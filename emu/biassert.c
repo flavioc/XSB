@@ -1759,8 +1759,6 @@ static int really_delete_clause(ClRef Clause)
 
 static int retract_clause( ClRef Clause, int retract_nr )
 {
-  bool perhaps_already_deleted = FALSE;
-  ClRef *CurrentCl;
 #ifdef RETRACT_DEBUG
             xsb_dbgmsg("Retract clause(%p) op(%x) type(%d)",
 		       Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
@@ -1769,16 +1767,22 @@ static int retract_clause( ClRef Clause, int retract_nr )
     {
         case UNINDEXED_CL:
 	    /* set fail for retract_nr AND protection */
-	  if (cell_opcode(ClRefEntryPoint(Clause)) == fail) 
-	    perhaps_already_deleted = TRUE;
-	  else
+	  if (cell_opcode(ClRefEntryPoint(Clause)) == fail &&
+	      cell_operand1(ClRefEntryPoint(Clause)) == 66) 
+	    retract_nr = 1;  /* previously scheduled for deletion */
+	  else {
 	    cell_opcode(ClRefEntryPoint(Clause)) = fail ;
+	    cell_operand1(ClRefEntryPoint(Clause)) = 66;
+	  }
 	  break ;
         case INDEXED_CL:
-	  if (cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) == fail )
-	    perhaps_already_deleted = TRUE;
-	  else
+	  if (cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) == fail 
+	      && cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) == 66)
+	    retract_nr = 1;  /* previously scheduled for deletion */
+	  else {
 	    cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = fail ;
+	    cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = 66;
+	  }
 	  break ;
         case COMPILED_CL:
 	  return 0 ; /* cannot retract compiled code */
@@ -1789,19 +1793,13 @@ static int retract_clause( ClRef Clause, int retract_nr )
 	  xsb_exit( "retract internal error!" ) ;
 	  break ;
     }
-    if (retract_nr) return TRUE;
-    if (perhaps_already_deleted) { /* don't schedule if already scheduled */
-      CurrentCl = OldestCl;
-      while (CurrentCl != NewestCl) {
-	if (*CurrentCl == Clause) return TRUE; /* already scheduled */
-	CurrentCl = next_in_buffer(CurrentCl);
-      }
-    }
+    if (!retract_nr) {
 #ifdef RETRACT_DEBUG
-    xsb_dbgmsg("Inserting clause in delete buffer(%p) op(%x) type(%d)",
-	 Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
+      xsb_dbgmsg("Inserting clause in delete buffer(%p) op(%x) type(%d)",
+		 Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
 #endif
-    delete_clause(Clause) ;
+      delete_clause(Clause) ;
+    }
     return TRUE ;
 }
 
