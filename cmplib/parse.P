@@ -240,11 +240,21 @@ check_compilable_clause(:-(D)) :- var(D), !,
 check_compilable_clause(:-(H,B)) :- var(H), !, 
 	error(('Clause cannot be compiled: ',:-(H,B))),
 	fail.
+check_compilable_clause(:-(H,B)) :- embedded_number(B), !, 
+	error(('Clause cannot be compiled: ',:-(H,B))),
+	fail.
 check_compilable_clause([]) :- !.
 check_compilable_clause([Cl|Cls]) :- !,
 	check_compilable_clause(Cl),
 	check_compilable_clause(Cls).
 check_compilable_clause(_).
+
+embedded_number(B) :- number(B), !.
+embedded_number((A,B)) :- 
+	(embedded_number(A)
+	 ->	true
+	 ;	embedded_number(B)
+	).
 
 %-------------------------------------------------------------------------
 % Note: The VariableList is not used in the rule parse_clause/3 for the 
