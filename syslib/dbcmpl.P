@@ -23,6 +23,9 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+
+#include "celltags.h"
 
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer			*/
@@ -52,9 +55,9 @@ dbgen_arg(c(Sym), Buff, LocIn, LocOut) :- LocOut is LocIn + 4,
 dbgen_arg(g(_Sym), _Buff, LocIn, LocOut) :- LocOut is LocIn + 4.
 dbgen_arg(n(I), Buff, LocIn, LocOut) :- 
 	term_type(I,TT), 
-	(TT =:= 2
-	 ->	buff_set_word(Buff, LocIn, I)	% integer
-	 ;	buff_set_cell(Buff, LocIn, 6, I)	% float
+	(TT =:= INT
+	 ->	buff_set_word(Buff, LocIn, I)
+	 ;	buff_set_cell(Buff, LocIn, FLOAT, I)
 	),
 	LocOut is LocIn + 4.
 dbgen_arg(i(I), Buff, LocIn, LocOut) :-  LocOut is LocIn + 4, 
@@ -68,7 +71,6 @@ dbgen_arg(v(I), Buff, LocIn, LocOut) :- LocOut is LocIn + 1,
 dbgen_arg(a(I), Buff, LocIn, LocOut) :- LocOut is LocIn + 1, 
 	buff_set_byte(Buff, LocIn, I).
 /* dbgen_arg(t(T), Buff, LocIn, LocOut) :- LocOut is LocIn + 1. */
-
 
 
 /*======================================================================*/
