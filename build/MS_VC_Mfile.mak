@@ -1,7 +1,7 @@
 #   MS_VC_Mfile.mak:  Makefile to compile XSB on Windows using VC++ NMAKE
 #
 # Usage:
-#   NMAKE /f "MS_VC_Mfile.mak" CFG="option" [DLL="yes"] [ORACLE="yes"] [SITE_LIBS=<"addl libs>"]
+#   NMAKE /f "MS_VC_Mfile.mak" CFG="option" [DLL="yes"] [ORACLE="yes"] [SITE_LIBS="addl libs"]
 #
 # Where: CFG = release | debug
 #    	 DLL = yes: build as a DLL
