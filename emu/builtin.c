@@ -96,6 +96,10 @@
 #include "odbc_xsb.h"
 #endif
 
+#ifdef XSB_INTERPROLOG
+#include "interprolog_xsb.h"
+#endif
+
 #ifdef PROFILE
 #include "inst_xsb.h"
 #include "subinst.h"
@@ -799,6 +803,7 @@ void init_builtin_table(void)
 
   set_builtin_table(JAVA_INTERRUPT, "setupJavaInterrupt");
   set_builtin_table(FORCE_TRUTH_VALUE, "force_truth_value");
+  set_builtin_table(INTERPROLOG_CALLBACK, "interprolog_callback");
 }
 
 /*----------------------------------------------------------------------*/
@@ -1685,6 +1690,10 @@ int builtin_call(byte number)
     
 #ifdef XSB_ODBC
 #include "odbc_xsb_i.h"
+#endif
+
+#ifdef XSB_INTERPROLOG
+#include "interprolog_xsb_i.h"
 #endif
     
 /*----------------------------------------------------------------------*/
