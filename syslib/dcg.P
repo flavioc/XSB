@@ -82,6 +82,15 @@ assert_word_list([Word|Words],N0,N) :-
 	assert(word(N0,Word,N1)),
 	assert_word_list(Words,N1,N).
 
+tphrase_add_word(From,Word,To) :-
+	assert(word(From,Word,To)).
+
+tphrase_print_words :-
+	word(F,W,T),
+	writeln(word(F,W,T)),
+	fail.
+tphrase_print_words.
+
 
 dcg((LHS --> RHS), (OutHead :- OutBody)) :-
 	( functor(LHS, ',', 2) -> 
