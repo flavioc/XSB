@@ -57,6 +57,7 @@
 #include "choice.h"
 #include "sw_envs.h"
 #include "xmacro.h"
+#include "tables.h"
 #include "subinst.h"
 #include "scc.h"
 #include "subp.h"
@@ -69,7 +70,7 @@
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function
- * variant_trie_search().  The name of this variable is from VarPosReg, a
+ * variant_answer_search().  The name of this variable is from VarPosReg, a
  * variable used in variant_call_search() to save the substitution factor
  * of the call.
  */
@@ -223,6 +224,7 @@ static int emuloop(byte *startaddr)
   static int infcounter = 0;
 #endif
   CPtr  xtemp1, xtemp2;
+
 
   xsb_segfault_message = xsb_default_segfault_msg;
   rreg = reg; /* for SUN */
