@@ -28,7 +28,7 @@
    str_fromlist/2, str_length/2, str_substring/4, str_substring/2, 
    sublist/2.   
 
-:- import atom/1 from standard.
+:- import atom/1,atom_codes/2 from standard.
 :- import buff_set_byte/3, buff_alloc/2, buff_byte/3, buff_dealloc/3,
 	  str_insert/2, str_len/2 from machine.
 :- import flatten/2 from basics.

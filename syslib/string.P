@@ -67,28 +67,28 @@ str_cat or str_len.
 concat_atom(Atomlist,Atom):-
 	atom_to_charlist(Atomlist,Charlist1),
 	flatten(Charlist1,Charlist),
-	atom_chars(Atom,Charlist).
+	atom_codes(Atom,Charlist).
 
 atom_to_charlist([],[]).
 atom_to_charlist([Atom|Rest],[List|Lrest]):- 
 	atom(Atom),
-	atom_chars(Atom,List),
+	atom_codes(Atom,List),
 	atom_to_charlist(Rest,Lrest).
 
 %---
 concat_atom(Atomlist,Sep,Atom):-
 	atom(Sep),
-	atom_chars(Sep,Slist),
+	atom_codes(Sep,Slist),
 	atom_to_charlist(Atomlist,Slist,Charlist1),
 	flatten(Charlist1,Charlist),
-	atom_chars(Atom,Charlist).
+	atom_codes(Atom,Charlist).
 
 atom_to_charlist([Atom],_,[List]):- !,
 	atom(Atom),
-	atom_chars(Atom,List).
+	atom_codes(Atom,List).
 atom_to_charlist([Atom|Rest],Slist,[List,Slist|Lrest]):- 
 	atom(Atom),
-	atom_chars(Atom,List),
+	atom_codes(Atom,List),
 	atom_to_charlist(Rest,Slist,Lrest).
 
 str_length(Str, Len) :- ( atom(Str) -> str_len(Str, L), Len = L ).
