@@ -94,7 +94,11 @@ standard_symbol(fmt_write_string, 3, xsb_writ).
 
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
-standard_symbol(get_calls_for_table, 3, tables).
+standard_symbol(get_call, 3, tables).
+standard_symbol(get_calls, 3, tables).
+standard_symbol(get_calls_for_table, 2, tables).
+standard_symbol(get_residual, 2, tables).
+standard_symbol(get_returns, 2, tables).
 standard_symbol(get_returns_for_call, 2, tables).
 standard_symbol(halt, 0, standard).
 standard_symbol((hilog), 1, standard).
