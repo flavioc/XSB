@@ -1500,6 +1500,7 @@ xsbBool no_quotes_needed(char *string)
 
   if (*string == '\0') return TRUE;
   if (!strcmp(string,"[]")) return FALSE;
+  if (!strcmp(string,"/*")) return TRUE;
   ctr = 0;
   nextchar = (int) string[0];
   flag = 0;
