@@ -393,29 +393,22 @@ reclaim_space(Fact) :-
 
 /*======================================================================*/
 /*									*/
-/* retract_facts_back_to(+Skel,+Lim) Skel must be an open term for	*/
-/*	a dynamic predicate containing only facts, and Lim is an 	*/
-/*	integer. This predicate nondeterministically removes and returns*/
-/*	the last facts from the dynamic predicate, binding Skel.  Lim	*/
-/*	indicates how many of the last facts of Skel to remove and	*/
-/*	return: the facts from that last one back to (and including) the*/
-/*	Lim+1st	one.  This predicate is designed to allow an unindexed	*/
-/*	dynamic predicate to serve as a log, and to use this predicate	*/
-/*	to support undo.						*/
+/* retract_last_fact(+Skel) should only be applied to dynamic predicates*/
+/* containing only facts.  Skel must be a most-general term.		*/
+/* retract_last retracts the last fact of the predicate and returns	*/
+/* the bindings in Skel.						*/
 /*									*/
 /*======================================================================*/
 
-retract_facts_back_to(Skel,Lim) :-
+retract_last_fact(Skel) :-
 	(is_most_general_term(Skel)
 	 ->	true
 	 ;	throw(error(instantiation_error,
-			    ('retract_facts_back_to/2, First argument is not an open term: ',Skel)))
+			    ('retract_last_fact/1, First argument is not an open term: ',Skel)))
 	),
-	get_dynamic_prref(Skel,'retract_facts_back_to/2',Prref),
-	db_get_clauses_in_list(Lim,0,0,0,Prref,Skel,RList,[]),
-	reverse(RList,List),
-	member([Clref|EntryPt],List),
-	do_dyn_code_call(EntryPt,Skel),
+	get_dynamic_prref(Skel,'retract_last_fact/1',Prref),
+	db_get_last_clause(Prref,Clref,_Type,EntryPoint),
+	do_dyn_code_call(EntryPoint,Skel),
 	db_retract0(Clref,0).
 
 do_dyn_code_call(EntryPt,Skel) :-

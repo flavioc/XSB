@@ -115,6 +115,7 @@
 	assert_buff_to_clref/6,
         formatted_io/5,
 	file_read_canonical/3,
+	db_get_last_clause/4,
 	gen_retract_all/1,
 	db_get_clause/11,
 	db_retract0/2,
