@@ -34,6 +34,8 @@
 
 #ifdef WIN_NT
 #define fdopen   _fdopen
+#define popen    _popen
+#define pclose   _pclose
 #endif
 
 /* The separator used between pathnames in PATH environment */
