@@ -18,17 +18,12 @@
 \setlength{\parskip}{2mm}               % space between paragraphs
 
 \def\cut{\mbox{\tt '!'/0}}
-\def\not{\mbox{${\tt '\backslash+'/1}$}}
 
 \newtheorem{example}{Example}[section]
 
 \newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
 
 \newcommand{\comment}[1]{}
-\newcommand{\ourprolog}{XSB}
-\newcommand{\smallourprolog}{xsb}
-\newcommand{\version}{Version 2.0}
-\newcommand{\LRD}{LRD-stratified}
 
 \newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
 \newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
@@ -155,6 +150,18 @@
 \begin{document}
 
 \maketitle
+\thispagestyle{empty}
+
+\newpage
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\tableofcontents
+
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
 
 
 \section{Introduction}

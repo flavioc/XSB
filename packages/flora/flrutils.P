@@ -75,10 +75,6 @@
 	displayln/0, displayln/1, flora_msgheader/0.
 
 
-/*********************************************************************
-  03/1999, modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
-*********************************************************************/
-
 
 /********************************************************************/
 flora_prefix("_$_$_flora_").
@@ -505,8 +501,8 @@ unbound_warn(Form,L) :-
 	'_$_$_write_flora_warnheader',
 	write('unbound variable(s) '),
 	write_list(L),
-	write(' in `'),
-	write(Form), writeln('''').
+	write(' in a '),
+	writeln(Form).
 
 
 /********************************************************************/
@@ -715,7 +711,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		displayln, flora_warnheader, display('unbound variable(s) '),
 		telling(CurrStream), tell(userout),
 		write_list(L), tell(CurrStream),
-		display(' in `'), display(Form), displayln('''')
+		display(' in a '), displayln(Form)
 	      ;
 		true
 	    ),
