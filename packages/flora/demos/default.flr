@@ -72,8 +72,8 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 
 ?- times_flies_like_an_arrow.	% ==> `yes'
 
-?- fruit_flies_like_an_apple.	% ==> `no' (and a warning)
-?- writeln('>>> Answer NO and WARNING intended! <<<').
+%%?- fruit_flies_like_an_apple.	% ==> `no' (and a warning)
+%%?- writeln('>>> Answer NO and WARNING intended! <<<').
 
 ?- fruit_flies_like_an_apple[].	% ==> `yes'
 
@@ -97,6 +97,5 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 ?- nl, write('mary..kids[] ??'), mary..kids[].
 
 // new
-?- nl, write('Thanks to '), unix(whoami), writeln('for using FLORA!').
-
-
+?- nl, write('On '), unix(date), 
+       writeln('FLORA thanks you for giving it a chance!').
