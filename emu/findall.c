@@ -548,10 +548,28 @@ static long term_size(Cell term)
     goto recur;
   }
   case ATTV: {
-    size += 2;
-    term = cell(clref_val(term) + 1);
-    goto recur;
-  }	
+    CPtr pfirstel;
+
+    pfirstel = clref_val(term);
+    if (pfirstel < hreg) {
+      /*
+       * This is the first occurrence of an attributed variable.  Its
+       * first cell (the VAR part) will be changed to an ATTV cell which
+       * points to hreg, and the cell of hreg will be set to a free
+       * variable.  So the later occurrence of this attributed variable is
+       * dereferenced and seen as an ATTV pointing to hreg, and we can
+       * tell it has been counted before.
+       */
+      size += 2;
+      findall_trail(pfirstel);
+      bld_attv(pfirstel, hreg); /* bind VAR part to a cell out of hreg */
+      bld_free(hreg);
+      term = cell(clref_val(term) + 1);
+      goto recur;
+    }
+    else /* this ATTV has been counted before */
+      return size;
+  }
   default:
     xsb_abort("Term type (tag = %ld) not handled by term_size.",
 	      (Cell)cell_tag(term));
@@ -651,7 +669,10 @@ int copy_term()
   
   if( isref(arg1) ) return 1;
   
+  init_findall_trail();
   size = term_size(arg1) ;
+  findall_untrail();
+
   check_glstack_overflow( 2, pcreg, size*sizeof(Cell) ) ;
   
   /* again because stack might have been reallocated */
