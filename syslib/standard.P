@@ -600,8 +600,12 @@ index(Ps,Arg,S) :-
 	nonvar(Ps), nonvar(Arg), nonvar(S),
 	add_index(Ps,Arg,S).
 
-index(Ps,trie) :-
-	add_trie_index(Ps).
+index(Ps,Arg) :-
+	nonvar(Ps), nonvar(Arg),
+	(Arg == trie
+	 ->	add_trie_index(Ps)
+	 ;	add_index(Ps,Arg,0)
+	).
 
 /* add tabling declaration */
 table(Ps) :- 
