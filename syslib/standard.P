@@ -908,6 +908,9 @@ statistics :- stat_sta(1).
 
 statistics(X) :- stat_sta(X).
 
+get_date(_Year,_Month,_Day,_Hour,_Minute) :-
+	'_$builtin'(GET_DATE).
+
 
 %-----------------------------------------------------------------------------%
 

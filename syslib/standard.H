@@ -34,7 +34,7 @@
 	atom_chars/2,   atom_codes/2,
 	call/1,		call_expose/1,	callable/1,
 	close/1,	compare/3,	compound/1,	cputime/1,	
-        display/1,
+        display/1, get_date/5,
 	expand_term/2,	file_exists/1,	fail/0,		fail_if/1,
 	fileerrors/0,	float/1,	functor/3,
 	get/1,		get0/1,		

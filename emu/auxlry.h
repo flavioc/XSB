@@ -33,6 +33,8 @@
 
 extern double cpu_time(void);
 extern double real_time(void);
+extern int get_date(unsigned *year, unsigned *month, unsigned *day,
+		    unsigned *hour, unsigned *minute);
 
 struct trace_str {		/* for tracing purpose below */
     unsigned long maxlstack_count, maxgstack_count, maxtrail_count, maxcpstack_count;

@@ -705,6 +705,8 @@ void init_builtin_table(void)
 
   set_builtin_table(DO_ONCE, "do_once");
 
+  set_builtin_table(GET_DATE, "get_date");
+
   set_builtin_table(PSC_ENV, "psc_env");
   set_builtin_table(PSC_SPY, "psc_spy");
   set_builtin_table(PSC_TABLED, "psc_tabled");
@@ -1236,6 +1238,16 @@ int builtin_call(byte number)
   case STAT_CPUTIME: {	/* R1: -cputime, in miliseconds */	
     int value = (int)(cpu_time() * 1000);
     ctop_int(1, value);
+    break;
+  }
+  case GET_DATE: {
+    unsigned year=0, month=0, day=0, hour=0, minute=0;
+    get_date(&year,&month,&day,&hour,&minute);
+    ctop_int(1,year);
+    ctop_int(2,month);
+    ctop_int(3,day);
+    ctop_int(4,hour);
+    ctop_int(5,minute);
     break;
   }
   case CODE_LOAD:		/* R1: +FileName, bytecode file to be loaded */
@@ -2215,7 +2227,11 @@ int builtin_call(byte number)
    */
   case ATTV_UNIFY: { /* R1: +Var; R2: +Value */
     Cell attv = ptoc_tag(1);
-    bind_copy((CPtr)dec_addr(attv), ptoc_tag(2));
+    if (isattv(attv)) {
+      bind_copy((CPtr)dec_addr(attv), ptoc_tag(2));
+    } else {
+      return FALSE;
+    }
     break;
   }
 

@@ -71,21 +71,36 @@ double cpu_time(void)
 
 /*----------------------------------------------------------------------*/
 
-#if 0
-/** Note: this one is not used anywhere, but it would make a
-    good builtin for some applications!!! --mk **/
-#ifdef HAVE_GETTIMEOFDAY
-int get_date(void)
+int get_date(unsigned *year, unsigned *month, unsigned *day,
+	     unsigned *hour, unsigned *minute)
 {
-  struct tm *value;
-  struct timeval tvs;
+#ifdef WIN_NT
+    SYSTEMTIME SystemTime;
+    TIME_ZONE_INFORMATION tz;
+    GetLocalTime(&SystemTime);
+    *year = SystemTime.wYear;
+    *month = SystemTime.wMonth;
+    *day = SystemTime.wDay;
+    *hour = SystemTime.wHour;
+    *minute = SystemTime.wMinute;
+    GetTimeZoneInformation(&tz);
+    *hour = hour + tz.Bias;
+#else
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval tv;
+    struct tm *tm;
 
-  gettimeofday(&tvs, 0);
-  value = localtime((time_t *)(&(tvs.tv_sec)));
-  return ((value->tm_year)<<16) + ((value->tm_mon+1)<<8) + value->tm_mday;
-}
+    gettimeofday(&tv,NULL);
+    tm = gmtime(&tv.tv_sec);
+    *year = tm->tm_year;
+    *month = tm->tm_mon;
+    *day = tm->tm_mday;
+    *hour = tm->tm_hour;
+    *minute = tm->tm_min;
 #endif
-#endif 
+#endif
+    return;
+}
 
 /*----------------------------------------------------------------------*/
 
