@@ -636,6 +636,8 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
   case SQL_VARCHAR:
     // extra 1 for space for end-of-string marker
     return(MAXI(collen+1, strlen((char *) colname)));
+  case SQL_TINYINT:
+    return(MAXI(4, strlen((char *)colname)));
   case SQL_SMALLINT:
     return(MAXI(6, strlen((char *)colname)));
   case SQL_INTEGER:
@@ -679,8 +681,12 @@ int DescribeSelectList(int i)
   CursorTable[i].ColCurNum = 0;
   CursorTable[i].ColNum = 0;
   SQLNumResultCols(CursorTable[i].hstmt, (SQLSMALLINT*)&(CursorTable[i].ColNum));
-  if (!(CursorTable[i].ColNum)) return 2;   // no columns are affected
-
+  //  if (!(CursorTable[i].ColNum)) return 2;   // no columns are affected, dealloc cursor?
+  if (!(CursorTable[i].ColNum)) {
+    // no columns are affected, set cursor status to unused 
+    CursorTable[i].Status = 1; 
+    return 2;   
+  }
   // if we aren't reusing a closed statement hand, we need to get
   // resulting rowset info and allocate memory for it
   if (CursorTable[i].Status != 2) {
@@ -711,7 +717,7 @@ int DescribeSelectList(int i)
 		     &collen, &scale, &nullable);
       // SQLServer returns these 2 wierd types, treat them as varchars?
       if (CursorTable[i].ColTypes[j] == -9) CursorTable[i].ColTypes[j] = SQL_VARCHAR;
-      if (CursorTable[i].ColTypes[j] == -6) CursorTable[i].ColTypes[j] = SQL_VARCHAR;
+      if (CursorTable[i].ColTypes[j] == SQL_TINYINT) CursorTable[i].ColTypes[j] = SQL_VARCHAR;
       colnamelen = (colnamelen > 49) ? 49 : colnamelen; 
       colname[colnamelen] = '\0';
       if (!((CursorTable[i]).ColLen[j] =
@@ -729,9 +735,10 @@ int DescribeSelectList(int i)
     }
   }
   // bind them
-  for (j = 0; j < CursorTable[i].ColNum; j++) 
+  for (j = 0; j < CursorTable[i].ColNum; j++) {
     SQLBindCol(CursorTable[i].hstmt, (short)(j+1), SQL_C_CHAR, CursorTable[i].Data[j],
 	       CursorTable[i].ColLen[j], (SDWORD FAR *)(&(CursorTable[i].OutLen[j])));
+  }
   return 0;
 }
 
@@ -809,7 +816,7 @@ void GetColumn()
     break;
   default: ;
   }
-    
+
   if (CursorTable[i].ColCurNum == CursorTable[i].ColNum) {
     // no more columns in the result row
     CursorTable[i].ColCurNum = 0;
@@ -843,6 +850,7 @@ void GetColumn()
     case SQL_VARCHAR:
       ctop_string(3, string_find(str[1],1));
       break;
+    case SQL_TINYINT:
     case SQL_SMALLINT:
     case SQL_INTEGER:
       ctop_string(3, string_find(str[2],1));
@@ -868,6 +876,7 @@ void GetColumn()
   case SQL_VARCHAR:
     ctop_string(3, string_find(CursorTable[i].Data[ColCurNum],1)); 
     break;
+  case SQL_TINYINT:
   case SQL_SMALLINT:
   case SQL_INTEGER:
     ctop_int(3,atoi(CursorTable[i].Data[ColCurNum]));
