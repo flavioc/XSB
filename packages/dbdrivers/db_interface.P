@@ -1,0 +1,73 @@
+/* File: db_interface.P
+** Author: Saikat Mukherjee
+** Contact: saikat@cs.sunysb.edu
+
+** This file defines the  Prolog interface to connect to a 
+** database. This layer will contact the  
+** driver manager for furthur processing. 
+*/
+
+%% opening connection to the database
+
+db_connect(Handle, Driver, Server, Database, User, Password) :- 
+		(openConnection(Handle, Driver, Server, Database, User, Password)
+		-> true; 
+		exception(Mesg), throw(xsb_error(Mesg))
+		).
+
+db_connect(Handle, Driver, Dsn, User, Password) :-
+		(openConnection(Handle, Driver, '', Dsn, User, Password)
+		-> true; 
+		exception(Mesg), throw(xsb_error(Mesg))
+		).
+
+%% closing connection to the database 
+
+db_disconnect(Handle) :- 
+		(closeConnection(Handle)
+		-> true; 
+		exception(Mesg), throw(xsb_error(Mesg))
+		).
+
+%% direct querying
+
+db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
+		(queryConnection(Connhandle, QueryHandle, SQLQueryList, ReturnList)
+		-> true;
+		!, 
+		(exception(Mesg)
+		-> throw(xsb_error(Mesg));
+		fail)
+		).
+
+db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
+		db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList).
+
+
+%% prepared statements
+
+db_prepare(ConnHandle, QueryHandle, SQLQuery) :-
+		(prepareStatement(ConnHandle, QueryHandle, SQLQuery)
+		-> true; exception(Mesg), throw(xsb_error(Mesg))).
+
+db_prepare_execute(QueryHandle, BindList, ReturnList) :-
+		(executePreparedStatement(QueryHandle, BindList, ReturnList)
+		-> true;
+		!, 
+		(exception(Mesg)
+		-> throw(xsb_error(Mesg));
+		fail)
+		).
+
+db_prepare_execute(QueryHandle, BindList, ReturnList) :-
+		db_prepare_execute(QueryHandle, BindList, ReturnList).
+
+%% closing statements
+
+db_statement_close(QueryHandle) :-
+		(closeStatement(QueryHandle)
+		-> true; 
+		exception(Mesg), throw(xsb_error(Mesg))
+		).
+
+

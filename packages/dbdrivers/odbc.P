@@ -1,0 +1,19 @@
+% File: odbc.P
+% Author: Saikat Mukherjee
+% Contact: saikat@cs.sunysb.edu
+
+% This dynamically loads up the ODBC driver.
+
+:- import bootstrap_package/2 from packaging.
+:- import slash/1 from machine.
+:- import fmt_write_string/3 from file_io.
+:- import driverODBC_register/0 from odbc_driver.
+:- import driverODBC_initialise/0 from odbc_driver.
+
+:-	slash(Slash),
+	fmt_write_string(Dir, 'dbdrivers%sodbc', a(Slash)),
+	bootstrap_package(Dir, odbc_driver),
+	[odbc_driver_config],
+	driverODBC_register, 
+	driverODBC_initialise.
+	
