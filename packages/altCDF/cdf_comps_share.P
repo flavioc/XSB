@@ -1,3 +1,6 @@
+:- compiler_options([xpp_on]).
+#include "standard.h"
+
 :- export 
 	get_component_extensional/2,
 	get_component_intensional/3,
@@ -47,7 +50,7 @@
 	machine_file_exists/1 from machine.
 
 :- import concat_atom/2 from string.
-:- import message/1 from standard.
+:- import messageln/2 from standard.
 
 :- ensure_loaded(cdf_config).
 
@@ -381,8 +384,7 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):-
 	get_full_path_and_loadname(Name,PathIn,Vin,AbsPath,V,Loadname),
 	(check_component(Name,AbsPath,V,Arglist,Flag) -> 
 	    slash(Slash),
-  	    message(['Loading component: ',AbsPath,Slash,Loadname,' v. ', V]),
-				nl,
+  	    messageln(['Loading component: ',AbsPath,Slash,Loadname,' v. ', V], STDMSG),
                 concat_atom([AbsPath,Slash,Loadname],Absname),
 	    cdf_load_extensional_facts(Absname,AbsPath),
 %	    writeln(just_loaded(Name)), /* write_cha, */ nl,
@@ -456,8 +458,8 @@ assert_dependencies_for_path2(Name,New,Pathnew,Vnew):-
 load_component_pass2(Name,AbsPath,Vin,Anclist):- 
 	slash(Slash),
 	get_full_path_and_loadname(Name,AbsPath,Vin,_Full,_V,Loadname),
-	message(['Loading int rules and initializing component: ',
-			AbsPath,Slash,Loadname]),nl,
+	messageln(['Loading int rules and initializing component: ',
+			AbsPath,Slash,Loadname], STDMSG),
 	load_component_dependencies_pass2(Name,Anclist),
 	concat_atom([AbsPath,Slash,Loadname],Dir),
 	load_intensional_rules(Dir),
@@ -774,7 +776,7 @@ pe_canon_path(Path,CPath) :-
 
 cdf_load_extensional_facts(Dir,CPath) :-
 	cdf_fix_dir(Dir,DirS),
-	write('Loading '),writeln(Dir),
+	write(userout, 'Loading '),writeln(userout, Dir),
 	reload_extensional(DirS,CPath).
 
 reload_extensional(Dir,CPath):- 
