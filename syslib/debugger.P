@@ -63,8 +63,8 @@ notrace :- stat_set_flag(TRACE,0),	       	       	% trace = 0
 	   nodebug.				% ??dsw added, (no load msgs)
 
 %% Trace control
-debug_ctl(skip, print)   :- !, leash([]).
-debug_ctl(skip, noprint) :- !, leash(['Call','Exit','Redo','Fail']).
+debug_ctl(prompt, off)   :- !, leash([]).
+debug_ctl(prompt, on) :- !, leash(['Call','Exit','Redo','Fail']).
 debug_ctl(leash, L)      :- is_list(L), !, leash(L).
 debug_ctl(show, L)       :- is_list(L), !, show(L).
 

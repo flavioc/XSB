@@ -143,12 +143,11 @@ Other standard predicates that are useful in debugging are:
    returns XSB back to the debugger prompt, but with new settings.
    %%
    \begin{enumerate}
-    \item {\tt debug\_ctl(skip, print)}
-      Set verbose skip globally. This essentially means that trace
-      will always be printed and the user will never be prompted during the
-      trace.
-    \item {\tt debug\_ctl(skip, noprint)} 
-      Turn global verbose skip mode off.
+   \item {\tt debug\_ctl(prompt, off)} Set non-interactive mode globally.
+     This means that trace will be printed from start to end, and the user
+     will never be prompted during the trace.
+    \item {\tt debug\_ctl(prompt, on)} 
+      Make tracing/spying interactive.
     \item {\tt debug\_ctl(profile, on)}  
       Turns profiling on. This means that each time a call execution
       reaches the {\tt Fail} or {\tt Exit} port, CPU time spent in that
