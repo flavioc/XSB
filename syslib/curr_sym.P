@@ -23,7 +23,7 @@
 */
 
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,sysmod,optimize]).
 
 #include "standard.h"
 #include "flag_defs_xsb.h"
@@ -428,7 +428,7 @@ psc_properties(PSC, Property) :-
 psc_properties(PSC, Property) :-
 	psc_name(PSC, Functor),		% Finding the Functor and the Arity
 	psc_arity(PSC, Arity),		% twice is silly, isn''t it?
-	( standard_symbol(Functor, Arity, _) -> Property = built_in ).
+	( standard_symbol(Functor, Arity, _) -> Property = xsb_standard_predicate ).
 		 % Unfortunately this doesn''t take the Module into account.
 
 
