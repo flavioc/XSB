@@ -36,7 +36,7 @@
  *  _$abort_cutpoint.
  */
 
-:- compiler_options([sysmod,cpp_on]).
+:- compiler_options([sysmod,xpp_on]).
 
 #include "standard.h"
 #include "char_defs.h"

@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 
 #include "configs/config.h"
 

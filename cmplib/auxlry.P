@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 #include "standard.h"
 
 
@@ -86,9 +86,9 @@ setoptions1([Opt|Rest]) :-
 	 ->	setopt(Opt1,0)
 	 ;	setopt(Opt,1)
 	),
-	%% cpp was off and now is on, hence we had compiler_options(cpp_on)
+	%% cpp was off and now is on, hence we had compiler_options(xpp_on)
 	%% Restart!
-	(conget(migh_need_restart,1), conget(cpp_on,1)
+	(conget(migh_need_restart,1), conget(xpp_on,1)
 	->  conset(needs_restart,1), conset(migh_need_restart,0)
 	;   setoptions1(Rest)
 	).
@@ -124,7 +124,7 @@ current_option(unfold).
 current_option(reorder).
 
 /* preprocessor */
-current_option(cpp_on).
+current_option(xpp_on).
 
 /* parse */
 current_option(quit_on_error).

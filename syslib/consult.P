@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 #include "standard.h"
 #include "char_defs.h"
 #include "flag_defs.h"
@@ -273,25 +273,24 @@ dotted_ext(Ext,DExt) :- str_cat('.',Ext,DExt).
 load_dyn1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
-	open_or_xpp_file(Rfname, CPP_process),
-	current_input_port(CPPport), % port from process, if it was launched
+	open_or_xpp_file(Rfname, XPP_process),
+	current_input_port(XPPport), % port from process, if it was launched
 	(   read_and_assert
 	%% If needs restart, close old file and skip to the second load_dyn1
 	->  ( conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
-	;   conset(needs_restart, 0), conset(cpp_on,0)
+	;   conset(needs_restart, 0), conset(xpp_on,0)
 	),
-	(
-	    CPP_process = none, ! 
-	;   %% Wait, if cpp was spawned so as to not leave zombies
-	    process_control(CPP_process, wait),
-	    %% Also, release the file descriptor used to read from cpp
-	    file_close(CPPport)
+	(   XPP_process = none, ! 
+	;   %% Wait, if gpp was spawned so as to not leave zombies
+	    process_control(XPP_process, wait),
+	    %% Also, release the file descriptor used to read from gpp
+	    file_close(XPPport)
 	),
 	seen,
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
 load_dyn1(Rfname) :- 
-	%% If we are restarting due to cpp, then reset needs_restart.
+	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
 	load_dyn1(Rfname).
 
@@ -304,7 +303,7 @@ load_dyn1(Rfname) :-
 :- dynamic load_dyn_module(_).
 
 init_for_load(Filename,Mod) :-
-	conset(needs_restart, 0), conset(cpp_on, 0), % Cleanup before CPP
+	conset(needs_restart, 0), conset(xpp_on, 0), % Cleanup before XPP
 	file_time(Filename,time(Time1,Time2)),
 	retractall(load_dyn_file_loaded(Filename,_)),
 	assert(load_dyn_file_loaded(Filename,time(Time1,Time2))),
@@ -315,7 +314,7 @@ init_for_load(Filename,Mod) :-
 	assert(load_dyn_module(Mod)).
 
 cleanup_for_load :-
-	conset(needs_restart, 0), conset(cpp_on, 0), % Cleanup after CPP
+	conset(needs_restart, 0), conset(xpp_on, 0), % Cleanup after XPP
 	retractall(load_dyn_trie_retracted(_)),
 	retractall(load_dyn_retracted(_,_,_,_,_)),
 	retractall(load_dyn_file(_)),
@@ -409,26 +408,25 @@ load_dync0(SExt,Base,Mod) :-
 load_dync1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
-	open_or_xpp_file(Rfname, CPP_process),
-	current_input_port(CPPport),
+	open_or_xpp_file(Rfname, XPP_process),
+	current_input_port(XPPport),
 	file_read_canonical(-1000,0,0),	% initialize previous psc
-	(   read_and_assert(CPPport)
+	(   read_and_assert(XPPport)
 	%% If needs restart, close old file and skip to the second load_dyn1
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
-	;   conset(needs_restart, 0), conset(cpp_on,0)
+	;   conset(needs_restart, 0), conset(xpp_on,0)
 	),
-	(
-	    CPP_process = none, ! 
-	;   %% Wait, if cpp was spawned so as to not leave zombies
-	    process_control(CPP_process, wait),
-	    %% Also, release the file descriptor used to read from cpp
-	    file_close(CPPport)
+	(   XPP_process = none, ! 
+	;   %% Wait, if gpp was spawned so as to not leave zombies
+	    process_control(XPP_process, wait),
+	    %% Also, release the file descriptor used to read from gpp
+	    file_close(XPPport)
 	),
 	seen,
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
 load_dync1(Rfname) :- 
-	%% If we are restarting due to cpp, then reset needs_restart.
+	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
 	load_dync1(Rfname).
 
@@ -585,8 +583,8 @@ proc_directive(hilog(X)) :- !, add_hilog_symbol(X).
 
 proc_directive(compiler_options(L)) :-
 	!,
-	(memberchk(cpp_on,L), conget(cpp_on, 0) 
-	->  conset(needs_restart,1), conset(cpp_on, 1)
+	(memberchk(xpp_on,L), conget(xpp_on, 0) 
+	->  conset(needs_restart,1), conset(xpp_on, 1)
 	;   true
 	).
 

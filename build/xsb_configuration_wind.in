@@ -150,6 +150,10 @@ xsb_configuration(config_dir, ConfigDir) :-
      fmt_write_string(ConfigDir, 
 		      '%s%sconfig%s%s',
 		      f(InstallDir,Slash,Slash,Configuration)).
+xsb_configuration(config_bindir, ConfigBindir) :-
+     xsb_configuration(config_dir, ConfigDir),
+     slash(Slash),
+     fmt_write_string(ConfigBindir, '%s%sbin', f(ConfigDir, Slash)).
 xsb_configuration(config_libdir, ConfigLibdir) :-
      xsb_configuration(config_dir, ConfigDir),
      slash(Slash),

@@ -25,17 +25,20 @@
 **
 */
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 #include "flag_defs.h"
 #include "standard.h"
 #include "char_defs.h"
 
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+/* For CPP
+    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
 
 
 /********************************************************************/
 
-flora_word(S,A) :- str_cat(STD_FPREFIX(''), S, A1), A1=A.
+flora_word(S,A) :- str_cat(STD_FPREFIX, S, A1), A1=A.
 
 
 
@@ -69,9 +72,9 @@ flora_error_nl(Fmt, Args) :-
 	fmt_write(STDERR, Fmt, Args),
 	file_nl(STDERR).
 
-STD_FPREFIX('warning_nl'(M)) :-
+STD_FPREFIX(warning_nl)(M) :-
 	fmt_write(STDWARN, "++FLORA Warning: %S\n", M).
-STD_FPREFIX('warning_nl'(Fmt, Args)) :-
+STD_FPREFIX(warning_nl)(Fmt, Args) :-
 	fmt_write(STDWARN, '++FLORA Warning: ', _),
 	fmt_write(STDWARN, Fmt, Args),
 	file_nl(STDWARN).
@@ -164,19 +167,19 @@ flora_consult_internal(File, Dtvs, Mode) :-
 
 
 /*********************************************************************/
-STD_FPREFIX('loadlist'([X])) :- flload(X).
+STD_FPREFIX(loadlist)([X]) :- flload(X).
 
-STD_FPREFIX('loadlist'([X1,X2|Xs])) :-
+STD_FPREFIX(loadlist)([X1,X2|Xs]) :-
 	flload(X1),
-	STD_FPREFIX('loadlist'([X2|Xs])).
+	STD_FPREFIX(loadlist)([X2|Xs]).
 
 
 /*********************************************************************/
-STD_FPREFIX('dynloadlist'([X])) :- dynload(X).
+STD_FPREFIX(dynloadlist)([X]) :- dynload(X).
 
-STD_FPREFIX('dynloadlist'([X1,X2|Xs])) :-
+STD_FPREFIX(dynloadlist)([X1,X2|Xs]) :-
 	dynload(X1),
-	STD_FPREFIX('dynloadlist'([X2|Xs])).
+	STD_FPREFIX(dynloadlist)([X2|Xs]).
 
 
 /*********************************************************************/
@@ -362,7 +365,7 @@ write_rules(rule(H,Gs)) :-
 write_rules(query(Body,NVs)) :-
 	!,
 	write('?- '),
-	A = STD_FPREFIX('print_all'),
+	A = STD_FPREFIX(print_all),
 	write_canonical(A),
 	write('('),
 	write_canonical(Body),
@@ -370,7 +373,7 @@ write_rules(query(Body,NVs)) :-
 	write_canonical(NVs),
 	writeln(').'),
 	nl,
-	T = STD_FPREFIX('tag'),
+	T = STD_FPREFIX(tag),
 	write_canonical(T), writeln('(query).').
 
 write_rules(unbound_warning(F,L)) :-
@@ -518,7 +521,7 @@ directives_options(LoadMode,Directives,Options,Status) :-
 	(member(eqlevel(N1),Directives) -> true ; N1=0),
 	(member(skolem,Options) -> N2=1 ; N2=0),
 	(   N2 == 1, N1 == 0
-	->  STD_FPREFIX('warning_nl'('skolemization in rule head performed'))
+	->  STD_FPREFIX(warning_nl)('skolemization in rule head performed')
 	;   true
 	),
 	external_options(Options,TempOpts),
@@ -680,7 +683,7 @@ read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 /********************************************************************/
 flora_discard_tokens(Status) :-
 	repeat,
-	STD_FPREFIX('warning_nl'('discarding tokens]')),
+	STD_FPREFIX(warning_nl)('discarding tokens]'),
 	read_tokens(Tokens,Status),
 	(   member(atom(rule_delimeter),Tokens), !
 	;   member(eof,Status), !
@@ -707,8 +710,8 @@ flora_directives([H|T],Opts) :-
 	(   flora_directive(H)
 	->  Opts=[H|R],
 	    flora_directives(T,R)
-	;   STD_FPREFIX('warning_nl'("unknown compiler option `%S' (discarded)\n",
-			     arg(H))),
+	;   STD_FPREFIX(warning_nl)("unknown compiler option `%S' (discarded)\n",
+			     arg(H)),
 	    flora_directives(T,Opts)
 	),
 	!.

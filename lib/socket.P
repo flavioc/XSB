@@ -22,10 +22,10 @@
 ** 
 */
 
-:- compiler_options([cpp_on,sysmod]).
+:- compiler_options([xpp_on,sysmod]).
 #include "io_defs.h"
 #include "standard.h"
-#include "xsbsocket.h"
+#include "socket_defs.h"
 
 %% socket_flush:  for back compatibility
 socket_flush(FileDes) :- file_function(FILE_FLUSH,FileDes,_,[],[],[],[]).

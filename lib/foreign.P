@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 
 #include "char_defs.h"
 #include "flag_defs.h"
@@ -99,7 +99,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 		closefile(TempFile),
 		see(OldFile),
 		tell(OldTell),
-		conset(cpp_on,0),
+		conset(xpp_on,0),
 %		seen,
 		length(ExList, Count),
 		obj_ext(OExt),
@@ -122,9 +122,9 @@ read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 	    ; Clause = (':-'(ldoption(Opt))) ->
 		form_ld_option(Opt, LdOptionIn, LdOptionMid)
 	    ; Clause = (':-'(compiler_options(CompOpt))) ->
-	        (memberchk(cpp_on,CompOpt), conget(cpp_on,0) ->
+	        (memberchk(xpp_on,CompOpt), conget(xpp_on,0) ->
 		    closefile(TempFile),
-		    conset(cpp_on,1),
+		    conset(xpp_on,1),
 		    seen, 
 		    fail
 		;

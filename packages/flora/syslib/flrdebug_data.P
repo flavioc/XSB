@@ -23,57 +23,65 @@
 ** 
 */
 
-:- compiler_options([cpp_on]).
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
-#define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
+:- compiler_options([xpp_on]).
+
+/* For CPP
+    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+    #define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
+#define DYN_FPREFIX(X)    'dyn_$_$_flora_''X'
 
 
-hide_this_hide(STD_FPREFIX('isa'),2).
-hide_this_hide(DYN_FPREFIX('isa'),2).
-hide_this_hide(STD_FPREFIX('strict_subclass'),2).
-hide_this_hide(STD_FPREFIX('subclass'),2).
-hide_this_hide(STD_FPREFIX('sub'),2).
-hide_this_hide(DYN_FPREFIX('sub'),2).
 
-hide_this_hide(STD_FPREFIX('fd'),3).
-hide_this_hide(DYN_FPREFIX('fd'),3).
-hide_this_hide(STD_FPREFIX('ifd'),3).
-hide_this_hide(DYN_FPREFIX('ifd'),3).
-hide_this_hide(STD_FPREFIX('fs'),3).
-hide_this_hide(DYN_FPREFIX('fs'),3).
-hide_this_hide(STD_FPREFIX('ifs'),3).
-hide_this_hide(DYN_FPREFIX('ifs'),3).
+hide_this_hide(STD_FPREFIX(isa),2).
+hide_this_hide(DYN_FPREFIX(isa),2).
+hide_this_hide(STD_FPREFIX(strict_subclass),2).
+hide_this_hide(DYN_FPREFIX(strict_subclass),2).
+hide_this_hide(STD_FPREFIX(subclass),2).
+hide_this_hide(DYN_FPREFIX(subclass),2).
+hide_this_hide(STD_FPREFIX(sub),2).
+hide_this_hide(DYN_FPREFIX(sub),2).
 
-hide_this_hide(STD_FPREFIX('mvd'),3).
-hide_this_hide(DYN_FPREFIX('mvd'),3).
-hide_this_hide(STD_FPREFIX('imvd'),3).
-hide_this_hide(DYN_FPREFIX('imvd'),3).
-hide_this_hide(STD_FPREFIX('mvs'),3).
-hide_this_hide(DYN_FPREFIX('mvs'),3).
-hide_this_hide(STD_FPREFIX('imvs'),3).
-hide_this_hide(DYN_FPREFIX('imvs'),3).
+hide_this_hide(STD_FPREFIX(fd),3).
+hide_this_hide(DYN_FPREFIX(fd),3).
+hide_this_hide(STD_FPREFIX(ifd),3).
+hide_this_hide(DYN_FPREFIX(ifd),3).
+hide_this_hide(STD_FPREFIX(fs),3).
+hide_this_hide(DYN_FPREFIX(fs),3).
+hide_this_hide(STD_FPREFIX(ifs),3).
+hide_this_hide(DYN_FPREFIX(ifs),3).
 
-hide_this_hide(STD_FPREFIX('switch'),1).
-hide_this_hide(STD_FPREFIX('loadlist'),1).
-hide_this_hide(STD_FPREFIX('dynloadlist'),1).
+hide_this_hide(STD_FPREFIX(mvd),3).
+hide_this_hide(DYN_FPREFIX(mvd),3).
+hide_this_hide(STD_FPREFIX(imvd),3).
+hide_this_hide(DYN_FPREFIX(imvd),3).
+hide_this_hide(STD_FPREFIX(mvs),3).
+hide_this_hide(DYN_FPREFIX(mvs),3).
+hide_this_hide(STD_FPREFIX(imvs),3).
+hide_this_hide(DYN_FPREFIX(imvs),3).
+
+hide_this_hide(STD_FPREFIX(switch),1).
+hide_this_hide(STD_FPREFIX(loadlist),1).
+hide_this_hide(STD_FPREFIX(dynloadlist),1).
 
 hide_this_hide(flora_read_parse_compile,6).
-hide_this_hide(STD_FPREFIX('write_shell_prompt'),0).
-hide_this_hide(STD_FPREFIX('loop_guard'),1).
-hide_this_hide(STD_FPREFIX('write_No'),0).
-hide_this_hide(STD_FPREFIX('write_Yes'),0).
-hide_this_hide(STD_FPREFIX('handle_trace'),0).
-hide_this_hide(STD_FPREFIX('handle_notrace'),0).
-hide_this_hide(STD_FPREFIX('handle_end_of_call'),0).
+hide_this_hide(STD_FPREFIX(write_shell_prompt),0).
+hide_this_hide(STD_FPREFIX(loop_guard),1).
+hide_this_hide(STD_FPREFIX(write_No),0).
+hide_this_hide(STD_FPREFIX(write_Yes),0).
+hide_this_hide(STD_FPREFIX(handle_trace),0).
+hide_this_hide(STD_FPREFIX(handle_notrace),0).
+hide_this_hide(STD_FPREFIX(handle_end_of_call),0).
 
-hide_this_hide(STD_FPREFIX('collectset'),3).
-hide_this_hide(STD_FPREFIX('collectbag'),3).
-hide_this_hide(STD_FPREFIX('min'),3).
-hide_this_hide(STD_FPREFIX('max'),3).
-hide_this_hide(STD_FPREFIX('avg'),3).
-hide_this_hide(STD_FPREFIX('sum'),3).
+hide_this_hide(STD_FPREFIX(collectset),3).
+hide_this_hide(STD_FPREFIX(collectbag),3).
+hide_this_hide(STD_FPREFIX(min),3).
+hide_this_hide(STD_FPREFIX(max),3).
+hide_this_hide(STD_FPREFIX(avg),3).
+hide_this_hide(STD_FPREFIX(sum),3).
 
-hide_this_hide(STD_FPREFIX('debug_get_context'),2).
+hide_this_hide(STD_FPREFIX(debug_get_context),2).
 hide_this_hide(flora_write_debug_goal,2).
 
 hide_this_hide(flora_trace,0).
@@ -81,12 +89,12 @@ hide_this_hide(flora_notrace,0).
 hide_this_hide(one,0).
 hide_this_hide(all,0).
 
-hide_this_show(STD_FPREFIX('print_answers'),2).
+hide_this_show(STD_FPREFIX(print_answers),2).
 
-show_this_hide(STD_FPREFIX('assert'), 1).
-show_this_hide(STD_FPREFIX('retract'), 2).
-show_this_hide(STD_FPREFIX('retractall'), 2).
-show_this_hide(STD_FPREFIX('erase'), 2).
+show_this_hide(STD_FPREFIX(assert), 1).
+show_this_hide(STD_FPREFIX(retract), 2).
+show_this_hide(STD_FPREFIX(retractall), 2).
+show_this_hide(STD_FPREFIX(erase), 2).
 
 
-STD_FPREFIX('debugger_data_loaded').
+STD_FPREFIX(debugger_data_loaded).

@@ -1,21 +1,25 @@
 /**** closure/flrheader.P: Prepended automatically by the FLORA compiler ****/
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 #include "standard.h"
 #include "char_defs.h"
 
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
-#define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
+/* For CPP
+    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+    #define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
+#define DYN_FPREFIX(X)    'dyn_$_$_flora_''X'
 
 
-:- table STD_FPREFIX('fd'/3).
-:- table STD_FPREFIX('mvd'/3).
-:- table STD_FPREFIX('ifd'/3).
-:- table STD_FPREFIX('imvd'/3).
-:- table STD_FPREFIX('isa'/2).
-:- table STD_FPREFIX('sub'/2).
-:- table STD_FPREFIX('fs'/3).
-:- table STD_FPREFIX('mvs'/3).
+:- table STD_FPREFIX(fd)/3.
+:- table STD_FPREFIX(mvd)/3.
+:- table STD_FPREFIX(ifd)/3.
+:- table STD_FPREFIX(imvd)/3.
+:- table STD_FPREFIX(isa)/2.
+:- table STD_FPREFIX(sub)/2.
+:- table STD_FPREFIX(fs)/3.
+:- table STD_FPREFIX(mvs)/3.
 
 
 :- import member/2, ground/1 from basics.
@@ -28,56 +32,56 @@
 
 :- import current_predicate/1 from curr_sym.
 
-:- import STD_FPREFIX('loadlist'/1), STD_FPREFIX('dynloadlist'/1), 
-	STD_FPREFIX('warning_nl'/2)
+:- import STD_FPREFIX(loadlist)/1, STD_FPREFIX(dynloadlist)/1, 
+	STD_FPREFIX(warning_nl)/2
    from flrutils.
 
 :- import bootstrap_flora/0 from flora.
 
 
 /****************************************************************************/
-:- dynamic DYN_FPREFIX('fd'(_,_,_)).
-:- dynamic DYN_FPREFIX('mvd'(_,_,_)).
-:- dynamic DYN_FPREFIX('ifd'(_,_,_)).
-:- dynamic DYN_FPREFIX('imvd'(_,_,_)).
-:- dynamic DYN_FPREFIX('isa'(_,_)).
-:- dynamic DYN_FPREFIX('sub'(_,_)).
-:- dynamic DYN_FPREFIX('fs'(_,_,_)).
-:- dynamic DYN_FPREFIX('mvs'(_,_,_)).
-:- dynamic DYN_FPREFIX('exists'(_)).
-:- dynamic DYN_FPREFIX('mvd'(_,_)).
-:- dynamic DYN_FPREFIX('imvd'(_,_)).
+:- dynamic DYN_FPREFIX(fd)(_,_,_).
+:- dynamic DYN_FPREFIX(mvd)(_,_,_).
+:- dynamic DYN_FPREFIX(ifd)(_,_,_).
+:- dynamic DYN_FPREFIX(imvd)(_,_,_).
+:- dynamic DYN_FPREFIX(isa)(_,_).
+:- dynamic DYN_FPREFIX(sub)(_,_).
+:- dynamic DYN_FPREFIX(fs)(_,_,_).
+:- dynamic DYN_FPREFIX(mvs)(_,_,_).
+:- dynamic DYN_FPREFIX(exists)(_).
+:- dynamic DYN_FPREFIX(mvd)(_,_).
+:- dynamic DYN_FPREFIX(imvd)(_,_).
 
-:- table DYN_FPREFIX('fd'/3).
-:- table DYN_FPREFIX('mvd'/3).
-:- table DYN_FPREFIX('ifd'/3).
-:- table DYN_FPREFIX('imvd'/3).
-:- table DYN_FPREFIX('isa'/2).
-:- table DYN_FPREFIX('sub'/2).
-:- table DYN_FPREFIX('fs'/3).
-:- table DYN_FPREFIX('mvs'/3).
-:- table DYN_FPREFIX('exists'/1).
-:- table DYN_FPREFIX('mvd'/2).
-:- table DYN_FPREFIX('imvd'/2).
+:- table DYN_FPREFIX(fd)/3.
+:- table DYN_FPREFIX(mvd)/3.
+:- table DYN_FPREFIX(ifd)/3.
+:- table DYN_FPREFIX(imvd)/3.
+:- table DYN_FPREFIX(isa)/2.
+:- table DYN_FPREFIX(sub)/2.
+:- table DYN_FPREFIX(fs)/3.
+:- table DYN_FPREFIX(mvs)/3.
+:- table DYN_FPREFIX(exists)/1.
+:- table DYN_FPREFIX(mvd)/2.
+:- table DYN_FPREFIX(imvd)/2.
 
-STD_FPREFIX('fd'(O,M,R))   :- DYN_FPREFIX('fd'(O,M,R)).
-STD_FPREFIX('mvd'(O,M,R))  :- DYN_FPREFIX('mvd'(O,M,R)).
-STD_FPREFIX('ifd'(O,M,R))  :- DYN_FPREFIX('ifd'(O,M,R)).
-STD_FPREFIX('imvd'(O,M,R)) :- DYN_FPREFIX('imvd'(O,M,R)).
-STD_FPREFIX('isa'(O1,O2))  :- DYN_FPREFIX('isa'(O1,O2)).
-STD_FPREFIX('sub'(O1,O2))  :- DYN_FPREFIX('sub'(O1,O2)).
-STD_FPREFIX('fs'(O,M,R))   :- DYN_FPREFIX('fs'(O,M,R)).
-STD_FPREFIX('mvs'(O,M,R))  :- DYN_FPREFIX('mvs'(O,M,R)).
-STD_FPREFIX('exists'(O))   :- DYN_FPREFIX('exists'(O)).
-STD_FPREFIX('mvd'(O,M))    :- DYN_FPREFIX('mvd'(O,M)).
-STD_FPREFIX('imvd'(O,M))   :- DYN_FPREFIX('imvd'(O,M)).
+STD_FPREFIX(fd)(O,M,R)   :- DYN_FPREFIX(fd)(O,M,R).
+STD_FPREFIX(mvd)(O,M,R)  :- DYN_FPREFIX(mvd)(O,M,R).
+STD_FPREFIX(ifd)(O,M,R)  :- DYN_FPREFIX(ifd)(O,M,R).
+STD_FPREFIX(imvd)(O,M,R) :- DYN_FPREFIX(imvd)(O,M,R).
+STD_FPREFIX(isa)(O1,O2)  :- DYN_FPREFIX(isa)(O1,O2).
+STD_FPREFIX(sub)(O1,O2)  :- DYN_FPREFIX(sub)(O1,O2).
+STD_FPREFIX(fs)(O,M,R)   :- DYN_FPREFIX(fs)(O,M,R).
+STD_FPREFIX(mvs)(O,M,R)  :- DYN_FPREFIX(mvs)(O,M,R).
+STD_FPREFIX(exists)(O)   :- DYN_FPREFIX(exists)(O).
+STD_FPREFIX(mvd)(O,M)    :- DYN_FPREFIX(mvd)(O,M).
+STD_FPREFIX(imvd)(O,M)   :- DYN_FPREFIX(imvd)(O,M).
 
 
 /****************************************************************************/
-STD_FPREFIX('tag'(noquery)).
+STD_FPREFIX(tag)(noquery).
 
-?- STD_FPREFIX('tag'(query)), !,
-   (   current_predicate(STD_FPREFIX('print_all'/2))
+?- STD_FPREFIX(tag)(query), !,
+   (   current_predicate(STD_FPREFIX(print_all)/2)
    ;   bootstrap_flora
    ),
    !.

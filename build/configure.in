@@ -1071,6 +1071,7 @@ AC_SUBST(with_smodels)
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
 	    ${arch_config_prefix}/modMakefile:modMakefile.in
+	    ${arch_config_prefix}/gppMakefile:gppMakefile.in
 	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
 dnl prolog_includes/config.h makes .O files system-dependent -- don't want this
 dnl	    ${prolog_includes}/config.h:def_prolog_config.in

@@ -164,11 +164,11 @@ handled by the XSB compiler.
     All predicates are loaded into {\tt usermod}.  Module declarations
     such as {\tt :- export} are ignored and a warning is issued.
 
-    Dynamically loaded files can be filtered through the C preprocessor.
+    Dynamically loaded files can be filtered through the XSB preprocessor.
     To do this, put the following in the source file: 
     %%
     \begin{verbatim}
-    :- compiler_options([cpp_on]).      
+    :- compiler_options([xpp_on]).      
     \end{verbatim}
     %%
     Of course, the name \verb|compiler_options| might seem like a misnomer
@@ -213,7 +213,7 @@ handled by the XSB compiler.
     follows:
     %%
     \begin{verbatim}
-     :-(compiler_options('.'(cpp_on,[]))).      
+     :-(compiler_options('.'(xpp_on,[]))).      
     \end{verbatim}
     %%
 
@@ -378,11 +378,11 @@ These definitions can be used in user programs, if the following is
 provided at the top of the source file:
 %%
 \begin{verbatim}
-    compiler_options([cpp_on]).
+    compiler_options([xpp_on]).
     #include "standard.h"
 \end{verbatim}
 %%
-(Note: the C preprocessor is not invoked on clauses typed into an
+(Note: the XSB preprocessor is not invoked on clauses typed into an
 interactive XSB session, so the above applies only to programs loaded from
 a file using {\tt consult} and such.)
 

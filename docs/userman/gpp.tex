@@ -1,0 +1,724 @@
+\input html2latex
+
+
+\chapter{GPP - Generic Preprocessor}
+\label{gpp-man}
+
+\begin{center}
+Version 1.2 - (C) Denis Auroux 1996-99
+
+\verb|http://www.math.polytechnique.fr/cmat/auroux/prog/gpp.html|
+\end{center}
+
+\htmlHR
+
+\section{DESCRIPTION}
+
+{\it gpp} is a general-purpose preprocessor designed to at the same time be
+able to handle more general situations than {\it cpp} by being independent of
+the C language syntax, and have a lighter syntax than {\it m4} in order to
+avoid having to juggle with lots of quotes. 
+
+{\it gpp} is targeted at all common preprocessing tasks where {\it cpp} is not
+suitable and where no very sophisticated features are needed. In order to be
+able to process properly very variable files such as C source code, TeX
+documents or HTML documents, {\it gpp} has several different operating modes. 
+
+At the beginning of the file gpp only understands a few built-in macros,
+called { \em meta-macros.} These meta-macros allow the definition of { \em user
+macros} as well as some basic operations that form the core of the
+preprocessing system. All user macro definitions are global, i.e. they remain
+valid until explicitly removed; meta-macros cannot be redefined. 
+
+\htmlHR
+
+\section{SYNTAX}
+
+{\bf gpp} [-h] [-o {\it outfile}] [-I{\it /include/path}]
+[-C{\htmlBar}-T{\htmlBar}-H{\htmlBar}-U ... [-M ...]] [-D{\it name=val} ...]
+[-x] [-a] [{\it infile}] 
+
+\htmlHR
+
+\section{OPTIONS}
+
+gpp recognizes the following command-line switches and options: 
+
+\begin{itemize}
+\item {\bf -h}\htmlBR
+Print a short help message. 
+
+\item {\bf -o} outfile\htmlBR
+Specify a file to which all output should be sent (by default, everything is
+sent to standard output). 
+
+\item {\bf -I}/include/path\htmlBR
+Specify a path where the {\it \#include} meta-macro will look for include
+files if they are not present in the current directory. The default is
+/usr/include. 
+
+\item {\bf -U} arg1 ... arg9\htmlBR
+User-defined mode. The nine following command-line arguments are taken to be
+respectively the macro start sequence, the macro end sequence for a call
+without arguments, the argument start sequence, the argument separator, the
+argument end sequence, the list of characters to stack for argument balancing,
+the list of characters to unstack, the string to be used for referring to an
+argument by number, and finally the quote character. These settings apply both
+to user macros and to meta-macros, unless the -M option is used to define
+other settings for meta-macros. When a separator is whitespace an empty string
+should be provided as argument. 
+
+\item {\bf -M} arg1 ... arg7\htmlBR
+User-defined mode specifications for meta-macros. This option can only be used
+together with -U. The seven following command-line arguments are taken to be
+respectively the macro start sequence, the macro end sequence for a call
+without arguments, the argument start sequence, the argument separator, the
+argument end sequence, the list of characters to stack for argument balancing,
+and the list of characters to unstack. 
+
+\item {\bf -C}\htmlBR
+so-called cpp-like compatibility mode. This is the default mode. For instance
+typical meta-macros and user macros will look like this: 
+
+\begin{PRE}
+\#define x y
+macro(arg,...)
+\end{PRE}
+
+This is not so compatible with {\it cpp}, but it is the closest you will get.
+However you should be aware that the lack of proper delimitation of
+meta-macros in this mode makes it syntactically weaker and heavier than the
+others if you need to nest meta-macros. 
+
+This mode is equivalent to 
+
+\begin{PRE}
+-U "" "" "(" "," ")" "(" ")" "\#" "{\htmlBackslash}{\htmlBackslash}" 
+-M "\#" "{\htmlBackslash}n" "" "" "{\htmlBackslash}n" "(" ")"
+\end{PRE}
+
+\item {\bf -T}\htmlBR
+TeX-like mode.  In this mode, typical meta-macros and user macros look like
+this: 
+
+\begin{PRE}
+{\htmlBackslash}define\{x\}\{y\}
+{\htmlBackslash}macro\{arg\}\{...\}
+\end{PRE}
+
+This mode is equivalent to 
+
+\begin{PRE}
+-U "{\htmlBackslash}{\htmlBackslash}" "" "\{" "\}\{" "\}" "\{" "\}" "\#" "@"
+\end{PRE}
+
+\item {\bf -H}\htmlBR
+HTML mode. In this mode, typical meta-macros and user macros look like this: 
+
+\begin{PRE}
+{\htmlLt}\#define x{\htmlBar}y{\htmlGt}
+{\htmlLt}\#macro arg{\htmlBar}...{\htmlGt}
+\end{PRE}
+
+This mode is equivalent to 
+
+\begin{PRE}
+-U "{\htmlLt}\#" "{\htmlGt}" "" "{\htmlBar}" "{\htmlGt}" "{\htmlLt}" "{\htmlGt}" "\#" "{\htmlBackslash}{\htmlBackslash}"
+\end{PRE}
+
+\item {\bf -D}name=val\htmlBR
+Define user macro {\it name} as equal to {\it val}. This is strictly
+equivalent to using the {\it \#define} meta-macro, but allows to define macros
+from the command-line. If {\it val} makes references to parameters or other
+macros, it should conform to the syntax of the chosen mode. 
+
+\item {\bf -x}\htmlBR
+Enable the use of the {\it \#exec} meta-macro. Since {\it \#exec} includes the
+output of an arbitrary shell command line, it may cause a potential security
+threat, and is thus disabled unless this option is specified. 
+
+\item {\bf -a}\htmlBR
+Enable macro aliasing. By default, when a macro is called with arguments,
+these arguments are parsed and passed to the macro even if the macro
+definition does not refer to any arguments (in which case they are lost). When
+this option is set, all macros whose definition involves neither named
+arguments nor argument references are preferentially called without any
+argument when there is an ambiguity. See examples for more detail. 
+
+\item {\it infile}\htmlBR
+Specify an input file from which gpp reads its input. If no input file is
+specified, input is read from standard input. 
+\end{itemize}
+
+\htmlHR
+
+\section{EVALUATION RULES}
+
+Input is read sequentially, and interpreted according to the rules of the
+current mode. A macro consists of : a {\it macro start sequence}, which is a
+sequence of characters that must appear immediately before the name of the
+macro itself. The name of the macro must be a valid {\it identifier}, that is
+a sequence of letters, digits, underscores (``\_'') or quoted characters.
+Then, either a {\it short macro end sequence} if the macro has no arguments,
+or a sequence of arguments initiated by an {\it argument start sequence}. The
+various arguments are then separated by an {\it argument separator}, and the
+macro ends with a {\it long macro end sequence}. 
+
+In all cases, the parameters of the current context, i.e. the arguments passed
+to the body being evaluated, can be referred to by using an {\it argument
+reference sequence} followed by a digit between 1 and 9. Furthermore, to avoid
+interference between the gpp syntax and the contents of the input file, a {\it
+quote character} is provided. The quote character can be used either to
+include a non-alphanumeric character in an identifier, or to prevent
+evaluation of something, for example a macro name (by quoting any part of the
+macro name or of the macro start sequence) or of an argument separator. So the
+quote character in a sense ``protects'' the following character, and always
+gets removed during evaluation. Two consecutive quote characters evaluate as a
+single quote character. 
+
+To facilitate proper argument delimitation, certain characters that are
+involved in the syntax are ``stacked'' when an argument is read, so that the
+argument separator or macro end sequences are not parsed if the argument body
+is not balanced. This allows nesting macro calls without using quotes. If a
+non-balanced argument is needed, quote characters should be added in front of
+some stacked characters to make it balanced. 
+
+Finally, the sequences describing the current mode may be different for
+meta-macros and for user macros. This is for example what happens in cpp-like
+mode. In any case, the evaluation occurs in the following way: 
+
+\begin{itemize}
+\item If the input matches a meta-macro prefix and valid meta-macro name, then
+gpp looks for arguments to the meta-macro. Note that meta-macros can have only
+up to two arguments, so that the delimitation rules of the second argument are
+somewhat sloppier than usual, and it may for instance contain unquoted
+argument separator sequences. The arguments found are then passed as is to the
+meta-macro without any evaluation (although the meta-macro may choose to
+evaluate them, see meta-macro descriptions below). 
+
+\item If the input matches a user macro prefix and a user macro name which is
+defined, then gpp looks for arguments to the user macro. Up to nine arguments
+are available. The arguments are then systematically evaluated, and passed as
+context parameters to the macro definition body, which gets evaluated with
+that environment. 
+
+\item Otherwise, gpp looks for an argument reference sequence, which if
+followed by a digit between 1 and 9 is replaced by the text corresponding to
+the specified argument (or a blank if that argument is not defined). Note that
+unless a user macro is being evaluated, this always produces a blank as no
+arguments can be passed to a standalone input file. If there are more than 9
+arguments it is necessary to name them in the macro definition, which makes it
+possible to refer to them by name (the syntax is then that of a user macro
+call with no arguments). 
+
+\item If nothing of the above matches, the text is output as is, only
+stripping the quote character when encountered. Note that this case also
+includes all calls to user macros for which no definition exists, so that user
+macros need not have a syntax orthogonal to that of the underlying document. 
+\end{itemize}
+
+\htmlHR
+
+\section{META-MACROS}
+
+These macros are always pre-defined. Their actual calling sequence depends on
+the current mode, and here we use the cpp-mode notation. 
+
+{\bf 
+
+\begin{PRE}
+\#define x y
+\end{PRE}
+
+} This defines the user macro {\it x} as {\it y}. {\it y} can be any valid gpp
+input, and may for example refer to other macros. {\it x} must be an
+identifier (see above). If {\it x} is already defined, the previous definition
+is overwritten. If no second argument is given, {\it x} will be defined as a
+macro that outputs nothing. Neither {\it x} nor {\it y} get evaluated, so the
+macro definition is evaluated whenever it is called but not when it is
+declared. This makes it possible for instance to define some macros called by
+{\it y} only later in the input. 
+
+Starting with version 1.1 of gpp, it is possible to name the arguments in a
+macro definition : in that case, the argument {\it x} should be a user-macro
+call whose arguments are all identifiers. These identifiers become available
+as user-macros inside the macro definition ; these virtual macros must be
+called without arguments, and evaluate to the corresponding argument. 
+
+{\bf 
+
+\begin{PRE}
+\#defeval x y
+\end{PRE}
+
+} This acts in a similar way as {\it \#define}, but the second argument {\it
+y} is evaluated immediately. However since all user macros are also evaluated
+each time they are called, this means that the macro {\it y} will undergo {\it
+two} successive evaluations. The usefulness of {\it \#defeval} is
+considerable, as it is the only way to evaluate something more than once, for
+instance to force evaluation of the arguments of a meta-macro that normally
+doesn't perform any evaluation. However since all argument references
+evaluated at define-time are understood as the arguments of the body in which
+the macro is being defined and not as the arguments of the macro, usually one
+has to use the quote character to prevent immediate evaluation of argument
+references. 
+
+{\bf 
+
+\begin{PRE}
+\#undef x
+\end{PRE}
+
+} This removes any existing definition of the user macro {\it x}. 
+
+{\bf 
+
+\begin{PRE}
+\#ifdef x
+\end{PRE}
+
+} This begins a conditional block. Everything that follows is evaluated only
+if the identifier {\it x} is defined, until either a {\it \#else} or a {\it
+\#endif} is reached. Of course the argument is not evaluated. 
+
+{\bf 
+
+\begin{PRE}
+\#ifndef x
+\end{PRE}
+
+} This begins a conditional block. Everything that follows is evaluated only
+if the identifier {\it x} is not defined. 
+
+{\bf 
+
+\begin{PRE}
+\#ifeq x y
+\end{PRE}
+
+} This begins a conditional block. Everything that follows is evaluated only
+if the results of the evaluations of {\it x} and {\it y} are identical as
+character strings. Note that in cpp-mode any unquoted non-alphanumeric
+character is understood as the end of the first argument if there are no
+unbalanced parentheses, so it may be a good idea to add parentheses around
+both {\it x} and {\it y} if {\it x} is not an identifier. In other modes this
+problem does not occur. 
+
+{\bf 
+
+\begin{PRE}
+\#ifneq x y
+\end{PRE}
+
+} This begins a conditional block. Everything that follows is evaluated only
+if the results of the evaluations of {\it x} and {\it y} are not identical. 
+
+{\bf 
+
+\begin{PRE}
+\#else
+\end{PRE}
+
+} This toggles the logical value of the current conditional block. That is,
+what follows is evaluated if and only if the preceding input was commented
+out. 
+
+{\bf 
+
+\begin{PRE}
+\#endif
+\end{PRE}
+
+} This ends a conditional block started by a {\it \#if...} meta-macro. 
+
+{\bf 
+
+\begin{PRE}
+\#include file
+\end{PRE}
+
+} This causes gpp to open the specified file and evaluate its contents,
+inserting the resulting text in the current output. All defined user macros
+are still available in the included file, and reciprocally all macros defined
+in the included file will be available in everything that follows. The include
+file is looked for first in the current directory, and then, if not found, in
+the directory specified by the {\it -I} command line option (or {\it
+/usr/include}) if no directory was specified. Note that in when the argument
+start sequence is blank (like in cpp or HTML modes), the user is also allowed
+to put the file name between ``'' or {\htmlLt}{\htmlGt}. 
+
+{\bf 
+
+\begin{PRE}
+\#exec command
+\end{PRE}
+
+} This causes gpp to execute the specified command line and include its
+standard output in the current output. Note that this meta-macro is disabled
+unless the {\it -x} command line flag was specified, for security reasons. If
+use of {\it \#exec} is not allowed, a warning message is printed and the
+output is left blank. Note that the specified command line gets evaluated
+before being executed, thus allowing the use of macros in the command-line.
+However, the output of the command is included as is and not evaluated. If you
+need the output to be evaluated, you must use {\it \#defeval} (see above) to
+cause a double evaluation. 
+
+\htmlHR
+
+\section{CPP COMPATIBILITY MODE}
+
+In cpp mode, meta-macros are invoked by a {\it \#} sign immediately followed
+by the name of the meta-macro, then any delimiter (if whitespace or
+tabulations are found, they are removed) followed by the arguments separated
+by any delimiter. The meta-macro ends with any unquoted newline character,
+provided the arguments are balanced. Meanwhile, user macros are referenced
+simply by their identifier. Arguments are specified between parentheses just
+after the macro name, and are separated by a comma. 
+
+The argument reference sequence is a {\it \#} sign. The quote character is a
+backslash {\it {\htmlBackslash}}. The arguments' delimitation is conditioned
+by the correct balancing of parentheses. Here is a self-explanatory example : 
+
+\begin{PRE}
+   \#define MESSAGE Hello, world !
+   \#define concat \#1\#2
+   printf("concat(MESSAGE,{\htmlBackslash}{\htmlBackslash}n)");
+   \#define Comment
+   Comment(The empty macro allows you to insert comments)
+   \#ifeq (concat(x,y)) (xy)
+   This is sent to output. 
+   \#else
+   This is never processed.
+   \#endif
+   /* last preprocessed at \#exec date
+    */
+\end{PRE}
+
+Remember that all user macro evaluations occur when the macro is called, not
+when it is defined. So the following example 
+
+\begin{PRE}
+   \#define example simple
+   \#define simple Test
+   example
+\end{PRE}
+
+outputs ``Test''. 
+
+Also note that the cpp-mode of gpp does not care about ``'s, so it can be used
+more conveniently than cpp e.g. for parsing HTML. However it does care about
+() to separate arguments cleanly. If the expression is not balanced you have
+to quote some {\htmlBackslash}('s. 
+
+The cpp-mode is syntactically weaker than HTML and TeX modes. The reason is
+the lack of appropriate delimitation of meta-macros, which makes it difficult
+to nest them : the only possible ways are either putting parentheses around
+the nested macro call, with the inconvenient that the parentheses appear in
+the output, or use {\it \#defeval} and quote the newline character that ends
+the inner-most macro. For example, here is how to test the presence of '-x'
+option. 
+
+\begin{PRE}
+   \#ifeq (\#exec echo blah
+   ) (blah
+   )
+   {\htmlBackslash}\#exec allowed.
+   \#else
+   {\htmlBackslash}\#exec not allowed (you may have obtained a warning...).
+   \#endif
+\end{PRE}
+
+As another example, here is a user macro that constructs a meta-macro call. 
+
+\begin{PRE}
+   \#defeval META {\htmlBackslash}\#defeval {\htmlBackslash}\_\_TEMP {\htmlBackslash}{\htmlBackslash}{\htmlBackslash}\#{\htmlBackslash}\#1{\htmlBackslash}{\htmlBackslash}{\htmlBackslash}
+   {\htmlBackslash}
+   {\htmlBackslash}\_\_TEMP
+\end{PRE}
+
+META(...) is the same as \#..., except that the line gets evaluated before.
+For instance, {\tt META(define {\htmlBackslash}a {\htmlBackslash}b)} is
+similar to {\tt \#define a b}. Indeed, META itself translates when parsed as 
+
+\begin{PRE}
+   \#defeval \_\_TEMP {\htmlBackslash}\#\#1{\htmlBackslash}
+   
+   \_\_TEMP
+\end{PRE}
+
+so when calling META(...), one defines \_\_TEMP as ''\#...{\htmlBackslash}n``
+and then evaluates it. Note that this macro always evaluates its arguments
+once, because user macro arguments are always evaluated before they are
+substituted in the definition of the macro. For instance the following defines
+y0 as z, which would not be possible with the standard meta-macros. 
+
+\begin{PRE}
+   \#define x y\#1
+   META(define x(0) z)
+\end{PRE}
+
+Also note that sometimes two successive evaluations (and thus a {\it
+\#defeval}) are necessary. For instance, if x is defined as ''y\#1`` and y0 is
+defined as ''z``, the evaluation of ''x(0)`` yields ''y0`` and not ''z``. The
+reason is that x(0) is evaluated as the concatenation of ''y`` and ''0`` from
+the definition of x, and thus not understood as a single token. And if
+moreover y is defined as ''t``, ''y0`` still yields ''z``, while ''x(0)``
+yields ''t0``. 
+
+As of version 1.1 arguments may be named in a macro definition : 
+
+\begin{PRE}
+   \#define add(a,b) a+b
+   add(x,y)
+\end{PRE}
+
+yields ''x+y``. Even in the case of a definition involving named parameters,
+it is still possible to use \#1 ... \#9 to refer to the first nine arguments. 
+
+Also note the difference in behavior induced by the option -a on macros whose
+definition does not involve any argument: 
+
+\begin{PRE}
+    \#define x y
+    x(3)
+\end{PRE}
+
+yields ''y`` when the -a option is not set (because ''3`` is passed to the
+macro ''x`` as an argument anyway), and ''y(3)`` when the -a option is used
+(because ''(3)`` is not parsed as being an argument to the macro ''x``, and
+therefore is output as is). The -a option is closer to cpp compatibility ; but
+in any case the example 
+
+\begin{PRE}
+    \#define add\_one(t) t++
+    \#define increment add\_one
+    increment(x)
+\end{PRE}
+
+never yields the same result as with cpp, because the provided parameter is
+either not parsed at all (when -a is used) or forgotten by the ''increment``
+macro. 
+
+\htmlHR
+
+\section{HTML MODE}
+
+In HTML mode, user macros and meta-macros have the same syntax. They are
+invoked by {\htmlLt}\#{\it macro\_name}{\htmlGt} if there are no arguments.
+The first parameter is added inside the brackets just after the macro name
+(separated by whitespace), and the following parameters are separated by {\tt
+{\htmlBar}}. The argument reference sequence is a {\it \#} sign, the quote
+character is a backslash. Arguments delimitation is conditioned by the correct
+balancing of brackets (''{\it {\htmlLt}}`` and ''{\it {\htmlGt}}``). For
+instance here is the HTML version of the above example : 
+
+\begin{PRE}
+   {\htmlLt}\#define MESSAGE{\htmlBar}Hello, world !{\htmlGt}
+   {\htmlLt}\#define concat{\htmlBar}\#1\#2{\htmlGt}
+   printf("{\htmlLt}\#concat {\htmlLt}\#MESSAGE{\htmlGt}{\htmlBar}{\htmlBackslash}n{\htmlGt}");
+   {\htmlLt}\#define Comment{\htmlGt}
+   {\htmlLt}\#Comment The empty macro allows you to insert comments{\htmlGt}
+   {\htmlLt}\#ifeq {\htmlLt}\#concat x{\htmlBar}y{\htmlGt}{\htmlBar}xy{\htmlGt}
+   This is sent to output.
+   {\htmlLt}\#else{\htmlGt}
+   This is never processed.
+   {\htmlLt}\#endif{\htmlGt}
+   /* last preprocessed at {\htmlLt}\#exec date{\htmlGt} */
+\end{PRE}
+
+Here is how to test the '-x' flag : 
+
+\begin{PRE}
+   {\htmlLt}\#ifeq {\htmlLt}\#exec echo blah{\htmlGt}{\htmlBar}blah
+   {\htmlGt}
+   \#exec allowed.
+   {\htmlLt}\#else{\htmlGt}
+   \#exec not allowed (you may have obtained a warning...).
+   {\htmlLt}\#endif{\htmlGt}
+\end{PRE}
+
+Here is a version of {\it \#defeval} that also evaluates its first argument
+(the idea is the same as in the ''META`` macro of cpp-mode). 
+
+\begin{PRE}
+   {\htmlLt}\#define def2eval{\htmlBar}{\htmlLt}\#defeval \_\_TEMP{\htmlBar}{\htmlLt}{\htmlBackslash}\#defeval \#1{\htmlBar}\#2{\htmlGt}{\htmlGt}{\htmlLt}\#\_\_TEMP{\htmlGt}{\htmlGt}
+\end{PRE}
+
+For instance, if x is defined as ''y``, ''{\htmlLt}\#def2eval
+{\htmlLt}\#x{\htmlGt}{\htmlBar}z{\htmlGt}`` defines y as ''z`` (which {\it
+\#defeval} cannot do as its first argument is not evaluated). 
+
+The following example demonstrates macro definitions with named parameters: 
+
+\begin{PRE}
+   {\htmlLt}\#define {\htmlLt}\#sum a{\htmlBar}b{\htmlGt}{\htmlBar}{\htmlLt}\#a{\htmlGt}+{\htmlLt}\#b{\htmlGt}{\htmlGt}
+   {\htmlLt}\#sum 2{\htmlBar}2{\htmlGt}
+\end{PRE}
+
+outputs ''2+2``. 
+
+Finally, note that as in cpp-mode, double evaluation is sometimes required,
+especially when macro calls are built by concatenation of tokens. Also, the -a
+flag has no effect in HTML mode, as there cannot be any ambiguity between a
+macro call with or without parameters. 
+
+\htmlHR
+
+\section{TEX MODE}
+
+In TeX mode, user macros and meta-macros have the same syntax. They are
+invoked by {\htmlBackslash}{\it macro\_name} if there are no arguments. Each
+parameter is added between {\it \{ \}} just after the macro name (no
+whitespace is allowed between the macro name and the parameters). The argument
+reference sequence is a {\it \#} sign, the quote character is ''{\it @}`` (if
+you have a better idea let me know...). Arguments delimitation is conditioned
+by the correct balancing of brackets (''{\it \{}`` and ''{\it \}}``). For
+instance here is the TeX version of the above example : 
+
+\begin{PRE}
+   {\htmlBackslash}define\{MESSAGE\}\{Hello, world !\}
+   {\htmlBackslash}define\{concat\}\{\#1\#2\}
+   printf("{\htmlBackslash}concat\{{\htmlBackslash}MESSAGE\}\{{\htmlBackslash}n\}");
+   {\htmlBackslash}define\{Comment\} 
+   {\htmlBackslash}Comment\{The empty macro allows you to insert comments\}
+   {\htmlBackslash}ifeq\{{\htmlBackslash}concat\{x\}\{y\}\}\{xy\}
+   This is sent to output.
+   {\htmlBackslash}else
+   This is never processed.
+   {\htmlBackslash}endif
+   /* last preprocessed at {\htmlBackslash}exec\{date\} */
+\end{PRE}
+
+Here is how to test the '-x' flag : 
+
+\begin{PRE}
+   {\htmlBackslash}ifeq\{{\htmlBackslash}exec\{echo blah\}\}\{blah
+   \}
+   @{\htmlBackslash}exec allowed.
+   {\htmlBackslash}else
+   @{\htmlBackslash}exec not allowed (you may have obtained a warning...).
+   {\htmlBackslash}endif
+\end{PRE}
+
+Here is a version of {\it {\htmlBackslash}defeval} that also evaluates its
+first argument 
+
+\begin{PRE}
+   {\htmlBackslash}define\{def2eval\}\{{\htmlBackslash}defeval\{\_\_TEMP\}\{@{\htmlBackslash}defeval\{\#1\}\{\#2\}\}{\htmlBackslash}\_\_TEMP\}
+\end{PRE}
+
+For instance, if x is defined as ''y``,
+''{\htmlBackslash}def2eval\{{\htmlBackslash}x\}\{z\}`` defines y as ''z``
+(which {\it {\htmlBackslash}defeval} cannot do as its first argument is not
+evaluated). 
+
+The following example demonstrates macro definitions with named parameters: 
+
+\begin{PRE}
+   {\htmlBackslash}define\{{\htmlBackslash}sum\{a\}\{b\}\}\{{\htmlBackslash}a+{\htmlBackslash}b\}
+   {\htmlBackslash}sum\{2\}\{2\}
+\end{PRE}
+
+outputs ''2+2``. 
+
+Finally, note that as in cpp-mode, double evaluation is sometimes required,
+especially when macro calls are built by concatenation of tokens. 
+
+\htmlHR
+
+\subsection{RECURSIVE MACROS}
+
+Although gpp does not seem to have any particular abilities to compute
+anything, it is still possible to have it perform some rather advanced things
+when one uses recursive macros, as illustrated by the following examples in
+TeX mode (adapting them to HTML mode is trivial, porting to cpp mode is much
+more tricky). 
+
+Generally speaking, the most natural way of defining a recursive macro, i.e.
+by having it contain a \#if... clause that recursively calls the macro only
+under a certain condition in order to avoid indefinite loops, will not work
+because the material inside a discarded \#if... statement is still evaluated
+to look for any \#else or \#endif statement that may result from it, thus
+leading to an indefinite loop in all cases. The proper way is rather to have
+the recursive macro erase its own definition under a certain condition.
+However, since named arguments are looked up while evaluation occurs, gpp is
+likely to crash if a recursive macro definition involves named arguments. 
+
+The first example displays longer and longer lines of stars, until the
+sequence of stars given as an argument is printed which causes the macro to
+terminate : 
+
+\begin{PRE}
+  {\htmlBackslash}define\{{\htmlBackslash}loop\{end\}\}\{{\htmlBackslash}define\{TEMP\}\{\#1             
+  {\htmlBackslash}ifeq\{\#1\}\{\#2\}{\htmlBackslash}define\{TEMP\}{\htmlBackslash}endif{\htmlBackslash}TEMP\{\#1*\}\{\#2\}\}{\htmlBackslash}TEMP\{\}\{{\htmlBackslash}end\}\}                
+\end{PRE}
+
+The loop macro defines a temporary recursive macro that prints its first
+argument, deletes itself if it is equal to its second argument, and finally
+calls itself again with the first argument containing one more '*'. For
+example, {\htmlBackslash}loop\{***\} evaluates to 
+
+\begin{PRE}
+  *             
+  **             
+  ***             
+\end{PRE}
+
+Following the same kind of principle, here is a macro that compares two
+sequences of '*'s and returns 1 if the first one is longer and 0 if the second
+one is longer. 
+
+\begin{PRE}
+  {\htmlBackslash}define\{{\htmlBackslash}greater\{x\}\{y\}\}\{{\htmlBackslash}define\{\_GT\}\{{\htmlBackslash}ifeq\{\#1\}\{\#4\}1
+  {\htmlBackslash}define\{\_GT\}{\htmlBackslash}endif{\htmlBackslash}ifeq\{\#3\}\{\#2\}0{\htmlBackslash}define\{\_GT\}
+  {\htmlBackslash}endif{\htmlBackslash}\_GT\{\#1\}\{\#2\}\{\#3*\}\{\#4*\}\}{\htmlBackslash}\_GT\{{\htmlBackslash}x\}\{{\htmlBackslash}y\}\{{\htmlBackslash}x\}\{{\htmlBackslash}y\}\}
+\end{PRE}
+
+Using this we can write a macro which, when given two sequences of '*'s, tests
+if the length of the second one is a multiple of the first one and then writes
+a number of '*'s equal to the quotient, else outputs ''NO``. 
+
+\begin{PRE}
+  {\htmlBackslash}define\{quotient\}\{{\htmlBackslash}define\{\_QT\}\{{\htmlBackslash}ifeq\{{\htmlBackslash}greater\{\#2\}\{\#3\}\}\{1
+  \}NO{\htmlBackslash}define\{\_QT\}
+  {\htmlBackslash}endif{\htmlBackslash}ifeq\{\#2\}\{\#3\}\#4{\htmlBackslash}define\{\_QT\}{\htmlBackslash}endif{\htmlBackslash}\_QT\{\#1\}\{\#2\#1\}\{\#3\}\{\#4*\}\}{\htmlBackslash}\_QT\{\#1\}\{\}\{\#2\}\{\}\}
+\end{PRE}
+
+Finally, here is a macro that performs decomposition into prime factors
+(always using sequences of '*'s to represent numbers). 
+
+\begin{PRE}
+  {\htmlBackslash}define\{{\htmlBackslash}factor\{x\}\}\{{\htmlBackslash}define\{\_FT\}\{{\htmlBackslash}ifeq\{\#2\}\{*\}DONE{\htmlBackslash}define\{\_FT\}
+  {\htmlBackslash}endif{\htmlBackslash}defeval\{\_Q\}\{{\htmlBackslash}quotient\{\#1\}\{\#2\}\}{\htmlBackslash}ifeq\{{\htmlBackslash}\_Q\}\{NO
+  \}{\htmlBackslash}define\{\_D\}\{*\}{\htmlBackslash}defeval\{\_N\}\{\#2\}{\htmlBackslash}else\#1
+  {\htmlBackslash}define\{\_D\}\{\}{\htmlBackslash}define\{\_N\}\{{\htmlBackslash}\_Q\}{\htmlBackslash}endif{\htmlBackslash}\_FT\{\#1{\htmlBackslash}\_D\}\{{\htmlBackslash}\_N\}\}{\htmlBackslash}\_FT\{**\}\{{\htmlBackslash}x\}\}
+\end{PRE}
+
+For example, {\tt {\htmlBackslash}factor\{******************************\}}
+outputs 
+
+\begin{PRE}
+  **
+  ***
+  *****
+  DONE
+\end{PRE}
+
+\htmlHR
+
+\subsection{BUGS}
+
+The quote character for TeX mode is unpractical.  Compatibility with cpp is
+not complete, especially when it comes to successive macro substitutions.
+Recursive macros can crash gpp quite easily.  GPP does not treat single and
+double quotes specially and allows macro substitutions to be performed
+inside such quotes. To prevent such substitutions, escape macros with a
+backslash. This incompatibility can be a feature when GPP is used to
+preprocess languages other than C.
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 

@@ -19,4 +19,8 @@ mkdir %XSBCONFIGdir%\lib
 
 nmake /f "MS_VC_Mfile.mak" %1 %2 %3 %4 %5 %6 %7
 
+@cd ..\gpp
+
+nmake /f "MS_VC_Mfile.mak"
+
 @cd ..\build

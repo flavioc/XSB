@@ -23,7 +23,7 @@
 */
 
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 #include "flag_defs.h"
 #include "celltags.h"
 #include "char_defs.h"

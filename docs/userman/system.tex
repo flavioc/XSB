@@ -692,6 +692,18 @@ Both the sources and the byte code\index{byte code!files!compiler}
 for the compiler can be found in the XSB system directory
 {\tt cmplib}\index{cmplib@{\tt cmplib}}.
 
+Prior to compiling, XSB filters the programs through \emph{GPP}, a 
+preprocessor written by Denis Auroux (auroux@math.polytechnique.fr).
+This preprocessor maintains high degree of compatibility with the C
+preprocessor, but is more suitable for processing Prolog programs.
+The preprocessor is invoked with the compiler option \verb|xpp_on|
+as described below. The various features of GPP are described in
+Appendix~\ref{gpp-man}.
+
+XSB also allows the programmer to use preprocessors other than GPP.
+However, the modules that come with XSB distribution require GPP.
+This is explained below (see \verb|xpp_on| compiler option).
+
 The following sections describe the various aspects of the compiler 
 in more detail.
 
@@ -827,24 +839,28 @@ The following options are currently recognized by the compiler:
 	recommended once the code has been debugged.
 
 
-\item[{\tt cpp\_on}]\index{{\tt cpp\_on}}
-  Filter the program through the C preprocessor before sending it to the XSB
-  compiler. In this case, the source code can include the usual C
+\item[{\tt xpp\_on}]\index{{\tt xpp\_on}}\index{gpp}
+  Filter the program through a preprocessor  before sending it to the XSB 
+  compiler. By default (and for the XSB code itself), XSB uses GPP, a
+  preprocessor developed by Denis Auroux (auroux@math.polytechnique.fr)
+  that has high degree of compatibility with the C preprocessor, but is
+  more suitable for Prolog syntax. In this case, the source code can
+  include the usual C 
   preprocessor directives, such as \verb|#define|, \verb|#ifdef|, and
   \verb|#include|. This option can be specified both as a parameter to
   compile/2 and as part of the {\tt compiler\_options/1} directive inside
-  the source file.
+  the source file. See Appendix~\ref{gpp-man} for more details on GPP.
 
   When an \verb|#include "file"| statement is encountered,
-  XSB directs the C preprocessor to search for the files to include in the
+  XSB directs GPP preprocessor to search for the files to include in the
   directories \verb|$XSB_DIR/emu| 
   %%$
   and \verb|$XSB_DIR/prolog_includes|.
   %%$
-  \index{\tt xsb\_cpp\_include\_dir}
+  \index{\tt xsb\_xpp\_include\_dir}
   %%
   However, additional directories can be added to this search path by
-  asserting into the predicate \verb|xsb_cpp_include_dir/1|, which should
+  asserting into the predicate \verb|xpp_include_dir/1|, which should
   be imported from module {\tt parse}.
 
   XSB predefines the constant {\tt XSB\_PROLOG}, which can be used for
@@ -865,48 +881,27 @@ The following options are currently recognized by the compiler:
   \end{samepage}
   %%
 
-  Because Prolog syntax is often at odds with the C syntax, the
-  following must be kept in mind:
+  \index{xpp\_program}
   %%
-  \begin{itemize}
-    \item  {\it Quotes\/}: C requires that quotes come in pairs, which is a
-      problem if your program has statements like {\tt 0'x}. While this is
-      not fatal, the C preprocessor issues anoying warnings. On top of
-      this, it might refuse to apply \verb|#define| macros to anything between
-      this single quote and the next one (say, another {\tt 0'p} hundred
-      lines below). It is recommended to pacify the preprocessor by putting
-      a comment of the following form at the end of the line as follows: 
-      %%
-\begin{verbatim}
-            put(0'p),       %  here's that other quote
-\end{verbatim}
-      %%
-      Another way to circumvent the problem is to use \verb|#define|,
-      {\it e.g.}, 
-      %%
-\begin{verbatim}
-    #define CH_P  80
-         .......
-         .......
-         put(CH_P),
-         .......
-\end{verbatim}
-      %%
-    \item {\it Comments\/}: The C preprocessor does not understand Prolog
-      syntax (yet). In particular, it does not know that ``\%'' starts a
-      comment. Therefore, it treats anything it finds in such Prolog
-      comments seriously. One particularly annoying problem is related to
-      the previous one: if your program has a line like:
-      %%
-\begin{verbatim}
-         %%  Don't do it!!!
-\end{verbatim}
-      %%
-      then you will see a complaint about unterminated quote. In such a
-      case, either double the quote ({\it e.g.}, {\tt Don''t do it!!!}) or
-      use C-style comments.
-  \end{itemize}
+  However, as mentioned earlier, XSB lets the user filter programs (except
+  the programs that belong to XSB distribution) through any preprocessor
+  the user wants. To this end, one only needs to assert the appropriate
+  command into the predicate \verb|xpp_program|, which should be imported
+  from module {\tt parse}. The command should not include the file
+  name---XSB appends the name of the file to be compiled to the command
+  supplied by the user. For instance, executing
   %%
+  \begin{verbatim}
+   :- assert(xpp_program('/usr/bin/m4 -E -G')).
+  \end{verbatim}
+  %%
+  before calling the compiler will have the effect that the next XSB
+  program passed to the compiler will be first preprocessed by the M4 macro
+  package. Note that the XSB compiler automatically clears out the
+  {\tt xpp\_program} predicate, so there is no need to tidy up each time.
+  But this also means that if you need to compile several programs with a
+  non-standard preprocessor then you must specify that non-standard
+  preprocessor each time the program is compiled.
 
 
 %-------------------------------

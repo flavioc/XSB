@@ -23,8 +23,11 @@
 **
 */
 
-:- compiler_options([cpp_on]).
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+:- compiler_options([xpp_on]).
+/* For CPP
+    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
 
 
 :- import
@@ -70,8 +73,8 @@
 :- export 
 	flora_flcompile/5,
 	flora_read_parse_compile/6,
-	STD_FPREFIX('loadlist'/1),
-	STD_FPREFIX('dynloadlist'/1),
+	STD_FPREFIX(loadlist)/1,
+	STD_FPREFIX(dynloadlist)/1,
 	flora_check_filename/1,
 	flora_discard_tokens/1,
 	flcompile/1, flcompile/2, flconsult/1, flconsult/2, dyncompile/1,
@@ -79,7 +82,7 @@
 	maxerr/1, flora_prefix/1, flora_word/2, terminate_list/1,
 	flora_member/2,
 	flora_error_nl/1, flora_error_nl/2,
-	STD_FPREFIX('warning_nl'/1), STD_FPREFIX('warning_nl'/2),
+	STD_FPREFIX(warning_nl)/1, STD_FPREFIX(warning_nl)/2,
 	flora_message_nl/1, flora_message_nl/2, flora_message/1,
 	flora_display_msg/1, flora_display_msg/2.
 

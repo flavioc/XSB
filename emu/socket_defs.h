@@ -1,4 +1,4 @@
-/* File:      obsolete.P -- keep obsolete stuff here
+/* File:      socket_defs.h
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -23,9 +23,19 @@
 */
 
 
-:- compiler_options([xpp_on]).
-#include "standard.h"
 
-%% Insert this in obsolete predicates.
-obsolete(Msg1, Msg2) :-
-	warning((Msg1, ': Obsolete predicate. Use: ', Msg2, ' instead')).
+/* socket macros */
+#define SOCKET_ROOT        0
+#define SOCKET_BIND        1
+#define SOCKET_LISTEN      2
+#define SOCKET_ACCEPT      3
+#define SOCKET_CONNECT     4
+/* #define SOCKET_FLUSH       5  deleted, use file_function */
+#define SOCKET_CLOSE       6
+#define SOCKET_RECV	   7
+#define SOCKET_SEND	   8
+#define SOCKET_SEND_EOF	   9
+#define SOCKET_SEND_ASCI   10
+#define SOCKET_GET0        11
+#define SOCKET_PUT         12
+#define SOCKET_SET_OPTION  13

@@ -23,8 +23,11 @@
 **
 */
 
-:- compiler_options([cpp_on]).
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+:- compiler_options([xpp_on]).
+/* For CPP
+    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
 
 
 :- import
@@ -46,8 +49,8 @@
 
 :- import
 	flora_member/2, flora_word/2, terminate_list/1, 
-	flora_error_nl/1, STD_FPREFIX('warning_nl'/1),
-	STD_FPREFIX('warning_nl'/2)
+	flora_error_nl/1, STD_FPREFIX(warning_nl)/1,
+	STD_FPREFIX(warning_nl)/2
    from flrutils.
 
 :- dynamic compiler_options(_).

@@ -63,7 +63,7 @@ parse(Modname, PFile, HFile, Module) :-
 
 parse1(Modname, File, Module) :-
 	seeing(OldFile),
-	open_or_xpp_file(File,CPP_process),
+	open_or_xpp_file(File,XPP_process),
 	(parse_clauses(Modname, Module), ! 
 	%% check if must restart
 	->  (conget(needs_restart,1)
@@ -73,13 +73,13 @@ parse1(Modname, File, Module) :-
 	;   true
 	),
 	(
-	    CPP_process = none, ! 
+	    XPP_process = none, ! 
 	;   %% Wait, if cpp was spawned so as to not leave zombies
-	    process_control(CPP_process, wait),
+	    process_control(XPP_process, wait),
 	    %% Also, release the file descriptor used to read from cpp
 	    current_input_port(FromPort), file_close(FromPort),
-	    %% and reset cpp_on
-	    conset(cpp_on,0)
+	    %% and reset xpp_on
+	    conset(xpp_on,0)
 	),
 	multifile_query(Modname, Module),
 	('_$apply_arity'(_)
@@ -90,14 +90,14 @@ parse1(Modname, File, Module) :-
 	seen,
 	see(OldFile).
 
-%% When :- compiler_options([cpp_on]) is detected, setoptions1 skips the 
+%% When :- compiler_options([xpp_on]) is detected, setoptions1 skips the 
 %% rest of the options and sets needs_restart to 1.
 %% When this happens, parse_clause returns with needs_restart set to 1,
 %% which causes parse_clauses to skip the rest of the clauses.
 %% When parse_clauses returns in the parse1 clause above, 
 %% it checks whether to restart parsing. 
 %% If restart is needed, control falls down here, needs_restart is cleared,
-%% and parse1 is restarted. Since cpp_on is now 1, the restart 
+%% and parse1 is restarted. Since xpp_on is now 1, the restart 
 %% process doesn''t repeat itself. -mk
 parse1(Modname, File, Module) :- 
 	%% If we are restarting due to cpp, then reset needs_restart.
@@ -105,25 +105,30 @@ parse1(Modname, File, Module) :-
 	parse1(Modname, File, Module).
 
 
-%% If cpp_on option is not set, just open the file.
+%% If xpp_on option is not set, just open the file.
 %% Otherwise, pass it through the C preprocessor
-open_or_xpp_file(File, CPP_process) :-
-	(conget(cpp_on,0), ! -> see(File), CPP_process = none
+open_or_xpp_file(File, XPP_process) :-
+	(conget(xpp_on,0), ! -> see(File), XPP_process = none
 	; 
-	    %% cpp_on is set: use preprocessor
-	    xpp_process_file(File, CPP_process, IOportFromProc),
+	    %% xpp_on is set: use preprocessor
+	    xpp_process_file(File, XPP_process, IOportFromProc),
 	    stat_set_flag(10, IOportFromProc)
 	).
 
-xpp_process_file(FileName, CPP_process, IOportFromProc) :-
-	(xpp_program(CPP_command), !
-	;   make_cpp_command(CPP_command, FileName)),
-	fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
-	message(CPP_command1),
+xpp_process_file(FileName, XPP_process, IOportFromProc) :-
+	(xpp_program(XPP_command), !
+	;   make_gpp_command(XPP_command)
+	),
+	fmt_write_string(FullXPP_command, '%s %s', args(XPP_command,FileName)),
+	fmt_write_string(XPP_command_msg, '[%s]', arg(FullXPP_command)),
+	message(XPP_command_msg),
 	%% Redirect cpp''s stderr to XSB''s STDWARN
-	spawn_process(CPP_command, block, IOportFromProc, 3, CPP_process).
+	spawn_process(FullXPP_command, block, IOportFromProc, 3, XPP_process),
+	!,
+	retractall(xpp_program(_)).
 
-make_cpp_command(CPP_command, FileName) :-
+/*
+make_cpp_command(CPP_command) :-
 	%% Construct the -Include directories
 	(   windows_os_loader
 	->  IncludeFlag = '/I'
@@ -138,8 +143,23 @@ make_cpp_command(CPP_command, FileName) :-
 			      Directive)),
 	%% Constract the cpp command
 	xsb_configuration(cpp, CPP),
-	fmt_write_string(CPP_command, '%s %s -DXSB_PROLOG %s',
-			 args(CPP, IncludeDirs, FileName)).
+	fmt_write_string(CPP_command, '%s %s -DXSB_PROLOG ',
+			 args(CPP, IncludeDirs)).
+*/
+
+make_gpp_command(GPP_command) :-
+	%% Construct the -Include directories
+	make_include_directive(Directive, '-I'),
+	slash(Slash),
+	xsb_configuration(install_dir, InstalDir),
+	fmt_write_string(IncludeDirs, '%s%s%semu %s%s%sprolog_includes %s',
+			 args('-I',InstalDir,Slash,
+			      '-I',InstalDir,Slash,
+			      Directive)),
+	xsb_configuration(config_bindir, Bindir),
+	%% Constract the gpp command
+	fmt_write_string(GPP_command, '%s%sgpp -c /* */ %s -DXSB_PROLOG ',
+			 args(Bindir,Slash,IncludeDirs)).
 
 %% Make an include directive out of the dirs in xpp_include_dir/1
 %% The dirs are supplied by applications that keep include files
@@ -479,12 +499,12 @@ parse_directive(edb(X), SymTab) :-
 	parse_list(X, SymTab, [(edb)], (edb)).
 parse_directive(compiler_options(Options),_SymTab) :-
 	%% Found compiler_options directive in the file,
-	%% but cpp_on is currently off.
+	%% but xpp_on is currently off.
 	%% We might need to restart parsing, if one of the encountered
-	%% compiler options turns cpp_on on. So, we indicate 
+	%% compiler options turns xpp_on on. So, we indicate 
 	%% interest in restarting. It might turn into a restart 
-	%% request if cpp_on is subsequently set.
-	(conget(cpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
+	%% request if xpp_on is subsequently set.
+	(conget(xpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
 	setoptions1(Options).
 
 /*======================================================================*/

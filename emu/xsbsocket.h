@@ -22,21 +22,7 @@
 ** 
 */
 
-/* socket macros */
-#define SOCKET_ROOT        0
-#define SOCKET_BIND        1
-#define SOCKET_LISTEN      2
-#define SOCKET_ACCEPT      3
-#define SOCKET_CONNECT     4
-/* #define SOCKET_FLUSH       5  deleted, use file_function */
-#define SOCKET_CLOSE       6
-#define SOCKET_RECV	   7
-#define SOCKET_SEND	   8
-#define SOCKET_SEND_EOF	   9
-#define SOCKET_SEND_ASCI   10
-#define SOCKET_GET0        11
-#define SOCKET_PUT         12
-#define SOCKET_SET_OPTION  13
+#include "socket_defs.h"
 
 #ifdef WIN_NT
 #define BAD_SOCKET(sockfd)         sockfd==INVALID_SOCKET

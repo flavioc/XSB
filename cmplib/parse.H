@@ -54,7 +54,8 @@
 :- import xsb_configuration/2 from xsb_configuration.
 
 :- import fmt_write_string/3, file_close/1 from file_io.
-:- import windows_os_loader/0 from loader.
+
+%%:- import windows_os_loader/0 from loader.
 
 :- import findall/3 from setof.
 :- import current_input_port/1 from curr_sym.

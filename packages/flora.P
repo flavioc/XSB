@@ -21,8 +21,11 @@
 ** 
 */
 
-:- compiler_options([cpp_on]).
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+:- compiler_options([xpp_on]).
+/* for CPP
+    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
 
 %% bootstrap(package-dirname-as-string, package-name-as-symbol).
 %% This also asserts 
@@ -30,7 +33,7 @@
 %% some packages use it.
 
 :- import bootstrap_package/2, package_configuration/2 from packaging.
-:- import STD_FPREFIX('shell'/0) from usermod.
+:- import STD_FPREFIX(shell)/0 from usermod.
 :- import hide_this_show/2 from usermod.
 :- import slash/1 from machine.
 :- import trie_assert/1 from tables.
@@ -61,5 +64,5 @@ flora_shell :- notrace,  %% stop any tracing
 	(   conget(flora_shell_loaded, 1), !
 	;   bootstrap_flora,
 	    [flrshell],
-	    STD_FPREFIX('shell')
+	    STD_FPREFIX(shell)
 	).

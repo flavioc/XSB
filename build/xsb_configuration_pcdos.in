@@ -74,6 +74,7 @@ xsb_configuration(host_cpu,  '@host_cpu@').
 %% Set the right compile mode and XSB scheduling strategy
 xsb_configuration(compile_mode, '@compile_mode@').
 xsb_configuration(scheduling_strategy, '(@xsb_scheduling_strategy@)').
+xsb_configuration(engine_mode, '@engine_mode@').
 
 %%%%% DON'T EDIT BELOW HERE!!!!
 %%
@@ -146,6 +147,10 @@ xsb_configuration(config_dir, ConfigDir) :-
      fmt_write_string(ConfigDir, 
 		      '%s%sconfig%s%s',
 		      f(InstallDir,Slash,Slash,Configuration)).
+xsb_configuration(config_bindir, ConfigBindir) :-
+     xsb_configuration(config_dir, ConfigDir),
+     slash(Slash),
+     fmt_write_string(ConfigBindir, '%s%sbin', f(ConfigDir, Slash)).
 xsb_configuration(config_libdir, ConfigLibdir) :-
      xsb_configuration(config_dir, ConfigDir),
      slash(Slash),

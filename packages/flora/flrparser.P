@@ -26,9 +26,12 @@
 */
 
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 #include "char_defs.h"
+/* for CPP
 #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
 
 rule(_) -->
 	{ trie_assert(error(none)),
@@ -113,7 +116,7 @@ rule(null) --> white_space0, !.
 
 rule(_) -->
 	{ error(reserved_word),
-          flora_error_nl('symbol prefix `%s'' is reserved', STD_FPREFIX('')),
+          flora_error_nl('symbol prefix `%s'' is reserved', STD_FPREFIX),
 	  fail
 	}.
 
@@ -798,7 +801,7 @@ reserved_word('~') :- !.
 
 reserved_word(A) :-
 	atom(A),
-	str_sub(STD_FPREFIX(''), A),
+	str_sub(STD_FPREFIX, A),
 	!,
 	trie_assert(error(reserved_word)).
 

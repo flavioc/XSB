@@ -28,7 +28,7 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod, cpp_on]).
+:- compiler_options([sysmod, xpp_on]).
 
 #include "flag_defs.h"
 #include "standard.h"

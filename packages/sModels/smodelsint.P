@@ -45,7 +45,7 @@ models in which the instance of Query is true.
 
 */
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 
 #include "sig.h"
 #include "flag_defs.h"

@@ -23,10 +23,14 @@
 ** 
 */
 
-:- compiler_options([cpp_on]).
+:- compiler_options([xpp_on]).
 #include "standard.h"
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
-#define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
+/* For CPP
+    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
+    #define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
+*/
+#define STD_FPREFIX(X)    '_$_$_flora_''X'
+#define DYN_FPREFIX(X)    'dyn_$_$_flora_''X'
 
 
 :- import package_configuration/2 from packaging.
@@ -38,34 +42,34 @@
 :- import process_control/2 from shell.
 :- import conset/2 from prof_sbp.
 :- import debug_display_call_hook/1,
-	STD_FPREFIX('debugger_data_loaded'/0), STD_FPREFIX('switch'/1)
+	STD_FPREFIX(debugger_data_loaded)/0, STD_FPREFIX(switch)/1
 	from usermod.
 
 :- dynamic debug_display_call_hook(_).
-:- dynamic STD_FPREFIX('switch'/1), STD_FPREFIX('debugger_data_loaded'/0).
-:- dynamic STD_FPREFIX('debug_context'/1).
+:- dynamic STD_FPREFIX(switch)/1, STD_FPREFIX(debugger_data_loaded)/0.
+:- dynamic STD_FPREFIX(debug_context)/1.
 
-%%:- export STD_FPREFIX('trace'/0), STD_FPREFIX('notrace'/0).
+%%:- export STD_FPREFIX(trace)/0, STD_FPREFIX(notrace)/0.
 
 :- trie_assert(debug_display_call_hook(flora_write_debug_goal)).
 
 
-flora_write_debug_goal(STD_FPREFIX('isa_rhs'(X,Y))) :-
+flora_write_debug_goal(STD_FPREFIX(isa_rhs)(X,Y)) :-
 	!, flora_print_isa(X,Y).
-flora_write_debug_goal(STD_FPREFIX('sub_rhs'(X,Y))) :-
+flora_write_debug_goal(STD_FPREFIX(sub_rhs)(X,Y)) :-
 	!, flora_print_sub(X,Y).
-flora_write_debug_goal(STD_FPREFIX('fd_rhs'(O, M, V))) :-
+flora_write_debug_goal(STD_FPREFIX(fd_rhs)(O, M, V)) :-
 	!, flora_print_fd(O,M,V).
-flora_write_debug_goal(STD_FPREFIX('mvd_rhs'(O, M, V))) :-
+flora_write_debug_goal(STD_FPREFIX(mvd_rhs)(O, M, V)) :-
 	!, flora_print_mvd(O,M,V).
 
-flora_write_debug_goal(STD_FPREFIX('assert'(L))) :-
+flora_write_debug_goal(STD_FPREFIX(assert)(L)) :-
 	!, flora_print_assert(L).
-flora_write_debug_goal(STD_FPREFIX('retract'(L,Cond))) :-
+flora_write_debug_goal(STD_FPREFIX(retract)(L,Cond)) :-
 	!, flora_print_retract(L,Cond).
-flora_write_debug_goal(STD_FPREFIX('retractall'(L,Cond))) :-
+flora_write_debug_goal(STD_FPREFIX(retractall)(L,Cond)) :-
 	!, flora_print_retractall(L,Cond).
-flora_write_debug_goal(STD_FPREFIX('erase'(L,Cond))) :-
+flora_write_debug_goal(STD_FPREFIX(erase)(L,Cond)) :-
 	!, flora_print_erase(L,Cond).
 
 flora_write_debug_goal('=..'(V, L)) :-
@@ -126,7 +130,7 @@ flora_write_debug_goal(findall(X,Gs,_Res)) :-
 	nonvar(Gs),
 	Gs =.. [',' , FirstGoal | _GoalList],
 	FirstGoal =.. [F|_],
-	str_sub(STD_FPREFIX(''), F),
+	str_sub(STD_FPREFIX, F),
 	!,
 	%% We don''t know which aggregate and whether there is grouping
 	fmt_write(STDDBG, 'Var = aggregate{%S; ', arg(X)),
@@ -138,7 +142,7 @@ flora_write_debug_goal(Call) :-
 	nonvar(Call),
 	Call =.. [',' | GoalList],
 	GoalList = [Call1 | Rest],
-	STD_FPREFIX('debug_get_context'(Rest,Context)),
+	STD_FPREFIX(debug_get_context)(Rest,Context),
 	!,
 	%% Context=none means list of independent goals
 	(Context == none -> flora_write_debug_goal(GoalList, none)
@@ -149,7 +153,7 @@ flora_write_debug_goal(Call) :-
 %% aggregates -- they come with "context" obtained from ','(Goal1,Goal2, ...)
 flora_write_debug_goal(Call) :- 
 	functor(Call, findall, 3),
-	STD_FPREFIX('debug_context'(Context)),
+	STD_FPREFIX(debug_context)(Context),
 	!,
 	flora_write_debug_goal(Call, Context).
 
@@ -227,22 +231,22 @@ flora_check_goal_for_context(Goal, Context) :-
 	 Goal =.. [ContextPred | _Rest1] % determines the type of aggregate
 	 ; fail
 	),
-	(ContextPred == STD_FPREFIX('collectset')
+	(ContextPred == STD_FPREFIX(collectset) 
 	->  Context = collectset
 	;   true),
-	(ContextPred == STD_FPREFIX('collectbag')
+	(ContextPred == STD_FPREFIX(collectbag) 
 	->  Context = collectbag
 	;   true),
-	(ContextPred == STD_FPREFIX('min')
+	(ContextPred == STD_FPREFIX(min) 
 	->  Context = min
 	;   true),
-	(ContextPred == STD_FPREFIX('max')
+	(ContextPred == STD_FPREFIX(max) 
 	->  Context = max
 	;   true),
-	(ContextPred == STD_FPREFIX('avg')
+	(ContextPred == STD_FPREFIX(avg) 
 	->  Context = avg
 	;   true),
-	(ContextPred == STD_FPREFIX('sum')
+	(ContextPred == STD_FPREFIX(sum) 
 	->  Context = sum
 	;   true).
 
@@ -275,13 +279,13 @@ flora_print_mvd(O,M,V) :-
 flora_print_assert(L) :- file_write(STDDBG, 'assert('), flora_print_assert1(L).
 flora_print_assert1([]) :- !, file_write(STDDBG, ')').
 flora_print_assert1([A | R]) :-
-	( A = DYN_FPREFIX('isa'(X,Y)) ->
+	( A = DYN_FPREFIX(isa)(X,Y) ->
 	    flora_print_isa(X,Y)
-	; A = DYN_FPREFIX('sub'(X,Y)) ->
+	; A = DYN_FPREFIX(sub)(X,Y) ->
 	    flora_print_sub(X,Y)
-	; A = DYN_FPREFIX('fd'(O,M,V)) ->
+	; A = DYN_FPREFIX(fd)(O,M,V) ->
 	    flora_print_fd(O,M,V)
-	; A = DYN_FPREFIX('mvd'(O,M,V)) ->
+	; A = DYN_FPREFIX(mvd)(O,M,V) ->
 	    flora_print_mvd(O,M,V)
 	),
 	(R == [] ; file_write(STDDBG, ', ')),
@@ -305,13 +309,13 @@ flora_print_retract1([A | R],Cond) :-
 	flora_print_retract1(R,Cond).
 
 flora_print_retract_molecule(flora_rtrct(A)) :-
-	( A = DYN_FPREFIX('isa'(X,Y)) ->
+	( A = DYN_FPREFIX(isa)(X,Y) ->
 	    flora_print_isa(X,Y)
-	; A = DYN_FPREFIX('sub'(X,Y)) ->
+	; A = DYN_FPREFIX(sub)(X,Y) ->
 	    flora_print_sub(X,Y)
-	; A = DYN_FPREFIX('fd'(O,M,V)) ->
+	; A = DYN_FPREFIX(fd)(O,M,V) ->
 	    flora_print_fd(O,M,V)
-	; A = DYN_FPREFIX('mvd'(O,M,V)) ->
+	; A = DYN_FPREFIX(mvd)(O,M,V) ->
 	    flora_print_mvd(O,M,V)
 	).
 
@@ -384,15 +388,15 @@ flora_write_vars(V,Rest) :-
 
 /*********************************************************************/
 
-STD_FPREFIX('trace') :-
+STD_FPREFIX(trace) :-
 	flora_read_debugger_data,
-	trie_assert(STD_FPREFIX('switch'(trace))),
-	STD_FPREFIX('handle_trace').
-STD_FPREFIX('notrace') :-
-	trie_retract_all(STD_FPREFIX('switch'(trace))),
-	STD_FPREFIX('handle_notrace').
+	trie_assert(STD_FPREFIX(switch)(trace)),
+	STD_FPREFIX(handle_trace).
+STD_FPREFIX(notrace) :-
+	trie_retract_all(STD_FPREFIX(switch)(trace)),
+	STD_FPREFIX(handle_notrace).
 
-flora_read_debugger_data :- STD_FPREFIX('debugger_data_loaded'), !.
+flora_read_debugger_data :- STD_FPREFIX(debugger_data_loaded), !.
 flora_read_debugger_data :- 
 	package_configuration(dir(flora), FlrSysLib),
 	fmt_write_string(DebugDataFile,
@@ -405,6 +409,6 @@ flora_read_debugger_data :-
 	    ),
 	process_control(CPP_process, wait),
 	file_close(IOportFromCPP),
-	conset(cpp_on,0),
+	conset(xpp_on,0),
 	!.
 
