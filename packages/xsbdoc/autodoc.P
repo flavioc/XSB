@@ -61,6 +61,8 @@
 :- import pretty_print/2 from pretty_print.
 :- import list/1 from basic_props.
 
+parsing_latex.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Interfaces to asserted form of program.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -437,11 +439,13 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 	findall(op(P,Prec,PredNames),
                    clause_read(1,op(P,Prec,PredNames),_),Ops),
 
+	write(here2),
 	get_file_level_declarations(NDecls),
+	write(here3),
 
         format_module_usage(Format,Name,RModuleType,Exports,
 	 	                UFiles,SysFiles,Ops,NDecls,Idxs,OS),
-
+write(here4),
 %        optional_message("Documenting (new) declarations...",Opts),
 %	doc_decls(Name,NDecls,Base,Idxs,OS,Format,Opts),
 %        optional_message("Documenting (new) mode definitions...",Opts),
@@ -453,10 +457,17 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 	optional_message('Documenting internal preds, etc. ...',Opts),
 	doc_internals(Name,Exports,Base,Idxs,OS,Format,Opts).
 
-get_file_level_declarations(NDecls):- 
-	findall(Decl,(clause_read(1,Decl,_Ctr),
-	              documentable_declaration(Decl)),NDecls).
 
+get_file_level_declarations(NDecls):- 
+	findall(Decl,(documentable_declaration(Decl),
+	clause_read(1,Decl,_Ctr)),NDecls).
+
+/*
+get_file_level_declarations([]).
+get_file_level_declarations(NDecls):- 
+	findall(Decl,(clause_read(1,Decl,_Ctr),writeln(cr(1,Decl)),
+	              documentable_declaration(Decl)),NDecls).
+*/
 documentable_declaration(autotable).
 %% ---------------------------------------------------------------------------
 :- pred export_list/3 # "Builds the list of exported
@@ -1219,6 +1230,7 @@ space_or_tab -->
 	tabchar.
 
 %% ---------------------------------------------------------------------------
+/* Added an escape so that when it sees latex $, it treats the math opaquely */
 
 parse_commands(_Format,_Idxs,Verb,Verb,_NL,_Opts,[]) --> 
 	[].
@@ -1226,24 +1238,25 @@ parse_commands(_Format,_Idxs,Verb,Verb,_NL,_Opts,[]) -->
 parse_commands(Format,Idxs,Verb,NewVerb,NL,Opts,NStr) --> 
 	start,
         command_body(Format,Idxs,Struct),
-	space,
+        (space -> 
+	    { handle_command(Struct,sp,Format,Idxs,Verb,NVerb,NL,NNL,Opts,
+                         NStr,Tail) }
+	; 
+	    { handle_command(Struct,nosp,Format,Idxs,Verb,NVerb,NL,NNL,Opts,
+	                 NStr,Tail)} ),
+        !,
+       parse_commands(Format,Idxs,NVerb,NewVerb,NNL,Opts,Tail).
+% Make math envs opaque to xsbdoc.
+parse_commands(Format,Idxs,Verb,NewVerb,_NL,Opts,[0'$|Math]) --> 
+	[0'$],
 	!,
-        { handle_command(Struct,sp,Format,Idxs,Verb,NVerb,NL,NNL,Opts,
-                         NStr,Tail) },
-	parse_commands(Format,Idxs,NVerb,NewVerb,NNL,Opts,Tail).
-%% Commands, with no space after them
-parse_commands(Format,Idxs,Verb,NewVerb,NL,Opts,NStr) --> 
-	start,
-        command_body(Format,Idxs,Struct),
-	!,
-	{ handle_command(Struct,nosp,Format,Idxs,Verb,NVerb,NL,NNL,Opts,
-	                 NStr,Tail)},
-	parse_commands(Format,Idxs,NVerb,NewVerb,NNL,Opts,Tail).
+	read_math(Math,Rest),
+ 	parse_commands(Format,Idxs,Verb,NewVerb,nonl,Opts,Rest).
 %% Normal chars
-parse_commands(Format,Idxs,Verb,NewVerb,_NL,Opts,[X|T]) --> 
-	normal_char(X),
+parse_commands(Format,Idxs,Verb,NewVerb,_NL,Opts,Default) --> 
+	parse_default(Default,Rest),
 	!,
- 	parse_commands(Format,Idxs,Verb,NewVerb,nonl,Opts,T).
+ 	parse_commands(Format,Idxs,Verb,NewVerb,nonl,Opts,Rest).
 %% Else error
 parse_commands(_Format,_Idxs,Verb,Verb,_NL,_Opts,NStr,B,_E) :-
 	xsbdoc_error(['while parsing docstring:']),
@@ -1251,6 +1264,32 @@ parse_commands(_Format,_Idxs,Verb,Verb,_NL,_Opts,NStr,B,_E) :-
 	xsbdoc_error(['* HERE *',Text]),
 	NStr = [].
 	
+parse_default(Default,Rest) --> 
+	({ parsing_latex } -> 
+	    ([0'{] -> {Default = [0'@,0'{|Rest]} 
+	      ; ([0'}] -> {Default = [0'@,0'}|Rest]}
+	        ; [X],{X \== 0'@} -> {Default = [X|Rest]} ))
+	   ; normal_char(X),{Default = [X|Rest]}).
+
+read_math([0'$|Rest],Rest) --> 
+	[0'$],!.
+read_math([0'@,0'{|T],Rest) --> 
+	[0'{],!,
+	read_math(T,Rest).
+read_math([0'@,0'}|T],Rest) --> 
+	[0'}],!,
+	read_math(T,Rest).
+read_math([H|T],Rest) --> 
+	[H],
+	read_math(T,Rest).
+
+/*
+writemath(Math,[]):- 
+	name(F,Math),
+	writeln(F),
+	fail.
+writemath(_,_).
+*/
 %% ---------------------------------------------------------------------------
 
 command_body(_Format,_Idxs,'{') -->
@@ -1395,7 +1434,8 @@ handle_command(Struct,SP,Format,Idxs,Verb,NVerb,NL,NNL,Opts,NStr,NNStr) :-
 	!.
 handle_command(Struct,_SP,_Format,_Idxs,Verb,Verb,NL,NL,_Opts,NStr,NStr) :-
 	functor(Struct,F,_),
-	xsbdoc_error(['could not process ',F,' command ',(Struct)]).
+	xsbdoc_error(['could not process ',F,' command ',(Struct)]),
+	fail.
 
 try_command(comment(_),_SP,_Format,_Idxs,Verb,Verb,NL,NL,_Opts,NStr,NStr) :-
         !.

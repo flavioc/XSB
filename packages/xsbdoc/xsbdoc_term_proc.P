@@ -46,6 +46,7 @@ postproc_newlines1([13|Tin],Tout):- !,
 	postproc_newlines1(Tin,Tout).
 postproc_newlines1([H|Tin],[H|Tout]):- 
 	postproc_newlines1(Tin,Tout).
+postproc_newlines1(Nonlist,Nonlist).   % for hide, etc.
 
 read_file_as_string_1(FStr,List):- 
 	get_code(FStr,Char),
@@ -69,9 +70,12 @@ process_a_file(File,Dir,Base,SrcName,IsLib) :-
 	read_file_reset,
  	corrected_search_module(File,Dir,Base,SrcName,IsLib),
 	concat_atom([Dir,SrcName],Full),
-        read_record_file(Full),
+            read_record_file(Full),
 	concat_atom([Dir,Base,'.H'],Hname),
 	(file_exists(Hname) -> read_record_file(Hname) ; true).
+
+:- import user_library/1 from usermod.
+:- dynamic user_library/1.
 
 /* corrected_search_module(main,Dir,main,main.P,<true/false>) */
 corrected_search_module(Input,Dir,Base,Source,IsLib):- 
@@ -85,7 +89,11 @@ corrected_search_module(Input,Dir,Base,Source,IsLib):-
 	   search_module(NewInput, Dir, Base, SExt, _Full, _Obj),
 	   concat_atom([Base,'.',SExt],Source)),
 	xsb_configuration(srcdir,SrcDir),
-	(str_sub(SrcDir,Dir) -> IsLib = true ; IsLib = false),!.
+	(str_sub(SrcDir,Dir) -> 
+	    IsLib = true 
+	  ; (user_library(Base) -> 
+	        IsLib = true
+	      ; IsLib = false) ),!.
 corrected_search_module(Input,_Dir,_Base,_Source,_IsLib):- 
 	permission_error(file_search,file,Input,'corrected_search_module/5').
 

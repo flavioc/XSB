@@ -91,15 +91,23 @@ xsbdoc(Format_file,_):-
 	format("~nCould not process: ~w",[Format_file]).
 
 tex_commands(Base):-
+	writeln('entering tex commands'(Base)),
 	xsb_configuration(host_os,Type),
 	(Type == windows -> 
 	  shell_list(['tex -interaction=nonstopmode ',Base,'.texic']),
-	  shell_list(['texindex ',Base,'.?? ']),
+	  writeln('entering texindex'(Base)),
+	  texinfo_the_files(Base),
 	  shell_list(['tex -interaction=nonstopmode ',Base,'.texic']) 
 	;
 	  shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
 	  shell_list(['texindex ',Base,'.?? ']),
 	  shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']) ).
+
+texinfo_the_files(Base):- 
+	member(X,[pd,op,co,gl]),
+	shell_list(['texindex ',Base,'.',X]),
+	fail.
+texinfo_the_files(_Base).
 
 perform_generation_type(ascii,Main,List):- 
 	component_ascii([Main|List]),
