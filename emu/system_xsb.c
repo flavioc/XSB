@@ -1003,7 +1003,7 @@ static int xsb_find_next_file(prolog_term handle,
   c2p_string(filedata.cFileName,file);
   return TRUE;
 #else
-  DIR *dirhandle = p2c_int(handle);
+  DIR *dirhandle = (DIR *) p2c_int(handle);
   struct dirent *dir_entry;
 
   dir_entry = readdir(dirhandle);
