@@ -80,9 +80,9 @@ tmpfile_open(IOport) :-
 	file_function(TMPFILE_OPEN, IOport, _, _, _, _, _).
 
 
-file_getbuf(IOport, ByteCount, ToString, BytesRead) :-
+file_getbuf(IOport, ByteCount, ToAtom, BytesRead) :-
 	(var(ToAtom), var(BytesRead) ->
-	    file_function(FILE_GETBUF, IOport,ByteCount,ToString,BytesRead,_,_)
+	    file_function(FILE_GETBUF, IOport,ByteCount,ToAtom,BytesRead,_,_)
 	; abort('Usage: file_getbuf([+IOport,] +ByteCount, -ToAtom, -BytesRead)')
         ).
 
