@@ -733,6 +733,8 @@ int mark_heap(int arity, int *marked_dregs)
   if (delayreg != NULL) {
     marked += mark_root((Cell)delayreg);
   }
+  /* Heap[0] is a global variable */
+  marked += mark_root((Cell)glstack.low);
   
   if (slide)
     { 

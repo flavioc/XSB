@@ -645,6 +645,7 @@ void init_builtin_table(void)
   set_builtin_table(PSC_EP, "psc_ep");
   set_builtin_table(PSC_SET_EP, "psc_set_ep");
 
+  set_builtin_table(TERM_NEW_MOD, "term_new_mod");
   set_builtin_table(TERM_PSC, "term_psc");
   set_builtin_table(TERM_TYPE, "term_type");
   set_builtin_table(TERM_COMPARE, "term_compare");
@@ -775,6 +776,8 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_DISPOSE_NR, "trie_dispose_nr");
   set_builtin_table(TRIE_UNDISPOSE, "trie_undispose");
   set_builtin_table(RECLAIM_UNINTERNED_NR, "reclaim_uninterned_nr");
+  set_builtin_table(GLOBALVAR, "globalvar");
+
 
   set_builtin_table(SET_TABLED_EVAL, "set_tabled_eval_method");
   set_builtin_table(PUT_ATTRIBUTES, "put_attributes");
@@ -1128,6 +1131,22 @@ int builtin_call(byte number)
   case TERM_COMPARE:	/* R1, R2: +term; R3: res (-int) */
     ctop_int(3, compare((void *)ptoc_tag(1), (void *)ptoc_tag(2)));
     break;
+  case TERM_NEW_MOD: {  /* R1: +ModName, R2: +Term, R3: -NewTerm */
+    int new, disp;
+    Cell arg, term = ptoc_tag(2);
+    Psc termpsc = term_psc(term);
+    Psc modpsc = pair_psc(insert_module(0,ptoc_string(1)));
+    Psc newtermpsc = pair_psc(insert(get_name(termpsc),get_arity(termpsc),modpsc,&new));
+    if (new) set_data(newtermpsc, modpsc);
+    env_type_set(newtermpsc, T_IMPORTED, T_ORDI, (xsbBool)new);
+    ctop_constr(3, (Pair)hreg);
+    new_heap_functor(hreg, newtermpsc);
+    for (disp=1; disp <= get_arity(newtermpsc); disp++) {
+      arg = cell(clref_val(term)+disp);
+      nbldval(arg);
+    }
+  }
+  break;
   case TERM_NEW: {		/* R1: +PSC, R2: -term */
     int disp;
     Psc psc = (Psc)ptoc_addr(1);
@@ -1151,7 +1170,11 @@ int builtin_call(byte number)
     /* used in file_read.P, array.P, array1.P */
     int  disp = ptoc_int(2);
     Cell term = ptoc_tag(1);
-    if (!ptoc_int(4)) { pushtrail(clref_val(term)+disp,cell(reg+3));}
+    if (ptoc_int(4) > 0) {
+      pushtrail(clref_val(term)+disp,cell(reg+3));
+    } else if (ptoc_int(4) < 0) {
+      push_pre_image_trail(clref_val(term)+disp, cell(reg+3));
+    }
     bld_copy(clref_val(term)+disp, cell(reg+3));
     break;
   }
@@ -2130,6 +2153,9 @@ int builtin_call(byte number)
   case RECLAIM_UNINTERNED_NR:
     reclaim_uninterned_nr(ptoc_int(1));
     break;
+  case GLOBALVAR:
+    ctop_tag(1, ((int)glstack.low));
+    break;
 
   case STORAGE_BUILTIN: {
     STORAGE_HANDLE *storage_handle =
@@ -2278,7 +2304,7 @@ int builtin_call(byte number)
     break;
   }
 
-  case PUT_ATTRIBUTES: { /* R1: -Var; R2: +Atts */
+  case PUT_ATTRIBUTES: { /* R1: -Var; R2: +List */
     Cell attv = ptoc_tag(1);
     Cell atts = ptoc_tag(2);
     if (isref(attv)) {		/* attv is a free var */
@@ -2303,17 +2329,15 @@ int builtin_call(byte number)
     break;
   }
 
-  case GET_ATTRIBUTES: { /* R1: +Var; R2: -Vector; R3: -OldMask */
+  case GET_ATTRIBUTES: { /* R1: +Var; R2: -List */
     Cell attv = ptoc_tag(1);
     if (isref(attv)) {		/* a free var */
-      /* ctop_tag(2, makenil); */ /* keep it as a free var */
-      ctop_tag(3, makeint(0));
+	return FALSE;
     }
     else if (isattv(attv)) {
-      CPtr vector;
-      vector = (CPtr)dec_addr(attv) + 1;
-      ctop_tag(2, cell(vector));
-      ctop_tag(3, cell(clref_val(cell(vector)) + 1));
+      CPtr list;
+      list = (CPtr)dec_addr(attv) + 1;
+      ctop_tag(2, cell(list));
     }
     else xsb_abort("[GET_ATTRIBUTES] Argument 1 is not an attributed variable");
     break;

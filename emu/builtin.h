@@ -38,6 +38,7 @@
 #define PSC_EP   	 8
 #define PSC_SET_EP	 9
 
+#define TERM_NEW_MOD    10
 #define TERM_PSC	11
 #define TERM_TYPE	12
 #define TERM_COMPARE	13
@@ -176,6 +177,7 @@
 #define TRIE_DISPOSE_NR         165
 #define TRIE_UNDISPOSE          166
 #define RECLAIM_UNINTERNED_NR   167
+#define GLOBALVAR               168
 
 #define SET_TABLED_EVAL		170
 
