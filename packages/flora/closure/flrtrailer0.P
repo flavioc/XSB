@@ -117,7 +117,6 @@
 
 '_$_$_flora_overwritten_fd'(Object,Class,Method) :-
 	'_$_$_flora_isa'(Object,SubClass),
-	SubClass \= Class,
 	'_$_$_flora_strict_subclass'(SubClass,Class),
 	'_$_$_flora_ifd'(SubClass,Method,_).
 
