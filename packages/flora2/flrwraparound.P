@@ -65,6 +65,7 @@
 
 #define FL_DUMP	       	        dump
 #define FL_INDEX2	       	index2
+#define FL_INDICES	       	indices
 #define FL_STORAGE	       	storage
 #define FL_DEBUGMODULE	       	debugmodule
 
@@ -80,6 +81,7 @@
 :- op(1100,fx,FL_HILOGTABLE).
 :- op(1100,fx,FL_EQUALITY).
 :- op(1100,fx,FL_EXPUNGE).
+:- op(1100,fx,FL_INDICES).
 
 :- bootstrap_flora.
 
@@ -148,7 +150,9 @@ process_clause(X) :-
 	(is_directive(X,FL_FLOGICSTATIC,PredList)
 	-> intern_predicate_specs(PredList,FL_FLOGICSTATIC)
 	; is_directive(X,FL_INDEX2,[PredSpec,Type])
-	-> dump_index_directive(PredSpec,Type)
+	-> dump_index2_directive(PredSpec,Type)
+	; is_directive(X,FL_INDICES,IndexSpecList)
+	-> dump_indices_directive(IndexSpecList)
 	; is_directive(X,FL_DUMP,DumpString)
 	-> writeln(DumpString)
 	; is_directive(X,FL_FIRSTORDER,PredList)
@@ -198,6 +202,7 @@ spec2skeleton(Skeleton,Skeleton).
 
 is_directive((:- FL_FLOGICSTATIC PredList),FL_FLOGICSTATIC,PredList) :- !.
 is_directive(':-'(index(PredSpec,Type)),FL_INDEX2,[PredSpec,Type]) :- !.
+is_directive((:- FL_INDICES IndexSpecList), FL_INDICES, IndexSpecList) :- !.
 is_directive((:- FL_DUMP Atom),FL_DUMP,Atom) :- !.
 is_directive((:- FL_STORAGE RuleList),FL_STORAGE,RuleList) :- !.
 %% for now, only handle simple directives of the form :- Directive PredList.
@@ -236,10 +241,26 @@ dump_other_directive(Directive, PredSpecs) :-
 	dump_rule_body(PredSpecs,1),
 	writeln('.').
 
-dump_index_directive(PredSpec,Type) :-
+dump_index2_directive(PredSpec,Type) :-
 	write(':- index('),
 	dump_simple_goal(PredSpec,0),
 	write(','), write(Type), writeln(').').
+
+dump_indices_directive(IndexSpecList) :-
+	writeln(':- index'),
+	dump_index_specs(IndexSpecList).
+dump_index_specs(','(Spec,IndexSpecList)) :-
+	!,
+	dump_index_spec(Spec),
+	writeln(','),
+	dump_index_specs(IndexSpecList).
+dump_index_specs(Spec) :- dump_index_spec(Spec), writeln('.').
+dump_index_spec(Spec) :-
+	(Spec = Pred/Arity-ArgNo, !
+	; abort(('Invalid index specification: ', Spec))),
+	dump_literal(Pred/Arity,1),
+	write('-'), write(ArgNo).
+
 
 dump_storage_rules(','(Rule,Rest)) :- !,
 	dump_storage_rule(Rule),

@@ -1,0 +1,65 @@
+/***************************************************************************
+  file: genincludes/flrindex_P.fli
+
+  Author(s): Michael Kifer
+
+  Contact:   xsb-contact@cs.sunysb.edu
+
+  Copyright (C) The Research Foundation of SUNY, 2002
+
+  This is a template file to generate the FLORA include file for
+  indices.
+***************************************************************************/
+
+#include "flora_terms.flh"
+
+:- FL_FLOGICSTATIC
+	derived_isa/2,
+	derived_sub/2,
+	derived_mvd/3,
+	derived_imvd/3,
+    	derived_mvdsig/3,
+    	derived_imvdsig/3,
+	derived_fd/3,
+	derived_ifd/3,
+	derived_fdsig/3,
+	derived_ifdsig/3,
+	derived_meth/2,
+	derived_imeth/2,
+	derived_tran/2,
+	%%derived_itran/2,
+	derived_objeql/2.
+
+:- indices
+	derived_isa/2-2,
+	derived_sub/2-2,
+    	derived_mvd/3-2,
+    	derived_imvd/3-2,
+    	derived_mvdsig/3-2,
+    	derived_imvdsig/3-2,
+    	derived_fd/3-2,
+    	derived_ifd/3-2,
+	derived_fdsig/3-2,
+	derived_ifdsig/3-2,
+	derived_meth/2-2,
+	derived_imeth/2-2,
+	derived_tran/2-2,
+	%%derived_itran/2-2,
+	derived_objeql/2-2.
+
+:- indices
+	derived_isa/2-1,
+	derived_sub/2-1,
+    	derived_mvd/3-1,
+    	derived_imvd/3-1,
+    	derived_mvdsig/3-1,
+    	derived_imvdsig/3-1,
+    	derived_fd/3-1,
+    	derived_ifd/3-1,
+	derived_fdsig/3-1,
+	derived_ifdsig/3-1,
+	derived_meth/2-1,
+	derived_imeth/2-1,
+	derived_tran/2-1,
+	%%derived_itran/2-1,
+	derived_objeql/2-1.

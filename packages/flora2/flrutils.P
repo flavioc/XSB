@@ -912,12 +912,9 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	    /*
 	    check_for_dependencies(CompiledRuleList, DepWarnList),
 	    check_for_dependencies_warn(DepWarnList, DepWarnNum),
 	    flora_errorwarn_count(0,DepWarnNum),
-	    flora_stderr_string("\n"),
-	    */
 
 	    flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
         ),
@@ -974,9 +971,10 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
 	findall(ModOption,member(FLSYSMOD(ModOption),FileOptionList),SysModOptionList),
 	append(SysLibOptionList,SysModOptionList,OptList),
-	%% FLLIBCONTROL and FLLIBMETAOPS in (sylibinc) should be
+	%% FLLIBCONTROL and FLLIBMETAOPS in (sylibinc) should really be
 	%% included by the compiler.
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL,FLLIBMETAOPS|OptList],
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,
+			    FLLIBCONTROL,FLLIBMETAOPS,FLINDEX_P|OptList],
                            HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
@@ -987,15 +985,16 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	  ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
 		  flora_message_line('including full F-logic equality maintenance'),
-		  flora_include_file([FLEQLTRAILER,FLSCALAREQL,FLPREDDEF],FileStatus)
+		  flora_include_file([FLEQLTRAILER,FLSCALAREQL], FileStatus)
 
 
 	      ; member(FLEQLBASIC,FileOptionList) ->
 	          flora_message_line('including basic equality maintenance'),
-		  flora_include_file([FLEQLTRAILER,FLPREDDEF],FileStatus)
+		  flora_include_file([FLEQLTRAILER],FileStatus)
 	      ;
-	        flora_include_file([FLTRAILER,FLPREDDEF],FileStatus)
-	      )
+	        flora_include_file([FLTRAILER],FileStatus)
+	      ),
+	      flora_include_file([FLPREDDEF],FileStatus)
 	  ;
 	    flora_coder_error(CoderStatus),
 	    FileStatus=FLORA_FAILURE
@@ -1576,10 +1575,10 @@ check_for_dependencies_warn([],0) :- !.
 check_for_dependencies_warn([warning(Msg)|L],WarnNum) :-
 	!,
 	( flora_current_compile_filename(FileName) ->
-	    flora_warning_line('[%s] [Dependency Checking] %s',
+	    flora_warning_line('[%s] [Dependency check] %s',
 			       args(FileName,Msg))
 	;
-	    flora_warning_line('[Dependency Checking] %s', args(Msg))
+	    flora_warning_line('[Dependency check] %s', args(Msg))
 	),
 	check_for_dependencies_warn(L,WN),
 	WarnNum is WN+1.

@@ -1,3 +1,16 @@
+/***************************************************************************
+  file: genincludes/flrpreddef.fli
+
+  Author(s): Chang Zhao
+
+  Contact:   xsb-contact@cs.sunysb.edu
+
+  Copyright (C) The Research Foundation of SUNY, 2002
+
+  This is a template file to generate the FLORA include file for
+  checking undefinedness.
+***************************************************************************/
+
 #include "flora_terms.flh"
 
 :- FL_FLOGICSTATIC

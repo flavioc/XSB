@@ -28,7 +28,7 @@
 
 XSBDIR = ../../..
 
-ALLOBJS = flrpatch.flh flrpreddef.flh
+ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh
 
 XSB = $(XSBDIR)/bin/xsb
 
@@ -56,6 +56,9 @@ all: clean init $(ALLOBJS) finish
 
 flrpreddef.flh: flrpreddef.fli $(FLORA_TERMS)
 	@echo 'flWrapAround(flrpreddef).' >> cmd...
+
+flrindex_P.flh: flrindex_P.fli $(FLORA_TERMS)
+	@echo 'flWrapAround(flrindex_P).' >> cmd...
 
 
 %.flh: %.fli $(FLORA_TERMS)

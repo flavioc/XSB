@@ -184,6 +184,7 @@ flora_library_file(FLSCALAREQL,flrscalareql,header) :- !.
 
 %% support for undefinedness
 flora_library_file(FLPREDDEF,flrpreddef,header) :- !.
+flora_library_file(FLINDEX_P,flrindex_P,header) :- !.
 
 /**************************************************************************
   Flora system modules use the system libraries mechanism to include

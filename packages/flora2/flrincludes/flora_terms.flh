@@ -526,6 +526,8 @@
 #define FLDEFINITION		fldefinition
 #define FLPATCH			flpatch
 
+#define FLINDEX_P		flindex_P
+
 %% support for undefinedness checking
 #define FLPREDDEF		flpreddef
 
