@@ -146,7 +146,7 @@ xsboramod:: $(ORAOBJS)
 
 
 depend::
-	@$(DEPEND) $(DEPENDFLAGS) -- $(CFLAGS) -- $(SRCS)
+	$(DEPEND) $(DEPENDFLAGS) -- $(CFLAGS) -- $(SRCS)
 
 
 #=======================================================================
