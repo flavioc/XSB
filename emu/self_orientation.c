@@ -265,7 +265,7 @@ DllExport void call_conv set_config_file() {
 
   /* Check if configuration.P exists and is readable */
   retcode = stat(xsb_config_file, &fileinfo);
-  if ( (retcode != 0) || !(S_IREAD & fileinfo.st_mode) ) {
+  if ( (retcode != 0) || !(S_IRUSR & fileinfo.st_mode) ) {
     fprintf(stderr,
 	    "*************************************************************\n");
     fprintf(stderr, "PANIC! XSB configuration file %s\n", xsb_config_file);
