@@ -166,9 +166,10 @@ int dosmode;
 int autoswitch;
 
 /* control whether standard dirs, like /usr/include, are to be search for
-   #include and whether the current dir is to be searched. */
-int NoStdInc = 0;
-int NoCurInc = 0;
+   #include and whether the current dir is to be searched first or last. */
+int NoStdInc        = 0;
+int NoCurIncFirst   = 0;
+int CurDirIncLast   = 0;
 int file_and_stdout = 0;
 
 typedef struct OUTPUTCONTEXT {
@@ -199,6 +200,7 @@ int commented[STACKDEPTH],iflevel;
 
 void ProcessContext(); /* the main loop */
 static void getDirname(char *fname, char *dirname);
+static FILE *openInCurrentDir(char *incfile);
 
 void bug(char *s)
 {
@@ -935,7 +937,12 @@ void initthings(int argc,char **argv)
       continue;
     }
     if (strcmp(*arg, "-nocurinc") == 0) {
-      NoCurInc = 1;
+      NoCurIncFirst = 1;
+      continue;
+    }
+    if (strcmp(*arg, "-curdirinclast") == 0) {
+      CurDirIncLast = 1;
+      NoCurIncFirst = 1;
       continue;
     }
     if (**arg=='+') {
@@ -1854,13 +1861,8 @@ int ParsePossibleMeta()
 	   )
 	 f=fopen(s,"r");
        else /* search current dir, if this search isn't turned off */
-	 if (!NoCurInc) {
-	   char *absfile =
-	     (char *)calloc(strlen(C->filename)+strlen(s)+1, sizeof(char));
-	   getDirname(C->filename,absfile);
-	   strcat(absfile,s);
-	   f=fopen(absfile,"r");
-	   free(absfile);
+	 if (!NoCurIncFirst) {
+	   f = openInCurrentDir(s);
 	 }
        
        for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
@@ -1872,7 +1874,15 @@ int ParsePossibleMeta()
          s[p1end-p1start+strlen(includedir[j])+1]=0;
          f=fopen(s,"r");
        }
-       if (f==NULL) bug("Requested include file not found");
+
+       /* If didn't find the file and "." is said to search last */
+       if (f==NULL && CurDirIncLast) {
+	 f = openInCurrentDir(s);
+       }
+
+       if (f==NULL)
+	 bug("Requested include file not found");
+
        N=C;
        C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
        C->in=f;
@@ -2193,6 +2203,18 @@ static void getDirname(char *fname, char *dirname)
   strncpy(dirname,fname,i);
   dirname[i] = SLASH;
   dirname[i+1] = '\0';
+}
+
+static FILE *openInCurrentDir(char *incfile)
+{
+  char *absfile =
+    (char *)calloc(strlen(C->filename)+strlen(incfile)+1, sizeof(char));
+  FILE *f;
+  getDirname(C->filename,absfile);
+  strcat(absfile,incfile);
+  f=fopen(absfile,"r");
+  free(absfile);
+  return f;
 }
 
 

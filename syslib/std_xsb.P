@@ -106,8 +106,10 @@ standard_symbol(file_close, 1, file_io).
 standard_symbol(file_clone, 3, file_io).
 standard_symbol(file_reopen, 4, file_io).
 
-standard_symbol(bootstrap_flora, 0, flora2).
-standard_symbol(unstrap_flora, 0, flora2).
+%% Suppress until the beta release
+%%standard_symbol(bootstrap_flora, 0, flora2).
+%%standard_symbol(unstrap_flora, 0, flora2).
+%%standard_symbol(flora_shell, 0, flora2).
 
 standard_symbol(file_write, 2, xsb_writ).
 standard_symbol(file_nl, 1, xsb_writ).

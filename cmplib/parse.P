@@ -176,7 +176,7 @@ make_include_directive1(' ',_, []).
 
 
 make_gpp_options(X) :- xpp_options(X), !.
-make_gpp_options(' -P -m -nostdinc -nocurinc ').
+make_gpp_options(' -P -m -nostdinc -curdirinclast ').
 
 /*======================================================================*/
 /* parse_clauses(+ModName, #module(#SymTab,#DcList,#ClList,#QrList))	*/
