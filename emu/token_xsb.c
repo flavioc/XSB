@@ -255,8 +255,8 @@ static void SyntaxError(char *description)
 void unGetC(int d, FILE *card, STRFILE *instr)
 {
   if (instr) {
-    ++(instr)->strcnt;
-    *(--(instr)->strptr) = d;
+    (instr)->strcnt++;
+    (instr)->strptr--;
   }
   else ungetc(d, card);
 }
@@ -715,7 +715,7 @@ DECIMAL:                *s++ = '.';
 				token->type = TK_REAL;
                         return token;
                     } else {
-                        unGetC(d, card, instr);
+		        unGetC(d, card, instr);
                         /* c has not changed */
                     }
 		}
