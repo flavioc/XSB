@@ -11,7 +11,7 @@ may be conveniently expressed and executed in Prolog.
 A Definite Clause Grammar rule in Prolog is executable because it is just 
 a notational variant of a Prolog term that has the following general form:
 \begin{center}
-		{\em Head} {\tt -->} {\em Body.}
+                {\em Head} {\tt -->} {\em Body.}
 \end{center}
 with the declarative interpretation that ``a possible form for {\em Head} is 
 {\em Body}''. The procedural interpretation of a grammar rule is that it
@@ -50,9 +50,9 @@ An overview of the syntax of DCGs supported by \ourprolog\ is as follows:
       enclosing such conditions in curly brackets, {\tt '\{'} and {\tt '\}'}.
       For example, one can write:
       \begin{center}
-		{\tt positive\_integer(N) --> [N], \{integer(N), N > 0\}.}
-		\footnote{A term like {\tt \{foo\}} is just a syntactic-sugar
-			  for the term {\tt '\{\}'(foo)}.}
+                {\tt positive\_integer(N) --> [N], \{integer(N), N > 0\}.}
+                \footnote{A term like {\tt \{foo\}} is just a syntactic-sugar
+                          for the term {\tt '\{\}'(foo)}.}
       \end{center}
 \item The left hand side of a DCG rule must consist of a single non-terminal,
       possibly followed by a sequence of terminals (which must be written as
@@ -67,9 +67,9 @@ An overview of the syntax of DCGs supported by \ourprolog\ is as follows:
       right hand side of a DCG rule. These symbols need not be enclosed in 
       curly brackets. 
       \footnote{Readers familiar with Quintus Prolog may notice the difference
-		in the treatment of the various kinds of not. For example, in 
-		Quintus Prolog a {\tt not/1} that is not enclosed within curly 
-		brackets is interpreted as a non-terminal grammar symbol.}
+                in the treatment of the various kinds of not. For example, in 
+                Quintus Prolog a {\tt not/1} that is not enclosed within curly 
+                brackets is interpreted as a non-terminal grammar symbol.}
       All other Prolog's control primitives, such as {\tt repeat/0}, must
       be enclosed explicitly within curly brackets if they are not meant
       to be interpreted as non-terminal grammar symbols.
@@ -277,7 +277,7 @@ The library predicates of \ourprolog\ that support DCGs are the following:
     {\em cuts}\index{cut} (\cut)\index{"!/0}, or {\em if-then-elses} 
     ({\tt '->'/2}) and is defined by the single clause:
     \begin{center}
-		{\tt 'C'([Token|Tokens], Token, Tokens).}
+                {\tt 'C'([Token|Tokens], Token, Tokens).}
     \end{center}
     The name 'C' was chosen for this predicate so that another useful
     name might not be preempted.
@@ -334,7 +334,7 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
       However, to obtain the standard expansion provided by the other Prolog
       systems, the user can simply execute:
       
-      \index{set_dcg_style/1}
+      \index{set\_dcg\_style/1}
       \stuff{
         \>\> set\_dcg\_style(standard).
       }
