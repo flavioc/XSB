@@ -1207,7 +1207,7 @@ case $CC in
    gcc) # This is the optimization flag used for emuloop.c. 
 	# It is generally lower than for other modules.
 	c_low_opt_level=-${optimization_level-"O4"}
-	CFLAGS="-ansi -pedantic -Wall"
+	CFLAGS="-ansi -pedantic -finline-functions -Winline -Wall"
 	;;
    cc)  if test "$__sunpro_c" = "no"; then
 	   c_low_opt_level=-${optimization_level-"O4"}

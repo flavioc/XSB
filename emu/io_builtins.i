@@ -107,7 +107,7 @@ bool file_stat(void)
 }
 
 /* file_flish, file_pos, file_truncate, file_seek */
-inline bool file_function(void)
+inline static bool file_function(void)
 {
   static int file_des, value, size, offset, length;
   static STRFILE *sfptr;
