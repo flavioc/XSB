@@ -190,7 +190,7 @@ flora_retractall_facts([Fs|FL]) :-
 	!,
 	%% "true" is needed in case that a previously retracted fact is
         %% retracted again.
-	(flora_retract_facts(Fs); true),
+	(flora_retract_facts(Fs), !; true),
 	flora_retractall_facts(FL).
 
 flora_retractall_facts([_Fs|FL]) :-
@@ -491,7 +491,7 @@ flora_eraseall_facts([]) :- !.
 flora_eraseall_facts([Fs|FL]) :-
 	flora_check_facts(Fs),
 	!,
-	(flora_erase_facts(Fs); true),
+	(flora_erase_facts(Fs), !; true),
 	flora_eraseall_facts(FL).
 
 flora_eraseall_facts([_Fs|FL]) :-
