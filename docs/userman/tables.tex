@@ -397,7 +397,7 @@ time, use stratified negation.
 \begin{exercise} \label{ex:win1}
 The program
 \begin{verbatim}
-         win(X):- move(X,Y),tnot(move(Y)).
+         win(X):- move(X,Y),tnot(win(Y)).
 \end{verbatim}
 is stratified when the {\tt move/2} relation is a binary tree.  This
 can be seen by loading the file {\tt
@@ -551,7 +551,7 @@ XSB represents undefined facts as {\em conditional answers}.
 Consider the behavior of the {\tt win/1} predicate from Exercise
 \ref{ex:win1}.
 \begin{verbatim}
-         win(X):- move(X,Y),tnot(move(Y)).
+         win(X):- move(X,Y),tnot(win(Y)).
 \end{verbatim}
 when the when the {\tt move/2} relation is a cycle.  Load the file
 {\tt \verb|$XSB_DIR/examples|cycle1k.P} into XSB and again type the
