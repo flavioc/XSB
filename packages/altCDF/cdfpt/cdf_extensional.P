@@ -3,6 +3,10 @@ isa_ext(cid(cdfpt,cdfpt),cid(componentIDs,cdf)).
 isa_ext(cid(compName(cid(cdfpt,cdfpt),cid(allAtoms,cdf)),cdfpt),cid(compNames,cdf)).
 isa_ext(cid(component(cid(cdfpt,cdfpt),cid(allAtoms,cdf),cid(allIntegers,cdf)),cdfpt),
 	cid(components,cdf)).
+isa_ext(crid(componentDepends,cdfpt),crid('CDF Class-Object Relations',cdf)).
+isa_ext(crid(hasVersion,cdfpt),crid('CDF Class-Object Relations',cdf)).
+isa_ext(crid(hasPath,cdfpt),crid('CDF Class-Object Relations',cdf)).
+
 
 classHasAttr_ext(cid(cdfpt,cdfpt),crid(hasPath,cdfpt),cid('',cdfpt)).
 classHasAttr_ext(cid(compName(cid(cdfpt,cdfpt),cid('',cdfpt)),cdfpt),
