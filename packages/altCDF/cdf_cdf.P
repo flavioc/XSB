@@ -15,7 +15,7 @@ cdf_use_cache.
 :- make_cdf_clean.
 
 make_cdf_dirty(Name) :- 
-	(Name == 'CDF' -> 
+	(Name == cdf -> 
 	    true
 	  ; 
 	    assert(cdf_flags(dirty,Name)) ).
