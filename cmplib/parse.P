@@ -62,12 +62,14 @@ parse(Modname, PFile, HFile, Module) :-
 
 parse1(Modname, File, Module) :-
 	seeing(OldFile),	% added by Baoqiu (1/16/1997)
-	open_or_cpp_file(File),
+	open_or_cpp_file(File,CPP_process),
 	(parse_clauses(Modname, Module) 
 				% check if must restart
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   true
 	),
+	%% Wait, if cpp was spawned
+	(CPP_process = none, ! ; process_control(CPP_process, wait)),
 	multifile_query(Modname, Module),
 	('_$apply_arity'(_)
 	 ->	assert('_$multifile'(apply/0)),
@@ -94,8 +96,8 @@ parse1(Modname, File, Module) :-
 
 %% If cpp_on option is not set, just open the file.
 %% Otherwise, pass it through the C preprocessor
-open_or_cpp_file(File) :-
-	(conget(cpp_on,0) -> see(File)
+open_or_cpp_file(File, CPP_process) :-
+	(conget(cpp_on,0) -> see(File), CPP_process = none
 	; 
 	    %% cpp_on is set: use preprocessor
 	    xsb_configuration(cpp, CPP),
@@ -113,7 +115,7 @@ open_or_cpp_file(File) :-
 			     args(CPP, IncludeDirs, File)),
 	    fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
 	    message(CPP_command1),
-	    spawn_process(CPP_command, block, From, block, _),
+	    spawn_process(CPP_command, block, From, block, CPP_process),
 	    stat_set_flag(10, From)
 	).
 
