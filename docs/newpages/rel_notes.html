@@ -18,6 +18,150 @@
 
 <h1>Release Notes</h1>
 
+<h2>Version 2.7 (Kinryo) </h2>
+
+<h3>General</h3>
+<p>
+Version 2.7 has many fixes to bugs and improvements to packages and
+libraries.
+</p>
+
+<h3>Major New Functionality</h3>
+<ul>
+  <li>The <b>Constraint Handling Rules</b> package includes both a
+  CHR runtime system and a compiler to convert CHR files to
+  Prolog files.  This packages allow CHR to be used with tabling, and
+  includes several sample CHR solvers that have been ported to XSB.
+  </li>
+  <li>
+  <b>ISO-style streams</b> are now supported by all XSB file I/O.
+  Streams can be used to access strings and pipes as well as files,
+  and the distinction between I/O streams and I/O ports has been
+  removed.  New I/O and other predicates to support ISO functionality
+  have also been added.
+  </li>
+  <li>
+  XSB now has the capability to determine the proportion of
+  time spent in each predicate and module via the <b>XSB Profiling
+  library.</b>
+  </li>
+  <li>
+  XSB now prints out the forward and backward execution stacks
+  upon unhandled errors, allowing for better debugging.  This facility
+  is on by default, but can be turned off using an XSB flag.
+  </li>
+  <li>
+  A new faculty <b>xsb_lint</b> has been created to
+  help determine which predicates must be exported and imported into
+  files upon modularization. Through the statements 
+  document_export/1 and document_import/1, Version 2.7 also
+  supports "pseudo-modules".  Such files act as are regular files in
+  terms of execution, but their declarations are used by 
+  xsb_lint, xsbdoc and the compiler's use inference pass.
+  </li>
+</ul>
+
+<h3>Other Functionality</h3>
+<ul>
+  <li>
+  Functionality for use inference, a part of XSB's compiler has
+  been expanded.  Use inference now checks standard meta-predicates
+  (e.g. findall, assert) for usage.
+  </li>
+  <li>
+  The predicate parsort/4 has been added to provide
+  efficient and flexible sorting.  It can sort different argument
+  positions of predicates lexicographically, in either ascending or
+  descending order, and either eliminate duplicates or not.
+  </li>
+  <li>
+  A new built-in set_file_write_depth/1 controls the depth of
+  terms printed by standard I/O built-ins.  
+  </li>
+  <li>
+  Improvements have been made to the compiler for efficiency,
+  and several bug fixes have been made to compiling and parsing.  In
+  addition, singleton_warnings_off a new compiler option
+  suppresses singleton warnings by the compiler, and so is useful for
+  code generation.
+  </li>
+  <li>
+  Improvements have been made to the ODBC interface, to allow
+  multiple ODBC connections, to allow querying of information about
+  the ODBC connection itself, and to allow data to be retrieved as
+  character lists rather than as atoms.
+  </li>
+  <li>
+  XSB disassembler output is now readable by Prolog.
+  </li>
+  <li>
+  Predicates defined within a module, but not exported can be
+  called from outside that module using the call Module:Call.
+  The predicate @=/2 has been added that succeeds if two terms
+  are identical variables, or if the main functor symbols of two terms
+  to be compared are identical, and fails otherwise. 
+  </li>
+  <li>
+  Improvements have been made to memory management, to better
+  integrate heap garbage collection and heap stack expansion.
+  </li>
+</ul>
+
+<h3>Selected Bug Fixes</h3>
+<ul>
+  <li>
+  Java 1.4.2 introduced some incompatibilities in memory
+  management which broke InterProlog. This has been fixed in this
+  version.  In addition, parameters may now be passed when invoking
+  XSB from Java.
+  </li>
+  <li>
+  The GPP pre-processor has been updated. Most notably among the
+  new functionalities is that #include can, now, take a macro as an
+  argument.
+  </li>
+  <li>
+  XSB's stack reallocation is now aware of attributed variables
+  and interrupt handlers.
+  </li>
+  <li>
+  An inconsistency in the handling of declarations has been
+  fixed. The inconsistency involved different handling of predicate
+  names declared as P/A and P(_,_,_,...).
+  </li>
+  <li>
+  message/2 has been fixed to properly deal with a list as
+  its 1st argument.
+  </li>
+  <li>
+  A long-standing register allocation bug in the compiler is now
+  fixed.
+  </li>
+  <li>
+  Optimizations and bug fixes have been made to the XASP Smodels
+  interface.
+  </li>
+  <li>
+  Various error fixes and improvements made to xsbdoc.
+  </li>
+</ul>
+
+<h3>Backward Incompatibility</h3>
+<ul>
+  <li>
+  The implementation and interface of attributed variables has
+  been changed to fix several inconsistencies and to allow attributes in
+  different modules.  These changes were necessary for the CHR
+  implementation and made the CLP(R) implementation unavailable.  CLP(R)
+  style handling is available through CHR solvers included in the CHR
+  package.
+  </li>
+  <li>
+  The Oracle interface is no longer supported.  Its functionality
+  can be obtained through either XSB's ODBC interface or
+  </li>
+</ul>
+
 <h2>Version 2.6 (Duff)</h2>
 
 <h3>General</h3>
