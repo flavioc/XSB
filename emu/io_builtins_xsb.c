@@ -272,6 +272,7 @@ xsbBool fmt_write(void)
 
     if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
+      XSB_StrSet(&StrArgBuf,"");
       print_pterm(Arg, TRUE, &StrArgBuf);
       PRINT_ARG(StrArgBuf.string);
     } else if (is_string(Arg)) {
@@ -419,6 +420,7 @@ xsbBool fmt_write_string(void)
 
     if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
+      XSB_StrSet(&StrArgBuf,"");
       print_pterm(Arg, TRUE, &StrArgBuf);
       SPRINT_ARG(StrArgBuf.string);
     } else if (is_string(Arg)) {
