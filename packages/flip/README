@@ -5,7 +5,7 @@ F L I P   README, Bertram Ludaescher, ludaesch@informatik.uni-freiburg.de
 FLIP is a lean, extensible, experimental, incomplete ... 
 
     =======================================
-    >>> F-LOGIC TO XSB-PROLOG COMPILER <<< 
+    >>> F-LOGIC TO XSB COMPILER <<< 
     =======================================
 
 Use at your own risk! (on the other hand: no risk, no fun!)
@@ -22,11 +22,19 @@ STARTING FLIP:
 	[i686-pc-linux-gnu; optimal mode]
 	| ?- [flip].
 	[...stuff deleted...]
+
+   At this point, you can start running Flip commands, e.g., 
+
+        | ?- run(some_program.flp).
+
+   You can also start the Flip interactive command loop by typing:
+
+	| ?- flip_shell.
 	FLIP> ?- 
 
-Further steps (optional):
+Here, FLIP> ?- is the Flip prompt, where you can start typing F-logic queries.
 
-	
+Further steps (optional):
 
 
 =========
@@ -48,25 +56,27 @@ FLIP consists of:
 	flip/flpshell.P	      top-level module, provides the FLIP shell
 	flip/flptokens.P      public domain tokenizer (from R. O'Keefe)
 	flip/flpparser.P      DCG parser for F-Logic *with path expressions*
-	flip/flpcompiler.P    compiles (flattens) rules to XSB-Prolog
+	flip/flpcompiler.P    compiles (flattens) rules to XSB
 	flip/flputils.P	      misc utility predicates
 	flip/lib/flpheader.P  header file, attached to the generated XSB code
 	flip/lib/flptrailer.P trailer file, attached to the generated XSB code
 
-There are some simple demo files:
+There are some simple demo files. Consult
 	flip/Demo/README
+for more details.
 
 When you enter 
 	FLIP> ?- rundemo("file").  
+
 the program "file.flp" is parsed (flpparser.P) and compiled (flpcompiler.P),
-thereby creating the XSB-Prolog file "file.P". Look at this file to
+thereby creating the XSB file "file.P". Look at this file to
 see what has become of your F-Logic program! The compilation consists
 mainly of a simple flattening procedure. Next, "file.P" is compiled by
 XSB (yielding "file.O") which is then executed.  If "file.flp"
 contains queries, these are immediately executed during this process
 (provided there are no errors).
 
-Of course you may enter F-Logic queries (including path expression)
+Of course you can enter F-Logic queries (including path expression)
 interactively from the FLIP shell, say:
 
     FLIP> ?-  X..kids[                  % Whose kids

@@ -388,7 +388,7 @@ del(S) :-
 %%%	FLIP ?- call(myprint("BLA bla")): 
 myprint(Cs) :- name(N,Cs), write(N).	
 
-:- shell.
+flip_shell :- shell.
 
 %:-spy(id_term).
 %:-spy(rule).
