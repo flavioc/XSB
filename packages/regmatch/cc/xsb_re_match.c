@@ -313,7 +313,7 @@ bool do_regsubstitute__(void)
 
   output_term = reg_term(4);
   if (! is_var(output_term))
-    xsb_abort("RE_SUBSTITUTE: Arg 4 (the output string) must be an unbound variable");
+    xsb_abort("RE_SUBSTITUTE: Arg 4 (the output) must be an unbound variable");
 
   subst_reg_list_term1 = subst_reg_list_term;
   subst_str_list_term1 = subst_str_list_term;
