@@ -81,10 +81,7 @@ double cpu_time(void)
 
     thisproc = GetCurrentProcess();
     GetProcessTimes(thisproc,&creation,&exit,&kernel,&user);
-    /* unfinished -- how to convert kernel+user (two 64-bit unsigned
-       integers) into an appropriate float?              --lfcastro */
-    /* the code below assumes sizeof(long long) == 8 */
-    
+
     lkernel = ((ULONGLONG) kernel.dwHighDateTime << 32) + 
       kernel.dwLowDateTime;
     luser = ((ULONGLONG) kernel.dwHighDateTime << 32) + 
