@@ -231,12 +231,12 @@ CDF configuration file. ").
 
 initialize_state:- 
 	initialize_cdf_flags,
+	cdf_reset_log,
 	initialize_state_nl.
 
 initialize_state_nl :-
 	clear_mfile_rules,
 	cdf_clear_dynamics,
-	cdf_reset_log,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
 	make_cdf_clean.
