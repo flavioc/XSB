@@ -550,7 +550,11 @@ check_component(Name,Path,V,Arglist):-
 %	\+ system_component(Name),
 	check_conflicting_path(Name,Path,Arglist),
 	check_conflicting_version(Name,Path,V),
-	\+ already_present(Name,Path,V,Arglist).
+	(   already_present(Name,Path,V,Arglist)
+	->  cdf_warning(component, [Name, ' is already loaded.']),
+	    fail
+	;   true
+	).
 
 check_conflicting_version(Name,Path,V):- 
 	(conflicting_version(Name,Path,V,V1) -> 
@@ -564,7 +568,7 @@ the CDF. */
 conflicting_version(Name,Path,V,V1):- 
 	classHasAttr_ext(cid(compName(cid(Name,Name),
 				      cid(Path,cdfpt)),Name),
-			 cid(hasVersion,Name),cid(V1,cdfpt)),
+			 crid(hasVersion,Name),cid(V1,cdfpt)),
 	V \== V1.
 
 %---------------
@@ -688,7 +692,7 @@ update_setup(In,Options,Abs,Action):-
 /* In initialize for create, old versions don't matter -- the only
    thing that matters is the version of the file in Dir, if any */
 
-initialize_for_create(Dir):- 
+initialize_for_create(Dir):-
 	analyze_components(Name,_),
 	slash(Slash),
 	concat_atom([Dir,Slash,Name],File),
