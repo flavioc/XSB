@@ -55,7 +55,7 @@
 {\end{tabular}\end{quote}}
 
 
-\newcommand{\obj}{\textit{obj}}
+\newcommand{\obj}{\textit{obj}\xspace}
 \newcommand{\db}[1]{\ensuremath{\mathcal{#1}}}
 
 \newcommand{\xany}{\textsf{any}}
@@ -336,7 +336,7 @@ tutorial are also valid \FLORA programs.
 \begin{itemize}
 \item \texttt{flrshell.P}: top-level module that provides the \FLORA shell
   commands for compiling and consulting \FLORA programs
-  (\texttt{flcompile/1}, \texttt{flconsult/1}), for setting the ouput mode
+  (\texttt{flcompile/1}, \texttt{flconsult/1}), for setting the output mode
   (\texttt{all/0} or \texttt{one/0} solution(s) at a time), and -- last but
   not the least -- for directly issuing queries against the loaded
   database/program (see Section~\ref{sec-shell-commands} for a full
@@ -401,10 +401,10 @@ mary:employee[age->29;kids->>{tim,leo};salary@(1998)->a_lot].
 \end{quote}
 
 As described in \cite{KLW95}, any complex F-logic molecule can be
-decomposed into a conjunction of simpler F-logic atoms. These latter atoms
-can be directly represented using Prolog syntax.  For the different kinds
-of F-logic atoms we use different Prolog predicates. For instance, the
-result of translating the above F-molecule might be:
+decomposed into a conjunction of simpler F-logic atomic formulas. These
+latter atoms can be directly represented using Prolog syntax.  For the
+different kinds of F-logic atoms we use different Prolog predicates. For
+instance, the result of translating the above F-molecule might be:
 
 \begin{quote}
 {\small
@@ -526,8 +526,8 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
     and are used to name objects, methods, and classes.  Ground id-terms
     ({\it i.e.}, terms with no variables) correspond to \emph{logical
       object identifiers} (\emph{oid}s), also called object \emph{names}.
-  \index{atom}
-\item \emph{Atoms}: Let $O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
+  \index{atom!in F-logic}
+\item \emph{Atomic formulas}: Let $O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
   addition to the usual first-order atoms, like $p(X_1,\dots,X_n)$, there
   are the following basic types of formulas: \medskip
 
@@ -575,7 +575,7 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
   id-terms, e.g., \textsf{john[salary@(1998)\fd 50000]}.
   
 \item \emph{Programs}: \fl\ \emph{literals}, \emph{rules}, and
-  \emph{programs} are defined as usual, based on \fl\ atoms.
+  \emph{programs} are defined as usual, based on \fl atoms.
 \end{itemize}
 
 \noindent
@@ -828,12 +828,12 @@ x_{de}]\} ~,
 %
 where $\db I \models \varphi$ means that $\varphi$ holds in \db I.
 Observe that $\obj(d.e)$ contains at most one element because the
-\emph{single-valued} method $e$ is applied to a single oid $d$. Thus, wto
+\emph{single-valued} method $e$ is applied to a single oid $d$. Thus, two
 formulas might be equivalent logically, but their values as objects might
 be different!
 
 In general, for an \fl\ database \db I, the object values of ground
-expressions are given by the following mapping \obj\ from ground references
+expressions are given by the following mapping \obj from ground references
 to sets of ground references:
 %
 \begin{displaymath}
@@ -857,7 +857,7 @@ to sets of ground references:
     o[m{\mvd}\{r\}] \}
   \end{array}
 \end{displaymath}
-Observe that if $t$ does not occur in \db{I}, then $\obj(t)$ is
+Observe that if $\tt t[]$ does not occur in \db{I}, then $\obj(t)$ is
 $\emptyset$.  Conversely, a ground reference $r$ is called \emph{active} if
 $\obj(r)$ is not empty. A reference, $r$, can be 
 single-valued or multi-valued:
@@ -875,18 +875,23 @@ single-valued or multi-valued:
 \end{itemize}
 
 
-\subsection{Atoms, Strings, Comments}
+\subsection{Symbols, Strings, Comments}
 
-\paragraph{Atoms.}
 
-\index{atom}
+\index{atom!in XSB}
+\index{symbol}
 \index{string}
 \index{comment}
-Like XSB atoms, \FLORA atoms begin with a lowercase letter followed by zero or more letters
-($A \ldots Z, a \ldots z$), digits ($0 \ldots 9$), or underscores (\_), e.g.,
-$\textit{student}, \textit{apple\_pie}$. Atoms can also be \emph{any} sequence
-of characters enclosed in a pair of single quotes, e.g.,
-$\texttt{'JOHN SMITH'},\texttt{'default.flr'}$.
+%%
+\paragraph{Symbols.}
+\FLORA symbols (that are used for the names of constants, predicates, and
+object constructors) begin with a lowercase letter followed by zero or more
+letters ($A \ldots Z, a \ldots z$), digits ($0 \ldots 9$), or underscores
+(\_), e.g., $\textit{student}, \textit{apple\_pie}$. Symbols can also be
+\emph{any} sequence of characters enclosed in a pair of single quotes,
+e.g., $\texttt{'JOHN SMITH'},\texttt{'default.flr'}$.  Internally, \FLORA
+symbols are represented as XSB atoms, which are used there as names of 
+predicates and function symbols.
 
 \begin{table}[htb]
 \begin{quote}
@@ -935,8 +940,8 @@ ASCII value. For example, $\texttt{{\bksl}xd}$ is the ASCII character
 Carriage Return, whereas $\texttt{{\bksl}x3A}$ represents the semicolon. In
 other cases, a backslash is recognized as itself.
 
-One exception is that inside a quoted atom, a single quote character is escaped by another
-single quote, e.g., $\texttt{'isn''t'}$.
+One exception is that inside a quoted symbol, a single quote character is
+escaped by another single quote, e.g., $\texttt{'isn''t'}$.
 
 \paragraph{Strings (Character Lists).}
 
@@ -947,8 +952,8 @@ Like XSB strings, \FLORA strings are enclosed in a pair of double quotes
 ASCII characters. For instance, \mbox{\texttt{[102,111,111]}} is the same
 as \texttt{{\dq}foo{\dq}}.
 
-Escape characters are recognized inside \FLORA strings as described above
-for \FLORA atoms.  However, inside a string, a single quote character does
+Escape characters are recognized inside \FLORA strings similarly to
+\FLORA symbols.  However, inside a string, a single quote character does
 not need to be escaped. A double quote character, however, needs to be
 escaped by another double quote, e.g.,
 $\texttt{{\dq}{\dq}{\dq}foo{\dq}{\dq}{\dq}}$.
@@ -956,13 +961,18 @@ $\texttt{{\dq}{\dq}{\dq}foo{\dq}{\dq}{\dq}}$.
 \paragraph{Numbers.}
 
 \index{number}
+%%
 \index{integer}
+%%
 \index{float}
-Normal \FLORA integers are decimals represented by a sequence of digits, e.g., $892, 12$.
-\FLORA also recognizes integers in other bases (2 through 36). The base is specified by
-a decimal integer followed by a single quote ($\texttt{'}$). The digit string immediately
-follows the single quote. The letters $A \ldots Z$ or $a \ldots z$ are used to represent
-digits greater than 9. Table~\ref{tab:tab-int-rep} lists a few sample integers.
+%%
+Normal \FLORA integers are decimals represented by a sequence of digits,
+e.g., $892, 12$.  \FLORA also recognizes integers in other bases (2 through
+36). The base is specified by a decimal integer followed by a single quote
+($\texttt{'}$). The digit string immediately follows the single quote. The
+letters $A \ldots Z$ or $a \ldots z$ are used to represent digits greater
+than 9.  Table~\ref{tab:tab-int-rep} lists a few sample integers.
+%%
 \begin{table}[htb]
 \begin{quote}
 \texttt{ \small
@@ -1074,7 +1084,7 @@ backtrack over the variable {\tt Who}. Thus, if {\tt john's} and {\tt
 and return both {\tt john} and {\tt mary}.
 
 The following example is a query that for each employee asks for a list of
-years wheen this employee had salary less than 60. This illustrates the use
+years when this employee had salary less than 60. This illustrates the use
 of the {\tt collectset} aggregate.
 %%
 \begin{quote}
@@ -1117,12 +1127,18 @@ inside a path expression is treated as the number to which the
 expression evaluates. Furthermore, \FLORA recognizes numbers as oid's, so
 the result of the evaluation is treated as a regular object.
 
-Take $o_1.m_1+o_2.m_2.method$ as an example. Since \FLORA allows path
-expressions inside arithmetic expressions, and {\it vice versa}, it is not
-immediately obvious whether the previous example stands for the arithmetic
-expression $(o_1.m_1)+(o_2.m_2.method)$ or for the path expression
-$(o_1.m_1+o_2.m_2).method$. The answer is the latter, because ``.'' in a
-path expression binds stronger than ``+'' in an arithmetic expression.
+To illustrate, consider the following example:
+%%
+\begin{verbatim}
+ ?- 1.m+2.n.k = X.
+\end{verbatim}
+%%
+Since \FLORA allows path expressions inside arithmetic expressions, and
+{\it vice versa}, it is not immediately obvious whether the previous
+example stands for the arithmetic expression $(1.m)+(2.n.k)$, or for the
+path expression $(1.m+2.n).k$, or the expression $(1.m + 2).n.k$.  The
+answer is the first path expression, because ``.'' in a path expression
+binds stronger than ``+'' in an arithmetic expression.
 
 One more confusing example is $2.3.4$. Does it mean $(2).(3).(4)$, or
 (2.3).4, or 2.(3.4)?  In \FLORA, $2.3.4$ alone means $(2.3).4$, since all
@@ -1186,13 +1202,14 @@ $5.(-6)$ &~~~~~& method ``$-6$'' applied to object ``5''
 
 \noindent
 The interpretation of the last expression stems from the fact that both the
-minus sign and plus sign are defined as unary operators. Therefore,
-$-6$ is a \emph{complex} arithmetic expression (with an arithmetic operator $-$) that represents
-a method, but not an atomic negative integer.
+minus sign and the plus sign are defined as unary operators. Therefore,
+$-6$ is a \emph{complex} arithmetic expression (with an arithmetic operator
+$-$) that represents a method, but not a negative integer.
 
-To avoid further confusion, \FLORA insists that all \emph{complex} arithmetic expressions
-representing oid's in path expressions must be enclosed in parentheses. Thus, although $5.$$-6$
-may seem legal according to Table~\ref{tab:tab-op-pre}, it has to be entered as $5.(-6)$.
+To avoid further confusion, \FLORA insists that all \emph{complex}
+arithmetic expressions representing oid's in path expressions must be
+enclosed in parentheses. Thus, although $5.$$-6$ may seem legal according
+to Table~\ref{tab:tab-op-pre}, it has to be entered as $5.(-6)$.
 
 \subsection{Negation in \FLORA}
 
@@ -1314,10 +1331,11 @@ reason in two different ways:
   necessarily we must have \verb|a[m ->> {c,d}]|. So, the value of
   attribute {\tt m} is not really that produced by inheritance. In other
   words, inheritance of \verb|a[m ->> c]| negates the very premise on which
-  the original inheritance was based, so we must undo the opeation and the
+  the original inheritance was based, so we must undo the operation and the
   ensuing rule application.
 \item We did derive \verb|a[m ->> d]| as a result of inheritance, but
-  that's OK --- we should not really be looking back.
+  that's OK --- we should not really be looking back and undo previously
+  made inheritance inferences. Thus, the result must be \verb|a[m ->> {c,d}]|.
 \end{enumerate}
 %%
 A semantics that favors the second interpretation was proposed in
@@ -1349,13 +1367,13 @@ by the {\tt tnot} operator).
 
 One problem with the current implementation of behavioral inheritance is
 that the well-founded semantics for negation in the presence of equality is
-not sufficiently develped yet. For this reason, inheritance is turned off
+not sufficiently developed yet. For this reason, inheritance is turned off
 if \FLORA compiler is instructed to compile a \FLORA module with equality
 maintenance enabled.
 
 \paragraph{Inheritable attributes and path expressions.}
 In the previous examples, path expressions used only non-inheritable
-attributes. Clearly, there is no reason to disalow inheritable attributes
+attributes. Clearly, there is no reason to disallow inheritable attributes
 in such expressions. To distinguish inheritable from non-inheritable
 attributes in path expressions, \FLORA uses ``!'' and ``!!''. For instance, 
 %%
@@ -1386,6 +1404,12 @@ F-logic semantics. The corresponding predicate can then be queried. The
 ``no'' answer means that the corresponding attribute \emph{does not}
 violate the typing rules.
 
+In this way, one can easily consruct special purpose type checkers.  This
+feature is particularly important when dealing with \emph{semi-structured}
+data. (Semi-structured data has object-like structure but normally does not
+need to conform to any type; or if it does, the type would normally cover
+only certain parts of the object structure.)
+
 \subsection{Meta-programming in \FLORA}
 
 The syntax of \fl lends itself naturally to meta-programming. For instance,
@@ -1414,21 +1438,15 @@ them:
 %%
 \begin{verbatim}
 FLORA> ?- functor(X,f,3).
-
 X = f(_h455,_h456,_h457)
-
 Yes.
 
 FLORA> ?- compound(f(X)).
-
 X = _h472
-
 Yes.
 
 FLORA> ?- X =.. [f,a,b].
-
 X = f(a,b)
-
 Yes.
 \end{verbatim}
 %%
@@ -1563,11 +1581,9 @@ Start XSB in the directory where both \emph{static.flr} and
 \emph{dynamic.flr} reside. Then start \FLORA shell and type:
 \begin{verbatim}
 FLORA> ?- flconsult(static).
-
 Yes.
 
 FLORA> ?- dynconsult(dynamic).
-
 Yes.
 
 FLORA> ?- D:department[coursesOffered->>C].
@@ -1586,7 +1602,6 @@ C = math101
 
 D = math
 C = math230
-
 Yes.
 \end{verbatim}
 %%
@@ -1646,7 +1661,8 @@ between $\mathtt{retract}$ and $\mathtt{retractall}$ is that:
 $\mathtt{retract}$ retracts facts one by one and fails if it is unable to
 retract any facts, whereas $\mathtt{retractall}$ always succeeds no matter
 what facts reside in the database. Actually, $\mathtt{retractall}$ is
-implemented using $\mathtt{retract}$ using the following schema:
+implemented using $\mathtt{retract}$ with the following schema (where the
+arguments are omitted):
 \begin{qrules}
 retractall :- retract, fail. \\
 retractall.
@@ -1662,7 +1678,6 @@ the example of Figure~\ref{fig:fig-static-dynamic-code}:
 %%
 \begin{verbatim}
 FLORA> ?- erase(cse[faculty->>smith]).
-
 No.
 \end{verbatim}
 %%
@@ -1671,7 +1686,6 @@ located in the static area and thus cannot be retracted.
 
 \begin{verbatim}
 FLORA> ?- erase(math[faculty->>john]).
-
 Yes.
 \end{verbatim}
 %%
@@ -1697,13 +1711,10 @@ P = smith
 Semester = spring
 Year = 1999
 Course = cse530
-
 Yes.
 
 FLORA> ?- P:professor.
-
 P = smith
-
 Yes.
 \end{verbatim}
 %%
@@ -1773,17 +1784,13 @@ mary[salary@(1998){\fd}90].
 \begin{verbatim}
 FLORA> ?- flcompile(module2).
 ... FLORA messages omitted ...
-
 Yes.
 
 FLORA> ?- [module1].
-
 Yes.
 
 FLORA> ?- X=count{Year; john.salary@(Year) < mary.salary@(Year)}.
-
 X = 2
-
 Yes.
 \end{verbatim}
 %%
@@ -1865,25 +1872,30 @@ following queries are entered at the \FLORA prompt:
 %%
 \begin{verbatim}
 FLORA> ?- [mix].
-
 Yes.
 
 FLORA> ?- show(a), show(b).
 a[reachableTo->>{b,c}]
 b[reachableTo->>{b,c}]
-
 Yes.
 \end{verbatim}
 
 Observe that in Figure~\ref{fig:fig-mix} we created a new predicate, {\tt
-  tc}, and used \emph{it} as an argument to {\tt findall}. It seems more
-natural to write $\mathtt{findall(Y,X[reachableTo{\mvd}Y],L)}$ instead.
-This more natural syntax will be supported in the future, but it does not
-work at the present time. The reason is that \FLORA compiler always
-treats \fl molecules as oid's, if they appear as predicate arguments.
-However, in {\tt findall}, we want the molecules in the second argument to
-be treated as logical formulas that evaluate to true or false.  This will
-be supported in a future release via a special compiler directive.
+  tc}, and used \emph{it} as an argument to {\tt findall} (which is a
+standard Prolog predicate; see the XSB manual). It seems more natural to
+write $\mathtt{findall(Y,X[reachableTo{\mvd}Y],L)}$ instead.  This more
+natural syntax will be supported in the future, but it does not work at the
+present time. The reason is that \FLORA compiler always treats \fl
+molecules as oid's, if they appear as predicate arguments.  However, in
+{\tt findall}, we want the molecules in the second argument to be treated
+as logical formulas that evaluate to true or false.  This will be supported
+in a future release via a special compiler directive.
+
+Since \FLORA can use most of the services provided by XSB, reading the XSB
+manual is highly recommended in order to be productive. Some services, such
+as I/O, are of obvious importance. However, there are many other useful
+packages, which provide pattern matching capabilities, interaction with the
+OS, foreign C interface, etc.
 
 \section{\FLORA and Tabling}\label{sec-tabling-flora}
 
@@ -1896,23 +1908,35 @@ evaluation has the advantage of being able to utilize highly optimized
 compilation techniques developed for Prolog. The result is a very efficient
 deductive engine.
 
-XSB lets the user to specify which predicates must be tabled.  The \FLORA
+XSB lets the user specify which predicates must be tabled.  The \FLORA
 compiler automatically tables the predicates used to flatten \fl molecules.
 However, the user is responsible for telling the system which other
 predicates must be tabled. (Normally, these are predicates defined by the
 user.)  \FLORA programs accepts the same tabling directives as XSB does
 (Section~\ref{sec-comp-directives} lists all the compiler directives).
 
-The user should be aware that the current implementation of XSB has a
-limitation that Prolog cuts (!) cannot cut across tabled predicates. See
-the XSB manual for the details on this obscure problem.
+The current implementation of XSB has a limitation that Prolog cuts (!)
+cannot cut across tabled predicates. See the XSB manual for the details on
+this obscure problem. This problem will be corrected in a future release.
 
-It is also important to understand that when XSB (and \FLORA) evaluate a
-program, all tabled predicates are partially materialized and all the
-computed tuples are stored in XSB tables. Thus, if you change the set of
-facts, the existing tables must be discarded in order to alow XSB to
-recompute the results. This is accomplished by issuing the predicate
-{\tt abolish\_all\_tables/0} described in the XSB manual.
+It is important to be aware that when XSB (and \FLORA) evaluate a program,
+all tabled predicates are partially materialized and all the computed
+tuples are stored in XSB tables. Thus, if you change the set of facts, the
+existing tables must be discarded in order to allow XSB to recompute the
+results. This is accomplished by issuing the predicate {\tt
+  abolish\_all\_tables/0} described in the XSB manual.
+
+It is also important to realize that XSB does not do reordering of objects
+and predicates during joins. Instead, all joins are performed left-to-right.
+The programmer, thus, must write program clauses in such a way as to ensure
+that smaller predicates and classes appear early on in the join. Also, even
+though XSB tables the results obtained from previous queries, the current
+tabling engine has several limitations. In particular, when a new query
+comes in, XSB tries to determine if this query is ``similar'' to one that
+already has been answered (or is in the process of being evaluated).
+Unfortunately, the current notion of similarity used by XSB is fairly weak,
+and many unnecessary recomputations might result. This problem will be
+corrected in a future release.
 
 
 \section{\FLORA Compiler} \label{sec-comp-directives}
@@ -1973,6 +1997,50 @@ Section~\ref{sec-shell-commands}). For instance, {\tt
 equality maintenance level 1.  If equality maintenance is given both in the
 {\tt flcompile} command and inside the flora module being compiled, the
 highest level will be selected by the compiler.
+
+\section{Future Enhancements}
+
+%%
+\begin{description}
+  \item  [Syntax enhancements:]
+    At present, the {\tt not} operator can be applied to predicates only.
+    This restriction will be removed in the future, so it will be possible
+    to negate arbitrary F-molecules.
+
+    A future version of \FLORA will support a no-op. So, it will be possible
+    to write F-molecules without worrying about the semicolon, {\it i.e.}, 
+    {\tt a[m->b;;c->d;]}. It will be also possible to have extraneous commas:
+    {\tt head :- b1,,b2,.}
+  \item[Aggregates:] \FLORA will provide builtin functions that will
+    directly apply to the outcome of the aggregates {\tt collectbag} and
+    {\tt collectset}. This will make it possible to do grouping once and
+    then compute multiple aggregates over the groups.
+  \item[Work areas:] At present, \FLORA supports only one dynamic work area.
+    A future version of \FLORA will support multiple dynamic work areas.
+  \item[If-then-else:] \FLORA will provide the equivalent of the
+    if-then-else construct, to make programs more readable.
+  \item[Transaction logic:] \FLORA will be enhanced with Transaction Logic
+    syntax.
+  \item[Additional compiler directives:] An F-molecule and a path
+    expression have two meanings: as an oid and as a truth value.
+    Currently, an F-molecule or a path expression that occurs inside a
+    predicate is interpreted as an object. This is not always desirable,
+    however. For instance, in {\tt findall}, it is more appropriate to
+    evaluate F-molecules that occur in the second argument to truth values.
+    This can be done with compiler directives like:
+    %%
+    \begin{verbatim}
+       :- arguments findall(oid,truth,oid)
+    \end{verbatim}
+    %%
+    meaning that the first and the third arguments should be evaluated to
+    their oids and the second argument should be evaluated to a truth
+    value.
+
+    \FLORA will also allow database declarations, like those 
+    used in the XSB database interface.
+\end{description}
+%%
 
 
 \bibliography{../../../docs/userman/manual}
