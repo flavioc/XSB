@@ -50,6 +50,24 @@ findall_odbc_sql(Input,Statement,Output,Term):-
 	    ; mode_warning(Term)).
 */
 
+% uppercase
+upper_case(Ci,Co) :-
+	(Ci >= 0'a, Ci =< 122
+	 ->	Co is Ci - 32
+	 ;	Co = Ci
+	).
+
+upper_case_codes([],[]).
+upper_case_codes([C|Cs],[U|Us]) :-
+	upper_case(C,U),
+	upper_case_codes(Cs,Us).
+
+upper_case_atom(A,U) :-
+	atom_codes(A,AC),
+	upper_case_codes(AC,UC),
+	atom_codes(U,UC).
+
+
 findall_odbc_sql_1(Input,Statement,Output):- 
 	writeln('-----fos'(Input,Statement,Output)),
 	(odbc_debug -> 
@@ -107,8 +125,9 @@ check_index_3([],_Selection,In,Statement):-
 	(In == [] -> 
 	    warning(['No indices in place for ',Statement])
 	;   warning(['Indices used in ',Statement,' are non-clustered:  ',In]) ).
-check_index_3([[_,Type,Column]|R],Selection,In,Statement):- 
-	( memberchk(Column,Selection) -> 
+check_index_3([[_,Type,Column]|R],Selection,In,Statement):-
+	upper_case_atom(Column, UColumn),
+	( memberchk(UColumn,Selection) -> 
 	    (is_clustered(Type) -> 
 		true
 	    ;   check_index_3(R,Selection,[Column|In],Statement) )
