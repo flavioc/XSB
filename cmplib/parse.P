@@ -151,7 +151,7 @@ make_gpp_command(GPP_command) :-
 			      '-I',InstallDir,Slash)),
 	xsb_configuration(config_bindir, Bindir),
 	%% Construct the gpp command
-	fmt_write_string(GPP_command, '%s%sgpp -P -m %s -DXSB_PROLOG ',
+	fmt_write_string(GPP_command, '%s%sgpp -P -m -nostdinc -nocurinc %s -DXSB_PROLOG ',
 			 args(Bindir,Slash,IncludeDirs)).
 
 %% Make an include directive out of the dirs in xpp_include_dir/1

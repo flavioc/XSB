@@ -164,6 +164,11 @@ int execallowed;
 int dosmode;
 int autoswitch;
 
+/* control whether standard dirs, like /usr/include, are to be search for
+   #include and whether the current dir is to be searched. */
+int NoStdInc = 0;
+int NoCurInc = 0;
+
 typedef struct OUTPUTCONTEXT {
   char *buf;
   int len,bufsize;
@@ -275,6 +280,8 @@ void usage() {
   fprintf(stderr," -n : send LF characters serving as macro terminators to output\n");
   fprintf(stderr," +c : use next 2 args as comment start and comment end sequences\n");
   fprintf(stderr," +s : use next 3 args as string start, end and quote character\n\n");
+  fprintf(stderr," -nostdinc : don't search standard directories for files to include\n\n");
+  fprintf(stderr," -nocurinc : don't search the current directory for files to include\n\n");
   exit(1);
 }
 
@@ -910,6 +917,14 @@ void initthings(int argc,char **argv)
   dosmode=DEFAULT_CRLF;
   
   for (arg=argv+1;*arg;arg++) {
+    if (strcmp(*arg, "-nostdinc") == 0) {
+      NoStdInc = 1;
+      continue;
+    }
+    if (strcmp(*arg, "-nocurinc") == 0) {
+      NoCurInc = 1;
+      continue;
+    }
     if (**arg=='+') {
       switch((*arg)[1]) {
         case 'c':
@@ -1008,7 +1023,7 @@ void initthings(int argc,char **argv)
   }
 
 #ifndef WIN_NT
-  if (nincludedirs==0) {
+  if ((nincludedirs==0) && !NoStdInc) {
     includedir[0]=strdup("/usr/include");
     nincludedirs=1;
   }
@@ -1803,7 +1818,7 @@ int ParsePossibleMeta()
     case 7: /* INCLUDE */
      if (!commented[iflevel]) {
        struct INPUTCONTEXT *N;
-       FILE *f;
+       FILE *f = NULL;
        char *s;
 
        if (nparam==2) warning("Extra argument to #include ignored");
@@ -1816,7 +1831,10 @@ int ParsePossibleMeta()
        s=malloc(p1end-p1start+1);
        for (i=0;i<p1end-p1start;i++) s[i]=getChar(p1start+i);
        s[p1end-p1start]=0;
-       f=fopen(s,"r");
+       /* search current dir, if this search isn't turned off */
+       if (!NoCurInc)
+	 f=fopen(s,"r");
+
        for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
          s=realloc(s,p1end-p1start+strlen(includedir[j])+2);
          strcpy(s,includedir[j]);
