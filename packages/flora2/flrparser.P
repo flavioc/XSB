@@ -394,6 +394,7 @@ flbirelate_struct(Subject,R,Object,FLBIRELATE(Subject,R,Object)).
 
 flobjref_struct(Object,M,Attribute,FLOBJREF(Object,M,Attribute)).
 
+%% Composes Funct with PARSED args to compose a parsed term
 flterm_struct(Funct,Arity,Args,FLTERM(Funct,Arity,Args)).
 
 flaggregt_struct(Op,Var,GroupVars,Conds,FLAGGREGATE(Op,Var,GroupVars,Conds)).
@@ -1880,6 +1881,10 @@ flora_prlgterm(CanoniTerm,_Code,Status) :-
 
 /****************************************************************************
   flora_term(+Funct,+Arity,+Args,-Code,-Status)
+
+  Parse a term Funct-spec(Args). Arguments are parsed according to the
+  argument spec in flora_argdef. The final parsed term
+  is composed using flterm_struct
 ****************************************************************************/
 flora_term(Funct,N,Args,Code,Status) :-
 	get_atom(Funct,FAtom),
@@ -1961,6 +1966,10 @@ flora_argpathexplist([T|L],[FL_BODYFORMULA|Arguments],[TCode|LCode],Status) :-
 
 /****************************************************************************
   flora_pathexp(+CanoniTerm,-PathExpression,-Status)
+
+  Parse path expression represented by CanoniTerm. A path expression is
+  oid[molecule].oid[molecule]. ... .oid[molecule]
+  (molecules are optional)
 ****************************************************************************/
 flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	get_atom(Funct,F),
