@@ -1993,6 +1993,59 @@ static int retract_clause( ClRef Clause, int retract_nr )
  *** Entry points for CLAUSE/RETRACT predicates
  ***/
 
+/* db_get_last_clause returns the clref of the last (un-failed) clause
+in a predicate.  It fails if there are no clauses.  It should be
+extended to handle indexed predicates... */
+
+xsbBool db_get_last_clause( /*+(PrRef)Pred, -(ClRef)Clause, 
+			      -(Integer)Type, -(Integer)EntryPoint*/ )
+{
+  PrRef Pred = (PrRef)ptoc_int(1);
+  ClRef Clause;
+  CPtr EntryPoint = 0;
+  int numInds, icnt = 0;
+  byte opcode;
+
+  if (cell_opcode((CPtr)Pred) == tabletrysingle) {
+	/* Tabled pred, fetch real prref */
+    	Pred = (PrRef)((CPtr *)Pred)[6];
+  }
+    
+  if (Pred->LastClRef == (ClRef)Pred) {
+    return FALSE;
+  } else {
+    Clause = Pred->LastClRef;
+    while (Clause != (ClRef)Pred) {
+      while (ClRefType(Clause) == SOB_RECORD) {
+	Clause = (ClRef)ClRefLastIndex(Clause);
+	icnt++;
+      }
+      if (ClRefNotRetracted(Clause)) break;
+      if (ClRefType(Clause) == INDEXED_CL) {
+	opcode = ClRefTryOpCode(Clause);
+	if (opcode == noop || opcode == trymeelse) {
+	  Clause = ClRefPrev(Clause);
+	  while (--icnt > 0) {
+	    Clause = ClRefUpSOB(Clause);
+	  }
+	}
+      }
+      Clause = ClRefPrev(Clause);
+    }
+    if (Clause == (ClRef)Pred) return FALSE;
+    if (ClRefType(Clause) != INDEXED_CL) {
+      EntryPoint = ClRefEntryPoint(Clause);
+    } else { /* ClRefType(Clause) == INDEXED_CL */
+      numInds = ClRefNumInds(Clause);
+      EntryPoint = ClRefIEntryPoint(Clause,numInds);
+    }
+  }
+  ctop_int(2, (Integer)Clause);
+  ctop_int(3, (Integer)ClRefType(Clause));
+  ctop_int(4, (Integer)EntryPoint);
+  return TRUE;
+}
+
 /* db_get_clause
  * gets next clause from predicate
  * Arg 1 is the previous ClRef, or 0 if this is the first call.

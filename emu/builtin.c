@@ -130,6 +130,7 @@ extern xsbBool startInterruptThread(SOCKET intSocket);
 
 extern xsbBool assert_code_to_buff(void), assert_buff_to_clref(void);
 extern xsbBool gen_retract_all(void), db_retract0(void), db_get_clause(void);
+extern xsbBool db_get_last_clause(void);
 extern xsbBool db_build_prref(void), db_remove_prref(void), db_reclaim0(void);
 
 extern char *dirname_canonic(char *);
@@ -741,6 +742,7 @@ void init_builtin_table(void)
   set_builtin_table(FILE_READ_CANONICAL, "file_read_canonical");
   set_builtin_table(GEN_RETRACT_ALL, "gen_retract_all");
 
+  set_builtin_table(DB_GET_LAST_CLAUSE, "db_get_last_clause");
   set_builtin_table(DB_RETRACT0, "db_retract0");
   set_builtin_table(DB_GET_CLAUSE, "db_get_clause");
   set_builtin_table(DB_BUILD_PRREF, "db_build_prref");
@@ -1761,6 +1763,9 @@ int builtin_call(byte number)
   case GEN_RETRACT_ALL:
     return gen_retract_all();
 
+  case DB_GET_LAST_CLAUSE:
+    return db_get_last_clause();
+    break;
   case DB_RETRACT0:
     db_retract0();
     break;
