@@ -25,7 +25,7 @@
 
 OBJEXT=.xwam
 
-ALL =	assert${OBJEXT} atts${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
+ALL =	assert${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
 	banner${OBJEXT} \
 	curr_sym${OBJEXT} dbclause${OBJEXT} \
 	dcg${OBJEXT} debugger${OBJEXT} domain${OBJEXT}\
