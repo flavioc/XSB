@@ -99,13 +99,53 @@ DllExport void call_conv xsb_throw(prolog_term Ball)
   /* need arity of 2, for extra cut_to arg */
   Prref = (PrRef)get_ep(exceptballpsc);
   assert_buff_to_clref_p(term_to_assert,2,Prref,0,makeint(0),0,&clause);
-
   /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack()) xsb_exit("Unwind_stack failed in xsb_throw!");
 
   /* Resume main emulator instruction loop */
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
 }
+
+static Cell *space_for_type_ball = 0;
+
+/*****************/
+void call_conv xsb_type_error(char *valid_type,Cell culprit, char *predicate,int arity,
+			      int arg) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr;
+  char message[255];
+
+  sprintf(message," in arg %d of predicate %s/%d)",arg,predicate,arity);
+
+  if (!space_for_type_ball) {
+    space_for_type_ball = (Cell *) malloc(8*sizeof(Cell)); /* 3 cells needed for term */
+    if (!space_for_type_ball) xsb_exit("out of memory in xsb_type_error!");
+  }
+  tptr = space_for_type_ball;
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace());
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("type_error",2,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find(valid_type,1));
+  tptr++;
+  bld_ref(tptr,culprit);
+
+  xsb_throw(ball_to_throw);
+
+}
+
+/*****************/
 
 static Cell *space_for_ball = 0;
 
@@ -129,6 +169,7 @@ void call_conv xsb_basic_abort(char *message)
   bld_copy(tptr,build_xsb_backtrace());
   xsb_throw(ball_to_throw);
 }
+
 
 DllExport void call_conv xsb_abort(char *description, ...)
 {
@@ -300,17 +341,7 @@ void err_handle(int description, int arg, char *f,
        ar, expected, (int) int_val(found));
     break;
   case TYPE:
-    if (expected == NULL) {
-      sprintf(message, 
-	      "! %s error in argument %d of %s/%d",
-	      err_msg[description], arg, f, ar);
-    } else  
-      sprintf
-	(message,
-	 "! %s error: in argument %d of %s/%d\n! %s expected, but %s found",
-	 err_msg[description], arg, f, ar, expected,
-	 "something else");
-    break;
+    xsb_type_error(expected,found,f,ar,arg);
   case ZERO_DIVIDE:
     sprintf(message,
 	    "! %s error in %s\n! %s expected, but %lx found",
