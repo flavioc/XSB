@@ -87,6 +87,8 @@ str_sub(S1, S2) :- str_match(S1, S2, forward, _, _).
 /* term_to_codes (term_to_atom) convert a general XSB term     */
 /* into a list of codes (an atom) in canonical term form.      */
 /* (It does NOT handle floats.)                                */
+/* Terms to be converted should not contain unary function     */
+/* symbols named ' _$var$_ '.  				       */
 /*                                                             */
 /***************************************************************/
 
@@ -100,12 +102,12 @@ term_to_codes(Term,Codes) :-
 
 term_to_codes(Term,Var0,Var,Codes0,Codes) :-
 	(var(Term)
-	 ->	Term = '$VAR'(Var0),
+	 ->	Term = ' _$var$_ '(Var0),
 		Var is Var0 + 1,
 		Codes0 = [0'_,0'h|Codes1],
 		number_codes(Var0,IntCodes),
 		append(IntCodes,Codes,Codes1)
-	 ;	Term = '$VAR'(I)
+	 ;	Term = ' _$var$_ '(I)
 	 ->	Var = Var0,
 		Codes0 = [0'_,0'h|Codes1],
 		number_codes(I,IntCodes),
