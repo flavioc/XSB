@@ -2159,7 +2159,7 @@ are described in the XSB manual. Meta-programming support for HiLog terms
 and F-molecules will be provided through future enhancement.
 
 
-\subsection{Passing Arguments Between \FLORA and XSB}
+\subsection{Passing Arguments between \FLORA and XSB}\label{sec-passing-args}
 
 The native HiLog support in \FLORA causes some tension when crossing the
 border from one system to another. The reason is that \FLORA terms and XSB
@@ -2823,8 +2823,8 @@ unique in each rule, but in the source program as well.
 
 Of course, uniqueness is achieved through the use of special weird naming
 schema for such oids. However, as long as the user does not use a similar
-naming convention (who, on earth, would give names with lots of {\tt
-  \_\$}?), uniqueness is guaranteed.
+naming convention (who, on earth, would give names that begin with lots of
+{\tt ``\_\$''}s?), uniqueness is guaranteed.
 
 
 For example, in the following program:
@@ -2912,7 +2912,7 @@ an order of magnitude. A future version of \FLORA might take advantage of
 this technique.
 
 
-\subsection{Procedural Methods}
+\subsection{Procedural Methods}\label{sec-proc-methods}
 
 \index{abolish\_all\_tables}
 %%
@@ -2990,73 +2990,147 @@ achieve.
 
 
 \index{update}
+\index{predicate!derived part of}
+\index{predicate!base part of}
+\index{object!base part of}
+\index{object!derived part of}
+\index{derived part of predicate}
+\index{base part of predicate}
 %
-\FLORA provides the users with several predicates to update the runtime
-database. The first note about these predicates is that they operate
-on \emph{base} facts only, but not on derived facts. That is, an
-insertion predicate only inserts facts into the database, while a
-deletion predicate never remove derived facts from the database.
+\FLORA provides primitives to update the runtime database. Unlike Prolog,
+\FLORA does not require the user to define a predicate as dynamic in order
+to update it. Instead, every predicate (HiLog or first-order) and object
+has a \emph{base part} and a \emph{derived part}.  Updates directly update
+only the base parts and only indirectly the derived parts.
 
-These update predicates can be categorized into two different groups,
-based on their effects upon backtracking: non-backtrackable and
-backtrackable.
+\FLORA updates can be \emph{non-backtrackable,} as in Prolog,
+or backtrackable, as in Transaction Logic \cite{trans-tcs94}.
+We first describe non-backtrackable updates.
 
 
 \subsection{Non-backtrackable Updates} \label{sec:non-backtrackable-updates}
 
-
+\index{non-backtrackable update}
 \index{update!non-backtrackable}
 %
-The effects of non-backtrackable updates persist once the operations are
-executed, even when a later failure causes the system to backtrack.
+The effects of non-backtrackable updates persist even if a subsequent failure
+causes the system to backtrack.
 
-\FLORA supports the following non-backtrackable update predicates:
+\FLORA supports the following non-backtrackable update primitives:
 {\tt insert}, {\tt insertall}, {\tt delete}, {\tt deleteall},
-{\tt erase}, {\tt eraseall}.
+{\tt erase}, {\tt eraseall}. These primitives use special syntax (the curly
+braces) and are \emph{not} predicates. Thus, it is allowed to have a
+user-defined predicate such as {\tt insert}.
 
 \index{non-backtrackable update!insert}
 \index{non-backtrackable update!insertall}
 %
-\paragraph{Insertion.} The syntax of an insertion predicate is as follows:
+\paragraph{Insertion.} The syntax of an insertion is as follows (note the
+\{,\}s!):
+{\tt
+\begin{quote}
+\emph{insop}\{\emph{literals} [| \emph{query}]\}
+\end{quote}
+}
+where {\it insop} stands for either {\tt insert} or {\tt insertall}.
+The
+{\it literals} part represents a comma separated list of literals,
+which can include
+predicates and \mbox{F-molecules}. The optional part, {\tt |}{\it query},
+is an additional condition that must be satisfied in order for
+\emph{literals} to be deleted.
+The semantics is that \emph{query} is posed first and, if it is
+satisfied, \emph{literals} is inserted (note that the query may affect the
+variable binding and thus the particular instance of \emph{literals} that
+will be inserted). For instance, in
 \begin{quote}
 \begin{verbatim}
-insop{literals [| formula]}
+flora2 ?- insert{p(a),mary[spouse->smith,children->>frank]}
+flora2 ?- insertall{P[spouse->S] | S[spouse->P]}
 \end{verbatim}
 \end{quote}
-where {\tt insop} stands for either {\tt insert} or {\tt insertall},
-{\tt literals} stands for any number of comma separated literals,
-including predicates and \mbox{F-molecules}, and {\tt [| formula]}
-stands for an optional logic formula following the vertical bar
-(``{\tt |}'') to specify additional quantifying conditions for the
-literals that will be inserted. For instance,
+%%
+the first statement inserts a particular molecule. In the second case, the
+query {\tt S[spouse->P]} is posed and one answer (a binding for {\tt P} and
+{\tt S}) is obtained. If there is no such binding, nothing is inserted and
+the statement fails. Otherwise, the instance of {\tt P[spouse->S]} is
+inserted for that binding and the statement succeeds.
+
+The difference between {\tt insert} and {\tt insertall} is that {\tt
+  insert} inserts only one instance of \emph{literals} that satisfies the
+formula, while {\tt insertall} inserts \emph{all} instances of the literals
+that satisfy the formula. In other words, \emph{query} is posed first and
+\emph{all} answers are obtained. Each answer is a tuple of bindings for
+some (or all) of the variables that occur in \emph{literals}.  To
+illustrate the difference between {\tt insert} and {\tt insertall},
+consider the following statements:
+%%
+{\tt
 \begin{quote}
-\begin{verbatim}
-insert{p(a),mary[spouse->smith,children->>frank]}
-insertall{P[spouse->S] | S[spouse->P]}
-\end{verbatim}
+  flora2  ?- p(X,Y), insert\{q(X,Y,Z)|r(Y,Z)\}.\\
+  flora2  ?- p(X,Y), insertall\{q(X,Y,Z)|r(Y,Z)\}.
 \end{quote}
+}
+%%
+In the first case, if {\tt p(x,y)} and {\tt r(y,z)} are true, then the fact
+{\tt q(x,y,z)} is inserted. In the second case, if {\tt p(x,y)} is true,
+then the update means the following:
+%%
+\begin{quote}
+  For each z such that r(y,z) holds, insert(x,y,z).
+\end{quote}
+%%
+\index{bulk insert}
+\index{insert!bulk}
+%%
+The primitive {\tt insertall} is also known as a bulk-insert operator.
 
-While {\tt insert} inserts only one instance of the literals that
-satisfy the formula, {\tt insertall} inserts \emph{all} instances
-of the literals that satisfy the formula.
-
-Note that each literal appearing inside the insertion predicate is
-treated as a separate fact. Thus these literals should follow the
-syntactic rules for facts and literals in the rule head (e.g,
-multi-valued path expressions are not allowed), except that module
-names can be specified for them, which means it is allowed to update
-the facts for other modules. Moreover, module name specification here
-is distributive over multiple literals enclosed by a pair of
-parentheses. For example, the insertion predicate below:
+Note that literals appearing inside the update predicates are treated as
+facts and should follow the syntactic rules for facts and literals in the
+rule head. In particular, multi-valued path expressions are not allowed.
+However, \FLORA permits databases updates whose target is a module other
+than the current one.  Thus, flora module specifications \emph{are}
+allowed. As before, module specification is distributing through
+parentheses, so
+%%
 \begin{quote}
 \begin{verbatim}
-insert{(mary[children->>frank], john[father->smith]) @ foomod}
+flora2 ?- insert{(mary[children->>frank], john[father->smith]) @ foomod}
 \end{verbatim}
 \end{quote}
 is equivalent to the following one:
 \begin{quote}
-\verb|insert{mary[children->>frank] @ foomod, john[father->smith] @ foomod}|
+\verb|flora2 ?- insert{mary[children->>frank] @ foomod, john[father->smith] @ foomod}|
 \end{quote}
+
+However, @prolog(...) is not allowed: If you want to update a dynamic XSB
+predicate, use {\tt assert/retract}:
+%%
+\begin{quote}
+ {\tt flora2 ?- ?- assert(foo(a,b,c))@prolog().  }
+\end{quote}
+%%
+Well, not quite. Recall Section~\ref{sec-passing-args} on the issues
+concerning the difference between Prolog representation of terms and the
+one used in XSB. The problem is that {\tt f(a,b,c)} is a HiLog term that
+XSB does not understand and will not associate it with the predicate {\tt
+  foo/3}  that it might have. To do it right, use explicit conversion:
+%%
+\begin{quote}
+ {\tt ?- flP2H(PrologRepr,foo(a,b,c)) assert(PrologRepr)@prolog().  }
+\end{quote}
+%%
+This will insert {\tt foo(a,b,c)} into the catch-all module of XSB called
+{\tt usermod}. If {\tt foo/3} is defined in another XSB module and is
+imported by {\tt usermod}, then the above statement will not do anything
+useful --- the XSB module system is too involved and requires more brain cells
+that we can afford to spend explaining it.
+
+We should also mention one important difference between insertion of facts
+in \FLORA and Prolog. Prolog treats facts as a \emph{bag}, so duplicates
+are allowed. In contrast, \FLORA treats the database as a \emph{set} of
+facts with no duplicates. Thus, insertion of a fact that is already in the
+database has no effect.
 
 
 \index{non-backtrackable update!delete}
@@ -3064,116 +3138,134 @@ is equivalent to the following one:
 \index{non-backtrackable update!erase}
 \index{non-backtrackable update!eraseall}
 %
-\paragraph{Deletion.} The syntax of a deletion predicate is as follows:
+\paragraph{Deletion.} The syntax of a deletion primitive is as follows:
 \begin{quote}
-\begin{verbatim}
-delop{literals [| formula]}
-\end{verbatim}
+{\tt \emph{delop}\{\emph{literals} [| \emph{query}]\}}
 \end{quote}
-where {\tt delop} stands for any of the following four deletion
-operations: {\tt delete}, {\tt deleteall}, {\tt erase}, and
-{\tt eraseall}, {\tt literals} stands for any number of comma
-separated literals, including predicates and \mbox{F-molecules},
-and {\tt [| formula]} stands for an optional logic formula following
-the vertical bar (``{\tt |}'') to specify additional quantifying
-conditions for the literals that will be deleted.
+%%
+where {\it delop} can be {\tt delete}, {\tt deleteall}, {\tt erase}, and
+{\tt eraseall}. The {\it literals} part is a comma separated list of
+F-molecules and predicates. The optional part, {\tt |}\emph{query},
+represents an additional constraint or a restricted quantifier, similarly
+to the one used in the insertion primitive.
 
 For instance, the following predicate:
 \begin{quote}
 \begin{verbatim}
-deleteall{john[Year(Semester)->>Course] | Year < 2000}
+flora2 ?- deleteall{john[Year(Semester)->>Course] | Year < 2000}
 \end{verbatim}
 \end{quote}
-will delete John's course selection history before the year
-2000.
+will delete John's course selection history before the year 2000.
 
-Note that the comma separated literals are actually in conjunctive
-form specifying the conditions that the literals should hold jointly
-to be deleted. That is, if variables in these literals have the same
-name, then they should share the same binding. For example, suppose
-the database contains the following facts:
+Note that the semantics of a {\tt delete}\{\emph{literal}{\tt |}{\it query}\}
+statement is that first the query \emph{literal} $\wedge$ \emph{query} should
+be asked. If it succeeds, then deletion is performed. For instance, if the
+database is
+%%
 \begin{quote}
 \begin{verbatim}
 p(a). p(b). q(a). q(c).
 \end{verbatim}
 \end{quote}
-then the predicate below:
+then the statement below:
 \begin{quote}
 \begin{verbatim}
-delete{p(X),q(X)}
+flora2 ?- delete{p(X)|q(X)}
 \end{verbatim}
 \end{quote}
-will succeed with the variable {\tt X} bound to {\tt a}.  However, if
-the database contains only the facts {\tt p(b)} and {\tt q(c)}, then
-the above predicate will fail.
+will succeed with the variable {\tt X} bound to {\tt a} and {\tt p(a)} will
+be deleted.  However, if the database contains only the facts {\tt p(b)}
+and {\tt q(c)}, then the above predicate will fail and the database will
+stay unchanged.
 
-\FLORA supports four different deletion operations, {\tt delete},
-{\tt deleteall}, {\tt erase}, and {\tt eraseall}:
+\index{bulk delete}
+\index{delete!bulk}
+%%
+\FLORA provides four deletion primitives: {\tt delete}, {\tt deleteall},
+{\tt erase}, and {\tt eraseall}. The primitive {\tt delete} removes at most
+one fact from the database. The primitives {\tt deleteall} and {\tt
+  eraseall} are {\tt bulk delete} operations; {\tt erase} is kind of a
+hybrid: it starts slowly, by deleting one fact, but may go on a joy ride
+and end up deleting much of your data. These primitives are described
+below.
+%%
 \begin{enumerate}
-\item If there are serveral bindings or matches for
-      the literals to be deleted, then {\tt delete} will choose only
-      one of them and delete it. The choice is nondeterministic.
-      For instance, suppose the database contains the following facts:
-      \begin{quote}
-      \verb|p(a). p(b). q(a). q(b).|
-      \end{quote}
-      then
-      \begin{quote}
-      \verb|delete{p(X),q(X)}|
-      \end{quote}
-      will succeed with {\tt X} bound to either {\tt a} or {\tt b},
-      depending on the ordering of facts in the database at runtime.
-
-\item On the other hand, {\tt deleteall} will try to delete ``all''
-      bindings or matches. However, the meaning of ``all'' here is
-      limited to some ``minimum'' semantics. The problem arises when
-      a fact appears in several bindings or matches for the literals.
-      For instance, suppose the database contains the following facts:
-      \begin{quote}
-      \verb|p(a). q(b). q(c).|
-      \end{quote}
-      then both \verb|<p(a),q(b)>| and \verb|<p(a),q(c)>| are good
-      bindings for \verb|<p(a),q(X)>|. But the question is: What will
-      \verb|deleteall{p(a),q(X)}| do? Should it delete both or just one?
-
-      \smallskip
-
-      In fact, \FLORA will randomly choose one of them and delete it.
-      The idea is to remove the \emph{minimum} amount of facts to
-      \emph{invalidate} the literals taken together as a conjunctive
-      query. For the above example, after the two facts {\tt p(a)} and
-      {\tt q(b)} (or {\tt q(c)}) are deleted, there will be no binding for
-      \verb|<p(a),q(X)>|. Therefore, further deleting {\tt q(c)}
-      (or {\tt q(b)}) seems like an overkill.
-
-      \smallskip
-
-      Unlike the {\tt delete} predicate, {\tt deleteall} \emph{always}
-      succeeds. However, when it succeeds, {\tt deleteall} will leave
-      all variables unbound.
-
-\item {\tt erase} works like {\tt delete}, but with extra functionalities
-      built for \fl facts. While deleting an \fl fact, {\tt erase}
-      will traverse the object tree starting from the object of
-      interest specified in this fact, and delete \emph{all} \fl facts
-      related those objects encountered on its path.
-
-\item {\tt eraseall} is the full version of {\tt erase}, just like {\tt deleteall}
-      is the full version of {\tt delete}. {\tt eraseall} will try to erase
-      ``all'' bindings or matches. It always succeeds and will leave all
-      variables unbound when it returns.
+\item If there are serveral bindings or matches for the literals to be
+  deleted, then {\tt delete} will choose only one of them
+  nondeterministically, and delete it.  For instance, suppose the database
+  contains the following facts:
+  \begin{quote}
+    \verb|p(a). p(b). q(a). q(b).|
+  \end{quote}
+  then
+  \begin{quote}
+    \verb|flora2 ?- delete{p(X),q(X)}|
+  \end{quote}
+  will succeed with {\tt X} bound to either {\tt a} or {\tt b},
+  depending on the ordering of facts in the database at runtime.
+      
+\item In contrast to the plain {\tt delete} primitive, {\tt deleteall} will
+  try to delete all bindings or matches.  Namely, for each binding of
+  variables produced by \emph{query} it deletes the corresponding instance
+  of \emph{literal}. If \emph{query} $\wedge$ \emph{literal} is false, the
+  {\tt deleteall} primitive fails.  To illustrate, consider the following:
+  %%
+  \begin{quote}
+    {\tt flora2 ?- p(X,Y), deleteall\{q(X,Y,Z)|r(Y,Z)\}.}
+  \end{quote}
+  %%
+  and suppose {\tt p(x,y)} is true. Then the above statement will, for
+  each {\tt z} such that {\tt r(y,z)} is true,
+  delete {\tt q(x,y,z)}.
+  
+  For another example, suppose the database contains the following facts:
+  %%
+  \begin{quote}
+    \verb|p(a). q(b). q(c).|
+  \end{quote}
+  %%
+  and the query is {\tt ?- deleteall\{p(a),q(X)\}.} The effect will be 
+  the deletion of {\tt p(a)} and of all the facts in {\tt q}. (If you
+  wanted to delete just one fact in {\tt q}, {\tt delete} should
+  have been used.
+  
+  \smallskip
+  
+  Unlike the {\tt delete} predicate, {\tt deleteall} \emph{always}
+  succeeds. However, when it succeeds, {\tt deleteall} will leave
+  all variables unbound.
+  
+\item {\tt erase} works like {\tt delete}, but with an object-oriented
+  twist: For each \fl fact, $f$, that it deletes, {\tt erase} will
+  traverse the object tree by following $f$'s methods and delete all
+  objects reachable in this way. It is a power-tool that can cause
+  maiming and injury. Safety glasses and protective gear are
+  recommended.
+  
+  Note that only the base part of the objects can be erased. If the
+  object has a part that is derived from the facts that still exist, this
+  part will not be erased.
+  
+\item {\tt eraseall} is the take-no-prisoners version of {\tt erase}.
+  Just like {\tt deleteall}, it first computes \emph{query} and for each
+  binding of variables it deletes the corresponding instance of
+  \emph{literal}. For each deleted object, it then finds all objects it
+  references through its methods and deletes those. This continues
+  recursively until nothing reachable is left.  This primitive always
+  succeeds.
 \end{enumerate}
 
 
 \subsection{Backtrackable Updates}
 
 
+\index{backtrackable update}
 \index{update!backtrackable}
 %
-The effects of backtrackable updates are undone upon backtracking,
-i.e., a previous inserted item will be removed from the database, and
-a previous deleted item will be put back into the database when the
-system backtracks.
+The effects of backtrackable updates are undone upon backtracking, i.e., if
+some post-condition fails and the system backtracks, a previously inserted
+item will be removed from the database, and a previously deleted item will be
+put back.
 
 \index{backtrackable update!btinsert}
 \index{backtrackable update!btinsertall}
@@ -3182,33 +3274,32 @@ system backtracks.
 \index{backtrackable update!bterase}
 \index{backtrackable update!bteraseall}
 %
-In \FLORA, the syntax of backtrackable update predicates is similar
-to that of non-backtrackable update predicates, except that the
-predicate names are different. The syntax of a backtrackable insertion
-predicate is:
+The syntax of backtrackable update primitives is similar to that of
+non-backtrackable ones and the names are similar, too.  The syntax for
+backtrackable insertion is:
+%%
 \begin{quote}
-\begin{verbatim}
-btinsop{literals [| formula]}
-\end{verbatim}
+\emph{btinsop}\{\emph{literals} [$\mid$ \emph{formula}]\}
 \end{quote}
-while the syntax of a backtrackable deletion predicate is:
+%%
+while the syntax of a backtrackable deletion is:
+%%
 \begin{quote}
-\begin{verbatim}
-btdelop{literals [| formula]}
-\end{verbatim}
+\emph{btdelop}\{\emph{literals} [$\mid$ \emph{query}]\}
 \end{quote}
+%%
 where {\tt btinsop} stands for either {\tt btinsert} or {\tt btinsertall},
-{\tt btdelop} stands for any of the following four backtrackable
-deletion operations: {\tt btdelete}, {\tt btdeleteall}, {\tt bterase}, and
-{\tt bteraseall}. The meanings of {\tt literals} and {\tt [| formula]} are
-explained in Section~\ref{sec:non-backtrackable-updates}.
+and {\tt btdelop} stands for either of the following four deletion
+operations: {\tt btdelete}, {\tt btdeleteall}, {\tt bterase}, and {\tt
+  bteraseall}. The meanings of {\it literals} and {\it query} is
+the same as in Section~\ref{sec:non-backtrackable-updates}.
 
-{\tt btinsert}, {\tt btinsertall}, {\tt btdelete}, {\tt btdeleteall},
-{\tt bterase}, and {\tt bteraseall} work similarly to {\tt insert},
-{\tt delete}, {\tt deleteall}, {\tt erase}, and {\tt eraseall},
-respectively, except that the former is backtrackable while the latter
-is not. Refer to Section~\ref{sec:non-backtrackable-updates} for
-details of these operations.
+{\tt btinsert}, {\tt btinsertall}, {\tt btdelete}, {\tt btdeleteall}, {\tt
+  bterase}, and {\tt bteraseall} work similarly to {\tt insert}, {\tt
+  delete}, {\tt deleteall}, {\tt erase}, and {\tt eraseall}, respectively,
+except that the new operations are backtrackable.  Refer to
+Section~\ref{sec:non-backtrackable-updates} for details of these
+operations.
 
 To illustrate the difference between backtrackable and
 non-backtrackable updates, consider the following execution trace
@@ -3240,17 +3331,49 @@ system backtracks to {\tt btinsert\{q(a)\}} and removes {\tt q(a)} that
 was previously inserted into the database. Thus the next query
 \verb|q(a)| returns with {\tt No}.
 
+Keep in mind that some things that Prolog programmers routinely do with
+{\tt assert} and {\tt retract} goes against the grain of the use of
+backtrackable updates. In particular, {\tt fail}-loops are not going to
+work (will leave the databases unchanged) for obvious reasons. In a future
+release, we will provide {\tt while}-loops that will work correctly with
+such updates.
+
+There are certain less obvious pitfalls in using backtrackable predicates
+in \FLORA. For instance, the query
+%%
+\begin{quote}
+ {\tt flora2 ?- p(X), btinsert\{q(X)\}}  
+\end{quote}
+%%
+will succeed (if {\tt p(X)} is true for some {\tt X}), but will leave the
+database unchanged! The reason has to do with the fact that, by default,
+\FLORA returns all answers to a query.  In the current release, this
+involves a {\tt fail}-loop and, obviously, hurts backtrackable updates
+badly. In a future release, these updates will be integrated with the query
+answering machinery much better. For now, we recommend using the {\tt
+  flOne} primitive, which turns the all-answer mode off:
+%%
+{\tt
+\begin{quote}
+  flora2 ?- flOne.\\
+  flora2 ?- p(X), btinsert\{q(X)\}.
+\end{quote}
+}
+%%
+\noindent
+(Note: {\tt flOne,p(X),btinsert\{q(X)\}} will not work: {\tt flOne} must be
+issued in a separate query.)
+
 
 \subsection{Updates and Tabling}
 
 
-To implement object properties, \FLORA relies on a feature of XSB called
-\emph{tabling} (see Section~\ref{sec-tabling-flora} for more details).
-Unfortunately, tabling and database updates do not mix well.
-The problem is that the results from previous queries are stored in
-XSB tables, and database updates do not modify XSB tables.
-
-Thus, a user might get the following counterintuitive result:
+We have earlier remarked in Section~\ref{sec-proc-methods} that tabling and
+database updates do not mix well.  The problem is that the results from
+previous queries are stored in XSB tables, and database updates do not
+modify XSB tables.  Thus, a user might get the following counterintuitive
+result:
+%%
 \begin{quote}
 \begin{verbatim}
 flora2 ?- insert{o[m->v]}.
@@ -3266,9 +3389,9 @@ flora2 ?- delete{o[m->v]}, o[m->v].
 Yes.
 \end{verbatim}
 \end{quote}
-The reason for the last positive answer here is that XSB tables remember
+The last positive answer is a consequence of the fact that XSB tables remember
 that the query {\tt o[m->v]} is true. So, when the same query is asked
-after {\tt delete}, a ``wrong'' result is returned from the tables. Similarly,
+after {\tt delete}, a ``stale'' answer is returned from the tables. Similarly,
 tabling might interact poorly with {\tt insert}:
 \begin{quote}
 \begin{verbatim}
@@ -3281,9 +3404,9 @@ flora2 ?- insert{o[m->v]}, o[m->v].
 No.
 \end{verbatim}
 \end{quote}
-The reason for the last result here is, again, that XSB tables
-remember that {\tt o[m->v]} is false. However, this is no longer
-correct after the insertion operation.
+The reason for this result is, again, that XSB tables remember that {\tt
+  o[m->v]} is false. However, this result becomes stale after the
+  insertion.
 
 \index{abolish\_all\_tables}
 %%
@@ -3292,13 +3415,18 @@ problems (and it is even possible that a future release of XSB will
 start doing the right thing in these situations). For now, the only
 remedy is to use a call to {\tt abolish\_all\_tables}, which will
 clear all tables.  However, at present, the only safe way to do this
-is by executing {\tt abolish\_all\_tables} as a separate query.
+is by executing {\tt abolish\_all\_tables} as a \emph{separate} query.
 
-Because of the way a tabled predicate is executed, it is a bad
-programming practice to define a tabled predicate that depends on
-database updates and/or procedural methods. For now, the \FLORA
-compiler does not automatically check this kind of dependency. Such
-a feature will be supported in a future release.
+One other temporal solution could be to design your program in such a way
+that tabled predicates and F-molecules will not depend on the facts that
+are dynamically inserted or deleted.
+
+Another, related, issue is that a tabled predicate might have an update in
+its body. In this case, the update will be executed the first time the
+predicate is evaluated. Subsequent calls will return the predicate truth
+value from the tables, without invoking the predicate definition.
+Such a dependency is most likely a mistake, which should be caught by the
+compiler. This enhancement will be supported in the future.
 
 
 \section{Negation} \label{sec:negation}

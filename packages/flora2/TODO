@@ -259,3 +259,12 @@
     When compiling, the macro definition
     #define FLORA_MODULE  .....
     would be dumped into the .P file
+
+14. Do dependency checking in the compiler to determine if a tabled
+    predicate or an F-molecule depends on an update predicate.
+
+15. Do smart reordering of arithmetic operations in rule bodies to minimize
+    the possibility of errors due to unbound variables.
+
+16. Figure out some workaround for the tabled stuff that depends on
+    dynamically asserted and deleted facts.
