@@ -31,7 +31,7 @@
 	current_functor/1, current_functor/2, 
 	current_predicate/1, current_predicate/2,
 	predicate_property/2, module_property/2, 
-	xsb_flag/2, garbage_collection/1, hilog_symbol/1.
+	xsb_flag/2, set_xsb_flag/2, garbage_collection/1, hilog_symbol/1.
 
 :- import '_$op'/3 from file_op.
 :- import '_$hilog_symbol'/1 from hilogsym.
@@ -46,6 +46,6 @@
      from machine.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import fmt_write_string/3 from file_io.
-
+:- import check_nonvar/3, check_number/3,domain_error/5 from error_handler.
 
 /* ----------------- end of file current_sym.H -------------------- */

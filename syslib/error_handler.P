@@ -11,7 +11,7 @@
 ** any later version.
 ** 
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
-** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** WARRANTY; without even the implied warranty of MERCHANTABrILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
 ** 
@@ -38,123 +38,67 @@
 
 default_error_handler(Error) :- 
 	default_user_error_handler(Error),
-        close_open_tables,
+	close_open_tables,
 	!,fail.
 default_error_handler(Error) :-
 	default_sys_error_handler(Error),
 	!,
 	messageln('Aborting...', STDFDBK),
-        close_open_tables,
+	close_open_tables,
 	%%reset_undef_pred_handlers, 
 	fail.
 
 /* messages are handled via abort/1.  */
-default_sys_error_handler('_$abort_ball'(_BackTrace)).
+default_sys_error_handler('_$abort_ball'(_BackTrace)):- 
+	% here is where we may do something abt backtraces.
+	get_sys_error_description('_$abort_ball'( _Backtrace),NewMsg),
+	messageln(NewMsg,STDERR).
 default_sys_error_handler('_$abort_ball'(Msg,_BackTrace)) :-
-	messageln(Msg,STDERR).
-
-default_sys_error_handler(error(Error,Msg,_Backtrace)) :-
+	% here is where we may do something abt backtraces.
+	get_sys_error_description('_$abort_ball'(Msg, _Backtrace),NewMsg),
+	messageln(NewMsg,STDERR).
+default_sys_error_handler(error(Error,Msg,Backtrace)) :-
+	% here is where we may do something abt backtraces.
+	xsb_flag(backtrace_on_error,BT),
+	(BT == on -> 
+                print_backtrace(Backtrace)
+	  ; true),
 	default_sys_error_handler(error(Error,Msg)).
+default_sys_error_handler(error(Error,Msg)) :-
+	get_sys_error_description(error(Error,Msg),NewMsg),
+	messageln(NewMsg,STDERR).
+default_sys_error_handler(error(Error,Msg)) :-
+	messageln(('Unhandled Exception: ',error(Error,Msg)),STDERR).
 
-default_sys_error_handler(error(instantiation_error,Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Instantiation] ', Msg), 
-	           STDERR).
-default_sys_error_handler(error(type_error(Valid_type,Culprit),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Type (',
-		    Culprit,' in place of ',Valid_type,')] ', Msg),STDERR).
-default_sys_error_handler(error(domain_error(Valid_type_in,Culprit),Msg)) :-
-	(Valid_type_in = [_|_] -> 
-                 concat_atom(Valid_type_in,Valid_type) ; 
-  	     Valid_type = Valid_type_in),
-	messageln(('++Error[XSB/Runtime/P]: [Domain (',
-		Culprit,' not in domain ',Valid_type,')] ', Msg), STDERR).
-default_sys_error_handler(error(existence_error(Object_type,Culprit),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Existence (No ',Object_type,
-		' ',Culprit,' exists)] ', Msg), STDERR).
-default_sys_error_handler(error(
-                                      undefined_predicate(_Name,_Arity,_Module),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: ', Msg), STDERR).
-default_sys_error_handler(error(permission_error(Op,Obj_type,Culprit),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Permission (Operation) ',
-	Op,' on ',Obj_type,': ',Culprit,'] ',Msg), STDERR).
-default_sys_error_handler(error(representation_error(Flag),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Representation (',Flag,
-	            ')] ', Msg), STDERR).
-default_sys_error_handler(error(calculation_error(Flag),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Calculation (',Flag,
-	            ')] ', Msg), STDERR).
-default_sys_error_handler(Msg) :-
-	messageln(('++Error[XSB/Runtime/P] uncaught exception: ', Msg), 
-	           STDERR).
-
-/* Get a string description of an exception thrown by XSB */
-get_sys_error_description('_$abort_ball'(AbortMsgs, Backtrace), ExceptionDescription, BacktraceList) :- !,
-	concat_atom(AbortMsgs, ExceptionDescription),
-	get_backtrace(Backtrace, BacktraceList).
-get_sys_error_description('_$abort_ball'(Backtrace), 'Aborting...', BacktraceList) :- !,
-	get_backtrace(Backtrace, BacktraceList).
-get_sys_error_description(error(Error,Msg,Backtrace), ExceptionDescription, BacktraceList) :- !,
-	get_sys_error_description(error(Error,Msg), ExceptionDescription),
-	get_backtrace(Backtrace, BacktraceList).
-get_sys_error_description(error(Error,Msg), ExceptionDescription, []) :-
-	get_sys_error_description(error(Error,Msg), ExceptionDescription).
-
-get_sys_error_description(error(Error,Msg,_Backtrace), ExceptionDescription) :-
-	get_sys_error_description(error(Error,Msg), ExceptionDescription).
-
-get_sys_error_description('_$abort_ball'(AbortMsgs, _Backtrace), ExceptionDescription) :- !,
-	concat_atom(AbortMsgs, ExceptionDescription).
-get_sys_error_description('_$abort_ball'(_Backtrace), 'Aborting...') :- !. %% not much of a description for this one
-get_sys_error_description(error(instantiation_error,Msg), ExceptionDescription) :- !,
-	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: [Instantiation] '| MsgList], ExceptionDescription).
-get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDescription) :- !,
-	(atom(Valid_type) -> Valid_type_a = Valid_type ; term_to_atom(Valid_type, Valid_type_a)),
-	(atom(Culprit) -> Culprit_a = Culprit ; term_to_atom(Culprit, Culprit_a)), 
-	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: Type ',Culprit_a,' in place of ',Valid_type_a,' '| MsgList],
-		    ExceptionDescription).
-get_sys_error_description(error(domain_error(Valid_type_in,Culprit),Msg), ExceptionDescription) :- !,
-	(atom(Culprit) -> Culprit_a = Culprit ; term_to_atom(Culprit, Culprit_a)),
-	list_comma_list(MsgList, Msg),
-	(Valid_type_in = [_|_]
-	 ->	concat_atom(Valid_type_in,Valid_type)
-	 ;	(atom(Valid_type_in) -> Valid_type = Valid_type_in ; term_to_atom(Valid_type_in, Valid_type))
-	),
-	concat_atom(['++Error[XSB/Runtime/P]: Domain ',Culprit_a,' not in domain ',Valid_type,' '| MsgList],
-		    ExceptionDescription).
-get_sys_error_description(error(existence_error(Object_type,Culprit),Msg), ExceptionDescription) :-
-	atom(Object_type), atom(Culprit), !,
-	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: [Existence (No ',Object_type, ' ',Culprit,' exists)] '| MsgList],
-		    ExceptionDescription).
-get_sys_error_description(error(undefined_predicate(_Name, _Arity, _Module),Msg), ExceptionDescription) :- !,
-	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: '| MsgList], ExceptionDescription).
-get_sys_error_description(error(permission_error(Op,Obj_type,Culprit),Msg), ExceptionDescription) :-
-	atom(Op), atom(Obj_type), atom(Culprit), !,
-	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: [Permission (Operation) ',
-		     Op,' on ',Obj_type,': ',Culprit,'] '|MsgList], ExceptionDescription).
-get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDescription) :-
-	atom(Flag), !,
-	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: [Representation (',Flag,')] '| MsgList], ExceptionDescription).
-get_sys_error_description(error(calculation_error(Flag),Msg), ExceptionDescription) :- 
-	atom(Flag), %% !,
-	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: [Calculation (',Flag,')] '| MsgList], ExceptionDescription).
-
-% list_comma_list(PrologList, CommaList)
-list_comma_list(Var1, Var2):- var(Var1), var(Var2), !, fail.
-list_comma_list([], true) :- !.
-list_comma_list([Term|L], Term1):-
-	L == [], var(Term1), !, Term1 = Term.
-list_comma_list([Arg1|List], ','(Arg1,Arg2)):- !,
-	list_comma_list(List, Arg2).
-list_comma_list([Term], Term1) :-
-	nonvar(Term1), Term1 = Term.
-
+% This needs to handle either comma lists or lists as input -- just as message/[1,2]
+get_sys_error_description('_$abort_ball'(AbortMsgs, _Backtrace), ExceptionDesc) :- 
+	ExceptionDesc = AbortMsgs.
+get_sys_error_description('_$abort_ball'(_Backtrace), 'Aborting...'). 
+get_sys_error_description(error(instantiation_error,Msg), ExceptionDesc) :- 
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Instantiation] ', Msg).
+get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDesc) :-
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Type (',Culprit,' in place of ',
+	                          Valid_type,')] ', Msg).
+get_sys_error_description(error(domain_error(Valid_type,Culprit),Msg), ExceptionDesc) :-
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Domain (',Culprit,' not in domain ',
+	                          Valid_type,')] ', Msg).
+get_sys_error_description(error(existence_error(Obj_type,Culprit),Msg), ExceptionDesc) :-
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Existence (No ',Obj_type,
+	                          ' ',Culprit,' exists)] ', Msg).
+get_sys_error_description(error(undefined_predicate(_Name, _Arity, _Mod),Msg), 
+	                          ExceptionDesc) :- !,
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: ', Msg).
+get_sys_error_description(error(permission_error(Op,Obj_type,Culprit),Msg), 
+	                          ExceptionDesc) :-
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Permission (Operation) ',
+		     Op,' on ',Obj_type,': ',Culprit,'] ', Msg).
+get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDesc) :- 
+	ExceptionDesc = 
+                          ('++Error[XSB/Runtime/P]: [Representation (',Flag,')] ', Msg) .
+get_sys_error_description(error(calculation_error(Flag),Msg), ExceptionDesc) :- 
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Calculation (',Flag,')] ', Msg).
+get_sys_error_description(error(misc_error,Msg), ExceptionDesc) :- 
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Miscellaneous ] ', Msg).
 
 /*get_backtrace(+, -) gets backtrace as built by build_xsb_backtrace:
 list pair, with car=forward continuation, cdr=backward continuation.
@@ -213,6 +157,10 @@ domain_error(Valid_type,Culprit,Predicate,Arg):-
 	xsb_backtrace(Bt),
 	throw(error(domain_error(Valid_type,Culprit),
 	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
+domain_error(Valid_type,Culprit,Predicate,Arg,Msg):- 
+	xsb_backtrace(Bt),
+	throw(error(domain_error(Valid_type,Culprit),
+	                             (' in arg ',Arg,' of predicate ',Predicate, '(',Msg,')'),Bt)).
 
 existence_error(Object_type,Culprit,Predicate,Arg):- 
 	xsb_backtrace(Bt),
@@ -254,6 +202,12 @@ check_atom(Term,Predicate,Arg) :-
 	(atom(Term) -> 
 	    true
 	 ;  type_error(atom,Term,Predicate,Arg) ).
+
+%-------------
+check_number(Term,Predicate,Arg) :- 
+	(number(Term) -> 
+	    true
+	 ;  type_error(number,Term,Predicate,Arg) ).
 
 %-------------
 % Checks that a term is ground
@@ -302,4 +256,9 @@ check_stream(Stream,Predicate,Arg) :-
 	    true
 	;
 	    type_error(stream,Stream,Predicate,Arg)).
+
+end_of_file.
+
+get_sys_error_description(error(Error,Msg,_Backtrace), ExceptionDesc) :-
+	get_sys_error_description(error(Error,Msg), ExceptionDescription).
 

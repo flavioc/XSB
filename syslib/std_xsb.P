@@ -323,6 +323,7 @@ standard_symbol(writeln, 2, standard).		% Not ISO
 standard_symbol(writeq, 1, standard).
 standard_symbol(writeq, 2, standard).
 standard_symbol(xsb_flag, 2, curr_sym).		% Not ISO
+standard_symbol(set_xsb_flag, 2, curr_sym).	% Not ISO
 standard_symbol((attribute), 1, atts).
 
 standard_symbol(default_error_handler, 1, error_handler).		
