@@ -141,7 +141,7 @@ odbc_sql_local(Connection,Input,Statement,Output):-
 
 file_latest_version(Dir,Name,Version):- 
 	findall(File,short_directory(Dir,File),Files),
-	atom_chars(Name,NameL),
+	atom_codes(Name,NameL),
 	file_latest_version_1(Files,NameL,-1,Version).
 		
 file_latest_version_1([],_NameL,V,V1):- V1 is V + 1.
@@ -156,15 +156,15 @@ file_latest_version_1([File|Rest],NameL,V,V1):-
 	  ;
 	    file_latest_version_1(Rest,NameL,V,V1)).
 
-get_v_from_filelist([],['_'|Rest],Rest):- 
+get_v_from_filelist([],[0'_|Rest],Rest):- 
 	all_numbers(Rest).
 get_v_from_filelist([H|T],[H|T1],Rest):- 
 	get_v_from_filelist(T,T1,Rest).
 
 all_numbers([]).
 all_numbers([H|T]):- 
-	48 =< H,
-	H =< 57,
+	0'0 =< H,
+	H =< 0'9,
 	all_numbers(T).
 
 
