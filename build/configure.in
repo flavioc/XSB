@@ -418,6 +418,7 @@ install_scriptdir=${prefix}/bin     # where the xsb invocation script goes
 install_builddir=${prefix}/build    # where the config detection scripts go
 install_prolog_includes=${prefix}/prolog_includes
 install_pkgdir=${prefix}/packages
+install_pkgxmcdir=${prefix}/packages/xmc
 install_examples=${prefix}/examples
 install_etcdir=${prefix}/etc
 
@@ -448,6 +449,92 @@ if test ! -f "${emudir}/emuloop.h" -o ! -f "${syslibdir}/tables.P" ; then
   rm -f  buildxsb.lock
   exit 1
 fi
+
+# Test if directories exist
+echo "
+Checking installation directories...
+***If any directory is missing, I will try to create it.
+***If this fails, YOU MUST create that directory manually,
+***then run \`configure' again!!!"
+
+( 
+dnl The following must already exist; if not, it doesn't even make sense to try
+dnl AC_MSG_CHECKING($libdir) && \
+dnl	 ((test -d $libdir || mkdir -p $libdir) && AC_MSG_RESULT(OK)) \
+dnl	    || AC_MSG_RESULT(FAILED)
+dnl AC_MSG_CHECKING($syslibdir) && \
+dnl	 ((test -d $syslibdir || mkdir -p $syslibdir) && AC_MSG_RESULT(OK)) \
+dnl	    || AC_MSG_RESULT(FAILED)
+dnl AC_MSG_CHECKING($cmplibdir) && \
+dnl	 ((test -d $cmplibdir || mkdir -p $cmplibdir) && AC_MSG_RESULT(OK)) \
+dnl	    || AC_MSG_RESULT(FAILED)
+
+AC_MSG_CHECKING($scriptdir) && \
+     ((test -d $scriptdir || mkdir -p $scriptdir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($arch_bindir) && \
+     ((test -d $arch_bindir || mkdir -p $arch_bindir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($arch_config_libdir) && \
+     ((test -d $arch_config_libdir || mkdir -p ${arch_config_libdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING(${arch_config_objlibdir}) && \
+     ((test -d "${arch_config_objlibdir}" || mkdir -p ${arch_config_objlibdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+
+dnl Checking site directories
+AC_MSG_CHECKING($site_libdir) && \
+     ((test -d $site_libdir || mkdir -p $site_libdir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($site_config_libdir) && \
+     ((test -d $site_config_libdir || mkdir -p $site_config_libdir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+
+dnl Checking installation directories
+AC_MSG_CHECKING($install_emudir) && \
+     ((test -d $install_emudir || mkdir -p $install_emudir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_libdir) && \
+     ((test -d $install_libdir || mkdir -p $install_libdir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_syslibdir) && \
+     ((test -d $install_syslibdir || mkdir -p $install_syslibdir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_cmplibdir) && \
+     ((test -d $install_cmplibdir || mkdir -p $install_cmplibdir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_scriptdir) && \
+     ((test -d $install_scriptdir || mkdir -p $install_scriptdir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_builddir) && \
+     ((test -d $install_builddir || mkdir -p $install_builddir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($arch_install_bindir) && \
+     ((test -d $arch_install_bindir || mkdir -p $arch_install_bindir) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($arch_install_config_libdir) && \
+     ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($arch_install_objdir) && \
+     ((test -d $arch_install_objdir || mkdir -p ${arch_install_objdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_etcdir) && \
+     ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_pkgdir) && \
+     ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_pkgxmcdir) && \
+     ((test -d $install_pkgxmcdir || mkdir -p ${install_pkgxmcdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_examples) && \
+     ((test -d $install_examples || mkdir -p ${install_examples}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_prolog_includes) && \
+     ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+) 2> /dev/null
+echo "Checking installation directories ... Done"
 
 if test "${with_gcc+set}" = "set" ; then
 	# allow --with-gcc=gcc-name
@@ -1363,89 +1450,6 @@ echo ""
 ) | tee Installation_summary
      
 
-
-# Test if directories exist
-echo "
-Checking installation directories...
-***If any directory is missing, I will try to create it.
-***If this fails, YOU MUST create that directory manually,
-***then run \`configure' again!!!"
-
-( 
-dnl The following must already exist; if not, it doesn't even make sense to try
-dnl AC_MSG_CHECKING($libdir) && \
-dnl	 ((test -d $libdir || mkdir -p $libdir) && AC_MSG_RESULT(OK)) \
-dnl	    || AC_MSG_RESULT(FAILED)
-dnl AC_MSG_CHECKING($syslibdir) && \
-dnl	 ((test -d $syslibdir || mkdir -p $syslibdir) && AC_MSG_RESULT(OK)) \
-dnl	    || AC_MSG_RESULT(FAILED)
-dnl AC_MSG_CHECKING($cmplibdir) && \
-dnl	 ((test -d $cmplibdir || mkdir -p $cmplibdir) && AC_MSG_RESULT(OK)) \
-dnl	    || AC_MSG_RESULT(FAILED)
-
-AC_MSG_CHECKING($scriptdir) && \
-     ((test -d $scriptdir || mkdir -p $scriptdir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($arch_bindir) && \
-     ((test -d $arch_bindir || mkdir -p $arch_bindir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($arch_config_libdir) && \
-     ((test -d $arch_config_libdir || mkdir -p ${arch_config_libdir}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING(${arch_config_objlibdir}) && \
-     ((test -d "${arch_config_objlibdir}" || mkdir -p ${arch_config_objlibdir}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-
-dnl Checking site directories
-AC_MSG_CHECKING($site_libdir) && \
-     ((test -d $site_libdir || mkdir -p $site_libdir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($site_config_libdir) && \
-     ((test -d $site_config_libdir || mkdir -p $site_config_libdir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-
-dnl Checking installation directories
-AC_MSG_CHECKING($install_emudir) && \
-     ((test -d $install_emudir || mkdir -p $install_emudir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_libdir) && \
-     ((test -d $install_libdir || mkdir -p $install_libdir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_syslibdir) && \
-     ((test -d $install_syslibdir || mkdir -p $install_syslibdir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_cmplibdir) && \
-     ((test -d $install_cmplibdir || mkdir -p $install_cmplibdir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_scriptdir) && \
-     ((test -d $install_scriptdir || mkdir -p $install_scriptdir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_builddir) && \
-     ((test -d $install_builddir || mkdir -p $install_builddir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($arch_install_bindir) && \
-     ((test -d $arch_install_bindir || mkdir -p $arch_install_bindir) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($arch_install_config_libdir) && \
-     ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($arch_install_objdir) && \
-     ((test -d $arch_install_objdir || mkdir -p ${arch_install_objdir}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_etcdir) && \
-     ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_pkgdir) && \
-     ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_examples) && \
-     ((test -d $install_examples || mkdir -p ${install_examples}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-AC_MSG_CHECKING($install_prolog_includes) && \
-     ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && AC_MSG_RESULT(OK)) \
-	|| AC_MSG_RESULT(FAILED)
-) 2> /dev/null
-echo "Checking installation directories ... Done"
 
 # This is needed so that *after* XSB is installed in a common directory,
 # users could compile packages that produce arch-specific code.
