@@ -132,16 +132,22 @@ int sys_syscall(int callno)
   struct stat stat_buff;
 
   switch (callno) {
+  case SYS_exit: {
+    int exit_code;
+    exit_code = ptoc_int(3);
+    xsb_mesg("\nXSB exited with exit code: %d", exit_code);
+    exit(exit_code); break;
+  }
 #if (!defined(WIN_NT))
-    case SYS_getpid : result = getpid(); break; 
-    case SYS_link  : result = link(ptoc_string(3), ptoc_string(4)); break;
+  case SYS_getpid : result = getpid(); break; 
+  case SYS_link  : result = link(ptoc_string(3), ptoc_string(4)); break;
 #endif
-    case SYS_unlink: result = unlink(ptoc_string(3)); break;
-    case SYS_chdir : result = chdir(ptoc_string(3)); break;
-    case SYS_access: result = access(ptoc_string(3), ptoc_int(4)); break;
-    case SYS_stat  : result = stat(ptoc_string(3), &stat_buff); break;
-    case SYS_rename: result = rename(ptoc_string(3), ptoc_string(4)); break;
-    default: xsb_abort("Unknown system call number, %d", callno);
+  case SYS_unlink: result = unlink(ptoc_string(3)); break;
+  case SYS_chdir : result = chdir(ptoc_string(3)); break;
+  case SYS_access: result = access(ptoc_string(3), ptoc_int(4)); break;
+  case SYS_stat  : result = stat(ptoc_string(3), &stat_buff); break;
+  case SYS_rename: result = rename(ptoc_string(3), ptoc_string(4)); break;
+  default: xsb_abort("Unknown system call number, %d", callno);
   }
   return result;
 }

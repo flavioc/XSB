@@ -1001,6 +1001,11 @@ As seen from this example, the same rules for blocking I/O streams
 apply to {\tt shell/5}. Finally, we should note that the already familiar
 standard predicates {\tt shell/1} and {\tt shell/2} are implemented using
 shell/5.
+\ouritem{sys\_exit(-ExitCode)}\index{{\tt sys\_exit/5}} 
+This predicate causes XSB subprocess to exit unconditionally with the exit
+code {\tt ExitCode}. Normally {\tt 0} is considered to indicate normal
+termination, while other exit codes are used to report various degrees of
+abnormality.
 \end{description}
 
 

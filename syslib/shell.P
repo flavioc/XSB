@@ -95,6 +95,9 @@ edit(File) :-
 	shell(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, '.P']).
 
 
+%% sys_exit(-ExitCode) exit subprocess unconditionally with ExitCode
+sys_exit(ExitCode) :- sys_syscall(SYS_exit,_,ExitCode,_).
+
 %% NEW
 sys_link(Source, Dest, Res) :-	sys_syscall(SYS_link, Res, Source, Dest).
 sys_unlink(Path, Res) 	    :-	sys_syscall(SYS_unlink, Res, Path, _).
