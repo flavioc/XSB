@@ -142,19 +142,24 @@ bool unify(Cell rop1, Cell rop2)
 /*  Print statistics and measurements.					*/
 /*======================================================================*/
 
-void print_statistics(int amount)
-{
+/*
+ * Called through builtins statistics/1 and statistics/0.
+ * ( statistics :- statistics(1). )
+ */
+void print_statistics(int amount) {
+
   switch (amount) {
-  case 0:			/* reset parameters */
+  case 0:		    /* Reset Statistical Parameters */
     realtime_count = real_time();
-    perproc_reset_stat();
-    reset_stat_total();
+    perproc_reset_stat();	/* reset op-counts, starting time, and 'tds'
+				   struct variable (all 0's) */
+    reset_stat_total();		/* reset 'ttt' struct variable (all 0's) */
     xsb_mesg("Statistics is reset.");
     break;
-  case 1:			/* print stack usage and cputime */
-    perproc_stat();
-    total_stat(real_time()-realtime_count);
-    reset_stat_total();
+  case 1:		    /* Print Stack Usage and CPUtime: */
+    perproc_stat();		/* move max usage into 'ttt' struct variable */
+    total_stat(real_time()-realtime_count);   /* print */
+    reset_stat_total();		/* reset 'ttt' struct variable (all 0's) */
     break;
   case 5:
     dis(0); break;		/* output memory image; for debugging */
@@ -279,33 +284,38 @@ void init_interrupt(void)
   signal(SIGSEGV, xsb_default_segfault_handler);
 }
 
-void intercept(Psc psc)
-{
-  unsigned long byte_size;
+
+/*
+ * Maintains max stack usage when "-s" option is given at startup.
+ */
+void intercept(Psc psc) {
 
   if (flags[CLAUSE_INT])
     synint_proc(psc, MYSIG_CLAUSE, pcreg-2*sizeof(Cell));
-  else
-    if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
-      if (get_spy(psc)) {	/* spy'ed pred, interrupted */
-	synint_proc(psc, MYSIG_SPY, pcreg-2*sizeof(Cell));
-	flags[HIDE_STATE]++;		/* hide interrupt handler */
-      } else if (flags[TRACE]) {
-	synint_proc(psc, MYSIG_TRACE, pcreg-2*sizeof(Cell));
-	flags[HIDE_STATE]++;		/* hide interrupt handler */
-      }
+  else if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
+    if (get_spy(psc)) { /* spy'ed pred, interrupted */
+      synint_proc(psc, MYSIG_SPY, pcreg-2*sizeof(Cell));
+      flags[HIDE_STATE]++; /* hide interrupt handler */
     }
-  if (flags[HITRACE]) debug_call(psc);
+    else if (flags[TRACE]) {
+      synint_proc(psc, MYSIG_TRACE, pcreg-2*sizeof(Cell));
+      flags[HIDE_STATE]++; /* hide interrupt handler */
+    }
+  }
+  if (flags[HITRACE])
+    debug_call(psc);
 
   if (flags[TRACE_STA]) {
+    unsigned long  byte_size;
+
     byte_size = (top_of_heap - (CPtr)(glstack.low) + 1) * sizeof(Cell);
     if ( byte_size > tds.maxgstack_count )
       tds.maxgstack_count = byte_size;
-    
+
     byte_size = ((CPtr)glstack.high - top_of_localstk) * sizeof(Cell);
     if ( byte_size > tds.maxlstack_count )
       tds.maxlstack_count = byte_size;
-    
+
     byte_size = (top_of_trail - (CPtr *)tcpstack.low + 1) * sizeof(CPtr);
     if ( byte_size > tds.maxtrail_count )
       tds.maxtrail_count = byte_size;
@@ -314,7 +324,7 @@ void intercept(Psc psc)
     if ( byte_size > tds.maxcpstack_count )
       tds.maxcpstack_count = byte_size;
 
-    byte_size = ((CPtr)complstack.high - openreg) * sizeof(Cell);
+    byte_size = ((CPtr)complstack.high - top_of_complstk) * sizeof(Cell);
     if ( byte_size > tds.maxopenstack_count )
       tds.maxopenstack_count = byte_size;
 
