@@ -63,6 +63,8 @@ hide_this_hide(FLLIBLOAD,1).
 
 trace_this_noprint(flora_findall,3).
 
+show_this_hide(flP2H,2).
+
 %% These are handled by the debugger only if flTraceLow is NOT in effect.
 flora_show_this_hide(FLLIBCOLLECTSET/4).
 flora_show_this_hide(FLLIBCOLLECTBAG/4).

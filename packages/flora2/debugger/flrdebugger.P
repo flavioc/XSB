@@ -46,6 +46,7 @@
 	flora_firstorder_module_predicate_symbol/3
     from flrwrapper.
 :- import flora_set_xpp_options/1,
+	flora_set_xpp_extra_options/1,
 	flora_set_xpp_options/0,
 	flora_clear_xpp_options/0 from flrutils.
 :- import flora_message_line/1, flora_message_line/2 from flrprint.
@@ -539,6 +540,9 @@ flora_read_debugger_data(WS,_Datafile) :-
 flora_read_debugger_data(WS,Datafile) :- 
 	(var(WS)
 	-> flora_set_xpp_options
+	; WS = flora(SysmodId)
+	-> flora_set_xpp_options(SysmodId),
+	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE ')
 	; flora_set_xpp_options(WS)
 	),
 	xpp_process_file(Datafile, CPP_process, IOportFromCPP),

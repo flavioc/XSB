@@ -59,7 +59,7 @@ FileHandle[#fmt_write(Format,O)] :-
 fmt_write_string(String,Format,O) :-
 	!,
 	flP2H(PO,O),
-	fmt_write(String,Format,PO)@prolog().
+	fmt_write_string(String,Format,PO)@prolog().
 fmt_read(Format,Result,Status) :-
 	!,
 	flP2H(PResult,Result),
