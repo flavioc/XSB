@@ -235,7 +235,7 @@ case trie_try_var: {
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
-	save_find_locx(ereg);
+	/*	save_find_locx(ereg);*/
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
