@@ -34,8 +34,11 @@
 :- import file_write/2, file_nl/1 from xsb_writ.
 :- import xsb_configuration/2 from configuration.
 :- import file_read/3, vv/2, file_read/2 from xsb_read.
+%% These are explicitly imported because they are used early on, 
+%% before XSB is fully bootstrapped.
 :- import abort/0, call/1, call_c/1, call_expose/1, goal_cut_trans/3,
-          push_abort_cutpoint/0, pop_abort_cutpoint/0, atom_codes/2
+          push_abort_cutpoint/0, pop_abort_cutpoint/0, atom_codes/2,
+	  '\='/2
      from standard.
 :- import conpsc/2, psc_type/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
           psc_arity/2, term_psc/2, term_arg/3, term_new/2, term_type/2,
