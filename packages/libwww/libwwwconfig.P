@@ -28,7 +28,7 @@
 :- import search_module/6 from consult.
 :- import libwww_info/2 from libwww_init.
 :- import compile_so/3, runtime_loader_flag/3 from foreign.
-:- import rename/2 from shell.
+:- import path_sysop/3, path_sysop/2 from file_io.
 
 %% Construct the file cc/xsb_libwww.H on the fly
 make_libwwwH(CC, CC_opts, LoaderFlags) :-
@@ -101,9 +101,9 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 	str_cat(Module_xml, '.so', SharedLib_xml),
 	str_cat(Module_rdf, '.so', SharedLib_rdf),
 	str_cat(Module_html, '.so', SharedLib_html),
-	rename(SharedLib_xml,LibMod_xml),
-	rename(SharedLib_rdf,LibMod_rdf),
-	rename(SharedLib_html,LibMod_html),
+	force_rename(SharedLib_xml,LibMod_xml),
+	force_rename(SharedLib_rdf,LibMod_rdf),
+	force_rename(SharedLib_html,LibMod_html),
 	%% Make options for the main foreign module (libwww_request.c)
 	fmt_write_string(LoaderFlags2, '%s %s %s %s',
 			 a(LoaderFlags1,LibMod_xml,LibMod_rdf,LibMod_html)),
@@ -112,8 +112,14 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibObjFile,
 			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
-	rename(Objfile, LibObjFile),
+	force_rename(Objfile, LibObjFile),
 	str_cat(Module, '.so', SharedLib),
 	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
-	rename(SharedLib,LibMod)
+	force_rename(SharedLib,LibMod)
      ).
+
+%% Windows semantics for renaming is such that the op fails, 
+%% if the target exists
+force_rename(Orig,Target) :-
+	(path_sysop(unlink,Target), !; true),
+	path_sysop(rename,Orig,Target).
