@@ -34,23 +34,23 @@ extern void init_inst_table(void);
 /*	The following are operand types of instructions.		*/
 /************************************************************************/
 
-#define A 1	/* a byte of integer (for arity, size, builtin-num, etc) */
-#define V 2	/* variable offset */
-#define R 3	/* register number */
-#define S 4	/* structure symbol */
-#define C 5	/* constant symbol */
-#define L 6	/* label (address) */
-#define G 7	/* string */
-#define N 8	/* number (integer) */
-#define I 9	/* 2nd & 3rd arguments of switchonbound */
-#define P 10	/* pad */
-#define X 11	/* not present */
-#define PP 12	/* double pad */
+#define A    1	/* a byte of integer (for arity, size, builtin-num, etc) */
+#define V    2	/* variable offset */
+#define R    3	/* register number */
+#define S    4	/* structure symbol */
+#define C    5	/* constant symbol */
+#define L    6	/* label (address) */
+#define G    7	/* string */
+#define N    8	/* number (integer) */
+#define I    9	/* 2nd & 3rd arguments of switchonbound */
+#define P   10	/* pad */
+#define X   11	/* not present */
+#define PP  12	/* double pad */
 #define PPP 13	/* triple pad */
 #define PPR 14  /* = PP + R; for switchonterm and switchonbound */
-#define T 15    /* tabletry */
+#define T   15  /* tabletry */
 #define RRR 16  /* = R + R + R; for switchon3bound */
-#define F 17    /* floating point number */
+#define F   17  /* floating point number */
 
 /************************************************************************/
 /*	Macros to fetch the instructions/operands.			*/
@@ -207,10 +207,10 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 /*----- Instructions for tries as code (Do NOT change the numbers) -----*/
 
-#define trie_no_cp_attv		0x50
-#define trie_trust_attv		0x51
-#define trie_try_attv		0x52
-#define trie_retry_attv		0x53
+#define trie_no_cp_attv		0x5c
+#define trie_trust_attv		0x5d
+#define trie_try_attv		0x5e
+#define trie_retry_attv		0x5f
 
 #define trie_no_cp_str		0x60
 #define trie_trust_str		0x61
@@ -248,7 +248,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define trie_assert_inst	0x7c
 #define trie_root		0x7d
 
-/* jf: reclaim deleted returns at completion */
+/* to reclaim deleted returns at completion */
 #define trie_no_cp_fail         0x90
 #define trie_trust_fail         0x91
 #define trie_try_fail           0x92
@@ -292,29 +292,22 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 #define dyntrustmeelsefail	0xba	/* Dynamic trust instruction */
 
-/* Tabling instructions */
+/* Tabling instructions --- they should really be changed to be as shown */
 
-#define tableretry		0xbd
-#define tabletry		0xbe
+#define tableretry		0xbd    /* c2 */
+#define tabletry		0xbe    /* c1 */
 
-#define tabletrust		0xc1
-#define tabletrysingle		0xc5
+#define tabletrust		0xc1    /* c3 */
+#define tabletrysingle		0xc5    /* c0 */
+#define check_complete		0xc4    /* c4 */
+#define answer_return		0xc7    /* c5 */
+#define resume_compl_suspension 0xc6    /* c6 */
 
-#define answer_return		0xc7
-
-#define check_complete		0xc9
-#define resume_compl_suspension 0xca
-
-/*
- * Rename the original instruction `new_answer_dealloc' (0xce) to
- * `old_new_answer_dealloc', and use a new number (0xcf) for
- * `new_answer_dealloc' (this is done in XSB 2.0 to make the system
- * backward compatible).
- */
-#define old_new_answer_dealloc	0xce
 #define new_answer_dealloc	0xcf
 
-#define term_comp		0xd0
+/* Term comparison inst */
+
+#define term_comp	0xd0
 
 /* Numeric instructions */
 
