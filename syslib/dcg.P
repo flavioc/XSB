@@ -56,19 +56,25 @@ set_dcg_style(X) :- write(X), writeln(': invalid DCG style'), fail.
 :- dynamic word(_,_,_).
 :- dynamic num_words(_).
 reset_dcg_mode :- 
-	(word([_|_],_,_)
-         ->     true
-         ;	retractall(word(_,_,_)),
+	(num_words(_)
+         ->     retractall(word(_,_,_)),
 	        retractall(num_words(_)),
 	        assert(word([Token|Tokens],Token,Tokens))
+	 ;      true
 	).
 
-set_tphrase_input(List) :-
-	abolish_all_tables,   % since changind EDB tables depend on.
+tphrase_set_string(List) :-
+	abolish_all_tables,   % since changing EDB tables depend on.
 	retractall(word(_,_,_)),
 	retractall(num_words(_)),
 	assert_word_list(List,0,N),
 	assert(num_words(N)).
+
+tphrase_string_length(N) :-
+	(num_words(N)
+         ->     true
+         ;      abort('tphrase_string_length/1: no string set by tphrase_set_string/1')
+        ).
 
 assert_word_list([],N,N).
 assert_word_list([Word|Words],N0,N) :-
@@ -182,7 +188,7 @@ tphrase(Phrase_Type) :-
 
 tphrase(Phrase_Type, List) :-
 	(nonvar(Phrase_Type)
-         ->     set_tphrase_input(List),
+         ->     tphrase_set_string(List),
 	        num_words(End),
 		dcg_body_nonvar(Phrase_Type, 0, End, Goal),
 	        call(Goal)

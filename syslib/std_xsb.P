@@ -180,6 +180,7 @@ standard_symbol(reconsult, 1, consult).
 standard_symbol(reconsult, 2, consult).
 standard_symbol(rename, 2, shell).
 standard_symbol(repeat, 0, standard).
+standard_symbol(reset_dcg_mode,0,dcg).
 standard_symbol(retract, 1, assert).
 standard_symbol(retractall, 1, assert).
 /* standard_symbol(save, 1, standard). */
@@ -217,6 +218,10 @@ standard_symbol(telling, 1, standard).
 standard_symbol(tfindall, 3, tables).
 standard_symbol(tnot, 1, tables).
 standard_symbol(told, 0, standard).
+standard_symbol(tphrase,1,dcg).
+standard_symbol(tphrase,2,dcg).
+standard_symbol(tphrase_set_string,1,dcg).
+standard_symbol(tphrase_string_length,1,dcg).
 standard_symbol(true, 0, standard).
 standard_symbol(trace, 0, debugger).
 standard_symbol(debug_ctl, 2, debugger).
