@@ -37,6 +37,7 @@ topMakefile.in	  - the Makefile template from which the main makefile is
 		    produced. 
 emuMakefile.in	  - the Makefile template from which the makefile for the
 		    emu directory is derived.
+MS_VC_Mfile.mak   - the Makefile for building using MS Visual C++ on Windows.
 
 def_config_pcdos.in - Out of this, configure generates a config.h file for
 		      DOS.

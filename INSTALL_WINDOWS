@@ -45,6 +45,17 @@
 6. Compile the .\emu directory.
 
    Windows:
-	Load the files in the emu\ directory into C++ studio.
-	Add the files in emu\debugs and emu\configs directories.
-	Add wsock32.lib library to the list of libraries to be linked with.
+      cd emu
+      NMAKE /f "MS_VC_Mfile.mak" CFG="release" (or "debug")
+
+      Other options are DLL=yes and ORACLE=yes.
+      In the latter case, you also have to specify SITE_LIBS="oracle libraries"
+      where Oracle libraries (should have been specified in the Oracle manual).
+
+7. The executable will be in
+
+     ./config/x86-pc-windows/bin/xsb.exe
+
+8. If you compiled XSB as a DLL (with DLL=yes) then NMAKE will put the DLL in:
+
+     ./config/x86-pc-windows/saved.o/xsb.dll
