@@ -36,6 +36,7 @@
 
 :- export current_input_port/1, current_output_port/1.
 
+:- import set_file_write_depth/1, get_file_write_depth/1 from xsb_writ.
 :- import '_$op'/3, '_$trie_asserted'/1, '_$index'/3 from file_op.
 :- import '_$hilog_symbol'/1 from hilogsym.
 :- import libpath/1 from loader.

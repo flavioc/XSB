@@ -151,40 +151,62 @@ file_read_line(IOport, Str) :-
 	; abort('Usage: file_read_line(+IOport, -InputStr)')
         ).
 
+%-----------------------
+
+% TLS: in introducing error conditions, in the read_line_xxx, I'm
+% trying not to change the semantics of the previous cases by adding new
+% checks.  
+
 %% same as file_read_line
-file_read_line_atom(IOport, Str) :-
-	( var(Str) ->
-	    file_function(FILE_READ_LINE, IOport, Str, _, _, _,_)
-	; abort('Usage: file_read_line_atom([+IOport,] -InputStr)')
+file_read_line_atom(S_or_A, Atom) :-
+	check_open_stream_or_alias(S_or_A,file_read_line_atom/2,1,input,Stream),
+	file_read_line_atom_1(Stream, Atom).
+
+file_read_line_atom_1(Stream, Atom) :-
+	( var(Atom) ->
+	    file_function(FILE_READ_LINE, Stream, Atom, _, _, _,_)
+	; abort('Usage: file_read_line_atom([+Stream] -InputAtom)')
         ).
 
 %% Read line from current input stream (previously set by 'see')
-file_read_line_atom(Str) :-
+file_read_line_atom(Atom) :-
 	stat_flag(CURRENT_INPUT, IOport),  % Current input
-	file_read_line_atom(IOport, Str).
+	file_read_line_atom_1(IOport, Atom).
+
+%-----------------------
 
 %% Like file_read_line_atom, but returns list of characters
-file_read_line_list(IOport, CharLst) :-
+file_read_line_list(S_or_A, CharLst) :-
+	check_open_stream_or_alias(S_or_A,file_read_line_list/2,1,input,Stream),
+	file_read_line_list_1(Stream, CharLst).
+
+file_read_line_list_1(Stream, CharLst) :-
 	( var(CharLst) ->
-	    file_function(FILE_READ_LINE_LIST, IOport, CharLst, _, _, _,_)
-	; abort('Usage: file_read_line_list([+IOport,] -InputStr)')
+	    file_function(FILE_READ_LINE_LIST, Stream, CharLst, _, _, _,_)
+	; abort('Usage: file_read_line_list([+Stream] -InputStr)')
         ).
 
 %% Read line from current input stream (previously set by 'see')
 %% Return list of chars
 file_read_line_list(Lst) :-
 	stat_flag(CURRENT_INPUT, IOport),  % Current input
-	file_read_line_list(IOport, Lst).
+	file_read_line_list_1(IOport, Lst).
+
+%-----------------------
 
 %% Write Str out to IOport. Str must be atom or list of chars.
 %% This is checked in C, by the builtin.
-file_write_line(IOport, Str, Offset) :-
-	file_function(FILE_WRITE_LINE, IOport, Str, Offset, _,_,_).
+
+file_write_line(S_or_A, Str, Offset) :-
+	check_open_stream_or_alias(S_or_A,file_write_line/3,1,input,Stream),
+	file_function(FILE_WRITE_LINE, Stream, Str, Offset, _,_,_).
 
 %% Same as file_write_line/3, but write to current output
-file_write_line(Str, Offset) :-
+file_write_line(String, Offset) :-
 	stat_flag(CURRENT_OUTPUT, IOport),  % Current output
-	file_function(FILE_WRITE_LINE, IOport, Str, Offset, _,_,_).
+	file_function(FILE_WRITE_LINE, IOport, String, Offset, _,_,_).
+
+%-----------------------
 
 
 /* Fancy stuff */

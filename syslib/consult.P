@@ -299,9 +299,18 @@ load_dyn(File) :-
 
 %% TLS: changed behavior to throw error rather than fail to make
 %% compatable with other ISO type errors, e.g. open/[3,4].  
-load_dyn(File,Dir) :-
+%% TLS allow calling with a or z 
+load_dyn(File,DirIn) :-
+	load_dyn_convert(DirIn,Dir,load_dyn),
 	get_fname(File,SExt,Base,Mod),
 	load_dyn0(SExt,Base,Mod,Dir).
+
+load_dyn_convert(a,0,_):- !.
+load_dyn_convert(z,1,_):- !.
+load_dyn_convert(0,0,_):- !.
+load_dyn_convert(1,1,_):- !.
+load_dyn_convert(Dir,_,Pred):- 
+	domain_error('a or z',Dir,Pred,2).
 
 get_fname(Filename,SExt,Base,Mod) :-
 	( search_module(Filename,_Dir,Mod,SExt,Base,_Obj) -> true
@@ -448,12 +457,13 @@ read_and_assert(_) :- conget(needs_restart,1), !.
 read_and_assert(Dir) :- read_and_assert(Dir).
 
 load_dync(File) :- load_dync(File,1).  % assertz
-load_dync(File,Dir) :-
+load_dync(File,Dirin) :-
 	(atom(File)
 	 ->	true
 	 ;	file_write0(STDERR, 'Wrong type in argument 1 of load_dync/1'),
 		fail
 	),
+	load_dyn_convert(Dirin,Dir,load_dync),
 	get_fname(File,SExt,Base,Mod),
 	load_dync0(SExt,Base,Mod,Dir).
 

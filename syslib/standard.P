@@ -235,12 +235,16 @@ through when I get to the tokenizer.  */
 %ISO 
 get_char(S_or_A,Char):- 
 	get_code(S_or_A,Code),
-	atom_codes(Char,[Code]).
+	(Code == -1 -> 
+	    Char = Code
+	  ; atom_codes(Char,[Code])).
 
 %ISO
 get_char(Char):- 
 	get_code(Code),
-	atom_codes(Char,[Code]).
+	(Code == -1 -> 
+	    Char = Code
+	  ; atom_codes(Char,[Code])).
 
 %ISO
 get_code(S_or_A,C) :- 
