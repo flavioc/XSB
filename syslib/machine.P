@@ -76,7 +76,7 @@ buff_set_var(_Buff, _Disp, _BufSize, _Var) :- '_$builtin'(BUFF_SET_VAR).
 buff_dealloc(_Buff, _OldSize, _NewSize) :- '_$builtin'(BUFF_DEALLOC).
 buff_cell(_Buff, _Disp, _Cell) :- '_$builtin'(BUFF_CELL).
 buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(BUFF_SET_CELL).
-copy_term0(_Term, _Result) :- '_$builtin'(COPY_TERM).
+copy_term0(_Term, _Result) :- '_$builtin'(COPY_TERM0).
 /* check if Sub is a substring in Str */
 str_sub(_Sub, _Str, _Pos) :- '_$builtin'(STR_SUB).
 %% If file is a directory, add slash, if needed, or strip extra slashes
