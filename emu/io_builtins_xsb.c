@@ -723,13 +723,13 @@ int funstk_size = 0;
 #define expand_opstk {\
     opstk_size = opstk_size+opstk_size;\
     opstk = (struct opstktype *)realloc(opstk,opstk_size*sizeof(struct opstktype));\
-    if (!opstk) xsb_exit("Out of space for read_canonical stacks");\
+    if (!opstk) xsb_abort("[READ_CANONICAL] Out of space for operand stack");\
     /*printf("RC opstk expanded to %d\n",opstk_size);*/ \
   }
 #define expand_funstk {\
     funstk_size = funstk_size+funstk_size;\
     funstk = (struct funstktype *)realloc(funstk,funstk_size*sizeof(struct funstktype));\
-    if (!funstk) xsb_exit("Out of space for read_canonical stacks");\
+    if (!funstk) xsb_abort("[READ CANONICAL] Out of space for function stack");\
     /*printf("RC funstk expanded to %d\n",funstk_size);*/ \
   }
 

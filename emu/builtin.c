@@ -477,7 +477,7 @@ Cell  val_to_hash(Cell term)
       /* index position which should be fixed one fine day! */
       value = (Cell)(isnil(term) ? 0 : string_val(term));
       break;
-    default: xsb_exit("Indexing on illegal argument");
+    default: xsb_abort("[term_hash/3] Indexing on illegal argument");
       value = 0;
       break;
   }
@@ -893,7 +893,7 @@ inline static int abolish_table_predicate(Psc psc)
   TIFptr tif;
   tif = get_tip(psc);
   if ( IsNULL(tif) )
-    xsb_abort("[abolish_table] Attempt to delete untabled predicate (%s/%d)\n",
+    xsb_abort("[abolish_table_pred] Attempt to delete untabled predicate (%s/%d)\n",
 	      get_name(psc), get_arity(psc));
 
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) 
@@ -914,7 +914,7 @@ inline static void abolish_table_info(void)
   for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;
 	csf = csf + COMPLFRAMESIZE )
     if ( ! is_completed(compl_subgoal_ptr(csf)) )
-      xsb_abort("Illegal table operation"
+      xsb_abort("[abolish_all_tables/0] Illegal table operation"
 		"\n\t Cannot abolish incomplete tables");
 
   for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
@@ -1849,7 +1849,7 @@ int builtin_call(byte number)
 #include "odbc_xsb_i.h"
 #else
   case ODBC_EXEC_QUERY: {
-    xsb_exit("XSB not compiled with ODBC support.\nRecompile using the option --with-odbc.\n");
+    xsb_abort("[ODBC] XSB not compiled with ODBC support.\nRecompile using the option --with-odbc.\n");
   }
 #endif
 
@@ -2470,7 +2470,7 @@ int builtin_call(byte number)
   }
 
   default:
-    xsb_exit("Builtin #%d is not implemented", number);
+    xsb_abort("Builtin #%d is not implemented", number);
     break;
 
   } /* switch */
