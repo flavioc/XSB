@@ -169,10 +169,10 @@ void time_comparison(char *lm_time, struct tm *time_user)
 		
 
   lm_sec = mktime(time1);
-  //  printf("the sec is %d\n", lm_sec);
+  /*  printf("the sec is %d\n", lm_sec); */
 	
   user_sec = mktime(time_user);
-  //  printf("the sec is %d\n", user_sec);
+  /*  printf("the sec is %d\n", user_sec); */
 
   if (lm_sec != -1 && user_sec != -1) {
     if (lm_sec < user_sec) load_flag = FALSE;
