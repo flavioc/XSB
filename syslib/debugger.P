@@ -233,7 +233,7 @@ leashable('Exit').
 leashable('Redo').
 leashable('Fail').
 
-:- dynamic(shown/2).
+:- dynamic(shown(_,_)).
 :- show(['Call','Exit','Redo','Fail']).
 
 show(X) :- retractall(shown(_,_)), show0(X).
@@ -245,7 +245,7 @@ show0([X|R]) :-
 		show0(R)
 	 ;	abort('Illegal port identifier').
 
-:- dynamic(leashed/2).
+:- dynamic(leashed(_,_)).
 :- leash(['Call','Exit','Redo','Fail']).
 
 leash(X) :- retractall(leashed(_,_)), leash0(X).
@@ -326,7 +326,7 @@ deb_skiptoaft :- file_get(0, C), C=\=10, !, deb_skiptoaft.
 deb_skiptoaft.
 
 % '_b_SPY_condition'/1 will be undefined, but that's OK.
-:- dynamic('_b_SPY_condition'/1).
+:- dynamic('_b_SPY_condition'(_)).
 
 spy(X) :- 
 	var(X)

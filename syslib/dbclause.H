@@ -28,7 +28,7 @@
 :- export db_retractall/2, db_abolish/1, '_$clause_int'/1.
 
 
-:- import asserti/2 from assert.
+:- import asserti/2, (dynamic)/1 from assert.
 :- import abort/1, atom/1, call/1, repeat/0 from standard.
 :- import set_inthandler/2, '_$load_undef'/1 from loader.
 :- import stat_set_flag/2, code_call/3, conname/2,

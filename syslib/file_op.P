@@ -28,6 +28,8 @@
 		/*  Querying the Operator Database  */
 		/************************************/
 
+:- local dyn_op/3.	% make it local
+
 '_$op'(P, T, S) :- 
 	dyn_op(P, T, S),
 	P =\= 0.		% operator S has not been de-activated
@@ -195,12 +197,27 @@ Informaiton is kept in a table '_$index'/3 which stores a most-general
 call to a predicate, the argument to index on, and the size of the hash
 table to use. */
 
-'_$index'(dyn_op(_,_,_),3,17).
-'_$index'('_$index'(_,_,_),1,29).
 
-:- dynamic '_$trie_asserted'/1.
+'_$index'(A,B,C) :-
+	conpsc('_$table1'(_,_,_),Psc),
+	psc_type(Psc, Type),
+	(Type =:= 1				% DYNA so exists 
+	 ->     '_$table1'(A,B,C)
+         ;      fail     % table doesn't exist yet, so it is empty
+        ).
 
-'_$trie_asserted'(_) :- fail. % Garbage declaration to avoid undefined error.
+:- assert('_$index1'(dyn_op(_,_,_),3,17)),
+   assert('_$index1'('_$index'(_,_,_),1,29)).
+
+:- dynamic '_$trie_asserted1'(_).
+'_$trie_asserted'(Term) :- 
+	conpsc('_$trie_asserted1'(_),Psc),
+	psc_type(Psc, Type),
+	(Type =:= 1				% DYNA so exists 
+	 ->     '_$trie_asserted1'(Term)
+         ;      fail     % table doesn't exist yet, so it is empty
+        ).
+	
 
 add_trie_index(P/Arity) :- !, 
 	functor(Pcall,P,Arity),
@@ -210,8 +227,10 @@ add_trie_index(Pcall)    :-
 
 
 assert_trie_index(Pcall) :-
-%	assertai('_$trie_asserted'(Pcall),1).
-	assert('_$trie_asserted'(Pcall)).
+	assert('_$trie_asserted1'(Pcall)).
+
+retract_trie_index(Pcall) :-
+	retractall('_$trie_asserted1'(Pcall)).
 
 add_index(Pred,Arg,Size) :-
 	(Pred = P/Arity
@@ -229,17 +248,22 @@ add_index(Pred,Arg,Size) :-
 		fix_arg(Arg,Arity,Targ)
 	),
 	(Narg < 0
-	 ->	retractall('_$index'(Pcall,_,_))
+	 ->	retractall('_$index1'(Pcall,_,_))
 	 ; '_$index'(Pcall,Oarg,Osize)
 	 ->	(Targ==Oarg, Hsize=:=Osize
 		 ->	true
-		 ;	retractall('_$index'(Pcall,_,_)),
-			assertai('_$index'(Pcall,Targ,Hsize),1)
+		 ;	retractall('_$index1'(Pcall,_,_)),
+			assertai('_$index1'(Pcall,Targ,Hsize),1)
 		)
-	 ;	assertai('_$index'(Pcall,Targ,Hsize),1)
+	 ;	assertai('_$index1'(Pcall,Targ,Hsize),1)
 	).			
 
-
+retract_index(Pred) :-
+	(Pred = P/Arity
+	 ->	functor(Pcall,P,Arity)
+	;	Pcall = Pred
+	),
+	retractall('_$index1'(Pcall,_,_)).
 
 
 fix_arg([],_,[]).
@@ -262,12 +286,20 @@ conv_joint(A,Na,Arity,Narg) :-
 
 /* quick hack to get dynamic tabling in. robustify it!!! */
 
-'_$table'(_) :- fail.
+:- dynamic '_$table1'(_).
+'_$table'(Term) :- %% bootstrapping issue, since dynamic calls this.
+	conpsc('_$table1'(_),Psc),
+	psc_type(Psc, Type),
+	(Type =:= 1				% DYNA so exists 
+	 ->     '_$table1'(Term)
+         ;      fail     % table doesn't exist yet, so it is empty
+        ).
+
 
 add_table(P/A) :-
 	functor(Call,P,A),
-	retractall('_$table'(Call)),
-	assertai('_$table'(Call),1).
+	retractall('_$table1'(Call)),
+	assertai('_$table1'(Call),1).
 
 
 /*======================================================================*/

@@ -200,7 +200,7 @@ db_do_call(Entry, Head) :-
 	stat_set_flag(24, 1),	        % set clause interrupt on (CLAUSE_INT)
 	code_call(Entry, Head, 1).	% Type =:= 1 means dynamic predicate.
 
-db_body_save(_) :- fail.	% gotta fix this, by having dynamic!
+:- dynamic(db_body_save(_)).
 
 '_$clause_int'(Call) :-
 	stat_set_flag(24,0),	% turn clause intercept off

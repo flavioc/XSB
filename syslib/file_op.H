@@ -25,14 +25,16 @@
 
 
 :- export '_$op'/3, add_ops/3, op_priority/1, op_specifier/1.
-:- export add_index/3, add_trie_index/1,  '_$index'/3 , '_$trie_asserted'/1.
+:- export add_index/3, retract_index/1, add_trie_index/1, retract_trie_index/1, 
+	  '_$index'/3 , '_$trie_asserted'/1.
 :- export add_table/1, '_$table'/1.
 :- export force_file_op_loaded/0.
-:- export dyn_op/3.	% make it local (yup, strange, ain't it.)
 
 :- import default_assert_size/1 from config.
 :- import integer/1, functor/3 from standard.
 :- import assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
+
+:- import conpsc/2, psc_type/2 from machine.
 
 :- index '_$op1'/3-3.
 

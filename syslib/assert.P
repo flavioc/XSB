@@ -234,10 +234,9 @@ convert_to_dyna(PHead,Prref) :-
 		db_new_prref(PSC,PHead,Prref)
 	; SYMTYPE =:= 12  ->    		/* unld, this is frst clse */
 		db_new_prref(PSC,PHead,Prref)
-	; SYMTYPE =:= 2 ->			/* compiled, so convert */
-		psc_prop(PSC, OldP),
-	        db_new_prref(PSC,PHead,Prref),		/* get a new Prref */
-		compiled_to_dynamic(PSC,OldP)
+	; SYMTYPE =:= 2 ->			/* compiled, illegal */
+                functor(PHead, F, A),
+		abort(['Not permitted to assert to static predicate', F/A])
 	; abort(('Asserting to something illegal (Type = ', SYMTYPE, ')'))
 	).
 
@@ -291,9 +290,13 @@ do_multifile_retract(Head, Body) :-
 	'_$multifile_retract'(Head, _, New_Head),
 	check_retract(New_Head, retract/1),
 	conpsc(New_Head, PSC),
-	psc_type(PSC,Type), Type = 1,		/* is DYNA */
-	psc_prop(PSC, Prref),			/* get Prref */
-	db_retract(New_Head, Body, Prref).
+	psc_type(PSC,Type), 
+	(Type =:= 2		/* is compiled */
+	 ->	functor(Head,F,A),
+	        abort(['Not permitted to retract from static predicate', F/A])
+         ;	psc_prop(PSC, Prref),			/* get Prref */
+                db_retract(New_Head, Body, Prref)
+	).
 
 
 retract0(Rule) :-	% original retract/1, is used in standard.P
@@ -303,9 +306,13 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	),
 	check_retract(Head, retract/1),
 	conpsc(Head, PSC),
-	psc_type(PSC,Type), Type = 1,		/* is DYNA */
-	psc_prop(PSC, Prref),			/* get Prref */
-	db_retract(Head, Body, Prref).
+	psc_type(PSC,Type),
+	(Type =:= 2		/* is Compiled */
+	 ->	functor(Head,F,A),
+	        abort(['Not permitted to retract from static predicate', F/A])
+	 ;      psc_prop(PSC, Prref),			/* get Prref */
+	        db_retract(Head, Body, Prref)
+	).
 
 retractall(Fact) :-
 	(nonvar(Fact), '_$multifile_retract'(Fact, _, _)
@@ -323,8 +330,9 @@ retractall0(Fact) :-
 	check_retract(Fact, retractall/1),
 	conpsc(Fact, PSC),
 	psc_type(PSC,Type), 
-	(Type =\= 1
-	 ->	true		/* not DYNA */
+	(Type =:= 2		/* is Compiled */
+	 ->	functor(Fact,F,A),
+	        abort(['Not permitted to retract from static predicate', F/A])
 	 ;	psc_prop(PSC, Prref),			/* get Prref */
 		db_retractall(Fact, Prref)
 	).
@@ -336,16 +344,21 @@ retract_nr(Rule) :-
 	),
 	check_retract(Head, retract_nr/1),
 	conpsc(Head, PSC),
-	psc_type(PSC,Type), Type = 1,		/* is DYNA */
-	psc_prop(PSC, Prref),			/* get Prref */
-	db_retract_nr(Head, Body, Prref).
+	psc_type(PSC,Type), 
+	(Type =:= 2		/* is Comiled */
+	 ->	functor(Head,F,A),
+	        abort(['Not permitted to retract from static predicate', F/A])
+         ;      psc_prop(PSC, Prref),			/* get Prref */
+	        db_retract_nr(Head, Body, Prref)
+	).
 
 reclaim_space(Fact) :-
 	check_retract(Fact, reclaim_space/1),
 	conpsc(Fact, PSC),
 	psc_type(PSC,Type), 
-	(Type =\= 1
-	 ->	true		/* not DYNA */
+	(Type =:= 2		/* is compiled */
+	 ->	functor(Fact,F,A),
+	        abort(['Not permitted to retract from static predicate', F/A])
 	 ;	psc_prop(PSC, Prref),			/* get Prref */
 		db_reclaim_space(Fact, Prref)
 	).
@@ -424,8 +437,8 @@ abolish(Pred,Arity) :-
 	abolish1(Spec).
 
 abolish1(Term) :-
-	retractall('_$index'(Term,_,_)),
-	retractall('_$trie_asserted'(Term)),
+	retract_index(Term),
+	retract_trie_index(Term),
 	conpsc(Term,Psc),
 	psc_type(Psc, Type),
 	( Type =:= 1 ->				% DYNA
@@ -462,8 +475,12 @@ clause(Head, Body) :-
 clause0(Head, Body) :-
 	conpsc(Head, PSC),
 	psc_type(PSC,Type), Type = 1,		/* is DYNA */
-	psc_prop(PSC, Prref),			/* get Prref */
-	db_clause(Head,Body,Prref,_Clref).
+	(Type =:= 2		/* is compiled */
+	 ->	functor(Head,F,A),
+	        abort(['cannot apply clause/2 to non dynamic predicate', F/A])
+	 ;	psc_prop(PSC, Prref),			/* get Prref */
+	        db_clause(Head,Body,Prref,_Clref)
+	).
 
 /*======================================================================*/
 /* check_clause(+Head_of_Clause)					*/

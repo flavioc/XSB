@@ -958,7 +958,7 @@ multifile([P/A, _T1, T2]) :-	% T1 is not used
 	functor(TT1, P, A),	% TT1 is in usermod
 	TT1 =.. [_|Args],
 	T2 =.. [_|Args],	% T2 still belongs to the original module
-	(retract0(:-(TT1, T2)); true),
+	(retract0(:-(TT1, T2)),fail; true),
 	% Here the original retract (retract0/1) must be used, because
 	% '_$multifile_retract'(TT1,_,TT2) is true and retract/1 will change
 	% TT1 to TT2.

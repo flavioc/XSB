@@ -42,11 +42,14 @@ add_hilog_symbol(HS) :-
 	!.
 add_hilog_symbol(HS) :- 
 	( atom(HS) ->
-		assertai('_$hilog_symbol'(HS), 1)
+		assertai('_$hilog_symbol1'(HS), 1)
 	; abort(('Symbol ', HS, ' in hilog declaration is not an atom')) ).
 
 
-'_$hilog_symbol'('^~').
+:- assertai('_$hilog_symbol1'('^~'),1).
+
+'_$hilog_symbol'(S) :-
+	'_$hilog_symbol1'(S).
 
 
 /* ----------------- end of file hilog_symbol.P ----------------------- */
