@@ -83,8 +83,8 @@ CPP=cl.exe
 
 # Assume we are running NMAKE in the emu directory
 #!IF  "$(DLL)" == "yes"
-# Put DLL in the saved.o directory
-DLLDIR=..\config\@canonical@@config_tag@\saved.o
+# Put DLL in the bin directory
+DLLDIR=..\config\@canonical@@config_tag@\bin
 OUTDIR=..\config\@canonical@@config_tag@\bin
 #!ELSE
 #OUTDIR=..\config\@canonical@@config_tag@\bin
@@ -200,6 +200,7 @@ LINK32_OBJS=$(INTDIR)/xmain.obj
 # Oracle requires one additional file
 !IF "$(ORACLE)" == "yes"
 LINK32_OBJS=$(LINK32_OBJS) $(INTDIR)/orastuff.obj
+DLL_LINK32_OBJS=$(DLL_LINK32_OBJS) $(INTDIR)/orastuff.obj
 !ENDIF
 
 !IF  "$(CFG)" == "release"  &&  "$(DLL)" == "no"
@@ -1236,7 +1237,7 @@ DEP_CPP_PRIVA=\
 ################################################################################
 # Begin Source File
 
-SOURCE=\Users\Luis\Programs\XSB\emu\chat.c
+SOURCE=$(INTDIR)\chat.c
 DEP_CPP_CHAT_=\
 	".\..\emu\configs\config.h"\
 	".\..\emu\debugs\debug.h"\

@@ -34,7 +34,8 @@
 /******* VARIABLES THAT MIGHT NEED TO BE SET MANUALLY ****************/
 
 
-/* If this is defined, winsock32.lib must also be included! */
+/* If this is defined, SOCKET_LIBRARY should be set to wsock32.lib */
+/* in MS_VC_Mfile.mak					           */
 #define HAVE_SOCKET 1
 
 /* Define as __inline__ if that's what the C compiler calls it.  */
