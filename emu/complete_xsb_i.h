@@ -33,7 +33,9 @@ case check_complete: {
   CPtr    orig_breg = breg;
   bool    leader = FALSE;
   SGFrame subgoal;
-  int	  i;
+#ifdef LOCAL_EVAL
+  int     i;
+#endif
 
   /* this CP has exhausted program resolution -- backtracking occurs */
   switch_envs(breg);    /* in CHAT: undo_bindings() */
