@@ -31,6 +31,7 @@
 
 
 #include "interface.h"
+
  
 /*----------------------------------------------------------------------------
 int match(SV *string, char *pattern)
@@ -49,7 +50,7 @@ int match(SV *string, char *pattern)
   SV *command = newSV(0), *retval;  /*allocate space for SV data*/
   SV *buffer = newSV(0);
   SV *string_buff = newSV(0);
-  AV *matchArray;                   /*AV storage for submatch list*/ 
+  AV *matchArray;            	    /* AV storage for submatch lists */
   int number,i;
   int returnCode = FAILURE;         /*return code*/
 
@@ -71,17 +72,20 @@ int match(SV *string, char *pattern)
     ------------------------------------------------------------------------*/
   /* use an unlikely variable name __match__ to avoid name clashes*/
   sv_setpvf(command,
-	    "$__text__=~%s; @__match__=%s", matchPattern, subMatchSpec);
+	    "$__text__=~%s; @__match__=%s",
+	    matchPattern, subMatchSpec);
  
   retval=my_perl_eval_sv(command, TRUE);
-  if (retval == 0 ) return returnCode;
+  if (retval == NULL ) return returnCode;
+
 
   /*-------------------------------------------------------------------------
     get submatch from @__match__
     -----------------------------------------------------------------------*/
   matchArray = perl_get_av("__match__", FALSE);
+  /* +1 because av_len gives the last index, and indices start with 0 */
   number = av_len(matchArray) + 1; 
-       /* +1 because av_len gives the last index, and indices start with 0 */
+  /* MAX_TOTAL_MATCH is also the size of subMatchSpec, so they must be equal */
   if ( number != MAX_TOTAL_MATCH ) {
     return returnCode;
   }
@@ -127,16 +131,16 @@ int match_again( void )
    ------------------------------------------------------------------------*/
   sv_setpvf(command, "$__text__=~%s; @__match__=%s",
 	    matchPattern,subMatchSpec);
- 
+
   retval=my_perl_eval_sv(command, TRUE);
-  if (retval == 0 ) return returnCode;
+  if (retval == NULL ) return returnCode;
 
   /*-------------------------------------------------------------------------
     get submatches from @__match__
     -----------------------------------------------------------------------*/
   matchArray = perl_get_av("__match__", FALSE);
+  /* +1 because av_len gives the last index, and indices start with 0 */
   number = av_len(matchArray) + 1;
-       /* +1 because av_len gives the last index, and indices start with 0 */
   if ( number != MAX_TOTAL_MATCH ) {
     return returnCode;
   }
@@ -189,7 +193,7 @@ int substitute(SV **string, char *pattern)
 }
 
 /*----------------------------------------------------------------------------
-int matches(SV *string, char *pattern, AV **match_list)
+int all_matches(SV *string, char *pattern, AV **match_list)
 Try to find the global pattern match in the input string.
 Store all matches in an array, then put the contents of the array 
 into the AV storage match_list.
@@ -201,7 +205,7 @@ into the AV storage match_list.
    
 ----------------------------------------------------------------------------*/
 
-int matches(SV *string, char *pattern, AV **match_list)
+int all_matches(SV *string, char *pattern, AV **match_list)
 {
   SV *command = newSV(0), *retval; /*allocate space for SV data */
   I32 num_matches;

@@ -52,6 +52,13 @@ the following can be modified
 #define LOADED 1           /* the flag when Perl interpretor is loaded */
 #define UNLOADED 0         /* the flag when Perl interpretor is not loaded */
 
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 /*----------------------------------------------------------------------------
  *global variables
  *--------------------------------------------------------------------------*/
@@ -75,8 +82,8 @@ extern int unloadPerl( void );   /*unload perl interpreter*/
 extern SV* my_perl_eval_sv(SV *sv, I32 croak_on_error); /*call perl compiler*/
 extern int match(SV *string, char *pattern); /*perl match function*/
 extern int substitute(SV **string, char *pattern);/*perl substitute function*/
-extern int matches(SV *string, char *pattern, AV **match_list);
-                                 /*perl global match function*/
+extern int all_matches(SV *string, char *pattern, AV **match_list);
+                                 /*perl global match function: all matches*/
 extern void buildSubMatchSpec(void); 
                                  /*build the submatch arguments list string*/
                            

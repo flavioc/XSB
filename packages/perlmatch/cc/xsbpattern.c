@@ -37,12 +37,14 @@
 
 /**------------------------------------------------------------------------**/
 
+#include "perlpattern.c"          /*pattern match basic functions */   
+
 void build_sub_match_spec( void );
+bool is_global_pattern( char *);
+bool global_pattern_mode = FALSE;
 
 
 #define xsb_warn(warning)	fprintf(stderr, "++Warning: %s\n", warning)
-
-#include "perlpattern.c"          /*pattern match basic functions */   
 
 
 /*----------------------------------------------------------------------------
@@ -59,21 +61,26 @@ int try_match__( void )
 
    SV *text=newSV(0);       /*the storage for the string in embeded Perl*/
    SV *string_buff=newSV(0);/*the storage for the string in embeded Perl*/
-   int num_match;           /*number of the matches*/
+   int was_match;           /*number of the matches*/
    char *string = ptoc_string(1),
         *pattern = ptoc_string(2);
 
    sv_setpv(text, string );  /*store the string in the SV */
 
-   if (perlObjectStatus == UNLOADED ) load_perl__();  /*load the perl interpreter*/
+   /* load the perl interpreter */
+   if (perlObjectStatus == UNLOADED )
+     load_perl__();
 
-   num_match=match(text, pattern );
+   was_match = match(text, pattern );
+
+   global_pattern_mode = is_global_pattern(pattern);
    
    SvREFCNT_dec(string_buff);
    SvREFCNT_dec(text);
   
-   if (num_match==0) return(FAILURE); /*no match, return FAILURE*/
+   return(was_match);
 }
+
 
 /*----------------------------------------------------------------------------
 next_match__()
@@ -85,15 +92,19 @@ If there is no calling of function try_match__() before, give warning!
 int next_match__( void )
 {
 
-   int num_match;        /* the number of the matches */
+  int was_match;        /* return code */
 
    if ( matchPattern == NULL ) { /*didn't try_match__ before*/
-     xsb_warn("call try_match first!");
-     num_match = 0;
+     xsb_warn("call try_match/2 first!");
+     was_match = FAILURE;
    }
-   else num_match=match_again( ); /*doing next match*/
+   else /*do next match*/
+     was_match = match_again( );
 
-   if (num_match==0) return(FAILURE); /* no match is found, return FAILURE */
+   if (global_pattern_mode)
+     return(was_match);
+   /* always fail, if Perl pattern is not global */
+   return FAILURE;
 
 }
 
@@ -132,7 +143,7 @@ int do_bulk_match__( void )
   /*------------------------------------------------------------------------
     do bulk match
     ----------------------------------------------------------------------*/
-  num_match = matches(text, ptoc_string(2),&match_list);
+  num_match = all_matches(text, ptoc_string(2),&match_list);
     
   /* allocate the space to store the matches */
   if ( num_match != 0 ) {
@@ -168,7 +179,9 @@ arguments:
 int string_substitute__( void )
 {
 
-  SV *text=newSV(0);    /* storage for the embeded perl cmd */
+  SV *text=newSV(0);    /* Perl representation for the string to be 
+			   modified by substitution */ 
+  char *subst_cmd = ptoc_string(2);
   int i;                
 
   sv_setpv(text, ptoc_string(1) );  /*put the string to the SV */
@@ -176,12 +189,13 @@ int string_substitute__( void )
   if ( perlObjectStatus == UNLOADED ) load_perl__(); 
   /*load perl interpreter*/
    
-  if( !substitute(&text, ptoc_string(2)) )
-    {
-      return(FAILURE);
-    }     
+  if( !substitute(&text, subst_cmd) )
+    return(FAILURE);
   
+  global_pattern_mode = is_global_pattern(subst_cmd);
+
   if (substituteString != NULL ) free(substituteString);
+
   substituteString = malloc(strlen(SvPV(text,na))+1);
   strcpy(substituteString,SvPV(text,na));
   
@@ -282,6 +296,7 @@ int get_bulk_match_result__( void ) {
   }
 }
 
+
 /*----------------------------------------------------------------------------
 get_match_resultC__(matchCode, matchResult):
 Get the value of the submatch string $1, $2, ... from 
@@ -322,7 +337,8 @@ int get_match_resultC__( void ) {
   int submatch_number=ptoc_int(1);
   
   /*--------------------------------------------------------------------------
-   get the order of the argument in the match result storage
+    Convert from Prolog-side convention for refering to submatches to
+    the corresponding  array index numbers in match result storage.
   --------------------------------------------------------------------------*/
   switch (submatch_number) {
   case MATCH:     /*MATCH = -1*/
@@ -353,7 +369,7 @@ int get_match_resultC__( void ) {
   if (order == -99) return(FAILURE);
 
   if ( matchPattern == NULL ) { /*didn't try_match before*/
-     xsb_warn("call try_match first!");
+     xsb_warn("Call try_match/2 first!");
      return(FAILURE);
    } else if ( !strcmp(matchResults[order],"") || matchResults[order] == NULL )
      return(FAILURE);           /*no match found, return FAILURE */
@@ -408,8 +424,21 @@ void build_sub_match_spec( void ) {
 }
 
 
+/* Check if the Perl pattern is global, i.e., contains the `g' modifier.
+** This is needed so that next_match will know that it has to fail immediately,
+** if no `g' has been specified.
+*/
+bool is_global_pattern(char *pattern) {
+  int len = strlen(pattern), i = len-1;
 
+  /* skip other Perl pattern modifiers and spaces */
+  while ( (i > 0) &&
+	  ( *(pattern+i) == ' ' || *(pattern+i) == '\t'
+	    || *(pattern+i) == 'o' || *(pattern+i) == 'i' ))
+    i--;
 
+  if (*(pattern+i) == 'g')
+    return TRUE;
+  return FALSE;
 
-
-
+}
