@@ -11,14 +11,29 @@ This document produced via the XSBDOC system.").
 
 :- comment(module,"
 
-The goal of the @em{Ontology Management System} (OMS) is to store,
-manage, and provide a basis for visualizing ontology-based knowledge
-for systems implemented in XSB @footnote{Historically, the OMS was
-first called the @em{Taxonomy Management System (TMS)}.}.  The OMS
-provides facilities to represent knowledge in a way useful to XSB, to
-translate that knowledge to and from a relational database format; and
-to translate that knowledge into a format visualizable through Protege
-(and eventually XJ2).
+Two leading paradigms for formal knowledge representation are
+ontologies and logic programming.  Both formalisms have a clear,
+logic-based semantics.  Ontologies have advantages in that the
+knowledge they represent is easily visualizable.  In addition, if an
+ontology is based on a description logic, important problems in
+consistency and ontology construction are decidable and can be
+performed by deduction engines.  In terms of knowledge representation,
+logic programming has advantages in its extensions to incorporate
+non-monotonic and constraint-based reasoning.  In addition the
+procedurality of logic programming complements an the deduction engine
+of an ontology.
+
+@em{Cold Dead Fish (CDF)} provides an experimental platform to combine
+logic programming with ontology management @footnote{Historically,
+Cold Dead Fish was called the Ontology Management System (OMS) and in
+this documentation we use the two terms interchangibly.}.  Development
+of CDF is actively underway, and the initial versions of many
+important parts of CDF are not yet available.  Nonetheless, the OMS
+has already been used heavily in commercial and research products to
+represent and manipulate knowledge in a way that is useful to XSB, to
+allow the knowledge to persist in a database of file system, and to
+visualize that knowledge through Interprolog @cite{Cale01} or other
+tools.
 
 @section{A Quick Tour of the OMS}
 
