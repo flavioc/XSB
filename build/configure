@@ -3569,6 +3569,7 @@ EOF
 	;;
       *-rhapsody* | *-darwin* )
         cat >> confdefs.h <<\EOF
+#define FOREIGN_ELF 1
 #define DARWIN 1
 EOF
 
