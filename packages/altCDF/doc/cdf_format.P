@@ -6,7 +6,8 @@ xsbdoc_main('main.P').
 xsbdoc_component('../cdf_init_cdf.P').
 xsbdoc_component('../cdf_io.P').
 xsbdoc_component('../cdf_exceptions.P').
-%xsbdoc_component('../cdf_components.P').
+xsbdoc_component('../cdf_components.P').
+
 %xsbdoc_component('../cdf_db_updatable.P').
 %xsbdoc_component('../cdf_db_storage.P').
 %xsbdoc_component('../oms_constraints.P').

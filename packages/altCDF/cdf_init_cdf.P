@@ -13,7 +13,7 @@
 	newComponent/4, newComponent/3,
 	updateAttribute/5.
 
-/* fool that module system... */
+% fool that module system... 
 :- export check_isa_types/1, check_ind_types/2.
 
 :- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3 from usermod.
@@ -22,6 +22,8 @@
 	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 :- import component_table_ext/2 from usermod.
 
+:- import load_extensional_facts/1, load_intensional_rules/1 from 
+						cdf_io.
 :- import file_latest_version/3 from cdf_utilities.
 :- import cdf_warning/2, cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, cdf_update_list/1 from cdf_cdf.
@@ -34,6 +36,8 @@
 :- import search_module/6 from consult.
 :- import new_trie/1, delete_trie/1, trie_interned/4, 
 	  trie_unintern_nr/2, trie_intern/5 from intern.
+:- import slash/1 from machine.
+:- import xsb_configuration/2 from xsb_configuration.
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -192,30 +196,26 @@ init_index_std.
 
 %-------
 
-% TLS: perhaps something about names.
+% Need to do full component loads.
 
 init_cdf_rels :-
 
-	newExtTerm(isa_ext(cid('CDF Classes',cdf),	
-	 		id('CDF Root',cdf))),
-	
-	newExtTerm(isa_ext(rid('CDF Object-Object Relations',cdf),	
-	 		id('CDF Root',cdf))),
-	
-	newExtTerm(isa_ext(sid('CDF Class-Object Relations',cdf),
-	 		id('CDF Root',cdf))),
+	xsb_configuration(install_dir,Dir),
+	slash(Slash),
+	concat_atom([Dir,Slash,packages,Slash,altCDF],CDFDir),
+	load_extensional_facts(CDFDir),
 
-	newExtTerm(isa_ext(cid('CDF Primitive Types',cdf),	
-	 		cid('CDF Classes',cdf))),
+	concat_atom([CDFDir,Slash,cdfpt],CDFPTDir),
+	load_intensional_rules(CDFPTDir),
 
-	newExtTerm(isa_ext(cid([],cdf),cid('CDF Primitive Types',cdf))),
+%	newExtTerm(isa_ext(cid([],cdf),cid('CDF Primitive Types',cdf))),
 
 	init_component_info.
 
 %-----------
 
 init_component_info :-
-	newComponent(cid('CDF',cdf),cid('.',cdf),check,OCid),
+	newComponent(cid(cdf,cdf),cid('.',cdf),check,OCid),
 	newExtTerm(classHasAttr_ext(OCid,sid(componentDepends,cdf),OCid)).
 
 /* New component initializes a new component, creating version,
@@ -231,6 +231,7 @@ re-creating the component with the same path is a safe operation.
 		if a previous component exists 
 		    its directoryPath is overwritten with the new path
 */
+
 
 :- comment(hide,newComponent/3).	
 newComponent(Name,Path,Compout):- 
@@ -342,12 +343,11 @@ linear in the sizes of the terms.  In all cases where variables are
 present, there is the possibility of backtracking through a large
 isa_relation.  For the instantiation pattern @tt{immediate_isa(+,-)}
 this is addressed by searching through only those product identifiers
-that occur in the first argument of the explicit isa relation.
+that occur in the first argument of the immediate isa relation.
 Because of the assumption that product identifiers can occur only in
-the first argument of the explicit isa relation, this option is not
+the first argument of the immediate isa relation, this option is not
 available for the instantiation patterns @tt{implicit_isa(-,+)} and
-@tt{implicit_isa(-,-)}, so they fail.
-").
+@tt{implicit_isa(-,-)}, so they fail.  ").
 
 implicit_isa(SubCid,SupCid) :- 
 	ground(SubCid),
@@ -358,7 +358,7 @@ implicit_isa(SubCid,SupCid) :-
 	
 implicit_isa_bf(SubCid,SupCid):- 
         skeleton(SubCid,SubSkel), 
-	explicit_isa(SubSkel,_),
+	immediate_isa(SubSkel,_),
 	term_isa(SubCid,SubSkel),
 	SubCid \== SubSkel,
 	SupCid = SubSkel.
@@ -416,19 +416,19 @@ isa_bb(Sub,Sup):-
 % Here use implicit bf specialization for first step, then look upwards 
 isa_bf(Sub,Sub).
 isa_bf(Sub,Sup):- 
-	(   explicit_isa(Sub,Mid)
+	(   immediate_isa(Sub,Mid)
 	  ; implicit_isa_bf(Sub,Mid) ),
 	isa_bf_inner(Mid,Sup).
 
 isa_bf_inner(Sub,Sub).
 isa_bf_inner(Sub,Sup):- 
-	explicit_isa(Sub,Mid),
+	immediate_isa(Sub,Mid),
 	isa_bf_inner(Mid,Sup).
 
-% Here implicit would fail; just do explicit, and look down. 
+% Here implicit would fail; just do immediate, and look down. 
 isa_fx(Sub,Sub).
 isa_fx(Sub,Sup):- 
-	explicit_isa(Mid,Sup),
+	immediate_isa(Mid,Sup),
 	isa_fx(Sub,Mid).
 
 :- comment(proper_isa/2, "@tt{proper_isa(Sub,Sup)} is true if @tt{Sub}
@@ -599,7 +599,7 @@ classHasAttr_gen13(SCid,RCid,TCid) :-
 		)
 	).
 
-max_implicative_classHasAttr(Term,BindPat) :-
+not_max_implicative_classHasAttr(Term,BindPat) :-
 	BindPat = classHasAttr(SCid,RCidO,TCidO),
 	Term = classHasAttr(SCid,RCid,TCid),
 	classHasAttr_gen2(SCid,RCidO,TCidO),
@@ -607,7 +607,7 @@ max_implicative_classHasAttr(Term,BindPat) :-
 	isa(RCidO,RCid),	
 	isa(TCidO,TCid).
 
-%%% SCHEMA RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% allAttr/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(immediate_allAttr/3, "@tt{immediate_allAttr(SCid,RCid,TCid)}
 accesses facts stored directly in @pred{allAttr_ext/3} and information
@@ -638,7 +638,7 @@ allAttr_2fix(SCid,RCid,TCid) :-
 	OutTerm = allAttr(SCid,RCid,TCid),
 	copy_term(OutTerm,BindPat),
 	allAttr_gen13(SCid,RCid,TCid),
-	(not_max_impliciative_allAttr(OutTerm,BindPat) -> fail ; true).
+	(not_max_implicative_allAttr(OutTerm,BindPat) -> fail ; true).
 
 :- table allAttr_2inh/3.
 allAttr_2inh(SCid,RCid,TCid) :-
@@ -680,8 +680,8 @@ not_max_implicative_allAttr(OutTerm,BindPat) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(retractallExtTerm/1, "@tt{retractallExtTerm(Term)} retracts
-all explicit CDF facts that unify with the parameters.  Note that this
-operation simply removes all matching tuples.  It does not affect
+all extensional CDF facts that unify with the parameters.  Note that
+this operation simply removes all matching tuples.  It does not affect
 information derived via intensional rules, and may not affect
 information derived via inheritance.").
 
@@ -697,7 +697,7 @@ are of the proper type and are consistent.  This can be turned off by
 
 @item Checks may also be made that @tt{Term} is not already implied by
 the ontology before it can be added.  The default is not to make such
-checks, but only to check that @tt{Term} is not explicitly present
+checks, but only to check that @tt{Term} is not extensionally present
 before it can be added.
 
 @item Conformability checks.
@@ -710,8 +710,9 @@ newExtTerm(Term):-
 
 newExtTerm(Term,Upd0,Upd):- 
 	check_types(update,Term),
-	check_implication(update,Term),
-	Upd0 = [asserta(Term)|Upd].
+	(check_implication(update,Term) -> 
+	    Upd0 = [asserta(Term)|Upd]
+	  ; Upd0 = Upd).
 
 %-----------------------------------------------------------
 % Type checking.	
@@ -934,7 +935,6 @@ show_log:-
 
 %% performance testing predicate
 :- comment(hide,set_chk_index/0).
-
 set_chk_index :-
 	set_chk_index(isa_ext(_,_)),
 	set_chk_index(hasAttr_ext(_,_,_)),
