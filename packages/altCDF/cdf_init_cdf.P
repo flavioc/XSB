@@ -39,7 +39,7 @@
 	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4
 						from  usermod.
 
-:- import cdf_set_log_off/0, cdf_log/1
+:- import cdf_set_log_off/0, cdf_log/1, cdf_reset_log/0
 	from cdf_concurrency.	
 
 :- import cdf_flags/2, 
@@ -228,6 +228,7 @@ initialize_state:-
 
 initialize_state_nl :-
 	cdf_clear_dynamics,
+	cdf_reset_log,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
 	make_cdf_clean.
