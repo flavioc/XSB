@@ -100,6 +100,13 @@ memberchk(X,[X|_]) :- !.
 memberchk(X,[_|L]) :- memberchk(X,L).
 
 %---
+% subset
+subset([],_).
+subset([H|T],List) :-
+	memberchk(H,List),
+        subset(T,List).
+
+%---
 % A not so naive reverse
 reverse(L, R) :- reverse_acc(L, [], R).
 

@@ -24,7 +24,7 @@
 
 
 :- export append/3, copy_term/2, flatten/2, ground/1, ith/3, length/2, 
-	  member/2, memberchk/2, reverse/2, select/3.
+	  member/2, memberchk/2, subset/2, reverse/2, select/3.
 
 :- import copy_term0/2 from machine.
 :- import integer/1, is_list/1 from standard.
