@@ -109,7 +109,10 @@ will be searched for header files.
 If no C compiler options are specified, the compilation of the C-file
 defaults to $CC$~{\tt -c~file.c} where $CC$ is the name of the C compiler
 used to install \ourprolog.
-Any Prolog compiler options are ignored when compiling a foreign module.
+In addition, if XSB was compiled with the `-g' debugging option, then `-g'
+option will be automatically added to the C compiler options list for the
+foreign module. Any Prolog compiler options are ignored when compiling a
+foreign module.
 
 \section{Foreign Modules That Link Dynamically with Other Libraries}
 

@@ -25,6 +25,8 @@
 
 :- compiler_options([xpp_on]).
 
+%%#define FOREIGN_DEBUG
+
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
 
@@ -82,35 +84,51 @@ runtime_loader_flag(Compiler,LibraryDir,Flag):-
 %% TempFile: Directory
 compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
+	xsb_configuration(compiler_flags, XSB_CC_Opts),
 	cc_name(Options, CC_Name),
-	cc_options(CC_Name, Options, CC_Opts),
+	cc_options(CC_Name, Options, CC_Opts0),
+	%% If XSB CC opts has -g then add -g to the foreign module options
+	(  str_sub(' -g', XSB_CC_Opts), not str_sub(' -g', CC_Opts0)
+	-> str_cat(' -g ', CC_Opts0, CC_Opts)
+	;  CC_Opts = CC_Opts0
+	),
 	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
-	( var(TempFile) -> TempFile = ''; true),
-	( str_sub(' -g', CC_Opts)
-	->  SymbolTableFlag = ' '
-	;   SymbolTableFlag = ' -s'  % if not debugging: strip the symbol table
+	( var(TempFile) -> TempFile = ''; true ),
+	%% If not debugging, the strip the symbol table from the result
+	(  str_sub(' -g', CC_Opts)
+	-> SymbolTableFlag = ' '
+	;  SymbolTableFlag = ' -s'
 	),
 	(   var(CompComm)
 	->  (	str_sub('solaris', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+#ifdef FOREIGN_DEBUG
+	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
+		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
+#endif
 	    ;	str_sub('linux', Configuration)
-	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
+	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+		       ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
-	    /*
-	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
+#ifdef FOREIGN_DEBUG
+	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+		       ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
-	    */
+#endif
 	    ; str_sub('bsd-', Configuration)
-	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
+	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+		       ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
-	    /*	   
-	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
+#ifdef FOREIGN_DEBUG
+	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+		       ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
-	    */ 
+#endif
 	    ;	str_sub('sgi', Configuration)
-	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
+	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+		       ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
 	    ;	str_sub('alpha', Configuration)
 	    ->	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
