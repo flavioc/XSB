@@ -175,8 +175,7 @@ int  xctr;
 
 /* place for a meaningful message when segfault is detected */
 char *xsb_default_segfault_msg =
-     "\n++Memory violation occurred during evaluation.\n++When reporting this
- XSB bug to xsb-development@lists.sourceforge.net,\n++please supply the steps necessary to reproduce the bug.\n";
+     "\n++Memory violation occurred during evaluation.\n++When reporting this XSB bug to xsb-development@lists.sourceforge.net,\n++please supply the steps necessary to reproduce the bug.\n";
 char *xsb_segfault_message;
 jmp_buf xsb_abort_fallback_environment;
 
