@@ -29,7 +29,7 @@
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
-:- import xsb_configuration/2 from xsb_configuration.
+:- import xsb_configuration/2, windows_os/0 from xsb_configuration.
 :- import rename/2 from shell.
 
 :-  package_configuration(dir(flora), FloraDir),
@@ -55,9 +55,14 @@
 	fmt_write_string(LibObjFile,
 			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
 	rename(Objfile, LibObjFile),
-	%% Note: the .so ending is Unix-ism. I dunno what this
-	%% corresponds to in windows. - mk
-	str_cat(Module, '.so', SharedLib),
-	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
-	rename(SharedLib,LibMod)
+	(windows_os, !
+	;
+	    %% Note: the .so ending is Unix-ism. I dunno what this
+	    %% corresponds to in windows. - mk
+	    str_cat(Module, '.so', SharedLib),
+	    fmt_write_string(LibMod,
+			     '%s%s%s.so',
+			     a(ConfigLibdir,Slash,Basename)),
+	    rename(SharedLib,LibMod)
+	)
      ).
