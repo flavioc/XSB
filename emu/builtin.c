@@ -106,7 +106,6 @@
 
 /*======================================================================*/
 
-extern TIFptr get_tip(Psc);
 extern TIFptr first_tip;
 
 extern int  sys_syscall(int);
@@ -275,7 +274,8 @@ DllExport void call_conv ctop_string(int regnum, char *value)
   if (isref(addr)) {
     bind_string(vptr(addr), value);
   }
-  else xsb_abort("CTOP_STRING: Wrong type of argument: %lux", addr);
+  else
+    xsb_abort("CTOP_STRING: Wrong type of argument: %lux", addr);
 }
 
 inline static void ctop_constr(int regnum, Pair psc_pair)
@@ -301,7 +301,8 @@ inline static void ctop_tag(int regnum, Cell term)
   if (isref(addr)) {
     bind_copy(vptr(addr), term);
   }
-  else xsb_abort("CTOP_TAG: Wrong type of argument: %lux", addr);
+  else
+    xsb_abort("CTOP_TAG: Wrong type of argument: %lux", addr);
 }
 
 
@@ -619,9 +620,12 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_RETRACT_SAFE, "trie_retract_safe");
   set_builtin_table(TRIE_DELETE_TERM, "trie_delete_term");
   set_builtin_table(TRIE_GET_RETURN, "trie_get_return");
-  set_builtin_table(TRIE_GET_CALL, "trie_get_call");
+
+  /* Note: TRIE_GET_CALL previously used for get_calls/1, before get_call/3
+     was made a builtin itself. */
+  set_builtin_table(TRIE_UNIFY_CALL, "get_calls");
   set_builtin_table(GET_LASTNODE_CS_RETSKEL, "get_lastnode_cs_retskel");
-  set_builtin_table(CONSTRUCT_RET_FOR_CALL, "construct_ret_for_call");
+  set_builtin_table(TRIE_GET_CALL, "get_call");
   set_builtin_table(BREG_RETSKEL,"breg_retskel");
 
   set_builtin_table(TRIMCORE, "trimcore");
@@ -1426,7 +1430,7 @@ int builtin_call(byte number)
   case GET_SUBGOAL_PTR: {	/* reg1: +term; reg2: -subgoal_ptr */
     Psc  psc;
     TIFptr tip;
-    CPtr subgoal_ptr;
+    SGFrame subgoal_ptr;
     Cell term = ptoc_tag(1);
 
     if ((psc = term_psc(term)) == NULL) {
@@ -1548,7 +1552,7 @@ int builtin_call(byte number)
     Psc    psc;
     TIFptr tip;
     int    value;
-    CPtr   subgoal_ptr;
+    SGFrame subgoal_ptr;
     Cell   term = ptoc_tag(1);
     if (!isinteger(term)) {
       if ((psc = term_psc(term)) == NULL) {
@@ -1562,9 +1566,9 @@ int builtin_call(byte number)
       } 
       subgoal_ptr = get_subgoal_ptr(term, tip);
     } else {
-      subgoal_ptr = (CPtr)int_val(term);
+      subgoal_ptr = (SGFrame)int_val(term);
     }
-    if (subgoal_ptr == NULL) {
+    if ( IsNULL(subgoal_ptr) ) {
       value = 1; /* no_call_yet */
     } else {
       value = (is_completed(subgoal_ptr)) ?  2 : 3;
@@ -1614,15 +1618,38 @@ int builtin_call(byte number)
   case TRIE_GET_RETURN:
     pcreg = trie_get_returns_for_call();
     break;
-  case TRIE_GET_CALL: /* r1: +call_term */
+  case TRIE_UNIFY_CALL: /* r1: +call_term */
     pcreg = trie_get_calls();
     break;
-  case GET_LASTNODE_CS_RETSKEL:
-    get_lastnode_cs_retskel();
-    break;
-  case CONSTRUCT_RET_FOR_CALL:
-    construct_ret_for_call();
-    break;
+  case GET_LASTNODE_CS_RETSKEL: {
+    const int regCallTerm  = 1;   /* in: call of a subsumptive predicate */
+    const int regTrieLeaf  = 2;   /* out: a unifying trie term handle */
+    const int regLeafChild = 3;   /* out: usually to get subgoal frame */
+    const int regRetTerm   = 4;   /* out: term in ret/N form:
+				     Call Trie -> answer template
+				     Other Trie -> variable vector */
+    ctop_int(regTrieLeaf, (Integer)Last_Nod_Sav);
+    ctop_int(regLeafChild, (Integer)BTN_Child(Last_Nod_Sav));
+    ctop_tag(regRetTerm, get_lastnode_cs_retskel(ptoc_tag(regCallTerm)));
+    return TRUE;
+  }
+  case TRIE_GET_CALL: {
+    const int regCallTerm = 1;   /* in:  tabled call to look for */
+    const int regSF       = 2;   /* out: corresponding subgoal frame */
+    const int regRetTerm  = 3;   /* out: answer template in ret/N form */
+
+    Cell ret;
+    SGFrame sf;
+
+    sf = get_call(ptoc_tag(regCallTerm), &ret);
+    if ( IsNonNULL(sf) ) {
+      ctop_int(regSF, (Integer)sf);
+      ctop_tag(regRetTerm, ret);
+      return TRUE;
+    }
+    else
+      return FALSE;
+  }
   case BREG_RETSKEL:
     breg_retskel();
     break;
