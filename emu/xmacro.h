@@ -378,17 +378,17 @@ extern ALNptr empty_return();
           /* ideally the completion stack should be compacted */ \
           /* and completed subgoals should be removed instead */ \
           compl_pdreg(subg_compl_stack_ptr(SUBG_PTR)) = NULL; \
-          reclaim_del_ret_list((SGFrame)SUBG_PTR); \
+          reclaim_del_ret_list(SUBG_PTR); \
         } 
 #else
 #define mark_as_completed(SUBG_PTR) {\
           subg_compl_flag(SUBG_PTR) = (CPtr) -1;  \
-          reclaim_del_ret_list((SGFrame)SUBG_PTR); \
+          reclaim_del_ret_list(SUBG_PTR); \
         } 
 #endif
 
 #define subgoal_space_has_been_reclaimed(SUBG_PTR,CS_FRAME) \
-        ((SGFrame)SUBGOAL != compl_subgoal_ptr(CS_FRAME))
+        (SUBG_PTR != compl_subgoal_ptr(CS_FRAME))
 
 #define mark_delayed(csf1, csf2, susp) { \
 	  compl_visited(csf1) = DELAYED; \
