@@ -25,7 +25,7 @@
 
 :- import '_$_$_flora_loadlist'/1, '_$_$_flora_dynloadlist'/1 from flrutils.
 
-:- import member/2 from basics.
+:- import member/2, ground/1 from basics.
 
 
 /************************** End of Header ***********************************/

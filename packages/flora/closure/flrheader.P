@@ -11,7 +11,7 @@
 :- table '_$_$_flora_mvs'/3.
 
 
-:- import member/2 from basics.
+:- import member/2, ground/1 from basics.
 
 :- import consult/1 from consult.
 
