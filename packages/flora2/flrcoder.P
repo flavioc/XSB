@@ -42,7 +42,7 @@ is_prdirective(PRDIRECTIVE(Direct),Direct).
 
 is_prcommand(PRCOMMAND(C),C).
 is_prtable(PRTABLE(P,A),P,A).
-is_prdynamic(PRDYNAMIC(P,A),P,A).
+%%is_prdynamic(PRDYNAMIC(P,A),P,A).
 %%is_prexport(PREXPORT(P,A),P,A).
 is_primport(PRIMPORT(P,A,M),P,A,M).
 is_prindex(PRINDEX(P,A,N),P,A,N).
@@ -400,21 +400,21 @@ flora_write_struct(Term,_Prefix) :-
 	write(N),
 	writeln('))').
 
-flora_write_struct(Term,_Prefix) :-
-	is_prdynamic(Term,P,A),
-	!,
-	( flora_prlgdef(P,A) ->
-	    write_canonical(dynamic(P/A))
-
-	; flora_firstorderdef(P,A) ->
-	    write('dynamic(/('),
-	    flora_write_workspace(P),
-	    write(','),
-	    write(A),
-	    writeln('))')
-	;
-	  write_canonical(dynamic(P/A))
-	).
+%%flora_write_struct(Term,_Prefix) :-
+%%	is_prdynamic(Term,P,A),
+%%	!,
+%%	( flora_prlgdef(P,A) ->
+%%	    write_canonical(dynamic(P/A))
+%%
+%%	; flora_firstorderdef(P,A) ->
+%%	    write('dynamic(/('),
+%%	    flora_write_workspace(P),
+%%	    write(','),
+%%	    write(A),
+%%	    writeln('))')
+%%	;
+%%	  write_canonical(dynamic(P/A))
+%%	).
 
 flora_write_struct(Term,_Prefix) :-
 	is_prindex(Term,P,A,N),
@@ -922,18 +922,18 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	flora_wspredicate(WRAP_HILOG,[],DWS,NewP),
 	Code=table(NewP/N).
 
-flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
-	is_prdynamic(Term,P,A),
-	!,
-	( flora_prlgdef(P,A) ->
-	    Code=dynamic(P/A)
-
-	; flora_firstorderdef(P,A) ->
-	    flora_wspredicate(P,[],DWS,NewP),
-	    Code=dynamic(NewP/A)
-	;
-	  Code=dynamic(P/A)
-	).
+%%flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
+%%	is_prdynamic(Term,P,A),
+%%	!,
+%%	( flora_prlgdef(P,A) ->
+%%	    Code=dynamic(P/A)
+%%
+%%	; flora_firstorderdef(P,A) ->
+%%	    flora_wspredicate(P,[],DWS,NewP),
+%%	    Code=dynamic(NewP/A)
+%%	;
+%%	  Code=dynamic(P/A)
+%%	).
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	is_prindex(Term,P,A,N),

@@ -156,7 +156,7 @@
 
 #define FL_OP			op
 #define FL_HILOG		(hilog)
-#define FL_DYNAMIC		(dynamic)
+%%#define FL_DYNAMIC		(dynamic)
 #define FL_TABLE		(table)
 #define FL_INDEX		(index)
 %%#define FL_EXPORT		(export)
@@ -168,8 +168,9 @@
 %%#define FL_PROLOG		(prolog)
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
-#define FL_FIRSTORDERNOSTORAGE	fl_firstorder_nostorage
-#define FL_FIRSTORDERNOSTORAGEALL fl_firstorder_nostorage_all
+#define FL_WRAPAROUND	        wraparound
+%%#define FL_FIRSTORDERNOSTORAGE	fl_firstorder_nostorage
+%%#define FL_FIRSTORDERNOSTORAGEALL fl_firstorder_nostorage_all
 #define FL_FIRSTORDER		firstorder
 #define FL_FIRSTORDERALL	firstorderall
 #define FL_HILOGTABLE		hilogtable
@@ -210,7 +211,7 @@
 
   FLCOMMAND(Direct)
   FLTABLE(Functor,Arity)
-  FLDYNAMIC(Functor,Arity)
+  %%FLDYNAMIC(Functor,Arity)
   %%FLEXPORT(Functor,Arity)
   FLIMPORT(Functor,Arity)
   FLARGUMENTS(Functor,Arity,Args)
@@ -262,13 +263,13 @@
 
 #define FLCOMMAND		flcommand
 #define FLTABLE			fltable
-#define FLDYNAMIC		fldynamic
+%%#define FLDYNAMIC		fldynamic
 %%#define FLEXPORT		flexport
 #define FLIMPORT		flimport
 #define FLARGUMENTS		flarguments
 #define FLPROLOG		flprolog
 #define FLOPDEF			flopdef
-#define FLFIRSTORDERNOSTORAGE	flfirstordernostorage
+%%#define FLFIRSTORDERNOSTORAGE	flfirstordernostorage
 #define FLFIRSTORDER		flfirstorder
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
@@ -317,7 +318,7 @@
 
 #define PRCOMMAND		prcommand
 #define PRTABLE			prtable
-#define PRDYNAMIC		prdynamic
+%%#define PRDYNAMIC		prdynamic
 %%#define PREXPORT		prexport
 #define PRIMPORT		primport
 #define PRINDEX			prindex

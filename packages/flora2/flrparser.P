@@ -325,12 +325,12 @@ fldirective_struct(Direct,FLDIRECTIVE(Direct)).
 
 flcmddirect_struct(C,FLCOMMAND(C)).
 fltbldirect_struct(F,A,FLTABLE(F,A)).
-fldyndirect_struct(F,A,FLDYNAMIC(F,A)).
+%%fldyndirect_struct(F,A,FLDYNAMIC(F,A)).
 %%flexptdirect_struct(F,A,FLEXPORT(F,A)).
 %%flimptdirect_struct(F,A,M,FLIMPORT(F,A,M)).
 flargumentsdirect_struct(F,N,Args,FLARGUMENTS(F,N,Args)).
 %%flprlgdirect_struct(F,A,FLPROLOG(F,A)).
-flfirstordernostoragedirect_struct(F,A,FLFIRSTORDERNOSTORAGE(F,A)).
+%%flfirstordernostoragedirect_struct(F,A,FLFIRSTORDERNOSTORAGE(F,A)).
 flfirstorderdirect_struct(F,A,FLFIRSTORDER(F,A)).
 flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
 flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
@@ -483,15 +483,15 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	  flora_firstorderall_directive(CanoniTerm,CodeList,Status)
 	%%; flora_import_directive(CanoniTerm,CodeList,Status)
 	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
-	; flora_firstordernostorage_directive(CanoniTerm,CodeList,Status)
-	; flora_firstordernostorageall_directive(CanoniTerm,CodeList,Status)
+	%%; flora_firstordernostorage_directive(CanoniTerm,CodeList,Status)
+	%%; flora_firstordernostorageall_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
 	; flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_table_directive(CanoniTerm,CodeList,Status)
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
 	%%; flora_export_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
-	; flora_dynamic_directive(CanoniTerm,CodeList,Status)
+	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_command_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_equality_directive(CanoniTerm,CodeList,Status)
@@ -662,17 +662,17 @@ flora_table_directlist([F/A|L],[Code|CL]) :-
 /****************************************************************************
   flora_dynamic_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_dynamic_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_name(Funct,FL_DYNAMIC),
-	flora_commasep_falist(T,FAList,Status),
-	(Status == [] -> flora_dynamic_directlist(FAList,CodeList); true).
-
-flora_dynamic_directlist([],[]) :- !.
-
-flora_dynamic_directlist([F/A|L],[Code|CL]) :-
-	!,
-	fldyndirect_struct(F,A,Code),
-	flora_dynamic_directlist(L,CL).
+%%flora_dynamic_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+%%	get_name(Funct,FL_DYNAMIC),
+%%	flora_commasep_falist(T,FAList,Status),
+%%	(Status == [] -> flora_dynamic_directlist(FAList,CodeList); true).
+%%
+%%flora_dynamic_directlist([],[]) :- !.
+%%
+%%flora_dynamic_directlist([F/A|L],[Code|CL]) :-
+%%	!,
+%%	fldyndirect_struct(F,A,Code),
+%%	flora_dynamic_directlist(L,CL).
 
 
 /****************************************************************************
@@ -770,28 +770,28 @@ flora_firstorder_directlist([F/A|L],[Code|CL]) :-
 /****************************************************************************
   flora_firstordernostorageall_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_firstordernostorageall_directive(CanoniTerm,[Code],[]) :-
-	get_name(CanoniTerm,FL_FIRSTORDERNOSTORAGEALL),
-	flfirstorderdirect_struct(_Funct,_Arity,Code).
+%%flora_firstordernostorageall_directive(CanoniTerm,[Code],[]) :-
+%%	get_name(CanoniTerm,FL_FIRSTORDERNOSTORAGEALL),
+%%	flfirstorderdirect_struct(_Funct,_Arity,Code).
 
 
 
 /****************************************************************************
   flora_firstordernostorage_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_firstordernostorage_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_name(Funct,FL_FIRSTORDERNOSTORAGE),
-	flora_commasep_falist(T,FAList,Status),
-	(Status == [] -> flora_firstordernostorage_directlist(FAList,CodeList); true).
-
-
-flora_firstordernostorage_directlist([],[]) :- !.
-
-flora_firstordernostorage_directlist([F/A|L],[Code|CL]) :-
-	!,
-	flfirstordernostoragedirect_struct(F,A,Code),
-	flora_firstordernostorage_directlist(L,CL).
-
+%%flora_firstordernostorage_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+%%	get_name(Funct,FL_FIRSTORDERNOSTORAGE),
+%%	flora_commasep_falist(T,FAList,Status),
+%%	(Status == [] -> flora_firstordernostorage_directlist(FAList,CodeList); true).
+%%
+%%
+%%flora_firstordernostorage_directlist([],[]) :- !.
+%%
+%%flora_firstordernostorage_directlist([F/A|L],[Code|CL]) :-
+%%	!,
+%%	flfirstordernostoragedirect_struct(F,A,Code),
+%%	flora_firstordernostorage_directlist(L,CL).
+%%
 
 /****************************************************************************
   flora_arguments_directive(+CanoniTerm,-CodeList,-Status)

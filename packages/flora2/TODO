@@ -1,5 +1,4 @@
-0. Remove the dynamic directive.
-   Make table imply firstorder.
+0. Make table imply firstorder.
    Do variable analysis in delete{...}/insert{...}
    to avoid errors like in demo/aggregate.flr
    Move the decision about how to compile @prolog(module) from the compiler

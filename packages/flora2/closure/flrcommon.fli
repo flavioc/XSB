@@ -152,9 +152,9 @@ imvdinc(O,M,[H|T]) :- imvd(O,M,H), imvdinc(O,M,T).
   multivalued attributes aggregation
 ****************************************************************************/
 
-mvdtolist(O,M,L) :- findall(V,mvd(O,M,V),L)@prolog(setof).
+mvdtolist(O,M,L) :- findall(V,mvd(O,M,V),L).
 
-imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L)@prolog(setof). 
+imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L). 
 
 
 /****************************************************************************
@@ -183,5 +183,5 @@ exists(X) :- imeth(X,_).
 ****************************************************************************/
 
 
-objeql(X,Y) :- (nonvar(X)@prolog(); nonvar(Y)@prolog()), X=Y.
+objeql(X,Y) :- (nonvar(X); nonvar(Y)), X=Y.
 objeql(X,Y) :- diffobjeql(X,Y).

@@ -53,13 +53,13 @@ is_fldirective(FLDIRECTIVE(DirectList),DirectList).
 
 is_flcommand(FLCOMMAND(C),C).
 is_fltable(FLTABLE(P,A),P,A).
-is_fldynamic(FLDYNAMIC(P,A),P,A).
+%%is_fldynamic(FLDYNAMIC(P,A),P,A).
 %%is_flexport(FLEXPORT(P,A),P,A).
 %%is_flimport(FLIMPORT(P,A,M),P,A,M).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
-is_flfirstordernostorage(FLFIRSTORDERNOSTORAGE(F,N),F,N).
+%%is_flfirstordernostorage(FLFIRSTORDERNOSTORAGE(F,N),F,N).
 is_flfirstorder(FLFIRSTORDER(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
 is_flhilogtable(FLHILOGTABLE(A),A).
@@ -133,7 +133,7 @@ directive_struct(Direct,PRDIRECTIVE(Direct)).
 
 command_struct(C,PRCOMMAND(C)).
 table_struct(F,N,PRTABLE(F,N)).
-dynamic_struct(F,N,PRDYNAMIC(F,N)).
+%%dynamic_struct(F,N,PRDYNAMIC(F,N)).
 %%export_struct(F,N,PREXPORT(F,N)).
 %% We keep the import directive's support mechanism for @prolog(module)
 import_struct(F,N,M,PRIMPORT(F,N,M)).
@@ -809,8 +809,8 @@ compile_direct(DirectTerm,[Code],[]) :-
 	; is_fltable(DirectTerm,P,A) ->
 	    table_struct(P,A,Direct)
 
-	; is_fldynamic(DirectTerm,P,A) ->
-	    dynamic_struct(P,A,Direct)
+	%%; is_fldynamic(DirectTerm,P,A) ->
+	%%    dynamic_struct(P,A,Direct)
 
 	%%; is_flexport(DirectTerm,P,A) ->
 	%%    export_struct(P,A,Direct)
@@ -860,10 +860,10 @@ compile_direct(DirectTerm,[Code],[]) :-
 	),
 	!.
 
-compile_direct(DirectTerm,[],[]) :-
-	is_flfirstordernostorage(DirectTerm,P,N),
-	flora_define_firstorder(P,N),
-	!.
+%%compile_direct(DirectTerm,[],[]) :-
+%%	is_flfirstordernostorage(DirectTerm,P,N),
+%%	flora_define_firstorder(P,N),
+%%	!.
 
 compile_direct(DirectTerm,CodeList,[]) :-
 	( is_flequality(DirectTerm,A) ->

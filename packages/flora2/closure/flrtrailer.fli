@@ -39,12 +39,12 @@ immediate_sub(X,Y) :-
 
 sub(X,Y) :-
 	inferred_sub(X,Y),
-	(X=Y,flora_warning_line('cycle in class hierarchy')@prolog(flrprint)
+	(X=Y,flora_warning_line('cycle in class hierarchy')
 	; true).
 
 sub(X,Y) :-
 	super_sub(X,Y),
-	(X=Y,flora_warning_line('cycle in class hierarchy')@prolog(flrprint)
+	(X=Y,flora_warning_line('cycle in class hierarchy')
 	; true).
 
 

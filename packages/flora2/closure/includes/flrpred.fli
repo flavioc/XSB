@@ -10,12 +10,11 @@
   This file lists F-logic predicates used by FLORA closure files.
 ***************************************************************************/
 
-#include "flora_terms.flh"
 
 /***************************************************************************
   F-logic facts
 ***************************************************************************/
-:- FL_FIRSTORDERNOSTORAGE
+:- wraparound
  	base_sub/2,
 	base_isa/2,
 	base_fd/3,
@@ -38,7 +37,7 @@
 /***************************************************************************
   F-logic predicates that appear in a rule head
 ***************************************************************************/
-:- FL_FIRSTORDERNOSTORAGE
+:- wraparound
 	derived_sub/2,
 	derived_isa/2,
 	derived_fd/3,
@@ -61,7 +60,7 @@
 /***************************************************************************
   F-logic predicates that appear in the trailer
 ***************************************************************************/
-:- FL_FIRSTORDERNOSTORAGE
+:- wraparound
 	inferred_sub/2,
 	inferred_isa/2,
 	inferred_ifd/3,
@@ -88,7 +87,7 @@
 /***************************************************************************
   F-logic predicates that appear in a rule body
 ***************************************************************************/
-:- FL_FIRSTORDERNOSTORAGE
+:- wraparound
 	sub/2,
 	isa/2,
 	fd/3,
@@ -117,7 +116,7 @@
 /***************************************************************************
   intermediate F-logic predicates that appear in the trailer
 ***************************************************************************/
-:- FL_FIRSTORDERNOSTORAGE
+:- wraparound
 	super_sub/2,
 	immediate_sub/2,
 	super_isa/2,
@@ -132,7 +131,7 @@
 /***************************************************************************
   F-logic predicates that appear only in the trailer with equality maintenance
 ***************************************************************************/
-:- FL_FIRSTORDERNOSTORAGE
+:- wraparound
 	inferred_sub_eql/2,
 	inferred_isa_eql/2,
 	inferred_ifd_eql/3,

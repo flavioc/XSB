@@ -43,6 +43,7 @@ ALLOBJS = flroperator.O \
 	  flrcoder.O \
 	  flrutils.O \
 	  flrwrapper.O \
+	  flrcompileinclude.O \
 	  flrundefhook.O \
 	  flrshell.O
 
@@ -155,6 +156,9 @@ flrundefhook.O : flrundefhook.P flrundefhook.H $(FLORA_TERMS)
 
 flrshell.O : flrshell.P flrshell.H $(FLORA_TERMS)
 	@echo 'mc(flrshell,$(OPTION)).' >> cmd...
+
+flrcompileinclude.O : flrcompileinclude.P flrcompileinclude.H $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+	@echo 'mc(flrcompileinclude,$(OPTION)).' >> cmd...
 
 
 init:

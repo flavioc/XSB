@@ -144,8 +144,9 @@
 	flora_compile_internal/2,
 	flora_load_module_internal/1,
 	flora_load_module_internal/2,
-	flCompileInclude/1,
 	flP2H/2,
+	flora_locate_file/3,
+	flora_FLH_filename/2,
 	flloadtrailer/1,
 	flloadtrailer/2,
 	flsetuptrailer/1,
@@ -158,5 +159,6 @@
 	flora_noop_command/1,
 	flora_check_filename/1,
 	flora_set_xpp_options/0,
+	flora_clear_xpp_options/0,
 	flora_list2conjunct/2,
 	flora_check_workspace/1.
