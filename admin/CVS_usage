@@ -234,14 +234,19 @@ NOTE: modules provide a convenient way of grouping files and directories
 Step 4: Working with the checked out version.
 --------------------------------------------
 
-    *** The first thing after checking out an XSB version, you must cd to
-	the top XSB directory and run `make'. This will ensure that all
-	files .O have been compiled!
-
     After you checked out a copy of XSB (or some of its CVS modules) you
-    can configure it, modify, etc., as you please.  Periodically, people
-    will be checking their changes into the main repository. To sunchronize
-    your copy with the repository, you can type:
+    can configure it, modify, etc., as you please:
+
+    	cd ~/projects/XSB/build/
+	configure
+	makexsb devel
+
+    Sometimes you might need to run `makexsb superdevel' instead. This
+    happens when somebody modified the XSB compiler and forgot to check the 
+    changes properly in (forgot to check in the .O files).
+
+    Periodically, people will be checking their changes into the main
+    repository. To sunchronize your copy with the repository, you can type:
     
 	cd ~/projects/XSB
 	cvs update 
@@ -610,6 +615,7 @@ Gotchas and experience
    Always use makexsb devel, not just makexsb. This way you can be sure
    that all the .O files that need to be recompiled are recompiled, and it
    might save you a lot of grief while hunting for non-existent bugs.
+   If this doesn't work, try `makexsb superdevel'.
 
 
 8. There are other, more serious gotchas. Please see Policies in this

@@ -13,6 +13,11 @@
 
 If something fails, please check the messages that `configure' and `makexsb'
 produce, and report to xsb-contact@cs.sunysb.edu
+The log is usually saved in XSB/build/Installation_summary.
+
+NOTE: if you downloaded XSB from the XSB CVS repository, you must type
+      `makexsb devel' instead of just `makexsb'.  This is because some .O 
+      files in your local copy might need to be recompiled.
 
 If everything worked, you can now run XSB using the shell script
 
