@@ -1401,7 +1401,7 @@ handle_command(Struct,SP,Format,Idxs,Verb,NVerb,NL,NNL,Opts,NStr,NNStr) :-
 	!.
 handle_command(Struct,_SP,_Format,_Idxs,Verb,Verb,NL,NL,_Opts,NStr,NStr) :-
 	functor(Struct,F,_),
-	xsbdoc_error(['could not process ',F,' command']).
+	xsbdoc_error(['could not process ',F,' command ',(Struct)]).
 
 try_command(comment(_),_SP,_Format,_Idxs,Verb,Verb,NL,NL,_Opts,NStr,NStr) :-
         !.
