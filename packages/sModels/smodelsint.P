@@ -43,7 +43,7 @@ of atoms true in the partial stable model total on the atoms relevant
 to instances of Query, if Flag is 0.  If Flag is 1, it only returns
 models in which the instance of Query is true.  
 
-set_query_true: set smodels so as to compute only partial stable
+set_query_true/1: set smodels so as to compute only partial stable
 models where the give query is true
 */
 
@@ -163,9 +163,11 @@ atom_handle(Atom,Handle) :-
 		atomhandle(Handle,Leaf)
 	).
 
-set_query_true :-
-	smodels_initted,
-	smodelsSetPosCompute(1).
+set_query_true(Neg) :-
+	smodels_initted,	
+	(Neg =:= 1
+	->  smodelsSetNegCompute(1)
+	;   smodelsSetPosCompute(1)).
 
 in_all_stable_models(Handle,Neg) :-
 	smodels_initted,

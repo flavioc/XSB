@@ -210,15 +210,15 @@ all_distinct1([vv(_Name,Var)|Rest]) :-
 process_stable_models(Query,Strict) :-
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
 	(Query = {tnot(Q)}
-         ->     true
-         ;      Q = Query
+         ->     Neg = 1
+         ;      Q = Query, Neg = 0
         ),
 	init_smodels(Q),
 	file_nl(STDFDBK),
 	file_write(STDFDBK,'Stable Models: '),
 	(var(Strict)
-	-> true
-	; set_query_true),
+	->  true
+	;   set_query_true(Neg)),
 	a_stable_model,
 	file_nl(STDFDBK),
 	file_write(STDFDBK,'  '),
