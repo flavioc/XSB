@@ -163,10 +163,10 @@ inline_builtin(get_delay_lists, 2, GET_DELAY_LISTS).
 inline_builtin(abolish_table_predicate, 1, ABOLISH_TABLE_PREDICATE).
 
 inline_builtin(trie_delete_branch_ret, 3, TRIE_DELETE_TERM).
-% inline_builtin(get_returns,2, TRIE_GET_RETURN). % Cannot be inlined - compiler bug ?
-% inline_builtin(get_calls,1, TRIE_GET_CALL). % Cannot be inlined - compiler bug ?
-inline_builtin(get_lastnode_cs_retskel, 3, GET_LASTNODE_CS_RETSKEL).
-inline_builtin(construct_ret_for_call, 1, CONSTRUCT_RET_FOR_CALL).
+% inline_builtin(get_returns, 2, TRIE_GET_RETURN). % Cannot be inlined - compiler bug ?
+% inline_builtin(get_calls, 1, TRIE_UNIFY_CALL). % Cannot be inlined - compiler bug ?
+inline_builtin(get_call, 3, TRIE_GET_CALL).
+inline_builtin(get_lastnode_cs_retskel, 4, GET_LASTNODE_CS_RETSKEL).
 % inline_builtin(breg_retskel, 4, BREG_RETSKEL).
 
 % The following two are not declared as inlined, because they are inlined
