@@ -397,7 +397,7 @@ inline static xsbBool file_function(void)
        the source file. So, if this will turn out to be a problem, a new
        builtin (interface to setvbuf) will have to be introduced. */
     FILE *src_fptr, *dest_fptr;
-    int src_fd, dest_fd, dest_xsb_fileno, errcode;
+    int src_fd, dest_fd, dest_xsb_fileno, errcode=0;
     char *mode = NULL;
     prolog_term dest_fptr_term;
 
@@ -414,7 +414,6 @@ inline static xsbBool file_function(void)
     } else {
       /* user wanted dup-like functionality */
       dest_fd = dup(src_fd);
-      errcode = dest_fd;
       if (dest_fd >= 0) {
 #ifdef WIN_NT
 	/* NT doesn't have fcntl(). Brain damage? */
@@ -422,24 +421,56 @@ inline static xsbBool file_function(void)
 #else /* Unix */ 
 	int fd_flags;
 	/* get the flags that open has set for this file descriptor */
-	fd_flags = fcntl(dest_fd, F_GETFL); 
-	if (fd_flags == (O_APPEND | O_WRONLY))
-	  mode = "ab";
-	else if (fd_flags == O_RDONLY)
-	  mode = "rb";
-	else if (fd_flags == O_WRONLY)
-	  mode = "wb";
-	else {
-	  /* can't determine the r/w/a mode of dest_fd 
-	     This usually happens for stdin/out/err and their clones.
-	     However, the mode r+ seems to work well for them. */
-	  mode = "r+";
+	fd_flags = fcntl(dest_fd, F_GETFL) & (O_ACCMODE | O_APPEND); 
+	switch (fd_flags) {
+	case O_RDONLY:
+	    mode = "rb";
+	    break;
+
+	case O_WRONLY:
+	    mode = "wb";
+	    break;
+
+	case O_ACCMODE:
+		/* Should not happen */
+		/* Falls through */
+
+	case O_RDWR:
+	    mode = "rb+";
+	    break;
+
+	case O_RDONLY | O_APPEND:
+	    mode = "rb";
+	    break;
+
+	case O_WRONLY | O_APPEND:
+	    mode = "ab";
+	    break;
+
+	case O_ACCMODE | O_APPEND:
+		/* Should not happen */
+		/* Falls through */
+
+	case O_RDWR | O_APPEND:
+	    mode = "ab+";
+	    break;
+
+	default:
+		mode = "rb+";
+		break;
 	}
 #endif
 	dest_fptr = fdopen(dest_fd, mode);
-	dest_xsb_fileno = xsb_intern_file(dest_fptr, "FILE_CLONE");
-	c2p_int(dest_xsb_fileno, dest_fptr_term);
-      }
+	if (dest_fptr) {
+	  dest_xsb_fileno = xsb_intern_file(dest_fptr, "FILE_CLONE");
+	  c2p_int(dest_xsb_fileno, dest_fptr_term);
+	} else {
+	  /* error */
+	  errcode = -1;
+	}
+      } else
+	/* error */
+	errcode = -1;
     }
     ctop_int(4, errcode);
 

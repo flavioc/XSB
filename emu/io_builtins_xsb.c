@@ -1300,6 +1300,8 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 int xsb_intern_file(FILE *fptr, char *context)
 {
   int i;
+  if (!fptr) return -1;
+
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES && open_files[i] != NULL; i++);
   if (i == MAX_OPEN_FILES) {
     xsb_warn("%s: Too many open files", context);
