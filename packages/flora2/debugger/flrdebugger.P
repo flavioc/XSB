@@ -43,10 +43,10 @@
 :- import member/2, append/3 from basics.
 
 :- import flora_decode_predicate/6,
+	flora_module_name/3,
 	flora_firstorder_module_predicate_symbol/3
     from flrwrapper.
 :- import flora_set_xpp_options/1,
-	flora_set_xpp_extra_options/1,
 	flora_set_xpp_options/0,
 	flora_clear_xpp_options/0 from flrutils.
 :- import flora_message_line/1, flora_message_line/2 from flrprint.
@@ -116,6 +116,8 @@ flora_write_goal(Call) :-
 	-> flora_write_hilog(Basename,ArgList,Workspace)
 	; Type == (flogic)
 	-> flora_write_flogic(Basename,ArgList,Workspace)
+	; Type == (prolog)
+	-> flora_write_prolog(Call)
 	; Type == (inheritance)
 	-> print_item('(Trying to derive by inheritance) '),
 	    flora_write_flogic(Basename,ArgList,Workspace)
@@ -283,6 +285,11 @@ flora_write_hilog(Basename,Args,Workspace) :-
 	HTerm =.. [WRAP_HILOG,Basename|Args],
 	write_hilog(HTerm),
 	write_workspace(Workspace).
+
+%%%%%%%%%%%%%%%%%%%%%% Prolog %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flora_write_prolog(Call) :-
+	print_items((Call, '@prolog()')).
 
 %%%%%%%%%%%%%%%%%%%%%% Firstorder %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -474,7 +481,7 @@ write_hilog_args([Arg|Rest]) :-
 write_workspace(WS) :-
 	(WS==main -> true
 	;
-	    fmt_write(STDDBG,'@%S',WS)
+	    fmt_write(STDDBG,'@%S',arg(WS))
 	).
 
 
@@ -541,9 +548,6 @@ flora_read_debugger_data(WS,_Datafile) :-
 flora_read_debugger_data(WS,Datafile) :- 
 	(var(WS)
 	-> flora_set_xpp_options
-	; WS = FL_FLORALIB(SysmodId)
-	-> flora_set_xpp_options(SysmodId),
-	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE ')
 	; flora_set_xpp_options(WS)
 	),
 	xpp_process_file(Datafile, CPP_process, IOportFromCPP),
@@ -594,7 +598,7 @@ flora_build_bridge_to_xsb_debugger :-
 	assert((show_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
 		flora_decode_predicate(X,_,WS,_,_,_),
-		WS = FL_FLORALIB(_)
+		flora_module_name(WS,systemmodule,_)
 	       )),
 	%% Rules for prefixes of predicates that need 
 	%% to be handled by the debugger
