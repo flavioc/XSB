@@ -136,12 +136,20 @@ flLoad(File) :-
 
 /*************************************************************************
   flCompileInclude(+File)
+  This is used only in the closure/Makefile
+  It takes a trailer template and wraps it with the workspace and 
+  flora prefixes. This way the trailer is easier to maintain and understand.
+
+  The included file is treated as a Flora program, so the compiler wraps it 
+  with the appropriate macros (e.g., WORKSPACE), as it would any other
+  Flora program.
 *************************************************************************/
 flCompileInclude(File) :-
 	flora_check_filename(File),
 	( flora_locate_file(File,FLORA_INCLUDE_EXT,FLIFile) ->
 	    flora_set_xpp_options,
 	    flora_FLH_filename(FLIFile,FLHFile),
+	    %% This adds the WORKSPACE macros etc.
 	    flora_compile_incfile(FLIFile,FLHFile,Status),
 	    flora_clear_xpp_options,
 	    (Status == FLORA_FAILURE -> fail; true)
@@ -305,20 +313,20 @@ flora_user_flora_dir(Dir) :-
 	( package_configuration(user_dir(flora),Dir) ->
 	    true
 	;
-	  xsb_configuration(user_home,UserHome),
-	  slash(S),
-	  fmt_write_string(Dir,"%s%s.xsb%sflora",args(UserHome,S,S)),
-          ( file_exists(Dir) ->
-	      true
-	  ;
-	    ( path_sysop(mkdir,Dir) ->
+	    xsb_configuration(user_home,UserHome),
+	    slash(S),
+	    fmt_write_string(Dir,"%s%s.xsb%sflora",args(UserHome,S,S)),
+	    ( file_exists(Dir) ->
 		true
 	    ;
-	      flora_error_line("Cannot create directory %s!",args(Dir)),
-	      abort
-	    )
-	  ),
-	  assert(package_configuration(user_dir(flora),Dir))
+		( path_sysop(mkdir,Dir) ->
+		    true
+		;
+		    flora_error_line("Cannot create directory %s!",args(Dir)),
+		    abort
+		)
+	    ),
+	    assert(package_configuration(user_dir(flora),Dir))
 	),
 	!.
 
@@ -724,6 +732,9 @@ flora_generate_DBfile(DBFileName,FlogicFactList,FileStatus) :-
 /*************************************************************************
   flora_compile_incfile(+InputFile,+OutputFile,-FileStatus) :-
 
+  This compiles the include file (it is called from flCompileInclude/1)
+  and adds the WORKSPACE and other macros to it.
+
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
 flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
@@ -768,6 +779,8 @@ flora_tailappend(V,[],V) :- !.
 flora_tailappend([H|V],[H|L],T) :- flora_tailappend(V,L,T).
 
 
+%% Calls the compiler. This is used to wrap templates, like trailers, 
+%% with the WORKSPACE macros.
 flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus) :-
 	flora_read_parse_compile(FLORA_FILE,Tokens,FlattenedRules,RuleOptions,RuleStatus),
 	member(error(EN),RuleStatus),
