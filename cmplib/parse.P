@@ -129,7 +129,12 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 #else
 	fmt_write_string(XPP_command_msg, '[Preprocessing %s]', FileName),
 #endif
-	message(XPP_command_msg),
+        %% If --quietload, don't print Preprocessing messages
+	stat_flag(BANNER_CTL,BannerCtl),
+	(   KeepQuiet is BannerCtl mod QUIETLOAD, KeepQuiet =:= 0
+	->  true
+	;   message(XPP_command_msg)
+	),
 	%% Redirect cpp's stderr to XSB's STDWARN
 	spawn_process(FullXPP_command, block, IOportFromProc, 3, XPP_process),
 	!,

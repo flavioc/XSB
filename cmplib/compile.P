@@ -24,6 +24,10 @@
 */
 
 
+:- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
+#include "flag_defs_xsb.h"
+
+
 
 mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 
@@ -41,7 +45,14 @@ compile(Modname, Basename, Options, ExportList) :-
 	file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 		   SpecFile, TIFile, TableFile, OptFile),
 	setoptions(Options), initialize,
-	message(('[Compiling ', Basename, ']')), cputime(TimeStart),
+	%% If --quietload, don't print Compiling/compiled messages
+	stat_flag(BANNER_CTL,BannerCtl),
+	(   KeepQuiet is BannerCtl mod QUIETLOAD, KeepQuiet =:= 0
+	->  true
+	;
+	message(('[Compiling ', Basename, ']'))
+	),
+	cputime(TimeStart),
 	retractall(current_compiled_module(_)),
 	assert(current_compiled_module(Basename)),
 	db_preprocess(PFile, HFile, OptFile, SourceFile),
@@ -68,7 +79,13 @@ compile(Modname, Basename, Options, ExportList) :-
 	; true
 	), !,
 	( IsModule =:= 0 -> IsModuleMsg = '' ; IsModuleMsg = 'Module ' ),
-	time_message(TimeStart, (IsModuleMsg, Modname, ' compiled')), !,
+	%% If --quietload, don't print Compiling/compiled messages
+	stat_flag(BANNER_CTL,BannerCtl1),
+	(   KeepQuiet1 is BannerCtl1 mod QUIETLOAD, KeepQuiet1 =:= 0
+	->  true
+	;   time_message(TimeStart, (IsModuleMsg, Modname, ' compiled'))
+	),
+	!,
 	close_ti_file(TIFile),
 	tell(OldFile).
 
