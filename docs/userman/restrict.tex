@@ -13,18 +13,14 @@ fix it or to assist you to bypass it.
 \section{Current Restrictions}
 
 \begin{itemize}
-\item	The maximum arity for predicate and function symbols is 255.
+\item The maximum arity for predicate and function symbols is 255.
 %
-\item	The maximum length of atoms that can be stored in an XSB
-  \emph{object} code file is 255.  So, users should avoid compiling files
-  containing atoms whose length is more than 255. This \emph{does not} mean
-  that XSB cannot handle longer atoms. Longer atoms can be read in or
-  loaded dynamicaly (instead of being compiled).  For instance, files
-  containing long atoms can be loaded into XSB using the standard
-  predicate {\tt load\_dyn/1} that asserts the contents of a file in XSB's
-  database (see the section {\em Library Utilities} in Volume 2).
+\item The maximum length of atoms that can be stored in an XSB
+      \emph{object} code file is in principle $2^{32}-1$, but in
+      practice it is $2^{28}-1$ (i.e., in 32-bit platforms it is
+      bounded by the size of the maximum integer; see below).
 %
-\item	In the current version, you should never try to rename a byte code 
+\item In the current version, you should never try to rename a byte code 
       file generated for a module, though you can move it around in your 
       file system.  Since the module name is stored in the file, renaming it
       causes the system to load it into wrong places.  However, byte code 
@@ -69,36 +65,7 @@ In fact the declartion {\tt :- dynamic} essentially instructs XSB to
 fail on that code if it is undefined.
 %
 \item Currently the C foreign language interface does not work when
-XSB is {\em also} compiled with the Oracle interface on Solaris.
-\comment{
-\item When compiling a predicate such as
-\begin{verbatim}
-foo :- (X=1;Y=2),write(X),nl,write(Y),nl,fail.
-\end{verbatim}
-you may get an error such as
-\begin{verbatim}
-++Error: Uninitialized variable #1 in clause #1 of temp/0
-         (cannot generate object code)
-++Error: Uninitialized variable #2 in clause #1 of temp/0
-         (cannot generate object code)
-\end{verbatim}
-This error occurs because, according to the compiler, for both {\tt X}
-and {\tt Y} there is an execution path that leads to a possibly
-uninitialized use of the variable.  For instance if {\tt X} is equal
-to {\tt 1}, the code for {\tt Y = 2} will not be executed so that {\tt
-write(Y)} will write an occurrence of {\tt Y} that is not initialized
-by the compiler.  The following predicate provides an inelegant but
-effective rewrite.
-\begin{verbatim}
-foo :- (X=1,Y=Z;Y=2,X=Z),write(X),nl,write(Y),nl,fail.
-\end{verbatim}
-\item When ``compiling'' of large files through {\tt consult/2}, many
-      parts of the compiler are bypassed.  As a result compiler
-      directives like {\tt auto-table} may not work with large files.
-      To work around this, the files may be explicitly compiled
-      through {\tt compile/2} to create an object file, and then
-      loaded as usual through {\tt consult/2}.
-}
+      XSB is {\em also} compiled with the Oracle interface on Solaris.
 % I think this is mostly fixed: tls
 %\item Explicit compilation (using {\tt compile/1}) of {\em very} large
 %      files {\em may} cause a core dump due to unfinished memory
@@ -125,9 +92,9 @@ foo :- (X=1,Y=Z;Y=2,X=Z),write(X),nl,write(Y),nl,fail.
 %           p(X) :- X1 is X, X1 =:= 1.
 %     \end{verbatim}
 \item The reader cannot read an infix operator immediately followed 
-       by a left parenthesis.  In such a case you get a
-      syntax error.  To avoid the syntax error just leave a blank between the
-      infix operator and the left parenthesis.  For example, instead of 
+      by a left parenthesis.  In such a case you get a syntax error.
+      To avoid the syntax error just leave a blank between the infix
+      operator and the left parenthesis.  For example, instead of 
       writing:
 
       \demo{	| ?- X=(a,b).}
@@ -138,19 +105,20 @@ foo :- (X=1,Y=Z;Y=2,X=Z),write(X),nl,write(Y),nl,fail.
       \demo{	| ?- X= (a,b).}
 %
 \item The reader cannot properly read an operator defined as both a
-prefix and an infix operator.  For instance the declaration 
-\begin{verbatim}
+      prefix and an infix operator.  For instance the declaration 
+      \begin{verbatim}
                 :- op(1200,xf,'<=').
                 :- op(1200,xfx,'<=').
-\end{verbatim}
-will lead to a syntax error.
+      \end{verbatim}
+      will lead to a syntax error.
 %
 \item When the code of a predicate is reloaded many times, if the old 
       code is still in use at the time of loading, unexpected errors may 
       occur, due to the fact that the space of the old code is reclaimed
       and may be used for other purposes.
 \item Currently, term comparisons ({\tt ==},{\tt @<=},{\tt @<},{\tt
-      @>}, and {\tt @>=}) do not work for very large terms (around
-      10,000 variables and function symbols) on the Next platform.
+      @>}, and {\tt @>=}) do not work for terms that overflow the
+      C-recursion stack (terms that contain more than 10,000 variables
+      and/or function symbols).
 \end{itemize}
 
