@@ -59,8 +59,10 @@
 
 :- import writeln/1, write/1 , '=..'/2, atomic/1, atom_codes/2,
         atom/1, number_codes/2, name/2, number/1, integer/1, nl/0,
-	'\='/2, functor/3, abort/1
+	'\='/2, functor/3, abort/1, structure/1
 	from standard.
 
 :- import findall/3, setof/3, bagof/3
 	from setof.
+
+:- import numbervars/1 from num_vars.
