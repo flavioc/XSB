@@ -133,10 +133,22 @@ bagOf(Call,List) :- bagof(Var,Call(Var),List).
 
 % Reduce elements using associative Op with identity Id.
 % Template,Call,Res are like args for setof; Call may have existentials
-bagReduce(Template,Call,_Res,Op,Id) :-
-	bagReduce1(Template,Call,_,Op,Id), fail.
+
 bagReduce(Template,Call,Res,Op,Id) :-
-	bagReduce1(Template,Call,Res0,Op,Id), Res=Res0.
+	table_state(bagReduce1(Template,Call,Res,Op,Id),_PT,_,AnsSetStatus),
+	(AnsSetStatus == complete
+	 ->	bagReduce1(Template,Call,Res,Op,Id)
+	 ; AnsSetStatus == undefined
+	 ->	(bagReduce1(Template,Call,Res,Op,Id),fail
+		 ;
+		 bagReduce(Template,Call,Res,Op,Id)
+		)
+	 ; AnsSetStatus == incomplete
+	 ->	get_ptcp(PTCP),
+		get_producer_subgoal_frame(bagReduce1(Template,Call,Res,Op,Id),SubgPtr),
+		is_incomplete(SubgPtr,PTCP),
+		bagReduce1(Template,Call,Res,Op,Id)
+	).
 
 :- table bagReduce1/5.
 :- use_variant_tabling bagReduce1(_,_,_,_,_).

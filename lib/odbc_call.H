@@ -25,7 +25,7 @@
 
 % import some necessary predicates from library.
 
-:- import str_cat/3 from string.
-:- import odbc_exec_query/5 from machine.
-:- import conset/2, conget/2 from gensym.
+:- import str_cat/3, concat_atom/2 from string.
+:- import call0/1, odbc_exec_query/5 from machine.
+:- import conset/2, conget/2, coninc/1 from gensym.
 :- import length/2, append/3, member/2 from basics.
