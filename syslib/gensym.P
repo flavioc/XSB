@@ -76,6 +76,10 @@ coninc(Con) :-
 	term_psc(Con, Psc), psc_prop(Psc, N),
 	NewN is N+1, psc_set_prop(Psc, NewN).
 
+coninc(Con,NewN) :-
+	term_psc(Con, Psc), psc_prop(Psc, N),
+	NewN is N+1, psc_set_prop(Psc, NewN).
+
 /*======================================================================*/
 /* counter routines. A counter is a unary term.				*/
 /*======================================================================*/

@@ -26,7 +26,7 @@
 
 :- export gensym/2, gennum/1, gennum/2, prepare/0, prepare/1.
 
-:- export conlength/2, conset/2, conget/2, coninc/1.
+:- export conlength/2, conset/2, conget/2, coninc/1, coninc/2.
 :- export newcounter/1, inccounter/1, getcounter/1.
 
 :- import psc_set_prop/2, 
