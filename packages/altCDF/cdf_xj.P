@@ -2,7 +2,7 @@
 
 :- compiler_options([ciao_directives]).
 
-:- export make_cdf_dirty/1, make_cdf_clean/0,
+:- export make_cdf_dirty/1, make_cdf_clean/0, make_cdf_clean/1,
 	  cdf_update_list/1,  cdf_dont_use_cache/0, cdf_use_cache/0.
 
 :- import assert_cdf/1, retractall_cdf/1 from usermod.
@@ -23,6 +23,7 @@ make_cdf_dirty(Name) :-
 	    true
 	  ; 
 	    assert(cdf_flags(dirty,Name)) ).
+make_cdf_clean(Name) :- retractall(cdf_flags(dirty,Name)).
 make_cdf_clean :- retractall(cdf_flags(dirty,_)).
 
 :- comment(cdf_update_list/1, "cdf_update_list takes a list of
