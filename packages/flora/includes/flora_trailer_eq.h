@@ -54,22 +54,26 @@ VAR_FPREFIX(fs)(O,MethodArgs,R) :-
 	VAR_FPREFIX(fs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(isa)(O,Class)
 	; VAR_FPREFIX(eql_true)(Class,C), VAR_FPREFIX(isa)(O,C)
+	; VAR_FPREFIX(eql_true)(C,Class), VAR_FPREFIX(isa)(O,C)
 	).
 VAR_FPREFIX(ifs)(O,MethodArgs,R) :-
 	VAR_FPREFIX(ifs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(isa)(O,Class)
 	; VAR_FPREFIX(eql_true)(Class,C), VAR_FPREFIX(isa)(O,C)
+	; VAR_FPREFIX(eql_true)(C,Class), VAR_FPREFIX(isa)(O,C)
 	).
 
 VAR_FPREFIX(mvs)(O,MethodArgs,R) :-
 	VAR_FPREFIX(mvs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(isa)(O,Class)
 	; VAR_FPREFIX(eql_true)(Class,C), VAR_FPREFIX(isa)(O,C)
+	; VAR_FPREFIX(eql_true)(C,Class), VAR_FPREFIX(isa)(O,C)
 	).
 VAR_FPREFIX(imvs)(O,MethodArgs,R) :-
 	VAR_FPREFIX(imvs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(isa)(O,Class)
 	; VAR_FPREFIX(eql_true)(Class,C), VAR_FPREFIX(isa)(O,C)
+	; VAR_FPREFIX(eql_true)(C,Class), VAR_FPREFIX(isa)(O,C)
 	).
 
 %% Subclass
@@ -77,22 +81,26 @@ VAR_FPREFIX(fs)(Sub,MethodArgs,R) :-
 	VAR_FPREFIX(fs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(strict_subclass)(Sub,Class)
 	; VAR_FPREFIX(eql_true)(Class,S), VAR_FPREFIX(strict_subclass)(Sub,S)
+	; VAR_FPREFIX(eql_true)(S,Class), VAR_FPREFIX(strict_subclass)(Sub,S)
 	).
 VAR_FPREFIX(ifs)(Sub,MethodArgs,R) :-
 	VAR_FPREFIX(ifs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(strict_subclass)(Sub,Class)
 	; VAR_FPREFIX(eql_true)(Class,S), VAR_FPREFIX(strict_subclass)(Sub,S)
+	; VAR_FPREFIX(eql_true)(S,Class), VAR_FPREFIX(strict_subclass)(Sub,S)
 	).
 
 VAR_FPREFIX(mvs)(Sub,MethodArgs,R) :-
 	VAR_FPREFIX(mvs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(strict_subclass)(Sub,Class)
 	; VAR_FPREFIX(eql_true)(Class,S), VAR_FPREFIX(strict_subclass)(Sub,S)
+	; VAR_FPREFIX(eql_true)(S,Class), VAR_FPREFIX(strict_subclass)(Sub,S)
 	).
 VAR_FPREFIX(imvs)(Sub,MethodArgs,R) :-
 	VAR_FPREFIX(imvs)(Class,MethodArgs,R),
 	( VAR_FPREFIX(strict_subclass)(Sub,Class)
 	; VAR_FPREFIX(eql_true)(Class,S), VAR_FPREFIX(strict_subclass)(Sub,S)
+	; VAR_FPREFIX(eql_true)(S,Class), VAR_FPREFIX(strict_subclass)(Sub,S)
 	).
 
 
@@ -245,42 +253,53 @@ VAR_FPREFIX(conflict_imvd)(Class,Super,Method) :-
 /*****************************************************************************
   rules for congruence due to single-valued methods
 *****************************************************************************/
-:- table wfs_true/1, wfs_maybe/1, wfs_false/1.
+:- table wfs_true/1.
 wfs_true(Call) :- (Call, fail; get_residual(Call,[])).
 
 :- table VAR_FPREFIX(eql)/2.
-:- table VAR_FPREFIX(eql_true)/2.
-:- table VAR_FPREFIX(metheql)/2.
+%% Not tabling these two seems faster!
+%%:- table VAR_FPREFIX(eql_true)/2.
+%%:- table VAR_FPREFIX(metheql)/2.
+:- table VAR_FPREFIX(eql_tmp)/2.
 
 VAR_FPREFIX(eql_true)(X,Y) :- wfs_true(VAR_FPREFIX(eql)(X,Y)).
 
 VAR_FPREFIX(eql)(X,Y) :- X == Y, fail.
 
-VAR_FPREFIX(eql)(X,Y) :-
-	X @< Y,
+VAR_FPREFIX(eql)(X,Y) :- wfs_true(VAR_FPREFIX(eql_tmp)(X,Y)).
+VAR_FPREFIX(eql_tmp)(X,Y) :-
 	VAR_FPREFIX(fd)(O,M1,X),
-	(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
+	%% Is metheql needed here? 
+	%% Aren't we supposed to derive fd(O,M2,X) anyway?
+	%%(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
+	M1=M2,
 	VAR_FPREFIX(fd)(O,M2,Y),
 	X \= Y.
 
-VAR_FPREFIX(eql)(X,Y) :-
-	X @< Y,
-	VAR_FPREFIX(eql)(O1,O2),
+/* Why is this rule needed?
+   (the wives example doesn't work right without it)
+*/
+VAR_FPREFIX(eql)(X,Y) :- wfs_true(VAR_FPREFIX(eql_tmp)(X,Y)).
+VAR_FPREFIX(eql_tmp)(X,Y) :-
 	VAR_FPREFIX(fd)(O1,M1,X),
-	(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
+	VAR_FPREFIX(eql)(O1,O2),
+	%% Is metheql needed here? 
+	%% Aren't we supposed to derive fd(O,M2,X) anyway?
+	%%(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
+	M1=M2,
 	VAR_FPREFIX(fd)(O2,M2,Y),
 	X \= Y.
 
 VAR_FPREFIX(eql)(X,Y) :-
-	X @< Y,
 	VAR_FPREFIX(eql)(X,Z),
 	VAR_FPREFIX(eql)(Z,Y),
 	X \= Y.
 
+/* This rule slows down! Use eql_true(X,Y); eql_true(Y,X) everywhere!
 VAR_FPREFIX(eql)(X,Y) :-
-	%%X @< Y,
 	VAR_FPREFIX(eql)(Y,X),
 	X \= Y.
+*/
 
 
 VAR_FPREFIX(metheql)(X,Y) :-
@@ -302,7 +321,10 @@ VAR_FPREFIX(argeql)(X,Y,N) :-
 	N >= 1,
 	arg(N,X,Xn),
 	arg(N,Y,Yn),
-	(Xn=Yn ; VAR_FPREFIX(eql_true)(Xn,Yn)),
+	(Xn=Yn
+	; VAR_FPREFIX(eql_true)(Xn,Yn)
+	; VAR_FPREFIX(eql_true)(Yn,Xn)
+	),
 	M is N-1,
 	VAR_FPREFIX(argeql)(X,Y,M).
 
@@ -374,18 +396,18 @@ VAR_FPREFIX(fd_rhs)(Object,Method,Result) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(fd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(fd)(O,M,Result),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(fd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
 	VAR_FPREFIX(fd)(Object,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(fd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(fd)(O,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
@@ -395,18 +417,18 @@ VAR_FPREFIX(mvd_rhs)(Object,Method,Result) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(mvd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(mvd)(O,M,Result),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(mvd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
 	VAR_FPREFIX(mvd)(Object,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(mvd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(mvd)(O,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
@@ -416,18 +438,18 @@ VAR_FPREFIX(ifd_rhs)(Object,Method,Result) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(ifd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(ifd)(O,M,Result),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(ifd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
 	VAR_FPREFIX(ifd)(Object,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(ifd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(ifd)(O,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
@@ -437,18 +459,18 @@ VAR_FPREFIX(imvd_rhs)(Object,Method,Result) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(imvd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(imvd)(O,M,Result),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(imvd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
 	VAR_FPREFIX(imvd)(Object,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(imvd_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(imvd)(O,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
@@ -458,7 +480,7 @@ VAR_FPREFIX(mvd_rhs)(Object,Method) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(mvd_rhs)(Object,Method) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(mvd)(O,M),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
@@ -468,7 +490,7 @@ VAR_FPREFIX(imvd_rhs)(Object,Method) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(imvd_rhs)(Object,Method) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(imvd)(O,M),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
@@ -477,16 +499,16 @@ VAR_FPREFIX(isa_rhs)(Object1,Object2) :-
 	VAR_FPREFIX(isa)(Object1,Object2).
 
 VAR_FPREFIX(isa_rhs)(Object1,Object2) :-
-	VAR_FPREFIX(eql_true)(Object1,O1),
+	(VAR_FPREFIX(eql_true)(Object1,O1); VAR_FPREFIX(eql_true)(O1,Object1)),
 	VAR_FPREFIX(isa)(O1,Object2).
 
 VAR_FPREFIX(isa_rhs)(Object1,Object2) :-
-	VAR_FPREFIX(eql_true)(Object2,O2),
+	(VAR_FPREFIX(eql_true)(Object2,O2); VAR_FPREFIX(eql_true)(O2,Object2)),
 	VAR_FPREFIX(isa)(Object1,O2).
 
 VAR_FPREFIX(isa_rhs)(Object1,Object2) :-
-	VAR_FPREFIX(eql_true)(Object1,O1),
-	VAR_FPREFIX(eql_true)(Object2,O2),
+	(VAR_FPREFIX(eql_true)(Object1,O1); VAR_FPREFIX(eql_true)(O1,Object1)),
+	(VAR_FPREFIX(eql_true)(Object2,O2); VAR_FPREFIX(eql_true)(O2,Object2)),
 	VAR_FPREFIX(isa)(O1,O2).
 
 /****************************************************************************/
@@ -494,16 +516,16 @@ VAR_FPREFIX(sub_rhs)(Object1,Object2) :-
 	VAR_FPREFIX(subclass)(Object1,Object2).
 
 VAR_FPREFIX(sub_rhs)(Object1,Object2) :-
-	VAR_FPREFIX(eql_true)(Object1,O1),
+	(VAR_FPREFIX(eql_true)(Object1,O1); VAR_FPREFIX(eql_true)(O1,Object1)),
 	VAR_FPREFIX(subclass)(O1,Object2).
 
 VAR_FPREFIX(sub_rhs)(Object1,Object2) :-
-	VAR_FPREFIX(eql_true)(Object2,O2),
+	(VAR_FPREFIX(eql_true)(Object2,O2); VAR_FPREFIX(eql_true)(O2,Object2)),
 	VAR_FPREFIX(subclass)(Object1,O2).
 
 VAR_FPREFIX(sub_rhs)(Object1,Object2) :-
-	VAR_FPREFIX(eql_true)(Object1,O1),
-	VAR_FPREFIX(eql_true)(Object2,O2),
+	(VAR_FPREFIX(eql_true)(Object1,O1); VAR_FPREFIX(eql_true)(O1,Object1)),
+	(VAR_FPREFIX(eql_true)(Object2,O2); VAR_FPREFIX(eql_true)(O2,Object2)),
 	VAR_FPREFIX(subclass)(O1,O2).
 
 /****************************************************************************/
@@ -512,18 +534,18 @@ VAR_FPREFIX(fs_rhs)(Object,Method,Result) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(fs_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(fs)(O,M,Result),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(fs_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
 	VAR_FPREFIX(fs)(Object,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(fs_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(fs)(O,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
@@ -533,18 +555,18 @@ VAR_FPREFIX(mvs_rhs)(Object,Method,Result) :-
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(mvs_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(mvs)(O,M,Result),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(mvs_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
 	VAR_FPREFIX(mvs)(Object,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
 VAR_FPREFIX(mvs_rhs)(Object,Method,Result) :-
-	VAR_FPREFIX(eql_true)(Result,R),
-	VAR_FPREFIX(eql_true)(Object,O),
+	(VAR_FPREFIX(eql_true)(Result,R); VAR_FPREFIX(eql_true)(R,Result)),
+	(VAR_FPREFIX(eql_true)(Object,O); VAR_FPREFIX(eql_true)(O,Object)),
 	VAR_FPREFIX(mvs)(O,M,R),
 	(M=Method ; VAR_FPREFIX(metheql)(M,Method)).
 
