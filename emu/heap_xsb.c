@@ -95,7 +95,6 @@ Todo:
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>  /* --lfcastro */
-#include <sys/resource.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
