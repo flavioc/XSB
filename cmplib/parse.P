@@ -97,7 +97,7 @@ parse1(Modname, File, Module) :-
 %% it checks whether to restart parsing. 
 %% If restart is needed, control falls down here, needs_restart is cleared,
 %% and parse1 is restarted. Since cpp_on is now 1, the restart 
-%% process doesn't repeat itself. -mk
+%% process doesn''t repeat itself. -mk
 parse1(Modname, File, Module) :- 
 	%% If we are restarting due to cpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
@@ -125,7 +125,8 @@ open_or_cpp_file(File, CPP_process) :-
 			     args(CPP, IncludeDirs, File)),
 	    fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
 	    message(CPP_command1),
-	    spawn_process(CPP_command, block, From, block, CPP_process),
+	    %% Redirect cpp''s stderr to XSB''s STDWARN
+	    spawn_process(CPP_command, block, From, 3, CPP_process),
 	    stat_set_flag(10, From)
 	).
 
