@@ -569,7 +569,7 @@ flatten_retract_term(objspec(O,Spec),W,Ps) :-
 
 flatten_retract_term(spterm(Op,E1,E2),_,Ps) :-
 	displayln,
-	fmt_write_string(Msg,'%s is compiled as a condition for retracts.',f(Op)),
+	fmt_write_string(Msg,'%s is compiled as a condition for retract operator',f(Op)),
 	displayln_warning(Msg),
 	rhs_flatten(spterm(Op,E1,E2),_,Ps).
 

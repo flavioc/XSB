@@ -148,48 +148,51 @@ flora_msgheader :-
 
 /*********************************************************************/
 flcompile(InFile,Dtvs) :-
-	'_$_$_flora_flcompile'(static_mode,Dtvs,InFile,force,Module),
-	displayln, flora_msgheader, displayln('calling XSB]'),
-	compile(Module,[optimize,spec_repr]).
+	flora_compile_internal(InFile, Dtvs, static_mode).
+
+dyncompile(InFile,Dtvs) :-
+	flora_compile_internal(InFile, Dtvs, dynamic_mode).
 
 flcompile(InFile) :-
 	flora_default_directives(Dtvs),
 	flcompile(InFile,Dtvs).
 
-
-/*********************************************************************/
-dyncompile(InFile,Dtvs) :-
-	'_$_$_flora_flcompile'(dynamic_mode,Dtvs,InFile,force,Module),
-	displayln, flora_msgheader, displayln('calling XSB]'),
-	compile(Module,[optimize,spec_repr]).
-
 dyncompile(InFile) :-
 	flora_default_directives(Dtvs),
 	dyncompile(InFile,Dtvs).
 
+flora_compile_internal(InFile, Dtvs, Mode) :-
+	'_$_$_flora_flcompile'(Mode,Dtvs,InFile,force,Module),
+	displayln, flora_msgheader, displayln('calling XSB compiler]'),
+	compile(Module,[optimize,spec_repr]).
 
 /*********************************************************************/
-flconsult(File,Dtvs) :- 
-	'_$_$_flora_flcompile'(static_mode,Dtvs,File,noforce,Module),
-	displayln, flora_msgheader, display('consulting '),
-	display(Module), displayln(']'),
-	consult(Module,[optimize,spec_repr]).
+flconsult(File, Dtvs) :-
+	flora_consult_internal(File, Dtvs, static_mode).
+
+dynconsult(File, Dtvs) :- 
+	flora_consult_internal(File, Dtvs, dynamic_mode).
 
 flconsult(File) :- 
 	flora_default_directives(Dtvs),
 	flconsult(File,Dtvs).
 
-
-/*********************************************************************/
-dynconsult(File,Dtvs) :- 
-	'_$_$_flora_flcompile'(dynamic_mode,Dtvs,File,noforce,Module),
-	displayln, flora_msgheader, display('dynamically loading '),
-	display(Module), displayln(']'),
-	load_dyn(Module).
-
 dynconsult(File) :- 
 	flora_default_directives(Dtvs),
 	dynconsult(File,Dtvs).
+
+flora_consult_internal(File, Dtvs, Mode) :-
+	'_$_$_flora_flcompile'(Mode,Dtvs,File,noforce,Module),
+	displayln, flora_msgheader, 
+	(Mode = static_mode -> display('consulting ')
+    	    	;
+		display('dynamically loading ')
+	),
+	display(Module), displayln(']'),
+	(Mode = static_mode -> consult(Module,[optimize,spec_repr])
+    	    	;
+		load_dyn(Module)
+	).
 
 
 /*********************************************************************/

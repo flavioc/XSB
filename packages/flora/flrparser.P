@@ -127,7 +127,7 @@ rule(null) --> white_space0, !.
 rule(_) -->
 	{ error(reserved_word),
 	  flora_prefix(P),
-	  fmt_write_string(Msg,'%s* is a reserved FLORA keyword.',f(P)),
+	  fmt_write_string(Msg,'%s* is a reserved FLORA keyword',f(P)),
           displayln,
           displayln_errmsg(Msg),
 	  fail
