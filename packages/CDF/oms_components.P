@@ -105,7 +105,7 @@ OMS instance.
 
 Information about components resides in the OMS itself which
 represents a component name along with a version using the product
-class @tt{compVers{id(Name,Name),id(integer(Version),'OMS'))}$ (in the
+class @tt{compVers(id(Name,Name),id(integer(Version),'OMS'))} (in the
 'OMS' component).  Information about a component and version is
 maintained as a subclass of @tt{id('OMS Component','OMS')}.  Component
 dependency is represented by the relation
@@ -123,7 +123,7 @@ Given an OMS state, a user may want to do several things.
 
 @item A user may wish to create components from an OMS state, or to
 update components used by an OMS state.  One way to do this is by
-@{update_all_components(Dir)} which determines a class or relation
+@tt{update_all_components(Dir)} which determines a class or relation
 based partition of the OMS instance, and computes all dependencies
 between these cells.  Cells that are not components are made into
 components (with version 0), and that are already components have

@@ -142,7 +142,7 @@ If @tt{attr(S,R,T)} succeeds then the subquery is satisfied with no
 penalty.  If @tt{attr(S,R,T)} fails, then the subquery succeeds with a
 penalty value given by @tt{Penalty}.
 
-@end{itemize}
+@end{enumerate}
 
 ").
 
