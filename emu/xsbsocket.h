@@ -37,14 +37,7 @@
 #define SOCKET_GET0        11
 #define SOCKET_PUT         12
 
-
-FILE *sockptr;
-int rc, domain, portnum;
-char ch;
-SOCKET sockfd, sockfd_in;
-
 #ifdef WIN_NT
-char *sock_msg, ci, last[1];
 #define IPPROTO_TCP                0  /* defined in Unix, but not Windows */
 #define BAD_SOCKET(sockfd)         sockfd==INVALID_SOCKET
 #define SOCKET_OP_FAILED(sock_op)   sockfd==SOCKET_ERROR
@@ -64,6 +57,12 @@ char *sock_msg, ci, last[1];
 #define FillWithZeros(addr)    	   memset((char *)&addr, (int) 0, sizeof(addr));
 #endif
 
-SOCKADDR_IN socket_addr;
-
 int retcode; /* return code from socket operation */
+
+SOCKADDR_IN socket_addr;
+FILE *sockptr;
+int rc, domain, portnum;
+char ch;
+SOCKET sockfd, sockfd_in;
+char *sock_msg, ci, last[1];
+
