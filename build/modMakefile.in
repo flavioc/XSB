@@ -38,7 +38,6 @@ CC=@CC@
 CPP=@CPP@
 CFLAGS=@CFLAGS@
 # Flags for files requiring lower optimization level (emuloop.c)
-LCFLAGS=@LCFLAGS@
 CPPFLAGS=@CPPFLAGS@
 LDFLAGS=@LDFLAGS@
 

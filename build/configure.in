@@ -426,22 +426,26 @@ AC_MSG_RESULT($__sunpro_c)
 
 dnl set some basic flags
 case $CC in
-   gcc)	c_low_opt_level=-${optimization_level-"O4"}
+   gcc)	emuloop_opt_level=-${optimization_level-"O4"}
+	trutils_opt_level=-${optimization_level-"O1"}
 	c_inline_level="-finline-functions -Winline" 
 	CFLAGS="-ansi -pedantic -Wall"
 	;;
    cc)  if test "$__sunpro_c" = "no"; then
-	   c_low_opt_level=-${optimization_level-"O4"}
+	   emuloop_opt_level=-${optimization_level-"O4"}
+	   trutils_opt_level=-${optimization_level-"O4"}
 	else
-	   # c_low_opt_level is the optimization level for emuloop.c
+	   # emuloop_opt_level is the optimization level for emuloop.c
     	   # Using xO4 would take SunPro more than an hour, hence xO2.
-	   c_low_opt_level=-${optimization_level-"xO2"}
+	   emuloop_opt_level=-${optimization_level-"xO2"}
+	   trutils_opt_level=-${optimization_level-"xO4"}
         fi
 	c_inline_level=""
 	CFLAGS=""
 	;;
    acc) # acc also seems to choke on high optimization levels for emuloop.c
-	c_low_opt_level=-${optimization_level-"O2"}
+	emuloop_opt_level=-${optimization_level-"O2"}
+        trutils_opt_level=-${optimization_level-"O4"}
 	c_inline_level=""
 	CFLAGS="-Xa"
 	;;
@@ -832,6 +836,7 @@ else
    c_opt_level=-${optimization_level-"xO4"}
 fi
 
+
 ####### Test for -export-dynamic option of ld
 TEMP_LDFLAGS=$LDFLAGS
 LDFLAGS="-Wl,-export-dynamic"
@@ -887,7 +892,8 @@ case "$canonical" in
 	     if test "${machine64bit}" = yes ; then
 		AC_DEFINE(SGI64)
 		c_opt_level=-${optimization_level-"O1"}
-		c_low_opt_level=-${optimization_level-"O1"}
+		emuloop_opt_level=-${optimization_level-"O1"}
+		trutils_opt_level=-${optimization_level-"O1"}
 		if test ! "$CC" = gcc ; then
 		    CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
 		    LINKFLAGS="-64"
@@ -895,11 +901,13 @@ case "$canonical" in
 	     else
       		AC_DEFINE(SGI)
 	     	c_opt_level=-${optimization_level-"O2"}
-	     	c_low_opt_level=-${optimization_level-"O2"}
+	     	emuloop_opt_level=-${optimization_level-"O2"}
+		trutils_opt_level=-${optimization_level-"O2"}
 		if test ! "$CC" = gcc ; then
 		    CFLAGS="${CFLAGS} -OPT:Olimit=7500"
 	     	fi
 	     fi     	
+	     trutils_opt_level=c_opt_level
 	    ;;
       *-solaris* | *-sunos5* ) AC_DEFINE(SOLARIS)
 		 LDFLAGS="${LDFLAGS} -lnsl -ldl"
@@ -947,7 +955,8 @@ esac
 # Don't optimize and inline if debugging!!
 if test "${do_debugging}" = "yes"  -o "${disable_optimization}" = "yes" ; then
    c_opt_level=
-   c_low_opt_level=
+   emuloop_opt_level=
+   trutils_opt_level=
    c_inline_level=
 fi
 if test "${do_debugging}" = "yes" ; then
@@ -964,8 +973,9 @@ fi
 #		${LDFLAGS}"
 #fi
 
-LCFLAGS="${c_site_includes} ${c_low_opt_level} ${c_inline_level} ${CFLAGS}"
-dnl Set CFLAGS **after** LCFLAGS
+emuloopCFLAGS="${c_site_includes} ${emuloop_opt_level} ${c_inline_level} ${CFLAGS}"
+trutilsCFLAGS="${c_site_includes} ${trutils_opt_level} ${c_inline_level} ${CFLAGS}"
+dnl Set CFLAGS **after** emuloopCFLAGS, trutilsCFLAGS
 CFLAGS="${c_site_includes} ${c_opt_level} ${c_inline_level} ${CFLAGS}"
 LDFLAGS="${ld_site_libraries} ${LDFLAGS}"
 
@@ -1009,7 +1019,8 @@ AC_SUBST(config_tag)
 AC_SUBST(arch_bindir)
 
 AC_SUBST(CFLAGS)
-AC_SUBST(LCFLAGS)
+AC_SUBST(emuloopCFLAGS)
+AC_SUBST(trutilsCFLAGS)
 AC_SUBST(CC)
 AC_SUBST(LDFLAGS)
 dnl used for SGIs only
@@ -1095,7 +1106,8 @@ Date: ${install_date}
   Site-specific code goes in:                     ${site_prefix} 
   Site configuration-specific code goes in:       ${site_config_prefix}
   XSB will be built with:                         ${CC} ${CFLAGS}
-  emuloop.c will be built with:                   ${CC} ${LCFLAGS}
+  emuloop.c will be built with:                   ${CC} ${emuloopCFLAGS}
+  tr_utils.c will be built with:                  ${CC} ${trutilsCFLAGS}
   Loader flags:                                   ${LDFLAGS}
   Compilation mode:                               ${compile_mode}
   XSB abstract machine: 			  ${engine_mode}

@@ -33,7 +33,8 @@ CC=@CC@
 CPP=@CPP@
 CFLAGS=@CFLAGS@
 # Flags for files requiring lower optimization level (emuloop.c)
-LCFLAGS=@LCFLAGS@
+emuloopCFLAGS=@emuloopCFLAGS@
+trutilsCFLAGS=@trutilsCFLAGS@
 CPPFLAGS=@CPPFLAGS@
 LDFLAGS=@LDFLAGS@
 
@@ -161,12 +162,12 @@ dynload.o: dynload.c
 	@cp dynload.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 emuloop.o: emuloop.c
-	$(CC) -c $(LCFLAGS) emuloop.c
+	$(CC) -c $(emuloopCFLAGS) emuloop.c
 	@cp emuloop.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # Higher optimization level has problem with some versions of gcc
 tr_utils.o: tr_utils.c
-	$(CC) -c -O1 tr_utils.c
+	$(CC) -c $(trutilsCFLAGS) tr_utils.c
 	@cp tr_utils.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
