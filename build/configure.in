@@ -674,6 +674,7 @@ fi
 if test "${enable_chat}" = "yes" ; then
    AC_DEFINE(CHAT)
    AC_DEFINE(CHAT_TREE_COPY)
+   AC_DEFINE(GC)
    AC_DEFINE(WAM_TRAIL)
    AC_DEFINE(INCREMENTAL_CP_TRAVERSAL)
    engine_mode=chat
