@@ -155,6 +155,7 @@ prepare:
 	  ln ${src_config_prefix}/debug.h debugs ; \
 	  ln ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
 	  ln ${src_config_prefix}/emuMakefile ./Makefile 
+	@rm -f /tmp/xsb_*lib_warn
 
 emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	cd ${src_emudir}; \

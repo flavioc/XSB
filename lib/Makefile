@@ -58,14 +58,18 @@ all: init $(ALL) finish
 	/bin/rm -f cmd...
 	@cat $(SVFILE)
 
-%.O:   %.P %.H  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
+%.O:   %.P $(PROLOG_INCLUDES) $(EMU_INCLUDES)
 	echo 'mc($*, $(Option)).' >> cmd...
-%.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
-	echo 'mc($*, $(Option)).' >> cmd...
+# The following is done because of brain damage in some make utilities
+# (notably Sun's), which don't take %.P %.H in the same dependency list
+%.P:   %.H
+	touch $@
 
-# These targets are obsolete
-.H.O:
-	echo 'mc($*, $(Option)).' >> cmd...
+
+# These targets are obsolete. They are here just in case some 
+# obscure make utility doesn't understand patterns
+.H.P:
+	touch $@
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 
