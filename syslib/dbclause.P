@@ -110,9 +110,9 @@ db_retract_abol(Prref1) :-
 	 ;	Prref = Prref1
 	),
 	buff_byte(Prref,0,Op),
-	buff_word(Prref,4,Buff),
 	(Op =\= 248	% fail	
-	 ->	gen_retract_all(Buff)
+	 ->	buff_word(Prref,4,Buff),
+		gen_retract_all(Buff)
 	 ;	true
 	),
 	buff_set_byte(Prref,0,248).	% fail
