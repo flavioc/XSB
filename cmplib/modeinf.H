@@ -44,7 +44,7 @@
 	write/1, writeln/1, writeq/1, write_canonical/1, ('=..')/2
    from standard.
 
-:- import file_time/2 from machine.
+:- import file_time/2 from file_io.
 
 :- import message/1, time_message/2, warning/1, option/1 from auxlry.
 
