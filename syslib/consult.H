@@ -55,7 +55,7 @@
 :- import code_load/3, code_call/3, file_read_canonical/3,
   expand_filename/2, unload_seg/1, 
 	  buff_word/3, assert_code_to_buff/1, assert_buff_to_clref/6,
-	  conpsc/2, psc_ep/2, psc_tabled/2, psc_type/2, psc_name/2,
+	  conpsc/2, psc_ep/2, psc_tabled/2, psc_type/2, psc_name/2, slash/1,
 	  psc_arity/2, existing_file_extension/2, almost_search_module/5
      from machine.
 :- import get_p_mod/3, change_multifile_directive/3, open_or_xpp_file/2,

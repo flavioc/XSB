@@ -162,13 +162,17 @@ needs_recompile('c', Base, Obj) :-
 file_exists_here_or_configbin(C_Obj,CC_Obj) :-
 	(file_exists(C_Obj)
 	 ->	CC_Obj = C_Obj
-	 ;	parse_filename(C_Obj, _, C_File, C_Ext),
-		xsb_configuration(config_dir,ConfigDir),
-		str_cat(ConfigDir,'/bin/',ConfigBinDir),
-		str_cat(ConfigBinDir,C_File,CC_Obj0),
-		str_cat(CC_Obj0,'.',CC_Obj1),
-		str_cat(CC_Obj1,C_Ext,CC_Obj),
-		file_exists(CC_Obj)
+	;
+	    parse_filename(C_Obj, _, C_File, C_Ext),
+	    xsb_configuration(config_dir,ConfigDir),
+	    slash(Slash),
+	    str_cat(ConfigDir,Slash,X1), % add /bin/ or \bin\
+	    str_cat(X1,'bin',X2),
+	    str_cat(X2,Slash,ConfigBinDir),
+	    str_cat(ConfigBinDir,C_File,CC_Obj0),
+	    str_cat(CC_Obj0,'.',CC_Obj1),
+	    str_cat(CC_Obj1,C_Ext,CC_Obj),
+	    file_exists(CC_Obj)
 	).
 
 
