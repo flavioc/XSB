@@ -1,0 +1,466 @@
+:- compiler_options([ciao_directives]).
+
+:- document_export 
+          create_component/1,
+          dump_component/1,
+          loadmerge_component/1.
+
+:- import slash/1 from machine.
+
+:- import search_module/6 from consult.
+:- import concat_atom/2 from string.
+:- import write_canonical_lettervar/1 from xsb_writ.
+:- import message/1 from standard.
+:- import numbervars/3 from num_vars.
+
+/*
+component has_status dirty...
+
+Incorporate antirelationships in create_component, etc.
+*/
+
+:- comment(module,"Typically, an OMS is made up of several separable
+components -- for instance, UNSPSC, NAICS, or DLAFIIG.  There may be a
+need for these components to be managed separately so that they can be
+updated externally and incorporated into various applications, loaded
+by several applications, and perhaps edited and saved.  The OMS
+components system attempts to address this problem.
+
+A component is defined as a collection of classes and objects of the
+same @em{source}, along with their relationships, attributes,
+subclasses, and memberofs.  Components thus form a collection vaguely
+analagous to a Java package.  One component @em{C1} depends on another
+component @em{C2} if NID2XC2 is the target of a relation or attribute
+of whose first argument is NID1XC1; or if an element of NID1XC1 is a
+subclass or memberof a class NID2XC2.  It is easy to see that
+component dependency need not be hierarchical so that two components
+may depend on one another.  In addition, NID2XC2 is always a subclass
+of itself, each component always depends on itself, and similarly each
+component always depends on the component 'OMS'.
+
+From the perspective of formats, a component may contain information
+in external form (e.g. schema_omsext.P and data_omsext.P files), or in
+external intensional form (oms_extint.P).  Information in internal
+format saved to file (e.g. schema_oms.P and data_oms.P) files is not
+supported as ambiguity arises if one attempts to combine internal ids
+from different files.  
+
+A convention is made that the name of a component is identical to the
+directory in which it resides.  Thus, a component @em{unspsc} must
+reside in the directory @em{unspsc}.  The OMS looks for these
+directories using XSB's library search paths -- or a full pathname can
+also be used.
+
+Information about components resides in the OMS itself.  The OMS knows
+about a component C1 when C1XC1 is a subclass of the class
+componentXOMS.  Component dependency is represented by the
+relationship @em{component_dependsXOMS}.  For components consisting of
+external files, the predicate @pred{create_component/1} can be used to
+add this information.  @tt{create_component(Dir} reads in external
+files, computes their dependencies, and writes out the files, plus
+component information, back to @em{Dir}.  In the case where a putative
+component includes an external intensional view, dependency
+information for the external intensional view must be added by hand.
+
+Components may be loaded via @pred{load_component/1} which loads a
+component @em{C1} and all components on which @em{C1} transitively
+depends.  If a component is modified, it may be saved to file via
+dump_component/1 which dumps the component but not any subcomponents
+on which it may depend.
+").
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(create_component/1, "Loads an omsext (but does not merge
+it), creates a component if possible, then dumps the new omsext that
+includes the component information.").
+
+create_component(Name):- 
+	retract_omsext,
+	abolish_table_pred(find_component_dependency/1),
+	find_component_dir(Name,Full),
+	load_omsext(Full),
+	check_component(Name),
+	assert(class_ext(Name,Name,Name)),
+	assert(subclass_ext(Name,Name,component,'OMS')),
+	create_dependencies(Name),
+	dump_component_ext(Full,Name),
+	retract_omsext.
+
+/* works on loaded, unmerged omsext */	
+create_dependencies(Name):- 
+	find_component_dependency(Dep),
+	call_assert(relationship_ext(Name,Name,
+	                                     component_depends,'OMS',Dep,Dep)),
+	fail.
+create_dependencies(Name):- 
+	asserta(relationship_ext(Name,Name,
+	                                     component_depends,'OMS',Name,Name)).
+
+%-----------
+/* checks whether a set of loaded,  non-merged external facts with
+a given source constitute a component */ 
+
+check_component(Name):- 
+	check_class(Name),
+	check_object(Name),check_subclass(Name),
+	check_memberof(Name),check_relationship(Name),
+	check_schrel(Name),check_strel(Name),
+	check_attribute(Name),check_attribute_object(Name).
+
+check_class(Name):- 
+	(class_ext(Q,W,N),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                                      ' has class with different source: ',
+			              class_ext(Q,W,N)])
+	; 
+	   fail).
+check_class(_).
+
+check_object(Name):- 
+	(object_ext(Q,W,N),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                                      ' has object with different source: ',
+					      object_ext(Q,W,N)])
+	; 
+	   fail).
+check_object(_).
+
+check_subclass(Name):- 
+	(subclass_ext(Q,N,W,E),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                                      ' has subclass with different source: ',
+					      subclass_ext(Q,N,W,E)])
+	; 
+	   fail).
+check_subclass(_).
+
+check_memberof(Name):- 
+	(memberof_ext(Q,N,W,E),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                   ' has memberof with different source: ',
+			   memberof_ext(Q,N,W,E)])
+	; 
+	   fail).
+check_memberof(_).
+
+check_relationship(Name):- 
+	(relationship_ext(Q,N,W,E,R,T),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                   ' has relationship with different source: ',
+			   relationship_ext(Q,N,W,E,R,T)])
+	; 
+	   fail).
+check_relationship(_).
+
+check_schrel(Name):- 
+	(schrel_ext(Q,N,W,E,R,T),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                   ' has schrel with different source: ',
+			   schrel_ext(Q,N,W,E,R,T)])
+	; 
+	   fail).
+check_schrel(_).
+
+check_strel(Name):- 
+	(strel_ext(Q,N,W,E,R,T),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                   ' has strel with different source: ',
+			   strel_ext(Q,N,W,E,R,T)])
+	; 
+	   fail).
+check_strel(_).
+
+check_attribute(Name):- 
+	(attribute_ext(Q,N,W,E,R,T),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                   ' has attribute with different source: ',
+			   attribute_ext(Q,N,W,E,R,T)])
+	; 
+	   fail).
+check_attribute(_).
+
+check_attribute_object(Name):- 
+	(attribute_object_ext(Q,N,W,E,R,T),N \== Name -> 
+	    oms_error(component,['Component specified by ',Name,
+	                   ' has attribute_object with different source: ',
+			   attribute_object_ext(Q,N,W,E,R,T)])
+	; 
+	   fail).
+check_attribute_object(_).
+
+
+%-------------------------------------
+
+/* find_component_dependency/1 returns the set of dependencies for a
+putative component -- from a set of loaded, non-merged external facts.
+Only those dependencies obtained from external form are returned --
+extint dependencies must be added "by hand". */
+
+:- table find_component_dependency/1.
+find_component_dependency(Dep):- 
+	find_component_dependency_1(Dep).
+
+find_component_dependency_1(Dep):- 
+	class_ext(_,Class,S),
+            (Dep = S; (S \== 'OMS',find_pc_dependency(Class,Dep))).
+find_component_dependency_1(Dep):- 
+	object_ext(_,Class,S),
+            (Dep = S; (S \== 'OMS',find_pc_dependency(Class,Dep))).
+find_component_dependency_1(Dep):- 
+	subclass_ext(_,_,Class,S),
+            (Dep = S; (S \== 'OMS',find_pc_dependency(Class,Dep))).
+find_component_dependency_1(Dep):- 
+	memberof_ext(_,_,Class,S),
+            (Dep = S; (S \== 'OMS',find_pc_dependency(Class,Dep))).
+find_component_dependency_1(Dep):- 
+	relationship_ext(_,_,Rcl,Rs,Tcl,Ts),
+	(Rs = Dep ; Rs \== 'OMS',find_pc_dependency(Rcl,Dep)
+             ; Ts = Dep ; Ts \== 'OMS',find_pc_dependency(Tcl,Dep)).
+find_component_dependency_1(Dep):- 
+	schrel_ext(_,_,Rcl,Rs,Tcl,Ts),
+	(Rs = Dep ; Rs \== 'OMS',find_pc_dependency(Rcl,Dep)
+             ; Ts = Dep ; Ts \== 'OMS',find_pc_dependency(Tcl,Dep)).
+find_component_dependency_1(Dep):- 
+	strel_ext(_,_,Rcl,Rs,Tcl,Ts),
+	(Rs = Dep ; Rs \== 'OMS',find_pc_dependency(Rcl,Dep)
+             ; Ts = Dep ; Ts \== 'OMS',find_pc_dependency(Tcl,Dep)).
+find_component_dependency_1(Dep):- 
+	attribute_ext(_,_,Rcl,Rs,Tcl,Ts),
+	(Rs = Dep ; Rs \== 'OMS',find_pc_dependency(Rcl,Dep)
+             ; Ts = Dep ; Ts \== 'OMS',find_pc_dependency(Tcl,Dep)).
+find_component_dependency_1(Dep):- 
+	attribute_object_ext(_,_,Rcl,Rs,Tcl,Ts),
+	(Rs = Dep ; Rs \== 'OMS',find_pc_dependency(Rcl,Dep)
+             ; Ts = Dep ; Ts \== 'OMS',find_pc_dependency(Tcl,Dep)).
+
+find_pc_dependency(Class,Dep):- 
+	compound(Class),
+	Class =.. [_|Arglist],
+	find_pc_dependency_list(Arglist,Dep).
+	
+find_pc_dependency_list([_Class,S|_R],S).
+find_pc_dependency_list([Class,S|_R],Dep):- 
+	S \== 'OMS',
+	find_pc_dependency(Class,Dep).
+find_pc_dependency_list([_Class,_S|R],Dep):- 
+	find_pc_dependency_list(R,Dep).
+
+%-----------
+/* dump_component_ext/2 is not to be exported -- it dumps from
+extrernal format and is to be used with create component. */
+dump_component_ext(Dir,Name):- 
+	slash(Slash),
+  	concat_atom([Dir,Slash,'schema_omsext.P'],SchFile),
+	init_ext_schema_index,
+	tell(SchFile),
+	write_hdr(class_ext(_,_,_)),
+	write_call(class_ext(_,_,Name)),
+	write_hdr(subclass_ext(_,_,_,_)),
+	write_call(subclass_ext(_,Name,_,_)),
+	write_hdr(relationship_ext(_,_,_,_,_,_)),
+	write_call(relationship_ext(_,Name,_,_,_,_)),
+	write_hdr(schrel_ext(_,_,_,_,_,_)),
+	write_call(schrel_ext(_,Name,_,_,_,_)),
+	write_hdr(strel_ext(_,_,_,_,_,_)),
+	write_call(strel_ext(_,Name,_,_,_,_)),
+	told,
+  	concat_atom([Dir,Slash,'data_omsext.P'],DataFile),
+	init_ext_data_index,
+	tell(DataFile),
+	write_hdr(object_ext(_,_,_)),
+	write_call(object_ext(_,_,Name)),
+	write_hdr(memberof_ext(_,_,_,_)),
+	write_call(memberof_ext(_,Name,_,_)),
+	write_hdr(attribute_ext(_,_,_,_,_,_)),
+	write_call(attribute_ext(_,Name,_,_,_,_)),
+	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
+	write_call(attribute_object_ext(_,Name,_,_,_,_)),
+	told.
+
+%---
+
+write_call(Call):- 
+	abolish_table_pred(table_call/1),
+	table_call(Call),
+	write_ext_term(Call),
+	fail.
+write_call(_Call):-
+	abolish_table_pred(table_call/1).
+
+:- table table_call/1.
+table_call(Call):- call(Call).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+loadmerge_component(Name):- 
+	retract_omsext,
+	load_component(Name),
+	message(['Merging in components.']),nl,
+	merge_omsext.
+
+load_component(Name):- 
+	message(['Loading component: ',Name]),nl,
+	find_component_dir(Name,Full),
+	overload_omsext(Full),
+	is_component(Name),
+	load_extint(Full),
+            load_component_dependencies(Name).
+
+load_component_dependencies(Name):- 
+	relationship_ext(Name,Name,component_depends,'OMS',N,N),
+	((N = Name ; N = 'OMS' ; class_ext(N,N,N) ; class(_,N,N,N)) -> 
+	    true 
+	  ; load_component(N) ),
+	fail.
+load_component_dependencies(_).
+
+load_extint(Full):- 
+	concat_atom([Full,'/oms_extint.P'],File),
+	(file_exists(File) -> consult(File) ; true).
+
+/* assuming that this means that all dependencies have been added...*/
+is_component('OMS').
+is_component(Name):- class_ext(Name,Name,Name).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+dump_component(Name):- 
+	find_component_dir(Name,Dir),
+	throw_oms_writable(Dir),
+	slash(Slash),
+  	concat_atom([Dir,Slash,'schema_omsext.P'],SchFile),
+	init_ext_schema_index,
+	tell(SchFile),
+	compwrite_class(Name),compwrite_subclass(Name),
+	compwrite_irel(Name),compwrite_schrel(Name),
+	compwrite_strel(Name),
+	told,
+  	concat_atom([Dir,Slash,'data_omsext.P'],DataFile),
+	init_ext_data_index,
+	tell(DataFile),
+	compwrite_object(Name),compwrite_memberof(Name),
+	compwrite_attribute(Name),compwrite_attribute_object(Name),
+	told.
+
+compwrite_class(Source):- 
+	write_hdr(class_ext(_,_,_)),
+	oms_cn(_,Name,Nid,Source),
+	write_ext_term(class_ext(Name,Nid,Source)),
+	fail.
+compwrite_class(_).
+
+compwrite_subclass(Source):- 
+	write_hdr(subclass_ext(_,_,_,_)),
+	oms_sc(Sub,Sup),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Sup,_,Nid1,Source1),
+	write_ext_term(subclass_ext(Nid,Source,Nid1,Source1)),
+	fail.
+compwrite_subclass(_).
+	
+compwrite_object(Source):- 
+	write_hdr(object_ext(_,_,_)),
+	oms_obj(_,Name,Nid,Source),
+	write_ext_term(object_ext(Name,Nid,Source)),
+	fail.
+compwrite_object(_).
+
+compwrite_memberof(Source):- 
+	write_hdr(memberof_ext(_,_,_,_)),
+	oms_mo(Sub,Sup),
+	oms_obj(Sub,_,Nid,Source),
+	oms_cn(Sup,_,Nid1,Source1),
+	write_ext_term(memberof_ext(Nid,Source,Nid1,Source1)),
+	fail.
+compwrite_memberof(_).
+
+compwrite_irel(Source):- 
+	write_hdr(relationship_ext(_,_,_,_,_,_)),
+	oms_rln(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(
+	                 relationship_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_irel(_).
+
+compwrite_schrel(Source):- 
+	write_hdr(schrel_ext(_,_,_,_,_,_)),
+	oms_schrel(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(schrel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_schrel(_).
+
+compwrite_strel(Source):- 
+	write_hdr(strel_ext(_,_,_,_,_,_)),
+	oms_strel(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(strel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_strel(_).
+
+compwrite_attribute(Source):- 
+	write_hdr(attribute_ext(_,_,_,_,_,_)),
+	oms_at(Sub,Mid,Targ),
+	oms_obj(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(
+	           attribute_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_attribute(_).
+
+compwrite_attribute_object(Source):- 
+	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
+	oms_ao(Sub,Mid,Targ),
+	oms_obj(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_obj(Targ,_,Nid2,Source2),
+	write_ext_term(
+	       attribute_object_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_attribute_object(_).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+find_component_dir(Name,Full):- 
+	(search_module(Name,_Dir_part,_Base_part,_Ext,Full,_Obj) 
+                -> true 
+	    ; 
+	        oms_error(component,['can''t find component: ',Name])),
+	(path_sysop(isdir,Full) -> 
+	    true 
+	  ; 
+	     oms_error(component,['component name is not a directory',Full])).
+
+overload_omsext(Dir) :-
+	oms_fix_dir(Dir,DirS),
+	dir_overload_dync(DirS,schema_omsext),
+	dir_overload_dync(DirS,data_omsext).
+
+dir_overload_dync(Dir,Base) :-
+	concat_atom([Dir,Base,'.P'],File),!,
+	(overload_dync(File) 		% i.e. use asserta
+              -> true
+	  ; oms_warning(permission,('File does not exist ',
+                                    'or is not readable: ',File))).
+
+overload_dync(File):- 
+	see(File),
+	overload_dync_1,
+	seen.
+
+overload_dync_1:- 
+	repeat,
+	read_canonical(T),
+	(T = end_of_file -> true ; asserta(T),fail).
+
+end_of_file.
+

@@ -43,6 +43,7 @@ directory.
 dump_omsext :- dump_omsext('').
 
 dump_omsext(Dir) :-
+	throw_oms_writable(Dir),
 	dump_omsext_schema(Dir),	dump_omsext_data(Dir).
 
 dump_omsext_schema :- dump_omsext_schema('').
@@ -93,27 +94,32 @@ init_ext_data_index :-
 	%% attribute_object_ext(OId,Osrc,RNCId,RSrc,TOId,Tsrc)
 	index(attribute_object_ext(_,_,_,_,_,_),[1+3+5]).
 
-c2ce :-
-	write_hdr(class_ext(_,_,_)),
-	findall(class_ext(Label,NatCid,Sou),
-		isa_external_classes(Label,NatCid,Sou),
-		ExtClasses),
-	sort_and_write_terms(ExtClasses).
-
-isa_external_classes(Label,NatCid,Sou) :-
-	oms_cn(Cid,Label,NatCid,Sou),
-	(atomic(Cid)
-	 ->	true
-	 ;	numbervars(NatCid,0,_)
-	).
-
 sort_and_write_terms(Terms) :-
 	sort(Terms,STerms),
 	member(Term,STerms),
-	write_term(Term,[quoted(true),numbervars(true),ignore_ops(true)]),
-	writeln('.'),
+	write_ext_term(Term),
 	fail.
 sort_and_write_terms(_Terms).
+
+write_ext_term(Term):- 
+	numbervars(Term,0,_),
+	write_canonical_lettervar(Term),writeln('.').
+
+/* minor optimization of above, does not require membervars */
+sort_and_writeq_terms(Terms) :-
+	sort(Terms,STerms),
+	member(Term,STerms),
+	writeq(Term),
+	writeln('.'),
+	fail.
+sort_and_writeq_terms(_Terms).
+
+c2ce :-
+	write_hdr(class_ext(_,_,_)),
+	findall(class_ext(Label,NatCid,Sou),
+		oms_cn(_,Label,NatCid,Sou),
+		ExtClasses),
+	sort_and_write_terms(ExtClasses).
 
 s2se :-
 	write_hdr(subclass_ext(_,_,_,_)),
@@ -125,8 +131,7 @@ s2se :-
 isa_external_subclass(NSubCid,SubSrc,NSupCid,SupSrc) :-
 	oms_sc(SubCid,SupCid),
 	cvt_cid_nid(SubCid,NSubCid,SubSrc),
-	cvt_cid_nid(SupCid,NSupCid,SupSrc),
-	numbervars(subclass_ext(NSubCid,SubSrc,NSupCid,SupSrc),0,_).
+	cvt_cid_nid(SupCid,NSupCid,SupSrc).
 
 r2re :-
 	write_hdr(relationship_ext(_,_,_,_,_,_)),
@@ -140,8 +145,7 @@ isa_external_relationship(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc) :-
 	%% display(immediate_relationship(SCid,RCid,TCid)),
 	cvt_cid_nid(SCid,NSCid,SSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
-	cvt_cid_nid(TCid,NTCid,TSrc),
-	numbervars(relationship_ext(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc),0,_).
+	cvt_cid_nid(TCid,NTCid,TSrc).
 
 strel2strele :-
 	write_hdr(strel_ext(_,_,_,_,_,_)),
@@ -154,8 +158,7 @@ isa_external_strel(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc) :-
 	oms_strel(SCid,RCid,TCid),
 	cvt_cid_nid(SCid,NSCid,SSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
-	cvt_cid_nid(TCid,NTCid,TSrc),
-	numbervars(strel_ext(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc),0,_).
+	cvt_cid_nid(TCid,NTCid,TSrc).
 
 schrel2schrele :-
 	write_hdr(schrel_ext(_,_,_,_,_,_)),
@@ -168,8 +171,7 @@ isa_external_schrel(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc) :-
 	oms_schrel(SCid,RCid,TCid),
 	cvt_cid_nid(SCid,NSCid,SSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
-	cvt_cid_nid(TCid,NTCid,TSrc),
-	numbervars(schrel_ext(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc),0,_).
+	cvt_cid_nid(TCid,NTCid,TSrc).
 
 o2oe :-
 	write_hdr(object_ext(_,_,_)),
@@ -201,13 +203,13 @@ isa_external_attribute(NOId,OSrc,NRCid,RSrc,NTCid,TSrc) :-
 	oms_at(Oid,RCid,TCid),
 	object(Oid,_Name,NOId,OSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
-	cvt_cid_nid(TCid,NTCid,TSrc),
-	numbervars(attribute_ext(NOId,OSrc,NRCid,RSrc,NTCid,TSrc),0,_).
+	cvt_cid_nid(TCid,NTCid,TSrc).
 
 ao2aoe :-
 	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
 	findall(attribute_object_ext(NOId,Osrc,NRCid,RSrc,NTOid,Tsrc),
-		isa_external_attribute_object(NOId,Osrc,NRCid,RSrc,NTOid,Tsrc),
+		isa_external_attribute_object(NOId,Osrc,
+		                                             NRCid,RSrc,NTOid,Tsrc),
 		AttributeObjects),
 	sort_and_writeq_terms(AttributeObjects).
 
@@ -216,14 +218,6 @@ isa_external_attribute_object(NOId,Osrc,NRCid,RSrc,NTOid,Tsrc) :-
 	object(Oid,_Name,NOId,Osrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
 	object(TOid,_Tname,NTOid,Tsrc).
-
-sort_and_writeq_terms(Terms) :-
-	sort(Terms,STerms),
-	member(Term,STerms),
-	writeq(Term),
-	writeln('.'),
-	fail.
-sort_and_writeq_terms(_Terms).
 
 :- import '_$index'/3, '_$trie_asserted'/1 from file_op.
 write_hdr(Skel) :-
@@ -266,7 +260,7 @@ dump_oms :- dump_oms('').
 dump_oms(odbc(Server,Name,Passwd)) :- !,
 	dump_db_oms(Server,Name,Passwd).
 dump_oms(Dir) :-
-	oms_writable(Dir),
+	throw_oms_writable(Dir),
 	dump_oms_schema(Dir),
 	dump_oms_data(Dir).
 
@@ -456,6 +450,7 @@ merge_omsext :-
 	cp_attribute_object_extoms,
 	(oms_checking(partial) -> true ; check_consistency),
 	(Cache =:= 1 -> oms_use_cache ; true),
+	retract_omsext,
 	time_message(Begin,('external OMS(s) merged')).
 
 /* Checks for Name,Nid,Sou are pefromed
@@ -607,15 +602,19 @@ load_mergeomsext(Dirs) :-
 
 load_mergeomsext1([]).
 load_mergeomsext1([Dir|Dirs]) :-
-	load_mergeomsext1(Dir),
+	load_mergeomsext2(Dir),
 	load_mergeomsext1(Dirs).
 load_mergeomsext1(Dir) :-
-	oms_fix_dir(Dir,DirS),
+	load_mergeomsext2(Dir).
 
+load_mergeomsext2(Dir) :-
+	oms_fix_dir(Dir,DirS),
 	dir_load_dync(DirS,schema_omsext),
 	dir_load_dync(DirS,data_omsext),
-%	writeln(calling_merge_omsext),
 	merge_omsext,
+	retract_omsext.
+
+retract_omsext:- 
 	retractall(class_ext(_,_,_)),
 	retractall(subclass_ext(_,_,_,_)),
 	retractall(relationship_ext(_,_,_,_,_,_)),
@@ -943,7 +942,13 @@ oms_exists(Dir):-
 	concat_atom([Dir,'/data_oms.P'],DataFile),
 	file_exists(DataFile).
 
-:- comment(oms_writable/1, 'Checks whether schema_oms.P and data_oms.P files (if exist) are overwritable (not read-only)').
+throw_oms_writable(Dir):-
+	(oms_writable(Dir) -> 
+	    true
+             ;  oms_error(permissions,['Directory is not writable: ',Dir])).
+
+:- comment(oms_writable/1, 'Checks whether schema_oms.P and data_oms.P
+files (if exist) are overwritable (not read-only)').
 oms_writable(Dir):-
 	(oms_exists(Dir)
 	 ->	concat_atom([Dir,'\schema_oms.P'],SchemaPath),

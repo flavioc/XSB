@@ -16,7 +16,7 @@
 	newRelationship/3, newRelationshipClass/3,
 	retractallRelationship/3,
 	strel/3,
-	is_a_strel/1,	
+	is_a_strel/1,
 %	assert_strel/3, 
 	newStrel/3, newStrelClass/3, retractallStrel/3,
 		schrel/3,
@@ -355,7 +355,15 @@ init_oms_rels :-
 
 	newClass('OMS Primitive Types',RootCid,'OMS',TypesCid),
 	newClass([],TypesCid,'OMS',_Nullid),
-	assert_basic_types(TypesCid).
+	assert_basic_types(TypesCid),
+	init_component_info.
+
+init_component_info :-
+            class(RootCid,'OMS Root','OMS Root','OMS'),
+	newClass(component,RootCid,'OMS',CompCid),
+	newClass('OMS',CompCid,'OMS',_),
+	class(Inhid,'OMS Inheritable Relationships',_,'OMS'),
+	newClass(component_depends,Inhid,'OMS',_Depid).
 
 oms_primitive_type(aint(_)).
 oms_primitive_type(atom(_)).
