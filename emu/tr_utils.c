@@ -732,11 +732,11 @@ void delete_return(BTNptr l, VariantSF sg_frame)
     /* lfcastro: run the CP stack, also */
     { 
       NLChoice b;
-      b = breg;
+      b = (NLChoice)breg;
       while (b <= (NLChoice)sg_frame->cp_ptr) {
 	if (b->trie_return == a)
 	  b->trie_return = n;
-	b = b->prev;
+	b = (NLChoice)b->prev;
       }
     }
 #else

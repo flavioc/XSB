@@ -23,6 +23,10 @@
 */
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef fileno				/* fileno may be a  macro */
 extern int    fileno(FILE *f);	        /* this is defined in POSIX */
 #endif
@@ -42,6 +46,10 @@ extern int kill(pid_t pid, int sig);
 #define PIPE(filedes_array)  pipe(filedes_array)
 #define WAIT(pid, status)    waitpid(pid, &status, 0)
 #define KILL_FAILED(pid)     kill(pid, SIGKILL) < 0
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #define FREE_PROC_TABLE_CELL(pid)   ((pid < 0) \
