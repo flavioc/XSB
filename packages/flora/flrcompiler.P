@@ -474,8 +474,13 @@ flatten_retract_term(objspec(O,Spec),W,Ps) :-
 	    append(C1,C2,Ps)
 	).
 
-flatten_retract_term(X,_,Ps) :-
-	rhs_flatten(X,_,Ps).
+flatten_retract_term(spterm(Op,E1,E2),_,Ps) :-
+	displayln,
+	display('*** Warning: special predicate '),
+	display(Op),
+	display(' is translated as an extra condition for retracts.'),
+	displayln,
+	rhs_flatten(spterm(Op,E1,E2),_,Ps).
 
 
 /***************************************************************************/
