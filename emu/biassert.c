@@ -600,8 +600,13 @@ static void reg_release(int R0)
     }
 }
 
+#ifndef max
 #define max(p1,p2) ((p1)>=(p2)?(p1):(p2))
+#endif
+#ifndef min
 #define min(p1,p2) ((p1)<=(p2)?(p1):(p2))
+#endif
+
 static char *Buff = NULL;
 static int Buff_size = 512;
 static int *Loc;

@@ -65,13 +65,13 @@ int  unifunc_call(int funcnum, CPtr regaddr)
   deref(value);
   switch (funcnum) {
       case FUN_float:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue = (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, fvalue);
 	  break;
       case FUN_floor:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_int(regaddr, floor(fvalue));
@@ -84,61 +84,61 @@ int  unifunc_call(int funcnum, CPtr regaddr)
       case FUN_OR:
 	  return 0;		/* should not come here */
       case FUN_sin:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, sin(fvalue));
 	  break;
       case FUN_cos:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, cos(fvalue));
 	  break;
       case FUN_tan:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, tan(fvalue));
 	  break;
       case FUN_exp:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, exp(fvalue));
 	  break;
       case FUN_log:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, log(fvalue));
 	  break;
       case FUN_log10:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, log10(fvalue));
 	  break;
       case FUN_sqrt:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, sqrt(fvalue));
 	  break;
       case FUN_asin:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, asin(fvalue));
 	  break;
       case FUN_acos:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, asin(fvalue));
 	  break;
       case FUN_atan:
-	  if (isinteger(value)) fvalue = int_val(value);
+	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
 	  else return 0;
 	  bld_float(regaddr, atan(fvalue));
