@@ -601,15 +601,16 @@ newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
 	    ; 
 	      newExtTerm(component_create,
 			 classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),
-						Path)) ),
+					  Path)) ),
 	(classHasAttr(cid(compName(cid(Src,Src),Path),Src),
 			crid(hasVersion,Src),Version) -> 
 	     true 
 	   ; 
-	     newExtTerm(component_create,
+	     Version = cid(0,cdfpt),
+		newExtTerm(component_create,
 			classHasAttr_ext(cid(compName(cid(Src,Src),Path),Src),
- 	                                 crid(hasVersion,Src),cid(0,cdfpt))),
-	     Version = cid(0,cdfpt) ).
+ 	                                 crid(hasVersion,Src),cid(0,cdfpt)))
+	).
 newPathandVersion(create,cid(Name,Name),_Pathin,Path,V):- 
 	system_component(Name),!,
         newExtTerm(isa_ext(cid(Name,Name),cid(componentIDs,cdf))),
@@ -645,9 +646,9 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
 /* Assumes merge_check has been done.  Do nothing if the component has been
    loaded from somewhere.  Otherwise, create it with the new directory path, 
    and check the directory for the proper version to make the component.  */
-newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):- 
+newPathandVersion(in_place,cid(Src,Src),Pathin,Path,cid(V,cdfpt)):- 
 	(classHasAttr(cid(compName(cid(Src,Src),Path),Src),
- 				crid(hasVersion,Src),V) -> 
+		      crid(hasVersion,Src),cid(V,cdfpt)) -> 
   	     true
 	  ; 
     	     /* newExtTerm(component_create,
@@ -668,7 +669,7 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):-
 					 crid(hasPath,Src),Pathin)),
   	     newExtTerm(component_create,
 		classHasAttr_ext(cid(compName(cid(Src,Src),Pathin),Src),
- 				 crid(hasVersion,Src),V)),
+ 				 crid(hasVersion,Src),cid(V,cdfpt))),
 	     Pathin = Path ).
 
 %%%% Path manipulation.
