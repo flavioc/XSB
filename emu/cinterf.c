@@ -403,6 +403,10 @@ DllExport bool call_conv is_charlist(prolog_term term, int *size)
   list = term;
   *size = 0;
   
+  /* apparently, is_nil can be true and is_list false?? */
+  if(is_nil(list))
+    return TRUE;
+
   if (!is_list(list)) 
     return FALSE;
 
