@@ -1,5 +1,9 @@
 % TLS: keep all this in usermod.
 
+:- import check_ground/2, check_types/2, check_identity/2,
+	classify_if_necessary/2
+	from cdf_checks.
+
 /* cdf flags: 
 caching
 logging
