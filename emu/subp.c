@@ -626,7 +626,7 @@ void xsb_segfault_catcher(int err)
   char *tmp_message = xsb_segfault_message;
   xsb_segfault_message = xsb_default_segfault_msg; /* restore default */
   longjmp(xsb_abort_fallback_environment,
-	  (int) exception_handler(tmp_message));
+	  (Integer) exception_handler(tmp_message));
 }
 
 void xsb_segfault_quitter(int err)
