@@ -482,15 +482,19 @@ class_cidbound(Cid,Label,NatCid,Sou):-
       ;	(oms_cn(Cid,Label,NatCid,Sou) -> true 
          ; (cn_id_map(Cid,Label,NatCid,Sou)  -> true 
             ; (\+ atomic(Cid),
-               skeleton(Cid,Cidskel), 
+               skeleton(Cid,Cidskel),
               ( (oms_cn(Cidskel,Label,_Natid1,Sou),
                  term_subclass(Cid,Cidskel), 
 		 parameterized_int_ext(Cid,NatCid,Sou))
 	         -> true 
-	            ; cn_id_map(Cidskel,Label,_NatCid1,Sou),
-                          term_subclass(Cid,Cidskel), 
-                          % get NID of orig. CID, not of subsuming CID
-	              parameterized_int_ext(Cid,NatCid,Sou)))))).
+	            ; (cn_id_map(Cidskel,Label,_NatCid1,Sou),
+		       term_subclass(Cid,Cidskel), 
+				% get NID of orig. CID, not of subsuming CID
+		       parameterized_int_ext(Cid,NatCid,Sou))
+		    ->	   true
+	       ;      parameterized_int_ext(Cid,NatCid,Sou),
+		      class_int(Label,NatCid,Sou)
+	      ))))).
 
 /* This predicate assumes that CID is not fully instantiated, and that
    source may not be bound: determinism is therefore not enforced.
@@ -513,7 +517,7 @@ class_cidbound(Cid,Label,NatCid,Sou):-
 /* TLS: I am assumnig that if we get to here, nid and source
     are both bound -- therefore CID must be functional, and we
     don't need non-determinism. */
-class_nidbound(Cid,Label,NatCid,Sou):- 	
+class_nidbound(Cid,Label,NatCid,Sou):-
 	(oms_primitive_class(Cid,Label,NatCid,Sou) -> 
 	      true
 	    ; (oms_cn(Cid,Label,NatCid,Sou) -> 
@@ -522,7 +526,7 @@ class_nidbound(Cid,Label,NatCid,Sou):-
 		     true
 		   ; class_nidbound_param(Cid,Label,NatCid,Sou) ) ) ).
 
-class_nidbound_param(Cid,Label,NatCid,Sou):- 
+class_nidbound_param(Cid,Label,NatCid,Sou):-
 	NatCid =.. [Functor|List],
 	class_nidbound_1(List,NewList,NatCid),
 	Cid =.. [Functor|NewList],
@@ -570,11 +574,14 @@ term_get_class_int(GoalCid,Label,NatCid,Sou) :-
 	).	
 
 get_class_int(Cid,Label,NatCid,Sou) :-
-	(cn_id_map(Cid,Label,NatCid,Sou) -> 
-	      true 
-	    ; class_int(Label,NatCid,Sou),
-	       atomic_newcid(Cid),
-	       asserta(cn_id_map(Cid,Label,NatCid,Sou))
+	(cn_id_map(Cid,Label,NatCid,Sou)
+	 ->	true 
+	 ;	class_int(Label,NatCid,Sou),
+		(structure(NatCid)
+		 ->	parameterized_ext_int(NatCid,Cid,Sou)
+		 ;	atomic_newcid(Cid)
+		),
+		asserta(cn_id_map(Cid,Label,NatCid,Sou))
 	).
 
 ext_int(Cid,Label,NatCid,Sou):- 
@@ -597,6 +604,7 @@ parameterized_ext_int_1([_H],_,Term):- !,
 	oms_error(update,('Cannot intern the class:',Term)).
 parameterized_ext_int_1([Nid,Sou|T],[Cid|T1],Term):- 
 	(atomic(Nid) -> class_or_abort(Nid,Sou,Cid,Term)
+	 ; var(Nid) -> true
 	   ; ext_int(Cid,_,Nid,Sou)),
 	parameterized_ext_int_1(T,T1,Term).
 
@@ -1188,6 +1196,7 @@ relationship_source_class_exists(SCid):-
 	 ; oms_warning(update,('attempt to add an inheritable ',
 		    ' relationship where source is missing: ',SCid)),
 	   fail).
+
 relationship_relation_exists(SCid):- 
 	(class_exists_for_cid(SCid) -> true
 	 ; oms_warning(update,('attempt to add an inheritable ',
@@ -1198,6 +1207,7 @@ relationship_relation_exists(SCid):-
 		    ' relationship for class that is not a ',
 		    ' relationship: ',SCid)),
 	   fail).
+
 relationship_target_class_exists(SCid):- 
 	(class_exists_for_cid(SCid) -> true
 	 ; oms_warning(update,('attempt to add an inheritable ',
@@ -1230,7 +1240,7 @@ is_a_strel(RCid) :-
 	class(RelsCid,'OMS Set-Valued Relations',
 		      'OMS Set-Valued Relations','OMS'), 
 	(nonvar(RCid)
-	 ->	subclass(RCid,RelsCid), RCid \== RelsCid	% was if_
+	 ->	subclass(RCid,RelsCid), RCid \== RelsCid % was if_
 	 ;	subclass_fb(RCid,RelsCid), RCid \== RelsCid
 	).
 
@@ -2165,14 +2175,16 @@ parameterized_int_ext(Term,Newterm,Sou):-
 	                                               %%%  oms_primitive_type/1
 	Term =.. [F|List],
 	parameterized_int_ext_1(List,Newlist,Term),
-	skeleton(Term,Skel),
-	get_source_of_skel(Skel,Sou),	% assume unique in OMS.
-	Newterm =.. [F|Newlist].
+	Newterm =.. [F|Newlist],
+	get_source_of_prod(Term,Newterm,Sou).	% assume unique in OMS.
 
 parameterized_int_ext_1([],[],_).
 parameterized_int_ext_1([H|T],[N,S|T1],Term):- 
-	(atomic(H) -> 	class_nid_or_abort(H,S,N,Term)
-	   ; parameterized_int_ext(H,N,S)),
+	(atomic(H)
+	 ->	class_nid_or_abort(H,S,N,Term)
+	 ; var(H)
+	 ->	true
+	 ;	parameterized_int_ext(H,N,S)),
 	parameterized_int_ext_1(T,T1,Term).
 
 class_nid_or_abort(H,S,N,_Term):- class(H,_,N,S),!.
@@ -2181,9 +2193,11 @@ class_nid_or_abort(H,S,_N,Term):-
 
 /* only want the first skel for source here.  Assume that we can't
    add more than one. */
-get_source_of_skel(Skel,Source):- 
+get_source_of_prod(Term,_,Source):- 
+	skeleton(Term,Skel),
 	oms_cn(Skel,_,_,Source),!.
-get_source_of_skel(Skel,Source):- 
+get_source_of_prod(_,NewTerm,Source):- 
+	skeleton(NewTerm,Skel),
 	class_int(_,Skel,Source),!.
 
 class_exists_for_cid(SCid):- 
@@ -2406,7 +2420,7 @@ bound_on_all(ArgNo,Goal) :-
 
 create_new_para_cid_for_int(NatCid,Cid,Sou,Label):- 
 	create_new_para_cid_for_int_1(NatCid,Cid,Sou,NatCid),
-	call_assert(cn_id_map(Cid,NatCid,Sou,Label)).
+	call_assert(cn_id_map(Cid,Label,NatCid,Sou)).
 	
 create_new_para_cid_for_int_1(Term,Term,'OMS',_NatCid):- 
 	skeleton(Term,Skel),
