@@ -34,7 +34,6 @@
 	  type_error/4,domain_error/4 from error_handler.
 
 :- import write/1 from standard.
-
 %:- import get_atts/2 from atts.
 
 :- op(200,fy,(?)).
@@ -202,12 +201,17 @@ sticky_contexts(alpha, quote).
 sticky_contexts(quote, alpha).
 */
 
+printable_list([]).
+printable_list([H|T]):- 
+	printable_char(H),
+	printable_list(T).
+
 printable_char(V) :- var(V), !, fail.
 printable_char(9).  % TAB
 printable_char(10). % NEWLINE
 printable_char(32). % SPACE
 printable_char(B) :-
-        integer(B), B > 32, B < 256, code_class(B, C), C > 0. % Not layout
+        integer(B), B > 32, B < 256, code_class1(B, C), C > 0. % Not layout
 
 %   write_out(Term, Options, Prio, PrePrio, Depth, Lpar, Ci, Co)
 %   writes out a Term given Options
@@ -304,7 +308,7 @@ write_out({Term}, Options, _, _, Depth, _, _, 2'100) :- !,
 write_out([Char|Tail], Options, _, _, Depth, _, _, Co) :-
 % 	TLS: change.
 %        current_prolog_flag(write_strings, on),
-        printable_char(Char), !,
+            printable_list([Char|Tail]), !,
 	put_code(0'"),  % print characters after '"'
         put_string_code(Char),
 	Depth1 is Depth+1,
@@ -374,6 +378,10 @@ write_VAR(N, Ci, 2'000) :-
 	    Rest is N//26, displayq(Rest)
 	;   true
         ).
+write_VAR(N, Ci, 2'000) :-
+	integer(N), N < 0, !,
+	maybe_space(Ci, 2'000),
+	put_code(0'_).
 write_VAR(Atom, Ci, Co) :-
 	atom(Atom), !,
 	'$atom_mode'(Atom, Co),
