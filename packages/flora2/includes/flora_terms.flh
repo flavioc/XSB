@@ -42,24 +42,24 @@
 
   TextInfo=TEXT(BeginX,BeginY,EndX,EndY,ListOfCodes)
 **************************************************************************/
-#define TEXT		text
-#define IDENTIFIER	identifier
-#define VARIABLE	variable
-#define NUMBER		number
-#define QUOTED_ATOM	quoted_atom
-#define ASCII_STRING	ascii_string
-#define SYMBOL_TOKEN	symbol_token
-#define SPECIAL_TOKEN	special_token
-#define WHITESPACE	whitespace
-#define COMMENT		comment
-#define RULE_DELIMETER	rule_delimeter
+#define TEXT			text
+#define IDENTIFIER		identifier
+#define VARIABLE		variable
+#define NUMBER			number
+#define QUOTED_ATOM		quoted_atom
+#define ASCII_STRING		ascii_string
+#define SYMBOL_TOKEN		symbol_token
+#define SPECIAL_TOKEN		special_token
+#define WHITESPACE		whitespace
+#define COMMENT			comment
+#define RULE_DELIMETER		rule_delimeter
 
 
 /**************************************************************************
   Indices of Tokens
 **************************************************************************/
-#define LOW_INDEX	1
-#define NO_INDEX	0
+#define LOW_INDEX		1
+#define NO_INDEX		0
 
 
 /**************************************************************************
@@ -72,118 +72,124 @@
      ARGUMENT(Parenthesis,Indx1,Indx2)
   (6)OBJECT(Token,Index)
 **************************************************************************/
-#define NULL		null
-#define PREFIX		prefix
-#define INFIX		infix
-#define SUFFIX		suffix
-#define FUNCTION	function
-#define ARGUMENT	argument
-#define OBJECT		object
+#define NULL			null
+#define PREFIX			prefix
+#define INFIX			infix
+#define SUFFIX			suffix
+#define FUNCTION		function
+#define ARGUMENT		argument
+#define OBJECT			object
 
 
 /**************************************************************************
   FLORA Vocabulary
 **************************************************************************/
-#define FL_IMPLYOP	(':-')
-#define FL_QUERYOP	('?-')
+#define FL_IMPLYOP		(':-')
+#define FL_QUERYOP		('?-')
 
-#define FL_PARENTHESIS	'('
-#define FL_BRACKET	'['
-#define FL_BRACE	'{'
+#define FL_PARENTHESIS		'('
+#define FL_BRACKET		'['
+#define FL_BRACE		'{'
 
-#define FL_COMMA	','
-#define FL_SLASH	'/'
-#define FL_BAR		'|'
-#define FL_SEMICOLON	';'
-#define FL_PLUS		'+'
-#define FL_MINUS	'-'
-#define FL_STAR		'*'
-#define FL_SLASH	'/'
-#define FL_MOD		(mod)
-#define FL_SYMOR	'\/'
-#define FL_SYMAND	'/\'
-#define FL_UNDERSCORE	'_'
-#define FL_AT		'@'
-#define FL_DOLLAR	'$'
-#define FL_CUT		'!'
-#define FL_NEWOID	'_#'
+#define FL_COMMA		','
+#define FL_SLASH		'/'
+#define FL_BAR			'|'
+#define FL_SEMICOLON		';'
+#define FL_PLUS			'+'
+#define FL_MINUS		'-'
+#define FL_STAR			'*'
+#define FL_SLASH		'/'
+#define FL_MOD			(mod)
+#define FL_SYMOR		'\/'
+#define FL_SYMAND		'/\'
+#define FL_UNDERSCORE		'_'
+#define FL_AT			'@'
+#define FL_DOLLAR		'$'
+#define FL_CUT			'!'
+#define FL_NEWOID		'_#'
 
-#define FL_TNOT		(tnot)
-#define FL_NOT		(not)
-#define FL_TILDE	'~'
-#define FL_NEG		'\+'
+#define FL_TNOT			(tnot)
+#define FL_NOT			(not)
+#define FL_TILDE		'~'
+#define FL_NEG			'\+'
 
-#define FL_ISA		':'
-#define FL_SUB		'::'
-#define FL_FD		'.'
-#define FL_MVD		'..'
-#define FL_INHERIFD	'!'
-#define FL_INHERIMVD	'!!'
+#define FL_ISA			':'
+#define FL_SUB			'::'
+#define FL_FD			'.'
+#define FL_MVD			'..'
+#define FL_INHERIFD		'!'
+#define FL_INHERIMVD		'!!'
 
-#define FL_FDARROW	'->'
-#define FL_MVDARROW	'->>'
-#define FL_ALLINARROW	'+>>'
-#define FL_FDSIGARROW	'=>'
-#define FL_MVDSIGARROW	'=>>'
-#define FL_INFDARROW	'*->'
-#define FL_INMVDARROW	'*->>'
-#define FL_INALLINARROW	'*+>>'
-#define FL_INFDSIGARR	'*=>'
-#define FL_INMVDSIGARR	'*=>>'
-#define FL_INMETH	'*'
-#define FL_TRAN		'#'
+#define FL_FDARROW		'->'
+#define FL_MVDARROW		'->>'
+#define FL_ALLINARROW		'+>>'
+#define FL_FDSIGARROW		'=>'
+#define FL_MVDSIGARROW		'=>>'
+#define FL_INFDARROW		'*->'
+#define FL_INMVDARROW		'*->>'
+#define FL_INALLINARROW		'*+>>'
+#define FL_INFDSIGARR		'*=>'
+#define FL_INMVDSIGARR		'*=>>'
+#define FL_INMETH		'*'
+#define FL_TRAN			'#'
 
-#define FL_UNIVEQ	'='
-#define FL_UNIVNOTEQ	'\='
-#define FL_EQ		'=='
-#define FL_NOTEQ	'\=='
-#define FL_ORDERLT	'@<'
-#define FL_ORDEREQLT	'@=<'
-#define FL_ORDERGT	'@>'
-#define FL_ORDEREQGT	'@>='
-#define FL_METAUNIV	'=..'
-#define FL_ASSIGN	':='
-#define FL_IS		(is)
-#define FL_MATHEQ	'=:='
-#define FL_OBJEQL	':=:'
-#define FL_MATHNOTEQ	'=\='
-#define FL_LT		'<'
-#define FL_EQLT		'=<'
-#define FL_GT		'>'
-#define FL_EQGT		'>='
-#define FL_RIGHTTO	'>>'
-#define FL_LEFTTO	'<<'
+#define FL_UNIVEQ		'='
+#define FL_UNIVNOTEQ		'\='
+#define FL_EQ			'=='
+#define FL_NOTEQ		'\=='
+#define FL_ORDERLT		'@<'
+#define FL_ORDEREQLT		'@=<'
+#define FL_ORDERGT		'@>'
+#define FL_ORDEREQGT		'@>='
+#define FL_METAUNIV		'=..'
+#define FL_ASSIGN		':='
+#define FL_IS			(is)
+#define FL_MATHEQ		'=:='
+#define FL_OBJEQL		':=:'
+#define FL_MATHNOTEQ		'=\='
+#define FL_LT			'<'
+#define FL_EQLT			'=<'
+#define FL_GT			'>'
+#define FL_EQGT			'>='
+#define FL_RIGHTTO		'>>'
+#define FL_LEFTTO		'<<'
 
-#define FL_OP		(op)
-#define FL_HILOG	(hilog)
-#define FL_DYNAMIC	(dynamic)
-#define FL_TABLE	(table)
-#define FL_INDEX	(index)
-#define FL_EXPORT	(export)
-#define FL_IMPORT	(import)
-#define FL_FROM		(from)
-#define FL_SIGNATURE	(sign)
-#define FL_OID		(oid)
-#define FL_FORMULAR	(form)
-#define FL_PROLOG	(prolog)
-#define FL_PROLOGALL	(prologall)
-#define FL_MODULE	(xsb)
-#define FL_NOHILOG	(nohilog)
-#define FL_NOHILOGALL	(nohilogall)
+#define FL_OP			(op)
+#define FL_HILOG		(hilog)
+#define FL_DYNAMIC		(dynamic)
+#define FL_TABLE		(table)
+#define FL_INDEX		(index)
+#define FL_EXPORT		(export)
+#define FL_IMPORT		(import)
+#define FL_FROM			(from)
+#define FL_SIGNATURE		(sign)
+#define FL_OID			(oid)
+#define FL_FORMULAR		(form)
+#define FL_PROLOG		(prolog)
+#define FL_PROLOGALL		(prologall)
+#define FL_MODULE		(xsb)
+#define FL_NOHILOG		(nohilog)
+#define FL_NOHILOGALL		(nohilogall)
 
-#define FL_MIN		min
-#define FL_MAX		max
-#define FL_SUM		sum
-#define FL_AVG		avg
-#define FL_COUNT	count
-#define FL_COLLECTSET	collectset
-#define FL_COLLECTBAG	collectbag
+#define FL_MIN			min
+#define FL_MAX			max
+#define FL_SUM			sum
+#define FL_AVG			avg
+#define FL_COUNT		count
+#define FL_COLLECTSET		collectset
+#define FL_COLLECTBAG		collectbag
 
-#define FL_ASSERT	assert
-#define FL_RETRACT	retract
-#define FL_RETRACTALL	retractall
-#define FL_ERASE	erase
-#define FL_ERASEALL	eraseall
+#define FL_ASSERT		assert
+#define FL_RETRACT		retract
+#define FL_RETRACTALL		retractall
+#define FL_ERASE		erase
+#define FL_ERASEALL		eraseall
+
+#define FL_BTASSERT		btassert
+#define FL_BTRETRACT		btretract
+#define FL_BTRETRACTALL		btretractall
+#define FL_BTERASE		bterase
+#define FL_BTERASEALL		bteraseall
 
 
 /****************************************************************************
@@ -235,145 +241,150 @@
   FLDELETE(Op,LiteralList,Conditon)
   FLDELETE(Op,LiteralList)
 ****************************************************************************/
-#define FLRULE		flrule
-#define FLFACT		flfact
-#define FLQUERY		flquery
-#define FLDIRECTIVE	fldirective
+#define FLRULE			flrule
+#define FLFACT			flfact
+#define FLQUERY			flquery
+#define FLDIRECTIVE		fldirective
 
-#define FLCOMMAND	flcommand
-#define FLTABLE		fltable
-#define FLDYNAMIC	fldynamic
-#define FLEXPORT	flexport
-#define FLIMPORT	flimport
-#define FLSIGNATURE	flsignature
-#define FLPROLOG	flprolog
-#define FLOPDEF		flopdef
-#define FLNOHILOG	flnohilog
-#define FLINDEX		flindex
+#define FLCOMMAND		flcommand
+#define FLTABLE			fltable
+#define FLDYNAMIC		fldynamic
+#define FLEXPORT		flexport
+#define FLIMPORT		flimport
+#define FLSIGNATURE		flsignature
+#define FLPROLOG		flprolog
+#define FLOPDEF			flopdef
+#define FLNOHILOG		flnohilog
+#define FLINDEX			flindex
 
-#define FLATOM		flatom
-#define FLNUMBER	flnumber
-#define FLSTRING	flstring
-#define FLVAR		flvar
-#define FLTOKEN		fltoken
-#define FLTERM		flterm
-#define FLAGGREGATE	flaggregate
-#define FLLIST		fllist
-#define FLBIRELATE	flbirelate
-#define FLOBJREF	flobjref
-#define FLOBJSPEC	flobjspec
-#define FLFDATTSPEC	flfdattspec
-#define FLMVDATTSPEC	flmvdattspec
-#define FLINCATTSPEC	flincattspec
-#define FLMETHSPEC	flmethspec
-#define FLIMETHSPEC	flimethspec
-#define FLTRANSPEC	fltranspec
-#define FLOBJEQL	flobjeql
-#define FLCUT		flcut
-#define FLLOAD		flload
-#define FLWORKSPACE	flworkspace
-#define FLMODULE	flmodule
-#define FLCONJUNCT	flconjunct
-#define FLDISJUNCT	fldisjunct
-#define FLNOT		flnot
-#define FLTNOT		fltnot
+#define FLATOM			flatom
+#define FLNUMBER		flnumber
+#define FLSTRING		flstring
+#define FLVAR			flvar
+#define FLTOKEN			fltoken
+#define FLTERM			flterm
+#define FLAGGREGATE		flaggregate
+#define FLLIST			fllist
+#define FLBIRELATE		flbirelate
+#define FLOBJREF		flobjref
+#define FLOBJSPEC		flobjspec
+#define FLFDATTSPEC		flfdattspec
+#define FLMVDATTSPEC		flmvdattspec
+#define FLINCATTSPEC		flincattspec
+#define FLMETHSPEC		flmethspec
+#define FLIMETHSPEC		flimethspec
+#define FLTRANSPEC		fltranspec
+#define FLOBJEQL		flobjeql
+#define FLCUT			flcut
+#define FLLOAD			flload
+#define FLWORKSPACE		flworkspace
+#define FLMODULE		flmodule
+#define FLCONJUNCT		flconjunct
+#define FLDISJUNCT		fldisjunct
+#define FLNOT			flnot
+#define FLTNOT			fltnot
 
-#define FLASSERT	flassert
-#define FLDELETE	fldelete
+#define FLASSERT		flassert
+#define FLDELETE		fldelete
 
 
 /****************************************************************************
   Prolog encoding of a compiled FLORA program
 ****************************************************************************/
-#define PRRULE		prrule
-#define PRFACT		prfact
-#define PRQUERY		prquery
-#define PRDIRECTIVE	prdirective
+#define PRRULE			prrule
+#define PRFACT			prfact
+#define PRQUERY			prquery
+#define PRDIRECTIVE		prdirective
 
-#define PRCOMMAND	prcommand
-#define PRTABLE		prtable
-#define PRDYNAMIC	prdynamic
-#define PREXPORT	prexport
-#define PRIMPORT	primport
-#define PRINDEX		prindex
+#define PRCOMMAND		prcommand
+#define PRTABLE			prtable
+#define PRDYNAMIC		prdynamic
+#define PREXPORT		prexport
+#define PRIMPORT		primport
+#define PRINDEX			prindex
 
-#define PRATOM		pratom
-#define PRNUMBER	prnumber
-#define PRVARIABLE	prvariable
-#define PRSTRING	prstring
-#define PRLIST		prlist
-#define PRTERM		prterm
-#define PRFDSKOLEM	prfdskolem
-#define PRIFDSKOLEM	prifdskolem
+#define PRATOM			pratom
+#define PRNUMBER		prnumber
+#define PRVARIABLE		prvariable
+#define PRSTRING		prstring
+#define PRLIST			prlist
+#define PRTERM			prterm
+#define PRFDSKOLEM		prfdskolem
+#define PRIFDSKOLEM		prifdskolem
 
-#define PRAND		prand
-#define PROR		pror
-#define PRNOT		prnot
-#define PRTNOT		prtnot
-#define PRATOMLIT	pratomlit
-#define PRTERMLIT	prtermlit
-#define PRCALL		prcall
-#define PRCUT		prcut
-#define PRWORKSPACE	prworkspace
-#define PRNEWPRED	prnewpred
-#define PROLOGTERM	prologterm
-#define FLORASYSLIB	florasyslib
+#define PRAND			prand
+#define PROR			pror
+#define PRNOT			prnot
+#define PRTNOT			prtnot
+#define PRATOMLIT		pratomlit
+#define PRTERMLIT		prtermlit
+#define PRCALL			prcall
+#define PRCUT			prcut
+#define PRWORKSPACE		prworkspace
+#define PRNEWPRED		prnewpred
+#define PROLOGTERM		prologterm
+#define FLORASYSLIB		florasyslib
 
-#define PRISA		prisa
-#define PRSUB		prsub
-#define PRMETH		prmeth
-#define PRIMETH		primeth
-#define PRTRAN		prtran
-#define PRFD		prfd
-#define PRIFD		prifd
-#define PRFDSIG		prfdsig
-#define PRMVDSIG	prmvdsig
-#define PRIFDSIG	prifdsig
-#define PRIMVDSIG	primvdsig
-#define PRMVD		prmvd
-#define PRIMVD		primvd
-#define PRMVDINC	prmvdinc
-#define PRIMVDINC	primvdinc
-#define PREXISTS	prexists
-#define PRFDDEF		prfddef
-#define PRIFDDEF	prifddef
-#define PRMVDDEF	prmvddef
-#define PRIMVDDEF	primvddef
-#define PROBJEQL	probjeql
+#define PRISA			prisa
+#define PRSUB			prsub
+#define PRMETH			prmeth
+#define PRIMETH			primeth
+#define PRTRAN			prtran
+#define PRFD			prfd
+#define PRIFD			prifd
+#define PRFDSIG			prfdsig
+#define PRMVDSIG		prmvdsig
+#define PRIFDSIG		prifdsig
+#define PRIMVDSIG		primvdsig
+#define PRMVD			prmvd
+#define PRIMVD			primvd
+#define PRMVDINC		prmvdinc
+#define PRIMVDINC		primvdinc
+#define PREXISTS		prexists
+#define PRFDDEF			prfddef
+#define PRIFDDEF		prifddef
+#define PRMVDDEF		prmvddef
+#define PRIMVDDEF		primvddef
+#define PROBJEQL		probjeql
 
 
 /****************************************************************************
   FLORA system libraries
 ****************************************************************************/
-#define	FLLIBMIN	fllibmin
-#define	FLLIBMAX	fllibmax
-#define	FLLIBSUM	fllibsum
-#define	FLLIBAVG	fllibavg
-#define FLLIBCOUNT	fllibcount
-#define	FLLIBCOLLECTSET	fllibcollectset
-#define	FLLIBCOLLECTBAG fllibcollectbag
-#define	FLLIBLOAD	fllibload
-#define FLLIBANSWER	fllibanswer
-#define FLLIBSHELLANS	fllibshellans
-#define FLLIBPROGRAMANS	fllibprogramans
-#define FLLIBDISPLAY	fllibdisplay
-#define FLLIBDBOP	fllibdbop
-#define FLLIBASSERT	fllibassert
-#define FLLIBRETRACT	fllibretract
-#define FLLIBRETRACTALL	fllibretractall
-#define FLLIBERASE	flliberase
-#define FLLIBERASEALL	flliberaseall
-#define FLLIBSHDIRECT	fllibshdirect
+#define	FLLIBMIN		fllibmin
+#define	FLLIBMAX		fllibmax
+#define	FLLIBSUM		fllibsum
+#define	FLLIBAVG		fllibavg
+#define FLLIBCOUNT		fllibcount
+#define	FLLIBCOLLECTSET		fllibcollectset
+#define	FLLIBCOLLECTBAG 	fllibcollectbag
+#define	FLLIBLOAD		fllibload
+#define FLLIBANSWER		fllibanswer
+#define FLLIBSHELLANS		fllibshellans
+#define FLLIBPROGRAMANS		fllibprogramans
+#define FLLIBDISPLAY		fllibdisplay
+#define FLLIBDBOP		fllibdbop
+#define FLLIBASSERT		fllibassert
+#define FLLIBRETRACT		fllibretract
+#define FLLIBRETRACTALL		fllibretractall
+#define FLLIBERASE		flliberase
+#define FLLIBERASEALL		flliberaseall
+#define FLLIBBTASSERT		fllibbtassert
+#define FLLIBBTRETRACT		fllibbtretract
+#define FLLIBBTRETRACTALL	fllibbtretractall
+#define FLLIBBTERASE		fllibbterase
+#define FLLIBBTERASEALL		fllibbteraseall
+#define FLLIBSHDIRECT		fllibshdirect
 
 
 /****************************************************************************
   FLORA options
 ****************************************************************************/
-#define FLSKOLEM	flskolem
-#define FLHEADER	flheader
-#define FLTRAILER	fltrailer
-#define FLDBDYN		fldbdyn
-#define FLOBJEQLDEF	flobjeqldef
+#define	FLSKOLEM		flskolem
+#define	FLHEADER		flheader
+#define	FLTRAILER		fltrailer
+#define	FLDBDYN			fldbdyn
+#define	FLOBJEQLDEF		flobjeqldef
 
 
 /****************************************************************************
@@ -385,30 +396,30 @@
 /****************************************************************************
   wrappers
 ****************************************************************************/
-#define	WRAP_HILOG	flapply
-#define	WRAP_ISA	isa
-#define	WRAP_SUB	sub
-#define	WRAP_METH	meth
-#define	WRAP_IMETH	imeth
-#define	WRAP_TRAN	tran
-#define	WRAP_FD		fd
-#define	WRAP_IFD	ifd
-#define	WRAP_FDSIG	fdsig
-#define	WRAP_IFDSIG	ifdsig
-#define	WRAP_MVD	mvd
-#define	WRAP_IMVD	imvd
-#define	WRAP_MVDSIG	mvdsig
-#define	WRAP_IMVDSIG	imvdsig
-#define	WRAP_MVDINC	mvdinc
-#define	WRAP_IMVDINC	imvdinc
-#define	WRAP_EXISTS	exists
-#define	WRAP_FDDEF	fddef
-#define	WRAP_IFDDEF	ifddef
-#define	WRAP_MVDDEF	mvddef
-#define	WRAP_IMVDDEF	imvddef
-#define WRAP_FDSKOLEM	fdskolem
-#define WRAP_IFDSKOLEM	ifdskolem
-#define WRAP_OBJEQL	objeql
+#define	WRAP_HILOG		flapply
+#define	WRAP_ISA		isa
+#define	WRAP_SUB		sub
+#define	WRAP_METH		meth
+#define	WRAP_IMETH		imeth
+#define	WRAP_TRAN		tran
+#define	WRAP_FD			fd
+#define	WRAP_IFD		ifd
+#define	WRAP_FDSIG		fdsig
+#define	WRAP_IFDSIG		ifdsig
+#define	WRAP_MVD		mvd
+#define	WRAP_IMVD		imvd
+#define	WRAP_MVDSIG		mvdsig
+#define	WRAP_IMVDSIG		imvdsig
+#define	WRAP_MVDINC		mvdinc
+#define	WRAP_IMVDINC		imvdinc
+#define	WRAP_EXISTS		exists
+#define	WRAP_FDDEF		fddef
+#define	WRAP_IFDDEF		ifddef
+#define	WRAP_MVDDEF		mvddef
+#define	WRAP_IMVDDEF		imvddef
+#define	WRAP_FDSKOLEM		fdskolem
+#define	WRAP_IFDSKOLEM		ifdskolem
+#define	WRAP_OBJEQL		objeql
 
 
 /****************************************************************************
@@ -429,6 +440,6 @@
 /****************************************************************************
   F-logic atoms prefixes
 ****************************************************************************/
-#define FLFACTPREFIX	'base_'
-#define FLHEADPREFIX	'derived_'
-#define FLBODYPREFIX	''
+#define FLFACTPREFIX		'base_'
+#define FLHEADPREFIX		'derived_'
+#define FLBODYPREFIX		''

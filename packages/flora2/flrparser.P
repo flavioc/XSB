@@ -400,12 +400,19 @@ flmodule_struct(Goal,Name,FLMODULE(Goal,Name)).
 
 is_dbassertop(FL_ASSERT) :- !.
 
+is_dbassertop(FL_BTASSERT) :- !.
+
 is_dbdeleteop(FL_RETRACT) :- !.
 is_dbdeleteop(FL_RETRACTALL) :- !.
 is_dbdeleteop(FL_ERASE) :- !.
 is_dbdeleteop(FL_ERASEALL) :- !.
 
-flassert_struct(List,FLASSERT(List)).
+is_dbdeleteop(FL_BTRETRACT) :- !.
+is_dbdeleteop(FL_BTRETRACTALL) :- !.
+is_dbdeleteop(FL_BTERASE) :- !.
+is_dbdeleteop(FL_BTERASEALL) :- !.
+
+flassert_struct(Op,List,FLASSERT(Op,List)).
 fldelete_struct(Op,List,Cond,FLDELETE(Op,List,Cond)).
 fldelete_struct(Op,List,FLDELETE(Op,List)).
 
@@ -1042,7 +1049,7 @@ flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,Ip),Code,Status) :-
 	( N == 0 ->
 	    parsing_error(Ip,EXP_ARGS,Status)
 	;
-	  flora_dbassert(Args,Code,Status)
+	  flora_dbassert(Atom,Args,Code,Status)
         ).
 
 flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,Ip),Code,Status) :-
@@ -1802,11 +1809,11 @@ flora_head_setexp(CanoniTerm,[Code],Status) :-
 
 
 /****************************************************************************
-  flora_dbassert(+ArgsList,-Code,-Status)
+  flora_dbassert(+OpAtom,+ArgsList,-Code,-Status)
 ****************************************************************************/
-flora_dbassert(Args,Code,Status) :-
+flora_dbassert(OpAtom,Args,Code,Status) :-
 	flora_dbliteral_list(FLINS,Args,CodeList,Status),
-	(Status == [] -> flassert_struct(CodeList,Code); true).
+	(Status == [] -> flassert_struct(OpAtom,CodeList,Code); true).
 
 
 /****************************************************************************
