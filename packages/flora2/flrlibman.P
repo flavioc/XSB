@@ -69,51 +69,53 @@ flora_load_library(_LibID).
   flora_include(+Atom,+FilePath)
   indicates which file to be included in the output file.
 ********************************************************************/
-flora_include(FLLIBMIN,'syslibinc/flraggmin_inc.flh').
-flora_include(FLLIBMAX,'syslibinc/flraggmax_inc.flh').
-flora_include(FLLIBSUM,'syslibinc/flraggsum_inc.flh').
-flora_include(FLLIBAVG,'syslibinc/flraggavg_inc.flh').
-flora_include(FLLIBCOUNT,'syslibinc/flraggcount_inc.flh').
-flora_include(FLLIBCOLLECTSET,'syslibinc/flrcolset_inc.flh').
-flora_include(FLLIBCOLLECTBAG,'syslibinc/flrcolbag_inc.flh').
-flora_include(FLLIBLOAD,'syslibinc/flrload_inc.flh').
-flora_include(FLLIBANSWER,'syslibinc/flranswer_inc.flh').
-flora_include(FLLIBSHELLANS,'syslibinc/flranswer_inc.flh').
-flora_include(FLLIBPROGRAMANS,'syslibinc/flranswer_inc.flh').
-flora_include(FLLIBINSERT,'syslibinc/flrdbop_inc.flh').
-flora_include(FLLIBDELETE,'syslibinc/flrdbop_inc.flh').
-flora_include(FLLIBDELETEALL,'syslibinc/flrdbop_inc.flh').
-flora_include(FLLIBERASE,'syslibinc/flrdbop_inc.flh').
-flora_include(FLLIBERASEALL,'syslibinc/flrdbop_inc.flh').
-flora_include(FLLIBSHDIRECT,'syslibinc/flrshdirect_inc.flh').
+flora_include(FLLIBMIN,'syslibinc/flraggmin_inc.flh') :- !.
+flora_include(FLLIBMAX,'syslibinc/flraggmax_inc.flh') :- !.
+flora_include(FLLIBSUM,'syslibinc/flraggsum_inc.flh') :- !.
+flora_include(FLLIBAVG,'syslibinc/flraggavg_inc.flh') :- !.
+flora_include(FLLIBCOUNT,'syslibinc/flraggcount_inc.flh') :- !.
+flora_include(FLLIBCOLLECTSET,'syslibinc/flrcolset_inc.flh') :- !.
+flora_include(FLLIBCOLLECTBAG,'syslibinc/flrcolbag_inc.flh') :- !.
+flora_include(FLLIBLOAD,'syslibinc/flrload_inc.flh') :- !.
+flora_include(FLLIBANSWER,'syslibinc/flranswer_inc.flh') :- !.
+flora_include(FLLIBSHELLANS,'syslibinc/flranswer_inc.flh') :- !.
+flora_include(FLLIBPROGRAMANS,'syslibinc/flranswer_inc.flh') :- !.
+flora_include(FLLIBINSERT,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBDELETE,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBDELETEALL,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBERASE,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBERASEALL,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBSHDIRECT,'syslibinc/flrshdirect_inc.flh') :- !.
 
-flora_include(FLHEADER,'closureinc/flrheader_inc.flh').
-flora_include(FLDBDYN,'closureinc/flrdbdyn_inc.flh').
-flora_include(FLSKOLEM,'closureinc/flreqltrailer_inc.flh').
-flora_include(FLOBJEQLDEF,'closureinc/flreqltrailer_inc.flh').
-flora_include(FLTRAILER,'closureinc/flrtrailer_inc.flh').
+flora_include(FLHEADER,'closureinc/flrheader_inc.flh') :- !.
+flora_include(FLDBDYN,'closureinc/flrdbdyn_inc.flh') :- !.
+flora_include(FLSKOLEM,'closureinc/flreqltrailer_inc.flh') :- !.
+flora_include(FLOBJEQLDEF,'closureinc/flreqltrailer_inc.flh') :- !.
+flora_include(FLTRAILER,'closureinc/flrtrailer_inc.flh') :- !.
+
+flora_include(FLDEFINITION,'closureinc/flrdefinition_inc.flh') :- !.
 
 
 /********************************************************************
   flora_library(+Atom,+FilePath)
   indicates which library to be loaded.
 ********************************************************************/
-flora_library(FLLIBMIN,'syslib/flraggmin.P').
-flora_library(FLLIBMAX,'syslib/flraggmax.P').
-flora_library(FLLIBSUM,'syslib/flraggsum.P').
-flora_library(FLLIBAVG,'syslib/flraggavg.P').
-flora_library(FLLIBCOUNT,'syslib/flraggcount.P').
-flora_library(FLLIBCOLLECTSET,'syslib/flraggcolset.P').
-flora_library(FLLIBCOLLECTBAG,'syslib/flraggcolbag.P').
-flora_library(FLLIBLOAD,'syslib/flrload.P').
-flora_library(FLLIBANSWER,'syslib/flranswer.P').
-flora_library(FLLIBSHELLANS,'syslib/flranswer.P').
-flora_library(FLLIBPROGRAMANS,'syslib/flranswer.P').
-flora_library(FLLIBDISPLAY,'syslib/flrdisplay.P').
-flora_library(FLLIBDBOP,'syslib/flrdbop.P').
-flora_library(FLLIBINSERT,'syslib/flrdbop.P').
-flora_library(FLLIBDELETE,'syslib/flrdbop.P').
-flora_library(FLLIBDELETEALL,'syslib/flrdbop.P').
-flora_library(FLLIBERASE,'syslib/flrdbop.P').
-flora_library(FLLIBERASEALL,'syslib/flrdbop.P').
-flora_library(FLLIBSHDIRECT,'syslib/flrshdirect.P').
+flora_library(FLLIBMIN,'syslib/flraggmin.P') :- !.
+flora_library(FLLIBMAX,'syslib/flraggmax.P') :- !.
+flora_library(FLLIBSUM,'syslib/flraggsum.P') :- !.
+flora_library(FLLIBAVG,'syslib/flraggavg.P') :- !.
+flora_library(FLLIBCOUNT,'syslib/flraggcount.P') :- !.
+flora_library(FLLIBCOLLECTSET,'syslib/flraggcolset.P') :- !.
+flora_library(FLLIBCOLLECTBAG,'syslib/flraggcolbag.P') :- !.
+flora_library(FLLIBLOAD,'syslib/flrload.P') :- !.
+flora_library(FLLIBANSWER,'syslib/flranswer.P') :- !.
+flora_library(FLLIBSHELLANS,'syslib/flranswer.P') :- !.
+flora_library(FLLIBPROGRAMANS,'syslib/flranswer.P') :- !.
+flora_library(FLLIBDISPLAY,'syslib/flrdisplay.P') :- !.
+flora_library(FLLIBDBOP,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBINSERT,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBDELETE,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBDELETEALL,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBERASE,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBERASEALL,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBSHDIRECT,'syslib/flrshdirect.P') :- !.

@@ -76,6 +76,7 @@ flora_prlg(findall,3) :- !.
 flora_prlg(compile,1) :- !.
 flora_prlg(fail,0) :- !.
 flora_prlg(true,0) :- !.
+flora_prlg(abort,0) :- !.
 flora_prlg(abolish_all_tables,0) :- !.
 flora_prlg(assert,1) :- !.
 flora_prlg(retract,1) :- !.

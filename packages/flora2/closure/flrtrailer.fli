@@ -499,3 +499,16 @@ exists(X) :- sub(X,_).
 exists(X) :- sub(_,X).
 exists(X) :- meth(X,_).
 exists(X) :- imeth(X,_).
+
+
+/*****************************************************************************
+  objeql/2
+*****************************************************************************/
+:- import flora_error_line/2 from flrprint.
+:- prolog args/1.
+
+
+objeql(_X,_Y) :-
+	FLORA_THIS_MODULE(WS),
+	flora_error_line('equality maintenance not supported in module `%s''',args(WS)),
+	abort.

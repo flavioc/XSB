@@ -52,6 +52,8 @@ flora_nohilog(WRAP_MVDDEF,2) :- !.
 flora_nohilog(WRAP_IMVDDEF,2) :- !.
 flora_nohilog(WRAP_OBJEQL,2) :- !.
 
+flora_nohilog(FLORA_THIS_MODULE,1) :- !.
+
 
 /****************************************************************************
   flora_nohilogdef(+Functor,+Arity)

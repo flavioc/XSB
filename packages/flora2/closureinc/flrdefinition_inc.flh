@@ -1,0 +1,12 @@
+/************************************************************************
+  file: closureinc/flrdefinition_inc.flh
+
+  Author(s): Guizhen Yang
+
+  This file is automatically included by the FLORA compiler.
+************************************************************************/
+
+WORKSPACE(VAR_WORKSPACE,flthismod)(VAR_WORKSPACE).
+
+/***********************************************************************/
+

@@ -196,7 +196,7 @@ flsetuptrailer(TrailerName) :-
 	tell(TrailerFullName),
 	flora_include_FLH_filename(TrailerFullName),
 	flora_trailer_include(TrailerName,TrailerInclude),
-	flora_include_file([FLHEADER,FLDBDYN,TrailerInclude],HeaderStatus),
+	flora_include_file([FLHEADER,FLDEFINITION,FLDBDYN,TrailerInclude],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -542,7 +542,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 	tell(PFileName),
 	flora_include_FLH_filename(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
-	flora_include_file([FLHEADER|LibOptionList],HeaderStatus),
+	flora_include_file([FLHEADER,FLDEFINITION|LibOptionList],HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
@@ -550,11 +550,11 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
 	      ( member(FLOBJEQLDEF,FileOptionList) ->
-		  flora_message_line('appending trailer for equality maintenance'),
+		  flora_message_line('appending the trailer for equality maintenance'),
 		  flora_include_file([FLOBJEQLDEF],FileStatus)
 
 	      ; member(FLSKOLEM,FileOptionList) ->
-	          flora_message_line('appending trailer for object skolemization'),
+	          flora_message_line('appending the trailer for object skolemization'),
 		  flora_include_file([FLSKOLEM],FileStatus)
 	      ;
 	        flora_include_file([FLTRAILER],FileStatus)
