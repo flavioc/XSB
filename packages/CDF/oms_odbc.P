@@ -10,7 +10,7 @@
 :- import concat_atom/2 from string.
 
 :- dynamic odbc_debug/0.
-:- assert(odbc_debug).
+%:- assert(odbc_debug).
 
 ?- set_scan_pars([letter(0'_)]).
 
@@ -77,7 +77,7 @@ upper_case_atom(A,U) :-
 
 
 findall_odbc_sql_1(Input,Statement,Output):- 
-	writeln('-----fos'(Input,Statement,Output)),
+%	writeln('-----fos'(Input,Statement,Output)),
 	(odbc_debug -> 
 	    check_index(Statement)
 	;   true),

@@ -45,6 +45,9 @@
 :- dynamic oms_at/3.
 :- dynamic oms_ao/3.
 
+:- dynamic oms_logging_state/1.
+:- dynamic oms_log_trie/1.
+
 %%%%%%%%%%%%% Declarations for External View
 
 :- dynamic class_ext/3.
@@ -104,7 +107,14 @@
 :- dynamic oms_checking/1.
 :- call_assert(oms_checking(partial)).
 
-:- init_oms_rels, init_index_std.
+:- initialize_oms.
+
+initialize_oms:- 
+	retractall(oms_logging_state(_)),
+	asserta(oms_logging_state(off)),
+	oms_set_log_off,
+	init_oms_rels, 
+	init_index_std.
 
 %--------------------------------------------------------------------
 /* TLS: these should be used only when checking dead code.  They
@@ -2233,11 +2243,11 @@ assert_oms(Term) :-
 	abolish_nec_tables(Term).
 
 assert_oms_term(Term) :-
-	oms_log(Term),
+	oms_log(assert(Term)),
 	assert_oms_int(Term),
 	!.
 assert_oms_term(Term) :-
-	oms_log(Term),
+	oms_log(assert(Term)),
 	asserta(Term),
 	oms_dirty(DFlg),
 	(DFlg =:= 1
@@ -2246,6 +2256,7 @@ assert_oms_term(Term) :-
 	).
 
 retractall_oms(Term) :-
+	oms_log(retractall(Term)),
 	retractall_oms_term(Term),
 	abolish_nec_tables(Term).
 
@@ -2317,7 +2328,63 @@ abolish_schrel_inherits :-
 
 %%% Logging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-oms_log(_).
+:- comment(oms_set_log_on/0,"This predicate creates a new log and
+ensures that logging will be performed for further updates until
+logging is turned off.").
+
+oms_set_log_on:- oms_logging_state(X),
+	       (X == on -> 
+		   true
+	          ;    retractall(oms_logging_state(_)),
+	               asserta(oms_logging_state(on)),
+		   (oms_log_trie(_) -> 
+		        oms_error(logging,['^%*&^%* log state inconsistent!',
+		                                     '(off to on)'])
+		     ;  new_trie(X),
+		         assert(oms_log_trie(X)))).
+
+
+:- comment(oms_set_log_off/0,"This predicate turns logging off, and
+deletes the current log, as it may have become out of date.").
+
+oms_set_log_off:- oms_logging_state(X),
+	       (X == off -> 
+		   true
+	          ;    retractall(oms_logging_state(_)),
+	               asserta(oms_logging_state(off)),
+		   (oms_log_trie(_) -> 
+		        delete_trie(X),
+		        retractall(oms_log_trie(X))
+		     ;  oms_error(logging,['^%*&^%* log state inconsistent!',
+		                                     '(on to off)']))).
+
+:- comment(oms_reset_log/0,"If logging is on, this predicate deletes
+the current log, and creates a new one.  If logging is off, no action
+is taken").
+
+oms_reset_log:- 
+	(oms_log_trie(X) -> 
+	    delete_trie(X),
+	    retractall(oms_log_trie(X))
+	  ; true),
+	  new_trie(X),
+	  assert(oms_log_trie(X)).
+
+/* Need to handle variables better.  */
+oms_log(Term):- 
+	oms_logging_state(X),
+	(X == on -> oms_log_1(assert(Term)) ; true).
+
+oms_log_1(assert(Term)):- 
+	oms_log_trie(T),
+	(trie_interned(retractall(Term),T,Leaf,_skel) -> 
+	    trie_unintern_nr(retractall(T),Leaf) ; true),
+	trie_intern(assert(Term),T,_,_,_).
+oms_log_1(retractall(Term)):- 
+	oms_log_trie(T),
+	(trie_interned(assert(Term),T,Leaf,_skel) -> 
+	    trie_unintern_nr(Term,Leaf)  
+	  ; trie_intern(delete(Term),T,_,_,_)).
 
 %%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
