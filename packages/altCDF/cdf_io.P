@@ -54,9 +54,11 @@ dump_extensional_facts_1(Dir) :-
 
 throw_cdf_writable(Dir):-
 	((slash(Slash),concat_atom([Dir,Slash,'cdf_extensional.P'],SchemaPath),
-	  path_sysop(writable, SchemaPath)) -> 
+	  file_exists(SchemaPath), path_sysop(writable, SchemaPath)) -> 
 	    true
-             ;  cdf_error(permissions,['Directory is not writable: ',Dir])).
+	 ; path_sysop(writable, Dir)
+	 ->	true
+	 ;	cdf_error(permissions,['Directory is not writable: ',Dir])).
 
 sort_and_write_terms(Terms) :-
 	sort(Terms,STerms),
