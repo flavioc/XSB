@@ -163,7 +163,7 @@ open(F,read,F):-!,
 	  File > 0,                             % file F exists and
 	  !,					% is readable.
 	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, 5)
+	  psc_set_type(PSC, T_FILE)
 	; abort([F,'not a file or not readable, cannot open'])
 	),
 	psc_prop(PSC, File0),

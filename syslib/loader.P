@@ -121,7 +121,7 @@ set_current_input :-
 	psc_set_type(UserInPSC, 5),        % ``ep'' field contains file desc
 	psc_set_prop(UserInPSC, 0),        % ``data'' field set to stdin
 	conset(current_input, UserInPSC),
-	stat_set_flag(CURRENT_INPUT, 0).
+	stat_set_flag(CURRENT_INPUT, STDIN).
 
 
 /*

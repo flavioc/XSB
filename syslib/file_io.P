@@ -27,6 +27,7 @@
 #include "io_defs_xsb.h"
 #include "standard.h"
 #include "flag_defs_xsb.h"
+#include "psc_defs.h"
 
 
 	       /********************************/
@@ -78,6 +79,8 @@ file_clearerr(IOport) :-
 	file_function(FILE_CLEARERR, IOport, _, _, _, _, _).
 tmpfile_open(IOport) :-
 	file_function(TMPFILE_OPEN, IOport, _, _, _, _, _).
+is_valid_ioport(IOport) :-
+	file_function(IS_VALID_IOPORT, IOport, _, _, _, _, _).
 
 
 file_getbuf(IOport, ByteCount, ToAtom, BytesRead) :-
@@ -195,6 +198,17 @@ pipe_open(ReadPipe, WritePipe) :-
 %% the child XSB process
 fd2ioport(Pipe, IOport) :-
 	file_function(FD2IOPORT, Pipe, IOport,_,_,_,_).
+
+
+%% ioport2iostream(+IOport, -Stream)
+%% Promotes I/O port to a strean, which can be manipulated 
+%% using see/seen/tell/told
+%% The I/O port must be a valid open I/O port
+ioport2iostream(IOport,Stream) :-
+	gensym('_$newstream_#', Stream),
+	conpsc(Stream,PSC),
+	psc_set_prop(PSC,IOport),
+	psc_set_type(PSC,T_FILE).
 
 
 /***************************************************************/
