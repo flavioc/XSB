@@ -670,12 +670,14 @@ xsbBool xsb_socket_request(void)
 
     /* specify the time out */
     timeout_term = reg_term(3);
-    timeout = p2c_int(timeout_term);
-    
-    /* initialize tv */
-    tv = (struct timeval *)malloc(sizeof(struct timeval));
-    tv->tv_sec = timeout;
-    tv->tv_usec = 0;
+    if (is_int(timeout_term)) {
+      timeout = int_val(timeout_term);
+      /* initialize tv */
+      tv = (struct timeval *)malloc(sizeof(struct timeval));
+      tv->tv_sec = timeout;
+      tv->tv_usec = 0;
+    } else
+      tv = NULL; /* no timeouts */
 
     /* initialize the prolog term */ 
     Avail_rsockfds = p2p_new();
@@ -740,7 +742,7 @@ xsbBool xsb_socket_request(void)
 		connections[count].exception_fds,connections[count].sizee);
     }
 
-    free((struct timeval *)tv);
+    if (tv) free((struct timeval *)tv);
     return set_error_code(ecode, 7, "SOCKET_SELECT");
   }
 
