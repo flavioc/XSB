@@ -181,6 +181,7 @@
 
 #define SEGFAULT_HANDLER	182
 
+#define IS_ATTV			189 /* similar to IS_LIST */
 #define VAR			190
 #define NONVAR			191
 #define ATOM			192

@@ -168,6 +168,7 @@ inline_builtin(get_lastnode_cs_retskel, 4, GET_LASTNODE_CS_RETSKEL).
 inline_builtin(abolish_table_info, 0, ABOLISH_TABLE_INFO).
 inline_builtin(abolish_table_predicate, 1, ABOLISH_TABLE_PREDICATE).
 inline_builtin(trie_delete_return, 2, TRIE_DELETE_RETURN).
+inline_builtin(is_attv, 1, IS_ATTV). % similar to is_list
 
 % The following two are not declared as inlined, because they are inlined
 % in a special way (through WAM instructions) by the XSB compiler anyway.

@@ -658,6 +658,7 @@ void init_builtin_table(void)
   set_builtin_table(PRIVATE_BUILTIN, "private_builtin");
   set_builtin_table(SEGFAULT_HANDLER, "segfault_handler");
 
+  set_builtin_table(IS_ATTV, "is_attv");
   set_builtin_table(VAR, "var");
   set_builtin_table(NONVAR, "nonvar");
   set_builtin_table(ATOM, "atom");

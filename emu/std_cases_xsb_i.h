@@ -23,6 +23,8 @@
 */
 
 
+  case IS_ATTV:	/* r1: ?term */
+    return isattv(ptoc_tag(1));
 
   case VAR:		/* r1: ?term */
     return isref(ptoc_tag(1));

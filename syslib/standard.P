@@ -300,6 +300,8 @@ print(T) :-	% Not what is supposed 2 B
 % Prolog Meta-Logical Predicates (now most of them are in C)	%
 %---------------------------------------------------------------%
 
+is_attv(X) :- is_attv(X).
+
 var(X) :- var(X).
 
 nonvar(X) :- nonvar(X).
