@@ -52,6 +52,11 @@
 #include "register.h"
 #include "ptoc_tag_xsb_i.h"
 #include "io_builtins_xsb.h"
+#include "flags_xsb.h"
+#include "auxlry.h"
+#include "flag_defs_xsb.h"
+#include "loader_xsb.h"
+#include "memory_xsb.h"
 
 #define MAXCURSORNUM                    25
 #define MAXVARSTRLEN                    2000
@@ -1340,6 +1345,28 @@ void ODBCConnectOption()
   else ctop_int(6,PrintErrorMsg(NULL));
 }
 
+extern xsbBool glstack_realloc(int,int);
+
+Cell build_codes_list(char *charptr) {
+  int len = strlen(charptr);
+
+  if (len == 0) {
+    return makenil;
+  } else {
+    CPtr this_term, prev_tail;
+    check_glstack_overflow(4,pcreg,2*sizeof(Cell)*len);
+    this_term = hreg;
+    cell(hreg++) = makeint((int)*charptr); charptr++;
+    prev_tail = hreg++;
+    while (*charptr != 0) {
+      cell(prev_tail) = makelist(hreg);
+      cell(hreg++) = makeint((int)*charptr); charptr++;
+      prev_tail = hreg++;
+    }
+    cell(prev_tail) = makenil;
+    return makelist(this_term);
+  }
+}
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
 /*     GetColumn() */
@@ -1387,12 +1414,17 @@ int GetColumn()
     if (isref(op))
       return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
-      STRFILE strfile;
-
-      strfile.strcnt = strlen(cur->Data[ColCurNum]);
-      strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
-      read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
-      return TRUE;
+      if (!strcmp(get_name(get_str_psc(op)),"string")) {
+	return unify(cell(clref_val(ptoc_tag(4))+1),  /* op might have moved! */
+		       build_codes_list(cur->Data[ColCurNum]));
+      } else {
+	STRFILE strfile;
+	
+	strfile.strcnt = strlen(cur->Data[ColCurNum]);
+	strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
+	read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
+	return TRUE;
+      }
     }
     if (!isstring(op)) return FALSE;
     if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
@@ -1408,12 +1440,17 @@ int GetColumn()
     if (isref(op))
       return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
-      STRFILE strfile;
-
-      strfile.strcnt = strlen(cur->Data[ColCurNum]);
-      strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
-      read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
-      return TRUE;
+      if (!strcmp(get_name(get_str_psc(op)),"string")) {
+	return unify(cell(clref_val(ptoc_tag(4))+1),  /* op might have moved! */
+		       build_codes_list(cur->Data[ColCurNum]));
+      } else {
+	STRFILE strfile;
+	
+	strfile.strcnt = strlen(cur->Data[ColCurNum]);
+	strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
+	read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
+	return TRUE;
+      }
     }
     if (!isstring(op)) return FALSE;
     if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
