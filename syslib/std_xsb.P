@@ -28,7 +28,7 @@
 % semantics of the predicate exactly *follows* that of the standard. 
 
 standard_symbol(abolish, 1, assert).
-standard_symbol(abolish, 2, assert).
+standard_symbol(abolish, 2, assert).			% Not ISO (Dec-10)
 standard_symbol(abolish_all_tables, 0, tables).		% Not ISO
 standard_symbol(abolish_table_call, 1, tables).		% Not ISO
 standard_symbol(abolish_table_pred, 1, tables).		% Not ISO
@@ -77,40 +77,43 @@ standard_symbol(current_output_port, 1, curr_sym).
 standard_symbol(current_predicate, 1, curr_sym).
 standard_symbol(current_predicate, 2, curr_sym).
 standard_symbol(current_prolog_flag, 1, standard).	% ISO
+
 standard_symbol(debug, 0, debugger).
+standard_symbol(debug_ctl, 2, debugger).
 standard_symbol(debugging, 0, debugger).
 standard_symbol(delete_return, 2, tables).
 standard_symbol(display, 1, standard).
 standard_symbol((dynamic), 1, assert).
+
 standard_symbol(edit, 1, shell).
 standard_symbol(ensure_loaded, 1, consult).
 standard_symbol(ensure_loaded, 2, consult).
 standard_symbol(expand_filename, 2, machine).
 standard_symbol(expand_term, 2, standard).
+standard_symbol(exec, 1, shell).
+
 standard_symbol(fail, 0, standard).
 standard_symbol(fail_if, 1, standard).
-
-standard_symbol(file_close, 1, file_io).
 standard_symbol(file_clone, 3, file_io).
+standard_symbol(file_close, 1, file_io).
 standard_symbol(file_exists, 1, standard).
 standard_symbol(file_flush, 2, file_io).
 standard_symbol(file_nl, 1, xsb_writ).
 standard_symbol(file_open, 3, file_io).
 standard_symbol(file_read, 2, xsb_read).
-
 standard_symbol(file_read_line, 2, file_io).
 standard_symbol(file_read_line_list, 1, file_io).
 standard_symbol(file_read_line_list, 2, file_io).
 standard_symbol(file_read_line_atom, 1, file_io).
 standard_symbol(file_read_line_atom, 2, file_io).
-
-standard_symbol(path_sysop,2,file_io).
-standard_symbol(path_sysop,3,file_io).
-
 standard_symbol(file_reopen, 4, file_io).
 standard_symbol(file_write, 2, xsb_writ).
 standard_symbol(findall, 3, setof).
 standard_symbol(float, 1, standard).
+
+standard_symbol(path_sysop,2,file_io).
+standard_symbol(path_sysop,3,file_io).
+
 
 %%%%%%% Flora %%%%%%%%
 standard_symbol(bootstrap_flora, 0, flora2).
@@ -149,6 +152,8 @@ standard_symbol(hilog_arg, 3, standard).
 standard_symbol(hilog_functor, 3, standard).
 standard_symbol(hilog_symbol, 1, curr_sym).
 standard_symbol((import), 1, standard).
+standard_symbol((index), 3, standard).
+standard_symbol((index), 2, standard).
 standard_symbol(integer, 1, standard).
 standard_symbol(is, 2, standard).
 standard_symbol(is_attv, 1, standard).
@@ -176,18 +181,16 @@ standard_symbol((nospy), 1, debugger).
 standard_symbol((not), 1, standard).
 standard_symbol((notrace), 0, debugger).
 standard_symbol(number, 1, standard).
-standard_symbol(number_chars, 2, standard).
-standard_symbol(number_codes, 2, standard).
-standard_symbol(number_digits, 2, standard).
+standard_symbol(number_chars, 2, standard).     % ISO
+standard_symbol(number_codes, 2, standard).	% ISO
+standard_symbol(number_digits, 2, standard).    % not ISO
+
+standard_symbol(obsolete, 2, obsolete).
 standard_symbol(once, 1, standard).
 standard_symbol(op, 3, standard).
 standard_symbol(open, 3, standard).
-standard_symbol(obsolete, 2, obsolete).
-standard_symbol((index), 3, standard).
-standard_symbol((index), 2, standard).
-standard_symbol((table), 1, standard).
-standard_symbol(tilde_expand_filename, 2, machine).
 standard_symbol(otherwise, 0, standard).
+
 standard_symbol(parse_filename, 4, machine).
 standard_symbol(phrase, 2, dcg).
 standard_symbol(phrase, 3, dcg).
@@ -195,52 +198,55 @@ standard_symbol(predicate_property, 2, curr_sym).
 standard_symbol(print, 1, standard).
 standard_symbol(proper_hilog, 1, standard).
 standard_symbol(put, 1, standard).		% not ISO
-standard_symbol(put_char, 1, standard).		%ISO
+standard_symbol(put_char, 1, standard).		%ISO
 standard_symbol(put_char, 2, standard).		%ISO
 standard_symbol(put_code, 1, standard).		%ISO
 standard_symbol(put_code, 2, standard).		%ISO
+
 standard_symbol(read, 1, standard).
 standard_symbol(read, 2, standard).
-standard_symbol(set_dcg_style, 1, dcg).
-
 standard_symbol(real, 1, standard).
 standard_symbol(reconsult, 1, consult).
 standard_symbol(reconsult, 2, consult).
-standard_symbol(rename, 2, shell).
+standard_symbol(rename, 2, shell).		% obsolecent
 standard_symbol(repeat, 0, standard).
 standard_symbol(reset_dcg_mode,0,dcg).
 standard_symbol(retract, 1, assert).
 standard_symbol(retractall, 1, assert).
+
 standard_symbol(see, 1, standard).
 standard_symbol(seeing, 1, standard).
 standard_symbol(seen, 0, standard).
-
 standard_symbol(segfault_handler, 1, machine).
+standard_symbol(set_dcg_style, 1, dcg). 	% not ISO
+standard_symbol(set_global_compiler_options, 1, auxlry).
 standard_symbol(set_input, 1, standard).	%ISO
 standard_symbol(set_output, 1, standard).	%ISO
 standard_symbol(set_timer, 1, standard).
-
 standard_symbol(setof, 3, setof).
+standard_symbol(shell, 1, shell).
+standard_symbol(shell, 2, shell).
+standard_symbol(shell, 5, shell).
+standard_symbol(sk_not, 1, tables).
 standard_symbol(sleep, 1, shell).
-standard_symbol(skip, 1, standard).
+standard_symbol(skip, 1, standard).  	 	% TLS do we need this one?
 standard_symbol(sort, 2, setof).
+standard_symbol(spawn_process, 5, shell).
 standard_symbol((spy), 1, debugger).
 standard_symbol(statistics, 0, standard).
 standard_symbol(statistics, 1, standard).
-standard_symbol(structure, 1, standard).
-
 standard_symbol(str_cat, 3, string).
+standard_symbol(str_length, 2, string).
+standard_symbol(str_match, 5, string).
 standard_symbol(str_sub, 3, string).
 standard_symbol(str_sub, 2, string).
-standard_symbol(str_length, 2, string).
-standard_symbol(substring, 4, string).
 standard_symbol(string_substitute, 4, string).
-standard_symbol(str_match, 5, string).
-
-standard_symbol((use_variant_tabling), 1, tables).
-standard_symbol((use_subsumptive_tabling), 1, tables).
+standard_symbol(structure, 1, standard).
+standard_symbol(substring, 4, string).
+standard_symbol(sys_exit, 1, shell).
 
 standard_symbol(tab, 1, standard).
+standard_symbol((table), 1, standard).
 standard_symbol(table_prop, 3, tables).
 standard_symbol(table_prop, 4, tables).
 standard_symbol(tbagof, 3, setof).
@@ -251,36 +257,34 @@ standard_symbol(telling, 1, standard).
 standard_symbol(tfindall, 3, tables).
 standard_symbol(tmpfile_open, 1, file_io).
 standard_symbol(tnot, 1, tables).
-standard_symbol(sk_not, 1, tables).
 standard_symbol(told, 0, standard).
 standard_symbol(tphrase, 1, dcg).
 standard_symbol(tphrase, 2, dcg).
 standard_symbol(tphrase, 3, dcg).
 standard_symbol(tphrase_set_string, 1, dcg).
 standard_symbol(tphrase_string_length, 1, dcg).
+standard_symbol(tilde_expand_filename, 2, machine).
 standard_symbol(true, 0, standard).
 standard_symbol(trace, 0, debugger).
-standard_symbol(debug_ctl, 2, debugger).
 standard_symbol(tsetof, 3, setof).
 standard_symbol(ttywrite, 1, standard).
 standard_symbol(ttywritenl, 1, standard).
+
 standard_symbol(unix, 1, unix).	       	   % obsolete
 standard_symbol(unix, 2, unix).	       	   % obsolete
-standard_symbol(shell, 1, shell).
-standard_symbol(shell, 2, shell).
-standard_symbol(shell, 5, shell).
-standard_symbol(exec, 1, shell).
-standard_symbol(spawn_process, 5, shell).
-standard_symbol(sys_exit, 1, shell).
+standard_symbol((use_variant_tabling), 1, tables).
+standard_symbol((use_subsumptive_tabling), 1, tables).
+
 standard_symbol(var, 1, standard).
+
 standard_symbol(write, 1, standard).
 standard_symbol(write, 2, standard).
 standard_symbol(write_canonical, 1, standard).
 standard_symbol(write_canonical, 2, standard).
 standard_symbol(write_prolog, 1, standard).
 standard_symbol(write_prolog, 2, standard).
-standard_symbol(write_term, 1, standard).	% ISO
-standard_symbol(write_term, 2, standard).	% ISO
+standard_symbol(write_term, 1, write_term).	% ISO
+standard_symbol(write_term, 2, write_term).	% ISO
 standard_symbol(writeln, 1, standard).		% Not ISO
 standard_symbol(writeln, 2, standard).		% Not ISO
 standard_symbol(writeq, 1, standard).
@@ -290,8 +294,6 @@ standard_symbol((attribute), 1, atts).
 
 standard_symbol(('_$cutto'), 1, standard).	% Not ISO
 standard_symbol(('_$savecp'), 1, standard).	% Not ISO
-
-standard_symbol(set_global_compiler_options, 1, auxlry).
 
 standard_symbol((('\+')), 1, standard).
 standard_symbol('!', 0, inline).
