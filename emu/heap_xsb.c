@@ -490,7 +490,7 @@ int gc_heap(CTXTdeclc int arity)
     
     GC_PROFILE_START_SUMMARY;
     
-    begin_marktime = cpu_time();
+    begin_marktime = (unsigned long) cpu_time();
     start_heap_size = hreg+1-(CPtr)glstack.low;
     
     /* make sure the top choice point heap pointer 
@@ -531,7 +531,7 @@ int gc_heap(CTXTdeclc int arity)
 
     marked = mark_heap(CTXTc arity, &marked_dregs);
     
-    end_marktime = cpu_time();
+    end_marktime = (unsigned long) cpu_time();
     
     if (fragmentation_only) {
       /* fragmentation is expressed as ratio not-marked/total heap in use
@@ -605,7 +605,7 @@ int gc_heap(CTXTdeclc int arity)
 	if (delayreg != NULL)
 	  delayreg = (CPtr)reg[arity--];
 
-	end_slidetime = cpu_time();
+	end_slidetime = (unsigned long) cpu_time();
 	
 	total_time_gc += (double) 
 	  (end_slidetime - begin_marktime)*1000/CLOCKS_PER_SEC;
@@ -632,7 +632,7 @@ int gc_heap(CTXTdeclc int arity)
 #ifdef SLG_GC
 	hfreg = hreg;
 #endif
-	end_copy_time = cpu_time();
+	end_copy_time = (unsigned long) cpu_time();
 	
 	total_time_gc += (double) 
 	  (end_copy_time - begin_marktime)*1000/CLOCKS_PER_SEC;

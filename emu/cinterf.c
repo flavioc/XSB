@@ -490,7 +490,7 @@ DllExport char *call_conv p2c_chars(CTXTdeclc prolog_term term, char *buf, int b
 
   p_charlist_to_c_string(CTXTc term, &bufvar, "p2c_chars", "list -> char*");
   
-  if (strlen(bufvar.string) > bsize) {
+  if (strlen(bufvar.string) > (size_t) bsize) {
     xsb_abort("Buffer overflow in p2c_chars");
   }
 

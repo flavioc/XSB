@@ -84,6 +84,7 @@ extern void remove_prog_seg(byte *);
    empty switch statements like the ones below, if DEBUG is not set
    (in which case xsb_dbgmsg is empty)                    --lfcastro */
 
+
 static inline void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
 {
   switch (Opcode) {
@@ -238,7 +239,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 }
 
 #define dbgen_inst_pvv(Opcode,Arg1,Arg2,Buff,Loc) {	\
-  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
+    dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);	\
   write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
   write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);	\
   pad64bits(Loc);					\
@@ -252,28 +253,28 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 }
 
 #define dbgen_inst_ppvw(Opcode,Arg1,Arg2,Buff,Loc) {	\
-  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
-  pad64bits(Loc);					\
-  write_word(Buff,Loc,Arg2);				\
+    dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);	\
+    write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+    write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);		\
+    pad64bits(Loc);						\
+    write_word(Buff,Loc,Arg2);					\
 }
 
 #define dbgen_inst_ppvww(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {	\
-  dbgen_printinst_macro(Opcode, Arg1, Arg2);			\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);		\
-  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);		\
-  pad64bits(Loc);						\
-  write_word(Buff,Loc,Arg2);					\
-  write_word(Buff,Loc,Arg3);					\
+    dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);		\
+    write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+    write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);		\
+    pad64bits(Loc);						\
+    write_word(Buff,Loc,Arg2);					\
+    write_word(Buff,Loc,Arg3);					\
 }
 
 #define dbgen_inst_pppw(Opcode,Arg1,Buff,Loc) {		\
-  dbgen_printinst_macro(Opcode, Arg1, 0);		\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-  write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);	\
-  pad64bits(Loc);					\
-  write_word(Buff,Loc,Arg1);				\
+    dbgen_printinst_macro(Opcode, (Integer)Arg1, 0);	\
+    write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+    write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);		\
+    pad64bits(Loc);						\
+    write_word(Buff,Loc,Arg1);					\
 }
 
 #define dbgen_inst_ppp(Opcode,Buff,Loc) {		\
@@ -301,7 +302,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 }
 
 #define dbgen_instB_pvv(Opcode,Arg1,Arg2) {		\
-  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
+  dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);		\
   if (*Loc >= BLim) Buff = buff_realloc();		\
   write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
   write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);	\
@@ -317,7 +318,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 }
 
 #define dbgen_instB_ppvw(Opcode,Arg1,Arg2) {		\
-  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
+  dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);		\
   if (*Loc >= BLim) Buff = buff_realloc();		\
   write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
   write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
@@ -326,12 +327,12 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 }
 
 #define dbgen_instB_pppw(Opcode,Arg1) {			\
-  dbgen_printinst_macro(Opcode, Arg1, 0);		\
-  if (*Loc >= BLim) Buff = buff_realloc();		\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-  write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);	\
-  pad64bits(Loc);					\
-  write_word(Buff,Loc,Arg1);				\
+    dbgen_printinst_macro(Opcode, (Integer)Arg1, 0);	\
+    if (*Loc >= BLim) Buff = buff_realloc();		\
+    write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+    write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);		\
+    pad64bits(Loc);						\
+    write_word(Buff,Loc,Arg1);					\
 }
 
 #define dbgen_instB_ppp(Opcode) {			\
@@ -890,7 +891,7 @@ static void db_putterm(CTXTdeclc int Rt, prolog_term T0,
       dbgen_instB_ppp(bldnil); break;
     default: 
       xsb_dbgmsg((LOG_DEBUG,"Incorrect bld instruction in assert %d", 
-			BldOpcode));
+		  BldOpcode));
     }
   }
 }
@@ -1349,7 +1350,7 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
 static void prefix_to_chain(byte Arity, ClRef FirstClause, ClRef NewClause)
 {
   int Loc = 0;
-  
+
   if (ClRefTryOpCode(FirstClause) == noop)
   {  dbgen_inst_ppvw(dyntrustmeelsefail,Arity,ClRefNext(FirstClause),
 		     FirstClause,&Loc); }
@@ -1429,11 +1430,11 @@ static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
    if( PredOpCode(Pred) != fail && ClRefType(SOBrec) == SOB_RECORD ) {
      ThisTabSize = ClRefHashSize(SOBrec) ;
      if (ClRefNumNonemptyBuckets(SOBrec) > (ThisTabSize/4)*3) {
-       if (ThisTabSize >= hashsizes[NUMHASHSIZES-1]) {
+       if (ThisTabSize >= (unsigned int) hashsizes[NUMHASHSIZES-1]) {
 	 ThisTabSize = ThisTabSize+2;
        } else {
 	 for (i=0; i<NUMHASHSIZES; i++) 
-	   if (hashsizes[i] > ThisTabSize) break; 
+	   if ((unsigned int) hashsizes[i] > ThisTabSize) break; 
 	 ThisTabSize = hashsizes[i];
        }
        /*printf("Resizing HT to %d\n",ThisTabSize);*/

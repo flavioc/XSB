@@ -87,7 +87,7 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
     break;
   case FUN_floor:
     set_fvalue_from_value;
-    ivalue = floor(fvalue);
+    ivalue = (prolog_int) floor(fvalue);
     bld_oint(regaddr, ivalue);
     break;
   case FUN_PLUS:

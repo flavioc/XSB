@@ -170,7 +170,7 @@ NodeStats subgoal_statistics(Structure_Manager *sm) {
     return sg_stats;
   }
 
-  if ( NodeStats_NumUsedNodes(sg_stats) != nSubgoals )
+  if ( NodeStats_NumUsedNodes(sg_stats) != (counter) nSubgoals )
     xsb_warn("Inconsistent Subgoal Frame Usage Calculations:\n"
 	     "\tSubgoal Frame count mismatch");
 

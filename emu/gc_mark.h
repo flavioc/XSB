@@ -701,7 +701,7 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
   if (slide) {
 #ifdef INDIRECTION_SLIDE
     /* space for keeping pointers to live data */
-    slide_buf_size = (hreg+1-(CPtr)glstack.low)*0.2;
+    slide_buf_size = (unsigned long) ((hreg+1-(CPtr)glstack.low)*0.2);
     slide_buf = (CPtr *) calloc(slide_buf_size+1, sizeof(CPtr));
     if (!slide_buf)
       xsb_exit("Not enough space to allocate slide_buf");

@@ -119,7 +119,7 @@ inline static  CPtr extract_template_from_insertion(CTXTdeclc CPtr ans_tmplt) {
   int i;
 
   i = 0;
-  while ( i < Trail_NumBindings )
+  while ( i < (int) Trail_NumBindings )
     *ans_tmplt-- = (Cell)Trail_Base[i++];
   *ans_tmplt = makeint(i);
   return ans_tmplt;

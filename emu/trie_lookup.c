@@ -216,7 +216,7 @@ void *stl_restore_variant_cont(CTXTdecl) {
 		      variant_cont.subterms.num);
 
   Trail_ResetTOS;
-  for (i = 0; i < variant_cont.bindings.num; i++) {
+  for (i = 0; i < (int) variant_cont.bindings.num; i++) {
     Trail_Push(variant_cont.bindings.stack.ptr[i].var);
     bld_ref(variant_cont.bindings.stack.ptr[i].var,
 	    variant_cont.bindings.stack.ptr[i].value);
@@ -1112,7 +1112,7 @@ void *variant_trie_lookup(CTXTdeclc void *trieRoot, int nTerms, CPtr termVector,
       if ( IsNonNULL(varArray) ) {
 	int i;
 
-	for ( i = 0;  i < Trail_NumBindings;  i++ )
+	for ( i = 0;  i < (int) Trail_NumBindings;  i++ )
 	  varArray[i+1] = (Cell)Trail_Base[i];
 	varArray[0] = i;
       }

@@ -1296,7 +1296,7 @@ contcase:     /* the main loop */
         Float temp = (Float)int_val(op2) / (Float)boxedint_val(op1);
         bld_float(op3, temp); }
       else if (isboxedinteger(op2)) {
-        Integer temp = (Float)boxedint_val(op2) / (Float)boxedint_val(op1);
+        Integer temp = (Integer) ((Float)boxedint_val(op2) / (Float)boxedint_val(op1));
         bld_float(op3, temp); }
       else if (isfloat(op2)) {
         Float temp = (Float)float_val(op2) / (Float)boxedint_val(op1);
