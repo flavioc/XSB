@@ -111,10 +111,26 @@
 assert0(Clause) :- assert(Clause,1,1).
 
 
-assert(Clause)  :- check_assert(Clause, 'assert/1'), assert(Clause,1,1).
-asserta(Clause) :- check_assert(Clause,'asserta/1'), assert(Clause,0,1).
-assertz(Clause) :- check_assert(Clause,'assertz/1'), assert(Clause,1,1).
+assert(Clause)  :-
+	check_assert(Clause, 'assert/1'),
+	call_assert_hook(Clause),
+	assert(Clause,1,1).
+asserta(Clause) :-
+	check_assert(Clause,'asserta/1'),
+	call_assert_hook(Clause),
+	assert(Clause,0,1).
+assertz(Clause) :-
+	check_assert(Clause,'assertz/1'),
+	call_assert_hook(Clause),
+	assert(Clause,1,1).
 
+call_assert_hook(Clause) :-
+	term_psc(assert_hook(_),Psc),
+	psc_type(Psc,Type),
+	(Type > 0
+	 ->	call_c(assert_hook(Clause))
+	 ;	true
+	).
 
 % NOTE: Predicates asserti[a,z]/2 though exported, are not available to
 %	the user (in the intepreter) and so no error checking is done.
@@ -284,10 +300,19 @@ retract(Rule) :-	% changed for multifile predicates (2/24/98)
 	 ->	true
 	 ;	Head = Rule, Body = true
 	),
+	call_retract_hook(Head,Body),
 	(nonvar(Head), '_$multifile_retract'(Head, _, _)
 	 % argument 1 fo retract/1 must be instantiated
 	 ->	do_multifile_retract(Head, Body)
 	 ;	retract0((Head :- Body))
+	).
+
+call_retract_hook(Head,Body) :-
+	term_psc(retract_hook(_,_),Psc),
+	psc_type(Psc,Type),
+	(Type > 0
+	 ->	call_c(retract_hook(Head,Body))
+	 ;	true
 	).
 
 do_multifile_retract(Head, Body) :-
@@ -320,6 +345,7 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	).
 
 retractall(Fact) :-
+	call_retract_hook(Fact,true),
 	(nonvar(Fact), '_$multifile_retract'(Fact, _, _)
 	 ->	do_multifile_retractall(Fact)
 	 ;	retractall0(Fact)
@@ -435,7 +461,8 @@ abolish(Spec) :-
 	),
 	(standard_symbol(Pred,Arity,_Prop)
 	 ->	abort('Not permitted to abolish built-in predicates')
-	 ;	abolish1(Nspec)
+	 ;	call_retract_hook(Nspec,true),
+		abolish1(Nspec)
 	).
 
 /*======================================================================*/
