@@ -43,6 +43,8 @@
 #define FILE_CLEARERR      16
 #define TMPFILE_OPEN       17
 #define IS_VALID_IOPORT    18
+#define FILE_READ_LINE_LIST 19
+
 
 /* OP numbers for formatted_io */
 #define FMT_WRITE    	   1

@@ -277,6 +277,56 @@ inline static xsbBool file_function(void)
     else
       return FALSE;
   }
+  case FILE_READ_LINE_LIST: {
+    /* Works like FILE_READ_LINE but returns a list of codes
+    ** Invoke: file_function(FILE_READ_LINE, +File, -List). Returns
+    ** the list of codes read.
+    ** Prolog invocation: file_read_line_list(+File, -Str) */
+    char buf[MAX_IO_BUFSIZE+1];
+    int break_loop = FALSE;
+    int eof=FALSE;
+    char *atomname;
+    Cell new_list;
+    CPtr top = NULL;
+    int i;
+
+    SET_FILEPTR(fptr, ptoc_int(2));
+    XSB_StrSet(&VarBuf,"");
+
+    do {
+      if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL) {
+	eof=TRUE;
+	break;
+      } else {
+	XSB_StrAppend(&VarBuf,buf);
+	break_loop = (buf[(strlen(buf)-1)] == '\n');
+      }
+    } while (!break_loop);
+    
+    check_glstack_overflow(3, pcreg, 2*sizeof(Cell)*VarBuf.length);
+    atomname = VarBuf.string;
+
+    if (VarBuf.length == 0) new_list = makenil;
+    else {
+      new_list = makelist(hreg);
+      for (i = 0; i < VarBuf.length; i++) {
+	follow(hreg++) = makeint(*(unsigned char *)atomname);
+	atomname++;
+	top = hreg++;
+	follow(top) = makelist(hreg);
+      }
+      follow(top) = makenil;
+    }
+
+    ctop_tag(3, new_list);
+    
+    /* this complex cond takes care of incomplete lines: lines that end with
+       end of file and not with end-of-line. */
+    if ((VarBuf.length>0) || (!eof))
+      return TRUE;
+    else
+      return FALSE;
+  }
   /* Like FILE_PUTBUF, but ByteCount=Line length. Also, takes atoms and lists
      of characters: file_function(11, +IOport, +String, +Offset) */
   case FILE_WRITE_LINE:
