@@ -33,6 +33,10 @@
 #include <fcntl.h>
 #endif
 
+#ifdef WIN_NT
+#include <io.h>
+#endif
+
 static struct stat stat_buff;
 extern char   *expand_filename(char *filename);
 extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
@@ -116,13 +120,14 @@ inline static xsbBool file_function(CTXTdecl)
     break;
   case FILE_TRUNCATE: /* file_function(2,+IOport,+Length,-Ret,_) */
     size = ptoc_int(CTXTc 3);
-#ifndef WIN_NT
     SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+#ifndef WIN_NT
     fseek(fptr, (long) size, 0);
     value = ftruncate( fileno(fptr), (off_t) size);
     ctop_int(CTXTc 4, (int) value);
 #else
-    xsb_warn("FILE_TRUNCATE: operation not supported under Windows.");
+    //    xsb_warn("FILE_TRUNCATE: operation not supported under Windows.");
+    ctop_int(CTXTc 4, (int) _chsize(fileno(fptr), size));
 #endif
     break;
   case FILE_POS: /* file_function(3, +IOport, -Pos) */
