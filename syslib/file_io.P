@@ -1,0 +1,111 @@
+/* File:      file_io.P
+** Author(s): kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1999
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+	       /********************************/
+	       /*  fmt_write, fmt_write_string */
+	       /********************************/
+fmt_write(Fmt, Args) :-
+       stat_flag(11, File), 
+       ( callable(Args) -> fmt_write(File, Fmt, Args)
+         ;
+	 abort('Usage: fmt_write(+FmtString, args(+A1,+A2,...))')
+       ).
+
+fmt_write(File, Fmt, Args) :-
+       ( callable(Args) -> fmt_write(File, Fmt, Args)
+         ;
+	 abort('Usage: fmt_write(+FmtString, args(+A1,+A2,...))')
+       ).
+
+fmt_write_string(Str, Fmt, Args) :-
+   ( var(Str), callable(Args) -> fmt_write_string(Str, Fmt, Args)
+     ;
+     abort('Usage: fmt_write_string(-OutputString, +FmtString, args(+A1,+A2,...))')
+   ).
+
+
+	/*****************************************/
+	/*  fmt_read, read_line                  */
+	/*****************************************/
+fmt_read(Fmt,Result,Status) :-
+        stat_flag(10, File),
+	( compound(Result), var(Status)
+		     -> fmt_read(File,Fmt,Result,Status)
+	    ;
+	    abort('Usage: fmt_read(+FmtString, result(-R1,-R2,...), -RetCode)')
+    	).
+
+fmt_read(File, Fmt,Result,Status) :-
+	( compound(Result), var(Status)
+		     -> fmt_read(File,Fmt,Result,Status)
+	    ;
+	    abort('Usage: fmt_read(+FmtString, result(-R1,-R2,...), -RetCode)')
+    	).
+
+%% Read line from current input stream (previously set by 'see')
+file_read_line(Str, IsFullLine) :-
+   stat_flag(10, File),
+   ( var(Str), var(IsFullLine) -> file_read_line(File, Str, IsFullLine)
+     ;
+      abort('Usage: file_read_line(-InputStr, -IsFullLine)')
+   ).
+
+file_read_line(File, Str, IsFullLine) :-
+	( var(Str), var(IsFullLine) -> file_read_line(File, Str, IsFullLine)
+	    ;
+	    abort('Usage: file_read_line(+FileDes, -InputStr, -IsFullLine)')
+       ).
+
+/***************************************************************/
+/*    	      	      	      	      	      	      	       */
+/*       file_flush, file_seel, file_truncate, file_pos	       */
+/*    	      	      	      	      	      	      	       */
+/***************************************************************/
+
+file_flush(File, Ret) :- file_function(0, File, Ret, _D, _E).
+file_seek(File, Offset, Place, Ret) :-
+	 file_function(1, File, Offset, Place, Ret).
+file_truncate(File, Length, Ret) :- file_function(2, File, Length, Ret, _E).
+file_pos(File, Pos) :- file_function(3, File, Pos, _Ret, _E).
+file_open(FileName, RWMode, FileDes) :-
+	file_function(4, FileName, RWMode, FileDes, _E).
+file_close(FileDes) :- file_function(5,FileDes,_X,_Y,_Z).
+file_get(FileDes,Char) :- file_function(6, FileDes, Char, _X, _Y).
+file_put(FileDes,Char) :- file_function(7, FileDes, Char, _X, _Y).
+file_getbuf(FileDes, ByteCount, ToString, Offset) :-
+	file_function(8, FileDes, ByteCount, ToString, Offset).
+file_putbuf(FileDes, ByteCount, FromString, Offset) :-
+	file_function(9, FileDes, ByteCount, FromString, Offset).
+
+
+/***************************************************************/
+/*    	      	      	      	      	      	      	       */
+/*       file_stat, file_size 	      	   	     	       */
+/*    	      	      	      	      	      	      	       */
+/***************************************************************/
+
+file_time(File, Time) :- file_stat(File,0,Time).
+file_size(File, Size) :- file_stat(File,1,Size).
+
