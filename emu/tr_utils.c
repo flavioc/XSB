@@ -598,8 +598,13 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
 	instruction field correctly, which is done above. */
      MakeStatusValid(lowest_node_in_branch);
    }
+#ifdef DEBUG_INTERN
    else
-     xsb_dbgmsg("Attempt to undelete a node that is not deleted");
+     /* This is permitted, because we might bt_delete, then insert
+	(non-backtrackably) and then backtrack.
+     */
+     xsb_dbgmsg("Undeleting a node that is not deleted");
+#endif
 }
 
 
@@ -1237,8 +1242,14 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   while(p != NULL){
     /*    xsb_warn("loopd"); */
     if(p -> leaf == leafn){
+#ifdef DEBUG_INTERN
+      /* The following should be permitted, because we should be able to
+	 backtrackably delete backtrackably deleted nodes (which should have no
+	 effect)
+      */
       if (IsDeletedNode(leafn))
-	xsb_bug("The leaf node being deleted has already been deleted");
+	xsb_dbgmsg("The leaf node being deleted has already been deleted");
+#endif
       return;
     }
     p = p -> next;
