@@ -279,7 +279,7 @@ Pair link_sym(Psc psc, Psc mod_psc)
 {
     Pair *search_ptr, found_pair;
     char *name, message[120];
-    byte arity, global_flag;
+    byte arity, global_flag, type;
 
     name = get_name(psc);
     arity = get_arity(psc);
@@ -294,10 +294,16 @@ Pair link_sym(Psc psc, Psc mod_psc)
 	 *  Invalidate the old name!! It is no longer accessible
 	 *  through the global chain.
 	 */
-	if ( get_type(pair_psc(found_pair)) != T_ORDI ) {
-	  sprintf(message,
-		  "%s/%d (type %d) was defined in another module!",
-		  name, arity, get_type(pair_psc(found_pair)));
+	type = get_type(pair_psc(found_pair));
+	if ( type != T_ORDI ) {
+	  if (type == T_DYNA || type == T_PRED)
+	    sprintf(message,
+		    "%s/%d (type %d) had been defined in module: %s",
+		    name, arity, type, get_name(get_data(pair_psc(found_pair))));
+	  else 
+	    sprintf(message,
+		    "%s/%d (type %d) had been defined in another module!",
+		    name, arity, type);
 	  xsb_warn(message);
 	}
 	pair_psc(found_pair) = psc;
