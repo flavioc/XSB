@@ -800,6 +800,23 @@ flora_write_funct([H|T]) :-
         in a rule body.
 ****************************************************************************/
 flora_write_prolog(F,N,Args,Prefix) :-
+	%% This fix is to write -3 and +3 as they are,
+	%% but not in the term format like -(3) and +(3).
+	%% XSB recognizes negative numbers at the syntactic
+	%% level whereas Flora does not.
+	( N == 1, (F == (FL_MINUS); F == (FL_PLUS)) ->
+	    Args=[NTerm],
+	    ( is_prnumber(NTerm,Number,_Index) ->
+		write(F),
+		write(Number)
+	    ;
+	      flora_write_normal_prolog(F,N,Args,Prefix)
+	    )
+	;
+	  flora_write_normal_prolog(F,N,Args,Prefix)
+	).
+
+flora_write_normal_prolog(F,N,Args,Prefix) :-
 	flora_write_quoted_atom(F),
 	( N == 0 ->
 	    true
