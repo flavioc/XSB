@@ -163,6 +163,10 @@ int nincludedirs;
 int execallowed;
 int dosmode;
 int autoswitch;
+/* must be a format-like string that has % % % in it.
+   The first % is replaced with line number, the second with "filename", and
+   the third with 1, 2 or blank
+*/
 char *include_directive_marker = NULL;
 
 /* controls if standard dirs, like /usr/include, are to be searched for
@@ -949,7 +953,29 @@ void initthings(int argc,char **argv)
       continue;
     }
     if (strcmp(*arg, "-includemarker") == 0) {
-      include_directive_marker = *(++arg);
+      /* assume that the include marker string is correct, i.e., has 3 %'s */
+      int len = strlen(*(++arg));
+      char *index1 = *arg, *index2;
+      include_directive_marker = malloc(len+7);
+      include_directive_marker[0] = '\0';
+      /* replace the first % with %d */
+      index2 = strchr(index1,'%');
+      strncat(include_directive_marker,index1, index2-index1);
+      strcat(include_directive_marker,"%d");
+      /* replace the second % with "%s" */
+      index1 = index2+1;
+      index2 = strchr(index1,'%');
+      strncat(include_directive_marker,index1, index2-index1);
+      strcat(include_directive_marker,"\"%s\"");
+      /* replace the third % with %s */
+      index1 = index2+1;
+      index2 = strchr(index1,'%');
+      strncat(include_directive_marker,index1, index2-index1);
+      strcat(include_directive_marker,"%s");
+      /* append the rest of *arg and terminate with the newline */
+      index1 = index2+1;
+      strcat(include_directive_marker,index1);
+      strcat(include_directive_marker,"\n");
       continue;
     }
     if (**arg=='+') {
@@ -1931,15 +1957,17 @@ int ParsePossibleMeta()
 	     || !strcmp(incfile_name+strlen(incfile_name)-2,".c"))
            SetStandardMode(S,"C");
        }
-       if (include_directive_marker != NULL)
+       if (include_directive_marker != NULL) {
 	 fprintf(N->out->f,
-		 "%s 1 \"%s\" 1\n",
-		 include_directive_marker, C->filename);
+		 include_directive_marker,
+		 1, C->filename, "1");
+       }
        ProcessContext();
-       if (include_directive_marker != NULL)
+       if (include_directive_marker != NULL) {
 	 fprintf(N->out->f,
-		 "%s %d \"%s\" 2\n",
-		 include_directive_marker, N->lineno, N->filename);
+		 include_directive_marker,
+		 N->lineno, N->filename, "2");
+       }
        free(C);
        PopSpecs();
        C=N;
@@ -2263,8 +2291,11 @@ static FILE *openInCurrentDir(char *incfile)
 int main(int argc,char **argv)
 {
   initthings(argc,argv); 
-  if (include_directive_marker != NULL)
-    fprintf(C->out->f, "%s 1 \"%s\"\n", include_directive_marker, C->filename);
+  if (include_directive_marker != NULL) {
+    fprintf(C->out->f,
+	    include_directive_marker, 
+	    1, C->filename, "");
+  }
   ProcessContext();
   fclose(C->out->f);
   return 0;
