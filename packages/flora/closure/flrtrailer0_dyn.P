@@ -7,23 +7,25 @@
   closure rules for X::Y
 *****************************************************************************/
 :- table '_$_$_flora_subclass_dyn'/2.
+:- table '_$_$_flora_strict_subclass_dyn'/2.
 
-'_$_$_flora_subclass_dyn'(X,X) :- '_$_$_flora_sub_dyn'(X,_).
-'_$_$_flora_subclass_dyn'(X,X) :- '_$_$_flora_sub_dyn'(_,X).
-'_$_$_flora_subclass_dyn'(X,Y) :- '_$_$_flora_sub_dyn'(X,Y).
+'_$_$_flora_subclass_dyn'(X,X) :- '_$_$_flora_exists_dyn'(X).
+'_$_$_flora_subclass_dyn'(X,Y) :- '_$_$_flora_strict_subclass_dyn'(X,Y).
 
-'_$_$_flora_subclass_dyn'(X,Y) :-
-	'_$_$_flora_subclass_dyn'(X,Z), 
-	'_$_$_flora_subclass_dyn'(Z,Y),
-	(X \= Z -> true ; Z\=Y),
+%% Using flora_subclass can be a major source of inefficiency
+%% In most cases, you want to use '_$_$_flora_strict_subclass'
+'_$_$_flora_strict_subclass_dyn'(X,Y) :- '_$_$_flora_sub_dyn'(X,Y), X \= Y.
+
+'_$_$_flora_strict_subclass_dyn'(X,Y) :-
+	'_$_$_flora_strict_subclass_dyn'(X,Z), 
+	'_$_$_flora_strict_subclass_dyn'(Z,Y),
+	%%(X \= Z -> true ; Z\=Y),
 	( X = Y ->
 	    write('++FLORA Warning: cyclic subclass hierarchy, '),
 	    write(X), write('::'), write(Z), write('::'), write(Y), nl
 	  ;
 	    true
 	).
-
-'_$_$_flora_subclass_dyn'(X,X) :- '_$_$_flora_exists_dyn'(X).
 
 
 /*****************************************************************************
@@ -32,7 +34,7 @@
 :- table '_$_$_flora_isa_dyn'/2.
 
 '_$_$_flora_isa_dyn'(O,C) :-
-	'_$_$_flora_subclass_dyn'(C1,C),
+	'_$_$_flora_strict_subclass_dyn'(C1,C),
 	'_$_$_flora_isa_dyn'(O,C1).
 
 
@@ -61,17 +63,17 @@
 
 %% Subclass
 '_$_$_flora_fs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_subclass_dyn'(Sub,Class),
+	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
 	'_$_$_flora_fs_dyn'(Class,MethodArgs,R).
 '_$_$_flora_ifs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_subclass_dyn'(Sub,Class),
+	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
 	'_$_$_flora_ifs_dyn'(Class,MethodArgs,R).
 
 '_$_$_flora_mvs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_subclass_dyn'(Sub,Class),
+	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
 	'_$_$_flora_mvs_dyn'(Class,MethodArgs,R).
 '_$_$_flora_imvs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_subclass_dyn'(Sub,Class),
+	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
 	'_$_$_flora_imvs_dyn'(Class,MethodArgs,R).
 
 
@@ -118,7 +120,7 @@
 '_$_$_flora_overwritten_fd_dyn'(Object,Class,Method) :-
 	'_$_$_flora_isa_dyn'(Object,SubClass),
 	SubClass \= Class,
-	'_$_$_flora_subclass_dyn'(SubClass,Class),
+	'_$_$_flora_strict_subclass_dyn'(SubClass,Class),
 	'_$_$_flora_ifd_dyn'(SubClass,Method,_).
 
 %% When this is called, Object always belongs to Class
@@ -126,8 +128,8 @@
 	'_$_$_flora_defined_ifd_dyn'(Class1,Method),
 	Class \= Class1,
 	'_$_$_flora_isa_dyn'(Object,Class1),
-	tnot('_$_$_flora_subclass_dyn'(Class1,Class)),
-	tnot('_$_$_flora_subclass_dyn'(Class,Class1)).
+	tnot('_$_$_flora_strict_subclass_dyn'(Class1,Class)),
+	tnot('_$_$_flora_strict_subclass_dyn'(Class,Class1)).
 
 
 '_$_$_flora_mvd_dyn'(Object,Method,Value) :-
@@ -148,25 +150,24 @@
 
 '_$_$_flora_overwritten_mvd_dyn'(Object,Class,Method) :-
 	'_$_$_flora_isa_dyn'(Object,SubClass),
-	SubClass \= Class,
-	'_$_$_flora_subclass_dyn'(SubClass,Class),
+	'_$_$_flora_strict_subclass_dyn'(SubClass,Class),
 	'_$_$_flora_imvd_dyn'(SubClass,Method,_).
 
 '_$_$_flora_conflict_mvd_dyn'(Object,Class,Method) :-
 	'_$_$_flora_defined_imvd_dyn'(Class1,Method),
 	Class \= Class1,
 	'_$_$_flora_isa_dyn'(Object,Class1),
-	tnot('_$_$_flora_subclass_dyn'(Class1,Class)),
-	tnot('_$_$_flora_subclass_dyn'(Class,Class1)).
+	tnot('_$_$_flora_strict_subclass_dyn'(Class1,Class)),
+	tnot('_$_$_flora_strict_subclass_dyn'(Class,Class1)).
 
 
 '_$_$_flora_ifd_dyn'(Class,Method,Value) :-
 	(ground(Class), ground(Method) ->
 	    tnot('_$_$_flora_defined_ifd_dyn'(Class,Method)),
-	    '_$_$_flora_subclass_dyn'(Class,Super),
+	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
 	    '_$_$_flora_ifd_dyn'(Super,Method,Value)
 	  ;
-	    '_$_$_flora_subclass_dyn'(Class,Super),
+	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
 	    '_$_$_flora_ifd_dyn'(Super,Method,Value),
 	    tnot('_$_$_flora_defined_ifd_dyn'(Class,Method))
 	),
@@ -177,27 +178,26 @@
 	'_$_$_flora_ifd_dyn'(Class,Method,_).
 
 '_$_$_flora_overwritten_ifd_dyn'(Class,Super,Method) :-
-	'_$_$_flora_subclass_dyn'(Class,S),
-	Super \= S,
-	'_$_$_flora_subclass_dyn'(S,Super),
+	'_$_$_flora_strict_subclass_dyn'(Class,S),
+	'_$_$_flora_strict_subclass_dyn'(S,Super),
 	'_$_$_flora_ifd_dyn'(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_ifd_dyn'(Class,Super,Method) :-
 	'_$_$_flora_defined_ifd_dyn'(Super1,Method),
 	Super1 \= Super,
-	'_$_$_flora_subclass_dyn'(Class,Super1),
-	tnot('_$_$_flora_subclass_dyn'(Super1,Super)),
-	tnot('_$_$_flora_subclass_dyn'(Super,Super1)).
+	'_$_$_flora_strict_subclass_dyn'(Class,Super1),
+	tnot('_$_$_flora_strict_subclass_dyn'(Super1,Super)),
+	tnot('_$_$_flora_strict_subclass_dyn'(Super,Super1)).
 
 
 '_$_$_flora_imvd_dyn'(Class,Method,Value) :-
 	(ground(Class), ground(Method) ->
 	    tnot('_$_$_flora_defined_imvd_dyn'(Class,Method)),
-	    '_$_$_flora_subclass_dyn'(Class,Super),
+	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
 	    '_$_$_flora_imvd_dyn'(Super,Method,Value)
 	  ;
-	    '_$_$_flora_subclass_dyn'(Class,Super),
+	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
 	    '_$_$_flora_imvd_dyn'(Super,Method,Value),
 	    tnot('_$_$_flora_defined_imvd_dyn'(Class,Method))
 	),
@@ -208,18 +208,17 @@
 	'_$_$_flora_imvd_dyn'(Class,Method,_).
 
 '_$_$_flora_overwritten_imvd_dyn'(Class,Super,Method) :-
-	'_$_$_flora_subclass_dyn'(Class,S),
-	Super \= S,
-	'_$_$_flora_subclass_dyn'(S,Super),
+	'_$_$_flora_strict_subclass_dyn'(Class,S),
+	'_$_$_flora_strict_subclass_dyn'(S,Super),
 	'_$_$_flora_imvd_dyn'(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_imvd_dyn'(Class,Super,Method) :-
 	'_$_$_flora_defined_imvd_dyn'(Super1,Method),
 	Super1 \= Super,
-	'_$_$_flora_subclass_dyn'(Class,Super1),
-	tnot('_$_$_flora_subclass_dyn'(Super1,Super)),
-	tnot('_$_$_flora_subclass_dyn'(Super,Super1)).
+	'_$_$_flora_strict_subclass_dyn'(Class,Super1),
+	tnot('_$_$_flora_strict_subclass_dyn'(Super1,Super)),
+	tnot('_$_$_flora_strict_subclass_dyn'(Super,Super1)).
 
 
 /*****************************************************************************

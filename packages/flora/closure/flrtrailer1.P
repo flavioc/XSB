@@ -7,23 +7,25 @@
   closure rules for X::Y
 *****************************************************************************/
 :- table '_$_$_flora_subclass'/2.
+:- table '_$_$_flora_strict_subclass'/2.
 
-'_$_$_flora_subclass'(X,X) :- '_$_$_flora_sub'(X,_).
-'_$_$_flora_subclass'(X,X) :- '_$_$_flora_sub'(_,X).
-'_$_$_flora_subclass'(X,Y) :- '_$_$_flora_sub'(X,Y).
+'_$_$_flora_subclass'(X,X) :- '_$_$_flora_exists'(X).
+'_$_$_flora_subclass'(X,Y) :- '_$_$_flora_strict_subclass'(X,Y).
 
-'_$_$_flora_subclass'(X,Y) :-
-	'_$_$_flora_subclass'(X,Z), 
-	'_$_$_flora_subclass'(Z,Y),
-	(X \= Z -> true ; Z\=Y),
+%% Using flora_subclass can be a major source of inefficiency
+%% In most cases, you want to use '_$_$_flora_strict_subclass'
+'_$_$_flora_strict_subclass'(X,Y) :- '_$_$_flora_sub'(X,Y),  X \= Y.
+
+'_$_$_flora_strict_subclass'(X,Y) :-
+	'_$_$_flora_strict_subclass'(X,Z), 
+	'_$_$_flora_strict_subclass'(Z,Y),
+	%%(X \= Z -> true ; Z\=Y),
 	( X = Y ->
 	    write('++FLORA Warning: cyclic subclass hierarchy, '),
 	    write(X), write('::'), write(Z), write('::'), write(Y), nl
 	  ;
 	    true
 	).
-
-'_$_$_flora_subclass'(X,X) :- '_$_$_flora_exists'(X).
 
 
 /*****************************************************************************
@@ -32,7 +34,7 @@
 :- table '_$_$_flora_isa'/2.
 
 '_$_$_flora_isa'(O,C) :-
-	'_$_$_flora_subclass'(C1,C),
+	'_$_$_flora_strict_subclass'(C1,C),
 	'_$_$_flora_isa'(O,C1).
 
 
@@ -74,28 +76,28 @@
 %% Subclass
 '_$_$_flora_fs'(Sub,MethodArgs,R) :-
 	'_$_$_flora_fs'(Class,MethodArgs,R),
-	( '_$_$_flora_subclass'(Sub,Class)
+	( '_$_$_flora_strict_subclass'(Sub,Class)
 	  ;
-	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_strict_subclass'(Sub,S)
 	).
 '_$_$_flora_ifs'(Sub,MethodArgs,R) :-
 	'_$_$_flora_ifs'(Class,MethodArgs,R),
-	( '_$_$_flora_subclass'(Sub,Class)
+	( '_$_$_flora_strict_subclass'(Sub,Class)
 	  ;
-	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_strict_subclass'(Sub,S)
 	).
 
 '_$_$_flora_mvs'(Sub,MethodArgs,R) :-
 	'_$_$_flora_mvs'(Class,MethodArgs,R),
-	( '_$_$_flora_subclass'(Sub,Class)
+	( '_$_$_flora_strict_subclass'(Sub,Class)
 	  ;
-	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_strict_subclass'(Sub,S)
 	).
 '_$_$_flora_imvs'(Sub,MethodArgs,R) :-
 	'_$_$_flora_imvs'(Class,MethodArgs,R),
-	( '_$_$_flora_subclass'(Sub,Class)
+	( '_$_$_flora_strict_subclass'(Sub,Class)
 	  ;
-	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_strict_subclass'(Sub,S)
 	).
 
 
@@ -136,16 +138,15 @@
 	tnot('_$_$_flora_conflict_fd'(Object,Class,Method)).
 
 /* Should we add '_$_$_flora_eql' everywhere? Why not make '_$_$_flora_isa',
-    '_$_$_flora_subclass', '_$_$_flora_ifd', etc. friendly to eql, so that 
-   we won't need to check for equality everywhere?
+    '_$_$_flora_strict_subclass', '_$_$_flora_ifd', etc. friendly to eql, 
+   so that we won't need to check for equality everywhere?
    We need to take care of equality in these rules below.
 */
 '_$_$_flora_defined_fd'(Object,Method) :- '_$_$_flora_fd'(Object,Method,_).
 
 '_$_$_flora_overwritten_fd'(Object,Class,Method) :-
 	'_$_$_flora_isa'(Object,SubClass),
-	SubClass \= Class,
-	'_$_$_flora_subclass'(SubClass,Class),
+	'_$_$_flora_strict_subclass'(SubClass,Class),
 	'_$_$_flora_ifd'(SubClass,Method,_).
 
 %% When this is called, Object always belongs to Class
@@ -153,8 +154,8 @@
 	'_$_$_flora_defined_ifd'(Class1,Method),
 	Class \= Class1,
 	'_$_$_flora_isa'(Object,Class1),
-	tnot('_$_$_flora_subclass'(Class1,Class)),
-	tnot('_$_$_flora_subclass'(Class,Class1)).
+	tnot('_$_$_flora_strict_subclass'(Class1,Class)),
+	tnot('_$_$_flora_strict_subclass'(Class,Class1)).
 
 
 '_$_$_flora_mvd'(Object,Method,Value) :-
@@ -174,25 +175,24 @@
 
 '_$_$_flora_overwritten_mvd'(Object,Class,Method) :-
 	'_$_$_flora_isa'(Object,SubClass),
-	SubClass \= Class,
-	'_$_$_flora_subclass'(SubClass,Class),
+	'_$_$_flora_strict_subclass'(SubClass,Class),
 	'_$_$_flora_imvd'(SubClass,Method,_).
 
 '_$_$_flora_conflict_mvd'(Object,Class,Method) :-
 	'_$_$_flora_defined_imvd'(Class1,Method),
 	Class \= Class1,
 	'_$_$_flora_isa'(Object,Class1),
-	tnot('_$_$_flora_subclass'(Class1,Class)),
-	tnot('_$_$_flora_subclass'(Class,Class1)).
+	tnot('_$_$_flora_strict_subclass'(Class1,Class)),
+	tnot('_$_$_flora_strict_subclass'(Class,Class1)).
 
 
 '_$_$_flora_ifd'(Class,Method,Value) :-
 	(ground(Class), ground(Method) ->
 	    tnot('_$_$_flora_defined_ifd'(Class,Method)),
-	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_strict_subclass'(Class,Super),
 	    '_$_$_flora_ifd'(Super,Method,Value)
 	  ;
-	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_strict_subclass'(Class,Super),
 	    '_$_$_flora_ifd'(Super,Method,Value),
 	    tnot('_$_$_flora_defined_ifd'(Class,Method))
 	),
@@ -202,27 +202,26 @@
 '_$_$_flora_defined_ifd'(Class,Method) :- '_$_$_flora_ifd'(Class,Method,_).
 
 '_$_$_flora_overwritten_ifd'(Class,Super,Method) :-
-	'_$_$_flora_subclass'(Class,S),
-	Super \= S,
-	'_$_$_flora_subclass'(S,Super),
+	'_$_$_flora_strict_subclass'(Class,S),
+	'_$_$_flora_strict_subclass'(S,Super),
 	'_$_$_flora_ifd'(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_ifd'(Class,Super,Method) :-
 	'_$_$_flora_defined_ifd'(Super1,Method),
 	Super1 \= Super,
-	'_$_$_flora_subclass'(Class,Super1),
-	tnot('_$_$_flora_subclass'(Super1,Super)),
-	tnot('_$_$_flora_subclass'(Super,Super1)).
+	'_$_$_flora_strict_subclass'(Class,Super1),
+	tnot('_$_$_flora_strict_subclass'(Super1,Super)),
+	tnot('_$_$_flora_strict_subclass'(Super,Super1)).
 
 
 '_$_$_flora_imvd'(Class,Method,Value) :-
 	(ground(Class), ground(Method) ->
 	    tnot('_$_$_flora_defined_imvd'(Class,Method)),
-	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_strict_subclass'(Class,Super),
 	    '_$_$_flora_imvd'(Super,Method,Value)
 	  ;
-	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_strict_subclass'(Class,Super),
 	    '_$_$_flora_imvd'(Super,Method,Value),
 	    tnot('_$_$_flora_defined_imvd'(Class,Method))
 	),
@@ -232,18 +231,17 @@
 '_$_$_flora_defined_imvd'(Class,Method) :- '_$_$_flora_imvd'(Class,Method,_).
 
 '_$_$_flora_overwritten_imvd'(Class,Super,Method) :-
-	'_$_$_flora_subclass'(Class,S),
-	Super \= S,
-	'_$_$_flora_subclass'(S,Super),
+	'_$_$_flora_strict_subclass'(Class,S),
+	'_$_$_flora_strict_subclass'(S,Super),
 	'_$_$_flora_imvd'(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_imvd'(Class,Super,Method) :-
 	'_$_$_flora_defined_imvd'(Super1,Method),
 	Super1 \= Super,
-	'_$_$_flora_subclass'(Class,Super1),
-	tnot('_$_$_flora_subclass'(Super1,Super)),
-	tnot('_$_$_flora_subclass'(Super,Super1)).
+	'_$_$_flora_strict_subclass'(Class,Super1),
+	tnot('_$_$_flora_strict_subclass'(Super1,Super)),
+	tnot('_$_$_flora_strict_subclass'(Super,Super1)).
 
 
 
