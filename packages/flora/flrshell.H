@@ -25,10 +25,7 @@
 
 :- compiler_options([xpp_on]).
 
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#mode restore
+#include "flora_prefix.h"
 
 
 :- import
@@ -57,6 +54,8 @@
 	bootstrap_package/2, package_configuration/2, unload_package/1
    from packaging.
 
+:- import xpp_include_dir/1 from parse.
+
 :- import bootstrap_flora/0 from flora.
 
 :- import
@@ -70,7 +69,8 @@
 	flload/1, dynload/1, dyncompile/1, dyncompile/2, dynconsult/1,
 	dynconsult/2, STD_FPREFIX(warning_nl)/1,
 	STD_FPREFIX(warning_nl)/2,
-	flora_display_msg/1, flora_display_msg/2
+	flora_display_msg/1, flora_display_msg/2,
+	STD_FPREFIX(tnot_all)/1
    from flrutils.
 
 :- import glob_directory/4 from wildmatch.

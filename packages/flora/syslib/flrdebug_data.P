@@ -25,40 +25,38 @@
 
 :- compiler_options([xpp_on]).
 
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#define DYN_FPREFIX(X)    'dyn_$_$_flora_''X'
-#mode restore
+#define  VAR_FPREFIX_BASE  dyn_$_$_flora_
+#include "flora_prefix.h"
+
 
 
 
 hide_this_hide(STD_FPREFIX(isa),2).
-hide_this_hide(DYN_FPREFIX(isa),2).
+hide_this_hide(VAR_FPREFIX(isa),2).
 hide_this_hide(STD_FPREFIX(strict_subclass),2).
-hide_this_hide(DYN_FPREFIX(strict_subclass),2).
+hide_this_hide(VAR_FPREFIX(strict_subclass),2).
 hide_this_hide(STD_FPREFIX(subclass),2).
-hide_this_hide(DYN_FPREFIX(subclass),2).
+hide_this_hide(VAR_FPREFIX(subclass),2).
 hide_this_hide(STD_FPREFIX(sub),2).
-hide_this_hide(DYN_FPREFIX(sub),2).
+hide_this_hide(VAR_FPREFIX(sub),2).
 
 hide_this_hide(STD_FPREFIX(fd),3).
-hide_this_hide(DYN_FPREFIX(fd),3).
+hide_this_hide(VAR_FPREFIX(fd),3).
 hide_this_hide(STD_FPREFIX(ifd),3).
-hide_this_hide(DYN_FPREFIX(ifd),3).
+hide_this_hide(VAR_FPREFIX(ifd),3).
 hide_this_hide(STD_FPREFIX(fs),3).
-hide_this_hide(DYN_FPREFIX(fs),3).
+hide_this_hide(VAR_FPREFIX(fs),3).
 hide_this_hide(STD_FPREFIX(ifs),3).
-hide_this_hide(DYN_FPREFIX(ifs),3).
+hide_this_hide(VAR_FPREFIX(ifs),3).
 
 hide_this_hide(STD_FPREFIX(mvd),3).
-hide_this_hide(DYN_FPREFIX(mvd),3).
+hide_this_hide(VAR_FPREFIX(mvd),3).
 hide_this_hide(STD_FPREFIX(imvd),3).
-hide_this_hide(DYN_FPREFIX(imvd),3).
+hide_this_hide(VAR_FPREFIX(imvd),3).
 hide_this_hide(STD_FPREFIX(mvs),3).
-hide_this_hide(DYN_FPREFIX(mvs),3).
+hide_this_hide(VAR_FPREFIX(mvs),3).
 hide_this_hide(STD_FPREFIX(imvs),3).
-hide_this_hide(DYN_FPREFIX(imvs),3).
+hide_this_hide(VAR_FPREFIX(imvs),3).
 
 hide_this_hide(STD_FPREFIX(switch),1).
 hide_this_hide(STD_FPREFIX(loadlist),1).
@@ -97,3 +95,5 @@ show_this_hide(STD_FPREFIX(erase), 2).
 
 
 STD_FPREFIX(debugger_data_loaded).
+
+#undef VAR_FPREFIX_BASE

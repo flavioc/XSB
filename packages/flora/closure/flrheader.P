@@ -4,11 +4,9 @@
 #include "standard.h"
 #include "char_defs.h"
 
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#define DYN_FPREFIX(X)    'dyn_$_$_flora_''X'
-#mode restore
+#define  VAR_FPREFIX_BASE  dyn_$_$_flora_
+#include "flora_prefix.h"
+
 
 
 :- table STD_FPREFIX(fd)/3.
@@ -32,48 +30,49 @@
 :- import current_predicate/1 from curr_sym.
 
 :- import STD_FPREFIX(loadlist)/1, STD_FPREFIX(dynloadlist)/1, 
-	STD_FPREFIX(warning_nl)/2
+	STD_FPREFIX(warning_nl)/2,
+	STD_FPREFIX(tnot_all)/1
    from flrutils.
 
 :- import bootstrap_flora/0 from flora.
 
 
 /****************************************************************************/
-:- dynamic DYN_FPREFIX(fd)(_,_,_).
-:- dynamic DYN_FPREFIX(mvd)(_,_,_).
-:- dynamic DYN_FPREFIX(ifd)(_,_,_).
-:- dynamic DYN_FPREFIX(imvd)(_,_,_).
-:- dynamic DYN_FPREFIX(isa)(_,_).
-:- dynamic DYN_FPREFIX(sub)(_,_).
-:- dynamic DYN_FPREFIX(fs)(_,_,_).
-:- dynamic DYN_FPREFIX(mvs)(_,_,_).
-:- dynamic DYN_FPREFIX(exists)(_).
-:- dynamic DYN_FPREFIX(mvd)(_,_).
-:- dynamic DYN_FPREFIX(imvd)(_,_).
+:- dynamic VAR_FPREFIX(fd)(_,_,_).
+:- dynamic VAR_FPREFIX(mvd)(_,_,_).
+:- dynamic VAR_FPREFIX(ifd)(_,_,_).
+:- dynamic VAR_FPREFIX(imvd)(_,_,_).
+:- dynamic VAR_FPREFIX(isa)(_,_).
+:- dynamic VAR_FPREFIX(sub)(_,_).
+:- dynamic VAR_FPREFIX(fs)(_,_,_).
+:- dynamic VAR_FPREFIX(mvs)(_,_,_).
+:- dynamic VAR_FPREFIX(exists)(_).
+:- dynamic VAR_FPREFIX(mvd)(_,_).
+:- dynamic VAR_FPREFIX(imvd)(_,_).
 
-:- table DYN_FPREFIX(fd)/3.
-:- table DYN_FPREFIX(mvd)/3.
-:- table DYN_FPREFIX(ifd)/3.
-:- table DYN_FPREFIX(imvd)/3.
-:- table DYN_FPREFIX(isa)/2.
-:- table DYN_FPREFIX(sub)/2.
-:- table DYN_FPREFIX(fs)/3.
-:- table DYN_FPREFIX(mvs)/3.
-:- table DYN_FPREFIX(exists)/1.
-:- table DYN_FPREFIX(mvd)/2.
-:- table DYN_FPREFIX(imvd)/2.
+:- table VAR_FPREFIX(fd)/3.
+:- table VAR_FPREFIX(mvd)/3.
+:- table VAR_FPREFIX(ifd)/3.
+:- table VAR_FPREFIX(imvd)/3.
+:- table VAR_FPREFIX(isa)/2.
+:- table VAR_FPREFIX(sub)/2.
+:- table VAR_FPREFIX(fs)/3.
+:- table VAR_FPREFIX(mvs)/3.
+:- table VAR_FPREFIX(exists)/1.
+:- table VAR_FPREFIX(mvd)/2.
+:- table VAR_FPREFIX(imvd)/2.
 
-STD_FPREFIX(fd)(O,M,R)   :- DYN_FPREFIX(fd)(O,M,R).
-STD_FPREFIX(mvd)(O,M,R)  :- DYN_FPREFIX(mvd)(O,M,R).
-STD_FPREFIX(ifd)(O,M,R)  :- DYN_FPREFIX(ifd)(O,M,R).
-STD_FPREFIX(imvd)(O,M,R) :- DYN_FPREFIX(imvd)(O,M,R).
-STD_FPREFIX(isa)(O1,O2)  :- DYN_FPREFIX(isa)(O1,O2).
-STD_FPREFIX(sub)(O1,O2)  :- DYN_FPREFIX(sub)(O1,O2).
-STD_FPREFIX(fs)(O,M,R)   :- DYN_FPREFIX(fs)(O,M,R).
-STD_FPREFIX(mvs)(O,M,R)  :- DYN_FPREFIX(mvs)(O,M,R).
-STD_FPREFIX(exists)(O)   :- DYN_FPREFIX(exists)(O).
-STD_FPREFIX(mvd)(O,M)    :- DYN_FPREFIX(mvd)(O,M).
-STD_FPREFIX(imvd)(O,M)   :- DYN_FPREFIX(imvd)(O,M).
+STD_FPREFIX(fd)(O,M,R)   :- VAR_FPREFIX(fd)(O,M,R).
+STD_FPREFIX(mvd)(O,M,R)  :- VAR_FPREFIX(mvd)(O,M,R).
+STD_FPREFIX(ifd)(O,M,R)  :- VAR_FPREFIX(ifd)(O,M,R).
+STD_FPREFIX(imvd)(O,M,R) :- VAR_FPREFIX(imvd)(O,M,R).
+STD_FPREFIX(isa)(O1,O2)  :- VAR_FPREFIX(isa)(O1,O2).
+STD_FPREFIX(sub)(O1,O2)  :- VAR_FPREFIX(sub)(O1,O2).
+STD_FPREFIX(fs)(O,M,R)   :- VAR_FPREFIX(fs)(O,M,R).
+STD_FPREFIX(mvs)(O,M,R)  :- VAR_FPREFIX(mvs)(O,M,R).
+STD_FPREFIX(exists)(O)   :- VAR_FPREFIX(exists)(O).
+STD_FPREFIX(mvd)(O,M)    :- VAR_FPREFIX(mvd)(O,M).
+STD_FPREFIX(imvd)(O,M)   :- VAR_FPREFIX(imvd)(O,M).
 
 
 /****************************************************************************/
@@ -85,6 +84,8 @@ STD_FPREFIX(tag)(noquery).
    ),
    !.
 
+
+#undef VAR_FPREFIX_BASE
 
 /************************** End of Header ***********************************/
 

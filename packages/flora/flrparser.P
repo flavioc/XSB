@@ -29,10 +29,7 @@
 :- compiler_options([xpp_on]).
 #include "char_defs.h"
 
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#mode restore
+#include "flora_prefix.h"
 
 rule(_) -->
 	{ trie_assert(error(none)),

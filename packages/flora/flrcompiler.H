@@ -25,10 +25,7 @@
 
 :- compiler_options([xpp_on]).
 
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#mode restore
+#include "flora_prefix.h"
 
 
 :- import

@@ -39,6 +39,7 @@
 :- import slash/1 from machine.
 :- import trie_assert/1 from tables.
 :- import conget/2 from gensym.
+:- import xpp_include_dir/1 from parse.
 :- dynamic hide_this_show(_,_).
 
 :- export bootstrap_flora/0, flora_shell/0.
@@ -50,11 +51,13 @@
 bootstrap_flora :-
 	bootstrap_package([flora,lib,syslib,pkgs],flora),
 	!,
-	assert(package_configuration(version(flora),'0.931 of 1999/08/22')),
-	package_configuration(dir(flora),FloraDir),
+	assert(package_configuration(version(flora),'0.94 of 1999/11/21')),
+	package_configuration(dir(flora),FlDir),
 	slash(S),
+	fmt_write_string(FloraIncludeDir, '%s%sincludes', args(FlDir,S)),
+	assert(xpp_include_dir(FloraIncludeDir)),
 	fmt_write_string(LibFlrDisplay,'%s%ssyslib%sflrdisplay',
-			 f(FloraDir,S,S)),
+			 f(FlDir,S,S)),
 	[tables, LibFlrDisplay, flrutils].
 bootstrap_flora.
 

@@ -26,10 +26,9 @@
 
 :- compiler_options([xpp_on]).
 
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#mode restore
+
+#undef VAR_FPREFIX_BASE
+#include "flora_prefix.h"
 
 
 :- import
@@ -46,87 +45,87 @@
 /*****************************************************************************
   rules for aggregates
 *****************************************************************************/
-STD_FPREFIX(min)(G,Matches,Min) :-
+VAR_FPREFIX(min)(G,Matches,Min) :-
 	( G = nogrp ->
 	    Matches=[H|T],
-	    STD_FPREFIX(minaux1)(T,H,Min)
+	    VAR_FPREFIX(minaux1)(T,H,Min)
 
-	  ; STD_FPREFIX(var_exists)(G) ->
+	  ; VAR_FPREFIX(var_exists)(G) ->
 	    findall(Grp, member(flora_rslt(_,Grp), Matches), L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D, member(flora_rslt(D,G), Matches), DL),
 	    DL=[H|T],
-	    STD_FPREFIX(minaux1)(T,H,Min)
+	    VAR_FPREFIX(minaux1)(T,H,Min)
 
 	  ;
 	    Matches=[flora_rslt(D,_)|T],
-	    STD_FPREFIX(minaux2)(T,D,Min)
+	    VAR_FPREFIX(minaux2)(T,D,Min)
 	).
 
-STD_FPREFIX(minaux1)([],X,X).
-STD_FPREFIX(minaux1)([H|T],X,N) :-
+VAR_FPREFIX(minaux1)([],X,X).
+VAR_FPREFIX(minaux1)([H|T],X,N) :-
 	(H @< X
-	->  STD_FPREFIX(minaux1)(T,H,N)
-	;   STD_FPREFIX(minaux1)(T,X,N)
+	->  VAR_FPREFIX(minaux1)(T,H,N)
+	;   VAR_FPREFIX(minaux1)(T,X,N)
 	).
 
-STD_FPREFIX(minaux2)([],X,X).
-STD_FPREFIX(minaux2)([flora_rslt(D,_)|T],X,N) :-
+VAR_FPREFIX(minaux2)([],X,X).
+VAR_FPREFIX(minaux2)([flora_rslt(D,_)|T],X,N) :-
 	(D @< X
-	->  STD_FPREFIX(minaux2)(T,D,N)
-	;   STD_FPREFIX(minaux2)(T,X,N)
+	->  VAR_FPREFIX(minaux2)(T,D,N)
+	;   VAR_FPREFIX(minaux2)(T,X,N)
 	).
 
 
 /****************************************************************************/
-STD_FPREFIX(max)(G,Matches,Max) :-
+VAR_FPREFIX(max)(G,Matches,Max) :-
 	( G = nogrp ->
 	    Matches=[H|T],
-	    STD_FPREFIX(maxaux1)(T,H,Max)
+	    VAR_FPREFIX(maxaux1)(T,H,Max)
 
-	  ; STD_FPREFIX(var_exists)(G) ->
+	  ; VAR_FPREFIX(var_exists)(G) ->
 	    findall(Grp, member(flora_rslt(_,Grp), Matches), L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D, member(flora_rslt(D,G), Matches), DL),
 	    DL=[H|T],
-	    STD_FPREFIX(maxaux1)(T,H,Max)
+	    VAR_FPREFIX(maxaux1)(T,H,Max)
 
 	  ;
 	    Matches=[flora_rslt(D,_)|T],
-	    STD_FPREFIX(maxaux2)(T,D,Max)
+	    VAR_FPREFIX(maxaux2)(T,D,Max)
 	).
 
-STD_FPREFIX(maxaux1)([],X,X).
-STD_FPREFIX(maxaux1)([H|T],X,N) :-
+VAR_FPREFIX(maxaux1)([],X,X).
+VAR_FPREFIX(maxaux1)([H|T],X,N) :-
 	(H @> X
-	->  STD_FPREFIX(maxaux1)(T,H,N)
-	;   STD_FPREFIX(maxaux1)(T,X,N)
+	->  VAR_FPREFIX(maxaux1)(T,H,N)
+	;   VAR_FPREFIX(maxaux1)(T,X,N)
 	).
 
-STD_FPREFIX(maxaux2)([],X,X).
-STD_FPREFIX(maxaux2)([flora_rslt(D,_)|T],X,N) :-
+VAR_FPREFIX(maxaux2)([],X,X).
+VAR_FPREFIX(maxaux2)([flora_rslt(D,_)|T],X,N) :-
 	(D @> X
-	->  STD_FPREFIX(maxaux2)(T,D,N)
-	;   STD_FPREFIX(maxaux2)(T,X,N)
+	->  VAR_FPREFIX(maxaux2)(T,D,N)
+	;   VAR_FPREFIX(maxaux2)(T,X,N)
 	).
 
 
 /****************************************************************************/
-STD_FPREFIX(sum)(G,Matches,Sum) :-
+VAR_FPREFIX(sum)(G,Matches,Sum) :-
 	( G = nogrp ->
-	    STD_FPREFIX(sumaux1)(Matches,X,Sum,Warning)
+	    VAR_FPREFIX(sumaux1)(Matches,X,Sum,Warning)
 
-	  ; STD_FPREFIX(var_exists)(G) ->
+	  ; VAR_FPREFIX(var_exists)(G) ->
 	    findall(Grp, member(flora_rslt(_,Grp), Matches), L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D, member(flora_rslt(D,G), Matches), DL),
-	    STD_FPREFIX(sumaux1)(DL,X,Sum,Warning)
+	    VAR_FPREFIX(sumaux1)(DL,X,Sum,Warning)
 
 	  ;
-	    STD_FPREFIX(sumaux2)(Matches,X,Sum,Warning), !
+	    VAR_FPREFIX(sumaux2)(Matches,X,Sum,Warning), !
 	),
 	( var(Warning) ->
 	    true
@@ -134,47 +133,47 @@ STD_FPREFIX(sum)(G,Matches,Sum) :-
 	    STD_FPREFIX(warning_nl)('discarding non-numeric objects while computing sum')
 	).
 
-STD_FPREFIX(sumaux1)([],X,X,_) :-
+VAR_FPREFIX(sumaux1)([],X,X,_) :-
 	(var(X) -> fail ; true).
 
-STD_FPREFIX(sumaux1)([H|T],X,N,Warning) :-
+VAR_FPREFIX(sumaux1)([H|T],X,N,Warning) :-
 	( number(H) ->
 	    (var(X) -> S=H ; S is X+H),
-	    STD_FPREFIX(sumaux1)(T,S,N,Warning)
+	    VAR_FPREFIX(sumaux1)(T,S,N,Warning)
 
 	  ;
 	    Warning=warning,
-	    STD_FPREFIX(sumaux1)(T,X,N,_)
+	    VAR_FPREFIX(sumaux1)(T,X,N,_)
 	).
 
-STD_FPREFIX(sumaux2)([],X,X,_) :-
+VAR_FPREFIX(sumaux2)([],X,X,_) :-
 	(var(X) -> fail ; true).
 
-STD_FPREFIX(sumaux2)([flora_rslt(D,_)|T],X,N,Warning) :-
+VAR_FPREFIX(sumaux2)([flora_rslt(D,_)|T],X,N,Warning) :-
 	( number(D) ->
 	    (var(X) -> S=D ; S is X+D),
-	    STD_FPREFIX(sumaux2)(T,S,N,Warning)
+	    VAR_FPREFIX(sumaux2)(T,S,N,Warning)
 
 	  ;
 	    Warning=warning,
-	    STD_FPREFIX(sumaux2)(T,X,N,_)
+	    VAR_FPREFIX(sumaux2)(T,X,N,_)
 	).
 
 
 /****************************************************************************/
-STD_FPREFIX(avg)(G,Matches,Avg) :-
+VAR_FPREFIX(avg)(G,Matches,Avg) :-
 	( G = nogrp ->
-	    STD_FPREFIX(avgaux1)(Matches,X1,X2,Avg,Warning)
+	    VAR_FPREFIX(avgaux1)(Matches,X1,X2,Avg,Warning)
 
-	  ; STD_FPREFIX(var_exists)(G) ->
+	  ; VAR_FPREFIX(var_exists)(G) ->
 	    findall(Grp, member(flora_rslt(_,Grp), Matches), L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D, member(flora_rslt(D,G), Matches), DL),
-	    STD_FPREFIX(avgaux1)(DL,X1,X2,Avg,Warning)
+	    VAR_FPREFIX(avgaux1)(DL,X1,X2,Avg,Warning)
 
 	  ;
-	    STD_FPREFIX(avgaux2)(L,X1,X2,Avg,Warning)
+	    VAR_FPREFIX(avgaux2)(L,X1,X2,Avg,Warning)
 	),
 	( var(Warning) ->
 	    true
@@ -182,36 +181,36 @@ STD_FPREFIX(avg)(G,Matches,Avg) :-
 	    STD_FPREFIX(warning_nl)('discarding non-numeric objects while computing average')
 	).
 
-STD_FPREFIX(avgaux1)([],S,N,Avg,_) :-
+VAR_FPREFIX(avgaux1)([],S,N,Avg,_) :-
 	(var(S) -> fail ; Avg is S/N).
 
-STD_FPREFIX(avgaux1)([H|T],X1,X2,Avg,Warning) :-
+VAR_FPREFIX(avgaux1)([H|T],X1,X2,Avg,Warning) :-
 	( number(H) ->
 	    (var(X1) -> S=H, N=1 ; S is X1+H, N is X2+1),
-	    STD_FPREFIX(avgaux1)(T,S,N,Avg,Warning)
+	    VAR_FPREFIX(avgaux1)(T,S,N,Avg,Warning)
 
 	  ;
 	    Warning=warning,
-	    STD_FPREFIX(avgaux1)(T,X1,X2,Avg,_)
+	    VAR_FPREFIX(avgaux1)(T,X1,X2,Avg,_)
 	).
 
-STD_FPREFIX(avgaux2)([],S,N,Avg,_) :-
+VAR_FPREFIX(avgaux2)([],S,N,Avg,_) :-
 	(var(S) -> fail ; Avg is S/N).
 
-STD_FPREFIX(avgaux2)([flora_rslt(D,_)|T],X1,X2,Avg,Warning) :-
+VAR_FPREFIX(avgaux2)([flora_rslt(D,_)|T],X1,X2,Avg,Warning) :-
 	( number(D) ->
 	    (var(X1) -> S=D, N=1 ; S is X1+D, N is X2+1),
-	    STD_FPREFIX(avgaux2)(T,S,N,Avg,Warning)
+	    VAR_FPREFIX(avgaux2)(T,S,N,Avg,Warning)
 
 	  ;
 	    Warning=warning,
-	    STD_FPREFIX(avgaux2)(T,X1,X2,Avg,_)
+	    VAR_FPREFIX(avgaux2)(T,X1,X2,Avg,_)
 	).
 
 
 /****************************************************************************/
-STD_FPREFIX(count)(G,Matches,Count) :-
-	( STD_FPREFIX(var_exists)(G) ->
+VAR_FPREFIX(count)(G,Matches,Count) :-
+	( VAR_FPREFIX(var_exists)(G) ->
 	    findall(Grp, member(flora_rslt(_,Grp), Matches), L),
 	    sort(L,Groups),
 	    member(G,Groups),
@@ -224,11 +223,11 @@ STD_FPREFIX(count)(G,Matches,Count) :-
 
 
 /****************************************************************************/
-STD_FPREFIX(collectset)(G,Matches,Set) :-
+VAR_FPREFIX(collectset)(G,Matches,Set) :-
 	( G = nogrp ->
 	    sort(Matches,Set)
 
-	  ; STD_FPREFIX(var_exists)(G) ->
+	  ; VAR_FPREFIX(var_exists)(G) ->
 	    findall(Grp, member(flora_rslt(_,Grp), Matches), L),
 	    sort(L,Groups),
 	    member(G,Groups),
@@ -242,11 +241,11 @@ STD_FPREFIX(collectset)(G,Matches,Set) :-
 
 
 /****************************************************************************/
-STD_FPREFIX(collectbag)(G,Matches,Bag) :-
+VAR_FPREFIX(collectbag)(G,Matches,Bag) :-
 	( G = nogrp ->
 	    Bag=Matches
 
-	  ; STD_FPREFIX(var_exists)(G) ->
+	  ; VAR_FPREFIX(var_exists)(G) ->
 	    findall(Grp, member(flora_rslt(_,Grp), Matches), L),
 	    sort(L,Groups),
 	    member(G,Groups),
@@ -258,22 +257,21 @@ STD_FPREFIX(collectbag)(G,Matches,Bag) :-
 
 
 /****************************************************************************/
-STD_FPREFIX(var_exists)(X) :- var(X), !.
+VAR_FPREFIX(var_exists)(X) :- var(X), !.
 
-STD_FPREFIX(var_exists)(T) :-
+VAR_FPREFIX(var_exists)(T) :-
 	functor(T,_,N),
-	STD_FPREFIX(var_exists)(T,N).
+	VAR_FPREFIX(var_exists)(T,N).
 
-STD_FPREFIX(var_exists)(T,N) :-
+VAR_FPREFIX(var_exists)(T,N) :-
 	N>=1,
 	arg(N,T,Arg),
-	( STD_FPREFIX(var_exists)(Arg) ->
+	( VAR_FPREFIX(var_exists)(Arg) ->
 	    !
 	  ;
 	    M is N-1,
-	    STD_FPREFIX(var_exists)(T,M)
+	    VAR_FPREFIX(var_exists)(T,M)
 	).
 
 
 /***********************  End of flraggregate.P  *********************/
-

@@ -30,16 +30,40 @@
 #include "standard.h"
 #include "char_defs.h"
 
-
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#mode restore
+#include "flora_prefix.h"
 
 
 /********************************************************************/
 
 flora_word(S,A) :- str_cat(STD_FPREFIX, S, A1), A1=A.
+
+%% This works like tnot/1, but allows variables
+:- table STD_FPREFIX(tmp_pred)/0.
+STD_FPREFIX(tnot_all_local)(Test) :- 
+	assert((STD_FPREFIX(tmp_pred) :- Test)),
+	%% Retract "STD_FPREFIX(tmp_pred) :- Test" after use
+	%% Abolish table for STD_FPREFIX(tmp_pred)
+	(tnot(STD_FPREFIX(tmp_pred))
+	->  retractall(STD_FPREFIX(tmp_pred)),
+	    abolish_table_pred(STD_FPREFIX(tmp_pred)/0)
+	;   retractall(STD_FPREFIX(tmp_pred)),
+	    abolish_table_pred(STD_FPREFIX(tmp_pred)/0),
+	    fail
+	).
+
+%% Temporary, until xsb is fixed
+%%STD_FPREFIX(tnot_all)(Test) :- STD_FPREFIX(tnot_all_local)(Test).
+:- import ground/1 from basics.
+STD_FPREFIX(tnot_all)(Test) :- ground(Test), tnot(Test).
+
+
+:- op(1050,xfy, STD_FPREFIX(then)).
+:- op(1100,xfy, STD_FPREFIX(else)).
+(C STD_FPREFIX(then)  T STD_FPREFIX(else) _S) :- call(C), call(T).
+(C STD_FPREFIX(then) _T STD_FPREFIX(else)  S) :-
+	STD_FPREFIX(tnot_all_local)(C),
+	call(S).
+
 
 
 

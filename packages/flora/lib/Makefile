@@ -31,7 +31,8 @@ EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	$(XSBDIR)/emu/io_defs_xsb.h \
 	$(XSBDIR)/emu/system_defs_xsb.h $(XSBDIR)/emu/socket_defs_xsb.h 
 PROLOG_INCLUDES = $(XSBDIR)/prolog_includes/char_defs.h \
-	$(XSBDIR)/prolog_includes/standard.h
+	$(XSBDIR)/prolog_includes/standard.h \
+	$(XSBDIR)/packages/flora/includes/flora_prefix.h
 
 
 Option = [optimize]
@@ -70,6 +71,8 @@ recompile: $(ALL) finish
 
 init:
 	rm -f $(SVFILE)
+	@echo "import bootstrap_flora/0 from flora." >> cmd...
+	@echo "bootstrap_flora." >> cmd...
 	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
 	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...

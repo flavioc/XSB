@@ -28,10 +28,9 @@
 #include "standard.h"
 #include "char_defs.h"
 
-#mode save
-#mode nostring "\!#'"
-#define STD_FPREFIX(X)    '_$_$_flora_''X'
-#mode restore
+#undef VAR_FPREFIX_BASE
+#include "flora_prefix.h"
+
 
 
 :- import
@@ -54,16 +53,9 @@
 :- import trie_assert/1, trie_retract_all/1 from tables.
 
 :- import STD_FPREFIX(warning_nl)/2 from flrutils.
+:- import STD_FPREFIX(then)/2, STD_FPREFIX(else)/2 from flrutils.
 
 :- dynamic STD_FPREFIX(switch)/1.
-
-:- import ground/1 from basics.
-
-:- op(1050,xfy,'##>').
-:- op(1100,xfy,'##').
-
-(C ##> T ## _S) :- call(C), call(T).
-(C ##> _T ## S) :- ground(C), tnot(C), call(S).
 
 :- table STD_FPREFIX(call)/1.
 
@@ -73,8 +65,10 @@ STD_FPREFIX(print_all)(Gs,NVs) :-
 	cputime(T0),
 	( NVs == [] ->
 	    (    STD_FPREFIX(call)(Gs)
-	    ##>  STD_FPREFIX(write_Yes) 
-	    ##   STD_FPREFIX(write_No) 
+	    STD_FPREFIX(then)
+	    	 STD_FPREFIX(write_Yes) 
+	    STD_FPREFIX(else)
+	    	 STD_FPREFIX(write_No) 
 	    )
 	
 	;   STD_FPREFIX(findall)(NVs,Gs,TempL),
@@ -109,16 +103,20 @@ STD_FPREFIX(print_all)(Gs,NVs) :-
 STD_FPREFIX(print_one)(Gs,NVs) :-
 	( NVs == [] ->
 	    (   STD_FPREFIX(call)(Gs)
-	    ##> STD_FPREFIX(write_Yes)
-	    ##  STD_FPREFIX(write_No)
+	    STD_FPREFIX(then)
+	    	STD_FPREFIX(write_Yes)
+	    STD_FPREFIX(else)
+	    	STD_FPREFIX(write_No)
 	    )
 	
 	;
 	    ( STD_FPREFIX(call)(Gs),
 		STD_FPREFIX(write_pairs)(NVs),
 		STD_FPREFIX(fail_unless_return)
-	    ##> true
-	    ##  STD_FPREFIX(write_No)
+	    STD_FPREFIX(then)
+	    	 true
+	    STD_FPREFIX(else)
+	    	 STD_FPREFIX(write_No)
 	    )
 	),
 	fail.
@@ -251,5 +249,3 @@ STD_FPREFIX(write_list)([X1,X2|Xs]) :-
 
 
 /******************** End of flrdisplay.P *************************/
-
-

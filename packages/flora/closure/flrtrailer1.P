@@ -3,6 +3,9 @@
  ***/
 
 
+#undef VAR_FPREFIX_BASE
+
+
 /*****************************************************************************
   closure rules for X::Y
 *****************************************************************************/
@@ -137,13 +140,10 @@ STD_FPREFIX(fd)(Object,Method,Value) :-
 	  ;
 	    STD_FPREFIX(isa)(Object,Class),
 	    STD_FPREFIX(ifd)(Class,Method,Value),
-	    ground(Object), ground(Method),
-	    tnot(STD_FPREFIX(defined_fd)(Object,Method))
+	    STD_FPREFIX(tnot_all)(STD_FPREFIX(defined_fd)(Object,Method))
 	),
-	ground(Class),
-	tnot(STD_FPREFIX(overwritten_fd)(Object,Class,Method)),
-	ground(Class),
-	tnot(STD_FPREFIX(conflict_fd)(Object,Class,Method)).
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(overwritten_fd)(Object,Class,Method)),
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(conflict_fd)(Object,Class,Method)).
 
 /* Should we add '_$_$_flora_eql' everywhere? Why not make '_$_$_flora_isa',
     '_$_$_flora_strict_subclass', '_$_$_flora_ifd', etc. friendly to eql, 
@@ -176,13 +176,10 @@ STD_FPREFIX(mvd)(Object,Method,Value) :-
 	  ;
 	    STD_FPREFIX(isa)(Object,Class),
 	    STD_FPREFIX(imvd)(Class,Method,Value),
-	    ground(Object), ground(Method),
-	    tnot(STD_FPREFIX(defined_mvd)(Object,Method))
+	    STD_FPREFIX(tnot_all)(STD_FPREFIX(defined_mvd)(Object,Method))
 	),
-	ground(Class),
-	tnot(STD_FPREFIX(overwritten_mvd)(Object,Class,Method)),
-	ground(Class),
-	tnot(STD_FPREFIX(conflict_mvd)(Object,Class,Method)).
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(overwritten_mvd)(Object,Class,Method)),
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(conflict_mvd)(Object,Class,Method)).
 
 STD_FPREFIX(defined_mvd)(Object,Method) :-
 	STD_FPREFIX(mvd)(Object,Method,_).
@@ -209,13 +206,10 @@ STD_FPREFIX(ifd)(Class,Method,Value) :-
 	  ;
 	    STD_FPREFIX(strict_subclass)(Class,Super),
 	    STD_FPREFIX(ifd)(Super,Method,Value),
-	    ground(Class), ground(Method),
-	    tnot(STD_FPREFIX(defined_ifd)(Class,Method))
+	    STD_FPREFIX(tnot_all)(STD_FPREFIX(defined_ifd)(Class,Method))
 	),
-	ground(Super),
-	tnot(STD_FPREFIX(overwritten_ifd)(Class,Super,Method)),
-	ground(Super),
-	tnot(STD_FPREFIX(conflict_ifd)(Class,Super,Method)).
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(overwritten_ifd)(Class,Super,Method)),
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(conflict_ifd)(Class,Super,Method)).
 
 STD_FPREFIX(defined_ifd)(Class,Method) :- STD_FPREFIX(ifd)(Class,Method,_).
 
@@ -242,13 +236,10 @@ STD_FPREFIX(imvd)(Class,Method,Value) :-
 	  ;
 	    STD_FPREFIX(strict_subclass)(Class,Super),
 	    STD_FPREFIX(imvd)(Super,Method,Value),
-	    ground(Class), ground(Method),
-	    tnot(STD_FPREFIX(defined_imvd)(Class,Method))
+	    STD_FPREFIX(tnot_all)(STD_FPREFIX(defined_imvd)(Class,Method))
 	),
-	ground(Super),
-	tnot(STD_FPREFIX(overwritten_imvd)(Class,Super,Method)),
-	ground(Super),
-	tnot(STD_FPREFIX(conflict_imvd)(Class,Super,Method)).
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(overwritten_imvd)(Class,Super,Method)),
+	STD_FPREFIX(tnot_all)(STD_FPREFIX(conflict_imvd)(Class,Super,Method)).
 
 STD_FPREFIX(defined_imvd)(Class,Method) :-
 	STD_FPREFIX(imvd)(Class,Method,_).
