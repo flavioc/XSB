@@ -264,7 +264,7 @@ configure_packages_install:
 	  chmod 644  $(install_config_prefix)/configuration.O
 
 remake_dot_O_files:
-	cd $(srcdir); make
+	cd $(srcdir); make XSB=$(src_scriptdir)/xsb$(config_tag)
 
 # clean for this architecture only
 configclean::

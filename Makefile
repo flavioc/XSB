@@ -24,6 +24,7 @@
 
 
 SUBDIR = cmplib syslib lib packages
+XSB=./bin/xsb
 
 all: $(SUBDIR)
 
@@ -34,16 +35,16 @@ touch::
 
 syslib::
 	@echo ""
-	cd syslib; make
+	cd syslib; make XSB=$(XSB)
 
 lib::
 	@echo ""
-	cd lib; make
+	cd lib; make XSB=$(XSB)
 
 cmplib::
 	@echo ""
-	cd cmplib; make
+	cd cmplib; make XSB=$(XSB)
 
 packages::
 	@echo ""
-	cd packages; make
+	cd packages; make XSB=$(XSB)
