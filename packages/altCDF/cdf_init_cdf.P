@@ -2027,9 +2027,10 @@ newExtTerm(Context,Term,Upd0,Upd):-
 
 :- initialize_cdf.
 
+:- import invalidate_tables_for/2 from tables.
+
 #if USING_XJ
 :- import cache_invalidate_for/1 from prologCache.
-:- import invalidate_tables_for/2 from tables.
 
 :- 	   cdf_message('Using XJ').
 :- 	   assert(cdf_configuration(proprietary_features,on)).
