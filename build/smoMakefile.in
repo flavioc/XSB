@@ -38,7 +38,7 @@ SMODELSHEADER= $(SMODELS)/api.h $(SMODELS)/atomrule.h $(SMODELS)/dcl.h \
 	$(SMODELS)/smodels.h $(SMODELS)/stable.h $(SMODELS)/stack.h \
 	$(SMODELS)/timer.h $(SMODELS)/tree.h
 
-Option = [optimize]
+Option = [sysmod,optimize]
 
 XSB=../../bin/xsb
 Prolog = $(XSB) 
