@@ -30,7 +30,8 @@
 
 
 :- export 
-	arg/3,		arg0/3,		atom/1,		atomic/1,
+	arg/3,		arg0/3,		atom/1,		
+            atom_concat/3,   atomic/1,
 	goal_arg/3,	atom_chars/2,   atom_codes/2,
 	call/1,		call_expose/1,	callable/1,
 	close/1,	compare/3,	compound/1,	cputime/1,	
@@ -92,7 +93,7 @@
 
 
 :- import (dynamic)/1, asserta/1 from assert.
-:- import member/2 from basics.
+:- import member/2,append/3 from basics.
 :- import consult/1, reconsult/1 from consult.
 :- import predicate_property/2 from curr_sym.
 :- import dcg/2 from dcg.
@@ -104,7 +105,8 @@
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
-:- import domain_error/4, check_atom/3, check_nonvar/3 from error_handler.
+:- import domain_error/4, check_atom/3, check_nonvar/3,type_error/4
+     from error_handler.
 :- import  check_stream/3, check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
 

@@ -25,8 +25,9 @@
 
 
 :- export cd/1, ls/0, rename/2, rm/1, rmdir/1, rmdir_rec/1, edit/1,
-	cwd/1, create_lockfile/1, sys_cwd/2, sys_pid/1,
-	shell/5, shell/2, shell/1, sleep/1,
+  expand_filename_no_prepend/2,
+  cwd/1, create_lockfile/1, sys_cwd/2, sys_pid/1,
+  shell/5, shell/2, shell/1, sleep/1,copy/2,
 	is_plain_file/1, is_directory/1,
 	spawn_process/5, get_process_table/1, process_status/2, 
 	process_control/2,
@@ -39,7 +40,8 @@
 :- import findall/3 from setof.
 :- import path_sysop/2 from file_io.
 :- import check_nonvar/3 from error_handler.
-:- import sys_system/7, expand_filename/2, sys_syscall/4
+:- import sys_system/7, expand_filename/2, sys_syscall/4,
+             tilde_expand_filename/2
    from machine.
 :- import atom/1, abort/1, is_list/1 from standard.
 :- import xsb_configuration/2 from xsb_configuration.

@@ -109,7 +109,11 @@ cd(Path) :-
 	    )
 	).
 
-rename(Old, New) :- sys_rename(Old, New, Res), Res =:= 0.
+copy(Old, New) :- 
+	sys_filecopy(Old, New, Res), Res =:= 0.
+
+rename(Old, New) :- 
+	sys_rename(Old, New, Res), Res =:= 0.
 
 ls :-
 	(   xsb_configuration(host_os,windows)
@@ -151,6 +155,9 @@ edit(File) :-
 	expand_filename(File, FileName), 
 	shell(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, XSB_SRC_EXTENSION_ATOM]).
 
+% TLS: wanted tilde_ to have a better name.
+expand_filename_no_prepend(In,Out):- 
+	tilde_expand_filename(In,Out).
 
 %% sys_exit(-ExitCode) exit subprocess unconditionally with ExitCode
 sys_exit(ExitCode) :- sys_syscall(SYS_exit,_,ExitCode,_).

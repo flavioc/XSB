@@ -635,6 +635,37 @@ l_intname(N, L1, L2) :-
 real_name(_R, _L1, _L2) :-
 	abort('Predicate name/2 for reals is not implemented yet').
 
+% ISO
+atom_concat(One,Two,Three):- 
+	(atom(One) -> 
+	    (atom(Two) -> 
+	       concat_atom([One,Two],Three)
+	     ; (var(Two) -> 
+	           (atom(Three) -> 
+		   atom_disassemble(Three,One,Two)
+	             ;  xsb_backtrace(Bt),
+		    throw(error(instantiation_error,('Arg 2 or 3 of atom_concat ',
+		             'must be an atom'),Bt)) )
+	         ; type_error(atom,Two,atom_concat/3,2) ) )
+               ; var(One) -> 
+	        (atom(Three) -> 
+	            atom_disassemble(Three,One,Two)
+	          ; xsb_backtrace(Bt),
+	             throw(error(instantiation_error,('Arg 1 or 3 of atom_concat ',
+		             'must be an atom'),Bt)) )
+	       ; type_error(atom,Two,atom_concat/3,1) ).
+
+% TLS: I dont think this mode will be used much, so I'm not bothering
+% to make it efficient.
+atom_disassemble(Three,One,Two):- 
+	atom_codes(Three,ThreeL),
+	(atom(One) -> atom_codes(One,Onel) ; One = Onel),
+	(atom(Two) -> atom_codes(Two,Twol) ; Two = Twol),
+	append(OneL,TwoL,ThreeL),
+	atom_codes(One,OneL),
+	atom_codes(Two,TwoL).
+
+
 
 			/********************/
 			/*   TERM READING   */

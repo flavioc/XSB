@@ -235,7 +235,9 @@ copyIOport(_,_).
 
 /***************************************************************/
 
+% TLS: changed to allow users to call with Time either time(A,B) or as var.
 file_time(FileName, Time) :-
+	Time = time(_,_),
 	sys_system(STAT_FILE_TIME,FileName,Time, _,_,_,_).
 
 file_size(FileName, Size) :-

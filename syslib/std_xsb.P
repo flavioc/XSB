@@ -53,10 +53,11 @@ standard_metapredicate(asserta,1,1).
 standard_symbol(assertz, 1, assert).
 standard_metapredicate(assertz,1,1).
 
-standard_symbol(atom, 1, standard).
-standard_symbol(atomic, 1, standard).
-standard_symbol(atom_chars, 2, standard).
-standard_symbol(atom_codes, 2, standard).
+standard_symbol(atom, 1, standard).                               % ISO
+standard_symbol(atom_concat, 3, standard).                   % ISO
+standard_symbol(atomic, 1, standard).                            % ISO
+standard_symbol(atom_chars, 2, standard).                     % ISO
+standard_symbol(atom_codes, 2, standard).                    % ISO
 standard_symbol(bagof, 3, setof).			% ISO
 standard_symbol(bootstrap_package, 2, packaging).
 standard_symbol(bootstrap_syspackage, 2, packaging).
