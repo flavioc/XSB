@@ -33,8 +33,7 @@ configure.in	  - this is the main workhorse that Autoconf uses to create
 aclocal.m4	  - some m4 macros customized for the XSB build.
 accconfig.h	  - a set of undef statements that autoheader uses to
 		    create def_config.h. Autoconf then uses def_config.h to 
-		    create the file emu/configs/config.h.
-		    This file is a replacement of the old emu/config.h
+		    create the file config/<architecture>/xsb_config.h.
 
 topMakefile.in	  - the Makefile template from which the main makefile is
 		    produced. 
@@ -100,9 +99,7 @@ YOU NEED TO RUN autoconf IFF YOU ENHANCE THE SETUP OR FIX A BUG!
 The new directory structure:
 
     emu		  - C source code for XSB
-    emu/configs/  - configuration files, created automatically
-    emu/debugs/   - debug include files. The debug.h file is created
-		    automatically. The other files are:
+    emu/debugs/   - debug include files. The files are:
 
 				  debug_biassert.h 
 				  debug_delay.h
@@ -182,10 +179,11 @@ The structure of the config directory:
 		      in the build directory.
 	topMakefile - the top make file, which is originally created in the 
 		      build directory.
-        config.h    - The file that contains the appropriate #define
+       xsb_config.h - The file that contains the appropriate #define
 		      statements for this architecture. It gets copied into
 		      emu/configs/ when you type make in the build/ directory.
 		      This file replaces the old config.h
+        xsb_debug.h - The file containing some debug includes.
     	banner.msg  - Message displayed by XSB on startup.
 
 	xsb_configuration.P -
@@ -262,34 +260,6 @@ How to build:
     config/<configuration>/ directory, where <configuration> is the
     canonical name for the current configuration.
 
-    NOTE ABOUT THE C PREPROCESSOR: Many .P programs that live in lib/,
-    cmplib/, and syslib/ directories use the C language preprocessor that
-    is automatically detected by the configuration script. There is a
-    slight chance that this script might fail to detect the right kind of
-    preprocessor, in which case you must tell the script where your C
-    preprocessor lives and supply the right kind of parameters to it. For
-    instance, 
-
-	configure --with-cpp="gcc -E -P -C -undef -x c"
-
-    or
-
-        configure --with-cpp="/lib/cpp -P -C -undef"
-
-    The above lines are, of course, just an example. If you have /lib/cpp
-    or gcc installed then, of course, configure will find them. If you have
-    to specify a different C preprocessor, then the following options must
-    be supplied:
-       a. Do not leave line numbers in post-processed files (usually -P)
-       b. Preserve comments (usually -C)
-       c. Undefine any non-standard symbols (usually -undef)
-       d. Some preprocessors, like gcc, insist that the files to be
-	  preprocessed must have a suitable ending, like .c or .h.
-	  Since XSB uses this preprocessor for .P files, we must somehow
-	  pacify gcc. The flags `-x c' tells gcc that is should believe
-	  that everything is ok. Other preprocessors might use other flags
-	  for that.
-
     A note about caching the configure tests: caching is disabled (the
     opposite of the standard Autoconf default). To enable it, type
 
@@ -331,6 +301,7 @@ How to build:
 
     Here are some other makexsb targets:
 
+             vfast  - Like fast, but gpp is not compiled.
 	     clean  - clean out the .o files in emu/ and in
 		      config/<arch>/saved.o/ where <arch> is the current
 		      architecture. 
