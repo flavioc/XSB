@@ -1,4 +1,6 @@
-/* closure/flrtrailer0_dyn.P: appended automatically by the FLORA compiler  */
+/*** closure/flrtrailer0_dyn.P: appended automatically by the FLORA compiler
+     to DYNAMIC code when equality maintenance is DISABLED 
+ ***/
 
 
 /*****************************************************************************

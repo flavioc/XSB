@@ -1,4 +1,6 @@
-/*** closure/flrtrailer0.P: appended automatically by the FLORA compiler  ***/
+/*** closure/flrtrailer0.P: appended automatically by the FLORA compiler
+     to STATIC code when equality maintenance is DISABLED 
+ ***/
 
 
 /*****************************************************************************
