@@ -93,12 +93,15 @@ INTDIR=.
 
 !IF  "$(ORACLE)" == "yes"
 ORACLE_FLAG=/D "ORACLE"
-ORACLE=MSG=with Oracle support
+ORACLE_MSG=with Oracle support
 !IF  "$(SITE_LIBS)" == ""
 !MESSAGE Oracle libraries must be specified, if building XSB with support for Oracle
 !MESSAGE Usage:
 !ERROR NMAKE /f "MS_VC_Mfile.mak" CFG="..." ORACLE=yes SITE_LIBS="oracle libs"
 !ENDIF
+!ELSE
+ORACLE_FLAG=""
+ORACLE_MSG=without Oracle support
 !ENDIF
 
 !IF "$(DLL)" == "yes"
@@ -114,7 +117,6 @@ CLEAN :
 	-@erase "$(INTDIR)\biassert.obj"
 	-@erase "$(INTDIR)\builtin.obj"
 	-@erase "$(INTDIR)\cinterf.obj"
-	-@erase "$(INTDIR)\cutils.obj"
 	-@erase "$(INTDIR)\debug.obj"
 	-@erase "$(INTDIR)\dis.obj"
 	-@erase "$(INTDIR)\dynload.obj"
@@ -131,6 +133,7 @@ CLEAN :
 	-@erase "$(INTDIR)\memory.obj"
 	-@erase "$(INTDIR)\orastuff.obj"
 	-@erase "$(INTDIR)\psc.obj"
+	-@erase "$(INTDIR)\private_builtin.obj"
 	-@erase "$(INTDIR)\residual.obj"
 	-@erase "$(INTDIR)\scc.obj"
 	-@erase "$(INTDIR)\self_orientation.obj"
@@ -157,7 +160,6 @@ LINK32_OBJS= \
 	"$(INTDIR)/builtin.obj" \
 	"$(INTDIR)/biassert.obj" \
 	"$(INTDIR)/cinterf.obj" \
-	"$(INTDIR)/cutils.obj" \
 	"$(INTDIR)/debug.obj" \
 	"$(INTDIR)/dis.obj" \
 	"$(INTDIR)/dynload.obj" \
@@ -173,6 +175,7 @@ LINK32_OBJS= \
 	"$(INTDIR)/load_seg.obj" \
 	"$(INTDIR)/memory.obj" \
 	"$(INTDIR)/psc.obj" \
+	"$(INTDIR)/private_builtin.obj" \
 	"$(INTDIR)/residual.obj" \
 	"$(INTDIR)/self_orientation.obj" \
 	"$(INTDIR)/slgdelay.obj" \
@@ -361,7 +364,6 @@ DEP_CPP_TRIES=\
 	{$(INTDIR)}"\basictypes.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	
 
 "$(INTDIR)\tries.obj" : $(SOURCE) $(DEP_CPP_TRIES) "$(INTDIR)"
@@ -386,7 +388,6 @@ DEP_CPP_TRACE=\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
@@ -416,12 +417,11 @@ DEP_CPP_TR_UT=\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\xsberror.h"\
-	{$(INTDIR)}"\switch.h"\
+	{$(INTDIR)}"\sw_envs.h"\
 	{$(INTDIR)}"\tr_utils.h"\
 	{$(INTDIR)}"\basictypes.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	
 
 "$(INTDIR)\tr_utils.obj" : $(SOURCE) $(DEP_CPP_TR_UT) "$(INTDIR)"
@@ -473,7 +473,6 @@ DEP_CPP_SUBP_=\
 	{$(INTDIR)}"\unify.i"\
 	{$(INTDIR)}"\sp_unify.i"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
@@ -503,7 +502,6 @@ DEP_CPP_SLGDE=\
 	{$(INTDIR)}"\subinst.h"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	
 
@@ -622,7 +620,6 @@ DEP_CPP_MEMOR=\
 	{$(INTDIR)}"\flags.h"\
 	{$(INTDIR)}"\subp.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
@@ -666,6 +663,7 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\debugs\debug.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\io_builtins.h"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\psc.h"\
@@ -679,10 +677,9 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\tr_utils.h"\
-	{$(INTDIR)}"\switch.h"\
+	{$(INTDIR)}"\sw_envs.h"\
 	{$(INTDIR)}"\configs\special.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
@@ -733,7 +730,6 @@ DEP_CPP_INIT_=\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\tr_utils.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
@@ -763,7 +759,6 @@ DEP_CPP_HEAP_=\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INCLUDE)}"\sys\types.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
@@ -872,7 +867,6 @@ DEP_CPP_EMULO=\
 	{$(INTDIR)}"\tc_insts.i"\
 	{$(INTDIR)}"\unify.i"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	{$(INTDIR)}"\complete.i"\
@@ -956,40 +950,11 @@ DEP_CPP_DEBUG=\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\subp.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
 "$(INTDIR)\debug.obj" : $(SOURCE) $(DEP_CPP_DEBUG) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=$(INTDIR)\cutils.c
-DEP_CPP_CUTIL=\
-	{$(INTDIR)}"\configs\config.h"\
-	{$(INTDIR)}"\debugs\debug.h"\
-	{$(INTDIR)}"\auxlry.h"\
-	{$(INTDIR)}"\cell.h"\
-	{$(INTDIR)}"\xsberror.h"\
-	{$(INTDIR)}"\register.h"\
-	{$(INTDIR)}"\binding.h"\
-	{$(INTDIR)}"\tries.h"\
-	{$(INTDIR)}"\choice.h"\
-	{$(INTDIR)}"\deref.h"\
-	{$(INTDIR)}"\psc.h"\
-	{$(INTDIR)}"\xmacro.h"\
-	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
-	{$(INTDIR)}"\slgdelay.h"\
-	{$(INTDIR)}"\debugs\debug_delay.h"\
-	
-
-"$(INTDIR)\cutils.obj" : $(SOURCE) $(DEP_CPP_CUTIL) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1015,7 +980,6 @@ DEP_CPP_CINTE=\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\basictypes.h"\
 	{$(INTDIR)}"\self_orientation.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	
 
 "$(INTDIR)\cinterf.obj" : $(SOURCE) $(DEP_CPP_CINTE) "$(INTDIR)"
@@ -1031,7 +995,6 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\configs\config.h"\
 	{$(INTDIR)}"\debugs\debug.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INCLUDE)}"\sys\types.h"\
 	{$(INCLUDE)}"\sys\stat.h"\
 	{$(INTDIR)}"\configs\special.h"\
@@ -1055,7 +1018,7 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\sig.h"\
 	{$(INTDIR)}"\subp.h"\
 	{$(INTDIR)}"\tr_utils.h"\
-	{$(INTDIR)}"\switch.h"\
+	{$(INTDIR)}"\sw_envs.h"\
 	{$(INTDIR)}"\trassert.h"\
 	{$(INTDIR)}"\dynload.h"\
 	{$(INTDIR)}"\cinterf.h"\
@@ -1063,11 +1026,13 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\oracle.h"\
 	{$(INTDIR)}"\xsb_odbc.h"\
 	{$(INTDIR)}"\bineg.i"\
+	{$(INTDIR)}"\io_builtin.i"\
 	{$(INTDIR)}"\std_pred.i"\
 	{$(INTDIR)}"\oracle.i"\
 	{$(INTDIR)}"\xsb_odbc.i"\
 	{$(INTDIR)}"\basictypes.h"\
 	{$(INTDIR)}"\slgdelay.h"\
+	{$(INTDIR)}"\builtin.h"\
 	
 
 "$(INTDIR)\builtin.obj" : $(SOURCE) $(DEP_CPP_BUILT) "$(INTDIR)"
@@ -1098,9 +1063,8 @@ DEP_CPP_BIASS=\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\tr_utils.h"\
-	{$(INTDIR)}"\switch.h"\
+	{$(INTDIR)}"\sw_envs.h"\
 	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\debugs\debug_kostis.h"\
 	{$(INTDIR)}"\slgdelay.h"\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
