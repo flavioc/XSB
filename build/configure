@@ -29,9 +29,9 @@ ac_help="$ac_help
   --with-odbc		   compile with support of Oracle"
 ac_help="$ac_help
   --with-interprolog	   compile with support for InterProlog. 
-			   It is possible you would need to use --site-includes
-			   option to specify locations of jni.h and jni_md.h 
-			   files"
+               It is possible you would need to use --site-includes
+               option to specify locations of jni.h and jni_md.h 
+               files"
 ac_help="$ac_help
   --enable-no-cygwin	    compiled with option -mno-cygwin (default: enabled)"
 ac_help="$ac_help
@@ -52,7 +52,7 @@ ac_help="$ac_help
   --disable-optimization     compile with no optimization (default: enabled)"
 ac_help="$ac_help
   --enable-batched-scheduling	compile using the batched scheduling strategy;
-				default is the local strategy"
+                default is the local strategy"
 ac_help="$ac_help
   --enable-gc-test	      stress-test the garbage collector (for developers)"
 ac_help="$ac_help
@@ -70,8 +70,8 @@ ac_help="$ac_help
 "
 ac_help="$ac_help
   --with-smodels=path		   use SMODELS for the XNMR module.
-				   path is the path where smodels has 
-				   been installed and compiled"
+                   path is the path where smodels has 
+                   been installed and compiled"
 
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
@@ -678,11 +678,11 @@ EOF
 
 
 release_year=`echo ${xsb_release_date} \
-	      | sed 's,^\([0-9][0-9][0-9][0-9]\)[-/.].*$,\1,'`
+          | sed 's,^\([0-9][0-9][0-9][0-9]\)[-/.].*$,\1,'`
 release_month=`echo ${xsb_release_date} \
-	      | sed 's,^[0-9]*[-/.]\([0-9][0-9]\)[-/.].*$,\1,'`
+          | sed 's,^[0-9]*[-/.]\([0-9][0-9]\)[-/.].*$,\1,'`
 release_day=`echo ${xsb_release_date} \
-	      | sed 's,^[0-9]*[-/.][0-9]*[-/.]\([0-9][0-9]\)$,\1,'`
+          | sed 's,^[0-9]*[-/.][0-9]*[-/.]\([0-9][0-9]\)$,\1,'`
 
 if test "$release_year" = "${xsb_release_date}" ; then
    echo "configure: error:"
@@ -844,23 +844,23 @@ config_prefix=${topdir}/config
 install_config_prefix=${prefix}/config
 
 if test "$config_tag" != "NONE" -a -n "$config_tag" ; then
-	config_tag="-$config_tag"
+    config_tag="-$config_tag"
 fi
 
 if test "${with_gcc+set}" = "set" ; then
-	# allow --with-gcc=gcc-name
-	CC=${with_gcc}
-	if test "${with_gcc}" = "yes"; then
-		CC=gcc 
-	fi
+    # allow --with-gcc=gcc-name
+    CC=${with_gcc}
+    if test "${with_gcc}" = "yes"; then
+        CC=gcc 
+    fi
 elif test "${with_cc+set}" = "set" ; then
-	# allow --with-cc=compiler on cmd line
-	CC=${with_cc}
-	if test "${with_cc}" = "yes"; then
-	   CC=cc
-	fi
+    # allow --with-cc=compiler on cmd line
+    CC=${with_cc}
+    if test "${with_cc}" = "yes"; then
+       CC=cc
+    fi
 elif test "${with_acc+set}" = "set" ; then
-	CC=acc 
+    CC=acc 
 fi
 
 
@@ -914,31 +914,31 @@ mno_cyg_lib=""
 
 # check for NT configurations
 case "$with_os" in
-  win* | *nt*) 	canonical=x86-pc-windows
-	host_os=windows
-	os_type=windows
-	os_version=
-	host_vendor=pc
-	host_cpu=x86
-	configuration_templ=xsb_configuration_wind.in
-	config_dot_h_templ=def_config_wind.in
-	echo 'Configuring for host system type... Windows NT/95/98/2000'
-	with_os=wind;
-	;;
-  *)		if test -n "$with_os" ; then
-	   echo "OS \`$with_os' is not supported"
-	   rm -f  buildxsb.lock
-	   exit 1
-	fi
-	configuration_templ=xsb_configuration.in
-	config_dot_h_templ=def_config.in
+  win* | *nt*)     canonical=x86-pc-windows
+    host_os=windows
+    os_type=windows
+    os_version=
+    host_vendor=pc
+    host_cpu=x86
+    configuration_templ=xsb_configuration_wind.in
+    config_dot_h_templ=def_config_wind.in
+    echo 'Configuring for host system type... Windows NT/95/98/2000'
+    with_os=wind;
+    ;;
+  *)	    if test -n "$with_os" ; then
+       echo "OS \`$with_os' is not supported"
+       rm -f  buildxsb.lock
+       exit 1
+    fi
+    configuration_templ=xsb_configuration.in
+    config_dot_h_templ=def_config.in
 
-		if test "$configuration" = "NONE" ; then
-	    echo '
+        if test "$configuration" = "NONE" ; then
+        echo '
 - You did not tell me what kind of host system you want to configure.
 - I will attempt to guess the kind of system this is.
 ' 1>&6
-	    
+        
 # Make sure we can run config.sub.
 if ${CONFIG_SHELL-/bin/sh} $ac_config_sub sun4 >/dev/null 2>&1; then :
 else { echo "configure: error: can not run $ac_config_sub" 1>&2; exit 1; }
@@ -965,12 +965,12 @@ host_vendor=`echo $host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
 host_os=`echo $host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
 echo "$ac_t""$host" 1>&6
 
-	    canonical=$host
-	    configuration=$host_alias
-	else
-	    canonical=`${CONFIG_SHELL-/bin/sh} ./config.sub $configuration 2>&1`
-	  
-	    
+        canonical=$host
+        configuration=$host_alias
+    else
+        canonical=`${CONFIG_SHELL-/bin/sh} ./config.sub $configuration 2>&1`
+      
+        
 # Make sure we can run config.sub.
 if ${CONFIG_SHELL-/bin/sh} $ac_config_sub sun4 >/dev/null 2>&1; then :
 else { echo "configure: error: can not run $ac_config_sub" 1>&2; exit 1; }
@@ -997,18 +997,18 @@ host_vendor=`echo $host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
 host_os=`echo $host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
 echo "$ac_t""$host" 1>&6
 
-	    if test -n "`echo "$canonical" | sed -e s/${configuration}//`" ; then
-		echo $canonical
-		echo ""
-		rm -f  buildxsb.lock
-		exit 1
-	    else
-		echo "checking host system type... $canonical" 1>&6
+        if test -n "`echo "$canonical" | sed -e s/${configuration}//`" ; then
+        echo $canonical
+        echo ""
+        rm -f  buildxsb.lock
+        exit 1
+        else
+        echo "checking host system type... $canonical" 1>&6
 echo "configure:1008: checking host system type... $canonical" >&5
-	    fi
-	fi
+        fi
+    fi
 
-	;;
+    ;;
 esac
 
 
@@ -1105,19 +1105,19 @@ rm -f .missingdirs.tmp
 
 echo $ac_n "checking $libdir""... $ac_c" 1>&6
 echo "configure:1108: checking $libdir" >&5 && \
-	 (test -d $libdir && echo "$ac_t""OK" 1>&6) \
-	    || (echo "$ac_t""FAILED" 1>&6; \
-	          echo "+++Can't find $libdir" >> .missingdirs.tmp)
+     (test -d $libdir && echo "$ac_t""OK" 1>&6) \
+        || (echo "$ac_t""FAILED" 1>&6; \
+              echo "+++Can't find $libdir" >> .missingdirs.tmp)
 echo $ac_n "checking $syslibdir""... $ac_c" 1>&6
 echo "configure:1113: checking $syslibdir" >&5 && \
-	 (test -d $syslibdir && echo "$ac_t""OK" 1>&6) \
-	    || (echo "$ac_t""FAILED" 1>&6; \
-	          echo "+++Can't find $syslibdir" >> .missingdirs.tmp)
+     (test -d $syslibdir && echo "$ac_t""OK" 1>&6) \
+        || (echo "$ac_t""FAILED" 1>&6; \
+              echo "+++Can't find $syslibdir" >> .missingdirs.tmp)
 echo $ac_n "checking $cmplibdir""... $ac_c" 1>&6
 echo "configure:1118: checking $cmplibdir" >&5 && \
-	 (test -d $cmplibdir && echo "$ac_t""OK" 1>&6) \
-	    || (echo "$ac_t""FAILED" 1>&6; \
-	          echo "+++Can't find $cmplibdir" >> .missingdirs.tmp)
+     (test -d $cmplibdir && echo "$ac_t""OK" 1>&6) \
+        || (echo "$ac_t""FAILED" 1>&6; \
+              echo "+++Can't find $cmplibdir" >> .missingdirs.tmp)
 
 # test if installation should fail
 test -f .missingdirs.tmp && \
@@ -1127,102 +1127,102 @@ test -f .missingdirs.tmp && \
 echo $ac_n "checking $scriptdir""... $ac_c" 1>&6
 echo "configure:1129: checking $scriptdir" >&5 && \
      ((test -d $scriptdir || mkdir -p $scriptdir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $scriptdir" >> .missingdirs.tmp)
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $scriptdir" >> .missingdirs.tmp)
 
 echo $ac_n "checking $arch_bindir""... $ac_c" 1>&6
 echo "configure:1134: checking $arch_bindir" >&5 && \
      ((test -d $arch_bindir || mkdir -p $arch_bindir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_bindir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_bindir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $arch_config_libdir""... $ac_c" 1>&6
 echo "configure:1139: checking $arch_config_libdir" >&5 && \
      ((test -d $arch_config_libdir || mkdir -p ${arch_config_libdir}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_config_libdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_config_libdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking ${arch_config_objlibdir}""... $ac_c" 1>&6
 echo "configure:1144: checking ${arch_config_objlibdir}" >&5 && \
      ((test -d "${arch_config_objlibdir}" || mkdir -p ${arch_config_objlibdir}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_config_objlibdir" >> .missingdirs.tmp)
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_config_objlibdir" >> .missingdirs.tmp)
 
 echo $ac_n "checking $site_libdir""... $ac_c" 1>&6
 echo "configure:1149: checking $site_libdir" >&5 && \
      ((test -d $site_libdir || mkdir -p $site_libdir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $site_libdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $site_libdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $site_config_libdir""... $ac_c" 1>&6
 echo "configure:1154: checking $site_config_libdir" >&5 && \
      ((test -d $site_config_libdir || mkdir -p $site_config_libdir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $site_config_libdir" >> .missingdirs.tmp)
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $site_config_libdir" >> .missingdirs.tmp)
 
 echo $ac_n "checking $install_emudir""... $ac_c" 1>&6
 echo "configure:1159: checking $install_emudir" >&5 && \
      ((test -d $install_emudir || mkdir -p $install_emudir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_emudir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_emudir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_libdir""... $ac_c" 1>&6
 echo "configure:1164: checking $install_libdir" >&5 && \
      ((test -d $install_libdir || mkdir -p $install_libdir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_libdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_libdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_syslibdir""... $ac_c" 1>&6
 echo "configure:1169: checking $install_syslibdir" >&5 && \
      ((test -d $install_syslibdir || mkdir -p $install_syslibdir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_syslibdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_syslibdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_cmplibdir""... $ac_c" 1>&6
 echo "configure:1174: checking $install_cmplibdir" >&5 && \
      ((test -d $install_cmplibdir || mkdir -p $install_cmplibdir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_cmplibdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_cmplibdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_scriptdir""... $ac_c" 1>&6
 echo "configure:1179: checking $install_scriptdir" >&5 && \
      ((test -d $install_scriptdir || mkdir -p $install_scriptdir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_scriptdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_scriptdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_builddir""... $ac_c" 1>&6
 echo "configure:1184: checking $install_builddir" >&5 && \
      ((test -d $install_builddir || mkdir -p $install_builddir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_builddir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_builddir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $arch_install_bindir""... $ac_c" 1>&6
 echo "configure:1189: checking $arch_install_bindir" >&5 && \
      ((test -d $arch_install_bindir || mkdir -p $arch_install_bindir) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_install_bindir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_install_bindir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $arch_install_config_libdir""... $ac_c" 1>&6
 echo "configure:1194: checking $arch_install_config_libdir" >&5 && \
      ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_install_config_libdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_install_config_libdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $arch_install_objdir""... $ac_c" 1>&6
 echo "configure:1199: checking $arch_install_objdir" >&5 && \
      ((test -d $arch_install_objdir || mkdir -p ${arch_install_objdir}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_install_objdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $arch_install_objdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_etcdir""... $ac_c" 1>&6
 echo "configure:1204: checking $install_etcdir" >&5 && \
      ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_etcdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_etcdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_pkgdir""... $ac_c" 1>&6
 echo "configure:1209: checking $install_pkgdir" >&5 && \
      ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_pkgdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_pkgdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_pkgxmcdir""... $ac_c" 1>&6
 echo "configure:1214: checking $install_pkgxmcdir" >&5 && \
      ((test -d $install_pkgxmcdir || mkdir ${install_pkgxmcdir}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_pkgxmcdir" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_pkgxmcdir" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_examples""... $ac_c" 1>&6
 echo "configure:1219: checking $install_examples" >&5 && \
      ((test -d $install_examples || mkdir -p ${install_examples}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create: $install_examples" >> .missingdirs.tmp)
-	
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create: $install_examples" >> .missingdirs.tmp)
+    
 echo $ac_n "checking $install_prolog_includes""... $ac_c" 1>&6
 echo "configure:1224: checking $install_prolog_includes" >&5 && \
      ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && echo "$ac_t""OK" 1>&6) \
-	|| (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_prolog_includes" >> .missingdirs.tmp)
+    || (echo "$ac_t""FAILED" 1>&6; echo "+++Can't create  $install_prolog_includes" >> .missingdirs.tmp)
 
 test -f .missingdirs.tmp && \
     (cat .missingdirs.tmp; \
@@ -1694,57 +1694,57 @@ if test -n "$with_gcc" ; then
         trutils_opt_level=-${optimization_level-"O1"}
         builtins_opt_level=-${optimization_level-"O1"}
         loader_opt_level=-${optimization_level-"O2"}
-	CFLAGS=""
-	c_inline_level=""
+    CFLAGS=""
+    c_inline_level=""
    else   
-	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-	builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-	loader_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-	if test -n "$optimization_level"; then
-	   c_inline_level=""
-	else
-	   c_inline_level="-finline-functions"
-	fi
-	CFLAGS="-Wall -ansi -pedantic"
+    emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+    trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+    builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+    loader_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+    if test -n "$optimization_level"; then
+       c_inline_level=""
+    else
+       c_inline_level="-finline-functions"
+    fi
+    CFLAGS="-Wall -ansi -pedantic"
    fi
 else
  case $CC in
    gcc) emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-	builtins_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-	loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
-	if test -n "$optimization_level"; then
-	   c_inline_level=""
-	else
-	   c_inline_level="-finline-functions" 
-	fi
-	CFLAGS="-Wall -ansi -pedantic"
-	 ;;
+    trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+    builtins_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+    loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
+    if test -n "$optimization_level"; then
+       c_inline_level=""
+    else
+       c_inline_level="-finline-functions" 
+    fi
+    CFLAGS="-Wall -ansi -pedantic"
+     ;;
    cc)	if test "$__sunpro_c" = "no"; then
-	   emuloop_opt_level=-${optimization_level-"O4"}
-	   trutils_opt_level=-${optimization_level-"O4"}
-	   builtins_opt_level=-${optimization_level-"O4"}
-	   loader_opt_level=-${optimization_level-"O4"}
-	else
-	   # emuloop_opt_level is the optimization level for emuloop.c
-	   # Using xO4 would take SunPro more than an hour, hence xO2.
-	   emuloop_opt_level=-${optimization_level-"xO2"}
-	   trutils_opt_level=-${optimization_level-"xO4"}
-	   builtins_opt_level=-${optimization_level-"xO4"}
-	   loader_opt_level=-${optimization_level-"xO4"}
-	fi
-	c_inline_level=""
-	CFLAGS=""
-	;;
+       emuloop_opt_level=-${optimization_level-"O4"}
+       trutils_opt_level=-${optimization_level-"O4"}
+       builtins_opt_level=-${optimization_level-"O4"}
+       loader_opt_level=-${optimization_level-"O4"}
+    else
+       # emuloop_opt_level is the optimization level for emuloop.c
+       # Using xO4 would take SunPro more than an hour, hence xO2.
+       emuloop_opt_level=-${optimization_level-"xO2"}
+       trutils_opt_level=-${optimization_level-"xO4"}
+       builtins_opt_level=-${optimization_level-"xO4"}
+       loader_opt_level=-${optimization_level-"xO4"}
+    fi
+    c_inline_level=""
+    CFLAGS=""
+    ;;
    acc) # acc also seems to choke on high optimization levels for emuloop.c
-	emuloop_opt_level=-${optimization_level-"O2"}
-	trutils_opt_level=-${optimization_level-"O4"}
-	builtins_opt_level=-${optimization_level-"O4"}
-	loader_opt_level=-${optimization_level-"O4"}
-	c_inline_level=""
-	CFLAGS="-Xa"
-	;;
+    emuloop_opt_level=-${optimization_level-"O2"}
+    trutils_opt_level=-${optimization_level-"O4"}
+    builtins_opt_level=-${optimization_level-"O4"}
+    loader_opt_level=-${optimization_level-"O4"}
+    c_inline_level=""
+    CFLAGS="-Xa"
+    ;;
  esac
 fi
 
@@ -1762,7 +1762,7 @@ if test -n "$site_static_libraries"; then
   for arg in $site_static_libraries; do
     case "$arg" in
             -* ) ;;
-	       * ) arg=`echo "-L${arg}" | sed 's,\([^/]\)/*$,\1,'` ;;
+           * ) arg=`echo "-L${arg}" | sed 's,\([^/]\)/*$,\1,'` ;;
     esac
     ld_site_libraries="${ld_site_libraries} $arg"
     echo "		$arg"
@@ -1779,16 +1779,16 @@ if test -n "$site_includes"; then
 fi
 
 if test -n "$with_libwww" && test -f $topdir/packages/libwww; then
-	cd $topdir/packages/libwww
-	./configure --with-config="$canonical" --with-libwww="$with_libwww" > /dev/null
-	cd $build_dir
+    cd $topdir/packages/libwww
+    ./configure --with-config="$canonical" --with-libwww="$with_libwww" > /dev/null
+    cd $build_dir
 fi
 
 cd $topdir/packages/dbdrivers
 ./run_configure_scripts --with-odbc-libdir="$with_odbc_libdir" \
-			--with-odbc-incdir="$with_odbc_incdir" \
-			--with-mysql-libdir="$with_mysql_libdir" \
-			--with-mysql-incdir="$with_mysql_incdir" \
+            --with-odbc-incdir="$with_odbc_incdir" \
+            --with-mysql-libdir="$with_mysql_libdir" \
+            --with-mysql-incdir="$with_mysql_incdir" \
               > /dev/null
 cd $build_dir
 
@@ -2424,9 +2424,9 @@ done
 
 test "${have_errors}" = "yes" &&
     { echo "configure: error: One of these header files is missing on your system:
-			unistd.h
-			string.h
-			stdlib.h" 1>&2; exit 1; }
+            unistd.h
+            string.h
+            stdlib.h" 1>&2; exit 1; }
 # Checks for typedefs, structures, and compiler characteristics.
 echo $ac_n "checking for working const""... $ac_c" 1>&6
 echo "configure:2433: checking for working const" >&5
@@ -2603,8 +2603,8 @@ done
 
 test "${have_errors}" = "yes" && \
     { echo "configure: error: One of these functions is missing on your system:
-			strdup
-			mkdir" 1>&2; exit 1; }
+            strdup
+            mkdir" 1>&2; exit 1; }
 
 for ac_func in gethostbyname gettimeofday socket snprintf
 do
@@ -2836,12 +2836,12 @@ LIBS="${ld_site_libraries} ${LIBS}"
 
 if test "${enable_oracle_debug+yes}" = "yes" || \
    test "${enable_oracle_debugging+yes}" = "yes"; then
-	cat >> confdefs.h <<\EOF
+    cat >> confdefs.h <<\EOF
 #define ORACLE_DEBUG 1
 EOF
 
-	with_oracle=yes
-	do_debugging=yes
+    with_oracle=yes
+    do_debugging=yes
 fi
 
 if test "${with_oracle+set}" = "set" ; then
@@ -2919,9 +2919,9 @@ ODBCOBJ=""
 
 if test "${with_odbc+set}" = "set"; then
     if test -n "$with_os" ; then
-	echo -n ""
+    echo -n ""
 #	AC_DEFINE(XSB_ODBC)
-	cat <<EOT
+    cat <<EOT
 #
 #    Building for $with_os with support for ODBC.
 #    You must ensure that the requisite ODBC libraries
@@ -2955,7 +2955,7 @@ EOT
 #	    with_odbc=no
 #	else
 #	    AC_DEFINE(XSB_ODBC)
-	    cat <<EOT
+        cat <<EOT
 
 Building with support for ODBC
 
@@ -3261,10 +3261,10 @@ if test "${with_interprolog}" = "yes"; then
     JAVA_HEADER_PATH=""
     JAVA_PLATFORM_HEADER_PATH=""
   else
-	JAVA_HEADER_PATH=${java_path}
+    JAVA_HEADER_PATH=${java_path}
         JAVA_PLATFORM_HEADER_PATH=`ls ${JAVA_HEADER_PATH}/*/jni_md.h`
         JAVA_PLATFORM_HEADER_PATH="${JAVA_PLATFORM_HEADER_PATH%jni_md.h}"
-	echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
+    echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
   fi
 else
   JAVA_HEADER_PATH=""
@@ -3359,7 +3359,7 @@ if test "${enable_mt}" = "yes" ; then
 #define MULTI_THREAD 1
 EOF
 
-if test "${enable_no_cygwin}" = "yes" ; then
+if test "${host_os}" = "cygwin"; then
    LDFLAGS="${LDFLAGS} -lpthreadVSE1"
 else
 if test "$with_os" != wind ; then
@@ -3376,7 +3376,7 @@ if test "${enable_profiling+set}" = set; then
 fi
 
 if test "${with_profiling}" = "yes" ; then
-	enable_profiling=yes
+    enable_profiling=yes
 fi
 if test "${enable_profiling}" = "yes" ; then
   CFLAGS="-pg -ggdb -a ${CFLAGS}"
@@ -3468,9 +3468,9 @@ fi
 # SGI64 must have O1 and 32 bit SGI's can have O2
 if test "$__sunpro_c" = "no"; then
    if test "$CC" = "gcc" ; then
-	c_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+    c_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
    else
-	c_opt_level=-${optimization_level-"O4"}
+    c_opt_level=-${optimization_level-"O4"}
    fi
 else
    c_opt_level=-${optimization_level-"xO4"}
@@ -3514,44 +3514,44 @@ case "$canonical" in
 #define FOREIGN_ELF 1
 EOF
 
-		;;
+        ;;
      *hpux*) cat >> confdefs.h <<\EOF
 #define HP700 1
 EOF
 
-	     cat >> confdefs.h <<\EOF
+         cat >> confdefs.h <<\EOF
 #define _HPUX_SOURCE 1
 EOF
 
-		;;
+        ;;
      *linux*) cat >> confdefs.h <<\EOF
 #define LINUX 1
 EOF
 
-	      cat >> confdefs.h <<\EOF
+          cat >> confdefs.h <<\EOF
 #define _GNU_SOURCE 1
 EOF
 
-	      if test "`uname -r | cut -d "." -f "1 2"`" -ge "2.6"; then
-		echo "Guessing the tagging for this version of Linux"
-		cat >> confdefs.h <<\EOF
+          if test "`uname -r | cut -d "." -f "1 2"`" -ge "2.6"; then
+        echo "Guessing the tagging for this version of Linux"
+        cat >> confdefs.h <<\EOF
 #define GUESS_TAGGING 1
 EOF
 
-	      fi
-	      case "${canonical}" in
-		   *ppc* | *powerpc* | *m68k* ) cat >> confdefs.h <<\EOF
+          fi
+          case "${canonical}" in
+           *ppc* | *powerpc* | *m68k* ) cat >> confdefs.h <<\EOF
 #define MKLINUX_PPC 1
 EOF
  ;;
-		   		   *)
-		       if test "${ac_linuxaout+set}" = "set" ; then
-			 cat >> confdefs.h <<\EOF
+                      *)
+               if test "${ac_linuxaout+set}" = "set" ; then
+             cat >> confdefs.h <<\EOF
 #define LINUX_AOUT 1
 EOF
  
-		       else
-			 			 cat >> confdefs.h <<\EOF
+               else
+                          cat >> confdefs.h <<\EOF
 #define LINUX_ELF 1
 EOF
 
@@ -3560,174 +3560,174 @@ EOF
 #			   CFLAGS="-m486 ${CFLAGS}"
 #			   AC_DEFINE(USE_BP_LPCREG)
 #			 fi
-  			 if test "${have_dl}" != "no" ; then
- 			    cat >> confdefs.h <<\EOF
+             if test "${have_dl}" != "no" ; then
+                cat >> confdefs.h <<\EOF
 #define FOREIGN_ELF 1
 EOF
 
- 			    LDFLAGS="${LDFLAGS} -ldl"
-    			    if test "$__export_dynamic" = "yes" ; then
- 			       LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
- 			    fi
-  			 fi
-			 if test "${have_pthread}" != "no" ; then
-			    LDFLAGS="${LDFLAGS} -lpthread"
-			 fi
-		       fi
-		   ;;
-	      esac
-	      ;;
+                LDFLAGS="${LDFLAGS} -ldl"
+                    if test "$__export_dynamic" = "yes" ; then
+                   LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+                fi
+             fi
+             if test "${have_pthread}" != "no" ; then
+                LDFLAGS="${LDFLAGS} -lpthread"
+             fi
+               fi
+           ;;
+          esac
+          ;;
       *freebsd* )
-	cat >> confdefs.h <<\EOF
+    cat >> confdefs.h <<\EOF
 #define FREEBSD 1
 EOF
 
-	cat >> confdefs.h <<\EOF
+    cat >> confdefs.h <<\EOF
 #define FOREIGN_ELF 1
 EOF
 
-	if test "$__export_dynamic" = "yes" ; then
-		LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-	fi
-	if test "${have_dl}" = yes ; then
-		LDFLAGS="${LDFLAGS} -ldl"
-	fi
-	if test "${have_pthread}" != "no" ; then
-		LDFLAGS="${LDFLAGS} -lpthread"
-	fi
-	;;
+    if test "$__export_dynamic" = "yes" ; then
+        LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+    fi
+    if test "${have_dl}" = yes ; then
+        LDFLAGS="${LDFLAGS} -ldl"
+    fi
+    if test "${have_pthread}" != "no" ; then
+        LDFLAGS="${LDFLAGS} -lpthread"
+    fi
+    ;;
       *-rhapsody* | *-darwin* )
         cat >> confdefs.h <<\EOF
 #define DARWIN 1
 EOF
 
-	# Darwin uses its own format for shared libraries and doesn't
-	# support the dlopen() interface. We need to find a wrapper for that.
-	;;
+    # Darwin uses its own format for shared libraries and doesn't
+    # support the dlopen() interface. We need to find a wrapper for that.
+    ;;
       *sgi* ) 
-	     cat >> confdefs.h <<\EOF
+         cat >> confdefs.h <<\EOF
 #define FOREIGN_ELF 1
 EOF
 
-	     if test "${machine64bit}" = yes ; then
-		cat >> confdefs.h <<\EOF
+         if test "${machine64bit}" = yes ; then
+        cat >> confdefs.h <<\EOF
 #define SGI64 1
 EOF
 
-		c_opt_level=-${optimization_level-"O1"}
-		emuloop_opt_level=-${optimization_level-"O1"}
-		trutils_opt_level=-${optimization_level-"O1"}
-		builtins_opt_level=-${optimization_level-"O1"}
-	        loader_opt_level=-${optimization_level-"O1"}
+        c_opt_level=-${optimization_level-"O1"}
+        emuloop_opt_level=-${optimization_level-"O1"}
+        trutils_opt_level=-${optimization_level-"O1"}
+        builtins_opt_level=-${optimization_level-"O1"}
+            loader_opt_level=-${optimization_level-"O1"}
 
-		if test ! "$CC" = gcc ; then
-		    CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
-		    LDFLAGS="-64 -lm"
-		    LINKFLAGS="-64"
-		    GPPCFLAGS="-64"
-		fi
-	     else
-		cat >> confdefs.h <<\EOF
+        if test ! "$CC" = gcc ; then
+            CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
+            LDFLAGS="-64 -lm"
+            LINKFLAGS="-64"
+            GPPCFLAGS="-64"
+        fi
+         else
+        cat >> confdefs.h <<\EOF
 #define SGI 1
 EOF
 
-		c_opt_level=-${optimization_level-"O2"}
-		emuloop_opt_level=-${optimization_level-"O2"}
-		trutils_opt_level=-${optimization_level-"O2"}
-		builtins_opt_level=-${optimization_level-"O2"}
-	        loader_opt_level=-${optimization_level-"O1"}
-		if test ! "$CC" = gcc ; then
-		    CFLAGS="${CFLAGS} -OPT:Olimit=7500"
-		    GPPCFLAGS="-OPT:Olimit=7500" 
-		fi
-	     fi
-	     trutils_opt_level=${c_opt_level}
-	    ;;
+        c_opt_level=-${optimization_level-"O2"}
+        emuloop_opt_level=-${optimization_level-"O2"}
+        trutils_opt_level=-${optimization_level-"O2"}
+        builtins_opt_level=-${optimization_level-"O2"}
+            loader_opt_level=-${optimization_level-"O1"}
+        if test ! "$CC" = gcc ; then
+            CFLAGS="${CFLAGS} -OPT:Olimit=7500"
+            GPPCFLAGS="-OPT:Olimit=7500" 
+        fi
+         fi
+         trutils_opt_level=${c_opt_level}
+        ;;
       *-solaris* | *-sunos5* ) cat >> confdefs.h <<\EOF
 #define SOLARIS 1
 EOF
 
-		 LDFLAGS="${LDFLAGS} -lnsl -ldl"
-		 if test "${have_dl}" = "no" ; then
-		    { echo "configure: error: Your system is missing library: \`dl'" 1>&2; exit 1; }
-		 fi
-		 if test "${have_nsl}" = "no" ; then
-		    { echo "configure: error: Your system is missing library: \`nsl'" 1>&2; exit 1; }
-		 fi
-		 if test "${have_pthread}" != "no" ; then
-		    LDFLAGS="${LDFLAGS} -lpthread"
-		 fi
-		 cat >> confdefs.h <<\EOF
+         LDFLAGS="${LDFLAGS} -lnsl -ldl"
+         if test "${have_dl}" = "no" ; then
+            { echo "configure: error: Your system is missing library: \`dl'" 1>&2; exit 1; }
+         fi
+         if test "${have_nsl}" = "no" ; then
+            { echo "configure: error: Your system is missing library: \`nsl'" 1>&2; exit 1; }
+         fi
+         if test "${have_pthread}" != "no" ; then
+            LDFLAGS="${LDFLAGS} -lpthread"
+         fi
+         cat >> confdefs.h <<\EOF
 #define BIG_MEM 1
 EOF
 
-		 cat >> confdefs.h <<\EOF
+         cat >> confdefs.h <<\EOF
 #define FOREIGN_ELF 1
 EOF
 
-		 case "${canonical}" in
-		      *i*86-*-*)
-			    cat >> confdefs.h <<\EOF
+         case "${canonical}" in
+              *i*86-*-*)
+                cat >> confdefs.h <<\EOF
 #define SOLARIS_x86 1
 EOF
 
-			   ;;
-			 *)
-			    if test "$CC" = "gcc" ; then
-			       CFLAGS="-msupersparc ${CFLAGS}"
-			    fi
-			   ;;
-		 esac
-		 LDFLAGS="-lsocket ${LDFLAGS}"
-		 if test "$__export_dynamic" = "yes" ; then
-		     LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-		 fi
-		 if test "${have_socket}" = "no" ; then
-		     { echo "configure: error: Your system is missing library: \`socket'" 1>&2; exit 1; }
-		 fi
-		;;
+               ;;
+             *)
+                if test "$CC" = "gcc" ; then
+                   CFLAGS="-msupersparc ${CFLAGS}"
+                fi
+               ;;
+         esac
+         LDFLAGS="-lsocket ${LDFLAGS}"
+         if test "$__export_dynamic" = "yes" ; then
+             LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+         fi
+         if test "${have_socket}" = "no" ; then
+             { echo "configure: error: Your system is missing library: \`socket'" 1>&2; exit 1; }
+         fi
+        ;;
       *-aix*)  cat >> confdefs.h <<\EOF
 #define IBM 1
 EOF
 
-	       ;;
+           ;;
       *-sunos4*)    cat >> confdefs.h <<\EOF
 #define SUN 1
 EOF
 
-		 cat >> confdefs.h <<\EOF
+         cat >> confdefs.h <<\EOF
 #define FOREIGN_AOUT 1
 EOF
 
-		 CFLAGS="${CFLAGS} -DBIG_MEM"
-		 LDFLAGS="${LDFLAGS} -N"
-		;;
+         CFLAGS="${CFLAGS} -DBIG_MEM"
+         LDFLAGS="${LDFLAGS} -N"
+        ;;
       *-cygwin*) cat >> confdefs.h <<\EOF
 #define CYGWIN 1
 EOF
 
-	      
+          
                  real_host_os=cygwin
-		 builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-		 loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
-		 if test "${enable_no_cygwin}" = "yes"; then
-		    echo 'Configuring for host system type... no-cygwin'
-		    host_os=windows
-		    os_type=windows
-		    os_version=
-		    host_vendor=pc
-		    host_cpu=x86
-		    configuration_templ=xsb_configuration.in
-		    config_dot_h_templ=def_config_mnoc.in
-		    GPPWNTFLAG="-D WIN_NT"
-		    
-		    if test "${xsb_scheduling_strategy}" = "local" ; then
-		       emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-		    fi
+         builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+         loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
+         if test "${enable_no_cygwin}" = "yes"; then
+            echo 'Configuring for host system type... no-cygwin'
+            host_os=windows
+            os_type=windows
+            os_version=
+            host_vendor=pc
+            host_cpu=x86
+            configuration_templ=xsb_configuration.in
+            config_dot_h_templ=def_config_mnoc.in
+            GPPWNTFLAG="-D WIN_NT"
+            
+            if test "${xsb_scheduling_strategy}" = "local" ; then
+               emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+            fi
 
-   		    LDFLAGS="$LDFLAGS -lwsock32 -luser32"
-		 fi
-		;;
+            LDFLAGS="$LDFLAGS -lwsock32 -luser32"
+         fi
+        ;;
 esac
 
 # check for MIPS
@@ -3796,9 +3796,9 @@ if test "${do_debugging}" = "yes" ; then
    if test "${enable_dwarf_debug}" = "yes" ; then
         CFLAGS="${CFLAGS} -gdwarf-2 -g3"
    else
-	CFLAGS="${CFLAGS} -g"
-	LDFLAGS=" -g ${LDFLAGS}"
-	LINKFLAGS=" -g ${LINKFLAGS}"
+    CFLAGS="${CFLAGS} -g"
+    LDFLAGS=" -g ${LDFLAGS}"
+    LINKFLAGS=" -g ${LINKFLAGS}"
    fi
 fi
 
@@ -3811,18 +3811,18 @@ fi
 
 if test "${CC}" = "sslittle-na-sstrix-gcc" 
 then
-	cat >> confdefs.h <<\EOF
+    cat >> confdefs.h <<\EOF
 #define SIMPLESCALAR 1
 EOF
 	
-	CROSS_SIMULATOR="sim-fast"
-	c_opt_level=-${optimization_level-"O1"}
-	LD=sslittle-na-sstrix-ld
+    CROSS_SIMULATOR="sim-fast"
+    c_opt_level=-${optimization_level-"O1"}
+    LD=sslittle-na-sstrix-ld
 fi
 
 if test "${CC}" = "arm-linux-gcc"
 then
-	LD=arm-linux-ld
+    LD=arm-linux-ld
 fi
 
 #dnl Prepend Oracle tricky library list
@@ -3838,11 +3838,11 @@ fi
 # dnl ODBC library 
 if test "${with_odbc}" = yes ; then
    case "$canonical" in
-	*-cygwin*) LDFLAGS="-lodbc32${LDFLAGS}"
-		   LINKFLAGS="-lodbc32 ${LINKFLAGS}"
-		   ;;
-	*) LDFLAGS="-lodbc${LDFLAGS}"
-	   LINKFLAGS="-lodbc ${LINKFLAGS}"
+    *-cygwin*) LDFLAGS="-lodbc32${LDFLAGS}"
+           LINKFLAGS="-lodbc32 ${LINKFLAGS}"
+           ;;
+    *) LDFLAGS="-lodbc${LDFLAGS}"
+       LINKFLAGS="-lodbc ${LINKFLAGS}"
    esac
 fi
 
@@ -4017,7 +4017,7 @@ fi
       smoLDFLAGS="-L${arch_config_prefix}/bin -L${with_smodels}"
       smoLIB="-lsmodels -lxsb"
       if test "${enable_no_cygwin}" = "yes"; then
-	 CXX="${CXX} -mno-cygwin"
+     CXX="${CXX} -mno-cygwin"
       fi
    else
       XASPLIBNAME=xasppkg.so
@@ -4267,21 +4267,21 @@ ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
 trap 'rm -fr `echo " ${arch_config_prefix}/topMakefile:topMakefile.in
-	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
-	    ${arch_config_prefix}/modMakefile:modMakefile.in
-	    ${arch_config_prefix}/gppMakefile:gppMakefile.in
-	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
-	    ${arch_config_prefix}/makedef.sh:makedef.sh.in
-	    ${arch_config_file}:${configuration_templ}
-	    makexsb:makexsb.in
-	    ${emudir}/extensions_xsb.h:extensions_xsb.in
-	    ${scriptdir}/xsb${config_tag}:xsb.in
-	    ${scriptdir}/chr_pp${config_tag}:chr_pp.in
-	    ${scriptdir}/wxsb.bat:wxsb.in
-	    ${arch_config_prefix}/banner.msg:banner.in
-	    ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
-	    ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
-	     ${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
+        ${arch_config_prefix}/emuMakefile:emuMakefile.in
+        ${arch_config_prefix}/modMakefile:modMakefile.in
+        ${arch_config_prefix}/gppMakefile:gppMakefile.in
+        ${arch_config_prefix}/smoMakefile:smoMakefile.in
+        ${arch_config_prefix}/makedef.sh:makedef.sh.in
+        ${arch_config_file}:${configuration_templ}
+        makexsb:makexsb.in
+        ${emudir}/extensions_xsb.h:extensions_xsb.in
+        ${scriptdir}/xsb${config_tag}:xsb.in
+        ${scriptdir}/chr_pp${config_tag}:chr_pp.in
+        ${scriptdir}/wxsb.bat:wxsb.in
+        ${arch_config_prefix}/banner.msg:banner.in
+        ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
+        ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
+         ${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
 ${arch_config_prefix}/xsb_debug.h:def_debug.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
@@ -4445,21 +4445,21 @@ EOF
 cat >> $CONFIG_STATUS <<EOF
 
 CONFIG_FILES=\${CONFIG_FILES-"${arch_config_prefix}/topMakefile:topMakefile.in
-	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
-	    ${arch_config_prefix}/modMakefile:modMakefile.in
-	    ${arch_config_prefix}/gppMakefile:gppMakefile.in
-	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
-	    ${arch_config_prefix}/makedef.sh:makedef.sh.in
-	    ${arch_config_file}:${configuration_templ}
-	    makexsb:makexsb.in
-	    ${emudir}/extensions_xsb.h:extensions_xsb.in
-	    ${scriptdir}/xsb${config_tag}:xsb.in
-	    ${scriptdir}/chr_pp${config_tag}:chr_pp.in
-	    ${scriptdir}/wxsb.bat:wxsb.in
-	    ${arch_config_prefix}/banner.msg:banner.in
-	    ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
-	    ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
-	    "}
+        ${arch_config_prefix}/emuMakefile:emuMakefile.in
+        ${arch_config_prefix}/modMakefile:modMakefile.in
+        ${arch_config_prefix}/gppMakefile:gppMakefile.in
+        ${arch_config_prefix}/smoMakefile:smoMakefile.in
+        ${arch_config_prefix}/makedef.sh:makedef.sh.in
+        ${arch_config_file}:${configuration_templ}
+        makexsb:makexsb.in
+        ${emudir}/extensions_xsb.h:extensions_xsb.in
+        ${scriptdir}/xsb${config_tag}:xsb.in
+        ${scriptdir}/chr_pp${config_tag}:chr_pp.in
+        ${scriptdir}/wxsb.bat:wxsb.in
+        ${arch_config_prefix}/banner.msg:banner.in
+        ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
+        ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
+        "}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
@@ -4655,8 +4655,8 @@ install_date=`date`
 (
 echo "
 
-			INSTALLATION SUMMARY
-			--------------------
+            INSTALLATION SUMMARY
+            --------------------
 
 XSB Version:	   ${xsb_version}
 Code name:	   ${xsb_codename}
@@ -4688,28 +4688,28 @@ Installation date: ${install_date}
 
 case "$with_oracle" in
    "yes") echo "  Building with support for ORACLE:		  yes"
-	;;
+    ;;
    "no") echo "  Building with support for ORACLE:	       NO"
-	;;
+    ;;
 esac
 case "$with_odbc" in
    "yes") echo "  Building with support for ODBC:		  yes"
-	;;
+    ;;
    "no") echo "  Building with support for ODBC:	       NO"
-	;;
+    ;;
 esac
 case "$with_interprolog" in
    "yes") echo "  Building with support for InterProlog:		  yes"
-	;;
+    ;;
    "no") echo "  Building with support for InterProlog:	       NO"
-	;;
+    ;;
 esac
 
 if test -n "$site_dynamic_libraries" ; then
    echo "  Configured with dynamic libraries:"
    for arg in $site_dynamic_libraries ; do
-		arg=`echo "${arg}" | sed 's,\([^/]\)/*$,\1,'` 
-	echo "			      $arg"
+        arg=`echo "${arg}" | sed 's,\([^/]\)/*$,\1,'` 
+    echo "			      $arg"
    done
 fi
 
@@ -4727,7 +4727,7 @@ EOT
 fi
 
 if test -f $topdir/packages/libwww/Installation_summary; then
-	cat $topdir/packages/libwww/Installation_summary
+    cat $topdir/packages/libwww/Installation_summary
 fi
 
 cat $topdir/packages/dbdrivers/Installation_summary
@@ -4770,8 +4770,8 @@ if test -n "$site_dynamic_libraries"; then
     test -f ${site_prefix}/siteinitrc.P || ./touch.sh ${site_prefix}/siteinitrc.P
 
     sed '/%%[ \t]*-[-]*[ \t]*DO NOT EDIT THIS LINE/,$ d' \
-	${site_prefix}/siteinitrc.P | \
-		cat - ${tempfile} > ${tempfile}1
+    ${site_prefix}/siteinitrc.P | \
+        cat - ${tempfile} > ${tempfile}1
   
   mv -f ${tempfile}1 ${site_prefix}/siteinitrc.P
   rm -f ${tempfile}
@@ -4792,10 +4792,10 @@ chmod 555 ${scriptdir}/xsb${config_tag}  ${scriptdir}/chr_pp${config_tag}  makex
 # These files should really be read-only, but this causes problems when
 # configuring for Windows over Samba, NFS, etc.
 chmod 644 ${arch_config_file} \
-	  ${arch_config_prefix}/xsb_config.h \
-	  ${arch_config_prefix}/xsb_debug.h \
-	  ${arch_config_prefix}/*Makefile \
-	  ${arch_config_prefix}/MSVC*
+      ${arch_config_prefix}/xsb_config.h \
+      ${arch_config_prefix}/xsb_debug.h \
+      ${arch_config_prefix}/*Makefile \
+      ${arch_config_prefix}/MSVC*
 
 
 # phantom private_builtin.c file
@@ -4810,9 +4810,9 @@ echo "Site libraries are to be found in ${site_prefix}"
 echo "Configuration report is saved in ./Installation_summary"
 
 if test "$have_warnings" = "yes"; then
-	echo ""
-	echo "PLEASE SCAN THE ABOVE MESSAGES FOR CONFIGURATION WARNINGS"
-	echo ""
+    echo ""
+    echo "PLEASE SCAN THE ABOVE MESSAGES FOR CONFIGURATION WARNINGS"
+    echo ""
 fi
 
 if test "$with_os" = wind ; then
