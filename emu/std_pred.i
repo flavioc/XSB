@@ -25,7 +25,7 @@
 
 
 
-static bool functor_builtin(void)
+inline static bool functor_builtin(void)
 {
   /* r1: ?term; r2: ?functor; r3: ?arity (int)	*/
   int  new_indicator, arity, value, disp;

@@ -197,9 +197,11 @@ int *asynint_ptr = &asynint_val;
           !(flags[DEBUG_ON] && !flags[HIDE_STATE] && \
                (get_spy(psc) || flags[TRACE]) \
          ) ) \
-      { dyn_pred(); \
-        lpcreg = cpreg;  /* "proceed" */ \
-      } \
+      /* A foreign function must return an int! \
+	 If dyn_pred returns 0, then fail    	 */ \
+      if (dyn_pred()) \
+        lpcreg = cpreg;		/* "proceed" */ \
+      else lpcreg = (pb)&fail_inst; \
       break; \
     case T_UDEF: \
     case T_UFUN: \

@@ -831,8 +831,12 @@ int builtin_call(byte number)
     case T_FORN:
 #ifdef FOREIGN
       proc_ptr = (PFI) get_ep(psc);
-      proc_ptr();
-      pcreg = cpreg;  /* always "proceed" -- unless somebody aborts/exits */
+      /* A foreign function must return an int!
+	 If it returns non-0 then proceed; 0 - fail */
+      if (proc_ptr())
+	pcreg = cpreg;      	 /* proceed */
+      else
+	pcreg = (pb)&fail_inst;	 /* fail    */
 #else
       xsb_exit("Foreign call in configuration that does not support it !");
 #endif
