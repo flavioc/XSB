@@ -164,6 +164,8 @@
    OF BUILTINS WITH IT.  */
 #define PRIVATE_BUILTIN	        180
 
+#define SEGFAULT_HANDLER	182
+
 #define VAR			190
 #define NONVAR			191
 #define ATOM			192

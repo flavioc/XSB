@@ -522,6 +522,11 @@ void xsb_segfault_catcher(int err)
 	  (int) exception_handler(tmp_message));
 }
 
+void xsb_segfault_quitter(int err)
+{
+  xsb_exit("Memory violation occurred during evaluation");
+}
+
 #ifdef WIN_NT
 /* Our separate thread */
 void checkJavaInterrupt(void *info)

@@ -42,7 +42,7 @@ Option = [sysmod,optimize,spec_repr,quit_on_error]
 #-------------------------------------------------------------------#
 #
 XSB=../bin/xsb
-Prolog = $(XSB)
+Prolog = $(XSB) -e "segfault_handler(warn)."
 #
 #-------------------------------------------------------------------#
 

@@ -119,6 +119,7 @@
 	oracle_query/7,
 	odbc_exec_query/5,
 	private_builtin/11,
+	segfault_handler/1,
 	is_charlist/2,
 	is_charlist/1,
 	trimcore/0,

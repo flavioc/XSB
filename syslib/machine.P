@@ -178,6 +178,8 @@ trimcore :- '_$builtin'(TRIMCORE).
 private_builtin(_OpCode,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10) :-
 	'_$builtin'(PRIVATE_BUILTIN).
 
+segfault_handler(_Type) :- '_$builtin'(SEGFAULT_HANDLER).
+
 is_charlist(_List, _Size) :- '_$builtin'(IS_CHARLIST).
 
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(ORACLE_QUERY).
