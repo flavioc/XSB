@@ -262,6 +262,7 @@ standard_symbol(unix, 2, unix).	       	   % obsolete
 standard_symbol(shell, 1, shell).
 standard_symbol(shell, 2, shell).
 standard_symbol(shell, 5, shell).
+standard_symbol(exec, 1, shell).
 standard_symbol(spawn_process, 5, shell).
 standard_symbol(sys_exit, 1, shell).
 standard_symbol(var, 1, standard).

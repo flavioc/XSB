@@ -178,6 +178,48 @@ xsbBool sys_system(int callno)
   case STAT_FILE_TIME:
   case STAT_FILE_SIZE:
     return file_stat(callno, ptoc_string(2));
+  case EXEC: {
+#ifdef HAVE_EXECVP
+    /* execs a new process in place of XSB */
+    char *params[MAX_SUBPROC_PARAMS+2];
+    prolog_term cmdspec_term;
+    int index = 0;
+    
+    cmdspec_term = reg_term(2);
+    if (is_list(cmdspec_term)) {
+      prolog_term temp, head;
+      char *string_head;
+
+      if (is_nil(cmdspec_term))
+	xsb_abort("[exec] Arg 1 must not be an empty list.");
+      
+      temp = cmdspec_term;
+      do {
+	head = p2p_car(temp);
+	temp = p2p_cdr(temp);
+	if (is_string(head)) 
+	  string_head = string_val(head);
+	else
+	  xsb_abort("[exec] non-string argument passed in list.");
+	
+	params[index++] = string_head;
+	if (index > MAX_SUBPROC_PARAMS)
+	  xsb_abort("[exec] Too many arguments.");
+      } while (!is_nil(temp));
+      params[index] = NULL;
+    } else if (is_string(cmdspec_term)) {
+      char *string = string_val(cmdspec_term);
+      split_string(string, params, "exec");
+    } else
+      xsb_abort("[exec] 1st argument should be term or list of strings.");
+
+    if (execvp(params[0], params)) 
+      xsb_abort("[exec] Exec call failed.");
+#else
+    xsb_abort("[exec] builtin not supported in this architecture.");
+#endif
+  }
+
   case SHELL: /* smart system call: like SPAWN_PROCESS, but returns error code
 		 instead of PID. Uses system() rather than execvp.
 		 Advantage: can pass arbitrary shell command. */

@@ -29,7 +29,8 @@
 	shell/5, shell/2, shell/1, sleep/1,
 	is_plain_file/1, is_directory/1,
 	spawn_process/5, get_process_table/1, process_status/2, 
-	process_control/2.
+	process_control/2,
+	exec/1.
 :- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3,
 	sys_mkdir/2, sys_rmdir/2,
 	sys_unlink/2, sys_exit/1, sys_rename/3.

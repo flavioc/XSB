@@ -26,7 +26,7 @@ AR = ar
 #-----------------------------------------------------------------------#
 
 # Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.xmc.tmp'
+SVFILE = './.xmc.tmp'
 OWRITE = 1
 STDWARN = 3
 STDERR = 2
@@ -47,6 +47,7 @@ all:  init $(ALL) finish parse libxlp.a xlparse.so
 	@rm cmd...
 	@cat $(SVFILE)
 	@rm -f $(SVFILE)
+	@chmod 755 xmc-gui
 
 init:
 	@cp /dev/null cmd...

@@ -2,3 +2,5 @@
 cmd...
 a.out
 *.o
+parse
+xmc-gui

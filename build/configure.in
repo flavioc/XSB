@@ -660,7 +660,6 @@ test "${have_errors}" = "yes" &&
 			unistd.h
 			string.h
 			stdlib.h])
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 
@@ -681,6 +680,8 @@ AC_CHECK_FUNCS(gethostbyname gettimeofday socket snprintf)
 AC_CHECK_FUNCS(regexec regerror regcomp, regmatch_support="yes", regmatch_support="no")
 AC_CHECK_FUNCS(fnmatch glob globfree, wildmatch_support="yes", wildmatch_support="no")
 
+dnl execvp
+AC_CHECK_FUNCS(execvp)
 
 dnl Checking for libraries that are NOT in standard places,
 dnl so they require --site-libraries
@@ -930,6 +931,18 @@ if test "${enable_profiling}" = "yes" ; then
   CFLAGS="-pg -ggdb -a ${CFLAGS}"
   LDFLAGS="-pg ${LDFLAGS}"
 fi
+
+dnl Check for Incr Tcl (used in the XMC gui)
+AC_ARG_WITH(itkwish, 
+[  --with-itkwish=DIR          Path to where the itkwish shell is located]
+)
+
+AC_PATH_PROG(itkwish_path, itkwish, no, $PATH:$with_itkwish)
+if test "${itkwish_path}" = "no"; then
+   echo "XMC GUI not supported due to failure to find Incr Tcl/Tk"
+fi
+
+AC_SUBST(itkwish_path)
 
 dnl experimental: use bp register for lpcreg
 dnl lfcastro
@@ -1245,6 +1258,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/banner.msg:banner.in
 	    ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
 	    ${prefix}/packages/xmc.P:xmc.in
+	    ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
 	    ])
 
 chmod 644 ${arch_config_file}

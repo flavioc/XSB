@@ -40,3 +40,10 @@ cleanup :-
 mck(P, F) :-
 	startstate(P, S),
 	models(S, form(F)).
+
+xmc_gui :- check_gui('/usr/bin/itkwish').
+check_gui(no) :-
+	write('Incr Tcl/Tk has not been found during configuration.'),
+	!, fail.
+check_gui(_) :-
+	exec('/home/luis/Programs/XSB/packages/xmc/xmc-gui').

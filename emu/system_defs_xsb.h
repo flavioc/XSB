@@ -35,3 +35,4 @@
 
 #define STAT_FILE_TIME           9
 #define STAT_FILE_SIZE           10
+#define EXEC                     11

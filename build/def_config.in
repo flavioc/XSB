@@ -250,6 +250,9 @@
 /* Define if you have the thread library (-lthread).  */
 #undef HAVE_LIBTHREAD
 
+/* Define if you have execvp */
+#undef HAVE_EXECVP
+
 /* On x86/linux/gcc, we use bp as the register that contains 
 the local program counter */
 #undef USE_BP_LPCREG
