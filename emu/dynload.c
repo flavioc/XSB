@@ -30,9 +30,6 @@ extern char executable[];        /* from self_orientation.c */
 
 #ifdef FOREIGN
 
-#ifdef FOREIGN_COFF
-#include "dyncoff.i"
-#else
 #ifdef FOREIGN_ELF
 #include "dynelf.i"
 #else
@@ -44,7 +41,6 @@ extern char executable[];        /* from self_orientation.c */
 #endif /* FOREIGN_WIN32 */
 #endif /* FOREIGN_AOUT */
 #endif /* FOREIGN_ELF */
-#endif /* FOREIGN_COFF */
 
 /*----------------------------------------------------------------------*/
 
