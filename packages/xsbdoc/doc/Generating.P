@@ -28,6 +28,13 @@ instance, in @tt{'xsbdoc_format.P'}, the main file is indicated by the fact:
 xsbdoc_main('../xsbdoc1.P').
 @end{verbatim}
 
+while the first few chapters are indicated by the facts
+
+@begin{verbatim}
+xsbdoc_component('Generating.P').
+xsbdoc_component('../comments.P').
+@end{verbatim}
+
 
 
 @begin{itemize}

@@ -1,7 +1,8 @@
 
-
+% xsbdoc_main/1 indicates the main file used for the manual.
 xsbdoc_main('../xsbdoc1.P').
 
+% xsbdoc_component/1 indicates the files used for each chapter.
 xsbdoc_component('Generating.P').
 xsbdoc_component('../comments.P').
 xsbdoc_component('assertions_doc.pl').

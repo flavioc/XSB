@@ -11,6 +11,8 @@
 *.log
 *.pd 
 *.pds
+*.pg
+*.pgs
 *.pl
 *.ps
 *.refs
