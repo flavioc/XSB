@@ -2153,12 +2153,15 @@ and {\tt dynamic/1} respectively.  If the index specification is other
 than {\tt tries}, the predicate will issue a warning message and have
 no effect on the database.
 
-\section{Trie Manipulation Utilities}
+\section{Low-level Trie Manipulation Utilities}
 
 The following utilities are used to implement assert and retract, but they
 can also be used to implement special purpose operations, like
 backtrackable assert and retract. All the utilities in this section are
 very low-level and require good understanding of the trie mechanism in XSB.
+
+The module {\tt storage} described in Volume 1 provides a higher-level and
+a more convenient interface to the XSB trie-based storage mechanism.
 
 %%
 \begin{description}
