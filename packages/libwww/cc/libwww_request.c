@@ -27,49 +27,12 @@
 #include "libwww_request.h"
 #include "deref.h"
 
-static HTList *XML_converter=NULL;
-
-void xml_conversions()
-{
-  if (!XML_converter) {
-    XML_converter = HTList_new();
-    HTConversion_add(XML_converter,"*/*", "www/debug",
-		     HTBlackHoleConverter, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"message/rfc822", "*/*", HTMIMEConvert,
-		     1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"message/x-rfc822-foot", "*/*",
-		     HTMIMEFooter, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"message/x-rfc822-head", "*/*",
-		     HTMIMEHeader, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"message/x-rfc822-cont", "*/*",
-		     HTMIMEContinue, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"message/x-rfc822-upgrade","*/*",
-		     HTMIMEUpgrade, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"message/x-rfc822-partial", "*/*",
-		     HTMIMEPartial, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"multipart/*", "*/*", HTBoundary,
-		     1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"text/x-http", "*/*", HTTPStatus_new,
-		     1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"text/plain", "text/xml",
-		     HTXML_new, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter, "text/xml", "*/*", 
-		     HTXML_new, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter, "application/xml", "*/*",
-		     HTXML_new, 1.0, 0.0, 0.0);
-    HTConversion_add(XML_converter,"*/*", "www/present", HTSaveConverter,
-		     0.3, 0.0, 0.0);
-  }
-  //HTAnchor_setFormat((HTParentAnchor *)anchor, HTAtom_for("text/xml"));
-  //HTRequest_setConversion(request, XML_converter, YES);
-  HTFormat_setConversion(XML_converter);
-}
 
 /* Calling sequence:
        libwww_request([req1,req2,...])
 
    Each req: functor(URL, REQUEST_Params, PARSED-Result, ERROR-Code)
-   functor: htmlparse, xmlparse, fetch, header.
+   functor: htmlparse, xmlparse, rdfparse, fetch, header.
        	    The first two are requests to parse HTML/XML. Fetch means retrieve
        	    a page without parsing; header means retrieve header only.
 	    All except "header" could be form fillouts, which return a page or
@@ -98,7 +61,6 @@ void do_libwww_request___()
   /* note that some sites block user agents that aren't Netscape or IE.
      So we fool them!!! */
   HTProfile_newHTMLNoCacheClient("Mozilla", "6.0");
-  //xml_conversions();
 
   /* We must enable alerts in order for authentication modules to call our own
      callback defined by HTAlert_add below. However, we delete all alerts other
@@ -118,19 +80,9 @@ void do_libwww_request___()
 
   HTPrint_setCallback(printer);
   HTTrace_setCallback(tracer);
-  HTSetTraceMessageMask("sob");
 #if 0
+  HTSetTraceMessageMask("sob");
 #endif
-
-  /* This catch-all filter is needed in order to catch termination of
-     subrequests, like the ones issues to parse external entities or to handle
-     the if-modified-since user directive. */
-  HTNet_deleteAfter(request_termination_handler);
-  HTNet_addAfter(request_termination_handler,
-		 NULL,
-		 NULL,
-		 HT_ALL,
-		 HT_FILTER_LAST);
 
   /* use abort here, because this is a programmatic mistake */
   if (!is_list(request_term_list))
@@ -156,7 +108,7 @@ void do_libwww_request___()
     HTTimer* timer = HTTimer_new(NULL, timer_cbf, NULL, 2*timeout_value, 1, 1);
 
 #ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("In libwww_request: starting event loop. Total requests=%d, timeout=%d",
+    xsb_dbgmsg("In libwww_request: Starting event loop. Total requests=%d, timeout=%d",
 	       total_number_of_requests, timeout_value);
 #endif
 
@@ -164,9 +116,16 @@ void do_libwww_request___()
 
     event_loop_runnung = TRUE;
     HTEventList_newLoop();
+    /* it is important to set this to false, because otherwise,
+       HTEventList_stopLoop might set HTEndLoop and then HTEventList_newLoop()
+       will always exit immediately. This is a libwww bug, it seems. */
+    event_loop_runnung = FALSE;
 
     /* expiring remaining timers is VERY important in order to avoid them
        kicking in at the wrong moment and killing subsequent requests */
+#ifdef LIBWWW_DEBUG
+    xsb_dbgmsg("Expiring timers");
+#endif
     HTTimer_expireAll();
     HTTimer_delete(timer);
 
@@ -191,7 +150,6 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   HTAnchor    *anchor = NULL;
   HTRequest   *request=NULL;
   HTAssocList *formdata=NULL;
-  BOOL local = YES;
   char 	      *uri = NULL;
   char 	      *cwd = HTGetCurrentDirectoryURL();
   REQUEST_CONTEXT *context;
@@ -199,8 +157,8 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   /* Create a new request and attach the context structure to it */
   request=HTRequest_new();
   context=set_request_context(request,req_term,request_id);
+  setup_termination_filter(request, request_termination_handler);
   setup_callbacks(context->type);
-  HTRequest_MIMEParseSet(request, &local);
   /* get URL */
   uri = extract_uri(req_term,request, request_id);
   /* get other params */
@@ -227,35 +185,23 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   /* check if the page has expired by first bringing the header */
   if ((context->type != HEADER) && (context->user_modtime > 0)) {
     HTRequest *header_req = HTRequest_new();
-    context->is_subrequest = TRUE;
+    context->is_subrequest = TRUE; /* should change to something better */
+    context->subrequest_id++;
+    setup_termination_filter(header_req,handle_dependent_termination);
     HTRequest_setPreemptive(header_req, YES);
     /* closing connection hangs libwww on concurrent requests
-    HTRequest_addConnection(header_req, "close", "");
+       HTRequest_addConnection(header_req, "close", "");
     */
     /* attach parent's context to this request */
     HTRequest_setContext(header_req, (void *)context);
     HTHeadAnchor(anchor,header_req);
     context->last_modtime = HTAnchor_lastModified((HTParentAnchor *)anchor);
-    /* If the subrequest failed to terminate---kill it.  Here it is just a
-       precaution, but generally this happens when a premptive (blocking)
-       request spawns a subrequest, which is also blocking. In this case, the
-       parent request will finish before the child request, leading to all
-       kinds of problems. */
-    if (context->is_subrequest) {
-      HTRequest_kill(header_req);
-      context->is_subrequest = FALSE;
-    }
-
-#ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("Subrequest=%d ended, parent request=%d",
-	       REQUEST_ID(header_req), REQUEST_ID(request));
-#endif
 
     if (context->user_modtime > context->last_modtime) {
       /* cleanup the request and don't start it */
 #ifdef LIBWWW_DEBUG
-      xsb_dbgmsg("Request %d: Page older(%d) than if-modified-since time(%d)",
-		 REQUEST_ID(request),
+      xsb_dbgmsg("Request %s: Page older(%d) than if-modified-since time(%d)",
+		 RequestID(request),
 		 context->last_modtime, context->user_modtime);
 #endif
 
@@ -264,8 +210,8 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
       if (is_var(context->status_term))
 	c2p_int(WWW_EXPIRED_DOC, context->status_term);
       else
-	libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 5 (Status) must be unbound variable",
-			 REQUEST_ID(request));
+	libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 5 (Status) must be unbound variable",
+			 RequestID(request));
       /* set the result params (header info); */
       extract_request_headers(header_req);
       /* terminate the result parameters list */
@@ -293,11 +239,29 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
       target = HTStreamToChunk(request, &(context->result_chunk), 0);
       HTRequest_setOutputStream(request, target);
       /* then do the same as in the case of parsing */
+      goto LBLREQUEST;
     }
   case XMLPARSE:
-    HTResponse_setFormat(HTRequest_response(request),HTAtom_for("text/xml"));
-    HTAnchor_setFormat((HTParentAnchor *)anchor, HTAtom_for("text/xml"));
+    /* This sets stream conversion for the XML request.
+       Needed to make sure libwww doesn't treat it as an HTML stream.
+       If libwww incorrectly recognizes an XML request, it will start calling
+       HTML parser's callbacks instead of XML callbacks. */
+    set_xml_conversions();
+    HTRequest_setConversion(request, XML_converter, YES);
+    /* www/xml forces libwww to recognize this as an XML request even if the
+       document was received from a server that dosn't recognize XML.
+       We can't use text/xml here, because then libwww gives error when a
+       document with text/xml is received. Dunno why */
+    HTRequest_setOutputFormat(request, HTAtom_for("www/xml"));
+    goto LBLREQUEST;
+  case RDFPARSE:
+    /* these don't do anything: callbacks havent been implemented yet */
+    set_rdf_conversions();
+    HTRequest_setConversion(request, RDF_converter, YES);
+    HTRequest_setOutputFormat(request, HTAtom_for("www/rdf"));
+    goto LBLREQUEST;
   case HTMLPARSE:
+  LBLREQUEST:
     if (formdata) {
       if (context->method == METHOD_GET)
 	status = (YES == HTGetFormAnchor(formdata,anchor,request));
@@ -320,6 +284,9 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     break;
   case XMLPARSE:
     xsb_dbgmsg("Request %d: request type: xmlparse", request_id);
+    break;
+  case RDFPARSE:
+    xsb_dbgmsg("Request %d: request type: rdfparse", request_id);
     break;
   case HEADER:
     xsb_dbgmsg("Request %d: request type: header", request_id);
@@ -352,8 +319,8 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     if (is_var(context->status_term))
       c2p_int(WWW_URI_SYNTAX, context->status_term);
     else
-      libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 5 (Status) must be unbound variable",
-		       REQUEST_ID(request));
+      libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 5 (Status) must be unbound variable",
+		       RequestID(request));
 
     c2p_nil(context->result_params);
     release_libwww_request(request);
@@ -367,23 +334,30 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
    A subrequest is independent of its parent request, except that it inherits
    the parent's id and context. When a subrequest returns, it should NOT
    release the context. */
-PRIVATE void handle_subrequest_termination(HTRequest *request, int status)
+PRIVATE int handle_dependent_termination(HTRequest   *request,
+					  HTResponse  *response,
+					  void	      *param,
+					  int 	      status)
 {
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In handle_subrequest_termination: Request %d: user_modtime=%d status=%d",
-	     REQUEST_ID(request), context->user_modtime, status);
+  xsb_dbgmsg("In handle_dependent_termination(%s): user_modtime=%d status=%d",
+	     RequestID(request), context->user_modtime, status);
 #endif
 
+  /* the following conditions are handled by standard libwww filters */
+  if (context->retry && AUTH_OR_REDIRECTION(status))
+    return HT_OK; /* this causes other filters to be used */
+
   if (status != HT_LOADED)
-    add_subrequest_error(request, status);
+    report_synch_subrequest_status(request, status);
 
   /* Note: this still preserves the anchor and the context; we use them after
      this call to extract last modified time from the header */
   HTRequest_clear(request);
   /* restore parent process' context */
   context->is_subrequest = FALSE;
-  return;
+  return !HT_OK;
 }
 
 
@@ -401,7 +375,7 @@ PRIVATE void libwww_abort_all(char *msg, ...)
 }
 
 
-void add_subrequest_error(HTRequest *request, int status)
+void report_synch_subrequest_status(HTRequest *request, int status)
 {
   prolog_term uri_term=p2p_new(), error_term=p2p_new();
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
@@ -410,6 +384,17 @@ void add_subrequest_error(HTRequest *request, int status)
   c2p_int(status, error_term);
   add_result_param(&(context->result_params),
 		   "subrequest",2,uri_term,error_term);
+}
+
+
+void report_asynch_subrequest_status(HTRequest *request, int status)
+{
+  REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
+  char *uri = HTAnchor_physical(HTRequest_anchor(request));
+
+  c2p_functor("subrequest",2,context->result_params);
+  c2p_string(uri,p2p_arg(context->result_params,1));
+  c2p_int(status, p2p_arg(context->result_params,2));
 }
 
 
@@ -423,6 +408,7 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
     libwww_abort_all("LIBWWW_REQUEST: Not enough memory");
 
   context->request_id = request_id;
+  context->subrequest_id = 0;
   context->suppress_is_default = FALSE;
   context->convert2list = FALSE;
   context->statusOverride = 0;
@@ -435,6 +421,7 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
   context->auth_info.realm = "";
   context->auth_info.uid = "foo";
   context->auth_info.pw = "foo";
+  context->retry = TRUE;
   context->method = METHOD_GET;
   context->selected_tags_tbl.table = NULL;
   context->suppressed_tags_tbl.table = NULL;
@@ -465,35 +452,11 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
 
   /* attach context to the request */
   HTRequest_setContext(request, (void *) context);
-  /* we handle only HT_LOADED, HT_ERROR, and HT_NO_DATA conditions.
-     We let the others (redirection, authentication, proxy) to be handled by
-     the standard Libwww filters. */
 
 #ifdef LIBWWW_DEBUG
   xsb_dbgmsg("Request %d: context set", request_id);
 #endif
 
-  HTRequest_addAfter(request,
-		     request_termination_handler,
-		     NULL,
-		     NULL,
-		     HT_LOADED,
-		     HT_FILTER_LAST,
-		     NO); /* don't override global filters! */
-  HTRequest_addAfter(request,
-		     request_termination_handler,
-		     NULL,
-		     NULL,
-		     HT_ERROR,
-		     HT_FILTER_LAST,
-		     NO); /* don't override global filters! */
-  HTRequest_addAfter(request,
-		     request_termination_handler,
-		     NULL,
-		     NULL,
-		     HT_NO_DATA,
-		     HT_FILTER_LAST,
-		     NO); /* don't override global filters! */
   return context;
 }
 
@@ -507,12 +470,15 @@ PRIVATE void free_request_context (REQUEST_CONTEXT *context)
   free_htable(&(context->stripped_tags_tbl));
   /* Note: we don't need to free context->result_chunk, since HTChunk_toCString
      deleted the chunk object, and we freed the chunk data earlier. */
-  /* release authentication info */
-  next_auth = context->auth_info.next;
-  while (next_auth) {
-    curr_auth = next_auth;
-    next_auth=next_auth->next;
-    free(curr_auth);
+  /* release authentication info, unless it is a subrequest (because request
+     and subrequest share authinfo) */
+  if (!(context->is_subrequest)) {
+    next_auth = context->auth_info.next;
+    while (next_auth) {
+      curr_auth = next_auth;
+      next_auth=next_auth->next;
+      free(curr_auth);
+    }
   }
   free(context);
 }
@@ -560,29 +526,17 @@ BOOL libwww_send_credentials(HTRequest * request, HTAlertOpcode op,
 			     int msgnum, const char * dfault, void * realm,
 			     HTAlertPar * reply)
 {
-  AUTHENTICATION *authinfo =
-    &(((REQUEST_CONTEXT *)HTRequest_context(request))->auth_info),
-    *credentials;
+  REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
+  AUTHENTICATION *authinfo = &(context->auth_info);
+  AUTHENTICATION *credentials;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In libwww_send_credentials: Request=%d, realm: '%s' msgnum=%d",
-	     REQUEST_ID(request), realm, msgnum);
+  xsb_dbgmsg("In libwww_send_credentials: Request=%s, realm: '%s' msgnum=%d",
+	     RequestID(request), realm, msgnum);
 #endif
 
-  /* the following blocks authentication filters on retry.
-     So, if this authentication failed, the retry will call the termination
-     filter with the HT_NO_ACCESS or HT_NO_PROXY_ACCESS code, and this is what
-     will be returned to the application. */
-  HTRequest_addAfter(request, request_termination_handler,
-		     NULL, NULL,
-		     HT_NO_ACCESS,
-		     HT_FILTER_LAST,
-		     NO); /* don't override global filters! */
-  HTRequest_addAfter(request, request_termination_handler,
-		     NULL, NULL,
-		     HT_NO_PROXY_ACCESS,
-		     HT_FILTER_LAST,
-		     NO); /* don't override global filters! */
+  /* don't authenticate on retry */
+  context->retry = FALSE;
 
   credentials = find_credentials(authinfo,realm);
   if (credentials) {
@@ -643,7 +597,7 @@ PRIVATE void release_libwww_request(HTRequest *request)
 }
 
 
-/* function to extract the individual request parameters from the request_params */
+/* Extraction of individual parameters from the request_params argument */
 PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
 {
   prolog_term param, req_params=p2p_arg(req_term,2);
@@ -651,8 +605,8 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
 
   if (!is_list(req_params) && !is_var(req_params) && !is_nil(req_params))
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 2 (Request params) must be a list or a variable",
-		     REQUEST_ID(request));
+    libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 2 (Request params) must be a list or a variable",
+		     RequestID(request));
   while(is_list(req_params) && !is_nil(req_params)) {
     param = p2p_car(req_params);
     paramfunctor = p2c_functor(param);
@@ -660,16 +614,16 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
     switch (paramfunctor[0]) {
     case 't': case 'T': /* user-specified timeout */ 
       if (!is_int(p2p_arg(param, 1)))
-	libwww_abort_all("LIBWWW_REQUEST: Request %d: Timeout parameter must be an integer",
-			 REQUEST_ID(request));
+	libwww_abort_all("LIBWWW_REQUEST: Request %s: Timeout parameter must be an integer",
+			 RequestID(request));
       context->timeout = p2c_int(p2p_arg(param, 1)) * 1000;
       if (context->timeout <= 0)
 	context->timeout = DEFAULT_TIMEOUT;
       break;
     case 'i': case 'I': /* if-modified-since */
       if (!is_string(p2p_arg(param, 1)))
-	libwww_abort_all("LIBWWW_REQUEST: Request %d: If_modified_since parameter must be a string",
-		  REQUEST_ID(request));
+	libwww_abort_all("LIBWWW_REQUEST: Request %s: If_modified_since parameter must be a string",
+		  RequestID(request));
       context->user_modtime =
 	(long)HTParseTime(string_val(p2p_arg(param,1)), NULL, YES);
       break;
@@ -703,7 +657,7 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
       auth_info->next=NULL;
       break;
     }
-    case 'f': case 'F':  /* formdata: the name and value pairs to fill out a form */
+    case 'f': case 'F':  /* formdata: name/value pair list to fill out forms */
       context->formdata = p2p_arg(param, 1);
       break;
     case 'm': case 'M': {  /* HTTP method: GET/POST/PUT */
@@ -740,17 +694,17 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
 	if (is_list(suppressed_term)) {
 	  init_tag_table(suppressed_term, &(context->suppressed_tags_tbl));
 	} else if (!is_var(suppressed_term))
-	  libwww_abort_all("LIBWWW_REQUEST: Request %d: In Arg 2, selection(_,SUPPRESS,_): SUPPRESS must be a var or a list",
-			   REQUEST_ID(request));
+	  libwww_abort_all("LIBWWW_REQUEST: Request %s: In Arg 2, selection(_,SUPPRESS,_): SUPPRESS must be a var or a list",
+			   RequestID(request));
 	
 	if (is_list(strip_term)) {
 	  init_tag_table(strip_term, &(context->stripped_tags_tbl));
 	} else if (!is_var(strip_term))
-	  libwww_abort_all("LIBWWW_REQUEST: Request %d: In Arg 2, selection(_,_,STRIP): STRIP must be a var or a list",
-			   REQUEST_ID(request));
+	  libwww_abort_all("LIBWWW_REQUEST: Request %s: In Arg 2, selection(_,_,STRIP): STRIP must be a var or a list",
+			   RequestID(request));
       } else {
-	libwww_abort_all("LIBWWW_REQUEST: Request %d: In Arg 2, wrong number of arguments in selection parameter",
-			 REQUEST_ID(request));
+	libwww_abort_all("LIBWWW_REQUEST: Request %s: In Arg 2, wrong number of arguments in selection parameter",
+			 RequestID(request));
       }
       break;
     default:  /* ignore unknown params */
@@ -805,6 +759,7 @@ PRIVATE REQUEST_TYPE get_request_type(prolog_term req_term, int request_id)
 
   if (strncmp("fetch",functor,3)==0) return FETCH;
   if (strncmp("xmlparse",functor,3)==0) return XMLPARSE;
+  if (strncmp("rdfparse",functor,3)==0) return RDFPARSE;
   if (strncmp("htmlparse",functor,3)==0) return HTMLPARSE;
   if (strncmp("header",functor,3)==0) return HEADER;
   libwww_abort_all("LIBWWW_REQUEST: Request %d: Invalid request type: %s",
@@ -925,15 +880,14 @@ PRIVATE int request_termination_handler (HTRequest   *request,
   void *userdata = context->userdata;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Request %d: In request_termination_handler %s",
-	     REQUEST_ID(request),
-	     (context->is_subrequest ? "(subrequest)" : ""));
+  xsb_dbgmsg("Request %s: In request_termination_handler, status %d",
+	     RequestID(request), status);
 #endif
 
-  if (context->is_subrequest) {
-    handle_subrequest_termination(request, status);
-    return !HT_OK;
-  }
+  /* the following conditions are handled by standard libwww filters */
+  if (context->retry && AUTH_OR_REDIRECTION(status))
+    return HT_OK; /* this causes other filters to be used */
+
 
   /* Redirection code is commented out. It is better handled by the standard
      Libwww redirection/proxy handling filters */
@@ -953,23 +907,18 @@ PRIVATE int request_termination_handler (HTRequest   *request,
     total_number_of_requests--;
   /* when the last request is done, stop the event loop */
   if ((total_number_of_requests == 0) && event_loop_runnung) {
-    HTNet_killAll();
     HTEventList_stopLoop();
     event_loop_runnung = FALSE;
 #ifdef LIBWWW_DEBUG
     xsb_dbgmsg("In request_termination_handler: event loop halted, status=%d, HTNetCount=%d",
 	       status, HTNet_count());
 #endif
-    /*
-      HText_unregisterElementCallback();
-      HText_unregisterTextCallback();
-    */
   }
 
   status = (context->statusOverride ? context->statusOverride : status);
   if (context->userdata)
     ((USERDATA *)(context->userdata))->status = status;
-  /* we must have checked already that status is a var */
+  /* we should have checked already that status is a var */
   if (is_var(context->status_term))
     c2p_int(status, context->status_term);
 
@@ -984,8 +933,8 @@ PRIVATE int request_termination_handler (HTRequest   *request,
     char *result_as_string = HTChunk_toCString(context->result_chunk);
 
     if (!is_var(context->request_result))
-      libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be unbound variable",
-		       REQUEST_ID(request));
+      libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 4 (Result) must be unbound variable",
+		       RequestID(request));
 
     if (result_as_string) {
       if (context->convert2list)
@@ -998,8 +947,8 @@ PRIVATE int request_termination_handler (HTRequest   *request,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In request_termination_handler: Cleanup: request %d, status=%d remaining requests: %d",
-	     REQUEST_ID(request), status, total_number_of_requests);
+  xsb_dbgmsg("In request_termination_handler: Cleanup: request %s, status=%d remaining requests: %d",
+	     RequestID(request), status, total_number_of_requests);
 #endif
 
   release_libwww_request(request);
@@ -1018,6 +967,9 @@ PRIVATE void setup_callbacks(REQUEST_TYPE type)
   case XMLPARSE:
     /* Register our new XML Instance handler */
     HTXMLCallback_registerNew(HTXML_newInstance, NULL);
+    break;
+  case RDFPARSE:
+    /* not yet implemented */
     break;
   case FETCH:
     break;
@@ -1064,7 +1016,7 @@ void add_result_param(prolog_term *result_param,
   va_list ap;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In add_result_param");
+  xsb_dbgmsg("Starting add_result_param");
 #endif
 
   deref(*result_param);
@@ -1079,12 +1031,29 @@ void add_result_param(prolog_term *result_param,
   for (i=0; i<cnt; i++)
     p2p_unify(va_arg(ap, prolog_term), p2p_arg(listHead, i+1));
   va_end(ap);
-  
+
 #ifdef LIBWWW_DEBUG_VERBOSE
   print_prolog_term(listHead, "In add_result_param: listHead");
 #endif
   *result_param = p2p_cdr(*result_param);
   c2p_list(*result_param);
+}
+
+
+PRIVATE prolog_term get_result_param_stub(prolog_term *result_param)
+{
+  prolog_term listHead;
+
+  deref(*result_param);
+  if (is_list(*result_param))
+    listHead = p2p_car(*result_param);
+  else {
+    print_prolog_term(*result_param, "In get_result_param_stub: result_param");
+    libwww_abort_all("LIBWWW_REQUEST: Bug: result_param is not a list");
+  }
+  *result_param = p2p_cdr(*result_param);
+  c2p_list(*result_param);
+  return listHead;
 }
 
 
@@ -1131,8 +1100,103 @@ int verifyMIMEformat(HTRequest *request, REQUEST_TYPE type)
 {
   if (((REQUEST_CONTEXT *)HTRequest_context(request))->type == type)
     return TRUE;
-  xsb_warn("LIBWWW_REQUEST Bug: Request %d Request type/MIME type mismatch",
-	   REQUEST_ID(request));
-  HTRequest_kill(request);
+  /*
+    xsb_warn("LIBWWW_REQUEST Bug: Request %s Request type/MIME type mismatch",
+	     RequestID(request));
+  */
   return FALSE;
+}
+
+
+char *RequestID(HTRequest *request)
+{
+  REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
+  static char idstr[200];
+
+  if (!context) return "null";
+
+  if (context->is_subrequest)
+    sprintf(idstr, "%d.%d", context->request_id, context->subrequest_id);
+  else
+    sprintf(idstr, "%d", context->request_id);
+
+  return idstr;
+}
+
+
+REQUEST_CONTEXT *set_subrequest_context(HTRequest *request,
+					HTRequest *subrequest,
+					prolog_term result_term)
+{
+  REQUEST_CONTEXT *parent_context =
+    (REQUEST_CONTEXT *)HTRequest_context(request);
+  REQUEST_CONTEXT *context;
+  HTStream *target;
+
+  if ((context=(REQUEST_CONTEXT *)calloc(1,sizeof(REQUEST_CONTEXT))) == NULL)
+    libwww_abort_all("LIBWWW_REQUEST: Not enough memory");
+
+  context->request_id = parent_context->request_id;
+  context->subrequest_id = ++(parent_context->subrequest_id);
+  context->suppress_is_default = FALSE;
+  context->convert2list = parent_context->convert2list;
+  context->statusOverride = 0;
+  context->is_subrequest = TRUE;
+  context->userdata = NULL;
+  context->last_modtime = 0;
+  context->timeout = DEFAULT_TIMEOUT;
+  context->user_modtime = 0;
+  context->formdata=0;
+  context->auth_info = parent_context->auth_info;
+  context->retry = TRUE;
+  context->method = METHOD_GET;
+  /* for subrequests, hash tables remain uninitialized: we don't do tag
+     exclusion for external entities and such */
+  context->selected_tags_tbl.table = NULL;
+  context->suppressed_tags_tbl.table = NULL;
+  context->stripped_tags_tbl.table = NULL;
+
+  context->type = parent_context->type;
+  context->result_chunk = NULL;
+
+  /* redirect stream to chunk */
+  target = HTStreamToChunk(subrequest, &(context->result_chunk), 0);
+  HTRequest_setOutputStream(subrequest, target);
+
+  /* output */
+  context->result_params =
+    get_result_param_stub(&parent_context->result_params);
+  //c2p_list(context->result_params);
+
+  context->request_result = result_term;
+
+  context->status_term = p2p_new();
+
+  /* attach context to the request */
+  HTRequest_setContext(subrequest, (void *) context);
+  /* we handle only HT_LOADED, HT_ERROR, and HT_NO_DATA conditions.
+     We let the others (redirection, authentication, proxy) to be handled by
+     the standard Libwww filters. */
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("Subrequest %s: context set", RequestID(subrequest));
+#endif
+
+  return context;
+
+}
+
+
+/* This sets termination filter for a request.
+   The idea is that the filter catches all except some standard conditions,
+   like authentication or redirection responses. */
+void setup_termination_filter(HTRequest *request, HTNetAfter *filter)
+{
+  HTRequest_addAfter(request,
+		     filter,
+		     NULL,
+		     NULL,
+		     HT_ALL,
+		     HT_FILTER_LAST,
+		     NO); /* don't override global filters! */
 }

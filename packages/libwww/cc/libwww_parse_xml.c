@@ -46,7 +46,8 @@ PRIVATE void HTXML_setHandlers (XML_Parser me)
 
   /* This exists only in expat 1.1. This version doesn't prohibit expansion of
      internal entities. Commented until expat 1.1 is included in libwww
-  XML_SetDefaultHandlerExpand(me, xml_default);
+
+     XML_SetDefaultHandlerExpand(me, xml_default);
   */
 }
 
@@ -72,8 +73,8 @@ PRIVATE void xml_beginElement(void  *userdata, /* where we build everything */
   USERDATA *userdata_obj = (USERDATA *) userdata;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_beginElement(%d): stackptr=%d tag=%s suppress=%d choose=%d",
-	     REQUEST_ID(userdata_obj->request),
+  xsb_dbgmsg("In xml_beginElement(%s): stackptr=%d tag=%s suppress=%d choose=%d",
+	     RequestID(userdata_obj->request),
 	     userdata_obj->stackptr, tag,
 	     IS_SUPPRESSED_TAG((HKEY)(char *)tag, userdata_obj->request),
 	     IS_SELECTED_TAG((HKEY)(char *)tag, userdata_obj->request)
@@ -107,8 +108,8 @@ PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
   USERDATA *userdata_obj = (USERDATA *) userdata;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_endElement(%d): stackptr=%d, tag=%s",
-	     REQUEST_ID(userdata_obj->request),
+  xsb_dbgmsg("In xml_endElement(%s): stackptr=%d, tag=%s",
+	     RequestID(userdata_obj->request),
 	     userdata_obj->stackptr, tag);
 #endif
 
@@ -134,7 +135,8 @@ PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
 
 /* The callback to capture text events */
 PRIVATE void xml_addText (void	         *userdata,
-			  const XML_Char *textbuf, int len)
+			  const XML_Char *textbuf,
+			  int	     	 len)
 {
   USERDATA *userdata_obj = (USERDATA *) userdata;
   static vstrDEFINE(pcdata_buf);
@@ -143,7 +145,7 @@ PRIVATE void xml_addText (void	         *userdata,
     (REQUEST_CONTEXT *)HTRequest_context(userdata_obj->request);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_addText (%d):", REQUEST_ID(userdata_obj->request));
+  xsb_dbgmsg("In xml_addText (%s)", RequestID(userdata_obj->request));
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)"pcdata", userdata_obj->request)) return;
@@ -222,7 +224,7 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 }
 
 
-/* push element onto HTEXT->stack */
+/* push element onto USERDATA->stack */
 PRIVATE int xml_push_element (USERDATA    *userdata,
 			       const XML_Char  *tag,
 			       const XML_Char  **attrs)
@@ -241,8 +243,8 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
   userdata->stackptr++;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_push_element(%d): stackptr=%d tag=%s",
-	     REQUEST_ID(userdata->request), userdata->stackptr, tag);
+  xsb_dbgmsg("In xml_push_element(%s): stackptr=%d tag=%s",
+	     RequestID(userdata->request), userdata->stackptr, tag);
 #endif
 
   CHECK_STACK_OVERFLOW(userdata);
@@ -283,13 +285,12 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
 }
 
 
-/* when we are done with an elt, we must close its contents list and pop the
-   stack */
+/* When done with an elt, close its contents list and pop the stack */
 PRIVATE void xml_pop_element(USERDATA *userdata)
 {
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In xml_pop_element(%d): stackptr=%d, elt_name=%s",
-	     REQUEST_ID(userdata->request),
+  xsb_dbgmsg("In xml_pop_element(%s): stackptr=%d, elt_name=%s",
+	     RequestID(userdata->request),
 	     userdata->stackptr,
 	     STACK_TOP(userdata).tag);
 #endif
@@ -323,7 +324,7 @@ PRIVATE void xml_pop_element(USERDATA *userdata)
 }
 
 
-/* pushes tag, but keeps only the tag info; doesn't convert to prolog term */
+/* Push tag, but keep only the tag info; don't convert to prolog term */
 PRIVATE void xml_push_suppressed_element(USERDATA   *userdata,
 					 const XML_Char *tag)
 {
@@ -357,8 +358,8 @@ PRIVATE void xml_pop_suppressed_element(USERDATA *userdata)
   userdata->stackptr--;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In xml_pop_suppressed_element(%d): stackptr=%d",
-	     REQUEST_ID(userdata->request), userdata->stackptr);
+  xsb_dbgmsg("In xml_pop_suppressed_element(%s): stackptr=%d",
+	     RequestID(userdata->request), userdata->stackptr);
   if (userdata->stackptr >= 0)
     print_prolog_term(STACK_TOP(userdata).content_list_tail, "content_list_tail");
   else
@@ -374,10 +375,21 @@ USERDATA *xml_create_userData(XML_Parser parser,
 			      HTStream  *target_stream)
 {
   USERDATA *me = NULL;
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("Start xml_create_userData: Request %s", RequestID(request));
+#endif
   if (parser) {
     /* make sure that MIME type is appropriate for XML */
-    if (!verifyMIMEformat(request, XMLPARSE))
-      return NULL;
+    if (!verifyMIMEformat(request, XMLPARSE)) {
+      /*
+	HTStream * input = HTRequest_inputStream(request);
+	(*input->isa->abort)(input, NULL);
+	HTRequest_setInputStream(request,NULL);
+	HTRequest_kill(request);
+	return NULL;
+      */
+      xsb_abort("LIBWWW_REQUEST: Bug: Request type/MIME type mismatch");
+    }
     if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_xml");
     me->delete_method = xml_delete_userData;
@@ -393,7 +405,7 @@ USERDATA *xml_create_userData(XML_Parser parser,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_create_userData(%d):", REQUEST_ID(request));
+  xsb_dbgmsg("End xml_create_userData: Request %s", RequestID(request));
 #endif
 
   /* Hook up userdata to the request context */
@@ -407,20 +419,18 @@ PRIVATE void xml_delete_userData(void *userdata)
 {
   prolog_term parsed_result, status_term;
   USERDATA *me = (USERDATA *)userdata;
-#ifdef LIBWWW_DEBUG
-  int request_id;
-#endif
+  HTRequest *request = me->request;
 
   if (me->request) {
     parsed_result =
-      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->request_result;
+      ((REQUEST_CONTEXT *)HTRequest_context(request))->request_result;
     status_term =
-      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->status_term;
+      ((REQUEST_CONTEXT *)HTRequest_context(request))->status_term;
   } else return;
 
 #ifdef LIBWWW_DEBUG
-  request_id = REQUEST_ID(me->request);
-  xsb_dbgmsg("In xml_delete_userData(%d): stackptr=%d", request_id, me->stackptr);
+  xsb_dbgmsg("In xml_delete_userData(%s): stackptr=%d",
+	     RequestID(request), me->stackptr);
 #endif
 
   /* if the status code says the doc was loaded fine, but stackptr is != -1,
@@ -436,15 +446,15 @@ PRIVATE void xml_delete_userData(void *userdata)
   if (is_var(me->parsed_term))
     p2p_unify(parsed_result, me->parsed_term);
   else
-    xsb_abort("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be unbound variable",
-	      REQUEST_ID(me->request));
+    xsb_abort("LIBWWW_REQUEST: Request %s: Arg 4 (Result) must be unbound variable",
+	      RequestID(request));
 
   if (me->target) FREE_TARGET(me);
   if (me->stack) HT_FREE(me->stack);
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Request %d: freed the USERDATA object", request_id);
+  xsb_dbgmsg("Request %s: freed the USERDATA object", RequestID(request));
 #endif
 
   return;
@@ -519,66 +529,43 @@ PRIVATE int xml_externalEntityRef (XML_Parser     parser,
 				   const XML_Char *systemId,
 				   const XML_Char *publicId)
 {
-  /* This external entity processor doesn't do anything. This is because we
-     need to figure out how to start a new libwww request on the external
-     entity URL while the parent request is waiting. */
   XML_Parser extParser =
     XML_ExternalEntityParserCreate(parser, openEntityNames, 0);
   HTAnchor  *anchor = NULL;
   HTRequest *request = HTRequest_new();
   char      *uri;
   USERDATA  *userdata = XML_GetUserData(parser);
-  REQUEST_CONTEXT *context =
-    (REQUEST_CONTEXT *)HTRequest_context(userdata->request);
-  HTChunk   *chunk = NULL;
+  HTRequest *parent_request = userdata->request;
   char      *cwd = HTGetCurrentDirectoryURL();
-
-  /* put the same context on this request */
-  HTRequest_setContext(request, (void *)context);
+  USERDATA *subuserdata;
 
   uri = HTParse((char *)systemId, cwd, PARSE_ALL);
   anchor = HTAnchor_findAddress(uri);
 
-#ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_externalEntityRef(%d): uri=%s", context->request_id, uri);
-#endif
-
   HTRequest_setOutputFormat(request, WWW_SOURCE);
-  /* make it a blocking request, so that we get the result right away */
-  HTRequest_setPreemptive(request, YES);
-  /*
-    HTRequest_addConnection(request, "close", "");
-  */
-  /* Launch a new subrequest. Since this request is blocking, this will
-     execute the request immediately. */
-  context->is_subrequest = TRUE;
-  chunk = HTLoadAnchorToChunk(anchor,request);
-  /* If subrequest failed to terminate, then kill it.  This might happen when
-     a premptive (blocking) request spawns a subrequest, which is also
-     blocking. In this case, the parent request will finish before the child
-     request, leading to all kinds of problems.  */
-  if (context->is_subrequest) {
-    HTRequest_kill(request);
-    context->is_subrequest = FALSE;
-  }
-  if (chunk) {
-    char *ext_entity_expansion = HTChunk_toCString(chunk);
+  set_subrequest_context(parent_request,request,xml_push_dummy(userdata));
+  setup_termination_filter(request,xml_entity_termination_handler);
+  subuserdata = xml_create_userData(extParser, request, NULL);
+  XML_SetUserData(extParser, (void *) subuserdata);
+  total_number_of_requests++;
 
-    if (ext_entity_expansion) {
 #ifdef LIBWWW_DEBUG
-      xsb_dbgmsg("In xml_externalEntityRef: entity=%s", ext_entity_expansion);
+  xsb_dbgmsg("In xml_externalEntityRef(%s): uri=%s", RequestID(request), uri);
 #endif
-      XML_Parse(extParser,ext_entity_expansion,strlen(ext_entity_expansion),1);
-      HT_FREE(ext_entity_expansion);
-    }
+
+  /* libwww breaks when a local file request is issued concurrently with an
+     existing request to another local file. So, we ignore such subrequests. */
+  if ((strncmp(uri,"file:/",6) != 0) || !HTRequest_preemptive(parent_request)) {
+    if (strncmp(uri,"file:/",6) == 0)
+      HTRequest_setPreemptive(request,YES);
+    HTLoadAnchor(anchor,request);
   } else {
-    /* return WWW_EXTERNAL_ENTITY error code in the response */
-    add_subrequest_error(request, WWW_EXTERNAL_ENTITY);
+    HTRequest_setAnchor(request,anchor);
+    xml_entity_termination_handler(request,NULL,NULL,WWW_EXTERNAL_ENTITY);
   }
 
   HT_FREE(uri);
   HT_FREE(cwd);
-  XML_ParserFree(extParser);
   return TRUE;
 }
 
@@ -602,7 +589,7 @@ PRIVATE int xml_unknownEncoding (void 	        *encodingHandlerData,
   return 0;
 }
 
-/* Default is commented out so that it'll parse entities.
+/* Default is commented out so that expat will parse entities.
 PRIVATE void xml_default (void * userData, const XML_Char * str, int len)
 {
   vstrDEFINE(unparsed);
@@ -612,12 +599,155 @@ PRIVATE void xml_default (void * userData, const XML_Char * str, int len)
   unparsed.length = len;
   vstrNULL_TERMINATE(&unparsed);
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_default: Request: %d: Unparsed: %s",
-	     REQUEST_ID(((USERDATA *)userData)->request), unparsed.string);
+  xsb_dbgmsg("In xml_default: Request: %s: Unparsed: %s",
+	     RequestID(((USERDATA *)userData)->request), unparsed.string);
 #endif
 
   return;
 }
 */
+
+
+
+/* Pushes an open prolog term onto the stack and return that term */
+PRIVATE prolog_term xml_push_dummy(USERDATA    *userdata)
+{
+  prolog_term location;
+
+  if (userdata->stackptr < 0)
+    location = userdata->parsed_term_tail;
+  else 
+    location = STACK_TOP(userdata).content_list_tail;
+
+  userdata->stackptr++;
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("In xml_push_dummy(%s): stackptr=%d",
+	     RequestID(userdata->request), userdata->stackptr);
+#endif
+
+  CHECK_STACK_OVERFLOW(userdata);
+
+  /* wire the new elt into where it should be in the content list */
+  STACK_TOP(userdata).elt_term = location;
+  STACK_TOP(userdata).tag = "extentity";
+
+  /* insert new list cell into the tail and change content_list_tail to point
+     to the new tail */
+  if (userdata->stackptr > 0) {
+    STACK_PREV(userdata).content_list_tail =
+      p2p_cdr(STACK_PREV(userdata).content_list_tail);
+    c2p_list(STACK_PREV(userdata).content_list_tail);
+  } else {
+    userdata->parsed_term_tail = p2p_cdr(userdata->parsed_term_tail);
+    c2p_list(userdata->parsed_term_tail);
+  }
+
+  userdata->stackptr--;
+
+#ifdef LIBWWW_DEBUG_VERBOSE
+  if (userdata->stackptr >= 0)
+    print_prolog_term(STACK_TOP(userdata).content_list_tail,
+		      "content_list_tail");
+  else
+    print_prolog_term(userdata->parsed_term_tail, "parsed_term_tail");
+#endif
+
+  return location;
+}
+
+
+int xml_entity_termination_handler(HTRequest   *request,
+				   HTResponse  *response,
+				   void        *param,
+				   int 	       status)
+{
+  char *ext_entity_expansion=NULL;
+  REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
+  USERDATA *userdata = context->userdata;
+  XML_Parser extParser = userdata->parser;
+
+  /* the following conditions are handled by standard libwww filters */
+  if (context->retry && AUTH_OR_REDIRECTION(status))
+    return HT_OK; /* this causes other filters to be used */
+
+  if (status==HT_LOADED) {
+    ext_entity_expansion = HTChunk_toCString(context->result_chunk);
+#ifdef LIBWWW_DEBUG
+    xsb_dbgmsg("In xml_entity_termination_handler(%s): entity=%s", 
+	       RequestID(request), ext_entity_expansion);
+#endif
+    XML_Parse(extParser,ext_entity_expansion,strlen(ext_entity_expansion),1);
+    HT_FREE(ext_entity_expansion);
+  } else {
+    prolog_term request_result = p2p_car(context->request_result);
+    char *uri = HTAnchor_address((HTAnchor *)HTRequest_anchor(request));
+#ifdef LIBWWW_DEBUG
+    xsb_dbgmsg("In xml_entity_termination_handler(%s): request failed",
+	       RequestID(request));
+#endif
+    c2p_functor("unexpanded_entity",2,request_result);
+    c2p_string(uri,p2p_arg(request_result,1));
+    c2p_int(status,p2p_arg(request_result,2));
+  }
+
+  report_asynch_subrequest_status(request, status);
+
+  XML_ParserFree(extParser);
+  if (userdata)
+    (((USERDATA *)userdata)->delete_method)(userdata);
+
+  if (total_number_of_requests > 0)
+    total_number_of_requests--;
+  /* when the last request is done, stop the event loop */
+  if ((total_number_of_requests == 0) && event_loop_runnung) {
+    HTEventList_stopLoop();
+    event_loop_runnung = FALSE;
+#ifdef LIBWWW_DEBUG
+    xsb_dbgmsg("In xml_entity_termination_handler: event loop halted, status=%d, HTNetCount=%d",
+	       status, HTNet_count());
+#endif
+  }
+
+  return !HT_OK;
+}
+
+
+void set_xml_conversions()
+{
+  /* Must delete old converter and create new. Apparently something in libwww
+     releases the atoms used in thes converters, which causes it to crash 
+     in HTStreamStack() on the second call to xmlparse. */
+  HTPresentation_deleteAll(XML_converter);
+  XML_converter = HTList_new();
+
+  HTConversion_add(XML_converter,"*/*", "www/debug",
+		   HTBlackHoleConverter, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"message/rfc822", "*/*",
+		   HTMIMEConvert, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"message/x-rfc822-foot", "*/*",
+		   HTMIMEFooter, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"message/x-rfc822-head", "*/*",
+		   HTMIMEHeader, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"message/x-rfc822-cont", "*/*",
+		   HTMIMEContinue, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"message/x-rfc822-upgrade","*/*",
+		   HTMIMEUpgrade, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"message/x-rfc822-partial", "*/*",
+		   HTMIMEPartial, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"multipart/*", "*/*",
+		   HTBoundary, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"text/x-http", "*/*",
+		   HTTPStatus_new, 1.0, 0.0, 0.0);
+  /* www/xml is invented for servers that don't recognize XML */
+  HTConversion_add(XML_converter,"text/plain", "www/xml",
+		   HTXML_new, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter,"www/present", "www/xml",
+		   HTXML_new, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter, "text/xml", "*/*", 
+		   HTXML_new, 1.0, 0.0, 0.0);
+  HTConversion_add(XML_converter, "application/xml", "*/*",
+		   HTXML_new, 1.0, 0.0, 0.0);
+}
 
 

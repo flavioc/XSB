@@ -45,15 +45,19 @@
 #include "cinterf.h"
 #include "varstring_xsb.h"
 
+/* XSB_LIBWWW_PACKAGE is used in http_errors.h */
 #define XSB_LIBWWW_PACKAGE
 #include "../prolog_includes/http_errors.h"
 
 
 /* definitions and macros included in all files */
 
+int total_number_of_requests;
+int event_loop_runnung;
+HTList *XML_converter=NULL, *RDF_converter=NULL;
 
-#define LIBWWW_DEBUG_VERBOSE
 /*
+#define LIBWWW_DEBUG_VERBOSE
 #define LIBWWW_DEBUG
 #define LIBWWW_DEBUG_TERSE
 */
@@ -76,7 +80,7 @@ struct _HTStream {
     const HTStreamClass *	isa;
 };
 
-enum request_type {FETCH, HTMLPARSE, XMLPARSE, HEADER};
+enum request_type {FETCH, HTMLPARSE, XMLPARSE, RDFPARSE, HEADER};
 typedef enum request_type REQUEST_TYPE;
 
 union hkey {
@@ -103,6 +107,7 @@ struct auth {
    to the Prolog side*/
 struct request_context {
   int  request_id;
+  int  subrequest_id;
   int  suppress_is_default;
   int  convert2list;    /* if convert pcdata to Prolog lists on exit */
   int  is_subrequest;  /* In XML parsing, we might need to go to a different
@@ -119,6 +124,7 @@ struct request_context {
   time_t user_modtime;      /* oldest modtime the user can tolerate */
   prolog_term formdata;
   AUTHENTICATION auth_info; /* list of name/pw pairs */
+  int 	         retry;     /* whether to retry authentication */
   HTMethod   method;
   HASH_TABLE selected_tags_tbl;
   HASH_TABLE suppressed_tags_tbl;
@@ -135,9 +141,6 @@ struct request_context {
 typedef struct request_context REQUEST_CONTEXT;
 
 typedef void DELETE_USERDATA(void *userdata);
-
-#define REQUEST_ID(request) \
-  ((REQUEST_CONTEXT *)HTRequest_context(request))->request_id
 
 /* like strcpy, but also converts to lowercase */
 void strcpy_lower(char *to, const char *from);
@@ -158,5 +161,24 @@ void HTXML_newInstance (HTStream *		me,
 			void * 			context);
 void add_result_param(prolog_term *result_param, 
 		      char *functor, int cnt, ...);
-void add_subrequest_error(HTRequest *request, int status);
+void report_asynch_subrequest_status(HTRequest *request, int status);
+void report_synch_subrequest_status(HTRequest *request, int status);
 int verifyMIMEformat(HTRequest *request, REQUEST_TYPE type);
+char *RequestID(HTRequest *request);
+
+int xml_entity_termination_handler(HTRequest   *request,
+				   HTResponse  *response,
+				   void      *param,
+				   int 	     status);
+REQUEST_CONTEXT *set_subrequest_context(HTRequest *request,
+					HTRequest *subrequest,
+					prolog_term result_term);
+void setup_termination_filter(HTRequest *request, HTNetAfter *filter);
+void set_xml_conversions(void);
+void set_rdf_conversions(void);
+
+#define AUTH_OR_REDIRECTION(status) \
+    ((status == HT_NO_ACCESS) || (status == HT_NO_PROXY_ACCESS) \
+       || (status == HT_REAUTH) || (status == HT_PROXY_REAUTH) \
+       || (status == HT_SEE_OTHER) || (status == HT_PERM_REDIRECT) \
+       || (status == HT_FOUND) || (status == HT_TEMP_REDIRECT))

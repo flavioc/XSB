@@ -98,5 +98,7 @@ PRIVATE int xml_unknownEncoding (void 	      	*encodingHandlerData,
 				 const XML_Char *name,
 				 XML_Encoding   *info);
 /*
-PRIVATE void xml_default (void * userData, const XML_Char * s, int len);
+  PRIVATE void xml_default (void * userData, const XML_Char * s, int len);
 */
+
+PRIVATE prolog_term xml_push_dummy(USERDATA    *userdata);

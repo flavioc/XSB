@@ -41,8 +41,8 @@ PRIVATE void html_beginElement(USERDATA	*htext, /* where we build everything */
 {
 #ifdef LIBWWW_DEBUG
   HTTag *tag = SGML_findTag(htext->dtd, element_number);
-  xsb_dbgmsg("In html_beginElement(%d): stackptr=%d tag=%s suppress=%d choose=%d",
-	     REQUEST_ID(htext->request),
+  xsb_dbgmsg("In html_beginElement(%s): stackptr=%d tag=%s suppress=%d choose=%d",
+	     RequestID(htext->request),
 	     htext->stackptr, HTTag_name(tag),
 	     IS_SUPPRESSED_TAG((HKEY)element_number, htext->request),
 	     IS_SELECTED_TAG((HKEY)element_number, htext->request)
@@ -73,8 +73,8 @@ PRIVATE void html_endElement (USERDATA *htext, int element_number)
   int i, match;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In html_endElement(%d): stackptr=%d",
-	     REQUEST_ID(htext->request), htext->stackptr);
+  xsb_dbgmsg("In html_endElement(%s): stackptr=%d",
+	     RequestID(htext->request), htext->stackptr);
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)element_number, htext->request)) return;
@@ -114,7 +114,7 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
     (REQUEST_CONTEXT *)HTRequest_context(htext->request);
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_addText: Request %d", REQUEST_ID(htext->request));
+  xsb_dbgmsg("In html_addText: Request %s", RequestID(htext->request));
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)PCDATA_SPECIAL, htext->request)) return;
@@ -218,8 +218,8 @@ PRIVATE void html_push_element (USERDATA       *htext,
   htext->stackptr++;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_push_element(%d): stackptr=%d",
-	     REQUEST_ID(htext->request), htext->stackptr);
+  xsb_dbgmsg("In html_push_element(%s): stackptr=%d",
+	     RequestID(htext->request), htext->stackptr);
 #endif
 
   CHECK_STACK_OVERFLOW(htext);
@@ -260,13 +260,12 @@ PRIVATE void html_push_element (USERDATA       *htext,
 }
 
 
-/* when we are done with an elt, we must close its contents list and pop the
-   stack */
+/* When done with an elt, close its contents list and pop the stack */
 PRIVATE void html_pop_element(USERDATA *htext)
 {
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_pop_element(%d): stackptr=%d, elt_name=%s",
-	     REQUEST_ID(htext->request),
+  xsb_dbgmsg("In html_pop_element(%s): stackptr=%d, elt_name=%s",
+	     RequestID(htext->request),
 	     htext->stackptr,
 	     HTTag_name(special_find_tag(htext, STACK_TOP(htext).element_number)));
 #endif
@@ -304,7 +303,7 @@ PRIVATE void html_pop_element(USERDATA *htext)
 }
 
 
-/* pushes tag, but keeps only the tag info; doesn't convert to prolog term */
+/* Push tag, but keep only the tag info; don't convert to prolog term */
 PRIVATE void html_push_suppressed_element(USERDATA *htext, int element_number)
 {
   /* if empty tag, then just return */
@@ -338,8 +337,8 @@ PRIVATE void html_pop_suppressed_element(USERDATA *htext)
   htext->stackptr--;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_pop_suppressed_element(%d): stackptr=%d",
-	     REQUEST_ID(htext->request), htext->stackptr);
+  xsb_dbgmsg("In html_pop_suppressed_element(%s): stackptr=%d",
+	     RequestID(htext->request), htext->stackptr);
   if (htext->stackptr >= 0)
     print_prolog_term(STACK_TOP(htext).content_list_tail, "content_list_tail");
   else
@@ -386,10 +385,20 @@ USERDATA *html_create_userData( HTRequest *             request,
 {
   USERDATA *me = NULL;
 
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("Start html_create_userData(%s):", RequestID(request));
+#endif
   if (request) {
     /* make sure that MIME type is appropriate for HTML */
-    if (!verifyMIMEformat(request, HTMLPARSE))
-      return NULL;
+    if (!verifyMIMEformat(request, HTMLPARSE)) {
+      /* The following causes segfault, so we xsb_abort instead 
+	 HTStream * input = HTRequest_inputStream(request);
+	 HTRequest_kill(request);
+	 (*input->isa->abort)(input, NULL);
+	 return NULL;
+      */
+      xsb_abort("LIBWWW_REQUEST: Bug: Request type/MIME type mismatch");
+    }
     if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_html");
     me->delete_method = html_delete_userData;
@@ -406,7 +415,7 @@ USERDATA *html_create_userData( HTRequest *             request,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In html_create_userData(%d):", REQUEST_ID(request));
+  xsb_dbgmsg("In html_create_userData(%s):", RequestID(request));
 #endif
 
   /* Hook up userdata to the request context */
@@ -420,21 +429,18 @@ PRIVATE void html_delete_userData(void *userdata)
   int i;
   prolog_term parsed_result, status_term;
   USERDATA *me = (USERDATA *)userdata;
-#ifdef LIBWWW_DEBUG
-  int request_id;
-#endif
+  HTRequest *request = me->request;
 
   if (me->request) {
     parsed_result =
-      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->request_result;
+      ((REQUEST_CONTEXT *)HTRequest_context(request))->request_result;
     status_term =
-      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->status_term;
+      ((REQUEST_CONTEXT *)HTRequest_context(request))->status_term;
   } else return;
 
 #ifdef LIBWWW_DEBUG
-  request_id = REQUEST_ID(me->request);
-  xsb_dbgmsg("In html_delete_userData(%d): stackptr=%d",
-	     request_id, me->stackptr);
+  xsb_dbgmsg("In html_delete_userData(%s): stackptr=%d",
+	     RequestID(request), me->stackptr);
 #endif
 
   /* close open tags on stack */
@@ -451,8 +457,8 @@ PRIVATE void html_delete_userData(void *userdata)
   if (is_var(me->parsed_term))
     p2p_unify(parsed_result, me->parsed_term);
   else
-    xsb_abort("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be unbound variable",
-	      REQUEST_ID(me->request));
+    xsb_abort("LIBWWW_REQUEST: Request %s: Arg 4 (Result) must be unbound variable",
+	      RequestID(request));
 
 
   if (me->target) FREE_TARGET(me);
@@ -460,7 +466,7 @@ PRIVATE void html_delete_userData(void *userdata)
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Request %d: freed the USERDATA obj", request_id);
+  xsb_dbgmsg("Request %s: freed the USERDATA obj", RequestID(request));
 #endif
 
   return;

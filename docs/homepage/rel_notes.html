@@ -24,6 +24,31 @@ Variables.</a>
 
 
 <h3>New Packages</h3>
+<ul>
+<li>
+    <b><tt>libwww</tt></b> - a powerful Web access package.
+    See <a href="manual/manual2.pdf">XSB Manual, Voulume 2, The Libwww
+    Package.</a>
+    <br>
+    This XSB package relies on the W3C's libwww library and requires it to
+    be installed. The entire package is implemented in C and is much faster
+    than other related Internet access packages for Prolog, e.g., PiLLOW). The
+    package provides the following functionality: 
+    <ul>
+    <li> HTML parser.
+    <li> XML parser (including handling of external entities).
+    <li> The ability to simultaneously dispatch several HTTP requests and parse
+         the responses as they arrive; no waiting until the entire
+	 document is received.
+    <li> Fetching web pages and filling out forms.
+    <li> Header information.
+    <li> Timeouts.
+    <li> Basic and digest  authentication. SSL to follow.
+    <li> Redirection.
+    <li> Error handling.
+    </ul>
+
+</ul>
 
 <h3>Backward Incompatibility</h3>
 

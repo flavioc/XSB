@@ -26,8 +26,8 @@
 
 
 
-PRIVATE int total_number_of_requests;
-PRIVATE int event_loop_runnung;
+//PRIVATE int total_number_of_requests;
+//PRIVATE int event_loop_runnung;
 PRIVATE int timeout_value;
 
 #define SELECTED_TAGS_TBL_SIZE	    29
@@ -65,7 +65,10 @@ PRIVATE int request_termination_handler(HTRequest    *request,
 					void 	   *param,
 					int          status);
 
-PRIVATE void handle_subrequest_termination(HTRequest *req, int status);
+PRIVATE int handle_dependent_termination(HTRequest   *request,
+					 HTResponse  *response,
+					 void	      *param,
+					 int 	      status);
 PRIVATE void libwww_abort_all(char *msg, ...);
 PRIVATE void setup_callbacks(REQUEST_TYPE type);
 PRIVATE void extract_request_headers(HTRequest *request);
