@@ -40,6 +40,11 @@
 %	written it is not clear whether we will support reals in the first
 %	XSB version).
 %-------------------------------------------------------------------------
+% TLS: 7/02: added min/2 and max/2 as evaluable functions to support the 
+% clpr package.  I have not yet added these functions to the compiler
+% or engine. 
+%-------------------------------------------------------------------------
+
 
 eval(Expr, Res) :- 
 	eval(Expr,Res,Expr).
@@ -80,7 +85,12 @@ eval0('\/'(X,Y), Res,Expr) :- eval(X, Res1,Expr),
 eval0('<<'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 << Res2.  
 eval0('>>'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-eval(Y,Res2), Res is Res1 >> Res2.  
+		eval(Y, Res2,Expr), Res is Res1 >> Res2.  
+eval0(min(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+			     (Res1 =< Res2 -> Res = Res1 ; Res = Res2).
+eval0(max(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+			     (Res1 >= Res2 -> Res = Res1 ; Res = Res2).
+
 eval0('-'(X), Res,Expr) :- eval(X, Res1,Expr), Res is -(Res1).
 eval0('\'(X), Res,Expr) :- eval(X, Res1,Expr), Res is '\'(Res1).  
 eval0(float(X), Res,Expr) :- eval(X, Res1,Expr), Res is float(Res1).  
