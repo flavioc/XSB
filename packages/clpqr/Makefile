@@ -23,9 +23,9 @@
 ## 
 ##
 
-ALL = arith.O arith_r.O assoc.O bv.O class.O clpr.O ineq.O itf3.O\
-fourmotz.O nf.O ordering.O project.O redund.O store.O ugraphs.O\
-dump.O
+ALL = 	arith.O arith_r.O bv.O class.O clpr.O ineq.O itf3.O \
+	fourmotz.O nf.O ordering.O project.O redund.O store.O \
+	dump.O
 
 # Option = [optimize, spec_off]
 
