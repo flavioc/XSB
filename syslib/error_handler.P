@@ -164,7 +164,10 @@ print_mod_pred_arity_list([Psc|Pscs]) :-
 	(Psc =:= 0
 	 ->	messageln('... unknown/?',STDERR)
 	 ;	psc_data(Psc,ModPsc),
-		psc_name(ModPsc,ModName),
+		(ModPsc =\= 0
+		 ->	psc_name(ModPsc,ModName)
+		 ;	ModName = unknown
+		),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity),
 		(ModName \== usermod
