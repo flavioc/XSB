@@ -55,7 +55,7 @@ rule(import_directive(PAs,Sigs,Module)) -->
 	imply_symbol,
 	white_space0,
 	atom_name(Import),
-	{atom_chars(Import,"import")},
+	{atom_codes(Import,"import")},
 	pa_sig_list(PAs,Sigs),
 	white_space0,
 	[identifier(from)],
@@ -68,7 +68,7 @@ rule(export_directive(PAs,Sigs)) -->
 	imply_symbol,
 	white_space0,
 	atom_name(Export),
-	{atom_chars(Export,"export")},
+	{atom_codes(Export,"export")},
 	pa_sig_list(PAs,Sigs),
 	rule_delimeter,
 	!.
@@ -77,7 +77,7 @@ rule(table_directive(PAs)) -->
 	imply_symbol,
 	white_space0,
 	atom_name(Table),
-	{atom_chars(Table,"table")},
+	{atom_codes(Table,"table")},
 	predicate_arity_list(PAs),
 	rule_delimeter,
 	!.
@@ -332,8 +332,8 @@ fluniv_lhs(L,V) --> path_expression(L,V), !.
 
 meta_method_var(meta_meth(Name,Var),V) -->
 	[atom('$@'),var(N)],
-	{ atom_chars(N,S),
-	  atom_chars(Name,[0'@|S]),
+	{ atom_codes(N,S),
+	  atom_codes(Name,[0'@|S]),
 	  flora_member(var(Name,Var),V)
         },
 	!.
@@ -783,7 +783,7 @@ reserved_word('~') :- !.
 
 reserved_word(A) :-
 	atom(A),
-	atom_chars(A,S),
+	atom_codes(A,S),
 	flora_prefix(P),
 	append(P,_,S),
 	!,

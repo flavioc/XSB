@@ -30,10 +30,10 @@
 flora_prefix("_$_$_flora_").
 
 flora_word(S,A) :-
-	atom_chars(S,Str),
+	atom_codes(S,Str),
 	flora_prefix(P),
 	append(P,Str,L),
-	atom_chars(A,L).
+	atom_codes(A,L).
 
 
 /********************************************************************/
@@ -335,8 +335,8 @@ write_tokens(atom(rule_delimeter)) :- !, write('.').
 
 write_tokens(atom(A)) :-
 	!,
-	atom_chars(A,[_|L]),
-	atom_chars(B,L),
+	atom_codes(A,[_|L]),
+	atom_codes(B,L),
 	write(B).
 
 write_tokens(identifier(X)) :- !, write(X).
@@ -346,7 +346,7 @@ write_tokens(string_atom(X)) :- !, write_canonical(X).
 
 write_tokens(string_list(X)) :-
 	!,
-	atom_chars(A,X),
+	atom_codes(A,X),
 	write('"'),
 	write(A),
 	write('"').
@@ -473,7 +473,7 @@ generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
 	displayln, flora_msgheader,
 	display('compiling '), display(FlrFile),
 	(LoadMode == static_mode -> Str="static" ; Str="dynamic"),
-	atom_chars(A,Str),
+	atom_codes(A,Str),
 	display(' to '), display(A), display(' code with options: '),
 	telling(F), tell(userout), write_list(Directives), tell(F),
 	displayln(']'),

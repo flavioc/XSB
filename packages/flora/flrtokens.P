@@ -95,7 +95,7 @@ whitespace(32).
 ****************************************************************************/
 read_identifier(Char,[identifier(Name)|Tokens],Status) :-
 	read_name(Char,Chars,NextCh),
-	atom_chars(Name,Chars),
+	atom_codes(Name,Chars),
 	read_tokens(NextCh,Tokens,Status).
 
 
@@ -133,7 +133,7 @@ read_name(Ch,[Ch|Chars],LastCh) :-
 ****************************************************************************/
 read_variable(Char,[var(Name)|Tokens],Status) :-
 	read_name(Char,Chars,NextCh),
-	atom_chars(Name,Chars),
+	atom_codes(Name,Chars),
 	read_tokens(NextCh,Tokens,Status).
 
 
@@ -261,13 +261,13 @@ read_special(0'',[string_atom(Name)|Tokens],Status) :-
 	!,
 	get0(Ch),
 	read_string(Ch,0'',Chars,Tokens,Status),
-	atom_chars(Name,Chars).
+	atom_codes(Name,Chars).
 
 read_special(Ch,Tokens,Status) :-
 	( symbol_char(Ch) ->
 	    read_symbol(Ch,Chars,NextCh),
 	    append("$",Chars,L),
-	    atom_chars(T,L),
+	    atom_codes(T,L),
 	    Tokens=[atom(T)|Ts],
 	    read_tokens(NextCh,Ts,Status)
 
@@ -439,7 +439,7 @@ read_fullstop(Ch,TokenList,Status) :-
 ****************************************************************************/
 read_number(Char,TokenList,Status) :-
 	read_digits(Char,IntList,NextCh),
-	number_chars(N,IntList),
+	number_codes(N,IntList),
 	( NextCh == 0'' ->
 	    ( N >= 2, N =< 36 ->
 		get0(C1),
@@ -575,11 +575,11 @@ read_float(Char,Integer,[num(Number)|Tokens],Status) :-
 	    ( C3 >= 0'0, C3 =< 0'9 ->
 		read_digits(C3,Exponent,NextCh),
 		append(L2,Exponent,L3),
-		number_chars(Number,L3),
+		number_codes(Number,L3),
 		read_tokens(NextCh,Tokens,Status)
 
 	      ;
-		atom_chars(Number,L2),
+		atom_codes(Number,L2),
 		( C3 == -1 ->
 		    Status=[eof,error('unexpected end of file')]
 
@@ -590,7 +590,7 @@ read_float(Char,Integer,[num(Number)|Tokens],Status) :-
 	    )
 
 	  ;
-	    number_chars(Number,L1),
+	    number_codes(Number,L1),
 	    read_tokens(C1,Tokens,Status)
 	).
 
