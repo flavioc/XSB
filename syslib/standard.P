@@ -1112,11 +1112,5 @@ throw(Ball) :-
         asserta('$$exception_ball'(Ball)),
         '$$unwind_stack'. % unwind_stack xsb_exits if no catcher was found
 
-%% Rounding floats and such
-floatop(_OpType,_FloatVal,_IntVal) :- '_$builtin'(FLOATOP).
-
-ceil(Float,Int) :- floatop('ceil',Float,Int).
-floor(Float,Int) :- floatop('floor',Float,Int).
-round(Float,Int) :- floatop('round',Float,Int).
 
 /* --------------------- end of file standard.P ----------------------- */
