@@ -65,17 +65,13 @@
 /*	are added and the symbol Sym is returned.			*/
 /*======================================================================*/
 
-%%:- import term_set_arg/4 from machine.
-:- import symbol_hash_table_size/1 from parse.
-
 sym_insert(Name, Arity, Prop, sym_tab(Buff,_Completed,HashTab), Sym) :-
-	( var(HashTab) ->	% SymTab does not exist yet (is empty).
+	( var(Buff) ->	% SymTab does not exist yet (is empty).
 		buff_alloc(8, Buff),
                 buff_set_word(Buff, 4, 0)
-	 %% someday compute hashsize from size of file?
 	; true
 	),
-	symbol_hash_table_size(HashSize),
+	log_ith(0,HashTab,HashSize),
 	term_hash(Name, HashSize, Hash0), Hash is Hash0+1,
 	log_ith(Hash, HashTab, Symlist),
 	sym_inserti(Name, Arity, Prop, Symlist, Sym, Index),
@@ -103,7 +99,7 @@ dispose_symtab( sym_tab(Buff,_,_) ) :- buff_dealloc(Buff, 8, 0).
 /*======================================================================*/
 
 sym_complete(sym_tab(_Buff,completed,HashTab)) :-
-	symbol_hash_table_size(HashSize),
+	log_ith(0,HashTab,HashSize),
 	sym_complete1(1, HashSize, _, HashTab).
 
 sym_complete1(I, HashSize, BucketList, HashTab) :-

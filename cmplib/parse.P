@@ -49,15 +49,15 @@
 % '_$multifile1'/1 and '_$apply_arity'/1 will be retracted in parse/4
 % '_$multifile_retract'/3 will be retracted in parse/4.
 %-----------------------------------------------------------------------
-:- import file_size/2 from file_io.
+
 parse(Modname, PFile, HFile, Module) :-
 	conset(needs_restart, 0),  % reset, if an error prevented this
 	(Modname == user
-	 ->	set_symbol_hash_table_size(1),
+	 ->	set_symbol_hash_table_size(1,Module0),
 		see(user), parse_clauses(user, Module0)
 	 ; file_exists(PFile)
 	 ->	file_size(PFile,FileSize),
-		set_symbol_hash_table_size(FileSize),
+		set_symbol_hash_table_size(FileSize,Module0),
 		(file_exists(HFile)
 		 ->	parse1(Modname,HFile,Module0)
 		 ;	Module0 = Module0	% init (lamp variable)
@@ -69,18 +69,10 @@ parse(Modname, PFile, HFile, Module) :-
 	retractall('_$multifile_retract'(_, Modname, _)),
 	module_close(Module0,Module), !.
 
-:- dynamic symbol_hash_table_size(_).
-
-set_symbol_hash_table_size(FileSize) :-
-	retractall(symbol_hash_table_size(_)),
+set_symbol_hash_table_size(FileSize,module(sym_tab(_,_,HashTab),_,_,_)) :-
 	EstSyms is FileSize // 50,
-	next_bigger_prime(EstSyms,Prime),
-	assert(symbol_hash_table_size(Prime)).
-
-next_bigger_prime(EstSyms,Prime) :-
-	prime(Prime),
-	EstSyms < Prime,
-	!.
+	(prime(Prime), EstSyms < Prime -> true),
+	log_ith(0,HashTab,Prime). % store hashtable size in 0th pos.
 
 parse1(Modname, File, Module) :-
 	seeing(OldFile),
