@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -38,10 +38,10 @@ flora_undefined_predicate_hook([PscRecord,true]) :-
 	!,
 	flora_stdmsg_nl,
 	( Base == WRAP_OBJEQL ->
-	    flora_message_line('loading the equality trailer into module `%s''',args(WS)),
+	    flora_message_line('loading the equality trailer into module %s',args(WS)),
 	    flloadtrailer(EQLTRAILER,WS)
 	;
-          flora_message_line('loading the standard trailer into module `%s''',args(WS)),
+          flora_message_line('loading the standard trailer into module %s',args(WS)),
           flloadtrailer(STDTRAILER,WS)
 	),
 	!.
@@ -51,7 +51,7 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	flora_hilog_predicate(PredName,Workspace),
 	!,
 	flora_stderr_nl,
-	flora_error_line("undefined HiLog predicate in module `%s'",args(Workspace)).
+	flora_error_line('undefined HiLog predicate in module %s',args(Workspace)).
 
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
@@ -59,4 +59,4 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	!,
 	psc_arity(PscRecord,N),
 	flora_stderr_nl,
-	flora_error_line("undefined predicate %s/%d in module `%s'",args(Predicate,N,Workspace)).
+	flora_error_line('undefined predicate %s/%d in module %s',args(Predicate,N,Workspace)).
