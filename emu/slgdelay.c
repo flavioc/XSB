@@ -123,13 +123,27 @@ static char *new_block;		/* used in new_entry() */
   NEXT_FUNCTION(ENTRY_TO_BE_RELEASED) = RELEASED;			\
   RELEASED = ENTRY_TO_BE_RELEASED
 
-#define remove_pnde(PNDE_HEAD, PNDE)					\
-  if (PNDE_HEAD == PNDE)						\
-    PNDE_HEAD = pnde_next(PNDE);					\
-  else									\
-    pnde_next(pnde_prev(PNDE)) = pnde_next(PNDE);			\
-  release_entry(PNDE, released_pndes, pnde_next)
+/*
+ * In remove_pnde(), PNDE_ITEM only needs to be removed/released when this
+ * PNDE list (pointed by PNDE_HEAD) has not been `forgotten' (set to NULL,
+ * see simplify_neg_fails() and simplify_pos_unconditional()).  Otherwise,
+ * all the items in this PNDE list are already being processed and will be
+ * released in simplify_neg_fails() or simplify_pos_unconditional(), so
+ * there is no need to release PNDE_ITEM again here.
+ */
 
+#define remove_pnde(PNDE_HEAD, PNDE_ITEM) {			\
+  PNDE *pnde_head_ptr;						\
+								\
+  pnde_head_ptr = &(PNDE_HEAD);					\
+  if (*pnde_head_ptr) {						\
+    if (*pnde_head_ptr == PNDE_ITEM)				\
+      *pnde_head_ptr = pnde_next(PNDE_ITEM);			\
+    else							\
+      pnde_next(pnde_prev(PNDE_ITEM)) = pnde_next(PNDE_ITEM);	\
+    release_entry(PNDE_ITEM, released_pndes, pnde_next);	\
+  }								\
+}
 
 /*
  * The following functions are used for statistics.
