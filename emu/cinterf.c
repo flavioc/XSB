@@ -86,6 +86,12 @@ DllExport xsbBool call_conv is_string(prolog_term term)
     return isstring(t);
 }
 
+DllExport xsbBool call_conv is_atom(prolog_term term)
+{
+    Cell t = (Cell)term;
+    return isatom(t);
+}
+
 DllExport xsbBool call_conv is_list(prolog_term term)
 {
     Cell t = (Cell)term;

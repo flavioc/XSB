@@ -209,6 +209,7 @@ DllExport extern xsbBool call_conv is_var(prolog_term);
 DllExport extern xsbBool call_conv is_int(prolog_term);
 DllExport extern xsbBool call_conv is_float(prolog_term);
 DllExport extern xsbBool call_conv is_string(prolog_term);
+DllExport extern xsbBool call_conv is_atom(prolog_term);
 DllExport extern xsbBool call_conv is_list(prolog_term);
 DllExport extern xsbBool call_conv is_nil(prolog_term);
 DllExport extern xsbBool call_conv is_functor(prolog_term);
