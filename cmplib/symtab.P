@@ -65,19 +65,25 @@
 /*	are added and the symbol Sym is returned.			*/
 /*======================================================================*/
 
-sym_insert(Name, Arity, Prop, sym_tab(Buff,_Completed,HashTab), Sym) :-
-	( var(Buff) ->	% SymTab does not exist yet (is empty).
-		buff_alloc(8, Buff),
-                buff_set_word(Buff, 4, 0)
-	; true
+sym_insert(Name, Arity, Prop, SymTab, Sym) :-
+	SymTab = sym_tab(Count,_Completed,HashTab),
+	(var(Count)	% SymTab does not exist yet (is empty).
+	 ->	Count = 0
+	 ;	true
 	),
 	log_ith(0,HashTab,HashSize),
 	term_hash(Name, HashSize, Hash0), Hash is Hash0+1,
 	log_ith(Hash, HashTab, Symlist),
 	sym_inserti(Name, Arity, Prop, Symlist, Sym, Index),
 	( var(Index) ->	% First time we encounter the symbol.
-		buff_word(Buff, 4, Index), New_I is Index+1,
-		backtrackable_buff_set_word(Buff, 4, New_I, Index)
+		Index = Count,
+		New_I is Index+1,
+		(term_set_arg(SymTab,1,New_I,1)
+		 ;
+		 term_set_arg(SymTab,1,Index,1)  % reset on backtracking
+		 %% can't use -1 for pre-image trailing; breaks GC?
+		 %% required to be backtrackable for testretract
+		)
         ; true
 	).
 
@@ -89,7 +95,8 @@ sym_inserti(Name, Arity, Prop, [Sym|_], Sym, Index) :-
 sym_inserti(Name, Arity, Prop, [_|SymTab], Sym, Index) :-
 	sym_inserti(Name, Arity, Prop, SymTab, Sym, Index).
 
-dispose_symtab( sym_tab(Buff,_,_) ) :- buff_dealloc(Buff, 8, 0).
+dispose_symtab(_).
+
 
 /*======================================================================*/
 /*  sym_complete(#SymTab)						*/
@@ -98,7 +105,7 @@ dispose_symtab( sym_tab(Buff,_,_) ) :- buff_dealloc(Buff, 8, 0).
 /* DSW: This should be done better using the log_ith structure...	*/
 /*======================================================================*/
 
-sym_complete(sym_tab(_Buff,completed,HashTab)) :-
+sym_complete(sym_tab(_Count,completed,HashTab)) :-
 	log_ith(0,HashTab,HashSize),
 	sym_complete1(1, HashSize, _, HashTab).
 
@@ -124,8 +131,7 @@ get_end_ith_bucket(BucketList, NextBucketList) :-
 /*	SymTab symbol table.						*/
 /*======================================================================*/
 
-sym_count(sym_tab(Buff,_,_), NumberOfSymbols) :-
-	buff_word(Buff, 4, NumberOfSymbols).
+sym_count(sym_tab(Count,_,_), Count).
 
 
 /*======================================================================*/
@@ -483,19 +489,3 @@ tree_listify(T,L0,L) :-
 			tree_listify(Y,L1,L)
 		 ;	L0 = [T|L]
 		).
-
-/* The following is extremely DIRTY and should be used very very	*/
-/* cautiously!.  For the moment it is only used when the symbol that	*/
-/* was inserted into the symbol table may be retracted and the count    */
-/* of the symbols has to remain the same.	        		*/
-
-/* DSW's comments 1/27/04: it seems that a test in testretract
-requires this to be backtrackable!?!  Trying to change this to use
-term_set_arg with backtrackable assignment doesn't work for large
-programs, and my guess is that GC doesn't work right for the pre-image
-trail. */
-
-backtrackable_buff_set_word(Buff, Bytes, NewValue, _) :- 
-	buff_set_word(Buff, Bytes, NewValue). 
-backtrackable_buff_set_word(Buff, Bytes, _, OldValue) :- 
-	buff_set_word(Buff, Bytes, OldValue), fail.

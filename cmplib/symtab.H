@@ -38,8 +38,7 @@
 :- import integer/1 from standard.
 :- import membercheck/2, member2/2, closetail/1 from listutil.
 :- import conget/2, conset/2 from gensym.
-:- import buff_alloc/2, buff_word/3, buff_set_word/3, term_hash/3,
-	  buff_dealloc/3, parsort/4
+:- import term_hash/3, parsort/4, term_set_arg/4
      from machine.
 :- import copy_term/2 from basics.
 
