@@ -1,0 +1,8 @@
+
+%%:- debug.
+
+?- [pretty_data>>data].
+
+?- writeln('Self info: ')@prolog(), student[#pp_self(data)]@flora(pp).
+?- writeln('Class info: ')@prolog(), student[#pp_class(data)]@flora(pp).
+?- writeln('ISA info: ')@prolog(), student[#pp_isa(data)]@flora(pp).

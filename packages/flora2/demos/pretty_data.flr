@@ -1,0 +1,82 @@
+
+%%:- debug.
+
+faculty :: instructor.
+lecturer :: instructor.
+
+phd(_)::student.
+ms(_)::student.
+'5yr'(_X)::ms(_X).
+
+
+student[first      *=>  string,
+	last	   *=>  string,
+	email      *=>  string,
+	joined     *=>  semester, % when joined graduate program
+        advisor    *=>> supervising,
+	advisor    *->> {},
+        support    *=>> support,
+	support    *->> {},
+        status     *=>  status,
+	quals      *=>  exam,
+	quals      *->  nottaken,
+	rpe        *=>  exam,
+	rpe        *->  nottaken,
+	prelim     *=>  exam,
+	prelim     *->  nottaken,
+	defense    *=>  exam,
+	defense    *->  nottaken,
+	graduated  *=>  date,
+	graduated  *->  futuredate,
+	taught     *=>> teaching,
+	taught     *->> {},
+	%%canteach   *=>  list(courseCode),
+	canteach   *-> [],
+	ta_eligibility *->> {},
+	remarks    *=>  string,    % whatever appropriate
+        remarks    *->  ''
+].
+
+instructor[name        =>  string,
+	   department  =>  string,
+	   department *->  cse      % default dept is cse
+].
+
+
+_#1:student
+  [ last      -> 'Doe',
+    first     -> 'John',
+    graduated -> date(2020,1),
+    advisor   ->> _#(_#1)[john, since -> spring(2010)],
+    status    ->> _#(_#1)[type -> phd],
+    quals     -> _#(_#1)[passed     ->  date(2010,10)],
+    rpe       -> _#(_#1)[passed     ->  futuredate,
+			 conditions ->  '',
+			 remarks    ->  ''
+			],
+    taught    ->> {
+                    _#(_#1)[course->cse127,semester->fall(2004)],
+                    _#(_#1)[course->cse230,semester->spring(2004)]
+		   },
+    domestic,
+    canteach  -> [cse127,cse230,cse214],
+    remarks   -> ''
+].
+
+_#1:student
+  [ last      -> 'Doe',
+    first     -> 'Mary',
+    joined    -> fall(1997),
+    graduated ->  date(2003,8),
+    advisor   ->> _#(_#1)[bill, since -> fall(1998)],
+    support   ->> {_#(_#1)[type ->ra],
+		   _#(_#1)[type -> fellowship,
+			   since->fall(1998), until->spring(2001)]},
+    status    ->> _#(_#1)[type -> phd],
+    quals     -> _#(_#1)[passed     ->  date(1997,5) ],
+    rpe       -> _#(_#1)[passed     ->  date(1999,10) ],
+    prelim    -> _#(_#1)[passed     ->  date(2002,5) ],
+    defense   -> _#(_#1)[passed     ->  date(2003,8) ],
+    female
+].
+
