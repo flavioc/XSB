@@ -17,17 +17,20 @@ This page is in alpha state. Please excuse our appearance.
 
 <p>
 FLORA is a sophisticated F-logic to <a
-href="http://www.cs.sunysb.edu/~sbprolog/xsb-page.html">XSB</a> compiler. It
-supports all features of F-logic, except type checking, and provides many
-extensions that make it a powerful programming platform. FLORA is seamlessly
-integrated with the XSB programming environment, which enables the development
-of large systems with components implemented in F-logic, Prolog, C, etc.
+href="http://www.cs.sunysb.edu/~sbprolog/xsb-page.html">XSB</a>
+compiler. It supports all features of F-logic, except type checking, and
+provides many extensions that make it a powerful programming platform. In
+particular, it supports HiLog and Transaction Logic. In addition, FLORA is
+seamlessly integrated with the XSB programming environment, which enables
+the development of large systems with components implemented in FLORA,
+Prolog, C, etc.
 
 <p>
 We are happy to announce the release of an alpha version of FLORA-2, a
 completely overhauled re-implementation of FLORA, which now supports HiLog
-and Transaction Logic. FLORA-2 is <b>not</b> syntactically compatible with
-the earlier version of this system.
+and Transaction Logic, a flexible module system, and much more. FLORA-2 is
+<b>not</b> syntactically compatible with the earlier version of FLORA.
+<p>
 Here is the manual:
 	<ul>
 	  <li> <a href="docs/manual.ps">Postscript version</a>
