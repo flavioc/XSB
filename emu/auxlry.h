@@ -27,7 +27,7 @@
 #include "basictypes.h"
 
 
-#define ihash(val, size) (word)(val) % (size)
+#define ihash(val, size) ((word)(val) % (size))
 
 extern double cpu_time(void);
 extern double real_time(void);
