@@ -1808,7 +1808,6 @@ int builtin_call(byte number)
     break;
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify() );
-    break;
   case DELETE_TRIE:
     if (strcmp(ptoc_string(2),"intern") == 0){
       int tmpval = ptoc_int(1);
