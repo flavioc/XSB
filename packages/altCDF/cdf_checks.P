@@ -144,7 +144,7 @@ to and loading them from a component.
 	  cdf_id_fields/4 from cdf_init_cdf.
 :- import get_component_extensional/2 from cdf_components.
 
-:- import cdf_flags/2 from usermod.
+:- import cdf_flags/2,component_table_ext/3 from usermod.
 
 :- import ground/1, member/2, memberchk/2  from basics.
 :- import conset/2, conget/2 from gensym.
@@ -191,12 +191,16 @@ check_ground_checkflag(Context,Term):-
 	  ; true).
 
 check_ground(Context,Term):- 
-        get_component_extensional(Term,Comp),
+	component_table_ext(Term,Main,Dep),
+	member(Arg,[Main|Dep]),
+	cdf_id_fields(Arg,_,_,Comp),
 	(Comp \== cdfpt-> 
-	   (ground(Term) -> 
+	   (ground(Arg) -> 
 	       true
 	     ; cdf_error(Context,[Term,' is not ground ']),fail)
-	   ; true).
+	   ; true),
+	  fail.
+check_ground(_Context,_Term).
 
 %-----------------
 
