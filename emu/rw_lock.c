@@ -33,7 +33,6 @@
 
 #ifdef MULTI_THREAD
 
-#include <pthread.h>
 #include "rw_lock.h"
 
 rw_lock trie_rw_lock ;

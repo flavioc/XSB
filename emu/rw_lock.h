@@ -25,6 +25,12 @@
 
 #ifdef MULTI_THREAD
 
+#ifdef WIN_NT
+#include "pthread.h"
+#else /* UNIX */
+#include <pthread.h>
+#endif
+
 typedef struct
 {
 	int havelock ;
