@@ -1161,8 +1161,8 @@ static int emuloop(byte *startaddr)
  case calld:   /* PPA-L */
     pppad;
     pad64;
-    check_glstack_overflow( MAX_ARITY, lpcreg, OVERFLOW_MARGIN ) ;
     cpreg = lpcreg+sizeof(Cell); 
+    check_glstack_overflow( MAX_ARITY, lpcreg, OVERFLOW_MARGIN ) ;
     lpcreg = *(pb *)lpcreg;
     goto contcase;
 

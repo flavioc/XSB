@@ -113,9 +113,13 @@ static void h_mark(int i)
 #define ls_marked(i) (ls_marks[i])
 #define ls_mark(i) ls_marks[i] |= MARKED
 
+/*
+ top_of_localstk is only right after the execution of a call/fail instruction.
+ the over approximation made here is fine for stack expansion
+*/
 #define stack_boundaries \
   heap_top = hreg; \
-  ls_top = top_of_localstk ; \
+  ls_top = top_of_localstk - 1024 ; \
   if (ls_top < heap_top) ls_top = heap_top ; \
   heap_bot = (CPtr)glstack.low ; \
   ls_bot = (CPtr)glstack.high - 1 ; \
@@ -894,6 +898,12 @@ void glstack_realloc(int new_size, int arity)
   { cell_ptr = (CPtr *)(reg+arity) ;
     reallocate_heap_or_ls_pointer(cell_ptr) ;
     arity-- ;    
+  }
+
+  /* Update the var_regs array */
+  for( arity = 0 ; arity < MaxTrieRegs ; arity++ )
+  { cell_ptr = (CPtr *)(var_regs+arity) ;
+    reallocate_heap_or_ls_pointer(cell_ptr) ;
   }
 
   hreg = (CPtr)hreg + heap_offset ;

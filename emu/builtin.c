@@ -1536,6 +1536,12 @@ int  builtin_call(byte number)
 	   < complstack.init_size * K - OVERFLOW_MARGIN )
 	complstack_realloc(complstack.init_size);
 
+	if (glstack.size != glstack.init_size)
+	  if ( (Integer)((glstack.high - (byte *)top_of_localstk) +
+			 ((byte *)hreg - glstack.low))
+	       < glstack.init_size * K - OVERFLOW_MARGIN )
+	glstack_realloc(glstack.init_size,0);
+
     break;
 
   case SCHED_STRAT:

@@ -602,6 +602,8 @@ int copy_term()
         size = term_size(arg1) ;
         check_glstack_overflow( 2, pcreg, size*sizeof(Cell) ) ;
 
+		/* again because stack might have been reallocated */
+		arg1 = (Cell)Areg(1) ; deref(arg1) ;
         arg2 = (Cell)Areg(2) ; deref(arg2) ;
 
         if( !isref(arg2) ) xsb_abort( "incorrect use of copy_term0" ) ;

@@ -61,6 +61,7 @@ case tabletry:		/* cur_label arity label xcurcall	*/
      */
     VarPosReg = top_of_cpstack;
     check_tcpstack_overflow(VarPosReg);
+	check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
     variant_call_search(ARITY, reg, &xcurcall, &xflag);
     if (xflag) {		    /* xflag = 1 if a variant-subgoal exists */
       xcurcall = (CPtr) *xcurcall;	/* point xcurcall to the call_struct */
@@ -343,6 +344,7 @@ case tabletrysingle:
     xflag = 1;
     VarPosReg = top_of_cpstack;
     check_tcpstack_overflow(VarPosReg);
+	check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
     variant_call_search(ARITY, reg, &xcurcall, &xflag);
     if (xflag) {                        /* xflag = 1 if variant */ 
       xcurcall = (CPtr) *xcurcall;	/* point xcurcall to the call_struct */
@@ -441,7 +443,6 @@ return_table_code:
 /*----------------------------------------------------------------------*/
 
 lay_down_active:
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
 	adjust_level(subg_compl_stack_ptr(xcurcall));
 	PREVSUSREC = subg_asf_list_ptr(xcurcall);
 	xtemp9 = ebreg;
