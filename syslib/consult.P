@@ -675,7 +675,6 @@ if_should_not_reload(File) :-
 	get_fname(File,SExt,Base,_Mod),
 	get_HRname(SExt,Base,_Hfname,Filename),
 	expand_filename(Filename,AFilename),
-	writeln(AFilename),
 	file_time(AFilename,time(Ctime1,Ctime2)),
 	load_dyn_file_loaded(AFilename,time(Ltime1,Ltime2)),
 	time(Ltime1,Ltime2) @>= time(Ctime1,Ctime2),
