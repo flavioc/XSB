@@ -787,9 +787,7 @@ flora_build_query(Term,DWS,Code) :-
 /****************************************************************************
   flora_build_structlist(+TermList,+DefaultWorkspace,+Prefix,?VarList,-CodeList)
 ****************************************************************************/
-flora_build_structlist([T],DWS,Prefix,VarList,[Code]) :-
-	!,
-	flora_build_struct(T,DWS,Prefix,VarList,Code).
+flora_build_structlist([],_DWS,_Prefix,_VarList,[]) :- !.
 
 flora_build_structlist([T|L],DWS,Prefix,VarList,[TCode|LCode]) :-
 	!,
