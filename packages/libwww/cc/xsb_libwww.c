@@ -61,7 +61,7 @@ int HTAuthFilter (HTRequest * request, HTResponse * response, void * param,
 
 	if (HTResponse_challenge(response)) {
 		Basic_generate(request, auth_info, status);
-		HTload(request, NO);
+		HTLoad(request, NO);
 		return HT_ERROR;
 	}
 	return HT_OK;
@@ -165,7 +165,7 @@ bool do_libwww_fetch_url___(void)
 		HTRequest_addConnection(request, "close", "");
 
 		absolute_url = HTParse(url, cwd, PARSE_ALL);
-		chunk =	(HTChunk *)HTloadToChunk(absolute_url, request);
+		chunk =	(HTChunk *)HTLoadToChunk(absolute_url, request);
  		HT_FREE(absolute_url);
 		HT_FREE(cwd);
 
@@ -231,7 +231,7 @@ bool do_libwww_form_request___(void)
 		element_list = p2p_car(Form_list);
 		if (!is_list(element_list)) xsb_abort("wrong form list pattern!");
 		head = p2p_car(element_list);
-		tail = P2p_cdr(element_list);
+		tail = p2p_cdr(element_list);
 		c2p_string(name, head);
 		c2p_string(value, tail);
 		c2p_nil(element_list);
