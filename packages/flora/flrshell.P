@@ -186,7 +186,7 @@ help :-
 	writeln('  flcompile(FILE.[flr],[...])  : flcompile(FILE) with options [...]'),
 	writeln('  flconsult(FILE.[flr])        : compile FILE.flr; consult FILE.P'),
 	writeln('  flconsult(FILE.[flr],[...])  : flconsult(FILE) with options [...]'),
-	writeln('  flload(FILE[.{P|O|flr}])    : consult FILE.flr, FILE.P or FILE.O'),
+	writeln('  flload(FILE[.{P|O|flr}])     : consult FILE.flr, FILE.P or FILE.O'),
 	writeln('  [FILE[.{P|O|flr}],...]       : consult a list of .flr, .P, or .O files'),
 	writeln('  dyncompile(FILE[.flr])       : compile FILE.flr to dynamic code'),
 	writeln('  dyncompile(FILE[.flr],[...]) : dyncompile(FILE) with options [...]'),
