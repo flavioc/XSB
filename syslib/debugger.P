@@ -75,18 +75,34 @@ debug_ctl(profile, off)  :- retractall('_$_deb_cputime_stack'(_)).
 debug_ctl(profile, on)   :- cputime_stack(_Rest), !.    % already set-no effect
 debug_ctl(profile, on)   :- set_cputime_stack([]).      % initialize stack
 
+
+debug_ctl(redirect,tty) :- !,
+	conget('_$_$_stdout_dbg',OutSaved),
+	conget('_$_$_stddbg_dbg',DbgSaved),
+	conget('_$_$_stderr_dbg',ErrSaved),
+	conget('_$_$_stwarn_dbg',WarnSaved),
+	file_flush(STDDBG,_),
+	file_flush(STDOUT,_),
+	file_flush(STDERR,_),
+	file_flush(STDWARN,_),
+	file_clone(OutSaved,STDOUT,_),
+	file_clone(ErrSaved,STDERR,_),
+	file_clone(WarnSaved,STDWARN,_),
+	file_clone(DbgSaved,STDDBG,_).
 %% redirect STDDBG, STDOUT to File. File can be /dev/tty
 debug_ctl(redirect,File) :-
+	file_clone(STDOUT,OutSaved,_),
+	conset('_$_$_stdout_dbg',OutSaved),
+	file_clone(STDDBG,DbgSaved,_),
+	conset('_$_$_stddbg_dbg',DbgSaved),
+	file_clone(STDWARN,WarnSaved,_),
+	conset('_$_$_stdwarn_dbg',WarnSaved),
+	file_clone(STDERR,ErrSaved,_),
+	conset('_$_$_stderr_dbg',ErrSaved),
 	file_reopen(File,w,STDDBG,_),
 	file_clone(STDDBG,STDERR,_),
 	file_clone(STDDBG,STDWARN,_),
 	file_clone(STDDBG,STDOUT,_).
-%% This won''t work on windows! What will?
-debug_ctl(redirect,tty) :-
-	file_reopen('/dev/tty',w,STDDBG,_),
-	file_reopen('/dev/tty',w,STDERR,_),
-	file_reopen('/dev/tty',w,STDWARN,_),
-	file_reopen('/dev/tty',w,STDOUT,_).
 
 debug_ctl(hide, L)   :- user_hide(L). % don''t trace inside the predicates in L
 debug_ctl(unhide, L) :- user_unhide(L). % cancel hide

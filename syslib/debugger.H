@@ -66,7 +66,7 @@
    from usermod.
 :- import xsb_configuration/2 from xsb_configuration.
 
-:- import fmt_write_string/3 from file_io.
+:- import fmt_write_string/3, file_flush/2 from file_io.
 :- import file_get/2, file_put/2, file_flush/2 from file_io.
 :- import file_reopen/4, file_clone/3 from file_io.
 
