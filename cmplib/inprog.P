@@ -51,6 +51,7 @@ inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag)) :-
 		% The id of the first chunk is 1, same as the head.
     ),
     varproc(VarList, VarTab, PvarCount),
+    !,		% needed to cut unnecessary choice points... (bmd & kostis)
     ( (need_alloc(Body) ; sym_type(Sym,tabled(_,_))) -> 
 	ARSize is PvarCount + 2		/* tls changed for XWAM */
     ; ARSize = 0
@@ -73,7 +74,8 @@ need_alloc(and(Goal,Goals), N0, N1, InlineEnd) :-
     need_alloc(Goal, N0, N2, _),
     ( N2 > 1, N1 = N2, InlineEnd = 0
     ; N2 =< 1, need_alloc(Goals, N2, N1, InlineEnd)
-    ).
+    ),
+    !.	% needed to cut unnecessary choice points... (bmd & kostis)
 need_alloc(or(_Goal,_Goals), _, 2, 0).
 need_alloc(if_then_else(_,Goal1,Goal2), N0, N1, 0) :-
     need_alloc(Goal1, N0, N2, Inend1),

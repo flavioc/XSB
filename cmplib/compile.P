@@ -213,8 +213,11 @@ compile_predicate(PredDef, GenAsm, AFile, OFile, TIFile, IsModule, SymTab) :-
 	; true
 	),
 	preprocess(PredDef, PredBlks, SymTab),
+	!,	% needed to cut unnecessary choice points... (bmd & kostis)
 	ti_transform(PredBlks, TIPredBlks, TIFile, SymTab),
+	!,	% needed to cut unnecessary choice points... (bmd & kostis)
 	compile_pred_block(TIPredBlks, PilCode-[], 0, NC),
+	!,	% needed to cut unnecessary choice points... (bmd & kostis)
 	compile_peephole_opt(PilCode, PilCode1),
 	( GenAsm =:= 0 -> true; tell(AFile), write_asm_instructions(PilCode1) ),
 	tell(OFile), asm_PIL(Sym, PilCode1, NC, IsModule),

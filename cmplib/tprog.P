@@ -40,6 +40,7 @@
 compile_clause(Sym, Clause, PilCode, PilCodeR, NC) :-
 	flatten(Clause, FlatClause),
 	inprog(Sym, FlatClause, InClause),
+	!,	% needed to cut unnecessary choice points... (bmd & kostis)
 	tclause(Sym, InClause, PilCode, PilCodeR, NC).
 
 tclause(Sym, clause(Args,Body,crec(ARSize,Label)),

@@ -48,8 +48,10 @@ varproc(VarList, VarTab, PvarCount) :-
 /*		-LastChunks: is an open ended-list.			*/
 /*======================================================================*/
 
-get_lastchunk([One], LastChunk) :- get_lastchunk1(One, LastChunk).
-get_lastchunk([_|Rest], LastChunk) :- get_lastchunk(Rest, LastChunk).
+get_lastchunk([One|Rest], LastChunk) :-
+	( Rest == [] -> get_lastchunk1(One, LastChunk)
+	; get_lastchunk(Rest, LastChunk)
+	).
 
 get_lastchunk1(goal(CkId,_,_,_), LastChunk) :- member1(CkId, LastChunk).
 get_lastchunk1(inlinegoal(CkId,_,_,_), LastChunk) :- member1(CkId, LastChunk).
@@ -87,6 +89,7 @@ mark_occurrence([variable(Vid,_VCPrag)|Rest], VarTab) :-
 mark_occ1([], N, N, Pre, Pre, _).
 mark_occ1([One|Rest], N0, N, Pre, Last, Vid) :-
 	mark_occ2(One, N0, N1, Pre, Med, Vid),
+	!,	% needed to cut unnecessary choice points... (bmd & kostis)
 	mark_occ1(Rest, N1, N, Med, Last, Vid).
 
 mark_occ2(goal(_,_,_,VOList), N0, N, Pre, Last, Vid) :-
@@ -187,6 +190,7 @@ mark_type([variable(Vid,v(Type,_Loc,Use,_NoUse))|Rest], VarTab, LastChunk) :-
 mark_type1([], _, _, _, _).
 mark_type1([One|Rest], Chunks, LastChunk, Safe, Vid) :-
 	mark_type2(One,  Chunks, LastChunk, Safe, Vid),
+	!,	% needed to cut unnecessary choice points... (bmd & kostis)
 	mark_type1(Rest, Chunks, LastChunk, Safe, Vid).
 
 mark_type2(head(VOList), Chunks, LastChunk, Safe, Vid) :-
@@ -258,6 +262,7 @@ alloc_vars([variable(Vid,v(VT,Loc,Use,NoUse))|VarList], VarTab, PVin, PVout) :-
       /* Conflict set = ChkArg - BUse0 */
       conflict_avoid(BUse0, HUse0, NoUse0, Use, NoUse, ChkArg)
     ),
+    !, % needed to cut unnecessary choice points... (bmd & kostis)
     alloc_vars(VarList, VarTab, PVmed, PVout).
 
 
