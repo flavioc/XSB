@@ -38,12 +38,12 @@
 
 :- compiler_options([sysmod,xpp_on]).
 
-#include "standard.h"
+#include "../prolog_includes/standard.h"
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
 #include "io_defs_xsb.h"
 #include "celltags_xsb.h"
-
+#include "psc_defs.h"
 
 %% Provide tests for the respective OS.
 %% windows_os_loader is used only here and in parse.
@@ -119,7 +119,7 @@ set_current_module :-
 set_current_input :-
 	conpsc(userin, UserInPSC),
 	psc_set_type(UserInPSC, 5),        % ``ep'' field contains file desc
-	psc_set_prop(UserInPSC, 0),        % ``ep'' field set to stdin
+	psc_set_prop(UserInPSC, 0),        % ``data'' field set to stdin
 	conset(current_input, UserInPSC),
 	stat_set_flag(CURRENT_INPUT, 0).
 
@@ -133,7 +133,7 @@ set_current_input :-
 set_current_output :-
 	conpsc(userout, UserOutPSC),
 	psc_set_type(UserOutPSC, 5),       % ``ep'' field contains file desc
-	psc_set_prop(UserOutPSC, 1),       % ``ep'' field set to stdout
+	psc_set_prop(UserOutPSC, 1),       % ``data'' field set to stdout
 	conset(current_output, UserOutPSC),
 	stat_set_flag(CURRENT_OUTPUT, 1).
 
@@ -261,17 +261,17 @@ load_pred1(PSC) :-
 	psc_name(PSC, Name),
 	psc_arity(PSC, Arity),
 	psc_env(PSC, Env), 
-	( Env =:= 2
+	( Env =:= T_UNLOADED
 	->  % is "imported"
 	    psc_prop(PSC, ModPSC),
 	    psc_name(ModPSC, ModName),
 	    psc_type(ModPSC, ModType), 
-	    (	ModType =:= 4
-	    ;	ModType =\= 4,	% module is not loaded yet
-		load(ModName)	% can abort here 
+	    (ModType =:= T_MODU
+	     ->	    true   % module loaded
+	     ;	    load(ModName)	% might abort here 
 	    ),
 	    (	psc_type(PSC, NType),
-		(   NType =:= 2; NType =:= 13; NType =:= 1 ), 
+		(   NType =:= T_PRED; NType =:= T_FORN; NType =:= T_DYNA ), 
 		%% module loaded, and pred/foreign-pred is there
 		'_$cutto'(B)
 		;

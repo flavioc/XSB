@@ -118,7 +118,7 @@ static void delete_tst_answer_set(TSTNptr root) {
 
   TSTNptr current, sibling;
   TSTHTptr hash_hdr;
-  int i;
+  unsigned int i;
 
 
   if ( IsNULL(root) )
@@ -156,7 +156,7 @@ void delete_subsumptive_table(BTNptr root) {
 
   BTNptr current, sibling;
   BTHTptr hash_hdr;
-  int i;
+  unsigned int i;
   SGFrame sf;
 
 

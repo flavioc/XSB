@@ -605,13 +605,13 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
     else mod = cur_mod;
     temp_pair = insert(str.string, t_arity, mod, &is_new);
     if (is_new && t_env==T_IMPORTED)
-      set_ep(temp_pair->psc_ptr, (byte *)(mod));
-    /* set ep to the psc record of the module name */
+      set_data(temp_pair->psc_ptr, mod);
+    /* set psc_data to the psc record of the module name */
     env_type_set(temp_pair->psc_ptr, t_env, t_type, (bool)is_new);
-    /* dsw added following */
+    /* dsw added following, maybe wrongly */
     if (exp && t_env == T_EXPORTED) {
       /* xsb_dbgmsg("exporting: %s from: %s",name,cur_mod->nameptr); */
-      if (is_new) set_ep(temp_pair->psc_ptr, (byte*)(mod));
+      if (is_new) set_data(temp_pair->psc_ptr, mod);
       link_sym(temp_pair->psc_ptr, (Psc)flags[CURRENT_MODULE]);
     }
   }

@@ -140,6 +140,7 @@ CPtr	ans_var_pos_reg;
 
 extern int  builtin_call(int), unifunc_call(int, CPtr);
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
+extern Pair build_call(Psc);
 
 #ifdef DEBUG
 extern void debug_inst(byte *, CPtr);
@@ -149,7 +150,7 @@ extern void print_delay_list(FILE *, CPtr);
 extern void printterm(Cell, byte, int);
 #endif
 
-static int  (*dyn_pred)();
+/**static int  (*dyn_pred)(); unused-remove soon**/
 
 bool neg_delay;
 int  xwammode, level_num;
@@ -1009,6 +1010,36 @@ contcase:     /* the main loop */
     cpreg = lpcreg;
     psc = (Psc)op2;
     call_sub(psc);
+    goto contcase;
+  }
+
+  case call_forn: { /* PPP-L, maybe use userfun instr? */
+    pppad; pad64; op2word;
+    if (((PFI)op2)())  /* call foreign function */
+      lpcreg = cpreg;
+    else Fail1;
+    goto contcase;
+  }
+
+  case load_pred: { /* PPP-S */
+    Psc psc;
+    
+    pppad; pad64; op2word;
+    psc = (Psc)op2;
+    /* check env or type to give (better) error msgs? */
+    switch (get_type(psc)) {
+    case T_PRED:
+    case T_DYNA:
+      xsb_abort("System Error: trying to load an already loaded pred");
+    default:
+      /* printf("loading module %s for %s/%d\n",
+	 get_name(get_data(psc)),get_name(psc),get_arity(psc)); */
+      bld_cs(reg+1, build_call(psc));   /* put call-term in r1 */
+      psc = (Psc)flags[MYSIG_UNDEF+32]; /* get psc of undef handler */
+      bld_int(reg+2, MYSIG_UNDEF);      /* undef-pred code */
+      lpcreg = get_ep(psc);             /* ep of undef handler */
+      break;
+    }
     goto contcase;
   }
 

@@ -87,7 +87,7 @@ static void dis_data(void)
 		}
 	   else if (strcmp(modname,"usermod")==0) 
 		fprintf(filedes, "\t/* Same as module global */\n");
-	   else dis_data_sub((Pair *)&get_ep(psc_ptr));
+	   else dis_data_sub((Pair *)&get_data(psc_ptr));
 	   fprintf(filedes, "\n");
 	   temp_ptr = &((*temp_ptr)->next);
 	}
@@ -123,7 +123,7 @@ static void dis_data_sub(Pair *chain_ptr)
 	  if (get_tip(temp) == NULL) fprintf(filedes, "UNTABLED, "); 
 	  else fprintf(filedes, "TABLED, ");
 	}
-	fprintf(filedes, "%p\n", get_ep(temp));
+	fprintf(filedes, "%p\n", get_ep(temp));  /* dsw ???? */
 	chain_ptr = &((*chain_ptr)->next);
    } /* while */
 }

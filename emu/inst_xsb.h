@@ -335,6 +335,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 /* Procedure instructions */
 
+#define call_forn       0xe5
+#define load_pred       0xe6
 #define allocate_gc     0xe7
 #define call            0xe8
 #define allocate        0xe9

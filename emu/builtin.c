@@ -521,6 +521,8 @@ void init_builtin_table(void)
   set_builtin_table(PSC_SET_TYPE, "psc_set_type");
   set_builtin_table(PSC_SET_PROP, "psc_set_prop");
   set_builtin_table(PSC_SET_SPY, "psc_set_spy");
+  set_builtin_table(PSC_EP, "psc_ep");
+  set_builtin_table(PSC_SET_EP, "psc_set_ep");
 
   set_builtin_table(TERM_PSC, "term_psc");
   set_builtin_table(TERM_TYPE, "term_type");
@@ -868,10 +870,6 @@ static void write_quotedname(FILE *file, char *string)
 
 int builtin_call(byte number)
 {
-#ifdef FOREIGN
-  static int (*proc_ptr)(void);		/* working variable */
-#endif
-  
   switch (number) {
   case PSC_NAME: {	/* R1: +PSC; R2: -String */
     Psc psc = ptoc_addr(1);
@@ -897,14 +895,27 @@ int builtin_call(byte number)
   case PSC_PROP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */
     Psc psc = ptoc_addr(1);
-    ctop_int(2, (Integer)get_ep(psc));
+    ctop_int(2, (Integer)get_data(psc));
     break;
   }
   case PSC_SET_PROP: {	       /* R1: +PSC; R2: +int */
     Psc psc = ptoc_addr(1);
-    set_ep(psc, (pb)ptoc_int(2));
+    set_data(psc, (Psc)ptoc_int(2));
     break;
   }
+  case PSC_EP: {	/* R1: +PSC; R2: -term */
+			/* prop: as a buffer pointer */
+    Psc psc = ptoc_addr(1);
+    ctop_int(2, (Integer)get_ep(psc));
+    break;
+  }
+  case PSC_SET_EP: {	       /* R1: +PSC; R2: +int */
+    Psc psc = ptoc_addr(1);
+    pb ep = (pb)ptoc_int(2);
+    set_ep(psc, (ep==NULL?((byte *)(&(psc->load_inst))):ep));
+    break;
+  }
+
   case PSC_SET_SPY: { 	       /* R1: +PSC; R2: +int */
     Psc psc = ptoc_addr(1);
     set_spy(psc, ptoc_int(2));
@@ -1110,17 +1121,18 @@ int builtin_call(byte number)
     switch (get_type(psc)) {
     case T_PRED:
     case T_DYNA:
+    case T_UDEF:
+    default:
+    case T_FORN:
       pcreg = get_ep(psc);
       break;
-    case T_FORN:
+/****    case T_FORN:
 #ifdef FOREIGN
       proc_ptr = (PFI) get_ep(psc);
-      /* A foreign function must return an int!
-	 If it returns non-0 then proceed; 0 - fail */
       if (proc_ptr())
-	pcreg = cpreg;      	 /* proceed */
+	pcreg = cpreg;
       else
-	pcreg = (pb)&fail_inst;	 /* fail    */
+	pcreg = (pb)&fail_inst;	 
 #else
       xsb_exit("Foreign call in configuration that does not support it !");
 #endif
@@ -1130,6 +1142,7 @@ int builtin_call(byte number)
       psc = synint_proc(psc, MYSIG_UNDEF, NULL);
       if (psc) pcreg = get_ep(psc);
       break;
+*****/
     }
     if (call_intercept) intercept(psc);
     break;
@@ -1156,15 +1169,6 @@ int builtin_call(byte number)
       }
       bld_int(reg+get_arity(psc)+1, value);
     } else psc = NULL; 
-    if (value == T_FORN) {
-#ifdef FOREIGN
-      proc_ptr = (PFI) get_ep(psc);
-      proc_ptr();
-      pcreg = cpreg;		/* always "proceed" */
-#else
-      xsb_exit("Foreign call in configuration that does not support it !");
-#endif
-    }
     break;
   }
   case SUBSTRING: /* R1: +String; R2,R3: +begin/end offset; R4: -OutSubstr */
@@ -1236,7 +1240,7 @@ int builtin_call(byte number)
     Psc  psc = pair_psc(insert_module(0, ptoc_string(3)));
     Pair sym = insert(ptoc_string(1), (char)ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
-      set_ep(pair_psc(sym), (byte *)(psc));
+      set_data(pair_psc(sym), (psc));
     env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, (bool)value);
     link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
     break;

@@ -25,6 +25,7 @@
 
 :- compiler_options([xpp_on]).
 #include "builtin.h"
+#include "psc_defs.h"
 
 
 
@@ -239,7 +240,7 @@ convert_to_dyna(PHead,Prref) :-
 	( SYMTYPE =:= 1 ->			/* already dynamic */
 		psc_tabled(PSC, Tabled),
 		(Tabled =:= 0
-		 ->	psc_prop(PSC, Prref),		/* get the Prref */
+		 ->	psc_ep(PSC, Prref),		/* get the Prref */
 			buff_byte(Prref, 0, Tmp),
 			(Tmp =:= 124	/* a trie_assert_inst instruction!!*/
 			 ->	functor(PHead,P,_),
@@ -247,7 +248,7 @@ convert_to_dyna(PHead,Prref) :-
 					P))
 			 ;	true
 			)
-		 ;	psc_prop(PSC, Prrefa),
+		 ;	psc_ep(PSC, Prrefa),
 			buff_word(Prrefa, 24, Prref)	% !! into calld
 		)
 	; SYMTYPE =:= 0  ->    		/* undefined, this is first clause */
@@ -323,7 +324,7 @@ do_multifile_retract(Head, Body) :-
 	(Type =:= 2		/* is compiled */
 	 ->	functor(Head,F,A),
 	        abort(['Not permitted to retract from static predicate', F/A])
-         ;	psc_prop(PSC, Prref),			/* get Prref */
+         ;	psc_ep(PSC, Prref),			/* get Prref */
                 db_retract(New_Head, Body, Prref)
 	).
 
@@ -340,7 +341,7 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	 ->	functor(Head,F,A),
 	        abort(['Not permitted to retract from static predicate', F/A])
 	 ;      Type =:= 1,
-		psc_prop(PSC, Prref),			/* get Prref */
+		psc_ep(PSC, Prref),			/* get Prref */
 	        db_retract(Head, Body, Prref)
 	).
 
@@ -366,7 +367,7 @@ retractall0(Fact) :-
 	        abort(['Not permitted to retract from static predicate', F/A])
 	 ;	(	Type =:= 1
 			->
-			psc_prop(PSC, Prref),		/* get Prref */
+			psc_ep(PSC, Prref),		/* get Prref */
 			db_retractall(Fact, Prref)
 			;
 			true
@@ -384,7 +385,7 @@ retract_nr(Rule) :-
 	 ->	functor(Head,F,A),
 	        abort(['Not permitted to retract from static predicate', F/A])
          ;      Type =:= 1,
-		psc_prop(PSC, Prref),			/* get Prref */
+		psc_ep(PSC, Prref),			/* get Prref */
 	        db_retract_nr(Head, Body, Prref)
 	).
 
@@ -397,7 +398,7 @@ reclaim_space(Fact) :-
 	        abort(['Not permitted to retract from static predicate', F/A])
 	 ;	(	Type =:= 1
 			->
-			psc_prop(PSC, Prref),		/* get Prref */
+			psc_ep(PSC, Prref),		/* get Prref */
 			db_reclaim_space(Fact, Prref)
 			;
 			true
@@ -482,17 +483,18 @@ abolish1(Term) :-
 	retract_trie_index(Term),
 	conpsc(Term,Psc),
 	psc_type(Psc, Type),
-	( Type =:= 1 ->				% DYNA
-		psc_prop(Psc, Prref),
+	(Type =:= T_DYNA	    % DYNA
+	 ->	psc_ep(Psc, Prref),
 		db_abolish(Prref),
 		psc_set_type(Psc, 0),
-		psc_set_prop(Psc, 0)
-	; Type =:= 2 ->				% normal compiled predicate
-		psc_prop(Psc,Ep),		% get entry point
-		unload_seg(Ep),			% free the space
+		psc_set_ep(Psc, 0)
+	 ; Type =:= T_PRED	    % normal compiled predicate
+	 ->	psc_ep(Psc,Ep),	    % get entry point
+		unload_seg(Ep),	    % free the space
 		psc_set_type(Psc, 0),
-		psc_set_prop(Psc, 0)
-	; Type =:= 0	/* need to check imported !!!! */
+		psc_set_ep(Psc, 0)
+		/*,psc_set_env(Psc, T_UNLOADED)*/
+	 ;	Type =:= T_ORDI	 /* need to check imported !!!! */
 	).
 
 
@@ -519,7 +521,7 @@ clause0(Head, Body) :-
 	(Type =:= 2		/* is compiled */
 	 ->	functor(Head,F,A),
 	        abort(['cannot apply clause/2 to non dynamic predicate', F/A])
-	 ;	psc_prop(PSC, Prref),			/* get Prref */
+	 ;	psc_ep(PSC, Prref),			/* get Prref */
 	        db_clause(Head,Body,Prref,_Clref)
 	).
 

@@ -230,9 +230,7 @@ int *asynint_ptr = &asynint_val;
 
 /*======================================================================*/
 
-#define obtain_ep(PSC) dyn_pred = (PFI)get_ep(PSC);
-
-#define call_sub(PSC) {							\
+#define ocall_sub(PSC) {							\
   if (*asynint_ptr > 0) { /* non-attv interrupt detected */		\
     if (*asynint_ptr == KEYINT_MARK) {					\
       synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));		\
@@ -251,41 +249,52 @@ int *asynint_ptr = &asynint_val;
     /* verify_attributes/2.					 */	\
     PSC = (Psc) flags[MYSIG_ATTV+32];					\
   }									\
-  else									\
-    switch (get_type(PSC)) {						\
-    case T_PRED:							\
-    case T_DYNA:							\
+  else { 								\
       lpcreg = (pb)get_ep(PSC);						\
       /* check_glstack_overflow(get_arity(PSC),	        */		\
       /*                       lpcreg,OVERFLOW_MARGIN); */		\
-      break;								\
-    case T_FORN:							\
-      obtain_ep(PSC);							\
-      /* only call the predicate in case   */				\
-      /* it won't be called in intercept() */				\
-      if (!call_intercept ||						\
-          !(flags[DEBUG_ON] && !flags[HIDE_STATE] &&			\
-	    (get_spy(psc) || flags[TRACE])				\
-	    ) ) {							\
-	/* A foreign function must return an int! */			\
-	/* If dyn_pred returns 0, then fail       */			\
-        if (dyn_pred())							\
-          lpcreg = cpreg;		/* "proceed" */			\
-        else lpcreg = (pb)&fail_inst;					\
-      }									\
-      break;								\
-    case T_UDEF:							\
-    default:								\
-      PSC = synint_proc(PSC, MYSIG_UNDEF, lpcreg-2*sizeof(Cell));	\
-      if (!PSC)								\
-	lpcreg = pcreg;							\
-      else								\
-	lpcreg = get_ep(PSC);						\
-      break;								\
-    }									\
+  }                                                                     \
   if (call_intercept) { /* for debugging or for statistics */		\
     pcreg = lpcreg;							\
     intercept(PSC);							\
     lpcreg = pcreg;							\
   }									\
 }
+
+#define call_sub(PSC) {							\
+  if ((*asynint_ptr > 0) | call_intercept | int_val(cell(interrupt_reg))) { \
+    if (*asynint_ptr > 0) { /* non-attv interrupt detected */		\
+      if (*asynint_ptr == KEYINT_MARK) {				\
+        synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));		\
+        lpcreg = pcreg;							\
+      }									\
+      else								\
+        lpcreg = (byte *)get_ep(PSC);					\
+      *asynint_ptr = 0;							\
+    }									\
+    else if (int_val(cell(interrupt_reg))) {				\
+      /* there is attv interrupt */					\
+      synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\
+      lpcreg = pcreg;							\
+      /* Set PSC to verify_attributes/2, so that the later call of */	\
+      /* intercept(PSC) will set the return point, pcreg, to	 */	\
+      /* verify_attributes/2.					 */	\
+      PSC = (Psc) flags[MYSIG_ATTV+32];					\
+    }									\
+    else { 								\
+        lpcreg = (pb)get_ep(PSC);					\
+        /* check_glstack_overflow(get_arity(PSC),	  */		\
+        /*                       lpcreg,OVERFLOW_MARGIN); */		\
+    }									\
+    if (call_intercept) { /* for debugging or for statistics */		\
+      pcreg = lpcreg;							\
+      intercept(PSC);							\
+      lpcreg = pcreg;							\
+    }									\
+  } else {								\
+    lpcreg = (pb)get_ep(PSC);						\
+    /* check_glstack_overflow(get_arity(PSC),	  */    		\
+    /*                       lpcreg,OVERFLOW_MARGIN); */		\
+  }									\
+}
+

@@ -67,7 +67,7 @@ static void dyn_link_all(char *symtab, Psc cur_mod)
   count = *(int *)(symtab+4);
   symtab += 8;
   strtab = symtab + count*sizeof(struct nlist);
-  search_ptr = (Pair)get_ep(cur_mod);
+  search_ptr = (Pair)get_data(cur_mod);
   while (search_ptr) {
     name = get_name(search_ptr->psc_ptr);
 /* Jiyang changed it to the form ``module_pred'':
@@ -78,13 +78,13 @@ static void dyn_link_all(char *symtab, Psc cur_mod)
 	sym_entry = (struct nlist *)(symtab + i * sizeof(struct nlist));
 	ptr = strtab + sym_entry->n_un.n_strx;
 	if (*ptr++ == '_' && strcmp(name, ptr)==0) { 
-	  set_ep(search_ptr->psc_ptr, (byte *)(sym_entry->n_value));
+	  set_forn(search_ptr->psc_ptr, (byte *)(sym_entry->n_value));
 	  break;
 	}
       }
       if (i>= count) {          /* does not find the name */
 	  xsb_warn("Cannot find foreign procedure %s", name);
-	  set_ep(search_ptr->psc_ptr, (byte *)(dummy));
+	  set_forn(search_ptr->psc_ptr, (byte *)(dummy));
       }
     }
     search_ptr = search_ptr->next;

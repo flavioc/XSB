@@ -562,8 +562,8 @@ set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize) :-
 	),
 	psc_tabled(Psc, Tabled),
 	(Tabled =:= 0
-	 ->	psc_prop(Psc, Prref)		/* get the Prref */
-	 ;	psc_prop(Psc, Prrefa),
+	 ->	psc_ep(Psc, Prref)		/* get the Prref */
+	 ;	psc_ep(Psc, Prrefa),
 		buff_word(Prrefa, 24, Prref)	% !! into calld
 	),
 	asserta(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)),

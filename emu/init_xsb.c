@@ -228,6 +228,7 @@ static void init_open_files(void)
   setvbuf(stdwarn, NULL, _IONBF, 0);
   setvbuf(stddbg, NULL, _IONBF, 0);
   setvbuf(stdfdbk, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
 
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
 }
@@ -725,7 +726,7 @@ void init_symbols(void)
 
   /* insert mod name global */
   tp = insert_module(T_MODU, "global");	/* loaded */
-  set_ep(pair_psc(tp), (byte *)1);	/* 1 stands for global mod */
+  set_data(pair_psc(tp), (Psc)1);	/* 1 stands for global mod */
   global_mod = pair_psc(tp);
 
   /* insert "[]"/0 into String Table */
@@ -746,7 +747,7 @@ void init_symbols(void)
   tables_psc = pair_psc(tp);
   temp = insert("tnot", 1, tables_psc, &new_indicator);
   tnot_psc = pair_psc(temp);
-  set_ep(tnot_psc, (byte *)tables_psc);
+  set_data(tnot_psc, tables_psc);
   set_env(tnot_psc, T_UNLOADED);
   set_type(tnot_psc, T_ORDI);
   temp = insert("DL", 3, global_mod, &new_indicator);
@@ -761,7 +762,7 @@ void init_symbols(void)
 
   /* make another reference to global module -- "usermod" */
   tp = insert_module(T_MODU, "usermod");	/* loaded */
-  set_ep(pair_psc(tp), get_ep(global_mod));
+  set_data(pair_psc(tp), get_data(global_mod));
 }
 
 /*==========================================================================*/

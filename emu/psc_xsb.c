@@ -101,8 +101,10 @@ static Psc make_psc_rec(char *name, char arity) {
   set_spy(temp, 0);
   set_arity(temp, arity);
   set_length(temp, length);
-  set_ep(temp,0);
+  set_ep(temp,(byte *)&(temp->load_inst));
   set_name(temp, string_find(name, 1));
+  cell_opcode(&(temp->load_inst)) = load_pred;
+  temp->this_psc = temp;
   return temp;
 }
 
@@ -168,11 +170,12 @@ static int is_globalmod(Psc mod_psc)
 {
 /* 
  * The modules considered global are the ones that have the value 1 in
- * their entry point field of the module's psc record.  The modules I
+ * their data field of the module's psc record.  The modules I
  * know that have this property are the modules "global" and "usermod".
  */
     if (mod_psc)
-      return (Cell)get_ep(mod_psc) == 1;
+      return (((Cell)get_data(mod_psc) == 1));
+    /** dsw need a better check here!!?! **/
     else
       return 1;
 }
@@ -232,7 +235,7 @@ Pair insert(char *name, byte arity, Psc mod_psc, int *is_new)
       return temp;
     }
     else {
-      search_ptr = (Pair *)&(get_ep(mod_psc));
+      search_ptr = (Pair *)&(get_data(mod_psc));
       return insert0(name, arity, search_ptr, is_new);
     }
 } /* insert */
@@ -247,10 +250,10 @@ Pair insert_module(int type, char *name)
 
     new_pair = insert0(name, 0, (Pair *)&flags[MOD_LIST], &is_new);
     if (is_new) {
-	get_type(new_pair->psc_ptr) = type;
-	get_ep(new_pair->psc_ptr) = 0;
+	set_type(new_pair->psc_ptr, type);
+	set_data(new_pair->psc_ptr, 0);
     } else {	/* set loading bit: T_MODU - loaded; 0 - unloaded */
-	get_type(new_pair->psc_ptr) |= type;
+      set_type(new_pair->psc_ptr, get_type(new_pair->psc_ptr) | type);
     }
     return new_pair;
 } /* insert_module */
@@ -280,7 +283,7 @@ Pair link_sym(Psc psc, Psc mod_psc)
       search_ptr = (Pair *)symbol_table.table +
 	           hash(name, arity, symbol_table.size);
     else
-      search_ptr = (Pair *)&get_ep(mod_psc);
+      search_ptr = (Pair *)&get_data(mod_psc);
     if ((found_pair = search(arity, name, search_ptr))) {
       if (pair_psc(found_pair) != psc) {
 	/*

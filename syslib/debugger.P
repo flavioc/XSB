@@ -578,7 +578,7 @@ term_mod(Mod:Term,Psc,Newterm) :-
 %% must already have been loaded if necessary.
 %% I=0: turn trace on; I=1: turn trace off
 basic_call(I,PSC,Call) :-
-	psc_prop(PSC, Code),
+	psc_ep(PSC, Code),
 	psc_type(PSC, Nt),
 	%%stat_flag(HIDE_STATE,V), V1 is V-1,	% calc hide_state-1
 	%%ll_write(call_hs_i(V,I)),ll_nl,

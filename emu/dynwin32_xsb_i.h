@@ -84,7 +84,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   ** dyn_link_all(loc, cur_mod);
   */
   
-  search_ptr = (Pair)get_ep(cur_mod);
+  search_ptr = (Pair)get_data(cur_mod);
   
   while (search_ptr) {
     name = get_name(search_ptr->psc_ptr);
@@ -101,9 +101,9 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
       if ((funcep = (int (*)) GetProcAddress(handle, name)) == NULL) {
 	xsb_warn("Cannot find foreign procedure %s", name);
-	set_ep(search_ptr->psc_ptr, (byte *)(dummy));
+	set_forn(search_ptr->psc_ptr, (byte *)(dummy));
       } else { 
-	set_ep(search_ptr->psc_ptr, (byte *)(funcep));
+	set_forn(search_ptr->psc_ptr, (byte *)(funcep));
       }
       
     }

@@ -219,7 +219,7 @@ static void default_inthandler(int intcode, byte *cur_inst)
 /* builds the current call onto the heap and returns a pointer to it.	*/
 /*======================================================================*/
 
-static Pair build_call(Psc psc)
+Pair build_call(Psc psc)
 {
   register Cell arg;
   register Pair callstr;

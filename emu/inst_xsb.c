@@ -213,6 +213,8 @@ static void init_inst_table_4(void)
   set_inst(int_test_nz, "int_test_nz", PP, R, N,L);
   set_inst(putdval, "putdval",         P,  V, R,X);
   set_inst(putuval, "putuval",         P,  V, R,X);
+  set_inst(call_forn, "call_forn",     PPP,L, X,X);
+  set_inst(load_pred, "load_pred",     PPP,S, X,X);
   set_inst(allocate_gc, "allocate_gc", P,  A, A,X);
   set_inst(call, "call",               PP, A, S,X);
   set_inst(allocate, "allocate",       PPP,X, X,X);

@@ -35,6 +35,8 @@
 #define PSC_SET_TYPE	 5
 #define PSC_SET_PROP	 6
 #define PSC_SET_SPY      7
+#define PSC_EP   	 8
+#define PSC_SET_EP	 9
 
 #define TERM_PSC	11
 #define TERM_TYPE	12
