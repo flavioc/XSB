@@ -24,3 +24,5 @@ show(X) :-
 writelist([X]) :- write(X).
 writelist([X1,X2|Xs]) :- write(X1), write(','), writelist([X2|Xs]).
 
+
+?- show(X).
