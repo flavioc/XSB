@@ -33,11 +33,11 @@
 
 :- import flora_shdefine_prolog/2 from flrprolog.
 
-:- import flora_shdefine_nohilog/2 from flrnohilog.
+:- import flora_shdefine_firstorder/2 from flrnohilog.
 
 :- import flora_shdefine_operator/3 from flroperator.
 
-:- import flora_shdefine_signature/3 from flrsignature.
+:- import flora_shdefine_arguments/3 from flrsignature.
 
 
 /*********************************************************************
@@ -52,11 +52,11 @@
 fllibshdirect(FL_PROLOG,Funct,Arity) :-
 	flora_shdefine_prolog(Funct,Arity).
 
-fllibshdirect(FL_PREDICATE,Funct,Arity) :-
-	flora_shdefine_nohilog(Funct,Arity).
+fllibshdirect(FL_FIRSTORDER,Funct,Arity) :-
+	flora_shdefine_firstorder(Funct,Arity).
 
 fllibshdirect(FL_OP,Preced,Assoc,Op) :-
 	flora_shdefine_operator(Preced,Assoc,Op).
 
-fllibshdirect(FL_SIGNATURE,Funct,Arity,Args) :-
-	flora_shdefine_signature(Funct,Arity,Args).
+fllibshdirect(FL_ARGUMENTS,Funct,Arity,Args) :-
+	flora_shdefine_arguments(Funct,Arity,Args).
