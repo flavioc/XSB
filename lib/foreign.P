@@ -26,6 +26,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flag_defs.h"
+#include "psc_defs.h"
 
 compile_cH(Modname, Base, Options, ExList, Dir) :-
 	/* ldoption is needed at compile time for ELF systems,
@@ -170,8 +171,8 @@ co_asmsym([One|ExList]) :- co_one(One), co_asmsym(ExList).
 
 co_one(P/A) :-
 	str_len(P, L),
-	put(0),		% domain = ex(ported)
-	put(13),	% type = T_FORN (in psc.h)
+	put(0),	% domain = ex(ported)
+	put(T_FORN),	% type = T_FORN (in psc.h)
 	put(A),		% arity = a
 	put(L),		% length
 	write(P).		
