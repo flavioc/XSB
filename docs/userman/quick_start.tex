@@ -388,62 +388,48 @@ using comments after the \% character):
 
 {\footnotesize
  \begin{verbatim}
-     my_favourite_prompt> cd $XSB_DIR/examples
-     my_favourite_prompt> ../bin/xsb -s
-     XSB Version 1.3.0 (93/9/13)
-     [sequential, single word, optimal mode]
-     | ?- [prof_lib].      % loads into the system predicate measure/1
-     [prof_lib loaded]
+my_favourite_prompt> cd $XSB_DIR/examples
+my_favourite_prompt> $XSB_DIR/bin/xsb
+XSB Version 2.0 (Gouden Carolus) of June 27, 1999
+[i586-pc-linux-gnu; mode: optimal; engine: slg-wam; scheduling: batched]
+| ?- [queens].
+[queens loaded]
 
-     yes
-     | ?- [queens].
-     [queens loaded]
+yes
+| ?- demo.
 
-     yes.
-     | ?- demo.
-     ..........          % output of 8-queens problem here
+% ...... output from queens program .......
 
-     yes.
-     | ?- measure(demo).
-     ..........          % same junk printed here
-     Time used: 2.409 sec
-     == Statistics ===      
-     Permanent space: 131752 in use, 384K allocated.
-     Stack space allocated: 64K+64K+768K+768K+8K
-     Stacks in use : global 164, local 88, trail 48, cp 220
-     SLG Stacks in use : table 0, tab_heap 0 opentables 0
-     num unwinds: 731
-     Max stack used: global 66152, local 500, trail 420, cp 2780
-     TIME: cputime: 2.41*1 sec, elapsetime 8.02 sec
+Time used: 0.4810 sec
 
-     yes
-     | ?- [map].         % This will generate some warnings but don't worry
-     ++Warning: demo/0 (type 2) was defined in another module!
-     ++Warning: go/0 (type 2) was defined in another module!
-     [map loaded]
+yes
+| ?- statistics.
 
-     yes.
-     | ?- demo.
-     ..........          % output of map coloring problem here
+memory (total)         1906488 bytes:       203452 in use,      1703036 free
+  permanent space       202552 bytes
+  glob/loc space        786432 bytes:          432 in use,       786000 free
+    global                                     240 bytes
+    local                                      192 bytes
+  trail/cp space        786432 bytes:          468 in use,       785964 free
+    trail                                      132 bytes
+    choice point                               336 bytes
+  SLG subgoal space          0 bytes:            0 in use,            0 free
+  SLG unific. space      65536 bytes:            0 in use,        65536 free
+  SLG completion         65536 bytes:            0 in use,        65536 free
+  SLG trie space             0 bytes:            0 in use,            0 free
+   (call+ret. trie           0 bytes,     trie hash tables            0 bytes)
 
-     yes.
-     | ?- measure(go).   % Don't give me all this junk again!
-     Statistics is reset.
-     Time used: 0.629  sec
-     == Statistics ===      
-     Permanent space: 132328 in use, 384K allocated.
-     Stack space allocated: 64K+64K+768K+768K+8K
-     Stacks in use : global 164, local 88, trail 48, cp 220
-     SLG Stacks in use : table 0, tab_heap 0 opentables 0
-     num unwinds: 708
-     Max stack used: global 66432, local 576, trail 612, cp 2216
-     TIME: cputime: 0.63*1 sec, elapsetime 0.68 sec
+      0 subgoals currently in tables
+      0 subgoal check/insert attempts inserted     0 subgoals in the tables
+      0 answer  check/insert attempts inserted     0 answers  in the tables
 
-     yes
-     | ?- halt.          % I had enough !!!
+       Time: 0.610 sec. cputime,  18.048 sec. elapsetime
 
-     End XSB (cputime 7.52s, elapsetime 125.69s)
-     my_favourite_prompt>
+yes
+| ?- halt.          % I had enough !!!
+
+End XSB (cputime 1.19 secs, elapsetime 270.25 secs)
+my_favourite_prompt>
  \end{verbatim}
 }
 
