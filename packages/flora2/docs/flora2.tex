@@ -185,8 +185,7 @@ runtime support.
 \index{FLIP}
 \index{FLORID}
 %%
-\FLORA was implemented by Guizhen Yang, but its origins trace back to the
-\FLIP compiler developed by Bertram Lud\"aescher.  The programming language
+The programming language
 supported by \FLORA is a dialect of \fl with numerous extensions.  Some
 extensions are borrowed from \FLORID, a C++-based \fl system developed at
 Freiburg University.\footnote{
@@ -226,24 +225,24 @@ other XSB modules, and regular XSB modules can query the objects defined in
 because it heavily relies on tabling and the well-founded semantics for
 negation, both of which are available only in XSB.
 
-%% Unimplemented -- slg-wam/chat
+%% Unimplemented -- slg-wam/batched
 Due to certain problems with XSB, \FLORA runs best when XSB is configured
-with SLG-WAM and local scheduling. This problem will be fixed in a future
-release of XSB. Under the default XSB configuration, certain \fl programs might
-run 30 times slower than under the suggested configuration. Some \FLORA
-programs might also give errors when run under the default configuration.
-To configure XSB for optimal \FLORA performance, build XSB using the
-following \emph{two} commands:
+with SLG-WAM and local scheduling (as opposed to \emph{batched}
+scheduling). This problem will be fixed in a future release of XSB.
+Fortunately, beginning with XSB version 2.5 this is the default
+configuration.  If (for some reason) you need to configure 
+XSB differently, you can do so using these two commands:
 %%
 {\tt
 \begin{quote}
- configure --with-local-scheduling --enable-slg-wam --config-tag=\\
+ configure --enable-batched-scheduling --config-tag=\\
  makexsb
 \end{quote}
 }
 %%
-If you are using Unix or Cygwin --- you are a lucky person, because \FLORA
-is built together with XSB. If, for some reason it fails to build, follow
+If you are using Unix --- you are a lucky person, because \FLORA
+is built together with XSB, so you do not need to do anything special to
+have it working. If, for some reason it fails to build, follow
 these steps:
 %%
 \begin{verbatim}
@@ -262,6 +261,8 @@ compatible installed.
    nmake /f NMakefile.mak
 \end{verbatim}
 %%
+At present \FLORA does not work under Cygwin because XSB's C interface is
+not working well with Cygwin.
 
 The fastest and easiest way to get a feel of the system
 is to start \FLORA shell and begin to enter queries interactively.  To
@@ -303,7 +304,9 @@ norm. To get back to the XSB command loop, type {\tt Control-D} or
 \end{quote}
 %%
 
-If you are using \FLORA shell frequently, it pays to define an alias, say,
+\noindent
+If you are using \FLORA shell frequently, it pays to define an alias, say
+(in Bash):
 %%
 \begin{quote}
  {\tt
@@ -3904,20 +3907,93 @@ we refer the reader to the XSB manual.
 
 
 
-\section{Type Checking}
+\section{Debugging}\label{sec-debugging}
+\index{debugging}
 
+\FLORA comes with an interactive, Prolog-style debugger, which is described
+in Appendix~\ref{sec-debugger}. The compiler makes many useful checks, such
+as the occurrence of singleton variables, which is often an error (see
+Section~\ref{sec-basic-flogic}). More checks will be provided in the future.
+
+In addition, it is possible to tell \FLORA to perform various run-time
+checks, as described below.
+
+\subsection{Checking for Undefined Methods and Predicates}\label{sec-undef}
+
+\FLORA has support for checking the invocation of undefined methods and
+predicates at run time. This feature can be of great help because a trivial
+typo can cause a method/predicate call to fail, sending the programmer on a
+wild goose chase after a hard-to-find bug. It should be noted, however,
+that enabling these checks can slow runtime by a factor of 2 or 3, so we
+recommend this to be done during debugging only.
+
+To enable runtime checks for undefined invocations, put the compiler
+directive
+%%
+\begin{quote}
+ {\tt
+ :- debug.
+ }
+\end{quote}
+%%
+at the top of the file where these checks are to be enabled. This feature
+works on a per-module basis.
+
+We should note one subtle interaction between these checks and
+meta-programming. Suppose your program does not have any class membership
+facts and the undefinedness checks are turned on. Then the meta-query
+%%
+\begin{quote}
+ {\tt
+ ?- a:X.
+ }
+\end{quote}
+%%
+would cause the following error:
+%%
+\begin{quote}
+ ++Error[FLORA]: Undefined class \_:\_ in user module main  
+\end{quote}
+%%
+Likewise, if the program does not have any definitions for set-valued
+methods, the query {\tt ?- X[Y->>Z].} would cause an error. This might be
+not what you expected because the program in question might be
+\emph{exploring} the schema or the available data, and the intention in the
+above cases might be to fail rather than to get an error.
+
+One way of circumventing this problem is to insert some weird facts into the
+database and special-case them in the program. For instance, you could put
+the following facts into the program to silence the above errors:
+%%
+\begin{quote}
+ {\tt
+ ads\_asd\_fsffdfd : ads\_asd\_fsffdfd.
+ }\\
+ {\tt
+ ads\_asd\_fsffdfd[ads\_asd\_fsffdfd ->> ads\_asd\_fsffdfd].
+ }
+\end{quote}
+%%
+You can then arrange the logic of your program so that anything that contains
+{\tt ads\_asd\_fsffdfd} is discarded.
+
+\subsection{Type Checking}\label{sec-typechecking}
 
 \index{type checking}
 %%
 %% Unimplemented -- type checking
 Although \FLORA allows specification of object types through signatures,
-type correctness is not checked automatically. So, what are the
-signatures good for then? One answer is that future versions of \FLORA
-might support some form of type checking. However, because \fl can
-naturally support powerful meta-programming, even the current level
-of support for signatures is useful. For instance, users can write
-simple queries to check the types of methods that might look suspicious.
-Here is one way to construct such a type-checking query:
+type correctness is not checked automatically.
+A future versions of \FLORA might support some form of run-time type
+checking. Nevertheless, run-time type checking is possible even now,
+although you should not expect any speed here and this should be done
+during debugging only.
+
+Run-time type checking is possible because \fl naturally supports powerful
+meta-programming, although currently the programmer has to do some work to
+make type checking happen.  For instance, a programmer can write simple
+queries to check the types of methods that might look suspicious.  Here is
+one way to construct such a type-checking query:
 %%
 \begin{verbatim}
 scalar_type_incorrect(O,M,R) :- O[X->R], O:C, C[X=>D], tnot R:D.
@@ -3933,7 +4009,10 @@ In this way, one can easily construct special purpose type checkers.  This
 feature is particularly important when dealing with \emph{semistructured}
 data. (Semistructured data has object-like structure but normally does not
 need to conform to any type; or if it does, the type would normally cover
-only certain portions of the object structure.)
+only certain portions of the object structure.) In this situation, one
+might want to limit type checking only to certain methods and classes,
+because other parts of the data might not be expected to have regular
+structure.
 
 
 \section{Optimizations}
@@ -4485,32 +4564,20 @@ The current version contains the following known bugs, which are due to the
 fact that certain features are yet to be implemented:
 %%
 \begin{enumerate}
-  \item  Certain programs ({\it e.g.}, 
-    %%
-    \begin{verbatim}
-      f[a->b].
-      ?- f[].      
-    \end{verbatim}
-    %%
-    will cause the following XSB error message:
+  \item  Certain programs might cause the following XSB error message:
     %%
     \begin{quote}
-     ++Error: Illegal cut over a tabled predicate ...      
+     ++Error[XSB]: [Compiler] '!' after table dependent symbol 
     \end{quote}
     %%
     This is due to certain limitations in the implementation of tabled
     predicates in the XSB system. This problem will be eliminated in a
     future release of XSB. Meanwhile, as explained in the Introduction,
-    configuring XSB for SLG-WAM and local scheduling will avoid the error.
+    configuring XSB for SLG-WAM and local scheduling will avoid many of
+    such errors.
   \item Error messages when \FLORA update predicates contain arithmetic
     expressions in the query part. This problem will be fixed in the
     future.
-  \item Undefined predicates and methods simply fail instead of generating
-    error messages. Generating compile-time error messages in such cases is
-    hard due to the fact that \FLORA programs likely contain
-    meta-programming feature. We will consider this possibility in the
-    future. Generating run-time error messages is much easier and will be
-    incorporated in a future release.
   \item If-then-else does not have the right associativity, so explicit
     parentheses are often required.
   \item Multiple types (which represent type intersection in \fl) are not
@@ -4520,6 +4587,17 @@ fact that certain features are yet to be implemented:
       a[*\#p(X)]}.
 \end{enumerate}
 %%
+
+\section{Authors}
+\FLORA was designed and implemented by Guizhen Yang, but its origins trace
+back to the \FLIP compiler developed by Bertram Lud\"aescher. In
+particular, certain ideas, such as the use of trailer files, originates
+with \FLIP.
+
+Michael Kifer helped design \FLORA, implemented the debugger, and some
+other features. Chang Zhao added a number of enhancements, such as run-time
+undefinedness checks and the checker for dependency among tabled predicates
+and updates. Bin Tang added support for numbered anonymous oids.
 
 
 \appendix
@@ -4531,8 +4609,8 @@ fact that certain features are yet to be implemented:
 \addcontentsline{toc}{section}{Appendices}
 
 
-\section{The \FLORA Debugger}
-\index{debugging}
+\section{The \FLORA Debugger}\label{sec-debugger}
+\index{debugger}
 
 
 \FLORA debugger is implemented as a presentation layer on top of the XSB

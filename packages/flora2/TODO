@@ -228,10 +228,9 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 9. Add the contraints syntax {...}.
 
 
-10. Implement convenient versions of I/O predicates and others, such as
+DONE 10. Implement convenient versions of I/O predicates and others, such as
     new_oid(X). This module should be automatically loaded into the module
-    "flora". Maybe we should prevent users from loading lodules into
-    the "flora" module.
+    "flora(sys)".
 
 11. Add the symbol _@, which will be handled by the tokenizer and passed
     along to the compiler so it would insert code to replace _@ with the

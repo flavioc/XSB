@@ -1,0 +1,117 @@
+1. IMPLEMENTATION OF THE MECHANISM FOR CATCHING UNDEFINED PREDICATE/METHODS
+
+ALGORITHM
+   1) When compiling a flora program with debug option turned on, we 
+      take the intermediate representation of the program from the 
+      compiler, compute skeletons for rule heads and facts (see below), and
+      remove duplications. These skeletons will be dumped into a file with 
+      extension .fld. When this program is loaded, the skeletons will
+      be loaded into the fld storage trie of the corresponding module.
+      
+   2) The basic idea is to add patch rules to trap undefined predicates.
+      For example, if we have the following patch rules: 
+      		flapply(X) :- storage_find_fact(fldstorage, flapply(X)),
+			      !, fail.
+		flapply(X) :- flora_error_undefined(flapply(X)), abort.
+      All undefined HiLog predicates whose arities are 0 will be trapped.
+      Such rules can be found in genincludes/flrpreddef.flh.
+
+      Unfortunately, this doesn't work for F-logic predicates because of
+      the inheritance rules.
+      For example, in closure/flrtrailer.fli, we have
+      		isa(O,C) :-
+			silent_sub(S,C),
+			inferred_isa(O,S).
+      It is possible that sub(_,C) is not defined, we will get an error
+      message saying "::C" is undefined when the query is ":C".
+
+      We can handle this problem in the following way:
+      F-logic wrappers in rule bodies and queries (except in database 
+      operations) are prefixed by 'd_'. using_debug_prefix/1 in flrcoder
+      is used for this purpose.
+      a) When debug option is turned on, we need patch rules such as:
+		test_undefined(O,C) :-
+		  storage_find_fact(fldstorage,isa(O,C)), !, fail.
+		test_undefined(O,C) :-
+		  storage_find_fact(fldstorage,sub(O,C)), !, fail.
+		test_undefined(_,_).
+      		d_isa(O,C) :- test_undefined(O,C),
+		              !,
+			      flora_error_undefined(isa(O,C)),
+		              abort.
+      		d_isa(O,C) :- isa(O,C).
+	 These patch rules are in genincludes/flrpreddef.flh; they are
+      	 generated from templates in genincludes/flrpreddef.fli.
+      b) When debug option is turned off, we need patch rules such as:
+      		d_isa(O,C) :- isa(O,C).
+	 These patch rules are in genincludes/flrnopreddef.flh.
+
+      If a flora program has the debug option turned on, its .P file will
+      include flrpreddef.flh in the end; otherwise, its .P file will include
+      flrnopreddef.flh in the end.
+
+   3) For firstorder predicates, if debug option is turned on, an 
+      additional patch rule will be added besides the original one.
+      For example, for p/1, we have
+	p(X) :- not(storage_find_fact(fldstorage, p(X))),
+	        flora_error_undefined(p(X)),
+		abort.
+	p(X) :- storage_find_fact(storage, p(X)).   
+      The latter rule is the original one without debug.
+
+   4) When insert, insertall, btinsert, btinsertall is executed, we need
+      to compute the skeleton(s) of the inserted fact(s) and insert the
+      skeleton(s) into the fld storage.
+
+4. debug option is local to module. This is done by keeping track of the
+   loaded modules that require debugging in flora_debug_module_registry
+
+
+SKELETONS
+
+    A skeleton represents a generalization of the terms in the rule heads.
+      For instance, for
+	  p(X)(a,Z)(b,D) :- ...
+      the skeleton is 
+          flapply(flapply(flapply(p,_),_,_) _, _)
+      for 
+          Z(X)(c,Z)(c,D) :- ...
+      it is 
+          flapply(flapply(flapply(_,_),_,_) _, _)
+      For F-logic molecules, say,
+
+	T[Z(X)(c,Z)(c,D) -> ...] :- ...
+	Q[p(X)(a,Z)(b,D) ->> ...] :- ...
+
+      you put into the trie the following skeletons:
+
+	fd(_, flapply(flapply(flapply(_,_),_,_) _, _), _)
+	mvd(_, flapply(flapply(flapply(p,_),_,_) _, _), _)
+
+
+2. IMPLEMENTATION OF NUMBERED ANONYMOUS OID SYNTAX
+
+   The goal is to allow _#1, _#2, in addition to _#.
+     
+   The idea is that two occurrences of, say, _#2 within the same rule would
+   be assigned the same oid and _#1,_#2, _# would be different.  Also,
+   occurrences of _#1 across different rules would be different as well.
+
+   The implementation is as follows. First, numbered (_#1, _#2) etc and
+   unnumbered (_#) oids should use difference naming schemas. The numbered
+   oids can use, say, _$_$_flora_newoid<rule-number>|<oid-number>.  For
+   instance, _#345 that appears in the clause number 9876 would be replaced
+   with _$_$_flora_newoid9876|345.
+
+   We should also check that each numbered oid that occurs inside a rule is
+   referenced there at least twice and issue a warning if not. This can be
+   done by asserting ruleoid(345,1) when the compiler sees _#345 within the
+   clause 9876 the first time. While processing that rule, the compiler
+   would increment the count. For instance, in our case it would retract
+   the above fact and assert ruleoid(345,2)
+
+   When it is done working with the rule, it should check if there are
+   facts of the form ruleoid(_,1) and issue an error if there are.  The
+   ruleoid/2 relation is reset by the compiler at the beginning of each new
+   rule.
+
