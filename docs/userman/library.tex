@@ -321,6 +321,16 @@ more than 255 that cannot be handled by the XSB compiler.
 	{\tt FileName} is not an atom at the time of call.
     \end{description}
 
+\ournewitem{load\_dyn(+FileName,+Dir)}{consult}
+\index{\texttt{load\_dyn/2}}\label{load_dyn/2}
+    Asserts the contents of file {\tt FileName} into the database.  {\tt Dir}
+    indicates whether {\tt assertz} or {\tt asserta} is to be used.  If {\tt Dir} 
+    is 1, then {\tt assertz} is used and the behavior of {\tt load\_dyn(FileName)}
+    is obtained.  If {\tt Dir} is 0, then {\tt asserta} is used to add the 
+    clauses to the database, and clauses will be in the reverse order of
+    their appearance in the input file.  {\tt asserta} is faster than {\tt assertz}
+    for predicates such that their indexing and data result in many hash collisions.
+
 \ournewitem{ensure\_dyn\_loaded(+FileName)}{consult}
 \index{\texttt{ensure\_dyn\_loaded/1}}
     Is similar to {\tt load\_dyn/1} except that it does nothing if the
@@ -328,7 +338,6 @@ more than 255 that cannot be handled by the XSB compiler.
     since.  However the file will be reloaded if the index declaration of
     any predicate in that file has changed to require more indexing, or a
     larger hash table.
-
 
 \ournewitem{load\_dync(+FileName)}{consult}\index{\texttt{load\_dync/1}}
 \index{canonical forma}
@@ -347,7 +356,8 @@ more than 255 that cannot be handled by the XSB compiler.
     Notice that this predicate can be used to load files of Datalog facts
     (since they will be in canonical format).  This predicate is
     significantly faster than {\tt load\_dyn/1} and should be used when
-    speed is important.  A file that is to be dynamically loaded often but
+    speed is important.  (See {\tt load\_dync/2 below for further efficiency 
+    considerations.}  A file that is to be dynamically loaded often but
     not often modified by hand should be loaded with this predicate.  Use
     predicate {\tt cvt\_canonical/2} (see below) to convert a usual file
     to a format readable by this predicate.
@@ -361,6 +371,29 @@ more than 255 that cannot be handled by the XSB compiler.
      :-(compiler_options('.'(xpp_on,[]))).      
     \end{verbatim}
     %%
+
+\ournewitem{load\_dync(+FileName,+Dir)}{consult}
+\index{\texttt{load\_dync/2}}\label{load_dync/2}
+    Acts as {\tt load\_dyn/2}, but assumes that facts are in
+    ``canonical'' format.  {\tt Dir} indicates whether {\tt assertz} 
+    or {\tt asserta} is to be used.  If {\tt Dir} is 1, then {\tt assertz}
+    is used and the exact behavior of {\tt load\_dync(FileName)}
+    is obtained.  If {\tt Dir} is 0, then {\tt asserta} is used to add the 
+    clauses to the database, and clauses will end up in the reverse order of
+    their appearance in the input file.  Using {\tt Dir} of 0 can sometimes
+    be {\em much} faster than the default of 1.  The reason has to do with how
+    indexes on dynamic code are represented.  Indexes use hash tables with bucket
+    chains.  No pointers are kept to the ends of bucket chains, so when adding
+    a new clause to the end of a bucket (as in {\tt assertz}), the entire chain
+    must be run.  Notice that in the limiting case of only one populated bucket 
+    (e.g., when all clauses have the same index term), this makes assertz-ing a
+    sequence of clauses quadratic.  However, when using {\tt asserta}, the new
+    clause is added to the beginning of its hash bucket, and this can be done in
+    constant time, resulting in linear behavior for asserta-ing a sequence of
+    clauses.
+
+{\tt asserta} is faster than {\tt assertz}
+    for predicates such that their indexing and data result in many hash collisions.
 
 \ournewitem{ensure\_dync\_loaded(+FileName)}{consult}
 \index{\texttt{ensure\_dync\_loaded/1}}
