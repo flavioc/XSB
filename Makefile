@@ -31,7 +31,7 @@ all: $(SUBDIR)
 force: touch all
 
 etags:
-	etags -l c `find . -name *.[ch] | grep -v Base` -l prolog `find . -name *.[PH] | grep -v Base`
+	etags -l c `find . -name \*.[ch] | grep -v Base` -l prolog `find . -name \*.[PH] | grep -v Base`
 
 touch::
 	touch cmplib/*.P lib/*.P syslib/*.P packages/*.P packages/*/*.P packages/*/*/*.P
