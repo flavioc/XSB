@@ -159,3 +159,4 @@ void HTXML_newInstance (HTStream *		me,
 void add_result_param(prolog_term *result_param, 
 		      char *functor, int cnt, ...);
 void add_subrequest_error(HTRequest *request, int status);
+int verifyMIMEformat(HTRequest *request, REQUEST_TYPE type);

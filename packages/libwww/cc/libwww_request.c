@@ -31,7 +31,6 @@ static HTList *XML_converter=NULL;
 
 void xml_conversions()
 {
-  puts("aaaaaa");
   if (!XML_converter) {
     XML_converter = HTList_new();
     HTConversion_add(XML_converter,"*/*", "www/debug",
@@ -296,7 +295,8 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
       /* then do the same as in the case of parsing */
     }
   case XMLPARSE:
-    //HTResponse_setFormat(HTRequest_response(request),HTAtom_for("text/xml"));
+    HTResponse_setFormat(HTRequest_response(request),HTAtom_for("text/xml"));
+    HTAnchor_setFormat((HTParentAnchor *)anchor, HTAtom_for("text/xml"));
   case HTMLPARSE:
     if (formdata) {
       if (context->method == METHOD_GET)
@@ -1124,4 +1124,15 @@ PRIVATE void extract_request_headers(HTRequest *request)
 PRIVATE int timer_cbf(HTTimer *timer, void *param, HTEventType type)
 {
   return !HT_OK;
+}
+
+
+int verifyMIMEformat(HTRequest *request, REQUEST_TYPE type)
+{
+  if (((REQUEST_CONTEXT *)HTRequest_context(request))->type == type)
+    return TRUE;
+  xsb_warn("LIBWWW_REQUEST Bug: Request %d Request type/MIME type mismatch",
+	   REQUEST_ID(request));
+  HTRequest_kill(request);
+  return FALSE;
 }

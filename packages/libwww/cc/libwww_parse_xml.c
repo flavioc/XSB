@@ -121,8 +121,10 @@ PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
     xml_pop_suppressed_element(userdata_obj);
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  if (!STACK_TOP(userdata_obj).suppress)
-    print_prolog_term(STACK_TOP(userdata_obj).elt_term, "elt_term");
+  if (userdata_obj->stackptr >= 0) {
+    if (!STACK_TOP(userdata_obj).suppress)
+      print_prolog_term(STACK_TOP(userdata_obj).elt_term, "elt_term");
+  }
 #endif
 
   return;
@@ -373,6 +375,9 @@ USERDATA *xml_create_userData(XML_Parser parser,
 {
   USERDATA *me = NULL;
   if (parser) {
+    /* make sure that MIME type is appropriate for XML */
+    if (!verifyMIMEformat(request, XMLPARSE))
+      return NULL;
     if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_xml");
     me->delete_method = xml_delete_userData;
