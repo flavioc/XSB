@@ -38,9 +38,7 @@ XSB = $(XSBDIR)/bin/xsb
 
 PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
 
-FLORA_INCLUDES_DIR = ../flrincludes
-
-FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
+FLORA_PRED_DEF = includes/flrpred.fli
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
@@ -48,6 +46,8 @@ STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling XSB/packages/flora2/closure:"
 
+# suffix rules
+.SUFFIXES: .flh .fli
 
 all: init $(ALLOBJS) finish
 	@$(XSBDIR)/build/touch.sh cmd...
@@ -56,24 +56,8 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flrcommon.flh : flrcommon.fli flrpred.fli
-	@echo 'flCompileInclude(flrcommon).' >> cmd...
-
-
-flrtrailer.flh : flrtrailer.fli flrpred.fli
-	@echo 'flCompileInclude(flrtrailer).' >> cmd...
-
-
-flreqltrailer.flh : flreqltrailer.fli flrpred.fli
-	@echo 'flCompileInclude(flreqltrailer).' >> cmd...
-
-
-flrscalareql.flh : flrscalareql.fli flrpred.fli
-	@echo 'flCompileInclude(flrscalareql).' >> cmd...
-
-
-flrdbdyn.flh : flrdbdyn.fli flrpred.fli
-	@echo 'flCompileInclude(flrdbdyn).' >> cmd...
+%.flh: %.fli $(FLORA_PRED_DEF)
+	@echo 'flCompileInclude($*).' >> cmd...
 
 
 init:
@@ -95,6 +79,7 @@ finish:
 
 clean:
 	/bin/rm -f *~ *.flh
+	/bin/rm -f includes/*~
 
 
 .DONE:

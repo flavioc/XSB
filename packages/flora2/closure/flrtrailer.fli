@@ -16,7 +16,7 @@
 ***************************************************************************/
 
 
-#include "flrpred.fli"
+#include "includes/flrpred.fli"
 
 
 :- import flora_warning_line/1, flora_error_line/2 from flrprint.

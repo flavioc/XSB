@@ -11,7 +11,7 @@
 ***************************************************************************/
 
 
-#include "flrpred.fli"
+#include "includes/flrpred.fli"
 
 
 diffobjeql(X,Y) :- inferred_fd(O,M,X), inferred_fd(O,M,Y), X \= Y.
