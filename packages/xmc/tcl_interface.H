@@ -1,5 +1,5 @@
-/* File:      typecheck.H -- XL typechecker
-** Author(s): VN Venkatakrishnan
+/* File:      tcl_interface.H  -- Code to manage interaction with TCL
+** Author(s): 
 ** Contact:   lmc@cs.sunysb.edu
 ** 
 ** Copyright (C) SUNY at Stony Brook, 1998-2000
@@ -22,21 +22,5 @@
 ** 
 */
 
-:- op(1100, fx, datatype).
-
-:- export typecheck/1.
-:- export type/2.
-
-%:- import apply/2, apply/4 from usermod.
+:- import prompt/3 from x_interp.
 :- import append/3 from basics.
-
-:- import pdef/3 from usermod.
-%:- import qpdef/3 from usermod.
-%:- import tc_error/4 from usermod.
-
-%:- import get_returns/3, delete_return/2 from tables.
-%:- import variant/2 from subsumes.
-
-:- import atype/2 from usermod.
-
-:- import reverse/2, ground/1 from basics.

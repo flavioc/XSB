@@ -46,5 +46,5 @@
 	get_expr_var/2
 	from util.
 :- import
-	rec_quad/5
+	rec_quad/6
 	from quad.

@@ -23,11 +23,13 @@
 */
 
 
-%:- export models/2.
+%:- export models/2, rec_models/2.
+%:- export start/2, transition/3.
 
 %:- import member/2 from basics.
-:- import 't not'/1 from tables.
+%:- import 't not'/1 from tables.
 :- import sk_not/1 from tables.
 
 :- import fDef/2 from usermod.
 :- import trans/3 from usermod.
+:- import startstate/2 from usermod.

@@ -23,7 +23,6 @@
 */
 
 :- import type/2 from typecheck.
-:- op(1100, fx, datatype).
 
 % assert atype: the type inference rules for user defined types.
 datatype(D) :-

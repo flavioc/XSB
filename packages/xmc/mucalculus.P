@@ -93,7 +93,7 @@ models(State_s, fBoxSetMinus(Set_a, X)) :-
 
 % Negation
 models(State_s, neg_form(X)) :-
-	't not'(rec_models(State_s, X)).
+	sk_not(rec_models(State_s, X)).
 
 % Recursion
 models(State_s, form(X)) :-

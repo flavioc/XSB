@@ -28,7 +28,7 @@
 :- import quad/5, directcall/2 from usermod.
 
 :- export
-	rec_quad/5, %rec_par_quad/5,
+	rec_quad/6, %rec_par_quad/5,
 	rec_super_trans/3, rec_par_trans/5,
 	get_quad/5, get_quad_rest/6, get_quad_non_rest/6,
 	get_quad_relab/6, get_quad_relab_rest/7, get_quad_relab_non_rest/7,

@@ -27,13 +27,10 @@
 % justification_root(+Q, -RootNode)
 % ---- Evaluates query Q and returns the rootnode of the tree.
 
-justification_root(Q, TV, Root) :-
-	justify(Q, TV, Root), close_open_tables, !.
-%	node(RootNodeId, Q, TV),
-%	RootNode = node(RootNodeId, Q, TV).
-
-justification_root1(Q, TV, Root, H) :-
-        justify1(Q, TV, Root, H), close_open_tables, !.                                 
+justification_root(Q, RootNode) :-
+	justify(Q, TV, RootNodeId), close_open_tables, !,
+	node(RootNodeId, Q, TV),
+	RootNode = node(RootNodeId, Q, TV).
 
 get_child(NodeId, Child) :- 
 	arc(NodeId, CId),

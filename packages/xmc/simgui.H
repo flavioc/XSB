@@ -1,8 +1,8 @@
-/* File:      typecheck.H -- XL typechecker
-** Author(s): VN Venkatakrishnan
+/* File:      simgui.P -- Prolog interface procedures for simulator
+** Author(s): Ping Yang
 ** Contact:   lmc@cs.sunysb.edu
 ** 
-** Copyright (C) SUNY at Stony Brook, 1998-2000
+** Copyright (C) SUNY at Stony Brook, 1998-2001
 ** 
 ** XMC is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -22,21 +22,8 @@
 ** 
 */
 
-:- op(1100, fx, datatype).
+:- import trie_intern/3, trie_interned/3 from intern. 
+:- import member/2, append/3, reverse/2 from basics.
+:- import conget/2, conset/2 from gensym.
+:- import startstate/2 from usermod.
 
-:- export typecheck/1.
-:- export type/2.
-
-%:- import apply/2, apply/4 from usermod.
-:- import append/3 from basics.
-
-:- import pdef/3 from usermod.
-%:- import qpdef/3 from usermod.
-%:- import tc_error/4 from usermod.
-
-%:- import get_returns/3, delete_return/2 from tables.
-%:- import variant/2 from subsumes.
-
-:- import atype/2 from usermod.
-
-:- import reverse/2, ground/1 from basics.

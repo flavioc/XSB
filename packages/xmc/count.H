@@ -29,5 +29,6 @@
 	checkit/1,
 	timeit/1, retimeit/1.
 
-:- import transition/3, start/1 from mucalculus.
+:- import transition/3 from mucalculus.
 :- import conget/2, conset/2 from gensym.
+:- import start/1 from usermod.

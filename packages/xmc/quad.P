@@ -25,14 +25,17 @@
 :- dynamic quad/5.
 :- dynamic trans/3.
 
-rec_quad(PN, S1, A, S2, C) :-
-	copy_term(q(PN,S1,A,S2,C), q(ProcName,State1,Action,State2,Code)),
+rec_quad(PN, S1, A, S2, C, V) :-
+	copy_term(q(PN,S1,A,S2,C,V), q(ProcName,State1,Action,State2,Code,Vars)),
 	pe_term(Code, PeCode),
 	(PeCode == fail ->
-		true
+	    true
 	;
-		assert((trans(State1, Action, State2) :- PeCode)),
-		assert(quad(ProcName, State1, Action, State2, PeCode))
+	    (functor(State1, par, _) ->
+		true				% skip standard par trans
+	    ;	assert((trans(State1, Action, State2) :- PeCode))),
+	    assert(quad(ProcName, State1, Action, State2, PeCode)),
+	    assert(translookup(State1, Action, State2, PeCode, Vars))
 	).
 
 %% record a super transition rule

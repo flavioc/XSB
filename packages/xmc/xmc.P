@@ -1,4 +1,4 @@
-:- assert(xmc_directory('/home/luis/Programs/xmc/System')).
+:- assert(xmc_directory('/home/stufs1/giri/projects/t/xmc/System')).
 /* File:      xmc.P	-- main textual interface for XMC
 ** Author(s): C.R. Ramakrishnan, Yifei Dong
 ** Contact:   lmc@cs.sunysb.edu
@@ -46,7 +46,6 @@ cleanup :-
 	retractall((trans(_,_,_,_,_) :- _)),
 	retractall(startstate(_,_)),
 	retractall(symlookup(_,_,_,_)),
-	retractall(atype(_,_)),			% from type checker
 	retractall(fDef(_,_)),
 	abolish_all_tables.
 

@@ -65,7 +65,7 @@ get_models(Process, Formula, Models) :-
 begin_justification :-
 	resolve_file_name('mucalculus.P', MCFile),
 	resolve_file_name('annot.P', AnnotFile),
-	just_init(MCFile, AnnotFile), !.
+	just_init(MCFile, AnnotFile).
 
 :- import slash/1 from machine.
 resolve_file_name(Name, FullName) :-
@@ -75,7 +75,7 @@ resolve_file_name(Name, FullName) :-
 	str_cat(D1, Name, FullName). 
 
 :- import node/3 from usermod.
-get_process_list(InNode, Process, Line,Char, Varbindings) :-
+get_process_list(InNode, Process, Line,Char, VarbindingsString) :-
 %
 % Patch to fix a wierd problem with getting variable bindings from the gui
 % Strangely, the nontabled nodes appear within {}'s. The source of the problem
@@ -101,14 +101,25 @@ get_process_list(InNode, Process, Line,Char, Varbindings) :-
 		intern(State1, IState1),
 		symlookup(State1, Process, (Line,Char), Varbindings)
 	   )
-	).
+	),
+	conv_binding_string(Varbindings, VarbindingsString).
 
-getroot(Predicate, Root, Truth) :-
-	justification_root(Predicate, Truth, Root).
-%	translate_node(Pred, Display).
+conv_binding_string(VB, VBS) :-
+	conv_binding_string_1(VB, '', VBS1),
+	fmt_write_string(VBS, "[%s]", args(VBS1)).
 
-getroot1(Predicate, Root, Truth, H) :-
-        justification_root1(Predicate, Truth, Root, H).                                 
+conv_binding_string_1([], String, String).
+conv_binding_string_1([(Name = Value) | L], OldString, String) :-
+	fmt_write_string(S1, "%s = %S", args(Name, Value)),
+	(L == []
+	 -> fmt_write_string(NewString, "%s%s", args(OldString,S1))
+	 ;  fmt_write_string(NewString, "%s%s, ", args(OldString,S1))
+	),
+	conv_binding_string_1(L, NewString, String).
+
+getroot(Predicate, Id, Display, Truth) :-
+	justification_root(Predicate, node(Id, Pred, Truth)),
+	translate_node(Pred, Display).
 
 getchild(NodeID, Id, Display, Truth) :-
 	get_child(NodeID, node(Id, Pred, Truth)),

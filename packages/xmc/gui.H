@@ -29,5 +29,7 @@
 :- import typecheck/1 from typecheck.
 :- import comp_form/0 from formula.
 :- import xlcomp/0 from comp.
+%:- import models/2, rec_models/2 from mucalculus.
 
 :- import startstate/2, fdef/2 from usermod.
+%:- import start/2 from mucalculus.
