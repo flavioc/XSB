@@ -75,6 +75,13 @@ CPtr *var_addr;
 int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
 Cell VarEnumerator[NUM_TRIEVARS];
 /*
+ * global_num_vars is a new variable to save the value of variable
+ * num_vars_in_var_regs temporarily.
+ */
+int global_num_vars;
+
+/*----------------------------------------------------------------------*/
+/*
  * Array mini_trail[] is used to trail the variable bindings when we copy
  * terms into tries.  The variables trailed using mini_trail are those
  * that are bound to elements in VarEnumerator[].

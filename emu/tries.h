@@ -226,27 +226,27 @@ typedef struct Call_Check_Insert_Results {
 
 /*-- exported trie functions ------------------------------------------*/
 
-extern BTNptr   newBasicTrie(Psc,int);
-extern byte *	trie_get_calls(void);
-extern int	free_trie_size(void);
-extern int	allocated_trie_size(void);
-extern int	allocated_trie_hash_size(void);
-extern byte *	trie_get_returns_for_call(void);
-extern void	abolish_trie(void);
-extern void	aux_call_info(void);
-extern void	remove_open_tries(CPtr);
-extern void     init_trie_aux_areas(void);
-extern void	get_lastnode_cs_retskel(void);
-extern void     load_solution_trie(int, CPtr, BTNptr);
-extern void     variant_call_search(CallInfoRecord *, CallLookupResults *);
-extern BTNptr   one_term_chk_ins(CPtr,BTNptr,int *);
-extern BTNptr   whole_term_chk_ins(Cell, BTNptr *, int *);
-extern BTNptr	get_next_trie_solution(ALNptr *);
-extern BTNptr	variant_trie_search(int, CPtr, CPtr, int *);
-extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
-extern void     undo_answer_bindings(void);
-extern void	load_delay_trie(int, CPtr, BTNptr);
-extern bool     bottom_up_unify(void);
+extern BTNptr newBasicTrie(Psc,int);
+extern byte * trie_get_calls(void);
+extern int    free_trie_size(void);
+extern int    allocated_trie_size(void);
+extern int    allocated_trie_hash_size(void);
+extern byte * trie_get_returns_for_call(void);
+extern void   abolish_trie(void);
+extern void   aux_call_info(void);
+extern void   remove_open_tries(CPtr);
+extern void   init_trie_aux_areas(void);
+extern void   get_lastnode_cs_retskel(void);
+extern void   load_solution_trie(int, CPtr, BTNptr);
+extern void   variant_call_search(CallInfoRecord *, CallLookupResults *);
+extern BTNptr one_term_chk_ins(CPtr,BTNptr,int *);
+extern BTNptr whole_term_chk_ins(Cell, BTNptr *, int *);
+extern BTNptr get_next_trie_solution(ALNptr *);
+extern BTNptr variant_trie_search(int, CPtr, CPtr, int *);
+extern BTNptr delay_chk_insert(int, CPtr, CPtr *);
+extern void   undo_answer_bindings(void);
+extern void   load_delay_trie(int, CPtr, BTNptr);
+extern bool   bottom_up_unify(void);
 
 /*---------------------------------------------------------------------*/
 

@@ -92,7 +92,7 @@ case tabletrysingle: {
 			  CallInfo_TableInfo(callInfo) );
     producerCPF = CallLUR_VarVector(lookupResults);
     save_find_locx(ereg);
-    save_registers(producerCPF, CallInfo_CallArity(callInfo), i, rreg);
+    save_registers(producerCPF, CallInfo_CallArity(callInfo), rreg);
     SaveProducerCPF(producerCPF, continuation, CallLUR_Subsumer(lookupResults),
 		    CallInfo_CallArity(callInfo));
 
@@ -109,6 +109,7 @@ case tabletrysingle: {
     /* Unify Call with Answer Trie
        --------------------------- */
     if (has_answer_code(CallLUR_Subsumer(lookupResults))) {
+      int i;
       Cell  CallNumVar;
 #ifdef DEBUG_DELAY
       fprintf(stddbg, "++Returning answers from COMPLETED table: ");

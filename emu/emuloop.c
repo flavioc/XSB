@@ -140,7 +140,6 @@ CPtr	ans_var_pos_reg;
 extern int  builtin_call(int), unifunc_call(int, CPtr);
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 
-
 #ifdef DEBUG
 extern void debug_inst(byte *, CPtr);
 extern void print_completion_stack(void);
@@ -149,13 +148,13 @@ extern void print_delay_list(FILE *, CPtr);
 extern void printterm(Cell, byte, int);
 #endif
 
-int  (*dyn_pred)();
+static int  (*dyn_pred)();
 
-bool    neg_delay;
-int     xwammode, level_num;
+bool neg_delay;
+int  xwammode, level_num;
 
 #ifdef DEBUG
-int     xctr;
+int  xctr;
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -169,6 +168,8 @@ int     xctr;
 #ifndef LOCAL_EVAL 
 #include "wfs.i" 
 #endif 
+
+/*----------------------------------------------------------------------*/
 
 /* place for a meaningful message when segfault is detected */
 char *xsb_default_segfault_msg =
@@ -211,20 +212,18 @@ jmp_buf xsb_abort_fallback_environment;
 
 static int emuloop(byte *startaddr)
 {
-  Psc psc;
   register byte *lpcreg;
   register CPtr rreg;
   register Cell op1, op2;	/* (*CPtr) */
-  CPtr op3;
+  CPtr op3, xtemp1, xtemp2;
   byte flag = READFLAG;  	/* read/write mode flag */
-  int  i, j, arity;	/* to unify subfields of op1 and op2 */
   int  restore_type;	/* 0 for retry restore; 1 for trust restore */ 
+
 #if (defined(GC) && defined(GC_TEST))
+/* Used only in the garbage collection test; does not affect emulator o/w */
 #define GC_INFERENCES 66 /* make sure the garbage collection test is hard */
   static int infcounter = 0;
 #endif
-  CPtr  xtemp1, xtemp2;
-
 
   xsb_segfault_message = xsb_default_segfault_msg;
   rreg = reg; /* for SUN */
@@ -492,7 +491,6 @@ contcase:     /* the main loop */
     goto contcase;
     
   case getlist_tvar_tvar: /* RRR */
-    /* op1 is FREE: change tls for value trail */
     op1 = opreg;
     deref(op1);
     if (isref(op1)) {
@@ -718,6 +716,7 @@ contcase:     /* the main loop */
       
   case switchon3bound: /* RRR-L-L */
   {
+    int  i, j = 0;
     Cell opa[3]; 
     /* op1 is register, op2 is hash table offset, op3 is modulus */
     if (*lpcreg == 0) { lpcreg++; opa[0] = 0; }
@@ -729,7 +728,6 @@ contcase:     /* the main loop */
     op3 = *(CPtr *)lpcreg; 
     /* This is not a good way to do this, but until we put retract into C,
        or add new builtins, it will have to do. */
-    j = 0;
     for (i = 0; i <= 2; i++) {
       if (opa[i] != 0) {
 	op1 = opa[i];
@@ -845,7 +843,6 @@ contcase:     /* the main loop */
     goto contcase; 
 
   case subreg: /* PRR */
-/*    ARITHPROC(-); */
     pad;
     op1 = opreg;
     op3 = opregaddr;							
@@ -970,12 +967,15 @@ contcase:     /* the main loop */
     } 
     goto contcase;
 
-  case call: /* PPA-S */
+  case call: { /* PPA-S */
+    Psc psc;
+
     pppad; pad64; op2word;	/* the first arg is used later by alloc */
     cpreg = lpcreg;
     psc = (Psc)op2;
     call_sub(psc);
     goto contcase;
+  }
 
   case allocate_gc: /* PAA */
     pad; op2byte; op3byte;
@@ -1041,11 +1041,14 @@ contcase:     /* the main loop */
     lpcreg = cpreg;
     goto contcase;
 
-  case execute:  /* PPP-S */
+  case execute: { /* PPP-S */
+    Psc psc;
+
     pppad; pad64; op2word;
     psc = (Psc)op2;
     call_sub(psc);
     goto contcase;
+  }
 
   case jump:   /* PPP-L */
     pppad;
@@ -1139,18 +1142,21 @@ contcase:     /* the main loop */
     pad64;
     goto contcase;
 
-  case userfunc:   /* PPA-S */	/* The same as "call" now */
+  case userfunc: {  /* PPA-S */	/* The same as "call" now */
+    Psc psc;
+
     pppad; pad64; op2word;	/* the first arg is used later by alloc */
     cpreg = lpcreg;
     psc = (Psc)op2;
     call_sub(psc);
     goto contcase;
+  }
 
   case calld:   /* PPA-L */
     pppad;
     pad64;
     cpreg = lpcreg+sizeof(Cell); 
-    check_glstack_overflow( MAX_ARITY, lpcreg, OVERFLOW_MARGIN ) ;
+    check_glstack_overflow(MAX_ARITY, lpcreg, OVERFLOW_MARGIN);
     lpcreg = *(pb *)lpcreg;
     goto contcase;
 
@@ -1268,7 +1274,7 @@ subtryme:
   save_find_locx(ereg);		/* sets ebreg to the top of the E-stack	*/
   check_tcpstack_overflow;
   cps_top = top_of_cpstack;
-  save_registers(cps_top, (Cell)op1, i, rreg);
+  save_registers(cps_top, (Cell)op1, rreg);
   save_choicepoint(cps_top, ereg, (byte *)op2, breg);
   breg = cps_top;
   hbreg = hreg;
@@ -1286,13 +1292,13 @@ restore_sub:
   ptcpreg = cp_ptcp(tbreg);
   delayreg = cp_pdreg(tbreg);
   restore_some_wamregs(tbreg, ereg);
-  restore_registers(tbreg, (int)op1, i, rreg);
+  restore_registers(tbreg, (int)op1, rreg);
   if (restore_type == 1) { /* trust */
     breg = cp_prevbreg(breg); 
     restore_trail_condition_registers(breg);
   }
   goto contcase;
-}
+} /* end of restore_sub */
 
 /*----------------------------------------------------------------------*/
 
@@ -1306,17 +1312,17 @@ table_restore_sub:
   ptcpreg = tcp_subgoal_ptr(tbreg);
   delayreg = NULL;
   restore_some_wamregs(tbreg, ereg);
-  table_restore_registers(tbreg, (int)op1, i, rreg);
+  table_restore_registers(tbreg, (int)op1, rreg);
   if (restore_type == 1) { 
     xtemp1 = tcp_prevbreg(breg); 
     restore_trail_condition_registers(xtemp1);
   }
   goto contcase;
-}
+} /* end of table_restore_sub */
 
 /*----------------------------------------------------------------------*/
 
-} /* end emuloop */
+} /* end of emuloop() */
 
 /*======================================================================*/
 /*======================================================================*/
