@@ -259,7 +259,8 @@ load_dyn(File) :-
 load_dyn(File,Dir) :-
 	(atom(File)
 	 ->	true
-	 ;	warning('Wrong type in argument 1 of load_dyn/1'),fail
+	;	file_write0(STDERR, 'Wrong type in argument 1 of load_dyn/1'),
+		fail
 	),
 	get_fname(File,SExt,Base,Mod),
 	load_dyn0(SExt,Base,Mod,Dir).
@@ -407,7 +408,8 @@ load_dync(File) :- load_dync(File,1).  % assertz
 load_dync(File,Dir) :-
 	(atom(File)
 	 ->	true
-	 ;	warning('Wrong type in argument 1 of load_dync/1'),fail
+	 ;	file_write0(STDERR, 'Wrong type in argument 1 of load_dync/1'),
+		fail
 	),
 	get_fname(File,SExt,Base,Mod),
 	load_dync0(SExt,Base,Mod,Dir).
