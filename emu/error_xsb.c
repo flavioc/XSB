@@ -116,7 +116,7 @@ void call_conv xsb_basic_abort(char *message)
   Cell *tptr;
 
   if (!space_for_ball) {
-    space_for_ball = (Cell *) malloc(2*sizeof(Cell)); /* 2 cells needed for term */
+    space_for_ball = (Cell *) malloc(3*sizeof(Cell)); /* 3 cells needed for term */
     if (!space_for_ball) xsb_exit("out of memory in xsb_basic_abort!");
   }
   tptr = space_for_ball;
