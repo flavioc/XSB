@@ -205,7 +205,9 @@ void init_interrupt(void)
 #else
   signal(SIGINT, keyint_proc); 
 #endif
+#ifndef DEBUG
   signal(SIGSEGV, &xsb_segfault_handler);
+#endif
 }
 
 
