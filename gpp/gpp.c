@@ -68,7 +68,7 @@ typedef struct MODE {
    \007 = \# = numeric (0-9)               \207 = \!#
    \010 = \i = identifier (a-zA-Z0-9_)     \210 = \!i
    \011 = \t, \012 = \n                    \211 = \!t, \212 = \!n
-   \013 = \o = operator (+-/*\^<>=`~:.?@#&!%|) \213 = \!o
+   \013 = \o = operator (+-*\/^<>=`~:.?@#&!%|) \213 = \!o
    \014 = \O = operator or ()[]{}              \214 = \!O
 */
                  /*  st        end   args   sep    arge ref  quot  stk  unstk */
@@ -78,6 +78,18 @@ struct MODE KUser = {"",       "",   "(",   ",",   ")", "#",  0,   "(", ")" };
 struct MODE KMeta = {"\n#\002","\n", "\001","\001","\n","#",  0,   "",  ""  }; 
 struct MODE Tex   = {"\\",     "",   "{",   "}{",  "}", "#", '@',  "{", "}" };
 struct MODE Html  = {"<#",     ">",  "\003","|",   ">", "#", '\\', "<", ">" };
+
+#define DEFAULT_OP_STRING "+-*/\\^<>=`~:.?@#&!%|"
+#define PROLOG_OP_STRING  "+-*/\\^<>=`~:.?@#&"
+#define DEFAULT_OP_PLUS   "()[]{}"
+#define DEFAULT_ID_STRING "\005\007_" /* or equiv. "A-Za-z0-9_" */
+
+/* here we assume that longs are at least 32 bit... if not, change this ! */
+#define LOG_LONG_BITS 5
+#define CHARSET_SUBSET_LEN (256>>LOG_LONG_BITS)
+typedef unsigned long *CHARSET_SUBSET;
+
+CHARSET_SUBSET DefaultOp,DefaultExtOp,PrologOp,DefaultId;
 
 typedef struct COMMENT {
   char *start;          /* how the comment/string starts */
@@ -114,8 +126,8 @@ typedef struct COMMENT {
  #define PREVENT_DELIM   0x10 
    all comments will prevent macro delimitation, i.e. foo('bar) is invalid.
    -- of course, unless the comment is ignored.
-   Too bad, #define foo '/*    terminates only at following "'".
-   Unless one adds quotechars like in #define foo \'\/* ...
+   Too bad, #define foo '...    terminates only at following "'".
+   Unless one adds quotechars like in #define foo \' ...
    
  ALSO NOTE : comments are not allowed before the end of the first argument
  to a meta-macro. E.g. this is legal :   #define foo <* blah *> 3
@@ -131,6 +143,7 @@ typedef struct SPECS {
   struct COMMENT *comments;
   struct SPECS *stack_next;
   int preservelf;
+  CHARSET_SUBSET op_set,ext_op_set,id_set;
 } SPECS;
 
 struct SPECS *S;
@@ -359,7 +372,7 @@ char *strnl(char *s) /* the same but with whitespace specifier handling */
         case 'O': *u='\014'; break;  /* operator/parenthese */
         default: *u='\\'; neg=-1;
       }
-      if (neg>0) *u += (char) 128;
+      if (neg>0) *u+=(char)128;
       s+=neg+1;
     }
     else if (*s==' ') *u='\001';
@@ -370,12 +383,13 @@ char *strnl(char *s) /* the same but with whitespace specifier handling */
   return t;
 }
 
-char *strnl2(char *s) /* the same but for C strings & in-place */
+char *strnl2(char *s,int check_delim) /* the same but for C strings & in-place */
 {
   char *u;
   int neg;
   u=s;
-  if (!isdelim(*s)) bug("character not allowed to start a syntax specifier");
+  if (check_delim&&!isdelim(*s)) 
+    bug("character not allowed to start a syntax specifier");
   while (*s!='"') {
     if (((*s&0x60)==0)&&(*s!='\n')&&(*s!='\t')) 
       bug("character not allowed in syntax specifier");
@@ -399,7 +413,7 @@ char *strnl2(char *s) /* the same but for C strings & in-place */
         case '"': case '\\': if (!neg) { *u=s[1]; break; }
         default: bug("unknown escape sequence in syntax specifier");
       }
-      if (neg>0) *u += (char)128;
+      if (neg>0) *u+=(char)128;
       s+=neg+1;
     }
     else if (*s==' ') *u='\001';
@@ -477,8 +491,7 @@ int parse_comment_specif(char c)
     case 'S': return FLAG_STRING|PARSE_MACROS;
     case 'Q': return OUTPUT_TEXT|PARSE_MACROS;
     case 'C': return FLAG_COMMENT|PARSE_MACROS;
-    default: bug("Invalid comment/string modifier");
-      return 0; /* to pacify the compiler */
+    default: bug("Invalid comment/string modifier"); return 0;
   }
 }
 
@@ -613,6 +626,11 @@ int identifierEnd(int start)
   return start;
 }
 
+int IsInCharset(CHARSET_SUBSET x,int c)
+{
+  return (x[c>>LOG_LONG_BITS] & 1L<<(c&((1<<LOG_LONG_BITS)-1)))!=0;
+}
+
 int matchSequence(char *s,int *pos)
 {
   int i=*pos;
@@ -650,7 +668,7 @@ int matchSequence(char *s,int *pos)
           match = ((c>='0')&&(c<='9')); break;
         case '\010':
           c=getChar(i++);
-          match = !isdelim(c); break;
+          match = IsInCharset(S->id_set,c); break;
         case '\011':
           c=getChar(i++);
           match = (c=='\t'); break;
@@ -659,10 +677,11 @@ int matchSequence(char *s,int *pos)
           match = (c=='\n'); break;
         case '\013':
           c=getChar(i++);
-          match = (strchr("+-*/\\^<>=`~:.?@#&!%|",c)!=NULL); break;
+          match = IsInCharset(S->op_set,c); break;
         case '\014':
           c=getChar(i++);
-          match = (strchr("+-*/\\^<>=`~:.?@#&!%|()[]{}",c)!=NULL); break;
+          match = IsInCharset(S->ext_op_set,c) || IsInCharset(S->op_set,c); 
+          break;
       }
       if ((*s)&0x80) match=!match;
       if (!match) return 0;
@@ -707,22 +726,77 @@ int matchStartSequence(char *s,int *pos)
       case '\007':
         match = ((c>='0')&&(c<='9')); break;
       case '\010':
-        match = !isdelim(c); break;
+        match = IsInCharset(S->id_set,c); break;
       case '\011':
         match = (c=='\t'); break;
       case '\012':
         match = (c=='\n'); break;
       case '\013':
-        match = (strchr("+-*/\\^<>=`~:.?@#&!%|",c)!=NULL); break;
+        match = IsInCharset(S->op_set,c); break;
       case '\014':
-        match = (strchr("+-*/\\^<>=`~:.?@#&!%|()[]{}",c)!=NULL); break;
-    }
+        match = IsInCharset(S->ext_op_set,c) || IsInCharset(S->op_set,c);
+        break;
+     }
     if ((*s)&0x80) match=!match;
     if (!match) return 0;
     s++;
   }    
   return matchSequence(s,pos);
 }
+
+void AddToCharset(CHARSET_SUBSET x,int c)
+{
+  x[c>>LOG_LONG_BITS] |= 1L<<(c&((1<<LOG_LONG_BITS)-1));
+}
+
+CHARSET_SUBSET MakeCharsetSubset(unsigned char *s)
+{
+  CHARSET_SUBSET x;
+  int i;
+  unsigned char c;
+
+  x=(CHARSET_SUBSET) malloc(CHARSET_SUBSET_LEN*sizeof(unsigned long));
+  for (i=0;i<CHARSET_SUBSET_LEN;i++) x[i]=0;
+  while (*s!=0) {
+    if (!((*s)&0x60)) { /* special sequences */
+      if ((*s)&0x80) bug("negated special sequences not allowed in charset specifications");
+      switch((*s)&0x1f) {
+        case '\002': case '\004':  /* \w, \W, \i, \o, \O not allowed */
+        case '\010': case '\013': case '\014':
+          bug("special sequence not allowed in charset specification");
+        case '\003':
+          AddToCharset(x,'\n');
+        case '\001':
+          AddToCharset(x,' ');
+        case '\011':
+          AddToCharset(x,'\t');
+          break;
+        case '\006':
+          AddToCharset(x,'\n');
+          AddToCharset(x,' ');
+          AddToCharset(x,'\t');
+        case '\005':
+          for (c='A';c<='Z';c++) AddToCharset(x,c);
+          for (c='a';c<='z';c++) AddToCharset(x,c);
+          break;
+        case '\007':
+          for (c='0';c<='9';c++) AddToCharset(x,c);
+          break;
+        case '\012':
+          AddToCharset(x,'\n');
+          break;
+      }
+    }
+    else if ((s[1]=='-')&&((s[2]&0x60)!=0)&&(s[2]>=*s)) {
+      for (c=*s;c<=s[2];c++) AddToCharset(x,c);
+      s+=2;
+    }
+    else AddToCharset(x,*s);
+    s++;
+  }
+  return x;
+}
+
 
 int idequal(char *b,int l,char *s)
 {
@@ -780,6 +854,11 @@ void initthings(int argc,char **argv)
   char **arg,*s;
   int i,isinput,isoutput,ishelp,ismode,hasmeta,usrmode;
 
+  DefaultOp=MakeCharsetSubset(DEFAULT_OP_STRING);
+  PrologOp=MakeCharsetSubset(PROLOG_OP_STRING);
+  DefaultExtOp=MakeCharsetSubset(DEFAULT_OP_PLUS);
+  DefaultId=MakeCharsetSubset(DEFAULT_ID_STRING);
+
   nmacros=0;
   nalloced=31;
   macros=(struct MACRO *)malloc(nalloced*sizeof(struct MACRO));
@@ -790,6 +869,9 @@ void initthings(int argc,char **argv)
   S->comments=NULL;
   S->stack_next=NULL;
   S->preservelf=0;
+  S->op_set=DefaultOp;
+  S->ext_op_set=DefaultExtOp;
+  S->id_set=DefaultId;
   
   C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
   C->in=stdin;
@@ -866,6 +948,7 @@ void initthings(int argc,char **argv)
       case 'P': ishelp|=ismode|hasmeta|usrmode; ismode=1;
                 S->User=KUser; S->Meta=KMeta;
                 S->preservelf=1;
+                S->op_set=PrologOp;
                 add_comment(S,"css",strdup("\213/*"),strdup("*/"),0); /* \!o */
                 add_comment(S,"cii",strdup("\\\n"),strdup(""),0);
                 add_comment(S,"css",strdup("%"),strdup("\n"),0);
@@ -1394,10 +1477,13 @@ char *remove_comments(int start,int end,int cmtmode)
 
 void SetStandardMode(struct SPECS *P,char *opt) 
 {
+  P->op_set=DefaultOp;
+  P->ext_op_set=DefaultExtOp;
+  P->id_set=DefaultId;
+  FreeComments(P);
   if (!strcmp(opt,"C")||!strcmp(opt,"cpp")) {
     P->User=KUser; P->Meta=KMeta;
     P->preservelf=1;
-    FreeComments(P);
     add_comment(P,"ccc",strdup("/*"),strdup("*/"),0);
     add_comment(P,"ccc",strdup("//"),strdup("\n"),0);
     add_comment(P,"ccc",strdup("\\\n"),strdup(""),0);
@@ -1407,22 +1493,19 @@ void SetStandardMode(struct SPECS *P,char *opt)
   else if (!strcmp(opt,"TeX")||!strcmp(opt,"tex")) {
     P->User=Tex; P->Meta=Tex;
     P->preservelf=0;
-    FreeComments(P);
   }
   else if (!strcmp(opt,"HTML")||!strcmp(opt,"html")) {
     P->User=Html; P->Meta=Html;
     P->preservelf=0;
-    FreeComments(P);
   }
   else if (!strcmp(opt,"default")) {
     P->User=CUser; P->Meta=CMeta;
     P->preservelf=0;
-    FreeComments(P);
   }
   else if (!strcmp(opt,"Prolog")||!strcmp(opt,"prolog")) {
     P->User=KUser; P->Meta=KMeta;
     P->preservelf=1;
-    FreeComments(P);
+    P->op_set=PrologOp;
     add_comment(P,"css",strdup("\213/*"),strdup("*/"),0); /* \!o */ 
     add_comment(P,"cii",strdup("\\\n"),strdup(""),0);
     add_comment(P,"css",strdup("%"),strdup("\n"),0);
@@ -1436,7 +1519,7 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
 {
   struct SPECS *P;
   char *s,*p,*opt;
-  int nargs;
+  int nargs,check_isdelim;
   char *args[10]; /* can't have more than 10 arguments */
   
   whiteout(&p1start,&p1end);
@@ -1457,11 +1540,12 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
     }
   }
   nargs=0;
+  check_isdelim=!idequal(C->buf+p1start,p1end-p1start,"charset");
   while (*p!=0) {
     if (nargs==10) bug("too many arguments in #mode command");
     if (*(p++)!='"') bug("syntax error in #mode command (missing \" or trailing data)");
     args[nargs++]=p;
-    p=strnl2(p);
+    p=strnl2(p,check_isdelim);
     while (iswhite(*p)) p++;
   }    
 
@@ -1539,6 +1623,16 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
     if ((opt!=NULL)||(nargs>1)) bug("syntax error in #mode nocomment/nostring");
     if (nargs==0) FreeComments(S->stack_next);
     else delete_comment(S->stack_next,strdup(args[0]));
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"charset")) {
+    if ((opt==NULL)||(nargs!=1)) bug("syntax error in #mode charset");
+    if (!strcasecmp(opt,"op"))
+      S->stack_next->op_set=MakeCharsetSubset(args[0]);
+    else if (!strcasecmp(opt,"par"))
+      S->stack_next->ext_op_set=MakeCharsetSubset(args[0]);
+    else if (!strcasecmp(opt,"id"))
+      S->stack_next->id_set=MakeCharsetSubset(args[0]);
+    else bug("unknown charset subset name in #mode charset");
   }
   else bug("unrecognized #mode command");
        
@@ -1746,7 +1840,7 @@ int ParsePossibleMeta()
      break;
 
     case 8: /* EXEC */
-     if (!commented[iflevel])
+     if (!commented[iflevel]) {
        if (!execallowed)
          warning("Not allowed to #exec. Command output will be left blank");
        else {
@@ -1770,6 +1864,7 @@ int ParsePossibleMeta()
            pclose(f);
          }
        }
+     }
      break;
 
     case 9: /* DEFEVAL */
@@ -2003,7 +2098,7 @@ void ParseText()
     if ((c>='1')&&(c<='9')) {
       c=c-'1';
       if (c<C->argc)
-        sendout(C->argv[c],strlen(C->argv[c]),0);
+        sendout(C->argv[(int)c],strlen(C->argv[(int)c]),0);
       shiftIn(l+1);
       return;
     }
@@ -2023,7 +2118,7 @@ void ProcessContext()
   free(C->malloced_buf);
 }
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
   initthings(argc,argv); 
   ProcessContext();
