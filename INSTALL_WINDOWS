@@ -45,7 +45,7 @@ B. Native build.
 
 2. Check the file:
 
-       config\x86-pc-windows\lib\configuration.P
+       config\x86-pc-windows\lib\xsb_configuration.P
 
    Again, some settings there might need to be changed.
    The file is commented and the part that might need to be changed is
@@ -78,8 +78,16 @@ B. Native build.
       Other options are "DLL=yes" and "ORACLE=yes".
       In the latter case, you also have to specify "SITE_LIBS=oracle libraries"
       where Oracle libraries (should be taken from the Oracle manual).
+     
+      makexsb_wind with no options will make both the .exe and .dll files.
 
 [NOTES on using Microsoft Visual C++:]
+
+The JAVA_HEADER_PATH may need correcting in the file: 
+XSB\config\x86-pc-windows\MSVC_mkfile.mak  perhaps by changing it to something
+like
+ JAVA_HEADER_PATH= /IC:\j2sdk1.4.2_05\include /IC:\j2sdk1.4.2_05\include\win32 
+
 To compile from the command line, you should set some environment
 variables. First, the path to NMAKE should be in the PATH
 env. variable. Also, you should set the following variables:
@@ -94,7 +102,7 @@ of your MS Visual C++
 
      .\config\x86-pc-windows\bin\xsb.exe
 
-8. If you compiled XSB as a DLL (with DLL=yes) then NMAKE will put the DLL in:
+8. NMAKE will put the DLL in:
 
      .\config\x86-pc-windows\bin\xsb.dll
 
