@@ -1275,6 +1275,7 @@ case "$canonical" in
 		c_opt_level=-${optimization_level-"O1"}
 		emuloop_opt_level=-${optimization_level-"O1"}
 		trutils_opt_level=-${optimization_level-"O1"}
+		builtins_opt_level=-${optimization_level-"O1"}
 		if test ! "$CC" = gcc ; then
 		    CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
 		    LINKFLAGS="-64"
@@ -1284,6 +1285,7 @@ case "$canonical" in
 		c_opt_level=-${optimization_level-"O2"}
 		emuloop_opt_level=-${optimization_level-"O2"}
 		trutils_opt_level=-${optimization_level-"O2"}
+		builtins_opt_level=-${optimization_level-"O2"}
 		if test ! "$CC" = gcc ; then
 		    CFLAGS="${CFLAGS} -OPT:Olimit=7500"
 		fi
