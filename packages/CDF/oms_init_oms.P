@@ -1,4 +1,6 @@
-:- compiler_options([ciao_directives]).
+:- compiler_options([ciao_directives,xpp_on]).
+
+#include "flag_defs_xsb.h"
 
 :- document_export
 	class/4, newClass/5, retractallClass/4,
@@ -26,6 +28,7 @@
 	set_chk_index/0,
 	show_oms_size/0.
 
+:- import intern_string/2, slash/1, stat_flag/2  from machine.
 :- import conset/2, conget/2 from gensym.
 :- import variant/2, subsumes/2 from subsumes.
 :- import ground/1, member/2 from basics.
@@ -36,48 +39,57 @@
 
 %%%%%%%%%%%%% Core Declarations 
 
-:- dynamic oms_cn/4.
-:- dynamic oms_sc/2.
-:- dynamic oms_rln/3.
-:- dynamic oms_strel/3.
-:- dynamic oms_schrel/3.
-:- dynamic oms_obj/4.
-:- dynamic oms_mo/2.
-:- dynamic oms_at/3.
-:- dynamic oms_ao/3.
+cdf_dynamic(oms_cn/4).
+cdf_index(oms_cn,4,[1,2,3]).
+cdf_dynamic(oms_sc/2).
+cdf_index(oms_sc,2,[1,2]).
+cdf_dynamic(oms_rln/3).
+cdf_index(oms_rln,3,[1+2,1,2+3]).
+cdf_dynamic(oms_strel/3).
+cdf_index(oms_strel,3,[1+2,1,2+3]).
+cdf_dynamic(oms_schrel/3).
+cdf_index(oms_schrel,3,[1+2,1,2+3]).
+cdf_dynamic(oms_obj/4).
+cdf_index(oms_obj,4,[1,3]).
+cdf_dynamic(oms_mo/2).
+cdf_index(oms_mo,2,[1,2]).
+cdf_dynamic(oms_at/3).
+cdf_index(oms_at,3,[1+2,1,2+3]).
+cdf_dynamic(oms_ao/3).
+cdf_index(oms_ao,3,[1+2]).
 
-:- dynamic oms_logging_state/1.
-:- dynamic oms_log_trie/1.
+cdf_dynamic(oms_logging_state/1).
+cdf_dynamic(oms_log_trie/1).
 
 %%%%%%%%%%%%% Declarations for External View
 
-:- dynamic class_ext/3.
-:- dynamic subclass_ext/4.
-:- dynamic relationship_ext/6.
-:- dynamic strel_ext/6.
-:- dynamic schrel_ext/6. 
-:- dynamic object_ext/3.
-:- dynamic memberof_ext/4.
-:- dynamic attribute_ext/6.
-:- dynamic attribute_object_ext/6. 
+cdf_dynamic(class_ext/3).
+cdf_dynamic(subclass_ext/4).
+cdf_dynamic(relationship_ext/6).
+cdf_dynamic(strel_ext/6).
+cdf_dynamic(schrel_ext/6). 
+cdf_dynamic(object_ext/3).
+cdf_dynamic(memberof_ext/4).
+cdf_dynamic(attribute_ext/6).
+cdf_dynamic(attribute_object_ext/6). 
 
 %%%%%%%%%%%%% Declarations for External Intensional View
 
-:- dynamic class_int/3.
-:- dynamic immediate_subclass_int/4.
-:- dynamic immediate_relationship_int/6.
-:- dynamic immediate_strel_int/6.
-:- dynamic immediate_schrel_int/6.
-:- dynamic object_int/3.
-:- dynamic immediate_memberof_int/4.
-:- dynamic immediate_attribute_int/6.
-:- dynamic attribute_object_int/6.
+cdf_dynamic(class_int/3).
+cdf_dynamic(immediate_subclass_int/4).
+cdf_dynamic(immediate_relationship_int/6).
+cdf_dynamic(immediate_strel_int/6).
+cdf_dynamic(immediate_schrel_int/6).
+cdf_dynamic(object_int/3).
+cdf_dynamic(immediate_memberof_int/4).
+cdf_dynamic(immediate_attribute_int/6).
+cdf_dynamic(attribute_object_int/6).
 
-:- dynamic cn_id_map/4.
-:- index(cn_id_map/4,[1,3+4],5001).
+cdf_dynamic(cn_id_map/4).
+cdf_index(cn_id_map,4,[1,3+4],5001).
 
-:- dynamic ob_id_map/4.
-:- index(ob_id_map/4,[1,3+4],5001).
+cdf_dynamic(ob_id_map/4).
+cdf_index(ob_id_map,4,[1,3+4],5001).
 
 %%%%%%%%%%%%% Declarations for caching and XJ interface
 :- ensure_loaded(oms_oblivion).
@@ -93,29 +105,36 @@
 %%%%%%%%%%%%% Declarations for updatable DB
 %%:- ensure_loaded(oms_db_updatable).
 
-:- dynamic oms_extint_updatable/1.
-:- dynamic retractall_object_int/4.
-:- dynamic newObject_int/5.
-:- dynamic retractall_memberof_int/2.
-:- dynamic retractall_attribute_int/3.
-:- dynamic newAttribute_int/3.
+cdf_dynamic(oms_extint_updatable/1).
+cdf_dynamic(retractall_object_int/4).
+cdf_dynamic(newObject_int/5).
+cdf_dynamic(retractall_memberof_int/2).
+cdf_dynamic(retractall_attribute_int/3).
+cdf_dynamic(newAttribute_int/3).
 
-:- dynamic assert_oms_int/1.
-:- dynamic retractall_oms_int/1.
+cdf_dynamic(assert_oms_int/1).
+cdf_dynamic(retractall_oms_int/1).
 
 %%%%%%%%%%%%% Declarations for constraint checking
-:- ensure_loaded(oms_constraints).
-:- dynamic oms_checking/1.
-:- call_assert(oms_checking(partial)).
+%:- ensure_loaded(oms_constraints).
+%cdf_dynamic(oms_checking/1).
 
 :- initialize_oms.
 
 initialize_oms:- 
-	retractall(oms_logging_state(_)),
+	init_dynamic_code,
+%	retractall(oms_logging_state(_)),
 	asserta(oms_logging_state(off)),
 	oms_set_log_off,
-	init_index_std,
-	init_oms_rels.
+	init_oms_rels,
+	init_index_std.
+%	call_assert(oms_checking(partial)).
+	
+init_dynamic_code:- 
+	cdf_dynamic(F/A),
+	dynamic(F/A),
+	fail.
+init_dynamic_code.
 
 %--------------------------------------------------------------------
 /* TLS: these should be used only when checking dead code.  They
@@ -257,63 +276,25 @@ relations.").
 new_oms:- 
 	conset('_cid_ctr',0),
 	conset('_oid_ctr',0),
-
-	retractall(oms_cn(_,_,_,_)),
-	retractall(oms_sc(_,_)),
-	retractall(oms_rln(_,_,_)),
-	retractall(oms_strel(_,_,_)),
-	retractall(oms_schrel(_,_,_)),
-	retractall(oms_obj(_,_,_,_)),
-	retractall(oms_mo(_,_)),
-	retractall(oms_at(_,_,_)),
-	retractall(oms_ao(_,_,_)),
-
-	retractall(class_int(_,_,_)),
-	retractall(immediate_subclass_int(_,_,_,_)),
-	retractall(immediate_relationship_int(_,_,_,_,_,_)),
-	retractall(immediate_strel_int(_,_,_,_,_,_)),
-	retractall(immediate_schrel_int(_,_,_,_,_,_)),
-	retractall(object_int(_,_,_)),
-	retractall(immediate_memberof_int(_,_,_,_)),
-	retractall(immediate_attribute_int(_,_,_,_,_,_)),
-	retractall(attribute_object_int(_,_,_,_,_,_)),
-
-	retractall(cn_id_map(_,_,_,_)),
-	retractall(ob_id_map(_,_,_,_)),
-
+	reset_dynamics,
+	asserta(oms_logging_state(off)),
+	oms_set_log_off,
 	init_oms_rels.
+
+reset_dynamics:- 
+	cdf_dynamic(F/A),
+	functor(T,F,A),
+	retractall(T),
+	fail.
+reset_dynamics.
 
 %-------
 
 init_index_std :-
-	init_schema_index_std,
-	init_data_index_std.
-
-init_schema_index_std :-
-	%% oms_cn(Cid,Label,NatCid,Sou)
-	index(oms_cn(_,_,_,_),[1,2,3]),
-	%% oms_sc(SubCid,SupCid)
-	index(oms_sc(_,_),[1,2]),
-	%% oms_rln(SCid,RCid,TCid)
-	index(oms_rln(_,_,_),[1+2,1,2+3]),
-%%	index(oms_rln(_,_,_),[1+2,1,16'0283]),
-	%% oms_strel(SCid,RCid,TCid)
-	index(oms_strel(_,_,_),[1+2,1,2+3]),
-	%% oms_schrel(SCid,RCid,TCid)
-	index(oms_schrel(_,_,_),[1+2,1,2+3]).
-
-init_data_index_std :-
-	%% oms_obj(Oid,Name,Native_Id,Src)
-	%% TLS, objects will "mostly" be unique w.o. source, so to save
-	%% a little space, I'm not changing the index yet.
-	index(oms_obj(_,_,_,_),[1,3]),
-	%% oms_mo(Oid,Cid)
-	index(oms_mo(_,_),[1,2]),
-	%% oms_at(Oid,RCid,TCid)
-	index(oms_at(_,_,_),[1+2,1,2+3]),
-%%	index(oms_at(_,_,_),[1+2,1,16'0283]),
-	%% oms_ao(Oid,RCid,TOid)
-	index(oms_ao(_,_,_),[1+2]).
+	(    cdf_index(F,A,I),index(F/A,I)
+	   ; cdf_index(F,A,I,N),index(F/A,I,N)  ),
+	fail.
+init_index_std.
 
 %-------
 
@@ -361,6 +342,24 @@ newPrimitiveClass(Name,ParentCid,NewCid,Source,NativeID):-
 		      asserta(oms_sc(NewCid,ParentCid))],
            oms_update_list(UpdateList)).
 
+oms_primitive_type(X):- oms_primitive_class(X,_,_,_).
+
+oms_primitive_class(aint(X),'AINT/1',aint(X),'OMS').
+oms_primitive_class(atom(X),'ATOM/1',atom(X),'OMS').
+oms_primitive_class(cardinal(X),'CARDINAL/1',cardinal(X),'OMS').
+oms_primitive_class(float(X),'FLOAT/1',float(X),'OMS').
+oms_primitive_class(integer(X),'INTEGER/1',integer(X),'OMS').
+oms_primitive_class(clause(X,Y),'CLAUSE/2',clause(X,Y),'OMS').
+oms_primitive_class(object(X),'OBJECT/1',object(Y,Z),'OMS') :-
+	(nonvar(X)
+	 ->	object(X,_,Y,Z)
+	 ; nonvar(Y),nonvar(Z)
+	 ->	object(X,_,Y,Z)
+	 ;	true
+	).
+
+%-----------
+
 init_component_info :-
         class(RootCid,'OMS Root','OMS Root','OMS'),
 	newClass('OMS Component',RootCid,'OMS',Compid),
@@ -368,11 +367,14 @@ init_component_info :-
 			component('OMS Root','OMS',atom(_),'OMS',
 				  integer(_),'OMS'),
 			'OMS',_Compid),
-%	newClass('compVers/2',Compid,
-%			compVers('OMS Root','OMS',integer(_),'OMS'),
-%			'OMS',_CVid),
-	newComponent('OMS','.',check,OCid,Rcid),
+	cdf_install_dir(InstallDir),
+	newComponent('OMS',InstallDir,check,OCid,Rcid),
 	newStrel(OCid,Rcid,OCid).
+
+cdf_install_dir(P) :- 
+	stat_flag(INSTALL_DIR, InstallDir1),
+	intern_string(InstallDir1, InstallDir),
+        fmt_write_string(P,'%s/packages/CDF',f(InstallDir)).
 
 /* New component initializes a new component, creating version,
 dependency and path information.  Given a previously existing component, 
@@ -392,60 +394,79 @@ newComponent(Name,Path,component(NameId,atom(Path),integer(V)),Depid):-
 	newComponent(Name,Path,check,
 			component(NameId,atom(Path),integer(V)),Depid).
 
-newComponent(Name,Path,Action,component(NameId,atom(Path),integer(V)),Depid):- 
+newComponent(Name,Path,Action,component(NameId,atom(Pathout),integer(V)),
+							Depid):- 
 	class(GenCompid,_,'OMS Component','OMS'),
 	newClass(Name,GenCompid,Name,NameId),
-	newStrelName(hasVersion,hasVersion,Name,VersId),
 	newStrelName(componentDepends,componentDepends,Name,Depid),
-	newDirectoryPath(Action,Name,NameId,Path),
+	newPathandVersion(Action,Name,NameId,Path,Pathout,V).
+
+/* check gives an error if a component exists whose file path is not
+equal to PATH.  New components are created with filepath PATH and
+version 0 
+
+create renames the path of each component to PATH if its file path is
+not equal to PATH (apart from OMS which it leaves alone). If the
+component is new, or has had its file path reset, its version is 0,
+and its version is updated otherwise.
+
+in_place does not affect existing components.  New components are
+created with filepath PATH and version 0.
+
+The latter two should just be used in component updates. */
+
+newPathandVersion(check,Name,NameId,Path,Path,V):-
+	newStrelName(hasPath,hasPath,Name,PathRid),
+	((strel(NameId,PathRid,atom(Path1)),Path1 \= Path) ->
+	      oms_error(component,['Creating a component path ',Path1,
+			' for ',Name,' which has path ',Path]) 
+	    ; 
+	      newStrel(NameId,PathRid,atom(Path)) ),
+	newStrelName(hasVersion,hasVersion,Name,VersId),
 	(strel(NameId,VersId,integer(V)) -> 
 	     true 
 	   ; 
 	     newStrel(NameId,VersId,integer(0)),
 	     V = 0 ).
-
-/* check gives an error if the component is recreated with a different
-path.  create renames the file paths for each component; in_place does
-not.  The latter two should just be used in component updates. */
-
-newDirectoryPath(check,Name,NameId,Path):-
+newPathandVersion(create,'OMS',NameId,_Pathin,Path,V):- !,
+	newStrelName(hasPath,hasPath,'OMS',PathRid),
+	newStrelName(hasVersion,hasVersion,'OMS',Versid),
+	immediate_strel(NameId,PathRid,atom(Path)),
+	immediate_strel(NameId,Versid,integer(V)).
+newPathandVersion(create,Name,NameId,Pathin,Pathin,V1):- 
 	newStrelName(hasPath,hasPath,Name,PathRid),
-	((strel(NameId,PathRid,atom(Path1)),Path1 \= Path) ->
-
-
-	      oms_error(component,['Creating a component path ',Path1,
-			' for ',Name,' which has path ',Path]) 
-	    ; 
-	      newStrel(NameId,PathRid,atom(Path)) ).
-/* TLS slight inefficiency as same path is retracted */
-newDirectoryPath(create,Name,NameId,Path):- 
+	newStrelName(hasVersion,hasVersion,Name,VersId),
+	(strel(NameId,PathRid,atom(Pathin)) ->
+	     retract_superfluous_paths(NameId,PathRid,Pathin),
+	     strel(NameId,VersId,integer(V)),
+	     retractallStrel(NameId,VersId,integer(V)),
+	     V1 is V + 1,
+	     newStrel(NameId,VersId,integer(V1))
+	   ;  
+             retractallStrel(NameId,PathRid,atom(_)),
+             retractallStrel(NameId,VersId,integer(_)),
+	     newStrel(NameId,PathRid,atom(Pathin)),
+	     newStrel(NameId,VersId,integer(0)),
+	     V1 = 0 ).
+/* assumes merge_check has been done */
+newPathandVersion(in_place,Name,NameId,Pathin,Path,V):- 
 	newStrelName(hasPath,hasPath,Name,PathRid),
-        retractallStrel(NameId,PathRid,atom(_)),
-        newStrel(NameId,PathRid,atom(Path)).
-newDirectoryPath(in_place,Name,NameId,Path):- 
-	newStrelName(hasPath,hasPath,Name,PathRid),
-	((strel(NameId,PathRid,atom(Path1)),Path1 \= Path) -> 
-	      true
-	    ; 
-	      newStrel(NameId,PathRid,atom(Path)) ).
-	
-oms_primitive_type(X):- oms_primitive_class(X,_,_,_).
+	newStrelName(hasVersion,hasVersion,Name,VersId),
+	class(Depid,componentDepends,componentDepends,Name),
+	(strel(component(NameId,atom(Path),integer(V)),Depid,_) -> 
+	    true
+	  ; 
+    	     newStrel(NameId,PathRid,atom(Path)),
+	     newStrel(NameId,VersId,integer(0)),
+	     V = 0, Pathin = Path ).
 
-oms_primitive_class(aint(X),'AINT/1',aint(X),'OMS').
-oms_primitive_class(atom(X),'ATOM/1',atom(X),'OMS').
-oms_primitive_class(cardinal(X),'CARDINAL/1',cardinal(X),'OMS').
-oms_primitive_class(float(X),'FLOAT/1',float(X),'OMS').
-oms_primitive_class(integer(X),'INTEGER/1',integer(X),'OMS').
-oms_primitive_class(clause(X,Y),'CLAUSE/2',clause(X,Y),'OMS').
-oms_primitive_class(object(X),'OBJECT/1',object(Y,Z),'OMS') :-
-	(nonvar(X)
-	 ->	object(X,_,Y,Z)
-	 ; nonvar(Y),nonvar(Z)
-	 ->	object(X,_,Y,Z)
-	 ;	true
-	).
+retract_superfluous_paths(NameId,PathRid,Path):-
+	strel(NameId,PathRid,atom(Path1)),Path1 \= Path,
+        retractallStrel(NameId,PathRid,atom(Path1)),
+	fail.
+retract_superfluous_paths(_,_,_).
 
-%-------
+%------------
 
 %% Given a OMS in memory, initialize ID counters to max used.
 oms_initialize_ctrs :-
@@ -1029,7 +1050,7 @@ of @pred{oms_sc/2}, @pred{immediate_subclass_int/4} and term subsumption for
 parameterized classes).  ").
 
 newSubclass(CCid,PCid) :-
-	check_incremental_constraints(subclass(CCid,PCid)),
+%	check_incremental_constraints(subclass(CCid,PCid)),
 	newSubclass(CCid,PCid,Updates,[]),
 	oms_update_list(Updates).
 
@@ -1418,7 +1439,7 @@ newStrel(SCid,RCid,TCidA) :-
    relation */
 newStrel(SCid,RCid,TCid,Upd0,Upd) :-
 %	standardize_value(TCidA,TCid),
-	check_incremental_constraints(strel(SCid,RCid,TCid)),
+%	check_incremental_constraints(strel(SCid,RCid,TCid)),
 	(strel(SCid,RCid,TCid)
 	 ->	Upd0 = Upd
 	 ; insert_new_strel(SCid,RCid,TCid,Upd0,Upd)).
@@ -1579,7 +1600,7 @@ newSchrel(SCid,RCid,TCidA) :-
    relation */
 newSchrel(SCid,RCid,TCid,Upd0,Upd) :-
 %	standardize_value(TCidA,TCid),
-	check_incremental_constraints(schrel(SCid,RCid,TCid)),
+%	check_incremental_constraints(schrel(SCid,RCid,TCid)),
 	(schrel(SCid,RCid,TCid)
 	 ->	Upd0 = Upd
 	 ; insert_new_schrel(SCid,RCid,TCid,Upd0,Upd)).
@@ -2100,7 +2121,7 @@ newAttribute(SOid,RCid,TCid) :-
 	).
 
 newAttribute(SOid,RCid,TCid,Upd0,Upd) :-
-	check_incremental_constraints(attribute(SOid,RCid,TCid)),
+%	check_incremental_constraints(attribute(SOid,RCid,TCid)),
 	(check_attribute(SOid,RCid,TCid)
 	 ->	Upd0 = Upd
 	 ;	(class_exists_for_cid(RCid),
@@ -2212,7 +2233,7 @@ newAttributeObject(SOid,RCid,TOid) :-
 	oms_update_list(Updates).
 
 newAttributeObject(SOid,RCid,TOid,Upd0,Upd) :-
-	check_incremental_constraints(attribute_object(SOid,RCid,TOid)),
+%	check_incremental_constraints(attribute_object(SOid,RCid,TOid)),
 	(attribute_object(SOid,RCid,TOidX),
 	 variant(TOidX,TOid)
 	 ->	Upd0 = Upd

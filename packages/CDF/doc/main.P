@@ -745,7 +745,7 @@ the second it is called a @em{product identifier}.  For either type of
 identifier, the first argument is termed the @em{native id} and the
 atomic second argument is called the @em{source}.
 
-@bf{Example 6} The external form of identifiers allows the OMS to
+@bf{Example 6} The external form of identifiers allows CDF to
 incorporate information from different ontologies in a clear way.  For
 instance, one might want to construct an ontology from information
 maintained by boththe U.S. Defence Logistics Information Service
@@ -770,14 +770,14 @@ shows that in many existing ontologies names of classes and objects
 may differ significantly from their native identifiers.
 
 The source of an identifier has important uses in the OMS component
-system @ref{}, and for the rest of this documentation identifiers will
-be shown in external source, unless otherwise noted.  At the same
-time, the external identifiers can consume space and be difficult to
-index.  As a result, the OMS stores some information using identifiers
-in internal form, where each 2-ary identifier of the form
-@em{id(Nid,Source)} is replaced by a generated atomic value.
-Identifiers can be transformed between internal and external form
-through the predicates:
+system @ref{oms_components (library)}, and for the rest of this
+documentation identifiers will be shown in external source, unless
+otherwise noted.  At the same time, the external identifiers can
+consume space and be difficult to index.  As a result, the OMS stores
+some information using identifiers in internal form, where each 2-ary
+identifier of the form @em{id(Nid,Source)} is replaced by a generated
+atomic value.  Identifiers can be transformed between internal and
+external form through the predicates:
 
 @begin{itemize} 
 
@@ -785,15 +785,18 @@ through the predicates:
 between a class identifier whose external form is @tt{id(Nid,Source)}
 and whose internal form is @tt{Cid}.
 
-@item @tt{object(Cid,Name,Nid,Source)} which can be used to translate
+@item @tt{object(Oid,Name,Nid,Source)} which can be used to translate
 between an object identifier whose external form is
-@tt{id(Nid,Source)} and whose internal form is @tt{Cid}.
+@tt{id(Nid,Source)} and whose internal form is @tt{Oid}.
 
-@item @tt{relation(Cid,Name,Nid,Source)} which can be used to
+@item @tt{relation(Rid,Name,Nid,Source)} which can be used to
 translate between a relation identifier whose external form is
-@tt{id(Nid,Source)} and whose internal form is @tt{Cid}.
+@tt{id(Nid,Source)} and whose internal form is @tt{Rid}.
 
 @end{itemize}
+
+@bf{TLS: need to mention constraint about product classes and sources,
+if we dont remove it.}.
 
 @section{Extensional and Intensional Information}
 
@@ -805,8 +808,112 @@ data ""on-demand"".  This can be particularly useful when representing
 data from a legacy database: rules can be written to map the data to
 OMS format using the XSB ODBC or Oracle interface.
 
-The format of intensional rules closely resembles that of OMS
-predicates:
+The format of intensional rules closely resembles that of extensional
+CDF predicates, where each functor is followed by @tt{_int} so that
+intensional rules can be defined using rules for the predicates
+@tt{class_int/2}, @tt{object_int/2}, @tt{subclass_int/2},
+@tt{relation_int/2}, @tt{memberof_int/2}, @tt{subrel_int/2},
+@tt{irel_int/3}, @tt{schrel_int/3}, @tt{strel_int/3},
+@tt{attribute_int/3}, and @tt{attribute_object_int/3}.
+
+Each of these rules is checked in the same manner as extensional data,
+so that intensional rules affect inheritance, subclassing, and other
+operations in exactly the same manner as extensional rules.
+
+@bf{TLS: there are some small problems with converting internal form
+to external form that we may have to explain}.
+
+When intensional rules are loaded, they are dynamically asserted in a
+manner that intensional rules can be loaded from several files, but
+reloading from file @tt{F} will retract rules previously loaded from
+@tt{F} and assert new ones.  Users, however do not need to worry about
+@tt{multifile/1} declarations for intensional rules.
+
+
+@bf{Example 6} Suppose that in Prolog, an approved item name fact
+consists of an Item Name Code, the FIIG to which the Item Name Code
+belongs, the Item Name itself, and a description:
+
+@begin{verbatim}
+item_name('00001','A516K0','ELECTRON TUBE','An inclosure, including
+two or more electrodes, in which a flow of electrons may occur through
+a vacuum or a contained gas. The electronic conduction takes place
+either by means of electrons emitted from a cathode or by ionization
+of the contained gas. Includes phototubes (photoemissive type only),
+Geiger-Mueller tubes, traveling wave tubes, cathode ray tubes and
+microwave tubes (Klystron, magnetron, or the like). Excludes items
+whose primary purpose is to produce light energy. Also excludes
+PHOTOELECTRIC CELL; and SEMICONDUCTOR DEVICE (as modified).'). 
+@end{verbatim}
+
+If we wish to include item name facts in our ontology, we might
+translate the above fact as follows.
+
+@begin{verbatim}
+class_ext('ELECTRON TUBE',id('OOOO1',dla)).
+
+subclass_ext('OOOO1',fiig,id('A516K0',dla)).
+
+strel(id('OOOO1',dla),id('Description',dla),id(atom(''An inclosure, including
+  two or more electrodes, in which a flow of electrons may occur
+  through a vacuum or a contained gas. The electronic conduction takes
+  place either by means of electrons emitted from a cathode or by
+  ionization of the contained gas. Includes phototubes (photoemissive
+  type only), Geiger-Mueller tubes, traveling wave tubes, cathode ray
+  tubes and microwave tubes (Klystron, magnetron, or the like). Excludes
+  items whose primary purpose is to produce light energy. Also excludes
+  PHOTOELECTRIC CELL; and SEMICONDUCTOR DEVICE (as modified).'),'OMS').
+@end{verbatim}
+
+To translate all such approved item names into the OMS wouldn't be
+hard, and a programmer might write scripts so that a file of item_name
+facts could then be transformed into OMS external form.  Alternately,
+the information could be stored as intensional rules:
+
+@begin{verbatim}
+class_int(Name,id(Nid,dla)):- item_name(Nid,_,Name,_).
+
+subclass_int(id(Nid,dla),id(Fiig,dla)):- item_name(Nid,Fiig_,_).
+
+strel_int(id(Nid,dla),id('Descriptions',dla),id(atom(Descr),'OMS)):- 
+	item_name(Nid,_,_,Descr).
+@end{verbatim}
+
+Information stored in intensional rules may be slower than if stored
+by extensional facts.  Nonetheless, there are often advantages in
+storing information in intensional rules if the data is updated
+outside of the OMS such as a legacy database, or information obtained
+by agents from the world wide web.
+
+
+@begin{verbatim}
+class(Id,Name,Nid,Src)
+@end{verbatim}
+
+@noindent will check not only the @pred{oms_cn/4} facts that may have
+been created from information external form but also will call
+@pred{class_int/3} rules.  Similarly, a query: 
+
+@begin{verbatim}
+subclass(ChildCid,ParentCid)
+@end{verbatim}
+
+@noindent will check @pred{oms_sc/2} rules, and also will translate
+the class ids of the query to native ids and sources and check
+@pred{subclass_int/4} rules, and translate the native ids and sources
+back to class ids when necessary. 
+
+For each @em{xxx}@tt{_ext/n} predicate, there is a corresponding
+@em{xxx}@tt{_int/n} predicate, and all views support a free
+intermixture of external intensional and explicitly loaded classes and
+/ or objects.  Even parameterized classes can be built using a mixture
+of intensional and explicitly loaded classes @footnote{Hopefully I've
+gotten all --- or at least most of --- the bugs out by now.}.
+
+As a final point, the OMS does not directly support assertion or
+deletion of information in the External Intensional Format.  As a
+result if intensional data is to be modified by, say, an XJ-based GUI,
+cache-coherency cannot be guarenteed.
 
 
 @section{Primitive Classes}
@@ -1032,56 +1139,6 @@ summarized below.  All relations in the External Format are
 extensional -- inheritance and transitivity is executed only after
 they are translated back to the Internal Format by routines in
 @ref{oms_io (library)}.
-
-In the external form, class names, object names, object native ids,
-and all sources must be atomic.
-
-@begin{itemize} 
-
-@item @tt{class_ext(Name,NativeId,Source)} (@pred{class_ext/3}):
-@tt{Name} is the name of a class, @tt{Nativeid} its (possibly
-parameterized) native id, and @tt{Source} its source.
-
-@item @tt{subclass_ext(SubNId,SubSrc,SupNId,SupSrc)}
-(@pred{subclass_ext/4}) denotes that one class is a subclass of
-another.  @tt{SubNId} and @tt{SubSrc} are the native id and source of
-the subclass; and @tt{SupNId} and @tt{SupSrc} are the native id and
-source of the superclass.
-
-@item
-@tt{relationship_ext(NId_from,Src_from,NId_rel,Src_rel,NId_to,Src_to)}
-(@pred{relationship_ext/6}) is the external form of an inheritable
-relationship.  Native ids and sources are used in the usual manner.
-
-@item
-@tt{strel_ext(NId_from,Src_from,NId_rel,Src_rel,NId_to,Src_to)}
-(@pred{strel_ext/6}) is the external form of a (non-inheritable)
-set-valued relation.
-
-@item
-@tt{schrel_ext(NId_from,Src_from,NId_rel,Src_rel,NId_to,Src_to)}
-(@pred{schrel_ext/6}) is the external form of an schema relationship.
-
-@item @tt{object_ext(Name,Native_id,Src)} (@pred{object_ext/3})
-denotes an object with given name, native id, and source.
-
-@item @tt{memberof_ext(ObjNid,ObjSrc,ClassNid,ClassSrc)}
-(@pred{memberof_ext/4}) declares the object specified by @tt{ObjNid +
-ObjSrc} to be a member of the class specified by @tt{ClassNid +
-ClassSrc}.
-
-@item
-@tt{attribute_ext(ObjNid,ObjSrc,RelNid,RelSrc,ClassNid,ClassSrc)}
-(@pred{attribute_ext/6}) defines an attribute of an object, using
-object and class native ids and sources.
-
-@item
-@tt{attribute_object_ext(ObjNid,ObjSrc,RelNid,RelSrc,Obj2Nid,Obj2Src)}
-(@pred{attribute_object_ext/6}) defines an attribute of an object,
-when the target of the object is another object, rather than a class
-as in @pred{attribute_ext/6}.
-
-@end{itemize}
 
 @subsection{Programmer's View of the OMS}
 
@@ -1341,114 +1398,6 @@ That is that RelCID maps OID to some object in TCID.
 the @pred{attribute_object/3} relation, and indicates that the
 relational class RelCID maps the object OID to the object TOID.  
 @end{itemize}
-
-@subsection{OMS: External Intensional Format} The final view of the
-OMS allows users to define a Programmer's View via predicates.  To see
-the advantage of using the External Intensional Format, consider a
-concrete example that uses approved item names.  In Prolog, an
-approved item name fact consists of an Item Name Code, the FIIG to
-which the Item Name Code belongs, the Item Name itself, and a
-description:
-
-@begin{verbatim}
-item_name('00001','A516K0','ELECTRON TUBE','An inclosure, including
-two or more electrodes, in which a flow of electrons may occur through
-a vacuum or a contained gas. The electronic conduction takes place
-either by means of electrons emitted from a cathode or by ionization
-of the contained gas. Includes phototubes (photoemissive type only),
-Geiger-Mueller tubes, traveling wave tubes, cathode ray tubes and
-microwave tubes (Klystron, magnetron, or the like). Excludes items
-whose primary purpose is to produce light energy. Also excludes
-PHOTOELECTRIC CELL; and SEMICONDUCTOR DEVICE (as modified).'). 
-@end{verbatim}
-
-If we wish to include item name facts in our ontology, we might
-translate the above fact as follows.
-
-@begin{verbatim}
-class_ext('ELECTRON TUBE','OOOO1',fiig).
-
-subclass_ext('OOOO1',fiig,'A516K0',fiig).
-
-strel('OOOO1',fiig,'Descriptions','OMS',atom(''An inclosure, including
-  two or more electrodes, in which a flow of electrons may occur
-  through a vacuum or a contained gas. The electronic conduction takes
-  place either by means of electrons emitted from a cathode or by
-  ionization of the contained gas. Includes phototubes (photoemissive
-  type only), Geiger-Mueller tubes, traveling wave tubes, cathode ray
-  tubes and microwave tubes (Klystron, magnetron, or the like). Excludes
-  items whose primary purpose is to produce light energy. Also excludes
-  PHOTOELECTRIC CELL; and SEMICONDUCTOR DEVICE (as modified).')).
-@end{verbatim}
-
-To translate all such approved item names into the OMS wouldn't be
-hard.  We'd start by mapping the item_name predicate to OMS predicates
-as follows.  
-
-@begin{verbatim}
-class_ext(Name,Nid,fiig):- item_name(Nid,_,Name,_).
-
-subclass_ext(Nid,fiig,Fiig,fiig):- item_name(Nid,Fiig_,_).
-
-strel_ext(Nid,fiig,'Descriptions','OMS',atom(Descr),'OMS):- 
-	item_name(Nid,_,_,Descr).
-@end{verbatim}
-
-The programmer might then write scripts so that a file of item_name
-facts could then be transformed into OMS external form.  Such an
-approach is fairly simple and is often done successfully.  However,
-this approach does have disadvantages.  First, if item name
-information is maintained outside of the OMS (as it is by DLA) then
-whenever information about item names changes, the transformation
-scripts must be rerun.  Second, if the item name information is kept
-in a database the DBMS resident information must be exported from the
-DBMS and transformed into external form @footnote{The DBMS interface
-to the OMS has been implemented, but is not yet fully supported}.
-
-The OMS external intensional format allows a user to define views of
-the data which are used automatically by the OMS.  For instance a view
-of item name information might look like:
-
-@begin{verbatim}
-class_int(Name,Nid,fiig):- item_name(Nid,_,Name,_).
-
-subclass_int(Nid,fiig,Fiig,fiig):- item_name(Nid,Fiig_,_).
-
-strel_int(Nid,fiig,'Descriptions','OMS',atom(Descr),'OMS):- 
-	item_name(Nid,_,_,Descr).
-@end{verbatim}
-
-@noindent If these rules are dynamically loaded into memory, along
-with @tt{item_name/4} then a query
-
-@begin{verbatim}
-class(Id,Name,Nid,Src)
-@end{verbatim}
-
-@noindent will check not only the @pred{oms_cn/4} facts that may have
-been created from information external form but also will call
-@pred{class_int/3} rules.  Similarly, a query: 
-
-@begin{verbatim}
-subclass(ChildCid,ParentCid)
-@end{verbatim}
-
-@noindent will check @pred{oms_sc/2} rules, and also will translate
-the class ids of the query to native ids and sources and check
-@pred{subclass_int/4} rules, and translate the native ids and sources
-back to class ids when necessary. 
-
-For each @em{xxx}@tt{_ext/n} predicate, there is a corresponding
-@em{xxx}@tt{_int/n} predicate, and all views support a free
-intermixture of external intensional and explicitly loaded classes and
-/ or objects.  Even parameterized classes can be built using a mixture
-of intensional and explicitly loaded classes @footnote{Hopefully I've
-gotten all --- or at least most of --- the bugs out by now.}.
-
-As a final point, the OMS does not directly support assertion or
-deletion of information in the External Intensional Format.  As a
-result if intensional data is to be modified by, say, an XJ-based GUI,
-cache-coherency cannot be guarenteed.
 
 @subsection{Views on the Different Views}
 

@@ -6,12 +6,14 @@
 	  update_all_components/2,
           load_component/3.
 
-:- import slash/1 from machine.
 :- import short_directory/2 from directry.
 
+:- import member/2,ground/1 from basics.
+:- import slash/1 from machine.
 :- import concat_atom/2 from string.
 :- import message/1 from standard.
-:- import member/2,ground/1 from basics.
+
+:- import fmt_write_string/3 from file_io.
 :- import pretty_print/1 from newpp.
 
 :- ensure_loaded(oms_io).
@@ -20,13 +22,15 @@
 
 :- dynamic temp_depends/4.
 
+
 /*
 % oms_init_oms
 :- import class/4, class_ext/3, class_cidbound/4, oms_cn/4,
 	object/4, oms_obj/4,
 	oms_ao/3, oms_at/3, oms_mo/2, oms_rln/3, oms_sc/2,
-	oms_schrel/3, oms_strel/3, 
-	immediate_strel/3,
+	oms_schrel/3, oms_strel/3, strel_ext/6,
+	oms_dirty/1,
+	immediate_strel/3, retractallStrel/3,strel/3, 
 	oms_fix_dir/2, oms_primitive_class/4,
 	init_ext_data_index/0, init_ext_schema_index/0 from usermod.
 
@@ -41,12 +45,13 @@
 :- import oms_warning/2,oms_error/2 from oms_exceptions.
 
 %oms_io
-:- import intensional_head/2,load_intensional_rules/2, 
+:- import load_intensional_rules/2, 
 	  fast_merge_omsext/0, merge_omsext/0,
 	  retract_omsext/0,
 	  write_ext_term/1, write_hdr/1
 	from usermod.
 */
+
 /*
 handle_load_component_error(Message):- 
 	retract_omsext,
@@ -173,7 +178,7 @@ to be found in a directory named @tt{Name_V}.
 
 @section{Representing Component Information}
 
-@em{This is what we should do once product types can belong to
+@em{This is what we should do onc product types can belong to
 different sources.}
 
 Information about a component resides in the OMS data itself and is
@@ -267,11 +272,11 @@ OMS instance to partition it into components and for each component
 
 analyze_components(Name,List):- 
 	abolish_table_pred(analyze_component_table/2),
-	analyze_component_1(Name1,List),
-	get_version_info(Name1,Name).
+	analyze_component_1(Name,List).
 
 analyze_component_1(Name,List):-
-	setof(Dep,analyze_component_w_version(Name,Dep),List).
+	setof(Dep,analyze_component_w_version(Name1,Dep),List),
+	get_version_info(Name1,Name).
 
 analyze_component_w_version(Name,Dep):-
 	analyze_component_table(Name,Dep1),
@@ -280,11 +285,13 @@ analyze_component_w_version(Name,Dep):-
 	 get_version_info('OMS',Dep) ).
 
 get_version_info(Name,CV):- 
-   (q_strel(id(Name,Name),id(has_version,Name),id(integer(Version),'OMS')) -> 
+   (q_strel(id(Name,Name),id(hasVersion,Name),id(integer(Version),'OMS')) -> 
 	    CV = compVers(Name,Name,integer(Version),'OMS')
 	  ; CV = compVers(Name,Name,integer(0),'OMS')).
 
 :- table analyze_component_table/2.
+:- use_subsumptive_tabling  analyze_component_table/2.
+
 analyze_component_table(Name,Dep):- 
 	analyze_extensional(Name,Dep).
 analyze_component_table(Name,Dep):- 
@@ -679,7 +686,6 @@ already_present(Name,Path,V,Arglist):-
 	     immediate_strel(Cid,Pid,atom(Path))
 	).
 
-
 %---------------
 
 /* here is where we may do something w. relative paths.
@@ -766,37 +772,103 @@ not @tt{Dir} are updated using their present path, if needed.
 In either case all dependency information reflects new component and
 path information.
 @end{itemize}
-
-
 ").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- dynamic temp_new_version/2.
+
 update_all_components(Dir,Options):- 
-	analyze_components(Comp,Dep),
-	Comp = compVers(Name,Name,integer(V),_),
+	retractall(temp_new_version(_,_)),
 	(member(action(create),Options) -> 
-	    update_component_create(Name,V,Dep,Dir)
-	  ; 
-	    update_component_in_place(Name,V,Dep,Dir) ),
+	    Action = create,initialize_for_create(Dir)
+	  ; Action = in_place,initialize_for_in_place),
+	((Action = in_place,merge_has_occurred) -> 
+	    oms_error(update_components,['Cannot update in place: two ',
+		'components have been merged'])
+	    ; true ),
+	analyze_component_1(Comp,Dep),
+	writeln((Comp,Dep)),
+	Comp = compVers(Name,Name,integer(V),_),
+	update_component_1(Action,Name,V,Dep,Dir),
 	fail.
-update_all_components(_Dir,_Options).
+update_all_components(_Dir,_Options):- 
+	retractall(temp_new_version(_,_)).
 
-update_component_create(Name,V,Dep,Dir):- 
-	newComponent(Name,Dir,create,NameId,RelId),
-	create_dependencies_int_1(Dep,Name,NameId,RelId,Dir,create),
+initialize_for_create(Dir):- 
+	analyze_components(Comp,_),
+	Comp = compVers(Name,Name,integer(V),'OMS'), 
+	concat_atom([Dir,'/',Name],File),
+	(file_exists(File) ->
+	     V1 is V + 1,
+	     assert(temp_new_version(Name,V1))
+	  ;  assert(temp_new_version(Name,0))),
+	fail.
+initialize_for_create(_Dir).
+
+initialize_for_in_place:- 
+	propagate_dirty_bits.
+
+/* TLS: this pass is needed becasue we dont know the order in which
+the name/list pairs will be returned. Thus if c is dirty, and a
+depends on b depends on c, we might get a,[b] back first, and b will
+be unmarked. */
+
+propagate_dirty_bits:- 
+	abolish_table_pred(comp_depends_on/2),
+	analyze_component_1(Name,_List),
+	propagate_for_name(Name).
+	
+propagate_for_name(Name):- 
+	(    needs_update(Name)
+	  ;  comp_depends_on(Name,Comp),needs_update(Comp) ),
+	!.
+
+:- table comp_depends_on/2.	
+comp_depends_on(X,Z):- 
+	analyze_component_1(X,List),
+	member(Y,List),
+	(Z = Y ; comp_depends_on(Y,Z) ).
+
+merge_has_occurred:- 
+	immediate_strel(component(Nameid,integer(V),atom(P1)),_,_),
+	immediate_strel(component(Nameid,integer(V),atom(P2)),_,_),
+	P1 \== P2.
+
+%-----------------
+
+/* Need to get oldpath in order to copy init files.  Note that 
+   the component may be created (i.e. namexname is a class) but 
+   its dependencies not yet added. In addition, need to get right
+   version. */
+
+update_component_1(create,Name,V,Dep,Dir):- 
+	Name \== 'OMS',
+	(q_immediate_strel(
+	    id(component(id(Name,Name),id(atom(Oldp),_),V),_),_,_) -> 
+               true
+	    ;  Oldp = nocopy),
+	newComponent(Name,Dir,create,CompId,RelId),
+	CompId = component(_Nameid,atom(Newpath),integer(_Vnew)),
+	temp_new_version(Name,Version),
+	NewCompId = component(_Nameid,atom(Newpath),integer(Version)),
+	create_dependencies_create(Dep,Name,NewCompId,RelId,Dir),
 	writeln(dumping(Name)),
-	dump_component_1(Dir,Name,V).
+	dump_component_1(Name,Newpath,Version,Oldp).
 
-update_component_in_place(_Name,_V,_Dep,_Dir):- 
-	abort('in_place option not yet implemented -- please use create').
-
-/*
-	newComponent(Name,Dir,in_place,NameId,RelId),
-	create_dependencies_int_1(Dep,Name,NameId,RelId,Dir,in_place),
+/* No copy for in_place: updates in place, and Dir is only for new comps */
+update_component_1(in_place,Name,V,Dep,Dir):- 
+	Name \== 'OMS',
+	newComponent(Name,Dir,in_place,CompId,RelId),
+	CompId = component(Nameid,atom(Newpath),integer(V)),
+	(needs_update(Nameid) -> 
+		V1 is V + 1,
+		NewCompid = component(Nameid,atom(Newpath),integer(V1)) ),
+	create_dependencies_in_place(Dep,Name,CompId,NewCompid,RelId,Dir),
 	writeln(dumping(Name)),
-	dump_component_1(Dir,Name,V).
-*/
+	dump_component_1(Name,Newpath,V,nocopy).
+
+%--------------------- 
 
 :- comment(update_components/2, "@tt{update_components(Dir,List)}
 Updates components in @tt{List} (or creates them) writing them into
@@ -808,22 +880,89 @@ changing the state or file system.  ").
 update_components(_Dir,_List):- 
 	abort('update_components/2 not yet implemented').
 
-/* Create a new component for each cell name in dependency list or
-find the version number of the component to which cell name belongs.
-Then, add the dependency structure. */
-create_dependencies_int_1([],_Name,_Compid,_Relid,_Dir,_Action).
-create_dependencies_int_1([compVers(Name,Name,integer(V),'OMS')|T],
-			  Name1,Compid,Relid,Dir,Action):- 
-	Name \== Name1,!,
-	(V == 0 -> 
-	      newComponent(Name,Dir,Action,NewCompId,_NewRelid) 
-	    ; class(NewCompId,_,compVers(Name,Name,integer(V),'OMS'),'OMS') ),
-	newStrel(Compid,Relid,NewCompId),
-	create_dependencies_int_1(T,Name,Compid,Relid,Dir,Action).
-create_dependencies_int_1([_|T],Name,Compid,Relid,Dir,Action):- 
-	create_dependencies_int_1(T,Name,Compid,Relid,Dir,Action).
+%--------------------- 
 
-dump_component_1(Dir,Name,Version):- 
+/* 
+Adds dependency structures for each component as needed, omitting
+self-dependencies.  These dependency structures are of two kinds,
+dependencies to newly created components (in Dir, specified at the
+top-level) and dependencies to previously created components.  In the
+second case, a check must be made whether the action is create or
+in_place.  If the action is create, depdendency information that may
+contain the old path is retracted, and dependency information is
+created with the new path.  If the action is in_place, dependency
+information with current the path information is created if needed.
+*/
+
+create_dependencies_create([],_From,_Compid,_Relid,_Dir).
+create_dependencies_create([compVers(ToName,ToName,integer(_),'OMS')|T],
+			  FromName,Compid,Relid,Dir):- 
+	FromName \== ToName,!,
+	create_all_dependencies_create(ToName,Dir,Compid,Relid),
+	create_dependencies_create(T,FromName,Compid,Relid,Dir).
+create_dependencies_create([_|T],FromName,Compid,Relid,Dir):- 
+	create_dependencies_create(T,FromName,Compid,Relid,Dir).
+
+/* TLS: in first clause, we are not necessarily creating a component: 
+   we may be removing it so that it can be moved, so we need to
+   retract all old dependencies, using the version we have previously found */
+create_all_dependencies_create('OMS',_Dir,FromCompid,Relid):- !,
+	FromCompid = component(FromNameId,atom(_),integer(_)),
+	class(ToNameid,'OMS','OMS','OMS'),
+	class(Depid,componentDepends,componentDepends,'OMS'),
+	immediate_strel(component(ToNameid,atom(Poms),integer(Voms)),
+			Depid,_),	
+	retractallStrel(component(FromNameId,atom(_),integer(_))
+			,Relid,component(ToNameid,_,integer(_))),
+	newStrel(FromCompid,Relid,
+		component(ToNameid,atom(Poms),integer(Voms))).
+create_all_dependencies_create(ToName,Dir,FromCompid,Relid):- !,
+	FromCompid = component(FromNameId,atom(_),integer(_)),
+	temp_new_version(ToName,V),
+	(class(ToNameid,ToName,ToName,ToName) -> 
+	    true
+	  ; 
+  	    class(Compid,'OMS Component','OMS Component','OMS'),
+	    newClass(ToName,Compid,ToName,ToNameid) ),
+	retractallStrel(component(FromNameId,atom(_),integer(_))
+			,Relid,component(ToNameid,_,integer(_))),
+	newStrel(FromCompid,Relid,component(ToNameid,atom(Dir),integer(V))).
+
+create_dependencies_in_place([],_Name,_Compid,_NewCompid,_Relid,_Dir).
+create_dependencies_in_place([compVers(Name,Name,integer(V),'OMS')|T],
+			  Name1,Compid,NewCompid,Relid,Dir):- 
+	Name \== Name1,!,
+	create_all_dependencies_in_place(V,Name,Dir,Compid,NewCompid,Relid),
+	create_dependencies_in_place(T,Name1,Compid,NewCompid,Relid,Dir).
+create_dependencies_in_place([_|T],Name1,Compid,NewCompid,Relid,Dir):- 
+	create_dependencies_in_place(T,Name1,Compid,NewCompid,Relid,Dir).
+
+create_all_dependencies_in_place(0,Name,Dir,_Compid,NewCompid,Relid):- !,
+	newComponent(Name,Dir,in_place,NewCompid,_NewRelid),
+	newStrel(NewCompid,Relid,NewCompid).
+create_all_dependencies_in_place(V,Name,_Dir,Compid,NewCompid,Relid):- !,
+	class(Nameid,Name,Name,Name),
+	(needs_update(Nameid) -> 
+            % To needs update, NewCompid handles both cases of from
+	    strel(component(Nameid,integer(V),atom(Path)),_,_),
+	    V1 is V + 1,
+	    retractallStrel(Compid,Relid,component(Nameid,integer(V),_)),
+	    newStrel(NewCompid,Relid,component(Nameid,integer(V1),atom(Path)))
+	  ; 
+	    (Compid = NewCompid  -> 
+                % neither from nor to needed update.
+		true	
+	      ; 
+	        % From needs update but not to
+		strel(component(Nameid,integer(V),atom(Path)),_,_),
+	        retractallStrel(Compid,Relid,component(Nameid,integer(V),_)),
+	        newStrel(NewCompid,Relid,
+				component(Nameid,integer(V1),atom(Path))) ) ).
+		
+
+%---------------------
+
+dump_component_1(Name,Dir,Version,Oldpath):- 
 	Name \== 'OMS',
 	slash(Slash),
 	make_component_dir(Dir,Name,Version,NewDir),
@@ -843,7 +982,15 @@ dump_component_1(Dir,Name,Version):-
 	concat_atom([NewDir,Slash,'oms_intensional.P'],IntFile),
 	tell(IntFile),
 	write_component_intensional(Name),
-	told.
+	told,
+	(Oldpath = nocopy -> 
+	    true
+	  ; 
+	    (concat_atom([Oldpath,'/initialization_file.P'],Oldfile),
+	     (file_exists(Oldfile) -> 
+	         shell(['cp ',Oldfile,' ',Dir]) 
+	       ; true ) ) ),
+	writeln(dumped(Name)).
 
 make_component_dir(Dir,Name,Version,NameDir):- 
 	slash(Slash),
@@ -984,7 +1131,7 @@ xsb_makedir(Dir):-
 	(path_sysop(isdir,Dir) -> true ; path_sysop(mkdir,Dir)).
 
 write_component_intensional(Name):- 
-	intensional_head(Head,_Arg),
+	component_table_int(Head,_Arg,_Arg2),
 	Head =.. [F|T],
 	concat_atom([F,'_',Name],NewF),
 	NewHead =.. [NewF|T],
@@ -992,6 +1139,8 @@ write_component_intensional(Name):-
 	pretty_print(clause(Head,Body)),
 	fail.
 write_component_intensional(_).
+
+needs_update(Component):- oms_dirty(Component).
 
 end_of_file.
 
@@ -1236,7 +1385,7 @@ that it will be written out on update.  ").
 
 increment_component_version(Component):- 
 	class(Cid,Component,Component,Component),
-	class(Rid,_,has_version,Component),
+	class(Rid,_,hasVersion,Component),
 	strel(Cid,Rid,integer(V)),
 	retractallStrel(Cid,Rid,integer(V)),
 	V1 is V + 1,
@@ -1291,7 +1440,7 @@ OMS state, otherwise a warning is given and the predicate fails.").
 
 add_component_initializer(Comp,File):- 
    (q_immediate_subclass(id(Comp,Comp),id('OMS Component','OMS')),
-    q_strel(id(Comp,Comp),id(has_version,Comp),id(integer(V),'OMS')) -> 
+    q_strel(id(Comp,Comp),id(hasVersion,Comp),id(integer(V),'OMS')) -> 
 	q_newStrel(id(compVers(id(Comp,Comp),id(integer(V),'OMS')),'OMS'),
 	          id(initialization_file,Comp),
 	          id(atom(File),'OMS'))
@@ -1340,4 +1489,11 @@ dependency_needs_loading(New,Name,Arglist):-
 	New \== 'OMS',New \== Name,
 	\+ class_ext(New,New,New),
 	(member(force(yes),Arglist) ; \+ class(_,New,New,New) ).
+
+create_all_dependencies_create(V,Name,Dir,Compid,Relid):- !,
+	Compid = component(NameId,atom(Path),integer(V)),
+	OldCompid = component(NameId,atom(Path),integer(_)),
+	retractallStrel(Compid,Relid,component(Nameid,integer(_),_)),
+	class(Nameid,Name,Name,Name),
+	newStrel(NewCompid,Relid,component(Nameid,integer(0),atom(Dir))).
 

@@ -441,7 +441,7 @@ merge_omsext :-
 	cp_memberof_extoms,
 	cp_attribute_extoms,
 	cp_attribute_object_extoms,
-	(oms_checking(partial) -> true ; check_consistency),
+%	(oms_checking(partial) -> true ; check_consistency),
 	(Cache =:= 1 -> oms_use_cache ; true),
 	retract_omsext,
 	time_message(Begin,('external OMS(s) merged')).
@@ -619,7 +619,7 @@ fast_merge_omsext :-
 	fast_attribute_extoms,
 	time_message(Begin,('attrs merged')),
 	fast_attribute_object_extoms,
-	(oms_checking(partial) -> true ; check_consistency),
+%	(oms_checking(partial) -> true ; check_consistency),
 	(Cache =:= 1 -> oms_use_cache ; true),
 	retract_omsext,
 	time_message(Begin,('external OMS(s) merged')).

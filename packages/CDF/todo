@@ -1,3 +1,10 @@
+
+Nai Ching
+
+Rui
+
+
+
 Paper
 
 tt irel, schrel, etc.
@@ -16,7 +23,7 @@ Log in doc. etc.
 
 Ontology vs. OMS instance vs. OMS state.
 
-Make sure ive mentioned product identifiers, and direct constituents.
+Make sure ive mentioned product identiofiers, and direct constituents.
 
 Probably haven't mentioned initialization file.
 
@@ -27,24 +34,48 @@ make sure omsext can read relation and subrel.
 
 Need to allow different sources for product classes.
 
+_int/6 => _int/3
+
 ---------------------------------------------------
 
-Component changes.
+Component stuff
 
-Probably need a component dirty for dump component or dump new version.
+-------------
+init_files not quite right.
 
--- Renaming -- do we still need a function to actually rename 2
-versions.
+bug if you give update a non-exist direct.
 
-update_all inplace.
+-- check for version 1 in dependenciy in create.
 
-Version conflicts for OMS version????
+also, clean up new component/create
 
-Check on why self-replacements are present...
+-- do a merge, then check update.
+
+-- update analyze_components.
+
+--- Then start test suite of in_place.  First check that dependencies
+work.
+
+-------------
+
+new_oms: put oms_db_updatable into new_oms.  Also oms_dirty.  Also
+oms_caching.
+
+Error reporting in path_sysop.
+
+Make second argument of descriptions inheritable, so we can define OMS
+descriptions, and then inherit.
+
+-- Renaming -- do we still need a renaming function 
 
 Not checking consistency of lists in load or update.
 
 Replace catch in load...
+
+update_components/2, fail if subdependencies are not
+themselves components.
+
+update find_directories.
 
 --------------------------------------------------------------
 Other: 
@@ -65,9 +96,6 @@ might need newCrel.
 get rid of [] (no.. clause).
 
 -----------------------------
-
-update_components/2, fail if subdependencies are not
-themselves components.
 
 Incorporate antirelationships in create_component, etc.
 
@@ -175,10 +203,3 @@ oms_filters  pair to key probably doesnt work.
 
 ----------------------------------------------------------------------
 
-Documentation -- can I make the query interface the main one?
-
-----------------------------------------------------------------------
-
-Components -- inverse or not.  Add inverse.
-
-new_oms: put oms_db_updatable into new_oms.
