@@ -1,0 +1,186 @@
+/* File:       flrdebug_data.fli -- data guides for XSB debugger in Flora shell
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2001
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+%% The data in this file is workspace-dependent
+
+%% This will dump the corresponding include instructions in the output file
+:- dump '#mode standard Prolog'.
+:- dump '#include "flrheader.flh"'.
+:- dump '#include "flora_terms.flh"'.
+
+%% This might not work on windows, but on windows we provide 
+%% a prebuilt .flh file
+#include "../closure/includes/flrpred.fli"
+
+
+:- wraparound
+	newpredicate/_,
+	debugger_data_loaded/0.
+
+
+
+/***************************************************************************
+  F-logic facts
+***************************************************************************/
+flora_hide_this_hide(base_sub/2).
+flora_hide_this_hide(base_isa/2).
+flora_hide_this_hide(base_fd/3).
+flora_hide_this_hide(base_ifd/3).
+flora_hide_this_hide(base_mvd/3).
+flora_hide_this_hide(base_imvd/3).
+flora_hide_this_hide(base_mvddef/2).
+flora_hide_this_hide(base_imvddef/2).
+flora_hide_this_hide(base_fdsig/3).
+flora_hide_this_hide(base_ifdsig/3).
+flora_hide_this_hide(base_mvdsig/3).
+flora_hide_this_hide(base_imvdsig/3).
+flora_hide_this_hide(base_meth/2).
+flora_hide_this_hide(base_imeth/2).
+flora_hide_this_hide(base_tran/2).
+flora_hide_this_hide(base_exists/1).
+flora_hide_this_hide(base_objeql/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear in a rule head
+***************************************************************************/
+
+flora_hide_this_show(derived_sub/2).
+flora_hide_this_show(derived_isa/2).
+flora_hide_this_show(derived_fd/3).
+flora_hide_this_show(derived_ifd/3).
+flora_hide_this_show(derived_mvd/3).
+flora_hide_this_show(derived_imvd/3).
+flora_hide_this_show(derived_fdsig/3).
+flora_hide_this_show(derived_ifdsig/3).
+flora_hide_this_show(derived_mvdsig/3).
+flora_hide_this_show(derived_imvdsig/3).
+flora_hide_this_show(derived_meth/2).
+flora_hide_this_show(derived_imeth/2).
+flora_hide_this_show(derived_tran/2).
+
+
+flora_hide_this_hide(derived_mvddef/2).
+flora_hide_this_hide(derived_imvddef/2).
+flora_hide_this_hide(derived_exists/1).
+flora_hide_this_hide(derived_objeql/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear in the trailer
+***************************************************************************/
+flora_hide_this_show(inferred_sub/2).
+flora_hide_this_show(inferred_isa/2).
+flora_hide_this_show(inferred_fd/3).
+flora_hide_this_show(inferred_ifd/3).
+flora_hide_this_show(inferred_mvd/3).
+flora_hide_this_show(inferred_imvd/3).
+flora_hide_this_show(inferred_meth/2).
+flora_hide_this_show(inferred_imeth/2).
+flora_hide_this_show(inferred_tran/2).
+flora_hide_this_show(inferred_fdsig/3).
+flora_hide_this_show(inferred_ifdsig/3).
+flora_hide_this_show(inferred_mvdsig/3).
+flora_hide_this_show(inferred_imvdsig/3).
+
+flora_hide_this_hide(inferred_mvddef/2).
+flora_hide_this_hide(inferred_imvddef/2).
+flora_hide_this_hide(inferred_exists/1).
+flora_hide_this_hide(inferred_objeql/2).
+
+flora_hide_this_hide(defined_inferred_ifd/2).
+flora_hide_this_hide(defined_inferred_imvd/2).
+flora_hide_this_hide(defined_inferred_fd/2).
+flora_hide_this_hide(defined_inferred_mvd/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear in a rule body
+***************************************************************************/
+
+/*
+flora_hide_this_show(sub/2).
+flora_hide_this_show(isa/2).
+flora_hide_this_show(fd/3).
+flora_hide_this_show(ifd/3).
+flora_hide_this_show(mvd/3).
+flora_hide_this_show(imvd/3).
+flora_hide_this_show(fdsig/3).
+flora_hide_this_show(ifdsig/3).
+flora_hide_this_show(mvdsig/3).
+flora_hide_this_show(imvdsig/3).
+flora_hide_this_show(meth/2).
+flora_hide_this_show(imeth/2).
+flora_hide_this_show(tran/2).
+
+flora_hide_this_show(mvdinc/3).
+flora_hide_this_show(imvdinc/3).
+flora_hide_this_show(mvdtolist/3).
+flora_hide_this_show(imvdtolist/3).
+*/
+
+flora_hide_this_hide(mvddef/2).
+flora_hide_this_hide(imvddef/2).
+flora_hide_this_hide(exists/1).
+flora_hide_this_hide(objeql/2).
+flora_hide_this_hide(fddef/2).
+flora_hide_this_hide(ifddef/2).
+
+/***************************************************************************
+  intermediate F-logic predicates that appear in the trailer
+***************************************************************************/
+flora_hide_this_hide(super_sub/2).
+flora_hide_this_hide(super_isa/2).
+flora_hide_this_hide(conflict_ifd/2).
+flora_hide_this_hide(conflict_imvd/2).
+flora_hide_this_hide(conflict_obj_ifd/2).
+flora_hide_this_hide(conflict_obj_imvd/2).
+
+flora_show_this_hide(ultimate_isa/2).
+flora_show_this_hide(immediate_sub/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear only in the trailer with equality maintenance
+***************************************************************************/
+flora_hide_this_hide(diffobjeql/2).
+flora_hide_this_hide(inferred_sub_eql/2).
+flora_hide_this_hide(inferred_isa_eql/2).
+flora_hide_this_hide(inferred_ifd_eql/3).
+flora_hide_this_hide(inferred_imvd_eql/3).
+flora_hide_this_hide(inferred_imvddef_eql/2).
+flora_hide_this_hide(inferred_fd_eql/3).
+flora_hide_this_hide(inferred_mvd_eql/3).
+flora_hide_this_hide(inferred_mvddef_eql/2).
+
+/*****************************************************************************
+    Intermediate predicates
+*****************************************************************************/
+
+flora_hide_this_show(pref(newpredicate/_)).
+
+
+
+debugger_data_loaded.

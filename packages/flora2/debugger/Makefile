@@ -1,4 +1,4 @@
-## File:      packages/flora2/closure/Makefile
+## File:      packages/flora2/syslib/Makefile
 ##
 ## Author(s): Michael Kifer
 ##            Guizhen Yang
@@ -28,43 +28,59 @@
 
 XSBDIR = ../../..
 
-ALLOBJS = flrpatch.flh
+ALLOBJS = flrdebugger.O dynamic_data.dat static_data.dat
+
+XSB_STANDARD = $(XSBDIR)/prolog_includes/standard.h
+XSB_EMU_FLAG_DEFS = $(XSBDIR)/emu/flag_defs_xsb.h
+
+FLORA_INCLUDES_DIR = ../flrincludes
+DYN_INCLUDES_DIR = ../includes
+
+FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
+FLORA_ERRORS = $(FLORA_INCLUDES_DIR)/flora_errors.flh
+FLRHEADER = $(DYN_INCLUDES_DIR)/flrheader.flh
+
+.SUFFIXES:  .in .dat .P .H .O
+
+
+OPTION = [optimize]
 
 XSB = $(XSBDIR)/bin/xsb
 
 PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
 
-FLORA_INCLUDES_DIR = ../flrincludes
-
-FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
-
 # Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.flora_genincl_warn.tmp'
+SVFILE = '$(XSBDIR)/build/.flora_debug_warn.tmp'
 STDWARN = 3
 STDERR = 2
-HDRMSG = "While compiling XSB/packages/flora2/genincludes:"
+HDRMSG = "While compiling XSB/packages/flora2/debugger:"
 
-# suffix rules
-.SUFFIXES: .fli .flh
 
-all: clean init $(ALLOBJS) finish
+all: init $(ALLOBJS) finish
 	@$(XSBDIR)/build/touch.sh cmd...
 	$(PROLOG) < cmd...
-	@rm cmd...
+	/bin/rm -f cmd...
 	@cat $(SVFILE)
 
+static_data.dat: static_data.in $(FLORA_TERMS)
+	cp -f static_data.in static_data.dat
 
-%.flh: %.fli $(FLORA_TERMS)
-	@echo 'flCompileInclude($*).' >> cmd...
+%.dat: %.in $(FLORA_TERMS)
+	@echo 'flWrapAround($*).' >> cmd...
+
+flrwraparound.O: flrwraparound.P $(FLORA_TERMS) $(XSB_STANDARD)
+	@echo 'mc(flrwraparound,$(OPTION)).' >> cmd...
+
+flrdebugger.O: flrdebugger.P $(FLORA_TERMS) $(XSB_STANDARD)
+	@echo 'mc(flrdebugger,$(OPTION)).' >> cmd...
 
 
 init:
 	/bin/rm -f $(SVFILE)
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
-	@echo "[flrcompileinclude]." >> cmd...
-	@echo "import flCompileInclude/1 from flrcompileinclude." >> cmd...
-	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...
+	@echo "[flrwraparound]." >> cmd...
+	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...
 	@echo "file_clone($(STDWARN),$(STDERR),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
 	@echo 'fmt_write($(STDWARN),"%s\n",args($(HDRMSG))).' >> cmd...
@@ -76,7 +92,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ *.flh
+	/bin/rm -f *~ *O *.dat
 
 
 .DONE:

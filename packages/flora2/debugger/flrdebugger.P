@@ -1,0 +1,541 @@
+/* File:        flrdebugger.P  -- Flora debugger
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2001
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+:- compiler_options([xpp_on]).
+#include "standard.h"
+
+#include "flrheader.flh"
+#include "flora_terms.flh"
+
+
+
+:- import fmt_write/3, file_close/1 from file_io.
+:- import file_write/2 from xsb_writ.
+:- import debug_display_call_hook/1, flora_switch/1 from usermod.
+:- import package_configuration/2 from packaging.
+:- import conset/2 from gensym.
+:- import process_control/2 from shell.
+:- import retractall/1 from assert.
+:- import xpp_process_file/3 from parse.
+:- import slash/1 from machine.
+:- import member/2, append/3 from basics.
+
+:- import flora_classify_call/5 from flrwrapper.
+:- import flora_wssymbol/3 from flrwrapper.
+:- import flora_set_xpp_options/1,
+	flora_set_xpp_options/0,
+	flora_clear_xpp_options/0 from flrutils.
+:- import flora_message_line/1, flora_message_line/2 from flrprint.
+:- import flLoadedModule/1 from flora2.
+
+
+:- import flora_handle_trace/0,
+	flora_handle_notrace/0
+   from usermod.
+%% This is a trick: the debugger wants the hook to be in usermod, 
+%% but we want to work in a module
+:- import flora_write_debugger_hook/1 from usermod.
+
+:- dynamic debug_display_call_hook/1.
+:- dynamic flora_switch/1.
+:- dynamic flora_debug_context/1.
+:- dynamic flora_write_debugger_hook/1.
+
+:- dynamic
+	hide_this_hide/2,
+	show_this_hide/2,
+	hide_this_show/2,
+	trace_this_noprint/2,
+	trace_this_print/2,
+	flora_hide_this_hide/1,
+	flora_hide_this_show/1,
+	flora_show_this_hide/1,
+	flora_trace_this_noprint/1,
+	flora_trace_this_print/1.
+:- import 
+	hide_this_hide/2,
+	show_this_hide/2,
+	hide_this_show/2,
+	trace_this_noprint/2,
+	trace_this_print/2,
+	flora_hide_this_hide/1,
+	flora_hide_this_show/1,
+	flora_show_this_hide/1,
+	flora_trace_this_noprint/1,
+	flora_trace_this_print/1
+    from usermod.
+
+:- export flora_read_debugger_data/1,
+	flora_load_dyndata_for_user_modules/1,
+	FLORA_SYMBOL(debugger_loaded),
+	flora_trace/0,
+	flora_notrace/0.
+
+
+?- assert(debug_display_call_hook(flora_write_debugger_hook)).
+?- assert((
+           flora_write_debugger_hook(X) :-
+	     (\+flora_switch(low_level_trace) -> flora_write_goal(X)
+	     ; print_item(X)
+	     )
+	  )).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% flora_write_goal %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/*
+%% This is a top-level call in flora_print_all/2 in flranswers.flr
+flora_write_goal(findall(NVs,FLORA_SYMBOL(call)(Gs),_TempL)) :-
+	print_item('Query: { '),
+	flora_write_vars(NVs),
+	print_item(' | '),
+	flora_write_goal(Gs),
+	print_item(' }').
+*/
+
+flora_write_goal(Call) :-
+	classify_call(Call, Type,Basename,ArgList,Workspace),
+	( Type == (firstorder)
+	-> flora_write_firstorder(Basename,ArgList,Workspace)
+	; Type == (hilog)
+	-> flora_write_hilog(Basename,ArgList,Workspace)
+	; Type == (flogic)
+	-> flora_write_flogic(Basename,ArgList,Workspace)
+	; Type == (inheritance)
+	-> print_item('(Trying to derive by inheritance) '),
+	    flora_write_flogic(Basename,ArgList,Workspace)
+	; Type == (definedvalue)
+	-> print_item('derivable by deduction '),
+	    append(ArgList, ['...'], NewArgList),
+	    flora_write_flogic(Basename,NewArgList,Workspace)
+	; Type == (conflictvalue)
+	-> print_item('inheritance conflict for '),
+	    append(ArgList, ['...'], NewArgList),
+	    flora_write_flogic(Basename,NewArgList,Workspace)
+	),
+	!.
+
+
+%% An update
+flora_write_goal(Call) :-
+	Call =.. [UpdPred,UpdLiterals|Query],
+	is_update_call(UpdPred,UpdName),
+	!,
+	(Query==[]
+	-> flora_write_update(UpdName,UpdLiterals)
+	; Query = [RealQuery],
+	    flora_write_update(UpdName,UpdLiterals,RealQuery)
+	).
+
+/*
+%% aggregate
+flora_write_goal(Call) :-
+	Call = ','(AggrCall,ComparisonCall),
+	AggrCall =.. [AggrPred,AggrVar,GroupVarList,Query,AggrResultVar],
+	is_aggregate_call(AggrPred,AggrName),
+	flora_write_aggregate(AggrName,AggrVar,GroupVarList,
+			      Query,AggrResultVar,ComparisonCall).
+*/
+%% aggregate
+flora_write_goal(Call) :-
+	Call =.. [AggrPred,AggrVar,GroupVarList,Query,AggrResultVar],
+	is_aggregate_call(AggrPred,AggrName),
+	flora_write_aggregate(AggrName,AggrVar,GroupVarList,
+			      Query,AggrResultVar).
+
+%% flLoad in the form of [...]
+flora_write_goal(Call) :-
+	Call = FLLIBLOAD(Arg),
+	print_item('['),
+	(Arg = '>>'(File,Module)
+	-> print_items((File,'>>',Module))
+	;  print_item(File)
+	),
+	print_item(']').
+
+%% List of goals -- the last one
+flora_write_goal(Call) :-
+	functor(Call,',',2),
+	!,
+	write_goal_commalist(Call).
+
+flora_write_goal(Call) :-
+	Call =.. [F, Subcall],
+	member(F, [(tnot),('\+'),(not),(call)]),
+	!,
+	print_items((F,'(')),
+	flora_write_goal(Subcall),
+	print_item(')').
+
+%% catch all
+flora_write_goal(Call) :- print_item(Call).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+write_goal_commalist(','(G,Gs)) :-
+	!,
+	flora_write_goal(G),
+	print_item(','),
+	write_goal_commalist(Gs).
+write_goal_commalist(G) :-
+	!,
+	flora_write_goal(G).
+
+
+/*********************************************************************/
+%%%%%%%%%%%%%%%%%%%%% Molecules %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flora_write_flogic(Basename,Args,Workspace) :-
+	decode_molecule(Basename,Code,Args),
+	write_molecule(Code),
+	write_workspace(Workspace).
+
+write_molecule(Code) :-
+	Code =.. [code|Elements],
+	write_mol_elements(Elements).
+write_mol_elements([]).
+write_mol_elements([H|Tail]) :-
+	write_value(H),
+	write_mol_elements(Tail).
+
+
+is_prolog(Call) :- 
+	callable(Call),
+	classify_call(Call, prolog,_Basename,_ArgList,_Workspace).
+is_hilog(Call) :- 
+	callable(Call),
+	classify_call(Call, hilog,_Basename,_ArgList,_Workspace).
+is_hilog(Call) :-
+	callable(Call),
+	Call =.. [WRAP_HILOG|_].
+
+
+decode_molecule(WRAP_FD,code(O,'[',M,'->',V,']'), [O,M,V]).
+decode_molecule(WRAP_MVD,code(O,'[',M,'->>',V,']'), [O,M,V]).
+decode_molecule(WRAP_IFD,code(O,'[',M,'*->',V,']'), [O,M,V]).
+decode_molecule(WRAP_IMVD,code(O,'[',M,'*->>',V,']'), [O,M,V]).
+decode_molecule(WRAP_FDSIG,code(O,'[',M,'=>',V,']'), [O,M,V]).
+decode_molecule(WRAP_IFDSIG,code(O,'[',M,'*=>',V,']'), [O,M,V]).
+decode_molecule(WRAP_MVDSIG,code(O,'[',M,'=>>',V,']'), [O,M,V]).
+decode_molecule(WRAP_IMVDSIG,code(O,'[',M,'*=>>',V,']'), [O,M,V]).
+decode_molecule(WRAP_MVDINC,code(O,'[',M,'+>>',V,']'), [O,M,V]).
+decode_molecule(WRAP_IMVDINC,code(O,'[',M,'*+>>',V,']'), [O,M,V]).
+decode_molecule(WRAP_MVDTOLIST,code(O,'[',M, '->->',V,']'), [O,M,V]).
+decode_molecule(WRAP_IMVDTOLIST,code(O,'[',M, '*->->',V,']'), [O,M,V]).
+decode_molecule(WRAP_OBJEQL,code(O1,':=:',O2), [O1,O2]).
+decode_molecule(WRAP_ISA,code(O,':',C), [O,C]).
+decode_molecule(WRAP_SUB,code(Sub,'::',Sup), [Sub,Sup]).
+%% boolean method
+decode_molecule(WRAP_METH,code(O,'[',P,']'), [O,P]).
+%% inheritable boolean method
+decode_molecule(WRAP_IMETH,code(O,'[*',P,']'), [O,P]).
+%% procedural boolean method
+decode_molecule(WRAP_TRAN,code(O,'[#',P,']'), [O,P]).
+
+%%%%%%%%%%%%%%%%%%%%% HiLog %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flora_write_hilog(Basename,Args,Workspace) :-
+	%% Construct hilog term
+	HTerm =.. [WRAP_HILOG,Basename|Args],
+	write_hilog(HTerm),
+	write_workspace(Workspace).
+
+%%%%%%%%%%%%%%%%%%%%%% Firstorder %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flora_write_firstorder(Basename,ArgList,Workspace) :-
+	print_items((Basename,'(')),
+	write_hilog_args(ArgList),
+	print_item(')'),
+	write_workspace(Workspace).
+
+%%%%%%%%%%%%%%%%%%%%% Updates %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+is_update_call(FLLIBINSERT, FL_INSERT).
+is_update_call(FLLIBINSERTALL, FL_INSERTALL).
+is_update_call(FLLIBBTINSERT, FL_BTINSERT).
+is_update_call(FLLIBBTINSERTALL, FL_BTINSERTALL).
+is_update_call(FLLIBDELETE, FL_DELETE).
+is_update_call(FLLIBDELETEALL, FL_DELETEALL).
+is_update_call(FLLIBBTDELETE, FL_BTDELETE).
+is_update_call(FLLIBBTDELETEALL, FL_BTDELETEALL).
+is_update_call(FLLIBERASE, FL_ERASE).
+is_update_call(FLLIBERASEALL, FL_ERASEALL).
+is_update_call(FLLIBBTERASE, FL_BTERASE).
+is_update_call(FLLIBBTERASEALL, FL_BTERASEALL).
+
+flora_write_update(UpdName,UpdLiterals) :-
+	print_items((UpdName,'{')),
+	write_update_literals(UpdLiterals),
+	print_item('}').
+flora_write_update(UpdName,UpdLiterals,Query) :-
+	print_items((UpdName,'{')),
+	write_update_literals(UpdLiterals),
+	print_item(' | '),
+	write_goal_commalist(Query),
+	print_item('}').
+write_update_literals([]).
+write_update_literals([L|Rest]) :-
+	L = FLSYSDBUPDATE(Literal,_Storage),
+	flora_write_goal(Literal),
+	(Rest \== [] -> print_item(','); true),
+	write_update_literals(Rest).
+
+
+%%%%%%%%%%%%%%%%%%%%% Aggregate Ops %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+flora_write_aggregate(AggrName,AggrVar,GroupVarList,
+			      Query,AggrResultVar,ComparisonCall) :- 
+	ComparisonCall =.. [Comparison,ComparisonVar,AggrResultVar],
+	print_items((ComparisonVar,Comparison,AggrName,'{',
+		     AggrVar,GroupVarList,' | ')),
+	flora_write_goal(Query),
+	print_item('}').
+*/
+flora_write_aggregate(AggrName,AggrVar,GroupVarList,Query,AggrResultVar) :- 
+	print_items((AggrResultVar,' = ',AggrName,'{',AggrVar,GroupVarList,' | ')),
+	flora_write_goal(Query),
+	print_item('}').
+
+is_aggregate_call(FLLIBMIN,FL_MIN).
+is_aggregate_call(FLLIBMAX,FL_MAX).
+is_aggregate_call(FLLIBSUM,FL_SUM).
+is_aggregate_call(FLLIBAVG,FL_AVG).
+is_aggregate_call(FLLIBCOUNT,FL_COUNT).
+is_aggregate_call(FLLIBCOLLECTSET,FL_COLLECTSET).
+is_aggregate_call(FLLIBCOLLECTBAG,FL_COLLECTBAG).
+
+
+%%%%%%%%%%%%%%%%%%%%%% Classifier %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+classify_call(Call, Type,Basename,ArgList,Workspace) :-
+	flora_classify_call(Call, Type1,Basename1,ArgList,Workspace),
+	(Type1 == (firstorder)
+	-> (Basename1 == ultimate_isa
+	   -> Basename = WRAP_ISA, Type = (inheritance)
+	   ; Basename1 == immediate_sub
+	   -> Basename = WRAP_SUB, Type = (inheritance)
+	   
+	   ; Basename1 == super_isa
+	   -> Basename = WRAP_ISA, Type = (flogic)
+	   ; Basename1 == super_sub
+	   -> Basename = WRAP_SUB, Type = (flogic)
+
+	   ; Basename1 == defined_inferred_fd
+	   -> Basename = WRAP_FD, Type = (definedvalue)
+	   ; Basename1 == defined_inferred_ifd
+	   -> Basename = WRAP_IFD, Type = (definedvalue)
+	   ; Basename1 == defined_inferred_mvd
+	   -> Basename = WRAP_MVD, Type = (definedvalue)
+	   ; Basename1 == defined_inferred_imvd
+	   -> Basename = WRAP_IMVD, Type = (definedvalue)
+
+	   ; Basename1 == conflict_obj_ifd
+	   -> Basename = WRAP_FD, Type = (conflictvalue)
+	   ; Basename1 == conflict_obj_imvd
+	   -> Basename = WRAP_MVD, Type = (conflictvalue)
+	   ; true
+	   )
+	; Type = Type1, Basename = Basename1
+	).
+
+%%%%%%%%%%%%%%%%%%%%% Write Utils %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+write_value(Val) :-
+	atomic(Val),
+	!,
+	print_item(Val).
+write_value(Val) :-
+	is_charlist(Val),
+	!,
+	fmt_write(STDDBG, '"%s"', arg(Val)).
+write_value(Val) :- var(Val), !, print_item( Val).
+write_value(=(_N,Var)) :- !, print_item( Var).
+write_value(WRAP_FDSKOLEM(X,Y)) :- !,
+	write_value(X), print_item('.'), write_value(Y).
+write_value(WRAP_IFDSKOLEM(X,Y)) :- !,
+	write_value(X), print_item('!'), write_value(Y).
+write_value(Val) :-
+	is_hilog(Val),
+	!,
+	write_hilog(Val).
+write_value(Val) :-
+	is_prolog(Val),
+	!,
+	print_item( Val).
+
+write_hilog(Val) :-
+	(atomic(Val);var(Val)),
+	!,
+	print_item( Val).
+write_hilog(Val) :-
+	(\+callable(Val) -> abort(('Ill-formed HiLog term,', Val))
+	;
+	    Val =.. [_,Head|Args],
+	    write_hilog(Head),
+	    print_item( '('),
+	    write_hilog_args(Args),
+	    print_item( ')')
+	).
+write_hilog_args([]) :- true.
+write_hilog_args([Arg]) :- !, write_hilog(Arg).
+write_hilog_args([Arg|Rest]) :-
+	!,
+	write_hilog(Arg),
+	print_item(','),
+	write_hilog_args(Rest).
+
+
+write_workspace(WS) :-
+	(WS==main -> true
+	;
+	    fmt_write(STDDBG,'@%S',WS)
+	).
+
+
+/*
+%% Extracts and writes variables from the list [=(name,internalVar), ...]
+%% or from the list [internalVar, internalVar, ...]
+flora_write_vars(V) :- V== [], !.
+flora_write_vars([V|Rest]) :- 
+	var(V), !, flora_write_vars(V,Rest).
+flora_write_vars([=(_N,V)|Rest]) :- 
+    	!, flora_write_vars(V,Rest).
+
+flora_write_vars(V,Rest) :-
+	print_item(V),
+	(Rest == [] -> true
+	 ; print_item(','), flora_write_vars(Rest)
+	).
+*/
+
+print_item(Item) :- file_write(STDDBG,Item).
+print_items(','(Item,Rest)) :-
+	!,
+	print_item(Item),
+	print_items(Rest).
+print_items(Item) :- print_item(Item).
+
+/*********************************************************************/
+
+flora_trace :-
+	assert(flora_switch(trace)),
+	retractall(flora_switch(low_level_trace)),
+	flora_handle_trace.
+flora_notrace :-
+	retractall(flora_switch(trace)),
+	retractall(flora_switch(low_level_trace)),
+	flora_handle_notrace.
+/*********************************************************************/
+
+flora_debug_dyndata_file(Filename) :-
+	package_configuration(dir(flora), FlrSysLib),
+	slash(S),
+	fmt_write_string(Filename,
+			 '%s%sdebugger%sdynamic_data.dat',
+			 arg(FlrSysLib,S,S)).
+flora_debug_statdata_file(Filename) :-
+	package_configuration(dir(flora), FlrSysLib),
+	slash(S),
+	fmt_write_string(Filename,
+			 '%s%sdebugger%sstatic_data.dat',
+			 arg(FlrSysLib,S,S)).
+
+%% If WS is a var -- loading static data
+%% Otherwise, loading dynamic data for the specified module
+flora_read_debugger_data(WS,_Datafile) :-
+	%% Check if already loaded
+	(var(WS) -> current_predicate(FLORA_SYMBOL(debugger_loaded/0))
+	; flora_wssymbol(debugger_data_loaded,WS,WSSym),
+	    current_predicate(WSSym/0)
+	),
+	!.
+flora_read_debugger_data(WS,Datafile) :- 
+	(var(WS)
+	-> flora_set_xpp_options
+	; flora_set_xpp_options(WS)
+	),
+	xpp_process_file(Datafile, CPP_process, IOportFromCPP),
+	repeat,
+	    file_read(IOportFromCPP,T),
+	    (T = end_of_file -> true
+	    	    	     ;  assert(T), fail
+	    ),
+	process_control(CPP_process, wait),
+	flora_clear_xpp_options,
+	file_close(IOportFromCPP),
+	conset(xpp_on,0),
+	(var(WS)
+	->  flora_message_line('Static debugger data loaded')
+	;   flora_message_line('Debugger data loaded for module %s', WS)
+	),
+	!.
+
+
+%% Read dynamic data for preloaded user modules
+flora_load_dyndata_for_user_modules([]).
+flora_load_dyndata_for_user_modules([M|List]) :-
+	flora_debug_dyndata_file(DataFile),
+	flora_read_debugger_data(M,DataFile),
+	flora_load_dyndata_for_user_modules(List).
+
+flora_load_statdata :-
+	flora_debug_statdata_file(DataFile),
+	flora_read_debugger_data(_M,DataFile).
+
+%% The bridge is disabled during low level tracing
+flora_build_bridge_to_xsb_debugger :-
+	assert((hide_this_hide(X,Y) :-
+	       \+flora_switch(low_level_trace),flora_hide_this_hide(X/Y))),
+	assert((hide_this_show(X,Y) :-
+	       \+flora_switch(low_level_trace),flora_hide_this_show(X/Y))),
+	assert((show_this_hide(X,Y) :-
+	       \+flora_switch(low_level_trace),flora_show_this_hide(X/Y))),
+	assert((trace_this_noprint(X,Y) :-
+	       \+flora_switch(low_level_trace),flora_trace_this_noprint(X/Y))),
+	assert((trace_this_print(X,Y) :-
+	       \+flora_switch(low_level_trace),flora_trace_this_print(X/Y))),
+	%% Rules for prefixes of predicates that need 
+	%% to be handled by the debugger
+	assert((hide_this_hide(X,Y) :-
+	       \+flora_switch(low_level_trace),
+		flora_hide_this_hide(pref(X1/Y)),str_sub(X1,X,1))),
+	assert((hide_this_show(X,Y) :-
+	       \+flora_switch(low_level_trace),
+		flora_hide_this_show(pref(X1/Y)),str_sub(X1,X,1))),
+	assert((show_this_hide(X,Y) :-
+	       \+flora_switch(low_level_trace),
+		flora_show_this_hide(pref(X1/Y)),str_sub(X1,X,1))),
+	assert((trace_this_noprint(X,Y) :-
+	       \+flora_switch(low_level_trace),
+		flora_trace_this_noprint(pref(X1/Y)),str_sub(X1,X,1))),
+	assert((trace_this_print(X,Y) :-
+	       \+flora_switch(low_level_trace),
+		flora_trace_this_print(pref(X1/Y)),str_sub(X1,X,1))).
+
+?- findall(X,flLoadedModule(X),L),
+   flora_load_statdata,
+   flora_load_dyndata_for_user_modules(L).
+
+?- flora_build_bridge_to_xsb_debugger.
+
+FLORA_SYMBOL(debugger_loaded).
+

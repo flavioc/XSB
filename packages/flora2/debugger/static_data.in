@@ -1,0 +1,101 @@
+/* File:        flrdebug_data.P -- data that guides XSB debugger in Flora shell
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2001
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+%% This is stationary data -- independent of the workspace
+
+:- compiler_options([xpp_on]).
+
+#mode standard Prolog
+
+#include "flrheader.flh"
+#include "flora_terms.flh"
+
+
+%% These are handled even if flTracelow is in effect
+hide_this_hide(flora_shell_command_line,3).
+hide_this_hide(flora_write_goal,1).
+
+hide_this_hide(flTrace,0).
+hide_this_hide(flNoTrace,0).
+hide_this_hide(flTraceLow,0).
+
+hide_this_hide(flOne,0).
+hide_this_hide(flAll,0).
+
+hide_this_hide(sk_not,1).
+
+hide_this_hide(flora_switch,1).
+
+hide_this_hide(flora_shell_prompt,0).
+hide_this_hide(flora_loop_guard,1).
+hide_this_hide(flora_write_No,0).
+hide_this_hide(flora_write_Yes,0).
+hide_this_hide(flora_handle_trace,0).
+hide_this_hide(flora_handle_notrace,0).
+hide_this_hide(flora_handle_end_of_call,0).
+
+hide_this_hide(storage_find_fact,2).
+hide_this_hide(storage_reclaim_space,0).
+hide_this_hide(flora_load_file,1).
+hide_this_hide(FLLIBLOAD,1).
+
+trace_this_noprint(flora_findall,3).
+
+%% These are handled by the debugger only if flTraceLow is NOT in effect.
+flora_show_this_hide(FLLIBCOLLECTSET/4).
+flora_show_this_hide(FLLIBCOLLECTBAG/4).
+flora_show_this_hide(FLLIBMIN/4).
+flora_show_this_hide(FLLIBMAX/4).
+flora_show_this_hide(FLLIBAVG/4).
+flora_show_this_hide(FLLIBSUM/4).
+flora_show_this_hide(FLLIBCOUNT/4).
+
+flora_show_this_hide(FLLIBERASEALL/2).
+flora_show_this_hide(FLLIBERASEALL/1).
+flora_show_this_hide(FLLIBERASE/2).
+flora_show_this_hide(FLLIBERASE/1).
+flora_show_this_hide(FLLIBBTERASEALL/2).
+flora_show_this_hide(FLLIBBTERASEALL/1).
+flora_show_this_hide(FLLIBBTERASE/2).
+flora_show_this_hide(FLLIBBTERASE/1).
+
+flora_show_this_hide(FLLIBBTINSERTALL/2).
+flora_show_this_hide(FLLIBBTINSERTALL/1).
+flora_show_this_hide(FLLIBBTINSERT/2).
+flora_show_this_hide(FLLIBBTINSERT/1).
+flora_show_this_hide(FLLIBINSERTALL/2).
+flora_show_this_hide(FLLIBINSERTALL/1).
+flora_show_this_hide(FLLIBINSERT/2).
+flora_show_this_hide(FLLIBINSERT/1).
+
+flora_show_this_hide(FLLIBBTDELETEALL/2).
+flora_show_this_hide(FLLIBBTDELETEALL/1).
+flora_show_this_hide(FLLIBBTDELETE/2).
+flora_show_this_hide(FLLIBBTDELETE/1).
+flora_show_this_hide(FLLIBDELETEALL/2).
+flora_show_this_hide(FLLIBDELETEALL/1).
+flora_show_this_hide(FLLIBDELETE/2).
+flora_show_this_hide(FLLIBDELETE/1).
+
