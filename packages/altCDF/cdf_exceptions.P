@@ -1,7 +1,7 @@
-:- compiler_options([xpp_on,ciao_directives]).
+:- compiler_options([xpp_on]).
 
-:- export handle_cdf_error/2, cdf_warning/2, cdf_error/2.
-
+:- export cdf_warning/2.  
+             
 :- import  message/2,messageln/2 from standard.
 
 #include "flag_defs_xsb.h"
@@ -27,7 +27,7 @@ update this, as new warnings and errors have been added}.
 
 Both @tt{cdf_error/2} and @tt{cdf_warning/2} check to see if the
 dynamic preicate @tt{using_xj/0} has been defined.  If not, a message
-is written to XSB's standard error or standard warning stream.  If so,
+rris written to XSB's standard error or standard warning stream.  If so,
 a message is displayed via a GUI window and, in the case of an error,
 something or other happens to control (currently there are just stubs).
 ").
@@ -50,46 +50,6 @@ handler.
 /* TLS: the xjNotifyUser should probably be best put in the handler,
 but until we get XJ to handle exceptions, I want to make sure the user
 is properly notified */
-
-:- import concat_atom/2 from string.
-:- import xjReportError/2 from usermod.
-
-cdf_error(Type,List):- 
-	(using_xj -> 
-	    concat_atom(List,String),
-	    xjReportError(Type,String)
-	  ; true),
-	throw(cdf_error(Type,List)).
-
-handle_cdf_error(Type,List):- 
-	(using_xj -> 
-	    handle_cdf_error_xj(Type,List)
-	  ;
-	    handle_cdf_error_noxj(Type,List)).
-
-handle_cdf_error_noxj(consistency,Message):- 
-	write_cdf_error_noxj(Message),
-	abort.
-handle_cdf_error_noxj(update,Message):- 
-	write_cdf_error_noxj(Message),
-	abort.
-
-write_cdf_error_noxj(Message):- 
-	message('++Error[CDF]: ', STDERR),
-	message('(Consistency) ', STDERR),
-	messageln(Message, STDERR).
-
-/* TLS: this is basically abort/1 */
-handle_cdf_error_xj(consistency,Message):- 
-	message('++Error[CDF(XJ)]: ', STDERR),
-	message('(Consistency) ', STDERR),
-	messageln(Message, STDERR),
-	abort.
-handle_cdf_error_xj(update,Message):- 
-	message('++Error[CDF(XJ)]: ', STDERR),
-	message('(Update) ', STDERR),
-	messageln(Message, STDERR),
-	abort.
 
 :- comment(cdf_warning/2,"cdf_arning can be used to handle warnings of
 different types -- currently @tt{consistency_warning} and

@@ -1387,7 +1387,7 @@ abolish_nec_tables(allAttr_ext(_,_,_)) :- !,
 abolish_nec_tables(classHasAttr_ext(_,_,_)) :- !,
 	abolish_classHasAttr_inherits.
 abolish_nec_tables(isa_ext(_,_)) :- !,
-	abolish_table_pred(table_isa(_,_)),
+            abolish_isas,
 	abolish_hasAttr_inherits,
 	abolish_allAttr_inherits,
 	abolish_classHasAttr_inherits,

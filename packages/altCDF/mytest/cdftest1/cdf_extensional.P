@@ -18,6 +18,7 @@ isa_ext(cid(f(cid(c1,test),
     	     cid(c13,test)).
 
 isa_ext(crid(s1,test),crid(s2,test)).
+isa_ext(crid(s2,test),crid(s2,cdf)).
 isa_ext(crid(s2,test),crid(s3,test)).
 isa_ext(crid(s3,test),crid('CDF Class-Object Relations',cdf)).
 

@@ -21,10 +21,11 @@
 
 :- import dlrule_to_cdf/2 from cdftp_rules.
 
-:- import cdf_error/2,cdf_warning/2 from cdf_exceptions.
+:- import cdf_warning/2 from cdf_exceptions.
 
 :- import cdf_fix_dir/2 from cdf_utilities.
 
+:- import existence_error/4, permission_error/4 from error_handler.
 :- import member/2,reverse/2 from basics.
 :- import concat_atom/2 from string.
 %:- import load_dync/2 from consult.
@@ -64,8 +65,9 @@ throw_cdf_writable(Dir):-
 	    true
 	 ; path_sysop(writable, Dir)
 	 ->	true
-	 ;	cdf_error(permissions,['Directory is not writable: ',Dir])).
+	 ;	permission_error(write,directory,Dir,'throw_cdf_writeable/1') ).
 
+	 
 sort_and_write_terms(Terms) :-
 	sort(Terms,STerms),
 	member(Term,STerms),
@@ -219,6 +221,7 @@ read_till_slash_1([S|_R],[],S):- !.
 read_till_slash_1([H|R],[H|R1],S):- 
 	read_till_slash_1(R,R1,S).
 
+%TLS: dont know if permission error is right here.	   :	
 load_intensional_rules(Path,Name):- 
 	retract_intensional_rules(Name),
 	concat_atom([Path,'/cdf_intensional.P'],File),
@@ -226,8 +229,7 @@ load_intensional_rules(Path,Name):-
    	    see(File),
 	    read_intensional_rules_1(Name),
 	    seen
-	  ; cdf_error(update,['File does not exist or is unreadable:'
-					,File]) ).
+	  ; existence_error(read,file,File,'load_intensional_rules/2') ).
 
 retract_intensional_rules(Name):- 
 	component_table_int(Head,_,_),

@@ -3,6 +3,10 @@
 :- [cdftp_cdfsc].
 :- [altCDF].
 
+:- document_export classify/1, descend_all/0, get_relevant_facts/2.
+:- document_import isa_ext/2 from usermod.
+:- document_import cdf_warning/2 from cdf_exceptions.
+
 :- import allAttr/3, immed_classHasAttr/3, hasAttr/3, 
 	   necessCond/2,
 	   isa/2, maxAttr/4, minAttr/4 from cdf_init_cdf.
@@ -10,6 +14,10 @@
 	    from cdf_init_cdf.
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import message/1 from standard.
+:- import domain_error/2 from error_handler.
+
+%--------------------------------
+% classify/1 is used to find all minimal parents of a class expression.
 
 classify(Expr):- 
 	cputime(Start),
@@ -44,6 +52,9 @@ classify(Expr,Class):-
 		; true) ).
 
 %--------------------------------------------------
+% descend_all is used to check consistency of an entire CDF instance,
+% starting from CDF root.
+
 descend_all:- 
 	cputime(Start),
 	conset(descend,0),
@@ -68,39 +79,16 @@ descend(Class):-
 	fail.
 
 
-%--------------------------------------------------
+getRelevantFacts(Id,Facts):-
+    extractCDFidentifier(Id,Id1).
 
-expand_all:- 
-	cputime(Start),
-	conset(expand,0),
-	expand_all_1,
-	cputime(End),
-	Tot is End - Start,
-	conget(expand,N),
-	message(['Cputime ',Tot,' for ',N,' Classes.']).
+extractCDFidentifier(cid(Id),cid(Id)):- !.
+extractCDFidentifier(oid(Id),oid(Id)):- !.
+extractCDFidentifier(unique(cid(Id)),oid(Id)):-!.
+extractCDFidentifier(X,_):-
+     domain_error(['cid(_),oid(_), or unique(cid(_))'],X,extractCDFidentifier/2,1).
 
-expand_all_1:- 
-	isa_ext(X,cid('CDF Classes',cdf)),
-	expand(X),
-	fail.
-expand_all_1.
-
-:- table expand/1.
-expand(Class):-
-	abolish_cdf_tables,
-	coninc(expand),
-	expand1(Class),
-	isa_ext(cid(NewClass,S),Class),
-	expand(cid(NewClass,S)),
-	fail.
-
-expand1(Class):-
-	cdf_id_fields(Class,cid,_C,Comp),
-	\+ system_component(Comp),
-	findall(Conj,cdf_to_ce(Class,Conj),CEList),
-	preprocess(CEList,CEForm,N),
-	writeln(ce(Class,CEForm),N).
-
+end_of_file.
 %----------------------------------------------------
 
 % atomic	
@@ -139,3 +127,38 @@ cdf_to_ce(Class,Form):-
 	  ; Form = atMost(N,R,C)).
 cdf_to_ce(Class,Form):- 
 	necessCond(Class,vid(Form)).
+
+%--------------------------------------------------
+end_of_file.
+
+expand_all:- 
+	cputime(Start),
+	conset(expand,0),
+	expand_all_1,
+	cputime(End),
+	Tot is End - Start,
+	conget(expand,N),
+	message(['Cputime ',Tot,' for ',N,' Classes.']).
+ 
+expand_all_1:- 
+	isa_ext(X,cid('CDF Classes',cdf)),
+	expand(X),
+	fail.
+expand_all_1.
+
+:- table expand/1.
+expand(Class):-
+	abolish_cdf_tables,
+	coninc(expand),
+	expand1(Class),
+	isa_ext(cid(NewClass,S),Class),
+	expand(cid(NewClass,S)),
+	fail.
+
+expand1(Class):-
+	cdf_id_fields(Class,cid,_C,Comp),
+	\+ system_component(Comp),
+	findall(Conj,cdf_to_ce(Class,Conj),CEList),
+	preprocess(CEList,CEForm,N),
+	writeln(ce(Class,CEForm),N).
+

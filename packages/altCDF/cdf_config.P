@@ -1,8 +1,10 @@
 % TLS: keep all this in usermod.
 
-:- import check_ground/2, check_types/2, check_identity/2,
+:- import cdf_check_ground/1, check_types/2, check_identity/2,
 	classify_if_necessary/2
 	from cdf_checks.
+
+:- import default_sys_error_handler/1 from error_handler.
 
 % keep a table with all possible flags here.
 cdf_flag(dirty).
@@ -20,10 +22,10 @@ cdf_flag(retractallExtTermSingle).
 %initial_cdf_flag(dirty,<component>).
 %initial_cdf_flag(query,check(A,B,[check_types(A,B)
 initial_cdf_flag(componentUpdate,check(A,B,[classify_if_necessary(A,B)])).
-initial_cdf_flag(newExtTermSingle,check(A,B,[check_ground(A,B),
+initial_cdf_flag(newExtTermSingle,check(A,B,[cdf_check_ground(B),
 				   	     check_types(A,B),
 					     check_identity(A,B)])).
-initial_cdf_flag(newExtTermBatch,check(A,B,[check_ground(A,B),
+initial_cdf_flag(newExtTermBatch,check(A,B,[cdf_check_ground(B),
 				   	     check_types(A,B),
 					     check_identity(A,B)])).
 
@@ -55,4 +57,11 @@ component_table_int(retractall_cdf_int(_),null,[]).
 
 /* For DL Rules */
 :- op(400, xfx, (<=)).
+
+default_user_error_handler(error(Type,List)):-
+	(using_xj -> 
+	    concat_atom(List,String),
+	    xjReportError(Type,String),
+                abort
+	  ; default_sys_error_handler(error(Type,List)) ).
 

@@ -27,7 +27,8 @@
 :- import cdf_flags/2,
 	  component_table_ext/3,component_table_int/3 from usermod.
 
-:- import cdf_warning/2,cdf_error/2 from cdf_exceptions.
+:- import cdf_warning/2 from cdf_exceptions.
+:- import check_atom/3, check_ground/3 from error_handler.
 
 :- import call_assert/1, file_latest_version/3 from cdf_utilities.
 :- import xsb_configuration/2 from xsb_configuration.
@@ -37,7 +38,7 @@
 %cdf_io
 :- import load_intensional_rules/1 from cdf_io.
 
-:- import member/2,ground/1 from basics.
+:- import member/2 from basics.
 
 :- import is_absolute_filename/1,slash/1,
 	machine_file_exists/1 from machine.
@@ -50,12 +51,6 @@
 :- dynamic temp_depends(_,_,_,_).
 :- dynamic loaded_component(_).
 
-/*
-handle_load_component_error(Message):- 
-	retractall(temp_depends(_,_,_)),
-	write_cdf_error_noxj(Message),
-	abort.
-*/
 
 :- comment(module,"Typically, a CDF instance can be partitioned into
 several separate cells representing information that arises from
@@ -324,7 +319,7 @@ version of a component.
 @end{itemize}
 ").
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 load_component(Name,Path,Arglist):-
 	load_component_setup(Name,Path,Arglist),
@@ -334,12 +329,9 @@ load_component(Name,Path,Arglist):-
 load_component_setup(Name,Path,Arglist):-
 	init_path_engine,
 	retractall(temp_depends(_,_,_,_)),
-	(atom(Path),atom(Name),ground(Arglist) -> 
-	    true
-	  ; slash(Slash),
-	    cdf_error(load_component,['Component name, path and arglist must',
-			' be instantiated to load: ',Path,Slash,Name,' ',
-			Arglist]) ).
+            check_atom(Name,'load_component_setup/1',1),
+            check_atom(Path,'load_component_setup/1',2),
+            check_ground(Arglist,'load_component_setup/1',3).
 
 load_component_1(Name,Path,Arglist):- 
 	split_arglist_on_version(Arglist,V,Arglist1),
@@ -482,8 +474,8 @@ check_good_component(Name,Full):-
 	(component_exists(Name) -> 
 	    true
 	  ;
-	    cdf_error(component_load,['Pathname: ',Full,Name,
-				      ' is not a component']) ).
+	    throw(error(component_load,['Pathname: ',Full,Name,
+				      ' is not a component'])) ).
 component_exists(Name):- 
 	classHasAttr(cid(Name,Name),crid(hasPath,Name),_).
 %---------------
@@ -503,9 +495,9 @@ check_component(Name,Path,V,Arglist,Flag):-
 
 check_conflicting_version(Name,Path,V):- 
 	(conflicting_version(Name,Path,V,V1) -> 
-	    cdf_error(component_load,['Version ',V,' of ',Name,
+	    throw(cdf_error(component_load,['Version ',V,' of ',Name,
 			' cannot be loaded, as version ',V1,
-			' is already loaded '])
+ 	                         ' is already loaded ']))
 	  ; true).
 
 /* TLS: For now, each component is taken to depend on some version of
@@ -521,9 +513,9 @@ conflicting_version(Name,Path,V,V1):-
 check_conflicting_path(Name,Path,Arglist):- 
 	(\+ member(action(union),Arglist) -> 
 		(conflicting_path(Name,Path,Path1) -> 
- 	            cdf_error(component_load,['Component ',Name,' has ',
+ 	            throw(cdf_error(component_load,['Component ',Name,' has ',
 			'conflicting paths in non-union merge: ',Path,
-			' and ',Path1])
+			' and ',Path1]))
 		  ; 
 		    true) 
 	      ;  true).
@@ -565,19 +557,20 @@ file_find_version_name(Path,Name,Version,Loadname):-
 	        concat_atom([Name,'_',Version],Loadname)
 	      ; 
 	            slash(Slash),
-		cdf_error(load_component,['Improper version number',Version,
-				' for ',Path,Slash,Name]) ) ).
+		throw(cdf_error(load_component,
+                          	 ['Improper version number',Version,
+				' for ',Path,Slash,Name])) ) ).
 	  
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- dynamic temp_new_version(_,_).
-:- dynamic concurrency_conflict(_).
+:-  dynamic concurrency_conflict(_).
 
 %-----------------
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Utilities
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 /* New component initializes a new component, creating version,
 dependency and path information.  Given a previously existing component, 
@@ -613,8 +606,8 @@ The latter two should just be used in component updates. */
 
 newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
 	((classHasAttr(cid(Src,Src),crid(hasPath,Src),Path1),Path1 \= Path) ->
-	      cdf_error(component,['Creating a component path ',Path,
-			' for ',Src,' which has path ',Path1]) 
+	      throw(cdf_error(component,['Creating a component path ',Path,
+			' for ',Src,' which has path ',Path1])) 
 	    ; 
 	      newExtTerm(isa_ext(crid(hasPath,Src),
 	                                     crid('CDF Class-Object Relations',cdf))),
