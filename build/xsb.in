@@ -36,7 +36,7 @@
 # This script assumes that it resides one level above the root
 # of the XSB source tree. 
 # If you need to invoke this (bin/xsb) script from some other location,
-# put a simple shell script in that other location, which would simly
+# put a simple shell script in that other location, which would simply
 # call the bin/xsb script.
 
 
@@ -50,12 +50,15 @@ case $0 in
     ;;
 esac
 
-# rectify .. in path names - 4 times should suffice for the most weird 
+# rectify .. in path names - 7 times should suffice for the most weird 
 # invocations with multiple ..'s
-thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
-thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
-thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
-thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,'`
 #rectify . in path names
 thisfile=`echo $thisfile | sed 's,//*\.//*,/,g'`
 
