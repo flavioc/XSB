@@ -22,6 +22,8 @@
 ** 
 */
 
+#ifndef __CUT_XSB_H__
+#define __CUT_XSB_H__
 
 /*----------------------------------------------------------------------*/
 /* This file contains code for cuts.  It was written in December 1997	*/
@@ -140,3 +142,4 @@
   }
 
 
+#endif /* __CUT_XSB_H__ */

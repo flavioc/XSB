@@ -22,6 +22,8 @@
 ** 
 */
 
+#ifndef __CELL_XSB_H__
+#define __CELL_XSB_H__
 
 #ifndef CONFIG_INCLUDED
 #error "File xsb_config.h must be included before this file"
@@ -171,12 +173,8 @@ extern Float getfloatval(Cell);
 /* take bits 0-1, 30-31 */
 /* BIG_MEM allows Solaris/Sun machines to use 1 gig of memory */
 
-#define enc_int(val) ( ((Integer)(val) & 0xc0000003) ?\
-		       (((Integer)(val) << 4) | 0x08) :\
-		       ((UInteger)(val) << 2) )
-#define dec_int(val) ( ((Integer)(val) & 0x08) ?\
-		       ((Integer)(val) >> 4) :\
-		       (((UInteger)(val) >> 2) & 0x3ffffffc) )
+#define enc_int(val)  (((Integer)(val) << 3))
+#define dec_int(val)  ((Integer)(val) >> 3) 
 
 #define enc_addr(addr) ((Cell)(addr) << 1)
 #define dec_addr(dcell) (((Cell)(dcell) >> 1) & 0x7ffffffc)
@@ -213,8 +211,11 @@ extern Float getfloatval(Cell);
 #define trievar_val(dcell) (Integer)dec_int(dcell)
 #define maketrievar(val) (Cell)(enc_int(val) | XSB_TrieVar)
 
-#define addr_val(dcell) int_val(dcell)
-#define makeaddr(val) makeint(val)
+#define addr_val(dcell) string_val(dcell)
+#define makeaddr(val) makestring(val)
+
+/* #define addr_val(dcell) int_val(dcell) */
+/* #define makeaddr(val) makeint(val) */
 
 /* common representations */
 #define vptr(dcell) (CPtr)(dcell)
@@ -297,3 +298,5 @@ extern Float getfloatval(Cell);
     if (int_overflow(value)) {					\
       bld_boxedint(addr, value);				\
     } else {bld_int(addr,value);}
+
+#endif /* __CELL_XSB_H__ */

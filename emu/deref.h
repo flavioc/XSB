@@ -23,6 +23,8 @@
 ** 
 */
 
+#ifndef __DEREF_H__
+#define __DEREF_H__
 
 /* deref expects argument of type Cell */
 
@@ -85,3 +87,4 @@
 			 if (op==follow(op)) \
   			    break; \
 			 op=follow(op); }
+#endif /* __DEREF_H__ */

@@ -1079,7 +1079,7 @@ int builtin_call(byte number)
   }
   case BUFF_DEALLOC: {	/* R1: +buffer; R2: +oldsize; R3: +newsize; */
     int  value;
-    char *addr = ptoc_string(1);
+    char *addr = (char *) ptoc_int(1);
     int  disp = ((ptoc_int(2)+7)>>3)<<3;
     disp *= ZOOM_FACTOR ;
     value = ((ptoc_int(3)+7)>>3)<<3;	/* alignment */
@@ -1094,7 +1094,7 @@ int builtin_call(byte number)
   }
   case BUFF_WORD: {     /* R1: +buffer; r2: displacement(+integer); */
 			/* R3: value (-integer) */
-    char *addr = ptoc_string(1);
+    char *addr = (char *) ptoc_int(1);
     int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     ctop_int(3, *(Integer *)(addr+disp));
@@ -1102,7 +1102,7 @@ int builtin_call(byte number)
   }
   case BUFF_SET_WORD: {	/* R1: +buffer; r2: displacement(+integer); */
 			/* R3: value (+integer) */
-    char *addr = ptoc_string(1);
+    char *addr = (char *) ptoc_int(1);
     int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     *(CPtr)(addr+disp) = ptoc_int(3);
@@ -1110,21 +1110,21 @@ int builtin_call(byte number)
   }
   case BUFF_BYTE: {	/* R1: +buffer; r2: displacement(+integer); */
 			/* R3: value (-integer) */
-    char *addr = ptoc_string(1);
+    char *addr = (char *) ptoc_int(1);
     int  disp = ptoc_int(2);
     ctop_int(3, (Integer)(*(byte *)(addr+disp)));
     break;
   }
   case BUFF_SET_BYTE: {	/* R1: +buffer; R2: displacement(+integer); */
 			/* R3: value (+integer) */
-    char *addr = ptoc_string(1);
+    char *addr = (char *) ptoc_int(1);
     int  disp = ptoc_int(2);
     *(pb)(addr+disp) = ptoc_int(3);
     break;
   }
   case BUFF_CELL: {	/* R1: +buffer; R2: displacement(+integer); */
                         /* R3: -Cell at that location */
-    char *addr = ptoc_string(1);
+    char *addr = (char *) ptoc_int(1);
     int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     ctop_tag(3, (Cell)(addr+disp));
@@ -1135,7 +1135,7 @@ int builtin_call(byte number)
     /* When disp<0, set the type of the buff itself */
     /* The last function is not implemented */
     int  value;
-    char *addr = ptoc_string(1);
+    char *addr = (char *) ptoc_int(1);
     int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     value = ptoc_int(3);
@@ -1169,7 +1169,7 @@ int builtin_call(byte number)
        after backtracking. */
     /* R1: +buffer; R2: +disp; */
     /* R3: +buffer length; R4: External var */
-    addr = ptoc_string(1);
+    addr = (char *) ptoc_int(1);
     disp = ptoc_int(2);
     disp *= ZOOM_FACTOR;
     term = ptoc_tag(4);

@@ -22,6 +22,8 @@
 ** 
 */
 
+#ifndef __MACRO_XSB_H__
+#define __MACRO_XSB_H__
 
 #include "debug_xsb.h"
 
@@ -617,3 +619,5 @@ void tstCreateTSIs(TSTNptr);
   attv_num = tmp_int >> 16
 
 /*----------------------------------------------------------------------*/
+
+#endif /* __MACRO_XSB_H__ */

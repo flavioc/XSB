@@ -22,6 +22,8 @@
 ** 
 */
 
+#ifndef __TR_UTILS_H__
+#define __TR_UTILS_H__
 
 extern VariantSF get_variant_sf(Cell, TIFptr, Cell *);
 extern SubProdSF get_subsumer_sf(Cell, TIFptr, Cell *);
@@ -66,3 +68,5 @@ typedef struct InternGarbageRootFrame{
   IGLptr leaves;
   IGRptr next;
 } InternGarbageRoot;
+
+#endif /* __TR_UTILS_H__ */

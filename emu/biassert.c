@@ -640,7 +640,7 @@ static void db_gentopinst(prolog_term T0, int Argno, RegStat Reg)
 {
   int Rt;
   
-  if (isinteger(T0) | isboxedinteger(T0)) {
+  if (isinteger(T0)) {
     dbgen_instB_ppvw(getnumcon, Argno, T0); /* getnumcon */
   } else if (isstring(T0)) {
     dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
@@ -724,7 +724,7 @@ static void db_geninst(prolog_term Sub, RegStat Reg,
 {
   int Rt;
   
-  if (isinteger(Sub) | isboxedinteger(Sub)) {
+  if (isinteger(Sub)) {
     dbgen_instB_pppw(uninumcon, Sub);
   } else if (isstring(Sub)) {
     dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));
@@ -779,7 +779,7 @@ static void db_genaput(prolog_term T0, int Argno,
     inst_queue_push(inst_queue, movreg, Rt, Argno);
   } else if ((Rt = is_frozen_var(T0))) {
     inst_queue_push(inst_queue, movreg, Rt, Argno);
-  } else if (isinteger(T0) | isboxedinteger(T0)) {
+  } else if (isinteger(T0)) {
     inst_queue_push(inst_queue, putnumcon, T0, Argno);
   } else if (isfloat(T0)) {
     inst_queue_push(inst_queue, putnumcon, makeint(p2c_float_as_int(T0)), 
@@ -873,7 +873,7 @@ static void db_bldsubs(prolog_term Sub, RegStat Reg,
   
   if (isstring(Sub)) {
     flatten_stack_push(flatten_stack,bldcon,(Cell)string_val(Sub)); /* bldcon */
-  } else if (isinteger(Sub)|isboxedinteger(Sub)) {               /* bldnumcon(Sub) */
+  } else if (isinteger(Sub)) {               /* bldnumcon(Sub) */
     flatten_stack_push(flatten_stack, bldnumcon, Sub);
   } else if (isfloat(Sub)) {             /* bldfloat(Sub) */
     flatten_stack_push(flatten_stack, bldfloat, Sub);
@@ -1172,7 +1172,7 @@ static int Index[20], NI ;
 
 static void get_indexes( prolog_term prolog_ind )
 {
-  if (isinteger(prolog_ind)|isboxedinteger(prolog_ind)) {
+  if (isinteger(prolog_ind)) {
     Index[1] = int_val(prolog_ind);
     if (Index[1] == 0) NI = 0; else NI = 1;
   } else {

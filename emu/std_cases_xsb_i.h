@@ -35,8 +35,10 @@
   case ATOM:		/* r1: ?term */
     return isatom(ptoc_tag(1));
     
-  case INTEGER:	/* r1: ?term */
-    return isinteger(ptoc_tag(1));
+  case INTEGER:	/* r1: ?term */ {
+      int tag = ptoc_tag(1);
+      return (isinteger(tag) || isboxedinteger(tag));
+  }
     
   case REAL:		/* r1: ?term */
     return isfloat(ptoc_tag(1));

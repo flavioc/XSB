@@ -22,6 +22,8 @@
 ** 
 */
 
+#ifndef __AUXLRY_H__
+#define __AUXLRY_H__
 
 #include "basicdefs.h"
 #include "basictypes.h"
@@ -86,3 +88,5 @@ extern char *xsb_segfault_message;
     stream = fileptr(xsb_filedes); \
     if ((stream==NULL) && (xsb_filedes != 0)) \
 	xsb_abort("Invalid file descriptor %d in I/O predicate", xsb_filedes);
+
+#endif /* __AUXLRY_H__ */
