@@ -325,7 +325,7 @@ specialise_pred(Sym, Calls, Representable, SymTab, CLin, CLout) :-
 
 specialise_calls(CallsMsg, SelClauses, Calls, N, A, Tabled,
 		 SymTab, NewCalls, Representative, NewPred) :- 
-	( singleton_sets_opt(SelClauses, HeadArgs, Body) ->
+	( singleton_sets_opt(SelClauses, Tabled, HeadArgs, Body) ->
 		singleton_special_calls(Calls, HeadArgs, Body, NewCalls)
 	; find_msg(CallsMsg, SelClauses, Msg),
 %	  typeout(('# Msg = ', Msg)),
@@ -337,14 +337,17 @@ specialise_calls(CallsMsg, SelClauses, Calls, N, A, Tabled,
 	).
 
 /*----------------------------------------------------------------------*/
-/* singleton_sets_opt(+SelectedClauses, -HeadArgs, -Body)		*/
+/* singleton_sets_opt(+SelectedClauses, +Tabled, -HeadArgs, -Body)	*/
 /*	Checks if the singleton clause selection optimisation is	*/
 /*	applicable and if so, returns the arguments of head and the	*/
 /*	goal of the body of the selected clause.  The optimisation is	*/
-/*	applicable iff the body contains just a single literal.		*/
+/*	applicable iff the body contains just a single literal provided	*/
+/*	that the termination characteristics of the program are not	*/
+/*	changed by bypassing calls to tabled predicates.		*/
 /*----------------------------------------------------------------------*/
 
-singleton_sets_opt([clause(HeadArgs,Body,_)], HeadArgs, Body) :-
+singleton_sets_opt([clause(HeadArgs,Body,_)], Tabled, HeadArgs, Body) :-
+	Tabled =:= 0,	%% do not bypass a call to a tabled predicate
 	fail_if(option(unfold_off)),
 	( Body = inlinegoal(_,_,_) -> true ; Body = goal(_,_) ).
 
