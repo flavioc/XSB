@@ -8,17 +8,6 @@
 #include "flora_prefix.h"
 
 
-
-:- table STD_FPREFIX(fd)/3.
-:- table STD_FPREFIX(mvd)/3.
-:- table STD_FPREFIX(ifd)/3.
-:- table STD_FPREFIX(imvd)/3.
-:- table STD_FPREFIX(isa)/2.
-:- table STD_FPREFIX(sub)/2.
-:- table STD_FPREFIX(fs)/3.
-:- table STD_FPREFIX(mvs)/3.
-
-
 :- import member/2, ground/1 from basics.
 
 :- import consult/1 from consult.
@@ -49,6 +38,15 @@
 :- dynamic VAR_FPREFIX(exists)(_).
 :- dynamic VAR_FPREFIX(mvd)(_,_).
 :- dynamic VAR_FPREFIX(imvd)(_,_).
+
+:- table STD_FPREFIX(fd)/3.
+:- table STD_FPREFIX(mvd)/3.
+:- table STD_FPREFIX(ifd)/3.
+:- table STD_FPREFIX(imvd)/3.
+:- table STD_FPREFIX(isa)/2.
+:- table STD_FPREFIX(sub)/2.
+:- table STD_FPREFIX(fs)/3.
+:- table STD_FPREFIX(mvs)/3.
 
 :- table VAR_FPREFIX(fd)/3.
 :- table VAR_FPREFIX(mvd)/3.
