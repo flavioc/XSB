@@ -1143,8 +1143,8 @@ To illustrate, consider the following example:
 Since \FLORA allows path expressions inside arithmetic expressions, and
 {\it vice versa}, it is not immediately obvious whether the previous
 example stands for the arithmetic expression $(1.m)+(2.n.k)$, or for the
-path expression $(1.m+2.n).k$, or the expression $(1.m + 2).n.k$.  The
-answer is the first path expression, because ``.'' in a path expression
+path expression $(1.m+2.n).k$, or $(1.m + 2).n.k$, or $1.(m+2).n.k$.  The
+correct answer is the first path expression, because ``.'' in a path expression
 binds stronger than ``+'' in an arithmetic expression.
 
 One more confusing example is $2.3.4$. Does it mean $(2).(3).(4)$, or
