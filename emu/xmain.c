@@ -58,15 +58,15 @@ char *user_home;     	     	     	/* the user $HOME dir or install dir,
 #endif
 #endif
 
-extern bool is_absolute_filename(char *filename);
-extern char *strip_names_from_path(char* path, int how_many);
+extern bool is_absolute_filename(char *);
+extern char *strip_names_from_path(char*, int);
 
 static void set_xsbinfo_dir (void);
-static void check_create_dir(char *path);
+static void check_create_dir(char *);
+static void xsb_executable_full_path(char *, char *);
 
 char current_dir[MAXPATHLEN];
 char xsbinfo_dir[MAXPATHLEN];
-char slash_string[2]; /* slash as a string; OS-appropriate */
 
 int main(int argc, char *argv[])
 { 
@@ -82,24 +82,16 @@ int main(int argc, char *argv[])
   stream_out = freopen("outlog", "w", stdout);
 #endif
   err = WSAStartup(0x0101, &wsaData);
-  if (err == SOCKET_ERROR)
-    {
-      fprintf (stdout, "WSAStartup Failed\n");
-      return FALSE;
-    }
+  if (err == SOCKET_ERROR) {
+    fprintf (stdout, "WSAStartup Failed\n");
+    return FALSE;
+  }
 #endif
 #endif
 
-  slash_string[0] = SLASH;
-  slash_string[1] = '\0';
-  
   /* set the name of the executable to the real name */
-  if (is_absolute_filename(argv[0]))
-    strcpy(executable, argv[0]);
-  else {
-    getcwd(current_dir, MAXPATHLEN-1);
-    sprintf(executable, "%s%c%s", current_dir, SLASH, argv[0]);
-  }
+  xsb_executable_full_path(argv[0], executable);
+
 
   /* strip 4 levels, since executable is always of this form:
      install_dir/config/<arch>/bin/xsb */
@@ -230,4 +222,58 @@ static void check_create_dir(char *path) {
 	    "*************************************************************\n");
     exit(1);
   }
+}
+
+void xsb_executable_full_path(char *myname, char *executable)
+{
+  struct stat fileinfo;
+  char *path = getenv("PATH");
+  int len, found = 0;
+  char *pathcounter, save;
+
+  if (is_absolute_filename(myname))
+    strcpy(executable, myname);
+  else {
+    getcwd(current_dir, MAXPATHLEN-1);
+    sprintf(executable, "%s%c%s", current_dir, SLASH, myname);
+  }
+
+  /* found executable by prepending cwd */
+  if (!stat(executable, &fileinfo)) return;
+
+  /* Otherwise, search PATH environment var.
+     This code is a modified "which" shell builtin */
+  pathcounter = path;
+  while (*pathcounter != '\0' && found == 0) {
+    len = 0;
+    while (*pathcounter != ':' && *pathcounter != '\0') {
+      len++;
+      pathcounter++;
+    }
+
+    /* save the separator ":" and replace it with \0 */
+    save = *pathcounter;
+    *pathcounter = '\0';
+
+    /* Now `len' holds the length of the PATH component 
+       we are currently looking at.
+       `pathcounter' points to the end of this component. */
+    sprintf(executable, "%s%c%s", pathcounter - len, SLASH, myname);
+
+    /* restore the separator and addvance the pathcounter */
+    *pathcounter = save;
+    if (*pathcounter) pathcounter++;
+
+    found = (0 == access(executable, 01));	/* executable */
+    if (found) return;
+  }
+
+  /* XSB executable isn't found after searching PATH */
+  fprintf(stderr,
+	  "*************************************************************\n");
+  printf("PANIC!!! Can't determine the full name of the XSB executable!\n");
+  printf("         Please report this bug to xsb-contact@cs.sunysb.edu\n");
+  fprintf(stderr,
+	  "*************************************************************\n");
+  exit(1);
 }
