@@ -129,7 +129,7 @@ tputpar(varocc(_Vid,Prag),N,Pil0,Pil,Tin,Tout,Tab) :-
 	putvarinst(Prag,N,Pil0,Pil,Tab).
 tputpar(structure(Sym,Args),N,[putstr(N,Sym)|Pil],Pilr,Tin,Tout,_Tab) :-
     tbldpars(Args,Pil,Pilr,Tin,Tout).
-%   telling(X),tell(user),
+%   telling(X),tell(userout),
 %   write('putstr: '),write(N),
 %   write('  Tin= '),write(Tin),write('  Tout= '),write(Tout),nl,
 %   write('  Pil= '),write(Pil),nl,told,tell(X).

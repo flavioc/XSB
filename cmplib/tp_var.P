@@ -254,7 +254,7 @@ release_if_done(Vid,R,VPrag,HoldR,Tin,Tout) :-
 	    )
 	; release(R, Tin, Tout)		% T is one of: p, d, u, vh
 	).
-   %telling(X),tell(user),
+   %telling(X),tell(userout),
    %write('called to release register: '),write(R),
    %write('  Tin= '),write(Tin),write('  Tout= '),write(Tout),nl,told,tell(X).
 release_if_done(_,_,_,_,T,T).

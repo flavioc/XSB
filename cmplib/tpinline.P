@@ -91,7 +91,7 @@ geninl_load_lhs(Term,R,Pil,Pilr,Tin,Tout,SaveR) :-
 	; getreg(Tin, R), hold(R, Tin, Tmid), SaveR = [],
 	  tputpar(Term, R, Pil, Pilr, Tmid, Tout,0)
 	).
-%   telling(X),tell(user),
+%   telling(X),tell(userout),
 %   write('called with term: '),write(Term),
 %   write('  Tin= '),write(Tin),write('  Tout= '),write(Tout),nl,
 %   write('  Pil= '),write(Pil), write(' Pilr= '),write(Pilr),nl,told,tell(X).

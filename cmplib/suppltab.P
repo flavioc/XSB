@@ -381,5 +381,5 @@ end_of_file.
 
 :- import telling/1, tell/1, told/0, ttywrite/1, nl/0 from standard.
 
-typeout(M) :- telling(X), tell(user), ttywrite(M), nl, told, tell(X).
+typeout(M) :- telling(X), tell(userout), ttywrite(M), nl, told, tell(X).
 

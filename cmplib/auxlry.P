@@ -253,7 +253,7 @@ meltargs(I, X, Y, FrozenVarDict) :-
 /*----writetop----------------------------------------------------------*/
 
 writetop(Term, Level) :-
-	telling(F), tell(user), writetop0(Term, Level), nl, tell(F).
+	telling(F), tell(userout), writetop0(Term, Level), nl, tell(F).
 
 writetop0(Term, _Level) :- atomic(Term), !, write(Term).
 writetop0(Term, _Level) :- var(Term), !, write(Term).

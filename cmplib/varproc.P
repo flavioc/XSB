@@ -33,7 +33,7 @@ varproc(VarList, VarTab, PvarCount) :-
 	mark_type(VarList, VarTab, LastChunk), !,
 	alloc_vars(VarList, VarTab, 0, PvarCount).
 % ,
-% ( option(asm_dump) -> telling(X), tell(user),
+% ( option(asm_dump) -> telling(X), tell(userout),
 % 	write('VarList = '), writeln(VarList),
 % 	write('VarTab = '), writeln(VarTab),
 % 	write('LastChunk = '), writeln(LastChunk),

@@ -50,7 +50,7 @@ spec(module(SymTab,DL,CL,QR), module(SymTab,DL,CL1,QR)) :-
 	collect_pi_calls(CL, DL, PI_Calls),
 	interesting_calls(PI_Calls, CL, InterestingCalls),
 	merge_calls(InterestingCalls, MergedCalls),
-%	telling(F), tell(user), pp(MergedCalls), told, tell(F),
+%	telling(F), tell(userout), pp(MergedCalls), told, tell(F),
 	specialise(MergedCalls, SymTab, CLmid, CL),
 	new_clause_list(MergedCalls, CLmid, CL1),
 	generate_table_decl(DL, MergedCalls).
@@ -902,7 +902,7 @@ pp_calls([body_calls(CallMsg,SelectedClauses,Cs,_NCs,_Rep)|Calls]) :-
 	tab(4), write(Cs), nl, 
 	pp_calls(Calls).
 
-typeout(M) :- telling(X), tell(user), ttywrite(M), nl, told, tell(X).
+typeout(M) :- telling(X), tell(userout), ttywrite(M), nl, told, tell(X).
 
 
 /*----------------------- end of file spec.P ---------------------------*/
