@@ -470,6 +470,13 @@ fldelete_struct(Op,List,FLDELETE(Op,List)).
 
 /****************************************************************************
   parsing_error(+IndexOrTerm,+ErrorMessage,-Status)
+
+  Note on handling the Status parameter in parsing predicates:
+  If a call to a parsing predicate comes with non-empty Status,
+  DO NOT call parsing_error/3, but rather pass the Status parameter 
+  up to the caller.
+
+  Status must ALWAYS be unbound
 ****************************************************************************/
 parsing_error(Index,ErrorMessage,Status) :-
 	integer(Index),
@@ -1426,7 +1433,9 @@ flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),PROLOGMODULE(MCode)
 	%% Check if it is a Prolog module. (@prolog(xsbmod))
 	get_name(Mod,FL_PLIB),
 	!,
-	(get_flname_struct(M,MCode) -> Status=[]; parsing_error(M,ERROR_WSNAME,Status)).
+	(get_flname_struct(M,MCode) -> Status=[]
+	;
+	    parsing_error(M,ERROR_WSNAME,Status)).
 
 flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),FLORASYSMOD(MCode),Status) :-
 	%% Check if it is a Flora system module specification. (@flora(mod))
@@ -2393,8 +2402,11 @@ flora_dbliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Sta
 	( flora_name_or_normvar(R,RCode) ->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
-	; flora_workspace(R,_,_) ->
-	    parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
+	; flora_workspace(R,_,S) -> 
+	    %% updating system module or illegal workspace
+	    (S==[] -> parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
+	    ; Status = S
+	    )
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
 	).
@@ -2429,8 +2441,11 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 	( flora_name_or_normvar(R,RCode) ->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
-	; flora_workspace(R,_,_) ->
-	    parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
+	; flora_workspace(R,_,S) ->
+	    %% updating system module or illegal workspace
+	    (S==[] -> parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
+	    ; Status = S
+	    )
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
