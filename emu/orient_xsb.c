@@ -69,11 +69,14 @@ char xsbinfo_dir[MAXPATHLEN];
 
 
 void set_xsbinfo_dir () {
-  struct stat fileinfo;
+  struct stat *fileinfo = malloc(1*sizeof(struct stat));
   char old_xinitrc[MAXPATHLEN], new_xinitrc[MAXPATHLEN],
     user_config_dir[MAXPATHLEN], user_arch_dir[MAXPATHLEN];
   int retcode;
 
+  if (!fileinfo) {
+    xsb_abort("No core memory to allocate stat structure.\n");
+  }
   sprintf(xsbinfo_dir, "%s%c.xsb", user_home, SLASH);
   sprintf(old_xinitrc, "%s%c.xsbrc", user_home, SLASH);
   sprintf(new_xinitrc, "%s%cxsbrc", xsbinfo_dir, SLASH);
@@ -84,22 +87,26 @@ void set_xsbinfo_dir () {
   check_create_dir(xsbinfo_dir);
   check_create_dir(user_config_dir);
   check_create_dir(user_arch_dir);
+  retcode = stat(old_xinitrc, fileinfo);
 
-  retcode = stat(old_xinitrc, &fileinfo);
-
-  if ((retcode == 0) && (stat(new_xinitrc, &fileinfo) != 0)) {
+  if ((retcode == 0) && (stat(new_xinitrc, fileinfo) != 0)) {
     xsb_warn("It appears that you have an old-style `.xsbrc' file!\n           The XSB initialization file is now %s.\n           If your `.xinitrc' defines the `library_directory' predicate,\n           please consult the XSB manual for the new conventions.", new_xinitrc);
   }
+  free(fileinfo);
 }
 
 
 /* Check if PATH exists. Create if it doesn't. Bark if it can't create or if
    PATH exists, but isn't a directory. */
 static void check_create_dir(char *path) {
-  struct stat fileinfo;
-  int retcode = stat(path, &fileinfo);
+  struct stat *fileinfo = malloc(1*sizeof(struct stat));
+  int retcode = stat(path, fileinfo);
 
-  if (retcode == 0 && ! S_ISDIR(fileinfo.st_mode)) {
+  if (!fileinfo) {
+    xsb_abort("No core memory to allocate stat structure.\n");
+  }
+
+  if (retcode == 0 && ! S_ISDIR(fileinfo->st_mode)) {
     xsb_warn("File `%s' is not a directory!\n           XSB uses this directory to store data.", path);
     /* exit(1); */
   }
@@ -115,6 +122,7 @@ static void check_create_dir(char *path) {
     xsb_warn("Cannot create directory `%s'!\n           XSB uses this directory to store data.", path);
     /* exit(1); */
   }
+  free(fileinfo);
 }
 
 /* uses the global executable var */
@@ -281,8 +289,15 @@ void set_config_file() {
   }
 }
 
+#ifdef WIN_NT
+void transform_cygwin_pathname(char*);
+#endif
+
 void set_user_home() {
   user_home = (char *) getenv("HOME");
   if ( user_home == NULL )
     user_home = install_dir;
+#ifdef WIN_NT
+  transform_cygwin_pathname(user_home);
+#endif
 }
