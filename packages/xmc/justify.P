@@ -258,7 +258,7 @@ just_true_nt(neg(G), DFS, _LastNeg, Ancs, (neg(G), true, (G, false, Child, nil),
 	just_false_nt(G, NDFS, DFS, Ancs, (G, false, Child, nil), Tc, T).
 
 just_true_nt(leaf(G), _, _, _, (leaf(G), true, nil, _), [], _) :- !,
-	getleafcall(G, G1), call(G).
+	getleafcall(G, G1), call(G1).
 just_true_nt(G, DFS, LastNeg, Ancs, (G, true, Child, _), Tc, T) :- 
 	NDFS is DFS + 1,
 	findonerule_nt(G, NDFS, LastNeg, Ancs, Child, Tc, T). 
@@ -295,7 +295,7 @@ tabled_call_undef(G, TV, TcList) :-
 	).
 
 leaf_call(neg(G)) :- leaf_call(G).	
-leaf_call(leaf(G)).
+leaf_call(leaf(_G)).
 
 getleafcall(neg(G), \+(G1)) :- !, getleafcall(G, G1).
 getleafcall(leaf(G), G1) :- !, getleafcall(G, G1).
@@ -326,8 +326,8 @@ findfails(Goal, DFS, LastNeg, Ancs, Root, T) :-
 	findall(Body, get_clause(Goal,Body), BodyList),
 	(BodyList = [] -> Root = (Goal, false, fact, nil)
 			;  failedlits(BodyList, DFS, LastNeg, Ancs, Root, TcList, T),
-			   justall_false(TcList, DFS, LastNeg, Ancs, T),
-			   Root = (_, _, _, nil)
+			   justall_false(TcList, DFS, LastNeg, Ancs, T)
+%			   Root = (_, _, _, nil)
 	),
         (nb_asserted(seen(num(_), Goal, _), T)
 		-> true
@@ -424,7 +424,7 @@ findfailsandrules(Goal, DFS, LastNeg, Ancs, Root, T) :-
 		-> fail
 		;  failsandrules(BodyList, DFS, LastNeg, Ancs, Root, TcList, undef, T),
 		   justall(TcList, DFS, LastNeg, Ancs, T),
-		   Root = (_, _, _, nil),
+%		   Root = (_, _, _, nil),
                    (nb_asserted(seen(num(_), Goal, _), T)
 			-> true
 			;  getNode(Node),
