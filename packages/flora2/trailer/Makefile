@@ -7,18 +7,18 @@
 ## 
 ## Copyright (C) The Research Foundation of SUNY, 1999-2001
 ## 
-## XSB is free software; you can redistribute it and/or modify it under the
+## FLORA-2 is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
 ## Software Foundation; either version 2 of the License, or (at your option)
 ## any later version.
 ## 
-## XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+## FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ## more details.
 ## 
 ## You should have received a copy of the GNU Library General Public License
-## along with XSB; if not, write to the Free Software Foundation,
+## along with FLORA-2; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
 ## $Id$
@@ -80,8 +80,10 @@ eqlflogic.P : $(CLOSURE)/flrcommon.flh \
 	@echo 'flsetuptrailer(flogic).' >> cmd...
 
 
-patch.P : $(GENINCLUDES)/flrpatch.flh $(HEADERINC)/flrheader_inc.flh \
-          $(HEADERINC)/flrdefinition_inc.flh
+patch.P : $(GENINCLUDES)/flrpatch.flh $(GENINCLUDES)/flrnopreddef.flh \
+	  $(HEADERINC)/flrheader_inc.flh \
+          $(HEADERINC)/flrdefinition_inc.flh \
+          $(HEADERINC)/flrnopreddef_inc.flh 
 	@echo 'flsetuppatch.' >> cmd...
 
 
@@ -105,6 +107,10 @@ $(GENINCLUDES)/flrpatch.flh : $(GENINCLUDES)/flrpatch.fli $(FLORA_TERMS)
 	@cd $(GENINCLUDES); make
 
 
+$(GENINCLUDES)/flrnopreddef.flh : $(GENINCLUDES)/flrnopreddef.fli $(FLORA_TERMS)
+	@cd $(GENINCLUDES); make
+
+
 init:
 	/bin/rm -f $(SVFILE)
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
@@ -124,7 +130,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ *.P *.O *.flh
+	/bin/rm -f *~ .*~ *.P *.O *.flh *.bak .#*
 
 
 .DONE:

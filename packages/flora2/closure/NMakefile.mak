@@ -14,6 +14,8 @@ ALL: $(ALLOBJS)
 CLEAN :
 	-@erase *~
 	-@erase *.flh
+	-@erase *.bak
+	-@erase .#*
 	-@erase includes\*~
 
 .fli.flh:

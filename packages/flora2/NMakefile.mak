@@ -48,6 +48,8 @@ ALL:: $(ALLOBJS)
 CLEAN :
 	-@erase *~
 	-@erase *.O
+	-@erase *.bak
+	-@erase .#*
 	-@erase ..\flora2.O
 	cd p2h
 	nmake /f NMakefile.mak clean
@@ -64,6 +66,10 @@ CLEAN :
 	cd ..\pkgs
 	nmake /f NMakefile.mak clean
 	cd ..\demos
+	nmake /f NMakefile.mak clean
+	cd ..\docs
+	nmake /f NMakefile.mak clean
+	cd ..\emacs
 	nmake /f NMakefile.mak clean
 	cd ..
 

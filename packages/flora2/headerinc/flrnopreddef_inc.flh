@@ -1,0 +1,14 @@
+/************************************************************************
+  file: headerinc/flrnopreddef_inc.flh
+
+  Author(s): Chang Zhao
+
+  This file is automatically included by the FLORA compiler.
+************************************************************************/
+
+:- compiler_options([xpp_on]).
+
+#include "flrnopreddef.flh"
+
+/***********************************************************************/
+

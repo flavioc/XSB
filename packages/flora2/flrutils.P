@@ -7,18 +7,18 @@
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
-** XSB is free software; you can redistribute it and/or modify it under the
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
 ** 
-** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
 ** 
 ** You should have received a copy of the GNU Library General Public License
-** along with XSB; if not, write to the Free Software Foundation,
+** along with FLORA-2; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
@@ -33,6 +33,8 @@
 #define FLORA_INCLUDE_EXT	fli
 #define FLORA_HEADER_EXT	flh
 #define FLORA_FDB_EXT		fdb
+%% Extension for storage of defined predicate skeletons
+#define FLORA_FLD_EXT		fld
 #define XSB_PFILE_EXT		'P'
 #define XSB_OFILE_EXT		'O'
 #define XSB_HFILE_EXT		'H'
@@ -259,7 +261,7 @@ flsetuppatch :-
 	fmt_write_string(PatchFullName,'%s%strailer%s%s',args(FloraDir,S,S,PatchName)),
 	telling(PreOutFile),
 	tell(PatchFullName),
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH],HeaderStatus),
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLNOPREDDEF],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -337,8 +339,9 @@ flora_rename_file(F1,F2) :-
 flora_flcompile(FlrFile,ModuleName) :-
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
+	flora_FLD_filename(FlrFile,FLDFile),
 	flora_set_xpp_options_for_compile(ModuleName),
-	flora_compile_file(FlrFile,MPFile,FDBFile,Status),
+	flora_compile_file(FlrFile,MPFile,FDBFile,FLDFile,Status),
 	( Status == FLORA_FAILURE ->
 	    flora_clear_xpp_options,
 	    !,
@@ -471,6 +474,9 @@ flora_flload(FlrFile,Workspace) :-
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_mainO_filename(FlrFile,MOFile),
 	flora_FDB_filename(FlrFile,FDBFile),
+	%% support for undefinedness
+	flora_FLD_filename(FlrFile,FLDFile),
+
 	flora_WSO_filename(FlrFile,Workspace,WSOFile),
 	!,
 	flora_set_xpp_options_for_compile(Workspace),
@@ -478,7 +484,7 @@ flora_flload(FlrFile,Workspace) :-
 	    flora_stdmsg_nl,
 	    true
 	;
-	  flora_compile_file(FlrFile,MPFile,FDBFile,Status),
+	  flora_compile_file(FlrFile,MPFile,FDBFile,FLDFile,Status),
 	  ( Status == FLORA_FAILURE ->
 	      flora_clear_xpp_options,
 	      !,
@@ -597,6 +603,7 @@ flora_library_directory(LibDir) :- xsb_configuration(cmplibdir,LibDir).
   flora_mainP_filename(+File,-MPFile)
   flora_mainO_filename(+File,-MOFile)
   flora_FDB_filename(+File,-FDBFile)
+  flora_FLD_filename(+File,-FLDFile)
   flora_FLH_filename(+File,-FLHFile)
   flora_WSP_filename(+File,+WS,-WSPFile)
   flora_WSO_filename(+File,+WS,-WSOFile)
@@ -613,6 +620,10 @@ flora_mainO_filename(File,MOFile) :-
 flora_FDB_filename(File,FDBFile) :-
 	parse_filename(File,Dir,Base,_),
 	fmt_write_string(FDBFile,'%s%s.%s',args(Dir,Base,FLORA_FDB_EXT)).
+
+flora_FLD_filename(File,FLDFile) :-
+	parse_filename(File,Dir,Base,_),
+	fmt_write_string(FLDFile,'%s%s.%s',args(Dir,Base,FLORA_FLD_EXT)).
 
 flora_FLH_filename(File,FLHFile) :-
 	parse_filename(File,Dir,Base,_),
@@ -767,6 +778,26 @@ flora_loaddyn_FDB_filename(DBFileName) :-
 
 
 /*************************************************************************
+  flora_loaddyn_FLD_filename(+FLDFileName)
+*************************************************************************/
+flora_loaddyn_FLD_filename(FLDFileName) :-
+	%% Output the base file name only. The full path will be taken
+	%% care of by flora_load_dyn_fld and consult.
+	parse_filename(FLDFileName,_Dir,Base,Ext),
+	writeln('#if !defined(FLORA_FLD_FILENAME)'),
+	writeln(':- import flora_load_dyn_fld/2 from flrutils.'),
+	current_output_port(OutPort),
+	fmt_write(OutPort, "#define FLORA_FLD_FILENAME  '%s.%s'", args(Base,Ext)),
+	nl,
+	writeln('?- flora_load_dyn_fld(FLORA_FLD_FILENAME,FLORA_THIS_MODULE_NAME).'),
+	writeln('#else'),
+	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
+	writeln('?- flora_read_canonical_and_insert(FLORA_FLD_FILENAME,FLORA_THIS_FLD_STORAGE).'),
+	writeln('#endif'),
+	nl.
+
+
+/*************************************************************************
   flora_include_file(+OptionList,-Status)
 *************************************************************************/
 flora_include_file([],FLORA_SUCCESS) :- !.
@@ -830,7 +861,7 @@ flora_reset_modules_for_shell :-
 
         The appropriate GPP options must be set before this procedure is called.
 *************************************************************************/
-flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
+flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	flora_maxerr(MaxErrNum),
 	flora_stdmsg_nl,
 	flora_message_line('compiling %s',args(InputFile)),
@@ -853,7 +884,7 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	  flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus)
+	  flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
         ),
 	cputime(T1),
 	( FileStatus == FLORA_FAILURE ->
@@ -865,7 +896,7 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	!.
 
 %% Catch a failure situation.
-flora_compile_file(_InputFile,_PFile,_DBFile,FLORA_FAILURE).
+flora_compile_file(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
 
 
 /*************************************************************************
@@ -873,10 +904,15 @@ flora_compile_file(_InputFile,_PFile,_DBFile,FLORA_FAILURE).
 
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
-flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
+flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus) :-
+	(flora_debug_mode ->
+	    flora_debug_code(CompiledRuleList, FLDFile)
+	;
+	    true
+	),
 	flora_divide_program(CompiledRuleList,RuleList,FactList),
 	sort(FileOptionList,FileOptions),
-	flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,DBFile,PFileStatus),
+	flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,DBFile,FLDFile,PFileStatus),
 	( PFileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
@@ -901,7 +937,7 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
   (5) program.
   (6) trailer.
 *************************************************************************/
-flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FileStatus) :-
+flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,FileStatus) :-
 	telling(PreOutFile),
 	tell(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
@@ -915,17 +951,44 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FileStatu
 	    FileStatus=FLORA_FAILURE
 	;
 	  (FactList == [] -> true; flora_loaddyn_FDB_filename(DBFile)),
+
+	  ( flora_debug_mode ->
+	      writeln('?- storage_delete_all(FLORA_THIS_FLD_STORAGE).'),
+	      writeln('?- (flora_debug_module_registry(FLORA_THIS_MODULE_NAME),!'),
+	      writeln(';assert(flora_debug_module_registry(FLORA_THIS_MODULE_NAME))).'),
+	      writeln(':- import flora_error_undefined/1 from flrundefined.'),
+	      flora_loaddyn_FLD_filename(FLDFile),
+	      nl
+	  ;
+	      true
+	  ),
+
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
 		  flora_message_line('including full F-logic equality maintenance'),
-		  flora_include_file([FLEQLTRAILER,FLSCALAREQL],FileStatus)
+		  ( flora_debug_mode ->
+		      flora_include_file([FLEQLTRAILER,FLSCALAREQL,FLPREDDEF],FileStatus)
+		  ;
+		      flora_include_file([FLEQLTRAILER,FLSCALAREQL,FLNOPREDDEF],FileStatus)
+		  )
+
 
 	      ; member(FLEQLBASIC,FileOptionList) ->
 	          flora_message_line('including basic equality maintenance'),
-		  flora_include_file([FLEQLTRAILER],FileStatus)
+		  %% flora_include_file([FLEQLTRAILER],FileStatus)
+		  ( flora_debug_mode ->
+		      flora_include_file([FLEQLTRAILER,FLPREDDEF],FileStatus)
+		  ;
+		      flora_include_file([FLEQLTRAILER,FLNOPREDDEF],FileStatus)
+		  )
 	      ;
-	        flora_include_file([FLTRAILER],FileStatus)
+	        %% flora_include_file([FLTRAILER],FileStatus)
+		(flora_debug_mode ->
+	            flora_include_file([FLTRAILER,FLPREDDEF],FileStatus)
+		;
+	            flora_include_file([FLTRAILER,FLNOPREDDEF],FileStatus)
+		)
 	      )
 	  ;
 	    flora_coder_error(CoderStatus),
@@ -1013,6 +1076,51 @@ flora_load_dyn(InDBFile,ModuleName) :-
 	),
 	!.
 
+/*************************************************************************
+  flora_load_dyn_fld(+InFLDFile,+ModuleName)
+
+  This procedure reads a Flora FLD file that contains facts in canonical
+  form and inserts them into the fld storage trie for the module. 
+*************************************************************************/
+flora_load_dyn_fld(InFLDFile,ModuleName) :-
+	flora_check_filename(InFLDFile),
+	( path_sysop(isabsolute,InFLDFile) ->
+	    InFLDFileAbs=InFLDFile
+
+	; current_loaded_file(LoadedFile) ->
+	    path_sysop(dirname,LoadedFile,FileDir),
+	    fmt_write_string(InFLDFileAbs,'%s%s',args(FileDir,InFLDFile))
+	;
+	  InFLDFileAbs=InFLDFile
+	),
+	!,
+	( flora_locate_file(InFLDFileAbs,FLDFile) ->
+	    flora_message_line('dynamically loading %s into module %S',
+			       args(FLDFile,ModuleName)),
+	    cputime(T0),
+	    seeing(PreInFile),
+	    flora_set_xpp_options_for_compile(ModuleName),
+	    xpp_process_file(FLDFile,XPP_process,IOportFromProc),
+	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	    flora_fld_storage_name(ModuleName,StorageName),
+	    flora_read_canonical_and_insert(StorageName),
+	    %% Wait, not to leave zombies.
+	    process_control(XPP_process,wait(ExitStatus)),
+	    (ExitStatus==0, !
+	    ; flora_error_line('Error while preprocessing %s', FLDFile)
+	    ),
+	    %% Release the file descriptor used to read from cpp.
+	    file_close(IOportFromProc),
+	    flora_clear_xpp_options,
+	    see(PreInFile),
+	    cputime(T1),
+	    T is T1-T0,
+	    flora_message_line('Done! CPU time used: %S seconds',args(T))
+	;
+	  flora_error_line('File %s does not exist!', args(InFLDFileAbs)),
+	  fail
+	),
+	!.
 
 /*************************************************************************
   flora_read_canonical_and_insert(+StorageName)
@@ -1600,8 +1708,10 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
 	%% Find the files that need to be dumped.
 	flora_mainP_filename(FlrFile,PFile),
 	flora_FDB_filename(FlrFile,FDBFile),
+	flora_FLD_filename(FlrFile,FLDFile),
 	flora_dump_filename(PFile,DumpPFile),
 	flora_dump_filename(FDBFile,DumpFDBFile),
+	flora_dump_filename(FLDFile,DumpFLDFile),
 	!,
 	( path_sysop(exists,PFile) ->
 	    %% Dump the main .P file.
@@ -1613,6 +1723,12 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
 	( path_sysop(exists,FDBFile) ->
 	    %% Dump the .fdb file if it exists.
 	    flora_gpp_dumpfile(FDBFile,DumpFDBFile,NewWorkspace)
+	;
+	  true
+	),
+	( path_sysop(exists,FLDFile) ->
+	    %% Dump the .fld file if it exists.
+	    flora_gpp_dumpfile(FLDFile,DumpFLDFile,NewWorkspace)
 	;
 	  true
 	),
@@ -1629,8 +1745,8 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	flora_message_line('Making dump file %s from %s',args(DumpFileName,FileName)),
 	parse_filename(DumpFileName,_,Base,_),
 	fmt_write_string(ExtraOptions,
-			 '-D FLORA_DUMP -D FLORA_FDB_FILENAME="''%s.%s''"',
-			 arg(Base,FLORA_FDB_EXT)),
+			 '-D FLORA_DUMP -D FLORA_FDB_FILENAME="''%s.%s''" -D FLORA_FLD_FILENAME="''%s.%s''"',
+			 arg(Base,FLORA_FDB_EXT,Base,FLORA_FLD_EXT)),
 	flora_set_xpp_options_for_compile(Workspace,ExtraOptions),
 	file_open(DumpFileName,w,DumpPort),
 	xpp_process_file(FileName,XPP_process,IOportFromGPP),

@@ -20,3 +20,6 @@ CLEAN:
 	-@del *.O
 	-@del *.P
 	-@del *.fdb
+	-@del *.fld
+	-@del *.bak
+	-@del .#*

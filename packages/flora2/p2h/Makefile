@@ -1,3 +1,3 @@
 
 clean:
-	/bin/rm -f *.O *.so
+	/bin/rm -f *.O *.so *.bak *~ .*~ .#*

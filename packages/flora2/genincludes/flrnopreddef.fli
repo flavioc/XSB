@@ -1,0 +1,41 @@
+/***************************************************************************
+  file: genincludes/flrpreddef.fli
+
+  Author(s): Chang Zhao
+
+  Contact:   xsb-contact@cs.sunysb.edu
+
+  Copyright (C) The Research Foundation of SUNY, 2002
+
+  This is a template file to generate the FLORA include file for
+  detecting undefined user predicates.
+***************************************************************************/
+
+
+#include "flora_terms.flh"
+
+/**************************************************************************
+  F-logic
+***************************************************************************/
+:- FL_FLORANOPREDDEF
+	WRAP_SUB/2,
+	WRAP_ISA/2,
+	WRAP_IFD/3,
+	WRAP_IMVD/3,
+	WRAP_IFDDEF/2,
+	WRAP_IMVDDEF/2,
+	WRAP_FD/3,
+	WRAP_MVD/3,
+	WRAP_FDDEF/2,
+	WRAP_MVDDEF/2,
+	WRAP_METH/2,
+	WRAP_IMETH/2,
+	WRAP_TRAN/2,
+	WRAP_FDSIG/3,
+	WRAP_IFDSIG/3,
+	WRAP_MVDSIG/3,
+	WRAP_IMVDSIG/3,
+	WRAP_MVDINC/3,
+	WRAP_IMVDINC/3,
+	WRAP_MVDTOLIST/3,
+	WRAP_IMVDTOLIST/3.

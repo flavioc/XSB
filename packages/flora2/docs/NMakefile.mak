@@ -11,9 +11,6 @@ INTDIR = .
 ALL : "$(OUTDIR)\$(MYPROGRAM).dll"
 
 CLEAN :
-	-@erase "$(INTDIR)\$(MYPROGRAM).obj"
-	-@erase "$(INTDIR)\$(MYPROGRAM).dll"
-	-@erase "$(INTDIR)\$(MYPROGRAM).exp"
 	-@erase *~
 	-@erase .#*
 	-@erase *.bak

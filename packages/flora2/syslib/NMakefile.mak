@@ -30,6 +30,8 @@ ALL:: $(ALLOBJS)
 CLEAN :
 	-@erase *~
 	-@erase *.O
+	-@erase *.bak
+	-@erase .#*
 
 
 .P.O:

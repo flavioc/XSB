@@ -6,18 +6,18 @@
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
-** XSB is free software; you can redistribute it and/or modify it under the
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
 **
-** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
 **
 ** You should have received a copy of the GNU Library General Public License
-** along with XSB; if not, write to the Free Software Foundation,
+** along with FLORA-2; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 **
@@ -362,6 +362,11 @@ flexpungedirect_struct(FAList,M,FLEXPUNGE(FAList,M)).
 flflogicstaticdirect_struct(F,A,FLFLOGICSTATIC(F,A)).
 flflorapatchdirect_struct(F,A,FLFLORAPATCH(F,A)).
 
+%% support for undefinedness
+flflorapreddefdirect_struct(F,FLFLORAPREDDEF(F)).
+flfloranopreddefdirect_struct(F,A,FLFLORANOPREDDEF(F,A)).
+fldebugdirect_struct(FLDEBUG).
+
 
 %% primitive structures with index for textual information
 flobject_struct(OBJECT(IDENTIFIER(Atom),I),FLATOM(Atom,I))     :- !.
@@ -539,6 +544,10 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
 	%%;  flora_prologall_directive(CanoniTerm,CodeList,Status)
 	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
+
+	%% support for undefinedness
+	; flora_debug_directive(CanoniTerm,CodeList,Status)
+
         ),
 	fldirective_struct(CodeList,Code),
 	!.
@@ -548,6 +557,9 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	conget(flora_compile_include_file,1),
 	( flora_flogicstatic_directive(CanoniTerm,CodeList,Status)
 	; flora_florapatch_directive(CanoniTerm,CodeList,Status)
+	%% support for checking undefinedness
+	; flora_florapreddef_directive(CanoniTerm,CodeList,Status)
+	; flora_floranopreddef_directive(CanoniTerm,CodeList,Status)
 	),
 	fldirective_struct(CodeList,Code),
 	!.
@@ -578,6 +590,9 @@ flora_exec_directive(CanoniTerm,Code,Status) :-
 	; flora_table_directive(CanoniTerm,CodeList,Status)
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
+
+	; flora_debug_directive(CanoniTerm,CodeList,Status)
+
 	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_exec_equality_directive(CanoniTerm,CodeList,Status)
@@ -1146,6 +1161,50 @@ flora_florapatch_directlist([F/A|L],[Code|CL]) :-
 	!,
 	flflorapatchdirect_struct(F,A,Code),
 	flora_florapatch_directlist(L,CL).
+
+
+
+/****************************************************************************
+  flora_florapreddef_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_florapreddef_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_FLORAPREDDEF),
+	flora_comma_separated_list(T,TList),
+	flora_florapreddef_directlist(TList,CodeList,Status).
+
+
+flora_florapreddef_directlist([],[],[]) :- !.
+
+flora_florapreddef_directlist([F|L],[Code|CL],S) :-
+	!,
+	flora_body(F,FCode,Status),
+	flflorapreddefdirect_struct(FCode,Code),
+	flora_florapreddef_directlist(L,CL,SL),
+	append(Status,SL,S).
+
+/****************************************************************************
+  flora_floranopreddef_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_floranopreddef_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_FLORANOPREDDEF),
+	flora_commasep_falist(T,FAList,Status),
+	(Status == [] -> flora_floranopreddef_directlist(FAList,CodeList);true).
+
+
+flora_floranopreddef_directlist([],[]) :- !.
+
+flora_floranopreddef_directlist([F/A|L],[Code|CL]) :-
+	!,
+	flfloranopreddefdirect_struct(F,A,Code),
+	flora_floranopreddef_directlist(L,CL).
+
+/****************************************************************************
+  flora_debug_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_debug_directive(CanoniTerm,[Code],[]) :-
+	get_name(CanoniTerm,FL_DEBUG),
+	fldebugdirect_struct(Code).
+
 
 
 /****************************************************************************

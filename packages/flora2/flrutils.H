@@ -6,18 +6,18 @@
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
-** XSB is free software; you can redistribute it and/or modify it under the
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
 ** 
-** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
 ** 
 ** You should have received a copy of the GNU Library General Public License
-** along with XSB; if not, write to the Free Software Foundation,
+** along with FLORA-2; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
@@ -114,6 +114,7 @@
 
 :- import
 	flora_reset_compiler/0,
+	flora_debug_mode/0,
 	flora_compile/4
    from flrcompiler.
 
@@ -122,6 +123,11 @@
 	flora_extern_code/2,
 	flora_intern_code/4
    from flrcoder.
+
+%% support for undefinedness
+:- import 
+	flora_debug_code/2
+   from flrundefined.
 
 :- import plg2hlg/3 from prolog2hilog.
 
@@ -154,12 +160,17 @@
 	flora_user_module_predicate_symbol/3,
 	flora_module_name/3,
 	flora_module_name_error/1,
-	flora_storage_name/2
+	flora_storage_name/2,
+	%% support for undefinedness
+	flora_fld_storage_name/2
    from flrwrapper.
 
 :- dynamic flora_maxerr(_).
 :- dynamic flora_xpp_extra_options/1.
 :- dynamic flora_module_registry/1.
+
+:- dynamic flora_debug_module_registry/1.
+
 :- dynamic flora_storage_registry/1.
 
 :- index(flora_maxerr/1,trie).
@@ -197,10 +208,16 @@
 	flora_list2conjunct/2,
 	flora_check_workspace/1,
 	flora_module_registry/1,
+	%% support for undefinedness
+	flora_debug_module_registry/1,
+
 	flora_storage_registry/1,
 	flora_reclaim_storage_space/0,
 	flora_commit_storage/0,
 	flora_load_dyn/2,
+	%% support for undefinedness
+	flora_load_dyn_fld/2,
+
 	flora_read_canonical_and_insert/2,
 	flora_compile_system_module_by_ID/1,
 	flora_load_system_module_internal/1,

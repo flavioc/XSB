@@ -23,4 +23,7 @@ CLEAN:
 	-@del *.P
 	-@del *.P_gpp
 	-@del *.fdb
+	-@del *.fld
+	-@del *.bak
+	-@del .#*
 

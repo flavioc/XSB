@@ -12,7 +12,9 @@ ALL:: $(ALLOBJS)
 CLEAN :
 	-@erase *~
 	-@erase *.O
+	-@erase .#*
 	-@erase *.dat
+	-@erase *.bak
 
 .P.O:
 	$(XSB) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."

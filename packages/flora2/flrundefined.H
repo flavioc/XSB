@@ -1,15 +1,16 @@
-/* File:      flrstorage.flr
+/* File:      flrundefined.H
 **
-** Author(s): Michael Kifer
+** Author(s): Chang Zhao
+**
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 2001
-** 
+** Copyright (C) The Research Foundation of SUNY, 2002
+**
 ** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-** 
+**
 ** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
@@ -23,17 +24,27 @@
 **
 */
 
-#include "standard.h"
+:- dynamic term_seen(_).
 
+:- import 
+	storage_find_fact/2, 
+	storage_insert_fact/3
+   from storage.
 
-commit :- flora_commit_storage@prolog(flrutils).
+:- import str_cat/3 from string.
 
-%% This commit is only for user modules
-commit(Module) :-
-	flora_user_storage_name(Module,StorageName)@prolog(flrwrapper),
-	storage_commit(StorageName)@prolog(storage),
-	storage_reclaim_space(StorageName)@prolog(storage).
+:- import flora_prlgdef/2 from flrprolog.
 
-purgedb(Module) :-
-	flora_user_storage_name(Module,StorageName)@prolog(flrwrapper),
-	storage_delete_all(StorageName)@prolog(storage).
+:- import flora_extern_code/2 from flrcoder.
+
+:- import flora_decode_predicate/6 from flrwrapper.
+
+:- import flora_error_line/2 from flrprint.
+
+:- import flora_debug_module_registry/1 from flrutils.
+
+:- export
+	flora_debug_code/2,
+	flora_error_undefined/1,
+	flora_insert_skeleton/1,
+	flora_build_skeleton/2.

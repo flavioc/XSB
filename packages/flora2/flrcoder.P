@@ -6,18 +6,18 @@
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
-** XSB is free software; you can redistribute it and/or modify it under the
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
 ** 
-** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
 ** 
 ** You should have received a copy of the GNU Library General Public License
-** along with XSB; if not, write to the Free Software Foundation,
+** along with FLORA-2; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
@@ -45,6 +45,8 @@
   utilities
 ****************************************************************************/
 is_prrule(PRRULE(Head,Body),Head,Body).
+%% patch rule for the debug option
+is_prpatchrule(PRPATCHRULE(Head,Body),Head,Body).
 is_prfact(PRFACT(Head),Head).
 is_prquery(PRQUERY(Goal),Goal).
 is_prdirective(PRDIRECTIVE(Direct),Direct).
@@ -59,6 +61,8 @@ is_prhilogtable(PRHILOGTABLE(A),A).
 
 is_prthismodule(PRTHISMODULE(PRTHISMODULE)).
 is_prthisstorage(PRTHISSTORAGE(PRTHISSTORAGE)).
+%% debug trie
+is_prthisfldstorage(PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
 
 %% with textual information
 is_pratom(PRATOM(Atom,_I),Atom).
@@ -101,6 +105,70 @@ is_prnewpred(PRNEWPRED(Name,N,Vars),Name,N,Vars).
 
 %% with textual information
 is_prnewoid(PRNEWOID(Oid,_I),Oid).
+
+is_flogic(PRISA(Obj1,Obj2),WRAP_D_ISA,2,[Obj1,Obj2]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRSUB(Obj1,Obj2),WRAP_D_SUB,2,[Obj1,Obj2]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRMETH(Obj,Meth),WRAP_D_METH,2,[Obj,Meth]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIMETH(Obj,IMeth),WRAP_D_IMETH,2,[Obj,IMeth]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRFD(Obj,Att,Val),WRAP_D_FD,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIFD(Obj,Att,Val),WRAP_D_IFD,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRFDSIG(Obj,Att,Val),WRAP_D_FDSIG,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRMVDSIG(Obj,Att,Val),WRAP_D_MVDSIG,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIFDSIG(Obj,Att,Val),WRAP_D_IFDSIG,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIMVDSIG(Obj,Att,Val),WRAP_D_IMVDSIG,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRMVD(Obj,Att,Val),WRAP_D_MVD,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIMVD(Obj,Att,Val),WRAP_D_IMVD,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRMVDINC(Obj,Att,Val),WRAP_D_MVDINC,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIMVDINC(Obj,Att,Val),WRAP_D_IMVDINC,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRMVDTOLIST(Obj,Att,Val),WRAP_D_MVDTOLIST,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIMVDTOLIST(Obj,Att,Val),WRAP_D_IMVDTOLIST,3,[Obj,Att,Val]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRFDDEF(Obj,Att),WRAP_D_FDDEF,2,[Obj,Att]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIFDDEF(Obj,Att),WRAP_D_IFDDEF,2,[Obj,Att]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRMVDDEF(Obj,Att),WRAP_D_MVDDEF,2,[Obj,Att]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRIMVDDEF(Obj,Att),WRAP_D_IMVDDEF,2,[Obj,Att]) :- 
+	using_debug_prefix(_),
+	!.
+is_flogic(PRTRAN(Obj,Tran),WRAP_D_TRAN,2,[Obj,Tran]) :- 
+	using_debug_prefix(_),
+	!.
 
 is_flogic(PRISA(Obj1,Obj2),WRAP_ISA,2,[Obj1,Obj2]) :- !.
 is_flogic(PRSUB(Obj1,Obj2),WRAP_SUB,2,[Obj1,Obj2]) :- !.
@@ -164,7 +232,9 @@ flora_divide_program([H|T],[H|RuleList],FactList) :-
   dumps the output in canonical form.
 ****************************************************************************/
 flora_extern_code(TermList,[]) :-
+	assert(using_debug_prefix(1)),
 	flora_write_codelist(TermList),
+	retractall(using_debug_prefix(_)),
 	!.
 
 %% This is for debugging.
@@ -176,7 +246,9 @@ flora_extern_code(_TermList,[error(UNKNOWN_ERROR)]).
   converts a list of intermediate terms into a callable XSB code.
 ****************************************************************************/
 flora_intern_code(TermList,DWS,Code,[]) :-
+	assert(using_debug_prefix(1)),
 	flora_build_codelist(TermList,DWS,Code),
+	retractall(using_debug_prefix(_)),
 	!.
 
 %% This is for debugging.
@@ -207,6 +279,9 @@ flora_write_code(Term) :-
 	( is_prrule(Term,Head,Body) ->
 	    flora_write_rule(Head,Body)
 
+	; is_prpatchrule(Term,Head,Body) ->
+	    flora_write_rule(Head,Body)
+
 	; is_prfact(Term,Head) ->
 	    flora_write_fact(Head)
 
@@ -231,7 +306,9 @@ flora_write_direct(Term) :-
   flora_write_fact(+Term)
 ****************************************************************************/
 flora_write_fact(Term) :-
+	retractall(using_debug_prefix(_)),
 	flora_write_struct(Term,FLBODYPREFIX),
+	assert(using_debug_prefix(1)),
 	writeln('.').
 
 
@@ -240,7 +317,9 @@ flora_write_fact(Term) :-
 ****************************************************************************/
 flora_write_rule(Head,Body) :-
 	write(':-('),
+	retractall(using_debug_prefix(_)),
 	flora_write_struct(Head,FLHEADPREFIX),
+	assert(using_debug_prefix(1)),
 	write(','),
 	flora_write_struct(Body,FLBODYPREFIX),
 	writeln(').').
@@ -426,6 +505,12 @@ flora_write_struct(Term,_Prefix) :-
 	!,
 	%% This is an encoded storage name.
 	write('FLORA_THIS_STORAGE').
+
+flora_write_struct(Term,_Prefix) :-
+	is_prthisfldstorage(Term),
+	!,
+	%% This is an encoded storage name.
+	write('FLORA_THIS_FLD_STORAGE').
 
 flora_write_struct(Term,_Prefix) :-
 	is_prstorage(Term,WSName),
@@ -738,17 +823,21 @@ flora_write_syslib(FLLIBANSWER,N,Args,Prefix) :-
 flora_write_syslib(Lib,1,[List],_Prefix) :-
 	is_fllibdb(Lib),
 	!,
+	retractall(using_debug_prefix(_)),
 	write_canonical(Lib),
 	write('('),
 	flora_write_struct(List,FLBODYPREFIX),
+	assert(using_debug_prefix(1)),
 	write(')').
 
 flora_write_syslib(Lib,2,[List,Cond],_Prefix) :-
 	is_fllibdb(Lib),
 	!,
+	retractall(using_debug_prefix(_)),
 	write_canonical(Lib),
 	write('('),
 	flora_write_struct(List,FLBODYPREFIX),
+	assert(using_debug_prefix(1)),
 	write(','),
 	flora_write_struct(Cond,FLBODYPREFIX),
 	write(')').
@@ -865,6 +954,9 @@ flora_build_code(Term,DWS,Code) :-
 	( is_prrule(Term,Head,Body) ->
 	    flora_build_rule(Head,Body,DWS,Code)
 
+	; is_prpatchrule(Term,Head,Body) ->
+	    flora_build_rule(Head,Body,DWS,Code)
+
 	; is_prfact(Term,Head) ->
 	    flora_build_fact(Head,DWS,Code)
 
@@ -889,14 +981,18 @@ flora_build_directive(Term,DWS,Code) :-
   flora_build_fact(+Term,+DefaultWorkspace,-Code)
 ****************************************************************************/
 flora_build_fact(Term,DWS,Code) :-
-	flora_build_struct(Term,DWS,FLBODYPREFIX,_VarList,Code).
+	retractall(using_debug_prefix(_)),
+	flora_build_struct(Term,DWS,FLBODYPREFIX,_VarList,Code),
+	assert(using_debug_prefix(1)).
 
 
 /****************************************************************************
   flora_build_rule(+Head,+Body,+DefaultWorkspace,-Code)
 ****************************************************************************/
 flora_build_rule(Head,Body,DWS,Code) :-
+	retractall(using_debug_prefix(_)),
 	flora_build_struct(Head,DWS,FLHEADPREFIX,VarList,HeadCode),
+	assert(using_debug_prefix(1)),
 	flora_build_struct(Body,DWS,FLBODYPREFIX,VarList,BodyCode),
 	Code =.. [(':-'),HeadCode,BodyCode].
 
@@ -1082,6 +1178,12 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	!,
 	flora_user_storage_name(DWS,Code).
 
+flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
+	is_prthisfldstorage(Term),
+	!,
+	%% debug storage
+	flora_user_fld_storage_name(DWS,Code).
+
 flora_build_struct(Term,_DWS,_Prefix,_VarList,Code) :-
 	is_prstorage(Term,WSName),
 	!,
@@ -1249,13 +1351,17 @@ flora_build_syslib(FLLIBANSWER,N,Args,DWS,Prefix,VarList,Code) :-
 flora_build_syslib(Lib,1,[List],DWS,_Prefix,VarList,Code) :-
 	is_fllibdb(Lib),
 	!,
+	retractall(using_debug_prefix(_)),
 	flora_build_struct(List,DWS,FLBODYPREFIX,VarList,ListCode),
+	assert(using_debug_prefix(1)),
 	Code =.. [Lib,ListCode].
 
 flora_build_syslib(Lib,2,[List,Cond],DWS,_Prefix,VarList,Code) :-
 	is_fllibdb(Lib),
 	!,
+	retractall(using_debug_prefix(_)),
 	flora_build_struct(List,DWS,FLBODYPREFIX,VarList,ListCode),
+	assert(using_debug_prefix(1)),
 	flora_build_struct(Cond,DWS,FLBODYPREFIX,VarList,CondCode),
 	Code =.. [Lib,ListCode,CondCode].
 

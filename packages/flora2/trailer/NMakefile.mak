@@ -14,6 +14,8 @@ CLEAN :
 	-@erase *.O
 	-@erase *.P
 	-@erase *.flh
+	-@erase *.bak
+	-@erase .#*
 
 
 

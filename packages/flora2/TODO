@@ -1,7 +1,7 @@
 1. Make :- table imply :- firstorder.
 
 
-2. Implement undefined predicate/method handling infrastructure.
+DONE 2. Implement undefined predicate/method handling infrastructure.
 
    a. Take the intermediate repesentation of the program from the compiler.
 

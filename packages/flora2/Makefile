@@ -7,18 +7,18 @@
 ## 
 ## Copyright (C) The Research Foundation of SUNY, 1999-2001
 ## 
-## XSB is free software; you can redistribute it and/or modify it under the
+## FLORA-2 is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
 ## Software Foundation; either version 2 of the License, or (at your option)
 ## any later version.
 ## 
-## XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+## FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ## more details.
 ## 
 ## You should have received a copy of the GNU Library General Public License
-## along with XSB; if not, write to the Free Software Foundation,
+## along with FLORA-2; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
 ## $Id$
@@ -41,6 +41,7 @@ ALLOBJS = flroperator.O \
           flrparser.O \
 	  flrcompiler.O \
 	  flrcoder.O \
+	  flrundefined.O \
 	  flrutils.O \
 	  flrwrapper.O \
 	  flrwraparound.O \
@@ -142,6 +143,10 @@ flrcoder.O : flrcoder.P flrcoder.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERROR
 	@echo 'mc(flrcoder,$(OPTION)).' >> cmd...
 
 
+flrundefined.O : flrundefined.P flrundefined.H $(FLORA_TERMS) 
+	@echo 'mc(flrundefined,$(OPTION)).' >> cmd...
+
+
 flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
 	@echo 'mc(flrutils,$(OPTION)).' >> cmd...
 
@@ -177,7 +182,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ *.O ../flora2.O
+	/bin/rm -f *~.*~ *.O .#* *.bak ../flora2.O
 	cd closure; $(MAKE) clean
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean
@@ -185,12 +190,15 @@ clean:
 	cd debugger; $(MAKE) clean
 	cd p2h; $(MAKE) clean
 	cd trailer; $(MAKE) clean
+	cd pkgs; $(MAKE) clean
 	cd demos; $(MAKE) clean
-	/bin/rm -f headerinc/*~
-	/bin/rm -f syslibinc/*~
-	/bin/rm -f libinc/*~
-	/bin/rm -f includes/*~
-	/bin/rm -f flrincludes/*~
+	cd docs; $(MAKE) clean
+	cd emacs; $(MAKE) clean
+	/bin/rm -f headerinc/*~ headerinc/.*~
+	/bin/rm -f syslibinc/*~ syslibinc/.*~
+	/bin/rm -f libinc/*~ libinc/.*~
+	/bin/rm -f includes/*~ includes/.*~
+	/bin/rm -f flrincludes/*~ flrincludes/.*~
 	/bin/rm -f $(HOME)/.xsb/flora/*.P $(HOME)/.xsb/flora/*.O
 
 

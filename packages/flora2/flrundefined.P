@@ -1,0 +1,669 @@
+/* File:      flrundefined.P  -- The additional info. for undefined predicates
+**
+** Author(s): Chang Zhao
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2002
+** 
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+/****************************************************************************
+  utilities
+****************************************************************************/
+is_prrule(PRRULE(Head,Body),Head,Body).
+is_prfact(PRFACT(Head),Head).
+is_pratom(PRATOM(Atom,_I),Atom).
+is_prvariable(PRVARIABLE(Name,_I),Name).
+is_prterm(PRTERM(FObj,N,ObjList),FObj,N,ObjList).
+is_pratomlit(PRATOMLIT(A,_I),A).
+is_prtermlit(PRTERMLIT(FObj,N,ObjList),FObj,N,ObjList).
+
+
+/***********************************************************************
+ * flora_debug_code(+CompileList)
+ * Generate facts that will be loaded into fld storage
+ * from facts and rule heads
+ ***********************************************************************/
+flora_debug_code(TermList, File) :-
+	retractall(term_seen(_)),
+	flora_build_debug_inter_codelist(TermList),
+	telling(PreOut),
+	tell(File),
+	writeln('#include "flrheader.flh"'),
+	nl,
+	generate_patches,
+	told,
+	tell(PreOut).
+
+/***********************************************************************
+ * flora_build_debug_inter_codelist(+CompileList)
+ * patch facts will be asserted into ter_seen(Term) to remove duplicates
+ ***********************************************************************/
+flora_build_debug_inter_codelist([]) :- !.
+
+flora_build_debug_inter_codelist([T|L]) :-
+	flora_build_debug_inter_code(T),
+	flora_build_debug_inter_codelist(L).
+
+flora_build_debug_inter_code(Term) :-
+	( is_prrule(Term,Head,_) ->
+	    ( flora_build_debug_skeleton(Head,Code) ->
+		( var(Code) ->
+		    true
+		;
+	            ( old_term(Code) ->
+	                true
+	            ;
+	                assert(term_seen(Code))
+	            )
+		)
+            ;
+	        true
+	    )
+	; is_prfact(Term,Head) ->
+	    ( flora_build_debug_skeleton(Head,Code) ->
+		( var(Code) ->
+		    true
+		;
+	            ( old_term(Code) ->
+	                true
+	            ;
+	                assert(term_seen(Code))
+	            )
+		)
+            ;
+	        true
+	    )
+	; true
+	).
+
+/***********************************************************
+ * flora_build_variable(-Code)
+ ***********************************************************/
+ flora_build_variable(PRVARIABLE(NewVar,_)) :-
+ 	fmt_write_string(NewVar, "%S", args(_)).
+
+/***********************************************************
+ * flora_build_variable_list(+N, -Code)
+ ***********************************************************/
+ flora_build_variable_list(0, []) :- !.
+ flora_build_variable_list(N, [PRVARIABLE(NewVar, _)|Rest]) :-
+ 	fmt_write_string(NewVar, "%S", args(_)),
+	M is N-1,
+	flora_build_variable_list(M, Rest).
+
+/***********************************************************
+ * flora_build_debug_skeleton(+Term, -Code)
+ * builds the intermediate form of the skeletons of all facts
+ * and rule heads
+ ***********************************************************/
+flora_build_debug_skeleton(Term,Term) :-
+	is_pratom(Term,_Atom),
+	!.
+
+flora_build_debug_skeleton(Term,NewVar) :-
+	is_prvariable(Term, _Name),
+	!,
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(Term,PRTERM(FCode,N,ObjListCode)) :-
+	is_prterm(Term, FObj, N, _ObjList),
+	!,
+	( is_pratom(FObj, FAtom), flora_prlgdef(FAtom,N) ->
+	    fail
+	;
+	    flora_build_debug_skeleton(FObj, FCode),
+	    flora_build_variable_list(N, ObjListCode)
+	).
+
+flora_build_debug_skeleton(Term,Term) :-
+        is_pratomlit(Term, A),
+	!,
+	( flora_prlgdef(A,0) ->
+	   fail
+        ;
+	   true
+        ).
+
+flora_build_debug_skeleton(Term, PRTERMLIT(FCode,N,ObjListCode)) :-
+	is_prtermlit(Term, FObj, N, _ObjList),
+	!,
+	( is_pratom(FObj,FAtom),
+	  flora_prlgdef(FAtom, N) ->
+	    fail
+	;
+	    flora_build_debug_skeleton(FObj, FCode),
+	    flora_build_variable_list(N, ObjListCode)
+	).
+
+flora_build_debug_skeleton(PRISA(_Obj1,Obj2),PRISA(NewVar,CCode)) :-
+	!,
+	flora_build_debug_skeleton(Obj2,CCode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRSUB(_Obj1,Obj2),PRSUB(NewVar,CCode)) :-
+	!,
+	flora_build_debug_skeleton(Obj2,CCode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRMETH(_Obj1,Meth),PRMETH(NewVar,MCode)) :-
+	!,
+	flora_build_debug_skeleton(Meth,MCode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRIMETH(_Obj1,IMeth),PRIMETH(NewVar,MCode)) :-
+	!,
+	flora_build_debug_skeleton(IMeth,MCode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRFDDEF(_Obj,Attr),PRFDDEF(NewVar,ACode)) :-
+	!,
+	flora_build_debug_skeleton(Attr,ACode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRMVDDEF(_Obj,Attr),PRMVDDEF(NewVar,ACode)) :-
+	!,
+	flora_build_debug_skeleton(Attr,ACode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRIFDDEF(_Obj,Attr),PRIFDDEF(NewVar,ACode)) :-
+	!,
+	flora_build_debug_skeleton(Attr,ACode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRIMVDDEF(_Obj,Attr),PRIMVDDEF(NewVar,ACode)) :-
+	!,
+	flora_build_debug_skeleton(Attr,ACode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRTRAN(_Obj,Tran),PRTRAN(NewVar,TCode)) :-
+	!,
+	flora_build_debug_skeleton(Tran,TCode),
+	flora_build_variable(NewVar).
+
+flora_build_debug_skeleton(PRFD(_Obj,Att,_Val),PRFD(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRIFD(_Obj,Att,_Val),PRIFD(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRFDSIG(_Obj,Att,_Val),PRFDSIG(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRMVDSIG(_Obj,Att,_Val),PRMVDSIG(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRIFDSIG(_Obj,Att,_Val),PRIFDSIG(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRIMVDSIG(_Obj,Att,_Val),PRIMVDSIG(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRMVD(_Obj,Att,_Val),PRMVD(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRIMVD(_Obj,Att,_Val),PRIMVD(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRMVDINC(_Obj,Att,_Val),PRMVDINC(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRIMVDINC(_Obj,Att,_Val),PRIMVDINC(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRMVDTOLIST(_Obj,Att,_Val),PRMVDTOLIST(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(PRIMVDTOLIST(_Obj,Att,_Val),PRIMVDTOLIST(OCode,ACode,VCode)) :-
+	!,
+	flora_build_variable(OCode),
+	flora_build_debug_skeleton(Att,ACode),
+	flora_build_variable(VCode).
+
+flora_build_debug_skeleton(_, _) :-
+	!.
+
+/***************************************
+ * old_term(+Term)
+ ***************************************/
+old_term(Term) :-
+   	term_seen(OldTerm),
+    	(inter_subsumes(OldTerm, Term); inter_subsumes(Term, OldTerm)),
+    	!,
+    	( inter_subsumes(OldTerm, Term)->
+            true
+    	;
+            retract(term_seen(OldTerm)),
+	    assert(term_seen(Term))
+	).
+
+/**********************************************
+ * inter_subsumes(+T1, +T2) 
+ * given T1 and T2 in intermediate form, decide
+ * whether T1 subsumes T2
+ **********************************************/
+ inter_subsumes(pratom(X,_),pratom(X,_)) :- !.
+
+ inter_subsumes(prvariable(_,_), _) :- !.
+ 
+ inter_subsumes(T1, T2) :-
+ 	!,
+	T1 =.. [F|A],
+	T2 =.. [F|B],
+	inter_list_subsumes(A, B).
+
+ inter_subsumes(T1, T2) :-
+ 	!,
+	T1 =.. [F,A1,A2,AL],
+	T2 =.. [F,B1,B2,BL],
+	inter_subsumes(A1, B1),
+	inter_subsumes(A2, B2),
+	inter_list_subsumes(AL, BL).
+
+inter_list_subsumes([], []) :- !.
+inter_list_subsumes([H1|L1], [H2|L2]) :-
+	inter_subsumes(H1, H2),
+	inter_list_subsumes(L1, L2).
+
+/*********************************************
+ * generate_patches
+ * generate a fact in intermediate form 
+ * for each Term asserted in term_seen(Term)
+ *********************************************/
+ generate_patches :-
+ 	term_seen(Term),
+	flora_extern_code([PRFACT(Term)], _FStatus),
+	fail.
+
+ generate_patches :- !.
+
+/***********************************************************
+ * flora_build_skeleton(+Term, -Code)
+ * builds the skeleton of Term
+ * this is similar to flora_build_debug_skeleton, but the 
+ * term is not in intermediate form.
+ * This predicate is used by flrdbop.P and flrbtdbop.P
+ ***********************************************************/
+flora_build_skeleton(Term,Term) :-
+	atom(Term),
+	!.
+
+flora_build_skeleton(Term,Term) :-
+	var(Term),
+	!.
+
+flora_build_skeleton(WRAP_ISA(_Obj1,Obj2),WRAP_ISA(_,CCode)) :-
+	!,
+	flora_build_skeleton(Obj2,CCode).
+
+flora_build_skeleton(WRAP_SUB(_Obj1,Obj2),WRAP_SUB(_,CCode)) :-
+	!,
+	flora_build_skeleton(Obj2,CCode).
+
+flora_build_skeleton(WRAP_METH(_Obj1,Meth),WRAP_METH(_,MCode)) :-
+	!,
+	flora_build_skeleton(Meth,MCode).
+
+flora_build_skeleton(WRAP_IMETH(_Obj1,IMeth),WRAP_IMETH(_,MCode)) :-
+	!,
+	flora_build_skeleton(IMeth,MCode).
+
+flora_build_skeleton(WRAP_FDDEF(_Obj,Attr),WRAP_FDDEF(_,ACode)) :-
+	!,
+	flora_build_skeleton(Attr,ACode).
+
+flora_build_skeleton(WRAP_MVDDEF(_Obj,Attr),WRAP_MVDDEF(_,ACode)) :-
+	!,
+	flora_build_skeleton(Attr,ACode).
+
+flora_build_skeleton(WRAP_IFDDEF(_Obj,Attr),WRAP_IFDDEF(_,ACode)) :-
+	!,
+	flora_build_skeleton(Attr,ACode).
+
+flora_build_skeleton(WRAP_IMVDDEF(_Obj,Attr),WRAP_IMVDDEF(_,ACode)) :-
+	!,
+	flora_build_skeleton(Attr,ACode).
+
+flora_build_skeleton(WRAP_TRAN(_Obj,Tran),WRAP_TRAN(_,TCode)) :-
+	!,
+	flora_build_skeleton(Tran,TCode).
+
+flora_build_skeleton(WRAP_FD(_Obj,Att,_Val),WRAP_FD(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_IFD(_Obj,Att,_Val),WRAP_IFD(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_FDSIG(_Obj,Att,_Val),WRAP_FDSIG(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_MVDSIG(_Obj,Att,_Val),WRAP_MVDSIG(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_IFDSIG(_Obj,Att,_Val),WRAP_IFDSIG(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_IMVDSIG(_Obj,Att,_Val),WRAP_IMVDSIG(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_MVD(_Obj,Att,_Val),WRAP_MVD(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_IMVD(_Obj,Att,_Val),WRAP_IMVD(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_MVDINC(_Obj,Att,_Val),WRAP_MVDINC(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_IMVDINC(_Obj,Att,_Val),WRAP_IMVDINC(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_MVDTOLIST(_Obj,Att,_Val),WRAP_MVDTOLIST(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(WRAP_IMVDTOLIST(_Obj,Att,_Val),WRAP_IMVDTOLIST(_,ACode,_)) :-
+	!,
+	flora_build_skeleton(Att,ACode).
+
+flora_build_skeleton(Term,Skeleton) :-
+	functor(Term, WRAP_HILOG, N),
+	!,
+	Term =.. [WRAP_HILOG, MainFunct|_Args],
+	M is N-1,
+	var_list(M, VarList),
+	flora_build_skeleton(MainFunct, MainFunctSkeleton),
+	Skeleton =.. [WRAP_HILOG, MainFunctSkeleton|VarList].
+
+flora_build_skeleton(Term, Skeleton) :-
+	functor(Term, MainFunct, N),
+	var_list(N, VarList),
+	Skeleton =.. [MainFunct|VarList].
+
+var_list(0, []) :- !.
+var_list(N, [_|Rest]) :-
+	M is N-1,
+	var_list(M, Rest).
+
+
+/************************************
+ * flora_error_undefined(+Predicate)
+ * print 'undefined predicate message
+ ************************************/
+flora_error_undefined(Predicate) :-
+	flora_decode_predicate(Predicate, PType, MName,
+			       _WPrefix, PSymbol, AList),
+	predicate_msg(PSymbol, AList, PMsg),
+	( (PType==firstorder) ->
+	    S1 = 'Undefined firstorder predicate'
+	;
+	    ( PType==flogic, (PSymbol==WRAP_ISA ; PSymbol==WRAP_SUB) ->
+		S1 = 'Undefined class'
+	    ; PType==flogic ->
+	        S1 = 'Undefined method'
+	    ;
+	        S1 = 'Undefined predicate'
+	    )
+	),
+	( MName=flora(Name) ->
+	    flora_error_line("%s %s in system module %s", args(S1,PMsg,Name))
+	;
+	    flora_error_line("%s %s in user module %s", args(S1,PMsg,MName))
+	).
+
+/**************************************************
+ * predicate_msg(+PredicateSymbol, +ArgList, -PMsg)
+ * generate a string from the predicate which is
+ * more readable to the user
+ **************************************************/
+predicate_msg(Term,Term) :-
+	atom(Term),
+	!.
+
+predicate_msg(Term,'_') :-
+	var(Term),
+	!.
+
+predicate_msg(Term,PMsg) :-
+	Term =.. [WRAP_HILOG,MainFunct|ArgList],
+	!,
+	predicate_msg(MainFunct, FMsg),
+	( ArgList = [] ->
+	    fmt_write_string(PMsg,"%s", args(FMsg))
+	;
+	    varlist_to_str(ArgList, VMsg),
+	    fmt_write_string(PMsg,"%s(%s)", args(FMsg, VMsg))
+	).
+
+predicate_msg(WRAP_ISA,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_:%s", args(O2Msg)).
+
+predicate_msg(WRAP_SUB,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_::%s", args(O2Msg)).
+
+predicate_msg(WRAP_METH,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_[%s]", args(O2Msg)).
+
+predicate_msg(WRAP_IMETH,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_[*%s]", args(O2Msg)).
+
+predicate_msg(WRAP_FDDEF,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_.%s[]", args(O2Msg)).
+
+predicate_msg(WRAP_MVDDEF,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_..%s[]", args(O2Msg)).
+
+predicate_msg(WRAP_IFDDEF,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_!%s[]", args(O2Msg)).
+
+predicate_msg(WRAP_IMVDDEF,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_!!%s[]", args(O2Msg)).
+
+predicate_msg(WRAP_TRAN,[_O1, O2], PMsg) :-
+	!,
+	predicate_msg(O2, O2Msg),
+	fmt_write_string(PMsg,"_[#%s]", args(O2Msg)).
+
+predicate_msg(WRAP_FD, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s->_]", args(AMsg)).
+
+predicate_msg(WRAP_IFD, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s*->_]", args(AMsg)).
+
+predicate_msg(WRAP_FDSIG, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s=>_]", args(AMsg)).
+
+predicate_msg(WRAP_MVDSIG, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s=>>_]", args(AMsg)).
+
+predicate_msg(WRAP_IFDSIG, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s*=>_]", args(AMsg)).
+
+predicate_msg(WRAP_IMVDSIG, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s*=>>_]", args(AMsg)).
+
+predicate_msg(WRAP_MVD, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s->>_]", args(AMsg)).
+
+predicate_msg(WRAP_IMVD, [_Obj, Att, _Val], PMsg) :- 
+	!,
+	predicate_msg(Att,AMsg),
+	fmt_write_string(PMsg,"_[%s*->>_]", args(AMsg)).
+
+predicate_msg(PredicateSymbol, ArgList, PMsg) :-
+	predicate_msg(PredicateSymbol, PredMsg),
+	varlist_count(ArgList, N),
+	fmt_write_string(PMsg, "%S/%d", args(PredMsg, N)).
+
+/*****************************************************
+ * varlist_to_str(+List, -String)
+ * produce a string of underscores seperated by comma
+ * the number of underscores is the same as the number
+ * of elements in the input list
+ *****************************************************/
+varlist_to_str([_], '_') :- !.
+varlist_to_str([_H|T], Str) :-
+	varlist_to_str(T, RestStr),
+	fmt_write_string(Str, "_,%s", args(RestStr)).
+
+/*****************************************************
+ * varlist_count(+List, -Number)
+ * count the number of elements in a list
+ *****************************************************/
+varlist_count([], 0) :- !.
+varlist_count([_H|T], M) :-
+	varlist_count(T, N),
+	M is N+1.
+
+
+/****************************************************************************
+ * flora_insert_skeleton(+Term)
+ * if the module of the Term is in debug mode and its skeleton isn't in the
+ * fld storage, insert the skeleton into the fld storage for that module
+ ***************************************************************************/
+flora_insert_skeleton(P) :-
+	flora_decode_predicate(P, PredicateType, MName, _WrapPrefix, 
+		PredicateSymbol, ArgsList),
+	( (MName = flora(ModuleName)) ->
+	    ModuleType=system
+	;
+	    ModuleName=MName,
+	    ModuleType=user
+	),
+	( flora_debug_module_registry(ModuleName) ->
+	    ( (ModuleType=user) ->
+	        str_cat(FLORA_USER_FLD_TRIE_PREFIX, '''', S1)
+	    ;
+	        str_cat(FLORA_SYSTEM_FLD_TRIE_PREFIX, '''', S1)
+	    ),
+	    str_cat(S1, ModuleName,FldStorage),
+	    ( storage_find_fact(FldStorage,P) ->
+	        true
+	    ;
+		( (PredicateType=hilog) ->
+		    Code =.. [WRAP_HILOG,PredicateSymbol|ArgsList]
+		;
+	            Code =.. [PredicateSymbol|ArgsList]
+		),
+   	        flora_build_skeleton(Code,Skeleton),
+
+	        Skeleton =.. [Funct|NewArgs],
+		( (PredicateType=firstorder) ->
+		    ( (ModuleType=user) ->
+	                str_cat(FLORA_FO_USER_MODULE_PREFIX, '''', F1)
+		    ;
+	                str_cat(FLORA_FO_SYSTEM_MODULE_PREFIX, '''', F1)
+		    )
+		;
+		    ( (ModuleType=user) ->
+	                str_cat(FLORA_USER_MODULE_PREFIX, '''', F1)
+		    ;
+	                str_cat(FLORA_SYSTEM_MODULE_PREFIX, '''', F1)
+		    )
+		),
+	        str_cat(F1, ModuleName,F2),
+	        str_cat(F2, '''', F3),
+	        str_cat(F3, Funct, NewFunct),
+	        Sk =.. [NewFunct|NewArgs],
+
+		storage_insert_fact(FldStorage,Sk,_Ins)
+            )
+	;
+	    true
+	).
+
