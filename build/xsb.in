@@ -90,8 +90,12 @@ do
     fi
 done
 
+if test "@CROSS_SIMULATOR@none" != "none" ; then
+    mkdir -p $HOME/.xsb/config/${config}${suffix} 2>/dev/null
+fi
+
 if test -x "$executable" ; then
-   eval "exec $executable $xsb_cmd"
+   eval "exec @CROSS_SIMULATOR@ $executable $xsb_cmd"
 else
    echo "${executable}: "
    echo "       file doesn't exist or is not executable"

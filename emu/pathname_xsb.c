@@ -247,6 +247,33 @@ DllExport char * call_conv strip_names_from_path(char* path, int how_many)
   char *cutoff_ptr;
   char *buffer = (char *) malloc(MAXPATHLEN);
 
+#ifdef SIMPLESCALAR
+  if (!buffer)
+    printf("no space to allocate buffer in strip_names_from_path.\n");
+  printf("starting strip_names_from_path.\n");
+  
+/*   rectify_pathname(path,buffer); */
+  strcpy(buffer,path);
+
+  printf("after rectify_pathname, buffer = %s, path = %s\n",buffer,path);
+
+  cutoff_ptr = buffer + strlen(buffer);
+
+  while (cutoff_ptr != buffer && how_many > 0) {
+    if (*cutoff_ptr == SLASH) {
+      how_many--;
+      *cutoff_ptr = '\0';
+    }
+    cutoff_ptr--;
+  }
+
+  if (how_many > 0)
+      xsb_abort("[PATHNAME] There is no directory %d levels below %s",
+		how_many, path);
+  return buffer;
+
+#endif
+
   rectify_pathname(path,buffer);
 
   for (i=0; i < how_many; i++) {

@@ -228,10 +228,14 @@ DllExport char* call_conv ptoc_string(int regnum)
   case XSB_FREE:
   case XSB_REF1:
   case XSB_ATTV:
-  case XSB_STRUCT:  
   case XSB_LIST:
   case XSB_FLOAT:
     xsb_abort("[PTOC_STRING] String (atom) argument expected");
+  case XSB_STRUCT:  /* tentative approach to fix boxed ints --lfcastro */
+    if (isboxedinteger(addr)) 
+      return (char *)boxedint_val(addr);
+    else
+      xsb_abort("[PTOC_STRING] String (atom) argument expected");
   case XSB_INT: return (char *)int_val(addr);
   case XSB_STRING: return string_val(addr); 
   default:

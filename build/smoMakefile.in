@@ -44,7 +44,7 @@ GCC=@CC@
 CFLAGS=@CFLAGS@ -I@arch_config_prefix@
 GMM=g++
 XSB=../../bin/xsb
-Prolog = $(XSB) 
+Prolog = "@CROSS_SIMULATOR@ $(XSB) "
 
 .IGNORE:
 

@@ -348,7 +348,7 @@ static void sort_buffer(unsigned long *indata, unsigned long insize)
 #ifdef GC_PROFILE
   if (verbose_gc) {
     end_sorting = cpu_time();
-    fprintf(stddbg,"{GC} Sorting took %f ms.\n", 
+    fprintf(stddbg,"{GC} Sorting took %f ms.\n", (double)
 	    (end_sorting - begin_sorting)*1000/CLOCKS_PER_SEC);
   }
 #endif

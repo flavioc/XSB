@@ -226,7 +226,7 @@ static CPtr heap_bot,heap_top,
   if (ls_top < heap_top) xsb_exit("Heap and local stack are clobbered"); \
   heap_bot = (CPtr)glstack.low ; \
   ls_bot = (CPtr)glstack.high - 1 ; \
-  tr_top = (CPtr)(top_of_trail) - 1 ; \
+  tr_top = (CPtr)(top_of_trail) /*- 1*/ ; \
   tr_bot = (CPtr)tcpstack.low ; \
   cp_bot = (CPtr)tcpstack.high - 1 ; \
   cp_top = top_of_cpstack ; \

@@ -130,6 +130,7 @@ char *xsb_executable_full_path(char *myname)
 
 
 #ifndef WIN_NT
+#ifndef SIMPLESCALAR
   /* Unix */
   /* if we can read symlink, then it is a symlink */
   if ( (link_len = readlink(myname, myname_augmented, MAXPATHLEN)) > 0 ) {
@@ -138,6 +139,7 @@ char *xsb_executable_full_path(char *myname)
       *(myname_augmented+link_len+1) = '\0';
   } else
     strcpy(myname_augmented, myname);
+#endif
 #else
   /* Windows doesn't seem to have readlink() */
   strcpy(myname_augmented, myname);

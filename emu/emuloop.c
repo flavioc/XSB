@@ -1283,6 +1283,10 @@ contcase:     /* the main loop */
       if (op1 == op2)
 	lpcreg = (byte *)op3;
     }
+    else if (isboxedinteger(op1)) {
+       if (oint_val(op1) == oint_val(op2))
+          lpcreg = (byte *)op3;
+    }	  
     else {
       arithmetic_comp_abort(op1, "=\\=", op2);
     }
@@ -1299,6 +1303,10 @@ contcase:     /* the main loop */
       if (op1 != op2)
 	lpcreg = (byte *) op3;
     }
+    else if (isboxedinteger(op1)) {
+       if (oint_val(op1) != oint_val(op2))
+          lpcreg = (byte *)op3;
+    }	  
     else {
       arithmetic_comp_abort(op1, "=:=", op2);
     }
@@ -1819,8 +1827,12 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 	The name of the executable could have been set in cinterf.c:xsb_init
 	if XSB is called from C. In this case, we don't want `executable'
 	to be overwritten, so we check if it is initialized. */
+#ifdef SIMPLESCALAR
+     strcpy(executable,argv[0]);
+#else
      if (executable[0] == '\0')
        xsb_executable_full_path(argv[0]);
+#endif
 
      /* set install_dir, xsb_config_file and user_home */
      set_install_dir();

@@ -267,3 +267,8 @@ the local program counter */
 /* GC on SLG-WAM! ;) */
 #undef SLG_GC
 
+/* SimpleScalar emulator */
+#undef SIMPLESCALAR
+
+/* electric fence needs a different tagging scheme */
+#undef ELECTRIC_FENCE

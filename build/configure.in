@@ -278,6 +278,23 @@ if test "$config_tag" != "NONE" -a -n "$config_tag" ; then
 	config_tag="-$config_tag"
 fi
 
+if test "${with_gcc+set}" = "set" ; then
+	# allow --with-gcc=gcc-name
+	CC=${with_gcc}
+	if test "${with_gcc}" = "yes"; then
+		CC=gcc 
+	fi
+elif test "${with_cc+set}" = "set" ; then
+	# allow --with-cc=compiler on cmd line
+	CC=${with_cc}
+	if test "${with_cc}" = "yes"; then
+	   CC=cc
+	fi
+elif test "${with_acc+set}" = "set" ; then
+	CC=acc 
+fi
+
+
 dnl Some more tags
 
 dnl If the user didn't specify --config-tag, check maybe -aout, -bits-64,
@@ -291,6 +308,13 @@ if test "${config_tag}" = "NONE" ; then
     dnl add -aout to the config tag, if --linuxaout is set on command line
     if test -n "$ac_linuxaout" ; then
        config_tag="${config_tag}-aout"
+    fi
+    dnl add -ss to config tag if compiling for simplescalar
+    if test "${CC}" = "sslittle-na-sstrix-gcc"; then
+       config_tag="${config_tag}-ss"
+    fi
+    if test "${CC}" = "arm-linux-gcc"; then
+       config_tag="${config_tag}-arm"
     fi
     dnl If debugging, add -dbg
     if test "${enable_debug}" ; then
@@ -561,23 +585,6 @@ AC_MSG_CHECKING($install_prolog_includes) && \
 ) 2> /dev/null
 echo "Checking installation directories ... Done"
 
-if test "${with_gcc+set}" = "set" ; then
-	# allow --with-gcc=gcc-name
-	CC=${with_gcc}
-	if test "${with_gcc}" = "yes"; then
-		CC=gcc 
-	fi
-elif test "${with_cc+set}" = "set" ; then
-	# allow --with-cc=compiler on cmd line
-	CC=${with_cc}
-	if test "${with_cc}" = "yes"; then
-	   CC=cc
-	fi
-elif test "${with_acc+set}" = "set" ; then
-	CC=acc 
-fi
-
-
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
@@ -600,6 +607,13 @@ dnl set some basic flags
 # if --with-gcc, take it as a sign of trouble 
 # with gcc and lower optimization levels
 if test -n "$with_gcc" ; then
+   if test "${CC}" = "sslittle-na-sstrix-gcc" ; then
+        emuloop_opt_level=-${optimization_level-"O1"}
+        trutils_opt_level=-${optimization_level-"O1"}
+        builtins_opt_level=-${optimization_level-"O1"}
+	CFLAGS=""
+	c_inline_level=""
+   else   
 	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
@@ -609,6 +623,7 @@ if test -n "$with_gcc" ; then
 	   c_inline_level="-finline-functions -Winline"
 	fi
 	CFLAGS="-Wall -ansi -pedantic"
+   fi
 else
  case $CC in
    gcc) emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
@@ -1053,6 +1068,17 @@ if test "${enable_profiling}" = "yes" ; then
   LDFLAGS="-pg ${LDFLAGS}"
 fi
 
+AC_ARG_ENABLE(electric-fence,
+[  --enable-electric-fence    link with the electric fence malloc debugger])
+if test "${with_electric_fence}" = "yes" ; then
+   enable_electric_fence=yes
+fi
+if test "${enable_electric_fence}" = "yes" ; then
+   echo "enabling electric fence..."
+   LDFLAGS="${LDFLAGS} -lefence"
+   AC_DEFINE(ELECTRIC_FENCE)
+fi
+
 dnl Check for Incr Tcl (used in the XMC gui)
 AC_ARG_WITH(itkwish, 
 [  --with-itkwish=DIR	       Path to where the itkwish shell is located]
@@ -1127,19 +1153,18 @@ case "$canonical" in
 		       else
 			 dnl Linux ELF
 			 AC_DEFINE(LINUX_ELF)
-			 AC_DEFINE(FOREIGN_ELF)
 #			  if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set";
 #			  then	
 #			   CFLAGS="-m486 ${CFLAGS}"
 #			   AC_DEFINE(USE_BP_LPCREG)
 #			 fi
-			 LDFLAGS="${LDFLAGS} -ldl"
-			 if test "$__export_dynamic" = "yes" ; then
-			    LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-			 fi
-			 if test "${have_dl}" = "no" ; then
-			    AC_MSG_ERROR(Your system is missing library: \`dl')
-			 fi
+  			 if test "${have_dl}" != "no" ; then
+ 			    AC_DEFINE(FOREIGN_ELF)
+ 			    LDFLAGS="${LDFLAGS} -ldl"
+    			    if test "$__export_dynamic" = "yes" ; then
+ 			       LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+ 			    fi
+  			 fi
 		       fi
 		   ;;
 	      esac
@@ -1249,6 +1274,21 @@ if test "${do_debugging}" = "yes" ; then
 #    fi
 fi
 
+LD=ld
+dnl special flags for simplescalar
+if test "${CC}" = "sslittle-na-sstrix-gcc" 
+then
+	AC_DEFINE(SIMPLESCALAR)	
+	CROSS_SIMULATOR="sim-fast"
+	c_opt_level=-${optimization_level-"O1"}
+	LD=sslittle-na-sstrix-ld
+fi
+
+if test "${CC}" = "arm-linux-gcc"
+then
+	LD=arm-linux-ld
+fi
+
 #dnl Prepend Oracle tricky library list
 #if test "${with_oracle}" = yes ; then
 #   LDFLAGS="-lclntsh -lsql -lsqlnet -lncr \
@@ -1300,13 +1340,15 @@ else
    compile_mode=optimal
 fi
 
-
 ### Specify what will be substituted into Makefile, xsb_config.h, etc.
 AC_SUBST(xsb_version)
 AC_SUBST(canonical)
 AC_SUBST(full_config_name)
 AC_SUBST(topdir)
 AC_SUBST(prefix)
+
+AC_SUBST(CROSS_SIMULATOR)
+AC_SUBST(LD)
 
 AC_SUBST(arch_config_prefix)
 AC_SUBST(arch_install_config_prefix)
