@@ -10,35 +10,43 @@
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import rename/2 from shell.
-:- import compile_so/3 from foreign.
+:- import compile_so/3, runtime_loader_flag/3 from foreign.
 :- import path_sysop/3, path_sysop/2 from file_io.
 
 make_mysql_driverH(CC, CC_opts) :-
    	slash(Slash),
-    xsb_configuration(compiler, XCC),
-    xsb_configuration(configuration, XSBconfiguration),
+	xsb_configuration(compiler, XCC),
+	xsb_configuration(configuration, XSBconfiguration),
 	xsb_configuration(config_libdir, ConfigLibdir),
-    fmt_write_string(LD_flags,
-		     ' -Wl,-rpath %s -Wl,-rpath /usr/lib/mysql -L/usr/lib/mysql -lmysqlclient -ldl %s%sdriver_manager.so %s%smysql_driver.so', f(ConfigLibdir, ConfigLibdir, Slash, ConfigLibdir, Slash)),
-    package_configuration(dir(mysql_driver), MySQLDriverDir),
-    fmt_write_string(LD_directives_file,
-		     '%s%scc%smysql_driver.H', f(MySQLDriverDir, Slash, Slash)),
-    telling(OldTell),
-    tell(LD_directives_file),
-    writeln('%% This file is generated on-the-fly by mysql_driver_config.P'),
-    writeln('%% Do not edit--any changes will be written over.'),
-    write('%% XSB config:    '), writeln(XSBconfiguration),
-    write('%% XSB CC:        '), writeln(XCC),
-    write('%% CC:       '), writeln(CC),
-    write('%% CC Opts: '), writeln(CC_opts), 
-    writeln(':- export driverMySQL_register/0.'),
-    writeln(':- export driverMySQL_initialise/0.'),
-    write(':- ldoption('''),
+	MysqlLibdir = '/usr/lib/mysql',
+	(MysqlLibdir == ''
+	-> MysqlLibdir_flag = ''
+	;  str_cat('-L', MysqlLibdir, MysqlLibdir_flag)
+	),
+	%% Creates something like -Wl,-rpath,<libdir>
+	runtime_loader_flag(XCC, ConfigLibdir, ConfigLibdirRunpathFlag),
+	runtime_loader_flag(XCC, MysqlLibdir, MysqlRunpathFlag),
+	fmt_write_string(LD_flags,
+			 ' %s %s %s -lmysqlclient -ldl %s%sdriver_manager.so %s%smysql_driver.so', f(ConfigLibdirRunpathFlag, MysqlRunpathFlag, MysqlLibdir_flag, ConfigLibdir, Slash, ConfigLibdir, Slash)),
+	package_configuration(dir(mysql_driver), MySQLDriverDir),
+	fmt_write_string(LD_directives_file,
+			 '%s%scc%smysql_driver.H', f(MySQLDriverDir, Slash, Slash)),
+	telling(OldTell),
+	tell(LD_directives_file),
+	writeln('%% This file is generated on-the-fly by mysql_driver_config.P'),
+	writeln('%% Do not edit--any changes will be written over.'),
+	write('%% XSB config:    '), writeln(XSBconfiguration),
+	write('%% XSB CC:        '), writeln(XCC),
+	write('%% CC:       '), writeln(CC),
+	write('%% CC Opts: '), writeln(CC_opts), 
+	writeln(':- export driverMySQL_register/0.'),
+	writeln(':- export driverMySQL_initialise/0.'),
+	write(':- ldoption('''),
 	write(LD_flags),
-    writeln(''').'),
-    told,
-    tell(OldTell).
-    
+	writeln(''').'),
+	told,
+	tell(OldTell).
+
 
 :-  package_configuration(dir(mysql_driver), MySQLDriverDir),
     slash(Slash),
@@ -46,7 +54,7 @@ make_mysql_driverH(CC, CC_opts) :-
     fmt_write_string(Module,
 		     '%s%scc%s%s', f(MySQLDriverDir, Slash, Slash, Basename)),
 	writeln(Module),
-    (  %% avoid recompilation: check if mysql_driver.O exists and 
+    (  %% avoid recompilation: check if mysql_driver.xwam exists and 
        %% is newer than mysql_driver.c.
        search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
        str_cat(Module, '.c', ModuleSourceFile),
@@ -55,17 +63,20 @@ make_mysql_driverH(CC, CC_opts) :-
        file_time(ModuleO, time(CT1,CT2)),
        file_time(ModuleSourceFile, time(ST1,ST2)),
        time(ST1,ST2) @< time(CT1,CT2)
-	       %% module compiled and is current, so just load
-	       -> write('loading..'), [Basename]
+    %% module compiled and is current, so just load
+    -> write('loading..'), [Basename]
+    ; %% windows - don't compile; supposed to be compiled already
+	xsb_configuration(architecture,A), str_sub(windows,A) ->
+	make_mysql_driverH(CC, ''),
+	[Basename]
 
-    %% Module isnt compiled or is old, so recompile
-    ; 
+    ; %% Module isnt compiled or is old, so recompile
 	xsb_configuration(compiler, CC),
 	xsb_configuration(compiler_flags, CCflags),
 	xsb_configuration(config_dir, ConfigDir),
 	xsb_configuration(config_libdir, ConfigLibDir),
 	xsb_configuration(packagesdir, PackagesDir),
-	DBdriver = dbdrivers,
+	DBdriver = 'dbdrivers/cc',
 	fmt_write_string(DBDriversDir, '%s%s%s', a(PackagesDir, Slash, DBdriver)),
 	fmt_write_string(CC_opts,
 			 ' %s -I /usr/include/mysql -I %s -I %s', f(CCflags, ConfigDir, DBDriversDir)),

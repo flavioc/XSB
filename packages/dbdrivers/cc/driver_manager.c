@@ -11,6 +11,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#ifdef WIN_NT
+#define XSB_DLL
+#endif
+
 #include "cinterf.h"
 #include "driver_manager_defs.h"
 
@@ -21,7 +26,7 @@ int numDrivers, numCHandles, numQHandles;
 char* errorMesg;
 char* errorNumber;
 
-int initialise(void)
+DllExport int call_conv initialise(void)
 {
 	numDrivers = numCHandles = numQHandles = 0;
 	errorMesg = NULL;
@@ -30,7 +35,7 @@ int initialise(void)
 }
 
 
-int openConnection(void)
+DllExport int call_conv openConnection(void)
 {
 	int (*connectDriver)(struct xsb_connectionHandle*);
 	char* (*errorMesgDriver)();
@@ -106,7 +111,7 @@ int openConnection(void)
 }  
 
 
-int closeConnection(void)
+DllExport int call_conv closeConnection(void)
 {
 	int (*disconnectDriver)(struct xsb_connectionHandle *);
 	int (*closeStmtDriver)(struct xsb_queryHandle *);
@@ -173,7 +178,7 @@ int closeConnection(void)
 }
 
 
-int queryConnection(void)
+DllExport int call_conv queryConnection(void)
 {
 	struct xsb_data** (*queryDriver)(struct xsb_queryHandle*);
 	char* (*errorMesgDriver)();
@@ -267,7 +272,7 @@ int queryConnection(void)
 	return FALSE;
 }
 
-int prepareStatement(void)
+DllExport int call_conv prepareStatement(void)
 {
 	int (*prepareStmtDriver)(struct xsb_queryHandle*);
 	char* (*errorMesgDriver)();
@@ -322,7 +327,7 @@ int prepareStatement(void)
 	return TRUE;
 }
 
-int executePreparedStatement(void)
+DllExport int call_conv executePreparedStatement(void)
 {
 	struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
 	char* (*errorMesgDriver)();
@@ -423,7 +428,7 @@ int executePreparedStatement(void)
 	return TRUE;
 }
 
-int closeStatement(void)
+DllExport int call_conv closeStatement(void)
 {
 	int (*closeStmtDriver)(struct xsb_queryHandle*);
 	char* (*errorMesgDriver)();
@@ -459,7 +464,7 @@ int closeStatement(void)
 }
 
 
-int exception(void)
+DllExport int call_conv exception(void)
 {
 	prolog_term number;
 	prolog_term message;
@@ -537,7 +542,7 @@ struct xsb_queryHandle* isQueryHandle(char* handle)
 }
 
 
-int registerXSBDriver(char* drivername, int num)
+DllExport int call_conv registerXSBDriver(char* drivername, int num)
 {
 	struct driver* dr;
 	int i;
@@ -563,7 +568,7 @@ int registerXSBDriver(char* drivername, int num)
 }
 
 
-int registerXSBFunction(char* drivername, int type, union functionPtrs* func)
+DllExport int call_conv registerXSBFunction(char* drivername, int type, union functionPtrs* func)
 {
 	int i, j;
 

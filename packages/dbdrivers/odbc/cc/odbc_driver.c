@@ -5,6 +5,14 @@
 ** This is the ODBC driver for connecting to a database.
 */
 
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+
+#ifdef WIN_NT
+#define XSB_DLL
+#endif
+
 #include "odbc_driver_defs.h"
 
 struct driverODBC_connectionInfo* odbcHandles[MAX_HANDLES];
@@ -13,8 +21,7 @@ int numHandles, numQueries;
 SQLCHAR* errorMesg;
 SQLHENV henv;
 
-
-int driverODBC_initialise()
+DllExport int call_conv driverODBC_initialise()
 {
 	SQLRETURN val;
 
@@ -520,7 +527,7 @@ void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle)
 }
 
 
-int driverODBC_register(void)
+DllExport int call_conv driverODBC_register(void)
 {
 	union functionPtrs* funcConnect;
 	union functionPtrs* funcDisconnect;

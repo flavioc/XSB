@@ -19,10 +19,12 @@ nmake /f "MSVC_mkfile.mak" %1 %2 %3 %4 %5 %6 %7
 del MSVC_mkfile.mak
 
 @cd ..\gpp
-
 nmake /f "MSVC_mkfile.mak"
 
-@cd ..\build
+@cd ..\packages\dbdrivers
+nmake /f NMakefile.mak
+
+@cd ..\..\build
 
 
 REM Local Variables:

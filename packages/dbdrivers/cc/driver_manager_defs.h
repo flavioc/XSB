@@ -96,8 +96,8 @@ union functionPtrs
 	char* (*errorMesgDriver)();
 };
 
-int registerXSBDriver(char* driver, int num);
-int registerXSBFunction(char* dr, int type, union functionPtrs* func);
+DllExport int call_conv registerXSBDriver(char* driver, int num);
+DllExport int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 struct xsb_connectionHandle* isConnectionHandle(char* handle);
 struct xsb_queryHandle* isQueryHandle(char* handle);
 char* buildSQLQuery(prolog_term sqlQueryList);

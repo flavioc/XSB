@@ -102,8 +102,6 @@ if test "$support" = "yes"; then
 
 EOT
 fi
-
 ) | tee Installation_summary
 
-AC_OUTPUT([ libwww_init.P:libwww_init.in
-	    ])
+AC_OUTPUT([libwww_init.P:libwww_init.in])

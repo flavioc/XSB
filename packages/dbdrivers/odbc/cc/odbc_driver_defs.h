@@ -51,7 +51,7 @@ struct driverODBC_connectionInfo
 
 /********* function declarations *********/
 
-int driverODBC_initialise();
+DllExport int call_conv driverODBC_initialise();
 int driverODBC_connect(struct xsb_connectionHandle* handle);
 int driverODBC_disconnect(struct xsb_connectionHandle* handle);
 struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle);
@@ -62,10 +62,10 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle);
 void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle);
 char* driverODBC_errorMesg();
 int driverODBC_getXSBType(SQLSMALLINT dataType);
-int driverODBC_register();
+DllExport int call_conv driverODBC_register();
 
 
-extern int registerXSBDriver(char* dr, int num);
-extern int registerXSBFunction(char* dr, int type, union functionPtrs* func);
+extern DllExport int call_conv registerXSBDriver(char* dr, int num);
+extern DllExport int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 
 

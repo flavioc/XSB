@@ -767,6 +767,14 @@ cd $topdir/packages/libwww
 ./configure --with-config="$canonical" --with-libwww="$with_libwww" > /dev/null
 cd $build_dir
 
+cd $topdir/packages/dbdrivers
+./run_configure_scripts --with-odbc-libdir="$with_odbc_libdir" \
+			--with-odbc-incdir="$with_odbc_incdir" \
+			--with-mysql-libdir="$with_mysql_libdir" \
+			--with-mysql-incdir="$with_mysql_incdir" \
+              > /dev/null
+cd $build_dir
+
 
 dnl check for Make feature
 AC_PROG_MAKE_SET
@@ -1692,6 +1700,7 @@ EOT
 fi
 
 cat $topdir/packages/libwww/Installation_summary
+cat $topdir/packages/dbdrivers/Installation_summary
 
 if test -n "$javac"; then
    cat <<EOT

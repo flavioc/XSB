@@ -149,9 +149,9 @@ CONFIG_INCLUDE_FLAG=$(CONFIG_INCLUDE_FLAG) $(JAVA_HEADER_PATH)
 !ENDIF
 
 !IF "$(DLL)" == "yes"
-ALL : "$(DLLDIR)\xsb.dll" "$(OUTDIR)\xsb.exe"
+ALL:: "$(DLLDIR)\xsb.dll" "$(OUTDIR)\xsb.exe"
 !ELSE
-ALL : "$(OUTDIR)\xsb.exe"
+ALL:: "$(OUTDIR)\xsb.exe"
 !ENDIF
 
 SOCKET_LIBRARY=wsock32.lib

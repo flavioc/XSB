@@ -23,13 +23,77 @@ same or different connections). The interface also supports dynamic loading of
 drivers. As a result, it is possible to query databases using different drivers
 concurrently.
 
-We use the {\tt student} database as our example to illustrate 
-the usage of XSB-DB interface in this manual. The schema of the
-student database contains three columns viz. the student name, 
-the student id, and the name of the advisor of the student.
+\section{Configuring the Interface}
+
+Generally, each driver has to be configured separately, but if the database
+packages such as ODBC, MySql, etc., are installed in standard places then
+the XSB configuration mechanism will do the job automatically.
+
+Under Windows, typing
+%%
+\begin{verbatim}
+    makexsb_wind  
+\end{verbatim}
+%%
+in the XSB's {\tt build} directory will normally configure the ODBC driver
+without problems. For the MySQL driver one has to edit the file
+%%
+\begin{verbatim}
+    packages\dbdrivers\mysql\cc\NMakefile.mak  
+\end{verbatim}
+%%
+to indicate where MySQL is installed.
+
+Under Unix, the {\tt configure} script should also build the drivers automatically.
+If, however, ODBC and MySQL are not installed in their standard places, you
+will have to provide the following parameters to the configure script:
+%%
+\begin{itemize}
+\item  {\tt --with-odbc-libdir=LibDIR} -- {\tt LibDIR} is the directory
+  where the library libodbc.so lives on your system. 
+\item  {\tt --with-odbc-incdir=IncludeDIR} -- {\tt IncludeDIR} is the
+  directory where the ODBC header files, such as {\tt sql.h} live.
+\item {\tt --with-mysql-libdir=MySQLlibdir} -- {\tt MySQLlibdir} is the
+  directory where MySQL's shared libraries live on your system.
+\item {\tt --with-mysql-incdir=MySQLincludeDir} -- {\tt MySQLincludeDir} is
+  the directory where MySQL's header files live.  
+\end{itemize}
+%%
+
+If at the time of configuring XSB some database packages ({\it e.g.},
+MySQL) are not installed on your system, you can install them later and
+configure the XSB interface to them then. For instance, to configure the
+ODBC interface separately, you can type
+%%
+\begin{verbatim}
+    cd packages/dbdrivers/odbc
+    configure
+\end{verbatim}
+%%
+Again, if ODBC is installed in a non-standard location, you might need to
+supply the options {\tt --with-odbc-libdir} and {\tt --with-odbc-incdir}
+to the configure script.
+
+Under Windows, separate configuration of the XSB-DB interfaces is also
+possible, but you need Visual Studio installed. For instance, to do so for
+the MySQL interface, type
+%%
+\begin{verbatim}
+    cd packages\dbdrivers\mysql\cc  
+    nmake /f NMakefile.mak
+\end{verbatim}
+%%
+As before, you might need to edit the NMakefile.mak script to tell the
+compiler where the required MySQL's libraries are.
+
 
 \section{Using the Interface}
 %========================================
+
+We use the {\tt student} database as our example to illustrate 
+the usage of the XSB-DB interface in this manual. The schema of the
+student database contains three columns viz. the student name, 
+the student id, and the name of the advisor of the student.
 
 The XSB-DB package has to be first loaded before using any of the
 predicates. This is done by the call:
@@ -44,13 +108,13 @@ be loaded. Currently, the interface has support for a native MySQL driver
 the ODBC driver call:
 
 \begin{verbatim}
-| ?- load_driver('odbc').
+| ?- load_driver(odbc).
 \end{verbatim}
 
 Similarly, to load the mysql driver call:
 
 \begin{verbatim}
-| ?- load_driver('mysql').
+| ?- load_driver(mysql).
 \end{verbatim}
 
 \subsection{Connecting to and Disconnecting from Databases}
@@ -77,15 +141,16 @@ with the odbc driver, the call is as follows:
 | ?- db_connect(ha, odbc, mydb, xsb, xsb).
 \end{verbatim}
 
-where {\tt ha} is the handle name the user chose for the connection.
+\noindent
+where {\tt ha} is the handle name that the user chose for the connection.
+The following version of {\tt db\_connect} is used for drivers other than
+ODBC.
 
 \begin{verbatim}
 | ?- db_connect(Handle, Driver, Server, Database, User, Password).
 \end{verbatim}
 
-The above version of {\tt db\_connect} is for all non-ODBC connections.
-This predicate is used for a direct connection to a database i.e.
-without the use of any dsn. The {\tt Handle}, {\tt Driver}, {\tt User},
+The {\tt Handle}, {\tt Driver}, {\tt User},
 and {\tt Password} are the same as before. The {\tt Server} and 
 {\tt Database} arguments specify the server and database to connect to.
 For example, for a connection to a database called test in the server
@@ -96,6 +161,7 @@ driver, the call is:
 | ?- db_connect(ha, mysql, wolfe, test, xsb, xsb).
 \end{verbatim}
 
+\noindent
 where {\tt ha} is the handle name the user chose for the connection.
 
 If the connection is successfully made, the predicate invocation will
@@ -109,6 +175,7 @@ To close a database connection use:
 | ?- db_disconnect(Handle).
 \end{verbatim}
 
+\noindent
 where handle is the handle name for the connection. For example, 
 to close the connection to above mysql database call:
 
@@ -150,10 +217,12 @@ For example, a query on the student database to select all the students
 for a given advisor is accomplished by the call:
 
 \begin{verbatim}
-| ?- X = adv, db_sql(ha, qa, ['select T.name from student T where 
-T.advisor = ', X], [P]), fail.
+| ?- X = adv,
+     db_sql(ha, qa, ['select T.name from student T where T.advisor = ', X], [P]),
+     fail.
 \end{verbatim}
 
+\noindent
 where {\tt ha} and {\tt qa} are respectively the connection handle and query
 handle name the user chose.
 
@@ -197,30 +266,36 @@ the handle, a call is made to the predicate:
 | ?- db_statement_close(QueryHandle).
 \end{verbatim}
 
+\noindent
 where QueryHandle is the query handle for the statement to be closed.
 
 \section{Error Handling}
 %============================
 
 Each predicate in the XSB-DB interface throws an exception with the functor 
-{\tt xsb\_error(database(Number), Message)} where Number is a string with the 
+%%
+\begin{verbatim}
+   xsb_error(database(Number), Message) 
+\end{verbatim}
+%%
+where Number is a string with the 
 error number and Message is a string with a slightly detailed error message.
 It is upto the user to catch this exception
 and proceed with error handling. This is done by the throw-catch error
 handling mechanism in XSB. For example, in order to catch the error which
 will be thrown when the user attempts to close a database connection for 
-a handle (ha) which does not exist:
+a handle {\tt (ha}) which does not exist:
 
 \begin{verbatim}
-| ?- catch(db_disconnect(ha), xsb_error(database(Number), Message), 
-handler(Number, Message)).
+| ?- catch(db_disconnect(ha),
+     xsb_error(database(Number), Message), handler(Number, Message)).
 \end{verbatim}
 
 It is the user's responsibility to define the handler predicate which can be as simple
 as printing out the error number and message or may involve more 
 complicated  processing.
 
-A list of error numbers and messages which are thrown by the XSB-DB interface
+A list of error numbers and messages that are thrown by the XSB-DB interface
 is given below:
 
 \begin{itemize}

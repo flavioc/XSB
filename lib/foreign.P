@@ -61,7 +61,8 @@ compile_so(Path, COptions, LdOptions) :-
 %% A better way would be to use libtool, if we can figure out how to do it 
 %% dynamically.
 %%
-%% runtime_loader_flag(+Compiler,+LibraryDir,-Flag):-
+%% runtime_loader_flag(+Compiler,+LibraryDir,-Flag)
+runtime_loader_flag(_Compiler,'','') :- !.
 runtime_loader_flag(Compiler,LibraryDir,Flag):-
 	xsb_configuration(configuration, Configuration),
 	(   str_sub(gcc,Compiler) %% egcc, kgcc, and friends
@@ -74,7 +75,7 @@ runtime_loader_flag(Compiler,LibraryDir,Flag):-
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
 	;   str_sub('bsd-', Configuration)
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
-	;   Flag = '-rpath '
+	;  str_cat('-rpath ', LibraryDir, Flag)
 	).
 
 

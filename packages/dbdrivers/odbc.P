@@ -12,7 +12,7 @@
 
 :-	slash(Slash),
 	fmt_write_string(Dir, 'dbdrivers%sodbc', a(Slash)),
-	bootstrap_package(Dir, odbc_driver),
+	bootstrap_package([Dir,cc], odbc_driver),
 	[odbc_driver_config],
 	driverODBC_register, 
 	driverODBC_initialise.

@@ -12,8 +12,8 @@ ac_help=
 ac_default_prefix=/usr/local
 # Any additions from configure.in:
 ac_help="$ac_help
-  --with-libwww=DIR	   the libwww library used for Web access is at DIR
-  --with-config=CONFIG	   the configuration to use while configuring libwww
+  --with-odbc-libdir=DIR	   the directory where the ODBC library lives
+  --with-odbc-incdir=DIR	   the directory of ODBC include files
    "
 
 # Initialize some variables set by options.
@@ -455,7 +455,7 @@ echo > confdefs.h
 
 # A filename unique to this package, relative to the directory that
 # configure is in, which we can look for to find out if srcdir is correct.
-ac_unique_file=libwwwconfig.P
+ac_unique_file=odbc_driver_config.P
 
 # Find the source files, if location was not specified.
 if test -z "$srcdir"; then
@@ -528,16 +528,18 @@ fi
 
 SHELL=/bin/sh
 
-# Check whether --with-libwww or --without-libwww was given.
-if test "${with_libwww+set}" = set; then
-  withval="$with_libwww"
+# Check whether --with-odbc-libdir or --without-odbc-libdir was given.
+if test "${with_odbc_libdir+set}" = set; then
+  withval="$with_odbc_libdir"
   :
 fi
 
 
+
+
 build_dir="`pwd`"
-# strip the last two directories and possibly trailing slashes
-topdir=`echo "${build_dir}" | sed 's,/[^/][^/]*/*/[^/][^/]*/*$,,'`
+# strip the last three directories and possibly trailing slashes
+topdir=`echo "${build_dir}" | sed 's,/[^/][^/]*/*/[^/][^/]*/*/[^/][^/]*/*$,,'`
 
 
 # Tell where the autoconf scripts are
@@ -573,7 +575,7 @@ else { echo "configure: error: can not run $ac_config_sub" 1>&2; exit 1; }
 fi
 
 echo $ac_n "checking host system type""... $ac_c" 1>&6
-echo "configure:577: checking host system type" >&5
+echo "configure:579: checking host system type" >&5
 
 host_alias=$host
 case "$host_alias" in
@@ -602,26 +604,210 @@ fi
 umask 022
 
 
+with_odbc=
+odbc_error=
 
-support="no"
-libdir=
-ccflags=
-ldflags=
-if test -n "$with_libwww" ; then
-   if test -x "$with_libwww/bin/libwww-config"; then
-      libwww_config_prog="$with_libwww/bin/libwww-config"
-      support="yes"
-   elif test -r "$with_libwww/libwww-config" ; then
-      libwww_config_prog="$with_libwww/libwww-config"
-      support="yes"
-   fi
+if test -z "$with_odbc_libdir" ; then
+   libdir=
+else
+   libdir=$with_odbc_libdir
 fi
-if test "$support" = "yes" ; then
-   test "${enable_debug+yes}" = "yes" && libwww_debug=" -g"
-   ccflags="$libwww_debug `sh $libwww_config_prog --cflags`"
-   ldflags=" `sh $libwww_config_prog --libs`"
-   libdir="$with_libwww"/lib
+if test -z "$with_odbc_incdir" ; then
+   incdir=
+else
+   incdir=$with_odbc_incdir
 fi
+
+# check if libodbc.so can be found
+# If the ODBC library is missing, set odbc_error
+# If libodbc.so is not in a standard place, we must use --with-odbc-libdir
+if test -n "$with_odbc_libdir" ; then
+   LDFLAGS="-L${with_odbc_libdir} ${LDFLAGS}"
+fi
+
+echo $ac_n "checking for  in -lodbc""... $ac_c" 1>&6
+echo "configure:630: checking for  in -lodbc" >&5
+ac_lib_var=`echo odbc'_' | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lodbc  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 638 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char ();
+
+int main() {
+()
+; return 0; }
+EOF
+if { (eval echo configure:649: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  odbc_error=yes
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+
+# Here we provide additional directories to check headers in
+# AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
+#
+# If any of the headers is not in a standard place, use --with-odbc-incdir
+if test -n "${with_odbc_incdir}"; then
+   CPPFLAGS="-I${with_odbc_incdir} ${CPPFLAGS}"
+   CFLAGS="-I${with_odbc_incdir} ${CPFLAGS}"
+fi
+
+echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
+echo "configure:680: checking how to run the C preprocessor" >&5
+# On Suns, sometimes $CPP names a directory.
+if test -n "$CPP" && test -d "$CPP"; then
+  CPP=
+fi
+if test -z "$CPP"; then
+if eval "test \"`echo '$''{'ac_cv_prog_CPP'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+    # This must be in double quotes, not single quotes, because CPP may get
+  # substituted into the Makefile and "${CC-cc}" will confuse make.
+  CPP="${CC-cc} -E"
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp.
+  cat > conftest.$ac_ext <<EOF
+#line 695 "configure"
+#include "confdefs.h"
+#include <assert.h>
+Syntax Error
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:701: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CPP="${CC-cc} -E -traditional-cpp"
+  cat > conftest.$ac_ext <<EOF
+#line 712 "configure"
+#include "confdefs.h"
+#include <assert.h>
+Syntax Error
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:718: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CPP="${CC-cc} -nologo -E"
+  cat > conftest.$ac_ext <<EOF
+#line 729 "configure"
+#include "confdefs.h"
+#include <assert.h>
+Syntax Error
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:735: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CPP=/lib/cpp
+fi
+rm -f conftest*
+fi
+rm -f conftest*
+fi
+rm -f conftest*
+  ac_cv_prog_CPP="$CPP"
+fi
+  CPP="$ac_cv_prog_CPP"
+else
+  ac_cv_prog_CPP="$CPP"
+fi
+echo "$ac_t""$CPP" 1>&6
+
+for ac_hdr in sql.h sqlext.h sqltypes.h
+do
+ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+echo "configure:763: checking for $ac_hdr" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 768 "configure"
+#include "confdefs.h"
+#include <$ac_hdr>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:773: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_hdr 1
+EOF
+ with_odbc=yes
+else
+  echo "$ac_t""no" 1>&6
+odbc_error=yes
+fi
+done
+
+
+if test "$odbc_error" = "yes"; then
+echo ""
+echo "configure: warning:  ****Your system is missing sql.h, sqlext.h, or sqltypes.h, which are required for ODBC support
+****ODBC driver will be disabled" 1>&2
+echo ""
+
+support=no
+else
+support=yes
+fi
+
 
 
 
@@ -631,14 +817,11 @@ fi
 
 (
 echo ""
-echo "  Libwww support: 				  $support"
-if test "$support" = "yes"; then
-   cat <<EOT
-    Libwww C flags:				  $ccflags
-    Libwww loader flags:			  $ldflags
-
-EOT
-fi
+echo "  ODBC support:                                   $support"
+echo "  ODBC library directory:                         $libdir"
+echo "  ODBC C Flags:                                   $CFLAGS"
+echo "  ODBC Loader Flags:                              $LDFLAGS"
+echo ""
 ) | tee Installation_summary
 
 trap '' 1 2 15
@@ -753,7 +936,7 @@ done
 
 ac_given_srcdir=$srcdir
 
-trap 'rm -fr `echo "libwww_init.P:libwww_init.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "odbc_init.P:odbc_init.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -790,9 +973,8 @@ s%@host_alias@%$host_alias%g
 s%@host_cpu@%$host_cpu%g
 s%@host_vendor@%$host_vendor%g
 s%@host_os@%$host_os%g
+s%@CPP@%$CPP%g
 s%@support@%$support%g
-s%@ccflags@%$ccflags%g
-s%@ldflags@%$ldflags%g
 
 CEOF
 EOF
@@ -834,7 +1016,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"libwww_init.P:libwww_init.in"}
+CONFIG_FILES=\${CONFIG_FILES-"odbc_init.P:odbc_init.in"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then

@@ -1,0 +1,9 @@
+#! /bin/sh
+
+# run configure scripts for individual drivers
+
+\rm ./Installation_summary
+
+cd odbc; ./configure $*; cat Installation_summary >> ../Installation_summary
+
+#cd mysql; ./configure $*; cat Installation_summary >> ../Installation_summary
