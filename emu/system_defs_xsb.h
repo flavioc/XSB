@@ -29,3 +29,6 @@
 #define PROCESS_STATUS    	 4
 #define PROCESS_CONTROL    	 5
 #define SLEEP_FOR_SECS	      	 6
+
+#define IS_PLAIN_FILE	     	 7
+#define IS_DIRECTORY	     	 8

@@ -241,3 +241,23 @@ copyIOport(FromIOport, ToIOport) :-
 copyIOport(_,_).
 
 
+/************************************************************************
+    	    	Path Operations
+************************************************************************/
+
+%% These fail if the op doesn't succeed
+path_sysop(isplain, Path) :- is_plain_file(Path).
+path_sysop(isdir, Path) :- is_directory(Path).
+path_sysop(rename, OldPath, NewPath) :- rename(OldPath,NewPath).
+path_sysop(rm, Path) :- rm(Path).
+path_sysop(unlink, Path) :- rm(Path).
+path_sysop(link, SrsPath, DestPath) :- sys_link(SrsPath,DestPath,Res), Res=:=0.
+path_sysop(cwd, Path) :- cwd(Path).
+path_sysop(chdir, Path) :- cd(Path).
+path_sysop(mkdir, Path) :- sys_mkdir(Path,Res), Res=:=0.
+path_sysop(rmdir, Path) :- sys_rmdir(Path,Res), Res=:=0.
+path_sysop(readable, Path) :- sys_access(Path, 'r', Res), Res =:= 0.
+path_sysop(writable, Path) :- sys_access(Path, 'w', Res), Res =:= 0.
+path_sysop(executable, Path) :- sys_access(Path, 'x', Res), Res =:= 0.
+
+

@@ -264,7 +264,7 @@ int *asynint_ptr = &asynint_val;
     if (flags[PSC_INT]) {    	     	     	     	     	     	\
       pcreg = lpcreg;							\
       synint_proc(PSC, MYSIG_PSC, pcreg-2*sizeof(Cell));      	     	\
-      flags[PSC_INT] = NULL; /* reset it only after synint_proc() */   	\
+      flags[PSC_INT] = (Cell)0; /* reset it only after synint_proc() */	\
       lpcreg = pcreg;							\
     }	     	     	     	     	     	     	     	     	\
   } else {								\

@@ -1327,6 +1327,42 @@ Get Id of the current process.
 
 \end{description}
 
+In addition, the module {\tt file\_io} provides the following unified
+interface to the operations on files. All these calls succeed iff the
+corresponding system call succeeds.
+%%
+\begin{description}
+  \ournewitem{path\_sysop(isplain, +Path)}{file\_io}
+  \index{\tt path\_sysop/2}
+  Succeeds, if {\tt Path} is a plain file.
+  \ournewitem{path\_sysop(isdir, +Path)}{file\_io}
+  Succeeds, if {\tt Path} is a directory.
+  \ournewitem{path\_sysop(rename, +OldPath, +NewPath)}{file\_io}
+  \index{\tt path\_sysop/3}
+  Renames {\tt OldPath} into {\tt NewPath}.
+  \ournewitem{path\_sysop(rm, +Path)}{file\_io}
+  Removes the plain file {\tt Path}.
+  \ournewitem{path\_sysop(unlink, +Path)}{file\_io}
+  Same as {\tt rm}.
+  \ournewitem{path\_sysop(link, +SrsPath, +DestPath)}{file\_io}
+  Creates a hard link from {\tt SrsPath} to {\tt DestPath}. UNIX only.
+  \ournewitem{path\_sysop(cwd, -Path)}{file\_io}
+  Binds {\tt Path} to the current working directory.
+  \ournewitem{path\_sysop(chdir, +Path)}{file\_io}
+  Changes the current working directory to {\tt Path}.
+  \ournewitem{path\_sysop(mkdir, +Path)}{file\_io}
+  Creates a new directory, {\tt Path}.
+  \ournewitem{path\_sysop(rmdir, +Path)}{file\_io}
+  Deletes the directory {\tt Path}.
+  \ournewitem{path\_sysop(readable, +Path)}{file\_io}
+  Succeeds if {\tt Path} is readable.
+  \ournewitem{path\_sysop(writable, +Path)}{file\_io}
+  Succeeds if {\tt Path} is writable.
+  \ournewitem{path\_sysop(executable, +Path)}{file\_io}
+  Succeeds if {\tt Path} is executable.
+\end{description}
+%%
+
 
 \section{Communication with Subprocesses}
 

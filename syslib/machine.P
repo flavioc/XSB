@@ -234,7 +234,7 @@ conpsc(Con, Psc) :-
 	).
 
 machine_file_exists(File) :- 
-	sys_syscall(SYS_access, Res, File, 0), Res =:= 0.
+	sys_syscall(SYS_access, Res, File, 'r'), Res =:= 0.
 
 /*======================================================================*/
 /* Some other stuff for convenience here;                               */

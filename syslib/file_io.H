@@ -34,12 +34,17 @@
 
 :- import gensym/2 from gensym.
 
+:- import is_plain_file/1, is_directory/1, rename/2, rm/1, cwd/1,
+	cd/1, sys_link/3, sys_mkdir/2, sys_rmdir/2, sys_access/3
+      from shell.
+
 :- import file_write/2 from xsb_writ.
 
 :- export fmt_write_string/3, fmt_write/2, fmt_read/3,
 	  fmt_write/3, fmt_read/4,
 	  print_file_contents/1,
 	  print_file_contents/2,
+	  path_sysop/2, path_sysop/3,
 	  copyIOport/2,
 	  file_flush/2, file_seek/4, file_truncate/3,
 	  file_pos/2, file_size/2, file_time/2,

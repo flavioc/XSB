@@ -67,6 +67,8 @@ process_control(Pid, Signal) :- sys_system(PROCESS_CONTROL,
 
 %% Sleep for the specified number of seconds
 sleep(Seconds) :- sys_system(SLEEP_FOR_SECS, Seconds,_,_,_,_,_).
+is_plain_file(File) :- sys_system(IS_PLAIN_FILE, File,_,_,_,_,_).
+is_directory(File) :- sys_system(IS_DIRECTORY, File,_,_,_,_,_).
 
 
 cd(Path) :- 
@@ -84,7 +86,7 @@ ls :- shell('ls -F', Res), Res =:= 0.
 rm(Name) :- sys_unlink(Name, Res), Res =:= 0.
 
 %% current working directory
-cwd(Name) :- sys_cwd(Name, _).
+cwd(Name) :- sys_cwd(Name, Res), Res =:= 0.
 
 edit(File) :- 
 	expand_filename(File, FileName), 
@@ -105,4 +107,6 @@ sys_stat(Path, Buff, Res)   :-	sys_syscall(SYS_stat, Res, Path, Buff).
 sys_rename(Old, New, Res)   :-	sys_syscall(SYS_rename, Res, Old, New).
 /* current working dir. Res is 0 on success, 1 on failure */
 sys_cwd(Name, Res)   	    :-	sys_syscall(SYS_cwd, Res, Name, _).
+sys_mkdir(Name, Res)   	    :-	sys_syscall(SYS_mkdir, Res, Name, _).
+sys_rmdir(Name, Res)   	    :-	sys_syscall(SYS_rmdir, Res, Name, _).
 
