@@ -1,4 +1,5 @@
 /* This demo shows various cases of non-monotonic inheritance */
+q.q[].
 
     a[b *-> c].
     a[b1 *-> c1].
