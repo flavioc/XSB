@@ -1241,7 +1241,7 @@ int builtin_call(byte number)
     break;
   }
   case GET_DATE: {
-    unsigned year=0, month=0, day=0, hour=0, minute=0;
+    int year=0, month=0, day=0, hour=0, minute=0;
     get_date(&year,&month,&day,&hour,&minute);
     ctop_int(1,year);
     ctop_int(2,month);
