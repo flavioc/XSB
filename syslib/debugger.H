@@ -43,7 +43,7 @@
 	  buff_byte/3, buff_set_byte/3, conname/2, code_call/3,
 	  psc_arity/2, psc_name/2, term_arg/3, term_type/2, term_new/2
      from machine.
-:- import file_get/2, file_put/2
+:- import file_get/2, file_put/2, file_flush/2
      from file_io.
 :- import standard_symbol/3 from std_xsb.
 :- import predicate_property/2, current_predicate/1 from curr_sym.

@@ -315,7 +315,8 @@ deb_writepref(intrace) :- ll_write('  ').
 
 deb_prompt(Type, Spy, C) :- 
 	leashed(Type,Spy)
-	 ->	deb_getonechar(C1),
+	 ->	ll_flush,
+	        deb_getonechar(C1),
 		(leg_r(C1)
 		 ->	C = C1, deb_ug(C)
 		 ;	deb_prompt(Type,Spy,C)
@@ -362,6 +363,7 @@ deb_getonechar(C) :-
 	prompt(Prompt,Prompt,'_$debug_prompt'(_)),
 	ll_write(Prompt),
 %	ll_write(' ? '),
+	ll_flush,
 	file_get(0, C1),
 	(C1=:=10
 	 ->	C=C1
@@ -475,6 +477,7 @@ code_call_h(Code,Call,Nt) :- code_call(Code,Call,Nt).
 
 ll_write(X) :- file_write(2, X).  % 2 means stderr
 ll_nl :- file_put(2, 10).
+ll_flush :- file_flush(2, _).
 
 /* NOTE: psc_spy/2 now is builtin in machine.P */
 psc_spy(PSC, Spy) :- buff_byte(PSC, 0, Val), Spy is Val /\ 192.
