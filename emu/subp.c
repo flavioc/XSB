@@ -263,14 +263,16 @@ static void default_inthandler(int intcode, byte *cur_inst)
 
   switch (intcode) {
   case MYSIG_UNDEF:
-    xsb_exit("Undefined predicate, quit by the default handler.");
+    xsb_exit("Undefined predicate; exiting by the default handler.");
     break;
   case MYSIG_KEYB:
-    xsb_exit("Keyboard interrupt, quit by the default handler.");
+    xsb_exit("Keyboard interrupt; exiting by the default handler.");
+    break;
+  case MYSIG_PSC:
     break;
   default:
     sprintf(message,
-	    "Unknown interrupt (%d) occured, quit by the default handler", 
+	    "Unknown interrupt (%d) occured; exiting by the default handler", 
 	    intcode);
     xsb_exit(message);
     break;
@@ -304,25 +306,42 @@ Pair build_call(Psc psc)
 
 Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
 {
-  if (!flags[intcode+32]) {		/* default hard handler */
+  if (flags[intcode+INT_HANDLERS_FLAGS_START]==(Cell)0) {
+    /* default hard handler */
     default_inthandler(intcode, cur_inst);
     psc = 0;
   } else {				/* call Prolog handler */
     switch (intcode) {
-    case MYSIG_UNDEF:		/* 0 */
-    case MYSIG_KEYB:		/* 1 */
-    case MYSIG_SPY:		/* 3 */
-    case MYSIG_TRACE:		/* 4 */
+    case MYSIG_UNDEF:		/*  0 */
+    case MYSIG_KEYB:		/*  1 */
+    case MYSIG_SPY:		/*  3 */
+    case MYSIG_TRACE:		/*  4 */
     case MYSIG_CLAUSE:		/* 16 */
-      if (psc) bld_cs(reg+1, build_call(psc));
-      psc = (Psc)flags[intcode+32];
+      if (psc)
+	bld_cs(reg+1, build_call(psc));
+      psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
       bld_int(reg+2, intcode);
       pcreg = get_ep(psc);
       break;
-    case MYSIG_ATTV:		/* 8 */
+    case MYSIG_PSC:		/* 14 */
+      /*
+      if (psc)
+	bld_cs(reg+1, build_call(psc));
+      */
+      printf("a called psc=%s \n", get_name(psc));
+      printf("aa createdPSC=%s \n", get_name((Psc)flags[PSC_INT]));
+      psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
+      printf("aaa inthandler=%s \n", get_name(psc));
+      /*
+      bld_int(reg+2, intcode);
+      */
+      pcreg = get_ep(psc);
+      break;
+    case MYSIG_ATTV:		/*  8 */
       /* the old call must be built first */
-      if (psc) bld_cs(reg + 2, build_call(psc));
-      psc = (Psc)flags[intcode+32];
+      if (psc)
+	bld_cs(reg+2, build_call(psc));
+      psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
       /*
        * Pass the interrupt chain to reg 1.  The counter of attv
        * interrupts (stored in *interrupt_reg) will be reset to 0 in

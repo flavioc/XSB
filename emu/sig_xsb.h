@@ -36,6 +36,7 @@
 #define MYSIG_SPY      3		/* spy point */
 #define MYSIG_TRACE    4	       	/* trace point */
 #define MYSIG_ATTV     8		/* attributed var interrupt */
+#define MYSIG_PSC     14                /* new PSC creation interrupt */
 #define MYSIG_CLAUSE  16	       	/* clause interrupt */
 
 #define KEYINT_MARK 0x80		/* keyboard interrupt ^C */

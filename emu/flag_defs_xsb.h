@@ -57,6 +57,7 @@
 #define INSTALL_DIR	23	/* set dynamically in orient_xsb.c         */
 
 #define CLAUSE_INT	24	/* for clause interrupt			YW */
+#define PSC_INT	   	25	/* for PSC interrupt			MK */
 
 #define CONFIG_FILE	26	/* Where xsb_configuration.P lives	   */
 /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
@@ -66,17 +67,22 @@
 /*
  *  Flags 32-48 are reserved for Interrupt Handler PSCs.
  */
-
 #define INT_HANDLERS_FLAGS_START   32  /* the first interrupt flag */
 
-/* --------------------------------------------------------
-As best as I can tell, only the following exist/are used:
+/* ----------------------------------------------------------------------------
+   The following exist/are defined in sig_xsb.h:
 
- MYSIG_UNDEF      32    // _$load_undef
- MYSIG_KEYB       33    // _$keyboard_int
+ MYSIG_UNDEF      0    // _$load_undef
+ MYSIG_KEYB       1    // _$keyboard_int
+ MYSIG_SPY        3    // _$deb_spy
+ MYSIG_TRACE      4    // _$deb_trace
+ MYSIG_ATTV       8    // _$attv_int
+ MYSIG_PSC       14    // _$psc_int
+ MYSIG_CLAUSE    16    // _$clause_int
 
- MYSIG_CLAUSE     48    // _$clause_int
---------------------------------------------------------- */
+These values are added to INT_HANDLERS_FLAGS_START to obtain the actual
+interrupt flag
+---------------------------------------------------------------------------- */
 
 
 /* This flag is used by the loader to tell itself whether it should look into

@@ -39,9 +39,13 @@
 #include "macro_xsb.h"
 #include "loader_xsb.h"
 #include "flags_xsb.h"
+#include "sig_xsb.h"
 #include "inst_xsb.h"
 #include "memory_xsb.h"
+#include "register.h"
 
+
+extern Psc synint_proc(Psc, int, byte *);
 
 /* === String Table manipulation ======================================	*/
 
@@ -208,16 +212,22 @@ static Pair search(int arity, char *name, Pair *search_ptr)
 
 static Pair insert0(char *name, byte arity, Pair *search_ptr, int *is_new)
 {
-    Pair new_pair;
+    Pair pair;
 
-    new_pair = search(arity, name, search_ptr);
-    if (!new_pair) {
+    pair = search(arity, name, search_ptr);
+    if (pair==NULL) {
       *is_new = 1;
-      new_pair = make_psc_pair(make_psc_rec(name,arity), search_ptr);
+      pair = make_psc_pair(make_psc_rec(name,arity), search_ptr);
+      if (arity > 0 && flags[MYSIG_PSC+INT_HANDLERS_FLAGS_START]) {
+	/* save the newly created PSC and set the interrupt flag */
+	/*
+	flags[PSC_INT] = (Cell)pair_psc(pair); 
+	*/
+      }
     }
     else
       *is_new = 0;
-    return new_pair;
+    return pair;
 } /* insert0 */
 
 
