@@ -480,17 +480,20 @@ all_anonymous([vv(VarName,_)|Vars]) :-
 /* parse_table_directive(+PAs, #QrList, #SymTab)			*/
 /*======================================================================*/
 
+parse_table_directive((PA, PAs), QrList, SymTab) :- !,
+	parse_table_directive(PA, QrList, SymTab),
+	parse_table_directive(PAs, QrList, SymTab).
 parse_table_directive(P/A, QrList, SymTab) :-
 	nonvar(P), integer(A),
 	!,
 	sym_insert(P, A, [tabled], SymTab, _),
 	add_table(P/A),
 	parse_query(table(P/A), QrList, SymTab).
-
-parse_table_directive((PA, PAs), QrList, SymTab) :- !,
-	parse_table_directive(PA, QrList, SymTab),
-	parse_table_directive(PAs, QrList, SymTab).
-	
+parse_table_directive(Skel, QrList, SymTab) :-
+	functor(Skel,P,A),
+	sym_insert(P, A, [tabled], SymTab, _),
+	add_table(P/A),
+	parse_query(table(P/A), QrList, SymTab).
 
 /*======================================================================*/
 /* parse_directive(+Directive, #Symbol_Table)				*/
