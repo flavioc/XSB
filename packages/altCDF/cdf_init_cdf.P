@@ -24,6 +24,7 @@
 	newDLRule/3, newDLRule/4, newDLRuleBatch/4,
             retractallDLRule/3,
 	assert_cdf/1, retractall_cdf/1,
+	assert_cdf_term/1, retractall_cdf_term/1,
 	updateExtTerm/3,
 	make_cdf_clean/0, make_cdf_clean/1,
 	make_cdf_dirty/1,
@@ -1557,55 +1558,6 @@ retractallExtTerm(Term) :-
 	caching_cdf(Flg),
 	cdf_update_term(retractall(Term),Flg).
 
-#if USING_XJ
-:- import cache_invalidate_for/1 from prologCache.
-:- import invalidate_tables_for/2 from tables.
-
-:- 	   cdf_message('Using XJ').
-:- 	   assert(cdf_configuration(proprietary_features,on)).
-
-maybe_invalidate_cache(Flg,Term,Mode):- 
-	(Flg =:= 1
-	 ->	cache_invalidate_for(Term),
-		%%writeln(calling_invalidate_tables_for_maybe(Term)),
-		invalidate_tables_for(Term,Mode) 
-				% always used for asserting now
-	 ;	true).
-
-cdf_update_term(asserta(Term),CFlg) :-
-	assert_cdf(Term),
-	(CFlg =:= 1
-	 ->	cache_invalidate_for(Term),
-		%%writeln(calling_invalidate_tables_for(Term)),
-		invalidate_tables_for(Term,assert)
-	 ;	true
-	).
-
-cdf_update_term(retractall(Term),CFlg) :-
-	retractall_cdf(Term),
-	(CFlg =:= 1
-	 ->	cache_invalidate_for(Term),
-		%%writeln(calling_invalidate_tables_for(Term)),
-		invalidate_tables_for(Term,retract)
-	 ;	true
-	).
-
-#else
-:- 	   cdf_message('Not using XJ').
-:- 	   assert(cdf_configuration(proprietary_features,off)).
-
-cdf_update_term(asserta(Term),CFlg) :-
-	assert_cdf(Term),
-	invalidate_tables_for(Term,assert)
-
-cdf_update_term(retractall(Term),CFlg) :-
-	retractall_cdf(Term),
-	invalidate_tables_for(Term,retract)
-
-maybe_invalidate_cache(_Flg,Term,Mode):- 
-	invalidate_tables_for(Term,Mode) 
-
-#endif
 
 %-----------------------------------------------------------
 %%%%%%%%%%  Retract tables as appropriate upon update; adjust dirty bits.
@@ -1754,7 +1706,7 @@ newDLRule(_Head,_Body,_Name).
 retractallDLRule(Head,Body,Name) :- 
 	caching_cdf(Flg),
 	retractallDLRule_1(Head,Body,Name) ,
-	maybe_invalidate_cache(Flg,Head).
+	maybe_invalidate_cache(Flg,Head,retract).
 
 retractallDLRule_1(H,B,Name) :- 
 	dlrule_to_cdf('<='(H,B),CDFList),
@@ -2033,26 +1985,34 @@ newExtTerm(Context,Term,Upd0,Upd):-
 
 #if USING_XJ
 :- import cache_invalidate_for/1 from prologCache.
+:- import invalidate_tables_for/2 from tables.
 
 :- 	   cdf_message('Using XJ').
 :- 	   assert(cdf_configuration(proprietary_features,on)).
 
-maybe_invalidate_cache(Flg,Term):- 
-	    (Flg =:= 1
-   	       ->	cache_invalidate_for(Term)
-	     ;	true).
+maybe_invalidate_cache(Flg,Term,Mode):- 
+	(Flg =:= 1
+	 ->	cache_invalidate_for(Term),
+		%%writeln(calling_invalidate_tables_for_maybe(Term)),
+		invalidate_tables_for(Term,Mode) 
+				% always used for asserting now
+	 ;	true).
 
 cdf_update_term(asserta(Term),CFlg) :-
 	assert_cdf(Term),
 	(CFlg =:= 1
-	 ->	cache_invalidate_for(Term)
+	 ->	cache_invalidate_for(Term),
+		%%writeln(calling_invalidate_tables_for(Term)),
+		invalidate_tables_for(Term,assert)
 	 ;	true
 	).
 
 cdf_update_term(retractall(Term),CFlg) :-
 	retractall_cdf(Term),
 	(CFlg =:= 1
-	 ->	cache_invalidate_for(Term)
+	 ->	cache_invalidate_for(Term),
+		%%writeln(calling_invalidate_tables_for(Term)),
+		invalidate_tables_for(Term,retract)
 	 ;	true
 	).
 
@@ -2061,14 +2021,16 @@ cdf_update_term(retractall(Term),CFlg) :-
 :- 	   assert(cdf_configuration(proprietary_features,off)).
 
 cdf_update_term(asserta(Term),CFlg) :-
-	assert_cdf(Term).
+	assert_cdf(Term),
+	invalidate_tables_for(Term,assert)
 
 cdf_update_term(retractall(Term),CFlg) :-
-	retractall_cdf(Term).
+	retractall_cdf(Term),
+	invalidate_tables_for(Term,retract)
 
-maybe_invalidate_cache(_,_).
+maybe_invalidate_cache(_Flg,Term,Mode):- 
+	invalidate_tables_for(Term,Mode) 
 
 #endif
 
 end_of_file.
-
