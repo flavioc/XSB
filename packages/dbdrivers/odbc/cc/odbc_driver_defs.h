@@ -61,7 +61,8 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle);
 char* driverODBC_errorMesg();
 DllExport int call_conv driverODBC_register();
 
-extern DllExport int call_conv registerXSBDriver(char* dr, int num);
-extern DllExport int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
+
+DllExport extern int call_conv registerXSBDriver(char* dr, int num);
+DllExport extern int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 
 

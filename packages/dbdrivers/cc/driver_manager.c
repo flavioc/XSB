@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xsb_config.h"
+
 #ifdef WIN_NT
 #define XSB_DLL
 #endif
@@ -32,7 +34,7 @@ int numDrivers, numCHandles, numQHandles;
 char* errorMesg;
 char* errorNumber;
 
-extern void write_canonical_term(prolog_term term);
+void write_canonical_term(prolog_term term);
 char* wcan_string;
 int wcan_disp;
 
