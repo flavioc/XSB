@@ -131,6 +131,11 @@ argument---they work off of the previous {\tt try\_match}. If you want to
 change the string or the pattern, call {\tt try\_match} again (with
 different parameters).
 
+\paragraph{Note:} To be able to iterate using {\tt next\_match}, the perl
+pattern must be \emph{global} {\it i.e.}, it must have the modifier `g' at
+the end ({\it e.g.}, {\tt m/a.b*/g}). Otherwise, {\tt next\_match} simply
+fails and only one (first) match will be returned.  
+
 \section{Bulk Matching}
 XSB-perl interface also supports {\em bulk\/} matching through the
 predicate {\tt bulk\_match/3}. Here, you get all

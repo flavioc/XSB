@@ -534,11 +534,11 @@ The order in which these options appear makes no difference.
     should be used (see Chapter~\ref{debugging}).
 
     Note: This option is not available when the system is being used
-    at the non-tracing mode (see Section~\ref{Debug_Mode}).
+    at the non-tracing mode (see Section~\ref{debugging}).
 \item[{\tt -t}] Traces through code at SLG-WAM instruction level.  This
     option is for internal debugging and is not fully supported.
     It is also not available when the system is being used at the non-debug
-    mode (see Section~\ref{Debug_Mode}).
+    mode (see Section~\ref{debugging}).
 
   \item[-e goal] Pass {\tt goal}  to XSB at starup. This goal is evaluated
     right before the first prompt is issued. For instance, 
@@ -1445,7 +1445,7 @@ true/0		&var/1		&nonvar/1	&halt/0	       &'!'/0   \\
 \end{table}
 
 We warn the user to be very cautious when defining predicates whose functor
-starts with \verb|_$| since the names of these predicates may interfere with
+starts with {\tt \_\$}  since the names of these predicates may interfere with
 some of \ourprolog's internal predicates.  The situation may be particularly
 severe for predicates like {\tt '\_\$builtin'/1} that are treated specially
 by the XSB compiler.
