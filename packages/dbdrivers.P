@@ -12,7 +12,7 @@
 :- import initialise/0 from driver_manager.
 
 :- 
-	bootstrap_package([dbdrivers,cc], dbdrivers),
+	bootstrap_package([dbdrivers,cc], dbdrivers1),
 	[db_interface],
 	Basename = driver_manager,
 	%% There is something weird with XSB: when it compiles driver_manager
@@ -23,15 +23,22 @@
 	(xsb_configuration(architecture,A), str_sub(windows,A), !
 	;
 	    slash(Slash),
-	    package_configuration(dir(dbdrivers), DriverManagerDir),
+	    package_configuration(dir(dbdrivers1), DriverManagerDir),
 	    fmt_write_string(SharedLibDriverManager,
-			     '%s%s/cc/%s.so', 
-			     f(DriverManagerDir, Slash, Basename)),
+			     '%s%scc%s%s.so', 
+			     f(DriverManagerDir, Slash, Slash, Basename)),
 	    xsb_configuration(config_libdir, ConfigLibDir),
 	    fmt_write_string(LibDriverManager,
 			     '%s%s%s.so',
 			     f(ConfigLibDir, Slash, Basename)),
-	    rename(SharedLibDriverManager, LibDriverManager)
+	    rename(SharedLibDriverManager, LibDriverManager),
+		fmt_write_string(DriverManagerObjX, 
+				 '%s%scc%s%s.xwam',
+				  f(DriverManagerDir, Slash, Slash, Basename)),
+	    fmt_write_string(LibDriverManagerObjX,
+			     '%s%s%s.xwam',
+			     f(ConfigLibDir, Slash, Basename)),
+	    rename(DriverManagerObjX, LibDriverManagerObjX)
 	),
 	initialise.
 
