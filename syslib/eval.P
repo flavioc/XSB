@@ -29,7 +29,8 @@
 %-------------------------------------------------------------------------
 % NOTE:	Predicate eval/2 is the one who is responsible for error checking
 %	of arithmetic comparisons and evaluations. According to the Prolog
-%	standard, arithmetic comparisons and evaluations can cause
+%	standard, arithmetic comparisons and evaluations can cause overflow
+%       and
 %	instantiation errors ONLY. Everything else should simply fail as
 %	far as evaluation is concerned.
 %-------------------------------------------------------------------------
@@ -46,7 +47,7 @@ eval(Expr, Res) :-
 eval(Arg, Res,Expr) :- 
 	term_type(Arg, T), 
 	((T =:= XSB_FREE; T =:= XSB_ATTV) ->
-	    abort(['Type Error: Unbound variable in arithmetic expression',Expr])
+	    eval_instantiation_abort(Expr)
 	; T =:= XSB_INT -> Res=Arg
 	; T =:= XSB_FLOAT -> Res=Arg
 	; (T =:= XSB_STRING; T =:= XSB_LIST) ->
@@ -139,5 +140,14 @@ eval_rt_args(I, A, Term, Res) :- I < A,
 	arg(I1, Res, Y),
 	eval(X, Y),
 	eval_rt_args(I1, A, Term, Res).
+
+/* TLS this is to get us around a second error message when expr is
+   uninstantiated */
+eval_instantiation_abort(Expr):- 
+	var(Expr),!,
+	abort(['Type Error: Uninstantiated Arithmetic Expression']).
+eval_instantiation_abort(Expr):- 
+	abort(['Type Error: Unbound variable in arithmetic expression',Expr]).
+
 
 /* ---------------------- end of file eval.P --------------------------	*/
