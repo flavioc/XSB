@@ -61,3 +61,6 @@
 
 :- import findall/3 from setof.
 :- import current_input_port/1 from curr_sym.
+
+:- import included_ciao_directive/1 from ciao_directives.
+
