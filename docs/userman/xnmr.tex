@@ -23,19 +23,19 @@ The XNMR top-loop is the interface between XNMR and the user. It adds
 extra functionalities to the standard top-loop of XSB to provide means
 to compute different semantics  for Prolog programs.
 
-There are two distinct modes for the XNMR top-loop. The 'nmr' mode
-allows for the computation of (partial) stable model semantics and
-answerset semantics of normal logic programs. The 'answerset' mode is
-designed to compute the answerset semantics of logic programs with
-explicit negation.
+There are two distinct modes for the XNMR top-loop. The \texttt{nmr}
+mode allows for the computation of (partial) stable model semantics
+and answerset semantics of normal logic programs. The
+\texttt{answerset} mode is designed to compute the answerset semantics
+of logic programs with explicit negation.
 
-\subsection{The 'nmr' mode}
+\subsection{The \texttt{nmr} mode}
 
-The 'nmr' mode is the default mode of XNMR. It provides support for
-computing the stable model and answerset semantics of normal logic
-programs. This mode can be identified by the 'nmr| ?-' prompt. If you
-change the mode to a different one, you can come back to 'nmr' mode
-using the predicate 'set_nmr_mode/0'.
+The \texttt{nmr} mode is the default mode of XNMR. It provides support
+for computing the stable model and answerset semantics of normal logic
+programs. This mode can be identified by the \verb#nmr| ?-# prompt. If
+you change the mode to a different one, you can come back to
+\texttt{nmr} mode using the predicate \texttt{set\_nmr\_mode/0}.
 
 The prompt works much like a standard Prolog top-level. The difference
 arises when the user issues a query which has an answer which depends
@@ -49,26 +49,26 @@ Three options are available in such cases:
 
 \begin{enumerate}
 
-\item['s'] computes and prints all (partial) stable models of the residual
+\item[`s'] computes and prints all (partial) stable models of the residual
   program, one at a time;
 
-\item['t'] computes and prints the (partial) stable models of the residual
+\item[`t'] computes and prints the (partial) stable models of the residual
   program where the query is true, one at a time;
 
-\item['a'] computes the answerset semantics of the residual program,
-  ie. it says 'yes' if the query is true in all stable models of the
+\item[`a'] computes the answerset semantics of the residual program,
+  ie. it says \verb#yes# if the query is true in all stable models of the
   residual program.
 
 \end{enumerate}
 
-Figure~\ref{fig:stable} shows the 's' operator in action. The
-'exwfs.P' program is shown in figure~\ref{fig:exwfs}. 
+Figure~\ref{fig:stable} shows the `s' operator in action. The
+`exwfs.P' program is shown in figure~\ref{fig:exwfs}. 
 
 At the ``more answers'' prompt, when there is a delay list, the user
-can type 's<cr>' and obtain the stable models of the residual program.
+can type \verb#s<cr># and obtain the stable models of the residual program.
 Note that one model is computed and printed at each time. After a
-model is printed, the user can ask for the next one by typing ';<cr>',
-or she can give up by pressing only <cr>.
+model is printed, the user can ask for the next one by typing \verb#;<cr>#,
+or she can give up by pressing only \verb#<cr>#.
 
 \begin{figure}
 \label{fig:exwfs}
@@ -134,13 +134,13 @@ Stable Models:
 no
 nmr| ?- 
 \end{boxedverbatim}
-\caption{Using the 's' operator}
+\caption{Using the `s' operator}
 \end{figure}
 
 
-Figure~\ref{fig:tstable} shows the use of the 't' option. Note that
+Figure~\ref{fig:tstable} shows the use of the `t' option. Note that
 the models computed with this option form a subset of the models
-computed with the 's' option, namely those models where the query is
+computed with the `s' option, namely those models where the query is
 true.
 
 \begin{figure}
@@ -181,12 +181,12 @@ Stable Models:
 no
 nmr| ?- 
 \end{boxedverbatim}
-\caption{Using the 't' operator}
+\caption{Using the `t' operator}
 \end{figure}
 
-Finally, figure~\ref{fig:answerset} shows one application of the 'a'
+Finally, figure~\ref{fig:answerset} shows one application of the `a'
 operation, to compute the answerset semantics of the residual
-program. You can see that, when we use 's' to compute the stable
+program. You can see that, when we use `s' to compute the stable
 models of the residual program, all computed models have the query as
 true. Therefore, it's clear that the query is true under the answerset
 semantics of the residual program. 
@@ -231,25 +231,25 @@ DELAY LIST = [p] ? a
 no
 nmr| ?- 
 \end{boxedverbatim}
-\caption{Using the 'a' option}
+\caption{Using the `a' option}
 \end{figure}
 
-\subsection{The 'answerset' mode}
+\subsection{The \texttt{answerset} mode}
 
-The 'answerset' mode is entered using the predicate
-'set_answerset_mode/0'. This mode has been designed to deal with logic
-programs with explicit negation.
+The \texttt{answerset} mode is entered using the predicate
+\texttt{set\_answerset\_mode/0}. This mode has been designed to deal
+with logic programs with explicit negation.
 
 Explicit negated predicates are represented by prepending their names
-with '-'. For example, if 'p' is a predicate, its explicitly-negated
-counterpart is '-p'. 
+with \verb#-#. For example, if \verb#p# is a predicate, its
+explicitly-negated counterpart is \verb#-p#.
 
 In this mode, when a query is issued, XNMR computes the answerset
 semantics for all possible instantiations of the given query, and says
-'yes' to all instantiations which are true under this semantics. 
+\verb#yes# to all instantiations which are true under this semantics. 
 
 After that, XNMR performs the same computation for the
-explicitly-negated counterpart of the query. It, then, says 'no' to
+explicitly-negated counterpart of the query. It, then, says \verb#no# to
 all computed instantiations. 
 
 It is assumed that the knowledge about all other instantiations not
