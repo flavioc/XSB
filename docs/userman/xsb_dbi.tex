@@ -29,13 +29,14 @@ Generally, each driver has to be configured separately, but if the database
 packages such as ODBC, MySql, etc., are installed in standard places then
 the XSB configuration mechanism will do the job automatically.
 
-Under Windows, typing
+\paragraph{Windows:}
+Under Windows, type:
 %%
 \begin{verbatim}
     makexsb_wind  
 \end{verbatim}
 %%
-in the XSB's {\tt build} directory will normally configure the ODBC driver
+in the XSB's {\tt build} directory. This should configure the ODBC driver
 without problems. For the MySQL driver one has to edit the file
 %%
 \begin{verbatim}
@@ -44,7 +45,9 @@ without problems. For the MySQL driver one has to edit the file
 %%
 to indicate where MySQL is installed.
 
-Under Unix, the {\tt configure} script should also build the drivers automatically.
+\paragraph{Unix:}
+Under Unix, the {\tt configure} script should also build the drivers
+automatically.
 If, however, ODBC and MySQL are not installed in their standard places, you
 will have to provide the following parameters to the configure script:
 %%
@@ -60,6 +63,17 @@ will have to provide the following parameters to the configure script:
 \end{itemize}
 %%
 
+\paragraph{Cygwin:}
+Under Cygwin, XSB must be configured as follows:
+%%
+\begin{verbatim}
+ ./configure --enable-no-cygwin  
+ ./makexsb
+\end{verbatim}
+%%
+Other than that, no special configuration steps are required.
+
+\paragraph{Configuring database interface at a later time:}
 If at the time of configuring XSB some database packages ({\it e.g.},
 MySQL) are not installed on your system, you can install them later and
 configure the XSB interface to them then. For instance, to configure the
