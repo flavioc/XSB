@@ -14,13 +14,10 @@ NOTE: Autoconf must be installed.
    DOS:
        ./configure --with-os=pcdos
 
-   Note: you MUST run configure, or else certain important files won't be
-	 created! Windows users cannot run the configure script!
+   Note: you MUST run configure, or else certain important files
+   (configs.h, configure.P, banner.msg)  won't be created!
+   Windows users cannot run this configure script!
 
-   Windows:
-	cp config/x86-pc-windows/config.h  emu/configs/
-   DOS:
-	config/x86-pc-pcdos/config.h  emu/configs/
 
    Make whatever is needed to include the XSB documentation.
 

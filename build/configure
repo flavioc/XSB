@@ -3674,6 +3674,11 @@ chmod 444 ${arch_config_file} \
 	  ${arch_config_prefix}/debug.h \
 	  ${arch_config_prefix}/*Makefile
 
+# Move the config file in case of DOS and Windoze to the right place
+if test -n "$with_os" ; then
+   cp -f ${arch_config_prefix}/config.h  ${emudir}/configs
+fi
+
 echo ""
 echo "XSB is configured for installation in ${prefix}"
 echo "Site libraries are to be found in ${site_prefix}"
