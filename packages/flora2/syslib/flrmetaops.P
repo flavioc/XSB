@@ -36,10 +36,8 @@
 #include "flora_terms.flh"
 
 
-FL_UNIVEQFORM(X,Y) :-
-	(var(X) ; var(Y)),
-	!,
-	X=Y.
+
+FL_UNIVEQFORM(X,Y) :- X=Y, !.
 
 %% This takes care of F-logic molecules with dynamic module specification
 FL_UNIVEQFORM(X, Y) :-
@@ -93,6 +91,3 @@ FL_UNIVEQFORM(X, Y) :-
 	; flora_decode_predicate(X,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
 	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
 	X = Literal.
-
-
-FL_UNIVEQFORM(X,Y) :- X=Y, !.
