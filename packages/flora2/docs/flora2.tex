@@ -2802,30 +2802,30 @@ class instances inherit from the classes they belong to:
 // inheritance rules for scalar attributes
 :- table defined/2, overwritten/3, conflict/3.
 
-Obj[A->V] <- Obj:Class, Class[A*->V], tnot defined(Obj,A),
+Obj[A->V] :- Obj:Class, Class[A*->V], tnot defined(Obj,A),
              tnot overwritten(Obj,Class,A), tnot conflict(Obj,Class,A).
 
-defined(Obj,A) <- Obj[A->V].
+defined(Obj,A) :- Obj[A->V].
 
-overwritten(Obj,Class,A) <- Obj:Class1, Class1::Class,
+overwritten(Obj,Class,A) :- Obj:Class1, Class1::Class,
                             Class1[A*->W], Class1 \= Class.
 
-conflict(Obj,Class,A) <- Obj:Super, Super[A*->V],
+conflict(Obj,Class,A) :- Obj:Super, Super[A*->V],
                          tnot Super::Class, tnot Class::Super.
 
 // inheritance rules for multi-valued attributes
 :- table definedSet/2, overwrittenSet/3, conflictSet/3.
 
-Obj[A->>V] <- Obj:Class, Class[A*->>V], tnot definedSet(Obj,A),
+Obj[A->>V] :- Obj:Class, Class[A*->>V], tnot definedSet(Obj,A),
               tnot overwrittenSet(Obj,Class,A),
               tnot conflictSet(Obj,Class,A).
 
-definedSet(Obj,A) <- Obj[A->>V].
+definedSet(Obj,A) :- Obj[A->>V].
 
-overwrittenSet(Obj,Class,A) <- Obj:Class1, Class1::Class,
+overwrittenSet(Obj,Class,A) :- Obj:Class1, Class1::Class,
                                Class1[A*->>W], Class1 \= Class
 
-conflictSet(Obj,Class,A) <- Obj:Super, Super[A*->V],
+conflictSet(Obj,Class,A) :- Obj:Super, Super[A*->V],
                             tnot Super::Class, tnot Class::Super.
 \end{verbatim}
 \end{quote}
