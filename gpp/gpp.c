@@ -1,9 +1,9 @@
 /* File:      gpp.c  -- generic preprocessor
 ** Author:    Denis Auroux
 ** Contact:   auroux@math.polytechnique.fr
-** Version:   2.0
+** Version:   2.1
 ** 
-** Copyright (C) Denis Auroux 1996, 1999
+** Copyright (C) Denis Auroux 1996, 1999, 2001
 ** 
 ** GPP is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -168,6 +168,7 @@ int autoswitch;
 /* must be a format-like string that has % % % in it.
    The first % is replaced with line number, the second with "filename", and
    the third with 1, 2 or blank
+   Can also use ? instead of %.
 */
 char *include_directive_marker = NULL;
 short WarningLevel = 2;
@@ -199,6 +200,7 @@ typedef struct INPUTCONTEXT {
   int eof;
   int in_comment;
   int ambience; /* FLAG_TEXT, FLAG_USER or FLAG_META */
+  int may_have_args;
 } INPUTCONTEXT;
 
 struct INPUTCONTEXT *C;
@@ -206,10 +208,15 @@ struct INPUTCONTEXT *C;
 int commented[STACKDEPTH],iflevel;
 
 void ProcessContext(); /* the main loop */
+
+int findIdent(char *b,int l);
+void delete_macro(int i);
+
+/* various recent additions */
 static void getDirname(char *fname, char *dirname);
 static FILE *openInCurrentDir(char *incfile);
 char *ArithmEval(int pos1,int pos2);
-void replace_definition_with_blank_lines(char *start, char *end);
+void replace_definition_with_blank_lines(char *start, char *end, int skip);
 void replace_directive_with_blank_line(FILE *file);
 void write_include_marker(FILE *f, int lineno, char *filename, char *marker);
 void construct_include_directive_marker(char **include_directive_marker,
@@ -218,13 +225,13 @@ void escape_backslashes(char *instr, char **outstr);
 
 void bug(char *s)
 {
-  fprintf(stderr,"%s:%d: error: %s.\n",C->filename,C->lineno,s);
+  fprintf(stderr,"++Error[GPP]: %s:%d: %s.\n",C->filename,C->lineno,s);
   exit(1);
 }
 
 void warning(char *s)
 {
-  fprintf(stderr,"%s:%d: warning: %s.\n",C->filename,C->lineno,s);
+  fprintf(stderr,"++Warning[GPP]: %s:%d: %s.\n",C->filename,C->lineno,s);
 }
 
 struct SPECS *CloneSpecs(struct SPECS *Q)
@@ -282,30 +289,30 @@ void PopSpecs()
 }
 
 void usage() {
-  fprintf(stderr,"GPP Version 2.0 - Generic Preprocessor - (c) Denis Auroux 1996-99\n");
+  fprintf(stderr,"GPP Version 2.1 - Generic Preprocessor - (c) Denis Auroux 1996-2001\n");
   fprintf(stderr,"Usage : gpp [-{o|O} outfile] [-I/include/path] [-Dname=val ...] [-z] [-x] [-m]\n");
   fprintf(stderr,"            [-n] [-C | -T | -H | -P | -U ... [-M ...]] [+c<n> str1 str2]\n");
   fprintf(stderr,"            [+s<n> str1 str2 c] [infile]\n\n");
   fprintf(stderr,"      default:    #define x y           macro(arg,...)\n");
-  fprintf(stderr," -o : output goes to outfile\n");
-  fprintf(stderr," -O : output goes to outfile and stdout\n");
   fprintf(stderr," -C : maximum cpp compatibility (includes -n, +c, +s, ...)\n");
   fprintf(stderr," -T : tex-like    \\define{x}{y}         \\macro{arg}{...}\n");
   fprintf(stderr," -H : html-like   <#define x|y>         <#macro arg|...>\n");
   fprintf(stderr," -P : prolog compatible cpp-like mode\n");
   fprintf(stderr," -U : user-defined syntax (specified in 9 following args, see manual)\n");
   fprintf(stderr," -M : user-defined syntax for meta-macros (specified in 7 following args)\n\n");
+  fprintf(stderr," -o : output to outfile\n");
+  fprintf(stderr," -O : output to outfile and stdout\n");
   fprintf(stderr," -z : line terminator is CR-LF (MS-DOS style)\n");
   fprintf(stderr," -x : enable #exec built-in macro\n");
   fprintf(stderr," -m : enable automatic mode switching upon including .h/.c files\n");
   fprintf(stderr," -n : send LF characters serving as macro terminators to output\n");
   fprintf(stderr," +c : use next 2 args as comment start and comment end sequences\n");
   fprintf(stderr," +s : use next 3 args as string start, end and quote character\n\n");
-  fprintf(stderr," -nostdinc : don't search standard directories for files to include\n\n");
-  fprintf(stderr," -nocurinc : don't search the current directory for files to include\n\n");
-  fprintf(stderr," -curdirinclast : search the current directory last\n\n");
-  fprintf(stderr," -warninglevel  : use next integer argument as the desired warning level\n\n");
-  fprintf(stderr," -includemarker : use next argument as a marker that tells\n\t\t  where #include was in the source file\n\n");
+  fprintf(stderr," -nostdinc : don't search standard directories for files to include\n");
+  fprintf(stderr," -nocurinc : don't search the current directory for files to include\n");
+  fprintf(stderr," -curdirinclast : search the current directory last\n");
+  fprintf(stderr," -warninglevel n : set warning level\n");
+  fprintf(stderr," -includemarker formatstring : keep track of #include directives in output\n\n");
   exit(1);
 }
 
@@ -388,48 +395,21 @@ char *strnl(char *s) /* the same but with whitespace specifier handling */
     if (*s=='\\') {
       neg=(s[1]=='!');
       switch(s[neg+1]) {
-      case 'n':
-      case 'r':
-	*u='\n';
-	break;
-      case 't':
-	*u='\t';
-	break;
-      case 'b':  /* one or more spaces */
-	*u='\001';
-	break;
-      case 'w':  /* zero or more spaces */
-	if (neg)
-	  bug("\\w and \\W cannot be negated");
-	*u='\002';
-	break;
-      case 'B':  /* one or more spaces or \n */
-	*u='\003';
-	break;
-      case 'W':  /* zero or more spaces or \n */
-	if (neg)
-	  bug("\\w and \\W cannot be negated");
-	*u='\004';
-	break;
-      case 'a':  /* alphabetic */
-	*u='\005';
-	break;
-      case 'A':  /* alphabetic + space */
-	*u='\006';
-	break;
-      case '#':  /* numeric */
-	*u='\007';
-	break;
-      case 'i':  /* identifier */
-	*u='\010';
-	break;
-      case 'o':  /* operator */
-	*u='\013';
-	break;
-      case 'O':  /* operator/parenthese */
-	*u='\014';
-	break;
-      default: *u='\\'; neg=-1;
+        case 'n': case 'r': *u='\n'; break;
+        case 't': *u='\t'; break;
+        case 'b': *u='\001'; break;  /* one or more spaces */
+        case 'w': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\002'; break;  /* zero or more spaces */
+        case 'B': *u='\003'; break;  /* one or more spaces or \n */
+        case 'W': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\004'; break;  /* zero or more spaces or \n */
+        case 'a': *u='\005'; break;  /* alphabetic */
+        case 'A': *u='\006'; break;  /* alphabetic + space */
+        case '#': *u='\007'; break;  /* numeric */
+        case 'i': *u='\010'; break;  /* identifier */
+        case 'o': *u='\013'; break;  /* operator */
+        case 'O': *u='\014'; break;  /* operator/parenthese */
+        default: *u='\\'; neg=-1;
       }
       if (neg>0) *u+=(char)128;
       s+=neg+1;
@@ -456,55 +436,22 @@ char *strnl2(char *s,int check_delim)
     if (*s=='\\') {
       neg=(s[1]=='!');
       switch(s[neg+1]) {
-      case 'n':
-      case 'r':
-	*u='\n';
-	break;
-      case 't':
-	*u='\t';
-	break;
-      case 'b':  /* one or more spaces */
-	*u='\001';
-	break;
-      case 'w':  /* zero or more spaces */
-	if (neg)
-	  bug("\\w and \\W cannot be negated");
-	*u='\002';
-	break;
-      case 'B':  /* one or more spaces or \n */
-	*u='\003';
-	break;
-      case 'W':  /* zero or more spaces or \n */
-	if (neg)
-	  bug("\\w and \\W cannot be negated");
-	*u='\004';
-	break;
-      case 'a':  /* alphabetic */
-	*u='\005';
-	break;
-      case 'A':  /* alphabetic + space */
-	*u='\006';
-	break;
-      case '#':  /* numeric */
-	*u='\007';
-	break;
-      case 'i':  /* identifier */
-	*u='\010';
-	break;
-      case 'o':  /* operator */
-	*u='\013';
-	break;
-      case 'O':  /* operator/parenthesis */
-	*u='\014';
-	break;
-      case '"':
-      case '\\':
-	if (!neg) {
-	  *u=s[1];
-	  break;
-	}
-      default:
-	bug("unknown escape sequence in syntax specifier");
+        case 'n': case 'r': *u='\n'; break;
+        case 't': *u='\t'; break;
+        case 'b': *u='\001'; break;  /* one or more spaces */
+        case 'w': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\002'; break;  /* zero or more spaces */
+        case 'B': *u='\003'; break;  /* one or more spaces or \n */
+        case 'W': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\004'; break;  /* zero or more spaces or \n */
+        case 'a': *u='\005'; break;  /* alphabetic */
+        case 'A': *u='\006'; break;  /* alphabetic + space */
+        case '#': *u='\007'; break;  /* numeric */
+        case 'i': *u='\010'; break;  /* identifier */
+        case 'o': *u='\013'; break;  /* operator */
+        case 'O': *u='\014'; break;  /* operator/parenthese */
+        case '"': case '\\': if (!neg) { *u=s[1]; break; }
+        default: bug("unknown escape sequence in syntax specifier");
       }
       if (neg>0) *u+=(char)128;
       s+=neg+1;
@@ -541,11 +488,38 @@ int nowhite_strcmp(char *s,char *t)
 
 void parseCmdlineDefine(char *s)
 {
-  int l;
+  int l, i, argc;
   
-  for (l=0;s[l]&&(s[l]!='=');l++);
+  for (l=0;s[l]&&(s[l]!='=')&&(s[l]!='(');l++);
+  i = findIdent(s,l);
+  if (i>=0) delete_macro(i);
   newmacro(s,l,0);
+  
+  /* possibly allow named arguments: -Dmacro(arg1,arg2)=... (no spaces) */
+  if (s[l]=='(') {
+    argc = 0;
+    do {
+      l++; i=l;
+      while (!isdelim(s[i])) i++;
+      if (s[i]!=',' && s[i]!=')') bug("invalid syntax in -D declaration");
+      if (i>l) argc++;
+      macros[nmacros].argnames =
+        (char **)realloc(macros[nmacros].argnames, (argc+1)*sizeof(char *));
+      if (i>l) {
+        macros[nmacros].argnames[argc-1]=malloc(i-l+1);
+        memcpy(macros[nmacros].argnames[argc-1], s+l, i-l);
+        macros[nmacros].argnames[argc-1][i-l]=0;
+      }
+      l = i;
+    } while (s[l]!=')');
+    l++;
+    macros[nmacros].nnamedargs = argc;
+    macros[nmacros].argnames[argc] = NULL;
+  }
+  
+  /* the macro definition afterwards ! */
   if (s[l]=='=') l++;
+  else if (s[l]!=0) bug("invalid syntax in -D declaration");
   macros[nmacros].macrolen=strlen(s+l);
   macros[nmacros++].macrotext=strdup(s+l);
 }
@@ -651,12 +625,12 @@ void outchar(char c)
     if (dosmode&&(c==10)) {
       fputc(13,C->out->f);
       if (file_and_stdout)
-	fputc(13,stdout);
+        fputc(13,stdout);
     }
     if (c!=13) {
       fputc(c,C->out->f);
       if (file_and_stdout)
-	fputc(c,stdout);
+        fputc(c,stdout);
     }
   }
 }
@@ -672,7 +646,7 @@ void sendout(char *s,int l,int proc) /* only process the quotechar, that's all *
       if (s[i]!=0) outchar(s[i]);
     }
   else
-    replace_definition_with_blank_lines(s+1,s+l);
+    replace_definition_with_blank_lines(s, s+l-1, 0);
 }
 
 void extendBuf(int pos)
@@ -812,6 +786,8 @@ int matchSequence(char *s,int *pos)
 int matchEndSequence(char *s,int *pos)
 {
   if (*s==0) return 1;
+  /* if terminator is \n and we're at end of input, let it be... */
+  if (getChar(*pos)==0 && s[0]=='\n' && s[1]==0) return 1;
   if (!matchSequence(s,pos)) return 0;
   if (S->preservelf&&iswhite(getChar(*pos-1))) (*pos)--;
   return 1;
@@ -1023,6 +999,7 @@ void initthings(int argc,char **argv)
   C->namedargs=NULL;
   C->in_comment=0;
   C->ambience=FLAG_TEXT;
+  C->may_have_args=0;
   commented[0]=0;
   iflevel=0;
   execallowed=0;
@@ -1044,13 +1021,13 @@ void initthings(int argc,char **argv)
       continue;
     }
     if (strcmp(*arg, "-includemarker") == 0) {
-      /* assume that the include marker string is correct, i.e., has 3 ?'s */
-      construct_include_directive_marker(&include_directive_marker, *(++arg));
+      if (!(*(++arg))) usage();
+      construct_include_directive_marker(&include_directive_marker, *arg);
       continue;
     }
 
     if (strcmp(*arg, "-warninglevel") == 0) {
-      arg++;
+      if (!(*(++arg))) usage();
       WarningLevel = atoi(*arg);
       continue;
     }
@@ -1060,10 +1037,8 @@ void initthings(int argc,char **argv)
       case 'c':
 	s=(*arg)+2;
 	if (*s==0) s="ccc";
-	if (!(*(++arg)))
-	  usage();
-	if (!(*(++arg)))
-	  usage();
+	if (!(*(++arg))) usage();
+	if (!(*(++arg))) usage();
 	add_comment(S,s,strnl(*(arg-1)),strnl(*arg),0,0);
 	break;
       case 's':
@@ -1077,6 +1052,9 @@ void initthings(int argc,char **argv)
       case 'z': 
 	dosmode=0;
 	break;
+      case 'n':
+        S->preservelf=0;
+        break;
       default: ishelp=1;
       }
     }
@@ -1091,8 +1069,7 @@ void initthings(int argc,char **argv)
       if (nincludedirs==MAXINCL) 
 	bug("too many include directories");
       if ((*arg)[2]==0) {
-	if (!(*(++arg)))
-	  usage();
+	if (!(*(++arg))) usage();
 	includedir[nincludedirs++]=strdup(*arg);
       }
       else includedir[nincludedirs++]=strdup((*arg)+2);
@@ -1100,7 +1077,7 @@ void initthings(int argc,char **argv)
     case 'C':
       ishelp|=ismode|hasmeta|usrmode; ismode=1;
       S->User=KUser; S->Meta=KMeta;
-      S->preservelf=0;
+      S->preservelf=1;
       add_comment(S,"ccc",strdup("/*"),strdup("*/"),0,0);
       add_comment(S,"ccc",strdup("//"),strdup("\n"),0,0);
       add_comment(S,"ccc",strdup("\\\n"),strdup(""),0,0);
@@ -1110,7 +1087,7 @@ void initthings(int argc,char **argv)
     case 'P':
       ishelp|=ismode|hasmeta|usrmode; ismode=1;
       S->User=KUser; S->Meta=KMeta;
-      S->preservelf=0;
+      S->preservelf=1;
       S->op_set=PrologOp;
       add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
       add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
@@ -1188,7 +1165,8 @@ void initthings(int argc,char **argv)
 #endif
 
   for (i=0;i<nmacros;i++) {
-    macros[i].define_specs=CloneSpecs(S);
+    if (macros[i].define_specs == NULL)
+      macros[i].define_specs=CloneSpecs(S);
     lookupArgRefs(i); /* for macro aliasing */
   }
 }
@@ -1201,13 +1179,13 @@ int findCommentEnd(char *endseq,char quote,char warn,int pos,int flags)
   while (1) {
     c=getChar(pos);
     i=pos;
+    if (matchEndSequence(endseq,&i)) return pos;
     if (c==0) bug("Input ended while scanning a comment/string");
     if (c==warn) {
       warn=0;
       if (WarningLevel > 1)
 	warning("possible comment/string termination problem");
     }
-    if (matchSequence(endseq,&i)) return pos;
     if (c==quote) pos+=2;
     else if ((flags&PARSE_MACROS)&&(c==S->User.quotechar)) pos+=2;
     else pos++;
@@ -1329,10 +1307,11 @@ int findMetaArgs(int start,int *p1b,int *p1e,int *p2b,int *p2e,int *endm,int *ar
     while(1) { /* look for mArgE, mArgSep, or comment-start */
       pos=iterIdentifierEnd(pos);
       SkipPossibleComments(&pos,FLAG_META,0);
-      if (getChar(pos)==0) bug("unfinished macro argument");
-      if (strchr(S->Meta.stackchar,getChar(pos))) k++;
-      if (k) { if (strchr(S->Meta.unstackchar,getChar(pos))) k--; }
-      else {
+      if (getChar(pos)!=0 && strchr(S->Meta.stackchar,getChar(pos))) k++;
+      if (k) { 
+        if (getChar(pos)!=0 && strchr(S->Meta.unstackchar,getChar(pos))) 
+          k--;
+      } else {
         *p1e=pos;
         if (matchSequence(S->Meta.mArgSep,&pos)) break;
         if (matchEndSequence(S->Meta.mArgE,&pos)) {
@@ -1340,6 +1319,7 @@ int findMetaArgs(int start,int *p1b,int *p1e,int *p2b,int *p2e,int *endm,int *ar
           return 1;
         }
       }
+      if (getChar(pos)==0) bug("unfinished macro argument");
       pos++; /* nothing matched, go forward */
     }
   }
@@ -1349,13 +1329,15 @@ int findMetaArgs(int start,int *p1b,int *p1e,int *p2b,int *p2e,int *endm,int *ar
   while(1) { /* look for mArgE or comment-start */
     pos=iterIdentifierEnd(pos);
     SkipPossibleComments(&pos,FLAG_META,0);
-    if (getChar(pos)==0) bug("unfinished macro");
-    if (strchr(S->Meta.stackchar,getChar(pos))) k++;
-    if (k) { if (strchr(S->Meta.unstackchar,getChar(pos))) k--; }
-    else {
+    if (getChar(pos)!=0 && strchr(S->Meta.stackchar,getChar(pos))) k++;
+    if (k) { 
+      if (getChar(pos)!=0 && strchr(S->Meta.unstackchar,getChar(pos))) 
+        k--;
+    } else {
       *p2e=pos;
       if (matchEndSequence(S->Meta.mArgE,&pos)) break;
     }
+    if (getChar(pos)==0) bug("unfinished macro");
     pos++; /* nothing matched, go forward */
   }
   *endm=pos;
@@ -1391,6 +1373,7 @@ char *ProcessText(char *buf,int l,int ambience)
   C->namedargs=T->namedargs;
   C->in_comment=T->in_comment;
   C->ambience=ambience;
+  C->may_have_args=T->may_have_args;
   
   ProcessContext();
   outchar(0); /* note that outchar works with the half-destroyed context ! */
@@ -1419,7 +1402,7 @@ int SpliceInfix(char *buf,int pos1,int pos2,char *sep,int *spl1,int *spl2)
 
 int DoArithmEval(char *buf,int pos1,int pos2,int *result)
 {
-  int spl1,spl2,result1,result2;
+  int spl1,spl2,result1,result2,l;
   char c,*p;
   
   while ((pos1<pos2)&&iswhite(buf[pos1])) pos1++;
@@ -1491,29 +1474,57 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
 
   if (SpliceInfix(buf,pos1,pos2,">=",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
-        !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
-    *result=result1>=result2;
+        !DoArithmEval(buf,spl2,pos2,&result2)) {
+      /* revert to string comparison */
+      while ((pos1<spl1)&&iswhite(buf[spl1-1])) spl1--;
+      while ((pos2>spl2)&&iswhite(buf[spl2])) spl2++;
+      l=spl1-pos1; if (l>pos2-spl2) l=pos2-spl2;
+      result1=strncmp(buf+pos1,buf+spl2,l);
+      *result=(result1>0) || ((result1==0) && (spl1-pos1>=pos2-spl2));
+    }  
+    else *result=(result1>=result2);
     return 1;
   }
 
   if (SpliceInfix(buf,pos1,pos2,">",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
-        !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
-    *result=result1>result2;
+        !DoArithmEval(buf,spl2,pos2,&result2)) {
+      /* revert to string comparison */
+      while ((pos1<spl1)&&iswhite(buf[spl1-1])) spl1--;
+      while ((pos2>spl2)&&iswhite(buf[spl2])) spl2++;
+      l=spl1-pos1; if (l>pos2-spl2) l=pos2-spl2;
+      result1=strncmp(buf+pos1,buf+spl2,l);
+      *result=(result1>0) || ((result1==0) && (spl1-pos1>pos2-spl2));
+    }  
+    else *result=(result1>result2);
     return 1;
   }
   
   if (SpliceInfix(buf,pos1,pos2,"<=",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
-        !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
-    *result=result1<=result2;
+        !DoArithmEval(buf,spl2,pos2,&result2)) {
+      /* revert to string comparison */
+      while ((pos1<spl1)&&iswhite(buf[spl1-1])) spl1--;
+      while ((pos2>spl2)&&iswhite(buf[spl2])) spl2++;
+      l=spl1-pos1; if (l>pos2-spl2) l=pos2-spl2;
+      result1=strncmp(buf+pos1,buf+spl2,l);
+      *result=(result1<0) || ((result1==0) && (spl1-pos1<=pos2-spl2));
+    }  
+    else *result=(result1<=result2);
     return 1;
   }
 
   if (SpliceInfix(buf,pos1,pos2,"<",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
-        !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
-    *result=result1<result2;
+        !DoArithmEval(buf,spl2,pos2,&result2)) {
+      /* revert to string comparison */
+      while ((pos1<spl1)&&iswhite(buf[spl1-1])) spl1--;
+      while ((pos2>spl2)&&iswhite(buf[spl2])) spl2++;
+      l=spl1-pos1; if (l>pos2-spl2) l=pos2-spl2;
+      result1=strncmp(buf+pos1,buf+spl2,l);
+      *result=(result1<0) || ((result1==0) && (spl1-pos1<pos2-spl2));
+    }  
+    else *result=(result1<result2);
     return 1;
   }
 
@@ -1523,7 +1534,7 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
     *result=result1+result2;
     return 1;
   }
-  
+
   if (SpliceInfix(buf,pos1,pos2,"-",&spl1,&spl2))
     if (spl1!=pos1) {
       if (!DoArithmEval(buf,pos1,spl1,&result1)||
@@ -1531,7 +1542,7 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
       *result=result1-result2;
       return 1;
     }
-  
+
   if (SpliceInfix(buf,pos1,pos2,"*",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
         !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
@@ -1546,7 +1557,7 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
     *result=result1/result2;
     return 1;
   }
-  
+
   if (SpliceInfix(buf,pos1,pos2,"%",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
         !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
@@ -1574,12 +1585,9 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
   }
 
   /* add the length() builtin to measure the length of the macro expansion */
-  if (strncmp(buf+pos1,"length",strlen("length"))==0) {
-    char *s;
-    int symlen=strlen("length");
-    s = ProcessText(buf+pos1+symlen,pos2-pos1-symlen,FLAG_META);
-    /* subtract 2 to account for the parentheses */
-    *result=strlen(s)-2;
+  if (strncmp(buf+pos1,"length(",strlen("length("))==0) {
+    if (buf[pos2-1]!=')') return 0;
+    *result=pos2-pos1-strlen("length()");
     return 1;
   }
   
@@ -1913,7 +1921,7 @@ int ParsePossibleMeta()
       if (i>=0) delete_macro(i);
       newmacro(C->buf+p1start,p1end-p1start,1);
       if (nparam==1) { p2end=p2start=p1end; }
-      replace_definition_with_blank_lines(C->buf+1,C->buf+p2end);
+      replace_definition_with_blank_lines(C->buf+1,C->buf+p2end,S->preservelf);
       macros[nmacros].macrotext=remove_comments(p2start,p2end,FLAG_META);
       macros[nmacros].macrolen=strlen(macros[nmacros].macrotext);
       macros[nmacros].defined_in_comment=C->in_comment;
@@ -1952,8 +1960,8 @@ int ParsePossibleMeta()
     break;
 
   case 3: /* IFDEF */
-    iflevel++;
     replace_directive_with_blank_line(C->out->f);
+    iflevel++;
     if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
     commented[iflevel]=commented[iflevel-1];
 
@@ -1969,8 +1977,8 @@ int ParsePossibleMeta()
     break;
 
   case 4: /* IFNDEF */
-    iflevel++;
     replace_directive_with_blank_line(C->out->f);
+    iflevel++;
     if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
     commented[iflevel]=commented[iflevel-1];
     if (!commented[iflevel]) {
@@ -2031,7 +2039,7 @@ int ParsePossibleMeta()
 	if (!NoCurIncFirst) {
 	  f = openInCurrentDir(incfile_name);
 	}
-       
+
       for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
 	incfile_name =
 	  realloc(incfile_name,p1end-p1start+strlen(includedir[j])+2);
@@ -2072,6 +2080,7 @@ int ParsePossibleMeta()
       C->namedargs=NULL;
       C->in_comment=0;
       C->ambience=FLAG_TEXT;
+      C->may_have_args=0;
       PushSpecs(S);
       if (autoswitch) {
 	if (!strcmp(incfile_name+strlen(incfile_name)-2,".h")
@@ -2084,7 +2093,6 @@ int ParsePossibleMeta()
       ProcessContext();
       /* Include marker after the included contents */
       write_include_marker(N->out->f, N->lineno, N->filename, "2");
-
       /* Need to leave the blank line in lieu of #include, like cpp does */
       replace_directive_with_blank_line(N->out->f);
       free(C);
@@ -2132,7 +2140,7 @@ int ParsePossibleMeta()
       if (i>=0) delete_macro(i);
       newmacro(C->buf+p1start,p1end-p1start,1);
       if (nparam==1) { p2end=p2start=p1end; }
-      replace_definition_with_blank_lines(C->buf+1,C->buf+p2end);
+      replace_definition_with_blank_lines(C->buf+1,C->buf+p2end,S->preservelf);
       macros[nmacros].macrotext=tmpbuf;
       macros[nmacros].macrolen=strlen(macros[nmacros].macrotext);
       macros[nmacros].defined_in_comment=C->in_comment;
@@ -2158,8 +2166,8 @@ int ParsePossibleMeta()
     break;
      
   case 10: /* IFEQ */
-    iflevel++;
     replace_directive_with_blank_line(C->out->f);
+    iflevel++;
     if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
     commented[iflevel]=commented[iflevel-1];
     if (!commented[iflevel]) {
@@ -2173,8 +2181,8 @@ int ParsePossibleMeta()
     break;
 
   case 11: /* IFNEQ */
-    iflevel++;
     replace_directive_with_blank_line(C->out->f);
+    iflevel++;
     if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
     commented[iflevel]=commented[iflevel-1];
     if (!commented[iflevel]) {
@@ -2198,8 +2206,8 @@ int ParsePossibleMeta()
     break;
 
   case 13: /* IF */
-    iflevel++;
     replace_directive_with_blank_line(C->out->f);
+    iflevel++;
     if (iflevel==STACKDEPTH) bug("Too many nested #ifs");
     commented[iflevel]=commented[iflevel-1];
     if (!commented[iflevel]) {
@@ -2279,6 +2287,7 @@ int ParsePossibleUser()
   C->argv=argv;
   C->filename=T->filename;
   C->lineno=T->lineno;
+  C->may_have_args=1;
   if ((macros[id].nnamedargs==-1)&&(lg_end>=0)&&
       (macros[id].define_specs->User.mEnd[0]==0)) {
     /* build an aliased macro call */
@@ -2298,6 +2307,7 @@ int ParsePossibleUser()
       strcat(C->buf,argv[i]);
     }
     strcat(C->buf,macros[id].define_specs->User.mArgE);
+    C->may_have_args=0;
   } 
   else {
     C->buf=C->malloced_buf=malloc(strlen(macros[id].macrotext)+2);
@@ -2337,6 +2347,8 @@ void ParseText()
           matchEndSequence(p->end,&l);
           if (p->flags[C->ambience]&OUTPUT_DELIM)
             sendout(C->buf+1,cs-1,0);
+          if (!(p->flags[C->ambience]&OUTPUT_TEXT)) 
+            replace_definition_with_blank_lines(C->buf+1, C->buf+ce-1, 0);
           if (p->flags[C->ambience]&PARSE_MACROS) {
             C->in_comment=1;
             s=ProcessText(C->buf+cs,ce-cs,C->ambience);
@@ -2358,7 +2370,7 @@ void ParseText()
   
   l=1;
   /* If matching numbered macro argument and inside a macro */
-  if (matchSequence(S->User.mArgRef,&l) && C->ambience==FLAG_META) {
+  if (matchSequence(S->User.mArgRef,&l) && C->may_have_args) {
     /* Process macro arguments referenced as #1,#2,... */
     c=getChar(l);
     if ((c>='1')&&(c<='9')) {
@@ -2384,7 +2396,7 @@ void ProcessContext()
   free(C->malloced_buf);
 }
 
-
+/* additions by M. Kifer - revised D.A. 12/16/01 */
 
 /* copy SLASH-terminated name of the directory of fname */
 static void getDirname(char *fname, char *dirname)
@@ -2417,13 +2429,14 @@ static FILE *openInCurrentDir(char *incfile)
   return f;
 }
 
-
-void replace_definition_with_blank_lines(char *start, char *end)
+/* skip = # of \n's already output by other mechanisms, to be skipped */
+void replace_definition_with_blank_lines(char *start, char *end, int skip)
 {
-  if (include_directive_marker != NULL) {
+  if ((include_directive_marker != NULL) && (C->out->f != NULL)) {
     while (start <= end) {
-      if (*start == '\n')
-	fprintf(C->out->f,"\n");
+      if (*start == '\n') {
+	if (skip) skip--; else fprintf(C->out->f,"\n");
+      }
       start++;
     }
   }
@@ -2434,7 +2447,8 @@ void replace_definition_with_blank_lines(char *start, char *end)
 */
 void replace_directive_with_blank_line(FILE *f)
 {
-  if (include_directive_marker != NULL) {
+  if ((include_directive_marker != NULL) && (f != NULL)
+      && (!S->preservelf) && (S->Meta.mArgE[0]=='\n')) {
     fprintf(f,"\n");
   }
 }
@@ -2446,7 +2460,7 @@ void write_include_marker(FILE *f, int lineno, char *filename, char *marker)
   static char lineno_buf[MAX_GPP_NUM_SIZE];
   static char *escapedfilename = NULL;
 
-  if (include_directive_marker != NULL) {
+  if ((include_directive_marker != NULL) && (f != NULL)) {
 #ifdef WIN_NT
     escape_backslashes(filename,&escapedfilename);
 #else
@@ -2491,7 +2505,7 @@ void construct_include_directive_marker(char **include_directive_marker,
   int len = strlen(includemarker_input);
   char ch;
   int in_idx=0, out_idx=0;
-  int quoted = 0;
+  int quoted = 0, num_repl = 0;
 
   /* only 6 extra chars are needed: 3 for the three %'s, 2 for \n, 1 for \0 */
   *include_directive_marker = malloc(len+18);
@@ -2511,11 +2525,13 @@ void construct_include_directive_marker(char **include_directive_marker,
 	*(*include_directive_marker+out_idx) = ' ';
 	out_idx++;
 	break;
+      case '%':
       case '?':
 	*(*include_directive_marker+out_idx) = '%';
 	out_idx++;
 	*(*include_directive_marker+out_idx) = 's';
 	out_idx++;
+        if (++num_repl > 3) bug("only 3 substitutions allowed in -includemarker");
 	break;
       default:
 	*(*include_directive_marker+out_idx) = ch;
@@ -2542,3 +2558,4 @@ int main(int argc,char **argv)
   fclose(C->out->f);
   return 0;
 }
+
