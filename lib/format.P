@@ -27,11 +27,12 @@
 :- compiler_options([ciao_directives,optimize,sysmod]).
 
 :- export format/2, format/3, format_control/1.
-:- import string/1, atm/1 from basic_props.
+:- import atm/1 from basic_props.
 
 :- import abort/1, put_code/1, nl/0, write/1, writeq/1, print/1,
 	write_canonical/1, write/1, current_output/1, integer/1, 'C'/3,
-	atom/1, atom_codes/2, set_output/1 from usermod. 
+	atom/1, atom_codes/2, set_output/1,xsb_configuration/2,
+	is_list/1 from usermod. 
 
 % TLS: need to put catch in interpreter.
 throw(X):- abort(X).
@@ -411,7 +412,10 @@ format_control(C) :- atm(C).
 format(Control, _) :-
         var(Control), !,
         throw(error(instantiation_error, format/2-1)).
-format(Control, Arguments) :- format1(Control, Arguments), !.
+format(Control_in, Args_in) :- 
+	preproc_newlines(Control_in,Control),
+	preproc_newlines_list(Args_in,Args),
+	format1(Control, Args), !.
 format(Control, Arguments) :-
 	throw(error(invalid_arguments(format(Control, Arguments)), format/2)).
 
@@ -422,10 +426,12 @@ format(Control, Arguments) :-
 format(_, Control, _) :-
         var(Control), !,
         throw(error(instantiation_error, format/3-2)).
-format(Stream, Control, Arguments) :-
+format(Stream, Control_in, Args_in) :-
+        preproc_newlines(Control_in,Control),
+        preproc_newlines_list(Args_in,Args),
         current_output(Curr),
         set_output(Stream),
-	(   format1(Control, Arguments) -> OK=yes
+	(   format1(Control, Args) -> OK=yes
 	;   OK=no
 	),
         set_output(Curr),
@@ -497,8 +503,11 @@ fmt_parse(0'*, [N|Args], Specs, _, _, D) -->
 	[C1], fmt_parse(C1, Args, Specs, 0, N, D).
 fmt_parse(0'~, Args, [0'~|Specs], _, 1, 1) -->
 	fmt_parse(Args, Specs).
+/*
 fmt_parse(0'n, Args, [spec(0'c, 0'
                           , N)|Specs], _, N, 1) -->
+	fmt_parse(Args, Specs).*/
+fmt_parse(0'n, Args, [spec(0'c, 10, N)|Specs], _, N, 1) -->
 	fmt_parse(Args, Specs).
 fmt_parse(0'N, Args, [settab(0,_,_,0)|Specs], _, 1, 1) -->
 	fmt_parse(Args, Specs).
@@ -619,16 +628,36 @@ putn_list(N, [C|Chars]) :-
 	put_code(Char),
 	putn_list(N1, Chars).
 
-%% ---------------------------------------------------------------------------
-:- comment(version_maintenance,dir('../version')).
+preproc_newlines_list(H,T):- 
+	xsb_configuration(host_os,Type),
+	(Type == windows -> 
+	    (nonvar(H),string(H) -> 
+	        preproc_newlines(H,T) 
+	      ;
+	        preproc_newlines_list1(H,T) )
+	  ;   
+	    H = T).
 
-:- comment(version(1*3+27,1999/07/09,20:25*50+'MEST'), "Changed title,
-   as texinfo does not allow ':' in titles.  (Daniel Cabeza Gras)").
+preproc_newlines_list1([],[]).
+preproc_newlines_list1([H|T],[H1|T1]):-
+	(nonvar(H),is_list(H) -> 
+	    preproc_newlines1(H,H1)
+	  ; H1 = H),
+	preproc_newlines_list1(T,T1).
 
-:- comment(version(0*4+5,1998/2/24), "Synchronized file versions with
-   global Ciao version.  (Manuel Hermenegildo)").
+preproc_newlines(H,T):- 
+	xsb_configuration(host_os,Type),
+	(Type == windows -> 
+	    preproc_newlines1(H,T)
+	  ;   
+	    H = T).
 
-:- comment(version(0*1+0,1997/8/21), "Added basic
-   documentation. (Manuel Hermenegildo)").
-%% ---------------------------------------------------------------------------
+preproc_newlines1([],[]).
+preproc_newlines1([H],[H]):-!.
+preproc_newlines1([92,110|Tin],[10|Tout]):- !,  %\n
+	preproc_newlines1(Tin,Tout).
+preproc_newlines1([H|Tin],[H|Tout]):- 
+	preproc_newlines1(Tin,Tout).
 
+string([]).
+string([H|T]):- integer(H),string(T).
