@@ -28,7 +28,7 @@ ALL =	assert.O basics.O consult.O curr_sym.O dbclause.O \
 	file_op.O hilogsym.O loader.O machine.O \
 	num_vars.O setof.O shell.O standard.O std_xsb.O \
 	string.O subsumes.O sysinitrc.O tables.O term_exp.O \
-	unix.O x_interp.O xsb_read.O xsb_writ.O xcallxsb.O
+	unix.O x_interp.O xsb_hook.O xsb_read.O xsb_writ.O xcallxsb.O
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
 	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \

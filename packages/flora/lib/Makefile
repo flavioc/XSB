@@ -56,7 +56,6 @@ HDRMSG = "While compiling XSB/packages/flora/lib:"
 .SUFFIXES: .P .flr
 
 all: init recompile
-	touch *.flr
 
 recompile: $(ALL) finish
 	@touch cmd...
