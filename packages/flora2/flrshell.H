@@ -86,7 +86,8 @@
    from flrprint.
 
 :- import
-	maxerr/1,
+	flMaxerr/1,
+	flHalt/0,
 	flP2H/2,
 	flCompileInclude/1,
 	flloadtrailer/1,

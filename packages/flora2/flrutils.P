@@ -1131,11 +1131,11 @@ flora_list2conjunct([G|L],Goal) :-
 
 
 /*************************************************************************
-  maxerr(+Num)
+  flMaxerr(+Num)
 *************************************************************************/
-:- maxerr(8).
+:- flMaxerr(8).
 
-maxerr(X) :-
+flMaxerr(X) :-
 	( var(X) ->
 	    flora_maxerr(X)
 
@@ -1148,3 +1148,7 @@ maxerr(X) :-
 	).
 
 flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG).
+
+
+flHalt :- halt.
+

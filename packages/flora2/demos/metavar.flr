@@ -9,9 +9,8 @@ o2[M->R] :-
 	o1[M->R],
 	M=_F(_A1,_A2).
 
-:- flProlog writeln/1.
 
-?- writeln('all objects, all method invocations:'), X[M -> R].
+?- writeln('all objects, all method invocations:')@prologlib(), X[M -> R].
 
-?- writeln('Methods of o2:'), o2[M -> R].
+?- writeln('Methods of o2:')@prologlib(), o2[M -> R].
 

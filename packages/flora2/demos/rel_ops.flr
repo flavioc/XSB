@@ -30,7 +30,7 @@
 %%% ==================================================================
 
 %%% SELECT some tuples from p(X,Y):
-ans_sel(X,Y) :- p(X,Y), not X=Y.
+ans_sel(X,Y) :- p(X,Y), \+ X=Y.
 
 %%% PROJECT on the first argument of p(X,Y):
 ans_proj(X) :- p(X,_Y).		
@@ -49,7 +49,7 @@ ans_union(X) :- q(X).
 ans_intersect(X) :- p(X), q(X).
 
 %%% SET-DIFFERENCE p(X) \ q(X):
-ans_diff(X) :- p(X), not q(X).
+ans_diff(X) :- p(X), \+ q(X).
 
 
 %%% ==================================================================

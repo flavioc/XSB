@@ -2,7 +2,9 @@
 
 :- import findall/3 from setof.
 
-:- flProlog write/1, writeln/1.
+%% Here we declare writeln/1 as a prolog predicate to get directly to this 
+%% builtin. On the other hand, we call write/1 using @prologlib()
+:- flProlog writeln/1.
 
 edge(a,b).
 edge(b,c).
@@ -17,14 +19,15 @@ tc(X,Y) :- X[reachableTo->>Y].
 
 show(X) :-
 	X:activeNode,
-	write(X),
-	write('[reachableTo->>{'),
+	write(X)@prologlib(),
+	write('[reachableTo->>{')@prologlib(),
 	findall(Y,tc(X,Y),L),
 	writelist(L),
 	writeln('}]').
 
-writelist([X]) :- write(X).
-writelist([X1,X2|Xs]) :- write(X1), write(','), writelist([X2|Xs]).
+writelist([X]) :- write(X)@prologlib().
+writelist([X1,X2|Xs]) :-
+	write(X1)@prologlib(), write(',')@prologlib(), writelist([X2|Xs]).
 
 
 ?- show(X).

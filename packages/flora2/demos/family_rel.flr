@@ -35,8 +35,8 @@
 %%% ======================================================================
 
 
-:- auto_table.
-:- flPrologAll.
+%% to table ancestor/2
+:- flHilogTable 2.
 
 %%% Ladies first:
 female(rita). 
@@ -85,8 +85,8 @@ parent(C,P) :- child(P,C).		% read as ``parent_of C is P''
 father(C,P) :- child(P,C), male(P).	% use the child relation...
 mother(C,P) :- parent(C,P), female(P).	% ... or the parent relation
 
-brother(X,B) :- parent(X,P), parent(B,P), male(B), not X=B.
-sister(X,S) :- parent(X,P), parent(S,P), female(S), not X=S.
+brother(X,B) :- parent(X,P), parent(B,P), male(B), \+ X=B.
+sister(X,S) :- parent(X,P), parent(S,P), female(S), \+ X=S.
 
 %%% define a relation recursively:
 ancestor(X,Y) :- parent(X,Y).		% read as ``ancestor_of X is Y''

@@ -27,8 +27,11 @@
 %%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
 %%% ===========================================================================
 
-:- flProlog tc/2.
-:- table tc/2.
+:- flPredicate tc/2.
+:- flTable tc/2.
+%% Could also leave tc/2 as HiLog predicate and added the 
+%% :- flHilogTable 2.
+%% directive
 
 
 times_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)

@@ -99,7 +99,7 @@ flora_pp_write_header(X) :- write(X)@prologlib(), writeln('[')@prologlib().
 
 %% Print out scalar methods
 flora_pp_write_body_scalar(Obj,Module) :-
-    	MethLst1 = flCollectSet{SM | Obj[SM -> _]@Module},
+    	MethLst1 = collectset{SM | Obj[SM -> _]@Module},
 	sort(MethLst1, MethLst2)@prologlib(),
 	flora_pp_write_body_scalar1(Obj, MethLst2,Module).
 
@@ -120,7 +120,7 @@ flora_pp_write_body_scalar1(Obj, [MethInv|MethInvs],Module) :-
 	flora_pp_write_body_scalar1(Obj, MethInvs,Module).
 
 flora_pp_write_body_set(Obj,Module) :-
-    	MethLst1 = flCollectSet{MM | Obj[MM ->> _]@Module},
+    	MethLst1 = collectset{MM | Obj[MM ->> _]@Module},
 	sort(MethLst1, MethLst2)@prologlib(),
 	flora_pp_write_body_set1(Obj, MethLst2,Module).
 
@@ -133,7 +133,7 @@ flora_pp_write_body_set1(Obj, [MethInv|MethInvs],Module) :-
 	%% skip this method
 	flora_pp_write_body_set1(Obj, MethInvs,Module).
 flora_pp_write_body_set1(Obj, [MethInv|MethInvs],Module) :-
-	Vals = flCollectSet{V| Obj[MethInv ->> V]@Module},
+	Vals = collectset{V| Obj[MethInv ->> V]@Module},
 	write('    ')@prologlib(), flora_pp_write_method_invocation(MethInv),
 	write(' ->> ')@prologlib(), flora_pp_write_set(Vals),
 	flora_pp_write_comma_maybe(MethInvs),
@@ -182,7 +182,7 @@ flora_pp_immediate_isa(Class,Module) :-
 flora_pp_immediate_isa(_,_).
 
 %% There is an intermediate class between X and Class
-:- table flora_in_between_isa/3.
+:- flTable flora_in_between_isa/3.
 flora_in_between_isa(X,Class,Module) :-
 	(X:C1)@Module, C1 \= Class, (C1::Class)@Module.
 
@@ -195,7 +195,7 @@ flora_pp_subclasses_isa(Class,_) :-
 	fail.
 flora_pp_subclasses_isa(_,_).
 
-:- table flora_in_between_sub/3.
+:- flTable flora_in_between_sub/3.
 flora_in_between_sub(Sub,Class,Module) :-
 	(Sub :: Sub1)@Module,
 	Sub \= Sub1, Sub1 \= Class,

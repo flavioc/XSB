@@ -138,7 +138,8 @@
 :- index(flora_maxerr/1,trie).
 
 :- export
-	maxerr/1,
+	flMaxerr/1,
+	flHalt/0,
 	flora_compile_internal/1,
 	flora_compile_internal/2,
 	flora_load_module_internal/1,

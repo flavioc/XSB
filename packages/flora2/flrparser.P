@@ -316,7 +316,6 @@ is_aggregtop(FL_COLLECTBAG) :- !.
 
 is_notop(FL_NOT)	:- !.
 is_notop(FL_NEG)	:- !.
-is_notop(FL_TILDE)	:- !.
 
 is_tnotop(FL_TNOT)	:- !.
 
@@ -540,7 +539,6 @@ flora_command_directive(CanoniTerm,[Code],[]) :-
 /****************************************************************************
   Listed as follows are those parser directives that look like commands.
 ****************************************************************************/
-flora_is_command_directive(auto_table) :- !.
 flora_is_command_directive(spec_repr) :- !.
 flora_is_command_directive(spec_off) :- !.
 flora_is_command_directive(spec_dump) :- !.

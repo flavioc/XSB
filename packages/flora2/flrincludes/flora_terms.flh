@@ -110,7 +110,6 @@
 
 #define FL_TNOT			(tnot)
 #define FL_NOT			(not)
-#define FL_TILDE		'~'
 #define FL_NEG			'\+'
 
 #define FL_ISA			':'
@@ -156,10 +155,10 @@
 #define FL_RIGHTTO		'>>'
 #define FL_LEFTTO		'<<'
 
-#define FL_OP			(op)
+#define FL_OP			(flOp)
 #define FL_HILOG		(hilog)
 #define FL_DYNAMIC		(dynamic)
-#define FL_TABLE		(table)
+#define FL_TABLE		flTable
 #define FL_INDEX		(index)
 #define FL_EXPORT		(export)
 #define FL_IMPORT		(import)
@@ -178,27 +177,27 @@
 #define FL_ABOLISH		flAbolish
 #define FL_IN			(in)
 
-#define FL_MIN			flMin
-#define FL_MAX			flMax
-#define FL_SUM			flSum
-#define FL_AVG			flAverage
-#define FL_COUNT		flCount
-#define FL_COLLECTSET		flCollectSet
-#define FL_COLLECTBAG		flCollectBag
+#define FL_MIN			min
+#define FL_MAX			max
+#define FL_SUM			sum
+#define FL_AVG			avg
+#define FL_COUNT		count
+#define FL_COLLECTSET		collectset
+#define FL_COLLECTBAG		collectbag
 
-#define FL_INSERT		flInsert
-#define FL_INSERTALL		flInsertAll
-#define FL_DELETE		flDelete
-#define FL_DELETEALL		flDeleteAll
-#define FL_ERASE		flErase
-#define FL_ERASEALL		flEraseAll
+#define FL_INSERT		insert
+#define FL_INSERTALL		insertall
+#define FL_DELETE		delete
+#define FL_DELETEALL		deleteall
+#define FL_ERASE		erase
+#define FL_ERASEALL		eraseall
 
-#define FL_BTINSERT		flBtInsert
-#define FL_BTINSERTALL		flBtInsertAll
-#define FL_BTDELETE		flBtDelete
-#define FL_BTDELETEALL		flBtDeleteAll
-#define FL_BTERASE		flBtErase
-#define FL_BTERASEALL		flBtEraseAll
+#define FL_BTINSERT		btinsert
+#define FL_BTINSERTALL		btinsertall
+#define FL_BTDELETE		btdelete
+#define FL_BTDELETEALL		btdeleteall
+#define FL_BTERASE		bterase
+#define FL_BTERASEALL		bteraseall
 
 
 /****************************************************************************
