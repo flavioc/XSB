@@ -229,6 +229,19 @@ get_test_name_price(Id,Nam,Pri) :-
 Note that to include a quote (') in an atom, it must be represented
 by using two quotes.
 
+There is also a predicate:
+\begin{verbatim}
+| ?- odbc_sql_cnt(ConnectionName,BindVals,SQLStmt,Count).
+\end{verbatim}
+\index{\texttt{odbc\_sql\_cnt/4}}
+
+This predicate is very similar to {\tt odbc\_slq/4} except that it can
+only be used for UPDATE, INSERT, and DELETE SQL statements.  The first
+three arguments are just as in {\tt odbc\_slq/4}; the fourth must be a
+variable in which is returned the integer count of the number of rows
+affected by the SQL operation.
+
+
 \subsection{Cursor Management} \label{odbc:cursors}
 %=======================================================
 
