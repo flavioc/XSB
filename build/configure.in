@@ -209,14 +209,14 @@ xsb_scheduling_strategy=local
 enable_local_scheduling=yes
 
 AC_ARG_ENABLE(batched-scheduling,
-[  --enable-batched-scheduling  compile using the batched scheduling strategy;
+[  --enable-batched-scheduling	compile using the batched scheduling strategy;
 				default is the local strategy])
 dnl AC_ARG_ENABLE(local-scheduling,
 dnl [  --enable-local-scheduling  compile using the local scheduling strategy;
-dnl 			     default is the batched strategy])
+dnl			     default is the batched strategy])
 dnl AC_ARG_ENABLE(local-scheduling,
-dnl [  --with-local-scheduling  compile using the local scheduling strategy;
-dnl 			    default is the batched strategy])
+dnl [  --with-local-scheduling	compile using the local scheduling strategy;
+dnl			    default is the batched strategy])
 dnl Allow some slack in how local scheduling is specified
 
 if test "${enable_batched_sched}" = "yes" || \
@@ -435,8 +435,8 @@ arch_install_objdir=${arch_install_config_prefix}/saved.o
 dnl When running autoheader, uncoment these 2 lines and comment the next 2.
 dnl Then move xsb_config.h.in to def_config.in.
 dnl There probably will be no need to run autoheader any more!
-dnl AC_CONFIG_HEADER([${arch_config_prefix}/xsb_config.h:def_config.in
-dnl  ${arch_config_prefix}/xsb_debug.h:def_debug.in])
+dnl AC_CONFIG_HEADER(${arch_config_prefix}/xsb_config.h:def_config.in
+dnl ${arch_config_prefix}/xsb_debug.h:def_debug.in])
 
 AC_CONFIG_HEADER([${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
 ${arch_config_prefix}/xsb_debug.h:def_debug.in])
@@ -1010,7 +1010,7 @@ fi
 
 dnl Check for Incr Tcl (used in the XMC gui)
 AC_ARG_WITH(itkwish, 
-[  --with-itkwish=DIR          Path to where the itkwish shell is located]
+[  --with-itkwish=DIR	       Path to where the itkwish shell is located]
 )
 
 AC_PATH_PROG(itkwish_path, itkwish, no, $PATH:$with_itkwish)
@@ -1216,7 +1216,10 @@ fi
 
 # dnl ODBC library 
 if test "${with_odbc}" = yes ; then
-   LDFLAGS="-lodbc32${LDFLAGS}"
+   case "$canonical" in
+	*-cygwin*) LDFLAGS="-lodbc32${LDFLAGS}";;
+	*) LDFLAGS="-lodbc${LDFLAGS}"
+   esac
 fi
 
 if test "${enable_no_cygwin+set}" = "set"; then
@@ -1404,9 +1407,9 @@ if test -n "$site_dynamic_libraries" ; then
    done
 fi
 
-echo "  POSIX regexp matching libraries:		  $regmatch_support"
-echo "  POSIX wildcard matching libraries:		  $wildmatch_support"
-echo "  Perl support:					  $perl_support"
+echo "	POSIX regexp matching libraries:		  $regmatch_support"
+echo "	POSIX wildcard matching libraries:		  $wildmatch_support"
+echo "	Perl support:					  $perl_support"
 
 if test "$perl_support" = "yes"; then
    cat <<EOT

@@ -25,16 +25,18 @@
 #include "xsb_config.h"
 #include "cell_xsb.h"
 
-#ifdef WIN_NT
-#include <windows.h>
-#include <sql.h>
-#include <sqlext.h>
-#include <string.h>
-#else
+#ifdef CYGWIN
 #define FAR
 #include "sql.h"
 #include "sqlext.h"
 #include "odbc_string.h"
+#else
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+#include <sql.h>
+#include <sqlext.h>
+#include <string.h>
 #endif
 
 #include <stdio.h>

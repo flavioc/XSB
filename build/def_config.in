@@ -65,6 +65,9 @@
 /* MK Linux on Power PC */
 #undef MKLINUX_PPC
 
+/* CYGWIN */
+#undef CYGWIN
+
 /* Defined, if XSB is built with support for ORACLE DB */
 #undef ORACLE
 #undef ORACLE_DEBUG
