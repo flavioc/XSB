@@ -58,11 +58,6 @@
 
 shell :-
 	welcome_msg,
-%%	package_configuration(dir(flip), FlipDir),
-%%	slash(Slash),
-%%	fmt_write_string(FlipLib, '%s%slib', f(FlipDir,Slash)),
-%%	assert(library_directory(FlipLib)),
-%%	[flpclosure],
 	shell1.
 
 welcome_msg :- nl,
@@ -99,61 +94,29 @@ conv([C|Cs],Name) :-
 	name(Name,[C|Cs]).
 conv(X,X).
 
-parse(File) :- 
-	conv(File,FileN),
-	fmt_write_string(Msg, '*** FLIP: Compiling module: %s.flp', f(FileN)),
-	write(Msg),
-	parse_code(FileN),
-        write('done.').
 
 run(File) :- 
 	conv(File,FileN),
-	gen_code_interactive(FileN),
+	gen_code_verbose(FileN, noforce),
 	nl, writeln('Executing ...'),
 	consult(FileN,[optimize,auto_table,spec_repr]).
 
 load(File) :- 
 	conv(File,FileN),
-	consult(FileN,[optimize,auto_table,spec_repr]).
+	flip_search_module(FileN, Module, 'flp'),
+	consult(Module,[optimize,auto_table,spec_repr]).
 
 
-%%% parse_code(+File): parse code for File
-parse_code(InFile) :-
-	flip_search_module(InFile, Module, 'flp'),
-	name(Module,InFileL),
-	open_input(InFileL),
-	open_output(InFileL),
-	parse_all,
-	close_output,
-	close_input.
 
-parse_all :-
-	read_tokens(L),
-	((L = [atom(end_of_file)] 
-	 ; L = [identifier(end_of_file)]
-	 )
-	-> true
-	;  parse_and_write(L),
-	   parse_all
-	).
-
-parse_and_write(L) :-
-	(rule(Parsed_Rule, L, [])
-	-> write('%%% '),
-	   portray_list(L), writeln('.'),
-	   write(Parsed_Rule), writeln('.'), nl
-	;  close_output,close_input,
-	   nl, portray_list(['*** Parse ERROR: '|L]),
-	   nl, write_list(L),
-	   fail
-	).
-
-
-%%% gen_code(+InFile): generate code for InFile
-gen_code(InFile) :-
+%%% gen_code(+InFile, +Force): generate code for InFile
+%%% If Force=force, then force compilation, even if the .P file is newer
+gen_code(InFile, Force) :-
 	flip_search_module(InFile, Module, 'flp'),
 	%% check if .P is older
-	flip_need_gencode(Module),
+	( Force \= force
+	 -> flip_need_gencode(Module)
+	  ; true
+	),
 	name(Module,InFileL),
 	open_input(InFileL),
 	open_output(InFileL),
@@ -169,12 +132,13 @@ gen_code(InFile) :-
 	close_output,
 	close_input.
 
+
 %% If .P is younger than .flp, then don't generate code.
-gen_code_interactive(InFile) :-
+gen_code_verbose(InFile, Force) :-
         fmt_write_string(Msg, '*** FLIP: Compiling module: %s.flp', f(InFile)),
 	write(Msg),
 	cputime(T0),
-	gen_code(InFile),
+	gen_code(InFile, Force),
 	cputime(T1),
 	T is T1-T0,
 	writeln(' done.'),
@@ -183,8 +147,13 @@ gen_code_interactive(InFile) :-
 	write('*** CPU time used: '), write(T), writeln(' seconds.'),
 	!.
 
-gen_code_interactive(_) :- 
+gen_code_verbose(_,_) :- 
         nl, writeln('*** Compiled module already exists.').
+
+%% parse and write .P file even if .P is newer.
+parse(InFile) :- 
+	conv(InFile, FNatom),
+	gen_code_verbose(FNatom, force).
 
 
 comp_all :-
@@ -404,7 +373,8 @@ rundemo_(X) :-
 	package_configuration(dir(flip), FlipDir),
 	slash(Slash),
 	fmt_write_string(DemoDir, '%s%sdemos', f(FlipDir, Slash)),
-	(library_directory(DemoDir) -> true
+	(library_directory(DemoDir)
+	       -> true
 		; assert(library_directory(DemoDir))
 	),
 	run(X),
@@ -425,17 +395,17 @@ parse_all_demos_ :- package_configuration(dir(flip), FlipDir),
 		    retract(library_directory(DemoDir)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Find module in XSB library.
+%% Find module in XSB libraries.
 %% If `In' filename is absolute, then use it.
 %% Otherwise, search library_directory.
 
 %% Don't let it backtrack, or else it will be called again in
-%% gen_code or parse_code! 
+%% gen_code! 
 flip_search_module(In, In, _) :- is_absolute_filename(In),!.
 flip_search_module(In, Out, Extension) :- 
         ( atom(Extension) -> true ;
 	       nl, abort('Argument 3 of flip_search_module must be an atom!')),
-	library_directory(Lib),
+	flip_library_directory(Lib),
 	slash(Slash),
 	parse_filename(In, InDir, InBase, _),
 	(InDir == '' ->  Fmt = '%s%s%s', Term = f(Lib,Slash,InBase)
@@ -446,7 +416,7 @@ flip_search_module(In, Out, Extension) :-
 	fmt_write_string(Out, Fmt, Term),
 	fmt_write_string(FullOut, '%s.%s', f(Out,Extension)),
 	%% Don't let it backtrack, if a module is found. Otherwise, it will
-	%% be called again in gen_code or parse_code!
+	%% be called again in gen_code!
 	machine_file_exists(FullOut), !.
 flip_search_module(In,In,_).
 
@@ -469,3 +439,6 @@ flip_need_gencode(Module) :-
          ;
 	    true).
 	    
+
+flip_library_directory('.').
+flip_library_directory(X) :- library_directory(X).
