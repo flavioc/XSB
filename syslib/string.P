@@ -62,11 +62,17 @@ concat_atom(Atomlist,Sep,Atom):-
 
 atom_to_charlist([],_,[]).
 atom_to_charlist([Atom],_,[List]):- !,
-	atom(Atom),
-	atom_codes(Atom,List).
+	(atom(Atom)
+	 ->	atom_codes(Atom,List)
+	 ; number(Atom)
+	 ->	number_codes(Atom,List)
+	).
 atom_to_charlist([Atom|Rest],Slist,[List,Slist|Lrest]):- 
-	atom(Atom),
-	atom_codes(Atom,List),
+	(atom(Atom)
+	 ->	atom_codes(Atom,List)
+	 ; number(Atom)
+	 ->	number_codes(Atom,List)
+	),
 	atom_to_charlist(Rest,Slist,Lrest).
 
 %% Get substring of String beginning at from and ending at To.
