@@ -2741,9 +2741,17 @@ EOF
 #define HP700 1
 EOF
 
+	     cat >> confdefs.h <<\EOF
+#define _HPUX_SOURCE 1
+EOF
+
 		;;
      *linux*) cat >> confdefs.h <<\EOF
 #define LINUX 1
+EOF
+
+	      cat >> confdefs.h <<\EOF
+#define _GNU_SOURCE 1
 EOF
 
 	      case "${canonical}" in
@@ -2873,7 +2881,8 @@ EOF
       *-aix*)  cat >> confdefs.h <<\EOF
 #define IBM 1
 EOF
- ;;
+
+	       ;;
       *-sunos4*) cat >> confdefs.h <<\EOF
 #define SUN 1
 EOF
@@ -2884,6 +2893,11 @@ EOF
 
 		 CFLAGS="${CFLAGS} -DBIG_MEM"
 		 LDFLAGS="${LDFLAGS} -N"
+		;;
+      *-cygwin*) cat >> confdefs.h <<\EOF
+#define CYGWIN 1
+EOF
+
 		;;
 esac
 
@@ -2897,21 +2911,21 @@ esac
 
 if test -z "$with_os" ; then
             echo $ac_n "checking for inline""... $ac_c" 1>&6
-echo "configure:2901: checking for inline" >&5
+echo "configure:2915: checking for inline" >&5
 if eval "test \"`echo '$''{'ac_cv_c_inline'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   ac_cv_c_inline=no
 for ac_kw in inline __inline__ __inline; do
   cat > conftest.$ac_ext <<EOF
-#line 2908 "configure"
+#line 2922 "configure"
 #include "confdefs.h"
 
 int main() {
 } $ac_kw foo() {
 ; return 0; }
 EOF
-if { (eval echo configure:2915: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2929: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_inline=$ac_kw; break
 else
@@ -2966,18 +2980,6 @@ trutilsCFLAGS="${c_site_includes} ${trutils_opt_level} ${c_inline_level} ${CFLAG
 CFLAGS="${c_site_includes} ${c_opt_level} ${c_inline_level} ${CFLAGS}"
 LDFLAGS="${ld_site_libraries} ${LDFLAGS}"
 
-
-## Set special preprocessor options
-case "${canonical}" in
-      *hpux*) cat >> confdefs.h <<\EOF
-#define _HPUX_SOURCE 1
-EOF
- ;;
-      *linux*) cat >> confdefs.h <<\EOF
-#define _GNU_SOURCE 1
-EOF
- ;;
-esac
 
 os_version=`echo $host_os | sed -e 's/[^0-9]*//'`
 os_type=`echo $host_os | sed -e 's/[0-9].*$//'`
@@ -3609,77 +3611,77 @@ Checking installation directories...
 ( 
 
 echo $ac_n "checking $scriptdir""... $ac_c" 1>&6
-echo "configure:3613: checking $scriptdir" >&5 && \
+echo "configure:3615: checking $scriptdir" >&5 && \
      ((test -d $scriptdir || mkdir -p $scriptdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_bindir""... $ac_c" 1>&6
-echo "configure:3617: checking $arch_bindir" >&5 && \
+echo "configure:3619: checking $arch_bindir" >&5 && \
      ((test -d $arch_bindir || mkdir -p $arch_bindir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_config_libdir""... $ac_c" 1>&6
-echo "configure:3621: checking $arch_config_libdir" >&5 && \
+echo "configure:3623: checking $arch_config_libdir" >&5 && \
      ((test -d $arch_config_libdir || mkdir -p ${arch_config_libdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking ${arch_config_objlibdir}""... $ac_c" 1>&6
-echo "configure:3625: checking ${arch_config_objlibdir}" >&5 && \
+echo "configure:3627: checking ${arch_config_objlibdir}" >&5 && \
      ((test -d "${arch_config_objlibdir}" || mkdir -p ${arch_config_objlibdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 
 echo $ac_n "checking $site_libdir""... $ac_c" 1>&6
-echo "configure:3630: checking $site_libdir" >&5 && \
+echo "configure:3632: checking $site_libdir" >&5 && \
      ((test -d $site_libdir || mkdir -p $site_libdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $site_config_libdir""... $ac_c" 1>&6
-echo "configure:3634: checking $site_config_libdir" >&5 && \
+echo "configure:3636: checking $site_config_libdir" >&5 && \
      ((test -d $site_config_libdir || mkdir -p $site_config_libdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 
 echo $ac_n "checking $install_emudir""... $ac_c" 1>&6
-echo "configure:3639: checking $install_emudir" >&5 && \
+echo "configure:3641: checking $install_emudir" >&5 && \
      ((test -d $install_emudir || mkdir -p $install_emudir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_libdir""... $ac_c" 1>&6
-echo "configure:3643: checking $install_libdir" >&5 && \
+echo "configure:3645: checking $install_libdir" >&5 && \
      ((test -d $install_libdir || mkdir -p $install_libdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_syslibdir""... $ac_c" 1>&6
-echo "configure:3647: checking $install_syslibdir" >&5 && \
+echo "configure:3649: checking $install_syslibdir" >&5 && \
      ((test -d $install_syslibdir || mkdir -p $install_syslibdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_cmplibdir""... $ac_c" 1>&6
-echo "configure:3651: checking $install_cmplibdir" >&5 && \
+echo "configure:3653: checking $install_cmplibdir" >&5 && \
      ((test -d $install_cmplibdir || mkdir -p $install_cmplibdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_scriptdir""... $ac_c" 1>&6
-echo "configure:3655: checking $install_scriptdir" >&5 && \
+echo "configure:3657: checking $install_scriptdir" >&5 && \
      ((test -d $install_scriptdir || mkdir -p $install_scriptdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_builddir""... $ac_c" 1>&6
-echo "configure:3659: checking $install_builddir" >&5 && \
+echo "configure:3661: checking $install_builddir" >&5 && \
      ((test -d $install_builddir || mkdir -p $install_builddir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_bindir""... $ac_c" 1>&6
-echo "configure:3663: checking $arch_install_bindir" >&5 && \
+echo "configure:3665: checking $arch_install_bindir" >&5 && \
      ((test -d $arch_install_bindir || mkdir -p $arch_install_bindir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_config_libdir""... $ac_c" 1>&6
-echo "configure:3667: checking $arch_install_config_libdir" >&5 && \
+echo "configure:3669: checking $arch_install_config_libdir" >&5 && \
      ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_objdir""... $ac_c" 1>&6
-echo "configure:3671: checking $arch_install_objdir" >&5 && \
+echo "configure:3673: checking $arch_install_objdir" >&5 && \
      ((test -d $arch_install_objdir || mkdir -p ${arch_install_objdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_etcdir""... $ac_c" 1>&6
-echo "configure:3675: checking $install_etcdir" >&5 && \
+echo "configure:3677: checking $install_etcdir" >&5 && \
      ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_pkgdir""... $ac_c" 1>&6
-echo "configure:3679: checking $install_pkgdir" >&5 && \
+echo "configure:3681: checking $install_pkgdir" >&5 && \
      ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_prolog_includes""... $ac_c" 1>&6
-echo "configure:3683: checking $install_prolog_includes" >&5 && \
+echo "configure:3685: checking $install_prolog_includes" >&5 && \
      ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 ) 2> /dev/null

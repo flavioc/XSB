@@ -232,11 +232,7 @@ DllExport char * call_conv strip_names_from_path(char* path, int how_many)
 
   for (i=0; i < how_many; i++) {
     if (abort_flag) {
-      char message[200];
-      sprintf(message,
-	      "There is no directory %d levels below %s\n",
-	      how_many, path);
-      xsb_abort(message);
+      xsb_abort("There is no directory %d levels below %s", how_many, path);
     }
     cutoff_ptr = strrchr(buffer, SLASH);
     if (cutoff_ptr == NULL)
@@ -327,8 +323,9 @@ static char *rectify_pathname(char *inpath, char *outpath) {
 
   /* check if expanded inpath has trailing/leading slash */
   leading_slash = (*expanded_inpath == SLASH ? TRUE : FALSE);
-#ifdef WIN_NT
-  /* In windows, the leading \\foo means remote drive */
+#if defined(WIN_NT) || defined(CYGWIN)
+  /* In windows, the leading \\foo means remote drive;
+     In CYGWIN, absolute path starts with //driveletter */
   leading_slash2 = (*(expanded_inpath+1) == SLASH ? TRUE : FALSE);
 #else
   leading_slash2 = FALSE;

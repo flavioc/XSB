@@ -885,8 +885,10 @@ case "$canonical" in
      *alpha*)  AC_DEFINE(FOREIGN_ELF)
 		;;
      *hpux*) AC_DEFINE(HP700)
+	     AC_DEFINE(_HPUX_SOURCE)
 		;;
      *linux*) AC_DEFINE(LINUX)
+	      AC_DEFINE(_GNU_SOURCE)
 	      case "${canonical}" in
 		   *ppc* | *powerpc* | *m68k* ) AC_DEFINE(MKLINUX_PPC) ;;
 	           dnl Linux a.out
@@ -974,11 +976,14 @@ case "$canonical" in
 		     AC_MSG_ERROR(Your system is missing library: \`socket')
 		 fi
 		;;
-      *-aix*)  AC_DEFINE(IBM) ;;
+      *-aix*)  AC_DEFINE(IBM)
+	       ;;
       *-sunos4*) AC_DEFINE(SUN)
 		 AC_DEFINE(FOREIGN_AOUT)
 		 CFLAGS="${CFLAGS} -DBIG_MEM"
 		 LDFLAGS="${LDFLAGS} -N"
+		;;
+      *-cygwin*) AC_DEFINE(CYGWIN)
 		;;
 esac
 
@@ -1023,12 +1028,6 @@ dnl Set CFLAGS **after** emuloopCFLAGS, trutilsCFLAGS
 CFLAGS="${c_site_includes} ${c_opt_level} ${c_inline_level} ${CFLAGS}"
 LDFLAGS="${ld_site_libraries} ${LDFLAGS}"
 
-
-## Set special preprocessor options
-case "${canonical}" in
-      *hpux*) AC_DEFINE(_HPUX_SOURCE) ;;
-      *linux*) AC_DEFINE(_GNU_SOURCE) ;;
-esac
 
 os_version=`echo $host_os | sed -e 's/[[^0-9]]*//'`
 os_type=`echo $host_os | sed -e 's/[[0-9]].*$//'`
