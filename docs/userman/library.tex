@@ -41,6 +41,30 @@ looking at the sources.
     should be instantiated (but not necessarily ground) at the time of 
     the call.
 
+\ournewitem{log\_ith(?Index, ?Tree, ?Element)}{basics}\index{{\tt log\_ith/3}}
+%\predindex{log\_ith/3~(L)}
+    Succeeds if the ${\tt Index^{th}}$ element of the Tree {\tt Tree}
+    unifies with {\tt Element}.  Fails if {\tt Index} is not a
+    positive integer or greater than the number of elements that can
+    be in {\tt Tree}.  Either {\tt Index} and {\tt Tree}, or {\tt
+    Tree} and {\tt Element}, should be instantiated (but not
+    necessarily ground) at the time of the call.  Tree is a list of
+    full binary trees, the first being of depth 0, and each one being
+    of depth one greater than its predecessor.  So {\tt log\_ith/3} is
+    very similar to {\tt ith/3} except it uses a tree instead of a
+    list to obtain log-time access to its elements.
+
+\ournewitem{log\_ith\_bound(?Index, ?Tree, ?Element)}{basics}
+	\index{{\tt log\_ith\_bound/3}}
+%\predindex{log\_ith\_bound/3~(L)}
+    is like {\tt log\_ith/3}, but only if the ${\tt Index^{th}}$ element
+    of {\tt Tree} is nonvariable and equal to Element.  This predicate
+    can be used in both directions, and is most useful with Index
+    unbound, since it will then bind {\tt Index} and {\tt Element} for
+    each nonvariable element in {\tt Tree} (in time proportional to
+    $N*logN$, for $N$ the number of nonvariable entries in {\tt
+    Tree}.)
+
 \ournewitem{length(?List, ?Length)}{basics}\index{{\tt length/2}}
 %\predindex{length/2~(L)}
     Succeeds if the length of the list {\tt List} is {\tt Length}.
@@ -259,6 +283,7 @@ handled by the XSB compiler.
     variable in {\tt Term} is given a value of {\tt N} satisfying
     {\tt "N is FirstN + 1"} and so on.  The last variable in {\tt Term}
     has the value {\tt LastN-1}.
+% $ for prettyprinter....
 
 \ournewitem{numbervars(+Term)}{num\_vars}\index{{\tt numbervars/1}}
 %\predindex{numbervars/1~(L)}
@@ -280,6 +305,17 @@ handled by the XSB compiler.
 %    {\tt   varnumbers(Term, Copy)}
 %    \end{center}
 %    is also provided.
+
+\ournewitem{unnumbervars(+Term, +FirstN, ?Copy)}{num\_vars}
+\index{{\tt unnumbervars/3}}
+%\predindex{unnumbervars/3~(B)}
+    This predicate is a partial inverse of predicate {\tt
+    numbervars/3}.  It creates a copy of Term in which all subterms of
+    the form \verb|'$VAR'(<int>)| where \verb|<int>| is not less than
+    {\tt FirstN} are uniformly replaced by variables.  \verb|'$VAR''|
+    subterms with the same integer are replaced by the same variable.
+    Also a version {\tt unnumbervars/2} is provided which calls {\tt
+    unnumbervars/3} with the second parameter set to 0.
 
 \ournewitem{subsumes(?Term1, +Term2)}{subsumes}\index{{\tt subsumes/2}}
 %\predindex{subsumes/2~(L)}
