@@ -63,7 +63,7 @@
 #define MAXVARSTRLEN                    2000
 #define MAXI(a,b)                       ((a)>(b)?(a):(b))
 
-static Cell     nullStrAtom;
+static Psc     nullFctPsc;
 static int      serverConnected = 0;
 /* static int      numberOfCursors = 0; */
 static long      SQL_NTSval = SQL_NTS;
@@ -430,6 +430,7 @@ void ODBCConnect()
   UCHAR *connectIn;
   HDBC hdbc = NULL;
   RETCODE rc;
+  int new;
 
   /* if we don't yet have an environment, allocate one.*/
   if (!henv) {
@@ -446,7 +447,7 @@ void ODBCConnect()
 
     LCursor = FCursor = NULL;
     FCurNum = NULL;
-    nullStrAtom = makestring(string_find("NULL",1));
+    nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
   }
 
   /* allocate connection handler*/
@@ -810,7 +811,7 @@ void SetBindVal()
 	/* SQLBindParameter will be done later in parse for char variables*/
       }
       cur->BindList[j] = string_val(BindVal);
-    } else if (isconstr(BindVal) && !strcmp(get_name(get_str_psc(BindVal)),"NULL")) {
+    } else if (isconstr(BindVal) && get_str_psc(BindVal) == nullFctPsc) {
       if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
       cur->BindTypes[j] = 3;
       cur->BindList[j] = NULL;
@@ -855,7 +856,7 @@ void SetBindVal()
   } else if (isstring(BindVal)) {
     cur->BindTypes[j] = 2;
     cur->BindList[j] = string_val(BindVal);
-  } else if (isconstr(BindVal) && !strcmp(get_name(get_str_psc(BindVal)),"NULL")) {
+    } else if (isconstr(BindVal) && get_str_psc(BindVal) == nullFctPsc) {
     cur->BindTypes[j] = 3;
     cur->BindList[j] = NULL;
   } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
@@ -1181,7 +1182,7 @@ void ODBCDataSources()
   static SQLCHAR DSN[SQL_MAX_DSN_LENGTH+1];
   static SQLCHAR Description[SQL_MAX_DSN_LENGTH+1];
   RETCODE rc;
-  int seq;
+  int seq, new;
   SWORD dsn_size, descr_size;
   Cell op2 = ptoc_tag(3);
   Cell op3 = ptoc_tag(4);
@@ -1196,7 +1197,7 @@ void ODBCDataSources()
     }
     LCursor = FCursor = NULL;
     FCurNum = NULL;
-    nullStrAtom = makestring(string_find("NULL",1));
+    nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
   }
 
   seq = ptoc_int(2);
@@ -1463,13 +1464,10 @@ int GetColumn()
   /* get the data*/
   if (cur->OutLen[ColCurNum] == SQL_NULL_DATA) {
     /* column value is NULL*/
-    //    return unify(op,nullStrAtom);
-    int new;
-    Cell retterm;
-    retterm = makecs(hreg);
-    new_heap_functor(hreg,pair_psc(insert("NULL",1,global_mod,&new)));
+    Cell nullterm = makecs(hreg);
+    new_heap_functor(hreg,nullFctPsc);
     new_heap_free(hreg);
-    return unify(op,retterm);
+    return unify(op,nullterm);
   }
 
   /* convert the string to either integer, float or string*/
