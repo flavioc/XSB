@@ -148,8 +148,6 @@
 #undef CHAT
 
 #undef WAM_TRAIL
-#undef CHAT_TREE_COPY
-#undef INCREMENTAL_CP_TRAVERSAL
 
 #undef PTCP_IN_CP
 

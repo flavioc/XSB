@@ -88,9 +88,6 @@
 #undef SGI
 #undef SGI64
 
-/* Use delay strategy */
-#undef SLG_WITH_DELAY
-
 /* Sun Solaris OS */
 #undef SOLARIS
 #undef BIG_MEM
@@ -183,8 +180,6 @@
 #undef GC
 
 #undef WAM_TRAIL
-#undef CHAT_TREE_COPY
-#undef INCREMENTAL_CP_TRAVERSAL
 
 #undef PTCP_IN_CP
 
