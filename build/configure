@@ -3683,9 +3683,16 @@ chmod 444 ${arch_config_file} \
 
 # Move the config file in case of DOS and Windoze to the right place
 if test -n "$with_os" ; then
+   echo ""
    echo "Copying config.h, debug.h to <emudir>/configs and <emudir>/debugs"
    cp -f ${arch_config_prefix}/config.h  ${emudir}/configs
    cp -f ${arch_config_prefix}/debug.h  ${emudir}/debugs
+fi
+
+#move the make file for MS Visual C++
+if test "$canonical" = "x86-pc-windows" ; then
+   echo "Copying Windows Makefiles to <emudir>"
+   cp -f MS_VC_Mfile.mak ${emudir}
 fi
 
 echo ""
