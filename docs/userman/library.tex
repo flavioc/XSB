@@ -750,16 +750,16 @@ Like \verb|file_putbuf/3|, but output goes to the currently open output stream.
 
 Prolog, (or XSB) can be useful for writing scripts in a UNIX system.
 Prolog's simple syntax and declarative semantics make it especially
-suitable for scripts that involve text processing.  The following
-library functions are intended to be used on UNIX-based platforms.
-Furthermore, they are new to Version 1.7 and should be considered to
-be in the Beta test stage.
+suitable for scripts that involve text processing.  Wherever noted, some of
+these functions are currently working under Unix only.
 
 \begin{description}
 \ournewitem{date(?Date)}{scrptutl}
 \index{{\tt date/1}}
-       Unifies {\tt Date} to the current date, returned as a Prolog
-term, suitable for term comparison.
+
+Unifies {\tt Date} to the current date, returned as a Prolog term, suitable
+for term comparison.  Currently this only works under Unix, is slow, and
+should be rewritten in C using {\tt time()} and {\tt localtime()}.
 
 Example:
 {\footnotesize
@@ -795,13 +795,16 @@ Returns file size.
 \ournewitem{directory(+Path,?Directory)}{directry}
 \index{{\tt directory/2}}
 
-	Unifies {\tt Directory} with a list of files in the directory
-specified by path.  Information about the files is similar to that
-obtained by {\tt ls -l}, but transformed for ease of processing.
+Unifies {\tt Directory} with a list of files in the directory specified by
+path.  Information about the files is similar to that obtained by {\tt ls
+  -l}, but transformed for ease of processing.  This currently works for
+Unix only, is slow, and should be reimplemented in C using {\tt opendir()}
+and {\tt readdir()}.
 
 
 \ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
 \index{{\tt expand\_filename/2}}
+
 Expands the file name passed as the first argument and binds the variable
 in the second argument to the expanded name. This includes expanding Unix
 tildas, prepending the current directory, etc. In addition, the expanded
@@ -836,6 +839,32 @@ always end with a slash or a backslash, as appropriate for the OS at hand.
 For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
 {\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
 {\tt /home/john} is what {\tt $\sim$john} expands into).  
+
+\ournewitem{file\_to\_list(IOport, List)}{scrptutl}s
+\index{{\tt file\_to\_list/2}}
+%%
+Read lines from an \emph{open} I/O port. Return a
+list of terms, one per each line read. Each such term is a list of tokens
+on the corresponding line.  Tokens are lists of characters separated by a
+space symbol (space, newline, return, tabs, formfeed). For instance, if
+{\tt IOport} 10 is bound to a file
+%%
+\begin{verbatim}
+ads sdfdsfd ee
+112 444
+4555  
+\end{verbatim}
+%%
+then
+%%
+\begin{verbatim}
+| ?- file_to_list(10, L).  
+L = [[ads,sdfdsfd,ee],[112,444],[4555]]
+yes
+\end{verbatim}
+%%
+Note: {\tt file\_to\_list/2} does not close the I/O port, so it is an
+application program responsibility.
 
 
 %% This predicate is superseded by spawn_process/5 and shell/5

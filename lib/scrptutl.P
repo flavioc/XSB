@@ -1,8 +1,8 @@
 /* File:      scrptutl.P
-** Author(s): Swift (Warren)
+** Author(s): Swift, Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1993-1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -22,40 +22,41 @@
 ** 
 */
 
-:- export  
-	   ca/2,ca_null/2,
-	   date/1,
-	   fget_line/3,file_to_list/3,
-	   simple_tokenize/2,
-	   sysin/2.
 
-:- import concat_atom/3 from string.
-:- import close/1, name/2, see/1, get0/1, open/3, atom/1, arg/3, functor/3,
-	seeing/1
-	from standard.
-:- import unix/1 from unix.
-:- import xsb_configuration/2 from xsb_configuration.
+:- compiler_options([xpp_on, sysmod]).
+#include "char_defs.h"
 
-% Crude but effective.  Returns stdout of a unix command as a list of
-% tokens.
-sysin(Command,List):-
-	ca([Command,'> /tmp/XSBdir'],Com1),
-	unix(Com1),
-	open('/tmp/XSBdir',read,Str),
-	file_to_list(Str,0,List),
-	close(Str).
-
-file_to_list(_Str,-1,[]):-!.
-file_to_list(Str,_,List):-
-	fget_line(Str,Inlist,Next),
-	(Inlist == [] -> List = [] 
-	  ; List = [Toklist|Rest],	
-   	    simple_tokenize(Inlist,Toklist),
-	    file_to_list(Str,Next,Rest)).
-
+%% This is very slow because of spawning a process and tokenizing.
+%% Should be done in C using time(3) and localtime(2).
 date(date(Y,Mon,D,H,Min,S)):-
-	sysin('date +%Y\ %b\ %d\ %k\ %M\ %S',[[Y,M_in,D,H,Min,S]]),
+	shell('date "+%Y %b %d %k %M %S"', none, FromDate, none, _ErrCode),
+	file_to_list(FromDate, [[Y,M_in,D,H,Min,S]]),
+	file_close(FromDate),
 	month(M_in,Mon).
+
+:- dynamic '_$_$_file_to_list'/1.
+%% Convert file into a list of lists of tokens
+file_to_list(File, List) :-
+	repeat,
+	(   file_read_line_list(File, Line, _)
+	->  (   Line = []
+	    ->	Toklist=[]
+	    ;	simple_tokenize(Line, Toklist)
+	    ),
+	    (	'_$_$_file_to_list'(SavedList)
+	    ->	SavedList1 = [Toklist | SavedList]
+	    ;	SavedList1 = [Toklist]
+	    ),
+	    retractall('_$_$_file_to_list'(_)),
+	    assert('_$_$_file_to_list'(SavedList1)),
+	    fail
+	;   !,
+	    (	'_$_$_file_to_list'(SavedList)
+	    ->	reverse(SavedList, List)
+	    ;	List = []
+	    ),
+	    retractall('_$_$_file_to_list'(_))
+	).
 
 month('Jan',0).
 month('Feb',1).
@@ -75,8 +76,16 @@ month('Dec',11).
 %	name(Atom,L),
 %	number_codes(Number,L).
 
+space_char(CH_SPACE).
+space_char(CH_TAB).
+space_char(CH_NEWLINE).
+space_char(CH_RETURN).
+space_char(CH_FORMFEED).
+space_char(CH_VERTAB).
+
 simple_tokenize([],[]):-!.
-simple_tokenize([32|Rest],Toks):-!,
+simple_tokenize([Char|Rest],Toks):-
+	space_char(Char), !,
 	simple_tokenize(Rest,Toks).
 simple_tokenize(List,[Tok|Rest]):-
 	read_const(List,Rlist,Toklist),
@@ -84,7 +93,8 @@ simple_tokenize(List,[Tok|Rest]):-
 	simple_tokenize(Rlist,Rest).
 
 read_const([],[],[]).
-read_const([32|Rest],Rest,[]):-!.
+read_const([Char|Rest],Rest,[]):-
+	space_char(Char), !.
 read_const([H|Rest],Out,[H|T]):-
 	read_const(Rest,Out,T).
 
@@ -105,8 +115,34 @@ ca_1([H|T],[H1|T1]):-!,
 ca_1('',[]):- !.
 ca_1(H,[H]):- atom(H).
 
+%% The stuff below is marked as obsolete!!
+
+% Crude but effective.  Returns stdout of a unix command as a list of
+% tokens. Obsolete!
+sysin(Command,List):-
+	obsolete('sysin/1', 'shell/5'),
+	ca([Command,'> /tmp/XSBdir'],Com1),
+	unix(Com1),
+	open('/tmp/XSBdir',read,Str),
+	file_to_list(Str,0,List),
+	close(Str).
+
+%% Obsolete
+file_to_list(_Str,-1,[]):-
+	obsolete('file_to_list/3', 'file_to_list/2'),
+	!.
+file_to_list(Str,_,List):-
+	obsolete('file_to_list/3', 'file_to_list/2'),
+	fget_line(Str,Inlist,Next),
+	(Inlist == [] -> List = [] 
+	  ; List = [Toklist|Rest],	
+   	    simple_tokenize(Inlist,Toklist),
+	    file_to_list(Str,Next,Rest)).
+
+
 /* Stage 1: tokenize XSB specific */
 fget_line(Str,Inlist,Next):-
+	obsolete('fget_line/3', 'file_read_line_atom/3 & file_read_line_list/3'),
 	seeing(OldFile),
 	see(Str),
 	xsb_configuration(configuration,Conf),
