@@ -717,6 +717,10 @@ typically called just before returning to the top level.
     complete set of answers).  Closed tables are unaffected, even if 
     the tables were created during the aborted computation.
 
+\ouritem{abort(+Message)}\index{{\tt abort/1}} \index{\tt STDERR} 
+    Acts as {\tt abort/0} but sents {\tt Message} to {\tt STDERR}
+    before aborting.
+
 \ouritem{catch(?Goal,?Catcher,?Handler)}\index{{\tt catch/3}} 
 \vspace{-7mm}
 \ouritem{throw(+Handler)}\index{{\tt throw/1}} 

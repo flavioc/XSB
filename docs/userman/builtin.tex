@@ -141,21 +141,38 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
 \ouritem{nl(+Stream)}\index{{\tt nl/1}}
     A new line character is sent to the designated output stream.
 
-\ouritem{get0(?N)}\index{{\tt get0/1}}
-    {\tt N} is the ASCII code of the next character read from the current 
-    input stream. If the current input stream reaches its end of file,
-    a {\tt -1} is returned 
+\ouritem{get0(?N)}\index{{\tt get0/1}} 
+    {\tt N} is the ASCII code of the next character read from the
+    current input stream (regarded as a text stream). If the current
+    input stream reaches its end of file, a {\tt -1} is returned.
 
     Compatibility Note:  Unlike other Prologs, such as C-Prolog, the input 
     stream is not closed on encountering the end-of-file character.
 
-\ouritem{get(?N)}\index{{\tt get/1}}
-    {\tt N} is the ASCII code of the next non-blank printable character
-    from the current input stream. It has the same behaviour as {\tt get0/1}
-    when an end of file character is encountered.
+\ouritem{get(?N)}\index{{\tt get/1}} 
+    {\tt N} is the ASCII code of the next non-blank printable
+    character from the current input stream (regarded as a text
+    stream).  If the current input stream reaches its end of file, a
+    {\tt -1} is returned.
 
     Compatibility Note:  Unlike other Prologs, such as C-Prolog, the input 
     stream is not closed on encountering the end-of-file character.
+
+\ouritem{get\_code(?N)}\index{{\tt get\_code/1}}
+\vspace{-7mm} 
+\ouritem{get\_code(+Stream,?N)}\index{{\tt get\_code/2}}
+   {\tt N} is the ASCII code of the next character from the current
+   input stream or from {\tt Stream}.  The semantics of these
+   predicates are based on that of {\tt get0/1} and do not conform in
+   all cases to the ISO standard.
+
+\ouritem{get\_char(?Char)}\index{{\tt get\_char/1}}
+\vspace{-7mm} 
+\ouritem{get\_char(+Stream,?Char)}\index{{\tt get\_char/2}}
+   {\tt Char} is the next ASCII character from the current input stream
+   or from {\tt Stream}.  The semantics of these predicates are based
+   on that of {\tt get0/1} and do not conform in all cases to the ISO
+   standard.
 
 \ouritem{put(+N)}\index{{\tt put/1}}
     Puts the ASCII character code {\tt N} to the current output stream.
@@ -167,6 +184,23 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
     \item[{\tt type\_error}]
 	{\tt N} is not an integer at the time of the call.
     \end{description}
+
+\ouritem{put\_code(+N)}\index{{\tt put\_code/1}}
+\vspace{-7mm} 
+\ouritem{put\_code(+Stream,+N)}\index{{\tt put\_code/2}}
+    Puts the ASCII character code {\tt N} to the current output stream
+    or to {\tt Stream}.  The semantics of these predicates are based
+    on that of {\tt put/1} and do not conform in all cases to the ISO
+    standard.
+
+\ouritem{put\_char(+Char)}\index{{\tt put\_char/1}}
+\vspace{-7mm} 
+\ouritem{put\_char(+Stream,+Char)}\index{{\tt put\_char/2}}
+    Puts the ASCII code of the character {\tt Char} to the current
+    output stream or to {\tt Stream}.  The semantics of these
+    predicates are based on that of {\tt put/1} and do not conform in
+    all cases to the ISO standard.
+
 
 \ouritem{tab(+N)}\index{{\tt tab/1}}
     Puts {\tt N} spaces to the current output stream. 
@@ -326,6 +360,9 @@ read/1}, but requires the input to be in canonical form.
 
 \end{description}
 
+\comment{ TLS: Taken out because this appears to be superceded by
+documentation in Manual 2
+
 \section{Special I/O}
 
 \begin{description}
@@ -352,7 +389,7 @@ read/1}, but requires the input to be in canonical form.
  Like {\tt fmt\_write/2}, but the output string is placed in {\tt String}.
 
 \end{description}
-
+}
 % tls \section{Arithmetic} \label{Arithmetic}
 
 %--- Need a very cursory description of arithmetic operations. \\
@@ -1426,7 +1463,6 @@ the use of two new builtins.
 
 \begin{description}
 \ouritem{setof(?X, +Goal, ?Set)}\index{{\tt setof/3}}
-%\predindex{setof/3~(L)}
     This predicate may be read as ``{\tt Set} is the set of all instances 
     of {\tt X} such that {\tt Goal} is provable''.
     If~{\tt Goal} is not provable, {\tt setof/3} fails.
@@ -1450,16 +1486,14 @@ the use of two new builtins.
     Exceptions: Same as predicate {\tt call/1}
 		(see Section~\ref{meta_predicates}).
 
-\ouritem{bagof(?X, +Goal, ?Bag)}
-%\predindex{bagof/3~(L)}\index{bagof/3|bold}
+\ouritem{bagof(?X, +Goal, ?Bag)} \index{{\tt bagof/3}}
     This predicate has the same semantics as {\tt setof/3} except that the 
     third argument returns an unordered list that may contain duplicates.
 
     Exceptions: Same as predicate {\tt call/1}
 		(see Section~\ref{meta_predicates}).
 
-\ouritem{findall(?X, +Goal, ?List)}
-%\predindex{findall/3~(L)}\index{findall/3|bold}
+\ouritem{findall(?X, +Goal, ?List)} \index{{\tt findall/3}}
     Similar to predicate {\tt bagof/3}, except that variables in {\tt Goal}
     that do not occur in {\tt X} are treated as existential, and alternative
     lists are not returned for different bindings of such variables.  This

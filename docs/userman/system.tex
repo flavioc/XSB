@@ -415,6 +415,7 @@ predicate is called.
 
 There are several command line options for the emulator. The general 
 synopsis is:
+{\small 
 \begin{verbatim}
 xsb [flags] [-l] [-i]
 xsb [flags] -n
@@ -471,6 +472,7 @@ cmd_loop_driver:
    --noprompt : don't show prompt (for non-interactive use)
 
 \end{verbatim}
+}
 The order in which these options appear makes no difference.
 
 \begin{description}
@@ -745,6 +747,7 @@ in more detail.
 The compiler is invoked directly at the interpreter level (or in a 
 program) through the Prolog predicates {\tt compile/[1,2]}.  
 
+\index{{\tt compile/[1,2]}}
 The general forms of predicate {\tt compile/2} are:
 \begin{center}{\tt	
 	compile(+File, +OptionList) \\
