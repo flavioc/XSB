@@ -221,13 +221,12 @@ make_distclean:-
 :- comment(bug,"Variable names are not propagated in head patterns of
                 :- pred assertions..").
 
-:- comment(bug,"autotable/1 directive should be doc'd at interface of module").
-
 :- comment(bug,"load_dyn/1, load_dync/1 directives should be doc'd at 
-		interface of module").
+		interface of module").	
 
 :- comment(bug,"Special indexing directives (e.g. tries) are not documented
-	        in predicate level documentation.").
+	        in predicate level documentation.  Other directives may also
+                be added to documentation").
 
 :- comment(bug,"Have not tested out _doc files; that more than one
 		bibfile can be used; that image files are

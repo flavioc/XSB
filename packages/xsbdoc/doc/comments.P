@@ -2,8 +2,6 @@
             docstring/1,stringcommand/1,
 	    version_descriptor/1.
 
-:- autotable.
-
 :- comment(title,"Enhancing Documentation with Machine-Readable Comments").
 
 :- comment(author,"Manuel Hermenegildo").

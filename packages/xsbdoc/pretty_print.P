@@ -1,19 +1,9 @@
 
 :- compiler_options([ciao_directives]).
 
-/*
-:- module(pretty_print,
-	[ pretty_print/2,
-	  pretty_print/3
-	],
-	[ assertions,
-	  regtypes,
-	  functions
-	]).
+:- export pretty_print/2, pretty_print/3.
 
-:- use_module(library(vndict)).
-:- use_module(library(write)).
-*/
+:- import numbervars/3 from num_vars.
 
 %% -----------------------------------------------------------------------
 :- comment(title,"A simple pretty-printer for Ciao programs").
