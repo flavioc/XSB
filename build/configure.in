@@ -1104,6 +1104,9 @@ AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
 AC_SUBST(engine_mode)
 
+topdir_wind=`echo $topdir | sed 's,/,\\\\,g'`
+AC_SUBST(topdir_wind)
+
 #These are used to compile the interface with sModels
 if test "${with_smodels}" = "" ; then
 	smodels_goal=nope
