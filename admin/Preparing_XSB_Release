@@ -2,6 +2,9 @@
     Instructions for Preparing an XSB Release
     =========================================
 
+NOTE: Instructions for maintenance of the Web site are in
+      docs/homepage/SOURCEFORGE_SITE_MAINTENANCE
+
 NOTE: Autoconf must be installed. 
       Releases can only be created under a Unix system
 
