@@ -939,7 +939,7 @@ contcase:     /* the main loop */
     }
     else {
       ADVANCE_PC;
-      arithmetic_comp_abort(op1, "=/=", op2);
+      arithmetic_comp_abort(op1, "=\\=", op2);
     }
     goto contcase;
 
