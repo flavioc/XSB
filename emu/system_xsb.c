@@ -1016,8 +1016,10 @@ static int xsb_find_next_file(prolog_term handle,
   HANDLE filehandle;
   
   filehandle = (HANDLE) p2c_int(handle);
-  if (!FindNextFile(filehandle,&filedata)) 
+  if (!FindNextFile(filehandle,&filedata)) {
+    FindClose(filehandle);
     return FALSE;
+  }
   c2p_string(filedata.cFileName,file);
   return TRUE;
 #else
