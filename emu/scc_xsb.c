@@ -40,6 +40,38 @@
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
 
+/* Documentation added 02/02 TLS.
+
+What does this do?  Well, it wants to break up the ASCC into SCCs.  It
+doesnt quite do this exactly, rather it constructs a series of n DFS
+visits of the DGT of the ASCC starting with the leader.  Thus, the n
+SCCs that constitute the ASCC are traversed, and for each SCC_n, max_u
+is set to the oldest subgoal in SCC_n.  The idea is that after all
+SCCs are checked, max_u is set to the oldest subgoal in an independant
+SCC.
+
+While there could be several independent SCCs, only the last
+independent SCC to be checked will be accessible 
+
+Also, suppose there are 2 independent SCCs, SCC_1 and SCC_2.  Also
+suppose SCC_1 has no loop through negation, but that SCC_2 does.  In
+this case Delaying may be prescribed for the ASCC because SCC_2 is
+acessible, but SCC_1 is not.  
+
+The algorithm could be modified by marking compl_visited with a ptr to
+the oldest subgoal of the SCC.  In this case, if the first returned
+SCC had a loop through negation, the second could be checked, and so
+on until an SCC that had no loop through negation was obtained.  
+
+In addition, such a change would obviate the need for the
+find_independent_scc called in wfs_xsb.i
+
+*/
+
+/* Note that this function does not need to check whether a given
+   subgoal is completed -- that has already been checked by
+   add_ascc_edges() in construct_dep_graph() */
+
 static void DFS_DGT_visit(ComplStackFrame u)
 {
     EPtr eptr;
