@@ -488,13 +488,33 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist):-
 	    fail ).
 
 load_component_dependencies_pass1(Name,Abs,Arglist):- 
-	classHasAttr_ext(cid(component(cid(Name,Name),cid(Abs,cdfpt),
-				       cid(_V,cdfpt)),Name),
-			 crid(componentDepends,Name),
-			 cid(component(cid(New,New),cid(Relnew,cdfpt),
-				       cid(Vnew,cdfpt)),New)),
+	findall((V,New,Relnew,Vnew),
+		classHasAttr_ext(cid(component(cid(Name,Name),cid(Abs,cdfpt),
+					       cid(V,cdfpt)),Name),
+				 crid(componentDepends,Name),
+				 cid(component(cid(New,New),cid(Relnew,cdfpt),
+					       cid(Vnew,cdfpt)),New)),
+	       List),
+	member((V,New,Relnew,Vnew),List),
 %        writeln(checking(dep(Name,New))),	
 	load_component_pass1(New,Relnew,AbsNew,version(Vnew),Arglist),
+%% make sure dependencies store absolute filenames
+	retractallExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
+							 cid(Abs,cdfpt),
+							 cid(V,cdfpt)),Name),
+					   crid(componentDepends,Name),
+					   cid(component(cid(New,New),
+							 cid(Relnew,cdfpt),
+							 cid(Vnew,cdfpt)),
+					       New))),
+	newExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
+						  cid(Abs,cdfpt),
+						  cid(V,cdfpt)),Name),
+				    crid(componentDepends,Name),
+				    cid(component(cid(New,New),
+						  cid(AbsNew,cdfpt),
+						  cid(Vnew,cdfpt)),
+					New))),
 	%% save absolute path in dependencies for path2 so that we don't
 	%% have to simulate the stack of cwd's again
         assert_dependencies_for_path2(Name,New,AbsNew,Vnew),
@@ -746,16 +766,17 @@ versions_for_existing_component(Name):-
  					      cid(P,cdfpt)),Name),
  		                        crid(hasVersion,Name),cid(V,cdfpt))),
  	      newExtTerm(classHasAttr_ext(cid(compName(cid(Name,Name),
- 						              cid(P,cdfpt)),Name),
+ 						              cid(P,cdfpt)),
+					      Name),
  	                             crid(hasVersion,Name),cid(V1,cdfpt))),
-	    retractallExtTerm(isa_ext(cid(component(cid(Name,Name),
-						    cid(P,cdfpt),
-						    cid(V,cdfpt)), Name),
-				      cid('CDF Classes',cdf))),
-	    newExtTerm(isa_ext(cid(component(cid(Name,Name),
+ 	    retractallExtTerm(isa_ext(cid(component(cid(Name,Name),
+ 						    cid(P,cdfpt),
+ 						    cid(V,cdfpt)), Name),
+ 				      cid('CDF Classes',cdf))),
+ 	    newExtTerm(isa_ext(cid(component(cid(Name,Name),
 					     cid(P,cdfpt),
-					     cid(V1,cdfpt)), Name),
-			       cid('CDF Classes',cdf)))
+ 					     cid(V1,cdfpt)), Name),
+ 			       cid('CDF Classes',cdf)))
 	    ; call_assert(temp_new_version(Name,V))).
 
 propagate_for_name(Name):- 
@@ -889,16 +910,25 @@ create_dependencies_in_place([_|T],FromName,FromCompid,Dir):-
     3) Component has not been created, and name must be interned */
  
 create_all_dependencies_in_place(ToName,Dir,FromCompid):- !,	
-	FromCompid = cid(_,FromName),
+	FromCompid = cid(component(cid(FromName,FromName),
+				   cid(Path,cdfpt),
+				   cid(_Version,cdfpt)),
+			 FromName),
 	(classHasAttr_ext(cid(ToName,ToName),crid(hasPath,ToName),
 				              cid(ToPath,cdfpt)) -> 
   	    true
 	  ;  
 	    ToPath = Dir),
 	temp_new_version(ToName,V),
-	retractallExtTerm(
-		classHasAttr_ext(FromCompid,crid(componentDepends,FromName),
-	                     cid(component(cid(ToName,ToName),_,_),_))),
+	retractallExtTerm(classHasAttr_ext(cid(component(cid(FromName,
+							     FromName),
+							 cid(Path,cdfpt),
+							 cid(_,cdfpt)),
+					       FromName),
+					   crid(componentDepends,FromName),
+					   cid(component(cid(ToName,ToName),
+							 _,_),
+					       _))),
         newExtTerm(classHasAttr_ext(FromCompid,crid(componentDepends,FromName),
 			        cid(component(cid(ToName,ToName),
 		                              cid(ToPath,cdfpt),
