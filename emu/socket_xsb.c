@@ -654,8 +654,7 @@ bool xsb_socket_request(void)
 
   case SOCKET_SELECT_DESTROY:  { 
     /*socket_request(SOCKET_SELECT_DESTROY, +connection_name) */
-    char *connection_name = NULL;
-    connection_name = (char*)ptoc_string(2);
+    char *connection_name = ptoc_string(2);
     select_destroy(connection_name);
     return TRUE;
   }
@@ -664,9 +663,6 @@ bool xsb_socket_request(void)
     xsb_warn("SOCKET_REQUEST: Invalid socket request %d", (int) ptoc_int(1));
     return FALSE;
   }
-
-  xsb_bug("SOCKET_REQUEST case %d has no return clause",
-	    ptoc_int(1));
 }
 
 
