@@ -107,13 +107,10 @@ static void dis_data_sub(Pair *chain_ptr)
 	    case T_PRED: fprintf(filedes, "PRED,\t"); break;
 	    case T_DYNA: fprintf(filedes, "DYNA,\t"); break;
 	    case T_ORDI: fprintf(filedes, "ORDI,\t"); break;
-	    case T_STRU: fprintf(filedes, "STRU,\t"); break;
 	    case T_FILE: fprintf(filedes, "FILE,\t"); break;
 	    case T_MODU: fprintf(filedes, "MODU,\t"); break;
 	    case T_FORN: fprintf(filedes, "FORN,\t"); break;
-	    case T_FUNC: fprintf(filedes, "FUNC,\t"); break;
 	    case T_UDEF: fprintf(filedes, "UDEF,\t"); break;
-	    case T_UFUN: fprintf(filedes, "UFUN,\t"); break;
 	    default:	 fprintf(filedes, "????"); break;
 	}
 	switch(get_env(temp)) {

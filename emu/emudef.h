@@ -185,7 +185,6 @@ int *asynint_ptr = &asynint_val;
   else \
     switch (get_type(PSC)) { \
     case T_PRED: \
-    case T_FUNC: \
     case T_DYNA: \
       lpcreg = (pb)get_ep(PSC); \
       /*check_glstack_overflow(get_arity(PSC),lpcreg,OVERFLOW_MARGIN);*/ \
@@ -205,7 +204,6 @@ int *asynint_ptr = &asynint_val;
       } \
       break; \
     case T_UDEF: \
-    case T_UFUN: \
     default: \
       PSC = synint_proc(PSC, MYSIG_UNDEF, lpcreg-2*sizeof(Cell)); \
       if (!PSC) \

@@ -31,12 +31,12 @@
 /*======================================================================*/
 
 struct psc_rec {
-    byte env;			/* 0 - visible; 1 - local; 2 - unloaded */
-    byte entry_type;		/* see below */
-    byte arity;
-    byte length;
-    char *nameptr;
-    byte *ep;      /* entry point, various meaning */
+  byte env;			/* 0 - visible; 1 - local; 2 - unloaded */
+  byte entry_type;		/* see below */
+  byte arity;
+  byte length;
+  char *nameptr;
+  byte *ep;      /* entry point, various meaning */
 };
 
 typedef struct psc_rec *Psc;
@@ -44,8 +44,8 @@ typedef struct psc_rec *Psc;
 /* --- Pair    -------------------------------------------- */
 
 struct psc_pair {
-    Psc psc_ptr;
-    struct psc_pair *next;
+  Psc psc_ptr;
+  struct psc_pair *next;
 };
 
 typedef struct psc_pair *Pair;
@@ -61,18 +61,12 @@ typedef struct psc_pair *Pair;
 #define T_ORDI  0	/* constant-type: no ep definition, may be set later */
 #define T_DYNA	1	/* constant-type: dynamic, code in buffer */
 #define T_PRED  2	/* constant-type: ep points to compiled code */
-#define T_PEXI  3	/* existential pred, globalseted only, old T_BUFF */
+
 #define T_MODU  4	/* ep field is used to hold psc-list */
 #define T_FILE  5	/* ep field could be file descriptor (not now) */
-#define T_STRU  7	/* pure structure symbol, can't be reset (may no ep)*/
-#define T_CSET  8	/* used for conset and convalue; not used in C code */
-#define T_STRG	9	/* string, only used in byte code and before loading */
-#define T_RKEY 10	/* record key, not directly used by the emulator */
-#define T_ALIA 11	/* alias. The prop field is a term */
+
 #define T_UDEF 12	/* unloaded T_PRED */
 #define T_FORN 13	/* predicate in foreign language */
-#define T_FUNC 14	/* functions */
-#define T_UFUN 15	/* unloaded T_FUN */
 
 /*======================================================================*/
 /* Interface macros (in the following "psc" is typed "Psc")		*/

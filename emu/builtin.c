@@ -749,13 +749,11 @@ int builtin_call(byte number)
   case PSC_PROP:		/* R1: +PSC; R2: -term */
 				/* prop: as a buffer pointer */
     psc = (Psc)ptoc_addr(1);
-    if (get_type(psc)==T_ALIA) ctop_tag(2, (Cell)get_ep(psc));
-    else ctop_int(2, (Integer)get_ep(psc));
+    ctop_int(2, (Integer)get_ep(psc));
     break;
   case PSC_SET_PROP:	        /* R1: +PSC; R2: +int */
     psc = (Psc)ptoc_addr(1);
-    if (get_type(psc)==T_ALIA) set_ep(psc, (pb)ptoc_tag(2));
-    else set_ep(psc, (pb)ptoc_int(2));
+    set_ep(psc, (pb)ptoc_int(2));
     break;
   case PSC_SET_SPY: 	        /* R1: +PSC; R2: +int */
     psc = (Psc)ptoc_addr(1);
@@ -772,7 +770,7 @@ int builtin_call(byte number)
   case TERM_TYPE:		/* R1: +term; R2: tag (-int)		*/
 				/* <0 - var, 1 - cs, 2 - int, 3 - list>	*/
     term = ptoc_tag(1);
-    if (!isnonvar(term)) ctop_int(2, 0);
+    if (isref(term)) ctop_int(2, 0);
     else ctop_int(2, cell_tag(term));
     break;
   case TERM_COMPARE:	/* R1, R2: +term; R3: res (-int) */
@@ -935,7 +933,6 @@ int builtin_call(byte number)
     }
     switch (get_type(psc)) {
     case T_PRED:
-    case T_FUNC:
     case T_DYNA:
       pcreg = get_ep(psc);
       break;
@@ -953,7 +950,6 @@ int builtin_call(byte number)
 #endif
       break;
     case T_UDEF:
-    case T_UFUN:
     default:
       psc = synint_proc(psc, MYSIG_UNDEF, NULL);
       if (psc) pcreg = get_ep(psc);
