@@ -1057,7 +1057,7 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 
 /* Predicate References */
 
-typedef struct PrRef
+typedef struct
 {	Cell	Instr ;
 	struct ClRefHdr *FirstClRef ;
 	struct ClRefHdr *LastClRef ;
