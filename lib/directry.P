@@ -24,14 +24,14 @@
 
 
 :- export
-	 directory/2,
+	 short_directory/2,
 	 find_file/1, find_file/2,
 	 get_file_name/2, get_file_date/2,
 	 is_directory/1,
 	 whats_new/3.
 
 :- import  ca/2, date/1, sysin/2 from scrptutl.
-:- import concat_atom/2 from string.
+:- import concat_atom/2, concat_atom/3 from string.
 :- import member/2 from basics.
 :- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1
 	from standard.
@@ -97,6 +97,12 @@ directory(Argument,Dir):-
 	sysin(Command,List),
 	date(date(Year,Month,Day,_,_,_)),
 	directory_1(List,date(Year,Month,Day),Dir).
+
+short_directory(Arg,Out):-
+	ca(['\ls',Arg],Command),
+	sysin(Command,List1),
+	member(L,List1),
+	concat_atom(L,' ',Out).
 
 directory_1([],_,[]):-!.
 directory_1([H|T],Year,List):-!,
