@@ -621,14 +621,20 @@ term_get_class_int(GoalCid,Label,NatCid,Sou) :-
 	).	
 
 get_class_int(Cid,Label,NatCid,Sou) :-
-	(cn_id_map(Cid,Label,NatCid,Sou)
+	(ground(NatCid), ground(Sou), cn_id_map(Cid,Label,NatCid,Sou)
 	 ->	true 
-	 ;	class_int(Label,NatCid,Sou),
-		(structure(NatCid)
-		 ->	parameterized_ext_int(NatCid,Cid,Sou)
-		 ;	atomic_newcid(Cid)
-		),
-		asserta(cn_id_map(Cid,Label,NatCid,Sou))
+	 ;	(ground(Cid),cn_id_map(Cid,Label,NatCid,Sou)
+		 ->	true 
+		 ;	class_int(Label,NatCid,Sou),
+			(cn_id_map(Cid,Label,NatCid,Sou)
+			 ->	true
+			 ;	(structure(NatCid)
+				 ->	parameterized_ext_int(NatCid,Cid,Sou)
+				 ;	atomic_newcid(Cid)
+				),
+				asserta(cn_id_map(Cid,Label,NatCid,Sou))
+			)
+		)
 	).
 
 ext_int(Cid,Label,NatCid,Sou):- 
