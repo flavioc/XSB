@@ -1,5 +1,5 @@
-\section{Compiler}
-%=================
+\section{Compiler} \label{sec:compiler}
+%======================================
 
 The compiler of XSB is written in (XSB)-Prolog. It transforms
 a source program module into an object code (byte code) module.
@@ -45,14 +45,12 @@ position in the following list reflects various dependencies between them.
 	Performs mode inference, annotating predicates with mode declarations
 	(pragmatic information).  This step is currently not implemented,
 	but should be of considerable use in (some of) the following steps.
-\item[determinacy analysis]
-	Performs determinacy analysis.  Currently not implemented.
 \item[call specialisation]
 	Specialises predicates according to (partially instantiated)
 	call patterns that appear in the module.  One instance of this
 	specialisation is for HiLog predicates.
 \item[table declaration]
-	Provided that the {\tt table\_all} option of the compiler is
+	Provided that the {\tt auto\_table} option of the compiler is
 	on, this step automatically chooses a subset of predicates that
 	should be tabled so that all possible cycles that cannot be proven
 	terminating contain at least one tabled predicate.  This step
@@ -146,7 +144,7 @@ Finally, there is yet another form:
 		these predicates are usually partially instantiated.
 \item[tabdef.P] Builds the call graph for the module and automatically chooses
 		a subset of predicates that will be tabled.
-\item[build\_graph.P]
+\item[cutcheck.P]
 		Checks for semantic violations in the use of cuts,
 		if-then-elses, or nots in combination with tabled predicates.
 \item[preprocess.P]
@@ -283,7 +281,7 @@ A {\tt Term} can be one of the following:
 {\sf QrList} represents queries (commands) of the module and has the
 same form as {\sf ClList} except that it contains only one predicate
 definition, and the predicate has the system supplied name \verb+'_$main'/0+.
-
+%$
 
 \subsection{Symbol Table Format}
 %===============================
@@ -380,11 +378,10 @@ following optional attributes called {\sf Properties}:
 	\item[{\tt index(Position)}]
 		Indicates the fact that the predicate will be indexed on
 		its {\tt Position}-th argument.  The default position is 1.
-	\item[{\tt tabled(Tabind,Chs,Rhs,Arity)}]
+	\item[{\tt tabled(Tabind,Arity)}]
 		Used for tabled predicates.  {\tt Tabind} is the table
-		identification number, {\tt Chs} and {\tt Rhs} are the call
-		and return hash sizes for the table, while {\tt Arity} is
-		the arity of the predicate symbol.
+		identification number and {\tt Arity} is the arity of
+		the predicate symbol.
 	\item[{\tt mode(p(+,.,?,..,-))}]
 		Indicates mode usage of the predicate {\tt p/N}.  A predicate
 		can have several different instances of this information.
@@ -555,7 +552,7 @@ depend on the specific occurence.
 
 For temporary variables, the {\sf location} attribute records the
 register number, while for permanent variables it is the offset in
-the activation record (the first variable has offset 1).
+the activation record (the first variable has offset 2).
 
 For temporary variables, the {\sf use} attribute stores a list of
 integers that represent the register numbers the variable is preferred

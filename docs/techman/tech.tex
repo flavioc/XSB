@@ -1,22 +1,18 @@
-\documentstyle[11pt, titlepage, ps, epsf]{article}
-\setlength{\topmargin}{0.1in}
-\setlength{\oddsidemargin}{-0.1in}
-\setlength{\textheight}{9.3in}
-\setlength{\textwidth}{6.5in}
-\addtolength{\topmargin}{-0.5in}
-\setlength{\footskip}{1in}
-\setlength{\footheight}{0.5in}
-\setlength{\parindent}{0in}		% no paragraph indent
-\setlength{\parskip}{2ex}		% space between paragraphs
+\documentclass[11pt]{article}
+
+\usepackage{epsfig}
+\usepackage{fullpage}
 
 \def\not{\mbox{${\tt '\backslash+'/1}$}}
 
-\newcommand{\version}{Version 1.4.1}
+\newcommand{\version}{Version 2.1}
 
 \newcommand{\demo}[1]{\hspace*{1.5cm}{\sf #1}}
 \newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
 
 \begin{document}
+
+\thispagestyle{empty}
 \title
           {XSB \version \\ Technical Reference Manual}
 
@@ -24,7 +20,7 @@
 }
 \maketitle
 
-
+\newpage
 
 \section*{	 	Credits	and Acknowledgments		 }
 %			===========================
@@ -33,12 +29,17 @@ SB-Prolog was initially developed at the State University of New York
 at Stony Brook, and at the University of Arizona.
 
 A version of SB-Prolog was later developed at ECRC by Jiyang Xu and
-called PSB-Prolog.  XSB prolog is based on PSB Prolog, and while it
-does not incude several features of PSB such as or-parallelism, it
-provides support for tabled program evaluation and for HiLog.
+called PSB-Prolog.  XSB is based on PSB-Prolog, and provides support
+for many extensions to Prolog: among them tabling and HiLog.
 
 This draft version of the technical reference manual is intended to
-document features which are common to both systems.  
+document features which are common to both systems.  Most of the
+material in Section~\ref{sec:compiler} was written by Kostis Sagonas.
+Sections~\ref{sec:comp-emu}--\ref{sec:libs} were written long ago by
+Jiyand Xu and not seriously updated ever since --- rely upon them at
+your own risk!  Section~\ref{sec:tabling} was written by Terry Swift.
+The remaining sections were written more or less by all authors of
+this technical manual.
 
 Fuller credits can be fount in the {\it The XSB Programmer's Manual}.
 \newpage
@@ -70,8 +71,8 @@ this documentation attempts to reflect the current status of the system.
 
 
 
-\section                 {Compiler-Emulator Interface}
-%                        =============================
+\section{Compiler-Emulator Interface} \label{sec:comp-emu}
+%=========================================================
 
 This section introduces the byte code and object file format, and
 built-in predicates representations. Since the compiler and
@@ -709,9 +710,6 @@ function {\tt hsize} with the following steps:
 $T$ is then the first prime number greater than or equal to $N'$.
 
 
-
-
-
 \subsection{Forms of Predicate Definitions}
 %==========================================
 
@@ -978,8 +976,8 @@ It can be overwritten if you wish.
 
 
 
-\section                 {System Libraries}
-%                        ==================
+\section{System Libraries} \label{sec:libs}
+%==========================================
 
 \subsection{Interpreter Flags}
 
@@ -1057,8 +1055,8 @@ node        +------------+  | |         When empty, the next/prev
 \end{figure}
 
 
-\section                 {Modifying the System}
-%                        ======================
+\section{Modifying the System} \label{sec:modification}
+%======================================================
 
 \subsection{Adding a Hard Built-in Predicate}
 %==========================================
@@ -1084,7 +1082,7 @@ and backtrack; otherwise the emulator assumes the builtin predicates
 succeed and continue the current instruction flow.
 
 \subsection{Adding a New Abstract Machine Instruction}
-%==========================================
+%-----------------------------------------------------
 
 \begin{enumerate}
   \item In {\tt emu/inst.h}, add a line
@@ -1121,8 +1119,10 @@ These options are available only if the system is compiled with the flag
 	a thread.
 \end{description} 
 
-\section{Tabling Extensions}
-%============================
+
+
+\section{Tabling Extensions} \label{sec:tabling}
+%===============================================
 
 Descriptions of extensions for tabling will be added (lazily!), as I
 write them up for other purposes.
@@ -1132,7 +1132,7 @@ write them up for other purposes.
 Figure~\ref{stack-layout.ps} shows the high-level structure of xsb memory.
 
 \begin{figure}[htbp]
-\mbox{\psfig{file=figures/stack-layout.ps}}
+\epsfig{file=figures/stack-layout.eps}
 \caption{Schematic Picture of XSB memory layout}\label{stack-layout.ps}
 \end{figure}
 
@@ -1140,7 +1140,7 @@ Figure~\ref{tabspc.ps} shows the high-level structure of the table
 space.  
 
 \begin{figure}[htbp]
-\mbox{\psfig{file=figures/tabspc.ps}}
+\epsfig{file=figures/tabspc.eps}
 \caption{Schematic Picture of Table Space}\label{tabspc.ps}
 \end{figure}
 
@@ -1189,7 +1189,7 @@ routines to traverse return lists.
 \end{verbatim}
 
 \subsection{Instruction-level Debugging}
-%============================
+%==========================-============
 
 The instruction level debugger is a powerful aid to improving the
 emulator.  If you add or modify existing SLG-WAM instructions, you
