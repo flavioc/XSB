@@ -1357,7 +1357,7 @@ odbc_import(Connection,DbPredicate,PredName) :-
 	%% --- asserts attribute(Num,PredName,Attr,Type,ConnH)
 	assert_import_attributes(PredName,Attributes,TableName,ConnHandle,1),
 	functor(SymPred,PredName,Arity),
-	odbc_query(ConnHandle,SymPred,SymPred).
+	odbc_query(Connection,SymPred,SymPred).
 odbc_import(_,PredName,_) :-
 	abort([PredName,' has already been used for odbc_import.']).
     
@@ -1479,12 +1479,11 @@ get_some_columns([Col|Columns],Cursor,[X|Row]) :-
 
 %%% assert rule to intercept any call and redirect to DB
 odbc_query(Head,Body) :-
-	odbc_connection(_,ConnHandle),
+	odbc_query(_,Head,Body).
+
+odbc_query(Connection,Head,Body) :-
+	odbc_connection(Connection,ConnHandle),
 	!,
-	odbc_query(ConnHandle,Head,Body).
-
-
-odbc_query(ConnHandle,Head,Body) :-
 	\+ atomic(Head),
 	copy_term(Head,Head1),
 	assert(odbc_asserted_query(ConnHandle,Head1)),
