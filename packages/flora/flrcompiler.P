@@ -521,7 +521,8 @@ rhs_flatten(string(Chars),Chars,[]) :- !.
 
 rhs_flatten(number(N),N,[]) :- !.
 
-%% rhs_flatten(cut,null,['!']) :- !.
+/*  Cuts are allowed, but be careful to not cut accross tables */
+rhs_flatten(cut,null,['!']) :- !.
 
 
 /***************************************************************************/
