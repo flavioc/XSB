@@ -108,6 +108,7 @@ The new directory structure:
 				  debug_delay.h
 				  debug_residual.h
 				  debug_tries.h
+				  debug_tables.h
 
 		    These are NOT created automatically. I went into the
 		    trouble of sorting out the various debug variables left 
