@@ -255,6 +255,7 @@ static void process_long_option(char *option)
 }
 
 /*==========================================================================*/
+FILE *stream_err, *stream_out; 
 
 /* Initialize System Parameters
    ---------------------------- */
@@ -275,6 +276,13 @@ char *init_para(int argc, char *argv[])
 
   init_flags();
   /* this needs to appear here as streams are used below in xsb_warn() */
+  for (i=1; i<argc; i++) { /* check to see if should redirect output */
+    if (!strcmp(argv[i],"-q")) {
+      stream_err = freopen("XSB_errlog", "w", stderr);
+      stream_out = freopen("XSB_outlog", "w", stdout);
+      break;
+    }
+  }
   init_open_files();
 
   init_newtrie();
@@ -491,6 +499,8 @@ char *init_para(int argc, char *argv[])
       break;
     case '-': /* this was a long option of the form --optionname */
       process_long_option(argv[i]+2);
+      break;
+    case 'q':
       break;
     default:
       sprintf(warning, "Unknown command line option %s", argv[i]);

@@ -237,8 +237,11 @@ DllExport extern int call_conv xsb_command_string(char *);
 DllExport extern int call_conv xsb_query();
 DllExport extern int call_conv xsb_query_string(char *);
 DllExport extern int call_conv xsb_query_string_string(char*,VarString*,char*);
+DllExport extern int call_conv xsb_query_string_string_b(char*,char*,int,int*,char*);
 DllExport extern int call_conv xsb_next();
 DllExport extern int call_conv xsb_next_string(VarString*,char*);
+DllExport extern int call_conv xsb_next_string_b(char*,int,int*,char*);
+DllExport extern int call_conv xsb_get_last_answer_string(char*,int,int*);
 DllExport extern int call_conv xsb_close_query();
 DllExport extern int call_conv xsb_close();
 

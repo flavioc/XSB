@@ -1132,7 +1132,6 @@ int xsb_answer_string(VarString *ans, char *sep) {
 /*                                                                      */
 /************************************************************************/
 
-
 int xsb_initted = 0;   /* if xsb has been called */
 
 DllExport int call_conv xsb_init(int argc, char *argv[])
@@ -1146,14 +1145,8 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 	  argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
   strcpy(executable, expand_filename(executable1));
 
-  /* set install_dir, xsb_config_file, and user_home */
-  set_install_dir();
-  set_config_file();
-  set_user_home();
-  
-  xsb(0, argc,argv);  /* initialize xsb */
 
-  set_xsbinfo_dir ();
+  xsb(0, argc,argv);  /* initialize xsb */
 
   xsb(1, 0, 0);       /* enter xsb to set up regs */
   xsb_initted = 1;
@@ -1168,11 +1161,15 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 /*	the function.  (Will handle a max of 19 args.)			*/
 /*									*/
 /************************************************************************/
+/*FILE *stream_err, *stream_out;*/
 
 DllExport int call_conv xsb_init_string(char *cmdline_param) {
 	int i = 0, argc = 0;
 	char **argv, delim;
 	char cmdline[2*MAXPATHLEN+1];
+
+	/*stream_err = freopen("XSB_errlog", "w", stderr);
+	  stream_out = freopen("XSB_outlog", "w", stdout);*/
 
 	if (strlen(cmdline_param) > 2*MAXPATHLEN) {
 	    xsb_warn("**************************************************************************");
@@ -1324,6 +1321,50 @@ int call_conv xsb_query_string_string(char *goal, VarString *ans, char *sep) {
 
 /************************************************************************/
 /*                                                                      */
+/*  xsb_query_string_string_b calls xsb_query_string and returns        */
+/*	the answer in a string.  The caller provides a buffer and its   */
+/*      length.  If the answer fits in the buffer, it is returned       */
+/*      there, and its length is returned.  If not, then the length is  */ 
+/*      returned, and the answer can be obtained by calling             */
+/*      xsb_get_last_answer.                                            */
+/*                                                                      */
+/************************************************************************/
+static vstrDEFINE(last_answer);
+
+DllExport
+int call_conv xsb_query_string_string_b(
+	     char *goal, char *buff, int buflen, int *anslen, char *sep) {
+  int rc;
+  
+  vstrSET(&last_answer,"");
+  rc = xsb_query_string_string(goal,&last_answer,sep);
+  if (rc > 0) return rc;
+  *anslen = last_answer.length;
+  vstrNULL_TERMINATE(&last_answer);
+  if (last_answer.length < buflen) {
+    strcpy(buff,last_answer.string);
+    return rc;
+  } else return 1;
+}
+
+/************************************************************************/
+/*                                                                      */
+/*	xsb_get_last_answer_string returns previous answer.             */
+/*                                                                      */
+/************************************************************************/
+DllExport int call_conv 
+   xsb_get_last_answer_string(char *buff, int buflen, int *anslen) {
+
+ *anslen = last_answer.length;
+  if (last_answer.length < buflen) {
+    strcpy(buff,last_answer.string);
+    return 0;
+  } else 
+    return 1;    
+}    
+
+/************************************************************************/
+/*                                                                      */
 /* xsb_next() causes xsb to return the next answer.  It (or             */
 /* xsb_close_query) must be called after xsb_query.  If there is        */
 /* another answer, xsb_next returns 0 and the variables in goal term    */
@@ -1360,6 +1401,32 @@ DllExport int call_conv xsb_next_string(VarString *ans, char *sep) {
   int rc = xsb_next();
   if (rc > 0) return rc;
   return xsb_answer_string(ans,sep);
+}
+
+/************************************************************************/
+/*                                                                      */
+/*	xsb_next_string_b(buff,buflen,anslen,sep) calls xsb_next() and  */
+/*      returns the answer in buff, provided by the caller.  The length */
+/*      of buff is buflen.  The length of the answer is put in anslen.  */
+/*      If the buffer is too small for the answer, nothing is put in    */
+/*      the buffer.  In this case the caller can allocate a larger      */
+/*      and retrieve the buffer using xsb_get_last_answer.              */
+/*                                                                      */
+/************************************************************************/
+
+DllExport int call_conv xsb_next_string_b(
+		     char *buff, int buflen, int *anslen, char *sep) {
+  int rc;
+
+  vstrSET(&last_answer,"");
+  rc = xsb_next_string(&last_answer,sep);
+  if (rc > 0) return rc;
+  *anslen = last_answer.length;
+  vstrNULL_TERMINATE(&last_answer);
+  if (last_answer.length < buflen) {
+    strcpy(buff,last_answer.string);
+    return rc;
+  } else return 1;
 }
 
 
