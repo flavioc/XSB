@@ -75,22 +75,19 @@ repository is not set up to watch the testsuite. (Somebody wants to
 tinker with tests/ to ensure that it will be watched and there won't be any 
 errors?)
 
-To un-watch the .O files, type:
+To un-watch the tests directory type:
 
    cvs watch off tests
 
-   Then type the following (this will need to be repeated, if new files are
-   added):
+To un-watch the .O files, type:
 
    cvs watch off cmplib/*.O
    cvs watch off syslib/*.O
-   cvs watch off lib/*.O
-   cvs watch off lib/*/*.O    
-   cvs watch off packages/*.O
-   cvs watch off packages/*/*.O
-   cvs watch off packages/*/*/*.O
 
+The last two must be repeated, if new files are added.
 Please suggest a better way to set watches, if you know it.
+(Note, the .O files in lib/ and packages/ dirs are not in the repository,
+so they don't need to be un-watched.)
 
 
 Users must run cvs edit <file>, NOT chmod to make files rw.

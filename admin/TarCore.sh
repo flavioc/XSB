@@ -5,7 +5,7 @@
     # Run this in ./admin/ directory!
 
 files="./LICENSE ./INSTALL ./INSTALL_PROBLEMS ./INSTALL_WINDOWS \
-	./README ./FAQ 
+	./README ./FAQ ./Makefile \
 	./admin \
       ./build/ac* ./build/*.in ./build/config.guess ./build/config.sub \
       ./build/*sh ./build/*.msg ./build/configure ./build/README \
