@@ -1086,8 +1086,7 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	    WarnNum=0
 	;
 	  ( Option == FLORA_COMMANDLINE ->
-	      flora_symbol_token_struct("?-",1,0,1,0,QueryOpToken),
-	      Tokens=[QueryOpToken|InputTokens]
+	      flora_construct_query_term(InputTokens,Tokens)
 	  ;
 	    Tokens=InputTokens
 	  ),
@@ -1120,6 +1119,29 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	;
 	  Status=[FLORA_NOT_EOF|EWS]
 	).
+
+
+/*************************************************************************
+  flora_construct_query_term(+InputTokens,-Tokens)
+
+  It constructs a query term from the shell command line input. Two extra
+  pair of parentheses are added to enclose the input. This is to prevent
+  the query term from being intepreted as having arity other than one.
+*************************************************************************/
+flora_construct_query_term(InputTokens,Tokens) :-
+	flora_symbol_token_struct("?-",1,0,1,0,QueryOpToken),
+	flora_symbol_token_struct("(",1,0,1,0,LPToken),
+	Tokens=[QueryOpToken,LPToken,LPToken|L],
+	flora_construct_rest_query_term(InputTokens,L).
+
+
+flora_construct_rest_query_term([T],[RPToken,RPToken,T]) :-
+	!,
+	%% This last one from the input tokens is the rule delimeter.
+	flora_symbol_token_struct(")",1,0,1,0,RPToken).
+
+flora_construct_rest_query_term([T|Ts],[T|L]) :-
+	flora_construct_rest_query_term(Ts,L).
 
 
 /*************************************************************************
