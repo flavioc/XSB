@@ -748,16 +748,20 @@ int process_status(int pid)
 }
 
 
-/* split buffer at spaces, \t, \n, and put components
+/* split STRING at spaces, \t, \n, and put components
    in a NULL-terminated array.
    Take care of quoted strings and escaped symbols
    If you call it twice, the old split is forgotten.
+   STRING is the string to split
+   PARAMS is the array of substrings obtained as a result of the split
+          these params are all sitting in a static variable, buffer.
+   CALLNAME - the name of the system call. Used in error messages.
 */
 static void split_string(char *string, char *params[], char *callname)
 {
   int buflen = strlen(string);
   int idx = 0;
-  char *buf_ptr;
+  char *buf_ptr, *arg_ptr;
   static char buffer[MAX_CMD_LEN];
 
   if (buflen > MAX_CMD_LEN - 1)
@@ -765,11 +769,18 @@ static void split_string(char *string, char *params[], char *callname)
 
   buf_ptr = buffer;
 
+  /*
+  fprintf(stderr,"%s\n", string);
+  */
   do {
-    params[idx] = get_next_command_argument(&buf_ptr,&string);
+    arg_ptr = get_next_command_argument(&buf_ptr,&string);
+    params[idx] = arg_ptr;
+    /*
+    fprintf(stderr,"%s\n", arg_ptr);
+    */
     idx++;
-  } while (idx <= MAX_SUBPROC_PARAMS); /* note: params has extra space,
-					  so not to worry */
+  } while (arg_ptr != NULL && idx <= MAX_SUBPROC_PARAMS);
+  /* note: params has extra space, so not to worry about <= */
 
   return;
 }
@@ -826,10 +837,12 @@ static char *get_next_command_argument(char **buffptr, char **cmdlineprt)
       }
       (*cmdlineprt)++;
       break;
+#ifndef WIN_NT
     case '\\':
       escaped = TRUE;
       (*cmdlineprt)++;
       break;
+#endif
     default:
       **buffptr=**cmdlineprt;
       (*buffptr)++;
