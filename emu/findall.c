@@ -48,12 +48,12 @@
 findall_solution_list *findall_solutions = NULL;
 findall_solution_list *current_findall;
 
-static int MAX_FINDALLS = 250 ;	/* make it larger if you want */
+#define MAX_FINDALLS  250
+/* make MAX_FINDALLS larger if you want */
 
 static int nextfree ; /* nextfree index in findall array */
 
 CPtr gl_bot, gl_top ;
-#define on_glstack(p) ((gl_bot <= p) && (p < gl_top))
 
 #include "ptoc_tag_xsb_i.h"
 
@@ -166,55 +166,128 @@ void findall_clean()
 
 /* findall_copy_to_heap does not need overflow checking - heap space is
    ensured; variables in the findall solution list can be altered without
-   problem, because they are not needed afterwards anymore, so no trailing */
+   problem, because they are not needed afterwards anymore, so no trailing
+*/
+
 void findall_copy_to_heap(Cell from, CPtr to, CPtr *h)
 {
 
 copy_again : /* for tail recursion optimisation */
 
-  switch ( cell_tag( from ) ) {
-  case INT :
-  case FLOAT :
-  case STRING :   *to = from ;
-    return ;
+  switch ( cell_tag( from ) )
+    {
+    case INT :
+    case FLOAT :
+    case STRING :
+      *to = from;
+      return;
     
-  case REF :
-  case REF1 :	deref(from) ;
-    if (on_glstack((CPtr)(from))) *to = from ;
-    else { *(CPtr)from = (Cell)to ; *to = (Cell)to ; }
-    return ;
-  case LIST : {
-    CPtr pfirstel ;
-    
-    *to = makelist(*h) ;
-    to = (*h) ;
-    (*h) += 2 ;
-    pfirstel = clref_val(from) ;
-    from = *pfirstel ; /* deref(from) ; */
-    findall_copy_to_heap(from,to,h) ;
-    from = *(pfirstel+1) ; deref(from) ; to++ ;
-    goto copy_again ;
-  }
-  
-  case CS : {
-    CPtr pfirstel ;
-    int ar ;
-    
-    pfirstel = (CPtr)cs_val(from) ;
-    
-    *to = makecs((Cell)(*h)) ;
-    to = *h ;
-    *to = *pfirstel ; /* the functor */
-    
-    ar = get_arity((Psc)(*pfirstel)) ;
-    *h += ar + 1 ;
-    while ( --ar ) {
-      from = *(++pfirstel) ; /* deref(from) ; */ to++ ;
-      findall_copy_to_heap(from,to,h) ;
+    case REF :
+    case REF1 :
+      deref(from);
+      if (! isref(from)) goto copy_again; /* it could be a LIST */
+      if (on_glstack((CPtr)(from)))
+	*to = from;
+      else
+	{
+	  *(CPtr)from = (Cell)to;
+	  *to = (Cell)to;
+	}
+      return;
+
+  case LIST :
+    {
+      CPtr pfirstel;
+      Cell q ;
+
+      /* first test whether from - which is an L - is actually the left over
+	 of a previously copied first list element
+      */
+      pfirstel = clref_val(from) ;
+      if (on_glstack(pfirstel))
+	{
+	  /* pick up the old value and copy it */
+	  *to = *pfirstel;
+	  return;
+	}
+
+      q = *pfirstel;
+      if (is_list(q))
+	{
+	  CPtr p;
+	  
+	  p = clref_val(q);
+	  if (on_glstack(p))  /* meaning it is a shared list */
+	    {
+	      *to = q;
+	      return;
+	    }
+	}
+
+
+
+      /* this list cell has not been copied before */
+      /* now be careful: if the first element of the list to be copied
+           is an undef (a ref to an undef is not special !)
+           we have to copy this undef now, before we do the general
+           thing for lists
+      */
+
+      {
+	Cell tr1;
+
+	tr1 = *to = makelist(*h) ;
+	to = (*h) ;
+	(*h) += 2 ;
+	if (q == (Cell)pfirstel) /* it is an UNDEF - special care needed */
+	  {
+	    /* it is an undef in the part we are copying from */
+	    *to = (Cell)to ;
+	    *pfirstel = makelist((CPtr)to);
+	  }
+	else
+	  {
+	    *pfirstel = makelist((CPtr)to);
+	    findall_copy_to_heap(q,to,h);
+	  }
+
+	from = *(pfirstel+1) ; to++ ;
+	goto copy_again ;
+      }
     }
-    from = *(++pfirstel) ; /* deref(from) ; */ to++ ;
-    goto copy_again ;
-  }
+
+    case CS :
+      {
+	CPtr pfirstel;
+	Cell newpsc;
+	int ar;
+    
+	pfirstel = (CPtr)cs_val(from);
+	if ( cell_tag((*pfirstel)) == CS )
+	  {
+	    /* this struct was copied before - it must be shared */
+            *to = *pfirstel;
+            return;
+	  }
+
+	/* first time we visit this struct */
+      
+	ar = get_arity((Psc)(*pfirstel)) ;
+	
+	newpsc = *to = makecs((Cell)(*h)) ;
+	to = *h ;
+	*to = *pfirstel ; /* the functor */
+	*pfirstel = newpsc; /* no need for trailing */
+	
+	*h += ar + 1 ;
+	while ( --ar )
+	  {
+	    from = *(++pfirstel) ; to++ ;
+	    findall_copy_to_heap(from,to,h) ;
+	  }
+	from = *(++pfirstel) ; to++ ;
+	goto copy_again ;
+      }
   
   case ATTV: {
     CPtr var;
@@ -225,7 +298,7 @@ copy_again : /* for tail recursion optimisation */
      * part of X has been pointed to the new copy on the heap.  When
      * we see this X again, we should dereference it to find that X
      * is already copied, but this deref is not done (see the code
-     * in `case CS:' -- deref's are commented out).
+     * in `case CS:' -- deref's are gone).
      */
     deref(from);
     var = clref_val(from);  /* the VAR part of the attv  */
@@ -254,7 +327,9 @@ copy_again : /* for tail recursion optimisation */
 
 /* trailing variables during copying a template: a linked list of arrays is used */
 
-#define F_TR_NUM 250 /* the number of trail entries in a chunck of the trail */
+#define F_TR_NUM 250 /* the number of trail entries in a chunck of the trail
+			it must be a multiple of 2
+		     */
 
 typedef struct f_tr_chunk {
   struct f_tr_chunk *previous ;
@@ -273,29 +348,44 @@ static void findall_untrail()
   if( !(tr_chunk = cur_tr_chunk) ) return ; /* protection */
   begin_trail = tr_chunk->tr ;
   
-  for (p = cur_tr_top ; p-- > begin_trail ; ) bld_free((*p)) ;
+  for (p = cur_tr_top ; p-- > begin_trail ; )
+    {
+      *((CPtr)(*p)) = (Cell)(*(p-1));
+      p--;
+    }
   
   tmp = tr_chunk ; tr_chunk = tr_chunk->previous ; free(tmp) ;
-  while (tr_chunk != 0) {
-    begin_trail = tr_chunk->tr ;
-    for (p = tr_chunk->tr + F_TR_NUM ; p-- > begin_trail ; )  bld_free((*p)) ;
-    tmp = tr_chunk ; tr_chunk = tr_chunk->previous ; free(tmp) ;
-  }
+  while (tr_chunk != 0)
+    {
+      begin_trail = tr_chunk->tr ;
+      for (p = tr_chunk->tr + F_TR_NUM; p-- > begin_trail ; )
+	{
+	  *((CPtr)(*p)) = (Cell)(*(p-1));
+	  p--;
+	}
+      tmp = tr_chunk ; tr_chunk = tr_chunk->previous ; free(tmp) ;
+    }
 } /* findall_untrail */
 
-static int findall_trail(CPtr p)
+/* if tr2 == 0, then we need to trail only the first two */
+
+static int findall_trail(CPtr p, Cell val)
 { 
   f_tr_chunk *new_tr_chunk ;
+  int trail_left = cur_tr_limit - cur_tr_top;
+  
+  if (trail_left == 0)
+    {
+      if (!(new_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
+	xsb_exit("findall_trail failed");
+      cur_tr_top = new_tr_chunk->tr ;
+      cur_tr_limit = new_tr_chunk->tr+F_TR_NUM ;
+      new_tr_chunk->previous = cur_tr_chunk ;
+      cur_tr_chunk = new_tr_chunk ;
+    }
 
-  if (cur_tr_top == cur_tr_limit) {
-    if (!(new_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
-      xsb_exit("findall_trail failed");
-    cur_tr_top = new_tr_chunk->tr ;
-    cur_tr_limit = new_tr_chunk->tr+F_TR_NUM ;
-    new_tr_chunk->previous = cur_tr_chunk ;
-    cur_tr_chunk = new_tr_chunk ;
-  }
-  *(cur_tr_top++) = p ;
+  *(cur_tr_top++) = (CPtr)val;
+  *(cur_tr_top++) = (CPtr)p;
   return TRUE;
 } /* findall_trail */
 
@@ -321,66 +411,132 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
   int size = 0 ;
   int s ;
 
-copy_again : /* for tail recursion optimisation */
+  copy_again : /* for tail recursion optimisation */
 
-  switch ( cell_tag( from ) ) {
-  case INT :
-  case FLOAT :
-  case STRING :	*to = from ; return(size) ;
+    switch ( cell_tag( from ) )
+      {
+      case INT :
+      case FLOAT :
+      case STRING :
+	*to = from ;
+	return(size) ;
     
-  case REF :
-  case REF1 :
-    if (on_glstack((CPtr)(from))) {
-      findall_trail((CPtr)from) ;
-      *(CPtr)from = (Cell)to ;
-      *to = (Cell)to ;
-    } else *to = from ;
-    return(size) ;
-  case LIST : {
-    CPtr pfirstel ;
+      case REF :
+      case REF1 :
+	if (on_glstack((CPtr)(from)))
+	  {
+	    findall_trail((CPtr)from,from) ;
+	    *(CPtr)from = (Cell)to ;
+	    *to = (Cell)to ;
+	  } else *to = from ;
+	return(size) ;
+
+      case LIST :
+	{
+	  CPtr pfirstel ;
+	  Cell q ;
+
+	  /* first test whether from - which is an L - is actually the left over
+	     of a previously copied first list element
+	  */
+	  pfirstel = clref_val(from) ;
+	  if (! on_glstack(pfirstel))
+	    {
+	      /* pick up the old value and copy it */
+	      *to = *pfirstel;
+	      return(size);
+	    }
+	  
+	  q = *pfirstel;
+	  if (is_list(q))
+	    {
+	      CPtr p;
+	      
+	      p = clref_val(q);
+	      if (! on_glstack(p))
+		{
+		  *to = q;
+		  return(size);
+		}
+	    }
+
+	  if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 3))
+	    {
+	      if (! get_more_chunk()) return(-1) ;
+	      *h = current_findall->top_of_chunk ;
+	    }
+
+	  {
+	    Cell tr1;
+
+	    tr1 = *to = makelist(*h) ;
+	    to = (*h) ;
+	    (*h) += 2 ;
+	    if (q == (Cell)pfirstel) /* it is an UNDEF - special care needed */
+	      {
+		/* it is an undef in the part we are copying from */
+		findall_trail(pfirstel,(Cell)pfirstel);
+		*to = (Cell)to ;
+		*pfirstel = makelist((CPtr)to);
+	      }
+	    else
+	      {
+		findall_trail(pfirstel,q);
+		*pfirstel = makelist((CPtr)to);
+		deref(q);
+		s = findall_copy_template_to_chunk(q,to,h);
+		if (s < 0) return(-1) ;
+		size += s + 2 ;
+	      }
+
+	    from = *(pfirstel+1) ; deref(from) ; to++ ;
+	    goto copy_again ;
+	  }
+	}
+	
+      case CS :
+	{
+	  CPtr pfirstel ;
+	  Cell newpsc;
+	  int ar ;
     
-    if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 3)) {
-      if (! get_more_chunk()) return(-1) ;
-      *h = current_findall->top_of_chunk ;
-    }
-    *to = makelist(*h) ;
-    to = (*h) ;
-    (*h) += 2 ;
-    pfirstel = clref_val(from) ;
-    from = *pfirstel ; deref(from) ;
-    s = findall_copy_template_to_chunk(from,to,h) ;
-    if (s < 0) return(-1) ;
-    size += s + 2 ;
-    from = *(pfirstel+1) ; deref(from) ; to++ ;
-    goto copy_again ;
-  }
-  
-  case CS : {
-    CPtr pfirstel ;
-    int ar ;
-    
-    pfirstel = (CPtr)cs_val(from) ;
-    ar = get_arity((Psc)(*pfirstel)) ;
-    if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 1 - ar)) {
-      if (! get_more_chunk()) return(-1) ;
-      *h = current_findall->top_of_chunk ;
-    }
-    
-    *to = makecs((Cell)(*h)) ;
-    to = *h ;
-    *to = *pfirstel ; /* the functor */
-    
-    *h += ar + 1 ;
-    size += ar + 1 ;
-    while ( --ar ) {
-      from = *(++pfirstel) ; deref(from) ; to++ ;
-      s = findall_copy_template_to_chunk(from,to,h) ;
-      if (s < 0) return(-1) ;
-      size += s ;
-    }
-    from = *(++pfirstel) ; deref(from) ; to++ ;
-    goto copy_again ;
-  }
+	  pfirstel = (CPtr)cs_val(from) ;
+	  if ( cell_tag((*pfirstel)) == CS )
+	    {
+	      /* this struct was copied before - it must be shared */
+	      *to = *pfirstel;
+	      return(size);
+	    }
+
+	  /* first time we visit this struct */
+
+	  findall_trail(pfirstel,*pfirstel);
+
+	  ar = get_arity((Psc)(*pfirstel)) ;
+	  /* make sure there is enough space in the chunks */
+	  if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 1 - ar))
+	    {
+	      if (! get_more_chunk()) return(-1) ;
+	      *h = current_findall->top_of_chunk ;
+	    }
+
+	  newpsc = *to = makecs((Cell)(*h)) ;
+	  to = *h ;
+	  *to = *pfirstel ; /* the functor */
+	  *pfirstel = newpsc; /* was trailed already */
+
+	  *h += ar + 1 ;
+	  size += ar + 1 ;
+	  while ( --ar )
+	    {
+	      from = *(++pfirstel) ; deref(from) ; to++ ;
+	      s = findall_copy_template_to_chunk(from,to,h) ;
+	      if (s < 0) return(-1) ;
+	      size += s ;
+	    }
+	  from = *(++pfirstel) ; deref(from) ; to++ ;
+	  goto copy_again ;
+	}
   
   case ATTV: {
     CPtr var;
@@ -402,7 +558,7 @@ copy_again : /* for tail recursion optimisation */
        * just created in the `to area', so that attributed variables
        * are shared in the `to area'.
        */
-      findall_trail(var);
+      findall_trail(var,(Cell)var);
       bld_attv(var, to);
       cell(to) = (Cell) to++;
       goto copy_again;
@@ -561,7 +717,7 @@ static long term_size(Cell term)
        * tell it has been counted before.
        */
       size += 2;
-      findall_trail(pfirstel);
+      findall_trail(pfirstel,(Cell)pfirstel);
       bld_attv(pfirstel, hreg); /* bind VAR part to a cell out of hreg */
       bld_free(hreg);
       term = cell(clref_val(term) + 1);
@@ -570,108 +726,278 @@ static long term_size(Cell term)
     else /* this ATTV has been counted before */
       return size;
   }
-  default:
-    xsb_abort("Term type (tag = %ld) not handled by term_size.",
-	      (Cell)cell_tag(term));
   }
   return FALSE;
 }
 
-/* copied from findall_copy_template_to_chunck */
+/* rewritten */
 /* recursively copies a term to a area of memory */
 /* used by copy_term to build a variant in the heap */
+
 static void do_copy_term(Cell from, CPtr to, CPtr *h)
 {
 copy_again : /* for tail recursion optimisation */
 
-  switch ( cell_tag( from ) ) {
-  case INT :
-  case FLOAT :
-  case STRING :
-    *to = from ; return ;
+  switch ( cell_tag( from ) )
+    {
+    case INT :
+    case FLOAT :
+    case STRING :
+      *to = from ;
+      return ;
     
-  case REF :
-  case REF1 :
-    if ((CPtr)from < hreg) {
-      findall_trail((CPtr)from) ;
-      *(CPtr)from = (Cell)to ;
-      *to = (Cell)to ;
-    } else *to = from ;
-    return ;
-  case LIST : {
-    CPtr pfirstel ;
+    case REF :
+    case REF1 :
+      if ((CPtr)from < hreg)  /* meaning: a not yet copied undef */
+	{
+	  findall_trail((CPtr)from,from) ;
+	  *(CPtr)from = (Cell)to ;
+	  *to = (Cell)to ;
+	}
+      else *to = from ;
+      return ;
+
+    case LIST :
+      {
+	/*
+	 *  before copying:
+	 *  
+	 *  +----+        +----+----+
+	 *  | x L|    (x) | a  | b  |    empty trail
+	 *  +----+        +----+----+
+	 *  
+	 *  
+	 *  after copying:
+	 *  
+	 *  
+	 *  +----+        +----+----+
+	 *  | x L|    (x) | x'L| b  |
+	 *  +----+        +----+----+
+	 *  
+	 *  
+	 *  trail:
+	 *  
+	 *  +----+----+
+	 *  | a  | x  |
+	 *  +----+----+
+	 *  
+	 *  
+	 *  the copy is:
+	 *  
+	 *  +----+         +----+----+
+	 *  | x'L|    (x') | a' | b' |
+	 *  +----+         +----+----+
+	 *  
+	 *  careful if a is undef !
+	 */
+
+	CPtr pfirstel;
+	Cell q ;
+
+	/* first test whether from - which is an L - is actually the left over
+	   of a previously copied first list element
+	*/
+	pfirstel = clref_val(from) ;
+	if (pfirstel >= hreg)
+	  {
+	    /* pick up the old value and copy it */
+	    *to = *pfirstel;
+	    return;
+	  }
+
+	q = *pfirstel;
+	if (is_list(q))
+	  {
+	    CPtr p;
+
+	    p = clref_val(q);
+	    if (p >= hreg)  /* meaning it is a shared list */
+	      {
+		*to = q;
+		return;
+	      }
+	  }
+
+	/* this list cell has not been copied before */
+	/* now be careful: if the first element of the list to be copied
+	   is an undef (a ref to an undef is not special !)
+	   we have to copy this undef now, before we do the general
+	   thing for lists
+	*/
+
+	{
+	  Cell tr1;
+
+	  tr1 = *to = makelist(*h) ;
+	  to = (*h) ;
+	  (*h) += 2 ;
+	  if (q == (Cell)pfirstel) /* it is an UNDEF - special care needed */
+	    {
+	      /* it is an undef in the part we are copying from */
+	      findall_trail(pfirstel,(Cell)pfirstel);
+	      *to = (Cell)to ;
+	      *pfirstel = makelist((CPtr)to);
+	    }
+	  else
+	    {
+	      findall_trail(pfirstel,q);
+	      *pfirstel = makelist((CPtr)to);
+	      deref(q);
+	      do_copy_term(q,to,h);
+	    }
+
+	  from = *(pfirstel+1) ; deref(from) ; to++ ;
+	  goto copy_again ;
+	}
+      }
+
+    case CS :
+      {
+	/*
+	 *  before copying:
+	 *  
+	 *      +----+      +-----------------------------------+      +----+
+	 *  (b) |a CS|  (a) | Functor | arg1 | arg2 | ... | argn|  (f) |a CS|
+	 *      +----+      +-----------------------------------+      +----+
+	 *  
+	 *  trail stack empty
+	 *  
+	 *  after copying the first (at b)
+	 *  
+	 *  
+	 *      +----+      +-----------------------------------+      +----+
+	 *  (b) |a CS|  (a) | d    CS | arg1 | arg2 | ... | argn|  (f) |a CS|
+	 *      +----+      +-----------------------------------+      +----+
+	 *  	       
+	 *      +----+      +-----------------------------------+ 
+	 *  (c) |d CS|  (d) | Functor | arg1 | arg2 | ... | argn| 
+	 *      +----+      +-----------------------------------+ 
+	 *  
+	 *         +-------------+
+	 *  trail: | Functor | a |
+	 *         +-------------+
+	 *  
+	 *  c and d are addresses of the copied things
+	 *  
+	 *  so when we come at the CS pointer at f, we hit the |d CS| cell
+	 *  at a, which means that it was copied before
+	 *  
+	 *  this relies on a Functor cell not having a CS tag
+	 *  
+	 *  the situation for lists is more complicated
+	 */
     
-    *to = makelist(*h) ;
-    to = (*h) ;
-    (*h) += 2 ;
-    pfirstel = clref_val(from) ;
-    from = *pfirstel ; deref(from) ;
-    do_copy_term(from,to,h) ;
-    from = *(pfirstel+1) ; deref(from) ; to++ ;
-    goto copy_again ;
-  }
-  case CS : {
-    CPtr pfirstel ;
-    int ar ;
+	CPtr pfirstel ;
+	Cell newpsc;
+	int ar ;
+
+	pfirstel = (CPtr)cs_val(from) ;
+	if ( cell_tag((*pfirstel)) == CS )
+	  {
+	    /* this struct was copied before - it must be shared */
+	    *to = *pfirstel;
+	    return;
+	  }
+
+	/* first time we visit this struct */
+
+	findall_trail(pfirstel,*pfirstel);
+
+	ar = get_arity((Psc)(*pfirstel)) ;
+	
+	newpsc = *to = makecs((Cell)(*h)) ;
+	to = *h ;
+	*to = *pfirstel ; /* the functor */
+	*pfirstel = newpsc; /* was trailed already */
+	
+	*h += ar + 1 ;
+	while ( --ar )
+	  {
+	    from = *(++pfirstel) ; deref(from) ; to++ ;
+	    do_copy_term(from,to,h) ;
+	  }
+	from = *(++pfirstel) ; deref(from) ; to++ ;
+	goto copy_again ;
+      }
+
+    case ATTV:
+      {
+	/*
+	 *  before copying: (A means ATTV tag)
+	 *  
+	 *  +----+        +----+----+
+	 *  | x A|    (x) | a  | b  |    empty trail
+	 *  +----+        +----+----+
+	 *  
+	 *  because of deref, a is always an undef, meaning that actually
+	 *  a == x
+	 *  
+	 *  
+	 *  after copying:
+	 *  
+	 *  
+	 *  +----+        +----+----+
+	 *  | x A|    (x) | x'A| b  |
+	 *  +----+        +----+----+
+	 *  
+	 *  
+	 *  trail:
+	 *  
+	 *  +----+----+
+	 *  | x  | x  |
+	 *  +----+----+
+	 *  
+	 *  the copy is:
+	 *  
+	 *  +----+         +----+----+
+	 *  | x'A|    (x') | a' | b' |
+	 *  +----+         +----+----+
+	 */
+
+	CPtr var;
     
-    pfirstel = (CPtr)cs_val(from) ;
-    ar = get_arity((Psc)(*pfirstel)) ;
-    
-    *to = makecs((Cell)(*h)) ;
-    to = *h ;
-    *to = *pfirstel ; /* the functor */
-    
-    *h += ar + 1 ;
-    while ( --ar ) {
-      from = *(++pfirstel) ; deref(from) ; to++ ;
-      do_copy_term(from,to,h) ;
-    }
-    from = *(++pfirstel) ; deref(from) ; to++ ;
-    goto copy_again ;
-  }
-  case ATTV: {
-    CPtr var;
-    
-    var = clref_val(from);  /* the VAR part of the attv  */
-    if (var < hreg) {	  /* has not been copied before */
-      from = cell(var + 1); /* from -> the ATTR part of the attv */
-      deref(from);
-      *to = makeattv(*h);
-      to = (*h);
-      (*h) += 2;		  /* skip two cells */
-      /*
-       * Trail and bind the VAR part of the attv to the new attv
-       * just created in the `to area', so that attributed variables
-       * are shared in the `to area'.
-       */
-      findall_trail(var);
-      bld_attv(var, to);
-      cell(to) = (Cell) to++;
-      goto copy_again;
-    } else			  /* is a new attv in the `to area' */
-      bld_attv(to, var);
-  } /* case ATTV */
-  } /*switch */
-}
+	var = clref_val(from);	/* the VAR part of the attv  */
+	if (var < hreg) {	/* has not been copied before */
+	  from = cell(var + 1);	/* from -> the ATTR part of the attv */
+	  deref(from);
+	  *to = makeattv(*h);
+	  to = (*h);
+	  (*h) += 2;		/* skip two cells */
+	  /*
+	   * Trail and bind the VAR part of the attv to the new attv just
+	   * created in the `to area', so that attributed variables are
+	   * shared in the `to area'.
+	   */
+	  findall_trail(var,(Cell)var);
+	  bld_attv(var, to);
+	  cell(to) = (Cell) to++;
+	  goto copy_again;
+	} else			/* is a new attv in the `to area' */
+	  bld_attv(to, var);
+      } /* case ATTV */
+    } /* switch */
+} /* do_copy_term */
+
+
 
 /* creates a new variant of a term in the heap
    arg1 - old term
    arg2 - new term; copy of old term unifies with new term
 */
+
 int copy_term()
 {
   long size ;
   Cell arg1, arg2, to ;
   CPtr hptr ;
-  bool result = FALSE;
-  
+
   arg1 = ptoc_tag(1);
   
   if( isref(arg1) ) return 1;
-  
-  init_findall_trail();
+
+  init_findall_trail() ;
   size = term_size(arg1) ;
-  findall_untrail();
+  findall_untrail() ;
 
   check_glstack_overflow( 2, pcreg, size*sizeof(Cell) ) ;
   
@@ -681,13 +1007,22 @@ int copy_term()
   
   hptr = hreg ;
   
+  gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   init_findall_trail() ;
   do_copy_term( arg1, &to, &hptr ) ;
   findall_untrail() ;
   
-  hreg += size ;
-  
-  result = p2p_unify((prolog_term)arg2, (prolog_term)to);
+  {
+    int size2 = hptr - hreg;
+    /* fprintf(stderr,"copied size = %d\n",size2); */
+    if (size2 > size)
+      fprintf(stderr,"panic after copy_term\n");
+  }
+
+  hreg = hptr;
+
+  return(unify(arg2, to));
  contcase:
-  return result;
-}
+  return(FALSE);
+
+} /* copy_term */
