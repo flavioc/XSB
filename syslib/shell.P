@@ -72,6 +72,32 @@ sleep(Seconds) :- sys_system(SLEEP_FOR_SECS, Seconds,_,_,_,_,_).
 is_plain_file(File) :- sys_system(IS_PLAIN_FILE, File,_,_,_,_,_).
 is_directory(File) :- sys_system(IS_DIRECTORY, File,_,_,_,_,_).
 
+list_directory(Dir,File) :-
+	(   (   atom(Dir)
+	    ;   is_list(Dir),
+		ground(Dir)
+	    ),
+	    var(File)
+	->  (   xsb_configuration(host_os,windows)
+	    ->	(   atom(Dir)
+		->  DDir = [Dir, '/*'] /* */
+		;   append(Dir,'/*',DDir) /* */
+		)
+	    ;	DDir = Dir
+	    ),
+	    sys_system(LIST_DIRECTORY,Handle,DDir,FirstFile,_,_,_),
+	    (	File = FirstFile
+	    ;	list_directory_1(DDir,File,Handle)
+	    )
+	;   abort('list_directory(+Dir,-File) called with wrong modes.')
+	).
+list_directory_1(Dir,File,Handle) :-
+	(   sys_system(LIST_DIRECTORY,Handle,Dir,NewFile,_,_,_)
+	->  (   File = NewFile
+	    ;	list_directory_1(Dir,File,Handle)
+	    )
+	;   fail
+	).
 
 cd(Path) :-
 	(   var(Path)

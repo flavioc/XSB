@@ -37,3 +37,4 @@
 #define STAT_FILE_SIZE           10
 #define EXEC                     11
 #define GET_TMP_FILENAME         12
+#define LIST_DIRECTORY           13

@@ -45,6 +45,7 @@
 #include <unistd.h>	
 #include <stddef.h>
 #include <sys/wait.h>
+#include <dirent.h>
 #endif
 
 #include <fcntl.h>
@@ -60,6 +61,7 @@
 #include "system_xsb.h"
 #include "system_defs_xsb.h"
 #include "register.h"
+#include "psc_xsb.h"
 
 #define MAX_CMD_LEN 1024
 
@@ -88,6 +90,9 @@ static struct proc_table_t {
 } xsb_process_table;
 
 static xsbBool file_stat(int callno, char *file);
+
+static int xsb_find_first_file(prolog_term, char*, prolog_term);
+static int xsb_find_next_file(prolog_term, char*, prolog_term);
 
 int sys_syscall(int callno)
 {
@@ -482,6 +487,18 @@ xsbBool sys_system(int callno)
 
     xsb_warn("[PROCESS_CONTROL] Arg 2: Invalid signal specification. Must be `kill' or `wait(Var)'");
     return FALSE;
+  }
+   
+  case LIST_DIRECTORY: {
+    /* assume all type- and mode-checking is done in Prolog */
+    prolog_term handle = reg_term(2); /* ref for handle */
+    char *dir_name = ptoc_longstring(3); /* +directory name */
+    prolog_term filename = reg_term(4); /* reference for name of file */
+    
+    if (is_var(handle)) 
+      return xsb_find_first_file(handle,dir_name,filename);
+    else
+      return xsb_find_next_file(handle,dir_name,filename);
   }
 
   default:
@@ -940,4 +957,61 @@ xsbBool file_stat(int callno, char *file)
   } /* switch */
 }
 
+static int xsb_find_first_file(prolog_term handle,
+			       char *dir,
+			       prolog_term file)
+{
+#ifdef WIN_NT
+  WIN32_FIND_DATA filedata;
+  HANDLE filehandle;
 
+  filehandle = FindFirstFile(dir,&filedata);
+  if (filehandle == INVALID_HANDLE_VALUE)
+    return FALSE;
+  c2p_int((Integer)filehandle,handle);
+  c2p_string(filedata.cFileName,file);
+  return TRUE;
+#else
+  DIR *dirhandle;
+  struct dirent *dir_entry;
+  
+  dirhandle = opendir(dir);
+  if (!dirhandle)
+    return FALSE;
+  dir_entry = readdir(dirhandle);
+  if (!dir_entry) {
+    closedir(dirhandle);
+    return FALSE;
+  }
+  c2p_int((Integer)dirhandle,handle);
+  c2p_string(dir_entry->d_name,file);
+  return TRUE;
+#endif
+}
+
+static int xsb_find_next_file(prolog_term handle,
+			      char *dir,
+			      prolog_term file)
+{
+#ifdef WIN_NT
+  WIN32_FIND_DATA filedata;
+  HANDLE filehandle;
+  
+  filehandle = p2c_int(handle);
+  if (!FindNextFile(filehandle,&filedata)) 
+    return FALSE;
+  c2p_string(filedata.cFileName,file);
+  return TRUE;
+#else
+  DIR *dirhandle = p2c_int(handle);
+  struct dirent *dir_entry;
+
+  dir_entry = readdir(dirhandle);
+  if (!dir_entry) {
+    closedir(dirhandle);
+    return FALSE;
+  }
+  c2p_string(dir_entry->d_name,file);
+  return TRUE;
+#endif
+}

@@ -30,13 +30,15 @@
 	is_plain_file/1, is_directory/1,
 	spawn_process/5, get_process_table/1, process_status/2, 
 	process_control/2,
-	exec/1.
+	exec/1, list_directory/2.
 :- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3,
 	sys_mkdir/2, sys_rmdir/2,
 	sys_unlink/2, sys_exit/1, sys_rename/3.
 
-:- import atom/1, abort/1 from standard.
+:- import atom/1, abort/1, is_list/1 from standard.
 :- import sys_system/7, expand_filename/2, sys_syscall/4
    from machine.
 
 :- import xsb_configuration/2 from xsb_configuration.
+
+:- import ground/1, append/3 from basics.
