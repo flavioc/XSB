@@ -31,8 +31,10 @@
 
 init_cdf:- 
 	bootstrap_package(['altCDF',cdftp,doc],'altCDF'),
+	[cdf_checks],
 	[cdf_init_cdf],
-	[cdf_io].
+	[cdf_io],
+	[cdf_init].
 
 :- init_cdf.
 
