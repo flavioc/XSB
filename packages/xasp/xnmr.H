@@ -34,7 +34,7 @@
 :- import file_read/3, vv/2 from xsb_read.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import call_expose/1, goal_cut_trans/3,
-          push_abort_cutpoint/0, pop_abort_cutpoint/0,
+	  catch/3,
 	  is_most_general_term/1, (table)/1, repeat/0,
 	  (import)/1 
      from standard.
@@ -50,10 +50,12 @@
     from tables.
 
 :- import consult/1 from consult.
-:- consult(sModels).
+:- consult(xasppkg).
 
 :- import coninc/1, conget/2 from gensym.
 
 :- import init_smodels/1, a_stable_model/0, print_current_stable_model/0,
 	in_all_stable_models/2, set_query_true/1
-        from smodelsint.
+        from xnmr_int.
+
+:- import retractall/1 from assert.

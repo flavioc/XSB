@@ -23,7 +23,7 @@
 */
 
 
-:- compiler_options([xpp_on,ciao_directives]).
+:- compiler_options([sysmod,xpp_on,ciao_directives]).
 
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"

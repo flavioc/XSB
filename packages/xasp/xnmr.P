@@ -23,7 +23,7 @@
 */
 
 
-:- compiler_options([xpp_on,ciao_directives]).
+:- compiler_options([sysmod,xpp_on,ciao_directives]).
 
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"
@@ -52,16 +52,12 @@ nmr :-
         prompt(' ? ',[],'_$debug_prompt'(_)),
         fail.
 nmr :-
-	push_abort_cutpoint,
+	retractall('$$exception_ball'(_)),
 	repeat,
-	pop_abort_cutpoint,
-	push_abort_cutpoint, % reset abort cutpoint
-	nmr1,	% Protect varible state, so fail to this point
-		% doesnt require untrailing (when aborting or
-		% segfault handling)
-	pop_abort_cutpoint.  % reset for caller
+	catch(nmr1(_),Ball,default_error_handler(Ball)),
+	fail.
 
-nmr1 :-
+nmr1(_) :-
 	repeat,
 	trimcore,
 	stat_set_flag(HIDE_STATE, 0), %% hide call interceptions.
