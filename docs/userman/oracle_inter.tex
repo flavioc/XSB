@@ -93,7 +93,7 @@ XSB executable is found in its usual place:
 %%
 
 
-\section{Using the interface:}
+\section{Using the interface:} \label{oracle:use}
 
 
 \subsection{Connecting to and disconnecting from Oracle:}
@@ -122,6 +122,7 @@ To disconnect from the current session use:
 
 
 \subsection{Accessing an Oracle table: $($relation level interface$)$}
+\label{sec:oracle:rellevel}
 
 Assuming you have access permission for the table you wish to import,
 you can use {\tt db\_import/2} as:
@@ -827,7 +828,7 @@ yes
 where user is your account name, and passwd is your passwd.
 
 
-\section{Limitations}
+\section{Limitations} \label{oracle:limitations}
 %----------------------
 The default limit on open cursors per session in most Oracle
 installations is 50, which is also the default limit for our
