@@ -53,7 +53,7 @@
 #define CMD_LINE_GOAL  	21	/* The Prolog goal passed on cmd 
 				   line with -e	       	       	           */
 #define USER_HOME  	22	/* $HOME, if not null. Else INSTALL_DIR    */
-#define INSTALL_DIR	23	/* set dynamically in self_orientation.c   */
+#define INSTALL_DIR	23	/* set dynamically in orient_xsb.c         */
 
 #define CLAUSE_INT	24	/* for clause interrupt			YW */
 

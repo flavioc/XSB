@@ -32,9 +32,9 @@
 
 #include "auxlry.h"
 #include "cell.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 #include "cinterf.h"
-#include "heap.h"
+#include "heap_xsb.h"
 
 extern char *p_charlist_to_c_string(prolog_term term, char *outstring, 
 				    int outstring_size,

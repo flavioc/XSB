@@ -58,22 +58,22 @@
 
 #include "auxlry.h"
 #include "cell.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 #include "psc.h"
-#include "hash.h"
+#include "hash_xsb.h"
 #include "tries.h"
 #include "choice.h"
 #include "deref.h"
-#include "xsb_memory.h"
-#include "heap.h"
+#include "memory_xsb.h"
+#include "heap_xsb.h"
 #include "register.h"
 #include "flags.h"
-#include "loader.h"
+#include "loader_xsb.h"
 #include "binding.h"
-#include "xmacro.h"
-#include "token.h"
+#include "macro_xsb.h"
+#include "token_xsb.h"
 #include "builtin.h"
-#include "sig.h"
+#include "sig_xsb.h"
 #include "subp.h"
 #include "tr_utils.h"
 #include "trassert.h"
@@ -86,11 +86,11 @@
 #include "tables.h"
 
 #ifdef ORACLE
-#include "oracle.h"
+#include "oracle_xsb.h"
 #endif
 
 #ifdef XSB_ODBC
-#include "xsb_odbc.h"
+#include "odbc_xsb.h"
 #endif
 
 #ifdef PROFILE
@@ -98,11 +98,11 @@
 #include "subinst.h"
 #endif
 
-#include "io_builtins.h"
+#include "io_builtins_xsb.h"
 
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
-#include "system.h"
+#include "system_xsb.h"
 
 /*======================================================================*/
 
@@ -860,10 +860,10 @@ static void write_quotedname(FILE *file, char *string)
 /*----------------------------------------------------------------------*/
 
 /* inlined definition of file_function */
-#include "io_builtins.i"
+#include "io_builtins_xsb_i.h"
 
 /* inlined functions for prolog standard builtins */
-#include "std_pred.i"
+#include "std_pred_xsb_i.h"
 
 /* --- built in predicates --------------------------------------------	*/
 
@@ -1395,7 +1395,7 @@ int builtin_call(byte number)
     break; 
 /*----------------------------------------------------------------------*/
 
-#include "bineg.i"
+#include "bineg_xsb_i.h"
 
 /*----------------------------------------------------------------------*/
   case GET_SUBGOAL_PTR: {	/* reg1: +term; reg2: -subgoal_ptr */
@@ -1503,14 +1503,14 @@ int builtin_call(byte number)
     
 /*----------------------------------------------------------------------*/
 
-#include "std_cases.i"
+#include "std_cases_xsb_i.h"
     
 #ifdef ORACLE
-#include "oracle.i"
+#include "oracle_xsb_i.h"
 #endif
     
 #ifdef XSB_ODBC
-#include "xsb_odbc.i"
+#include "odbc_xsb_i.h"
 #endif
     
 /*----------------------------------------------------------------------*/

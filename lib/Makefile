@@ -31,8 +31,8 @@ ALL = 	aggregs.O array.O array1.O directry.O foreign.O \
 	xnmr.O
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
-	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
-	../emu/system.h ../emu/xsbsocket.h 
+	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
+	../emu/system_xsb.h ../emu/socket_defs_xsb.h 
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
 
 Option = [sysmod,optimize,quit_on_error]

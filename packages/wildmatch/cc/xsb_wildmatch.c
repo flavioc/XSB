@@ -35,7 +35,7 @@
 
 #include "auxlry.h"
 #include "cell.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 #include "cinterf.h"
 
 /* Casefolding seems to be defined in some versions of gcc, but not in

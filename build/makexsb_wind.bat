@@ -21,6 +21,8 @@ copy %XSBCONFIGdir%\MSVC_Makefile.mak+%XSBCONFIGdir%\MSVC.dep MSVC_Makefile.mak
 
 nmake /f "MSVC_Makefile.mak" %1 %2 %3 %4 %5 %6 %7
 
+del MSVC_Makefile.mak
+
 @cd ..\gpp
 
 nmake /f "MSVC_Makefile.mak"

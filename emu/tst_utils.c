@@ -38,10 +38,10 @@
 #include "deref.h"
 #include "trie_internals.h"
 #include "tst_aux.h"
-#include "xmacro.h"
+#include "macro_xsb.h"
 #include "choice.h"
 #include "inst.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 
 
 /* ======================================================================= */

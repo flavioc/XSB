@@ -32,8 +32,8 @@
 #include "configs/config.h"
 #include "cell.h"
 #include "flags.h"
-#include "xsberror.h"
-#include "io_builtins.h"
+#include "error_xsb.h"
+#include "io_builtins_xsb.h"
 
 EXEC SQL INCLUDE "orastuff.h";
 
@@ -398,7 +398,7 @@ static int oracleCursor_prepare_and_declare(CursorHandle cursorHandle,
   sql_stmt = stmtString;
 
   EXEC SQL WHENEVER SQLERROR GOTO error_handler;
-  EXEC SQL INCLUDE orastuff/prepdecl.i;
+  EXEC SQL INCLUDE orastuff/prepdecl_xsb_i.h;
 
   return SUCCESS;
 
@@ -448,7 +448,7 @@ static int oracleCursor_describe_BVs(CursorHandle cursorHandle, int numBVs) {
     }
 
     EXEC SQL WHENEVER SQLERROR GOTO error_handler;
-    EXEC SQL INCLUDE orastuff/desc_bv.i;
+    EXEC SQL INCLUDE orastuff/desc_bv_xsb_i.h;
 
     if (SQLDA_NumEntriesFound(descriptor) < 0) {
       #ifdef VIEW_BVs
@@ -514,7 +514,7 @@ static int oracleCursor_describe_SLIs(CursorHandle cursorHandle, int numSLIs) {
     }
 
     EXEC SQL WHENEVER SQLERROR GOTO error_handler;
-    EXEC SQL INCLUDE orastuff/desc_sli.i;
+    EXEC SQL INCLUDE orastuff/desc_sli_xsb_i.h;
 
     if (SQLDA_NumEntriesFound(descriptor) < 0) {
       #ifdef VIEW_SLIs
@@ -578,7 +578,7 @@ static int oracleCursor_execute(CursorHandle cursorHandle) {
     bindDesc = cursors[cursorHandle].bv.descriptor;
 
     EXEC SQL WHENEVER SQLERROR GOTO error_handler;
-    EXEC SQL INCLUDE orastuff/open.i;
+    EXEC SQL INCLUDE orastuff/open_xsb_i.h;
   }
   cursors[cursorHandle].bv.cur_entry_index = 0;
   return SUCCESS;
@@ -614,7 +614,7 @@ static int oracleCursor_fetch(CursorHandle cursorHandle) {
 
   EXEC SQL WHENEVER NOT FOUND GOTO nodata_handler;
   EXEC SQL WHENEVER SQLERROR GOTO error_handler;
-  EXEC SQL INCLUDE orastuff/fetch.i;
+  EXEC SQL INCLUDE orastuff/fetch_xsb_i.h;
   EXEC SQL WHENEVER NOT FOUND CONTINUE;   /* turn trap off for rest of file */
 
   return SUCCESS;
@@ -659,7 +659,7 @@ static int oracleCursor_fetch(CursorHandle cursorHandle) {
 static int oracleCursor_close(CursorHandle cursorHandle) {
 
   EXEC SQL WHENEVER SQLERROR GOTO close_error;
-  EXEC SQL INCLUDE orastuff/close.i;
+  EXEC SQL INCLUDE orastuff/close_xsb_i.h;
   return SUCCESS;
 
  close_error:

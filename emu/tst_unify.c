@@ -32,18 +32,18 @@
 #include "auxlry.h"
 #include "cell.h"
 #include "register.h"
-#include "xsb_memory.h"
+#include "memory_xsb.h"
 #include "binding.h"
 #include "psc.h"
 #include "deref.h"
 #include "subp.h"          /* bool unify(Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "xmacro.h"
+#include "macro_xsb.h"
 #include "choice.h"
 #include "tst_aux.h"
 #include "tst_utils.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 
 
 /* ========================================================================= */

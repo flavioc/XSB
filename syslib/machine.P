@@ -33,7 +33,7 @@
 #include "builtin.h"
 #include "celltags.h"
 #include "flag_defs.h"
-#include "msyscall.h"
+#include "syscall_xsb.h"
 
 /*======================================================================*/
 /* This file contains definitions for predicates implemented by the	*/

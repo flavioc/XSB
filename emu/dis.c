@@ -32,15 +32,15 @@
 
 #include "auxlry.h"
 #include "psc.h"
-#include "hash.h"
-#include "loader.h"
+#include "hash_xsb.h"
+#include "loader_xsb.h"
 #include "cell.h"
 #include "inst.h"
 #include "builtin.h"
-#include "xsb_memory.h"
+#include "memory_xsb.h"
 #include "flags.h"
 #include "tries.h"
-#include "xmacro.h"
+#include "macro_xsb.h"
 
 /* --------------- The following are working variables ----------------	*/
 

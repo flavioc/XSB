@@ -41,7 +41,7 @@
 #include "standard.h"
 #include "char_defs.h"
 #include "flag_defs.h"
-#include "io_defs.h"
+#include "io_defs_xsb.h"
 #include "celltags.h"
 
 

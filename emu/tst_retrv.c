@@ -34,14 +34,14 @@
 #include "cell.h"
 #include "inst.h"
 #include "register.h"
-#include "xsb_memory.h"
-#include "xsberror.h"
+#include "memory_xsb.h"
+#include "error_xsb.h"
 #include "psc.h"
 #include "deref.h"
 #include "subp.h"          /* bool unify(Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "xmacro.h"
+#include "macro_xsb.h"
 #include "tst_aux.h"
 
 

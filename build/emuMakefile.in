@@ -80,35 +80,35 @@ DEPEND = makedepend
 
 
 SRCS =	auxlry.c biassert.c builtin.c \
-	chat.c cinterf.c debug.c dis.c dynload.c \
+	chat.c cinterf.c debug_xsb.c dis.c dynload.c \
 	emuloop.c findall.c function.c \
-	hash.c heap.c init.c inst.c io_builtins.c \
-	loader.c psc.c residual.c \
-	scc.c self_orientation.c slgdelay.c \
-	struct_manager.c sub_insert.c subp.c system.c \
-	table_stats.c tables.c token.c tr_utils.c \
-	trace.c tries.c tst_insert.c tst_retrv.c\
+	hash_xsb.c heap_xsb.c init_xsb.c inst.c io_builtins_xsb.c \
+	loader_xsb.c psc.c residual.c \
+	scc_xsb.c orient_xsb.c slgdelay.c \
+	struct_manager.c sub_insert.c subp.c system_xsb.c \
+	table_stats.c tables.c token_xsb.c tr_utils.c \
+	trace_xsb.c tries.c tst_insert.c tst_retrv.c\
 	tst_unify.c tst_utils.c \
-	xmain.c xpathname.c xsb_memory.c \
-	xsb_string.c xsberror.c xsbsocket.c
+	main_xsb.c pathname_xsb.c memory_xsb.c \
+	string_xsb.c error_xsb.c socket_xsb.c
 
 ORASRCS = $(SRCS) orastuff.c
 
 
 OBJS =	auxlry.o biassert.o builtin.o \
-	chat.o cinterf.o debug.o dis.o dynload.o \
+	chat.o cinterf.o debug_xsb.o dis.o dynload.o \
 	emuloop.o findall.o function.o \
-	hash.o heap.o init.o inst.o io_builtins.o \
-	loader.o private_builtin.o psc.o \
-	residual.o scc.o self_orientation.o slgdelay.o \
-	struct_manager.o sub_insert.o subp.o system.o \
-	table_stats.o tables.o token.o tr_utils.o \
-	trace.o tries.o tst_insert.o tst_retrv.o\
+	hash_xsb.o heap_xsb.o init_xsb.o inst.o io_builtins_xsb.o \
+	loader_xsb.o private_builtin.o psc.o \
+	residual.o scc_xsb.o orient_xsb.o slgdelay.o \
+	struct_manager.o sub_insert.o subp.o system_xsb.o \
+	table_stats.o tables.o token_xsb.o tr_utils.o \
+	trace_xsb.o tries.o tst_insert.o tst_retrv.o\
 	tst_unify.o tst_utils.o \
-	xpathname.o xsb_memory.o \
-	xsb_string.o xsberror.o xsbsocket.o
+	pathname_xsb.o memory_xsb.o \
+	string_xsb.o error_xsb.o socket_xsb.o
 
-allOBJS = xmain.o ${OBJS}
+allOBJS = main_xsb.o ${OBJS}
 
 ORAOBJS = $(OBJS) orastuff.o
 
@@ -152,9 +152,9 @@ depend::
 # Put in this group all actions (rules) of this Makefile.
 #=======================================================================
 
-init.o: init.c
-	$(CC) -c $(CFLAGS) init.c
-	@cp init.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+init_xsb.o: init_xsb.c
+	$(CC) -c $(CFLAGS) init_xsb.c
+	@cp init_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 dynload.o: dynload.c
 	$(CC) -c $(CFLAGS) dynload.c

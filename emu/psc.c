@@ -32,15 +32,15 @@
 
 #include "auxlry.h"
 #include "cell.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 #include "psc.h"
 #include "tries.h"
-#include "hash.h"
-#include "xmacro.h"
-#include "loader.h"
+#include "hash_xsb.h"
+#include "macro_xsb.h"
+#include "loader_xsb.h"
 #include "flags.h"
 #include "inst.h"
-#include "xsb_memory.h"
+#include "memory_xsb.h"
 
 
 /* === String Table manipulation ======================================	*/

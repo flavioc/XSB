@@ -26,18 +26,18 @@
 
 #include "configs/config.h"	/* This should appear BEFORE the ifdef!	*/
 
-extern char executable[];        /* from self_orientation.c */
+extern char executable[];        /* from orient_xsb.c */
 
 #ifdef FOREIGN
 
 #ifdef FOREIGN_ELF
-#include "dynelf.i"
+#include "dynelf_xsb_i.h"
 #else
 #ifdef FOREIGN_AOUT
-#include "dynaout.i"
+#include "dynaout_xsb_i.h"
 #else
 #ifdef FOREIGN_WIN32
-#include "dynwin32.i"
+#include "dynwin32_xsb_i.h"
 #endif /* FOREIGN_WIN32 */
 #endif /* FOREIGN_AOUT */
 #endif /* FOREIGN_ELF */

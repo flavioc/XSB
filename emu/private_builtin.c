@@ -46,11 +46,11 @@
 
 #include "auxlry.h"
 #include "cell.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 #include "cinterf.h"
-#include "xsb_memory.h"
+#include "memory_xsb.h"
 #include "psc.h"
-#include "heap.h"
+#include "heap_xsb.h"
 #include "register.h"
 #include "flags.h"
 

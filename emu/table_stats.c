@@ -33,8 +33,8 @@
 #include "psc.h"
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "xmacro.h"
-#include "xsberror.h"
+#include "macro_xsb.h"
+#include "error_xsb.h"
 
 
 

@@ -117,47 +117,47 @@ CLEAN :
 	-@erase "$(OBJDIR)\biassert.obj"
 	-@erase "$(OBJDIR)\builtin.obj"
 	-@erase "$(OBJDIR)\cinterf.obj"
-	-@erase "$(OBJDIR)\debug.obj"
+	-@erase "$(OBJDIR)\debug_xsb.obj"
 	-@erase "$(OBJDIR)\dis.obj"
 	-@erase "$(OBJDIR)\dynload.obj"
 	-@erase "$(OBJDIR)\emuloop.obj"
 	-@erase "$(OBJDIR)\findall.obj"
 	-@erase "$(OBJDIR)\function.obj"
-	-@erase "$(OBJDIR)\hash.obj"
-	-@erase "$(OBJDIR)\heap.obj"
+	-@erase "$(OBJDIR)\hash_xsb.obj"
+	-@erase "$(OBJDIR)\heap_xsb.obj"
 	-@erase "$(OBJDIR)\inst.obj"
-	-@erase "$(OBJDIR)\init.obj"
-	-@erase "$(OBJDIR)\io_builtins.obj"
-	-@erase "$(OBJDIR)\loader.obj"
+	-@erase "$(OBJDIR)\init_xsb.obj"
+	-@erase "$(OBJDIR)\io_builtins_xsb.obj"
+	-@erase "$(OBJDIR)\loader_xsb.obj"
 	-@erase "$(OBJDIR)\chat.obj
-	-@erase "$(OBJDIR)\xsb_memory.obj"
+	-@erase "$(OBJDIR)\memory_xsb.obj"
 	-@erase "$(OBJDIR)\orastuff.obj"
 	-@erase "$(OBJDIR)\psc.obj"
 	-@erase "$(OBJDIR)\private_builtin.obj"
 	-@erase "$(OBJDIR)\residual.obj"
-	-@erase "$(OBJDIR)\scc.obj"
-	-@erase "$(OBJDIR)\self_orientation.obj"
+	-@erase "$(OBJDIR)\scc_xsb.obj"
+	-@erase "$(OBJDIR)\orient_xsb.obj"
 	-@erase "$(OBJDIR)\slgdelay.obj"
 	-@erase "$(OBJDIR)\struct_manager.obj"
 	-@erase "$(OBJDIR)\sub_insert.obj"
 	-@erase "$(OBJDIR)\subp.obj"
-	-@erase "$(OBJDIR)\system.obj"
+	-@erase "$(OBJDIR)\system_xsb.obj"
 	-@erase "$(OBJDIR)\table_stats.obj"
 	-@erase "$(OBJDIR)\tables.obj"
-	-@erase "$(OBJDIR)\token.obj"
-	-@erase "$(OBJDIR)\trace.obj"
+	-@erase "$(OBJDIR)\token_xsb.obj"
+	-@erase "$(OBJDIR)\trace_xsb.obj"
 	-@erase "$(OBJDIR)\tries.obj"
 	-@erase "$(OBJDIR)\tr_utils.obj"
 	-@erase "$(OBJDIR)\tst_insert.obj"
 	-@erase "$(OBJDIR)\tst_retrv.obj"
 	-@erase "$(OBJDIR)\tst_unify.obj"
 	-@erase "$(OBJDIR)\tst_utils.obj"
-	-@erase "$(OBJDIR)\xmain.obj"
-	-@erase "$(OBJDIR)\xpathname.obj"
-	-@erase "$(OBJDIR)\xsb_odbc.obj"
-	-@erase "$(OBJDIR)\xsberror.obj"
-	-@erase "$(OBJDIR)\xsbsocket.obj"
-	-@erase "$(OBJDIR)\xsb_string.obj"
+	-@erase "$(OBJDIR)\main_xsb.obj"
+	-@erase "$(OBJDIR)\pathname_xsb.obj"
+	-@erase "$(OBJDIR)\odbc_xsb.obj"
+	-@erase "$(OBJDIR)\error_xsb.obj"
+	-@erase "$(OBJDIR)\socket_xsb.obj"
+	-@erase "$(OBJDIR)\string_xsb.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -171,50 +171,50 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/biassert.obj" \
 	"$(OBJDIR)/chat.obj"\
 	"$(OBJDIR)/cinterf.obj" \
-	"$(OBJDIR)/debug.obj" \
+	"$(OBJDIR)/debug_xsb.obj" \
 	"$(OBJDIR)/dis.obj" \
 	"$(OBJDIR)/dynload.obj" \
 	"$(OBJDIR)/emuloop.obj" \
 	"$(OBJDIR)/findall.obj" \
 	"$(OBJDIR)/function.obj" \
-	"$(OBJDIR)/hash.obj" \
-	"$(OBJDIR)/heap.obj" \
-	"$(OBJDIR)/init.obj" \
+	"$(OBJDIR)/hash_xsb.obj" \
+	"$(OBJDIR)/heap_xsb.obj" \
+	"$(OBJDIR)/init_xsb.obj" \
 	"$(OBJDIR)/inst.obj" \
-	"$(OBJDIR)/io_builtins.obj" \
-	"$(OBJDIR)/loader.obj" \
-	"$(OBJDIR)/xsb_memory.obj" \
+	"$(OBJDIR)/io_builtins_xsb.obj" \
+	"$(OBJDIR)/loader_xsb.obj" \
+	"$(OBJDIR)/memory_xsb.obj" \
 	"$(OBJDIR)/psc.obj" \
 	"$(OBJDIR)/private_builtin.obj" \
 	"$(OBJDIR)/residual.obj" \
-	"$(OBJDIR)/self_orientation.obj" \
+	"$(OBJDIR)/orient_xsb.obj" \
 	"$(OBJDIR)/slgdelay.obj" \
 	"$(OBJDIR)/subp.obj" \
 	"$(OBJDIR)/struct_manager.obj" \
 	"$(OBJDIR)/sub_insert.obj" \
-	"$(OBJDIR)/scc.obj" \
-	"$(OBJDIR)/system.obj" \
+	"$(OBJDIR)/scc_xsb.obj" \
+	"$(OBJDIR)/system_xsb.obj" \
 	"$(OBJDIR)/table_stats.obj" \
 	"$(OBJDIR)/tables.obj" \
-	"$(OBJDIR)/token.obj" \
-	"$(OBJDIR)/trace.obj" \
+	"$(OBJDIR)/token_xsb.obj" \
+	"$(OBJDIR)/trace_xsb.obj" \
 	"$(OBJDIR)/tries.obj" \
 	"$(OBJDIR)/tr_utils.obj" \
 	"$(OBJDIR)/tst_insert.obj" \
 	"$(OBJDIR)/tst_retrv.obj" \
 	"$(OBJDIR)/tst_unify.obj" \
 	"$(OBJDIR)/tst_utils.obj" \
-	"$(OBJDIR)/xpathname.obj" \
-	"$(OBJDIR)/xsb_odbc.obj" \
-	"$(OBJDIR)/xsberror.obj" \
-	"$(OBJDIR)/xsbsocket.obj" \
-	"$(OBJDIR)/xsb_string.obj"
+	"$(OBJDIR)/pathname_xsb.obj" \
+	"$(OBJDIR)/odbc_xsb.obj" \
+	"$(OBJDIR)/error_xsb.obj" \
+	"$(OBJDIR)/socket_xsb.obj" \
+	"$(OBJDIR)/string_xsb.obj"
 
-# DLLs don't use xmain.c
+# DLLs don't use main_xsb.c
 !IF  "$(DLL)" == "no"
-LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/xmain.obj
+LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/main_xsb.obj
 !ELSE
-LINK32_OBJS=$(OBJDIR)/xmain.obj
+LINK32_OBJS=$(OBJDIR)/main_xsb.obj
 !ENDIF
 
 # Oracle requires one additional file

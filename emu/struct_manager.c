@@ -33,7 +33,7 @@
 #include "auxlry.h"
 #include "struct_manager.h"
 #include "cell.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

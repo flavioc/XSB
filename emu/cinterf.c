@@ -33,20 +33,20 @@
 
 #include "auxlry.h"
 #include "cell.h"
-#include "xsb_memory.h"
+#include "memory_xsb.h"
 #include "register.h"
 #include "psc.h"
 #include "flags.h"
 #include "deref.h"
-#include "heap.h"
+#include "heap_xsb.h"
 #include "binding.h"
 #include "tries.h"
 #include "choice.h"
 #include "subp.h"
 #include "emuloop.h"
 #include "cinterf.h"
-#include "xsberror.h"
-#include "self_orientation.h"
+#include "error_xsb.h"
+#include "orient_xsb.h"
 
 /* the following really belongs somewhere else */
 extern char *expand_filename(char *);

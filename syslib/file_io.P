@@ -24,7 +24,7 @@
 
 
 :- compiler_options([xpp_on]).
-#include "io_defs.h"
+#include "io_defs_xsb.h"
 #include "standard.h"
 #include "flag_defs.h"
 

@@ -43,30 +43,30 @@
 #include "auxlry.h"
 #include "cell.h"
 #include "register.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 #include "inst.h"
 #include "psc.h"
 #include "deref.h"
-#include "xsb_memory.h"
-#include "heap.h"
-#include "sig.h"
+#include "memory_xsb.h"
+#include "heap_xsb.h"
+#include "sig_xsb.h"
 #include "emudef.h"
-#include "loader.h"
+#include "loader_xsb.h"
 #include "binding.h"
 #include "flags.h"
 #include "trie_internals.h"
 #include "choice.h"
 #include "sw_envs.h"
-#include "xmacro.h"
+#include "macro_xsb.h"
 #include "tables.h"
 #include "subinst.h"
-#include "scc.h"
+#include "scc_xsb.h"
 #include "subp.h"
 #include "tr_utils.h"
 #include "cut.h"
 #include "export.h"
-#include "self_orientation.h"
-#include "io_builtins.h"
+#include "orient_xsb.h"
+#include "io_builtins_xsb.h"
 
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
@@ -80,7 +80,7 @@ CPtr	ans_var_pos_reg;
 /*----------------------------------------------------------------------*/
 
 #include "tr_delay.h"
-#include "tr_code.i"
+#include "tr_code_xsb_i.h"
 
 #ifdef CHAT
 #include "chat.h"
@@ -161,13 +161,13 @@ int  xctr;
 /*----------------------------------------------------------------------*/
 
 #ifdef CHAT
-#include "chatsched.i"
+#include "chatsched_xsb_i.h"
 #else
-#include "schedrev.i"
+#include "schedrev_xsb_i.h"
 #endif
 
 #ifndef LOCAL_EVAL 
-#include "wfs.i" 
+#include "wfs_xsb_i.h" 
 #endif 
 
 /*----------------------------------------------------------------------*/
@@ -798,8 +798,8 @@ contcase:     /* the main loop */
 
 /*----------------------------------------------------------------------*/
 
-#include "slginsts.i"
-#include "tc_insts.i"
+#include "slginsts_xsb_i.h"
+#include "tc_insts_xsb_i.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -1262,7 +1262,7 @@ contcase:     /* the main loop */
 
 nunify: /* ( op1, op2 ) */
 /* word op1, op2 */
-#include "unify.i"
+#include "unify_xsb_i.h"
 
     goto contcase;  /* end of nunify */
 

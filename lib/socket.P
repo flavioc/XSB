@@ -23,9 +23,9 @@
 */
 
 :- compiler_options([xpp_on,sysmod]).
-#include "io_defs.h"
+#include "io_defs_xsb.h"
 #include "standard.h"
-#include "socket_defs.h"
+#include "socket_defs_xsb.h"
 
 %% socket_flush:  for back compatibility
 socket_flush(FileDes) :- file_function(FILE_FLUSH,FileDes,_,[],[],[],[]).

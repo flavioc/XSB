@@ -34,14 +34,14 @@
 #include "cell.h"    	     	 /* cell.h must be included before deref.h */
 #include "deref.h"
 #include "register.h"
-#include "xsb_memory.h"
+#include "memory_xsb.h"
 #include "psc.h"
-#include "xsberror.h"
-#include "heap.h"
+#include "error_xsb.h"
+#include "heap_xsb.h"
 #include "binding.h"
 #include "subp.h"
 #include "flags.h"
-#include "loader.h"
+#include "loader_xsb.h"
 
 #include "findall.h"
 

@@ -34,12 +34,12 @@
 #include "cell.h"
 #include "inst.h"
 #include "register.h"
-#include "xsberror.h"
+#include "error_xsb.h"
 #include "psc.h"
 #include "deref.h"
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "xmacro.h"
+#include "macro_xsb.h"
 #include "tst_aux.h"
 
 

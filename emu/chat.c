@@ -36,15 +36,15 @@
 #include "psc.h"
 #include "tries.h"
 #include "choice.h"
-#include "xmacro.h"
-#include "xsb_memory.h"
-#include "xsberror.h"
+#include "macro_xsb.h"
+#include "memory_xsb.h"
+#include "error_xsb.h"
 #include "chat.h"
 #include "sw_envs.h"
 #include "binding.h"
 #include "realloc.h"
 #include "inst.h"
-#include "io_builtins.h"
+#include "io_builtins_xsb.h"
 
 static unsigned long chat_total_malloced = 0;
 static unsigned long chat_inuse = 0;

@@ -27,9 +27,9 @@
 :- compiler_options([xpp_on,sysmod]).
 
 #include "celltags.h"
-#include "system_defs.h"
+#include "system_defs_xsb.h"
 #include "builtin.h"
-#include "msyscall.h"
+#include "syscall_xsb.h"
 
 
 /* Create subprocess. Redirect its standard input to StreamToProc

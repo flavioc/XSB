@@ -33,8 +33,8 @@ ALL =	asm.O asm_inst.O asm_opt.O asmpass2.O auxlry.O builtin.O \
 	tpinline.O tprog.O useinfer.O varproc.O writeasm.O
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
-	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
-	../emu/system.h ../emu/xsbsocket.h 
+	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
+	../emu/system_defs_xsb.h ../emu/socket_xsb.h 
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
 
 Option = [sysmod,optimize,spec_repr,quit_on_error]

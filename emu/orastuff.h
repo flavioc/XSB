@@ -88,7 +88,7 @@ void ctop_string(int regnum, char *value);
 /* from psc.c */
 char* string_find(char *, int);
 
-/* from xsberror.c */
+/* from error_xsb.c */
 void xsb_abort(char *);
 
 

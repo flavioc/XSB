@@ -38,8 +38,8 @@
 #include "cinterf.h"
 #include "binding.h"
 #include "psc.h"
-#include "heap.h"
-#include "xsb_memory.h"
+#include "heap_xsb.h"
+#include "memory_xsb.h"
 #include "register.h"
 #include "deref.h"
 #include "flags.h"
@@ -47,12 +47,12 @@
 #if (!defined(WAM_TRAIL))
 #include "cut.h"
 #endif
-#include "xmacro.h"
+#include "macro_xsb.h"
 #include "sw_envs.h"
 #include "choice.h"
 #include "inst.h"
-#include "xsberror.h"
-#include "io_builtins.h"
+#include "error_xsb.h"
+#include "io_builtins_xsb.h"
 #include "trassert.h"
 #include "tr_utils.h"
 #ifdef CHAT
