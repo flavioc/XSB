@@ -70,7 +70,8 @@ flcompile(File,Workspace) :-
 	  flora_stderr_nl,
 	  flora_error_line("%s does NOT exist!",args(File)),
           fail
-        ).
+        ),
+	!.
 
 
 /*************************************************************************
@@ -97,7 +98,8 @@ flload(File,Workspace) :-
 	  flora_stderr_nl,
 	  flora_error_line("%s does NOT exist!",args(File)),
           fail
-        ).
+        ),
+	!.
 
 
 /**********************************************************************
@@ -128,7 +130,8 @@ flload(File) :-
 	  flora_stderr_nl,
 	  flora_error_line("%s does NOT exist!",args(File)),
           fail
-        ).
+        ),
+	!.
 
 
 /*************************************************************************
@@ -151,7 +154,8 @@ flcompinc(File) :-
 	  flora_stderr_nl,
 	  flora_error_line("%s does NOT exist!",args(File)),
           fail
-        ).
+        ),
+	!.
 
 
 /**********************************************************************
@@ -177,7 +181,8 @@ flloadtrailer(TrailerName,Workspace) :-
 	  compile(TrailerFullName,[optimize,spec_repr]),
 	  flora_clear_xpp_options,
 	  consult(TrailerFullName)
-        ).
+        ),
+	!.
 
 
 /**********************************************************************
@@ -206,7 +211,8 @@ flsetuptrailer(TrailerName) :-
 	  flora_set_xpp_options,
 	  compile(TrailerFullName,[optimize,spec_repr]),
 	  flora_clear_xpp_options
-	).
+	),
+	!.
 
 flora_trailer_filename(NONE,'standard.P').
 flora_trailer_filename(BASIC,'eqlbasic.P').
@@ -236,7 +242,8 @@ flora_flcompile(FlrFile,Workspace) :-
 	  flora_message_line("calling XSB compiler"),
 	  compile(WSPFile,[optimize,spec_repr])
         ),
-	flora_clear_xpp_options.
+	flora_clear_xpp_options,
+	!.
 
 
 /*************************************************************************
@@ -249,6 +256,8 @@ flora_flload(FlrFile,Workspace) :-
 	flora_FLH_filename(FlrFile,FLHFile),
 	flora_WSP_filename(FlrFile,Workspace,WSPFile),
 	flora_WSO_filename(FlrFile,Workspace,WSOFile),
+	flora_setup_workspace(FLHFile,Workspace),
+	!,
         ( flora_file_newerthan(WSPFile,FlrFile) ->
 	    flora_stdmsg_nl,
 	    true
@@ -270,12 +279,12 @@ flora_flload(FlrFile,Workspace) :-
 	( flora_file_newerthan(WSOFile,WSPFile) ->
 	    ConsultFile=WSOFile
 	;
-	  flora_setup_workspace(FLHFile,Workspace),
 	  ConsultFile=WSPFile
         ),
 	flora_message_line("loading %s into module %s",args(FlrFile,Workspace)),
         consult(ConsultFile),
-	flora_clear_xpp_options.
+	flora_clear_xpp_options,
+	!.
 
 
 /*************************************************************************
