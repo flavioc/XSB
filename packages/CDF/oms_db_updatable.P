@@ -1,9 +1,9 @@
 :- compiler_options([ciao_directives]).
 
 :- import member/2, length/2, append/3 from basics.
-:- import odbc_sql/4 from odbc_call.
+:- import odbc_sql/4, odbc_open/2, odbc_open/4 from odbc_call.
 
-:- document_export coerce_db_type/5.
+:- document_export coerce_db_type/5, oms_db_open/3.
 
 :- comment(module,
 "
@@ -72,8 +72,7 @@ these objects are members.
 @end{itemize}
 
 The caller must have previously opened an ODBC connection, named
-Source, by using @pred{odbc_open/4} @footnote{See Volume 2 of the XSB
-manual.}, before these routines will work.
+Source, by using @pred{oms_db_open/3}, before these routines will work.
 
 For each functional attribute represented in an Object Table, there
 must be a fact of the following form:
@@ -198,6 +197,30 @@ where, once again:
 @end{itemize}
 
 ").
+
+:- comment(oms_db_open/3,"
+@tt{oms_db_open(Component,CallToGetPar,Parameter)} opens an odbc
+connection to a database for use by oms_db_updatable, or
+oms_db_storage, routines.  @tt{Component} is an atom representing the
+component; @tt{CallToGetPar} is a callable term, which will be called
+to instantiate variables in @tt{Parameters}.  If @tt{Parameters} is
+given as a ground term, then @tt{CallToGetPar} should be @tt{true}.
+It can be used, for example, to ask the user for a database and/a
+password.  @tt{Parameter} specifies the necessary information for
+odbc_open to open a connection.  It is one of the following forms:
+@odbc(Server,Name,Passwd)} or @odbc{ConnectionString}.  See the
+@tt{odbc_open/1/3} documentation @footnote{See Volume 2 of the XSB
+manual.}  for details on what these parameters must be.  ").
+
+oms_db_open(Source,BindCall,ConnectData) :-
+	call(BindCall),
+	oms_db_connect(ConnectData,Source).
+
+oms_db_connect(odbc(Server,Name,Passwd),Connection) :-
+	odbc_open(Server,Name,Passwd,Connection).
+oms_db_connect(odbc(ConnectionString),Connection) :-
+	odbc_open(ConnectionString,Connection).
+
 
 :- dynamic ext_object_table/7.
 :- dynamic ext_functional_attribute_table/5.
