@@ -58,27 +58,40 @@ double cpu_time(void)
   float time_sec;
 
 #if defined(WIN_NT)
-#if 0 /* code specific for win nt, 2000 & xp */
-      /* needs testing --lfcastro */
-  HANDLE thisproc;
-  FILETIME creation, exit, kernel, user;
-  long long lkernel, luser;
+  static int win_version = -1;
 
-  thisproc = GetCurrentProcess();
-  GetProcessTimes(thisproc,&creation,&exit,&kernel,&user);
-  /* unfinished -- how to convert kernel+user (two 64-bit unsigned
-     integers) into an appropriate float?              --lfcastro */
-  /* the code below assumes sizeof(long long) == 8 */
-  lkernel = (kernel.dwHighDateTime << 32) + kernel.dwLowDateTime;
-  luser = (kernel.dwHighDateTime << 32) + kernel.dwLowDateTime;
-  luser += lkernel;
+  if (win_version == -1) {
+    OSVERSIONINFO winv;
+    winv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&winv);
+    win_version = winv.dwPlatformId;
+  }
 
-  time_sec = luser / 10000.0;
+  if (win_version == VER_PLATFORM_WIN32_NT) {
+    HANDLE thisproc;
+    FILETIME creation, exit, kernel, user;
+    unsigned long long lkernel, luser;
+    double stime, utime;
 
-#else /* this code is for Win98 */
+    thisproc = GetCurrentProcess();
+    GetProcessTimes(thisproc,&creation,&exit,&kernel,&user);
+    /* unfinished -- how to convert kernel+user (two 64-bit unsigned
+       integers) into an appropriate float?              --lfcastro */
+    /* the code below assumes sizeof(long long) == 8 */
+    
+    lkernel = ((unsigned long long) kernel.dwHighDateTime << 32) + 
+      kernel.dwLowDateTime;
+    luser = ((unsigned long long) kernel.dwHighDateTime << 32) + 
+      kernel.dwLowDateTime;
 
-  time_sec = ((float) clock() / CLOCKS_PER_SEC);
-#endif
+    stime = lkernel / 1.0e7;
+    utime = luser / 1.0e7;
+
+    time_sec = (float) stime + utime;
+
+  } else {
+    time_sec = ((float) clock() / CLOCKS_PER_SEC);
+  }
 
 #else
   struct rusage usage;
