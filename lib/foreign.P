@@ -34,37 +34,42 @@ compile_cH(Modname, Base, Options, ExList, Dir) :-
 	compile_H(Modname,Base,Options,ExList,LdOption,CompComm,TempFile),
 	compile_c(Modname,Base,Options,Dir,LdOption,CompComm,TempFile).
 
+
 compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	cc_name(Options, CC_Name), cc_options(Options, CC_Opts),
 	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( var(TempFile) -> TempFile = ''; true),
-	( var(CompComm) ->
- 	( str_sub('solaris', Configuration) ->
-	    shell([CC_Name, ' -s -o ', Base, '.so',
-		   ' -G ', Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
-	    ;str_sub('linux', Configuration) ->
-	    shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
-		   Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
-	;   str_sub('alpha', Configuration) ->
-	    shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
-	    shell(['ld -expect_unresolved \* -O1 -shared -o ', Base, '.so ',
-		   Base, '.o ', LdOption])
-	; str_sub('windows', Configuration) ->
-	        warning(('You are responsible for creating ',Modname,'.dll'))
-	; shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
-	  /*The following appears here because C compilers usually put the 
-	     object file in the current directory and not in the source''s 
-	     one.*/
-	  ( Dir == './' -> true
-	  ; ( str_sub('msdos', Configuration) ->
-		shell(['ren ', Modname, '.o', Dir])
-	    ;
-		shell(['mv ', Modname, '.o ', Dir])
+	(   var(CompComm)
+	->  (	str_sub('solaris', Configuration)
+	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -G ',
+		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+	    ;	str_sub('linux', Configuration)
+	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+	    /*
+	    , message((CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
+	    */
+	    ;	str_sub('alpha', Configuration)
+	    ->	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
+		shell(['ld -expect_unresolved \* -O1 -shared -o ',
+		       Base, '.so ', Base, '.o ', LdOption])
+	    ;	str_sub('windows', Configuration)
+	    ->	warning(('You must create the ', Modname,'.dll'))
+	    ;	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
+	        /* The following is here because C compilers usually put 
+	           the object file in the current directory
+	           and not in the source one. */
+	        (	Dir == './'
+		->  true
+		;   ( str_sub('msdos', Configuration)
+		    ->	shell(['ren ', Modname, '.o', Dir])
+		    ;	shell(['mv ', Modname, '.o ', Dir])
+		    )
+		)
 	    )
-	  )
-	)
         ;   shell([CompComm])
         ).
 
@@ -79,67 +84,67 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	hdr_ext(HExt),
 	str_cat(Base, HExt, HFile),
 	( file_exists(HFile) ->
-		( Options == [] -> M = ''
-		; M = ' (any Prolog compiler options are ignored)'
-		),
-		message(('[Compiling Foreign Module ', Base, M, ']')),
-		cputime(TimeStart),
-		seeing(OldFile),
-		telling(OldTell),
-%		see(HFile),
-		repeat,
-		open_or_xpp_file(HFile,CPPprocess),
-		read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile), !,
-		( CPPprocess = none, ! 
-	        ; 
-	          process_control(CPPprocess,wait),
-		  stat_flag(CURRENT_INPUT,FromPort),
-		  file_close(FromPort)
-	        ),
-		closefile(TempFile),
-		see(OldFile),
-		tell(OldTell),
-		conset(xpp_on,0),
-%		seen,
-		length(ExList, Count),
-		obj_ext(OExt),
-		str_cat(Base, OExt, OFile),
-		tell(OFile),
-		co_asmhead(Modname, LdOption, Count),
-		co_asmsym(ExList),
-		told,
-		time_message(TimeStart, (Modname, ' compiled'))
-	; abort(('File ', HFile, ' for foreign module does not exist'))
+	    (	Options == [] 
+	    ->	M = ''
+	    ;	M = ' (Prolog compiler options are ignored)'
+	    ),
+	    message(('[Compiling Foreign Module ', Base, M, ']')),
+	    cputime(TimeStart),
+	    seeing(OldFile),
+	    telling(OldTell),
+%%%	    see(HFile),
+	    repeat,
+	    open_or_xpp_file(HFile,CPPprocess),
+	    read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile), !,
+	    (	CPPprocess = none, ! 
+	    ;	process_control(CPPprocess,wait),
+		stat_flag(CURRENT_INPUT,FromPort),
+		file_close(FromPort)
+	    ),
+	    closefile(TempFile),
+	    see(OldFile),
+	    tell(OldTell),
+	    conset(xpp_on,0),
+%%%         seen,
+	    length(ExList, Count),
+	    obj_ext(OExt),
+	    str_cat(Base, OExt, OFile),
+	    tell(OFile),
+	    co_asmhead(Modname, LdOption, Count),
+	    co_asmsym(ExList),
+	    told,
+	    time_message(TimeStart, (Modname, ' compiled'))
+	;   abort(('File ', HFile, ' for foreign module does not exist'))
 	),
 	!.
 
 read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 	read(Clause),
-	( Clause == end_of_file -> LdOptionOut = LdOptionIn
-        ;   ( Clause = (':-'(export(Exports))) ->
-		add_to_exlist(Exports, ExList),
+	(   Clause == end_of_file
+	->  LdOptionOut = LdOptionIn
+        ;   (   Clause = (':-'(export(Exports)))
+	    ->	add_to_exlist(Exports, ExList),
 		LdOptionMid = LdOptionIn
-	    ; Clause = (':-'(ldoption(Opt))) ->
-		form_ld_option(Opt, LdOptionIn, LdOptionMid)
-	    ; Clause = (':-'(compiler_options(CompOpt))) ->
-	        (memberchk(xpp_on,CompOpt), conget(xpp_on,0) ->
-		    closefile(TempFile),
+	    ;	Clause = (':-'(ldoption(Opt)))
+	    ->	form_ld_option(Opt, LdOptionIn, LdOptionMid)
+	    ;	Clause = (':-'(compiler_options(CompOpt)))
+	    ->	(memberchk(xpp_on,CompOpt), conget(xpp_on,0)
+		->  closefile(TempFile),
 		    conset(xpp_on,1),
 		    seen, 
 		    fail
-		;
-		    LdOptionMid = LdOptionIn)
-	    ; Clause = (':-'(compile_command(CompComm))) -> 
-		LdOptionMid = LdOptionIn
-	    ; Clause = (':-'(foreign_pred(PredDecl))) ->
-	        checkfile(ModName, TempFile),  % creates tempfile if necessary
+		;   LdOptionMid = LdOptionIn)
+	    ;	Clause = (':-'(compile_command(CompComm)))
+	    ->	LdOptionMid = LdOptionIn
+	    ;	Clause = (':-'(foreign_pred(PredDecl)))
+	    ->	checkfile(ModName, TempFile), % creates tempfile if necessary
 	        process_from(PredDecl,Exports),
 		add_to_exlist(Exports,ExList),
 		LdOptionMid = LdOptionIn
-	    ; LdOptionMid = LdOptionIn		% all other clauses are ignored
+	    ;	LdOptionMid = LdOptionIn % all other clauses are ignored
 	    ),
             read_clauses(ModName, ExList, LdOptionMid, LdOptionOut, 
-	                        CompComm, TempFile)
+			 CompComm, TempFile)
         ).
 
 
