@@ -1,5 +1,5 @@
 /* File:      flptokens.P
-** Author(s): Richard O'Keefe, Bertram Ludaescher
+** Author(s): Bertram Ludaescher (heavily borrowed from Richard O'Keefe's code)
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) Bertram Ludaescher, 1998

@@ -554,10 +554,11 @@ letters, etc.
 This predicate parses file names by separating the directory part, the base
 name part, and file extension. If file extension is found, it is removed
 from the base name. Also, directory names are rectified and if a directory
-name starts with a tilde (in Unix), then it is expanded.
+name starts with a tilde (in Unix), then it is expanded. Directory names
+always end with a slash or a backslash, as appropriate for the OS at hand.
 
 For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
-{\tt /home/john/doe}, {\tt foo}, and {\tt bar} (where we assume that    
+{\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
 {\tt /home/john} is what {\tt $\sim$john} expands into).  
 
 

@@ -214,6 +214,7 @@ conpsc(Con, Psc) :-
 machine_file_exists(File) :- 
 	sys_syscall(33, Res, File, 0), Res =:= 0.
 
+%% Read line from current input stream (previously set by 'see')
 file_read_line(String, IsFullLine) :-
 	 stat_flag(10, File), file_read_line(File, String, IsFullLine).
 

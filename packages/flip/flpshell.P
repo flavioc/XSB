@@ -29,19 +29,21 @@
 
 :- import fmt_write_string/3, slash/1,
 	  parse_filename/4, is_absolute_filename/1,
-	  machine_file_exists/1
+	  machine_file_exists/1, file_time/2
    from machine.
 
 %% Where to search for FLIP libraries
 :- import library_directory/1 from usermod.
 
-:- import abort/0, write/1, repeat/0
+:- import abort/0, write/1, repeat/0,
+	  abort/1
    from standard.
+
 :- import unload_package/1 from packaging.
 
-:- import write_stream/2,display_nl/0,display/1,portray_list/1,
-	  write_matches/1,write_match/1,
-	  write_list/1, write_codelist/1,write_body/1,
+:- import write_stream/2, display_nl/0, display/1, portray_list/1,
+	  write_matches/1, write_match/1,
+	  write_list/1, write_codelist/1, write_body/1,
 	  depth_bound/2  			
    from flputils.
 
@@ -66,20 +68,24 @@ shell :-
 welcome_msg :- nl,
       write('FLIP Version '), package_configuration(version(flip), I),
       write(I), writeln(' loaded.'),
-      writeln('Type ``help.'''' for help. Type ``rundemo(demoName).'''' to run demos in'),
+      writeln('*** `help.'' displays help;  `rundemo(demoName).'' runs demos in'),
       slash(Slash),
       package_configuration(dir(flip), FlipDir),
-      fmt_write_string(DemoDir, '%s%sdemos', f(FlipDir,Slash)),
-      write('       '), writeln(DemoDir).
+      fmt_write_string(DemoDir, '       %s%sdemos', f(FlipDir,Slash)),
+      writeln(DemoDir),
+      !.
 
 shell1 :-
 	write('FLIP> ?- '),
 	read_tokens(L),
-	(rule(Parsed_Rule, [atom(' ?-') |L], [])
-	-> comp(Parsed_Rule,[query(Q,Match)]),
+	%% drop down to XSB on end of file
+	(L == [atom(end_of_file)] -> nl, end_ ; true),
+	%% Parse
+	(rule(Parsed_Rule, [atom(' ?-') |L], []) ->
+	   comp(Parsed_Rule,[query(Q,Match)]),
 	   print_solutions(Q,Match),nl
-	;  portray_list(['*** Parse ERROR: '|L]),nl,
-	   write_list(L),nl
+	 ;  portray_list(['*** Parse ERROR: '|L]),nl,
+	    write_list(L), nl
 	),
 	shell1.
 
@@ -95,18 +101,15 @@ conv(X,X).
 
 parse(File) :- 
 	conv(File,FileN),
-	write('*** FLIP: Compiling to XSB: '),write(FileN), write('.flp'),
+	fmt_write_string(Msg, '*** FLIP: Compiling module: %s.flp', f(FileN)),
+	write(Msg),
 	parse_code(FileN),
         write('done.').
 
 run(File) :- 
 	conv(File,FileN),
-	write('*** FLIP: Compiling to XSB: '), write(FileN), write('.flp '),
-	cputime(T0),
-	gen_code(FileN),
-	cputime(T1),
-	T is T1-T0,
-	nl, write('*** CPU time used: '),write(T),write(' seconds.'),nl,
+	gen_code_interactive(FileN),
+	nl, writeln('Executing ...'),
 	consult(FileN,[optimize,auto_table,spec_repr]).
 
 load(File) :- 
@@ -116,7 +119,7 @@ load(File) :-
 
 %%% parse_code(+File): parse code for File
 parse_code(InFile) :-
-	flip_search_module(InFile, Module),
+	flip_search_module(InFile, Module, 'flp'),
 	name(Module,InFileL),
 	open_input(InFileL),
 	open_output(InFileL),
@@ -137,17 +140,20 @@ parse_all :-
 parse_and_write(L) :-
 	(rule(Parsed_Rule, L, [])
 	-> write('%%% '),
-	   portray_list(L), write('.'), nl,
-	   write(Parsed_Rule),write('.'),nl,nl
+	   portray_list(L), writeln('.'),
+	   write(Parsed_Rule), writeln('.'), nl
 	;  close_output,close_input,
-	   nl,portray_list(['*** Parse ERROR: '|L]),
-	   nl,write_list(L),
+	   nl, portray_list(['*** Parse ERROR: '|L]),
+	   nl, write_list(L),
 	   fail
 	).
 
+
 %%% gen_code(+InFile): generate code for InFile
 gen_code(InFile) :-
-	flip_search_module(InFile, Module),
+	flip_search_module(InFile, Module, 'flp'),
+	%% check if .P is older
+	flip_need_gencode(Module),
 	name(Module,InFileL),
 	open_input(InFileL),
 	open_output(InFileL),
@@ -163,6 +169,24 @@ gen_code(InFile) :-
 	close_output,
 	close_input.
 
+%% If .P is younger than .flp, then don't generate code.
+gen_code_interactive(InFile) :-
+        fmt_write_string(Msg, '*** FLIP: Compiling module: %s.flp', f(InFile)),
+	write(Msg),
+	cputime(T0),
+	gen_code(InFile),
+	cputime(T1),
+	T is T1-T0,
+	writeln(' done.'),
+	%% fmt_write_string(Msg1, '*** CPU time used: %f seconds.', f(T)),
+	%% writeln(Msg1),
+	write('*** CPU time used: '), write(T), writeln(' seconds.'),
+	!.
+
+gen_code_interactive(_) :- 
+        nl, writeln('*** Compiled module already exists.').
+
+
 comp_all :-
 	read_tokens(L),
 	((L = [atom(end_of_file)] 
@@ -177,12 +201,12 @@ comp_and_write(L) :-
 	(rule(Parsed_Rule, L, [])
 	-> comp(Parsed_Rule,Flat_Rules),
 	   write('%%% '),
-	   portray_list(L), write('.'), nl,
-	   write_codelist(Flat_Rules),nl 
-	   , display('.')
+	   portray_list(L), writeln('.'),
+	   write_codelist(Flat_Rules), nl,
+	   display('.')
 	;  close_output,close_input,
 	   nl, portray_list(['*** Parse ERROR: '|L]),
-	   nl,write_list(L),
+	   nl, write_list(L),
 	   fail
 	).
 
@@ -198,7 +222,9 @@ open_input(InFileL) :-
 	name(InFile1,InFileL1),
 	(file_exists(InFile1)
 	-> see(InFile1)
-	;  nl,write('*** Warning: Could not open '),write(InFile1),nl,
+	;  nl, 
+	   fmt_write_string(Msg, '*** Warning: Could not open %s', f(InFile1)),
+	   writeln(Msg),
 	   fail
 	).
 close_input :-	seen.
@@ -229,10 +255,10 @@ all_ :- set(all).
 
 one_ :- del(all).
 
-end_ :- unload_package(flip), abort.
+end_ :- unload_package(flip), writeln('ciao!'), abort.
 
 help_:-	nl,
-	writeln('available commands:'),
+	writeln('Flip commands:'),
 	writeln('  help		 :	show this info'),
 	writeln('  parse(FILE)	 :	parse "FILE.flp"; create "FILE.P"'),
 	writeln('  run(FILE)	 :	compile "FILE.flp"; execute "FILE.P"'),
@@ -254,9 +280,9 @@ call_direct(Goal) :-
 	check1(Goal).
 
 print_solutions(Gs,Match) :-
-	(switch(all) 
-	-> print_all(Gs,Match)
-	;  print_one(Gs,Match)
+	(switch(all) ->
+	   print_all(Gs,Match)
+	 ;  print_one(Gs,Match)
 	).
 
 %%% print_all(+Goal_list,+Match_list)
@@ -273,8 +299,10 @@ print_all(Gs,Match) :-
 	;  cputime(T1), T is T1-T0,
 	   nl, write('no! 0')
 	),
-	write(' solutions in '),
-	write(T), write(' sec. on '), unix(hostname).
+	%% fmt_write_string(Msg, ' solutions in %f seconds on ', f(T)),
+	%% write(Msg),
+	write(' solutions in '), write(T), write(' seconds on '),
+	unix(hostname).
 
 %%% print_one(+Goal_list,+Match_list)
 print_one(Gs,Match) :-
@@ -283,17 +311,17 @@ print_one(Gs,Match) :-
 	-> (ground(Gs)
 	   -> (prove_conj(Gs,Match)
 	      -> write_match(Match),
-	      nl,write(yes)
-	      ;  nl,write(no)
+	      nl, write(yes)
+	      ;  nl, write(no)
 	      )
 	   ;  (prove_conj(Gs,Match),
 	       write_match(Match),
 	       fail_unless_return
 	      ;
-		  nl,write(no)
+		  nl, write(no)
 	      )
 	   )
-	; nl,write(no)
+	; nl, write(no)
 	).
 
 fail_unless_return :- 
@@ -303,7 +331,7 @@ fail_unless_return :-
 	; get0(_)	% ignore RETURN
 	),
 	C=10,
-	nl,write(yes).
+	nl, write(yes).
 
 
 check_conj([]) :-!.
@@ -395,17 +423,41 @@ run_all_demos_ :- rundemo_(default),
 
 %% Don't let it backtrack, or else it will be called again in
 %% gen_code or parse_code! 
-flip_search_module(In, In) :- is_absolute_filename(In),!.
-flip_search_module(In, Out) :- 
+flip_search_module(In, In, _) :- is_absolute_filename(In),!.
+flip_search_module(In, Out, Extension) :- 
+        ( atom(Extension) -> true ;
+	       nl, abort('Argument 3 of flip_search_module must be an atom!')),
 	library_directory(Lib),
 	slash(Slash),
 	parse_filename(In, InDir, InBase, _),
 	(InDir == '' ->  Fmt = '%s%s%s', Term = f(Lib,Slash,InBase)
-		 ; Fmt = '%s%s%s%s%s', Term = f(Lib,Slash,InDir,Slash,InBase)
+		 ; Fmt = '%s%s%s%s',
+		   %% parse_filename makes InDir end with Slash
+		   Term = f(Lib,Slash,InDir,InBase)
 	 ),
 	fmt_write_string(Out, Fmt, Term),
-	str_cat(Out,'.flp', FullOut),
+	fmt_write_string(FullOut, '%s.%s', f(Out,Extension)),
 	%% Don't let it backtrack, if a module is found. Otherwise, it will
 	%% be called again in gen_code or parse_code!
 	machine_file_exists(FullOut), !.
-flip_search_module(In,In).
+flip_search_module(In,In,_).
+
+%% Test is needs gencode mod.P from mod.flp
+%% Expects full path name, including file extension
+flip_need_gencode(Module) :-
+    	parse_filename(Module, ModDir, ModBase, _),
+	%% parse_filename makes ModDir end with Slash, so no need to add it.
+	fmt_write_string(ModuleDotP, '%s%s.P', f(ModDir, ModBase)),
+	fmt_write_string(ModuleFlp, '%s%s.flp', f(ModDir, ModBase)),
+	(machine_file_exists(ModuleFlp) ->
+	    true
+	  ; nl, abort(['Module ', ModuleFlp, ' does not exist!'])),
+	%% Generate mod.P from mod.flp if:
+	%%    	  a) mod.P exists and is older; or b) mod.P doesn't exist
+	(machine_file_exists(ModuleDotP) ->
+	    file_time(ModuleFlp, time(FTime1, FTime2)),
+	    file_time(ModuleDotP, time(PTime1, PTime2)),
+	    time(PTime1, PTime2) @< time(FTime1, FTime2)
+         ;
+	    true).
+	    

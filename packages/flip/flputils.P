@@ -25,19 +25,19 @@
 
 
 :- export 
-	write_stream/2,display_nl/0,display/1,portray_list/1,
-	write_matches/1,write_match/1,
+	write_stream/2, display_nl/0, display/1, portray_list/1,
+	write_matches/1, write_match/1,
 	write_list/1,
-	write_codelist/1,write_body/1,
+	write_codelist/1, write_body/1,
 	depth_bound/2.
 
 
 write_stream(Stream,T) :-
-	telling(F),tell(Stream),
+	telling(F), tell(Stream),
 	write(T),
-	told,tell(F).
+	told, tell(F).
 
-display_nl :- name(NL,[10]),write_stream(userout,NL).
+display_nl :- name(NL,[10]), write_stream(userout,NL).
 display(T) :- write_stream(userout,T).
 
 portray_list([]).
@@ -45,37 +45,37 @@ portray_list([X|Xs]) :-
 	portray(X),
 	portray_list(Xs).
 
-portray(identifier(X)) :- !,write(X).
+portray(identifier(X)) :- !, write(X).
 portray(atom(X)) :- !,
 	(name(X,[32|R])
-	-> name(X1,R),write(X1)
+	-> name(X1,R), write(X1)
 	; write(X)
 	).
-portray(num(X)) :- !,write(X).
-portray(var(_,X)) :- !,write(X).
-portray(identifier(X)) :- !,write(X).
+portray(num(X)) :- !, write(X).
+portray(var(_,X)) :- !, write(X).
+portray(identifier(X)) :- !, write(X).
 portray(X) :- write(X).
 
 
 
 write_matches([]).
 write_matches([M|Ms]) :-
-	write_match(M),nl,
+	write_match(M), nl,
 	write_matches(Ms).
 
 write_match([]).
 write_match([XN=V]) :-
 	name(X,XN),
-	write(X),write('='),write_val(V).
+	write(X), write('='), write_val(V).
 write_match([XN=V,X2|Xs]) :-
 	name(X,XN),
-	write(X),write('='),write_val(V),put(9),
+	write(X), write('='), write_val(V), put(9),
 	write_match([X2|Xs]).
 
-write_val([]) :- !,write('""').
+write_val([]) :- !, write('""').
 write_val([C|Cs]) :- !,
 	name(A,[C|Cs]),
-	write('"'),write(A),write('"').
+	write('"'), write(A), write('"').
 write_val(X) :- 
 	write(X).
 
@@ -94,22 +94,22 @@ write_codelist([X|Xs]) :-
 
 
 write_code(rule(H,B)):-
-	write(H),write(' :-'),nl,
-	write('	'),write_body(B).
+	write(H), write(' :-'), nl,
+	write('	'), write_body(B).
 write_code(query(Q,Match)) :-
-	write(' :- '),write_body([print_all(Q,Match)]).
+	write(' :- '), write_body([print_all(Q,Match)]).
 write_code(fact(Hs)):-
 	write_facts(Hs).
 
 write_body([X]) :-
-	write(X), write('.'),nl.
+	write(X), write('.'), nl.
 write_body([X,X1|Xs]) :-
-	write(X),write(','),
+	write(X), write(','),
 	write_body([X1|Xs]).
 
 write_facts([]).
 write_facts([X|Xs]) :-
-	write(X),write('.'),nl,
+	write(X), write('.'), nl,
 	write_facts(Xs).
 
 %   Author : R.A.O'Keefe

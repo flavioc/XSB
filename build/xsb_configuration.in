@@ -53,8 +53,8 @@ xsb_configuration(os_version, '@os_version@').
 xsb_configuration(host_vendor, '@host_vendor@').
 xsb_configuration(host_cpu,  '@host_cpu@').
 
+%% Set the right compile mode and XSB scheduling strategy
 xsb_configuration(compile_mode, '@compile_mode@').
-
 xsb_configuration(scheduling_strategy, '(@xsb_scheduling_strategy@)').
 
 xsb_configuration(major_version, '@xsb_major_version@').
