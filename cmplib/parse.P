@@ -76,7 +76,7 @@ parse1(Modname, File, Module) :-
 	;   %% Wait, if cpp was spawned so as to not leave zombies
 	    process_control(CPP_process, wait),
 	    %% Also, release the file descriptor used to read from cpp
-	    current_input_fd(FromPort), file_close(FromPort),
+	    current_input_port(FromPort), file_close(FromPort),
 	    %% and reset cpp_on
 	    conset(cpp_on,0)
 	),
@@ -110,26 +110,31 @@ open_or_cpp_file(File, CPP_process) :-
 	(conget(cpp_on,0), ! -> see(File), CPP_process = none
 	; 
 	    %% cpp_on is set: use preprocessor
-	    xsb_configuration(cpp, CPP),
-	    xsb_configuration(install_dir, InstalDir),
-	    %% Construct the -Include directories
-	    (windows_os_loader -> IncludeFlag = '/I' ; IncludeFlag = '-I'),
-	    make_include_directive(Directive, IncludeFlag),
-	    slash(Slash),
-	    fmt_write_string(IncludeDirs, '%s%s%semu %s%s%sprolog_includes %s',
-			     args(IncludeFlag,InstalDir,Slash,
-				  IncludeFlag,InstalDir,Slash,
-				  Directive)),
-	    %% Constract the cpp command
-	    fmt_write_string(CPP_command, '%s %s -DXSB_PROLOG %s',
-			     args(CPP, IncludeDirs, File)),
-	    fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
-	    message(CPP_command1),
-	    %% Redirect cpp''s stderr to XSB''s STDWARN
-	    spawn_process(CPP_command, block, From, 3, CPP_process),
-	    stat_set_flag(10, From)
+	    cpp_file(File, CPP_process, IOportFromProc),
+	    stat_set_flag(10, IOportFromProc)
 	).
 
+cpp_file(File, CPP_process, IOportFromProc) :-
+	xsb_configuration(cpp, CPP),
+	xsb_configuration(install_dir, InstalDir),
+	%% Construct the -Include directories
+	(   windows_os_loader
+	->  IncludeFlag = '/I'
+	;   IncludeFlag = '-I'
+	),
+	make_include_directive(Directive, IncludeFlag),
+	slash(Slash),
+	fmt_write_string(IncludeDirs, '%s%s%semu %s%s%sprolog_includes %s',
+			 args(IncludeFlag,InstalDir,Slash,
+			      IncludeFlag,InstalDir,Slash,
+			      Directive)),
+	%% Constract the cpp command
+	fmt_write_string(CPP_command, '%s %s -DXSB_PROLOG %s',
+			 args(CPP, IncludeDirs, File)),
+	fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
+	message(CPP_command1),
+	%% Redirect cpp''s stderr to XSB''s STDWARN
+	spawn_process(CPP_command, block, IOportFromProc, 3, CPP_process).
 
 %% Make an include directive out of the dirs in xsb_cpp_include_dir/1
 %% The dirs are supplied by applications that keep include files

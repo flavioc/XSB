@@ -26,7 +26,7 @@
 
 :- export parse/4, get_symtab/2, parse_preddef/4.
 :- export get_p_mod/3, change_multifile_directive/3, 
-	open_or_cpp_file/2, xsb_cpp_include_dir/1,
+	cpp_file/3, open_or_cpp_file/2, xsb_cpp_include_dir/1,
 	'_$multifile'/1, '_$multifile1'/1,
 	'_$multifile2'/3, '_$apply_arity'/1,
 	'_$multifile_retract'/3.
@@ -56,4 +56,4 @@
 :- import windows_os_loader/0 from loader.
 
 :- import findall/3 from setof.
-:- import current_input_fd/1 from curr_sym.
+:- import current_input_port/1 from curr_sym.
