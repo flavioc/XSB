@@ -293,7 +293,14 @@ term(T,V) --> predicate_term(T,V), !.
 
 
 /**************************************************************/
-literal(not([T]),V) -->
+literal(literallist(L),V) -->
+	[atom('$(')],
+	literals(L,V),
+	white_space0,
+	[atom('$)')],
+	!.
+
+literal(not(T),V) -->
 	atom_name(not),
 	white_space0,
 	literal(T,V),
@@ -303,24 +310,6 @@ literal(not([T]),V) -->
 	[atom('$~')],
 	white_space0,
 	literal(T,V),
-	!.
-
-literal(not(L),V) -->
-	atom_name(not),
-	white_space0,
-	[atom('$(')],
-	literals(L,V),
-	white_space0,
-	[atom('$)')],
-	!.
-
-literal(not(L),V) -->
-	[atom('$~')],
-	white_space0,
-	[atom('$(')],
-	literals(L,V),
-	white_space0,
-	[atom('$)')],
 	!.
 
 literal(loadlist(L),_) -->
@@ -347,6 +336,14 @@ literal(spterm(P,P1,P2),V) -->
 	path_expression(P2,V),
 	!.
 
+literal(fluniv(L,R),V) -->
+	fluniv_lhs(L,V),
+	white_space0,
+	[atom('$='),atom('$..')],
+	white_space0,
+	path_expression(R,V),
+	!.
+
 literal(T,V)   --> term(T,V), !.
 
 /***************************************************************
@@ -355,6 +352,19 @@ literal(T,V)   --> term(T,V), !.
 
 literal(cut,_) --> [atom('$!')], !.
 ***************************************************************/
+
+
+/**************************************************************/
+fluniv_lhs(L,V) --> meta_method_var(L,V), !.
+fluniv_lhs(L,V) --> path_expression(L,V), !.
+
+meta_method_var(meta_meth(Name,Var),V) -->
+	[atom('$@'),var(N)],
+	{ atom_chars(N,S),
+	  atom_chars(Name,[0'@|S]),
+	  flora_member(var(Name,Var),V)
+        },
+	!.
 
 
 /**************************************************************/
@@ -552,10 +562,14 @@ colon(A) --> [atom('$!!')], {flora_word(imvd,A)}, !.
 colon(A) --> [atom('$!')], {flora_word(ifd,A)}, !.
 
 
+method_application(M,V) --> meta_method_var(M,V), !.
+
 method_application(methargs(A,O,Args),V) -->
 	object(O,V),
 	method_arguments0(Args,V),
-	{flora_word('@',A)}.
+	{flora_word('@',A)},
+	!.
+	
 
 method_arguments0(L,V)  --> [atom('$@')], arguments1(L,V), !.
 method_arguments0([],_) --> [], !.

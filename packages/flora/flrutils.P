@@ -103,6 +103,7 @@ flora_member(NV,NVs) :-
 
 flora_member(var(N,V),[var(N,V)|_]) :-
 	N \= '_',
+	N \= '@_',
 	!.
 
 flora_member(NV,[_|NVs]) :-

@@ -12,6 +12,7 @@
 
 6. if-then-else syntax and noop.
 
+7. compiler instruction like :- augment findall(oid,truth,oid).
 
 
 

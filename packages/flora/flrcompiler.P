@@ -335,22 +335,25 @@ rhs_flatten_list([T|Ts],Code) :-
 /****************************************************************************
   rhs_flatten(+Term,-Object,-Code)
 ****************************************************************************/
+rhs_flatten(literallist(L),null,Code) :-
+	rhs_flatten_list(L,Code).
+
 rhs_flatten(not(R),null,[not(Code)]) :-
 	!,
-	rhs_flatten_list(R,List),
+	rhs_flatten(R,_,List),
 	list2conjunction(List,Code).
 
-rhs_flatten(loadlist(L),null,Rules) :-
+rhs_flatten(loadlist(L),null,Code) :-
 	!,
 	flora_word(loadlist,F),
 	P =.. [F,L],
-	Rules=[P].
+	Code=[P].
 
-rhs_flatten(dynloadlist(L),null,Rules) :-
+rhs_flatten(dynloadlist(L),null,Code) :-
 	!,
 	flora_word(dynloadlist,F),
 	P =.. [F,L],
-	Rules=[P].
+	Code=[P].
 
 rhs_flatten(pterm(assert,Args),null,Code) :-
 	!,
@@ -383,6 +386,21 @@ rhs_flatten(pterm(F,Args),null,Code) :-
 	rhs_flatten_pathlist(Args,AObjs,C),
 	P =.. [F|AObjs],
 	append(C,[P],Code).
+
+rhs_flatten(fluniv(meta_meth(_,V),R),null,Code) :-
+	!,
+	rhs_flatten(R,O,C1),
+	flora_word('@',A),
+	P =.. [=..,V,[A|O]],
+	append(C1,[P],Code).
+
+rhs_flatten(fluniv(L,R),null,Code) :-
+	!,
+	rhs_flatten(L,LO,C1),
+	rhs_flatten(R,RO,C2),
+	P =.. [=..,LO,RO],
+	append(C1,C2,C3),
+	append(C3,[P],Code).
 
 rhs_flatten(fnctn(F,Args),Obj,Code) :-
 	!,
@@ -627,6 +645,8 @@ rhs_flatten_methappl(methargs(F,M,Args),Obj,Code) :-
 	Obj =.. [F,MObj|AObjs],
 	append(C1,C2,Code).
 	
+rhs_flatten_methappl(meta_meth(_,Var),Var,[]).
+
 
 /***************************************************************************/
 rhs_flatten_speclist(_,[],[]).
@@ -805,6 +825,8 @@ lhs_flatten_methappl(methargs(F,M,Args),Obj,Code,Aux,AVs) :-
 	append(C1,C2,Code),
 	append(A1,A2,Aux).
 
+lhs_flatten_methappl(meta_meth(_,Var),Var,[],[],_).
+
 
 /***************************************************************************/
 lhs_flatten_speclist(_,[],[],[],_).
@@ -962,6 +984,10 @@ flora_vars(N,Term,Vs) :-
 remove_anonymous([],[]).
 
 remove_anonymous([var('_',_)|T],NVs) :-
+	!,
+	remove_anonymous(T,NVs).
+
+remove_anonymous([var('@_',_)|T],NVs) :-
 	!,
 	remove_anonymous(T,NVs).
 
