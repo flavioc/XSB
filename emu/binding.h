@@ -40,7 +40,11 @@
 
 #ifdef WAM_TRAIL
 
-#define pushtrail0(addr,val)  *(trreg++) = addr
+#define pushtrail0(addr,val)  \
+   if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {\
+     handle_tcpstack_overflow();\
+   }\
+   *(trreg++) = addr
 
 #else
 
@@ -48,12 +52,18 @@
 
 #define pushtrail0(addr,val)  \
    if (trfreg > trreg) {\
+     if ((char *)trfreg > ((char *)(top_of_cpstack) - 10)) {\
+       handle_tcpstack_overflow();\
+     }\
      *(trfreg+3) = (CPtr) trreg;\
      trreg = trfreg + 3;\
      *(trreg-1) = (CPtr) val;\
      *(trreg-2) = addr;\
    }\
    else {\
+     if ((char *)trreg > ((char *)(top_of_cpstack) - 10)) {\
+       handle_tcpstack_overflow();\
+     }\
      trreg = trreg+3;\
      *trreg = (CPtr) trreg-3;\
      *(trreg-1) = (CPtr) val;\

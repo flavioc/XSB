@@ -112,6 +112,7 @@ extern byte *mem_alloc(unsigned long);
 extern void mem_dealloc(byte *, unsigned long);
 extern void tcpstack_realloc(long);
 extern void complstack_realloc(long);
+extern void handle_tcpstack_overflow(void);
 
 /* Instruction Externs
    ------------------- */

@@ -249,6 +249,21 @@ void tcpstack_realloc(long new_size) {
 
 /* ------------------------------------------------------------------------- */
 
+void handle_tcpstack_overflow(void)
+{
+  if (flags[STACK_REALLOC]) {
+#ifdef DEBUG
+    fprintf(stderr, "Expanding trail and choice point stack...\n");
+#endif
+    tcpstack_realloc(resize_stack(tcpstack.size,0));
+  }
+  else {
+    xsb_exit("Trail/ChoicePoint stack overflow detected but expansion is off");
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+
 /*
  * Re-allocate the space for the completion stack data area to "new_size"
  *   K-byte blocks.

@@ -34,6 +34,7 @@
 
 #include "auxlry.h"
 #include "cell.h"
+#include "memory.h"
 #include "psc.h"
 #include "register.h"
 #include "heap.h"

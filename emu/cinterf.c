@@ -33,6 +33,7 @@
 
 #include "auxlry.h"
 #include "cell.h"
+#include "memory.h"
 #include "register.h"
 #include "psc.h"
 #include "flags.h"
@@ -46,7 +47,8 @@
 #include "cinterf.h"
 #include "self_orientation.h"
 
-char *expand_filename(char *);
+/* the following really belongs somewhere else */
+extern char *expand_filename(char *);
 
 
 
