@@ -86,7 +86,7 @@
 bootstrap_flora :-
 	bootstrap_package([flora2,syslib,lib,debugger,pkgs,p2h],flora),
 	!,
-	assert(package_configuration(version(flora),'0.80 of April, 2001')),
+	assert(package_configuration(version(flora),'0.81 of July, 2001')),
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	fmt_write_string(FloraFlrIncludesDir,
