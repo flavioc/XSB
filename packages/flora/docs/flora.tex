@@ -141,7 +141,7 @@
 \newcommand{\dq}{\symbol{34}}
 
 
-\title{\FLORA's Secrets \\  (of Object-Oriented Logic Programming)}
+\title{\FLORA's Secrets: Object-Oriented Logic Programming}
 
 \author{
   Bertram Lud\"ascher
@@ -167,10 +167,10 @@ program. This program is then passed to XSB for compilation (yielding {\tt
   file.O}) and execution.
 
 \index{FLIP}
-The current version of \FLORA was implemented by Guizhen Yang, but its 
-origins trace back to the \FLIP compiler developed by Bertram
-Lud\"aescher, and the basic architectures of the two compilers are similar.
-However, unlike \FLIP, \FLORA is a complete application development
+The current version of \FLORA was implemented by Guizhen Yang under the
+supervision of Michael Kifer, but its  origins trace back to the \FLIP compiler
+developed by Bertram Lud\"aescher. The basic architectures of the two compilers
+are similar. However, unlike \FLIP, \FLORA is a complete application development
 platform with many features not found in \FLIP. It has a much more
 optimized compiler, and its tokenizer and parser are very different from
 \FLIP's.
@@ -274,7 +274,7 @@ The following \FLORA shell commands are supported:
   dynconsult('FILE')        \> : \> dyncompile FILE.flr, then dynamically load FILE.P \\
   dynconsult('FILE',[...])  \> : \> dynconsult('FILE') with options [...] \\
   dynload('FILE[.EXT]')\footnotemark    \> : \> dynamically load FILE.flr or FILE.P \\
-  \symbol{123}'FILE[.EXT]',...\symbol{125}        \> : \> dynload a list of .flr or .P files \\
+  <'FILE[.EXT]',...>        \> : \> dynload a list of .flr or .P files \\
   rundemo('FILE')           \> : \> flconsult a demo from \FLORA demos directory \\
   rundemo('FILE',[...])     \> : \> rundemo('FILE') with options [...] \\
   abolish\_all\_tables\footnotemark        \> : \> flush all tabled data \\
@@ -329,7 +329,7 @@ tutorial are also valid \FLORA programs.
 
 
 
-\section{Inside \FLORA}
+\section{Insides of \FLORA}
 
 
 \FLORA consists of the following modules:
@@ -341,9 +341,9 @@ tutorial are also valid \FLORA programs.
   not the least -- for directly issuing queries against the loaded
   database/program (see Section~\ref{sec-shell-commands} for a full
   description of shell commands).
-\item \texttt{flrtokens.P}: The \FLORA tokenizer.
-\item \texttt{flrparser.P}: The DCG parser for \fl.
-\item \texttt{flrcompiler.P}: The \FLORA compiler that translates \fl to XSB.
+\item \texttt{flrtokens.P}: \FLORA tokenizer.
+\item \texttt{flrparser.P}: DCG parser for \fl.
+\item \texttt{flrcompiler.P}: \FLORA compiler that translates \fl to XSB.
 \item \texttt{flrutils.P}: miscellaneous utility predicates.
 \end{itemize}
 %%
@@ -519,16 +519,11 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
     %%
     }
   %%
-\medskip
-  
   \index{object identifier}
-  \begin{minipage}[t]{.80\textwidth}
     First-order terms over \funcs\ and \vars\ are called \emph{id-terms},
     and are used to name objects, methods, and classes.  Ground id-terms
     ({\it i.e.}, terms with no variables) correspond to \emph{logical
       object identifiers} (\emph{oid}s), also called object \emph{names}.
-  \end{minipage}
-  \hfill ~
   \index{atom}
 \item \emph{Atoms}: Let $O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
   addition to the usual first-order atoms, like $p(X_1,\dots,X_n)$, there
@@ -597,7 +592,7 @@ $\textsf{john:person}\land\textsf{john[age\fd
 \end{example}
 
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \begin{tabular}{c}
   \begin{tabular}{l}
     {\bf Schema:}\\
@@ -1106,8 +1101,8 @@ over the interpretation as part of a single-valued path expression.
 Another ambiguous situation arises when the symbols $-$ and $+$ are used.
 Indeed, they can be used as minus/plus signs, e.g., $-3$ and $+3$, or as binary
 arithmetic operators; e.g., $4-7$ and $4+7$. Actually, the minus and plus
-signs are defined in \FLORA as unary operators; these operators take
-precedence over binary operators.
+signs are defined in \FLORA as unary operators which take precedence over
+binary operators.
 
 Table~\ref{tab:tab-op-pre} lists various operators in decreasing precedence
 order, their associativity, and arity.
@@ -1213,9 +1208,9 @@ Elephant example:
 %%
 \begin{verbatim}
 elephant[color *=> color].
-royal_elephant :: elephant.\\
-clyde : elephant.\\
-elephant[color *-> gray].\\
+royal_elephant :: elephant.
+clyde : elephant.
+elephant[color *-> gray].
 \end{verbatim}
 %%
 The question is what is the color of Clyde?
@@ -1332,8 +1327,8 @@ in such expressions. To distinguish inheritable from non-inheritable
 attributes in path expressions, \FLORA uses ``!'' and ``!!''. For instance, 
 %%
 \begin{verbatim}
-clyde!color.           means: clyde[color *-> X], for some X
-obj!!attr.             means: obj[attr *->> Y].
+clyde!color           means: some X, such that clyde[color *-> X]
+obj!!attr             means: some Y, such that obj[attr *->> Y].
 \end{verbatim}
 %%
 
@@ -1355,7 +1350,7 @@ scalar_type_incorrect(O,M,R) :- O[X -> R] , O:C, C[X => D], tnot(R:D).
 %%
 Here, we defined what it means to violate type checking using the usual
 F-logic semantics. The corresponding predicate can then be queried. The
-``no'' answer means that the corresponding attribute does not violates the
+``no'' answer means that the corresponding attribute does NOT violates the
 typing rules.
 
 \subsection{Meta-programming in \FLORA}
@@ -1374,8 +1369,8 @@ Here are some simle examples:
 // All unary scalar methods defined for object John
 ?- john[M@(_) -> _].
 
-// All unary scalar methods that apply to John, {\it i.e.}, for which a
-// signature was specified
+// All unary scalar methods that apply to John, i.e., for which a
+// signature was declared
 ?- john[M@(_) => _].
 \end{verbatim}
 %%
@@ -1409,6 +1404,70 @@ These primitives are described in the XSB manual. However, \FLORA provides
 one primitive of its own: a {\em meta variable\/} that can range over methods of
 any arity.
 
+A meta variable is specified by a normal variable immediately following a ``@''
+sign, {\it e.g.}, @Method, @\_var, @\_. Note that @\_ represents a \emph{don't care}
+meta variable. The ``@'' sign is always considered as part of a meta variable's name.
+Thus, @M and M represent two different variables.
+
+Currently, a meta variable can only appear where a method together with its arguments
+is allowed. For instance, $\mathtt{john[@M{\fd}Salary], o_1.@M1.o_2[@M2{\mvd}r]}$.
+
+Note that a meta (method) variable does not represents an \fl object, but a method
+invocation expression instead, {\it i.e.}, a method together with its arguments.
+The =.. operator (like that of XSB) is used to obtain a method and its arguments from
+a method invocation expression (that is bound to a meta variable), or on the other hand,
+to build a method invocation expression out of a method and its arguments. For example,
+\begin{verbatim}
+FLORA> ?- @M =.. [m,a1,a2].
+
+@M = m@(a1,a2)
+
+Yes.
+\end{verbatim}
+
+The left hand side of =.. can be either a normal Prolog term or a meta variable. In the
+former case, =.. just works exactly the same as that of XSB, whereas in the latter case,
+the right hand side of =.. would try to unify with a list of \fl objects containing the
+method object as the first element followed by its argument objects.
+
+Consider the example in Figure~\ref{fig:fig-metavar}:
+%%
+\begin{figure}[htb]
+\begin{center}
+\begin{tabular}{l}
+{\bf metavar.flr:}\\ \\
+:- import length/2 from basics. \\ \\
+$o_1$[$m_1$@($a_1$){\fd}$r_1$]. \\
+$o_1$[$m_2$@($b_1$,$b_2$){\fd}$r_2$]. \\
+$o_1$[$m_3${\fd}$r_3$]. \\
+$o_1$[$m_4$@($c_1$,$c_2$,$c_3$){\fd}$r_4$]. \\ \\
+$o_2$[@M{\fd}R] :- \\
+\hspace{1.5cm}	$o_1$[@M{\fd}R], \\
+\hspace{1.5cm}	@M =.. [Meth$|$Args], \\
+\hspace{1.5cm}	length(Args,2).
+\end{tabular}
+\end{center}
+\caption{Meta Variable} \label{fig:fig-metavar}
+\end{figure}
+
+The rule says that applying to $o_2$ those of $o_1$'s methods that take two arguments 
+yields the same result as applying to $o_1$. To see the effects, from \FLORA
+shell's command prompt, enter:
+\begin{verbatim}
+FLORA> ?- rundemo(metavar).
+
+Yes.
+
+FLORA> ?- o2[@M->R].
+
+@M = m2@(b1,b2)
+R = r2
+
+Yes.
+
+FLORA> ?- 
+\end{verbatim}
+
 
 \section{Compiled Code vs. Dynamic Code}
 
@@ -1427,11 +1486,11 @@ predicate {\tt flcompile(file)}, and is loaded into the static runtime
 environment by {\tt flconsult(file)}, {\tt load(file)}, or {\tt [file]}.
 \emph{Dynamic code} can be compiled by {\tt dyncompile(file)} and loaded
 into the dynamic runtime environment by {\tt dynconsult(file)},
-{\tt dynload(file)}, or \texttt{\{file\}}.  we have shown the syntax of
+{\tt dynload(file)}, or \texttt{<file>}.  we have shown the syntax of
 these predicates in Section~\ref{sec-shell-commands}.
 
 The above predicates can also be called from within a \FLORA program, but
-except for {\tt [file]} and \texttt{\{file\}}, all of them must first be
+except for {\tt [file]} and \texttt{<file>}, all of them must first be
 imported from \emph{flrutils} (see Section~\ref{sec-module} for details).
 
 Although static and dynamic code resides in different areas, the rules and
@@ -1440,8 +1499,6 @@ facts in both these areas are considered as a whole and executed together.
 A small example should help illustrate this. Suppose there are two
 programs, {\it static.flr} and {\it dynamic.flr}, as shown in
 Figure~\ref{fig:fig-static-dynamic-code}.
-Start XSB in the directory where both \emph{static.flr} and
-\emph{dynamic.flr} reside. Then start \FLORA shell and type:
 %%
 \begin{figure}[htb]
 \begin{center}
@@ -1468,7 +1525,8 @@ john[teaches@(spring,1999){\mvd}math101].
 \end{center}
 \caption{Static Code vs. Dynamic Code} \label{fig:fig-static-dynamic-code}
 \end{figure}
-
+Start XSB in the directory where both \emph{static.flr} and
+\emph{dynamic.flr} reside. Then start \FLORA shell and type:
 \begin{verbatim}
 FLORA> ?- flconsult(static).
 
@@ -1498,7 +1556,7 @@ C = math230
 Yes.
 \end{verbatim}
 %%
-You can see that the two parts of the code work in union. The difference
+It can be seen that the two parts of the code work in union. The difference
 comes when we are trying to modify the code dynamically, {\it e.g.}, by
 deleting or adding facts.
 
@@ -1508,16 +1566,17 @@ the dynamic area. However, only the facts that reside in the dynamic area
 can be asserted or retracted. (In the furture, \FLORA might support 
 asserting and retracting rules in the dynamic area). The database
 modification predicates supported by
-\FLORA are explained below.
+\FLORA are explained below:
 
-\paragraph{$\bullet~~\mathtt{assert(P_1,\ldots,P_n)}$:} asserts a list of facts into the dynamic area.
-$\mathtt{P_i~(i=1{\ldots}n)}$ can be any \fl molecule or user defined
+\paragraph{$\bullet~~\mathtt{assert(P_1,\ldots,P_n)}$:} asserts a list of facts
+into the dynamic area.
+$\mathtt{P_i~(i=1{\ldots}n)}$ can be any \mbox{\fl} molecule or user defined
 predicate, e.g.,
-$\mathtt{assert(david{\isa}professor[teaches@(fall,1999){\mvd}cse505])}$.
+\[\mathtt{assert(david{\isa}professor[teaches@(fall,1999){\mvd}cse505])}.\]
 
 \paragraph{$\bullet~~\mathtt{retract(P_1,\ldots,P_n | C_1,\ldots,C_n)}$}
-retracts a \emph{ground} fact corresponding to $\mathtt{P_1,\ldots,P_n}$ if
-the conjunction of $\mathtt{P_1,\ldots,P_n,C_1,\ldots,C_n}$ succeeds.
+retracts the \emph{ground} facts corresponding to $\mathtt{P_1,\ldots,P_n}$ for
+which the conjunction of $\mathtt{P_1,\ldots,P_n,C_1,\ldots,C_n}$ succeeds.
 $\mathtt{C_1,\ldots,C_n}$ can be considered as the conditions qualifying
 the facts to be retracted.  For instance,
 \[
@@ -1525,7 +1584,7 @@ the facts to be retracted.  For instance,
 \]
 retracts the teaching information about {\it john} when it duplicates {\it
   smith}'s ({\it i.e.}, when John and Smith appear to have taught the same
-course during the same semester. In contrast,
+course during the same semester). In contrast,
 \[
 \mathtt{retract(john[teaches@(S,Y){\mvd}C],smith[teaches@(S,Y){\mvd}C])}
 \]
@@ -1574,7 +1633,7 @@ No.
 \end{verbatim}
 %%
 Here, \FLORA returns ``no'' because the fact {\tt cse[faculty->>smith]} is
-located in the static area and cannot be retracted.
+located in the static area and thus cannot be retracted.
 
 \begin{verbatim}
 FLORA> ?- erase(math[faculty->>john]).
@@ -1583,8 +1642,8 @@ Yes.
 \end{verbatim}
 %%
 Here, the removal of {\tt math[faculty->>john]} proceeds without a hitch,
-because this fact resides in the dynamic area. What's more interesting is
-that all the information about John is also gone as well!
+because this fact resides in the dynamic area. More interestingly, all the
+information about John is also gone as well!
 This can be seen from the following queries:
 %%
 \begin{verbatim}
@@ -1615,9 +1674,9 @@ Yes.
 \end{verbatim}
 %%
 Note that when erasing $O_1{\isa}O_2$ or $O_1{\subcl}O_2$, only the object
-references that originate in $O_1$ are followed. For other \fl facts, such as
+references that originate from $O_1$ are followed. For other \fl facts, such as
 $O_1[method{\fd}O_2],O_1[method{\mvd}O_2]$, only the object references
-$O_2$ that originate at $Q_2$ are followed.
+that originate from $Q_2$ are followed.
 
 \paragraph{$\bullet~~\mathtt{eraseall(P_1,\ldots,P_n | C_1,\ldots,C_n)}$} erases \emph{all ground}
 facts corresponding to $\mathtt{P_1,\ldots,P_n}$ for which the conjunction
@@ -1635,7 +1694,7 @@ into the dynamic area, all queries that appear in that file are ignored.
 \section{\FLORA Modules and Interaction with XSB}\label{sec-module}
 
 Besides static area and dynamic area, \FLORA also has a module system that
-is implemented on top of and is integrated with the XSB module system.
+is both implemented on top of and integrated with the XSB module system.
 \FLORA modules communicate with each other by importing/exporting either
 \emph{ground} \fl signatures or normal Prolog predicates. With the rest of
 XSB, \FLORA modules communicate using the normal Prolog predicates only
@@ -1645,10 +1704,11 @@ XSB, \FLORA modules communicate using the normal Prolog predicates only
 To illustrate, consider the two \FLORA modules \emph{module1.flr} and
 \emph{module2.flr} in Figure~\ref{fig:fig-module}.
 Let us start XSB in the directory where both \emph{module1.flr} and
-\emph{module2.flr} reside, and let us type the following from the \FLORA
+\emph{module2.flr} reside, and type the following from the \FLORA
 shell:
 %%
-\begin{figure}[tb]
+\begin{figure}[htb]
+\begin{center}
 \begin{tabular}{l}
 {\bf module1.flr:}\vspace{3mm} \\
 :- import employee[salary@(number){\Fd}number] from module2. \vspace{2mm}\\
@@ -1670,6 +1730,7 @@ mary[salary@(1996){\fd}70]. \\
 mary[salary@(1997){\fd}80]. \\
 mary[salary@(1998){\fd}90].
 \end{tabular}
+\end{center}
 \caption{Example \FLORA Modules} \label{fig:fig-module}
 \end{figure}
 %%
@@ -1717,8 +1778,8 @@ is not.
 
 When a \FLORA module imports from another module, say, module {\tt foo.flr}, 
 the latter must already be compiled, or else a runtime error will be
-issued. Furthermore, a \FLORA module cannot import and export the same
-signature. These restrictions stem from the limitations of the underlying
+issued. Furthermore, a \FLORA module can not import and export the same
+signature. These restrictions result from the limitations of the underlying
 XSB module system.
 
 Import directives can appear in both static and dynamic code. However, all
@@ -1766,7 +1827,7 @@ writelist([$X_1,X_2|$Xs]) :- write($X_1$), write(','), writelist([$X_2|$Xs]).
 \end{figure}
 
 Consider the example in Figure~\ref{fig:fig-mix} and suppose that the
-following queries are typed at the \FLORA prompt:
+following queries are entered at the \FLORA prompt:
 %%
 \begin{verbatim}
 FLORA> ?- [mix].
@@ -1784,9 +1845,9 @@ Observe that in Figure~\ref{fig:fig-mix} we created a new predicate, {\tt
   tc}, and used \emph{it} as an argument to {\tt findall}. It seems more
 natural to write $\mathtt{findall(Y,X[reachableTo{\mvd}Y],L)}$ instead.
 This more natural syntax will be supported in the future, but it does not
-work at the present time. The reason is that the \FLORA compiler always
-treats \fl molecules as oid's, if they appear as predicate arguments. in
-contrast, in {\tt findall}, we want the molecules in the second argument to
+work at the present time. The reason is that \FLORA compiler always
+treats \fl molecules as oid's, if they appear as predicate arguments.
+However, in {\tt findall}, we want the molecules in the second argument to
 be treated as logical formulas that evaluate to true or false.  This will
 be supported in a future release via a special compiler directive.
 
@@ -1820,7 +1881,7 @@ recompute the results. This is accomplished by issuing the predicate
 {\tt abolish\_all\_tables/0} described in the XSB manual.
 
 
-\section{The \FLORA Compiler} \label{sec-comp-directives}
+\section{\FLORA Compiler} \label{sec-comp-directives}
 
 Like XSB compiler, \FLORA compiler can take compilation directives. All
 such directives must begin with {\tt :-} (while all queries must begin with
@@ -1871,8 +1932,8 @@ correctness, requires full equality maintenance), it automatically switches
 to the equality level 1.  Therefore, path expressions in the rule head must
 be avoided if at all possible.
 
-Equality maintenance can also be requested when \FLORA modules are compiler
-using {\tt flcompile} and {\tt flconsult} (see
+Equality maintenance can also be requested when \FLORA modules are compiled
+using predicates such as {\tt flcompile} and {\tt flconsult} (see
 Section~\ref{sec-shell-commands}). For instance, {\tt
   flcompile(benchmark,[eqlevel(1)])} will compile {\tt benchmark.flr} with
 equality maintenance level 1.  If equality maintenance is given both in the
