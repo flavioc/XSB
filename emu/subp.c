@@ -63,6 +63,7 @@
 #include "table_stats.h"
 #include "unify_xsb.h"
 #include "debug_xsb.h"
+#include "hash_xsb.h"
 
 /*======================================================================*/
 /*======================================================================*/
@@ -256,6 +257,10 @@ void print_statistics(int amount) {
     print_cp_backtrace();
     break;
 #endif
+  case 8:
+    symbol_table_stats();
+    string_table_stats();
+    break;
   }
 }
 
