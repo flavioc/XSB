@@ -955,7 +955,7 @@ int builtin_call(byte number)
     break;
   }
   case TERM_COMPARE:	/* R1, R2: +term; R3: res (-int) */
-    ctop_int(3, compare(ptoc_tag(1), ptoc_tag(2)));
+    ctop_int(3, compare((void *)ptoc_tag(1), (void *)ptoc_tag(2)));
     break;
   case TERM_NEW: {		/* R1: +PSC, R2: -term */
     int disp;

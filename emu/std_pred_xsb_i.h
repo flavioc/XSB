@@ -552,7 +552,7 @@ inline static xsbBool sort(void)
     follow(hreg++) = cell_tbl[0]; top = hreg++;
     follow(top) = makelist(hreg);
     for (i=1 ; i < len ; i++) {
-      if (compare(cell_tbl[i], cell_tbl[i-1])) {
+      if (compare((void*)cell_tbl[i], (void*)cell_tbl[i-1])) {
 	follow(hreg++) = cell_tbl[i];
 	top = hreg++;
 	follow(top) = makelist(hreg);

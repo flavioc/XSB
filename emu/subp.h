@@ -35,8 +35,8 @@ extern xsbBool unify(Cell, Cell);
 
 /* don't use Cell declarations here, to avoid gcc compiler warnings;
    However, this causes warnings under Windows */
-extern int compare( void *, void * );
-extern int key_compare( void *, void * );
+extern int compare( const void *, const void * );
+extern int key_compare( const void *, const void * );
 
 extern byte *exception_handler(char *);
 

@@ -820,7 +820,7 @@ contcase:     /* the main loop */
   case term_comp: /* RRR */
     op1 = (Cell)*(opregaddr);
     op2 = (Cell)*(opregaddr);
-    bld_int(opregaddr, compare(op1, op2));
+    bld_int(opregaddr, compare((void*)op1, (void*)op2));
     pad64;
     goto contcase;
 

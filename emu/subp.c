@@ -428,7 +428,7 @@ static inline int sign(Float num)
 /*	in the above ordering list.					*/
 /*======================================================================*/
 
-int compare(void * v1, void * v2)
+int compare(const void * v1, const void * v2)
 {
   int comp;
   CPtr cptr1, cptr2;
@@ -499,9 +499,9 @@ int compare(void * v1, void * v2)
       cptr2 = clref_val(val2);
       for (arity2 = 1; arity2 <= arity1; arity2++) {
 	if (islist(val2))
-	  comp = compare(cell(cptr1+arity2), cell(cptr2+arity2-1));  
+	  comp = compare((void*)cell(cptr1+arity2), (void*)cell(cptr2+arity2-1));  
 	else
-	  comp = compare(cell(cptr1+arity2), cell(cptr2+arity2));
+	  comp = compare((void*)cell(cptr1+arity2), (void*)cell(cptr2+arity2));
 	if (comp) break;
       }
       return comp;
@@ -509,13 +509,13 @@ int compare(void * v1, void * v2)
     break;
   case XSB_LIST:
     if (cell_tag(val2) != XSB_STRUCT && cell_tag(val2) != XSB_LIST) return 1;
-    else if (isconstr(val2)) return -(compare(val2, val1));
+    else if (isconstr(val2)) return -(compare((void*)val2, (void*)val1));
     else {	/* Here we are comparing two list structures. */
       cptr1 = clref_val(val1);
       cptr2 = clref_val(val2);
-      comp = compare(cell(cptr1), cell(cptr2));
+      comp = compare((void*)cell(cptr1), (void*)cell(cptr2));
       if (comp) return comp;
-      return compare(cell(cptr1+1), cell(cptr2+1));
+      return compare((void*)cell(cptr1+1), (void*)cell(cptr2+1));
     }
     break;
   case XSB_ATTV:
@@ -539,14 +539,14 @@ int compare(void * v1, void * v2)
 /*	standard total order of Prolog terms (see compare()).		*/
 /*======================================================================*/
 
-int key_compare(void * t1, void * t2)
+int key_compare(const void * t1, const void * t2)
 {
   Cell term1 = (Cell) t1 ;
   Cell term2 = (Cell) t2 ;
 
   XSB_Deref(term1);		/* term1 is not in register! */
   XSB_Deref(term2);		/* term2 is not in register! */
-  return compare(cell(clref_val(term1)+1), cell(clref_val(term2)+1));
+  return compare((void*)cell(clref_val(term1)+1), (void*)cell(clref_val(term2)+1));
 }
 
 /*======================================================================*/
