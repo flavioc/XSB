@@ -165,7 +165,7 @@ int execallowed;
 int dosmode;
 int autoswitch;
 
-/* control whether standard dirs, like /usr/include, are to be search for
+/* controls if standard dirs, like /usr/include, are to be searched for
    #include and whether the current dir is to be searched first or last. */
 int NoStdInc        = 0;
 int NoCurIncFirst   = 0;
@@ -201,6 +201,7 @@ int commented[STACKDEPTH],iflevel;
 void ProcessContext(); /* the main loop */
 static void getDirname(char *fname, char *dirname);
 static FILE *openInCurrentDir(char *incfile);
+char *ArithmEval(int pos1,int pos2);
 
 void bug(char *s)
 {
@@ -289,6 +290,7 @@ void usage() {
   fprintf(stderr," +s : use next 3 args as string start, end and quote character\n\n");
   fprintf(stderr," -nostdinc : don't search standard directories for files to include\n\n");
   fprintf(stderr," -nocurinc : don't search the current directory for files to include\n\n");
+  fprintf(stderr," -curdirinclast : search the current directory last\n\n");
   exit(1);
 }
 
@@ -1432,6 +1434,16 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
     *result=-result1;
     return 1;
   }
+
+  /* add the length() builtin to measure the length of the macro expansion */
+  if (strncmp(buf+pos1,"length",strlen("length"))==0) {
+    char *s;
+    int symlen=strlen("length");
+    s = ProcessText(buf+pos1+symlen,pos2-pos1-symlen,FLAG_META);
+    /* subtract 2 to account for the parentheses */
+    *result=strlen(s)-2;
+    return 1;
+  }
   
   if (buf[pos1]=='(') {
     if (buf[pos2-1]!=')') return 0;
@@ -1696,6 +1708,7 @@ int ParsePossibleMeta()
   int id,expparams,nparam,i,j;
   int p1start,p1end,p2start,p2end,macend;
   int argc,argb[MAXARGS],arge[MAXARGS];
+  char *tmpbuf;
 
   cklen=1;
   if (!matchStartSequence(S->Meta.mStart,&cklen)) return -1;  
@@ -1943,11 +1956,12 @@ int ParsePossibleMeta()
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end)) 
         bug("#defeval requires an identifier (A-Z,a-z,0-9,_ only)");
+      tmpbuf=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
       i=findIdent(C->buf+p1start,p1end-p1start);
       if (i>=0) delete_macro(i);
       newmacro(C->buf+p1start,p1end-p1start,1);
       if (nparam==1) { p2end=p2start=p1end; }
-      macros[nmacros].macrotext=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
+      macros[nmacros].macrotext=tmpbuf;
       macros[nmacros].macrolen=strlen(macros[nmacros].macrotext);
       macros[nmacros].defined_in_comment=C->in_comment;
 
