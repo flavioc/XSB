@@ -8,7 +8,7 @@ XSB_DIR=xsb
 SUBDIR=tempCompiled
 
 all:
-	rm -r tempCompiled;\
+	rm -rf tempCompiled;\
 	mkdir tempCompiled;\
 	$(JC) -d tempCompiled $(JCLASSPATH) tests/com/declarativa/interprolog/*.java tests/com/xsb/interprolog/*.java com/declarativa/interprolog/*.java com/declarativa/interprolog/util/*.java com/declarativa/interprolog/gui/*.java com/declarativa/interprolog/examples/*.java com/xsb/interprolog/*.java;\
 	./compile_Ps $(XSB_DIR);\
@@ -21,7 +21,7 @@ all:
 	cd tempCompiled;\
 	jar cf ../interprolog.jar *;\
 	cd ..;\
-	rm -r tempCompiled
+	rm -rf tempCompiled
 
 clean: 
-	rm -r tempCompiled
+	rm -rf tempCompiled
