@@ -1845,10 +1845,10 @@ int builtin_call(byte number)
   }
 
   /*
-   * attv_unify/1 is a internal builtin for binding an attv to a value
+   * attv_unify/1 is an internal builtin for binding an attv to a value
    * (it could be another attv or a nonvar term).  The users can call
    * this builtin in verify_attributes/2 to bind an attributed var
-   * without trigger the attv interrupt.
+   * without triggering attv interrupt.
    */
   case ATTV_UNIFY: { /* R1: +Var; R2: +Value */
     Cell attv = ptoc_tag(1);
