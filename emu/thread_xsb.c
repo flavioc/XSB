@@ -81,7 +81,6 @@ static int th_new( pthread_t_p t )
 {
 	xsb_thread_t *pos ;
 	int i ;
-
 	if( (i = th_find(t)) != -1 )
 		return i ;
 
@@ -165,7 +164,7 @@ static int xsb_thread_create(th_context *th)
 	int rc ;
 	Cell goal ;
 	th_context *new_th ;
-	pthread_t thr ;
+	pthread_t_p thr ;
 	Integer id ;
 
 	goal = ptoc_tag(th, 2) ;
@@ -176,14 +175,15 @@ static int xsb_thread_create(th_context *th)
 
 	flags[NUM_THREADS]++ ;
 
+#ifdef WIN_NT
+	thr = malloc(sizeof(pthread_t));
+	rc = pthread_create( thr, NULL, &xsb_thread_run, (void *)new_th ) ;
+#else
 	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th ) ;
+#endif
 
 	pthread_mutex_lock( &th_mutex );
-#ifdef WIN_NT
-	id = th_new( &thr ) ;
-#else
 	id = th_new( thr ) ;
-#endif
 	pthread_mutex_unlock( &th_mutex );
 
 	ctop_int( th, 3, id ) ;
