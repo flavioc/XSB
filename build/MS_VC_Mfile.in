@@ -138,13 +138,20 @@ CLEAN :
 	-@erase "$(OBJDIR)\scc.obj"
 	-@erase "$(OBJDIR)\self_orientation.obj"
 	-@erase "$(OBJDIR)\slgdelay.obj"
-	-@erase "$(OBJDIR)\subp.obj"
 	-@erase "$(OBJDIR)\struct_manager.obj"
+	-@erase "$(OBJDIR)\sub_insert.obj"
+	-@erase "$(OBJDIR)\subp.obj"
 	-@erase "$(OBJDIR)\system.obj"
+	-@erase "$(OBJDIR)\table_stats.obj"
+	-@erase "$(OBJDIR)\tables.obj"
 	-@erase "$(OBJDIR)\token.obj"
 	-@erase "$(OBJDIR)\trace.obj"
 	-@erase "$(OBJDIR)\tries.obj"
 	-@erase "$(OBJDIR)\tr_utils.obj"
+	-@erase "$(OBJDIR)\tst_insert.obj"
+	-@erase "$(OBJDIR)\tst_retrv.obj"
+	-@erase "$(OBJDIR)\tst_unify.obj"
+	-@erase "$(OBJDIR)\tst_utils.obj"
 	-@erase "$(OBJDIR)\xmain.obj"
 	-@erase "$(OBJDIR)\xpathname.obj"
 	-@erase "$(OBJDIR)\xsb_odbc.obj"
@@ -184,12 +191,19 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/slgdelay.obj" \
 	"$(OBJDIR)/subp.obj" \
 	"$(OBJDIR)/struct_manager.obj" \
+	"$(OBJDIR)/sub_insert.obj" \
 	"$(OBJDIR)/scc.obj" \
 	"$(OBJDIR)/system.obj" \
+	"$(OBJDIR)/table_stats.obj" \
+	"$(OBJDIR)/tables.obj" \
 	"$(OBJDIR)/token.obj" \
 	"$(OBJDIR)/trace.obj" \
 	"$(OBJDIR)/tries.obj" \
 	"$(OBJDIR)/tr_utils.obj" \
+	"$(OBJDIR)/tst_insert.obj" \
+	"$(OBJDIR)/tst_retrv.obj" \
+	"$(OBJDIR)/tst_unify.obj" \
+	"$(OBJDIR)/tst_utils.obj" \
 	"$(OBJDIR)/xpathname.obj" \
 	"$(OBJDIR)/xsb_odbc.obj" \
 	"$(OBJDIR)/xsberror.obj" \
@@ -1314,6 +1328,202 @@ DEP_CPP_XSB_STR=\
 
 
 "$(OBJDIR)\xsb_string.obj" : $(SOURCE) $(DEP_CPP_XSB_STR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
+SOURCE=$(INTDIR)\sub_insert.c
+DEP_CPP_SUB_INSERT=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\deref.h"\
+	{$(INTDIR)}"\table_stats.h"\
+	{$(INTDIR)}"\trie_internals.h"\
+	{$(INTDIR)}"\tst_aux.h"\
+	{$(INTDIR)}"\xmacro.h"\
+	{$(INTDIR)}"\binding.h"\
+	{$(INTDIR)}"\inst.h"\
+
+
+"$(OBJDIR)\sub_insert.obj" : $(SOURCE) $(DEP_CPP_SUB_INSERT) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
+SOURCE=$(INTDIR)\table_stats.c
+DEP_CPP_TABLE_STATS=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\table_stats.h"\
+	{$(INTDIR)}"\trie_internals.h"\
+	{$(INTDIR)}"\xmacro.h"\
+
+
+"$(OBJDIR)\table_stats.obj" : $(SOURCE) $(DEP_CPP_TABLE_STATS) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
+SOURCE=$(INTDIR)\tables.c
+DEP_CPP_TABLES=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\debugs\debug_tables.h"\
+	{$(INTDIR)}"\debugs\debug_delay.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\heap.h"\
+	{$(INTDIR)}"\xsb_memory.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\binding.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\table_stats.h"\
+	{$(INTDIR)}"\trie_internals.h"\
+	{$(INTDIR)}"\xmacro.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\tables.h"\
+
+
+"$(OBJDIR)\tables.obj" : $(SOURCE) $(DEP_CPP_TABLES) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
+SOURCE=$(INTDIR)\tst_insert.c
+DEP_CPP_TST_INSERT=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\inst.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\deref.h"\
+	{$(INTDIR)}"\table_stats.h"\
+	{$(INTDIR)}"\trie_internals.h"\
+	{$(INTDIR)}"\xmacro.h"\
+	{$(INTDIR)}"\tst_aux.h"\
+
+
+
+"$(OBJDIR)\tst_insert.obj" : $(SOURCE) $(DEP_CPP_TST_INSERT) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
+SOURCE=$(INTDIR)\tst_retrv.c
+DEP_CPP_TST_RETRV=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\inst.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\xsb_memory.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\deref.h"\
+	{$(INTDIR)}"\subp.h"\
+	{$(INTDIR)}"\table_stats.h"\
+	{$(INTDIR)}"\trie_internals.h"\
+	{$(INTDIR)}"\xmacro.h"\
+	{$(INTDIR)}"\tst_aux.h"\
+
+
+
+"$(OBJDIR)\tst_retrv.obj" : $(SOURCE) $(DEP_CPP_TST_RETRV) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
+SOURCE=$(INTDIR)\tst_unify.c
+DEP_CPP_TST_UNIFY=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\xsb_memory.h"\
+	{$(INTDIR)}"\binding.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\deref.h"\
+	{$(INTDIR)}"\subp.h"\
+	{$(INTDIR)}"\table_stats.h"\
+	{$(INTDIR)}"\trie_internals.h"\
+	{$(INTDIR)}"\xmacro.h"\
+	{$(INTDIR)}"\choice.h"\
+	{$(INTDIR)}"\tst_aux.h"\
+	{$(INTDIR)}"\tst_utils.h"\
+	{$(INTDIR)}"\xsberror.h"\
+
+
+
+"$(OBJDIR)\tst_unify.obj" : $(SOURCE) $(DEP_CPP_TST_UNIFY) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
+SOURCE=$(INTDIR)\tst_utils.c
+DEP_CPP_TST_UTILS=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\xsb_memory.h"\
+	{$(INTDIR)}"\binding.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\deref.h"\
+	{$(INTDIR)}"\subp.h"\
+	{$(INTDIR)}"\table_stats.h"\
+	{$(INTDIR)}"\trie_internals.h"\
+	{$(INTDIR)}"\xmacro.h"\
+	{$(INTDIR)}"\choice.h"\
+	{$(INTDIR)}"\tst_aux.h"\
+	{$(INTDIR)}"\tst_utils.h"\
+	{$(INTDIR)}"\xsberror.h"\
+
+
+
+"$(OBJDIR)\tst_utils.obj" : $(SOURCE) $(DEP_CPP_TST_UTILS) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
