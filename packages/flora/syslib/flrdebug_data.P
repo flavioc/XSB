@@ -1,0 +1,67 @@
+/* File:        flrdebug_data.P -- data that guides XSB debugger in Flora shell
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+hide_this_hide('_$_$_flora_isa',2).
+hide_this_hide('_$_$_flora_isa_dyn',2).
+hide_this_hide('_$_$_flora_strict_subclass',2).
+hide_this_hide('_$_$_flora_subclass',2).
+hide_this_hide('_$_$_flora_sub',2).
+hide_this_hide('_$_$_flora_sub_dyn',2).
+
+hide_this_hide('_$_$_flora_fd',3).
+hide_this_hide('_$_$_flora_fd_dyn',3).
+hide_this_hide('_$_$_flora_ifd',3).
+hide_this_hide('_$_$_flora_ifd_dyn',3).
+hide_this_hide('_$_$_flora_fs',3).
+hide_this_hide('_$_$_flora_fs_dyn',3).
+hide_this_hide('_$_$_flora_ifs',3).
+hide_this_hide('_$_$_flora_ifs_dyn',3).
+
+hide_this_hide('_$_$_flora_mvd',3).
+hide_this_hide('_$_$_flora_mvd_dyn',3).
+hide_this_hide('_$_$_flora_imvd',3).
+hide_this_hide('_$_$_flora_imvd_dyn',3).
+hide_this_hide('_$_$_flora_mvs',3).
+hide_this_hide('_$_$_flora_mvs_dyn',3).
+hide_this_hide('_$_$_flora_imvs',3).
+hide_this_hide('_$_$_flora_imvs_dyn',3).
+
+hide_this_hide('_$_$_flora_switch',1).
+hide_this_hide('_$_$_flora_loadlist',1).
+
+hide_this_hide('_$_$_flora_read_parse_compile',6).
+hide_this_hide('_$_$_flora_write_shell_prompt',0).
+hide_this_hide('_$_$_flora_loop_guard',1).
+hide_this_hide('_$_$_flora_write_No',0).
+hide_this_hide('_$_$_flora_write_Yes',0).
+
+hide_this_show('_$_$_flora_print_answers',2).
+
+show_this_hide('_$_$_flora_assert', 1).
+show_this_hide('_$_$_flora_retract', 2).
+show_this_hide('_$_$_flora_retractall', 2).
+show_this_hide('_$_$_flora_erase', 2).
+
+'_$_$_flora_debugger_data_loaded'.

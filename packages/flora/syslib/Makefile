@@ -23,7 +23,8 @@
 ##
 
 
-ALL = 	flrdisplay.O flrassert.O flrassert_dyn.O flraggregate.O flraggregate_dyn.O
+ALL = 	flrdisplay.O flrassert.O flrassert_dyn.O flraggregate.O \
+	flraggregate_dyn.O flrdebugger.O
 
 Option = [optimize]
 

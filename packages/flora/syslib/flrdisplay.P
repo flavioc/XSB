@@ -28,6 +28,7 @@
 
 :- import
 	call/1, cputime/1, write/1, writeln/1, nl/0,
+	goal_cut_trans/3, call_c/1,
 	get0/1, functor/3, var/1
    from standard.
 
@@ -39,6 +40,8 @@
 
 :- import current_predicate/1 from curr_sym.
 
+:- import trie_assert/1, trie_retract_all/1 from tables.
+
 :- import '_$_$_write_flora_warnheader'/0 from flrutils.
 
 :- dynamic '_$_$_flora_switch'/1.
@@ -48,10 +51,10 @@
 '_$_$_flora_print_all'(Gs,NVs) :-
 	cputime(T0),
 	( NVs = [] ->
-	    ( call(Gs) ->
-		nl, writeln('Yes.')
+	    ( '_$_$_flora_call'(Gs) ->
+		'_$_$_flora_write_Yes'
 	      ;
-	        nl, writeln('No.')
+	        '_$_$_flora_write_No'
 	    )
 
 	  ;
@@ -61,7 +64,7 @@
 	    T is T1-T0,
 	    length(L,N),
 	    ( N = 0 ->
-		nl, writeln('No.')
+	        '_$_$_flora_write_No'
 	      ;
 		('_$_$_flora_switch'(no_chatter) -> true
 		  ;
@@ -70,7 +73,7 @@
 		    write(T), write(' seconds on '),
 		    unix(hostname)
 		),
-		nl, writeln('Yes.')
+	        '_$_$_flora_write_Yes'
 	    )
 	).
 
@@ -78,18 +81,18 @@
 /********************************************************************/
 '_$_$_flora_print_one'(Gs,NVs) :-
 	( NVs = [] ->
-	    ( call(Gs) ->
-		nl, writeln('Yes.')
+	    ( '_$_$_flora_call'(Gs) ->
+	        '_$_$_flora_write_Yes'
 	      ;
-	        nl, writeln('No.')
+	        '_$_$_flora_write_No'
 	    )
 
 	  ;
-	    ( call(Gs),
+	    ( '_$_$_flora_call'(Gs),
 	      '_$_$_flora_write_pairs'(NVs),
 	      '_$_$_flora_fail_unless_return', !
 	     ;
-	      nl, writeln('No.')
+	      '_$_$_flora_write_No'
 	    )
 	).
 
@@ -97,7 +100,31 @@
 '_$_$_flora_fail_unless_return' :- 
 	get0(C),
 	(C == 10 -> true ; get0(_)),
-	C=10, nl, writeln('Yes.').
+	C=10, '_$_$_flora_write_Yes'.
+
+'_$_$_flora_write_Yes' :- nl, writeln('Yes.').
+'_$_$_flora_write_No' :- nl, writeln('No.').
+
+/********************************************************************/
+%% Hookup to the Flora debugger
+
+%% flora_call essentially repeats the XSB call definition
+'_$_$_flora_call'(Goal) :- 
+	( callable(Goal) -> '_$savecp'(C), 
+	   goal_cut_trans(Goal, Trans_Goal, C), 
+	    %% Turn trace on, if requested.
+	   ( '_$_$_flora_switch'(trace) -> trace ;   true),
+	    %% Regardless of whether call succeeds, turn trace off
+	   ( call_c(Trans_Goal) ->
+	       ( '_$_$_flora_switch'(trace) -> notrace ; true)
+	      ;
+	       ( '_$_$_flora_switch'(trace) -> notrace ; true),
+	       fail
+	   )
+	;  var(Goal) -> 
+	   abort('Uninstantiated argument 1 of call/1')
+	;  abort('Wrong type in argument 1 of call/1 (callable term expected)')
+	).
 
 
 /********************************************************************/

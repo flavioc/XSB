@@ -1,0 +1,160 @@
+/* File:        flrdebugger.P  -- Flora debugger
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+
+:- import package_configuration/2 from packaging.
+:- import trie_assert/1, trie_retract_all/1 from tables.
+:- import fmt_write/2 from file_io.
+:- import debug_display_call_hook/1,
+	'_$_$_flora_debugger_data_loaded'/0, '_$_$_flora_switch'/1
+	from usermod.
+
+:- dynamic debug_display_call_hook(_).
+:- dynamic '_$_$_flora_switch'/1, '_$_$_flora_debugger_data_loaded'/0.
+
+%%:- export '_$_$_flora_trace'/0, '_$_$_flora_notrace'/0.
+
+:- trie_assert(debug_display_call_hook(flora_write_debug_goal)).
+
+%% In the future, flrprettyprint will be a module
+:- [flrprettyprint].
+
+
+flora_write_debug_goal('_$_$_flora_isa_rhs'(X,Y)) :-
+	!, flora_print_isa(X,Y).
+flora_write_debug_goal('_$_$_flora_sub_rhs'(X,Y)) :-
+	!, flora_print_sub(X,Y).
+flora_write_debug_goal('_$_$_flora_fd_rhs'(O, M, V)) :-
+	!, flora_print_fd(O,M,V).
+flora_write_debug_goal('_$_$_flora_mvd_rhs'(O, M, V)) :-
+	!, flora_print_mvd(O,M,V).
+
+flora_write_debug_goal('_$_$_flora_assert'(L)) :-
+	!, flora_print_assert(L).
+flora_write_debug_goal('_$_$_flora_retract'(L,Cond)) :-
+	!, flora_print_retract(L,Cond).
+flora_write_debug_goal('_$_$_flora_retractall'(L,Cond)) :-
+	!, flora_print_retractall(L,Cond).
+flora_write_debug_goal('_$_$_flora_erase'(L,Cond)) :-
+	!, flora_print_erase(L,Cond).
+
+%% This one is complicated. To be figured out later
+flora_write_debug_goal('_$_$_flora_collectset'(nogrp,Y,Z)) :-
+	!, fmt_write('collectset{%S ; %S}', args(Y,Z)).
+
+flora_write_debug_goal(Call) :- write(Call).
+
+/*********************************************************************/
+
+flora_print_isa(X,Y) :- 
+	flora_pp_write_value(X),
+	write(' : '),
+	flora_pp_write_value(Y).
+flora_print_sub(X,Y) :-
+	flora_pp_write_value(X),
+	write(' :: '),
+	flora_pp_write_value(Y).
+
+flora_print_fd(O,M,V) :-
+	flora_pp_write_value(O),
+	write('['),
+	flora_print_method(M),
+	write(' -> '),
+	flora_pp_write_value(V),
+	write(']').
+flora_print_mvd(O,M,V) :-
+	flora_pp_write_value(O),
+	write('['),
+	flora_print_method(M),
+	write(' ->> '),
+	flora_pp_write_value(V),
+	write(']').
+
+flora_print_assert(L) :- write('assert('), flora_print_assert1(L).
+flora_print_assert1([]) :- !, write(')').
+flora_print_assert1([A | R]) :-
+	( A = '_$_$_flora_isa_dyn'(X,Y) ->
+	    flora_print_isa(X,Y)
+	; A = '_$_$_flora_sub_dyn'(X,Y) ->
+	    flora_print_sub(X,Y)
+	; A = '_$_$_flora_fd_dyn'(O,M,V) ->
+	    flora_print_fd(O,M,V)
+	; A = '_$_$_flora_mvd_dyn'(O,M,V) ->
+	    flora_print_mvd(O,M,V)
+	),
+	(R = [] ; write(', ')),
+	flora_print_assert1(R).
+
+flora_print_retract(L,Cond) :- write('retract('), flora_print_retract1(L,Cond).
+flora_print_retractall(L,C) :- write('retractall('), flora_print_retract1(L,C).
+flora_print_erase(L,Cond) :- write('erase('), flora_print_retract1(L,Cond).
+
+flora_print_retract1([],[]) :- !, write(')').
+%% Need to do a better job printing L
+flora_print_retract1([],Cond) :- !, fmt_write('| %S )', arg(Cond)).
+flora_print_retract1([A | R],Cond) :-
+	flora_print_retract_molecule(A),
+	(R = [], !
+	 ;   write(', ')
+	),
+	flora_print_retract1(R,Cond).
+
+flora_print_retract_molecule('_$_$_flora_rtrct'(A)) :-
+	( A = '_$_$_flora_isa_dyn'(X,Y) ->
+	    flora_print_isa(X,Y)
+	; A = '_$_$_flora_sub_dyn'(X,Y) ->
+	    flora_print_sub(X,Y)
+	; A = '_$_$_flora_fd_dyn'(O,M,V) ->
+	    flora_print_fd(O,M,V)
+	; A = '_$_$_flora_mvd_dyn'(O,M,V) ->
+	    flora_print_mvd(O,M,V)
+	).
+
+flora_print_method(M) :-
+	M =.. [_Junk | MethArgs],
+	flora_pp_write_method_invocation(MethArgs).
+
+
+
+
+/*********************************************************************/
+
+'_$_$_flora_trace' :-
+	flora_read_debugger_data,
+	trie_assert('_$_$_flora_switch'(trace)).
+'_$_$_flora_notrace' :- trie_retract_all('_$_$_flora_switch'(trace)).
+
+flora_read_debugger_data :- '_$_$_flora_debugger_data_loaded', !.
+flora_read_debugger_data :- 
+	package_configuration(dir(flora), FlrSysLib),
+	fmt_write_string(DebugDataFile,
+			 '%s/syslib/flrdebug_data.P', arg(FlrSysLib)),
+	see(DebugDataFile),
+	repeat,
+	    read(T),
+	    (T = end_of_file -> true
+	    	    	     ;  assert(T), fail
+	    ),
+	seen.
