@@ -58,7 +58,6 @@
 
 extern Psc term_psc(Cell);
 extern Cell ptoc_tag(int);
-extern void ctop_tag(int, Cell);
 extern TIFptr get_tip(Psc);
 #ifdef DPVR_DEBUG_BD
 extern void printterm(Cell, byte, int);
