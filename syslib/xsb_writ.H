@@ -28,7 +28,9 @@
 	file_nl/1.
 :- export write_int/1, write_float/1.
 :- export write_canonical_lettervar/1.
+:- export set_file_write_depth/1, get_file_write_depth/1.
 
+	
 :- import '_$op'/3 from file_op.
 :- import file_put/2 from file_io.
 :- import integer/1 from standard.
@@ -41,4 +43,5 @@
 %% for the first time before xsb_configuration configuration is loaded.
 :- import windows_os_loader/0 from loader.
 
+:- import conget/2, conset/2 from gensym.
 /* ------------------- end of file file_write.H ----------------------- */

@@ -35,8 +35,8 @@
 :- import file_read/3, vv/2 from xsb_read.
 %% These are explicitly imported because they are used early on, 
 %% before XSB is fully bootstrapped.
-:- import abort/0, call_c/1, call_expose/1, catch/3, goal_cut_trans/3,
-          atom_codes/2, seeing/1, telling/1, see/1, tell/1, seen/0, told/0
+:- import abort/0, call/1, call_c/1, call_expose/1, catch/3, goal_cut_trans/3,
+          atom_codes/2, seeing/1, telling/1, see/1, tell/1, seen/0, told/0, write/1, nl/0, is_attv/1
      from standard.
 :- import '$$exception_ball'/1 from standard.
 :- import close_open_tables/0, conname/2, 
@@ -52,7 +52,9 @@
 :- import push_stdin/2, pop_stdin/1 from push_io.
 :- import  retractall/1 from assert.
 :- import call_xsb_hook/2, xsb_exit_hook/1 from xsb_hook.
-:- import verify_attributes/2 from usermod.
+%:- import verify_attributes/2 from usermod.
+:- import attv_unify/2, get_attributes/2, verify_attribute_handler/4 from machine.
+
 :- import conset/2, conget/2 from gensym.
 
 :- import banner_control/1 from banner.
