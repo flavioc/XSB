@@ -38,6 +38,8 @@
 	  classHasAttr_ext/3, allAttr_ext/3,maxAttr_ext/4
 						from usermod.
 
+:- import call0/1 from machine.
+
 :- import necessCond_int/2, %ic_int /1, 
 	  isa_int/2, hasAttr_int/3, minAttr_int/4,
 	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4
@@ -61,7 +63,7 @@
 :- import cdf_message/1 from cdf_exceptions.
 
 :- import '_$index'/3 from file_op.
-%:- import conset/2, conget/2 from gensym.
+%%:- import conset/2, conget/2, coninc/1 from gensym.
 :- import ground/1 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import search_module/6 from consult.
@@ -85,7 +87,7 @@ cdf_dynamic(necessCond_ext/2).
 cdf_index(necessCond_ext,2,[*(1)]).
 
 cdf_dynamic(isa_ext/2).
-cdf_index(isa_ext,2,[*(1),*(2)]).
+cdf_index(isa_ext,2,[*(1),*(2)],5001).
 
 cdf_dynamic(hasAttr_ext/3).
 %%cdf_index(hasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
@@ -93,7 +95,7 @@ cdf_index(hasAttr_ext,3,[*(1) + *(2) + *(3),*(1) + *(2),*(2) + *(3)]).
 cdf_dynamic(minAttr_ext/4).
 cdf_index(minAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
 cdf_dynamic(classHasAttr_ext/3).
-cdf_index(classHasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+cdf_index(classHasAttr_ext,3,[*(1) + *(2) + *(3),*(1) + *(2),*(2) + *(3)]).
 cdf_dynamic(allAttr_ext/3). 
 cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
 cdf_dynamic(maxAttr_ext/4). 
@@ -462,8 +464,8 @@ immed_isa(SubCid,SupCid) :-
 
 immed_isa1(SubCid,SupCid) :- 
 	isa_ext(SubCid,SupCid).
-immed_isa1(CCid,PCid) :-
-	isa_int(CCid,PCid).
+immed_isa1(SubCid,SupCid) :- 
+	isa_int(SubCid,SupCid).
 
 %------------------------------------
 
@@ -1510,7 +1512,7 @@ updateExtTermMerge(SOValList,SNValList,ArgsVars,Updates0,Updates) :-
 	 ->	updateExtTermMerge(SOVals,SNVals,ArgsVars,Updates0,Updates)
 	 ; OVal @< NVal
 	 ->	copy_term(ArgsVars,p(NExtTerm,OVal)),
-		(call(NExtTerm) % don't delete if inherited
+		(call0(NExtTerm) % don't delete if inherited
 		 ->	Updates0 = 
 			   [retractall(NExtTerm)|Updates1],
 			updateExtTermMerge(SOVals,SNValList,ArgsVars,
@@ -1528,7 +1530,7 @@ updateExtTermMerge([],[NVal|SNVals],ArgsVars,Updates0,Updates) :- !,
 	updateExtTermMerge([],SNVals,ArgsVars,Updates1,Updates).
 updateExtTermMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
 	copy_term(ArgsVars,p(NExtTerm,OVal)),
-	(call(NExtTerm) % don't delete if inherited
+	(call0(NExtTerm) % don't delete if inherited
 	 ->	Updates0 = 
 		 	[retractall(NExtTerm)|Updates1],
 		updateExtTermMerge(SOVals,[],ArgsVars,Updates1,Updates)
@@ -1569,15 +1571,10 @@ count_success(Term):-
 	writeln(('There are ',N,' ',F,'/',A,' successes')).
 	
 count_success_1(Term):- 
-	call(Term),
-	inc_count,
+	call0(Term),
+	conget('_$size_matters'),
 	fail.
 count_success_1(_).
-
-inc_count:- 
-	conget('_$size_matters',N),
-	N1 is N + 1,
-	conset('_$size_matters',N1).
 
 :- comment(is_a_classHasAttr/1, "@tt{is_a_classHasAttr(Rid)} checks
 that @tt{Rid} is the class ID of a subclass of @tt{id('CDF
