@@ -41,6 +41,9 @@ typedef struct choice_point {
 #ifdef SLG_GC
   CPtr prev_top;        /* previous top of CP stack */
 #endif
+#ifdef CP_DEBUG
+  Psc  psc;             /* PSC of predicate that created this CP */
+#endif
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
     CPtr *trreg;	/* current top of trail stack */
@@ -49,9 +52,6 @@ typedef struct choice_point {
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;          /* pointer to parent tabled CP (subgoal) */
     CPtr prev;		/* dynamic link */
-#ifdef CP_DEBUG
-  Psc  psc;             /* PSC of predicate that created this CP */
-#endif
 } *Choice;
 
 #define CP_SIZE	(sizeof(struct choice_point)/sizeof(CPtr))
@@ -101,6 +101,9 @@ typedef struct tabled_choice_point {
 #if defined(SLG_GC)
   CPtr prev_top;
 #endif
+#ifdef CP_DEBUG
+  Psc  psc;             /* PSC of predicate that created this CP */
+#endif
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
     CPtr *trreg;	/* current top of trail stack */
@@ -111,9 +114,6 @@ typedef struct tabled_choice_point {
     CPtr prev;		/* previous choicepoint */
     CPtr answer_template;
     CPtr subgoal_ptr;	/* pointer to the subgoal frame */
-#ifdef CP_DEBUG
-    Psc  psc;             /* PSC of predicate that created this CP */
-#endif    
 #if defined(LOCAL_EVAL) && !defined(SLG_GC)
   CPtr prev_top;
 #endif
@@ -245,6 +245,9 @@ typedef struct consumer_choice_point {
 #ifdef SLG_GC
   CPtr prev_top;
 #endif
+#ifdef CP_DEBUG
+    Psc  psc;             /* PSC of predicate that created this CP */
+#endif    
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
     CPtr *trreg;	/* current top of trail stack */
@@ -255,9 +258,6 @@ typedef struct consumer_choice_point {
     CPtr prev;		/* prev top of choice point stack */
     CPtr answer_template;
     CPtr subgoal_ptr;	/* where the answer list lives */
-#ifdef CP_DEBUG
-  Psc  psc;             /* PSC of predicate that created this CP */
-#endif    
 #ifdef CHAT
     CPtr chat_area;	/* temporarily */
 #endif
@@ -341,6 +341,9 @@ typedef struct compl_susp_frame {
 #ifdef SLG_GC
   CPtr prev_top;
 #endif
+#ifdef CP_DEBUG
+  Psc  psc;             /* PSC of predicate that created this CP */
+#endif    
   CPtr ebreg;		/* environment backtrack -- top of env stack */
   CPtr hreg;		/* current top of heap */
   CPtr *trreg;	/* current top of trail stack */
@@ -386,6 +389,12 @@ typedef struct compl_susp_frame {
 #ifdef SLG_GC
 #define csf_prevtop(b)          ((ComplSuspFrame)(b))->prev_top
 #endif
+#ifdef CP_DEBUG
+#define csf_psc(b)              ((ComplSuspFrame)(b))->psc
+#define SAVE_CSFPSC(b)            csf_psc(b) = pscreg
+#else
+#define SAVE_CSFPSC(b)
+#endif
 /* #ifdef CHAT  this is valid for both! --lfcastro */
 #define is_compl_susp_frame(b) \
     ((cp_pcreg(b) == (byte *) &resume_compl_suspension_inst) || \
@@ -399,6 +408,7 @@ typedef struct compl_susp_frame {
     csf_pcreg(WHERE) = (pb) &resume_compl_suspension_inst; \
     csf_ebreg(WHERE) = ebreg; \
     csf_hreg(WHERE) = hreg; \
+    SAVE_CSFPSC(WHERE); \
     csf_trreg(WHERE) = trreg; \
     csf_cpreg(WHERE) = CPREG; \
     csf_ereg(WHERE) = ereg; \
@@ -415,6 +425,7 @@ typedef struct compl_susp_frame {
     csf_neg_loop(t_breg) = FALSE; \
     csf_prevcsf(t_breg) = subg_compl_susp_ptr(subg); \
     csf_ptcp(t_breg) = t_ptcp; \
+    SAVE_CSFPSC(WHERE); \
     csf_pdreg(t_breg) = delayreg; \
     csf_subgoal_ptr(t_breg) = subg; \
     csf_ereg(t_breg) = t_ereg; \
@@ -437,6 +448,9 @@ typedef struct compl_susp_choice_point {
 #ifdef SLG_GC
   CPtr prev_top;
 #endif
+#ifdef CP_DEBUG
+  Psc  psc;             /* PSC of predicate that created this CP */
+#endif    
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
 #ifdef SLG_GC
@@ -469,11 +483,18 @@ typedef struct compl_susp_choice_point {
 #else
 #define SAVE_CSCP_EXTRA(t_breg)
 #endif
+#ifdef CP_DEBUG
+#define cscp_psc(b)              ((ComplSuspChoice)(b))->psc
+#define SAVE_CSCPPSC(b)            cscp_psc(b) = pscreg
+#else
+#define SAVE_CSCPPSC(b)
+#endif
 
 #define save_compl_susp_cp(t_breg,prev,compsuspptr) \
     t_breg -= COMPL_SUSP_CP_SIZE; \
     cs_prevbreg(t_breg) = prev; \
     SAVE_CSCP_EXTRA(t_breg); \
+    SAVE_CSCPPSC(t_breg); \
     cs_compsuspptr(t_breg) = compsuspptr;\
     cs_hreg(t_breg) = hreg; \
     cs_ebreg(t_breg) = ebreg; \

@@ -177,6 +177,9 @@ DllExport void call_conv xsb_error (char *description, ...)
   vfprintf(stderr, description, args);
   va_end(args);
   fprintf(stderr, "\n");
+#if defined(DEBUG) && defined(CP_DEBUG)
+  print_cp_backtrace();
+#endif
 }
 
 DllExport void call_conv xsb_warn(char *description, ...)
@@ -188,6 +191,9 @@ DllExport void call_conv xsb_warn(char *description, ...)
   vfprintf(stdwarn, description, args);
   va_end(args);
   fprintf(stdwarn, "\n");
+#if defined(DEBUG) && defined(CP_DEBUG)
+  print_cp_backtrace();
+#endif
 }
 
 DllExport void call_conv xsb_mesg(char *description, ...)
@@ -268,6 +274,9 @@ void err_handle(int description, int arg, char *f,
     break;
   }
   pcreg = exception_handler(message);
+#if defined(DEBUG) && defined(CP_DEBUG)
+  print_cp_backtrace();
+#endif
 }
 
 /*************************************************************************/

@@ -1568,12 +1568,7 @@ void print_cpf_pred(CPtr cpf)
   char *lcpreg;
   Psc psc;
   
-#if 0
-  lcpreg = cp_cpreg(cpf);
-  psc = *(CPtr)(lcpreg-4);
-#else
   psc = cp_psc(cpf);
-#endif
   if (psc) {
     switch(get_type(psc)) {
     case T_PRED:
