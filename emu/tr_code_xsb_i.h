@@ -285,6 +285,16 @@ int     delay_it;
   }									\
 }
 
+/*
+ * In clp(Q,R), most (or all) of the attvs in the call are updated in the
+ * answer.  So we have a set of *new* attvs in the answer trie.  This set
+ * of new attvs will be copied into the answer trie when the *first* attv
+ * in the call is copied into the answer trie (since most/all of the other
+ * attvs are related to the first one).  The later occurrences of the
+ * *other* attvs are encoded as `unify_with_trie_val', but we don't want
+ * to trigger attv interrupts when we update the attvs in the call.
+ */
+
 #define unify_with_trie_val {						\
   Cell cell2deref;							\
   deref(*reg_arrayptr);							\
@@ -298,8 +308,8 @@ int     delay_it;
     cell2deref = (Cell) var_regs[(int)int_val(opatom)];			\
     deref(cell2deref);							\
     if (*reg_arrayptr != cell2deref) {					\
-      attv_dbgmsg(">>>> add_interrupt in unify_with_trie_val\n");	\
-      add_interrupt(*reg_arrayptr, cell2deref);				\
+      /* Do not trigger attv interrupt! */				\
+      bind_ref(clref_val(*reg_arrayptr), cell2deref);			\
     }									\
     else {								\
       attv_dbgmsg(">>>> keep old attr in unify_with_trie_val\n");	\
@@ -317,15 +327,13 @@ int     delay_it;
 }
 
 #define unify_with_trie_attv {						\
-  CPtr temp;								\
   deref(*reg_arrayptr);							\
   num_vars_in_var_regs = (int)int_val(opatom) &0xffff;			\
   if (isref(*reg_arrayptr)) {						\
     bind_ref((CPtr) *reg_arrayptr, makeattv(hreg));			\
   }									\
   else if (isattv(*reg_arrayptr)) {					\
-    temp = clref_val(*reg_arrayptr);					\
-    bind_ref(temp, makeattv(hreg));					\
+    bind_ref(clref_val(*reg_arrayptr), makeattv(hreg));			\
   }									\
   else {								\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_attv\n");	\
