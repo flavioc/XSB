@@ -3668,7 +3668,7 @@ Here, we define what it means to violate type checking using the usual
 ``no'' answer means that the corresponding attribute \emph{does not}
 violate the typing rules.
 
-In this way, one can easily consruct special purpose type checkers.  This
+In this way, one can easily construct special purpose type checkers.  This
 feature is particularly important when dealing with \emph{semistructured}
 data. (Semistructured data has object-like structure but normally does not
 need to conform to any type; or if it does, the type would normally cover
@@ -3925,6 +3925,184 @@ of keeping the syntax object-oriented.
 \end{itemize}
 %%
 
+\section{A Note on the Programming Style}
+
+Programming in \FLORA is similar to programming in Prolog, but is more
+declarative. For one thing, F-molecules are always tabled, so the
+programmer does not need to worry about tabling the right predicates.
+Second, there is no need to worry that a predicate must be declared as
+dynamic in order to be updatable. Third --- and most important --- the facts 
+specified in the program are considered to be part of the database. In
+particular, their order does not matter and duplicates are eliminated
+automatically. 
+
+This has a far-reaching implication on the programming style.
+In Prolog, it is a common practice to put the catch-all facts at the end of
+a program block in order to capture subgoals that do not match the rest of
+the program clauses. For instance, 
+%%
+\begin{verbatim}
+  p(f(X)) :- ...
+  p(g(X)) :- ...
+  %% If all else fails, simply succeed.
+  p(_).
+\end{verbatim}
+%%
+This will not work in \FLORA, because {\tt p(\_)} will be treated as a
+database fact, which is placed in no particular order with respect to the
+program. If you want the desired effect, represent the catch-all facts as
+rules: 
+%%
+\begin{verbatim}
+  p(f(X)) :- ...
+  p(g(X)) :- ...
+  %% If all else fails, simply succeed. Use the rule notation for p/1.
+  p(_) :- true.
+\end{verbatim}
+%%
+
+
+\section{Bugs and How to Report Them}
+
+The \FLORA system includes a compiler and runtime libraries, but for
+execution it relies on XSB. Thus, some bugs that you might encounter are
+the fault of \FLORA, while others are XSB bugs. For instance, a memory
+violation that occurs during the execution is in all likelihood an internal
+XSB bug. (\FLORA is like a stress test for XSB --- all bugs come to the
+surface.)
+
+An incorrect result during the execution can be equally blamed on XSB and
+on \FLORA --- it requires a close look at the program. A compiler or
+a runtime error for a perfectly valid program is probably a bug in the
+\FLORA system.
+
+Bugs that are the fault of XSB are particularly hard to fix, because
+\FLORA programs are translated into an unreadable Prolog code. To make
+things worse, this code might contain calls to \FLORA system libraries.
+
+\index{flDump/1}
+%%
+To simplify bug reporting, \FLORA provides utilities and make the compiled
+XSB program more readable. The flDump/1 predicate can be used to strip the
+macros from the code, making it much more palatable. If you issue the
+following command
+%%
+\begin{verbatim}
+  flora2 ?- flDump(foo).  
+\end{verbatim}
+%%
+the program {\tt foo.flr} will be compiled without the macros and dump the
+result in the file {\tt foo\_dump.P}. This file is still not very readable,
+because the program clauses are not properly indented and, to add insult to
+injury, are represented using the \emph{canonical} Prolog form. For
+instance, the clause
+%%
+\begin{verbatim}
+   p :- q,r,s.
+\end{verbatim}
+%%
+will look as follows:
+%%
+\begin{verbatim}
+  ':-'(p,','(q,','(r,s))).  
+\end{verbatim}
+%%
+{\bf Unimplemented}: In a future release, a pretty-printing program will be
+provided to cope with this difficulty.
+
+\paragraph{Reporting XSB bugs.}
+If you find an XSB bug triggered by a \FLORA program, here is a set of
+guidelines that can simplify the job of the XSB developers and increase the
+chances that the bug will be fixed speedily:
+%%
+\begin{enumerate}
+  \item  Reduce the size of your \FLORA program as much as possible.
+  \item  Eliminate all the calls to the system services (that use the
+    {\tt @flora(lib)} syntax).
+  \item  If the program has several modules, try to put them into one file
+    and use just one module.
+  \item  Use {\tt flDump/1} to strip \FLORA macros from the output of the
+    \FLORA compiler.
+  \item  Use a pretty printing utility to produce a human-readable 
+    version of the compiler output. ({\bf Unimplemented}: such a utility
+    will be provided in the future.)
+  \item  See if the resulting program runs under plain XSB system (without
+    the \FLORA shell). If it does not, it means that the program contains
+    calls to \FLORA runtime libraries. Try to eliminate such calls.
+
+    One common library call is used to collect all query answers in a list
+    and then print them out. You can get rid of this library call by
+    finding the predicate {\tt fllibprogramans/2} in the compiled {\tt .P}
+    program and removing it while preserving the subgoal (the first
+    argument) and renaming the variables (as indicated by the second argument).
+    Make sure the resulting program is still syntactically correct!
+    
+    If there are other calls to \FLORA runtime libraries, try to delete
+    them, provided that the bug is still reproducible.
+  \item Try to reduce the size of the resulting program as much as possible.
+    Even eliminating the numerous comment blocks in the dumped {\tt .P}
+    file would be useful.
+\end{enumerate}
+%%
+Finally, remember to include the details of your OS and other relevant
+information. Some bugs might be architecture-dependent.
+
+\paragraph{Reporting \FLORA bugs.}
+If you believe that the bug is in the \FLORA system rather than in XSB,
+the algorithm is much more simple: 
+%%
+\begin{enumerate}
+  \item Reduce the size of the program as much as possible by deleting 
+    unrelated program clauses and squeezing a multi-module program into
+    just one file.
+  \item Remove all the calls to service libraries (that use {\tt
+      @flora(lib)} syntax), unless such a call that is the essence of the
+    bug.
+\end{enumerate}
+%%
+
+The current version contains the following known bugs, which are due to the
+fact that certain features are yet to be implemented:
+%%
+\begin{enumerate}
+  \item  Certain programs ({\it e.g.}, 
+    %%
+    \begin{verbatim}
+      f[a->b].
+      ?- f[].      
+    \end{verbatim}
+    %%
+    will cause the following XSB error message:
+    %%
+    \begin{quote}
+     ++Error: Illegal cut over a tabled predicate ...      
+    \end{quote}
+    %%
+    This is due to certain limitations in the implementation of tabled
+    predicates in the XSB system. This problem will be eliminated in a
+    future release of XSB. Meanwhile, as explained in the Introduction,
+    configuring XSB for SLG-WAM and local scheduling will avoid the error.
+  \item Error messages when \FLORA update predicates contain arithmetic
+    expressions in the query part. This problem will be fixed in the
+    future.
+  \item Undefined predicates and methods simply fail instead of generating
+    error messages. Generating compile-time error messages in such cases is
+    hard due to the fact that \FLORA programs likely contain
+    meta-programming feature. We will consider this possibility in the
+    future. Generating run-time error messages is much easier and will be
+    incorporated in a future release.
+\end{enumerate}
+%%
+
+
+\appendix
+
+\newpage
+
+\noindent
+{\LARGE\bf Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 
 \section{\FLORA Debugger}
 \index{debugging}
@@ -3978,6 +4156,7 @@ generated without user intervention; and {\tt debug\_ctl(redirect,
 The latter feature is usually useful only in conjunction with the
   aforesaid prompt-off mode. See the XSB manual for additional information
   on debugger control.
+
 
 
 \section{Emacs Support}
@@ -4131,7 +4310,6 @@ indented automatically.
 
 
 
-\appendix
 
 \section{Inside \FLORA}
 
