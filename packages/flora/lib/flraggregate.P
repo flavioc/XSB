@@ -89,7 +89,7 @@
 	    telling(F),
 	    tell(userout),
 	    nl,
-	    writeln('*** FLORA Warning: discarding non-numbers while computing sum'),
+	    writeln('++FLORA Warning: discarding non-numeric objects while computing sum'),
 	    tell(F)
 	).
 
@@ -141,7 +141,7 @@
 	    telling(F),
 	    tell(userout),
 	    nl,
-	    writeln('*** FLORA Warning: discarding non-numbers while computing average'),
+	    writeln('++FLORA Warning: discarding non-numeric objects while computing average'),
 	    tell(F)
 	).
 

@@ -15,7 +15,7 @@
 	'_$_$_flora_subclass'(Z,Y),
 	(X \= Z -> true ; Z\=Y),
 	( X = Y ->
-	    write('*** FLORA Warning: cyclic subclass hierarchy: '),
+	    write('++FLORA Warning: cyclic subclass hierarchy, '),
 	    write(X), write('::'), write(Z), write('::'), write(Y), nl
 	  ;
 	    true
