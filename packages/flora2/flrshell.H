@@ -63,9 +63,7 @@
 :- import flora_undefined_predicate_hook/1 from flrundefhook.
 
 :- import
-	unstrap_flora/0,
-	(flLoad)/1,
-	(flCompile)/1
+	unstrap_flora/0
    from flora2.
 
 :- import flora_shreset_operator/0 from flroperator.
