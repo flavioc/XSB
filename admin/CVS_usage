@@ -42,10 +42,10 @@ Obviously, your copy of XSB will become busted, and you will have to go
 through all these files and resolve the conflicts.
 
 A BETTER WAY: use CVS EXCLUSIVELY though Emacs or XEmacs. In this case,
-your copy won't be busted. Instead, emacs will open an Ediff session (emacs
-interface to diff) on your copy and repository's copy (for each conflicting
-file) and will walk you through the changes, allowing YOU to merge the
-changes in a very simple way.
+your copy won't be busted. Instead, emacs will let you open an Ediff
+session (emacs interface to diff) on your copy and repository's copy (for
+each conflicting file) and will walk you through the changes, allowing YOU
+to merge the changes in a very simple way.
 
 CVS update must be done also before you commit your changes to the common
 repository. Although this is not strictly necessary, I strongly suggest
