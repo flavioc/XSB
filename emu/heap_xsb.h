@@ -34,10 +34,10 @@
 
 #define new_heap_nil(sh_reg) bld_nil(sh_reg); sh_reg++
 
-#define new_heap_num(sh_reg, val) bld_int(sh_reg, val); sh_reg++
+#define new_heap_num(sh_reg, val) bld_int_tagged(sh_reg, val); sh_reg++
 /* make a new num node on the heap, with value val */
 
-#define new_heap_float(sh_reg, val) bld_float(sh_reg, val); sh_reg++
+#define new_heap_float(sh_reg, val) bld_float_tagged(sh_reg, val); sh_reg++
 /* make a new float node on the heap, with value val */
 
 #define new_heap_functor(sh_reg, psc) bld_functor(sh_reg++, psc)

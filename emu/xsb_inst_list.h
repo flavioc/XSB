@@ -231,8 +231,8 @@ XSB_INST(0xd8, subreg, _subreg, P, R, R,X);
 XSB_INST(0xd9, mulreg, _mulreg, P, R, R,X);
 XSB_INST(0xda, divreg, _divreg, P, R, R,X);
 XSB_INST(0xdb, idivreg, _idivreg, P, R, R,X);
-XSB_INST(0xdc, int_test_z, _int_test_z, PP, R, N,L);
-XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, N,L);
+XSB_INST(0xdc, int_test_z, _int_test_z, PP, R, N, L);
+XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, N, L);
 XSB_INST(0xde, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xdf, no_inst, _no_inst, PPP,X,X,X);
 

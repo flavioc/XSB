@@ -153,7 +153,8 @@
 #undef SIZEOF_LONG
 
 
-#undef INDIRECT_THREADING
+#undef JUMPTABLE_EMULOOP
+#undef TAG_ON_LOAD
 #undef GC_TEST
 #undef FREEBSD
 #undef HAVE_READLINE

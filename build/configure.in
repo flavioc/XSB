@@ -432,7 +432,11 @@ else
    gcc) emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	builtins_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-	c_inline_level="-finline-functions -Winline" 
+	if test -n "$optimization_level"; then
+	   c_inline_level=""
+	else
+	   c_inline_level="-finline-functions -Winline" 
+	fi
 	CFLAGS="-Wall -ansi -pedantic"
 	 ;;
    cc)  if test "$__sunpro_c" = "no"; then
@@ -812,20 +816,38 @@ if test "${enable_gc_test}" = "yes" ; then
    gc_test=yes
 fi
 
-AC_ARG_ENABLE(threading,
-[  --enable-threading         Implements indirect threading on emulator loop])
-if test "${with_threading}" = "yes" ; then
-   enable_threading=yes
+AC_ARG_ENABLE(tag-on-load,
+[  --enable-tag-on-load       Tags numeric constants at load time])
+if test "${with_tag_on_load}" = "yes"; then
+	enable_tag_on_load=yes
 fi
-if test "${enable_threading}" = "yes"; then
+if test "${enable_tag_on_load}" = "yes"; then
+	AC_DEFINE(TAG_ON_LOAD)
+fi
+
+AC_ARG_ENABLE(jumptable,
+[  --enable-jumptable         Implements a jumptable-based emulator loop])
+if test "${with_jumptable}" = "yes" ; then
+   enable_jumptable=yes
+fi
+jumptable=no
+if test "${enable_jumptable}" = "yes"; then
   if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
-    AC_DEFINE(INDIRECT_THREADING)
-    threading=yes
+    AC_DEFINE(JUMPTABLE_EMULOOP)
+    jumptable=yes
     CFLAGS=`echo ${CFLAGS} | sed "s/-ansi//" -`
     CFLAGS=`echo ${CFLAGS} | sed "s/-pedantic//" -`
   else
-    AC_MSG_ERROR(Threading is only possible with gcc)
+    AC_MSG_ERROR(Jumptable is only possible with gcc)
   fi
+fi
+
+AC_ARG_ENABLE(insn-blocks,
+[  --enable-insn-blocks       Make temp variables local to wam insns])
+insn_blocks=no
+if test "${enable_insn_blocks}" = "yes" ; then
+	AC_DEFINE(INSN_BLOCKS)
+	insn_blocks=yes
 fi
 
 AC_ARG_ENABLE(profiling,
@@ -834,7 +856,7 @@ if test "${with_profiling}" = "yes" ; then
 	enable_profiling=yes
 fi
 if test "${enable_profiling}" = "yes" ; then
-  CFLAGS="-pg -g -a ${CFLAGS}"
+  CFLAGS="-pg -ggdb -a ${CFLAGS}"
   LDFLAGS="-pg ${LDFLAGS}"
 fi
 
@@ -858,6 +880,20 @@ else
    AC_DEFINE(WAM_TRAIL)
 fi
 
+dnl experimental: use bp register for lpcreg
+dnl lfcastro
+AC_ARG_ENABLE(bp-lpcreg,
+[  --enable-bp-lpcreg		put local pcreg into BP register on x86s])
+bp_free=no
+if test "${enable_bp_lpcreg}" = "yes" ; then
+   bp_free=`echo ${emuloop_opt_level} | \
+	sed 's/.*\(-fomit-frame-pointer\).*/yes/'`
+   if test "${bp_free}" = "yes" ; then
+	AC_DEFINE(USE_BP_LPCREG)
+  else
+    AC_MSG_ERROR(Cannot use BP without -fomit-frame-pointer)
+   fi
+fi
 
 dnl Take care of the scheduling strategy
 xsb_scheduling_strategy=batched
@@ -922,9 +958,11 @@ case "$canonical" in
 			 dnl Linux ELF
 			 AC_DEFINE(LINUX_ELF) 
 			 AC_DEFINE(FOREIGN_ELF)
-			 if test "$CC" = "gcc" ; then
-			   CFLAGS="-m486 ${CFLAGS}"
-			 fi
+#                         if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set";
+#                         then	
+#			   CFLAGS="-m486 ${CFLAGS}"
+#		           AC_DEFINE(USE_BP_LPCREG)
+#			 fi
 			 LDFLAGS="${LDFLAGS} -ldl"
 			 if test "$__export_dynamic" = "yes" ; then
 			    LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
@@ -939,9 +977,9 @@ case "$canonical" in
       *freebsd*)
 	AC_DEFINE(FREEBSD)
 	AC_DEFINE(FOREIGN_ELF)
-	if test "$CC" = "gcc" ; then
-		CFLAGS="-m486 ${CFLAGS}"
-	fi
+#	if test "$CC" = "gcc" ; then
+#		CFLAGS="-m486 ${CFLAGS}"
+#	fi
 	if test "$__export_dynamic" = "yes" ; then
 	   	LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
 	fi
@@ -1034,7 +1072,11 @@ if test "${do_debugging}" = "yes"  -o "${disable_optimization}" = "yes" ; then
    c_inline_level=
 fi
 if test "${do_debugging}" = "yes" ; then
-   CFLAGS="${CFLAGS} -g"
+#    if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
+#	CFLAGS="${CFLAGS} -ggdb3"
+#    else
+	CFLAGS="${CFLAGS} -g"
+#    fi
 fi
 
 #dnl Prepend Oracle tricky library list
@@ -1195,8 +1237,11 @@ Installation date: ${install_date}
   Compilation mode:                               ${compile_mode}
   XSB abstract machine: 			  ${engine_mode}
   XSB scheduling strategy:                        ${xsb_scheduling_strategy}
-  Garbage Collection Stress-Test:                 ${gc_test}"
-
+  Garbage Collection Stress-Test:                 ${gc_test}
+  Jumptable-based emulator loop:                  ${jumptable}
+  Local temp vars:                                ${insn_blocks}
+  Local pcreg in BP register                      ${bp_free}
+  Tag on load:                                    ${enable_tag_on_load}"
 
 case "$with_oracle" in
    "yes") echo "  Building with support for ORACLE:               yes"

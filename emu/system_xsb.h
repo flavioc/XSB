@@ -37,6 +37,9 @@ extern FILE *fdopen(int fildes, const char *type);
 #ifndef WIN_NT
 extern int kill(pid_t pid, int sig);
 #endif
+#ifdef _cplusplus
+}
+#endif
 
 #ifdef WIN_NT
 #define PIPE(filedes_array)  _pipe(filedes_array, 5*MAXBUFSIZE, _O_TEXT)

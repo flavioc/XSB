@@ -126,6 +126,25 @@ Todo:
 static float mark_threshold = 0.9F;
 #endif
 
+/* lfcastro: profiling: count size of deref-chains encountered during GC */
+/*  #define COUNT_VAR_CHAINS */
+/* lfcastro: profiling: count kinds of cells found during GC */
+/*  #define EXAMINE_DATA_ON_GC */
+
+#ifdef COUNT_VAR_CHAINS
+unsigned long long chains[64];
+#endif
+
+#ifdef EXAMINE_DATA_ON_GC
+unsigned long long tag_examined[8];
+unsigned long long deep_mark;
+unsigned long long current_mark;
+unsigned long old_gens;
+unsigned long current_gen;
+CPtr start_hbreg;
+/*  unsigned long long tag_examined_current[8]; */
+#endif
+
 /*=========================================================================*/
 
 /* to choose between copying or sliding collector:
@@ -178,7 +197,7 @@ static int print_anyway = 0 ;
 /*#define SAFE_GC*/
 
 /* if VERBOSE_GC is defined, garbage collection prints its statistics */
-/*#define VERBOSE_GC*/
+/*  #define VERBOSE_GC */
 
 
 /*---------------------------------------------------------------------------*/
@@ -229,8 +248,49 @@ static char *compl_marks = NULL ;
 #define MARKED    1
 #define CHAIN_BIT 4                            
 
-#define h_marked(i)        (heap_marks[i])
+#ifdef COUNT_VAR_CHAINS
+#define COUNT_CHAINS \
+    if ((tag == XSB_REF || tag == XSB_REF1) && \
+	points_into_heap((CPtr) *cell_ptr)) { \
+      int temp = 0; \
+      CPtr ptr = (CPtr) *cell_ptr; \
+      while (isref(ptr) && ptr != (CPtr) follow(ptr)) { \
+	temp ++; \
+	ptr = (CPtr) follow(ptr); \
+      } \
+      if (temp >= 64) \
+	xsb_abort("Chain too long!!!\n"); \
+      chains[temp]++; \
+    }
+#else
+#define COUNT_CHAINS
+#endif
+
+
+#ifdef EXAMINE_DATA_ON_GC
+#define h_mark(i) \
+{ CPtr cell_ptr; int tag, place;\
+ place = i;\
+ cell_ptr = (CPtr) heap_bot + place;\
+ tag = cell_tag(*cell_ptr);\
+\
+ COUNT_CHAINS \
+ if (tag == XSB_REF || tag == XSB_REF1) { \
+   if (points_into_heap((CPtr) *cell_ptr)) \
+       tag_examined[tag]++; \
+ } else \
+   tag_examined[tag]++;\
+ if ((unsigned long) cell_ptr < (unsigned long) start_hbreg)\
+   deep_mark++;\
+ else \
+   current_mark++;\
+ heap_marks[place] |= MARKED;\
+}
+#else
 #define h_mark(i)          heap_marks[i] |= MARKED
+#endif
+
+#define h_marked(i)        (heap_marks[i])
 #define h_clear_mark(i)	   heap_marks[i] &= ~MARKED
 
 #define ls_marked(i)       (ls_marks[i])
@@ -395,6 +455,7 @@ static int mark_cell(CPtr cell_ptr)
 
   cell_val = *cell_ptr;
   tag = cell_tag(cell_val);
+
 
   if (tag == XSB_LIST || tag == XSB_ATTV)
     { cell_ptr = clref_val(cell_val) ;
@@ -2573,10 +2634,32 @@ int gc_heap(int arity)
 #endif
        end_slidetime, end_copy_time;
   int  marked = 0, marked_dregs = 0, i;
+  int  start_heap_size;
 
   if (flags[GARBAGE_COLLECT] != NO_GC) {
 
     num_gc++ ;
+
+#ifdef COUNT_VAR_CHAINS
+    { int i;
+    for (i=0; i<64; i++)
+      chains[i]=0;
+    }
+#endif
+#ifdef EXAMINE_DATA_ON_GC
+    { int i;
+    for (i=0; i<8; i++) {
+      tag_examined[i]=0;
+/*        tag_examined_current[i]=0; */
+    }
+    current_mark = deep_mark=0;
+    start_hbreg = cp_hreg(breg);
+    old_gens = ((unsigned long) start_hbreg - (unsigned long) glstack.low) / 
+      sizeof(CPtr);
+    current_gen = ((unsigned long) hreg - (unsigned long) start_hbreg) / 
+      sizeof(CPtr);
+    }
+#endif
 
     slide = (flags[GARBAGE_COLLECT] == SLIDING_GC) ;
 
@@ -2584,13 +2667,12 @@ int gc_heap(int arity)
     heap_early_reset = ls_early_reset = 0;
 
 #ifdef VERBOSE_GC
-    xsb_dbgmsg("Heap gc - arity = %d - used = %d - left = %d - #gc = %d",
+    xsb_dbgmsg("\nHeap gc - arity = %d - used = %d - left = %d - #gc = %d",
 	       arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ;
-
 #endif
     begin_marktime = (long)(1000*cpu_time()) ;
 
-    total_collected += hreg+1-(CPtr)glstack.low;
+    start_heap_size = hreg+1-(CPtr)glstack.low;
 
     /* make sure the top choice point heap pointer 
        that might not point into heap, does */
@@ -2635,11 +2717,12 @@ int gc_heap(int arity)
 #ifdef CHAT
 	if (compl_marks) { free(compl_marks); compl_marks = NULL; }
 #endif
-	return(TRUE);
+/*  	return(TRUE); */
+	goto end;
       }
 
 #ifdef VERBOSE_GC
-    xsb_dbgmsg("Heap gc - marking finished - #marked = %d - start compact",
+    xsb_dbgmsg("\nHeap gc - marking finished - #marked = %d - start compact",
 	       marked);
 #endif
 
@@ -2649,18 +2732,17 @@ int gc_heap(int arity)
      if (marked > ((hreg+1-(CPtr)glstack.low)*mark_threshold))
       {
 #ifdef VERBOSE_GC
-        xsb_dbgmsg("Heap gc - marked too much - quitting gc") ;
+        xsb_dbgmsg("\nHeap gc - marked too much - quitting gc") ;
 #endif
         if (slide)
           hreg -= arity;
-	total_collected = 0; /* keep statistics honest */
 	total_time_gc += (end_marktime - begin_marktime);
 	chat_clear_marks();
         goto free_marks; /* clean-up temp areas and get out of here... */
       }
 #endif
 
-    total_collected -= marked;
+    total_collected += (start_heap_size - marked);
     if (slide)
       {
 #ifdef VERBOSE_GC
@@ -2701,7 +2783,7 @@ int gc_heap(int arity)
 
 	total_time_gc += (end_slidetime - begin_marktime);
 #ifdef VERBOSE_GC
-	xsb_dbgmsg("Heap gc end - mark time = %d; slide time = %d; total = %d\n",
+	xsb_dbgmsg("\nHeap gc end - mark time = %d; slide time = %d; total = %d\n",
 		   (end_marktime - begin_marktime),
 		   (end_slidetime - begin_slidetime),
 		   total_time_gc) ;
@@ -2726,7 +2808,7 @@ int gc_heap(int arity)
 
 	total_time_gc += (end_copy_time - begin_marktime);
 #ifdef VERBOSE_GC
-	xsb_dbgmsg("Heap gc end - mark time = %d; copy_time = %d; total = %d\n",
+	xsb_dbgmsg("\nHeap gc end - mark time = %d; copy_time = %d; total = %d\n",
 		   (end_marktime - begin_marktime),
 		   (end_copy_time - begin_copy_time),
 		   total_time_gc) ;
@@ -2772,6 +2854,56 @@ int gc_heap(int arity)
   /* for non-CHAT, there is no gc, but stack expansion can be done */
 #endif
 
+#ifdef CHAT
+ end:
+
+#ifdef COUNT_VAR_CHAINS
+  {int i;
+  fprintf(stddbg,"\nReference Chains: \n");
+  for (i=0; i<64; i++)
+    if (chains[i])
+      fprintf(stddbg, "   chain[%d]=%lld\n",i,chains[i]);
+  }
+#endif
+#ifdef EXAMINE_DATA_ON_GC
+  fprintf(stddbg,"\nCells visited:\n");
+  fprintf(stddbg, "   %lld reference cells.\n", 
+	  tag_examined[XSB_REF] + tag_examined[XSB_REF1]);
+  fprintf(stddbg, "   %lld structure cells.\n", tag_examined[XSB_STRUCT]);
+  fprintf(stddbg, "   %lld integer cells.\n", tag_examined[XSB_INT]);
+  fprintf(stddbg, "   %lld list cells.\n", tag_examined[XSB_LIST]);
+  fprintf(stddbg, "   %lld atom cells.\n", tag_examined[XSB_STRING]);
+  fprintf(stddbg, "   %lld float cells.\n", tag_examined[XSB_FLOAT]);
+  fprintf(stddbg, "   %lld attributed variable cells.\n", 
+	  tag_examined[XSB_ATTV]);
+  if (current_gen > 0)
+    fprintf(stddbg, "Cells marked on current generation: %lld / %ld = %lld / 100\n",
+	    current_mark, current_gen, (current_mark*100/current_gen));
+  if (old_gens > 0)
+    fprintf(stddbg, "Cells marked on deep generations: %lld / %ld = %lld / 100\n",
+	    deep_mark, old_gens, (deep_mark*100/old_gens));
+  if (old_gens+current_gen > 0)
+    fprintf(stddbg, "Total cells marked: %lld / %ld = %lld / 100\n",
+	    deep_mark + current_mark, current_gen + old_gens,
+	    ((deep_mark+current_mark)*100/(current_gen+old_gens)));
+/*    fprintf(stddbg, "\nCells visited on current frame:\n"); */
+/*    fprintf(stddbg, "   %lld reference cells.\n",  */
+/*  	  tag_examined_current[XSB_REF] + tag_examined_current[XSB_REF1]); */
+/*    fprintf(stddbg, "   %lld structure cells.\n",  */
+/*  	  tag_examined_current[XSB_STRUCT]); */
+/*    fprintf(stddbg, "   %lld integer cells.\n",  */
+/*  	  tag_examined_current[XSB_INT]); */
+/*    fprintf(stddbg, "   %lld list cells.\n",  */
+/*  	  tag_examined_current[XSB_LIST]); */
+/*    fprintf(stddbg, "   %lld string cells.\n",  */
+/*  	  tag_examined_current[XSB_STRING]); */
+/*    fprintf(stddbg, "   %lld float cells.\n",  */
+/*  	  tag_examined_current[XSB_FLOAT]); */
+/*    fprintf(stddbg, "   %lld attributed variable cells.\n",  */
+/*  	  tag_examined_current[XSB_ATTV]); */
+#endif
+
+#endif /* CHAT */
   return(TRUE);
 
 } /* gc_heap */

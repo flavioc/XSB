@@ -110,7 +110,8 @@
 /* Sets runtime library search path for the dynamic loader */
 #undef RUNTIME_LD_PATH
 
-#undef INDIRECT_THREADING
+#undef JUMPTABLE_EMULOOP
+#undef INSN_BLOCKS
 
 #ifdef ___ALWAYS_TRUE___
 #if ( defined(SUN) )
@@ -248,3 +249,10 @@
 
 /* Define if you have the thread library (-lthread).  */
 #undef HAVE_LIBTHREAD
+
+/* On x86/linux/gcc, we use bp as the register that contains 
+the local program counter */
+#undef USE_BP_LPCREG
+
+/* Tag constants at load time */
+#undef TAG_ON_LOAD

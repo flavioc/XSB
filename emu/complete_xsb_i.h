@@ -28,11 +28,18 @@
 
 /*----------------------------------------------------------------------*/
 
-XSB_Start_Instr(check_complete,_check_complete); {
+XSB_Start_Instr(check_complete,_check_complete)
   CPtr    cs_ptr;
   CPtr    orig_breg = breg;
   xsbBool    leader = FALSE;
   VariantSF subgoal;
+#ifdef CHAT
+  CPtr xtemp1;
+#else
+#ifdef LOCAL_EVAL
+  Def1op
+#endif
+#endif
 #ifdef LOCAL_EVAL
   int     i;
 #endif
@@ -399,5 +406,5 @@ XSB_Start_Instr(check_complete,_check_complete); {
 #endif
   }
   Fail1;
-  XSB_Next_Instr();
-} /* end of check_complete */
+XSB_End_Instr()
+/* end of check_complete */

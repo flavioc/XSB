@@ -87,6 +87,7 @@
 #define cut_code(OP1)	                                        \
    { CPtr cut_breg;					        \
      byte inst_cut_over;                                        \
+     CPtr xtemp1, xtemp2;                                       \
 								\
      XSB_Deref(OP1);						\
      cut_breg = (CPtr)(tcpstack.high - int_val(OP1));		\
@@ -104,7 +105,7 @@
 	breg = cut_breg;					\
      }								\
      check_table_cut = TRUE;                                    \
-     XSB_Next_Instr();		       			\
+     XSB_Next_Instr();		       			        \
    }
 
 /*----------------------------------------------------------------------*/

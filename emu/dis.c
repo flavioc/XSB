@@ -131,13 +131,13 @@ static void dis_data_sub(Pair *chain_ptr)
 CPtr print_inst(FILE *fd, CPtr inst_ptr)
 {
     Cell instr ;
-    CPtr lpcreg ;
+    CPtr loc_pcreg ;
     int i,a;
     Psc psc;
 
-    lpcreg = (CPtr) inst_ptr;
-    fprintf(fd,"%p\t", lpcreg);
-    instr = cell(lpcreg++) ;
+    loc_pcreg = (CPtr) inst_ptr;
+    fprintf(fd,"%p\t", loc_pcreg);
+    instr = cell(loc_pcreg++) ;
 /* We want the instruction string printed out below.  
  * Someday we should ANSI-fy it. 
  */
@@ -160,7 +160,7 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	   fprintf(fd, "\tr%d", cell_operandn(&instr,a++));
 	   break;
 	 case T:
-	   fprintf(fd, "\t%lx", cell(lpcreg++));
+	   fprintf(fd, "\t%lx", cell(loc_pcreg++));
 	   break;
 	 case P:
 	   a++;
@@ -168,24 +168,34 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	 case S:
 	   if (cell_opcode(&instr) == (byte) call ||
 	       cell_opcode(&instr) == (byte) execute) {
-	     fprintf(fd, "\t0x%lx", *lpcreg);
-	     psc = (Psc) cell(lpcreg++);
+	     fprintf(fd, "\t0x%lx", *loc_pcreg);
+	     psc = (Psc) cell(loc_pcreg++);
 	     fprintf(fd,"\t(%s/%d)", get_name(psc), get_arity(psc));
 	   }
 	   else
-	     fprintf(fd, "\t0x%lx", cell(lpcreg++));
+	     fprintf(fd, "\t0x%lx", cell(loc_pcreg++));
 	   break;
 	 case C:
 	 case L:
 	 case G:
-	   fprintf(fd, "\t0x%lx", cell(lpcreg++));
+	   fprintf(fd, "\t0x%lx", cell(loc_pcreg++));
 	   break;
 	 case I:
 	 case N:
-	   fprintf(fd, "\t%ld", cell(lpcreg++));
+#ifdef TAG_ON_LOAD	   
+	   fprintf(fd, "\t%ld", (long) int_val(cell(loc_pcreg)));
+	   loc_pcreg++;
+#else
+	   fprintf(fd, "\t%ld", cell(loc_pcreg++));
+#endif
 	   break;
 	 case F:
-	   fprintf(fd, "\t0x%lx", cell(lpcreg++));
+#ifdef TAG_ON_LOAD
+	   fprintf(fd, "\t%f", float_val(cell(loc_pcreg)));
+	   loc_pcreg++;
+#else
+	   fprintf(fd, "\t0x%lx", cell(loc_pcreg++));
+#endif
 	   break;
 	 case PP:
 	   a += 2;
@@ -205,12 +215,12 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	 default:
 	   break;
 	}  /* switch */
-	/*if (cell_opcode(&instr) == noop) lpcreg += 2 * *(lpcreg-1); */
-	if (cell_opcode(&instr) == noop) lpcreg += cell_operand3(&instr)/2; /* ?!@% */
+	/*if (cell_opcode(&instr) == noop) loc_pcreg += 2 * *(loc_pcreg-1); */
+	if (cell_opcode(&instr) == noop) loc_pcreg += cell_operand3(&instr)/2; /* ?!@% */
     } /* for */
     fprintf(fd, "\n");
     fflush(fd);
-    return lpcreg;
+    return loc_pcreg;
 } /* print_inst */
 
 

@@ -23,7 +23,6 @@
 ** 
 */
 
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
@@ -67,6 +66,8 @@
 #include "export.h"
 #include "orient_xsb.h"
 #include "io_builtins_xsb.h"
+#include "unify_xsb.h"
+#include "emuloop_aux.h"
 
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
@@ -88,47 +89,105 @@ CPtr	ans_var_pos_reg;
 
 /*----------------------------------------------------------------------*/
 /* indirect threading-related stuff                                     */
+
 #ifdef DEBUG
-#define XSB_Debug_Instr \
-   if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);\
+
+#define XSB_Debug_Instr                                    \
+   if (flags[PIL_TRACE]) {                                 \
+      debug_inst(lpcreg, ereg);                            \
+   }                                                       \
    xctr++;
+
 #else
+
 #define XSB_Debug_Instr
-#endif
-#ifdef PROFILE
-#define XSB_Profile_Instr \
-    if (flags[PROFFLAG]) { \
-      inst_table[(int) *(lpcreg)][sizeof(Cell)+1] \
-        = inst_table[(int) *(lpcreg)][sizeof(Cell)+1] + 1; \
-      if (flags[PROFFLAG] > 1 && (int) *lpcreg == builtin) \
-        builtin_table[(int) *(lpcreg+3)][1] = \
-  	  builtin_table[(int) *(lpcreg+3)][1] + 1;\
-    } 
-#else
-#define XSB_Profile_Instr
+
 #endif
 
-#ifdef INDIRECT_THREADING
+#ifdef PROFILE
+
+#define XSB_Profile_Instr                                     \
+    if (flags[PROFFLAG]) {                                    \
+      inst_table[(int) *(lpcreg)][sizeof(Cell)+1]             \
+        = inst_table[(int) *(lpcreg)][sizeof(Cell)+1] + 1;    \
+      if (flags[PROFFLAG] > 1 && (int) *lpcreg == builtin)    \
+        builtin_table[(int) *(lpcreg+3)][1] =                 \
+  	  builtin_table[(int) *(lpcreg+3)][1] + 1;            \
+    } 
+
+#else
+
+#define XSB_Profile_Instr
+
+#endif
+
+/* lfcastro: with INSN_BLOCKS, we use a block for each WAM instruction, 
+   and define temporary variables locally; otherwise, temp variables are 
+   global to the emuloop function */
+
+#ifdef INSN_BLOCKS
+
+#define Def1op          register Cell op1;
+#define Def2ops         register Cell op1, op2;
+#define Def3ops         register Cell op1,op2; register CPtr op3;
+#define DefOps13        register Cell op1; register CPtr op3;
+
+#define DefGlobOps
+
+#else
+
+#define Def1op
+#define Def2ops
+#define Def3ops
+#define DefOps13
+
+#define DefGlobOps register Cell op1,op2; register CPtr op3;
+
+#endif
+
+/* lfcastro: with JUMPTABLE_EMULOOP, we use GCC's first-order labels to
+   create a jumptable for the WAM instructions of emuloop(); otherwise 
+   a switch statement is used. */
+
+#ifdef JUMPTABLE_EMULOOP
+
 static void *instr_addr[256];
-#define XSB_Next_Instr()   do {           \
-                   XSB_Debug_Instr \
-                   XSB_Profile_Instr \
-                   goto *instr_addr[(byte)*lpcreg]; \
+
+#define XSB_End_Instr()                                      \
+                   XSB_Debug_Instr                           \
+                   XSB_Profile_Instr                         \
+		   goto *instr_addr[(byte)*lpcreg];          \
+		   }
+
+
+#define XSB_Next_Instr()                                     \
+                   do {                                      \
+                      XSB_Debug_Instr                        \
+                      XSB_Profile_Instr                      \
+                      goto *instr_addr[(byte)*lpcreg];       \
                    } while(0)
 
-#define XSB_Start_Instr_Chained(Instr,Label) \
-        Label:
-#define XSB_Start_Instr(Instr,Label)  \
+
+#define XSB_Start_Instr_Chained(Instr,Label)                 \
         Label: 
+
+#define XSB_Start_Instr(Instr,Label)                         \
+        Label: {
+		   
 
 
 #else /* no threading */
+
 #define XSB_Next_Instr()              goto contcase
 
-#define XSB_Start_Instr_Chained(Instr,Label) \
+#define XSB_End_Instr()               goto contcase; }
+
+#define XSB_Start_Instr_Chained(Instr,Label)                 \
         case Instr:
-#define XSB_Start_Instr(Instr,Label)  \
-        case Instr: 
+
+#define XSB_Start_Instr(Instr,Label)                         \
+        case Instr: { 
+
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -174,6 +233,12 @@ static void *instr_addr[256];
 
 #define WRITE		1
 #define READFLAG	0
+
+#ifdef USE_BP_LPCREG
+#define POST_LPCREG_DECL asm ("bp")
+#else
+#define POST_LPCREG_DECL
+#endif
 
 /*----------------------------------------------------------------------*/
 /* The following macros work for all CPs.  Make sure this remains	*/
@@ -274,10 +339,9 @@ jmp_buf xsb_abort_fallback_environment;
 
 static int emuloop(byte *startaddr)
 {
-  register byte *lpcreg;
   register CPtr rreg;
-  register Cell op1, op2;	/* (*CPtr) */
-  CPtr op3, xtemp1, xtemp2;
+  register byte *lpcreg POST_LPCREG_DECL;
+  DefGlobOps
   byte flag = READFLAG;  	/* read/write mode flag */
   int  restore_type;	/* 0 for retry restore; 1 for trust restore */ 
 
@@ -289,16 +353,19 @@ static int emuloop(byte *startaddr)
 
   xsb_segfault_message = xsb_default_segfault_msg;
   rreg = reg; /* for SUN */
-  op1 = op2 = (Cell) NULL;
   lpcreg = (pb)&reset_inst;  /* start by initializing abort handler */
 
-#ifdef INDIRECT_THREADING
+#ifdef JUMPTABLE_EMULOOP
+
 #define XSB_INST(INum,Instr,Label,d1,d2,d3,d4) \
         instr_addr[INum] = &&##Label
 #include "xsb_inst_list.h"
-#endif
+
+#else
 
 contcase:     /* the main loop */
+
+#endif
 
 #ifdef DEBUG
   if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
@@ -314,138 +381,157 @@ contcase:     /* the main loop */
   }
 #endif
   
-#ifdef INDIRECT_THREADING
+#ifdef JUMPTABLE_EMULOOP
   XSB_Next_Instr();
 #else
 
   switch (*lpcreg) {
 #endif
     
-  XSB_Start_Instr(getpvar,_getpvar);  /* PVR */
+  XSB_Start_Instr(getpvar,_getpvar)  /* PVR */
+    Def2ops
     Op1(Variable(get_xvx));
     Op2(Register(get_xxr));
     ADVANCE_PC(size_xxx);
    /* trailing is needed here because this instruction can also be
        generated *after* the occurrence of the first call - kostis */
     bind_copy((CPtr)op1, op2);      /* In WAM bld_copy() */
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(getpval,_getpval); /* PVR */
+  XSB_End_Instr()
+
+  XSB_Start_Instr(getpval,_getpval) /* PVR */
+    Def2ops
     Op1(Variable(get_xvx));
     Op2(Register(get_xxr));
     ADVANCE_PC(size_xxx);
-    goto nunify;
+    unify_xsb(_getpval);
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getstrv,_getstrv); /* PPV-S */
+  XSB_Start_Instr(getstrv,_getstrv) /* PPV-S */
+    Def2ops
     Op1(Variable(get_xxv));
     Op2(get_xxxs);
     ADVANCE_PC(size_xxxX);
     nunify_with_str(op1,op2);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(gettval,_gettval); /* PRR */
+  XSB_Start_Instr(gettval,_gettval) /* PRR */
+    Def2ops
     Op1(Register(get_xrx));
     Op2(Register(get_xxr));
     ADVANCE_PC(size_xxx);
-    goto nunify;
+    unify_xsb(_gettval);
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getcon,_getcon); /* PPR-C */
+  XSB_Start_Instr(getcon,_getcon) /* PPR-C */
+    Def2ops
     Op1(Register(get_xxr));
     Op2(get_xxxc);
     ADVANCE_PC(size_xxxX);
     nunify_with_con(op1,op2);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getnil,_getnil); /* PPR */
-  Op1(Register(get_xxr));
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(getnil,_getnil) /* PPR */
+    Def1op
+    Op1(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     nunify_with_nil(op1);
-    XSB_Next_Instr();	
+  XSB_End_Instr()	
 
-  XSB_Start_Instr(getstr,_getstr); /* PPR-S */
-  Op1(Register(get_xxr));
-  Op2(get_xxxs);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(getstr,_getstr) /* PPR-S */
+    Def2ops
+    Op1(Register(get_xxr));
+    Op2(get_xxxs);
+    ADVANCE_PC(size_xxxX);
     nunify_with_str(op1,op2);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getlist,_getlist); /* PPR */
-  Op1(Register(get_xxr));
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(getlist,_getlist) /* PPR */
+    Def1op
+    Op1(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     nunify_with_list_sym(op1);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getattv,_getattv); /* PPR */
-  Op1(Register(get_xxr));
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(getattv,_getattv) /* PPR */
+    Def1op
+    Op1(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     nunify_with_attv(op1);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
 /* tls 12/8/92 */
-  XSB_Start_Instr(unipvar,_unipvar); /* PPV */
-  Op1(get_xxv);
-  ADVANCE_PC(size_xxx);
-    if (flag) {	/* if (flag == WRITE) */
-      bind_ref((CPtr)op1, hreg);
-      new_heap_free(hreg);
-    } else {
+  XSB_Start_Instr(unipvar,_unipvar) /* PPV */
+    Def1op
+    Op1(get_xxv);
+    ADVANCE_PC(size_xxx);
+    if (!flag) {	/* if (flag == READ) */
       /* also introduce trailing here - bmd & kostis
          was: bld_copy((CPtr)op1, *(sreg++)); */
       bind_copy((CPtr)op1, *(sreg));
       sreg++;
+    } else {
+      bind_ref((CPtr)op1, hreg);
+      new_heap_free(hreg);
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(unipval,_unipval); /* PPV */
-  Op1(Variable(get_xxv));
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(unipval,_unipval) /* PPV */
+    Def2ops
+    Op1(Variable(get_xxv));
+    ADVANCE_PC(size_xxx);
     if (flag) { /* if (flag == WRITE) */
       nbldval(op1); 
     } 
     else {
       op2 = *(sreg++);
-      goto nunify;
+      unify_xsb(_unipval);
     } 
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(unitvar,_unitvar); /* PPR */
-  Op1(get_xxr);
-  ADVANCE_PC(size_xxx);
-    if (flag) {	/* if (flag == WRITE) */
+  XSB_Start_Instr(unitvar,_unitvar) /* PPR */
+    Def1op
+    Op1(get_xxr);
+    ADVANCE_PC(size_xxx);
+    if (!flag) {	/* if (flag == READ) */
+      bld_copy((CPtr)op1, *(sreg++));
+    }
+    else {
       bld_ref((CPtr)op1, hreg);
       new_heap_free(hreg);
     }
-    else {
-      bld_copy((CPtr)op1, *(sreg++));
-    }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(unitval,_unitval); /* PPR */
-  Op1(Register(get_xxr));
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(unitval,_unitval) /* PPR */
+    Def2ops
+    Op1(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     if (flag) { /* if (flag == WRITE) */
       nbldval(op1); 
       XSB_Next_Instr();
     }
     else {
       op2 = *(sreg++);
-      goto nunify;
+      unify_xsb(_unitval);
     } 
+  XSB_End_Instr()
 
-  XSB_Start_Instr(unicon,_unicon); /* PPP-C */
-  Op2(get_xxxc);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(unicon,_unicon) /* PPP-C */
+    Def2ops
+    Op2(get_xxxc);
+    ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
       new_heap_string(hreg, (char *)op2);
     }
-    else {  /* op2 already set */
+    else {  
+      /* op2 already set */
       op1 = *(sreg++);
       nunify_with_con(op1,op2);
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(uninil,_uninil); /* PPP */
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(uninil,_uninil) /* PPP */
+    Def1op
+    ADVANCE_PC(size_xxx);
     if (flag) {	/* if (flag == WRITE) */
       new_heap_nil(hreg);
     }
@@ -453,149 +539,179 @@ contcase:     /* the main loop */
       op1 = *(sreg++);
       nunify_with_nil(op1);
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getnumcon,_getnumcon); /* PPR-N */
-  Op1(Register(get_xxr));
-  Op2(get_xxxn);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(getnumcon,_getnumcon) /* PPR-N */
+    Def2ops
+    Op1(Register(get_xxr));
+    Op2(get_xxxn);
+    ADVANCE_PC(size_xxxX);
     nunify_with_num(op1,op2);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getfloat,_getfloat); /* PPR-N */
-  Op1(Register(get_xxr));
-  Op2(get_xxxn);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(getfloat,_getfloat) /* PPR-N */
+    Def2ops
+    Op1(Register(get_xxr));
+    Op2(get_xxxn);
+    ADVANCE_PC(size_xxxX);
     nunify_with_float(op1,op2);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putnumcon,_putnumcon); /* PPR-N */
-  Op1(get_xxr);
-  op2 = *(pw)(lpcreg+sizeof(Cell));
-  ADVANCE_PC(size_xxxX);
-    bld_int((CPtr)op1, op2);
-    XSB_Next_Instr();
+  XSB_Start_Instr(putnumcon,_putnumcon) /* PPR-N */
+    Def2ops
+    Op1(get_xxr);
+/*      Op2(get_xxxn); */
+    op2 = *(pw)(lpcreg+sizeof(Cell));
+    ADVANCE_PC(size_xxxX);
+    bld_int_tagged((CPtr)op1, op2);
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putfloat,_putfloat); /* PPR-N */
-  Op1(get_xxr);
-  Op2(get_xxxn);
-  ADVANCE_PC(size_xxxX);
-    bld_float((CPtr)op1, asfloat(op2));
-    XSB_Next_Instr();
+  XSB_Start_Instr(putfloat,_putfloat) /* PPR-N */
+    Def2ops
+    Op1(get_xxr);
+    Op2(get_xxxn);
+    ADVANCE_PC(size_xxxX);
+#ifdef TAG_ON_LOAD
+    bld_float_tagged((CPtr)op1, op2);
+#else
+    bld_float_tagged((CPtr)op1, asfloat(op2));
+#endif
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putpvar,_putpvar); /* PVR */
-  Op1(get_xvx);
-  Op2(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(putpvar,_putpvar) /* PVR */
+    Def2ops
+    Op1(get_xvx);
+    Op2(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_free((CPtr)op1);
     bld_ref((CPtr)op2, (CPtr)op1);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putpval,_putpval); /* PVR */
-  Op1(get_xvx);
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(putpval,_putpval) /* PVR */
+    DefOps13
+    Op1(get_xvx);
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_copy(op3, *((CPtr)op1));
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(puttvar,_puttvar); /* PRR */
-  Op1(get_xrx);
-  Op2(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(puttvar,_puttvar) /* PRR */
+    Def2ops
+    Op1(get_xrx);
+    Op2(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_ref((CPtr)op1, hreg);
     bld_ref((CPtr)op2, hreg);
     new_heap_free(hreg); 
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
 /* tls 12/8/92 */
-  XSB_Start_Instr(putstrv,_putstrv); /*  PPV-S */
-  Op1(get_xxv);
-  Op2(get_xxxs);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(putstrv,_putstrv) /*  PPV-S */
+    Def2ops
+    Op1(get_xxv);
+    Op2(get_xxxs);
+    ADVANCE_PC(size_xxxX);
     bind_cs((CPtr)op1, (Pair)hreg);
     new_heap_functor(hreg, (Psc)op2); 
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putcon,_putcon); /* PPR-C */
-  Op1(get_xxr);
-  Op2(get_xxxc);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(putcon,_putcon) /* PPR-C */
+    Def2ops
+    Op1(get_xxr);
+    Op2(get_xxxc);
+    ADVANCE_PC(size_xxxX);
     bld_string((CPtr)op1, (char *)op2);
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(putnil,_putnil); /* PPR */
-  Op1(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(putnil,_putnil) /* PPR */
+    Def1op
+    Op1(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_nil((CPtr)op1);
-    XSB_Next_Instr();
-    
+  XSB_End_Instr()
+
 /* doc tls -- differs from putstrv since it pulls from a register */
-  XSB_Start_Instr(putstr,_putstr); /* PPR-S */
-  Op1(get_xxr);
-  Op2(get_xxxs);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(putstr,_putstr) /* PPR-S */
+    Def2ops
+    Op1(get_xxr);
+    Op2(get_xxxs);
+    ADVANCE_PC(size_xxxX);
     bld_cs((CPtr)op1, (Pair)hreg);
     new_heap_functor(hreg, (Psc)op2); 
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putlist,_putlist); /* PPR */
-  Op1(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(putlist,_putlist) /* PPR */
+    Def1op
+    Op1(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_list((CPtr)op1, hreg);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putattv,_putattv); /* PPR */
-  Op1(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(putattv,_putattv) /* PPR */
+    Def1op
+    Op1(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_attv((CPtr)op1, hreg);
     new_heap_free(hreg);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(bldpvar,_bldpvar); /* PPV */
-  Op1(get_xxv);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(bldpvar,_bldpvar) /* PPV */
+    Def1op
+    Op1(get_xxv);
+    ADVANCE_PC(size_xxx);
     /* tls 12/8/92 */
     bind_ref((CPtr)op1, hreg); /* trailing is needed: if o/w see ai_tests */
     new_heap_free(hreg);
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(bldpval,_bldpval); /* PPV */
-  Op1(Variable(get_xxv));
-  ADVANCE_PC(size_xxx);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldpval,_bldpval) /* PPV */
+    Def1op
+    Op1(Variable(get_xxv));
+    ADVANCE_PC(size_xxx);
     nbldval(op1);
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(bldtvar,_bldtvar); /* PPR */
-  Op1(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldtvar,_bldtvar) /* PPR */
+    Def1op
+    Op1(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_ref((CPtr)op1, hreg);
     new_heap_free(hreg);
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(bldtval,_bldtval); /* PPR */
-  Op1(Register(get_xxr));
-  ADVANCE_PC(size_xxx);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldtval,_bldtval) /* PPR */
+    Def1op
+    Op1(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     nbldval(op1);
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(bldcon,_bldcon); /* PPP-C */
-  Op2(get_xxxc);
-  ADVANCE_PC(size_xxxX);
-    new_heap_string(hreg, (char *)op2);
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(bldnil,_bldnil); /* PPP */
-  ADVANCE_PC(size_xxx);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldcon,_bldcon) /* PPP-C */
+    Def1op
+    Op1(get_xxxc);
+    ADVANCE_PC(size_xxxX);
+    new_heap_string(hreg, (char *)op1);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldnil,_bldnil) /* PPP */
+    ADVANCE_PC(size_xxx);
     new_heap_nil(hreg);
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(getlist_tvar_tvar,_getlist_tvar_tvar); /* RRR */
-  Op1(Register(get_rxx));
-  Op2(get_xrx);
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(getlist_tvar_tvar,_getlist_tvar_tvar) /* RRR */
+    Def3ops
+    Op1(Register(get_rxx));
+    Op2(get_xrx);
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     XSB_Deref(op1);
-    if (isref(op1)) {
+    if (islist(op1)) {
+      sreg = clref_val(op1);
+      op1 = (Cell)op2;
+      bld_ref((CPtr)op1, *(sreg));
+      op1 = (Cell)op3;
+      bld_ref((CPtr)op1, *(sreg+1));
+    } else if (isref(op1)) {
       bind_list((CPtr)(op1), hreg);
       op1 = (Cell)op2;
       bld_ref((CPtr)op1, hreg);
@@ -603,13 +719,7 @@ contcase:     /* the main loop */
       op1 = (Cell)op3;
       bld_ref((CPtr)op1, hreg);
       new_heap_free(hreg);
-    } else if (islist(op1)) {
-      sreg = clref_val(op1);
-      op1 = (Cell)op2;
-      bld_ref((CPtr)op1, *(sreg));
-      op1 = (Cell)op3;
-      bld_ref((CPtr)op1, *(sreg+1));
-    } else if (isattv(op1)) {
+     } else if (isattv(op1)) {
       attv_dbgmsg(">>>> getlist_tvar_tvar: ATTV interrupt needed\n");
       add_interrupt(op1, makelist(hreg));
       op1 = (Cell)op2;
@@ -620,11 +730,12 @@ contcase:     /* the main loop */
       new_heap_free(hreg);
     }
     else Fail1;
-    XSB_Next_Instr();	/* end getlist_tvar_tvar */
+  XSB_End_Instr()	/* end getlist_tvar_tvar */
 
-  XSB_Start_Instr(uninumcon,_uninumcon); /* PPP-N */
-  Op2(get_xxxn); /* num in op2 */
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(uninumcon,_uninumcon) /* PPP-N */
+    Def2ops
+    Op2(get_xxxn); /* num in op2 */
+    ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
       new_heap_num(hreg, (Integer)op2);
     }
@@ -632,108 +743,143 @@ contcase:     /* the main loop */
       op1 = *(sreg++);
       nunify_with_num(op1,op2);
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(unifloat,_unifloat); /* PPPF */
-  Op2(get_xxxf); /* num in op2 */
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(unifloat,_unifloat) /* PPPF */
+    Def2ops
+    Op2(get_xxxf); /* num in op2 */
+    ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
+#ifdef TAG_ON_LOAD
+      new_heap_float(hreg, op2);
+#else
       new_heap_float(hreg, asfloat(op2));
+#endif
     }
     else {  /* op2 set */
       op1 = cell(sreg++);
       nunify_with_float(op1,op2);
     }
-    XSB_Next_Instr();
-    
-  XSB_Start_Instr(bldnumcon,_bldnumcon); /* PPP-N */
-  Op2(get_xxxn);  /* num to op2 */
-  ADVANCE_PC(size_xxxX);
-    new_heap_num(hreg, (Integer)op2);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(bldfloat,_bldfloat); /* PPP-F */
-  Op2(get_xxxf); /* num to op2 */
-  ADVANCE_PC(size_xxxX);
-    new_heap_float(hreg, asfloat(op2));
-    XSB_Next_Instr();
+  XSB_Start_Instr(bldnumcon,_bldnumcon) /* PPP-N */
+    Def1op
+    Op1(get_xxxn);  /* num to op2 */
+    ADVANCE_PC(size_xxxX);
+    new_heap_num(hreg, (Integer)op1);
+  XSB_End_Instr()
 
-  XSB_Start_Instr(trymeelse,_trymeelse); /* PPA-L */
-  Op1(get_xxa);
-  Op2(get_xxxl);
-  ADVANCE_PC(size_xxxX);
-    goto subtryme;
+  XSB_Start_Instr(bldfloat,_bldfloat) /* PPP-F */
+    Def1op
+    Op1(get_xxxf); /* num to op2 */
+    ADVANCE_PC(size_xxxX);
+#ifdef TAG_ON_LOAD
+    new_heap_float(hreg, op1);
+#else
+    new_heap_float(hreg, asfloat(op1));
+#endif
+  XSB_End_Instr()
 
-  XSB_Start_Instr(retrymeelse,_retrymeelse); /* PPA-L */
-  Op1(get_xxa);
+  XSB_Start_Instr(trymeelse,_trymeelse) /* PPA-L */
+    Def2ops
+    Op1(get_xxa);
+    Op2(get_xxxl);
+    ADVANCE_PC(size_xxxX);
+    SUBTRYME
+  XSB_End_Instr()
+
+  XSB_Start_Instr(retrymeelse,_retrymeelse) /* PPA-L */
+    Def1op
+    Op1(get_xxa);
     cp_pcreg(breg) = (byte *)get_xxxl;
     restore_type = 0;
     ADVANCE_PC(size_xxxX);
-    goto restore_sub;
+    RESTORE_SUB
+  XSB_End_Instr()
 
-  XSB_Start_Instr(trustmeelsefail,_trustmeelsefail); /* PPA */
-  Op1(get_xxa);
+  XSB_Start_Instr(trustmeelsefail,_trustmeelsefail) /* PPA */
+    Def1op
+    Op1(get_xxa);
     restore_type = 1;
     ADVANCE_PC(size_xxx);
-    goto restore_sub;
+    RESTORE_SUB
+  XSB_End_Instr()
 
-  XSB_Start_Instr(try,_try); /* PPA-L */
-  Op1(get_xxa);
+  XSB_Start_Instr(try,_try) /* PPA-L */
+    Def2ops
+    Op1(get_xxa);
     op2 = (Cell)((Cell)lpcreg + sizeof(Cell)*2);
     lpcreg = *(pb *)(lpcreg+sizeof(Cell)); /* = *(pointer to byte pointer) */
-    goto subtryme;
+    SUBTRYME
+  XSB_End_Instr()
 
-  XSB_Start_Instr(retry,_retry); /* PPA-L */
-  Op1(get_xxa);
+  XSB_Start_Instr(retry,_retry) /* PPA-L */
+    Def1op
+    Op1(get_xxa);
     cp_pcreg(breg) = lpcreg+sizeof(Cell)*2;
     lpcreg = *(pb *)(lpcreg+sizeof(Cell));
     restore_type = 0;
-    goto restore_sub;
+    RESTORE_SUB
+  XSB_End_Instr()
 
-  XSB_Start_Instr(trust,_trust); /* PPA-L */
-  Op1(get_xxa);
+  XSB_Start_Instr(trust,_trust) /* PPA-L */
+    Def1op
+    Op1(get_xxa);
     lpcreg = *(pb *)(lpcreg+sizeof(Cell));
     restore_type = 1;
-    goto restore_sub;
+    RESTORE_SUB
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getVn,_getVn); /* PPV */
-  Op1(get_xxv);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(getVn,_getVn) /* PPV */
+    Def1op
+    Op1(get_xxv);
+    ADVANCE_PC(size_xxx);
     cell((CPtr)op1) = (Cell)tcp_subgoal_ptr(breg);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(getpbreg,_getpbreg); /* PPV */
-  Op1(get_xxv);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(getpbreg,_getpbreg) /* PPV */
+    Def1op
+    Op1(get_xxv);
+    ADVANCE_PC(size_xxx);
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(gettbreg,_gettbreg); /* PPR */
-  Op1(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(gettbreg,_gettbreg) /* PPR */
+    Def1op
+    Op1(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putpbreg,_putpbreg); /* PPV */
-  Op1(Variable(get_xxv));
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(putpbreg,_putpbreg) /* PPV */
+    Def1op
+    Op1(Variable(get_xxv));
+    ADVANCE_PC(size_xxx);
     cut_code(op1);
+  XSB_End_Instr()
 
-  XSB_Start_Instr(puttbreg,_puttbreg); /* PPR */
-  Op1(Register(get_xxr));
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(puttbreg,_puttbreg) /* PPR */
+    Def1op
+    Op1(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     cut_code(op1);
+  XSB_End_Instr()
 
-  XSB_Start_Instr(jumptbreg,_jumptbreg); /* PPR-L */	/* ??? */
-  Op1(get_xxr);
+  XSB_Start_Instr(jumptbreg,_jumptbreg) /* PPR-L */	/* ??? */
+    Def1op
+    Op1(get_xxr);
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
     lpcreg = *(byte **)(lpcreg+sizeof(Cell));
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(test_heap,_test_heap); /* PPA-N */
-  Op1(get_xxa); /* op1 = the arity of the procedure */
-  Op2(get_xxxn);
-  ADVANCE_PC(size_xxxX);
+  XSB_Start_Instr(test_heap,_test_heap) /* PPA-N */
+    Def2ops
+    Op1(get_xxa); /* op1 = the arity of the procedure */
+    Op2(get_xxxn);
+    ADVANCE_PC(size_xxxX);
+#ifdef TAG_ON_LOAD
+    op2 = int_val(op2);
+#endif
 #ifdef GC_TEST
     if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < (long)op2))
       {
@@ -759,21 +905,22 @@ contcase:     /* the main loop */
 	}
 	/* are there any localy cached quantities that must be reinstalled ? */
       }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(switchonterm,_switchonterm); /* PPR-L-L */
-  Op1(Register(get_xxr));
+  XSB_Start_Instr(switchonterm,_switchonterm) /* PPR-L-L */
+    Def1op
+    Op1(Register(get_xxr));
     XSB_Deref(op1);
     switch (cell_tag(op1)) {
-    case XSB_FREE:
-    case XSB_REF1:
-    case XSB_ATTV:
-      ADVANCE_PC(size_xxxXX);
-      break;
     case XSB_INT:
     case XSB_STRING:
     case XSB_FLOAT:
       lpcreg = *(pb *)(lpcreg+sizeof(Cell));	    
+      break;
+    case XSB_FREE:
+    case XSB_REF1:
+    case XSB_ATTV:
+      ADVANCE_PC(size_xxxXX);
       break;
     case XSB_STRUCT:
       if (get_arity(get_str_psc(op1)) == 0) {
@@ -784,18 +931,20 @@ contcase:     /* the main loop */
       lpcreg = *(pb *)(lpcreg+sizeof(Cell)*2); 
       break;
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(switchonbound,_switchonbound); /* PPR-L-L */
+  XSB_Start_Instr(switchonbound,_switchonbound) /* PPR-L-L */
+    Def3ops
     /* op1 is register, op2 is hash table offset, op3 is modulus */
-  Op1(get_xxr);
+    Op1(get_xxr);
     XSB_Deref(op1);
     switch (cell_tag(op1)) {
-    case XSB_FREE:
-    case XSB_REF1:
-    case XSB_ATTV:
-      lpcreg += 3 * sizeof(Cell);
-      goto sotd2;
+    case XSB_STRUCT:
+      op1 = (Cell)get_str_psc(op1);
+      break;
+    case XSB_STRING:	/* We should change the compiler to avoid this test */
+      op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
+      break;
     case XSB_INT: 
     case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
       op1 = (Cell)int_val(op1);
@@ -803,22 +952,21 @@ contcase:     /* the main loop */
     case XSB_LIST:
       op1 = (Cell)(list_str); 
       break;
-    case XSB_STRUCT:
-      op1 = (Cell)get_str_psc(op1);
-      break;
-    case XSB_STRING:	/* We should change the compiler to avoid this test */
-      op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
-      break;
+    case XSB_FREE:
+    case XSB_REF1:
+    case XSB_ATTV:
+      lpcreg += 3 * sizeof(Cell);
+      XSB_Next_Instr();
     }
     op2 = (Cell)(*(byte **)(lpcreg+sizeof(Cell)));
     op3 = *(CPtr *)(lpcreg+sizeof(Cell)*2);
     /* doc tls -- op2 + (op1%size)*4 */
     lpcreg =
       *(byte **)((byte *)op2 + ihash((Cell)op1, (Cell)op3) * sizeof(Cell));
-  sotd2: XSB_Next_Instr();
-      
-  XSB_Start_Instr(switchon3bound,_switchon3bound); /* RRR-L-L */
-  {
+  XSB_End_Instr()
+
+  XSB_Start_Instr(switchon3bound,_switchon3bound) /* RRR-L-L */
+    Def3ops
     int  i, j = 0;
     Cell opa[3]; 
     /* op1 is register, op2 is hash table offset, op3 is modulus */
@@ -839,7 +987,8 @@ contcase:     /* the main loop */
 	case XSB_REF1:
 	case XSB_ATTV:
 	  ADVANCE_PC(size_xxxXX);
-	  goto sob3d2;
+/*  	  goto sob3d2; */
+	  XSB_Next_Instr();
 	case XSB_INT: 
 	case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
 	  op1 = (Cell)int_val(op1);
@@ -861,58 +1010,68 @@ contcase:     /* the main loop */
       }
     }
     lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
-  sob3d2: XSB_Next_Instr();
-  }
+  XSB_End_Instr()
 
-  XSB_Start_Instr(trymeorelse,_trymeorelse); /* PPA-L */
-  Op1(0);
-  Op2(get_xxxl);
+  XSB_Start_Instr(trymeorelse,_trymeorelse) /* PPA-L */
+    Def2ops
+    Op1(0);
+    Op2(get_xxxl);
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
-    goto subtryme;
+    SUBTRYME
+  XSB_End_Instr()
 
-  XSB_Start_Instr(retrymeorelse,_retrymeorelse); /* PPA-L */
-  Op1(0);
+  XSB_Start_Instr(retrymeorelse,_retrymeorelse) /* PPA-L */
+    Def1op
+    Op1(0);
     cp_pcreg(breg) = *(byte **)(lpcreg+sizeof(Cell));
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     restore_type = 0;
-    goto restore_sub;
+    RESTORE_SUB
+  XSB_End_Instr()
 
-  XSB_Start_Instr(trustmeorelsefail,_trustmeorelsefail); /* PPA */
-  Op1(0);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(trustmeorelsefail,_trustmeorelsefail) /* PPA */
+    Def1op
+    Op1(0);
+    ADVANCE_PC(size_xxx);
     cpreg = lpcreg+sizeof(Cell);
     restore_type = 1;
-    goto restore_sub;
+    RESTORE_SUB
+  XSB_End_Instr()
 
-  XSB_Start_Instr(dyntrustmeelsefail,_dyntrustmeelsefail); /* PPA-L, second word ignored */
-  Op1(get_xxa);
+  XSB_Start_Instr(dyntrustmeelsefail,_dyntrustmeelsefail) /* PPA-L, second word ignored */
+    Def1op
+    Op1(get_xxa);
     ADVANCE_PC(size_xxxX);
     restore_type = 1;
-    goto restore_sub;
+    RESTORE_SUB
+  XSB_End_Instr()
 
 /*----------------------------------------------------------------------*/
 
 #include "slginsts_xsb_i.h"
+
 #include "tc_insts_xsb_i.h"
 
 /*----------------------------------------------------------------------*/
 
-  XSB_Start_Instr(term_comp,_term_comp); /* RRR */
-  Op1(get_rxx);
-  Op2(get_xrx);
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(term_comp,_term_comp) /* RRR */
+    Def3ops
+    Op1(get_rxx);
+    Op2(get_xrx);
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_int(op3, compare((void *)op1, (void *)op2));
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(movreg,_movreg); /* PRR */
-  Op1(get_xrx);
-  Op2(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(movreg,_movreg) /* PRR */
+    Def2ops
+    Op1(get_xrx);
+    Op2(get_xxr);
+    ADVANCE_PC(size_xxx);
     bld_copy((CPtr) op2, *((CPtr)op1));
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
 #define ARITHPROC(OP, STROP) \
     Op1(Register(get_xrx));                                             \
@@ -923,7 +1082,7 @@ contcase:     /* the main loop */
     XSB_Deref(op2);		       					\
     if (isinteger(op1)) {						\
 	if (isinteger(op2)) {						\
-	    bld_int(op3, int_val(op2) OP int_val(op1));	}		\
+	    bld_int(op3, int_val(op2) OP int_val(op1)); }               \
 	else if (isfloat(op2)) {					\
 	    bld_float(op3, float_val(op2) OP (Float)int_val(op1)); }	\
 	else { arithmetic_abort(op2, STROP, op1); }                     \
@@ -935,14 +1094,16 @@ contcase:     /* the main loop */
 	else { arithmetic_abort(op2, STROP, op1); } 	                \
     } else { arithmetic_abort(op2, STROP, op1); }
 
-  XSB_Start_Instr(addreg,_addreg); /* PRR */
+  XSB_Start_Instr(addreg,_addreg) /* PRR */
+    Def3ops
     ARITHPROC(+, "+");
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(subreg,_subreg); /* PRR */
-  Op1(Register(get_xrx));
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(subreg,_subreg) /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1);
     XSB_Deref(op2);
@@ -960,16 +1121,18 @@ contcase:     /* the main loop */
       else arithmetic_abort(op2, "-", op1);
     }
     else arithmetic_abort(op2, "-", op1);
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(mulreg,_mulreg); /* PRR */
+  XSB_Start_Instr(mulreg,_mulreg) /* PRR */
+    Def3ops
     ARITHPROC(*, "*");
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(divreg,_divreg); /* PRR */
-  Op1(Register(get_xrx));
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(divreg,_divreg) /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1);
     XSB_Deref(op2);
@@ -986,18 +1149,20 @@ contcase:     /* the main loop */
 	bld_float(op3, (Float)int_val(op2)/float_val(op1)); }
       else { arithmetic_abort(op2, "/", op1); }
     } else { arithmetic_abort(op2, "/", op1); }
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(idivreg,_idivreg); /* PRR */
-  Op1(Register(get_xrx));
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(idivreg,_idivreg) /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1);
     XSB_Deref(op2);
     if (isinteger(op1) && isinteger(op2)) {
-      if (int_val(op1) != 0) { bld_int(op3, int_val(op2) / int_val(op1)); }
-      else {
+      if (int_val(op1) != 0) { 
+          bld_int(op3, int_val(op2) / int_val(op1)); 
+      } else {
 	err_handle(ZERO_DIVIDE, 2,
 		   "arithmetic expression involving is/2 or eval/2",
 		   2, "non-zero number", op1);
@@ -1005,50 +1170,62 @@ contcase:     /* the main loop */
       }
     }
     else { arithmetic_abort(op2, "//", op1); }
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(int_test_z,_int_test_z);   /* PPR-N-L */
-  Op1(Register(get_xxr));
-  Op2(get_xxxn);
-  Op3(get_xxxxl);
-  ADVANCE_PC(size_xxxXX);
+  XSB_Start_Instr(int_test_z,_int_test_z)   /* PPR-N-L */
+    Def3ops
+    Op1(Register(get_xxr));
+    Op2(get_xxxn);
+    Op3(get_xxxxl);
+    ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
     if (isnumber(op1)) {
+#ifdef TAG_ON_LOAD
+      if (op1 == op2)
+#else
       if ((int_val(op1) - (Integer)op2) == 0)
+#endif
 	lpcreg = (byte *)op3;
     }
     else {
       arithmetic_comp_abort(op1, "=\\=", op2);
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(int_test_nz,_int_test_nz);   /* PPR-N-L */
-  Op1(Register(get_xxr));
-  Op2(get_xxxn);
-  Op3(get_xxxxl);
-  ADVANCE_PC(size_xxxXX);
+  XSB_Start_Instr(int_test_nz,_int_test_nz)   /* PPR-N-L */
+    Def3ops
+    Op1(Register(get_xxr));
+    Op2(get_xxxn);
+    Op3(get_xxxxl);
+    ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
     if (isnumber(op1)) {
+#ifdef TAG_ON_LOAD
+      if (op1 != op2)
+#else
       if ((int_val(op1) - (Integer)op2) != 0)
+#endif
 	lpcreg = (byte *) op3;
     }
     else {
       arithmetic_comp_abort(op1, "=:=", op2);
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putdval,_putdval); /* PVR */
-  Op1(Variable(get_xvx));
-  Op2(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(putdval,_putdval) /* PVR */
+    Def2ops
+    Op1(Variable(get_xvx));
+    Op2(get_xxr);
+    ADVANCE_PC(size_xxx);
     XSB_Deref(op1);
     bld_copy((CPtr)op2, op1);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(putuval,_putuval); /* PVR */
-  Op1(Variable(get_xvx));
-  Op2(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(putuval,_putuval) /* PVR */
+    Def2ops
+    Op1(Variable(get_xvx));
+    Op2(get_xxr);
+    ADVANCE_PC(size_xxx);
     XSB_Deref(op1);
     if (isnonvar(op1) || ((CPtr)(op1) < hreg) || ((CPtr)(op1) >= ereg)) {
       bld_copy((CPtr)op2, op1);
@@ -1057,18 +1234,19 @@ contcase:     /* the main loop */
       bind_ref((CPtr)(op1), hreg);
       new_heap_free(hreg);
     } 
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
   /*
    * Instruction `check_interrupt' is used before `new_answer_dealloc' to
    * handle the pending attv interrupts.  It is similar to `call' but the
    * second argument (S) is not used currently.
    */
-  XSB_Start_Instr(check_interrupt,_check_interrupt); { /* PPA-S */
+  XSB_Start_Instr(check_interrupt,_check_interrupt)  /* PPA-S */
+    Def1op
     Pair true_pair;
     int new_indicator;
     
-    Op2(get_xxxs);
+    Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
     if (int_val(cell(interrupt_reg)) > 0) {
       cpreg = lpcreg;
@@ -1078,35 +1256,35 @@ contcase:     /* the main loop */
       bld_copy(reg + 1, build_interrupt_chain());
       lpcreg = get_ep((Psc) flags[MYSIG_ATTV + 32]);
     }
-    XSB_Next_Instr();
-  }
+  XSB_End_Instr()
 
-  XSB_Start_Instr(call,_call); { /* PPA-S */
+  XSB_Start_Instr(call,_call)  /* PPA-S */
+    Def1op
     Psc psc;
 
-    Op2(get_xxxs); /* the first arg is used later by alloc */
+    Op1(get_xxxs); /* the first arg is used later by alloc */
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
-    psc = (Psc)op2;
+    psc = (Psc)op1;
     call_sub(psc);
-    XSB_Next_Instr();
-  }
+  XSB_End_Instr()
 
-  XSB_Start_Instr(call_forn,_call_forn); { /* PPP-L, maybe use userfun instr? */
-    Op2(get_xxxl);
+  XSB_Start_Instr(call_forn,_call_forn)  /* PPP-L, maybe use userfun instr? */
+    Def1op
+    Op1(get_xxxl);
     ADVANCE_PC(size_xxxX);
-    if (((PFI)op2)())  /* call foreign function */
+    if (((PFI)op1)())  /* call foreign function */
       lpcreg = cpreg;
     else Fail1;
-    XSB_Next_Instr();
-  }
+  XSB_End_Instr()
 
-  XSB_Start_Instr(load_pred,_load_pred); { /* PPP-S */
+  XSB_Start_Instr(load_pred,_load_pred) /* PPP-S */
+    Def1op
     Psc psc;
     
-    Op2(get_xxxs);
+    Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
-    psc = (Psc)op2;
+    psc = (Psc)op1;
     /* check env or type to give (better) error msgs? */
     switch (get_type(psc)) {
     case T_PRED:
@@ -1121,13 +1299,13 @@ contcase:     /* the main loop */
       lpcreg = get_ep(psc);             /* ep of undef handler */
       break;
     }
-    XSB_Next_Instr();
-  }
+  XSB_End_Instr()
 
-  XSB_Start_Instr(allocate_gc,_allocate_gc); /* PAA */
-  Op2(get_xax);
-  Op3((CPtr) (int)get_xxa);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(allocate_gc,_allocate_gc) /* PAA */
+    Def3ops
+    Op2(get_xax);
+    Op3((CPtr) (int)get_xxa);
+    ADVANCE_PC(size_xxx);
 #if (!defined(CHAT))
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
@@ -1149,11 +1327,12 @@ contcase:     /* the main loop */
         p--;
       }
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
 /* This is obsolete and is only kept for backwards compatibility for < 2.0 */
-  XSB_Start_Instr(allocate,_allocate); /* PPP */
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(allocate,_allocate) /* PPP */
+    Def1op
+    ADVANCE_PC(size_xxx);
 #if (!defined(CHAT))
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
@@ -1175,125 +1354,136 @@ contcase:     /* the main loop */
         p--;
       }
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(deallocate,_deallocate); /* PPP */
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(deallocate,_deallocate) /* PPP */
+    ADVANCE_PC(size_xxx);
     cpreg = *((byte **)ereg-1);
     ereg = *(CPtr *)ereg;
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(proceed,_proceed);  /* PPP */
+  XSB_Start_Instr(proceed,_proceed)  /* PPP */
     lpcreg = cpreg;
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(execute,_execute); { /* PPP-S */
+  XSB_Start_Instr(execute,_execute) /* PPP-S */
+    Def1op
     Psc psc;
 
-    Op2(get_xxxs);
+    Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
-    psc = (Psc)op2;
+    psc = (Psc)op1;
     call_sub(psc);
-    XSB_Next_Instr();
-  }
+  XSB_End_Instr()
 
-  XSB_Start_Instr(jump,_jump);   /* PPP-L */
+  XSB_Start_Instr(jump,_jump)   /* PPP-L */
     lpcreg = (byte *)get_xxxl;
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(jumpz,_jumpz);   /* PPR-L */
-  Op1(Register(get_xxr));
+  XSB_Start_Instr(jumpz,_jumpz)   /* PPR-L */
+    Def1op
+    Op1(Register(get_xxr));
     if (int_val(op1) == 0)
        lpcreg = (byte *)get_xxxl;
     else
          ADVANCE_PC(size_xxxX);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(jumpnz,_jumpnz);    /* PPR-L */
-  Op1(Register(get_xxr));
+  XSB_Start_Instr(jumpnz,_jumpnz)    /* PPR-L */
+    Def1op
+    Op1(Register(get_xxr));
     if (int_val(op1) != 0)
       lpcreg = (byte *)get_xxxl;
     else ADVANCE_PC(size_xxxX);;
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(jumplt,_jumplt);    /* PPR-L */
-  Op1(Register(get_xxr));
+  XSB_Start_Instr(jumplt,_jumplt)    /* PPR-L */
+    Def1op
+    Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) < 0) ||
 	(isfloat(op1) && float_val(op1) < 0.0))
       lpcreg = (byte *)get_xxxl;
     else ADVANCE_PC(size_xxxX);
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(jumple,_jumple);    /* PPR-L */
-  Op1(Register(get_xxr));
+  XSB_Start_Instr(jumple,_jumple)    /* PPR-L */
+    Def1op
+    Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) <= 0) ||
 	(isfloat(op1) && float_val(op1) <= 0.0))
       lpcreg = (byte *)get_xxxl;
     else ADVANCE_PC(size_xxxX);
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(jumpgt,_jumpgt);    /* PPR-L */
-  Op1(Register(get_xxr));
+  XSB_Start_Instr(jumpgt,_jumpgt)    /* PPR-L */
+    Def1op
+    Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) > 0) ||
 	(isfloat(op1) && float_val(op1) > 0.0))
         lpcreg = (byte *)get_xxxl;
     else ADVANCE_PC(size_xxxX);
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(jumpge,_jumpge);    /* PPR-L */
-  Op1(Register(get_xxr));
+  XSB_Start_Instr(jumpge,_jumpge)    /* PPR-L */
+    Def1op
+    Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) >= 0) ||
 	(isfloat(op1) && float_val(op1) >= 0.0))
         lpcreg = (byte *)get_xxxl;
     else ADVANCE_PC(size_xxxX);
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(fail,_fail);    /* PPP */
+  XSB_Start_Instr(fail,_fail)    /* PPP */
     Fail1; 
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(noop,_noop);  /* PPA */
-  Op1(get_xxa);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(noop,_noop)  /* PPA */
+    Def1op
+    Op1(get_xxa);
+    ADVANCE_PC(size_xxx);
     lpcreg += (int)op1;
     lpcreg += (int)op1;
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(halt,_halt);  /* PPP */
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(halt,_halt)  /* PPP */
+    ADVANCE_PC(size_xxx);
     pcreg = lpcreg; 
     inst_begin = lpcreg;  /* hack for the moment to make this a ``creturn'' */
     return(0);	/* not "goto contcase"! */
+  XSB_End_Instr()
 
-  XSB_Start_Instr(builtin,_builtin);
-  Op1(get_xxa);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(builtin,_builtin)
+    Def1op
+    Op1(get_xxa);
+    ADVANCE_PC(size_xxx);
     pcreg=lpcreg; 
     if (builtin_call((byte)(op1))) {lpcreg=pcreg;}
     else Fail1;
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(unifunc,_unifunc);   /* PAR */
-  Op1(get_xax);
-  Op2(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(unifunc,_unifunc)   /* PAR */
+    Def2ops
+    Op1(get_xax);
+    Op2(get_xxr);
+    ADVANCE_PC(size_xxx);
     if (unifunc_call((int)(op1), (CPtr)op2) == 0) {
       xsb_error("Error in unary function call");
       Fail1;
     }
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(calld,_calld);   /* PPA-L */
-  ADVANCE_PC(size_xxx); /* this is ok */
+  XSB_Start_Instr(calld,_calld)   /* PPA-L */
+    ADVANCE_PC(size_xxx); /* this is ok */
     cpreg = lpcreg+sizeof(Cell); 
     check_glstack_overflow(MAX_ARITY, lpcreg,OVERFLOW_MARGIN,XSB_Next_Instr());
     lpcreg = *(pb *)lpcreg;
-    XSB_Next_Instr();
+  XSB_End_Instr()
 
-  XSB_Start_Instr(logshiftr,_logshiftr);  /* PRR */
-  Op1(Register(get_xrx));
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(logshiftr,_logshiftr)  /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1301,12 +1491,13 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'>>'", op1);
     }
     else { bld_int(op3, int_val(op2) >> int_val(op1)); }
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(logshiftl,_logshiftl);   /* PRR */
-  Op1(Register(get_xrx));
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(logshiftl,_logshiftl)   /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1314,12 +1505,13 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'<<'", op1);
     }
     else { bld_int(op3, int_val(op2) << int_val(op1)); }
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(or,_or);   /* PRR */
-  Op1(Register(get_xrx));
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(or,_or)   /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1327,12 +1519,13 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'\\/'", op1);
     }
     else { bld_int(op3, int_val(op2) | int_val(op1)); }
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(and,_and);   /* PRR */
-  Op1(Register(get_xrx));
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
+  XSB_Start_Instr(and,_and)   /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1340,18 +1533,19 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'/\\'", op1);
     }
     else { bld_int(op3, int_val(op2) & int_val(op1)); }
-    XSB_Next_Instr(); 
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(negate,_negate);   /* PPR */
-  Op3(get_xxr);
-  ADVANCE_PC(size_xxx);
-    op2 = *(op3);
-    XSB_Deref(op2);
-    if (!isinteger(op2)) { arithmetic_abort1("'\\'", op2); }
-    else { bld_int(op3, ~(int_val(op2))); }
-    XSB_Next_Instr(); 
+  XSB_Start_Instr(negate,_negate)   /* PPR */
+    DefOps13
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
+    op1 = *(op3);
+    XSB_Deref(op1);
+    if (!isinteger(op1)) { arithmetic_abort1("'\\'", op1); }
+    else { bld_int(op3, ~(int_val(op1))); }
+  XSB_End_Instr() 
 
-  XSB_Start_Instr(reset,_reset);  /* PPP */
+  XSB_Start_Instr(reset,_reset)  /* PPP */
     /*
      * This instruction is added just to provide a fall back point for
      * xsb_abort() or xsb_segfault_catcher().  It is called only once, and 
@@ -1367,9 +1561,9 @@ contcase:     /* the main loop */
       signal(SIGSEGV, xsb_default_segfault_handler);
     }
     else lpcreg = startaddr;  /* first instruction of entire engine */
-    XSB_Next_Instr();
-
-#ifndef INDIRECT_THREADING
+  XSB_End_Instr()
+     
+#ifndef JUMPTABLE_EMULOOP
   default: {
     char message[80];
     sprintf(message, "Illegal opcode hex %x", *lpcreg); 
@@ -1384,80 +1578,6 @@ contcase:     /* the main loop */
       xsb_exit(message);
     }
 #endif
-
-/*======================================================================*/
-/* unification routines							*/
-/*======================================================================*/
-
-#define IFTHEN_SUCCEED  XSB_Next_Instr()
-#define IFTHEN_FAILED	{Fail1 ; XSB_Next_Instr() ;}
-
-nunify: /* ( op1, op2 ) */
-/* word op1, op2 */
-#include "unify_xsb_i.h"
-
-    /* unify_xsb_i already ends with this statement.
-       XSB_Next_Instr();  
-    */
-    /* end of nunify */
-
-/*======================================================================*/
-
-subtryme:
-{
-  register CPtr cps_top;	/* cps_top only needed for efficiency */
-
-  save_find_locx(ereg);		/* sets ebreg to the top of the E-stack	*/
-  check_tcpstack_overflow;
-  cps_top = top_of_cpstack;
-  save_registers(cps_top, (Cell)op1, rreg);
-  save_choicepoint(cps_top, ereg, (byte *)op2, breg);
-  breg = cps_top;
-  hbreg = hreg;
-  XSB_Next_Instr();
-} /* end of subtryme */
-
-/*----------------------------------------------------------------------*/
-
-restore_sub:
-{
-  register CPtr tbreg;
-
-  tbreg = breg;
-  /*   switch_envs(tbreg); */
-  undo_bindings(tbreg);
-  ptcpreg = cp_ptcp(tbreg);
-  delayreg = cp_pdreg(tbreg);
-  restore_some_wamregs(tbreg, ereg);
-  restore_registers(tbreg, (int)op1, rreg);
-  if (restore_type == 1) { /* trust */
-    breg = cp_prevbreg(breg); 
-    restore_trail_condition_registers(breg);
-  }
-  XSB_Next_Instr();
-} /* end of restore_sub */
-
-/*----------------------------------------------------------------------*/
-
-table_restore_sub:
-{
-  register CPtr tbreg;
-
-  tbreg = breg;
-  switch_envs(tbreg);
-  /* This CP should be used for the dependency graph */
-  ptcpreg = tcp_subgoal_ptr(tbreg);
-  delayreg = NULL;
-  restore_some_wamregs(tbreg, ereg);
-  table_restore_registers(tbreg, (int)op1, rreg);
-  if (restore_type == 1) { 
-    xtemp1 = tcp_prevbreg(breg); 
-    restore_trail_condition_registers(xtemp1);
-  }
-  XSB_Next_Instr();
-} /* end of table_restore_sub */
-
-/*----------------------------------------------------------------------*/
 
 } /* end of emuloop() */
 

@@ -180,7 +180,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      if ((pb)top_of_localstk < (pb)top_of_heap) {			   \
        PCREG = exception_handler("\nFatal ERROR:  -- "			   \
 				 "Local Stack clobbered Heap --\n");	   \
-       todo_on_exception;						   \
+       {todo_on_exception;}						   \
      }									   \
      else {								   \
        fprintf(stdwarn, "\n++Warning: Heap / Local Stack overflow:   ");   \
@@ -193,7 +193,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 	 fprintf(stdwarn, "Reallocation turned OFF!\n");		   \
 	 print_statistics(1);						   \
 	 local_global_exception(PCREG);					   \
-	 todo_on_exception;						   \
+	 {todo_on_exception;}						   \
        }								   \
      }									   \
    }
@@ -266,3 +266,5 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
    }
 
 #endif
+
+

@@ -23,7 +23,6 @@
 ** 
 */
 
-
 #include "debugs/debug_attv.h"
 
 /* Argument Registers
@@ -102,7 +101,7 @@ int *asynint_ptr = &asynint_val;
     /* op is FREE */							\
     bind_nil((CPtr)(op));						\
   }									\
-  else if (isnil(op)) XSB_Next_Instr(); /* op == [] */			\
+  else if (isnil(op)) {XSB_Next_Instr();} /* op == [] */		\
   else if (isattv(op)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_nil, interrupt needed\n");	\
     add_interrupt(op, makenil);						\
@@ -118,7 +117,7 @@ int *asynint_ptr = &asynint_val;
     bind_string((CPtr)(OP1), (char *)OP2);				\
   }									\
   else if (isstring(OP1)) {						\
-    if (string_val(OP1) == (char *)OP2) XSB_Next_Instr(); else Fail1;	\
+    if (string_val(OP1) == (char *)OP2) {XSB_Next_Instr();} else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_con, interrupt needed\n");	\
@@ -129,6 +128,23 @@ int *asynint_ptr = &asynint_val;
 
 /*======================================================================*/
 
+#ifdef TAG_ON_LOAD
+#define nunify_with_num(OP1,OP2)					\
+  /* op1 is general, op2 has number (untagged) */			\
+  XSB_Deref(OP1);      							\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_int_tagged((CPtr)(OP1), OP2);                 			\
+  }									\
+  else if (isinteger(OP1)) {						\
+    if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;	                \
+  }									\
+  else if (isattv(OP1)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_num, interrupt needed\n");	\
+    add_interrupt(OP1, OP2);					        \
+  }									\
+  else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
+#else
 #define nunify_with_num(OP1,OP2)					\
   /* op1 is general, op2 has number (untagged) */			\
   XSB_Deref(OP1);      							\
@@ -137,31 +153,49 @@ int *asynint_ptr = &asynint_val;
     bind_int((CPtr)(OP1), (Integer)OP2);				\
   }									\
   else if (isinteger(OP1)) {						\
-    if (int_val(OP1) == (Integer)OP2) XSB_Next_Instr(); else Fail1;	\
+    if (int_val(OP1) == (Integer)OP2) {XSB_Next_Instr();} else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_num, interrupt needed\n");	\
     add_interrupt(OP1, makeint(OP2));					\
   }									\
   else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
-
+#endif
 /*======================================================================*/
+
+#ifdef TAG_ON_LOAD
+#define nunify_with_float(OP1,OP2)					\
+  XSB_Deref(OP1);      							\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_float_tagged(vptr(OP1), OP2);                	                \
+  }									\
+  else if (isfloat(OP1)) {						\
+    if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;	                \
+  }									\
+  else if (isattv(OP1)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_float, interrupt needed\n");	\
+    add_interrupt(OP1, OP2);			                        \
+  }									\
+  else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
+
+#else
 
 #define nunify_with_float(OP1,OP2)					\
   XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
-    bind_float(vptr(op1), asfloat(op2));				\
+    bind_float(vptr(OP1), asfloat(OP2));				\
   }									\
-  else if (isfloat(op1)) {						\
-    if (float_val(op1) == asfloat(op2)) XSB_Next_Instr(); else Fail1;	\
+  else if (isfloat(OP1)) {						\
+    if (float_val(OP1) == asfloat(OP2)) {XSB_Next_Instr();} else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_float, interrupt needed\n");	\
     add_interrupt(OP1, makefloat(asfloat(OP2)));			\
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
-
+#endif
 /*======================================================================*/
 
 #define nunify_with_str(OP1,OP2)					\
@@ -297,4 +331,5 @@ int *asynint_ptr = &asynint_val;
     /*                       lpcreg,OVERFLOW_MARGIN); */		\
   }									\
 }
+
 

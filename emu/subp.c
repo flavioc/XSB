@@ -61,6 +61,7 @@
 #include "inst_xsb.h"
 #include "macro_xsb.h"
 #include "table_stats.h"
+#include "unify_xsb.h"
 
 /*======================================================================*/
 /*======================================================================*/
@@ -72,7 +73,9 @@
 #define attv_dbgmsg(String)
 #endif
 
+#undef IFTHEN_FAILED
 #define IFTHEN_FAILED	return 0
+#undef IFTHEN_SUCCEED
 #define IFTHEN_SUCCEED	return 1
 
 double realtime_count;
@@ -111,6 +114,7 @@ void add_interrupt(Cell op1, Cell op2) {
   num++;
   push_pre_image_trail(interrupt_reg, makeint(num));
   bld_int(interrupt_reg, num);
+
 #endif
 }
 
@@ -141,8 +145,9 @@ Cell build_interrupt_chain(void) {
   /* Reset the interrupt counter to 0 for further attv interrupts. */
   push_pre_image_trail(interrupt_reg, makeint(0));
 #endif
+
   bld_int(interrupt_reg, 0);
-  
+
   return head;
 }
 
@@ -157,7 +162,7 @@ xsbBool unify(Cell rop1, Cell rop2)
   op1 = rop1; op2 = rop2;
 
 /*----------------------------------------*/
-#include "unify_xsb_i.h"
+  unify_xsb(unify);
   /* unify_xsb_i already ends with this statement
      IFTHEN_SUCCEED;
   */

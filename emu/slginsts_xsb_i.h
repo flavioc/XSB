@@ -104,8 +104,9 @@
  *    3rd word: preds_TableInfo_record
  */
 
-XSB_Start_Instr_Chained(tabletry,_tabletry);
-XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
+XSB_Start_Instr_Chained(tabletry,_tabletry)
+XSB_Start_Instr(tabletrysingle,_tabletrysingle) 
+  DefOps13
   /*
    *  Retrieve instruction arguments and test the system stacks for
    *  overflow.  The local PCreg, "lpcreg", is incremented to point to
@@ -133,7 +134,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
   if ( this_instr == tabletry ) {
     /* lpcreg was left pointing to the next clause, e.g. tableretry */
     continuation = lpcreg;
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr()) ;
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
   }
   else
     continuation = (pb) &check_complete_inst;
@@ -276,7 +277,10 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
     if ( IsNonNULL(answer_set) ) {
       int tmp;
 #ifdef CHAT      /* for the time being let's update consumed answers eagerly */
-      nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(consumer_cpf)))) =
+      nlcp_trie_return((CPtr)
+		       (&chat_get_cons_start
+			((chat_init_pheader)
+			 nlcp_chat_area(consumer_cpf)))) =
 #endif
       nlcp_trie_return(consumer_cpf) = answer_set; 
       hbreg = hreg;
@@ -314,7 +318,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
 #ifndef IGNORE_DELAYVAR
 	    int i;
 	    CPtr temp_hreg = hreg;
-	    temp_hreg = hreg;
 	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
 	    for (i = 0; i < num_heap_term_vars; i++)
 	      cell(hreg++) = (Cell) var_addr[i];
@@ -337,8 +340,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
       Fail1;
     }
   }
-  XSB_Next_Instr();
-}
+XSB_End_Instr()
 
 /*-------------------------------------------------------------------------*/
 
@@ -357,7 +359,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
  *    points to the dummy answer.
  */
 
-XSB_Start_Instr(answer_return,_answer_return); {
+XSB_Start_Instr(answer_return,_answer_return) 
   VariantSF consumer_sf;
   ALNptr answer_set;
   BTNptr answer_leaf;
@@ -372,6 +374,9 @@ XSB_Start_Instr(answer_return,_answer_return); {
   if ( IsNULL(answer_set) && IsProperlySubsumed(consumer_sf) ) {
     SubProdSF producer_sf = conssf_producer(consumer_sf);
     if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
+#ifdef CHAT
+      CPtr xtemp1;
+#endif
       switch_envs(breg);
       answer_set =
 	table_identify_relevant_answers(producer_sf, (SubConsSF)consumer_sf,
@@ -381,7 +386,9 @@ XSB_Start_Instr(answer_return,_answer_return); {
 
   if ( IsNonNULL(answer_set)) {
     int tmp;
-    
+#ifdef CHAT
+    CPtr xtemp1;
+#endif
     /* Restore Consumer's state
        ------------------------ */
     switch_envs(breg);
@@ -447,8 +454,7 @@ XSB_Start_Instr(answer_return,_answer_return); {
 #endif
     Fail1;
   }
-  XSB_Next_Instr();
-}
+XSB_End_Instr()
 
 /*-------------------------------------------------------------------------*/
 
@@ -468,8 +474,8 @@ XSB_Start_Instr(answer_return,_answer_return); {
  *    environment variable.
  */
 
-XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc); {
-
+XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc) 
+  Def2ops
   CPtr producer_cpf, producer_csf, answer_template;
   int template_size, attv_num, tmp;
   VariantSF producer_sf;
@@ -611,9 +617,8 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc); {
 #endif
   }
   else     /* repeat answer -- ignore */
-    Fail1;
-  XSB_Next_Instr();
-}
+     Fail1;
+XSB_End_Instr()
 
 /*-------------------------------------------------------------------------*/
 
@@ -631,12 +636,14 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc); {
  *    next code subblock.
  */
 
-XSB_Start_Instr(tableretry,_tableretry);
-Op1(get_xxa);
+XSB_Start_Instr(tableretry,_tableretry)
+  Def1op
+  Op1(get_xxa);
   tcp_pcreg(breg) = lpcreg+sizeof(Cell)*2;
   lpcreg = *(pb *)(lpcreg+sizeof(Cell));
   restore_type = 0;
-  goto table_restore_sub;
+  TABLE_RESTORE_SUB
+XSB_End_Instr()
 
 /*-------------------------------------------------------------------------*/
 
@@ -653,32 +660,34 @@ Op1(get_xxa);
  *    subblock.
  */
 
-XSB_Start_Instr(tabletrust,_tabletrust);
-Op1(get_xxa);
-ADVANCE_PC(size_xxx);
-    tcp_pcreg(breg) = (byte *) &check_complete_inst;
-    lpcreg = *(pb *)lpcreg;
+XSB_Start_Instr(tabletrust,_tabletrust)
+  Def1op
+  Op1(get_xxa);
+  ADVANCE_PC(size_xxx);
+  tcp_pcreg(breg) = (byte *) &check_complete_inst;
+  lpcreg = *(pb *)lpcreg;
 #if (defined(LOCAL_EVAL) || defined(CHAT))
-    /* trail cond. registers should not be restored here for Local */
-    restore_type = 0;
+  /* trail cond. registers should not be restored here for Local */
+  restore_type = 0;
 #else
-    restore_type = 1;
+  restore_type = 1;
 #endif
-    goto table_restore_sub;
-
+  TABLE_RESTORE_SUB
+XSB_End_Instr()
 /*-------------------------------------------------------------------------*/
 
 #include "complete_xsb_i.h"
 
 /*-------------------------------------------------------------------------*/
 
-XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension);
+XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
 #ifdef DEBUG_DELAYVAR
       fprintf(stddbg, ">>>> resume_compl_suspension is called\n");
 #endif
 #ifdef CHAT
-  {
+{
     chat_init_pheader chat_area;
+    CPtr xtemp1;
 
     switch_envs(breg);
     ptcpreg = csf_ptcp(breg);
@@ -693,11 +702,11 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension);
       breg = csf_prev(breg);  /* forget this CP; simulates Fail1 */
     }
     lpcreg = cpreg;
-    XSB_Next_Instr();
-  }
+}
 #else
-  {
+{
     CPtr csf = cs_compsuspptr(breg);
+    CPtr xtemp1;
     /* Switches the environment to a frame of a subgoal that was	*/
     /* suspended on completion, and sets the continuation pointer.	*/
     check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
@@ -717,9 +726,9 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension);
       breg = cs_prevbreg(breg);
     }
     lpcreg = cpreg;
-    XSB_Next_Instr();
-  }
+}
 #endif
+XSB_End_Instr()
 
 /*----------------------------------------------------------------------*/
 

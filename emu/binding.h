@@ -171,6 +171,22 @@
 
 /* --- binding -------------------------------------------------------- */
 
+#ifdef TAG_ON_LOAD
+#define bind_int_tagged(addr, val)	pushtrail(addr, (Cell) val); \
+   				        bld_int_tagged(addr, val)
+
+#define bind_float_tagged(addr, val)	pushtrail(addr, (Cell) val); \
+				        bld_float_tagged(addr, val)
+
+#else
+
+#define bind_int_tagged(addr, val)	pushtrail(addr, makeint(val));\
+				        bld_int(addr, val)
+
+#define bind_float_tagged(addr, val)   pushtrail(addr, (Cell) makefloat(val));\
+				       bld_float(addr, val)
+#endif
+
 #define bind_int(addr, val)	pushtrail(addr, makeint(val));\
 				bld_int(addr, val)
 
