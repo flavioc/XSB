@@ -59,6 +59,8 @@
 #define FUN_truncate  23
 #define FUN_round  24
 #define FUN_ceiling  25
+#define FUN_max  26
+#define FUN_min  27
 
 /* --- returns 1 when succeeds, and returns 0 when there is an error --	*/
 
