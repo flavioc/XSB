@@ -22,7 +22,7 @@
 ## 
 ##
 
-ALL = smodels.O smodelsops.O
+ALL = smodels.O smodelsops.O smodelsint.O
 
 SMODELS = @with_smodels@
 
