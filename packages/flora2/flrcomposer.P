@@ -118,7 +118,7 @@ is_sole_operand(ASCII_STRING(_,_)) :- !.
 is_sole_operand(SPECIAL_TOKEN(_,_)) :- !.
 
 /*********************************************************************
-	Added by Bin Tang for richer anonymous oid syntax.
+	support for numbered anon oids
 **********************************************************************/
 is_sole_operand(SPECIAL_TOKEN(_,_,_)) :- !.
 
@@ -194,7 +194,7 @@ argument_struct(S,I1,I2,ARGUMENT(S,I1,I2)).
 function_struct(F,A,FUNCTION(F,A)).
 
 /************************************************************
-     Modified by Bin Tang for richer anonymous oid syntax
+     support for numbered anon oids
 *************************************************************/
 object_struct(O,I,OBJECT(T,I)) :-
 	%% Strip textual information.

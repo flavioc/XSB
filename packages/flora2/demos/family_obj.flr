@@ -36,6 +36,7 @@
 %%% ======================================================================
 
 
+%%:- debug.
 
 male :: person.		% subclass relation
 female :: person.	% subclass relation

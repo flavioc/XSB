@@ -146,7 +146,7 @@
 #define UNBOUND_VAR	'unbound variable in rule head'
 
 /****************************************
-  Added by Bin Tang for richer anonymous oid syntax
+  support for numbered anon oids
 *****************************************/
 #define SINGLETON_OID	'singleton numbered anonymous oid in clause'
 

@@ -119,7 +119,7 @@ flora_current_compile_filename(Name) :-
   flora_ascii_string_struct(+ASCII,+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
   flora_symbol_token_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
   
-  %% ********Added by Bin Tang for richer anonymouse oid syntax ************
+  %% support for numbered anon oids
   flora_special_token_struct(+TextStr,+Num,+LN1,+CN1,+LN2,+CN2,-Token)
   
   flora_whitespace_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
@@ -153,7 +153,7 @@ flora_special_token_struct(TextStr,LN1,CN1,LN2,CN2,SPECIAL_TOKEN(A,Text)) :-
 	atom_codes(A,TextStr).
 
 /***************************************************************************
-	Added by Bin Tang for richer anonymous oid
+	support for numbered anon oids
 ****************************************************************************/
 flora_special_token_struct(TextStr,Num,LN1,CN1,LN2,CN2,SPECIAL_TOKEN(A,B,Text)) :-
         TextStr=[Underscore, Hash],
@@ -196,7 +196,7 @@ flora_token_text(SPECIAL_TOKEN(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
 	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
 
 /***************************************************************************
-	    Added by Bin Tang for richer anonymous oid syntax
+	    support for numbered anon oids
 ***************************************************************************/
 flora_token_text(SPECIAL_TOKEN(_A,_Num,Text),TextStr,BLN,BCN,ELN,ECN) :-
 	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
@@ -447,7 +447,7 @@ reads a number Num starting at position (LN1, CN1) and ending at (LN2, CN2),
 the character right before Num is at (PrevLN,  PrevCN),  
 the first non-digit character NCh is at (NLN, NCN), 
 (NNLN, NNCN) is the position of the char following NCh.
-Used to handle rich anon oid syntax
+Used to handle numbered anon oid syntax
 **********************************************************************/
 get_number(PrevLN,PrevCN,LN1,CN1,LN2,CN2,Num,NLN,NCN,NCh,NNLN,NNCN) :-
 	get_char(LN1, CN1, Ch, NextLN, NextCN),
@@ -467,7 +467,8 @@ get_number(PrevLN,PrevCN,LN1,CN1,LN2,CN2,Num,NLN,NCN,NCh,NNLN,NNCN) :-
 
 
 /****************************************************************************
-Modified by Bin Tang for richer anonymous oid syntax
+support for numbered anon oids
+
 read_underscore_variable(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
   reads a varialbe beginning with an underscore. Char is the beginning
   underscore. This function handles the special token _# whose only purpose
@@ -479,7 +480,6 @@ read_underscore_variable(C1,LN1,CN1,LN,CN,TokenList,Status) :-
         ( Ch == CH_HASH ->
           get_char(NextLN,NextCN,NextCh,LNN,CNN),
           ( NextCh >=CH_0, NextCh =< CH_9 ->
-	     %%  Modified by Bin Tang for richer anonymous oid syntax
 	     %%  Numbered anonymous oid is read
 	     get_number(NextLN,NextCN,LNN,CNN,LN2,CN2,Num,NLN,NCN,NCh,NNLN,NNCN),
 	     flora_special_token_struct([C1,Ch],[NextCh|Num],LN1,CN1,LN2,CN2,Tk)

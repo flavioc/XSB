@@ -219,7 +219,10 @@ flora_pp_write_comma_conditional(Cond) :-
 
 
 
-flora_pp_write_method_invocation(M) :- write(M)@flora(io).
+flora_pp_write_method_invocation(M) :-
+	M =.. ML,
+	ground_list(ML),
+	write(M)@flora(io).
 
 flora_pp_write_set(L) :-
     	write('{')@prolog(),
@@ -294,3 +297,10 @@ flora_pp_immediate_superclasses(Class,Module) :-
 	write('.')@prolog(), nl@prolog(),
 	fail.
 flora_pp_immediate_superclasses(_,_) :- true.
+
+%% Replaces each var with atom '_' for nicer output
+ground_list([]) :- !.
+ground_list([H|T]) :-
+	(var(H)@prolog(), !, H='_' ; true),
+	ground_list(T).
+

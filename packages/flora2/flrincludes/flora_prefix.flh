@@ -62,6 +62,10 @@
 #define FLORA_USER_TRIE			'usertrie'
 #define FLORA_SYSTEM_TRIE		'systrie'
 
+%%  Trie for keeping skeletons of defined facts -- debugging
+#define FLORA_USER_FLD_TRIE		'userfldtrie'
+#define FLORA_SYSTEM_FLD_TRIE		'sysfldtrie'
+
 
 /******************************************************************************
   prefixes
@@ -83,3 +87,9 @@
 
 %% prefix to name Flora storage trie for a system module.
 #define FLORA_SYSTEM_TRIE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_TRIE)
+
+%% prefix to name Flora fld storage trie for a user module.
+#define FLORA_USER_FLD_TRIE_PREFIX	FLORA_SYMBOL(FLORA_USER_FLD_TRIE)
+
+%% prefix to name Flora fld storage trie for a system module.
+#define FLORA_SYSTEM_FLD_TRIE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_FLD_TRIE)

@@ -41,6 +41,7 @@
 #include "flora_errors.flh"
 #include "flora_terms.flh"
 
+%% ruleoid is used for numbered anonymous oid generation
 :- dynamic ruleoid(_,_,_).
 :- dynamic TMPDIRECT(_).
 :- dynamic TMPOPTION(_).
@@ -114,7 +115,7 @@ is_flstring(FLSTRING(String,_I),String).
 is_fltoken(FLTOKEN(Token,I),Token,I).
 
 /****************************************************************
-	Added by Bin Tang for richer anonymous oid syntax
+	support for numbered anon oids
 ****************************************************************/
 is_fltoken(FLTOKEN(Token,Num,I),Token,Num,I). 
 
@@ -568,7 +569,7 @@ new_oidobj(Index,OidObject) :-
 	newoid_struct(Name,Index,OidObject).
 
 /*************************************************************************
-	Modified by Bin Tang for richer anonymous oid syntax
+	support for numbered anon oids
 *************************************************************************/
 new_oidobj(Rule_num,Num,Index,OidObject) :-
 	(
@@ -695,7 +696,7 @@ collect_vars(ParserTerm,Vars,Vars) :-
 	  is_fltoken(ParserTerm,_Token,_I);
 	  
 	  /****************************************************
-	  Added by Bin Tang for richer anonymous oid syntax
+	  support for numbered anon oids
 	  ****************************************************/
 	  is_fltoken(ParserTerm,_Token,_Num,_I) 
         ),
@@ -888,7 +889,7 @@ flora_reset_compiler :-
 
 
 /****************************************************************************
-  Modified by Bin Tang for richer anonymous oid syntax
+  support for numbered anon oids
   flora_compile(+ParserTerm,-CodeList,-OptionList,-Status)
 ****************************************************************************/
 flora_compile(NULL,[],[],[]) :- !.
@@ -929,7 +930,7 @@ flora_compile(_ParserTerm,[],[],[error(UNKNOWN_ERROR)]).
 
 
 /***************************************************************************
-  Added by Bin Tang for richer anonymous oid syntax
+  support for numbered anon oids
   referenced_once(+Status_rf,-Status)
   finds singleton numbered anon oid and puts warning message in Status
 ***************************************************************************/
@@ -1958,7 +1959,7 @@ compile_head_pathexp(ParserTerm,Object,[],[]) :-
 	    compile_head_fltoken(Token,Index,Object)
 
 	/************************************************************
-		Added by Bin Tang for richer anonymous oid syntax
+		support for numbered anon oids
 	*************************************************************/
 	
 	; is_fltoken(ParserTerm,Token,Num,Index) ->      
@@ -1998,7 +1999,7 @@ compile_head_fltoken(Token,Index,Object) :-
 	).
 
 /****************************************************************************
-  Added by Bin Tang for richer oid anonymous syntax
+  support for numbered anon oids
   compile_head_fltoken(+Token,+Num,+Index,-Object)
 ****************************************************************************/
 compile_head_fltoken(Token,Num,Index,Object) :-

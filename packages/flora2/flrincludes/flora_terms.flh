@@ -180,6 +180,11 @@
 #define FL_FLOGICSTATIC		flogic
 #define FL_FLORAPATCH		patch
 
+%% support for detecting undefinedness
+#define FL_FLORAPREDDEF		preddef	
+#define FL_FLORANOPREDDEF	nopreddef	
+#define FL_DEBUG		debug
+
 #define FL_HILOGTABLE		hilogtable
 #define FL_EQUALITY		equality
 #define FL_EXPUNGE		expunge
@@ -287,6 +292,11 @@
 #define FLFLOGICSTATIC		flflogicstatic
 #define FLFLORAPATCH		flflorapatch
 
+%% support for undefinedness checking
+#define FLFLORAPREDDEF		flflorapreddef
+#define FLFLORANOPREDDEF	flfloranopreddef
+#define FLDEBUG			fldebug
+
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
 #define FLSTRING		flstring
@@ -324,6 +334,7 @@
   Prolog encoding of a compiled FLORA program
 ****************************************************************************/
 #define PRRULE			prrule
+#define PRPATCHRULE		prpatchrule
 #define PRFACT			prfact
 #define PRQUERY			prquery
 #define PRDIRECTIVE		prdirective
@@ -338,6 +349,8 @@
 #define PRTHISMODULE		prthismodule
 #define PRTHISSTORAGE		prthisstorage
 #define PRSTORAGE		prstorage
+%% For the trie that keeps track of defined predicate skeletons
+#define PRTHISFLDSTORAGE	prthisfldstorage
 
 #define PRATOM			pratom
 #define PRNUMBER		prnumber
@@ -420,6 +433,29 @@
 #define	WRAP_IFDSKOLEM		ifdskolem
 #define	WRAP_OBJEQL		objeql
 
+%% Wrapper names that occur in the body of the compiled rules that come
+%% from the user program
+#define	WRAP_D_ISA		FLDEBUGPREFIX(isa)
+#define	WRAP_D_SUB		FLDEBUGPREFIX(sub)
+#define	WRAP_D_METH		FLDEBUGPREFIX(meth)
+#define	WRAP_D_IMETH		FLDEBUGPREFIX(imeth)
+#define	WRAP_D_TRAN		FLDEBUGPREFIX(tran)
+#define	WRAP_D_FD		FLDEBUGPREFIX(fd)
+#define	WRAP_D_IFD		FLDEBUGPREFIX(ifd)
+#define	WRAP_D_FDSIG		FLDEBUGPREFIX(fdsig)
+#define	WRAP_D_IFDSIG		FLDEBUGPREFIX(ifdsig)
+#define	WRAP_D_MVD		FLDEBUGPREFIX(mvd)
+#define	WRAP_D_IMVD		FLDEBUGPREFIX(imvd)
+#define	WRAP_D_MVDSIG		FLDEBUGPREFIX(mvdsig)
+#define	WRAP_D_IMVDSIG		FLDEBUGPREFIX(imvdsig)
+#define	WRAP_D_MVDINC		FLDEBUGPREFIX(mvdinc)
+#define	WRAP_D_IMVDINC		FLDEBUGPREFIX(imvdinc)
+#define WRAP_D_MVDTOLIST	FLDEBUGPREFIX(mvdtolist)
+#define WRAP_D_IMVDTOLIST	FLDEBUGPREFIX(imvdtolist)
+#define	WRAP_D_FDDEF		FLDEBUGPREFIX(fddef)
+#define	WRAP_D_IFDDEF		FLDEBUGPREFIX(ifddef)
+#define	WRAP_D_MVDDEF		FLDEBUGPREFIX(mvddef)
+#define	WRAP_D_IMVDDEF		FLDEBUGPREFIX(imvddef)
 
 /****************************************************************************
   FLORA builtin libraries
@@ -493,6 +529,10 @@
 #define FLEQLBASIC		fleqlbasic
 #define FLEQLFLOGIC		fleqlflogic
 
+%% undefinedness checking
+#define	FLPREDDEF		flpreddef
+#define	FLNOPREDDEF		flnopreddef
+
 
 /****************************************************************************
   FLORA include files
@@ -536,6 +576,12 @@
 #define FLBODYPREFIX		''
 #define FLTRAILERPREFIX		'inferred_'
 
+#define FLDEBUGPREFIX		'd_'
+%% This is a 1-argument macro
+#mode save
+#mode nostring "\!#'"
+#define FLDEBUGPREFIX(X)        'd_#1'
+#mode restore
 
 /******************************************************************************
   lengths of prefixes

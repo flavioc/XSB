@@ -283,7 +283,7 @@ get_index(OBJECT(_PrimitiveType,Index),Index) :- !.
 get_spectoken(OBJECT(SPECIAL_TOKEN(Atom),_I),Atom) :- !.
 
 /*************************************************************
-	Added by Bin Tang for richer anonymouse oid syntax
+	support for numbered anon oids
 *************************************************************/
 get_spectoken(OBJECT(SPECIAL_TOKEN(Atom,_Num),_I),Atom) :- !.
 
@@ -373,7 +373,7 @@ flobject_struct(OBJECT(ASCII_STRING(Str),I),FLSTRING(Str,I))   :- !.
 flobject_struct(OBJECT(SPECIAL_TOKEN(Atom),I),FLTOKEN(Atom,I)) :- !.
 
 /*************************************************************
-        Added by Bin Tang for richer anonymouse oid syntax
+        support for numbered anon oids
 *************************************************************/
 flobject_struct(OBJECT(SPECIAL_TOKEN(Atom,Num),I),FLTOKEN(Atom,Num,I)) :- !.
 

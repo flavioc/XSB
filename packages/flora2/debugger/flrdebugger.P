@@ -341,27 +341,33 @@ is_flora_builtin(Call) :-
 	flora_prlgdef(F,N).
 
 
-decode_molecule(WRAP_FD,code(O,'[',M,'->',V,']'), [O,M,V]).
-decode_molecule(WRAP_MVD,code(O,'[',M,'->>',V,']'), [O,M,V]).
-decode_molecule(WRAP_IFD,code(O,'[',M,'*->',V,']'), [O,M,V]).
-decode_molecule(WRAP_IMVD,code(O,'[',M,'*->>',V,']'), [O,M,V]).
-decode_molecule(WRAP_FDSIG,code(O,'[',M,'=>',V,']'), [O,M,V]).
-decode_molecule(WRAP_IFDSIG,code(O,'[',M,'*=>',V,']'), [O,M,V]).
-decode_molecule(WRAP_MVDSIG,code(O,'[',M,'=>>',V,']'), [O,M,V]).
-decode_molecule(WRAP_IMVDSIG,code(O,'[',M,'*=>>',V,']'), [O,M,V]).
-decode_molecule(WRAP_MVDINC,code(O,'[',M,'+>>',V,']'), [O,M,V]).
-decode_molecule(WRAP_IMVDINC,code(O,'[',M,'*+>>',V,']'), [O,M,V]).
-decode_molecule(WRAP_MVDTOLIST,code(O,'[',M, '->->',V,']'), [O,M,V]).
-decode_molecule(WRAP_IMVDTOLIST,code(O,'[',M, '*->->',V,']'), [O,M,V]).
-decode_molecule(WRAP_OBJEQL,code(O1,':=:',O2), [O1,O2]).
-decode_molecule(WRAP_ISA,code(O,':',C), [O,C]).
-decode_molecule(WRAP_SUB,code(Sub,'::',Sup), [Sub,Sup]).
+decode_molecule(Wrapper,Code,ComponentList) :-
+	(str_match(FLDEBUGPREFIX,Wrapper,forward,0,End),! ; End=0),
+	substring(Wrapper,End,_,BaseWrapper),
+	decode_molecule_base(BaseWrapper,Code,ComponentList).
+
+decode_molecule_base(WRAP_FD,code(O,'[',M,'->',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_MVD,code(O,'[',M,'->>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_IFD,code(O,'[',M,'*->',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_IMVD,code(O,'[',M,'*->>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_FDSIG,code(O,'[',M,'=>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_IFDSIG,code(O,'[',M,'*=>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_MVDSIG,code(O,'[',M,'=>>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_IMVDSIG,code(O,'[',M,'*=>>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_MVDINC,code(O,'[',M,'+>>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_IMVDINC,code(O,'[',M,'*+>>',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_MVDTOLIST,code(O,'[',M, '->->',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_IMVDTOLIST,code(O,'[',M, '*->->',V,']'), [O,M,V]).
+decode_molecule_base(WRAP_ISA,code(O,':',C), [O,C]).
+decode_molecule_base(WRAP_SUB,code(Sub,'::',Sup), [Sub,Sup]).
 %% boolean method
-decode_molecule(WRAP_METH,code(O,'[',P,']'), [O,P]).
+decode_molecule_base(WRAP_METH,code(O,'[',P,']'), [O,P]).
 %% inheritable boolean method
-decode_molecule(WRAP_IMETH,code(O,'[*',P,']'), [O,P]).
+decode_molecule_base(WRAP_IMETH,code(O,'[*',P,']'), [O,P]).
 %% procedural boolean method
-decode_molecule(WRAP_TRAN,code(O,'[#',P,']'), [O,P]).
+decode_molecule_base(WRAP_TRAN,code(O,'[#',P,']'), [O,P]).
+
+decode_molecule_base(WRAP_OBJEQL,code(O1,':=:',O2), [O1,O2]).
 
 %%%%%%%%%%%%%%%%%%%%% HiLog %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
