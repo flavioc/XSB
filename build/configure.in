@@ -609,7 +609,7 @@ fi
 
 AC_CHECK_PROG(perl_support, perl, "yes", "no")
 
-if test "${perl_support+yes}" = "yes"; then
+if test "${perl_support}" = "yes"; then
    perl_archlib=`perl -MConfig -e 'print $Config{archlib}'`
    perl_cc_compiler=`perl -MConfig -e 'print $Config{cc}'`
    perl_ccflags=`perl -MConfig -e 'print $Config{ccflags}'`
@@ -623,18 +623,24 @@ AC_SUBST(perl_ccflags)
 AC_SUBST(perl_libs)
 
 # Java support
-javac=`which javac`
+AC_CHECK_PROG(java_support, javac, "yes", "no")
+if test "${java_support}" = "yes"; then
+    dnl after AC_CHECK_PROG, ac_dir holds the directory where javac is found
+    javac="$ac_dir"/javac
+else
+    javac=javac
+fi
 AC_SUBST(javac)
 
 # profiling implies debug
-if test "${enable_profile+yes}" = "yes"; then
-	AC_DEFINE(DEBUG)
-	AC_DEFINE(PROFILE)
-	do_debugging=yes
+if test "${enable_profile}" = "yes"; then
+    AC_DEFINE(DEBUG)
+    AC_DEFINE(PROFILE)
+    do_debugging=yes
 fi
-if test "${enable_debug+yes}" = "yes"; then
-	AC_DEFINE(DEBUG)
-	do_debugging=yes
+if test "${enable_debug}" = "yes"; then
+    AC_DEFINE(DEBUG)
+    do_debugging=yes
 fi
 
 
