@@ -42,7 +42,7 @@
 	  trie_retract_all/1
    from tables.
 
-:- import conget/2, conset/2 from gensym.
+:- import conset/2, gensym/2 from gensym.
 
 :- import flora_set/1 from flrparser.
 

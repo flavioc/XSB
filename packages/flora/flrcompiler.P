@@ -971,29 +971,13 @@ var_member(E,[_|T]) :-
 
 
 /**************************************************************************/
-init_gensym(Root):-
-	nonvar(Root),
-	conset(Root,0).
-
-
-gensym(Root,Symbol):-
-	nonvar(Root),
-	var(Symbol),
-	conget(Root,Counter),
-	NewCounter is Counter + 1,
-	conset(Root,NewCounter),
-	fmt_write_string(Symbol, '%s%d', args(Root,NewCounter)).
-
-
-
-/**************************************************************************/
 new_aux(Aux) :-
 	gensym(aux,V),
 	flora_word(V,Aux).
 
 
 init_flrcompiler :-
-	init_gensym(aux).
+	conset(aux,0).
 
 
 /***************************************************************************
