@@ -447,7 +447,7 @@ l_write_quoted(File, Atom, _) :-	% This takes care of all atoms but []
 	term_type(Atom, Type),
 	Type =:= 5,
 	!,
-	l_writequotedname(File, Atom).
+	file_writequoted(File, Atom).
 l_write_quoted(File, T, Prec) :- 	% functor(T, OP, N),
 	term_type(T, Type), 
 	Type =:= 1, !,		% CS
@@ -455,7 +455,7 @@ l_write_quoted(File, T, Prec) :- 	% functor(T, OP, N),
 	psc_arity(PSC, N),
 	psc_name(PSC, Name),
 	OP = Name,
-	( N=:=0 -> l_writequotedname(File, Name)
+	( N=:=0 -> file_writequoted(File, Name)
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
@@ -500,7 +500,7 @@ l_write_quoted(File, T, _) :-
 	file_puttoken(File, Type, T).
 
 l_writestr_quoted(File, Name, N, Term) :-
-	l_writequotedname(File, Name), 
+	file_writequoted(File, Name), 
 	file_put(File, 40), 			% '('
 	term_arg(Term, 1, X),
 	l_write_quoted(File, X, 999),
@@ -628,10 +628,6 @@ l_writetail_quoted(File, X) :-
 file_write_canonical(File, Term) :- l_write_canonical(File, Term), fail.
 file_write_canonical(_, _).
 
-alt_file_write_canonical(File, Term):- alt_l_write_canonical(File, Term), fail.
-alt_file_write_canonical(_, _).
-
-
 l_write_canonical(File, Var) :-
 	term_type(Var, Type),
 	Type =:= 0,
@@ -652,21 +648,21 @@ l_write_canonical(File, Atom) :-
 	term_type(Atom, Type),
 	Type =:= 5,
 	!,
-	l_writequotedname(File, Atom).
+	file_writequoted(File, Atom).
 l_write_canonical(File, Term) :-	% functor(Term, Name, N)
 	term_type(Term, Type),
 	Type =:= 1, !,		% CS
 	term_psc(Term, PSC),
 	psc_name(PSC, Name),
 	psc_arity(PSC, N),
-	( N =:= 0 -> l_writequotedname(File, Name)
+	( N =:= 0 -> file_writequoted(File, Name)
 	; l_writestr_canonical(File, Name, N, Term) ).
 l_write_canonical(File, Term) :-
 	term_type(Term, Type),
 	file_puttoken(File, Type, Term).
 
 l_writestr_canonical(File, Name, N, Term) :-
-	l_writequotedname(File, Name),
+	file_writequoted(File, Name),
 	file_put(File, 40),		% '('
 	term_arg(Term, 1, X),
 	l_write_canonical(File, X),
@@ -681,159 +677,12 @@ l_writearg_canonical(File, Term, N, M) :-
 	l_write_canonical(File, X),
 	l_writearg_canonical(File, Term, N, L).
 
-alt_l_write_canonical(File, Var) :-
-	term_type(Var, Type),
-	Type =:= 0,
-	!,
-	file_puttoken(File, 0, Var).
-alt_l_write_canonical(File, '$VAR'(N)) :- 
-	!,
-	l_writevar(File, N, 0).
-alt_l_write_canonical(File, []) :-
-	!,
-	file_put(File, 91),	% '['
-	file_put(File, 93).	% ']'
-alt_l_write_canonical(File, [X|Y]) :-
-	!,
-	file_puttoken(File, 5, '''.''('),
-	alt_l_write_canonical(File, X),
-	file_put(File, 44),		% ','
-	alt_l_write_canonical(File, Y),
-	file_put(File, 41).		% ')'
-alt_l_write_canonical(File, Atom) :-
-	term_type(Atom, Type),
-	Type =:= 5,
-	!,
-	l_writequotedname(File, Atom).
-alt_l_write_canonical(File, Term) :-	% functor(Term, Name, N)
-	term_type(Term, Type),
-	Type =:= 1, !,		% CS
-	term_psc(Term, PSC),
-	psc_name(PSC, Name),
-	psc_arity(PSC, N),
-	( N =:= 0 -> l_writequotedname(File, Name)
-	; alt_l_writestr_canonical(File, Name, N, Term) ).
-alt_l_write_canonical(File, Term) :-
-	term_type(Term, Type),
-	file_puttoken(File, Type, Term).
-
-alt_l_writestr_canonical(File, Name, N, Term) :-
-	l_writequotedname(File, Name),
-	file_put(File, 40),		% '('
-	term_arg(Term, 1, X),
-	alt_l_write_canonical(File, X),
-	alt_l_writearg_canonical(File, Term, N, 1),
-	file_put(File, 41).		% ')'
-
-alt_l_writearg_canonical(_File, _Term, N, N) :- !.
-alt_l_writearg_canonical(File, Term, N, M) :-
-	L is M + 1,
-	file_put(File, 44),	% 0',
-	term_arg(Term, L, X),
-	alt_l_write_canonical(File, X),
-	alt_l_writearg_canonical(File, Term, N, L).
-
- 
-			/*******************************/
-			/*     l_writequotedname/2     */   
-			/*******************************/
-
-l_writequotedname(File, Atom) :-
-	file_writequoted(File, Atom).
-
 end_of_file.
 
 /* ------------------- end of file file_write.P ----------------------- */
 
 
-/************* Old version of l_writequotedname/2 ***********************/
-
-l_writequotedname(File, Atom) :-
-        name(Atom, [StartingChar|RestCharList]),  % An empty atom needs quotes.
-        !,
-        ( check_no_quotes_needed([StartingChar|RestCharList]) ->
-                file_puttoken(File, 5, Atom)
-        ; file_put(File, 39),           % ''''
-          double_the_quote(File, [StartingChar|RestCharList]),
-          file_put(File, 39)            % ''''
-        ).
-l_writequotedname(File, _Empty_Atom) :- 
-	file_put(File, 39),		% ''''
-%	file_puttoken(File, 5, Atom),
-	file_put(File, 39).		% ''''
-
-double_the_quote(_, []).
-double_the_quote(File, [Char|RestCharList]) :-
-        ( Char =:= 39 -> file_put(File, 39) ; true ),
-        file_put(File, Char),
-        double_the_quote(File, RestCharList).
-
-check_no_quotes_needed([StartingChar|RestCharList]) :-
-	StartingChar >= 97, StartingChar =< 122,     % 0'a=97, 0'z=122  
-        no_quotes_needed(RestCharList).
-check_no_quotes_needed(CharList) :-
-	all_char_operators(CharList).
-check_no_quotes_needed([Char]) :-
-	special_char(Char).
-
-no_quotes_needed([]).
-no_quotes_needed([Char|RestChars]) :- 
-	ok(Char),
-	no_quotes_needed(RestChars).
-
-ok(Char) :- Char >= 97, Char =< 122.	% 0'a=97, 0'z=122
-ok(Char) :- Char >= 48, Char =< 57.	% 0'0=48, 0'9=57
-ok(Char) :- Char >= 65, Char =< 90.	% 0'A=65, 0'Z=90
-ok(95).					% 0'_=95
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  The business of quoting special characters is very tricky (and messy):     %
-%									      %
-%  The following list of special characters (usually appearing as operators), %	
-%  which are: < = > ? @ : & # $ * + - \ ^ ` ~ /   			      %
-%  do not need to be quoted when written by writeq/1 or write_canonical/1.    %
-%									      %
-%  Also there are two special characters: ! and ; that can appear as atoms    %
-%  without being quoted. These characters however, cannot appear in           %
-%  combination with the charaters above.				      %
-% 									      %
-%  On the other hand characters that are puctuations:   , [ ] ( ) { } and |   %
-%  need to be quoted. The same happens with the following characters: % _     %
-%									      %
-%  Finally, the punctuation symbol . (period) whenever it appears on its own  %
-%  as a functor (in case of a list) must be quoted. (this is taken care when  %
-%  writing a list). On the other hand, when it appears in combination with    %
-%  operator characters, (like in =..) it doesn't need to be quoted.	      %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-all_char_operators([]).
-all_char_operators([Char|RestChars]) :-
-	char_operator(Char),
-	all_char_operators(RestChars).
-
-char_operator(Ch) :- Ch >= 60, Ch =< 64.	% <=>?@
-char_operator(58).				% :
-char_operator(38).				% &
-char_operator(35).				% #
-char_operator(36).				% $
-char_operator(42).				% *
-char_operator(43).				% +
-char_operator(45).				% -
-char_operator(92).				% \
-char_operator(94).				% ^
-char_operator(96).				% `
-char_operator(126).				% ~
-char_operator(46).				% .
-char_operator(47).				% /
-
-special_char(33).				% !
-special_char(59).				% ;
- 
-
-end_of_file.
-
-
-/************************************************************************/
+/***********************************************************************
    TEST CODE
  ************
 
@@ -857,3 +706,5 @@ yes
 | ?- write_canonical(a+b).
 +(a,b)
 yes
+
+ ***********************************************************************/

@@ -89,20 +89,6 @@ set_pil_off :-
 
 /*----------------------------------------------------------------------*/
 
-output_table(Term,File) :-
-	tell(File),
-	output_table_1(Term),
-	told.
-
-output_table_1(Term) :-
-	get_calls_for_table(Term,Call),
-	get_returns_for_call(Call,Return),
-	numbervars(Return,0,_),
-	alt_write_canonical(Return),
-	nl,
-	fail.
-output_table_1(_Term).
-
 abolish_table_call(Call) :- 	
 	call_psc_tip(Call,_Psc,Tip),
 	get_subg_ptr(Call,Tip,SubgPtr),

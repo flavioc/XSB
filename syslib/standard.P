@@ -261,9 +261,6 @@ write_canonical(Ostr,Term):- tell(Ostr),
 
 write_canonical(T) :- stat_flag(11, File), file_write_canonical(File, T).
 
-
-alt_write_canonical(T):- stat_flag(11,File), alt_file_write_canonical(File, T).
-
 print(T) :-	% Not what is supposed 2 B
 	telling(F), tell(userout), write(T), told, tell(F).
 

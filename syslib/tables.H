@@ -24,8 +24,7 @@
 
 
 :- export abolish_all_tables/0, abolish_table_call/1, abolish_table_pred/1,
-	  get_calls_for_table/2, get_returns_for_call/2,
-	  table_state/2, output_table/2,		% debugging.
+	  get_calls_for_table/2, get_returns_for_call/2, table_state/2, 
 	  tfindall/3, tnot/1, 't not'/1, etnot/1,
 	  delete_return/2,
 	  get_call/3, get_calls/3, get_returns/2, get_returns/3,
@@ -49,15 +48,12 @@
 	  zero_out_profile/0, write_out_profile/0
 	from machine.
 
-:- import nl/0, call/1, tcall/1, tell/1, told/0, alt_write_canonical/1,
-	  abort/1, writeln/1, functor/3
-        from standard.  
+:- import call/1, tcall/1, abort/1, writeln/1, functor/3 from standard.  
 
 :- import findall/3 from setof.
-:- import numbervars/3 from num_vars.
 :- import add_trie_index/1 from file_op.
 :- import ground/1, member/2 from basics.
-:- import retract/1, retract_nr/1, retractall/1, 
-          (dynamic)/1, t_assert/2 from assert.
+:- import retract/1, retract_nr/1, retractall/1,
+	  (dynamic)/1, t_assert/2 from assert.
 
 /* ------------------- end of file tables.H --------------------------- */

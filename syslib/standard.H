@@ -54,7 +54,7 @@
 	true/0, 	var/1,		
 	write/1,	write/2,	write_prolog/1,	write_prolog/2,
 	writeln/1,	writeln/2,	writeq/1,	writeq/2,
-	write_canonical/1,  write_canonical/2,  alt_write_canonical/1,
+	write_canonical/1,  write_canonical/2,
 	('\+')/1,	'=:='/2,	'=\='/2,	'<'/2,
 	'>'/2,		'=<'/2,		'>='/2,		'='/2,
 	'\='/2,		'=..'/2,	'^=..'/2,	'=='/2,
@@ -88,8 +88,7 @@
      from machine.
 :- import str_tolist/2, str_fromlist/2 from string.
 :- import file_write0/2, file_write/2, file_write_prolog/2, 
-	  file_write_quoted/2, file_write_canonical/2, 
-	  alt_file_write_canonical/2, file_nl/1
+	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
 :- import char_blank/1 from xsb_tok.
 :- import file_read/2 from xsb_read.
