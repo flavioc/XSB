@@ -1961,7 +1961,7 @@ bool db_build_prref( /* Arity, FirstTIP, -TIP, -PrRef, -PrEntry */ )
     p[2] = (Cell)p ;
     if( (Integer)FirstTIP != - 1 )
     {	tip = (CPtr)mem_alloc(4*sizeof(Cell)) ;
-	tip[0] = (Cell)FirstTIP ;
+	tip[0] = 0 ; 
 	tip[1] = 0 ;
 	tp  = (CPtr)mem_alloc(9*sizeof(Cell)) ;
 	Loc = 0 ;
