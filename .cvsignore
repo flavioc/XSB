@@ -1,4 +1,5 @@
 site
 config
 bin
+obj.*
 tests
