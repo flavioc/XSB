@@ -136,9 +136,9 @@ INSTALL_DATA = @INSTALL_DATA@
 XSB = xsb
 
 
-all: prepare emu register emu_clean 
+all: prepare emu run_xsb_src register emu_clean 
 
-devel: prepare emu emu_clean
+devel: prepare emu run_xsb_src emu_clean
 
 prepare:
 	@cd $(src_emudir); \
