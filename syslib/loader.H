@@ -33,6 +33,7 @@
 :- import default_error_handler/1 from error_handler.
 :- import conset/2 from gensym.
 :- import reconsult/1 from consult.
+:- import compile/1 from consult.
 :- import standard_symbol/3 from std_xsb.
 :- import library_directory/1 from usermod.
 :- import xsb_configuration/2 from xsb_configuration.

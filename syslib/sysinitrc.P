@@ -73,4 +73,5 @@
 :- stat_set_flag(LIBS_LOADED, 1). 
 
 %% load package maintenance definitions
-:- [packaging].
+%% NO, made standard preds so this will be loaded on demand.
+%%:- [packaging].

@@ -58,6 +58,10 @@ standard_symbol(atomic, 1, standard).
 standard_symbol(atom_chars, 2, standard).
 standard_symbol(atom_codes, 2, standard).
 standard_symbol(bagof, 3, setof).			% ISO
+standard_symbol(bootstrap_package, 2, packaging).
+standard_symbol(bootstrap_syspackage, 2, packaging).
+standard_symbol(bootstrap_sitepackage, 2, packaging).
+standard_symbol(bootstrap_userpackage, 3, packaging).
 standard_symbol(break, 0, x_interp).
 standard_symbol('C', 3, dcg).
 standard_symbol(call, 1, standard).
@@ -300,6 +304,7 @@ standard_symbol(ttywritenl, 1, standard).
 
 standard_symbol(unix, 1, unix).	       	   % obsolete
 standard_symbol(unix, 2, unix).	       	   % obsolete
+standard_symbol(unload_package, 1, packaging).
 standard_symbol((use_variant_tabling), 1, tables).
 standard_symbol((use_subsumptive_tabling), 1, tables).
 
