@@ -6,7 +6,7 @@
 
 %% XML
 :- libwww_request([xml('http://www.w3.org/TR/1998/REC-xml-19980210.xml',
-		       [timeout(1)],P,Y,Z)]).
+		       [timeout(5)],P,Y,Z)]).
 %% swww.etrade.com times out
 :- libwww_request([html('http://swww.etrade.com/', [timeout(1)],P,Y,Z),
 		   html('http://www.etrade.com/', [timeout(1)],PP,YY,ZZ)]).
@@ -34,6 +34,7 @@
 :- libwww_request([html('http://localhost/',Z,P,Y,XXX)]).
 :- libwww_request([html("http://localhost/",Z,P,Y,XXX)]).
 :- libwww_request([head('http://localhost/',Z,P,Y,XXX)]).
+:- libwww_request([head('http://www.cs.sunysb.edu/',Z,P,Y,XXX)]).
 :- libwww_request([fetch("http://localhost/",Z,P,Y,XXX)]).
 %% Libwww loops on this one
 %% The extra timer trick alleviates this problem by timing out everything.
@@ -46,6 +47,15 @@
 			 PP,YY,XX),
 		   fetch('hp://localhost/sub/001.ent',ZZ,PPPP,YYYY,XXXX)
 		  ] ).
+:- libwww_request([html('http://www.ug.cs.sunysb.edu/',
+			[if_modified('Tue, 21 Sep 2000 14:46:36 GMT')],
+			P,Y,X),
+		   fetch('http://www.cs.sunysb.edu/',Z,PPP,YYY,XXX),
+	 	   fetch('http://www.ug.cs.sunysb.edu/',
+			[if_modified('Tue, 21 Mar 1998 14:46:36 GMT')],
+			 PP,YY,XX),
+		   fetch('hp://www.cs.sunysb.edu/',ZZ,PPPP,YYYY,XXXX)
+		  ] ).
 :- libwww_request([fetch('http://localhost/sub/001.ent',Z,PPP,YYY,XXX),
 		   ff('http://localhost/sub/001.ent',Z,PPPP,YYYY,XXXX)]).
 :- libwww_request([fetch('http://localhost/22',Z,P,Y,XXX)]).
@@ -54,6 +64,12 @@
 		   fetch('http://localhost/22',_,_,_,XX),
 		   fetch('http://localhost/22',_,_,_,X),
 		   fetch('http://localhost/',[timeout(1)],P1,Y1,X1)
+		   ]).
+:- libwww_request([fetch('http://www.cs.sunysb.edu/~kifer/test/22',Z,P,Y,XXX),
+		   fetch('http://www.cs.sunysb.edu/~kifer/test/22',_,_,_,XX),
+		   fetch('http://www.cs.sunysb.edu/~kifer/test/22',_,_,_,X),
+		   fetch('http://www.cs.sunysb.edu/',
+			 [timeout(1)],P1,Y1,X1)
 		   ]).
 :- libwww_request([fetch('files/simple.html', X,P,Y,Z)]).
 

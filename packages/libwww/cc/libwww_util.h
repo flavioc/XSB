@@ -52,8 +52,8 @@
 /* definitions and macros included in all files */
 
 
-#define LIBWWW_DEBUG
 /*
+#define LIBWWW_DEBUG
 #define LIBWWW_DEBUG_VERBOSE
 #define LIBWWW_DEBUG_TERSE
 */

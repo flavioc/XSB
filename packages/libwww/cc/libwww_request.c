@@ -81,7 +81,7 @@ void do_libwww_request___()
   HTPrint_setCallback(printer);
   HTTrace_setCallback(tracer);
 #if 0
-  HTSetTraceMessageMask("*");
+  HTSetTraceMessageMask("sob");
 #endif
 
   /* This catch-all filter is needed in order to catch termination of
@@ -101,13 +101,16 @@ void do_libwww_request___()
   request_list_tail = request_term_list;
   total_number_of_requests=0;
   event_loop_runnung = FALSE;
-  timeout_value = DEFAULT_TIMEOUT;
+  timeout_value = -1;
   while (is_list(request_list_tail) && !is_nil(request_list_tail)) {
     request_id++;
     total_number_of_requests++;
     setup_request_structure(p2p_car(request_list_tail), request_id);
     request_list_tail = p2p_cdr(request_list_tail);
   }
+
+  if (timeout_value <= 0)
+    timeout_value = DEFAULT_TIMEOUT;
 
   /* start the event loop and begin to parse all requests in parallel */
   if (total_number_of_requests > 0) {
@@ -123,6 +126,7 @@ void do_libwww_request___()
 
     event_loop_runnung = TRUE;
     HTEventList_newLoop();
+
     /* expiring remaining timers is VERY important in order to avoid them
        kicking in at the wrong moment and killing subsequent requests */
     HTTimer_expireAll();
@@ -164,7 +168,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
 
   /* we set the timer only once (libwww trouble otherwise);
      timer must be set before achor is loaded into request */
-  if (HTHost_eventTimeout() <= 0 && context->timeout > 0) {
+  if (timeout_value <= 0 && context->timeout > 0) {
     timeout_value = context->timeout;
     HTHost_setEventTimeout(timeout_value);
   }
@@ -199,7 +203,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     }
 
 #ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("Subreq=%d ended: parent=%d",
+    xsb_dbgmsg("Subrequest=%d ended, parent request=%d",
 	       REQUEST_ID(header_req), REQUEST_ID(request));
 #endif
 
@@ -503,11 +507,9 @@ PRIVATE int tracer (const char * fmt, va_list pArgs)
 }
 
 
-/* this procedure is supposed to get the credentials from the input parameters
-   and pass them on through the REPLY argument.
-   For this to happen, alerts must be enabled.
-
-*/
+/* This procedure gets the credentials from the input parameters
+   and passes them back through the REPLY argument.
+   For this to happen, alerts must be enabled. */
 BOOL libwww_send_credentials(HTRequest * request, HTAlertOpcode op,
 			     int msgnum, const char * dfault, void * realm,
 			     HTAlertPar * reply)
@@ -517,8 +519,8 @@ BOOL libwww_send_credentials(HTRequest * request, HTAlertOpcode op,
     *credentials;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In libwww_send_credentials: Request=%d default: '%s' input: '%s' msgnum=%d",
-	     REQUEST_ID(request), dfault, realm, msgnum);
+  xsb_dbgmsg("In libwww_send_credentials: Request=%d, realm: '%s' msgnum=%d",
+	     REQUEST_ID(request), realm, msgnum);
 #endif
 
   /* the following blocks authentication filters on retry.
@@ -1071,5 +1073,5 @@ PRIVATE void extract_request_headers(HTRequest *request)
 
 PRIVATE int timer_cbf(HTTimer *timer, void *param, HTEventType type)
 {
-  return TRUE;
+  return !HT_OK;
 }
