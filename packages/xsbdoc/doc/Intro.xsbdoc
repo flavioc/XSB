@@ -164,11 +164,12 @@ The @apl{doc} library directory includes the @em{format file}
 used as a example of how to generate other manuals.  Typically, the
 format file is put into a separate directory (say a subdirectory) from
 the code that it documents, and relative or absolute paths to the main
-and componts are given to access the file.  The main file to be used
-is indicated by the predicate @pred{xsbdoc_main/1}, while component
-files are indicated by the predicate @pred{xsbdoc_component/1} and are
-documented in the order in which they occur in the format file.  For
-instance, in @tt{'xsbdoc_format.P'}, the main file is indicated by the fact: 
+file and the components are given so that they can be accessed.  The
+main file to be used is indicated by the predicate
+@pred{xsbdoc_main/1}, while component files are indicated by the
+predicate @pred{xsbdoc_component/1} and are documented in the order in
+which they occur in the format file.  For instance, in
+@tt{'xsbdoc_format.P'}, the main file is indicated by the fact:
 
 @begin{verbatim}
 xsbdoc_main('../xsbdoc1.P').
@@ -388,7 +389,7 @@ without a directory path or extension) specified by the fact
 on having @apl{texi2html} installed on your machine.
 
 @item @tt{ascii} which generates ascii files which are surprisingly
-nicely formatted to denote chapeter and section headings, indices, and
+nicely formatted to denote chapter and section headings, indices, and
 so on.  Use of this option depends on having @apl{makeinfo} installed
 on your machine.
 
@@ -450,7 +451,7 @@ the source program but which contain additional information intended
 to be read by humans (i.e., this is an instantiation of the
 @index{literate programming} style of Knuth @cite{knuth-lit}). In
 addition to predicate-level comments, typical comments include title,
-author(s), bugs, changelog, etc.
+author(s), bbugs, changelog, etc.
 
 @end{itemize}
 
@@ -500,7 +501,7 @@ the documentation, in the same way as if the documentation were placed
 in file @tt{m1}.
 
 Finally, there are several other mechanisms of including image files,
-predicate definitions and so on in machine readible comments, as is
+predicate definitions and so on in machine readable comments, as is
 explained in @ref{Enhancing Documentation with Machine-Readable
 Comments}.
 
