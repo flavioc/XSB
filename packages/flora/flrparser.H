@@ -26,7 +26,7 @@
 
 
 :- import
-	atom_chars/2, integer/1
+	atom_codes/2, integer/1
    from standard.
 
 :- import append/3 from basics.

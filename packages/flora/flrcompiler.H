@@ -29,7 +29,7 @@
    from basics.
 
 :- import
-	atom_chars/2, number_chars/2
+	atom_codes/2, number_codes/2
    from standard.
 
 :- import fmt_write_string/3 from file_io.

@@ -26,7 +26,7 @@
 
 :- import
 	put/1, write/1, tab/1, writeln/1, write_canonical/1, display/1,
-	atom_chars/2, see/1, seen/0, tell/1, told/0, seeing/1, telling/1,
+	atom_codes/2, see/1, seen/0, tell/1, told/0, seeing/1, telling/1,
 	file_exists/1, cputime/1, var/1
    from standard.
 
@@ -38,7 +38,7 @@
 
 :- import sort/2, findall/3 from setof.
 
-:- import bootstrap_package/2, package_configuration/2 from packaging.
+:- import package_configuration/2 from packaging.
 
 :- import bootstrap_flora/0 from flora.
 

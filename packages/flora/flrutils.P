@@ -447,7 +447,7 @@ write_PAs([pa(P,A)|PAs]) :-
 
 
 /********************************************************************/
-unbound_warn(Form,L) :-
+unbound_warn(_Form,L) :-
 	'_$_$_write_flora_warnheader',
 	write('unsafe variable(s) '),
 	write_list(L),
@@ -616,15 +616,10 @@ flora_file_exists(File) :-
 
 
 /********************************************************************/
+:- import print_file_contents/1 from file_io.
 flora_output_file(File) :-
 	seeing(In),
-	see(File),
-	repeat,
-	  get0(C),
-	  (C = -1 -> true ; put(C)),
-	  C = -1,
-	!,
-	seen,
+	print_file_contents(File),
 	see(In).
 
 
@@ -655,7 +650,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 	    )
 
 	  ;
-	    ( member(unbound_warning(Form,L),FlattenedRules) ->
+	    ( member(unbound_warning(_Form,L),FlattenedRules) ->
 		displayln, flora_warnheader, display('unsafe variable(s) '),
 		telling(CurrStream), tell(userout),
 		write_list(L), tell(CurrStream),
