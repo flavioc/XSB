@@ -1333,6 +1333,7 @@ xsbBool no_quotes_needed(char *string)
   int nextchar;
   int ctr, flag;
 
+  if (*string == '\0') return TRUE;
   if (!strcmp(string,"[]")) return FALSE;
   ctr = 0;
   nextchar = (int) string[0];
