@@ -58,25 +58,30 @@ flora_write_debug_goal('_$_$_flora_retractall'(L,Cond)) :-
 flora_write_debug_goal('_$_$_flora_erase'(L,Cond)) :-
 	!, flora_print_erase(L,Cond).
 
+flora_write_debug_goal('=..'(V, L)) :-
+	!, flora_print_univ(V,L).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Findall-related calls
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% collectset (currently, this also handles collectbag, because it is 
-%% hard to distinguish the two without a lookahead).
-/*
-flora_write_debug_goal(findall('_$_$_flora_rslt'(CollectVar,Grp),Goal,_Result)) :-
-	Grp =.. ['_$_$_flora_grp' | GrpVars],
-	!, 
-	write('Set = collectset{ '),
-	write(CollectVar),
-	write(' [ '),
-	'_$_$_flora_write_vars'(GrpVars),
-	write(' ]; '),
-	flora_write_debug_goal(Goal),
-	write(' }').
-*/
-
+%% Problem:
+%% Currently, the debugger displays some goals, such as =(_,_), which 
+%% flora compiler places as part of the translation, as in the following 
+%% example:
+%%
+%%  ?- L = collectset{X; X[Y->Z]}.
+%%  ?- '_$_$_flora_print_all'(','(findall(_h4610,'_$_$_flora_fd_rhs'(_h4610,'_$_$_flora_@'(_h4649),_h4761),_h4957),
+%%     	       	       ','('_$_$_flora_collectset'(nogrp,_h4957,_h4970),
+%%     	       	       =(_h4589,_h4970))),
+%%     	       	       '.'(var('L',_h4589),
+%%     	       	       '.'(var('X',_h4610),
+%%     	       	       '.'(var('Y',_h4649),
+%%     	       	       '.'(var('Z',_h4761),[]))))).
+%% The problem here is =(_h4589,_h4970) which is going to be executed after
+%% '_$_$_flora_collectset'. '_$_$_flora_collectset' itself is hidden, 
+%% but "=" is not (and should not). We can't just avoid printing it, 
+%% because it is activated with call_c, which always enables printing.
 
 %% flora_print_all
 flora_write_debug_goal(findall(X,Gs,_Res)) :-
@@ -89,16 +94,51 @@ flora_write_debug_goal(findall(X,Gs,_Res)) :-
 	flora_write_debug_goal(Gs),
 	write(' }').
 
+%% Aggregates in the rule body, but not query.
+%% Can't determine the context. We need to change translation 
+%% from Flora into prolog to be able to determine the context.
+%% For instance, here is a translation that is handled by this case:
+%%
+%% flora_pp_write_body_set(Obj) :- 
+%%     	   MethLst1 = collectset{ML ; Obj[@M ->> _], @M =.. ML},
+%%    	   sort(MethLst1, MethLst2),
+%%    	   flora_pp_write_body_set1(Obj, MethLst2).
+%%
+%% flora_pp_write_body_set(_h15703) :- 
+%%        findall(_h15750,','('_$_$_flora_mvd_rhs'(_h15703,_h15789,_h15869),
+%%    	      	      	    =..(_h15789,'.'('_$_$_flora_@',_h15750))),_h16267),
+%%    	  '_$_$_flora_collectset'(nogrp,_h16267,_h16280),
+%%        =(_h15729,_h16280),
+%%        sort(_h15729,_h15951),
+%%        flora_pp_write_body_set1(_h15703,_h15951).
+%%
+flora_write_debug_goal(findall(X,Gs,_Res)) :-
+	nonvar(Gs),
+	Gs =.. [',' , FirstGoal | _GoalList],
+	FirstGoal =.. [F|_],
+	str_sub('_$_$_flora_', F),
+	!,
+	%% We don't know which aggregate and whether there is grouping
+	write('Var = aggregate{'),
+	write(X),
+	write('; '),
+	flora_write_debug_goal(Gs),
+	write(' }').
+
 %% ','(Goal1,Goal2, ...). This comes from flora_print_all
 flora_write_debug_goal(Call) :- 
-	compound(Call),
-	Call =.. [',' , Call1 | Rest],
+	nonvar(Call),
+	Call =.. [',' | GoalList],
+	GoalList = [Call1 | Rest],
 	'_$_$_flora_debug_get_context'(Rest,Context),
 	!,
-	flora_write_debug_goal(Call1, Context).
+	%% Context=none means list of independent goals
+	(Context == none -> flora_write_debug_goal(GoalList, none)
+	    	    	 ; flora_write_debug_goal(Call1, Context)
+	).
 
 
-%% aggregates -- they come with context obtained from ','(Goal1,Goal2, ...)
+%% aggregates -- they come with "context" obtained from ','(Goal1,Goal2, ...)
 flora_write_debug_goal(Call) :- 
 	functor(Call, findall, 3),
 	'_$_$_flora_debug_context'(Context),
@@ -114,9 +154,14 @@ flora_write_debug_goal(Call) :- write(Call).
 /*********************************************************************/
 %% Context-sensitive flora_write_debug_goal's
 
-flora_write_debug_goal(findall('_$_$_flora_rslt'(CollectVar,Grp),Goal,_Result),
+%% This handles aggregates
+flora_write_debug_goal(findall(AggrResult,Goal,_Result),
 		       Context) :-
-	Grp =.. ['_$_$_flora_grp' | GrpVars],
+	(var(AggrResult) -> AggrResult = CollectVar % no grouping vars
+	%% Grouping vars present
+	 ;  AggrResult = '_$_$_flora_rslt'(CollectVar,Grp),
+	    Grp =.. ['_$_$_flora_grp' | GrpVars]
+	),
 	!, 
 	(Context == collectset -> write('Set = collectset{ ') ;  true),
 	(Context == collectbag -> write('Set = collectbag{ ') ;  true),
@@ -125,30 +170,57 @@ flora_write_debug_goal(findall('_$_$_flora_rslt'(CollectVar,Grp),Goal,_Result),
 	(Context == avg -> write('Res = avg{ ') ;  true),
 	(Context == sum -> write('Res = sum{ ') ;  true),
 	write(CollectVar),
-	write(' [ '),
-	'_$_$_flora_write_vars'(GrpVars),
-	write(' ]; '),
+	(is_list(GrpVars) ->  % there are grouping vars
+	    write('['),
+	    '_$_$_flora_write_vars'(GrpVars),
+	    write(']; ')
+	 ; write('; ')  % no grouping
+	),
 	flora_write_debug_goal(Goal),
 	write(' }').
-%% None of the above contexts
-flora_write_debug_goal(Goal, none) :-
-	!, flora_write_debug_goal(Goal).
 
+%% None of the above contexts: assume a list of independent goals
+flora_write_debug_goal(Goals, none) :-
+	!,
+	flora_write_debug_goallist(Goals).
+flora_write_debug_goallist(G) :- G == [], !.
+flora_write_debug_goallist([G|Gs]) :-
+	flora_write_debug_goal(G),
+	!,
+	(Gs == [] ; write(', ')),
+	flora_write_debug_goallist(Gs).
+
+%% Extract context out of the list of secondary goals
 '_$_$_flora_debug_get_context'([SecondaryGoals | _], Context) :-
-    	SecondaryGoals =.. [',' , Goal2 | _Rest],
-	nonvar(Goal2),
-	Goal2 =.. [ContextPred | _Rest1],
+    	(SecondaryGoals =.. [',' | Goals],
+	    '_$_$_flora_debug_get_context1'(Goals, Context) -> true
+	    ; Context = none
+	),
+	!,
+	retractall('_$_$_flora_debug_context'(_)),
+	assert('_$_$_flora_debug_context'(Context)).
+
+%% Fails if not context found
+'_$_$_flora_debug_get_context1'(GoalList, Context) :-
+    	nonvar(GoalList),
+    	GoalList = [Goal | Rest],
+	('_$_$_flora_check_goal_for_context'(Goal, Context)
+	    ->  true
+	    ;   '_$_$_flora_debug_get_context1'(Rest, Context)
+	).
+	 
+%% Fails, if no context found
+'_$_$_flora_check_goal_for_context'(Goal, Context) :-
+    	(nonvar(Goal),
+	 Goal =.. [ContextPred | _Rest1] % determines the type of aggregate
+	 ; fail
+	),
 	(ContextPred == '_$_$_flora_collectset' -> Context = collectset; true),
 	(ContextPred == '_$_$_flora_collectbag' -> Context = collectbag; true),
 	(ContextPred == '_$_$_flora_min' -> Context = min; true),
 	(ContextPred == '_$_$_flora_max' -> Context = max; true),
 	(ContextPred == '_$_$_flora_avg' -> Context = avg; true),
-	(ContextPred == '_$_$_flora_sum' -> Context = sum; true),
-	(var(ContextPred) -> Context = none; true),
-	!,
-	retractall('_$_$_flora_debug_context'(_)),
-	assert('_$_$_flora_debug_context'(Context)).
-	 
+	(ContextPred == '_$_$_flora_sum' -> Context = sum; true).
 
 /*********************************************************************/
 
@@ -188,7 +260,7 @@ flora_print_assert1([A | R]) :-
 	; A = '_$_$_flora_mvd_dyn'(O,M,V) ->
 	    flora_print_mvd(O,M,V)
 	),
-	(R = [] ; write(', ')),
+	(R == [] ; write(', ')),
 	flora_print_assert1(R).
 
 flora_print_retract(L,Cond) :- write('retract('), flora_print_retract1(L,Cond).
@@ -200,7 +272,7 @@ flora_print_retract1([],[]) :- !, write(')').
 flora_print_retract1([],Cond) :- !, fmt_write('| %S )', arg(Cond)).
 flora_print_retract1([A | R],Cond) :-
 	flora_print_retract_molecule(A),
-	(R = [], !
+	(R == [], !
 	 ;   write(', ')
 	),
 	flora_print_retract1(R,Cond).
@@ -216,6 +288,26 @@ flora_print_retract_molecule('_$_$_flora_rtrct'(A)) :-
 	    flora_print_mvd(O,M,V)
 	).
 
+%% Case of meta variable @M =.. L or meth@(....) =.. L
+flora_print_univ(V,L) :-
+	nonvar(L),
+	L = [H|L1],
+	H == '_$_$_flora_@',
+	!,
+	(var(V) -> write('@'), write(V)
+	 ; V =.. [_Junk|MethodInvoc], 
+	    '_$_$_flora_debug_write_method_invocation'(MethodInvoc)
+	),
+	write(' =.. '),
+	'_$_$_flora_debug_write_value'(L1),
+	!.
+flora_print_univ(V,L) :-
+	'_$_$_flora_debug_write_value'(V),
+	write(' =.. '),
+	'_$_$_flora_debug_write_value'(L),
+	!.
+	
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 '_$_$_flora_debug_write_value'(Val) :-
@@ -230,25 +322,26 @@ flora_print_retract_molecule('_$_$_flora_rtrct'(A)) :-
 '_$_$_flora_debug_write_value'(var(_N,Var)) :- !, write(Var).
 '_$_$_flora_debug_write_value'(Val) :- write(Val).
 
-'_$_$_flora_debug_write_method_invocation'([]).
-'_$_$_flora_debug_write_method_invocation'([Attr]) :-
-    	!, '_$_$_flora_debug_write_value'(Attr).
-'_$_$_flora_debug_write_method_invocation'([M, Arg |Args]) :-
-    	!, '_$_$_flora_debug_write_value'(M),
+'_$_$_flora_debug_write_method_invocation'(X) :- var(X), !, write(X).
+'_$_$_flora_debug_write_method_invocation'(X) :- X==[], !.
+'_$_$_flora_debug_write_method_invocation'(X) :-
+    	nonvar(X), X = [Attr], !,
+    	'_$_$_flora_debug_write_value'(Attr).
+'_$_$_flora_debug_write_method_invocation'(X) :-
+    	nonvar(X), X = [M, Arg |Args], !,
+    	'_$_$_flora_debug_write_value'(M),
 	write('@('),
 	'_$_$_flora_debug_write_value'(Arg),
 	'_$_$_flora_write_vars'(Args),
 	write(')').
 '_$_$_flora_debug_write_method_invocation'(M) :-
-    	compound(M),
-	M =.. [_Junk | MethArgs],
-	!,
+    	nonvar(M), M =.. [_Junk | MethArgs], !,
 	'_$_$_flora_debug_write_method_invocation'(MethArgs).
 
 
 %% Extracts and writes variables from the list [var(name,internalVar), ...]
 %% or from the list [internalVar, internalVar, ...]
-'_$_$_flora_write_vars'([]) :- !.
+'_$_$_flora_write_vars'(V) :- V== [], !.
 '_$_$_flora_write_vars'([V|Rest]) :- 
 	var(V), !, '_$_$_flora_write_vars1'(V,Rest).
 '_$_$_flora_write_vars'([var(_N,V)|Rest]) :- 
@@ -256,7 +349,7 @@ flora_print_retract_molecule('_$_$_flora_rtrct'(A)) :-
 
 '_$_$_flora_write_vars1'(V,Rest) :-
 	write(V),
-	(Rest = [] -> true
+	(Rest == [] -> true
 	 ; write(','), '_$_$_flora_write_vars'(Rest)
 	).
 

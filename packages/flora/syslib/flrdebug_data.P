@@ -50,6 +50,7 @@ hide_this_hide('_$_$_flora_imvs_dyn',3).
 
 hide_this_hide('_$_$_flora_switch',1).
 hide_this_hide('_$_$_flora_loadlist',1).
+hide_this_hide('_$_$_flora_dynloadlist',1).
 
 hide_this_hide('_$_$_flora_read_parse_compile',6).
 hide_this_hide('_$_$_flora_write_shell_prompt',0).
@@ -81,7 +82,6 @@ show_this_hide('_$_$_flora_assert', 1).
 show_this_hide('_$_$_flora_retract', 2).
 show_this_hide('_$_$_flora_retractall', 2).
 show_this_hide('_$_$_flora_erase', 2).
-
 
 
 '_$_$_flora_debugger_data_loaded'.
