@@ -1188,7 +1188,15 @@ The following options are currently recognized by the compiler:
 	{\tt \$XSB\_DIR/syslib/machine.P} for a current listing of
 	primitive predicates.  When compiling in this mode,
 	non-primitive standard predicates must be explicitly imported
-	from the appropriate system module.
+	from the appropriate system module.  Also standard predicates 
+	are permitted to be defined.
+\item[{\tt allow_redefinition}] \index{standard predicates}
+	By default the compiler refuses to compile a file that
+	contains clauses that would redefine a standard predicate
+	(unless the {\tt sysmod} option is in effect.)  By specifying
+	this option, the user can direct the compiler to quietly allow
+	redefinition of standard predicates.
+
 \item[{\tt verbo}] Compiles the files (modules) specified in ``verbose'' mode, 
 	printing out information about the progress of the compilation of each 
 	predicate.

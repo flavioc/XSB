@@ -68,7 +68,7 @@ requires an extra set of parentheses: {\tt assert((Head :- Body))}.
 Default: first-argument indexing.
 
 \ouritem{asserta(+Clause)}\index{\texttt{asserta/1}}
-If the index specification for the preicate is not {\tt tries}, this
+If the index specification for the preicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
 before} any other clauses for the same predicate currently in the
 database.  If the index specification for the predicate is {\tt trie},
@@ -77,7 +77,7 @@ message sent to {\tt stderr}.
 
 
 \ouritem{assertz(+Clause)}\index{\texttt{assertz/1}}
-If the index specification for the predicate is not {\tt tries}, this
+If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
 after} any other clauses for the same predicate currently in the
 database.  If the index specification for the predicate is {\tt trie},
