@@ -77,6 +77,8 @@ AC_ARG_WITH(oracle,
 [  --with-oracle	   compile with support of Oracle])
 AC_ARG_WITH(odbc,
 [  --with-odbc		   compile with support of Oracle])
+AC_ARG_WITH(interprolog,
+[  --with-interprolog	   compile with support for InterProlog])
 AC_ARG_ENABLE(no-cygwin,
 [  --enable-no-cygwin	    compiled with option -mno-cygwin (default: disabled)])
 
@@ -924,6 +926,11 @@ if test "${with_odbc+set}" = "set"; then
     with_odbc=yes
 fi
 
+if test "${with_interprolog+set}" = "set"; then
+    AC_DEFINE(XSB_INTERPROLOG)
+    with_interprolog=yes
+fi
+
 AC_CHECK_PROG(perl_support, perl, "yes", "no")
 
 if test "${perl_support}" = "yes"; then
@@ -1409,6 +1416,12 @@ case "$with_odbc" in
    "yes") echo "  Building with support for ODBC:		  yes"
 	;;
    "no") echo "  Building with support for ODBC:	       NO"
+	;;
+esac
+case "$with_interprolog" in
+   "yes") echo "  Building with support for InterProlog:		  yes"
+	;;
+   "no") echo "  Building with support for InterProlog:	       NO"
 	;;
 esac
 

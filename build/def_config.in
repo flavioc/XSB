@@ -92,6 +92,9 @@
 /* XSB is built with support for ODBC */
 #undef XSB_ODBC
 
+/* XSB is built with support for InterProlog */
+#undef XSB_INTERPROLOG
+
 /* XSB's FOREIGN_ELF is designed in a way such that it supports
    any system using the high level dlopen... functions.
 */
