@@ -36,7 +36,7 @@ LDFLAGS += @smoLDFLAGS@
 SMODELS=@with_smodels@
 SMOLIB=@smoLIB@
 
-ALL = xasppkg.xwam sm_clause_store.xwam sm_int.xwam
+ALL = xasppkg.xwam sm_clause_store.xwam sm_int.xwam xnmr.xwam xnmr_int.xwam
 
 Option = [sysmod,optimize]
 
