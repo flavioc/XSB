@@ -45,12 +45,17 @@
 
 #define BUFFEXTRA 1024
 
+#ifdef SOLARIS
+/* just to supress stupid gcc warning */
+extern int putenv(const char *);
+#endif
+
 /*----------------------------------------------------------------------*/
 
-bool dummy()
+static bool dummy(void)
 {
-    xsb_error("Trying to use an undefined foreign procedure");
-    return FALSE;
+  xsb_error("Trying to use an undefined foreign procedure");
+  return FALSE;
 }
 
 /*----------------------------------------------------------------------*/
@@ -63,9 +68,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   int 	strl = strlen(pofilename);
   void	*handle;
   void	*funcep;
-  bool	dummy();
   char  *ldp1,*ldp2;
-  static char  *ldstring_oldenv, *ldstring_newenv;
+  static char *ldstring_oldenv, *ldstring_newenv;
   char  *libpath;
   char  ldtemp; 
   int   slibpath;
