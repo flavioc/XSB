@@ -31,7 +31,7 @@
 #include "psc_defs.h"
 #include "extensions_xsb.h"
 
-/* ===== current_atom/1 =============================================== */
+/* ===== current_atom/1 ====================================== */
 
 %current_atom(Atom) :- true.
 current_atom(Module:Atom) :-
@@ -56,7 +56,7 @@ current_atom(Module:Atom) :-
 %	psc_scan(PSC), psc_arity(PSC, N), N = 0, term_new(PSC, A0), A0 = A.
 
 
-/* ===== current_functor/1 ============================================ */
+/* ===== current_functor/1 ===================================== */
 
 %   current_functor(?Predicate_Indicator)
 %   Succeeds iff Predicate_Indicator is a predicate indicator for one
@@ -68,13 +68,6 @@ current_atom(Module:Atom) :-
 %   A variable in place of Predicate_Indicator succeeds only for global
 %   modules.
 
-current_functor(Functor/N) :-		% This takes care of global modules.
-	!,				% i.e. "usermod" and "global".
-	psc_scan_in_hash_table(0, PSC),
-	psc_arity(PSC, Arity), 
-	psc_name(PSC, Name),
-	Functor = Name,
-	Arity = N.
 current_functor(Module:Functor/N) :-
 	get_first_psc_pair(PSC_Pair),
 	module_scan(PSC_Pair, ModuleName, ModulePSC),
@@ -89,6 +82,13 @@ current_functor(Module:Functor/N) :-
 	  Functor = Name,
 	  Arity = N
 	).
+current_functor(Functor/N) :-		% This takes care of global modules.
+	!,				% i.e. "usermod" and "global".
+	psc_scan_in_hash_table(0, PSC),
+	psc_arity(PSC, Arity), 
+	psc_name(PSC, Name),
+	Functor = Name,
+	Arity = N.
 
 psc_scan_in_hash_table(Bucket_Index, PSC) :- 
 	dereference_the_bucket(Bucket_Index, First_Pair_of_Bucket),
@@ -113,7 +113,7 @@ psc_scan_in_bucket(PSC_Pair, Next_PSC) :-
 %	psc_insert(Name, 0, PSC0), term_new(PSC0, F0), F0 = F, N0 = N.
 
 
-/* ===== current_functor/2 ============================================ */
+/* ===== current_functor/2 ===================================== */
 
 %   current_functor(?Name, ?Term_Indicator)
 %   Succeeds iff Term_Indicator is the most general term corresponding to
@@ -149,31 +149,58 @@ current_functor(Name, Term_Indicator) :-
 	  functor(Term, Name, Arity)
 	).
 
+/* ===== current_index/2 =================================== */ 
 
-/* ===== current_index/2 ====================================== */
+/* Here is how I understand the index encoding to work.  Alternative
+indices are put into a list of indices each of which may be simple or
+composite.  Any of the 255 arguments of a term can be used as a single
+index and is in the least significant byte.  Otherwise, the most
+significant bit of a byte (the 128 bit) indicates * indexing.  A
+single * index has a l.s. byte of 0 followed by a byte w. the 128-bit
+set indicating the * index argument.
 
-/*
+In a composite index each byte indicates the argument, and whether or
+not the 128 bit is set indicates whether the index is a * index in
+each byte.  Unlike simple * indices, the l.s. byte is not set to 0.
+
+*/
+
 current_index(F/N,Index):-
-	functor(Term,F,N),
+	functor(Term,F,N),!,
 	current_index(Term,Index).
 current_index(Term,Index):- 
-	'_$index(Term,Ind),
+	'_$index'(Term,Ind,_Size),!,
 	decode_index(Ind,Index).
 current_index(Term,trie):- 
-	'_$trie_asserted(Term).
-current_index(Term,[1]).
+	'_$trie_asserted'(Term),!.
+current_index(_Term,1).
 
+decode_index([],[]):-!.
 decode_index([Ind|Rest],[Index|R]):- !,
-	decode_one_index(Ind,Index),
+	decode_index_in_list(Ind,Index),
 	decode_index(Rest,R).
+decode_index(Ind,Out):- 
+	decode_index([Ind],Out).
 
-decode_one_index(Ind,Index):- 
-	(0 < X,X <  256 -> 
-	    [Ind] = Index
-	 ;  decode_one_index_1(Ind,Index)).
+decode_index_in_list(Ind,Ind):- 
+	0 < Ind,Ind <  256,!.
+decode_index_in_list(Ind,IndOut):- 
+	decode_star_index(Ind,_,IndOut).
 
-decode_index_1(Ind,Index): -
-*/	
+decode_star_index(0,IndIn,IndIn):- !.
+decode_star_index(Ind,IndIn,IndOut):- 
+	Ind < 256,!,
+	I is Ind - 128,
+	(I == 0 -> 
+	    IndOut = IndIn
+	 ;  (var(IndIn) -> 
+	        (I < 0 -> IndOut = Ind ; IndOut = *(I))
+	      ; (I < 0 -> IndOut = IndIn + Ind ; IndOut = IndIn + *(I) ) ) ).
+decode_star_index(Ind,IndIn,IndOut):- 
+	PreInd1 is '/\'(Ind,255),
+	decode_star_index(PreInd1,IndIn,IndMid),
+	IndRest is Ind >> 8,
+	decode_star_index(IndRest,IndMid,IndOut).
 
 /* ===== current_input/1 ======================================= */
 % TLS: changed on 8/04 for new streams.
@@ -252,14 +279,24 @@ current_output_port(FileDes) :- stat_flag(CURRENT_OUTPUT, FileDes).
 %   A variable in place of Predicate_Indicator succeeds only for global
 %   modules.
 %  TLS: added ISO-style error handling 8/04.
+% TLS: redid so that we have a unified semantics for different forms
+% of predicate indicators.  09/04
 
+current_predicate(Specifier) :-		% This takes care of global modules.
+	(Specifier = Module:Functor/N -> 
+	   current_predicate_module(Module,Functor,N)
+	;  (Specifier = Functor/N -> 
+	      current_predicate_global(Functor,N)
+	      ; type_error(term_indicator,Specifier,current_predicate/1,1) ) ).
+
+/*
 current_predicate(Specifier) :-		% This takes care of global modules.
 	(Specifier = Functor/N -> 
 	    current_predicate_global(Functor,N)
 	  ; (Specifier = Module:Functor/N -> 
 	        current_predicate_module(Module,Functor,N)
 	      ; type_error(term_indicator,Specifier,current_predicate/1,1) ) ).
-
+*/
 current_predicate_global(Functor,N):- 
 	!,				% i.e. "usermod" and "global".
 	psc_scan_in_hash_table(0, PSC),
@@ -272,6 +309,8 @@ current_predicate_global(Functor,N):-
 	psc_name(PSC, Name),
 	Functor = Name,
 	Arity = N.
+
+
 current_predicate_module(Module,Functor,N) :-
 	get_first_psc_pair(PSC_Pair),
 	module_scan(PSC_Pair, ModuleName, ModulePSC),
