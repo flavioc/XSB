@@ -7,4 +7,4 @@ xsb_codename="Gouden Carolus"
 
 # Format: YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
 # With this, XSB should become Y2K compliant :-)
-xsb_release_date=1999-06-20
+xsb_release_date=1999-06-27
