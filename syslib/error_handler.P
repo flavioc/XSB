@@ -87,6 +87,93 @@ default_sys_error_handler(Msg) :-
 	messageln(('++Error[XSB/Runtime/P] uncaught exception: ', Msg), 
 	           STDERR).
 
+/* Get a string description of an exception thrown by XSB */
+get_sys_error_description('_$abort_ball'(AbortMsgs, Backtrace), ExceptionDescription, BacktraceList) :- !,
+	concat_atom(AbortMsgs, ExceptionDescription),
+	get_backtrace(Backtrace, BacktraceList).
+get_sys_error_description('_$abort_ball'(Backtrace), 'Aborting...', BacktraceList) :- !,
+	get_backtrace(Backtrace, BacktraceList).
+get_sys_error_description(error(Error,Msg,Backtrace), ExceptionDescription, BacktraceList) :- !,
+	get_sys_error_description(error(Error,Msg), ExceptionDescription),
+	get_backtrace(Backtrace, BacktraceList).
+get_sys_error_description(error(Error,Msg), ExceptionDescription, []) :-
+	get_sys_error_description(error(Error,Msg), ExceptionDescription).
+
+get_sys_error_description(error(Error,Msg,_Backtrace), ExceptionDescription) :-
+	get_sys_error_description(error(Error,Msg), ExceptionDescription).
+
+get_sys_error_description('_$abort_ball'(AbortMsgs, _Backtrace), ExceptionDescription) :- !,
+	concat_atom(AbortMsgs, ExceptionDescription).
+get_sys_error_description('_$abort_ball'(_Backtrace), 'Aborting...') :- !. %% not much of a description for this one
+get_sys_error_description(error(instantiation_error,Msg), ExceptionDescription) :- !,
+	list_comma_list(MsgList, Msg),
+	concat_atom(['++Error[XSB/Runtime/P]: [Instantiation] '| MsgList], ExceptionDescription).
+get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDescription) :-
+	atom(Valid_type), atom(Culprit), !,
+	list_comma_list(MsgList, Msg),
+	concat_atom(['++Error[XSB/Runtime/P]: [Type (',Culprit,' in place of ',Valid_type,')] '| MsgList],
+		    ExceptionDescription).
+get_sys_error_description(error(domain_error(Valid_type_in,Culprit),Msg), ExceptionDescription) :-
+	atom(Valid_type_in), atom(Culprit), !,
+	list_comma_list(MsgList, Msg),
+	(Valid_type_in = [_|_] -> concat_atom(Valid_type_in,Valid_type) ; Valid_type = Valid_type_in),
+	concat_atom(['++Error[XSB/Runtime/P]: [Domain (',Culprit,' not in domain ',Valid_type,')] '| MsgList],
+		    ExceptionDescription).
+get_sys_error_description(error(existence_error(Object_type,Culprit),Msg), ExceptionDescription) :-
+	atom(Object_type), atom(Culprit), !,
+	list_comma_list(MsgList, Msg),
+	concat_atom(['++Error[XSB/Runtime/P]: [Existence (No ',Object_type, ' ',Culprit,' exists)] '| MsgList],
+		    ExceptionDescription).
+get_sys_error_description(error(undefined_predicate(_Name, _Arity, _Module),Msg), ExceptionDescription) :- !,
+	list_comma_list(MsgList, Msg),
+	concat_atom(['++Error[XSB/Runtime/P]: '| MsgList], ExceptionDescription).
+get_sys_error_description(error(permission_error(Op,Obj_type,Culprit),Msg), ExceptionDescription) :-
+	atom(Op), atom(Obj_type), atom(Culprit), !,
+	list_comma_list(MsgList, Msg),
+	concat_atom(['++Error[XSB/Runtime/P]: [Permission (Operation) ',
+		     Op,' on ',Obj_type,': ',Culprit,'] '|MsgList], ExceptionDescription).
+get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDescription) :-
+	atom(Flag), !,
+	list_comma_list(MsgList, Msg),
+	concat_atom(['++Error[XSB/Runtime/P]: [Representation (',Flag,')] '| MsgList], ExceptionDescription).
+get_sys_error_description(error(calculation_error(Flag),Msg), ExceptionDescription) :- 
+	atom(Flag), %% !,
+	list_comma_list(MsgList, Msg),
+	concat_atom(['++Error[XSB/Runtime/P]: [Calculation (',Flag,')] '| MsgList], ExceptionDescription).
+
+% list_comma_list(PrologList, CommaList)
+list_comma_list(Var1, Var2):- var(Var1), var(Var2), !, fail.
+list_comma_list([], true) :- !.
+list_comma_list([Term|L], Term1):-
+	L == [], var(Term1), !, Term1 = Term.
+list_comma_list([Arg1|List], ','(Arg1,Arg2)):- !,
+	list_comma_list(List, Arg2).
+list_comma_list([Term], Term1) :-
+	nonvar(Term1), Term1 = Term.
+
+
+/*get_backtrace(+, -) gets backtrace as built by build_xsb_backtrace:
+list pair, with car=forward continuation, cdr=backward continuation.
+backward is [] if xsb not started with -p option */
+get_backtrace([ForPscs|BackPscs], [['Forward Continuation...'|PFor]|['Backward Continuation...'| PBack]]) :-
+	get_mod_pred_arity_list(ForPscs,PFor),
+	get_mod_pred_arity_list(BackPscs,PBack).
+
+get_mod_pred_arity_list([], []).
+get_mod_pred_arity_list([Psc|Pscs], [ModPred|ModPreds]) :-
+	(Psc =:= 0
+	 ->	ModPred = '... unknown/?'
+	 ;	psc_data(Psc,ModPsc),
+		psc_name(ModPsc,ModName),
+		psc_name(Psc,Name),
+		psc_arity(Psc,Arity),
+		(ModName == usermod
+		 ->	concat_atom(['... ',Name,'/',Arity],ModPred)
+		 ;	concat_atom(['... ',ModName,':',Name,'/',Arity],ModPred)
+		)
+	),
+	get_mod_pred_arity_list(Pscs, ModPreds).
+
 /* prints out backtrace as built by build_xsb_backtrace:
 list pair, with car=forward continuation, cdr=backward continuation.
 backward is [] if xsb not started with -p option */

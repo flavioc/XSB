@@ -35,10 +35,13 @@
               check_var/3, 
               default_error_handler/1,
 	      default_sys_error_handler/1,
-	      print_backtrace/1.
+              get_sys_error_description/2,
+              get_sys_error_description/3,
+              print_backtrace/1,
+              get_backtrace/2.
 
 :- import (dynamic)/1 from assert.
-:- import ground/1 from basics.
+ :- import ground/1 from basics.
 %%:- import reset_undef_pred_handlers/0 from loader.
 :- import close_open_tables/0, psc_data/2, psc_name/2, psc_arity/2,
              xsb_backtrace/1 from machine.
