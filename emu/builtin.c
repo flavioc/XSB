@@ -149,6 +149,7 @@ extern void force_answer_false(BTNptr);
 #if (defined(DEBUG) && defined(DEBUG_DELAY))
 extern void print_delay_list(FILE *, CPtr);
 extern void print_subgoal(FILE *, SGFrame);
+extern void printterm(Cell, byte, int);	/* used in bineg_xsb_i.h */
 #endif
 
 /* ------- variables also used in other parts of the system -----------	*/
