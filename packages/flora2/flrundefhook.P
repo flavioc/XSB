@@ -32,7 +32,8 @@
 /****************************************************************************
   flora_undefined_predicate_hook/1
 ****************************************************************************/
-flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord,true]) :-
+flora_undefined_predicate_hook([PscRecord,true]) :-
+	psc_name(PscRecord,PredName),
 	flora_flogic_predicate(PredName,WS,_Position,Base),
 	!,
 	flora_stdmsg_nl,
@@ -45,13 +46,15 @@ flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord,true]) :-
 	),
 	!.
 
-flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord,fail]) :-
+flora_undefined_predicate_hook([PscRecord,fail]) :-
+	psc_name(PscRecord,PredName),
 	flora_hilog_predicate(PredName,Workspace),
 	!,
 	flora_stderr_nl,
 	flora_error_line("undefined HiLog predicate in module `%s'",args(Workspace)).
 
-flora_undefined_predicate_hook([PredName,_XSBModule,PscRecord,fail]) :-
+flora_undefined_predicate_hook([PscRecord,fail]) :-
+	psc_name(PscRecord,PredName),
 	flora_nohilog_predicate(PredName,Predicate,Workspace),
 	!,
 	psc_arity(PscRecord,N),

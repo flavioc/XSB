@@ -24,7 +24,7 @@
 */
 
 
-:- import psc_arity/2 from machine.
+:- import psc_name/2, psc_arity/2 from machine.
 
 :- import
 	flora_flogic_predicate/4,
