@@ -741,13 +741,21 @@ versions_for_existing_component(Name):-
         (needs_update(Name) -> 
 	      V1 is V + 1,
 	      call_assert(temp_new_version(Name,V1)),
-	      retractallExtTerm(classHasAttr_ext(
-			            cid(compName(cid(Name,Name),
-					      cid(P,cdfpt)),Name),
-		                        crid(hasVersion,Name),cid(V,cdfpt))),
-	      newExtTerm(classHasAttr_ext(cid(compName(cid(Name,Name),
-						              cid(P,cdfpt)),Name),
-	                             crid(hasVersion,Name),cid(V,cdfpt)))
+ 	      retractallExtTerm(classHasAttr_ext(
+ 			            cid(compName(cid(Name,Name),
+ 					      cid(P,cdfpt)),Name),
+ 		                        crid(hasVersion,Name),cid(V,cdfpt))),
+ 	      newExtTerm(classHasAttr_ext(cid(compName(cid(Name,Name),
+ 						              cid(P,cdfpt)),Name),
+ 	                             crid(hasVersion,Name),cid(V1,cdfpt))),
+	    retractallExtTerm(isa_ext(cid(component(cid(Name,Name),
+						    cid(P,cdfpt),
+						    cid(V,cdfpt)), Name),
+				      cid('CDF Classes',cdf))),
+	    newExtTerm(isa_ext(cid(component(cid(Name,Name),
+					     cid(P,cdfpt),
+					     cid(V1,cdfpt)), Name),
+			       cid('CDF Classes',cdf)))
 	    ; call_assert(temp_new_version(Name,V))).
 
 propagate_for_name(Name):- 
