@@ -125,8 +125,6 @@ inline_builtin(tilde_expand_filename, 2, 67).
 inline_builtin(is_absolute_filename, 1, 68).
 inline_builtin(parse_filename, 4, 69).
 
-inline_builtin(buff_assign_word, 3, 96).
-
 inline_builtin(psc_env, 2, 100).
 inline_builtin(psc_spy, 2, 101).
 inline_builtin(psc_tabled, 2, 102).
@@ -145,7 +143,7 @@ inline_builtin(slg_not, 1, 114).
 
 inline_builtin(is_xwammode, 1, 117).
 inline_builtin(close_open_tables, 0, 118).
-inline_builtin(call_hash, 5, 119).
+
 inline_builtin(print_predicate_table, 1, 120).
 
 inline_builtin(file_read_line, 3, 123).
@@ -155,9 +153,10 @@ inline_builtin(abolish_table_info, 0, 126).
 
 inline_builtin(fmt_write, 3, 131).
 
+inline_builtin(get_delay_lists, 2, 144).
+
 % inline_builtin(get_returns,2,150).
 % inline_builtin(get_calls,1,151).
-inline_builtin(get_delay_lists, 2, 144).
 inline_builtin(get_lastnode_cs_retskel, 3, 152).
 
 inline_builtin(get_emu_dependent_const, 2, 156).
