@@ -2,8 +2,6 @@
 %===================================
 \label{foreign}
 
-\section{Compiler Directives for Foreign C Modules}
-
 When \ourprolog\ is used to build real-world systems, a foreign-language
 interface may be necessary to:
 \begin{itemize}
@@ -14,6 +12,15 @@ interface may be necessary to:
 \item speed up certain critical operations.
 \end{itemize}
 
+XSB has both the high-level and the low-level interfaces to C.  The
+low-level interface is much more flexible, but it requires greater
+attention to details of how the data is passed between \ourprolog\ and C.
+To connect XSB to a C program using the high-level interface requires very
+little work, but the program must be used ``as is'' and it must take the
+input and produce the output supported by this high-level interface.  We
+first describe the low-level interface.
+
+\section{Compiler Directives for Foreign C Modules}
 
 Foreign predicates must always appear in modules, which can contain
 only foreign predicates.  The main difference between a normal module
@@ -673,7 +680,7 @@ bool do_regsubstitute__(void)
                   c2p_string(output_buffer, output_term);
        The reason for not interning is that in Web page
        manipulation it is often necessary to process the same string many
-       times. This can cause atom table overflow. Not interning allws us to
+       times. This can cause atom table overflow. Not interning allows us to
        circumvent the problem.  */
     ctop_string(4, output_buffer);
   
@@ -772,32 +779,28 @@ bool do_bulkmatch__(void)
 
 \section{High Level Foreign Predicate Interface}
 
-The high level foreign predicate interface was designed to release,
-from the programmer, the burden of having to write specific code to
-transfer arguments to \ourprolog\ to C and vice-versa.
-
-By introducing a new and improved notation for describing C functions
-and its counterpart Prolog predicates in the .H files, this module is
-capable of automatically generating code (called \emph{wrappers})
-which will be responsible for translating Prolog terms and structures
-to proper C types, and vice-versa. The \emph{wrappers} are
-automatically used when compiling the foreign predicates\footnote{In
-  Windows, this is not true. Due to the complexity of creating
-  Makefiles for the different Windows compilers, it's not yet
-  implemented, and the user is responsible for compiling the foreign
-  module along with the created wrappers}.
+The high-level foreign predicate interface was designed to release the
+programmer from the burden of having to write low-level code to transfer
+data from \ourprolog\ to C and vice-versa.  Instead, all the user needs to
+do is to describe each C function and its corresponding Prolog predicates
+in the .H files. The interface then automatically generates the
+\emph{wrappers} that translate Prolog terms and structures to proper C
+types, and vice-versa. The \emph{wrappers} are then automatically used when
+the foreign predicates are compiled.\footnote{Please see the special
+  instructions for Windows.}
 
 \subsection{Declaration of high level foreign predicates}
 
 The basic format of a foreign predicate declaration is:
-
+%%
 \begin{center}
 {\tt :- foreign\_pred \emph{predname}(\emph{[+-]parg1,
-  [+-]parg2,...}) from \emph{funcname}(\emph{carg1:type1, carg2:type2,
+  [+-]parg2,...})\\
+~~~~~~~~~~~~~~~~~~~from \emph{funcname}(\emph{carg1:type1, carg2:type2,
   ...}):\emph{functype}.
 }
 \end{center}
-
+%%
 where:
 
 \begin{description}
@@ -806,40 +809,33 @@ where:
 of the Prolog predicate that will be created.
 
 \ouritem{parg1, parg2, ...} are the predicate arguments. Each argument is
-preceded by either '+' or '-', indicating its mode as, respectively,
-input or output.The names of the arguments are the same as the
-ones declared for the C function. Note that a C function argument may
-appear as at most two positions in the predicate argument list, as
-long as both have different modes. Also, the identifier
-\texttt{retval} is used to mean the return value of the C function,
-and if used has always to have mode '-'.
+preceded by either '+' or '-', indicating its mode as input or output
+respectively. The names of the arguments must be the same as those used in
+the declaration of the corresponding C function. If a C argument is used
+both for input and output, then the corresponding Prolog argument can
+appear twice: once with ``+'' and once with ``-''.  Also, a special
+argument \texttt{retval} is used to denote the argument that corresponds to
+the return value of the C function; it must always have the mode '-'.
 
 \ouritem{funcname} is the name of the C function being
 \emph{wrapped}. This is the C function given by the user, which will
 be exported as a Prolog foreign predicate.
 
-\ouritem{carg1, carg2, ...} is the list of arguments of the C
-function. The names used for the arguments must match with the names
-used in the Prolog declaration.
+\ouritem{carg1, carg2, ...} is the list of arguments of the C function. The
+names used for the arguments must match the names used in the Prolog
+declaration.
 
 \ouritem{type1, type2, ...} are the types associated to the arguments of
 the C function. This is not the set of C types, but rather a set of
-descriptive types, defined below.
+descriptive types, as defined in Table~\ref{table:hltypes}.
 
 \ouritem{functype} is the return type of the C function.
 
 \end{description}
 
-This notation allows the use of pre-defined C functions, which were
-not designed to be a prolog foreign predicate. Also, it's much useful
-when designing new foreign predicates, once the user can concentrate
-on the actual functionality of the C code, and not on details specific
-to how to transfer data to and from Prolog.
-
-Table~\ref{table:hltypes} shows which types are allowed in the C
-function declaration, and to which actual C types they relate. Note
-that the associate C type of a descriptive type may change according
-to the usage of the argument in the Prolog predicate definition.
+Table~\ref{table:hltypes} provides the correspondence between the types
+allowed on the C side of a foreign module declaration and the types allowed
+on the Prolog side of the declaration.
 
 \begin{table}
 \label{table:hltypes}
@@ -914,6 +910,7 @@ passed to C, \\
 \hline
 \end{tabular}
 \caption{Allowed combinations of types and modes, and their meanings}
+\label{tbl-types-p}
 \end{table}
 
 In all modes and types, checks are performed to ensure the types of
@@ -922,22 +919,27 @@ variables at call time.
 
 \subsection{Compiling the foreign module on Windows}
 
-As stated before, the system doesn't attempt to compile and build the
-DLL for the foreign module on Windows, due to the complexity of
-creating makefiles for the different compilers.
+Due to the complexity of
+creating makefiles for the different compilers under Windows,
+XSB doesn't attempt to compile and build 
+DLL's for the Windows foreign modules.
 
-In order to use this facility, the user has to create the DLL herself.
-The process is, roughly, as follows: first, she has to compile the
-module from within \ourprolog\. This will create the \ourprolog\ 
-specific object file, and the \emph{wrappers}. The \emph{wrappers} are
-created in a file named
+Instead, the user has to create the DLL herself.  The process is, roughly,
+as follows: first, compile the module from within \ourprolog\.
+This will create the \ourprolog-specific object file, and the
+\emph{wrappers}. The \emph{wrappers} are created in a file named
 \texttt{xsb\_wrap\_}\emph{modulename}\texttt{.c}.
 
-Then, the user has to create a project, in her preferred compiler,
-for a dynamically-linked library. In this project, she will include
-the module source code, along with the \emph{wrapper} created by
-XSB. Also, this DLL should be linked against the library
-\texttt{XSB/config/x86-pc-windows/bin/xsb.lib}, which is provided with
+Then, the user has to create a project, using the compiler of choice, for a
+dynamically-linked library. In this project, the user must include the
+source code of the module along with the \emph{wrapper} created by XSB. In
+addition, this DLL should be linked against the library
+%%
+\begin{quote}
+   \verb|XSB\config\x86-pc-windows\bin\xsb.lib|
+\end{quote}
+%%
+which is distributed with
 XSB.
 
 %%
