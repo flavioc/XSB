@@ -146,7 +146,7 @@ void printterm(Cell term, byte car, int level)
 	fprintf(outfile, "\"%s\"", string_val(term));
 	break;
       case INT:
-	fprintf(outfile, "%d", int_val(term));
+	fprintf(outfile, "%ld", (long)int_val(term));
 	return;
       case FLOAT:
 	fprintf(outfile, "%f", float_val(term));

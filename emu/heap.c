@@ -999,7 +999,7 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
   if (fromwhere == FROM_CP) heap_top-- ;
   switch (whereto)
     { case TO_HEAP : index = p - heap_bot ; s = "ref_heap" ; break ;
-      case TO_NOWHERE : index = (int)p ; s = "ref_nowhere" ; break ;
+      case TO_NOWHERE : index = (Integer)p ; s = "ref_nowhere" ; break ;
       case TO_LS : index = ls_bot - p ; s = "ref_ls" ; break ;
       case TO_CP : index = cp_bot - p ; s = "ref_cp" ; break ;
       case TO_TR : index = p - tr_bot ; s = "ref_tr" ; break ;
@@ -1017,20 +1017,20 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
 	    case TO_LS :
 	    case TO_TR :
 	    case TO_CP :
-	      fprintf(where,"%s,%d).\n",s,index) ;
+	      fprintf(where,"%s,%ld).\n",s,(long)index) ;
 	      break ;
 	    case TO_COMPL :
-	      fprintf(where,"%s,%d).\n",s,index) ;
+	      fprintf(where,"%s,%ld).\n",s,(long)index) ;
 	      break ;
 	    case TO_NOWHERE:
 	      if (points_into_heap(p))
 		{
 		  index = (p-heap_bot) ;
-		  fprintf(where,"between_h_ls,%d/%p,_) .\n",index,p) ;
+		  fprintf(where,"between_h_ls,%ld/%p,_) .\n",(long)index,p) ;
 		}
 	      else
 		if ((Integer)cell_val < 10000)
-		  fprintf(where,"strange,%d).\n",(Integer)cell_val) ;
+		  fprintf(where,"strange,%ld).\n",(long)cell_val) ;
 		else
 		  if (fromwhere == FROM_HEAP)
 		    fprintf(where,"funct,'%s'/%d).\n",
@@ -1042,8 +1042,8 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
 			char *s ;
 		        if ((tr_bot < (CPtr)cell_val) &&
 			    ((CPtr)cell_val < cp_bot))
-			  fprintf(where,"between_trail_cp,%d).\n",
-				  (Integer)cell_val) ;
+			  fprintf(where,"between_trail_cp,%ld).\n",
+				  (long)cell_val) ;
 			else
 			  {
 			    s = code_to_string((byte *)cell_val) ;
@@ -1060,17 +1060,17 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
 
       case CS :
         if (whereto == TO_NOWHERE)
-	  fprintf(where,"cs-%s,%x).\n",s,index) ;
+	  fprintf(where,"cs-%s,%lx).\n",s,(long)index) ;
 	else
-	  fprintf(where,"cs-%s,%d).\n",s,index) ;
+	  fprintf(where,"cs-%s,%ld).\n",s,(long)index) ;
         break ;
 
       case LIST :
-        fprintf(where,"list-%s,%d).\n",s,index) ;
+        fprintf(where,"list-%s,%ld).\n",s,(long)index) ;
         break ;
 
       case INT :
-        fprintf(where,"int  ,%d).\n",int_val(cell_val)) ;
+        fprintf(where,"int  ,%ld).\n",(long)int_val(cell_val)) ;
         break ;
 
       case FLOAT :
@@ -1231,16 +1231,16 @@ void print_regs(int a,int add)
       startp++ ; start++ ;                   
     }
 
-  fprintf(where,"trreg = %d\n",(CPtr)trreg-tr_bot) ;
-  fprintf(where,"breg = %d\n",cp_bot-breg) ;
-  fprintf(where,"hreg = %d\n",hreg-heap_bot) ;
-  fprintf(where,"ereg = %d\n",ls_bot-ereg) ;
+  fprintf(where,"trreg = %ld\n",(long)((CPtr)trreg-tr_bot)) ;
+  fprintf(where,"breg = %ld\n",(long)(cp_bot-breg)) ;
+  fprintf(where,"hreg = %ld\n",(long)(hreg-heap_bot)) ;
+  fprintf(where,"ereg = %ld\n",(long)(ls_bot-ereg)) ;
 
 #if (!defined(CHAT))
-  fprintf(where,"trfreg = %d\n",(CPtr)trfreg-tr_bot) ;
-  fprintf(where,"bfreg = %d\n",cp_bot-bfreg) ;
-  fprintf(where,"hfreg = %d\n",hfreg-heap_bot) ;
-  fprintf(where,"efreg = %d\n",ls_bot-efreg) ;
+  fprintf(where,"trfreg = %ld\n",(long)(CPtr)(trfreg-tr_bot)) ;
+  fprintf(where,"bfreg = %ld\n",(long)(cp_bot-bfreg)) ;
+  fprintf(where,"hfreg = %ld\n",(long)(hfreg-heap_bot)) ;
+  fprintf(where,"efreg = %ld\n",(long)(ls_bot-efreg)) ;
 #endif
   fprintf(where,"ptcpreg = %ld\n",(Cell)ptcpreg) ;
 
