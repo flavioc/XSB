@@ -37,11 +37,10 @@
 :- import concat_atom/2, concat_atom/3 from string.
 :- import member/2 from basics.
 :- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1,
-	throw/1, atom/1
+	throw/1, atom/1, '\='/2
 	from standard.
 :- import cwd/1, cd/1 from shell.
 
-:- import scan/2, set_scan_pars/1 from stdscan.
 :- import flatten/2 from basics.
 
 :- import slash/1 from machine.
@@ -185,9 +184,7 @@ split_dirs(Path,Drive,LDirs) :-
 	->  atom_codes(Path,CPath)
 	;   CPath = Path
 	),
-	set_scan_pars([no_case,letter(0'_)]),
-	scan(CPath,SCPath),
-	path(Drive,LDirs,SCPath,[]),
+	path(Drive,LDirs,CPath,[]),
 	!.
 
 path(Drive,LDirs) -->
@@ -196,42 +193,43 @@ path(Drive,LDirs) -->
 	dirs(LDirs).
 path([],LDirs) -->
 	dirs(LDirs).
+path([],[Dir|LDirs]) -->
+	dir(DirL),
+	dirs(LDirs),
+	{atom_codes(Dir,DirL)}.
 
 disk(Drive) -->
-	[Drive], [':'].
+	[LDrive], [58], {atom_codes(Drive,[LDrive])}. % 0':
 
 dirs([]) --> opt_slash, [].
 dirs([Dir|Dirs]) -->
 	slash,
-	[Dir],
-	dirs(Dirs).
+	dir(LDir),
+	dirs(Dirs),
+	{atom_codes(Dir,LDir)}.
 
-slash --> ['/'], !.
-slash --> ['\'], opt_bslash.
-opt_bslash --> [].
-opt_bslash --> ['\'], opt_bslash.
-opt_slash --> [].
+slash --> [92], opt_slash. % 0'\
+slash --> [47], opt_slash. % 0'/
+
 opt_slash --> slash.
+opt_slash --> [].
+
+dir([X]) --> letter(X).
+dir([X|Y]) --> letter(X), dir(Y).
+
+letter(X) --> [X], {X \= 92, X \= 47, X \= 58}.
 
 %% rel_path(+Orig, +Dest, -RelPath)
 %% Makes RelPath a relative path to Dest from Orig. If drive names are
 %% given, and they are different, RelPath = Dest.
 
 rel_path(Orig, Dest, RelPath) :-
-	split_dirs(Orig,ODrive,ODirs0),
-	elim_mixed(ODirs0,ODirs),
-	split_dirs(Dest,DDrive,DDirs0),
-	elim_mixed(DDirs0,DDirs),
+	split_dirs(Orig,ODrive,ODirs),
+	split_dirs(Dest,DDrive,DDirs),
 	(   ODrive = DDrive
 	->  make_relative(ODirs,DDirs,RelPath)
 	;   atom_codes(RelPath,Dest)
 	).
-
-elim_mixed([],[]) :- !.
-elim_mixed([mixed(H)|T],[H|T1]) :- !,
-	elim_mixed(T,T1).
-elim_mixed([H|T],[H|T1]) :-
-	elim_mixed(T,T1).
 
 make_relative([],[],'.') :- !.
 make_relative([],D,CD) :- !,
