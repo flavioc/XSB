@@ -2887,16 +2887,16 @@ EOF
 			    if test "$CC" = "gcc" ; then
 			       CFLAGS="-msupersparc ${CFLAGS}"
 			    fi
-			    LDFLAGS="-lsocket ${LDFLAGS}"
-			    if test "$__export_dynamic" = "yes" ; then
-				LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-			    fi
-			    if test "${have_socket}" = "no" ; then
-				{ echo "configure: error: Your system is missing library: \`socket'" 1>&2; exit 1; }
-			    fi
 			   ;;
 		 esac
-		 ;;
+		 LDFLAGS="-lsocket ${LDFLAGS}"
+		 if test "$__export_dynamic" = "yes" ; then
+		     LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+		 fi
+		 if test "${have_socket}" = "no" ; then
+		     { echo "configure: error: Your system is missing library: \`socket'" 1>&2; exit 1; }
+		 fi
+		;;
       *-aix*)  cat >> confdefs.h <<\EOF
 #define IBM 1
 EOF

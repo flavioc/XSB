@@ -975,16 +975,16 @@ case "$canonical" in
 			    if test "$CC" = "gcc" ; then
 			       CFLAGS="-msupersparc ${CFLAGS}"
 			    fi
-			    LDFLAGS="-lsocket ${LDFLAGS}"
-			    if test "$__export_dynamic" = "yes" ; then
-				LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-			    fi
-			    if test "${have_socket}" = "no" ; then
-				AC_MSG_ERROR(Your system is missing library: \`socket')
-			    fi
 			   ;;
 		 esac
-		 ;;
+		 LDFLAGS="-lsocket ${LDFLAGS}"
+		 if test "$__export_dynamic" = "yes" ; then
+		     LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+		 fi
+		 if test "${have_socket}" = "no" ; then
+		     AC_MSG_ERROR(Your system is missing library: \`socket')
+		 fi
+		;;
       *-aix*)  AC_DEFINE(IBM) ;;
       *-sunos4*) AC_DEFINE(SUN)
 		 AC_DEFINE(FOREIGN_AOUT)
