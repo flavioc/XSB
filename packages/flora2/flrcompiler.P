@@ -69,7 +69,8 @@ is_fltnot(FLTNOT(Goal),Goal).
 
 is_flload(FLLOAD(LoadList),LoadList).
 is_flworkspace(FLWORKSPACE(P,WS),P,WS).
-is_flmodule(FLMODULE(P,MD),P,MD).
+is_flplib(FLPLIB(P,MD),P,MD).
+is_flplib(FLPLIB(P),P).
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
 is_flinsert(FLINSERT(Op,List),Op,List).
 is_fldelete(FLDELETE(Op,List,Cond),Op,List,Cond).
@@ -973,7 +974,10 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	; is_flworkspace(ParserTerm,P,WS) ->
 	    compile_wsliteral(P,WS,Code,Status)
 
-	; is_flmodule(ParserTerm,P,Module) ->
+	; is_flplib(ParserTerm,P) ->
+	    compile_prlgtermlit(P,Code,Status)
+
+	; is_flplib(ParserTerm,P,Module) ->
 	    compile_prlgtermlit(P,Module,Code,Status)
 
 	; is_flinsert(ParserTerm,Op,List) ->
@@ -1042,7 +1046,10 @@ compile_pathexp(ParserTerm,Object,Code,Status) :-
 	; is_flaggregate(ParserTerm,Op,V,GV,B) ->
 	    compile_flaggregate(Op,V,GV,B,Object,Code,Status)
 
-	; is_flmodule(ParserTerm,P,Module) ->
+	; is_flplib(ParserTerm,P) ->
+	    compile_prlgtermobj(P,Object,Code,Status)
+
+	; is_flplib(ParserTerm,P,Module) ->
 	    compile_prlgtermobj(P,Module,Object,Code,Status)
 	;
 	  is_flworkspace(ParserTerm,P,WS),
@@ -2233,19 +2240,34 @@ compile_wsflobjeql(Obj1,Obj2,WS,Code,Status) :-
 
 
 /****************************************************************************
+  compile_prlgtermlit(+ParserTerm,-Code,-Status)
+
+  This is for compiling Prolog library calls.
+****************************************************************************/
+compile_prlgtermlit(ParserTerm,Code,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    is_flatom(Funct,FAtom),
+	    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status),
+	    (Status == [] -> conjunct_code(ACode,TCode,Code); true)
+	;
+	  is_flatom(ParserTerm,FAtom),
+	  N=0,
+	  prologterm_struct(FAtom,0,[],Code),
+	  Status=[]
+	),
+	!.
+
+
+/****************************************************************************
   compile_prlgtermlit(+ParserTerm,+Module,-Code,-Status)
 
-  This is for compiling XSB calls.
+  This is for compiling Prolog library calls.
 ****************************************************************************/
 compile_prlgtermlit(ParserTerm,Module,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    is_flatom(Funct,FAtom),
 	    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status),
-	    ( Status == [] ->
-		conjunct_code(ACode,TCode,Code)
-	    ;
-	      true
-	    )
+	    (Status == [] -> conjunct_code(ACode,TCode,Code); true)
 	;
 	  is_flatom(ParserTerm,FAtom),
 	  N=0,
@@ -2253,12 +2275,24 @@ compile_prlgtermlit(ParserTerm,Module,Code,Status) :-
 	  Status=[]
 	),
 	!,
-	( Module == FL_UNIVMOD ->
-	    true
+	import_struct(FAtom,N,Module,ICode),
+	directive_struct(ICode,DCode),
+	report_directive(DCode).
+
+
+/****************************************************************************
+  compile_prlgtermobj(+ParserTerm,-Object,-Code,-Status)
+****************************************************************************/
+compile_prlgtermobj(ParserTerm,Object,Code,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    is_flatom(Funct,FAtom),
+	    compile_prlgterm(FAtom,N,Args,Object,Code,Status)
 	;
-	  import_struct(FAtom,N,Module,ICode),
-	  directive_struct(ICode,DCode),
-	  report_directive(DCode)
+	  is_flatom(ParserTerm,FAtom),
+	  N=0,
+	  prologterm_struct(FAtom,0,[],Object),
+	  Code=NULL,
+	  Status=[]
 	),
 	!.
 
@@ -2278,13 +2312,9 @@ compile_prlgtermobj(ParserTerm,Module,Object,Code,Status) :-
 	  Status=[]
 	),
 	!,
-	( Module == FL_UNIVMOD ->
-	    true
-	;
-	  import_struct(FAtom,N,Module,ICode),
-	  directive_struct(ICode,DCode),
-	  report_directive(DCode)
-	).
+	import_struct(FAtom,N,Module,ICode),
+	directive_struct(ICode,DCode),
+	report_directive(DCode).
 
 
 /****************************************************************************

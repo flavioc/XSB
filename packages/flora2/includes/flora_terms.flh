@@ -107,7 +107,6 @@
 #define FL_DOLLAR		'$'
 #define FL_CUT			'!'
 #define FL_NEWOID		'_#'
-#define FL_UNIVMOD		'*'
 
 #define FL_TNOT			(tnot)
 #define FL_NOT			(not)
@@ -170,7 +169,7 @@
 #define FL_FORMULAR		(form)
 #define FL_PROLOG		(prolog)
 #define FL_PROLOGALL		(prologall)
-#define FL_MODULE		(plib)
+#define FL_PLIB			(plib)
 #define FL_NOHILOG		(florapred)
 #define FL_NOHILOGALL		(florapredall)
 
@@ -236,7 +235,8 @@
   FLCUT
   FLLOAD(FLLIST)
   FLWORKSPACE(FLTERM|FLOBJSPEC|FLBIRELATE,Name)
-  FLMODULE(FLTERM|FLOBJSPEC|FLBIRELATE,Name)
+  FLPLIB(FLTERM,Name)
+  FLPLIB(FLTERM)
   FLCONJUNCT(Goal,Goal)
   FLDISJUNCT(Goal,Goal)
   FLNOT(Goal)
@@ -283,7 +283,7 @@
 #define FLCUT			flcut
 #define FLLOAD			flload
 #define FLWORKSPACE		flworkspace
-#define FLMODULE		flmodule
+#define FLPLIB			flplib
 #define FLCONJUNCT		flconjunct
 #define FLDISJUNCT		fldisjunct
 #define FLNOT			flnot

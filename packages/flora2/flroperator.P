@@ -106,7 +106,7 @@ flora_op(600,fy,FL_MINUS).
 
 flora_op(500,xfx,FL_AT).
 
-flora_op(400,fx,FL_MODULE).
+flora_op(400,fx,FL_PLIB).
 
 flora_op(300,yfx,FL_FD).
 flora_op(300,yfx,FL_MVD).

@@ -401,7 +401,8 @@ flload_struct(List,FLLOAD(List)).
 flworkspace_struct(Literal,Name,FLWORKSPACE(Literal,Name)).
 is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
-flmodule_struct(Goal,Name,FLMODULE(Goal,Name)).
+flplib_struct(Goal,Name,FLPLIB(Goal,Name)).
+flplib_struct(Goal,FLPLIB(Goal)).
 
 is_dbinsertop(FL_INSERT) :- !.
 
@@ -1007,10 +1008,14 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,Code,Status) :-
 	( get_name(R,RCode) -> %% Path expression needs runtime support.
 	    flora_body(L,RCode,Code,Status)
 
-	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_MODULE) ->
-	    ( (get_name(M,MCode); (get_atom(M,MCode), MCode == FL_UNIVMOD)) ->
+	; R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
+	    flora_prlgterm(L,LCode,Status),
+	    (Status == [] -> flplib_struct(LCode,Code); true)
+
+	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
+	    ( get_name(M,MCode) ->
 		flora_prlgterm(L,LCode,Status),
-		(Status == [] -> flmodule_struct(LCode,MCode,Code); true)
+		(Status == [] -> flplib_struct(LCode,MCode,Code); true)
 	    ;
 	      parsing_error(M,ERROR_WSNAME,Status)
 	    )
@@ -1368,10 +1373,14 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	      Status=S
 	    )
 
-	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_MODULE) ->
-	    ( (get_name(M,MCode); (get_atom(M,MCode), MCode == FL_UNIVMOD)) ->
+	; R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
+	    flora_prlgterm(L,LCode,Status),
+	    (Status == [] -> flplib_struct(LCode,Code); true)
+
+	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
+	    ( get_name(M,MCode) ->
 		flora_prlgterm(L,LCode,Status),
-		(Status == [] -> flmodule_struct(LCode,MCode,Code); true)
+		(Status == [] -> flplib_struct(LCode,MCode,Code); true)
 	    ;
 	      parsing_error(M,ERROR_WSNAME,Status)
 	    )
