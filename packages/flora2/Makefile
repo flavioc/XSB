@@ -84,6 +84,7 @@ base: core showerrors
 
 showerrors:
 	@cat $(FLORADIR)/.flora*.tmp
+	@rm $(FLORADIR)/.flora*.tmp
 
 top: init $(ALLOBJS) finish
 	./CompileChangedFiles.sh $(PROLOG_COMMAND)
