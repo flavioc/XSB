@@ -183,6 +183,7 @@ flora_library_file(FLLIBLOOPUNTIL,flrcontrol,syslib) :- !.
 
 flora_library_file(FLLIBMETAOPS,flrmetaops,syslib) :- !.
 flora_library_file(FLLIBUNIVEQFORM,flrmetaops,syslib) :- !.
+flora_library_file(FLLIBMETAUNIV,flrmetaops,syslib) :- !.
 
 
 /**************************************************************************

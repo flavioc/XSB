@@ -37,6 +37,10 @@
 
 
 
+/******************************************************************************
+  FLLIBUNIVEQFORM(?X,?Y)
+  The meta predicate ~
+******************************************************************************/
 FLLIBUNIVEQFORM(X,Y) :- X=Y, !.
 
 %% This takes care of F-logic molecules with dynamic module specification
@@ -91,3 +95,11 @@ FLLIBUNIVEQFORM(X, Y) :-
 	; flora_decode_predicate(X,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
 	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
 	X = Literal.
+
+
+/******************************************************************************
+  FLLIBMETAUNIV(?X,?Y)
+  The meta predicate =..
+******************************************************************************/
+
+FLLIBMETAUNIV(X,Y) :- X =.. Y.

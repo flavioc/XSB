@@ -273,6 +273,7 @@
   FLWHILELOOP(WhileCondition,Action)
   FLLOOPUNTIL(Action,UntilCondition)
 
+  FLMETAUNIV(LeftTerm,RightList)
   FLUNIVEQFORM(LeftFormula,RightFormula)
 ****************************************************************************/
 #define FLRULE			flrule
@@ -338,6 +339,7 @@
 #define FLLOOP			flloop
 
 #define FLUNIVEQFORM            fluniveqform
+#define FLMETAUNIV              flmetauniv
 
 
 /****************************************************************************
@@ -526,6 +528,8 @@
 #define FLLIBMETAOPS		fllibmetaops
 %% The meta ~
 #define FLLIBUNIVEQFORM		fllibuniveqform
+%% the meta =..
+#define FLLIBMETAUNIV  		fllibmetauniv
 
 
 /*****************************************************************************

@@ -25,7 +25,6 @@ flora2.pdf: flora2.dvi
 	@echo
 	@echo Making pdf...
 	pdflatex flora2
-	pdflatex flora2
 
 clean:
 	/bin/rm -f  *.bak *~ .*~ .#*

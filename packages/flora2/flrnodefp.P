@@ -50,7 +50,6 @@ flora_nodefp(FL_ORDERLT,2) :- !.
 flora_nodefp(FL_ORDEREQLT,2) :- !.
 flora_nodefp(FL_ORDERGT,2) :- !.
 flora_nodefp(FL_ORDEREQGT,2) :- !.
-flora_nodefp(FL_METAUNIV,2) :- !.
 flora_nodefp(FL_IS,2) :- !.
 flora_nodefp(FL_MATHEQ,2) :- !.
 flora_nodefp(FL_MATHNOTEQ,2) :- !.
@@ -66,6 +65,7 @@ flora_nodefp(FL_CUT,0) :- !.
 
 %% FLORA builtins
 flora_nodefp(FL_UNIVEQFORM,2) :- !.
+flora_nodefp(FL_METAUNIV,2) :- !.
 
 %% FLORA special syntax
 flora_nodefp(FL_WHILE,1) :- !.

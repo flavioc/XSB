@@ -93,6 +93,8 @@ is_flifthen(FLIFTHEN(Cond,Then),Cond,Then).
 
 %% Meta ~
 is_fluniveqform(FLUNIVEQFORM(Left,Right),Left,Right).
+%% Meta =..
+is_flmetauniv(FLMETAUNIV(Left,Right),Left,Right).
 
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
 is_flinsert(FLINSERT(Op,List,Cond),Op,List,Cond).
@@ -538,6 +540,9 @@ ifthen_struct(Cond,Then,Code) :-
 
 univeqform_struct(Left,Right,Code) :-
 	florasyslib_struct(FLLIBUNIVEQFORM,2,[Left,Right],Code).
+
+metauniv_struct(Left,Right,Code) :-
+	florasyslib_struct(FLLIBMETAUNIV,2,[Left,Right],Code).
 
 
 /****************************************************************************
@@ -1346,6 +1351,9 @@ compile_body_literal(ParserTerm,Code,Status) :-
 
 	; is_fluniveqform(ParserTerm,Left,Right) ->
 	    compile_fluniveqform(Left,Right,Code,Status)
+
+	; is_flmetauniv(ParserTerm,Left,Right) ->
+	    compile_flmetauniv(Left,Right,Code,Status)
 	
 	; is_flcut(ParserTerm,I) ->
 	    cut_struct(I,Code),
@@ -1399,12 +1407,34 @@ compile_flifthen(Cond,Then,Code,Status) :-
 
 /****************************************************************************
   compile_fluniveqform(+Left,+Right,-Code,-Status)
+  Compiling ~
 ****************************************************************************/
 compile_fluniveqform(Left,Right,Code,Status) :-
 	compile_body(Left,LeftCode,S1),
 	( S1 == [] ->
 	    compile_body(Right,RightCode,Status),
 	    (Status == [] -> univeqform_struct(LeftCode,RightCode,Code); true)
+	;
+	  Status=S1
+	).
+
+
+/****************************************************************************
+  compile_flmetauniv(+Left,+Right,-Code,-Status)
+  Compiling =..
+****************************************************************************/
+compile_flmetauniv(Left,Right,Code,Status) :-
+	%%compile_body(Left,LeftCode,S1),
+	%% Use pathexp translation instead of body translation, because we
+	%% don't want module name to be tacked on unless requested
+	compile_pathexp(Left,Obj,ObjCode,S1),
+	%% if it is a term (ObjCode==NULL) then use its translation
+	%% otherwise use the object code part
+	(ObjCode==NULL -> LeftCode=Obj ; LeftCode=ObjCode),
+	( S1 == [] ->
+	    %%compile_body(Right,RightCode,Status),
+	    compile_pathexp(Right,RightCode,_RightObjCode,Status),
+	    (Status == [] -> metauniv_struct(LeftCode,RightCode,Code); true)
 	;
 	  Status=S1
 	).

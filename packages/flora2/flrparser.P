@@ -431,13 +431,21 @@ fltnot_struct(Goal,FLTNOT(Goal)).
 
 flload_struct(List,FLLOAD(List)).
 
-flworkspace_struct(Literal,WSName,FLWORKSPACE(Literal,WSName)).
 is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
-flplib_struct(Goal,Name,FLPLIB(Goal,Name)).
-flplib_struct(Goal,FLPLIB(Goal)).
+%% Encoding module specs of the form: @mod, @flora(mod), @prolog(mod)
+flmodule_struct(Literal,WSName,FLORAUSERMOD,FLWORKSPACE(Literal,WSName)) :- !.
+flmodule_struct(Literal,Module,FLORASYSMOD,FLFLORALIB(Literal,Module)). :- !.
+flmodule_struct(Goal,Name,PROLOGMODULE,FLPLIB(Goal,Name)). :- !.
 
-flfloralib_struct(Literal,Module,FLFLORALIB(Literal,Module)).
+%% Encoding module specs of the form: @prolog()
+flplib_struct(Goal,FLPLIB(Goal)) :- !.
+
+%% Given module spec, get back module type and module name
+get_module_from_spec(FLORAUSERMOD(Mod),FLORAUSERMOD,Mod) :- !.
+get_module_from_spec(FLORASYSMOD(Mod),FLORASYSMOD,Mod) :- !.
+get_module_from_spec(PROLOGMODULE(Mod),PROLOGMODULE,Mod) :- !.
+
 
 is_flmodulespec_struct(FLWORKSPACE(_G,_N)) :- !.
 is_flmodulespec_struct(FLPLIB(_G)) :- !.
@@ -470,6 +478,7 @@ flifthen_struct(Cond,Then,FLIFTHEN(Cond,Then)).
 
 %% the meta ~
 fluniveqform_struct(Left,Right,FLUNIVEQFORM(Left,Right)).
+flmetauniv_struct(Left,Right,FLMETAUNIV(Left,Right)).
 
 
 /****************************************************************************
@@ -664,6 +673,8 @@ flora_var_fapair(CanoniTerm,_F,_A,Status) :-
 
 /****************************************************************************
   flora_commasep_falist(+CanoniTerm,-FAList,-Status)
+
+  Parse comma-separated Functor/Arg list
 ****************************************************************************/
 flora_commasep_falist(CanoniTerm,FAList,Status) :-
 	flora_comma_separated_list(CanoniTerm,TermList),
@@ -680,6 +691,8 @@ flora_commasep_var_falist(CanoniTerm,FAList,Status) :-
 
 /****************************************************************************
   flora_falist(+CanoniTermList,-FAList,-Status)
+
+  Parse Functor/Arg list
 ****************************************************************************/
 flora_falist([],[],[]) :- !.
 
@@ -1254,6 +1267,8 @@ flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :
 	parsing_error(If,ERROR_HDLITERAL,Status).
 
 /*
+%% No need to handle if-then-else separately here
+
 flora_head_literal(CANOTERM(Funct,1,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
         get_name(Funct,FL_IF),
         !,
@@ -1394,8 +1409,16 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
 	!,
         flora_body_univeqform(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
 
+%% Parse the =.. meta predicate
+%% Workspace as in (A=..B)@foo is illegal.  But (A@foo =.. B) is fine.
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
+	get_name(Funct,FL_METAUNIV),
+	!,
+        flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
+
 %% At this point, CanoniTerm is neither a logical formula nor a 
-%% if-then-else statement, nor some other special builtin
+%% if-then-else statement, nor some other special builtin 
+%% (like while-loops or meta operators)
 flora_body(CanoniTerm,NULL,Code,Status) :-
 	!,
 	%% no module name
@@ -1407,26 +1430,20 @@ flora_body(CanoniTerm,PROLOGMODULE,Code,Status) :-
 	flora_prlgterm(CanoniTerm,TCode,Status),
 	(Status == [] -> flplib_struct(TCode,Code); true).
 
-flora_body(CanoniTerm,PROLOGMODULE(Mod),Code,Status) :-
+flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
+	get_module_from_spec(PrologModuleSpec,PROLOGMODULE,Mod),
 	!,
 	%% Prolog module
 	flora_prlgterm(CanoniTerm,TCode,Status),
-	(Status == [] -> flplib_struct(TCode,Mod,Code); true).
+	(Status == [] -> flmodule_struct(TCode,Mod,PROLOGMODULE,Code); true).
 
-flora_body(CanoniTerm,FLORAUSERMOD(WS),Code,Status) :-
+flora_body(CanoniTerm,FloraModSpec,Code,Status) :-
+	get_module_from_spec(FloraModSpec,ModuleType,Module),
 	!,
-	%% Flora user module
+	%% Flora user or system module
 	flora_body_wsliteral(CanoniTerm,TCode,Status),
-	(Status == [] -> flworkspace_struct(TCode,WS,Code); true).
+	(Status == [] -> flmodule_struct(TCode,Module,ModuleType,Code); true).
 
-flora_body(CanoniTerm,FLORASYSMOD(Mod),Code,Status) :-
-	!,
-	%% Flora system module
-	%% The literals that are allowed to be associated with Flora system
-	%% module specification are those that are allowed to be associated
-	%% with Flora user module specification.
-	flora_body_wsliteral(CanoniTerm,TCode,Status),
-	(Status == [] -> flfloralib_struct(TCode,Mod,Code); true).
 
 
 /****************************************************************************
@@ -1568,11 +1585,45 @@ flora_body_ifthenelse(CanoniTerm,WS,[],[],Code,Status) :-
 /****************************************************************************
   flora_body_univeqform(+CanoniTerm,+WS,-Code,-Status)
 
-  Compile the meta op ~
+  Parse the meta op ~
 ****************************************************************************/
 flora_body_univeqform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,Code,Status) :-
 	flora_distribute_ws(Args,WS,[LCode,RCode],Status),
 	(Status == [] -> fluniveqform_struct(LCode,RCode,Code) ; true).
+
+
+/****************************************************************************
+  flora_body_metauniv(+CanoniTerm,+WS,-Code,-Status)
+
+  Parse the meta op =..
+  (_=.. _)@floramodule, and (_ =.. _)@prolog(mod) are illegal, but
+  (_ =.. _)@prolog() is.
+****************************************************************************/
+flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Status) :-
+	get_module_from_spec(WS,_,_),
+	!,
+	parsing_error(If,NO_WORKSPACE,Status).
+
+%% If (_ =.. _)@prolog() then use Prolog =..
+flora_body_metauniv(CanoniTerm,PROLOGMODULE,Code,Status) :-
+	!,
+	flora_prlgterm(CanoniTerm,TCode,Status),
+	(Status == [] -> flplib_struct(TCode,Code); true).
+
+flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Status) :-
+	Args = [LCode,RCode],
+	flora_body(LCode,_LhsWS,LCodeParsed,S1),
+	(S1 == []
+	%%-> flora_body(RCode,NULL,RCodeParsed,Status)
+	-> flora_pathexp(RCode,RCodeParsed,Status)
+	%% failed to parse the first term
+	; Status=S1
+	),
+	(Status == [] -> flmetauniv_struct(LCodeParsed,RCodeParsed,Code)
+	%% failed to parse the second term
+	; true
+	).
+
 
 /****************************************************************************
   flora_distribute_ws(+List,+WS,-TransformedList,-Status)
@@ -1951,16 +2002,12 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 		;
 		  Status=[],
 		  ( WSCode = PROLOGMODULE ->
+		      %% Covers: @prolog()
 		      flplib_struct(LCode,Code)
 
-		  ; WSCode = PROLOGMODULE(Mod) ->
-		      flplib_struct(LCode,Mod,Code)
-
-		  ; WSCode = FLORAUSERMOD(Mod) ->
-		      flworkspace_struct(LCode,Mod,Code)
-		  
-		  ; WSCode = FLORASYSMOD(Mod) ->
-		      flfloralib_struct(LCode,Mod,Code)
+		  %% Covers: @mod, @flora(mod), @prolog(mod)
+		  ; get_module_from_spec(WSCode,ModuleType,Mod) ->
+		      flmodule_struct(LCode,Mod,ModuleType,Code)
 		  )
 	        )
 	    ;
@@ -2114,7 +2161,7 @@ flora_attmethspec(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 		  ( is_flworkspace_struct(C) ->
 		      parsing_error(If,NO_WSNESTING,Status)
 		  ;
-		    flworkspace_struct(C,RCode,W),
+		    flmodule_struct(C,RCode,FLORAUSERMOD,W),
 		    flmethspec_struct(W,Code),
 		    Status=[]
 		  )
@@ -2582,7 +2629,7 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 
 flora_dbwsliteral(Mode,CanoniTerm,WS,[WSCode],Status) :-
 	flora_dbwslit(Mode,CanoniTerm,Code,Status),
-	flworkspace_struct(Code,WS,WSCode).
+	flmodule_struct(Code,WS,FLORAUSERMOD,WSCode).
 
 /****************************************************************************
    The following flora_check_update_* statements make sure that builtins
@@ -2893,7 +2940,7 @@ flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status)
 		; nowspathexp(LCode) ->
 		    parsing_error(L,NO_WORKSPACE,Status)
 		;
-		  flworkspace_struct(LCode,RCode,Code),
+		  flmodule_struct(LCode,RCode,FLORAUSERMOD,Code),
 		  Status=[]
 	        )
 	    ;
