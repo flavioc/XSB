@@ -7,6 +7,7 @@ Usage:	xsb [flags] [-l] [-i]
 
       	memory management flags:
 	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r
+	    -g gc_type (where gc_type is one of "none", "sliding", or "copying")
 	miscellaneous flags:
 	     -s | -T
 	module:
