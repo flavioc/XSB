@@ -1,5 +1,5 @@
 /* File:      numbervars.H
-** Author(s): Kostis F. Sagonas, Jiyang Xu
+** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -24,6 +24,8 @@
 
 
 :- export numbervars/1, numbervars/3.
+:- export unnumbervars/2.
 
-:- import term_psc/2, term_type/2, psc_arity/2, term_arg/3 from machine.
-
+:- import term_psc/2, term_type/2, psc_arity/2, term_arg/3, term_new/2
+        from machine.
+:- import log_ith/3 from basics.

@@ -75,6 +75,124 @@ ith1([X|_],I,I,X).
 ith1([_|L],I1,I,X) :- I2 is I1+1, ith1(L,I2,I,X).
 
 %---
+% log_ith/3 is a variant of ith, in which the ``list'' argument is a 
+% tree, which is a list of full binary trees, each having depth one
+% greater than the previous.  This guarantees log time access to any
+% element in the ``list''
+
+% Like ith/3, log_ith/3 works in both directions.  The major advantage
+% is that when using log_ith with its first argument bound, the access
+% time is (2)log, instead of linear.  Also, log_ith/3 only instantiates
+% the portion of the list-tree structure it needs, so much of it can
+% remain unbound.  For example, after inserting a value into the Kth
+% location in a completely unbound list-tree, the structure constructed
+% is of order log K.
+
+% log_ith(Index,ListStr,Element)
+log_ith(K,T,E) :- 
+	term_type(K,Ty),
+	(Ty =:= 2	% integer
+	 ->	log_ith0(K,T,E,1)
+	 ;	log_ith1(K,T,E,1)
+	).
+
+% K is bound
+log_ith0(K,[L|R],E,N) :-
+	(K < N
+	 ->	bintree0(K,L,E,N)
+	 ;	K1 is K-N,
+		N2 is N+N,
+		log_ith0(K1,R,E,N2)
+	).
+
+% First arg (K) is bound
+bintree0(0,E,E,1).
+bintree0(K,[L|R],E,N) :- 
+	N > 1,
+	N2 is N // 2,
+	(K < N2
+	 ->	bintree0(K,L,E,N2)
+	 ;	K1 is K - N2,
+		bintree0(K1,R,E,N2)
+	).
+
+% K is unbound
+log_ith1(K,[L|_R],E,N) :-
+	bintree1(K,L,E,N).
+log_ith1(K,[_L|R],E,N) :-
+	N1 is N + N,
+	log_ith1(K1,R,E,N1),
+	K is K1 + N.
+
+% First arg (K) is unbound
+bintree1(0,E,E,1).
+bintree1(K,[L|R],E,N) :- 
+	N > 1,
+	N2 is N // 2,
+	(bintree1(K,L,E,N2)
+	 ;
+	 bintree1(K1,R,E,N2),
+	 K is K1 + N2
+	).
+
+% log_ith_bound(Index,ListStr,Element) is like log_ith, but only
+% succeeds if the Index_th element of ListStr is nonvariable and equal
+% to Element.  This can be used in both directions, and is most useful
+% with Index unbound, since it will then bind Index and Element for each
+% nonvariable element in ListStr (in time proportional to N*logN, for N
+% the number of nonvariable entries in ListStr.)
+
+log_ith_bound(K,T,E) :- 
+	nonvar(T),
+	term_type(K,Ty),
+	(Ty =:= 2	% integer
+	 ->	log_ith2(K,T,E,1)
+	 ;	log_ith3(K,T,E,1)
+	).
+
+log_ith2(K,[L|R],E,N) :-
+	(K < N
+	 ->	nonvar(L),bintree2(K,L,E,N)
+	 ;	nonvar(R),
+		K1 is K-N,
+		N2 is N+N,
+		log_ith2(K1,R,E,N2)
+	).
+
+bintree2(0,E,E,1).
+bintree2(K,[L|R],E,N) :- 
+	N > 1,
+	N2 is N // 2,
+	(K < N2
+	 ->	nonvar(L),
+		bintree2(K,L,E,N2)
+	 ;	nonvar(R),
+		K1 is K - N2,
+		bintree2(K1,R,E,N2)
+	).
+
+log_ith3(K,[L|_R],E,N) :-
+	nonvar(L),
+	bintree3(K,L,E,N).
+log_ith3(K,[_L|R],E,N) :-
+	nonvar(R),
+	N1 is N + N,
+	log_ith3(K1,R,E,N1),
+	K is K1 + N.
+
+bintree3(0,E,E,1).
+bintree3(K,[L|R],E,N) :- 
+	N > 1,
+	N2 is N // 2,
+	(nonvar(L), 
+	 bintree3(K,L,E,N2)
+	 ;
+	 nonvar(R),
+	 bintree3(K1,R,E,N2),
+	 K is K1 + N2
+	).
+
+%---
 % length/2 that works both ways
 length(L,N) :-
 	var(N)
