@@ -37,7 +37,7 @@
 
 :- import concat_atom/3 from string.
 :- import close/1, name/2, see/1, get0/1, open/3, atom/1, arg/3, functor/3,
-	repeat/0, seeing/1
+          repeat/0, seeing/1, '<'/2, '=:='/2
 	from standard.
 :- import reverse/2 from basics.
 :- import unix/1 from unix.

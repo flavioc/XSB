@@ -37,8 +37,8 @@
 %% These are explicitly imported because they are used early on, 
 %% before XSB is fully bootstrapped.
 :- import abort/0, call_c/1, call_expose/1, goal_cut_trans/3,
-          push_abort_cutpoint/0, pop_abort_cutpoint/0, atom_codes/2
-     from standard.
+          push_abort_cutpoint/0, pop_abort_cutpoint/0, atom_codes/2,
+          '=:='/2, is/2, '>'/2  from standard.
 :- import '$$exception_ball'/1 from standard.
 :- import psc_set_type/2, psc_prop/2, psc_set_prop/2, term_psc/2,
 	  conname/2, stat_flag/2, stat_set_flag/2, intern_string/2,

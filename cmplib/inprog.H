@@ -26,6 +26,7 @@
 
 :- export force_inprog_loaded/0, inprog/3.
 
+:- import is/2, '>'/2, '=<'/2 from standard.
 :- import memberchk/2 from basics.
 :- import gennum/1 from gensym.
 :- import sym_name/3, sym_type/2 from symtab.

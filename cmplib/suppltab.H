@@ -27,7 +27,7 @@
 
 :- dynamic edb_dep(_,_,_), suppl_folding(_,_,_).
 
-:- import name/2 from standard.
+:- import name/2, is/2, '<'/2, '>'/2, '>='/2 from standard.
 :- import gensym_pred/2 from preproc.
 :- import conget/2 from gensym.
 :- import call_themselves/3, table_it/1 from tabdef.

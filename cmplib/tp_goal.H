@@ -35,4 +35,4 @@
 	vprag_use/2, vprag_lastchunk/2, vprag_argno/2, vprag_level/2,
 	vprag_occ/2, vprag_type1/2
    from varproc.
-
+:- import is/2, '=:='/2 from standard.

@@ -28,6 +28,7 @@
 
 :- export format/2, format/3, format_control/1.
 :- import string/1, atm/1 from basic_props.
+:- import '>='/2, '=<'/2, is/2, '>'/2 from standard.
 
 :- import abort/1, put_code/1, nl/0, write/1, writeq/1, print/1,
 	write_canonical/1, write/1, current_output/1, integer/1, 'C'/3,

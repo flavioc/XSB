@@ -81,7 +81,8 @@
    from ordsets.
 
 :- import append/3, member/2, reverse/2, length/2 from basics.
-:- import compare/3, abort/0, integer/1 from standard.
+:- import compare/3, abort/0, integer/1,
+          '<'/2, '>'/2, '>='/2, '=<'/2, is/2, '=:='/2  from standard.
 :- import sort/2, keysort/2 from setof.
 :- import file_write/2, file_nl/1 from xsb_writ.
 :- import ord_list_to_assoc/2, get_assoc/3, get_assoc/5 from assoc_xsb.

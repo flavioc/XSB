@@ -228,14 +228,14 @@ is_charlist(List) :- is_charlist(List, _).
 
 conname(Con, Name) :-
 	term_type(Con, Type),
-	( Type =:= XSB_STRING -> Name = Con
-	; Type =:= XSB_STRUCT -> term_psc(Con, Psc), psc_name(Psc, Name)
+	( Type '=:=_inl' XSB_STRING -> Name = Con
+	; Type '=:=_inl' XSB_STRUCT -> term_psc(Con, Psc), psc_name(Psc, Name)
 	).
 
 conpsc(Con, Psc) :-
 	term_type(Con, Type),
-	( Type =:= XSB_STRUCT -> term_psc(Con, Psc)
-	; Type =:= XSB_STRING -> psc_insert(Con, 0, Psc, 0)
+	( Type '=:=_inl' XSB_STRUCT -> term_psc(Con, Psc)
+	; Type '=:=_inl' XSB_STRING -> psc_insert(Con, 0, Psc, 0)
 	).
 
 machine_file_exists(File) :- 

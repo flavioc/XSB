@@ -32,7 +32,7 @@
 
 :- import
 	abort/1, atom_codes/2, '\='/2, repeat/0,
-	file_exists/1
+        file_exists/1, is/2, '=:='/2, '>='/2
       from standard.
 
 :- import gensym/2 from gensym.

@@ -60,6 +60,7 @@ tclause(Sym, clause(Args,Body,crec(ARSize,Label)),
 							% was getpbreg
 	),
 	theadpars(Args,1,Pil1,Pil3,Tin,TRegs),
+%	write(user,p(Body)),nl(user),nl(user),
 	tbody(Body,ARSize1,Pil3,Pilr,TRegs,_,lastgoal,no,
 	      [],Tabled,Tabar,Sym,NC).
 

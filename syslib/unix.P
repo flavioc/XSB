@@ -36,7 +36,7 @@
 :- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3.
 
 :- import str_cat/3 from string.
-:- import atom/1, abort/1 from standard.
+:- import atom/1, abort/1, '=:='/2 from standard.
 :- import psc_name/2, sys_system/7, term_psc/2, term_type/2, expand_filename/2
    from machine.
 

@@ -148,6 +148,13 @@ arithrelop('=<').
 arithrelop('>').
 arithrelop('>=').
 
+arithrelop('=:=_inl').
+arithrelop('=\=_inl').
+arithrelop('<_inl').
+arithrelop('=<_inl').
+arithrelop('>_inl').
+arithrelop('>=_inl').
+
 eval_arithreloptab(=:=, R, Label, jumpnz(R,Label)).
 eval_arithreloptab(=\=, R, Label, jumpz(R,Label)).
 eval_arithreloptab(<,   R, Label, jumpge(R,Label)).
@@ -157,6 +164,16 @@ eval_arithreloptab(>=,  R, Label, jumplt(R,Label)).
 
 eval_arithreloptab(=:=, R, N, Label, int_test_nz(R,N,Label)).
 eval_arithreloptab(=\=, R, N, Label, int_test_z(R,N,Label)).
+
+eval_arithreloptab('=:=_inl', R, Label, jumpnz(R,Label)).
+eval_arithreloptab('=\=_inl', R, Label, jumpz(R,Label)).
+eval_arithreloptab('<_inl',   R, Label, jumpge(R,Label)).
+eval_arithreloptab('=<_inl',  R, Label, jumpgt(R,Label)).
+eval_arithreloptab('>_inl',   R, Label, jumple(R,Label)).
+eval_arithreloptab('>=_inl',  R, Label, jumplt(R,Label)).
+
+eval_arithreloptab('=:=_inl', R, N, Label, int_test_nz(R,N,Label)).
+eval_arithreloptab('=\=_inl', R, N, Label, int_test_z(R,N,Label)).
 
 eval_var(Prag,R,Pil,Pilr,Tin,Tout,PredSym,NC) :-
     alloc_reg(Prag,Tin,Tmid),

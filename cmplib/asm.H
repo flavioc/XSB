@@ -32,7 +32,8 @@
 :- import term_hash/3, str_len/2 from machine.
 :- import write_int/1 from xsb_writ.
 :- import ll_arg/3 from auxlry.
-:- import functor/3, write/1, put/1, tell/1 from standard.
+:- import functor/3, write/1, put/1, tell/1, '=:='/2, is/2, '=<'/2
+           from standard.
 :- import asm_gendata/1, asm_genindex/2, asm_gentext/2, asm_putlength/1
      from asmpass2.
 :- import sym_name/3, sym_count/2, sym_propin/2, sort_by_index/2 from symtab.

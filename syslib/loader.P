@@ -91,7 +91,7 @@ fmt_write(File,Fmt,A) :- formatted_io(FMT_WRITE, File,Fmt,A,_).
  */
 
 set_inthandler(Handler, Number) :-
-	Flag is Number + INT_HANDLERS_FLAGS_START,
+	Flag is_inl Number + INT_HANDLERS_FLAGS_START,
 	term_psc(Handler, PSC),
 	stat_set_flag(Flag, PSC).
 
@@ -244,8 +244,8 @@ XSB's in-lined predicates, builtins, and functions.
 
 '_$load_undef'(Term) :-
 	term_type(Term, Type),
-	( Type =:= XSB_STRUCT -> term_psc(Term, PSC)
-	; Type =:= XSB_STRING -> psc_insert(Term, 0, PSC, 0)
+	( Type '=:=_inl' XSB_STRUCT -> term_psc(Term, PSC)
+	; Type '=:=_inl' XSB_STRING -> psc_insert(Term, 0, PSC, 0)
 	),
 	load_pred(PSC),
 	call0(Term).
@@ -264,17 +264,18 @@ load_pred1(PSC) :-
 	psc_name(PSC, Name),
 	psc_arity(PSC, Arity),
 	psc_env(PSC, Env), 
-	( Env =:= T_UNLOADED
+	( Env '=:=_inl' T_UNLOADED
 	->  % is "imported"
 	    psc_prop(PSC, ModPSC),
 	    psc_name(ModPSC, ModName),
 	    psc_type(ModPSC, ModType), 
-	    (ModType =:= T_MODU
+	    (ModType '=:=_inl' T_MODU
 	     ->	    true   % module loaded
 	     ;	    load(ModName)	% might abort here 
 	    ),
 	    (	psc_type(PSC, NType),
-		(   NType =:= T_PRED; NType =:= T_FORN; NType =:= T_DYNA ), 
+		(   NType '=:=_inl' T_PRED
+                    ; NType '=:=_inl' T_FORN; NType '=:=_inl' T_DYNA ), 
 		%% module loaded, and pred/foreign-pred is there
 		'_$cutto'(B)
 		;
@@ -308,7 +309,7 @@ call_undef_pred_handlers(PSC,AbortMsg) :-
 	%% found a handler that agrees to handle this predicate
 	->  (   RetCode==true
 	    ->  psc_type(PSC, Type1), 
-		(  Type1 =< T_ORDI % pred is still undefined
+		(  Type1 '=<_inl' T_ORDI % pred is still undefined
 		%% The handler says re-issue the call, but the 
 		%% predicate remains undefined after the handler: 
 		%% fail the original call
@@ -338,15 +339,15 @@ not_handling_undef_pred :- conget('_$_$_undefhook',0).
 load(ModName) :-
 	'_$savecp'(B),
 	stat_flag(DEBUG_ON, Debug_on),
-	(   Debug_on =:= 1
+	(   Debug_on '=:=_inl' 1
 	->  fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
 	;   true
 	),
 	(   search_file(ModName, FileName_O, XSB_OBJ_EXTENSION_ATOM),
 	    code_load(FileName_O, Init, 0), % use the C loader
-	    (	Init =\= 0	% load succeeded
+	    (	Init '=\=_inl' 0	% load succeeded
 	    ->	'_$cutto'(B),
-		(   Init =\= 4 % prolog byte-code succeeded
+		(   Init '=\=_inl' 4 % prolog byte-code succeeded
 		->  ll_code_call(Init, true, 2), % call '_$main'
 		    unload_seg(Init) % delete code for '_$main'
 		;   true	% load foreign obj code succeeded
@@ -427,7 +428,7 @@ libpath(P) :- slash(Slash), str_cat('.', Slash,P).
 
 libraries_loaded :- 
 	stat_flag(LIBS_LOADED, Lib_Loaded),
-	Lib_Loaded =:= 1.
+	Lib_Loaded '=:=_inl' 1.
 
 /*======================================================================*/
 

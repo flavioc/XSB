@@ -37,7 +37,8 @@
 
 :- import =.. /2, \= /2, functor/3, atom/1, is_list/1, call/1, cputime/1,
           call/1, see/1, seeing/1, seen/0, repeat/0, read/1, warning/1,
-	  abort/0, abort/1, (import)/1, callable/1
+         abort/0, abort/1, (import)/1, callable/1,
+         '<'/2, '=:='/2, '=\='/2, is/2
      from standard.
 
 :- import assert/1 from assert.

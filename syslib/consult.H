@@ -48,7 +48,8 @@
 	  seeing/1, see/1, seen/0, call/1, goal_cut_trans/3,
 	  expand_term/2, read/1, op/3, (table)/1, (index)/3, (index)/2,
 	  (=..)/2, writeln/1, write_canonical/1, tell/1,
-	  told/0, telling/1, functor/3, cputime/1
+          told/0, telling/1, functor/3, cputime/1,
+          '>'/2, is/2, '=:='/2, '=\='/2
      from standard.
 :- import code_load/3, code_call/3, file_read_canonical/3,
 	  stat_flag/2,

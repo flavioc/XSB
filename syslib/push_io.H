@@ -24,7 +24,7 @@
 
 
 
-:- import abort/1, atom/1 from standard.
+:- import abort/1, atom/1  from standard.
 :- import see/1, seeing/1, seen/0 from standard.
 :- import assert/1, retractall/1, (dynamic)/1 from assert.
 

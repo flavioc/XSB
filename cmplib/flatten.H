@@ -29,4 +29,4 @@
 
 :- import gennum/1 from gensym.
 :- import arithrelop/1 from tp_eval.
-
+:- import is/2, '=\='/2, '=:='/2, '>'/2, '=<'/2 from standard.

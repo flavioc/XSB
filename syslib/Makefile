@@ -25,11 +25,12 @@
 
 OBJEXT=.xwam
 
-ALL =	assert${OBJEXT} atts${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
+ALL =	file_op${OBJEXT} assert${OBJEXT} atts${OBJEXT} basics${OBJEXT} \
+	consult${OBJEXT} \
 	curr_sym${OBJEXT} dbclause${OBJEXT} \
 	dcg${OBJEXT} debugger${OBJEXT} domain${OBJEXT} eval${OBJEXT}  \
 	file_io${OBJEXT} \
-	file_op${OBJEXT} gensym${OBJEXT} hilogsym${OBJEXT} loader${OBJEXT}  \
+        gensym${OBJEXT} hilogsym${OBJEXT} loader${OBJEXT}  \
 	machine${OBJEXT} num_vars${OBJEXT} \
 	push_io${OBJEXT} \
 	setof${OBJEXT} shell${OBJEXT} standard${OBJEXT} std_xsb${OBJEXT} \

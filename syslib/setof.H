@@ -30,7 +30,8 @@
 	  excess_vars/4.
 
 :- import tfindall/3 from tables.
-:- import functor/3, (=..)/2, arg/3, call/1 from standard.
+:- import functor/3, (=..)/2, arg/3, call/1, '=:='/2,  '>'/2, is/2
+                         from standard.
 :- import '$$findall_init'/2, '$$findall_add'/3, '$$findall_get_solutions'/4
      from machine.
 

@@ -33,4 +33,4 @@
 :- import str_cat/3 from machine.
 :- import conget/2, gensym/2 from gensym.
 :- import append/3 from basics.
-
+:- import is/2, '>'/2, '=:='/2, '=\='/2 from standard.

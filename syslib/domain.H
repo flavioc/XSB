@@ -27,7 +27,8 @@
 :- export ':'/2, int/3, int/1, intype/1, '/='/2, plus/3, times/3, in/2.
 :- export deleteff/3, deleteff_p/3, generate/1, generate_ff/1.
 
-:- import integer/1, arg/3, write/1, nl/0, call/1, op/3 from standard.
+:- import integer/1, arg/3, write/1, nl/0, call/1, op/3,
+          '<'/2, '>'/2, '=<'/2, '>='/2, is/2, '=:='/2 from standard.
 :- import dom_range/3, dom_size/2, dom_elem/2, dom_diff/3, dom_enum/2,
 	dom_plus/3, dom_times/3, dom_type/2, dom_min/2,
 	term_type/2, term_psc/2, term_new/2, psc_arity/2, dom_esize/2

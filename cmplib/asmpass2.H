@@ -31,7 +31,8 @@
 :- import asm_inst/4 from asm_inst.
 :- import membercheck/2 from listutil.
 :- import term_hash/3, str_len/2 from machine.
-:- import write/1, put/1, integer/1 from standard.
+:- import write/1, put/1, integer/1, '=\='/2, is/2, '=:='/2, 
+      '<'/2, '>='/2 from standard.
 :- import write_int/1, write_float/1 from xsb_writ.
 :- import member/2 from basics.
 :- import sym_offset/2, sym_env/2, sym_category/2, sym_name/3 from symtab.

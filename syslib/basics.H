@@ -28,4 +28,5 @@
 :- export log_ith/3, log_ith_bound/3.
 
 :- import term_type/2 from machine.
-:- import integer/1, is_list/1 from standard.
+:- import integer/1, is_list/1, '=:='/2, '<'/2, '>'/2, 
+	    '>='/2, '=<'/2, is/2 from standard.

@@ -147,5 +147,6 @@
 
 :- export set_pil_on/0, set_pil_off/0, set_prof_on/1, set_prof_off/0.
 
+:- import '=:='/2 from standard.
 /* --------------------- end of file machine.H ------------------------ */
 

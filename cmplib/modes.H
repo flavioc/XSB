@@ -41,7 +41,7 @@
 	(index)/3, name/2, nl/0, (not)/1, op/3, read/1, repeat/0,
 	statistics/0, see/1, seeing/1, seen/0, (table)/1, tell/1,
 	telling/1, told/0, write/1, writeln/1, write_canonical/1,
-	writeq/1, ('=..')/2
+        writeq/1, ('=..')/2, '=<'/2, '=:='/2, is/2
    from standard.
 
 :- import message/1, time_message/2 from auxlry.

@@ -31,7 +31,9 @@
 :- export force_file_op_loaded/0.
 
 :- import default_assert_size/1 from config.
-:- import integer/1, functor/3 from standard.
+:- import integer/1, functor/3, 
+         '=:='/2, '<'/2, '>'/2, '>='/2, '=<'/2, '=\='/2, is/2
+                                          from standard.
 :- import assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
 
 :- import conpsc/2, psc_type/2 from machine.

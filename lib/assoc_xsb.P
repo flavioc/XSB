@@ -43,7 +43,7 @@
 	put_assoc/4.			% Key x Assoc x Val -> Assoc
 
 :- import length/2 from basics.
-:- import compare/3, writeln/1 from standard.
+:- import compare/3, writeln/1, is/2, '<'/2, '=<'/2 from standard.
 :- import 'C'/3 from dcg.
 
 % :- meta_predicate

@@ -28,7 +28,7 @@
 
 :- import sym_name/3, sym_prop/2, sym_gen/2 from symtab.
 :- import nl/0, told/0, tell/1, telling/1, put/1,
-	  tab/1, write/1, writeq/1, integer/1
+  tab/1, write/1, writeq/1, integer/1, '=:='/2
      from standard.
 
 /* --------------------- end of file sanity.H ------------------------- */

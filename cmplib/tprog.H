@@ -38,4 +38,4 @@
 :- import tcond/10, tvar_hold/3 from tp_cond.
 :- import sym_name/3, sym_type/2 from symtab.
 :- import tgetpar/6, tgoalargs/7 from tp_goal.
-
+:- import is/2, '>'/2, '=:='/2, '=\='/2, '=<'/2 from standard.

@@ -30,4 +30,5 @@
 	  absmerge/3, delete/3, delete_ith/4, reverse/2.
 
 :- import member/2 from basics.
+:- import is/2, '=:='/2 from standard.
 

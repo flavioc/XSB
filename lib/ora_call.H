@@ -39,6 +39,8 @@
    retractall/1 from assert.
 :- import write/1, writeln/1, (=..)/2, atom_codes/2 from standard.
 :- import name/2, atom/1, integer/1, (\=)/2, atomic/1 from standard.
-:- import nl/0, functor/3, number/1, call/1, (not)/1 from standard.
+:- import nl/0, functor/3, number/1, call/1, (not)/1,
+          '<'/2, is/2, '=:='/2, '=\='/2
+                       from standard.
 :- import findall/3, bagof/3 from setof.
 :- import copy_term/2, append/3, member/2 from basics.

@@ -65,6 +65,10 @@ geninline('_$cutto', [Arg], _, Pil, Pilr, Tin, Tout, _, _) :-
 	geninline_cutto(Arg, Pil, Pilr, Tin, Tout).
 
 geninline(is, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC) :-
+%	write(user,(is, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC)),
+	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, PredSym, NC).
+geninline(is_inl, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC) :-
+%	write(user,(is_inl, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC)),
 	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, PredSym, NC).
 geninline(=, [Lhs,Rhs], HoldR, Pil, Pilr, Tin, Tout, _, _) :-
 	geninl_load_lhs(Lhs, R, Pil, Pil1, Tin, Tmid0, SaveReg),

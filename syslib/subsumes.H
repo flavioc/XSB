@@ -25,6 +25,7 @@
 
 :- export subsumes_chk/2, variant/2, subsumes/2.
 
+:- import '=:='/2, is/2 from standard.
 :- import numbervars/1 from num_vars.
 :- import conset/2, conget/2 from gensym.
 :- import term_psc/2, psc_arity/2, term_arg/3, term_type/2

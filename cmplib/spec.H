@@ -25,7 +25,7 @@
 
 :- export spec/2.
 
-:- import name/2, atom_codes/2, ttywritenl/2 from standard.
+:- import name/2, atom_codes/2, ttywritenl/2, '=:='/2, is/2 from standard.
 :- import conget/2, conset/2 from gensym.
 :- import memberchk/2, append/3 from basics.
 :- import gensym_pred/2, have_hardcut/2 from preproc.

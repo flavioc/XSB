@@ -23,7 +23,8 @@
 */
 
 :- import
-	'=..'/2, atom/1, call/1, call_c/1, callable/1, abort/1, arg/3
+  '=..'/2, atom/1, call/1, call_c/1, callable/1, abort/1, arg/3,
+  '>'/2, '=\='/2, '=<'/2
 	from standard.
 :- import retractall/1, assert/1, (dynamic)/1 from assert.
 :- import psc_type/2, term_psc/2, term_new/2, psc_arity/2 from machine.
