@@ -39,7 +39,7 @@
 %% call_xsb_hook(hookname(_)) goes over all the hooks stored in hookname(_) 
 %% and calls them. This is supposed to call only propositional hook predicates.
 %%
-%% call_xsb_hook(hookhame(_),ArgList) calls the hooks by subtituting ArgList 
+%% call_xsb_hook(hookhame(_),ArgList) calls the hooks by substituting ArgList 
 %% for the first argument of the hook. The hook predicates that populate 
 %% such a hook type must all be 1-ary predicates.
 
