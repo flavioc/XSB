@@ -2319,7 +2319,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	!,
 	compile_wsflspecbody(Object,L,WS,LCode,S),
 	( S == [] ->
-	    compile_wsflspecbody(Object,WS,R,RCode,Status),
+	    compile_wsflspecbody(Object,R,WS,RCode,Status),
 	    (Status == [] -> disjunct_struct(LCode,RCode,Code); true)
 	;
 	  Status=S
