@@ -84,6 +84,13 @@ compile_popt11(jump(Addr), [Instr|PRest], OptCode) :-
 	;   
 	    compile_popt11(jump(Addr), PRest, OptCode)
 	).
+compile_popt11(fail, [Instr|PRest], OptCode) :-
+	( Instr = label(_,_) ->
+	    OptCode = [fail,Instr|OptPRest], % label stays
+	    compile_popt1(PRest,OptPRest)
+	;   
+	    compile_popt11(fail, PRest, OptCode)
+	).
 compile_popt11(jumpz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
 	compile_popt1(PRest,OptPRest).
 compile_popt11(jumpnz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
