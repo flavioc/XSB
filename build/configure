@@ -449,7 +449,7 @@ fi
 
 SHELL=/bin/sh
 
-touch buildxsb.lock
+./touch.sh buildxsb.lock
 trap 'rm buildxsb.lock; exit 1' 1 2 15
 
 build_dir="`pwd`"
