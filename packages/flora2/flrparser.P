@@ -1970,6 +1970,9 @@ flora_aggregt(Funct,N,Args,If,Ip,Code,Status) :-
 	    ;
 	      parsing_error(Ip,ERROR_AGGREGT,Status)
 	    )
+
+	; get_name(Funct,F), (is_dbinsertop(F); is_dbdeleteop(F)) ->
+	    parsing_error(If,ERROR_UPDATEOP,Status)
 	;
 	  parsing_error(If,UNKNOWN_AGGREGT,Status)
         ).
