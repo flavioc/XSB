@@ -91,7 +91,7 @@ do
 done
 
 if test -x "$executable" ; then
-   eval "$executable $xsb_cmd"
+   eval "exec $executable $xsb_cmd"
 else
    echo "${executable}: "
    echo "       file doesn't exist or is not executable"
