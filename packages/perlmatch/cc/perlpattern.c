@@ -55,7 +55,8 @@ int match(SV *string, char *pattern)
   /*-------------------------------------------------------------------------
     initialize the seaching string 
     -----------------------------------------------------------------------*/
-  sv_setpvf(command, "$__text__='%s'", SvPV(string,PL_na)); 
+  /* sv_setpvf(command, "$__text__='%s'", SvPV(string,PL_na)); */
+  sv_setpvf(command, "$__text__= <<'ENDj9yq6QC43b'; chop($__text__);\n%s\nENDj9yq6QC43b\n", SvPV(string,PL_na)); 
   my_perl_eval_sv(command, TRUE);     /* execute the perl command */
   
   /*-------------------------------------------------------------------------
@@ -171,7 +172,8 @@ int substitute(SV **string, char *pattern)
 {
   SV *command = newSV(0), *retval; /*allocate space for SV data */
   
-  sv_setpvf(command, "$__string__ = '%s'; ($__string__ =~ %s)",
+  /*  sv_setpvf(command, "$__string__ = '%s'; ($__string__ =~ %s)",*/
+  sv_setpvf(command, "$__string__ = <<'ENDj9yq6QC43b'; chop($__string__);\n%s\nENDj9yq6QC43b\n ($__string__ =~ %s)",
 	    SvPV(*string,PL_na), pattern);
 
   retval = my_perl_eval_sv(command, TRUE);
@@ -201,7 +203,8 @@ int all_matches(SV *string, char *pattern, AV **match_list)
   SV *command = newSV(0), *retval; /*allocate space for SV data */
   I32 num_matches;
 
-  sv_setpvf(command, "my $string = '%s'; @__array__ = ($string =~ %s)",
+  /*  sv_setpvf(command, "my $string = '%s'; @__array__ = ($string =~ %s)",*/
+  sv_setpvf(command, "my $string = <<'ENDj9yq6QC43b'; chop($string);\n%s\nENDj9yq6QC43b\n @__array__ = ($string =~ %s)",
 	    SvPV(string,PL_na), pattern);
 
   retval=my_perl_eval_sv(command, TRUE);
