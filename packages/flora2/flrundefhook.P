@@ -32,19 +32,12 @@
 /****************************************************************************
   flora_undefined_predicate_hook/1
 ****************************************************************************/
-flora_undefined_predicate_hook([PscRecord,true]) :-
+flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
-	flora_flogic_predicate(PredName,WS,_Position,Base),
+	flora_flogic_predicate(PredName,WS,_Position,_Base),
 	!,
-	flora_stdmsg_nl,
-	( Base == WRAP_OBJEQL ->
-	    flora_message_line('loading the equality trailer into module %s',args(WS)),
-	    flloadtrailer(EQLTRAILER,WS)
-	;
-          flora_message_line('loading the standard trailer into module %s',args(WS)),
-          flloadtrailer(STDTRAILER,WS)
-	),
-	!.
+	flora_error_line('undefined F-logic atom in module %s',args(WS)),
+	abort.
 
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),

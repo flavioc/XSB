@@ -336,6 +336,7 @@ flnohilogdirect_struct(F,A,FLNOHILOG(F,A)).
 flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
 flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
 flhilogtbldirect_struct(A,FLHILOGTABLE(A)).
+fleqldirect_struct(A,FLEQUALITY(A)).
 
 flatom_struct(Atom,FLATOM(Atom)).
 
@@ -487,6 +488,7 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_command_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
+	; flora_equality_directive(CanoniTerm,CodeList,Status)
 	; parsing_error(CanoniTerm,UNKNOWN_DIRECT,Status)
         ),
 	!.
@@ -530,7 +532,7 @@ flora_command_directive(CanoniTerm,[Code],[]) :-
 /****************************************************************************
   Listed as follows are those parser directives that look like commands.
 ****************************************************************************/
-flora_is_command_directive(auto_table)   :- !.
+flora_is_command_directive(auto_table) :- !.
 
 
 /****************************************************************************
@@ -868,6 +870,16 @@ flora_hilogtable_directlist([Arity|L],[Code|CL],Status) :-
 	;
 	  parsing_error(Arity,EXP_POSINTEGER,Status)
 	).
+
+
+/****************************************************************************
+  flora_equality_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],[]) :-
+	get_name(Funct,FL_EQUALITY),
+	get_name(T,A),
+        (A == NONE; A == BASIC; A == flogic),
+	fleqldirect_struct(A,Code).
 
 
 /****************************************************************************

@@ -773,22 +773,6 @@ diffobjeql(X,Y) :-
 	diffobjeql(Z,Y),
 	X \= Y.
 
-diffobjeql(X,Y) :- derived_fd(O,M,X), derived_fd(O,M,Y), X \= Y.
-
-diffobjeql(X,Y) :- derived_ifd(O,M,X), derived_ifd(O,M,Y), X \= Y.
-
-diffobjeql(X,Y) :-
-	diffobjeql(O1,O2),
-	derived_fd(O1,M,X),
-	derived_fd(O2,M,Y),
-	X \= Y.
-
-diffobjeql(X,Y) :-
-	diffobjeql(O1,O2),
-	derived_ifd(O1,M,X),
-	derived_ifd(O2,M,Y),
-	X \= Y.
-
 
 /*****************************************************************************
   objeql/2

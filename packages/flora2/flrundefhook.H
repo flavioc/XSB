@@ -34,11 +34,7 @@
 
 :- import
 	flora_stderr_nl/0,
-	flora_error_line/2,
-	flora_stdmsg_nl/0,
-	flora_message_line/2
+	flora_error_line/2
    from flrprint.
-
-:- import flloadtrailer/2 from flrutils.
 
 :- export flora_undefined_predicate_hook/1.

@@ -156,14 +156,14 @@ flcompinc(File) :-
 
 /**********************************************************************
   flloadtrailer(+TrailerName,+Workspace)
-  TrailerName must be either STDTRAILER or EQLTRAILER.
+  TrailerName must be either NONE, or BASIC, or FLOGIC.
 **********************************************************************/
 flloadtrailer(TrailerName) :-
 	flloadtrailer(TrailerName,FLORA_DEFAULT_WORKSPACE).
 
 flloadtrailer(TrailerName,Workspace) :-
-	( TrailerName \== STDTRAILER, TrailerName \== EQLTRAILER ->
-	    flora_error_line("Trailer name must be either `%s' or `%s'!",args(STDTRAILER,EQLTRAILER)),
+	( TrailerName \== NONE, TrailerName \== BASIC, TrailerName \== FLOGIC ->
+	    flora_error_line("Equality must be `%s', or `%s', or `%s'!",args(NONE,BASIC,FLOGIC)),
 	    fail
 	;
 	  flora_check_workspace(Workspace),
@@ -182,7 +182,7 @@ flloadtrailer(TrailerName,Workspace) :-
 
 /**********************************************************************
   flsetuptrailer(+TrailerName)
-  TrailerName must be either trailer or eqltrailer.
+  TrailerName must be either NONE, or BASIC, or FLOGIC.
   This predicate is called in the Makefile.
 **********************************************************************/
 flsetuptrailer(TrailerName) :-
@@ -196,7 +196,7 @@ flsetuptrailer(TrailerName) :-
 	tell(TrailerFullName),
 	flora_include_FLH_filename(TrailerFullName),
 	flora_trailer_include(TrailerName,TrailerInclude),
-	flora_include_file([FLHEADER,FLDEFINITION,FLDBDYN,TrailerInclude],HeaderStatus),
+	flora_include_file([FLHEADER,FLDEFINITION,FLDBDYN|TrailerInclude],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -208,11 +208,13 @@ flsetuptrailer(TrailerName) :-
 	  flora_clear_xpp_options
 	).
 
-flora_trailer_filename(STDTRAILER,'stdtrailer.P').
-flora_trailer_filename(EQLTRAILER,'eqltrailer.P').
+flora_trailer_filename(NONE,'standard.P').
+flora_trailer_filename(BASIC,'eqlbasic.P').
+flora_trailer_filename(FLOGIC,'eqlflogic.P').
 
-flora_trailer_include(STDTRAILER,FLTRAILER).
-flora_trailer_include(EQLTRAILER,FLOBJEQLDEF).
+flora_trailer_include(NONE,[FLTRAILER]).
+flora_trailer_include(BASIC,[FLEQLTRAILER]).
+flora_trailer_include(FLOGIC,[FLEQLTRAILER,FLSCALAREQL]).
 
 
 /*************************************************************************
@@ -549,13 +551,13 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 	  (FlogicFactList == [] -> true; flora_loaddyn_FDB_filename(PFileName)),
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
-	      ( member(FLOBJEQLDEF,FileOptionList) ->
-		  flora_message_line('appending the trailer for equality maintenance'),
-		  flora_include_file([FLOBJEQLDEF],FileStatus)
+	      ( member(FLEQLFLOGIC,FileOptionList) ->
+		  flora_message_line('including full F-logic equality maintenance'),
+		  flora_include_file([FLEQLTRAILER,FLSCALAREQL],FileStatus)
 
-	      ; member(FLSKOLEM,FileOptionList) ->
-	          flora_message_line('appending the trailer for object skolemization'),
-		  flora_include_file([FLSKOLEM],FileStatus)
+	      ; member(FLEQLBASIC,FileOptionList) ->
+	          flora_message_line('including basic equality maintenance'),
+		  flora_include_file([FLEQLTRAILER],FileStatus)
 	      ;
 	        flora_include_file([FLTRAILER],FileStatus)
 	      )

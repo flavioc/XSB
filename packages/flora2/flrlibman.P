@@ -116,11 +116,10 @@ flora_include(FLLIBMODOBJ,'syslibinc/flrdynmod_inc.flh') :- !.
 
 flora_include(FLHEADER,'closureinc/flrheader_inc.flh') :- !.
 flora_include(FLDBDYN,'closureinc/flrdbdyn_inc.flh') :- !.
-flora_include(FLSKOLEM,'closureinc/flreqltrailer_inc.flh') :- !.
-flora_include(FLOBJEQLDEF,'closureinc/flreqltrailer_inc.flh') :- !.
-flora_include(FLTRAILER,'closureinc/flrtrailer_inc.flh') :- !.
-
 flora_include(FLDEFINITION,'closureinc/flrdefinition_inc.flh') :- !.
+flora_include(FLTRAILER,'closureinc/flrtrailer_inc.flh') :- !.
+flora_include(FLEQLTRAILER,'closureinc/flreqltrailer_inc.flh') :- !.
+flora_include(FLSCALAREQL,'closureinc/flrscalareql_inc.flh') :- !.
 
 
 /********************************************************************

@@ -62,6 +62,7 @@ is_flprolog(FLPROLOG(F,N),F,N).
 is_flnohilog(FLNOHILOG(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
 is_flhilogtable(FLHILOGTABLE(A),A).
+is_flequality(FLEQUALITY(A),A).
 
 is_flconjunct(FLCONJUNCT(L,R),L,R).
 is_fldisjunct(FLDISJUNCT(L,R),L,R).
@@ -827,6 +828,18 @@ compile_direct(DirectTerm,[],[]) :-
 compile_direct(DirectTerm,[],[]) :-
 	is_flnohilog(DirectTerm,P,N),
 	flora_define_nohilog(P,N),
+	!.
+
+compile_direct(DirectTerm,[],[]) :-
+	is_flequality(DirectTerm,A),
+	( A == BASIC ->
+	    report_option(FLEQLBASIC)
+
+	; A == FLOGIC ->
+	    report_option(FLEQLFLOGIC)
+	;
+	  true
+	),
 	!.
 
 

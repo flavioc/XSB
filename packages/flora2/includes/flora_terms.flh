@@ -167,12 +167,13 @@
 #define FL_SIGNATURE		(sign)
 #define FL_OID			(oid)
 #define FL_FORMULAR		(form)
-#define FL_PROLOG		(prolog)
-#define FL_PROLOGALL		(prologall)
-#define FL_PLIB			(prologlib)
-#define FL_NOHILOG		(florapred)
-#define FL_NOHILOGALL		(florapredall)
-#define FL_HILOGTABLE		(hilogtable)
+#define FL_PROLOG		prolog
+#define FL_PROLOGALL		prologall
+#define FL_PLIB			prologlib
+#define FL_NOHILOG		florapred
+#define FL_NOHILOGALL		florapredall
+#define FL_HILOGTABLE		hilogtable
+#define FL_EQUALITY		equality
 
 #define FL_MIN			min
 #define FL_MAX			max
@@ -265,6 +266,7 @@
 #define FLNOHILOG		flnohilog
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
+#define FLEQUALITY		flequality
 
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
@@ -406,11 +408,15 @@
 /****************************************************************************
   FLORA options
 ****************************************************************************/
-#define	FLSKOLEM		flskolem
 #define	FLHEADER		flheader
-#define	FLTRAILER		fltrailer
 #define	FLDBDYN			fldbdyn
+#define	FLTRAILER		fltrailer
+#define FLEQLTRAILER		fleqltrailer
+#define FLSCALAREQL		flscalareql
+#define	FLSKOLEM		flskolem
 #define	FLOBJEQLDEF		flobjeqldef
+#define FLEQLBASIC		fleqlbasic
+#define FLEQLFLOGIC		fleqlflogic
 
 
 /****************************************************************************
@@ -488,8 +494,8 @@
 
 
 /****************************************************************************
-  arguments to flloadtrailer/2
+  arguments to flEquality/2
 ****************************************************************************/
-#define STDTRAILER		standard
-#define EQLTRAILER		equality
-
+#define NONE			none
+#define BASIC			basic
+#define FLOGIC			flogic

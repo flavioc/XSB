@@ -64,6 +64,7 @@ flora_init_shell :-
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
 	flora_load_library(FLLIBDISPLAY),
+	FL_EQUALITY(NONE),
 	flora_welcome_msg,
 	all,
 	chatter,
@@ -235,3 +236,7 @@ rundemo(File) :-
 	cd(CurrWorkingDir),
 	retractall(library_directory(DemoDir)).
 
+
+/*********************************************************************/
+FL_EQUALITY(X) :- flloadtrailer(X).
+FL_EQUALITY(X,Y) :- flloadtrailer(X,Y).

@@ -1,0 +1,10 @@
+/************************************************************************
+  file: closureinc/flreqltrailer_inc.flh
+
+  Author(s): Guizhen Yang
+
+  This file is automatically included by the FLORA compiler.
+************************************************************************/
+
+#include "flrscalareql.flh"
+

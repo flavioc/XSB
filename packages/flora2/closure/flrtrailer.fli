@@ -12,9 +12,6 @@
 ***************************************************************************/
 
 
-#include "flora_terms.flh"
-
-
 :- import flora_warning_line/1, flora_error_line/2 from flrprint.
 
 
@@ -506,12 +503,30 @@ exists(X) :- imeth(X,_).
 
 
 /*****************************************************************************
-  objeql/2
+  equality maintenance
 *****************************************************************************/
-:- prolog args/1.
+:- florapred base_objeql/2.
+:- florapred derived_objeql/2.
+:- florapred diffobjeql/2.
 
 
-objeql(_X,_Y) :-
-	FLORA_THIS_MODULE(WS),
-	flora_error_line('equality maintenance not supported in module `%s''',args(WS)),
-	abort.
+:- table diffobjeql/2.
+
+
+:- prolog nonvar/1.
+
+
+derived_objeql(X,Y) :-
+	base_objeql(X,Y).
+
+
+diffobjeql(X,Y) :-
+	derived_objeql(X,Y),
+	X \= Y.
+
+
+objeql(X,Y) :-
+	(nonvar(X); nonvar(Y)),
+	X=Y.
+
+objeql(X,Y) :- diffobjeql(X,Y).
