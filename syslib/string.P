@@ -37,7 +37,7 @@ much faster than the old one (which I must confess to writing).  Also,
 this is well-behaved for memory management since it no longer uses
 str_cat or str_len.
 */
-
+ 
 concat_atom(Atomlist,Atom):-
 	atom_to_charlist(Atomlist,Charlist1),
 	flatten(Charlist1,Charlist),
@@ -57,6 +57,7 @@ concat_atom(Atomlist,Sep,Atom):-
 	flatten(Charlist1,Charlist),
 	atom_codes(Atom,Charlist).
 
+atom_to_charlist([],_,[]).
 atom_to_charlist([Atom],_,[List]):- !,
 	atom(Atom),
 	atom_codes(Atom,List).
