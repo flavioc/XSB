@@ -653,6 +653,7 @@ void init_symbols(void)
   Psc tables_psc;
   Pair temp, tp;
   int new_indicator;
+  int i;
 
   /* insert mod name global */
   tp = (Pair)insert_module(T_MODU, "global");	/* loaded */
@@ -682,6 +683,9 @@ void init_symbols(void)
   set_type(tnot_psc, T_ORDI);
   temp = (Pair)insert("DL", 3, global_mod, &new_indicator);
   delay_psc = pair_psc(temp);
+
+  /* Initialize ret PSCs */
+  for (i = 0; i < 255; i++) ret_psc_exists[i] = 0;
 
   /* make another reference to global module -- "usermod" */
   tp = (Pair)insert_module(T_MODU, "usermod");	/* loaded */
