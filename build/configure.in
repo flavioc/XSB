@@ -643,7 +643,6 @@ echo "Checking installation directories ... Done"
 
 AC_PROG_CC
 AC_PROG_CPP
-dnl AC_PROG_CXX
 AC_PROG_INSTALL
 dnl If on AIX, define _ALL_SOURCE, which allows the use of some BSD functions
 dnl This must be AFTER AC_PROG_CC
@@ -1435,6 +1434,7 @@ if test "x${with_smodels}" = "x"; then
    echo "    Not using SMODELS"
    smodels_goal=nope
 else
+   AC_PROG_CXX
    smodels_goal=all
    if test  "$os_type" = "windows"; then
       XASPLIBNAME=xasppkg.dll
@@ -1442,6 +1442,9 @@ else
       smoCFLAGS="-I${arch_config_prefix} -I${with_smodels}"
       smoLDFLAGS="-L${arch_config_prefix}/bin -L${with_smodels}"
       smoLIB="-lsmodels -lxsb"
+      if test "${enable_no_cygwin+set}" = "set"; then
+	 CXX="${CXX} -mno-cygwin"
+      fi
    else
       XASPLIBNAME=xasppkg.so
       XASPDEFFILE=
@@ -1511,7 +1514,7 @@ AC_SUBST(trutilsCFLAGS)
 AC_SUBST(GPPCFLAGS)
 AC_SUBST(GPPWNTFLAG)
 AC_SUBST(CC)
-dnl AC_SUBST(CXX)
+AC_SUBST(CXX)
 AC_SUBST(LDFLAGS)
 dnl used for SGIs only
 AC_SUBST(LINKFLAGS)
