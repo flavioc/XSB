@@ -9,7 +9,7 @@ able to {\em call}\ \ourprolog\ from the host language, often C,
 providing queries for \ourprolog\ to evaluate and retrieving back the
 answers.  An interface for calling \ourprolog\ from C is provided for
 this purpose and is described in this chapter.  Simple examples of
-the use of this interface are given in the {\tt XSB/examples/c_calling_XSB}
+the use of this interface are given in the {\tt XSB/examples/c\_calling\_XSB}
 subdirectory, in files {\tt cmain.c}, {\tt cmain2.c}, {\tt ctest.P}, and {\tt
 Makefile}.
 
@@ -52,26 +52,57 @@ This is a C-callable function that initializes \ourprolog . It must be
 called before any other calls can be made.  {\tt argc} is the count of
 the number of arguments in the {\tt argv} vector.  The {\tt argv}
 vector is exactly as would be passed from the command line to
-\ourprolog .  It must contain the -n flag (or the filename 
-{\tt xcallxsb}).  This
-flag tells \ourprolog\ not to start the read-eval-print top loop, but
-to act as a subroutine to a calling C routine.  Other flags are
-optional, but can be used to modify sizes of the various spaces used
-in \ourprolog .  In particular, if \ourprolog\ will be required to
-load some other (usually C) program using the foreign language
-interface, then the -E option must be used to specify the full path
-name of the executable of the main C program.  See section
-\ref{emulator_options} for more details.  {\tt xsb\_init} returns 0 if
-initialization is completed, and 1 if some error is encountered.
+\ourprolog .  It must contain at least the following two things:
+%%
+\begin{itemize}
+\item $\tt argv[0]$ must be an absolute or relative path name of the XSB
+  installation directory ({\it i.e.}, {\tt \$XSB\_DIR}.  Here is an
+  example, which assumes that we invoke the C program from the XSB
+  installation directory.
+    %%
+    \begin{verbatim}
+int main(int argc, char *argv[])
+{ 
+  int myargc = 2;
+  char *myargv[2];
+
+  /* XSB_init relies on the calling program to pass the addr of the XSB
+     installation directory. From here, it will find all the libraries */
+  myargv[0] = ".";
+  myargv[1] = "-n";
+
+  /* Initialize xsb */
+  xsb_init(myargc,myargv);
+    \end{verbatim}
+    %%
+  \item $\tt argv[1]$ must be the {\tt -n} flag.  This flag tells
+    \ourprolog\ not to start the read-eval-print top loop, but to act as a
+    subroutine to a calling C routine.
+\end{itemize}
+%%
+Other flags are optional, but can be used to modify sizes of the various
+spaces used in \ourprolog.  In particular, if \ourprolog\ will be required
+to load some other (usually C) program using the foreign language
+interface, then the -E option must be used to specify the full path name of
+the executable of the main C program.  See section \ref{emulator_options}
+for more details.  {\tt xsb\_init} returns 0 if initialization is
+completed, and 1 if some error is encountered.
 
 \ouritem{int xsb\_init\_string(char *options)} \index{{\tt xsb\_init\_string}}
 This is a variant of {\tt xsb\_init} which takes the command line as a
 string argument (rather than as a argc/argv pair.)  For example, a call
-could be \verb|xsb_init_string("xsb -n");|.  The first
-word is ignored (but must be present), and the following parameters are
-just as they could appear on a command line.  The function of this
-subroutine is exactly the same as {\tt xsb\_init}, and its return codes
-are the same.
+could be
+%%
+\begin{verbatim}
+   xsb_init_string(". -n");
+\end{verbatim}
+%%
+Note that just as with {\tt xsb\_init}, you must pass the path name of the
+XSB installation directory. In the above, we pass ``.'', assuming that we
+are invoking the C program from the XSB installation directory.  The
+parameters following the file name are just as those that could appear on a
+command line.  The function of this subroutine is exactly the same as {\tt
+  xsb\_init}, and its return codes are the same.
 
 \ouritem{int xsb\_command()} \index{{\tt xsb\_command}}
 This function passes a command to \ourprolog .  No query can be active
@@ -229,7 +260,7 @@ file, say ruleproc.o, for your C routine, you could execute:
 \end{verbatim}
 
 There is a simple example of a C program calling \ourprolog\ in the
-{\tt XSB/examples/c_calling_XSB} directory, in files {\tt cmain.c}, {\tt
+{\tt XSB/examples/c\_calling\_XSB} directory, in files {\tt cmain.c}, {\tt
   ctest.P}, cmain2.c {\tt and},  {\tt Makefile}.
 
 \section{Passing Data Between C and \ourprolog} \label{c2p_p2p_p2c}
