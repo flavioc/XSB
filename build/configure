@@ -3576,10 +3576,16 @@ if test "${do_debugging}" = "yes" ; then
         CFLAGS="${CFLAGS} -gdwarf-2 -g3"
    else
 	CFLAGS="${CFLAGS} -g"
+	LINKFLAGS="-g ${LINKFLAGS}"
    fi
 fi
 
-LD=ld
+if test "${has_gcc}" = "yes"; then
+      LD=gcc 
+else
+   LD=ld
+fi
+
 if test "${CC}" = "sslittle-na-sstrix-gcc" 
 then
 	cat >> confdefs.h <<\EOF
@@ -3609,8 +3615,11 @@ fi
 # dnl ODBC library 
 if test "${with_odbc}" = yes ; then
    case "$canonical" in
-	*-cygwin*) LDFLAGS="-lodbc32${LDFLAGS}";;
+	*-cygwin*) LDFLAGS="-lodbc32${LDFLAGS}"
+		   LINKFLAGS="-lodbc32 ${LINKFLAGS}"
+		   ;;
 	*) LDFLAGS="-lodbc${LDFLAGS}"
+	   LINKFLAGS="-lodbc ${LINKFLAGS}"
    esac
 fi
 

@@ -30,7 +30,7 @@ the features that the XSB-ODBC interface provides is as follows:
 \item Full data access and cursor transparency including support for
         \begin{itemize}
         \item Full data recursion through XSB's tabling mechanism 
-	(depending on the capabilities of the underlying ODBC driver.
+        (depending on the capabilities of the underlying ODBC driver.
         \item Runtime type checking
         \item Automatic handling of NULL values for insertion, 
                 deletion and querying
@@ -40,7 +40,7 @@ the features that the XSB-ODBC interface provides is as follows:
         \item Transaction support
         \item Cursor reuse for cached SQL statements 
                 with bind variables (thereby avoiding re-parsing and 
-		re-optimizing).
+                re-optimizing).
         \item Caching compiler generated SQL statements with bind variables 
                 and efficient cursor management for cached statements
         \end{itemize}
@@ -583,12 +583,12 @@ The predicate {\tt odbc\_transaction/1} supports these operations.
 
 \begin{description}
 \item[odbc\_transaction(autocommit(on))]
-	Turns on autocommit, so that all update operations will be
-	immediately committed on completion.
+        Turns on autocommit, so that all update operations will be
+        immediately committed on completion.
 \item[odbc\_transaction(autocommit(off))]
-	Turns off autocommit, so that all update operations will not
-	be committed until explicitly done so by the program (using
-	one of the following operations.)
+        Turns off autocommit, so that all update operations will not
+        be committed until explicitly done so by the program (using
+        one of the following operations.)
 \item[odbc\_transaction(commit)]
         Commits all transactions up to this point.  (Only has an
         effect if autocommit is off).
@@ -713,6 +713,32 @@ interface running properly.
 
 \item Diagnosis: Please contact us at xsb-contact@cs.sunysb.edu
 \end{itemize}
+
+\section{Notes on specific ODBC drivers}
+%============================
+
+\begin{description}
+\item[MyODBC] The ODBC driver for MySQL is called MyODBC, and it
+  presents some particularities that should be noted. 
+
+  First, MySQL, as
+  of version 3.23.55, does not support strings of length greater than
+  255 characters. XSB's ODBC interface has been updated to allow the
+  use of the BLOB datatype to encode larger strings. 
+  
+  More importantly, MyODBC implements SQLDescribeCol such that, by
+  default, it returns actual lengths of columns in the result table,
+  instead of the formal lengths in the tables. For example, suppose
+  you have, in table A, a field $f$ declared as ``VARCHAR
+  (200)''. Now, you create a query of the form ``SELECT $f$ FROM A
+  WHERE ...'' If, in the result set, the largest size of $f$ is 52,
+  that's the length that SQLDescribeCol will return. This breaks XSB's
+  caching of query-related datastructures. In order to prevent this
+  behavior, you should configure your DSN setup so that you pass
+  ``Option=1'' to MyODBC.
+
+\end{description}
+
 
 \end{description}
 
