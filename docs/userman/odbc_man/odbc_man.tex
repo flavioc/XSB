@@ -150,12 +150,45 @@ is nondeterministic, returning each retrieved row in turn.
 The {\tt BindVals} list should have a length corresponding to the
 number of parameters in the query, in particular being the empty list
 ([]) if {\tt SQLStmt} contains no '?'s.  If {\tt SQLStmt} is not a
-select statement returning a result set, then ResultRow will be the
+select statement returning a result set, then {\tt ResultRow} will be the
 empty list, and the call is deterministic.  Thus this predicate can be
 used to do updates, DDL statements, indeed any SQL statement.
 
 {\tt SQLStmt} need not be an atom, but can be a (nested) list of atoms
-which flattens (or concatenates) to form an SQL statement.
+which flattens (and concatenates) to form an SQL statement.
+
+{\tt BindVals} is normally a list of values of primitive Prolog types:
+atoms, integers, or floats.  The values are converted to the types of
+the corresponding database fields.  However, complex Prolog values can
+also be stored in a database field.  If a term of the form
+{\tt term(VAL)} appears in the {\tt BindVal} list, then {\tt VAL} (a
+Prolog term) will be written in canonical form (as produced by {\tt
+write\_canonical}) to the corresponding database field (which must be
+CHAR or BYTE).  If a term of the form {\tt string(CODELIST)} appears
+in {\tt BindVal}, then {\tt CODELIST} must be a list of ascii-codes
+(as produced by {\tt atom\_codes}) and these codes will be converted
+to a CHAR or BYTE database type.
+
+{\tt ResultRow} for a select statement is normally a list of variables
+that will nondeterministically be bound to the values of the fields of
+the tuples returned by the execution of the select statement.  The
+Prolog types of the values returned will be determined by the database
+types of the corresponding fields.  A CHAR or BYTE database type will
+be returned as a Prolog atom; an INTEGER database field will be
+returned as a Prolog integer, and similarly for floats.  However, the
+user can request that CHAR and BYTE database fields be returned as
+something other than an atom.  If the term {\tt string(VAR)} appears
+in {\tt ResultRow}, then the corresponding database field must be CHAR
+or BYTE, and in this case, the variable {\tt VAR} will be bound to the
+list of ascii-codes that make up the database field.  This allows an
+XSB programmer to avoid adding an atom to the atom table
+unnecessarily.  If the term {\tt term(VAR)} appears in {\tt
+ResultRow}, then the corresponding database field value is assumed to
+be a Prolog term in canonical form, i.e., can be read by {\tt
+read\_canonical/1}.  The corresponding value will be converted into a
+Prolog term and bound to {\tt VAR}.  This allows a programmer to store
+complex Prolog terms in a database.  Variables in such a term are
+local only to that term.
 
 When connecting to multiple data sources, you should use the form:
 
