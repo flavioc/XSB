@@ -39,3 +39,8 @@
 #define SOCKET_GET0        11
 #define SOCKET_PUT         12
 #define SOCKET_SET_OPTION  13
+#define SOCKET_SET_SELECT     14
+#define SOCKET_SELECT         15
+#define SOCKET_SELECT_DESTROY 16
+#define SET_TIMEOUT           17	
+

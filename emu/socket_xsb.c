@@ -31,6 +31,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
 
@@ -152,6 +153,8 @@ bool xsb_socket_request(void)
     }
     
     sock_handle = socket(domain, SOCK_STREAM, IPPROTO_TCP);
+	
+    /* error handling */
     if (BAD_SOCKET(sock_handle)) {
       xsb_warn("SOCKET_REQUEST: Cannot open stream socket");
       return FALSE;
@@ -159,6 +162,7 @@ bool xsb_socket_request(void)
 
     ctop_int(3, (SOCKET) sock_handle);
     break;
+
   case SOCKET_BIND:
     /* socket_request(SOCKET_BIND,+domain,+sock_handle,+port,-Error,_,_) 
        Currently only supports AF_INET */
@@ -186,6 +190,8 @@ bool xsb_socket_request(void)
 #endif
     
     retcode = bind(sock_handle, (PSOCKADDR) &socket_addr, sizeof(socket_addr));
+	
+    /* error handling */
     if (SOCKET_OP_FAILED(retcode)) {
       xsb_warn("SOCKET_BIND: Connection failed");
       return FALSE;
@@ -206,6 +212,8 @@ bool xsb_socket_request(void)
     sock_handle_in = (SOCKET) ptoc_int(2);
     
     sock_handle = accept(sock_handle_in, NULL, NULL);
+	
+    /* error handling */ 
     if (BAD_SOCKET(sock_handle)) {
       xsb_warn("SOCKET_ACCEPT: Connection failed");
       return FALSE;
@@ -220,13 +228,16 @@ bool xsb_socket_request(void)
 #else
     sockfd = sock_handle;
 #endif
+
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       sockptr = NULL;
       xsb_warn("SOCKET_ACCEPT: fdopen failed");
       return FALSE;
     }
+
     /* find empty slot in XSB openfile table and put sockptr there */
     i = xsb_intern_file(sockptr, "SOCKET_ACCEPT");
+	
     ctop_int(3, i);
     break;
   }
@@ -279,20 +290,25 @@ bool xsb_socket_request(void)
 #else
     sockfd = sock_handle;
 #endif
+   
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       xsb_warn("SOCKET_CONNECT: fdopen failed");
       sockptr = NULL;
       return FALSE;
     }
+
     /* find empty slot in XSB openfile table and put fptr there */
     i = xsb_intern_file(sockptr,"SOCKET_CONNECT");
+
     ctop_int(6, i);
     break;
-  case SOCKET_CLOSE:	
+
+  case SOCKET_CLOSE: 
     /* socket_request(SOCKET_CLOSE,+sock_handle,-Error,_,_,_,_) */
     closesocket((SOCKET) ptoc_int(2));
     break;
-  case SOCKET_RECV:    
+
+  case SOCKET_RECV:
     /* socket_request(SOCKET_RECV,+Sockfd, -Msg, -Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     sock_msg = calloc(1024, sizeof(char));
@@ -300,7 +316,8 @@ bool xsb_socket_request(void)
     ctop_string(3, (char*) string_find((char*) sock_msg,1));
     free(sock_msg);
     break;
-  case SOCKET_SEND:   
+
+  case SOCKET_SEND:
     /* socket_request(SOCKET_SEND,+Sockfd, -Msg, -Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     sock_msg = calloc(1024, sizeof(char));
@@ -310,12 +327,15 @@ bool xsb_socket_request(void)
     /*send(sock_handle, "\n", strlen("\n"),0),*/
     free(sock_msg);
     break;
-  case SOCKET_SEND_ASCI: 
+
+  case SOCKET_SEND_ASCI:
     /* socket_request(SOCKET_SEND_ASCI,+Sockfd,-Msg,-Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     rc = ptoc_int(3);
     sock_msg = calloc(1024, sizeof(char));
+
     ci = (char) rc;
+	
     sprintf(sock_msg,"%c",ci);
     /*printf("XSB2: str:%s.\n", sock_msg);*/
     send(sock_handle, sock_msg, strlen(sock_msg), 0);
@@ -323,13 +343,15 @@ bool xsb_socket_request(void)
     /*send(sock_handle, "\n", strlen("\n"),0);*/
     free(sock_msg);
     break;
-  case SOCKET_SEND_EOF:   
+
+  case SOCKET_SEND_EOF:
     /* SOCKET_SEND_EOF(SOCKET_SEND_EOF,+Sockfd,-Error,_,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     last[0] = EOF;
     send(sock_handle, last, 1, 0);
     send(sock_handle, "`", strlen("`"),0);
     break;
+
   case SOCKET_GET0:
     /* socket_request(SOCKET_GET0,+Sockfd,-C,-Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
@@ -341,6 +363,7 @@ bool xsb_socket_request(void)
       ctop_int(4,WSAGetLastError());
     }
     break;
+
   case SOCKET_PUT: {
     /* socket_request(SOCKET_PUT,+Sockfd,+C,-Error_,_,_) */
     static char tmpch[4];
@@ -349,9 +372,9 @@ bool xsb_socket_request(void)
     send(sock_handle, tmpch, 1, 0);
     break;
   }
+
   case SOCKET_SET_OPTION: {
     /* socket_request(SOCKET_SET_OPTION,+Sockfd,+OptionName,+Value,_,_,_) */
-
     char *option_name;
     /* Set the "linger" parameter to a small number of seconds */
     sock_handle = (SOCKET) ptoc_int(2);
@@ -386,5 +409,6 @@ bool xsb_socket_request(void)
     xsb_warn("SOCKET_REQUEST: Invalid socket request %d", (int) ptoc_int(1));
     return FALSE;
   }
+
   return TRUE;
 }

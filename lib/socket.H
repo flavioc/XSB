@@ -34,5 +34,8 @@
      socket_send/3, socket_send_eof/2, socket_send_asci/3,
      socket_get0/3, socket_put/3.
 
+:- export socket_set_select/4, socket_select/5, socket_select_destroy/1.
+
+
 :- import socket_request/7, file_function/7 from machine.
 

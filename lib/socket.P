@@ -79,3 +79,15 @@ socket_put(Sockfd,Char) :- socket_put(Sockfd,Char,_).
 
 %% socket_set_option doesn''t need error code, so
 
+%% select calls
+socket_set_select(Symbolic_Name, R_sockfd, W_sockfd, E_sockfd) :-
+   socket_request(SOCKET_SET_SELECT, Symbolic_Name, R_sockfd, W_sockfd,
+      E_sockfd, _, _).
+
+socket_select(Avail_rsockfds, Avail_wsockfds, Avail_esockfds,Nsec, Error) :-
+   socket_request(SOCKET_SELECT, Avail_rsockfds, Avail_wsockfds, Avail_esockfds,
+   Nsec, Error, _).
+
+socket_select_destroy(Symbolic_Name) :-
+   socket_request(SOCKET_SELECT_DESTROY, Symbolic_Name,_,_,_,_,_).
+ 
