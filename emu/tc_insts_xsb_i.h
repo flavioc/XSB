@@ -652,7 +652,6 @@ case trie_proceed:	/* This is essentially a "proceed" */
 	xsb_dbgmsg("trie_proceed:");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
-	num_vars_in_var_regs = -1;
 	proceed_lpcreg;
 	goto contcase;
 
