@@ -4,9 +4,9 @@
 
 % This module loads up the selected driver from the dbdrivers directory
 
-:- import bootstrap_package/2, package_configuration/2 from packaging.
-:- import fmt_write_string/3, file_time/2 from file_io.
-:- import slash/1, machine_file_exists/1 from machine.
+:- import bootstrap_package/2 from packaging.
+:- import fmt_write_string/3 from file_io.
+:- import slash/1 from machine.
 :- import rename/2 from shell.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import initialise/0 from driver_manager.
@@ -20,49 +20,49 @@
 	Basename = driver_manager,
 	[Basename],	
 	(running_under(cygwin) -> 
-		% cygwin specific stuff
-			
-		xsb_configuration(packagesdir, PackageDir),
-		xsb_configuration(config_bindir, ConfigBinDir),
-		fmt_write_string(DriverManagerDir, '%s%sdbdrivers%scc%s', 
-			f(PackageDir, Slash, Slash, Slash)),
-		fmt_write_string(DriverManagerDll, '%sdriver_manager.dll', 
-			f(DriverManagerDir)),
-		fmt_write_string(ConfigBinDll, '%s%sdriver_manager.dll', 
-			f(ConfigBinDir, Slash)),  
-		rename(DriverManagerDll, ConfigBinDll),
-		fmt_write_string(DriverManagerO, '%sdriver_manager.o',
-			f(DriverManagerDir)),
-		fmt_write_string(ConfigBinO, '%s%sdriver_manager.o',
-			f(ConfigBinDir, Slash)),
-		rename(DriverManagerO, ConfigBinO),
-		fmt_write_string(DriverManagerA, '%sdriver_manager.a',
-			f(DriverManagerDir)),
-		fmt_write_string(ConfigBinA, '%s%sdriver_manager.a',
-			f(ConfigBinDir, Slash)),
-		rename(DriverManagerA, ConfigBinA),
-		fmt_write_string(DriverManagerDef, '%sdriver_manager.def',
-			f(DriverManagerDir)),
-		fmt_write_string(ConfigBinDef, '%s%sdriver_manager.def',
-			f(ConfigBinDir, Slash)),
-		rename(DriverManagerDef, ConfigBinDef)
-	;
+	    %% cygwin specific stuff
+	    
+	    xsb_configuration(packagesdir, PackageDir),
+	    xsb_configuration(config_bindir, ConfigBinDir),
+	    fmt_write_string(DriverManagerDir, '%s%sdbdrivers%scc%s', 
+			     f(PackageDir, Slash, Slash, Slash)),
+	    fmt_write_string(DriverManagerDll, '%sdriver_manager.dll', 
+			     f(DriverManagerDir)),
+	    fmt_write_string(ConfigBinDll, '%s%sdriver_manager.dll', 
+			     f(ConfigBinDir, Slash)),  
+	    rename(DriverManagerDll, ConfigBinDll),
+	    fmt_write_string(DriverManagerO, '%sdriver_manager.o',
+			     f(DriverManagerDir)),
+	    fmt_write_string(ConfigBinO, '%s%sdriver_manager.o',
+			     f(ConfigBinDir, Slash)),
+	    rename(DriverManagerO, ConfigBinO),
+	    fmt_write_string(DriverManagerA, '%sdriver_manager.a',
+			     f(DriverManagerDir)),
+	    fmt_write_string(ConfigBinA, '%s%sdriver_manager.a',
+			     f(ConfigBinDir, Slash)),
+	    rename(DriverManagerA, ConfigBinA),
+	    fmt_write_string(DriverManagerDef, '%sdriver_manager.def',
+			     f(DriverManagerDir)),
+	    fmt_write_string(ConfigBinDef, '%s%sdriver_manager.def',
+			     f(ConfigBinDir, Slash)),
+	    rename(DriverManagerDef, ConfigBinDef)
+	; %% windows specific stuff
 	(running_under(windows) -> true
-		% windows specific stuff
-	;
-		% else unix specific stuff 
-
-		xsb_configuration(packagesdir, PackageDir),
-		fmt_write_string(DriverManagerDir, '%s%sdbdrivers', 
-		f(PackageDir, Slash)),
-	   	fmt_write_string(SharedLibDriverManager,
-	   		'%s%scc%s%s.so', 
-	     	f(DriverManagerDir, Slash, Slash, Basename)),
-	   	xsb_configuration(config_libdir, ConfigLibDir),
-	   	fmt_write_string(LibDriverManager,
-	    	'%s%s%s.so',
-		f(ConfigLibDir, Slash, Basename)),
-	   	rename(SharedLibDriverManager, LibDriverManager)
+	; %% else unix specific stuff 
+	    
+	    xsb_configuration(packagesdir, PackageDir),
+	    fmt_write_string(DriverManagerDir, '%s%sdbdrivers', 
+			     f(PackageDir, Slash)),
+	    (running_under(darwin)
+	    -> LibrarySuffix='.dylib'
+	    ;  LibrarySuffix='.so'
+	    ),
+	    fmt_write_string(SharedLibDriverManager, '%s%scc%s%s%s', 
+			     f(DriverManagerDir, Slash, Slash, Basename,LibrarySuffix)),
+	    xsb_configuration(config_libdir, ConfigLibDir),
+	    fmt_write_string(LibDriverManager, '%s%s%s%s',
+			     f(ConfigLibDir, Slash, Basename,LibrarySuffix)),
+	    rename(SharedLibDriverManager, LibDriverManager)
 	)
 	),
 	initialise.
@@ -76,11 +76,15 @@ running_under(windows) :-
 	xsb_configuration(architecture, A),
 	str_sub(windows, A),
 	!.
+running_under(darwin) :-
+	xsb_configuration(architecture, A),
+	str_sub(darwin, A),
+	!.
 running_under(unix) :-
 	\+ running_under(cygwin),
+	\+ running_under(darwin),
         \+ running_under(windows).
 
 
-load_driver(Driver) :-
-		[Driver]. 
+load_driver(Driver) :- [Driver]. 
 
