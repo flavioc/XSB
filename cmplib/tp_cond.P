@@ -112,7 +112,7 @@ tcond_sot(Op,varocc(Vid,Prag),SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold) :-
     putvarinst(Prag,R,Pil,Pilm,0), /* replace by tabled */
     SuccLab = label(_,SL0),
     FailLab = label(_,FL0),
-    ( Op == var -> Pilm = [switchonterm(R,FL0,FL0)|Pilr]
+    ( Op == var -> Pilm = [switchonterm(R,FL0,FL0),jump(SL0)|Pilr]
     ; /* nonvar */ Pilm = [switchonterm(R,SL0,SL0),jump(FL0)|Pilr]
     ),
     release_if_done(Vid,R,Prag,Hold,Tmid1,Tout).
