@@ -29,6 +29,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flag_defs_xsb.h"
+#include "standard.h"
 
 #include "flora_characters.flh"
 #include "flora_terms.flh"
@@ -860,7 +861,9 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	flora_reset_modules_for_file(InputFile),
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	flora_measure_time(
 	flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,FileOptionList,CompileStatus),
+	'Compiling '),
 	%% Wait, to not leave zombies.
 	process_control(XPP_process,wait(ExitStatus)),
 	(ExitStatus==0, !
@@ -877,13 +880,10 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	    Tcompile is T11 - T0,
 	    writeln(compilation=Tcompile),
 	    */
+	    flora_measure_time(
 	    check_for_dependencies(CompiledRuleList, DepWarnList),
+	    '[DependencyCheck] '),
 	    check_for_dependencies_warn(DepWarnList, DepWarnNum),
-	    /*
-	    cputime(T22),
-	    Tdep is T22 - T11,
-	    writeln(dependencycheck=Tdep),
-	    */
 	    flora_errorwarn_count(0,DepWarnNum),
 
 	    flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
@@ -893,10 +893,6 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	    true
 	;
 	    T is T1-T0,
-	    /*
-	    Tcoder is T1 - T22,
-	    writeln(coder=Tcoder),
-	    */
 	  flora_message_line('Done! CPU time used: ~w seconds',[T])
 	),
 	!.
@@ -912,17 +908,25 @@ flora_compile_file(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
 *************************************************************************/
 flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus) :-
 	%% Generate FLD file for undefinedness checking
+	flora_measure_time(
 	flora_debug_code(CompiledRuleList, FLDFile),
+	'[Coder] Generating FLD file '),
+	flora_measure_time(
 	flora_divide_program(CompiledRuleList,RuleList,FactList),
+	'[Coder] Dividing program '),
 	sort(FileOptionList,FileOptions),
+	flora_measure_time(
 	flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,DBFile,FLDFile,PFileStatus),
+        '[Coder] Generating P file'),
 	( PFileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
 	  ( FactList == [] ->
 	      FileStatus=FLORA_SUCCESS
 	  ;
-	    flora_generate_DBfile(DBFile,FactList,FileStatus)
+	      flora_measure_time(
+	      flora_generate_DBfile(DBFile,FactList,FileStatus)
+	      , '[Coder] Generating DB file ')
 	  )
         ),
 	!.
@@ -1931,8 +1935,7 @@ flora_measure_time(Call,Message) :-
 	call(Call),
 	flora_cputime(T2),
 	Delta is T2 - T1,
-	format('~w ~w seconds', [Message,Delta]),
-	nl.
+	flora_message_line('~w ~w seconds',[Message,Delta]).
 
 
 %% From, To are file names. Variable means stdin or stdout, respectively
