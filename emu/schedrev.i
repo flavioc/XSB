@@ -25,81 +25,96 @@
 */
 
 
-/**********************************************************************/
-/* schedule answers that haven't been returned yet 
- * if returns 1, answers have been scheduled and engine will have
- * to fail over them, else continue forward execution
- * orig_breg is the address of the TCP
+/*-------------------------------------------------------------------------*/
+
+/*
+ * Schedules consumers to which at least some answers haven't been
+ * returned.  Does so by linking them through their "previous breg" choice
+ * point fields.  The value returned is the scheduling chain of such
+ * consumers (NULL if no such consumers of this producer exist).
  */
-static CPtr sched_answers(SGFrame subg_struct, CPtr orig_breg, int leader) {
-  ALNptr tmp_ret_ptr;
-  CPtr first_sched_node, prev_node, active_node;
+
+static CPtr sched_answers(SGFrame producer_sf, CPtr producer_cpf,
+			  bool is_leader) {
+  ALNptr answer_set;
+  CPtr first_sched_cons, last_sched_cons, consumer_cpf;
+  SGFrame consumer_sf;
 
 #ifdef PROFILE
   subinst_table[SCHED_ANSWERS][1]++;
 #endif	
-  first_sched_node = prev_node = (CPtr)0;
 
-  /* there answers and consuming nodes */  
-  if(subg_answers(subg_struct) && 
-     (active_node = subg_asf_list_ptr(subg_struct))) {
+  first_sched_cons = last_sched_cons = NULL;
+  consumer_cpf = subg_asf_list_ptr(producer_sf);
+
+  /* The producer has answers and consuming calls */  
+  if ( has_answers(producer_sf) && IsNonNULL(consumer_cpf) ) {
 #ifdef DEBUG_REV
-    xsb_dbgmsg("SchedAnswers: active_node=%d,subg_struct=%d",
-	       (int)active_node,(int)subg_struct);
+    xsb_dbgmsg("SchedAnswers: consumer_cpf=%d,producer_sf=%d",
+	       (int)consumer_cpf,(int)producer_sf);
 #endif
-    /* check if any suspended node still has unresolved answers */
-    while(active_node) {
-      tmp_ret_ptr = nlcp_trie_return(active_node);
-      /* if there is a new answer  - schedule */
-      if(tmp_ret_ptr && aln_next_aln(tmp_ret_ptr)) { 
-	if (prev_node){
-	  nlcp_prevbreg(prev_node) = active_node;
-	}
-	else {	 /* record first active node to backtrack to */
-	  first_sched_node = active_node;
-	}
-	prev_node = active_node;
-      } /* if (tmp_ret...) */
-      active_node = nlcp_prevlookup(active_node);
-    } /* while active node */
+    /* Check each consumer for unresolved answers */
+    while ( IsNonNULL(consumer_cpf) ) {
+      consumer_sf = (SGFrame)nlcp_subgoal_ptr(consumer_cpf);
+      answer_set = ALN_Next(nlcp_trie_return(consumer_cpf));
+      if ( IsNULL(answer_set) &&
+	   ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
+	switch_envs(consumer_cpf);
+	answer_set =
+	  table_retrieve_answers(producer_sf,consumer_sf,
+				 consumer_cpf + NLCPSIZE);
+      }
+      /* if there is a new answer, schedule the consumer */
+      if ( IsNonNULL(answer_set) ) { 
+	if ( IsNonNULL(last_sched_cons) )
+	  nlcp_prevbreg(last_sched_cons) = consumer_cpf;
+	else	 /* record first consumer to backtrack to */
+	  first_sched_cons = consumer_cpf;
+	last_sched_cons = consumer_cpf;
+      }
+      consumer_cpf = nlcp_prevlookup(consumer_cpf);
+    }
     
-    /* last active node always has to backtrack to TCP */
-    if (prev_node) nlcp_prevbreg(prev_node) = orig_breg;
+    /* The last consumer always has to backtrack to the producer */
+    if ( IsNonNULL(last_sched_cons) )
+      nlcp_prevbreg(last_sched_cons) = producer_cpf;
   } /* if any answers and active nodes */
 
 
-#ifdef LOCAL_EVAL
+#ifdef LOCAL_EVAL /*-----------------------------------------------------*/
   /* if leader, nothing needs to be done -- its answers will only be 
    * returned after the SCC is completed 
    * ow, schedules answers to the generator node, changing 
    * the flag of the TCP
    */
-  if (!leader) {
+  if ( ! is_leader ) {
     /* if not leader and gen has not been scheduled before */
-    if(tcp_trie_return(orig_breg)==NULL) {
+    if(tcp_trie_return(producer_cpf)==NULL) {
 #ifdef DEBUG_REV
       xsb_dbgmsg("-----> LEADER became NON_LEADER, sched gen %d",
-		 (int)orig_breg);
+		 (int)producer_cpf);
 #endif
-      tcp_trie_return(orig_breg) = subg_ans_list_ptr(subg_struct);
+      tcp_trie_return(producer_cpf) = subg_ans_list_ptr(producer_sf);
     }
-    if(aln_next_aln(tcp_trie_return(orig_breg))) {
+    if(aln_next_aln(tcp_trie_return(producer_cpf))) {
       /*so that checkcompl will ret ans*/
-      tcp_tag(orig_breg) = (int)RETRY_GEN_ACTIVE_TAG;
-      if (!prev_node)
-	prev_node = first_sched_node = orig_breg;
+      tcp_tag(producer_cpf) = (int)RETRY_GEN_ACTIVE_TAG;
+      if (!last_sched_cons)
+	last_sched_cons = first_sched_cons = producer_cpf;
     }
   } /* if not leader */
-#endif /* LOCAL_EVAL */
+#endif /* LOCAL_EVAL ----------------------------------------------------*/
   
 #ifdef DEBUG_REV
   xsb_dbgmsg("schedule active nodes: ccbreg=%d, breg=%d", 
-	     (int)orig_breg,(int)breg);
+	     (int)producer_cpf,(int)breg);
   xsb_dbgmsg("first active =%d, last=%d",
-	     (int)first_sched_node,(int)prev_node);
+	     (int)first_sched_cons,(int)last_sched_cons);
 #endif
-  return first_sched_node;
+  return first_sched_cons;
 }
+
+/*-------------------------------------------------------------------------*/
 
 /* returns 0 if reached fixpoint, otherwise, returns the next breg 
  * for batched - should extend to local (but first decide if can
@@ -109,7 +124,9 @@ static CPtr sched_answers(SGFrame subg_struct, CPtr orig_breg, int leader) {
  * I recall that kostis mentioned cps should not be relinked
  * I cannot remember why...
  */
-static CPtr find_fixpoint(SGFrame subg, CPtr orig_breg) {
+
+static CPtr find_fixpoint(SGFrame subg, CPtr producer_cpf) {
+
   SGFrame currSubg;
   CPtr complFrame; /* completion frame for currSubg */
   CPtr tcp; /* choice point for currSubg */
@@ -131,7 +148,7 @@ static CPtr find_fixpoint(SGFrame subg, CPtr orig_breg) {
     tcp = subg_cp_ptr(currSubg);
 
     /* if there are unresolved answers for currSubg */
-    if ((tmp_sched = sched_answers(currSubg, tcp, 0))) {
+    if ((tmp_sched = sched_answers(currSubg, tcp, FALSE))) {
       if (prev_sched) { /* if there is a prev subgoal scheduled */
 	/* link new node to the previous one */
 	tcp_prevbreg(prev_sched) = tmp_sched;
@@ -142,14 +159,14 @@ static CPtr find_fixpoint(SGFrame subg, CPtr orig_breg) {
       prev_sched = tcp;
     }
     else { /* no unresolved answers for currSubg */
-      tcp_prevbreg(tcp) = orig_breg;  /* backtrack to leader */
+      tcp_prevbreg(tcp) = producer_cpf;  /* backtrack to leader */
     }
     complFrame = prev_compl_frame(complFrame);	
   }  /* while */
 
   if (prev_sched)  /* if anything has been scheduled */
     /* the first generator should backtrack to leader */
-    tcp_prevbreg(prev_sched) = orig_breg;  
+    tcp_prevbreg(prev_sched) = producer_cpf;  
 
   return sched_chain;
 }
