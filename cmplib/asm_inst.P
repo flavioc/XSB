@@ -141,7 +141,7 @@ asm_inst(halt,			4,	250,	[ppp]		).
 asm_inst(builtin(W),		4,	251,	[pp, a(W)]	).
 asm_inst(unifunc(W,R),		4,	252,	[p, a(W), r(R)]	).
 %  asm_inst(straight_noop,	4,	252,	[ppp]		).
-asm_inst(userfunc(A,I),		8,	253,	[pp, a(A), s(I)]).
+
 asm_inst(arglabel(T, I, L),	9,	-3,	[t(T), n(I), l(L)]	).
 	% only used in index block
 asm_inst(arglabel(T, L),	5,	-3,	[t(T), l(L)]	).
