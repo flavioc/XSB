@@ -404,7 +404,11 @@ get_type(Type,TypeOut) :-
 	atom_codes(Type,TypeCodes),
 	(append("int",_,TypeCodes)
 	 ->	TypeOut = integer
+	(append("INT",_,TypeCodes)
+	 ->	TypeOut = integer
 	 ; append("num",_,TypeCodes)
+	 ->	TypeOut = number
+	 ; append("NUM",_,TypeCodes)
 	 ->	TypeOut = number
 	 ;	TypeOut = string
 	).
