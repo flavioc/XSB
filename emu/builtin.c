@@ -593,7 +593,7 @@ void init_builtin_table(void)
   set_builtin_table(IS_INCOMPLETE, "is_incomplete");
 
   set_builtin_table(GET_PTCP, "get_ptcp");
-  set_builtin_table(GET_SUBGOAL_PTR, "get_subgoal_ptr");
+  set_builtin_table(GET_PRODUCER_SUBGOAL_FRAME, "get_producer_subgoal_frame");
   set_builtin_table(DEREFERENCE_THE_BUCKET, "dereference_the_bucket");
   set_builtin_table(PAIR_PSC, "pair_psc");
   set_builtin_table(PAIR_NEXT, "pair_next");
@@ -738,7 +738,8 @@ inline static void abolish_table_info(void)
   for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;
 	csf = csf + COMPLFRAMESIZE )
     if ( ! is_completed(compl_subgoal_ptr(csf)) )
-      xsb_abort("Illegal table operation: Cannot abolish incomplete tables");
+      xsb_abort("Illegal table operation"
+		"\n\t Cannot abolish incomplete tables");
 
   for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
     TIF_CallTrie(pTIF) = NULL;
@@ -1423,20 +1424,39 @@ int builtin_call(byte number)
 #include "bineg_xsb_i.h"
 
 /*----------------------------------------------------------------------*/
-  case GET_SUBGOAL_PTR: {	/* reg1: +term; reg2: -subgoal_ptr */
-    Psc  psc;
-    TIFptr tip;
-    Cell term = ptoc_tag(1);
 
-    if ((psc = term_psc(term)) == NULL) {
-      err_handle(TYPE, 1, "get_subgoal_ptr", 2, "callable term", term);
-      return FALSE;	/* fail */
+  case GET_PRODUCER_SUBGOAL_FRAME: {
+    const int Arity = 2;
+    const int regSubgoalTerm  = 1;  /* in: subgoal term */
+    const int regSubgoalFrame = 2;  /* out: producer from which subgoal
+				            consumes */
+    Cell term;
+    Psc  psc;
+    TIFptr tif;
+
+    term = ptoc_tag(regSubgoalTerm);
+    if ( isref(term) ) {
+      err_handle(INSTANTIATION, regSubgoalTerm,
+		 BuiltinName(GET_PRODUCER_SUBGOAL_FRAME), Arity, "", term);
+      break;
     }
-    tip = get_tip(psc);
-    if (tip == NULL) {
-      xsb_abort("Predicate %s/%d is not tabled", get_name(psc),get_arity(psc));
+    psc = term_psc(term);
+    if ( IsNULL(psc) ) {
+      err_handle(TYPE, regSubgoalTerm,
+		 BuiltinName(GET_PRODUCER_SUBGOAL_FRAME), Arity,
+		 "Callable term", term);
+      break;
     }
-    ctop_addr(2, get_subgoal_ptr(term, tip));
+    tif = get_tip(psc);
+    if ( IsNULL(tif) )
+      xsb_abort("Illegal table operation\n\t Untabled predicate (%s/%d)"
+		"\n\t In argument %d of %s/%d",
+		get_name(psc), get_arity(psc), regSubgoalTerm,
+		BuiltinName(GET_PRODUCER_SUBGOAL_FRAME), Arity);
+    if ( IsSubsumptivePredicate(tif) )
+      ctop_addr(regSubgoalFrame, get_subsumer_sf(term, tif));      
+    else
+      ctop_addr(regSubgoalFrame, get_variant_sf(term, tif));
     break;
   }
 
@@ -1631,7 +1651,7 @@ int builtin_call(byte number)
       }
       pred_type = TIF_EvalMethod(tif);
       if ( IsVariantPredicate(tif) )
-	goalSF = subsumerSF = get_subgoal_ptr(goalTerm, tif);
+	goalSF = subsumerSF = get_variant_sf(goalTerm, tif);
       else {
 	BTNptr root, leaf;
 	TriePathType path_type;
@@ -1711,10 +1731,12 @@ int builtin_call(byte number)
     }
     tif = get_tip(psc);
     if ( IsNULL(tif) )
-      xsb_abort("Illegal table operation: Untabled predicate in argument 1"
-		" of %s/1", BuiltinName(ABOLISH_TABLE_PREDICATE));
+      xsb_abort("Illegal table operation\n\t Untabled predicate (%s/%d)"
+		"\n\t In argument %d of %s/%d",
+		get_name(psc), get_arity(psc), regTerm,
+		BuiltinName(ABOLISH_TABLE_PREDICATE), Arity);
     if ( ! is_completed_table(tif) )
-      xsb_abort("Illegal table operation: Cannot abolish incomplete table"
+      xsb_abort("Illegal table operation\n\t Cannot abolish incomplete table"
 		" of predicate %s/%d", get_name(psc), get_arity(psc));
     delete_predicate_table(tif);
     return TRUE;
@@ -1740,17 +1762,24 @@ int builtin_call(byte number)
     const int regReturnNode = 2;   /* in: answer trie node */
     VariantSF sf;
     BTNptr leaf;
-
+    /*
+     * The primary purpose of this builtin is for the support of HiLog
+     * aggregation predicates, which are based upon variant tabling.
+     * So we currently disallow its use on subsumptive predicates.
+     */
     sf = ptoc_addr(regTableEntry);
-    if ( ! smIsValidStructRef(&smVarSF,sf) &&
-	 ! smIsValidStructRef(&smProdSF,sf) &&
-	 ! smIsValidStructRef(&smConsSF,sf) )
+    if ( smIsValidStructRef(&smProdSF,sf) ||
+	 smIsValidStructRef(&smConsSF,sf) )
+      xsb_abort("Invalid Table Entry Handle: Subsumptive table entry"
+		"\n\t Argument %d of %s/%d\n\t Answers for subsumptive"
+		" subgoals may not be deleted",
+		regTableEntry, BuiltinName(TRIE_DELETE_RETURN), Arity);
+    if ( ! smIsValidStructRef(&smVarSF,sf) )
       xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 		regTableEntry, BuiltinName(TRIE_DELETE_RETURN), Arity);
 
     leaf = ptoc_addr(regReturnNode);
-    if ( ! smIsValidStructRef(&smTableBTN,leaf) &&
-	 ! smIsValidStructRef(&smTSTN,leaf) )
+    if ( ! smIsValidStructRef(&smTableBTN,leaf) )
       xsb_abort("Invalid Return Handle\n\t Argument %d of %s/%d",
 		regReturnNode, BuiltinName(TRIE_DELETE_RETURN), Arity);
 

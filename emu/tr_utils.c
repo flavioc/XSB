@@ -97,7 +97,7 @@ xsbBool has_unconditional_answers(VariantSF subg)
 
 /*----------------------------------------------------------------------*/
 
-VariantSF get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
+VariantSF get_variant_sf(Cell callTerm, TIFptr pTIF) {
 
   int arity;
   BTNptr root, leaf;
@@ -106,7 +106,7 @@ VariantSF get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
   if ( IsNULL(root) )
     return NULL;
 
-  arity = get_arity(term_psc(callTerm));
+  arity = get_arity(TIF_PSC(pTIF));
   leaf = variant_trie_lookup(root, arity, clref_val(callTerm) + 1, NULL);
   if ( IsNonNULL(leaf) )
     return CallTrieLeaf_GetSF(leaf);
@@ -114,6 +114,33 @@ VariantSF get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
     return NULL;
 }
 
+/*----------------------------------------------------------------------*/
+
+/* Assumes that a subsumptive predicate is given */
+
+SubProdSF get_subsumer_sf(Cell callTerm, TIFptr pTIF) {
+
+  BTNptr root, leaf;
+  int arity;
+  TriePathType path_type;
+  VariantSF sf;
+
+  root = TIF_CallTrie(pTIF);
+  if ( IsNULL(root) )
+    return NULL;
+
+  arity = get_arity(TIF_PSC(pTIF));
+  leaf = subsumptive_trie_lookup(root, arity, clref_val(callTerm) + 1,
+				 &path_type);
+  if ( IsNULL(leaf) )
+    return NULL;
+  sf = CallTrieLeaf_GetSF(leaf);
+  if ( IsSubsumptiveProducer(sf) )
+    return ( (SubProdSF)sf );
+  else
+    return ( conssf_producer(sf) );
+}
+  
 /*----------------------------------------------------------------------*/
 
 /*
@@ -1218,8 +1245,8 @@ void reclaim_uninterned_nr(long rootidx)
 
 }
 
-
 /*----------------------------------------------------------------------*/
+
 void trie_undispose(long rootIdx, BTNptr leafn)
 {
   IGRptr r = getIGRnode(rootIdx);
@@ -1238,7 +1265,3 @@ void trie_undispose(long rootIdx, BTNptr leafn)
     undelete_branch(leafn);
   }
 }
-
-
-
-

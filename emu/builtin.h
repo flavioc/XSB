@@ -111,7 +111,7 @@
 #define IS_INCOMPLETE           104
 
 #define GET_PTCP	        107
-#define GET_SUBGOAL_PTR	        108
+#define GET_PRODUCER_SUBGOAL_FRAME  108
 #define DEREFERENCE_THE_BUCKET	109
 #define PAIR_PSC		110
 #define PAIR_NEXT		111

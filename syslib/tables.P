@@ -108,33 +108,17 @@ table_state(Call, State) :-
 
 /*----------------------------------------------------------------------*/
 
-/*
- * Temporarily abort computations on subsumptive predicates by
- * standard predicates that utilize, or provide, negation.
- */
-
-:- import warning/1 from standard.
-
 tfindall(T, Call, Result) :-
 	table_state(Call,PredType,_CallType,AnsSetStatus),
-	( PredType == variant ->
-	  ( AnsSetStatus == complete -> findall(T,Call,Result)
-	  ; AnsSetStatus == undefined ->
-		(call(Call), fail ; tfindall(T,Call,Result))
-	  ; AnsSetStatus == incomplete ->
-	        get_ptcp(PTCP), get_subgoal_ptr(Call, SubgPtr),
-		is_incomplete(Call,SubgPtr,PTCP,_), findall(T,Call,Result)
-	  )
-        ; PredType == subsumptive ->
-	  warning(('tfindall/3 does not yet fully support ',
-	           'subsumptive predicates.')),
+	( PredType \== undefined ->
 	  ( AnsSetStatus == complete -> findall(T,Call,Result)
           ; AnsSetStatus == undefined ->
-	     ( call(Call), fail ; tfindall(T,Call,Result) )
+		( call(Call), fail ; tfindall(T,Call,Result) )
 	  ; AnsSetStatus == incomplete ->
-	     abort(('tfindall/3: Incomplete subsumptive subgoal: ', Call))
+	        get_ptcp(PTCP), get_producer_subgoal_frame(Call,SubgPtr),
+		is_incomplete(SubgPtr,PTCP), findall(T,Call,Result)
 	  )
-        ; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
+	; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
 	).
 
 
@@ -149,12 +133,15 @@ tnot(Goal) :-
 	( PredType == subsumptive ->
 	  abort(['Negation of subsumptive predicates currently',
 	         'not supported.'])
-	; get_ptcp(PTCP), get_subgoal_ptr(Goal, SubgPtr),
-	  ( SubgPtr =:= 0, tcall(Goal), fail
-	  ; is_incomplete(Goal, SubgPtr, PTCP, Subg), slg_not(Subg)
-	  )
-	).
-	
+	; get_producer_subgoal_frame(Goal,SubgPtr),
+	  get_ptcp(PTCP),
+	  ( SubgPtr =:= 0
+            -> ( tcall(Goal), fail; get_producer_subgoal_frame(Goal,SF) )
+	    ;  SF = SubgPtr ),
+	  is_incomplete(SF,PTCP),
+	  slg_not(SF)
+        ).
+
 %% skolemized tnot.  Variables temporarily changed to ground and tnot 
 %% call is made.  Should give existential semantics to nonground negative
 %% calls. That is: ...:- sk_not(p(X)),... is like

@@ -47,60 +47,58 @@
 
 /*----------------------------------------------------------------------*/
 
-    case IS_INCOMPLETE: { /* reg1: +term; reg2: +SubgoalPtr;	*/
-			  /* reg3: +PTCP; reg4: -SubgPtr        */
-      Cell term = ptoc_tag(1);
-      VariantSF subgoal_ptr = (VariantSF) ptoc_int(2);
-      CPtr t_ptcp = (CPtr) ptoc_int(3);
-      Psc  psc = term_psc(term);
-      int  arity = get_arity(psc);
-      TIFptr tip;
+case IS_INCOMPLETE: {
 
-      if (subgoal_ptr == NULL) {
-	if ((tip = get_tip(psc)) == NULL) {
-	  xsb_abort("Predicate %s/%d is not tabled", get_name(psc), arity);
-	}
-	subgoal_ptr = get_subgoal_ptr(term, tip);
-      }
-      ctop_int(4, (Integer)subgoal_ptr);
+  const int Arity = 2;
+  const int regSubgoalFrame = 1;  /* in: rep of a tabled subgoal */
+  const int regRootSubgoal  = 2;  /* in: PTCPreg */
+
+  VariantSF producerSF = ptoc_addr(regSubgoalFrame);
+  CPtr t_ptcp = ptoc_addr(regRootSubgoal);
+
+  if ( ! smIsValidStructRef(&smVarSF,producerSF) &&
+       ! smIsValidStructRef(&smProdSF,producerSF) &&
+       ! smIsValidStructRef(&smConsSF,producerSF) )
+    xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
+	      regSubgoalFrame, BuiltinName(IS_INCOMPLETE), Arity);
+
 #ifdef DEBUG_DELAY
-      fprintf(stddbg, "Is incomplete for ");
-      print_subgoal(stddbg, subgoal_ptr);
-      fprintf(stddbg, ", (%x)\n", (int)&subg_ans_root_ptr(subgoal_ptr));
+  fprintf(stddbg, "Is incomplete for ");
+  print_subgoal(stddbg, producerSF);
+  fprintf(stddbg, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF));
 #endif
-      if (is_completed(subgoal_ptr)) {
-	neg_delay = FALSE;
-	ptcpreg = t_ptcp;  /* restore ptcpreg as the compl. suspens. would */
-	return TRUE;	/* succeed */
-      }
-      else {	/* subgoal is not completed; save a completion suspension */
-	CPtr xtemp1, xtemp2;
+  if (is_completed(producerSF)) {
+    neg_delay = FALSE;
+    ptcpreg = t_ptcp;  /* restore ptcpreg as the compl. suspens. would */
+    return TRUE;	/* succeed */
+  }
+  else {	/* subgoal is not completed; save a completion suspension */
 #ifdef DEBUG_DELAY
-	fprintf(stddbg, "... Saving a completion suspension (~");
-	print_subgoal(stddbg, subgoal_ptr);
-	fprintf(stddbg, " in the body of ");
-	if (t_ptcp != NULL) {
-	  print_subgoal(stddbg, (VariantSF)t_ptcp);
-	} else fprintf(stddbg, "an UNTABLED predicate");
-	fprintf(stddbg, ")\n");
+    fprintf(stddbg, "... Saving a completion suspension (~");
+    print_subgoal(stddbg, producerSF);
+    fprintf(stddbg, " in the body of ");
+    if (t_ptcp != NULL) {
+      print_subgoal(stddbg, (VariantSF)t_ptcp);
+    } else fprintf(stddbg, "an UNTABLED predicate");
+    fprintf(stddbg, ")\n");
 #endif
-	adjust_level(subg_compl_stack_ptr(subgoal_ptr));
-	save_find_locx(ereg);
+    adjust_level(subg_compl_stack_ptr(producerSF));
+    save_find_locx(ereg);
 #ifdef CHAT
-	subg_compl_susp_ptr(subgoal_ptr) = (CPtr)
-	  save_a_chat_compl_susp(subgoal_ptr, t_ptcp, cpreg);
+    subg_compl_susp_ptr(producerSF) = (CPtr)
+      save_a_chat_compl_susp(producerSF, t_ptcp, cpreg);
 #else
-	efreg = ebreg;
-	if (trreg > trfreg) trfreg = trreg;
-	if (hfreg < hreg) hfreg = hreg;
-	if (bfreg > breg) bfreg = breg;
-	/* check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
-	save_compl_susp_frame(bfreg, ereg, (CPtr)subgoal_ptr, t_ptcp, cpreg);
-	subg_compl_susp_ptr(subgoal_ptr) = bfreg;
+    efreg = ebreg;
+    if (trreg > trfreg) trfreg = trreg;
+    if (hfreg < hreg) hfreg = hreg;
+    if (bfreg > breg) bfreg = breg;
+    /* check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
+    save_compl_susp_frame(bfreg, ereg, (CPtr)producerSF, t_ptcp, cpreg);
+    subg_compl_susp_ptr(producerSF) = bfreg;
 #endif
-	return FALSE;
-      }
-    }
+    return FALSE;
+  }
+}
 
 /*----------------------------------------------------------------------*/
 

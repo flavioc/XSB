@@ -158,6 +158,19 @@ struct completion_stack_frame {
 #define prev_compl_frame(b)	(((CPtr)(b))+COMPLFRAMESIZE)
 #define next_compl_frame(b)	(((CPtr)(b))-COMPLFRAMESIZE)
 
+
+#define adjust_level(CS_FRAME) {					\
+  int new_level = compl_level(CS_FRAME);				\
+  if ( new_level < compl_level(openreg) ) {				\
+    CPtr csf = CS_FRAME;						\
+    while ( (compl_level(csf) >= new_level) && (csf >= openreg) ) {	\
+      compl_level(csf) = new_level;					\
+      csf = next_compl_frame(csf);					\
+    }									\
+  }									\
+}
+
+
 /*
  *  The overflow test MUST be placed after the initialization of the
  *  ComplStackFrame in the current implementation.  This is so that the
@@ -638,18 +651,6 @@ void tstCreateTSIs(TSTNptr);
    }							\
  }
 #endif
-
-/*----------------------------------------------------------------------*/
-
-#define adjust_level(CS_FRAME) \
-    xtemp2 = (CPtr) compl_level(CS_FRAME);	\
-    if ((Integer) xtemp2 < compl_level(openreg)) {  \
-      for (xtemp1 = CS_FRAME;			\
-	   compl_level(xtemp1) >= (Integer) xtemp2 && xtemp1 >= openreg; \
-	   xtemp1 = next_compl_frame(xtemp1)) {	\
-	     compl_level(xtemp1) = (Integer) xtemp2;\
-      }						\
-    }
 
 /*----------------------------------------------------------------------*/
 

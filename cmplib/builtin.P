@@ -136,10 +136,11 @@ inline_builtin(psc_env, 2, PSC_ENV).
 inline_builtin(psc_spy, 2, PSC_SPY).
 inline_builtin(psc_tabled, 2, PSC_TABLED).
 
-% inline_builtin(is_incomplete, 4, IS_INCOMPLETE). % Should not be inlined -- Kostis !!
-
+% Should not be inlined -- Kostis !!
+% inline_builtin(is_incomplete, 2, IS_INCOMPLETE).
 inline_builtin(get_ptcp, 1, GET_PTCP).
-inline_builtin(get_subgoal_ptr, 2, GET_SUBGOAL_PTR).
+inline_builtin(get_producer_subgoal_frame, 2, GET_PRODUCER_SUBGOAL_FRAME).
+
 inline_builtin(dereference_the_bucket, 2, DEREFERENCE_THE_BUCKET).
 inline_builtin(pair_psc, 2, PAIR_PSC).
 inline_builtin(pair_next, 2, PAIR_NEXT).
