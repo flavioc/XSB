@@ -11,6 +11,11 @@ isa_int(cid(Atom,cdfpt),cid(allAtoms,cdf)):- atom(Atom).
 isa_int(oid(Term,cdfpt),cid(allStructures,cdf)):- structure(Term).
 isa_int(cid(Term,cdfpt),cid(allStructures,cdf)):- structure(Term).
 
+isa_int(oid(AInteger,cdfpt),cid(atomicIntegers,cdf)):- atom(AInteger),
+	atom_codes(AInteger, AIntegerCodes), number_codes(Integer, AIntegerCodes), integer(Integer).
+isa_int(cid(AInteger,cdfpt),cid(atomicIntegers,cdf)):- atom(AInteger),
+	atom_codes(AInteger, AIntegerCodes), number_codes(Integer, AIntegerCodes), integer(Integer).
+
 end_of_file.
 
 isa_int(oid(Integer,cdfpt),cid(allIntegers,cdf)):- 
