@@ -243,15 +243,14 @@ flDemo(File) :-
 	flora_check_filename(File),
 	package_configuration(dir(flora),FloraDir),
 	flora_slash(Slash),
-	%% Add the demo directory to library_directory
+	%% Add the demo directory to the module search path
 	flora_concat_atoms([FloraDir,Slash,'demos'],DemoDir),
-	( library_directory(DemoDir) ->
+	( flora_module_path_get(DemoDir) ->
 	    true
-	;
-	  assert(library_directory(DemoDir))
+	; flora_module_path_add(DemoDir)
 	),
 	cwd(CurrWorkingDir),
 	cd(DemoDir),
 	flora_load_module_internal(File),
 	cd(CurrWorkingDir),
-	retractall(library_directory(DemoDir)).
+	flora_module_path_remove(DemoDir).

@@ -42,10 +42,16 @@
 
 
 /****************************************************************************
-                           An Informal Grammar
+                           AN INFORMAL BNF GRAMMAR
+
+%% To avoid confusion between some language elements and meta-syntax
+%% (e.g., parentheses and brackets are part of BNF and also of the language
+%% being described), we enclose some symbols in single quotes to make it
+%% clear that they are part of the language syntax, not of the grammar.
+%% However, FLORA these symbols can be used with or without the quotes.
 
 
-Rule := Head (':-' Body)?
+Rule := Head (':-' Body)? .
 
 Head := HeadLiteral
 Head := Head ',' Head
@@ -53,57 +59,84 @@ Head := Head ',' Head
 HeadLiteral := BinaryRelationship | ObjectSpecification | Term
 
 Body := BodyLiteral
-Body := BodyConjunt | BodyDisjunct | BodyNegative | IfThenElse
+Body := BodyConjunt | BodyDisjunct | BodyNegative | ControlFlowStatement
 Body := Body '@' ModuleName
 
-ModuleName := prolog() | prolog(atom) | atom | flora(atom) 
+ModuleName := 'prolog()' | 'prolog(' atom ')' | atom | 'flora(' atom ') '
 
-BodyConjuct := Body ',' Body
+BodyConjuct  := Body ',' Body
 BodyDisjunct := Body ';' Body
 BodyNegative := ('tnot' | '\+') Body
-IfThenElse := 'if' Body 'then' Body  ('else' Body)?
 
-BodyLiteral := BinaryRelationship | ObjectSpecification | Term |
-               DBUpdate | Builtin | Loading
+ControlFlowStatement  := IfThenElse | UnlessDo
+                          | WhileDo | WhileLoop
+			  | DoUntil | LoopUntil
+IfThenElse := if Body then Body  (else Body)?
+UnlessDo   := unless Body do Body
+WhileDo    := while Body do Body
+WhileLoop  := while Body loop Body
+DoUntil    := do Body until Body
+LoopUntil  := loop Body until Body
+
+BodyLiteral := BinaryRelationship | ObjectSpecification | Term
+                | DBUpdate | Builtin | Loading
 
 Builtin := Arithmetic Comparison, etc.
 
 Loading := '[' LoadingCommand (',' LoadingCommand)* ']'
 LoadingCommand := filename ('>>' atom)
 
-BinaryRelationship := Oid ':' Oid
-BinaryRelationship := Oid '::' Oid
+BinaryRelationship := PathExpression ':' PathExpression
+BinaryRelationship := PathExpression '::' PathExpression
 
-ObjectSpecification := Oid '[' SpecBody ']'
+ObjectSpecification := PathExpression '[' SpecBody ']'
 
-SpecBody := 'tnot' AttributeSpecification
+SpecBody := 'tnot' MethodSpecification
 SpecBody := SpecBody ',' SpecBody
 SpecBody := SpecBody ';' SpecBody
 
-AttributeSpecification := ('#' | '*')? Term
-AttributeSpecification := Oid ('->' | '->>' | '*->' | '*->>' | '=>' | '=>>') Oid
+MethodSpecification :=  ('#' | '*')? Term
+MethodSpecification :=  PathExpression ValueReferenceConnective PathExpression
 
-Oid := atom | number | string | variable | anonymousOid | numberedOid
-Oid := Term | List
-Oid := Oid ('.' | '..' | '!' | '!!') Oid
-Oid := BinaryRelationship
-Oid := ObjectSpecification
-Oid := Aggregate
+ValueReferenceConnective :=  '->' | '->>' | '*->' | '*->>' | '=>' | '=>>'
 
-List := '[' Oid (',' Oid)* ('|' Oid)? ']'
+PathExpression := atom | number | string | variable | specialOidToken
+PathExpression := Term | List
+PathExpression := PathExpression  PathExpressionConnective PathExpression
+PathExpression := BinaryRelationship
+PathExpression := ObjectSpecification
+PathExpression := Aggregate
+
+PathExpressionConnective :=  '.' | '..' | '!' | '!!'
+
+specialOidToken :=  anonymousOid | numberedOid | thisModuleName
+
+%% No quotes are allowed in the following special tokens!
+%% No space alowed between _# and integer
+%% anonymousOid & numberedOid can occur only in rule head
+anonymousOid   := _#
+numberedOid    := _#integer
+thisModuleName := _@
+
+List := '[' PathExpression (',' PathExpression)* ('|' PathExpression)? ']'
 
 Term := Functor '(' Arguments ')'
 
-Functor := Oid
+Functor := PathExpression
 
-Arguments := Oid (',' Oid)*
+Arguments := PathExpression (',' PathExpression)*
 
-Aggregate := AggregateOperator '{' variable (GroupingVariables)? '|' Body '}'
+Aggregate := AggregateOperator '{' TargetVariable (GroupingVariables)? '|' Body '}'
 AggregateOperator := 'max' | 'min' | 'avg' | 'sum' | 'collectset' | 'collectbag'
+%% Note: only one TargetVariable is permitted.
+%% It must be a variable, not a term. If you need to aggregate over terms,
+%% as for example, in collectset/collectbag, use the following idiom:
+%%      S = collectset{ V | ... , V=Term }
+TargetVariable := variable
 GroupingVariables := '[' variable, (',' variable)* ']'
 
 DBUpdate := DBOp '{' UpdateList ('|' Body)? '}'
-DBOp := insert, delete, etc.
+DBOp := insert | insertall | delete | deleteall | erase | eraseall
 UpdateList := HeadLiteral ('@' atom)?
 UpdateList := UpdateList ',' UpdateList
 ****************************************************************************/
@@ -3128,7 +3161,7 @@ flora_db_pathexp(Mode,CANOLIST(L,T,_N,I,_Ib),Code,Status) :-
 	flora_db_list(Mode,L,T,I,Code,Status).
 
 flora_db_pathexp(_Mode,ObjectTerm,_Code,Status) :-
-	%% New oid directive is not allowed in insert/delete, since it is error prone.
+	%% New oid directive is not allowed in insert/delete
 	get_spectoken(ObjectTerm,FL_NEWOID),
 	!,
 	parsing_error(ObjectTerm,ERROR_NEWOID,Status).

@@ -24,6 +24,16 @@
 */
 
 
+/* File extensions used by XSB */
+#include "extensions_xsb.h"
+
+#deffast PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
+#deffast PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
+#deffast PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
+
+#define PROLOG_CUSTOM_DIR       '.xsb'
+
+
 /******************************************************************************
   Negation predicate
 ******************************************************************************/

@@ -28,18 +28,12 @@
 
 :- compiler_options([xpp_on]).
 
-#include "extensions_xsb.h"
-#include "char_defs.h"
 #include "flag_defs_xsb.h"
 
+#include "flora_characters.flh"
 #include "flora_terms.flh"
 #include "flora_porting.flh"
 
-
-#define PROLOG_CUSTOM_DIR       '.xsb'
-#define PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
-#define PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
-#define PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
 
 #define FLORA_FILE_EXT		flr
 #define FLORA_INCLUDE_EXT	fli
@@ -122,7 +116,7 @@ flora_load_module_internal(InFile) :-
 
 	; parse_filename(File,_,_,Ext),
           Ext \== '', Ext \== PROLOG_OFILE_EXT, Ext \== PROLOG_PFILE_EXT, Ext \== FLORA_FILE_EXT,
-	  path_sysop(exists,File)
+	  flora_file_op(exists,File)
 	->
 	    flora_stderr_nl,
 	    flora_error_line('~w: Filename extension must be ~w, ~w or ~w!',
@@ -167,7 +161,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	  ( flora_file_newerthan(UserTrailerPFile,TrailerFullName) ->
 	      true
 	  ;
-	    path_sysop(copy,TrailerFullName,UserTrailerPFile)
+	    flora_file_op(copy,TrailerFullName,UserTrailerPFile)
 	  ),
 	  ( flora_file_newerthan(UserTrailerWSOFile,UserTrailerPFile) ->
 	      true
@@ -181,8 +175,9 @@ flloadtrailer(TrailerName,Workspace) :-
 	  consult(UserTrailerWSOFile),
 	  !,
 	  %% Check if the patch needs to be loaded.
-	  flora_firstorder_user_module_predicate_symbol(FLORA_THIS_MODULE,Workspace,Predicate),
-	  (current_predicate(Predicate/1) -> true; flloadpatch(Workspace))
+	  (flora_module_registry(Workspace) -> true
+	  ; flloadpatch(Workspace)
+	  )
         ),
 	!.
 
@@ -239,7 +234,7 @@ flloadpatch(Workspace) :-
 	%% Copy the main file to user directory.
 	( flora_file_newerthan(UserPatchPFile,PatchFullName) -> true
 	;
-	  path_sysop(copy,PatchFullName,UserPatchPFile)
+	  flora_file_op(copy,PatchFullName,UserPatchPFile)
 	),
 	( flora_file_newerthan(UserPatchWSOFile,UserPatchPFile) ->
 	    true
@@ -289,15 +284,13 @@ flora_user_flora_dir(Dir) :-
 	( package_configuration(user_dir(flora),Dir) ->
 	    true
 	;
-	    xsb_configuration(user_home,UserHome),
+	    flora_user_home(UserHome),
 	    flora_slash(S),
 	    %% something like $HOME/.xsb/flora
 	    flora_concat_atoms([UserHome,S,PROLOG_CUSTOM_DIR,S,flora],Dir),
-	    ( path_sysop(exists,Dir) ->
-		true
+	    ( flora_file_op(exists,Dir) -> true
 	    ;
-		( path_sysop(mkdir,Dir) ->
-		    true
+		( flora_file_op(mkdir,Dir) -> true
 		;
 		    flora_error_line('Cannot create directory `~w''!',[Dir]),
 		    abort
@@ -315,8 +308,7 @@ flora_user_tmpfile(Filename) :-
 
 /*************************************************************************
    flora_rename_file(+F1,+F2)
-   This is like path_sysop(rename,F1,F2), but it first tries issues
-   an error when fails.
+   This is like flora_file_op(rename,F1,F2), but it issues an error when fails.
    The reason is that on Windows files sometimes fail to be renamed for 
    strange reasons, so we first delete F2, try to rename, and if failed,
    issue an error, which explains what happened.
@@ -324,8 +316,8 @@ flora_user_tmpfile(Filename) :-
    will be in a broken state.
 *************************************************************************/
 flora_rename_file(F1,F2) :-
-	( (path_sysop(unlink,F2), !; true),
-	  path_sysop(rename,F1,F2), !
+	( (flora_file_op(unlink,F2), !; true),
+	    flora_file_op(rename,F1,F2), !
 	;
 	    flora_error_line("Something wrong -- can't rename ~w to ~w~n",
 			     [F1,F2]),
@@ -385,14 +377,15 @@ flora_flcompile(FlrFile,ModuleName) :-
 ******************************************************************************/
 flora_compile_system_module(File) :-
 	%% Get the system module ID from the base file name.
-	path_sysop(basename,File,BaseName),
+	flora_file_op(basename,File,BaseName),
 	flora_sysmod_file(SysModID,BaseName,_SubDir),
 	( flora_locate_file(BaseName,FLORA_FILE_EXT,FlrFile) ->
 	    flora_module_name(ModuleName,systemmodule,SysModID),
 	    flora_flcompile(FlrFile,ModuleName)
 	;
 	  flora_stderr_nl,
-	  flora_error_line('File ~w[.~w] does not exist!',[BaseName,FLORA_FILE_EXT]),
+	  flora_error_line('File ~w[.~w] does not exist!',
+			   [BaseName,FLORA_FILE_EXT]),
 	  !,
           fail
 	),
@@ -417,7 +410,7 @@ flora_load_system_module_internal(SysModID) :-
 	    ( flora_file_newerthan(WSOFile,FlrFile) ->
 		true
 
-	    ; path_sysop(exists,FlrFile) ->
+	    ; flora_file_op(exists,FlrFile) ->
 		flora_flcompile(FlrFile,ModuleName)
 	    ;
 	      flora_stderr_nl,
@@ -456,7 +449,7 @@ flora_compile_system_module_by_ID(SysModID) :-
 	package_configuration(dir(flora),FloraDir),
 	flora_slash(S),
 	flora_concat_atoms([FloraDir,S,SubDir,S,BaseName,'.flr'],FlrFile),
-	( path_sysop(exists,FlrFile) ->
+	( flora_file_op(exists,FlrFile) ->
 	    flora_module_name(ModuleName,systemmodule,SysModID),
 	    flora_flcompile(FlrFile,ModuleName)
 	;
@@ -525,12 +518,9 @@ flora_flload(FlrFile,Workspace) :-
   Read user input and save it in the given file
 *****************************************************************************/
 flora_save_user_clauses(FlrFile) :-
-	flora_message_line('Enter FLORA program clauses. When done, type Ctl-D.'),
-	file_open(FlrFile,w,Port),
-	stat_flag(CURRENT_INPUT, InPort),
-	copyIOport(InPort,Port),
-	file_close(Port),
-	flora_message_line('User program saved in file ~w', [FlrFile]).
+	flora_message_line('Type in FLORA program statements. Type Ctl-D when done.'),
+	flora_copy_input(_,FlrFile),
+	flora_message_line('Program saved in file ~w', [FlrFile]).
 
 
 /*************************************************************************
@@ -540,7 +530,7 @@ flora_save_user_clauses(FlrFile) :-
 *************************************************************************/
 flora_get_user_program_maybe(InFile,File) :-
 	( InFile == user ->
-	    %%path_sysop(tmpfilename,File),
+	    %%flora_file_op(tmpfilename,File),
 	    flora_user_tmpfile(File),
 	    flora_concat_atoms([File,'.',FLORA_FILE_EXT],FlrFile),
 	    flora_save_user_clauses(FlrFile)
@@ -571,16 +561,16 @@ flora_locate_file(InFile,ExtType,ExtFile) :-
   When it succeeds, it returns the absolute file name.
 *************************************************************************/
 flora_locate_file(In,In) :-
-	path_sysop(isabsolute,In),
+	flora_file_op(isabsolute,In),
 	!,
-	path_sysop(exists,In).
+	flora_file_op(exists,In).
 
 flora_locate_file(In,Loc) :-
-	flora_library_directory(LibDir),
+	flora_module_path_get(LibDir),
 	flora_slash(S),
 	flora_concat_atoms([LibDir,S,In],File),
-	path_sysop(expand,File,Loc),
-	path_sysop(exists,Loc),
+	flora_file_op(expand,File,Loc),
+	flora_file_op(exists,Loc),
 	!.
 
 
@@ -589,19 +579,9 @@ flora_locate_file(In,Loc) :-
   returns true if File1 exists and is newer than File2. File2 already exists.
 *************************************************************************/
 flora_file_newerthan(File1,File2) :-
-	path_sysop(exists,File1),
-	path_sysop(newerthan,File1,File2).
+	flora_file_op(exists,File1),
+	flora_file_op(newerthan,File1,File2).
 
-
-/*************************************************************************
-  flora_library_directory(-Dir)
-  returns directories to search a FLORA file.
-*************************************************************************/
-flora_library_directory('.').
-flora_library_directory(LibDir) :- library_directory(LibDir).
-flora_library_directory(LibDir) :- xsb_configuration(libdir,LibDir).
-flora_library_directory(LibDir) :- xsb_configuration(syslibdir,LibDir).
-flora_library_directory(LibDir) :- xsb_configuration(cmplibdir,LibDir).
 
 
 /*************************************************************************
@@ -816,8 +796,8 @@ flora_include_file([Opt|OptList],Status) :-
 	package_configuration(dir(flora),FloraDir),
 	flora_slash(S),
 	flora_concat_atoms([FloraDir,S,File],FullName),
-	( path_sysop(exists,FullName) ->
-	    print_file_contents(FullName),
+	( flora_file_op(exists,FullName) ->
+	    flora_copy_input(FullName,_),
 	    flora_include_file(OptList,Status)
 	;
 	  flora_error_line('The FLORA system file ~w cannot be found!',
@@ -1058,11 +1038,11 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 *************************************************************************/
 flora_load_dyn_fdb(InDBFile,ModuleName) :-
 	flora_check_filename(InDBFile),
-	( path_sysop(isabsolute,InDBFile) ->
+	( flora_file_op(isabsolute,InDBFile) ->
 	    InDBFileAbs=InDBFile
 
 	; current_loaded_file(LoadedFile) ->
-	    path_sysop(dirname,LoadedFile,FileDir),
+	    flora_file_op(dirname,LoadedFile,FileDir),
 	    flora_concat_atoms([FileDir,InDBFile],InDBFileAbs)
 	;
 	  InDBFileAbs=InDBFile
@@ -1106,11 +1086,11 @@ flora_load_dyn_fdb(InDBFile,ModuleName) :-
 *************************************************************************/
 flora_load_dyn_fld(InFLDFile,ModuleName) :-
 	flora_check_filename(InFLDFile),
-	( path_sysop(isabsolute,InFLDFile) ->
+	( flora_file_op(isabsolute,InFLDFile) ->
 	    InFLDFileAbs=InFLDFile
 
 	; current_loaded_file(LoadedFile) ->
-	    path_sysop(dirname,LoadedFile,FileDir),
+	    flora_file_op(dirname,LoadedFile,FileDir),
 	    flora_concat_atoms([FileDir,InFLDFile],InFLDFileAbs)
 	;
 	  InFLDFileAbs=InFLDFile
@@ -1435,7 +1415,7 @@ flora_shell_command_line(Code,Options,Status) :-
 *************************************************************************/
 flora_flrfilename_error(File) :-
 	( parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_FILE_EXT,
-	  path_sysop(exists,File) ->
+	  flora_file_op(exists,File) ->
 	    flora_stderr_nl,
 	    flora_error_line('~w: Filename extension must be ~w!',
 			     [File,FLORA_FILE_EXT])
@@ -1765,20 +1745,20 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
 	  str_cat(Workspace,'_',NewWorkspace)
 	),
 	!,
-	( path_sysop(exists,PFile) ->
+	( flora_file_op(exists,PFile) ->
 	    %% Dump the main .P file.
 	    flora_gpp_dumpfile(PFile,DumpPFile,NewWorkspace)
 	;
 	  flora_error_line('Failed to create the main dumpfile ~w',
 		           [PFile])
 	),
-	( path_sysop(exists,FDBFile) ->
+	( flora_file_op(exists,FDBFile) ->
 	    %% Dump the .fdb file if it exists.
 	    flora_gpp_dumpfile(FDBFile,DumpFDBFile,NewWorkspace)
 	;
 	    true
 	),
-	( path_sysop(exists,FLDFile) ->
+	( flora_file_op(exists,FLDFile) ->
 	    %% Dump the .fld file if it exists.
 	    flora_gpp_dumpfile(FLDFile,DumpFLDFile,NewWorkspace)
 	;
@@ -1852,7 +1832,7 @@ flCompileInclude(File) :-
 	    (Status == FLORA_FAILURE -> fail; true)
 
 	; parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_INCLUDE_EXT,
-	  path_sysop(exists,File)
+	  flora_file_op(exists,File)
 	->
 	    flora_stderr_nl,
 	    flora_error_line('~w: Include filename extension must be ~w!',
@@ -1933,3 +1913,20 @@ flora_measure_time(Call,Message) :-
 	Delta is T2 - T1,
 	format('~w ~w seconds', [Message,Delta]),
 	nl.
+
+
+%% Copies stdin to stdout
+flora_copy_input :-
+	repeat,
+	  get0(Ch),
+	  (Ch =:= CH_EOF_P, !
+	  ; put(Ch), fail
+	  ).
+
+%% From, To are file names. Variable means stdin or stdout, respectively
+flora_copy_input(From,To) :-
+	(var(From), !  ; seeing(OldIn), see(From)),
+	(var(To), !    ; telling(OldOut), tell(To)),
+	flora_copy_input,
+	(var(From), !  ; seen, see(OldIn)),
+	(var(To), !    ; told, tell(OldOut)).

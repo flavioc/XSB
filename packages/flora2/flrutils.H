@@ -30,6 +30,10 @@
 #include "flora_porting.flh"
 
 :- import
+	flora_user_home/1,
+	flora_file_op/2,
+	flora_file_op/3,
+	flora_module_path_get/1,
 	flora_slash/1,
 	flora_cputime/1,
 	flora_set_counter/2,
@@ -40,17 +44,9 @@
 
 :- import member/2, append/3 from basics.
 
-:- import
-	current_loaded_file/1
-    from consult.
-
-:- import library_directory/1 from usermod.
-
-:- import xsb_configuration/2 from xsb_configuration.
+:- import current_loaded_file/1 from consult.
 
 :- import xpp_options/1, xpp_process_file/3 from parse.
-
-:- import current_predicate/1 from curr_sym.
 
 :- import package_configuration/2 from packaging.
 
@@ -60,13 +56,7 @@
 	stat_set_flag/2
    from machine.
 
-:- import
-	file_close/1,
-	print_file_contents/1,
-	copyIOport/2,
-	path_sysop/2,
-	path_sysop/3
-   from file_io.
+:- import file_close/1 from file_io.
 
 :- import process_control/2 from shell.
 
@@ -154,7 +144,6 @@
 :- import prettyprint_stdin/0 from flrprettyprint.
 
 :- import
-	flora_firstorder_user_module_predicate_symbol/3,
 	flora_module_name/3,
 	flora_module_name_error/1,
 	flora_fdb_storage_name/2,

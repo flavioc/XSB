@@ -26,27 +26,26 @@
 #include "standard.h"
 
 libpath[#add(Path)] :-
-	path_sysop(expand,Path,ExpandedPath)@prolog(),
-	( library_directory(ExpandedPath)@prolog() -> true
-         ;
-	 assert(library_directory(ExpandedPath)@prolog())@prolog()
+	flora_file_op(expand,Path,ExpandedPath)@prolog(flrporting),
+	( flora_module_path_get(ExpandedPath)@prolog(flrporting) -> true
+         ; flora_module_path_add(ExpandedPath)@prolog(flrporting)
         ).
 
 libpath[#remove(Path)] :-
-	path_sysop(expand,Path,ExpandedPath)@prolog(),
-	retractall(library_directory(ExpandedPath)@prolog())@prolog().
+	flora_file_op(expand,Path,ExpandedPath)@prolog(flrporting),
+	flora_module_path_remove(ExpandedPath)@prolog(flrporting).
 
 libpath[#query(Path)] :-
 	atom(Path)@prolog(),
 	!,
-	path_sysop(expand,Path,ExpandedPath)@prolog(),
-	library_directory(ExpandedPath)@prolog().
+	flora_file_op(expand,Path,ExpandedPath)@prolog(flrporting),
+	flora_module_path_get(ExpandedPath)@prolog(flrporting).
 libpath[#query(Path)] :-
 	var(Path)@prolog(),
 	!,
-	library_directory(Path)@prolog().
+	flora_module_path_get(Path)@prolog(flrporting).
 libpath[#query(_Path)] :-
-	abort('libpath[#query(Path)]@flora(sys): Argument must be an atom or a variable')@flora(sys).
+	abort('libpath[#query(Path)]@flora(sys): Argument must be atom or variable')@flora(sys).
 
 
 tables[#abolish] :- abolish_all_tables@prolog().

@@ -297,12 +297,9 @@ DONE 11. Implement convenient versions of I/O predicates and others, such as
     new_oid(X). This module should be automatically loaded into the module
     "flora(sys)".
 
-12. Add the symbol _@, which will be handled by the tokenizer and passed
+DONE 12. Add the symbol _@, which will be handled by the tokenizer and passed
     along to the compiler so it would insert code to replace _@ with the
-    preprocessor constant FLORA_MODULE.
-    When compiling, the macro definition
-    #define FLORA_MODULE  .....
-    would be dumped into the .P file
+    preprocessor constant FLORA_THIS_MODULE_NAME
 
 DONE 13. Do dependency checking in the compiler to determine if a tabled
     predicate or an F-molecule depends on an update predicate.

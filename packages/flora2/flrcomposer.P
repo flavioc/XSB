@@ -36,7 +36,7 @@
 #define TKCNT		tkcnt	/* index counter for tokens */
 #define RLCNT		rlcnt	/* sequence number counter for rules */
 
-#include "char_defs.h"
+#include "flora_characters.flh"
 #include "flora_errors.flh"
 #include "flora_terms.flh"
 

@@ -117,6 +117,7 @@
 #define FL_DOLLAR		'$'
 #define FL_CUT			'!'
 #define FL_NEWOID		'_#'
+#define FL_THISMODULE           '_@'
 
 #define FL_TNOT			(tnot)
 #define FL_NEG			'\+'
@@ -593,8 +594,6 @@
 
 #define FLSYSLIB		flsyslib
 #define FLSYSDBUPDATE		flsysdbupdate
-
-#define FLORA_THIS_MODULE	flThisModule
 
 
 /****************************************************************************

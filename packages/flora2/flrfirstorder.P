@@ -31,15 +31,10 @@
 #include "flora_terms.flh"
 
 
-flora_firstorder(FLORA_THIS_MODULE,1) :- !.
-
 
 /****************************************************************************
   flora_firstorderdef(+Functor,+Arity)
 ****************************************************************************/
-flora_firstorderdef(X,Y) :-
-	flora_firstorder(X,Y),
-	!.
 
 flora_firstorderdef(X,Y) :-
 	( flora_get_counter(flora_shell_mode,1) ->
@@ -66,11 +61,7 @@ flora_define_firstorder(Functor,Arity) :-
 	assert(flora_dynfirstorder(Functor,Arity)).
 
 flora_define_firstorder(Functor,Arity) :-
-	( flora_firstorder(Functor,Arity) ->
-	    true
-	;
-	  assert(flora_dynfirstorder(Functor,Arity))
-	).
+	assert(flora_dynfirstorder(Functor,Arity)).
 
 
 /****************************************************************************
@@ -88,11 +79,7 @@ flora_shdefine_firstorder(Functor,Arity) :-
 	assert(flora_shfirstorder(Functor,Arity)).
 
 flora_shdefine_firstorder(Functor,Arity) :-
-	( flora_firstorder(Functor,Arity) ->
-	    true
-	;
-	  assert(flora_shfirstorder(Functor,Arity))
-	).
+	assert(flora_shfirstorder(Functor,Arity)).
 
 
 /****************************************************************************

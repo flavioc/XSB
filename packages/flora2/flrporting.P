@@ -28,10 +28,16 @@
 :- import eval/2 from eval.
 :- import slash/1 from machine.
 :- import substring/4 from string.
+:- import library_directory/1 from usermod.
+:- import xsb_configuration/2 from xsb_configuration.
+:- import path_sysop/2, path_sysop/3 from file_io.
 
 
 :- export
 	flora_slash/1,
+	flora_file_op/2,
+	flora_file_op/3,
+	flora_user_home/1,
 	flora_match_substring/3,
 	flora_match_substring/5,
 	flora_get_substring/4,
@@ -41,7 +47,10 @@
 	flora_set_counter/2,
 	flora_get_counter/2,
 	flora_increment_counter/4,
-	flora_cputime/1.
+	flora_cputime/1,
+	flora_module_path_get/1,
+	flora_module_path_add/1,
+	flora_module_path_remove/1.
 
 
 flora_term_to_atom(Term,Atom) :- fmt_write_string(Atom,'%S',arg(Term)).
@@ -87,3 +96,32 @@ flora_get_substring(String,From,To,Subst) :- substring(String,From,To,Subst).
 flora_slash(Slash) :- slash(Slash).
 
 flora_cputime(X) :- cputime(X).
+
+
+%% Manipulation of module search path
+%% Yap uses path/1, add_to_path/1, remove_from_path/1
+flora_module_path_add(Path)    :- assert(library_directory(Path)).
+flora_module_path_remove(Path) :- retractall(library_directory(Path)).
+
+flora_module_path_get('.').
+flora_module_path_get(Path) :- library_directory(Path).
+flora_module_path_get(Path) :- xsb_configuration(libdir,Path).
+flora_module_path_get(Path) :- xsb_configuration(syslibdir,Path).
+flora_module_path_get(Path) :- xsb_configuration(cmplibdir,Path).
+
+
+%% User Home
+flora_user_home(Path) :- xsb_configuration(user_home,Path).
+
+%% File system-related
+flora_file_op(exists,File)          :- path_sysop(exists,File).
+flora_file_op(mkdir,Dir)            :- path_sysop(mkdir,Dir).
+flora_file_op(unlink,File)          :- path_sysop(unlink,File).
+flora_file_op(tmpfilename,File)     :- path_sysop(tmpfilename,File).
+flora_file_op(isabsolute,File)      :- path_sysop(isabsolute,File).
+flora_file_op(rename,File,ToFile)   :- path_sysop(rename,File,ToFile).
+flora_file_op(basename,File,Base)   :- path_sysop(basename,File,Base).
+flora_file_op(expand,File,Base)     :- path_sysop(expand,File,Base).
+flora_file_op(newerthan,File,Base)  :- path_sysop(newerthan,File,Base).
+flora_file_op(dirname,File,Dir)     :- path_sysop(dirname,File,Dir).
+flora_file_op(copy,From,To)         :- path_sysop(copy,From,To).

@@ -53,6 +53,7 @@
 
 
 \newcommand{\obj}{\textit{obj}\xspace}
+\newcommand{\thismodule}{{\tt \_@}\xspace}
 \newcommand{\db}[1]{\ensuremath{\mathcal{#1}}}
 
 \newcommand{\xany}{\textsf{any}}
@@ -534,7 +535,12 @@ sign in method invocations.
 
 In this section we describe the basic syntactic structures used to build
 \FLORA programs. Subsequent sections describe the various advanced features
-that are needed to build practical applications.
+that are needed to build practical applications. The complete syntax is
+given in Appendix~\ref{app-bnf}. However, it should be noted that BNF
+cannot describe the syntax of FLORA precisely, because it is based on
+operator grammar (like in Prolog) mixed with context free grammars in
+places where operator grammar is inadequate (as, for example, in parsing
+if-then-else).
 
 
 \subsection{\fl Vocabulary}\label{sec-basic-flogic}
@@ -1420,7 +1426,7 @@ When calling the literals defined in the same module, the {\tt @{\it
     module}} notation is not needed, of course. (In fact, since a program
 does not know where it will be loaded, using the @-notation to call a
 literal in the same module is hard. However, it is possible with the help
-of the special predicate {\tt flThisModule/1}, described later, and is left
+of the special token \thismodule, which is described later, and is left
 as an exercise.)
 
 \index{module!rules for}
@@ -1497,20 +1503,32 @@ The following rules apply when calling a literal defined in another module:
 
 \subsection{Finding the Current Module Name}
 
-\index{module!{\tt flThisModule/1}}
-\index{{\tt flThisModule/1}}
+\index{module!\thismodule}
+\index{\thismodule}
 %
 Since a \FLORA program can be loaded into any module, the program does not
 have a priori knowledge of the module it will be executing in. However, the
-program can determine its module at runtime using the special predicate
-{\tt flThisModule/1}.  This predicate accepts a variable argument and binds
-it to the name of the \FLORA module into which the program was loaded.
+program can determine its module at runtime using the special token
+\thismodule, which is replaced with the current module name when the module
+is loaded. More precisely, if \thismodule occurs anywhere as an oid, method
+name, value, etc., in file {\tt foo.flr} then when {\tt foo.flr} is loaded
+into a module, say, {\tt bar}, then all such occurrences of \thismodule are
+replaced with {\tt bar}. For instance,
+%%
+\begin{verbatim}
+   a[b->_@].
+   ?- a[b->X].
+
+   X=main
+
+   Yes.
+\end{verbatim}
+%%
 
 
 
 \subsection{Loading Files into User Modules}\label{sec-loading-mods}
 
-%
 
 \index{module!user!compilation of}
 %%
@@ -1685,37 +1703,67 @@ Since Prolog does not understand \FLORA syntax, it can call only
 predicates defined in \FLORA programs. These predicates can be HiLog or
 first-order predicates (See Section~\ref{sec:hilog}). To call predicates
 defined in \FLORA programs, they must be imported by the Prolog program.
-To do this, the Prolog query
-%%
-\begin{quote}
- ?- bootstrap\_flora.  
-\end{quote}
-%%
-must be executed first. To call \FLORA predicates from the Prolog shell,
-the following {\tt flImport} queries must be executed in the shell:
-%%
-\begin{quote}
-  \tt
-   ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it
-     xsb-name}(\_,\_,...,\_)\\
-   \hspace*{5cm}from {\it filename} >> {\it flora-module-name}
-   \\
-   ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it 
-     xsb-name}(\_,\_,...,\_)\\
-   \hspace*{5cm}from {\it flora-module-name}
-\end{quote}
-%%
-To call \FLORA from within a Prolog program, say {\tt test.P}, these {\tt
-  flImport} queries must appear near the top of the program (prior to any
-call to \FLORA predicates). Also, the query {\tt bootstrap\_flora} must be
-executed \emph{before compiling and loading} {\tt test.P} --- otherwise,
-the program will not compile.
 
-The first syntax for {\tt flImport} above is used to both import the
-predicate and also load the program file defining it into a given \FLORA
-user module. The second syntax is used when the flora program is already
-loaded into a module and we only need to import the corresponding
-predicate.
+\paragraph{Importing \FLORA predicates into Prolog shell.}
+To import a \FLORA predicate into Prolog shell, the following must be done:
+%%
+%%
+\begin{itemize}
+\item The query
+%%
+\begin{quote}
+ ?- [flora2], bootstrap\_flora.  
+\end{quote}
+%%
+must be executed first.
+\item 
+  One of the following {\tt flImport} queries must be executed in the shell:
+  \begin{quote}
+    \tt
+    ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it
+      xsb-name}(\_,\_,...,\_)\\
+    \hspace*{5cm}from {\it filename} >> {\it flora-module-name}
+    \\
+    ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it 
+      xsb-name}(\_,\_,...,\_)\\
+    \hspace*{5cm}from {\it flora-module-name}
+  \end{quote}
+  %%
+\end{itemize}
+%%
+We will explain shortly which {\tt flImport} query should be used in what
+situation.
+
+\paragraph{Calling \FLORA from Prolog module.}
+To call \FLORA from within a Prolog program, say {\tt test.P}, the
+  following must be done:
+  %%
+  \begin{enumerate}
+  \item  The query 
+    %%
+    \begin{quote}
+      {\tt ?- [flora2], bootstrap\_flora} 
+    \end{quote}
+    %%
+    must be executed \emph{before compiling or loading} {\tt test.P} ---
+    otherwise, the program will not compile or load.
+  \item The directive
+    %%
+    \begin{quote}
+      {\tt :- import (flImport)/1 from flora2.}    
+    \end{quote}
+    %%
+    must appear at the top of {\tt test.P}.
+  \item The above {\tt flImport} queries must appear near the top of the
+    program (prior to any call to \FLORA predicates).
+  \end{enumerate}
+  %%
+  
+  The first syntax for {\tt flImport} above is used to both import the
+  predicate and also load the program file defining it into a given \FLORA
+  user module. The second syntax is used when the flora program is already
+  loaded into a module and we only need to import the corresponding
+  predicate.
 
 In both cases, the option {\tt hilog} is used to import a HiLog predicate
 and {\tt firstorder} is used to import first-order predicates. The imported
@@ -1734,7 +1782,7 @@ queries (again, bootstrap\_ {\tt flora} must be executed in advance):
 %%
 \begin{quote}
  \tt
- :- import flLoad/1, flCompile/1 from flora2.\\
+ :- import (flLoad)/1, (flCompile)/1 from flora2.\\
  ?- flLoad  {\it flora-file} >> {\it flora-module}.\\
  ?- flLoad  {\it flora-file}\\
  ?- flCompile {\it flora-file} >> {\it flora-module}.\\
@@ -1814,8 +1862,8 @@ programming. Consider the following example:
       Module {\tt foo}  & Module {\tt moo} \\
       \hline
       something :- ... & ......\\
-      something\_else :- flThisModule(M), & ......\\
-      \hspace*{1.5cm}a[someservice(M,Arg)->Res]@moo ~~& ......\\
+      something\_else :- & ......\\
+      \hspace*{1.5cm}a[someservice(\thismodule,Arg)->Res]@moo ~~& ......\\
       ...... & a[someservice(Module,Arg)-> Res] :- \\
       ...... & \hspace*{2.2cm} something@Module, ...\\
       ...... & ......
@@ -4426,10 +4474,13 @@ The following example illustrates the use of this library:
 %%
 \begin{quote}
  {\tt
-   ?- flThisModule(M), john[\#pp\_self(M)]@flora(pp).
+   ?- john[\#pp\_self(\thismodule)]@flora(pp).
    }
 \end{quote}
 %%
+When this method is called, the token \thismodule is replaced with the name
+of the module in which the call occurs, so it known that it has to pretty
+print the object {\tt john} in that module.
 
 \subsection{Input and Output}
 
@@ -4797,6 +4848,108 @@ pretty-printer for dumped Prolog code.
 \noindent
 {\LARGE\bf Appendices}
 \addcontentsline{toc}{section}{Appendices}
+
+\section{A BNF-style Grammar for \FLORA}\label{app-bnf}
+
+%%
+\begin{verbatim}
+%% To avoid confusion between some language elements and meta-syntax
+%% (e.g., parentheses and brackets are part of BNF and also of the language
+%% being described), we enclose some symbols in single quotes to make it
+%% clear that they are part of the language syntax, not of the grammar.
+%% However, in FLORA these symbols can be used with or without the quotes.
+
+
+Rule := Head (':-' Body)? .
+
+Head := HeadLiteral
+Head := Head ',' Head
+
+HeadLiteral := BinaryRelationship | ObjectSpecification | Term
+
+Body := BodyLiteral
+Body := BodyConjunt | BodyDisjunct | BodyNegative | ControlFlowStatement
+Body := Body '@' ModuleName
+
+ModuleName := 'prolog()' | 'prolog(' atom ')' | atom | 'flora(' atom ') '
+
+BodyConjuct  := Body ',' Body
+BodyDisjunct := Body ';' Body
+BodyNegative := ('tnot' | '\+') Body
+
+ControlFlowStatement  := IfThenElse | UnlessDo
+                          | WhileDo | WhileLoop
+			  | DoUntil | LoopUntil
+IfThenElse := if Body then Body  (else Body)?
+UnlessDo   := unless Body do Body
+WhileDo    := while Body do Body
+WhileLoop  := while Body loop Body
+DoUntil    := do Body until Body
+LoopUntil  := loop Body until Body
+
+BodyLiteral := BinaryRelationship | ObjectSpecification | Term
+                | DBUpdate | Builtin | Loading
+
+Builtin := Arithmetic Comparison, etc.
+
+Loading := '[' LoadingCommand (',' LoadingCommand)* ']'
+LoadingCommand := filename ('>>' atom)
+
+BinaryRelationship := PathExpression ':' PathExpression
+BinaryRelationship := PathExpression '::' PathExpression
+
+ObjectSpecification := PathExpression '[' SpecBody ']'
+
+SpecBody := 'tnot' MethodSpecification
+SpecBody := SpecBody ',' SpecBody
+SpecBody := SpecBody ';' SpecBody
+
+MethodSpecification :=  ('#' | '*')? Term
+MethodSpecification :=  PathExpression ValueReferenceConnective PathExpression
+
+ValueReferenceConnective :=  '->' | '->>' | '*->' | '*->>' | '=>' | '=>>'
+
+PathExpression := atom | number | string | variable | specialOidToken
+PathExpression := Term | List
+PathExpression := PathExpression  PathExpressionConnective PathExpression
+PathExpression := BinaryRelationship
+PathExpression := ObjectSpecification
+PathExpression := Aggregate
+
+PathExpressionConnective :=  '.' | '..' | '!' | '!!'
+
+specialOidToken :=  anonymousOid | numberedOid | thisModuleName
+
+%% No quotes are allowed in the following special tokens!
+%% No space alowed between _# and integer
+%% anonymousOid & numberedOid can occur only in rule head
+anonymousOid   := _#
+numberedOid    := _#integer
+thisModuleName := _@
+
+List := '[' PathExpression (',' PathExpression)* ('|' PathExpression)? ']'
+
+Term := Functor '(' Arguments ')'
+
+Functor := PathExpression
+
+Arguments := PathExpression (',' PathExpression)*
+
+Aggregate := AggregateOperator '{' TargetVariable (GroupingVariables)? '|' Body '}'
+AggregateOperator := 'max' | 'min' | 'avg' | 'sum' | 'collectset' | 'collectbag'
+%% Note: only one TargetVariable is permitted.
+%% It must be a variable, not a term. If you need to aggregate over terms,
+%% as for example, in collectset/collectbag, use the following idiom:
+%%      S = collectset{ V | ... , V=Term }
+TargetVariable := variable
+GroupingVariables := '[' variable, (',' variable)* ']'
+
+DBUpdate := DBOp '{' UpdateList ('|' Body)? '}'
+DBOp := insert | insertall | delete | deleteall | erase | eraseall
+UpdateList := HeadLiteral ('@' atom)?
+UpdateList := UpdateList ',' UpdateList  
+\end{verbatim}
+%%
 
 
 \section{The \FLORA Debugger}\label{sec-debugger}

@@ -25,8 +25,6 @@
 */
 
 
-:- index flora_firstorder/2-1.
-
 :- dynamic flora_dynfirstorder(_,_).
 
 :- dynamic flora_shfirstorder(_,_).
