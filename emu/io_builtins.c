@@ -50,6 +50,7 @@
 #include "tries.h"
 #include "choice.h"
 #include "xmacro.h"
+#include "io_builtins.h"
 #include "configs/special.h"
 
 static FILE *fptr;			/* working variable */
@@ -130,14 +131,32 @@ char *p_charlist_to_c_string(prolog_term, char *, char *);
 	    ptr_OutString += bytes_formatted; \
     	    *ptr_OutString = '\0'; \
         }
+
+bool fmt_write(void);
+bool fmt_write_string(void);
+bool fmt_read(void);
     	    
 
-/*----------------------------------------------------------------------*/
-/* like fprintf:
-   R1: +File 
-   R2: +Format, fprintf format as atom;
-   R3: +Vals, term whose args are values */
-/*----------------------------------------------------------------------*/
+bool formatted_io (void)
+{
+  switch (ptoc_int(1)) {
+  case FMT_WRITE: return fmt_write();
+  case FMT_WRITE_STRING: return fmt_write_string();
+  case FMT_READ: return fmt_read();
+  default:
+    xsb_abort("FORMATTED_IO: Invalid operation number: %d", ptoc_int(1));
+  }
+  return TRUE; /* just to get rid of compiler warning */
+}
+
+/*----------------------------------------------------------------------
+    like fprintf
+     C invocation: formatted_io(FMT_WRITE, FileDes, Format, ValTerm)
+     Prolog invocation: fmt_write(+FileDes, +Format, +ValTerm)
+       FileDes: file descriptor
+       Format: format as atom or string;
+       ValTerm: term whose args are vars to receive values returned.
+----------------------------------------------------------------------*/
 
 
 bool fmt_write(void)
@@ -152,8 +171,8 @@ bool fmt_write(void)
   struct fmt_spec *current_fmt_spec;
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
-  fptr = fileptr((int) ptoc_int(1));
-  Fmt_term = reg_term(2);
+  fptr = fileptr((int) ptoc_int(2));
+  Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term, "FMT_WRITE", "format string");
   else if (is_string(Fmt_term))
@@ -161,7 +180,7 @@ bool fmt_write(void)
   else
     xsb_abort("FMT_WRITE: Format must be an atom or a character string");
 
-  ValTerm = reg_term(3);
+  ValTerm = reg_term(4);
   if (!is_functor(ValTerm))
     xsb_abort("Usage: fmt_write([File,] FormatStr, args(Arg1,...,Arg_n))");
   Arity = get_arity(get_str_psc(ValTerm));
@@ -233,12 +252,14 @@ bool fmt_write(void)
 
 
 
-/*----------------------------------------------------------------------*/
-/* like sprintf:
-   R1: String
-   R2: +Format, sprintf format as atom;
-   R3: +Vals, term whose args are values */
-/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------
+   like sprintf:
+    C invocation: formatted_io(FMT_WRITE_STRING, String, Format, ValTerm)
+    Prolog invocation: fmt_write_string(-String, +Format, +ValTerm)
+      String: string buffer
+      Format: format as atom or string;
+      ValTerm: Term whose args are vars to receive values returned.
+----------------------------------------------------------------------*/
 
 #define MAX_SPRINTF_STRING_SIZE MAXBUFSIZE*4
 
@@ -268,7 +289,7 @@ bool fmt_write_string(void)
   int safe_outstring_bytes = SAFE_OUT_SIZE; /* safe number of bytes to write
 					       to OutString 	    	     */
   OutString[0] = '\0'; 	       	            /* anull the output string 	     */
-  Fmt_term = reg_term(2);
+  Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term,
 				 "FMT_WRITE_STRING", "format string");
@@ -277,7 +298,7 @@ bool fmt_write_string(void)
   else
     xsb_abort("FMT_WRITE_STRING: Format must be an atom or a character string");
 
-  ValTerm = reg_term(3);
+  ValTerm = reg_term(4);
   if (!is_functor(ValTerm))
     xsb_abort("Usage: fmt_write_string(OutBuf, FormatStr, args(Arg1,...,Arg_n))");
   Arity = get_arity(get_str_psc(ValTerm));
@@ -352,26 +373,27 @@ bool fmt_write_string(void)
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)
      Therefore, must use string_find(..., 1). */
-  ctop_string(1, string_find(OutString,1));
+  ctop_string(2, string_find(OutString,1));
   
   return TRUE;
 }
 
 
-
 /* 
 ** Works like fgets(buf, size, stdin). Fails on reaching the end of file 
-** Invoke: file_read_line(+File, -Str, -IsFullLine). Returns the string read
-** and an indicator (IsFullLine = 1 or 0) of whether the string read is a full
+** Invoke: file_function(FILE_READ_LINE, +File, -Str, -IsFullLine). Returns the
+** string read and an indicator (IsFullLine = 1 or 0) of whether the string
+** read is a full 
 ** line. Doesn't intern the string and is always using the same
 ** spot in the memory. So, each file_read_line overrides the previous one.
 ** If you want to intern, you must do so explicitly.
+** Prolog invocation: file_read_line(+File, -Str, -IsFullLine)
 */
 
 bool file_read_line(void)
 {
   static char buf[MAXBUFSIZE+1];
-  int filedes=ptoc_int(1);
+  int filedes=ptoc_int(2);
   FILE *file=fileptr(filedes);
 
   /* MAXBUFSIZE-1, because fgets addts '\0' at the end */
@@ -380,22 +402,24 @@ bool file_read_line(void)
   } else {
     /* the need to string-find(intern) the string was introduced only recently
        by somebody */
-    ctop_string(2, string_find(buf,1));
+    ctop_string(3, string_find(buf,1));
     if (buf[(strlen(buf)-1)] == '\n')
-      ctop_int(3, 1); /* full line */
-    else ctop_int(3, 0); /* partial line */
+      ctop_int(4, 1); /* full line */
+    else ctop_int(4, 0); /* partial line */
     return TRUE;
   }
 }
 
 
-/*----------------------------------------------------------------------*/
-/* like fscanf,
-   R1: +File
-   R2: +Format, fscanf format as atom;
-   R3: -ValsVar, Term whose args are vars to receive values returned.
-   R4: -Ret: 0 OK, -1 eof */
-/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------
+   like fscanf
+     C invocation: formatted_io(FMT_READ, File, Format, ArgTerm, Status)
+     Prolog invocation: fmt_read(+File, +Format, -ArgTerm, -Status)
+      File: file descriptor
+      Format: format as atom or string;
+      ArgTerm: Term whose args are vars to receive values returned.
+      Status: 0 OK, -1 eof 
+----------------------------------------------------------------------*/
 
 bool fmt_read(void)
 {
@@ -411,8 +435,8 @@ bool fmt_read(void)
   int cont; /* continuation indicator */
   int chars_accumulator=0, curr_chars_consumed=0;
   
-  fptr = fileptr((int) ptoc_int(1));
-  Fmt_term = reg_term(2);
+  fptr = fileptr((int) ptoc_int(2));
+  Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term, "FMT_READ", "format string");
   else if (is_string(Fmt_term))
@@ -420,7 +444,7 @@ bool fmt_read(void)
   else
     xsb_abort("FMT_READ: Format must be an atom or a character string");
 
-  AnsTerm = reg_term(3);
+  AnsTerm = reg_term(4);
   if (!is_functor(AnsTerm))
     xsb_abort("Usage: fmt_read([File,] FormatStr, args(Arg1,...,Arg_n), RetCode");
   Arity = get_arity(get_str_psc(AnsTerm));
@@ -501,7 +525,7 @@ bool fmt_read(void)
     number_of_successes = -1;
 
  EXIT_READ:
-  ctop_int(4, number_of_successes);
+  ctop_int(5, number_of_successes);
   return TRUE;
 }
 
@@ -1053,17 +1077,6 @@ char *p_charlist_to_c_string (prolog_term term, char *in_func, char *where)
 }
 
 
-#define FILE_FLUSH         0
-#define FILE_SEEK          1
-#define FILE_TRUNCATE      2
-#define FILE_POS      	   3
-#define FILE_OPEN      	   4
-#define FILE_CLOSE     	   5
-#define FILE_GET     	   6
-#define FILE_PUT     	   7
-#define FILE_GETBUF    	   8
-#define FILE_PUTBUF    	   9
-
 extern Cell ptoc_tag(int);
 extern char *expand_filename(char *filename);
 
@@ -1221,6 +1234,8 @@ bool file_function(void)
     tmpval = ptoc_int(2);
     fwrite(addr+disp, 1, ptoc_int(3), fileptr(tmpval));
     break;
+  case FILE_READ_LINE:
+    return file_read_line();
   default:
     xsb_abort("Invalid file function request %d\n", ptoc_int(1));
   }
@@ -1228,9 +1243,6 @@ bool file_function(void)
   return TRUE;
 }
 
-
-#define FILE_STAT_TIME	  0
-#define FILE_STAT_SIZE	  1
 
 /* use stat() to get file mod time, size, and other things */
 /* file_stat(+FileName, +FuncNumber, -Result)	     	   */

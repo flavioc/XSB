@@ -245,9 +245,6 @@
 	}
 	break;
 
-    case MY_HiLog_FUNCTOR:
-	break;
-
     case HiLog_ARG:	/* r1: +index (int); r2: +term; r3: ?arg (term) */
 	index = ptoc_tag(1);
 	if (isinteger(index)) {
@@ -274,12 +271,6 @@
 	break;
 
     case HiLog_UNIV:	/* r1: ?term; r2: ?list	*/
-	break;
-
-    case MY_COPY_TERM:
-	break;
-
-    case MY_NAME:
 	break;
 
     case ATOM_CHARS:	/* r1: ?term; r2: ?character list	*/

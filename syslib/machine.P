@@ -127,17 +127,16 @@ close_open_tables :- '_$builtin'(118).
 print_predicate_table(_Psc):- '_$builtin'(120).
 
 file_function(_Function, _A, _B, _C, _D) :- '_$builtin'(122).
-file_read_line(_File, _String, _IsFullLine) :- '_$builtin'(123).
+
 slash(_Slash) :- '_$builtin'(124).
-fmt_write_string(_String,_Format,_ValsList) :- '_$builtin'(125).
+
 abolish_table_info :- '_$builtin'(126).
 zero_out_profile :- '_$builtin'(127).
 write_out_profile :- '_$builtin'(128).
 assert_code_to_buff(_Clause,_Size) :- '_$builtin'(129).
 assert_buff_to_clref(_Head,_NAri,_Prref,_AZ,_RInd,_HashTabSize,_Clref) :-
 	'_$builtin'(130).
-fmt_write(_File,_Format,_ValsList) :- '_$builtin'(131).
-fmt_read(_File,_Format,_ValsListVar,_Ret) :- '_$builtin'(132).
+
 file_read_canonical(_File,_Var,_Ret) :- '_$builtin'(133).
 gen_retract_all(_Buff) :- '_$builtin'(134).
 compiled_to_dynamic(_PSC,_NewPred) :- '_$builtin'(135).
@@ -146,6 +145,9 @@ db_get_clause(_CC0,_CI,_CIL,_PrRef,_Index,_Clause,_Type,_Entry) :-
 	'_$builtin'(137).
 db_build_prref(_PSC,_Tabled,_PrRef) :- '_$builtin'(138).
 db_remove_prref(_Prref) :- '_$builtin'(139).
+
+formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
+	'_$builtin'(142).
 
 get_emu_dependent_const(_ConstName, _Value) :- '_$builtin'(156).
 

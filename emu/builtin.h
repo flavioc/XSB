@@ -94,6 +94,7 @@ extern void init_builtin_table(void);
 #define FILE_STAT		60
 #define FILE_WRITEQUOTED	61
 #define FAST_GROUND		62
+
 #define INTERN_STRING           65
 #define EXPAND_FILENAME 	66
 #define TILDE_EXPAND_FILENAME   67
@@ -121,17 +122,15 @@ extern void init_builtin_table(void);
 #define CLOSE_OPEN_TABLES       118
 
 #define FILE_FUNCTION           122
-#define FILE_READ_LINE          123
+
 #define SLASH_BUILTIN           124
-#define FMT_WRITE_STRING        125
 
 #define ABOLISH_TABLE_INFO      126
 #define ZERO_OUT_PROFILE        127
 #define WRITE_OUT_PROFILE       128
 #define ASSERT_CODE_TO_BUFF	129
 #define ASSERT_BUFF_TO_CLREF	130
-#define FMT_WRITE		131
-#define FMT_READ		132
+
 #define FILE_READ_CANONICAL	133
 #define GEN_RETRACT_ALL		134
 #define COMPILED_TO_DYNAMIC	135
@@ -139,9 +138,10 @@ extern void init_builtin_table(void);
 #define DB_GET_CLAUSE		137
 #define DB_BUILD_PRREF		138
 #define DB_REMOVE_PRREF		139
-
 #define TRIE_NODE_ELEMENT	140
 #define PROLOG_NEWNODE		141
+
+#define FORMATTED_IO            142
 
 #define TABLE_STATUS            143
 #define GET_DELAY_LISTS		144
@@ -183,11 +183,9 @@ extern void init_builtin_table(void);
 #define FUNCTOR			200
 #define ARG			201
 #define UNIV			202
-#define MY_HiLog_FUNCTOR	203
+
 #define HiLog_ARG		204
 #define HiLog_UNIV		205
-#define MY_COPY_TERM		206
-#define MY_NAME			207
 #define ATOM_CHARS		208
 #define NUMBER_CHARS		209
 
@@ -198,7 +196,6 @@ extern void init_builtin_table(void);
 #define KEYSORT			221
 
 #define ORACLE_QUERY		230
-#define CASP_QUERY		231
 #define ODBC_QUERY		239
 
 /* added by Bart Demoen & Kostis Sagonas for debugging and convenience */

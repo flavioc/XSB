@@ -145,8 +145,7 @@ extern tab_inf_ptr first_tip;
 extern tab_inf_ptr last_tip;
 
 extern int  sys_syscall(int);
-extern bool fmt_read(void), fmt_write(void), fmt_write_string(void),
-  read_canonical(void), file_read_line(void);
+extern bool formatted_io(void), read_canonical(void);
 extern bool file_function(void);
 extern bool file_stat(void);
 
@@ -577,11 +576,8 @@ void init_builtin_table(void)
   set_builtin_table(WRITE_OUT_PROFILE, "write_out_profile");
   set_builtin_table(ASSERT_CODE_TO_BUFF, "assert_code_to_buff");
   set_builtin_table(ASSERT_BUFF_TO_CLREF, "assert_buff_to_clref");
-  set_builtin_table(FMT_WRITE, "fmt_write");
+  set_builtin_table(FORMATTED_IO, "formatted_io");
   set_builtin_table(SLASH_BUILTIN, "slash");
-  set_builtin_table(FMT_WRITE_STRING, "fmt_write_string");
-  set_builtin_table(FILE_READ_LINE, "file_read_line");
-  set_builtin_table(FMT_READ, "fmt_read");
   set_builtin_table(FILE_READ_CANONICAL, "file_read_canonical");
   set_builtin_table(GEN_RETRACT_ALL, "gen_retract_all");
   set_builtin_table(COMPILED_TO_DYNAMIC, "compiled_to_dynamic");
@@ -624,11 +620,8 @@ void init_builtin_table(void)
   set_builtin_table(FUNCTOR, "functor");
   set_builtin_table(ARG, "arg");
   set_builtin_table(UNIV, "univ");
-  set_builtin_table(MY_HiLog_FUNCTOR, "hilog_functor");
   set_builtin_table(HiLog_ARG, "hilog_arg");
   set_builtin_table(HiLog_UNIV, "hilog_univ");
-  set_builtin_table(MY_COPY_TERM, "my_copy_term");
-  set_builtin_table(MY_NAME, "my_name");
   set_builtin_table(ATOM_CHARS, "atom_chars");
   set_builtin_table(NUMBER_CHARS, "number_chars");
 
@@ -1369,8 +1362,6 @@ int builtin_call(byte number)
 			   '.'. */
     ctop_string(2, string_find(dirname_canonic(ptoc_string(1)), 1));
     break;
-  case FMT_WRITE:
-    return fmt_write();
   case SLASH_BUILTIN: {  /* R1: -Slash. Tells what kind of slash the OS uses */
     static char slash_string[2];
     slash_string[0] = SLASH;
@@ -1378,12 +1369,8 @@ int builtin_call(byte number)
     ctop_string(1, string_find(slash_string, 1));
     break;
   }
-  case FMT_WRITE_STRING:
-    return fmt_write_string();
-  case FILE_READ_LINE:
-    return file_read_line();
-  case FMT_READ:
-    return fmt_read();
+  case FORMATTED_IO:
+    return formatted_io();
   case FILE_READ_CANONICAL:
     return read_canonical();
   case GEN_RETRACT_ALL:
