@@ -145,7 +145,7 @@ devel: prepare emu xsbmod gpp remake_dot_O_files configure_packages_src emu_clea
 superdevel: prepare emu xsbmod gpp remake_dot_O_files_force configure_packages_src emu_clean
 
 # Developer who needs a quick re-make of the executable
-fast: prepare emu xsbmod gpp emu_clean
+fast: prepare emu emu_clean
 
 prepare:
 	@cd $(src_emudir); \
