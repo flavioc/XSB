@@ -24,7 +24,7 @@
 
 
 #ifndef WIN_NT
-typedef short bool;
+typedef short  bool;
 #endif
 
 #ifndef FALSE
