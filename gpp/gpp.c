@@ -1215,7 +1215,7 @@ int findCommentEnd(char *endseq,char quote,char warn,int pos,int flags)
     if (c==0) bug("Input ended while scanning a comment/string");
     if (c==warn) {
       warn=0;
-      if (WarningLevel > 1)
+      if (WarningLevel > 2)
 	warning("possible comment/string termination problem");
     }
     if (c==quote) pos+=2;
