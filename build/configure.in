@@ -774,7 +774,8 @@ case "$canonical" in
      *decstation*) AC_DEFINE(DECstation)
 		   AC_DEFINE(MIPS_BASED)
 		;;
-     *hpux*) AC_DEFINE(HP700) ;;
+     *hpux*) AC_DEFINE(HP700)
+		;;
      *linux*) AC_DEFINE(LINUX)
 	      case "${canonical}" in
 		   *ppc* | *powerpc* | *m68k* ) AC_DEFINE(MKLINUX_PPC) ;;

@@ -47,9 +47,6 @@
 /* Defined on DEC stations */
 #undef DECstation
 
-/* HP300 running HP-UX */
-#undef HP300
-
 /* HP700 running HP-UX */
 #undef HP700
 
@@ -114,7 +111,7 @@
  */
 
 #undef FOREIGN_ELF
-#undef FOREIGN_OUT
+#undef FOREIGN_AOUT
 
 #ifdef ___ALWAYS_TRUE___
 #if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF))
