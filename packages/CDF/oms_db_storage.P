@@ -18,6 +18,7 @@
 
 :- import member/2, ground/1 from basics.
 :- import call0/1 from machine.
+:- import conset/2, conget/2, coninc/1 from gensym.
 
 :- import arg/3 from standard.
 %- import ground/1 from basics.
@@ -54,7 +55,8 @@ as 9 relations in external form in a relational database.
 %%:- export load_db_oms/3, dump_db_oms/3.
 
 :- ensure_loaded(oms_io).
-
+:- ensure_loaded(oms_components).
+:- ensure_loaded(oms_utilities).
 
 :- comment(clear_db_oms/1," @tt{clear_db_oms(+Connection)} deletes all
 tuples in the OMS tables in the database accessible through the
@@ -307,21 +309,25 @@ dump_db_oms(Connection,Source) :-
 	dump_db_attribute_object(Connection,Source).
 
 dump_db_class(Connection,Source) :-
-	class(_,Name,NatCid,Source),
+%%	class(_,Name,NatCid,Source),
+	oms_cn(Id,Name,NatCid,Src),
+	get_component_extensional(oms_cn(Id,Name,NatCid,Src),Source),
 	odbc_sql(Connection,
-		 [term(Name),term(NatCid),term(Source)],
+		 [term(Name),term(NatCid),term(Src)],
 		 'insert into oms_class (Name,NatCid,Source) values (?,?,?)',
 		 []),
 	fail.
 dump_db_class(_Connection,_Source).
 
 dump_db_subclass(Connection,Source) :-
-	class(Cid,_,_,Source),
-	immediate_subclass(Cid,ParCid),
-	cvt_cid_nid(Cid,NatCid,Source),
-	cvt_cid_nid(ParCid,ParNatCid,ParSource),
+%%	class(Cid,_,_,Source),
+%%	immediate_subclass(Cid,ParCid),
+	oms_sc(Cid,ParCid),
+	get_component_extensional(oms_sc(Cid,ParCid),Source),
+	cvt_cid_nid(Cid,NatCid,Source1),
+	cvt_cid_nid(ParCid,ParNatCid,Source2),
 	odbc_sql(Connection,
-		 [term(NatCid),term(Source),term(ParNatCid),term(ParSource)],
+		 [term(NatCid),term(Source1),term(ParNatCid),term(Source2)],
 		 'insert into oms_subclass (NatCid,Source,ParNatCid,ParSource)
 		 values (?,?,?,?)',
 		 []),
@@ -329,12 +335,14 @@ dump_db_subclass(Connection,Source) :-
 dump_db_subclass(_Connection,_Source).
 
 dump_db_relationship(Connection,Source) :-
-	immediate_relationship(SCid,RCid,TCid),
-	cvt_cid_nid(SCid,SNatCid,Source),
+%%	immediate_relationship(SCid,RCid,TCid),
+	oms_rln(SCid,RCid,TCid),
+	get_component_extensional(oms_rln(SCid,RCid,TCid),Source),
+	cvt_cid_nid(SCid,SNatCid,SSource),
 	cvt_cid_nid(RCid,RNatCid,RSource),
 	cvt_cid_nid(TCid,TNatCid,TSource),
 	odbc_sql(Connection,
-		 [term(SNatCid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 [term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
 		 'insert into oms_relationship (SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
 		 values (?,?,?,?,?,?)',
 		 []),
@@ -342,12 +350,14 @@ dump_db_relationship(Connection,Source) :-
 dump_db_relationship(_Connection,_Source).
 
 dump_db_schrel(Connection,Source) :-
-	immediate_schrel(SCid,RCid,TCid),
-	cvt_cid_nid(SCid,SNatCid,Source),
+%%	immediate_schrel(SCid,RCid,TCid),
+	oms_schrel(SCid,RCid,TCid),
+	get_component_extensional(oms_schrel(SCid,RCid,TCid),Source),
+	cvt_cid_nid(SCid,SNatCid,SSource),
 	cvt_cid_nid(RCid,RNatCid,RSource),
 	cvt_cid_nid(TCid,TNatCid,TSource),
 	odbc_sql(Connection,
-		 [term(SNatCid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 [term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
 		 'insert into oms_schrel (SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
 		 values (?,?,?,?,?,?)',
 		 []),
@@ -355,12 +365,14 @@ dump_db_schrel(Connection,Source) :-
 dump_db_schrel(_Connection,_Source).
 
 dump_db_strel(Connection,Source) :-
-	immediate_strel(SCid,RCid,TCid),
-	cvt_cid_nid(SCid,SNatCid,Source),
+%%	immediate_strel(SCid,RCid,TCid),
+	oms_strel(SCid,RCid,TCid),
+	get_component_extensional(oms_strel(SCid,RCid,TCid),Source),
+	cvt_cid_nid(SCid,SNatCid,SSource),
 	cvt_cid_nid(RCid,RNatCid,RSource),
 	cvt_cid_nid(TCid,TNatCid,TSource),
 	odbc_sql(Connection,
-		 [term(SNatCid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 [term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
 		 'insert into oms_strel (SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
 		 values (?,?,?,?,?,?)',
 		 []),
@@ -368,36 +380,42 @@ dump_db_strel(Connection,Source) :-
 dump_db_strel(_Connection,_Source).
 
 dump_db_object(Connection,Source) :-
-	object(_,Name,NatOid,Source),
+	object(Id,Name,NatOid,Src),
+	get_component_extensional(oms_obj(Id,Name,NatOid,Src),Source),
 	odbc_sql(Connection,
-		 [term(Name),term(NatOid),term(Source)],
+		 [term(Name),term(NatOid),term(Src)],
 		 'insert into oms_object (Name,NatOid,Source) values (?,?,?)',
 		 []),
 	fail.
 dump_db_object(_Connection,_Source).
 
 dump_db_memberof(Connection,Source) :-
-	object(Oid,_,NatOid,Source),
-	immediate_memberof(Oid,Cid),
+	oms_mo(Oid,Cid),
+	get_component_extensional(oms_mo(Oid,Cid),Source),
+	object(Oid,_,NatOid,OSource),
+/*	immediate_memberof(Oid,Cid),
 	(   Cid = object(Oid)
 	->  fail
-	;   cvt_cid_nid(Cid,NatCid,CSource),
-	    odbc_sql(Connection,
-		     [term(NatOid),term(Source),term(NatCid),term(CSource)],
+	;*/
+	cvt_cid_nid(Cid,NatCid,CSource),
+	odbc_sql(Connection,
+		     [term(NatOid),term(OSource),term(NatCid),term(CSource)],
 		     'insert into oms_memberof (NatOid,Source,NatCid,CSource)
 		     values (?,?,?,?)',
-		    [])
-	),
+		    []),
 	fail.
 dump_db_memberof(_Connection,_Source).
 
 dump_db_attribute(Connection,Source) :-
-	object(Oid,_,NatOid,Source),
-	immediate_attribute(Oid,RCid,TCid),
+%%	object(Oid,_,NatOid,Source),
+%%	immediate_attribute(Oid,RCid,TCid),
+	oms_at(Oid,RCid,TCid),
+	get_component_extensional(oms_at(Oid,RCid,TCid),Source),
+	object(Oid,_,NatOid,OSource),
 	cvt_cid_nid(RCid,RNatCid,RSource),
 	cvt_cid_nid(TCid,TNatCid,TSource),
 	odbc_sql(Connection,
-		 [term(NatOid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 [term(NatOid),term(OSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
 		 'insert into oms_attribute (SNatOid,SSource,RNatCid,RSource,TNatCid,TSource)
 		 values (?,?,?,?,?,?)',
 		 []),
@@ -405,12 +423,15 @@ dump_db_attribute(Connection,Source) :-
 dump_db_attribute(_Connection,_Source).
 
 dump_db_attribute_object(Connection,Source) :-
-	object(Oid,_,NatOid,Source),
-	immediate_attribute_object(Oid,RCid,TOid),
+%%	object(Oid,_,NatOid,Source),
+%%	immediate_attribute_object(Oid,RCid,TOid),
+	oms_ao(Oid,RCid,TOid),
+	get_component_extensional(oms_ao(Oid,RCid,TOid),Source),
+	object(Oid,_,NatOid,SSource),
 	cvt_cid_nid(RCid,RNatCid,RSource),
 	object(TOid,_,TNatOid,TSource),
 	odbc_sql(Connection,
-		 [term(NatOid),term(Source),term(RNatCid),term(RSource),term(TNatOid),term(TSource)],
+		 [term(NatOid),term(SSource),term(RNatCid),term(RSource),term(TNatOid),term(TSource)],
 		 'insert into oms_attribute_object (SNatOid,SSource,RNatCid,RSource,TNatOid,TSource)
 		 values (?,?,?,?,?,?)',
 		 []),
@@ -425,6 +446,8 @@ dump_db_attribute_object(_Connection,_Source).
 /*										*/
 /********************************************************************************/
 
+/*
+  These go into oms_intensional.P file now
 :- assert_rule_if_nec(class_int(A,B,C),class_int_cdb(A,B,C)).
 :- assert_rule_if_nec(immediate_subclass_int(A,B,C,D),immediate_subclass_int_cdb(A,B,C,D)).
 :- assert_rule_if_nec(immediate_relationship_int(A,B,C,D,E,F),immediate_relationship_int_cdb(A,B,C,D,E,F)).
@@ -439,7 +462,7 @@ dump_db_attribute_object(_Connection,_Source).
 :- assert_rule_if_nec(retractall_oms_int(Term),(retractall_oms_int_cdb(Term))).
 
 assert_rule_if_nec(H,B) :- (clause(H,B) -> true ; assert((H:-B))).
-
+*/
 
 %%:- dynamic calls_class/3.
 :- dynamic cache_class/3.
@@ -523,7 +546,8 @@ assoc_pred(cache_immediate_attribute_object(A,B,C,D,E,F), calls_immediate_attrib
 % 	check_indexes(T,Call).
 
 class_int_cdb(Name,NatCid,Source) :-
-	ext_caching(Source,Cx),
+	get_component_intensional_bind(class_int(Name,NatCid,Source),CompSource),
+	ext_caching(CompSource,Cx),
 	(structure(NatCid)
 	 ->	functor(NatCid,Fn,Ar),
 		functor(NatCid0,Fn,Ar),
@@ -545,56 +569,65 @@ class_int_cdb(Name,NatCid,Source) :-
 		 parameterized_ext_int(NatCid0,Cid0,Source),
 		 subclass(Cid,Cid0), !
 		)
-	 ; cn_id_map(_,Name,NatCid,Source)
-	 ->	true
-	 ;	db_call_gen(Cx,oms_class,[Name,NatCid,Source])
+		; (ground(NatCid), ground(Source), cn_id_map(_,Name,NatCid,Source)
+		   ->	  true
+		   ;	  db_call_gen(Cx,oms_class,[Name,NatCid,Source])
+		  )
 	).
 
-immediate_subclass_int_cdb(NatCid,Source,ParNatCid,ParSource) :-
+immediate_subclass_int_cdb(NatCid,Source1,ParNatCid,Source2) :-
+	get_component_intensional_bind(immediate_subclass_int(NatCid,Source1,ParNatCid,Source2),Source),
 	ext_caching(Source,Cx),
-	db_cache_call(calls_immediate_subclass(NatCid,Source,ParNatCid,ParSource),
-		      cache_immediate_subclass(NatCid,Source,ParNatCid,ParSource),
+	db_cache_call(calls_immediate_subclass(NatCid,Source1,ParNatCid,Source2),
+		      cache_immediate_subclass(NatCid,Source1,ParNatCid,Source2),
 		      oms_subclass,Cx).
 
 immediate_relationship_int_cdb(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource) :-
-	ext_caching(SSource,Cx),
+	get_component_intensional_bind(immediate_relationship_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
 	db_cache_call(calls_immediate_relationship(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      cache_immediate_relationship(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      oms_relationship,Cx).
 
 immediate_schrel_int_cdb(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource) :-
-	ext_caching(SSource,Cx),
+	get_component_intensional_bind(immediate_schrel_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
 	db_cache_call(calls_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      cache_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      oms_schrel,Cx).
 
 immediate_strel_int_cdb(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource) :-
-	ext_caching(SSource,Cx),
+	get_component_intensional_bind(immediate_strel_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
 	db_cache_call(calls_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      oms_strel,Cx).
 
 object_int_cdb(Name,NatOid,Source) :-
-	ext_caching(Source,Cx),
+	get_component_intensional_bind(object_int(Name,NatOid,Source),CompSource),
+	ext_caching(CompSource,Cx),
 	(ob_id_map(_,Name,NatOid,Source)
 	 ->	true
 	 ;  db_call_gen(Cx,oms_object,[Name,NatOid,Source])
 	).
 
-immediate_memberof_int_cdb(NatOid,Source,NatCid,CSource) :-
+immediate_memberof_int_cdb(NatOid,OSource,NatCid,CSource) :-
+	get_component_intensional_bind(memberof_int(NatOid,OSource,NatCid,CSource),Source),
 	ext_caching(Source,Cx),
-	db_cache_call(calls_immediate_memberof(NatOid,Source,NatCid,CSource),
-		      cache_immediate_memberof(NatOid,Source,NatCid,CSource),
+	db_cache_call(calls_immediate_memberof(NatOid,OSource,NatCid,CSource),
+		      cache_immediate_memberof(NatOid,OSource,NatCid,CSource),
 		      oms_memberof,Cx).
 
 immediate_attribute_int_cdb(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource) :-
-	ext_caching(SSource,Cx),
+	get_component_intensional_bind(immediate_attribute_int(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
 	db_cache_call(calls_immediate_attribute(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      cache_immediate_attribute(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      oms_attribute,Cx).
 
 immediate_attribute_object_int_cdb(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource) :-
-	ext_caching(SSource,Cx),
+	get_component_intensional_bind(immediate_attribute_object_int(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource),Source),
+	ext_caching(Source,Cx),
 	db_cache_call(calls_immediate_attribute_object(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource),
 		      cache_immediate_attribute_object(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource),
 		      oms_attribute_object,Cx).
@@ -771,21 +804,9 @@ add_commas([FreeName],[FreeName]) :- !.
 add_commas([FreeName|FreeNames],[FreeName,', '|FreeCommas]) :-
 	add_commas(FreeNames,FreeCommas).
 
-:- import conset/2, conget/2, coninc/1 from gensym.
-:- resetdbctr.
-resetdbctr :- conset('_dbctr',0),conset('_duplctr',0).
-
-odbc_sql_local(Connection,Input,Statement,Output):- 
-	conget('_dbctr',DbCtr),DbCtr1 is DbCtr + 1,conset('_dbctr',DbCtr1),
-	(DbCtr1 mod 100 =:= 0 -> write(',') ; true),
-%%	writeq(sQL(Statement,Input)),nl,
-	findall(Output,odbc_sql(Connection,Input,Statement,Output),Outputs1),
-	sort(Outputs1,Outputs),
-	member(Output,Outputs).
-
-
 assert_oms_int_cdb(oms_cn(Cid,Name,NatCid,Source)) :-
-	ext_caching(Source,Cx),
+	get_component_intensional_bind(class_int(Name,NatCid,Source),CompSource),
+	ext_caching(CompSource,Cx),
 	(cn_id_map(Cid,Name,NatCid,Source)
 	 ->	true
 	 ;	assert(cn_id_map(Cid,Name,NatCid,Source)),
@@ -795,19 +816,37 @@ assert_oms_int_cdb(oms_cn(Cid,Name,NatCid,Source)) :-
 			)
 	).
 assert_oms_int_cdb(oms_sc(SubCid,SupCid)) :-
-	class(SubCid,_,NatCid,Source),
+	get_component_intensional_bind(immediate_subclass_int(NatCid,Source1,ParNatCid,Source2),Source),
 	ext_caching(Source,Cx),
-	class(SupCid,_,ParNatCid,ParSource),
-	assert(cache_immediate_subclass(NatCid,Source,ParNatCid,ParSource)),
-	odbc_sql(Cx,[term(NatCid),term(Source),term(ParNatCid),term(ParSource)],
+	(var(Source2)
+	 ->	%% first argument defines component (Source1=Source), check it first
+		class(SubCid,_,NatCid,Source1),
+		class(SupCid,_,ParNatCid,Source2)
+	 ;	class(SupCid,_,ParNatCid,Source2),
+		class(SubCid,_,NatCid,Source1)
+	),
+	assert(cache_immediate_subclass(NatCid,Source1,ParNatCid,Source2)),
+	odbc_sql(Cx,[term(NatCid),term(Source1),term(ParNatCid),term(Source2)],
 		 'insert into oms_subclass (NatCid,Source,ParNatCid,ParSource) values (?,?,?,?)',
 		 []
 		).
 assert_oms_int_cdb(oms_rln(SCid,RCid,TCid)) :-
-	class(SCid,_,SNatCid,SSource),
-	ext_caching(SSource,Cx),
-	class(RCid,_,RNatCid,RSource),
-	class(TCid,_,TNatCid,TSource),
+	get_component_intensional_bind(immediate_relationship_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
+	(var(SSource)
+	 ->	(var(RSource)
+		 ->	class(TCid,_,TNatCid,TSource),
+			class(SCid,_,SNatCid,SSource),
+			class(RCid,_,RNatCid,RSource)
+		 ;
+			class(RCid,_,RNatCid,RSource),
+			class(SCid,_,SNatCid,SSource),
+			class(TCid,_,TNatCid,TSource)
+		)
+	 ;	class(SCid,_,SNatCid,SSource),
+		class(RCid,_,RNatCid,RSource),
+		class(TCid,_,TNatCid,TSource)
+	),
 	(cache_immediate_relationship(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
 	 ->	true
 	 ;	assert(cache_immediate_relationship(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
@@ -817,10 +856,22 @@ assert_oms_int_cdb(oms_rln(SCid,RCid,TCid)) :-
 			)
 	).
 assert_oms_int_cdb(oms_schrel(SCid,RCid,TCid)) :-
-	class(SCid,_,SNatCid,SSource),
-	ext_caching(SSource,Cx),
-	class(RCid,_,RNatCid,RSource),
-	class(TCid,_,TNatCid,TSource),
+	get_component_intensional_bind(immediate_schrel_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
+	(var(SSource)
+	 ->	(var(RSource)
+		 ->	class(TCid,_,TNatCid,TSource),
+			class(SCid,_,SNatCid,SSource),
+			class(RCid,_,RNatCid,RSource)
+		 ;
+			class(RCid,_,RNatCid,RSource),
+			class(SCid,_,SNatCid,SSource),
+			class(TCid,_,TNatCid,TSource)
+		)
+	 ;	class(SCid,_,SNatCid,SSource),
+		class(RCid,_,RNatCid,RSource),
+		class(TCid,_,TNatCid,TSource)
+	),
 	(cache_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
 	 ->	true
 	 ;	assert(cache_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
@@ -830,10 +881,22 @@ assert_oms_int_cdb(oms_schrel(SCid,RCid,TCid)) :-
 			)
 	).
 assert_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
-	class(SCid,_,SNatCid,SSource),
-	ext_caching(SSource,Cx),
-	class(RCid,_,RNatCid,RSource),
-	class(TCid,_,TNatCid,TSource),
+	get_component_intensional_bind(immediate_strel_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
+	(var(SSource)
+	 ->	(var(RSource)
+		 ->	class(TCid,_,TNatCid,TSource),
+			class(SCid,_,SNatCid,SSource),
+			class(RCid,_,RNatCid,RSource)
+		 ;
+			class(RCid,_,RNatCid,RSource),
+			class(SCid,_,SNatCid,SSource),
+			class(TCid,_,TNatCid,TSource)
+		)
+	 ;	class(SCid,_,SNatCid,SSource),
+		class(RCid,_,RNatCid,RSource),
+		class(TCid,_,TNatCid,TSource)
+	),
 	(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
 	 ->	true
 	 ;	assert(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
@@ -843,7 +906,8 @@ assert_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
 			)
 	).
 assert_oms_int_cdb(oms_obj(Oid,Name,NatOid,Source)) :-
-	ext_caching(Source,Cx),
+	get_component_intensional_bind(object_int(Name,NatOid,Source),CompSource),
+	ext_caching(CompSource,Cx),
 	(ob_id_map(Oid,Name,NatOid,Source)
 	 ->	true
 	 ;	assert(ob_id_map(Oid,Name,NatOid,Source)),
@@ -853,19 +917,35 @@ assert_oms_int_cdb(oms_obj(Oid,Name,NatOid,Source)) :-
 			)
 	).
 assert_oms_int_cdb(oms_mo(Oid,Cid)) :-
-	ob_id_map(Oid,_,NatOid,Source),
+	get_component_intensional_bind(memberof_int(NatOid,OSource,NatCid,CSource),Source),
 	ext_caching(Source,Cx),
-	class(Cid,_,NatCid,CSource),
-	assert(cache_immediate_memberof(NatOid,Source,NatCid,CSource)),
-	odbc_sql(Cx,[term(Oid),term(Source),term(NatCid),term(CSource)],
+	(var(CSource) %% object defines the component
+	 ->	ob_id_map(Oid,_,NatOid,OSource),
+		class(Cid,_,NatCid,CSource)
+	 ;	class(Cid,_,NatCid,CSource),
+		object(Oid,_,NatOid,OSource)
+	),
+	assert(cache_immediate_memberof(NatOid,OSource,NatCid,CSource)),
+	odbc_sql(Cx,[term(NatOid),term(OSource),term(NatCid),term(CSource)],
 		 'insert into oms_memberof (NatOid,Source,NatCid,CSource) values (?,?,?,?)',
 		 []
 		).
 assert_oms_int_cdb(oms_at(SOid,RCid,TCid)) :-
-	ob_id_map(SOid,_,SNatOid,SSource),
-	ext_caching(SSource,Cx),
-	class(RCid,_,RNatCid,RSource),
-	class(TCid,_,TNatCid,TSource),
+	get_component_intensional_bind(immediate_attribute_int(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
+	(var(SSource)
+	 ->	(var(RSource)
+		 ->	class(TCid,_,TNatCid,TSource),
+			object(SOid,_,SNatOid,SSource),
+			class(RCid,_,RNatCid,RSource)
+		 ;	class(RCid,_,RNatCid,RSource),
+			object(SOid,_,SNatOid,SSource),
+			class(TCid,_,TNatCid,TSource)
+		)
+	 ;	ob_id_map(SOid,_,SNatOid,SSource),
+		class(RCid,_,RNatCid,RSource),
+		class(TCid,_,TNatCid,TSource)
+	),
 	(cache_immediate_attribute(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource)
 	 ->	true
 	 ;	assert(cache_immediate_attribute(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource)),
@@ -875,10 +955,21 @@ assert_oms_int_cdb(oms_at(SOid,RCid,TCid)) :-
 			)
 	).
 assert_oms_int_cdb(oms_ao(SOid,RCid,TOid)) :-
-	ob_id_map(SOid,_,SNatOid,SSource),
-	ext_caching(SSource,Cx),
-	class(RCid,_,RNatCid,RSource),
-	ob_id_map(TOid,_,TNatOid,TSource),
+	get_component_intensional_bind(immediate_attribute_object_int(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource),Source),
+	ext_caching(Source,Cx),
+	(var(SSource)
+	 ->	(var(RSource)
+		 ->	ob_id_map(TOid,_,TNatOid,TSource),
+			object(SOid,_,SNatOid,SSource),
+			class(RCid,_,RNatCid,RSource)
+		 ;	class(RCid,_,RNatCid,RSource),
+			object(SOid,_,SNatOid,SSource),
+			object(TOid,_,TNatOid,TSource)
+		)
+	 ;	ob_id_map(SOid,_,SNatOid,SSource),
+		class(RCid,_,RNatCid,RSource),
+		object(TOid,_,TNatOid,TSource)
+	),
 	(cache_immediate_attribute_object(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource)
 	 ->	true
 	 ;	assert(cache_immediate_attribute_object(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource)),
@@ -891,7 +982,8 @@ assert_oms_int_cdb(oms_ao(SOid,RCid,TOid)) :-
 retractall_oms_int_cdb(oms_cn(Cid,Name,NatCid,Source)) :-
 	(nonvar(Cid)
 	 ->	class(Cid,Name,NatCid,Source),
-		ext_caching(Source,Cx),
+		get_component_intensional_bind(class_int(Name,NatCid,Source),CompSource),
+		ext_caching(CompSource,Cx),
 		retractall(cn_id_map(Cid,Name,NatCid,Source)),
 		odbc_sql(Cx,[term(Name),term(NatCid),term(Source)],
 			 'delete from oms_class where Name = ? and NatCid = ? and Source = ?',
@@ -900,11 +992,16 @@ retractall_oms_int_cdb(oms_cn(Cid,Name,NatCid,Source)) :-
 	).
 retractall_oms_int_cdb(oms_sc(SubCid,SupCid)) :-
 	(nonvar(SubCid),nonvar(SupCid)
-	 ->	class(SubCid,_,NatCid,Source),
+	 ->	get_component_intensional_bind(immediate_subclass_int(NatCid,Source1,ParNatCid,Source2),Source),
 		ext_caching(Source,Cx),
-		class(SupCid,_,ParNatCid,ParSource),
-		retractall(cache_immediate_subclass(NatCid,Source,ParNatCid,ParSource)),
-		odbc_sql(Cx,[term(NatCid),term(Source),term(ParNatCid),term(ParSource)],
+		(var(Source2)
+		 ->	class(SubCid,_,NatCid,Source1),
+			class(SupCid,_,ParNatCid,Source2)
+		 ;	class(SupCid,_,ParNatCid,Source2),
+			class(SubCid,_,NatCid,Source1)
+		),
+		retractall(cache_immediate_subclass(NatCid,Source1,ParNatCid,Source2)),
+		odbc_sql(Cx,[term(NatCid),term(Source1),term(ParNatCid),term(Source2)],
 			 'delete from oms_subclass where NatCid=? and Source=? and ParNatCid=? and ParSource=?',
 			 []
 			)
@@ -912,9 +1009,10 @@ retractall_oms_int_cdb(oms_sc(SubCid,SupCid)) :-
 	).
 retractall_oms_int_cdb(oms_rln(SCid,RCid,TCid)) :-
 	(nonvar(SCid),nonvar(RCid),nonvar(TCid)
-	 ->	class(SCid,_,SNatCid,SSource),
-		ext_caching(SSource,Cx),
+	 ->	get_component_intensional_bind(immediate_relationship_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+		ext_caching(Source,Cx),
 		class(RCid,_,RNatCid,RSource),
+		class(SCid,_,SNatCid,SSource),
 		class(TCid,_,TNatCid,TSource),
 		retractall(cache_immediate_relationship(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
 		odbc_sql(Cx,[term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
@@ -922,10 +1020,7 @@ retractall_oms_int_cdb(oms_rln(SCid,RCid,TCid)) :-
 			 []
 			)
 	 ; nonvar(SCid),nonvar(RCid)
-	 ->	class(SCid,_,SNatCid,SSource),
-		ext_caching(SSource,Cx),
-		class(RCid,_,RNatCid,RSource),
-		(findall(TCid,immediate_relationship(SCid,RCid,TCid),TCids),
+	 ->	(findall(TCid,immediate_relationship(SCid,RCid,TCid),TCids),
 		 member(TCid,TCids),
 		 retractall_oms_int_cdb(oms_rln(SCid,RCid,TCid)),
 		 fail
@@ -936,9 +1031,10 @@ retractall_oms_int_cdb(oms_rln(SCid,RCid,TCid)) :-
 	).
 retractall_oms_int_cdb(oms_schrel(SCid,RCid,TCid)) :-
 	(nonvar(SCid),nonvar(RCid),nonvar(TCid)
-	 ->	class(SCid,_,SNatCid,SSource),
-		ext_caching(SSource,Cx),
+	 ->	get_component_intensional_bind(immediate_schrel_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+		ext_caching(Source,Cx),
 		class(RCid,_,RNatCid,RSource),
+		class(SCid,_,SNatCid,SSource),
 		class(TCid,_,TNatCid,TSource),
 		retractall(cache_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
 		odbc_sql(Cx,[term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
@@ -949,9 +1045,10 @@ retractall_oms_int_cdb(oms_schrel(SCid,RCid,TCid)) :-
 	).
 retractall_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
 	(nonvar(SCid),nonvar(RCid),nonvar(TCid)
-	 ->	class(SCid,_,SNatCid,SSource),
-		ext_caching(SSource,Cx),
+	 ->	get_component_intensional_bind(immediate_strel_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+		ext_caching(Source,Cx),
 		class(RCid,_,RNatCid,RSource),
+		class(SCid,_,SNatCid,SSource),
 		class(TCid,_,TNatCid,TSource),
 		retractall(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
 		odbc_sql(Cx,[term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
@@ -959,9 +1056,10 @@ retractall_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
 			 []
 			)
 	 ; nonvar(SCid),nonvar(RCid)
-	 ->	class(SCid,_,SNatCid,SSource),
-		ext_caching(SSource,Cx),
+	 ->	get_component_intensional_bind(immediate_strel_int(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+		ext_caching(Source,Cx),
 		class(RCid,_,RNatCid,RSource),
+		class(SCid,_,SNatCid,SSource),
 		retractall(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,_,_)),
 		odbc_sql(Cx,[term(SNatCid),term(SSource),term(RNatCid),term(RSource)],
 			 'delete from oms_strel where SNatCid=? and SSource=? and RNatCid=? and RSource=?',
@@ -971,7 +1069,8 @@ retractall_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
 	).
 retractall_oms_int_cdb(oms_obj(Oid,Name,NatOid,Source)) :-
 	(nonvar(Oid)
-	 ->	ext_caching(Source,Cx),
+	 ->	get_component_intensional_bind(object_int(Name,NatOid,Source),CompSource),
+		ext_caching(CompSource,Cx),
 		retractall(ob_id_map(Oid,Name,NatOid,Source)),
 		odbc_sql(Cx,[term(Name),term(NatOid),term(Source)],
 			 'delete from oms_object where Name=? and NatOid=? and Source=?',
@@ -981,11 +1080,16 @@ retractall_oms_int_cdb(oms_obj(Oid,Name,NatOid,Source)) :-
 	).
 retractall_oms_int_cdb(oms_mo(Oid,Cid)) :-
 	(nonvar(Oid),nonvar(Cid)
-	 ->	ob_id_map(Oid,_,NatOid,Source),
+	 ->	get_component_intensional_bind(memberof_int(NatOid,OSource,NatCid,CSource),Source),
 		ext_caching(Source,Cx),
-		class(Cid,_,NatCid,CSource),
-		retractall(cache_immediate_memberof(NatOid,Source,NatCid,CSource)),
-		odbc_sql(Cx,[term(Oid),term(Source),term(NatCid),term(CSource)],
+		(var(CSource) %% object defines the component
+		 ->	ob_id_map(Oid,_,NatOid,OSource),
+			class(Cid,_,NatCid,CSource)
+		 ;	class(Cid,_,NatCid,CSource),
+			object(Oid,_,NatOid,OSource)
+		),
+		retractall(cache_immediate_memberof(NatOid,OSource,NatCid,CSource)),
+		odbc_sql(Cx,[term(NatOid),term(OSource),term(NatCid),term(CSource)],
 			 'delete from oms_memberof where NatOid=? and Source=? and NatCid=? and CSource=?',
 			 []
 			)
@@ -1001,10 +1105,21 @@ retractall_oms_int_cdb(oms_mo(Oid,Cid)) :-
 	).
 retractall_oms_int_cdb(oms_at(SOid,RCid,TCid)) :-
 	(nonvar(SOid),nonvar(RCid),nonvar(TCid)
-	 ->	ob_id_map(SOid,_,SNatOid,SSource),
-		ext_caching(SSource,Cx),
-		class(RCid,_,RNatCid,RSource),
-		class(TCid,_,TNatCid,TSource),
+	 ->	get_component_intensional_bind(immediate_attribute_int(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+		ext_caching(Source,Cx),
+		(var(SSource)
+		 ->	(var(RSource)
+			 ->	class(TCid,_,TNatCid,TSource),
+				object(SOid,_,SNatOid,SSource),
+				class(RCid,_,RNatCid,RSource)
+			 ;	class(RCid,_,RNatCid,RSource),
+				object(SOid,_,SNatOid,SSource),
+				class(TCid,_,TNatCid,TSource)
+			)
+		 ;	ob_id_map(SOid,_,SNatOid,SSource),
+			class(RCid,_,RNatCid,RSource),
+			class(TCid,_,TNatCid,TSource)
+		),
 		retractall(cache_immediate_attribute(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource)),
 		odbc_sql(Cx,[term(SNatOid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
 			 'delete from oms_attribute where SNatOid=? and SSource=? and RNatCid=? and RSource=? and TNatCid=? and TSource=?',
@@ -1014,10 +1129,21 @@ retractall_oms_int_cdb(oms_at(SOid,RCid,TCid)) :-
 	).
 retractall_oms_int_cdb(oms_ao(SOid,RCid,TOid)) :-
 	(nonvar(SOid),nonvar(RCid),nonvar(TOid)
-	 ->	ob_id_map(SOid,_,SNatOid,SSource),
-		ext_caching(SSource,Cx),
-		class(RCid,_,RNatCid,RSource),
-		ob_id_map(TOid,_,TNatOid,TSource),
+	 ->	get_component_intensional_bind(immediate_attribute_object_int(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource),Source),
+		ext_caching(Source,Cx),
+		(var(SSource)
+		 ->	(var(RSource)
+			 ->	ob_id_map(TOid,_,TNatOid,TSource),
+				object(SOid,_,SNatOid,SSource),
+				class(RCid,_,RNatCid,RSource)
+			 ;	class(RCid,_,RNatCid,RSource),
+				object(SOid,_,SNatOid,SSource),
+				object(TOid,_,TNatOid,TSource)
+			)
+		 ;	ob_id_map(SOid,_,SNatOid,SSource),
+			class(RCid,_,RNatCid,RSource),
+			object(TOid,_,TNatOid,TSource)
+		),
 		retractall(cache_immediate_attribute_object(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource)),
 		odbc_sql(Cx,[term(SNatOid),term(SSource),term(RNatCid),term(RSource),term(TNatOid),term(TSource)],
 			 'delete from oms_attribute_object where SNatOid=? and SSource=? and RNatCid=? and RSource=? and TNatOid=? and TSource=?',
@@ -1059,3 +1185,7 @@ get_term_vars_list([Term|Terms],Vars0,Vars) :-
 	get_term_vars(Term,Vars0,Vars1),
 	get_term_vars_list(Terms,Vars1,Vars).
 
+get_component_intensional_bind(Term,Component):- 
+	component_table_int(Term,Arg,_Deps),
+	arg(Arg,Term,Source),
+	Source = Component.
