@@ -10,3 +10,7 @@ o2[@M->R] :-
 	@M =.. [Meth|Args],
 	length(Args,2).
 
+?- X[@M -> R].
+
+?- writeln('o2:'), o2[@M -> R].
+
