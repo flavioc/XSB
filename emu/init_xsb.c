@@ -412,7 +412,7 @@ char *init_para(int argc, char *argv[])
       break;
     case 's':
       flags[TRACE_STA] = 1;
-      *asynint_ptr |= MSGINT_MARK;
+      asynint_val |= MSGINT_MARK;
       break;
     case 'S':
       flags[TABLING_METHOD] = SUBSUMPTIVE_TEM;
@@ -424,13 +424,13 @@ char *init_para(int argc, char *argv[])
       break;
     case 'T': 
       flags[HITRACE] = 1;
-      *asynint_ptr |= MSGINT_MARK; 
+      asynint_val |= MSGINT_MARK; 
       break;
     case 't': 
 #ifdef DEBUG
       flags[PIL_TRACE] = 1;
       flags[HITRACE] = 1;
-      *asynint_ptr |= MSGINT_MARK;
+      asynint_val |= MSGINT_MARK;
 #else
       xsb_exit("-t option unavailable for this executable (non-debug mode)");
 #endif

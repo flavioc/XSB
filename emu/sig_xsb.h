@@ -24,7 +24,7 @@
 
 
 /* signals 1 and 8-15 are asynchronous. They are flaged by the variable  */
-/* *asynint_ptr, which can be 8-15 and maybe OR'ed with KEYINT_MARK.	 */
+/* asynint_val, which can be 8-15 and maybe OR'ed with KEYINT_MARK.	 */
 /* At some interval (currently at the entry of "call", etc), a check is  */
 /* made to see if there is an asynchronous interrupt occurred. If yes,	 */
 /* the procedure "interrupt_proc" is invoked. The rest of signals (0 and */

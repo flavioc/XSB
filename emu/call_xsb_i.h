@@ -74,7 +74,7 @@ static inline int prolog_call0(Cell term)
       break;
 *****/
     }
-    if (*asynint_ptr) intercept(psc);
+    if (asynint_val) intercept(psc);
 
     return TRUE;
 }
