@@ -1008,9 +1008,8 @@ int mark_heap(int arity, int *marked_dregs)
 #ifdef CHAT
   marked += chat_mark_frozen_parts(&avail_dreg_marks);
   if (slide) *marked_dregs = MAX_DREG_MARKS - avail_dreg_marks;
-#endif
-
   marked += mark_from_attv_array();
+#endif
 
   marked += mark_hreg_from_choicepoints();
 
