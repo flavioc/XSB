@@ -57,8 +57,6 @@ static void strclose(int i)
   iostrs[i] = NULL;
 }
 
-
-
 /* file_flush, file_pos, file_truncate, file_seek */
 inline static xsbBool file_function(void)
 {
@@ -70,6 +68,9 @@ inline static xsbBool file_function(void)
   static prolog_term pterm;
   static Cell term;
   static char *strmode;
+  static char *line_buff = NULL;
+  static int line_buff_len = 0;
+  int line_buff_disp;
 
   switch (ptoc_int(1)) {
   case FILE_FLUSH: /* file_function(0,+IOport,-Ret,_,_) */
@@ -259,7 +260,7 @@ inline static xsbBool file_function(void)
     XSB_StrSet(&VarBuf,"");
 
     do {
-      if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL) {
+      if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL && feof(fptr)) {
 	eof=TRUE;
 	break;
       } else {
@@ -280,36 +281,35 @@ inline static xsbBool file_function(void)
   case FILE_READ_LINE_LIST: {
     /* Works like FILE_READ_LINE but returns a list of codes
     ** Invoke: file_function(FILE_READ_LINE, +File, -List). Returns
-    ** the list of codes read.
+    ** the list of codes read. Rewritten by DSW 5/18/04 to allow \0 in lines.
     ** Prolog invocation: file_read_line_list(+File, -Str) */
-    char buf[MAX_IO_BUFSIZE+1];
-    int break_loop = FALSE;
-    int eof=FALSE;
     char *atomname;
+    char c;
     Cell new_list;
     CPtr top = NULL;
     int i;
 
     SET_FILEPTR(fptr, ptoc_int(2));
-    XSB_StrSet(&VarBuf,"");
 
+    line_buff_disp = 0;
     do {
-      if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL) {
-	eof=TRUE;
-	break;
-      } else {
-	XSB_StrAppend(&VarBuf,buf);
-	break_loop = (buf[(strlen(buf)-1)] == '\n');
+      if (line_buff_disp >= line_buff_len) {
+	line_buff_len = line_buff_disp+MAX_IO_BUFSIZE;
+	line_buff = realloc(line_buff,line_buff_len);
       }
-    } while (!break_loop);
+      *(line_buff+line_buff_disp) = c = getc(fptr);
+      if (c == EOF) break;
+      line_buff_disp++;
+    } while (c != '\n');
+    *(line_buff+line_buff_disp) = 0;
     
-    check_glstack_overflow(3, pcreg, 2*sizeof(Cell)*VarBuf.length);
-    atomname = VarBuf.string;
+    check_glstack_overflow(3, pcreg, 2*sizeof(Cell)*line_buff_disp);
+    atomname = line_buff;
 
-    if (VarBuf.length == 0) new_list = makenil;
+    if (line_buff_disp == 0) new_list = makenil;
     else {
       new_list = makelist(hreg);
-      for (i = 0; i < VarBuf.length; i++) {
+      for (i = 0; i < line_buff_disp; i++) {
 	follow(hreg++) = makeint(*(unsigned char *)atomname);
 	atomname++;
 	top = hreg++;
@@ -322,7 +322,8 @@ inline static xsbBool file_function(void)
     
     /* this complex cond takes care of incomplete lines: lines that end with
        end of file and not with end-of-line. */
-    if ((VarBuf.length>0) || (!eof))
+    //    if ((line_buff_disp>0) || (c != EOF))
+    if (line_buff_disp>0)
       return TRUE;
     else
       return FALSE;
