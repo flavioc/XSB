@@ -492,8 +492,11 @@ class_cidbound(Cid,Label,NatCid,Sou):-
 				% get NID of orig. CID, not of subsuming CID
 		       parameterized_int_ext(Cid,NatCid,Sou))
 		    ->	   true
-	       ;      parameterized_int_ext(Cid,NatCid,Sou),
-		      class_int(Label,NatCid,Sou)
+	       ;      functor(Cid,Fn,Ar), EAr is Ar*2, functor(ESkel,Fn,EAr),
+		      class_int(Label,ESkel,Sou),
+		      cn_id_map(CidISkel,Label,ESkel,Sou),
+		      term_subclass(Cid,CidISkel),
+		      parameterized_int_ext(Cid,NatCid,Sou)
 	      ))))).
 
 /* This predicate assumes that CID is not fully instantiated, and that
