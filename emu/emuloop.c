@@ -877,7 +877,7 @@ contcase:     /* the main loop */
         if (gc_heap(op1)) { /* garbage collection potentially modifies hreg */
 	  if ((ereg - hreg) < (long)op2) {
 	    if (flags[STACK_REALLOC]) {
-	      if (glstack_realloc(resize_stack(glstack.size,0),op1) != 0) {
+	      if (glstack_realloc(resize_stack(glstack.size,(op2*sizeof(Cell))),op1) != 0) {
 		local_global_exception(lpcreg);
 		XSB_Next_Instr();
 	      }
