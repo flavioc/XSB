@@ -108,13 +108,12 @@ int terminate_handler (HTRequest *request, HTResponse *response,
 
   /* if OK, add form request result to Response_member */
   if (status == HT_LOADED) {
-    if (result && HTChunk_data(result)) {
-      string = HTChunk_data(result);
+    if (result && (string = HTChunk_data(result))) {
       response_array[0] = "result";
       response_array[1] = string;
       response_array[2] = NULL;
       add_response(&Response_member, response_array);
-      HT_FREE(string);
+      HTChunk_delete(result);
     }
   } 
   
@@ -357,10 +356,6 @@ bool do_libwww_form_request___(void)
       result = HTGetFormAnchorToChunk(formfields, anchor, request);
 
     if (formfields) HTAssocList_delete(formfields);
-    if (result) HTChunk_delete(result);
-    /* This should come after the above two. Apparently this cleans up the
-       stream, including the chunk (result) it returned, so subsequent
-       HTChunk_delete(result) might segfault. */
     HTEventList_loop(request);
   } else
     xsb_abort("Bad parameters - please try again\n");
