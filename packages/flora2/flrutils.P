@@ -918,6 +918,7 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	;
 	    check_for_dependencies(CompiledRuleList, DepWarnList),
 	    check_for_dependencies_warn(DepWarnList, DepWarnNum),
+	    flora_stderr_nl,
 	    flora_errorwarn_count(0,DepWarnNum),
 
 	    flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
@@ -1200,9 +1201,11 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 	( EN > 0 -> %% errors just found
 	    ( MaxErr \== FLORA_ALL, NewErrNum >= MaxErr ->
 		FileStatus=FLORA_FAILURE,
-		flora_stderr_string("\n"),
+		flora_stderr_nl,
 		flora_errorwarn_count(NewErrNum,NewWarnNum),
-		flora_stderr_string("\n++compilation aborted\n")
+		flora_stderr_nl,
+		flora_stderr_string('++compilation aborted'),
+		flora_stderr_nl
 
 	    ; flora_rule_delimeter_struct(_,_,_,_,_,RuleDelimeterToken),
 	      flora_not_end_of_input(RuleStatus), member(RuleDelimeterToken,Tokens) ->
@@ -1214,9 +1217,11 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
                                _CompiledRuleList,_FileOptionList,FileStatus)
 	    ;
 	      FileStatus=FLORA_FAILURE,
-	      flora_stderr_string("\n"),
-	      flora_errorwarn_count(NewErrNum,NewWarnNum),
-	      flora_stderr_string("\n++compilation aborted\n")
+		flora_stderr_nl,
+		flora_errorwarn_count(NewErrNum,NewWarnNum),
+		flora_stderr_nl,
+		flora_stderr_string('++compilation aborted'),
+		flora_stderr_nl
 	    )
 	;
 	  ( NewErrNum == 0 -> %% no error so far
@@ -1241,9 +1246,11 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 		)
 	    ;
 	      FileStatus=FLORA_FAILURE,
-	      flora_stderr_string("\n"),
-	      flora_errorwarn_count(NewErrNum,NewWarnNum),
-	      flora_stderr_string("\n++compilation aborted\n")
+		flora_stderr_nl,
+		flora_errorwarn_count(NewErrNum,NewWarnNum),
+		flora_stderr_nl,
+		flora_stderr_string('++compilation aborted'),
+		flora_stderr_nl
 	    )
 	  )
 	),
@@ -1430,18 +1437,22 @@ flora_flrfilename_error(File) :-
 *************************************************************************/
 flora_errorwarn_count(ErrNum,WarnNum) :-
 	( ErrNum == 1 ->
-	    flora_stderr_string("++1 error\n")
+	    flora_stderr_string('++1 error'),
+	    flora_stderr_nl, flora_stderr_nl
 
 	; ErrNum > 1 ->
-	    flora_stderr_string("++%d errors\n",args(ErrNum))
+	    flora_stderr_string('++%d errors',args(ErrNum)),
+	    flora_stderr_nl, flora_stderr_nl
 	;
 	  true
         ),
 	( WarnNum == 1 ->
-	    flora_stdwarn_string("++1 warning\n")
+	    flora_stdwarn_string('++1 warning'),
+	    flora_stderr_nl, flora_stderr_nl
 
 	; WarnNum > 1 ->
-	    flora_stdwarn_string("++%d warnings\n",args(WarnNum))
+	    flora_stdwarn_string('++%d warnings',args(WarnNum)),
+	    flora_stderr_nl, flora_stderr_nl
 	;
 	  true
         ),
@@ -1467,7 +1478,8 @@ flora_lexer_error(Tokens,LexerStatus,ErrNum) :-
 	                       args(ELN,ECN,TextStr))
 	    ),
 	    flora_error_indentline,
-	    flora_stderr_string("%s\n",args(Msg)),
+	    flora_stderr_string('%s',args(Msg)),
+	    flora_stderr_nl,
 	    ErrNum=1
 	;
 	  ErrNum=0
@@ -1491,7 +1503,8 @@ flora_composer_errorwarn([error(Indx,Msg)|L],ErrNum,WarnNum) :-
                            args(BLN,BCN,TextStr))
 	),
 	flora_error_indentline,
-	flora_stderr_string("%s\n",args(Msg)),
+	flora_stderr_string('%s',args(Msg)),
+	flora_stderr_nl,
 	flora_composer_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 
@@ -1509,7 +1522,8 @@ flora_composer_errorwarn([error(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	                   args(BLN1,BCN1,TextStr1,BLN2,BCN2,TextStr2))
 	),
 	flora_error_indentline,
-	flora_stderr_string("%s\n",args(Msg)),
+	flora_stderr_string('%s',args(Msg)),
+	flora_stderr_nl,
 	flora_composer_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 
@@ -1559,7 +1573,8 @@ flora_parser_error([error(Indx,Msg)|L],ErrNum) :-
                            args(BLN,BCN,TextStr))
 	),
 	flora_error_indentline,
-	flora_stderr_string("%s\n",args(Msg)),
+	flora_stderr_string('%s',args(Msg)),
+	flora_stderr_nl,
 	flora_parser_error(L,EN),
 	ErrNum is EN+1.
 
@@ -1603,7 +1618,8 @@ flora_compiler_errorwarn([error(Indx,Msg)|L],ErrNum,WarnNum) :-
                            args(BLN,BCN,TextStr))
 	),
 	flora_error_indentline,
-	flora_stderr_string("%s\n",args(Msg)),
+	flora_stderr_string('%s',args(Msg)),
+	flora_stderr_nl,
 	flora_compiler_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 

@@ -765,9 +765,9 @@ check_for_dependencies(CodeList,WarnList) :-
 	       ),
 	findall((Func2,Arity2),procedural(Func2,Arity2),ProcList),
 	findall((Func3,Arity3),dboperation(Func3,Arity3),DbList),
-	retractall(warning_seen(_,_,_,_)),
+	retractall(warning_seen(_,_,_,_,_)),
 	checking_list(TabledList,DbList,'database operation'),
-	checking_list(TabledList,ProcList,'procedure'),
+	checking_list(TabledList,ProcList,'procedural method'),
 	generate_warnings(WarnList).
 
 /****************************************************************************
@@ -807,27 +807,27 @@ aggregate_warnings([],_) :- !.
 aggregate_warnings([((T1,IT1),(T2,IT2),_,_)|T],Type) :-
 	conset(min_ind,0),
 	conset(next_min_ind,0),
-	to_string(T1,IT1,Str1),
+	to_string(T1,IT1,Str1,RuleID),
 	conget(min_ind,HMinInd),
 	conget(next_min_ind,HNMinInd),
 
 	conset(min_ind,0),
 	conset(next_min_ind,0),
-	to_string(T2,IT2,Str2),
+	to_string(T2,IT2,Str2,_RID),
 	conget(min_ind,BMinInd),
 
         fmt_write_string(WarnMsg,"Tabled literal in the head of rule that starts with %s depends on %s %s",
 			 args(Str1,Type,Str2)),
 
-	( warning_seen(HMinInd,HInd2,BMinInd,_) ->
-	    ( (HInd2<HNMinInd;HInd2=HNMinInd) ->
+	( warning_seen(RuleID,HInd1,HInd2,BMinInd,_) ->
+	    ( (HInd1<HMinInd;HInd1=HMinInd),(HInd2<HNMinInd;HInd2=HNMinInd) ->
 	        true
 	    ;
-	        retract(warning_seen(HMinInd,HInd2,BMinInd,_)),
-		assert(warning_seen(HMinInd,HNMinInd,BMinInd,WarnMsg))
+	        retract(warning_seen(RuleID,HInd1,HInd2,BMinInd,_)),
+		assert(warning_seen(RuleID,HMinInd,HNMinInd,BMinInd,WarnMsg))
 	    )
 	;
-	    assert(warning_seen(HMinInd,HNMinInd,BMinInd,WarnMsg))
+	    assert(warning_seen(RuleID,HMinInd,HNMinInd,BMinInd,WarnMsg))
 	),
 	aggregate_warnings(T,Type).
 
@@ -853,13 +853,15 @@ retrieve_program_tabled([H|T]) :-
 	retrieve_program_tabled(T).
 
 /****************************************************************************
- to_string(+Term,+IndexedTerm,-Str)
+ to_string(+Term,+IndexedTerm,-Str,-RuleID)
  ****************************************************************************/
- to_string(Term,(IT,Index),Str) :-
+ to_string(Term,(IT,Index),Str,RuleID) :-
 	rebuild_text(Term,(IT,Index),Text),
 	( (Index==NO_INDEX) ->
-	    fmt_write_string(Str,"`%s'",args(Text))
+	    fmt_write_string(Str,"`%s'",args(Text)),
+	    RuleID==NO_INDEX
 	;
+ 	    flora_token_rulenum(Index,RuleID),
  	    flora_nth_token(Index,Token),
 	    flora_token_text(Token,_T,BL,BC,_EL,_EC),
 	    fmt_write_string(Str,"`%s' near line(%d)/char(%d)",
@@ -1166,7 +1168,7 @@ rebuild_text_list([H|L],[IndH|IndL],Text) :-
  generate_warnings(-WarnList)
  ****************************************************************************/
 generate_warnings(WarnList) :-
-	findall((HInd1,BInd,WarnMsg),warning_seen(HInd1,_,BInd,WarnMsg),WL),
+	findall((HInd1,BInd,WarnMsg),warning_seen(_,HInd1,_,BInd,WarnMsg),WL),
 	sort(WL, SortedWL),
 	append_warnings(SortedWL,WarnList).
 

@@ -12,7 +12,11 @@
 
 :- import flora_prlgdef/2 from flrprolog.
 
-:- import flora_nth_token/2 from flrcomposer.
+:- import
+	flora_nth_token/2,
+	flora_token_rulenum/2
+   from flrcomposer.
+
 :- import flora_token_text/6 from flrlexer.
 
 :- import
@@ -50,7 +54,7 @@
 :- dynamic dependency(_,_,_).
 :- dynamic checked(_).
 :- dynamic program_tabled(_,_).
-:- dynamic warning_seen(_,_,_,_).
+:- dynamic warning_seen(_,_,_,_,_).
 
 :- export
 	check_for_dependencies/2.
