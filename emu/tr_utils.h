@@ -23,13 +23,6 @@
 */
 
 
-typedef enum Trie_Path_Type {
-  NO_PATH, VARIANT_PATH, SUBSUMPTIVE_PATH
-} TriePathType;
-
-BTNptr variant_trie_lookup(int, CPtr, BTNptr, Cell[]);
-BTNptr subsumptive_trie_lookup(int, CPtr, BTNptr, TriePathType *);
-
 extern VariantSF get_subgoal_ptr(Cell, TIFptr);
 extern VariantSF get_call(Cell, Cell *);
 extern Cell build_ret_term(int, Cell[]);

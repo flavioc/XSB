@@ -32,6 +32,7 @@ extern void print_op(FILE *, char *, int);
 extern void remove_open_tables_reset_freezes(void);
 
 extern xsbBool unify(Cell, Cell);
+extern xsbBool are_identical_terms(Cell, Cell);
 
 /* don't use Cell declarations here, to avoid gcc compiler warnings;
    However, this causes warnings under Windows */

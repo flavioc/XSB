@@ -306,20 +306,24 @@ extern void     undo_answer_bindings(void);
 extern void	load_delay_trie(int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(void);
 
-/*
- * The following typedef is to support a function prototype ONLY and
- * should NOT be used for any other reason.  Its sole purpose is to
- * get around a compiler -- or specification -- limitation regarding
- * arguments in function prototypes.  See macro_xsb.h for the
- * preferred name.
- */
-typedef struct SubsumptiveProducerSubgoalFrame SPSF;
+extern void    consume_subsumptive_answer(BTNptr, int, CPtr);
+extern ALNptr  retrieve_unifying_answers(TSTNptr, TimeStamp, int, CPtr);
+extern void    delete_subsumptive_table(struct Table_Info_Frame *);
 
-void	subsumptive_call_search(TabledCallInfo *, CallLookupResults *);
-TSTNptr	subsumptive_answer_search(int, CPtr, SPSF *, xsbBool *);
-void	consume_subsumptive_answer(BTNptr, int, CPtr);
-ALNptr	retrieve_unifying_answers(TSTNptr, TimeStamp, int, CPtr);
-void	delete_subsumptive_table(struct Table_Info_Frame *);
+extern void    tstShrinkDynStacks(void);
+
+extern TSTNptr subsumptive_tst_search(TSTNptr, int, CPtr, xsbBool, xsbBool *);
+extern BTNptr  subsumptive_bt_search(BTNptr, int, CPtr, xsbBool *);
+extern TSTNptr variant_tst_search(TSTNptr, int, CPtr, xsbBool, xsbBool *);
+extern BTNptr  variant_bt_search(BTNptr, int, CPtr, xsbBool *);
+
+
+typedef enum Trie_Path_Type {
+  NO_PATH, VARIANT_PATH, SUBSUMPTIVE_PATH
+} TriePathType;
+
+extern void *subsumptive_trie_lookup(void *root, int, CPtr, TriePathType *);
+extern void *variant_trie_lookup(void *root, int, CPtr, Cell[]);
 
 /*---------------------------------------------------------------------*/
 

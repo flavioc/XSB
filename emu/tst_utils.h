@@ -25,25 +25,17 @@
 
 /* Debugging Routines
    ------------------ */
-void printNodeType(byte);
-void printTrieType(byte);
-void printTrieSymbol(Cell);
-void tnSymbolicPrint(BTNptr);
-void thtPrintSymbols(BTHTptr);
+extern char *stringNodeType(byte);
+extern char *stringTrieType(byte);
+extern void printTrieSymbol(FILE *, Cell);
+extern void printTrieNode(FILE *, BTNptr);
+extern void printTriePath(FILE *, BTNptr, xsbBool);
 
-void printCall(TabledCallInfo *);
-CPtr decode_ptr(Cell);
-int decode_int(Cell);
-int decode_tag(Cell);
+extern void printAnswerTemplate(CPtr, int);
 
-VariantSF findSF_forAnswerRoot(TSTNptr);
-VariantSF findSF_forAnswerLeaf(TSTNptr);
-VariantSF findProdSF_for_ConsSF(VariantSF);
-int containsSF(VariantSF, VariantSF);
+extern void sfPrintGoal(FILE *, VariantSF, xsbBool);
+extern void sfPrintConsGoals(FILE *, VariantSF);
+extern void printAnswerList(FILE *, ALNptr);
 
-void triePrintPath(BTNptr, xsbBool);
-void sfPrintGoal(VariantSF, xsbBool);
-void sfPrintConsGoals(VariantSF);
-
-void printAnswerTemplate(CPtr, int);
-void printAnswerList(ALNptr);
+extern void printTabledCall(TabledCallInfo *);
+extern void printTriePathType(FILE *, TriePathType, BTNptr);

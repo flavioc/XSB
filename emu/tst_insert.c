@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "debugs/debug_tries.h"
+
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "inst_xsb.h"
@@ -38,29 +40,53 @@
 #include "deref.h"
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "macro_xsb.h"
 #include "tst_aux.h"
+
+
+
+/*===========================================================================
+
+    This file defines a set of functions for inserting a set of terms
+    into different types of tries.  Note that these routines STRICTLY
+    insert the terms -- NO searching is performed.
+
+      BTNptr bt_insert(BTNptr,BTNptr,Cell)
+      TSTNptr tst_insert(TSTNptr,TSTNptr,Cell,xsbBool)
+
+    They are intended for internal use only by the trie search routines,
+    which use them for term insert only after ensuring that some related
+    term set doesn't already exist in the trie.
+
+    These insertion functions assume a non-NULL node pointer, a nonempty
+    set of terms, and appropriate initialization of the trie Trail.
+
+===========================================================================*/
 
 
 /*=========================================================================*/
 
 /*
- *                  TSI Creation and Access Methods
- *                  ===============================
+ *             Time-Stamp Index Creation and Access Methods
+ *             ============================================
+ *
+ * Recall that Time-Stamp Indices are central to identifying unifying
+ * term sets with time stamps greater than a given value.
  */
 
+/*-------------------------------------------------------------------------*/
 
 /*
- *  Allocate a TS_IndexNode, associate it with a TSTN 'tstn', and place
- *  it at the head of the TS Index managed by the hash table 'ht'.  This
- *  operation is used for symbols newly inserted into an established
- *  hash table.  The timestamp of this new entry will be set at the end
- *  of the subsumptive_answer_search operation when we walk back up the
- *  trie adjusting all timestamps to a new max as we go.  Hence, the
- *  head of the entry list is where this new entry belongs.
+ * Allocate a TSI node, associate it with a TST node 'tstn', and place
+ * it at the head of the Time-Stamp Index managed by the hash table 'ht'.
+ *
+ * This operation is used for symbols inserted into an established hash
+ * table.  The timestamp of this new entry will be set at the end of the
+ * TST Insert operation when we walk back up the trie adjusting all
+ * timestamps to a new max as we go.  Hence, the head of the entry list
+ * is where this new entry belongs.
  */
 
-inline static TSINptr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
+inline static  TSINptr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
 
   TSINptr pTSIN;
 
@@ -72,46 +98,47 @@ inline static TSINptr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
   return pTSIN;
 }
     
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*-------------------------------------------------------------------------*/
 
 /*
- *  Used during the creation of a tsi.  Allocate a TS_IndexNode for a
- *  TS_TrieNode and insert it into the TSI in (decreasing) timestamp order.
+ *  Used during the creation of a Time-Stamp Index, allocates a TSI node
+ *  for a given TST node and inserts it into the TSI in (decreasing)
+ *  timestamp order.
  *
  *  NOTE: We cannot assume that the time stamp of the incoming node is  
  *  greater than that of all of the nodes already present in the TSI.
  *  Although this is the norm once the TSI is established, when a
  *  sibling list is moved to a hashing format, Entries are created for
- *  the nodes one at a time, but this processing order is not
+ *  the nodes one at a time, but this node-processing order is not
  *  guaranteed to coincide with time stamp order.
  */
 
-inline static TSINptr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
+inline static  TSINptr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
 
-  TSINptr newTSIN;      /* To be inserted after pTSIN */
-  TSINptr pTSIN;        /* Steps thru each TSIN inspecting time stamp */
+  TSINptr nextTSIN;     /* Steps thru each TSIN inspecting time stamp */
+  TSINptr newTSIN;      /* To be inserted after nextTSIN */
 
 
   New_TSIN(newTSIN, tstn);
 
   /* Determine proper position for insertion
      --------------------------------------- */
-  pTSIN = TSTHT_IndexHead(ht);
-  while ( IsNonNULL(pTSIN) &&
-	 (TSIN_TimeStamp(newTSIN) < TSIN_TimeStamp(pTSIN)) )
-    pTSIN = TSIN_Next(pTSIN);
+  nextTSIN = TSTHT_IndexHead(ht);
+  while ( IsNonNULL(nextTSIN) &&
+	 (TSIN_TimeStamp(newTSIN) < TSIN_TimeStamp(nextTSIN)) )
+    nextTSIN = TSIN_Next(nextTSIN);
 
 
-  /* Splice newTSIN between pTSIN and its predecessor
-     -------------------------------------------------- */
-  if ( IsNonNULL(pTSIN) ) {
-    TSIN_Prev(newTSIN) = TSIN_Prev(pTSIN);
-    TSIN_Next(newTSIN) = pTSIN;
-    if ( IsTSindexHead(pTSIN) )
+  /* Splice newTSIN between nextTSIN and its predecessor
+     --------------------------------------------------- */
+  if ( IsNonNULL(nextTSIN) ) {
+    TSIN_Prev(newTSIN) = TSIN_Prev(nextTSIN);
+    TSIN_Next(newTSIN) = nextTSIN;
+    if ( IsTSindexHead(nextTSIN) )
       TSTHT_IndexHead(ht) = newTSIN;
     else
-      TSIN_Next(TSIN_Prev(pTSIN)) = newTSIN;
-    TSIN_Prev(pTSIN) = newTSIN;
+      TSIN_Next(TSIN_Prev(nextTSIN)) = newTSIN;
+    TSIN_Prev(nextTSIN) = newTSIN;
   }
   else {   /* Insertion is at the end of the TSIN list */
     TSIN_Prev(newTSIN) = TSTHT_IndexTail(ht);
@@ -123,18 +150,17 @@ inline static TSINptr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
     TSTHT_IndexTail(ht) = newTSIN;
   }
 
-  return(newTSIN);
+  return newTSIN;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*-------------------------------------------------------------------------*/
 
-#ifdef COMMENT	/* tsiRemoveEntry is not used anywhere now */
 /*
- *  Remove a TS_IndexNode from a tsi and place it on the global TSI free
- *  list for later reuse.
+ * Remove a TSI entry node from a TSI and place it on the global TSI
+ * free list for later reuse.
  */
 
-static void tsiRemoveEntry(TSTHTptr ht, TSINptr tsin) {
+void tsiRemoveEntry(TSTHTptr ht, TSINptr tsin) {
 
   /* Splice out the TSIN from the Index
      ---------------------------------- */
@@ -151,17 +177,16 @@ static void tsiRemoveEntry(TSTHTptr ht, TSINptr tsin) {
      ------------------------------- */
   SM_DeallocateStruct(smTSIN,tsin);
 }
-#endif /* COMMENT */
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*-------------------------------------------------------------------------*/
 
 /*
- *  Increase the time stamp of a hashed TSTN to that which is greater
- *  than any other.  Hence, its TSIN must be moved to the head of
- *  the list to maintain our ordering property.
+ * Increase the time stamp of a hashed TSTN to that which is greater
+ * than any other.  Hence, its TSI entry must be moved to the head of
+ * the list to maintain our ordering property.
  */
 
-inline static void tsiPromoteEntry(TSTNptr tstn, TimeStamp ts) {
+inline static  void tsiPromoteEntry(TSTNptr tstn, TimeStamp ts) {
 
   TSINptr tsin;
   TSTHTptr ht;
@@ -188,382 +213,17 @@ inline static void tsiPromoteEntry(TSTNptr tstn, TimeStamp ts) {
   TSTHT_IndexHead(ht) = tsin;
 }
 
-/* ---------------------------------------------------------------------- */
-
-/*
- *              TST Hash Table Creation and Access Methods
- *              ==========================================
- */
-
-/*
- *  The number of children of 'parent' has increased beyond the threshold
- *  and requires a hashing structure.  This function creates a hash table
- *  and inserts the children into it.  If the subgoal to which this
- *  answer set belongs properly subsumes other calls, then a TSI is also
- *  created for the children.  The header of the hash table is then
- *  referenced through the `Child' filed of the parent.  Hash tables in a
- *  TST are also linked to one another through the TST's root.
- */
-
-inline static void tstnHashifyChildren(TSTNptr parent, TSTNptr root,
-				       xsbBool needTSI) {
-
-  TSTNptr children;           /* child list of the parent */
-  TSTNptr tstn;               /* current child for processing */
-  TSTHTptr ht;                /* HT header struct */
-  TSTNptr *tablebase;         /* first bucket of allocated HT */
-  unsigned long  hashseed;    /* for inserting TSTNs into the HT */
-
-
-  New_TSTHT(ht,TS_ANSWER_TRIE_TT,root);
-  children = TSTN_Child(parent);
-  TSTN_SetHashHdr(parent,ht);
-  tablebase = TSTHT_BucketArray(ht);
-  hashseed = TSTHT_GetHashSeed(ht);
-  for (tstn = children;  IsNonNULL(tstn);  tstn = children) {
-    children = TSTN_Sibling(tstn);
-    TrieHT_InsertNode(tablebase, hashseed, tstn);
-    MakeHashedNode(tstn);
-    if ( needTSI )
-      TSTN_SetTSIN(tstn, tsiOrderedInsert(ht, tstn));
-  }
-}
-
-/*-------------------------------------------------------------------------*/
-
-/*
- *                     Inserting a Single Symbol
- *                     =========================
- */
-
-/*
- *  Search among the children of `parent', which are maintained in a
- *  hash table, for a node containing `symbol'.  If one does not exist,
- *  then create a TSTN containing this symbol.
- *
- *  Return a pointer to the node containing `symbol'.  Set the flag
- *  appropriately, stating whether the node returned was just created.
- */
-
-inline static TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol,
-					xsbBool needTSI, xsbBool *is_new) {
-
-  TSTHTptr ht;
-  TSTNptr tstn, chain, *bucket;
-  int chain_length;
-
-
-  ht = TSTN_GetHashHdr(parent);
-  bucket = CalculateBucketForSymbol(ht,symbol);
-  tstn = chain = *bucket;
-  SearchChainForSymbol(tstn,symbol,chain_length);
-  if ( IsNULL(tstn) ) {
-    *is_new = TRUE;
-    TSTHT_NumContents(ht)++;
-#ifdef SHOW_HASHTABLE_ADDITIONS
-    printf("Hash Table size is %lu and now contains %lu elements.\n",
-	   TSTHT_NumBuckets(ht), TSTHT_NumContents(ht));
-    printf("Addition being made to bucket %lu; now has length %d.\n",
-	   TrieHash(symbol, TSTHT_NumBuckets(ht) - 1), chain_length+1);
-#endif
-    New_TSTN(tstn,TS_ANSWER_TRIE_TT,HASHED_INTERRIOR_NT,symbol,parent,chain);
-    if ( needTSI )
-      TSTN_SetTSIN(tstn, tsiHeadInsert(ht,tstn));
-    *bucket = tstn;
-    chain_length++;  /* total number of nodes now inhabiting this bucket */
-    TrieHT_ExpansionCheck(ht,chain_length);
-  }
-  else
-    *is_new = FALSE;
-
-  return tstn;
-}
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-/*
- *  Search the children (there is at least one) of TSTN `parent' for a
- *  node containing `symbol'.  If one does not exist, then create a
- *  TSTN containing this symbol.  If the sibling chain is not already
- *  "too long", then insert the new node as the first child in the
- *  chain.  Otherwise, create a hashing environment for the parent's
- *  children.  In either case, return a pointer to the node containing
- *  `symbol'.  Set the flag appropriately, stating whether the node
- *  returned was just created.
- */
-
-inline static TSTNptr tstnInsertSymbol(TSTNptr parent, Cell symbol,
-				       TSTNptr root, xsbBool needTSI,
-				       xsbBool *is_new) {
-
-  TSTNptr tstn, chain;
-  int chain_length;
-
-  tstn = chain = TSTN_Child(parent);
-  SearchChainForSymbol(tstn,symbol,chain_length);
-  if ( IsNULL(tstn) ) {
-    *is_new = TRUE;
-    New_TSTN(tstn,TS_ANSWER_TRIE_TT,INTERRIOR_NT,symbol,parent,chain);
-    TSTN_Child(parent) = tstn;
-    chain_length++;
-    if ( IsLongSiblingChain(chain_length) )
-      tstnHashifyChildren(parent,root,needTSI);
-  }
-  else
-    *is_new = FALSE;
-  return tstn;
-}
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-/*
- *  Create a new child for TSTN 'parent', which currently has no children,
- *  containing symbol 'symbol'.  Optimizes away some unnecessary checks of
- *  tstnInsertSymbol.
- */
-
-inline static TSTNptr tstnAddSymbol(TSTNptr parent, Cell symbol) {
-
-  TSTNptr newTSTN;
-
-  New_TSTN(newTSTN,TS_ANSWER_TRIE_TT,INTERRIOR_NT,symbol,parent,NULL);
-  TSTN_Child(parent) = newTSTN;
-  return (newTSTN);
-}
-
-/*-------------------------------------------------------------------------*/
-
-/*
- *                           Helper Utilities
- *                           ================
- */
-
-/* Create an Empty Answer Set
-   -------------------------- */
-
-inline static void *newAnswerTST(int arity) {
-
-  TSTNptr root;
-
-  New_TSTN( root, TS_ANSWER_TRIE_TT, TRIE_ROOT_NT,
-	    EncodeTriePSC(get_ret_psc(arity)), NULL, NULL );
-  TSTN_TimeStamp(root) = EMPTY_TST_TIMESTAMP;
-  return root;
-}
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-/*
- *  Given a pointer to a leaf TSTN for a newly inserted set of terms,
- *  update the timestamps of all nodes lying along the path from this
- *  leaf to the root.  Updates effect the TSIs, if they exist.
- */
-
-inline static void update_timestamps(TSTNptr leaf, TSTNptr root,
-				     TimeStamp ts, xsbBool containsTSIs) {
-
-  if ( containsTSIs )
-    do {
-      if ( IsHashedNode(leaf) )
-	tsiPromoteEntry(leaf, ts);
-      else
-	TSTN_TimeStamp(leaf) = ts;
-      leaf = TSTN_Parent(leaf);
-    } while ( leaf != root );
-  else
-    do {
-      TSTN_TimeStamp(leaf) = ts;
-      leaf = TSTN_Parent(leaf);
-    } while ( leaf != root );
-  TSTN_TimeStamp(root) = ts;
-}
-
-/*-------------------------------------------------------------------------*/
-
-/*
- * Locate/insert the answer substitution, given as a size and a vector
- * terms stored in low-to-high memory fashion, into the answer set,
- * represented as a Time Stamp Trie, of a producing call.  If the
- * producer properly subsumes some issued call, then the time stamp
- * indices are updated in cases of insertion.  The time stamp to
- * associate with a new answer is stored in the subgopal frame.  Returns
- * a pointer to the TST leaf representing the substitution, and sets a
- * flag to indicate whether this substitution was new.
- */
-
-TSTNptr subsumptive_answer_search(int nTerms, CPtr termVector,
-				  SubProdSF sfProducer, xsbBool *isNew) {
-
-  TSTNptr tstRoot;          /* The root node of the TST answer set */
-
-  TimeStamp tsNewAnswer;    /* Time stamp to assign to a new answer */
-
-  xsbBool maintainTSI;      /* Whether indices have been created and need
-			       to be maintained during insertion */
-
-  TSTNptr pParentTSTN;      /* Used for stepping down through the trie */
-
-  Cell symbol;		    /* Trie representation of current heap symbol,
-			       used for matching/inserting into a TSTN */
-
-  Cell subterm;		    /* Used for stepping through the term */
-
-  int symbol_type,	    /* Type of current subterm */
-      std_var_num;	    /* Next available TrieVar index; for standardizing
-			       call variables when interned */
-
-
-
-  NumSubOps_AnswerCheckInsert++;
-
-#ifdef INTERN_DEBUG
-  {
-    int i;
-    printf("Entered subsumptive_answer_search() with the following terms:\n");
-    for (i = 0; i < nTerms; i++) {
-      printf("\t");
-      printterm((Cell)(termVector - i),1,25);
-      printf("\n");
-    }
-  }
-#endif
-
-  if ( IsNULL(subg_ans_root_ptr(sfProducer)) )
-    subg_ans_root_ptr(sfProducer) = newAnswerTST(nTerms);
-  tstRoot = (TSTNptr)subg_ans_root_ptr(sfProducer);
-  tsNewAnswer = TSTN_TimeStamp(tstRoot) + 1;
-
-  if (nTerms == 0) {
-    /* Create/Find an Escape Node
-       -------------------------- */
-    if ( IsNULL(TSTN_Child(tstRoot)) ) {
-      NumSubOps_AnswerInsert++;
-      CreateEscapeTSTN(pParentTSTN,TS_ANSWER_TRIE_TT,tstRoot);
-      TSTN_TimeStamp(pParentTSTN) = TSTN_TimeStamp(tstRoot) = tsNewAnswer;
-      TSTN_Child(tstRoot) = pParentTSTN;
-      *isNew = TRUE;
-      return pParentTSTN;
-    }
-    else if ( IsEscapeNode(TSTN_Child(tstRoot)) ) {
-      *isNew = FALSE;
-      return ( TSTN_Child(tstRoot) );
-    }
-    else
-      xsb_abort("TST Answer Insertion\n"
-		"Incorrect substitution size (%d): 0\n", nTerms);
-  }
-
-  /* Search the TST
-     -------------- */
-  pParentTSTN = tstRoot;
-  maintainTSI = ProducerSubsumesSubgoals(sfProducer);
-  *isNew = FALSE;
-  std_var_num = 0;
-  symbol = symbol_type = 0;     /* suppress compiler warning */
-  Trail_ResetTOS;
-  TermStack_ResetTOS;
-  TermStack_PushHighToLowVector(termVector,nTerms);
-
-  while ( ! TermStack_IsEmpty ) {
-  #ifdef INTERN_DEBUG
-    printf("TermStack contains %d terms\n",tstTermStack.top-tstTermStack.base);
-  #endif
-    subterm = TermStack_Pop;
-    XSB_Deref(subterm);
-    symbol_type = cell_tag(subterm);
-    switch (symbol_type) {
-
-    case XSB_REF:
-    case XSB_REF1:
-    #ifdef INTERN_DEBUG
-      printf("Found variable: ");
-      printterm(subterm, 1, 8);
-      printf("\n");
-    #endif
-      if ( ! IsStandardizedVariable(subterm) ) {
-	StandardizeVariable(subterm, std_var_num);
-	Trail_Push(subterm);
-	symbol = EncodeNewTrieVar(std_var_num);
-	std_var_num++;
-      }
-      else
-	symbol = EncodeTrieVar(IndexOfStdVar(subterm));
-      break;
-
-    case XSB_STRING:
-    case XSB_INT:
-    case XSB_FLOAT:
-    #ifdef INTERN_DEBUG
-      printf("Found literal (str, int, flt): ");
-      printterm((Cell)subterm, 1, 8);
-      printf(" (raw val: 0x%lx)\n", (Cell)subterm);
-    #endif
-      symbol = EncodeTrieConstant(subterm);
-      break;
-
-    case XSB_STRUCT:
-    #ifdef INTERN_DEBUG
-      printf("Found function symbol: ");
-      printterm(subterm, 1, 8);
-      printf("\n");
-    #endif
-      symbol = EncodeTrieFunctor(subterm);
-      TermStack_PushFunctorArgs(subterm);
-      break;
-
-    case XSB_LIST:
-    #ifdef INTERN_DEBUG
-      printf("Found list: ");
-      printterm((Cell)subterm, 1, 8);
-      printf("\n");
-    #endif
-      symbol = EncodeTrieList(subterm);
-      TermStack_PushListArgs(subterm);
-      break;
-
-    default: 
-      Trail_Unwind_All;
-      xsb_abort("TST Answer Insertion\n"
-		"Bad tag in heap term.  Tag: %x   Value: %lx\n"
-		"Time-stamped trie left in dubious state\n",
-		symbol_type, subterm);
-    }
-
-    /* Determine the search/insert function to call */
-
-    if ( IsNULL(TSTN_Child(pParentTSTN)) ) {
-      *isNew = TRUE;
-      pParentTSTN = tstnAddSymbol(pParentTSTN, symbol);
-    }
-    else if ( IsHashHeader(TSTN_Child(pParentTSTN)) )
-      pParentTSTN = tsthtInsertSymbol(pParentTSTN, symbol, maintainTSI,
-				      isNew);
-    else
-      pParentTSTN = tstnInsertSymbol(pParentTSTN, symbol, tstRoot,
-				     maintainTSI, isNew);
-  }
-
-  Trail_Unwind_All;
-
-  /* 'pParentTSTN' points to the leaf representing the set of given terms */
-
-  if (*isNew) {
-    NumSubOps_AnswerInsert++;
-    update_timestamps(pParentTSTN,tstRoot,tsNewAnswer,maintainTSI);
-    MakeLeafNode(pParentTSTN);
-    TN_UpgradeInstrTypeToSUCCESS(pParentTSTN,symbol_type);
-  }
-  return(pParentTSTN);
-}
-
 /*--------------------------------------------------------------------------*/
 
 /*
- *  To support lazy creation of TSIs for incomplete TST Answer Sets.
- *  TSIs are created once a properly subsumed subgoal is identified.
+ * This function may be called externally, and is made available to
+ * support lazy creation of Time-Stamp Indices.
+ *
+ * An example of this use is for incomplete subsumptive Answer Sets.
+ * TSIs are created only once a properly subsumed subgoal is issued.
  */
 
-void tstCreateStructures(TSTNptr pTST) {
+void tstCreateTSIs(TSTNptr pTST) {
 
   TSTNptr *pBucket, tstn;
   TSTHTptr ht;
@@ -588,3 +248,359 @@ void tstCreateStructures(TSTNptr pTST) {
 	TSTN_SetTSIN(tstn,tsiOrderedInsert(ht,tstn));
   }
 }
+
+/*=========================================================================*/
+
+/*
+ *			TST Hash Table Creation
+ *			=======================
+ */
+
+
+/*
+ * The number of children of 'parent' has increased beyond the threshold
+ * and requires a hashing structure.  This function creates a hash table
+ * and inserts the children into it.  The value of the third argument
+ * determines whether a TSI is also created for the children.
+ *
+ * After its creation, the hash table is referenced through the `Child'
+ * field of the parent.  Hash tables in a TST are also linked to one
+ * another through the TST's root.
+ */
+
+inline static
+void tstnHashifyChildren(TSTNptr parent, TSTNptr root, xsbBool createTSI) {
+
+  TSTNptr children;           /* child list of the parent */
+  TSTNptr tstn;               /* current child for processing */
+  TSTHTptr ht;                /* HT header struct */
+  TSTNptr *tablebase;         /* first bucket of allocated HT */
+  unsigned long  hashseed;    /* for hashing symbols of the TSTNs */
+
+
+  New_TSTHT(ht,TSTN_TrieType(root),root);
+  children = TSTN_Child(parent);
+  TSTN_SetHashHdr(parent,ht);
+  tablebase = TSTHT_BucketArray(ht);
+  hashseed = TSTHT_GetHashSeed(ht);
+  for (tstn = children;  IsNonNULL(tstn);  tstn = children) {
+    children = TSTN_Sibling(tstn);
+    TrieHT_InsertNode(tablebase, hashseed, tstn);
+    MakeHashedNode(tstn);
+    if ( createTSI )
+      TSTN_SetTSIN(tstn, tsiOrderedInsert(ht, tstn));
+  }
+}
+
+/*=========================================================================*/
+
+/*
+ *                    Inserting a Symbol into a Trie
+ *                    ==============================
+ */
+
+
+/*-------------------------------------------------------------------------*/
+
+/*
+ * Adds a node containing 'symbol' below 'parent', which currently has
+ * no children.  Optimizes away certain checks performed by the
+ * xxxInsertSymbol() routines.
+ */
+
+inline static
+TSTNptr tstnAddSymbol(TSTNptr parent, Cell symbol, int trieType) {
+
+  TSTNptr newTSTN;
+
+  New_TSTN(newTSTN,trieType,INTERRIOR_NT,symbol,parent,NULL);
+  TSTN_Child(parent) = newTSTN;
+  return newTSTN;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+inline static
+BTNptr btnAddSymbol(BTNptr parent, Cell symbol, int trieType) {
+
+  BTNptr newBTN;
+
+  New_BTN(newBTN,trieType,INTERRIOR_NT,symbol,parent,NULL);
+  BTN_Child(parent) = newBTN;
+  return newBTN;
+}
+
+/*-------------------------------------------------------------------------*/
+
+/*
+ * Inserts a node containing 'symbol' at the head of the sibling chain
+ * below 'parent' and returns a pointer to this node.  If this addition
+ * causes the chain to become "too long", then creates a hashing
+ * environment for the children.
+ */
+
+inline static
+TSTNptr tstnInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
+			 TSTNptr root, xsbBool createTSI) {
+
+  TSTNptr tstn, chain;
+  int chain_length;
+
+
+  chain = TSTN_Child(parent);
+  New_TSTN(tstn,trieType,INTERRIOR_NT,symbol,parent,chain);
+  TSTN_Child(parent) = tstn;
+  chain_length = 1;
+  while ( IsNonNULL(chain) ) {
+    chain_length++;
+    chain = TSTN_Sibling(chain);
+  }
+  if ( IsLongSiblingChain(chain_length) )
+    tstnHashifyChildren(parent,root,createTSI);
+  return tstn;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+inline static
+BTNptr btnInsertSymbol(BTNptr parent, Cell symbol, int trieType) {
+
+  BTNptr btn, chain;
+  int chain_length;
+
+
+  chain = BTN_Child(parent);
+  New_BTN(btn,trieType,INTERRIOR_NT,symbol,parent,chain);
+  BTN_Child(parent) = btn;
+  chain_length = 1;
+  while ( IsNonNULL(chain) ) {
+    chain_length++;
+    chain = BTN_Sibling(chain);
+  }
+  if ( IsLongSiblingChain(chain_length) )
+    hashify_children(parent,trieType);
+  return btn;
+}
+
+/*-------------------------------------------------------------------------*/
+
+/*
+ * Inserts a node containing 'symbol' in the appropriate bucket of the
+ * hash table maintained by 'parent' and returns a pointer to this node.
+ * If this addition causes the chain to become "too long", then expand
+ * the hash table.
+ */
+
+inline static
+TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
+			  xsbBool maintainsTSI) {
+
+  TSTHTptr ht;
+  TSTNptr tstn, chain, *bucket;
+  int chain_length;
+
+
+  ht = TSTN_GetHashHdr(parent);
+  bucket = CalculateBucketForSymbol(ht,symbol);
+  chain = *bucket;
+  New_TSTN(tstn,trieType,HASHED_INTERRIOR_NT,symbol,parent,chain);
+  *bucket = tstn;
+  TSTHT_NumContents(ht)++;
+  if ( maintainsTSI )
+    TSTN_SetTSIN(tstn, tsiHeadInsert(ht,tstn));
+  chain_length = 1;
+  while ( IsNonNULL(chain) ) {
+    chain_length++;
+    chain = TSTN_Sibling(chain);
+  }
+
+#ifdef SHOW_HASHTABLE_ADDITIONS
+  xsb_dbgmsg("Hash Table size is %lu and now contains %lu elements.",
+	     TSTHT_NumBuckets(ht), TSTHT_NumContents(ht));
+  xsb_dbgmsg("Addition being made to bucket %lu; now has length %d.",
+	     TrieHash(symbol, TrieHT_GetHashSeed(ht)), chain_length);
+#endif
+
+  TrieHT_ExpansionCheck(ht,chain_length);
+  return tstn;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+inline static  BTNptr bthtInsertSymbol(BTNptr parent, Cell symbol,
+				       int trieType) {
+
+  BTHTptr ht;
+  BTNptr btn, chain, *bucket;
+  int chain_length;
+
+
+  ht = BTN_GetHashHdr(parent);
+  bucket = CalculateBucketForSymbol(ht,symbol);
+  chain = *bucket;
+  New_BTN(btn,trieType,HASHED_INTERRIOR_NT,symbol,parent,chain);
+  *bucket = btn;
+  BTHT_NumContents(ht)++;
+  chain_length = 1;
+  while ( IsNonNULL(chain) ) {
+    chain_length++;
+    chain = BTN_Sibling(chain);
+  }
+
+#ifdef SHOW_HASHTABLE_ADDITIONS
+  xsb_dbgmsg("Hash Table size is %lu and now contains %lu elements.",
+	     BTHT_NumBuckets(ht), BTHT_NumContents(ht));
+  xsb_dbgmsg("Addition being made to bucket %lu; now has length %d.",
+	     TrieHash(symbol, TrieHT_GetHashSeed(ht)), chain_length);
+#endif
+
+  TrieHT_ExpansionCheck(ht,chain_length);
+  return btn;
+}
+
+/*=========================================================================*/
+
+/*
+ *                 Updating Time Stamps Along a New Path
+ *                 =====================================
+ *
+ *  Given a pointer to a leaf TSTN for a newly inserted set of terms,
+ *  update the timestamps of all nodes lying along the path from this
+ *  leaf to the root.  Updates effect the TSIs, if they exist.
+ */
+
+inline static  void update_timestamps(TSTNptr tstLeaf, TSTNptr tstRoot,
+				      xsbBool containsTSIs) {
+
+  TimeStamp tsNewAnswer;
+
+
+  tsNewAnswer = TSTN_TimeStamp(tstRoot) + 1;
+  if ( containsTSIs )
+    do {
+      if ( IsHashedNode(tstLeaf) )
+	tsiPromoteEntry(tstLeaf, tsNewAnswer);
+      else
+	TSTN_TimeStamp(tstLeaf) = tsNewAnswer;
+      tstLeaf = TSTN_Parent(tstLeaf);
+    } while ( tstLeaf != tstRoot );
+  else
+    do {
+      TSTN_TimeStamp(tstLeaf) = tsNewAnswer;
+      tstLeaf = TSTN_Parent(tstLeaf);
+    } while ( tstLeaf != tstRoot );
+  TSTN_TimeStamp(tstRoot) = tsNewAnswer;
+}
+
+/*=========================================================================*/
+
+/*
+ *			Term Insertion Into a Trie
+ *			==========================
+ *
+ * Inserts a nonempty set of terms into a trie (a non-NULL root pointer)
+ * below the node 'lastMatch'.  Note that if the trie is empty or if no
+ * symbols were previously matched, then 'lastMatch' will reference the
+ * root.  The terms to insert may exist in one of two forms:
+ *
+ *  1) The first symbol to be inserted is passed in as an argument, and
+ *     the remaining terms are present on the TermStack.  (This supports
+ *     the variant-lookup operation which processes a subterm BEFORE
+ *     searching for its occurrence in the trie; by then, the stacks
+ *     have been altered.)  In this case, the TermStack may be empty.
+ *
+ *  2) All terms to be inserted are present on the TermStack, in which
+ *     case the symbol argument 'firstSymbol' has the value
+ *     NO_INSERT_SYMBOL.  (This supports the subsumptive-lookup operation
+ *     which processes a subterm only AFTER determining that it can be
+ *     subsumed by a symbol in the trie.)  In this case, the TermStack is
+ *     expected to contain at least one term.
+ *
+ * In either case, any trie variables already encountered along the path
+ * from the root of the trie to 'lastMatch' have been standardized and
+ * their bindings noted on the Trail.  After insertion is complete, the
+ * leaf node representing the term set is returned.
+ */
+
+/*-------------------------------------------------------------------------*/
+
+/*
+ * If the TST contains Time-Stamp Indices -- as noted in the argument
+ * 'maintainTSI' -- these need to be maintained during insertion.
+ */
+
+TSTNptr tst_insert(TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbol,
+		   xsbBool maintainTSI) {
+
+  Cell symbol;
+  int std_var_num,
+      trieType;
+
+
+  symbol = firstSymbol;
+  std_var_num = Trail_NumBindings;
+  trieType = TSTN_TrieType(tstRoot);
+
+  /* Insert initial symbol
+     --------------------- */
+  if ( symbol == NO_INSERT_SYMBOL )
+    ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
+
+  if ( IsNULL(TSTN_Child(lastMatch)) )
+    lastMatch = tstnAddSymbol(lastMatch,symbol,trieType);
+  else if ( IsHashHeader(TSTN_Child(lastMatch)) )
+    lastMatch = tsthtInsertSymbol(lastMatch,symbol,trieType,maintainTSI);
+  else
+    lastMatch = tstnInsertSymbol(lastMatch,symbol,trieType,tstRoot,
+				 maintainTSI);
+
+  /* Insert remaining symbols
+     ------------------------ */
+  while ( ! TermStack_IsEmpty ) {
+    ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
+    lastMatch = tstnAddSymbol(lastMatch,symbol,trieType);
+  }
+  update_timestamps(lastMatch,tstRoot,maintainTSI);
+  MakeLeafNode(lastMatch);
+  TN_UpgradeInstrTypeToSUCCESS(lastMatch,TrieSymbolType(symbol));
+  return lastMatch;
+}
+
+/*-------------------------------------------------------------------------*/
+
+
+BTNptr bt_insert(BTNptr btRoot, BTNptr lastMatch, Cell firstSymbol) {
+
+  Cell symbol;
+  int std_var_num;
+  int trieType;
+
+
+  symbol = firstSymbol;
+  std_var_num = Trail_NumBindings;
+  trieType = BTN_TrieType(btRoot);
+
+  /* Insert initial symbol
+     --------------------- */
+  if ( symbol == NO_INSERT_SYMBOL )
+    ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
+
+  if ( IsNULL(BTN_Child(lastMatch)) )
+    lastMatch = btnAddSymbol(lastMatch,symbol,trieType);
+  else if ( IsHashHeader(BTN_Child(lastMatch)) )
+    lastMatch = bthtInsertSymbol(lastMatch,symbol,trieType);
+  else
+    lastMatch = btnInsertSymbol(lastMatch,symbol,trieType);
+
+  /* Insert remaining symbols
+     ------------------------ */
+  while ( ! TermStack_IsEmpty ) {
+    ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
+    lastMatch = btnAddSymbol(lastMatch,symbol,trieType);
+  }
+  MakeLeafNode(lastMatch);
+  TN_UpgradeInstrTypeToSUCCESS(lastMatch,TrieSymbolType(symbol));
+  return lastMatch;
+}
+
+/*=========================================================================*/

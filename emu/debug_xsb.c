@@ -111,6 +111,22 @@ static void debug_interact(void);
 /*  developers during debugging.					*/
 /*======================================================================*/
 
+CPtr decode_ptr(Cell cell) {
+  return ( clref_val(cell) );
+}
+
+
+int decode_int(Cell cell) {
+  return ( int_val(cell) );
+}
+
+
+int decode_tag(Cell cell) {
+  return ( cell_tag(cell) );
+}
+
+/*----------------------------------------------------------------------*/
+
 void printterm(Cell term, byte car, int level)
 {
   unsigned short i, arity1;

@@ -322,7 +322,7 @@ enum Types_of_Trie_Nodes {
 #define DecodeTriePSC(Symbol)		DecodeTrieFunctor(Symbol)
 
 /*
- *  Symbols in Escape nodes are never looked at, so we arbitrarily
+ *  Symbols in Escape Nodes are never looked at, so we arbitrarily
  *  choose some value.
  */
 #define ESCAPE_NODE_SYMBOL		(Cell)0
@@ -409,6 +409,10 @@ extern Cell TrieVarBindings[];
  *		         =======================
  */
 
+
+#define IsEmptyTrie(Root)	IsNULL(TN_Child(Root))
+
+
 /*
  *                            Trie Nodes
  *                            ----------
@@ -489,7 +493,7 @@ extern Cell TrieVarBindings[];
 #define TrieHT_INIT_SIZE     64
 #define TrieHT_NewSize(pHT)  ( TrieHT_NumBuckets(pHT) << 1 )
 
-extern void     hashify_children(BTNptr, int);
+extern void  hashify_children(BTNptr, int);
 
 
 /*
@@ -566,8 +570,8 @@ extern Structure_Manager smTableBTN;
 extern Structure_Manager smAssertBTN;
 extern Structure_Manager *smBTN;
 
-BTNptr new_btn(int TrieType, int NodeType, Cell Symbol,
-	       BTNptr Parent, BTNptr Sibling);
+extern BTNptr new_btn(int TrieType, int NodeType, Cell Symbol,
+		      BTNptr Parent, BTNptr Sibling);
 
 #define New_BTN(BTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
    BTN = new_btn(TrieType,NodeType,Symbol,(BTNptr)Parent,(BTNptr)Sibling)
@@ -631,7 +635,7 @@ typedef struct Basic_Trie_HashTable {
    THT = btht;								\
 }
 
-extern void     expand_trie_ht(BTHTptr);
+extern void expand_trie_ht(BTHTptr);
 
 /*
  * Allocated Hash Tables are maintained on a list to facilitate
@@ -699,8 +703,8 @@ extern Structure_Manager *smBTHT;
 #define TSTNs_PER_BLOCK    K
 extern Structure_Manager smTSTN;
 
-TSTNptr new_tstn(int TrieType, int NodeType, Cell Symbol,
-		 TSTNptr Parent, TSTNptr Sibling);
+extern TSTNptr new_tstn(int TrieType, int NodeType, Cell Symbol,
+			TSTNptr Parent, TSTNptr Sibling);
 
 #define New_TSTN(TSTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
    TSTN = new_tstn(TrieType,NodeType,Symbol,Parent,Sibling)
@@ -793,8 +797,8 @@ typedef struct HashTable_for_TSTNs {
   unsigned long  numBuckets;
   TSTNptr *pBucketArray;
   TSTHTptr prev, next;
-  TSTHTptr internalLink;     /* for reclaimation of Entries w/i a TST */
-  TSINptr index_head;       /* these fields maintain TSI */
+  TSTHTptr internalLink;     /* For reclaimation of TSI Entries w/i a TST. */
+  TSINptr index_head;        /* These fields maintain the TSI. */
   TSINptr index_tail;
 } TST_HashTable;
 
@@ -828,7 +832,7 @@ extern Structure_Manager smTSTHT;
    TSTHT_IndexHead(TSTHT) = TSTHT_IndexTail(TSTHT) = NULL;	\
  }
 
-/*===========================================================================*/
+/*-------------------------------------------------------------------------*/
 
 /*
  *                             Answer List Node
@@ -858,7 +862,87 @@ extern Structure_Manager smALN;
      SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame))	\
  }
 
-/*=========================================================================*/
+/*===========================================================================*/
+
+/*
+ *	     L O W - L E V E L   T R I E   O P E R A T I O N S
+ *	     =================================================
+ */
+
+
+/* Term Lookup
+   ----------- */
+extern void *var_trie_lookup(void *, xsbBool *, Cell *);
+extern void *iter_sub_trie_lookup(void *trieNode, TriePathType *);
+
+#define trie_escape_lookup(Root)		\
+   ( IsEscapeNode(TN_Child((BTNptr)Root))	\
+     ? TN_Child((BTNptr)Root)			\
+     : NULL )
+
+
+/* Term Insertion
+   -------------- */
+void *stl_restore_variant_cont(void);
+
+enum {NO_INSERT_SYMBOL = 0};
+extern BTNptr  bt_escape_search(BTNptr root, xsbBool *isNew);
+extern BTNptr  bt_insert(BTNptr root, BTNptr start, Cell firstSym);
+extern TSTNptr tst_insert(TSTNptr root, TSTNptr start, Cell firstSym,
+			  xsbBool maintainTSI);
+
+#define TST_InsertEscapeNode(Root,NewNode) {				    \
+   CreateEscapeTSTN(NewNode,TSTN_TrieType(Root),Root);			    \
+   TSTN_Child(Root) = NewNode;						    \
+   TSTN_TimeStamp(NewNode) = TSTN_TimeStamp(Root) = TSTN_DEFAULT_TIMESTAMP; \
+ }
+
+#define BT_InsertEscapeNode(Root,NewNode) {		\
+   CreateEscapeBTN(NewNode,BTN_TrieType(Root),Root);	\
+   BTN_Child(Root) = NewNode;				\
+ }
+
+/*===========================================================================*/
+
+/*
+ *			E R R O R   R E P O R T I N G
+ *			=============================
+ */
+
+
+#define TrieError_UnknownSubtermTagMsg				\
+   "Trie Subterm-to-Symbol Conversion\nUnknown subterm type (%d)"
+
+#define TrieError_UnknownSubtermTag(Subterm)			\
+   xsb_abort(TrieError_UnknownSubtermTagMsg, cell_tag(Subterm))
+
+
+#define TrieError_AbsentEscapeNode(Root) {		\
+  Cell symbol = TN_Symbol(Root);			\
+  if ( IsTrieFunctor(symbol) &&				\
+       (get_arity(DecodeTrieFunctor(symbol)) == 0) )	\
+    xsb_abort("Trie Structure Anomaly\n"		\
+	      "Non-Escape-Node present in 0-ary trie");	\
+  else							\
+    xsb_abort("Trie Structure Anomaly\n"		\
+	      "Escape Node expected but not found");	\
+ }
+
+
+#define TrieError_TooManyTerms(Function)			\
+   xsb_abort("Trie Matching\nToo many terms for trie in "	\
+	     Function)
+
+
+#define TrieError_TooFewTerms(Function)				\
+   xsb_abort("Trie Matching\nToo few terms for trie in "	\
+	     Function)
+
+
+#define TrieError_InterfaceInvariant(Function)			\
+   xsb_abort("Trie Interface\nImproper use of " Function)
+
+/*===========================================================================*/
 
 
 #endif

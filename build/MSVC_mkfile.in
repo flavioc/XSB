@@ -148,6 +148,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\debug_xsb.obj"
 	-@erase "$(OBJDIR)\dis.obj"
 	-@erase "$(OBJDIR)\dynload.obj"
+	-@erase "$(OBJDIR)\dynamic_stack.obj"
 	-@erase "$(OBJDIR)\emuloop.obj"
 	-@erase "$(OBJDIR)\findall.obj"
 	-@erase "$(OBJDIR)\function.obj"
@@ -169,7 +170,6 @@ CLEAN :
 	-@erase "$(OBJDIR)\slgdelay.obj"
 	-@erase "$(OBJDIR)\struct_manager.obj"
 	-@erase "$(OBJDIR)\sub_delete.obj"
-	-@erase "$(OBJDIR)\sub_insert.obj"
 	-@erase "$(OBJDIR)\subp.obj"
 	-@erase "$(OBJDIR)\system_xsb.obj"
 	-@erase "$(OBJDIR)\table_stats.obj"
@@ -177,6 +177,8 @@ CLEAN :
 	-@erase "$(OBJDIR)\timer_xsb.obj"
 	-@erase "$(OBJDIR)\token_xsb.obj"
 	-@erase "$(OBJDIR)\trace_xsb.obj"
+	-@erase "$(OBJDIR)\trie_lookup.obj"
+	-@erase "$(OBJDIR)\trie_search.obj"
 	-@erase "$(OBJDIR)\tries.obj"
 	-@erase "$(OBJDIR)\tr_utils.obj"
 	-@erase "$(OBJDIR)\tst_insert.obj"
@@ -205,6 +207,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/debug_xsb.obj" \
 	"$(OBJDIR)/dis.obj" \
 	"$(OBJDIR)/dynload.obj" \
+	"$(OBJDIR)/dynamic_stack.obj" \
 	"$(OBJDIR)/emuloop.obj" \
 	"$(OBJDIR)/error_xsb.obj" \
 	"$(OBJDIR)/findall.obj" \
@@ -223,18 +226,19 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/private_builtin.obj" \
 	"$(OBJDIR)/random_xsb.obj" \
 	"$(OBJDIR)/residual.obj" \
+	"$(OBJDIR)/scc_xsb.obj" \
 	"$(OBJDIR)/slgdelay.obj" \
-	"$(OBJDIR)/subp.obj" \
 	"$(OBJDIR)/struct_manager.obj" \
 	"$(OBJDIR)/sub_delete.obj" \
-	"$(OBJDIR)/sub_insert.obj" \
-	"$(OBJDIR)/scc_xsb.obj" \
+	"$(OBJDIR)/subp.obj" \
 	"$(OBJDIR)/system_xsb.obj" \
 	"$(OBJDIR)/table_stats.obj" \
 	"$(OBJDIR)/tables.obj" \
 	"$(OBJDIR)/timer_xsb.obj" \
 	"$(OBJDIR)/token_xsb.obj" \
 	"$(OBJDIR)/trace_xsb.obj" \
+	"$(OBJDIR)/trie_lookup.obj" \
+	"$(OBJDIR)/trie_search.obj" \
 	"$(OBJDIR)/tries.obj" \
 	"$(OBJDIR)/tr_utils.obj" \
 	"$(OBJDIR)/tst_insert.obj" \

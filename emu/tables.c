@@ -43,13 +43,23 @@
 #include "trie_internals.h"
 #include "macro_xsb.h"
 #include "error_xsb.h"
-#include "tables.h"
 #include "flags_xsb.h"
 
 
+#include "sub_tables_xsb_i.h"
 
-/* Manager Structures
-   ------------------ */
+
+
+/*=========================================================================
+     This file contains the interface functions to the tabling subsystem
+  =========================================================================*/
+
+
+/*=========================================================================*/
+
+/* Engine-Level Tabling Manager Structures
+   --------------------------------------- */
+
 Structure_Manager smVarSF  = SM_InitDecl(variant_subgoal_frame,
 					 SUBGOAL_FRAMES_PER_BLOCK,
 					 "Variant Subgoal Frame");
@@ -62,21 +72,49 @@ Structure_Manager smConsSF = SM_InitDecl(subsumptive_consumer_sf,
 Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
 					 "Answer List Node");
 
-/*-------------------------------------------------------------------------*/
+/*=========================================================================*/
 
 /*
- * Performs the Call Check/Insert operation.
- * Upon exit, CallLUR_VarVector(*results) points to the size of the
- * answer template on the CPS, unless a producer was found and we're
- * running in CHAT node.  In that case, this value is the same as
- * CallInfo_VarVector(*call_info), and the AT is sitting on the heap,   
- * its size pointed to by (hreg - 1).  See slginsts_xsb_i.h for answer
- * template layout.
+ *			Call Check/Insert Operation
+ *			===========================
  */
 
-void table_call_search(TabledCallInfo *call_info, CallLookupResults *results) {
 
-  if ( IsVariantPredicate(CallInfo_TableInfo(*call_info)) )
+/*
+ * Create an Empty Call Index, represented by a Basic Trie.  Note that
+ * the root of the trie is labelled with the predicate symbol.
+ */
+
+inline static  BTNptr newCallIndex(Psc predicate) {
+
+  BTNptr pRoot;
+
+  New_BTN( pRoot, CALL_TRIE_TT, TRIE_ROOT_NT, EncodeTriePSC(predicate),
+	   NULL, NULL );
+  return pRoot;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ * Note that the call index of the TIF is not allocated until the first
+ * call is entered.  Upon exit, CallLUR_VarVector(*results) points to
+ * the size of the answer template on the CPS, unless a producer was
+ * found and we're running in CHAT node.  In that case, this value is
+ * the same as CallInfo_VarVector(*call_info), and the AT is sitting on
+ * the heap, its size pointed to by (hreg - 1).  See slginsts_xsb_i.h
+ * for answer template layout.
+ */
+
+void table_call_search(TabledCallInfo *call_info,
+		       CallLookupResults *results) {
+
+  TIFptr tif;
+
+  tif = CallInfo_TableInfo(*call_info);
+  if ( IsNULL(TIF_CallTrie(tif)) )
+    TIF_CallTrie(tif) = newCallIndex(TIF_PSC(tif));
+  if ( IsVariantPredicate(tif) )
     variant_call_search(call_info,results);
   else
     subsumptive_call_search(call_info,results);
@@ -111,26 +149,30 @@ void table_call_search(TabledCallInfo *call_info, CallLookupResults *results) {
 #endif
 }
 
-/*-------------------------------------------------------------------------*/
+/*=========================================================================*/
+
+/*
+ *			Answer Check/Insert Operation
+ *			=============================
+ */
+
 
 /*
  * Template is a pointer to the first term in the vector, with the
  * elements arranged from high to low memory.
  */
+
 BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
-			   CPtr templ, xsbBool *is_new) {
+			   CPtr template, xsbBool *is_new) {
 
   void *answer;
 
   if ( IsSubsumptiveProducer(producer) ) {
     answer =
-      subsumptive_answer_search(size,templ,(SubProdSF)producer,is_new);
+      subsumptive_answer_search((SubProdSF)producer,size,template,is_new);
     if ( *is_new ) {
-
-      /* Put New Answer at End of Answer Chain
-	 ------------------------------------- */
       ALNptr newALN;
-      New_ALN(newALN, answer, NULL);
+      New_ALN(newALN,answer,NULL);
       SF_AppendNewAnswer(producer,newALN);
     }
   }
@@ -145,7 +187,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 #endif /* IGNORE_DELAYVAR */
 
-    answer = variant_answer_search(size,attv_num,templ,producer,&wasFound);
+    answer = variant_answer_search(size,attv_num,template,producer,&wasFound);
 
 #ifdef DEBUG_DELAYVAR
 #ifndef IGNORE_DELAYVAR
@@ -169,10 +211,16 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
   return (BTNptr)answer;
 }
 
-/*-------------------------------------------------------------------------*/
+/*=========================================================================*/
 
-void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr templ,
-			  TIFptr pred) {
+/*
+ *			    Answer Consumption
+ *			    ==================
+ */
+
+
+void table_consume_answer(BTNptr answer, int size, int attv_num,
+			  CPtr template, TIFptr predicate) {
 
   if (size == 0) {
     if ( ! IsEscapeNode(answer) )
@@ -180,15 +228,21 @@ void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr templ,
 		"answer\nwith a non-empty substitution!\n");
   }
   else {
-    if ( IsSubsumptivePredicate(pred) )
-      consume_subsumptive_answer(answer,size,templ);
+    if ( IsSubsumptivePredicate(predicate) )
+      consume_subsumptive_answer(answer,size,template);
     else
       /* this also tracks variables created during unification */
-      load_solution_trie(size,attv_num,templ,answer);
+      load_solution_trie(size,attv_num,template,answer);
   }
 }
 
-/*-------------------------------------------------------------------------*/
+/*=========================================================================*/
+
+/*
+ *			   Answer Identification
+ *			   =====================
+ */
+
 
 /*
  *  Collects answers from a producer's answer set based on an answer
@@ -225,7 +279,7 @@ ALNptr table_retrieve_answers(SubProdSF prodSF, SubConsSF consSF,
   return answers;
 }
 
-/*-------------------------------------------------------------------------*/
+/*=========================================================================*/
 
 /*
  *                     Table Structure Reclamation
@@ -380,7 +434,7 @@ void table_complete_entry(VariantSF producerSF) {
 #endif
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*-------------------------------------------------------------------------*/
 
 /*
  * Frees all the tabling space resources.
@@ -401,4 +455,4 @@ void release_all_tabling_resources() {
   SM_ReleaseResources(smConsSF);
 }
 
-/*-------------------------------------------------------------------------*/
+/*=========================================================================*/

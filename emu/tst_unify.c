@@ -107,7 +107,7 @@ static void consumption_error(char *string) {
 
   fprintf(stderr,"\nAnswer Return ERROR:  Failed to unify\n");
   fprintf(stderr,"  ");
-  triePrintPath(gAnsLeaf,YES);
+  printTriePath(stderr,gAnsLeaf,YES);
   fprintf(stderr,"\n  ");
   printAnswerTemplate(gAnsTmplt,gSizeTmplt);
   fprintf(stderr,"\n\n");
@@ -119,7 +119,7 @@ static void consumption_error(char *string) {
 
 /*     pCPF = pAnsTmplt - sizeTmplt - NLCPSIZE; */
 /*     pSF = (VariantSF)nlcp_subgoal_ptr(pCPF); */
-/*     printAnswerList(subg_answers(pSF)); */
+/*     printAnswerList(stderr,subg_answers(pSF)); */
 /*     fprintf(stderr,"\n\n"); */
 /*     *(CPtr)0 = 0; */
 /*   } */
@@ -394,9 +394,9 @@ void consume_subsumptive_answer(BTNptr pAnsLeaf, int sizeTmplt,
   /* Consume the Answer
      ------------------ */
   while ( ! TermStack_IsEmpty ) {
-    subterm = TermStack_Pop;
+    TermStack_Pop(subterm);
     XSB_Deref(subterm);
-    symbol = SymbolStack_Pop;
+    SymbolStack_Pop(symbol);
     sym_orig_tag = cell_tag(symbol);
     TrieSymbol_Deref(symbol);
     switch ( cell_tag(subterm) ) {

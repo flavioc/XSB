@@ -147,93 +147,94 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 
 #ifdef DEBUG
 
-#define check_tcpstack_overflow {					    \
-									    \
-   CPtr cps_top = top_of_cpstack;					    \
-									    \
-   if ((pb)cps_top < (pb)top_of_trail + OVERFLOW_MARGIN) {		    \
-     if ((pb)cps_top < (pb)top_of_trail) {				    \
-       xsb_error("Trail clobbered Choice Point Stack");	       	       	    \
-       print_statistics(1);						    \
-       trail_cp_exception(lpcreg);					    \
-       XSB_Next_Instr();       						    \
-     }									    \
-     else {								    \
-       fprintf(stdwarn, "\nTrail / Choice Point Stack overflow:   ");	    \
-       if (flags[STACK_REALLOC]) {					    \
-         fprintf(stdwarn, "Expanding ...\n");				    \
-         if (tcpstack.size == tcpstack.init_size) {			    \
-           fprintf(stdwarn, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n",    \
-                   tcpstack.low, tcpstack.size);			    \
-           fprintf(stdwarn, "\tTop:\t\t0x%p\n", tcpstack.high);		    \
-         }								    \
-         tcpstack_realloc(resize_stack(tcpstack.size,0));		    \
-         fprintf(stdwarn, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",	    \
-                 tcpstack.low, tcpstack.size);				    \
-         fprintf(stdwarn, "\tNew Top:\t0x%p\n", tcpstack.high);		    \
-       }								    \
-       else {								    \
-         fprintf(stdwarn, "Reallocation turned OFF!\n");		    \
-         print_statistics(1);						    \
-         trail_cp_exception(lpcreg);					    \
-         XSB_Next_Instr();     						    \
-       }								    \
-     }									    \
-   }									    \
+#define check_tcpstack_overflow {					\
+									\
+   CPtr cps_top = top_of_cpstack;					\
+									\
+   if ((pb)cps_top < (pb)top_of_trail + OVERFLOW_MARGIN) {		\
+     if ((pb)cps_top < (pb)top_of_trail) {				\
+       xsb_error("Trail clobbered Choice Point Stack");			\
+       print_statistics(1);						\
+       trail_cp_exception(lpcreg);					\
+       XSB_Next_Instr();						\
+     }									\
+     else {								\
+       fprintf(stdwarn, "\nTrail / Choice Point Stack overflow:   ");	\
+       if (flags[STACK_REALLOC]) {					\
+         fprintf(stdwarn, "Expanding ...\n");				\
+         if (tcpstack.size == tcpstack.init_size) {			\
+           fprintf(stdwarn, "\tBottom:\t\t%p\t\tInitial Size: %ldK\n",	\
+                   tcpstack.low, tcpstack.size);			\
+           fprintf(stdwarn, "\tTop:\t\t%p\n", tcpstack.high);		\
+         }								\
+         tcpstack_realloc(resize_stack(tcpstack.size,0));		\
+         fprintf(stdwarn, "\tNew Bottom:\t%p\t\tNew Size: %ldK\n",	\
+                 tcpstack.low, tcpstack.size);				\
+         fprintf(stdwarn, "\tNew Top:\t%p\n", tcpstack.high);		\
+       }								\
+       else {								\
+         fprintf(stdwarn, "Reallocation turned OFF!\n");		\
+         print_statistics(1);						\
+         trail_cp_exception(lpcreg);					\
+         XSB_Next_Instr();						\
+       }								\
+     }									\
+   }									\
  }
 
-#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)          \
-    if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {   \
-        if ((pb)top_of_localstk < (pb)top_of_heap) {                         \
-            PCREG = exception_handler("\nFatal ERROR:  -- Local Stack clobbered Heap --\n");  \
-        todo_on_exception;                                                   \
-      }                                                                      \
-      else {                                                                 \
-        fprintf(stdwarn, "\nHeap / Local Stack overflow:   ");            \
-        if (flags[STACK_REALLOC]) {                                          \
-          fprintf(stdwarn, "Expanding ...\n");                                \
-          if (glstack.size == glstack.init_size) {                           \
-            fprintf(stdwarn, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n",     \
-                    glstack.low, glstack.size);                              \
-            fprintf(stdwarn, "\tTop:\t\t0x%p\n", glstack.high);               \
-          }                                                                  \
-          glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN),  \
-                       arity);                       \
-          fprintf(stdwarn, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",         \
-                  glstack.low, glstack.size);                                \
-          fprintf(stdwarn, "\tNew Top:\t0x%p\n", glstack.high);               \
-        }                                                                    \
-        else {                                                               \
-          fprintf(stdwarn, "Reallocation turned OFF!\n");                     \
-          print_statistics(1);                                               \
-          local_global_exception(PCREG);                                     \
-          todo_on_exception;                                                 \
-       }                                                                     \
-      }                                                                      \
-    }
+#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)	   \
+   if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {  \
+     if ((pb)top_of_localstk < (pb)top_of_heap) {			   \
+       PCREG = exception_handler("\nFatal ERROR:  -- "			   \
+				 "Local Stack clobbered Heap --\n");	   \
+       todo_on_exception;						   \
+     }									   \
+     else {								   \
+       fprintf(stdwarn, "\nHeap / Local Stack overflow:   ");		   \
+       if (flags[STACK_REALLOC]) {					   \
+	 fprintf(stdwarn, "Expanding ...\n");				   \
+	 if (glstack.size == glstack.init_size) {			   \
+	   fprintf(stdwarn, "\tBottom:\t\t%p\t\tInitial Size: %ldK\n",	   \
+		   glstack.low, glstack.size);				   \
+	   fprintf(stdwarn, "\tTop:\t\t%p\n", glstack.high);		   \
+	 }								   \
+	 glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN), \
+			 arity);					   \
+	 fprintf(stdwarn, "\tNew Bottom:\t%p\t\tNew Size: %ldK\n",	   \
+		 glstack.low, glstack.size);				   \
+	 fprintf(stdwarn, "\tNew Top:\t%p\n", glstack.high);		   \
+       }								   \
+       else {								   \
+	 fprintf(stdwarn, "Reallocation turned OFF!\n");		   \
+	 print_statistics(1);						   \
+	 local_global_exception(PCREG);					   \
+	 todo_on_exception;						   \
+       }								   \
+     }									   \
+   }
 
-#define check_completion_stack_overflow                               	\
-   if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {        	\
-     fprintf(stdwarn, "\nCompletion Stack overflow:   ");              	\
-     if (flags[STACK_REALLOC]) {                                      	\
-       fprintf(stdwarn, "Expanding ...\n");                            	\
-       if (complstack.size == complstack.init_size) {                 	\
-         fprintf(stdwarn, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n", 	\
-                 complstack.low, complstack.size);                    	\
-         fprintf(stdwarn, "\tTop:\t\t0x%p\n", complstack.high);        	\
-       }                                                              	\
-       complstack_realloc(resize_stack(complstack.size,0));           	\
-       fprintf(stdwarn, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",     	\
-	       complstack.low, complstack.size);                      	\
-       fprintf(stdwarn, "\tNew Top:\t0x%p\n", complstack.high);        	\
-     }                                                                	\
-     else {                                                           	\
-       fprintf(stdwarn, "Reallocation turned OFF!\n");                 	\
-       print_statistics(1);                                        	\
-       complstack_exception(lpcreg);                               	\
-       XSB_Next_Instr();                                              	\
-     }                                                      		\
-     fflush(stdwarn);                                        		\
+#define check_completion_stack_overflow					\
+   if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {		\
+     fprintf(stdwarn, "\nCompletion Stack overflow:   ");		\
+     if (flags[STACK_REALLOC]) {					\
+       fprintf(stdwarn, "Expanding ...\n");				\
+       if (complstack.size == complstack.init_size) {			\
+         fprintf(stdwarn, "\tBottom:\t\t%p\t\tInitial Size: %ldK\n",	\
+                 complstack.low, complstack.size);			\
+         fprintf(stdwarn, "\tTop:\t\t%p\n", complstack.high);		\
+       }								\
+       complstack_realloc(resize_stack(complstack.size,0));		\
+       fprintf(stdwarn, "\tNew Bottom:\t%p\t\tNew Size: %ldK\n",	\
+	       complstack.low, complstack.size);			\
+       fprintf(stdwarn, "\tNew Top:\t%p\n", complstack.high);		\
+     }									\
+     else {								\
+       fprintf(stdwarn, "Reallocation turned OFF!\n");			\
+       print_statistics(1);						\
+       complstack_exception(lpcreg);					\
+       XSB_Next_Instr();						\
+     }									\
+     fflush(stdwarn);							\
    }
 
 
@@ -246,8 +247,8 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 									\
    if ((pb)cps_top < (pb)top_of_trail + OVERFLOW_MARGIN) {		\
      if ((pb)cps_top < (pb)top_of_trail) {				\
-       lpcreg = exception_handler("\nFatal ERROR:  --Trail "		\
-				  "clobbered Choice Point Stack--\n");	\
+       lpcreg = exception_handler("\nFatal ERROR:  -- Trail "		\
+				  "clobbered Choice Point Stack --\n");	\
        XSB_Next_Instr();       						\
      }									\
      else {								\
@@ -261,30 +262,31 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
    }									\
  }
 
-#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)  \
-    if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {   \
-      if ((pb)top_of_localstk < (pb)top_of_heap) {                         \
-        PCREG = exception_handler("\nFatal ERROR:  -- Local Stack clobbered Heap --\n");  \
-        todo_on_exception;                                                   \
-      }                                                                      \
-      else {                                                                 \
-        if ((flags[STACK_REALLOC] == FALSE) ||                               \
-          (glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN), \
-                          arity) != 0)) {                                    \
-          local_global_exception(PCREG);                                     \
-          todo_on_exception;                                                 \
-        }                                                                    \
-      }                                                                      \
-    }
+#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)	      \
+   if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {     \
+     if ((pb)top_of_localstk < (pb)top_of_heap) {			      \
+       PCREG = exception_handler("\nFatal ERROR:  -- "			      \
+				 "Local Stack clobbered Heap --\n");	      \
+       todo_on_exception;						      \
+     }									      \
+     else {								      \
+       if ((flags[STACK_REALLOC] == FALSE) ||				      \
+	   (glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN), \
+			    arity) != 0)) {				      \
+	 local_global_exception(PCREG);					      \
+	 todo_on_exception;						      \
+       }								      \
+     }									      \
+   }
 
-#define check_completion_stack_overflow                                      \
-    if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {              \
-      if (flags[STACK_REALLOC])                                              \
-        complstack_realloc(resize_stack(complstack.size,0));                 \
-      else {                                                                 \
-	complstack_exception(lpcreg);                                        \
-	XSB_Next_Instr();                                                    \
-      }                                                                      \
-    }
+#define check_completion_stack_overflow				\
+   if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {	\
+     if (flags[STACK_REALLOC])					\
+       complstack_realloc(resize_stack(complstack.size,0));	\
+     else {							\
+       complstack_exception(lpcreg);				\
+       XSB_Next_Instr();					\
+     }								\
+   }
 
 #endif

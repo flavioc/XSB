@@ -119,7 +119,7 @@ static CPtr orig_ebreg;
 
 typedef struct {
   TSTNptr alt_node;      /* sibling of the TSTN whose child ptr we took */
-  CPtr ts_top;           /* current top-of-tstTermStack at CP creation */
+  int ts_top_offset;     /* current top-of-tstTermStack at CP creation */
   pLogFrame log_top;     /* current top-of-tstTermStackLog at CP creation */
   CPtr *trail_top;       /* current top-of-trail at CP creation */
   CPtr heap_bktrk;       /* current hbreg at time of CP creation */
@@ -135,7 +135,7 @@ static struct {
 
 /* Use these to access the frame to which `top' points */
 #define tstCPF_AlternateNode    ((tstCPStack.top)->alt_node)
-#define tstCPF_TermStackTop     ((tstCPStack.top)->ts_top)
+#define tstCPF_TermStackTopOffset     ((tstCPStack.top)->ts_top_offset)
 #define tstCPF_TSLogTop         ((tstCPStack.top)->log_top)
 #define tstCPF_TrailTop         ((tstCPStack.top)->trail_top)
 #define tstCPF_HBreg            ((tstCPStack.top)->heap_bktrk)
@@ -148,16 +148,17 @@ void initTSTRetrieve() {
   tstCPStack.ceiling = tstCPStack.base + TST_CPSTACK_SIZE;
 }
 
-#define CPStack_PushFrame(AlternateTSTN)		\
-   if ( IsNonNULL(AlternateTSTN) ) {			\
-     CPStack_OverflowCheck				\
-     tstCPF_AlternateNode = AlternateTSTN;		\
-     tstCPF_TermStackTop = tstTermStack.top + 1;	\
-     tstCPF_TSLogTop = tstTermStackLog.top;		\
-     tstCPF_TrailTop = trreg;				\
-     tstCPF_HBreg = hbreg;				\
-     hbreg = hreg;					\
-     tstCPStack.top++;					\
+#define CPStack_PushFrame(AlternateTSTN)	\
+   if ( IsNonNULL(AlternateTSTN) ) {		\
+     CPStack_OverflowCheck			\
+     tstCPF_AlternateNode = AlternateTSTN;	\
+     tstCPF_TermStackTopOffset =		\
+       TermStack_Top - TermStack_Base + 1;	\
+     tstCPF_TSLogTop = tstTermStackLog.top;	\
+     tstCPF_TrailTop = trreg;			\
+     tstCPF_HBreg = hbreg;			\
+     hbreg = hreg;				\
+     tstCPStack.top++;				\
    }
 
 #define CPStack_Pop     tstCPStack.top--
@@ -197,13 +198,13 @@ void initTSTRetrieve() {
  *  the number of memory moves.  This only resets terms which will lie
  *  below the new top of the TermStack.
  *      tstTermStackLog.top--;
- *      if (*LogFrame_Addr < tstCPF_TermStackTop)
- *        *LogFrame_Addr = LogFrame_Value;
+ *      if (LogFrame_Index < tstCPF_TermStackTopOffset)
+ *        TermStack_Base[LogFrame_Index] = LogFrame_Value;
  */
 #define RestoreTermStack				\
-    while (tstTermStackLog.top > tstCPF_TSLogTop)	\
-      TermStackLog_PopAndReset				\
-    tstTermStack.top = tstCPF_TermStackTop
+   while (tstTermStackLog.top > tstCPF_TSLogTop)	\
+     TermStackLog_PopAndReset;				\
+   TermStack_SetTOS(tstCPF_TermStackTopOffset)
 
 
 #define ResetHeap_fromCPF	\
@@ -321,7 +322,7 @@ static void tstRetrievalError(char *string, xsbBool cleanup_needed) {
 #define SearchChain_ExactMatch(SearchChain,TrieEncodedSubterm,TS,	\
 			       ContChain,TermStack_PushOp) 		\
    while ( IsNonNULL(SearchChain) ) {					\
-     if (TrieEncodedSubterm == TSTN_Symbol(SearchChain)) {		\
+     if ( TrieEncodedSubterm == TSTN_Symbol(SearchChain) ) {		\
        if ( IsValidTS(TSTN_GetTSfromTSIN(SearchChain),TS) ) {		\
 	 Chain_NextValidTSTN(ContChain,TS,TSTN_GetTSfromTSIN);		\
 	 CPStack_PushFrame(ContChain);					\
@@ -743,7 +744,7 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
  While_TSnotEmpty:
 
   while ( ! TermStack_IsEmpty ) {
-    subterm = TermStack_Pop;
+    TermStack_Pop(subterm);
     XSB_Deref(subterm);
     switch(cell_tag(subterm)) {
 

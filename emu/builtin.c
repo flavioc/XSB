@@ -1623,12 +1623,18 @@ int builtin_call(byte number)
       if ( IsVariantPredicate(tif) )
 	goalSF = subsumerSF = get_subgoal_ptr(goalTerm, tif);
       else {
-	BTNptr leaf;
+	BTNptr root, leaf;
 	TriePathType path_type;
 
-	leaf =
-	  subsumptive_trie_lookup(get_arity(psc), clref_val(goalTerm) + 1,
-				  TIF_CallTrie(tif), &path_type);
+	root = TIF_CallTrie(tif);
+	if ( IsNonNULL(root) )
+	  leaf = subsumptive_trie_lookup(root, get_arity(psc),
+					 clref_val(goalTerm) + 1,
+					 &path_type);
+	else {
+	  leaf = NULL;
+	  path_type = NO_PATH;
+	}
 	if ( path_type == NO_PATH )
 	  goalSF = subsumerSF = NULL;
 	else if ( path_type == VARIANT_PATH ) {
@@ -1771,12 +1777,13 @@ int builtin_call(byte number)
 	   < complstack.init_size * K - OVERFLOW_MARGIN )
 	complstack_realloc(complstack.init_size);
 
-	if (glstack.size != glstack.init_size)
-	  if ( (unsigned int)((glstack.high - (byte *)top_of_localstk) +
-			 ((byte *)hreg - glstack.low))
-	       < glstack.init_size * K - OVERFLOW_MARGIN )
+    if (glstack.size != glstack.init_size)
+      if ( (unsigned int)((glstack.high - (byte *)top_of_localstk) +
+			  ((byte *)hreg - glstack.low))
+	   < glstack.init_size * K - OVERFLOW_MARGIN )
 	glstack_realloc(glstack.init_size,0);
 
+    tstShrinkDynStacks();
     break;
 
   case NEWTRIE:

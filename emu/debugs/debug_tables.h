@@ -3,10 +3,13 @@
 
 #define DEBUG_TABLE_DEFS
 
+
+/*** Subsumptive Call Check/Insert ***/
+#undef DEBUG_CALL_CHK_INS
+
 /*** Tabling-structure allocation ***/
 #undef DEBUG_STRUCT_ALLOC
 
-/*** Catching Overflows in Auxiliary Stacks for Subsumptive Operations ***/
-#undef DEBUG_SUB_STACK_OVERFLOW
 
 #endif
+

@@ -1,5 +1,5 @@
 /* File:      subp.c
-** Author(s): Warren, Swift, Xu, Sagonas
+** Author(s): Warren, Swift, Xu, Sagonas, Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -164,6 +164,50 @@ xsbBool unify(Cell rop1, Cell rop2)
 /*----------------------------------------*/
 
 }  /* end of unify */
+
+/*======================================================================*/
+/*  Determining whether two terms are identical.			*/
+/*======================================================================*/
+
+xsbBool are_identical_terms(Cell term1, Cell term2) {
+
+  XSB_Deref(term1);
+  XSB_Deref(term2);
+  
+  if ( term1 == term2 )
+    return TRUE;
+
+  if ( cell_tag(term1) != cell_tag(term2) )
+    return FALSE;
+
+  if ( cell_tag(term1) == XSB_STRUCT ) {
+    CPtr cptr1 = clref_val(term1);
+    CPtr cptr2 = clref_val(term2);
+    Psc psc1 = (Psc)*cptr1;
+    int i;
+
+    if ( psc1 != (Psc)*cptr2 )
+      return FALSE;
+
+    for ( cptr1++, cptr2++, i = 0;  i < (int)get_arity(psc1);  i++ )
+      if ( ! are_identical_terms(*cptr1,*cptr2) ) 
+	return FALSE;
+
+    return TRUE;
+  }
+  else if ( cell_tag(term1) == XSB_LIST ) {
+    CPtr cptr1 = clref_val(term1);
+    CPtr cptr2 = clref_val(term2);
+
+    if ( are_identical_terms(*cptr1, *cptr2) &&
+	 are_identical_terms(*(cptr1 + 1), *(cptr2 + 1)) )
+      return TRUE;
+    else
+      return FALSE;
+  }
+  else
+    return FALSE;
+}
 
 /*======================================================================*/
 /*  Print statistics and measurements.					*/
