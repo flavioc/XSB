@@ -3,7 +3,6 @@
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
-** Copyright (C) ECRC, Germany, 1990
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -618,21 +617,22 @@ inline static CPtr compute_answer_template(TabledCallInfo *call_info,
  *  'CurNODE'.  'CurNODE' may be NULL at block entry.
  */
 
-#define NonVarSearchChain_BoundTrievar(Subterm,CurNODE,VarChain) {	  \
-									  \
-   int trievar_index;							  \
-									  \
-   while ( IsNonNULL(CurNODE) ) {					  \
-     if ( IsTrieVar(BTN_Symbol(CurNODE)) &&				  \
-          ! IsNewTrieVar(BTN_Symbol(CurNODE)) ) {			  \
-       trievar_index = DecodeTrieVar(BTN_Symbol(CurNODE));		  \
-       if (identical_subterms(TrieVarBindings[trievar_index],Subterm) ) { \
-	 Create_ChoicePointFrame(BTN_Sibling(CurNODE),VarChain)		  \
-	 Descend_In_Trie_and_Continue(CurNODE);				  \
-       }								  \
-     }									  \
-     CurNODE = BTN_Sibling(CurNODE);					  \
-   }									  \
+#define NonVarSearchChain_BoundTrievar(Subterm,CurNODE,VarChain) {	\
+									\
+   int trievar_index;							\
+									\
+   while ( IsNonNULL(CurNODE) ) {					\
+     if ( IsTrieVar(BTN_Symbol(CurNODE)) &&				\
+          ! IsNewTrieVar(BTN_Symbol(CurNODE)) ) {			\
+       trievar_index = DecodeTrieVar(BTN_Symbol(CurNODE));		\
+       if ( are_identical_subterms(TrieVarBindings[trievar_index],	\
+				   Subterm) ) {				\
+	 Create_ChoicePointFrame(BTN_Sibling(CurNODE),VarChain)		\
+	 Descend_In_Trie_and_Continue(CurNODE);				\
+       }								\
+     }									\
+     CurNODE = BTN_Sibling(CurNODE);					\
+   }									\
  }
 
 /* ------------------------------------------------------------------------- */
@@ -727,18 +727,18 @@ inline static CPtr compute_answer_template(TabledCallInfo *call_info,
 /* Checking for Identical Terms
    ---------------------------- */
 
-static int identical_subterms(Cell term1, Cell term2) {
+bool are_identical_subterms(Cell term1, Cell term2) {
 
   deref(term1);
   deref(term2);
   
-  if (term1 == term2)
+  if ( term1 == term2 )
     return TRUE;
 
-  if(cell_tag(term1) != cell_tag(term2))
+  if ( cell_tag(term1) != cell_tag(term2) )
     return FALSE;
 
-  if (cell_tag(term1) == CS) {
+  if ( cell_tag(term1) == CS ) {
     CPtr cptr1 = clref_val(term1);
     CPtr cptr2 = clref_val(term2);
     Psc psc1 = (Psc)*cptr1;
@@ -747,21 +747,21 @@ static int identical_subterms(Cell term1, Cell term2) {
     if ( psc1 != (Psc)*cptr2 )
       return FALSE;
 
-    for (cptr1++, cptr2++, i = 0; i < get_arity(psc1); i++)
-      if (identical_subterms(*cptr1,*cptr2) == FALSE) 
+    for ( cptr1++, cptr2++, i = 0;  i < get_arity(psc1);  i++ )
+      if ( ! are_identical_subterms(*cptr1,*cptr2) ) 
 	return FALSE;
 
     return TRUE;
   }
-  else if (cell_tag(term1) == LIST) {
+  else if ( cell_tag(term1) == LIST ) {
     CPtr cptr1 = clref_val(term1);
     CPtr cptr2 = clref_val(term2);
 
-    if ( (identical_subterms(*cptr1, *cptr2) == FALSE) ||
-	 (identical_subterms(*(cptr1 + 1), *(cptr2 + 1)) == FALSE) )
-      return FALSE;
-    else
+    if ( are_identical_subterms(*cptr1, *cptr2) &&
+	 are_identical_subterms(*(cptr1 + 1), *(cptr2 + 1)) )
       return TRUE;
+    else
+      return FALSE;
   }
   else
     return FALSE;
@@ -1100,7 +1100,8 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
 	if ( IsTrieVar(BTN_Symbol(pCurrentBTN)) &&
 	     ! IsNewTrieVar(BTN_Symbol(pCurrentBTN)) ) {
 	  trievar_index = DecodeTrieVar(BTN_Symbol(pCurrentBTN));
-	  if (identical_subterms(TrieVarBindings[trievar_index],subterm)) {
+	  if ( are_identical_subterms(TrieVarBindings[trievar_index],
+				      subterm) ) {
 	    Create_ChoicePointFrame(BTN_Sibling(pCurrentBTN),variableChain);
 	    Descend_In_Trie_and_Continue(pCurrentBTN);
 	  }
