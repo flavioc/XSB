@@ -717,4 +717,33 @@ XSB_Start_Instr(trie_try_attv,_trie_try_attv);
   XSB_Next_Instr();
 }
 
+XSB_Start_Instr(trie_retry_attv,_trie_retry_attv); {
+  CPtr tbreg;
+#ifdef PVR_DEBUG_TC_INSTS
+  xsb_dbgmsg("trie_retry_attv:");
+#endif
+  NodePtr = (BTNptr) lpcreg;
+  tbreg = breg;
+  restore_regs_and_vars(tbreg, CP_SIZE);
+  cp_pcreg(breg) = (byte *) opfail;
+  unify_with_trie_attv;
+  next_lpcreg;
+  XSB_Next_Instr();
+}
+
+XSB_Start_Instr(trie_trust_attv,_trie_trust_attv); {
+  CPtr tbreg;
+#ifdef PVR_DEBUG_TC_INSTS
+  xsb_dbgmsg("trie_trust_attv");
+#endif
+  NodePtr = (BTNptr) lpcreg;
+  tbreg = breg;
+  restore_regs_and_vars(tbreg, CP_SIZE);
+  breg = cp_prevbreg(breg);	/* Remove this CP */
+  restore_trail_condition_registers(breg);
+  unify_with_trie_attv;
+  next_lpcreg;
+  XSB_Next_Instr();
+}
+
 /*----------------------------------------------------------------------*/
