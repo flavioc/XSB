@@ -170,6 +170,37 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal
 	return rcode;
 }
 
+JNIEXPORT jint JNICALL 
+Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
+(JNIEnv *env, jobject obj, jstring jXSBPath, jobjectArray jXSBParameters) {
+        int rcode;
+	int i;
+	int myargc = (*env)->GetArrayLength(env, jXSBParameters) + 2;
+	char * myargv[myargc];
+	char *XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
+	if (debug==JNI_TRUE) printf("Entering Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
+	myargv[0] = XSBPath;
+	myargv[1] = "-n"; 
+
+	jstring parameter[myargc - 2];
+	for (i=0; i<myargc-2; i++) {
+          parameter[i] = (jstring)(*env)->GetObjectArrayElement(env, jXSBParameters, i);
+	  myargv[i + 2] = (*env)->GetStringUTFChars(env, parameter[i], 0);
+	}
+
+	rcode=xsb_init(myargc,myargv);
+
+	(*env)->ReleaseStringUTFChars(env,jXSBPath, XSBPath);
+
+      	for (i=0; i<myargc-2; i++) {
+	  (*env)->ReleaseStringUTFChars(env, parameter[i], myargv[i + 2]);
+	  // may be needed ?(*env)->DeleteLocalRef(env, parameter[i]);
+	} 
+
+	if (debug==JNI_TRUE) printf("Exiting Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
+	return rcode;
+}
+
 JNIEXPORT void JNICALL 
 Java_com_xsb_interprolog_NativeEngine_xsb_1interrupt (JNIEnv *env, jobject obj){
 	/* Do XSB's "interrupt" thing, by simulating a ctrl-C: */
