@@ -605,6 +605,7 @@ that are needed to build practical applications.
   \index{method!single-valued}
   \index{method!scalar}
   \index{method!multi-valued}
+  \index{method!set-valued}
   %
   In all of the above cases, {\tt O}, {\tt C}, {\tt M}, ${\tt V_i}$, and
   ${\tt T_i}$ are HiLog terms, {\it i.e.}, expressions of the form, $\tt a$,
@@ -617,12 +618,12 @@ that are needed to build practical applications.
   result object $\tt V$ in case (1), or a set of objects, $\tt V_1$, ...,
   $\tt V_n$, in case (2). Thus, in (1), $\tt M$ is said to be a
   \emph{single-valued} (or \emph{scalar}) method expression, i.e., there is
-  at most one $\tt V$ such that $\tt O[M\fd V]$ holds.  In contrast, in (2),
-  $\tt M$ is \emph{multi-valued}, so the result contains several objects,
-  which \emph{includes} $\tt V_1$, $\tt V_2$, ..., $\tt V_n$. Note that we
-  emphasized ``includes'' rather than ``equals'', because other facts and
-  rules in the program can specify additional objects that must be
-  considered part of the method result.
+  at most one $\tt V$ such that $\tt O[M\fd V]$ holds.  In contrast, in
+  (2), $\tt M$ is \emph{multi-valued} (also known as \emph{set-valued}), so
+  the result contains several objects, which \emph{includes} $\tt V_1$,
+  $\tt V_2$, ..., $\tt V_n$. Note that we emphasized ``includes'' rather
+  than ``equals'', because other facts and rules in the program can specify
+  additional objects that must be considered part of the method result.
   
   When $n=1$ in set-valued data atoms, the curly braces can be omitted. For
   instance, $\tt O[M\mvd V_1]$. In fact, the single expression (2) is
@@ -1596,7 +1597,7 @@ XSB predicates can be called from \FLORA through the \FLORA module system
 and do not need to be loaded explicitly because the association between XSB
 programs and modules is fixed.  The syntax to call XSB predicates is
 %%
-\index{module!{\tt @prolog(modulename)}}
+\index{module!{\tt prolog(modulename)}}
 %%
 \begin{quote}
   \tt
@@ -1724,6 +1725,7 @@ loaded using the following call:
 
 \index{system module}
 \index{module!system}
+\index{module!{\tt flora(modulename)}}
 %%
 \FLORA provides a special set of modules that are \emph{preloaded} with
 useful utilities, such as prettyprinting or I/O. These modules have special
@@ -2585,6 +2587,7 @@ established inferences.
 
 \index{attribute!inheritable}
 \index{attribute!non-inheritable}
+%%
 \fl (and \FLORA) distinguishes between attributes and methods that can
 inherit values from superclasses and those that do not. The syntax that we
 have seen so far applies to \emph{non-inheritable} attributes only.
@@ -2955,9 +2958,12 @@ even the value {\tt void}). Therefore, boolean methods {\tt cannot} appear
 in path expressions. For instance, \mbox{\tt john.is\_vegetarian} is
 illegal.
 
-Like scalar methods, boolean methods can also be inheritable. To make a
-boolean method inheritable, the ``\verb|*|'' sign is added before
-the method:
+\index{method!boolean!inheritable}
+\index{boolean method!inheritable}
+%%
+Like scalar methods, boolean methods can be inheritable. To make a
+boolean method inheritable, the \verb|*| sign is prepended to
+the method name:
 %%
 \begin{quote}
 \begin{verbatim}
@@ -4158,6 +4164,11 @@ fact that certain features are yet to be implemented:
     incorporated in a future release.
   \item If-then-else does not have the right associativity, so explicit
     parentheses are often required.
+  \item Multiple types (which represent type intersection in \fl) are not
+    allowed in set-valued signature expressions: {\tt a[m=>>{c,d}]} and
+    {\tt a[m*=>>{c,d}]}. Use {\tt a[m=>>c],a[m=>>d]} for now.
+  \item Inheritance of procedural methods is not supported: {\tt
+      a[*\#p(X)]}.
 \end{enumerate}
 %%
 
