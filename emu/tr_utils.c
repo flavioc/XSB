@@ -480,6 +480,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
     SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
     lowest_node_in_branch = parent_ptr;
   }
+
   if (lowest_node_in_branch == NULL)
     *hook = 0;
   else {
@@ -694,8 +695,12 @@ void delete_return(BTNptr l, VariantSF sg_frame)
 #ifdef DEBUG_RECLAIM_DEL_RET
     xsb_dbgmsg("DELETE_NODE: %d - Par: %d", l, BTN_Parent(l));
 #endif
-  safe_delete_branch(l);
-  if (!is_completed(sg_frame)) {
+/*    safe_delete_branch(l); */
+
+  if (is_completed(sg_frame)) {
+    safe_delete_branch(l);
+  } else {
+    delete_branch(l,&subg_ans_root_ptr(sg_frame));
     n = subg_ans_list_ptr(sg_frame);
     /* Find previous sibling -pvr */
     while (ALN_Answer(ALN_Next(n)) != l) {
@@ -706,6 +711,8 @@ void delete_return(BTNptr l, VariantSF sg_frame)
     }
     a               = ALN_Next(n);
     next            = ALN_Next(a);
+    ALN_Answer(a)   = NULL; /* since we eagerly release trie nodes, this is
+			       necessary to keep garbage collection sane */
     ALN_Next(a) = compl_del_ret_list(subg_compl_stack_ptr(sg_frame));
     compl_del_ret_list(subg_compl_stack_ptr(sg_frame)) = a;    
 
@@ -721,6 +728,16 @@ void delete_return(BTNptr l, VariantSF sg_frame)
 	nlcp_trie_return(c) = n;
       }
       chat_ptr = (chat_init_pheader)nlcp_prevlookup(c);
+    }
+    /* lfcastro: run the CP stack, also */
+    { 
+      NLChoice b;
+      b = breg;
+      while (b <= (NLChoice)sg_frame->cp_ptr) {
+	if (b->trie_return == a)
+	  b->trie_return = n;
+	b = b->prev;
+      }
     }
 #else
     c = (NLChoice) subg_asf_list_ptr(sg_frame);
@@ -742,7 +759,6 @@ void delete_return(BTNptr l, VariantSF sg_frame)
 #endif
    
     ALN_Next(n) = next;
-    /* lfcastro: the above seems redundant */
 
     if(next == NULL){ /* last answer */
       subg_ans_list_tail(sg_frame) = n;
@@ -763,7 +779,7 @@ void  reclaim_del_ret_list(VariantSF sg_frame) {
   while (x != NULL) {
     y = x;
     x = ALN_Next(x);
-    delete_branch(ALN_Answer(y), &subg_ans_root_ptr(sg_frame));
+/*      delete_branch(ALN_Answer(y), &subg_ans_root_ptr(sg_frame)); */
     SM_DeallocateStruct(smALN,y);
   }
 }

@@ -211,8 +211,12 @@ get_call(Call, SubgoalPtr, RetSkel) :- get_call(Call, SubgoalPtr, RetSkel).
  */
 
 get_calls(CallSkel, SubgoalPtr, RetSkel) :-
-	get_calls(CallSkel),
-	get_lastnode_cs_retskel(CallSkel, _Leaf, SubgoalPtr, RetSkel).
+	findall(p(CallSkel,SubgoalPtr,RetSkel),
+		( get_calls(CallSkel),
+		  get_lastnode_cs_retskel(CallSkel, _, SubgoalPtr, RetSkel)
+		),
+		List),
+	member(p(CallSkel,SubgoalPtr,RetSkel),List).
 
 
 /*
@@ -244,8 +248,16 @@ get_residual(CallSkel, DelayList) :-
 	).
 
 get_returns_and_dls(CallStr, RetSkel, DLs) :-
-	get_returns(CallStr, RetSkel, Leaf),
-	get_delay_lists(Leaf, DLs).
+	findall((CallStr,RetSkel,DLs),
+		(
+		    get_returns(CallStr,RetSkel),
+		    get_lastnode_cs_retskel(_,Leaf,_,_),
+		    get_delay_lists(Leaf,DLs)
+		),
+		L),
+	member((CallStr,RetSkel,DLs),L).
+%	get_returns(CallStr, RetSkel, Leaf),
+%	get_delay_lists(Leaf, DLs).
 
 /* inline builtin #144 */
 get_delay_lists(Leaf, DLs) :- get_delay_lists(Leaf, DLs).
@@ -261,8 +273,11 @@ get_delay_lists(Leaf, DLs) :- get_delay_lists(Leaf, DLs).
  */
 
 get_returns(CallStr, RetSkel, Rleaf) :-
-	get_returns(CallStr, RetSkel),
-	get_lastnode_cs_retskel(_, Rleaf, _, _).
+	findall(p(CallStr,RetSkel,Rleaf), (get_returns(CallStr,RetSkel),
+			       get_lastnode_cs_retskel(_,Rleaf,_,_)
+			   ),
+		List),
+	member(p(CallStr,RetSkel,Rleaf),List).
 
 /*----------------------------------------------------------------------*/
 /* delete_return(Cs,N) takes a call structure pointer in Cs (returned
@@ -296,8 +311,11 @@ trie_retract_all(X) :- retractall(X).
 abolish_table_predicate(_Term) :- '_$builtin'(ABOLISH_TABLE_PREDICATE).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :-
 	'_$builtin'(TRIE_DELETE_TERM).
+
 get_returns(_CallStr,_RetSkel) :- '_$builtin'(TRIE_GET_RETURN).
 get_calls(_CallSkel)  :- '_$builtin'(TRIE_UNIFY_CALL).
 force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(FORCE_TRUTH_VALUE).
 
 /* ---------------------- end of file tables.P ------------------------ */
+
+

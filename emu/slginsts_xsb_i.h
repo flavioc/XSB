@@ -379,7 +379,7 @@ XSB_Start_Instr(answer_return,_answer_return); {
     }
   }
 
-  if ( IsNonNULL(answer_set) ) {
+  if ( IsNonNULL(answer_set)) {
     int tmp;
     
     /* Restore Consumer's state
