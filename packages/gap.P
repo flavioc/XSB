@@ -27,7 +27,11 @@
 %% package_configuration(dir(PackageName), FullPackageDirname)
 %% some packages use it.
 
+:- export gap_meta/1.
 :- import bootstrap_package/2 from packaging.
+:- import meta/1 from gapmeta.
 
-:- bootstrap_package('gap',gap),
-   [gapmeta].
+gap_meta(Call):- meta(Call).
+
+:- bootstrap_package('gap',gap).
+
