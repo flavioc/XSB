@@ -222,11 +222,12 @@ copy_files::
 	  )
 
 run_xsb_src:
-	run_xsb $(src_scriptdir)/xsb$(config_tag) ; \
+	run_xsb.sh $(src_scriptdir)/xsb$(config_tag) | \
+	    	    	    	    	    tee -a Installation_summary ; \
 	  chmod 644  $(src_config_prefix)/configuration.O
 
 run_xsb_install:
-	@run_xsb $(install_scriptdir)/xsb$(config_tag) ; \
+	@run_xsb.sh $(install_scriptdir)/xsb$(config_tag) ; \
 	  chmod 644  $(install_config_prefix)/configuration.O
 
 # clean for this architecture only
