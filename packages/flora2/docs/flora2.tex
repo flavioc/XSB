@@ -3896,6 +3896,9 @@ semantics \cite{gelder-alternating-89,gelder-ross-schlipf-91}. Both types
 of negation are compiled into clauses that invoke the corresponding
 operators in XSB.
 
+\index{tnot}
+\index{\NAF}
+%%
 Negation as failure is specified using the operator \NAF.  Negation based
 on well-founded semantics is specified using the operator {\tt tnot}. The
 well-founded negation, {\tt tnot}, is applied to predicates that are tabled
@@ -3914,7 +3917,40 @@ primitive (see Section~\ref{sec-updates} for a discussion of this issue).
 For more information on the implementation of the negation operators in XSB
 we refer the reader to the XSB manual.
 
+Both \NAF and {\tt tnot} can be used as operators inside and outside \FLORA
+molecules. For instance,
+%%
+\begin{alltt}
+   ?- tnot p(a).
+   ?- \NAF p(a).
+   ?- tnot X[foo->bar, bar->>foo].
+   ?- X[tnot foo->bar, bar->>foo, \NAF #p(Y)].
+\end{alltt}
+%%
+are all legal. Note that \NAF applies only to non-tables constructs, such
+as non-tabled \FLORA predicates and procedural methods.
 
+We should warn against one pitfall however. Sometimes it is necessary to
+apply negation to several separate literals and write something like
+%%
+\begin{alltt}
+   ?- \NAF(p(a),q(X)).
+   ?- tnot(p(a),q(X)).
+   ?- tnot(X[foo->bar], X[bar->>foo]).
+\end{alltt}
+%%
+This is incorrect however, since in this context \FLORA (and Prolog as
+well) will interpret {\tt tnot} and \NAF as predicates with two arguments,
+which are undefined. The correct syntax is:
+%%
+\begin{alltt}
+   ?- \NAF((p(a),q(X))).
+   ?- tnot((p(a),q(X))).
+   ?- tnot((X[foo->bar], X[bar->>foo])).
+\end{alltt}
+%%
+{\it i.e.}, an additional pair of parentheses is needed to indicate that
+the sequence of literals form a single argument.
 
 
 \section{Debugging User Programs}\label{sec-debugging}
