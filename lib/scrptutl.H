@@ -38,9 +38,14 @@
 :- import name/2, see/1, get0/1, atom/1, arg/3, functor/3,
 	repeat/0, seeing/1
 	from standard.
+
+:- import open/3, close/1 from standard.
+
 :- import reverse/2 from basics.
 :- import obsolete/2 from obsolete.
 :- import datime/1 from standard.
 :- import xsb_configuration/2 from xsb_configuration.
 
-:- import spawn_process/5 from shell.
+:- import unix/1 from unix.
+
+% :- import spawn_process/5 from shell.
