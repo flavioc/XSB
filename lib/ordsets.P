@@ -55,6 +55,7 @@
 	ord_symdiff/3,		%  Set x Set -> Set
 	ord_union/3,		%  Set x Set -> Set
 	ord_union/2,		%  list(Set) -> Set
+	ord_add_element/3,	%  Set x Elem -> Set
 	ord_del_element/3.	%  Set x Elem -> Set
 
 :- import sort/2 from setof.
@@ -314,6 +315,21 @@ ord_union_3(N, R0, U, R) :-
 	ord_union_3(P, R0, A, R1),
 	ord_union_3(Q, R1, B, R),
 	ord_union(A, B, U).
+
+
+%   ord_add_element(+Set1, +Element -Set2)
+%   is true when Set2 is Set1 with Element inserted in it, preserving
+%   the order.
+
+ord_add_element([], Element, [Element]).
+ord_add_element([Head|Tail], Element, Set) :-
+	compare(Order, Head, Element),
+	ord_add_element(Order, Head, Tail, Element, Set).
+
+ord_add_element(<, Head, Tail, Element, [Head|Set]) :-
+	ord_add_element(Tail, Element, Set).
+ord_add_element(=, Head, Tail, _, [Head|Tail]).
+ord_add_element(>, Head, Tail, Element, [Element,Head|Tail]).
 
 
 %   ord_del_element(+Set1, +Element, ?Set2)
