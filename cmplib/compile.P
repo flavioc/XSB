@@ -87,6 +87,7 @@ compile(Modname, Basename, Options, ExportList) :-
 	),
 	!,
 	close_ti_file(TIFile),
+	retractall(current_compiled_module(_)),
 	tell(OldFile).
 
 
