@@ -29,7 +29,9 @@
 % Type checking.	
 % TLS: should be turned on and off...
 check_types(Context,Term):- 
-	(cdf_flags(check_types,Context) -> 
+	((cdf_flags(check_types,Context),
+               get_component_extensional(Term,Comp),
+	   Comp \== cdfpt)-> 
 	    check_types_no_checkflag(Context,Term)
 	  ; true).	
 

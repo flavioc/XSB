@@ -3,7 +3,7 @@ isa_ext(cid(c13,test),cid('CDF Classes',cdf)).
 isa_ext(cid(c1,test),cid(c2,test)).
 isa_ext(cid(c2,test),cid(c3,test)).
 
-isa_ext(cid(f(a),cdfpt),cid(11,test)).
+isa_ext(cid(f(a,X),cdfpt),cid(11,test)).
 isa_ext(cid(c11,test),cid(c12,test)).
 isa_ext(cid(c12,test),cid(c13,test)).
 

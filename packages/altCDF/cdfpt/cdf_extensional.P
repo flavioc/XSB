@@ -1,5 +1,9 @@
 
 isa_ext(cid(cdfpt,cdfpt),cid(componentClasses,cdf)).
+isa_ext(cid(compName(cid(cdfpt,cdfpt),cid('',cdfpt)),cdfpt),
+	cid(componentClasses,cdf)).
+isa_ext(cid(component(cid(cdfpt,cdfpt),cid('',cdfpt),cid(0,cdfpt)),cdfpt),
+	cid(componentClasses,cdf)).
 
 classHasAttr_ext(cid(cdfpt,cdfpt),crid(hasPath,cdfpt),cid('',cdfpt)).
 classHasAttr_ext(cid(compName(cid(cdfpt,cdfpt),cid('',cdfpt)),cdfpt),

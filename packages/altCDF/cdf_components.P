@@ -332,6 +332,7 @@ get_component_extensional(Term,Comp):-
 	comp_from_id(CompId,Comp).
 
 get_dependency_extensional(Term,Dep):- 
+%	writeln(dep(Term)),
 	component_table_ext(Term,CompArg,Deps),
 	(    arg(CompArg,Term,CompId),
 	     dep_from_id(CompId,Dep) 
@@ -346,6 +347,7 @@ dep_from_id(CompId,Comp):-  arg(2,CompId,Comp).
 dep_from_id(CompId,Comp):-  
 	arg(1,CompId,Nid),
 	(structure(Nid) -> 
+  	    arg(2,CompId,Src),Src \== cdfpt,
 	    Nid =.. [_|Arglist],
 	    member(NewNid,Arglist),
 	    dep_from_id(NewNid,Comp)
@@ -1127,6 +1129,7 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
 			 	crid(hasVersion,Src),_Int)),
         newExtTerm(component_create,classHasAttr_ext(cid(Src,Src),
 				    crid(hasPath,Src),cid(Pathin,cdfpt))),
+        newExtTerm(isa_ext(cid(Src,Src),cid(componentClasses,cdf))),
         slash(Slash),
         concat_atom([Pathin,Slash,Src],File),
         (file_exists(File) ->
@@ -1141,7 +1144,7 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
    and check the directory for the proper version to make the component.  */
 newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):- 
 	(classHasAttr(cid(compName(cid(Src,Src),Path),Src),
-				crid(hasVersion,Src),V) -> 
+ 				crid(hasVersion,Src),V) -> 
   	     true
 	  ; 
     	     newExtTerm(component_create,
@@ -1261,6 +1264,15 @@ use_canonical_path(classHasAttr_ext(cid(component(cid(N,N),cid(_,cdfpt),
 					      cid(V,cdfpt)),N),
 				crid(componentDepends,N),
 				Dependency)) :- !.
+use_canonical_path(isa_ext(cid(compName(SrcCid,cid(_,cdfpt)),Src),ParCid),
+	               CPath,
+		   isa_ext(cid(compName(SrcCid,cid(CPath,cdfpt)),Src),
+		                   ParCid)):- !.
+use_canonical_path(isa_ext(cid(component(SrcCid,cid(_,cdfpt),VCid),Src),
+	                              ParCid),
+	               CPath,
+		   isa_ext(cid(component(SrcCid,cid(CPath,cdfpt),VCid),Src),
+		                   ParCid)):- !.
 use_canonical_path(Term,_,Term).
 
 end_of_file.
