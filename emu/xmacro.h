@@ -23,24 +23,26 @@
 */
 
 
-/*----------------------------------------------------------------------*/
-/*  Table Information Structure.					*/
-/*----------------------------------------------------------------------*/
+/*===========================================================================*/
 
 /*
- * The way in which similar tabled calls are identified during Call
- * Check/Insert.
+ *                         Table Information Frame
+ *                         =======================
+ *
+ *  Table Information Frames are created for each tabled predicate,
+ *  allowing access to its calls and their associated answers.
  */
-typedef enum {
-    VARIANT_TM,  SUBSUMPTIVE_TM
-} TablingMethod;
+
+typedef enum Tabled_Computation_Method {
+  VARIANT_TCM, SUBSUMPTIVE_TCM
+} TabledCompMethod;
 
 typedef struct Table_Info_Frame *TIFptr;
 typedef struct Table_Info_Frame {
-    TIFptr next_tif;	  /* pointer to next table info frame */
-    BTNptr call_trie;	  /* pointer to the root of the call trie */
-    Psc  psc_ptr;	  /* pointer to the PSC record of the subgoal */
-    TablingMethod method;
+  TIFptr next_tif;	/* pointer to next table info frame */
+  BTNptr call_trie;	/* pointer to the root of the call trie */
+  Psc  psc_ptr;		/* pointer to the PSC record of the subgoal */
+  TabledCompMethod method;
 } TableInfoFrame;
 
 #define TIF_NextTIF(pTIF)	   ( (pTIF)->next_tif )
@@ -48,21 +50,22 @@ typedef struct Table_Info_Frame {
 #define TIF_PSC(pTIF)		   ( (pTIF)->psc_ptr )
 #define TIF_TablingMethod(pTIF)	   ( (pTIF)->method )
 
-#define IsVariantPredicate(pTIF)	( (pTIF)->method == VARIANT_TM )
-#define IsSubsumptivePredicate(pTIF)	( (pTIF)->method == SUBSUMPTIVE_TM )
+#define IsVariantPredicate(pTIF)	( (pTIF)->method == VARIANT_TCM )
+#define IsSubsumptivePredicate(pTIF)	( (pTIF)->method == SUBSUMPTIVE_TCM )
 
 #include "flags.h"
 
-#define New_TIF(pTIF,pPSC) {				\
-   pTIF = malloc(sizeof(TableInfoFrame));		\
-   TIF_NextTIF(pTIF) = NULL;				\
-   TIF_CallTrie(pTIF) = NULL;				\
-   TIF_PSC(pTIF) = pPSC;				\
-   TIF_TablingMethod(pTIF) = flags[TABLING_METHOD];	\
+#define New_TIF(pTIF,pPSC) {					     \
+   pTIF = malloc(sizeof(TableInfoFrame));			     \
+   if ( IsNULL(pTIF) )						     \
+     xsb_abort("Ran out of memory in allocation of TableInfoFrame"); \
+   TIF_NextTIF(pTIF) = NULL;					     \
+   TIF_CallTrie(pTIF) = NULL;					     \
+   TIF_PSC(pTIF) = pPSC;					     \
+   TIF_TablingMethod(pTIF) = flags[TABLING_METHOD];		     \
  }
 
-/*----------------------------------------------------------------------*/
-/*----------------------------------------------------------------------*/
+/*===========================================================================*/
 
 typedef struct ascc_edge *EPtr;
 typedef struct completion_stack_frame *ComplStackFrame;
@@ -234,7 +237,7 @@ struct subgoal_frame {
 #if (!defined(CHAT))
   CPtr asf_list_ptr;	/* Pointer to list of (CP) active subgoal frames */
 #endif
-  TIFptr tip_ptr;	/* Used only in remove_open_tries */
+  TIFptr tif_ptr;	/* Used only in remove_open_tries */
   CPtr compl_stack_ptr;	/* Pointer to subgoal's completion stack frame */
 #ifdef CHAT
   CPtr compl_suspens_ptr; /* pointer to CHAT area; type is chat_init_pheader */
@@ -248,7 +251,18 @@ struct subgoal_frame {
   ALNptr ans_list_tail; /* pointer to the tail of the answer list */
   CPtr compl_flag;      /* indicates whether subgoal is completed */
   PNDE nde_list;	/* pointer to a list of negative DEs */
-} ;
+  TimeStamp ts;		/* Producer: timestamp to be given to next new answer
+			   Consumer: TS to use in next answer retrieval */
+  SGFrame producer;     /* the subgoal frame from whose answer table answers
+			   are collected into the answer list */
+  SGFrame consumers;    /* Producer: list of subgoal frames which consume from
+			     its answer table
+			   Consumer: link in this chain */
+  bool reclaimed_structs;   /* whether tabling structures associated with an
+			       incomplete table have already been reclaimed;
+			       could be folded into a single word with
+			       compl_flag */
+};
 
 #define CALLSTRUCTSIZE	(sizeof(struct subgoal_frame)/sizeof(CPtr))
 
@@ -258,7 +272,7 @@ struct subgoal_frame {
 #if (!defined(CHAT))
 #define subg_asf_list_ptr(b)	((SGFrame)(b))->asf_list_ptr
 #endif
-#define subg_tip_ptr(b)		((SGFrame)(b))->tip_ptr
+#define subg_tif_ptr(b)		((SGFrame)(b))->tif_ptr
 #define subg_leaf_ptr(b)	((SGFrame)(b))->leaf_ptr
 /* use this for mark as completed == 0 */
 #define subg_compl_stack_ptr(b)	((SGFrame)(b))->compl_stack_ptr
@@ -268,48 +282,156 @@ struct subgoal_frame {
 #define subg_ans_list_tail(b)	((SGFrame)(b))->ans_list_tail
 #define subg_compl_flag(b)	((SGFrame)(b))->compl_flag
 #define subg_nde_list(b)	((SGFrame)(b))->nde_list
+#define subg_producer(b)	((SGFrame)(b))->producer
+#define subg_consumers(b)	((SGFrame)(b))->consumers
+#define subg_timestamp(b)	((SGFrame)(b))->ts
+#define subg_structs_are_reclaimed(b)	((SGFrame)(b))->reclaimed_structs
 
-extern SGFrame subg_structure_list;
-extern ALNptr empty_return();
+/* beginning of REAL answers in the answer list */
 #define subg_answers(subg) aln_next_aln(subg_ans_list_ptr(subg))
 
-/*
- * Creates a new subgoal frame, setting the first arg to point to it, and
- * inserts it into the global subgoal list.  The TIP and leaf ptr fields are
- * given useful values, while the completion stack frame pointer is set to
- * the next available (frame) location on the stack, but the space is not yet
- * allocated to one.
- * Changed to use calloc() so that remaining fields are initialized to 0/NULL
- * so, in some sense making this macro independent of the number of fields.
- */
+#define ConsumerIsProducerVariant(pSF)	( subg_producer(pSF) == pSF )
+#define ConsumerIsProperlySubsumed(pSF)	( subg_producer(pSF) != pSF )
 
-#define create_subgoal_frame(NewFrame,LeafPtr,TableInfo) {		 \
-   NewFrame = calloc(1,sizeof(struct subgoal_frame));			 \
-   if ( IsNULL(NewFrame) )						 \
-     xsb_exit("Out of Memoryn");					 \
-   else {								 \
-     subg_tip_ptr(NewFrame) = TableInfo;				 \
-     subg_leaf_ptr(NewFrame) = LeafPtr; 				 \
-     BTN_SetSF(LeafPtr,NewFrame);					 \
-     subg_compl_stack_ptr(NewFrame) = (CPtr)(openreg - COMPLFRAMESIZE);  \
-     subg_ans_list_ptr(NewFrame) = empty_return(); 			 \
-     if ( IsNonNULL(subg_structure_list) )				 \
-       subg_prev_subgoal(subg_structure_list) = NewFrame;		 \
-     subg_next_subgoal(NewFrame) = subg_structure_list;			 \
-     subg_structure_list = NewFrame;					 \
-   }									 \
+#define ProducerHasConsumers(pSF)	IsNonNULL(subg_consumers(pSF))
+
+/*
+ * Determines whether a producer subgoal has added answers to its set
+ * since the given consumer last collected relavant answers from this set.
+ */
+#define ConsumerCacheNeedsUpdating(ConsSF,ProdSF)		\
+   ( ( ConsSF != ProdSF ) &&					\
+     IsNonNULL(subg_ans_root_ptr(ProdSF)) &&			\
+     ( TSTN_TimeStamp((TSTNptr)subg_ans_root_ptr(ProdSF)) >	\
+       subg_timestamp(ConsSF) ) )
+
+extern ALNptr empty_return();
+
+
+/* Appending to the Answer List of a SF
+   ------------------------------------ */
+#define SF_AppendNewAnswerList(pSF,pAnsList) {	\
+						\
+   ALNptr pLast;				\
+						\
+   pLast = pAnsList;				\
+   while ( IsNonNULL(ALN_Next(pLast)) )		\
+     pLast = ALN_Next(pLast);			\
+   SF_AppendToAnswerList(pSF,pAnsList,pLast);	\
  }
 
-#define free_subgoal_frame(x){\
-   if (subg_prev_subgoal(x) == NULL) {\
-       subg_structure_list = subg_next_subgoal(x);\
-   } else {\
-       subg_next_subgoal(subg_prev_subgoal(x)) = subg_next_subgoal(x);\
-   }\
-   if (subg_next_subgoal(x) != NULL) {\
-       subg_prev_subgoal(subg_next_subgoal(x)) = subg_prev_subgoal(x);\
-   }\
-   free(x);\
+#define SF_AppendNewAnswer(pSF,pAns)	SF_AppendToAnswerList(pSF,pAns,pAns)
+
+#define SF_AppendToAnswerList(pSF,pHead,pTail) {			\
+   if ( has_answers(pSF) )						\
+     /*
+      *  Insert new answer at the end of the answer list.
+      */								\
+     ALN_Next(subg_ans_list_tail(pSF)) = pHead; 			\
+   else									\
+     /*
+      * The dummy answer list node is the only node currently in the list.
+      * It's pointed to by the head ptr, but the tail ptr is NULL.
+      */								\
+     ALN_Next(subg_ans_list_ptr(pSF)) = pHead;				\
+   subg_ans_list_tail(pSF) = pTail;					\
+ }
+
+
+/* Global Structure Management
+   --------------------------- */
+#define SUBGOAL_FRAMES_PER_BLOCK     K
+
+extern struct Structure_Manager smSF;
+
+
+/* Subgoal Frames (De)Allocation
+   ----------------------------- */
+/*
+ * Allocated Subgoal Frames are maintained on a list to facilitate
+ * deallocation of specific calls and answer sets.
+ */
+#define SF_AddNewToAllocList(SF)	\
+   SM_AddToAllocList_DL(smSF,SF,subg_prev_subgoal,subg_next_subgoal)
+
+#define SF_RemoveFromAllocList(SF)	\
+   SM_RemoveFromAllocList_DL(smSF,SF,subg_prev_subgoal,subg_next_subgoal)
+
+/*
+ * Allocates and initializes a subgoal frame for a producer subgoal.  It
+ * is inserted at the head of the global subgoal list, located in the
+ * structure manager, smSF.  The TIP field is initialized, fields of the
+ * call trie leaf and this subgoal are set to point to one another, while
+ * the completion stack frame pointer is set to the next available
+ * location (frame) on the stack (but the space is not yet allocated from
+ * the stack).  Also, an answer-list node is allocated for pointing to a
+ * dummy answer node and inserted into the answer list.  Note that answer
+ * sets (answer tries, roots) are lazily created -- not until an answer
+ * is generated.  Therefore this field may potentially be NULL, as it is
+ * initialized here.  memset() is used so that the remaining fields are
+ * initialized to 0/NULL so, in some sense making this macro independent
+ * of the number of fields.
+ */
+
+#define NewProducerSF(SF,Leaf,TableInfo) {			\
+								\
+   SGFrame pNewSF;						\
+								\
+   SM_AllocateStruct(smSF,pNewSF);				\
+   pNewSF = memset(pNewSF,0,sizeof(struct subgoal_frame));	\
+   subg_tif_ptr(pNewSF) = TableInfo;				\
+   subg_leaf_ptr(pNewSF) = Leaf;				\
+   CallTrieLeaf_SetSF(Leaf,pNewSF);				\
+   subg_ans_list_ptr(pNewSF) = empty_return();			\
+   subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;	\
+   subg_producer(pNewSF) = pNewSF;				\
+   subg_timestamp(pNewSF) = PRODUCER_SF_INITIAL_TS;		\
+   SF_AddNewToAllocList(pNewSF);				\
+   SF = pNewSF;							\
+}
+
+
+#define FreeProducerSF(SF)			\
+   SF_RemoveFromAllocList(SF);			\
+   SM_DeallocateStruct(smSF,SF)
+
+
+/*
+ *  Allocates and initializes a subgoal frame for a consuming subgoal: a
+ *  properly subsumed call consuming from an incomplete producer.
+ *  Consuming subgoals are NOT inserted into the global subgoal list but
+ *  instead are maintained by the producer in a private linked list.
+ *  Many fields of a consumer SF are left blank since it won't be used in
+ *  the same way as those for producers.  Its main purpose is to maintain
+ *  the answer list and the call form.  Just as for the producer, an
+ *  answer-list node is allocated for pointing to a dummy answer node and
+ *  inserted into the answer list.
+ *
+ *  Finally, some housekeeping is needed to support lazy creation of the
+ *  auxiliary structures in the producer's answer TST.  If this is the
+ *  first consumer for this producer, then create these auxiliary
+ *  structures.
+ */
+
+void tstCreateStructures(TSTNptr);
+
+#define NewConsumerSF(SF,Leaf,TableInfo,Producer) {		\
+					      			\
+   SGFrame pNewSF;				    		\
+						    		\
+   SM_AllocateStruct(smSF,pNewSF);		       		\
+   pNewSF = memset(pNewSF,0,sizeof(struct subgoal_frame));	\
+   subg_tif_ptr(pNewSF) = TableInfo;				\
+   subg_leaf_ptr(pNewSF) = Leaf;				\
+   CallTrieLeaf_SetSF(Leaf,pNewSF);		  		\
+   subg_ans_list_ptr(pNewSF) = empty_return();			\
+   subg_producer(pNewSF) = Producer;				\
+   if ( ! ProducerHasConsumers(Producer) )	 		\
+     tstCreateStructures((TSTNptr)subg_ans_root_ptr(Producer));	\
+   subg_consumers(pNewSF) = subg_consumers(Producer);		\
+   subg_consumers(Producer) = pNewSF;				\
+   subg_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
+   SF = pNewSF;							\
 }
 
 /*----------------------------------------------------------------------*/
@@ -330,9 +452,10 @@ extern ALNptr empty_return();
 	(next_tab_level(CSF_PTR) < compl_level(CSF_PTR))
 
 /*----------------------------------------------------------------------*/
+/* Codes for completed subgoals (assigned to subg_answers)              */
 /*----------------------------------------------------------------------*/
 
-#define NO_ANSWERS	NULL
+#define NO_ANSWERS	(ALNptr)0
 #define UNCOND_ANSWERS	(ALNptr)1
 #define COND_ANSWERS	(ALNptr)2
 
@@ -340,18 +463,25 @@ extern ALNptr empty_return();
 /* The following 2 macros are to be used for incomplete subgoals.	*/
 /*----------------------------------------------------------------------*/
 
-#define has_answers(SUBG_PTR)	\
-	(subg_answers(SUBG_PTR) != NO_ANSWERS)
-#define has_no_answers(SUBG_PTR)	\
-	(subg_answers(SUBG_PTR) == NO_ANSWERS)
+#define has_answers(SUBG_PTR)	    IsNonNULL(subg_answers(SUBG_PTR))
+#define has_no_answers(SUBG_PTR)    IsNULL(subg_answers(SUBG_PTR))
 
 /*----------------------------------------------------------------------*/
 /* The following 5 macros should be used only for completed subgoals.	*/
 /*----------------------------------------------------------------------*/
 
+/*
+ * These defs depend on when the root of an answer trie is created.
+ * Currently, this is when the first answer is added to the set.  They
+ * are also dependent upon representation of the truth of ground goals.
+ * Currently, true subgoals have an ESCAPE node placed below the root,
+ * while false goals have no root nor leaves (since no answer was ever
+ * inserted, there was no opportunity to create a root).
+ */
 #define has_answer_code(SUBG_PTR)				\
 	( IsNonNULL(subg_ans_root_ptr(SUBG_PTR)) &&		\
 	  IsNonNULL(BTN_Child(subg_ans_root_ptr(SUBG_PTR))) )
+
 #define subgoal_fails(SUBG_PTR)			\
 	( ! has_answer_code(SUBG_PTR) )
 
@@ -372,18 +502,18 @@ extern ALNptr empty_return();
         ((Integer) subg_compl_flag(SUBG_PTR) < 0)
 
 #ifdef CHAT
-#define mark_as_completed(SUBG_PTR) {\
-          subg_compl_flag(SUBG_PTR) = (CPtr) -1;  \
-          /* the following is used to maintain invariants; */    \
-          /* ideally the completion stack should be compacted */ \
-          /* and completed subgoals should be removed instead */ \
-          compl_pdreg(subg_compl_stack_ptr(SUBG_PTR)) = NULL; \
-          reclaim_del_ret_list(SUBG_PTR); \
+#define mark_as_completed(SUBG_PTR) {					\
+          subg_compl_flag(SUBG_PTR) = (CPtr) -1;			\
+          /* the following is used to maintain invariants; */		\
+          /* ideally the completion stack should be compacted */	\
+          /* and completed subgoals should be removed instead */	\
+          compl_pdreg(subg_compl_stack_ptr(SUBG_PTR)) = NULL;		\
+          reclaim_del_ret_list(SUBG_PTR);				\
         } 
 #else
-#define mark_as_completed(SUBG_PTR) {\
-          subg_compl_flag(SUBG_PTR) = (CPtr) -1;  \
-          reclaim_del_ret_list(SUBG_PTR); \
+#define mark_as_completed(SUBG_PTR) {			\
+          subg_compl_flag(SUBG_PTR) = (CPtr) -1;	\
+          reclaim_del_ret_list(SUBG_PTR);		\
         } 
 #endif
 
@@ -401,17 +531,24 @@ extern ALNptr empty_return();
 /* The following macro might be called more than once for some subgoal. */
 /* So, please make sure that functions/macros that it calls are robust  */
 /* under repeated uses.                                 - Kostis.       */
+/* A new Subgoal Frame flag prevents multiple calls.	- Ernie		*/
 /*----------------------------------------------------------------------*/
 
 #ifdef CHAT
-#define reclaim_subg_space(SUBG_PTR) {\
-	  chat_free_cons_chat_areas(SUBG_PTR); \
-	  reclaim_ans_list_nodes(SUBG_PTR); \
-        }
+#define reclaim_incomplete_table_structs(SUBG_PTR) {	\
+   if ( ! subg_structs_are_reclaimed(SUBG_PTR) ) {	\
+     chat_free_cons_chat_areas(SUBG_PTR);		\
+     table_complete_entry(SUBG_PTR);			\
+     subg_structs_are_reclaimed(SUBG_PTR) = TRUE;	\
+   }							\
+ }
 #else
-#define reclaim_subg_space(SUBG_PTR) {\
-	  reclaim_ans_list_nodes(SUBG_PTR); \
-	}
+#define reclaim_incomplete_table_structs(SUBG_PTR) {	\
+   if ( ! subg_structs_are_reclaimed(SUBG_PTR) ) {	\
+     table_complete_entry(SUBG_PTR);			\
+     subg_structs_are_reclaimed(SUBG_PTR) = TRUE;	\
+   }							\
+ }
 #endif
 
 /*----------------------------------------------------------------------*/

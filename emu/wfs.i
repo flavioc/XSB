@@ -334,7 +334,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	curr_subg = compl_subgoal_ptr(ComplStkFrame);
 	if (compl_visited(ComplStkFrame) != DELAYED) {
 	  mark_as_completed(curr_subg);
-	  reclaim_subg_space(curr_subg);
+	  reclaim_incomplete_table_structs(curr_subg);
 	  if (neg_simplif_possible(curr_subg)) {
 	    simplify_neg_fails(curr_subg);
 	  }
@@ -417,7 +417,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	subg_compl_stack_ptr(curr_subg) = CopyFrame;
 	compact_completion_frame(CopyFrame, ComplStkFrame, curr_subg);
       } else { /* this may be done 2x! */
-	reclaim_subg_space(curr_subg);
+	reclaim_incomplete_table_structs(curr_subg);
       }
       ComplStkFrame = next_compl_frame(ComplStkFrame);
     }
@@ -450,7 +450,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     ComplStkFrame = leader_compl_frame;
     while (ComplStkFrame >= openreg) {
       curr_subg = compl_subgoal_ptr(ComplStkFrame);
-      reclaim_subg_space(curr_subg);
+      reclaim_incomplete_table_structs(curr_subg);
       ComplStkFrame = next_compl_frame(ComplStkFrame);
     }
     /* point openreg to first empty space */
