@@ -17,7 +17,24 @@ popular {\tt libxml2} library, which supports XPath and XML parsing, and is
 used in Mozilla based browsers. At present, the XML parsing capabilities of
 {\tt libxml2} are not utilized explicitly in XSB, but such support might be
 provided in the future. The {\tt sgml} package does not rely on {\tt
-  libxml2}.   
+  libxml2}.
+
+\paragraph{Installation and configuration.}
+The {\tt sgml} package does not require any installation steps under
+Unix-based systems or under Cygwin. Under native Windows, if you downloaded XSB
+from CVS, you need to compile the package as follows:
+%%
+\begin{verbatim}
+    cd XSB\packages\sgml\cc
+    nmake /f NMakefile.mak
+\end{verbatim}
+%%
+You need MS Visual Studio for that. If you downloaded a prebuilt version
+of XSB, then the {\tt sgml}  package should have already been compiled for you
+and no installation is required.
+
+The details of the {\tt xpath} package and the corresponding configuration
+instructions appear in Section~\ref{sec-xpath}.
 
 \section{Overview of the SGML Parser}
 
@@ -94,6 +111,7 @@ will parse it and bind {\tt Term} to the following Prolog term:
 
 
 \index{{\tt CDATA}}
+\noindent
 The XML document is converted to a list of Prolog terms of the form {\tt
   element(\emph{Name},\emph{Attributes},\emph{Content})}.  Each term
 corresponds to an XML element. \emph{Name} represents the name of the element.
@@ -784,23 +802,24 @@ In particular, XInclude is not implemented.
 \end{longtable}
 
 
-\section{XPath support}
+\section{XPath support}\label{sec-xpath}
 
-XPath is a query language designed for addressing parts of an XML document.
-XSB's {\tt xpath} package is designed to provide support for such queries.
+XPath is a query language for addressing parts of an XML document.
+In XSB, this support is provided by the {\tt xpath} package.
 To use this package the {\tt libxml2} XML parsing library must be installed
-on the machine. It comes with most Linux distributions or one can download
+on the machine. It comes with most Linux distributions, since it is part of
+the Gnome desktop, or one can download
 it from \emph{http://xmlsoft.org/}. It is available for Linux, Solaris,
 Windows, and MacOS. Note that both the library itself and the {\tt
-  .h} files of that library must be installed. In some Linux distributions
-(e.g., Mandrake), the {\tt .h} files might reside in a separate package
+  .h} files of that library must be installed. In some Linux distributions,
+the {\tt .h} files might reside in a separate package
 from the package that contains the actual library. For instance, the
 library ({\tt libxml2.so})  might be in the package called {\tt libxml2}
 (which is usually installed by default),
 while the {\tt .h} files hight be in the package {\tt libxml2-devel}
 (which is usually \emph{not} in a default installation).
 
-On Unix-based systems (and MacOS), the package can be configured using the
+On Unix-based systems (and MacOS), the package needs to be configured using the
 {\tt configure} script found in the XSB's {\tt packages/xpath} directory.
 The {\tt configure} script has several options such as {\tt --exec-prefix},
 {\tt --prefix}, etc, which may need to be specified if the package {\tt
@@ -809,7 +828,8 @@ The {\tt configure} script has several options such as {\tt --exec-prefix},
 {\tt lib/libxml2.so} file is located and {\tt --prefix=}\emph{include-dir} 
 where the {\tt include/libxml2} directory is 
 found. The default {\tt exec-prefix} is {\tt /usr/lib} and {\tt prefix} is
-{\tt /usr}. If the defaults are fine, then one can configure the package using
+{\tt /usr}. If the defaults are fine (they would be, if the Gnome desktop
+is installed on your machine), then one can configure the package using
 %%
 \begin{verbatim}
   ./configure 
@@ -822,29 +842,27 @@ Otherwise, use
 \end{verbatim}
 %%
 if, for example, {\tt libxml2.so} is in {\tt /usr/local/lib/libxml2.so} and
-the include files are in {\tt /usr/share/include/libxml2}. 
+the included {\tt .h}  files are in {\tt /usr/share/include/libxml2}. 
 
-On Windows (but not for Cygwin), the libxml2 library is already included.
-To configure the package one should do the following:
+On Windows and under Cygwin, the {\tt libxml2} library is already included
+in the XSB distribution and does not need to be downloaded. If you are
+using a prebuilt XSB distribution for Windows, then you do not need to do
+anything---the package has already been built for you.
+
+For Cygwin, you only need to run the {\tt ./configure} script without any
+options. This needs to be done regardless of whether you downloaded XSB
+from CVS or a released prebuilt version. 
+
+If you downloaded XSB from CVS and want to use it under native Windows (not
+Cygwin), then you would need to compile the XPath package, and you
+need Microsoft's Visual Studio.  To compile the package one should do the
+following:
 %%
-\begin{enumerate}
-\item  Copy the files from the  directory
-  {\tt XSB$\backslash$packages$\backslash$xpath$\backslash$cc$\backslash$bin}
-  (where {\tt XSB} is the directory where XSB has been installed) into the
-  directory
-  {\tt XSB$\backslash$config$\backslash$x86-pc-windows$\backslash$bin}.
-\item Change to
-  {\tt packages$\backslash$xpath$\backslash$cc} and run the following command:
-  %%
 \begin{verbatim}
+      cd packages\xpath\cc
       nmake /f NMakefile.mak  
 \end{verbatim}
-  %%
-\end{enumerate}
 %%
-For the last step, you need the Microsoft's Nmake program, which can be
-downloaded from {\tt
-  http://download.microsoft.com/download/vc15/Patch/1.52/W95/EN-US/Nmake15.exe}.
 
 
 The following section assumes that the reader is familiar with the syntax
@@ -861,7 +879,7 @@ The program needs to include the following directive:
 
 %%
 \begin{verbatim}
-   :- import parse\_xpath/4 from xpath. 
+   :- import parse_xpath/4 from xpath. 
 \end{verbatim}
 %%
 
@@ -908,3 +926,8 @@ prefix has been defined as {\tt 'x=http://www.w3.org/1999/xhtml'}.
 \end{description}
 
 
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual2"
+%%% End: 

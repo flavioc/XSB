@@ -2080,10 +2080,10 @@ promotion can be done using the following predicate:
     for regular file I/O. 
 \end{description}
 %%
-Once {\tt IOport} is obtained, all I/O primitives described in
-Section~\ref{sec-low-level-io} can be used. This is, perhaps, the easiest
-and the most convenient way to use sockets in XSB. (This feature has not
-been implemented for Windows.)
+Once {\tt IOport} is obtained, all normal I/O primitives can be used by
+specifying the {\tt IOport} as their first argument. This is, perhaps, the
+easiest and the most convenient way to use sockets in XSB. (This feature
+has not been implemented for Windows.)
 
 \noindent
 Here is an example of the use of this feature:
@@ -2703,4 +2703,5 @@ unordered set routines, such as {\tt member/2}, {\tt length/2}, or
 {\tt select/3} can be used unchanged.
 
 
+%%% TeX-master: "manual2"
 %%% Local Variables: %%% mode: latex %%% TeX-master: "manual2" %%% End:
