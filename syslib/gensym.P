@@ -44,9 +44,13 @@ gennum(N) :- conget(gennum_val, O), N is O + 1, conset(gennum_val, N).
 
 /*----gensym------------------------------------------------------------*/
 
-gensym(R, C) :-
-	gennum(N), atom_codes(R, N1), name(N, N2),
-	append(N1, N2, N3), atom_codes(C, N3).
+gensym(Root, Sym) :-
+	(atom(Root),var(Sym)
+	->  gennum(N),
+	    number_codes(N,NLst), atom_codes(NAtm, NLst),
+	    str_cat(Root, NAtm, Sym)
+	;   abort('Wrong type argument in gensym/2')
+	).
 
 /*----copyterm----------------------------------------------------------*/
 /* Get a copy of the Term, with a new set of variables.			*/
