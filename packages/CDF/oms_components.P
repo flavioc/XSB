@@ -470,11 +470,11 @@ get_intensional_rule(Head,Body1):-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% :-
 :- comment(load_component/3,
-"@tt{load_component(Path,Name,Parameter_list)} loads the
-component @tt{Name}, from path @tt{Path} and recursively, all other
-components upon which the component depends.  If a version conflict is
-detected between a component to be loaded and one already in the OMS
-state or about to be loaded, @tt{loadmerge_component/2} aborts without
+"@tt{load_component(Name,Path,Parameter_list)} loads the component
+@tt{Name}, from path @tt{Path} and recursively, all other components
+upon which the component depends.  If a version conflict is detected
+between a component tag to be loaded and one already in the OMS state
+or about to be loaded, @tt{loadmerge_component/2} aborts without
 changing OMS extensional rules in internal form, or intensional rules.
 
 The order of loading is as follows.  First, all extensional facts are
@@ -622,7 +622,7 @@ check_conflicting_version(Name,Path,V):-
 	(conflicting_version(Name,Path,V,V1) -> 
 	    oms_error(component_load,['Version ',V,' of ',Name,
 			' cannot be loaded, as version ',V1,
-			' is alreaty loaded '])
+			' is halreaty loaded '])
 	  ; true).
 
 %---------------
