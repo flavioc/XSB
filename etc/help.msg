@@ -42,7 +42,8 @@ Usage:	xsb [flags] [-l] [-i]
           -o N : allocate N KB for the SLG completion stack
           -u N : allocate N KB for the SLG unification stack
             -r : turn off automatic stack expansion
-    -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
+    -g gc_type : choose the garbage collection ("none", "sliding",
+						"indirection" or "copying")
             -s : maintain detailed statistical information
 	    -S : set default tabling method to subsumption-based
             -T : print a trace of each called predicate
