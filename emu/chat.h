@@ -102,6 +102,9 @@ struct chat_root {
 
 /*----------------------------------------------------------------------*/
 
+extern unsigned long chat_now_used(void);
+extern unsigned long chat_max_alloc(void);
+
 extern void abolish_cr_space(void);
 extern void reclaim_cr_space(TChoice);
 extern void print_chat_statistics(void);
@@ -117,18 +120,12 @@ extern chat_init_pheader save_a_chat_compl_susp(int,CPtr,SGFrame,CPtr,byte *);
 
 extern void chat_set_chained(CPtr);
 extern void chat_set_unchained(CPtr);
-extern int chat_is_chained(CPtr);
+extern int  chat_is_chained(CPtr);
 
 #ifdef LOCAL_EVAL
 extern chat_init_pheader save_a_consumer_for_generator(SGFrame);
 #endif
 
 extern chat_init_pheader chat_link_headers;
-
-/* the following are for debugging purposes only and will be taken out */
-
-#ifdef Chat_DEBUG
-extern int chat_check_memory(chat_pheader);
-#endif
 
 /*------------------------- end of file chat.h --------------------------*/

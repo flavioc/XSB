@@ -45,14 +45,14 @@
 #include "realloc.h"
 #include "inst.h"
 
-static int chat_total_malloced = 0;
-static int chat_inuse = 0;
-static int chat_malloc_high_mark = 0;
-static int chat_number_saved_consumers = 0;
-static int chat_number_incremental_saves = 0;
-static int chat_area_sharing = 0;
-static int chat_nr_of_restores = 0;
-static int chat_restored_memory = 0;
+static unsigned long chat_total_malloced = 0;
+static unsigned long chat_inuse = 0;
+static unsigned long chat_malloc_high_mark = 0;
+static unsigned long chat_number_saved_consumers = 0;
+static unsigned long chat_number_incremental_saves = 0;
+static unsigned long chat_area_sharing = 0;
+static unsigned long chat_nr_of_restores = 0;
+static unsigned long chat_restored_memory = 0;
 
 chat_init_pheader chat_link_headers = 0;
 
@@ -952,6 +952,16 @@ chat_init_pheader save_a_chat_compl_susp(int nrarguments, CPtr reg_base,
 /* routines for memory statistics about CHAT areas                      */
 /*----------------------------------------------------------------------*/
 
+unsigned long chat_now_used(void)
+{
+  return chat_inuse;
+}
+
+unsigned long chat_max_alloc(void)
+{
+  return chat_malloc_high_mark;
+}
+
 void reset_chat_statistics(void)
 {
     chat_total_malloced = chat_malloc_high_mark = chat_inuse = 0;
@@ -961,16 +971,15 @@ void reset_chat_statistics(void)
 
 void print_chat_statistics(void)
 {
-  printf("  total size CHAT areas: %d b; high water mark: %d b; not freed: %d b\n",
+  printf("  total size CHAT areas: %ld b; high water mark: %ld b; not freed: %ld b\n",
 	  chat_total_malloced,chat_malloc_high_mark,chat_inuse);
-  printf("  suspensions saved: %d; increments saved: %d; shared increments: %d\n",
+  printf("  suspensions saved: %ld; increments saved: %ld; shared increments: %ld\n",
 	  chat_number_saved_consumers,
 	  chat_number_incremental_saves,
 	  chat_area_sharing);
-  printf("  number of restored suspensions: %d; total restored memory: %d\n",
+  printf("  number of restored suspensions: %ld; total restored memory: %ld\n",
 	 chat_nr_of_restores,chat_restored_memory);
 }
-
 
 /*----------------------------------------------------------------------*/
 /* some gc related stuff                                                */
