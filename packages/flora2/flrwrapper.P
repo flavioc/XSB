@@ -374,6 +374,7 @@ flora_is_flogic_wrapper(WrapPrefix,Base) :-
 	; WrapPrefix=FLBODYPREFIX
 	; WrapPrefix=FLFACTPREFIX
 	; WrapPrefix=FLTRAILERPREFIX
+	; WrapPrefix=FLDEBUGPREFIX
 	),
 	!,
 	flora_is_flogic_base(Base).

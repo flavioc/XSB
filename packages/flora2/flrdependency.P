@@ -436,6 +436,10 @@ parse_rule(Head,Body) :-
 	build_struct(Body,VarList,BodyCode,BCI),
 	assert_rule((HeadCode,HCI),BodyCode,BCI,anu(_,_,_)).
 
+assert_rule(_H,BodyCode,_BI,_) :-
+	var(BodyCode),
+	!.
+
 assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,N,U)) :-
 	(BodyCode=','(Body1,Body2); BodyCode=';'(Body1,Body2)),
 	(BCI=','(BCI1,BCI2); BCI=';'(BCI1,BCI2)),
@@ -487,10 +491,6 @@ assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,N,U)) :-
 	!,
 	BCI = flsysdbupdate(NewBCI,_),
 	assert_rule(HeadCode,NewBody,NewBCI,anu(A,N,U)).
-
-assert_rule(_H,BodyCode,_BI,_) :-
-	var(BodyCode),
-	!.
 
 assert_rule(HeadCode,BodyCode,BCwithIndex,anu(A,N,U)) :-
 	assert(rule(HeadCode,(BodyCode,BCwithIndex),anu(A,N,U))).
@@ -914,8 +914,8 @@ aggregate_warnings([((T1,IT1),(T2,IT2),_,_)|T],Type) :-
 	to_string(T2,IT2,Str2),
 	conget(min_ind,BMinInd),
 
-        fmt_write_string(WarnMsg,"Rule head which begins with %s depends on %s %s",
-			args(Str1,Type,Str2)),
+        fmt_write_string(WarnMsg,"Tabled literal in the head of rule that starts with %s depends on %s %s",
+			 args(Str1,Type,Str2)),
 
 	( warning_seen(HMinInd,HInd2,BMinInd,_) ->
 	    ( (HInd2<HNMinInd;HInd2=HNMinInd) ->
@@ -956,11 +956,11 @@ retrieve_program_tabled([H|T]) :-
  to_string(Term,(IT,Index),Str) :-
 	rebuild_text(Term,(IT,Index),Text),
 	( (Index==NO_INDEX) ->
-	    fmt_write_string(Str,"'%s'",args(Text))
+	    fmt_write_string(Str,"`%s'",args(Text))
 	;
  	    flora_nth_token(Index,Token),
 	    flora_token_text(Token,_T,BL,BC,_EL,_EC),
-	    fmt_write_string(Str,"'%s' near line(%d)/char(%d)",
+	    fmt_write_string(Str,"`%s' near line(%d)/char(%d)",
 			     args(Text,BL,BC))
 	).
  	

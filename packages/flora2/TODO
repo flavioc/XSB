@@ -375,3 +375,6 @@ DONE 23.  Implement a richer anonymous oid syntax.
      When it is done with the rule, it should check if there are facts of
      the form ruleoid(_,1) and issue an error if there are.  The ruleoid/2
      relation is reset by the compiler at the beginning of each new rule.
+
+!24. Make @prolog() have scope like any other @module, including overriding
+    by declarations in the subscope, etc.

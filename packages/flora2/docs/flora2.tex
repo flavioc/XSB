@@ -3676,7 +3676,8 @@ future release.
 
 \subsection{Updates and Tabling}
 
-
+\index{updates!and tabling}
+%%
 We have earlier remarked in Section~\ref{sec-proc-methods} that tabling and
 database updates do not mix well.  The problem is that the results from
 previous queries are stored in XSB tables, and database updates do not
@@ -3731,14 +3732,21 @@ One other temporal solution could be to design your program in such a way
 that tabled predicates and F-molecules will not depend on the facts that
 are dynamically inserted or deleted.
 
-Another, related, issue is that a tabled predicate might have an update in
-its body. In this case, the update will be executed the first time the
-predicate is evaluated. Subsequent calls will return the predicate truth
-value from the tables, without invoking the predicate definition.
-Such a dependency is most likely a mistake, which is caught by the
-compiler.
+A related issue is that a tabled predicate (or an F-logic molecule)
+might occur in the head of a rule that has an update in its body, or it may
+be transitively dependent on such an update. In this case, the update will
+be executed the first time the predicate is evaluated. Subsequent calls
+will return the predicate truth value from the tables, without invoking the
+predicate definition.  Moreover, if the update statement is non-logical
+({\it i.e.}, non-backtrackable), then it is hard to predict how many times
+it will be executed (due to backtracking) before it will start being
+ignored due to tabling.
 
-{\bf Unimplemented}: This compiler check has not been implemented yet.
+If \FLORA compiler detects that a tabled literal depends on an update
+statement, a warning is issued, because such a dependency is most likely a
+mistake. This warning is issued also for procedural methods ({\it i.e.},
+Boolean methods of the form {\tt \#foo(...)}) when a tabled literal depends
+on them.
 
 \subsection{Updates and Meta-programming}
 
@@ -3924,8 +3932,8 @@ checks, as described below.
 predicates at run time. This feature can be of great help because a trivial
 typo can cause a method/predicate call to fail, sending the programmer on a
 wild goose chase after a hard-to-find bug. It should be noted, however,
-that enabling these checks can slow the runtime by a factor of 2 or 3, so we
-recommend this to be done during debugging only.
+that enabling these checks can slow the runtime by up to 2 times (typically
+about 50\% though), so we recommend this to be done during debugging only.
 
 \index{check\_undefined/1}
 \index{check\_undefined/2}
