@@ -177,17 +177,18 @@ maintained through @pred{classHasAttr/3} facts.
 
 @begin{itemize} 
 
-@item The path of component @tt{C} is kept via 
-@begin{verbatim}
-classHasAttr(cid(N,N),crid(hasPath,N),cid(Path,cdfpt))
-@end{verbatim}
-
 @item The version of component @tt{C} is kept via 
+
+@begin{verbatim}
+classHasAttr(cid(N,N),crid(hasVersion,N),cid(V,cdfpt))
+@end{verbatim}
+when the component is stored and
 
 @begin{verbatim}
 classHasAttr(cid(compName(cid(N,N),cid(Path,cdfpt)),N),
                 crid(hasVersion,N),cid(V,cdfpt)
 @end{verbatim}
+when the component is loaded in memory. 
 
 @item Dependency information of @tt{C} is maintained via 
 @begin{verbatim}
