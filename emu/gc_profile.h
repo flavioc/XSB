@@ -232,8 +232,8 @@ inline static void inspect_chain(CPtr cell_ptr)
   tag = cell_tag(*cell_ptr);
 
   if (count_chains) {
-    if ((tag == XSB_REF || tag == XSB_REF1) && 
-	points_into_heap((CPtr)*cell_ptr)) { 
+    if ((tag == XSB_REF || tag == XSB_REF1) &&
+	points_into_heap((CPtr)*cell_ptr)) {
       int temp=0;
       CPtr ptr = (CPtr) *cell_ptr;
       if (points_into_ls(cell_ptr)) {
@@ -241,7 +241,8 @@ inline static void inspect_chain(CPtr cell_ptr)
 	ptr = (CPtr) follow(ptr);
 	chain_from_ls++;
       }
-      while (isref(ptr) && ptr != (CPtr) follow(ptr)) {
+      while (isref(ptr) && points_into_heap(ptr) && 
+	     ptr != (CPtr) follow(ptr)) {
 	temp++;
 	ptr = (CPtr) follow(ptr);
       }

@@ -192,7 +192,7 @@ static int num_gc = 0 ;
 #ifdef DEBUG
 static int print_at = 0 ; /* at the print_at-th gc, the stacks are printed */
 static int print_after = 0 ; /* if non zero, print all after this numgc */
-static int print_anyway = 1 ;
+static int print_anyway = 0 ;
 
 #define print_on_gc \
         ((print_at == num_gc) \
