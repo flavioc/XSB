@@ -638,7 +638,7 @@ static void release_all_dls(ASI asi)
     de = dl_de_list(dl);
     while (de) {
       tmp_de = de_next(de);
-      if (de_ans_subst(de) == NULL) { /* is NED */
+      if (de_ans_subst(de) == NULL) { /* is NDE */
 	remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
       }
       else {
