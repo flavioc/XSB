@@ -147,8 +147,8 @@ bagReduce1(Templ,Call,Res,Op,Id) :-
 	excess_vars(Call,Templ,[],VarList),
 	copy_term(p(Call,VarList,Templ,Res,Skel),
 		  p(OCall,VarList,OTempl,ORes,Oskel)),
-	(atom(OP)
-	 ->	Test =.. [OP,Var1,OTempl,Res]
+	(atom(Op)
+	 ->	Test =.. [Op,Var1,OTempl,Res]
 	 ; Op = OpF/3
 	 ->	Test =.. [OpF,Var1,OTempl,Res]
 	 ; 	copy_term(Op,Test),
