@@ -184,7 +184,14 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 		       Base,'.dll ',Base,'.def ',
 		       Obj,' ',TempObj,' -lxsb'])
 	    ;	str_sub('windows', Configuration)
-	    ->	warning(('You must create the ', Modname,'.dll'))
+	    ->  %% check if Module.dll exists in the bindir or current dir
+		%% If not - issue a warning
+		fmt_write_string(DLLhere, '%s.dll', arg(Modname)),
+		xsb_configuration(config_bindir,BINDIR),
+		fmt_write_string(DLLbin, '%s\%s.dll', arg(BINDIR,Modname)),
+		((file_exists(DLLhere) ; file_exists(DLLbin)) -> true
+		; warning(('You must create the ', Modname,'.dll'))
+		)
 	    ;	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
 	        /* The following is here because C compilers usually put 
 	           the object file in the current directory
