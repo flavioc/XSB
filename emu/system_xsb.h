@@ -64,9 +64,9 @@ extern int kill(pid_t pid, int sig);
 #define  PIPE_FROM_PROC_FAILED	-2
 #define  SUB_PROC_FAILED	-3
 
-#define MAX_SUBPROC_PARAMS 30  /* max # of cmdline params in a subprocess */
+#define MAX_SUBPROC_PARAMS 50  /* max # of cmdline params in a subprocess */
 
-#define MAX_SUBPROC_NUMBER 20  /* max number of subrocesses allowed       */
+#define MAX_SUBPROC_NUMBER 40  /* max number of subrocesses allowed       */
 
 
 #define RUNNING	       1

@@ -614,17 +614,21 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   /* duplicate saved copies of stdio fds back into main process stdio */
   if (dup2(stdin_saved, fileno(stdin)) < 0) {
     perror("SPAWN_PROCESS");
+    close(stdin_saved); close(stdout_saved); close(stderr_saved);
     return PIPE_TO_PROC_FAILED;
   }
   if (dup2(stdout_saved, fileno(stdout)) < 0) {
     perror("SPAWN_PROCESS");
+    close(stdin_saved); close(stdout_saved); close(stderr_saved);
     return PIPE_TO_PROC_FAILED;
   }
   if (dup2(stderr_saved, fileno(stderr)) < 0) {
     perror("SPAWN_PROCESS");
+    close(stdin_saved); close(stdout_saved); close(stderr_saved);
     return PIPE_TO_PROC_FAILED;
   }
 
+  close(stdin_saved); close(stdout_saved); close(stderr_saved);
   return pid;
 }
 

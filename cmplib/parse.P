@@ -26,6 +26,7 @@
 
 :- compiler_options([sysmod, xpp_on]).
 #include "flag_defs_xsb.h"
+#include "standard.h"
 %%#define DEBUG_GPP 1
 
 /*======================================================================*/
@@ -137,7 +138,7 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	;   message(XPP_command_msg)
 	),
 	%% Redirect cpp's stderr to XSB's STDWARN
-	spawn_process(FullXPP_command, block, IOportFromProc, 3, XPP_process),
+	spawn_process(FullXPP_command, block, IOportFromProc, STDWARN, XPP_process),
 	!,
 	retractall(xpp_program(_)).
 
