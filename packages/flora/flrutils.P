@@ -342,10 +342,7 @@ write_tokens(string_atom(X)) :- !, write_canonical(X).
 
 write_tokens(string_list(X)) :-
 	!,
-	atom_codes(A,X),
-	write('"'),
-	write(A),
-	write('"').
+	write(X).
 
 
 /********************************************************************/
