@@ -30,9 +30,6 @@
 // new
 :- table tc/2.
 
-// new
-:- import unix/1 from unix.
-
 
 times_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
 fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
