@@ -104,35 +104,35 @@ static int gSizeTmplt;      /* ... of this size */
 
 static void consumption_error(char *string) {
 
-  xsbBool print_addr;
+  char *abort_string;
 
-#ifdef DEBUG
-  print_addr = YES;
-#else
-  print_addr = NO;
-#endif
   fprintf(stderr,"\nAnswer Return ERROR:  Failed to unify answer\n\t");
-  printTriePath(stderr,gAnsLeaf,print_addr);
+#ifdef DEBUG
+  printTriePath(stderr,gAnsLeaf,YES);
+#else
+  printTriePath(stderr,gAnsLeaf,NO);
+#endif
   fprintf(stderr,"\nwith ");
   printAnswerTemplate(stderr,gAnsTmplt,gSizeTmplt);
   fprintf(stderr,
 	  "(* Note: this template may be partially instantiated *)\n");
-#ifndef DEBUG
-  xsb_abort(string);
-#else
-  fprintf(stderr,"%s\n",string);
-  /* get consumer SF from the CPS, using the ptr to AnsTmplt */
- {
-   VariantSF pSF;
-   CPtr pCPF;
+#ifdef DEBUG
+  xsb_error(string);
+  /* Get Consumer SF from the CPS, using the ptr to AnsTmplt */
+  {
+    VariantSF pSF;
+    CPtr pCPF;
 
-   pCPF = gAnsTmplt - gSizeTmplt - NLCPSIZE;
-   pSF = (VariantSF)nlcp_subgoal_ptr(pCPF);
-   printAnswerList(stderr,subg_answers(pSF));
-   fprintf(stderr,"\n\n");
-   *(CPtr)0 = 0;
- }
+    pCPF = gAnsTmplt - gSizeTmplt - NLCPSIZE;
+    pSF = (VariantSF)nlcp_subgoal_ptr(pCPF);
+    printAnswerList(stderr,subg_answers(pSF));
+  }
+  abort_string = "";
+#else
+  abort_string = string;
 #endif
+  Trail_Unwind_All;  /* unbind TrieVarBindings[] elements */
+  xsb_abort(abort_string);
 }
 
 
@@ -366,12 +366,17 @@ static void consumption_error(char *string) {
 
 /*
  *  Given a pointer to the answer template (a high-to-low memory vector),
- *  its size, and an answer leaf, unify the corresponding terms of each,
- *  conditionally trailing variables that become bound as a result.
- *  Values to which these variables are bound are placed on the heap.
- *
+ *  its size, and an answer leaf, unify the corresponding terms of each
+ *  using the system stacks.  Variables that become bound are
+ *  conditionally trailed while these values may be built on the heap.
  *  In this way, the bindings are readied for use by the engine, i.e., an
  *  answer is returned to a subsumed call.
+ *
+ *  Trie variables -- elements of the TrieVarBindings[] array -- may also
+ *  become bound.  The bindings are needed during this operation but
+ *  these variables should be unbound before leaving this function to
+ *  ready TrieVarBindings[] for the next tabling operation.  The tstTrail
+ *  is used to note these bindings for untrailing.
  */
 
 void consume_subsumptive_answer(BTNptr pAnsLeaf, int sizeTmplt,
@@ -435,5 +440,5 @@ void consume_subsumptive_answer(BTNptr pAnsLeaf, int sizeTmplt,
       return;
     }
   }
-  Trail_Unwind_All;
+  Trail_Unwind_All;  /* unbind TrieVarBindings[] elements */
 }
