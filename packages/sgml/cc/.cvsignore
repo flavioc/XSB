@@ -1,0 +1,9 @@
+*.O
+*.so
+*.xwam
+*.def
+*.obj
+*.o
+*.dll
+*.exp
+*.lib

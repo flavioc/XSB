@@ -1,0 +1,79 @@
+/* File:      sgmlconfig.P -- loader for the SGML foreign module
+** Author(s): Rohan Shirwaikar
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 2004
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+#include "extensions_xsb.h"
+
+
+:- import slash/1, str_cat/3, machine_file_exists/1 from machine.
+:- import search_module/6 from consult.
+:- import path_sysop/3, path_sysop/2, fmt_write_string/3 from file_io.
+:- import xsb_configuration/2 from xsb_configuration.
+
+
+:-
+    package_configuration(dir(sgml), SgmlDir),  
+    slash(Slash),
+    Basename = sgml2pl,
+    xsb_configuration(config_libdir, ConfigLibdir),
+    fmt_write_string(Module, '%s%scc%s%s', f(SgmlDir,Slash,Slash,Basename)),
+    fmt_write_string(LibObjFile,
+		     '%s%s%s%s',
+		     args(ConfigLibdir,Slash, Basename, XSB_OBJ_EXTENSION_ATOM)),
+    str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
+    ( 
+      search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO),
+      str_cat(Module, '.c', ModuleSourceFile),
+      path_sysop(newerthan,ModuleO,ModuleSourceFile)
+    %% module compiled and is current, so just load
+    -> [Basename]
+
+    ;
+      xsb_configuration(host_os, 'windows')
+    ->
+      [Basename],
+      force_rename(Objfile, LibObjFile)
+
+    %% If Module isn't compiled or is old --- recompile
+    ;   xsb_configuration(compiler, CC),
+	xsb_configuration(loader_flags, LoaderFlags),
+	xsb_configuration(compiler_flags, CCflags),
+   
+	fmt_write_string(CC_opts,
+			 ' %s %s ',
+			 f(CCflags,LoaderFlags)),
+	
+	consult(Module, [cc(CC), cc_opts(CC_opts)]),
+	force_rename(Objfile, LibObjFile),
+	str_cat(Module, '.so', SharedLib),
+	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
+	force_rename(SharedLib,LibMod)
+     ).
+
+%% Windows semantics for renaming is such that the op fails, 
+%% if the target exists
+force_rename(Orig,Target) :-
+	(path_sysop(unlink,Target), !; true),
+	path_sysop(rename,Orig,Target).
