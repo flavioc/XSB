@@ -857,6 +857,21 @@ inline static xsbBool is_completed_table(TIFptr tif) {
 
 /*----------------------------------------------------------------------*/
 
+inline static int abolish_table_predicate(Psc psc)
+{
+  TIFptr tif;
+  tif = get_tip(psc);
+  if ( IsNULL(tif) )
+    xsb_abort("[abolish_table] Attempt to delete untabled predicate (%s/%d)\n",
+	      get_name(psc), get_arity(psc));
+
+  if ( ! is_completed_table(tif) )
+    return 0;
+
+  delete_predicate_table(tif);
+  return 1;
+}
+
 inline static void abolish_table_info(void)
 {
   CPtr csf;
@@ -1834,7 +1849,6 @@ int builtin_call(byte number)
     const int regTerm = 1;   /* in: tabled predicate as term */
     Cell term;
     Psc psc;
-    TIFptr tif;
 
     term = ptoc_tag(regTerm);
     if ( isref(term) ) {
@@ -1848,17 +1862,11 @@ int builtin_call(byte number)
 		 Arity, "Predicate specification", term);
       break;
     }
-    tif = get_tip(psc);
-    if ( IsNULL(tif) )
-      xsb_abort("Illegal table operation\n\t Untabled predicate (%s/%d)"
-		"\n\t In argument %d of %s/%d",
-		get_name(psc), get_arity(psc), regTerm,
-		BuiltinName(ABOLISH_TABLE_PREDICATE), Arity);
-    if ( ! is_completed_table(tif) )
-      xsb_abort("Illegal table operation\n\t Cannot abolish incomplete table"
-		" of predicate %s/%d", get_name(psc), get_arity(psc));
-    delete_predicate_table(tif);
-    return TRUE;
+    if (abolish_table_predicate(psc))
+      return TRUE;
+    else
+      xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
+		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
   }
 
   case ABOLISH_TABLE_CALL: {
