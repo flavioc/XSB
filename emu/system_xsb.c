@@ -794,7 +794,16 @@ char *get_next_command_argument(char **buffptr, char **cmdlineprt)
      been found and extracted */
   while ((!isspace(**cmdlineprt) || quoted) && **cmdlineprt != '\0') {
     if (escaped) {
-      **buffptr=**cmdlineprt;
+      switch (**cmdlineprt) {
+      case 'b': **buffptr='\b'; break;
+      case 'f': **buffptr='\f'; break;
+      case 'n': **buffptr='\n'; break;
+      case 'r': **buffptr='\r'; break;
+      case 't': **buffptr='\t'; break;
+      case 'v': **buffptr='\v'; break;
+      default:
+	**buffptr=**cmdlineprt;
+      }
       (*buffptr)++;
       (*cmdlineprt)++;
       escaped=FALSE;
