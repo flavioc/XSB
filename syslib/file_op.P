@@ -231,6 +231,7 @@ add_trie_index(Pcall)    :-
 
 
 assert_trie_index(Pcall) :-
+	retractall('_$trie_asserted1'(Pcall)),
 	assert('_$trie_asserted1'(Pcall)).
 
 retract_trie_index(Pcall) :-
