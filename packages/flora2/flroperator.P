@@ -125,15 +125,15 @@ flora_op(700,yfx,FL_SYMAND).
 flora_op(600,fy,FL_PLUS).
 flora_op(600,fy,FL_MINUS).
 
+flora_op(550,fy,FL_UNIVEQFORM).
+
 flora_op(500,xfx,FL_AT).
 
 flora_op(400,fx,FL_PLIB).
 flora_op(400,fx,FL_FLORALIB).
 
-flora_op(360,yfx,FL_ISA).
-flora_op(360,yfx,FL_SUB).
-
-flora_op(350,fy,FL_UNIVEQFORM).
+flora_op(350,yfx,FL_ISA).
+flora_op(350,yfx,FL_SUB).
 
 flora_op(300,yfx,FL_FD).
 flora_op(300,yfx,FL_MVD).

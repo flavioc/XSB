@@ -1767,6 +1767,7 @@ compile_flvar(Name,Index,VarObject) :-
 compile_fltermobj(Funct,1,Args,Object,OidCode,Code,Status) :-
 	%% If it is ~(...) treat as reificated term
 	is_flatom(Funct,FL_UNIVEQFORM),
+	!,
 	compile_argpathexplist(Args,[FL_BODYFORMULA],AObj,OidCode,Code,Status),
 	(Status == [] -> AObj = [Object] ; true).
 
@@ -2242,6 +2243,13 @@ compile_flobjeql(Obj1,Obj2,OidCode,Code,Status) :-
 /****************************************************************************
   compile_head_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-Code,-Status)
 ****************************************************************************/
+compile_head_fltermobj(Funct,1,Args,Object,Code,Status) :-
+	%% If it is ~(...) treat as reificated term
+	is_flatom(Funct,FL_UNIVEQFORM),
+	!,
+	compile_head_argpathexplist(Args,[FL_BODYFORMULA],AObj,Code,Status),
+	(Status == [] -> AObj = [Object] ; true).
+
 compile_head_fltermobj(Funct,N,Args,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -2744,6 +2752,15 @@ compile_wsflpathexp(ParserTerm,WS,Object,OidCode,Code,Status) :-
 /****************************************************************************
   compile_wstermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
+compile_wstermobj(Funct,1,Args,WS,Object,OidCode,Code,Status) :-
+	%% If it is ~(...) treat as reificated term
+	is_flatom(Funct,FL_UNIVEQFORM),
+	!,
+	compile_wsflargpathexplist(Args,[FL_BODYFORMULA],WS,AObj,OidCode,Code,Status),
+	(Status == [] -> AObj = [O], workspaceobj_struct(O,WS,Object,_WCode)
+	; true
+	).
+
 compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -2776,6 +2793,13 @@ compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
         is that compile_wsfltermobj applies workspace only to F-Logic
         constructs.  
 ****************************************************************************/
+compile_wsfltermobj(Funct,1,Args,WS,Object,OidCode,Code,Status) :-
+	%% If it is ~(...) treat as reificated term
+	is_flatom(Funct,FL_UNIVEQFORM),
+	!,
+	compile_wsflargpathexplist(Args,[FL_BODYFORMULA],WS,AObj,OidCode,Code,Status),
+	(Status == [] -> AObj = [Object] ; true).
+
 compile_wsfltermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -3515,8 +3539,9 @@ compile_head_wstermobj(_Funct,_N,_Args,WS,_Object,_Code,Status) :-
 	is_flvar(WS,_Name,VarIndex),
 	!,
 	%% Workspace in the rule head is not bound at compile time. Currently
-	%% this will generate an error. However, this might be solve by moving
-	%% the code that generates the workspace predicate to the body of the rule.
+	%% this will generate an error. However, this might be solved by moving
+	%% the code that generates the workspace predicate to the body
+	%% of the rule.
 	compiling_error(VarIndex,VARWSINHEAD,Status).
 
 compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
@@ -3527,8 +3552,8 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,Code,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
-	    %% WCode should be NULL here since it is already checked by the rule
-	    %% that the workspace is not a variable.
+	    %% WCode should be NULL here since it is already checked
+	    %% by the rule that the workspace is not a variable.
 	    workspaceobj_struct(O,WS,Object,_WCodeIsNULL)
 	;
 	  true
@@ -3549,10 +3574,18 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 /****************************************************************************
   compile_head_wsfltermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-Code,-Status)
 
-  Note: The difference between compile_head_wsflpathexp and compile_head_wspathexp
+  Note: The difference between compile_head_wsflpathexp
+        and compile_head_wspathexp
         is that compile_head_wsflpathexp applies workspace only to F-Logic
         constructs.
 ****************************************************************************/
+compile_head_wsfltermobj(Funct,1,Args,WS,Object,Code,Status) :-
+	%% If it is ~(...) treat as reificated term
+	is_flatom(Funct,FL_UNIVEQFORM),
+	!,
+	compile_head_wsflargpathexplist(Args,[FL_BODYFORMULA],WS,AObj,Code,Status),
+	(Status == [] -> AObj = [Object] ; true).
+
 compile_head_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
