@@ -13,8 +13,6 @@
 			 args(ID,SL,SL)),
 	assert(xmc_directory(XMCDIR)).
 			
-%:- assert(xmc_directory('@prefix@/packages/xmc')).
-
 :- [mucalculus].
 
 xlc(File) :-
@@ -42,7 +40,7 @@ cleanup :-
 %% ----------------------------------------------------------------------
 
 mck(P, F) :-
-	startstate(P, S),
+	start(P, S),
 	models(S, form(F)).
 
 xmc_gui :-
