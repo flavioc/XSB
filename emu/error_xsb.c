@@ -134,7 +134,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   tptr++;
   bld_string(tptr,string_find(message,1));
   tptr++;
-  bld_copy(tptr,build_xsb_backtrace());
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
   tptr++;
   bld_functor(tptr, pair_psc(insert("type_error",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
@@ -171,7 +171,7 @@ void call_conv xsb_permission_error(CTXTdeclc
   tptr++;
   bld_string(tptr,string_find(message,1));
   tptr++;
-  bld_copy(tptr,build_xsb_backtrace());
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
   tptr++;
   bld_functor(tptr, pair_psc(insert("permission_error",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
@@ -212,7 +212,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
   tptr++;
   bld_string(tptr,string_find(message,1));
   tptr++;
-  bld_copy(tptr,build_xsb_backtrace());
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
 
   xsb_throw(CTXTc ball_to_throw);
 
@@ -241,7 +241,7 @@ void call_conv xsb_basic_abort(char *message)
   tptr++;
   bld_string(tptr,string_find(message,1));
   tptr++;
-  bld_copy(tptr,build_xsb_backtrace());
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
   xsb_throw(ball_to_throw);
 }
 #endif
