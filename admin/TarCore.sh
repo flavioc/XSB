@@ -11,12 +11,14 @@ files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS ./XSB/INSTALL_WINDOWS 
         ./XSB/build/config.sub ./XSB/build/*sh ./XSB/build/*.msg \
         ./XSB/build/configure ./XSB/build/README \
         ./XSB/emu ./XSB/syslib ./XSB/cmplib ./XSB/lib \
+	./XSB/gpp \
+	./XSB/prolog_includes \
         ./XSB/etc \
         ./XSB/packages "
 
     cd ../..
 
-    tar cvf XSB/XSB.tar $files
+    tar cvhf XSB/XSB.tar $files
 
     gzip -f XSB/XSB.tar
     chmod 644 XSB/XSB.tar.gz
