@@ -895,6 +895,7 @@ compare(Op, T1, T2) :-	% Pred compare/3 has no associated error conditions.
 	).
 
 X ==  Y :- X == Y.
+X @=  Y :- X @= Y.
 X \== Y :- X \== Y.
 X @<  Y :- X @< Y.
 X @=< Y :- X @=< Y.

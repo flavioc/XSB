@@ -339,6 +339,7 @@ standard_symbol(('\='), 2, standard).
 standard_symbol(('=..'), 2, standard).
 standard_symbol(('^=..'), 2, standard).
 standard_symbol(('=='), 2, standard).
+standard_symbol(('@='), 2, standard).
 standard_symbol(('\=='), 2, standard).
 standard_symbol(('@<'), 2, standard).
 standard_symbol(('@>'), 2, standard).
