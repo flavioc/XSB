@@ -2412,7 +2412,8 @@ compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status) :-
 	compile_head_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACodeList,Status),
 	( Status == [] ->
 	    head_objref_struct(Obj,RefType,Att,Object,TCode),
-	    append(OACodeList,[TCode],CodeList)
+	    workspace_struct(TCode,WS,WTCode),
+	    append(OACodeList,[WTCode],CodeList)
 	;
 	  true
         ).
@@ -2425,7 +2426,8 @@ compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,CodeList,Status) :-
 	compile_head_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OCodeList,Status),
 	( Status == [] ->
 	    birelate_struct(Obj1,RelType,Obj2,TCode),
-	    append(OCodeList,[TCode],CodeList)
+	    workspace_struct(TCode,WS,WTCode),
+	    append(OCodeList,[WTCode],CodeList)
 	;
 	  true
         ).

@@ -42,6 +42,9 @@
 #define FLORA_FILE		file
 #define FLORA_COMMANDLINE	commandline
 
+#define STDTRAILER		standard
+#define EQLTRAILER		equality
+
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
 #include "flora_terms.flh"
@@ -152,6 +155,67 @@ flcompinc(File) :-
 	  flora_error_line("%s does NOT exist!",args(File)),
           fail
         ).
+
+
+/**********************************************************************
+  flloadtrailer(+TrailerName,+Workspace)
+  TrailerName must be either STDTRAILER or EQLTRAILER.
+**********************************************************************/
+flloadtrailer(TrailerName) :-
+	flloadtrailer(TrailerName,FLORA_DEFAULT_WORKSPACE).
+
+flloadtrailer(TrailerName,Workspace) :-
+	( TrailerName \== STDTRAILER, TrailerName \== EQLTRAILER ->
+	    flora_error_line("Trailer name must be either `%s' or `%s'!",args(STDTRAILER,EQLTRAILER)),
+	    fail
+	;
+	  flora_check_workspace(Workspace),
+	  package_configuration(dir(flora),FloraDir),
+	  slash(S),
+	  flora_trailer_filename(TrailerName,TrailerFileName),
+	  fmt_write_string(TrailerFullName,"%s%strailer%s%s",args(FloraDir,S,S,TrailerFileName)),
+	  flora_FLH_filename(TrailerFullName,FLHFile),
+	  flora_setup_workspace(FLHFile,Workspace),
+	  flora_set_xpp_options,
+	  compile(TrailerFullName,[optimize,spec_repr]),
+	  flora_clear_xpp_options,
+	  consult(TrailerFullName)
+        ).
+
+
+/**********************************************************************
+  flsetuptrailer(+TrailerName)
+  TrailerName must be either trailer or eqltrailer.
+  This predicate is called in the Makefile.
+**********************************************************************/
+flsetuptrailer(TrailerName) :-
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	flora_trailer_filename(TrailerName,TrailerFileName),
+	fmt_write_string(TrailerFullName,"%s%strailer%s%s",args(FloraDir,S,S,TrailerFileName)),
+	flora_FLH_filename(TrailerFullName,FLHFile),
+	flora_setup_workspace(FLHFile,FLORA_DEFAULT_WORKSPACE),
+	telling(PreOutFile),
+	tell(TrailerFullName),
+	flora_include_FLH_filename(TrailerFullName),
+	flora_trailer_include(TrailerName,TrailerInclude),
+	flora_include_file([FLHEADER,FLDBDYN,TrailerInclude],HeaderStatus),
+	told,
+	tell(PreOutFile),
+	!,
+	( HeaderStatus == FLORA_FAILURE ->
+	    fail
+	;
+	  flora_set_xpp_options,
+	  compile(TrailerFullName,[optimize,spec_repr]),
+	  flora_clear_xpp_options
+	).
+
+flora_trailer_filename(STDTRAILER,'stdtrailer.P').
+flora_trailer_filename(EQLTRAILER,'eqltrailer.P').
+
+flora_trailer_include(STDTRAILER,FLTRAILER).
+flora_trailer_include(EQLTRAILER,FLOBJEQLDEF).
 
 
 /*************************************************************************

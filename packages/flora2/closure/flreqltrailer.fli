@@ -18,6 +18,14 @@
 
 
 /***************************************************************************
+  register this trailer
+***************************************************************************/
+:- nohilog flora_trailer_loaded/1.
+
+flora_trailer_loaded(flreqltrailer).
+
+
+/***************************************************************************
   closure rules for X::Y
 ***************************************************************************/
 :- nohilog base_sub/2.
@@ -27,7 +35,7 @@
 :- nohilog immediate_sub/2.
 
 
-%:- table derived_sub/2.
+:- table derived_sub/2.
 :- table derived_sub_eql/2.
 :- table super_sub/2.
 :- table immediate_sub/2.
@@ -93,7 +101,7 @@ sub(X,Y) :-
 :- nohilog ultimate_isa/2.
 
 
-%:- table derived_isa/2.
+:- table derived_isa/2.
 :- table derived_isa_eql/2.
 :- table isa/2.
 :- table super_isa/2.
@@ -221,10 +229,10 @@ conflict_ifd(C,A) :-
 :- nohilog conflict_imvd/2.
 
 
-%:- table derived_imvd/3.
+:- table derived_imvd/3.
 :- table derived_imvd_eql/3.
 :- table imvd/3.
-%:- table derived_imvddef/2.
+:- table derived_imvddef/2.
 :- table derived_imvddef_eql/2.
 :- table imvddef/2.
 :- table defined_derived_imvd_eql/2.
@@ -407,11 +415,11 @@ conflict_obj_ifd(O,A) :-
 :- nohilog conflict_obj_imvd/2.
 
 
-%:- table derived_mvd/3.
-%:- table derived_mvd_eql/3.
+:- table derived_mvd/3.
+:- table derived_mvd_eql/3.
 :- table mvd/3.
-%:- table derived_mvddef/2.
-%:- table derived_mvddef_eql/2.
+:- table derived_mvddef/2.
+:- table derived_mvddef_eql/2.
 :- table mvddef/2.
 :- table defined_derived_mvd_eql/2.
 :- table conflict_obj_imvd/2.
@@ -522,9 +530,9 @@ imvdinc(O,M,[H|T]) :-
 :- nohilog derived_imeth/2.
 
 
-%:- table derived_meth/2.
+:- table derived_meth/2.
 :- table meth/2.
-%:- table derived_imeth/2.
+:- table derived_imeth/2.
 :- table imeth/2.
 
 
@@ -704,7 +712,7 @@ imvdsig(S,MethodArgs,R) :-
 :- nohilog derived_exists/1.
 
 
-%:- table derived_exists/1.
+:- table derived_exists/1.
 :- table exists/1.
 
 

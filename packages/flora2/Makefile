@@ -80,6 +80,7 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 	cd syslib; $(MAKE)
 	cd closure; $(MAKE)
+	cd trailer; $(MAKE)
 
 
 flroperator.O : flroperator.P flroperator.H $(FLORA_TERMS)

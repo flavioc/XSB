@@ -423,7 +423,7 @@
 #define FLSYSLIB		flsyslib
 
 #define FLORA_PREFIX		'_$_$_flora'
-#define FLORA_PREFIX_LEN	11
+#define FLORA_PREFIX_LEN_PLUS1	11
 
 
 /****************************************************************************
