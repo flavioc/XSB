@@ -184,6 +184,7 @@ clean:
 	/bin/rm -f headerinc/*~
 	/bin/rm -f syslibinc/*~
 	/bin/rm -f includes/*~
+	/bin/rm -f $(HOME)/.xsb/flora/*.P $(HOME)/.xsb/flora/*.O
 
 
 .DONE:
