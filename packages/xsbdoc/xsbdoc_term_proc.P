@@ -18,7 +18,7 @@
 :- import str_sub/2,concat_atom/2 from string.
 :- import write_term/2 from write_term.
 :- import xsb_configuration/2 from usermod.
-
+:- import check_atom/3, permission_error/4 from error_handler.
 %:- import file_time/2 from file_io.
 
 :- import '_#clause'/2 from usermod.
@@ -75,6 +75,7 @@ process_a_file(File,Dir,Base,SrcName,IsLib) :-
 
 /* corrected_search_module(main,Dir,main,main.P,<true/false>) */
 corrected_search_module(Input,Dir,Base,Source,IsLib):- 
+	check_atom(Input,'corrected_search_module/5',1),
 	(search_module(Input, Dir, Base, SExt, _Full, _Obj) -> 
 	   concat_atom([Base,'.',SExt],Source)
 	 ; atom_chars(Input,Inl),
@@ -84,9 +85,12 @@ corrected_search_module(Input,Dir,Base,Source,IsLib):-
 	   search_module(NewInput, Dir, Base, SExt, _Full, _Obj),
 	   concat_atom([Base,'.',SExt],Source)),
 	xsb_configuration(srcdir,SrcDir),
-	(str_sub(SrcDir,Dir) -> IsLib = true ; IsLib = false).
+	(str_sub(SrcDir,Dir) -> IsLib = true ; IsLib = false),!.
+corrected_search_module(Input,_Dir,_Base,_Source,_IsLib):- 
+	permission_error(file_search,file,Input,'corrected_search_module/5').
 
 read_record_file(File) :-
+        messageln(''),   messageln(''),
         messageln(['Reading ',File]),
 	read_file(File).
 
@@ -94,10 +98,16 @@ read_record_file(File) :-
 read_file(File):- 
 	open(File,read,Istr),
 	repeat,
-	read(Istr,Term),
+	read_term(Istr,Term,[variable_names(Names)]),
+	instantiate_read_term(Names,Term),
 	assert_term(File,Term),
 	(Term == end_of_file -> true ; fail),
 	close(Istr),!.
+
+instantiate_read_term([],_Term).
+instantiate_read_term([Name = Var|Rest],Term):- 
+	Name = Var,
+	instantiate_read_term(Rest,Term).
 
 inc_ctr(N1):- 
 	'_#ctr'(N),

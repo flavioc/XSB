@@ -508,6 +508,8 @@ classify_import_files([],[],_).
 
 /* TLS: need to rewrite to find the true system and library paths */
 classify_files_1([],[],[],_).
+classify_files_1([usermod|Files],Lfiles,Ufiles,Opts):-
+	classify_files_1(Files,Lfiles,Ufiles,Opts),!.
 classify_files_1([File|Files],Lfiles,Ufiles,Opts):-
 	corrected_search_module(File,_Dir,_Base,_Source,IsLib),!,
 	(IsLib == true -> 
@@ -1245,7 +1247,8 @@ parse_commands(Format,Idxs,Verb,NewVerb,_NL,Opts,[X|T]) -->
 %% Else error
 parse_commands(_Format,_Idxs,Verb,Verb,_NL,_Opts,NStr,B,_E) :-
 	xsbdoc_error(['while parsing docstring:']),
-	xsbdoc_error(['* HERE *',B]),
+	atom_codes(Text,B),
+	xsbdoc_error(['* HERE *',Text]),
 	NStr = [].
 	
 %% ---------------------------------------------------------------------------

@@ -24,6 +24,7 @@
 
 :- import autodoc/7 from autodoc.
 
+:- dynamic refs_stream/1.
 :- dynamic xsbdoc_option/1.
 :- dynamic xsbdoc_index/1.
 :- dynamic xsbdoc_bibfile/1.
@@ -31,7 +32,6 @@
 :- dynamic xsbdoc_startpage/1.
 :- dynamic xsbdoc_component/1.
 :- dynamic xsbdoc_main/1.
-
 
 %% ---------------------------------------------------------------------------
 %% Intro
@@ -80,7 +80,7 @@ xsbdoc(Format_file,Generation_type):-
 	xsbdoc_main(Main),
 	corrected_search_module(Main,_Dir,Base,_Src,_Isl), 
 	findall(Index,xsbdoc_index(Index),Indices),
-        autodoc_fail(texinfo,Main,Indices,Texics,
+            autodoc_fail(texinfo,Main,Indices,Texics,
 	             StartPage,PaperType,['-main'|Opts]),
 	xsbdoc_components(Components,Indices,Opts),
 	make_bibfiles(Base),
@@ -160,14 +160,13 @@ throw_load_dyn(File):-
 	load_dyn(File) -> true ; abort(('file not found ',File)).
 
 clear_the_decks:- 
-	retractall(xsbdoc_main(_)),
-	retractall(xsbdoc_component(_)),
-	retractall(xsbdoc_option(_)),
-	retractall(xsbdoc_index(_)),
 	retractall(xsbdoc_bibfile(_)),
+	retractall(xsbdoc_component(_)),
+	retractall(xsbdoc_index(_)),
+	retractall(xsbdoc_main(_)),
+	retractall(xsbdoc_option(_)),
 	retractall(xsbdoc_papertype(_)),
 	retractall(xsbdoc_startpage(_)),
-	
 	retractall(refs_stream(_)).
 
 get_options(StartPage,PaperType,Opts):- 
@@ -185,7 +184,7 @@ display_version:-
 	format("xsbdoc ~s ",[Version]),
 	format("Using code modified from CLIP Group, T.U. of Madrid~n",[]).
 
-xsbdoc_version("0.1").
+xsbdoc_version("1.0").
 
 get_components(Vals):- 
 	findall(Val,xsbdoc_component(Val),Vals).

@@ -227,11 +227,11 @@ rewrite_command_body_texinfo(result(""), "result" ,"") :- !.
 rewrite_command_body_texinfo(Command,CommandNameS,Body) :-
 	Command =.. [CommandName,Body],
 	atom_codes(CommandName,CommandNameS),
+	atom_codes(Text,Body),
 	xsbdoc_warning(['unrecognized command in string (passed on): ',
-	                 CommandName,Body]).
+	        '@',CommandName,'{',Text,'}']).
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Concept definition index entry: handled below, with em(...)
 %% rewrite_command(html,index(Body),_,Body) :-
@@ -392,10 +392,11 @@ rewrite_command_body_html(ref(Body),"i",Body) :- !.
 rewrite_command_body_html(Command,CommandNameS,Body) :-
 	Command =.. [CommandName,Body],
 	atom_codes(CommandName,CommandNameS),
+	atom_codes(Text,Body),
 	xsbdoc_warning(['unrecognized command in string (passed on): ',
-	        CommandName,Body]).
+	        '@',CommandName,'{',Text,'}']).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Concept definition index entry
 rewrite_ascii_command(index(Body),_,Body) :-

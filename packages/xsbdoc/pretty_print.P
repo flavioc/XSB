@@ -218,20 +218,3 @@ ppg(A,Tab,_K) :-
 	writeq(A).
 
 
-%% -----------------------------------------------------------------------
-:- comment(version_maintenance,dir('../version')).
-
-:- comment(version(0*9+100,1999/05/26,12:36*46+'MEST'), "Minor fixes
-   to doc.  (Manuel Hermenegildo)").
-
-:- comment(version(0*8+20,1998/12/03,13:00*00+'MET'), "Updated types
-   and comment separators.  (Manuel Hermenegildo)").
-
-:- comment(version(0*5+38,1998/07/06,16:06*06+'MET DST'), "Added
-   argument for hooks to the two main entry points.  (Francisco Bueno
-   Carrillo)").
-
-:- comment(version(0*4+5,1998/2/24), "Synchronized file versions with
-   global CIAO version.  (Manuel Hermenegildo)").
-%% -----------------------------------------------------------------------
-
