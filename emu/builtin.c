@@ -790,7 +790,7 @@ int builtin_call(byte number)
     case FILE_TRUNCATE: /* file_function(2,+file, +length, -ret, -dontcare) */
       tmpval = ptoc_int(2);
       fptr = fileptr(tmpval);
-      value = ftruncate((int) fptr -> _file, (off_t) ptoc_int(3));
+      value = ftruncate((int) fileno(fptr), (off_t) ptoc_int(3));
       ctop_int(4, (int) value);
       break;
     default:
