@@ -5,7 +5,7 @@
 **
 ** Contact:   flora-users@lists.sourceforge.net
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1998
+** Copyright (C) The Research Foundation of SUNY, 1998 - 2002
 ** 
 ** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -21,6 +21,8 @@
 ** along with FLORA-2; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
+**
+** $Id$
 ** 
 */
 
@@ -41,17 +43,21 @@
 
 :- import
 	flora_load_module_internal/2, flora_load_module_internal/1,
-	flora_module_registry/1,
 	flora_compile_internal/2, flora_compile_internal/1
    from flrutils.
 
+:- import flora_configuration/2,
+	flora_module_registry/1
+   from flrregistry.
+
 :- import flora_sysmod_file/3 from flrlibman.
+
+:- import slash/1 from machine.
+:- import str_cat/3 from string.
 
 :- import flora_shell_loop/0 from usermod.
 
 :- import hide_this_show/2 from usermod.
-
-:- import slash/1 from machine.
 
 :- import conget/2, conset/2 from gensym.
 
@@ -70,24 +76,43 @@
 	flora_shell/0.
 
 
+#define FLORA_VERSION               '0.84 of March 2002'
 /*****************************************************************************/
+
+
 bootstrap_flora :-
-	bootstrap_package([flora2,syslib,lib,debugger,pkgs,p2h],flora),
+	%% Just check if flora_configuration is defined --
+	%% don't load flrregistry at this early stage
+	(current_predicate(flrregistry:flora_configuration/2)
+	-> \+flora_configuration(loaded,yes)
+	;  true
+	),
+	(
+	  current_predicate(flrregistry:flora_configuration/2),
+	  %% running FLORA as a development version
+	  flora_configuration(develmode,_),
+	  !,
+	  flora_configuration(installdir,FloraDir)
+	;
+	  %% running FLORA as a package
+	  bootstrap_package([flora2,syslib,lib,debugger,pkgs,p2h],flora),
+	  assert(package_configuration(version(flora),FLORA_VERSION)),
+	  package_configuration(dir(flora),FloraDir),
+	  assert(flora_configuration(version,FLORA_VERSION)),
+	  assert(flora_configuration(installdir,FloraDir))
+	),
 	!,
-	assert(package_configuration(version(flora),'0.84 of March 2002')),
-	package_configuration(dir(flora),FloraDir),
+	assert(flora_configuration(loaded,yes)),
 	slash(S),
-	fmt_write_string(FloraFlrIncludesDir,
-			 '%s%sflrincludes',args(FloraDir,S)),
-	assert(xpp_include_dir(FloraFlrIncludesDir)),
-	fmt_write_string(FloraClosureDir,'%s%sclosure',args(FloraDir,S)),
-	assert(xpp_include_dir(FloraClosureDir)),
-	fmt_write_string(FloraIncludesDir,'%s%sincludes',args(FloraDir,S)),
-	assert(xpp_include_dir(FloraIncludesDir)),
-	fmt_write_string(FloraGenIncludesDir,
-			 '%s%sgenincludes',args(FloraDir,S)),
-	assert(xpp_include_dir(FloraGenIncludesDir)),
-	[flrutils],
+	concat_atoms([FloraDir,S,closure],Closure),
+	concat_atoms([FloraDir,S,includes],Includes),
+	concat_atoms([FloraDir,S,flrincludes],FlrIncludes),
+	concat_atoms([FloraDir,S,genincludes],GenIncludes),
+	assert(xpp_include_dir(Closure)),
+	assert(xpp_include_dir(Includes)),
+	assert(xpp_include_dir(FlrIncludes)),
+	assert(xpp_include_dir(GenIncludes)),
+	assert(flora_configuration(includedirs, [Closure,Includes,FlrIncludes,GenIncludes])),
 	[p2h_config].
 
 bootstrap_flora.
@@ -95,19 +120,10 @@ bootstrap_flora.
 
 /*****************************************************************************/
 unstrap_flora :-
-	package_configuration(dir(flora),FloraDir),
-	slash(S),
-	fmt_write_string(FloraFlrIncludesDir,
-			 "%s%sflrincludes",args(FloraDir,S)),
-	(retract(xpp_include_dir(FloraFlrIncludesDir)); true),
-	fmt_write_string(FloraClosureDir,"%s%sclosure",args(FloraDir,S)),
-	(retract(xpp_include_dir(FloraClosureDir)); true),
-	fmt_write_string(FloraIncludesDir,"%s%sincludes",args(FloraDir,S)),
-	(retract(xpp_include_dir(FloraIncludesDir)); true),
-	fmt_write_string(FloraGenIncludesDir,
-			 "%s%sgenincludes",args(FloraDir,S)),
-	(retract(xpp_include_dir(FloraGenIncludesDir)); true),
-	unload_package(flora),
+	flora_configuration(includedirs,IncludeDirs),
+	remove_include_dirs(IncludeDirs),
+	(flora_configuration(develmode,_), ! ; unload_package(flora)),
+	retractall(flora_configuration(loaded,_)),
 	conset(flora_shell_loaded,0).
 
 
@@ -191,3 +207,20 @@ flCompile(Module) :- flora_compile_internal(Module).
 flLoadedModule(ModuleName) :- 
 	flora_module_registry(ModuleName),
 	\+ flora_sysmod_file(ModuleName,_,_).
+
+
+/***************************************************************************/
+%% Some utilities that must be duplicated here because they can't be imported
+
+remove_include_dirs([]).
+remove_include_dirs([H|T]) :-
+	(retract(xpp_include_dir(H)) ; true),
+	remove_include_dirs(T).
+
+
+concat_atoms([Atom1,Atom2],Atom) :- !, str_cat(Atom1,Atom2,Atom).
+concat_atoms([Atom1|AtomList],Atom) :-
+	concat_atoms(AtomList,Atom2),
+	str_cat(Atom1,Atom2,Atom).
+concat_atoms([],'').
+	
