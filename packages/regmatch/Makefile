@@ -24,7 +24,7 @@
 
 XSBDIR = ../..
 
-ALL = 	regmtchconfig.O regmtchshell.O
+ALL = 	regmtchconfig.O
 
 Option = [optimize]
 

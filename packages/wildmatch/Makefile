@@ -25,7 +25,7 @@
 
 XSBDIR=../..
 
-ALL = 	wldmtchconfig.O wldmtchshell.O
+ALL = 	wldmtchconfig.O
 
 Option = [optimize]
 
