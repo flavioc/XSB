@@ -25,6 +25,7 @@
 
 :- compiler_options([xpp_on]).
 
+#include "celltags.h"
 #include "char_defs.h"
 
 
@@ -58,9 +59,9 @@ file_write0(_, _).
 
 l_write(File, Var, _) :- 
 	term_type(Var, Type), 
-	Type =:= 0,
+	(Type =:= FREE; Type =:= ATTV),
 	!, 
-	file_puttoken(File, 0, Var).
+	file_puttoken(File, Type, Var).
 l_write(File, '$VAR'(N), _) :- 
 	!, 
 	l_writevar(File, N, 0).
@@ -71,12 +72,12 @@ l_write(File, [X|Y], _) :-
 	l_writetail(File, Y).
 l_write(File, T, Prec) :- 	% functor(T, OP, N),
 	term_type(T, Type), 
-	Type =:= 1, !,		% CS
+	Type =:= CS, !,		% CS
 	term_psc(T, PSC), 
 	psc_arity(PSC, N),
 	psc_name(PSC, Name),
 	OP = Name,
-	( N=:=0 -> file_puttoken(File, 5, Name)
+	( N=:=0 -> file_puttoken(File, STRING, Name)
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
@@ -122,13 +123,13 @@ l_writevar(File, N, Quoted) :-
 		file_put(File, ChrLetter),
 		Number is N // 26,
 		( Number =:= 0 -> true
-		; file_puttoken(File, 2, Number) 
+		; file_puttoken(File, INT, Number) 
 		)
-	; ( Quoted =:= 0 -> file_puttoken(File, 5, '$VAR')
+	; ( Quoted =:= 0 -> file_puttoken(File, STRING, '$VAR')
 	  %% NEW
 	  %%; file_put(File, 0''),
 	  ; file_put(File, CH_QUOTE),
-	    file_puttoken(File, 5, '$VAR'), 
+	    file_puttoken(File, STRING, '$VAR'), 
 	    %% NEW
 	    %%file_put(File, 0'')
 	    file_put(File, CH_QUOTE)
@@ -143,7 +144,7 @@ l_writevar(File, N, Quoted) :-
 	).
 
 l_writestr(File, Name, N, Term) :-
-	file_puttoken(File, 5, Name), 
+	file_puttoken(File, STRING, Name), 
 	%% NEW
 	%%file_put(File, 40),	% (
 	file_put(File, CH_LPAREN),    % (
@@ -230,10 +231,10 @@ l_writearg(File, T, N, M) :-
 
 l_writetail(File, Var) :- 
 	term_type(Var, Type),
-	Type =:= 0,
+	(Type =:= FREE; Type =:= ATTV),
 	!, 
 	file_put(File, 124), 		% '|'
-	file_puttoken(File, 0, Var), 
+	file_puttoken(File, Type, Var), 
 	file_put(File, 93).		% ']'
 l_writetail(File, [X|Y]) :- 
 	!, 
@@ -258,10 +259,10 @@ file_write_prolog(_, _).
 
 
 l_write_prolog(File, Var, _) :- 
-	term_type(Var, T), 
-	T=:=0, 
+	term_type(Var, Type), 
+	(Type =:= FREE; Type =:= ATTV),
 	!, 
-	file_puttoken(File, 0, Var).
+	file_puttoken(File, Type, Var).
 l_write_prolog(File, '$VAR'(N), _) :- 
 	!,
 	l_writevar(File, N, 0).
@@ -272,12 +273,12 @@ l_write_prolog(File, [X|Y], _) :-
 	l_writetail_prolog(File, Y).
 l_write_prolog(File, T, Prec) :- 	% functor(T, OP, N),
 	term_type(T, Type), 
-	Type =:= 1, !,		% CS
+	Type =:= CS, !,		% CS
 	term_psc(T, PSC), 
 	psc_arity(PSC, N),
 	psc_name(PSC, Name),
 	OP = Name,
-	( N=:=0 -> file_puttoken(File, 5, Name)
+	( N=:=0 -> file_puttoken(File, STRING, Name)
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
@@ -312,7 +313,7 @@ l_write_prolog(File, T, _) :-
 	file_puttoken(File, Type, T).
 
 l_writestr_prolog(File, Name, N, Term) :-
-	file_puttoken(File, 5, Name), 
+	file_puttoken(File, STRING, Name), 
 	file_put(File, 40), 		% '('
 	term_arg(Term, 1, X),
 	l_write_prolog(File, X, 999),
@@ -399,12 +400,12 @@ l_writearg_prolog(File, Term, N, M) :-
 
 l_writetail_prolog(File, Var) :-
 	term_type(Var, Type),
-	Type =:= 0,
+	(Type =:= FREE; Type =:= ATTV),
 	!, 
 	%% NEW
 	%%file_put(File, 124), 		% '|'
 	file_put(File, CH_BAR),		% |
-	file_puttoken(File, 0, Var), 
+	file_puttoken(File, Type, Var), 
 	%% NEW
 	%%file_put(File, 93).	% ]
 	file_put(File, CH_RBRACKET).	% ]
@@ -438,9 +439,9 @@ file_write_quoted(_, _).
 
 l_write_quoted(File, Var, _) :-
 	term_type(Var, Type),
-	Type =:= 0,
+	(Type =:= FREE; Type =:= ATTV),
 	!,
-	file_puttoken(File, 0, Var).
+	file_puttoken(File, Type, Var).
 l_write_quoted(File, '$VAR'(N), _) :- 
 	!,
 	l_writevar(File, N, 1).
@@ -461,12 +462,12 @@ l_write_quoted(File, [X|Y], _) :-
 	l_writetail_quoted(File, Y).
 l_write_quoted(File, Atom, _) :-	% This takes care of all atoms but []
 	term_type(Atom, Type),
-	Type =:= 5,
+	Type =:= STRING,
 	!,
 	file_writequoted(File, Atom).
 l_write_quoted(File, T, Prec) :- 	% functor(T, OP, N),
 	term_type(T, Type), 
-	Type =:= 1, !,		% CS
+	Type =:= CS, !,		% CS
 	term_psc(T, PSC), 
 	psc_arity(PSC, N),
 	psc_name(PSC, Name),
@@ -616,12 +617,12 @@ l_writearg_quoted(File, T, N, M) :-
 
 l_writetail_quoted(File, Var) :-
 	term_type(Var, Type),
-	Type =:= 0,
+	(Type =:= FREE; Type =:= ATTV),
 	!, 
 	%% NEW
 	%%file_put(File, 124), 		% '|'
 	file_put(File, CH_BAR),		% |
-	file_puttoken(File, 0, Var), 
+	file_puttoken(File, Type, Var), 
 	%% NEW
 	%%file_put(File, 93).		% ']'
 	file_put(File, CH_RBRACKET).	% ']'
@@ -654,9 +655,9 @@ file_write_canonical(_, _).
 
 l_write_canonical(File, Var) :-
 	term_type(Var, Type),
-	Type =:= 0,
+	(Type =:= FREE; Type =:= ATTV),
 	!,
-	file_puttoken(File, 0, Var).
+	file_puttoken(File, Type, Var).
 l_write_canonical(File, []) :-
 	!,
 	%% NEW
@@ -666,7 +667,7 @@ l_write_canonical(File, []) :-
 	file_put(File, CH_RBRACKET).	% ]
 /**l_write_canonical(File, [X|Y]) :-
 	!,
-	file_puttoken(File, 5, '''.''('),
+	file_puttoken(File, STRING, '''.''('),
 	l_write_canonical(File, X),
 	%% NEW
 	%%file_put(File, 44),		% ','
@@ -683,12 +684,12 @@ l_write_canonical(File, [X|Y]) :- !,
 	file_put(File, CH_RBRACKET).
 l_write_canonical(File, Atom) :-
 	term_type(Atom, Type),
-	Type =:= 5,
+	Type =:= STRING,
 	!,
 	file_writequoted(File, Atom).
 l_write_canonical(File, Term) :-	% functor(Term, Name, N)
 	term_type(Term, Type),
-	Type =:= 1, !,		% CS
+	Type =:= CS, !,		% CS
 	term_psc(Term, PSC),
 	psc_name(PSC, Name),
 	psc_arity(PSC, N),
@@ -722,10 +723,10 @@ l_writearg_canonical(File, Term, N, M) :-
 
 l_writelisttail_canonical(File, Var) :-
 	term_type(Var, Type),
-	Type =:= 0,
+	(Type =:= FREE; Type =:= ATTV),
 	!,
 	file_put(File, CH_BAR),
-	file_puttoken(File, 0, Var).
+	file_puttoken(File, Type, Var).
 l_writelisttail_canonical(_File, []) :- !.
 l_writelisttail_canonical(File, [X|Y]) :-
 	!,
