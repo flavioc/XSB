@@ -22,43 +22,40 @@
 ** 
 */
 
-get_calls_for_table(Skel,Call):- 
-	get_calls_for_table(Skel,Call,_).
 
-/* need to come to a decision about F/A */
+/*----------------------------------------------------------------------*/
 
-zero_out_profile_table:-
+zero_out_profile_table :-
 	zero_out_profile.
 
-write_out_profile_table:-
+write_out_profile_table :-
 	write_out_profile.
-
-robust_term_psc(Term,Psc):-
-	term_type(Term,Type),
-	( Type =:= 1 -> conpsc(Term,Psc)
-	; Type =:= 5 -> conpsc(Term,Psc)
-	; abort('First arg to term_psc/1 is not a callable term')
-	).
 
 abolish_all_tables :- 
 	abolish_table_info.
 
+/*----------------------------------------------------------------------*/
+
+table_state(Call, State) :-
+	table_status(Call, Status),
+	status_to_state(Status, State).
+
+status_to_state(0, undef).
+status_to_state(1, no_call_yet).
+status_to_state(2, complete).
+status_to_state(3, incomplete).
 
 tfindall(T, Call, Result) :-
-	table_state(Call,Res),
-	( Res == complete -> tfindall1(T,Call,Result)
-	; Res == no_call_yet -> (call(Call),fail ; tfindall(T,Call,Result))
-	; Res == incomplete ->
-		is_incomplete(Call,0,0,0,_), tfindall1(T,Call,Result)
+	table_status(Call, Status),
+	( Status =:= 2 -> findall(T,Call,Result)
+	; Status =:= 1 -> (call(Call),fail ; tfindall(T,Call,Result))
+	; Status =:= 3 ->
+	        get_ptcp(PTCP), get_subgoal_ptr(Call, SubgPtr),
+		is_incomplete(Call,SubgPtr,PTCP,_), findall(T,Call,Result)
         ; abort(('Illegal (untabled?) subgoal to tfindall/3: ', Call))
 	).
 
-/* use regular findall; maybe someday improve its efficiency so it
-doesn't do 2 copies */
-tfindall1(T, Call, Result) :- findall(T, Call, Result).
-
-
-tnot(X):-
+tnot(X) :-
 	( ground(X) -> 't not'(X)
 	; functor(X,F,A),
 	  abort(('FLOUNDERING: tnot/1 used with a non-ground subgoal of predicate ', F/A))
@@ -67,64 +64,30 @@ tnot(X):-
 't not'(X) :-
 	get_ptcp(PTCP), get_subgoal_ptr(X, SubgPtr),
 	( SubgPtr =:= 0, tcall(X), fail
-	; is_incomplete(X, SubgPtr, PTCP, 1, Subg), slg_not(Subg)
+	; is_incomplete(X, SubgPtr, PTCP, Subg), slg_not(Subg)
 	).
 
-etnot(X):-
+etnot(X) :-
 	get_ptcp(PTCP), get_osp_breg(Os, Breg),
 	( call(X), cut_if_leader(X, Os, Breg), fail
-	; Usage = 2, is_incomplete(X, 0, PTCP, Usage, Subg), slg_not(Subg)
+	; is_incomplete(X, 0, PTCP, Subg), slg_not(Subg)
 	).
 
-set_prof_on(Level):-
+/*----------------------------------------------------------------------*/
+
+set_prof_on(Level) :-
 	stat_set_flag(52,Level,1).
 
-set_prof_off:-
+set_prof_off :-
 	stat_set_flag(52,0,1).
 
-set_pil_on:-
+set_pil_on :-
 	stat_set_flag(0,1,1).
 
-set_pil_off:-
+set_pil_off :-
 	stat_set_flag(0,0,1).
 
-set_xtrace_on:-
-	stat_set_flag(51,1,1).
-
-set_xtrace_off:-
-	stat_set_flag(51,0,1).
-
-show_table0('/'(F,A)):-!,
-	functor(Term,F,A),
-	robust_term_psc(Term,Psc),
-	print_predicate_table(Psc).
-
-show_table(P/A) :-
-	functor(Skel,P,A),
-	get_calls_for_table(Skel,Call,Empty),
-	(Empty == empty
-	 ->	numbervars(Call,0,_),
-		write('Call: '),write(Call),ttywritenl(': empty'),
-		fail
-	 ;	(numbervars(Call,0,_),
-		 write('Call: '),write(Call),ttywritenl(':'),fail
-		;
-		 true
-		),
-		get_returns_for_call(Call,Ret),
-		numbervars(Ret,0,_),
-		write(' Ret: '),write(Ret),ttywritenl('.'),
-		fail
-	).
-
-
-from_table(Skel) :-
-	\+ get_calls_for_table(Skel,Call,_)
-	 ->	warning('No unifying call in table.'),
-		fail
-	 ;	get_calls_for_table(Skel,Call,notempty),
-		get_returns_for_call(Call,Skel).
-
+/*----------------------------------------------------------------------*/
 
 output_table(Term,File) :-
 	tell(File),
@@ -132,8 +95,7 @@ output_table(Term,File) :-
 	told.
 
 output_table_1(Term) :-
-	get_calls_for_table(Term,Call,Empty),
-	Empty == notempty,
+	get_calls_for_table(Term,Call),
 	get_returns_for_call(Call,Return),
 	numbervars(Return,0,_),
 	alt_write_canonical(Return),
@@ -144,24 +106,24 @@ output_table_1(_Term).
 abolish_table_call(Call) :- 	
 	call_psc_tip(Call,_Psc,Tip),
 	get_subg_ptr(Call,Tip,SubgPtr),
-        (SubgPtr = 0 ->
+        ( SubgPtr =:= 0 ->
             	true
-        ;
-		call_struct_disp(call_leaf_ptr,LeafDisp),
-		buff_word(SubgPtr,LeafDisp,CallLeafNode),
-		trie_node_element(CallLeafNode,_S,Child,_Pt,_P,_T,_A),
-		new_node(NewNode),
-		trie_node_disp(child,ChildDisp),
-		buff_set_word(NewNode,ChildDisp,Child),
-		trie_node_disp(atom,AtomDisp),
-		get_emu_dependent_const(escape,Escape),
-		buff_set_word(NewNode,AtomDisp,Escape),
-		delete_predicate_table(NewNode), % Using the routine in a diff way
-		tip_struct_disp(call_trie_root,CallRootDisp),
-		CallRootPtr is Tip + CallRootDisp,
-		trie_delete_branch(CallLeafNode,CallRootPtr)).
+        ; call_struct_disp(call_leaf_ptr,LeafDisp),
+	  buff_word(SubgPtr,LeafDisp,CallLeafNode),
+	  trie_node_element(CallLeafNode,Child),
+	  new_node(NewNode),
+	  trie_node_disp(child,ChildDisp),
+	  buff_set_word(NewNode,ChildDisp,Child),
+	  trie_node_disp(atom,AtomDisp),
+	  get_emu_dependent_const(escape,Escape),
+	  buff_set_word(NewNode,AtomDisp,Escape),
+	  delete_predicate_table(NewNode), % Using the routine in a diff way
+	  tip_struct_disp(call_trie_root,CallRootDisp),
+	  CallRootPtr is Tip + CallRootDisp,
+	  trie_delete_branch(CallLeafNode,CallRootPtr)
+	).
 
-abolish_table_pred(Spec):-
+abolish_table_pred(Spec) :-
 	(Spec = F/A
 	 ->	functor(Term,F,A)
 	 ;	Term = Spec
@@ -180,6 +142,16 @@ abolish_table_pred(Spec):-
 	).
 
 
+get_returns_for_call(Call,Call) :-
+	get_call(Call,C,R), get_returns(C,R).
+
+/* OLD get_returns_for_call/2
+   should actually be called get_returns_for_subsumed_call/2.
+
+:- import copy_term/2 from basics.
+:- import arg/3 from standard.
+:- import variant/2 from subsumes.
+
 get_returns_for_call(Call,Return) :-
 	copy_term(Call,Ocall),
 	get_calls(Call,CallStr,RetSkel),
@@ -188,119 +160,10 @@ get_returns_for_call(Call,Return) :-
 	Call = Return,		% bind vars to use in retrieval
 	get_returns(CallStr,RetSkel).
 
-
-get_calls_for_table(Skeleton,Call,Empty) :-
-	functor(Skeleton,Fun,Arity),
-	functor(Call,Fun,Arity),
-	get_calls(Call,CallStr,_RetSkel),
-	call_struct_disp(ans_root_ptr,Arpd),
-	buff_word(CallStr,Arpd,RetTrie),
-	(RetTrie =:= 0
-	 ->	Empty = empty
-	 ;	Empty = notempty
-	).
-
-call_psc_tip(Call,Psc,Tip):-
-	conpsc(Call,Psc),
-	psc_tabled(Psc,Tip),
-	(Tip =\= 0 -> true; writeln(Call),writeln(':is not tabled'),fail).
-
-
-get_subg_ptr(Call,Tip,SubgPtr):-
-	get_emu_dependent_const(call_hash_addr,CHA_flag),
-	tip_prop(Tip,CHA_flag,0 /*get*/,CHT),
-        (CHT = 0 ->
-        	SubgPtr = 0
-	;
-		functor(Call,_Funct,Arity),	
-		call_hash(Call,CHT,Arity,_Dummy,SubgPtr)
-	).
-
-get_subg_ptr(Call,SubgPtr):-
-	call_psc_tip(Call,_Psc,Tip),
-	get_subg_ptr(Call,Tip,SubgPtr).
-
-
-subgp_call_trie_leaf(SubgP,LeafNode):-
-	call_struct_disp(call_leaf_ptr,LeafDisp),
-	buff_word(SubgP,LeafDisp,LeafNode).
-
-
-tip_call_trie_root(Tip,CallRootNode) :-
-	tip_struct_disp(call_trie_root,CallRootDisp),
-	buff_word(Tip,CallRootDisp,CallRootNode).
-
-
-
-table_state(Call,Result) :-
-	conpsc(Call,Psc),
-	psc_tabled(Psc,Tip),
-	(Tip =:= 0
-	 ->	Result = undef
-	 ;	tip_struct_disp(call_trie_root,Ctrd),
-		buff_word(Tip,Ctrd,CallRoot),
-		(CallRoot =:= 0
-		 -> 	Result = no_call_yet
-		 ;	((get_subg_ptr(Call,Tip,Callstr),
-			 Callstr =\= 0)
-			 ->	call_struct_disp(compl_flag,Spd),
-				buff_word(Callstr,Spd,CallStrSusPtr),
-				(CallStrSusPtr =:= -1
-				 ->	Result = complete
-				 ;	Result = incomplete
-				)
-			 ;	Result = no_call_yet
-			)
-		)
-	).
-
-/******* internal predicates *************/
-
-get_residual(CallSkel, DelayList) :-
-	get_calls(CallSkel, S, R),
-	get_returns(S, R, Leaf), 
-	get_delay_lists(Leaf, DLs),
-	( DLs == [] -> DelayList = []
-	; DLs = [DL] -> DelayList = DL
-	; member(DelayList, DLs)
-	).
-
-/* Given the address of the call structure for a return trie (Callstr)
-and a return skeleton (Retskel), both as returned by get_calls, it
-instantiates through backtracking the return skeleton, Retskel, for
-all the returns in the specified trie. If Retskel is partially
-instantiated, it returns only those answers that unify with it.
-get_returns/3 returns in addition the leaf node of the reutrn.  It can
-be passed to delete_return/2 (along with the callstr) to delete the
-return.  */
-
-get_returns(CallStr,RetSkel) :- gr_c(CallStr,RetSkel,_Leaf).
-get_returns(CallStr,RetSkel,Rleaf) :- gr_c(CallStr,RetSkel,Rleaf),
-	aux_call_info(Rleaf,_NumOfVars,_VarArrayPtr).
-
-get_calls(CallSkel,CallStrPtr,RetSkel):- get_calls(CallSkel),
-	get_skel(LastNode,RetSkel),
-	trie_node_element(LastNode,_S,CallStrPtr,_Pt,_P,_Tag,_A).
-
-
-get_skel(LastNode,RetSkel) :- 
-	aux_call_info(LastNode,NumOfVars,VarArrayPtr),
-%	writeln(numofvars(NumOfVars,las(LastNode),vap(VarArrayPtr))),
-%	buff_word(Child,0,CallStrPtr),
-	make_list(0,NumOfVars,VarArrayPtr,ArgList),
-	RetSkel =.. [ret|ArgList].
-
-
-make_list(X,X,_,[]).
-make_list(N,M,Vp,[Hd|Tl]) :- N < M,
-	nth_var_reg(N,Hd),
-	N1 is N + 1,
-	make_list(N1,M,Vp,Tl).
-
-
 not_most_general(Term) :-
 	functor(Term,_,Arity),
 	not_most_gen(Term,1,Arity).
+
 not_most_gen(Term,I,Arity) :-
 	I =< Arity,
 	arg(I,Term,Arg),
@@ -311,9 +174,102 @@ not_most_gen(Term,I,Arity) :-
 		not_most_gen(Term,I1,Arity)
 	).
 
-/********************trie assert related routines *******/
+*/
+
+get_calls_for_table(Skeleton,Call) :-
+	functor(Skeleton,F,A), functor(Call,F,A),
+	get_calls(Call,_CallStr,_RetSkel).
+
+call_psc_tip(Call,Psc,Tip) :-
+	conpsc(Call,Psc),
+	psc_tabled(Psc,Tip),
+	(Tip =\= 0 -> true; writeln(Call),writeln(':is not tabled'),fail).
+
+
+get_subg_ptr(Call,Tip,SubgPtr) :-
+	get_emu_dependent_const(call_hash_addr,CHA_flag),
+	tip_prop(Tip,CHA_flag,0 /*get*/,CHT),
+        ( CHT =:= 0 ->
+        	SubgPtr = 0
+	;
+		functor(Call,_Funct,Arity),	
+		call_hash(Call,CHT,Arity,_Dummy,SubgPtr)
+	).
+
+
+/*----------------------------------------------------------------------*/
+/* Predicates to retrieve information out of tables.                    */
+/*----------------------------------------------------------------------*/
+
+get_residual(CallSkel, DelayList) :-
+	get_calls(CallSkel, S, R),
+	get_returns(S, R, Leaf), 
+	get_delay_lists(Leaf, DLs),
+	( DLs == [] -> DelayList = []
+	; DLs = [DL] -> DelayList = DL
+	; member(DelayList, DLs)
+	).
+
+get_call(Call,SubgoalPtr,RetSkel) :-
+	get_subgoal_ptr(Call,SubgoalPtr), SubgoalPtr =\= 0,
+	construct_ret_for_call(R), RetSkel = R.
+
+get_calls(CallSkel,CallStrPtr,RetSkel) :-
+	get_calls(CallSkel),
+	get_lastnode_and_retskel(LastNode,1,R), RetSkel = R,
+	trie_node_element(LastNode,CallStrPtr).
+
+/* Given the address of the call structure for a return trie (CallStr)
+ * and a return skeleton (RetSkel), both as returned by get_calls/3, it
+ * instantiates through backtracking the return skeleton, Retskel, for
+ * all the returns in the specified trie.  If RetSkel is partially
+ * instantiated, it returns only those answers that unify with it.
+ * get_returns/3 returns in addition the leaf node of the return.
+ * It can be passed to delete_return/2 (along with the CallStr) to
+ * delete the return.
+ */
+
+get_returns(CallStr,RetSkel) :- get_returns(CallStr,RetSkel).
+
+get_returns(CallStr,RetSkel,Rleaf) :-
+	gr_c(CallStr,RetSkel),
+	get_lastnode_and_retskel(Rleaf,0,_).
+
+/* delete_return(Cs,N) takes a call structure pointer in Cs (returned
+ * by get_calls) and the address of a node that is a leaf of the return
+ * trie pointed to by the call structure. (Such a node address is
+ * returned by get_returns/3.)  It deletes the node and reclaims the
+ * space.  There is a potential inefficiency problem in that it deletes
+ * it from the chain of returns by running the chain, which may be long.
+ *
+ * trie_delete_branch/2 brutally deletes a term from the trie...
+ */
+
+trie_delete_branch(A,B) :- trie_delete_branch_ret(A,B,0).
+
+delete_return(CallStr,AnsNode) :- trie_delete_branch_ret(AnsNode,CallStr,1).
+
+
+/*----------------------------------------------------------------------*/
+/* trie assert related predicates                                       */
+/*----------------------------------------------------------------------*/
 
 is_trie_asserted(Term) :- trie_asserted_fact(Term,_Psc,_Ep,_Rn).
+trie_dynamic(X) :- dynamic(X), add_trie_index(X).
+trie_assert(Term) :- t_assert(Term, _Flag).
+trie_assert(Term,Flag) :- t_assert(Term,Flag).
+trie_retract(X) :- retract(X).
+trie_retract_nr(X) :- retract_nr(X).
+trie_retract_all(X) :- retractall(X).
+
+abolish_trie_asserted(Functor/Arity) :-
+	functor(Term,Functor,Arity),
+	trie_asserted_fact(Term,Psc,_Ep,Rn),
+	psc_struct_disp(ep,Epdisp),
+	buff_set_word(Psc,Epdisp,0), 
+	psc_struct_disp(entry_type,Typedisp),
+	buff_set_byte(Psc,Typedisp,0),
+	delete_predicate_table(Rn).
 
 trie_asserted_fact(Term,Psc,Eptr,RootNode) :-
 	conpsc(Term,Psc),
@@ -326,27 +282,17 @@ trie_asserted_fact(Term,Psc,Eptr,RootNode) :-
 	Instr = TrInstr,
 	trie_node_disp(child,ChildDisp),
 	buff_word(Eptr,ChildDisp,RootNode).
-	
-abolish_trie_asserted(Functor/Arity) :-
-	functor(Term,Functor,Arity),
-	trie_asserted_fact(Term,Psc,_Ep,Rn),
-	psc_struct_disp(ep,Epdisp),
-	buff_set_word(Psc,Epdisp,0), 
-	psc_struct_disp(entry_type,Typedisp),
-	buff_set_byte(Psc,Typedisp,0),
-	delete_predicate_table(Rn).
 
+/*----------------------------------------------------------------------*/
+/* aggregate stuff                                                      */
+/*----------------------------------------------------------------------*/
 
-trie_dynamic(X) :- dynamic(X), add_trie_index(X).
-trie_retract(X) :- retract(X).
-trie_assert(Term) :- t_assert(Term, _Flag).
-trie_assert(Term,Flag) :- t_assert(Term,Flag).
-trie_retract_nr(X) :- retract_nr(X).
-
-
-trie_retract_all(X):- retractall(X).
-
-% aggregate stuff
+breg_retskel(BregOffset,Arity,RetTerm,CallStr) :-
+	get_emu_dependent_const(cp_base, CPBase),
+	Breg is CPBase - BregOffset,
+	nvars(Breg,Arity,Nvars),
+	functor(RetTerm,ret,Nvars),
+	breg_retskel_fillskel(RetTerm,Breg,Arity,Nvars,CallStr).
 
 nvars(Breg,Arity,Nvars) :- 	
 	get_emu_dependent_const(tcp_size,TcpSize),
@@ -356,60 +302,42 @@ nvars(Breg,Arity,Nvars) :-
 	Ptr is Breg + Tmp1,
 	buff_word(Ptr,0,Nvars).
 
-breg_retskel(BregOffset,Arity,RetTerm,CallStr) :-
-	get_emu_dependent_const(cp_base, CPBase),
-	Breg is CPBase - BregOffset,
-	nvars(Breg,Arity,Nvars),
-	functor(RetTerm,ret,Nvars),
-	breg_retskel_fillskel(RetTerm,Breg,Arity,Nvars,CallStr).
-
-/* delete_return(Cs,N) takes a call structure pointer in Cs (returned
-by get_calls) and the address of a node that is a leaf of the return
-trie pointed to by the call structure. (Such a node address is
-returned by get_returns/3.) It deletes the node and reclaims the
-space. There is a potential efficiency problem in that it deletes it
-from the chain of returns by running the chain, which may be long.
---------------------------------------------------
-trie_delete_branch/2 brutally deletes a term  from the trie...
- */
-
-trie_delete_branch(A,B):- trie_delete_branch_ret(A,B,0).
-delete_return(CallStr,AnsNode):- trie_delete_branch_ret(AnsNode,CallStr,1).
+/*======================================================================*/
+/* builtins to get (and change) trie nodes - they belong somewhere else */
 /*======================================================================*/
 
-% builtins to get (and change) trie nodes
-trie_node_element(_N,_Sibling,_Child,_Ptag,_Parent,_Tag,_Atom):- '_$builtin'(140).
-new_node(_N):- '_$builtin'(141).
+trie_node_element(_N,_Child) :- '_$builtin'(140).
+new_node(_N) :- '_$builtin'(141).
+table_status(_Call,_Status) :- '_$builtin'(143).
+get_delay_lists(_LeafNode,_DL) :- '_$builtin'(144).
 delete_predicate_table(_N) :- '_$builtin'(145).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :- '_$builtin'(149).
-gr_c(_CallStr,_RetSkel,_LeafNode) :- '_$builtin'(150).
+gr_c(_CallStr,_RetSkel) :- '_$builtin'(150).
 get_calls(_CallSkel)  :- '_$builtin'(151).
-aux_call_info(_LastNode,_NumOfVars,_VarArrayPtr) :- '_$builtin'(152). 
-nth_var_reg(_Hd,_Tmp) :- '_$builtin'(153).
+get_lastnode_and_retskel(_LastNode,_Mode,_RetSkel) :- '_$builtin'(152).
+construct_ret_for_call(_RetSkel) :- '_$builtin'(153).
 breg_retskel_fillskel(_RetTerm,_Breg,_Arity,_Nvars,_CallStr) :- '_$builtin'(154).
-get_delay_lists(_LeafNode,_DL) :- '_$builtin'(144).
 
 /*======================================================================*/
 /*  Emulator-dependent constants (make sure they are kept up-to-date).	*/
 /*======================================================================*/
-
-
 
 % C structure definitions:
 % call structure
 %-------------------------
 call_struct_disp(next_subgoal,0).
 call_struct_disp(ans_root_ptr,4).
-call_struct_disp(susp_ptr,8).
+call_struct_disp(asf_list_ptr,8).
 call_struct_disp(tip_ptr,12).
 call_struct_disp(compl_stack_ptr,16).
 call_struct_disp(compl_susp_ptr,20).
 call_struct_disp(ans_list_ptr,24).
-call_struct_disp(prev_sug_ptr,28).
+call_struct_disp(prev_subg_ptr,28).
 call_struct_disp(call_leaf_ptr,32).
 call_struct_disp(cp_ptr,36).
-call_struct_disp(ans_list_tail,40).  %jf: 07/23/95
-call_struct_disp(compl_flag,44).     %jf: 07/23/95
+call_struct_disp(ans_list_tail,40).
+call_struct_disp(compl_flag,44).
+call_struct_disp(nide,48).
 
 % table information structure
 %----------------------------
@@ -422,8 +350,6 @@ trie_node_disp(sibling,4).
 trie_node_disp(child,8).
 trie_node_disp(parent,12).
 trie_node_disp(atom,16).
-
-
 
 % Psc structure 
 %--------------

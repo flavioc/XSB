@@ -108,26 +108,27 @@ struct answer_list_node {
 
 /*-- exported trie functions ------------------------------------------*/
 
-extern int	trie_get_calls(void);
+extern byte *	trie_get_calls(void);
 extern int	free_trie_size(void);
 extern int	allocated_trie_size(void);
 extern int	allocated_trie_hash_size(void);
-extern int	trie_get_returns_for_call(void);
+extern byte *	trie_get_returns_for_call(void);
 extern void	abolish_trie(void);
 extern void	aux_call_info(void);
 extern void	prolog_newnode(void);
 extern void	remove_open_tries(CPtr);
-extern void	make_cell_as_desired(void);
+extern void	get_lastnode_and_retskel(void);
 extern void     load_solution_trie(int, CPtr, NODEptr);
-extern void     variant_call_search(int, CPtr, CPtr *, int *);
+extern bool     variant_call_search(int, CPtr, CPtr *);
 extern NODEptr  one_term_chk_ins(CPtr,CPtr,int *);
 extern NODEptr  whole_term_chk_ins(Cell, CPtr, int *);
 extern NODEptr	get_next_trie_solution(ALPtr *);
 extern NODEptr	variant_trie_search(int, CPtr, CPtr, int *);
 extern NODEptr  delay_chk_insert(int, CPtr, CPtr *);
-extern void     undo_answer_bindings();
+extern void     undo_answer_bindings(void);
 extern void	load_delay_trie(int, CPtr, NODEptr);
-extern void     bottom_up_unify();
+extern void     bottom_up_unify(void);
+
 /*---------------------------------------------------------------------*/
 
 /* slg variables */

@@ -64,16 +64,16 @@
 /* Prolog code the way it really should.		- Kostis.	*/
 /*----------------------------------------------------------------------*/
 
-#ifdef DEBUG
+#if (defined(DEBUG) && !defined(CHAT))
 #define CHECK_TABLE_CUT()\
-    if( *breg == (Cell) &retry_active_inst ||                               \
-        *breg == (Cell) &completion_suspension_inst || *breg <= 2 )         \
+    if( *breg == (Cell) &answer_return_inst ||                              \
+        *breg == (Cell) &resume_compl_suspension_inst || *breg <= 2 )         \
     {   fprintf( stderr, "warning: cutting over non prolog CP: @inst %d: ", \
                  xctr ) ;                                                   \
-        if( *breg == (Cell) &retry_active_inst )                            \
-            fprintf( stderr, "retry_active node\n" );                       \
-        else if( *breg == (Cell) &completion_suspension_inst )              \
-            fprintf( stderr, "completion_suspension_inst node\n" );         \
+        if( *breg == (Cell) &answer_return_inst )                           \
+            fprintf( stderr, "consumer choice point\n" );                   \
+        else if( *breg == (Cell) &resume_compl_suspension_inst )              \
+            fprintf( stderr, "negation suspension choice point\n" );        \
         else if( *breg <= 2 )                                               \
             fprintf( stderr, "negation stuff\n" );                          \
         fprintf( stderr, "b=%p bf=%p tr=%p trf=%p, cut to %p\n",            \
@@ -108,24 +108,44 @@
 /* Takes a pointer to the choice point frame we are cutting back to.	*/
 /*----------------------------------------------------------------------*/
 
+#ifdef CHAT      /* First attempt: CHECK FOR CORRECTNESS !!! */
+#define cut_restore_trail_condition_registers(CUTB) \
+    ebreg = cp_ebreg(CUTB); \
+    hbreg = cp_hreg(CUTB);
+#else
 #define cut_restore_trail_condition_registers(CUTB) \
     if ((CPtr)  *CUTB >= (CPtr) pdl.low || \
-		*CUTB == (Cell) &retry_active_inst || \
-		*CUTB == (Cell) &completion_suspension_inst) { \
+		*CUTB == (Cell) &answer_return_inst || \
+		*CUTB == (Cell) &resume_compl_suspension_inst) { \
 	ebreg = cp_ebreg(CUTB); \
 	hbreg = cp_hreg(CUTB); \
     }
+#endif
 
 /*----------------------------------------------------------------------*/
 /* Deletes all trail frames that are no longer conditional.		*/
 /* Most probably, it does *NOT* work for cuts over tables!!		*/
 /*----------------------------------------------------------------------*/
 
+#if (!defined(WAM_TRAIL))
 #define trail_parent(t)         ((CPtr *)*(t))
 #define trail_value(t)          ((CPtr *)*((t)-1))
 #define trail_variable(t)       ((CPtr *)*((t)-2))
 #define good_trail_register(t)	(conditional(((CPtr) *((t)-2))))
+#else
+#define good_trail_register(t)	(conditional(((CPtr) *(t))))
+#endif
 
+#if (defined(CHAT) && defined(WAM_TRAIL))
+#define unwind_trail(tbreg, from, to) {	\
+    from = to = (CPtr) cp_trreg(tbreg);				\
+    while (from < (CPtr)trreg) {				\
+      if (good_trail_register(from)) { *to = *from; to++; }	\
+      from++;							\
+    }								\
+    trreg = (CPtr *)to;						\
+  }
+#else
 #define unwind_trail(tbreg, t1, t2) {	\
     while (!good_trail_register(trreg) &&				\
 	   trreg > trfreg &&						\
@@ -142,5 +162,6 @@
       }									\
     }									\
   }
+#endif
 
 

@@ -138,6 +138,12 @@ tab_inf_ptr get_tip(Psc temp)
 	    case tabletry:
 	    case tabletrysingle:
 	      return (tab_inf_ptr) (temp1[2]) ;
+	    case test_heap:
+	      if (*(pb)(temp1+2) == tabletry ||
+		  *(pb)(temp1+2) == tabletrysingle)
+		return (tab_inf_ptr) (temp1[4]) ;
+	      else return NULL;
+	      break;
 	    case switchon3bound:
 	    case switchonbound:
 	    case switchonterm:

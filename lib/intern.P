@@ -23,12 +23,11 @@
 */
 
 
-
 :- export new_trie/1, trie_intern/5, trie_intern/4, trie_interned/4,
-	trie_intern/3, trie_interned/3, trie_unintern/2,
-	delete_trie/1.
-:- import  get_skel/2 from tables.
-:- import integer/1, abort/1  from standard.
+	  trie_intern/3, trie_interned/3, trie_unintern/2, delete_trie/1.
+
+:- import integer/1, abort/1 from standard.
+:- import get_lastnode_and_retskel/3 from tables.
 
 
 % the i_ predicates are internal!
@@ -42,7 +41,6 @@
 new_trie(_Root) :-
 	 '_$builtin'(159).
 
-
 /*--------------------------------------------------
 trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
 	Term: term to be interned
@@ -51,26 +49,23 @@ trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
 	Flag: 1 -> Old term 0 -> New term
 	Skel: Variables in the interned term
 --------------------------------------------------*/
-trie_intern(Term,Root,Leaf,Flag,Skel) :- 
-       i_trie_intern(Term,Root,Leaf,Flag),
-	get_skel(_,Skel).
 
-
+trie_intern(Term,Root,Leaf,Flag,Skel) :-
+	i_trie_intern(Term,Root,Leaf,Flag),
+	get_lastnode_and_retskel(_,1,Skel1), Skel = Skel1.
 
 /*--------------------------------------------------
  version where flag is ignored 
 --------------------------------------------------*/
+
 trie_intern(Term,Root,Leaf,Skel) :- 
 	trie_intern(Term,Root,Leaf,_Flag,Skel). 
-
 
 /* --------------------------------------------------
 version which interns into a fixed trie 
 --------------------------------------------------*/
+
 trie_intern(Term,Leaf,Skel) :- 	trie_intern(Term,0,Leaf,Skel).
-
-
-
 
 /*--------------------------------------------------
 trie_interned(?Term,+Root,?Leaf,-Skel)
@@ -90,23 +85,22 @@ Leaf Parameters are incorrect)
 trie_interned(Term,Root,Leaf,Skel) :-
 	var(Leaf),
 	i_trie_interned(Term,Root,Leaf),
-	get_skel(Leaf,Skel1),
+	get_lastnode_and_retskel(Leaf,1,Skel1),
 	Skel1 = Skel.
 
 trie_interned(Term,Root,Leaf,Skel) :-
 	integer(Leaf),
 	bottom_up_unify(Term1,Root,Leaf),
 	Term1 = Term,
-	get_skel(_,Skel1),
+	get_lastnode_and_retskel(_,1,Skel1),
 	Skel1 = Skel.
 
 /* --------------------------------------------------
 version which interns into a fixed trie 
 --------------------------------------------------*/
+
 trie_interned(Term,Leaf,Skel) :- 
 	trie_interned(Term,0,Leaf,Skel).
-
-
 
 /*--------------------------------------------------
 trie_unintern(+Root,+Leaf)
@@ -114,14 +108,14 @@ this predicate has to be called with care. Uninterning
 can be done only when the trie from which the term is
 being uninterned is not being actively accessed. 
 --------------------------------------------------*/
+
 trie_unintern(Root,Leaf) :- 
 	integer(Root),
 	integer(Leaf),
 	!,
-	 trie_dispose(Root,Leaf).
+	trie_dispose(Root,Leaf).
 trie_unintern(R,L) :-
 	abort(('Incorrect Arguments to',trie_unintern(R,L))).
-
 
 /*--------------------------------------------------
 delete_trie(+Root)
@@ -139,12 +133,12 @@ delete_trie(Root) :- delete_trie(Root,intern).
 
 
 
-
 /* builtin calls */
 i_trie_intern(_Term,_Root,_Leaf,_Flag) :- '_$builtin'(160).
 i_trie_interned(_Term,_Root,_Leaf) :- '_$builtin'(161).
 trie_dispose(_Root,_Leaf) :- '_$builtin'(162).
 bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(163).
 delete_trie(_Root,_Usage) :- '_$builtin'(164).
+
 
 

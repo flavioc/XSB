@@ -37,7 +37,7 @@ compile(Modname, Basename, Options, ExportList) :-
 		   SpecFile, TIFile, TableFile, OptFile),
 	setoptions(Options), initialize,
 	message(('[Compiling ', Basename, ']')), cputime(TimeStart),
-	db_preprocess(PFile, HFile, OptFile, SourceFile),
+	db_preprocess(PFile, HFile, Options, OptFile, SourceFile),
 	parse(Modname, SourceFile, HFile, Module_0),
     ( option(profile) -> 
 		time_message(TimeStart, 'Parse finito'), cputime(TimeParse)
@@ -96,25 +96,24 @@ abort_if_syntax_errors(Modname) :-
 	).
 
 /*======================================================================*/
-/* db_preprocess(+PFile, +HFile, +OptFile, -SourceFile)	*/
+/* db_preprocess(+PFile, +HFile, +Options, +OptFile, -SourceFile)	*/
 /*	Calls the database optimizer of XSB as a preprocessor that	*/
 /*	produces the file OptFile out of PFile and HFile.		*/
 /*======================================================================*/
 
-db_preprocess(PFile, HFile, OptFile, SourceFile) :-
-	(option(db_opt)
-	 ->	(option(unfold),option(reorder)
-		 ->	DB_Opt_Options = [unfold,reorder]
-		 ; option(unfold)
-		 ->	DB_Opt_Options = [unfold]
-		 ; option(reorder)
-		 ->	DB_Opt_Options = [reorder]
-		 ;	DB_Opt_Options = []
-		),
+db_preprocess(PFile, HFile, Options, OptFile, SourceFile) :-
+	( option(db_opt) ->
+		db_opt_options(Options, [], DB_Opt_Options),
 		db_optimize(PFile, HFile, DB_Opt_Options, OptFile),
 		SourceFile = OptFile
-	 ;	SourceFile = PFile
+	; SourceFile = PFile
 	).
+
+:- mode db_opt_options(+,+,-).
+
+db_opt_options(Options, Oin, Oout) :-
+	( member1(unfold, Options) -> Omid = [unfold|Oin] ; Omid = Oin ),
+	( member1(reorder, Options) -> Oout = [reorder|Omid] ; Oout = Omid ).
 
 /*======================================================================*/
 /* table_process(+ModuleIn, -ModuleOut, +SFile)				*/
@@ -247,7 +246,8 @@ compile_pred_block([PredDef|PRest], PilCode-PilCodeR, NCin, NCout) :-
 
 compile_predicate2(pred(Sym,Clauses,Prag), PilCode-PilCodeR, NC) :-
 	gennum(L),
-	PilCode = [label(pred,(Sym,L))|PilCode1],
+	PilCode = [label(pred,(Sym,L)),test_heap(Arity,Margin)|PilCode1],
+	sym_name(Sym,_,Arity), Margin = 2000, % Margin is temporary
 	find_if_tabled(Sym,Tabled,Tabind),
 	makeindex(Sym, Clauses, PilCode1, PilCodeM, Prag, Tabled, Tabind),
 	need_neck(Clauses, Neck),

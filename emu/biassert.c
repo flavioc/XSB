@@ -58,7 +58,7 @@
 #include "choice.h"
 #include "xmacro.h"
 #include "tr_utils.h"
-#include "switch.h"
+#include "trassert.h"
 
 
 /* --- routines used from other files ---------------------------------	*/
@@ -1977,7 +1977,7 @@ bool db_build_prref( /* Arity, FirstTIP, -TIP, -PrRef, -PrEntry */ )
 	Loc = 0 ;
 	dbgen_inst_ppvww(tabletrysingle,Arity,(tp+3),tip,tp,&Loc) ;
 	dbgen_inst_ppp(allocate,tp,&Loc) ;
-	dbgen_inst_ppv(getpbreg,2,tp,&Loc) ;
+	dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
 	dbgen_inst_ppvw(calld,3,p,tp,&Loc) ;
 	dbgen_inst_pvv(new_answer_dealloc,Arity,2,tp,&Loc) ;
 	dbgen_inst_ppp(proceed,tp,&Loc) ;
@@ -2099,8 +2099,7 @@ void print_bytes(CPtr x,int lo, int hi)
 #endif
 /*----------------------------------------------------------------*/
 
-int  clref_trie_asserted(CPtr Clref){
-  
+int clref_trie_asserted(CPtr Clref) {
   return((code_to_run(Clref) == jump) && 
 	 (first_instr_to_run(Clref) == trie_assert_inst));
 }
@@ -2110,9 +2109,7 @@ int  clref_trie_asserted(CPtr Clref){
 
 CPtr trie_asserted_clref(CPtr prref)
 {
-
   CPtr Clref;
-
 
   Clref = last_clref(prref);
   if(try_type_instr_fld(prref) != fail){
@@ -2206,7 +2203,7 @@ int trie_assert(void)
     /* Allocate the trie node as in old trie assert 
        put it in a clref block and pray */
     Trie_Asserted_Clref = ((CPtr)mem_alloc(6*sizeof(Cell))) + 2;
-    *(Trie_Asserted_Clref -2) = 6*sizeof(Cell)+2;
+    *(Trie_Asserted_Clref-2) = 6*sizeof(Cell)+2;
 
     inst_node_ptr = (NODEptr)mem_alloc(sizeof(struct NODE));
     if (inst_node_ptr == NULL){
@@ -2265,11 +2262,10 @@ int trie_retract(void)
   }
   switch_from_trie_assert;
   return TRUE;
-
-
-  
 }
+
 /*-----------------------------------------------------------------*/
+
 int trie_retract_safe(void)
 { 
   if(Last_Nod_Sav == NULL)
@@ -2280,10 +2276,14 @@ int trie_retract_safe(void)
   }
 }
 /*-----------------------------------------------------------------*/
-void reclaim_space(){
+
+void reclaim_space(void)
+{
   fprintf(stderr,"Will be implemented soon\n");
 }
+
 /*-----------------------------------------------------------------*/
+
 void abolish_trie_asserted_stuff(CPtr b)
 {
    NODEptr TNode;
@@ -2296,3 +2296,4 @@ void abolish_trie_asserted_stuff(CPtr b)
    *(b + 3) = (Cell) 0;
 }
 
+/*-----------------------------------------------------------------*/

@@ -38,6 +38,12 @@
  *  TRreg and TRFreg always point to the Dynamic Link field of a trail frame.
  */
 
+#ifdef WAM_TRAIL
+
+#define pushtrail0(addr,val)  *(trreg++) = addr
+
+#else
+
 #define TRAIL_FRAME_SIZE  3
 
 #define pushtrail0(addr,val)  \
@@ -53,11 +59,16 @@
      *(trreg-1) = (CPtr) val;\
      *(trreg-2) = addr;\
    }
+#endif
 
+#ifdef CHAT
+#define conditional(a)	( ((a) >= ebreg) || ((a) < hbreg) )
+#else
 #define conditional(a)	( ((a) >= ebreg || (a) >= efreg) || \
 			  ((a) < hbreg  || (a) < hfreg) )
+#endif
 
-#define pushtrail(a,v)	if (conditional(a)) {pushtrail0(a,v)}
+#define pushtrail(a,v)	if (conditional(a)) { pushtrail0(a,v); }
 #define dpushtrail(a,v) pushtrail0(a,v)
 
 /* --- binding -------------------------------------------------------- */

@@ -42,10 +42,12 @@ byte *cpreg;		/* return point register        */
 byte *pcreg;		/* program counter              */
 CPtr ebreg;		/* breg into environment stack	*/
 
+#if (!defined(CHAT))
 CPtr efreg;
 CPtr bfreg;
 CPtr hfreg;
 CPtr *trfreg;
+#endif
 CPtr pdlreg;
 CPtr openreg;
 CPtr root_address;

@@ -42,9 +42,9 @@
   follow(hreg++) = makecs(sreg);					\
   follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
   new_heap_functor(sreg, delay_psc);					\
-  cell(sreg) = (Cell)SUBGOAL; sreg++;					\
-  cell(sreg) = (Cell)NEG_DELAY; sreg++;					\
-  cell(sreg) = (Cell)NEG_DELAY; sreg++;					\
+  cell(sreg) = makestring(SUBGOAL); sreg++;				\
+  cell(sreg) = makestring(NEG_DELAY); sreg++;				\
+  cell(sreg) = makecs(NEG_DELAY); sreg++;				\
   hreg = sreg;								\
   delayreg = (CPtr) new_delay_cons_cell;				\
 }
@@ -68,8 +68,8 @@
   follow(hreg++) = makecs(sreg);					\
   follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
   new_heap_functor(sreg, delay_psc);					\
-  cell(sreg++) = (Cell)SUBGOAL;						\
-  cell(sreg++) = (Cell)ANSWER;						\
+  cell(sreg++) = makestring(SUBGOAL);					\
+  cell(sreg++) = makestring(ANSWER);					\
   follow(sreg++) = makecs(SUBSF);					\
   hreg = sreg;								\
   delayreg = (CPtr) new_delay_cons_cell;				\
@@ -111,7 +111,7 @@ struct delay_element {
 			 * negative).  Will be set in record_de_usage()
 			 */
   CPtr    subs_fact;
-  CPtr    subs_fact_leaf;
+  NODEptr subs_fact_leaf;
 } ;
 
 #define de_subgoal(X)	 (X) -> subgoal

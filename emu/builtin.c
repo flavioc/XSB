@@ -105,11 +105,12 @@
 #include "sig.h"
 #include "subp.h"
 #include "tr_utils.h"
-#include "switch.h"
 #include "trassert.h"
 #include "dynload.h"
 #include "cinterf.h"
-
+#ifdef CHAT
+#include "chat.h"
+#endif
 
 #include "residual.h"
 
@@ -260,13 +261,13 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   register Cell addr = cell(reg+regnum);
 
   /* deref and then check the type */
-  free_deref( addr );
+  deref( addr );
   switch (cell_tag(addr)) {
   case FREE:
   case REF1: 
   case CS:
   case LIST:
-  case FLOAT: printf("Wrong arg in ptoc_int\n");
+  case FLOAT: fprintf(stderr, "Wrong arg in ptoc_int\n");
     return 0;
   case STRING: return (prolog_int)string_val(addr);	/* dsw */
   case INT: return int_val(addr);
@@ -280,7 +281,7 @@ DllExport prolog_float call_conv ptoc_float(int regnum)
   register Cell addr = cell(reg+regnum);
 
   /* deref and then check the type */
-  free_deref( addr );
+  deref( addr );
   switch (cell_tag(addr)) {
   case FREE:
   case REF1: 
@@ -300,7 +301,7 @@ DllExport char* call_conv ptoc_string(int regnum)
   register Cell addr = cell(reg+regnum);
   
   /* deref and then check the type */
-  free_deref( addr );
+  deref( addr );
   switch (cell_tag(addr)) {
   case FREE:
   case REF1: 
@@ -511,10 +512,10 @@ static void strclose(int i)
 
 int  builtin_call(byte number)
 {
-  CPtr var;
+  CPtr var, reg_base;
   char message[80];
   char *addr, *tmpstr;
-  int value, i, disp, arity, tmpval, usage;
+  int value, i, disp, arity, tmpval;
   long c; int new_indicator, len;	/* for standard preds */
   
   Cell heap_addr, term, term2, index;	/* used in standard preds */
@@ -736,14 +737,7 @@ int  builtin_call(byte number)
       printf("New Buffer Size Cannot exceed the old one!!\n");
       break;
     }
-    if (ptoc_int(4)==1) {
-      mem_dealloc((byte *)(addr+value), disp-value);
-    }
-    else /* perm == 0, in heap */ {
-      if ((Cell)hreg == (Cell)(addr+disp)) 
-	if ((CPtr) (addr + value) >= hfreg)
-	  hreg = (CPtr)(addr + value);
-    }
+    mem_dealloc((byte *)(addr+value), disp-value);
     break;
   case BUFF_WORD:		/* R1: +buffer; r2: displacement(+integer); */
 				/* R3: value (-integer) */
@@ -1321,7 +1315,7 @@ int  builtin_call(byte number)
     get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
     compl_stack_ptr = subg_compl_stack_ptr(subgoal_ptr);
     if (prev_compl_frame(compl_stack_ptr) >= COMPLSTACKBOTTOM ||
-	is_leader(subgoal_ptr)) {
+	is_leader(compl_stack_ptr)) {
       next_openreg = (CPtr) ((Integer)complstack.high - ptoc_int(2));
       next_breg = (CPtr)(tcpstack.high - ptoc_int(3));
       /*	      printf("nb %x no %x\n",next_breg, next_openreg);*/
@@ -1451,7 +1445,7 @@ int  builtin_call(byte number)
     db_remove_prref();
     break;
 
-    /*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
 
 #include "std_pred.i"
 
@@ -1463,18 +1457,37 @@ int  builtin_call(byte number)
 #include "xsb_odbc.i"
 #endif
 
-    /*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
 
-  case TRIE_NODE_ELEMENT: trie_node_element();break;
-  case PROLOG_NEWNODE:prolog_newnode();break;
-  case DELETE_PREDICATE_TABLE:delete_predicate_table();break;
-  case TABLE_HASH: 
+  case TRIE_NODE_ELEMENT:
+    trie_node_element();
+    break;
+  case PROLOG_NEWNODE:
+    prolog_newnode();
+    break;
+  case TABLE_STATUS:  /* reg1: +term; reg2: -status (int) */
     term = ptoc_tag(1);
-    i = ptoc_int(2);
-    if (isconstr(term)) 
-      ctop_int(3,HASH(makecs(follow(cs_val(term))),i));
-    else if (islist(term)) ctop_int(3,0);
-    else ctop_int(3,HASH(term,i));
+    if ((psc = term_psc(term)) == NULL) {
+      err_handle(TYPE, 1, "table_status", 2, "callable term", term);
+      return 0;	/* fail */
+    }
+    tip = get_tip(psc);
+    if (tip == NULL) {
+      value = 0; /* undef */
+    } else {
+      arity = get_arity(psc);
+      subgoal_ptr = ti_call_trie_root(tip);
+      get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
+      if (subgoal_ptr == NULL) {
+	value = 1; /* no_call_yet */
+      } else {
+	value = (is_completed(subgoal_ptr)) ?  2 : 3;
+      }
+    }
+    ctop_int(2, value);
+    break;
+  case DELETE_PREDICATE_TABLE:
+    delete_predicate_table();
     break;
   case TRIE_ASSERT:
     if(trie_assert())
@@ -1492,21 +1505,19 @@ int  builtin_call(byte number)
     if(ptoc_int(3) == 0)
       delete_branch((NODEptr)ptoc_int(1),(CPtr)ptoc_int(2)); 
     else
-      delete_return((NODEptr)ptoc_int(1),(CPtr)ptoc_int(2)); 
+      delete_return((NODEptr)ptoc_int(1),(SGFrame)ptoc_int(2)); 
     break;
   case TRIE_GET_RETURN:
-    if(trie_get_returns_for_call()== FALSE)
-      pcreg = (pb)&fail_inst;
+    pcreg = trie_get_returns_for_call();
     break;
-  case TRIE_GET_CALL:
-    if(trie_get_calls()==FALSE)
-      pcreg = (pb)&fail_inst;
+  case TRIE_GET_CALL: /* r1: +call_term */
+    pcreg = trie_get_calls();
     break;
-  case AUX_CALL_INFO:
-    aux_call_info();
+  case GET_LASTNODE_AND_RETSKEL:
+    get_lastnode_and_retskel();
     break;
-  case MAKE_CELL_AS_DESIRED:
-    make_cell_as_desired();
+  case CONSTRUCT_RET_FOR_CALL:
+    construct_ret_for_call();
     break;
   case BREG_RETSKEL:
     aux_breg_retskel();
@@ -1545,30 +1556,6 @@ int  builtin_call(byte number)
 
     break;
 
-  case SCHED_STRAT:
-    term = ptoc_tag(1);
-    if (isnonvar(term)){
-      if (isstring(term)) {
-	tmpstr = ptoc_string(1);
-#ifdef LOCAL_EVAL
-	if (!strcmp(tmpstr,"local_sched"))
-	  return TRUE;
-	else return FALSE;
-#else
-	if (!strcmp(tmpstr,"batched_sched"))
-	  return TRUE;
-	else return FALSE;
-#endif	    
-      } /* if (isstrin... */
-      else
-	return FALSE;
-    }
-#ifdef LOCAL_EVAL
-    ctop_string(1,string_find("local_sched",1));
-#else
-    ctop_string(1,string_find("batched_sched",1));
-#endif	    
-    break;
   case NEWTRIE:
     newtrie();
     break;
@@ -1597,6 +1584,16 @@ int  builtin_call(byte number)
     }
     break;
 	    
+  case PR_LS: print_ls(0) ; return TRUE ;
+  case PR_TR: print_tr(0) ; return TRUE ;
+  case PR_HEAP: print_heap(0,2000,0) ; return TRUE ;
+  case PR_CP: print_cp(0) ; return TRUE ;
+  case PR_REGS: print_regs(10,0) ; return TRUE ;
+  case PR_ALL: print_all() ; return TRUE ;
+  case EXP_H: glstack_realloc(glstack.size + 1,0) ; return TRUE ;
+  case MARK_H: mark_heap(ptoc_int(1)) ; return TRUE ;
+  case GC_H: return(gc_heap(0)) ;
+
   case FINDALL_INIT: return(findall_init()) ;
   case FINDALL_ADD: return(findall_add()) ;
   case FINDALL_GET_SOLS: return(findall_get_solutions()) ;
@@ -1948,7 +1945,6 @@ int  builtin_call(byte number)
     xsb_exit(message);
     break;
   }
-contcase:
   return 1;
 }
 

@@ -38,6 +38,8 @@
 #include "cell.h"
 #include "inst.h"
 #include "psc.h"
+#include "heap.h"
+#include "flags.h"
 #include "deref.h"
 #include "memory.h"
 #include "register.h"
@@ -49,37 +51,39 @@
 #include "xsberror.h"
 #include "tr_utils.h"
 
+/*----------------------------------------------------------------------*/
+
 struct NODE dummy_ans_node = {0,0,1,0,NULL,NULL,NULL,0};
+
 static CPtr *trie_tr_base, *temp_trreg;
 int AnsVarCtr;
-/*======================================================================*/
+
+/*----------------------------------------------------------------------*/
 
 extern tab_inf_ptr get_tip(Psc);
 extern Psc term_psc(Cell);
 
-/*======================================================================*/
-
-#define set_min(a,b,c)	if (b < c) a = b; else a = c
-
-
+/*----------------------------------------------------------------------*/
 
 struct HASHhdr HASHroot = {0,0,0,0};
 struct HASHhdr *HASHrootptr;
 
-
 struct HASHhdr tra_HASHroot = {0,0,0,0};
 
+/*----------------------------------------------------------------------*/
 /*********Simpler trails ********/
-#define simple_dbind_ref(addr,val) bld_ref(addr,val);\
-	*(++temp_trreg) = addr;
 
+#define simple_dbind_ref(addr,val) \
+    bld_ref(addr,val);\
+    *(++temp_trreg) = addr;
 
-#define simple_table_undo_bindings while(temp_trreg > trie_tr_base){\
-	bld_ref(*temp_trreg,(Cell)*temp_trreg);\
+#define simple_table_undo_bindings \
+    while (temp_trreg > trie_tr_base) {\
+	untrail(*temp_trreg);\
 	temp_trreg--;\
-	}
-	
-	
+    }	
+
+/*----------------------------------------------------------------------*/
 /*******NEW DEFINES******/
 
 #define FirstInstOfVar(x) (Integer)int_val(x) & 0x10000
@@ -130,18 +134,19 @@ struct HASHhdr tra_HASHroot = {0,0,0,0};
 		xsb_abort("Bye");\
 	}
 		
-/* can be changed to Instr(Sibl(X)) = Instr(Sibl(X))|RETRY_MASK 
-But for now */
-
-#define make_current_try(X)	Instr(X) = ((Instr(X)) & ~3) | 0x2
-#define make_current_retry(X)	X->instr++
-#define change_to_success(X)	Instr(X) += 4 /* 4 Cells */
+/* can be changed to Instr(Sibl(X)) = Instr(Sibl(X))|RETRY_MASK, but for now */
+#define make_current_try(X)		Instr(X) = ((Instr(X)) & ~3) | 0x2
+/* the following is used to change trie_try_* to trie_retry_*
+   and also change trie_no_cp_* to trie_trust_* */
+#define update_current_trie_instr(X)	Instr(X)++
+#define change_to_success(X)		Instr(X) += 4
 /* Just zero out the last two bits */
-#define lay_no_cp_in_bucket(X)	Instr(X) = ((Instr(X)) & ~3 )
-	
+#define lay_no_cp_in_bucket(X)		Instr(X) = ((Instr(X)) & ~3 )
+
+/*----------------------------------------------------------------------*/
 /*****************Addr Stack************/
 int addr_stack_pointer = 0;
-int addr_stack_size   = DEFAULT_ARRAYSIZ;
+int addr_stack_size    = DEFAULT_ARRAYSIZ;
 
 CPtr *Addr_Stack;
 #define push_addr(X) {\
@@ -151,12 +156,12 @@ CPtr *Addr_Stack;
     Addr_Stack[addr_stack_pointer++] = ((CPtr) X);\
 }
 
-
 #define pop_addr Addr_Stack[--addr_stack_pointer]
+
 /*****************Term Stack*************/
 int term_stackptr = -1;
 long term_stacksize = DEFAULT_ARRAYSIZ;
-/**********************************/
+/****************************************/
 
 int ctr;
 
@@ -192,8 +197,6 @@ NODEptr bak_free_trie_space = 0;
 NODEptr bak_top_trie_space = 0;
 char    *bak_trie_node_chunk_ptr = 0;
 
-
-
 int answer_list_chunk_size = 512 * sizeof(struct answer_list_node);
 
 char *answer_list_node_chunk_ptr = 0;
@@ -204,7 +207,7 @@ ALPtr top_answer_list_space = 0;
 
 /*----------------------------------------------------------------------*/
 
-static NODEptr alloc_more_trie_space()
+static NODEptr alloc_more_trie_space(void)
 {
   char *t;
   t = (char *)mem_alloc(trie_chunk_size+sizeof(Cell));
@@ -218,7 +221,7 @@ static NODEptr alloc_more_trie_space()
 
 /*----------------------------------------------------------------------*/
 
-static ALPtr alloc_more_answer_list_space()
+static ALPtr alloc_more_answer_list_space(void)
 {
   char *t;
   t = (char *)mem_alloc(answer_list_chunk_size+sizeof(Cell));
@@ -231,30 +234,6 @@ static ALPtr alloc_more_answer_list_space()
 }
  
 /*----------------------------------------------------------------------*/
-#ifdef PVPROF
-int num_newnodes = 0;
-int freenodes = 0;
-#endif
-
-#ifdef PVPROF
-#define NewNode(t,item,chil,sibl,nparen) {\
-  if (free_trie_nodes) {\
-    t = free_trie_nodes;\
-    free_trie_nodes = Sibl(free_trie_nodes);\
-  }\
-  else if (free_trie_space < top_trie_space) \
-    {t = free_trie_space++;}\
-  else {t = alloc_more_trie_space();}\
-  Sibl(t) = (NODEptr)sibl;\
-  Child(t)= (NODEptr)chil;\
-  Parent(t) =(NODEptr)nparen;\
-  DelFlag(t) = (byte)0;\
-  NodeType(t) = NODE_TYPE_UNKNOWN;\
-  Atom(t) = (Cell)item;\
-  if (sibl != NULL) make_try_opcode(t,item) else make_no_cp(t,item);\
-  num_newnodes++;\
-}
-#else
 
 #define NewNode(t,item,chil,sibl,nparen) {\
   if (free_trie_nodes) {\
@@ -273,8 +252,6 @@ int freenodes = 0;
   if (sibl != NULL) make_try_opcode(t,item) else make_no_cp(t,item);\
 }
 
-
-#endif
 /*----------------------------------------------------------------------*/
  
 #define NewAnsListNode(t) {\
@@ -315,7 +292,7 @@ void abolish_trie(void)
     th = tht;
   }
 
-  while(answer_list_node_chunk_ptr){
+  while (answer_list_node_chunk_ptr) {
     t = *(char **)answer_list_node_chunk_ptr;
     mem_dealloc((byte *)answer_list_node_chunk_ptr,answer_list_chunk_size+sizeof(Cell));
     answer_list_node_chunk_ptr = t;
@@ -324,7 +301,6 @@ void abolish_trie(void)
   free_answer_list_nodes = 0;
   free_answer_list_space = 0;
   top_answer_list_space = 0;
-  
 
   while(subg_structure_list != NULL){
     temp = subg_structure_list;
@@ -336,8 +312,6 @@ void abolish_trie(void)
   HASHrootptr->prev = 0;
   HASHrootptr->numInHash = 0;
   HASHrootptr->HASHmask = 0;
-
- /* clear_interned_tries();*/
 }
 
 /*----------------------------------------------------------------------*/
@@ -360,7 +334,8 @@ int allocated_trie_size(void)
 Include the number of "free nodes" in the list in 
 the free trie space
 --------------------------------------------------*/
-int num_free_nodes()
+
+static int num_free_nodes(void)
 {
   int i = 0;
   NODEptr p;
@@ -375,7 +350,7 @@ int num_free_nodes()
 
 int free_trie_size(void)
 {
-  return (top_trie_space - free_trie_space +num_free_nodes()) * sizeof(struct NODE);
+  return (top_trie_space - free_trie_space + num_free_nodes()) * sizeof(struct NODE);
 }
 
 int allocated_trie_hash_size(void)
@@ -404,12 +379,13 @@ int allocated_trie_hash_size(void)
     Paren = LocalNodePtr;\
     wherefrom = LocalNodePtr;\
     Found = 0;\
-    if(Sibl(LocalNodePtr))\
-    	make_current_retry(Sibl(LocalNodePtr));\
+    if (Sibl(LocalNodePtr))\
+      update_current_trie_instr(Sibl(LocalNodePtr));\
   } else Paren = LocalNodePtr;\
 }
 
-/*************************************************/
+/*----------------------------------------------------------------------*/
+
 #define one_node_chk_ins(Found,item) \
 {\
   int count = 0;\
@@ -440,7 +416,7 @@ int allocated_trie_hash_size(void)
   GNodePtrPtr = &(Child(LocalNodePtr));\
 }
 
-/*******************************/
+/*----------------------------------------------------------------------*/
 
 static void reorganize(NODEptr *locnPtrPtr)
 {
@@ -475,7 +451,7 @@ static void reorganize(NODEptr *locnPtrPtr)
       Sibl(ProcessPtr) = Array[num]; 
       if (Array[num] != NULL) {
 	make_current_try(ProcessPtr);
-	make_current_retry(Array[num]);
+	update_current_trie_instr(Array[num]);
       }
       else {
 	lay_no_cp_in_bucket(ProcessPtr);
@@ -485,7 +461,7 @@ static void reorganize(NODEptr *locnPtrPtr)
   }
 }
 
-/***********************************************/
+/*----------------------------------------------------------------------*/
 
 void expand_hash(NODEptr *locnPtrPtr, struct HASHhdr *oldHash)
 {
@@ -525,7 +501,7 @@ void expand_hash(NODEptr *locnPtrPtr, struct HASHhdr *oldHash)
       Sibl(ProcessPtr) = newArray[num];
       if (newArray[num] != NULL) {
 	make_current_try(ProcessPtr);
-	make_current_retry(newArray[num]);
+	update_current_trie_instr(newArray[num]);
       }
       else {
 	lay_no_cp_in_bucket(ProcessPtr);
@@ -539,7 +515,7 @@ void expand_hash(NODEptr *locnPtrPtr, struct HASHhdr *oldHash)
   free(oldHash);
 }
 
-/*******************/
+/*----------------------------------------------------------------------*/
 
 static void follow_par_chain(NODEptr SolnPtr)
 {
@@ -550,27 +526,20 @@ static void follow_par_chain(NODEptr SolnPtr)
   }
 }
 
-/************************************/
+/*----------------------------------------------------------------------*/
 
 NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 {
   NODEptr TempPtr;
 
-  if (!*NextPtrPtr){
-    return(NULL);
-  }
-
-  if (ftagged(Parent(aln_answer_ptr(*NextPtrPtr))))
-    TempPtr = aln_answer_ptr(*NextPtrPtr);
-  else 
-    TempPtr = NULL;
+  TempPtr = aln_answer_ptr(*NextPtrPtr);
+  if (!(ftagged(Parent(TempPtr)))) TempPtr = NULL;
   *NextPtrPtr = aln_next_aln(*NextPtrPtr);
 
-  /* printf("next returning %d, saving %d\n",TempPtr,*NextPtrPtr); */
   return(TempPtr);
 }
 
-/************************************/
+/*----------------------------------------------------------------------*/
 
 #define rec_macro_make_heap_term(Macro_addr)\
 {int rj,rArity;\
@@ -615,18 +584,22 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
    }\
   }\
 }
-/***********************************************/
+
+/*----------------------------------------------------------------------*/
+
 #define macro_make_heap_term(ataddr,ret_val,dummy_addr)\
 { int mArity,mj;\
+  Integer mIntVal;\
   switch(cell_tag(xtemp2 = ((CPtr) pop_term)))\
    {\
     case TrieVar: \
-	if (FirstInstOfVar(xtemp2)) {\
-          safe_assign(var_addr,((Integer)int_val(xtemp2) & 0xffff),ataddr,var_addr_arraysz);\
-	  ret_val = (Cell)var_addr[(Integer)int_val(xtemp2) & 0xffff];\
+        mIntVal = int_val(xtemp2);\
+	if (FirstInstOfVar(xtemp2)) { /* diff with CHAT - Kostis */\
+          safe_assign(var_addr,(mIntVal & 0xffff),ataddr,var_addr_arraysz);\
+	  ret_val = (Cell)var_addr[mIntVal & 0xffff];\
 	  num_heap_term_vars++;\
 	}\
-	else {ret_val = (Cell) var_addr[(Integer)int_val(xtemp2)];}\
+	else {ret_val = (Cell) var_addr[mIntVal];}\
 	break;\
     case STRING:\
     case INT:\
@@ -657,7 +630,9 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 	return;\
    }\
 }
-/***************************************************************************/
+
+/*----------------------------------------------------------------------*/
+
 #define recvariant_trie(flag)\
 {\
 	int  j;\
@@ -668,15 +643,18 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 	  tag = cell_tag(xtemp1);\
 	  switch (tag) {\
 	    case FREE: case REF1: \
-	    if(is_VarEnumerator(xtemp1)){\
-	      simple_dbind_ref_nth_var(xtemp1,ctr);\
-	      one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));\
-	      ctr++;\
-					}\
-            else{\
-              one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
-	       }\
-              break;\
+	      if (is_VarEnumerator(xtemp1)) {\
+	        simple_dbind_ref_nth_var(xtemp1,ctr);\
+	        j = (ctr | 0x10000);\
+	        item = maketrievar(j);\
+	       one_node_chk_ins(flag, item);\
+	       ctr++;\
+	      } else {\
+	        item = trie_var_num(xtemp1);\
+	        item = maketrievar(item);\
+                one_node_chk_ins(flag, item);\
+	      }\
+            break;\
 	    case STRING: case INT: case FLOAT:\
 	      one_node_chk_ins(flag, (Cell)xtemp1);\
 	      break;\
@@ -686,9 +664,12 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
               pdlpush(cell(clref_val(xtemp1)));\
 	      break;\
 	    case CS:\
-	      one_node_chk_ins(flag,makecs(follow(cs_val(xtemp1)))); /*put root in trie */\
-	      for (j = get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--) \
-  	         {pdlpush(cell(clref_val(xtemp1) +j));}\
+              psc = (Psc) follow(cs_val(xtemp1));\
+              item = makecs(psc);\
+	      one_node_chk_ins(flag, item); /*put root in trie */\
+	      for (j = get_arity(psc); j>=1 ; j--) {\
+  	         pdlpush(cell(clref_val(xtemp1)+j));\
+              }\
 	      break;\
 	    default: \
               xsb_abort("Bad type tag in recvariant_trie...\n");\
@@ -697,7 +678,7 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
         resetpdl;\
 }
 
-/***************************************************************************/
+/*----------------------------------------------------------------------*/
 
 /*
  * This is a special version of recvariant_trie(), and it is only used by 
@@ -710,7 +691,7 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 
 #define recvariant_trie_ans_subsf(flag)\
 {\
-	int  j;\
+        int  j;\
 \
 	while (!pdlempty ) {\
 	  xtemp1 = (CPtr) pdlpop;\
@@ -718,15 +699,14 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 	  tag = cell_tag(xtemp1);\
 	  switch (tag) {\
 	    case FREE: case REF1:\
-	    if(is_VarEnumerator(xtemp1)){\
-	      bld_ref(hreg++, xtemp1);\
-	      simple_dbind_ref_nth_var(xtemp1,ctr);\
-	      one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));\
-	      ctr++;\
-					}\
-            else{\
-              one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
-	       }\
+	      if (is_VarEnumerator(xtemp1)){\
+	        bld_ref(hreg++, xtemp1);\
+	        simple_dbind_ref_nth_var(xtemp1,ctr);\
+	        one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));\
+	        ctr++;\
+	      } else {\
+                one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
+	      }\
               break;\
 	    case STRING: case INT: case FLOAT:\
 	      one_node_chk_ins(flag, (Cell)xtemp1);\
@@ -737,9 +717,12 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
               pdlpush(cell(clref_val(xtemp1)));\
 	      break;\
 	    case CS:\
-	      one_node_chk_ins(flag,makecs(follow(cs_val(xtemp1)))); /*put root in trie */\
-	      for (j = get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--) \
-  	         {pdlpush(cell(clref_val(xtemp1) +j));}\
+	      psc = (Psc) follow(cs_val(xtemp1));\
+	      item = makecs(psc);\
+	      one_node_chk_ins(flag, item); /*put root in trie */\
+	      for (j = get_arity(psc); j>=1 ; j--) {\
+  	         pdlpush(cell(clref_val(xtemp1)+j));\
+	      }\
 	      break;\
 	    default: \
               xsb_abort("Bad type tag in recvariant_trie_ans_subsf...\n");\
@@ -748,7 +731,9 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
         resetpdl;\
 }
 
-/*
+/*----------------------------------------------------------------------
+ * variant_trie_search(NumVarsInCall, VarsInCall, SubgoalPtr, Ptrflag)
+ *
  * Called in SLG instruction `new_answer_dealloc', variant_trie_search()
  * checks if the answer has been returned before and, if not, inserts it
  * into the answer trie.  Here, `arity' is the number of variables in the
@@ -759,26 +744,25 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
  * answer has been returned before.
  *
  * The returned value of this function is the leaf of the answer trie.  
- */
+ *----------------------------------------------------------------------*/
 
 NODEptr variant_trie_search(int arity, CPtr cptr,
 			    CPtr subgoal_ptr, int *flagptr)
 {
-    CPtr xtemp1;
-    int i, j, flag = 1;
-    Cell tag = 0 ;
+    Psc   psc;
+    CPtr  xtemp1;
+    int   i, j, flag = 1;
+    Cell  tag = 0, item;
     ALPtr answer_node;
 
     ans_chk_ins++; /* Counter (answers checked & inserted) */
 
-    /*
-     * Initialize trie_tr_base (trial base for trie code) and
-     * temp_trreg.
-     */
-    if(trfreg > trreg)
-	trie_tr_base = temp_trreg = trfreg;
+#if (!defined(CHAT))
+    if (trfreg > trreg)
+      trie_tr_base = temp_trreg = trfreg;
     else
-	trie_tr_base = temp_trreg = trreg;
+#endif
+      trie_tr_base = temp_trreg = trreg;
 
     AnsVarCtr = 0;
     ctr = 0;
@@ -787,8 +771,7 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 		    */
     GNodePtrPtr = (NODEptr *) &subg_ans_root_ptr(subgoal_ptr);
     for (i = 0; i<arity; i++) {
-      xtemp1 = (CPtr) (cptr - i); /*
-				   * One element of VarsInCall.  It might
+      xtemp1 = (CPtr) (cptr - i); /* One element of VarsInCall.  It might
 				   * have been bound in the answer for
 				   * the call.
 				   */
@@ -796,8 +779,7 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
       tag = cell_tag(xtemp1);
       switch (tag) {
       case FREE: case REF1:
-	/*one_node_chk_ins(flag,FREE);*/
-	if(is_VarEnumerator(xtemp1)){
+	if (is_VarEnumerator(xtemp1)) {
 	  /*
 	   * If this is the first occurrence of this variable, then:
 	   *
@@ -817,14 +799,17 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 	   */
 	  bld_ref(hreg++, xtemp1);
 	  simple_dbind_ref_nth_var(xtemp1,ctr);
-	  one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));
+	  j = (ctr | 0x10000);
+	  item = maketrievar(j);
+	  one_node_chk_ins(flag, item);
 	  ctr++;
-	}
-	else{
-          one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
+	} else {
+	  item = trie_var_num(xtemp1);
+	  item = maketrievar(item);
+	  one_node_chk_ins(flag, item);
 	}
 	break;
-      case STRING: case INT:  case FLOAT:
+      case STRING: case INT: case FLOAT:
 	one_node_chk_ins(flag, (Cell)xtemp1);
 	break;
       case LIST:
@@ -834,16 +819,17 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 	recvariant_trie_ans_subsf(flag);
 	break;
       case CS:
-	/* put root in trie */
-	one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))));
-	for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
+	psc = (Psc)follow(cs_val(xtemp1));
+	item = makecs(psc);
+	one_node_chk_ins(flag, item); /* put root in trie */
+	for (j = get_arity(psc); j >= 1 ; j--) {
 	  pdlpush(cell(clref_val(xtemp1)+j));
 	}
 	recvariant_trie_ans_subsf(flag);
 	break;
-	default:
-	  xsb_abort(" Bad type tag :variant_trie_search\n");
-	}                                                       
+      default:
+	xsb_abort("Bad type tag in variant_trie_search()");
+      }                                                       
     }
     resetpdl;                                                   
 
@@ -916,7 +902,7 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
  * done.
  */
 
-void undo_answer_bindings(){
+void undo_answer_bindings() {
   simple_table_undo_bindings;
 }
 
@@ -945,8 +931,10 @@ void undo_answer_bindings(){
  
 NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
 {
+    Psc  psc;
+    Cell item;
     CPtr xtemp1;
-    int i, j, tag = 0, flag = 1;
+    int  i, j, tag = 0, flag = 1;
  
 #ifdef DEBUG_DELAYVAR
     fprintf(stderr, ">>>> start delay_chk_insert()\n");
@@ -954,11 +942,6 @@ NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
 
     ans_chk_ins++;
  
-   /* if(trfreg > trreg)
-        trie_tr_base = temp_trreg = trfreg;
-    else
-        trie_tr_base = temp_trreg = trreg; */
-
     Paren = NOPAR;
     GNodePtrPtr = (NODEptr *) hook;
 
@@ -988,13 +971,12 @@ NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
       tag = cell_tag(xtemp1);
       switch (tag) {
       case FREE: case REF1:
-        /*one_node_chk_ins(flag,FREE);*/
-        if(is_VarEnumerator(xtemp1)){
+	if (is_VarEnumerator(xtemp1)) {
           simple_dbind_ref_nth_var(xtemp1,ctr);
           one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));
           ctr++;
         }
-        else{
+        else {
           one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
         }
         break;
@@ -1016,7 +998,7 @@ NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
         recvariant_trie(flag);
         break;
         default:
-          xsb_abort(" Bad type tag :variant_trie_search\n");
+          xsb_abort("Bad type tag in delay_chk_insert()\n");
         }
     }
     resetpdl;  
@@ -1059,16 +1041,17 @@ static void load_solution_from_trie(int arity, CPtr cptr)
      xtemp1 = (CPtr) (cptr-i);
      cptr_deref(xtemp1);
      macro_make_heap_term(xtemp1,returned_val,Dummy_Addr);
-     if( xtemp1 != (CPtr)returned_val )
-     { dpushtrail(xtemp1,returned_val);
-       bld_ref(xtemp1,returned_val);
+     if (xtemp1 != (CPtr)returned_val) {
+       dbind_ref(xtemp1,returned_val);
      }
    }
    resetpdl;
 }
 
 /*----------------------------------------------------------------------*/
-void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf){
+
+void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf)
+{
   NODEptr SolnPtr;
   CPtr Dummy_Addr, xtemp2;
   Cell returned_val;
@@ -1082,7 +1065,7 @@ void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf){
 #endif
 
   num_heap_term_vars = 0;     
-  while(SolnPtr!= NULL){
+  while (SolnPtr!= NULL) {
     push_term((Atom(SolnPtr)));
 #ifdef DEBUG_INTERN
     printf("node = ");
@@ -1099,8 +1082,7 @@ void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf){
   for(i = 0; i < num_heap_term_vars; i++){
     var_regs[i] = var_addr[i];
   }
- num_vars_in_var_regs =  num_heap_term_vars -1;
-  
+  num_vars_in_var_regs =  num_heap_term_vars -1;
 
 #ifdef DEBUG_INTERN
   deref(returned_val);
@@ -1110,9 +1092,11 @@ void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf){
   printf(" *gen = %d\n",(int)*gen);
 #endif
 }
+
 /*----------------------------------------------------------------------*/
-void     bottom_up_unify(){
-  Cell term;
+void bottom_up_unify(void)
+{
+  Cell    term;
   NODEptr root;
   NODEptr leaf;
   int     rootidx;
@@ -1123,8 +1107,8 @@ void     bottom_up_unify(){
   root    = Set_ArrayPtr[rootidx];  
   leaf    = (NODEptr) ptoc_int(3);   
   bottomupunify(term, root, leaf);
-
 }
+
 /*----------------------------------------------------------------------*/
 
 void load_solution_trie(int arity, CPtr cptr, NODEptr TriePtr)
@@ -1137,6 +1121,7 @@ void load_solution_trie(int arity, CPtr cptr, NODEptr TriePtr)
 }
 
 /*----------------------------------------------------------------------*/
+
 void load_delay_trie(int arity, CPtr cptr, NODEptr TriePtr)
 {
    if (arity) {
@@ -1156,16 +1141,14 @@ void load_delay_trie(int arity, CPtr cptr, NODEptr TriePtr)
     cptr_deref(xtemp1);\
     switch(tag = cell_tag(xtemp1)) {\
       case FREE: case REF1: \
-        if(is_VarEnumerator(xtemp1)){\
-	*(--VarPosReg) = (Cell) xtemp1;\
-	/* printf("var[%lx] at %lx is %d\n", ctr, VarPosReg-1, xtemp1); */\
-	bld_nth_var(xtemp1,ctr);\
-	one_node_chk_ins(flag,maketrievar((ctr | 0x10000)));\
-	ctr++;\
-				    }\
-      else{\
-	one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
-	 }\
+        if (is_VarEnumerator(xtemp1)) {\
+	  *(--VarPosReg) = (Cell) xtemp1;\
+	  bld_nth_var(xtemp1,ctr);\
+	  one_node_chk_ins(flag,maketrievar((ctr | 0x10000)));\
+	  ctr++;\
+        } else{\
+	  one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
+        }\
         break;\
       case STRING: case INT: case FLOAT:\
 	one_node_chk_ins(flag, (Cell)xtemp1);\
@@ -1176,8 +1159,10 @@ void load_delay_trie(int arity, CPtr cptr, NODEptr TriePtr)
         pdlpush( cell(clref_val(xtemp1)) );\
 	break;\
       case CS:\
-	one_node_chk_ins(flag,makecs(follow(cs_val(xtemp1)))); /*put root in trie */\
-	for(j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1; j--) {\
+        psc = (Psc) follow(cs_val(xtemp1));\
+	item = makecs(psc);\
+	one_node_chk_ins(flag, item); /*put root in trie */\
+	for (j=get_arity(psc); j>=1; j--) {\
 	  pdlpush(cell(clref_val(xtemp1)+j));\
 	}\
 	break;\
@@ -1188,86 +1173,105 @@ void load_delay_trie(int arity, CPtr cptr, NODEptr TriePtr)
   resetpdl;\
 }
 
-/******************************************************/
+/*----------------------------------------------------------------------*/
 
-void variant_call_search(int arity, CPtr cptr, CPtr *curcallptr, int *flagptr)
+bool variant_call_search(int arity, CPtr cptr, CPtr *curcallptr)
 {
-	CPtr xtemp1;
-	int i,j,flag = 1;
-	Cell tag=0;
-	CPtr tVarPosReg;
+    Psc  psc;
+    CPtr xtemp1;
+    int  i, j, flag = 1;
+    Cell tag = 0, item;
+    CPtr tVarPosReg;
 
-	subg_chk_ins++;
+    subg_chk_ins++;
 
-	tVarPosReg = VarPosReg;
-        ctr = 0;
-	Paren = NOPAR;
-	UglyHackForTip = (tab_inf_ptr)*curcallptr;
-	GNodePtrPtr = (NODEptr *)&(ti_call_trie_root(*curcallptr));
+    tVarPosReg = VarPosReg;
+    ctr = 0;
+    Paren = NOPAR;
+    UglyHackForTip = (tab_inf_ptr)*curcallptr;
+    GNodePtrPtr = (NODEptr *)&(ti_call_trie_root(*curcallptr));
 
-	for (i=1; i<=arity; i++) {
-	  xtemp1 = (CPtr) (cptr + i);            /* Note! */
-	  cptr_deref(xtemp1);
-	  tag =cell_tag(xtemp1);
-	  switch (tag) {
-	    case FREE: case REF1:
-	        if(is_VarEnumerator(xtemp1)){
-		  /*
-		   * Save pointers of the substitution factor of the call
-		   * into CP stack.  Each pointer points to a variable in 
-		   * the heap.  The variables may get bound in the later
-		   * computation.
-		   */
-		  *(--VarPosReg) = (Cell) xtemp1;
-		  bld_nth_var(xtemp1,ctr);
-		  one_node_chk_ins(flag,maketrievar((ctr | 0x10000)));
-		  ctr++;
-		}
-		else{
-		  one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
-		}
-                break;
-	      case STRING: case INT: case FLOAT:
-		one_node_chk_ins(flag, (Cell)xtemp1);
-		break;
-	      case LIST:
-		one_node_chk_ins(flag, (Cell)LIST);
-	        pdlpush(cell(clref_val(xtemp1)+1));/* changed */
-	        pdlpush(cell(clref_val(xtemp1)));
-		recvariant_call(flag);
-		break;
-	    case CS:
-		one_node_chk_ins(flag,makecs(follow(cs_val(xtemp1))));
-                /*put root in trie */
-		for (j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--) {
-		  pdlpush(cell(clref_val(xtemp1)+j));
-		}
-		recvariant_call(flag);
-		break;
-  	    default:
-		xsb_abort("Bad type tag in variant_call_search...\n");
-	    }
-        }
-        resetpdl;
-	*(--VarPosReg) = ctr;
-	while(--tVarPosReg > VarPosReg) {
-		bld_ref(((CPtr)(*tVarPosReg)),(Cell)*tVarPosReg);
+    for (i=1; i<=arity; i++) {
+      xtemp1 = (CPtr) (cptr + i);            /* Note! */
+      cptr_deref(xtemp1);
+      tag =cell_tag(xtemp1);
+      switch (tag) {
+        case FREE: case REF1:
+	  if (is_VarEnumerator(xtemp1)) {
+	    /*
+	     * Save pointers of the substitution factor of the call
+	     * into CP stack.  Each pointer points to a variable in 
+	     * the heap.  The variables may get bound in the later
+	     * computation.
+	     */
+	    *(--VarPosReg) = (Cell) xtemp1;
+	    bld_nth_var(xtemp1,ctr);
+	    one_node_chk_ins(flag,maketrievar((ctr | 0x10000)));
+	    ctr++;
+	  } else {
+	    one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
+	  }
+	  break;
+	case STRING: case INT: case FLOAT:
+	  one_node_chk_ins(flag, (Cell)xtemp1);
+	  break;
+	case LIST:
+	  one_node_chk_ins(flag, (Cell)LIST);
+	  pdlpush(cell(clref_val(xtemp1)+1));/* changed */
+	  pdlpush(cell(clref_val(xtemp1)));
+	  recvariant_call(flag);
+	  break;
+	case CS:
+	  psc = (Psc)follow(cs_val(xtemp1));
+	  item = makecs(psc);
+	  one_node_chk_ins(flag, item); /* put root in trie */
+	  for (j=get_arity(psc); j>=1 ; j--) {
+	    pdlpush(cell(clref_val(xtemp1)+j));
+	  }
+	  recvariant_call(flag);
+	  break;
+	default:
+	  xsb_abort("Bad type tag in variant_call_search...\n");
 	}
-	/* Simplified Untrailing of Variables */
-	if(arity == 0){
-		one_node_chk_ins(flag, (Cell)0);
-		Instr(Paren) = trie_proceed;
-	}
-	else{
-	      Parent(Paren) = makeftag(Parent(Paren));
-	      if ((flag == 0) && (tag == STRING || tag == INT || tag == FLOAT)) {
-		change_to_success(Paren);
-              }    
-	}
+    }
+    resetpdl;
+    
+    if (arity == 0) {
+      one_node_chk_ins(flag, (Cell)0);
+      Instr(Paren) = trie_proceed;
+    } else {
+      Parent(Paren) = makeftag(Parent(Paren));
+      if ((flag == 0) && (tag == STRING || tag == INT || tag == FLOAT)) {
+	change_to_success(Paren);
+      }
+    }
 
-	if (!flag) subg_inserts++;
-        *curcallptr = (CPtr) (&(Child(Paren)));
-	*flagptr = flag;
+    if (!flag) { /* generator is found */
+      subg_inserts++;
+#if (!defined(CHAT))
+    }
+#else
+      for (j=ctr-1; j >= 0; j--) { /* put the subst. factor in heap */
+	tVarPosReg--;
+	bld_free(((CPtr)*tVarPosReg));
+	/* heap grows in the opposite direction than the CP stack */
+	bld_copy0((hreg+j), *tVarPosReg);
+      }
+      hreg += ctr;
+      new_heap_num(hreg, ctr);
+      VarPosReg = tVarPosReg;
+    } else { /* consumer is found */
+#endif
+      *(--VarPosReg) = ctr;
+      while (--tVarPosReg > VarPosReg) {
+	bld_free(((CPtr)(*tVarPosReg)));
+      }
+#ifdef CHAT
+    }
+#endif
+
+    *curcallptr = (CPtr) (&(Child(Paren)));
+    return flag;
 }
 
 /*----------------------------------------------------------------------*/
@@ -1311,54 +1315,55 @@ void remove_open_tries(CPtr bottom_parameter)
 
 NODEptr whole_term_chk_ins(Cell term, CPtr hook, int *flagptr)
 {
-  CPtr xtemp1;
-  int j, flag = 1;
-  Cell tag = 0;
-  CPtr *trie_tr_base, *temp_trreg;
+    Psc  psc;
+    CPtr xtemp1;
+    int  j, flag = 1;
+    Cell tag = 0, item;
+    CPtr *trie_tr_base, *temp_trreg;
 
-  xtemp1 = (CPtr) term;
-  cptr_deref(xtemp1);
-  tag = cell_tag(xtemp1);
-  Paren = NOPAR;
-  GNodePtrPtr = (NODEptr *) hook;
-    if(trfreg > trreg)
-	trie_tr_base = temp_trreg = trfreg;
+    xtemp1 = (CPtr) term;
+    cptr_deref(xtemp1);
+    tag = cell_tag(xtemp1);
+    Paren = NOPAR;
+    GNodePtrPtr = (NODEptr *) hook;
+#if (!defined(CHAT))
+    if (trfreg > trreg)
+      trie_tr_base = temp_trreg = trfreg;
     else
-	trie_tr_base = temp_trreg = trreg;
-  ctr = 0;
+#endif
+      trie_tr_base = temp_trreg = trreg;
+    ctr = 0;
 
-  switch (tag) {
-  case FREE: case REF1:
-    if(is_VarEnumerator(xtemp1)){
-      /*one_node_chk_ins(flag,FREE);*/
-      simple_dbind_ref_nth_var(xtemp1,ctr);
-      one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));
-      ctr++;
+    switch (tag) {
+    case FREE: case REF1:
+      if (is_VarEnumerator(xtemp1)) {
+	simple_dbind_ref_nth_var(xtemp1,ctr);
+	one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));
+	ctr++;
+      } else {
+	one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
+      }
+      break;
+    case STRING: case INT:  case FLOAT:
+      one_node_chk_ins(flag, (Cell)xtemp1);
+      break;
+    case LIST:
+      one_node_chk_ins(flag, (Cell)LIST);
+      pdlpush(cell(clref_val(xtemp1)+1)); /* changed */
+      pdlpush(cell(clref_val(xtemp1)));
+      recvariant_trie(flag);
+      break;
+    case CS:
+      /* put root in trie */
+      one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))));
+      for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
+	pdlpush(cell(clref_val(xtemp1)+j));
+      }
+      recvariant_trie(flag);
+      break;
+    default:
+      xsb_abort("Bad type tag in whole_term_check_ins()");
     }
-    else{
-      one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
-    }
-    break;
-  case STRING: case INT:  case FLOAT:
-    one_node_chk_ins(flag, (Cell)xtemp1);
-    break;
-  case LIST:
-    one_node_chk_ins(flag, (Cell)LIST);
-    pdlpush(cell(clref_val(xtemp1)+1)); /* changed */
-    pdlpush(cell(clref_val(xtemp1)));
-    recvariant_trie(flag);
-    break;
-  case CS:
-    /* put root in trie */
-    one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))));
-    for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
-      pdlpush(cell(clref_val(xtemp1)+j));
-    }
-    recvariant_trie(flag);
-    break;
-  default:
-    xsb_abort("Bad type tag: one_term_check_ins\n");
-  }            
 
     /* if there is no parent node an ESCAPE node has to be created;	*/
     /* ow the parent node is "ftagged" to indicate that it is a leaf.	*/
@@ -1372,41 +1377,40 @@ NODEptr whole_term_chk_ins(Cell term, CPtr hook, int *flagptr)
 	change_to_success(Paren);
       }
     }
-    *flagptr = flag;	
+    *flagptr = flag;
 
-
-  for(j = 0; j < ctr; j++){
-    var_regs[j] = (CPtr)trie_tr_base [j + 1];
-  }
- num_vars_in_var_regs = ctr -1;
-  simple_table_undo_bindings;
-
+    for (j = 0; j < ctr; j++) {
+      var_regs[j] = (CPtr)trie_tr_base[j + 1];
+    }
+    num_vars_in_var_regs = ctr - 1;
+    simple_table_undo_bindings;
 
     return(Paren);
 }
 
+/*----------------------------------------------------------------------*/
+/* one_term_chk_ins(termptr,hook,flag)					*/
+/*----------------------------------------------------------------------*/
 
-/**************************************************************************
-* one_term_chk_ins(termptr,hook,flag)
-**************************************************************************/
-
-NODEptr one_term_chk_ins(CPtr termptr,CPtr hook,int *flagptr)
+NODEptr one_term_chk_ins(CPtr termptr, CPtr hook, int *flagptr)
 {
     int  arity;
     CPtr cptr;
     CPtr *trie_tr_base, *temp_trreg;
     CPtr xtemp1;
-    int i, j, flag = 1;
-    Cell tag = 0;
-    Psc psc;
+    int  i, j, flag = 1;
+    Cell tag = 0, item;
+    Psc  psc;
 
     psc = term_psc((prolog_term)termptr);
     arity = get_arity(psc);
     cptr = (CPtr)cs_val(termptr);
-    if(trfreg > trreg)
-	trie_tr_base = temp_trreg = trfreg;
+#if (!defined(CHAT))
+    if (trfreg > trreg)
+      trie_tr_base = temp_trreg = trfreg;
     else
-	trie_tr_base = temp_trreg = trreg;
+#endif
+      trie_tr_base = temp_trreg = trreg;
     ctr = 0;
     Paren = NOPAR;
     GNodePtrPtr = (NODEptr *) hook;
@@ -1416,17 +1420,17 @@ NODEptr one_term_chk_ins(CPtr termptr,CPtr hook,int *flagptr)
       tag = cell_tag(xtemp1);
       switch (tag) {
 	case FREE: case REF1:
-	if(is_VarEnumerator(xtemp1)){
-	  /*one_node_chk_ins(flag,FREE);*/
-	  simple_dbind_ref_nth_var(xtemp1,ctr);
-	  one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));
-	  ctr++;
-	}
-	else{
-          one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
-	}
+	  if (is_VarEnumerator(xtemp1)) {
+	    /*one_node_chk_ins(flag,FREE);*/
+	    simple_dbind_ref_nth_var(xtemp1,ctr);
+	    j = (ctr | 0x10000);
+	    one_node_chk_ins(flag, maketrievar(j));
+	    ctr++;
+	  } else {
+	    one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
+	  }
           break;
-	case STRING: case INT:  case FLOAT:
+	case STRING: case INT: case FLOAT:
 	  one_node_chk_ins(flag, (Cell)xtemp1);
 	  break;
 	case LIST:
@@ -1436,16 +1440,16 @@ NODEptr one_term_chk_ins(CPtr termptr,CPtr hook,int *flagptr)
 	  recvariant_trie(flag);
 	  break;
 	case CS:
-          /* put root in trie */
-	  one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))));
-	  for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
+	  psc = (Psc) follow(cs_val(xtemp1));
+	  one_node_chk_ins(flag, makecs(psc));  /* put root in trie */
+	  for (j = get_arity(psc); j >= 1 ; j--) {
 	    pdlpush(cell(clref_val(xtemp1)+j));
 	  }
 	  recvariant_trie(flag);
 	  break;
 	default:
-	  xsb_abort("Bad type tag: one_term_check_ins\n");
-	}                                                       
+	  xsb_abort("Bad type tag in one_term_check_ins()");
+      }
     }                
     resetpdl;                                                   
 
@@ -1466,49 +1470,50 @@ NODEptr one_term_chk_ins(CPtr termptr,CPtr hook,int *flagptr)
     *flagptr = flag;	
     return(Paren);
 }
-/*************************************************/
 
-int trie_get_returns_for_call(void)
+/*----------------------------------------------------------------------*/
+
+byte * trie_get_returns_for_call(void)
 {
   SGFrame call_str_ptr;
-  CPtr retskel,term1;
+  CPtr retskel, term1;
   int i;
   Psc psc_ptr;
   NODEptr ans_root_ptr;
   CPtr cptr;
-  
+
 #ifdef DEBUG_DELAYVAR
   fprintf(stderr, ">>>> (at the beginning of trie_get_returns_for_call\n");
   fprintf(stderr, ">>>> num_vars_in_var_regs = %d)\n", num_vars_in_var_regs);
 #endif
 
   call_str_ptr = (SGFrame) ptoc_int(1);
-  retskel = (CPtr)ptoc_tag(2);
-
-  if((ans_root_ptr = subg_ans_root_ptr(call_str_ptr))== NULL)
-	return FALSE;
-  else{ 
-    pcreg = (byte *)ans_root_ptr;
-    term1 = retskel;
-    cptr_deref(term1);
-    if(cell_tag(term1) == CS){
-      psc_ptr = get_str_psc(retskel);
-      reg_arrayptr = reg_array -1;
-      num_vars_in_var_regs = -1;
-      cptr = (CPtr)cs_val(retskel);
-      for(i = get_arity(psc_ptr); i >=1; i--){
-	pushreg(cell(cptr+i));
+    if ((ans_root_ptr = subg_ans_root_ptr(call_str_ptr)) == NULL)
+      return (byte *)&fail_inst;
+    else {
+      retskel = (CPtr)ptoc_tag(2);
+      term1 = retskel;
+      cptr_deref(term1);
+      /* num_vars_in_var_regs = -1; Bart added */
+      if (isconstr(term1)) {
+	psc_ptr = get_str_psc(retskel);
+	reg_arrayptr = reg_array -1;
+	num_vars_in_var_regs = -1;
+	cptr = (CPtr)cs_val(retskel);
+	for (i = get_arity(psc_ptr); i>=1; i--) {
+	  pushreg(cell(cptr+i));
+	}
       }
-    }
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> The end of trie_get_returns_for_call ==> go to answer trie\n");
+      fprintf(stderr, ">>>> The end of trie_get_returns_for_call ==> go to answer trie\n");
 #endif
-    return TRUE;
+      return (byte *)ans_root_ptr;
   }
 }
-/****************************************************/
 
-int trie_get_calls(void)
+/*----------------------------------------------------------------------*/
+
+byte * trie_get_calls(void)
 {
    Cell call_term;
    Psc psc_ptr;
@@ -1516,66 +1521,104 @@ int trie_get_calls(void)
    tab_inf_ptr tip_ptr;
    CPtr cptr, call_trie_root;
 
-   call_term =  ptoc_tag(1);
-   if((  psc_ptr = term_psc(call_term)) != NULL){
+   call_term = ptoc_tag(1);
+   if ((psc_ptr = term_psc(call_term)) != NULL) {
      tip_ptr = get_tip(psc_ptr);
-     if(tip_ptr == NULL){
+     if (tip_ptr == NULL) {
        xsb_abort("get_calls/3 called with non-tabled predicate");
-       return FALSE; 
+       return (byte *)&fail_inst;
      }
-     call_trie_root =ti_call_trie_root(tip_ptr);
-     if(call_trie_root == NULL)
-       return FALSE;
-     else{
+     call_trie_root = ti_call_trie_root(tip_ptr);
+     if (call_trie_root == NULL)
+       return (byte *)&fail_inst;
+     else {
        cptr = (CPtr)cs_val(call_term);
-       reg_arrayptr = reg_array  -1;
+       reg_arrayptr = reg_array-1;
        num_vars_in_var_regs = -1;
-       for (i = get_arity(psc_ptr); i >=1; i--) {
+       for (i = get_arity(psc_ptr); i>=1; i--) {
 #ifdef DEBUG_DELAYVAR
 	 fprintf(stderr, ">>>> push one cell\n");
 #endif
 	 pushreg(cell(cptr+i));
        }
-       pcreg = (byte *)call_trie_root;
-       return TRUE;
+       return (byte *)call_trie_root;
      }
    }
    else
-     return FALSE;
+     return (byte *)&fail_inst;
+}
 
-}
-/*************************************************/
-void aux_call_info(void)
+/*----------------------------------------------------------------------*/
+
+static void construct_ret(void)
 {
+    Pair sym;
+    Cell term; /* the function assumes that term is free on call ! */
+    CPtr sreg;
+    int  arity, i, new;
+
+    arity = num_vars_in_var_regs+1;
+    if (arity == 0) {
+      ctop_string(3, string_find("ret",1));
+    } else {
+      term = ptoc_tag(3);
+      sreg = hreg;
+      bind_cs((CPtr)term, sreg);
+      sym = (Pair)insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
+      new_heap_functor(sreg, sym->psc_ptr);
+      for (i = 0; i < arity; i++) {
+	bind_copy(sreg, (Cell)var_regs[i]);
+	sreg++;
+      }
+      hreg = sreg;
+    }
+}
+
+/*----------------------------------------------------------------------*/
+/* This function is called immediately after using the trie intructions
+ * to traverse one branch of the call or answer trie.  A side-effect of
+ * executing these instructions is that the leaf node of the branch is
+ * left in a global variable "Last_Nod_Sav".  If needed, the function
+ * also calls construct_ret() to construct a term with the return
+ * skeleton in the third argument.
+ * One reason for writing it so, is that it is important that the
+ * construction of the return skeleton is an operation that cannot be
+ * interrupted by garbage collection.
+ *----------------------------------------------------------------------*/
+
+void get_lastnode_and_retskel(void)
+{  
+    int mode;
+
     ctop_int(1, (Integer)Last_Nod_Sav);
-    ctop_int(2, num_vars_in_var_regs + 1);
-    ctop_int(3, (Integer)&var_regs[0]);
+    mode = ptoc_int(2);
+    if (mode) construct_ret(/* in 3rd arg */);
+    /* num_vars_in_var_regs = -1;  Bart added */
 }
-/*************************************/
-void make_cell_as_desired(void)
-{
-  int i;
-  i = ptoc_int(1);
-  ctop_tag(2, (Cell)var_regs[i]);
-}
-/************************************/
+
+/*----------------------------------------------------------------------*/
+
 void prolog_newnode(void) 
 {
-  NODEptr i;
+    NODEptr i;
   
-  /* Used only in one context hence this abuse */
-  NewNode(i,(Cell)0,NULL,NULL,NULL);
-  ctop_int(1, (Integer)i);
+    /* Used only in one context hence this abuse */
+    NewNode(i,(Cell)0,NULL,NULL,NULL);
+    ctop_int(1, (Integer)i);
 }
 
-/* jf: 102695 create an empty (dummy) answer */
-ALPtr empty_return() 
+/*----------------------------------------------------------------------*/
+/* creates an empty (dummy) answer.					*/
+/*----------------------------------------------------------------------*/
+
+ALPtr empty_return(void)
 {
-  ALPtr i;
+    ALPtr i;
   
-  /* Used only in one context hence this abuse */
-  NewAnsListNode(i);
-  aln_answer_ptr(i) = &dummy_ans_node;
-  aln_next_aln(i) = NULL;
-  return i;
+    /* Used only in one context hence this abuse */
+    NewAnsListNode(i);
+    aln_answer_ptr(i) = &dummy_ans_node;
+    return i;
 }
+
+/*----------------------------------------------------------------------*/

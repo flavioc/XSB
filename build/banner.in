@@ -1,2 +1,2 @@
 XSB Version @xsb_full_version_name@ of @release_monthname@ @release_day@, @release_year@
-[@canonical@@config_tag@; mode: @compile_mode@; scheduling: @xsb_scheduling_strategy@]
+[@canonical@@config_tag@; mode: @compile_mode@; engine: @engine_mode@; scheduling: @xsb_scheduling_strategy@]

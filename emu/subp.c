@@ -335,7 +335,26 @@ int compare(Cell val1, Cell val2)
 	  case FREE:
 	  case REF1:
 	    if (isnonvar(val2)) return -1;
-	    else return vptr(val1) - vptr(val2);
+	    else { /* in case there exist local stack variables in the    */
+		   /* comparison, globalize them to guarantee that their  */
+		   /* order is retained as long as nobody "touches" them  */
+		   /* in the future -- without copying garbage collection */
+		if ((top_of_localstk <= vptr(val1)) &&
+		    (vptr(val1) <= (CPtr)glstack.high-1)) {
+		  bld_free(hreg);
+		  bind_ref(vptr(val1), hreg);
+		  hreg++;
+		  val1 = follow(val1);	/* deref again */
+		}
+		if ((top_of_localstk <= vptr(val2)) &&
+		    (vptr(val2) <= (CPtr)glstack.high-1)) {
+		  bld_free(hreg);
+		  bind_ref(vptr(val2), hreg);
+		  hreg++;
+		  val2 = follow(val2);	/* deref again */
+		}
+		return vptr(val1) - vptr(val2);
+	    }
 	  case FLOAT:
 	    if (!isnonvar(val2)) return 1;
 	    else if (isfloat(val2)) 

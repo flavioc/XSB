@@ -40,7 +40,9 @@
 #include "psc.h"
 #include "xmacro.h"
 
-extern int num_unwinds;
+#ifdef CHAT
+#include "chat.h"
+#endif
 
 extern int count_subgoals(void);
 
@@ -58,7 +60,6 @@ struct trace_str trace_init = {		/* initial value for a trace str */
 
 void perproc_stat(void)
 {
-
   tds.time_count = cpu_time() - time_start;
   if (ttt.maxgstack_count < tds.maxgstack_count) 
      ttt.maxgstack_count = tds.maxgstack_count;
@@ -81,72 +82,76 @@ void perproc_stat(void)
 
 void total_stat(double elapstime)
 {
-unsigned long lstktop, trie_alloc, trie_used, total_alloc, total_used, gl_avail, tc_avail;
-unsigned long subg_count, trie_hash_alloc;
+  unsigned long lstktop, trie_alloc, trie_used,
+                total_alloc, total_used, gl_avail, tc_avail;
+  unsigned long subg_count, trie_hash_alloc;
 
-    lstktop = (unsigned long)ereg;
+  lstktop = (unsigned long)ereg;
 
-    subg_count = count_subgoals();
-    trie_hash_alloc = allocated_trie_hash_size();
-    trie_alloc = allocated_trie_size() + trie_hash_alloc;
-    trie_used = trie_alloc - free_trie_size();
+  subg_count = count_subgoals();
+  trie_hash_alloc = allocated_trie_hash_size();
+  trie_alloc = allocated_trie_size() + trie_hash_alloc;
+  trie_used = trie_alloc - free_trie_size();
 
-    total_alloc = pspacesize + trie_alloc + sizeof(Cell)*CALLSTRUCTSIZE*subg_count +
-		  (pdl.size + glstack.size + tcpstack.size +
-		   complstack.size) * K;
+  total_alloc = pspacesize + trie_alloc +
+                sizeof(Cell)*CALLSTRUCTSIZE*subg_count +
+		(pdl.size + glstack.size + tcpstack.size + complstack.size) * K;
 
-    gl_avail    = lstktop-(unsigned long)hreg;
-    tc_avail    = (unsigned long)breg-(unsigned long)trreg;
+  gl_avail    = lstktop-(unsigned long)hreg;
+  tc_avail    = (unsigned long)breg-(unsigned long)trreg;
 
-    total_used  = pspacesize + trie_used + (glstack.size * K - gl_avail) +
-                  (tcpstack.size * K - tc_avail);
+  total_used  = pspacesize + trie_used + (glstack.size * K - gl_avail) +
+                (tcpstack.size * K - tc_avail);
 
+  printf("\n");
+  printf("memory (total)    %12ld bytes: %12ld in use, %12ld free\n",
+	 total_alloc, total_used, total_alloc-total_used);
+  printf("  permanent space %12ld bytes\n", pspacesize);
+  printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
+	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
+  printf("    global                         %12ld bytes\n",
+	 (unsigned long)hreg - (unsigned long)glstack.low);
+  printf("    local                          %12ld bytes\n",
+	 (unsigned long)glstack.high - lstktop);
+  printf("  trail/cp space  %12ld bytes: %12ld in use, %12ld free\n",
+	 tcpstack.size * K, tcpstack.size * K - tc_avail, tc_avail);
+  printf("    trail                          %12ld bytes\n",
+	 (unsigned long)trreg - (unsigned long)(tcpstack.low));
+  printf("    choice point                   %12ld bytes\n",
+	 (unsigned long)tcpstack.high - (unsigned long)breg);
+  printf("  SLG subgoal space %10ld bytes: %12ld in use, %12ld free\n",
+	 sizeof(Cell)*subg_count*(unsigned long)CALLSTRUCTSIZE,
+	 sizeof(Cell)*subg_count*(unsigned long)CALLSTRUCTSIZE,0L);
+  printf("  SLG unific. space %10ld bytes: %12ld in use, %12ld free\n",
+	 pdl.size * K, (unsigned long)(pdlreg+1) - (unsigned long)pdl.high,
+	 pdl.size * K - ((unsigned long)(pdlreg+1)-(unsigned long)pdl.high)); 
+  printf("  SLG completion  %12ld bytes: %12ld in use, %12ld free\n",
+	 (unsigned long)complstack.size * K,
+	 (unsigned long)COMPLSTACKBOTTOM - (unsigned long)openreg,
+	 (unsigned long)complstack.size * K -
+	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)openreg));
+  printf("   SLG trie space  %10ld bytes: %12ld in use, %12ld free\n",
+	 trie_alloc, trie_used, trie_alloc - trie_used);
+  printf("   (call+ret. trie %12ld bytes,    trie hash tables %12ld bytes)\n",
+	 (long)allocated_trie_size(), trie_hash_alloc);
+  printf("\n");
+
+  if (flags[TRACE_STA]) {
+    printf("   Maximum stack use: global %ld, local %ld, trail %ld, cp %ld\n",
+	   ttt.maxgstack_count, ttt.maxlstack_count, 
+	   ttt.maxtrail_count, ttt.maxcpstack_count);
+    total_used = ttt.maxgstack_count + ttt.maxlstack_count +
+                 ttt.maxtrail_count + ttt.maxcpstack_count +
+		 ttt.maxopenstack_count;
+    printf("   Maximum stack use: SLG completion %ld, Total %ld.  Max level: %ld\n",
+	   ttt.maxopenstack_count, total_used, ttt.maxlevel_num);
     printf("\n");
-    printf("memory (total)    %12ld bytes: %12ld in use, %12ld free\n",
-	   total_alloc, total_used, total_alloc-total_used);
-    printf("  permanent space %12ld bytes\n", pspacesize);
-    printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
-	   glstack.size * K, glstack.size * K - gl_avail, gl_avail);
-    printf("    global                         %12ld bytes\n",
-	   (unsigned long)hreg - (unsigned long)glstack.low);
-    printf("    local                          %12ld bytes\n",
-	   (unsigned long)glstack.high - lstktop);
-    printf("  trail/cp space  %12ld bytes: %12ld in use, %12ld free\n",
-	   tcpstack.size * K, tcpstack.size * K - tc_avail, tc_avail);
-    printf("    trail                          %12ld bytes\n",
-	   (unsigned long)trreg - (unsigned long)(tcpstack.low));
-    printf("    choice point                   %12ld bytes\n",
-	   (unsigned long)tcpstack.high - (unsigned long)breg);
-    printf("  SLG subgoal space %12ld bytes: %12ld in use, %12ld free\n",
-	   sizeof(Cell)*subg_count*(unsigned long)CALLSTRUCTSIZE,
-	   sizeof(Cell)*subg_count*(unsigned long)CALLSTRUCTSIZE,0L);
-    printf("  SLG unific. space %12ld bytes: %12ld in use, %12ld free\n",
-	   pdl.size * K, (unsigned long)(pdlreg+1) - (unsigned long)pdl.high,
-	   pdl.size * K - ((unsigned long)(pdlreg+1)-(unsigned long)pdl.high)); 
-    printf("  SLG completion  %12ld bytes: %12ld in use, %12ld free\n",
-	   (unsigned long)complstack.size * K,
-           (unsigned long)COMPLSTACKBOTTOM - (unsigned long)openreg,
-	   (unsigned long)complstack.size * K -
-          ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)openreg));
-    printf("   SLG trie space  %10ld bytes: %12ld in use, %12ld free\n",
-	   trie_alloc, trie_used, trie_alloc - trie_used);
-    printf("   (call+ret. trie %12ld bytes,   trie hash tables %12ld bytes)\n",
-	   (long)allocated_trie_size(), trie_hash_alloc);
-    printf("\n");
+  }
 
-    if (flags[TRACE_STA]) {
-	printf("   Maximum stack use: global %ld, local %ld, trail %ld, cp %ld\n",
-	       ttt.maxgstack_count, ttt.maxlstack_count, 
-	       ttt.maxtrail_count, ttt.maxcpstack_count);
-	printf("   Maximum stack use: SLG completion %ld.  Max level: %ld\n",
-	       ttt.maxopenstack_count, ttt.maxlevel_num);
-	printf("\n");
-    }
-
-    printf(" %5ld subgoal check/insert attempts", subg_chk_ins);
-    printf(" inserted %5ld subgoals in the tables\n", subg_inserts);
-    printf(" %5ld answer  check/insert attempts", ans_chk_ins);
-    printf(" inserted %5ld answers  in the tables\n", ans_inserts);
+  printf(" %6ld subgoal check/insert attempts", subg_chk_ins);
+  printf(" inserted %5ld subgoals in the tables\n", subg_inserts);
+  printf(" %6ld answer  check/insert attempts", ans_chk_ins);
+  printf(" inserted %5ld answers  in the tables\n", ans_inserts);
 
 /*     if (ide_count > 0) { */
 /* 	printf(" %5d ide tab check/insert attempts", ide_chk_ins); */
@@ -155,11 +160,16 @@ unsigned long subg_count, trie_hash_alloc;
 /* 	printf(" interned %5d dl lists in the tables\n\n", idl_count); */
 /*     } else printf("\n"); */
 
-    printf(" %5d Trail unwinds,   %5ld subgoals,   %5d levels\n\n",
-	   num_unwinds, subg_count, level_num);
+#ifdef CHAT
+  print_chat_statistics();
+#endif
+  printf(" %6ld subgoals,   %5d levels\n\n", subg_count, level_num);
+#ifdef GC
+  print_gc_statistics();
+#endif
 
-    printf(" %.3f sec. cputime,  %.3f sec. elapsetime\n",
-	   ttt.time_count, elapstime);
+  printf(" %.3f sec. cputime,  %.3f sec. elapsetime\n",
+	 ttt.time_count, elapstime);
 }
 
 void perproc_reset_stat(void)
@@ -168,6 +178,9 @@ void perproc_reset_stat(void)
 /*    ide_chk_ins = idl_chk_ins = 0; */
    ans_chk_ins = ans_inserts = 0;
    subg_chk_ins = subg_inserts = 0;
+#ifdef CHAT
+   reset_chat_statistics();
+#endif
    time_start = cpu_time();
 }
 

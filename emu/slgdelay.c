@@ -136,12 +136,20 @@ static DE intern_delay_element(Cell delay_elem)
    * delay_negatively() or delay_positively().  Note that cell(cptr) is
    * the delay_psc ('DL').
    */
-  SGFrame subgoal = (SGFrame)cell(cptr + 1);
-  NODEptr ans_subst = (NODEptr)cell(cptr + 2);
-  CPtr ret_n = (CPtr) cs_val(cell(cptr + 3));
+  SGFrame subgoal;
+  NODEptr ans_subst;
+  CPtr ret_n;
   int arity;
+  Cell tmp_cell;
+
+  tmp_cell = cell(cptr + 1);
+  subgoal = (SGFrame) string_val(tmp_cell);
+  tmp_cell = cell(cptr + 2);
+  ans_subst = (NODEptr) string_val(tmp_cell);
+  tmp_cell = cell(cptr + 3);
+  ret_n = (CPtr) cs_val(tmp_cell);
   
-  if (cell(cptr + 3) == NEG_DELAY)
+  if (ret_n == NEG_DELAY)
     arity = 0;
   else
     arity = get_arity((Psc) get_str_psc(cell(cptr + 3)));
@@ -166,8 +174,8 @@ static DE intern_delay_element(Cell delay_elem)
     de_ans_subst(de) = ans_subst; /* Leaf of the answer (substitution) trie */
     de_subs_fact(de) = NULL;
     if (arity != 0) {
-      de_subs_fact_leaf(de) = (CPtr)delay_chk_insert(arity, ret_n + 1,
-						     &de_subs_fact(de));
+      de_subs_fact_leaf(de) = (NODEptr) delay_chk_insert(arity, ret_n + 1,
+							 &de_subs_fact(de));
     }
     return de;
   }
@@ -325,12 +333,15 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
     CPtr    cptr;
     SGFrame subgoal;
     NODEptr ans_subst;
+    Cell tmp_cell;
 
     while (islist(dlist)) {
       dlist = clref_val(dlist);
       cptr = (CPtr)cs_val(cell(dlist));
-      subgoal = (SGFrame)cell(cptr+1);
-      ans_subst = (NODEptr)cell(cptr+3);
+      tmp_cell = cell(cptr + 1);
+      subgoal = (SGFrame) string_val(tmp_cell);
+      tmp_cell = cell(cptr + 2);
+      ans_subst = (NODEptr) string_val(tmp_cell);
       if (is_failing_delay_element(subgoal,ans_subst)) {
 #ifdef PROFILE
 	if (ans_subst == NULL) 
@@ -425,8 +436,7 @@ static void handle_empty_dl_creation(DL dl)
     simplify_pos_unconditional(as_leaf);
     /*--- perform early completion if necessary ---*/
     if (!is_completed(subgoal) && most_general_answer(as_leaf)) {
-      tcp_pcreg(subg_cp_ptr(subgoal)) = (byte *) &check_complete_inst;
-      mark_as_completed(subgoal);
+      perform_early_completion(subgoal, subg_cp_ptr(subgoal));
     }
     simplify_neg_succeeds(subgoal);
   }

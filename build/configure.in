@@ -50,11 +50,11 @@ AC_DEFINE(___ALWAYS_TRUE___)
 
 
 AC_ARG_WITH(gcc,
-[  --with-gcc              use GCC to compile Emacs])
+[  --with-gcc              use GCC to compile XSB])
 AC_ARG_WITH(cc,
-[  --with-cc              use CC to compile Emacs])
+[  --with-cc               use CC to compile XSB])
 AC_ARG_WITH(acc,
-[  --with-acc              use ACC to compile Emacs])
+[  --with-acc              use ACC to compile XSB])
 
 AC_ARG_WITH(oracle,
 [  --with-oracle           compile with support of Oracle])
@@ -308,7 +308,7 @@ site_config_prefix=${site_prefix}/config/${canonical}
 # site-specific config-dependent XSB libraries
 site_config_libdir=${site_config_prefix}/lib
 
-# Installation directories: We only check if the exist
+# Installation directories: We only check if they exist
 install_libdir=${prefix}/lib
 install_syslibdir=${prefix}/syslib
 install_cmplibdir=${prefix}/cmplib
@@ -644,6 +644,26 @@ if test "${enable_debug}" = "yes"; then
 fi
 
 
+dnl Choose an abstract machine for XSB
+engine_mode=slg-wam
+
+AC_ARG_ENABLE(chat,
+[  --enable-chat                compile using CHAT as the abstract machine;
+				default is SLG-WAM])
+if test "${enable_chat}" = "yes" ; then
+   enable_chat=yes
+fi
+if test "${enable_chat}" = "yes" ; then
+   AC_DEFINE(CHAT)
+   AC_DEFINE(CHAT_TREE_COPY)
+   AC_DEFINE(WAM_TRAIL)
+   AC_DEFINE(INCREMENTAL_CP_TRAVERSAL)
+   engine_mode=chat
+else
+   AC_DEFINE(PTCP_IN_CP)
+fi
+
+
 dnl Take care of the scheduling strategy
 xsb_scheduling_strategy=batched
 
@@ -869,7 +889,7 @@ AC_SUBST(site_prefix)
 # These are needed for NT and DOS config.h files
 AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
-
+AC_SUBST(engine_mode)
 
 
 dnl If the cache file doesn't exist, make it.
@@ -915,6 +935,7 @@ Date: ${install_date}
   emuloop.c will be built with:                   ${CC} ${LCFLAGS}
   Loader flags:                                   ${LDFLAGS}
   Compilation mode:                               ${compile_mode}
+  XSB abstract machine: 			  ${engine_mode}
   XSB scheduling strategy:                        $xsb_scheduling_strategy"
 
 

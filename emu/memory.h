@@ -68,6 +68,13 @@ extern System_Stack pdl,            /* PDL                        */
  *    topmost used cell on their respective stack.
  */
 #define top_of_heap      (hreg - 1)
+#ifdef CHAT
+#define top_of_localstk	( (ereg < ebreg) \
+			      ? ereg - *(cpreg - 2*sizeof(Cell)+3) + 1 \
+			      : ebreg )
+#define top_of_trail	trreg
+#define top_of_cpstack	breg
+#else
 #define top_of_localstk  ( ((efreg < ebreg) && (efreg < ereg)) \
                            ? efreg  \
 			   : ( (ereg < ebreg) \
@@ -75,8 +82,9 @@ extern System_Stack pdl,            /* PDL                        */
 			       : ebreg ) )
 #define top_of_trail     ((trreg > trfreg) ? trreg : trfreg)
 #define top_of_cpstack   ((breg < bfreg) ? breg : bfreg)
-#define top_of_complstk  openreg
+#endif
 
+#define top_of_complstk  openreg
 
 #define COMPLSTACKBOTTOM	((CPtr) complstack.high)
 
@@ -108,15 +116,14 @@ void complstack_realloc(long);
 
 /* From heap.c
    -----====== */
-void glstack_realloc( int size_in_k, int arity ) ;
+extern void glstack_realloc( int size_in_k, int arity ) ;
 
 /* Instruction Externs
    ------------------- */
 extern byte *inst_begin;       /* ptr to beginning of instruction array. */
 
-extern Cell retry_active_inst, check_complete_inst, hash_handle_inst,
-	    completion_suspension_inst, fail_inst, halt_inst, proceed_inst;
-
+extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
+	    resume_compl_suspension_inst, fail_inst, halt_inst, proceed_inst;
 
 
 /* Stack Overflow Checkers
@@ -259,6 +266,5 @@ extern Cell retry_active_inst, check_complete_inst, hash_handle_inst,
 	goto contcase;                                                       \
       }                                                                      \
     }
-
 
 #endif

@@ -76,7 +76,7 @@ asm_genheader(_OFile, _ModName, _SymTab, _IsModule).
 
 asm_genheader0(OFile, ModName, SymTab, IsModule) :-
 	tell(OFile),
-	asm_magic(4),	/* use magic number 17-18-19-4 */
+	asm_magic(5),	/* use magic number 17-18-19-5 */
 	( IsModule =:= 0 -> put(0)
 	; str_len(ModName, L), put(L), write(ModName)
 	),

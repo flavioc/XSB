@@ -214,6 +214,11 @@ void tcpstack_realloc(long new_size) {
        csf_ptr < (ComplStackFrame)complstack.high;
 	 csf_ptr++) {
     subg_ptr = (SGFrame)compl_subgoal_ptr(csf_ptr);
+#ifdef CHAT
+    xsb_exit("Implementation of Trail/CP stack realloc still murky in CHAT");
+#else
+    /* Alter specific fields
+       --------------------- */
     if (subg_asf_list_ptr(subg_ptr) != NULL)
       subg_asf_list_ptr(subg_ptr) =
 	(CPtr)( (byte *)subg_asf_list_ptr(subg_ptr) + cps_offset );
@@ -222,6 +227,7 @@ void tcpstack_realloc(long new_size) {
 	(CPtr)( (byte *)subg_compl_susp_ptr(subg_ptr) + cps_offset );
     subg_cp_ptr(subg_ptr) =
       (CPtr)((byte *)subg_cp_ptr(subg_ptr) + cps_offset);
+#endif
   }
 						     
   /* Update the system variables
@@ -231,11 +237,17 @@ void tcpstack_realloc(long new_size) {
   tcpstack.size = new_size;
   
   trreg = (CPtr *)((byte *)trreg + trail_offset);
+#if (!defined(CHAT))
   trfreg = (CPtr *)((byte *)trfreg + trail_offset);
+#endif
   breg = (CPtr)((byte *)breg + cps_offset);
+#if (!defined(CHAT))
   bfreg = (CPtr)((byte *)bfreg + cps_offset);
+#endif
+#ifdef PTCP_IN_CP
   if (ptcpreg != NULL)
     ptcpreg = (CPtr)((byte *)ptcpreg + cps_offset);
+#endif
   if (root_address != NULL)
     root_address = (CPtr)((byte *)root_address + cps_offset);
   /* I'm not sure if the following is REALLY needed - RFM */

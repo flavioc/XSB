@@ -116,7 +116,7 @@ void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
 		    set_env(psc, T_LOCAL);	
 		else /* We are trying to load a module
 			that imports sth not exported. */
-		    printf("module imports something not exported\n");
+		    fprintf(stderr, "module imports something not exported\n");
 	    }
 	}
 	else set_env(psc, env);
@@ -158,30 +158,41 @@ static byte *loader_foreign(char *, FILE *, int);
 
 byte *loader(char *file, int exp)
 {
-	Cell magic_num;
-	byte *first_inst = NULL;
+    Cell magic_num;
+    byte *first_inst = NULL;
+    char message[160];  /* Allow 2 lines of error reporting.    */
 
-	fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
-	if (!fd) return 0;
-	if (flags[HITRACE]) printf("\n     ...... loading file %s\n", file);
-	magic_num = read_magic();
-	if (magic_num == 0x11121304) first_inst = loader1(fd,exp);
-	else if (magic_num == 0x11121308) {
-#ifdef FOREIGN
-		first_inst = loader_foreign(file, fd, exp);
+    fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
+    if (!fd) return 0;
+    if (flags[HITRACE]) printf("\n     ...... loading file %s\n", file);
+    magic_num = read_magic();
+#ifdef V2_OBJECT_FORMAT
+    if (magic_num == 0x11121305)
 #else
-		fprintf(stderr, "Trying to load in foreign file: %s\n", file);
+    if (magic_num == 0x11121304 || magic_num == 0x11121305)
 #endif
-	}
-	else {
-	  fprintf(stderr, "Not a byte code file\n");
-	}
-	fclose(fd);
-	if (reloc_table) {
-	  free(reloc_table);
-	}
-	reloc_table = 0;
-	return first_inst;
+      first_inst = loader1(fd,exp);
+    else if (magic_num == 0x11121308) {
+#ifdef FOREIGN
+      first_inst = loader_foreign(file, fd, exp);
+#else
+      sprintf(message, "Trying to load in foreign file: %s\n", file);
+      xsb_abort(message);
+#endif
+    }
+    else {
+      sprintf(message,
+	      "File: %s does not have proper byte code format...\n%s",
+	      file, "\t Please recompile it");
+      xsb_abort(message);
+      first_inst = NULL;
+    }
+    fclose(fd);
+    if (reloc_table) {
+      free(reloc_table);
+    }
+    reloc_table = 0;
+    return first_inst;
 } /* loader */
 
 static byte *loader1(FILE *fd, int exp)

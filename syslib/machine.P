@@ -122,7 +122,7 @@ psc_spy(_PSC, _Spy) :- '_$builtin'(101).
 
 psc_tabled(_PSC, _Tabled) :- '_$builtin'(102).
 tip_prop(_Tip, _Field, _Get_or_set, _Value):- '_$builtin'(103).
-is_incomplete(_Tab,_SubgoalPtr,_PTCP,_Usage,_Ans):- '_$builtin'(104).
+is_incomplete(_Tab,_SubgoalPtr,_PTCP,_SubgoalFrame):- '_$builtin'(104).
 get_osp_breg(_Osp,_Breg):- '_$builtin'(105).
 cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(106).
 get_ptcp(_PTCP) :- '_$builtin'(107).
@@ -166,7 +166,7 @@ sched_strat(_SchedStrat) :- '_$builtin'(157).
 trimcore :- '_$builtin'(158).
 
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).
-odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(240).
+odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(239).
 
 '$$findall_init'(_I,_C) :- '_$builtin'(249).
 '$$findall_add'(_T,_I,_C) :- '_$builtin'(250).

@@ -77,7 +77,14 @@ typedef struct subgoal_frame *SGFrame;
 struct completion_stack_frame {
   SGFrame subgoal_ptr;
   int     level_num;
-  ALPtr   del_ret_list;  /* to reclaim deleted returns */
+#ifdef CHAT
+  CPtr    hreg;	          /* for accessing the substitution factor */
+  int     chat_chain_bit; /* should come immediatly after hreg */
+  CPtr    pdreg;
+  CPtr    ptcp;
+  CPtr    cons_copy_list; /* Pointer to a list of consumer copy frames */
+#endif
+  ALPtr   del_ret_list;   /* to reclaim deleted returns */
   int     visited;
   EPtr    DG_edges;
   EPtr    DGT_edges;
@@ -87,13 +94,24 @@ struct completion_stack_frame {
 
 #define compl_subgoal_ptr(b)	((ComplStackFrame)(b))->subgoal_ptr
 #define compl_level(b)		((ComplStackFrame)(b))->level_num
+#ifdef CHAT
+#define compl_hreg(b)		((ComplStackFrame)(b))->hreg
+#define compl_chain_bit(b)	((ComplStackFrame)(b))->chat_chain_bit
+#define compl_pdreg(b)		((ComplStackFrame)(b))->pdreg
+#define compl_ptcp(b)		((ComplStackFrame)(b))->ptcp
+#define compl_cons_copy_list(b)	((ComplStackFrame)(b))->cons_copy_list
+
+#define compl_is_chained(b)     *(((CPtr)b)+1)
+#define compl_set_unchained(b)  *(((CPtr)b)+1) = 0
+#define compl_set_chained(b)    *(((CPtr)b)+1) = 1
+#endif
 #define compl_del_ret_list(b)	((ComplStackFrame)(b))->del_ret_list
 #define compl_visited(b)	((ComplStackFrame)(b))->visited
 #define compl_DG_edges(b)	((ComplStackFrame)(b))->DG_edges
 #define compl_DGT_edges(b)	((ComplStackFrame)(b))->DGT_edges
 
-#define next_compl_frame(b)	((CPtr)(b))-COMPLFRAMESIZE
-#define prev_compl_frame(b)	((CPtr)(b))+COMPLFRAMESIZE
+#define prev_compl_frame(b)	(((CPtr)(b))+COMPLFRAMESIZE)
+#define next_compl_frame(b)	(((CPtr)(b))-COMPLFRAMESIZE)
 
 /*
  *  The overflow test MUST be placed after the initialization of the
@@ -102,6 +120,22 @@ struct completion_stack_frame {
  *  link can be updated if an expansion is required.  This was the simplest
  *  solution to not leaving any dangling pointers to the old area.
  */
+#ifdef CHAT
+#define	push_completion_frame(subgoal)	\
+  level_num++; \
+  openreg -= COMPLFRAMESIZE; \
+  compl_subgoal_ptr(openreg) = subgoal; \
+  compl_level(openreg) = level_num; \
+  compl_hreg(openreg) = hreg - 1; /* so that it points to something useful */ \
+  compl_chain_bit(openreg) = 0; \
+  compl_pdreg(openreg) = delayreg; \
+  compl_ptcp(openreg) = ptcpreg; \
+  compl_cons_copy_list(openreg) = NULL; \
+  compl_del_ret_list(openreg) = (ALPtr)NULL; \
+  compl_visited(openreg) = FALSE; \
+  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = (EPtr) NULL; \
+  check_completion_stack_overflow
+#else  /* Regular SLG-WAM */
 #define	push_completion_frame(subgoal)	\
   level_num++; \
   openreg -= COMPLFRAMESIZE; \
@@ -111,13 +145,29 @@ struct completion_stack_frame {
   compl_visited(openreg) = FALSE; \
   compl_DG_edges(openreg) = compl_DGT_edges(openreg) = (EPtr) NULL; \
   check_completion_stack_overflow
+#endif
 
+#ifdef CHAT
+#define compact_completion_frame(cp_frame,cs_frame,subgoal)	\
+  compl_subgoal_ptr(cp_frame) = subgoal;			\
+  compl_level(cp_frame) = compl_level(cs_frame);		\
+  compl_hreg(cp_frame) = compl_hreg(cs_frame);			\
+  compl_chain_bit(cp_frame) = compl_chain_bit(cs_frame);	\
+  compl_pdreg(cp_frame) = compl_pdreg(cs_frame);	       	\
+  compl_ptcp(cp_frame) = compl_ptcp(cs_frame);			\
+  compl_cons_copy_list(cp_frame) = compl_cons_copy_list(cs_frame); \
+  compl_del_ret_list(cp_frame) = compl_del_ret_list(cs_frame);	\
+  compl_visited(cp_frame) = FALSE;				\
+  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = (EPtr) NULL; \
+  cp_frame = next_compl_frame(cp_frame)
+#else
 #define compact_completion_frame(cp_frame,cs_frame,subgoal)	\
   compl_subgoal_ptr(cp_frame) = subgoal;			\
   compl_level(cp_frame) = compl_level(cs_frame);		\
   compl_visited(cp_frame) = FALSE;				\
   compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = (EPtr) NULL; \
   cp_frame = next_compl_frame(cp_frame)
+#endif
 
 /*----------------------------------------------------------------------*/
 /*  Subgoal (Call) Structure.						*/
@@ -133,10 +183,16 @@ struct completion_stack_frame {
 struct subgoal_frame {
   SGFrame next_subgoal;
   NODEptr ans_root_ptr;	/* Root of the return trie */
+#if (!defined(CHAT))
   CPtr asf_list_ptr;	/* Pointer to list of (CP) active subgoal frames */
+#endif
   tab_inf_ptr tip_ptr;	/* Used only in remove_open_tries */
   CPtr compl_stack_ptr;	/* Pointer to subgoal's completion stack frame */
+#ifdef CHAT
+  CPtr compl_suspens_ptr; /* pointer to CHAT area; type is chat_init_pheader */
+#else
   CPtr compl_suspens_ptr; /* CP Stack ptr */
+#endif
   ALPtr ans_list_ptr;	/* Pointer to the list of returns in the ret trie */
   SGFrame prev_subgoal;
   NODEptr leaf_ptr;	/* Used only in remove_open_tries */
@@ -151,7 +207,9 @@ struct subgoal_frame {
 #define subg_next_subgoal(b)	((SGFrame)(b))->next_subgoal
 #define subg_prev_subgoal(b)	((SGFrame)(b))->prev_subgoal
 #define subg_ans_root_ptr(b)	((SGFrame)(b))->ans_root_ptr
+#if (!defined(CHAT))
 #define subg_asf_list_ptr(b)	((SGFrame)(b))->asf_list_ptr
+#endif
 #define subg_tip_ptr(b)		((SGFrame)(b))->tip_ptr
 #define subg_leaf_ptr(b)	((SGFrame)(b))->leaf_ptr
 /* use this for mark as completed == 0 */
@@ -160,9 +218,9 @@ struct subgoal_frame {
 #define subg_ans_list_ptr(b)	((SGFrame)(b))->ans_list_ptr
 #define subg_cp_ptr(b)		((SGFrame)(b))->cp_ptr
 #define subg_ans_list_tail(b)	((SGFrame)(b))->ans_list_tail
-/* jf: 072295 */
 #define subg_compl_flag(b)	((SGFrame)(b))->compl_flag
 #define subg_nde_list(b)	((SGFrame)(b))->nde_list
+
 extern SGFrame subg_structure_list;
 extern ALPtr empty_return();
 #define subg_answers(subg) aln_next_aln(subg_ans_list_ptr(subg))
@@ -173,59 +231,55 @@ extern ALPtr empty_return();
  * given useful values, while the completion stack frame pointer is set to
  * the next available (frame) location on the stack, but the space is not yet
  * allocated to one.
- *
- * LeafPtr is the pointer to the corresponding leaf node of the call trie.
+ * Changed to use calloc() so that remaining fields are initialized to 0/NULL
+ * so, in some sense making this macro independent of the number of fields.
  */
 
 #define create_subgoal_frame(storeptr,LeafPtr){\
-   SGFrame NewFrame;\
-   if ((NewFrame = (SGFrame)malloc(sizeof(struct subgoal_frame))) == NULL){\
-     xsb_exit("Out of Memory\n");\
-   }\
-   else{\
+   SGFrame NewFrame; \
+   if ((NewFrame = (SGFrame)calloc(1,sizeof(struct subgoal_frame))) == NULL){\
+	xsb_exit("Out of Memory\n");\
+   } else {\
 	storeptr = (Cell) NewFrame;\
 	if (subg_structure_list != NULL)\
 	  subg_prev_subgoal(subg_structure_list) = NewFrame;\
-	subg_ans_root_ptr(NewFrame)= NULL;\
-	subg_asf_list_ptr(NewFrame) = (CPtr) 0; \
 	subg_tip_ptr(NewFrame) = UglyHackForTip;\
-	subg_leaf_ptr(NewFrame) =  LeafPtr; \
-	subg_compl_stack_ptr(NewFrame)= (CPtr)(openreg - COMPLFRAMESIZE); \
-	subg_compl_susp_ptr(NewFrame)= NULL;\
-	/****subg_ans_list_ptr(NewFrame) = NULL; *******/ \
+	subg_leaf_ptr(NewFrame) = LeafPtr; \
+	subg_compl_stack_ptr(NewFrame) = (CPtr)(openreg - COMPLFRAMESIZE); \
 	subg_ans_list_ptr(NewFrame) = (ALPtr) empty_return(); \
-	subg_cp_ptr(NewFrame) = NULL;\
 	subg_next_subgoal(NewFrame) = subg_structure_list;\
 	subg_structure_list = NewFrame;\
-	subg_prev_subgoal(NewFrame) = NULL;\
-        subg_ans_list_tail(NewFrame) = NULL; /* REV_ANSWER_LIST */\
-	subg_compl_flag(NewFrame) = (CPtr) 0; /* jf: 072295 */\
-	subg_nde_list(NewFrame) = NULL;\
   }\
 }
 
 #define free_subgoal_frame(x){\
- if(subg_prev_subgoal(x) == NULL) \
-    subg_structure_list = subg_next_subgoal(x);\
- else\
-    subg_next_subgoal(subg_prev_subgoal(x)) = subg_next_subgoal(x);\
- if(subg_next_subgoal(x) != NULL)\
-    subg_prev_subgoal(subg_next_subgoal(x)) = subg_prev_subgoal(x);\
- free(x);\
-                            }
+   if (subg_prev_subgoal(x) == NULL) {\
+       subg_structure_list = subg_next_subgoal(x);\
+   } else {\
+       subg_next_subgoal(subg_prev_subgoal(x)) = subg_next_subgoal(x);\
+   }\
+   if (subg_next_subgoal(x) != NULL) {\
+       subg_prev_subgoal(subg_next_subgoal(x)) = subg_prev_subgoal(x);\
+   }\
+   free(x);\
+}
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
 
+#ifdef CHAT
+#define set_min(a,b,c)	a = b
+#else
 #define set_min(a,b,c)	if (b < c) a = b; else a = c
+#endif
 
-#define tab_level(SUBG_PTR)	\
-	compl_level((subg_compl_stack_ptr(SUBG_PTR)))
-#define next_tab_level(SUBG_PTR) \
-	compl_level(prev_compl_frame(subg_compl_stack_ptr(SUBG_PTR)))
+#define tab_level(SUBG_PTR)     \
+        compl_level((subg_compl_stack_ptr(SUBG_PTR)))
+#define next_tab_level(CSF_PTR) \
+        compl_level(prev_compl_frame(CSF_PTR))
 
-#define is_leader(SUBG_PTR)	\
-	(next_tab_level(SUBG_PTR) < tab_level(SUBG_PTR))
+#define is_leader(CSF_PTR)	\
+	(next_tab_level(CSF_PTR) < compl_level(CSF_PTR))
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
@@ -275,16 +329,27 @@ extern ALPtr empty_return();
 	csf_neg_loop(susp) = TRUE; }
 
 /*----------------------------------------------------------------------*/
+/* The following macro might be called more than once for some subgoal. */
+/* So, please make sure that functions/macros that it calls are robust  */
+/* under repeated uses.                                 - Kostis.       */
+/*----------------------------------------------------------------------*/
 
+#ifdef CHAT
+#define reclaim_subg_space(SUBG_PTR) {\
+	  chat_free_cons_chat_areas(SUBG_PTR); \
+	  reclaim_ans_list_nodes(SUBG_PTR); \
+        }
+#else
 #define reclaim_subg_space(SUBG_PTR) {\
 	  reclaim_ans_list_nodes(SUBG_PTR); \
 	}
+#endif
 
 /*----------------------------------------------------------------------*/
 
 #define adjust_level(CS_FRAME) \
     xtemp2 = (CPtr) compl_level(CS_FRAME);	\
-    if ((Integer) xtemp2 < compl_level(openreg)) {	\
+    if ((Integer) xtemp2 < compl_level(openreg)) {  \
       for (xtemp1 = CS_FRAME;			\
 	   compl_level(xtemp1) >= (Integer) xtemp2 && xtemp1 >= openreg; \
 	   xtemp1 = next_compl_frame(xtemp1)) {	\
@@ -294,6 +359,11 @@ extern ALPtr empty_return();
 
 /*----------------------------------------------------------------------*/
 
+#ifdef CHAT
+#define reset_freeze_registers \
+    level_num = 0; \
+    root_address = ptcpreg = NULL
+#else
 #define reset_freeze_registers \
     bfreg = (CPtr)(tcpstack.high) - CP_SIZE; \
     trfreg = (CPtr *)(tcpstack.low); \
@@ -302,18 +372,20 @@ extern ALPtr empty_return();
     level_num = xwammode = 0; \
     root_address = ptcpreg = NULL
 
-    /* JF: added parameter 0912 */
 #define adjust_freeze_registers(tcp) \
     if (bfreg < tcp_bfreg(tcp)) { bfreg = tcp_bfreg(tcp); }	 \
     if (trfreg > tcp_trfreg(tcp)) { trfreg = tcp_trfreg(tcp); }\
     if (hfreg > tcp_hfreg(tcp)) { hfreg = tcp_hfreg(tcp); }	 \
     if (efreg < tcp_efreg(tcp)) { efreg = tcp_efreg(tcp); }
+#endif
 
 
-/* JF: added factoring out repeated code - reclaims all stack
- * to the state they were when the subgoal corresponding to tcp
- * was created
-*/
+#ifdef CHAT
+#define reclaim_stacks(tcp) \
+  if (tcp == root_address) { \
+    reset_freeze_registers; \
+  }
+#else
 #define reclaim_stacks(tcp) \
   if (tcp == root_address) { \
     reset_freeze_registers; \
@@ -322,8 +394,10 @@ extern ALPtr empty_return();
   else { \
     adjust_freeze_registers(tcp); \
     /* fprintf(stderr,"adjust registers.... \n"); */ \
-  } \
+  }
+#endif
 
+/*----------------------------------------------------------------------*/
 
 #define pdlpush(cell)	*(pdlreg) = cell;  pdlreg--
 
@@ -335,15 +409,6 @@ extern ALPtr empty_return();
    if (pdlreg < (CPtr) pdl.low) \
      xsb_exit("pdlreg grew too much"); \
    else (pdlreg = (CPtr)(pdl.high) - 1)
-
-
-/* second arg is just a temporary variable */
-#define table_undo_bindings(old_trreg, traddr) \
-  while (trreg > old_trreg) {\
-     traddr = *(trreg-2);\
-     untrail(traddr);\
-     trreg = (CPtr *) *trreg;\
-  }
 
 #define remove_open_tables_loop(Endpoint) remove_open_tries(Endpoint)
 

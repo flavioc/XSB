@@ -81,6 +81,10 @@ asm_inst(gettbreg(R),		4,	167,	[pp, r(R)]	).
 asm_inst(putpbreg(V),		4,	168,	[pp, v(V)]	).
 asm_inst(puttbreg(R),		4,	169,	[pp, r(R)]	).
 asm_inst(jumpsavebreg(A,L),	8,	170,	[pp, a(A),l(L)]	).
+
+asm_inst(getVn(V),              4,      171,    [pp, v(V)]      ).
+asm_inst(test_heap(A,N),        8,      172,    [pp, a(A), n(N)]).
+
 asm_inst(switchonterm(R,L,L1),	12,	176,	[pp, r(R), l(L), l(L1)]	).
 /* the following two instructions have not been implemented by Jiyang or TLS */
 asm_inst(switchoncon(L),	8,	177,	[ppp, l(L)]	).
@@ -119,6 +123,7 @@ asm_inst(int_test_nz(R,I,L),   12,	221,	[pp, r(R), n(I), l(L)]).
 
 asm_inst(putdval(V,R),		4,	224,	[p, v(V), r(R)]	).
 asm_inst(putuval(V,R),		4,	225,	[p, v(V), r(R)]	).
+asm_inst(allocate_gc(R,R1),     4,      231,    [p, a(R),a(R1)] ).
 asm_inst(call(S,B),		8,	232,	[pp, a(B), s(S)]).
 	% Address has been preprocessed
 asm_inst(allocate,		4,	233,	[ppp]		).

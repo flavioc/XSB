@@ -31,13 +31,15 @@
 #define ARITY	op1
 #define Yn	op2
 #define LABEL	op3
-#define PREVSUSREC	xtemp3
-#define SOLUTIONCP	xtemp3
+#ifdef CHAT
+#define COMPL_STK_FRAME	xtemp3
+#else
+#define PREV_CONSUMER	xtemp3
+#define GENERATOR_CP	xtemp3
+#endif
 #define COMPL_SUSP_ENV	xtemp3
 #define VarsInCall	xtemp5
-#define SUBGOAL		xtemp12
-
-/* #define set_min(a,b,c)	if (b < c) a = b; else a = c */ /* JF */
+#define SUBGOAL		xcurcall
 
 /*----------------------------------------------------------------------*/
 
@@ -46,9 +48,6 @@ case tabletry:		/* cur_label arity label xcurcall	*/
     ARITY = (Cell)(*lpcreg++);	/* op1 */
     pad64;
     LABEL = (CPtr)(*(byte **) lpcreg);	/* op3 */
-#ifdef CP_PVR_DEBUG
-    fprintf(stderr,"Table Try: arity = %d breg=%d\n", (int)ARITY,(int)breg);
-#endif
     ADVANCE_PC;
     xcurcall = (* (CPtr *) lpcreg);  /* pointer to cur call-tabinfoptr */
     ADVANCE_PC;  /* lpcreg points to next instruction, e.g. tabretry */
@@ -62,20 +61,19 @@ case tabletry:		/* cur_label arity label xcurcall	*/
     VarPosReg = top_of_cpstack;
     check_tcpstack_overflow(VarPosReg);
 	check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
-    variant_call_search(ARITY, reg, &xcurcall, &xflag);
+    if (variant_call_search(ARITY, reg, &xcurcall)) { /* variant call exists */
     /*
      * After variant_call_search, VarPosReg sits on top of the
      * substitution factor of the call and points to a cell which
      * containins the number of variables in the call.  Under this cell
      * are all the variables (still free) --- the SUBSF.
      */
-    if (xflag) {		    /* xflag = 1 if a variant-subgoal exists */
       xcurcall = (CPtr) *xcurcall;	/* point xcurcall to the call_struct */
       if (is_completed(xcurcall)) {
 	if (has_answer_code(xcurcall)) goto return_table_code;
 	else { Fail1; goto contcase; }
       }
-      else goto lay_down_active;
+      else goto lay_down_consumer;
     }
     else {  /* there is no variant-subgoal */
 	    /* put subgoal in stack and init structure components */
@@ -86,7 +84,7 @@ case tabletry:		/* cur_label arity label xcurcall	*/
        * (result from variant_call_search()).
        */
       create_subgoal_frame(*xcurcall, Paren);
-
+      xcurcall = (CPtr) *xcurcall;
       save_find_locx(ereg);
 
       save_registers(VarPosReg, (int)ARITY, i, rreg);
@@ -98,104 +96,80 @@ case tabletry:		/* cur_label arity label xcurcall	*/
        * uses: bfreg,efreg,trfreg,hfreg,ereg,cpreg,trreg,hreg,ebreg,tbreg,
        * prev=breg,lpcreg
        */
-      save_solution_choicepoint(VarPosReg, ereg, (CPtr) *xcurcall, breg);
-      breg = VarPosReg;
-
-#ifdef CP_PVR_DEBUG
-    fprintf(stderr,"Table Try: arity = %d TCP=%d subg=%d\n",(int)ARITY,(int)breg,(int)*xcurcall);
-    fprintf(stderr,"Table Try: saved delayreg==%d\n",(int)delayreg);
+#ifdef CHAT
+      save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg);
+#else
+      save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
 #endif
-
-#ifdef LOCAL_EVAL
-      tcp_arity(breg) = (int) ARITY;
-#endif  /* LOCAL_EVAL */
-
-
+      push_completion_frame((SGFrame)xcurcall);
+#ifdef PTCP_IN_CP
+      subg_cp_ptr(xcurcall) = ptcpreg = breg = VarPosReg;
+#else
+      ptcpreg = xcurcall;
+      subg_cp_ptr(xcurcall) = breg = VarPosReg;
+#endif
       delayreg = NULL;
-      subg_cp_ptr(*xcurcall) = ptcpreg = breg;
       if (root_address == 0) root_address = breg;
-
-      push_completion_frame((SGFrame)*xcurcall); /* init susp_ptr of cur subgoal */
       hbreg = hreg;
       lpcreg = (byte *) LABEL;	/* branch to program clause */
+      goto contcase;
     } 
-    goto contcase;
 
 /*----------------------------------------------------------------------*/
-/* get all current answers - copy them out from the table, if any.	*/
+/*  Returns answers to consumers.  This can happen either when the	*/
+/*  consumer is created and the generator has some answers, or when	*/
+/*  the consumer is scheduled through a check-complete instruction.	*/
+/*  Note that nlcp-trie-return points to the last answer which has	*/
+/*  been consumed.							*/
 /*----------------------------------------------------------------------*/
 
-case retry_active:
-#ifdef CP_PVR_DEBUG
-    fprintf(stderr, "Retry Active\n");
-#endif
-
-    switch_envs(breg);
-    ptcpreg = nlcp_ptcp(breg);
-    delayreg = nlcp_pdreg(breg);
-    restore_some_wamregs(breg, ereg);
-    /* An extra computation in the interest of clarity */
-    CallNumVar = *(breg + NLCPSIZE);
-    op3 = breg + NLCPSIZE + CallNumVar;
-    /* if an answer has already been consumed, get next otherwise get all
-     * answers in the table -- note that nlcp_trie_return points to the
-     * last answer which has been consumed
-     */
-    SUBGOAL = nlcp_subgoal_ptr(breg);
-    /* to the dummy answer -- that will never be NULL */
+case answer_return:
     OldRetPtr = aln_next_aln(nlcp_trie_return(breg)); /* get next answer */
-    /* jf: skip the deleted answers */
     if (OldRetPtr){
-/*----------------------------------------------------------------------*/
+
+      switch_envs(breg);
+      ptcpreg = nlcp_ptcp(breg);
+      delayreg = nlcp_pdreg(breg);
+      restore_some_wamregs(breg, ereg);
+      /* An extra computation in the interest of clarity */
+      CallNumVar = *(breg + NLCPSIZE);
+      op3 = breg + NLCPSIZE + CallNumVar;
       nlcp_trie_return(breg) = OldRetPtr; /* last answer consumed */
       TrieRetPtr = get_next_trie_solution(&OldRetPtr);
-#ifdef DEBUG_REV
-      fprintf(stderr,"new_lookup-breg=%d: getting next trie solution %d. \n",
-	      (int)breg,(int)TrieRetPtr);
-#endif      
       load_solution_trie(CallNumVar,op3,TrieRetPtr);
-
       if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
-#ifdef DEBUG_DELAY
-	fprintf(stderr,
-		"! POSITIVELY DELAYING in retry active (delayreg = %p)\n",
-		delayreg);
-	fprintf(stderr, "\n>>>> delay_positively in retry_active\n");
-#endif
-	{
-	  int i;
-	  CPtr temp_hreg;
-	  /*
-	   * After load_solution_trie(), the substitution factor of the
-	   * answer is left in array var_addr[], and its arity is in
-	   * num_heap_term_vars.  We have to put it into a term ret/n (on 
-	   * the heap) and pass it to delay_positively().
-	   */
-	  temp_hreg = hreg;
-	  new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
-	  for (i = 0; i < num_heap_term_vars; i++)
-	    cell(hreg++) = (Cell) var_addr[i];
-	  delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
-			   temp_hreg);
+	int i;
+	CPtr temp_hreg;
+	/*
+	 * After load_solution_trie(), the substitution factor of the
+	 * answer is left in array var_addr[], and its arity is in
+	 * num_heap_term_vars.  We have to put it into a term ret/n (on 
+	 * the heap) and pass it to delay_positively().
+	 */
+	temp_hreg = hreg;
+	new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	for (i = 0; i < num_heap_term_vars; i++) {
+	  cell(hreg++) = (Cell) var_addr[i];
 	}
-#ifdef DEBUG_DELAY
-	fprintf(stderr, "Returning a conditional answer...\n");
-#endif
+	SUBGOAL = nlcp_subgoal_ptr(breg);
+	delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
+			 temp_hreg);
       }
-#ifdef DEBUG_DELAY
-      else {
-	fprintf(stderr, "Returning an unconditional answer...\n");
-      }
-#endif
-/*----------------------------------------------------------------------*/
       lpcreg = cpreg;
-    }
-    else {
-#ifdef DEBUG_REV
-	fprintf(stderr,"new_lookup %d: no trie solution to get. \n",(int) breg);
+    } else {
+#ifdef CHAT	/* update consumed answers in CHAT-area before failing out */
+      nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
+	nlcp_trie_return(breg);	/* last answer consumed */
 #endif
-	breg = nlcp_prevbreg(breg); /* in semi-naive this execs next active */
-	Fail1;
+      breg = nlcp_prevbreg(breg); /* in semi-naive this execs next active */
+#ifdef CHAT
+      hreg = cp_hreg(breg);
+      restore_trail_condition_registers(breg);
+#else
+      restore_trail_condition_registers(breg);
+      if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg;
+#endif
+      Fail1;
     }
     goto contcase;
 
@@ -205,7 +179,7 @@ case retry_active:
 /*  all negation suspensions of the subgoal are abolished.		*/
 /*----------------------------------------------------------------------*/
 
-case new_answer_dealloc: {
+case new_answer_dealloc:
 #ifdef DEBUG_DELAYVAR
     fprintf(stderr, ">>>> (starting new_answer_dealloc) delayreg =%p\n",
 	    delayreg);
@@ -218,7 +192,14 @@ case new_answer_dealloc: {
     ARITY = (Cell) (*lpcreg++);
     Yn = (Cell) (*lpcreg++);
     pad64;
-    xtemp4 = (CPtr) *(ereg-Yn);
+#ifdef CHAT
+    SUBGOAL = (CPtr)cell(ereg-Yn);
+    COMPL_STK_FRAME = subg_compl_stack_ptr(SUBGOAL);
+    /* substitution factor is now in the heap for generators */
+    CallNumVar = int_val(cell(compl_hreg(COMPL_STK_FRAME)));
+    VarsInCall = compl_hreg(COMPL_STK_FRAME)-1;
+#else
+    op3 = (CPtr) *(ereg-Yn);
     /*
      * All the information from the choice point stack, including
      * CallNumVar, VarsInCall, and ARITY's registers, was set in
@@ -230,16 +211,16 @@ case new_answer_dealloc: {
      *              in the call)
      * breg       : first permanent var (saved in local stack as an offset) 
      */
-    SOLUTIONCP = (CPtr)(tcpstack.high - int_val(xtemp4));
-    CallNumVar = *(SOLUTIONCP + TCP_SIZE + (Cell) ARITY);
-    VarsInCall = SOLUTIONCP + TCP_SIZE + (Cell) ARITY + CallNumVar;
-    SUBGOAL = tcp_subgoal_ptr(SOLUTIONCP);
+    GENERATOR_CP = (CPtr)(tcpstack.high - int_val(op3));
+    SUBGOAL = tcp_subgoal_ptr(GENERATOR_CP);
+    CallNumVar = *(GENERATOR_CP + TCP_SIZE + (Cell) ARITY);
+    VarsInCall = GENERATOR_CP + TCP_SIZE + (Cell) ARITY + CallNumVar;
+#endif
 
 #ifdef DEBUG_DELAYVAR
     fprintf(stderr, ">>>> ARITY = %d; Yn = %d\n", (int)ARITY, (int)Yn);
 #endif
 
-/*----------------------------------------------------------------------*/
 #ifdef DEBUG_DELAY
     fprintf(stderr, "\t--> This answer for ");
     print_subgoal(stderr, (SGFrame)SUBGOAL);
@@ -250,7 +231,7 @@ case new_answer_dealloc: {
       fprintf(stderr, " has no delay list");
     }
 #endif
-/*----------------------------------------------------------------------*/
+
     xflag = 0;
 
 #ifdef DEBUG_DELAYVAR
@@ -282,63 +263,18 @@ case new_answer_dealloc: {
     do_delay_stuff(TrieRetPtr, (SGFrame)SUBGOAL, xflag);
     undo_answer_bindings();
 
-#ifdef LOCAL_EVAL
-    if(xflag) {
-#ifdef DEBUG_REV
-      fprintf(stderr,"Repeated answer: %d (subg=%d)\n",(int)TrieRetPtr,(int)SUBGOAL);
-#endif
-    } /* if (xflag) - repeated answer */
-    else { /* new answer */
-#ifdef DEBUG_REV
-      fprintf(stderr,"New answer: %d (subg=%d)\n",(int)TrieRetPtr,(int)SUBGOAL);
-#endif
-      /* restore delayreg of parent */ /* shouldn't - it will fail!! */
-      delayreg = tcp_pdreg(SOLUTIONCP);
-/*----------------------------------------------------------------------*/
-#ifdef DEBUG_DELAY
-      fprintf(stderr, " (adding it ");
-#endif
-/*----------------------------------------------------------------------*/
-      if (is_conditional_answer(TrieRetPtr)) {	/* positive delay */
-	/* check: I think this is being done twice unnecesarily... */
-/* THIS IS DONE IN THE COMMON DIRECTORY */
-/*	delay_positively(SUBGOAL, TrieRetPtr);  */
-#ifdef DEBUG_DELAY
-	fprintf(stderr, "conditionally)\n");
-#endif
-      }
-      else {
-#ifdef DEBUG_DELAY
-	fprintf(stderr, "unconditionally)\n");
-#endif
-	if (CallNumVar == 0) {	/* perform early completion */
-	  tcp_pcreg(SOLUTIONCP) = (byte *) &check_complete_inst;
-	  mark_as_completed(SUBGOAL);
-	  breg = SOLUTIONCP; /* this is done for LOCAL_EVAL */
-	} /* if (Call... */
-      } /* else */
-    } /* else new answer */
-    
-    Fail1; /* and do not return answer */
-
-#else /* LOCAL_EVAL */
     if (xflag) {
-/*----------------------------------------------------------------------*/
-#ifdef DEBUG_DELAY
-      fprintf(stderr, " (variant exists, failing)\n");
-#endif
-/*----------------------------------------------------------------------*/
-      Fail1;  /* do not return repeated answer to sol_cp */
+      Fail1;  /* do not return repeated answer to generator */
     }
     else { /* go ahead -- look for more answers */
 /*----------------------------------------------------------------------*/
-      delayreg = tcp_pdreg(SOLUTIONCP);	/* restore delayreg of parent */
-/*----------------------------------------------------------------------*/
-#ifdef DEBUG_DELAY
-      fprintf(stderr, " (adding it ");
+#ifdef CHAT
+      delayreg = compl_pdreg(COMPL_STK_FRAME); /* restore delayreg of parent */
+#else
+      delayreg = tcp_pdreg(GENERATOR_CP);      /* restore delayreg of parent */
 #endif
-/*----------------------------------------------------------------------*/
       if (is_conditional_answer(TrieRetPtr)) {	/* positive delay */
+#ifndef LOCAL_EVAL
 #ifdef DEBUG_DELAYVAR
 	fprintf(stderr, "\n>>>> delay_positively in new_answer_dealloc\n");
 #endif
@@ -353,35 +289,34 @@ case new_answer_dealloc: {
 	 * answer was saved as a term ret/n (in variant_trie_search()).
 	 */
 	delay_positively(SUBGOAL, TrieRetPtr, ans_var_pos_reg);
-
-#ifdef DEBUG_DELAY
-	fprintf(stderr, "conditionally)\n");
 #endif
       } else {
-#ifdef DEBUG_DELAY
-	fprintf(stderr, "unconditionally)\n");
-#endif
 	if (CallNumVar == 0) {	/* perform early completion */
-	  tcp_pcreg(SOLUTIONCP) = (byte *) &check_complete_inst;
-	  mark_as_completed(SUBGOAL);
+	  perform_early_completion(SUBGOAL, GENERATOR_CP);
+#if (defined(LOCAL_EVAL) && !defined(CHAT))
+	  breg = GENERATOR_CP;
+#endif
 	}
       }
 /*----------------------------------------------------------------------*/
-      ptcpreg = tcp_ptcp(SOLUTIONCP);
+#ifdef LOCAL_EVAL
+      Fail1;	/* and do not return answer to the generator */
+#else
+#ifdef CHAT
+      ptcpreg = compl_ptcp(COMPL_STK_FRAME);
+#else
+      ptcpreg = tcp_ptcp(GENERATOR_CP);
+#endif
       cpreg = *((byte **)ereg-1);
       ereg = *(CPtr *)ereg;
-      lpcreg = cpreg;
+      lpcreg = cpreg; 
+#endif
     }
-#endif /* LOCAL_EVAL */
     goto contcase;
-} /* new_answer_dealloc */
 
 /*----------------------------------------------------------------------*/
 
  case tableretry: /* PPA-L */
-#ifdef CP_PVR_DEBUG
-    printf("Table Retry\n");
-#endif
     ppad; op1byte;
     pad64;
     tcp_pcreg(breg) = lpcreg+sizeof(Cell);
@@ -396,14 +331,11 @@ case new_answer_dealloc: {
 /*----------------------------------------------------------------------*/
 
 case tabletrust:
-#ifdef CP_PVR_DEBUG
-    printf("Table Trust\n");
-#endif
     ppad; op1byte;
     pad64;
     tcp_pcreg(breg) = (byte *) & check_complete_inst;
     lpcreg = *(pb *)lpcreg;
-#ifdef LOCAL_EVAL
+#if (defined(LOCAL_EVAL) || defined(CHAT))
     /* trail cond. registers should not be restored here for Local */
     restore_type = 0;
 #else
@@ -418,191 +350,203 @@ case tabletrust:
 /*----------------------------------------------------------------------*/
 
 case tabletrysingle:
-#ifdef CP_PVR_DEBUG
-    printf("Table Try Single: breg=%d\n", (int) breg);
-#endif
-    xwammode = 1;    ppad;
+    xwammode = 1;
+    ppad;
     ARITY = (Cell)(*lpcreg++);
     pad64;
     LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;
     xcurcall = * (CPtr *) lpcreg; ADVANCE_PC;
-    xflag = 1;
     VarPosReg = top_of_cpstack;
     check_tcpstack_overflow(VarPosReg);
-	check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
-    variant_call_search(ARITY, reg, &xcurcall, &xflag);
-    if (xflag) {                        /* xflag = 1 if variant */ 
+    if (variant_call_search(ARITY, reg, &xcurcall)) { /* variant call exists */
       xcurcall = (CPtr) *xcurcall;	/* point xcurcall to the call_struct */
       if (is_completed(xcurcall)) {
 	if (has_answer_code(xcurcall)) goto return_table_code;
 	else { Fail1; goto contcase; }
       }
-      else goto lay_down_active;
+      else goto lay_down_consumer;
     }
-    else {  /* create solution choice point  */
+    else {  /* create generator choice point */
       create_subgoal_frame(*xcurcall, Paren);
+      xcurcall = (CPtr) *xcurcall;
+      save_find_locx(ereg);
 
       /* now lay down single clause choicepoint */
-      save_find_locx(ereg);
-
       save_registers(VarPosReg, (int)ARITY, i, rreg);
-      save_singleclause_choicepoint(VarPosReg, ereg, (CPtr) *xcurcall, breg);
-      breg = VarPosReg;
-#ifdef CP_PVR_DEBUG
-    fprintf(stderr,"Table Try: arity = %d TCP=%d subg=%d\n",(int)ARITY,(int)breg,(int)*xcurcall);
-    fprintf(stderr,"Table Try: saved delayreg==%d\n",(int)delayreg);
+#ifdef CHAT
+      save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg);
+#else
+      save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
 #endif
-
-#ifdef LOCAL_EVAL
-      tcp_arity(breg) = (int) ARITY;
+      push_completion_frame((SGFrame) xcurcall);
+#ifdef PTCP_IN_CP
+      subg_cp_ptr(xcurcall) = ptcpreg = breg = VarPosReg;
+#else
+      ptcpreg = xcurcall;
+      subg_cp_ptr(xcurcall) = breg = VarPosReg;
 #endif
-
       delayreg = NULL;
-      subg_cp_ptr(*xcurcall) = ptcpreg = breg;
       if (root_address == 0) root_address = breg;
-      push_completion_frame((SGFrame) *xcurcall);
+      hbreg = hreg;
+      lpcreg = (byte *) LABEL; /* go to clause ep */
+      goto contcase;
     }
-    hbreg = hreg;
-    lpcreg = (byte *) LABEL; /* go to clause ep */
-    goto contcase;
 
 /*----------------------------------------------------------------------*/
-/* completion_suspension (formely known as return_completion)		*/
+/* resume_compl_suspension                                		*/
+/*----------------------------------------------------------------------*/
+
+case resume_compl_suspension:
+#ifdef DEBUG_DELAYVAR
+      fprintf(stderr, ">>>> resume_compl_suspension is called\n");
+#endif
+#ifdef CHAT
+{
+    chat_init_pheader chat_area;
+
+    switch_envs(breg);
+    ptcpreg = csf_ptcp(breg);
+    delayreg = csf_pdreg(breg);
+    neg_delay = csf_neg_loop(breg);
+    /* not really sure whether the following two lines are needed */
+ /*   ebreg = csf_ebreg(breg);
+    hbreg = csf_hreg(breg); */
+    restore_some_wamregs(breg, ereg); /* this also restores cpreg */
+    chat_area = (chat_init_pheader)csf_chat_area(breg);
+    chat_restore_compl_susp_trail(chat_area); /* the chat area is freed here */
+    if ((chat_area = (chat_init_pheader)csf_prevcsf(breg)) != NULL) {
+      chat_update_compl_susp(chat_area);
+#ifdef CHAT_DEBUG
+      fprintf(stderr, "INSTALLED THE NEXT COMPL_SUSP here...\n");
+#endif
+    } else {
+      breg = csf_prev(breg);  /* forget this CP; simulates Fail1 */
+    }
+    lpcreg = cpreg;
+    goto contcase;
+  }
+#else
 /*	Switches the environments to a frame of a subgoal that was	*/
 /*	suspended on completion, and sets the continuation pointer.	*/
-/*----------------------------------------------------------------------*/
-
-case completion_suspension:
-#ifdef DEBUG_DELAYVAR
-      fprintf(stderr, ">>>> completion_suspension is called\n");
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
+    COMPL_SUSP_ENV = cs_compsuspptr(breg);
+    freeze_and_switch_envs(COMPL_SUSP_ENV, COMPL_SUSP_CP_SIZE);
+    ptcpreg = csf_ptcp(COMPL_SUSP_ENV);
+    neg_delay = csf_neg_loop(COMPL_SUSP_ENV);
+    delayreg = csf_pdreg(COMPL_SUSP_ENV);
+    cpreg = csf_cpreg(COMPL_SUSP_ENV); 
+    ereg = csf_ereg(COMPL_SUSP_ENV);
+    ebreg = csf_ebreg(COMPL_SUSP_ENV);
+    hbreg = csf_hreg(COMPL_SUSP_ENV);
+    save_find_locx(ereg);
+    hbreg = hreg;
+    if (csf_prevcsf(COMPL_SUSP_ENV) != NULL) {
+      cs_compsuspptr(breg) = csf_prevcsf(COMPL_SUSP_ENV);
+    } else {
+      breg = cs_prevbreg(breg);
+    }
+    lpcreg = cpreg;
+    goto contcase;
 #endif
-      check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
-      COMPL_SUSP_ENV = cs_compsuspptr(breg);
-      freeze_and_switch_envs(COMPL_SUSP_ENV, COMPL_SUSP_CP_SIZE);
-      ptcpreg = csf_ptcp(COMPL_SUSP_ENV);
-      neg_delay = csf_neg_loop(COMPL_SUSP_ENV);
-      delayreg = csf_pdreg(COMPL_SUSP_ENV);
-#ifdef DEBUG_DELAY
-      fprintf(stderr, ">>>> delayreg = %p\n", delayreg);
-      fprintf(stderr, "... Executing a Completion Suspension for subgoal ");
-      print_subgoal(stderr, (SGFrame)csf_subgoal_ptr(COMPL_SUSP_ENV));
-      fprintf(stderr, " in the body of ");
-      if (csf_ptcp(COMPL_SUSP_ENV) != NULL) {
-	print_subgoal(stderr, (SGFrame)tcp_subgoal_ptr(ptcpreg));
-      } else fprintf(stderr, "an UNTABLED predicate");
-      if (neg_delay != FALSE) fprintf(stderr, "\t(Delayed)");
-      fprintf(stderr, "\n");
-#endif
-      cpreg = csf_cpreg(COMPL_SUSP_ENV); 
-      ereg = csf_ereg(COMPL_SUSP_ENV);
-      ebreg = csf_ebreg(COMPL_SUSP_ENV);
-      hbreg = csf_hreg(COMPL_SUSP_ENV);
-      save_find_locx(ereg);
-      hbreg = hreg;
-      if (csf_prevcsf(COMPL_SUSP_ENV) != NULL) {
-#ifdef KOSTIS_DEBUG
-        fprintf(stderr, "Completion Suspension in THEN part...\n");
-#endif
-	cs_compsuspptr(breg) = csf_prevcsf(COMPL_SUSP_ENV);
-      }
-      else {
-#ifdef KOSTIS_DEBUG
-        fprintf(stderr, "Completion Suspension in ELSE part...\n");
-#endif
-	breg = cs_prevbreg(breg);
-      }
-      lpcreg = cpreg;
-      goto contcase;
 
 /*----------------------------------------------------------------------*/
 
 return_table_code:
 #ifdef DEBUG_DELAY
-	xsb_warn("Returning answers from a COMPLETED table...");
+    xsb_warn("Returning answers from a COMPLETED table...");
 #endif
-	CallNumVar = *(VarPosReg);
-        num_vars_in_var_regs = -1;
-        reg_arrayptr = reg_array -1;
-	for (cptr = VarPosReg+1; cptr <= VarPosReg+CallNumVar; cptr++) {
-	  pushreg(*cptr);
-	}
-	lpcreg = (byte *) subg_ans_root_ptr(xcurcall);
-	goto contcase;
+    CallNumVar = *(VarPosReg);
+    num_vars_in_var_regs = -1;
+    reg_arrayptr = reg_array -1;
+#ifdef DEBUG /* PLEASE TAKE ME OUT OF HERE */
+    fprintf(stderr,"  Trie-returning answers of ");
+    print_subgoal(stderr, (SGFrame)xcurcall);
+    fprintf(stderr," %ld vars\n", CallNumVar);
+#endif
+    for (i = 1; i <= CallNumVar; i++) {
+       pushreg(cell(VarPosReg+i));
+    }
+    lpcreg = (byte *) subg_ans_root_ptr(xcurcall);
+    goto contcase;
 
 /*----------------------------------------------------------------------*/
 
-lay_down_active:
-	adjust_level(subg_compl_stack_ptr(xcurcall));
-	PREVSUSREC = subg_asf_list_ptr(xcurcall);
-	xtemp9 = ebreg;
-	save_find_locx(ereg);
-	efreg = ebreg;
-	if (trreg > trfreg) trfreg = trreg;
-	if (hfreg < hreg) hfreg = hreg;
-	save_nl_choicepoint(VarPosReg,ereg,xcurcall,PREVSUSREC,breg);
-	breg = bfreg = VarPosReg;
-#ifdef CP_PVR_DEBUG
-	fprintf(stderr, "---> lay down active breg=%d\n",(int)breg);
+lay_down_consumer:
+    adjust_level(subg_compl_stack_ptr(xcurcall));
+#if (!defined(CHAT))
+    PREV_CONSUMER = subg_asf_list_ptr(xcurcall);
 #endif
-	subg_asf_list_ptr(xcurcall) = (CPtr) bfreg; /* new susp into front */
-	/* jf: 010695 init nlcp_trie_return anyway, so that it points
-	 * to the dummy answer */
-        nlcp_trie_return(breg) = subg_ans_list_ptr(xcurcall);
-	OldRetPtr = subg_answers(xcurcall);
-	/* jf: skip the deleted answers */
-        if (OldRetPtr)	{
-	  nlcp_trie_return(breg) = OldRetPtr; 
-	  TrieRetPtr = get_next_trie_solution(&OldRetPtr);
-          CallNumVar = *(bfreg+NLCPSIZE);
-          op3 = bfreg + NLCPSIZE + CallNumVar;
-          xtemp14 = hbreg;
-	  hbreg = hreg;
-	  load_solution_trie(CallNumVar,op3,TrieRetPtr);
-/*----------------------------------------------------------------------*/
-	  if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
+    save_find_locx(ereg);
+#if (!defined(CHAT))
+    efreg = ebreg;
+    if (trreg > trfreg) trfreg = trreg;
+    if (hfreg < hreg) hfreg = hreg;
+    save_consumer_choicepoint(VarPosReg,ereg,xcurcall,PREV_CONSUMER,breg);
+#else
+    save_consumer_choicepoint(VarPosReg,ereg,xcurcall,breg);
+#endif
+#if (!defined(CHAT))
+    subg_asf_list_ptr(xcurcall) = /* new consumer into front */
+    bfreg =
+#endif
+    breg = VarPosReg;
+#ifdef CHAT
+    compl_cons_copy_list(subg_compl_stack_ptr(xcurcall)) =
+	nlcp_chat_area(breg) = (CPtr) save_a_consumer_copy((SGFrame)xcurcall,
+							   CHAT_CONS_AREA);
+#endif
+    OldRetPtr = subg_answers(xcurcall);
+    if (OldRetPtr) {
+/* CHAT had this which is correct -- but does not have variables in delay lists
+      if (is_conditional_answer(aln_answer_ptr(OldRetPtr))) {
+	delay_positively(xcurcall, aln_answer_ptr(OldRetPtr))
+      }
+ */
+#ifdef CHAT      /* for the time being let's update consumed answers eagerly */
+      nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
+#endif
+	nlcp_trie_return(breg) = OldRetPtr; 
+      TrieRetPtr = get_next_trie_solution(&OldRetPtr);
+      CallNumVar = *(breg+NLCPSIZE);
+      op3 = breg + NLCPSIZE + CallNumVar;
+      hbreg = hreg;
+      load_solution_trie(CallNumVar,op3,TrieRetPtr);
+      if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
 #ifdef DEBUG_DELAY
-	    fprintf(stderr,
-		    "! POSITIVELY DELAYING in lay active (delayreg = %p)\n",
-		    delayreg);
-	    fprintf(stderr, "\n>>>> delay_positively in lay_down_active\n");
-	    fprintf(stderr, ">>>> subgoal = ");
-	    print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
+	fprintf(stderr,
+		"! POSITIVELY DELAYING in lay active (delayreg = %p)\n",
+		delayreg);
+	fprintf(stderr, "\n>>>> delay_positively in lay_down_active\n");
+	fprintf(stderr, ">>>> subgoal = ");
+	print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
 #endif
-	    {
-	      int i;
-	      CPtr temp_hreg;
-	      /*
-	       * Similar to delay_positively() in retry_active, we also
-	       * need to put the substitution factor of the answer,
-	       * var_addr[], into a term ret/n and pass it to
-	       * delay_positively().
-	       */
-	      temp_hreg = hreg;
-	      new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
-	      for (i = 0; i < num_heap_term_vars; i++)
-		cell(hreg++) = (Cell) var_addr[i];
-	      delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
-			       temp_hreg);
-	    }
-
-#ifdef DEBUG_DELAY
-	    fprintf(stderr, "! Returning a conditional answer...\n");
-#endif
-	  }
-#ifdef DEBUG_DELAY
-	    else {
-	      fprintf(stderr, "! Returning an unconditional answer...\n");
-	  }
-#endif
-/*----------------------------------------------------------------------*/
-	  lpcreg = cpreg;
+	{
+	  int i;
+	  CPtr temp_hreg;
+	  /*
+	   * Similar to delay_positively() in retry_active, we also
+	   * need to put the substitution factor of the answer,
+	   * var_addr[], into a term ret/n and pass it to
+	   * delay_positively().
+	   */
+	  temp_hreg = hreg;
+	  new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	  for (i = 0; i < num_heap_term_vars; i++)
+	    cell(hreg++) = (Cell) var_addr[i];
+	  delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
+			   temp_hreg);
 	}
-	else {
-	  ebreg =  xtemp9; /* jf: I'm not sure if this is needed ... */
-	  breg = nlcp_prevbreg(breg);
-	  Fail1;
-	}
-	goto contcase;
+      }
+      lpcreg = cpreg;
+    } else {
+      breg = nlcp_prevbreg(breg);
+#ifdef CHAT
+      hreg = cp_hreg(breg);
+      ereg = cp_ereg(breg);
+#endif
+      Fail1;
+    }
+    goto contcase;
 
 /*----------------------------------------------------------------------*/
 

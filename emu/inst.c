@@ -106,8 +106,6 @@ void init_inst_table_2(void)
     set_inst(uninumcon, "uninumcon",          PPP,N, X,X);
     set_inst(bldnumcon, "bldnumcon",          PPP,N, X,X);
     set_inst(getlist_tvar_tvar, "getlist_tvar_tvar",  R,  R, R,X);
-    set_inst(getcomma, "getcomma",           PP, R, X,X);
-    set_inst(getcomma_tvar_tvar, "getcomma_tvar_tvar", R,  R, R,X);
 
     set_inst(trie_no_cp_str, "trie_no_cp_str", X, X, X,X);
     set_inst(trie_try_str, "trie_try_str", X, X, X,X);
@@ -142,18 +140,13 @@ void init_inst_table_2(void)
     set_inst(putfloat, "putfloat",           PP, R, F,X);
     set_inst(unifloat, "unifloat",           PPP,F, X,X);
     set_inst(bldfloat, "bldfloat",           PPP,F, X,X);
-/*  keep profiles clean
-    set_inst(neck, "neck",               PP, A, X,X);
-    set_inst(neck_putpbreg, "neck_putpbreg",      P,  A, V,X);
-    set_inst(neck_puttbreg, "neck_puttbreg",      P,  A, R,X);
-*/
     set_inst(trymeelse, "trymeelse",          PP, A, L,X);
     set_inst(retrymeelse, "retrymeelse",        PP, A, L,X);
     set_inst(trustmeelsefail, "trustmeelsefail",    PP, A, X,X);
-    set_inst(try, "try",                PP, A, L,X);
+    set_inst(try, "try",                  PP, A, L,X);
     set_inst(retry, "retry",              PP, A, L,X);
     set_inst(trust, "trust",              PP, A, L,X);
-    set_inst(getpbreg, "getpbreg",           PP, V, X,X);
+    set_inst(getpbreg, "getpbreg",        PP, V, X,X);
 }
 
 void init_inst_table_3(void)
@@ -161,15 +154,14 @@ void init_inst_table_3(void)
     set_inst(gettbreg, "gettbreg",           PP, R, X,X);
     set_inst(putpbreg, "putpbreg",           PP, V, X,X);
     set_inst(puttbreg, "puttbreg",           PP, R, X,X);
-    set_inst(jumptbreg, "jumptbreg",          PP, R, L,X);
-    set_inst(getarg_proceed, "getarg_proceed",     PP, A, X,X);
+    set_inst(jumptbreg, "jumptbreg",         PP, R, L,X);
+
+    set_inst(getVn, "getVn",                 PP, V, X,X);
+    set_inst(test_heap, "test_heap",         PP, A, N,X);
+
     set_inst(switchonterm, "switchonterm",       PPR,L, L,X);
     set_inst(switchonbound, "switchonbound",      PPR,I, I,X);
     set_inst(switchon3bound, "switchon3bound",      RRR,I, I,X);
-/*  keep profiles clean
-    set_inst(switchoncon, "switchoncon",        PPP,L, X,X);
-    set_inst(switchonstr, "switchonstr",        PPP,L, X,X);
-*/
     set_inst(trymeorelse, "trymeorelse",          PP, A, L,X);
     set_inst(retrymeorelse, "retrymeorelse",        PP, A, L,X);
     set_inst(trustmeorelsefail, "trustmeorelsefail",   PP, A, X,X);
@@ -177,12 +169,11 @@ void init_inst_table_3(void)
     set_inst(tableretry, "tableretry",         PP, A, L,X);
     set_inst(tabletry, "tabletry",           PP, A, L,T); 
     set_inst(tabletrust, "tabletrust",         PP, A, L,X); 
-    set_inst(tabconfig, "tabconfig",          PPP,I, I,X); /* used by loader*/
     set_inst(tabletrysingle, "tabletrysingle",       PP, A, L,T); 
-    set_inst(retry_active, "retry_active",         PPP, X, X,X); 
+    set_inst(answer_return, "answer_return",         PPP, X, X,X); 
 
     set_inst(check_complete, "check_complete",     PPP, X, X,X); 
-    set_inst(completion_suspension, "completion_suspension",	PPP, X, X,X); 
+    set_inst(resume_compl_suspension, "resume_compl_suspension", PPP, X, X,X); 
     set_inst(new_answer_dealloc, "new_answer_dealloc", P, A, R, X);
     set_inst(term_comp, "term_comp",     R,  R, R,X);
     set_inst(movreg, "movreg",           P,  R, R,X);
@@ -204,6 +195,7 @@ void init_inst_table_4(void)
     set_inst(int_test_nz, "int_test_nz", PP, R, N,L);
     set_inst(putdval, "putdval",         P,  V, R,X);
     set_inst(putuval, "putuval",         P,  V, R,X);
+    set_inst(allocate_gc, "allocate_gc", P,  A, A,X);
     set_inst(call, "call",               PP, A, S,X);
     set_inst(allocate, "allocate",       PPP,X, X,X);
     set_inst(deallocate, "deallocate",   PPP,X, X,X);
@@ -250,7 +242,6 @@ void init_builtin_table(void)
   int i;
 
   for (i = 0; i < BUILTIN_TBL_SZ ; i++) builtin_table[i][1] = 0;
-  /*so bs can be added */
   set_builtin_table(PSC_NAME, "psc_name");
   set_builtin_table(PSC_ARITY, "psc_arity");
   set_builtin_table(PSC_TYPE, "psc_type");
@@ -359,21 +350,21 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_NODE_ELEMENT, "trie_node_element");
   set_builtin_table(PROLOG_NEWNODE, "prolog_newnode");
 
+  set_builtin_table(TABLE_STATUS, "table_status");
   set_builtin_table(GET_DELAY_LISTS, "get_delay_lists");
   set_builtin_table(DELETE_PREDICATE_TABLE, "delete_predicate_table");
-  set_builtin_table(TABLE_HASH, "table_hash");
+
   set_builtin_table(TRIE_ASSERT, "trie_assert");
   set_builtin_table(TRIE_RETRACT, "trie_retract");
   set_builtin_table(TRIE_RETRACT_SAFE, "trie_retract_safe");
   set_builtin_table(TRIE_DELETE_TERM, "trie_delete_term");
   set_builtin_table(TRIE_GET_RETURN, "trie_get_return");
   set_builtin_table(TRIE_GET_CALL, "trie_get_call");
-  set_builtin_table(AUX_CALL_INFO, "aux_call_info");
-  set_builtin_table(MAKE_CELL_AS_DESIRED, "make_cell_as_desired");
+  set_builtin_table(GET_LASTNODE_AND_RETSKEL, "get_lastnode_and_retskel");
+  set_builtin_table(CONSTRUCT_RET_FOR_CALL, "construct_ret_for_call");
   set_builtin_table(BREG_RETSKEL,"breg_retskel");
 
   set_builtin_table(GET_EMU_DEPENDENT_CONST, "get_emu_dependent_const");
-  set_builtin_table(SCHED_STRAT, "sched_strat");
   set_builtin_table(TRIMCORE, "trimcore");
 
   set_builtin_table(VAR, "var");
@@ -405,6 +396,15 @@ void init_builtin_table(void)
 
   set_builtin_table(ORACLE_QUERY, "oracle_query");
   set_builtin_table(ODBC_QUERY, "odbc_query");
+
+  set_builtin_table(PR_LS, "print_ls");
+  set_builtin_table(PR_TR, "print_tr");
+  set_builtin_table(PR_HEAP, "print_heap");
+  set_builtin_table(PR_CP, "print_cp");
+  set_builtin_table(PR_REGS, "print_regs");
+  set_builtin_table(PR_ALL, "print_all");
+  set_builtin_table(MARK_H, "mark_heap");
+  set_builtin_table(GC_H, "gc_heap");
 
   set_builtin_table(FINDALL_INIT, "$$findall_init");
   set_builtin_table(FINDALL_ADD, "$$findall_add");

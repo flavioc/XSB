@@ -50,14 +50,15 @@
 /*----------------------------------------------------------------------*/
 
     case IS_INCOMPLETE:  /* reg1: +term; reg2: +SubgoalPtr;	*/
-			 /* reg3: +PTCP; reg4: +Usage; reg5: -SubgPtr */
-	check_glstack_overflow(5,pcreg,OVERFLOW_MARGIN);
+			 /* reg3: +PTCP; reg4: -SubgPtr         */
 	term = ptoc_tag(1);
 	subgoal_ptr = (CPtr) ptoc_int(2);
-	t_ptcp = (CPtr)((pb)tcpstack.high - ptoc_int(3)) ;
-	if( t_ptcp == (CPtr)tcpstack.high )
-		t_ptcp = NULL ;
-	usage = ptoc_int(4);	/* usage =:= 0 -> tfindall ; negation */
+#ifdef PTCP_IN_CP
+	t_ptcp = (CPtr)((pb)tcpstack.high - ptoc_int(3));
+	if (t_ptcp == (CPtr)tcpstack.high) t_ptcp = NULL;
+#else
+	t_ptcp = (CPtr) ptoc_int(3);
+#endif
 	psc = term_psc(term);
 	arity = get_arity(psc);
 	if (subgoal_ptr == NULL) {
@@ -70,8 +71,8 @@
 	  subgoal_ptr = ti_call_trie_root(tip);
 	  get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
 	}
-	ctop_int(5, (Integer)subgoal_ptr);
-#ifdef KOSTIS_DEBUG
+	ctop_int(4, (Integer)subgoal_ptr);
+#ifdef DEBUG_DELAY
 	fprintf(stderr, "Is incomplete for ");
 	print_subgoal(stderr, (SGFrame)subgoal_ptr);
 	fprintf(stderr, ", (%x)\n", (int)&subg_ans_root_ptr(subgoal_ptr));
@@ -82,35 +83,52 @@
 	  return TRUE;	/* succeed */
 	}
 	else {	/* subgoal is not completed; save a completion suspension */
-	  adjust_level(subg_compl_stack_ptr(subgoal_ptr));
-	  save_find_locx(ereg);
-	  efreg = ebreg;
-	  if (trreg > trfreg) trfreg = trreg;
-	  if (hfreg < hreg) hfreg = hreg;
-	  if (bfreg > breg) bfreg = breg;
-	/*  check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
-	  save_registers(bfreg, arity, i, (CPtr) cs_val(term));
+#ifdef CHAT_DEBUG
+	  fprintf(stderr, "! Predicate is_incomplete is needed\n");
+#endif
 #ifdef DEBUG_DELAY
 	  fprintf(stderr, "... Saving a completion suspension (~");
 	  print_subgoal(stderr, (SGFrame)subgoal_ptr);
 	  fprintf(stderr, " in the body of ");
 	  if (t_ptcp != NULL) {
+#ifdef PTCP_IN_CP
 	    print_subgoal(stderr, (SGFrame)tcp_subgoal_ptr(t_ptcp));
+#else
+	    print_subgoal(stderr, (SGFrame)t_ptcp);
+#endif
 	  } else fprintf(stderr, "an UNTABLED predicate");
 	  fprintf(stderr, ")\n");
 #endif
-	/*--- Changed the last argument from cpreg to pcreg on 7 March 95 ---*/
-	  save_compl_susp_frame(bfreg,ereg,subgoal_ptr,t_ptcp,usage,pcreg);
+	  adjust_level(subg_compl_stack_ptr(subgoal_ptr));
+	  save_find_locx(ereg);
+	  reg_base = (CPtr)cs_val(term);
+#ifdef CHAT
+	  subg_compl_susp_ptr(subgoal_ptr) = (CPtr)
+		save_a_chat_compl_susp(arity, reg_base,
+				       (SGFrame)subgoal_ptr, t_ptcp, cpreg);
+#else
+	  efreg = ebreg;
+	  if (trreg > trfreg) trfreg = trreg;
+	  if (hfreg < hreg) hfreg = hreg;
+	  if (bfreg > breg) bfreg = breg;
+	/*  check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
+	  save_registers(bfreg, arity, i, reg_base);
+	  save_compl_susp_frame(bfreg, ereg, subgoal_ptr, t_ptcp, cpreg);
 	  subg_compl_susp_ptr(subgoal_ptr) = bfreg;
+#endif
 	  return FALSE;
 	}
 
 /*----------------------------------------------------------------------*/
 
     case GET_PTCP:
-	if( ptcpreg != NULL )
-		ctop_int(1, (pb)tcpstack.high-(pb)ptcpreg);
-	else    ctop_int(1, (Integer)0);
+#ifdef PTCP_IN_CP
+	if (ptcpreg != NULL)
+	  ctop_int(1, (pb)tcpstack.high-(pb)ptcpreg);
+	else ctop_int(1, (Integer)0);
+#else
+	ctop_int(1, (Integer)ptcpreg);
+#endif
 	break;
 
 /*----------------------------------------------------------------------*/

@@ -156,7 +156,7 @@ void printterm(Cell term, byte car, int level)
 	if ( car ) fprintf(outfile, "[");
 	printterm(cell(cptr1), CAR, level);
 	term = cell(cptr1+1);
-	free_deref(term);
+	deref(term);
 	switch (cell_tag(term)) {
 	        case FREE:
 	        case REF1: 
@@ -181,6 +181,8 @@ void printterm(Cell term, byte car, int level)
     }
 }
 
+/*----------------------------------------------------------------------*/
+
 static void print_call(Psc psc)
 {
   int i, arity;
@@ -195,6 +197,8 @@ static void print_call(Psc psc)
   if (arity != 0) fprintf(outfile, ")\n"); else fprintf(outfile, "\n");
   fflush(outfile);
 }
+
+/*----------------------------------------------------------------------*/
 
 void debug_call(Psc psc)
 {
@@ -236,7 +240,9 @@ void print_help(void)
   printf("      B <num>: print detailed Prolog choice points from the top\n");
   printf("\tof the choice point stack with <num>-Cell overlap\n");
   printf("      c <num>: print top of choice point stack with <num> overlap\n");
+#if (!defined(CHAT))
   printf("      C <num>: print choice point stack (around bfreg) with <num> overlap\n");
+#endif
   printf("      d: print disassembled code for module\n");
   printf("      D: print current value of delay list (pointed by delayreg)\n");
   printf("      e <size>: expand trail/cp stack to <size> K-byte blocks\n");
@@ -399,48 +405,47 @@ static Cell cell_array[500];
 
 static void print_term_of_subgoal(FILE *fp, int *i)
 {
-  Cell term;
-  int  j, args;
+    Cell term;
+    int  j, args;
 
-  term = cell_array[*i];
-  switch (cell_tag(term)) {
-  case CS:
-    args = get_arity((Psc)cs_val(term));
-    fprintf(fp, "%s", get_name((Psc)cs_val(term)));
-    if (args > 0) fprintf(fp, "(");
-    for (j = args; j > 0; j--) {
-      (*i)--;
-      print_term_of_subgoal(fp, i);
-      if (j > 1) fprintf(fp, ",");
+    term = cell_array[*i];
+    switch (cell_tag(term)) {
+      case TrieVar:
+	fprintf(fp, "_v%d", (int_val(term) & 0xffff));
+	break;
+      case CS:
+	args = get_arity((Psc)cs_val(term));
+	fprintf(fp, "%s", get_name((Psc)cs_val(term)));
+	if (args > 0) fprintf(fp, "(");
+	for (j = args; j > 0; j--) {
+	  (*i)--;
+	  print_term_of_subgoal(fp, i);
+	  if (j > 1) fprintf(fp, ",");
+	}
+	if (args > 0) fprintf(fp, ")");
+	break;
+      case LIST:	/* the list [a,b(1),c] is stored as . . . [] c b 1 a */
+	fprintf(fp, "[");
+	if (isnil(cell_array[(*i)-1])) {
+	  (*i) -= 2;
+	  print_term_of_subgoal(fp, i);
+	  fprintf(fp, "]");
+	} else fprintf(stderr, "Non-single element list in print_subgoal()\n");
+	break;
+      case STRING:
+	fprintf(fp, "%s", string_val(term));
+	break;
+      case INT:
+	fprintf(fp, "%d", int_val(term));
+	break;
+      case FLOAT:
+	fprintf(fp, "%.5g", float_val(term));
+	break;
+      default:
+	fprintf(stderr, "Term with unknown tag (%d) in print_subgoal()\n",
+			(int)cell_tag(term));
+	break;
     }
-    if (args > 0) fprintf(fp, ")");
-    break;
-  case LIST:	/* the list [a,b(1),c] is stored as . . . [] c b 1 a */
-    fprintf(fp, "[");
-    if (isnil(cell_array[(*i)-1])) {
-      (*i) -= 2;
-      print_term_of_subgoal(fp, i);
-      fprintf(fp, "]");
-    } else fprintf(stderr, "Non-single element list in print_subgoal()\n");
-    break;
-  case STRING:
-    fprintf(fp, "%s", string_val(term));
-    break;
-  case INT:
-    fprintf(fp, "%d", int_val(term));
-    break;
-  case FLOAT:
-    fprintf(fp, "%.5g", float_val(term));
-    break;
-  case TrieVar:
-    fprintf(fp, "_v%d", (int_val(term) & 0xffff));
-    break;
-    /* pvr 21.june -6 ESCAPE removed  , Unused2 converted to TrieVar */
-  default:
-    fprintf(stderr, "Term with unknown tag (%d) in print_subgoal()\n",
-	    (int)cell_tag(term));
-    break;
-  }
 }
 
 /*----------------------------------------------------------------------*/
@@ -455,12 +460,14 @@ void print_subgoal(FILE *fp, SGFrame subg)
     cell_array[i++] = Atom(leaf);
   }
   fprintf(fp, "%s", get_name(psc));
-  if (get_arity(psc) > 0) fprintf(fp, "(");
-  for (i--; i >= 0 ; i--) {
-    print_term_of_subgoal(fp, &i);
-    if (i > 0) fprintf(fp, ", ");
+  if (get_arity(psc) > 0) {
+    fprintf(fp, "(");
+    for (i--; i >= 0 ; i--) {
+      print_term_of_subgoal(fp, &i);
+      if (i > 0) fprintf(fp, ", ");
+    }
+    fprintf(fp, ")");
   }
-  if (get_arity(psc) > 0) fprintf(fp, ")");
 }
 
 /*----------------------------------------------------------------------*/
@@ -470,13 +477,17 @@ static void print_delay_element(FILE *fp, Cell del_elem)
     Psc  psc;
     CPtr cptr;
     int arity, i;
+    Cell tmp_cell;
 
     if ((psc = get_str_psc(del_elem)) == delay_psc) {
       fprintf(fp, "%s(", get_name(psc));
       cptr = (CPtr)cs_val(del_elem);
-      print_subgoal(fp, (SGFrame)cell(cptr+1)); fprintf(fp, ",");
-      fprintf(fp, "%p", (SGFrame)cell(cptr+2)); fprintf(fp, ",");
-      if (cell(cptr+3) == NEG_DELAY)
+      tmp_cell = cell(cptr + 1);
+      print_subgoal(fp, (SGFrame) string_val(tmp_cell)); fprintf(fp, ",");
+      tmp_cell = cell(cptr + 2);
+      fprintf(fp, "%p", (NODEptr) string_val(tmp_cell)); fprintf(fp, ",");
+      tmp_cell = cell(cptr + 3);
+      if (((CPtr) cs_val(tmp_cell)) == NEG_DELAY)
 	fprintf(fp, "NEG");
       else {
 	psc = get_str_psc(cell(cptr + 3));
@@ -484,7 +495,7 @@ static void print_delay_element(FILE *fp, Cell del_elem)
 	fprintf(fp, "%s/%d(", get_name(psc), arity);
 	cptr = (CPtr) cs_val(cell(cptr + 3));
  	for (i = 0; i < arity; i++)
-	  printterm(cell(cptr + 1 +i), 1, 25);
+	  printterm(cell(cptr + 1 + i), 1, 25);
       }
       fprintf(fp, ")");
     } else {
@@ -674,7 +685,7 @@ static void print_local_stack(int overlap)
 {
   int i;
   CPtr cell_ptr,
-    local_stack_bottom = (CPtr) glstack.high;
+       local_stack_bottom = (CPtr) glstack.high;
   char ans = 'y';
 
   if (ereg_on_top(ereg)) {
@@ -686,7 +697,9 @@ static void print_local_stack(int overlap)
     printf("ebreg on top\n");
   }
   for (i = -overlap; i < 0; i++) {
+#if (!defined(CHAT))
     if ( cell_ptr+i == efreg ) printf("efreg\n");
+#endif
     print_cp_cell("Local Stack", cell_ptr+i, cell(cell_ptr+i));
   }
   printf("top\n");
@@ -696,8 +709,9 @@ static void print_local_stack(int overlap)
 	printf("ebreg\n");
       if (cell_ptr == ereg)
 	printf("ereg\n");
-      if (cell_ptr == efreg)
-	printf("efreg\n");
+#if (!defined(CHAT))
+      if (cell_ptr == efreg) printf("efreg\n");
+#endif
       print_cp_cell("Local Stack", cell_ptr, cell(cell_ptr));
       cell_ptr++;
     }
@@ -721,19 +735,27 @@ static void print_trail(int overlap)		/* trail grows up */
   char ans = 'y';
   CPtr *temp;
 
-  if (trfreg > trreg) temp = trfreg;  else temp = trreg;
-  for (i = overlap; (i > 0); i--)
-    {
-      if ( (temp + i) == trreg ) printf("trreg\n");
-      if ( (temp + i) == trfreg ) printf("trfreg\n");
-      print_cell("Trail", (CPtr)(temp+i), cell((CPtr)(temp+i)), NULL);
-    }
-  while (ans == 'y' && temp-offset >= (CPtr *) tcpstack.low) { 
-    for (i = 0
+#ifdef CHAT
+    temp = trreg;
+#else
+    if (trfreg > trreg) temp = trfreg;  else temp = trreg;
+#endif
+    for (i = overlap; (i > 0); i--)
+      {
+	if ( (temp + i) == trreg ) printf("trreg\n");
+#if (!defined(CHAT))
+	if ( (temp + i) == trfreg ) printf("trfreg\n");
+#endif
+	print_cell("Trail", (CPtr)(temp+i), cell((CPtr)(temp+i)), NULL);
+       }
+    while (ans == 'y' && temp-offset >= (CPtr *) tcpstack.low) { 
+      for (i = 0
 	   ; (i <= STRIDESIZE && temp-(offset+i) >= (CPtr *)tcpstack.low)
 	   ; i++ )      {
 	if ( (temp - (offset+i)) == trreg ) printf("trreg\n");
+#if (!defined(CHAT))
 	if ( (temp - (offset+i)) == trfreg ) printf("trfreg\n");
+#endif
 	print_cell("Trail", (CPtr)(temp-(offset+i)),
 		   cell((CPtr)(temp-(offset+i))), NULL);
 	if ( (temp-(offset+i)) == (CPtr *) tcpstack.low ) 
@@ -747,6 +769,8 @@ static void print_trail(int overlap)		/* trail grows up */
 }
 
 /*----------------------------------------------------------------------*/ 
+
+#if (!defined(CHAT))
 
 static void print_freeze_choice_points(int overlap)	/* CPs grow down */
 {
@@ -781,6 +805,8 @@ static void print_freeze_choice_points(int overlap)	/* CPs grow down */
   }
 }
 
+#endif
+
 /*----------------------------------------------------------------------*/ 
 
 /*
@@ -811,16 +837,9 @@ static void analyze_cpf(CPtr cpf_addr, int *length, int *cpf_type)
  *  print choice point frame (in, in, in)
  */
 
-/*static*/ void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
+static void print_common_cpf_part(CPtr cpf_addr) {
+    char *s = "   CP stack ";
 
-  CPtr arg;
-  int i, num_of_args;
-  char *s = "   CP stack ";
-
-
-  switch (cpf_type) {
-  case STANDARD_CP_FRAME:
-    printf("Standard Choice Point Frame:\n");
     printf("%s%p:\tptr to next clause:\t0x%p\n", s,
 	   &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr));
     printf("%s%p:\tprev env cap (ebreg):\t0x%p\n", s,
@@ -835,19 +854,58 @@ static void analyze_cpf(CPtr cpf_addr, int *length, int *cpf_type)
 	   &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr));
     printf("%s%p:\tdynamic link:\t\t0x%p\n", s,
 	   &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr));
-    printf("%s%p:\tparent tabled CP:\t0x%p\n", s,
-	   &(cp_ptcp(cpf_addr)), cp_ptcp(cpf_addr));
-    printf("%s%p:\tparent subgoal delayreg:\t0x%p\n", s,
+    printf("%s%p:\tparent subgoal dreg:\t0x%p\n", s,
 	   &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr));
+}
 
-    num_of_args = length - CP_SIZE;
-    for (i = 1, arg = cpf_addr + CP_SIZE; i <= num_of_args; i++, arg++)
-      printf("%s%p:\tpredicate arg #%d:\t0x%p\n", s, arg, i, ref_val(*arg));
-    break;
+static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
 
-  default:
-    break;
-  }
+    CPtr arg;
+    int i, num_of_args;
+    char *s = "   CP stack ";
+
+    switch (cpf_type) {
+      case STANDARD_CP_FRAME:
+	printf("Standard Choice Point Frame:\n");
+	print_common_cpf_part(cpf_addr);
+
+	num_of_args = length - CP_SIZE;
+	for (i = 1, arg = cpf_addr + CP_SIZE; i <= num_of_args; i++, arg++)
+	  printf("%s%p:\tpredicate arg #%d:\t0x%p\n", s, arg, i, ref_val(*arg));
+	break;
+      case GENERATOR_CP_FRAME:
+	printf("Generator Choice Point Frame:\n");
+	print_common_cpf_part(cpf_addr);
+	printf("%s%p:\tparent tabled CP:\t0x%p\n", s,
+	       &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr));
+	printf("%s%p:\tsubgoal frame ptr:\t0x%p\n", s,
+	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr));
+#if (!defined(CHAT))
+	printf("%s%p:\tCh P  freeze register:\t0x%p\n", s,
+	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr));
+	printf("%s%p:\tHeap  freeze register:\t0x%p\n", s,
+	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr));
+	printf("%s%p:\tTrail freeze register:\t0x%p\n", s,
+	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr));
+	printf("%s%p:\tLo St freeze register:\t0x%p\n", s,
+	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr));
+#ifdef LOCAL_EVAL
+	printf("%s%p:\ttag used for local eval:\t0x%d\n", s,
+	       &(tcp_tag(cpf_addr)), tcp_tag(cpf_addr));
+	printf("%s%p:\tlocal eval trie_return:\t0x%p\n", s,
+	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr));
+	printf("%s%p:\tsubst factor arity:\t0x%d\n", s,
+	       &(tcp_arity(cpf_addr)), tcp_arity(cpf_addr));
+#endif
+#endif
+	num_of_args = length - TCP_SIZE;
+	for (i = 1, arg = cpf_addr + TCP_SIZE; i <= num_of_args; i++, arg++)
+	  printf("%s%p:\tpredicate arg #%d:\t0x%p\n", s, arg, i, ref_val(*arg));
+	break;
+    default:
+	fprintf(stderr, "CP Type %d not handled yet...\n", cpf_type);
+	break;
+      }
 }
 
 /*----------------------------------------------------------------------*/ 
@@ -867,15 +925,19 @@ static void print_cpfs(int overlap)
     type;
 
   for (i = -overlap ; (i < 0) ; i++) {
+#if (!defined(CHAT))
     if ((breg+i) == bfreg) printf("bfreg\n");
+#endif
     print_cp_cell("   CP stack", breg+i, cell(breg+i));
   }
   printf("breg\n");
   cpf = breg;
   do {
     for (i = 0; (i < frames) && (cpf < cp_stack_bottom); i++) {
+#if (!defined(CHAT))
       if ( cpf == bfreg )
 	printf("bfreg\n");
+#endif
       analyze_cpf(cpf, &length, &type);
       print_cpf(cpf, length, type);
       cpf = cpf + length;
@@ -901,7 +963,9 @@ static void print_choice_points(int overlap)
   CPtr cp_stack_bottom = (CPtr)tcpstack.high;
  
   for (i = -overlap ; (i < 0) ; i++) {
+#if (!defined(CHAT))
     if ((breg+i) == bfreg) printf("bfreg\n");
+#endif
     print_cp_cell("CP stack", breg+i, cell(breg+i));
   }
   printf("breg\n");
@@ -909,7 +973,9 @@ static void print_choice_points(int overlap)
     for (i = last;
 	 (i <= last + STRIDESIZE) && (breg+i <= cp_stack_bottom);
 	 i++) {
+#if (!defined(CHAT))
       if ( (breg + i) == bfreg ) printf("bfreg\n");
+#endif
       print_cp_cell("CP stack", breg+i, cell(breg+i));
       if ( (breg + i) == cp_stack_bottom ) printf(EOS);
     }
@@ -940,7 +1006,9 @@ static void print_heap(int overlap)	/* Heap grows up */
     for (i = 0
 	   ;(i <= STRIDESIZE && hreg-(offset+i) >= (CPtr) glstack.low) 
 	   ; i++) {
+#if (!defined(CHAT))
       if ( (hreg - (offset+i)) == hfreg ) printf("hfreg\n");
+#endif
       if ( (hreg - (offset+i)) == hbreg ) printf("hbreg\n");
       print_cell("Heap", hreg-(offset+i), cell(hreg-(offset+i)), NULL);
       if ( (hreg-(offset+i)) == (CPtr) glstack.low ) 
@@ -958,8 +1026,11 @@ static void print_heap(int overlap)	/* Heap grows up */
 /*----- For table debugging --------------------------------------------*/ 
 
 static char *compl_stk_frame_field[] = {
-  "subgoal_ptr", "level_num", "del_ret_list",
-  "visited", "DG_edges", "DGT_edges"
+        "subgoal_ptr", "level_num",
+#ifdef CHAT
+	"tcp-hreg", "chain-bit", "tcp-pdreg", "tcp-ptcp", "cons_copy_list",
+#endif
+	"del_ret_list", "visited", "DG_edges", "DGT_edges"
 };
 
 /*----------------------------------------------------------------------*/
@@ -981,7 +1052,7 @@ void print_completion_stack(void)
     printf("Completion Stack %p: %lx\t(%s)",
 	   temp, *temp, compl_stk_frame_field[(i % COMPLFRAMESIZE)]);
     if ((i % COMPLFRAMESIZE) >= COMPLFRAMESIZE-2) {
-      for (eptr = (EPtr)*temp; eptr != NULL; eptr=next_edge(eptr)) {
+      for (eptr = (EPtr)*temp; eptr != NULL; eptr = next_edge(eptr)) {
 	printf(" --> %p", edge_to_node(eptr));
       }
     }
@@ -1005,13 +1076,11 @@ static void print_pdlstack(void)
  
 /*----------------------------------------------------------------------*/ 
 
-/*** Commented Kostis didn't update this, He should get back to it....
 static void print_tables(void)
 {
   int i = 0;
   char ans = 'y';
   SGFrame subg;
-  PNDE nde;
 
   i = count_subgoals();
   printf("\t There are %d subgoal structures...\n", i); if (i) printf(EOSUBG);
@@ -1021,18 +1090,20 @@ static void print_tables(void)
     i++;
     print_subg_header(subg);
     printf("%p:", subg);
+#ifdef CHAT
+    printf("\tnext_subg = %6p,   ans_root_ptr = %6p,\n",
+	   subg_next_subgoal(subg), subg_ans_root_ptr(subg));
+#else
     printf("\tnext_subg = %6p,   ans_root_ptr = %6p,    asf_list_ptr = %p,\n",
 	   subg_next_subgoal(subg), subg_ans_root_ptr(subg),
 	   subg_asf_list_ptr(subg));
+#endif
     printf("\t  tip_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,\n",
 	   subg_tip_ptr(subg), subg_compl_stack_ptr(subg),
 	   subg_compl_susp_ptr(subg));
     printf("\t ans_list = %6p,       leaf_ptr = %6p,          cp_ptr = %p\n",
 	   subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
-    printf("\tnde_list");
-    for (nde = subg_nde_list(subg); nde != NULL; nde = pnde_next(nde))
-      printf(" --> %p", pnde_de(nde));
-    if (subg_nde_list(subg) == NULL) printf(" = NULL\n"); else printf("\n");
+    printf("\t     nide = %p\n", subg_nde_list(subg));
     subg = subg_next_subgoal(subg);
     if (subg != NULL) printf(EOSUBG);
     if (i == 10) {
@@ -1044,7 +1115,6 @@ static void print_tables(void)
   }
   printf(EOS);
 }
-*** end of commented out part *****/
 
 /*----------------------------------------------------------------------*/ 
 
@@ -1059,10 +1129,12 @@ static void print_status(void)
   printf("    cpreg: 0x%p\n", cpreg);
   printf("    pcreg: 0x%p\n", pcreg);
 
+#if (!defined(CHAT))
   printf("    efreg: 0x%p\n", efreg);
   printf("    bfreg: 0x%p\n", bfreg);
   printf("    hfreg: 0x%p\n", hfreg);
   printf("   trfreg: 0x%p\n", trfreg);
+#endif
   printf("   pdlreg: 0x%p\n", pdlreg);
   printf("  ptcpreg: 0x%p\n", ptcpreg);
   printf(" delayreg: 0x%p\n", delayreg);
@@ -1157,12 +1229,14 @@ static void debug_interact(void)
     skip_to_nl();
     print_choice_points(num);
     goto again;
+#if (!defined(CHAT))
   case 'C':
     scanf("%d", &num);
     skip_to_nl();
     print_freeze_choice_points(num);
     skip_to_nl();
     goto again;
+#endif
   case 'd':
     skip_to_nl();
     dis(1);
@@ -1304,7 +1378,7 @@ static void debug_interact(void)
     goto again;      
   case '1':
     skip_to_nl();
-    /*    print_tables(); */
+    print_tables();
     goto again;
   case '2':
     scanf("%d",&num);

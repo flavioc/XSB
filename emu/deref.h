@@ -40,14 +40,3 @@
 			 if (op==follow(op)) \
   			    break; \
 			 op=follow(op); }
-
-
-/* dereference, if cell_tag(op) is FREE or REF1 */
-#define free_deref(op) \
-  while ( (cell_tag(op) == FREE) || (cell_tag(op) == REF1) ) { \
-    if (op == follow(op)) \
-      break; \
-    op = follow(op); \
-  }
-
-

@@ -43,7 +43,7 @@
  * the substitution factor of the answer in the delay element.
  */
 
-#ifdef DELAY_DEBUG
+#ifdef DEBUG_DELAY
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
     if (is_conditional_answer(NodePtr)) {				\

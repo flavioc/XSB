@@ -52,8 +52,6 @@
 #include "tries.h"
 #include "choice.h"
 #include "xmacro.h"
-#include "tr_utils.h"
-#include "switch.h"
 #include "configs/special.h"
 
 static FILE* fptr;			/* working variable */

@@ -87,17 +87,8 @@ extern char *strip_names_from_path(char* path, int how_many);
 /* real_alloc uses malloc only to keep pspacesize straight. */
 #define real_alloc(X) malloc(X) 
 
-/*
-byte retry_active_inst = retry_active;
-byte completion_suspension_inst = completion_suspension;
-byte check_complete_inst = check_complete;
-byte hash_handle_inst = hash_handle;
-byte fail_inst = fail;
-byte halt_inst = halt;
-byte proceed_inst = proceed; */         /* returned by load_obj */
-
-Cell retry_active_inst;
-Cell completion_suspension_inst;
+Cell answer_return_inst;
+Cell resume_compl_suspension_inst;
 Cell check_complete_inst;
 Cell hash_handle_inst;
 Cell fail_inst;
@@ -521,9 +512,9 @@ char *init_para(int argc, char *argv[])
 void init_machine(void) {
   int i;
 
-  /* set special (X)WAM instruction addresses */
-  cell_opcode(&retry_active_inst) = retry_active;
-  cell_opcode(&completion_suspension_inst) = completion_suspension;
+  /* set special SLG_WAM instruction addresses */
+  cell_opcode(&answer_return_inst) = answer_return;
+  cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
   cell_opcode(&check_complete_inst) = check_complete;
   cell_opcode(&hash_handle_inst) = hash_handle;
   cell_opcode(&fail_inst) = fail;

@@ -52,6 +52,7 @@
 #include "flags.h"
 #include "tries.h"
 #include "choice.h"
+#include "sw_envs.h"
 #include "xmacro.h"
 #include "subinst.h"
 #include "scc.h"
@@ -59,9 +60,6 @@
 #include "tr_utils.h"
 #include "cut.h"
 
-Cell	CallNumVar;
-NODEptr TrieRetPtr;
-ALPtr   OldRetPtr;
 CPtr	VarPosReg;
 /*
  * Variables ans_var_pos_reg is a pointer to substitution factor of an
@@ -83,6 +81,10 @@ extern void printterm(Cell, byte, int);
 #include "tr_delay.h"
 #include "tr_code.i"
 
+#ifdef CHAT
+#include "chat.h"
+#endif
+
 /*----------------------------------------------------------------------*/
 
 #define pad		(lpcreg++)
@@ -100,6 +102,8 @@ extern void printterm(Cell, byte, int);
 #define opreg		cell(opregaddr)
 #define opvar		cell(opvaraddr)
 #define op1byte		op1 = (Cell)(*lpcreg++)
+#define op2byte		op2 = (Cell)(*lpcreg++)
+#define op3byte		op3 = (CPtr)((int)(*lpcreg++))
 #define op2word		op2 = (Cell)(*(CPtr)lpcreg); lpcreg+=sizeof(Cell)
 #define op3word		op3 = *(CPtr)lpcreg; lpcreg+=sizeof(Cell)
 
@@ -117,11 +121,19 @@ extern void printterm(Cell, byte, int);
 
 #define Fail1 lpcreg = cp_pcreg(breg);
 
+/* why the test on pcheck_complete_inst in the following non-CHAT macro ? */
+
+#ifdef CHAT
+#define restore_trail_condition_registers(BREG) \
+      ebreg = cp_ebreg(BREG); \
+      hbreg = cp_hreg(BREG);
+#else
 #define restore_trail_condition_registers(breg) \
       if (*breg != (Cell) &check_complete_inst) { \
 	ebreg = cp_ebreg(breg); \
 	hbreg = cp_hreg(breg); \
       } 
+#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -133,17 +145,27 @@ extern void print_subgoal(FILE *, SGFrame);
 extern void print_delay_list(FILE *, CPtr);
 #endif
 
+#ifdef WAM_TRAIL
+CPtr    temp_trreg;
+#endif
+
 int  (*dyn_pred)();
 
 bool    neg_delay;
-int     num_unwinds = 0;
-int     xwammode, level_num, xctr;
-CPtr    xcurcall, xtemp3, xtemp5, xtemp6, xtemp12, hreg1, xtemp14;
-SGFrame xtemp15;
+int     xwammode, level_num;
+
+#ifdef DEBUG
+int     xctr;
+#endif
 
 /*----------------------------------------------------------------------*/
 
+#ifdef CHAT
+#include "chatsched.i"
+#else
 #include "schedrev.i"
+#endif
+
 #ifndef LOCAL_EVAL 
 #include "wfs.i" 
 #endif 
@@ -188,13 +210,13 @@ int xsb(int flag, int argc, char *argv[])
 	       startup_file);
        xsb_exit(message);
      }
-/*
-     fread(&magic, 4, 1, fd);
-     fix_bb(&magic);
-*/
      get_obj_word_bb(&magic);
      fclose(fd);
-     if (magic == 0x11121304)
+#ifdef V2_OBJECT_FORMAT
+     if (magic == 0x11121305)
+#else
+     if (magic == 0x11121304 || magic == 0x11121305)
+#endif
        inst_begin = loader(startup_file,0);
      else
        xsb_exit("Incorrect startup file format");
@@ -253,14 +275,24 @@ static int emuloop(byte *startaddr)
   
   int restore_type;	/* 0 for retry restore; 1 for trust restore */
   
-  int xflag;
-  register CPtr xtemp1, xtemp2;
-  CPtr xtemp4;	/* Temporary variable for breg (used in slginsts.i) */
+#ifdef GC
+  static int infcounter = 0;
+  static int just_print = 0;
+#endif
+
+  int  xflag;
+  CPtr xtemp1, xtemp2, xtemp3, xtemp5, xcurcall;
 #ifdef LOCAL_EVAL
   CPtr xtemp6=0;  /* Temporary variable for next breg (used in complete.i) */
+  SGFrame xtemp15;
 #endif
-  CPtr xtemp9;	/* Temporary variable for ebreg (used in slginsts.i) */
+  Cell  CallNumVar;
+  ALPtr OldRetPtr;
+  NODEptr TrieRetPtr;
   char message[80];
+#ifdef Chat_DEBUG
+  chat_pheader chat_header_ptr;
+#endif
   
   rreg = reg; /* for SUN */
   op1 = op2 = (Cell) NULL;
@@ -271,7 +303,7 @@ static int emuloop(byte *startaddr)
 #ifdef DEBUG
   if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
   xctr++;
-#ifdef STACKS_DEBUG
+#if (defined(STACKS_DEBUG) && !defined(CHAT))
     if ((pb)ereg < (pb)hreg + OVERFLOW_MARGIN/4 ||
         (pb)efreg < (pb)hreg + OVERFLOW_MARGIN/4 ||
         (pb)ebreg < (pb)hreg + OVERFLOW_MARGIN/4) {
@@ -345,9 +377,11 @@ static int emuloop(byte *startaddr)
     if (flag) {	/* if (flag == WRITE) */
 	bind_ref((CPtr)op1, hreg);
 	new_heap_free(hreg);
-    }
-    else {
-	bld_copy0((CPtr)op1, *(sreg++));
+    } else {
+      /* also introduce trailing here - bmd & kostis
+         was: bld_copy0((CPtr)op1, *(sreg++)); */
+        bind_copy((CPtr)op1, *(sreg));
+        sreg++;
     }
     goto contcase;
 
@@ -497,7 +531,7 @@ static int emuloop(byte *startaddr)
     ppad; op1 = (Cell)(opvaraddr);
     pad64;
     /* tls 12/8/92 */
-    bind_ref((CPtr)op1, hreg);
+    bind_ref((CPtr)op1, hreg); /* trailing is needed: if o/w see ai_tests */
     new_heap_free(hreg);
     goto contcase;
     
@@ -556,53 +590,6 @@ static int emuloop(byte *startaddr)
     }
     else Fail1;
     goto contcase;	/* end getlist_tvar_tvar */
-
-/* In the following two instructions, I replaced `comma_psc' with a lookup
-   of ','/2 in standard.  -EJJ 4/97 */
- case getcomma: /* PPR */
-    ppad; op1 = opreg;
-    pad64;
-    psc = pair_psc(insert_module(0, "standard"));
-    op2 = (Cell)pair_psc(insert(",", 2, psc, &xflag));
-    nunify_with_str(op1,op2);
-    goto contcase;
-
-/* Old:
-    ppad; op1 = opreg;
-    op2 = (Cell)(comma_psc);
-    goto nunify_with_str;
-*/
-
- case getcomma_tvar_tvar: /* RRR */
-    op1 = opreg;
-    psc = pair_psc(insert_module(0, "standard"));
-    psc = pair_psc(insert(",", 2, psc, &xflag));
-    /* op1 is FREE: */
-    deref(op1);
-    if (isref(op1)) {
-      bind_cs((CPtr)(op1), (Pair)hreg);
-      new_heap_functor(hreg, psc);
-      op1 = (Cell)(opregaddr);
-      bld_ref((CPtr)op1, hreg);
-      new_heap_free(hreg);
-      op1 = (Cell)(opregaddr);
-      pad64;
-      bld_ref((CPtr)op1, hreg);
-      new_heap_free(hreg);
-    } else if (isconstr(op1)) {	/* or DELAY */
-      /* tls: clref_val = constant list ref val. Untags the word */
-      op2 = (Cell)(clref_val(op1));
-      if (((Pair)(CPtr)op2)->psc_ptr == psc) {
-	sreg = (CPtr)op2 + 1;
-	op1 = (Cell)(opregaddr);
-	bld_ref((CPtr)op1, *(sreg)); sreg++;
-	op1 = (Cell)(opregaddr);
-        pad64;
-	bld_ref((CPtr)op1, *(sreg));
-      }
-    }
-    else Fail1;
-    goto contcase;	/* end getcomma_tvar_tvar */
 
  case uninumcon: /* PPP-N */
     pppad; pad64; op2word; /* num in op2 */
@@ -669,14 +656,24 @@ static int emuloop(byte *startaddr)
     restore_type = 0;
     goto restore_sub;
 
- case trust: /* PPA-L */
+  case trust: /* PPA-L */
     ppad; op1byte;
     pad64;
     lpcreg = *(pb *)lpcreg;
     restore_type = 1;
     goto restore_sub;
 
- case getpbreg: /* PPV */
+  case getVn: /* PPV */
+#ifdef CHAT
+    ppad; op1 = (Cell)(opvaraddr);
+    pad64;
+    cell((CPtr)op1) = (Cell)tcp_subgoal_ptr(breg);
+    goto contcase;
+#else
+    /* fall through to the getpbreg case */
+#endif
+
+  case getpbreg: /* PPV */
     ppad; op1 = (Cell)(opvaraddr);
     pad64;
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
@@ -708,17 +705,32 @@ static int emuloop(byte *startaddr)
     lpcreg = *(byte **)lpcreg;
     goto contcase;
 
- case getarg_proceed: /* PPA */
-    ppad; op1byte;
-    pad64;
-    lpcreg = cpreg;
+  case test_heap: /* PPA-N */
+    ppad ;
+    op1 = op1byte ;
+    op2 = *(pw)lpcreg; lpcreg+=4;
+#ifdef GC
+    /* if ((infcounter++ > 1000) || (ereg - hreg) < op2) */
+    if ((ereg - hreg) < op2)
+      { infcounter = 0;
+        fprintf(stderr,".");
+        if (just_print)
+	  goto contcase;
+        if (gc_heap(op1))
+	{ if ((ereg - hreg) < op2)
+	       /* an expansion strategy for testing - later better */
+               glstack_realloc(glstack.size+20,op1) ; /* op1 = the arity of the procedure */
+	}
+      /* are there any localy cached quantities that must be reinstalled ? */
+      }
+#endif
     goto contcase;
 
  case switchonterm: /* PPR-L-L */
     ppad; 
     op1 = opreg;
     pad64;
-    free_deref(op1);
+    deref(op1);
     switch (cell_tag(op1)) {
     case FREE:
     case REF1: 
@@ -746,7 +758,7 @@ static int emuloop(byte *startaddr)
       ppad; 
       op1 = opreg;
       pad64;
-      free_deref(op1);
+      deref(op1);
       switch (cell_tag(op1)) {
       case FREE:
       case REF1: 
@@ -767,7 +779,8 @@ static int emuloop(byte *startaddr)
 	op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
 	break;
       }
-      op2 = (Cell)(*(byte **)(lpcreg)); lpcreg += sizeof(Cell);
+      op2 = (Cell)(*(byte **)(lpcreg));
+      lpcreg += sizeof(Cell);
       op3 = *(CPtr *)lpcreg;
       /* doc tls -- op2 + (op1%size)*4 */
       lpcreg =
@@ -789,7 +802,7 @@ static int emuloop(byte *startaddr)
       for (i = 0; i <= 2; i++) {
 	if (opa[i] != 0) {
 	  op1 = opa[i];
-	  free_deref(op1);
+	  deref(op1);
 	  switch (cell_tag(op1)) {
 	  case FREE:
 	  case REF1: 
@@ -817,14 +830,6 @@ static int emuloop(byte *startaddr)
       }
       lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
     sob3d2: goto contcase;
-
- case switchoncon: pppad; pad64; op2word;
-    xsb_exit("Switchoncon not implemented");
-    goto contcase;
-
- case switchonstr: pppad; op2word;
-    xsb_exit("Switchonstr not implemented");
-    goto contcase;
 
  case trymeorelse: /* PPA-L */
     pppad;
@@ -1039,18 +1044,57 @@ static int emuloop(byte *startaddr)
     call_sub(psc);
     goto contcase;
 
- case allocate: /* PPP */
-    pppad; 
+ case allocate_gc: /* PAA */
+    pad; op2byte; op3byte;
     pad64;
+#if (!defined(CHAT))
     if (efreg_on_top(ereg))
       op1 = (Cell) (efreg -1);
     else {
+#endif
       if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
       else op1 = (Cell)(ebreg-1);
+#if (!defined(CHAT))
     }
+#endif
     *(CPtr *)((CPtr) op1) = ereg;
     *((byte **) (CPtr)op1-1) = cpreg;
     ereg = (CPtr)op1; 
+    { /* initialize local variables that appear in the *body* of the clause */
+      int  i = ((Cell)op3) - op2;
+      CPtr p = ((CPtr)op1) - op2;
+      while (i--) {
+	bld_free(p);
+        p--;
+      }
+    }
+    goto contcase;
+
+/* This is obsolete and is only kept for backwards compatibility for < 2.0 */
+ case allocate: /* PPP */
+    pppad; 
+    pad64;
+#if (!defined(CHAT))
+    if (efreg_on_top(ereg))
+      op1 = (Cell) (efreg -1);
+    else {
+#endif
+      if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
+      else op1 = (Cell)(ebreg-1);
+#if (!defined(CHAT))
+    }
+#endif
+    *(CPtr *)((CPtr) op1) = ereg;
+    *((byte **) (CPtr)op1-1) = cpreg;
+    ereg = (CPtr)op1; 
+    { /* for old object files initialize pessimisticly but safely */
+      int  i = 256;
+      CPtr p = ((CPtr)op1)-2;
+      while (i--) {
+	bld_free(p);
+        p--;
+      }
+    }
     goto contcase;
 
  case deallocate: /* PPP */
@@ -1283,7 +1327,6 @@ restore_sub:
 
   tbreg = breg;
   switch_envs(tbreg);
-  ptcpreg = cp_ptcp(tbreg);
   delayreg = cp_pdreg(tbreg);
   restore_some_wamregs(tbreg, ereg);
   restore_registers(tbreg, (int)op1, i, rreg);
@@ -1302,7 +1345,11 @@ table_restore_sub:
 
   tbreg = breg;
   switch_envs(tbreg);
+#ifdef PTCP_IN_CP
   ptcpreg = tbreg;	/* This CP should be used for the dependency graph */
+#else
+  ptcpreg = tcp_subgoal_ptr(tbreg);
+#endif
   delayreg = NULL;
   restore_some_wamregs(tbreg, ereg);
   table_restore_registers(tbreg, (int)op1, i, rreg);

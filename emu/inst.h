@@ -201,8 +201,6 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define bldnumcon	0x1f
 
 #define getlist_tvar_tvar	0x48
-#define getcomma		0x49
-#define getcomma_tvar_tvar	0x4a
 
 /*----- Instructions for tries as code (Do NOT change the numbers) -----*/
 
@@ -256,9 +254,6 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 
 /* Non-determinism instructions */
 
-#define neck		0x9d
-#define neck_putpbreg	0x9e
-#define neck_puttbreg	0x9f
 #define trymeelse       0xa0
 #define retrymeelse     0xa1
 #define trustmeelsefail 0xa2
@@ -270,13 +265,13 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define putpbreg	0xa8
 #define puttbreg	0xa9
 #define jumptbreg	0xaa
-#define getarg_proceed	0xab
+
+#define getVn	        0xab      /* for tabled predicates */
+#define test_heap       0xac      /* for heap overflow testing */
 
 /* Indexing instructions */
 
 #define switchonterm    0xb0
-#define switchoncon     0xb1
-#define switchonstr     0xb2
 #define switchonbound	0xb3
 #define switchon3bound	0xb4
 
@@ -294,13 +289,12 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define tabletry		0xbe
 
 #define tabletrust		0xc1
-#define tabconfig		0xc2	/* loader directive */
 #define tabletrysingle		0xc5
 
-#define retry_active		0xc7
+#define answer_return		0xc7
 
 #define check_complete		0xc9
-#define completion_suspension	0xca
+#define resume_compl_suspension 0xca
 
 #define new_answer_dealloc	0xce
 
@@ -329,6 +323,7 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 
 /* Procedure instructions */
 
+#define allocate_gc     0xe7
 #define call            0xe8
 #define allocate        0xe9
 #define deallocate      0xea
@@ -486,20 +481,21 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define TRIE_NODE_ELEMENT	140
 #define PROLOG_NEWNODE		141
 
+#define TABLE_STATUS            143
 #define GET_DELAY_LISTS		144
 #define DELETE_PREDICATE_TABLE	145
-#define TABLE_HASH		146
+
 #define TRIE_ASSERT		147
 #define TRIE_RETRACT		148
 #define TRIE_DELETE_TERM	149
 #define TRIE_GET_RETURN		150
 #define TRIE_GET_CALL		151
-#define AUX_CALL_INFO		152
-#define MAKE_CELL_AS_DESIRED	153
+#define GET_LASTNODE_AND_RETSKEL 152
+#define CONSTRUCT_RET_FOR_CALL  153
+
 #define BREG_RETSKEL		154
 #define TRIE_RETRACT_SAFE	155
 #define GET_EMU_DEPENDENT_CONST	156
-#define SCHED_STRAT             157
 #define TRIMCORE		158
 
 #define NEWTRIE                 159
@@ -539,7 +535,18 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 
 #define ORACLE_QUERY		230
 #define CASP_QUERY		231
-#define ODBC_QUERY		240
+#define ODBC_QUERY		239
+
+/* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
+#define PR_LS                   240
+#define PR_TR                   241
+#define PR_HEAP                 242
+#define PR_CP                   243
+#define PR_REGS                 244
+#define PR_ALL                  245
+#define EXP_H                   246
+#define MARK_H                  247
+#define GC_H                    248
 
 #define FINDALL_INIT		249
 #define FINDALL_ADD		250

@@ -104,7 +104,7 @@
 	psc_spy/2, 
 	psc_tabled/2, 
 	tip_prop/4,
-	is_incomplete/5,
+	is_incomplete/4,
 	get_osp_breg/2,
 	cut_if_leader/3,
 	get_ptcp/1,

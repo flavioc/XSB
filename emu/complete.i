@@ -34,50 +34,42 @@
 
 #define CC_TBREG	xtemp6
 
+#ifdef LOCAL_EVAL
 #define COMPL_SUBG	xtemp15	/* subgoal to be completed */
+#endif
 
 /*----------------------------------------------------------------------*/
 
 case check_complete: {
   CPtr orig_breg = breg, tmp_breg;
-  int leader = 0;
+  bool leader = FALSE;
+
+  ptcpreg = tcp_ptcp(breg);	/* this CP has exhausted program resolution */
 
   SUBGOAL = tcp_subgoal_ptr(breg);	/* get the subgoal that is checked */
 
-#ifdef DEBUG_DELAY
-  xcurcall = SUBGOAL;
-  fprintf(stderr, ">>>> check_complete is called.  The checked subgoal is: ");
-  print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
-#endif
-
   CC_CSPTR = subg_compl_stack_ptr(SUBGOAL);
-  if (/* !is_completed(SUBGOAL) &&	*/
-      (prev_compl_frame(CC_CSPTR) >= COMPLSTACKBOTTOM || is_leader(SUBGOAL))){
+
+  if ((prev_compl_frame(CC_CSPTR) >= COMPLSTACKBOTTOM || is_leader(CC_CSPTR))) {
     leader = 1;
   }
   
-#ifdef LOCAL_EVAL
-  /* retry_active for generator: return answers to caller of generator
-   * subgoals that are not leaders
-   */
+#if (defined(LOCAL_EVAL) && !defined(CHAT))
+  /* return answers to caller of generator subgoals that are not leaders */
   if (tcp_tag(breg)==(Cell)RETRY_GEN_ACTIVE_TAG) {
     if (tcp_trie_return(breg) == NULL) { 
       /* this can only happen if answers are deleted */ 
       tcp_tag(breg) = (int)CHECK_COMPLETE_TAG; 
-    } 
-    else { 
-      ARITY = tcp_arity(breg); 
+    } else { /* This code mimics the answer_return code */
       switch_envs(breg);  
       ptcpreg = tcp_ptcp(breg); 
       delayreg = tcp_pdreg(breg); 
-      SUBGOAL = tcp_subgoal_ptr(breg); 
       restore_some_wamregs(breg,ereg); 
+      ARITY = tcp_arity(breg); 
       CallNumVar = *(breg + TCP_SIZE + (Cell)ARITY); 
       op3 = breg + TCP_SIZE + (Cell) ARITY + CallNumVar; 
-      OldRetPtr = (ALPtr) aln_next_aln(tcp_trie_return(breg)); 
-      /* get next answer */ 
+      OldRetPtr = aln_next_aln(tcp_trie_return(breg)); /* get next answer */ 
       if (OldRetPtr){
-	/* if (is_cond...) */ 
 	tcp_trie_return(breg) = OldRetPtr; 
 	/* last answer consumed */ 
 	TrieRetPtr = get_next_trie_solution(&OldRetPtr); 
@@ -95,8 +87,8 @@ case check_complete: {
 	 * substitution factor information we saved in heap may be
 	 * overwritten.
 	 *
-	 * This is similar to the situation in retry_active and
-	 * lay_down_active.
+	 * This is similar to the situation in answer_return and
+	 * lay_down_consumer.
 	 */
 	if (is_conditional_answer(aln_answer_ptr(tcp_trie_return(breg)))) { 
 #ifdef DEBUG_DELAYVAR
@@ -124,20 +116,25 @@ case check_complete: {
   } /* retry_gen_active */
 #endif /* LOCAL_EVAL */
 
+#ifdef CHAT
+  undo_bindings(breg);
+#else
   /* schedule answers */
-  if((tmp_breg = sched_answers(SUBGOAL,orig_breg,leader))){
+  if ((tmp_breg = sched_answers(SUBGOAL, breg, leader))){
     breg = tmp_breg;
     Fail1;  
     goto contcase;
   }
-  
-  if(leader) {
-#ifdef LOCAL_EVAL
-    bool  non_lrd_stratified;
 #endif
+
+  if(leader) {
     /* check if fixpoint has been reached, otherwise schedule any
      * unresolved answers */
-    if ((tmp_breg = find_fixpoint(SUBGOAL,orig_breg))) {
+#ifdef CHAT
+    if ((tmp_breg = chat_fixpoint((SGFrame)SUBGOAL, (TChoice)breg))) {
+#else
+    if ((tmp_breg = find_fixpoint(SUBGOAL, breg))) {
+#endif
       breg = tmp_breg;
       Fail1;
       goto contcase;
@@ -148,33 +145,28 @@ case check_complete: {
     /* mark topmost SCC as completed */ 
     breg = orig_breg;
     ComplStkFrame = CC_CSPTR;
-    non_lrd_stratified = FALSE;
 
     /* check from leader up to the youngest subgoal */
     while (ComplStkFrame >= openreg) {
       COMPL_SUBG = compl_subgoal_ptr(ComplStkFrame);
       if (is_completed(COMPL_SUBG)) { /* this was early completed */
-	if(subg_compl_susp_ptr(COMPL_SUBG) != NULL)
-	  subg_compl_susp_ptr(COMPL_SUBG) = NULL;
-#ifdef DEBUG_REV
-	fprintf(stderr,"--->EARLY COMPLETED: removing suspended clauses \n");
+#ifdef CHAT
+	chat_free_compl_susp_chat_areas((SGFrame)COMPL_SUBG);
+#else
+	subg_compl_susp_ptr(COMPL_SUBG) = NULL;
 #endif
-      }
+     }
       else { /* if not early completed */
-	CPtr par = NULL, par_subg = NULL;
-	int par_compl=0;
-	CPtr nsf;
-	if ((nsf=subg_compl_susp_ptr(COMPL_SUBG)) != NULL) { 
-	  /* remove any negative susp for COMPL_SUBG whose caller (head of
-	   * the clause) has been completed
-	   * remove compl_susp_frames whose parents have been completed */
-	  CPtr prev_nsf = (CPtr) 0;
+	CPtr p, nsf;
+	if ((nsf = subg_compl_susp_ptr(COMPL_SUBG)) != NULL) { 
+	  /* remove completion suspensions whose parents have been completed */
+	  CPtr prev_nsf = NULL;
 	  while (nsf) { /* check each suspension frame */
-	    if (csf_ptcp(nsf) != NULL) {
-	      par = csf_ptcp(nsf);
-	      par_subg = tcp_subgoal_ptr(par);
-	      par_compl = (int) is_completed(par_subg);
-	      if(is_completed(tcp_subgoal_ptr(csf_ptcp(nsf)))){
+	    if ((p = csf_ptcp(nsf)) != NULL) {
+#ifdef PTCP_IN_CP
+	      p = tcp_subgoal_ptr(p);
+#endif
+	      if (is_completed(p)) {
 		/* remove nsf from list */
 		if (!prev_nsf) { /* if first susp is to be deleted */
 		  nsf = subg_compl_susp_ptr(COMPL_SUBG) = csf_prevcsf(nsf);
@@ -185,21 +177,27 @@ case check_complete: {
 		}
 	      } /* if is_completed parent  */
 	      else {
-		mark_delayed(ComplStkFrame,
-			     subg_compl_stack_ptr(tcp_subgoal_ptr(csf_ptcp(nsf))),
-			     nsf);
-		non_lrd_stratified = TRUE;
-		/* csf_neg_loop(nsf) = TRUE; */
+		mark_delayed(ComplStkFrame, subg_compl_stack_ptr(p), nsf);
 		prev_nsf = nsf;
 		nsf = csf_prevcsf(nsf);
 	      } /* if(is_c ... parent is completed */
 	    } /* if (csf_ ... if parent is tabled */
 	  } /* while (nsf) */
-	  if ((nsf=subg_compl_susp_ptr(COMPL_SUBG))) {/* laydown neg answers */
+	  if ((nsf = subg_compl_susp_ptr(COMPL_SUBG))) {
+#ifdef CHAT
+	    CPtr H, EB;
+
+	    H = cp_hreg(breg);
+	    EB = cp_ebreg(breg);
+
+	    breg = CC_TBREG = chat_restore_compl_susp((chat_init_pheader)nsf, H, EB);
+	    subg_compl_susp_ptr(COMPL_SUBG) = NULL;
+#else
 	    set_min(xtemp1, breg, bfreg);
 	    save_compl_susp_cp(xtemp1,CC_TBREG,nsf);
+	    subg_compl_susp_ptr(COMPL_SUBG) = NULL;
 	    breg = CC_TBREG = xtemp1;		  
-	    subg_compl_susp_ptr(COMPL_SUBG) = NULL; /* avoid doing 2x */
+#endif
 	  }
 	} /* if there are neg. suspensions */
       } /* else if not early completed */
@@ -208,18 +206,13 @@ case check_complete: {
 
     /* find continuation and reclaim space - if there are no negation
      * susps, sched answers if any */
-    if(CC_TBREG==orig_breg){ 
+    if (CC_TBREG==orig_breg) { 
       /* no delays, mark all SCC as completed and do simplification */
       ComplStkFrame = CC_CSPTR; 
       while (ComplStkFrame >= openreg) {
 	COMPL_SUBG = compl_subgoal_ptr(ComplStkFrame);
 	mark_as_completed(COMPL_SUBG); 
 	if (neg_simplif_possible(COMPL_SUBG)) {
-#ifdef DEBUG_DELAY
-	  fprintf(stderr,"---->Simplifying subg %d ",(int)COMPL_SUBG);
-	  print_subgoal(stderr,COMPL_SUBG);
-	  fprintf(stderr,"\n ");
-#endif
 	  simplify_neg_fails(COMPL_SUBG);
 	}
 	ComplStkFrame = next_compl_frame(ComplStkFrame);
@@ -229,7 +222,7 @@ case check_complete: {
       ComplStkFrame = next_compl_frame(CC_CSPTR); 
       while (ComplStkFrame >= openreg) {
 	COMPL_SUBG = compl_subgoal_ptr(ComplStkFrame);
-	reclaim_ans_list_nodes(COMPL_SUBG);
+	reclaim_subg_space(COMPL_SUBG);
 	ComplStkFrame = next_compl_frame(ComplStkFrame);
       } /* while */
 
@@ -237,7 +230,7 @@ case check_complete: {
        * (when answers are returned, the answer list is reclaimed
        * and set to 0, 1 or 2) */
       if (has_answer_code(SUBGOAL) && (subg_answers(SUBGOAL)>COND_ANSWERS)) {
-	reclaim_ans_list_nodes((SGFrame) SUBGOAL);
+	reclaim_subg_space((SGFrame)SUBGOAL);
 	/* so that answers will be returned right after the neg susps
 	 * are returned and engine fails over TCP
 	 */
@@ -248,7 +241,9 @@ case check_complete: {
 	  orig_breg = breg;
 	  fprintf(stderr,"Making orig_breg=%d\n",(int)orig_breg);
 	}
+#if (!defined(CHAT))
 	tcp_tag(orig_breg)=(Cell)CHECK_COMPLETE_TAG; 
+#endif
 #ifdef DEBUG_REV
 	fprintf(stderr,"===>TRIE Returning answers for breg=%d\n",(int)breg);
 #endif
@@ -258,60 +253,53 @@ case check_complete: {
 	 * are answers to be returned 
 	 */
 	/* JF: change breg to orig_breg */
-	ptcpreg = tcp_ptcp(orig_breg); /* Necessary after tabled switch_envs() */
+#ifdef CHAT
+	ptcpreg = compl_ptcp(CC_CSPTR);
+	delayreg = compl_pdreg(CC_CSPTR);
+#else
+	ptcpreg = tcp_ptcp(orig_breg);
+	delayreg = tcp_pdreg(orig_breg);
+#endif
 	restore_some_wamregs(orig_breg, ereg);
 	/* restore_trail_condition_registers - because success path
-	* will be followed
-	*/
+	 * will be followed
+	 */
 	ebreg = cp_ebreg(tcp_prevbreg(orig_breg));
 	hbreg = cp_hreg(tcp_prevbreg(orig_breg));
-#ifdef DEBUG_SET
-	fprintf(stderr," ret_ans ---> Using trie as code for gen_active \n");
-#endif
-	
-	delayreg = tcp_pdreg(orig_breg);
-	
-#ifdef DEBUG_SET
-	fprintf(stderr," ret_ans --->setting delayreg=%d \n",(int)delayreg);
-#endif
+#ifdef CHAT
+	compl_cons_copy_list(CC_CSPTR) = 0;
+#else
 	subg_asf_list_ptr(SUBGOAL) = 0;
-	ARITY = tcp_arity(orig_breg);
-	TrieRootPtr = (NODEptr) subg_ans_root_ptr(SUBGOAL);
+#endif
 	
 	/* reclaim stacks, including leader */
-	/* 	reclaim(CC_CSPTR);  */
 	openreg = prev_compl_frame(CC_CSPTR);
 	reclaim_stacks(orig_breg);
+#ifdef CHAT
+	CallNumVar = int_val(cell(compl_hreg(CC_CSPTR)));
+	VarsInCall = compl_hreg(CC_CSPTR)-CallNumVar;	/* first variable */
+#else
+	ARITY = tcp_arity(orig_breg);
 	CallNumVar = *(orig_breg + TCP_SIZE + (Cell)ARITY);
-	/* first variable */
-	VarsInCall = orig_breg+TCP_SIZE+(Cell)ARITY + 1;
-        reg_arrayptr = reg_array -1;
-	num_vars_in_var_regs = -1;
-	for (i=0;i<CallNumVar;i++) {
-	  cptr = VarsInCall;
-#ifdef DEBUG_SET
-	  fprintf(stderr,"----->Var %d: %d\n",i+1,(int) *cptr);
+	VarsInCall = orig_breg+TCP_SIZE+(Cell)ARITY + 1; /* first variable */
 #endif
+	for (i=0; i<CallNumVar; i++) {
+	  cptr = VarsInCall;
 	  pushreg(*cptr);
 	  VarsInCall++;
 	} /* for (i=0... */
-	lpcreg = (byte *)TrieRootPtr;
+        reg_arrayptr = reg_array -1;
+	num_vars_in_var_regs = -1;
+	lpcreg = (byte *)subg_ans_root_ptr(SUBGOAL);
 	/* backtrack to prev tabled subgoal after returning answers */
 	breg =  tcp_prevbreg(orig_breg); /* orig_???*/ 
 	goto contcase;
-	/* now, after the new_cp has been added, can reset
-	 * bfreg if subg is the root call, since it is guaranteed
-	 * nothing else will be called
-	 */
       } /* if there are answers */   
       else { /* no answers to return */
-#ifdef DEBUG_RECLAIM
-	fprintf(stderr,"RECLAIM:No answers or suspensions!\n");
-#endif	
-	reclaim_ans_list_nodes((SGFrame) SUBGOAL);
+	reclaim_subg_space((SGFrame) SUBGOAL);
 
 	/* there is nothing else to be done for this SCC */
-	CC_TBREG=tcp_prevbreg(orig_breg); /* go to prev SCC */
+	CC_TBREG = tcp_prevbreg(orig_breg); /* go to prev SCC */
 		
 	openreg = prev_compl_frame(CC_CSPTR); 
 	reclaim_stacks(orig_breg);
@@ -320,16 +308,15 @@ case check_complete: {
     breg = CC_TBREG; /* either orig, prev_cp or compl_susp */
  
 #else /* LOCAL_EVAL */
-    batched_compute_wfs(CC_CSPTR,orig_breg,SUBGOAL);
+    batched_compute_wfs(CC_CSPTR, orig_breg, SUBGOAL);
 
     /* do all possible stack reclamation */
     if (openreg == prev_compl_frame(CC_CSPTR)) {
       reclaim_stacks(orig_breg);
       if (breg == orig_breg) {
 	breg = tcp_prevbreg(breg);
-#ifdef IDE_TABLE_DEBUG
-	print_ide_tab(stderr);
-	print_idl_tab(stderr);
+#ifdef CHAT
+	restore_trail_condition_registers(breg);
 #endif
       }
     }
@@ -337,14 +324,22 @@ case check_complete: {
   }
   /* if not leader */
   else {
+#ifdef CHAT
+    chat_incremental_copy((SGFrame)SUBGOAL);
+    /* let's cause some segmentation faults and fix exact completion in CHAT */
+    subg_cp_ptr(SUBGOAL) = NULL;	/* preserve invariants */
+#endif
     breg = tcp_prevbreg(breg); 
-    /* since these registers are not reset in trust for local,
-     * they should be set here - check anyway if thei presence
-     * alters memory consumtion
+    /* since the trail condition registers are not reset in
+     * tabletrust for CHAT or for local, they should be restored here
      */
+#ifdef CHAT
+    restore_trail_condition_registers(breg);
+#else
 #ifdef LOCAL_EVAL
     hbreg = tcp_hreg(breg);
     ebreg = tcp_ebreg(breg);
+#endif
 #endif
   }
   Fail1;

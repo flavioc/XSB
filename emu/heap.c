@@ -1,9 +1,10 @@
 /* File:      heap.c
-** Author(s): Bart Demoen
+** Author(s): Bart Demoen, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
 ** Copyright (C) ECRC, Germany, 1990
+** Copyright (C) K.U. Leuven, 1998
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,9 +24,10 @@
 ** 
 */
 
+#define GC
 
-/*
-This module provides
+/*************************************************************************
+ * This module provides
 
 	reallocation of the heap/environment area
 		void glstack_realloc(new_size,arity)
@@ -33,7 +35,36 @@ This module provides
 		memory.c, but completely redone by Bart Demoen
 
 	heap garbage collector
-		int gc_heap(arity)
+		int gc_heap(arity) - only supported for CHAT
+		see paper
+		B. Demoen and K. Sagonas.
+		Memory Management for Prolog with Tabling.
+		in Proceedings of the 1998 ACM SIGPLAN International
+		Symposium on Memory Management, Vancouver, B.C., Canada,
+		Oct. 1998. ACM Press. p. 97-106
+
+		additional information in
+		B. Demoen and K. Sagonas.
+		Experiences with building garbage collectors for XSB-CHAT.
+		CW report 272, September 1998
+
+
+	CPtr slide_heap implements a sliding collector a la Morris
+	       Prolog specific: see paper
+	       K. Appleby, M. Carlsson, S. Haridi, and D. Sahlin.
+	       Garbage Collection for Prolog Based on WAM.
+	       Communications of the ACM}, 31(6):719--741, June 1988.
+
+
+	CPtr copy_heap implements a copying collector a la Cheney
+               Prolog specific: see paper
+	       J. Bevemyr and T. Lindgren.
+	       A Simple and Efficient Copying Garbage Collector for Prolog.
+	       In M. Hermenegildo and J. Penjam, editors,
+	       Proceedings of the Sixth International Symposium on
+	       Programming Language Implementation and Logic Programming},
+	       number 844 in LNCS, pages 88--101, Madrid, Spain, Sept.  1994.
+	       Springer-Verlag.
 
 
 	printing routines for some areas
@@ -44,10 +75,15 @@ This module provides
 		print_tr
 		print_all: does all of the above
 	some - maybe all - of these were somewhere in the system already
-		but didn't comply to my needs
+		but weren't entirely what we needed
 
-*/
 
+Todo:
+        adapt the gc's to SLG-WAM
+	provide a decent user interface to the gc
+	integrate with compiler
+
+****************************************************************************/
 
 /* configs/config.h must be the first #include.  Please don't move it. */
 #include "configs/config.h"
@@ -57,8 +93,6 @@ This module provides
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/stat.h>
-/* special.h must be included after sys/stat.h */
-#include "configs/special.h"
 
 #include "auxlry.h"
 #include "cell.h"
@@ -75,17 +109,83 @@ This module provides
 #include "xsberror.h"  /* xsb_exit() */
 #include "psc.h"       /* needed by "xmacro.h" */
 #include "xmacro.h"    /* Completion Stack and Subgoal Frame def's */
+#include "realloc.h"   /* Heap - ls reallocation macros */
+#include "chat.h"      /* CHAT related declarations */
 
+
+/* choose between copying or sliding collector */
+static int slide = 0;
+
+
+/* measuring fragmentation without collection - it also sets slide = 0 */
+static int fragmentation_only = 0;
+				      
+/* choose to do early reset in active computation or not */
+#define EARLY_RESET 1
+
+
+/* expresses how often early reset of a trailed heap cell occurs */
+static int heap_early_reset;
+
+/* expresses how often early reset of a trailed local stack cell occurs */
+static int ls_early_reset;
+
+
+/* ways to count gc and control the output during a gc */
 
 static int printnum = 0 ;
-static CPtr heap_bot,heap_top,ls_bot,ls_top,tr_bot,tr_top,cp_bot,cp_top ;
-static FILE *where ;
 static int num_gc = 0 ;
+
 static int print_at = 0 ; /* at the print_at-th gc, the stacks are printed */
-static int print_anyway = 0 ;
+static int print_after = 0 ; /* if non zero, print all after this numgc */
+static int print_anyway = 1 ;
 
-#define print_on_gc ((print_at == num_gc) || print_anyway)
+#define print_on_gc \
+        ((print_at == num_gc) \
+	 || ((print_after > 0) && (print_after <= num_gc)) \
+	 || print_anyway)
 
+
+/* if SAFE_GC is defined, some more checks are made after gc */
+/* #define SAFE_GC */
+
+
+/* if VERBOSE_GC is defined, gc prints its statistics */
+#define VERBOSE_GC
+
+
+/* global variables for top and bottom of some areas + macro to compute them */
+
+static CPtr heap_bot,heap_top,
+            ls_bot,ls_top,
+            tr_bot,tr_top,
+            cp_bot,cp_top,
+            compl_top, compl_bot;
+
+#define stack_boundaries \
+  heap_top = hreg; \
+  ls_top = top_of_localstk ; \
+  if (ls_top < heap_top) ls_top = heap_top ; \
+  heap_bot = (CPtr)glstack.low ; \
+  ls_bot = (CPtr)glstack.high - 1 ; \
+  tr_top = (CPtr)(top_of_trail) -1 ; \
+  tr_bot = (CPtr)tcpstack.low ; \
+  cp_bot = (CPtr)tcpstack.high - 1 ; \
+  cp_top = top_of_cpstack ; \
+  compl_top = (CPtr)complstack.high ; \
+  compl_bot = (CPtr)complstack.low ;
+
+
+#define points_into_heap(p) ((heap_bot <= p) && (p < heap_top))
+#define points_into_ls(p) ((ls_top <= p) && (p <= ls_bot))
+#define points_into_cp(p) ((cp_top <= p) && (p <= cp_bot))
+#define points_into_tr(p) ((tr_bot <= p) && (p <= tr_top))
+#define points_into_comp(p) ((compl_bot <= p) && (p <= compl_top))
+
+
+/* marker bits in different areas: the mark bit for the CHAT areas is
+   in the CHAT areas themselves - same for competion stack
+*/
 
 static char *heap_marks = NULL ;
 static char *ls_marks = NULL ;
@@ -98,81 +198,11 @@ static char *tr_marks = NULL ;
 #define h_marked(i) (heap_marks[i])
 #define h_mark(i) heap_marks[i] |= MARKED
 
-/*
-static void h_mark(int i)
-{
-	if ((num_gc == 12))
-		{ printf("%d\n",i) ;
-		  if (i == 53801) exit(0) ;
-		}
-	heap_marks[i] |= MARKED ;
-
-}
-*/
-
 #define ls_marked(i) (ls_marks[i])
 #define ls_mark(i) ls_marks[i] |= MARKED
 
-/*
- top_of_localstk is only right after the execution of a call/fail instruction.
- the over approximation made here is fine for stack expansion
-*/
-#define stack_boundaries \
-  heap_top = hreg; \
-  ls_top = top_of_localstk - 1024 ; \
-  if (ls_top < heap_top) ls_top = heap_top ; \
-  heap_bot = (CPtr)glstack.low ; \
-  ls_bot = (CPtr)glstack.high - 1 ; \
-  tr_top = (CPtr)(top_of_trail) ; \
-  tr_bot = (CPtr)tcpstack.low ; \
-  cp_bot = (CPtr)tcpstack.high - 1 ; \
-  cp_top = (bfreg < breg) ? bfreg : breg ; /* is this correct ? */
 
-#define FROM_NOWHERE 0
-#define FROM_LS 1
-#define FROM_CP 2
-#define FROM_TR 3
-#define FROM_AREG 4
-#define FROM_HEAP 5
 
-#define TO_NOWHERE 0
-#define TO_LS 1
-#define TO_CP 2
-#define TO_TR 3
-#define TO_AREG 4
-#define TO_HEAP 5
-
-#define realloc_ref(cell_pr, cell_val)                          \
-{       if (heap_bot <= cell_val)                               \
-        {   if( cell_val < heap_top)                            \
-                *cell_ptr = cell_val + heap_offset ;            \
-            else if( cell_val <= ls_bot )                       \
-                 *cell_ptr = cell_val + local_offset ;          \
-}       }
-
-#define reallocate_heap_or_ls_pointer(cell_ptr) 		\
-    cell_val = (Cell)*cell_ptr ; 				\
-    switch (cell_tag(cell_val)) 				\
-    { case REF: case REF1 : 					\
-        realloc_ref(cell_ptr,(CPtr)cell_val);                   \
-        break ; /* end case FREE or REF */ 			\
-      case CS : 						\
-        if( heap_bot <= (clref_val(cell_val)) &&		\
-                        (clref_val(cell_val)) < heap_top )      \
-            *cell_ptr = 					\
-		(CPtr)makecs((Cell)(clref_val(cell_val)+heap_offset)) ;\
-        break ; 						\
-      case LIST : 						\
-        if( heap_bot <= (clref_val(cell_val)) &&		\
-		        (clref_val(cell_val)) < heap_top )	\
-            *cell_ptr =						\
-		(CPtr)makelist((Cell)(clref_val(cell_val)+heap_offset));\
-        break ; 						\
-      default : /* no need to reallocate */ 			\
-        break ; 						\
-    }
-
-void print_heap(int, int,int) ;
 void print_all() ;
 
 static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
@@ -195,13 +225,15 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 		return((CPtr)cell) ;
 	}
 
-      if ((heap_bot <= retp) && (retp < heap_top)) *whereto = TO_HEAP ;
+      if (points_into_heap(retp)) *whereto = TO_HEAP ;
 	else
-      if ((tr_bot <= retp) && (retp <= tr_top)) *whereto = TO_TR ;
+      if (points_into_tr(retp)) *whereto = TO_TR ;
         else
-      if ((ls_top <= retp) && (retp <= ls_bot)) *whereto = TO_LS ;
+      if (points_into_ls(retp)) *whereto = TO_LS ;
         else
-      if ((cp_top <= retp) && (retp <= cp_bot)) *whereto = TO_CP ;
+      if (points_into_cp(retp)) *whereto = TO_CP ;
+        else
+      if (points_into_comp(retp)) *whereto = TO_COMPL ;
         else *whereto = TO_NOWHERE ;
       return(retp) ;
 
@@ -225,12 +257,28 @@ static char * pr_ls_marked(CPtr cell_ptr)
   if (ls_marked(i) == CHAIN_BIT) return("chained") ;
   if (ls_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
   return("not_m") ; 
-} /* pr_h_marked */ 
+} /* pr_ls_marked */ 
+
+static char * pr_cp_marked(CPtr cell_ptr) 
+{ int i ; 
+  i = cell_ptr - cp_top ;
+  if (cp_marks == NULL) return("not_m") ;
+  if (cp_marks[i]) return("chained") ;
+  return("not_m") ; 
+} /* pr_cp_marked */ 
+
+static char * pr_tr_marked(CPtr cell_ptr) 
+{ int i ; 
+  i = cell_ptr - tr_top ;
+  if (tr_marks == NULL) return("not_m") ;
+  if (tr_marks[i]) return("chained") ;
+  return("not_m") ; 
+} /* pr_tr_marked */ 
 
 /* mark_cell keeps an explicit stack
    marking without using such a stack, as in SICStus, should not be considered
    it is nice, but slower and more prone to errors
-   recursive marking is the only aternative in my opinion, but one can
+   recursive marking is the only alternative in my opinion, but one can
    construct too easely examples that overflow the C-stack
 */
 
@@ -247,7 +295,7 @@ static int mark_cell(CPtr cell_ptr)
 
     m = 0 ;
 mark_more:
-    if ((heap_bot > cell_ptr) || (cell_ptr >= heap_top)) /* defensive marking */
+    if (!points_into_heap(cell_ptr)) /* defensive marking */
 		goto pop_more ;
     i = cell_ptr - heap_bot ;
     if (h_marked(i)) goto pop_more ;
@@ -260,6 +308,7 @@ mark_more:
         if (p == cell_ptr) goto pop_more ;
 	cell_ptr = p ;
 	goto mark_more ;
+        break ;
 
       case CS :                     
         cell_ptr = ((CPtr)(cs_val(cell_val))) ;
@@ -275,6 +324,7 @@ mark_more:
 		}
 	else while (--arity) push_to_mark(++p) ;
 	goto mark_more ;
+        break ;
 
       case LIST :
         cell_ptr = clref_val(cell_val) ;
@@ -282,6 +332,7 @@ mark_more:
         	{ m += mark_cell(cell_ptr+1) ; }
         else push_to_mark(cell_ptr+1) ;
 	goto mark_more ;
+        break ;
 
       case INT :
       case FLOAT :
@@ -289,8 +340,9 @@ mark_more:
 	goto pop_more ;
 
       default :
-        fprintf(stderr,"Unknown tag on heap during marking %ld\n",(Cell)cell_val) ; 
+        fprintf(stderr,"Unknown tag on heap during marking %ld\n",(Cell)cell_val) ; /* JF: long */
 	return(0) ;
+        break ;
     }
 pop_more:
     if (mark_top--)
@@ -305,10 +357,10 @@ static int mark_root(Cell cell_val)
   int tag, whereto ;
   Cell v ;
 
-/* this is one of the places to be defensive while marking: and uninitialised */
-/* cell in the ls, can point to a Psc; the danger is not in following the Psc */
-/* and marking something outside of the heap: mark_cell takes care of that;   */
-/* the dangerous thing is to mark the cell with the Psc on the heap without   */
+/* this is one of the places to be defensive while marking: an uninitialised */
+/* cell in the ls can point to a Psc; the danger is not in following the Psc */
+/* and mark something outside of the heap: mark_cell takes care of that; the */
+/* dangerous thing is to mark the cell with the Psc on the heap without      */
 /* marking all its arguments */
 
     if (cell_val == 0) return(0) ;
@@ -325,16 +377,18 @@ static int mark_root(Cell cell_val)
 
       case CS : 
         cell_ptr = ((CPtr)(cs_val(cell_val))) ;
-        if ((heap_bot > cell_ptr) || (cell_ptr > heap_top)) return(0) ;
+        if (!points_into_heap(cell_ptr)) return(0) ;
         i = cell_ptr - heap_bot ; 
         if (h_marked(i)) return(0) ; 
 	/* now check that at i, there is a Psc */
 	v = *cell_ptr ;
 	p = pointer_from_cell(v,&tag,&whereto) ;
+	/* v must be a PSC - the following tries to test this */
 	switch (tag)
 	{ case REF: case REF1 :
 		if (whereto != TO_NOWHERE) return(0) ;
 		break ;
+		/* default: return(0); */
 	}
         h_mark(i) ; m = 1 ; 
         cell_val = *cell_ptr;
@@ -345,7 +399,7 @@ static int mark_root(Cell cell_val)
       case LIST :
 	/* the 2 cells will be marked iff neither of them is a Psc */
         cell_ptr = clref_val(cell_val) ;
-        if ((heap_bot > cell_ptr) || (cell_ptr > heap_top)) return(0) ;
+        if (!points_into_heap(cell_ptr)) return(0) ;
 	v = *cell_ptr ;
 	p = pointer_from_cell(v,&tag,&whereto) ;
 	switch (tag)
@@ -402,7 +456,300 @@ static int mark_query()
         e = (CPtr)e[0] ;
       }
       if (b >= (cp_bot-CP_SIZE)) return(total_marked) ;
-      a = cp_hreg(b) ;
+      a = tr ;
+      tr = (CPtr)cp_trreg(b) ;
+      while (a-- > tr)
+        { /* a[0] == & trailed cell */
+          trailed_cell = (CPtr)a[0] ;
+          if (points_into_heap(trailed_cell))
+          	{ i = trailed_cell - heap_bot ;
+          	  if (! h_marked(i))
+		    {
+#if (EARLY_RESET == 1)
+			{
+			  h_mark(i) ;
+          		  total_marked++ ;
+          		  bld_free(trailed_cell); /* early reset */
+			  /* could do trail compaction now or later */
+			  heap_early_reset++;
+          		}
+#else
+			{
+			  total_marked += mark_root((Cell)trailed_cell);
+			}
+#endif
+		    }
+          	}
+          else
+          /* it must be a ls pointer, but for safety we take into account between_h_ls */
+          if (points_into_ls(trailed_cell))
+          	{ i = trailed_cell - ls_top ;
+          	  if (! ls_marked(i))
+		    {
+#if (EARLY_RESET == 1)
+			{
+			  /* don't ls_mark(i) because we early reset
+			     so, it is not a heap pointer
+			     but marking would be correct */
+
+          		  bld_free(trailed_cell) ; /* early reset */
+          		  /* could do trail compaction now or later */
+			  ls_early_reset++;
+          		}
+#else
+                        { ls_mark(i) ;
+                          total_marked += mark_region(trailed_cell,trailed_cell);
+                        }
+#endif
+                    }
+         	}
+        }
+
+      /* mark the arguments in the choicepoint */
+      /* the choicepoint can be a consumer, a generator or ... */
+
+      /* need help from Kostis here */
+      /* the code for non-tabled choice points is ok */
+      /* for all other cps - check that
+	   (1) the saved arguments are marked
+	   (2) the substitution factor is marked
+      */
+
+      if (is_generator_choicepoint(b))
+      	   { /* mark the arguments */
+	     total_marked += mark_region(b+CP_SIZE,(CPtr)tcp_prevbreg(b)-1) ;
+	     /* mark the substitution factor later */
+	   }
+      else if (is_consumer_choicepoint(b))
+	{ /* mark substitution factor */
+	  /* substitution factor is now in the choicepoint for consumers */
+	  total_marked += mark_region(b+NLCPSIZE+1,b+NLCPSIZE+ (*(b+NLCPSIZE)));
+	}
+      else { CPtr endregion, beginregion ;
+             endregion = (CPtr)cp_prevbreg(b)-1;
+	     beginregion = b+CP_SIZE;
+	     /*	     if (cell_opcode(*b) == trie_trust_var)
+	       {
+		 fprintf(stderr,"here we are\n");
+		 } */
+	     total_marked += mark_region(beginregion,endregion) ;
+           }
+
+      e = cp_ereg(b) ;
+      cp = cp_cpreg(b) ;
+      b = cp_prevbreg(b) ;
+    }
+
+} /* mark_query */
+
+/*----------------------------------------------------------------------*/
+
+#ifdef CHAT
+
+static int chat_mark_trail(CPtr *tr,int trlen)
+{ int m = 0;
+  CPtr trailed_cell ;
+  int i,j;
+
+  /* mark trail: both address and value - do cautious early reset */
+
+  while (trlen)
+    { 
+      if (trlen > sizeof(CPtr))
+	{ trlen -= sizeof(CPtr); j = sizeof(CPtr)>>1 ; }
+      else { j = trlen>>1; trlen = 0; }
+      while (j--)
+	{ 
+	  /* mark address */
+	  trailed_cell = *tr;
+	  tr++;
+	  if (points_into_heap(trailed_cell))
+	    { i = trailed_cell - heap_bot ;
+	      if (! h_marked(i))
+		{ h_mark(i) ; /* it is correct to mark this cell, because the
+				 value is also marked
+				 avoiding to mark the cell would make chat
+				 trail compaction necessary
+			      */
+#if (EARLY_RESET == 1)
+		  *tr = (CPtr)makeint(888);
+		  heap_early_reset++;
+#endif
+		  m++ ;
+		}
+	    }
+	  else
+	    /* it must be a ls pointer, but we check between_h_ls */
+	    if (points_into_ls(trailed_cell))
+	      { i = trailed_cell - ls_top ;
+	        if (! ls_marked(i))
+		  {
+		    /* it is possible to come here:
+		       in SLG-WAM (and CHAT) there might exist envs
+		       that are not reachable from anywhere and some
+		       CHAT trail pointer might point into it
+		       as example (maybe not simplest):
+		       :- table g/1.
+
+		       g(X) :- a, g(Y).
+		       g(_) :- gc_heap.
+
+		       a :- b(X), p(X), use(X).
+		       
+		       p(17).
+		       
+		       use(_).
+		       
+		       b(_).
+		       b(_) :- fail.
+		    */
+#if (EARLY_RESET == 1)
+		    *tr = (CPtr)makeint(999);
+		    ls_early_reset++;
+#endif
+		  }
+	      }
+
+	  /* mark value */
+	  m += mark_root((Cell)(*tr));
+	  tr++;
+	}
+      tr++; /* skip chain bits */
+    }
+
+  return(m);
+} /* chat_mark_trail */
+
+static int chat_mark_region(CPtr b, int len)
+{ int m = 0;
+  int j;
+
+  while (len)
+    {
+      if (len > sizeof(CPtr))
+        { len -= sizeof(CPtr); j = sizeof(CPtr) ; }
+      else { j = len; len = 0; }
+      while (j--)
+        {
+          m += mark_root(*b);
+          b++;
+        }
+      b++; /* skip chain bits */
+    }
+
+  return(m); 
+} /* chat_mark_region */
+
+/*
+chat_mark_frozen_parts: see ISMM'98 paper for more understanding
+for CHAT it means:
+         mark the environment chain starting from the consumer
+	 then mark the trail in the chat areas of this consumer
+	          but be careful with early reset
+	 since the failure continuations of a consumer are always also
+	 failure continuations of the active computation, there is no
+	 need to mark the failure continuations of the consumer
+*/
+
+static int chat_mark_frozen_parts()
+{ int m ;
+  chat_init_pheader initial_pheader;
+  chat_incr_pheader pheader;
+  CPtr b,e,*tr;
+  byte *cp;
+  int i,trlen,yvar;
+
+  m = 0;
+  initial_pheader = chat_link_headers;
+  if (initial_pheader != NULL)
+  do
+    {
+      b = (CPtr)chat_get_args_start(initial_pheader);
+      /* marking of argument registers from consumer */
+      m += chat_mark_region(b,chat_get_nrargs(initial_pheader));
+
+      /* marking of heap pointer from consumer is unnecessary */
+      /* as consumer gets hreg from its scheduler             */
+
+      /* mark from the consumer the environment chain */
+      /* it is enough to do that until the e of the leader of the consumer */
+      /* we do it all the way up for now */
+
+      b = (CPtr)(&chat_get_cons_start(initial_pheader));
+      e = cp_ereg(b);
+      cp = cp_cpreg(b);
+
+      while ((e < ls_bot) && (cp != NULL))
+	{ if (ls_marked(e - ls_top)) break ;
+          ls_mark(e - ls_top) ;
+	  yvar = *(cp-5) - 1 ;
+	  m += mark_region(e-yvar,e-2) ;
+	  i = (e-2) - ls_top ;
+	  while (yvar-- > 1) ls_mark(i--) ;
+	  cp = (byte *)e[-1] ;
+	  e = (CPtr)e[0] ;
+	}
+
+      /* now mark the CHAT trail */
+      pheader = chat_get_father(initial_pheader);
+      while ((pheader != NULL) && (! chat_area_imarked(pheader)))
+	{
+	  chat_imark_area(pheader);
+	  tr = chat_get_tr_start(pheader);
+	  trlen = chat_get_tr_length(pheader);
+	  m += chat_mark_trail(tr,trlen);
+
+	  pheader = chat_get_ifather(pheader);
+	}
+      initial_pheader = initial_pheader->next_header;
+    }
+  while (initial_pheader != chat_link_headers);
+
+  return(m) ;
+
+} /* chat_mark_frozen_parts */
+
+static int chat_mark_substitution_factor()
+{ int m ;
+
+  m = 0;
+  /* mark the substitution factor starting from the completion stack */
+
+  { CPtr compl_fr;
+    SGFrame subgptr ;
+    CPtr region_to_mark;
+    int CallNumVar;
+
+    compl_fr = openreg;
+    while (compl_fr != COMPLSTACKBOTTOM)
+      { subgptr = compl_subgoal_ptr(compl_fr) ;
+	/* substitution factor is now in the heap for generators */
+        region_to_mark = compl_hreg(compl_fr);
+	CallNumVar = int_val(cell(region_to_mark))+1;
+	while (CallNumVar--)
+	  m += mark_cell(region_to_mark--);
+	compl_fr = prev_compl_frame(compl_fr);
+      }
+  }
+
+  return(m) ;
+
+} /* chat_mark_substitution_factor */
+
+#endif
+
+static int mark_hreg_from_choicepoints()
+{ CPtr b,bprev,a;
+  int i,m;
+
+  /* this has to happen after all other marking ! */
+  /* but there is no need to do it for a copying collector */
+
+  b = breg;
+  bprev = 0;
+  m = 0;
+  while (b != bprev)
+    { a = cp_hreg(b) ;
       i = a - heap_bot ;
       if (! h_marked(i)) /* h from choicepoint should point to something that
       				is marked; if not, mark it now and set it
@@ -410,110 +757,38 @@ static int mark_query()
       				although a bit scary :-)
       			  */
           { h_mark(i) ;
-            total_marked++ ;
+            m++ ;
             *a = makeint(666) ;
           }
-      a = tr ;
-      tr = (CPtr)cp_trreg(b) ;
-      while (a > tr)
-        { /* a[0]a == prev cell; a[-1] == new value; a[-2] == & trailed cell */
-          trailed_cell = (CPtr)a[-2] ;
-          if ((heap_bot <= trailed_cell) && (trailed_cell < heap_top))
-          	{ i = trailed_cell - heap_bot ;
-          	  if (! h_marked(i))
-          		{ h_mark(i) ;
-          		  total_marked++ ;
-          		  *trailed_cell = (Cell)trailed_cell ; /* early reset */
-          		  a[-1] = (Cell)trailed_cell ;
-          		}
-          	}
-          else
-          /* it must be a ls pointer, but since the trail is traversed
-             context free, one has to take into account between_h_ls
-          */
-          if ((ls_top <= trailed_cell) && (trailed_cell <= ls_bot))
-          	{ i = trailed_cell - ls_top ;
-          	  if (! ls_marked(i))
-          		{ ls_mark(i) ; /* do not update total_marked */
-          		  *trailed_cell = (Cell)trailed_cell ; /* early reset */
-          		  a[-1] = (Cell)trailed_cell ;
-          		}
-         	}
-
-          a = (CPtr)a[0] ;
-        }
-
-#ifdef MARK_QUERY_NEEDED
-      if (*b == (Cell)pretry_active_inst)/* not nice neither correct :-) */
-      	   total_marked += mark_region(b+CP_SIZE,(CPtr)nlcp_prevbreg(b)-1) ;
-      else total_marked += mark_region(b+CP_SIZE,(CPtr)cp_prevbreg(b)-1) ;
-#endif
-
-      e = cp_ereg(b) ;
-      cp = cp_cpreg(b) ;
-      b = cp_prevbreg(b) ;
+      bprev = b; b = cp_prevbreg(b);
     }
 
+  return(m);
+} /* mark_hreg_from_choicepoints */
 
-} /* mark_query */
+static void adapt_hreg_from_choicepoints(CPtr h)
+{ CPtr b, bprev;
 
-/*
-	mark_frozen_parts is not yet completely understood by the author
-	one way to do it is
-		for each active subgoal
-			re-install it
-			do usual marking
-			de-install it
-	I had hoped that this would be possible reusing code from XSB
-	because that would allow early reset also inside the frozen parts
-	but it turns out that this *-installing business is partly hidden
-	and als relies on invariants which are not true at the moment of gc;
-	for instance, the top choicepoint is not an ASF, neither is it
-	more recent than any environment
+  /* only after copying collection */
 
-	so, I have decided for the moment to implement this:
-		for each active subgoal
-			mark its frozen tr part
-			mark its frozen ls part
-			mark its frozen choicepoint
-	and forget about early reset at the moment - seems like this is the
-	only thing that is lost
+  b = breg;
+  bprev = 0;
+  while (b != bprev)
+    { cp_hreg(b) = h;
+      bprev = b; b = cp_prevbreg(b);
+    }
 
-	another alternative - I will experiment with it first - is to just
-	mark everything remaining ...
-*/
-
-static int mark_frozen_parts()
-{ int m ;
-
-	m = mark_region(tr_bot,tr_top) ;
-	m += mark_region(ls_top,ls_bot) ;
-	m += mark_region(cp_top,cp_bot) ;
-	return(m) ;
-
-} /* mark_frozen_parts */
+} /* adapt_hreg_from_choicepoints */
 
 
-int mark_heap(int arity)
+int mark_heap(int arity, int num_var_regs, int num_reg_array)
 { int marked ;
-
-  /* first make sure the heap pointer that might not point into heap, does */
-  if (hreg == cp_hreg(breg))
-	{ *hreg = makeint(666) ;
-	  hreg++ ;
-	}
-
-  /* copy the aregs to the top of the heap */
-  for (marked = 1; marked <= arity; marked++ )
-  	*hreg++ = reg[marked] ;
 
   stack_boundaries ;
 
-#ifdef STACKS_DEBUG
-  if (print_on_gc) print_all() ;
-#endif
+if (print_on_gc) print_all() ;
 
-  heap_marks = calloc(heap_top - heap_bot,1) ;
+  heap_marks = ((char *)calloc(heap_top - heap_bot+2,1)) + 1 ;  /* see its free */
   ls_marks = calloc(ls_bot - ls_top + 1,1) ;
   cp_marks = calloc(cp_bot - cp_top + 1,1) ;
   tr_marks = calloc(tr_top - tr_bot + 1,1) ;
@@ -522,16 +797,35 @@ int mark_heap(int arity)
   		|| (cp_marks == NULL) || (tr_marks == NULL))
 	xsb_exit("Not enough core to mark heap") ;
 
-  marked = mark_region(reg+1,reg+arity) + arity ;
-  while (arity > 0)
-  	h_mark((heap_top - arity--)-heap_bot) ;
+  marked = mark_region(reg+1,reg+arity) ;
+  if (islist(delayreg))
+    marked += mark_root((Cell)delayreg);
+#ifdef TRIE_CP_MARKING_NEEDED
+  marked += mark_region((CPtr)var_regs,(CPtr)var_regs+num_var_regs-1) ;
+  marked += mark_region((CPtr)reg_array,(CPtr)reg_array+num_reg_array-1) ;
+#endif
+
+  if (slide)
+    { int put_on_heap;
+      put_on_heap = arity+num_var_regs+num_reg_array;
+      marked += put_on_heap;
+      while (put_on_heap > 0)
+	h_mark((heap_top - put_on_heap--)-heap_bot) ;
+    }
+
+#ifdef CHAT
+  marked += chat_mark_substitution_factor() ;
+#endif
+
   marked += mark_query() ;
 
-  marked += mark_frozen_parts() ;
-
-#ifdef STACKS_DEBUG
-  if (print_on_gc) print_all() ;
+#ifdef CHAT
+  marked += chat_mark_frozen_parts() ;
 #endif
+
+  marked += mark_hreg_from_choicepoints();
+
+if (print_on_gc) print_all() ;
 
   return(marked) ;
 } /* mark_heap */
@@ -541,7 +835,7 @@ static char *code_to_string(byte *pc)
 	return((char *)(inst_table[*pc][0])) ;
 } /* code_to_string */
 
-static void print_cell(CPtr cell_ptr,int fromwhere)
+static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
 { Integer index = 0 ;
   Cell cell_val ;
   CPtr p ;
@@ -552,18 +846,26 @@ static void print_cell(CPtr cell_ptr,int fromwhere)
     index = (Integer)cell_val ;
     if ((-258 < index) && (index < 258))
 	{ if (index == 0)  fprintf(where,"null,0).\n") ;
-		else fprintf(where,"untagged,%ld).\n", (long) index) ;
+		else fprintf(where,"untagged,%d).\n",index) ;
 	  return ;
 	}
-    if (fromwhere == FROM_CP) heap_top++ ;
+
+    if (index == 0)  { fprintf(where,"null,0).\n") ; return; }
+
+
+    if (fromwhere == FROM_CP) heap_top++ ; /* because the hreg in a CP
+					      can be equal to heap_top
+					      and pointer_from_cell tests
+					      for strict inequality */
     p = pointer_from_cell(cell_val,&tag,&whereto) ;
     if (fromwhere == FROM_CP) heap_top-- ;
     switch (whereto)
 	{ case TO_HEAP : index = p - heap_bot ; s = "ref_heap" ; break ;
-	  case TO_NOWHERE : index = p - heap_bot ; s = "ref_nowhere" ; break ;
+	  case TO_NOWHERE : index = (int)p ; s = "ref_nowhere" ; break ;
 	  case TO_LS : index = ls_bot - p ; s = "ref_ls" ; break ;
 	  case TO_CP : index = cp_bot - p ; s = "ref_cp" ; break ;
 	  case TO_TR : index = p - tr_bot ; s = "ref_tr" ; break ;
+	  case TO_COMPL : index = p - compl_bot ; s = "ref_compl" ; break ;
 	}
     switch (tag)
     { case REF : case REF1 :
@@ -576,18 +878,19 @@ static void print_cell(CPtr cell_ptr,int fromwhere)
 	   case TO_LS :
 	   case TO_TR :
 	   case TO_CP :
-		fprintf(where,"%s,%ld).\n",s, (long) index) ;
+		fprintf(where,"%s,%d).\n",s,index) ;
+		break ;
+	   case TO_COMPL :
+		fprintf(where,"%s,%d).\n",s,index) ;
 		break ;
 	   case TO_NOWHERE:
-		if ((heap_top <= p) && (p < ls_top))
+		if (points_into_heap(p))
 			{ index = (p-heap_bot) ;
-			  fprintf(where,"between_h_ls,%ld/%ld,_) .\n",
-				  (long) index, (long) (ls_bot-p)) ;
+			  fprintf(where,"between_h_ls,%d/%p,_) .\n",index,p) ;
 			}
 		else
-		if ((Integer)cell_val < 10000) 
-			fprintf(where,"strange,%ld).\n", 
-				(long)cell_val) ;
+		if ((Integer)cell_val < 10000)
+			fprintf(where,"strange,%d).\n",(Integer)cell_val) ;
 		else
 		if (fromwhere == FROM_HEAP)
 			fprintf(where,"funct,'%s'/%d).\n",
@@ -596,34 +899,36 @@ static void print_cell(CPtr cell_ptr,int fromwhere)
 		else
 		if ((fromwhere == FROM_LS) || (fromwhere == FROM_CP))
 			{ char *s ;
-			  s = code_to_string((byte *)cell_val) ;
-			  if (s == NULL)
-			    fprintf(where,"code,%ld).\n",
-				    (long)cell_val) ; 
-			  else  
-			    fprintf(where,"code,%ld-%s).\n",
-				    (long)cell_val,s) ; 
+			  if ((tr_bot < (CPtr)cell_val) && ((CPtr)cell_val < cp_bot))
+			      fprintf(where,"between_trail_cp,%d).\n",(Integer)cell_val) ;
+			  else
+			    {
+			      s = code_to_string((byte *)cell_val) ;
+			      if (s == NULL)
+				fprintf(where,"dont_know,%d).\n",(Integer)cell_val) ;
+			      else  fprintf(where,"code,%d-%s).\n",(Integer)cell_val,s) ;
+			    }
 			}
-		else fprintf(where,"strange_ref,%ld).\n",(long)cell_val) ;
+		else fprintf(where,"strange_ref,%d).\n",(Integer)cell_val) ;
 		break ;
 	  }
 	}
 	break ;
 
       case CS :
-        fprintf(where,"cs-%s,%ld).\n",s, (long) index) ;
+        fprintf(where,"cs-%s,%d).\n",s,index) ;
         break ;
 
       case LIST :
-        fprintf(where,"list-%s,%ld).\n",s, (long) index) ;
+        fprintf(where,"list-%s,%d).\n",s,index) ;
         break ;
 
       case INT :
-        fprintf(where,"int  ,%ld).\n", (long) int_val(cell_val)) ;
+        fprintf(where,"int  ,%d).\n",int_val(cell_val)) ;
         break ;
 
       case FLOAT :
-        fprintf(where,"float,%.5g).\n", float_val((Integer)cell_val)) ;
+        fprintf(where,"float,%.5g).\n",float_val((Integer)cell_val)) ;
         break ;
 
       case STRING :
@@ -632,7 +937,7 @@ static void print_cell(CPtr cell_ptr,int fromwhere)
         break ;
 
       default :
-        fprintf(where,"strange,%ld).\n",(long)cell_val) ; 
+        fprintf(where,"strange,%d).\n",(Integer)cell_val) ;
         break ;
     }
 
@@ -642,10 +947,15 @@ void print_heap(int start, int end, int add)
 {
   CPtr startp, endp ;
   char buf[100] ;
+  FILE *where ;
 
   sprintf(buf,"HEAP%d",printnum) ;
   printnum += add ;
   where = fopen(buf,"w") ;
+  if (! where)
+    { fprintf(stderr,"could not open HEAP%d\n",printnum);
+      return;
+    }
   stack_boundaries ;
 
   if (start < 0) start = 0 ;
@@ -654,8 +964,8 @@ void print_heap(int start, int end, int add)
   if (endp > heap_top) endp = heap_top ;
 
   while ( startp < endp )
-  { fprintf(where,"heap(%6d,%s,",start,pr_h_marked(startp)) ;
-    print_cell(startp,FROM_HEAP) ;
+  { fprintf(where,"heap('%p',%6d,%s,",startp,start,pr_h_marked(startp)) ;
+    print_cell(where,startp,FROM_HEAP) ;
     startp++ ; start++ ;
   }
 
@@ -667,10 +977,15 @@ void print_ls(int add)
   CPtr startp, endp ;
   char buf[100] ;
   int start ;
+  FILE *where ;
 
   sprintf(buf,"LS%d",printnum) ;
   printnum += add ;
   where = fopen(buf,"w") ;
+  if (! where)
+    { fprintf(stderr,"could not open LS%d\n",printnum);
+      return;
+    }
   stack_boundaries ;
 
   start = 1 ;
@@ -679,7 +994,7 @@ void print_ls(int add)
 
   while ( startp >= endp )
   { fprintf(where,"ls(%6d,%s,",start,pr_ls_marked(startp)) ;
-    print_cell(startp,FROM_LS) ;
+    print_cell(where,startp,FROM_LS) ;
     startp-- ; start++ ;
   }
 
@@ -691,15 +1006,19 @@ void print_cp(int add)
   CPtr startp, endp ;
   char buf[100] ;
   int start ;
+  FILE *where ;
 
   sprintf(buf,"CP%d",printnum) ;
   printnum += add ;
   where = fopen(buf,"w") ;
+  if (! where)
+    { fprintf(stderr,"could not open CP%d\n",printnum);
+      return;
+    }
   stack_boundaries ;
 
 /*
 fprintf(where," retry_active_inst = %d\n", pretry_active_inst);
-fprintf(where," completion_suspension_inst = %d\n", pcompletion_suspension_inst);
 fprintf(where," check_complete_inst = %d\n", pcheck_complete_inst);  
 fprintf(where," hash_handle_inst = %d\n",phash_handle_inst); 
 fprintf(where," fail_inst = %d\n", pfail_inst);
@@ -712,8 +1031,9 @@ fprintf(where," proceed_inst = %d\n", pproceed_inst);
   endp = cp_top ;
 
   while ( startp >= endp )
-  { fprintf(where,"cp(%6d,",start) ;
-    print_cell(startp,FROM_CP) ;
+  { fprintf(where,"cp(%6d,%s,",start,pr_cp_marked(startp)) ;
+    print_cell(where,startp,FROM_CP) ;
+    fflush(where);
     startp-- ; start++ ;
   }
 
@@ -724,12 +1044,17 @@ void print_tr(int add)
 {
   CPtr startp, endp ;
   int start ;
+  FILE *where ;
 
   char buf[100] ;
 
   sprintf(buf,"TRAIL%d",printnum) ;
   printnum += add ;
   where = fopen(buf,"w") ;
+  if (! where)
+    { fprintf(stderr,"could not open TRAIL%d\n",printnum);
+      return;
+    }
   stack_boundaries ;
 
   startp = tr_bot ;
@@ -737,8 +1062,8 @@ void print_tr(int add)
   start = 0 ;
 
   while ( startp <= endp )
-  { fprintf(where,"trail(%6d,",start) ;
-    print_cell(startp,FROM_TR) ;
+  { fprintf(where,"trail(%6d,%s,",start,pr_tr_marked(startp)) ;
+    print_cell(where,startp,FROM_TR) ;
     startp++ ; start++ ;
   }
 
@@ -749,12 +1074,17 @@ void print_regs(int a,int add)
 {
   CPtr startp, endp ;                                                     
   int start ;                                                             
+  FILE *where ;
 
   char buf[100] ;                                                         
 
   sprintf(buf,"REGS%d",printnum) ;                                       
   printnum += add ;
-  where = fopen(buf,"w") ;                                                
+  where = fopen(buf,"w") ;
+  if (! where)
+    { fprintf(stderr,"could not open REGS%d\n",printnum);
+      return;
+    }
   stack_boundaries ;      
 
   startp = reg+1 ;                                                       
@@ -763,41 +1093,132 @@ void print_regs(int a,int add)
 
   while ( startp <= endp )                                              
   { fprintf(where,"areg(%6d,",start) ;
-    print_cell(startp,FROM_AREG) ;                              
+    print_cell(where,startp,FROM_AREG) ;                              
     startp++ ; start++ ;                   
   }                                                                       
 
-  fprintf(where,"trreg = %ld\n", (long) ((CPtr)trreg-tr_bot)) ;
-  fprintf(where,"breg = %ld\n", (long) (cp_bot-breg)) ;
-  fprintf(where,"hreg = %ld\n", (long) (hreg-heap_bot)) ;
-  fprintf(where,"ereg = %ld\n", (long) (ls_bot-ereg)) ;
+  fprintf(where,"trreg = %d\n",(CPtr)trreg-tr_bot) ;
+  fprintf(where,"breg = %d\n",cp_bot-breg) ;
+  fprintf(where,"hreg = %d\n",hreg-heap_bot) ;
+  fprintf(where,"ereg = %d\n",ls_bot-ereg) ;
 
-  fprintf(where,"trfreg = %ld\n", (long) ((CPtr)trfreg-tr_bot)) ;
-  fprintf(where,"bfreg = %ld\n", (long) (cp_bot-bfreg)) ;
-  fprintf(where,"hfreg = %ld\n", (long) (hfreg-heap_bot)) ;
-  fprintf(where,"efreg = %ld\n", (long) (ls_bot-efreg)) ;
+#if (!defined(CHAT))
+  fprintf(where,"trfreg = %d\n",(CPtr)trfreg-tr_bot) ;
+  fprintf(where,"bfreg = %d\n",cp_bot-bfreg) ;
+  fprintf(where,"hfreg = %d\n",hfreg-heap_bot) ;
+  fprintf(where,"efreg = %d\n",ls_bot-efreg) ;
+#endif
   fprintf(where,"ptcpreg - %ld\n",(Cell)ptcpreg) ;
 
-  fprintf(where,"ebreg = %ld\n", (long) (ls_bot-ebreg)) ;
-  fprintf(where,"hbreg = %ld\n", (long) (hbreg-heap_bot)) ;
+  fprintf(where,"ebreg = %d\n",ls_bot-ebreg) ;
+  fprintf(where,"hbreg = %d\n",hbreg-heap_bot) ;
 
   fprintf(where,"cpreg - %ld\n",(Cell)cpreg) ;
   fprintf(where,"pcreg - %ld\n",(Cell)pcreg) ;
 
+  if (islist(delayreg))
+    {
+      fprintf(where,"delayreg(");
+      print_cell(where,(CPtr)(&delayreg),FROM_AREG);
+    }
+  else fprintf(where,"delayreg = %ld\n",(Cell)delayreg);
 
   fclose(where) ;
 
 } /* print_regs */
 
+#ifdef CHAT
+
+void print_chat(int add)
+{
+  CPtr startp ;                                                     
+  FILE *where ;
+  chat_init_pheader initial_pheader;
+  chat_incr_pheader pheader;
+  char buf[100] ;                                                         
+  int i, j, len;
+
+  sprintf(buf,"CHAT%d",printnum) ;                                       
+  printnum += add ;
+  where = fopen(buf,"w") ;                                                
+  if (! where)
+    { fprintf(stderr,"could not open CHAT%d\n",printnum);
+      return;
+    }
+  stack_boundaries ;      
+
+  initial_pheader = chat_link_headers;
+  if (initial_pheader == NULL)
+    { fprintf(where,"no CHAT areas\n");
+      return;
+    }
+
+  do
+    { fprintf(where,"CHAT area - %p\n",initial_pheader);
+      fprintf(where,"--------------------\n");
+      fprintf(where,"Arguments\n");
+      fprintf(where,"--------------------\n");
+
+      startp = (CPtr)chat_get_args_start(initial_pheader);
+      len = chat_get_nrargs(initial_pheader);
+      i = 0;
+      while (len)
+	{ if (len > sizeof(CPtr))
+	    { j = sizeof(CPtr); len -= sizeof(CPtr); }
+	  else { j = len; len = 0; }
+	  while (j--)
+	    { fprintf(where,"chatargs('%p',%3d,%1d,",startp,i,chat_is_chained(startp));
+	      print_cell(where,startp,FROM_CP);
+	      startp++ ; i++;
+	    }
+	  startp++;
+	}
+
+      fprintf(where,"Trail\n");
+      pheader = chat_get_father(initial_pheader);
+      while (pheader != NULL)
+	{ fprintf(where,"increment %p marked = %d\n",pheader,chat_area_imarked(pheader));
+	   startp = (CPtr)chat_get_tr_start(pheader);
+	  len = chat_get_tr_length(pheader);
+
+	  i = 0;
+	  while (len)
+	    { if (len > sizeof(CPtr))
+	      { j = sizeof(CPtr); len -= sizeof(CPtr); }
+	    else { j = len; len = 0; }
+	    while (j--)
+	      { fprintf(where,"chattrail('%p',%3d,%1d,",startp,i,chat_is_chained(startp));
+	        print_cell(where,startp,FROM_CP);
+		startp++ ; i++;
+	      }
+	    startp++;
+	    }
+
+
+	  pheader = chat_get_ifather(pheader);
+	}
+      fprintf(where,"End CHAT area - %p\n\n\n",initial_pheader);
+      initial_pheader = initial_pheader->next_header;
+    }
+  while (initial_pheader != chat_link_headers);
+
+  fclose(where) ;
+
+} /* print_chat */
+
+#endif
 
 void print_all()
 {
-printnum++ ;
-print_heap(0,200000,0) ;
-print_ls(0) ;
-print_tr(0) ;
-print_cp(0) ;
-print_regs(10,0) ;
+    printnum++ ;
+    print_regs(10,0) ;
+    print_heap(0,200000,0) ;
+    print_ls(0) ;
+    print_tr(0) ;
+    print_cp(0) ;
+#ifdef CHAT
+    print_chat(0);
+#endif
 } /* print_all */
 
 /*
@@ -821,32 +1242,139 @@ print_regs(10,0) ;
                                 any pointing into the local stack).
 */
 
-void glstack_realloc(int new_size, int arity)
-{ CPtr new_heap_bot ;       /* bottom of new Global Stack area */
-  CPtr new_ls_bot ;         /* bottom of new Local Stack area */
 
-  long heap_offset ;         /* offsets between the old and new */
-  long local_offset ;        /* stack bottoms, measured in Cells */
+/*----------------------------------------------------------------------*/
+/* reallocation for CHAT areas                                          */
+/*----------------------------------------------------------------------*/
 
-  CPtr *cell_ptr ;
+#ifdef CHAT
+
+static void chat_relocate_region(CPtr *startp, int len,
+				 int heap_offset, int local_offset)
+{ int j;
   Cell cell_val ;
 
-  long new_size_in_bytes, new_size_in_cells ; /* what a mess ! */
-#ifdef STACKS_DEBUG
-  long expandtime ;
-#endif
+  while (len)
+    { 
+      if (sizeof(CPtr) > len)
+	       { j = len; len = 0; }
+	  else { j = sizeof(CPtr); len -= sizeof(CPtr); }
+
+	  while (j--)
+	    { reallocate_heap_or_ls_pointer(startp);
+	      startp++;
+	    }
+	  startp++;
+      }
+
+} /* chat_relocate_region */
+
+static void chat_relocate_all(CPtr heap_bot, int heap_offset,
+			      CPtr ls_bot, int local_offset)
+{ chat_init_pheader initial_pheader;
+  chat_incr_pheader pheader;
+  CPtr *b, *tr;
+  int i, trlen;
+  Cell cell_val ;
+
+  initial_pheader = chat_link_headers;
+  if (initial_pheader != NULL)
+  {
+  do
+    {
+      /* relocate the saved consumer choice points */
+      /* more refined traversal of choice point possible, but is it worth it ? */
+
+      b = (CPtr *)(&chat_get_cons_start(initial_pheader));
+      for (i = NLCPSIZE; i > 0; i--)
+	{ reallocate_heap_or_ls_pointer(b);
+	  b++;
+	}
+
+      /* relocate the argument registers from consumer */
+      b = (CPtr *)chat_get_args_start(initial_pheader);
+      chat_relocate_region(b,chat_get_nrargs(initial_pheader),heap_offset,local_offset);
+
+      /* relocate the CHAT trail */
+      /* this is more tricky than expected: the marks must be used:  */
+      /* a relocated pointer might point to the old area !           */
+      /* and the marks have to switched off as well at the end       */
+      pheader = chat_get_father(initial_pheader);
+      while ((pheader != NULL) && (! chat_area_imarked(pheader)))
+	{
+	  chat_imark_area(pheader);
+	  tr = chat_get_tr_start(pheader);
+	  trlen = chat_get_tr_length(pheader);
+	  chat_relocate_region(tr,trlen,heap_offset,local_offset);
+
+	  pheader = chat_get_ifather(pheader);
+	}
+      initial_pheader = initial_pheader->next_header;
+    }
+  while (initial_pheader != chat_link_headers);
+
+  initial_pheader = chat_link_headers;
+  do
+    {
+      /* here the marks are switched off */
+      pheader = chat_get_father(initial_pheader);
+      while ((pheader != NULL) && (chat_area_imarked(pheader)))
+        {
+          chat_iunmark_area(pheader);
+          pheader = chat_get_ifather(pheader);
+        }
+      initial_pheader = initial_pheader->next_header;
+    }
+  while (initial_pheader != chat_link_headers);
+  }
+
+  /* now relocate the SF heap pointers */
+
+  { CPtr compl_fr;
+    CPtr *p;
+
+    compl_fr = openreg;
+    while (compl_fr != COMPLSTACKBOTTOM)
+      { /* substitution factor is now in the heap for generators */
+	p = (CPtr *)(&compl_hreg(compl_fr));
+	reallocate_heap_or_ls_pointer(p);
+	compl_fr = prev_compl_frame(compl_fr);
+      }
+  }
+
+} /* chat_relocate_all */
+
+#endif /* CHAT */
+
+/*----------------------------------------------------------------------*/
+
+void glstack_realloc(int new_size, int arity)
+{ CPtr   new_heap_bot ;       /* bottom of new Global Stack area */
+  CPtr   new_ls_bot ;         /* bottom of new Local Stack area */
+
+  long   heap_offset ;        /* offsets between the old and new */
+  long   local_offset ;       /* stack bottoms, measured in Cells */
+
+  CPtr   *cell_ptr ;
+  Cell   cell_val ;
+
+  size_t new_size_in_bytes, new_size_in_cells ; /* what a mess ! */
+  long   expandtime ;
 
   if (new_size <= glstack.size) return ;
+#ifdef STACKS_DEBUG
+  fprintf(stderr,"Heap/Local Stack expansion - new size = %d  arity = %d\n",new_size,arity) ;
+#endif
+
+  expandtime = 1000*cpu_time() ;
 
   new_size_in_bytes = new_size*K ;
   new_size_in_cells = new_size_in_bytes/sizeof(Cell) ;
   		/* and let's hope K stays divisible by sizeof(Cell) */
 
-#ifdef STACKS_DEBUG
-  expandtime = 1000*cpu_time() ;
-/* print_anyway = 1 ; */
-  if (print_on_gc) print_all() ;
-#endif
+/*
+print_all() ;
+*/
 
   stack_boundaries ;
 
@@ -877,15 +1405,23 @@ void glstack_realloc(int new_size, int arity)
   /* Update the trailed variable pointers */
   for (cell_ptr = (CPtr *)top_of_trail - 1;
        cell_ptr > (CPtr *)tcpstack.low;
+#ifdef WAM_TRAIL
+       cell_ptr--)
+  { /* the address is the only thing */
+    cell_val = (Cell)*cell_ptr ;
+    realloc_ref(cell_ptr,(CPtr)cell_val) ;
+  }
+#else
        cell_ptr = cell_ptr - 2)
   { /* first the value */
-    reallocate_heap_or_ls_pointer(cell_ptr) ;
-
+    cell_val = (Cell)*cell_ptr ;
+    realloc_ref(cell_ptr,(CPtr)cell_val) ;
     /* now the address */
     cell_ptr-- ;
     cell_val = (Cell)*cell_ptr ;
     realloc_ref(cell_ptr,(CPtr)cell_val) ;
   }
+#endif
 
   /* Update the CP Stack pointers */
   for (cell_ptr = (CPtr *)top_of_cpstack;
@@ -900,43 +1436,45 @@ void glstack_realloc(int new_size, int arity)
     arity-- ;    
   }
 
-  /* Update the var_regs array */
-  for( arity = 0 ; arity < MaxTrieRegs ; arity++ )
-  { cell_ptr = (CPtr *)(var_regs+arity) ;
-    reallocate_heap_or_ls_pointer(cell_ptr) ;
-  }
-
-  hreg = (CPtr)hreg + heap_offset ;
-  hbreg = (CPtr)hbreg + heap_offset ;
-  hfreg = (CPtr)hfreg + heap_offset ;
-  ereg = (CPtr)ereg + local_offset ;
-  ebreg = (CPtr)ebreg + local_offset ;
-  efreg = (CPtr)efreg + local_offset ;
-
-  if( islist(delayreg) )
-      delayreg = (CPtr)makelist(clref_val(delayreg) + heap_offset);
+#ifdef CHAT
+  chat_relocate_all(heap_bot,heap_offset,ls_bot,local_offset); 
+#endif 
 
   /* Update the system variables */
   glstack.low = (byte *)new_heap_bot ;
   glstack.high = (byte *)(new_ls_bot + 1) ;
   glstack.size = new_size ;
 
-#ifdef STACKS_DEBUG
+  hreg = (CPtr)hreg + heap_offset ;
+  hbreg = (CPtr)hbreg + heap_offset ;
+#if (!defined(CHAT))
+  hfreg = (CPtr)hfreg + heap_offset ;
+#endif
+  ereg = (CPtr)ereg + local_offset ;
+  ebreg = (CPtr)ebreg + local_offset ;
+#if (!defined(CHAT))
+  efreg = (CPtr)efreg + local_offset ;
+#endif
+
+  if (islist(delayreg))
+    delayreg = (CPtr)makelist(clref_val(delayreg) + heap_offset);
+
   expandtime = 1000*cpu_time() - expandtime;
 
+#ifdef STACKS_DEBUG
   fprintf(stderr,"Heap/Local Stack expansion - finito in %ld msecs\n\n",
-          expandtime) ;
-
-/*  print_all() ; */
+	expandtime) ;
 #endif
+
+  /*  print_all() ;  */
 
 } /* glstack_realloc */
 
 
-/* from here to end of sweep_heap is code taken to some extent from
+/* from here to end of slide_heap is code taken to some extent from
    BinProlog and adapted to XSB - especially what concerns the
-   environments, but the BinProlog was also written originally
-   and solely by Bart Demoen
+   environments
+   the BinProlog gc was also written originally by Bart Demoen
 */
 
 
@@ -996,7 +1534,20 @@ static void unchain(CPtr hptr, CPtr destination)
 	  case TO_CP : continue_after_this = cp_is_chained(pointsto) ;
 			cp_set_unchained(pointsto) ;
 			break ;
-	  default : xsb_exit("whereto error during unchaining") ;
+#ifdef CHAT
+	  case TO_COMPL : continue_after_this = compl_is_chained(pointsto) ;
+			compl_set_unchained(pointsto) ;
+			break ;
+#endif
+	  default :
+#ifdef CHAT
+		/* we count on it being into a CHAT area - trail or arguments */
+	              continue_after_this = chat_is_chained(pointsto) ;
+		       chat_set_unchained(pointsto);
+#else
+		      xsb_exit("pointsto wrong space error during unchaining");
+#endif
+		       break;
 	}
 	*hptr = *pointsto ;
 	switch (tag)
@@ -1036,17 +1587,103 @@ static void swap_with_tag(CPtr p, CPtr q, int tag)
     }
 } /* swap_with_tag */
 
+/*----------------------------------------------------------------------*/
+
+#ifdef CHAT
+
+#ifdef SAFE_GC
+static void chat_check_zero_region(CPtr b, int len)
+{ int j;
+
+  /* no need to distinguish between trail or args  */
+
+  while (len)
+    { if (len > sizeof(CPtr))
+           { len -= sizeof(CPtr); j = sizeof(CPtr); }
+      else { j = len; len = 0; }
+      while (j--)
+	{ if (chat_is_chained(b))
+	     fprintf(stderr,"chain bit left in chat area\n");
+	  b++;
+	}
+      b++; /* skipping the chain bits */
+    }
+ 
+} /* chat_check_zero_region */
+
+static void chat_check_zero()
+{ 
+  chat_init_pheader initial_pheader;
+  chat_incr_pheader pheader;
+  int trlen;
+  CPtr b,*tr;
+  if (chat_link_headers == NULL) return;
+
+  initial_pheader = chat_link_headers;
+  do
+    {
+      b = (CPtr)chat_get_args_start(initial_pheader);
+      chat_check_zero_region(b,chat_get_nrargs(initial_pheader));
+
+      pheader = chat_get_father(initial_pheader);
+      while (pheader != NULL)
+	{ tr = chat_get_tr_start(pheader);
+	  trlen = chat_get_tr_length(pheader);
+	  chat_check_zero_region((CPtr)tr,trlen);
+	  pheader = chat_get_ifather(pheader);
+	}
+      initial_pheader = initial_pheader->next_header;
+    }
+  while (initial_pheader != chat_link_headers);
+
+} /* chat_check_zero */
+#else
+static void chat_check_zero()
+  {
+  } /* chat_check_zero */
+#endif
+
+
+static void chat_chain_region(CPtr b, int len)
+{ int whereto, tag, j ;
+  Cell contents;
+  CPtr q ;
+
+  /* no need to distinguish between trail or args chaining */
+
+  while (len)
+    { if (len > sizeof(CPtr))
+           { len -= sizeof(CPtr); j = sizeof(CPtr); }
+      else { j = len; len = 0; }
+      while (j--)
+	{ contents = cell(b);
+	  q = pointer_from_cell(contents,&tag,&whereto) ;
+	  if (whereto != TO_HEAP) { b++; continue ; }
+	  if (! h_marked(q-heap_bot)) { fprintf(stderr,"panic 17\n"); b++; continue ; }
+	  if (h_is_chained(q)) chat_set_chained(b) ;
+	  h_set_chained(q) ;
+	  swap_with_tag(b,q,tag) ;
+	  b++;
+	}
+      b++; /* skipping the chain bits */
+    }
+} /* chat_chain_region */
+
+#endif
+
+/*----------------------------------------------------------------------*/
 /*
-	sweep_heap: implements a sliding collector for the heap
+	slide_heap: implements a sliding collector for the heap
 	see: Algorithm of Morris / ACM paper by Appleby et al.
 	num_marked = number of marked heap cells
 	the relevant argument registers have been moved to the top of the heap
 		prior to marking
 */
 
-static CPtr sweep_heap(int num_marked)
+static CPtr slide_heap(int num_marked)
 { int whereto, tag ;
-  CPtr p, contents, q ;
+  Cell contents;
+  CPtr p, q ;
 
         /* chain external (to heap) pointers */      
 
@@ -1059,8 +1696,8 @@ static CPtr sweep_heap(int num_marked)
                 { CPtr endtr ;
                   endtr = tr_top ;
                   for (p = tr_bot; p <= endtr ; p++ )
-                  { contents = (CPtr)(*p) ;
-                    q = pointer_from_cell((Cell)contents,&tag,&whereto) ;
+                  { contents = cell(p) ;
+                    q = pointer_from_cell(contents,&tag,&whereto) ;
                     if (whereto != TO_HEAP) continue ;
 		    if (! h_marked(q-heap_bot)) continue ;
                     if (h_is_chained(q)) tr_set_chained(p) ;
@@ -1075,15 +1712,41 @@ static CPtr sweep_heap(int num_marked)
                 { CPtr endcp ;
                   endcp = cp_top ;
                   for (p = cp_bot; p >= endcp ; p-- )
-                  { contents = (CPtr)(*p) ;
-                    q = pointer_from_cell((Cell)contents,&tag,&whereto) ;
+                  { contents = cell(p) ;
+                    q = pointer_from_cell(contents,&tag,&whereto) ;
                     if (whereto != TO_HEAP) continue ;
-		    if (! h_marked(q-heap_bot)) continue ;
+		    if (! h_marked(q-heap_bot))
+		      { fprintf(stderr,"not marked from cp\n"); continue ; }
                     if (h_is_chained(q)) cp_set_chained(p) ;
                     h_set_chained(q) ;
                     swap_with_tag(p,q,tag) ;
                   }
                 }
+
+		/* chain the substitution factors reachable - for CHAT	    */
+		/* substitution factors of generators are in completion stack */
+		/* the substitution factors of the consumers are in the cps */
+		/* so they have just been chained already                   */
+#ifdef CHAT
+		{ CPtr compl_fr;
+
+		  compl_fr = openreg;
+		  while (compl_fr != COMPLSTACKBOTTOM)
+		    { /* substitution factor is now in the heap for generators */
+		      p = (CPtr)(&compl_hreg(compl_fr));
+		      contents = cell(p) ;
+		      q = pointer_from_cell(contents,&tag,&whereto) ;
+		      if (whereto != TO_HEAP)
+			fprintf(stderr,"bad heap pointer during chaining SF\n");
+		      if (! h_marked(q-heap_bot))
+			fprintf(stderr,"chain SF problem\n");
+		      if (h_is_chained(q)) compl_set_chained(p) ;
+		      h_set_chained(q) ;
+		      swap_with_tag(p,q,tag) ;
+		      compl_fr = prev_compl_frame(compl_fr);
+		    }
+		}
+#endif
 
 		/* chain local stack */
 		/* more precise traversal of local stack possible */
@@ -1093,8 +1756,8 @@ static CPtr sweep_heap(int num_marked)
                   for (p = ls_bot; p >= endls ; p-- )
                   { if (! ls_marked(p-ls_top)) continue ;
 	            ls_clear_mark(p) ; /* chain bit cannot be on yet */
-		    contents = (CPtr)(*p) ;
-                    q = pointer_from_cell((Cell)contents,&tag,&whereto) ;
+		    contents = cell(p) ;
+                    q = pointer_from_cell(contents,&tag,&whereto) ;
                     if (whereto != TO_HEAP) continue ;
 		    if (! h_marked(q-heap_bot)) continue ;
                     if (h_is_chained(q)) ls_set_chained(p) ;
@@ -1103,9 +1766,46 @@ static CPtr sweep_heap(int num_marked)
                   }
                 }
 
-#ifdef STACKS_DEBUG
-    if (print_on_gc) print_all() ;
+#ifdef CHAT
+		/* chain CHAT areas */
+
+		if (chat_link_headers != NULL)
+		{ chat_init_pheader initial_pheader;
+		  chat_incr_pheader pheader;
+		  int trlen;
+		  CPtr b,*tr;
+
+		  initial_pheader = chat_link_headers;
+		  do
+		    {
+		      b = (CPtr)chat_get_args_start(initial_pheader);
+		      /* chaining of argument registers from consumer */
+		      chat_chain_region(b,chat_get_nrargs(initial_pheader));
+
+		      /* chaining of heap pointer from consumer is unnecessary */
+
+		      /* because of how chaining of ls is done above, no need to   */
+		      /* do chaining of the ls that is reachable from the consumer */
+		      /* revision might be needed                                  */
+
+		      /* chaining of the CHAT trails */
+		      /* during which the imarkbit is switched off */
+
+		      pheader = chat_get_father(initial_pheader);
+		      while ((pheader != NULL) && chat_area_imarked(pheader))
+			{ chat_iunmark_area(pheader);
+			  tr = chat_get_tr_start(pheader);
+			  trlen = chat_get_tr_length(pheader);
+			  chat_chain_region((CPtr)tr,trlen);
+			  pheader = chat_get_ifather(pheader);
+			}
+		      initial_pheader = initial_pheader->next_header;
+		    }
+		  while (initial_pheader != chat_link_headers);
+		}
 #endif
+
+		/* if (print_on_gc) print_all() ; */
 
 { CPtr destination, hptr ;
   long garbage = 0 ;
@@ -1137,9 +1837,11 @@ static CPtr sweep_heap(int num_marked)
 	  index-- ;
         }
 
-/*
+	if (garbage)
+	  /* the first heap cell is not marked */
+	  *heap_bot = (Cell)garbage ;
+
 if (print_on_gc) print_all() ;
-*/
 
         /* one phase downwards - from bottom of heap to top of heap */
 
@@ -1150,7 +1852,7 @@ if (print_on_gc) print_all() ;
                 { if (h_is_chained(hptr))
                         { unchain(hptr,destination) ; }
                   if ((Cell)(hptr) == *hptr) /* UNDEF */
-                        *destination = (long)destination ;
+                        bld_free(destination) ;
                   else
 		  { p = pointer_from_cell(*hptr,&tag,&whereto) ;
                     *destination = *hptr ;
@@ -1167,57 +1869,538 @@ if (print_on_gc) print_all() ;
                 }
           else { index += (long)*hptr ; hptr += (long)*hptr ; }
         }
+if (destination != (heap_bot+num_marked))
+  fprintf(stderr,"bad size %p  %p\n",destination,heap_bot+num_marked);
 }
 
         return(heap_bot + num_marked) ;
 
-} /* sweep_heap */
+} /* slide_heap */
 
 static void check_zero(char *b, int l, char *s)
-{ int i = 0 ;
+{ 
+#ifdef SAFE_GC
+  int i = 0 ;
   while (l--)
-    if (*b++)
-    { fprintf(stderr,"%s - left marker - %d - %d - %d\n",s,*(--b),i,l) ;
-      return ;
+    { if (*b++)
+            fprintf(stderr,"%s - left marker - %d - %d - %d\n",s,*(b-1),i,l) ;
+      i++ ;
     }
-	else i++ ;
-
+#endif
 } /* check_zero */
 
 static int total_time_gc = 0 ;
+static int total_collected = 0 ;
 
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+/*  Heap collection by copying                                           */
+/*  Marking is finished and new heap allocated                           */
+/*  Idea is to copy a la Cheney and copy immediatly back to original     */
+/*          heap - this allows release of the new heap                   */
+/*          Cheney is slightly adapted to make it possible to have       */
+/*          the copy back as a mem copy; so heap pointers during Cheney  */
+/*          will already point to the final destination                  */
+/*                                                                       */
+/*  It is very similar to the BinProlog garbage collector                */
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+
+#ifdef GC_DEBUG
+#define GC_DEBUG
+#define GCDBG(mes,val) if (num_gc == 61) fprintf(stderr,mes,val)
+#else
+#define GCDBG(mes,val)
+#endif
+
+/* the following variables are set by copy_heap() and used as */
+/* globals in the two functions below.                        */
+
+static int offset;
+static CPtr scan, next;
+
+#ifdef GC_DEBUG
+static void check(CPtr p)
+{ CPtr q;
+  q = (CPtr)(*p);
+  if (((heap_bot - offset) <= q) && (q < next)) return;
+  fprintf(stderr,"really bad thing discovered\n");
+} /* check */
+#else
+#define check(p)
+#endif
+
+#define adapt_external_heap_pointer(P,Q,TAG) \
+check(Q);\
+    GCDBG("Adapting %p ", P); GCDBG("with %p ", Q);\
+    Q = (CPtr)((CPtr)(cell(Q))+offset); \
+    if (TAG == REF || TAG == REF1) {\
+      bld_ref(P, Q); \
+    } else {\
+      cell(P) = (Cell)(enc_addr(Q) | TAG); \
+    } \
+    GCDBG("to %lx\n", cell(P))
+
+#define find_begin_point(HP) \
+    begin_point = HP; \
+    GCDBG("In hp = %p, ",begin_point); \
+    while ((i = begin_point-heap_bot-1) >= 0 && h_marked(i)) begin_point--;
+#define find_end_point(HP) \
+    end_point = HP; \
+    while (h_marked(end_point+1-heap_bot)) end_point++;
+
+#define copy_block(BEGIN_P,END_P,NEXT) \
+    for (p=BEGIN_P; p<=END_P; p++) { \
+      GCDBG("%p ", p); \
+      h_clear_mark(p); \
+      cell(NEXT) = cell(p); \
+      cell(p) = (Cell)(NEXT); /* leave a forwarding pointer */\
+      NEXT++; \
+    } \
+    GCDBG("%s","\n");
+
+static void find_and_copy_block(CPtr hp)
+{
+    int i, tag;
+    CPtr p, q, addr, begin_point, end_point;
+
+    find_begin_point(hp);
+    find_end_point(hp);
+    GCDBG("found1 a block of size %d ... ", (end_point-begin_point+1));
+    /* GCDBG("(bp = %p ",begin_point); GCDBG("ep = %p)  ", end_point); */
+
+    /* copy the block into the new heap area */
+
+    copy_block(begin_point,end_point,next);
+
+    /* perform a Cheney scan: pointer "scan" chases the "next" pointer  */
+    /* note that "next" is modified inside the for loop by copy_block() */
+    for ( ; scan < next; /* fprintf(stderr,".\n"),*/ scan++) {
+      q = (CPtr)cell(scan);
+      tag = cell_tag(q);
+      switch (tag)
+      { case REF : case REF1 :
+	  if (points_into_heap(q)) {
+	    GCDBG("Reference to heap with tag %d\n", tag);
+#ifdef GC_DEBUG
+	    fprintf(stderr, "In adapting case for %p with %p (%lx)...",
+		    scan, q, cell(q));
+#endif
+	   if(h_marked(q-heap_bot))
+	     { find_begin_point(q);
+	       find_end_point(q);
+	       GCDBG("found4 a block of size %d ... ", (end_point-begin_point+1));
+	       copy_block(begin_point,end_point,next);
+	     }
+	   q = (CPtr)((CPtr)(cell(q))+offset);
+	   GCDBG(" to be adapted to %p\n", q);
+	   bld_ref(scan, q);
+	  }
+	  break;
+        case CS :
+	  addr = (CPtr)cs_val(q);
+	  GCDBG("Structure pointing to %p found...\n", addr);
+	  if (h_marked(addr-heap_bot)) { /* if structure not already copied */
+	    find_begin_point(addr);
+	    find_end_point(addr);
+	    GCDBG("found2 a block of size %d ... ", (end_point-begin_point+1));
+	    copy_block(begin_point,end_point,next); /* this modifies *addr */
+	  }
+check(addr);
+	  GCDBG("*p = %lx ", cell(addr));
+	  addr = (CPtr)((CPtr)(cell(addr))+offset);
+	  GCDBG("q = %p ", addr);
+	  bld_cs(scan, addr);
+	  GCDBG("made to point to %lx\n", cell(scan));
+          break;
+        case LIST :
+	  addr = clref_val(q);
+	  GCDBG("List found... %s\n", "Not treated yet");
+	  if (h_marked(addr-heap_bot)) { /* if list head not already copied */
+	    find_begin_point(addr);
+	    find_end_point(addr);
+	    GCDBG("found3 a block of size %d ... ", (end_point-begin_point+1));
+	    copy_block(begin_point,end_point,next); /* this modifies *addr */
+	  }
+check(addr);
+	  addr = (CPtr)((CPtr)(cell(addr))+offset);
+	  bld_list(scan, addr);
+          break;
+        default :
+	  break;
+      }
+    }
+} /* find_and_copy_block */
+
+#ifdef CHAT
+static void chat_copy_region(CPtr p, int len)
+{ int j;
+  CPtr q;
+  int tag, whereto;
+  Cell contents;
+
+
+  while (len)
+    {
+      if (len > sizeof(CPtr))
+        { len -= sizeof(CPtr); j = sizeof(CPtr) ; }
+      else { j = len; len = 0; }
+      while (j--)
+        { contents = cell(p);
+          q = pointer_from_cell(contents,&tag,&whereto) ;
+          if (whereto != TO_HEAP) { p++; continue ; }
+          if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+          adapt_external_heap_pointer(p,q,tag);
+          p++;
+        }
+      p++; /* skip chain bits */
+    }
+} /* chat_copy_region */
+#endif
+
+static CPtr copy_heap(int marked, CPtr begin_new_heap, CPtr end_new_heap,
+		      int num_var_regs, int num_reg_array, int arity)
+{
+    Cell contents;
+    CPtr p, q;
+    int tag, whereto; 
+
+    offset = heap_bot-begin_new_heap;
+    scan = next = begin_new_heap; 
+
+#ifdef GC_DEBUG
+    fprintf(stderr,
+	    "New heap space between %p and %p\n", begin_new_heap,end_new_heap);
+#endif
+
+  /* the order in which stuff is copied might be important                 */
+  /* but like the price of a ticket from Seattle to New York: nobody knows */
+
+
+  /* trail */
+  /* more precise traversal of trail possible */
+
+    { CPtr endtr ;
+      endtr = tr_top ;
+      for (p = tr_bot; p <= endtr; p++)
+	{ contents = cell(p);
+          q = pointer_from_cell(contents,&tag,&whereto) ;
+	  if (whereto != TO_HEAP) continue ;
+	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+	  adapt_external_heap_pointer(p,q,tag);
+	}
+    }
+
+  /* choicepoints */
+  /* more precise traversal of choicepoints possible */
+
+    { CPtr endcp ;
+      endcp = cp_top ;
+      for (p = cp_bot; p >= endcp ; p--)
+	{ contents = cell(p) ;
+	  q = pointer_from_cell(contents,&tag,&whereto) ;
+	  if (whereto != TO_HEAP) continue ;
+	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+	  adapt_external_heap_pointer(p,q,tag);
+	}
+    }
+
+
+#ifdef CHAT
+  /* substitution factors reachable - they are in completion stack */
+  /* the substitution factors of the consumers are in the cps, */
+  /* they have just been treated                          */
+
+    { CPtr compl_fr;
+      compl_fr = openreg;
+      while (compl_fr != COMPLSTACKBOTTOM)
+	{ /* substitution factor is now in the heap for generators */
+	  p = (CPtr)(&compl_hreg(compl_fr));
+	  contents = cell(p) ;
+	  q = pointer_from_cell(contents,&tag,&whereto) ;
+	  if (whereto != TO_HEAP)
+	    fprintf(stderr,"bad heap pointer during copying SF\n");
+	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+	  adapt_external_heap_pointer(p,q,tag);
+	  compl_fr = prev_compl_frame(compl_fr);
+	}
+    }
+#endif
+
+  /* local stack */
+  /* more precise traversal of local stack possible */
+
+    { CPtr endls;
+      endls = ls_top ;
+      for (p = ls_bot; p >= endls ; p-- )
+	{ if (! ls_marked(p-ls_top)) continue ;
+          ls_clear_mark(p) ;
+	  contents = cell(p) ;
+	  q = pointer_from_cell(contents,&tag,&whereto) ;
+	  if (whereto != TO_HEAP) continue ;
+	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+	  adapt_external_heap_pointer(p,q,tag);
+	}
+    }
+
+
+#ifdef CHAT
+  /* CHAT areas */
+
+    if (chat_link_headers != NULL)
+    { chat_init_pheader initial_pheader;
+      chat_incr_pheader pheader;
+      int trlen;
+      CPtr b,*tr;
+
+      initial_pheader = chat_link_headers;
+      do
+	{
+	  b = (CPtr)chat_get_args_start(initial_pheader);
+	  /* copying of argument registers from consumer */
+	  chat_copy_region(b,chat_get_nrargs(initial_pheader));
+
+	  /* copying of heap pointer from consumer is unnecessary */
+
+	  /* because of how copying of ls is done above, no need to   */
+	  /* do copying of the ls that is reachable from the consumer */
+	  /* revision might be needed                                 */
+
+	  /* copying of the CHAT trails */
+	  /* during which the imarkbit is switched off */
+
+	  pheader = chat_get_father(initial_pheader);
+	  while ((pheader != NULL) && chat_area_imarked(pheader))
+	  { chat_iunmark_area(pheader);
+	    tr = chat_get_tr_start(pheader);
+	    trlen = chat_get_tr_length(pheader);
+	    chat_copy_region((CPtr)tr,trlen);
+	    pheader = chat_get_ifather(pheader);
+	  }
+	  initial_pheader = initial_pheader->next_header;
+	}
+      while (initial_pheader != chat_link_headers);
+    }
+#endif
+
+    /* now do the argument registers */
+
+    { CPtr p;
+      for (p = reg+1; arity-- > 0; p++)
+        { contents = cell(p) ;
+          q = pointer_from_cell(contents,&tag,&whereto) ;
+          if (whereto != TO_HEAP) continue ;
+          if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+          adapt_external_heap_pointer(p,q,tag);
+        }
+    }
+
+    /* now do the delay register */
+
+    { CPtr p;
+
+      if (islist(delayreg))
+	{ 
+	  p = (CPtr)(&delayreg);
+	  contents = cell(p) ;
+          q = pointer_from_cell(contents,&tag,&whereto) ;
+          if (whereto != TO_HEAP)
+	    fprintf(stderr,"non null delayreg points not in heap\n");
+          else
+	    {
+	      if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+	      adapt_external_heap_pointer(p,q,tag);
+	    }
+        }
+    }
+
+    /* now do the var_regs registers */
+
+#ifdef TRIE_CP_MARKING_NEEDED
+    { CPtr p;
+      int i = num_var_regs;
+
+      for (p = (CPtr)var_regs; i-- > 0; p++)
+        { contents = cell(p) ;
+          q = pointer_from_cell(contents,&tag,&whereto) ;
+          if (whereto != TO_HEAP) continue ;
+          if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+          adapt_external_heap_pointer(p,q,tag);
+        }
+    }
+
+    { CPtr p;
+      int i = num_reg_array;
+
+      for (p = reg_array; i-- > 0; p++)
+        { contents = cell(p) ;
+          q = pointer_from_cell(contents,&tag,&whereto) ;
+          if (whereto != TO_HEAP) continue ;
+          if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+          adapt_external_heap_pointer(p,q,tag);
+        }
+    }
+#endif
+
+
+    if (next != end_new_heap)
+      fprintf(stderr,
+	      "heap copy gc - inconsistent hreg (next=%p, end=%p) %d cells not copied...\n",
+	      next, end_new_heap, (end_new_heap-next));
+
+    memcpy((void *)heap_bot, (void *)begin_new_heap, marked*sizeof(Cell));
+
+    return(heap_bot+marked);
+} /* copy_heap */
+
+/*----------------------------------------------------------------------*/
+
+#ifdef GC
 int gc_heap(int arity)
-{ int marked, marktime, sweeptime ;
+{ int begin_marktime, end_marktime,
+  begin_slidetime, end_slidetime,
+  begin_copy_time, end_copy_time ;
+  int num_var_regs = 0;
+  int num_reg_array = 0;
+  int marked = 0;
 
-num_gc++ ;
+  num_gc++ ;
 
-  fprintf(stderr,"Heap gc - arity = %d - used = %ld - left = %ld - #gc = %d\n",
-	  arity, (long) (hreg-(CPtr)glstack.low), (long) (ereg-hreg), num_gc) ;
-  marktime = 1000*cpu_time() ;
-  marked = mark_heap(arity) ;
-  sweeptime = 1000*cpu_time() ;
-  marktime = sweeptime - marktime ;
+  if (fragmentation_only) slide = 0;
+  heap_early_reset = ls_early_reset = 0;
+
+#ifdef VERBOSE_GC
+  fprintf(stderr,"Heap gc - arity = %d - used = %d - left = %d - #gc = %d\n",
+  			arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ;
+
+#endif
+  begin_marktime = 1000*cpu_time() ;
+
+  total_collected += hreg+1-(CPtr)glstack.low;
+
+  /* make sure the top choice point heap pointer that might not point into heap, does */
+  if (hreg == cp_hreg(breg))
+	{ *hreg = makeint(666) ;
+	  hreg++ ;
+	}
+
+  /* copy the aregs to the top of the heap - only if sliding */
+  /* same with var_regs and reg_array */
+  /* just hope there is enough space */
+  /* this happens best before the stack_boundaries are computed */
+  if (slide)
+    { int i;
+      if (islist(delayreg))
+	{ arity++;
+	  reg[arity] = (Cell)delayreg;
+	}
+      for (i = 1; i <= arity; i++ )
+            *hreg++ = reg[i] ;
+    }
+
+  marked = mark_heap(arity,num_var_regs,num_reg_array) ;
+
+  end_marktime = 1000*cpu_time() ;
+
+
+  if (fragmentation_only)
+    {
+      /* fragmentation is expressed as ratio not-marked/total heap in use
+	 this is internal fragmentation only
+         we print marked and total, so that postprocessing can do what it wants
+      */
+
+      fprintf(stderr,"marked_used_missed(%d,%d,%d,%d).\n",
+	      marked,hreg+1-(CPtr)glstack.low,heap_early_reset,ls_early_reset);
+
+      /* get rid of the marking areas - if they exist */
+      if (heap_marks)
+	{
+	  free((heap_marks-1)) ; /* see its calloc */
+	  heap_marks = NULL ;
+	}
+      if (tr_marks)
+	{
+	  free(tr_marks) ;
+	  tr_marks = NULL ;
+	}
+      if (ls_marks)
+	{
+	  free(ls_marks) ;
+	  ls_marks = NULL ;
+	}
+      if (cp_marks)
+	{
+	  free(cp_marks) ;
+	  cp_marks = NULL ;
+	}
+      return(TRUE);
+    }
+
+#ifdef VERBOSE_GC
   fprintf(stderr,
   	"Heap gc - marking finished - #marked = %d - start compact\n",marked) ;
-  hreg = sweep_heap(marked) ;
-  /* copy the aregs from the top of the heap back */
-  for (marked = 1; marked <= arity; marked++)
-  	reg[marked] = hreg[marked - arity - 1] ;
-  hreg -= arity ;
-  hbreg = cp_hreg(breg);
+#endif
 
+  total_collected -= marked;
+  if (slide)
+    { begin_slidetime = end_marktime;
+      hreg = slide_heap(marked) ;
+      if (hreg != (heap_bot+marked))
+	fprintf(stderr,"heap copy gc - inconsistent hreg\n");
+      /* copy the reg_array, var_regs and aregs from the top of the heap back */
+      hreg -= (arity+num_var_regs+num_reg_array);
+      hbreg = cp_hreg(breg);
 
-  sweeptime =  1000*cpu_time() - sweeptime ;
+      { CPtr p = hreg;
+        int i;
 
-if (print_on_gc) print_all() ;
+        for (i = 1; i <= arity; i++)
+	  reg[i] = *p++ ;
+        if (islist(delayreg))
+	  delayreg = (CPtr)reg[arity--];
+      }
 
-  total_time_gc += marktime + sweeptime ;
-  fprintf(stderr,
-  	"Heap gc end - mark time = %d; sweep time = %d; total = %d\n\n",
-			marktime, sweeptime,total_time_gc) ;
+      end_slidetime = 1000*cpu_time();
+
+      total_time_gc += (end_slidetime - begin_marktime);
+#ifdef VERBOSE_GC
+      fprintf(stderr,
+  	"Heap gc end - mark time = %d; slide time = %d; total = %d\n\n",
+			(end_marktime - begin_marktime),
+	                (end_slidetime - begin_slidetime),
+	                total_time_gc) ;
+#endif
+    }
+  else
+    { /* else we call the copying collector a la Cheney */
+      CPtr begin_new_heap, end_new_heap;
+
+      begin_copy_time = end_marktime;
+      begin_new_heap = (CPtr)malloc(marked*sizeof(Cell));
+      if (begin_new_heap == NULL)
+	xsb_exit("copying gc could not allocate new heap");
+      end_new_heap = begin_new_heap+marked;
+      hreg = copy_heap(marked,begin_new_heap,end_new_heap,num_var_regs,num_reg_array,arity);
+      free(begin_new_heap);
+      adapt_hreg_from_choicepoints(hreg);
+      hbreg = cp_hreg(breg);
+      end_copy_time = 1000*cpu_time();
+
+      total_time_gc += (end_copy_time - begin_marktime);
+#ifdef VERBOSE_GC
+      fprintf(stderr,
+        "Heap gc end - mark time = %d; copy_time = %d; total = %d\n\n",
+                        (end_marktime - begin_marktime),
+                        (end_copy_time - begin_copy_time),
+                        total_time_gc) ;
+#endif
+    }
+
+  if (print_on_gc) print_all() ;
+
   /* get rid of the marking areas - if they exist */
   if (heap_marks) { check_zero(heap_marks,(heap_top-heap_bot),"heap") ;
-                    free(heap_marks) ;
+                    free((heap_marks-1)) ; /* see its calloc */
 		    heap_marks = NULL ;
                   }
   if (tr_marks)   { check_zero(tr_marks,(tr_top-tr_bot + 1),"tr") ;
@@ -1232,6 +2415,42 @@ if (print_on_gc) print_all() ;
                     free(cp_marks) ;
 		    cp_marks = NULL ;
                   }
+#ifdef CHAT
+  chat_check_zero();
+#endif
+
+#ifdef SAFE_GC
+  { CPtr p = hreg;
+    while (p < heap_top)
+      *p++ = 0;
+  }
+#endif
 
   return(TRUE) ;
+
 } /* gc_heap */
+#else
+int gc_heap(int arity)
+{
+  /* for non-CHAT, there is no gc, but stack expansion can be done */
+  return(TRUE);
+}
+#endif
+
+void print_gc_statistics(void)
+{ char *which;
+
+  if (slide)
+    which = "sliding" ;
+  else which = "copying";
+
+  printf("\n%d heap garbage collections by %s took %d millisecs and collected %d cells\n\n",
+	 num_gc, which, total_time_gc, total_collected);
+}
+
+
+void check_tr()
+{
+  if ((CPtr)trreg > ((CPtr)breg-100))
+    fprintf(stderr,"overflow\n");
+}

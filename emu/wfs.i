@@ -86,10 +86,10 @@ static EPtr alloc_more_edge_space(void)
     FromEptr = theEdge
 
 #define add_ascc_edges(subgoal,cs_frame,leader_cs_frame)	\
-    cs_frame2 = subg_compl_stack_ptr(subgoal);			\
-    if (leader_cs_frame >= cs_frame2  && !is_completed(subgoal)) {       \
-      New_Edge(eptr, compl_DGT_edges(cs_frame), cs_frame2);	\
-      New_Edge(eptr, compl_DG_edges(cs_frame2), cs_frame);	\
+    csf2 = (ComplStackFrame)subg_compl_stack_ptr(subgoal);	\
+    if (leader_cs_frame >= csf2  && !is_completed(subgoal)) {	\
+      New_Edge(eptr, compl_DGT_edges(cs_frame), csf2);		\
+      New_Edge(eptr, compl_DG_edges(csf2), cs_frame);		\
     }
 
 static void reclaim_edge_space(ComplStackFrame csf_ptr)
@@ -113,19 +113,99 @@ static void reclaim_edge_space(ComplStackFrame csf_ptr)
 }
 
 /*----------------------------------------------------------------------*/
+/* These macros abstract the fact that SLG-WAM and CHAT construct the	*/
+/* subgoal dependency graph by looking at different data structures.	*/
+/*----------------------------------------------------------------------*/
 
-/* negation handling for Batched Scheduling */
+#ifdef CHAT
+#define first_consumer(SUBG,CSF) (compl_cons_copy_list(CSF))
+#define ptcp_of_gen(SUBG,CSF)	 ((TChoice)(compl_ptcp(CSF)))
+#define ptcp_of_cons(CONS_CP) \
+	((TChoice)(nlcp_ptcp((&chat_get_cons_start((chat_init_pheader)CONS_CP)))))
+#define ptcp_of_csusp(CSUSP_CP) \
+	((TChoice)(csf_ptcp((&chat_get_cons_start((chat_init_pheader)CSUSP_CP)))))
+#else
+#define first_consumer(SUBG,CSF) (subg_asf_list_ptr(SUBG))
+#define ptcp_of_gen(SUBG,CSF)	 ((TChoice)(tcp_ptcp(subg_cp_ptr(SUBG))))
+#define ptcp_of_cons(CONS_CP)	 ((TChoice)(nlcp_ptcp(CONS_CP)))
+#define ptcp_of_csusp(CSUSP_CP)	 ((TChoice)(csf_ptcp(CSUSP_CP)))
+#endif
+
+/*----------------------------------------------------------------------*/
+
+static void construct_dep_graph(ComplStackFrame leader_compl_frame)
+{
+    EPtr eptr;
+    TChoice p;
+    CPtr asf, nsf;
+    SGFrame source_subg;
+#ifdef PTCP_IN_CP
+    SGFrame dest_subg;
+#endif
+    ComplStackFrame csf1, csf2;
+
+    csf1 = leader_compl_frame;
+    while (csf1 >= (ComplStackFrame)openreg) {
+      source_subg = compl_subgoal_ptr(csf1);
+      if (!is_completed(source_subg)) {
+	/*--- find the edge of the DepGraph due to the generator node ---*/
+	if ((p = ptcp_of_gen(source_subg,csf1)) != NULL) {
+#ifdef PTCP_IN_CP
+	  dest_subg = (SGFrame)tcp_subgoal_ptr(p);
+	  add_ascc_edges(dest_subg, csf1, leader_compl_frame);
+#else
+	  add_ascc_edges(p, csf1, leader_compl_frame);
+#endif
+	}
+	/*--- find the edges of the DepGraph due to the consumers ---*/
+	for (asf = first_consumer(source_subg,csf1);
+	     asf != NULL; asf = nlcp_prevlookup(asf)) {
+	  if ((p = ptcp_of_cons(asf)) != NULL) {
+#ifdef PTCP_IN_CP
+	    dest_subg = (SGFrame)tcp_subgoal_ptr(p);
+	    add_ascc_edges(dest_subg, csf1, leader_compl_frame);
+#else
+	    add_ascc_edges(p, csf1, leader_compl_frame);
+#endif
+	  }
+	}
+	/*--- find the edges of the DepGraph due to the suspended nodes ---*/
+	for (nsf = subg_compl_susp_ptr(source_subg);
+	     nsf != NULL; nsf = csf_prevcsf(nsf)) {
+	  if ((p = ptcp_of_csusp(nsf)) != NULL) {
+#ifdef PTCP_IN_CP
+	    dest_subg = (SGFrame)tcp_subgoal_ptr(p);
+	    add_ascc_edges(dest_subg, csf1, leader_compl_frame);
+#else
+	    add_ascc_edges(p, csf1, leader_compl_frame);
+#endif
+	  }
+	}
+      }
+      csf1 = (ComplStackFrame)next_compl_frame(csf1);
+    }
+#ifdef VERBOSE_COMPLETION
+    fprintf(stderr, "! Constructed the edges of the DepGraph\n");
+#endif
+}
+
+/*----------------------------------------------------------------------*/
+/* The following function handles negation for Batched Scheduling.	*/
+/*----------------------------------------------------------------------*/
 
 static void batched_compute_wfs(CPtr leader_compl_frame, 
 				CPtr leader_breg, 
-				CPtr leader_subg) {
-  
+				CPtr leader_subg)
+{  
   CPtr ComplStkFrame; /* CopyFrame */
   bool sccs_needed;
   SGFrame curr_subg;
   CPtr cont_breg = leader_breg;
   
 /*----------------------------------------------------------------------*/
+#ifdef EXACT_COMPLETION_NEEDED
+  sccs_needed = TRUE;
+#else
   sccs_needed = FALSE; ComplStkFrame = leader_compl_frame;
   while (ComplStkFrame >= openreg) {
 #ifdef COMPACT_COMPL_STACK
@@ -142,14 +222,14 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
       ComplStkFrame = next_compl_frame(ComplStkFrame);
     }
   }
-  
+#endif
+
   if (sccs_needed) {
-    EPtr eptr;
+#if (!defined(CHAT))
     bool found;
-    SGFrame source_subg;
-    CPtr dest_subg, asf, nsf;
+#endif
+    CPtr nsf;
     CPtr CopyFrame;
-    CPtr cs_frame2;
     ComplStackFrame csf, max_finish_csf;
     bool non_lrd_stratified;
 
@@ -157,50 +237,23 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
      * remains unchanged */
     /**********************************************************************/
 
+#ifdef DEBUG
+#define VERBOSE_COMPLETION
+#define COMPLETION_DEBUG
+#endif
+
 #ifdef VERBOSE_COMPLETION
     fprintf(stderr,
 	    "\t===> SCC detection is needed...(%d subgoals in ASCC)...\n",
 	    (int)((leader_compl_frame-openreg)/COMPLFRAMESIZE+1));
+    print_completion_stack();
 #endif
 
-    /*--- Construct the edges of the DepGraph ---*/
-    ComplStkFrame = leader_compl_frame;
-    while (ComplStkFrame >= openreg) {
-#ifndef COMPACT_COMPL_STACK
-      curr_subg = compl_subgoal_ptr(ComplStkFrame);
-#endif
-      /* JF: if not COMPACTing stack, check if completed */
-      source_subg = compl_subgoal_ptr(ComplStkFrame);
-      if (!is_completed(curr_subg)) {
-	/*--- find the edge of the DepGraph due to the generator node ---*/
-	if (tcp_ptcp(subg_cp_ptr(source_subg)) != NULL) {
-	  dest_subg = tcp_subgoal_ptr(tcp_ptcp(subg_cp_ptr(source_subg)));
-	  add_ascc_edges(dest_subg, ComplStkFrame,leader_compl_frame);
-	}
-	/*--- find the edges of the DepGraph due to the active nodes ---*/
-	for (asf = subg_asf_list_ptr(source_subg);
-	     asf != NULL; asf = nlcp_prevlookup(asf)) {
-	  if (nlcp_ptcp(asf) != NULL) {
-	    dest_subg = tcp_subgoal_ptr(nlcp_ptcp(asf));
-	    add_ascc_edges(dest_subg, ComplStkFrame, leader_compl_frame);
-	  }
-	}
-	/*--- find the edges of the DepGraph due to the suspended nodes ---*/
-	for (nsf = subg_compl_susp_ptr(source_subg);
-	     nsf != NULL; nsf = csf_prevcsf(nsf)) {
-	  if (csf_ptcp(nsf) != NULL) {
-	    dest_subg = tcp_subgoal_ptr(csf_ptcp(nsf));
-	    add_ascc_edges(dest_subg, ComplStkFrame, leader_compl_frame);
-	  }
-	}
-      } /* if not completed - if completed, skip */
-      ComplStkFrame = next_compl_frame(ComplStkFrame);
-    }
+    construct_dep_graph((ComplStackFrame)leader_compl_frame);
 #ifdef COMPLETION_DEBUG
-    fprintf(stderr, "! Constructed the edges of the DepGraph\n");
+    print_completion_stack();
 #endif
 
-    /* find the leader of an SCC in the topmost ASCC */
     max_finish_csf = DFS_DGT((ComplStackFrame)leader_compl_frame);
 #ifdef COMPLETION_DEBUG
     fprintf(stderr, "! MAX FINISH_SUBGOAL = %p\n", max_finish_csf);
@@ -213,12 +266,17 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
      * by traversing the SDG */
     find_independent_scc(max_finish_csf);
     
-    /* Perform a LRD stratification check of the program-query pair
-     *  and classify the completion suspensions as stratified or not.  */
+#ifdef COMPLETION_DEBUG
+    print_completion_stack();
+#endif
+
+    /* Perform a LRD stratification check of the program-query pair	*/
+    /* and classify the completion suspensions as stratified or not.	*/
     ComplStkFrame = leader_compl_frame;
     non_lrd_stratified = FALSE;
     
     while (ComplStkFrame >= openreg) {
+      TChoice p;
       CPtr susp_subgoal, susp_csf;
 #ifndef COMPACT_COMPL_STACK
       curr_subg = compl_subgoal_ptr(ComplStkFrame);
@@ -227,22 +285,23 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
       if (!is_completed(curr_subg)) {
 	
 	if (compl_visited(ComplStkFrame) != FALSE) {
-	  curr_subg = compl_subgoal_ptr(ComplStkFrame);
-	  
+	  curr_subg = compl_subgoal_ptr(ComplStkFrame);  
 	  for (nsf = subg_compl_susp_ptr(curr_subg);
 	       nsf != NULL; nsf = csf_prevcsf(nsf)) {
-	    
-	    if (csf_ptcp(nsf) != NULL) {
-	      susp_subgoal = tcp_subgoal_ptr(csf_ptcp(nsf));
-	      susp_csf = subg_compl_stack_ptr(susp_subgoal);
-	      
+	    if ((p = ptcp_of_csusp(nsf)) != NULL) {
+#ifdef PTCP_IN_CP
+	      susp_subgoal = tcp_subgoal_ptr(p);
+#else
+	      susp_subgoal = (CPtr)p;
+#endif
+	      susp_csf = subg_compl_stack_ptr(susp_subgoal);      
 	      if (!is_completed(susp_subgoal) && 
 		  susp_csf <= leader_compl_frame &&
 		  compl_visited(susp_csf) != FALSE) {
 		/*--- The suspended subgoal is in the completable SCC ---*/
 		mark_delayed(ComplStkFrame, susp_csf, nsf);
 		non_lrd_stratified = TRUE;
-#ifdef DEBUG_DELAY
+#ifdef DELAY_DEBUG
 		fprintf(stderr, "\t   Subgoal ");
 		print_subgoal(stderr, (SGFrame)susp_subgoal);
 		fprintf(stderr, " depends negatively on subgoal ");
@@ -250,13 +309,9 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 		fprintf(stderr, "\n");
 #endif
 	      } /*  no completed susp_subg */
-
-	    } /* csf_ptcp(nsf) != NULL */
-	    
+	    }
 	  } /* for each nsf */
-	  
 	} /* not visited */
-	
       } /* skip completed subgoals in the completion stack */
       ComplStkFrame = next_compl_frame(ComplStkFrame);
     } /* while */
@@ -270,40 +325,42 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     /*--- We have to find the continuation.  It is the topmost ---*/
     /*--- subgoal of the ASCC that will not be completed. ---*/
     if (non_lrd_stratified == FALSE) {
+#ifdef CHAT
+      cont_breg = leader_breg;
+#else
       found = FALSE;
-      for (ComplStkFrame = openreg; !found && ComplStkFrame <= leader_compl_frame;
+      for (ComplStkFrame = openreg;
+	   !found && ComplStkFrame <= leader_compl_frame;
 	   ComplStkFrame = prev_compl_frame(ComplStkFrame)) {
 	if (compl_visited(ComplStkFrame) <= FALSE) {
 	  cont_breg = subg_cp_ptr(compl_subgoal_ptr(ComplStkFrame));
 	  breg = cont_breg;		/*-- Check this for correctness! --*/
-#ifdef COMPLETION_DEBUG
+#ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
 	  fprintf(stderr, "------ Setting TBreg to %p...\n", cont_breg);
 #endif
 	  found = TRUE;
 	}
       }
       if (!found) {	/* case in which the ASCC contains only one SCC */
-	/* and all subgoals will be completed (no delay) */
-	/* JF: set ebreg and hbreg? */
+			/* and all subgoals will be completed (no delay) */
 	cont_breg = tcp_prevbreg(leader_breg);
       }
+#endif
     } else {	/* the chosen SCC has a loop through negation */
       for (ComplStkFrame = openreg; ComplStkFrame <= leader_compl_frame;
 	   ComplStkFrame = prev_compl_frame(ComplStkFrame)) {
 	if (compl_visited(ComplStkFrame) != FALSE)
 	  compl_visited(ComplStkFrame) = DELAYED;
       }
+#if (!defined(CHAT))
       cont_breg = subg_cp_ptr(compl_subgoal_ptr(leader_compl_frame));
       breg = cont_breg;
-#ifdef COMPLETION_DEBUG
+#ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
       fprintf(stderr, "------ Setting TBreg to %p...\n", cont_breg);
+#endif
 #endif
     }
     
-    /* JF: Check whether this can be removed - noticed that this
-     * can lead to errors, since simplification may change the
-     * status of answers that will be removed from the answer list
-     * */
     /*--- Now complete the subgoals of the chosen SCC ---*/
     for (ComplStkFrame = leader_compl_frame; ComplStkFrame >= openreg;
 	 ComplStkFrame = next_compl_frame(ComplStkFrame)) {
@@ -319,15 +376,30 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	
 	/* If there are any completion suspensions for this subgoal. */
 	if ((nsf = subg_compl_susp_ptr(curr_subg)) != NULL) {
+#ifdef CHAT
+	  CPtr H, EB;
+
+	  H = cp_hreg(breg);
+	  EB = cp_ebreg(breg);
+#ifdef DEBUG
+fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
+	breg, tcp_subgoal_ptr(breg), ((CPtr)glstack.high - 1) - EB);
+#endif
+#else
 	  CPtr min_breg;
 	  
 	  set_min(min_breg, breg, bfreg);
+#endif
 	  if (compl_visited(ComplStkFrame) != DELAYED) {
+#ifdef CHAT
+	    breg = chat_restore_compl_susp((chat_init_pheader)nsf, H, EB);
+#else
 	    save_compl_susp_cp(min_breg, cont_breg, nsf);
+	    breg = min_breg;
+#endif
 	    /*-- forget these completion suspensions --*/
 	    subg_compl_susp_ptr(curr_subg) = NULL;
-	    breg = min_breg;
-#ifdef COMPLETION_DEBUG
+#ifdef VERBOSE_COMPLETION
 	    fprintf(stderr, "------ Setting Breg to %p...\n", breg);
 #endif
 	  } else {	/* unsuspend only those suspensions that are delayed */
@@ -349,8 +421,12 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	      }
 	    }
 	    if (head_dnsf != NULL) {
+#ifdef CHAT
+	      breg = chat_restore_compl_susp((chat_init_pheader)head_dnsf, H, EB);
+#else
 	      save_compl_susp_cp(min_breg, cont_breg, head_dnsf);
 	      breg = min_breg;
+#endif
 	    }
 	    subg_compl_susp_ptr(curr_subg) = head_ndnsf;
 	  }
@@ -363,8 +439,6 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     fprintf(stderr, "------ Completed the chosen SCC...\n");
 #endif
 /*----------------------------------------------------------------------*/
-    /* JF should only do this if there is an SCC within the SCC, if
-     * whole ASCC=SCC, no need! */
     
     /*--- Finally, compact the Completion Stack ---*/
     ComplStkFrame = CopyFrame = leader_compl_frame; 
@@ -374,24 +448,25 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
       if (!is_completed(curr_subg)) {
 	subg_compl_stack_ptr(curr_subg) = CopyFrame;
 	compact_completion_frame(CopyFrame, ComplStkFrame, curr_subg);
-      }
-      /* this is being done 2x! */
-      else {
+      } else { /* this may be done 2x! */
 	reclaim_subg_space(curr_subg);
       }
       ComplStkFrame = next_compl_frame(ComplStkFrame);
     }
     openreg = prev_compl_frame(CopyFrame);
-    
+
+#if (!defined(CHAT))
     /* chain remaining TCPs in the choice point stack */
+    /* for CHAT this does not make sense as these TCPs are reclaimed */
     tcp_prevbreg(subg_cp_ptr(compl_subgoal_ptr(leader_compl_frame))) = 
       tcp_prevbreg(subg_cp_ptr(leader_subg));
     for (ComplStkFrame = next_compl_frame(leader_compl_frame);
-	 ComplStkFrame>=openreg;
+	 ComplStkFrame >= openreg;
 	 ComplStkFrame = next_compl_frame(ComplStkFrame)){
       tcp_prevbreg(subg_cp_ptr(compl_subgoal_ptr(ComplStkFrame))) = 
 	subg_cp_ptr(compl_subgoal_ptr(prev_compl_frame(ComplStkFrame)));
     }
+#endif
   } /* if sccs_needed */
   else { /* sccs not needed */
     ComplStkFrame = leader_compl_frame;
