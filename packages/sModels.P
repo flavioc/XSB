@@ -32,6 +32,6 @@
 :- bootstrap_package('sModels', sModels),
    assert(package_configuration(version(sModels), 'sModels 082599')).
 
-
+:- [sm_clause_store].
 
 
