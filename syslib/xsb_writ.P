@@ -1,5 +1,5 @@
 /* File:      xsb_writ.P
-** Author(s): Kostis F. Sagonas
+** Author(s): Xu, Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -146,23 +146,24 @@ l_write(File, T, _, _D) :-
 	file_puttoken(File, Type, T).
 
 l_writevar(File, N, Quoted, D) :-
-	( integer(N) ->
-		OrdLetter is N mod 26,
-		ChrLetter is CH_A + OrdLetter,	% Char A
-		file_put(File, ChrLetter),
-		Number is N // 26,
-		( Number =:= 0 -> true
-		; file_puttoken(File, TK_VAR, Number) 
-		)
-	; ( Quoted =:= 0 -> file_puttoken(File, TK_ATOM, '$VAR')
-	  ; file_put(File, CH_QUOTE),
-	    file_puttoken(File, TK_ATOM, '$VAR'), 
-	    file_put(File, CH_QUOTE)
-	  ),
-	  file_put(File, CH_LPAREN),
-	  l_write(File, N, 999, D),
-	  file_put(File, CH_RPAREN)
-	).
+	( N =:= -1 -> 
+  	    file_put(File, CH_UNDERSCORE)
+	  ; (integer(N) ->
+	        OrdLetter is N mod 26,
+	        ChrLetter is CH_A + OrdLetter,	% Char A
+	        file_put(File, ChrLetter),
+	        Number is N // 26,
+	        (Number =:= 0 -> 
+                       true
+	         ; file_puttoken(File, TK_VAR, Number) )
+   	     ; (Quoted =:= 0 -> 
+	            file_puttoken(File, TK_ATOM, '$VAR')
+	          ; file_put(File, CH_QUOTE),
+	             file_puttoken(File, TK_ATOM, '$VAR'), 
+	             file_put(File, CH_QUOTE) ),
+	        file_put(File, CH_LPAREN),
+	        l_write(File, N, 999, D),
+	        file_put(File, CH_RPAREN) ) ).
 
 l_writestr(File, Name, N, Term, D) :-
 	file_puttoken(File, TK_ATOM, Name), 
