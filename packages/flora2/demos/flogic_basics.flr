@@ -26,7 +26,7 @@
 %%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
 %%% ===========================================================================
 
-times_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
+time_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
 fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
 
 :- firstorder e/2, tc/2.
@@ -73,7 +73,7 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 %%% now ask some QUERIES here (or INTERACTIVELY from the FLORA SHELL)
 %%% ===========================================================================
 
-?- times_flies_like_an_arrow.	% ==> `yes'
+?- time_flies_like_an_arrow.	% ==> `yes'
 
 ?- fruit_flies_like_a_banana[].	% ==> `yes'
 
