@@ -90,6 +90,8 @@ OUTDIR=..\config\@canonical@@config_tag@\bin
 #OUTDIR=..\config\@canonical@@config_tag@\bin
 #!ENDIF
 
+OBJDIR=..\config\@canonical@@config_tag@\saved.o
+
 INTDIR=.
 
 !IF  "$(ORACLE)" == "yes"
@@ -111,96 +113,99 @@ ALL : "$(OUTDIR)\xsb.exe"
 SOCKET_LIBRARY=wsock32.lib
 
 CLEAN : 
-	-@erase "$(INTDIR)\auxlry.obj"
-	-@erase "$(INTDIR)\biassert.obj"
-	-@erase "$(INTDIR)\builtin.obj"
-	-@erase "$(INTDIR)\cinterf.obj"
-	-@erase "$(INTDIR)\debug.obj"
-	-@erase "$(INTDIR)\dis.obj"
-	-@erase "$(INTDIR)\dynload.obj"
-	-@erase "$(INTDIR)\emuloop.obj"
-	-@erase "$(INTDIR)\findall.obj"
-	-@erase "$(INTDIR)\function.obj"
-	-@erase "$(INTDIR)\hash.obj"
-	-@erase "$(INTDIR)\heap.obj"
-	-@erase "$(INTDIR)\inst.obj"
-	-@erase "$(INTDIR)\init.obj"
-	-@erase "$(INTDIR)\io_builtins.obj"
-	-@erase "$(INTDIR)\loader.obj"
-	-@erase "$(INTDIR)\chat.obj
-	-@erase "$(INTDIR)\load_seg.obj"
-	-@erase "$(INTDIR)\memory.obj"
-	-@erase "$(INTDIR)\orastuff.obj"
-	-@erase "$(INTDIR)\psc.obj"
-	-@erase "$(INTDIR)\private_builtin.obj"
-	-@erase "$(INTDIR)\residual.obj"
-	-@erase "$(INTDIR)\scc.obj"
-	-@erase "$(INTDIR)\self_orientation.obj"
-	-@erase "$(INTDIR)\slgdelay.obj"
-	-@erase "$(INTDIR)\subp.obj"
-	-@erase "$(INTDIR)\system.obj"
-	-@erase "$(INTDIR)\token.obj"
-	-@erase "$(INTDIR)\trace.obj"
-	-@erase "$(INTDIR)\tries.obj"
-	-@erase "$(INTDIR)\tr_utils.obj"
-	-@erase "$(INTDIR)\xmain.obj"
-	-@erase "$(INTDIR)\xpathname.obj"
-	-@erase "$(INTDIR)\xsb_odbc.obj"
-	-@erase "$(INTDIR)\xsberror.obj"
+	-@erase "$(OBJDIR)\auxlry.obj"
+	-@erase "$(OBJDIR)\biassert.obj"
+	-@erase "$(OBJDIR)\builtin.obj"
+	-@erase "$(OBJDIR)\cinterf.obj"
+	-@erase "$(OBJDIR)\debug.obj"
+	-@erase "$(OBJDIR)\dis.obj"
+	-@erase "$(OBJDIR)\dynload.obj"
+	-@erase "$(OBJDIR)\emuloop.obj"
+	-@erase "$(OBJDIR)\findall.obj"
+	-@erase "$(OBJDIR)\function.obj"
+	-@erase "$(OBJDIR)\hash.obj"
+	-@erase "$(OBJDIR)\heap.obj"
+	-@erase "$(OBJDIR)\inst.obj"
+	-@erase "$(OBJDIR)\init.obj"
+	-@erase "$(OBJDIR)\io_builtins.obj"
+	-@erase "$(OBJDIR)\loader.obj"
+	-@erase "$(OBJDIR)\chat.obj
+	-@erase "$(OBJDIR)\load_seg.obj"
+	-@erase "$(OBJDIR)\memory.obj"
+	-@erase "$(OBJDIR)\orastuff.obj"
+	-@erase "$(OBJDIR)\psc.obj"
+	-@erase "$(OBJDIR)\private_builtin.obj"
+	-@erase "$(OBJDIR)\residual.obj"
+	-@erase "$(OBJDIR)\scc.obj"
+	-@erase "$(OBJDIR)\self_orientation.obj"
+	-@erase "$(OBJDIR)\slgdelay.obj"
+	-@erase "$(OBJDIR)\subp.obj"
+	-@erase "$(OBJDIR)\system.obj"
+	-@erase "$(OBJDIR)\token.obj"
+	-@erase "$(OBJDIR)\trace.obj"
+	-@erase "$(OBJDIR)\tries.obj"
+	-@erase "$(OBJDIR)\tr_utils.obj"
+	-@erase "$(OBJDIR)\xmain.obj"
+	-@erase "$(OBJDIR)\xpathname.obj"
+	-@erase "$(OBJDIR)\xsb_odbc.obj"
+	-@erase "$(OBJDIR)\xsberror.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_OBJS=$(INTDIR)/
+CPP_OBJS=$(OBJDIR)/
 CPP_SBRS=
 LINK32=link.exe
 DLL_LINK32_OBJS= \
-	"$(INTDIR)/auxlry.obj" \
-	"$(INTDIR)/builtin.obj" \
-	"$(INTDIR)/biassert.obj" \
-	"$(INTDIR)/chat.obj"\
-	"$(INTDIR)/cinterf.obj" \
-	"$(INTDIR)/debug.obj" \
-	"$(INTDIR)/dis.obj" \
-	"$(INTDIR)/dynload.obj" \
-	"$(INTDIR)/emuloop.obj" \
-	"$(INTDIR)/findall.obj" \
-	"$(INTDIR)/function.obj" \
-	"$(INTDIR)/hash.obj" \
-	"$(INTDIR)/heap.obj" \
-	"$(INTDIR)/init.obj" \
-	"$(INTDIR)/inst.obj" \
-	"$(INTDIR)/io_builtins.obj" \
-	"$(INTDIR)/loader.obj" \
-	"$(INTDIR)/load_seg.obj" \
-	"$(INTDIR)/memory.obj" \
-	"$(INTDIR)/psc.obj" \
-	"$(INTDIR)/private_builtin.obj" \
-	"$(INTDIR)/residual.obj" \
-	"$(INTDIR)/self_orientation.obj" \
-	"$(INTDIR)/slgdelay.obj" \
-	"$(INTDIR)/subp.obj" \
-	"$(INTDIR)/scc.obj" \
-	"$(INTDIR)/system.obj" \
-	"$(INTDIR)/token.obj" \
-	"$(INTDIR)/trace.obj" \
-	"$(INTDIR)/tries.obj" \
-	"$(INTDIR)/tr_utils.obj" \
-	"$(INTDIR)/xpathname.obj" \
-	"$(INTDIR)/xsb_odbc.obj" \
-	"$(INTDIR)/xsberror.obj"
+	"$(OBJDIR)/auxlry.obj" \
+	"$(OBJDIR)/builtin.obj" \
+	"$(OBJDIR)/biassert.obj" \
+	"$(OBJDIR)/chat.obj"\
+	"$(OBJDIR)/cinterf.obj" \
+	"$(OBJDIR)/debug.obj" \
+	"$(OBJDIR)/dis.obj" \
+	"$(OBJDIR)/dynload.obj" \
+	"$(OBJDIR)/emuloop.obj" \
+	"$(OBJDIR)/findall.obj" \
+	"$(OBJDIR)/function.obj" \
+	"$(OBJDIR)/hash.obj" \
+	"$(OBJDIR)/heap.obj" \
+	"$(OBJDIR)/init.obj" \
+	"$(OBJDIR)/inst.obj" \
+	"$(OBJDIR)/io_builtins.obj" \
+	"$(OBJDIR)/loader.obj" \
+	"$(OBJDIR)/load_seg.obj" \
+	"$(OBJDIR)/memory.obj" \
+	"$(OBJDIR)/psc.obj" \
+	"$(OBJDIR)/private_builtin.obj" \
+	"$(OBJDIR)/residual.obj" \
+	"$(OBJDIR)/self_orientation.obj" \
+	"$(OBJDIR)/slgdelay.obj" \
+	"$(OBJDIR)/subp.obj" \
+	"$(OBJDIR)/scc.obj" \
+	"$(OBJDIR)/system.obj" \
+	"$(OBJDIR)/token.obj" \
+	"$(OBJDIR)/trace.obj" \
+	"$(OBJDIR)/tries.obj" \
+	"$(OBJDIR)/tr_utils.obj" \
+	"$(OBJDIR)/xpathname.obj" \
+	"$(OBJDIR)/xsb_odbc.obj" \
+	"$(OBJDIR)/xsberror.obj"
 
 # DLLs don't use xmain.c
 !IF  "$(DLL)" == "no"
-LINK32_OBJS=$(DLL_LINK32_OBJS) $(INTDIR)/xmain.obj
+LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/xmain.obj
 !ELSE
-LINK32_OBJS=$(INTDIR)/xmain.obj
+LINK32_OBJS=$(OBJDIR)/xmain.obj
 !ENDIF
 
 # Oracle requires one additional file
 !IF "$(ORACLE)" == "yes"
-LINK32_OBJS=$(LINK32_OBJS) $(INTDIR)/orastuff.obj
-DLL_LINK32_OBJS=$(DLL_LINK32_OBJS) $(INTDIR)/orastuff.obj
+!IF "$(DLL)" == "yes"
+DLL_LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/orastuff.obj
+!ELSE
+LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/orastuff.obj
+!ENDIF
 !ENDIF
 
 !IF  "$(CFG)" == "release"  &&  "$(DLL)" == "no"
@@ -320,7 +325,7 @@ DEP_CPP_XSBER=\
 	
 
 
-"$(INTDIR)\xsberror.obj" : $(SOURCE) $(DEP_CPP_XSBER) "$(INTDIR)"
+"$(OBJDIR)\xsberror.obj" : $(SOURCE) $(DEP_CPP_XSBER) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 # End Source File
@@ -334,7 +339,7 @@ DEP_CPP_XSB_O=\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
-"$(INTDIR)\xsb_odbc.obj" : $(SOURCE) $(DEP_CPP_XSB_O) "$(INTDIR)"
+"$(OBJDIR)\xsb_odbc.obj" : $(SOURCE) $(DEP_CPP_XSB_O) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -358,7 +363,7 @@ DEP_CPP_XPATH=\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
-"$(INTDIR)\xpathname.obj" : $(SOURCE) $(DEP_CPP_XPATH) "$(INTDIR)"
+"$(OBJDIR)\xpathname.obj" : $(SOURCE) $(DEP_CPP_XPATH) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -390,7 +395,7 @@ DEP_CPP_TRIES=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\tries.obj" : $(SOURCE) $(DEP_CPP_TRIES) "$(INTDIR)"
+"$(OBJDIR)\tries.obj" : $(SOURCE) $(DEP_CPP_TRIES) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -417,7 +422,7 @@ DEP_CPP_TRACE=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\trace.obj" : $(SOURCE) $(DEP_CPP_TRACE) "$(INTDIR)"
+"$(OBJDIR)\trace.obj" : $(SOURCE) $(DEP_CPP_TRACE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -451,7 +456,7 @@ DEP_CPP_TR_UT=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\tr_utils.obj" : $(SOURCE) $(DEP_CPP_TR_UT) "$(INTDIR)"
+"$(OBJDIR)\tr_utils.obj" : $(SOURCE) $(DEP_CPP_TR_UT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -472,7 +477,7 @@ DEP_CPP_SYSTE=\
 	{$(INTDIR)}"\configs\special.h"\
 	
 
-"$(INTDIR)\system.obj" : $(SOURCE) $(DEP_CPP_SYSTE) "$(INTDIR)"
+"$(OBJDIR)\system.obj" : $(SOURCE) $(DEP_CPP_SYSTE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -505,7 +510,7 @@ DEP_CPP_SUBP_=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\subp.obj" : $(SOURCE) $(DEP_CPP_SUBP_) "$(INTDIR)"
+"$(OBJDIR)\subp.obj" : $(SOURCE) $(DEP_CPP_SUBP_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -534,7 +539,7 @@ DEP_CPP_SLGDE=\
 	{$(INTDIR)}"\slgdelay.h"\
 	
 
-"$(INTDIR)\slgdelay.obj" : $(SOURCE) $(DEP_CPP_SLGDE) "$(INTDIR)"
+"$(OBJDIR)\slgdelay.obj" : $(SOURCE) $(DEP_CPP_SLGDE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -552,7 +557,7 @@ DEP_CPP_SELF_=\
 	{$(INTDIR)}"\configs\special.h"\
 	
 
-"$(INTDIR)\self_orientation.obj" : $(SOURCE) $(DEP_CPP_SELF_) "$(INTDIR)"
+"$(OBJDIR)\self_orientation.obj" : $(SOURCE) $(DEP_CPP_SELF_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -575,7 +580,7 @@ DEP_CPP_SCC_C=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\scc.obj" : $(SOURCE) $(DEP_CPP_SCC_C) "$(INTDIR)"
+"$(OBJDIR)\scc.obj" : $(SOURCE) $(DEP_CPP_SCC_C) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -600,7 +605,7 @@ DEP_CPP_RESID=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\residual.obj" : $(SOURCE) $(DEP_CPP_RESID) "$(INTDIR)"
+"$(OBJDIR)\residual.obj" : $(SOURCE) $(DEP_CPP_RESID) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -627,7 +632,7 @@ DEP_CPP_PSC_C=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\psc.obj" : $(SOURCE) $(DEP_CPP_PSC_C) "$(INTDIR)"
+"$(OBJDIR)\psc.obj" : $(SOURCE) $(DEP_CPP_PSC_C) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -654,7 +659,7 @@ DEP_CPP_MEMOR=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\memory.obj" : $(SOURCE) $(DEP_CPP_MEMOR) "$(INTDIR)"
+"$(OBJDIR)\memory.obj" : $(SOURCE) $(DEP_CPP_MEMOR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -679,7 +684,7 @@ DEP_CPP_LOAD_=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\load_seg.obj" : $(SOURCE) $(DEP_CPP_LOAD_) "$(INTDIR)"
+"$(OBJDIR)\load_seg.obj" : $(SOURCE) $(DEP_CPP_LOAD_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -694,6 +699,8 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
 	{$(INTDIR)}"\io_builtins.h"\
+	{$(INTDIR)}"\io_builtins.i"\
+	{$(INTDIR)}"\sockets.i"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\export.h"\
@@ -715,7 +722,7 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\io_builtins.obj" : $(SOURCE) $(DEP_CPP_IO_BU) "$(INTDIR)"
+"$(OBJDIR)\io_builtins.obj" : $(SOURCE) $(DEP_CPP_IO_BU) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -734,7 +741,7 @@ DEP_CPP_INST_=\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
-"$(INTDIR)\inst.obj" : $(SOURCE) $(DEP_CPP_INST_) "$(INTDIR)"
+"$(OBJDIR)\inst.obj" : $(SOURCE) $(DEP_CPP_INST_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -766,7 +773,7 @@ DEP_CPP_INIT_=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\init.obj" : $(SOURCE) $(DEP_CPP_INIT_) "$(INTDIR)"
+"$(OBJDIR)\init.obj" : $(SOURCE) $(DEP_CPP_INIT_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -796,7 +803,7 @@ DEP_CPP_HEAP_=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\heap.obj" : $(SOURCE) $(DEP_CPP_HEAP_) "$(INTDIR)"
+"$(OBJDIR)\heap.obj" : $(SOURCE) $(DEP_CPP_HEAP_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -816,7 +823,7 @@ DEP_CPP_HASH_=\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
-"$(INTDIR)\hash.obj" : $(SOURCE) $(DEP_CPP_HASH_) "$(INTDIR)"
+"$(OBJDIR)\hash.obj" : $(SOURCE) $(DEP_CPP_HASH_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -835,7 +842,7 @@ DEP_CPP_FUNCT=\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
-"$(INTDIR)\function.obj" : $(SOURCE) $(DEP_CPP_FUNCT) "$(INTDIR)"
+"$(OBJDIR)\function.obj" : $(SOURCE) $(DEP_CPP_FUNCT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -860,7 +867,7 @@ DEP_CPP_FINDA=\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
-"$(INTDIR)\findall.obj" : $(SOURCE) $(DEP_CPP_FINDA) "$(INTDIR)"
+"$(OBJDIR)\findall.obj" : $(SOURCE) $(DEP_CPP_FINDA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -909,7 +916,7 @@ DEP_CPP_EMULO=\
 	{$(INTDIR)}"\debugs\debug_tries.h"\
 	
 
-"$(INTDIR)\emuloop.obj" : $(SOURCE) $(DEP_CPP_EMULO) "$(INTDIR)"
+"$(OBJDIR)\emuloop.obj" : $(SOURCE) $(DEP_CPP_EMULO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -934,7 +941,7 @@ DEP_CPP_DYNLO=\
 	{$(INTDIR)}"\flags.h"\
 	
 
-"$(INTDIR)\dynload.obj" : $(SOURCE) $(DEP_CPP_DYNLO) "$(INTDIR)"
+"$(OBJDIR)\dynload.obj" : $(SOURCE) $(DEP_CPP_DYNLO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -960,7 +967,7 @@ DEP_CPP_DIS_C=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\dis.obj" : $(SOURCE) $(DEP_CPP_DIS_C) "$(INTDIR)"
+"$(OBJDIR)\dis.obj" : $(SOURCE) $(DEP_CPP_DIS_C) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -990,7 +997,7 @@ DEP_CPP_DEBUG=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\debug.obj" : $(SOURCE) $(DEP_CPP_DEBUG) "$(INTDIR)"
+"$(OBJDIR)\debug.obj" : $(SOURCE) $(DEP_CPP_DEBUG) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1019,7 +1026,7 @@ DEP_CPP_CINTE=\
 	{$(INTDIR)}"\self_orientation.h"\
 	
 
-"$(INTDIR)\cinterf.obj" : $(SOURCE) $(DEP_CPP_CINTE) "$(INTDIR)"
+"$(OBJDIR)\cinterf.obj" : $(SOURCE) $(DEP_CPP_CINTE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1074,7 +1081,7 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\builtin.h"\
 	
 
-"$(INTDIR)\builtin.obj" : $(SOURCE) $(DEP_CPP_BUILT) "$(INTDIR)"
+"$(OBJDIR)\builtin.obj" : $(SOURCE) $(DEP_CPP_BUILT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1109,7 +1116,7 @@ DEP_CPP_BIASS=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\biassert.obj" : $(SOURCE) $(DEP_CPP_BIASS) "$(INTDIR)"
+"$(OBJDIR)\biassert.obj" : $(SOURCE) $(DEP_CPP_BIASS) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1122,7 +1129,7 @@ DEP_CPP_AUXLR=\
 	"$(INTDIR)\configs\config.h"\
 	
 
-"$(INTDIR)\auxlry.obj" : $(SOURCE) $(DEP_CPP_AUXLR) "$(INTDIR)"
+"$(OBJDIR)\auxlry.obj" : $(SOURCE) $(DEP_CPP_AUXLR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1141,7 +1148,7 @@ DEP_CPP_TOKEN=\
 	{$(INTDIR)}"\register.h"\
 	
 
-"$(INTDIR)\token.obj" : $(SOURCE) $(DEP_CPP_TOKEN) "$(INTDIR)"
+"$(OBJDIR)\token.obj" : $(SOURCE) $(DEP_CPP_TOKEN) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1165,7 +1172,7 @@ DEP_CPP_LOADE=\
 	{$(INTDIR)}"\slgdelay.h"\
 	
 
-"$(INTDIR)\loader.obj" : $(SOURCE) $(DEP_CPP_LOADE) "$(INTDIR)"
+"$(OBJDIR)\loader.obj" : $(SOURCE) $(DEP_CPP_LOADE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1186,7 +1193,7 @@ DEP_CPP_XMAIN=\
 	{$(INTDIR)}"\self_orientation.h"\
 	
 
-"$(INTDIR)\xmain.obj" : $(SOURCE) $(DEP_CPP_XMAIN) "$(INTDIR)"
+"$(OBJDIR)\xmain.obj" : $(SOURCE) $(DEP_CPP_XMAIN) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1204,7 +1211,7 @@ DEP_CPP_XMAIN=\
 	{$(INTDIR)}"\cell.h"\
 	
 
-"$(INTDIR)\orastuff.obj" : $(SOURCE) $(DEP_CPP_XMAIN) "$(INTDIR)"
+"$(OBJDIR)\orastuff.obj" : $(SOURCE) $(DEP_CPP_XMAIN) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1229,7 +1236,7 @@ DEP_CPP_PRIVA=\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
-"$(INTDIR)\private_builtin.obj" : $(SOURCE) $(DEP_CPP_PRIVA) "$(INTDIR)"
+"$(OBJDIR)\private_builtin.obj" : $(SOURCE) $(DEP_CPP_PRIVA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1259,7 +1266,7 @@ DEP_CPP_CHAT_=\
 	".\..\emu\debugs\debug_delay.h"\
 	
 
-"$(INTDIR)\chat.obj" : $(SOURCE) $(DEP_CPP_CHAT_) "$(INTDIR)"
+"$(OBJDIR)\chat.obj" : $(SOURCE) $(DEP_CPP_CHAT_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
