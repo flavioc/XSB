@@ -1,3 +1,4 @@
+?- flcompile(module2).
 
 :- import employee[salary@(number) => number] from module2.
 
