@@ -1523,7 +1523,14 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
     Last_Nod_Sav = Paren;
     simple_table_undo_bindings;
 
-    *flagptr = flag;
+    /* if node was deleted, then return 0 to indicate that the insertion took
+       place conceptually (even if not physically */
+    if (IsDeletedNode(Paren)) {
+      *flagptr = 0;
+      undelete_branch(Paren);
+    } else
+      *flagptr = flag;
+
     return(Paren);
 }
 

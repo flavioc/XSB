@@ -217,18 +217,18 @@ static void printTriePathType(TriePathType type, BTNptr leaf) {
 
   switch (type) {
   case NO_PATH:
-    printf("No path found :-(\n");
+    xsb_dbgmsg("No path found :-(");
     break;
   case VARIANT_PATH:
-    printf("Variant path found: ");
+    fprintf(stddbg,"Variant path found: ");
     triePrintPath(leaf,FALSE);
     break;
   case SUBSUMPTIVE_PATH:
-    printf("Subsumptive path found: ");
+    fprintf(stddbg,"Subsumptive path found: ");
     triePrintPath(leaf,FALSE);
     break;
   default:
-    printf("What kind of path? (%d)\n", type);
+    fprintf(stddbg,"What kind of path? (%d)\n", type);
     break;
   }
 }
@@ -266,7 +266,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
    */
   if ( TermStack_IsEmpty ) {
 #ifdef DEBUG_TRIE_LOOKUP
-    printf("Base case: empty TermStack\n");
+    xsb_dbgmsg(stddbg,"Base case: empty TermStack");
 #endif
     return parent;
   }
@@ -280,7 +280,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
    * by returning NULL.
    */
 #ifdef DEBUG_TRIE_LOOKUP
-  printf("Recursive case:\n");
+  xsb_dbgmsg(stddbg,"Recursive case:");
 #endif
   subterm = TermStack_Pop;
   TermStackLog_PushFrame;
@@ -297,7 +297,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 
     if ( ! IsStandardizedVariable(subterm) ) {
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("  Found new call variable: ");
+      fprintf(stddbg,"  Found new call variable: ");
 #endif
 
       /*
@@ -310,7 +310,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
       for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
 	if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
 #ifdef DEBUG_TRIE_LOOKUP
-	  printf("  Binding it to free trievar\n");
+	  xsb_dbgmsg(stddbg,"  Binding it to free trievar");
 #endif
 	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	  /*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
@@ -327,7 +327,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  }
 	  else {
 #ifdef DEBUG_TRIE_LOOKUP
-	  printf(" Binding to free trievar didn't lead to valid path\n");
+	    xsb_dbgmsg(" Binding to free trievar didn't lead to valid path");
 #endif
 	    Trail_PopAndReset;
 	    Trail_PopAndReset;
@@ -335,13 +335,13 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  }
 	}
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("No free trievar here\n");
+      xsb_dbgmsg("No free trievar here");
 #endif
     }
     else {
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("  Found repeat call variable\n"
-	     "  Option #1: Look to pair with repeat trie var\n");
+      fprintf(stddbg,"  Found repeat call variable\n"
+	      "  Option #1: Look to pair with repeat trie var\n");
 #endif
       /*
        * Option 1: Look for a nonlinear trie variable which has already been
@@ -362,7 +362,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  if ( are_identical_subterms(TrieVarBindings[trievar_index],
 				      subterm) ) {
 #ifdef DEBUG_TRIE_LOOKUP
-	    printf("  Found trivar with identical binding\n");
+	    xsb_dbgmsg("  Found trivar with identical binding");
 #endif
 	    leaf = sub_trie_lookup(cur,pathType);
 	    if ( IsNonNULL(leaf) ) {
@@ -378,7 +378,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	    }
 #ifdef DEBUG_TRIE_LOOKUP
 	    else
-	      printf("  Pairing with identically bound trievar didn't lead to valid path\n");
+	      xsb_dbgmsg("  Pairing with identically bound trievar didn't lead to valid path");
 #endif
 	  }
 	}
@@ -387,12 +387,12 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
        * --------  variable.  There is only one of these in a sibling set.
        */    
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("  Option #2: Bind new trievar to repeat call var\n");
+      xsb_dbgmsg("  Option #2: Bind new trievar to repeat call var");
 #endif
       for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
 	if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("    Found new trievar; binding it\n");
+      xsb_dbgmsg("    Found new trievar; binding it");
 #endif
 	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	  /*** TrieVar_BindToMarkedCallVar(trievar_index,subterm); ***/
@@ -406,7 +406,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  }
 	  else {
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("    Binding new trievar to repeat callvar didn't lead to valid path\n");
+      xsb_dbgmsg("    Binding new trievar to repeat callvar didn't lead to valid path");
 #endif
 	    Trail_PopAndReset;
 	    break;
@@ -425,7 +425,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      */
     if ( isconstant(subterm) ) {      /* XSB_INT, XSB_FLOAT, XSB_STRING */
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("  Found constant\n");
+      xsb_dbgmsg("  Found constant");
 #endif
       symbol = EncodeTrieConstant(subterm);
       arity = 0;
@@ -433,7 +433,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
     }
     else if ( isconstr(subterm) ) {   /* XSB_STRUCT */
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("  Found structure\n");
+      xsb_dbgmsg("  Found structure");
 #endif
       symbol = EncodeTrieFunctor(subterm);
       arity = get_arity((Psc)*clref_val(subterm));
@@ -441,7 +441,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
     }
     else if ( islist(subterm) ) {     /* XSB_LIST */
 #ifdef DEBUG_TRIE_LOOKUP
-      printf("  Found list\n");
+      xsb_dbgmsg("  Found list");
 #endif
       symbol = EncodeTrieList(subterm);
       arity = 2;
@@ -475,13 +475,13 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      * --------  one of these among a set of child nodes.
      */
 #ifdef DEBUG_TRIE_LOOKUP
-    printf("  Nonvar Option #1: Find matching symbol in trie\n");
+    xsb_dbgmsg("  Nonvar Option #1: Find matching symbol in trie");
 #endif
     for ( cur = match;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
       if ( symbol == BTN_Symbol(cur) ) {
 	CPtr origTermStackTop = tstTermStack.top;
 #ifdef DEBUG_TRIE_LOOKUP
-	printf("  Found matching trie symbol\n");
+	xsb_dbgmsg("  Found matching trie symbol");
 #endif
 	TermStack_PushLowToHighVector(args,arity);
 	leaf = sub_trie_lookup(cur,pathType);
@@ -492,7 +492,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	}
 	else {
 #ifdef DEBUG_TRIE_LOOKUP
-	  printf("  Matching trie symbol didn't lead to valid path\n");
+	  xsb_dbgmsg("  Matching trie symbol didn't lead to valid path");
 #endif
 	  tstTermStack.top = origTermStackTop;
 	  break;
@@ -505,7 +505,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      */
 
 #ifdef DEBUG_TRIE_LOOKUP
-    printf("  Nonvar Option #2: Match with previously bound trievar\n");
+    xsb_dbgmsg("  Nonvar Option #2: Match with previously bound trievar");
 #endif
     for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
       if ( IsTrieVar(BTN_Symbol(cur)) && ! IsNewTrieVar(BTN_Symbol(cur)) ) {
@@ -513,7 +513,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	if ( are_identical_subterms(TrieVarBindings[trievar_index],
 				    subterm) ) {
 #ifdef DEBUG_TRIE_LOOKUP
-	  printf("  Found trievar bound to matching symbol\n");
+	  xsb_dbgmsg("  Found trievar bound to matching symbol");
 #endif
 	  leaf = sub_trie_lookup(cur,pathType);
 	  if ( IsNonNULL(leaf) ) {
@@ -522,7 +522,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  }
 #ifdef DEBUG_TRIE_LOOKUP
 	  else
-	    printf("  Bound trievar didn't lead to valid path\n");
+	    xsb_dbgmsg("  Bound trievar didn't lead to valid path");
 #endif
 	}
       }
@@ -532,12 +532,12 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      * --------
      */
 #ifdef DEBUG_TRIE_LOOKUP
-    printf("  Nonvar Option #3: Bind free trievar to symbol\n");
+    xsb_dbgmsg("  Nonvar Option #3: Bind free trievar to symbol");
 #endif
     for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
       if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
 #ifdef DEBUG_TRIE_LOOKUP
-	printf("  Binding free trievar to symbol\n");
+	xsb_dbgmsg("  Binding free trievar to symbol");
 #endif
 	trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	/*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
@@ -550,7 +550,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	}
 	else {
 #ifdef DEBUG_TRIE_LOOKUP
-	  printf("Binding free trievar to symbol didn't lead to valid path\n");
+	  xsb_dbgmsg("Binding free trievar to symbol didn't lead to valid path");
 #endif
 	  Trail_PopAndReset;
 	  break;  /* only one unbound trie variable per sibling set */
@@ -560,7 +560,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 
   /* Nothing worked, so fail.  Make stacks same as when this was called. */
 #ifdef DEBUG_TRIE_LOOKUP
-    printf("All options failed!\n");
+    xsb_dbgmsg("All options failed!");
 #endif
   TermStackLog_PopAndReset;
   *pathType = NO_PATH;
@@ -1035,7 +1035,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
    }
    else
      xsb_dbgmsg("Attempt to undelete a node that is not deleted");
- }
+}
 
 
 void reclaim_uninterned_nr(BTNptr root)
@@ -1064,7 +1064,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_op_size = 2*trie_op_size;\
     delete_trie_op = (char *)realloc(delete_trie_op,trie_op_size*sizeof(char));\
     if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
-    /*printf("realloc delete_trie_op to %d\n",trie_op_size);*/\
+    /*xsb_dbgmsg("realloc delete_trie_op to %d",trie_op_size);*/\
   }\
   delete_trie_op[trie_op_top] = op;\
   trie_node_top++;\
@@ -1072,7 +1072,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_node_size = 2*trie_node_size;\
     delete_trie_node = (BTNptr *)realloc(delete_trie_node,trie_node_size*sizeof(BTNptr));\
     if (!delete_trie_node) xsb_exit("out of space for deleting trie");\
-    /*printf("realloc delete_trie_node to %d\n",trie_node_size);*/\
+    /*xsb_dbgmsg("realloc delete_trie_node to %d",trie_node_size);*/\
   }\
   delete_trie_node[trie_node_top] = node;\
 }  
@@ -1082,7 +1082,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_op_size = 2*trie_op_size;\
     delete_trie_op = (char *)realloc(delete_trie_op,trie_op_size*sizeof(char));\
     if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
-    /*printf("realloc delete_trie_op to %d\n",trie_op_size);*/\
+    /*xsb_dbgmsg("realloc delete_trie_op to %d",trie_op_size);*/\
   }\
   delete_trie_op[trie_op_top] = DT_HT;\
   trie_hh_top++;\
@@ -1090,7 +1090,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_hh_size = 2*trie_hh_size;\
     delete_trie_hh = (BTHTptr *)realloc(delete_trie_hh,trie_hh_size*sizeof(BTHTptr));\
     if (!delete_trie_hh) xsb_exit("out of space for deleting trie");\
-    /*printf("realloc delete_trie_hh to %d\n",trie_hh_size);*/\
+    /*xsb_dbgmsg("realloc delete_trie_hh to %d",trie_hh_size);*/\
   }\
   delete_trie_hh[trie_hh_top] = hh;\
 }  
@@ -1113,7 +1113,7 @@ void delete_trie(BTNptr iroot) {
   delete_trie_op[0] = 0;
   delete_trie_node[0] = iroot;
   while (trie_op_top >= 0) {
-    /*    printf("top %d %d %d %p\n",trie_op_top,trie_hh_top,
+    /*    xsb_dbgmsg("top %d %d %d %p",trie_op_top,trie_hh_top,
 	  delete_trie_op[trie_op_top],delete_trie_node[trie_node_top]); */
     switch (delete_trie_op[trie_op_top--]) {
     case DT_DS:
@@ -1160,7 +1160,8 @@ void delete_trie(BTNptr iroot) {
 	    }
 	  }
 	}
-      } else printf("null node");
+      } else
+	printf("null node");
       break;
     }
   }
@@ -1426,9 +1427,9 @@ void trie_intern(void)
   RootIndex = ptoc_int(2);
 
 #ifdef DEBUG_INTERN
-  printf("Interning ");
+  fprintf(stddbg,"Interning ");
   printterm(term,1,25);
-  printf("In position %d\n", RootIndex);
+  xsb_dbgmsg("In position %d", RootIndex);
 #endif
   switch_to_trie_assert;
   Leaf = whole_term_chk_ins(term,&(Set_ArrayPtr[RootIndex]),&flag);
@@ -1437,7 +1438,7 @@ void trie_intern(void)
   ctop_int(3,(Integer)Leaf);
   ctop_int(4,flag);
 #ifdef DEBUG_INTERN
-  printf("Exit flag %d\n",flag);
+  xsb_dbgmsg("Exit flag %d",flag);
 #endif
 }
 

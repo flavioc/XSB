@@ -79,11 +79,14 @@ void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
 {
   switch (Opcode) {
   case getlist_tvar_tvar:
-    printf("getlist_tvar_tvar - %ld %ld %ld\n",(long)Arg1,(long)Arg2,(long)Arg3); break;
+    xsb_dbgmsg("getlist_tvar_tvar - %ld %ld %ld",
+	       (long)Arg1,(long)Arg2,(long)Arg3); break;
   case switchonbound:
-    printf("switchonbound - %ld %ld %ld\n",(long)Arg1,(long)Arg2,(long)Arg3); break;
+    xsb_dbgmsg("switchonbound - %ld %ld %ld",
+	       (long)Arg1,(long)Arg2,(long)Arg3); break;
   case switchon3bound:
-    printf("switchon3bound - %ld %ld %ld\n",(long)Arg1,(long)Arg2,(long)Arg3); break;
+    xsb_dbgmsg("switchon3bound - %ld %ld %ld",
+	       (long)Arg1,(long)Arg2,(long)Arg3); break;
   default: xsb_dbgmsg("Unknown instruction in assert %d",
 		      Opcode);
   }
@@ -1198,7 +1201,7 @@ xsbBool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
   HashTabSize = ptoc_int(6);
 
 #ifdef ASSERTDEBUG
-  printf("Now add clref to chain:\n");
+  xsb_dbgmsg("Now add clref to chain:");
 #endif /* ASSERTDEBUG */
 
   MakeClRef( Clause,
@@ -2149,13 +2152,13 @@ static void print_bytes(CPtr x, int lo, int hi)
 {
   int i;
 
-  printf("addr %p ---------------------------------\n",x);
+  xsb_dbgmsg("addr %p ---------------------------------",x);
   for (i = lo; i <= hi ; i++) {
-    printf(" i = %d 4*i = %d  x[i] = %x \n",i,4*i, (int)*(x+i));
+    xsb_dbgmsg(" i = %d 4*i = %d  x[i] = %x ",i,4*i, (int)*(x+i));
   }
-  printf("Instr = %s ---code to run %s----\n",
-	 (char *)inst_table[try_type_instr_fld(x)][0],
-	 (char *)inst_table[code_to_run(x)][0] );
+  xsb_dbgmsg("Instr = %s ---code to run %s----",
+	     (char *)inst_table[try_type_instr_fld(x)][0],
+	     (char *)inst_table[code_to_run(x)][0] );
 }
 #endif
 
@@ -2180,20 +2183,20 @@ int trie_assert(void)
 
 #ifdef DEBUG_T
   Arity  = ptoc_int(3);
-  printf("Prref bytes\n");
+  fprintf(stddbg,"Prref bytes\n");
   print_bytes(Prref,-2,2);
-  printf("Clause :");
+  fprintf(stddbg,"Clause :");
   printterm(Clause,1,24);
-  printf(" Arity %d ", Arity);
-  printf(" Psc   %d ",(int)psc);
-  printf(" Prref %d ",(int)Prref);
-  printf("\n");
+  fprintf(stddbg," Arity %d ", Arity);
+  fprintf(stddbg," Psc   %d ",(int)psc);
+  fprintf(stddbg," Prref %d ",(int)Prref);
+  fprintf(stddbg,"\n");
 #endif
 
   Trie_Asserted_Clref = trie_asserted_clref(Prref);
 
 #ifdef ASSERTDEBUG
-  printf(" Trie_Asserted_Clref %p \n",Trie_Asserted_Clref);
+  xsb_dbgmsg(" Trie_Asserted_Clref %p",Trie_Asserted_Clref);
 #endif
 
   switch_to_trie_assert;
@@ -2242,14 +2245,14 @@ int trie_retract(void)
   else {
     inst_node_ptr = (BTNptr)*(Clref +3);
 #ifdef DEBUG_T
-    printf(" Deleting from Instrn Node %p\n",  inst_node_ptr );
-    printf(" Before: Child of Instrn Node %p\n", Child(inst_node_ptr));
+    xsb_dbgmsg(" Deleting from Instrn Node %p",  inst_node_ptr );
+    xsb_dbgmsg(" Before: Child of Instrn Node %p", Child(inst_node_ptr));
 #endif
     switch_to_trie_assert;
     delete_branch(Last_Nod_Sav, &(Child(inst_node_ptr)));
     switch_from_trie_assert;
 #ifdef DEBUG_T
-    printf(" After : Child of Instrn Node %p\n", Child(inst_node_ptr));
+    xsb_dbgmsg(" After : Child of Instrn Node %p", Child(inst_node_ptr));
 #endif
     return TRUE;
   }
