@@ -61,8 +61,7 @@ rule(fact(Head,HeadVars)) -->
 rule(import_directive(PAs,Sigs,Module)) -->
 	imply_symbol,
 	white_space0,
-	atom_name(Import),
-	{atom_codes(Import,"import")},
+	atom_name((import)),
 	pa_sig_list(PAs,Sigs),
 	white_space0,
 	[identifier(from)],
@@ -74,8 +73,7 @@ rule(import_directive(PAs,Sigs,Module)) -->
 rule(export_directive(PAs,Sigs)) -->
 	imply_symbol,
 	white_space0,
-	atom_name(Export),
-	{atom_codes(Export,"export")},
+	atom_name((export)),
 	pa_sig_list(PAs,Sigs),
 	rule_delimeter,
 	!.
@@ -83,8 +81,7 @@ rule(export_directive(PAs,Sigs)) -->
 rule(table_directive(PAs)) -->
 	imply_symbol,
 	white_space0,
-	atom_name(Table),
-	{atom_codes(Table,"table")},
+	atom_name((table)),
 	predicate_arity_list(PAs),
 	rule_delimeter,
 	!.
@@ -92,8 +89,7 @@ rule(table_directive(PAs)) -->
 rule(dynamic_directive(PAs)) -->
 	imply_symbol,
 	white_space0,
-	atom_name(Dynamic),
-	{atom_codes(Dynamic,"dynamic")},
+	atom_name((dynamic)),
 	predicate_arity_list(PAs),
 	rule_delimeter,
 	!.
