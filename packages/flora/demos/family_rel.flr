@@ -95,8 +95,6 @@ sister(X,S) :- parent(X,P), parent(S,P), female(S), not X=S.
 ancestor(X,Y) :- parent(X,Y).		% read as ``ancestor_of X is Y''
 ancestor(X,Y) :- ancestor(X,Z), ancestor(Z,Y).
 
-%%% uncomment when using FLORID:
-%?-sys.eval. 	
 
 %%% ======================================================================
 %%% now ask some queries:

@@ -52,7 +52,6 @@ ans_diff(X) :- p(X), not q(X).
 
 %%% ==================================================================
 %%% Here are some base facts.
-%%% (put these BEFORE the rules when using FLORID instead of FLIP)
 %%% ==================================================================
 
 %%% p(X,Y):
