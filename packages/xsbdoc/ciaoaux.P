@@ -1,20 +1,16 @@
 
 :- compiler_options([xpp_on,ciao_directives]).
 
-:- export atom_concat/2, atom_concat/3, 
-	  (data)/1, display/2, 
+:- export  (data)/1, display/2, 
 	  error_message/1, error_message/2, 
-	  fast_read/1, fast_write/1,
 	  list_concat/2, 
 	  note_message/1, optional_message/2,
 	  pop_prolog_flag/1,  push_prolog_flag/1,
-	  retract_fact/1, 
 	  set_libs/1,
 	  xsbdoc_error/1,
 	  xsbdoc_warning/1.
 
 :- import format/2 from format.
-:- import concat_atom/2 from string.
 :- import warning/1,messageln/2, message/2 from standard.
 :- import member/2 from basics.
 
@@ -29,10 +25,6 @@ data(_).
 pop_prolog_flag(X):- warning((pop_prolog_flag(X),' is a no-op')).
 
 push_prolog_flag(X):- warning((push_prolog_flag(X),' is a no-op')).
-
-retract_fact(_):- retract(_).
-
-retractall_fact(_):- retractall(_).
 
 /* TLS: the following has a slightly different semantics from flatten */
 
@@ -51,9 +43,6 @@ list_concat([L|RL],Head) :-
 	dlist(L,Head,Tail),
 	list_concat(RL,Tail).
 
-atom_concat(List,Atom):- concat_atom(List,Atom).
-
-atom_concat(Atom1,Atom2,Atom3):- concat_atom([Atom1,Atom2],Atom3).
 
 % TLS: perhaps this is not the way to do it, but ciao display/2 is a kernal 
 % predicate.
@@ -82,19 +71,6 @@ optional_message(Message,Opts):-
 	member('-v',Opts),!,
 	writeln(Message).
 optional_message(_Message,_Opts).
-
-fast_read(Term):- read(Term).
-
-fast_write(Term):- write(Term).
- 
-
-current_fact(Goal):- call(Goal).
-
-undo_decls(Base) :-
-        current_fact(undo_decl(Base, _, UndoGoal)),
-          call(UndoGoal),
-        fail.
-undo_decls(_).
 
 xsbdoc_warning(Message):- 
 	message('++Warning[xsbdoc]: ', STDWARN),

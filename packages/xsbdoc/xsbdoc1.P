@@ -105,6 +105,7 @@ tex_commands(Base):-
 
 texinfo_the_files(Base):- 
 	member(X,[pd,op,co,gl]),
+	writeln(['texindex ',Base,'.',X]),
 	shell_list(['texindex ',Base,'.',X]),
 	fail.
 texinfo_the_files(_Base).
@@ -148,7 +149,7 @@ xsbdoc_components(_,_,_).
 component_html([]).
 component_html([P|T]):- 
 	corrected_search_module(P,_Dir,Base,_Src,_Isl), 
-	shell_list(['texi2html -expandinfo -split_chapter -menu ',
+	shell_list(['csh texi2html -expandinfo -split_chapter -menu ',
 		    Base,'.texic']),
 	component_html(T).
 
@@ -168,6 +169,7 @@ throw_load_dyn(File):-
 	load_dyn(File) -> true ; abort(('file not found ',File)).
 
 clear_the_decks:- 
+	retractall(user_library(_,_)),
 	retractall(xsbdoc_bibfile(_)),
 	retractall(xsbdoc_component(_)),
 	retractall(xsbdoc_index(_)),

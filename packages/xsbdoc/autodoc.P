@@ -38,7 +38,7 @@
 	  supported_format_suffix/2,
 	  verbatimize_string/3 from autodocformats.
 
-:- import comma_member/2, corrected_search_module/5,
+:- import  corrected_search_module/5,
 	  postproc_newlines/2, 
 	  process_a_file/5, 
 	  read_file_as_string/2,
@@ -56,9 +56,9 @@
 :- import message/1, ttyflush/0 from xsb_ciao.
 :- import '_#clause'/2 from usermod.
 
-:- import append/3, length/2, member/2, reverse/2,copy_term/2 from basics.
+:- import append/3, length/2, member/2, reverse/2,copy_term/2,  comma_member/2  from basics.
 :- import concat_atom/2 from string.
-:- import pretty_print/2 from pretty_print.
+:- import pretty_print/1 from pretty_print.
 :- import list/1 from basic_props.
 
 parsing_latex.
@@ -295,8 +295,9 @@ autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
 	retractall(refs_stream(_)),
 	close(OS),
 	retractall(main_name(_)),
-	(close(IntroOS) ; true),
-
+	(stream_property(IntroOs,type(_)) -> 
+	    close(IntroOs)
+	  ; true),
 	read_file_reset,
 	message('}'),
 	ttyflush,!.
@@ -1032,7 +1033,7 @@ do_the_file_processing(RMain,FormatSuffix,_AssrtOps,_AssrtNDPs,
 
 	# "@var{Base} is the file name with the full path. @var{Dir}
            is the library directory name. @var{Suffix} is the suffix
-           for @var{O}. @var{Name} is the basic name of the file
+       for @var{O}. @var{Name} is the basic name of the file
            (without the path or suffix). @var{NDName} is @var{Name}
            without @tt{_doc} if @var{Name} ends in @tt{_doc}.".
 */
@@ -1484,33 +1485,33 @@ try_command(includefact(PredS),
 	   append(RContent,Tail,NStr)
 	;  error_message("~s not found in program text",[PredS]),
 	   Tail=NStr, Verb=NewVerb ).
+
+% TLS: autodocXXXXXXX is used to collect all clauses and put in verbatim (from Ciao)
+% TLS: dont know why I don't need dict manipulation.
 try_command(includedef(PredS),
             SP,Format,Idxs,Verb,Verb,_NL,NNL,Opts,NStr,Tail) :-
+%	trace,
 	parse_predname(Functor,Arity,PredS),
-        !,
+            !,
 	(  Functor \== 0,
 	   functor(Pattern,Functor,Arity),
 	   copy_term(Pattern,TmpPattern),
 	   optional_message(['-> Including code for ',Functor/Arity,
 			     'in documentation string'],Opts),
 	   clause_read(TmpPattern,_,_)
-	-> telling(Old),
-	   open(autodocXXXXXX,write,Tmp),
-	   tell(Tmp),
-%	   current_prolog_flag(write_strings,X),
-%	   set_prolog_flag(write_strings,on),
+	-> open(autodocXXXXXX,write,Tmp),
 	   ( clause_read(Pattern,Body,_Ctr),
-	     Clause = clause(Pattern,Body),
 %	     varnamesl2dict(Dict,ICiaoDict),
 %	     complete_dict(ICiaoDict,Clause,CiaoDict),
-	     pretty_print(Clause,[nl(no)]),
+	     telling(Old), tell(Tmp),
+	     pretty_print((Pattern :- Body)),
 	     fail
 	   ; true ),
-%	   set_prolog_flag(write_strings,X),
-	   told,
-	   tell(Old),
-	   read_file(Tmp,Content), 
-%	   delete_file(Tmp),
+	   tell(Old),close(Tmp),
+	   open(autodocXXXXXX,read,TmpIn),
+	   read_stream(TmpIn,Content), 
+	   close(TmpIn),
+	   path_sysop(rm,'autodocXXXXXX'),
 	   rewrite_command(Format,begin("verbatim"),Idxs,BVerb),
 	   rewrite_command(Format,end("verbatim"),Idxs,EVerb),
 	   % Could be done better?
@@ -1599,15 +1600,6 @@ add_space_after_command(sp,Comm,NewComm,nl) :-
 	append(CommNoNL," \n",NewComm).
 add_space_after_command(sp,Comm,NewComm,nonl) :-
 	append(Comm," ",NewComm).
-
-read_file(File,Content) :-
-	file_exists(File),
-	!,
-	open(File,read,IS),
-	read_stream(IS,Content),
-	close(IS).
-read_file(File,[]) :-
-	error_message("file ~w not found",[File]).
 
 read_stream(IS,Content) :-
 	get_code(IS,N),

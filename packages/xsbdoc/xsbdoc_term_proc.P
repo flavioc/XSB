@@ -34,6 +34,13 @@ read_file_as_string(File,List):-
 	postproc_newlines(List_in,List),
 	close(FStr).
 	
+read_file_as_string_1(FStr,List):- 
+	get_code(FStr,Char),
+	(Char < 0 -> 
+	    List = [] 
+    	  ; List = [Char|List1],
+	    read_file_as_string_1(FStr,List1) ).
+	    
 postproc_newlines(H,T):- 
 	xsb_configuration(host_os,Type),
 	(Type == windows -> 
@@ -48,13 +55,6 @@ postproc_newlines1([H|Tin],[H|Tout]):-
 	postproc_newlines1(Tin,Tout).
 postproc_newlines1(Nonlist,Nonlist).   % for hide, etc.
 
-read_file_as_string_1(FStr,List):- 
-	get_code(FStr,Char),
-	(Char < 0 -> 
-	    List = [] 
-    	  ; List = [Char|List1],
-	    read_file_as_string_1(FStr,List1) ).
-	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 /* Call from autodoc
@@ -174,38 +174,6 @@ messageln(X):- message(X),message('
 read_file_reset:- 
 	retractall('_#clause'(_,_)),
 	retractall('_#ctr'(_)).
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Commautils.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-comma_to_list((One,Two),[One|Twol]):- !,
-	comma_to_list(Two,Twol).
-comma_to_list(One,[One]).
-
-comma_memberchk_eq(A,A1):- A == A1,!.
-comma_memberchk_eq(','(A,_),A1):- A == A1,!.
-comma_memberchk_eq(','(_,R),A1):- 
-	comma_memberchk_eq(R,A1).
-
-% warning: may bind variables.
-comma_member(A,','(A,_)).
-comma_member(A,','(_,R)):- 
-	comma_member(A,R).
-comma_member(A,A):- \+ (functor(A,',',_)).
-
-comma_length(','(_L,R),N1):- !,
-	comma_length(R,N),
-	N1 is N + 1.	
-comma_length(true,0):- !.
-comma_length(_,1).
-
-comma_append(','(L,R),Cl,','(L,R1)):- !,
-	comma_append(R,Cl,R1).
-comma_append(true,Cl,Cl):- !.
-comma_append(L,Cl,Out):- 
-	(Cl == true -> Out = L ; Out = ','(L,Cl)).
 
 get_atom_from_body(tnot(A),A):- !.
 get_atom_from_body(not(Seq),A):- !,
@@ -536,9 +504,8 @@ new_file_status(Base, PlName, Dir, Type, Status) :-
         ).
 
 extension_name_time(Base, Ext, File, Time) :-
-        atom_concat(Base, Ext, File),
+        concat_atom([Base, Ext], File),
         modif_time0(File, Time). % system
-
 
 process_expanded_data((?- Goal), _, _, _, _, _, _, _) :- !,
         call(Goal), !. % Done at compile time
