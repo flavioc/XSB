@@ -843,8 +843,7 @@ static void write_out_profile(void)
     tot = isum + ssum;
   if (tot!=0) {
     fprintf(stdout,
-	    "max subgoals %u max completed %u max consumers in ascc %u
-             max compl_susps in ascc %u\n",
+	    "max subgoals %u max completed %u max consumers in ascc %u max compl_susps in ascc %u\n",
 	          max_subgoals,max_completed,max_consumers_in_ascc,
 	          max_compl_susps_in_ascc);
     rat1 = isum / tot;
