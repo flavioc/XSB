@@ -1050,7 +1050,7 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*		24: BC noop(6) to skip next (NI-1)*8-2 bytes		*/
 /*		28: Addr of previous ClRefI on bucket chain		*/
 /*		32: Try-type instruction, for hash bucket subchain	*/
-/*		34: (cont) Addr of next ClRefI in bucket		*/
+/*		36: (cont) Addr of next ClRefI in bucket		*/
 /*	   NI*16+8: BC for asserted code				*/
 /*									*/
 /*======================================================================*/
@@ -1980,7 +1980,7 @@ xsbBool db_build_prref( /* PSC, Tabled?, -PrRef */ )
   set_type(psc, T_DYNA);
   set_env(psc, T_VISIBLE);
     
-  p = (CPtr)mem_alloc(4*sizeof(Cell));
+  p = (CPtr)mem_alloc(sizeof(PrRefData));
   Loc = 0 ;
   dbgen_inst_ppp(fail,p,&Loc) ;
   p[2] = (Cell)p ;
@@ -2011,10 +2011,10 @@ xsbBool db_remove_prref( /* PrRef */ )
   if ( *(pb)p == tabletrysingle )
     {
       /* free prref, from calld instr set in db_build_prref */
-      mem_dealloc((pb)(*(p+6)), 4*sizeof(Cell)); 
+      mem_dealloc((pb)(*(p+6)), sizeof(PrRefData));
       mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ; /*free table hdr*/
     }
-  else mem_dealloc((pb)p, 4*sizeof(Cell)); /* free prref */
+  else mem_dealloc((pb)p, sizeof(PrRefData));  /* free prref */
   return TRUE ;
 }
 
