@@ -60,6 +60,8 @@
 
 #define CLAUSE_INT	24	/* for clause interrupt			YW */
 
+#define BACKTRACE	25	/* for backtracing on error      Y/N              */
+
 #define CONFIG_FILE	26	/* Where xsb_configuration.P lives	   */
 /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
 #define CONFIG_NAME	28	/* this looks like this: cpu-vendor-os	   */
