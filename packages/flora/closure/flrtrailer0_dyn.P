@@ -73,6 +73,7 @@
 
 /*****************************************************************************
   rules for nonmonotonic behavior inheritance
+*****************************************************************************/
 
 :- table '_$_$_flora_fd_dyn'/3.
 :- table '_$_$_flora_mvd_dyn'/3.
@@ -81,16 +82,17 @@
 :- table '_$_$_flora_defined_fd_dyn'/2.
 :- table '_$_$_flora_defined_mvd_dyn'/2.
 :- table '_$_$_flora_defined_ifd_dyn'/2.
-:- table '_$_$_flora_defined_imvd_dyn'/3.
+:- table '_$_$_flora_defined_imvd_dyn'/2.
 :- table '_$_$_flora_overwritten_fd_dyn'/3.
 :- table '_$_$_flora_overwritten_mvd_dyn'/3.
 :- table '_$_$_flora_overwritten_ifd_dyn'/3.
 :- table '_$_$_flora_overwritten_imvd_dyn'/3.
 
+
 '_$_$_flora_fd_dyn'(Object,Method,Value) :-
-	tnot('_$_$_flora_defined_fd_dyn'(Object,Method)),
 	'_$_$_flora_isa_dyn'(Object,Class),
 	'_$_$_flora_ifd_dyn'(Class,Method,Value),
+	tnot('_$_$_flora_defined_fd_dyn'(Object,Method)),
 	tnot('_$_$_flora_overwritten_fd_dyn'(Object,Class,Method)).
 
 '_$_$_flora_defined_fd_dyn'(Object,Method) :-
@@ -104,9 +106,9 @@
 
 
 '_$_$_flora_mvd_dyn'(Object,Method,Value) :-
-	tnot('_$_$_flora_defined_mvd_dyn'(Object,Method)),
 	'_$_$_flora_isa_dyn'(Object,Class),
 	'_$_$_flora_imvd_dyn'(Class,Method,Value),
+	tnot('_$_$_flora_defined_mvd_dyn'(Object,Method)),
 	tnot('_$_$_flora_overwritten_mvd_dyn'(Object,Class,Method)).
 
 '_$_$_flora_defined_mvd_dyn'(Object,Method) :-
@@ -120,9 +122,9 @@
 
 
 '_$_$_flora_ifd_dyn'(Class,Method,Value) :-
-	tnot('_$_$_flora_defined_ifd_dyn'(Class,Method)),
 	'_$_$_flora_subclass_dyn'(Class,Super),
 	'_$_$_flora_ifd_dyn'(Super,Method,Value),
+	tnot('_$_$_flora_defined_ifd_dyn'(Class,Method)),
 	tnot('_$_$_flora_overwritten_ifd_dyn'(Class,Super,Method)).
 
 '_$_$_flora_defined_ifd_dyn'(Class,Method) :-
@@ -136,9 +138,9 @@
 
 
 '_$_$_flora_imvd_dyn'(Class,Method,Value) :-
-	tnot('_$_$_flora_defined_imvd_dyn'(Class,Method)),
 	'_$_$_flora_subclass_dyn'(Class,Super),
 	'_$_$_flora_imvd_dyn'(Super,Method,Value),
+	tnot('_$_$_flora_defined_imvd_dyn'(Class,Method)),
 	tnot('_$_$_flora_overwritten_imvd_dyn'(Class,Super,Method)).
 
 '_$_$_flora_defined_imvd_dyn'(Class,Method) :-
@@ -149,7 +151,6 @@
 	'_$_$_flora_subclass_dyn'(S,Super),
 	Super \= S,
 	'_$_$_flora_imvd_dyn'(S,Method,_).
-*****************************************************************************/
 
 
 /*****************************************************************************

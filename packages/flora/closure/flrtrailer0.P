@@ -73,6 +73,7 @@
 
 /*****************************************************************************
   rules for nonmonotonic inheritance of behavior
+*****************************************************************************/
 
 :- table '_$_$_flora_fd'/3.
 :- table '_$_$_flora_mvd'/3.
@@ -81,16 +82,16 @@
 :- table '_$_$_flora_defined_fd'/2.
 :- table '_$_$_flora_defined_mvd'/2.
 :- table '_$_$_flora_defined_ifd'/2.
-:- table '_$_$_flora_defined_imvd'/3.
+:- table '_$_$_flora_defined_imvd'/2.
 :- table '_$_$_flora_overwritten_fd'/3.
 :- table '_$_$_flora_overwritten_mvd'/3.
 :- table '_$_$_flora_overwritten_ifd'/3.
 :- table '_$_$_flora_overwritten_imvd'/3.
 
 '_$_$_flora_fd'(Object,Method,Value) :-
-	tnot('_$_$_flora_defined_fd'(Object,Method)),
 	'_$_$_flora_isa'(Object,Class),
 	'_$_$_flora_ifd'(Class,Method,Value),
+	tnot('_$_$_flora_defined_fd'(Object,Method)),
 	tnot('_$_$_flora_overwritten_fd'(Object,Class,Method)).
 
 '_$_$_flora_defined_fd'(Object,Method) :- '_$_$_flora_fd'(Object,Method,_).
@@ -103,9 +104,9 @@
 
 
 '_$_$_flora_mvd'(Object,Method,Value) :-
-	tnot('_$_$_flora_defined_mvd'(Object,Method)),
 	'_$_$_flora_isa'(Object,Class),
 	'_$_$_flora_imvd'(Class,Method,Value),
+	tnot('_$_$_flora_defined_mvd'(Object,Method)),
 	tnot('_$_$_flora_overwritten_mvd'(Object,Class,Method)).
 
 '_$_$_flora_defined_mvd'(Object,Method) :- '_$_$_flora_mvd'(Object,Method,_).
@@ -118,9 +119,9 @@
 
 
 '_$_$_flora_ifd'(Class,Method,Value) :-
-	tnot('_$_$_flora_defined_ifd'(Class,Method)),
 	'_$_$_flora_subclass'(Class,Super),
 	'_$_$_flora_ifd'(Super,Method,Value),
+	tnot('_$_$_flora_defined_ifd'(Class,Method)),
 	tnot('_$_$_flora_overwritten_ifd'(Class,Super,Method)).
 
 '_$_$_flora_defined_ifd'(Class,Method) :- '_$_$_flora_ifd'(Class,Method,_).
@@ -133,9 +134,9 @@
 
 
 '_$_$_flora_imvd'(Class,Method,Value) :-
-	tnot('_$_$_flora_defined_imvd'(Class,Method)),
 	'_$_$_flora_subclass'(Class,Super),
 	'_$_$_flora_imvd'(Super,Method,Value),
+	tnot('_$_$_flora_defined_imvd'(Class,Method)),
 	tnot('_$_$_flora_overwritten_imvd'(Class,Super,Method)).
 
 '_$_$_flora_defined_imvd'(Class,Method) :- '_$_$_flora_imvd'(Class,Method,_).
@@ -145,7 +146,6 @@
 	'_$_$_flora_subclass'(S,Super),
 	Super \= S,
 	'_$_$_flora_imvd'(S,Method,_).
-*****************************************************************************/
 
 
 /*****************************************************************************
