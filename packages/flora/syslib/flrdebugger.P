@@ -34,7 +34,7 @@
 :- import fmt_write/3, file_open/3, file_close/1 from file_io.
 :- import file_read/2 from xsb_read.
 :- import file_write/2 from xsb_writ.
-:- import cpp_file/3 from parse.
+:- import xpp_process_file/3 from parse.
 :- import process_control/2 from shell.
 :- import conset/2 from prof_sbp.
 :- import debug_display_call_hook/1,
@@ -397,7 +397,7 @@ flora_read_debugger_data :-
 	package_configuration(dir(flora), FlrSysLib),
 	fmt_write_string(DebugDataFile,
 			 '%s/syslib/flrdebug_data.P', arg(FlrSysLib)),
-	cpp_file(DebugDataFile, CPP_process, IOportFromCPP),
+	xpp_process_file(DebugDataFile, CPP_process, IOportFromCPP),
 	repeat,
 	    file_read(IOportFromCPP,T),
 	    (T = end_of_file -> true
