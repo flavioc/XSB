@@ -418,6 +418,12 @@ described in Section \ref{sec:dcg_tabling}.
 \noindent
 implicitly changing the DCG mode from list to datalog.
 
+\ouritem{tphrase\_set\_string\_keeping\_tables(+List)}\index{{\tt tphrase\_set\_string\_keeping\_tables/1}} 
+
+    This predicate is the same as {\tt tphrase\_set\_string}, execpt
+it does not abolish any tables.  When using this predicate, the
+user is responsible for explicitly abolishing the necessary tables.
+
 \ournewitem{dcg(+DCG\_Rule, ?Prolog\_Clause)}{dcg}
 \index{{\tt dcg/2}}
     Succeeds iff the DCG rule {\tt DCG\_Rule} translates to the Prolog
