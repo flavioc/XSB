@@ -42,7 +42,7 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 #-----------------------------------------------------------------------#
 
 # Make sure warnings are saved in a file.
-SVFILE = '../../build/.regmatch_warn.tmp'
+SVFILE = '../../build/.regmatch_warn.top'
 OWRITE = 1
 STDWARN = 3
 STDERR = 2
