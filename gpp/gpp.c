@@ -2236,7 +2236,8 @@ int ParsePossibleUser()
   idstart=1;
   id=0;
   if (!SplicePossibleUser(&idstart,&idend,&sh_end,&lg_end,
-                          argb,arge,&argc,1,&id,FLAG_USER)) return -1;
+                          argb,arge,&argc,1,&id,FLAG_USER))
+    return -1;
   if ((sh_end>=0)&&(C->namedargs!=NULL)) {
     i=findNamedArg(C->buf+idstart,idend-idstart);
     if (i>=0) {
@@ -2245,6 +2246,7 @@ int ParsePossibleUser()
       return 0;
     }
   }
+
   if (id<0) return -1;
   if (lg_end>=0) macend=lg_end; else { macend=sh_end; argc=0; }
 
@@ -2355,7 +2357,12 @@ void ParseText()
   if (ParsePossibleUser()>=0) return;
   
   l=1;
-  if (matchSequence(S->User.mArgRef,&l)) {
+  /* MK: changed this If-statement. Check with Denis
+     if (matchSequence(S->User.mArgRef,&l)) {
+  */
+  /* If matching numbered macro argument and inside a macro */
+  if (matchSequence(S->User.mArgRef,&l) && C->ambience==FLAG_META) {
+    /* Process macro argument referenced as #1,#2,... */
     c=getChar(l);
     if ((c>='1')&&(c<='9')) {
       c=c-'1';
