@@ -105,9 +105,6 @@
 
 /*======================================================================*/
 
-/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
-extern FILE *fdopen(int fildes, const char *type);
-
 extern tab_inf_ptr get_tip(Psc);
 extern tab_inf_ptr first_tip;
 extern tab_inf_ptr last_tip;

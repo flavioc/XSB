@@ -339,7 +339,7 @@ predicates are described here.
     Another difference with C is that, unlike most C compilers, XSB insists
     that a single {\tt \%} in the format string signifies format conversion
     specification. (Some C compilers might output {\tt \%} if it is not
-    folowed by a valid type conversion spec.) So, to output {\tt \%}
+    followed by a valid type conversion spec.) So, to output {\tt \%}
     you must type {\tt \%\%}.
     Format can also be an atom enclosed in single quotes. However, in that
     case, escape sequences are not recognized and are printed as is.
@@ -370,7 +370,7 @@ predicates are described here.
     Another difference with C is that, unlike most C compilers, XSB insists
     that a single {\tt \%} in the format string signifies format conversion
     specification. (Some C compilers might output {\tt \%} if it is not
-    folowed by a valid type conversion spec.) So, to output {\tt \%}
+    followed by a valid type conversion spec.) So, to output {\tt \%}
     you must type {\tt \%\%}.
     
     Format can also be an atom, but then escape sequences are not
@@ -554,7 +554,7 @@ succeeds. It does not distinguish between a file error and end of file.
 You can determine if either of these conditions has happened by verifying
 that $\tt BytesRead < BytesRequested$.
 
-Note: The string read is {\bf not} interned. Please see exlanations to
+Note: The string read is {\bf not} interned. Please see explanations to
 \verb|file_read_line| on this matter. Because of the difficulties in using
 this predicate, the predicates \verb|file_getbuf_atom| and
 \verb|file_getbuf_list| are often better alternatives.
@@ -714,6 +714,102 @@ Example:
 \end{description}
 
 
+\section{Communication with Other Processes}
+
+In the previous section, we have seen several predicates that allow XSB to
+create other processes. However, these predicates offer only a very
+limited way to communicate with these processes. The predicate
+\verb|spawn_process/3| comes to the rescue. It allows to spawn any
+process (including multiple copies of XSB) and redirect its standard
+input and output to XSB streams. XSB can then write to the process and read
+from it. The section of socket I/O describes yet another mode of
+interprocess communication.
+
+\begin{description}
+\ouritem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc)}\index{{\tt spawn\_process/3}} 
+Spawn a new process specified by {\tt CmdSpec}. {\tt CmdSpec} must be a
+\emph{list} of atoms or Prolog strings (character lists). The first
+argument must be the name of the program to run and the other elements are
+arguments to the program. Program name must be specified in such a way as
+to make sure the OS can find it using the contents of the environment
+variable {\tt PATH}.
+
+The remaining parameters to \verb|spawn_process| are XSb I/O streams
+to and from the process.
+\end{description}
+%%
+
+\noindent
+Here is a simple example of how it works.
+
+%%
+\begin{verbatim}
+| ?- import file_flush/2, file_read_line_atom/3 from file_io.
+| ?- import file_nl/1 , file_write/2 from xsb_writ.  
+
+| ?- spawn_process([cat, "-"], To, From),
+     file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_),
+     file_read_line_atom(From,Y,_).
+
+To = 3
+From = 4
+Y = Hello cat!
+
+yes
+\end{verbatim}
+%%
+
+Here we created a new process, which runs the ``{\tt cat}'' program
+with argument ``--''. This forces {\tt cat} to read from standard input and
+write to standard output. The next line writes a newline-terminated string
+to the XSB stream {\tt To} the, which is bound to the standard input of the
+{\tt cat} process. The process then copies the input to the standard output.
+Since standard output of the process is redirected to the XSB stream {\tt
+  From}, the last line in our program is able to read it and return in the
+variable {\tt Y}.
+
+Note that in the second line we used {\tt file\_flush/2}. Flushing the
+output is extremely important here, because XSB I/O streams are buffered.
+Thus, {\tt cat} might not see its input until the buffer is filled up, so
+the above clause might hang. {\tt file\_flush/2} makes sure that the input
+is immediately available to the subprocess.
+
+In addition to the above general schema, the user can tell
+\verb|spawn_process| to not open one of the communication streams.
+This is useful when you do not expect to write or read to/from the
+subprocess. To tell that a certain stream is not needed, it suffices to
+pass a non-variable term to \verb|spawn_process|. For instance, 
+%%
+\begin{verbatim}
+| ?- spawn_process([cat, "-"], To, none),
+     file_nl(To), file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_).
+
+
+To = 3,
+Hello cat!
+\end{verbatim}
+%%
+reads from XSB and copies the result to standard output. Likewise,
+%%
+\begin{verbatim}
+| ?- spawn_process([cat, "test"], none, From),
+     file_read_line_atom(From, S, _).
+
+From = 4
+S = The first line of file ``test''
+\end{verbatim}
+%%
+In each case, only one of the streams is open. Finally, if both streams are
+suppressed, then \verb|spawn_process| reduces to the already familiar
+{\tt unix/1} call:
+%%
+\begin{verbatim}
+| ?- spawn_process([pwd], none, none).
+
+/usr/local/foo/bar
+\end{verbatim}
+%%
+
 
 \section{Socket I/O}
 
@@ -808,7 +904,7 @@ routines.  Currently only the domain {\tt AF\_INET} is supported.
 
 \end{description}
 
-(dsw - This is stuff Hasan wrote, wich ought to be formated, cleaned up an dincluded: )
+(dsw - This is stuff Hasan wrote, wich ought to be formated, cleaned up and included: )
 
 The following calls can be imported from the ``socket'' library.
 
@@ -975,7 +1071,7 @@ In \version, trie asserted code has been merged with standard asserted
 code.  If the user wishes to use tries for dynamic code, the
 recommended programming practice is as outlined in the section {\it
 Modification of the Database} in Volume 1.
-For compatability with previous versions, the
+For compatibility with previous versions, the
 predicates {\tt trie\_assert/1}, {\tt trie\_retract/1}, {\tt
 trie\_retractall/1}, {\tt trie\_retract\_nr/1}, {\tt
 abolish\_trie\_asserted/1} and {\tt trie\_dynamic/1} can be imported
@@ -1005,7 +1101,7 @@ the {\em well-founded semantics with explicit negation} \cite{ADP95}.
 Briefly, WFSX is an extension of the well-founded semantics to include
 explicit negation and which is based on the {\em coherence principle}
 in which an atom is taken to be default false if it is proven to be
-explicitly false, intutively:
+explicitly false, intuitively:
 \[
 -p \Rightarrow not\ p.
 \]
@@ -1043,7 +1139,7 @@ by the rule {\tt -t} overrides the undefined truth value for {\tt t}
 obtained by the rule {\tt t:- r}.  The WFSX model for this program
 will assign the truth value of {\tt t} as false, and that of {\tt s}
 as true.  If the above program were contained in the file {\tt
-test.P}, an XSB session ising {\tt test.P} might look like the
+test.P}, an XSB session using {\tt test.P} might look like the
 following:
 {\small
 \begin{verbatim}
@@ -1116,8 +1212,8 @@ a query {\tt ?- L} will succeed if {\tt L} is true in the WFSX model,
 
 Generalized Annotated Programs (GAPs) \cite{KiSu92} offer a powerful
 computational framework for handling paraconsistentcy and quantitative
-informatin within logic programs.  The tabling of XSB is well-suited
-to implementing GAPs, and the gap library provides a meta-intrpreter
+information within logic programs.  The tabling of XSB is well-suited
+to implementing GAPs, and the gap library provides a meta-interpreter
 that has proven robust and efficient enough for a commercial
 application in data mining.  The current meta-interpreter is limited
 to range-restricted programs.

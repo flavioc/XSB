@@ -36,6 +36,9 @@
 #define fdopen   _fdopen
 #define popen    _popen
 #define pclose   _pclose
+#define dup      _dup
+#define dup2     _dup2
+#define fileno   _fileno
 #endif
 
 /* The separator used between pathnames in PATH environment */

@@ -25,8 +25,7 @@
 
 
 :- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1,
-	open_process_stream/3, close_process_stream/2,
-	open_process_pipe/3, close_process_pipe/2.
+	spawn_process/3.
 :- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3.
 
 :- import str_cat/3 from string.

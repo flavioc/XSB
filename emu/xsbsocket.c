@@ -61,6 +61,10 @@
 #include "io_builtins.h"
 #include "xsbsocket.h"
 
+
+/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
+extern FILE *fdopen(int fildes, const char *type);
+
 int retcode; /* return code from socket operation */
 
 SOCKADDR_IN socket_addr;
