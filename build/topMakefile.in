@@ -158,13 +158,13 @@ prepare:
 	@cd $(src_emudir); \
 	  rm -f *.o Makefile \
 	    configs/config.h debugs/debug.h  2> /dev/null || echo "" ; \
-	  ln ${src_config_prefix}/config.h configs ; \
-	  ln ${src_config_prefix}/debug.h debugs ; \
-	  ln ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
-	  ln ${src_config_prefix}/emuMakefile ./Makefile
+	  ln -s ${src_config_prefix}/config.h configs ; \
+	  ln -s ${src_config_prefix}/debug.h debugs ; \
+	  ln -s ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
+	  ln -s ${src_config_prefix}/emuMakefile ./Makefile
 	@cd $(srcdir)/gpp; \
 	  rm -f *.o Makefile ; \
-	  ln ${src_config_prefix}/gppMakefile ./Makefile 
+	  ln -s ${src_config_prefix}/gppMakefile ./Makefile 
 	@rm -f $(srcdir)/build/.*.tmp
 
 emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
@@ -186,7 +186,7 @@ smodels:
 	@cd $(src_pkgdir)/sModels; \
 	  echo "Compiling smodels interface"; \
 	  rm -f *.o Makefile *.h *.O *.so 2>/dev/null || echo ""; \
-	  ln ${src_config_prefix}/smoMakefile ./Makefile; \
+	  ln -s ${src_config_prefix}/smoMakefile ./Makefile; \
 	  make XSB=$(src_scriptdir)/xsb$(config_tag) @smodels_goal@ 2>&1\
 		 | tee -a ../../build/Installation_summary
 
