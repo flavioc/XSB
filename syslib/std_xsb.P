@@ -98,6 +98,15 @@ standard_symbol(fmt_write, 3, file_io).
 standard_symbol(fmt_write_string, 3, file_io).
 standard_symbol(fmt_write_string, 4, file_io).
 
+standard_symbol(file_flush, 2, file_io).
+standard_symbol(file_open, 3, file_io).
+standard_symbol(file_close, 1, file_io).
+standard_symbol(file_clone, 3, file_io).
+standard_symbol(file_reopen, 4, file_io).
+
+standard_symbol(file_write, 2, xsb_writ).
+standard_symbol(file_read, 2, xsb_read).
+
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
 standard_symbol(get_call, 3, tables).
