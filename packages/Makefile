@@ -26,11 +26,11 @@ OBJEXT=.xwam
 
 ALL = 	slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
-	xasp${OBJEXT} libwww${OBJEXT} clpr${OBJEXT} xsbdoc${OBJEXT} \
+	xasp${OBJEXT} libwww${OBJEXT} xsbdoc${OBJEXT} \
 	xmc${OBJEXT} iprolog${OBJEXT}
 
 SUBDIR = iprolog flora2 slx perlmatch gap regmatch wildmatch libwww xasp \
-	clpqr xsbdoc xmc iprolog
+	 xsbdoc xmc iprolog
 
 Option = [optimize]
 
@@ -66,9 +66,9 @@ all:  init $(ALL) finish $(SUBDIR)
 	@rm cmd...
 	@cat $(SVFILE)
 
-clpqr::
-	@echo ""
-	cd clpqr; make
+# clpqr::
+# 	@echo ""
+# 	cd clpqr; make
 
 slx::
 	@echo ""
