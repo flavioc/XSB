@@ -2416,9 +2416,10 @@ retractall_oms(Term) :-
 	retractall_oms_term(Term),
 	abolish_nec_tables(Term).
  
-retractall_oms_term(Term) :-
+retractall_oms_term(Term) :- 
 	retractall_oms_int(Term),
-	!.
+	%% fail to check other components if component argument is not bound, i.e. retractall(oms_at(oid,_,_))
+	fail. 
 retractall_oms_term(Term) :-
 	retractall(Term),
 	oms_dirty(DFlg),
