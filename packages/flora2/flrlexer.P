@@ -1,0 +1,967 @@
+/* File:      flrlexer.P  -- Flora Lexer
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#define	LINE_NO	line_no
+#define CHAR_NO	char_no
+
+#include "char_defs.h"
+#include "flora_errors.flh"
+#include "flora_terms.flh"
+
+
+/****************************************************************************
+  set_charpos(+LineNo,+CharNo)
+  sets the line number counter and character number counter.
+****************************************************************************/
+set_charpos(LN,CN) :-
+	conset(LINE_NO,LN),
+	conset(CHAR_NO,CN).
+
+
+/****************************************************************************
+  flora_identifier_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_variable_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_number_struct(+Num,+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_quoted_atom_struct(+AtomStr,+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_ascii_string_struct(+ASCII,+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_symbol_token_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_whitespace_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_comment_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  flora_rule_delimeter_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+****************************************************************************/
+flora_identifier_struct(TextStr,LN1,CN1,LN2,CN2,IDENTIFIER(A,Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text),
+	atom_codes(A,TextStr).
+
+flora_variable_struct(TextStr,LN1,CN1,LN2,CN2,VARIABLE(A,Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text),
+	atom_codes(A,TextStr).
+
+flora_number_struct(Num,TextStr,LN1,CN1,LN2,CN2,NUMBER(Num,Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text).
+
+flora_quoted_atom_struct(AtomStr,TextStr,LN1,CN1,LN2,CN2,QUOTED_ATOM(A,Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text),
+	atom_codes(A,AtomStr).
+
+flora_ascii_string_struct(ASCII,TextStr,LN1,CN1,LN2,CN2,ASCII_STRING(ASCII,Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text).
+
+flora_symbol_token_struct(TextStr,LN1,CN1,LN2,CN2,SYMBOL_TOKEN(A,Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text),
+	atom_codes(A,TextStr).
+
+flora_whitespace_struct(TextStr,LN1,CN1,LN2,CN2,WHITESPACE(Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text).
+
+flora_comment_struct(TextStr,LN1,CN1,LN2,CN2,COMMENT(Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text).
+
+flora_rule_delimeter_struct(TextStr,LN1,CN1,LN2,CN2,RULE_DELIMETER(Text)) :-
+	text_info(LN1,CN1,LN2,CN2,TextStr,Text).
+
+
+/****************************************************************************
+  flora_token_text(+Token,TextStr,BLN,BCN,ELN,ECN)
+****************************************************************************/
+flora_token_text(IDENTIFIER(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(VARIABLE(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(NUMBER(_Num,Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(QUOTED_ATOM(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(ASCII_STRING(_ASCII,Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(SYMBOL_TOKEN(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(WHITESPACE(Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(COMMENT(Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+flora_token_text(RULE_DELIMETER(Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+
+
+/****************************************************************************
+  get_charpos(-LineNo,-CharNo)
+  gets the line number counter and character number counter.
+****************************************************************************/
+get_charpos(LN,CN) :-
+	conget(LINE_NO,LN),
+	conget(CHAR_NO,CN).
+
+
+/****************************************************************************
+  reset_charpos
+  resets the line number counter and character number counter. They together
+  denote the position of the next character to be read.
+****************************************************************************/
+reset_charpos :- set_charpos(1,1).
+
+
+/****************************************************************************
+  text_info(+BeginLineNo,+BeginCharNo,+EndLineNo,+EndCharNo,+String,-TextInfo)
+****************************************************************************/
+text_info(LN1,CN1,LN2,CN2,Str,TEXT(LN1,CN1,LN2,CN2,Str)) :- !.
+
+
+/****************************************************************************
+  get_char(+LineNo,+CharNo,-Char,-NextLineNo,-NextCharNo)
+  reads the next character from the current input stream, and advances the
+  counters. (LineNo,CharNo) is the position of the character to be read.
+****************************************************************************/
+get_char(LN,CN,Char,NextLN,NextCN) :-
+	get0(Char),
+	( Char == CH_NEWLINE ->
+	    NextLN is LN+1,
+	    NextCN=1
+
+	; Char == CH_EOF_P ->
+	    NextLN=1,
+	    NextCN=1,
+	    reset_charpos
+	;
+	  NextLN=LN,
+	  NextCN is CN+1
+        ),
+	!.
+
+
+/****************************************************************************
+  flora_reset_lexer/0
+****************************************************************************/
+flora_reset_lexer :- reset_charpos.
+
+
+/****************************************************************************
+  flora_blank_line(+Tokens)
+****************************************************************************/
+flora_blank_line([]).
+
+flora_blank_line([Token]) :-
+	flora_whitespace_struct(_Text,_LN1,_CN1,_LN2,_CN2,Token).
+
+
+/****************************************************************************
+  flora_tokens(-TokenList,-Status)
+  scans the input characters, constructs the list of tokens for a rule and
+  returns it as the first argument. The second argument denotes the status
+  of tokenizer (FLORA_EOF, FLORA_NOT_EOF, error(message)).
+
+  Note: Each blank line will be recognized seperately and returned as a
+        whitespace token. The shell can benefit from this feature.
+****************************************************************************/
+flora_tokens(TokenList,Status) :-
+	get_charpos(LN1,CN1),
+	get_char(LN1,CN1,C1,NextLN,NextCN),
+	( C1 == CH_NEWLINE ->
+	    flora_whitespace_struct([C1],LN1,CN1,LN1,CN1,Tk),
+	    TokenList=[Tk],
+	    Status=[FLORA_NOT_EOF],
+	    set_charpos(NextLN,NextCN)
+
+	; whitespace(C1) ->
+	    flora_whitespace_struct(Chars,LN1,CN1,LN2,CN2,Tk),
+	    TokenList=[Tk|Tokens],
+	    scan_line(C1,LN1,CN1,NextLN,NextCN,Chars,LN2,CN2,Tokens,Status)
+	;
+	  read_tokens(C1,LN1,CN1,NextLN,NextCN,TokenList,Status)
+        ).
+
+
+/****************************************************************************
+  scan_line(+Char,+LN1,+CN1,+LN,+CN,-Chars,-LN2,-CN2,-Tokens,-Status)
+  tries to scan a blank line, i.e., a line that consists of whitespace
+  characters only. (Char,+LN1,+CN1) is known to be a whitespace but not newline.
+  (LN2,CN2) is the position of the last whitespace. Chars collects all the
+  characters including Char.
+****************************************************************************/
+scan_line(Ch,LN1,CN1,LN,CN,[Ch|Chars],LN2,CN2,Tokens,Status) :-
+	get_char(LN,CN,C,NextLN,NextCN),
+	( C == CH_NEWLINE ->
+	    Chars=[C],
+	    LN2=LN,
+	    CN2=CN,
+	    Tokens=[],
+	    Status=[FLORA_NOT_EOF],
+	    set_charpos(NextLN,NextCN)
+
+	; whitespace(C) ->
+	    scan_line(C,LN,CN,NextLN,NextCN,Chars,LN2,CN2,Tokens,Status)
+	;
+	  Chars=[],
+	  LN2=LN1,
+	  CN2=CN1,
+	  read_tokens(C,LN,CN,NextLN,NextCN,Tokens,Status)
+	).
+
+
+/****************************************************************************
+  read_tokens(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
+  parses tokens starting from Char. (NextLN,NextCN) is the position of the
+  next character to be read. Passing this information is to avoid bookkeeping
+  by conget/conset. Performance can be improved.
+****************************************************************************/
+read_tokens(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status) :-
+	( whitespace(Char) ->
+	    read_whitespace(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status)
+
+	; Char >= CH_a, Char =< CH_z ->
+	    read_identifier(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status)
+
+	; Char >= CH_A, Char =< CH_Z ->
+	    read_variable(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status)
+
+	; Char == CH_UNDERSCORE ->
+	    read_variable(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status)
+
+	; Char >= CH_0, Char =< CH_9 ->
+	    read_number(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status)
+
+	; Char == CH_EOF_P ->
+	    TokenList=[],
+	    Status=[FLORA_EOF]
+
+	; Char < CH_SPACE ->
+	    flora_symbol_token_struct([Char],LineNo,CharNo,LineNo,CharNo,Token),
+	    TokenList=[Token],
+	    Status=[FLORA_NOT_EOF,error(UNEXP_UNPRINT)],
+	    set_charpos(NextLN,NextCN)
+
+	; Char >= CH_DELETE ->
+	    flora_symbol_token_struct([Char],LineNo,CharNo,LineNo,CharNo,Token),
+	    TokenList=[Token],
+	    Status=[FLORA_NOT_EOF,error(UNEXP_DEL_ISO)],
+	    set_charpos(NextLN,NextCN)
+
+	;
+	  read_special(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status)
+	).
+
+
+/****************************************************************************
+  read_whitespace(+Char,+LineNo,+CharNo,NextLN,NextCN,-Tokens,-Status)
+  scans the input characters until a non-whitespace char. (Char,LineNo,CharNo)
+  is already known to be a whitespace character.
+****************************************************************************/
+read_whitespace(C1,LN1,CN1,LN,CN,TokenList,Status) :-
+	flora_whitespace_struct(Chars,LN1,CN1,LN2,CN2,Tk),
+	TokenList=[Tk|Tokens],
+	scan_whitespace(C1,LN1,CN1,LN,CN,Chars,LN2,CN2,Tokens,Status).
+
+scan_whitespace(C1,LN1,CN1,LN,CN,[C1|Chars],LN2,CN2,Tokens,Status) :-
+	get_char(LN,CN,Ch,NextLN,NextCN),
+	( whitespace(Ch) ->
+	    scan_whitespace(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,Tokens,Status)
+	;
+	  Chars=[],
+	  LN2=LN1,
+	  CN2=CN1,
+	  read_tokens(Ch,LN,CN,NextLN,NextCN,Tokens,Status)
+	).
+
+whitespace(CH_TAB) :- !.
+whitespace(CH_NEWLINE) :- !.
+whitespace(CH_RETURN) :- !.
+whitespace(CH_SPACE) :- !.
+
+
+/****************************************************************************
+  read_identifier(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
+  reads an atom which begins with a lower case letter Char and continues
+  with letters, digits, and underscores. (Char,Line,CharNo) is known to
+  start the identifier.
+****************************************************************************/
+read_identifier(C1,LN1,CN1,LN,CN,TokenList,Status) :-
+	read_name(C1,LN1,CN1,LN,CN,Chars,LN2,CN2,NextCh,NLN,NCN,NNLN,NNCN),
+	flora_identifier_struct(Chars,LN1,CN1,LN2,CN2,Tk),
+	TokenList=[Tk|Tokens],
+	!,
+	read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status).
+
+
+/****************************************************************************
+  read_name(+Ch,+LN1,+CN1,LN,CN,-Chars,-LN2,-CN2,-NCh,-NLN,-NCN,-NNLN,-NNCN)
+  reads a sequence of letters, digits, and underscores, where the previous
+  character read was (Ch,LN1,CN1) and it is known to be included in the
+  result. The desired characters are returned as the list Chars. (LN2,CN2)
+  is the position of the last character. (NCh,NLN,NCN,NNLN,NNCN) is the next
+  non-name character.
+****************************************************************************/
+read_name(C1,LN1,CN1,LN,CN,[C1|Chars],LN2,CN2,NCh,NLN,NCN,NNLN,NNCN) :-
+	get_char(LN,CN,Ch,NextLN,NextCN),
+	( Ch >= CH_a, Ch =< CH_z ->
+	    read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+
+	; Ch >= CH_A, Ch =< CH_Z ->
+	    read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+
+	; Ch >= CH_0, Ch =< CH_9 ->
+	    read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+
+	; Ch == CH_UNDERSCORE ->
+	    read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+
+	;
+	  Chars=[],
+	  LN2=LN1,
+	  CN2=CN1,
+	  NCh=Ch,
+	  NLN=LN,
+	  NCN=CN,
+	  NNLN=NextLN,
+	  NNCN=NextCN
+	).
+
+
+/****************************************************************************
+  read_variable(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
+  Char is the first character of a variable name (NOT IS a variable name,
+  as in XSB).
+****************************************************************************/
+read_variable(C1,LN1,CN1,LN,CN,TokenList,Status) :-
+	read_name(C1,LN1,CN1,LN,CN,Chars,LN2,CN2,NextCh,NLN,NCN,NNLN,NNCN),
+	flora_variable_struct(Chars,LN1,CN1,LN2,CN2,Tk),
+	TokenList=[Tk|Tokens],
+	!,
+	read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status).
+
+
+/****************************************************************************
+  read_special(+Ch,+LineNo,+CharNo,+NextLN,+NextCN,-Tokens,-Status)
+  handles tokens made of special symbols.
+****************************************************************************/
+read_special(C1,LN1,CN1,LN,CN,TokenList,Status) :-
+	single_symbol_token(C1),
+	flora_symbol_token_struct([C1],LN1,CN1,LN1,CN1,Tk),
+	TokenList=[Tk|Tokens],
+	!,
+	get_char(LN,CN,Ch,NextLN,NextCN),
+	read_tokens(Ch,LN,CN,NextLN,NextCN,Tokens,Status).
+
+read_special(CH_DOUBLEQUOTE,LN1,CN1,LN,CN,TokenList,Status) :-
+	!,
+	get_char(LN,CN,Ch,NextLN,NextCN),
+	flora_ascii_string_struct(Chars,[CH_DOUBLEQUOTE|TxChs],LN1,CN1,LN2,CN2,Tk),
+	TokenList=[Tk|Tokens],
+	read_string(Ch,LN,CN,NextLN,NextCN,LN1,CN1,CH_DOUBLEQUOTE,
+	            Chars,TxChs,LN2,CN2,Tokens,Status).
+
+read_special(CH_QUOTE,LN1,CN1,LN,CN,TokenList,Status) :-
+	!,
+	get_char(LN,CN,Ch,NextLN,NextCN),
+	read_string(Ch,LN,CN,NextLN,NextCN,LN1,CN1,CH_QUOTE,
+	            Chars,TxChs,LN2,CN2,Tokens,Status),
+	flora_quoted_atom_struct(Chars,[CH_QUOTE|TxChs],LN1,CN1,LN2,CN2,Tk),
+	TokenList=[Tk|Tokens].
+
+read_special(CH_PERCENT,LN1,CN1,LN,CN,[Tk|Tokens],Status) :-
+	!,
+	flora_comment_struct([CH_PERCENT|TxChs],LN1,CN1,LN2,CN2,Tk),
+	get_char(LN,CN,Ch,NLN,NCN),
+	read_comment_line(Ch,LN,CN,NLN,NCN,LN1,CN1,TxChs,LN2,CN2,Tokens,Status).
+
+read_special(CH_EXCLAMATION,LN1,CN1,LN,CN,[Tk|Tokens],Status) :-
+	!,
+	get_char(LN,CN,C1,NextLN,NextCN),
+	( C1 == CH_EXCLAMATION ->
+	    flora_symbol_token_struct([C1,C1],LN1,CN1,LN,CN,Tk),
+	    get_char(NextLN,NextCN,C2,NLN,NCN),
+	    read_tokens(C2,NextLN,NextCN,NLN,NCN,Tokens,Status)
+	;
+	  flora_symbol_token_struct([CH_EXCLAMATION],LN1,CN1,LN1,CN1,Tk),
+	  read_tokens(C1,LN,CN,NextLN,NextCN,Tokens,Status)
+	).
+
+read_special(CH_DOT,LN1,CN1,LN,CN,Tokens,Status) :-
+	!,
+	get_char(LN,CN,C1,NextLN,NextCN),
+	read_after_fullstop(LN1,CN1,C1,LN,CN,NextLN,NextCN,Tokens,Status).
+
+read_special(CH_SLASH,LN1,CN1,LN,CN,TokenList,Status) :-
+	!,
+	get_char(LN,CN,Ch,NLN,NCN),
+	( Ch == CH_SLASH ->
+	    get_char(NLN,NCN,Char,NNLN,NNCN),
+	    flora_comment_struct([CH_SLASH,CH_SLASH|TxChs],LN1,CN1,LN1,CN2,Tk),
+	    TokenList=[Tk|Tokens],
+	    read_comment_line(Char,NLN,NCN,NNLN,NNCN,LN,CN,TxChs,LN2,CN2,Tokens,Status)
+
+	; Ch == CH_STAR ->
+	    get_char(NLN,NCN,Char,NNLN,NNCN),
+	    flora_comment_struct([CH_SLASH,CH_STAR|TxChs],LN1,CN1,LN2,CN2,Tk),
+	    TokenList=[Tk|Tokens],
+	    read_comment_block(Char,NLN,NCN,NNLN,NNCN,LN,CN,TxChs,LN2,CN2,Tokens,Status)
+	;
+	  read_symbols(LN1,CN1,Ch,LN,CN,NLN,NCN,
+	               Chs,LN2,CN2,NextCh,NextLN,NextCN,LineNo,CharNo),
+	  flora_symbol_token_struct([CH_SLASH|Chs],LN1,CN1,LN2,CN2,Tk),
+          TokenList=[Tk|Tokens],
+	  read_tokens(NextCh,NextLN,NextCN,LineNo,CharNo,Tokens,Status)
+	).
+
+read_special(C1,LN1,CN1,LN,CN,TokenList,Status) :-
+	( symbol_char(C1) ->
+	    get_char(LN,CN,Ch,NextLN,NextCN),
+	    read_symbols(LN1,CN1,Ch,LN,CN,NextLN,NextCN,
+                         Chs,LN2,CN2,NextCh,NLN,NCN,NNLN,NNCN),
+	    flora_symbol_token_struct([C1|Chs],LN1,CN1,LN2,CN2,Tk),
+	    TokenList=[Tk|Tokens],
+	    read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status)
+	;
+	  flora_symbol_token_struct([C1],LN1,CN1,LN1,CN1,Tk),
+	  TokenList=[Tk],
+	  Status=[FLORA_NOT_EOF,error(UNEXP_PRINT)],
+	  set_charpos(LN,CN) %% C1 is not EOF
+	).
+
+
+/****************************************************************************
+  Each of the following symbols is recognized as a token. Note that
+  single_symbol_token and token_char should not overlap.
+****************************************************************************/
+single_symbol_token(CH_COMMA) :- !.    % ,
+single_symbol_token(CH_SEMICOL) :- !.  % ;
+single_symbol_token(CH_LPAREN) :- !.   % (
+single_symbol_token(CH_RPAREN) :- !.   % )
+single_symbol_token(CH_LBRACKET) :- !. % [
+single_symbol_token(CH_RBRACKET) :- !. % ]
+single_symbol_token(CH_LBRACE) :- !.   % {
+single_symbol_token(CH_RBRACE) :- !.   % }
+
+
+/****************************************************************************
+  read_string(+Ch,+LN,+CN,+LN1,+CN1,+PrevLN,+PrevCN,+Quote,
+              -Chars,-TextChs,-LastLN,-LastCN,-Tokens,-Status)
+  (Ch,LN,CN) is the current character being screened. (PLN,PCN) is the
+  position of the previous character. This function is called after a quote
+  character has been read. (LastLN,LastCN) is the position of the last
+  character in the string.
+
+  Formats supported:
+  (1) \ followed by x (X) and 1-2 hex symbols;
+  (2) \ followed by escape character (\\ denotes \);
+  (3) anything else recognized as it is;
+  (4) double quotes equal to single quote.
+****************************************************************************/
+read_string(CH_BACKSLASH,LN,CN,LN1,CN1,_,_,Q,Chars,TextChars,LLN,LCN,Tks,Status) :-
+	!,
+	TextChars=[CH_BACKSLASH|TxChs],
+	get_char(LN1,CN1,C1,LN2,CN2),
+	( C1 == CH_EOF_P ->
+	    Chars=[CH_BACKSLASH],
+	    TxChs=[],
+	    LLN=LN,
+	    LCN=CN,
+	    Tks=[],
+	    Status=[FLORA_EOF,error(UNEXP_EOF)]
+
+	; C1 \/ 32 =:= CH_x ->
+	    get_char(LN2,CN2,C2,LN3,CN3),
+	    ( hex_symbol(C2,V2) ->
+		get_char(LN3,CN3,C3,LN4,CN4),
+		( hex_symbol(C3,V3) -> %% two hex symbols found
+		    TxChs=[C1,C2,C3|RestTx],
+		    V is V2*16+V3,
+		    get_char(LN4,CN4,C4,LN5,CN5),
+		    Chars=[V|Chs],
+		    read_string(C4,LN4,CN4,LN5,CN5,LN3,CN3,Q,
+		                Chs,RestTx,LLN,LCN,Tks,Status)
+
+		; %% only one hex symbol found
+		  TxChs=[C1,C2|RestTx],
+		  Chars=[V2|Chs],
+		  read_string(C3,LN3,CN3,LN4,CN4,LN2,CN2,Q,
+		              Chs,RestTx,LLN,LCN,Tks,Status)
+	        )
+	    ;
+	      Chars=[CH_BACKSLASH,C1],
+	      Tks=[],
+	      ( C2 == CH_EOF_P ->
+		  TxChs=[C1],
+		  LLN=LN1,
+		  LCN=CN1,
+		  Status=[FLORA_EOF,error(UNEXP_EOF)]
+	      ;
+	        TxChs=[C1,C2],
+		LLN=LN2,
+		LCN=CN2,
+	        Status=[FLORA_NOT_EOF,error(HEX_EXPECTED)],
+		set_charpos(LN3,CN3)
+	      )
+	    )
+	; 
+	  (escape_char(C1,V) -> Chars=[V|Chs] ; Chars=[CH_BACKSLASH,C1|Chs]),
+	  TxChs=[C1|RestTx],
+	  get_char(LN2,CN2,C2,LN3,CN3),
+	  read_string(C2,LN2,CN2,LN3,CN3,LN1,CN1,Q,Chs,RestTx,LLN,LCN,Tks,Status)
+	).
+
+read_string(Q,LN,CN,LN1,CN1,_,_,Q,Chars,[Q|TxChs],LLN,LCN,Tks,Status) :-
+	!,
+	get_char(LN1,CN1,C1,LN2,CN2),
+	( C1 == Q ->
+	    Chars=[C1|Chs],
+	    TxChs=[C1|RestTx],
+	    get_char(LN2,CN2,C2,LN3,CN3),
+	    read_string(C2,LN2,CN2,LN3,CN3,LN1,CN1,Q,Chs,RestTx,LLN,LCN,Tks,Status)
+	;
+	  Chars=[],
+	  TxChs=[],
+	  LLN=LN,
+	  LCN=CN,
+	  read_tokens(C1,LN1,CN1,LN2,CN2,Tks,Status)
+	).
+
+read_string(CH_EOF_P,_,_,_,_,LLN,LCN,_,[],[],LLN,LCN,[],[FLORA_EOF,error(UNEXP_EOF)]) :-
+	!.
+
+read_string(Ch,LN,CN,LN1,CN1,_,_,Q,[Ch|Chs],[Ch|TxChs],LLN,LCN,Tks,Status) :-
+	get_char(LN1,CN1,C1,LN2,CN2),
+	read_string(C1,LN1,CN1,LN2,CN2,LN,CN,Q,Chs,TxChs,LLN,LCN,Tks,Status).
+
+hex_symbol(Ch,Value) :-
+	( Ch >= CH_0, Ch =< CH_9 ->
+	    Value is Ch - CH_0
+
+	; Ch >= CH_a, Ch =< CH_f ->
+	    Value is Ch - CH_a + 10
+
+	; Ch >= CH_A, Ch =< CH_F ->
+	    Value is Ch - CH_A + 10
+	).
+
+
+/****************************************************************************
+  This table is for ASCII.
+****************************************************************************/
+escape_char(CH_BACKSLASH, CH_BACKSLASH) :- !.	% \\ = Backslash
+escape_char(CH_n, CH_NEWLINE) :- !.		% \n = NewLine
+escape_char(CH_N, CH_NEWLINE) :- !.		% \N = NewLine
+escape_char(CH_t, CH_TAB) :- !.			% \t = Tab
+escape_char(CH_T, CH_TAB) :- !.			% \T = Tab
+escape_char(CH_r, CH_RETURN) :- !.		% \r = Return
+escape_char(CH_R, CH_RETURN) :- !.		% \R = Return
+escape_char(CH_v, CH_VERTAB) :- !.		% \v = Vertical tab
+escape_char(CH_V, CH_VERTAB) :- !.		% \V = Vertical tab
+escape_char(CH_b, CH_BACKSPACE) :- !.		% \b = Backspace
+escape_char(CH_B, CH_BACKSPACE) :- !.		% \B = Backspace
+escape_char(CH_f, CH_FORMFEED) :- !.		% \f = FormFeed
+escape_char(CH_F, CH_FORMFEED) :- !.		% \F = FormFeed
+escape_char(CH_e, CH_ESC) :- !.			% \e = Escape
+escape_char(CH_E, CH_ESC) :- !.			% \E = Escape
+escape_char(CH_d, CH_DELETE) :- !.		% \d = Delete
+escape_char(CH_D, CH_DELETE) :- !.		% \D = Delete
+escape_char(CH_s, CH_SPACE) :- !.		% \s = visible Space
+escape_char(CH_S, CH_SPACE) :- !.		% \S = visible Space
+
+
+/****************************************************************************
+  read_comment_line(+Ch,+LN,+CN,+LN1,+CN1,+PrevLN,+PrevCN,
+                    -TextChs,-LastLN,-LastCN,-Tokens,-Status)
+  is called when either // or % has been read. It scans the rest of the
+  line and starts reading tokens from the next line. (Ch,LN,CN) is a char
+  after % or // that is being screened. (LastLN,LastCN) is the position of
+  the last. (PrevLN,PrevCN) is the position of the previous character.
+****************************************************************************/
+read_comment_line(CH_NEWLINE,LN,CN,LN1,CN1,_,_,[CH_NEWLINE],LN,CN,Tokens,Status) :-
+	!,
+	get_char(LN1,CN1,C1,NextLN,NextCN),
+	read_tokens(C1,LN1,CN1,NextLN,NextCN,Tokens,Status).
+
+read_comment_line(CH_EOF_P,_,_,_,_,LN,CN,[],LN,CN,[],[FLORA_EOF]) :- !.
+
+read_comment_line(Ch,LN,CN,LN1,CN1,_,_,[Ch|TxChs],LLN,LCN,Tokens,Status) :-
+	!,
+	get_char(LN1,CN1,C1,NextLN,NextCN),
+	read_comment_line(C1,LN1,CN1,NextLN,NextCN,LN,CN,TxChs,LLN,LCN,Tokens,Status).
+
+
+/****************************************************************************
+  read_comment_block(+Ch,+LN,+CN,+NextLN,+NextCN,+PrevLN,+PrevCN,
+	             -TextChars,-LastLN,-LastCN,-Tokens,-Status)
+  is called when /* has been read. It skips everything up and including
+  * followed /, and then starts reading tokens thereafter. (Ch,LN,CN) is
+  being screen after / and * have been read. 
+****************************************************************************/
+read_comment_block(CH_STAR,LN,CN,LN1,CN1,_,_,[CH_STAR|TxChs],LLN,LCN,Tokens,Status) :-
+	!,
+	get_char(LN1,CN1,C1,LN2,CN2),
+	( C1 == CH_SLASH ->
+	    TxChs=[C1],
+	    LLN=LN1,
+	    LCN=CN1,
+	    get_char(LN2,CN2,C2,NextLN,NextCN),
+	    read_tokens(C2,LN2,CN2,NextLN,NextCN,Tokens,Status)
+	;
+	  read_comment_block(C1,LN1,CN1,LN2,CN2,LN,CN,TxChs,LLN,LCN,Tokens,Status)
+        ).
+
+read_comment_block(CH_EOF_P,_,_,_,_,LN,CN,[],LN,CN,[],[error(UNEXP_EOF)]) :- !.
+
+read_comment_block(Ch,LN,CN,LN1,CN1,_,_,[Ch|TxChs],LLN,LCN,Tokens,Status) :-
+	!,
+	get_char(LN1,CN1,C1,NextLN,NextCN),
+	read_comment_block(C1,LN1,CN1,NextLN,NextCN,LN,CN,TxChs,LLN,LCN,Tokens,Status).
+
+
+/****************************************************************************
+  read_symbols(+PrevLN,+PrevCN,+Ch,+LN,+CN,+NextLN,+NextCN,
+	       -Chars,-LastLN,-LastCN,-NextCh,-NLN,-NCN,-NNLN,-NNCN)
+  reads and collects a list of symbol characters starting from (Ch,LN,CN),
+  which is currently being screened. Any continuous sequence of symbol
+  characters will be read as a token. It
+  will be decided later by the  parser whether the use of it is appropriate.
+  (PrevLN,PrevCN) is the position of the character before (Ch,LN,CN).
+****************************************************************************/
+read_symbols(PL,PC,Ch,LN,CN,LN1,CN1,Chars,LLN,LCN,NextCh,NLN,NCN,NNLN,NNCN) :-
+	( symbol_char(Ch) ->
+	    Chars=[Ch|Chs],
+	    get_char(LN1,CN1,C1,LN2,CN2),
+	    read_symbols(LN,CN,C1,LN1,CN1,LN2,CN2,
+	                 Chs,LLN,LCN,NextCh,NLN,NCN,NNLN,NNCN)
+	;
+	  Chars=[],
+	  LLN=PL,
+	  LCN=PC,
+	  NextCh=Ch,
+	  NLN=LN,
+	  NCN=CN,
+	  NNLN=LN1,
+	  NNCN=CN1
+        ).
+
+
+/****************************************************************************
+  read_after_fullstop(+DLN,+DCN,+Ch,+LN,+CN,+NextLN,+NextCN,-Tokens,-Status)
+  handles the first character following a fullstop. (DLN,DCN) is the position
+  of the dot. (Ch,LN,CN) is the character immediately after the dot.
+****************************************************************************/
+read_after_fullstop(DLN,DCN,Ch,LN,CN,LN1,CN1,TokenList,Status) :-
+	( Ch == CH_EOF_P ->
+	    flora_rule_delimeter_struct([CH_DOT],DLN,DCN,DLN,DCN,Tk),
+	    TokenList=[Tk],
+	    Status=[FLORA_EOF]
+
+	; whitespace(Ch) ->
+	    flora_rule_delimeter_struct([CH_DOT,Ch],DLN,DCN,LN,CN,Tk),
+	    TokenList=[Tk],
+	    Status=[FLORA_NOT_EOF],
+	    set_charpos(LN1,CN1)
+	;
+	  read_symbols(DLN,DCN,Ch,LN,CN,LN1,CN1,
+	               Chs,LLN,LCN,NextCh,NLN,NCN,NNLN,NNCN),
+	  flora_symbol_token_struct([CH_DOT|Chs],DLN,DCN,LLN,LCN,Tk),
+	  TokenList=[Tk|Tokens],
+	  read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status)
+	).
+
+
+/****************************************************************************
+  Any sequence of symbol characters makes up a token, except that this
+  sequence cannot contain any of the following substring:
+  (1) / followed by *, which starts a comment block.
+  (2) . followed by whitespace, which denotes a rule delimeter.
+  (3) / followed by /, which starts a comment line.
+
+  Note that % is not a symbol character here.
+****************************************************************************/
+symbol_char(CH_DOT) :- !.         % .
+symbol_char(CH_STAR) :- !.        % *
+symbol_char(CH_COLON) :- !.       % :
+symbol_char(CH_LESS) :- !.        % <
+symbol_char(CH_EQUAL) :- !.       % =
+symbol_char(CH_GREATER) :- !.     % >
+symbol_char(CH_QUESTION) :- !.    % ?
+symbol_char(CH_AT) :- !.          % @
+symbol_char(CH_BACKSLASH) :- !.   % \ 
+symbol_char(CH_TILDE) :- !.       % ~
+symbol_char(CH_EXCLAMATION) :- !. % !
+symbol_char(CH_AMPERSAND) :- !.   % &
+symbol_char(CH_BAR) :- !.         % |
+symbol_char(CH_PLUS) :- !.        % +
+symbol_char(CH_MINUS) :- !.       % -
+symbol_char(CH_HAT) :- !.         % ^
+symbol_char(CH_HASH) :- !.        % #
+symbol_char(CH_DOLLAR) :- !.      % $
+symbol_char(CH_SLASH) :- !.       % /
+symbol_char(CH_BACKQUOTE) :- !.   % `
+
+
+/****************************************************************************
+  read_number(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-Tokens,-Status)
+  Char is already known to be a digit.
+****************************************************************************/
+read_number(C1,LN1,CN1,LN,CN,TokenList,Status) :-
+	read_digits(LN1,CN1,LN,CN,IntList,TxChs,LN2,CN2,NextCh,NLN,NCN,NNLN,NNCN),
+	!,
+	number_codes(N,[C1|IntList]),
+	( NextCh == CH_QUOTE ->
+	    append([C1|TxChs],[CH_QUOTE],TxStr),
+	    read_after_base(NNLN,NNCN,N,TxStr,LN1,CN1,NLN,NCN,TokenList,Status)
+
+	; NextCh == CH_DOT ->
+	    get_char(NNLN,NNCN,Ch,LineNo,CharNo),
+	    ( Ch >= CH_0, Ch =< CH_9 ->
+		append([C1|TxChs],[CH_DOT],TxStr),
+		read_float(Ch,NNLN,NNCN,LineNo,CharNo,[C1|IntList],
+		           TxStr,LN1,CN1,TokenList,Status)
+	    ; 
+	      flora_number_struct(N,[C1|TxChs],LN1,CN1,LN2,CN2,Tk),
+	      TokenList=[Tk|Tokens],
+	      read_after_fullstop(NLN,NCN,Ch,NNLN,NNCN,LineNo,CharNo,Tokens,Status)
+	    )
+	;
+	  flora_number_struct(N,[C1|TxChs],LN1,CN1,LN2,CN2,Tk),
+	  TokenList=[Tk|Tokens],
+	  read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status)
+	).
+
+
+/****************************************************************************
+  read_digits(+LN,+CN,+LN1,+CN1,-Chars,-TextChs,-ELN,-ECN,
+              -NextCh,-NextLN,-NextCN,-NNLN,-NNCN)
+  returns in Chars a list of continuous digits. (LN,CN) is the position of
+  the previous digit. (NextCh,NextLN,NextCN) stores the next nondigit character
+  that is read. (LN1,CN1) is the position of the next character to be read
+  and screened.
+****************************************************************************/
+read_digits(LN,CN,LN1,CN1,Chars,TextChars,ELN,ECN,NextCh,NLN,NCN,NNLN,NNCN) :-
+	get_char(LN1,CN1,C1,LN2,CN2),
+	( C1 >= CH_0, C1 =< CH_9 ->
+	    Chars=[C1|Chs],
+	    TextChars=[C1|TxChs],
+	    read_digits(LN1,CN1,LN2,CN2,Chs,TxChs,ELN,ECN,NextCh,NLN,NCN,NNLN,NNCN)
+
+	; C1 == CH_UNDERSCORE ->
+	    TextChars=[C1|TxChs],
+	    read_digits(LN1,CN1,LN2,CN2,Chars,TxChs,ELN,ECN,NextCh,NLN,NCN,NNLN,NNCN)
+	;
+	  Chars=[],
+	  TextChars=[],
+	  ELN=LN,
+	  ECN=CN,
+	  NextCh=C1,
+	  NLN=LN1,
+	  NCN=CN1,
+	  NNLN=LN2,
+	  NNCN=CN2
+	).
+
+
+/****************************************************************************
+  read_based(+LN,+CN,+Base,+TextChars,+BeginLN,+BeginCN,+EndLN,+EndCN,
+             -TokenList,-Status)
+  is called when a base number N followed by a single quote (') has been
+  read. It returns in TokenList a list of tokens. (LN,CN) is the position of
+  the character to be read. (BeginLN,BeginCN) and (EndLN,EndCN) denote the
+  boundary of the text string that has been read.
+****************************************************************************/
+read_after_base(LN1,CN1,N,TxChs,BLN,BCN,ELN,ECN,TokenList,Status) :-
+	N >= 2, N =< 36,
+	!,
+	get_char(LN1,CN1,C1,LN2,CN2),
+	( symbol_value(N,C1,V) ->
+	    read_based_integer(LN1,CN1,LN2,CN2,N,V,Number,Tx,LLN,LCN,
+	                       NCh,NLN,NCN,NNLN,NNCN),
+	    append(TxChs,[C1|Tx],TxStr),
+	    !,
+	    flora_number_struct(Number,TxStr,BLN,BCN,LLN,LCN,Tk),
+	    TokenList=[Tk|Tokens],
+	    read_tokens(NCh,NLN,NCN,NNLN,NNCN,Tokens,Status)
+	;
+	  ( C1 == CH_EOF_P ->
+	      flora_number_struct(N,TxChs,BLN,BCN,ELN,ECN,Tk),
+	      TokenList=[Tk],
+	      Status=[FLORA_EOF,error(UNEXP_EOF)]
+	  ;
+	    append(TxChs,[C1],TxStr),
+	    flora_number_struct(N,TxStr,BLN,BCN,LN1,CN1,Tk),
+	    TokenList=[Tk],
+	    Status=[FLORA_NOT_EOF,error(AFTER_RADIX)],
+	    set_charpos(LN2,CN2)
+	  )
+        ).
+
+read_after_base(LN1,CN1,N,TxChs,BLN,BCN,ELN,ECN,TokenList,Status) :-
+	N == 0,
+	!,
+	get_char(LN1,CN1,C1,LN2,CN2),
+	( C1 == CH_EOF_P ->
+	    flora_number_struct(0,TxChs,BLN,BCN,ELN,ECN,Tk),
+	    TokenList=[Tk],
+	    Status=[FLORA_EOF,error(UNEXP_EOF)]
+
+	;
+	  append(TxChs,[C1],TxStr),
+	  flora_number_struct(C1,TxStr,BLN,BCN,LN1,CN1,Tk),
+	  TokenList=[Tk|Tokens],
+	  get_char(LN2,CN2,C2,NextLN,NextCN),
+	  read_tokens(C2,LN2,CN2,NextLN,NextCN,Tokens,Status)
+        ).
+
+read_after_base(LN,CN,N,TxChs,LN1,CN1,LN2,CN2,TokenList,Status) :-
+	flora_number_struct(N,TxChs,LN1,CN1,LN2,CN2,Tk),
+	TokenList=[Tk],
+	Status=[FLORA_NOT_EOF,error(INVALID_RADIX)],
+	set_charpos(LN,CN).
+
+
+/****************************************************************************
+  read_based_integer(+PrevLN,+PrevCN,+LN,+CN,+Base,+N0,
+                     -Number,-TextChars,-LastLN,-LastCN,
+                     -NextCh,NextLN,-NextCN,-NNLN,-NNCN)
+  reads an integer in base Base. The base has been read as Base. (LN,CN) is
+  the position of the symbol to be read. (NextCh,NextLN,NextCN) is the next
+  nonsymbol character.
+****************************************************************************/
+read_based_integer(PN,PC,LN,CN,Base,N0,N,TextChars,LLN,LCN,NextCh,NL,NC,NNL,NNC) :-
+	get_char(LN,CN,Ch,NextLN,NextCN),
+	( symbol_value(Base,Ch,Int) ->
+	    N1 is N0*Base+Int,
+	    TextChars=[Ch|TxChs],
+	    read_based_integer(LN,CN,NextLN,NextCN,Base,N1,N,TxChs,LLN,LCN,
+	                       NextCh,NL,NC,NNL,NNC)
+
+	  ; Ch == CH_UNDERSCORE	->
+	    TxChs=[Ch|TxChs],
+	    read_based_integer(LN,CN,NextLN,NextCN,Base,N0,N,TxChs,LLN,LCN,
+	                       NextCh,NL,NC,NNL,NNC)
+	  ;
+	    N=N0,
+	    TextChars=[],
+	    LLN=PN,
+	    LCN=PC,
+	    NextCh=Ch,
+	    NL=LN,
+	    NC=CN,
+	    NNL=NextLN,
+	    NNC=NextCN
+	).
+
+
+/****************************************************************************
+  symbol_value(+Base,+Char,-Int)
+  checks whether Char denotes a valid symbol in base Base and returns the
+  value in Int.
+****************************************************************************/
+symbol_value(Base,Char,Int) :-
+	( Char >= CH_0, Char =< CH_9 ->
+	    Int is Char-CH_0
+
+	; Char >= CH_A, Char =< CH_Z ->
+	    Int is Char-CH_A+10
+
+	; Char >= CH_a, Char =< CH_z ->
+	    Int is Char-CH_a+10
+
+	;
+	  Int=99
+	),
+	Int < Base.
+
+
+/****************************************************************************
+  read_float(+Char,+LN,+CN,+NextLN,+NextCN,
+	     +Integer,+TxChs,+BLN,+BCN,-Tokens,-Status)
+  is called when we have parsed <digit>+ '. <digit>. Integer is the list of
+  digits preceding the decimal point, and Char is the first digit after the
+  decimal point. TxChs is the text string including the dot. Integer is the
+  digit string before the dot.
+****************************************************************************/
+read_float(Char,LN,CN,LN1,CN1,Integer,TxChs,BLN,BCN,TokenList,Status) :-
+	read_digits(LN,CN,LN1,CN1,Fraction,FractTx,LLN,LCN,C1,LNO1,CNO1,LNO2,CNO2),
+	append(Integer,[CH_DOT,Char|Fraction],L1), %% L1 is the number string
+	append(TxChs,[Char|FractTx],Tx1), %% Tx1 is the text string
+	!,
+	( C1 \/ 32 =:= CH_e -> %% exponent expected
+	    get_char(LNO2,CNO2,C2,LNO3,CNO3), %% C2 may be the sign
+	    ( C2 =\= CH_MINUS, C2 =\= CH_PLUS -> %% no +/- sign
+		Sign=[],
+		C3=C2,
+		LN3=LNO2,
+		CN3=CNO2,
+		LN4=LNO3,
+		CN4=CNO3,
+		ELN1=LNO1,
+		ECN1=CNO1
+	    ;
+	      Sign=[C2],
+	      get_char(LNO3,CNO3,C3,LN4,CN4),
+	      LN3=LNO3,
+	      CN3=CNO3,
+	      ELN1=LNO2,
+	      ECN1=CNO2
+	    ),
+	    %% (C3,LN3,CN3,LN4,CN4) is the next char to consider
+	    %% (ELN1,ECN1) is the new boundary
+	    append(L1,[C1|Sign],L2), %% L2 is the number string
+	    append(Tx1,[C1|Sign],Tx2), %% Tx2 is the text string
+	    !,
+	    ( C3 >= CH_0, C3 =< CH_9 ->
+		read_digits(LN3,CN3,LN4,CN4,Exponent,ExpTx,ELN2,ECN2,
+		            NextCh,NLN,NCN,NNLN,NNCN),
+		append(L2,[C3|Exponent],L3),
+		append(Tx2,[C3|ExpTx],Tx3),
+		!,
+		number_codes(Number,L3),
+		flora_number_struct(Number,Tx3,BLN,BCN,ELN2,ECN2,Tk),
+		TokenList=[Tk|Tokens],
+		read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status)
+	    ;
+	      ( C3 == CH_EOF_P ->
+		  flora_number_struct(0,Tx2,BLN,BCN,ELN1,ECN1,Tk),
+		  TokenList=[Tk],
+		  Status=[FLORA_EOF,error(UNEXP_EOF)]
+	      ;
+	        append(Tx2,[C3],Tx3),
+		!,
+		flora_number_struct(0,Tx3,BLN,BCN,LN3,CN3,Tk),
+		TokenList=[Tk],
+	        Status=[FLORA_NOT_EOF,error(ERROR_EXPONENT)],
+		set_charpos(LN4,CN4)
+	      )
+	    )
+
+	; %% no exponent
+	  number_codes(Number,L1),
+	  flora_number_struct(Number,Tx1,BLN,BCN,LLN,LCN,Tk),
+	  TokenList=[Tk|Tokens],
+	  read_tokens(C1,LNO1,CNO1,LNO2,CNO2,Tokens,Status)
+	).
+

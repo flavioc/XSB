@@ -1,0 +1,213 @@
+/* File:        flranswer.P
+**
+** Author(s): Guizhen Yang
+**            Michael Kifer 
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "char_defs.h"
+#include "standard.h"
+#include "flora_terms.flh"
+
+
+:- import
+	call/1,
+	cputime/1,
+	get0/1,
+	var/1
+   from standard.
+
+:- import length/2 from basics.
+
+:- import findall/3, sort/2 from setof.
+
+:- import fmt_write/3 from file_io.
+
+:- import stat_flag/2 from machine.
+
+:- import shell/5 from shell.
+
+:- import flora_register_syslib/1 from flrlibman.
+
+:- import
+	flora_stdfdbk_string/2,
+	flora_stdfdbk_nl/0,
+	flora_stdfdbk_line/1
+   from flrprint.
+
+:- import flora_write/2 from flrdisplay.
+
+:- dynamic flora_switch(_).
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBANSWER).
+?- flora_register_syslib(FLLIBSHELLANS).
+?- flora_register_syslib(FLLIBPROGRAMANS).
+
+
+/********************************************************************/
+fllibshellans(Gs,NVs) :-
+	flora_switch(all),
+	!,
+	flora_print_all(Gs,NVs).
+
+fllibshellans(Gs,NVs) :-
+	flora_print_one(Gs,NVs).
+
+
+/********************************************************************/
+fllibprogramans(Gs,NVs) :-
+	flora_print_all(Gs,NVs).
+
+
+/********************************************************************/
+flora_print_all(Gs,NVs) :-
+	cputime(T0),
+	( NVs == [] ->
+	    flora_if_then_else(flora_call(Gs),flora_write_Yes,flora_write_No)
+	;
+	  flora_findall(NVs,Gs,TempL),
+	  sort(TempL,L),
+	  cputime(T1),
+	  T is T1-T0,
+	  length(L,N),
+	  ( N == 0 ->
+	      flora_write_No
+	  ;
+	    flora_write_matches(L),
+	    ( flora_switch(chatter) ->
+		flora_stdfdbk_string("\n%d solution(s) in %S seconds on ",args(N,T)),
+	        shell(hostname,block,STDFDBK,block,_)
+	    ;
+	      true
+	    ),
+	    flora_write_Yes
+	  )
+	).
+
+
+/********************************************************************/
+flora_print_one(Gs,NVs) :-
+	( NVs == [] ->
+	    flora_if_then_else(flora_call(Gs),flora_write_Yes,flora_write_No)
+	;
+	  ( flora_call(Gs),
+	    flora_write_pairs(NVs),
+	    flora_fail_unless_return
+	  ;
+	    flora_write_No
+	  )
+	).
+
+
+/********************************************************************/
+flora_if_then_else(Condition,Then,_Else) :-
+	call(Condition),
+	call(Then).
+
+flora_if_then_else(_Condition,_Then,Else) :-
+	call(Else).
+
+
+/********************************************************************/
+flora_fail_unless_return :- 
+	get0(C),
+	(C == CH_NEWLINE -> true; get0(_)),
+	C=CH_NEWLINE,
+	flora_write_Yes.
+
+
+/********************************************************************/
+flora_write_Yes :- flora_stdfdbk_line("\nYes.\n").
+flora_write_No  :- flora_stdfdbk_line("\nNo.\n").
+
+
+/********************************************************************/
+%% Hookup to the Flora debugger
+%% flora_call is a wrapper around XSB call
+flora_call(Goal) :- 
+    	flora_handle_trace,
+    	call(Goal),
+	flora_handle_end_of_call.
+
+flora_call(_Goal) :-
+	flora_handle_notrace,
+	fail.
+
+
+/********************************************************************/
+flora_findall(NVs,Gs,TempL) :-
+	flora_handle_trace,
+	findall(NVs,Gs,TempL),
+	flora_handle_end_of_call.
+
+flora_findall(_NVs,_Gs,_TempL) :-
+	flora_handle_notrace,
+	fail.
+
+
+/********************************************************************/
+flora_handle_trace :-
+    	( flora_switch(trace) ->
+	    (stat_flag(6,Trace), Trace = 0 -> trace; true)
+	;
+	  true
+	).
+
+
+/********************************************************************/
+flora_handle_notrace :-
+    	(stat_flag(6,Trace), Trace > 0 -> notrace; true).
+
+
+/********************************************************************/
+%% This turns off trace, so that flora internal stuff done after a
+%% subgoal call won''t be traced. However, on backtracking, this turns
+%% trace on and fails, thereby allowing to backtrack over the previous
+%% subgoal.
+flora_handle_end_of_call :- flora_handle_notrace.
+flora_handle_end_of_call :- flora_handle_trace, fail.
+
+
+/********************************************************************/
+flora_write_matches([]).
+
+flora_write_matches([M|Ms]) :-
+	flora_write_pairs(M),
+	flora_stdfdbk_nl,
+	flora_write_matches(Ms).
+
+
+flora_write_pairs([]).
+
+flora_write_pairs([N=V|NVs]) :-
+	flora_stdfdbk_nl,
+	flora_stdfdbk_string("%s = ",args(N)),
+	flora_write(STDFDBK,V),
+	flora_write_pairs(NVs).

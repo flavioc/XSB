@@ -1,0 +1,174 @@
+/* File:      flroperator.P -- Flora operator definitions
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+
+#include "flora_terms.flh"
+
+
+flora_op(1600,xfx,FL_IMPLYOP).
+flora_op(1600,fx,FL_IMPLYOP).
+flora_op(1600,fx,FL_QUERYOP).
+
+flora_op(1500,fx,FL_HILOG).
+flora_op(1500,fx,FL_DYNAMIC).
+flora_op(1500,xfx,FL_BAR).
+flora_op(1500,fx,FL_TABLE).
+flora_op(1500,fx,FL_INDEX).
+flora_op(1500,fx,FL_EXPORT).
+flora_op(1500,fx,FL_IMPORT).
+flora_op(1500,fx,FL_SIGNATURE).
+flora_op(1500,fx,FL_PROLOG).
+flora_op(1500,fx,FL_NOHILOG).
+
+flora_op(1400,xfx,FL_FROM).
+flora_op(1400,xfy,FL_SEMICOLON).
+
+flora_op(1300,xfy,FL_COMMA).
+
+flora_op(1200,fy,FL_TNOT).
+flora_op(1200,fy,FL_NOT).
+flora_op(1200,fy,FL_NEG).
+flora_op(1200,fy,FL_TILDE).
+
+flora_op(1100,xfx,FL_FDARROW).
+flora_op(1100,xfx,FL_MVDARROW).
+flora_op(1100,xfx,FL_ALLINARROW).
+flora_op(1100,xfx,FL_FDSIGARROW).
+flora_op(1100,xfx,FL_MVDSIGARROW).
+flora_op(1100,xfx,FL_INFDARROW).
+flora_op(1100,xfx,FL_INMVDARROW).
+flora_op(1100,xfx,FL_INALLINARROW).
+flora_op(1100,xfx,FL_INFDSIGARR).
+flora_op(1100,xfx,FL_INMVDSIGARR).
+flora_op(1100,fx,FL_INMETH).
+flora_op(1100,fx,FL_TRAN).
+
+flora_op(1000,xfx,FL_UNIVEQ).
+flora_op(1000,xfx,FL_UNIVNOTEQ).
+flora_op(1000,xfx,FL_EQ).
+flora_op(1000,xfx,FL_NOTEQ).
+flora_op(1000,xfx,FL_ORDERLT).
+flora_op(1000,xfx,FL_ORDEREQLT).
+flora_op(1000,xfx,FL_ORDERGT).
+flora_op(1000,xfx,FL_ORDEREQGT).
+flora_op(1000,xfx,FL_METAUNIV).
+flora_op(1000,xfx,FL_ASSIGN).
+flora_op(1000,xfx,FL_OBJEQL).
+flora_op(1000,xfx,FL_IS).
+flora_op(1000,xfx,FL_MATHEQ).
+flora_op(1000,xfx,FL_MATHNOTEQ).
+flora_op(1000,xfx,FL_LT).
+flora_op(1000,xfx,FL_EQLT).
+flora_op(1000,xfx,FL_GT).
+flora_op(1000,xfx,FL_EQGT).
+
+flora_op(900,xfx,FL_RIGHTTO).
+flora_op(900,xfx,FL_LEFTTO).
+
+flora_op(800,yfx,FL_PLUS).
+flora_op(800,yfx,FL_MINUS).
+flora_op(800,yfx,FL_SYMOR).
+
+flora_op(700,yfx,FL_STAR).
+flora_op(700,yfx,FL_SLASH).
+flora_op(700,yfx,FL_MOD).
+flora_op(700,yfx,FL_SYMAND).
+
+flora_op(600,fy,FL_PLUS).
+flora_op(600,fy,FL_MINUS).
+
+flora_op(500,xfx,FL_AT).
+
+flora_op(400,fx,FL_MODULE).
+
+flora_op(300,yfx,FL_FD).
+flora_op(300,yfx,FL_MVD).
+flora_op(300,yfx,FL_INHERIFD).
+flora_op(300,yfx,FL_INHERIMVD).
+flora_op(300,yfx,FL_ISA).
+flora_op(300,yfx,FL_SUB).
+
+flora_op(200,yfx,FL_DOLLAR).
+
+flora_op(100,fy,FL_DOLLAR).
+
+
+/****************************************************************************
+  flora_opdef(+Precedence,+Associativity,+Op)
+****************************************************************************/
+flora_opdef(X,Y,Z) :-
+	flora_op(X,Y,Z).
+
+flora_opdef(X,Y,Z) :-
+	( conget(flora_shell_mode,1) ->
+	    flora_shop(X,Y,Z)
+	;
+	  flora_dynop(X,Y,Z)
+	).
+
+
+/****************************************************************************
+  flora_conflict_operator(+Precedence,+Associativity,+Op)
+****************************************************************************/
+flora_conflict_operator(P,A,Op) :-
+	flora_op(_P,_A,Op),
+	(P \= _P; A \= _A).
+
+
+/****************************************************************************
+  flora_reset_operator/0
+****************************************************************************/
+flora_reset_operator :- retractall(flora_dynop(_,_,_)).
+
+
+/****************************************************************************
+  flora_define_operator(+Precedence,+Associativity,+Op)
+****************************************************************************/
+flora_define_operator(P,A,Op) :-
+	( flora_op(P,A,Op) ->
+	    true
+	;
+	  assert(flora_dynop(P,A,Op))
+	).
+
+
+/****************************************************************************
+  flora_shreset_operator/0
+****************************************************************************/
+flora_shreset_operator :- retractall(flora_shop(_,_,_)).
+
+
+/****************************************************************************
+  flora_shdefine_operator(+Precedence,+Associativity,+Op)
+****************************************************************************/
+flora_shdefine_operator(P,A,Op) :-
+	( flora_op(P,A,Op) ->
+	    true
+	;
+	  assert(flora_shop(P,A,Op))
+	).

@@ -1,0 +1,105 @@
+/* File:      flora2.P
+**
+** Author(s): Michael Kifer
+**            Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+
+:- import assert/1, retract/1 from assert.
+
+:- import consult/1 from consult.
+
+:- import
+	bootstrap_package/2,
+	package_configuration/2,
+	unload_package/1
+   from packaging.
+
+:- import fmt_write_string/3 from file_io.
+
+:- import flora_shell_loop/0 from usermod.
+
+:- import hide_this_show/2 from usermod.
+
+:- import slash/1 from machine.
+
+:- import assert/1 from assert.
+
+:- import conget/2, conset/2 from gensym.
+
+:- import xpp_include_dir/1 from parse.
+
+:- dynamic hide_this_show(_,_).
+
+:- index(hide_this_show/2,trie).
+
+:- export
+	bootstrap_flora/0,
+	unstrap_flora/0,
+	flora_shell/0.
+
+
+/******************************************************************************/
+bootstrap_flora :-
+	bootstrap_package([flora2,syslib],flora),
+	!,
+	assert(package_configuration(version(flora),'2.0 of January, 2001')),
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(FloraIncludesDir,"%s%sincludes",args(FloraDir,S)),
+	assert(xpp_include_dir(FloraIncludesDir)),
+	fmt_write_string(FloraClosureDir,"%s%sclosure",args(FloraDir,S)),
+	assert(xpp_include_dir(FloraClosureDir)).
+
+bootstrap_flora.
+
+
+/******************************************************************************/
+unstrap_flora :-
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(FloraIncludesDir,"%s%sincludes",args(FloraDir,S)),
+	(retract(xpp_include_dir(FloraIncludesDir)); true),
+	fmt_write_string(FloraClosureDir,"%s%sclosure",args(FloraDir,S)),
+	(retract(xpp_include_dir(FloraClosureDir)); true),
+	unload_package(flora),
+	conset(flora_shell_loaded,0).
+
+
+/******************************************************************************/
+%% don''t show flora_shell in trace
+:- assert(hide_this_show(flora_shell,0)). 
+
+
+/******************************************************************************/
+flora_shell :-
+	bootstrap_flora,
+	notrace,
+	( conget(flora_shell_loaded,1), !
+	;
+	  consult(flrshell),
+	  flora_shell_loop
+	).

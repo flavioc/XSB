@@ -1,0 +1,99 @@
+/* File:      flrprint.P
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2000
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "standard.h"
+
+
+/*************************************************************************
+  print utilities
+*************************************************************************/
+flora_stderr_nl :- file_nl(STDERR).
+flora_stderr_string(Str) :- fmt_write(STDERR,Str,_).
+flora_stderr_string(Fmt,Args) :- fmt_write(STDERR,Fmt,Args).
+
+
+flora_stdwarn_nl :- file_nl(STDWARN).
+flora_stdwarn_string(Str) :- fmt_write(STDWARN,Str,_).
+flora_stdwarn_string(Fmt,Args) :- fmt_write(STDWARN,Fmt,Args).
+
+
+flora_stdmsg_nl :- file_nl(STDMSG).
+flora_stdmsg_string(Str) :- fmt_write(STDMSG,Str,_).
+flora_stdmsg_string(Fmt,Args) :- fmt_write(STDMSG,Fmt,Args).
+flora_stdmsg_line(M) :- fmt_write(STDMSG,"%s\n",args(M)).
+
+
+flora_stdfdbk_nl :- file_nl(STDFDBK).
+flora_stdfdbk_string(Str) :- fmt_write(STDFDBK,Str,_).
+flora_stdfdbk_string(Fmt,Args) :- fmt_write(STDFDBK,Fmt,Args).
+flora_stdfdbk_line(M) :- fmt_write(STDFDBK,"%s\n",args(M)).
+
+
+flora_error_heading :- flora_stderr_string("++FLORA Error: ").
+flora_error_indentline :- flora_stderr_string("               ").
+
+
+flora_warning_heading :- flora_stdwarn_string("++FLORA Warning: ").
+flora_warning_indentline :- flora_stdwarn_string("                 ").
+
+
+flora_message_heading :- flora_stdmsg_string("[FLORA: ").
+flora_message_tailing :- flora_stdmsg_string("]\n").
+
+
+flora_error_line(Str) :-
+	flora_error_heading,
+	flora_stderr_string(Str),
+	flora_stderr_nl.
+
+flora_error_line(Fmt,Args) :-
+	flora_error_heading,
+	flora_stderr_string(Fmt,Args),
+	flora_stderr_nl.
+
+flora_warning_line(Str) :-
+	flora_warning_heading,
+	flora_stdwarn_string(Str),
+	flora_stdwarn_nl.
+
+flora_warning_line(Fmt,Args) :-
+	flora_warning_heading,
+	flora_stdwarn_string(Fmt,Args),
+	flora_stdwarn_nl.
+
+flora_message_line(Str) :-
+	flora_message_heading,
+	flora_stdmsg_string(Str),
+	flora_message_tailing.
+
+flora_message_line(Fmt,Args) :-
+	flora_message_heading,
+	flora_stdmsg_string(Fmt,Args),
+	flora_message_tailing.
+
+

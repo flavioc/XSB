@@ -1,0 +1,492 @@
+/***************************************************************************
+  file: closure/flrtrailer.fli
+
+  Author(s): Guizhen Yang
+
+  Contact:   xsb-contact@cs.sunysb.edu
+
+  Copyright (C) The Research Foundation of SUNY, 1999-2000
+
+  This is a template file to generate the FLORA trailer that has no
+  equality maintenance.
+***************************************************************************/
+
+
+:- prolog flora_warning_line/1.
+
+:- import flora_warning_line/1 from flrprint.
+
+
+/***************************************************************************
+  closure rules for X::Y
+***************************************************************************/
+:- nohilog base_sub/2.
+:- nohilog derived_sub/2.
+:- nohilog super_sub/2.
+:- nohilog immediate_sub/2.
+
+
+:- table derived_sub/2.
+:- table super_sub/2.
+:- table immediate_sub/2.
+:- table sub/2.
+
+
+derived_sub(X,Y) :-
+	base_sub(X,Y).
+
+
+super_sub(X,Y) :-
+	derived_sub(X,Z),
+	derived_sub(Z,Y).
+
+super_sub(X,Y) :-
+	super_sub(X,Z),
+	derived_sub(Z,Y).
+
+
+immediate_sub(X,Y) :-
+	derived_sub(X,Y),
+	tnot(super_sub(X,Y)).
+
+
+sub(X,Y) :-
+	derived_sub(X,Y),
+	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
+
+sub(X,Y) :-
+	super_sub(X,Y),
+	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
+
+
+/***************************************************************************
+  closure rules for O:C
+***************************************************************************/
+:- nohilog base_isa/2.
+:- nohilog derived_isa/2.
+:- nohilog super_isa/2.
+:- nohilog ultimate_isa/2.
+
+
+:- table derived_isa/2.
+:- table isa/2.
+:- table super_isa/2.
+:- table ultimate_isa/2.
+
+
+derived_isa(O,C) :-
+	base_isa(O,C).
+
+
+isa(O,C) :-
+	derived_isa(O,C).
+
+isa(O,C) :-
+	sub(S,C),
+	derived_isa(O,S).
+
+
+super_isa(O,C) :-
+	derived_isa(O,S),
+	sub(S,C).
+
+
+ultimate_isa(O,C) :-
+	derived_isa(O,C),
+	tnot(super_isa(O,C)).
+
+
+/*****************************************************************************
+  nonmonotonic inheritance of scalar attributes among classes
+*****************************************************************************/
+:- nohilog base_ifd/3.
+:- nohilog derived_ifd/3.
+:- nohilog defined_derived_ifd/2.
+:- nohilog conflict_ifd/2.
+
+
+:- table derived_ifd/3.
+:- table defined_derived_ifd/2.
+:- table ifd/3.
+:- table conflict_ifd/2.
+
+
+derived_ifd(C,A,V) :-
+	base_ifd(C,A,V).
+
+
+defined_derived_ifd(C,A) :-
+	derived_ifd(C,A,_V).
+
+
+ifd(C,A,V) :-
+	derived_ifd(C,A,V).
+
+ifd(C,A,V) :-
+	immediate_sub(C,S),
+	ifd(S,A,V),
+	tnot(defined_derived_ifd(C,A)),
+	tnot(conflict_ifd(C,A)).
+
+
+conflict_ifd(C,A) :-
+	immediate_sub(C,S1),
+	immediate_sub(C,S2),
+	S1 \= S2,
+	ifddef(S1,A),
+	ifddef(S2,A).
+
+
+/*****************************************************************************
+  nonmonotonic inheritance of (defined) multivalued attributes among classes
+*****************************************************************************/
+:- nohilog base_imvd/3.
+:- nohilog derived_imvd/3.
+:- nohilog base_imvddef/2.
+:- nohilog derived_imvddef/2.
+:- nohilog defined_derived_imvd/2.
+:- nohilog conflict_imvd/2.
+
+
+:- table derived_imvd/3.
+:- table imvd/3.
+:- table derived_imvddef/2.
+:- table imvddef/2.
+:- table defined_derived_imvd/2.
+:- table conflict_imvd/2.
+
+
+derived_imvd(C,A,V) :-
+	base_imvd(C,A,V).
+
+
+imvd(C,A,V) :-
+	derived_imvd(C,A,V).
+
+imvd(C,A,V) :-
+	immediate_sub(C,S),
+	imvd(S,A,V),
+	tnot(defined_derived_imvd(C,A)),
+	tnot(conflict_imvd(C,A)).
+
+
+derived_imvddef(C,A) :-
+	base_imvddef(C,A).
+
+
+imvddef(C,A) :-
+	derived_imvddef(C,A).
+
+imvddef(C,A) :-
+	immediate_sub(C,S),
+	imvddef(S,A),
+	tnot(defined_derived_imvd(C,A)),
+	tnot(conflict_imvd(C,A)).
+
+imvddef(C,A) :-
+	imvd(C,A,_V).
+
+
+defined_derived_imvd(C,A) :-
+	derived_imvd(C,A,_V).
+
+defined_derived_imvd(C,A) :-
+	derived_imvddef(C,A).
+
+
+conflict_imvd(C,A) :-
+	immediate_sub(C,S1),
+	immediate_sub(C,S2),
+	S1 \= S2,
+	imvddef(S1,A),
+	imvddef(S2,A).
+
+
+/*****************************************************************************
+  nonmonotonic inheritance of scalar attributes among objects
+*****************************************************************************/
+:- nohilog base_fd/3.
+:- nohilog derived_fd/3.
+:- nohilog defined_derived_fd/2.
+:- nohilog conflict_obj_ifd/2.
+
+
+:- table derived_fd/3.
+:- table defined_derived_fd/2.
+:- table fd/3.
+:- table conflict_obj_ifd/2.
+
+
+derived_fd(O,A,V) :-
+	base_fd(O,A,V).
+
+
+defined_derived_fd(O,A) :-
+	derived_fd(O,A,_V).
+
+
+fd(O,A,V) :-
+	derived_fd(O,A,V).
+
+fd(O,A,V) :-
+	ultimate_isa(O,C),
+	ifd(C,A,V),
+	tnot(defined_derived_fd(O,A)),
+	tnot(conflict_obj_ifd(O,A)).
+
+
+conflict_obj_ifd(O,A) :-
+	ultimate_isa(O,C1),
+	ultimate_isa(O,C2),
+	C1 \= C2,
+	ifddef(C1,A),
+	ifddef(C2,A).
+
+
+/*****************************************************************************
+  defined scalar attributes
+
+  Notes: There is no base_fddef or base_ifddef.
+*****************************************************************************/
+:- table fddef/2.
+:- table ifddef/2.
+
+
+fddef(O,A) :-
+	fd(O,A,_V).
+
+
+ifddef(C,A) :-
+	ifd(C,A,_V).
+
+
+/*****************************************************************************
+  nonmonotonic inheritance of (defined) multivalued attributes among objects
+*****************************************************************************/
+:- nohilog base_mvd/3.
+:- nohilog derived_mvd/3.
+:- nohilog base_mvddef/2.
+:- nohilog derived_mvddef/2.
+:- nohilog defined_derived_mvd/2.
+:- nohilog conflict_obj_imvd/2.
+
+
+:- table derived_mvd/3.
+:- table mvd/3.
+:- table derived_mvddef/2.
+:- table mvddef/2.
+:- table defined_derived_mvd/2.
+:- table conflict_obj_imvd/2.
+
+
+derived_mvd(O,A,V) :-
+	base_mvd(O,A,V).
+
+
+mvd(O,A,V) :-
+	derived_mvd(O,A,V).
+
+mvd(O,A,V) :-
+	ultimate_isa(O,C),
+	imvd(C,A,V),
+	tnot(defined_derived_mvd(O,A)),
+	tnot(conflict_obj_imvd(O,A)).
+
+
+derived_mvddef(O,A) :-
+	base_mvddef(O,A).
+
+
+mvddef(O,A) :-
+	derived_mvddef(O,A).
+
+mvddef(O,A) :-
+	ultimate_isa(O,C),
+	imvddef(C,A),
+	tnot(defined_derived_mvd(O,A)),
+	tnot(conflict_obj_imvd(O,A)).
+
+mvddef(O,A) :-
+	mvd(O,A,_V).
+
+
+defined_derived_mvd(O,A) :-
+	derived_mvd(O,A,_V).
+
+defined_derived_mvd(O,A) :-
+	derived_mvddef(O,A).
+
+
+conflict_obj_imvd(O,A) :-
+	ultimate_isa(O,C1),
+	ultimate_isa(O,C2),
+	C1 \= C2,
+	imvddef(C1,A),
+	imvddef(C2,A).
+
+
+/*****************************************************************************
+  multivalued attributes inclusion
+*****************************************************************************/
+mvdinc(_O,_M,[]).
+
+mvdinc(O,M,[H|T]) :-
+	mvd(O,M,H),
+	mvdinc(O,M,T).
+
+
+imvdinc(_O,_M,[]).
+
+imvdinc(O,M,[H|T]) :-
+	imvd(O,M,H),
+	imvdinc(O,M,T).
+
+
+/*****************************************************************************
+  monotonic inheritance of binary attributes (tabled methods)
+*****************************************************************************/
+:- nohilog base_meth/2.
+:- nohilog derived_meth/2.
+:- nohilog base_imeth/2.
+:- nohilog derived_imeth/2.
+
+
+:- table derived_meth/2.
+:- table meth/2.
+:- table derived_imeth/2.
+:- table imeth/2.
+
+
+derived_meth(O,M) :-
+	base_meth(O,M).
+
+
+meth(O,M) :-
+	derived_meth(O,M).
+
+meth(O,M) :-
+	isa(O,C),
+	imeth(C,M).
+
+
+derived_imeth(C,M) :-
+	base_imeth(C,M).
+
+
+imeth(C,M) :-
+	derived_imeth(C,M).
+
+imeth(C,M) :-
+	sub(C,S),
+	imeth(S,M).
+
+
+/*****************************************************************************
+  nontabled methods (transactions)
+*****************************************************************************/
+:- nohilog base_tran/2.
+:- nohilog derived_tran/2.
+
+
+derived_tran(O,T) :-
+	base_tran(O,T).
+
+tran(O,T) :-
+	derived_tran(O,T).
+
+
+/*****************************************************************************
+  monotonic inheritance of signatures
+*****************************************************************************/
+:- nohilog base_fdsig/3.
+:- nohilog derived_fdsig/3.
+:- nohilog base_ifdsig/3.
+:- nohilog derived_ifdsig/3.
+:- nohilog base_mvdsig/3.
+:- nohilog derived_mvdsig/3.
+:- nohilog base_imvdsig/3.
+:- nohilog derived_imvdsig/3.
+
+
+:- table fdsig/3.
+:- table ifdsig/3.
+:- table mvdsig/3.
+:- table imvdsig/3.
+
+
+derived_fdsig(O,MethodArgs,R) :-
+	base_fdsig(O,MethodArgs,R).
+
+fdsig(O,MethodArgs,R) :-
+	derived_fdsig(O,MethodArgs,R).
+
+fdsig(O,MethodArgs,R) :-
+	isa(O,C),
+	ifdsig(C,MethodArgs,R).
+
+
+derived_ifdsig(O,MethodArgs,R) :-
+	base_ifdsig(O,MethodArgs,R).
+
+ifdsig(O,MethodArgs,R) :-
+	derived_ifdsig(O,MethodArgs,R).
+
+ifdsig(S,MethodArgs,R) :-
+	sub(S,C),
+	ifdsig(C,MethodArgs,R).
+
+
+derived_mvdsig(O,MethodArgs,R) :-
+	base_mvdsig(O,MethodArgs,R).
+
+mvdsig(O,MethodArgs,R) :-
+	derived_mvdsig(O,MethodArgs,R).
+
+mvdsig(O,MethodArgs,R) :-
+	isa(O,C),
+	imvdsig(C,MethodArgs,R).
+
+
+derived_imvdsig(O,MethodArgs,R) :-
+	base_imvdsig(O,MethodArgs,R).
+
+imvdsig(O,MethodArgs,R) :-
+	derived_imvdsig(O,MethodArgs,R).
+
+imvdsig(S,MethodArgs,R) :-
+	sub(S,C),
+	imvdsig(C,MethodArgs,R).
+
+
+/*****************************************************************************
+  object existence
+*****************************************************************************/
+:- nohilog base_exists/1.
+:- nohilog derived_exists/1.
+
+
+:- table derived_exists/1.
+:- table exists/1.
+
+
+derived_exists(X) :-
+	base_exists(X).
+
+
+exists(X) :-
+	derived_exists(X).
+
+exists(X) :- fd(X,_,_).
+exists(X) :- fd(_,_,X).
+exists(X) :- mvd(X,_,_).
+exists(X) :- mvd(_,_,X).
+exists(X) :- ifd(X,_,_).
+exists(X) :- ifd(_,_,X).
+exists(X) :- imvd(X,_,_).
+exists(X) :- imvd(_,_,X).
+exists(X) :- isa(X,_).
+exists(X) :- isa(_,X).
+exists(X) :- sub(X,_).
+exists(X) :- sub(_,X).
+exists(X) :- meth(X,_).
+exists(X) :- imeth(X,_).

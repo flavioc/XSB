@@ -1,0 +1,142 @@
+/* File:      flora_errors.flh -- Flora errors
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+#mode standard Prolog
+
+
+/**************************************
+  errors reported by Flora Lexer
+**************************************/
+#define UNEXP_UNPRINT	'unexpected unprintable character'
+#define UNEXP_DEL_ISO	'unexpected DEL or ISO character'
+#define UNEXP_EOF	'unexpected end of file'
+#define UNEXP_PRINT	'unexpected printable character'
+#define HEX_EXPECTED    'hexadecimal symbol expected in string'
+#define AFTER_RADIX	'invalid symbol after radix'
+#define INVALID_RADIX	'invalid radix'
+#define ERROR_EXPONENT	'syntax error in exponent'
+
+
+/**************************************
+  warnings reported by Flora Composer
+**************************************/
+#define OP_AMBIGUITY	 'ambiguous operator definitions'
+
+
+/**************************************
+  errors reported by Flora Composer
+**************************************/
+#define UNKNOWN_ERROR    'unexpected error (report this to xsb-contact@cs.sunysb.edu)'
+#define UNEXP_EOR	 'rule delimeter expected'
+#define UNEXP_OPERAND    'unexpected operand'
+#define UNEXP_OPERATOR   'unexpected operator'
+#define UNEXP_LEFT       'unexpected left parenthesis/brace/bracket'
+#define UNEXP_RIGHT      'unexpected right parenthesis/brace/bracket'
+#define UNEXP_END        'unexpected end of rule'
+#define WRONG_PRECEDENCE 'precedence definitions violated'
+#define WRONG_ASSOCIATE  'associativity definitions violated'
+#define UNMATCHED_LEFT   'unmatched left parenthesis/brace/bracket'
+#define UNMATCHED_RIGHT  'unmatched right parenthesis/brace/bracket'
+
+
+/**************************************
+  errors reported by Flora Operator
+**************************************/
+#define NO_REDEFOP	'redefinition of standard operators not allowed'
+
+
+/**************************************
+  errors reported by Flora Signature
+**************************************/
+#define NO_REDEFSIGN	'redefinition of standard signatures not allowed'
+
+
+/**************************************
+  errors reported by Flora Parser
+**************************************/
+#define ERROR_OPDEF	'invalid associativity definition'
+#define ERROR_OPERATOR	'invalid operator'
+#define ERROR_FAPAIR	'invalid functor/arity pair'
+#define ERROR_ARGSIGN	'invalid argument specification (`oid''/`form'' expected)'
+#define ERROR_SIGNATURE	'invalid signature directive'
+#define ERROR_MODULE	'invalid module name'
+#define ERROR_AGGREGT	'syntax error in aggregate body'
+#define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
+#define ERROR_PRLGLIT	'invalid PROLOG literal'
+#define ERROR_WSNAME	'invalid workspace name'
+#define ERROR_PATHEXP	'invalid path expression'
+#define ERROR_HDLITERAL 'invalid literal/molecule in rule head'
+#define ERROR_EXPINHEAD 'invalid path expression in rule head'
+#define ERROR_LOADLIST	'invalid list of loading commands'
+#define ERROR_LOADITEM	'invalid loading command'
+#define ERROR_LOADFILE	'invalid file name'
+#define ERROR_ASSERT	'invalid literal to assert'
+#define ERROR_DELETE	'invalid literal to delete'
+#define ERROR_EXPASSERT 'invalid path expression in assert'
+#define ERROR_EXPDELETE 'invalid path expression in delete'
+#define ERROR_INDXDIREC	'invalid trie indexing directive'
+#define EXP_POSINTEGER	'positive integer expected'
+#define EXP_VARIABLE	'variable expected'
+#define EXP_ATOMICFUNCT	'atomic functor expected'
+#define EXP_AGGREGVAR	'aggregate variable expected'
+#define EXP_AGGRGRPVAR	'aggregate and grouping variables expected'
+#define EXP_ARGS	'arguments expected'
+#define NO_LISTTAIL	'list tail specification not allowed'
+#define NO_DISJUNCTION	'disjunction not allowed in rule head'
+#define NO_NEGATION	'negation not allowed in rule head'
+#define NO_WORKSPACE	'invalid association with workspace specification'
+#define NO_WSINRULEHEAD	'workspace specification not allowed in rule head'
+#define NO_WSNESTING	'invalid workspace nesting'
+#define NO_REDEFINITION 'redefinition of standard predicates not allowed'
+#define NO_MULTIATT	'multivalued reference not allowed in rule head'
+#define NO_AGGINHEAD	'aggregate not allowed in rule head'
+#define NO_ASSERT	'assert into built-in predicates not allowed'
+#define NO_DELETE	'delete from built-in predicates not allowed'
+#define NO_ASSRTMULATT  'multivalued reference not allowed in assert'
+#define NO_ASSERTDISJUN	'disjunction not allowed in assert'
+#define NO_DELETEDISJUN	'disjunction not allowed in delete'
+#define NO_ASSERTNEG	'negation not allowed in assert'
+#define NO_DELETENEG	'negation not allowed in delete'
+#define UNKNOWN_AGGREGT 'unknown aggregate operator'
+#define UNKNOWN_DIRECT	'unknown compiler directive'
+
+
+/**************************************
+  warnings reported by Flora Compiler
+**************************************/
+#define SINGLETON_VAR	'singleton variable'
+#define UNBOUND_VAR	'unbound variable in rule head'
+
+
+/**************************************
+  errors reported by Flora Compiler
+**************************************/
+#define REPEATED_GVAR	'repeated grouping variable not allowed'
+#define GVAR_NOTIN	'grouping variable not in aggregate body'
+#define AVAR_NOTIN	'aggregate variable not in aggregate body'
+#define ERROR_GVAR	'invalid grouping variable'
+#define ERROR_AVAR	'invalid aggregate variable'
+#define AVAR_ASGVAR	'aggregate variable not allowed as grouping variable'

@@ -1,0 +1,17 @@
+/************************************************************************
+  file: closure/flrheader.flh
+
+  Author(s): Guizhen Yang
+
+  This file is automatically included by the FLORA compiler.
+************************************************************************/
+
+#mode standard Prolog
+
+#mode save
+#mode nostring "\!#'"
+#define WORKSPACE(X,Y)    'X''Y'
+#mode restore
+
+/***********************************************************************/
+

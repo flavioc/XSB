@@ -1,0 +1,102 @@
+/* File:      flraggavg.P
+**
+** Author(s): Guizhen Yang 
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+:- import ground/1, member/2 from basics.
+
+:- import findall/3, sort/2 from setof.
+
+:- import flora_register_syslib/1 from flrlibman.
+
+:- import flora_warning_line/1 from flrprint.
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBAVG).
+
+
+/*********************************************************************
+  fllibavg(+Var,+VarList,+Goal,-Avg)
+*********************************************************************/
+fllibavg(Var,[],Goal,Avg) :-
+	!,
+	findall(Var,Goal,Matches),
+	flora_avgaux(Matches,Avg).
+
+fllibavg(Var,VarList,Goal,Avg) :-
+	ground(VarList),
+	!,
+	findall(Var,Goal,Matches),
+	flora_avgaux(Matches,Avg).
+
+fllibavg(Var,VarList,Goal,Avg) :-
+	!,
+	findall(flora_result(Var,VarList),Goal,Matches),
+	findall(Grp,member(flora_result(_,Grp),Matches),GL),
+	sort(GL,Groups),
+	member(VarList,Groups),
+	findall(D,member(flora_result(D,VarList),Matches),DL),
+	flora_avgaux(DL,Avg).
+
+
+/********************************************************************
+  flora_avgaux(+List,-Avg).
+  flora_avgaux(+List,-CurrSum,-CurrNum,-Avg,-Warning)
+********************************************************************/
+flora_avgaux(Matches,Avg) :-
+	flora_avgaux(Matches,_,_,Avg,Warning),
+	( var(Warning) ->
+	    true
+	;
+	  flora_warning_line("discarding non-numeric values while computing average")
+	).
+
+
+flora_avgaux([],Sum,Num,Avg,_) :-
+	!,
+	(var(Sum) -> fail; Avg is Sum/Num).
+
+flora_avgaux([H|L],Sum,Num,Avg,Warning) :-
+	!,
+	( number(H) ->
+	    ( var(Sum) ->
+		S=H,
+		N=1
+	      ;
+	        S is Sum+H,
+		N is Num+1
+	    ),
+	    flora_avgaux(L,S,N,Avg,Warning)
+	;
+	  Warning=[],
+	  flora_avgaux(L,Sum,Num,Avg,_)
+	).

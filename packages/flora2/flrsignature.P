@@ -1,0 +1,96 @@
+/* File:      flrsignature.P -- Flora signature definitions
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+
+flora_sign((findall),3,[FL_OID,FL_FORMULAR,FL_OID]).
+
+
+/****************************************************************************
+  flora_signdef(+Functor,+Arity,+ArgsList)
+****************************************************************************/
+flora_signdef(X,Y,Z) :-
+	flora_sign(X,Y,Z).
+
+flora_signdef(X,Y,Z) :-
+	( conget(flora_shell_mode,1) ->
+	    flora_shsign(X,Y,Z)
+	;
+	  flora_dynsign(X,Y,Z)
+	).
+
+
+/****************************************************************************
+  flora_conflict_signature(+Op,+Arity,+Args)
+****************************************************************************/
+flora_conflict_signature(O,A,Args) :-
+	flora_sign(O,_A,_Args),
+	(A \= _A; Args \= _Args).
+
+
+/****************************************************************************
+  flora_reset_signature/0
+****************************************************************************/
+flora_reset_signature :- retractall(flora_dynsign(_,_,_)).
+
+
+/****************************************************************************
+  flora_define_signature(+Op,+Arity,+Args)
+****************************************************************************/
+flora_define_signature(Op,Arity,Args) :-
+	( flora_sign(Op,Arity,Args) ->
+	    true
+
+	; flora_dynsign(Op,Arity,_) ->
+	    retractall(flora_dynsign(Op,Arity,_)),
+	    assert(flora_dynsign(Op,Arity,Args))
+	;
+	  assert(flora_dynsign(Op,Arity,Args))
+	).
+
+
+/****************************************************************************
+  flora_shreset_signature/0
+****************************************************************************/
+flora_shreset_signature :- retractall(flora_shsign(_,_,_)).
+
+
+/****************************************************************************
+  flora_shdefine_signature(+Op,+Arity,+Args)
+****************************************************************************/
+flora_shdefine_signature(Op,Arity,Args) :-
+	( flora_sign(Op,Arity,Args) ->
+	    true
+
+	; flora_shsign(Op,Arity,_) ->
+	    retractall(flora_shsign(Op,Arity,_)),
+	    assert(flora_shsign(Op,Arity,Args))
+	;
+	  assert(flora_shsign(Op,Arity,Args))
+	).

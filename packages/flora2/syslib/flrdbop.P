@@ -1,0 +1,519 @@
+/* File:      flrdbop.P
+**
+** Author(s): Guizhen Yang 
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+
+:- import var/1, call/1 from standard.
+
+:- import clause/2 from assert.
+
+:- import assert/1, retract/1, retractall/1 from assert.
+
+:- import findall/3, sort/2 from setof.
+
+:- import fmt_write_string/3 from file_io.
+
+:- import str_sub/3, substring/4 from string.
+
+:- import eval/2 from eval.
+
+:- import append/3 from basics.
+
+:- import flora_register_syslib/1 from flrlibman.
+
+:- dynamic flora_flogic_base(_,_).
+:- dynamic flora_flogic_wsbase(_,_).
+:- dynamic flora_flogic_workspace(_).
+
+:- index(flora_flogic_base/2,trie).
+:- index(flora_flogic_wsbase/2,trie).
+:- index(flora_flogic_workspace/1,trie).
+
+
+/*********************************************************************
+  This file is for the following FLORA database operations:
+  assert, retract, retractall, erase, eraseall.
+*********************************************************************/
+?- flora_register_syslib(FLLIBDBOP).
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBASSERT).
+
+
+/*****************************************************************************
+  fllibassert(+List)
+*****************************************************************************/
+fllibassert([]) :- !.
+
+fllibassert([H|T]) :-
+	assert(H),
+	fllibassert(T).
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBRETRACT).
+
+
+/*****************************************************************************
+  fllibretract(+List)
+*****************************************************************************/
+fllibretract(List) :- fllibretract(List,true).
+
+
+/*****************************************************************************
+  fllibretract(+List,+Condition)
+
+  The semantics is such that all the literals in "List" must be base facts
+  to be retracted.
+*****************************************************************************/
+fllibretract([P],true) :-
+	!,
+	retract((P :- true)).
+
+fllibretract(List,Condition) :-
+	flora_prove_goals(List),
+	flora_prove_goals([Condition]),
+	flora_check_facts(List),
+	flora_retract_facts(List).
+
+
+/*****************************************************************************
+  flora_list2conjunct(+List,-Goal)
+*****************************************************************************/
+flora_list2conjunct([G],G) :- !.
+
+flora_list2conjunct([G|L],Goal) :-
+	!,
+	flora_list2conjunct(L,LG),
+	Goal =.. [',',G,LG].
+
+
+/*****************************************************************************
+  flora_prove_goals(+List)
+*****************************************************************************/
+flora_prove_goals(List) :-
+	flora_list2conjunct(List,Goal),
+	!,
+	call(Goal).
+
+
+/*****************************************************************************
+  flora_check_facts(+List)
+*****************************************************************************/
+flora_check_facts([]) :- !.
+
+flora_check_facts([F|Fs]) :-
+	!,
+	clause(F,true),
+	flora_check_facts(Fs).
+
+
+/*****************************************************************************
+  flora_retract_facts(+List)
+*****************************************************************************/
+flora_retract_facts([]) :- !.
+
+flora_retract_facts([F|Fs]) :-
+	!,
+	retract((F :- true)),
+	flora_retract_facts(Fs).
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBRETRACTALL).
+
+
+/*****************************************************************************
+  fllibretractall(+List)
+*****************************************************************************/
+fllibretractall(List) :- fllibretractall(List,true).
+
+
+/*****************************************************************************
+  fllibretractall(+List,+Condition)
+
+  The semantics is such that all the literals in "List" must be base facts
+  to be retracted. This call always succeeds.
+*****************************************************************************/
+fllibretractall([P],true) :-
+	!,
+	retractall(P).
+
+fllibretractall(List,Condition) :-
+	flora_list2conjunct([Condition|List],Goal),
+	findall(List,Goal,FactList),
+	flora_retractall_facts(FactList).
+
+
+/*****************************************************************************
+  flora_retractall_facts(+FactList)
+
+  Note: This predicate always succeeds.
+*****************************************************************************/
+flora_retractall_facts([]) :- !.
+
+flora_retractall_facts([Fs|FL]) :-
+	flora_check_facts(Fs),
+	!,
+	%% "true" is needed in case that a previously retracted fact is
+        %% retracted again.
+	(flora_retract_facts(Fs); true),
+	flora_retractall_facts(FL).
+
+flora_retractall_facts([_Fs|FL]) :-
+	flora_retractall_facts(FL).
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBERASE).
+
+
+/*****************************************************************************
+  flliberase(+List)
+*****************************************************************************/
+flliberase(List) :- flliberase(List,true).
+
+
+/*****************************************************************************
+  flliberase(+List,+Condition)
+*****************************************************************************/
+flliberase(List,Condition) :-
+	flora_prove_goals(List),
+	flora_prove_goals([Condition]),
+	flora_check_facts(List),
+	flora_erase_facts(List).
+
+
+/*****************************************************************************
+  flora_erase_facts(+List)
+*****************************************************************************/
+flora_erase_facts([]) :- !.
+
+flora_erase_facts([F|Fs]) :-
+	!,
+	retract((F :- true)),
+	flora_erase_one_fact(F),
+	flora_erase_facts(Fs).
+
+
+/*****************************************************************************
+  flora_erase_one_fact(+Fact)
+*****************************************************************************/
+flora_erase_one_fact(Fact) :-
+	Fact =.. [Funct|Args],
+	( flora_flogic_base(isa,Bisa), str_sub(Bisa,Funct,X) ->
+	    Args=[O,_C],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(sub,Bsub), str_sub(Bsub,Funct,X) ->
+	    Args=[O,_C],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(fd,Bfd), str_sub(Bfd,Funct,X) ->
+	    Args=[_S,_A,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(mvd,Bmvd), str_sub(Bmvd,Funct,X) ->
+	    Args=[_S,_A,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(ifd,Bifd), str_sub(Bifd,Funct,X) ->
+	    Args=[_S,_IA,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(imvd,Bimvd), str_sub(Bimvd,Funct,X) ->
+	    Args=[_S,_IA,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(meth,Bmeth), str_sub(Bmeth,Funct,X) ->
+	    Args=[O,_M],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(imeth,Bimeth), str_sub(Bimeth,Funct,X) ->
+	    Args=[O,_IM],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(exists,Bexists), str_sub(Bexists,Funct,X) ->
+	    Args=[O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(mvddef,Bmvddef), str_sub(Bmvddef,Funct,X) ->
+	    Args=[O,_A],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(imvddef,Bimvddef), str_sub(Bimvddef,Funct,X) ->
+	    Args=[O,_IA],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(tran,Btran), str_sub(Btran,Funct,X) ->
+	    Args=[O,_T],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(fdsig,Bfdsig), str_sub(Bfdsig,Funct,X) ->
+	    Args=[_S,_AS,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(ifdsig,Bifdsig), str_sub(Bifdsig,Funct,X) ->
+	    Args=[_S,_IAS,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(mvdsig,Bmvdsig), str_sub(Bmvdsig,Funct,X) ->
+	    Args=[_S,_AS,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+
+	; flora_flogic_base(imvdsig,Bimvdsig), str_sub(Bimvdsig,Funct,X) ->
+	    Args=[_S,_IAS,O],
+	    eval(X-1,Y),
+	    substring(Funct,0,Y,Workspace)
+	),
+	( var(O) ->
+	    true
+	;
+	  ( flora_flogic_workspace(Workspace) ->
+	      true
+	  ;
+	    flora_setup_flogic_wsbase(Workspace)
+	  ),
+	  flora_erase_objects([O])
+	).
+
+
+/*****************************************************************************
+  flora_setup_flogic_base/0
+*****************************************************************************/
+flora_setup_flogic_base :-
+	fmt_write_string(Bisa,"'%s%s",args(FLFACTPREFIX,WRAP_ISA)),
+	fmt_write_string(Bsub,"'%s%s",args(FLFACTPREFIX,WRAP_SUB)),
+	fmt_write_string(Bmeth,"'%s%s",args(FLFACTPREFIX,WRAP_METH)),
+	fmt_write_string(Bimeth,"'%s%s",args(FLFACTPREFIX,WRAP_IMETH)),
+	fmt_write_string(Btran,"'%s%s",args(FLFACTPREFIX,WRAP_TRAN)),
+	fmt_write_string(Bfd,"'%s%s",args(FLFACTPREFIX,WRAP_FD)),
+	fmt_write_string(Bifd,"'%s%s",args(FLFACTPREFIX,WRAP_IFD)),
+	fmt_write_string(Bfdsig,"'%s%s",args(FLFACTPREFIX,WRAP_FDSIG)),
+	fmt_write_string(Bifdsig,"'%s%s",args(FLFACTPREFIX,WRAP_IFDSIG)),
+	fmt_write_string(Bmvd,"'%s%s",args(FLFACTPREFIX,WRAP_MVD)),
+	fmt_write_string(Bimvd,"'%s%s",args(FLFACTPREFIX,WRAP_IMVD)),
+	fmt_write_string(Bmvdsig,"'%s%s",args(FLFACTPREFIX,WRAP_MVDSIG)),
+	fmt_write_string(Bimvdsig,"'%s%s",args(FLFACTPREFIX,WRAP_IMVDSIG)),
+	fmt_write_string(Bexists,"'%s%s",args(FLFACTPREFIX,WRAP_EXISTS)),
+	fmt_write_string(Bmvddef,"'%s%s",args(FLFACTPREFIX,WRAP_MVDDEF)),
+	fmt_write_string(Bimvddef,"'%s%s",args(FLFACTPREFIX,WRAP_IMVDDEF)),
+	assert(flora_flogic_base(isa,Bisa)),
+	assert(flora_flogic_base(sub,Bsub)),
+	assert(flora_flogic_base(meth,Bmeth)),
+	assert(flora_flogic_base(imeth,Bimeth)),
+	assert(flora_flogic_base(tran,Btran)),
+	assert(flora_flogic_base(fd,Bfd)),
+	assert(flora_flogic_base(ifd,Bifd)),
+	assert(flora_flogic_base(fdsig,Bfdsig)),
+	assert(flora_flogic_base(ifdsig,Bifdsig)),
+	assert(flora_flogic_base(mvd,Bmvd)),
+	assert(flora_flogic_base(imvd,Bimvd)),
+	assert(flora_flogic_base(mvdsig,Bmvdsig)),
+	assert(flora_flogic_base(imvdsig,Bimvdsig)),
+	assert(flora_flogic_base(exists,Bexists)),
+	assert(flora_flogic_base(mvddef,Bmvddef)),
+	assert(flora_flogic_base(imvddef,Bimvddef)).
+
+
+/*****************************************************************************
+  flora_setup_flogic_wsbase(+WS)
+*****************************************************************************/
+flora_setup_flogic_wsbase(WS) :-
+	retractall(flora_flogic_workspace(_WS)),
+	assert(flora_flogic_workspace(WS)),
+	fmt_write_string(WSBisa,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_ISA)),
+	fmt_write_string(WSBsub,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_SUB)),
+	fmt_write_string(WSBmeth,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_METH)),
+	fmt_write_string(WSBimeth,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMETH)),
+	fmt_write_string(WSBtran,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_TRAN)),
+	fmt_write_string(WSBfd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_FD)),
+	fmt_write_string(WSBifd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IFD)),
+	fmt_write_string(WSBfdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_FDSIG)),
+	fmt_write_string(WSBifdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IFDSIG)),
+	fmt_write_string(WSBmvd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_MVD)),
+	fmt_write_string(WSBimvd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMVD)),
+	fmt_write_string(WSBmvdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_MVDSIG)),
+	fmt_write_string(WSBimvdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMVDSIG)),
+	fmt_write_string(WSBexists,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_EXISTS)),
+	fmt_write_string(WSBmvddef,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_MVDDEF)),
+	fmt_write_string(WSBimvddef,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMVDDEF)),
+	assert(flora_flogic_wsbase(isa,WSBisa)),
+	assert(flora_flogic_wsbase(sub,WSBsub)),
+	assert(flora_flogic_wsbase(meth,WSBmeth)),
+	assert(flora_flogic_wsbase(imeth,WSBimeth)),
+	assert(flora_flogic_wsbase(tran,WSBtran)),
+	assert(flora_flogic_wsbase(fd,WSBfd)),
+	assert(flora_flogic_wsbase(ifd,WSBifd)),
+	assert(flora_flogic_wsbase(fdsig,WSBfdsig)),
+	assert(flora_flogic_wsbase(ifdsig,WSBifdsig)),
+	assert(flora_flogic_wsbase(mvd,WSBmvd)),
+	assert(flora_flogic_wsbase(imvd,WSBimvd)),
+	assert(flora_flogic_wsbase(mvdsig,WSBmvdsig)),
+	assert(flora_flogic_wsbase(imvdsig,WSBimvdsig)),
+	assert(flora_flogic_wsbase(exists,WSBexists)),
+	assert(flora_flogic_wsbase(mvddef,WSBmvddef)),
+	assert(flora_flogic_wsbase(imvddef,WSBimvddef)).
+
+
+/*****************************************************************************
+  flora_erase_objects(+ObjectList)
+*****************************************************************************/
+flora_erase_objects([]) :- !.
+
+flora_erase_objects([O|OList]) :-
+	!,
+	flora_flogic_wsbase(isa,WSBisa),
+	flora_flogic_wsbase(sub,WSBsub),
+	flora_flogic_wsbase(meth,WSBmeth),
+	flora_flogic_wsbase(imeth,WSBimeth),
+	flora_flogic_wsbase(tran,WSBtran),
+	flora_flogic_wsbase(fd,WSBfd),
+	flora_flogic_wsbase(ifd,WSBifd),
+	flora_flogic_wsbase(fdsig,WSBfdsig),
+	flora_flogic_wsbase(ifdsig,WSBifdsig),
+	flora_flogic_wsbase(mvd,WSBmvd),
+	flora_flogic_wsbase(imvd,WSBimvd),
+	flora_flogic_wsbase(mvdsig,WSBmvdsig),
+	flora_flogic_wsbase(imvdsig,WSBimvdsig),
+	flora_flogic_wsbase(exists,WSBexists),
+	flora_flogic_wsbase(mvddef,WSBmvddef),
+	flora_flogic_wsbase(imvddef,WSBimvddef),
+	Wfd =.. [WSBfd,O,_,X],
+	Wifd =.. [WSBifd,O,_,X],
+	Wfdsig =.. [WSBfdsig,O,_,X],
+	Wifdsig =.. [WSBifdsig,O,_,X],
+	Wmvd =.. [WSBmvd,O,_,X],
+	Wimvd =.. [WSBimvd,O,_,X],
+	Wmvdsig =.. [WSBmvdsig,O,_,X],
+	Wimvdsig =.. [WSBimvdsig,O,_,X],
+	findall(X,(Wfd; Wifd; Wfdsig; Wifdsig; Wmvd; Wimvd; Wmvdsig; Wimvdsig),AddedOList),
+	append(OList,AddedOList,NewOList),
+	sort(NewOList,NextOList),
+	Pisa =.. [WSBisa,O,_],
+	Psub =.. [WSBsub,O,_],
+	Pmeth =.. [WSBmeth,O,_],
+	Pimeth =.. [WSBimeth,O,_],
+	Ptran =.. [WSBtran,O,_],
+	Pfd =.. [WSBfd,O,_,_],
+	Pifd =.. [WSBifd,O,_,_],
+	Pfdsig =.. [WSBfdsig,O,_,_],
+	Pifdsig =.. [WSBifdsig,O,_,_],
+	Pmvd =.. [WSBmvd,O,_,_],
+	Pimvd =.. [WSBimvd,O,_,_],
+	Pmvdsig =.. [WSBmvdsig,O,_,_],
+	Pimvdsig =.. [WSBimvdsig,O,_,_],
+	Pexists =.. [WSBexists,O],
+	Pmvddef =.. [WSBmvddef,O,_],
+	Pimvddef =.. [WSBimvddef,O,_],
+	retractall(Pisa),
+	retractall(Psub),
+	retractall(Pmeth),
+	retractall(Pimeth),
+	retractall(Ptran),
+	retractall(Pfd),
+	retractall(Pifd),
+	retractall(Pfdsig),
+	retractall(Pifdsig),
+	retractall(Pmvd),
+	retractall(Pimvd),
+	retractall(Pmvdsig),
+	retractall(Pimvdsig),
+	retractall(Pexists),
+	retractall(Pmvddef),
+	retractall(Pimvddef),
+	flora_erase_objects(NextOList).
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBERASEALL).
+
+
+/*****************************************************************************
+  flliberaseall(+List)
+*****************************************************************************/
+flliberaseall(List) :- flliberaseall(List,true).
+
+
+/*****************************************************************************
+  flliberaseall(+List,+Condition)
+*****************************************************************************/
+flliberaseall(List,Condition) :-
+	flora_list2conjunct([Condition|List],Goal),
+	findall(List,Goal,FactList),
+	flora_eraseall_facts(FactList).
+
+
+/*****************************************************************************
+  flora_eraseall_facts(+FactList)
+
+  Note: This predicate always succeeds.
+*****************************************************************************/
+flora_eraseall_facts([]) :- !.
+
+flora_eraseall_facts([Fs|FL]) :-
+	flora_check_facts(Fs),
+	!,
+	(flora_erase_facts(Fs); true),
+	flora_eraseall_facts(FL).
+
+flora_eraseall_facts([_Fs|FL]) :-
+	flora_eraseall_facts(FL).
+
+
+/*****************************************************************************
+  Set up the F-logic base predicate names when this module is loaded.
+*****************************************************************************/
+?- flora_setup_flogic_base.

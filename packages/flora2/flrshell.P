@@ -1,0 +1,196 @@
+/* File:      flrshell.P  -- The Flora interactive shell
+**
+** Author(s): Bertram Ludaescher
+**            Michael Kifer
+**            Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+
+/*********************************************************************/
+flora_shell_loop :-
+	flora_init_shell,
+	push_abort_cutpoint,
+	repeat,
+	pop_abort_cutpoint,
+	push_abort_cutpoint,
+	%seen,
+	%see(userin),
+	%told,
+	%tell(userout),
+	flora_shell_prompt,
+	flora_shell_command_line(Code,Options,Status),
+	( flora_good_command(Status) ->
+	    findall(Op,member(FLSYSLIB(Op),Options),OpList),
+	    flora_load_library(OpList),
+	    writeln(Code),
+	    call(Code)
+	;
+	  true
+        ),
+	flora_loop_guard(Status).
+
+
+/*********************************************************************/
+flora_init_shell :-
+	consult(flrutils),
+	flora_load_library(FLLIBSHELLANS),
+	flora_load_library(FLLIBLOAD),
+	flora_load_library(FLLIBDISPLAY),
+	flora_welcome_msg,
+	all,
+	chatter,
+	conset(flora_shell_loaded,1).
+
+
+/*********************************************************************/
+flora_welcome_msg :-
+	package_configuration(version(flora),V),
+	flora_stdmsg_string("\nFLORA Version %S\n\n",args(V)),
+	flora_stdmsg_line('Type `help.'' to show the help message.'),
+	flora_stdmsg_line('Type `rundemo(demoName).'' to run demos.'),
+	flora_stdmsg_nl,
+	!.
+
+
+/*********************************************************************/
+flora_shell_prompt :- flora_stdfdbk_string("flora2 ?- ").
+
+
+/*********************************************************************/
+flora_loop_guard(Status) :-
+	( flora_end_of_input(Status) ->
+	    ( pop_stdin(cmd_line_argument) ->
+		%% end of input from -e option string to XSB
+		flora_stdfdbk_string("\n"),
+		abort
+	    ;
+	      end
+	    )
+	;
+	  abort
+        ).
+
+
+/*********************************************************************/
+help :-
+	flora_stdmsg_line("\nFLORA shell commands:\n"),
+	flora_stdmsg_line('o help'),
+	flora_stdmsg_line('    show this info'),
+	flora_stdmsg_line('o compile(FILE[.P])'),
+	flora_stdmsg_line('    compile FILE.P'),
+	flora_stdmsg_line('o flcompile(FILE[.flr])'),
+	flora_stdmsg_line('    compile FILE.flr for the default module `main'''),
+	flora_stdmsg_line('o flcompile(FILE[.flr],Module)'),
+	flora_stdmsg_line('    compile FILE.flr for the module `Module'''),
+	flora_stdmsg_line('o flcompinc(FILE[.fli])'),
+	flora_stdmsg_line('    compile FLORA template include file'),
+	flora_stdmsg_line('o flconsult(FILE[.flr])'),
+	flora_stdmsg_line('    load FILE.flr into the default module `main'''),
+	flora_stdmsg_line('o flload(FILE[.flr],Module)'),
+	flora_stdmsg_line('    load FILE.flr into the module `Module'''),
+	flora_stdmsg_line('o flload(FILE[.{P|O|flr}])'),
+	flora_stdmsg_line('    load FILE.flr (into the default module `main''), or FILE.P or FILE.O'),
+	flora_stdmsg_line('o [FILE[.{P|O|flr}][>> Module],...]'),
+	flora_stdmsg_line('    load a list of .flr (into the module `Module''), .P, or .O files'),
+	flora_stdmsg_line('o abolish_all_tables'),
+	flora_stdmsg_line('    flush all tabled data'),
+	flora_stdmsg_line('o all'),
+	flora_stdmsg_line('    show all solutions (default)'),
+	flora_stdmsg_line('o one'),
+	flora_stdmsg_line('    show solutions one by one'),
+	flora_stdmsg_line('o maxerr(all/N)'),
+	flora_stdmsg_line('    set/show the error reporting threshold'),
+	flora_stdmsg_line('o fltrace/flrnotrace'),
+	flora_stdmsg_line('    turn on/off FLORA trace'),
+	flora_stdmsg_line('o chatter/nochatter'),
+	flora_stdmsg_line('    turn on/off FLORA chatter'),
+	flora_stdmsg_line('o end'),
+	flora_stdmsg_line('    Ciao to FLORA'),
+	flora_stdmsg_line('o halt'),
+	flora_stdmsg_line('    Ciao both to FLORA and XSB').
+
+
+/*********************************************************************/
+all :-
+	( flora_switch(all) ->
+	    true
+	;
+	  assert(flora_switch(all))
+	).
+
+one :-
+	retractall(flora_switch(all)).
+
+
+/*********************************************************************/
+end :-
+	unstrap_flora,
+	flora_stdmsg_line("\n\nCiao!"),
+	pop_abort_cutpoint,
+	abort.
+
+
+/*********************************************************************/
+fltrace :-
+	( flora_debugger_data_loaded ->
+	    true
+	;
+	  consult(flrdebugger)
+	),
+	flora_trace.
+
+flnotrace :-
+	( flora_debugger_data_loaded ->
+	    true
+	;
+	  consult(flrdebugger)
+	),
+	flora_notrace.
+
+
+/*********************************************************************/
+chatter :- assert(flora_switch(chatter)).
+nochatter :- retractall(flora_switch(chatter)).
+
+
+/*********************************************************************/
+rundemo(File) :-
+	flora_check_filename(File),
+	package_configuration(dir(flora),FloraDir),
+	slash(Slash),
+	%% Add the demo directory to library_directory
+	fmt_write_string(DemoDir,'%s%sdemos',args(FloraDir,Slash)),
+	( library_directory(DemoDir) ->
+	    true
+	;
+	  assert(library_directory(DemoDir))
+	),
+	flconsult(File),
+	retractall(library_directory(DemoDir)).
+

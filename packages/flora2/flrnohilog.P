@@ -1,0 +1,111 @@
+/* File:      flrnohilog.P
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+
+#include "flora_terms.flh"
+
+
+flora_nohilog(WRAP_ISA,2).
+flora_nohilog(WRAP_SUB,2).
+flora_nohilog(WRAP_METH,2).
+flora_nohilog(WRAP_IMETH,2).
+flora_nohilog(WRAP_TRAN,2).
+flora_nohilog(WRAP_FD,3).
+flora_nohilog(WRAP_IFD,3).
+flora_nohilog(WRAP_FDSIG,3).
+flora_nohilog(WRAP_IFDSIG,3).
+flora_nohilog(WRAP_MVD,3).
+flora_nohilog(WRAP_IMVD,3).
+flora_nohilog(WRAP_MVDSIG,3).
+flora_nohilog(WRAP_IMVDSIG,3).
+flora_nohilog(WRAP_MVDINC,3).
+flora_nohilog(WRAP_IMVDINC,3).
+flora_nohilog(WRAP_EXISTS,1).
+flora_nohilog(WRAP_FDDEF,2).
+flora_nohilog(WRAP_IFDDEF,2).
+flora_nohilog(WRAP_MVDDEF,2).
+flora_nohilog(WRAP_IMVDDEF,2).
+flora_nohilog(WRAP_OBJEQL,2).
+
+
+/****************************************************************************
+  flora_nohilogdef(+Functor,+Arity)
+****************************************************************************/
+flora_nohilogdef(X,Y) :-
+	flora_nohilog(X,Y).
+
+flora_nohilogdef(X,Y) :-
+	( conget(flora_shell_mode,1) ->
+	    flora_shnohilog(X,Y)
+	;
+	  flora_dynnohilog(X,Y)
+	).
+
+
+/****************************************************************************
+  flora_reset_nohilog/0
+****************************************************************************/
+flora_reset_nohilog :- retractall(flora_dynnohilog(_,_)).
+
+
+/****************************************************************************
+  flora_define_nohilog(+Functor,+Arity)
+****************************************************************************/
+flora_define_nohilog(Functor,Arity) :-
+	(var(Functor); var(Arity)),
+	!,
+	assert(flora_dynnohilog(Functor,Arity)).
+
+flora_define_nohilog(Functor,Arity) :-
+	( flora_nohilog(Functor,Arity) ->
+	    true
+	;
+	  assert(flora_dynnohilog(Functor,Arity))
+	).
+
+
+/****************************************************************************
+  flora_shreset_nohilog/0
+****************************************************************************/
+flora_shreset_nohilog :- retractall(flora_shnohilog(_,_)).
+
+
+/****************************************************************************
+  flora_shdefine_nohilog(+Functor,+Arity)
+****************************************************************************/
+flora_shdefine_nohilog(Functor,Arity) :-
+	(var(Functor); var(Arity)),
+	!,
+	assert(flora_shnohilog(Functor,Arity)).
+
+flora_shdefine_nohilog(Functor,Arity) :-
+	( flora_nohilog(Functor,Arity) ->
+	    true
+	;
+	  assert(flora_shnohilog(Functor,Arity))
+	).

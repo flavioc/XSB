@@ -1,0 +1,2705 @@
+/* File:      flrcompiler.P  -- The Flora Compiler
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+**
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+**
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#define NEWVAR		newvar
+#define NEWPREDICATE	newpredicate
+#define NEWOID		newoid
+#define TMPDIRECT	tmpdirect
+#define TMPOPTION	tmpoption
+
+#include "flora_errors.flh"
+#include "flora_terms.flh"
+
+:- dynamic TMPDIRECT(_).
+:- dynamic TMPOPTION(_).
+
+:- index(TMPDIRECT/1,trie).
+:- index(TMPOPTION/1,trie).
+
+
+/****************************************************************************
+  utilities
+****************************************************************************/
+is_flrule(FLRULE(Head,Body),Head,Body).
+is_flfact(FLFACT(Head),Head).
+is_flquery(FLQUERY(Body),Body).
+is_fldirective(FLDIRECTIVE(DirectList),DirectList).
+
+is_flcommand(FLCOMMAND(C),C).
+is_fltable(FLTABLE(P,A),P,A).
+is_fldynamic(FLDYNAMIC(P,A),P,A).
+is_flexport(FLEXPORT(P,A),P,A).
+is_flimport(FLIMPORT(P,A,M),P,A,M).
+is_flopdef(FLOPDEF(P,A,O),P,A,O).
+is_flsignature(FLSIGNATURE(F,N,Args),F,N,Args).
+is_flprolog(FLPROLOG(F,N),F,N).
+is_flnohilog(FLNOHILOG(F,N),F,N).
+is_flindex(FLINDEX(F,A,Name),F,A,Name).
+
+is_flconjunct(FLCONJUNCT(L,R),L,R).
+is_fldisjunct(FLDISJUNCT(L,R),L,R).
+is_flnot(FLNOT(Goal),Goal).
+is_fltnot(FLTNOT(Goal),Goal).
+
+is_flload(FLLOAD(LoadList),LoadList).
+is_flworkspace(FLWORKSPACE(P,WS),P,WS).
+is_flmodule(FLMODULE(P,MD),P,MD).
+is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
+is_flassert(FLASSERT(List),List).
+is_fldelete(FLDELETE(Op,List,Cond),Op,List,Cond).
+is_fldelete(FLDELETE(Op,List),Op,List).
+is_flaggregate(FLAGGREGATE(Op,V,GV,Goal),Op,V,GV,Goal).
+is_flbirelate(FLBIRELATE(Obj1,RelType,Obj2),Obj1,RelType,Obj2).
+is_flobjspec(FLOBJSPEC(Obj,Spec),Obj,Spec).
+is_flobjref(FLOBJREF(Obj,RefType,Att),Obj,RefType,Att).
+is_flfdattspec(FLFDATTSPEC(Att,RefType,Val),Att,RefType,Val).
+is_flmvdattspec(FLMVDATTSPEC(Att,RefType,Val),Att,RefType,Val).
+is_flincattspec(FLINCATTSPEC(Att,RefType,Val),Att,RefType,Val).
+is_flmethspec(FLMETHSPEC(Meth),Meth).
+is_flimethspec(FLIMETHSPEC(IMeth),IMeth).
+is_fltranspec(FLTRANSPEC(Tran),Tran).
+is_flobjeql(FLOBJEQL(O1,O2),O1,O2).
+is_flcut(FLCUT).
+
+is_flvar(FLVAR(Name,Index),Name,Index).
+is_flatom(FLATOM(Atom),Atom).
+is_flnumber(FLNUMBER(Number),Number).
+is_flstring(FLSTRING(String),String).
+is_fllist(FLLIST(L,T),L,T).
+
+is_isaspecop(FL_ISA).
+is_subspecop(FL_SUB).
+is_fdrefop(FL_FD).
+is_ifdrefop(FL_INHERIFD).
+is_mvdrefop(FL_MVD).
+is_imvdrefop(FL_INHERIMVD).
+is_fdspecop(FL_FDARROW).
+is_ifdspecop(FL_INFDARROW).
+is_mvdspecop(FL_MVDARROW).
+is_imvdspecop(FL_INMVDARROW).
+is_fdsigspecop(FL_FDSIGARROW).
+is_mvdsigspecop(FL_MVDSIGARROW).
+is_mvdincspecop(FL_ALLINARROW).
+is_imvdincspecop(FL_INALLINARROW).
+is_ifdsigspecop(FL_INFDSIGARR).
+is_imvdsigspecop(FL_INMVDSIGARR).
+
+
+/****************************************************************************
+  encoding utilities
+****************************************************************************/
+rule_struct(Head,Body,PRRULE(Head,Body)).
+fact_struct(Head,PRFACT(Head)).
+query_struct(Goal,PRQUERY(Goal)).
+directive_struct(Direct,PRDIRECTIVE(Direct)).
+
+command_struct(C,PRCOMMAND(C)).
+table_struct(F,N,PRTABLE(F,N)).
+dynamic_struct(F,N,PRDYNAMIC(F,N)).
+export_struct(F,N,PREXPORT(F,N)).
+import_struct(F,N,M,PRIMPORT(F,N,M)).
+index_struct(F,A,N,PRINDEX(F,A,N)).
+
+
+/****************************************************************************
+  conjunct_struct(+Goal1,+Goal2,-Code)
+  disjunct_struct(+Goal1,+Goal2,-Code)
+  not_struct(+Goal,-Code)
+  tnot_struct(+Goal,-Code)
+  conjunct_code(+Goal1,+Goal2,-Code)
+****************************************************************************/
+conjunct_struct(Goal1,Goal2,PRAND(Goal1,Goal2)).
+disjunct_struct(Goal1,Goal2,PROR(Goal1,Goal2)).
+not_struct(Goal,PRNOT(Goal)).
+call_struct(VarName,PRCALL(Var)) :- varobj_struct(VarName,Var).
+cut_struct(PRCUT).
+
+
+atomlit_struct(Atom,Struct) :-
+	flora_prlgdef(Atom,0),
+	!,
+	prologterm_struct(Atom,0,[],Struct).
+
+atomlit_struct(Atom,PRATOMLIT(Atom)).
+
+
+termlit_struct(FObj,N,ObjList,Struct) :-
+	atomobj_struct(Atom,FObj),
+	flora_prlgdef(Atom,N),
+	!,
+	prologterm_struct(Atom,N,ObjList,Struct).
+
+termlit_struct(FObj,N,ObjList,PRTERMLIT(FObj,N,ObjList)).
+
+%% Prolog specification overrides workspace specification.
+wstermlit_struct(FObj,N,ObjList,Struct) :- termlit_struct(FObj,N,ObjList,Struct).
+
+conjunct_code(Goal1,Goal2,Code) :-
+	( Goal1 == NULL ->
+	    Code=Goal2
+
+	; Goal2 == NULL ->
+	    Code=Goal1
+	;
+	  conjunct_struct(Goal1,Goal2,Code)
+        ).
+
+
+/****************************************************************************
+  tnot_struct(+Goal,-Code)
+****************************************************************************/
+tnot_struct(Goal,PRTNOT(Goal)) :-
+	import_struct((sk_not),1,(tables),ICode),
+	directive_struct(ICode,DCode),
+	report_directive(DCode).
+
+
+/****************************************************************************
+  encoding routines
+****************************************************************************/
+atomobj_struct(Atom,PRATOM(Atom)).
+numobj_struct(Number,PRNUMBER(Number)).
+varobj_struct(Name,PRVARIABLE(Name)).
+strobj_struct(String,PRSTRING(String)).
+list_struct(List,Term,PRLIST(List,Term)).
+workspace_struct(P,WS,PRWORKSPACE(P,WS)).
+newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
+prologterm_struct(F,N,Args,PROLOGTERM(F,N,Args)).
+
+florasyslib_struct(F,N,Args,FLORASYSLIB(F,N,Args)) :- report_option(FLSYSLIB(F)).
+
+termobj_struct(FObj,N,ObjList,Struct) :-
+	atomobj_struct(Atom,FObj),
+	flora_prlgdef(Atom,N),
+	!,
+	prologterm_struct(Atom,N,ObjList,Struct).
+
+termobj_struct(FObj,N,ObjList,PRTERM(FObj,N,ObjList)).
+
+%% Prolog declaration overrides workspace specification.
+wstermobj_struct(FObj,N,ObjList,Struct) :- termobj_struct(FObj,N,ObjList,Struct).
+
+assert_struct(List,Code) :-
+	florasyslib_struct(FLLIBASSERT,1,[List],Code).
+
+delete_struct(Op,List,Cond,Code) :-
+	delete_syslib(Op,Lib),
+	florasyslib_struct(Lib,2,[List,Cond],Code).
+
+delete_struct(Op,List,Code) :-
+	delete_syslib(Op,Lib),
+	florasyslib_struct(Lib,1,[List],Code).
+
+delete_syslib(FL_RETRACT,FLLIBRETRACT) :- !.
+delete_syslib(FL_RETRACTALL,FLLIBRETRACTALL) :- !.
+delete_syslib(FL_ERASE,FLLIBERASE) :- !.
+delete_syslib(FL_ERASEALL,FLLIBERASEALL) :- !.
+
+aggregate_struct(Op,V,GV,B,Object,Code) :-
+	aggregate_syslib(Op,Lib),
+	new_varobj(Object),
+	( GV == [] ->
+	    florasyslib_struct(Lib,3,[V,B,Object],Code)
+	;
+	  florasyslib_struct(Lib,4,[V,GV,B,Object],Code)
+        ).
+
+aggregate_syslib(FL_MIN,FLLIBMIN) :- !.
+aggregate_syslib(FL_MAX,FLLIBMAX) :- !.
+aggregate_syslib(FL_SUM,FLLIBSUM) :- !.
+aggregate_syslib(FL_AVG,FLLIBAVG) :- !.
+aggregate_syslib(FL_COUNT,FLLIBCOUNT) :- !.
+aggregate_syslib(FL_COLLECTSET,FLLIBCOLLECTSET) :- !.
+aggregate_syslib(FL_COLLECTBAG,FLLIBCOLLECTBAG) :- !.
+
+objexists_struct(Obj,PREXISTS(Obj)).
+
+birelate_struct(Obj1,RelType,Obj2,Code) :-
+	( is_isaspecop(RelType) ->
+	    isaspec_struct(Obj1,Obj2,Code)
+	;
+	  is_subspecop(RelType),
+	  subspec_struct(Obj1,Obj2,Code)
+        ).
+
+isaspec_struct(Obj1,Obj2,PRISA(Obj1,Obj2)).
+subspec_struct(Obj1,Obj2,PRSUB(Obj1,Obj2)).
+
+fdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
+	( is_fdspecop(RefType) ->
+	    fdspec_struct(Object,AttObj,ValObj,Code)
+
+	; is_ifdspecop(RefType) ->
+	    ifdspec_struct(Object,AttObj,ValObj,Code)
+
+	; is_fdsigspecop(RefType) ->
+	    fdsigspec_struct(Object,AttObj,ValObj,Code)
+
+	; is_mvdsigspecop(RefType) ->
+	    mvdsigspec_struct(Object,AttObj,ValObj,Code)
+
+	; is_ifdsigspecop(RefType) ->
+	    ifdsigspec_struct(Object,AttObj,ValObj,Code)
+	;
+	  is_imvdsigspecop(RefType),
+	  imvdsigspec_struct(Object,AttObj,ValObj,Code)
+        ).
+
+fdspec_struct(Object,AttObj,ValObj,PRFD(Object,AttObj,ValObj)).
+ifdspec_struct(Object,AttObj,ValObj,PRIFD(Object,AttObj,ValObj)).
+fdsigspec_struct(Object,AttObj,ValObj,PRFDSIG(Object,AttObj,ValObj)).
+mvdsigspec_struct(Object,AttObj,ValObj,PRMVDSIG(Object,AttObj,ValObj)).
+ifdsigspec_struct(Object,AttObj,ValObj,PRIFDSIG(Object,AttObj,ValObj)).
+imvdsigspec_struct(Object,AttObj,ValObj,PRIMVDSIG(Object,AttObj,ValObj)).
+
+
+objattdef_struct(Obj,RefType,Att,Code) :-
+	( is_fdrefop(RefType) ->
+	    fddef_struct(Obj,Att,Code)
+
+	; is_ifdrefop(RefType) ->
+	    ifddef_struct(Obj,Att,Code)
+
+	; is_mvdrefop(RefType) ->
+	    mvddef_struct(Obj,Att,Code)
+	;
+	  is_imvdrefop(RefType),
+	  imvddef_struct(Obj,Att,Code)
+        ).
+
+mvdattdef_struct(Object,AttObj,RefType,Code) :-
+	( is_mvdspecop(RefType) ->
+	    mvddef_struct(Object,AttObj,Code)
+	;
+	  is_imvdspecop(RefType),
+	  imvddef_struct(Object,AttObj,Code)
+        ).
+
+fddef_struct(Object,AttObj,PRFDDEF(Object,AttObj)).
+ifddef_struct(Object,AttObj,PRIFDDEF(Object,AttObj)).
+mvddef_struct(Object,AttObj,PRMVDDEF(Object,AttObj)).
+imvddef_struct(Object,AttObj,PRIMVDDEF(Object,AttObj)).
+
+mvdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
+	( is_mvdspecop(RefType) ->
+	    mvdspec_struct(Object,AttObj,ValObj,Code)
+	;
+	  is_imvdspecop(RefType),
+	  imvdspec_struct(Object,AttObj,ValObj,Code)
+        ).
+
+mvdspec_struct(Object,AttObj,ValObj,PRMVD(Object,AttObj,ValObj)).
+imvdspec_struct(Object,AttObj,ValObj,PRIMVD(Object,AttObj,ValObj)).
+
+incattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
+	( is_mvdincspecop(RefType) ->
+	    mvdincspec_struct(Object,AttObj,ValObj,Code)
+	;
+	  is_imvdincspecop(RefType),
+	  imvdincspec_struct(Object,AttObj,ValObj,Code)
+        ).
+
+mvdincspec_struct(Object,AttObj,ValObj,PRMVDINC(Object,AttObj,ValObj)).
+imvdincspec_struct(Object,AttObj,ValObj,PRIMVDINC(Object,AttObj,ValObj)).
+
+objref_struct(Obj,RefType,Att,Val,Code) :-
+	new_varobj(Val),
+	( is_fdrefop(RefType) ->
+	    fdspec_struct(Obj,Att,Val,Code)
+
+	; is_ifdrefop(RefType) ->
+	    ifdspec_struct(Obj,Att,Val,Code)
+
+	; is_mvdrefop(RefType) ->
+	    mvdspec_struct(Obj,Att,Val,Code)
+	;
+	  is_imvdrefop(RefType),
+	  imvdspec_struct(Obj,Att,Val,Code)
+        ).
+
+head_objref_struct(Obj,RefType,Att,Val,Code) :-
+	( is_fdrefop(RefType) ->
+	    fdskolem_struct(Obj,Att,Val),
+	    fdspec_struct(Obj,Att,Val,Code)
+	;
+	  is_ifdrefop(RefType),
+	  ifdskolem_struct(Obj,Att,Val),
+	  ifdspec_struct(Obj,Att,Val,Code)
+        ).
+
+fdskolem_struct(Obj,Att,PRFDSKOLEM(Obj,Att)) :- report_option(FLSKOLEM).
+ifdskolem_struct(Obj,Att,PRIFDSKOLEM(Obj,Att)) :- report_option(FLSKOLEM).
+
+methspec_struct(Obj,Meth,PRMETH(Obj,Meth)).
+imethspec_struct(Obj,IMeth,PRIMETH(Obj,IMeth)).
+transpec_struct(Obj,Tran,PRTRAN(Obj,Tran)).
+
+objeql_struct(O1,O2,PROBJEQL(O1,O2)).
+
+
+/****************************************************************************
+  reset_newpredicate/0
+  new_predicate(-Name)
+****************************************************************************/
+reset_newpredicate :- conset(NEWPREDICATE,1).
+
+new_predicate(Name) :-
+	conget(NEWPREDICATE,N),
+	M is N+1,
+	conset(NEWPREDICATE,M),
+	number_codes(N,NLst),
+	atom_codes(NAtm,NLst),
+	str_cat(NEWPREDICATE,NAtm,Name).
+
+
+/****************************************************************************
+  reset_newvar/0
+  new_varobj(-CompiledVarObj)
+****************************************************************************/
+reset_newvar :- conset(NEWVAR,1).
+
+new_varobj(VarObj) :-
+	conget(NEWVAR,N),
+	M is N+1,
+	conset(NEWVAR,M),
+	number_codes(N,NLst),
+	atom_codes(NAtm,NLst),
+	str_cat(NEWVAR,NAtm,Name),
+	varobj_struct(Name,VarObj).
+
+
+/****************************************************************************
+  reset_newoid/0
+  new_oidobj(-OidObject)
+****************************************************************************/
+reset_newoid :- conset(NEWOID,1).
+
+new_oidobj(OidObject) :-
+	conget(NEWOID,N),
+	M is N+1,
+	conset(NEWOID,M),
+	number_codes(N,NLst),
+	atom_codes(NAtm,NLst),
+	str_cat(NEWOID,NAtm,Name),
+	atomobj_struct(Name,OidObject).
+
+
+/****************************************************************************
+  allvars(+CompilerTerm,-Vars)
+  collects all variables in a term (or a list of terms) into the list Vars.
+
+  allvars(+CompilerTerm,-Vars,-TailVars)
+****************************************************************************/
+is_atomobj_struct(PRATOM(_Atom)).
+is_numobj_struct(PRNUMBER(_Number)).
+is_varobj_struct(PRVARIABLE(_Name)).
+is_strobj_struct(PRSTRING(_String)).
+
+allvars(Term,Vars) :-
+	allvars(Term,Vs,[]),
+	sort(Vs,Vars).
+
+
+allvars(Term,Vars,Vars) :-
+	(var(Term); atomic(Term)),
+	!.
+
+allvars([],Vars,Vars) :- !.
+
+allvars([H|L],Vars,TVars) :-
+	!,
+	allvars(H,Vars,LVars),
+	allvars(L,LVars,TVars).
+
+allvars(Term,[Term|Vars],Vars) :-
+	is_varobj_struct(Term),
+	!.
+
+allvars(Term,Vars,Vars) :-
+	( is_atomobj_struct(Term);
+	  is_numobj_struct(Term);
+	  is_strobj_struct(Term)
+        ),
+	!.
+
+allvars(Term,Vars,TVars) :-
+	Term =.. [_F|L],
+	allvars(L,Vars,TVars).
+
+
+/****************************************************************************
+  encoding utilites
+****************************************************************************/
+factlist([],[]) :- !.
+
+factlist([H|L],[HC|LC]) :-
+	fact_struct(H,HC),
+	factlist(L,LC).
+
+
+rulelist([H],Body,[Code]) :-
+	!,
+	rule_struct(H,Body,Code).
+
+rulelist(HeadList,Body,[Code|CodeList]) :-
+	allvars(HeadList,HeadVars),
+	length(HeadVars,N),
+	new_predicate(Name),
+	newpredicate_struct(Name,N,HeadVars,Newpredicate),
+	rule_struct(Newpredicate,Body,Code),
+	rulelist_struct(HeadList,Newpredicate,CodeList).
+
+rulelist_struct([],_B,[]) :- !.
+
+rulelist_struct([H|L],B,[HC|LC]) :-
+	rule_struct(H,B,HC),
+	rulelist_struct(L,B,LC).
+
+
+/****************************************************************************
+  error and warning messages
+****************************************************************************/
+compiling_error(Index,Msg,error(Index,Msg)).
+
+compiling_warning(Index,Msg,warning(Index,Msg)).
+
+
+/****************************************************************************
+  collect_vars(+ParserTermOrList,-Vars)
+  collects all occurrences of variables in a parser term (or a list of parser
+  terms) into the list Vars.
+
+  collect_vars(+ParserTerm,-Vars,-TailVars)
+****************************************************************************/
+collect_vars(ParserTermOrList,Vars) :-
+	collect_vars(ParserTermOrList,Vars,[]).
+
+
+collect_vars(ParserTerm,Vars,Vars) :-
+	(var(ParserTerm); atomic(ParserTerm)),
+	!.
+
+collect_vars([],Vars,Vars) :- !.
+
+collect_vars([H|L],Vars,TVars) :-
+	!,
+	collect_vars(H,Vars,LVars),
+	collect_vars(L,LVars,TVars).
+
+collect_vars(ParserTerm,[ParserTerm|Vars],Vars) :-
+	is_flvar(ParserTerm,_Name,_Index),
+	!.
+
+collect_vars(ParserTerm,Vars,Vars) :-
+	( is_flatom(ParserTerm,_Atom);
+	  is_flnumber(ParserTerm,_Number);
+	  is_flstring(ParserTerm,_String)
+        ),
+	!.
+
+collect_vars(ParserTerm,Vars,TVars) :-
+	ParserTerm =.. [_F|L],
+	collect_vars(L,Vars,TVars).
+
+
+/****************************************************************************
+  subtract_vars(+VarsList1,+VarsList2,-VarsList)
+  subtracts the VarsList2 from VarsList1, both of which contain parser term.
+  The result is a list of variables whose names do not appear in VarsList2.
+  Anonymous variables are considered as distinct names.
+****************************************************************************/
+subtract_vars([],_,[]) :- !.
+
+subtract_vars([H|T1],L,[H|T2]) :-
+	is_flvar(H,FL_UNDERSCORE,_I),
+	!,
+	subtract_vars(T1,L,T2).
+
+subtract_vars([H|T],L,V) :-
+	is_flvar(H,N,_I),
+	is_flvar(X,N,_J),
+	member(X,L),
+	!,
+	subtract_vars(T,L,V).
+
+subtract_vars([H|T1],L,[H|T2]) :-
+	subtract_vars(T1,L,T2).
+
+
+/****************************************************************************
+  collect_namevars(+ParserTerm,-QueryVars)
+  collects all the queryable variables (those that do not start with an
+  underscore) in a parser term (or a list of parser terms) into a list
+  of Name=Var constructs.
+
+  indexvars(+SortedNameVars,-IndexVars)
+  namevars(+SortedIndexVars,-QueryVars)
+****************************************************************************/
+collect_namevars(ParserTerm,QueryVars) :-
+	collect_vars(ParserTerm,NameVs),
+	sort(NameVs,SortedNameVs),
+	indexvars(SortedNameVs,IndexVs),
+	keysort(IndexVs,SortedIndexVs),
+	namevars(SortedIndexVs,QueryVars).
+
+
+indexvars([],[]) :- !.
+
+indexvars([T|L],Vars) :-
+	is_flvar(T,Name,I),
+	( str_sub(FL_UNDERSCORE,Name,1) ->
+	    indexvars(L,Vars)
+	;
+	  Vars=[I-Name|Vs],
+	  remove_dupvars(L,Name,VL),
+	  indexvars(VL,Vs)
+        ).
+
+
+namevars([],[]) :- !.
+
+namevars([_I-Name|L],[NV|NVs]) :-
+	varobj_struct(Name,V),
+	atomobj_struct(Name,N),
+	prologterm_struct(FL_UNIVEQ,2,[N,V],NV),
+	namevars(L,NVs).
+
+
+/****************************************************************************
+  singleton_vars(+SortedVarsList,-SingletonVars)
+  collects all the singleton variables in SortedVarsList into SingletonVars.
+  Singleton variables collected here exclude those
+  beginning with a underscore and the anonymous.
+
+  remove_dupvars(+SortedVarsList,+VarName,-Vars)
+****************************************************************************/
+singleton_vars([],[]) :- !.
+
+singleton_vars([V|L],[V|Vs]) :-
+	is_flvar(V,FL_UNDERSCORE,_I),
+	!,
+	singleton_vars(L,Vs).
+
+singleton_vars([V],[V]) :- !.
+
+singleton_vars([V1,V2|L],Vars) :-
+	( is_flvar(V1,Name,_I), is_flvar(V2,Name,_J) ->
+	    remove_dupvars(L,Name,Vs),
+	    singleton_vars(Vs,Vars)
+	;
+	  Vars=[V1|Vs],
+	  singleton_vars([V2|L],Vs)
+        ).
+
+
+remove_dupvars([V|L],Name,Vars) :-
+	is_flvar(V,Name,_I),
+	!,
+	remove_dupvars(L,Name,Vars).
+
+remove_dupvars(Vars,_Name,Vars).
+
+
+/****************************************************************************
+  singleton_warning(+VarList,-WarnList,-WarnTail)
+  Warnings are not generated for variables beginning with an underscore.
+****************************************************************************/
+singleton_warning([],WarnList,WarnList).
+
+singleton_warning([V|L],WarnList,WarnTail) :-
+	is_flvar(V,Name,I),
+	( str_sub(FL_UNDERSCORE,Name,1) ->
+	    singleton_warning(L,WarnList,WarnTail)
+	;
+	  compiling_warning(I,SINGLETON_VAR,W),
+	  WarnList=[W|T],
+	  singleton_warning(L,T,WarnTail)
+        ).
+
+
+/****************************************************************************
+  unbound_warning(+VarList,-WarnList,-WarnTail)
+  Warnings are not generated for variables beginning with an underscore.
+****************************************************************************/
+unbound_warning([],WarnList,WarnList).
+
+unbound_warning([V|L],WarnList,WarnTail) :-
+	is_flvar(V,Name,I),
+	( str_sub(FL_UNDERSCORE,Name,1) ->
+	    unbound_warning(L,WarnList,WarnTail)
+	;
+	  compiling_warning(I,UNBOUND_VAR,W),
+	  WarnList=[W|T],
+	  unbound_warning(L,T,WarnTail)
+        ).
+
+
+/****************************************************************************
+  check_vars(+HeadTermList,+BodyTerm,-Status)
+****************************************************************************/
+check_vars(HeadTermList,BodyTerm,Status) :-
+	collect_vars(HeadTermList,HeadVars),
+	collect_vars(BodyTerm,BodyVars),
+	append(HeadVars,BodyVars,Vars),
+	sort(Vars,SortedVars),
+	singleton_vars(SortedVars,SingletonVars),
+	singleton_warning(SingletonVars,Status,WarnTail),
+	subtract_vars(HeadVars,BodyVars,UnboundVars),
+	unbound_warning(UnboundVars,WarnTail,[]).
+
+
+/****************************************************************************
+  clear_directive
+  get_directive(-L)  
+  report_directive(+Direct)
+  clear_option
+  get_option(-L)
+  report_option(+Option)
+****************************************************************************/
+clear_directive :- retractall(TMPDIRECT(_)).
+get_directive(L) :- findall(D,TMPDIRECT(D),L).
+report_directive(Direct) :- assert(TMPDIRECT(Direct)).
+
+
+clear_option :- retractall(TMPOPTION(_)).
+get_option(L) :- findall(O,TMPOPTION(O),L).
+report_option(Option) :- assert(TMPOPTION(Option)).
+
+
+/****************************************************************************
+  initialize_work
+****************************************************************************/
+initialize_work :-
+	reset_newvar,
+	clear_directive,
+	clear_option.
+
+
+/****************************************************************************
+  flora_reset_compiler/0
+****************************************************************************/
+flora_reset_compiler :-
+	reset_newpredicate,
+	reset_newoid.
+
+
+/****************************************************************************
+  flora_compile(+ParserTerm,-CodeList,-OptionList,-Status)
+****************************************************************************/
+flora_compile(NULL,[],[],[]) :- !.
+
+flora_compile(ParserTerm,CodeList,OptionList,Status) :-
+	initialize_work,
+	( is_flrule(ParserTerm,Head,Body) ->
+	    compile_rule(Head,Body,CodeList,Status)
+
+	; is_flfact(ParserTerm,Head) ->
+	    compile_fact(Head,CodeList,Status)
+
+	; is_flquery(ParserTerm,Body) ->
+	    compile_query(Body,CodeList,Status)
+	;
+	  is_fldirective(ParserTerm,DirectList),
+	  compile_directive(DirectList,CodeList,Status)
+        ),
+	!,
+	get_option(OptionList).
+
+%% This rule is for debugging.
+flora_compile(_ParserTerm,[],[],[error(UNKNOWN_ERROR)]).
+
+
+/****************************************************************************
+  compile_directive(+DirectList,-CodeList,-Status)
+  compile_direct(DirectTerm,-CodeList,Status)
+****************************************************************************/
+compile_directive([],[],[]) :- !.
+
+compile_directive([D|L],CodeList,Status) :-
+	compile_direct(D,DCodeList,S),
+	( S == [] ->
+	    compile_directive(L,LCodeList,Status),
+	    (Status == [] -> append(DCodeList,LCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+
+compile_direct(DirectTerm,[Code],[]) :-
+	( is_flcommand(DirectTerm,C) ->
+	    command_struct(C,Direct)
+
+	; is_fltable(DirectTerm,P,A) ->
+	    table_struct(P,A,Direct)
+
+	; is_fldynamic(DirectTerm,P,A) ->
+	    dynamic_struct(P,A,Direct)
+
+	; is_flexport(DirectTerm,P,A) ->
+	    export_struct(P,A,Direct)
+
+	; is_flimport(DirectTerm,P,A,M) ->
+	    import_struct(P,A,M,Direct)
+
+	; is_flindex(DirectTerm,P,A,N) ->
+	    index_struct(P,A,N,Direct)
+        ),
+	!,
+	directive_struct(Direct,Code).
+
+compile_direct(DirectTerm,[],[]) :-
+	is_flopdef(DirectTerm,P,A,O),
+	flora_define_operator(P,A,O),
+	!.
+
+compile_direct(DirectTerm,[],[]) :-
+	is_flsignature(DirectTerm,P,N,A),
+	flora_define_signature(P,N,A),
+	!.
+
+compile_direct(DirectTerm,[],[]) :-
+	is_flprolog(DirectTerm,P,N),
+	flora_define_prolog(P,N),
+	!.
+
+compile_direct(DirectTerm,[],[]) :-
+	is_flnohilog(DirectTerm,P,N),
+	flora_define_nohilog(P,N),
+	!.
+
+
+/****************************************************************************
+  compile_fact(+Head,-CodeList,-Status)
+****************************************************************************/
+compile_fact(Head,CodeList,Status) :-
+	compile_head(Head,HeadCodeList,S),
+	( S == [] ->
+	    factlist(HeadCodeList,CodeList),
+	    check_vars(Head,[],Status)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_query(+Body,-CodeList,-Status)
+****************************************************************************/
+compile_query(Body,CodeList,Status) :-
+	compile_body(Body,BodyCode,Status),
+	( Status == [] ->
+	    collect_namevars(Body,NV),
+	    list_struct(NV,[],NVCode),
+	    florasyslib_struct(FLLIBANSWER,2,[BodyCode,NVCode],Goal),
+	    query_struct(Goal,QueryCode),
+	    get_directive(DirectCodeList),
+	    append(DirectCodeList,[QueryCode],CodeList)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_rule(+Head,+Body,-CodeList,-Status)
+****************************************************************************/
+compile_rule(Head,Body,CodeList,Status) :-
+	compile_head(Head,HeadCodeList,HS),
+	( HS == [] ->
+	    compile_body(Body,BodyCode,BS),
+	    ( BS == [] ->
+		rulelist(HeadCodeList,BodyCode,RuleCodeList),
+		check_vars(Head,Body,Status),
+		get_directive(DirectCodeList),
+		append(DirectCodeList,RuleCodeList,CodeList)
+	    ;
+	      Status=BS
+	    )
+	;
+	  Status=HS
+        ).
+
+
+/****************************************************************************
+  compile_head(+ParserTermList,-CodeList,-Status)
+****************************************************************************/
+compile_head([],[],[]) :- !.
+
+compile_head([ParserTerm|ParserTermList],CodeList,Status) :-
+	compile_head_literal(ParserTerm,PCodeList,S),
+	( S == [] ->
+	    compile_head(ParserTermList,PLCodeList,Status),
+	    (Status == [] -> append(PCodeList,PLCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_head_literal(+ParserTerm,-CodeList,-Status)
+****************************************************************************/
+compile_head_literal(ParserTerm,CodeList,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_head_fltermlit(Funct,N,Args,CodeList,Status)
+
+	; is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
+	    compile_head_flbirelate(OT1,RelType,OT2,_Obj,CodeList,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_head_flobjspec(ObjTerm,Spec,_Obj,CodeList,Status)
+
+	; is_flobjeql(ParserTerm,Obj1,Obj2) ->
+	    compile_head_flobjeql(Obj1,Obj2,CodeList,Status)
+
+	; is_flworkspace(ParserTerm,P,WS) ->
+	    compile_head_wsliteral(P,WS,CodeList,Status)
+	;
+	  is_flatom(ParserTerm,Atom),
+	  atomlit_struct(Atom,Code),
+	  CodeList=[Code],
+	  Status=[]
+	).
+
+
+/****************************************************************************
+  compile_body(+ParserTerm,-Code,-Status)
+****************************************************************************/
+compile_body(ParserTerm,Code,Status) :-
+	is_flconjunct(ParserTerm,L,R),
+	!,
+	compile_body(L,LCode,S),
+	( S == [] ->
+	    compile_body(R,RCode,Status),
+	    (Status == [] -> conjunct_struct(LCode,RCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_body(ParserTerm,Code,Status) :-
+	is_fldisjunct(ParserTerm,L,R),
+	!,
+	compile_body(L,LCode,S),
+	( S == [] ->
+	    compile_body(R,RCode,Status),
+	    (Status == [] -> disjunct_struct(LCode,RCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_body(ParserTerm,Code,Status) :-
+	is_flnot(ParserTerm,G),
+	!,
+	compile_body(G,GCode,Status),
+	(Status == [] -> not_struct(GCode,Code); true).
+
+compile_body(ParserTerm,Code,Status) :-
+	is_fltnot(ParserTerm,G),
+	!,
+	compile_body(G,GCode,Status),
+	(Status == [] -> tnot_struct(GCode,Code); true).
+
+compile_body(ParserTerm,Code,Status) :-
+	compile_body_literal(ParserTerm,Code,Status).
+
+
+/****************************************************************************
+  compile_body_literal(+ParserTerm,-Code,-Status)
+****************************************************************************/
+compile_body_literal(ParserTerm,Code,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_fltermlit(Funct,N,Args,Code,Status)
+
+	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
+	    compile_flbirelate(ObjTerm1,RelType,ObjTerm2,_Obj,Code,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_flobjspec_literal(ObjTerm,Spec,Code,Status)
+
+	; is_flload(ParserTerm,LoadList) ->
+	    compile_flload(LoadList,Code,Status)
+
+	; is_flworkspace(ParserTerm,P,WS) ->
+	    compile_wsliteral(P,WS,Code,Status)
+
+	; is_flmodule(ParserTerm,P,Module) ->
+	    compile_prlgtermlit(P,Module,Code,Status)
+
+	; is_flassert(ParserTerm,List) ->
+	    compile_flassert(List,Code,Status)
+
+	; is_fldelete(ParserTerm,Op,List,Cond) ->
+	    compile_fldelete(Op,List,Cond,Code,Status)
+
+	; is_fldelete(ParserTerm,Op,List) ->
+	    compile_fldelete(Op,List,Code,Status)
+
+        ; is_flcut(ParserTerm) ->
+	    cut_struct(Code),
+	    Status=[]
+
+	; is_flatom(ParserTerm,Atom) ->
+	    atomlit_struct(Atom,Code),
+	    Status=[]
+
+	; is_flvar(ParserTerm,Name,_Index) ->
+	  call_struct(Name,Code),
+	  Status=[]
+
+	; is_flobjeql(ParserTerm,O1,O2) ->
+	    compile_flobjeql(O1,O2,Code,Status)
+
+	; is_fldirective(ParserTerm,DirectList) ->
+	    compile_exec_directive(DirectList,Code,Status)
+	).
+
+
+/****************************************************************************
+  compile_pathexp(+ParserTerm,-Object,-Code,-Status)
+****************************************************************************/
+compile_pathexp(ParserTerm,Object,NULL,[]) :-
+	( is_flatom(ParserTerm,Atom) ->
+	    atomobj_struct(Atom,Object)
+
+	; is_flnumber(ParserTerm,Number) ->
+	    numobj_struct(Number,Object)
+
+	; is_flvar(ParserTerm,Name,_Index) ->
+	    compile_flvar(Name,Object)
+	;
+	  is_flstring(ParserTerm,String),
+	  strobj_struct(String,Object)
+	),
+	!.
+
+compile_pathexp(ParserTerm,Object,Code,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_fltermobj(Funct,N,Args,Object,Code,Status)
+
+	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
+	    compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Object,Code,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_flobjspec(ObjTerm,Spec,Object,Code,Status)
+
+	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
+	    compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status)
+
+	; is_fllist(ParserTerm,L,T) ->
+	    compile_fllist(L,T,Object,Code,Status)
+
+	; is_flaggregate(ParserTerm,Op,V,GV,B) ->
+	    compile_flaggregate(Op,V,GV,B,Object,Code,Status)
+
+	; is_flmodule(ParserTerm,P,Module) ->
+	    compile_prlgtermobj(P,Module,Object,Code,Status)
+	;
+	  is_flworkspace(ParserTerm,P,WS),
+	  compile_wspathexp(P,WS,Object,Code,Status)
+	).
+
+
+/****************************************************************************
+  compile_pathexplist(+ParserTermList,-ObjectList,-Code,-Status)
+****************************************************************************/
+compile_pathexplist([],[],NULL,[]) :- !.
+
+compile_pathexplist([T|L],[TObj|LObj],Code,Status) :-
+	compile_pathexp(T,TObj,TCode,S),
+	( S == [] ->
+	    compile_pathexplist(L,LObj,LCode,Status),
+	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_signpathexplist(+ParserTermList,+SignatureList,-ObjectList,-Code,-Status)
+****************************************************************************/
+compile_signpathexplist([],[],[],NULL,[]).
+
+compile_signpathexplist([T|L],[FL_OID|SignList],[TObj|LObj],Code,Status) :-
+	!,
+	compile_pathexp(T,TObj,TCode,S),
+	( S == [] ->
+	    compile_signpathexplist(L,SignList,LObj,LCode,Status),
+	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_signpathexplist([T|L],[FL_FORMULAR|SignList],[TCode|LObj],Code,Status) :-
+	!,
+	compile_body(T,TCode,S),
+	( S == [] ->
+	    compile_signpathexplist(L,SignList,LObj,Code,Status)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_flload(+LoadList,-Code,-Status)
+****************************************************************************/
+compile_flload(LoadList,Code,Status) :-
+	is_fllist(LoadList,L,T),
+	compile_fllist(L,T,ObjList,OCode,Status),
+	( Status == [] ->
+	    florasyslib_struct(FLLIBLOAD,1,[ObjList],LCode),
+	    conjunct_code(OCode,LCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_flvar(+Name,-VarObject)
+****************************************************************************/
+compile_flvar(Name,VarObject) :-
+	( Name == FL_UNDERSCORE ->
+	    new_varobj(VarObject)
+	;
+	  varobj_struct(Name,VarObject)
+        ).
+
+
+/****************************************************************************
+  compile_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-Code,-Status)
+****************************************************************************/
+compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_signdef(FAtom,N,Signs),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_signpathexplist(Args,Signs,AObj,Code,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
+	compile_pathexplist([Funct|Args],[FObj|AObj],Code,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+
+/****************************************************************************
+  compile_fltermlit(+FunctorTerm,+Arity,+ArgList,-Code,-Status)
+****************************************************************************/
+compile_fltermlit(Funct,N,Args,Code,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_signdef(FAtom,N,Signs),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_signpathexplist(Args,Signs,AObj,ObjCode,Status),
+	( Status == [] ->
+	    termlit_struct(FObj,N,AObj,TCode),
+	    conjunct_code(ObjCode,TCode,Code)
+	;
+	  true
+        ).
+
+compile_fltermlit(Funct,N,Args,Code,Status) :-
+	compile_pathexplist([Funct|Args],[FObj|AObj],ObjCode,Status),
+	( Status == [] ->
+	    termlit_struct(FObj,N,AObj,TCode),
+	    conjunct_code(ObjCode,TCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_fllist(+ObjTermList,+ObjTerm,-Object,-Code,-Status)
+****************************************************************************/
+compile_fllist(ObjTermList,ObjTerm,Object,Code,Status) :-
+	compile_pathexplist(ObjTermList,ObjList,ObjListCode,S),
+	( S == [] ->
+	    ( ObjTerm == [] ->
+		Obj=[],
+		ObjCode=NULL,
+		Status=[]
+	    ;
+	      compile_pathexp(ObjTerm,Obj,ObjCode,Status)
+	    ),
+	    ( Status == [] ->
+		list_struct(ObjList,Obj,Object),
+		conjunct_code(ObjListCode,ObjCode,Code)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_flobjref(+ObjTerm,+RefType,+AttTerm,-Object,-Code,-Status)
+****************************************************************************/
+compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status) :-
+	compile_pathexplist([ObjTerm,AttTerm],[Obj,Att],OCode,Status),
+	( Status == [] ->
+	    objref_struct(Obj,RefType,Att,Object,TCode),
+	    conjunct_code(OCode,TCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_flbirelate(+ObjTerm1,+RelType,+ObjTerm2,-Object,-Code,-Status)
+****************************************************************************/
+compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,Code,Status) :-
+	compile_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCode,Status),
+	( Status == [] ->
+	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    conjunct_code(OCode,TCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_flobjspec_literal(+ObjTerm,+SpecBody,-Code,-Status)
+  compile_flobjspec(+ObjTerm,+SpecBody,-Object,-Code,-Status)
+  compile_flspecbody(+Object,+SpecTerm,-Code,-Status)
+  compile_mvdattspec(+Object,+AttObj,+RefType,+ValTermList,-Code,-Status)
+****************************************************************************/
+compile_flobjspec_literal(ObjTerm,SpecBody,Code,Status) :-
+	SpecBody == [],
+	is_flobjref(ObjTerm,OTerm,RefType,ATerm),
+	!,
+	compile_pathexplist([OTerm,ATerm],[OObj,AObj],ObjCode,Status),
+	( Status == [] ->
+	    objattdef_struct(OObj,RefType,AObj,TCode),
+	    conjunct_code(ObjCode,TCode,Code)
+	;
+	  true
+        ).
+
+compile_flobjspec_literal(ObjTerm,SpecBody,Code,Status) :-
+	compile_flobjspec(ObjTerm,SpecBody,_Object,Code,Status).
+
+
+compile_flobjspec(ObjTerm,SpecBody,Object,Code,Status) :-
+	( SpecBody == [] ->
+	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
+		compile_pathexplist([OTerm,ATerm],[OObj,AObj],ObjCode,Status),
+		( Status == [] ->
+		    objref_struct(OObj,RefType,AObj,Object,TCode),
+		    conjunct_code(ObjCode,TCode,Code)
+		;
+		  true
+	        )
+	    ;
+	      compile_pathexp(ObjTerm,Object,ObjCode,Status),
+	      ( Status == [] ->
+		  objexists_struct(Object,ECode),
+		  conjunct_code(ObjCode,ECode,Code)
+	      ;
+	        true
+	      )
+	    )
+	;
+	  compile_pathexp(ObjTerm,Object,ObjCode,S),
+	  ( S == [] ->
+	      compile_flspecbody(Object,SpecBody,SpecCode,Status),
+	      (Status == [] -> conjunct_code(ObjCode,SpecCode,Code); true)
+	  ;
+	    Status=S
+          )
+        ).
+
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_flconjunct(SpecTerm,L,R),
+	!,
+	compile_flspecbody(Object,L,LCode,S),
+	( S == [] ->
+	    compile_flspecbody(Object,R,RCode,Status),
+	    (Status == [] -> conjunct_struct(LCode,RCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_fldisjunct(SpecTerm,L,R),
+	!,
+	compile_flspecbody(Object,L,LCode,S),
+	( S == [] ->
+	    compile_flspecbody(Object,R,RCode,Status),
+	    (Status == [] -> disjunct_struct(LCode,RCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_flnot(SpecTerm,G),
+	!,
+	compile_flspecbody(Object,G,GCode,Status),
+	(Status == [] -> not_struct(GCode,Code); true).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_fltnot(SpecTerm,G),
+	!,
+	compile_flspecbody(Object,G,GCode,Status),
+	(Status == [] -> tnot_struct(GCode,Code); true).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
+	( Status == [] ->
+	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    conjunct_code(OCode,SCode,Code)
+	;
+	  true
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_flmvdattspec(SpecTerm,AttTerm,RefType,ValTermList),
+	!,
+	compile_pathexp(AttTerm,AttObj,ACode,S),
+	( S == [] ->
+	    ( ValTermList == [] ->
+		mvdattdef_struct(Object,AttObj,RefType,SCode),
+		conjunct_code(ACode,SCode,Code),
+		Status=[]
+	    ;
+	      compile_mvdattspec(Object,AttObj,RefType,ValTermList,SCode,Status),
+	      (Status == [] -> conjunct_code(ACode,SCode,Code); true)
+	    )
+        ;
+	  Status=S
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_flincattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
+	( Status == [] ->
+	    incattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    conjunct_code(OCode,SCode,Code)
+	;
+	  true
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_flmethspec(SpecTerm,MethTerm),
+	!,
+	compile_pathexp(MethTerm,MethObj,MCode,Status),
+	( Status == [] ->
+	    methspec_struct(Object,MethObj,SCode),
+	    conjunct_code(MCode,SCode,Code)
+	;
+	  true
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_flimethspec(SpecTerm,IMethTerm),
+	!,
+	compile_pathexp(IMethTerm,IMethObj,IMCode,Status),
+	( Status == [] ->
+	    imethspec_struct(Object,IMethObj,SCode),
+	    conjunct_code(IMCode,SCode,Code)
+	;
+	  true
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_fltranspec(SpecTerm,TranTerm),
+	!,
+	compile_pathexp(TranTerm,TranObj,TCode,Status),
+	( Status == [] ->
+	    transpec_struct(Object,TranObj,SCode),
+	    conjunct_code(TCode,SCode,Code)
+	;
+	  true
+        ).
+
+
+compile_mvdattspec(Object,AttObj,RefType,[T],Code,Status) :-
+	!,
+	compile_pathexp(T,TObj,TCode,Status),
+	( Status == [] ->
+	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+	    conjunct_code(TCode,SCode,Code)
+	;
+	  true
+        ).
+
+compile_mvdattspec(Object,AttObj,RefType,[T|L],Code,Status) :-
+	!,
+	compile_mvdattspec(Object,AttObj,RefType,[T],TCode,S),
+	( S == [] ->
+	    compile_mvdattspec(Object,AttObj,RefType,L,LCode,Status),
+	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_flaggregate(+Op,+Var,+GVars,+BodyTerm,-Object,-Code,-Status)
+****************************************************************************/
+compile_flaggregate(Op,Var,GVars,BodyTerm,Object,Code,Status) :-
+	compile_body(BodyTerm,BCode,S),
+	( S == [] ->
+	    check_aggregate(Var,GVars,BodyTerm,Status),
+	    ( Status == [] ->
+		compile_pathexplist([Var|GVars],[VarCode|GVarsCode],NULL,[]),
+		list_struct(GVarsCode,[],GVarsListCode),
+		aggregate_struct(Op,VarCode,GVarsListCode,BCode,Object,Code)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  check_aggregate(+Var,+GroupVars,+BodyTerm,-Status)
+  check_repeatedvar(+Vars,-Status,-TailStatus)
+  allgvar_notin(+SortedVars,-Status,-TailStatus)
+****************************************************************************/
+check_aggregate(Var,GVars,BodyTerm,Status) :-
+	is_flvar(Var,VarName,VarIndex),
+	%% Check if the aggregate variable is anonymous.
+	( VarName == FL_UNDERSCORE ->
+	    compiling_error(VarIndex,ERROR_AVAR,M1),
+	    Status=[M1|S1]
+	;
+	  Status=S1
+        ),
+	%% Check if any grouping variable is anonymous.
+	check_gvar(GVars,S1,S2),
+	%% Check if the aggregate variable is also used for grouping.
+	( VarName \= FL_UNDERSCORE, is_flvar(U,VarName,_Iu), member(U,GVars) ->
+	    compiling_error(VarIndex,AVAR_ASGVAR,M2),
+	    S2=[M2|S3]
+	;
+	  S3=S2
+        ),
+	%% Check if there are any repeated grouping variables.
+	sort(GVars,SVars),
+	check_repeatedvar(SVars,S3,S4),
+	collect_vars(BodyTerm,BVars),
+	%% Check if aggregate variable is used in the aggregate body.
+	( (VarName == FL_UNDERSCORE; is_flvar(W,VarName,_Iw), member(W,BVars)) ->
+	    S5=S4
+        ;
+	  compiling_error(VarIndex,AVAR_NOTIN,M5),
+	  S4=[M5|S5]
+        ),
+	%% Check if all grouping variables are used in the aggregate body.
+	( subtract_vars(GVars,BVars,L), L \== [] ->
+	    sort(L,SL),
+	    allgvar_notin(SL,S5,[])
+	;
+	  S5=[]
+        ).
+
+
+check_gvar([],S,S) :- !.
+
+check_gvar([H|L],Status,TS) :-
+	( is_flvar(H,FL_UNDERSCORE,HIndex) ->
+	    compiling_error(HIndex,ERROR_GVAR,M),
+	    Status=[M|S],
+	    check_gvar(L,S,TS)
+	;
+	  check_gvar(L,Status,TS)
+        ).
+
+
+check_repeatedvar([],S,S) :- !.
+
+check_repeatedvar([H|L],Status,TS) :-
+	is_flvar(H,FL_UNDERSCORE,_I),
+	!,
+	check_repeatedvar(L,Status,TS).
+
+check_repeatedvar([_H],S,S) :- !.
+
+check_repeatedvar([H1,H2|T],Status,TS) :-
+	( is_flvar(H1,Name,_I1), is_flvar(H2,Name,I2) ->
+	    compiling_error(I2,REPEATED_GVAR,Msg),
+	    Status=[Msg|S],
+	    check_repeatedvar([H1|T],S,TS)
+	;
+	  check_repeatedvar([H2|T],Status,TS)
+        ).
+
+
+allgvar_notin([],S,S) :- !.
+
+allgvar_notin([H|L],Status,TS) :-
+	is_flvar(H,FL_UNDERSCORE,_I),
+	!,
+	allgvar_notin(L,Status,TS).
+
+allgvar_notin([H|T],[Msg|S],TS) :-
+	is_flvar(H,Name,Index),
+	compiling_error(Index,GVAR_NOTIN,Msg),
+	remove_dupvars(T,Name,L),
+	allgvar_notin(L,S,TS).
+
+
+/****************************************************************************
+  compile_flobjeql(+Obj1,+Obj2,-Code,-Status)
+****************************************************************************/
+compile_flobjeql(Obj1,Obj2,Code,Status) :-
+	compile_pathexplist([Obj1,Obj2],[O1,O2],OCode,Status),
+	( Status == [] ->
+	    objeql_struct(O1,O2,OECode),
+	    conjunct_code(OCode,OECode,Code)
+	;
+	  true
+	).
+
+
+/****************************************************************************
+  compile_head_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
+	compile_head_pathexplist([Funct|Args],[FObj|AObj],CodeList,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+
+/****************************************************************************
+  compile_head_fltermlit(+FunctorTerm,+Arity,+ArgList,-CodeList,-Status)
+****************************************************************************/
+compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
+	compile_head_pathexplist([Funct|Args],[FObj|AObj],ObjCodeList,Status),
+	( Status == [] ->
+	    wstermlit_struct(FObj,N,AObj,TObj),
+	    append(ObjCodeList,[TObj],CodeList)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_fllist(+ObjTermList,+ObjTerm,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_fllist(ObjTermList,ObjTerm,Object,CodeList,Status) :-
+	compile_head_pathexplist(ObjTermList,ObjList,ObjListCodeList,S),
+	( S == [] ->
+	    ( ObjTerm == [] ->
+		Obj=[],
+		ObjCodeList=[],
+		Status=[]
+	    ;
+	      compile_head_pathexp(ObjTerm,Obj,ObjCodeList,Status)
+	    ),
+	    ( Status == [] ->
+		list_struct(ObjList,Obj,Object),
+		append(ObjListCodeList,ObjCodeList,CodeList)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_head_pathexplist(+ParserTermList,-ObjectList,-CodeList,-Status)
+****************************************************************************/
+compile_head_pathexplist([],[],[],[]) :- !.
+
+compile_head_pathexplist([T|L],[TObj|LObj],CodeList,Status) :-
+	compile_head_pathexp(T,TObj,TCodeList,S),
+	( S == [] ->
+	    compile_head_pathexplist(L,LObj,LCodeList,Status),
+	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_head_pathexp(+ParserTerm,-Object,-CodeList,-Status)
+
+  Note: It is for skolemization.
+****************************************************************************/
+compile_head_pathexp(ParserTerm,Object,[],[]) :-
+	( is_flatom(ParserTerm,Atom) ->
+	    compile_head_flatom(Atom,Object)
+
+	; is_flnumber(ParserTerm,Number) ->
+	    numobj_struct(Number,Object)
+
+	; is_flvar(ParserTerm,Name,_Index) ->
+	    compile_flvar(Name,Object)
+	;
+	  is_flstring(ParserTerm,String),
+	  strobj_struct(String,Object)
+	),
+	!.
+
+compile_head_pathexp(ParserTerm,Object,CodeList,Status) :-
+	( is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
+	    compile_head_flbirelate(OT1,RelType,OT2,Object,CodeList,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_head_flobjspec(ObjTerm,Spec,Object,CodeList,Status)
+
+	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
+	    compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,CodeList,Status)
+
+	; is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status)
+
+	; is_fllist(ParserTerm,L,T) ->
+	    compile_head_fllist(L,T,Object,CodeList,Status)
+	;
+	  is_flworkspace(ParserTerm,P,WS),
+	  compile_head_wspathexp(P,WS,Object,CodeList,Status)
+        ).
+
+
+/****************************************************************************
+  compile_head_flatom(+Atom,-Object)
+****************************************************************************/
+compile_head_flatom(Atom,Object) :-
+	( Atom == FL_NEWOID ->
+	    new_oidobj(Object)
+	;
+	  atomobj_struct(Atom,Object)
+        ).
+
+
+/****************************************************************************
+  compile_head_flobjref(+ObjT,+RefType,+AttT,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,CodeList,Status) :-
+	compile_head_pathexplist([ObjTerm,AttTerm],[Obj,Att],OACodeList,Status),
+	( Status == [] ->
+	    head_objref_struct(Obj,RefType,Att,Object,TCode),
+	    append(OACodeList,[TCode],CodeList)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_flbirelate(+OT1,+RelType,+OT2,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,CodeList,Status) :-
+	compile_head_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCodeList,Status),
+	( Status == [] ->
+	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    append(OCodeList,[TCode],CodeList)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_flobjspec(+ObjTerm,+SpecBody,-Object,-CodeList,-Status)
+  compile_head_flspecbody(+Object,+SpecTerm,-CodeList,-Status)
+  compile_head_mvdattspec(+Object,+AttObj,+RefType,+VL,-CodeList,-Status)
+****************************************************************************/
+compile_head_flobjspec(ObjTerm,SpecBody,Object,CodeList,Status) :-
+	( SpecBody == [] ->
+	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
+		compile_head_flobjref(OTerm,RefType,ATerm,Object,CodeList,Status)
+	    ;
+	      compile_head_pathexp(ObjTerm,Object,ObjCodeList,Status),
+	      ( Status == [] ->
+		  objexists_struct(Object,ECode),
+		  append(ObjCodeList,[ECode],CodeList)
+	      ;
+	        true
+	      )
+	    )
+	;
+	  compile_head_pathexp(ObjTerm,Object,ObjCodeList,S),
+	  ( S == [] ->
+	      compile_head_flspecbody(Object,SpecBody,SCodeList,Status),
+	      (Status == [] -> append(ObjCodeList,SCodeList,CodeList); true)
+	  ;
+	    Status=S
+	  )
+        ).
+
+
+compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+	is_flconjunct(SpecTerm,L,R),
+	!,
+	compile_head_flspecbody(Object,L,LCodeList,S),
+	( S == [] ->
+	    compile_head_flspecbody(Object,R,RCodeList,Status),
+	    (Status == [] -> append(LCodeList,RCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_head_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],VACodeList,Status),
+	( Status == [] ->
+	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    append(VACodeList,[SCode],CodeList)
+	;
+	  true
+        ).
+
+compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+	is_flmvdattspec(SpecTerm,AttTerm,RefType,VL),
+	!,
+	compile_head_pathexp(AttTerm,AObj,ACodeList,S),
+	( S == [] ->
+	    ( VL == [] ->
+		mvdattdef_struct(Object,AObj,RefType,SCode),
+		append(ACodeList,[SCode],CodeList),
+		Status=[]
+	    ;
+	      compile_head_mvdattspec(Object,AObj,RefType,VL,VCodeList,Status),
+	      (Status == [] -> append(ACodeList,VCodeList,CodeList); true)
+	    )
+        ;
+	  Status=S
+        ).
+
+compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+	is_flmethspec(SpecTerm,MethTerm),
+	!,
+	compile_head_pathexp(MethTerm,MethObj,MCodeList,Status),
+	( Status == [] ->
+	    methspec_struct(Object,MethObj,SCode),
+	    append(MCodeList,[SCode],CodeList)
+	;
+	  true
+        ).
+
+compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+	is_flimethspec(SpecTerm,IMethTerm),
+	!,
+	compile_head_pathexp(IMethTerm,IMethObj,IMCodeList,Status),
+	( Status == [] ->
+	    imethspec_struct(Object,IMethObj,SCode),
+	    append(IMCodeList,[SCode],CodeList)
+	;
+	  true
+        ).
+
+compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+	is_fltranspec(SpecTerm,TranTerm),
+	!,
+	compile_head_pathexp(TranTerm,TranObj,TCodeList,Status),
+	( Status == [] ->
+	    transpec_struct(Object,TranObj,SCode),
+	    append(TCodeList,[SCode],CodeList)
+	;
+	  true
+        ).
+
+
+compile_head_mvdattspec(_Object,_AttObj,_RefType,[],[],[]) :- !.
+
+compile_head_mvdattspec(Object,AttObj,RefType,[T|L],CodeList,Status) :-
+	!,
+	compile_head_pathexp(T,TObj,TCodeList,S),
+	( S == [] ->
+	    compile_head_mvdattspec(Object,AttObj,RefType,L,LCodeList,Status),
+	    ( Status == [] ->
+		mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+		append(LCodeList,[SCode],LSCodeList),
+		append(TCodeList,LSCodeList,CodeList)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_head_flobjeql(+Obj1,+Obj2,-CodeList,-Status)
+****************************************************************************/
+compile_head_flobjeql(Obj1,Obj2,CodeList,Status) :-
+	compile_head_pathexplist([Obj1,Obj2],[O1,O2],OCList,Status),
+	( Status == [] ->
+	    objeql_struct(O1,O2,OECode),
+	    append(OCList,[OECode],CodeList),
+	    report_option(FLOBJEQLDEF)
+	;
+	  true
+	).
+
+
+/****************************************************************************
+  compile_wsliteral(+ParserTerm,+Workspace,-Code,-Status)
+****************************************************************************/
+compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_wstermlit(Funct,N,Args,WS,WSCode,Status)
+
+	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
+	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,_Obj,WSCode,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_wsflobjspec(ObjTerm,Spec,WS,_Obj,WSCode,Status)
+
+	; is_flobjeql(ParserTerm,O1,O2) ->
+	    compile_wsflobjeql(O1,O2,WS,WSCode,Status)
+	;
+	  is_flatom(ParserTerm,Atom),
+	  atomlit_struct(Atom,Code),
+	  workspace_struct(Code,WS,WSCode),
+	  Status=[]
+	).
+
+
+/****************************************************************************
+  compile_wspathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
+****************************************************************************/
+compile_wspathexp(ParserTerm,WS,Object,Code,Status) :-
+	( is_flatom(ParserTerm,Atom) ->
+	    atomlit_struct(Atom,A),
+	    workspace_struct(A,WS,Object),
+	    Code=NULL,
+	    Status=[]
+
+	; is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_wstermobj(Funct,N,Args,WS,Object,Code,Status)
+
+	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
+	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,Code,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_wsflobjspec(ObjTerm,Spec,WS,Object,Code,Status)
+	;
+	  is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm),
+	  compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status)
+	).
+
+
+/****************************************************************************
+  compile_wsflpathexplist(+ParserTermList,+Workspace,-ObjectList,-Code,-Status)
+****************************************************************************/
+compile_wsflpathexplist([],_WS,[],NULL,[]).
+
+compile_wsflpathexplist([T|L],WS,[TObj|LObj],Code,Status) :-
+	compile_wsflpathexp(T,WS,TObj,TCode,S),
+	( S == [] ->
+	    compile_wsflpathexplist(L,WS,LObj,LCode,Status),
+	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_wsflsignpathexplist(+ParserTermList,+SignatureList,+WS,-ObjectList,-Code,-Status)
+****************************************************************************/
+compile_wsflsignpathexplist([],[],_WS,[],NULL,[]) :- !.
+
+compile_wsflsignpathexplist([T|L],[FL_OID|SignList],WS,[TObj|LObj],Code,Status) :-
+	!,
+	compile_wsflpathexp(T,WS,TObj,TCode,S),
+	( S == [] ->
+	    compile_wsflsignpathexplist(L,SignList,WS,LObj,LCode,Status),
+	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_wsflsignpathexplist([T|L],[FL_FORMULAR|SignList],WS,[TCode|LObj],Code,Status) :-
+	!,
+	%% workspace not distributive over nested "form"
+	compile_body(T,TCode,S),
+	( S == [] ->
+	    compile_wsflsignpathexplist(L,SignList,WS,LObj,Code,Status)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_wsflpathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
+
+  Note: The difference between compile_wsflpathexp and compile_wspathexp
+        is that compile_wsflpathexp applies workspace only to F-Logic
+        constructs.
+****************************************************************************/
+compile_wsflpathexp(ParserTerm,WS,Object,Code,Status) :-
+	( is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
+	    compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_wsflobjspec(ObjTerm,Spec,WS,Object,Code,Status)
+
+	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
+	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,Code,Status)
+
+	; is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status)
+
+	; is_fllist(ParserTerm,L,T) ->
+	    compile_wsfllist(L,T,WS,Object,Code,Status)
+
+	; is_flworkspace(ParserTerm,P,NestedWS) ->
+	    compile_wspathexp(P,NestedWS,Object,Code,Status)
+	;
+	  %% workspace not distributive over nested aggregates
+	  compile_pathexp(ParserTerm,Object,Code,Status)
+        ).
+
+
+/****************************************************************************
+  compile_wstermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-Code,-Status)
+****************************************************************************/
+compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_signdef(FAtom,N,Signs),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_wsflsignpathexplist(Args,Signs,WS,AObj,Code,Status),
+	( Status == [] ->
+	    wstermobj_struct(FObj,N,AObj,O),
+	    workspace_struct(O,WS,Object)
+	;
+	  true
+	).
+
+compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
+	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],Code,Status),
+	( Status == [] ->
+	    wstermobj_struct(FObj,N,AObj,O),
+	    workspace_struct(O,WS,Object)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_wsfltermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-Code,-Status)
+
+  Note: The difference between compile_wsfltermobj and compile_wstermobj
+        is that compile_wsfltermobj applies workspace only to F-Logic
+        constructs.  
+****************************************************************************/
+compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_signdef(FAtom,N,Signs),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_wsflsignpathexplist(Args,Signs,WS,AObj,Code,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
+	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],Code,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+
+/****************************************************************************
+  compile_wstermlit(+FunctorTerm,+Arity,+ArgList,+Workspace,-Code,-Status)
+****************************************************************************/
+compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_signdef(FAtom,N,Signs),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_wsflsignpathexplist(Args,Signs,WS,AObj,ObjCode,Status),
+	( Status == [] ->
+	    wstermlit_struct(FObj,N,AObj,TCode),
+	    workspace_struct(TCode,WS,WSCode),
+	    conjunct_code(ObjCode,WSCode,Code)
+	;
+	  true
+        ).
+
+compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
+	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCode,Status),
+	( Status == [] ->
+	    wstermlit_struct(FObj,N,AObj,TCode),
+	    workspace_struct(TCode,WS,WSCode),
+	    conjunct_code(ObjCode,WSCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_wsfllist(+ObjTermList,+ObjTerm,+WS,-Object,-Code,-Status)
+****************************************************************************/
+compile_wsfllist(ObjTermList,ObjTerm,WS,Object,Code,Status) :-
+	compile_wsflpathexplist(ObjTermList,WS,ObjList,ObjListCode,S),
+	( S == [] ->
+	    ( ObjTerm == [] ->
+		Obj=[],
+		ObjCode=NULL,
+		Status=[]
+	    ;
+	      compile_wsflpathexp(ObjTerm,WS,Obj,ObjCode,Status)
+	    ),
+	    ( Status == [] ->
+		list_struct(ObjList,Obj,Object),
+		conjunct_code(ObjListCode,ObjCode,Code)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_wsflobjref(+ObjTerm,+RefType,+AttTerm,+Workspace,-Object,-Code,-Status)
+****************************************************************************/
+compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status) :-
+	compile_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACode,Status),
+	( Status == [] ->
+	    objref_struct(Obj,RefType,Att,Object,TCode),
+	    workspace_struct(TCode,WS,WTCode),
+	    conjunct_code(OACode,WTCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_wsflbirelate(+ObjTerm1,+RelType,+ObjTerm2,+Workdpace,-Object,-Code,-Status)
+****************************************************************************/
+compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,Code,Status) :-
+	compile_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OCode,Status),
+	( Status == [] ->
+	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    workspace_struct(TCode,WS,WTCode),
+	    conjunct_code(OCode,WTCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_wsflobjspec(+ObjTerm,+SpecBody,+Workspace,-Object,-Code,-Status)
+****************************************************************************/
+compile_wsflobjspec(ObjTerm,SpecBody,WS,Object,Code,Status) :-
+	( SpecBody == [] ->
+	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
+		compile_wsflobjref(OTerm,RefType,ATerm,WS,Object,Code,Status)
+	    ;
+	      compile_wsflpathexp(ObjTerm,WS,Object,ObjCode,Status),
+	      ( Status == [] ->
+		  objexists_struct(Object,ECode),
+		  workspace_struct(ECode,WS,WSECode),
+		  conjunct_code(ObjCode,WSECode,Code)
+	      ;
+	        true
+	      )
+	    )
+	;
+	  compile_wsflpathexp(ObjTerm,WS,Object,ObjCode,S),
+	  ( S == [] ->
+	      compile_wsflspecbody(Object,SpecBody,WS,SpecCode,Status),
+	      (Status == [] -> conjunct_code(ObjCode,SpecCode,Code); true)
+	  ;
+	    Status=S
+          )
+        ).
+
+
+/****************************************************************************
+  compile_wsflspecbody(+Object,+SpecTerm,+Workspace,-Code,-Status)
+  compile_wsmvdattspec(+Object,+AttObj,+RefType,+ValTermList,+Workspace,-Code,-Status)
+****************************************************************************/
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_flconjunct(SpecTerm,L,R),
+	!,
+	compile_wsflspecbody(Object,L,WS,LCode,S),
+	( S == [] ->
+	    compile_wsflspecbody(Object,R,WS,RCode,Status),
+	    (Status == [] -> conjunct_struct(LCode,RCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_fldisjunct(SpecTerm,L,R),
+	!,
+	compile_wsflspecbody(Object,L,WS,LCode,S),
+	( S == [] ->
+	    compile_wsflspecbody(Object,WS,R,RCode,Status),
+	    (Status == [] -> disjunct_struct(LCode,RCode,Code); true)
+	;
+	  Status=S
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_flnot(SpecTerm,G),
+	!,
+	compile_wsflspecbody(Object,G,WS,GCode,Status),
+	(Status == [] -> not_struct(GCode,Code); true).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_fltnot(SpecTerm,G),
+	!,
+	compile_wsflspecbody(Object,G,WS,GCode,Status),
+	(Status == [] -> tnot_struct(GCode,Code); true).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
+	( Status == [] ->
+	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    workspace_struct(SCode,WS,WSCode),
+	    conjunct_code(OCode,WSCode,Code)
+	;
+	  true
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_flmvdattspec(SpecTerm,AttTerm,RefType,ValTermList),
+	!,
+	compile_wsflpathexp(AttTerm,WS,AttObj,ACode,S),
+	( S == [] ->
+	    ( ValTermList == [] ->
+		mvdattdef_struct(Object,AttObj,RefType,SCode),
+		workspace_struct(SCode,WS,WSCode),
+		conjunct_code(ACode,WSCode,Code),
+		Status=[]
+	    ;
+	      compile_wsmvdattspec(Object,AttObj,RefType,ValTermList,WS,WSCode,Status),
+	      (Status == [] -> conjunct_code(ACode,WSCode,Code); true)
+	    )
+        ;
+	  Status=S
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_flincattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_wsflpathexp([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
+	( Status == [] ->
+	    incattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    workspace_struct(SCode,WS,WSCode),
+	    conjunct_code(OCode,WSCode,Code)
+	;
+	  true
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_flmethspec(SpecTerm,MethTerm),
+	!,
+	compile_wsflpathexp(MethTerm,WS,MethObj,MCode,Status),
+	( Status == [] ->
+	    methspec_struct(Object,MethObj,SCode),
+	    workspace_struct(SCode,WS,WSCode),
+	    conjunct_code(MCode,WSCode,Code)
+	;
+	  true
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_flimethspec(SpecTerm,IMethTerm),
+	!,
+	compile_wsflpathexp(IMethTerm,WS,IMethObj,IMCode,Status),
+	( Status == [] ->
+	    imethspec_struct(Object,IMethObj,SCode),
+	    workspace_struct(SCode,WS,WSCode),
+	    conjunct_code(IMCode,WSCode,Code)
+	;
+	  true
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_fltranspec(SpecTerm,TranTerm),
+	!,
+	compile_wsflpathexp(TranTerm,WS,TranObj,TCode,Status),
+	( Status == [] ->
+	    transpec_struct(Object,TranObj,SCode),
+	    workspace_struct(SCode,WS,WSCode),
+	    conjunct_code(TCode,WSCode,Code)
+	;
+	  true
+        ).
+
+
+compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,Code,Status) :-
+	!,
+	compile_wsflpathexp(T,WS,TObj,TCode,Status),
+	( Status == [] ->
+	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+	    workspace_struct(SCode,WS,WSCode),
+	    conjunct_code(TCode,WSCode,Code)
+	;
+	  true
+        ).
+
+compile_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,Code,Status) :-
+	!,
+	compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,WTCode,S),
+	( S == [] ->
+	    compile_wsmvdattspec(Object,AttObj,RefType,L,WS,WLCode,Status),
+	    (Status == [] -> conjunct_code(WTCode,WLCode,Code); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_wsflobjeql(+Obj1,+Obj2,+Workspace,-Code,-Status)
+****************************************************************************/
+compile_wsflobjeql(Obj1,Obj2,WS,Code,Status) :-
+	compile_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OCode,Status),
+	( Status == [] ->
+	    objeql_struct(O1,O2,OECode),
+	    workspace_struct(OECode,WS,WSCode),
+	    conjunct_code(OCode,WSCode,Code)
+	;
+	  true
+	).
+
+
+/****************************************************************************
+  compile_prlgtermlit(+ParserTerm,+Module,-Code,-Status)
+
+  This is for compiling XSB calls.
+****************************************************************************/
+compile_prlgtermlit(ParserTerm,Module,Code,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    is_flatom(Funct,FAtom),
+	    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status),
+	    ( Status == [] ->
+		conjunct_code(ACode,TCode,Code)
+	    ;
+	      true
+	    )
+	;
+	  is_flatom(ParserTerm,FAtom),
+	  N=0,
+	  prologterm_struct(FAtom,0,[],Code),
+	  Status=[]
+	),
+	import_struct(FAtom,N,Module,ICode),
+	directive_struct(ICode,DCode),
+	report_directive(DCode).
+
+
+/****************************************************************************
+  compile_prlgtermobj(+ParserTerm,+Module,-Object,-Code,-Status)
+****************************************************************************/
+compile_prlgtermobj(ParserTerm,Module,Object,Code,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    is_flatom(Funct,FAtom),
+	    compile_prlgterm(FAtom,N,Args,Object,Code,Status)
+	;
+	  is_flatom(ParserTerm,FAtom),
+	  N=0,
+	  prologterm_struct(FAtom,0,[],Object),
+	  Code=NULL,
+	  Status=[]
+	),
+	import_struct(FAtom,N,Module,ICode),
+	directive_struct(ICode,DCode),
+	report_directive(DCode).
+
+
+/****************************************************************************
+  compile_prlgterm(+FunctorAtom,+Arity,+ArgList,-Object,-Code,-Status)
+****************************************************************************/
+compile_prlgterm(FAtom,N,Args,Object,Code,Status) :-
+	flora_signdef(FAtom,N,Signs),
+	!,
+	compile_signpathexplist(Args,Signs,AObj,Code,Status),
+	( Status == [] ->
+	    prologterm_struct(FAtom,N,AObj,Object)
+	;
+	  true
+        ).
+
+compile_prlgterm(FAtom,N,Args,Object,Code,Status) :-
+	compile_pathexplist(Args,AObj,Code,Status),
+	( Status == [] ->
+	    prologterm_struct(FAtom,N,AObj,Object)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_wspathexp(+ParserTerm,+Workspace,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_wspathexp(ParserTerm,WS,Object,CodeList,Status) :-
+	( is_flatom(ParserTerm,Atom) ->
+	    atomlit_struct(Atom,A),
+	    workspace_struct(A,WS,Object),
+	    CodeList=[],
+	    Status=[]
+
+	; is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status)
+
+	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
+	    compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,CodeList,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_head_wsflobjspec(ObjTerm,Spec,WS,Object,CodeList,Status)
+	;
+	  is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm),
+	  compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status)
+	).
+
+
+/****************************************************************************
+  compile_head_wsliteral(+ParserTerm,+Workspace,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsliteral(ParserTerm,WS,CodeList,Status) :-
+	( is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status)
+
+	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
+	    compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,_Obj,CodeList,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_head_wsflobjspec(ObjTerm,Spec,WS,_Obj,CodeList,Status)
+
+	; is_flobjeql(ParserTerm,O1,O2) ->
+	    compile_head_wsflobjeql(O1,O2,WS,CodeList,Status)
+	;
+	  is_flatom(ParserTerm,Atom),
+	  atomlit_struct(Atom,Code),
+	  workspace_struct(Code,WS,WSCode),
+	  CodeList=[WSCode],
+	  Status=[]
+	).
+
+
+/****************************************************************************
+  compile_head_wsflpathexplist(+ParserTermList,+WS,-ObjectList,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsflpathexplist([],_WS,[],[],[]) :- !.
+
+compile_head_wsflpathexplist([T|L],WS,[TObj|LObj],CodeList,Status) :-
+	compile_head_wsflpathexp(T,WS,TObj,TCodeList,S),
+	( S == [] ->
+	    compile_head_wsflpathexplist(L,WS,LObj,LCodeList,Status),
+	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_head_wsflpathexp(+ParserTerm,+WS,-Object,-CodeList,-Status)
+
+  Note: The difference between compile_head_wsflpathexp and compile_head_wspathexp
+        is that compile_head_wsflpathexp applies workspace only to F-Logic
+        constructs.
+****************************************************************************/
+compile_head_wsflpathexp(ParserTerm,WS,Object,CodeList,Status) :-
+	( is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
+	    compile_head_wsflbirelate(OT1,RelType,OT2,WS,Object,CodeList,Status)
+
+	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
+	    compile_head_wsflobjspec(ObjTerm,Spec,WS,Object,CodeList,Status)
+
+	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
+	    compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status)
+
+	; is_flterm(ParserTerm,Funct,N,Args) ->
+	    compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status)
+
+	; is_fllist(ParserTerm,L,T) ->
+	    compile_head_wsfllist(L,T,WS,Object,CodeList,Status)
+
+	; is_flworkspace(ParserTerm,P,NestedWS) ->
+	    compile_head_wspathexp(P,NestedWS,Object,CodeList,Status)
+	;
+	  compile_head_pathexp(ParserTerm,Object,CodeList,Status)
+        ).
+
+
+/****************************************************************************
+  compile_head_wstermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
+	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],CodeList,Status),
+	( Status == [] ->
+	    wstermobj_struct(FObj,N,AObj,O),
+	    workspace_struct(O,WS,Object)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_wsfltermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-CodeList,-Status)
+
+  Note: The difference between compile_head_wsflpathexp and compile_head_wspathexp
+        is that compile_head_wsflpathexp applies workspace only to F-Logic
+        constructs.
+****************************************************************************/
+compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
+	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],CodeList,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+
+/****************************************************************************
+  compile_head_wstermlit(+FunctorTerm,+Arity,+ArgList,+WS,-CodeList,-Status)
+****************************************************************************/
+compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
+	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCodeList,Status),
+	( Status == [] ->
+	    wstermlit_struct(FObj,N,AObj,TObj),
+	    workspace_struct(TObj,WS,WSTObj),
+	    append(ObjCodeList,[WSTObj],CodeList)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_wsfllist(+ObjTermList,+ObjTerm,+WS,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsfllist(ObjTermList,ObjTerm,WS,Object,CodeList,Status) :-
+	compile_head_wsflpathexplist(ObjTermList,WS,ObjList,ObjListCodeList,S),
+	( S == [] ->
+	    ( ObjTerm == [] ->
+		Obj=[],
+		ObjCodeList=[],
+		Status=[]
+	    ;
+	      compile_head_wsflpathexp(ObjTerm,WS,Obj,ObjCodeList,Status)
+	    ),
+	    ( Status == [] ->
+		list_struct(ObjList,Obj,Object),
+		append(ObjListCodeList,ObjCodeList,CodeList)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_head_wsflobjref(+ObjT,+RefType,+AttT,+WS,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status) :-
+	compile_head_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACodeList,Status),
+	( Status == [] ->
+	    head_objref_struct(Obj,RefType,Att,Object,TCode),
+	    append(OACodeList,[TCode],CodeList)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_wsflbirelate(+OT1,+RelType,+OT2,+WS,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,CodeList,Status) :-
+	compile_head_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OCodeList,Status),
+	( Status == [] ->
+	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    append(OCodeList,[TCode],CodeList)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_head_wsflobjspec(+ObjTerm,+SpecBody,+WS,-Object,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsflobjspec(ObjTerm,SpecBody,WS,Object,CodeList,Status) :-
+	( SpecBody == [] ->
+	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
+		compile_head_wsflobjref(OTerm,RefType,ATerm,WS,Object,CodeList,Status)
+	    ;
+	      compile_head_wsflpathexp(ObjTerm,WS,Object,ObjCodeList,Status),
+	      ( Status == [] ->
+		  objexists_struct(Object,ECode),
+		  workspace_struct(ECode,WS,WSECode),
+		  append(ObjCodeList,[WSECode],CodeList)
+	      ;
+	        true
+	      )
+	    )
+	;
+	  compile_head_wsflpathexp(ObjTerm,WS,Object,ObjCodeList,S),
+	  ( S == [] ->
+	      compile_head_wsflspecbody(Object,SpecBody,WS,SCodeList,Status),
+	      (Status == [] -> append(ObjCodeList,SCodeList,CodeList); true)
+	  ;
+	    Status=S
+	  )
+        ).
+
+
+/****************************************************************************
+  compile_head_wsflspecbody(+Object,+SpecTerm,+WS,-CodeList,-Status)
+  compile_head_wsmvdattspec(+Object,+AttObj,+RefType,+VL,+WS,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+	is_flconjunct(SpecTerm,L,R),
+	!,
+	compile_head_wsflspecbody(Object,L,WS,LCodeList,S),
+	( S == [] ->
+	    compile_head_wsflspecbody(Object,R,WS,RCodeList,Status),
+	    (Status == [] -> append(LCodeList,RCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_head_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],VACodeList,Status),
+	( Status == [] ->
+	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    workspace_struct(SCode,WS,WSSCode),
+	    append(VACodeList,[WSSCode],CodeList)
+	;
+	  true
+        ).
+
+compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+	is_flmvdattspec(SpecTerm,AttTerm,RefType,VL),
+	!,
+	compile_head_wsflpathexp(AttTerm,WS,AObj,ACodeList,S),
+	( S == [] ->
+	    ( VL == [] ->
+		mvdattdef_struct(Object,AObj,RefType,SCode),
+		workspace_struct(SCode,WS,WSSCode),
+		append(ACodeList,[WSSCode],CodeList),
+		Status=[]
+	    ;
+	      compile_head_wsmvdattspec(Object,AObj,RefType,VL,WS,VCodeList,Status),
+	      (Status == [] -> append(ACodeList,VCodeList,CodeList); true)
+	    )
+        ;
+	  Status=S
+        ).
+
+compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+	is_flmethspec(SpecTerm,MethTerm),
+	!,
+	compile_head_wsflpathexp(MethTerm,WS,MethObj,MCodeList,Status),
+	( Status == [] ->
+	    methspec_struct(Object,MethObj,SCode),
+	    workspace_struct(SCode,WS,WSSCode),
+	    append(MCodeList,[WSSCode],CodeList)
+	;
+	  true
+        ).
+
+compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+	is_flimethspec(SpecTerm,IMethTerm),
+	!,
+	compile_head_wsflpathexp(IMethTerm,WS,IMethObj,IMCodeList,Status),
+	( Status == [] ->
+	    imethspec_struct(Object,IMethObj,SCode),
+	    workspace_struct(SCode,WS,WSSCode),
+	    append(IMCodeList,[WSSCode],CodeList)
+	;
+	  true
+        ).
+
+compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+	is_fltranspec(SpecTerm,TranTerm),
+	!,
+	compile_head_wsflpathexp(TranTerm,WS,TranObj,TCodeList,Status),
+	( Status == [] ->
+	    transpec_struct(Object,TranObj,SCode),
+	    workspace_struct(SCode,WS,WSSCode),
+	    append(TCodeList,[WSSCode],CodeList)
+	;
+	  true
+        ).
+
+
+compile_head_wsmvdattspec(_Object,_AttObj,_RefType,[],_WS,[],[]) :- !.
+
+compile_head_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,CodeList,Status) :-
+	!,
+	compile_head_wsflpathexp(T,WS,TObj,TCodeList,S),
+	( S == [] ->
+	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+	    workspace_struct(SCode,WS,WSSCode),
+	    append(TCodeList,[WSSCode],TSCodeList),
+	    compile_head_wsmvdattspec(Object,AttObj,RefType,L,WS,LCodeList,Status),
+	    (Status == [] -> append(TSCodeList,LCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_head_wsflobjeql(+Obj1,+Obj2,+Workspace,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsflobjeql(Obj1,Obj2,WS,CodeList,Status) :-
+	compile_head_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OCodeList,Status),
+	( Status == [] ->
+	    objeql_struct(O1,O2,OECode),
+	    workspace_struct(OECode,WS,WSCode),
+	    append(OCodeList,[WSCode],CodeList)
+	;
+	  true
+	).
+
+
+/****************************************************************************
+  compile_flassert(+List,-Code,Status)
+****************************************************************************/
+compile_flassert(List,Code,Status) :-
+	compile_head(List,CodeList,Status),
+	( Status == [] ->
+	    list_struct(CodeList,[],ListCode),
+	    assert_struct(ListCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_fldelete(+Op,+List,+Cond,-Code,-Status)
+****************************************************************************/
+compile_fldelete(Op,List,Cond,Code,Status) :-
+	compile_fldelete_list(List,CodeList,S),
+	( S == [] ->
+	    compile_body(Cond,CondCode,Status),
+	    ( Status == [] ->
+		list_struct(CodeList,[],ListCode),
+		delete_struct(Op,ListCode,CondCode,Code)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_fldelete(+Op,+List,-Code,-Status)
+****************************************************************************/
+compile_fldelete(Op,List,Code,Status) :-
+	compile_fldelete_list(List,CodeList,Status),
+	( Status == [] ->
+	    list_struct(CodeList,[],ListCode),
+	    delete_struct(Op,ListCode,Code)
+	;
+	  true
+        ).
+
+
+/****************************************************************************
+  compile_fldelete_list(+List,-CodeList,-Status)
+****************************************************************************/
+compile_fldelete_list([],[],[]) :- !.
+
+compile_fldelete_list([H|T],CodeList,Status) :-
+	compile_body_literal(H,HCode,S),
+	( S == [] ->
+	    compile_conjunct2list(HCode,HCodeList),
+	    compile_fldelete_list(T,TCodeList,Status),
+	    (Status == [] -> append(HCodeList,TCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  compile_conjunct2list(+ConjunctCode,-CodeList)
+****************************************************************************/
+compile_conjunct2list(ConjunctCode,CodeList) :-
+	conjunct_struct(C1,C2,ConjunctCode),
+	!,
+	compile_conjunct2list(C1,C1List),
+	compile_conjunct2list(C2,C2List),
+	append(C1List,C2List,CodeList).
+
+compile_conjunct2list(Code,[Code]) :- !.
+
+
+/****************************************************************************
+  compile_list2conjunct(+CodeList,-Code)
+****************************************************************************/
+compile_list2conjunct([Code],Code) :- !.
+
+compile_list2conjunct([C|CList],Code) :-
+	!,
+	compile_list2conjunct(CList,CListCode),
+	conjunct_struct(C,CListCode,Code).
+
+
+/****************************************************************************
+  compile_exec_directive(+DirectList,-Code,-Status)
+  compile_execdirect_list(+DirectList,-DirectCodeList)
+****************************************************************************/
+compile_exec_directive(DirectList,Code,[]) :-
+	compile_execdirect_list(DirectList,DirectCodeList),
+	compile_list2conjunct(DirectCodeList,Code).
+
+
+compile_execdirect_list([],[]) :- !.
+
+compile_execdirect_list([D|L],[DCode|LCode]) :-
+	compile_execdirect(D,DCode),
+	compile_execdirect_list(L,LCode).
+
+
+/****************************************************************************
+  compile_execdirect(+Direct,-Code)
+****************************************************************************/
+compile_execdirect(DirectTerm,Code) :-
+	( is_fltable(DirectTerm,P,A) ->
+	    table_struct(P,A,Code)
+
+	; is_fldynamic(DirectTerm,P,A) ->
+	    dynamic_struct(P,A,Code)
+
+	; is_flimport(DirectTerm,P,A,M) ->
+	    import_struct(P,A,M,Code)
+
+	; is_flindex(DirectTerm,P,A,N) ->
+	    index_struct(P,A,N,Code)
+        ),
+	!.
+
+compile_execdirect(DirectTerm,Code) :-
+	( is_flprolog(DirectTerm,Funct,Arity) ->
+	    (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
+	    (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
+	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_PROLOG,FunctCode,ArityCode],Code)
+
+	; is_flnohilog(DirectTerm,Funct,Arity) ->
+	    (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
+	    (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
+	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_NOHILOG,FunctCode,ArityCode],Code)
+
+	; is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
+	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_OP,Precedence,Associativity,Op],Code)
+
+	; is_flsignature(DirectTerm,Funct,Arity,Args) ->
+	    list_struct(Args,[],ArgsCode),
+	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_SIGNATURE,Funct,Arity,ArgsCode],Code)
+	),
+	!.
