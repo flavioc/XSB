@@ -1050,7 +1050,7 @@ int read_canonical(void)
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	term = opstk[0].op;
-	check_glstack_overflow(3, pcreg, (size+1)*sizeof(Cell)) ;
+	check_glstack_overflow(3, pcreg, (size+1)*sizeof(Cell), goto contcase) ;
 	arg2 = ptoc_tag(2);
 	if (isnonvar(arg2)) 
 	  xsb_abort("READ_CANONICAL: argument must be a variable");

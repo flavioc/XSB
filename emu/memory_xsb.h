@@ -182,11 +182,11 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
    }									    \
  }
 
-#define check_glstack_overflow(arity,PCREG,EXTRA)                            \
+#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)          \
     if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {   \
         if ((pb)top_of_localstk < (pb)top_of_heap) {                         \
             PCREG = exception_handler("\nFatal ERROR:  -- Local Stack clobbered Heap --\n");  \
-        goto contcase;                                                       \
+        todo_on_exception;                                                   \
       }                                                                      \
       else {                                                                 \
         fprintf(stdwarn, "\nHeap / Local Stack overflow:   ");            \
@@ -207,7 +207,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
           fprintf(stdwarn, "Reallocation turned OFF!\n");                     \
           print_statistics(1);                                               \
           local_global_exception(PCREG);                                     \
-          goto contcase;                                                     \
+          todo_on_exception;                                                 \
        }                                                                     \
       }                                                                      \
     }
@@ -261,18 +261,18 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
    }									\
  }
 
-#define check_glstack_overflow(arity,PCREG,EXTRA)                    \
+#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)  \
     if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {   \
       if ((pb)top_of_localstk < (pb)top_of_heap) {                         \
         PCREG = exception_handler("\nFatal ERROR:  -- Local Stack clobbered Heap --\n");  \
-        goto contcase;                                                       \
+        todo_on_exception;                                                   \
       }                                                                      \
       else {                                                                 \
         if ((flags[STACK_REALLOC] == FALSE) ||                               \
           (glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN), \
                           arity) != 0)) {                                    \
           local_global_exception(PCREG);                                     \
-          goto contcase;                                                     \
+          todo_on_exception;                                                 \
         }                                                                    \
       }                                                                      \
     }

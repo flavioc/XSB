@@ -131,7 +131,7 @@ case tabletrysingle: {
   if ( this_instr == tabletry ) {
     /* lpcreg was left pointing to the next clause, e.g. tableretry */
     continuation = lpcreg;
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, goto contcase) ;
   }
   else
     continuation = (pb) &check_complete_inst;
@@ -696,7 +696,7 @@ case resume_compl_suspension:
     CPtr csf = cs_compsuspptr(breg);
     /* Switches the environment to a frame of a subgoal that was	*/
     /* suspended on completion, and sets the continuation pointer.	*/
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN);
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, goto contcase);
     freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
     ptcpreg = csf_ptcp(csf);
     neg_delay = (csf_neg_loop(csf) != FALSE);

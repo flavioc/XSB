@@ -1191,7 +1191,7 @@ contcase:     /* the main loop */
     pppad;
     pad64;
     cpreg = lpcreg+sizeof(Cell); 
-    check_glstack_overflow(MAX_ARITY, lpcreg, OVERFLOW_MARGIN);
+    check_glstack_overflow(MAX_ARITY, lpcreg, OVERFLOW_MARGIN, goto contcase);
     lpcreg = *(pb *)lpcreg;
     goto contcase;
 

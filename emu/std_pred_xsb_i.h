@@ -357,7 +357,7 @@ inline static bool atom_to_list(int call_type)
 	else return isnil(list);
       } else {
 	/* check that there is enough space on the heap! */
-	check_glstack_overflow(2, pcreg, 2*len*sizeof(Cell)) ;
+	check_glstack_overflow(2, pcreg, 2*len*sizeof(Cell), goto contcase) ;
 	list = ptoc_tag(2);   /* in case it changed */
 
 	new_list = makelist(hreg);

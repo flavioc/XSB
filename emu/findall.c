@@ -655,7 +655,7 @@ int findall_get_solutions()
   
   p = findall_solutions + cur_f ;
   
-  check_glstack_overflow(4, pcreg, p->size*sizeof(Cell)) ;
+  check_glstack_overflow(4, pcreg, p->size*sizeof(Cell), return TRUE) ;
   
   arg1 = ptoc_tag(1);  /* only after enough space is ensured */
   arg2 = ptoc_tag(2);  /* only after enough space is ensured */
@@ -666,7 +666,6 @@ int findall_get_solutions()
   findall_copy_to_heap(from,(CPtr)arg1,&hreg) ; /* this can't fail */
   *(CPtr)arg2 = *(p->tail) ; /* no checking, no trailing */
   findall_free(cur_f) ;
- contcase:
   return TRUE;
 } /* findall_get_solutions */
 
@@ -999,7 +998,7 @@ int copy_term()
   size = term_size(arg1) ;
   findall_untrail() ;
 
-  check_glstack_overflow( 2, pcreg, size*sizeof(Cell) ) ;
+  check_glstack_overflow( 2, pcreg, size*sizeof(Cell), return FALSE ) ;
   
   /* again because stack might have been reallocated */
   arg1 = ptoc_tag(1);
@@ -1022,7 +1021,4 @@ int copy_term()
   hreg = hptr;
 
   return(unify(arg2, to));
- contcase:
-  return(FALSE);
-
 } /* copy_term */
