@@ -114,8 +114,8 @@ initialize_oms:-
 	retractall(oms_logging_state(_)),
 	asserta(oms_logging_state(off)),
 	oms_set_log_off,
-	init_oms_rels, 
-	init_index_std.
+	init_index_std,
+	init_oms_rels.
 
 %--------------------------------------------------------------------
 /* TLS: these should be used only when checking dead code.  They
