@@ -543,6 +543,7 @@ static int is_most_general_term(Cell term)
 /* --------------------------------------------------------------------	*/
 
 #include "term_psc_xsb_i.h"
+#include "conget_xsb_i.h"
 
 /* -------------------------------------------------------------------- */
 
@@ -592,6 +593,8 @@ void init_builtin_table(void)
   set_builtin_table(PSC_PROP, "psc_prop");
   set_builtin_table(PSC_SET_TYPE, "psc_set_type");
   set_builtin_table(PSC_SET_PROP, "psc_set_prop");
+  set_builtin_table(CONGET_TERM, "conget");
+  set_builtin_table(CONSET_TERM, "conset");
   set_builtin_table(PSC_SET_SPY, "psc_set_spy");
   set_builtin_table(PSC_EP, "psc_ep");
   set_builtin_table(PSC_SET_EP, "psc_set_ep");
@@ -998,6 +1001,20 @@ int builtin_call(byte number)
     Psc psc = (Psc)ptoc_addr(1);
     set_data(psc, (Psc)ptoc_int(2));
     break;
+  }
+
+  case CONGET_TERM: {
+    Integer res = conget((Cell)ptoc_tag(1));
+    prolog_term arg2 = reg_term(2);
+    if (is_var(arg2)) {
+      c2p_int(res,arg2);
+      return TRUE;
+    } else {
+      return (int_val(arg2) == res);
+    }
+  }
+  case CONSET_TERM: {
+    return conset((Cell)ptoc_tag(1), (Integer)ptoc_int(2));
   }
   case PSC_EP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */

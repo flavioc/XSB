@@ -47,6 +47,8 @@
 	term_arg/3, 
 	term_set_arg/4, 
 	term_hash/3,
+	conget/2,
+	conset/2,
 	stat_flag/2, 
 	stat_set_flag/2, 
 	stat_sta/1,

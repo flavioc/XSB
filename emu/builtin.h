@@ -103,6 +103,10 @@
 #define ALMOST_SEARCH_MODULE     70
 #define EXISTING_FILE_EXTENSION  71
 
+/* for efficiency, implemented these in C */
+#define CONGET_TERM	         75
+#define CONSET_TERM	         76
+
 #define PSC_ENV		        100
 #define PSC_SPY		        101
 #define PSC_TABLED	        102

@@ -153,9 +153,7 @@ storage_reclaim_space(StorageName) :-
 %% that is already saved as a property of IdAtom
 triehandle_for_storage(IdAtom,Handle) :-
 	conget(IdAtom,H),
-	(H==0
-	-> new_trie(Handle), conset(IdAtom,Handle)
-	;  integer(H), H > 0
-	-> H = Handle
-	;  abort(('Something wrong: ', IdAtom, ' trie handle is corrupted'))
+	(  integer(H), H > 0 -> H = Handle
+	;  H==0 -> new_trie(Handle), conset(IdAtom,Handle)
+	;  abort(('Storage: ', IdAtom, ' trie handle is corrupted'))
 	).
