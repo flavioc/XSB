@@ -19,7 +19,7 @@
 	coversAttr/3, immed_coversAttr/3,
 	in_hierarchy/1,
 	newExtTerm/1, newExtTerm/2, newExtTermBatch/2,
-            retractallExtTerm/1,
+            retractallExtTerm/1, retracteachExtTerm/1,
 	newIntRule/3, newIntRule/4, newIntRuleBatch/4,
             retractallIntRule/3,
 	newDLRule/3, newDLRule/4, newDLRuleBatch/4,
@@ -1569,6 +1569,20 @@ retractallExtTerm(Term) :-
 	caching_cdf(Flg),
 	cdf_update_term(retractall(Term),Flg).
 
+:- comment(retracteachExtTerm/1, "@tt{retracteachExtTerm(Term)} has
+similar effect as @tt{retractallExtTerm(Term)} except that it first
+calls Term to find its instances in the CDF and then retracts each
+such term.  This is useful to avoid unnecessary (and costly)
+invalidation.").
+
+retracteachExtTerm(Term) :- 
+	apply_checks(retractallExtTermSingle,Term),
+	caching_cdf(Flg),
+	findall(Term,Term,Terms),
+	member(Term,Terms),
+	cdf_update_term(retractall(Term),Flg),
+	fail.
+retracteachExtTerm(_Term).
 
 %-----------------------------------------------------------
 %%%%%%%%%%  Retract tables as appropriate upon update; adjust dirty bits.
