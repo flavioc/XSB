@@ -27,6 +27,8 @@
 #include "debugs/debug.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <fnmatch.h>
 #include <glob.h>
@@ -41,6 +43,9 @@
 */
 #ifndef FNM_CASEFOLD
 #define FNM_CASEFOLD 0
+#define CASEFOLD_UNSUPPORTED 1
+#else
+#define CASEFOLD_UNSUPPORTED 0
 #endif
 
 extern char *p_charlist_to_c_string(prolog_term term, char *outstring,
@@ -51,6 +56,8 @@ extern void c_string_to_p_charlist(char *name, prolog_term list,
 static char wild_buffer[MAXBUFSIZE], input_string_buffer[4*MAXBUFSIZE];
 static prolog_term wild_term, input_string_term;
 
+static char *lowercase_string(char *str);
+
 /* XSB wildcard matcher entry point 
 ** Arg1: wildcard, Arg2: string to be matched, Arg3: IgnoreCase flag */
 bool do_wildmatch__(void)
@@ -58,6 +65,7 @@ bool do_wildmatch__(void)
   int ignorecase=FALSE;
   int flags = 0; /* passed to wildcard matcher */
   char *wild_ptr=NULL, *input_string=NULL;
+  int ret_code;
 
   wild_term = reg_term(1); /* Arg1: wildcard */
   input_string_term = reg_term(2); /* Arg2: string to find matches in */
@@ -88,7 +96,21 @@ bool do_wildmatch__(void)
   } else
     xsb_abort("WILDMATCH: Input string (Arg 2) must be an atom or a character list");
 
-  if (0 == fnmatch(wild_ptr, input_string, flags))
+  /* if the FNM_CASEFOLD flag is not supported,
+     convert everything to lowercase before matching */
+  if (CASEFOLD_UNSUPPORTED && ignorecase) {
+    wild_ptr = lowercase_string(wild_ptr);
+    input_string = lowercase_string(input_string);
+  }
+
+  ret_code = fnmatch(wild_ptr, input_string, flags);
+
+  /* if we used lowercase_string, we must free up space to avoid memory leak */
+  if (CASEFOLD_UNSUPPORTED && ignorecase) {
+    free(input_string);
+    free(wild_ptr);
+  }
+  if (ret_code == 0)
     return TRUE;
   return FALSE;
 }
@@ -162,4 +184,16 @@ bool do_glob_directory__(void)
   c2p_nil(listTail); /* bind tail to nil */
   globfree(&file_vector);
   return TRUE;
+}
+
+/* gets string, converts to lowercase, returns result; allocates space 
+   so don't forget to clean up */
+static char *lowercase_string(char *str)
+{
+  int i, len=strlen(str)+1;
+  char *newstr = (char *) malloc(len);
+
+  for (i=0; i<len; i++)
+    *(newstr+i) = tolower(*(str+i));
+  return newstr;
 }

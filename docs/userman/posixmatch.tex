@@ -401,11 +401,9 @@ The calling sequence for wildmatch/3 is as follows:
 {\tt Wildcard} is the same as before. {\tt String} represents the string to
 be matched against {\tt Wildcard}. Like {\tt Wildcard}, {\tt String} can be
 an atom or a string. {\tt IgnoreCase} indicates whether case of letters
-should be ignored: if this argument is bound to a non-variable, then case
-is ignored. Otherwise, if {\tt IgnoreCase} is a variable, then the case of
-letters is preserved. {\bf Note}: ignoring case of the letters in wild card
-matching is not a portable feature. Versions of gcc after 2.7.2.3 support
-it, but many other compilers do not.
+should be ignored during matching. Namely, if this argument is bound to a
+non-variable, then the case of letters is ignored. Otherwise, if {\tt
+  IgnoreCase} is a variable, then the case of letters is preserved.
 
 This predicate succeeds when {\tt Wildcard} matches {\tt String} and fails
 otherwise.
