@@ -92,7 +92,7 @@ OUTDIR=..\config\x86-pc-windows\bin
 INTDIR=.
 
 !IF  "$(ORACLE)" == "yes"
-ORACLE_FLAG=/D ORACLE
+ORACLE_FLAG=/D "ORACLE"
 !IF  "$(SITE_LIBS)" == ""
 !MESSAGE Oracle libraries must be specified, if building XSB with support for Oracle
 !MESSAGE Usage:
@@ -195,7 +195,7 @@ LINK32_OBJS=$(LINK32_OBJS) $(INTDIR)/orastuff.obj
 !IF  "$(CFG)" == "release"  &&  "$(DLL)" == "no"
 
 CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+ $ORACLE_FLAG /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -211,7 +211,8 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF  "$(CFG)" == "debug"  &&  "$(DLL)" == "no"
 
 CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
- /D "DEBUG" /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+ /D "DEBUG" $ORACLE_FLAG\
+  /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib wsock32.lib "$(SITE_LIBS)" /nologo /subsystem:console /incremental:yes\
@@ -226,7 +227,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF "$(CFG)" == "release" && "$(DLL)" == "yes"
 
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
-  /D "XSB_DLL" /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+  /D "XSB_DLL" $ORACLE_FLAG /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib wsock32.lib "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:no\
@@ -236,7 +237,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF "$(CFG)" == "debug" &&  "$(DLL)" == "yes"
 
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
- /D "DEBUG" /D "XSB_DLL" /Fp"$(INTDIR)/xsb.pch" /YX\
+ /D "DEBUG" $ORACLE_FLAG /D "XSB_DLL" /Fp"$(INTDIR)/xsb.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
