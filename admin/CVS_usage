@@ -113,22 +113,40 @@ Unix versions can be downloaded from:
 3. Getting down to work
 -----------------------
 
-Step 1 (SSH keys):  Create your SSH public key and put it in
-         ~/.ssh/authorized_keys in your home directory.
-	 Local users don't need this, but it is still useful, if you want
-	 to work from home.
+Step 1 (SSH keys):  Create your SSH public key.
 	 *** Make sure you remember the password you used to create this pair
-	     of keys! Also, the directory .ssh and the file authorized_keys 
-	     are not group-writable.
-         Set the environment variable CVS_RSH to point to ssh
-	 (something like /usr/local/bin/ssh or wherever your ssh lives).
+	     of keys!
+     -If your client ssh (try ssh -v) is Version 1:
+         Create the directory ~/.ssh in the home directory of your account
+	 on the SBCS network.
+         Put your public key in ~/.ssh/authorized_keys.
+	 Make sure the directory .ssh and the file authorized_keys are not
+	 group-writable. 
 
-	 E.g., (CSH, TCSH):
-	       setenv CVS_RSH /usr/local/bin/ssh
+     -If your client ssh is Version 2:
+         Create the directory ~/.ssh2 in the home directory of your account
+	 on the SBCS network.
+	 Copy the file containing your public key to a file in ~/.ssh2
+	 (e.g., to ~/ssh2/public_key.pub
+	 Create the file ~/ssh2/authorization and put this line there:
 
-	 or (SH,BASH,KSH):
-	       CVS_RSH=/usr/local/bin/ssh
-	       export CVS_RSH=/usr/local/bin/ssh
+	     Key public_key.pub
+
+	 Make sure the directory .ssh2 and the file authorization are not
+	 group-writable. 
+
+     Set the environment variable CVS_RSH to point to ssh
+     (something like /usr/local/bin/ssh or wherever your ssh lives).
+
+     E.g., (CSH, TCSH):
+	   setenv CVS_RSH /usr/local/bin/ssh
+
+     or (SH,BASH,KSH):
+	   CVS_RSH=/usr/local/bin/ssh
+	   export CVS_RSH=/usr/local/bin/ssh
+
+     Local users don't need the above, but it is still useful, if you want
+     to work from home.
 
 Step 2 (Choose directory): Decide where you want XSB to live. Let's assume
 	you want XSB to  be in ~/projects. I will be using ~/projects
