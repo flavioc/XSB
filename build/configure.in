@@ -45,7 +45,6 @@ AC_CONFIG_AUX_DIR($build_dir)
 
 # Needed by the config.h file
 AC_DEFINE(CONFIG_INCLUDED)
-AC_DEFINE(SLG_WITH_DELAY)
 AC_DEFINE(___ALWAYS_TRUE___)
 
 
@@ -666,7 +665,7 @@ dnl Choose an abstract machine for XSB
 engine_mode=slg-wam
 
 AC_ARG_ENABLE(chat,
-[  --enable-chat                compile using CHAT as the abstract machine;
+[  --enable-chat                 compile using CHAT as the abstract machine;
 				default is SLG-WAM])
 if test "${enable_chat}" = "yes" ; then
    enable_chat=yes

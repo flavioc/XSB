@@ -65,10 +65,6 @@
 #define CONFIG_INCLUDED
 #endif
 
-/* Use delay strategy */
-#define SLG_WITH_DELAY 1
-
-
 /* Use local eval strategy. Default is `batched' */
 #undef LOCAL_EVAL
 
@@ -98,6 +94,8 @@
 #undef INCREMENTAL_CP_TRAVERSAL
 
 #undef PTCP_IN_CP
+
+#undef GC
 
 /* Define if you have the gethostbyname function.  */
 #define HAVE_GETHOSTBYNAME 1

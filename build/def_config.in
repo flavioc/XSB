@@ -88,9 +88,6 @@
 #undef SGI
 #undef SGI64
 
-/* Use delay strategy */
-#undef SLG_WITH_DELAY
-
 /* Sun Solaris OS */
 #undef SOLARIS
 #undef BIG_MEM
@@ -155,6 +152,8 @@
 #undef INCREMENTAL_CP_TRAVERSAL
 
 #undef PTCP_IN_CP
+
+#undef GC
 
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
