@@ -346,3 +346,5 @@
      specified ones (plus xpp_on). Then the coder would dump
      :- compiler_options([option,option,...]) into the .P file.
 
+22.  Make the compiler dump the original source in comments right
+     in front of the translated code block.
