@@ -465,8 +465,7 @@ XSB_Start_Instr(answer_return,_answer_return); {
  *    information necessary to perform this Answer Check/Insert operation
  *    is saved in the producer's choice point frame.  This structure can be
  *    reached through the subgoal frame, which is noted in the first
- *    environment variable.  Upon derivation of the first answer, all
- *    negation suspensions of the subgoal are abolished.
+ *    environment variable.
  */
 
 XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc); {

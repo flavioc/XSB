@@ -62,6 +62,11 @@ void smPrint(Structure_Manager smRecord, char *string) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/*
+ *  Allocate a new block from the system and place it at the head of
+ *  the block list in the Structure Manager.
+ */
+
 void smAllocateBlock(Structure_Manager *pSM) {
 
   void *pNewBlock;
@@ -108,23 +113,23 @@ void smFreeBlocks(Structure_Manager *pSM) {
 
 /*
  *  Determine whether a given pointer is indeed a reference to a
- *  structure maintained by some Structure Manager.
+ *  structure maintained by the given Structure Manager.
  */
 
-xsbBool smIsValidStructRef(Structure_Manager *pSM, void *ptr) {
+xsbBool smIsValidStructRef(Structure_Manager smRecord, void *ptr) {
 
   void *pBlock, *firstStruct, *lastStruct;
   size_t structSize;
 
 
-  structSize = SM_StructSize(*pSM);
+  structSize = SM_StructSize(smRecord);
 
-  for ( pBlock = SM_CurBlock(*pSM);  IsNonNULL(pBlock);
+  for ( pBlock = SM_CurBlock(smRecord);  IsNonNULL(pBlock);
 	pBlock = SMBlk_NextBlock(pBlock) ) {
     
     firstStruct = SMBlk_FirstStruct(pBlock);
     lastStruct =
-      SMBlk_LastStruct(pBlock,structSize,SM_StructsPerBlock(*pSM));
+      SMBlk_LastStruct(pBlock,structSize,SM_StructsPerBlock(smRecord));
 
     /* Determine whether pointer lies within block
        ------------------------------------------- */
@@ -139,4 +144,44 @@ xsbBool smIsValidStructRef(Structure_Manager *pSM, void *ptr) {
     }
   }
   return FALSE;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *  Determine whether the given structure maintained by the given
+ *  Structure Manager is allocated.
+ */
+
+xsbBool smIsAllocatedStruct(Structure_Manager smRecord, void *pStruct) {
+
+  void *freeStruct;
+
+  /* Determine whether struct lies w/i unallocated section of 1st block
+     ------------------------------------------------------------------ */
+  if ( (SM_NextStruct(smRecord) <= pStruct) &&
+       (pStruct <= SM_LastStruct(smRecord)) )
+    return FALSE;
+
+  /* Determine whether struct is on the free list
+     -------------------------------------------- */
+  for ( freeStruct = SM_FreeList(smRecord);  IsNonNULL(freeStruct);
+	freeStruct = SMFL_NextFreeStruct(freeStruct) )
+    if ( freeStruct == pStruct )
+      return FALSE;
+
+  return TRUE;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *  Determine whether a given pointer is a reference to an allocated
+ *  structure maintained by the given Structure Manager.
+ */
+
+xsbBool smIsAllocatedStructRef(Structure_Manager smRecord, void *ptr) {
+
+  return ( smIsValidStructRef(smRecord,ptr) &&
+	   smIsAllocatedStruct(smRecord,ptr) );
 }

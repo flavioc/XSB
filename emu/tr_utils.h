@@ -25,6 +25,7 @@
 
 extern VariantSF get_variant_sf(Cell, TIFptr);
 extern SubProdSF get_subsumer_sf(Cell, TIFptr);
+extern BTNptr get_trie_root(BTNptr);
 extern VariantSF get_call(Cell, Cell *);
 extern Cell build_ret_term(int, Cell[]);
 extern void construct_answer_template(Cell, SubProdSF, Cell[]);

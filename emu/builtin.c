@@ -1620,9 +1620,9 @@ int builtin_call(byte number)
     }
     if ( is_encoded_addr(goalTerm) ) {
       goalSF = (VariantSF)decode_addr(goalTerm);
-      if ( ! smIsValidStructRef(&smVarSF,goalSF) &&
-	   ! smIsValidStructRef(&smProdSF,goalSF) &&
-	   ! smIsValidStructRef(&smConsSF,goalSF) )
+      if ( ! smIsValidStructRef(smVarSF,goalSF) &&
+	   ! smIsValidStructRef(smProdSF,goalSF) &&
+	   ! smIsValidStructRef(smConsSF,goalSF) )
 	xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 		  regGoalHandle, BuiltinName(TABLE_STATUS), Arity);
 
@@ -1768,20 +1768,25 @@ int builtin_call(byte number)
      * So we currently disallow its use on subsumptive predicates.
      */
     sf = ptoc_addr(regTableEntry);
-    if ( smIsValidStructRef(&smProdSF,sf) ||
-	 smIsValidStructRef(&smConsSF,sf) )
+    if ( smIsValidStructRef(smProdSF,sf) ||
+	 smIsValidStructRef(smConsSF,sf) )
       xsb_abort("Invalid Table Entry Handle: Subsumptive table entry"
 		"\n\t Argument %d of %s/%d\n\t Answers for subsumptive"
 		" subgoals may not be deleted",
 		regTableEntry, BuiltinName(TRIE_DELETE_RETURN), Arity);
-    if ( ! smIsValidStructRef(&smVarSF,sf) )
+    if ( ! smIsValidStructRef(smVarSF,sf) )
       xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 		regTableEntry, BuiltinName(TRIE_DELETE_RETURN), Arity);
 
     leaf = ptoc_addr(regReturnNode);
-    if ( ! smIsValidStructRef(&smTableBTN,leaf) )
+    if ( ! smIsValidStructRef(smTableBTN,leaf) )
       xsb_abort("Invalid Return Handle\n\t Argument %d of %s/%d",
 		regReturnNode, BuiltinName(TRIE_DELETE_RETURN), Arity);
+
+    if ( (! smIsAllocatedStruct(smTableBTN,leaf)) ||
+	 (subg_ans_root_ptr(sf) != get_trie_root(leaf)) ||
+	 (! IsLeafNode(leaf)) )
+      return FALSE;
 
     delete_return(leaf,sf);
     break;
@@ -1796,9 +1801,9 @@ int builtin_call(byte number)
     Cell retTerm;
 
     sf = ptoc_addr(regTableEntry);
-    if ( ! smIsValidStructRef(&smVarSF,sf) &&
-	 ! smIsValidStructRef(&smProdSF,sf) &&
-	 ! smIsValidStructRef(&smConsSF,sf) )
+    if ( ! smIsValidStructRef(smVarSF,sf) &&
+	 ! smIsValidStructRef(smProdSF,sf) &&
+	 ! smIsValidStructRef(smConsSF,sf) )
       xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 		regTableEntry, BuiltinName(TRIE_GET_RETURN), Arity);
 

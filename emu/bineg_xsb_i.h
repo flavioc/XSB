@@ -56,9 +56,9 @@ case IS_INCOMPLETE: {
   VariantSF producerSF = ptoc_addr(regSubgoalFrame);
   CPtr t_ptcp = ptoc_addr(regRootSubgoal);
 
-  if ( ! smIsValidStructRef(&smVarSF,producerSF) &&
-       ! smIsValidStructRef(&smProdSF,producerSF) &&
-       ! smIsValidStructRef(&smConsSF,producerSF) )
+  if ( ! smIsValidStructRef(smVarSF,producerSF) &&
+       ! smIsValidStructRef(smProdSF,producerSF) &&
+       ! smIsValidStructRef(smConsSF,producerSF) )
     xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 	      regSubgoalFrame, BuiltinName(IS_INCOMPLETE), Arity);
 

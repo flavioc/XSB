@@ -143,6 +143,22 @@ SubProdSF get_subsumer_sf(Cell callTerm, TIFptr pTIF) {
   
 /*----------------------------------------------------------------------*/
 
+BTNptr get_trie_root(BTNptr node) {
+
+  while ( IsNonNULL(node) ) {
+    if ( IsTrieRoot(node) )
+      return node;
+    node = BTN_Parent(node);
+  }
+  /*
+   * If the trie is constructed correctly, processing will not reach
+   * here, other than if 'node' was originally NULL.
+   */
+  return NULL;
+}
+
+/*----------------------------------------------------------------------*/
+
 /*
  * Given a vector of terms and their number, N, builds a ret/N structure
  * on the heap containing those terms.  Returns this constructed term.
@@ -707,10 +723,6 @@ void delete_trie(BTNptr iroot) {
  * the node as deleted and changes the try instruction to fail.
  * The deleted node is then linked into the del_nodes_list
  * in the completion stack.
- *
- * Problems: there is no check whether the node is actually in the given
- *   subgoal frame, nor whether the node has been previously deleted.
- *   Some notion of success or failure would help this latter problem.
  */
 void delete_return(BTNptr l, VariantSF sg_frame) 
 {

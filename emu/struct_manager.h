@@ -175,7 +175,9 @@ typedef struct Structure_Manager {
 extern void smPrint(Structure_Manager, char *);
 extern void smAllocateBlock(Structure_Manager *);
 extern void smFreeBlocks(Structure_Manager *);
-extern xsbBool smIsValidStructRef(Structure_Manager *, void *);
+extern xsbBool smIsValidStructRef(Structure_Manager, void *);
+extern xsbBool smIsAllocatedStruct(Structure_Manager, void *);
+extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
