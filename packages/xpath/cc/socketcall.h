@@ -4,7 +4,7 @@
  *
  ****************************************************************************/
 
-#ifdef WIN32
+#ifdef WIN_NT
 #include <winsock2.h>
 #include <windows.h>
 #else 

@@ -17,7 +17,7 @@ CLEAN :
 
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "$(XSBDIR)\config\x86-pc-windows" \
 		 /I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" /I "$(XSBDIR)\packages\sgml\cc"\
-		 /D "WIN32" /D "WIN_NT" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
+		 /D "WIN_NT" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
 		 /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c 
 	
 

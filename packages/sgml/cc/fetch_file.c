@@ -6,6 +6,7 @@
  *
  ****************************************************************************/
 
+#include "xsb_config.h"
 #include "socketcall.h"
 #include <stdio.h>
 #include <errno.h>
@@ -117,7 +118,7 @@ int get_file_www(char *server, char *fname, char **source)
 	char *tempstr = NULL;
 	
 	/*Special socket handling for windows*/
-#ifdef WIN32
+#ifdef WIN_NT
 	int rc;
 	WSADATA wsadata;
 	
@@ -165,7 +166,7 @@ int get_file_www(char *server, char *fname, char **source)
 	  memcpy(&servaddr.sin_addr, *pptr, sizeof(struct in_addr));
 	  if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) == 0)
 	    break;		
-#ifdef WIN32
+#ifdef WIN_NT
 	  closesocket(sockfd);
 #else
 	  close(sockfd);
@@ -325,7 +326,7 @@ int get_file_www(char *server, char *fname, char **source)
 	  return FALSE;
 	}
 
-#ifdef WIN32
+#ifdef WIN_NT
 	closesocket(sockfd);
 #else
 	close(sockfd);

@@ -22,6 +22,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "xsb_config.h"
 #include "util.h"
 #include "catalog.h"
 #include <stdio.h>
@@ -68,7 +69,7 @@ typedef struct _catalog_file
 
 static catalog_file *catalog;
 
-#ifdef WIN32
+#ifdef WIN_NT
 #define isDirSep(c) ((c) == '/' || (c) == '\\')
 #define DIRSEPSTR "\\"
 #else
@@ -101,7 +102,7 @@ DirName(const char *f, char *dir)
 int
 is_absolute_path(const char *name)
 { if (isDirSep(name[0])
-#ifdef WIN32
+#ifdef WIN_NT
       || (isalpha(uc(name)) && name[1] == ':')
 #endif
     )

@@ -7,6 +7,7 @@
 
 #define DTD_IMPLEMENTATION 1
 
+#include "xsb_config.h"
 #include "dtd.h"
 #include "parser.h"
 #include "model.h"
@@ -480,7 +481,7 @@ gripe(dtd_error_id e, ...);
 static int
 set_option_dtd(dtd *dtd, dtd_option option, char * set);
 
-#ifdef WIN32
+#ifdef WIN_NT
 #define isDirSep(c) ((c) == '/' || (c) == '\\')
 #define DIRSEPSTR "\\"
 #else
@@ -5329,7 +5330,7 @@ load_dtd_from_file(dtd_parser *p, const char *file)
 int
 is_absolute_path(const char *name)
 { if (isDirSep(name[0])
-#ifdef WIN32
+#ifdef WIN_NT
       || (isalpha(toupper(name[0])) && name[1] == ':')
 #endif
       )

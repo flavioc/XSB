@@ -8,7 +8,7 @@
 
 
 #include "xsb_config.h"
-#ifdef WIN32
+#ifdef WIN_NT
 #define XSB_DLL
 #endif
 #include "cinterf.h"
@@ -28,7 +28,7 @@
 #include "util.h"
 #include "basic_defs.h"
 
-#ifndef WIN32
+#ifndef WIN_NT
 #include <sys/stat.h>
 #endif
 

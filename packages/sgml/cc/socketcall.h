@@ -3,7 +3,9 @@
  *  Files to include for socket handling for windows and unix
  *
  *****************************************************************************/
-#ifdef WIN32
+
+#include "xsb_config.h"
+#ifdef WIN_NT
 #include <winsock2.h>
 #include <windows.h>
 #else 
