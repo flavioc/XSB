@@ -1,1 +1,0 @@
-%1%\config\x86-pc-windows\bin\xsb.exe -e "compile('com/declarativa/interprolog/interprolog.P'), compile('com/declarativa/interprolog/tests.P'), compile('com/declarativa/interprolog/gui/visualization.P'), compile('com/declarativa/interprolog/tests.P'), halt."

@@ -1,1 +1,0 @@
-java -classpath %CLASSPATH%;junit.jar;interprolog.jar com.declarativa.interprolog.AllTests
