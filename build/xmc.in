@@ -1,0 +1,42 @@
+%%%	xmc.P:  Startup file for XMC
+
+%% $Id$
+
+%% ----------------------------------------------------------------------
+%%	xlc(S): compile XL program to trans rules.
+%% ----------------------------------------------------------------------
+
+:- import bootstrap_package/2 from packaging.
+:- bootstrap_package('xmc',xmc).
+
+:- assert(xmc_directory('@prefix@/packages/xmc')).
+
+:- [mucalculus].
+
+xlc(File) :-
+	cleanup,
+	str_cat(File, '.xl', XLFile),
+	str_cat(XLFile, 'o', XLOFile),
+	parse(XLFile, XLOFile, stderr),
+	typecheck(XLOFile),
+	comp_form,
+	xlcomp.
+
+cleanup :-
+	retractall(trans(_,_,_)),
+	retractall((trans(_,_,_) :- _)),
+	retractall((trans(_,_,_,_,_) :- _)),
+	retractall(startstate(_,_)),
+	retractall(symlookup(_,_,_,_)),
+	retractall(atype(_,_)),			% from type checker
+	retractall(fDef(_,_)),
+	abolish_all_tables.
+
+%% ----------------------------------------------------------------------
+%%	mck(P, F): Top level modelcheck predicate:
+%%		   Does process named P model formula named F?
+%% ----------------------------------------------------------------------
+
+mck(P, F) :-
+	startstate(P, S),
+	models(S, form(F)).
