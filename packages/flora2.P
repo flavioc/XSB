@@ -105,13 +105,15 @@ bootstrap_flora.
 unstrap_flora :-
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
-	fmt_write_string(FloraFlrIncludesDir,"%s%sflrincludes",args(FloraDir,S)),
+	fmt_write_string(FloraFlrIncludesDir,
+			 "%s%sflrincludes",args(FloraDir,S)),
 	(retract(xpp_include_dir(FloraFlrIncludesDir)); true),
 	fmt_write_string(FloraClosureDir,"%s%sclosure",args(FloraDir,S)),
 	(retract(xpp_include_dir(FloraClosureDir)); true),
 	fmt_write_string(FloraIncludesDir,"%s%sincludes",args(FloraDir,S)),
 	(retract(xpp_include_dir(FloraIncludesDir)); true),
-	fmt_write_string(FloraGenIncludesDir,"%s%sgenincludes",args(FloraDir,S)),
+	fmt_write_string(FloraGenIncludesDir,
+			 "%s%sgenincludes",args(FloraDir,S)),
 	(retract(xpp_include_dir(FloraGenIncludesDir)); true),
 	unload_package(flora),
 	conset(flora_shell_loaded,0).
@@ -141,6 +143,11 @@ flora_shell :-
   or
       :- flImport [flHilog|flProlog|flPredicate] Pred/Arity as Pred1(_,_,...)
                                 from FloraModule
+
+  Also (to load into the default module)
+      :- flLoad file.
+  or
+      :- flLoad file>>module.
 ************************************************************************/
 
 :- op(1150,fx,(flProlog)).
@@ -175,5 +182,5 @@ flImport(flPredicate(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
 	).
 flImport(X) :- abort(['Invalid flImport syntax: ', X]).
 
-flLoad(File>>Workspace) :- flora_load_module_internal(File,Workspace).
-flLoad(Workspace) :- flora_load_module_internal(Workspace).
+flLoad(File>>Module) :- flora_load_module_internal(File,Module).
+flLoad(Module) :- flora_load_module_internal(Module).
