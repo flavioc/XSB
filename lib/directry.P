@@ -30,7 +30,7 @@
 	 is_directory/1,
 	 whats_new/3,
 	 split_dirs/3,
-	 rel_path/3,
+	 rel_path/2, rel_path/3,
 	 canonical_pathname/2.
 
 :- import  ca/2, date/1, sysin/2 from scrptutl.
@@ -199,7 +199,9 @@ path([],[Dir|LDirs]) -->
 	{atom_codes(Dir,DirL)}.
 
 disk(Drive) -->
-	[LDrive], [58], {atom_codes(Drive,[LDrive])}. % 0':
+	[LDrive], ":",
+	{(LDrive > 90 -> LDriveUC is LDrive - 32 ; LDriveUC = LDrive),
+	 atom_codes(Drive,[LDriveUC])}.
 
 dirs([]) --> opt_slash, [].
 dirs([Dir|Dirs]) -->
@@ -219,6 +221,13 @@ dir([X|Y]) --> letter(X), dir(Y).
 
 letter(X) --> [X], {X \= 92, X \= 47, X \= 58}.
 
+%% rel_path(+Dest, -RelPath) makes filename +Dest relative to the
+%%  current directory
+
+rel_path(Dest, RelPath) :-
+	cwd(Orig),
+	rel_path(Orig, Dest, RelPath).
+
 %% rel_path(+Orig, +Dest, -RelPath)
 %% Makes RelPath a relative path to Dest from Orig. If drive names are
 %% given, and they are different, RelPath = Dest.
@@ -228,7 +237,7 @@ rel_path(Orig, Dest, RelPath) :-
 	split_dirs(Dest,DDrive,DDirs),
 	(   ODrive = DDrive
 	->  make_relative(ODirs,DDirs,RelPath)
-	;   atom_codes(RelPath,Dest)
+	;   RelPath = Dest
 	).
 
 make_relative([],[],'.') :- !.
