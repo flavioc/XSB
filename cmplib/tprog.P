@@ -175,11 +175,9 @@ tbody(if_then_else(Test,TGoal,FGoal),A,Pil,Pilr,Tin,Tout,M,_,
     tbody(FGoal,A,Pil3,Pil4,Tout1,Tout2,M,no,HoldRegs0,Tabled,Tabar,Sym,NC), 
     /* tvar may be in */
     merge(Tout1,Tout2,Tout), !.		/* branches of an i-t-e */
-tbody(nil,_,Pil,Pilr,T,T,_,_,_,Tabled,Tabar,_,_) :-
+tbody(nil,_,Pil,Pilr,T,T,_,_,_,Tabled,Tabar,Sym,_) :-
     ( Tabled =:= 0 -> Pil = [proceed|Pilr]
-    ; % Handle tabled preds without body.
-      % No need to insert `check_interrupt' here.
-      Pil = [new_answer_dealloc(Tabar,2)|Pilr] 
+    ; Pil = [check_interrupt(Sym,3), new_answer_dealloc(Tabar,2)|Pilr]
     ).
 
 tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
