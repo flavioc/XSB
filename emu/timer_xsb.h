@@ -24,7 +24,7 @@
 
 
 #ifndef CONFIG_INCLUDED
-#error "File configs/config.h must be included before this file"
+#error "File configs/xsb_config.h must be included before this file"
 #endif
 
 #include "setjmp_xsb.h" 

@@ -157,9 +157,9 @@ fast: prepare emu emu_clean
 prepare:
 	@cd $(src_emudir); \
 	  rm -f *.o Makefile \
-	    configs/config.h debugs/debug.h  2> /dev/null || echo "" ; \
-	  ln -s ${src_config_prefix}/config.h configs ; \
-	  ln -s ${src_config_prefix}/debug.h debugs ; \
+	    configs/xsb_config.h debugs/xsb_debug.h 2> /dev/null || echo "" ; \
+	  ln -s ${src_config_prefix}/xsb_config.h configs ; \
+	  ln -s ${src_config_prefix}/xsb_debug.h debugs ; \
 	  ln -s ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
 	  ln -s ${src_config_prefix}/emuMakefile ./Makefile
 	@cd $(srcdir)/gpp; \
@@ -167,7 +167,7 @@ prepare:
 	  ln -s ${src_config_prefix}/gppMakefile ./Makefile 
 	@rm -f $(srcdir)/build/.*.tmp
 
-emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
+emu: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	cd ${src_emudir}; \
 	    make depend; \
 	    rm -f $(srcdir)/build/.xsb_build_failed; \
@@ -196,7 +196,7 @@ module: prepare xsbmod do_cleaning inform_module
 
 # if supporting Oracle, then emumake_goal=xsbora; else emumake_goal=xsb
 # This invokes xsboramod and xsbmod goals in emuMakefile, respectively
-xsbmod: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
+xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	cd ${src_emudir}; \
 	    make $(emumake_goal)mod
 
@@ -254,9 +254,10 @@ copy_files::
 	          ${install_config_libdir} ; \
 	    chmod 644 ${install_config_libdir}/xsb_configuration.* ; \
 	    ./touch.sh ${install_config_libdir}/xsb_configuration.O ; \
-	    cp -f ${src_config_prefix}/banner.msg \
+	    cp -f ${src_config_prefix}/banner.msg ${src_config_prefix}/*.h \
 	          ${install_config_prefix} ; \
-	    chmod 644 ${install_config_prefix}/banner.msg ; \
+	    chmod 644 ${install_config_prefix}/banner.msg \
+		      ${src_config_prefix}/*.h ; \
 	    cp -f ${src_config_libdir}/* \
 	          ${install_config_libdir} 2> /dev/null || echo ""; \
 	    chmod 644 ${install_config_libdir}/* 2> /dev/null || echo ""; \

@@ -477,7 +477,7 @@ ac_config_sub=$ac_aux_dir/config.sub
 ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 
 
-# Needed by the config.h file
+# Needed by the xsb_config.h file
 cat >> confdefs.h <<\EOF
 #define CONFIG_INCLUDED 1
 EOF
@@ -2964,7 +2964,7 @@ else
 fi
 
 
-### Specify what we'll be editing into Makefile and config.h.
+### Specify what will be substituted into Makefile, xsb_config.h, etc.
 
 
 
@@ -3137,8 +3137,8 @@ trap 'rm -fr `echo " ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
 	    ${arch_config_prefix}/MSVC_Makefile.mak:MSVC_Makefile.in
-	     ${arch_config_prefix}/config.h:${config_dot_h_templ}
-${arch_config_prefix}/debug.h:def_debug.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+	     ${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
+${arch_config_prefix}/xsb_debug.h:def_debug.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -3358,8 +3358,8 @@ ac_eD='%g'
 if test "${CONFIG_HEADERS+set}" != set; then
 EOF
 cat >> $CONFIG_STATUS <<EOF
-  CONFIG_HEADERS="${arch_config_prefix}/config.h:${config_dot_h_templ}
-${arch_config_prefix}/debug.h:def_debug.in"
+  CONFIG_HEADERS="${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
+${arch_config_prefix}/xsb_debug.h:def_debug.in"
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 fi
@@ -3677,8 +3677,8 @@ chmod 555 ${scriptdir}/xsb${config_tag}  makexsb
 # These files should really be read-only, but this causes problems when
 # configuring for Windows over Samba, NFS, etc.
 chmod 644 ${arch_config_file} \
-	  ${arch_config_prefix}/config.h \
-	  ${arch_config_prefix}/debug.h \
+	  ${arch_config_prefix}/xsb_config.h \
+	  ${arch_config_prefix}/xsb_debug.h \
 	  ${arch_config_prefix}/*Makefile \
 	  ${arch_config_prefix}/MSVC*
 

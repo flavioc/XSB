@@ -24,7 +24,7 @@
 */
 
 
-#include "configs/config.h"	/* This should appear BEFORE the ifdef!	*/
+#include "configs/xsb_config.h"	/* This should appear BEFORE the ifdef!	*/
 
 extern char executable[];        /* from orient_xsb.c */
 

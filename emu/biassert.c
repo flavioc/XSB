@@ -24,8 +24,8 @@
 */
 
 
-#include "configs/config.h"
-#include "debugs/debug.h"
+#include "configs/xsb_config.h"
+#include "debugs/xsb_debug.h"
 
 /* Special debug includes */
 #include "debugs/debug_biassert.h"

@@ -23,8 +23,7 @@
 */
 
 
-#include "configs/config.h"
-#include "debugs/debug.h"
+#include "xsb_config.h"
 
 #include <stdio.h>
 #include <string.h>

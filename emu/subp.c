@@ -24,9 +24,10 @@
 */
 
 
-/* configs/config.h must be the first #include.  Please don't move it. */
-#include "configs/config.h"
-#include "debugs/debug.h"
+/* configs/xsb_config.h must be the first #include.  Pls don't move it! */
+#include "configs/xsb_config.h"
+#include "debugs/xsb_debug.h"
+
 #include "debugs/debug_attv.h"
 
 #include <stdio.h>

@@ -54,7 +54,7 @@ topdir=`echo "${build_dir}" | sed 's,/[[^/]][[^/]]*/*$,,'`
 
 AC_CONFIG_AUX_DIR($build_dir)
 
-# Needed by the config.h file
+# Needed by the xsb_config.h file
 AC_DEFINE(CONFIG_INCLUDED)
 AC_DEFINE(___ALWAYS_TRUE___)
 
@@ -359,14 +359,14 @@ arch_install_config_libdir=${arch_install_config_prefix}/lib
 arch_install_objdir=${arch_install_config_prefix}/saved.o
 
 
-dnl When running autoheader, uncoment thse 2 lines and comment the next 2.
-dnl Then move config.h.in to def_config.in.
+dnl When running autoheader, uncoment these 2 lines and comment the next 2.
+dnl Then move xsb_config.h.in to def_config.in.
 dnl There probably will be no need to run autoheader any more!
-dnl AC_CONFIG_HEADER([${arch_config_prefix}/config.h:def_config.in
-dnl  ${arch_config_prefix}/debug.h:def_debug.in])
+dnl AC_CONFIG_HEADER([${arch_config_prefix}/xsb_config.h:def_config.in
+dnl  ${arch_config_prefix}/xsb_debug.h:def_debug.in])
 
-AC_CONFIG_HEADER([${arch_config_prefix}/config.h:${config_dot_h_templ}
-${arch_config_prefix}/debug.h:def_debug.in])
+AC_CONFIG_HEADER([${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
+${arch_config_prefix}/xsb_debug.h:def_debug.in])
 
 
 dnl Find the source directory.
@@ -470,8 +470,8 @@ AC_DEFINE_UNQUOTED(CC, "${CC}")
 
 dnl Let autoconf take care of the "inline" and "const" keywords.
 if test -z "$with_os" ; then
-    dnl do testing for inlining only on Unix
-    dnl we hard-set it in config.h on windows 
+    dnl test for inlining only on Unix
+    dnl hard-set it in xsb_config.h on windows 
     AC_C_INLINE
 fi
 
@@ -1036,7 +1036,7 @@ else
 fi
 
 
-### Specify what we'll be editing into Makefile and config.h.
+### Specify what will be substituted into Makefile, xsb_config.h, etc.
 AC_SUBST(xsb_version)
 AC_SUBST(canonical)
 AC_SUBST(full_config_name)
@@ -1331,8 +1331,8 @@ chmod 555 ${scriptdir}/xsb${config_tag}  makexsb
 # These files should really be read-only, but this causes problems when
 # configuring for Windows over Samba, NFS, etc.
 chmod 644 ${arch_config_file} \
-	  ${arch_config_prefix}/config.h \
-	  ${arch_config_prefix}/debug.h \
+	  ${arch_config_prefix}/xsb_config.h \
+	  ${arch_config_prefix}/xsb_debug.h \
 	  ${arch_config_prefix}/*Makefile \
 	  ${arch_config_prefix}/MSVC*
 

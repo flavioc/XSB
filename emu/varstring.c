@@ -59,7 +59,8 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "configs/config.h"
+#include "configs/xsb_config.h"
+
 #include "configs/special.h"
 
 #include "auxlry.h"

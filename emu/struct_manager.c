@@ -23,9 +23,9 @@
 */
 
 
-/* config.h must be the first #include.  Please don't move it. */
-#include "configs/config.h"
-#include "debugs/debug.h"
+/* xsb_config.h must be the first #include.  Please don't move it. */
+#include "configs/xsb_config.h"
+#include "debugs/xsb_debug.h"
 
 #include <stdio.h>
 #include <stdlib.h>

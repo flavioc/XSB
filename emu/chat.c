@@ -25,8 +25,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "configs/config.h"
-#include "debugs/debug.h"
+#include "configs/xsb_config.h"
+#include "debugs/xsb_debug.h"
 
 #ifdef CHAT	/* have this here so that gcc is silent with -ansi */
 

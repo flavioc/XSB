@@ -35,8 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "configs/config.h"
-#include "debugs/debug.h"
+#include "configs/xsb_config.h"
+#include "debugs/xsb_debug.h"
 
 #include "auxlry.h"
 #include "psc_xsb.h"

@@ -37,8 +37,8 @@
 #endif
 #endif
 
-#include "configs/config.h"
-#include "debugs/debug.h"
+#include "configs/xsb_config.h"
+#include "debugs/xsb_debug.h"
 
 #include "auxlry.h"
 #include "cell_xsb.h"
