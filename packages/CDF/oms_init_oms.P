@@ -49,6 +49,7 @@
 :- import variant/2, subsumes/2 from subsumes.
 :- import ground/1, member/2 from basics.
 :- import abolish_table_pred/1 from tables.
+:- import concat_atom/2 from string.
 
 :- dynamic oms_checking/1.
 :- call_assert(oms_checking(partial)).
@@ -56,9 +57,19 @@
 :- [oms_exceptions].
 :- [oms_oblivion].
 
-:- (file_exists('oms_xj.xwam') -> [oms_xj]
-    ; file_exists('oms_xj.P') -> [oms_xj]
-    ; [oms_cdf]).
+:- (library_directory(Dir),
+    (concat_atom([Dir,'/oms_xj.xwam'],XJXWAM),
+     file_exists(XJXWAM)
+     ->	    consult(oms_xj)
+     ;	(concat_atom([Dir,'/oms_xj.xwam'],XJP),
+	 file_exists(XJP))
+     ->	    consult(oms_xj)
+     ;	    fail
+    ),
+    !
+    ;	   
+    consult(oms_cdf)
+   ).
 
 :- dynamic class_int/3.
 :- dynamic immediate_subclass_int/4.
