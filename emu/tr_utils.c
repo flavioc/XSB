@@ -72,16 +72,6 @@ extern void printterm(Cell, byte, int);
 
 /*----------------------------------------------------------------------*/
 
-void trie_node_element(void)
-{
-  NODEptr i;
-
-  i = (NODEptr) ptoc_int(1);
-  ctop_int(2, (Integer)Child(i));
-}
-
-/*----------------------------------------------------------------------*/
-
 bool has_unconditional_answers(SGFrame subg)
 {
   ALPtr node_ptr = subg_answers(subg);
@@ -338,6 +328,8 @@ void delete_table_trie(NODEptr x)
   struct HASHhdr *thdr;
   NODEptr node, rnod; 
 
+  if (x == NULL) return;
+
   push_node(x);
   while (node_stk_top != 0) {
     pop_node(node);
@@ -394,15 +386,6 @@ void delete_table_trie(NODEptr x)
     }
     free_node(node);
   }
-}
-
-/*----------------------------------------------------------------------*/
-
-void delete_predicate_table(void)
-{
-/* r1 contains pointer to node that is root of call trie to free */ 
-
-  delete_table_trie(((NODEptr)ptoc_int(1)));
 }
 
 /*----------------------------------------------------------------------*/

@@ -95,7 +95,6 @@
  	psc_env/2, 
 	psc_spy/2, 
 	psc_tabled/2, 
-	tip_prop/4,
 	is_incomplete/4,
 	get_osp_breg/2,
 	cut_if_leader/3,
@@ -108,7 +107,6 @@
 	slg_not/1,
 	is_xwammode/1, 
 	close_open_tables/0, 
-	print_predicate_table/1, 
 	abolish_table_info/0,
 	zero_out_profile/0, 
 	write_out_profile/0,
@@ -122,11 +120,11 @@
 	db_retract0/2,
 	db_build_prref/3,
 	db_remove_prref/1,
-	get_emu_dependent_const/2,
 	oracle_query/7,
 	odbc_exec_query/5,
 	private_builtin/11,
 	trimcore/0,
+	print_chat/0,
 	print_ls/0, print_tr/0, print_heap/2, print_cp/0, print_regs/0,
 	print_all_stacks/0, expand_heap/0, mark_heap/1, gc_heap/0,
 	'$$findall_init'/2,
@@ -138,6 +136,8 @@
 	file_function/7, conname/2, conpsc/2, 
 	machine_file_exists/1, backtrackable_buff_set_word/4,
   	is_backslashing_os/0, is_pcdos/0, slash/1.
+
+:- export set_pil_on/0, set_pil_off/0, set_prof_on/1, set_prof_off/0.
 
 /* --------------------- end of file machine.H ------------------------ */
 

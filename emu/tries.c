@@ -1682,17 +1682,6 @@ void get_lastnode_cs_retskel(void)
 }
 
 /*----------------------------------------------------------------------*/
-
-void prolog_newnode(void) 
-{
-    NODEptr i;
-  
-    /* Used only in one context hence this abuse */
-    NewNode(i,(Cell)0,NULL,NULL,NULL);
-    ctop_int(1, (Integer)i);
-}
-
-/*----------------------------------------------------------------------*/
 /* creates an empty (dummy) answer.					*/
 /*----------------------------------------------------------------------*/
 

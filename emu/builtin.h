@@ -38,6 +38,7 @@ extern void init_builtin_table(void);
 #define PSC_PROP	 4
 #define PSC_SET_TYPE	 5
 #define PSC_SET_PROP	 6
+
 #define TERM_PSC	11
 #define TERM_TYPE	12
 #define TERM_COMPARE	13
@@ -53,14 +54,13 @@ extern void init_builtin_table(void);
 #define BUFF_SET_BYTE	23
 #define CODE_CALL	24
 #define STR_LEN		25
+
 #define STR_CAT		27
 #define STR_CMP		28
 #define STR_HSH		29
 #define STR_INSERT	30
 #define CALL0		31
-
 /* some other builtins that might need hard implementation */
-
 #define STAT_STA	32
 #define STAT_CPUTIME	33
 #define CODE_LOAD	34
@@ -69,15 +69,13 @@ extern void init_builtin_table(void);
 #define BUFF_CELL	37
 #define BUFF_SET_CELL	38
 #define COPY_TERM	39
-
 /* check for substring */
 #define STR_SUB	        40
 #define DIRNAME_CANONIC 41
-
 /* for efficiency reasons, the following predicates are also implemented */
-
 #define PSC_INSERT	42
 #define PSC_IMPORT	43
+
 #define PSC_INSERTMOD	46
 #define LOAD_SEG	47
 #define FILE_GETTOKEN	48
@@ -86,31 +84,31 @@ extern void init_builtin_table(void);
 #define UNLOAD_SEG	51
 #define LOAD_OBJ	52
 
-#define GETENV			54
-#define SYS_SYSCALL		55
-#define SYS_SYSTEM		56
-#define SYS_GETHOST		57
-#define SYS_ERRNO		58
-#define FILE_STAT		60
-#define FILE_WRITEQUOTED	61
-#define FAST_GROUND		62
+#define GETENV			 54
+#define SYS_SYSCALL		 55
+#define SYS_SYSTEM		 56
+#define SYS_GETHOST		 57
+#define SYS_ERRNO		 58
 
-#define INTERN_STRING           65
-#define EXPAND_FILENAME 	66
-#define TILDE_EXPAND_FILENAME   67
-#define IS_ABSOLUTE_FILENAME    68
-#define PARSE_FILENAME        	69
+#define FILE_STAT		 60
+#define FILE_WRITEQUOTED	 61
+#define FAST_GROUND		 62
 
-#define PSC_ENV		100
-#define PSC_SPY		101
-#define PSC_TABLED	102
-#define TIP_PROP	103
-#define IS_INCOMPLETE   104
-#define GET_OSP_BREG    105
-#define CUT_IF_LEADER   106
-#define GET_PTCP	107
-#define GET_SUBGOAL_PTR	108
+#define INTERN_STRING            65
+#define EXPAND_FILENAME 	 66
+#define TILDE_EXPAND_FILENAME    67
+#define IS_ABSOLUTE_FILENAME     68
+#define PARSE_FILENAME        	 69
 
+#define PSC_ENV		        100
+#define PSC_SPY		        101
+#define PSC_TABLED	        102
+
+#define IS_INCOMPLETE           104
+#define GET_OSP_BREG            105
+#define CUT_IF_LEADER           106
+#define GET_PTCP	        107
+#define GET_SUBGOAL_PTR	        108
 #define DEREFERENCE_THE_BUCKET	109
 #define PAIR_PSC		110
 #define PAIR_NEXT		111
@@ -122,7 +120,6 @@ extern void init_builtin_table(void);
 #define CLOSE_OPEN_TABLES       118
 
 #define FILE_FUNCTION           123
-
 #define SLASH_BUILTIN           124
 
 #define ABOLISH_TABLE_INFO      126
@@ -138,15 +135,12 @@ extern void init_builtin_table(void);
 #define DB_GET_CLAUSE		137
 #define DB_BUILD_PRREF		138
 #define DB_REMOVE_PRREF		139
-#define TRIE_NODE_ELEMENT	140
-#define PROLOG_NEWNODE		141
 
 #define FORMATTED_IO            142
-
 #define TABLE_STATUS            143
 #define GET_DELAY_LISTS		144
-#define DELETE_PREDICATE_TABLE	145
 
+#define ABOLISH_TABLE_PREDICATE 146
 #define TRIE_ASSERT		147
 #define TRIE_RETRACT		148
 #define TRIE_DELETE_TERM	149
@@ -154,18 +148,16 @@ extern void init_builtin_table(void);
 #define TRIE_GET_CALL		151
 #define GET_LASTNODE_CS_RETSKEL 152
 #define CONSTRUCT_RET_FOR_CALL  153
-
 #define BREG_RETSKEL		154
 #define TRIE_RETRACT_SAFE	155
-#define GET_EMU_DEPENDENT_CONST	156
-#define TRIMCORE		158
 
+#define TRIMCORE		158
 #define NEWTRIE                 159
 #define TRIE_INTERN             160
 #define TRIE_INTERNED           161
 #define TRIE_DISPOSE            162
-#define DELETE_TRIE             164
 #define BOTTOM_UP_UNIFY         163
+#define DELETE_TRIE             164
 #define TRIE_DISPOSE_NR         165
 #define TRIE_UNDISPOSE          166
 
@@ -185,16 +177,15 @@ extern void init_builtin_table(void);
 #define COMPOUND		197
 #define CALLABLE		198
 #define IS_LIST			199
-
 #define FUNCTOR			200
 #define ARG			201
 #define UNIV			202
 
 #define HiLog_ARG		204
 #define HiLog_UNIV		205
+
 #define ATOM_CHARS		208
 #define NUMBER_CHARS		209
-
 #define PUT			210
 #define TAB			211
 
@@ -202,9 +193,10 @@ extern void init_builtin_table(void);
 #define KEYSORT			221
 
 #define ORACLE_QUERY		230
-#define ODBC_QUERY		239
+#define ODBC_EXEC_QUERY		231
 
 /* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
+#define PRINT_CHAT              239
 #define PRINT_LS                240
 #define PRINT_TR                241
 #define PRINT_HEAP              242
@@ -214,12 +206,9 @@ extern void init_builtin_table(void);
 #define EXP_HEAP                246
 #define MARK_HEAP               247
 #define GC_HEAP                 248
-
 #define FINDALL_INIT		249
 #define FINDALL_ADD		250
 #define FINDALL_GET_SOLS	251
-
 #define SOCKET_REQUEST          252
-
 #define JAVA_INTERRUPT          253
 #define FORCE_TRUTH_VALUE	254

@@ -42,6 +42,7 @@ psc_type(_PSC, _Type) :- '_$builtin'(3).
 psc_prop(_PSC, _Term) :- '_$builtin'(4).
 psc_set_type(_PSC, _Type) :- '_$builtin'(5).
 psc_set_prop(_PSC, _Term) :- '_$builtin'(6).
+
 term_psc(_Term, _PSC) :- '_$builtin'(11).
 term_type(_Term, _Type) :- '_$builtin'(12).
 term_compare(_Term1, _Term2, _Res) :- '_$builtin'(13).
@@ -57,6 +58,7 @@ buff_byte(_Buffer, _Disp, _Value) :- '_$builtin'(22).
 buff_set_byte(_Buffer, _Disp, _Value) :- '_$builtin'(23).
 code_call(_CodeAddr, _Term, _Type) :- '_$builtin'(24).
 str_len(_String, _Length) :- '_$builtin'(25).
+
 str_cat(_String1, _String2, _String3) :- '_$builtin'(27).
 str_cmp(_String1, _String2, _Res) :- '_$builtin'(28).
 str_hsh(_String, _Arity, _Size, _Res) :- '_$builtin'(29).
@@ -70,16 +72,12 @@ buff_dealloc(_Buff, _OldSize, _NewSize) :- '_$builtin'(36).
 buff_cell(_Buff, _Disp, _Cell) :- '_$builtin'(37).
 buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(38).
 copy_term0(_Term, _Result) :- '_$builtin'(39).
-
 /* check if Sub is a substring in Str */
 str_sub(_Sub, _Str, _Pos) :- '_$builtin'(40).
 str_sub(Sub, Str) :- str_sub(Sub, Str, _).
-
 %% If file is a directory, add slash, if needed, or strip extra slashes
 dirname_canonic(_File, _Canonic) :- '_$builtin'(41).
-
 /* for efficiency reasons, the following predicates are also implemented */
-
 psc_insert(_Name, _Arity, _PSC, _MName) :- '_$builtin'(42).
 psc_import(_Pname, _Arity, _MName) :- '_$builtin'(43).
 
@@ -97,9 +95,11 @@ sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(55).
 sys_system(_Command, _Res) :- '_$builtin'(56).
 sys_gethost(_Name, _Buffer) :- '_$builtin'(57).
 sys_errno(_Errno) :- '_$builtin'(58).
+
 file_stat(_File, _Which, _RetVal) :- '_$builtin'(60).
 file_writequoted(_File, _Term) :- '_$builtin'(61).
 fast_ground(_Term) :- '_$builtin'(62).
+
 intern_string(_Str,_InternedStr) :- '_$builtin'(65).
 expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(66).
 tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(67).
@@ -109,7 +109,7 @@ parse_filename(_FileName, _Dir, _Basename, _Extension) :- '_$builtin'(69).
 psc_env(_PSC, _Env) :- '_$builtin'(100).
 psc_spy(_PSC, _Spy) :- '_$builtin'(101).
 psc_tabled(_PSC, _Tabled) :- '_$builtin'(102).
-tip_prop(_Tip, _Field, _Get_or_set, _Value):- '_$builtin'(103).
+
 is_incomplete(_Tab,_SubgoalPtr,_PTCP,_SubgoalFrame):- '_$builtin'(104).
 get_osp_breg(_Osp,_Breg):- '_$builtin'(105).
 cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(106).
@@ -124,10 +124,8 @@ slg_not(_SubgoalPtr) :- '_$builtin'(114).
 
 is_xwammode(_Flag) :- '_$builtin'(117).
 close_open_tables :- '_$builtin'(118).
-print_predicate_table(_Psc):- '_$builtin'(120).
 
 file_function(_Function, _A, _B, _C, _D, _E, _F) :- '_$builtin'(123).
-
 slash(_Slash) :- '_$builtin'(124).
 
 abolish_table_info :- '_$builtin'(126).
@@ -149,8 +147,6 @@ db_remove_prref(_Prref) :- '_$builtin'(139).
 formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
 	'_$builtin'(142).
 
-get_emu_dependent_const(_ConstName, _Value) :- '_$builtin'(156).
-
 trimcore :- '_$builtin'(158).
 
 /* This is the builtin where people should put their private, experimental
@@ -161,8 +157,9 @@ private_builtin(_OpCode,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10) :-
 	'_$builtin'(180).
 
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).
-odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(239).
+odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(231).
 
+print_chat :- '_$builtin'(239).
 print_ls :- '_$builtin'(240).
 print_tr :- '_$builtin'(241).
 print_heap(_X,_Y) :-'_$builtin'(242).
@@ -172,13 +169,12 @@ print_all_stacks :- '_$builtin'(245).
 expand_heap :- '_$builtin'(246).
 mark_heap(_) :- '_$builtin'(247).
 gc_heap :- '_$builtin'(248).
-
 '$$findall_init'(_I,_C) :- '_$builtin'(249).
 '$$findall_add'(_T,_I,_C) :- '_$builtin'(250).
 '$$findall_get_solutions'(_L,_T,_I,_C) :- '_$builtin'(251).
-
 socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr) :-
 	'_$builtin'(252).
+
 /*======================================================================*/
 
 conname(Con, Name) :-
@@ -195,6 +191,16 @@ conpsc(Con, Psc) :-
 
 machine_file_exists(File) :- 
 	sys_syscall(33, Res, File, 0), Res =:= 0.
+
+/*======================================================================*/
+/* Some other stuff for convenience here; in my opinion they should be  */
+/* deleted from the system - kostis.                                    */
+/*======================================================================*/
+
+set_pil_on :- stat_set_flag(0,1).
+set_pil_off :- stat_set_flag(0,0).
+set_prof_off :- stat_set_flag(52,0).
+set_prof_on(Level) :- stat_set_flag(52,Level).
 
 /*********************************************************************/
 /* The following predicates are not builtins.  	       	       	     */

@@ -105,7 +105,6 @@ extern int	allocated_trie_hash_size(void);
 extern byte *	trie_get_returns_for_call(void);
 extern void	abolish_trie(void);
 extern void	aux_call_info(void);
-extern void	prolog_newnode(void);
 extern void	remove_open_tries(CPtr);
 extern void     init_trie_aux_areas(void);
 extern void	get_lastnode_cs_retskel(void);

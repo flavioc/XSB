@@ -121,15 +121,6 @@
 
 /*======================================================================*/
 
-/* For tip hacking */
-#define CALL_NEXT_TIP 0
-#define CALL_HASH_ADDR 1
-#define CALL_HASH_SIZE 2
-#define RET_HASH_SIZE 3
-#define FIRST_TIP 4
-
-/*======================================================================*/
-
 #define DELETED_SET 1
 
 /* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
@@ -559,7 +550,7 @@ void init_builtin_table(void)
   set_builtin_table(PSC_ENV, "psc_env");
   set_builtin_table(PSC_SPY, "psc_spy");
   set_builtin_table(PSC_TABLED, "psc_tabled");
-  set_builtin_table(TIP_PROP, "tip_prop");
+
   set_builtin_table(IS_INCOMPLETE, "is_incomplete");
   set_builtin_table(GET_OSP_BREG, "get_osp_breg");
   set_builtin_table(CUT_IF_LEADER, "cut_if_leader");
@@ -588,13 +579,10 @@ void init_builtin_table(void)
   set_builtin_table(DB_BUILD_PRREF, "db_build_prref");
   set_builtin_table(DB_REMOVE_PRREF, "db_remove_prref");
 
-  set_builtin_table(TRIE_NODE_ELEMENT, "trie_node_element");
-  set_builtin_table(PROLOG_NEWNODE, "prolog_newnode");
-
   set_builtin_table(TABLE_STATUS, "table_status");
   set_builtin_table(GET_DELAY_LISTS, "get_delay_lists");
-  set_builtin_table(DELETE_PREDICATE_TABLE, "delete_predicate_table");
 
+  set_builtin_table(ABOLISH_TABLE_PREDICATE, "abolish_table_predicate");
   set_builtin_table(TRIE_ASSERT, "trie_assert");
   set_builtin_table(TRIE_RETRACT, "trie_retract");
   set_builtin_table(TRIE_RETRACT_SAFE, "trie_retract_safe");
@@ -605,7 +593,6 @@ void init_builtin_table(void)
   set_builtin_table(CONSTRUCT_RET_FOR_CALL, "construct_ret_for_call");
   set_builtin_table(BREG_RETSKEL,"breg_retskel");
 
-  set_builtin_table(GET_EMU_DEPENDENT_CONST, "get_emu_dependent_const");
   set_builtin_table(TRIMCORE, "trimcore");
 
   set_builtin_table(PRIVATE_BUILTIN, "private_builtin");
@@ -635,8 +622,9 @@ void init_builtin_table(void)
   set_builtin_table(KEYSORT, "keysort");
 
   set_builtin_table(ORACLE_QUERY, "oracle_query");
-  set_builtin_table(ODBC_QUERY, "odbc_query");
+  set_builtin_table(ODBC_EXEC_QUERY, "odbc_exec_query");
 
+  set_builtin_table(PRINT_CHAT, "print_chat");
   set_builtin_table(PRINT_LS, "print_ls");
   set_builtin_table(PRINT_TR, "print_tr");
   set_builtin_table(PRINT_HEAP, "print_heap");
@@ -645,7 +633,6 @@ void init_builtin_table(void)
   set_builtin_table(PRINT_ALL_STACKS, "print_all_stacks");
   set_builtin_table(MARK_HEAP, "mark_heap");
   set_builtin_table(GC_HEAP, "gc_heap");
-
   set_builtin_table(FINDALL_INIT, "$$findall_init");
   set_builtin_table(FINDALL_ADD, "$$findall_add");
   set_builtin_table(FINDALL_GET_SOLS, "$$findall_get_solutions");
@@ -658,6 +645,7 @@ void init_builtin_table(void)
   set_builtin_table(FORCE_TRUTH_VALUE, "force_truth_value");
 }
 
+/*----------------------------------------------------------------------*/
 
 /* inlined definition of file_function */
 #include "io_builtins.i"
@@ -1220,32 +1208,6 @@ int builtin_call(byte number)
     psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_tip(psc));
     break; 
-  case TIP_PROP: /*reg1: +TIP; reg2: +field; reg3: +get/set; reg4: ?val*/
-    tip = (tab_inf_ptr) ptoc_addr(1);
-    disp = ptoc_int(3);
-    switch (ptoc_int(2)) {
-    case CALL_NEXT_TIP:
-      if (disp == 1) ti_next_tip(tip) = (CPtr) ptoc_int(4);
-      else if (disp == 0) ctop_int(4, (Integer)ti_next_tip(tip));
-      break;
-    case CALL_HASH_ADDR:
-      if (disp == 1) ti_call_trie_root(tip) = (CPtr) ptoc_int(4);
-      else if (disp == 0) ctop_int(4, (Integer)ti_call_trie_root(tip));
-      break;
-    case CALL_HASH_SIZE: case RET_HASH_SIZE:
-      xsb_warn("CALL_HASH_SIZE/RET_HASH_SIZE: CHS and RHS are meaningless for tries");
-      break;
-    case FIRST_TIP:
-      if (disp == 1) { /* add new tip at END of list of tips */
-	tip = (tab_inf_ptr) ptoc_int(4);
-	if (first_tip == 0) first_tip = tip;
-	else ti_next_tip(last_tip) = (CPtr) tip;
-	last_tip = tip;
-      }
-      else if (disp == 0) ctop_int(4, (Integer)first_tip);
-      break;
-    }
-    break; 
 /*----------------------------------------------------------------------*/
 
 #include "bineg.i"
@@ -1410,12 +1372,6 @@ int builtin_call(byte number)
 
 /*----------------------------------------------------------------------*/
 
-  case TRIE_NODE_ELEMENT:
-    trie_node_element();
-    break;
-  case PROLOG_NEWNODE:
-    prolog_newnode();
-    break;
   case TABLE_STATUS:  /* reg1: +term; reg2: -status (int) */
     term = ptoc_tag(1);
     if ((psc = term_psc(term)) == NULL) {
@@ -1437,8 +1393,23 @@ int builtin_call(byte number)
     }
     ctop_int(2, value);
     break;
-  case DELETE_PREDICATE_TABLE:
-    delete_predicate_table();
+  case ABOLISH_TABLE_PREDICATE:
+    term = ptoc_tag(1);
+    if ((psc = term_psc(term)) == NULL) {
+      err_handle(TYPE, 1, "abolish_table_pred", 1,
+		 "predicate (specification)", term);
+      return 0;	/* fail */
+    }
+    tip = get_tip(psc);
+    if (tip == NULL) {
+      xsb_abort("Cannot abolish tables of untabled predicate %s/%d",
+		get_name(psc), get_arity(psc));
+    } else {
+      NODEptr CallRoot = (NODEptr)ti_call_trie_root(tip);
+
+      ti_call_trie_root(tip) = NULL;
+      delete_table_trie(CallRoot);
+    }
     break;
   case TRIE_ASSERT:
     if (trie_assert())
@@ -1472,14 +1443,6 @@ int builtin_call(byte number)
     break;
   case BREG_RETSKEL:
     breg_retskel();
-    break;
-  case GET_EMU_DEPENDENT_CONST:	/* r1: +name; r2: -int */
-    tmpstr = ptoc_string(1);
-    if (!strcmp(tmpstr, "escape")) ctop_int(2, 0);
-    else {
-      xsb_abort("GET_EMU_DEPENDENT_CONST: Invalid argument 1");
-      return FALSE;
-    }
     break;
 
   case TRIMCORE:
@@ -1559,7 +1522,8 @@ int builtin_call(byte number)
       xsb_abort("DELETE_TRIE: Invalid use of this operation");
     }
     break;
-	    
+
+  case PRINT_CHAT: print_chat(1) ; return TRUE ;
   case PRINT_LS: print_ls(1) ; return TRUE ;
   case PRINT_TR: print_tr(1) ; return TRUE ;
   case PRINT_HEAP: print_heap(0,2000,1) ; return TRUE ;

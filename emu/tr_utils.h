@@ -24,9 +24,8 @@
 
 
 extern void breg_retskel(void);
-extern void trie_node_element(void);
 extern void construct_ret_for_call(void);
-extern void delete_predicate_table(void);
+extern void delete_table_trie(NODEptr);
 extern void reclaim_del_ret_list(SGFrame);
 extern void delete_return(NODEptr, SGFrame);
 extern void reclaim_ans_list_nodes(SGFrame);

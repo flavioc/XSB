@@ -1,5 +1,5 @@
 /* File:      tables.H
-** Author(s): Swift, Rao, Sagonas
+** Author(s): Terry Swift, Prasad Rao, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -30,30 +30,18 @@
 	  get_call/3, get_calls/3, get_returns/2, get_returns/3,
 	  get_residual/2,
 	  get_lastnode_cs_retskel/3, /* because it is used in intern.P */
-	  breg_retskel/4,
 	  force_truth_value/2.
 
-:- export is_trie_asserted/1, (trie_dynamic)/1, trie_assert/1, trie_assert/2,
-	  trie_retract/1, trie_retract_nr/1, trie_retract_all/1,
-	  abolish_trie_asserted/1.
-
-:- export set_pil_on/0, set_pil_off/0, /* convenience */
-	  set_prof_on/1, set_prof_off/0, /* convenience */
-	  zero_out_profile_table/0, write_out_profile_table/0.
-
-:- import abolish_table_info/0, buff_set_word/3, buff_word/3, conpsc/2,
-	  cut_if_leader/3, slg_not/1, buff_byte/3, buff_set_byte/3, 
-	  is_incomplete/4, get_osp_breg/2, get_ptcp/1, get_subgoal_ptr/2,
-          psc_tabled/2, stat_set_flag/2, tip_prop/4, get_emu_dependent_const/2,
-	  zero_out_profile/0, write_out_profile/0
-	from machine.
-
-:- import call/1, tcall/1, abort/1, writeln/1, functor/3 from standard.  
+:- export (trie_dynamic)/1, trie_assert/1, trie_assert/2,
+	  trie_retract/1, trie_retract_nr/1, trie_retract_all/1.
 
 :- import findall/3 from setof.
 :- import add_trie_index/1 from file_op.
 :- import ground/1, member/2 from basics.
 :- import retract/1, retract_nr/1, retractall/1,
 	  (dynamic)/1, t_assert/2 from assert.
+:- import call/1, tcall/1, abort/1, functor/3 from standard.  
+:- import abolish_table_info/0, is_incomplete/4, get_ptcp/1, slg_not/1,
+	  get_subgoal_ptr/2, get_osp_breg/2, cut_if_leader/3 from machine.
 
 /* ------------------- end of file tables.H --------------------------- */
