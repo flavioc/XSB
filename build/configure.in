@@ -686,9 +686,11 @@ fi
 #    fi
 #fi
 
+ODBCSRC=""
+ODBCOBJ=""
 
-#if test "${with_odbc+set}" = "set"; then
-#    if test -n "$with_os" ; then
+if test "${with_odbc+set}" = "set"; then
+    if test -n "$with_os" ; then
 #	AC_DEFINE(XSB_ODBC)
 #	cat <<EOT
 #
@@ -698,7 +700,7 @@ fi
 #
 #EOT
 #
-#    else
+    else
 #	cat <<EOT
 #
 #    Checking whether XSB can be built with ODBC support.
@@ -724,16 +726,20 @@ fi
 #	    with_odbc=no
 #	else
 #	    AC_DEFINE(XSB_ODBC)
-#	    cat <<EOT
-#
-#    Building with support for ODBC
-#
-#EOT
+	    cat <<EOT
+
+Building with support for ODBC
+
+EOT
 #	fi
 #	dnl restore CPPFLAGS
 #	CPPFLAGS="${saved_cpp_flags}"
-#    fi
-#fi
+
+    ODBCSRC="odbc_xsb.c"
+    ODBCOBJ="odbc_xsb.o"
+
+    fi
+fi
 
 if test "${with_odbc+set}" = "set"; then
     AC_DEFINE(XSB_ODBC)
@@ -1089,6 +1095,11 @@ fi
 #		${LDFLAGS}"
 #fi
 
+# dnl ODBC library 
+if test "${with_odbc}" = yes ; then
+   LDFLAGS="-lodbc32${LDFLAGS}"
+fi
+
 builtinsCFLAGS="${c_site_includes} ${builtins_opt_level} ${c_inline_level} ${CFLAGS}"
 emuloopCFLAGS="${c_site_includes} ${emuloop_opt_level} ${c_inline_level} ${CFLAGS}"
 trutilsCFLAGS="${c_site_includes} ${trutils_opt_level} ${c_inline_level} ${CFLAGS}"
@@ -1169,6 +1180,9 @@ AC_SUBST(site_prefix)
 AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
 AC_SUBST(engine_mode)
+
+AC_SUBST(ODBCSRC)
+AC_SUBST(ODBCOBJ)
 
 topdir_base=/`basename $topdir`
 topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`
