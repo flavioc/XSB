@@ -28,7 +28,9 @@
 #undef RELEASE_YEAR
 
 /* sometimes needed for C preprocessor under Linux */
+#ifndef _GNU_SOURCE
 #undef _GNU_SOURCE
+#endif
 
 /* sometimes needed for C preprocessor under HP-UX */
 #undef _HPUX_SOURCE
