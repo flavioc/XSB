@@ -30,7 +30,9 @@
 
 
 static struct stat stat_buff;
+#ifndef fileno				/* fileno may be a  macro */
 extern int    fileno(FILE *);	        /* this is defined in POSIX */
+#endif
 extern Cell   ptoc_tag(int);
 extern char   *expand_filename(char *filename);
 extern char *p_charlist_to_c_string (prolog_term, char *, char *);
