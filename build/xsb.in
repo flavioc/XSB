@@ -105,5 +105,9 @@ else
     	    	    	    | egrep -v "^${canonical}${suffix}\$" 2> /dev/null
    echo "***configuration list end"
    echo ""
+   echo "One other frequent problem: you might be over your disk quota,"
+   echo "and your XSB executable might have been deleted by the system"
+   echo "immediately after it was created."
+   echo ""
    echo "Please contact your system administrator, if you can't rebuild XSB."
 fi
