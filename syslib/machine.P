@@ -260,7 +260,4 @@ set_pil_off :- stat_set_flag(PIL_TRACE,0).
 set_prof_off :- stat_set_flag(PROFFLAG,0).
 set_prof_on(Level) :- stat_set_flag(PROFFLAG,Level).
 
-predicate_module(_Name,_Arity,_Module) :-
-	'_$builtin'(PREDICATE_MODULE).
-
 /* --------------------- end of file machine.P ------------------------ */

@@ -141,7 +141,6 @@
 	get_attributes/3,
 	delete_attributes/1,
         attv_unify/2,
-	predicate_module/3,
         interprolog_callback/3.
 
 :- export 
