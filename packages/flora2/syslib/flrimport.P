@@ -1,0 +1,104 @@
+/* File:      flrimport.P
+**
+** Author(s): kifer
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+:- compiler_options([xpp_on]).
+
+#include "flrheader.flh"
+#include "flora_terms.flh"
+
+check_args(P,A) :-
+	%% check that P is given as foo/arity
+	(functor(P,'/',_) -> true
+	; abort([Message, P, ' Arg 1 must have the form Pred/Arity'])
+	),
+	%% check that A is given as bar(_,_,_) and not as bar/Arity
+	(functor(A,'/',_)
+	-> abort([Message, A, ' Arg 2 must have the form Pred(_,_,...)'])
+	; true
+	).
+
+%% Clone A in the same module. Return a cloned A and the list of its arguments
+duplicate(A,NewA,Args) :-
+	term_psc(A,PSC), term_new(PSC,NewA),
+	(dynamic NewA),
+	NewA =.. [_|Args].
+
+%% assert the connecting rule and load
+funish_up(NewA,NewP,File,Module) :-
+	assert((NewA :- NewP)), % assert(A :- P).
+	flLoad(File,Module).     % load the module
+
+%% The following three predicate do the following:
+%% Get P in the form foo/Arity and A of the form bar(_,_,_,...)
+%% of the same arity and assert
+%%         bar(X,Y,Z) :- PREFIXfoo(X,Y,Z).
+%% for the right arity, where PREFIX is the appropriate Flora prefix for Module
+%% Make bar(...) dynamic and place it
+%% into the correct XSB module (the module where flImport is called)
+%% Use:
+%%        flImportXYZ P as A from File>>Module.
+
+%% This assumes that P is a Flora predicate
+flImportFloraPred(P,A,File,Module) :-
+	check_args(P,A),
+	P = FuncP/ArityP,
+	%% attach the workspace
+	flora_wssymbol(FuncP,Module,WSFuncP),
+	duplicate(A,NewA,Args),
+	(import WSFuncP/ArityP from usermod), % import whatever P is bound to
+	functor(NewP, WSFuncP, ArityP),
+	%% unify the args of P and A
+	NewP =.. [_|Args],
+	funish_up(NewA,NewP,File,Module).
+
+%% This assumes that P is a HiLog predicate
+flImportProlog(P,A,File,Module) :-
+	check_args(P,A),
+	P = FuncP/ArityP,
+	duplicate(A,NewA,Args),
+	(import FuncP/ArityP from usermod), % import whatever P is bound to
+	functor(NewP, FuncP, ArityP),
+	%% unify the args of P and A
+	NewP =.. [_|Args],
+	funish_up(NewA,NewP,File,Module).
+
+%% This assumes that P is a prolog predicate within a flora program.
+flImportHiLog(P,A,File,Module) :-
+	check_args(P,A),
+	P = FuncP/ArityP,
+	%% attach the workspace
+	flora_wshilog(Module,FloraHiLogWrap),
+	ArityP1 is ArityP + 1,
+	functor(NewP,FloraHiLogWrap,ArityP1),
+	arg(1,NewP,FuncP),
+	duplicate(A,NewA,Args),
+	(import FloraHiLogWrap/ArityP1 from usermod), % import Flora Hilog pred
+	%% unify the args of P and A.
+	%% In HiLog the first arg is the predicate name, which is why _,_
+	NewP =.. [_,_|Args],
+	funish_up(NewA,NewP,File,Module).
+
+

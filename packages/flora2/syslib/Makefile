@@ -44,6 +44,7 @@ ALLOBJS = flranswer.O \
 	  flrshdirect.O \
 	  flrdynmod.O \
 	  flrequality.O \
+	  flrimport.O \
 	  flrabolish.O
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
@@ -58,9 +59,11 @@ XSB_STANDARD = $(XSBDIR)/prolog_includes/standard.h
 XSB_EMU_FLAG_DEFS = $(XSBDIR)/emu/flag_defs_xsb.h
 
 FLORA_INCLUDES_DIR = ../flrincludes
+DYN_INCLUDES_DIR = ../includes
 
 FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 FLORA_ERRORS = $(FLORA_INCLUDES_DIR)/flora_errors.flh
+FLRHEADER = $(DYN_INCLUDES_DIR)/flrheader.flh
 
 
 OPTION = [optimize]
@@ -145,6 +148,9 @@ flrdynmod.O : flrdynmod.P $(FLORA_TERMS)
 
 flrequality.O : flrequality.P $(FLORA_TERMS)
 	@echo 'mc(flrequality,$(OPTION)).' >> cmd...
+
+flrimport.O: flrimport.P $(FLORA_TERMS) $(FLRHEADER)
+	@echo 'mc(flrimport,$(OPTION)).' >> cmd...
 
 
 flrabolish.O : flrabolish.P $(FLORA_TERMS)
