@@ -148,12 +148,12 @@ unsigned long subg_count, trie_hash_alloc;
     printf(" %5ld answer  check/insert attempts", ans_chk_ins);
     printf(" inserted %5ld answers  in the tables\n", ans_inserts);
 
-    if (ide_count > 0) {
-	printf(" %5d ide tab check/insert attempts", ide_chk_ins);
-	printf(" interned %5d dl elems in the tables\n", ide_count);
-	printf(" %5d idl tab check/insert attempts", idl_chk_ins);
-	printf(" interned %5d dl lists in the tables\n\n", idl_count);
-    } else printf("\n");
+/*     if (ide_count > 0) { */
+/* 	printf(" %5d ide tab check/insert attempts", ide_chk_ins); */
+/* 	printf(" interned %5d dl elems in the tables\n", ide_count); */
+/* 	printf(" %5d idl tab check/insert attempts", idl_chk_ins); */
+/* 	printf(" interned %5d dl lists in the tables\n\n", idl_count); */
+/*     } else printf("\n"); */
 
     printf(" %5d Trail unwinds,   %5ld subgoals,   %5d levels\n\n",
 	   num_unwinds, subg_count, level_num);
@@ -165,7 +165,7 @@ unsigned long subg_count, trie_hash_alloc;
 void perproc_reset_stat(void)
 {
    tds = trace_init;
-   ide_chk_ins = idl_chk_ins = 0;
+/*    ide_chk_ins = idl_chk_ins = 0; */
    ans_chk_ins = ans_inserts = 0;
    subg_chk_ins = subg_inserts = 0;
    time_start = cpu_time();
