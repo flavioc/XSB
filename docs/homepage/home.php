@@ -84,7 +84,7 @@ Interfaces to Java (distributed separately):
 <p>
 <?php include "counter.php";	?>
 <?php $number = CounterImage(); ?>
-<IMG SRC="<?php echo($number); ?>" ALIGN="left"> visitors since 05/14/2000.
+<IMG SRC="<?php echo($number); ?>" ALIGN="left"> visitors since 07/13/2001.
 
 <br>
 

@@ -69,7 +69,7 @@ Related links:
 <?php include "../counter.php";    ?>
 <?php $number = CounterImage(); ?>
 <IMG SRC="<?php echo($number); ?>" ALIGN="left">
-visits since July 9, 2000.
+visits since August 10, 2001.
 <P>
 
 <hr>
