@@ -17,6 +17,9 @@
 :- import get_term_vars/2 from basics.
 :- import call0/1 from machine.
 
+:- import arg/3 from standard.
+%- import ground/1 from basics.
+
 open :- odbc_open(oms_lazy_db,warren,'',lazy).
 dump :- dump_db_oms(lazy,_).
 clear :- clear_db_oms(lazy).
@@ -369,12 +372,15 @@ dump_db_object(_Connection,_Source).
 dump_db_memberof(Connection,Source) :-
 	object(Oid,_,NatOid,Source),
 	immediate_memberof(Oid,Cid),
-	cvt_cid_nid(Cid,NatCid,CSource),
-	odbc_sql(Connection,
-		 [term(NatOid),term(Source),term(NatCid),term(CSource)],
-		 'insert into oms_memberof (NatOid,Source,NatCid,CSource)
-		 values (?,?,?,?)',
-		 []),
+	(   Cid = object(Oid)
+	->  fail
+	;   cvt_cid_nid(Cid,NatCid,CSource),
+	    odbc_sql(Connection,
+		     [term(NatOid),term(Source),term(NatCid),term(CSource)],
+		     'insert into oms_memberof (NatOid,Source,NatCid,CSource)
+		     values (?,?,?,?)',
+		    [])
+	),
 	fail.
 dump_db_memberof(_Connection,_Source).
 
@@ -470,6 +476,52 @@ assert_rule_if_nec(H,B) :- (clause(H,B) -> true ; assert((H:-B))).
 :- index(cache_immediate_attribute_object/6,[1+2+3,3+5+6]).
 
 :- dynamic ext_caching/2.
+:- comment(cache_abstract/3,"@tt{cache_abstract(Connection,
+CallTemplate, AbstractCallTemplate)} is a dynamic predicate
+which can be used to control call abstraction, thus implementing
+a form of cache prefetching.").
+	  
+:- dynamic cache_abstract/3.
+:- index(cache_abstract/3,[1+2]).
+
+% has_index(cache_class,[2,3]).
+% has_index(cache_immediate_subclass,[1,2]).
+% has_index(cache_immediate_subclass,[3,4]).
+% has_index(cache_immediate_relationship,[1,2,3]).
+% has_index(cache_immediate_relationship,[3,5,6]).
+% has_index(cache_immediate_schrel,[1,2,3]).
+% has_index(cache_immediate_schrel,[3,5,6]).
+% has_index(cache_strel,[1,2,3]).
+% has_index(cache_strel,[3,5,6]).
+% has_index(cache_immediate_memberof,[1,2]).
+% has_index(cache_immediate_memberof,[3,4]).
+% has_index(cache_immediate_attribute,[1,2,3]).
+% has_index(cache_immediate_attribute,[3,5,6]).
+% has_index(cache_immediate_attribute_object,[1,2,3]).
+% has_index(cache_immediate_attribute_object,[3,5,6]).
+
+
+assoc_pred(cache_class(A,B,C), calls_class(A,B,C), class(A,B,C)).
+assoc_pred(cache_immediate_subclass(A,B,C,D), calls_immediate_subclass(A,B,C,D), immediate_subclass(A,B,C,D)).
+assoc_pred(cache_immediate_relationship(A,B,C,D,E,F), calls_immediate_relationship(A,B,C,D,E,F), immediate_relationship(A,B,C,D,E,F)).
+assoc_pred(cache_immediate_schrel(A,B,C,D,E,F), calls_immediate_schrel(A,B,C,D,E,F), immediate_schrel(A,B,C,D,E,F)).
+assoc_pred(cache_strel(A,B,C,D,E,F), calls_strel(A,B,C,D,E,F), strel(A,B,C,D,E,F)).
+assoc_pred(cache_immediate_memberof(A,B,C,D), calls_immediate_memberof(A,B,C,D), immediate_memberof(A,B,C,D)).
+assoc_pred(cache_immediate_attribute(A,B,C,D,E,F), calls_immediate_attribute(A,B,C,D,E,F), immediate_attribute(A,B,C,D,E,F)).
+assoc_pred(cache_immediate_attribute_object(A,B,C,D,E,F), calls_immediate_attribute_object(A,B,C,D,E,F), immediate_attribute_object(A,B,C,D,E,F)).
+	   
+% check_index(Call) :-
+% 	Call =.. [Head|_Args],
+% 	( has_index(Head,Indexes),
+% 	  check_indexes(Indexes,Call)
+% 	-> true
+% 	; writeln(no_index(Call))
+% 	).
+% check_indexes([],_).
+% check_indexes([H|T],Call) :-
+% 	arg(H,Call,Arg),
+% 	ground(Arg),
+% 	check_indexes(T,Call).
 
 class_int_cdb(Name,NatCid,Source) :-
 	ext_caching(Source,Cx),
@@ -527,7 +579,7 @@ object_int_cdb(Name,NatOid,Source) :-
 	ext_caching(Source,Cx),
 	(ob_id_map(_,Name,NatOid,Source)
 	 ->	true
-	 ;	db_call_gen(Cx,oms_object,[Name,NatOid,Source])
+	 ;  db_call_gen(Cx,oms_object,[Name,NatOid,Source])
 	).
 
 immediate_memberof_int_cdb(NatOid,Source,NatCid,CSource) :-
@@ -554,18 +606,28 @@ db_cache_call(CallTerm,CacheTerm,_,_) :-
 	call0(CallTerm),
 	is_most_general_term(Vars),
 	!,
+%%	check_index(CacheTerm),
 	call0(CacheTerm).
 db_cache_call(CallTerm,CacheTerm,TableName,Cx) :-
-	assert(CallTerm),
-	CacheTerm =.. [_|Vars],
+	(   assoc_pred(CacheTerm,_,Call),
+	    cache_abstract(Cx,Call,AbsCall)
+	->  assoc_pred(AbsCacheTerm,AbsCallTerm,AbsCall),
+	    AbsCacheTerm =.. [_|Vars],
+	    writeln(abstracting(Call,AbsCall,AbsCacheTerm,AbsCallTerm))
+	;   CacheTerm =.. [_|Vars],
+	    AbsCacheTerm = CacheTerm,
+	    AbsCallTerm = CallTerm
+	),
 	db_table_attrs(TableName,AttrList),
+	assert(AbsCallTerm),
 	split_on_bound(Vars,AttrList,BindNames,BindVars,FreeNames,FreeVars,FreeTerms),
 	findall(FreeVars,db_call_gen(Cx,TableName,BindNames,BindVars,FreeNames,FreeVars,FreeTerms),RES),
 	member(FreeVars,RES),
-	(call0(CacheTerm) -> coninc('_duplctr'),fail ; true),
-	assert(CacheTerm),
+	(call0(AbsCacheTerm) -> coninc('_duplctr'),fail ; true),
+	assert(AbsCacheTerm),
 	fail.
 db_cache_call(_,CacheTerm,_,_) :-
+%%	check_index(CacheTerm),
 	call0(CacheTerm).
 
 /*************
@@ -652,6 +714,22 @@ db_call_gen(Cx,TableName,Vars) :-
 	db_table_attrs(TableName,AttrList),
 	split_on_bound(Vars,AttrList,BindNames,BindVars,FreeNames,FreeVars,FreeTerms),
 	db_call_gen(Cx,TableName,BindNames,BindVars,FreeNames,FreeVars,FreeTerms).
+
+
+db_call_gen(XConnection,TableName,[],[],FreeNames,FreeVars,FreeTerms) :-
+	!,
+	(FreeNames == []
+	 ->	odbc_sql_local(XConnection,
+			       [],
+			       ['select ''a'' from ',TableName],
+			       [term(_)])
+	 ;	add_commas(FreeNames,FreeNames1),
+		odbc_sql_local(XConnection,
+			       [],
+			       ['select ',FreeNames1,' from ',TableName],
+			       FreeTerms),
+		FreeVars = FreeTerms
+	).
 
 db_call_gen(XConnection,TableName,BindNames,BindVars,FreeNames,FreeVars,FreeTerms) :-
 	add_equals_ands(BindNames,BindConds),
