@@ -27,6 +27,7 @@
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
+:- import compile_so/3 from foreign.
 :- import rename/2 from shell.
 
 %% Construct the file cc/xsb_libwww.H on the fly
@@ -44,15 +45,17 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
     write('%% Libwww compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
     writeln(':- export do_libwww_fetch_url___/4, do_libwww_form_request___/4.'),
-    fmt_write(':- ldoption('' %s'').', arg(LoaderFlags)), writeln(''),
+    fmt_write(':- ldoption('' %s'').', arg(LoaderFlags)), nl,
     told.
     
 
 :-  package_configuration(dir(libwww), LibwwwDir),
     slash(Slash),
     Basename = xsb_libwww,
+    Basename_util = xsb_libwww_util,
     fmt_write_string(Module, '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename)),
-    %%fmt_write_string(Module1, '%s%scc%sxsb_libwww_util', f(LibwwwDir, Slash, Slash)),
+    fmt_write_string(Module_util,
+		     '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename_util)),
     (  %% avoid recompilation: check if xsb_libwww.O exists and 
        %% is newer than xsb_libwww.c.
        search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
@@ -69,19 +72,23 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
     ;   xsb_configuration(compiler, CC),
 	xsb_configuration(libwww_ldflags, LoaderFlags),
 	xsb_configuration(libwww_ccflags, CCflags),
-	fmt_write_string(CC_opts, ' %s', CCflags),
-	%%fmt_write_string(LoaderFlags1, '%s %s.so', a(LoaderFlags,Module1)),
-	%%make_xsb_libwwwH(CC, CC_opts, LoaderFlags1),
-	make_xsb_libwwwH(CC, CC_opts, LoaderFlags),
 	xsb_configuration(config_libdir, ConfigLibdir),
+	fmt_write_string(CC_opts, ' %s', CCflags),
+	%% Compile the _util.c file into a shared object
+	compile_so(Module_util, [cc(CC), cc_opts(CC_opts)], LoaderFlags),
+	%% Move Module_util to the arch-dependent library
+	fmt_write_string(LibMod_util,
+			 '%s%s%s.so', a(ConfigLibdir,Slash,Basename_util)),
+	str_cat(Module_util, '.so', SharedLib_util),
+	rename(SharedLib_util,LibMod_util),
+	%% Make options for the main foreign module (xsb_libwww.c)
+	fmt_write_string(LoaderFlags1, '%s %s', a(LoaderFlags,LibMod_util)),
+	make_xsb_libwwwH(CC, CC_opts, LoaderFlags1),
 	str_cat(Module, '.O', Objfile),
-	%%shell([CC, ' -s -o ' , Module1, '.so', ' -shared ', Module1, '.c', '', ' ', CC_opts, ' -I /home/users/kifer/XSB/XSB/emu ', ' ', LoaderFlags]),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibObjFile,
 			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
 	rename(Objfile, LibObjFile),
-	%% Note: the .so ending is heavily Unix-centered. I dunno what this
-	%% corresponds to in windows. - mk
 	str_cat(Module, '.so', SharedLib),
 	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
 	rename(SharedLib,LibMod)

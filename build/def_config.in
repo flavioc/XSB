@@ -89,7 +89,7 @@
 /* XSB is built with support for ODBC */
 #undef XSB_ODBC
 
-/* XSB's FOREIGN_ELF is designed in away such that it supports
+/* XSB's FOREIGN_ELF is designed in a way such that it supports
    any system using the high level dlopen... functions.
 */
 
@@ -106,6 +106,10 @@
 #undef FOREIGN_ELF
 #undef FOREIGN
 #endif
+
+/* Sets runtime library search path for the dynamic loader */
+#undef RUNTIME_LD_PATH
+
 
 #ifdef ___ALWAYS_TRUE___
 #if ( defined(SUN) )

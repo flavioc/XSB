@@ -68,11 +68,14 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   char	sofilename[MAXPATHLEN];
   void	*handle;
   void	*funcep;
+  char  ldtemp; 
+
+#ifndef RUNTIME_LD_PATH
   char  *ldp1,*ldp2;
   static vstrDEFINE(ldstring_oldenv);
   static vstrDEFINE(ldstring_newenv);
   char  *libpath;
-  char  ldtemp; 
+#endif
   
   /* (1) create filename.so */
   
@@ -80,6 +83,18 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* replace the O suffix with the so suffix */
   strcpy(sofilename+strlen(pofilename)-1, "so");
   
+#ifndef RUNTIME_LD_PATH
+  /* When RUNTIME_LD_PATH is defined, the search path is built into the .so
+     file. On Solaris, one can't use putenv("LD_LIBRARY_PATH=path")
+     to change the library search path.
+     On Linux, this is possible, but still using the -Rpath option when
+     compiling the .so file is better.
+     -Rpath should be supplied with the ldoption parameter.
+
+     If RUNTIME_LD_PATH isn't defined, then we use putenv 
+     in the hope it works :-(
+  */
+
   /* (1.5) include necessary paths into LD_LIBRARY_PATH */
   libpath = getenv("LD_LIBRARY_PATH");
   if (libpath == NULL)
@@ -114,20 +129,17 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   if (putenv(ldstring_newenv.string) != 0)
     xsb_error("LOAD_OBJ_DYN: can't adjust LD_LIBRARY_PATH");
+#endif
 
-  /*
-  xsb_dbgmsg("New LD_LIBRARY_PATH: %s", getenv("LD_LIBRARY_PATH"));
-  */
   
   /* (2) open the needed object */
   handle = dlopen(sofilename, RTLD_LAZY);
 
+#ifndef RUNTIME_LD_PATH
   if (putenv(ldstring_oldenv.string) != 0)
     xsb_error("LOAD_OBJ_DYN: can't restore the value of LD_LIBRARY_PATH");
+#endif
   
-  /*
-  xsb_dbgmsg("Restored LD_LIBRARY_PATH: %s", getenv("LD_LIBRARY_PATH"));
-  */
 
   if (handle == 0) {
     xsb_mesg("%s", dlerror());
