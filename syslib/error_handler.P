@@ -103,7 +103,7 @@ type_error(Valid_type,Culprit,Predicate,Arg):-
 % These checks can be reused for various types of ISO compatability.
 
 %-------------
-% Checks that a term is not a variable
+% Checks that a term is an atom.
 check_atom(Term,Predicate,Arg) :- 
 	(atom(Term) -> 
 	    true
@@ -141,5 +141,5 @@ check_stream(Stream,Predicate,Arg) :-
 	(atom(Stream) -> 
 	    true
 	;
-	    instantiation_error(Predicate,Arg)).
+	    type_error(stream,Stream,Predicate,Arg)).
 

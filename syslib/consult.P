@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,sysmod]).
 #include "standard.h"
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
@@ -267,7 +267,7 @@ load_dyn(File) :-
 %% TLS: changed behavior to throw error rather than fail to make
 %% compatable with other ISO type errors, e.g. open/[3,4].  
 load_dyn(File,Dir) :-
-	check_atom(File,'load_dyn/1',1),
+	check_stream(File,'load_dyn/1',1),
 	get_fname(File,SExt,Base,Mod),
 	load_dyn0(SExt,Base,Mod,Dir).
 
@@ -401,7 +401,7 @@ multifile_query(ModName) :-
 	;	true).
  
  
-%% This version is used for load_dyn1 only!
+%% This version is used for load_dyn1 / load_dync1 only!
 read_and_assert(Dir) :-
 	read(Term1),
 	expand_term(Term1,Term2),

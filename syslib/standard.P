@@ -51,18 +51,10 @@
 
 set_input(Stream):- see(Stream).
 
-see(Var) :- 
-	var(Var), !, 
-	abort('Uninstantiated argument 1 of see/1, cannot see!').
-see(user) :- 
-	!, 
-	see0(userin).
-see(F) :- 
-	\+ number(F),!,
-	see0(F).	% Note that this captures ``see(userin)''
-see(F):- 
-	number(F),
-	abort([F,' is not a proper stream identifier, cannot see.']).
+% whenever streams are fixed, dont forget userin and user.
+see(Stream) :- 
+	check_stream(Stream,'see/1',1),
+	see0(Stream).
 
 see0(F) :- 
 	conpsc(F, PSC),
@@ -104,18 +96,10 @@ seen :- conpsc(current_input, CurinPsc),
 
 set_output(Stream):- tell(Stream).
 
-tell(Var) :- 
-        var(Var), !,
-        abort('Uninstantiated argument 1 of tell/1, cannot tell!').
-tell(user) :- 
-	!, 
-	tell0(userout).
-tell(F) :- 
-	\+ number(F),
-	tell0(F).	% Note that this captures ``tell(userout)''
-tell(F) :- 
-	number(F),
-	abort([F,' is not a proper stream identifier, cannot tell.']).
+% whenever streams are fixed, dont forget userout and user.
+tell(Stream) :- 
+	check_stream(Stream,'tell/1',1),
+	tell0(Stream).
 
 tell0(F) :- 
 	conpsc(F, PSC),
@@ -156,14 +140,10 @@ told :- conpsc(current_output, CuroutPsc),
 	psc_set_prop(CuroutPsc, UserPsc).
 
 file_exists(F) :- 
-	( atom(F) ->
-		expand_filename(F, EF),
-		machine_file_exists(EF)
-	; var(F) ->
-		abort('Uninstantiated argument 1 of file_exists/1')
-	; abort('Wrong type in argument 1 of file_exists/1')
-	).
-
+	check_nonvar(F,'file_exists/1',1),
+	check_atom(F,'file_exists/1',1),
+	expand_filename(F, EF),
+	machine_file_exists(EF).
 
 open(File,_,_):-
 	var(File), !, 

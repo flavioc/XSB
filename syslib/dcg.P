@@ -94,7 +94,6 @@ tphrase_print_words :-
 	fail.
 tphrase_print_words.
 
-
 dcg((LHS --> RHS), (OutHead :- OutBody)) :-
 	( functor(LHS, ',', 2) -> 
 		arg(1, LHS, Non_Terminal),

@@ -43,7 +43,7 @@
 :- import compile/4 from compile.
 :- import predicate_property/2, current_input_port/1 from curr_sym.
 :- import default_assert_size/1 from config.
-:- import check_atom/3 from error_handler.
+:- import check_stream/3 from error_handler.
 :- import file_time/2, file_close/1 from file_io.
 :- import '_$index'/3, '_$trie_asserted'/1 from file_op.
 :- import compile_cH/5 from foreign.
