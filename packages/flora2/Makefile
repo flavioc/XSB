@@ -173,7 +173,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ *.O
+	/bin/rm -f *~ *.O ../flora2.O
 	cd closure; $(MAKE) clean
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean
