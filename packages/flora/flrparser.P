@@ -82,6 +82,15 @@ rule(table_directive(PAs)) -->
 	rule_delimeter,
 	!.
 
+rule(dynamic_directive(PAs)) -->
+	imply_symbol,
+	white_space0,
+	atom_name(Dynamic),
+	{atom_codes(Dynamic,"dynamic")},
+	predicate_arity_list(PAs),
+	rule_delimeter,
+	!.
+
 rule(table_directive(auto_table)) -->
 	imply_symbol,
 	white_space0,

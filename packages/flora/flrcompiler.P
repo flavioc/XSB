@@ -138,6 +138,9 @@ compile_flogic(query(Body,BodyVars),[query(BodyCode,NVs)],Opts) :-
 compile_flogic(table_directive(X),[table_directive(X)],Opts) :-
 	retract_options(Opts),
 	!.
+%%compile_flogic(dynamic_directive(X),[dynamic_directive(X)],Opts) :-
+%%	retract_options(Opts),
+%%	!.
 
 /***************************************************************************/
 compile_flogic(export_directive(_,_),[],Opts) :-
