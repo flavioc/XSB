@@ -2,6 +2,8 @@
 #
 # $Id$
 
+.PHONY: all manual1 manual2
+
 all: manual1 manual2
 
 manual1:
