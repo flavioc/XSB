@@ -29,10 +29,13 @@
 
 #include "file_modes_xsb.h"
 
+#if (defined(CYGWIN))
+#include <fcntl.h>
+#endif
+
 static struct stat stat_buff;
 extern char   *expand_filename(char *filename);
 extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
-
 
 static FILE *stropen(char *str)
 {
@@ -121,26 +124,45 @@ inline static xsbBool file_function(void)
 	ctop_int(3, offset);
     }
     break;
-  case XSB_FILE_OPEN:
-    /* file_function(4, +FileName, +Mode, -IOport)
-       When read, mode = 0; when write, mode = 1, 
-       when append, mode = 2, when opening a 
-       string for read mode = 3 */
+  case XSB_FILE_OPEN: {
+    /* file_function(4, +FileName, +Mode, -IOport) TLS: changing modes
+     and differentiating binaries, so its best to not allow integer
+     modes any more */
+
+    int str_type = 0;
+    char string_mode[3];
 
     tmpstr = ptoc_longstring(2);
     pterm = reg_term(3);
-    if (isinteger(pterm)|isboxedinteger(pterm))
-      mode = oint_val(pterm);
-    else if (isstring(pterm)) {
-      switch ((string_val(pterm))[0]) {
-      case 'r': mode = OREAD; break;
-      case 'w': mode = OWRITE; break;
-      case 'a': mode = OAPPEND; break;
+
+    if (isstring(pterm)) {
+      strcpy(string_mode,string_val(pterm));
+
+      switch ((string_mode)[0]) {
+      case 'r': 
+	mode = OREAD; 
+	if ((string_mode)[1] == 'b')
+	  str_type = BINARY_FILE_STREAM;
+	else  str_type = TEXT_FILE_STREAM;
+	break;
+      case 'w': 
+	mode = OWRITE; 
+	if ((string_mode)[1] == 'b')
+	  str_type = BINARY_FILE_STREAM;
+	else  str_type = TEXT_FILE_STREAM;
+	break;
+      case 'a': 
+	mode = OAPPEND; 
+	if ((string_mode)[1] == 'b')
+	  str_type = BINARY_FILE_STREAM;
+	else  str_type = TEXT_FILE_STREAM;
+	break;
       case 's':
-	if ((string_val(pterm))[1] == 'r')
+	str_type = STRING_STREAM;
+	if ((string_mode)[1] == 'r')
 	  /* reading from string */
 	  mode = OSTRINGR;
-	else if ((string_val(pterm))[1] == 'w')
+	else if ((string_mode)[1] == 'w')
 	  /* writing to string */
 	  mode = OSTRINGW;
 	else
@@ -149,11 +171,15 @@ inline static xsbBool file_function(void)
       default: mode = -1;
       }
     } else
-      xsb_abort("[FILE_OPEN] File opening mode must be an atom or an integer");
+      xsb_abort("[FILE_OPEN] File opening mode must be an atom.");
 
     switch (mode) {
-      /* "b" does nothing, but POSIX allows it */
-    case OREAD:   strmode = "rb"; break; /* READ_MODE */
+
+      /* In UNIX the 'b" does nothing, but in Windows it
+	 differentiates a binary from a text file.  If I take the 'b'
+	 out, this breaks the compiler. */
+
+    case OREAD: strmode = "rb"; break; /* READ_MODE */
     case OWRITE:  strmode = "wb"; break; /* WRITE_MODE */
     case OAPPEND: strmode = "ab"; break; /* APPEND_MODE */
     case OSTRINGR:
@@ -175,12 +201,17 @@ inline static xsbBool file_function(void)
     /* we reach here only if the mode is OREAD,OWRITE,OAPPEND */
     addr = expand_filename(tmpstr);
 
-    if (!xsb_intern_file("FILE_OPEN",addr, &ioport,strmode))
+    /*    printf("xsb_intern_file addr %s,string_mode %s\n",addr,string_mode); */
+
+
+    if (!xsb_intern_file("FILE_OPEN",addr, &ioport,strmode)) {
+      open_files[ioport].stream_type = str_type;
       ctop_int(4,ioport);
+    }
     else ctop_int(4,-1);
 
     break;
-
+  }
     /* TLS: handling the case in which we are closing a flag that
        we're currently seeing or telling.  Probably bad programming
        style to mix streams w. open/close, though. */
@@ -198,6 +229,7 @@ inline static xsbBool file_function(void)
 	open_files[io_port].file_ptr = NULL;
 	open_files[io_port].file_name = NULL;
 	open_files[io_port].io_mode = '\0';
+	open_files[io_port].stream_type = NULL;
 	if (flags[CURRENT_INPUT] == io_port) 
 	  { flags[CURRENT_INPUT] = STDIN;}
 	if (flags[CURRENT_OUTPUT] == io_port) 
@@ -408,7 +440,7 @@ inline static xsbBool file_function(void)
     addr = expand_filename(tmpstr);
     SET_FILEPTR(fptr, ptoc_int(4));
     fflush(fptr);
-    fptr = freopen(addr, strmode, fptr);
+    fptr = freopen(addr, string_val(pterm), fptr);
 
     if (fptr) {
       if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
@@ -453,8 +485,8 @@ inline static xsbBool file_function(void)
       /* user wanted dup-like functionality */
       dest_fd = dup(src_fd);
       if (dest_fd >= 0) {
-#ifdef WIN_NT
-	/* NT doesn't have fcntl(). Brain damage? */
+#if (defined (WIN_NT) && ! defined(CYGWIN))
+	/* NT doesn't have fcntl(). Brain damage? But Cygwin does */
 	mode = "r+";
 #else /* Unix */ 
 	int fd_flags;
@@ -531,15 +563,20 @@ inline static xsbBool file_function(void)
     break;
   }
 
-  case FD2IOPORT: { /* fd2ioport(+Pipe, -IOport) */
-    /* this can take any C file descriptor and make it into an XSB I/O port */
-    int pipe_fd;
+  case FD2IOPORT: { /* fd2ioport(+Pipe, -IOport,+Mode) */
+    /* this can take any C file descriptor and make it into an XSB I/O port.
+        For backward compatability,mode may not be used -- where it is "u" */
+    int pipe_fd, i;
     char *mode=NULL;
 #ifndef WIN_NT /* unix */
     int fd_flags;
 #endif
-
     pipe_fd = ptoc_int(2); /* the C file descriptor */
+    pterm = reg_term(4);
+
+    if (isstring(pterm)) {
+      if ((string_val(pterm))[0] == 'u') {
+	/* Need to try to find mode */
 #ifdef WIN_NT
     /* NT doesn't have fcntl(). Brain damage? */
     mode = "r+";
@@ -554,11 +591,17 @@ inline static xsbBool file_function(void)
       mode = "r+";
     }
 #endif
+      } 
+      else mode = string_val(pterm);
+    }
+    else xsb_abort("[FD2IOPORT] Opening mode must be an atom.");
 
     fptr = fdopen(pipe_fd, mode);
 
     /* xsb_intern_file will return -1, if fdopen fails */
-    ctop_int(3, xsb_intern_fileptr(fptr, "FD2IOPORT","created from fd",mode));
+    i = xsb_intern_fileptr(fptr, "FD2IOPORT","created from fd",mode);
+    ctop_int(3, i);
+    open_files[i].stream_type = PIPE_STREAM;
     break;
   }
     
@@ -645,11 +688,13 @@ inline static xsbBool file_function(void)
     int i; 
     for (i= 0 ; i < MAX_OPEN_FILES ; i++) {
       if ((int) open_files[i].file_name == 0) {
- 	printf("i: %d File Ptr %p Mode %c\n",
- 	        i,open_files[i].file_ptr,open_files[i].io_mode);
+ 	printf("i: %d File Ptr %p Mode %c Type %d \n",
+ 	        i,open_files[i].file_ptr,open_files[i].io_mode,
+	        open_files[i].stream_type);
       } else {
-	printf("i; %d File Ptr %p Name %s Mode %c \n",i,
-	       open_files[i].file_ptr, open_files[i].file_name,open_files[i].io_mode);
+	printf("i; %d File Ptr %p Name %s Mode %c Type %d\n",i,
+	       open_files[i].file_ptr, open_files[i].file_name,open_files[i].io_mode,
+	       open_files[i].stream_type);
       }
     }
     break;

@@ -159,7 +159,7 @@ edit(File) :-
 expand_filename_no_prepend(In,Out):- 
 	tilde_expand_filename(In,Out).
 
-%% sys_exit(-ExitCode) exit subprocess unconditionally with ExitCode
+%% sys_exit(+ExitCode) exit subprocess unconditionally with ExitCode
 sys_exit(ExitCode) :- sys_syscall(SYS_exit,_,ExitCode,_).
 
 %% TLS: adding error checking as I get hit.  Shouldn't add perceptable

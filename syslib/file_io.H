@@ -68,7 +68,7 @@
 	  file_read_line_atom/1, file_read_line_atom/2,
 	  file_read_line_list/1, file_read_line_list/2,
 	  file_reopen/4, file_clone/3,
-	  pipe_open/2, fd2ioport/2, 
+	  pipe_open/2, fd2ioport/2, fd2iostream/3, 
 	  file_clearerr/1, tmpfile_open/1,
   print_openfiles/0, check_enumerate_stream_or_alias/4, 
   check_stream_or_alias/4, check_open_stream_or_alias/5, add_alias/2,

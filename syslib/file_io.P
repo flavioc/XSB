@@ -71,7 +71,7 @@ file_pos(IOport, Pos) :-
 	file_function(FILE_POS, IOport, Pos, _Ret, _E, _,_).
 file_open(FileName, Mode, IOport) :-
 	file_function(XSB_FILE_OPEN, FileName, Mode, IOport, _E, _,_).
-/* TLS: this one is obsolescent */
+/* TLS: file_close/1 is obsolescent */
 file_close(IOport) :-
 	file_function(FILE_CLOSE,IOport,NOFORCE_FILE_CLOSE,_Y,_Z, _,_).
 file_close(IOport,Force) :-
@@ -200,7 +200,9 @@ pipe_open(ReadPipe, WritePipe) :-
 %% This should be done on both ends: by the parent XSB process and by 
 %% the child XSB process
 fd2ioport(Pipe, IOport) :-
-	file_function(FD2IOPORT, Pipe, IOport,_,_,_,_).
+	file_function(FD2IOPORT, Pipe, IOport,"u",_,_,_).
+fd2iostream(Pipe, Mode,IOstream) :-
+	file_function(FD2IOPORT, Pipe, IOstream,Mode,_,_,_).
 
 
 /***************************************************************

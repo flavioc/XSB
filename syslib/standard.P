@@ -95,7 +95,11 @@ told :-    stat_flag(CURRENT_OUTPUT, Str),
 	(Str > 6 -> close(Str) ; true),
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 
-%-------------------------------------------------
+%----------------------------------------------------------------------------------------------------
+% Opening and Closing
+%----------------------------------------------------------------------------------------------------
+
+% TLS considering user, userin, userout, user_in and user_out as aliases.
 
 open(File,_,_):-
 	var(File), !, 
@@ -112,19 +116,40 @@ open(userout,write,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 open(user_out,write,STDOUT):-!,  % ISO
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(F,Mode,Stream):-
-	check_nonvar(Mode,open/3,2),
-	translate(Mode,M),
-	file_open(F,M,Stream),
+open(pipe(FileDescr),Mode,Stream):- !,
+	file_translate(Mode,M),
+	fd2iostream(FileDescr,M,Stream),
 	(Stream < 0 -> 
-	    permission_error(open,file,F,open/3)
+	    permission_error(open,file,FileDescr,open/3)
 	 ;  true).
+open(atom(Atom),Mode,Stream):- !,
+	(Mode == read -> 
+	    true
+	 ;  domain_error(read,Mode,open/3,2) ),
+	 file_open(Atom, sr, Stream),
+	 writeln(stream(Stream)),
+	 (Stream < -1000 -> 
+	    permission_error(open,file,Atom,open/3)
+	 ;  true).
+open(file(File),Mode,Stream):- !,
+	open(File,Mode,Stream).
+open(File,Mode,Stream):- 
+	atom(File),!,
+	file_translate(Mode,M),
+	file_open(File, M, Stream),
+	(Stream < 0 -> 
+	    permission_error(open,file,File,open/3)
+	 ;  true).
+open(SrcSnk,_,_):- 
+	domain_error(source_or_sink,SrcSnk,open/3,1).
 
-translate(read,r):- !.
-translate(write,w):- !.
-translate(append,a):- !.
-translate(Mode,_):- 
-	domain_error(io_mode,Mode,open/3,2).
+file_translate(read,r):- !.
+file_translate(write,w):- !.
+file_translate(write_binary,wb):- !.
+file_translate(append,a):- !.
+file_translate(append_binary,ab):- !.
+file_translate(Mode,_):- 
+	domain_error(file_io_mode,Mode,open/3,2).
 
 %-------------------------------------------------
 
@@ -191,9 +216,9 @@ examine_close_options_1([force(Bool)|T],Res):- !,
 examine_close_options_1([Option|_],_):- 
 	domain_error(close_option,Option,open/4,4).
 
-%--------------------------%
+%-----------------------------------------------------------------------%
 % Character I/O Predicates %
-%--------------------------%
+%-----------------------------------------------------------------------%
 
 nl(S_or_A) :-  
 	check_open_stream_or_alias(S_or_A,nl/1,1,output,Str),

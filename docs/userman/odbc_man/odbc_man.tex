@@ -2,7 +2,9 @@
 %====================================================
 
 \begin{center}
-{\Large {\bf By Baoqiu Cui, Lily Dong, and David S. Warren }}
+{\Large {\bf By Baoqiu Cui, Lily Dong, and David S. Warren
+}}~\footnote{This interface was partly based on the XSB-Oracle
+Interface by Hassan Davulcu, Ernie Johnson and Terrance Swift.}.
 \end{center}
 
 \section{Introduction}
@@ -80,6 +82,7 @@ ODBC Administrator, it can be connected to in the following way:
 | ?- odbc_open(data_source_name, username, passwd).
 \end{verbatim}
 
+\index{\texttt{odbc\_open/3}}
 If the connection is successfully made, the predicate invocation will
 succeed.  This step is necessary before anything can be done with the
 data sources since it gives XSB the opportunity to initialize system
@@ -92,6 +95,7 @@ To close the current session use:
 \begin{verbatim}
 | ?- odbc_close.
 \end{verbatim}
+\index{\texttt{odbc\_close/0}}
 
 and XSB will give all the resources it allocated for this session back
 to the system.
@@ -108,12 +112,14 @@ versions are:
 \begin{verbatim}
 | ?- odbc_open(data_source_name, username, passwd, connectionName).
 \end{verbatim}
+\index{\texttt{odbc\_open/4}}
 
 and
 
 \begin{verbatim}
 | ?- odbc_close(connectionName).
 \end{verbatim}
+\index{\texttt{odbc\_close/1}}
 
 A list of existing Data Source Names and descriptions can be obtained
 by backtracking through \texttt{odbc\_data\_sources/2}. For example:
@@ -121,12 +127,13 @@ by backtracking through \texttt{odbc\_data\_sources/2}. For example:
 \begin{verbatim}
 | ?- odbc_data_sources(DSN,DSNDescr).
  
-DSN = myoms
+DSN = mycdf
 DSNDescr = MySQL driver;
  
-DSN = mywinoms
+DSN = mywincdf
 DSNDescr = TDS driver (Sybase/MS SQL);
 \end{verbatim}
+\index{\texttt{odbc\_data\_sources/2}}
 
 \subsection{Accessing Tables in Data Sources Using SQL}
 %=======================================
@@ -139,6 +146,7 @@ The basic call is:
 \begin{verbatim}
 | ?- odbc_sql(BindVals,SQLStmt,ResultRow).
 \end{verbatim}
+\index{\texttt{odbc\_sql/3}}
 \noindent
 where {\tt BindVals} is a list of (ground) values that correspond to
 the parameter indicators in the SQL statement (the '?'s); {\tt
@@ -195,6 +203,7 @@ When connecting to multiple data sources, you should use the form:
 \begin{verbatim}
 | ?- odbc_sql(ConnectionName,BindVals,SQLStmt,ResultRow).
 \end{verbatim}
+\index{\texttt{odbc\_sql/4}}
 
 For example, we can define a predicate, {\tt get\_test\_name\_price},
 which given a test ID, retrieves the name and price of that test from
@@ -232,6 +241,7 @@ for each mode in which the predicate is called.
 
 To declare a predicate to access a database table, a user must use the
 {\tt odbc\_import/2} interface predicate.
+\index{\texttt{odbc\_import/2}}
 
 The syntax of  {\tt odbc\_import/2} is as follows:
 
@@ -262,6 +272,111 @@ When connecting to multiple data sources, you should use the form:
                  'PredicateName').
 \end{verbatim}
 
+
+\subsection{Handling NULL values}\label{NULL-values}
+%===========================================
+
+The interface treats NULL's by introducing a single valued function
+{\tt 'NULL'/1} whose single value is a unique $($Skolem$)$ constant.
+For example a NULL value may be represented by 
+\begin{verbatim}
+	'NULL'(null123245) 
+\end{verbatim} 
+Under this representation, two distinct NULL values will not unify.
+On the other hand, the search condition {\tt IS NULL Field} can be
+represented in XSB as {\tt Field = 'NULL'(\_)}
+
+Using this representation of NULL's the following protocol for queries
+and updates is established.
+
+\subsubsection{Queries}
+%
+\begin{center}
+
+{\tt | ?- dept('NULL'(\_),\_,\_).}
+\end{center}
+
+Generates the query: 
+
+
+\begin{verbatim}
+SELECT NULL , rel1.DNAME , rel1.LOC
+			  FROM DEPT rel1
+			  WHERE rel1.DEPTNO IS NULL;
+\end{verbatim}
+
+Hence, {\tt 'NULL'(\_)} can be used to retrieve rows with NULL values 
+at any field.
+
+{\tt 'NULL'/1} fails the predicate whenever it is
+used with a bound argument.
+\begin{center}
+
+{\tt | ?- dept('NULL'(null2745),\_,\_). $\rightarrow$ fails always.}
+\end{center}
+
+
+\subsubsection{Query Results}
+When returning NULL's as field values, the interface returns {\tt NULL/1} 
+function with a unique integer argument serving as a skolem constant.
+
+Notice that the above guarantees the expected semantics for the join 
+statements.  In the following example, even if {\tt Deptno} is NULL for some rows in {\tt emp} or {\tt dept} tables, the query still evaluates the join successfully.
+\begin{center}
+
+{\tt | ?- emp(Ename,\_,\_,\_,Deptno),dept(Deptno,Dname,Loc)..}
+\end{center}
+
+\subsubsection{Inserts}
+
+To insert rows with NULL values you can use {\tt Field = 'NULL'(\_)} or
+{\tt Field = 'NULL'(null2346)}.  For example:
+
+\begin{center}
+
+{\tt | ?- emp\_ins('NULL'(\_), ...).  $\rightarrow$ inserts a NULL value for ENAME}
+\end{center}
+\begin{center}
+
+{\tt | ?- emp\_ins('NULL'('bound'), ...) $\rightarrow$ inserts a NULL value for ENAME.}
+
+\end{center}
+
+
+\subsubsection{Deletes}
+
+
+To delete rows with NULL values at any particular {\tt FIELD} use {\tt Field = 'NULL'(\_)}, {\tt 'NULL'/1} with a free argument.  When {\tt 'NULL'/1} 's argument
+is bound it fails the delete predicate always.  For example:
+
+\begin{center}
+{\tt | ?- emp\_del('NULL'(\_), ..).  $\rightarrow$ adds ENAME IS NULL to the generated SQL statement}
+\end{center}
+\begin{center}
+
+{\tt | ?- emp\_del('NULL'('bound'), ...).  $\rightarrow$ fails always}
+
+\end{center}
+
+The reason for the above protocol is to preserve the semantics of deletes, 
+when some free arguments of a delete predicate get bound by some preceding
+predicates.  For example in the following clause, the semantics is preserved 
+even if the {\tt Deptno} field is NULL for some rows.
+
+
+\begin{center}
+
+{\tt | ?- emp(\_,\_,\_,\_,Deptno), dept\_del(Deptno).}
+\end{center}
+
+\section{Cursor Management} \label{odbc:cursors}
+%=======================================================
+Since XSB-ODBC interface is a simulation of XSB-ORACLE interface on
+UNIX platform, it inherits all limitations of the XSB-ORACLE
+interface, i.e. it is limited to 100 open cursors, cursors could leak
+when using cuts and etc.  Hence the guidelines for XSB-ORACLE
+interface application developers are also for XSB-ODBC interface
+application developers.  
 
 \subsection{Using the Relation Level Interface}
 %===========================================
@@ -311,7 +426,7 @@ to the value {\tt 'X-Ray'}.\newline
 
 Also as a courtesy to Quintus Prolog users we have provided
 compatibility support for some PRODBI predicates which access tables
-at a relational level.
+at a relational level~\footnote{This predicate is obsolescent and {\tt odbc\_import/\{2,3,4\}} should be used instead.}.
 
 \begin{verbatim}
 | ?- odbc_attach(PredicateName, table(TableName)).
@@ -341,6 +456,7 @@ One can use the view level interface through the predicate {\tt odbc\_query/2}:
 \begin{verbatim}
 | ?- odbc_query('QueryName'(ARG1, ..., ARGn), DatabaseGoal).
 \end{verbatim}
+\index{\texttt{odbc\_query/2}}
 All arguments are standard XSB terms.  {\tt ARG1}, {\tt ARG2}, ...,
 {\tt ARGn} define the attributes to be retrieved from the database,
 while {\tt DatabaseGoal} is an XSB goal (i.e. a possible body of a
@@ -462,7 +578,8 @@ D = 516-252-100
 E = 2.5
 \end{verbatim}
 
-All database queries defined by odbc\_query can be queried with any mode.
+All database queries defined by {\tt odbc\_query/\{2,3\}} can be
+queried with any mode.
 
 Note that at each call to a database relation or rule, the
 communication takes place through bind variables.  The corresponding
@@ -478,6 +595,7 @@ If connecting to multiple data sources, use the form:
 \begin{verbatim}
  :- odbc_query(connectionName,'QueryName'(ARG1, ..., ARGn), DatabaseGoal).
 \end{verbatim}
+\index{\texttt{odbc\_query/3}}
 
 
 \subsection{Insertions and Deletions of Rows through the Relational Level}
@@ -507,6 +625,7 @@ yes
 
 yes
 \end{verbatim}
+\index{\texttt{odbc\_insert/\{2,3\}}}
 This will insert the row: ('306',NULL, 2,'3') into the table {\tt Room}. Note that 
 any call to {\tt room\_ins/7} should have all its arguments bound.
 
@@ -524,6 +643,7 @@ limited to simple comparisons.  For example assuming
 
 yes
 \end{verbatim}
+\index{\texttt{odbc\_delete/\{2,3\}}}
 
 After this declaration you can use:
 \begin{verbatim}
@@ -552,11 +672,14 @@ lower-level interface: {\tt odbc\_sql}.
 \subsection{Access to Data Dictionaries}
 %======================================
 
-The following utility predicates provide users the tools to access data 
-dictionaries.  Users of Quintus Prolog may note that these predicates are all 
-PRODBI compatible.  A brief description of these predicates is as follows:
+The following utility predicates provide users with tools to access
+data dictionaries~\footnote{Users of Quintus Prolog may note that
+these predicates are all PRODBI compatible.}.  A brief description of
+these predicates is as follows:
 \begin{description}
 
+\index{\texttt{odbc\_show\_schema/1}}
+\index{\texttt{odbc\_get\_schema/2}}
 \item[odbc\_show\_schema(accessible(Owner))]
         Shows the names of all accessible tables that are owned by Owner. (This list can be long!) If Owner is a variable, all tables will be shown, grouped by owner.
 
@@ -564,7 +687,7 @@ PRODBI compatible.  A brief description of these predicates is as follows:
         Shows just those tables that belongs to user.
 
 \item[odbc\_show\_schema(tuples('Table'))]
-        Shows the contents of the base table named {\tt 'Table'}.
+        Shows all rows of the database table named {\tt 'Table'}.
 
 \item[odbc\_show\_schema(arity('Table'))]
         The number of fields in the table {\tt 'Table'}.
@@ -576,10 +699,10 @@ PRODBI compatible.  A brief description of these predicates is as follows:
 For retrieving above information use:
 \begin{itemize}
 
-\item odbc\_get\_schema(accessible(Owner),List)
-\item odbc\_get\_schema(user,List)
-\item odbc\_get\_schema(arity('Table'),List)
-\item odbc\_get\_schema(columns('Table'),List)
+\item {\tt odbc\_get\_schema(accessible(Owner),List)}
+\item {\tt odbc\_get\_schema(user,List)}
+\item {\tt odbc\_get\_schema(arity('Table'),List)}
+\item {\tt odbc\_get\_schema(columns('Table'),List)}
 \end{itemize}
 
 The results of above are returned in List as a list.
@@ -588,6 +711,7 @@ The results of above are returned in List as a list.
 
 \begin{description}
 
+\index{\texttt{odbc\_create\_table/2}}
 \item[odbc\_create\_table('TableName','FIELDs')]
         {\tt FIELDS} is the field specification as in SQL.
 \begin{verbatim}
@@ -598,6 +722,7 @@ eg. odbc_create_table('MyTable', 'Col1 NUMBER,
 \end{verbatim}
 
 
+\index{\texttt{odbc\_create\_index/3}}
 \item[odbc\_create\_index('TableName','IndexName', index(\_,Fields))]
         {\tt Fields} is the list of columns for which an index
         is requested.  For example:
@@ -606,10 +731,13 @@ eg. odbc_create_table('MyTable', 'Col1 NUMBER,
 odbc_create_index('Doctor', 'DocKey', index(_,'DId')).
 \end{verbatim}
 
+\index{\texttt{odbc\_delete\_table/1}}
 \item[odbc\_delete\_table('TableName')] To delete a table named {\tt 'TableName'}
 
+\index{\texttt{odbc\_delete\_view/1}}
 \item[odbc\_delete\_view('ViewName')] To delete a view named {\tt 'ViewName'}
 
+\index{\texttt{odbc\_delete\_index/1}}
 \item[odbc\_delete\_index('IndexName')] To delete an index named {\tt 'IndexName'}
 \end{description}
 
@@ -627,6 +755,7 @@ become permanent (or are ignored.).
 
 The predicate {\tt odbc\_transaction/1} supports these operations.
 
+\index{\texttt{odbc\_transaction/1}}
 \begin{description}
 \item[odbc\_transaction(autocommit(on))]
         Turns on autocommit, so that all update operations will be
@@ -643,44 +772,63 @@ The predicate {\tt odbc\_transaction/1} supports these operations.
         point.  (Only has an effect if autocommit is off).
 \end{description}
 
+%---------------------------------------------------------------------------------
+\comment{
 \subsection{Handling NULL Values}
 %=======================================
 Null value is handled in the same way as that of XSB Oracle interface.
 Please refer to Section \ref{NULL-values}) for details.
+}
+%---------------------------------------------------------------------------------
 
 \subsection{Interface Flags}
 %====================================
 
-Users are given the option to monitor the SQL queries generated 
-by the interface and their execution status by using the 
-predicate {\tt odbc\_flag/3}.  The first parameter indicates the function  to be
-changed.  The second argument is the old value, and the third argument specifies
-the new value.  For example:
+Users are given the option to monitor control aspects of the ODBC
+interface by setting ODBC flags via the predicates{\tt
+set\_odbc\_flag/2} and {\tt odbc\_flag/2}.
+
+The first aspect that can be controlled is whether to display SQL
+statements for SQL queries.  This is done by the {\tt show\_query}
+flag.  For example: 
+\index{\texttt{set\_odbc\_flag/2}}
+\index{\texttt{odbc\_flag/2}}
+%
 \begin{verbatim}
+| ?- odbc_flag(show_query,Val).
 
-| ?- odbc_flag(show_query, Old, on).
-
-     Old = off
+     Val = on
 \end{verbatim}
+%
+Indicates that SQL statements will now be displayed for all SQL
+queries, and is the default value for the ODBC interface.  To turn it
+off execute the command {\tt set\_odbc\_flag(show\_query,on)}.  
 
-SQL statements will now be displayed for all SQL queries $($the default$)$.
-To turn it off use {\tt odbc\_flag(show\_query,on, off)}.  The default value 
-for {\tt show\_query} is on.
-
-To control the error behavior of either the interface or
-data sources use {\tt odbc\_flag/3} with fail\_on\_error as first argument.
-For example:
-
+The second aspect that can be controlled is the action taken upon ODBC
+errors.  Three possible actions may be useful in different contexts
+and with different drivers.  First, the error may be ignored, so that
+a database call succeeds; second the error cause the predicate to
+fail, and third the error may cause an exception to be thrown to be
+handled by a catcher (or the default system error handler, see Volume
+1).
+%
 \begin{description}
-
-\item[\tt | ?- odbc\_flag(fail\_on\_error, on, off)] Gives all the error control 
-to users, hence all requests to data sources return true.  It's the users' 
-responsibility to check each of their actions and do error handling.
-
-\item[\tt | ?- odbc\_flag(fail\_on\_error, off, on)] Interface fails whenever 
+%
+\item[\tt | ?- odbc\_flag(fail\_on\_error, ignore)] Ignores all ODBC
+errors, apart from writing a warning.  In this case, it's the users'
+users' responsibility to check each of their actions and do error
+handling.
+%
+\item[\tt | ?- odbc\_flag(fail\_on\_error, fail)] Interface fails whenever 
 error occurs.
+%
+\item[\tt | ?- odbc\_flag(fail\_on\_error, throw)] Throws an
+error-term of the form {\tt error(odbc\_error,Message,Backtrace)}, in
+which {\tt Message} is a textual description of the ODBC error, and
+{\tt Backtrace} is a list of the continuations of the call.  These
+continuations may be printed out by the error handler.
 \end{description}
-
+%
 The default value of fail\_on\_error is on.
 
 
@@ -711,16 +859,6 @@ by
         member([A,B,C],PredList)...
 \end{verbatim}
 and get the desired effect.
-
-\section{Limitation and Guidelines for Application Developers} \label{Guide}
-%=======================================================
-Since XSB-ODBC interface is a simulation of XSB-ORACLE interface on UNIX 
-platform, it inherits all limitations of the XSB-ORACLE interface, i.e. limited 
-number of usable cursors, cursor leaking when using cuts and etc.  Hence 
-the guidelines for XSB-ORACLE interface application 
-developers are also for XSB-ODBC interface application developers.  
-Please refer to Sections \ref{oracle:use} and \ref{oracle:limitations}
-for datails. 
 
 \section{Error messages}
 %============================

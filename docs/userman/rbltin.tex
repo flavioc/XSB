@@ -477,9 +477,24 @@ typically called just before returning to the top level.
     the tables were created during the computation for which the break was
     entered.
 
-\ouritem{halt}\index{\texttt{halt/0}}
-    Exits the \ourprolog\ session regardless of the break level.  On exiting
+\ournewitem{halt}{ISO}\index{\texttt{halt/0}}
+    Exits the XSB session regardless of the break level.  On exiting
     the system cpu and elapsed time information is displayed.
+
+\ournewitem{halt(Code)}{ISO}\index{\texttt{halt/1}}
+%
+Exits the XSB session regardless of the break level, sending the
+integer {\tt Code} to the parent process.  Normally {\tt 0} is
+considered to indicate normal termination, while other exit codes are
+used to report various degrees of abnormality.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Code} is not an integer
+\bi
+\item 	{\tt type\_error(Integer,Code)}
+\ei
+\ei
 
 \ouritem{prompt(+NewPrompt, ?OldPrompt)}\index{\texttt{prompt/2}}
     Sets the prompt of the top level interpreter to {\tt NewPrompt} and 

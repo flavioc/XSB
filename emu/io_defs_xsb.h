@@ -65,7 +65,6 @@
 #define MIN_USR_OPEN_FILE 7     /* Where user files start in the XSB
 				   open files table */
 
-
 /* OP numbers for formatted_io */
 #define FMT_WRITE    	   1
 #define FMT_WRITE_STRING   2
@@ -74,8 +73,15 @@
 #define READ_MODE 0
 #define WRITE_MODE 1
 #define APPEND_MODE 2
-#define STRING_READ_MODE 3
-#define STRING_WRITE_MODE 4
 
 #define FORCE_FILE_CLOSE     0 
 #define NOFORCE_FILE_CLOSE     1
+
+/* This list may eventually include sockets, urls, etc.
+   Starting with 1 to preserve 0 as undef.  */
+
+#define TEXT_FILE_STREAM            1
+#define BINARY_FILE_STREAM         2
+#define STRING_STREAM                3
+#define PIPE_STREAM                    4
+#define CONSOLE_STREAM            5

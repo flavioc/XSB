@@ -1,47 +1,102 @@
 \chapter{Standard Predicates} \label{standard}
 %=============================================
 
-Standard predicates are always available to the Prolog interpreter, and do
-not need to be imported or loaded explicitly as do other Prolog predicates.
-Our standard predicates are listed below.  Standard predicates whose 
-semantics depend on HiLog terms or on SLG evaluation are marked as 
-{\sf HiLog} or {\sf Tabling}.
+This chapter describes standard predicates, which are always available
+to the Prolog interpreter, and do not need to be imported or loaded
+explicitly as do other Prolog predicates.  By default, it is a
+compiler error to redefine standard predicates.  This behavior can be
+overridden by allowing explicit redefinition of standard predicates
+(see Section~\ref{}); or alternatively the set of standard predicates
+can be easily reconfigured (Section~\ref{}).
 
-It is possible for the user to add standard predicates not provided
-in the standard release. See the section on Customizing XSB.
+In the description below, certain standard predicates depend on HiLog
+semantics; the description of such predicates have the token {\sf
+HiLog} at the right of the page.  Similarly predicates that depend on
+SLG evaluation are marked as {\sf Tabling}, and predicates whose
+semantics is defined by the ISO standard (or whose implementation is
+reasonably close to that definition) are marked as {\tt ISO}.
+Occasionally, however, we include in this section predicates that are
+not standard.  In such cases we denote their module in {\tt text} font
+towards the middle of the page.
 
 \section{Input and Output}
 
 XSBs I/O is based on ISO-style streams, although it also supports
-older DEC-10 style file handling.  XSB's I/O streams are small
-integers, but should not be confused with the file descriptors used by
-the OS.  The OS file descriptors are objects returned by the C {\tt
-open} function; XSB I/O streams indices into the internal XSB table of
-open files and associated information. The OS does not know about XSB
-I/O streams, while XSB (obviously) does know about the OS file
-descriptors. An OS file descriptor may be returned by certain
-predicates (e.g.  {\tt pipe\_open/2} or user-defined I/O).  In such a
-file descriptor can be promoted to XSB stream using the predicate {\tt
-fd2iostream/2}.
+older DEC-10 style file handling.  The use of streams provides a
+unified interface to a number of different classes of sources and
+sinks.  Currently these classes include textual and binary files,
+console input and output, pipes, and atoms; in the future sockets and
+urls may be handled under the stream interface.  When streams are
+opened, certain actions may occur depending on the class of the source
+or sink and on the wishes of the user.  For instance when a file {\tt
+F} is opened for output mode, an existing file {\tt F} may be
+truncated (in write mode) or not (in append mode).  In addition,
+various operations may or may not be valid depending on the class of
+stream.  For instance, repositioning is valid for an atom or file but
+not a pipe or console.
 
-% TLS: refer to it in Manual 2.
+XSB provides several default I/O streams, which make it easier for a
+user to embed XSB in other applications.  These streams include the
+default input and output streams.  They also include the standard
+error stream, to which XSB writes all error messages.  By default the
+standard error stream is the same as the standard output stream, but
+it can be redirected either by UNIX shell-style I/O redirection or by
+the predicates {\tt file\_reopen/4} and {\tt file\_clone/3}.
+Similarly there is the standard warning stream (to which all system
+warnings are written), the standard debugging stream (to which
+debugging information is written, and ???.  All of these streams are
+aliased by default to standard output, and can be redirected by the
+predicates the predicates {\tt file\_reopen/4} and {\tt
+file\_clone/3}.
 
-The default input and output streams can be denoted by {\tt user\_in}
-and {\tt user\_out} and they refer to the process'es standard input
-and standard output streams) \footnote{For backwards compatability,
-the default input stream can also be aliased by {\tt user} or {\tt
-userin}, and the default output stream by {\tt user} or {\tt
-userout}.}.
+Streams may also be aliased: the default input and output streams can
+be denoted by {\tt user\_in} and {\tt user\_out} and they refer to the
+process'es standard input and standard output streams. \footnote{For
+backwards compatability, the default input stream can also be aliased
+by {\tt user} or {\tt userin}, and the default output stream by {\tt
+user} or {\tt userout}.}.
+
+Streams are distinguished by their {\tt class} -- whether they are
+file or atom, etc.; as well as by various properties.  These
+properties include whether a stream is positionable or not and whether
+a (file) stream is textual or binary.
+
+\bi
+\item {\tt Console} The default streams mentioned above are
+console streams, which are textual and not repositionable.
+%
+\item {\tt File}  A file stream corresponds to an operating system
+file and is repositionable.  On Windows, binary files and textual
+files differ, while on UNIX they are the same.  
+%
+\item {\tt Atom} XSB can read from an atom, just as it can from a file.
+Atoms are considered to be textual and repositionable.  Writing to
+atoms via streams is not currently available in XSB, although 
+the predicate {\tt term\_to\_atom/2} contains some of the
+functionality that such streams would provide.
+%
+\item {\tt Pipe} XSB can also open piles either directly, or as part
+of its ability to spawn processes.  Pipes are textual and not
+repositionable.
+\ei
+
 
 \subsection{I/O Stream Implementation}
 
-Typically XSB opens files for buffered I/O, so XSB streams internally
-refer to {\tt FILE} data structures (those returned by the C {\tt
-fopen} function).  When it starts, XSB opens a number of standard I/O
-streams that it uses to print results, errors, debugging info, etc. The
-descriptors are described in the file {\tt
-prolog\_includes/standard.h}. This file provides the following
-symbolic definitions:
+A user may note that XSB's I/O streams are small integers, but they
+should not be confused with the file descriptors used by the OS.  The
+OS file descriptors are objects returned by the C {\tt open} function;
+XSB I/O streams indices into the internal XSB table of open files and
+associated information. The OS does not know about XSB I/O streams,
+while XSB (obviously) does know about the OS file descriptors. An OS
+file descriptor may be returned by certain predicates (e.g.  {\tt
+pipe\_open/2} or user-defined I/O).  In such a file descriptor can be
+promoted to XSB stream using the predicate {\tt fd2iostream/2}.
+
+When it starts, XSB opens a number of standard I/O streams that it
+uses to print results, errors, debugging info, etc. The descriptors
+are described in the file {\tt prolog\_includes/standard.h}. This file
+provides the following symbolic definitions:
 %%
 \begin{verbatim}
     #define STDIN            0
@@ -88,19 +143,55 @@ a file using {\tt consult} and such.)
 
 \begin{description}
 
-\ournewitem{open(+File,+Mode,-Stream)}{ISO}\index{\texttt{open/3}}
-    {\tt open/1} creates a stream for the file designated in {\em
-    File}, and binds {\em Stream} to a structure representing that
-    stream.  {\em Mode} can be one of either {\tt read} to create an
-    input stream or {\tt write} or {\tt append} to create an output
-    stream.  If the mode is {\tt write}, the contents of {\em File}
-    are removed and {\em File} becomes a record of the output stream.
-    If the mode is {\tt append} the output stream is appended to the
-    contents of {\em File}.
+\ournewitem{open(+SourceSink,+Mode,-Stream)}{ISO}\index{\texttt{open/3}}
+%
+{\tt open/1} creates a stream for the source or sink designated in
+{\tt SourceSink}, and binds {\tt Stream} to a structure representing
+that stream.  
+%
+\bi
+\item If {\tt SourceSink} is an atom, or the term {\tt file(File)}
+where {\tt File} is an atom, the stream is a file stream.  In this
+case {\tt Mode} can be 
+\bi
+\item {\tt read} to create an input stream.  In Windows, whether the
+file is textual or binary is determined by the file's properties.
+%
+\item {\tt write} to create an output stream.  Any previous file with
+a similar path is removed and a (textual) file is created which becomes
+a record of the output stream.  
+%
+\item {\tt write\_binary} to create an output stream.  Any previous file with
+a similar path is removed and a file is created which becomes
+a record of the output stream.  The file created is binary in Windows,
+while in UNIX {\tt write\_binary} has the same effect as {\tt write}.
+%
+\item {\tt append} to create an output stream.  In this case the
+output stream is appended to the contents of the file, if it exists,
+and otherwise a new file is created for (textual) ouput
+%
+\item {\tt append\_binary} to create an output stream.  In this case the
+output stream is appended to the contents of the file, if it exists,
+and otherwise a new file is created for (binary) ouput
+\ei
+\item If {\tt SourceSink} is the term {\tt atom(Atom)} where {\tt
+Atom} is an atom, the stream is an atom stream.  In this case {\tt
+Mode} currently can only be {\tt read}.  This stream class, which
+reads from interned atoms, is analogous to C's {\tt sscanf()}
+function.
+%
+\item If {\tt SourceSink} is the term {\tt pipe(FIleDescriptor)}
+where {\tt FileDescriptor} is an integer, then a pipe stream is opened
+in the mode for {\tt FileDescriptor}.
+\ei
+
+\compatability This predicate extends the ISO definition of {\tt
+open/3} to include strings and pipes as well as the file modes {\tt
+write\_binary} and {\tt append\_binary}.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt File} or {\tt Mode} is not instantiated
+\item 	{\tt SourceSink} or {\tt Mode} is not instantiated
 \bi
 \item 	{\tt instantiation\_error}
 \ei
@@ -110,23 +201,26 @@ a file using {\tt consult} and such.)
 \item 	{\tt domain\_error(io\_mode,Mode)}
 \ei
 %
-\item 	{\tt File} cannot be opened, or opened in the desired mode
+\item 	{\tt SourceSink} is a file and cannot be opened, or opened in
+the desired mode 
 \bi
-\item 	{\tt permission\_error(open,file,File)}
+\item 	{\tt permission\_error(open,file,SourceSink)}
 \ei
 \ei
 
 \ournewitem{open(+File,+Mode,-Stream.+Options)}{ISO}\index{\texttt{open/4}}
 %
 {\tt open/4} behaves as does {\tt open/3}, but allows a list of
-options to be given.  The only effective option in \version{} of XSB
-is {\tt alias(A)} which allows the stream to be aliased to an atom.
-The ISO option {\tt reposition(Boolean)} currently has no effect on
-file streams, which are always repositionable.  The ISO option {\tt
-type(T)} currently has no effect on file streams, which are always
-textual.  And finally, the ISO option {\tt eof\_action(Action)}
-currently has no effect on file streams.  Appropriate warnings are
-given if an option list includes these option types.
+options to be given.  The option {\tt alias(A)} allows the stream to
+be aliased to an atom {\tt A}.  The ISO option {\tt type(T)} has no
+effect on file streams in UNIX, which are always textual, but in
+Windows if {\tt T} is {\tt binary} a binary file is opened.  The ISO
+option {\tt reposition(Boolean)} currently has no effect on streams,
+because whether or not the stream is repositionable or not depends on
+the stream class.  And finally, the ISO option {\tt
+eof\_action(Action)} currently has no effect on file streams.
+Appropriate warnings are given if an option list includes these option
+types.
 
 {\bf Error Cases}  Error cases are the same as {\tt open/3} but with
 the addition: 
@@ -139,17 +233,21 @@ option.
 \ei
 
 \ournewitem{close(+Stream\_or\_alias.+OptionsList)}{ISO}\index{\texttt{close/2}}
-	{\tt close/2} closes the stream or alias {\tt
-	Stream\_or\_alias}.  {\tt OptionsList} allows the user to
-	declare whether a permission error will be raised in XSB upon
-	a resource or system error from the closing function
-	(e.g. {\tt fclose()} or other system function).  If {\tt
-	OptionsList} is non-empty and contains only terms of the form
-	{\tt force(true)} then such an error will be ignored (possibly
-	leading to unacknowledged loss of data).  If {\tt OptionsList}
-	contains terms of the form {\tt force(true)} and {\tt
-	force(false)}, then an error is raised.  Otherwise the
-	``default'' behavior is to raise a permission error.
+%
+{\tt close/2} closes the stream or alias {\tt Stream\_or\_alias}.
+{\tt OptionsList} allows the user to declare whether a permission
+error will be raised in XSB upon a resource or system error from the
+closing function (e.g. {\tt fclose()} or other system function).  If
+{\tt OptionsList} is non-empty and contains only terms of the form
+{\tt force(true)} then such an error will be ignored (possibly leading
+to unacknowledged loss of data).  If {\tt OptionsList} contains terms
+of the form {\tt force(true)} and {\tt force(false)}, then an error is
+raised.  Otherwise the ``default'' behavior is to raise a permission
+error.
+
+If the stream class of {\tt Stream\_or\_alias} is an atom, then the
+only action taken is to close the stream itself -- the interned atom
+itself is not affected.
 
 {\bf Error Cases}
 \bi
@@ -180,7 +278,7 @@ option.
 \ournewitem{close(+Stream\_or\_alias)}{ISO}\index{\texttt{close/1}}
 %
 {\tt close/1} closes the stream or alias {\tt Stream\_or\_alias}.
-Behaves as the ``default'' case {\tt
+Behaves as the  {\tt
 close(Stream\_or\_alas,[force(false)])}.
 
 \ournewitem{set\_input(+Stream\_or\_alias)}{ISO}\index{\texttt{set\_input/1}}
@@ -223,40 +321,44 @@ unifiy with {\tt Property} for the stream {\tt Stream\_or\_alias}.  Currently,
 the following properties are defined.
 
 \bi
-\item {\tt file\_name(F)} is a property of {\tt Stream\_or\_alias}, if {\tt F} is
-the file name associate with {\tt Stream\_or\_alias}.  The full operating system
+\item {\tt stream\_class(C)} gives the stream class for a file:
+i.e. {\tt file}, {\tt atom}, etc.
+
+\item {\tt file\_name(F)} is a property of {\tt Stream\_or\_alias}, if
+{\tt Stream\_or\_alias} is a file stream and {\tt F} is the file name
+associate with {\tt Stream\_or\_alias}.  The full operating system
 path is used.
 %
-\item {\tt mode(M)} is a property of {\tt Stream\_or\_alias}, if {\tt M} represents the
-I/O mode: {\tt read}, {\tt write}, {\tt append}, {\tt read\_plus},
-{\tt write\_plus}, or {\tt append\_plus} with which {\tt Stream\_or\_alias} was
-opened.
+\item {\tt type(T)} is a property of {\tt Stream\_or\_alias}, if
+{\tt Stream\_or\_alias} is a file stream and {\tt T} is the file type
+of {\tt Stream\_or\_alias}: {\tt text} or {\tt binary}.
 %
-\item {\tt input}  is a property of {\tt Stream\_or\_alias}, if {\tt
-Stream\_or\_alias} was opened in the I/O mode: {\tt read}, {\tt
-read\_plus}, {\tt write\_plus}, or {\tt append\_plus}.
-% 
-\item {\tt output}  is a property of {\tt Stream\_or\_alias}, if {\tt
-Stream\_or\_alias} was opened in the I/O mode: {\tt write}, {\tt
-append}, {\tt read\_plus}, {\tt write\_plus}, or {\tt append\_plus}.
+\item {\tt mode(M)} is a property of {\tt Stream\_or\_alias}, if {\tt
+M} represents the I/O mode with which {\tt Stream\_or\_alias} was
+opened: i.e. {\tt read}, {\tt write}, {\tt append}, {\tt
+write\_binary}, etc., as appropriate for the class of {\tt
+Stream\_or\_alias}.
 %
 \item {\tt alias(A)}  is a property of {\tt Stream\_or\_alias}, if
 {\tt Stream\_or\_alias} was opened with alias {\tt A}.
 %
+\item {\tt input}  is a property of {\tt Stream\_or\_alias}, if {\tt
+Stream\_or\_alias} was opened in the I/O mode: {\tt read}.
+% 
+\item {\tt output}  is a property of {\tt Stream\_or\_alias}, if {\tt
+Stream\_or\_alias} was opened in the I/O mode: {\tt write}, {\tt
+append}, {\tt write\_binary}, or {\tt append\_binary}.
+%
 \item {\tt reposition(Bool)} is true, if {\tt Stream\_or\_alias} is
-repositionable, and false otherwise.  In XSB \version, user streams
-are always repositionable, although system streams may not be.
-%
-\item {\tt type(Type)} is true, if {\tt Stream\_or\_alias} is of type
-{\tt text} or {\tt binary}.  In XSB \version{} all streams are text
-streams.
-%
-% end_of_stream.
+repositionable, and false otherwise. 
 \end{itemize}
 
 \ournewitem{flush\_output(+Stream\_or\_alias)}{ISO}
 \index{\texttt{flush\_output/1}}
-    Any buffered data in {\tt Stream\_or\_aias}  gets flushed.
+%
+Any buffered data in {\tt Stream\_or\_aias}  gets flushed.  If
+{\tt Stream\_or\_alias} is not buffered (i.e. if it is of class {\tt
+atom}), no action is taken.
 
 {\bf Error Cases}
 \bi
@@ -276,17 +378,19 @@ streams.
 
 \ournewitem{flush\_output}{ISO}
 \index{\texttt{flush\_output/0}}
-    Any buffered data in the current output stream gets flushed.
+%
+Any buffered data in the current output stream gets flushed.
 
 \ournewitem{set\_stream\_position(+Stream\_or\_alias,+Position)}{ISO}
 \index{\texttt{set\_stream\_position/2}}
-    Sets the stream position indicator for the next input or output
-    operation. Position is a term {\tt position(Place,Offset)}.  The
-    value of {\tt Place} can be {\tt start\_of\_file}, {\tt
-    current\_pos}, or {\tt end\_of\_file}, which correspond to the
-    beginning of the file, the current position in the file, or the
-    end of the file, respectively. {\tt Offset} is a positive or
-    negative integer denoting the offset from {\tt Place}.
+%
+Sets the stream position indicator for the next input or output
+operation. Position is a term {\tt position(Place,Offset)}.  The value
+of {\tt Place} can be {\tt start\_of\_file}, {\tt current\_pos}, or
+{\tt end\_of\_file}, which correspond to the beginning of the file,
+the current position in the file, or the end of the file,
+respectively. {\tt Offset} is a positive or negative integer denoting
+the offset from {\tt Place}.
 
 {\bf Error Cases}
 \bi
@@ -303,7 +407,8 @@ or alias.
 \bi
 \item 	{\tt existence\_error(stream,Stream\_or\_alias)}
 \ei
-\item 	Repositioning returns an error.
+\item 	{\tt Stream\_or\_alias} is not repositionable, or
+	repositioning returns an error. 
 \bi
 \item 	{\tt permission\_error(resposition,stream,Stream\_or\_alias)}
 \ei
@@ -362,46 +467,52 @@ Succeeds if the current stream has position at or past the end of stream.
 }
 %-----------------------------------------------------------------------------
 
-\ournewitem{file\_truncate(+Stream, +Length, -Return)}{file\_io}
+\ouritem{file\_clone(+SrcStream,?DestStream,-RetCode)}
+\index{\texttt{file\_clone/1}}
+This is yet another way to redirect I/O. It is a Prolog interface to
+the C {\tt dup} and {\tt dup2} system calls. If {\tt DestStream} is a
+variable, then this call creates a new XSB I/O stream that is a clone
+of {\tt SrcStream}. This means that I/O sent to either stream goes
+to the same place. If {\tt DestStream} is not a variable, then it must
+be a number corresponding to a valid I/O stream. In this case, XSB
+closes {\tt DestStream} and makes it into a clone of {\tt
+SrcStream}. 
+
+For instance, suppose that 10 is a I/O Stream that is currently open
+for writing to file {\tt foo.bar}.  Then 
+%%
+\begin{verbatim} 
+| ?- file_clone(10,3,_).  
+\end{verbatim} 
+%% 
+causes all messages sent to XSB standard warnings stream to go to file
+{\tt foo.bar}. While this could be also done with {\tt file\_reopen},
+there are things that only {\tt file\_clone} can do: 
+%%
+\begin{verbatim} 
+| ?- file_clone(1,10,_). 
+ \end{verbatim} 
+%% 
+This means that I/O stream 10 now becomes clone of standard
+output. So, all subsequent I/O will now go to standard output instead
+of {\tt foo.bar}.
+
+On success, {\tt RetCode} is 0; on error, the return code is negative.
+
+%-----------------------------------------------------------------------------
+
+\ourmoditem{file\_truncate(+Stream, +Length, -Return)}{file\_io}
 \index{\texttt{file\_truncate/3}}
     The regular file  referenced by the Stream{\tt Stream}
     is chopped to have the size of {\tt Length} bytes. Upon successful
     completion {\tt Return} is set to zero.
 
+\portability This predicate is not defined on Windows unless compiled
+using Cygwin.
+
 \ouritem{tmpfile\_open(-Stream)}\index{\texttt{tmpfile\_open/1}}
     Opens a temporary file with a unique filename. The file is deleted when
     it is closed or when the program terminates.
-
-\ouritem{file\_clone(+SrcStream,?DestStream,-RetCode)}
-\index{\texttt{file\_clone/1}}
-    This is yet another way to redirect I/O. It is a prolog interface to
-    the C {\tt dup} and {\tt dup2} system calls. If {\tt DestStream} is a
-    variable, then this call creates a new XSB I/O stream that is a
-    clone of {\tt SrcStream}. This means that I/O sent to either
-    descriptor goes to the same place. If {\tt DestStream} is not a
-    variable, then it must be a number corresponding to a valid I/O
-    stream. In this case, XSB closes {\tt DestStream} and makes it 
-    into a clone on {\tt SrcStream}. For instance, suppose that 10 is a
-    I/O Stream that is currently open for writing to file {\tt foo.bar}.
-    Then
-    %%
-    \begin{verbatim}
-    | ?- file_clone(10,3,_).      
-    \end{verbatim}
-    %%
-    causes all messages sent to XSB standard warnings stream to go to file
-    {\tt foo.bar}. While this could be also done with {\tt file\_reopen},
-    there are things that only {\tt file\_clone} can do:
-    %%
-    \begin{verbatim}
-    | ?- file_clone(1,10,_).      
-    \end{verbatim}
-    %%
-    This means that I/O stream 10 now becomes clone of standard
-    output. So, all subsequent I/O will now go to standard output instead
-    of {\tt foo.bar}. 
-
-    On success, {\tt RetCode} is 0; on error, the return code is negative.
 
 \end{description}
 

@@ -1930,7 +1930,7 @@ shell/5.
   The pipes returned by the {\tt pipe\_open/2} predicate are small integers
   that represent file descriptors used by the underlying OS. They are {\bf
     not XSB I/O ports}, and they cannot be used for I/O directly. To
-  use them, one must call the {\tt fd2ioport/2} predicate, as described
+  use them, one must call the {\tt fd2stream/2} predicate, as described
   next.\footnote{
     %%
     XSB does not convert pipes into I/O ports automatically.
@@ -1941,10 +1941,10 @@ shell/5.
     converts these descriptor into XSB I/O ports.
     %%
     }
-\ouritem{fd2ioport(+Pipe, -IOport)}\index{\texttt{fd2ioport/2}} 
-    Take a pipe and convert it to an XSB I/O port that can be used
-    for I/O. This predicate is needed because pipes must be associated with
-    XSB I/O ports before any I/O can be done on them by an XSB program.
+\ouritem{fd2iostream(+Pipe, -IOstream)}\index{\texttt{fd2iostream/2}} 
+Take a pipe and convert it to an XSB I/O stream. This predicate is
+needed because pipes must be associated with XSB I/O streams before
+any I/O can be done on them by an XSB program.
 
     The best way to illustrate how one can create a new pipe to a child
     (even if the child has been created earlier) is to show an example.
@@ -1963,12 +1963,12 @@ shell/5.
     standard output. Both programs are shown below:
     %%
     \begin{verbatim}
-%% parent.p      
-:- import pipe_open/2, fd2ioport/2, fmt_write/3, file_flush/2 from file_io.
+%% parent.P      
+:- import pipe_open/2, fd2iostream/2, fmt_write/3, file_flush/2 from file_io.
 %% Create the pipe and pass it to the child process
 ?- pipe_open(RP,WP),
-   %% WF is now the XSB I/O port bound to the write part of the pipe
-   fd2ioport(WP,WF),
+   %% WF is now the XSB I/O stream bound to the write part of the pipe
+   fd2iostream(WP,WF),
    %% ProcInput becomes the XSB stream leading directly to the child's stdin
    spawn_process(xsb, ProcInput, block, block, Process),
    %% Tell the child where the reading part of the pipe is
@@ -1992,10 +1992,10 @@ shell/5.
     %%
     \begin{verbatim}
 %% child.P
-:- import fd2ioport/2 from file_io.
+:- import fd2iostream/2 from file_io.
 :- import file_read_line_atom/2 from file_io.
 :- dynamic pipe/1.
-?- pipe(P), fd2ioport(P,F),
+?- pipe(P), fd2iostream(P,F),
    %% Acknowledge receipt of the pipe
    fmt_write("\nPipe %d received\n", arg(P)),
    %% Get a message from the parent and print it to stdout
@@ -2024,26 +2024,32 @@ yes
     \end{verbatim}
     %%
     
-    Observe that the parent process is very careful about making sure that
-    the child terminates and also about closing the I/O ports after they
-    are no longer needed.
+    Observe that the parent process is very careful about making sure
+    that the child terminates and also about closing the I/O streams
+    after they are no longer needed.
     
-    Finally, we should note that this mechanism can be used to communicate
-    through pipes with non-XSB processes as well. Indeed, an XSB process
-    can create a pipe using {\tt pipe\_open} (\emph{before} spawning a
-    child process), pass one end of the pipe to a child process (which can
-    be a C program), and use {\tt fd2ioport} to convert the other end of
-    the pipe to an XSB file. The C program, of course, does not need {\tt
-      fd2ioport}, since it can use the pipe file handle directly. Likewise,
-    a C program can spawn off an XSB process and pass it one end of a pipe.
-    The XSB child-process can then convert this pipe fd to a file using
-    {\tt fd2ioport} and then talk to the paren C program.
+    Finally, we should note that this mechanism can be used to
+    communicate through pipes with non-XSB processes as well. Indeed,
+    an XSB process can create a pipe using {\tt pipe\_open}
+    (\emph{before} spawning a child process), pass one end of the pipe
+    to a child process (which can be a C program), and use {\tt
+    fd2iostream} to convert the other end of the pipe to an XSB
+    stream. The C program, of course, does not need {\tt fd2ioport},
+    since it can use the pipe file handle directly. Likewise, a C
+    program can spawn off an XSB process and pass it one end of a
+    pipe.  The XSB child-process can then convert this pipe fd to a
+    file using {\tt fd2ioport} and then talk to the parent C program.
 
+%------------------------------------------------------------------------------------------
+\comment{
+% TLS: Redefining ISO halt/1 as sys_exit/1.
 \ouritem{sys\_exit(-ExitCode)}\index{\texttt{sys\_exit/1}} 
 This predicate causes XSB subprocess to exit unconditionally with the exit
 code {\tt ExitCode}. Normally {\tt 0} is considered to indicate normal
 termination, while other exit codes are used to report various degrees of
 abnormality.
+}
+%------------------------------------------------------------------------------------------
 \end{description}
 
 
