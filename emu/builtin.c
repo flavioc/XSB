@@ -1025,7 +1025,8 @@ int builtin_call(byte number)
 
   case TERM_PSC:		/* R1: +term; R2: -PSC */
     /* Assumes that `term' is a XSB_STRUCT-tagged Cell. */
-    ctop_addr(2, get_str_psc(ptoc_tag(1)));
+    /*    ctop_addr(2, get_str_psc(ptoc_tag(1))); */
+    ctop_addr(2, term_psc((Cell)(ptoc_tag(1))));
     break;
   case TERM_TYPE: {	/* R1: +term; R2: tag (-int)			  */
 			/* <0 - var, 1 - cs, 2 - int, 3 - list, 7 - ATTV> */
