@@ -311,7 +311,8 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	(Type =:= 2		/* is Compiled */
 	 ->	functor(Head,F,A),
 	        abort(['Not permitted to retract from static predicate', F/A])
-	 ;      psc_prop(PSC, Prref),			/* get Prref */
+	 ;      Type =:= 1,
+		psc_prop(PSC, Prref),			/* get Prref */
 	        db_retract(Head, Body, Prref)
 	).
 
@@ -334,9 +335,13 @@ retractall0(Fact) :-
 	(Type =:= 2		/* is Compiled */
 	 ->	functor(Fact,F,A),
 	        abort(['Not permitted to retract from static predicate', F/A])
-	 ;	psc_prop(PSC, Prref),			/* get Prref */
-		db_retractall(Fact, Prref)
-	).
+	 ;	(	Type =:= 1
+			->
+			psc_prop(PSC, Prref),		/* get Prref */
+			db_retractall(Fact, Prref)
+			;
+			true
+	)	).
 
 retract_nr(Rule) :-
 	(Rule = (Head :- Body)
@@ -346,10 +351,11 @@ retract_nr(Rule) :-
 	check_retract(Head, retract_nr/1),
 	conpsc(Head, PSC),
 	psc_type(PSC,Type), 
-	(Type =:= 2		/* is Comiled */
+	(Type =:= 2		/* is Compiled */
 	 ->	functor(Head,F,A),
 	        abort(['Not permitted to retract from static predicate', F/A])
-         ;      psc_prop(PSC, Prref),			/* get Prref */
+         ;      Type =:= 1,
+		psc_prop(PSC, Prref),			/* get Prref */
 	        db_retract_nr(Head, Body, Prref)
 	).
 
@@ -360,9 +366,13 @@ reclaim_space(Fact) :-
 	(Type =:= 2		/* is compiled */
 	 ->	functor(Fact,F,A),
 	        abort(['Not permitted to retract from static predicate', F/A])
-	 ;	psc_prop(PSC, Prref),			/* get Prref */
-		db_reclaim_space(Fact, Prref)
-	).
+	 ;	(	Type =:= 1
+			->
+			psc_prop(PSC, Prref),		/* get Prref */
+			db_reclaim_space(Fact, Prref)
+			;
+			true
+	)	).
 
 /*======================================================================*/
 /* check_retract(+Head_of_Clause, +Predicate_Called)			*/
