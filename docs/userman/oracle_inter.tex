@@ -8,7 +8,7 @@
 \section{Introduction}
 %=====================
 
-The XSB - Oracle interface provides the programmer with two levels of
+The XSB\,-\,Oracle interface provides the programmer with two levels of
 interaction.  The first, {\it relation level interface},
 offers a tuple-at-a-time retrieval of information from the Oracle
 tables.  The second, {\it view level interface}, can translate an
@@ -55,57 +55,77 @@ negative knowledge through negation.
 \item No mode specification is required for optimized view compilation
 \end{itemize}
 
-\section{Installation:}
+\section{Installation}
 %======================
 
 The instructions below assume that Oracle is currently installed.
 
 \paragraph{Unix instructions:}
 \begin{enumerate}
-\item Set {\tt LDFLAGS} to indicate the Oracle libraries needed to build
-  the system. For instance:
+\item Set the environment variable {\tt LDFLAGS} to indicate the
+Oracle libraries needed to build the system.  For instance:
 %%
-\begin{verbatim}
-LDFLAGS=-lclntsh -lcommon -lcore4 -lnlsrtl3
-\end{verbatim}
+\begin{quote}
+	\texttt{LDFLAGS=-lclntsh -lcommon -lcore4 -lnlsrtl3}
+\end{quote}
 %%
 or
 %%
-\begin{verbatim}
-setenv LDFLAGS "-lclntsh -lcommon -lcore4 -lnlsrtl3"  
-\end{verbatim}
+\begin{quote}
+	\texttt{setenv LDFLAGS "-lclntsh -lcommon -lcore4 -lnlsrtl3"}
+\end{quote}
 %%
-depending on the shell that you are using.
-Note that libraries might be different depending on the version of Oracle
-or the OS in use. Also, the order of these libraries in the list is usually
-important.
-\item When running {\tt configure} during XSB installation, add these
-  options: {\tt --with-oracle} and {\tt
-    --site-static-libraries=ORACLE\_LIB\_PATH}, where {\tt
-    ORACLE\_LIB\_PATH} is the directory that has the Oracle client
-  libraries.
+depending on the shell that you are using.  Note that libraries might
+be different depending on the version of Oracle or the OS in use.
+Also, the order of these libraries in the list is usually important.
+Refer to your Oracle documentation.
 
-  Sometimes, building Oracle requires that you use a C compiler other than
-  the default one. Use {\tt --with-cc=your-compiler} to tell configure
-  which compiler to use.
-\item run {\tt configure} with appropriate options specified on command
-  line.
-\item when done, the {\tt configure} script will tell you  whether you
-  should build XSB with just {\tt makexsb} or pass an additional option. 
-\item Rebuild orastuff.c from orastuff.pc by running
-  \\
-  {\tt make -f proc.mk orastuff.c}
-  \\
-  The file {\tt proc.mk} that you should use is the one
-  included with your copy of Oracle, but with some changes. See the sample
-  file {\tt emu/proc.mk} included with the XSB distribution.
+\item Run the XSB configuration script, {\tt configure}, with the
+additional options
+\begin{quote}
+	{\tt --with-oracle}\quad
+	{\tt --site-static-libraries=ORACLE\_LIB\_PATH}
+\end{quote}
+where {\tt ORACLE\_LIB\_PATH} is the directory that contains the Oracle
+client libraries.
 
-\item Run {\tt makexsb} as directed by the message displayed at the end of
-  the run of the configure script.
-\item When {\tt makexsb} is done, it will tell use if you need to run XSB
-  using the usual {\tt .../bin/xsb} script or, maybe, something like
-  {\tt .../bin/xsb-ora}.
-\item after starting XSB, load {\tt ora\_call.P} by {\tt [ora\_call].}
+Sometimes, building Oracle requires that you use a C compiler other
+than the default one.  If such is the case, then additionally use the
+option
+\begin{quote}
+	{\tt --with-cc=\emph{compiler}}
+\end{quote}
+to \texttt{configure}, indicating that \emph{\texttt{compiler}} should
+instead be used.
+
+Note the final message that {\tt configure} produces before
+completing.  It indicates how you should invoke \texttt{makexsb} to
+build an Oracle-enabled version of XSB\@.
+
+\item In the \texttt{emu/} directory, create the file
+\texttt{orastuff.c} from \texttt{orastuff.pc} by invoking the Pro*C
+preprocessor:
+\begin{quote}
+	{\tt make -f proc.mk orastuff.c}
+\end{quote}
+A sample makefile, \texttt{proc.mk}, is provided, but you should use
+the one included with your version of Oracle.  This used to be found
+with sample SQL*Plus and Pro*C files in the Oracle installation
+hierarchy.
+
+\textbf{Note: this file may provide insight into the library paths and
+linking options required by your Oracle installation.}
+
+\item Run {\tt makexsb} as directed by the message displayed at the
+end of the run of the \texttt{configure} script (from step~2).
+
+When {\tt makexsb} completes, it will provide you with the name of the
+XSB executable.  Unless you have used the configuration option
+\begin{quote}
+	{\tt --config-tag=\emph{tag}}
+\end{quote}
+this will likely be {\tt ../bin/xsb-ora}.
+
 \end{enumerate}
 
 \paragraph{Windows instructions:}
@@ -128,42 +148,52 @@ XSB executable is found in its usual place:
 %%
 
 
-\section{Using the interface:} \label{oracle:use}
+\section{Using the Interface} \label{oracle:use}
 
+Begin by  starting XSB and loading the interface:
+\begin{quote}
+	\texttt{| ?- [ora\_call].}
+\end{quote}
 
-\subsection{Connecting to and disconnecting from Oracle:}
+\subsection{Connecting to and disconnecting from Oracle}
 
-Assuming the Oracle server is running, you have an account, and that
-the environment variables {\tt ORACLE\_SID, ORACLE\_HOME} are set, you
-can login to Oracle by invoking {\tt db\_open/1} as:
-\begin{center}
-{\tt  | ?- db\_open(oracle(name, passwd)).}
-\end{center}
+Assuming the Oracle server is running, you have an account, and the
+environment variables \texttt{ORACLE\_SID} and \texttt{ORACLE\_HOME}
+are set, you can login to Oracle by invoking {\tt db\_open/1} as:
+\begin{quote}
+{\tt  | ?- db\_open(oracle(Name, Password)).}
+\end{quote}
 If the login is successful, there will be a response of {\tt yes}.
 
 To reach a remote server you can use:
-\begin{center}
-{\tt  | ?- db\_open(oracle('name@dblink', passwd)).}
-\end{center}
-where {\tt dblink} is the protocol, machine and server instance name.
-For example, \\ {\tt SCOTT@T:compserv1gw:INST} tells the runtime system we
-want to contact an oracle server instance whose {\tt ORACLE\_SID} is
-{\tt INST} on the host {\tt compserv1gw} using the TCP/IP protocol.
+\begin{quote}
+	{\tt  | ?- db\_open(oracle('Name@\emph{dblink}', Password)).}
+\end{quote}
+where {\tt \emph{dblink}} contains the machine name, and optionally
+the protocol and server instance name.  For example
+\begin{quote}
+ {\tt | ?- db\_open(oracle('SCOTT@T:compserv1gw:\emph{INST}', 'TIGER')).}
+\end{quote}
+indicates to the runtime system that we want to contact an Oracle
+server instance on the host {\tt compserv1gw}, whose {\tt ORACLE\_SID}
+is {\tt \emph{INST}}, using the TCP/IP protocol.  Further, we want to
+access that database as the user \texttt{SCOTT} with password
+\texttt{TIGER}.
 
 To disconnect from the current session use:
-\begin{center}
+\begin{quote}
 {\tt  | ?- db\_close.}
-\end{center}
+\end{quote}
 
 
-\subsection{Accessing an Oracle table: $($relation level interface$)$}
+\subsection{Accessing an Oracle Table: Relation Level Interface}
 \label{sec:oracle:rellevel}
 
 Assuming you have access permission for the table you wish to import,
 you can use {\tt db\_import/2} as:
-\begin{center}
+\begin{quote}
 {\tt | ?- db\_import('TABLENAME'('FIELD1', 'FIELD2', .., 'FIELDn'), 'Pname').}
-\end{center}
+\end{quote}
 where {\tt 'TABLENAME'} is the name of the table you wish to access
 and {\tt 'Pname'} is the name of the predicate you wish to use to
 access the table from XSB. {\tt 'FIELD1'} through {\tt 'FIELDn'} are
@@ -187,10 +217,10 @@ Backtracking can then be used to retrieve the next row of the table {\tt DEPT}.
 Records with particular field values may be selected in the same way
 as in Prolog.  (In particular, no mode specification for database predicates is
 required). For example:
-\begin{center}
+\begin{quote}
 
 {\tt | ?- dept(A, 'ACCOUNTING', C).}
-\end{center}
+\end{quote}
 generates the query:
 \begin{verbatim}
 
@@ -199,10 +229,10 @@ FROM DEPT rel1
 WHERE rel1.DNAME = :BIND1;
 \end{verbatim}
 and 
-\begin{center}
+\begin{quote}
 
 {\tt | ?- dept('NULL'(\_), 'ACCOUNTING', C).}
-\end{center}
+\end{quote}
 generates: (See section \ref{NULL-values})
 \begin{verbatim}
 SELECT NULL , rel1.DNAME , rel1.LOC
@@ -216,10 +246,10 @@ using two quotes.
 
 Note that the relation level interface can be used to define and
 access simple project views of single tables.  For example:
-\begin{center}
+\begin{quote}
 
 {\tt | ?- db\_import('DEPT'('DEPTNO','DNAME'),deptview).}
-\end{center}
+\end{quote}
 defines {\tt deptview/2}.
 
 The predicate {\tt db\_import/2} $($and other Oracle interface
@@ -238,13 +268,13 @@ i) | ?- db_attach(Pname, table(Tablename)).
 \end{verbatim}
 
 eg. execute 
-\begin{center}
+\begin{quote}
 {\tt | ?- db\_attach(dept, table('DEPT')).} 
-\end{center}
+\end{quote}
 then execute 
-\begin{center}	
+\begin{quote}	
 {\tt | ?- dept(Depno, Dname, Loc).}
-\end{center}
+\end{quote}
 to retrieve the rows.
 \begin{verbatim}
 
@@ -259,7 +289,7 @@ ii) | ?- db_record('DEPT', R).
 
 
 
-\subsection{The view level interface:}
+\subsection{View Level Interface}
 
 
 % how about builtins.
@@ -273,9 +303,9 @@ processing ability of the database system.
 
 One can use the view level interface through the predicate {\tt
 db\_query/2}:  
-\begin{center}
+\begin{quote}
 {\tt | ?- db\_query('Rulename'(Arg1, ... , Argn), DatabaseGoal).}
-\end{center}
+\end{quote}
 All arguments are standard Prolog terms.  {\tt Arg\_1} through {\tt Arg\_n}
 defines the attributes to be retrieved from the database, while
 {\tt DatabaseGoal} defines the selection restrictions and join conditions.
@@ -336,10 +366,10 @@ Loc = NEW YORK
 \end{verbatim}
 
 Backtracking can then be used to retrieve the next row of the view.
-\begin{center}
+\begin{quote}
 
 {\tt | ?- rule1('CLARK',Dept,'NULL'(\_)).}
-\end{center}
+\end{quote}
 
 generates the SQL statement:
 \begin{verbatim}
@@ -412,10 +442,10 @@ S = 2300
 
 All database rules defined by db\_query can be queried with any mode:
 For example:
-\begin{center}
+\begin{quote}
 
 {\tt | ?- harder(A,'ANALYST',D,'NULL'(\_),S).}
-\end{center}
+\end{quote}
 
 generates the query:
 \begin{verbatim}
@@ -450,7 +480,7 @@ unused cursor and retrieve the results.  In this way efficient access
 methods for relations and database rules can be maintained throughout
 the session.
 
-\subsection{ Connecting to an SQL query}
+\subsection{Connecting to an SQL query}
 
 
 It is also possible to connect to any SQL query using the {\tt
@@ -565,7 +595,7 @@ represented in XSB as {\tt Field = 'NULL'(\_)}
 Using this representation of NULL's the following protocol for queries
 and updates is established.
 
-\subsubsection{Queries:}
+\subsubsection{Queries}
 
 \begin{center}
 
@@ -594,7 +624,7 @@ used with a bound argument.
 \end{center}
 
 
-\subsubsection{Query Results:}
+\subsubsection{Query Results}
 When returning NULL's as field values, the interface returns {\tt NULL/1} 
 function with a unique integer argument serving as a skolem constant.
 
@@ -605,7 +635,7 @@ statements.  In the following example, even if {\tt Deptno} is NULL for some row
 {\tt | ?- emp(Ename,\_,\_,\_,Deptno),dept(Deptno,Dname,Loc)..}
 \end{center}
 
-\subsubsection{Inserts:}
+\subsubsection{Inserts}
 
 To insert rows with NULL values you can use {\tt Field = 'NULL'(\_)} or
 {\tt Field = 'NULL'(null2346)}.  For example:
@@ -621,7 +651,7 @@ To insert rows with NULL values you can use {\tt Field = 'NULL'(\_)} or
 \end{center}
 
 
-\subsubsection{Deletes:}
+\subsubsection{Deletes}
 
 
 To delete rows with NULL values at any particular {\tt FIELD} use {\tt Field = 'NULL'(\_)}, {\tt 'NULL'/1} with a free argument.  When {\tt 'NULL'/1} 's argument
@@ -687,7 +717,7 @@ For retrieving above information use:
 The results of above are returned in List as a list.
 
 
-\subsection{Other database operations:}
+\subsection{Other database operations}
 
 \begin{description}
 
@@ -735,7 +765,7 @@ For other SQL statements use {\tt db\_sql/1} with the SQL statement as the
 \end{center}
 
 
-\subsection{Interface Flags:}
+\subsection{Interface Flags}
 	
    If you wish to see the SQL query generated by the interface use the 
 predicate {\tt db\_flag/3}.  The first parameter indicates the function you wish to
