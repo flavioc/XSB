@@ -34,6 +34,7 @@
 :- export t_assert/2.
 
 
+:- import append/3 from basics.
 :- import (=..)/2, functor/3, integer/1, callable/1,
 	  goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1
      from standard.

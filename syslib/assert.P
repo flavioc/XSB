@@ -494,15 +494,9 @@ check_clause(Head) :-
 	).
 
 /*======================================================================*/
-/* Aux routines								*/
 /*======================================================================*/
 
-append([], L, L).
-append([X|L1], L2, [X|L3]) :- append(L1, L2, L3).
-
-/*==================================================*/
 t_assert_exit(Clause) :- abort(('Illegal Term in trie_assert:',Clause)).
-
 
 %t_assert(Clause) :- Clause = (_Head :- _Body), t_assert_exit(Clause).
 t_assert(Clause, Flag) :- check_assert(Clause,trie_assert/1),
