@@ -29,9 +29,9 @@
 	str_match/5, string_substitute/4.
 :- export term_to_codes/2, term_to_atom/2, codes_to_term/2, atom_to_term/2.
 
-:- import flatten/2, append/3, memberchk/2 from basics.
+:- import flatten/2, append/3, memberchk/2, copy_term/2 from basics.
 :- import str_len/2 from machine.
 :- import atom/1, atom_codes/2, number/1, integer/1, structure/1, '=..'/2,
-        number_codes/2 from standard.
+        is_list/1, number_codes/2 from standard.
 
 /* ---------------------- end of file string.H ------------------------ */

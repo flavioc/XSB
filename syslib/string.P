@@ -91,7 +91,8 @@ str_sub(S1, S2) :- str_match(S1, S2, forward, _, _).
 /***************************************************************/
 
 term_to_atom(Term,Atom) :-
-	term_to_codes(Term,Codes),
+	copy_term(Term,Term1),  % protect Term's variables
+	term_to_codes(Term1,Codes),
 	atom_codes(Atom,Codes).
 
 term_to_codes(Term,Codes) :-
@@ -116,6 +117,11 @@ term_to_codes(Term,Var0,Var,Codes0,Codes) :-
 	 ;	atom(Term)
 	 ->	Var = Var0,
 		extern_atom_codes(Term,Codes0,Codes)
+	 ;	is_list(Term)
+	 ->	Term=[Term1|Terms],
+		Codes0 = [0'[|Codes1],
+		term_to_codes(Term1,Var0,Var1,Codes1,Codes2),
+		cvt_termlist_to_codes(Terms,Var1,Var,Codes2,[0']|Codes])
 	 ;	structure(Term)
 	 ->	Term =.. [Fun,Arg1|Args],
 		extern_atom_codes(Fun,Codes0,[0'(|Codes2]),
@@ -136,6 +142,7 @@ extern_atom_codes(Atom,Codes0,Codes) :-
 		copy_double_quote(AtomCodes,Codes1,[0''|Codes])
 	).
 
+if_not_need_quote([0'[,0']]) :- !.
 if_not_need_quote([C|Cs]) :-
 	C >= 0'a, C =< 0'z,
 	if_not_need_quote1(Cs).
@@ -176,10 +183,24 @@ atom_to_term(Atom,Term) :-
 codes_to_term(Codes,Term) :- codes_to_term(Codes,[],[],_,Term).
 
 codes_to_term(Rest0,Rest,ST0,ST,Term) :-
+	scan_blanks(Rest0,Rest1),
+	codes_to_term_d(Rest1,Rest,ST0,ST,Term).
+
+codes_to_term_d([0'[|Rest0],Rest,ST0,ST,Term) :- !,
+	(Rest0 = [0']|Rest]
+	 ->	Term = [],
+		ST = ST0
+	 ;	codes_to_term(Rest0,Rest1,ST0,ST1,Tok1),
+		codes_to_term_list(Rest1,[0']|Rest2],Toks,[],ST1,ST),
+		scan_blanks(Rest2,Rest),
+		Term = [Tok1|Toks]
+	).
+codes_to_term_d(Rest0,Rest,ST0,ST,Term) :-
 	next_token(Rest0,Rest1,ST0,ST1,Tok0),
 	(Rest1 = [0'(|Rest2]
 	 ->	codes_to_term(Rest2,Rest3,ST1,ST2,Tok1),
-		codes_to_term_list(Rest3,Rest,Terms,[],ST2,ST),
+		codes_to_term_list(Rest3,[0')|Rest4],Terms,[],ST2,ST),
+		scan_blanks(Rest4,Rest),
 		Term =.. [Tok0,Tok1|Terms]
 	 ;	Rest = Rest1,
 		ST = ST1,
@@ -189,7 +210,11 @@ codes_to_term(Rest0,Rest,ST0,ST,Term) :-
 codes_to_term_list(Rest0,Rest,Terms0,Terms,ST0,ST) :-
 	Rest0 = [C|Rest1],
 	(C =:= 0') 
-	 ->	Rest = Rest1,
+	 ->	Rest = Rest0,
+		Terms = Terms0,
+		ST = ST0
+	 ;	C =:= 0'] 
+	 ->	Rest = Rest0,
 		Terms = Terms0,
 		ST = ST0
 	 ;	C =:= 0',,
@@ -204,8 +229,8 @@ next_token(Rest0,Rest,ST0,ST,Tok) :-
 	 ->	Val is C - 0'0,
 		ST = ST0,
 		scan_number(Rest1,Rest,Val,Tok)
-	 ; C =:= 0'_
-	 ->	scan_variable(Rest1,Rest,ST0,ST,Tok)
+	 ; (C =:= 0'_ ; (C >= 0'A , C =< 0'Z))
+	 ->	scan_variable([C|Rest1],Rest,ST0,ST,Tok)
 	 ; C =:= 0''
 	 ->	ST = ST0,
 		scan_quoted_con(Rest1,Rest,Codes,[]),
@@ -225,17 +250,22 @@ scan_number(Rest0,Rest,Val0,Val) :-
 
 scan_variable(Rest0,Rest,ST0,ST,Var) :-
 	scan_to_delim(Rest0,Rest,Str,[]),
-	atom_codes(VName,Str),
-	(memberchk(VName=Var,ST0)
+	(Str == "_"
 	 ->	ST = ST0
-	 ;	ST = [VName=Var|ST0]
+	 ; 	atom_codes(VName,Str),
+		(memberchk(VName=Var,ST0)
+		 ->	ST = ST0
+		 ;	ST = [VName=Var|ST0]
+		)
 	).
 
 scan_to_delim(Rest0,Rest,Str0,Str) :-
 	(Rest0 = [C|Rest1]
-	 ->	((C =:= 0'( ; C =:= 0', ; C =:= 0'))
+	 ->	((C =:= 0'( ; C =:= 0', ; C =:= 0') ; C =:= 0'])
 		 ->	Rest = Rest0,
 			Str = Str0
+		 ; C =:= 0'  %
+		 ->	scan_to_delim(Rest1,Rest,Str0,Str)
 		 ;	Str0 = [C|Str1],
 			scan_to_delim(Rest1,Rest,Str1,Str)
 		)
@@ -253,6 +283,12 @@ scan_quoted_con([C|Rest0],Rest,Str0,Str) :-
 		)
 	 ;	Str0 = [C|Str1],
 		scan_quoted_con(Rest0,Rest,Str1,Str)
+	).
+
+scan_blanks(Rest0,Rest) :-
+	(Rest0 = [0' |Rest1]
+	 ->	scan_blanks(Rest1,Rest)
+	 ;	Rest = Rest0
 	).
 
 /* ---------------------- end of file string.P ------------------------ */
