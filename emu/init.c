@@ -199,7 +199,11 @@ char *init_para(int argc, char *argv[])
 
 
   flags[STACK_REALLOC] = TRUE;
+#ifdef CHAT
   flags[GARBAGE_COLLECT] = SLIDING_GC;
+#else
+  flags[GARBAGE_COLLECT] = NO_GC;
+#endif
   flags[DCG_MODE] = XSB_STYLE_DCG;
 
   /* Set default Prolog files.
