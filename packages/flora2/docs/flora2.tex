@@ -1796,7 +1796,7 @@ the variable {\tt O}.
 \end{example}
 
 
-\subsection{Path Expressions in the Rule Head}
+\subsection{Path Expressions in the Rule Head}\label{sec-pathexp-head}
 
 
 Only single-valued path expressions are allowed in a rule head. Set-valued
@@ -1823,7 +1823,7 @@ Because John's mother is now identified as {\tt mary}, it follows that
 ${\tt mary}$ and ${\tt john.mother}$ represent the same things, since the
 attribute {\tt mother} is scalar. To deal with single-valued path
 expressions in rule heads, \FLORA \emph{skolemizes} ${\tt john.mother}$ and
-adds the requisite equalities to record that the Skolem function that
+adds the requisite equalities to record that the Skolem term that
 corresponds to {\tt john.mother} equals {\tt mary}.  All this is done by
 the \FLORA compiler transparently to the user: if a path expression in rule
 head is detected, \FLORA replaces this expression with a Skolem function.
@@ -1839,31 +1839,39 @@ needed.  Equality maintenance is discussed in Section~\ref{sec-eqmaintain}.
 
 
 Id-terms, \fl atoms, and path expressions can all be used as objects. This
-is obvious for Id-terms and path expressions of the form (7) and (8),
-page~\pageref{eq-path-fun}. The \fl atoms (1) through (6) on
-pages~\pageref{eq-scalar-atom} through~\pageref{eq-subclass} are typically
-viewed as formulas and, thus, they are assumed to have a truth value only.
-However, there also is a natural way to assign them object values.  For
-example, {\tt o{\isa}c[m{\fd}r]} has object value {\tt o} and a truth
-value.  The latter depends on whether {\tt o} belongs to class {\tt c} and
-on the value of the attribute {\tt m}.
+is obvious for Id-terms and the object interpretation of path expressions
+of the form (7) and (8) on page~\pageref{eq-path-fun} was discussed
+earlier. The \fl atoms (1) through (6) on pages~\pageref{eq-scalar-atom}
+through~\pageref{eq-subclass} are typically viewed as formulas and, thus,
+they are assumed to have a truth value only.  However, there also is a
+natural way to give them object interpretation.  For example, {\tt
+  o{\isa}c[m{\fd}r]} has object value {\tt o} and some truth value.
+However, unlike the object value, the truth value depends on the database
+(on whether {\tt o} belongs to class {\tt c} in the database and whether
+the value of the attribute {\tt m} is, indeed, {\tt r}.
 
+Although previously we discussed only the object interpretation for path
+expressions, it is easy to see that they have truth values as well, because
+a path expression corresponds to a conjunction of F-logic atoms.
 Consequently, all F-molecules of the form (1) through (8) have dual
-reading. Given an intended model, \db I, of an \fl program an expression has:
+reading: As logical formulas (\emph{the deductive perspective}), and as
+expressions that represent one or more objects (\emph{the object-oriented
+  perspective}).  Given an intended model, \db I, of an \fl program an
+expression has:
 %%
 \begin{itemize}
   \index{molecule!object value}
-\item An \emph{object value}, which yields the name(s) of the object(s)
-  reachable in \db I by the corresponding expression, and 
+\item An \emph{object value}, which yields the Id(s) of the object(s)
+  that are reachable in \db I by the corresponding expression, and 
   \index{molecule!truth value}
 \item A \emph{truth value}, like any other literal or molecule of the
-  language. In particular, a molecule $r$ evaluates to \emph{false} if
-  \db I has no object corresponding to $r$.
+  language. 
 \end{itemize}
 %%
-Thus, a path expression can be viewed as a logical formula (\emph{the
-  deductive perspective}), or as an expression that represents one or more
-objects (\emph{the object-oriented perspective}).
+An important property that relates the above interpretations is: a
+molecule, $r$, evaluates to \emph{false} if \db I has no object
+corresponding to $r$.
+
 
 Consider the following path expression and an equivalent, decomposed
 expression:
@@ -1887,14 +1895,14 @@ x_{de}]\}
 \end{displaymath}
 %
 where $\db I \models \varphi$ means that $\varphi$ holds in \db I.  Observe
-that $\tt \obj(d.e)$ contains at most one element because the
-\emph{single-valued} method $\tt e$ is applied to a single oid $\tt d$.
-Thus, two formulas might be equivalent logically, but their values as
-objects might be different!
+two formulas can be equivalent, but their object values might be different.
+For instance, $\tt d[e\fd f]$ is equivalent to {\tt d.e} as a formula.
+However, $\tt \obj(d.e)$ is $f$, while $\tt \obj(d[e\fd f])$ is {\tt d}.
 
-In general, for an \fl\ database \db I, the object values of ground
-path expressions are given by the following mapping \obj from ground molecules
-to sets of ground oids:
+In general, for an \fl\ database \db I, the object values of ground path
+expressions are given by the following mapping, \obj, from ground molecules
+to sets of ground oids ($t$, $o$, $c$, $d$, $m$ can be oids or path
+expressions):
 %
 \begin{displaymath}
   \begin{array}{cll@{\hspace{4em}}c}
@@ -1935,35 +1943,35 @@ single-valued or multi-valued:
 \item in all other cases, $r$ is \emph{single-valued}.
 \end{itemize}
 
-In \FLORA, path expressions can appear wherever Id-terms are
-allowed. Consequently, the question arises whether a path expression
-is intended to indicate a truth value or an object value. For
-instance, we may want to call the XSB aggregate predicate {\tt findall/3}
-to retrieve the oids of the managers who like to play tennis:
+\paragraph{Dual representation and meta-predicates.}
+Since path expressions can appear wherever Id-terms are allowed, the
+question arises whether a path expression is intended to indicate a truth
+value or an object value. For instance, we may want to call the XSB
+aggregate predicate {\tt findall/3} to retrieve the oids of the managers
+who like to play tennis:
 %%
 \begin{qrules}
 findall(P,P{\isa}manager[hobbies{\mvd}tennis],L)
 \end{qrules}
 %%
-If all arguments are treated as objects, then this expression would be
-translated as
+If all arguments are treated as objects, then this expression would mean
 %%
 \begin{quote}
  \tt
  P{\isa}manager[hobbies{\mvd}tennis], findall(P,P,L)
 \end{quote}
 %%
-and a meaningless result will be returned --- the list of all instances of
-{\tt P} that evaluate to true. Since, due to the first F-molecule, these
-instances of {\tt P} must be the oids of the tennis-playing managers, such
-as {\tt john}, the list {\tt L} would contain those oids that happen to be
-true as 0-ary facts. (For example, {\tt john} would end up on such a list if
-the fact {\tt john} is true as a 0-ary predicate).
+and a meaningless result --- the list of all instances of {\tt P} that
+evaluate to true --- will be returned. Since, due to the first F-molecule,
+these instances of {\tt P} must be the oids of the tennis-playing managers,
+such as {\tt john}, the list {\tt L} would contain those oids that happen
+to be true as 0-ary facts. (For example, {\tt john} would end up on such a
+list if the fact {\tt john} is true as a 0-ary predicate).
 
-The upshot of this problem is that the default interpretation of
-\fl expressions as objects is not always suitable. In our example, we need
-to indicate to the compiler that the middle argument of {\tt findall/3}
-ought to be translated into XSB as follows:
+The upshot of this problem is that the interpretation of \fl expressions as
+objects is not always suitable. In our example, we need to indicate to the
+compiler that the middle argument of {\tt findall/3} ought to be translated
+into XSB as follows:
 %%
 \begin{quote}
  \tt
@@ -1994,7 +2002,7 @@ expression to {\it p}. In order to tell the compiler that the entire
 formula obtained by translating $E$ into Prolog is to be passed to $p$, we
 need to define the \emph{meta signature} of $p$ using the compiler
 directive {\tt arguments}.  For instance, the following directive will make
-{\tt findall/3} function as intended:
+{\tt findall/3} work as intended:
 %%
 \begin{qrules}
 :- arguments findall(oid,bform,oid).
@@ -2002,7 +2010,8 @@ directive {\tt arguments}.  For instance, the following directive will make
 %%
 This signature declaration tells \FLORA that the first and the third
 arguments to {\tt findall/3} should be translated as oids, while the second
-argument of {\tt findall/3} into a formula.
+argument of {\tt findall/3} should be treated as a formula of the kind that
+might occur in the body of a rule.
 
 
 
@@ -2013,63 +2022,86 @@ argument of {\tt findall/3} into a formula.
 %
 HiLog \cite{hilog-jlp} is the default syntax that \FLORA uses to represent
 functor terms (including object Ids) and predicates.  In HiLog, complex
-terms can appear wherever a function symbol is allowed, e.g., {\tt
-  group(X)(Y,Z)}, where the functor is the complex term {\tt group(X)}. In
-\FLORA, any Id-term, including function symbols, predicate symbols, and
-their arguments, can be a HiLog term.
+terms can appear wherever a function symbol is allowed. For example, {\tt
+  group(X)(Y,Z)} is a HiLog term where the functor is no longer a symbol
+but rather a complex term {\tt group(X)}. Variables in HiLog can range over
+terms, predicate and function symbols, and even over atomic formulas. For
+instance,
+%%
+\begin{quote}
+ ?- p(X), X(p), X.  
+\end{quote}
+%%
+is a perfectly legal query. If {\tt p(a(b))}, {\tt a(b)(p)},
+and {\tt a(b)} are all true in the database, then $X=a$ is one of the
+answers to the query.
 
 \index{HiLog!translation}
 %
-In fact, HiLog has a higher order syntax but a first order semantics
-\cite{hilog-jlp}. Any HiLog term can be consistently translated into
-a Prolog term. For instance, {\tt group(X)(Y,Z)} can be represented
-by the Prolog term {\tt flapply(flapply(group,X),Y,Z)}. The translation
-scheme is pretty straightforward and described in \cite{hilog-jlp}.
+Although HiLog has a higher order syntax, its semantics is first order
+\cite{hilog-jlp}. Any HiLog term can be consistently translated into a
+Prolog term. For instance, {\tt group(X)(Y,Z)} can be represented by the
+Prolog term {\tt apply(apply(group,X),Y,Z)}. The translation scheme is
+pretty straightforward and described in \cite{hilog-jlp}.
 
-In \FLORA any term is considered as a HiLog term and therefore subject
-to translation. That is, even a normal Prolog term will by default be
-represented using the HiLog translaiton, e.g., {\tt foo(a)} will be
-represented as {\tt flapply(foo,a)}. This is to guarantee that no
-extra translation will be needed for unification to work correctly at
-runtime. For instance, {\tt foo(a)} will unify with {\tt F(a)} and
-bind the variable {\tt F} to {\tt foo}.
+In \FLORA any Id-term, including function symbols and predicate symbols,
+are considered to be HiLog terms and therefore are subject to translation.
+That is, even a normal Prolog term will by default be represented using the
+HiLog translaiton, e.g., {\tt foo(a)} will be represented as {\tt
+  apply(foo,a)}. This guarantees that HiLog unification will work correctly
+at runtime. For instance, {\tt foo(a)} will unify with {\tt F(a)} and bind
+the variable {\tt F} to {\tt foo}.
 
 
 \index{HiLog!unification}
 %
-The following problem arises as far as unificatoin is concerned:
-Should {\tt foo} unify with {\tt foo()}, which both seem like 0-ary
-terms? Moreover, if the answer is yes, then should {\tt foo} unify
-with {\tt foo()()}, which is also a valid HiLog term?  In \FLORA, the
-answers depend on whether these 0-ary terms appear as predicate calls
-in rule heads and bodies, or just as Id-terms, i.e., arguments.
+HiLog has one interesting peculiarity: If {\tt foo}  is a symbol,
+then {\tt foo} and {\tt foo()} are not the same, and both are different
+from {\tt foo()()}. In terms of the translation, this means that {\tt foo}
+is different from {\tt apply(foo)} is different from {\tt apply(apply(foo))}.
 
-In general, the presence of a pair of parentheses in a term would imply
-one application of the HiLog translation during
-compilation. Therefore, {\tt foo()} would be represented as
-{\tt flapply(foo)}, {\tt foo()()} as {\tt flapply(flapply(foo))},
-and {\tt foo} as it is, i.e, {\tt foo}.  So {\tt foo} does not unify
-with {\tt foo()} or {\tt foo()()} while they all act as Id-terms. One
-of the advantages of keeping them differently is to make a \FLORA module
-communicate easily with normal XSB modules, which do not fully support
-HiLog. Refer to Section~\ref{sec:flora-modules} for more information
-on \FLORA modules.
-
-However, to make programming easy in the higher order fashion, 0-ary
-Prolog terms are translated like 0-ary HiLog terms when they appear
-as predicate calls in rule heads and bodies. For instance, the
-following two rules are equivalent in \FLORA:
+This, it would seem that the following queries are different:
+%%
+{\tt
 \begin{quote}
-\begin{verbatim}
-foo :- body.
-foo() :- body.
-\end{verbatim}
+   ?- p.\\
+   ?- p().
 \end{quote}
-and can be invoked in a rule body by either {\tt foo}, {\tt foo()},
-or more fancily, {\tt X()}, where {\tt X} is a variable to be bound
-to {\tt foo} when the call succeeds.
-
-{\tt foo} never unifies with {\tt foo()()} in \FLORA.
+}
+%%
+\noindent
+However, considering that calling 0-ary predicates is quite common in logic
+programming, we decided to make {\tt p} and {\tt p()} the same {\em when
+  they occur as predicates in the rule head or body}. Thus, in the following
+program,
+%%
+{\tt
+\begin{quote}
+ p. \\
+ q().\\
+ ?- p().\\
+ ?- q.\\
+ ?- r = r().
+\end{quote}
+}
+%%
+\noindent
+the first two queries will succeed, but the last one will fail.
+This grace does not extend to {\tt p()()}. In the following program,
+%%
+{\tt
+\begin{quote}
+ p.\\
+ q().\\
+ ?- p()().\\
+ ?- q()().\\
+ ?- p = p()().\\
+ ?- q() = q()().
+\end{quote}
+}
+%%
+\noindent
+all queries fail.
 
 
 \subsection{Meta-programming}
@@ -2077,9 +2109,10 @@ to {\tt foo} when the call succeeds.
 
 \index{meta-programming}
 %
-\fl enhanced with HiLog lends itself naturally to meta-programming. For
-instance, it is easy to examine the methods and types defined for the
-various classes.  Here are some simle examples:
+\fl together with HiLog is powerful stuff. In particular, it lends itself
+naturally to meta-programming. For instance, it is easy to examine the
+methods and types defined for the various classes.  Here are some simple
+examples:
 %%
 \begin{quote}
 \begin{verbatim}
@@ -2122,9 +2155,62 @@ Yes.
 \end{quote}
 %%
 Note that these primitives are used for Prolog terms only and
-described in the XSB manual. Meta-programming support for HiLog terms
+are described in the XSB manual. Meta-programming support for HiLog terms
 and F-molecules will be provided through future enhancement.
 
+
+\subsection{Passing Arguments Between \FLORA and XSB}
+
+The native HiLog support in \FLORA causes some tension when crossing the
+border from one system to another. The reason is that \FLORA terms and XSB
+terms have different internal representation. Even though XSB supports
+HiLog (according to the manual, anyway), this support is incomplete and is
+not integrated well into the system --- most notably into its module
+system. As a result, XSB does not recognize terms passed to it from \FLORA
+as HiLog terms and, thus, many useful primitives will not work correctly.
+(Try {\tt ?- writeln(foo(abc))@prolog()} and see what happens.)
+
+\index{flP2H/2}
+\index{Prolog to HiLog conversion}
+\index{HiLog to Prolog conversion}
+%%
+To cope with the problem, \FLORA provides a primitive, {\tt
+  flP2H(Plg,Hlg)}, which does the translation. If the first argument,
+{\tt Plg}, is bound, the primitive binds the second argument to the
+Hilog representation of the term. If {\tt Plg} is already bound to a
+Hilog term, then {\tt Hlg} is bound to the same term without conversion.
+Similarly, if {\tt Hlg} is bound to a HiLog term, then {\tt Plg} gets
+bound to the Prolog representation of that term. If {\tt Hlg} is bound to
+a non-HiLog term, then {\tt Plg} gets bound to the same term without
+conversion. In all these cases, the call to flP2H/2 succeeds. If {\tt both}
+arguments are bound, then the call succeeds if and only if
+%%
+\begin{itemize}
+\item {\tt Plg} is a Prolog term and {\tt Hlg} is its HiLog
+  representation.
+\item Both {\tt Plg} and {\tt Hlg} are identical HiLog terms.
+\end{itemize}
+%%
+Note that if both {\tt Plg} and {\tt Hlg} are bound to the same
+\emph{Prolog term} then the predicate \emph{fails}. Thus, if you type the
+following queries into the \FLORA shell, they both succeed:
+%%
+{\tt
+\begin{quote}
+  ?- flP2H(X,f(a)), flP2H(X,f(a)).  \\
+  ?- flP2H(f(a),f(a)).
+\end{quote}
+}
+%%
+
+
+Not all arguments passed back and forth to XSB need conversion. For
+instance, {\tt sort/2}, {\tt ground/1}, {\tt compound/1}, and many others
+do not need conversion because they work the same for Prolog and HiLog
+representations. On the other hand, most I/O predicates require conversion.
+In a future release, \FLORA will provide libraries of useful predicates and
+methods that do appropriate conversion without the user having to do
+this explicitly.
 
 
 \subsection{First-Order Predicates and HiLog Predicates}
@@ -2138,18 +2224,19 @@ the object-oriented syntax of \fl and the predicate-based ({\it i.e.},
 relational) syntax of Prolog. Incorporation of predicates is conceptually
 simple, but is somewhat burdened by pragmatic considerations, namely,
 integration with HiLog. As a result, \FLORA has two types of predicates,
-first-order {\tt predicates} and \emph{HiLog predicates}. 
+{\em first-order predicates\/} and \emph{HiLog predicates}. 
 
-The native syntax for predicates in \FLORA is that of HiLog, as explained
-in Section~\ref{sec:hilog}, due to HiLog's support for meta-programming.
-In particular, the query 
+Recall that the main reason for using HiLog as the native syntax and
+semantics in \FLORA is meta-programming. However, this is also one of the
+reasons for adding the first-order predicates. To explain, consider the
+following query:
 %%
 \begin{quote}
  \tt
  ?- X(a,b).
 \end{quote}
 %%
-would return all names of binary predicates that contain
+which returns all names of binary predicates that contain
 the tuple {\tt a,b}. However, it is sometimes useful to exclude certain
 predicates from the domain of the meta-variables, such as {\tt X} above.
 For instance, if {\tt write/2}  is an I/O predicates, should the above
@@ -2182,13 +2269,13 @@ the following compiler directive:
 First-order predicates are module-aware. This means that the predicates defined
 in different modules are treated as unrelated entities.
 
-There is one other reason why we might sometimes use first-order predicates
-over HiLog predicates, which has to do with tabling. This issue is
-discussed in Section~\ref{sec-tabling-flora}.
+There is one other reason why we might sometimes choose first-order
+predicates over HiLog predicates --- predicate tabling. This issue
+is discussed in Section~\ref{sec-tabling-flora}.
 
 
 
-\subsection{Abolishing \FLORA Predicates}
+\subsection{Abolishing First-Order Predicates}
 
 
 \index{module!{\tt expunge}}
@@ -2199,11 +2286,13 @@ a program is loaded into, the following compiler directive can be used:
 \verb!:- expunge functor/arity.!
 \end{quote}
 
+\noindent
 {\tt expunge} can also be called like a normal predicate,
 either from the shell or from within a rule body, to expunge
 predicates in one specific module. The syntax is shown below:
+%%
 \begin{quote}
-\verb!:- expunge functor/arity, ..., functor/arity in module.!
+\verb!:- expunge functor/arity, ..., functor/arity in modulename.!
 \end{quote}
 where {\tt in} is a special keyword, and {\tt module} stands for the
 name of the module from which to expunge the list of predicates.
@@ -2218,9 +2307,9 @@ default module.
 \section{Equality Maintenance}\label{sec-eqmaintain}
 
 
-Equality of object identities (oids) stems in the first place from the
-closure axioms stupilated on scalar methods in \fl. For instance, consider
-the following \fl facts:
+Unlike regular Prolog, \FLORA terms can become {\tt equal}, which is a side
+effect of the \fl semantics for scalar methods.  For instance, consider the
+following \fl facts:
 %%
 \begin{quote}
 mary[spouse{\fd}john]. \\
@@ -2228,64 +2317,99 @@ mary[spouse{\fd}joe]. \\
 john[son{\mvd}frank].
 \end{quote}
 %%
-Because ``{\tt spouse}'' is a scalar method, i.e., single-valued method,
-we know that the oids ``{\tt john}'' and ``{\tt joe}'' represent
-the same object. Therefore, whatever is true about ``{\tt john}'' should
-be also true about ``{\tt joe}'', and vice versa. Thus we can derive
-that {\tt joe[son{\mvd}frank]}.
+Since {\tt spouse} is a scalar attribute, it can have at most one value for
+any given object. This implies that the oids {\tt john} and {\tt joe} must
+refer to the same object. Therefore, whatever is true about {\tt john}
+should be also true about {\tt joe}, and vice versa.  Thus we should be
+able to derive that {\tt joe[son{\mvd}frank]}.
 
 What is illustrated above is just a very simple scenario of equality
-maintenance. Moreover, users can define equalities in a source program
-using the predicate {\tt :=:}, e.g.,
+maintenance. Another scenario arises due to the path expressions in the
+rule heads (Section~\ref{sec-pathexp-head}).  Furthermore, users can define
+equality \emph{explicitly} in the source program using the predicate {\tt
+  :=:}, e.g.,
+%%
 \begin{quote}
 \verb|john:=:batman.|
 \end{quote}
 
-Once oids are identified, it may need to propogate to all
-\fl structures, including the subclass hierarchy, the ISA hierarchy, etc.,
-depending on the application domain. By default, \FLORA does not use
-the trailer with equality maintenance, since equality maintenance
-consumes more resources.  However, users do not have to worry about
-the various aspects of equality maintenance. The equality maintenance
-rules are already implemented by \FLORA and the level of support for
-equalitycan maintenance can be specified by using one of the following
-three compiler directives:
+Once oids are made equal, this fact may need to be propogate to all \fl
+structures, including the subclass hierarchy, the ISA hierarchy, etc.,
+depending on the application domain. Although equality is a powerful
+feature, its maintenance can slow the program down quite significantly.
+In order to be able to eat the cake and have it at the same time, \FLORA
+allows the user to control how equality is handles.
+by providing the following three compiler directives:
 %%
 \index{equality}
 \index{compiler directive!equality}
 %%
 {\tt
 \begin{quote}
-:- equality none.\\
+:- equality none.  (default)\\
 :- equality basic.\\
 :- equality flogic.
 \end{quote}
 }
 
-To be more specific, \mbox{\tt equality none} does not use any feature of
-equality maintenance while \mbox{\tt equality basic} guarantees the
-congruence relation among object equalities, i.e., transivity, reflexity,
-and symmetry. Besides the properties of equality stipulated by
-\mbox{\tt equality basic}, \mbox{\tt equality floigc} will enforce the full
-equality implied by \fl, including the scalar axiom.
+\noindent
+These directives affect the particular modules in which they are included.
+Thus, equality can be treated differently in different modules. This allows
+to compartmentalize the problem and, if used judiciously, can lead to
+significant gain in performance.
 
-Note that {\tt equality} can also be used as a normal predicate. When it
-is called from the shell or from within a rule body, it will set equality
-support for the default module. Moreover, it can also set equality level
-for one specific module. The syntax is as follows:
+To first directive, \mbox{\tt equality none}, does not maintain equality
+and {\tt :=:} is considered just like any other user-defined predicate
+without any special semantics.  The directive \mbox{\tt equality basic}
+guarantees that {\tt :=:} obeys the usual congruence rules for equality,
+i.e., transivity, reflexity, and symmetry, and substitution, but not the
+special \fl equality rule for scalar methods. Finally, \mbox{\tt equality
+  flogic} means that the full equality theory for \fl is in force.  In
+particular, programs with path expressions in the rule heads might require
+this level of equality to work correctly (if there is a possibility that
+the Skolem terms introduced to represent the path expressions might be
+equal to some real objects).
+
+Note that equality can also be maintained when working with the \FLORA
+shell. Furthermore, \FLORA allows one module to set the level of equality
+maintenance in another module:
+%%
 \begin{quote}
-\verb!equality {none|basic|flogic} in module!
+\verb!equality {none|basic|flogic} in modulename!
 \end{quote}
-where {\tt in} is a special keyword, and {\tt module} stands for the name of
-the module.
+%%
+\index{dynamic module}
+%%
+This might be useful for \emph{dynamic} modules, {\it i.e.}, modules that
+are not associated with any files and whose content is generated completely
+dynamically. (See Section~\ref{sec-updates}.)
+
+One final advice regarding equality. In many cases, programmers tend to use
+equality as an aliasing technique for long messages, numbers, etc. In this
+case, we recommend to use the preprocessor commands, which achieve the same
+result without loss of performance. For instance,
+
+%%
+\begin{verbatim}
+  #define YAHOO  'http://yahoo.com'  
+
+  ?- YAHOO[fetch \fd X].
+\end{verbatim}
+%%
+\noindent
+Assuming that {\tt fetch} is a method that applies to strings that
+represent WWW sites and that fetches the corresponding Web pages, the above
+program will fetch the page at the Yahoo site, because \FLORA compiler will
+replace YAHOO with the corresponding string that represents a URL.
 
 
-\section{Inheritance}
+\section{Inheritance}\label{sec-inheritance}
 
 
 \index{inheritance!structural}
 \index{inheritance!behavioral}
-\fl identifies two types of inheritance: \emph{structural} and
+%%
+\fl supports two types of inheritance: \emph{structural} and
 \emph{behavioral}.  Structural inheritance applies to signatures only. For
 instance, if {\tt student::person} and a program defines the signature
 {\tt person[name{\Fd}string]} then the query {\tt ?- student[name{\Fd}X]}
@@ -2394,7 +2518,7 @@ reason in two different ways:
 \item \verb|a[m->>c]| was derived based on the belief that attribute {\tt
     m} is not defined for the object {\tt a}. However, once inherited,
   necessarily we must have \verb|a[m->>{c,d}]|. So, the value of
-  attribute {\tt m} is not really that produced by inheritance. In other
+  attribute {\tt m} is not really the one produced by inheritance. In other
   words, inheritance of \verb|a[m->>c]| negates the very premise on which
   the original inheritance was based, so we must undo the operation and the
   ensuing rule application.
@@ -2403,14 +2527,33 @@ reason in two different ways:
   made inheritance inferences. Thus, the result must be \verb|a[m->>{c,d}]|.
 \end{enumerate}
 %%
+A similar situation (with similarly conflicting conclusions) arises when
+the class hierarchy is not static. For instance, 
+%%
+\begin{verbatim}
+ d[m*->e]
+ d::b.
+ b[m*->c].
+ a:b.
+ a:d :- a[m->c].  
+\end{verbatim}
+%%
+If we inherit {\tt a[m \fd c]}  from {\tt b} (which seems to be OK in the
+beginning, because nothing overrides this inheritance), then we derive {\tt
+  a:d}, {\it i.e.}, we get the following: {\tt a:d::b}. This means that
+\emph{now} {\tt d} seems to be negating the reason why {\tt a[m \fd c]} was
+inherited in the first place. Again, we can either undo the inheritance or
+adopt the principle that inheritance is never undone.
+
 A semantics that favors the second interpretation was proposed in
 \cite{KLW95}. This approach is based on a fixpoint computation of
 non-monotonic behavioral inheritance.  However, this semantics is very hard
 to implement efficiently, especially using a top-down deductive engine
-provided by XSB. Thus, \FLORA uses a different, more cautious semantics for
-inheritance, which favors the first interpretation above.  The idea can be
-summarized using the following rules, which define how class instances
-inherit from the classes they belong to:
+provided by XSB. It is also unsatisfactory in many respects because it is
+not based on any model-theory. \FLORA uses a different, more cautious
+semantics for inheritance, which favors the first interpretation above.
+The basic idea can be summarized using the following rules, which define how
+class instances inherit from the classes they belong to:
 %%
 \begin{quote}
 \begin{verbatim}
@@ -2446,16 +2589,21 @@ conflictSet(Obj,Class,A) <- Obj:Super, Super[A*->V],
 \end{quote}
 %%
 \index{well-founded semantics}
+%%
 Negation here is implemented using the {\em well-founded semantics}
 for negation \cite{gelder-alternating-89,gelder-ross-schlipf-91} (as
 indicated by the {\tt tnot} operator).  Similar rules are needed to
 describe how classes inherit from superclasses.
 
+Under this semantics, {\tt clyde} will still be white, but in the other two
+examples {\tt a[m->c]} is \emph{not} inherited. Details of this semantics
+and its model theory will be presented in a future paper.
+
 In the examples that we have seen so far, path expressions use only
 non-inheritable attributes. Clearly, there is no reason to disallow
 inheritable attributes in such expressions. To distinguish inheritable
-attributes from non-inheritable ones in path expressions, \FLORA uses
-``{\tt !}'' and ``{\tt !!}''. For instance,
+attributes from non-inheritable ones, \FLORA uses the symbols
+{\tt !} and {\tt !!} in its path expressions. For instance,
 %%
 \begin{quote}
 \begin{verbatim}
@@ -2470,7 +2618,7 @@ obj!!attr             means: some Y, such that obj[attr*->>Y].
 \section{Aggregates}
 
 
-The syntax for aggregates in \FLORA is similar to that in \FLORID. An
+The syntax for aggregates is similar to that in \FLORID. An
 aggregate has the following form:
 %%
 \begin{qrules}
@@ -2489,18 +2637,19 @@ can be any combinaiton of conjunction, disjunction, and negation of literals.
 All the variables appearing in {\it body} but not in {\tt X} or {\tt Gs} are
 considered to be existentially quantified. Furthermore, the syntax of an
 aggregate must satisfy the following conditions:
+%%
 \begin{enumerate}
-\item All the variable names in both {\tt X} and {\tt Gs} must
+\item All names of variables in both {\tt X} and {\tt Gs} must
 appear in {\it body};
 \item {\tt Gs} should not contain {\tt X}.
 \end{enumerate}
 
 Aggregates are evaluated as follows: First, the query
-conditions specified by {\it body} are evaluated to obtain all the bindings
-for the tuple of the form {\tt \texttt{<}X, Gs\texttt{>}}; Then, these
+condition specified in {\it body} is evaluated to obtain all the bindings
+for the template of the form {\tt \texttt{<}X, Gs\texttt{>}}. Then, these
 tuples are grouped according to each distinct binding for
-{\tt \texttt{<}Gs\texttt{>}}; Finally, for each group the aggregate operator
-is applied the list of bindings for the aggregate variable.
+{\tt \texttt{<}Gs\texttt{>}}. Finally, for each group, the aggregate operator
+is applied to the list of bindings for the aggregate variable $\tt X$.
 
 
 \index{aggregates!min}
@@ -2540,15 +2689,15 @@ illustrate the use of aggregates (some borrowed from the \FLORID manual):
 %%
 If an aggregate contains grouping variables that are \emph{not} bound
 by a preceding subgoal, then this aggregate would backtrack over such
-grouping variables (In other words, they are considered to be
+grouping variables (In other words, grouping variables are considered to be
 existentially quantified). For instance, in the last query above, the
 aggregate will backtrack over the variable {\tt Who}. Thus, if
 {\tt john}'s and {\tt mary}'s average salary is greater than {\tt 20000},
 this query will backtrack and return both {\tt john} and {\tt mary}.
 
-The following example is a query that for each employee asks for a list of
-years when this employee had salary less than 60. This illustrates the use
-of the {\tt collectset} aggregate.
+The following query returns, for each employee, a list of years when this
+employee had salary less than 60. This illustrates the use of the {\tt
+  collectset} aggregate.
 %%
 \begin{quote}
 \begin{verbatim}
@@ -2562,15 +2711,21 @@ Who = john
 \end{quote}
 %%
 
+\subsection {Aggregation and Set-Valued Methods}
+
 \index{aggregates!multi-valued methods}
 \index{multi-valued methods!aggregation}
-%
-To retrieve all the return values of multi-valued methods, \FLORA provides
-two new operators, {\tt ->->} and {\tt *->->}, for non-inheritable and
-inheritable multi-value methods, respectively. 
+\index{->->}
+\index{*->->}
+%%
+Aggregation is often used in conjunction with set-valued methods, and
+\FLORA provides several shortcuts to facilitate this use.
+In particular, the operators
+{\tt ->->} and {\tt *->->}, for non-inheritable and
+inheritable multivalued methods, collects all the values of the given
+method for a given object in a set. The semantics of these operators is
+as follows:
 
-In fact, {\tt ->->} and {\tt *->->} are just syntactic sugars and can be
-defined using the {\tt collectset} aggregate, as follows:
 \begin{quote}
 \begin{verbatim}
 O[M->->L] :- L=collectset{V|O[M->>V]}
@@ -2579,96 +2734,82 @@ O[M*->->L] :- L=collectset{V|O[M*->>V]}
 \end{verbatim}
 \end{quote}
 
-The only restriction is that {\tt ->->} and {\tt *->->} cannot appear in
-the head of a rule.
+\noindent
+Note that in {\tt O[M->->L]}  and {\tt O[M*->->L]}  {\tt L} is a list of oids.
+
+Having special meaning for {\tt ->->} and {\tt *->->} means that these
+constructs \emph{cannot} appear in the head of a rule.
+One other caveat: recursion through aggregation is not supported and can
+produce incorrect results.
 
 
-\subsection{Boolean Methods}
 
+\index{\tt +>>}
+\index{\tt *+>>}
+  %%
+Sets collected in the above manner often  need to be compared to other
+sets. For this, \FLORA provides another pair of primitives: {\tt +>>} and
+{\tt *+>>} for non-inheritable and inheritable methods, respectively.
+The atom of the form {\tt o[m+>>s]} is true if the set of all values of the
+non-inheritable attribute {\tt m} for object {\tt o} \emph{contains} every
+element in the list {\tt s}. 
 
-\index{method!boolean}
-%
-As a syntactic sugar, \FLORA introduces boolean methods, which can be
-considered as scalar methods that return some fixed value, e.g.,
-{\tt true}. For example, the following facts:
-\begin{quote}
-\verb|john[is_tall -> true].| \\
-\verb|john[loves(tennis) -> true].|
-\end{quote}
-can be rewritten using boolean methods as follows:
-\begin{quote}
-\verb|john[is_tall].| \\
-\verb|john[loves(tennis)].|
-\end{quote}
-
-Conceptually, boolean methods represent statements about objects whose
-truth value is of primary concern. However, boolean methods are not
-completely interchangeable with scalar methods in that boolean methods
-do not return any value (not even the value {\tt true}). Therefore,
-boolean methods can only appear inside the specification part for an
-object, not as part of a path navigation like
-\mbox{\tt john.is\_vegetarian}.
-
-Like inheritable scalar methods, there are also inheritable boolean
-methods. To make a boolean method inheritable, a ``\verb|*|'' sign
-needs to be added before it. For instance, the following facts:
-\begin{quote}
-\begin{verbatim}
-buddhist[*is_vegetarian].
-john:buddhist.
-\end{verbatim}
-\end{quote}
-say that all Buddhists are vegetarian and John (the object with oid {\tt
-  john}) is a Buddhist. Since \verb|is_vegetarian| is inheritable, it
-follows that John is also a vegetarian, i.e.,
-\verb|john[is_vegetarian]|.
-
-
-\subsection {Sets vs. Lists}
-
-
-\index{multi-valued methods!set notation}
-%
-As mentioned in Section~\ref{sec-basic-flogic}, \fl uses the set
-notation, \{$\ldots$\}, to specify a subset of the return values of a
-multi-valued method, e.g.,
-\begin{quote}
-\verb|mary[children->>{john,frank}].|
-\end{quote}
+For instance, the following query tests whether all Mary's children are
+also John's children:
 %%
-says that the children of Mary (the object with oid {\tt mary})
-\emph{include} John and Frank (the objects with oids {\tt john} and {\tt
-  frank}).
-
-However, since \fl does not support any operator to compose or
-decompose a set, and Prolog does not support the set notation either,
-breaking down of a set is done by the \FLORA compiler. This drawback
-leads to less flexibility in programing style.
-
-\index{multi-valued methods!list notation}
-%
-But in Prolog there is a data structure very close to sets --- lists.
-Note that lists are indeed complex terms and potentially can also be
-used as oids. To avoid this ambiguity, \FLORA introduces a new
-operator, {\tt +>>}, to specify that all members of a list constitute
-a subset of the return values of a multi-valued method. For example,
-the following query tests whether all Mary's children are also
-John's children:
 \begin{quote}
 \begin{verbatim}
 ?- mary[children->->L], john[children+>>L].
 \end{verbatim}
 \end{quote}
 
-Corresponding to inheritable multi-valued methods, \FLORA introduces
-another new operator, {\tt *+>>}, for use in the list notation.
-
-The only limitation to the use of {\tt +>>} and {\tt *+>>} is that
-they cannot appear in a fact or the head of a rule.
+As with {\tt ->->} and {\tt *->->},
+the use of {\tt +>>} and {\tt *+>>} is limited to rule bodies.
 
 
 
-\subsection{Anonymous Oid}
+\section{Boolean Methods}
+
+
+\index{method!boolean}
+%
+As a syntactic sugar, \FLORA introduces boolean methods, which can be
+considered as scalar methods that return some fixed value, e.g.,
+{\tt void}. For example, the following facts:
+\begin{quote}
+\verb|john[is_tall -> void].| \\
+\verb|john[loves(tennis) -> void].|
+\end{quote}
+can be simplified as boolean methods as follows:
+\begin{quote}
+\verb|john[is_tall].| \\
+\verb|john[loves(tennis)].|
+\end{quote}
+
+Conceptually, boolean methods are statements about objects whose truth
+value is the only concern. Boolean methods do not return any value (not
+even the value {\tt void}). Therefore, boolean methods {\tt cannot} appear
+in path expressions. For instance, \mbox{\tt john.is\_vegetarian} is
+illegal.
+
+Like scalar methods, boolean methods can also be inheritable. To make a
+boolean method inheritable, the ``\verb|*|'' sign is added before
+the method:
+%%
+\begin{quote}
+\begin{verbatim}
+buddhist[*is_vegetarian].
+john:buddhist.
+\end{verbatim}
+\end{quote}
+%%
+The above says that all Buddhists are vegetarian and John (the object with
+oid {\tt john}) is a Buddhist. Since \verb|is_vegetarian| is inheritable,
+it follows that John is also a vegetarian, i.e.,
+\verb|john[is_vegetarian]|.
+
+
+\section{Anonymous Oid}
 
 
 \index{anonymous oid}
@@ -2678,34 +2819,26 @@ compiler directive \verb|_#| to automatically generate a new
 oid. \verb|_#| can be used wherever an Id-term is allowed. Like the
 anonymous variable \verb|_|, each occurrence of \verb|_#| represents
 an anonymous oid. The difference is that such an oid is not only
-``unique'' in each rule, but in the source program as well.
+unique in each rule, but in the source program as well.
 
-However, ``unique'' is just the approximate saying. The \FLORA
-compiler does not really check for uniqueness of those newly generated
-oids.  When \FLORA compiles a source program, it first initiates a
-sequential counter.  Each occurrence of \verb|_#| causes the counter
-to be incremented by one, and a new oid to be generated by
-concatenating a fixed prefix, e.g, \verb|_$_$_flora'newoid|, and the
-content of the counter.
+Of course, uniqueness is achieved through the use of special weird naming
+schema for such oids. However, as long as the user does not use a similar
+naming convention (who, on earth, would give names with lots of {\tt
+  \_\$}?), uniqueness is guaranteed.
 
-For example, the following program:
+
+For example, in the following program:
+%%
 \begin{quote}
 \begin{verbatim}
 _#[ssn->123, father->_#[name->john, spouse->_#[name->mary]]].
 foo[_#(X)->Y] :- foo(X,Y).
 \end{verbatim}
 \end{quote}
-is the same as the following one, where the anonymous oids are explicitly
-replaced by the corresponding encrypted strings that would be generated
-by the \FLORA compiler:
-\begin{quote}
-\begin{verbatim}
-'_$_$_flora''newoid1'[ssn->123, father->'_$_$_flora''newoid2'].
-'_$_$_flora''newoid2'[name->john, spouse->'_$_$_flora''newoid3'].
-'_$_$_flora''newoid3'[name->mary].
-foo['_$_$_flora''newoid4'(X)->Y] :- foo(X,Y).
-\end{verbatim}
-\end{quote}
+%%
+the compiler will generate unique oids for each occurrence of {\tt \_\#}.
+Note that, in the second clause, only one oid is generated and it serves as
+a method name.
 
 
 
@@ -2717,31 +2850,26 @@ foo['_$_$_flora''newoid4'(X)->Y] :- foo(X,Y).
 
 \index{tabling}
 %
-Tabling is a technique that enhances top-down evaluation with a mechanism
-that remembers the calls previously made during query evaluation.
-This technique is known to be essentially equivalent to the Magic Sets
-method for bottom-up evaluation. However, tabling combined with top-down
+Tabling is a technique that enhances top-down query evaluation with a
+mechanism that remembers the calls made previously in the process.  This
+technique is known to be essentially equivalent to the Magic Sets method
+for bottom-up evaluation. However, tabling combined with top-down
 evaluation has the advantage of being able to utilize highly optimized
 compilation techniques developed for Prolog. The result is a very efficient
 deductive engine.
 
 XSB lets the user specify which predicates must be tabled.  The \FLORA
-compiler automatically tables the predicates used to flatten F-molecules.
+compiler automatically tables the predicates used to represent F-molecules.
 However, the user is responsible for telling the system which other
-predicates must be tabled. (Normally, these are predicates defined by the
-user.)  \FLORA accepts the same tabling directives as XSB does
-(Section~\ref{sec-comp-directives} lists all the compiler directives).
+predicates --- first-order and HiLog --- must be tabled.  \FLORA
+understands one tabling directive for first-order predicates and another
+for HiLog.  (Section~\ref{sec-comp-directives} lists all the compiler
+directives.)
 
 \index{table}
 \index{compiler directive!{\tt table}}
 %
-Due to the current implementation of HiLog and module system in \FLORA, a
-HiLog predicate cannot be tabled directly (without hacking into the \FLORA
-implementation). To table a predicate, it must be declared as a first-order
-predicate using the \mbox{\tt firstorder functor/arity} compiler directive
-(refer to Section~\ref{sec:hilog} and
-Section~\ref{sec:flora-modules-predicates} for more information on these
-compiler directives). For instance, the following \FLORA program:
+To table a first-order predicate, the following can be used:
 \begin{quote}
 \begin{verbatim}
 :- firstorder tc/2.
@@ -2752,14 +2880,14 @@ tc(X,Y) :- edge(X,Y), tc(Y,Z).
 \end{verbatim}
 \end{quote}
 %%
-renders {\tt tc/2}  as a tabled first-order predicate.
+which renders {\tt tc/2}  as a tabled first-order predicate.
+(In the future, the tabling directive will imply {\tt firstorder}.)
 
 \index{hilogtable}
 \index{compiler directive!{\tt hilogtable}}
 %%
-It is also possible to table HiLog predicates, but the granularity of 
-tabling is coarse: \FLORA tables \emph{all} HiLog predicates of the given
-arity at once. For instance, 
+To table HiLog predicates, \FLORA requires you to table \emph{all}
+predicates of a given arity: For instance,
 %%
 \begin{quote}
  \tt
@@ -2768,62 +2896,63 @@ arity at once. For instance,
 %%
 tables all HiLog predicates of arity 3.
 
-It is important to keep in mind that XSB does not do reordering of
-objects and predicates during joins. Instead, all joins are performed
-left-to-right.  Thus, program clauses must be written in such a way as
-to ensure that smaller predicates and classes appear early on in the
-join. Also, even though XSB tables the results obtained from previous
-queries, the current tabling engine has several limitations. In
-particular, when a new query comes in, XSB tries to determine if this
-query is ``similar'' to one that already has been answered (or is in
-the process of being evaluated).  Unfortunately, the current notion of
-similarity used by XSB is fairly weak, and many unnecessary
-recomputations might result. This problem will be corrected in a
-future release.
-
-\index{abolish\_all\_tables}
-%%
-It is also important to be aware that when XSB (and \FLORA) evaluate a program,
-all tabled predicates are partially materialized and all the computed
-tuples are stored in XSB tables. Thus, if you change the set of facts, the
-existing tables must be discarded in order to allow XSB to recompute the
-results. This is accomplished by issuing the predicate
-{\tt abolish\_all\_tables/0} described in the XSB manual.
+It is important to keep in mind that XSB does not do reordering of \fl
+molecules and predicates during joins. Instead, all joins are performed
+left-to-right.  Thus, program clauses must be written in such a way as to
+ensure that smaller predicates and classes appear early on in the join.
+Also, even though XSB tables the results obtained from previous queries,
+the current tabling engine has several limitations. In particular, when a
+new query comes in, XSB tries to determine if this query is ``similar'' to
+one that already has been answered (or is in the process of being
+evaluated).  Unfortunately, the default notion of similarity used by XSB is
+fairly weak, and many unnecessary recomputations might result. Recently, a
+new technique, called \emph{subsumptive tabling}, has been implemented in
+XSB. It is known that subsumptive tabling can speed up certain queries by
+an order of magnitude. A future version of \FLORA might take advantage of
+this technique.
 
 
 \subsection{Procedural Methods}
 
+\index{abolish\_all\_tables}
+%%
+When XSB (and \FLORA) evaluate a program, all tabled predicates are
+partially materialized and all the computed tuples are stored in XSB
+tables. Thus, if you change the set of facts, the existing tables must be
+discarded in order to allow XSB to recompute the results. This is
+accomplished by issuing the predicate {\tt abolish\_all\_tables/0}
+described in the XSB manual. We discuss updates in
+Section~\ref{sec-updates}.
 
 \index{method!procedural}
 %
-Unfortunately, tabling sometimes has undesirable effects in
-``real-world'' programming, especially on those predicates with
-non-logical ``side effects'' (e.g., writing or reading a file).  If a
-tabled predicate has such side effects, then the first time the predicate
-is called the side effect will be performed, but the second time the call
-simply returns with success or failure (depending on the outcome of the
-first call).  Thus, if the predicate is intended to perform the side
-effect each time it is called, it will not operate correctly.
+Because tabling is not integrated with the update mechanism in XSB, it can
+have undesirable effect on predicates with non-logical ``side effects''
+(e.g., writing or reading a file) and predicates that change the state of
+the database.  If a tabled predicate has a side effect, the first time the
+predicate is called the side effect is performed, but the second time the
+call simply returns with success or failure (depending on the outcome of
+the first call), because XSB will simply look it up in a table.  Thus, if
+the predicate is intended to perform the side effect each time it is
+called, it will not operate correctly.
 
-In the object-oriented programming style, people tend to define
-methods with side effects and attach them to objects. These methods
-are \emph{procedural} in nature and should be performed each time they
-are called. Because by default \FLORA tables everything that comes
-from F-molecules, these procedural methods are potentially subject to
-the same problem as described above.
+Object-oriented programms often rely on methods that produce side effects
+or make updates.  In \FLORA we call such methods \emph{procedural}.
+Because by default \FLORA tables everything that looks like an F-molecule,
+these procedural methods are potentially subject to the aforesaid problem.
 
-To solve this program, \FLORA introduces a new syntax to identify
-procedural methods --- simply put a ``\verb|#|'' sign in front of a
-procedural method. For instance, the following rule defines an
-output method that for every object writes out its oid in canonical
-form:
+To sidestep this program, \FLORA introduces a new syntax to identify
+procedural methods --- by allowing the ``\verb|#|'' sign in front of a
+procedural method. For instance, the following rule defines an output
+method that, for every object, writes out its oid:
+%%
 \begin{quote}
-\verb|O[# output] :- write_canonical(O).|
+\verb|O[#output] :- write(O)@prolog().|
 \end{quote}
-
-Like boolean methods in \FLORA, procedural methods do not return any
-value but can take any number of arguments. The only difference is that
-procedural methods are \emph{not} tabled, while boolean methods are.
+%%
+Like boolean methods, procedural methods can take arguments, but do not
+return any values.  The only difference is that procedural methods are
+\emph{not} tabled, while boolean methods are.
 
 
 \subsection{Cuts}
@@ -2834,26 +2963,30 @@ procedural methods are \emph{not} tabled, while boolean methods are.
 %%
 No discussion of a logic programming language is complete without a few
 words about the infamous Prolog cut (!). Although Prolog cut has been
-(mostly rightfully) excommunicated by as far as Database Query Languages
-are concerned, it is sometimes indispensable when doing ``real work'', like
+(mostly rightfully) excommunicated as far as Database Query Languages are
+concerned, it is sometimes indispensable when doing ``real work'', like
 pretty-printing \FLORA programs or implementing a pattern matching
 algorithm.  To facilitate this kind of tasks, \FLORA lets the programmer
 use cuts.  However, the current implementation of XSB has a limitation that
-Prolog cuts cannot ``cut across tabled predicates.''  Without trying to
-pretend to be experts, we refer the reader to the XSB manual for details on
-this obscure problem. The XSB team is considering correcting this problem
-in a future release.
+Prolog cuts cannot ``cut across tabled predicates.''  If you get an error
+message telling something about cutting across the tables --- you know that
+you have cut too much!
 
-For now, enjoy your cut.  If you get an error message telling something
-about cutting across the tables --- you know that you may have cut too much.
-The basic rule that can keep you out of trouble is: do not put a cut
-in the body of a rule \emph{after} any F-molecule. However, it is (usually)
-OK to to put a cut before any F-molecule. It is even OK to have a cut in
-the body of a rule that \emph{defines} an F-molecule (again, provided that
-the body has no F-molecule to the left of that cut).
+The basic rule that can keep you out of trouble is: do not put a cut in the
+body of a rule \emph{after} any F-molecule or tabled first-order or HiLog
+predicate. However, it is OK to to put a cut before any F-molecule. It is
+even OK to have a cut in the body of a rule that \emph{defines} an
+F-molecule (again, provided that the body has no F-molecule to the left of
+that cut). If you need to use cuts, plan on using procedural methods or
+non-tabled predicates.
+
+In a future release, XSB will implement a different tabling schema. While
+cutting across tables will still be prohibited, it will provide an
+alternative mechanism that achieves many of the goals a cut is used to
+achieve.
 
 
-\section{Updates}
+\section{Updates}\label{sec-updates}
 
 
 \index{update}
@@ -3442,8 +3575,10 @@ use this:
    emacs -batch -f batch-byte-compile flora.el 
 \end{quote}
 %%
+This will produce the file {\tt flora.elc} --- a compiled byte code.
 If you are using XEmacs, use {\tt xemacs} instead of {\tt emacs} above ---
-the two emacsen often use incompatible byte code.
+the two emacsen use incompatible byte code, and you cannot use {\tt
+  flora.elc} compiled under one system for editing files under another.
 
 Finally, you must tell X/Emacs how to recognize \FLORA program files, so
 Emacs will be able to invoke the Flora major mode automatically when you
@@ -3486,7 +3621,7 @@ programs), you can do the following:
 
 
 \paragraph{Menubar menu.}
-Once flora editing mode is installed, it provides a number of functions.
+Once \FLORA editing mode is installed, it provides a number of functions.
 First, whenever you edit a \FLORA program, you will see the ``Flora'' menu
 in the menubar. This menu provides commands for controlling the Flora
 process (i.e., XSB with the \FLORA shell). You can start and stop
@@ -3495,8 +3630,8 @@ the buffer you are editing, the entire buffer, or some other file.
 
 Because Emacs provides automatic file completion and allows you to edit
 what you typed, performing these functions right out of the buffer takes
-much less effort than typing the corresponding commands on XSB command
-line.
+much less effort than typing the corresponding commands to the \FLORA
+shell.
 
 \paragraph{Keyboard functions.}
 In addition to the menu, \emph{flora-mode} lets you execute most of the
@@ -3504,12 +3639,12 @@ menu commands using the keyboard. Once you get the hang of it, keyboard
 commands are much faster to invoke:
 %%
 \begin{verbatim}
-Consult file:                 Ctl-c Ctl-f
-Consult file dynamically:     Ctl-u Ctl-c Ctl-f
-Consult buffer:               Ctl-c Ctl-b
-Consult buffer dynamically:   Ctl-u Ctl-c Ctl-b
-Consult region:               Ctl-c Ctl-r
-Consult region dynamically:   Ctl-u Ctl-c Ctl-r
+Load file:                 Ctl-c Ctl-f
+Load file dynamically:     Ctl-u Ctl-c Ctl-f
+Load buffer:               Ctl-c Ctl-b
+Load buffer dynamically:   Ctl-u Ctl-c Ctl-b
+Load region:               Ctl-c Ctl-r
+Load region dynamically:   Ctl-u Ctl-c Ctl-r
 \end{verbatim}
 %%
 When you invoke any of the above commands, a \FLORA process is started,
@@ -3529,13 +3664,13 @@ Restart Flora Process:        Ctl-c Ctl-s
 \end{verbatim}
 %%
 Interrupting \FLORA is equivalent to typing {\tt Ctl-c} at the \FLORA
-prompt, quitting the process stops XSB, and restarting the process shuts
+prompt. Quitting the process stops XSB, and restarting the process shuts
 down the old XSB process and starts a new one with \FLORA shell running.
 
 \paragraph{Indentation.}
 Flora editing mode understands some aspects of the \FLORA syntax, which
 enables it to provide correct indentation of program lines (in many cases).
-In the future, flora mode will know more about the syntax, which will let
+In the future, flora-mode will know more about the syntax, which will let
 it provide even better support for indentation.
 
 The most common use of \FLORA indentation facility is by typing the {\tt
@@ -3589,7 +3724,7 @@ definitions included at compile time. These will be described in a
 technical document.
 
 
-\subsection{How It Works}
+\subsection{How \FLORA Works}
 
 
 As an \fl-to-XSB compiler, \FLORA first parses its source file,
