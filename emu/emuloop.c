@@ -1332,7 +1332,7 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 
    extern void dis(int);
    extern char *init_para(int, char **);
-   extern void init_flags(), init_machine(), init_symbols();
+   extern void init_machine(void), init_symbols(void);
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
 #ifndef FOREIGN_WIN32
@@ -1346,7 +1346,7 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 	The name of the executable could have been set in cinterf.c:xsb_init
 	if XSB is called from C. In this case, we don't want `executable'
 	to be overwritten, so we check if it is initialized. */
-     if(executable[0] == '\0')
+     if (executable[0] == '\0')
        xsb_executable_full_path(argv[0]);
 
      /* set install_dir, xsb_config_file and user_home */
@@ -1356,9 +1356,8 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 
      realtime = real_time();
      setbuf(stdout, NULL);
-     init_flags();
-     startup_file = init_para(argc, argv);	/* init parameters */
      init_machine();		/* init space, regs, stacks */
+     startup_file = init_para(argc, argv);	/* init parameters */
      init_inst_table();		/* init table of instruction types */
      init_symbols();		/* preset a few symbols in PSC table */
      init_interrupt();		/* catch ^C interrupt signal */
@@ -1383,14 +1382,13 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
      if (!inst_begin)
        xsb_exit("Error in loading startup file");
 
-     if ( xsb_mode == DISASSEMBLE ) {
+     if (xsb_mode == DISASSEMBLE) {
        dis(1);
        exit(0);
      }
 
      /* do it after initialization, so that typing 
 	xsb -v or xsb -h won't create .xsb directory */
-     
      set_xsbinfo_dir();
 
      return(0);
@@ -1409,7 +1407,7 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 #endif
 #endif
 
-     if ( xsb_mode != C_CALLING_XSB ) {
+     if (xsb_mode != C_CALLING_XSB) {
        realtime = real_time() - realtime;
        fprintf(stdmsg, "\nEnd XSB (cputime %.2f secs, elapsetime ",
 	       cpu_time());

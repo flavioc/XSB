@@ -127,7 +127,7 @@ extern char *user_home; /* the user HOME dir or install dir, if HOME is null */
 
 /*==========================================================================*/
 
-void static display_file(char *infile_name)
+static void display_file(char *infile_name)
 {
   FILE *infile;
   char buffer[MAXBUFSIZE];
@@ -145,7 +145,7 @@ void static display_file(char *infile_name)
 }
 
 
-void static version_message(void)
+static void version_message(void)
 {
   char licensemsg[MAXPATHLEN], configmsg[MAXPATHLEN];
 
@@ -174,6 +174,67 @@ static void help_message(void)
 
 /*==========================================================================*/
 
+/* Initialize System Flags
+   ----------------------- */
+static void init_flags(void)
+{
+  int i;
+
+  for (i=0; i<64; i++) flags[i] = 0;
+  flags[RELOC_TABLE] = (Cell)reloc_table;
+}
+
+/*==========================================================================*/
+
+static void init_open_files(void)
+{
+  int i, msg_fd, dbg_fd, warn_fd, fdbk_fd;
+
+  open_files[0] = stdin;
+  open_files[1] = stdout;
+  open_files[2] = stderr;
+
+  /* stream for xsb warning msgs */
+  if ((warn_fd = dup(fileno(stderr))) < 0)
+    xsb_exit("Can't open the standard stream for warnings\n");
+  stdwarn = fdopen(warn_fd, "w");
+  open_files[3] = stdwarn;
+
+  /* stream for xsb normal msgs */
+  if ((msg_fd = dup(fileno(stderr))) < 0)
+     xsb_exit("Can't open the standard stream for messages\n");
+  stdmsg = fdopen(msg_fd, "w");
+  open_files[4] = stdmsg;
+
+  /* stream for xsb debugging msgs */
+  if ((dbg_fd = dup(fileno(stderr))) < 0)
+     xsb_exit("Can't open the standard stream for debugging messages\n");
+  stddbg = fdopen(dbg_fd, "w");
+  open_files[5] = stddbg;
+
+  /* stream for xsb debugging msgs */
+  if ((fdbk_fd = dup(fileno(stdout))) < 0)
+     xsb_exit("Can't open the standard stream for XSB feedback messages\n");
+  stdfdbk = fdopen(fdbk_fd, "w");
+  open_files[6] = stdfdbk;
+
+#ifdef WIN_NT
+  /* NT doesn't seem to think that dup should preserve the buffering mode of
+     the source file. Here we make all new descriptors unbuffered -- dunno if
+     this is good or bad. Line-buffering _IOLBF is the most that can be
+     allowed. Otherwise one won't see anything on the screen. -mk */
+  setvbuf(stdmsg, NULL, _IONBF, 0);
+#endif
+  /* for these, unbuffered I/O might be a good idea -- NT or not */
+  setvbuf(stdwarn, NULL, _IONBF, 0);
+  setvbuf(stddbg, NULL, _IONBF, 0);
+  setvbuf(stdfdbk, NULL, _IONBF, 0);
+
+  for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
+}
+
+/*==========================================================================*/
+
 /* Initialize System Parameters
    ---------------------------- */
 char *init_para(int argc, char *argv[])
@@ -188,7 +249,11 @@ char *init_para(int argc, char *argv[])
   */
   char *boot_module, *cmd_loop_driver;
   char *cmd_line_goal="true.";
-  int strlen_instdir, strlen_initfile, strlen_2ndfile;
+  int  strlen_instdir, strlen_initfile, strlen_2ndfile;
+
+  init_flags();
+  /* this needs to appear here as streams are used below in xsb_warn() */
+  init_open_files();
 
   init_newtrie();
   init_trie_aux_areas();
@@ -197,9 +262,8 @@ char *init_para(int argc, char *argv[])
   perproc_reset_stat();
   reset_stat_total();
 
-
   flags[STACK_REALLOC] = TRUE;
-#ifdef CHAT
+#ifdef GC
   flags[GARBAGE_COLLECT] = SLIDING_GC;
 #else
   flags[GARBAGE_COLLECT] = NO_GC;
@@ -247,6 +311,7 @@ char *init_para(int argc, char *argv[])
       break;
     case 'g':
       i++;
+#ifdef GC
       if (i < argc) {
 	if (!strcmp(argv[i],"sliding")) flags[GARBAGE_COLLECT] = SLIDING_GC;
 	else
@@ -257,6 +322,9 @@ char *init_para(int argc, char *argv[])
 	xsb_warn("Unrecognized garbage collection type");
       } else
         xsb_warn("Missing garbage collection type");
+#else
+      xsb_warn("-g option does not make sense in this XSB configuration");
+#endif
       break;
     case 'u':
       if (argv[i][2] != '\0')
@@ -493,9 +561,6 @@ char *init_para(int argc, char *argv[])
    ----------------------------------------------- */
 void init_machine(void)
 {
-  int i;
-  int msg_fd, dbg_fd, warn_fd, fdbk_fd;
-
   /* set special SLG_WAM instruction addresses */
   cell_opcode(&answer_return_inst) = answer_return;
   cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
@@ -601,61 +666,6 @@ void init_machine(void)
 
   symbol_table.table = calloc(symbol_table.size, sizeof(Pair));
   string_table.table = calloc(string_table.size, sizeof(char *));
-
-  open_files[0] = stdin;
-  open_files[1] = stdout;
-  open_files[2] = stderr;
-
-  /* stream for xsb warning msgs */
-  if ((warn_fd = dup(fileno(stderr))) < 0)
-    xsb_exit("Can't open the standard stream for warnings\n");
-  stdwarn = fdopen(warn_fd, "w");
-  open_files[3] = stdwarn;
-
-  /* stream for xsb normal msgs */
-  if ((msg_fd = dup(fileno(stderr))) < 0)
-     xsb_exit("Can't open the standard stream for messages\n");
-  stdmsg = fdopen(msg_fd, "w");
-  open_files[4] = stdmsg;
-
-  /* stream for xsb debugging msgs */
-  if ((dbg_fd = dup(fileno(stderr))) < 0)
-     xsb_exit("Can't open the standard stream for debugging messages\n");
-  stddbg = fdopen(dbg_fd, "w");
-  open_files[5] = stddbg;
-
-  /* stream for xsb debugging msgs */
-  if ((fdbk_fd = dup(fileno(stdout))) < 0)
-     xsb_exit("Can't open the standard stream for XSB feedback messages\n");
-  stdfdbk = fdopen(fdbk_fd, "w");
-  open_files[6] = stdfdbk;
-
-#ifdef WIN_NT
-  /* NT doesn't seem to think that dup should preserve the buffering mode of
-     the source file. Here we make all new descriptors unbuffered -- dunno if
-     this is good or bad. Line-buffering _IOLBF is the most that can be
-     allowed. Otherwise one won't see anything on the screen. -mk */
-  setvbuf(stdmsg, NULL, _IONBF, 0);
-#endif
-  /* for these, unbuffered I/O might be a good idea -- NT or not */
-  setvbuf(stdwarn, NULL, _IONBF, 0);
-  setvbuf(stddbg, NULL, _IONBF, 0);
-  setvbuf(stdfdbk, NULL, _IONBF, 0);
-
-  for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
-}
-
-/*==========================================================================*/
-
-/* Initialize System Flags
-   ----------------------- */
-void init_flags(void)
-{
-  int i;
-
-  for (i=0; i<64; i++) flags[i] = 0;
-  flags[RELOC_TABLE] = (Cell)reloc_table;
-  /*    flags[CURRENT_OUTPUT] = 1; */
 }
 
 /*==========================================================================*/
@@ -664,10 +674,9 @@ void init_flags(void)
    ------------------------------- */
 void init_symbols(void)
 {
-  Psc tables_psc;
+  Psc  tables_psc;
   Pair temp, tp;
-  int new_indicator;
-  int i;
+  int  i, new_indicator;
 
   /* insert mod name global */
   tp = insert_module(T_MODU, "global");	/* loaded */
@@ -711,4 +720,3 @@ void init_symbols(void)
 }
 
 /*==========================================================================*/
-
