@@ -1420,7 +1420,7 @@ int builtin_call(byte number)
     break;
 
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
-    ctop_string(2, string_find(expand_filename(ptoc_string(1)), 1));
+    ctop_string(2, string_find(expand_filename(ptoc_longstring(1)), 1));
     break;
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
     ctop_string(2, string_find(tilde_expand_filename(ptoc_string(1)), 1));
