@@ -160,6 +160,7 @@ current_option(mi_foreign).
 current_option(profile).
 
 current_option(singleton_warnings_off).
+current_option(allow_redefinition).
 
 % TLS: taken out 11/03: these do not seem to be used.
 % current_option(init_var_off).

@@ -74,9 +74,10 @@ compile(Modname, Basename, Options, ExportList) :-
 	compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule),
 	dispose_symtab( SymTab ),
 	( option(compile_off) -> print_result(Module) ; true ),
-	( conget('error occurred', 1) ->
+	(conget('error occurred', 1) ->
 	    sys_unlink(OFile,_), 
-	    message(('The file ', OFile, ' is removed')), abort
+	    message(('The file ', OFile, ' is removed')),
+	    abort_quietly
 	; true
 	), !,
 	( IsModule =:= 0 -> IsModuleMsg = '' ; IsModuleMsg = 'Module ' ),
@@ -118,9 +119,12 @@ abort_if_syntax_errors(Modname) :-
 	    %% Forget about syntax errors when compiling module user
 	    error(('Aborting compilation of module ', 
 		   Modname, ' due to ', N, ' syntax error(s).')), 
-	    abort
+	    abort_quietly
 	;   true
 	).
+
+abort_quietly :-
+	throw('_$abort_ball'([[]])).
 
 /*================================================================*/
 /* db_preprocess(+PFile, +HFile, +OptFile, -SourceFile)	*/
@@ -192,7 +196,7 @@ compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
 	  write_asmheader(AFile, Modname, SymTab, IsModule), myclose(AFile)
       ; conget('error occurred', 1) ->
 	  error(('Aborting compilation of module ',Modname,' due to errors')),
-	  abort
+	  abort_quietly
       ; option(asm_dump) -> 
 	  write_asmheader(AFile,Modname,SymTab, IsModule), % generate .A header
 	  asm_genheader(OFile, Modname, SymTab, IsModule), % generate OBJ header
@@ -224,28 +228,40 @@ compile0(_, _, _, _, _, _).
 
 compile_predicate(PredDef, GenAsm, AFile, OFile, TIFile, IsModule, SymTab) :-
 	PredDef = pred(Sym,_,_),
+	(compile_check_ok(Sym)
+	 ->	preprocess(PredDef, PredBlks, SymTab),
+		!,		% needed to cut unnecessary choice points... (bmd & kostis)
+		ti_transform(PredBlks, TIPredBlks, TIFile, SymTab),
+		!,		% needed to cut unnecessary choice points... (bmd & kostis)
+		compile_pred_block(TIPredBlks, PilCode-[], 0, NC),
+		!,		% needed to cut unnecessary choice points... (bmd & kostis)
+		compile_peephole_opt(PilCode, PilCode1),
+		( GenAsm =:= 0 -> true; tell(AFile), write_asm_instructions(PilCode1) ),
+		tell(OFile), asm_PIL(Sym, PilCode1, NC, IsModule),
+		!
+	 ;	true
+	).
+
+compile_check_ok(Sym) :-
 	sym_name(Sym, P, N),
 	( option(verbo) -> message(('        ....compiling ', P/N)) ; true ),
-	( option(sysmod) -> true
-	; standard_symbol(P, N, _) ->
-		warning(('Redefining the standard predicate: ', P, '/', N))
-	; true
+	( option(sysmod)
+	 ->	true
+	 ;	(standard_symbol(P, N, _)
+		 ->	(option(allow_redefinition)
+			 ->	warning(('Redefining the standard predicate: ', P, '/', N))
+			 ;	error(('Trying to redefine the standard predicate: ', P, '/', N)),
+				fail
+			)
+		 ;	true
+		)
 	),
 	( sym_prop(im(Mod), Sym) ->
 		error(('Cannot redefine ', P, '/', N,
-		' (already declared imported from ', Mod, '!)'))
-	; true
-	),
-	preprocess(PredDef, PredBlks, SymTab),
-	!,	% needed to cut unnecessary choice points... (bmd & kostis)
-	ti_transform(PredBlks, TIPredBlks, TIFile, SymTab),
-	!,	% needed to cut unnecessary choice points... (bmd & kostis)
-	compile_pred_block(TIPredBlks, PilCode-[], 0, NC),
-	!,	% needed to cut unnecessary choice points... (bmd & kostis)
-	compile_peephole_opt(PilCode, PilCode1),
-	( GenAsm =:= 0 -> true; tell(AFile), write_asm_instructions(PilCode1) ),
-	tell(OFile), asm_PIL(Sym, PilCode1, NC, IsModule),
-	!.
+		       ' (already declared imported from ', Mod, '!)')),
+		fail
+	 ;	true
+	).
 
 ti_transform(PredBlks, TIPredBlks, TIFile, SymTab) :-
 	ti_pred_block(PredBlks, TIPredBlks, SymTab),
