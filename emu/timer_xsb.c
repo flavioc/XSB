@@ -123,6 +123,8 @@
 static int exitFlag = STILL_WAITING;
 static long timedThread;
 HANDLE sockEvent = NULL;
+#else /* UNIX */ 
+sigjmp_buf xsb_timer_env;
 #endif
 
 struct xsb_timeout {

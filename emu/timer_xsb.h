@@ -44,7 +44,7 @@
 #define TIMED_OUT            1
 #define STILL_WAITING        0
 #else  /* UNIX */
-sigjmp_buf xsb_timer_env;
+extern sigjmp_buf xsb_timer_env;
 #endif
 
 typedef struct xsb_timeout xsbTimeout;
