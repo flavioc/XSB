@@ -120,8 +120,10 @@ cc_name(Options, CC_Name) :-
 	).
 cc_options(CC_Name, Options, CC_Opts) :-
 	xsb_configuration(emudir, Emudir),
+	xsb_configuration(config_dir, ConfigDir),
 	(   memberchk(cc_opts(CC_Opts1), Options)
-	->  fmt_write_string(CC_Opts2, '-I%s %s', args(Emudir,CC_Opts1))
+	->  fmt_write_string(CC_Opts2, '-I%s -I%s %s',
+			     args(Emudir,ConfigDir,CC_Opts1))
 	;   str_cat('-I', Emudir, CC_Opts2)
 	),
 	(  CC_Name == gcc 
