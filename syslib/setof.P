@@ -84,25 +84,23 @@ clean_existentials(X,Y) :- var(X), !, Y=X.
 clean_existentials(_^X,Y) :- !, clean_existentials(X,Y).
 clean_existentials(X,X).
 
-pick(Bags,Key,Bag) :-
-   Bags \== [],
-   parade(Bags,Key1,Bag1,Bags1),
-   decide(Key1,Bag1,Bags1,Key,Bag).
+/* The following 3 preds are a result of a bug fix by Kostis,
+   with a little help from Bart */
+pick([K-X|Bags], Key, Bag) :-
+        parade(Bags, K, Bag1, Bags1),
+	decide(Bags1, [X|Bag1], K, Key, Bag).
 
-parade([K-X|L1],K,[X|B],L) :- !, parade(L1,K,B,L).
-parade(L,_,[],L).
+parade([K-X|L1], Key, Bag1, L) :-
+	variant(K, Key),
+	!,
+	K = Key,
+	Bag1 = [X|B1],
+	parade(L1, Key, B1, L).
+parade(L, _, [], L).
 
-/***decide(Key,Bag,Bags,Key,Bag) :- (Bags=[], ! ; true).
-decide(_,_,Bags,Key,Bag) :- pick(Bags,Key,Bag). ***/
-
-decide(Key0,Bag0,Bags,Key,Bag) :-
-	(Bags == []
-	 ->	Key = Key0, Bag = Bag0
-	 ;	(Key = Key0, Bag = Bag0
-		 ;
-		 pick(Bags,Key,Bag)
-		)
-	).
+decide([], Bag, Key, Key, Bag) :- !.
+decide(_, Bag, Key, Key, Bag).
+decide(Bags, _, _, Key, Bag) :- pick(Bags, Key, Bag).
 
 excess_vars(T,X,L0,L) :- var(T), !,
    ( no_occurrence(T,X), !, introduce(T,L0,L)

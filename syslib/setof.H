@@ -33,4 +33,4 @@
 :- import functor/3, (=..)/2, arg/3, call/1 from standard.
 :- import '$$findall_init'/2, '$$findall_add'/3, '$$findall_get_solutions'/4
      from machine.
-
+:- import variant/2 from subsumes.
