@@ -284,9 +284,20 @@ arch_config_prefix=${config_prefix}/${full_config_name}
 arch_config_file=${arch_config_prefix}/configuration.P
 
 cache_file="${arch_config_prefix}/config.cache"
+
 dnl This is a redefined standard AC_CACHE_LOAD. The standard one is now no-op.
 dnl We do this so we could place the cache file in the configuration directory.
-AC_CACHE_LOAD_HACKED
+if test -r "$cache_file" -a "$ac_caching" = "yes" ; then
+  echo "loading cache $cache_file"
+  . $cache_file
+elif test ! -r "$cache_file" ; then
+  echo "creating cache $cache_file"
+  dnl If this fails, the user'll see a msg later that cache file isn't found
+  (test -d $arch_config_prefix || mkdir -p ${arch_config_prefix}) 2> /dev/null
+  touch $cache_file
+  chmod 644 "$cache_file"
+fi
+
 
 
 # where binary executables go (this is config-specific)
@@ -484,10 +495,21 @@ test "${have_errors}" = "yes" &&
 			sys/time.h
 			sys/resource.h])
 
-AC_CHECK_HEADERS(malloc.h unistd.h string.h stdlib.h, , have_errors=yes)
+# autoconf fails to properly detect malloc.h under FreeBSD
+# so we test for malloc() instead
+dnl AC_MSG_CHECKING(for malloc.h)
+dnl AC_TRY_CPP([#include <malloc.h>],have_malloc=yes,have_malloc=no)
+dnl AC_MSG_RESULT($have_malloc)
+dnl test "${have_malloc}" = "no" &&
+dnl    AC_MSG_ERROR([malloc.h is missing on your system])
+
+AC_CHECK_FUNCS(malloc, have_malloc=yes,have_malloc=no)
+test "${have_malloc}" = "no" &&
+    AC_MSG_ERROR([malloc() is missing on your system])
+
+AC_CHECK_HEADERS(unistd.h string.h stdlib.h, , have_errors=yes)
 test "${have_errors}" = "yes" &&
     AC_MSG_ERROR([One of these header files is missing on your system:
-			malloc.h
         		unistd.h
 			string.h
 			stdlib.h])
@@ -947,10 +969,6 @@ AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
 AC_SUBST(engine_mode)
 
-
-dnl If the cache file doesn't exist, make it.
-test -f "$cache_file" ||  \
-     ( ((test -d "${arch_config_prefix}" || mkdir -p ${arch_config_prefix}) && touch "$cache_file" ; chmod 644 "$cache_file") || echo "" )
 
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in

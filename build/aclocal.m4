@@ -302,15 +302,3 @@ fi
 dnl AC_CACHE_LOAD()
 define([AC_CACHE_LOAD], [ ])
 
-dnl AC_CACHE_LOAD_HACKED()
-define([AC_CACHE_LOAD_HACKED],
-[if test -r "$cache_file" -a "$ac_caching" = "yes" ; then
-  echo "loading cache $cache_file"
-  . $cache_file
-elif test ! -r "$cache_file" ; then
-  echo "creating cache $cache_file"
-  dnl If this fails, the user'll see a msg later that cache file isn't found
-  (test -d $src_config_prefix || mkdir -p ${src_config_prefix}) 2> /dev/null
-  > $cache_file
-fi
-])
