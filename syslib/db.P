@@ -1,0 +1,75 @@
+/* File:      db.P
+** Author(s): David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*======================================================================*/
+/* This module contains routines that handle predicate and clause	*/
+/* references, in order to support assert and retract in our system.	*/
+/*									*/
+/* A predicate reference (Prref) is a database reference to a sequence  */
+/* of clauses. Normally a Prref is associated with a psc-entry 		*/
+/* (in the e.p.  field), the psc entry of the main functor symbol of 	*/
+/* all the clauses.  But that need not be the case. A Prref can be	*/
+/* created, asserted to, and called explicitly. 			*/
+/*									*/
+/* See the description of the formats of these records in assert.P	*/
+/*======================================================================*/
+
+:- export db_new_prref/3.
+
+:- import psc_set_type/3, psc_set_prop/3, tip_prop/4,
+	  psc_arity/2, psc_set_env/2, db_build_prref/5
+	from machine.
+:- import '_$table'/1 from file_op.
+
+/*======================================================================*/
+/* db_new_prref(+PSC,-Prref): 						*/
+/*	creates an empty Prref, i.e.  one with no clauses in it.  	*/
+/*	If called, it will simply fail.  Prref must be a variable at 	*/
+/*	the time of call. It points the entry point of the psc record	*/
+/*	pointed to by PSC to this Prref. So in effect it makes it	*/
+/*	dynamic.	 						*/
+/*	dsw:								*/
+/*	Prref ->:							*/
+/*		-4: Addr of last Clref on ALL chain			*/
+/*		0: BC instruction: fail (if empty),			*/
+/*			jump and save breg (if nonempty)		*/
+/*		4: Addr of first Clref on ALL chain			*/
+/*======================================================================*/
+
+db_new_prref(PSC,PHead,Prref) :-
+	psc_set_type(PSC, 1, 1),        /* Make it dynamic */
+	psc_set_env(PSC, 0),            /* Make it exported */
+	psc_arity(PSC,Arity),
+	('_$table'(PHead)
+	 ->
+		tip_prop(0,4,0,First_tip),
+		db_build_prref( Arity, First_tip, Tip, Prref, PrEntry ),
+		tip_prop(0,4,1,Tip)	% set new first tip
+	 ;
+		db_build_prref( Arity, -1, _, Prref, PrEntry )
+	),
+	psc_set_prop(PSC, PrEntry, 1).	% set psc to point to table ins
+

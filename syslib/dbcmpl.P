@@ -1,0 +1,89 @@
+/* File:      dbcmpl.P
+** Author(s): David S. Warren, Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- export dbgen_inst/4.
+:- export dbgen_opcode/3.
+
+:- import asm_inst/4 from asm_inst.
+:- import buff_set_byte/3, term_psc/2,
+	  buff_set_word/3, term_type/2,
+	  buff_set_cell/4
+    from machine.
+
+/*======================================================================*/
+/* dbgen_inst: Generate an instruction in the buffer			*/
+/*======================================================================*/
+
+dbgen_inst(Inst, Buff, LocIn, LocOut) :-
+	asm_inst(Inst, _Len, Opcode, Args),
+	buff_set_byte(Buff, LocIn, Opcode),
+	LocMid is LocIn + 1,
+	dbgen_args(Args, Buff, LocMid, LocOut).
+
+dbgen_args([], _, LocIn, LocIn).
+dbgen_args([One|More], Buff, LocIn, LocOut) :-
+	dbgen_arg(One, Buff, LocIn, LocMid),
+	dbgen_args(More, Buff, LocMid, LocOut).
+
+dbgen_arg(p, _Buff, LocIn, LocOut) :- LocOut is LocIn + 1.
+dbgen_arg(pp, _Buff, LocIn, LocOut) :- LocOut is LocIn + 2.
+dbgen_arg(ppp, _Buff, LocIn, LocOut) :- LocOut is LocIn + 3.
+dbgen_arg(s(Str), Buff, LocIn, LocOut) :- LocOut is LocIn + 4,
+	term_psc(Str, PSC),
+	buff_set_word(Buff, LocIn, PSC).
+dbgen_arg(c(Sym), Buff, LocIn, LocOut) :- LocOut is LocIn + 4,
+	buff_set_word(Buff, LocIn, Sym).
+	     /* Trick here! Treat Term as an integer or string.  */
+             /* May cause problem if modifying format.           */
+dbgen_arg(g(_Sym), _Buff, LocIn, LocOut) :- LocOut is LocIn + 4.
+dbgen_arg(n(I), Buff, LocIn, LocOut) :- 
+	term_type(I,TT), 
+	(TT =:= 2
+	 ->	buff_set_word(Buff, LocIn, I)	% integer
+	 ;	buff_set_cell(Buff, LocIn, 6, I)	% float
+	),
+	LocOut is LocIn + 4.
+dbgen_arg(i(I), Buff, LocIn, LocOut) :-  LocOut is LocIn + 4, 
+	buff_set_word(Buff, LocIn, I).
+dbgen_arg(l(L), Buff, LocIn, LocOut) :- LocOut is LocIn + 4,
+	buff_set_word(Buff, LocIn, L).
+dbgen_arg(r(I), Buff, LocIn, LocOut) :- LocOut is LocIn + 1, 
+	buff_set_byte(Buff, LocIn, I).
+dbgen_arg(v(I), Buff, LocIn, LocOut) :- LocOut is LocIn + 1, 
+	buff_set_byte(Buff, LocIn, I).
+dbgen_arg(a(I), Buff, LocIn, LocOut) :- LocOut is LocIn + 1, 
+	buff_set_byte(Buff, LocIn, I).
+/* dbgen_arg(t(T), Buff, LocIn, LocOut) :- LocOut is LocIn + 1. */
+
+
+
+/*======================================================================*/
+/* dbgen_opcode: Generate an opcode into a buffer			*/
+/*======================================================================*/
+
+dbgen_opcode(Inst,Buff,Disp) :-
+	asm_inst(Inst,_Len,Opcode,_Args),
+	buff_set_byte(Buff,Disp,Opcode).
