@@ -3,6 +3,7 @@
 	get_component_intensional/3,
 	get_intensional_mfile_expansion/2,
 	get_full_path_and_loadname/6,
+	get_component_direct_dependencies/4,
 	load_component/3,
 	init_path_engine/0,
 	pe_canon_path/2,
@@ -818,5 +819,44 @@ use_canonical_path(isa_ext(cid(component(SrcCid,cid(_,cdfpt),VCid),Src),
 ********/
 use_canonical_path(Term,_,Term).
 
-end_of_file.
+/****************************************************************/
+/*								*/
+/* get_component_direct_dependencies(+Comp,+Path,+Ver,-Deps)	*/
+/*   takes a path, a component name, and a version and returns	*/
+/*   a list of comp(Comp,AbsPath,Ver) tuples containing one for	*/
+/*   each component version that the input component directly 	*/
+/*   depends on.						*/
+/*								*/
+/****************************************************************/
 
+get_component_direct_dependencies(Comp,RPath,Ver,Deps) :-
+	expand_filename(RPath,Path),
+	(Ver == ''
+	 ->	concat_atom([Path,'/',Comp,'/cdf_extensional.P'],ExtFile)
+	 ;	concat_atom([Path,'/',Comp,'_',Ver,'/cdf_extensional.P'],ExtFile)
+	),
+	see(ExtFile),
+	findall(Dep,read_dependencies(Comp,Path,Dep),UDeps),
+	seen,
+	sort(UDeps,Deps).
+
+read_dependencies(CComp,CPath,comp(Comp,Path,Ver)) :-
+	slash(Slash),
+	repeat,
+	read_canonical(Term),
+	(Term == end_of_file
+	 ->	!,fail
+	 ;	Term = classHasAttr_ext(cid(component(cid(CComp,CComp),_,_),CComp),
+					crid(componentDepends,CComp),
+					cid(component(cid(Comp,Comp),
+						      cid(RPath,cdfpt),
+						      cid(Ver,cdfpt)),Comp)),
+		(RPath == ''
+		 ->	Path = RPath
+		 ; is_absolute_filename(RPath)
+		 ->	Path = RPath
+		 ;	concat_atom([CPath,Slash,RPath],Path)
+		 )
+	).
+	 
+end_of_file.
