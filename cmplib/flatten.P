@@ -1,5 +1,5 @@
 /* File:      flatten.P
-** Author(s): Kostis F. Sagonas
+** Author(s): Jiyang Xu, Kostis F. Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -45,10 +45,42 @@
 
 level_allowed(1).
 
+
+flatten(clause(Args,B0,P), clause(NArgs,B1,P)) :-
+        flt_args_head(Args, NArgs, B2, B1, 1),     % different
+        flt_body(B0, B2).
+
+/* old code
 flatten(clause(Args,B0,P), clause(NArgs,B1,P)) :-
 	flt_args(Args, NArgs, B2, B1, 1, 0),
 	flt_body(B0, B2).
+*/
 
+/*======================================================================*/
+/* flt_args(+OldArgs, -NewArgs, +OldGoal, -NewGoal, +Level, +InIs)      */
+/*      Flattens the arguments in the head of a clause; it is written   */
+/*      this way so that arguments appear in a left-to-right order in   */
+/*      the beginning of the body.                                      */
+/*======================================================================*/
+
+flt_args_head([], [], OldGoal, OldGoal, _).
+flt_args_head([Arg|Args], [NArg|NArgs], OldGoal, NewGoal, Level) :-
+        flt_args_head(Args, NArgs, OldGoal, MedGoal, Level),
+        flt_arg_head(Arg, NArg, MedGoal, NewGoal, Level).
+
+flt_arg_head(varocc(Var), varocc(Var), OldGoal, OldGoal, _).
+flt_arg_head(integer(Int), integer(Int), OldGoal, OldGoal, _).
+flt_arg_head(real(Real), real(Real), OldGoal, OldGoal, _).
+flt_arg_head(constant(Sym), constant(Sym), OldGoal, OldGoal, _).
+flt_arg_head(structure(Sym,Args), New, OldGoal, NewGoal, Level) :-
+        level_allowed(Allowed),
+        NStr = structure(Sym,NArgs),
+        Level1 is Level + 1,
+        flt_args_head(Args, NArgs, OldGoal, MedGoal, Level1),
+        ( Level =< Allowed, New = NStr, NewGoal = MedGoal
+        ; Level > Allowed, gennum(Vid), New = varocc(Vid),
+          NewGoal = and(inlinegoal('=',2,[New,NStr]),MedGoal)
+        ).
 
 /*======================================================================*/
 /* flt_body(+Body, -FlattenedBody)					*/
