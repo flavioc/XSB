@@ -45,6 +45,7 @@ do
     esac
 done
 
+
 config=`@topdir@/build/config.guess`
 dir=@topdir@/config/`@topdir@/build/config.sub $config`${suffix}
 makefile=${dir}/topMakefile
