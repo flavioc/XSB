@@ -1136,11 +1136,10 @@ flora_load_dyn_fld(InFLDFile,ModuleName) :-
 flora_read_canonical_and_insert(StorageName) :-
 	repeat,
 	read_canonical(Term),
-	( Term == end_of_file ->
-	    !
+	( Term == end_of_file, !
 	;
-	  storage_insert_fact(StorageName,Term,_Inserted),
-	  fail
+	    storage_insert_fact(StorageName,Term,_Inserted),
+	    fail
 	).
 
 /*************************************************************************
