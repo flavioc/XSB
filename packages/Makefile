@@ -24,9 +24,10 @@
 
 
 ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
-	sModels.O libwww.O
+	sModels.O libwww.O clpr.O
 
-SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww sModels
+SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww sModels \
+	clpqr
 
 Option = [optimize]
 
@@ -61,6 +62,10 @@ all:  init $(ALL) finish $(SUBDIR)
 	$(Prolog) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
+
+clpqr::
+	@echo ""
+	cd clpqr; make
 
 slx::
 	@echo ""
