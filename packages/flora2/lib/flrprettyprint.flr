@@ -46,8 +46,8 @@ flora_print_ignore(print(pretty)).
 flora_print_ignore(ignore(pretty)).
 
 %% prettyprint_class(+Class,+Module,+File)
-prettyprint_class(Class, Module, OutFile) :-
-	tell(OutFile)@prologlib(),
+prettyprint_class(Class, Module, Outfile) :-
+	tell(Outfile)@prologlib(),
     	prettyprint_class(Class, Module),
 	told@prologlib().
 %% Print class in Module
@@ -68,7 +68,7 @@ prettyprint_obj(X,Module) :-
 	writeln('].')@prologlib(), nl@prologlib().
 %% Print obj in Module to a Outfile
 prettyprint_obj(X,Module,Outfile) :-
-	tell(OutFile)@prologlib(),
+	tell(Outfile)@prologlib(),
 	prettyprint_obj(X,Module),
 	told@prologlib().
 
