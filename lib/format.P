@@ -29,15 +29,16 @@
 :- export format/2, format/3, format_control/1.
 :- import atm/1 from basic_props.
 
-:- import abort/1, put_code/1, nl/0, write/1, writeq/1, print/1,
+:- import  put_code/1, nl/0, write/1, writeq/1, print/1,
 	write_canonical/1, write/1, current_output/1, integer/1, 'C'/3,
 	atom/1, atom_codes/2, set_output/1,xsb_configuration/2,
 	is_list/1 from usermod.
 
-:- import (\=)/2 from standard.
+:-  import throw/1 from standard.
 
-% TLS: need to put catch in interpreter.
-throw(X):- abort(X).
+:- import check_nonvar/3, check_stream/3 from error_handler.
+
+:- import (\=)/2 from standard.
 
 display(Term):- write(Term).
 
@@ -58,28 +59,27 @@ display(Term):- write(Term).
 % ------------------------------------------------------------------------
 :- comment(title,"Formatted output").
 
-:- comment(module,"The @tt{format} family of predicates is due to 
-	Quintus Prolog, by way of Ciao.  They act as a Prolog analog
-	to the C
-	@tt{stdio} function @tt{printf()}, allowing formatted output.
+:- comment(module,"The @tt{format} family of predicates is due to
+Quintus Prolog, by way of Ciao.  They act as a Prolog analog to the C
+@tt{stdio} function @tt{printf()}, allowing formatted output.
 
-	Output is formatted according to an output pattern which can
-        have either a format control sequence or any other character,
-	whic h will appear verbatim in the output. Control sequences
-        act as place-holders for the actual terms that will be output.
-        Thus  
-        @begin{verbatim}
+Output is formatted according to an output pattern which can have
+either a format control sequence or any other character, which will
+appear verbatim in the output. Control sequences act as place-holders
+for the actual terms that will be output.  Thus 
+@begin{verbatim}
         ?- format(""Hello ~q!"",world).
-        @end{verbatim}
-        @noindent
-        will print @tt{Hello world!}.
+@end{verbatim}
 
-        If there is only one item to print it may be supplied alone.
-        If there are more they have to be given as a list. If there are 
-        none then an empty list should be supplied. There has to be as
-        many items as control characters.
+@noindent
+will print @tt{Hello world!}.
 
-        The character @tt{~} introduces a control sequence. To print 
+If there is only one item to print it may be supplied alone.  If there
+are more they have to be given as a list. If there are none then an
+empty list should be supplied. There have to be as many items as
+control characters.
+
+The character @tt{~} introduces a control sequence. To print 
         a @tt{~} verbatim just repeat it:  
         @begin{verbatim}
         ?- format(""Hello ~~world!"", []).
@@ -87,7 +87,7 @@ display(Term):- write(Term).
         @noindent
         will result in @tt{Hello ~world!}.
 
-        A format may be spread over several lines. The control
+A format may be spread over several lines. The control
         sequence @tt{\\c} followed by a @key{LFD} will translate to the 
         empty string:  
         @begin{verbatim}
@@ -411,24 +411,23 @@ format_control(C) :- atm(C).
    # "Print @var{Arguments} onto current output stream according to format
       @var{Format}.").
 
-format(Control, _) :-
-        var(Control), !,
-        throw(error(instantiation_error, format/2-1)).
 format(Control_in, Args_in) :- 
+	check_nonvar(Control_in,'format/2',1),
+	check_nonvar(Args_in,'format/2',1),
 	preproc_newlines(Control_in,Control),
 	preproc_newlines_list(Args_in,Args),
 	format1(Control, Args), !.
 format(Control, Arguments) :-
-	throw(error(invalid_arguments(format(Control, Arguments)), format/2)).
+	throw(error(parse_error(format(Control, Arguments)), format/2)).
 
 :- pred(format(+Stream,format_control(Format),Arguments)
    # "Print @var{Arguments} onto @var{Stream} according to format
       @var{Format}.").
 
-format(_, Control, _) :-
-        var(Control), !,
-        throw(error(instantiation_error, format/3-2)).
 format(Stream, Control_in, Args_in) :-
+        check_stream(Stream,'format/2',1),
+        check_nonvar(Control_in,'format/2',2),
+        check_nonvar(Args_in,'format/2',3),
         preproc_newlines(Control_in,Control),
         preproc_newlines_list(Args_in,Args),
         current_output(Curr),
@@ -439,7 +438,7 @@ format(Stream, Control_in, Args_in) :-
         set_output(Curr),
         OK=yes, !.
 format(_, Control, Arguments) :-
-	throw(error(invalid_arguments(format(..., Control, Arguments)), format/3)).
+	throw(error(parse_error(format(..., Control, Arguments)), format/3)).
 
 format1(Control, Arguments) :-
 	(   atom(Control) -> atom_codes(Control, ControlList)
@@ -643,7 +642,9 @@ preproc_newlines_list(H,T):-
 	    (nonvar(H),string(H) -> 
 	        preproc_newlines(H,T) 
 	      ;
-	        preproc_newlines_list1(H,T) )
+	        (isList(H) -> 
+		    preproc_newlines_list1(H,T)
+		;   H = T) )
 	  ;   
 	    H = T).
 
@@ -675,3 +676,5 @@ preproc_newlines1([H|Tin],[H|Tout]):-
 string([]).
 string([H|T]):- integer(H),string(T).
 
+isList([]).
+isList([_|_]).
