@@ -28,7 +28,7 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod, xpp_on]).
+:- compiler_options([sysmod, optimize, xpp_on]).
 
 #include "celltags_xsb.h"
 #include "flag_defs_xsb.h"
@@ -1028,6 +1028,41 @@ import(P/A, MName) :-
    (see timer_xsb.c) then timer alarm rings, unless the goal suceeds
    before that */
 set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%   Control predicates : catch/3 throw/1
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%     Written by Bart Demoen, after the CW report 98:
+%%               A 20' implementation of catch and throw
+%%     7 Febr 1999
+%%     Do not call any of the $$ predicates below at other places.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- dynamic '$$exception_ball'/1.
+
+catch(Goal,_Catcher,_Handler) :-
+        '$$set_scope_marker',  % should not be called in any other place
+                               % because it remembers the pcreg
+	call(Goal),
+        '$$clean_up_block'.    % if no choicepoints in call(Goal) cleans up one
+catch(_Goal,Catcher,Handler) :-
+        '$$exception_ball'(Ball),
+        (
+            Ball = Catcher ->
+            retractall('$$exception_ball'(_)),
+            call(Handler)
+        ;
+            '$$unwind_stack'  % unwind_stack xsb_exits if no catcher was found
+        ).
+
+
+throw(Ball) :-
+        asserta('$$exception_ball'(Ball)),
+        '$$unwind_stack'. % unwind_stack xsb_exits if no catcher was found
 
 
 /* --------------------- end of file standard.P ----------------------- */

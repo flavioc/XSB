@@ -201,6 +201,10 @@ inline_builtin(number_digits, 2, NUMBER_DIGITS).
 inline_builtin(sort, 2, SORT).
 inline_builtin(keysort, 2, KEYSORT).
 
+inline_builtin('$$set_scope_marker', 0, SET_SCOPE_MARKER).
+inline_builtin('$$unwind_stack', 0, UNWIND_STACK).
+inline_builtin('$$clean_up_block', 0, CLEAN_UP_BLOCK).
+
 inline_builtin(print_chat, 0, PRINT_CHAT).
 inline_builtin(print_ls, 0, PRINT_LS).
 inline_builtin(print_tr, 0, PRINT_TR).

@@ -181,6 +181,11 @@ formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
 
 trimcore :- '_$builtin'(TRIMCORE).
 
+put_attributes(_Var, _VNew) :- '_$builtin'(PUT_ATTRIBUTES).
+get_attributes(_Var, _V, _OldMask) :- '_$builtin'(GET_ATTRIBUTES).
+delete_attributes(_Var) :- '_$builtin'(DELETE_ATTRIBUTES).
+attv_unify(_Var, _Value) :- '_$builtin'(ATTV_UNIFY).
+
 /* This is the builtin where people should put their private, experimental
    builtin code. SEE THE EXAMPLE IN emu/private_builtin.c to UNDERSTAND HOW 
    TO DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE 
@@ -194,6 +199,10 @@ is_charlist(_List, _Size) :- '_$builtin'(IS_CHARLIST).
 
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(ORACLE_QUERY).
 odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(ODBC_EXEC_QUERY).
+
+'$$set_scope_marker':- '$$set_scope_marker'.
+'$$unwind_stack':- '$$unwind_stack'.
+'$$clean_up_block':- '$$clean_up_block'.
 
 print_chat :- print_chat.
 print_ls :- print_ls.
@@ -212,11 +221,6 @@ gc_heap :- gc_heap.
 
 socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr,_Error) :-
 	'_$builtin'(SOCKET_REQUEST).
-
-put_attributes(_Var, _VNew) :- '_$builtin'(PUT_ATTRIBUTES).
-get_attributes(_Var, _V, _OldMask) :- '_$builtin'(GET_ATTRIBUTES).
-delete_attributes(_Var) :- '_$builtin'(DELETE_ATTRIBUTES).
-attv_unify(_Var, _Value) :- '_$builtin'(ATTV_UNIFY).
 
 /*======================================================================*/
 
@@ -238,8 +242,7 @@ machine_file_exists(File) :-
 	sys_syscall(SYS_access, Res, File, 0), Res =:= 0.
 
 /*======================================================================*/
-/* Some other stuff for convenience here; in my opinion they should be  */
-/* deleted from the system - kostis.                                    */
+/* Some other stuff for convenience here;                               */
 /*======================================================================*/
 
 set_pil_on :- stat_set_flag(PIL_TRACE,1).

@@ -147,6 +147,10 @@ extern bool str_sub(void);
 extern void force_answer_true(BTNptr);
 extern void force_answer_false(BTNptr);
 
+extern int set_scope_marker();
+extern int unwind_stack();
+extern int clean_up_block();
+
 #if (defined(DEBUG) && defined(DEBUG_DELAY))
 extern void print_delay_list(FILE *, CPtr);
 extern void print_subgoal(FILE *, SGFrame);
@@ -681,6 +685,9 @@ void init_builtin_table(void)
 
   set_builtin_table(ORACLE_QUERY, "oracle_query");
   set_builtin_table(ODBC_EXEC_QUERY, "odbc_exec_query");
+  set_builtin_table(SET_SCOPE_MARKER, "set_scope_marker");
+  set_builtin_table(UNWIND_STACK, "unwind_stack");
+  set_builtin_table(CLEAN_UP_BLOCK, "clean_up_block");
 
   set_builtin_table(PRINT_CHAT, "print_chat");
   set_builtin_table(PRINT_LS, "print_ls");
@@ -1965,6 +1972,7 @@ int builtin_call(byte number)
       bld_free(hreg); hreg++;
     }
     break;
+
   }
 
   /*
@@ -1976,6 +1984,19 @@ int builtin_call(byte number)
   case ATTV_UNIFY: { /* R1: +Var; R2: +Value */
     Cell attv = ptoc_tag(1);
     bind_copy((CPtr)dec_addr(attv), ptoc_tag(2));
+    break;
+  }
+
+  case SET_SCOPE_MARKER: {
+    if (set_scope_marker()) return TRUE; else return FALSE;
+    break;
+  }
+  case UNWIND_STACK: {
+    if (unwind_stack()) return TRUE; else return FALSE;
+    break;
+  }
+  case CLEAN_UP_BLOCK: {
+    if (clean_up_block()) return TRUE; else return FALSE;
     break;
   }
 

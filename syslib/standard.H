@@ -68,7 +68,9 @@
 /* --------------------------------------------------------------- */
 
 :- export
-	call_c/1,	goal_cut_trans/3,	goal_cut_untrans/2,
+        call_c/1,	
+        catch/3,                throw/1,        '$$exception_ball'/1,
+        goal_cut_trans/3,	goal_cut_untrans/2,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
 	message/1,      message/2,
         warning/1,	push_abort_cutpoint/0,  pop_abort_cutpoint/0,
@@ -87,6 +89,10 @@
 	  expand_filename/2, machine_file_exists/1, psc_insert/4,
 	  psc_import/3, call0/1, close_open_tables/0
      from machine.
+:- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
+          '$$clean_up_block'/0 
+     from machine. 
+
 :- import windows_os/0 from xsb_configuration.
 
 :- import file_open/3, file_close/1, file_get/2, file_put/2
@@ -102,7 +108,7 @@
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import dcg/2 from dcg.
-:- import retract0/1, assertz/1, clause/2 from assert.
+:- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
 :- import numbervars/1 from num_vars.
 :- import predicate_property/2 from curr_sym.
 :- import (dynamic)/1, asserta/1, retract/1 from assert.

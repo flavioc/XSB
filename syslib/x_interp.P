@@ -93,6 +93,7 @@ interpreter :-
 interpreter1 :-
 	x_interp_repeat,
 	trimcore,
+	retractall('$$exception_ball'(_)),
 	stat_set_flag(HIDE_STATE, 1), %% hide call interceptions.
 	stat_set_flag(INVOKE_NUM, 0),
 	conset('_$break_level', 0),
