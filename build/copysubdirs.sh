@@ -65,6 +65,10 @@ for f in $files ; do
     else
        echo "Copying $1/$f to $2"
        cp -rpf $1/$f  $2
+       /bin/rm -rf $2/*/CVS $2/*/*/CVS $2/*/.cvsignore $2/*/*/.cvsignore
+       /bin/rm -rf $2/*/*/*/CVS $2/*/*/*/.cvsignore
+       /bin/rm -rf $2/*/*~ $2/*/*/*~ $2/*/#*# $2/*/*/#*#
+       /bin/rm -rf $2/*/*/*/*~ $2/*/*/*/#*#
     fi
   fi
 done

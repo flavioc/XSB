@@ -89,6 +89,8 @@ install_pkgdir=$(prefix)/packages
 install_etcdir=$(prefix)/etc
 # where .h files will be copied
 install_emudir=$(prefix)/emu
+# where XSB examples live
+install_examples=$(prefix)/examples
 
 
 # Like `prefix', but used for architecture-specific files.
@@ -110,6 +112,7 @@ src_prolog_includes=$(srcdir)/prolog_includes
 # where source packages live
 src_pkgdir=$(srcdir)/packages
 src_etcdir=$(srcdir)/etc
+src_examples=$(srcdir)/examples
 
 src_config_libdir=$(src_config_prefix)/lib
 
@@ -283,6 +286,9 @@ copy_files::
 	    ./copysubdirs.sh ${src_pkgdir} ${install_pkgdir} ; \
 	    echo "Copying etc..."; \
 	    cp -fr ${src_etcdir}/* ${install_etcdir}; \
+	    echo "Copying examples..."; \
+	    cp -f ${src_examples}/*.[POH] ${install_examples}; \
+	    ./copysubdirs.sh ${src_examples} ${install_examples} ; \
 	    echo ""; echo "Installed!" \
 	  )
 
@@ -320,6 +326,7 @@ clean:
 	@echo "Cleaning up ${src_emudir}"
 	@rm -f ${src_emudir}/*.o
 	@cd ../packages; ../build/clean_pkgs.sh
+	@cd ${src_examples}; @rm -f *.O *.o *~ */*.O */*.o */*~
 
 # recreate the makefiles
 again: Makefile.in emuMakefile.in config.status ${src_config_prefix}/config.cache

@@ -417,6 +417,7 @@ install_scriptdir=${prefix}/bin     # where the xsb invocation script goes
 install_builddir=${prefix}/build    # where the config detection scripts go
 install_prolog_includes=${prefix}/prolog_includes
 install_pkgdir=${prefix}/packages
+install_examples=${prefix}/examples
 install_etcdir=${prefix}/etc
 
 arch_install_config_prefix=${install_config_prefix}/${full_config_name}
@@ -1420,6 +1421,9 @@ AC_MSG_CHECKING($install_etcdir) && \
 	|| AC_MSG_RESULT(FAILED)
 AC_MSG_CHECKING($install_pkgdir) && \
      ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && AC_MSG_RESULT(OK)) \
+	|| AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_examples) && \
+     ((test -d $install_examples || mkdir -p ${install_examples}) && AC_MSG_RESULT(OK)) \
 	|| AC_MSG_RESULT(FAILED)
 AC_MSG_CHECKING($install_prolog_includes) && \
      ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && AC_MSG_RESULT(OK)) \

@@ -110,4 +110,5 @@ else
    echo "immediately after it was created."
    echo ""
    echo "Please contact your system administrator, if you can't rebuild XSB."
+   exit 1
 fi
