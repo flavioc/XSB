@@ -233,12 +233,20 @@ get_producer_call(CallTerm, ProducerTableEntry, ReturnTemplate) :-
  *   inlined and we explicitly invoke the builtin call.
  */
 
+
+'_$$get_calls'(CallTerm,Handle,Template) :-
+	get_calls(CallTerm),
+	get_lastnode_cs_retskel(CallTerm, _Leaf, Handle, Template).
+
+/* 
+ * the argument to the following findall is folded into the
+ * predicate above so that get_lastnode_cs_retskel is inlined,
+ * thus avoiding a GC between get_calls & get_lastnode_cs_retskel
+ */
+
 get_calls(CallTerm, Handle, Template) :-
 	findall('_$get_calls'(CallTerm,Handle,Template),
-		(
-		  get_calls(CallTerm),
-		  get_lastnode_cs_retskel(CallTerm, _Leaf, Handle, Template)
-		),
+		'_$$get_calls'(CallTerm,Handle,Template),
 		List),
 	member('_$get_calls'(CallTerm,Handle,Template),List).
 
@@ -287,12 +295,14 @@ get_returns(TableEntry, ReturnTemplate) :-
 	change_attv_to_var(ReturnTemplate),
 	member('_$get_returns'(TableEntry,ReturnTemplate),ReturnsList).
 
+'_$$get_returns'(TableEntry,RetTmplt,RetLeaf) :-
+	trie_get_return(TableEntry,RetTmplt),
+	get_lastnode_cs_retskel(_,RetLeaf,_,_).
+	
+
 get_returns(TableEntry, RetTmplt, RetLeaf) :-
 	findall('_$get_returns'(TableEntry,RetTmplt,RetLeaf),
-	        (
-		    trie_get_return(TableEntry,RetTmplt),
-		    get_lastnode_cs_retskel(_,RetLeaf,_,_)
-		),
+		'_$$get_returns'(TableEntry,RetTmplt,RetLeaf),
 		ReturnsList),
 	member('_$get_returns'(TableEntry,RetTmplt,RetLeaf),ReturnsList).
 
@@ -349,13 +359,14 @@ get_residual(CallSkel, DelayList) :-
 	; member(DelayList, DLs)
 	).
 
+'_$$get_returns_and_dls'(CallStr,RetSkel,DLs) :-
+	trie_get_return(CallStr,RetSkel),
+	get_lastnode_cs_retskel(_,Leaf,_,_),
+	get_delay_lists(Leaf,DLs).
+	
 get_returns_and_dls(CallStr, RetSkel, DLs) :-
 	findall('_$get_returns_and_dls'(CallStr,RetSkel,DLs),
-		(
-		    trie_get_return(CallStr,RetSkel),
-		    get_lastnode_cs_retskel(_,Leaf,_,_),
-		    get_delay_lists(Leaf,DLs)
-		),
+		'_$$get_returns_and_dls'(CallStr,RetSkel,DLs),
 		List),
 	member('_$get_returns_and_dls'(CallStr,RetSkel,DLs),List).
 
