@@ -84,9 +84,15 @@ flora_compile_internal(File,Workspace) :-
   flora_load_module_internal(+File,+Workspace)
   File must be a FLORA file.
 **********************************************************************/
-flora_load_module_internal(File,Workspace) :-
-	flora_check_filename(File),
+flora_load_module_internal(InFile,Workspace) :-
+	flora_check_filename(InFile),
 	flora_check_workspace(Workspace),
+	(InFile == user
+	->  path_sysop(tmpfilename,File),
+	    str_cat(File,'.flr',FlrFile),
+	    flora_save_user_clauses(FlrFile)
+	;   InFile = File
+	),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,Workspace)
 
@@ -109,8 +115,14 @@ flora_load_module_internal(File,Workspace) :-
   flora_load_module_internal(+File)
   File may be a FLORA file, .P file, or .O file.
 **********************************************************************/
-flora_load_module_internal(File) :-
-	flora_check_filename(File),
+flora_load_module_internal(InFile) :-
+	flora_check_filename(InFile),
+	(InFile == user
+	->  path_sysop(tmpfilename,File),
+	    str_cat(File,'.flr',FlrFile),
+	    flora_save_user_clauses(FlrFile)
+	;   InFile = File
+	),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,FLORA_DEFAULT_WORKSPACE)
 
@@ -320,29 +332,23 @@ flora_flcompile(FlrFile,Workspace) :-
 
 
 /*************************************************************************
-  flora_flload(+FlrFile,+Workspace)
+  flora_flload(+File,+Workspace)
 *************************************************************************/
-flora_flload(InFlrFile,Workspace) :-
-	(InFlrFile == 'user.flr'
-	->  path_sysop(tmpfilename,FlrFile1),
-	    str_cat(FlrFile1,'.flr',FlrFile),
-	    flora_save_user_clauses(FlrFile)
-	;   InFlrFile = FlrFile
-	),
-	flora_mainP_filename(FlrFile,MPFile),
-	flora_FDB_filename(FlrFile,FDBFile),
-	flora_WSP_filename(FlrFile,Workspace,WSPFile),
-	flora_WSO_filename(FlrFile,Workspace,WSOFile),
+flora_flload(File,Workspace) :-
+	flora_mainP_filename(File,MPFile),
+	flora_FDB_filename(File,FDBFile),
+	flora_WSP_filename(File,Workspace,WSPFile),
+	flora_WSO_filename(File,Workspace,WSOFile),
 	!,
-        ( flora_file_newerthan(WSPFile,FlrFile) ->
+        ( flora_file_newerthan(WSPFile,File) ->
 	    flora_stdmsg_nl,
 	    true
 	;
-	    ( flora_file_newerthan(MPFile,FlrFile) ->
+	    ( flora_file_newerthan(MPFile,File) ->
 		flora_stdmsg_nl,
 		true
 	    ;
-		flora_compile_file(FlrFile,MPFile,FDBFile,Status),
+		flora_compile_file(File,MPFile,FDBFile,Status),
 		(Status == FLORA_FAILURE -> fail; true)
 	    ),
 	    flora_copy_file(MPFile,WSPFile)
@@ -353,8 +359,7 @@ flora_flload(InFlrFile,Workspace) :-
 	;
 	    ConsultFile=WSPFile
         ),
-	flora_message_line("loading %s into module %s",
-			   args(FlrFile,Workspace)),
+	flora_message_line("loading %s into module %s", args(File,Workspace)),
 	flora_set_xpp_options(Workspace),
         consult(ConsultFile),
 	flora_clear_xpp_options,
@@ -380,16 +385,13 @@ flora_save_user_clauses(FlrFile) :-
   ExtType is appended).
 *************************************************************************/
 flora_locate_file(InFile,ExtType,ExtFile) :-
-	(InFile==user, ExtType==FLORA_FILE_EXT
-	->  fmt_write_string(ExtFile,'%s.%s',args(InFile,ExtType))
-	;  parse_filename(InFile,_,_,Ext),
-	    ( Ext == ExtType ->
-		ExtFileName=InFile
-	    ;
-		fmt_write_string(ExtFileName,"%s.%s",args(InFile,ExtType))
-	    ),
-	    flora_locate_file(ExtFileName,ExtFile)
+	parse_filename(InFile,_,_,Ext),
+	( Ext == ExtType ->
+	    ExtFileName=InFile
+	;
+	    fmt_write_string(ExtFileName,"%s.%s",args(InFile,ExtType))
 	),
+	flora_locate_file(ExtFileName,ExtFile),
 	!.
 
 

@@ -224,6 +224,7 @@ other XSB modules, and regular XSB modules can query the objects defined in
 because it heavily relies on tabling and the well-founded semantics for
 negation, both of which are available only in XSB.
 
+%% UNIMPLEMENTED -- slg-wam/chat
 Due to certain problems with XSB, \FLORA runs best when XSB is configured
 with SLG-WAM and local scheduling. This problem will be fixed in a future
 release of XSB. Under the default XSB configuration, certain \fl programs might
@@ -1273,12 +1274,14 @@ and the contents consists of the program code that is typically loaded from
 some file (but it can also be constructed dynamically by inserting
 facts\footnote{
   %%
+  %% UNIMPLEMENTED -- asserting rules
   Dynamic insertion of rules will be implemented in the future.
   %%
   }
 %%
 into another module).
 
+%% UNIMPLEMENTED -- encapsulation
 The basic idea behind \FLORA modularization is that reusable code libraries
 are to be placed in separate files.  To use a library, it must be
 \emph{loaded into a module}. Other parts of the program can then invoke
@@ -1675,6 +1678,46 @@ For instance if file {\tt foo.flr} contains the following instructions:
 the effect is the same as if the above three files were concatenated
 together and stored in {\tt foo.flr}.
 
+\subsection{More on Variables as Module Specifications}
+
+Earlier we mentioned that a module specification can be a variable, {\it
+  e.g.}, {\tt a[m->b]@X}, which ranges over module names. This variable
+must be bound to a concrete module name before the call is made. However,
+this binding cannot be {\tt prolog()}, {\tt prolog(module)}, or {\tt
+  flora(module)}.
+
+Dynamic module bindings can be used to implement \emph{adaptive methods},
+which are used in  many types of applications, {\it e.g.}, agent
+programming. Consider the following example:
+%%
+  \begin{center}
+    {\tt
+    \begin{tabular}{l l}
+      Module {\tt foo}  & Module {\tt moo} \\
+      \hline
+      something :- ... & ......\\
+      ...:- flThisModule(M), & ......\\
+      \hspace*{1.5cm}a[someservice(M,Arg)->Res]@moo ~~& ......\\
+      ...... & a[someservice(Module,Arg)-> Res] :- \\
+      ...... & \hspace*{2.2cm} something@Module, ...\\
+      ...... & ......
+      
+    \end{tabular}
+    }
+  \end{center}
+%%
+  
+  Here the method {\tt someservice} in module {\tt moo} performs different
+  operation depending on who is calling it, because {\tt something} can be
+  defined differently for different callers. This is, for instance, how the
+  pretty printing module of \FLORA works. A pretty-printing method is
+  called on an object in some module, and to do its job the pretty-printing
+  method needs to query the object \emph{in the context of
+    the caller} module to find the methods the object has.
+
+It is also possible to view adaptive methods as a declarative counterpart
+of the callback functions in C/C++, which allows the callee to behave
+differently for different clients.
 
 
 \section{Path Expressions}\label{sec-pathexpr}
@@ -1682,8 +1725,7 @@ together and stored in {\tt foo.flr}.
 \subsection{Path Expressions in the Rule Body}
 
 
-\index{path expression}
-\index{path expression!in rule body}
+\index{path expression} \index{path expression!in rule body}
 %%
 In addition to the basic \fl syntax, the \FLORA  system also supports
 \emph{path expressions} to simplify object navigation along
@@ -2028,11 +2070,22 @@ but rather a complex term {\tt group(X)}. Variables in HiLog can range over
 terms, predicate and function symbols, and even over atomic formulas. For
 instance,
 %%
-\begin{quote}
- ?- p(X), X(p), X.  
-\end{quote}
+{\tt
+\begin{equation}
+ ?- p(X), X(p).
+\end{equation}
+}
 %%
-is a perfectly legal query. If {\tt p(a(b))}, {\tt a(b)(p)},
+\noindent
+and
+%%
+{\tt
+\begin{equation}\label{eq-hilog-notallowed}
+ ?- p(X), X(p), X.  
+\end{equation}
+}
+%%
+are perfectly legal queries. If {\tt p(a(b))}, {\tt a(b)(p)},
 and {\tt a(b)} are all true in the database, then $X=a$ is one of the
 answers to the query.
 
@@ -2052,15 +2105,40 @@ HiLog translaiton, e.g., {\tt foo(a)} will be represented as {\tt
 at runtime. For instance, {\tt foo(a)} will unify with {\tt F(a)} and bind
 the variable {\tt F} to {\tt foo}.
 
+There is one important difference between HiLog, as described in
+\cite{hilog-jlp}, and its implementation in \FLORA. In HiLog, functor terms
+that appear as arguments to predicates and the atomic formulas ({\it i.e.},
+predicates that are applied to some arguments) belong to the same domain. 
+In contrast, in \FLORA they are in different domains.\footnote{
+  %%
+  This is allowed in \emph{sorted HiLog} \cite{hilog-icdt-95}. 
+  %%
+  }
+%%
+For instance, (\ref{eq-hilog-notallowed}) will fail because once {\tt X} is
+bound to a term, it cannot unify with any predicate. In a future release,
+we will provide a predicate {\tt call}/1, which converts HiLog terms in the
+domain of arguments into HiLog terms in the domain of atomic formulas, so
+(\ref{eq-hilog-notallowed}) could be rewritten into {\tt p(X), X(p), call(X).}\footnote{
+  %%
+  Of course, {\tt call/1} exists in Prolog as well. However, unlike HiLog
+  and sorted HiLog, this predicate does not have logical semantics.
+  %%
+  }
+
+
 
 \index{HiLog!unification}
 %
-HiLog has one interesting peculiarity: If {\tt foo}  is a symbol,
-then {\tt foo} and {\tt foo()} are not the same, and both are different
-from {\tt foo()()}. In terms of the translation, this means that {\tt foo}
-is different from {\tt apply(foo)} is different from {\tt apply(apply(foo))}.
-
-This, it would seem that the following queries are different:
+Like in classical logic, {\tt foo} and {\tt foo()} are different terms.
+However, in programming, it is convenient to identify these terms when they
+are treated as predicates. Prologs often disallow the use of the {\tt
+  foo()} syntax altogether.  The same distinction holds in HiLog: {\tt
+  foo}, {\tt foo()} and {\tt foo()()} are all different. In terms of the
+HiLog to Prolog translation, this means that {\tt foo} is different from
+{\tt apply(foo)} is different from {\tt apply(apply(foo))}.  However, just
+like in Prolog, we treat {\tt p} as syntactic sugar for {\tt p()} when both
+occur as predicates. Thus, the following queries are the same:
 %%
 {\tt
 \begin{quote}
@@ -2070,24 +2148,24 @@ This, it would seem that the following queries are different:
 }
 %%
 \noindent
-However, considering that calling 0-ary predicates is quite common in logic
-programming, we decided to make {\tt p} and {\tt p()} the same {\em when
-  they occur as predicates in the rule head or body}. Thus, in the following
-program,
+In the following program,
 %%
 {\tt
 \begin{quote}
  p. \\
  q().\\
- ?- p().\\
- ?- q.\\
+ ?- p(), X().\\
+ ?- q, X().\\
  ?- r = r().
 \end{quote}
 }
 %%
 \noindent
-the first two queries will succeed, but the last one will fail.
-This grace does not extend to {\tt p()()}. In the following program,
+the first two queries will succeed (with {\tt X} bound to {\tt p} or {\tt
+  q}), but the last one will fail.  Identification of {\tt p} with {\tt
+  p()} does not extend to {\tt p()()}, which is distinct from both {\tt p}
+and {\tt p()} not only as a term but also as a formula. In the following
+program, all queries fail:
 %%
 {\tt
 \begin{quote}
@@ -2100,8 +2178,6 @@ This grace does not extend to {\tt p()()}. In the following program,
 \end{quote}
 }
 %%
-\noindent
-all queries fail.
 
 
 \subsection{Meta-programming}
@@ -2154,6 +2230,7 @@ Yes.
 \end{verbatim}
 \end{quote}
 %%
+%% UNIMPLEMENTED -- meta programming
 Note that these primitives are used for Prolog terms only and
 are described in the XSB manual. Meta-programming support for HiLog terms
 and F-molecules will be provided through future enhancement.
@@ -2204,6 +2281,7 @@ following queries into the \FLORA shell, they both succeed:
 %%
 
 
+%% UNIMPLEMENTED -- useful libraries
 Not all arguments passed back and forth to XSB need conversion. For
 instance, {\tt sort/2}, {\tt ground/1}, {\tt compound/1}, and many others
 do not need conversion because they work the same for Prolog and HiLog
@@ -2881,6 +2959,7 @@ tc(X,Y) :- edge(X,Y), tc(Y,Z).
 \end{quote}
 %%
 which renders {\tt tc/2}  as a tabled first-order predicate.
+%% UNIMPLEMENTED --  :-table implies :-firstorder
 (In the future, the tabling directive will imply {\tt firstorder}.)
 
 \index{hilogtable}
@@ -2896,6 +2975,7 @@ predicates of a given arity: For instance,
 %%
 tables all HiLog predicates of arity 3.
 
+%% UNIMPLEMENTED -- Flora and subsumptive tabling
 It is important to keep in mind that XSB does not do reordering of \fl
 molecules and predicates during joins. Instead, all joins are performed
 left-to-right.  Thus, program clauses must be written in such a way as to
@@ -2980,6 +3060,7 @@ F-molecule (again, provided that the body has no F-molecule to the left of
 that cut). If you need to use cuts, plan on using procedural methods or
 non-tabled predicates.
 
+%% UNIMPLEMENTED -- demand tabling
 In a future release, XSB will implement a different tabling schema. While
 cutting across tables will still be prohibited, it will provide an
 alternative mechanism that achieves many of the goals a cut is used to
@@ -3000,8 +3081,32 @@ achieve.
 \FLORA provides primitives to update the runtime database. Unlike Prolog,
 \FLORA does not require the user to define a predicate as dynamic in order
 to update it. Instead, every predicate (HiLog or first-order) and object
-has a \emph{base part} and a \emph{derived part}.  Updates directly update
+has a \emph{base part} and a \emph{derived part}.  Updates directly change
 only the base parts and only indirectly the derived parts.
+
+%%UNIMPLEMENTED -- make base part dynamic
+Note that the base part of a predicate or an object contains only the facts
+that were \emph{explicitly inserted} into the database. If you just put the
+facts such as 
+%%
+{\tt
+\begin{quote}
+ p(a).\\
+ a[m->b].
+\end{quote}
+}
+%%
+\noindent
+into the database, they will be located in the derived part and cannot be
+deleted. (This might change in a future release).
+
+%%UNIMPLEMENTED
+Also, in the current release, the base part of first-order predicates
+cannot be queried in the \FLORA shell (but it can be queried in the program
+file).  Likewise, if the {\tt firstorderall} directive is in effect, the
+base part of the first-order predicates is inaccessible to querying.  These
+limitations will be removed in the future.
+
 
 \FLORA updates can be \emph{non-backtrackable,} as in Prolog,
 or backtrackable, as in Transaction Logic \cite{trans-tcs94}.
@@ -3123,8 +3228,7 @@ XSB does not understand and will not associate it with the predicate {\tt
 This will insert {\tt foo(a,b,c)} into the catch-all module of XSB called
 {\tt usermod}. If {\tt foo/3} is defined in another XSB module and is
 imported by {\tt usermod}, then the above statement will not do anything
-useful --- the XSB module system is too involved and requires more brain cells
-that we can afford to spend explaining it.
+useful due to certain idiosyncrasies in the XSB module system.
 
 We should also mention one important difference between insertion of facts
 in \FLORA and Prolog. Prolog treats facts as a \emph{bag}, so duplicates
@@ -3331,6 +3435,7 @@ system backtracks to {\tt btinsert\{q(a)\}} and removes {\tt q(a)} that
 was previously inserted into the database. Thus the next query
 \verb|q(a)| returns with {\tt No}.
 
+%% UNIMPLEMENTED -- while loops
 Keep in mind that some things that Prolog programmers routinely do with
 {\tt assert} and {\tt retract} goes against the grain of the use of
 backtrackable updates. In particular, {\tt fail}-loops are not going to
@@ -3338,6 +3443,7 @@ work (will leave the databases unchanged) for obvious reasons. In a future
 release, we will provide {\tt while}-loops that will work correctly with
 such updates.
 
+%% UNIMPLEMENTED -- backtrackable updates and the fail-loop
 There are certain less obvious pitfalls in using backtrackable predicates
 in \FLORA. For instance, the query
 %%
@@ -3410,6 +3516,7 @@ The reason for this result is, again, that XSB tables remember that {\tt
 
 \index{abolish\_all\_tables}
 %%
+%% UNIMPLEMENTED: tabling and updates
 In a future release, \FLORA will provide a workaround for these
 problems (and it is even possible that a future release of XSB will
 start doing the right thing in these situations). For now, the only
@@ -3421,6 +3528,8 @@ One other temporal solution could be to design your program in such a way
 that tabled predicates and F-molecules will not depend on the facts that
 are dynamically inserted or deleted.
 
+%% UNIMPLEMENTED -- checking dependency of tabled preds on update
+%% primitives
 Another, related, issue is that a tabled predicate might have an update in
 its body. In this case, the update will be executed the first time the
 predicate is evaluated. Subsequent calls will return the predicate truth
@@ -3498,6 +3607,7 @@ Therefore, explicit parentheses are recommended around the entire clause.
 
 \index{type checking}
 %%
+%% UNIMPLEMENTED -- type checking
 Although \FLORA allows specification of object types through signatures,
 type correctness is not being checked automatically. So, what are the
 signatures good for then? One answer is that future versions of \FLORA

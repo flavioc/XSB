@@ -55,7 +55,7 @@
       Name of storage should be local to the module name.
 
       The above file F is to be generated and/or included  ONLY if the
-	  :- flDebug 
+	  :- debug 
       directive appears in the file.
       This is because such error checking is potentially expensive to do in
       "production" runs.
@@ -80,7 +80,7 @@
        translate as:
            ...,p'foo'exported(X)
        In module foo, p/1 must be declared as
-           :- flExport p/1.
+           :- export p/1.
 
        Which would insert the rule
 
@@ -88,9 +88,9 @@
 
        Same for methods.
        Should have something like:
-           :- flExport method123/5 ->. (for all kinds of arrows)
-	   :- flExport :.  (for membership)
-	   :- flExport ::. (for subclass)
+           :- export method123/5 ->. (for all kinds of arrows)
+	   :- export :.  (for membership)
+	   :- export ::. (for subclass)
 
        For hilog predicates:
           p(a,Y)(X)@foo
@@ -98,7 +98,7 @@
           ...,flapply'foo'export(flapply(p,a,Y),X)
        and in foo we should have:
 
-          :- flExport p(_,_)/1.
+          :- export p(_,_)/1.
 
        which adds the fact
           foo'exported'hilog'registry(flapply(p,_,_)).
@@ -123,18 +123,17 @@
 	One solution: in debug mode insert should check the registry of
 	exported things in the module foo.
 
-    RESEARCH ISSUE: 
-	  Is there another, more fine-grained design for the module system?
+    More fine-grained encapsulation based on the ideas from annotated logic.
        
 
 5. Asserting Flora rules.
 
    Proposal:
       - Allow assertion only into modules that are declared as 
-        :- flDynamicModule
+        :- dynamicmodule
 	(in the file loaded into that module).
 
-      - The flDynamicModule directive should tell the compiler that only
+      - The dynamicmodule directive should tell the compiler that only
 	directives are allowed in that paticular file.
 
       - The rules connecting the storage tries (the patch rules)
@@ -142,8 +141,9 @@
 
 	  p(X) :- storage_find_fact(p(X),_).
 
-	for flPredicates, hilog and F-logic wrappers must be asserted into
-	the dynamic modules (but the trailer can be compiledand appended).
+	for firstorder predicates, hilog and F-logic wrappers must be
+	asserted into the dynamic modules (but the trailer can be compiled
+	and appended).
 
 	For the Flora rules we don't need to change the translation much.
 	We assert
@@ -170,7 +170,7 @@
      - Need to implement the @foreign module123 wrapper which should tell
        the coder to wrap F-molecule into one call:
 
-         ..., (p(X), a[(m->Y, k->P); l->>123])@foreign foo,...
+         ..., (p(X), a[(m->Y, k->P); l->>123])@foreign(foo),...
 
        should be wrapped as
          foo'foreign(and(p(X),
@@ -189,25 +189,18 @@
 		    var?).
 	    Functor: the name of the predicate, functor, or method.
 
-7. Implement the :- flPredicateAll directive.
-   Should go over the entire file and collect all predicates that aren't
-   declared as flHiLog or flProlog. For each of these, encode them as Flora
-   predicates and create the patch rules to connect them to the storage
-   area.
+   Note: foreign(foo) should not be distributive or nested, unlike @module,
+	 @flora(...) and @ prolog(...). Any nesting of foreign inside
+	 foreign should be an error.
 
-   There is another issue here when it comes to metaprogramming.
-   When we do something like
-	X ..=.. [flpred,mod,foo,5, ...]
-   a patch rule for foo'mod/5 must be asserted, if it isn't already
-   there.
+7. Implement asserting the storage-linking rules (the patch rules) in the
+   Flora shell, so that we'll be able to use insert/delete for firstorder
+   predicates in the shell.
 
-8. Implement asserting the storage-linking rules (the patch rules) in the
-   Flora shell, so that we'll be able to use insert/delete for flPredicates
-   in the shell.
+   The way to do this is to keep track of all firstorder predicates in the
+   shell.
 
-   The way to do this is to keep track of all flpredicates in the shell.
-
-   a. assert register_flPredicate(functor/arity) into usermod.
+   a. assert register_firstorder(functor/arity) into usermod.
    
    b. Check to see if functor/arity is already in main module
       (using current_predicate/1). If yes, do nothing. Otherwise,
@@ -216,10 +209,12 @@
       storage_find_fact(main_module,functor(X,Y,...)).
 
    c. When a file is loaded into the module main, for each
-      functor/arity in register_flPredicate/1, do
+      functor/arity in register_firstorder/1, do
       retractall(functor(X,Y,...)).
 
-9. Implement flPredicateAll.
+8. Implement  patch rules for firstorderall.
+   Firstorderall is already implemented. We only need to add the patch
+   rules.
 
    a. Take the intermediate results from the compiler.
 
@@ -237,7 +232,13 @@
    e. Need to dump the rules from Step d into the same file where
       program code is generated.
 
-10. If then else
+   There is another issue here when it comes to metaprogramming.
+   When we do something like
+	X ..=.. [flpred,mod,foo,5, ...]
+   a patch rule for foo'mod/5 must be asserted, if it isn't already
+   there.
+
+9. If then else
     Right now if/then/else are defined in flroperator.P and syslib/flrcontrol.P
     However, the defs don't parse correctly some nested if-then-else
     expressions, such as if a then if b then c else f else g.
@@ -245,26 +246,85 @@
     by the operators if/then/else, it would rearrange it to fix the
     associativity.
 
-11. Add the contraints syntax {...}.
+10. Add the contraints syntax {...}.
 
 
-12. Implement convenient versions of I/O predicates and others, such as
+11. Implement convenient versions of I/O predicates and others, such as
     new_oid(X). This module should be automatically loaded into the module
     "flora". Maybe we should prevent users from loading lodules into
     the "flora" module.
 
-13. Add the symbol _@, which will be handled by the tokenizer and passed
+12. Add the symbol _@, which will be handled by the tokenizer and passed
     along to the compiler so it would insert code to replace _@ with the
     preprocessor constant FLORA_MODULE.
     When compiling, the macro definition
     #define FLORA_MODULE  .....
     would be dumped into the .P file
 
-14. Do dependency checking in the compiler to determine if a tabled
+13. Do dependency checking in the compiler to determine if a tabled
     predicate or an F-molecule depends on an update predicate.
 
-15. Do smart reordering of arithmetic operations in rule bodies to minimize
+14. Do smart reordering of arithmetic operations in rule bodies to minimize
     the possibility of errors due to unbound variables.
 
-16. Figure out some workaround for the tabled stuff that depends on
+15. Figure out some workaround for the tabled stuff that depends on
     dynamically asserted and deleted facts.
+
+16. Instead of compiling, load .fdb facts into the trie associated with the
+    corresponding module. This way the facts specified as
+    p(a).
+    f[m->b].
+    etc. can be deleted from the database.
+    We also need to make sure that the coder puts predicates (first-order
+    and hilog) into .fdb.
+
+17. Provide primitives
+    :- firstorder foo/1 in modname.
+    :- hilog moo/2 in modname.
+    (For symmetry, let us also have :- hilog moo/2. without the module.
+    All this is supposed to do is to check if there is a conflicting
+    declaration.)
+
+    This will direct the compiler to make the right translation for things like
+
+    ..., foo(X)@modname,...
+    ..., moo(X,Y)@modname,...
+
+    Also, the coder must dump apropriate code to preserve these
+    declarations in the .P file. The result would be that these
+    declarations will be global to the Flora runtime environment.
+    Each declaration will specify whether a particular predicate symbol is
+    supposed to be first order or hilog in some particular module.
+    When the shell runs, it would know how to translate predicate literals
+    that are entered on command line.
+
+    The global declarations should be something like:
+
+    FLORA_PREFIX'decl(symbol,firstorder/hilog,ownermodule,consumercount)
+
+    When a new module is loaded, we should check if there are conflicts.
+    (A conflict can be complex and involve default definitions, etc.)
+    We should decide if we will allow a module to redefine the
+    declarations it owns when the module is reloaded. But if we do allow
+    this, this can be done only if there are no consumers for the symbol.
+    
+18. Add a call(X) meta predicate.
+    The main point right now is that
+
+    :- p(X), X.     (*)
+
+    won't work correctly because in Flora terms and atomic (predicate)
+    formulas belong to different sorts (domains). For instance, module name
+    isn't attached to the apply-wrapper for terms, but it is for predicate
+    formulas.  So, f(a) in p(f(a)) is  represented as apply(f,a), while
+    when it occurs in a module foo as a predicate:
+
+    f(a).            (**)
+
+    it is represented as apply'foo(a).
+    So, the free X in (*) won't match (**).
+
+    One solution could be to add the call/1 predicate.
+    call(f(a)) would change the outermost wrapper and attach module name.
+    Also, call(p) should convert to call(apply(p)), because Flora treats
+    propositional constants like p as p().
