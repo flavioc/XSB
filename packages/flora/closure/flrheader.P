@@ -19,8 +19,7 @@
 :- import current_predicate/1 from curr_sym.
 
 :- import STD_FPREFIX(loadlist)/1, STD_FPREFIX(dynloadlist)/1, 
-	STD_FPREFIX(warning_nl)/2,
-	STD_FPREFIX(tnot_all)/1
+	STD_FPREFIX(warning_nl)/2
    from flrutils.
 
 :- import bootstrap_flora/0 from flora.

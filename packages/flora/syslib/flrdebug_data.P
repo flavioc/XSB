@@ -86,6 +86,8 @@ hide_this_hide(flora_notrace,0).
 hide_this_hide(one,0).
 hide_this_hide(all,0).
 
+hide_this_hide(sk_not,1).
+
 hide_this_show(STD_FPREFIX(print_answers),2).
 
 show_this_hide(STD_FPREFIX(assert), 1).

@@ -32,8 +32,7 @@
 :- dynamic VAR_FPREFIX(mvs)/2.
 
 :- import VAR_FPREFIX(loadlist)/1, VAR_FPREFIX(dynloadlist)/1, 
-	VAR_FPREFIX(warning_nl)/2,
-	STD_FPREFIX(tnot_all)/1
+	VAR_FPREFIX(warning_nl)/2
    from flrutils.
 
 :- import member/2, ground/1 from basics.
