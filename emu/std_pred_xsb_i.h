@@ -1,5 +1,6 @@
 /* File:      std_pred_xsb_i.h
 ** Author(s): Kostis F. Sagonas
+** Modified by Swift 
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -31,6 +32,8 @@
 static xsbBool atom_to_list(int call_type);
 static xsbBool number_to_list(int call_type);
 
+/* TLS 10/01 changed functor so that it did not core dump on 
+   functor(X,1,2) */
 inline static xsbBool functor_builtin(void)
 {
   /* r1: ?term; r2: ?functor; r3: ?arity (int)	*/
@@ -58,7 +61,8 @@ inline static xsbBool functor_builtin(void)
     if (isstring(functor) || isinteger(functor) || isfloat(functor) ||
 	(isconstr(term) && get_arity(get_str_psc(term)) == 0)) {
       arity = ptoc_tag(3);
-      if (arity_integer(arity)) {
+      /* tls: added !isnumber conjunct */
+      if (arity_integer(arity) && !isnumber(functor)) {
 	value = int_val(arity);
 	if (value == 0) return unify(functor, term);
 	else {
@@ -83,24 +87,27 @@ inline static xsbBool functor_builtin(void)
 	  }
 	  return TRUE;	/* always succeed! */
 	}
+	/* TLS rearranged order of the two elses below */
       } else {
-	if (isnonvar(arity)) {
-	  if (isinteger(arity))
-	    err_handle(RANGE, 3, "functor", 3,
-		       "integer in the range 0..255", arity);
-	  else err_handle(TYPE, 3, "functor", 3, "integer",arity);
-	} else {
 	  if (isnumber(functor))
 	    return (unify(term, functor) && 
 		    int_unify(makeint(0), arity));
+	  else {
+	    if (isnonvar(arity)) {
+	      if (isinteger(arity))
+		err_handle(RANGE, 3, "functor", 3,
+		       "integer in the range 0..255", arity);
+	      else err_handle(TYPE, 3, "functor", 3, "integer",arity);
+	    }
 	  else err(INSTANTIATION, 3, "functor", 3);
-	}
+	  }
       }
-    } else {
+    }
+      else {
       if (isnonvar(functor))
 	err_handle(TYPE, 2, "functor", 3, "atom", functor);
       else err(INSTANTIATION, 2, "functor", 3);
-    }
+      }
   }
   return TRUE;
 }
