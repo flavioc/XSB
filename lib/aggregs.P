@@ -153,7 +153,7 @@ filterReduce1(Call,Op,Id,Res) :-
 		functor(Comp,Op,3),
 		functor(Idcomp,Op,3),
 	copy_term(Skel,Oskel),
-	apply_last(Call,Nvar,New_call),   % rather than copy_term,
+	apply_last(Call,[Nvar],New_call),   % rather than copy_term,
 					    % since we want variant.
 		arg(1,Idcomp,Id),arg(2,Idcomp,Nvar),arg(3,Idcomp,Res),
 		arg(1,Comp,Oopt),arg(2,Comp,Nvar),arg(3,Comp,Res),
