@@ -2122,7 +2122,7 @@ described only briefly.
     It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
 \end{description}
 
-
+%-----------------------------------------------------------------------------------------
 \section{Negation and Control}\label{sec:control}
 \index{control}
 
@@ -2267,7 +2267,11 @@ ground or not.
 
 \end{description}
 
+%-------------------------------------------------------------------------
+\section{Comparison and Sorting} \label{Comparison}
+\input{comparison}
 
+%------------------------------------------------------------------------------------------------
 \section{Meta-Logical}\label{MetaLogical}
 
 To facilitate manipulation of terms as objects in themselves,
@@ -2933,7 +2937,8 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 
 \end{description}
 
-\section{Atom Manipulation}
+%-----------------------------------------------------------------------------------------------
+\section{Manipulation of Atomic Terms}
 
 \begin{description}
 
@@ -3153,6 +3158,21 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 \ourusage{atom\_concat(?Atom,?Atom,+Atom)}
 \ourusage{atom\_concat(+Atom,+Atom,-Atom)}
 
+\ournewitem{term\_to\_atom(+Term,-Atom)}{string}
+\index{\texttt{term\_to\_atom/2 }}
+
+This predicate converts an arbitrary Prolog term {\tt Term} into an
+atom, putting the result in {\tt Atom}.  It uses a format similar to
+the canonical format of {\tt write\_canonical}, but uses a standard
+list format for lists.  An atom created from a term using this
+predicate can be reconverted back to the original term by using {\tt
+atom\_to\_term/2}.
+
+\ournewitem{term\_to\_codes(+Term,-CodeList)}{string}
+\index{\texttt{term\_to\_codes/2 }}
+
+This predicate is used in the definition of {\tt term\_to\_atom/2} and 
+converts a term into a list of ascii codes.
 
 \end{description}
 
@@ -3545,9 +3565,6 @@ bagAvg(Call,Avg) :-
 
 \end{description}
 
-%-------------------------------------------------------------------------
-\section{Comparison} \label{Comparison}
-\input{comparison}
 %-------------------------------------------------------------------------
 
 \section{Meta-Predicates} \label{meta_predicates}

@@ -67,199 +67,41 @@ mean the following:
 \ei
 \ei
 
-\ouritem{current\_module(?Module)}\index{\texttt{current\_module/1}}
-    The standard predicate {\tt current\_module/1} allows the user to check 
-    whether a given module is {\em current} or to generate (through 
-    backtracking) all currently known modules.
-    Succeeds iff {\tt Module} is one of the modules in the database. This
-    includes both user modules and system modules.  
+\ournewitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
+\index{\texttt{current\_prolog\_flag/2}}
+%
+{\tt current\_prolog\_flag/2} allows the user to examine both dynamic
+aspects of XSB along with certain non-changable ISO
+flags~\footnote{The ISO flags {\tt integer\_rounding\_function}, {\tt
+char\_conversion}, {\tt double\_quotes}, and {\tt unknown} are not yet
+implemented.}.  This predicate is based upon the predicate {\tt
+XSB\_flag/2}.
 
-    Note that predicate {\tt current\_module/1} succeeds for a given module 
-    even if that module is not a real module (in the sense taht it does not
-    export any predicates). There are no error conditions associated 
-    with this predicate; if its argument does not unify with one of the 
-    current modules, {\tt current\_module/1} simply fails.
-
-\ouritem{current\_module(?Module, ?ObjectFile)}\index{\texttt{current\_module/2}}
-    Predicate {\tt current\_module/2} gives the relationship between the
-    modules and their associated object file names. The file name 
-    {\tt ObjectFile} must be absolute and always ends with {\tt '.O'}.
-
-    It is possible for a current module to have no associated file name 
-    (as is the case for modules like {\tt "usermod"} and {\tt "global"}), 
-    or for the system to be unable to determine the file name of a current
-    module. In both cases, predicate {\tt current\_module/1} will succeed
-    for this module, while {\tt current\_module/2} will fail. The system is
-    unable to determine the file name of a given module if that module is not
-    in one of the directories of the search path (see Section~\ref{LibPath}).
-    Once again, there are no error conditions associated with this predicate;
-    if the arguments of {\tt current\_module/2} are not correct, or 
-    {\tt Module} has no associated {\tt File}, the predicate will simply fail.
-
-\ouritem{current\_atom(?Atom\_Indicator)}\index{\texttt{current\_atom/1}}
-    Generates (through backtracking) all currently known atoms, and unifies
-    each in turn with {\tt Atom\_Indicator}. 
-
-%\ouritem{current\_atom(?Atom)}\index{\texttt{current\_atom/2}}
-%\predindex{\$current\_atom/2~(B)}
-%    However, atoms considered ``internal'' symbols,
-%    i.e.\ those whose names begin with {\bf \$} or {\bf \_\$} are not returned.
-%    The intrepid user who wishes to access such internal atoms as
-%    well can use the goal
-%    \begin{center}
-%    {\tt ?- \$current\_atom({\tt Atom}, 1).}
-%    \end{center}
-
-\ouritem{current\_functor(?Predicate\_Indicator)}
-\index{\texttt{current\_functor/1}}
-    The standard predicate {\tt current\_functor/1} can be used to find all
-    the currently known terms appearing in a particular current module. 
-    It succeeds iff {\tt Predicate\_Indicator} is a predicate 
-    indicator for any term that appears in the database. Note that 
-    this includes terms both in system and in user defined modules, even 
-    terms that may be not yet loaded in the system. The behaviour of
-    {\tt current\_functor/1} may be contrasted with that of
-    {\tt current\_predicate/1}, which reports only those predicates which 
-    have been loaded in the system (both Prolog and foreign predicates) or
-    are dynamic predicates.
-    There are no error conditions associated with this predicate; if its 
-    argument is not a predicate indicator the predicate simply fails.
-
-    Predicate {\tt current\_functor/1} comes in two flavours depending on 
-    the form of its argument ({\tt Predicate\_Indicator}):
-    \begin{enumerate}
-    \item If {\tt Predicate\_Indicator} is of the form 
-	  {\tt Module:Functor/Arity}, then the execution of
-	  {\tt current\_functor/1} will backtrack through all
-	  the current modules of the system (user defined, system
-	  defined and global modules). 
-    \item If, however, {\tt Predicate\_Indicator} is uninstantiated 
-	  or has the form {\tt Functor/Arity}, then predicate 
-	  {\tt current\_functor/1} backtracks only through the terms appearing 
-	  in the global modules of the system (in other words searches only 
-	  modules {\tt "usermod"} and {\tt "global"}). This flavour is only 
-	  for convenience, since this is the common use of predicate 
-	  {\tt current\_functor/1}. Note that all the following are equivalent:
-
-	  \stuff{
-          \>	\>	| ?- current\_functor(Functor/Arity).     \\
-          \>	\>	| ?- current\_functor(Predicate).         \\
-          \>	\>	| ?- current\_functor(usermod:Predicate). \\
-          \>	\>	| ?- current\_functor(global:Predicate).  
-          }
-    \end{enumerate}
-
-    So, to backtrack through all of the functors of positive arity (function
-    and predicate symbols) that appear in the global modules of the system
-    regardless of whether they are system or a user defined, use:
-
-    \stuff{
-    \> \>	| ?- current\_functor(Functor/Arity), Arity > 0.
-    }
-
-\ouritem{current\_functor(?Name, ?Term\_Indicator)}
-\index{\texttt{current\_functor/2}}
-    Succeeds iff {\tt Term\_Indicator} is the most general term 
-    corresponding to one of the currently known terms having {\tt Name} 
-    as their functor appearing in a current module.  (Both system and user 
-    defined modules are checked).  Or procedurally, 
-    {\tt current\_functor/2} unifies {\tt Name} with the name of a functor 
-    known to the database, and {\tt Term\_Indicator} with the most 
-    general term corresponding to that functor. The flavours of this predicate 
-    are analogous to the ones of {\tt current\_functor/1} according to 
-    whether {\tt Term\_Indicator} has one of the following two forms:
-    \begin{enumerate}
-    \item{\tt Module:Term.}
-    \item{\tt Term} (for global modules).
-    \end{enumerate}
-    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
-    only for global modules.  
-    As in {\tt current\_functor/1} even unloaded predicates are reported
-    (if they have been imported and are are known to the database).
-
-    For example, if a predicate {\tt foo/2} and and a function symbol 
-    {\tt foo/1} are defined into module {\tt blah}, the following query 
-    will return:
-
-    \stuff{
-    \>	\>	| ?- current\_functor(foo, blah:Term).	\\
-    \>  \>						\\
-    \>	\>      Term = foo(\_638788,\_638792);		\\
-    \>  \>						\\
-    \>	\>	Term = foo(\_638788);			\\
-    \>  \>						\\
-    \>	\>	no
-    }
-
-    If a module is specified, {\tt current\_functor/2} succeeds only for
-    those functors (function and predicate symbols) which are defined in 
-    that module. Unless the module is one of the global modules, 
-    {\tt current\_functor/2} fails for the predicates which are imported 
-    into that module.
-
-    On the other hand, the goal:
-
-    \stuff{
-    \>	\>	| ?- current\_functor(Name, Term).
-    }
-
-    can be used to backtrack through every known term {\tt Term} in the global
-    modules of \ourprolog's database that has {\tt Name} as its functor.
-
-    Note that the order of term generation is undetermined. Once again, 
-    there are no error conditions associated with this predicate; if its
-    arguments are inappropriate, the predicate simply fails.
+{\bf Error Cases}
+\bi
+\item 	{\tt Flag\_Name} is neither a variable nor an atom.
+\bi
+\item 	{\tt domain\_error(atom\_or\_variable,Flag\_Name)}
+\ei
+\ei
 
 \ournewitem{current\_predicate(?Predicate\_Indicator)}{ISO}
 \index{\texttt{current\_predicate/1}}
-    The predicate {\tt current\_predicate/1} can be used to find all
-    the predicates that are defined and loaded in a particular current module. 
-    The module can be either a Prolog or a foreign module (see the
-Chapter {\it Foreign Language Interface} in Volume 2.
-    This predicate succeeds iff {\tt Predicate\_Indicator} is a 
-    predicate indicator for one of the procedures (both Prolog and foreign 
-    language ones) that are loaded in the database or that are dynamic. Note
-    that this includes procedures both in system and in user defined modules. 
-    Unlike {\tt current\_functor/1} which reports all predicates that are
-    somehow known to the database, {\tt current\_predicate/1} reports only
-    those predicates that are either created dynamically (for example using 
-    {\tt assert/1}) or loaded in the system.  (I.e. it excludes those
-    predicates which have been imported, but not loaded).
-    There are no error conditions associated with this predicate; if its 
-    argument is not what it should be, the predicate simply fails.
+%
+{\tt current\_predicate/1} can be used to backtrack through indicators
+for loaded user or system predicates.  If {\tt Predicate\_Indicator}
+unifies with {\tt Module:F/A} all loaded predicates unifying with this
+indicator is returned.  If {\tt Predicate\_indicator} is {\tt F/A},
+{\tt current\_predicate/1} behaves as if it were called with the form
+{\tt usermod:F/A} (or {\tt global:F/A}).  Unlike {\tt
+current\_functor/1} {\tt current\_predicate/1}does not return
+indicators for predicates that have been imported but not actually
+loaded into code space.  For more detailed analysis of predicate
+properties, the predicate {\tt predicate\_property/2} can be used.
 
-    Like {\tt current\_functor/1}, predicate {\tt current\_predicate/1}
-    comes in two flavours depending on  the form of its argument 
-    ({\tt Predicate\_Indicator}).
-    \begin{enumerate}
-    \item If {\tt Predicate\_Indicator} has the form 
-	  {\tt Module:Functor/Arity}, then the execution of
-	  {\tt current\_predicate/1} unifies the predicate indicator
-	  with predicates in all current modules (user defined, system
-	  defined and global modules). 
-    \item If, however, {\tt Predicate\_Indicator} is uninstantiated 
-	  or has the form {\tt Functor/Arity}, then {\tt current\_predicate/1} 
-	  backtracks only through the predicates loaded in the global modules 
-	  of the system (in other words searches only modules {\tt "usermod"}
-	  and {\tt "global"}).
-	  Since this is the common use of predicate {\tt current\_predicate/1}, 
-	  this flavour is only for convenience.
-	  Note that all the following are equivalent:
-
-	  \stuff{
-          \>	\>	| ?- current\_predicate(Functor/Arity).     \\
-          \>	\>	| ?- current\_predicate(Predicate).         \\
-          \>	\>	| ?- current\_predicate(usermod:Predicate). \\
-          \>	\>	| ?- current\_predicate(global:Predicate).  
-          }
-    \end{enumerate}
-
-    So, to backtrack through all of the predicates defined and loaded in module 
-    {\tt blah}, regardless of whether {\tt blah} is a system or a user 
-    defined module
-    \footnote{The only limitation is that {\tt blah} must indeed 
-	      be a module in the sense that it exports at least one symbol.}
-    , use:
+As an example to backtrack through all of the predicates defined and loaded in
+module {\tt blah}, regardless of whether {\tt blah} is a system or a
+user defined module, use:
 
     \stuff{
     \> \>	| ?- current\_predicate(blah:Predicate).
@@ -281,14 +123,14 @@ Chapter {\it Foreign Language Interface} in Volume 2.
     modules of the system, use: 
 
     \stuff{
-    \> \>	| ?- current\_predicate(Functor/3).
+    \> \>	| ?- current\_predicate(usermod:Functor/3).
     }
 
     while to find all predicates loaded in the global modules of the system
     regardless of their arity, use:
 
     \stuff{
-    \> \>	| ?- current\_predicate(Predicate). \\
+    \> \>	| ?- current\_predicate(usermod:Predicate). \\
     }
 
 
@@ -300,6 +142,10 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 \ei
 \ei
 
+%-----------------------------------------------------------------------------------------------
+\comment{
+TLS: I don't see that this gives us anything useful over
+current_predicate/1, so why confuse the user?
 \ouritem{current\_predicate(?Name, ?Term\_Indicator)}
 \index{\texttt{current\_predicate/2}}
     Succeeds iff {\tt Term\_Indicator} is the most general term 
@@ -354,6 +200,133 @@ Chapter {\it Foreign Language Interface} in Volume 2.
     Note that the order of term generation is undetermined. Once again, 
     there are no error conditions associated with this predicate; if its
     argument is not what it should be, the predicate simply fails.
+
+\ouritem{current\_functor(?Name, ?Term\_Indicator)}
+\index{\texttt{current\_functor/2}}
+    Succeeds iff {\tt Term\_Indicator} is the most general term 
+    corresponding to one of the currently known terms having {\tt Name} 
+    as their functor appearing in a current module.  (Both system and user 
+    defined modules are checked).  Or procedurally, 
+    {\tt current\_functor/2} unifies {\tt Name} with the name of a functor 
+    known to the database, and {\tt Term\_Indicator} with the most 
+    general term corresponding to that functor. The flavours of this predicate 
+    are analogous to the ones of {\tt current\_functor/1} according to 
+    whether {\tt Term\_Indicator} has one of the following two forms:
+    \begin{enumerate}
+    \item{\tt Module:Term.}
+    \item{\tt Term} (for global modules).
+    \end{enumerate}
+    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
+    only for global modules.  
+    As in {\tt current\_functor/1} even unloaded predicates are reported
+    (if they have been imported and are are known to the database).
+
+    For example, if a predicate {\tt foo/2} and and a function symbol 
+    {\tt foo/1} are defined into module {\tt blah}, the following query 
+    will return:
+
+    \stuff{
+    \>	\>	| ?- current\_functor(foo, blah:Term).	\\
+    \>  \>						\\
+    \>	\>      Term = foo(\_638788,\_638792);		\\
+    \>  \>						\\
+    \>	\>	Term = foo(\_638788);			\\
+    \>  \>						\\
+    \>	\>	no
+    }
+
+    If a module is specified, {\tt current\_functor/2} succeeds only for
+    those functors (function and predicate symbols) which are defined in 
+    that module. Unless the module is one of the global modules, 
+    {\tt current\_functor/2} fails for the predicates which are imported 
+    into that module.
+
+    On the other hand, the goal:
+
+    \stuff{
+    \>	\>	| ?- current\_functor(Name, Term).
+    }
+
+    can be used to backtrack through every known term {\tt Term} in the global
+    modules of \ourprolog's database that has {\tt Name} as its functor.
+
+    Note that the order of term generation is undetermined. Once again, 
+    there are no error conditions associated with this predicate; if its
+    arguments are inappropriate, the predicate simply fails.
+}
+%--------------------------------------------------------------------------------------------------
+
+\ouritem{current\_module(?Module)}\index{\texttt{current\_module/1}}
+    The standard predicate {\tt current\_module/1} allows the user to
+    check whether a given module is {\em current} or to generate
+    (through backtracking) all currently known modules.  Succeeds iff
+    {\tt Module} is one of the modules in the database. This includes
+    both user modules and system modules.  For more detailed analysis
+    of module properties, the predicate {\tt module\_property/2}
+    can be used.
+
+    Note that predicate {\tt current\_module/1} succeeds for a given
+    module even if that module does not export any predicates. There
+    are no error conditions associated with this predicate; if its
+    argument does not unify with one of the current modules, {\tt
+    current\_module/1} simply fails.
+
+\ouritem{current\_module(?Module, ?ObjectFile)}\index{\texttt{current\_module/2}}
+    Predicate {\tt current\_module/2} gives the relationship between
+    the modules and their associated object file names. The file name
+    {\tt ObjectFile} must be absolute and end with the object file
+    extension for the system (by default, {\tt .xwam}).
+%
+    It is possible for a current module to have no associated file name 
+    (as is the case for modules like {\tt "usermod"} and {\tt "global"}), 
+    or for the system to be unable to determine the file name of a current
+    module. In both cases, predicate {\tt current\_module/1} will succeed
+    for this module, while {\tt current\_module/2} will fail. The system is
+    unable to determine the file name of a given module if that module is not
+    in one of the directories of the search path (see Section~\ref{LibPath}).
+    Once again, there are no error conditions associated with this predicate;
+    if the arguments of {\tt current\_module/2} are not correct, or 
+    {\tt Module} has no associated {\tt File}, the predicate will simply fail.
+
+\ouritem{current\_functor(?Predicate\_Indicator)}
+\index{\texttt{current\_functor/1}}
+{\tt current\_predicate/1} can be used to backtrack through indicators
+for all non-atomic terms occurring in loaded modules.  If {\tt
+Predicate\_Indicator} unifies with {\tt Module:F/A} all term
+indicators unifying with {\tt F/A} in a module unifying with {\tt
+Module} are returned.  If {\tt Predicate\_indicator} is {\tt F/A},
+{\tt current\_predicate/1} behaves as if it were called with the form
+{\tt usermod:F/A} (or {\tt global:F/A}).  Unlike {\tt
+current\_predicate/1} {\tt current\_functor/1} returns not only
+structures occurring in predicates but predicates that are imported
+into loaded modules but are not yet themselves loaded.
+
+As an example, to backtrack through all of the functors of positive
+arity (function and predicate symbols) that appear in the global
+modules of the system regardless of whether they are system or a user
+defined, use:
+
+    \stuff{
+    \> \>	| ?- current\_functor(Functor/Arity), Arity > 0.
+    }
+
+    There are no error conditions associated with this predicate; if its 
+    argument is not a predicate indicator the predicate simply fails.
+
+\ouritem{current\_index(Functor/Arity,IndexSpec)}
+\index{\texttt{current\_index/2}}
+%
+XSB has a variety of ways to index dynamic predicate including
+alternate argument indexing, multiple argument indexing,
+star-indexing, and tries, as discussed in Section~\ref{sec:assert}.
+In addition XSB allows a choice of which argument to index for
+compiled predicates as well.  {\tt current\_index/2} returns the index
+specification for each functor/arity pair unifying with {\tt
+Functor/Arity} and visible from the calling context of  {\tt current\_index/2}.
+
+\ouritem{current\_atom(?Atom\_Indicator)}\index{\texttt{current\_atom/1}}
+    Generates (through backtracking) all currently known atoms, and unifies
+    each in turn with {\tt Atom\_Indicator}. 
 
 %??? need to define visible.
 \label{PredProp}
@@ -653,22 +626,6 @@ module {\tt "usermod"} may be enumerated using:
     xsb_configuration(user_config_libdir, UserConfigLibdir) :- ...
 \end{verbatim}
 
-\ournewitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
-\index{\texttt{current\_prolog\_flag/2}}
-	{\tt current\_prolog\_flag/2} allows the user to examine both
-	dynamic aspects of XSB along with certain non-changable ISO
-	flags~\footnote{The ISO flags {\tt
-integer\_rounding\_function}, {\tt char\_conversion}, {\tt
-double\_quotes}, and {\tt unknown} are not yet implemented.}.
-
-{\bf Error Cases}
-\bi
-\item 	{\tt Flag\_Name} is neither a variable nor an atom.
-\bi
-\item 	{\tt domain\_error(atom\_or\_variable,Flag\_Name)}
-\ei
-\ei
-
 \ouritem{xsb\_flag(?Flag\_Name, ?Value)}\index{\texttt{xsb\_flag/2}}
     Succeeds iff the current value of the XSB flag {\tt Flag\_Name} is 
     {\tt Value}. So, one can enumerate all the flag names which the system
@@ -779,3 +736,284 @@ specifier of the types above.
 %%% mode: latex
 %%% TeX-master: "manual1"
 %%% End: 
+
+%======================================================
+
+\section{Execution State}\label{environmental}
+
+\begin{description}
+
+\ouritem{break}\index{\texttt{break/0}}
+    Causes the current execution to be suspended at the beginning of the next 
+    call.  The interpreter then enters break level 1 and is ready to accept
+    input as if it were at top level.  If another call to {\tt break/0} is 
+    encountered, it moves up to break level 2, and so on.  While execution 
+    is done at break level $n>0$ the prompt changes to {\tt $n$: ?-}.
+
+    To close a break level and resume the suspended execution, the user can 
+    type the the atom {\tt end\_of\_file} or the end-of-file character 
+    applicable on the system (usually {\tt CTRL-d} on UNIX systems).  
+    Predicate {\tt break/0} 
+    then succeeds (note in the following example that the calls to {\tt break/0}
+    do not succeed), and the execution of the interrupted program is resumed.  
+    Alternatively, the suspended execution can be abandoned by calling the 
+    standard predicate {\tt abort/0}, which causes a return to the top level.
+
+    An example of {\tt break/0} 's use is the following:
+
+    \stuff{
+        \>   \>     | ?- break. \\
+        \>   \>     [ Break (level 1) ] \\
+        \>   \>     1: ?- break. \\
+        \>   \>     [ Break (level 2) ] \\
+        \>   \>     2: ?- end\_of\_file. \\
+        \>   \>     [ End break (level 2) ] \\
+        \\
+        \>   \>     yes \\
+        \>   \>     1: ?-
+    }
+
+    Entering a break closes all incomplete tables (those which may not have a 
+    complete set of answers).  Closed tables are unaffected, even if 
+    the tables were created during the computation for which the break was
+    entered.
+
+\ournewitem{halt}{ISO}\index{\texttt{halt/0}}
+    Exits the XSB session regardless of the break level.  On exiting
+    the system cpu and elapsed time information is displayed.
+
+\ournewitem{halt(Code)}{ISO}\index{\texttt{halt/1}}
+%
+Exits the XSB session regardless of the break level, sending the
+integer {\tt Code} to the parent process.  Normally {\tt 0} is
+considered to indicate normal termination, while other exit codes are
+used to report various degrees of abnormality.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Code} is not an integer
+\bi
+\item 	{\tt type\_error(Integer,Code)}
+\ei
+\ei
+
+\ouritem{prompt(+NewPrompt, ?OldPrompt)}\index{\texttt{prompt/2}}
+    Sets the prompt of the top level interpreter to {\tt NewPrompt} and 
+    returns the old prompt in {\tt OldPrompt}.
+
+    An example of {\tt prompt/2} 's use is the following:
+
+    \stuff{
+        \>   \>     | ?- prompt('Yes master > ', P). \\
+        \\
+        \>   \>     P = | ?- ; \\
+        \\
+        \>   \>     no \\
+        \>   \>     Yes master > fail. \\
+        \\
+        \>   \>     no \\
+        \>   \>     Yes master >
+    }
+
+\ouritem{garbage\_collection(+Option)}\index{texttt{garbage\_collection/1}} 
+   Sets the system so that subsequent heap garbage collecting will be
+   done according to the specified {\tt Option}.  {\tt Option} may be
+   the atom \verb|none| indicating that heap garbage collection is
+   turned off; it may be the atom \verb|sliding| indicating that
+   sliding garbage collection will be done; the atom \verb|copying|
+   indicating that the copying garbage collector will be used; or it
+   may be the atom
+\verb|indirection| indicating that the indirect-sliding garbage
+collector will be used.
+ 
+\ouritem{cputime(-CPU\_Time)}\index{\texttt{cputime/1}}
+    Returns the {\tt CPU\_Time} at the time of the call in seconds.
+    The difference between results of successive calls to this
+    predicate can measure the time spent in specific predicates.
+
+\ouritem{walltime(-Time)}\index{\texttt{cputime/1}}
+    Returns the \texttt{Time}, in seconds, since execution started, or
+    since the last call to \texttt{statistics(0)}. 
+
+\ouritem{statistics}\index{\texttt{statistics/0}} Prints on the current
+    output stream: 
+\begin{itemize} 
+\item Information about allocation of memory  containing the 
+\begin{itemize} 
+\item Global stack (heap) and local (environment) stack (see e.g.
+\cite{AitK90}). Memory for these two WAM stacks is allocated as a
+single unit so that each stack grows together; information is provided
+on the current allocation for the stacks as well as on the stack sizes
+themselves.  (See Section~\ref{sec:EmuOptions} for the memory
+re-allocation algorithm).  For maximum space used by each of these
+stacks, use the {\tt '-s'} command-line option.
+%
+\item Trail and choice point stack (see e.g. \cite{AitK90}).  Memory
+for these two WAM stacks is allocated as a single unit so that each
+stack grows together; information is provided on the current
+allocation for the stacks as well as on the stack sizes themselves.
+The (re-)allocation follows the algorithm sketched in
+Section~\ref{sec:EmuOptions}).  (See Section~\ref{sec:EmuOptions} for
+the memory re-allocation algorithm).  For maximum space used by each
+of these stacks, use the {\tt '-s'} command-line option.
+% TLS: this had been taken out a version or two ago.
+%         \item SLG subgoal space (tablestack)
+\item SLG unification stack.  This stack is used as a space to copy
+terms from the execution stacks into table space, or back out.  This
+stack will not be reallocated unless extremely large terms are tabled.
+%
+\item SLG completion stack.  The completion stack is used to perform
+incremental completion for sets of mutually dependant tabled
+subgoals.  One completion stack frame is allocated per tabled subgoal
+\cite{SaSw98} but the size of these frames is version-dependent.
+%
+\item the space occupied by subgoal and answer tables (in the form of
+tries) \cite{RRSSW98}.
+\end{itemize}
+\item Information about the number of tabling operations performed in
+the session.  Note that the statistics are divided up between calls to
+predicates that use variant tabling and those that use (call)
+subsumptive tabling (see Section \ref{sec:TablingStrategies} and
+\cite{TST99}).
+\begin{itemize}
+\item Call Subsumption Subgoal Operations.  For predicates that use
+subsumptive tabling, the total number of subsumptive subgoal calls is
+given, as is the number of new calls ({\tt producers}) and the number
+of repeated calls to non-completed tables ({\tt variants}).
+Furthermore, the number of properly subsumed calls to incomplete
+tables is given, along with the number of subsumed calls to completed
+tables.  Finally, the total number of subsumptive table entries
+overall is given, including all producer and consumer calls.
+%
+\item Call Subsumption Answer Operations.  In call subsumptive
+tabling, answer lists are copied from producer subgoals to subsumed
+consumer subgoals (this opration is not required in variant tabling).
+The number of {\tt answer ident} operations represents the number of
+times this copy is done.  In addition, the number of consumptions
+performed by all consuming subsumptive table entries is also given.
+%
+\item Call Variance Subgoal Operations.  For call variance the number
+of subgoal check/insert operations is given along with the unique
+number of subgoals encountered ({\tt generator}) and the number of
+redundant consumer encountered ({\tt consumer}).
+%
+\item Total Answer Operations.  For both variant and subsumptive
+tables, the number of answer check insert operations is given along
+with the number of answers actually inserted into the table and the
+number of redundant answers derived.
+\end{itemize}
+%
+\item Garbage Collection Information.  Time spent garbage collecting
+and number of heap cells collected.
+
+\item Information about process CPU and clock time.
+    \end{itemize}
+
+As mentioned above, if the emulator is invoked with the {\tt '-s'}
+    option (see Section~\ref{sec:EmuOptions}), additional information
+    is printed out about maximum use of each execution stack and table
+    space.  However, the {\tt '-s'} option can substantially slow down
+    the emulator so benchmarks of time should be performed separately
+    from benchmarks of space.
+
+{\bf Example}: The following printout shows how the {\tt statistics/0}
+output looks if it is invoked with the {\tt '-s'} option (without it
+the {\tt Maximum stack used}, and {\tt Maximum table space used} lines
+are not shown).  Information about the allocation size is provided
+since the sizes can be changed through emulator options (see
+Section~\ref{sec:EmuOptions}).
+
+    {\footnotesize
+     \begin{verbatim}
+     | ?- statistics.
+
+Memory (total)         1941216 bytes:       238120 in use,      1703096 free
+  permanent space       237280 bytes:       237280 in use,            0 free
+  glob/loc space        786432 bytes:          524 in use,       785908 free
+    global                                     284 bytes
+    local                                      240 bytes
+  trail/cp space        786432 bytes:          316 in use,       786116 free
+    trail                                       24 bytes
+    choice point                               292 bytes
+  SLG unific. space      65536 bytes:            0 in use,        65536 free
+  SLG completion         65536 bytes:            0 in use,        65536 free
+  SLG table space            0 bytes:            0 in use,            0 free
+
+        Maximum stack used: global 224, local 1384, trail 240, cp 492,
+                            SLG completion 0 (0 subgoals)
+        Maximum table space used:  0 bytes
+
+Tabling Operations
+  Call Subsumption Subgoal Operations:
+            0 call check/insert ops: 0 producers, 0 variants,
+            0 properly subsumed. 0 used completed table, 
+            0 table entries overall.
+  Call Subsumption Answer Operations:
+            0 relevant answer ident ops.  0 consumptions via answer list.
+  Call Variance Subgoal Operations: 
+            0 call check/insert ops: 0 generators, 0 consumers.
+  Total Answer Operations: 
+            0 answer check/insert ops: 0 unique inserts, 0 redundant.
+
+{GC}    0 heap garbage collections by copying: collected 0 cells in 0.000000 millisecs
+
+      0.570 sec. cputime, 5.088 sec. elapsetime 
+\end{verbatim}} 
+     For expert users of XSB, further information about resources
+     required by the system can be obtained through the non-supported
+     predicate {\tt statistics/1} in {\tt \$XSB\_DIR/emu/trace.c}.
+
+%\ouritem{analyze\_table(+Pred\_indicator)}\index{\texttt{analyze\_table/1}}
+%    This predicate provides additional means for the user to profile
+%    execution of tabled predicates.  Given a predicate indicator for a 
+%    tabled predicate, {\tt analyze\_table/1} prints the following information.
+%    \begin{itemize}
+%    \item  "$\langle$Num$\rangle$ call hash buckets used out of 
+%          $\langle$Total$\rangle$".  The number
+%           of call hash buckets containing at least one element.
+%    \item  "avg call bucket length (of used) $\langle$Avg$\rangle$".  
+%          The average length of call hash buckets containing at least one
+%          element.
+%    \item  "max call bucket length $\langle$Length$\rangle$".
+%    \item  "$\langle$Num$\rangle$ ret hash buckets used out of 
+%          $\langle$Total$\rangle$".  The number
+%           of ret hash buckets containing at least one element.
+%    \item  "avg ret bucket length (of used) $\langle$Avg$\rangle$".
+%          The average length of ret hash buckets containing at least
+%          one element.
+%    \item  "max ret bucket length $\langle$Length$\rangle$".
+%    \end{itemize}
+
+%    In \version, {\tt analyze\_table/1} is most readily used to 
+%    determine proper call and return hash sizes.  The hash table sizes can
+%    be reset using {\tt set\_table\_prop/3} from the interpreter level
+%    (see Section~\ref{sec:TablingPredicates}) or by recompiling the source code
+%    with new declarations (see Section~\ref{compiler_directives}).
+
+%    Example:
+%    {\footnotesize
+%     \begin{verbatim}
+%     | ?- analyze_table(ancestor/2).
+%                 1 hash buckets full out of 97
+%                 avg call bucket length (of filled) 1.00
+%                 max call bucket length 1
+%                 ret buckets used 97 out of 97
+%                 avg return bucket length 11.92
+%                 max ret bucket length 17
+%
+%     yes
+%     \end{verbatim}}
+%    The output of {\tt analyze\_table} indicates that the return hash size for
+%    ancestor is too small for the query.  Changing the return hash size will
+%    speed up similar queries which add answers to tables, but the size of the
+%    return hash table has no effect on the speed of queries which use completed
+%    tables.
+
+\end{description}
+
+%need op (just so we dont forget ???
+
+
+%=====================================================================
+
+

@@ -1035,8 +1035,10 @@ from the beginning of {\tt Str}).  The last example checks if the first
 match of {\tt Sub} is a prefix of {\tt Str}. If so, {\tt X} is bound to the
 offset (from the beginning of {\tt Str}) of the last character of {\tt
   Sub}.
- 
 
+%-----------------------------------------------------------------------
+\comment{
+TLS: use concat_atom, or atom_concat. 
 \ournewitem{str\_cat(+Str1, +Str2, ?Result)}{string}
 \index{\texttt{str\_cat/3}}
         
@@ -1046,6 +1048,8 @@ In addition to this, the predicate \verb|fmt_write_string/3| described in
 Section~\ref{sec-low-level-io} can be used to concatenate strings and do
 much more. However, for simple string concatenation, {\tt str\_cat/3} is
 more efficient.
+}
+%-----------------------------------------------------------------------
 
 \ournewitem{str\_length(+Str, ?Result)}{string}
 \index{\texttt{str\_length/2}}
@@ -1159,33 +1163,18 @@ the atoms and integers into a single atom, separating each by {\tt
 Sep}, return the resulting atom in {\tt Atom}.  Integers and floats
 are converted to character strings using {\tt number\_codes/2}.
 
-\ournewitem{term\_to\_atom(+Term,-Atom)}{string}
-\index{\texttt{term\_to\_atom/2 }}
-
-This predicate converts an arbitrary Prolog term {\tt Term} into an
-atom, putting the result in {\tt Atom}.  It uses a format similar to
-the canonical format of {\tt write\_canonical}, but uses a standard
-list format for lists.  An atom created from a term using this
-predicate can be reconverted back to the original term by using {\tt
-atom\_to\_term/2}.
-
-\ournewitem{term\_to\_codes(+Term,-CodeList)}{string}
-\index{\texttt{term\_to\_codes/2 }}
-
-This predicate is used in the definition of {\tt term\_to\_atom/2} and 
-converts a term into a list of ascii codes.
-
 \ournewitem{atom\_to\_term(+Atom,-Term)}{string}
 \index{\texttt{atom\_to\_term/2 }}
 
 This predicate converts an atom (in {\tt Atom}) consisting of the
 characters making up a valid term and converts it into that term,
-placing the result in {\tt Term}.  The accepted syntax is intended to
-be valid canonical form (with no trailing '.'), extended by a
-treatment of the usual list syntax.  It should be the inverse of {\tt
-term\_to\_atom/2}.  Floating point numbers are not completely handled; 
-only a fixed point representation is used.  If the atom is not a
-syntactically valid term, the predicate fails, quietly.
+placing the result in {\tt Term}.  This predicate is for convenience,
+as any atom can be opened and read using XSB's streams.  The accepted
+syntax is intended to be valid canonical form (with no trailing '.'),
+extended by a treatment of the usual list syntax.  It should be the
+inverse of {\tt term\_to\_atom/2}.  Floating point numbers are not
+completely handled; only a fixed point representation is used.  If the
+atom is not a syntactically valid term, the predicate fails, quietly.
 
 \ournewitem{codes\_to\_term(+CodeList,-Term)}{string}
 \index{\texttt{codes\_to\_term/2 }}
@@ -1199,25 +1188,25 @@ into that term.  See {\tt atom\_to\_term} for details.
 
 This predicate converts an atom {\tt Atom} whose characters make up a
 valid term that can be read by {\tt read/1} into the term ({\tt Term})
-it represents.  This predicate actually uses XSB's {\tt read} to
-process the term so the operators currently in effect are used.  The
-atom should {\em not} contain a terminating period ('.'). If the atom
-is not a syntactically correct term, then this predicate fails,
-quietly.
+it represents.  This predicate is for convenience, as any atom can be
+opened and read using XSB's streams.  A minor difference with the
+stream-based approach is that the atom should {\em not} contain a
+terminating period ('.'). If the atom is not a syntactically correct
+term, then this predicate fails, quietly.
 
 \ournewitem{read\_atom\_to\_term(+Atom,-Term,-VarList)}{string}
 \index{\texttt{read\_atom\_to\_term/3 }}
 
-This predicate is similar to {\tt read\_atom\_to\_term/2}, but in
-addition returns in the third argument an (open-tailed) list of
-{\tt vv(VariableName,Variable)} pairs associating the variable names
-with the variables.  This is exactly the list returned from {\tt
-file\_read/3}, so documentation for that predicate gives further details.
+This predicate converts an atom {\tt Atom} whose characters make up a
+valid term that can be read by {\tt read/1} into the term ({\tt Term})
+it represents.  This predicate is for convenience, as any atom can be
+opened and read using XSB's streams and {\tt read\_term/3}.  A minor
+difference with the stream-based approach is that the atom should {\em
+not} contain a terminating period ('.'). If the atom is not a
+syntactically correct term, then this predicate fails, quietly.
 
 \end{description}
 %%
-
-
 
 \section{Script Writing Utilities}
 %========================
