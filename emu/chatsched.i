@@ -29,7 +29,7 @@
 /* Returns NULL if there are no consumers that need scheduling.		*/
 /*----------------------------------------------------------------------*/
 
-static CPtr schedule_subgoal(SGFrame subg_ptr, CPtr compl_fr)
+static CPtr schedule_subgoal(SGFrame producer_sf, CPtr compl_fr)
 {
   CPtr consumer = NULL;
   chat_init_pheader chat_ptr = NULL;
@@ -37,28 +37,29 @@ static CPtr schedule_subgoal(SGFrame subg_ptr, CPtr compl_fr)
 #ifdef Chat_DEBUG
    fprintf(stddbg,"scheduling answers for ");
 #ifdef DEBUG
-   print_subgoal(stddbg, subg_ptr);
+   print_subgoal(stddbg, producer_sf);
 #endif
-   fprintf(stddbg, " (in %p) ",subg_ptr);
-   if (has_answers(subg_ptr)) fprintf(stddbg, "has answers");
+   fprintf(stddbg, " (in %p) ",producer_sf);
+   if (has_answers(producer_sf)) fprintf(stddbg, "has answers");
    else fprintf(stddbg, "NO answers\n");
 #endif
 
   /* there are consumers and answers */  
-  if ((has_answers(subg_ptr)) &&
+  if ((has_answers(producer_sf)) &&
       (chat_ptr = (chat_init_pheader)compl_cons_copy_list(compl_fr))) {
     consumer = (CPtr)(&chat_get_cons_start(chat_ptr));
-    /*--------------------------------------------------------
+    /* find the first consumer with unresolved answers, if any */
     while ( IsNonNULL(chat_ptr) ) {
-      consumer_sf = (SGFrame)nlcp_subgoal_ptr(consumer);
-      answer_set = ALN_Next(nlcp_trie_return(consumer));
+      SGFrame consumer_sf = (SGFrame)nlcp_subgoal_ptr(consumer);
+      ALNptr answer_set = ALN_Next(nlcp_trie_return(consumer));
       if ( IsNULL(answer_set) &&
 	   ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
-        ** restoring the state may not be as straight forward under CHAT **
-	switch_envs(consumer_cpf);
-	answer_set =
-	  table_retrieve_answers(producer_sf,consumer_sf,
-	                         consumer_cpf + NLCPSIZE);
+	CPtr template, *baseTR;
+
+	template = restore_answer_template(chat_ptr, &baseTR);
+	answer_set = table_retrieve_answers(producer_sf, consumer_sf,
+					    template);
+	undo_template_restoration(baseTR);
       }
       if ( IsNonNULL(answer_set) )
 	break;
@@ -67,13 +68,6 @@ static CPtr schedule_subgoal(SGFrame subg_ptr, CPtr compl_fr)
 	if ( IsNonNULL(chat_ptr) )
 	  consumer = (CPtr)(&chat_get_cons_start(chat_ptr));
       }
-    }
-    ---------------------------------------------------------*/
-    /* find the first consumer with unresolved answers, if any */
-    while ((chat_ptr != NULL) && (nlcp_trie_return(consumer) != NULL) &&
-	   (aln_next_aln(nlcp_trie_return(consumer)) == NULL)) {
-      if ((chat_ptr = (chat_init_pheader)nlcp_prevlookup(consumer)) != NULL)
-	consumer = (CPtr)(&chat_get_cons_start(chat_ptr));
     }
     if (chat_ptr != NULL) {
       /* Reinstall the consumer and return the value of breg */

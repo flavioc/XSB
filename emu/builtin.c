@@ -529,7 +529,6 @@ void init_builtin_table(void)
   set_builtin_table(PSC_SET_PROP, "psc_set_prop");
   set_builtin_table(PSC_SET_SPY, "psc_set_spy");
 
-  set_builtin_table(FILE_FUNCTION, "file_function");
   set_builtin_table(TERM_PSC, "term_psc");
   set_builtin_table(TERM_TYPE, "term_type");
   set_builtin_table(TERM_COMPARE, "term_compare");
@@ -544,13 +543,13 @@ void init_builtin_table(void)
   set_builtin_table(BUFF_BYTE, "buff_byte");
   set_builtin_table(BUFF_SET_BYTE, "buff_set_byte");
   set_builtin_table(CODE_CALL, "code_call");
-  set_builtin_table(SUBSTRING, "substring");
-  set_builtin_table(STRING_SUBSTITUTE, "string_substitute");
+
   set_builtin_table(STR_LEN, "str_len");
+  set_builtin_table(SUBSTRING, "substring");
   set_builtin_table(STR_CAT, "str_cat");
   set_builtin_table(STR_CMP, "str_cmp");
-  set_builtin_table(STR_SUB, "str_sub");
-  set_builtin_table(DIRNAME_CANONIC, "dirname_canonic");
+  set_builtin_table(STRING_SUBSTITUTE, "string_substitute");
+
   set_builtin_table(CALL0, "call0");
   set_builtin_table(STAT_STA, "stat_sta");
   set_builtin_table(STAT_CPUTIME, "stat_cputime");
@@ -560,6 +559,10 @@ void init_builtin_table(void)
   set_builtin_table(BUFF_CELL, "buff_cell");
   set_builtin_table(BUFF_SET_CELL, "buff_set_cell");
   set_builtin_table(COPY_TERM0,"copy_term0");
+
+  set_builtin_table(STR_SUB, "str_sub");
+  set_builtin_table(DIRNAME_CANONIC, "dirname_canonic");
+
   set_builtin_table(PSC_INSERT, "psc_insert");
   set_builtin_table(PSC_IMPORT, "psc_import");
   set_builtin_table(PSC_INSERTMOD, "psc_insertmod");
@@ -569,6 +572,7 @@ void init_builtin_table(void)
   set_builtin_table(TERM_HASH, "term_hash");
   set_builtin_table(UNLOAD_SEG, "unload_seg");
   set_builtin_table(LOAD_OBJ, "load_obj");
+
   set_builtin_table(GETENV, "getenv");
   set_builtin_table(SYS_SYSCALL, "sys_syscall");
   set_builtin_table(SYS_SYSTEM, "sys_system");
@@ -598,17 +602,20 @@ void init_builtin_table(void)
   set_builtin_table(PAIR_PSC, "pair_psc");
   set_builtin_table(PAIR_NEXT, "pair_next");
   set_builtin_table(NEXT_BUCKET, "next_bucket");
+
   set_builtin_table(SLG_NOT, "slg_not");
   set_builtin_table(IS_XWAMMODE, "is_xwammode");
   set_builtin_table(CLOSE_OPEN_TABLES, "close_open_tables");
+
+  set_builtin_table(FILE_FUNCTION, "file_function");
+  set_builtin_table(SLASH_BUILTIN, "slash");
 
   set_builtin_table(ABOLISH_TABLE_INFO, "abolish_table_info");
   set_builtin_table(ZERO_OUT_PROFILE, "zero_out_profile");
   set_builtin_table(WRITE_OUT_PROFILE, "write_out_profile");
   set_builtin_table(ASSERT_CODE_TO_BUFF, "assert_code_to_buff");
   set_builtin_table(ASSERT_BUFF_TO_CLREF, "assert_buff_to_clref");
-  set_builtin_table(FORMATTED_IO, "formatted_io");
-  set_builtin_table(SLASH_BUILTIN, "slash");
+
   set_builtin_table(FILE_READ_CANONICAL, "file_read_canonical");
   set_builtin_table(GEN_RETRACT_ALL, "gen_retract_all");
 
@@ -618,6 +625,7 @@ void init_builtin_table(void)
   set_builtin_table(DB_REMOVE_PRREF, "db_remove_prref");
   set_builtin_table(DB_RECLAIM0, "db_reclaim0");
 
+  set_builtin_table(FORMATTED_IO, "formatted_io");
   set_builtin_table(TABLE_STATUS, "table_status");
   set_builtin_table(GET_DELAY_LISTS, "get_delay_lists");
 
@@ -633,9 +641,21 @@ void init_builtin_table(void)
   set_builtin_table(BREG_RETSKEL,"breg_retskel");
 
   set_builtin_table(TRIMCORE, "trimcore");
+  set_builtin_table(NEWTRIE, "newtrie");
+  set_builtin_table(TRIE_INTERN, "trie_intern");
+  set_builtin_table(TRIE_INTERNED, "trie_interned");
+  set_builtin_table(TRIE_DISPOSE, "trie_dispose");
+  set_builtin_table(BOTTOM_UP_UNIFY, "bottom_up_unify");
+  set_builtin_table(DELETE_TRIE, "delete_trie");
+  set_builtin_table(TRIE_DISPOSE_NR, "trie_dispose_nr");
+  set_builtin_table(TRIE_UNDISPOSE, "trie_undispose");
 
+  set_builtin_table(SET_TABLED_EVAL, "set_tabled_eval_method");
+  set_builtin_table(PUT_ATTRIBUTES, "put_attributes");
+  set_builtin_table(GET_ATTRIBUTES, "get_attributes");
+  set_builtin_table(DELETE_ATTRIBUTES, "delete_attributes");
+  set_builtin_table(ATTV_UNIFY, "attv_unify");
   set_builtin_table(PRIVATE_BUILTIN, "private_builtin");
-
   set_builtin_table(SEGFAULT_HANDLER, "segfault_handler");
 
   set_builtin_table(VAR, "var");
@@ -689,10 +709,6 @@ void init_builtin_table(void)
 
   set_builtin_table(JAVA_INTERRUPT, "setupJavaInterrupt");
   set_builtin_table(FORCE_TRUTH_VALUE, "force_truth_value");
-  set_builtin_table(PUT_ATTRIBUTES, "put_attributes");
-  set_builtin_table(GET_ATTRIBUTES, "get_attributes");
-  set_builtin_table(DELETE_ATTRIBUTES, "delete_attributes");
-  set_builtin_table(ATTV_UNIFY, "attv_unify");
 }
 
 /*----------------------------------------------------------------------*/
@@ -1633,7 +1649,6 @@ int builtin_call(byte number)
     break;
 
   case SET_TABLED_EVAL: {    /* R1: +Term */
-#ifndef CHAT
     Psc psc;
     TIFptr tif;
 
@@ -1656,12 +1671,6 @@ int builtin_call(byte number)
       xsb_warn("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
       return FALSE;
     }
-#else
-    void print_chat_sub_warning();
-
-    print_chat_sub_warning();
-    return FALSE;
-#endif
   }
 
   case PRINT_CHAT: print_chat(1) ; return TRUE ;

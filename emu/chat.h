@@ -129,4 +129,7 @@ extern chat_init_pheader save_a_consumer_for_generator(SGFrame);
 
 extern chat_init_pheader chat_link_headers;
 
+extern CPtr restore_answer_template(chat_init_pheader,CPtr **);
+extern void undo_template_restoration(CPtr *);
+
 /*------------------------- end of file chat.h --------------------------*/

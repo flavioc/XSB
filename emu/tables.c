@@ -398,9 +398,3 @@ void release_all_tabling_resources() {
 }
 
 /*-------------------------------------------------------------------------*/
-
-#ifdef CHAT
-void print_chat_sub_warning() {
-  xsb_warn("Subsumption not currently supported under CHAT\n");
-}
-#endif

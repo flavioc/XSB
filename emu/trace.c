@@ -303,9 +303,7 @@ void total_stat(double elapstime) {
     printf("\n");
   }
 
-#ifndef CHAT
   print_subsumption_stats();
-#endif
 
   printf("\nVariant Operations:\n");
   printf("  %ld subgoal check/insert attempts", subg_chk_ins);

@@ -516,6 +516,30 @@ void chat_restore_compl_susp_trail(chat_init_pheader pheader)
 } /* chat_restore_compl_susp_trail */
 
 /*----------------------------------------------------------------------*/
+
+CPtr restore_answer_template(chat_init_pheader pheader, CPtr **baseTR) {
+
+  CPtr consumer_cpf, answer_template;
+
+  *baseTR = tcp_trreg(breg);   /* base chosen by the following function */
+  chat_reinstall_all_oldbindings(chat_get_father(pheader));
+
+  answer_template = breg - 1 - chat_get_nrargs(pheader);
+  consumer_cpf = answer_template - NLCPSIZE;
+  chat_restore_init_area(consumer_cpf, CONSUMER_TYPE, pheader);
+  return answer_template;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+void undo_template_restoration(CPtr *baseTR) {
+
+  table_undo_bindings(baseTR);
+}
+
+/*----------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------*/
 /* Routines that save states in CHAT areas.                             */
 /*----------------------------------------------------------------------*/
 

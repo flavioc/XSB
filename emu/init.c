@@ -374,14 +374,7 @@ char *init_para(int argc, char *argv[])
       flags[TRACE_STA] = call_intercept = 1;
       break;
     case 'S':
-#ifndef CHAT
       flags[TABLING_METHOD] = SUBSUMPTIVE_TEM;
-#else
-      {
-	void print_chat_sub_warning();
-	print_chat_sub_warning();
-      }
-#endif
       break;
     case 'd':
       if ( (xsb_mode != DEFAULT) && (xsb_mode != CUSTOM_BOOT_MODULE) )
