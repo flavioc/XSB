@@ -47,6 +47,7 @@
 #include "load_seg.h"
 #include "xmacro.h"
 #include "tr_utils.h"
+#include "export.h"
 
 /*-----------------------------------------------------------------------*/
 
@@ -80,7 +81,7 @@ pdl = {NULL, NULL, 0,
 
 Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
 
-extern char *strip_names_from_path(char* path, int how_many);
+DllExport extern char * call_conv strip_names_from_path(char*, int);
 
 /* real_alloc uses malloc only to keep pspacesize straight. */
 #define real_alloc(X) malloc(X) 

@@ -22,7 +22,7 @@
 ** 
 */
 
-
+#include "configs/config.h"
 #include <windows.h>
 #include <SQL.H>
 #include <SQLEXT.H>

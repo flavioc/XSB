@@ -1,5 +1,5 @@
-/* File:      self_orientation.h
-** Author(s): Michael Kifer
+/* File:      export.h 
+** Author(s): luis
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1998
@@ -21,12 +21,26 @@
 ** $Id$
 ** 
 */
-#include "export.h"
 
-DllExport extern void call_conv set_xsbinfo_dir (void);
-DllExport extern void call_conv set_install_dir(void);
-DllExport extern void call_conv set_config_file(void);
-DllExport extern void call_conv set_user_home(void);
-DllExport extern char * call_conv xsb_executable_full_path(char *);
-extern char executable[];
+#ifndef __EXPORT_H__
+#define __EXPORT_H__
+
+#include "configs/config.h"
+
+#ifdef XSB_DLL
+#define DllExport __declspec(dllexport)
+#define call_conv __stdcall
+#elif defined(XSB_DLL_C)
+#define DllExport __declspec(dllexport)
+#define call_conv __cdecl
+#else
+#define DllExport
+#define call_conv
+#endif
+
+#endif 
+
+
+
+
 

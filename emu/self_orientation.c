@@ -49,9 +49,10 @@ char *user_home;     	     	     	/* the user $HOME dir or install dir,
 #include <sys/stat.h>
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
+#include "export.h"
 
 extern bool is_absolute_filename(char *);
-extern char *strip_names_from_path(char*, int);
+DllExport extern char * call_conv strip_names_from_path(char*, int);
 
 static void check_create_dir(char *);
 
@@ -61,7 +62,7 @@ char current_dir[MAXPATHLEN];
 char xsbinfo_dir[MAXPATHLEN];
 
 
-void set_xsbinfo_dir () {
+DllExport void call_conv set_xsbinfo_dir () {
   struct stat fileinfo;
   char old_xinitrc[MAXPATHLEN], new_xinitrc[MAXPATHLEN],
     user_config_dir[MAXPATHLEN], user_arch_dir[MAXPATHLEN];
@@ -130,7 +131,7 @@ static void check_create_dir(char *path) {
 }
 
 /* uses the global executable var */
-char *xsb_executable_full_path(char *myname)
+DllExport char * call_conv xsb_executable_full_path(char *myname)
 {
   struct stat fileinfo;
   char *path = getenv("PATH");
@@ -220,7 +221,7 @@ char *xsb_executable_full_path(char *myname)
   exit(1);
 }
 
-void set_install_dir() {
+DllExport void call_conv set_install_dir() {
 
   /* strip 4 levels, since executable is always of this form:
      install_dir/config/<arch>/bin/xsb */
@@ -237,7 +238,7 @@ void set_install_dir() {
   }
 }
 
-void set_config_file() {
+DllExport void call_conv set_config_file() {
   int retcode;
   struct stat fileinfo;
 
@@ -275,7 +276,7 @@ void set_config_file() {
   }
 }
 
-void set_user_home() {
+DllExport void call_conv set_user_home() {
   user_home = (char *) getenv("HOME");
   if ( user_home == NULL )
     user_home = install_dir;

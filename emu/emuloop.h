@@ -23,7 +23,8 @@
 ** 
 */
 
+#include "export.h"
 
-extern int xsb(int, int, char **);
+DllExport extern int call_conv xsb(int, int, char **);
 
 /*----------------------------------------------------------------------*/

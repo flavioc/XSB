@@ -42,7 +42,7 @@
 #include <sys/stat.h>
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
-
+#include "export.h"
 
 #if (!defined(WIN_NT))
 #include <pwd.h>
@@ -222,7 +222,7 @@ bool is_absolute_filename(char *filename) {
    This function copies the result into a large buffer, so we can add more
    stuff to it. These buffers stay forever, but we call this func only a couple
    of times, so it's ok. */
-char *strip_names_from_path(char* path, int how_many)
+DllExport char * call_conv strip_names_from_path(char* path, int how_many)
 {
   int i, abort_flag=FALSE;
   char *cutoff_ptr;
