@@ -45,7 +45,7 @@
 #include "cell.h"
 #include "xsberror.h"
 #include "psc.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "register.h"
 #include "heap.h"
 #include "deref.h"

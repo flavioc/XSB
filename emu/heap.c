@@ -31,7 +31,7 @@
 	-----------------------------------------
 	Function glstack_realloc(new_size,arity)
 		originally written by E. Johnson in file
-		memory.c, but completely redone by Bart Demoen
+		xsb_memory.c, but completely redone by Bart Demoen
 
 	heap garbage collection
 	-----------------------
@@ -97,7 +97,7 @@ Todo:
 
 #include "auxlry.h"
 #include "cell.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "inst.h"
 
 /* For Reallocation Routines

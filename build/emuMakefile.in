@@ -85,12 +85,12 @@ SRCS =	auxlry.c biassert.c xsbsocket.c builtin.c \
 	findall.c function.c hash.c \
 	heap.c init.c inst.c \
 	io_builtins.c \
-	load_seg.c loader.c memory.c \
+	load_seg.c loader.c \
 	psc.c residual.c scc.c \
 	self_orientation.c slgdelay.c \
 	struct_manager.c subp.c system.c \
-	token.c tr_utils.c trace.c \
-	tries.c xmain.c xpathname.c xsberror.c
+	token.c tr_utils.c trace.c tries.c \
+	xmain.c xpathname.c xsberror.c xsb_memory.c
 
 ORASRCS = $(SRCS) orastuff.c
 
@@ -101,13 +101,13 @@ OBJS = auxlry.o biassert.o xsbsocket.o builtin.o \
 	findall.o function.o hash.o \
 	heap.o init.o inst.o \
 	io_builtins.o \
-	load_seg.o loader.o memory.o \
+	load_seg.o loader.o \
 	private_builtin.o \
 	psc.o residual.o scc.o \
 	self_orientation.o slgdelay.o \
 	struct_manager.o subp.o system.o \
-	token.o tr_utils.o trace.o \
-	tries.o xpathname.o xsberror.o
+	token.o tr_utils.o trace.o tries.o \
+	xpathname.o xsberror.o xsb_memory.o
 
 allOBJS = xmain.o ${OBJS}
 

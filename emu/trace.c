@@ -32,7 +32,7 @@
 #include "auxlry.h"
 #include "cell.h"
 #include "inst.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "register.h"
 #include "psc.h"
 #include "tries.h"

@@ -34,7 +34,7 @@
 #include "xsberror.h"
 #include "binding.h"
 #include "psc.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "flags.h"
 #include "register.h"
 #include "deref.h"

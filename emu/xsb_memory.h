@@ -1,4 +1,4 @@
-/* File:      memory.h
+/* File:      xsb_memory.h
 ** Author(s): Ernie Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

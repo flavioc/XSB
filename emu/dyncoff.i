@@ -41,7 +41,7 @@
 
 #include "auxlry.h"
 #include "cell.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "inst.h"
 #include "psc.h"
 #include "xsberror.h"

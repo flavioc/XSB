@@ -31,7 +31,7 @@
 #include "auxlry.h"
 #include "cell.h"
 #include "register.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "deref.h"
 
 #define FUN_PLUS   1

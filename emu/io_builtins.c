@@ -40,7 +40,7 @@
 #include "cell.h"
 #include "xsberror.h"
 #include "cinterf.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "psc.h"
 #include "heap.h"
 #include "register.h"

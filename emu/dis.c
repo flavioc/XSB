@@ -37,7 +37,7 @@
 #include "cell.h"
 #include "inst.h"
 #include "builtin.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "flags.h"
 #include "tries.h"
 #include "xmacro.h"

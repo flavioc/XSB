@@ -46,7 +46,7 @@
 #include "inst.h"
 #include "psc.h"
 #include "deref.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "heap.h"
 #include "sig.h"
 #include "emudef.h"

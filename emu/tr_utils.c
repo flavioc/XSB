@@ -39,7 +39,7 @@
 #include "binding.h"
 #include "psc.h"
 #include "heap.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "register.h"
 #include "deref.h"
 #include "flags.h"

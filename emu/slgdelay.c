@@ -38,7 +38,7 @@
 #include "psc.h"
 #include "register.h"
 #include "trie_internals.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "choice.h"
 #include "xmacro.h"
 #include "tr_utils.h"

@@ -64,7 +64,7 @@
 #include "tries.h"
 #include "choice.h"
 #include "deref.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "heap.h"
 #include "register.h"
 #include "flags.h"

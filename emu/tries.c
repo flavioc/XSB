@@ -41,7 +41,7 @@
 #include "heap.h"
 #include "flags.h"
 #include "deref.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "register.h"
 #include "binding.h"
 #include "trie_internals.h"

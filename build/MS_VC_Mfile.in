@@ -131,7 +131,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\loader.obj"
 	-@erase "$(OBJDIR)\chat.obj
 	-@erase "$(OBJDIR)\load_seg.obj"
-	-@erase "$(OBJDIR)\memory.obj"
+	-@erase "$(OBJDIR)\xsb_memory.obj"
 	-@erase "$(OBJDIR)\orastuff.obj"
 	-@erase "$(OBJDIR)\psc.obj"
 	-@erase "$(OBJDIR)\private_builtin.obj"
@@ -177,7 +177,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/io_builtins.obj" \
 	"$(OBJDIR)/loader.obj" \
 	"$(OBJDIR)/load_seg.obj" \
-	"$(OBJDIR)/memory.obj" \
+	"$(OBJDIR)/xsb_memory.obj" \
 	"$(OBJDIR)/psc.obj" \
 	"$(OBJDIR)/private_builtin.obj" \
 	"$(OBJDIR)/residual.obj" \
@@ -661,7 +661,7 @@ DEP_CPP_PSC_C=\
 ################################################################################
 # Begin Source File
 
-SOURCE=$(INTDIR)\memory.c
+SOURCE=$(INTDIR)\xsb_memory.c
 DEP_CPP_MEMOR=\
 	{$(INTDIR)}"\configs\config.h"\
 	{$(INTDIR)}"\debugs\debug.h"\
@@ -680,7 +680,7 @@ DEP_CPP_MEMOR=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	
 
-"$(OBJDIR)\memory.obj" : $(SOURCE) $(DEP_CPP_MEMOR) "$(INTDIR)"
+"$(OBJDIR)\xsb_memory.obj" : $(SOURCE) $(DEP_CPP_MEMOR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 

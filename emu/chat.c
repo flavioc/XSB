@@ -37,7 +37,7 @@
 #include "tries.h"
 #include "choice.h"
 #include "xmacro.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "xsberror.h"
 #include "chat.h"
 #include "sw_envs.h"

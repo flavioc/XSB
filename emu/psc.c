@@ -40,7 +40,7 @@
 #include "loader.h"
 #include "flags.h"
 #include "inst.h"
-#include "memory.h"
+#include "xsb_memory.h"
 
 
 /* === String Table manipulation ======================================	*/

@@ -50,7 +50,7 @@
 #include "psc.h"
 #include "hash.h"
 #include "heap.h"
-#include "memory.h"
+#include "xsb_memory.h"
 #include "register.h"
 #include "tries.h"
 #include "choice.h"
