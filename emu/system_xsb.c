@@ -103,8 +103,22 @@ int sys_syscall(int callno)
   case SYS_unlink: result = unlink(ptoc_string(3)); break;
   case SYS_chdir : result = chdir(ptoc_string(3)); break;
   case SYS_access: result = access(ptoc_string(3), ptoc_int(4)); break;
-  case SYS_stat  : result = stat(ptoc_string(3), &stat_buff); break;
+  case SYS_stat  : {
+    /* Who put this in??? What did s/he expect to get out of this call?
+       stat_buff is never returned (and what do you do with it in Prolog?)!!!
+    */
+    result = stat(ptoc_string(3), &stat_buff);
+    break;
+  }
   case SYS_rename: result = rename(ptoc_string(3), ptoc_string(4)); break;
+  case SYS_cwd: {
+    char current_dir[MAXPATHLEN];
+    /* returns 0, if != NULL, 1 otherwise */
+    result = (getcwd(current_dir, MAXPATHLEN-1) == NULL);
+    if (result == 0)
+      ctop_string(3,string_find(current_dir,1));
+    break;
+  }
   default: xsb_abort("Unknown system call number, %d", callno);
   }
   return result;

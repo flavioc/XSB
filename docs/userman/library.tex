@@ -1288,6 +1288,43 @@ application program responsibility.
 %%                yes
 %%\end{verbatim}}
 
+\ournewitem{sleep(+Seconds)}{shell}
+\index{{\tt sleep/1}}
+Put XSB to sleep for a given number of seconds.
+
+\ournewitem{cd(+Path)}{shell}
+\index{{\tt cd/1}}
+Change directory.
+
+\ournewitem{rename(+Old,-New)}{shell}
+\index{{\tt rename/2}}
+Rename file.
+
+\ournewitem{ls}{shell}
+\index{{\tt ls/0}}
+Does {\tt ls -F}. Unix only.
+
+\ournewitem{rm(+Path)}{shell}
+\index{{\tt rm/1}}
+Remove file.
+
+\ournewitem{cwd(-Dir)}{shell}
+\index{{\tt cwd/1}}
+Get current working directory.
+
+\ournewitem{edit(+Path)}{shell}
+\index{{\tt edit/1}}
+Edit file using your favorite editor (specified by the environment variable
+{\tt EDITOR}. Unix only.
+
+\ournewitem{sys\_exit(+ExitCode)}{shell}
+\index{{\tt sys\_exit/1}}
+Exit XSB with a given exit code.
+
+\ournewitem{sys_pid(-Pid)}{shell}
+\index{{\tt pid/1}}
+Get Id of the current process.
+
 \end{description}
 
 

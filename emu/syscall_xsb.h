@@ -208,3 +208,7 @@
 #define SYS_fchdir	176
 #define SYS_fchroot	177
 #define SYS_vpixsys	178
+
+/* XSB-specific numbers */
+
+#define SYS_cwd         300  /* current working directory */

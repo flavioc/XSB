@@ -83,6 +83,9 @@ ls :- shell('ls -F', Res), Res =:= 0.
 
 rm(Name) :- sys_unlink(Name, Res), Res =:= 0.
 
+%% current working directory
+cwd(Name) :- sys_cwd(Name, _).
+
 edit(File) :- 
 	expand_filename(File, FileName), 
 	shell(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, '.P']).
@@ -91,10 +94,15 @@ edit(File) :-
 %% sys_exit(-ExitCode) exit subprocess unconditionally with ExitCode
 sys_exit(ExitCode) :- sys_syscall(SYS_exit,_,ExitCode,_).
 
+%% Get process id -- Unix only
+sys_pid(Pid)     	    :-	sys_syscall(SYS_getpid, Pid, _, _).
+%% Link file -- Unix only
 sys_link(Source, Dest, Res) :-	sys_syscall(SYS_link, Res, Source, Dest).
 sys_unlink(Path, Res) 	    :-	sys_syscall(SYS_unlink, Res, Path, _).
 sys_chdir(Dir, Res)	    :- 	sys_syscall(SYS_chdir, Res, Dir, _).
 sys_access(File, Mode, Res) :- 	sys_syscall(SYS_access, Res, File, Mode).
 sys_stat(Path, Buff, Res)   :-	sys_syscall(SYS_stat, Res, Path, Buff).
 sys_rename(Old, New, Res)   :-	sys_syscall(SYS_rename, Res, Old, New).
+/* current working dir. Res is 0 on success, 1 on failure */
+sys_cwd(Name, Res)   	    :-	sys_syscall(SYS_cwd, Res, Name, _).
 
