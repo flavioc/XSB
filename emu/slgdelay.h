@@ -207,19 +207,6 @@ struct pos_neg_de_list {
 
 extern bool neg_delay;
 
-extern char *current_de_block, *current_dl_block, *current_pnde_block;
-
-extern DE released_des;
-extern DL released_dls;
-extern PNDE released_pndes;
-
-extern DE next_free_de;
-extern DL next_free_dl;
-extern PNDE next_free_pnde;
-
-extern DE current_de_block_top;
-extern DL current_dl_block_top;
-extern PNDE current_pnde_block_top;
 
 /*
  * Procedures used in other parts of the system.

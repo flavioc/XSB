@@ -43,7 +43,7 @@
 #include "xmacro.h"
 #include "tr_utils.h"
 #include "inst.h"
-#include "subinst.h"
+#include "chat.h"
 #include "xsberror.h"
 
 static void simplify_neg_succeeds(SGFrame);
@@ -54,27 +54,27 @@ static void simplify_pos_unconditional(NODEptr);
  * Some new global variables ...
  */
 
-unsigned long de_block_size = 2048 * sizeof(struct delay_element);
-unsigned long dl_block_size = 2048 * sizeof(struct delay_list);
-unsigned long pnde_block_size = 2048 * sizeof(struct pos_neg_de_list);
+static unsigned long de_block_size = 2048 * sizeof(struct delay_element);
+static unsigned long dl_block_size = 2048 * sizeof(struct delay_list);
+static unsigned long pnde_block_size = 2048 * sizeof(struct pos_neg_de_list);
 
-char *current_de_block = NULL;
-char *current_dl_block = NULL;
-char *current_pnde_block = NULL;
+static char *current_de_block = NULL;
+static char *current_dl_block = NULL;
+static char *current_pnde_block = NULL;
 
-DE released_des = NULL;		/* the list of released DEs */
-DL released_dls = NULL;		/* the list of released DLs */
-PNDE released_pndes = NULL;	/* the list of released PNDEs */
+static DE released_des = NULL;		/* the list of released DEs */
+static DL released_dls = NULL;		/* the list of released DLs */
+static PNDE released_pndes = NULL;	/* the list of released PNDEs */
 
-DE next_free_de = NULL;		/* next available free DE space */
-DL next_free_dl = NULL;		/* next available free DL space */
-PNDE next_free_pnde = NULL;	/* next available free PNDE space */
+static DE next_free_de = NULL;		/* next available free DE space */
+static DL next_free_dl = NULL;		/* next available free DL space */
+static PNDE next_free_pnde = NULL;	/* next available free PNDE space */
 
-DE current_de_block_top = NULL;	/* the top of current DE block */
-DL current_dl_block_top = NULL;	/* the top of current DL block */
-PNDE current_pnde_block_top = NULL; /* the top of current PNDE block */
+static DE current_de_block_top = NULL;	/* the top of current DE block */
+static DL current_dl_block_top = NULL;	/* the top of current DL block */
+static PNDE current_pnde_block_top = NULL; /* the top of current PNDE block */
 
-char *new_block;		/* used in new_entry() */
+static char *new_block;		/* used in new_entry() */
 
 /*
  * A macro definition for allocating a new entry of DE, DL, or PNDE.  To
@@ -179,7 +179,7 @@ static DE intern_delay_element(Cell delay_elem)
 	      de_next,
 	      DE,
 	      de_block_size,
-	      "No enough memory to expand DE space");
+	      "Not enough memory to expand DE space");
     de_subgoal(de) = subgoal;
     de_ans_subst(de) = ans_subst; /* Leaf of the answer (substitution) trie */
 #ifdef DEBUG_DELAYVAR
@@ -227,7 +227,7 @@ static DL intern_delay_list(CPtr dlist) /* assumes that dlist != NULL	*/
 	      dl_next,
 	      DL,
 	      dl_block_size,
-	      "No enough memory to expand DL space");
+	      "Not enough memory to expand DL space");
     dl_de_list(dl) = head;
     dl_asl(dl) = NULL;
     return dl;
@@ -265,7 +265,7 @@ static void record_de_usage(DL dl)
 	      pnde_next,
 	      PNDE,
 	      pnde_block_size,
-	      "No enough memory to expand PNDE space");
+	      "Not enough memory to expand PNDE space");
     pnde_dl(pnde) = dl;
     pnde_de(pnde) = de;
     pnde_prev(pnde) = NULL;
@@ -360,12 +360,6 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
       tmp_cell = cell(cptr + 2);
       ans_subst = (NODEptr) int_val(tmp_cell);
       if (is_failing_delay_element(subgoal,ans_subst)) {
-#ifdef PROFILE
-	if (ans_subst == NULL) 
-	  subinst_table[NEW_ANSWER_SIMPL_NEG_FAIL][1]++;
-	else 
-	  subinst_table[NEW_ANSWER_SIMPL_POS_UNS][1]++;
-#endif
 	return TRUE;
       }
       dlist = (CPtr)cell(dlist+1);
@@ -451,9 +445,14 @@ static void handle_empty_dl_creation(DL dl)
   if (is_conditional_answer(as_leaf)) {	/* if it is still conditional */
     subgoal = asi_subgoal((ASI)Delay(as_leaf));
     simplify_pos_unconditional(as_leaf);
-    /*--- perform early completion if necessary ---*/
+    /*-- perform early completion if necessary; please preserve invariants --*/
     if (!is_completed(subgoal) && most_general_answer(as_leaf)) {
       perform_early_completion(subgoal, subg_cp_ptr(subgoal));
+#ifdef CHAT
+      chat_free_compl_susp_chat_areas(subgoal);
+#else
+      subg_compl_susp_ptr(subgoal) = NULL;
+#endif
     }
     simplify_neg_succeeds(subgoal);
   }
