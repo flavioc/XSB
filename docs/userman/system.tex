@@ -884,17 +884,24 @@ The following options are currently recognized by the compiler:
   %%
   However, additional directories can be added to this search path by
   asserting into the predicate \verb|xpp_include_dir/1|, {\bf which should
-  be imported from module} {\tt parse}.
-
+    be imported from module} {\tt parse}.
+  
   Note that when compiling XSB programs, GPP {\bf does not} search the
-  current directory. If you want it to, then the following statements must
-  be executed:
+  current directory or the directory of the parent file that contains the
+  include-directive. If you want the current directory to be searched, then
+  the following statements must be executed:
 %%
 \begin{verbatim}
     :- import xpp_include_dir/1 from parse.
     :- assert(xpp_include_dir('.')).
 \end{verbatim}
 %%
+  If you want Gpp to search the directory of the parent file, then
+  {\tt xpp\_options/1} can be used (see below).
+
+   Note: if you assert something into this predicate then you must also {\tt
+    retractall(xpp\_include\_dir(\_))} after that or else subsequent Prolog
+  compilations might not work correctly.
 
   XSB predefines the constant {\tt XSB\_PROLOG}, which can be used for
   conditional compilation. For instance, you can write portable program
@@ -935,6 +942,25 @@ The following options are currently recognized by the compiler:
   But this also means that if you need to compile several programs with a
   non-standard preprocessor then you must specify that non-standard
   preprocessor each time the program is compiled.
+  
+\item[{\tt xpp\_options}] \index{{\tt xpp\_options}} This dynamic predicate
+  must be imported from module {\tt parse}.  If some atom is asserted into
+  {\tt xpp\_options} then this atom is assumed to be the list of command
+  line options to be used by the preprocessor (only the first asserted atom
+  is ever considered). If this predicate is empty, then the default list of
+  options is used (which is {\tt '-P -m -nostdinc -nocurinc'}, meaning: use
+  Prolog mode and do not search the standard C directories and the
+  directory of the parent file that contains the include-instruction).
+  
+  As mentioned earlier, when XSB invokes Gpp, it uses the option {\tt
+    -nocurinc} so that Gpp will not search the directory of the parent file. 
+  If a particular application requires that the parent file directory
+  must be searched, then this can be accomplished by executing 
+  {\tt assert(xpp\_options('-P -m -nostdinc'))}.
+  
+  Note: if you assert something into this predicate then you must also {\tt
+    retractall(xpp\_options(\_))} after that or else subsequent Prolog
+  compilations might not work correctly.
   
 \item[{\tt xpp\_dump}] \index{{\tt xpp\_dump}}
   %%

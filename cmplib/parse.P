@@ -41,6 +41,7 @@
 :- dynamic '_$multifile_retract'(_,_,_).
 
 :- dynamic xpp_include_dir(_).
+:- dynamic xpp_options(_).
 :- dynamic xpp_program(_).
 
 % '_$multifile'/1 and '_$multifile2'/3 will be retractd in useinfer/3.
@@ -155,10 +156,12 @@ make_gpp_command(GPP_command,FileName) :-
 	->  fmt_write_string(DumpDirective, ' -O %s_gpp ', arg(FileName))
 	;   DumpDirective = ' '
 	),
+	make_gpp_options(GPP_options),
 	%% Construct the gpp command
 	fmt_write_string(GPP_command,
-			 '%s%sgpp %s -P -m -nostdinc -nocurinc %s -DXSB_PROLOG ',
-			 args(Bindir,Slash,DumpDirective,IncludeDirs)).
+			 '%s%sgpp %s %s %s -DXSB_PROLOG ',
+			 args(Bindir,Slash,DumpDirective,
+			      GPP_options,IncludeDirs)).
 
 %% Make an include directive out of the dirs in xpp_include_dir/1
 %% The dirs are supplied by applications that keep include files
@@ -172,6 +175,8 @@ make_include_directive1(Directive, Flag, [H|Tail]) :-
 make_include_directive1(' ',_, []).
 
 
+make_gpp_options(X) :- xpp_options(X), !.
+make_gpp_options(' -P -m -nostdinc -nocurinc ').
 
 /*======================================================================*/
 /* parse_clauses(+ModName, #module(#SymTab,#DcList,#ClList,#QrList))	*/
@@ -181,10 +186,6 @@ parse_clauses(ModName, Module) :-
 	my_read(Clause, VariableList),
 	singleton_check(Clause, VariableList),
 	check_compilable_clause(Clause),
-%	expand_term(Clause, Expanded_Clause),	% This line is changed to the
-						% two lines below by Baoqiu 
-						% to process the multifile 
-						% directive
 	expand_term(Clause, Expanded_Clause0),
 	change_multifile_directive(Expanded_Clause0, ModName, Expanded_Clause),
 	( Expanded_Clause == end_of_file, !
