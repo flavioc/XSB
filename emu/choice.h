@@ -138,21 +138,21 @@ typedef struct tabled_choice_point {
 #define tcp_chat_roots(b)       ((TChoice)(b))->chat_roots
 #endif
 
-#define is_generator_choicepoint(b) \
-    ((cp_pcreg(b) == (byte *) &check_complete_inst) || \
-     (cell_opcode(cp_pcreg(b)) == tabletrust) || \
+#define is_generator_choicepoint(b)			\
+    ((cp_pcreg(b) == (byte *) &check_complete_inst) ||	\
+     (cell_opcode(cp_pcreg(b)) == tabletrust) ||	\
      (cell_opcode(cp_pcreg(b)) == tableretry))
 
 /* The following macro is used to perform early completion */
 #ifdef CHAT
-#define perform_early_completion(SUBGOAL,GENERATOR_CP) \
-    if (subg_cp_ptr(SUBGOAL) != NULL) \
-      tcp_pcreg(subg_cp_ptr(SUBGOAL)) = (byte *) &check_complete_inst; \
-    mark_as_completed(SUBGOAL);
+#define perform_early_completion(ProdSF,ProdCPF)		\
+    if (ProdCPF != NULL)					\
+      tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;	\
+    mark_as_completed(ProdSF)
 #else
-#define perform_early_completion(SUBGOAL,GENERATOR_CP) \
-    tcp_pcreg(GENERATOR_CP) = (byte *) &check_complete_inst; \
-    mark_as_completed(SUBGOAL);
+#define perform_early_completion(ProdSF,ProdCPF)	\
+    tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;	\
+    mark_as_completed(ProdSF)
 #endif
 
 
@@ -211,14 +211,14 @@ typedef struct consumer_choice_point {
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
     CPtr *trreg;	/* current top of trail stack */
-    byte *cpreg;	/* return point of the call to the procedure	*/
-    CPtr ereg;		/* current top of stack */
-    CPtr prev;      
+    byte *cpreg;	/* return point of the call to the procedure */
+    CPtr ereg;		/* current top of local stack */
+    CPtr prev;		/* prev top of choice point stack */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
-    CPtr subgoal_ptr;
-    CPtr prevlookup;      
-    ALNptr trie_return;
+    CPtr subgoal_ptr;	/* where the answer list lives */
+    CPtr prevlookup;	/* link for chain of consumer CPFs */
+    ALNptr trie_return;	/* last answer consumed by this consumer */
 #ifdef CHAT
     CPtr chat_area;	/* temporarily */
 #endif
@@ -263,13 +263,13 @@ typedef struct consumer_choice_point {
  }
 
 #ifdef CHAT
-#define SaveConsumerCPF(TopCPS,SF,PrevConsumer) {	\
-   _SaveConsumerCPF_common(TopCPS,SF,PrevConsumer);	\
+#define SaveConsumerCPF(TopCPS,ConsSF) {		\
+   _SaveConsumerCPF_common(TopCPS,ConsSF,NULL);		\
     nlcp_chat_area(TopCPS) = NULL;			\
  }
 #else
-#define SaveConsumerCPF(TopCPS,SF,PrevConsumer)		\
-   _SaveConsumerCPF_common(TopCPS,SF,PrevConsumer)
+#define SaveConsumerCPF(TopCPS,ConsSF,PrevConsumer)	\
+   _SaveConsumerCPF_common(TopCPS,ConsSF,PrevConsumer)
 #endif
 
 /*----------------------------------------------------------------------*/
