@@ -47,24 +47,29 @@ The XSB Programmers' Manual:
 	</ul>
 </li>
 
-<li><a href="flora/index.php" target="new_window">FLORA</a>: An F-logic compiler that provides an object-oriented layer on top of XSB.
-    <ul>
-    FLORA-2 (alpha version) is released.<img SRC="new.gif" IMG align=TOP>
-    </ul>
-<br>
-The FLORA manual:
-        <ul>
-         <li> <a href="flora/docs/manual.ps">Postscript version</a>
-         <li> <a href="flora/docs/manual.pdf">PDF version</a>
-        </ul>
-</li>
-
 <li>
 Other Documentation:
 	<ul>
 	<li><a href="vb_dll.html">How to Use XSB DLL from Visual Basic</a></li>
 	</ul>
 </li>
+<pre>
+
+</pre>
+<li> Large projects that use XSB (and are distributed with it):
+        <ul>
+         <li> <a href="http://flora.sourceforge.net/" target="new_window">FLORA</a>: An
+	      object-oriented language for building knowledge-intensive
+    	      applications, which is based on the ideas of F-logic, HiLog, and
+    	      Transaction Logic.
+         <li> <a href="http://www.cs.sunysb.edu/~lmc/" target="new_window">XMC</a>: The
+	     Logic-Based Model Checking Project
+        </ul>
+</li>
+<pre>
+
+</pre>
+
 <li>
 Interfaces to Java (distributed separately):
         <ul>
