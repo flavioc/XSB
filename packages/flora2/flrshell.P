@@ -46,7 +46,6 @@ flora_shell_loop :-
 	    flora_load_library(SysLibList),
 	    findall(SysModOp,member(FLSYSMOD(SysModOp),Options),SysModList),
 	    flora_load_system_module(SysModList),
-	    %writeln(Code),
 	    call(Code)
 	;
 	  true

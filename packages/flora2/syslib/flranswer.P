@@ -58,6 +58,8 @@
 	flora_stdfdbk_line/1
    from flrprint.
 
+:- import windows_os/0 from xsb_configuration.
+
 :- import flora_stdfdbk_write/1 from flrdisplay.
 
 :- dynamic flora_switch(_).
@@ -98,8 +100,12 @@ flora_print_all(Gs,NVs) :-
 	  ;
 	    flora_write_matches(L),
 	    ( flora_switch(chatter) ->
-		flora_stdfdbk_string("\n%d solution(s) in %S seconds on ",args(N,T)),
-	        shell(hostname,block,STDFDBK,block,_)
+		flora_stdfdbk_string("\n%d solution(s) in %S seconds",args(N,T)),
+	        (  windows_os, flora_stdfdbk_nl, !
+		;
+		   flora_stdfdbk_string(' on '),
+		   shell(hostname,block,STDFDBK,block,_)
+		)
 	    ;
 	      true
 	    ),

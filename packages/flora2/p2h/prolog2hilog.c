@@ -28,6 +28,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef WIN_NT
+#define XSB_DLL
+#endif
+
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
@@ -285,11 +289,13 @@ static prolog_term map_commalist(prolog_term (*func)(), prolog_term termCList, c
 
 static char *pterm2string(prolog_term term)
 { 
-  static XSB_StrDefine(StrArgBuf);
+  static VarString *StrArgBuf;
   prolog_term term2 = p2p_deref(term);
-  XSB_StrSet(&StrArgBuf,"");
-  print_pterm(term2, 1, &StrArgBuf); 
-  return StrArgBuf.string;
+
+  XSB_StrCreate(StrArgBuf);
+  XSB_StrSet(StrArgBuf,"");
+  print_pterm(term2, 1, StrArgBuf); 
+  return StrArgBuf->string;
 } 
 
 

@@ -166,7 +166,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	  ;
 	    flora_set_xpp_options(Workspace),
 	    compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
-	    path_sysop(rename,UserTrailerOFile,UserTrailerWSOFile),
+	    flora_rename_file(UserTrailerOFile,UserTrailerWSOFile),
 	    flora_clear_xpp_options
 	  ),
 	  consult(UserTrailerWSOFile),
@@ -238,7 +238,7 @@ flloadpatch(Workspace) :-
 	;
 	  flora_set_xpp_options(Workspace),
 	  compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
-	  path_sysop(rename,UserPatchOFile,UserPatchWSOFile),
+	  flora_rename_file(UserPatchOFile,UserPatchWSOFile),
 	  flora_clear_xpp_options
         ),
 	consult(UserPatchWSOFile),
@@ -303,6 +303,26 @@ flora_user_tmpfile(Filename) :-
 
 
 /*************************************************************************
+   flora_rename_file(+F1,+F2)
+   This is like path_sysop(rename,F1,F2), but it first tries issues
+   an error when fails.
+   The reason is that on Windows files sometimes fail to be renamed for 
+   strange reasons, so we first delete F2, try to rename, and if failed,
+   issue an error, which explains what happened.
+   There is no point to continue after a failure, because Flora 
+   will be in a broken state.
+*************************************************************************/
+
+flora_rename_file(F1,F2) :-
+	( (path_sysop(unlink,F2), !; true),
+	  path_sysop(rename,F1,F2), !
+	;
+	    flora_error_line("Something wrong: Can't rename %s to %s\n",
+			     args(F1,F2)),
+	    abort
+	).
+
+/*************************************************************************
   flora_flcompile(+FlrFile,+Workspace)
 
   Need to make sure the GPP options are cleared when this procedure is
@@ -330,7 +350,7 @@ flora_flcompile(FlrFile,Workspace) :-
 	  !,
 	  flora_clear_xpp_options,
 	  flora_WSO_filename(FlrFile,Workspace,WSOFile),
-	  path_sysop(rename,MOFile,WSOFile)
+	  flora_rename_file(MOFile,WSOFile)
         ),
 	!.
 
@@ -467,7 +487,7 @@ flora_flload(FlrFile,Workspace) :-
 	    flora_clear_xpp_options,
 	    fail
 	  ),
-	  path_sysop(rename,MOFile,WSOFile)
+	  flora_rename_file(MOFile,WSOFile)
         ),
         consult(WSOFile),
 	flora_clear_xpp_options,

@@ -86,4 +86,4 @@ finish:
 	echo Done
 
 clean:
-	/bin/rm -f *.P *.P_gpp *.O *.flh *.fdb *~
+	/bin/rm -f *.P *.P_gpp *.O *.fdb *~

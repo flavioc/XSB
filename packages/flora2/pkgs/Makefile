@@ -56,7 +56,7 @@ HDRMSG = "While compiling XSB/packages/flora2/pkgs:"
 .SUFFIXES: .P .flr
 
 # We should have touch *.flr here when there will be packages
-all: init recompile
+all: clean init recompile
 
 recompile: $(ALL) finish
 	@touch cmd...
@@ -84,3 +84,6 @@ finish:
 
 .DONE:
 	echo Done
+
+clean:
+	/bin/rm -f *.P *.O *.fdb *~

@@ -242,13 +242,24 @@ following \emph{two} commands:
 \end{quote}
 }
 %%
-In the current release of \FLORA, it does not come pre-built, so you must
-build it after installing and compiling XSB:
+If you are using Unix or Cygwin --- you are a lucky person, because \FLORA
+is built together with XSB. If, for some reason it fails to build, follow
+these steps:
 %%
 \begin{verbatim}
    cd <xsb-installation-directory>/packages/flora2/
    make clean
    make
+\end{verbatim}
+%%
+If you are using Windows --- do not despair. Building \FLORA is easy,
+although it takes time. You need to have Microsoft {\tt nmake} or
+compatible installed.
+%%
+\begin{verbatim}
+   cd <xsb-installation-directory>/packages/flora2/
+   nmake /f NMakefile.mak clean
+   nmake /f NMakefile.mak
 \end{verbatim}
 %%
 
