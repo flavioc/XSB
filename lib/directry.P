@@ -39,7 +39,6 @@
 :- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1,
 	throw/1, atom/1
 	from standard.
-:- import xsb_configuration/2 from xsb_configuration.
 :- import cwd/1, cd/1 from shell.
 
 :- import scan/2, set_scan_pars/1 from stdscan.
@@ -48,6 +47,7 @@
 :- import slash/1 from machine.
 
 :- import 'C'/3 from dcg.
+:- import findall/3 from setof.
 
 % I always want this in UNIX.
 whats_new(Directory,Date,List):-
@@ -111,14 +111,17 @@ directory(Argument,Dir):-
 	date(date(Year,Month,Day,_,_,_)),
 	directory_1(List,date(Year,Month,Day),Dir).
 
-short_directory(Arg,Out):-
-	(   xsb_configuration(host_os,windows)
-	->  ca(['dir /B ',Arg], Command)
-	;   ca(['\ls',Arg],Command)
-	),
-	sysin(Command,List1),
-	member(L,List1),
-	concat_atom(L,' ',Out).
+short_directory(Arg,Out) :-
+	findall(X,list_directory(Arg,X),Out).
+
+% short_directory(Arg,Out):-
+% 	(   xsb_configuration(host_os,windows)
+% 	->  ca(['dir /B ',Arg], Command)
+% 	;   ca(['\ls',Arg],Command)
+% 	),
+% 	sysin(Command,List1),
+% 	member(L,List1),
+% 	concat_atom(L,' ',Out).
 
 directory_1([],_,[]):-!.
 directory_1([H|T],Year,List):-!,
