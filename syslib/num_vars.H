@@ -24,7 +24,7 @@
 
 
 :- export numbervars/1, numbervars/3.
-:- export unnumbervars/2.
+:- export unnumbervars/2, unnumbervars/3.
 
 :- import term_psc/2, term_type/2, psc_arity/2, term_arg/3, term_new/2
         from machine.

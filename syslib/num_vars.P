@@ -64,37 +64,46 @@ numbervars(Y,I,J,N,A) :-
 numbervars(Term) :-
         numbervars(Term, 0, _).
 
-% unnumbervars(+TermIn,-TermOut) takes a numbervarred term (ground term with
-% terms of the form '$VAR'(<int>)) and converts it to a term with variables
-% in it, by replacing uniformly the '$VAR'(<int>) terms with new variables.
-% It is the converse of numbervars, and must copy the input term.
-unnumbervars(TermIn,TermOut) :- unnumbervars(TermIn,TermOut,_Vars).
 
-unnumbervars(TermIn,TermOut,Vars) :-
+/* unnumbervars(+TermIn,+FirstN,-TermOut) takes a numbervarred term
+(ground term with terms of the form '$VAR'(<int>)) and converts it to
+a term with variables in it, by replacing uniformly the '$VAR'(<int>)
+terms where <int> >= FirstN with new variables.  It is the converse of
+numbervars, and must copy the input term. */
+
+unnumbervars(TermIn,TermOut) :- unnumbervars(TermIn,0,TermOut,_Vars).
+
+unnumbervars(TermIn,FirstN,TermOut) :- 
+	unnumbervars(TermIn,FirstN,TermOut,_Vars).
+
+unnumbervars(TermIn,FirstN,TermOut,Vars) :-
 	term_type(TermIn,Type),
 	(Type =:= CS
          ->     (TermIn = '$VAR'(I)
-                 ->     log_ith(I,Vars,TermOut)
+                 ->     (I >= FirstN
+	                 ->     log_ith(I,Vars,TermOut)
+		         ;      TermOut = TermIn
+		        )
                  ;      term_psc(TermIn,PSC),
 		        term_new(PSC,TermOut),
 			psc_arity(PSC,Arity),
-			unnumbervars(1,Arity,TermIn,TermOut,Vars)
+			unnumbervars(1,Arity,TermIn,FirstN,TermOut,Vars)
 		)
          ; Type =:= LIST
          ->     TermIn = [A1|A2],
 	        TermOut = [B1|B2],
-		unnumbervars(A1,B1,Vars),
-		unnumbervars(A2,B2,Vars)
+		unnumbervars(A1,FirstN,B1,Vars),
+		unnumbervars(A2,FirstN,B2,Vars)
          ;      TermOut = TermIn
         ).
 
 
-unnumbervars(I,Arity,TermIn,TermOut,Vars) :-
+unnumbervars(I,Arity,TermIn,FirstN,TermOut,Vars) :-
 	(I =< Arity
          ->     term_arg(TermIn,I,ArgIn),
 		term_arg(TermOut,I,ArgOut),
-	        unnumbervars(ArgIn,ArgOut,Vars),
+	        unnumbervars(ArgIn,FirstN,ArgOut,Vars),
 		I1 is I+1,
-		unnumbervars(I1,Arity,TermIn,TermOut,Vars)
+		unnumbervars(I1,Arity,TermIn,FirstN,TermOut,Vars)
 	 ;      true
         ).

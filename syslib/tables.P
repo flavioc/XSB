@@ -90,6 +90,22 @@ tnot(X) :-
 	; is_incomplete(X, SubgPtr, PTCP, Subg), slg_not(Subg)
 	).
 
+% skolemized tnot.  Variables temporarily changed to ground and tnot 
+% call is made.  Should give prolog's semantics to nonground negative
+% calls.
+
+:- table tunnumcall/1.
+
+sk_not(Goal) :-
+	copy_term(Goal,Goal1),
+	numbervars(Goal1,0,_),  % is now ground, so no check necessary
+	't not'(tunnumcall(Goal1)).
+
+tunnumcall(GGoal) :-
+	unnumbervars(GGoal,VGoal),
+	call(VGoal).
+
+
 /*----------------------------------------------------------------------*/
 
 abolish_all_tables :- 

@@ -26,7 +26,7 @@
 :- export abolish_all_tables/0, abolish_table_call/1, abolish_table_pred/1,
 	  variant/1, subsumptive/1,
 	  get_calls_for_table/2, get_returns_for_call/2, table_state/2, 
-	  tfindall/3, tnot/1, 't not'/1,
+	  tfindall/3, tnot/1, 't not'/1, sk_not/1,
 	  delete_return/2,
 	  get_call/3, get_calls/3, get_returns/2, get_returns/3,
 	  get_residual/2,
@@ -38,11 +38,14 @@
 
 :- import findall/3 from setof.
 :- import add_trie_index/1 from file_op.
-:- import ground/1, member/2 from basics.
+:- import ground/1, member/2, copy_term/2 from basics.
 :- import retract/1, retract_nr/1, retractall/1,
 	  (dynamic)/1, t_assert/2 from assert.
-:- import call/1, tcall/1, abort/1, is_list/1, functor/3 from standard.  
+:- import call/1, tcall/1, abort/1, is_list/1, functor/3
+        from standard.  
 :- import abolish_table_info/0, is_incomplete/4, get_ptcp/1, slg_not/1,
 	  get_subgoal_ptr/2 from machine.
+:- import numbervars/3, unnumbervars/2 from num_vars.
+:- import (table)/1 from usermod.
 
 /* ------------------- end of file tables.H --------------------------- */
