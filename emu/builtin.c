@@ -1560,11 +1560,11 @@ int builtin_call(byte number)
     }
     break;
 	    
-  case PRINT_LS: print_ls(0) ; return TRUE ;
-  case PRINT_TR: print_tr(0) ; return TRUE ;
-  case PRINT_HEAP: print_heap(0,2000,0) ; return TRUE ;
-  case PRINT_CP: print_cp(0) ; return TRUE ;
-  case PRINT_REGS: print_regs(10,0) ; return TRUE ;
+  case PRINT_LS: print_ls(1) ; return TRUE ;
+  case PRINT_TR: print_tr(1) ; return TRUE ;
+  case PRINT_HEAP: print_heap(0,2000,1) ; return TRUE ;
+  case PRINT_CP: print_cp(1) ; return TRUE ;
+  case PRINT_REGS: print_regs(10,1) ; return TRUE ;
   case PRINT_ALL_STACKS: print_all_stacks() ; return TRUE ;
   case EXP_HEAP: glstack_realloc(glstack.size + 1,0) ; return TRUE ;
   case MARK_HEAP: mark_heap(ptoc_int(1),&tmpval) ; return TRUE ;
