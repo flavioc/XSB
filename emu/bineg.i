@@ -149,11 +149,11 @@
 
 #ifdef DEBUG_DELAYVAR
       fprintf(stderr, ">>>> (at the beginning of GET_DELAY_LISTS\n");
-      fprintf(stderr, ">>>> num_vars_in_var_regs = %d)\n",num_vars_in_var_regs);
+      fprintf(stderr, ">>>> global_num_vars = %d)\n",global_num_vars);
 	
       {
 	int i;
-	for(i = 0; i <= num_vars_in_var_regs; i++){
+	for(i = 0; i <= global_num_vars; i++){
 	  Cell x;
 	  fprintf(stderr, ">>>> var_regs[%d] =",i);
 	  x = (Cell)var_regs[i];
@@ -169,10 +169,10 @@
       if (is_conditional_answer(as_leaf)) {
 	bind_list((CPtr)delay_lists, hreg);
 	{ /*
-	   * Make copy of var_regs & num_vars_in_var_regs (after
-	   * get_returns, which calls trie_get_returns_for_call).
-	   * (num_vars_in_var_regs + 1) is the number of variables left 
-	   * in the answer (substitution factor of the answer)
+	   * Make copy of var_regs & global_num_vars (after get_returns,
+	   * which calls trie_get_returns_for_call).  (global_num_vars +
+	   * 1) is the number of variables left in the answer
+	   * (substitution factor of the answer)
 	   *
 	   * So, copy_of_var_addr[] is the substitution factor of the
 	   * answer for the head predicate.
@@ -183,10 +183,10 @@
 	    fprintf(stderr, "No enough memory to calloc copy_of_var_addr!\n");
 	    xsb_exit("Bye");
 	  }
-	  for( i = 0; i <= num_vars_in_var_regs; i++)
+	  for( i = 0; i <= global_num_vars; i++)
 	    copy_of_var_addr[i] = var_regs[i];
 	  
-	  copy_of_num_heap_term_vars = num_vars_in_var_regs + 1;
+	  copy_of_num_heap_term_vars = global_num_vars + 1;
 	}
 
 	for (dl = asi_dl_list((ASI) Delay(as_leaf)); dl != NULL; ) {
@@ -198,13 +198,13 @@
 	  /*
 	   * This answer may have more than one delay list.  We have to
 	   * restore copy_of_num_heap_term_vars for each of them.  But,
-	   * among delay elements of each delay list, it is not
-	   * necessary to restore this value.
+	   * among delay elements of each delay list, it is not necessary
+	   * to restore this value.
 	   *
-	   * Note that num_vars_in_var_regs is always set back to
+	   * Note that global_num_vars is always set back to
 	   * copy_of_num_heap_term_vars at the end of build_delay_list().
 	   */
-	  copy_of_num_heap_term_vars = num_vars_in_var_regs + 1;
+	  copy_of_num_heap_term_vars = global_num_vars + 1;
 	  build_delay_list(dls_head, de);
 	  if ((dl = dl_next(dl)) != NULL) {
 	    bind_list(dls_tail, hreg);
