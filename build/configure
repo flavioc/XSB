@@ -1514,6 +1514,12 @@ else
  esac
 fi
 
+if test "${enable_no_cygwin+set}" = "set"; then
+	if test "${xsb_scheduling_strategy}" = "local" ; then
+		emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+	fi
+fi
+
 cat >> confdefs.h <<EOF
 #define CC "${CC}"
 EOF

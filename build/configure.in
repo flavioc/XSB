@@ -531,6 +531,12 @@ else
  esac
 fi
 
+if test "${enable_no_cygwin+set}" = "set"; then
+	if test "${xsb_scheduling_strategy}" = "local" ; then
+		emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+	fi
+fi
+
 dnl In XSB, CC is the C compiler to be used with the C interface
 dnl Could be different from C compiler with which XSB was compiled, 
 dnl if it was done with a cross-compiler.
