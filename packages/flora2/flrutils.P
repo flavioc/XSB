@@ -124,12 +124,12 @@ flora_load_module_internal(InFile) :-
 	  flora_file_op(exists,File)
 	->
 	    flora_stderr_nl,
-	    flora_error_line('~w: Filename extension must be ~w, ~w or ~w!',
+	    flora_error_line('~w: Filename extension must be ~w, ~w or ~w',
 	                     [File,FLORA_FILE_EXT,PROLOG_PFILE_EXT,PROLOG_OFILE_EXT]),
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line('File ~w[.{~w|~w|~w}] does not exist!',
+	  flora_error_line('File ~w[.{~w|~w|~w}] does not exist',
 			   [File,FLORA_FILE_EXT,PROLOG_PFILE_EXT,PROLOG_OFILE_EXT]),
           fail
         ),
@@ -146,7 +146,7 @@ flloadtrailer(TrailerName) :-
 
 flloadtrailer(TrailerName,Workspace) :-
 	( TrailerName \== NONE, TrailerName \== BASIC, TrailerName \== FLOGIC ->
-	    flora_error_line('Equality directive must be ~w, ~w, or ~w!',
+	    flora_error_line('Equality mode can be only ~w, ~w, or ~w',
                              [NONE,BASIC,FLOGIC]),
 	    fail
 	;
@@ -204,7 +204,7 @@ flsetuptrailer(TrailerName) :-
 	telling(PreOutFile),
 	tell(TrailerFullName),
 	flora_trailer_include(TrailerName,TrailerInclude),
-	flora_include_file([FLHEADER|TrailerInclude],HeaderStatus),
+	flora_include_file([FLHEADER,FLHEADER2|TrailerInclude],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -269,7 +269,9 @@ flsetuppatch :-
 	flora_patch_full_filename(PatchFullName),
 	telling(PreOutFile),
 	tell(PatchFullName),
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLDYNA,FLDYNZ,FLPREDDEF],HeaderStatus),
+	flora_include_file([FLHEADER,FLDEFINITION,FLHEADER2,FLPATCH,FLDYNA,
+			    FLDYNZ,FLPREDDEF,FLREFRESHTABLE],
+			   HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -307,8 +309,7 @@ flora_user_flora_dir(Dir) :-
 	    ;
 		( flora_file_op(mkdir,Dir) -> true
 		;
-		    flora_error_line('Cannot create directory `~w''!',[Dir]),
-		    throw(FLORA_ABORT)
+		    flora_abort(['Cannot create directory: ',Dir])
 		)
 	    ),
 	    assert(flora_configuration(userdir,Dir))
@@ -334,9 +335,7 @@ flora_rename_file(F1,F2) :-
 	( (flora_file_op(unlink,F2), !; true),
 	    flora_file_op(rename,F1,F2), !
 	;
-	    flora_error_line("Something wrong -- can't rename ~w to ~w~n",
-			     [F1,F2]),
-	    throw(FLORA_ABORT)
+	    flora_abort(['Something wrong -- cannot rename ',F1,' to ',F2])
 	).
 
 
@@ -399,7 +398,7 @@ flora_compile_system_module(File) :-
 	    flora_flcompile(FlrFile,ModuleName)
 	;
 	  flora_stderr_nl,
-	  flora_error_line('File ~w[.~w] does not exist!',
+	  flora_error_line('File ~w[.~w] does not exist',
 			   [BaseName,FLORA_FILE_EXT]),
 	  !,
           fail
@@ -429,7 +428,7 @@ flora_load_system_module_internal(SysModID) :-
 		flora_flcompile(FlrFile,ModuleName)
 	    ;
 	      flora_stderr_nl,
-	      flora_error_line('system module file `~w'' does not exist!',
+	      flora_error_line('system module file `~w'' does not exist',
 			       [FlrFile]),
 	      !,
 	      fail
@@ -469,7 +468,7 @@ flora_compile_system_module_by_ID(SysModID) :-
 	    flora_flcompile(FlrFile,ModuleName)
 	;
 	  flora_stderr_nl,
-	  flora_error_line('system module file `~w'' does not exist!',
+	  flora_error_line('system module file `~w'' does not exist',
 			   [FlrFile]),
 	  !,
           fail
@@ -533,7 +532,9 @@ flora_flload(FlrFile,Workspace) :-
   Read user input and save it in the given file
 *****************************************************************************/
 flora_save_user_clauses(FlrFile) :-
-	flora_message_line('Type in FLORA program statements. Type Ctl-D when done.'),
+	(flora_running_under(windows) -> CtlChar = 'Z' ; CtlChar = 'D'),
+	flora_message_line('Type in FLORA program statements; Ctl-~w when done',
+			   [CtlChar]),
 	flora_copy_input(_,FlrFile),
 	flora_message_line('Program saved in file ~w', [FlrFile]).
 
@@ -732,8 +733,7 @@ flora_set_xpp_options(Purpose,ModuleName) :-
 	    ExtraOpt='-D FLORA_COMPILE_SYSTEM_MODULE'
 
 	; Type == invalid ->
-	    flora_module_name_error(WS),
-	    throw(FLORA_ABORT)
+	    flora_module_name_error(WS)
 	),
 	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
 	; Purpose==dump -> flora_xpp_standard_options_for_dump(StandardOpt)
@@ -764,6 +764,8 @@ flora_clear_xpp_options :-
 
 /*************************************************************************
   flora_insert_code_for_loaddyn_data(+FileName)
+
+  Add static code to the compiled .P file for loading FDB and FLD files.
 *************************************************************************/
 flora_insert_code_for_loaddyn_data(FileName) :-
 	%% Output the base file name only. The full path will be taken
@@ -820,13 +822,13 @@ flora_include_file([Opt|OptList],Status) :-
 	    flora_copy_input(FullName,_),
 	    flora_include_file(OptList,Status)
 	;
-	  flora_error_line('The FLORA system file ~w cannot be found!',
+	  flora_error_line('The FLORA system file ~w cannot be found',
 			   [FullName]),
           Status=FLORA_FAILURE
 	).
 
 flora_include_file(_OptList,FLORA_FAILURE) :-
-	  flora_error_line('System file corrupted!').
+	  flora_error_line('System file corrupted').
 
 
 /*************************************************************************
@@ -890,8 +892,7 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_measure_time(
 			   flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,
-					  FileOptionList,CompileStatus)
-			  ,
+					  FileOptionList,CompileStatus),
 			   'Compile time '
 			   ),
 	%% Wait, to not leave zombies.
@@ -905,7 +906,10 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
+	    flora_measure_time(
 	    check_for_dependencies(CompiledRuleList,DepWarnList),
+			       'Dependency checking time: '
+			      ),
 	    check_for_dependencies_errorwarn(DepWarnList,DepWarnNum,DepErrNum),
 	    flora_errorwarn_count(0,DepWarnNum),
 
@@ -979,12 +983,13 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	append(SysLibOptionList,SysModOptionList,OptList),
 	( member(XSB_SPECREPR,FileOptionList) -> true
 	; writeln(':- compiler_options([spec_off]).')),
-	flora_include_file([FLHEADER],FLHeaderStatus),
+	flora_include_file([FLHEADER,FLHEADER2],FLHeaderStatus),
 	( FLHeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	;
 	  findall((Arity,Pos),member(FLINDEX(Arity,Pos),FileOptionList),IndexList),
 	  write_index_directives(IndexList),
-	  flora_include_file([FLDEFINITION,FLINDEX_P,FLPATCH,FLDYNA|OptList],
+	  flora_include_file([FLDEFINITION,FLREFRESHTABLE,FLLIBIMPORTEDCALLS,
+			      FLINDEX_P,FLPATCH,FLDYNA|OptList],
                            HeaderStatus),
 	  ( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	  ;
@@ -1065,7 +1070,7 @@ write_index_directives([(A,P)|L]) :-
 flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 	telling(PreOutFile),
 	tell(DBFileName),
-	%% Include the Macro definitions.
+	%% Include Macro definitions.
 	writeln('#include "flrheader.flh"'),
 	nl,
 	flora_extern_code(FactList,CoderStatus),
@@ -1167,7 +1172,7 @@ flora_loaddyn_data(InFile,ModuleName,Ext) :-
 	    T is T1-T0,
 	    flora_message_line('Done! CPU time used: ~w seconds',[T])
 	;
-	  flora_error_line('File ~w does not exist!', [InFileAbs]),
+	  flora_error_line('File ~w does not exist', [InFileAbs]),
 	  fail
 	),
 	!.
@@ -1183,7 +1188,7 @@ flora_read_canonical_and_insert(StorageName) :-
 	read_canonical(Term),
 	( Term == end_of_file, !
 	;
-	    FLORA_DB_INSERT(StorageName,Term,_Inserted),
+	    flora_db_insert_base(StorageName,Term),
 	    fail
 	).
 
@@ -1206,7 +1211,7 @@ flora_read_canonical_and_insert(File,StorageName) :-
 
 flora_commit_storage :-
 	(flora_storage_registry(StorageName),
-	    FLORA_DB_COMMIT(StorageName),
+	    flora_db_commit(StorageName),
 	    fail
 	; true).
 
@@ -1217,7 +1222,7 @@ flora_commit_storage :-
 **************************************************************************/
 flora_reclaim_storage_space :-
 	(flora_storage_registry(StorageName),
-	    FLORA_DB_RECLAIM_SPACE(StorageName),
+	    flora_db_reclaim_space(StorageName),
 	    fail
 	; true).
 
@@ -1470,11 +1475,11 @@ flora_flrfilename_error(File) :-
 	( parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_FILE_EXT,
 	  flora_file_op(exists,File) ->
 	    flora_stderr_nl,
-	    flora_error_line('~w: Filename extension must be ~w!',
+	    flora_error_line('~w: Filename extension must be ~w',
 			     [File,FLORA_FILE_EXT])
 	;
 	  flora_stderr_nl,
-	  flora_error_line('File ~w[.~w] does not exist!',[File,FLORA_FILE_EXT])
+	  flora_error_line('File ~w[.~w] does not exist',[File,FLORA_FILE_EXT])
         ),
 	!.
 
@@ -1749,18 +1754,6 @@ flMaxerr(X) :-
 	).
 
 
-/*************************************************************************
-  flP2H/2
-*************************************************************************/
-flP2H(PrologTerm,HiLogTerm) :-
-	flora_plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG,P2H_UNIFY_VARS).
-
-%% This is used by the compiler for converting prolog to hilog 
-%% in the implementation of @prologall().
-%% Note: flora_plg2hlg/4 succeeds if both arguments are unifiable prolog terms
-flora_post_p2h_conversion(PrologTerm,HiLogTerm) :-
-	flora_plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG,P2H_UNIFY_VARS).
-
 
 /*************************************************************************
   flHalt/0
@@ -1878,97 +1871,10 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	!.
 
 flora_gpp_dumpfile(FileName,_DumpFileName,_Workspace) :-
-	flora_error_line('Failed to make a dump file for ~w!',[FileName]),
+	flora_error_line('Failed to make a dump file for ~w',[FileName]),
 	!,
 	fail.
 
-
-/*************************************************************************
-  flCompileInclude(+File)
-
-  This call is used only in the closure/Makefile
-  Takes a trailer template and wraps it with the workspace and 
-  flora prefixes. This way the trailer is easier to maintain and understand.
-
-  The included file is treated as a Flora program, so the compiler wraps it 
-  with the appropriate macros (e.g., WORKSPACE), as it would any other
-  Flora program.
-*************************************************************************/
-flCompileInclude(File) :-
-	flora_check_filename(File),
-	( flora_locate_file(File,FLORA_INCLUDE_EXT,FLIFile) ->
-	    flora_FLH_filename(FLIFile,FLHFile),
-	    flora_compile_incfile(FLIFile,FLHFile,Status),
-	    (Status == FLORA_FAILURE -> fail; true)
-
-	; parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_INCLUDE_EXT,
-	  flora_file_op(exists,File)
-	->
-	    flora_stderr_nl,
-	    flora_error_line('~w: Include filename extension must be ~w!',
-			     [File,FLORA_INCLUDE_EXT]),
-	    fail
-	;
-	  flora_stderr_nl,
-	  flora_error_line('File ~w[.~w] does not exist!',
-			   [File,FLORA_INCLUDE_EXT]),
-          fail
-        ),
-	!.
-
-
-/*************************************************************************
-  flora_compile_incfile(+InputFile,+OutputFile,-FileStatus) :-
-
-  This compiles the include file (it is called from flCompileInclude/1)
-  and adds the WORKSPACE and other macros to it.
-
-  Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
-*************************************************************************/
-flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
-	flora_stdmsg_nl,
-	flora_message_line('Compiling FLORA template include file ~w',
-			   [InputFile]),
-	flora_cputime(T0),
-	seeing(PreInFile),
-	%% Enable the compilation for FLORA template include files.
-	flora_set_counter(flora_compile_include_file,1),
-	flora_reset_modules_for_file(InputFile),
-	flora_set_xpp_options_for_compile,
-	xpp_process_file(InputFile,XPP_process,IOportFromProc),
-	stat_set_flag(CURRENT_INPUT,IOportFromProc),
-	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
-	%% Wait, not to leave zombies.
-	process_control(XPP_process,wait(ExitStatus)),
-	(ExitStatus==0, !
-	; flora_error_line('Error while preprocessing `~w''', InputFile)
-	),
-	%% Release the file descriptor used to read from cpp.
-	file_close(IOportFromProc),
-	flora_clear_xpp_options,
-	%% Disable the compilation for FLORA template include files.
-	flora_set_counter(flora_compile_include_file,0),
-	see(PreInFile),
-	!,
-	( CompileStatus == FLORA_FAILURE ->
-	    FileStatus=FLORA_FAILURE
-	;
-	  telling(PreOutFile),
-	  tell(OutputFile),
-	  flora_extern_code(CompiledRuleList,CoderStatus),
-	  ( CoderStatus == [] ->
-	      FileStatus=FLORA_SUCCESS
-	  ;
-	    flora_coder_error(CoderStatus),
-	    FileStatus=FLORA_FAILURE
-	  ),
-	  told,
-	  tell(PreOutFile),
-	  flora_cputime(T1),
-	  T is T1-T0,
-	  flora_message_line('Done! CPU time used: ~w seconds',[T])
-	),
-	!.
 
 
 /*****************************************************************************
@@ -1991,3 +1897,12 @@ flora_copy_input(From,To) :-
 	flora_copy_input,
 	(var(From), !  ; seen, see(OldIn)),
 	(var(To), !    ; told, tell(OldOut)).
+
+
+flora_abort :- close_open_tables, throw(FLORA_ABORT).
+flora_abort(Msg) :-
+	is_list(Msg), !,
+	flora_concat_items(Msg,AtomMsg),
+	close_open_tables, throw(FLORA_ABORT(AtomMsg)).
+flora_abort(Msg) :- close_open_tables, throw(FLORA_ABORT(Msg)).
+

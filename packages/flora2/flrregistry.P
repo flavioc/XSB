@@ -1,13 +1,19 @@
 
+%% Tells which modules are loaded
 :- dynamic flora_module_registry/1.
-:- dynamic flora_debug_module_registry/1.
-:- dynamic flora_storage_registry/1.
+%% Tells which modules have trailers loaded in them (some may have no trailers)
 :- dynamic flora_trailer_registry/1.
+%% Tells which modules have debug option turned on
+:- dynamic flora_debug_module_registry/1.
+%% Keeps track of the storage trie names
+:- dynamic flora_storage_registry/1.
 
 :- dynamic flora_in_debug_mode/1.
 :- index(flora_in_debug_mode/1,trie).
 
 :- dynamic flora_configuration/2.
+
+:- dynamic flora_disabled_undefinedness_check_registry/3.
 
 :- index(flora_debug_module_registry/1,trie).
 :- index(flora_storage_registry/1,trie).
@@ -19,4 +25,5 @@
 	flora_in_debug_mode/1,
 	flora_storage_registry/1,
 	flora_trailer_registry/1,
+	flora_disabled_undefinedness_check_registry/3,
 	flora_configuration/2.

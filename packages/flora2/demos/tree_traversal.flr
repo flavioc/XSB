@@ -35,7 +35,7 @@ leaf[dfs->0].
 
 %% This one measures cpu time for method M.
 X[cpu(M)->T] :-
-	cputime(T0)@prolog(), X[M->V], cputime(T1)@prolog(),
+	cputime(T0)@prolog(), atom(M)@prolog(), X[M->V], cputime(T1)@prolog(),
 	T is T1-T0,
 	write('Value of ')@prolog(),
 	write(X)@prolog(),

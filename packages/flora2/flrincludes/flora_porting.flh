@@ -27,9 +27,9 @@
 /* File extensions used by XSB */
 #include "extensions_xsb.h"
 
-#deffast PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
-#deffast PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
-#deffast PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
+#define PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
+#define PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
+#define PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
 
 #define PROLOG_CUSTOM_DIR       '.xsb'
 
@@ -37,63 +37,5 @@
 /******************************************************************************
   Negation predicate
 ******************************************************************************/
-#define  FLORA_TNOT_PREDICATE  	      	  sk_not
-#deffast FLORA_TNOT(Goal)   	      	  FLORA_TNOT_PREDICATE(#1)
-
-/******************************************************************************
-  Database retrieval predicates
-******************************************************************************/
-#define  FLORA_DB_FIND_PREDICATE    	    	storage_find_fact
-#define  FLORA_DB_INSERT_PREDICATE    	    	storage_insert_fact
-#define  FLORA_DB_DELETE_PREDICATE    	    	storage_delete_fact
-#define  FLORA_DB_INSERT_BT_PREDICATE    	storage_insert_fact_bt
-#define  FLORA_DB_DELETE_BT_PREDICATE    	storage_delete_fact_bt
-#define FLORA_DB_INSERT_KEYPAIR_PREDICATE   storage_insert_keypair
-#define FLORA_DB_DELETE_KEYPAIR_PREDICATE   storage_delete_keypair
-#define FLORA_DB_FIND_KEYPAIR_PREDICATE     storage_find_keypair
-
-%% Some contexts don't like executable statements in included files.
-%% We can bracket them out there by defining FLORA_NO_EXECUTABLE_INCLUDES.
-#ifndef FLORA_NO_EXECUTABLE_INCLUDES
-:- import
-	FLORA_DB_FIND_PREDICATE/2,
-	FLORA_DB_INSERT_PREDICATE/3,
-	FLORA_DB_DELETE_PREDICATE/3,
-	FLORA_DB_INSERT_BT_PREDICATE/3,
-	FLORA_DB_DELETE_BT_PREDICATE/3,
-	FLORA_DB_INSERT_KEYPAIR_PREDICATE/4,
-	FLORA_DB_FIND_KEYPAIR_PREDICATE/3
-   from storage.
-%% Dummy use of symbols: To avoid compiler warnings
-?- fail, FLORA_DB_FIND_PREDICATE(_,_),
-         FLORA_DB_INSERT_PREDICATE(_,_,_),
-	 FLORA_DB_DELETE_PREDICATE(_,_,_),
-         FLORA_DB_INSERT_BT_PREDICATE(_,_,_),
-	 FLORA_DB_DELETE_BT_PREDICATE(_,_,_),
-	 FLORA_DB_INSERT_KEYPAIR_PREDICATE(_,_,_,_),
-	 FLORA_DB_FIND_KEYPAIR_PREDICATE(_,_,_).
-#endif
-
-
-#deffast FLORA_DB_FIND(Storage,Fact)     FLORA_DB_FIND_PREDICATE(Storage,Fact)
-#deffast FLORA_DB_INSERT(Storage,Fact,Status)  \
-                                         FLORA_DB_INSERT_PREDICATE(#1,#2,#3)
-#deffast FLORA_DB_DELETE(Storage,Fact,Status)  \
-                                         FLORA_DB_DELETE_PREDICATE(#1,#2,#3)
-#deffast FLORA_DB_INSERT_BT(Storage,Fact,Status) \
-                                         FLORA_DB_INSERT_BT_PREDICATE(#1,#2,#3)
-#deffast FLORA_DB_DELETE_BT(Storage,Fact,Status)  \
-                                         FLORA_DB_DELETE_BT_PREDICATE(#1,#2,#3)
-
-#deffast FLORA_DB_INSERT_KEYPAIR(Storage,Key,Fact,Status) \
-				 FLORA_DB_INSERT_KEYPAIR_PREDICATE(#1,#2,#3,#4)
-#deffast FLORA_DB_DELETE_KEYPAIR(Storage,Key,Status) \
-				 FLORA_DB_DELETE_KEYPAIR_PREDICATE(#1,#2,#3)
-#deffast FLORA_DB_FIND_KEYPAIR(Storage,Key,Fact)  \
-                                 FLORA_DB_FIND_KEYPAIR_PREDICATE(#1,#2,#3)
-
-#define  FLORA_DB_COMMIT_PREDICATE          storage_commit
-#define  FLORA_DB_RECLAIM_SPACE_PREDICATE   storage_reclaim_space
-
-#deffast FLORA_DB_COMMIT(Storage)         FLORA_DB_COMMIT_PREDICATE(#1)
-#deffast FLORA_DB_RECLAIM_SPACE(Storage)  FLORA_DB_RECLAIM_SPACE_PREDICATE(#1)
+#define  FLORA_TNOT_PREDICATE  	      	  flora_tnot
+#define  FLORA_TNOT(Goal)   	      	  FLORA_TNOT_PREDICATE(#1)

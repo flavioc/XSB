@@ -1,5 +1,5 @@
-DYNAMICALLY CREATING MODULES AND INSERTING RULES
-================================================
+DYNAMICALLY CREATING MODULES, INSERTING RULES, AND DELETING RULES
+=================================================================
 Chang Zhao, Nov. 25, 2002
 
 1. Syntax
@@ -25,7 +25,15 @@ should be included in a pair of parentheses. Module can be an atom, a regular
 variable, or _@. At runtime, the system will check to make sure that Module
 is bound to some already loaded module name.
 
-(3) table syntax
+(3) delete a list of rules
+        deleterule_a{RuleList}
+    or
+        deleterule_z{RuleList}
+    or
+        deleterule{RuleList}
+where RuleList is the same as rule insertion.
+
+(4) table syntax
 The compile directive table can't be used to table predicates in other modules.
 To be able to table predicates in another module, the instruction
 	?- table(Module, SpecList).
@@ -37,7 +45,7 @@ not a rule for that module satisfying both of the following:
     a) the head is subsumed by Pred/Arity
     b) when the rule is compiled/inserted, it's not tabled
 
-(4) index syntax
+(5) index syntax
 Similarly, the compile directive index can't be used to index predicates in
 other modules. But the instruct index can:
 	?- index(Module, Arity-Position).
@@ -47,7 +55,7 @@ this instruction will be translated into
 	?- index(Wrap_dyna_hilog_of_Module/A,P).
 	?- index(Wrap_dynz_hilog_of_Module/A,P).
 
-(5) example
+(6) example
 A simple example is as follows:
 e(a,b). e(b,c). e(c,d).
 ?- newmodule{mod1}.
@@ -55,6 +63,12 @@ e(a,b). e(b,c). e(c,d).
 ?- M=mod1, insertrule_a{((tc(X,Y) :- e(X,Y)@_@)@M), 
 		        ((tc(X,Y) :- tc(X,Z),e(Z,Y)@_@)@M)
 		       }.
+?- tc(X,Y)@mod1.
+?- deleterule_a{(tc(X,Y) :- tc(X,Z),e(Z,Y)@_@)@mod1}.
+?- refresh{tc(X,Y)}.
+?- tc(X,Y)@mod1.
+?- M=mod1, deleterule_a{(tc(X,Y) :- P@SomeModule)@M}. 
+?- refresh{tc(X,Y)}.
 ?- tc(X,Y)@mod1.
 
 
@@ -96,7 +110,40 @@ rules and rules for undefinedness checking:
 WRAP_HILOG(X1,X2) :- WRAP_DYNZ_HILOG(X1,X2).
 derived_isa(X,Y) :- WRAP_DYNZ_ISA(X,Y).
 
-(3) compilation
+(3) flora_rule_signature(Head,BodySignature,RuleList,BridgeRuleList)
+We maintain a flora_rule_signature record for each dynamic rule. When the rule
+is inserted, its signature is inserted into flora_rule_signature. When it is
+deleted, its signature is deleted from flora_rule_signature. This is necessary
+mainly because of two reasons:
+    a) A rule inserted may correspond to as many as three rules because of
+    conjuction in rule head and tabling. For example
+        :- table p/1.
+        ?- insertrule_a{(p(X),q(X)) :- r(X)}.
+    the rule p(X):-r(X) is actually translated into three rules:
+        newpredicate1(X) :- r(X).
+        flapply(p,X) :- tabled_flapply(p,X,1).
+        tabled_flapply(p,X,1) :- newpredicate1(X).
+    In this case, BridgeRuleList is [newpredicate1(X):-r(X)], and RuleList is
+    [(flapply(p,X):-tabled_flapply(p,X,1)),
+    (tabled_flapply(p,X,1):-newpredicate(X))].
+
+    b) We want the dynamic rule p(X) :- p(X)@foo be deleted when the user issues
+        ?- deleterule_a{p(X) :- p(X)@M}.
+    To make 'usermod'foo'flapply(p,X) unify with fllibmodlit(flapply,[p,X],M),
+    we build the canonical form BodySignature of rule body when the rule is
+    inserted. When a rule is to be deleted, its canonical form is buit and
+    match with those in flora_rule_signature. BodySignature takes the form:
+        (Wrap,Args,Module,Callable)
+    Some examples are as follows:
+        p(a)@foo         canonical: (flapply,[p,a],foo,p(a)@foo)
+        X@Y              canonical: (_P,_A,Y,X)
+        a:b@X            canonical: (d_isa,[a,b],X,_Call)
+
+Notice that flora_rule_signature contains Head instead of HeadSigature,
+because it is required that the predicate name and module name of the rule
+head be bound when the rule is to be deleted.
+
+(4) compilation
 Similar to insert and delete, newmodule and insertrule_a (insertrule_z) are
 compiled into system calls FLLIBNEWMODULE and FLLIBINSERTRULE_A
 (FLLIBINSERTRULE_Z), respectively. Something noticeable is that the split of
@@ -113,7 +160,7 @@ one elements.
 The distribution of workspace occurs at compile time. FLLIBMODLIT is still used
 for variable module name.
 
-(4) execution
+(5) execution
 FLLIBNEWMODULE(Module) is treated as FLLIBNEWMODULE(Module,NONE). 
 FLLIBNEWMODULE(Module,TrailerType) first checks to make sure Module is bound
 to an atom which is not an existing module name. Then it compiles and loads
@@ -121,15 +168,16 @@ trailer/patch.P for the given module name. At last it loads the correct trailer.
 
 FLLIBINSERTRULE_A(RuleList) does the following for each element Rule in the
 list RuleList, where Rule is encoded as FLSYSRULEUPDATE(HeadList,Body):
-    a) remove fllibmodlit in Body where module name is already bound. Currently
+    a) build the canonical form of the rule body
+    b) remove fllibmodlit in Body where module name is already bound. Currently
 this is only done for the subgoals and control constructs but not for meta
 arguments.
-    b) if there is only one element Head in HeadList, go to c). else generate
+    c) if there is only one element Head in HeadList, go to c). else generate
 a new predicate in the same module as those in the HeadList. Its arguments
 are all the variables in Body. A global counter is maintained to generate
 new predicates. Assert a rule whose head is this new predicate and the body
 is Body. For each element Head in HeadList and the new predicate, do c).
-    c) for a rule to be inserted with Head and Body, first get rid of 
+    d) for a rule to be inserted with Head and Body, first get rid of 
 fllibmodlit from Head if any. Then get the module name from Head and checks
 whether it is a loaded user module. The Head might be 
 	* a tabled hilog predicate Pred(Args)
@@ -144,13 +192,24 @@ whether it is a loaded user module. The Head might be
 	  WRAP_DYNA_HILOG(Pred,Args) :- Body.
 	* otherwise just assert
 	  Head :- Body.
-    d) insert the skeleton of the head into corresponding fld trie.
+    e) insert a record into flora_rule_signature
+    f) insert the skeleton of the head into corresponding fld trie.
 
 FLLIBINSERTRULE_Z(RuleList) is almost the same as FLLIBINSERTRULE_A(RuleList),
 but just substitute WRAP_DYNA_HILOG with WRAP_DYNZ_HILOG.
 
+FLLIBDELETERULE_A(RuleList) and FLLIBDELETERULE_Z(RuleList) does the following:
+        for each element FLSYSRULEUPDATE(HeadList,Body) in RuleList
+            build the canonical form BodySig of Body
+            for each element Head in HeadList
+                find a flora_rule_signature record with the Head and BodySig
+                delete related rules as directed by the record
+            end for
+        end for
+FLLIBDELETERULE(RuleList) :- FLLIBDELETERULE_A(RuleList).
+FLLIBDELETERULE(RuleList) :- FLLIBDELETERULE_Z(RuleList).
+
 3. What's left
-(1) deleterule
-(2) cut in rules inserted by insertrule_a doesn't not work properly
+(1) cut in rules inserted by insertrule_a doesn't not work properly
     
 

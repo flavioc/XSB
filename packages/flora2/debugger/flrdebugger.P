@@ -32,20 +32,15 @@
 
 
 :- import file_close/1, ioport2iostream/2 from file_io.
-:- import format/3 from format.
 :- import debug_display_call_hook/1, flora_switch/1 from usermod.
 :- import flora_configuration/2 from flrregistry.
 :- import process_control/2 from shell.
 :- import xpp_process_file/3 from parse.
-:- import member/2, length/2 from basics.
-%%:- import append/3 from basics.
 
 :- import flora_decode_predicate/6,
 	flora_module_name/3,
 	flora_module_predicate_symbol/3
     from flrwrapper.
-:- import flora_prlgdef/2 from flrprolog.
-:- import flora_opdef/3 from flroperator.
 :- import flora_set_xpp_options_for_read/1,
 	flora_set_xpp_options_for_read/0,
 	flora_clear_xpp_options/0 from flrutils.
@@ -54,9 +49,10 @@
 
 :- import flora_concat_atoms/2,
 	flora_slash/1,
-	flora_match_substring/5,
 	flora_set_counter/2
    from flrporting.
+
+:- import flora_write_goal/2 from flrdecode.
 
 
 :- import flora_handle_trace/0,
@@ -68,7 +64,6 @@
 
 :- dynamic debug_display_call_hook/1.
 :- dynamic flora_switch/1.
-:- dynamic flora_debug_context/1.
 :- dynamic flora_write_debugger_hook/1.
 
 :- dynamic
@@ -102,653 +97,29 @@
 	flora_notrace/0.
 
 
+%% Assert the debugger hook
 ?- assert(debug_display_call_hook(flora_write_debugger_hook)).
 ?- assert((
            flora_write_debugger_hook(X) :-
-	     (\+flora_switch(low_level_trace) -> flora_write_goal(X)
+	     (\+flora_switch(low_level_trace) -> flora_write_debug_call(X)
 	     ; flora_write_dbg_item(X)
 	     )
 	  )).
 
 
+%% Get the debugging output stream
 :- dynamic flora_dbg_stream/1.
 ?- (flora_dbg_stream(Stream) -> close(Stream), retractall(flora_dbg_stream(_))
    ; ioport2iostream(STDDBG,Stream), assert(flora_dbg_stream(Stream))
    ).
-flora_write_dbg_item(Format,ArgList) :-
-	flora_dbg_stream(Stream), format(Stream,Format,ArgList).
-flora_write_dbg_item(Item) :- flora_dbg_stream(Stream), write(Stream,Item).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% flora_write_goal %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-flora_write_goal(Call) :- var(Call), !, flora_write_dbg_item(Call).
+flora_write_debug_call(Call) :-
+	flora_dbg_stream(Stream), flora_write_goal(Stream,Call).
 
-flora_write_goal(Call) :-
-	classify_call(Call, Type,Basename,ArgList,Workspace),
-	/*
-	%% Debugging
-	flora_dbg_stream(Stream),
-	format(Stream,'~n~w~n~w~n~w~n~w~n~w~n',
-		      [Call,Type,Workspace,Basename,ArgList]),
-	*/
+flora_write_dbg_item(Item) :- flora_dbg_stream(Stream), write(Stream,Item).
 
-	( Type == (hilog)
-	-> flora_write_hilog(Basename,ArgList,Workspace)
-	; Type == (flogic)
-	-> flora_write_flogic(Basename,ArgList,Workspace)
-	; Type == (inheritance)
-	-> flora_write_dbg_item('(Trying to derive by inheritance) '),
-	    flora_write_flogic(Basename,ArgList,Workspace)
-	; Type == (dynhead_before)
-	-> flora_write_dbg_item('(Trying to derive by dynamic before-rules) '),
-	    flora_write_flogic(Basename,ArgList,Workspace)
-	; Type == (dynhead_after)
-	-> flora_write_dbg_item('(Trying to derive by dynamic after-rules) '),
-	    flora_write_flogic(Basename,ArgList,Workspace)
-	),
-	!.
-
-
-%% An update
-flora_write_goal(Call) :-
-	Call =.. [UpdPred,UpdLiterals|Query],
-	is_update_call(UpdPred,UpdName),
-	!,
-	(Query==[]
-	-> flora_write_update(UpdName,UpdLiterals)
-	; Query = [RealQuery],
-	    flora_write_update(UpdName,UpdLiterals,RealQuery)
-	).
-
-/*
-%% aggregate
-flora_write_goal(Call) :-
-	Call = ','(AggrCall,ComparisonCall),
-	AggrCall =.. [AggrPred,AggrVar,GroupVarList,Query,AggrResultVar],
-	is_aggregate_call(AggrPred,AggrName),
-	flora_write_aggregate(AggrName,AggrVar,GroupVarList,
-			      Query,AggrResultVar,ComparisonCall).
-*/
-%% aggregate
-flora_write_goal(Call) :-
-	Call =.. [AggrPred,AggrVar,GroupVarList,Query,AggrResultVar],
-	is_aggregate_call(AggrPred,AggrName),
-	flora_write_aggregate(AggrName,AggrVar,GroupVarList,
-			      Query,AggrResultVar).
-
-%% flLoad in the form of [...]
-flora_write_goal(Call) :-
-	Call = FLLIBLOAD(Arg),
-	flora_write_dbg_item('['),
-	(Arg = '>>'(File,Module)
-	-> print_items((File,'>>',Module))
-	;  flora_write_dbg_item(File)
-	),
-	flora_write_dbg_item(']').
-
-%% List of goals -- the last one
-flora_write_goal(Call) :-
-	is_commalist(Call),
-	!,
-	write_goal_commalist(Call).
-flora_write_goal(Call) :-
-	is_list_term(Call),
-	!,
-	write_goal_list(Call).
-flora_write_goal(Call) :-
-	is_disjunction(Call),
-	!,
-	write_disjunction(Call).
-flora_write_goal('->'(Call1,Call2)) :-
-	flora_write_goal(Call1),
-	flora_write_dbg_item(' -> '),
-	flora_write_goal(Call2).
-
-flora_write_goal(Call) :-
-	Call =.. [F, Subcall],
-	member(F, [(tnot),('\+'),(not),(call)]),
-	!,
-	print_items((F,'(')),
-	flora_write_goal(Subcall),
-	flora_write_dbg_item(')').
-
-flora_write_goal(Call) :-
-	Call = FLLIBUNIVEQFORM(Left,Right),
-	!,
-	flora_write_goal(Left),
-	print_items((' ', FL_UNIVEQFORM, ' ')),
-	flora_write_goal(Right).
-
-flora_write_goal(call(Call)) :-
-	flora_write_dbg_item('call('),
-	flora_write_goal(Call),
-	flora_write_dbg_item(')').
-
-flora_write_goal(catch(Call,Catcher,Handler)) :-
-	flora_write_dbg_item('catch('),
-	flora_write_goal(Call),
-	flora_write_dbg_item(','),
-	write_hilog(Catcher),
-	flora_write_dbg_item(','),
-	flora_write_goal(Handler),
-	flora_write_dbg_item(')').
-
-flora_write_goal(FLLIBIFTHENELSE(Cond,Then,Else)) :-
-	!,
-	flora_print_if_statement(Cond,Then,Else).
-
-flora_write_goal(FLLIBIFTHEN(Cond,Then)) :-
-	!,
-	flora_print_if_statement(Cond,Then).
-
-flora_write_goal(FLLIBUNLESSDO(Cond,Action)) :-
-	!,
-	flora_print_unless(Cond,Action).
-
-flora_write_goal(FLLIBWHILEDO(Cond,Action)) :-
-	!,
-	flora_print_while('DO',Cond,Action).
-
-flora_write_goal(FLLIBWHILELOOP(Cond,Action)) :-
-	!,
-	flora_print_while('LOOP',Cond,Action).
-
-flora_write_goal(FLLIBDOUNTIL(Action,Cond)) :-
-	!,
-	flora_print_until('DO',Action,Cond).
-
-flora_write_goal(FLLIBLOOPUNTIL(Action,Cond)) :-
-	!,
-	flora_print_until('LOOP',Action,Cond).
-
-
-%% This occurs when you have hilog-lit@Module, where Module is a var
-flora_write_goal(FLLIBMODLIT(WRAP_HILOG,Args,Module)) :-
-	!,
-	(nonvar(Args), !
-	; abort('[Debugger] Internal error: Invalid FLLIBMODLIT/3 goal')),
-	Args = [Basename|ArgList],
-	flora_write_hilog(Basename,ArgList,Module).
-
-%% This occurs when you have X@..., i.e., the literal part is a variable
-flora_write_goal(FLLIBMODLIT(FL_LIBMOD,Args,Module)) :-
-	!,
-	((var(Args) ; atomic(Args)) ->
-	    flora_write_dbg_item('~w@~w',[Args,Module])
-	; flora_write_goal(Args),
-	    flora_write_dbg_item('@~w',[Module])
-	).
-
-
-%% This occurs when you have flogic-lit@Module, where Module is a var
-flora_write_goal(FLLIBMODLIT(Basename,Args,Module)) :-
-	!,
-	flora_write_flogic(Basename,Args,Module).
-
-flora_write_goal(Call) :-
-	is_prolog(Call),
-	!,
-	flora_write_prolog(Call).
-
-%% catch all
-flora_write_goal(Call) :- flora_write_dbg_item(Call).
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-write_goal_commalist(G) :-
-	flora_write_dbg_item('('),
-	write_goal_commalist_internal(G).
-	flora_write_dbg_item(')').
-
-write_goal_commalist_internal(G) :-
-	var(G),
-	!,
-	flora_write_dbg_item(G).
-write_goal_commalist_internal(','(G,Gs)) :-
-	!,
-	flora_write_goal(G),
-	flora_write_dbg_item(','),
-	write_goal_commalist_internal(Gs).
-write_goal_commalist_internal(G) :-
-	!,
-	flora_write_goal(G).
-
-write_goal_list([]) :- !, flora_write_dbg_item([]).
-write_goal_list(List) :-
-	flora_write_dbg_item('['),
-	write_goal_list_internal(List),
-	flora_write_dbg_item(']').
-write_goal_list_internal([H]) :-
-	!,
-	flora_write_goal(H).
-write_goal_list_internal([H|R]) :-
-	!,
-	flora_write_goal(H),
-	flora_write_dbg_item(','),
-	write_goal_list_internal(R).
-write_disjunction(';'(G1,G2)) :-
-	!,
-	flora_write_dbg_item('('),
-	flora_write_goal(G1),
-	flora_write_dbg_item(' ; '),
-	flora_write_goal(G2),
-	flora_write_dbg_item(')').
-
-
-/*********************************************************************/
-%%%%%%%%%%%%%%%%%%%%% Molecules %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-flora_write_flogic(Basename,Args,Workspace) :-
-	decode_molecule(Basename,Code,Args),
-	write_code(Code),
-	write_workspace(Workspace).
-
-write_code(Code) :-
-	Code =.. [code|Elements],
-	write_code_elements(Elements).
-write_code_elements([]).
-write_code_elements([H|Tail]) :-
-	write_value(H),
-	write_code_elements(Tail).
-
-
-is_flogic(Call) :-
-	callable(Call),
-	classify_call(Call, flogic,_Basename,_ArgList,_Workspace).
-is_prolog(Call) :- 
-	callable(Call),
-	classify_call(Call, prolog,_Basename,_ArgList,_Workspace).
-is_hilog(Call) :- 
-	callable(Call),
-	classify_call(Call, hilog,_Basename,_ArgList,_Workspace).
-is_hilog(Call) :-
-	callable(Call),
-	Call =.. [WRAP_HILOG|_].
-is_commalist(Call) :-
-	callable(Call),
-	functor(Call,',',2).
-%% only tests if the functor is '.' -- not that it is a proper list
-is_list_term(Call) :-
-	callable(Call),
-	functor(Call,'.',2).
-is_disjunction(Call) :-
-	callable(Call),
-	functor(Call,';',2).
-
-%% The predicates declared as flora_prlg in flrprolog.P
-is_flora_builtin(Call) :-
-	callable(Call),
-	functor(Call,F,N),
-	flora_prlgdef(F,N).
-
-
-decode_molecule(Wrapper,Code,ComponentList) :-
-	(flora_match_substring(FLDEBUGPREFIX,Wrapper,forward,0,End),! ; End=0),
-	substring(Wrapper,End,_,BaseWrapper),
-	decode_molecule_base(BaseWrapper,Code,ComponentList).
-
-decode_molecule_base(WRAP_FD,code(O,'[',M,'->',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_MVD,code(O,'[',M,'->>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_IFD,code(O,'[',M,'*->',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_IMVD,code(O,'[',M,'*->>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_FDSIG,code(O,'[',M,'=>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_IFDSIG,code(O,'[',M,'*=>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_MVDSIG,code(O,'[',M,'=>>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_IMVDSIG,code(O,'[',M,'*=>>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_MVDINC,code(O,'[',M,'+>>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_IMVDINC,code(O,'[',M,'*+>>',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_MVDTOLIST,code(O,'[',M, '->->',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_IMVDTOLIST,code(O,'[',M, '*->->',V,']'), [O,M,V]).
-decode_molecule_base(WRAP_ISA,code(O,':',C), [O,C]).
-decode_molecule_base(WRAP_SUB,code(Sub,'::',Sup), [Sub,Sup]).
-%% boolean method
-decode_molecule_base(WRAP_METH,code(O,'[',P,']'), [O,P]).
-%% inheritable boolean method
-decode_molecule_base(WRAP_IMETH,code(O,'[*',P,']'), [O,P]).
-%% procedural boolean method
-decode_molecule_base(WRAP_TRAN,code(O,'[#',P,']'), [O,P]).
-
-decode_molecule_base(WRAP_OBJEQL,code(O1,':=:',O2), [O1,O2]).
-
-%%%%%%%%%%%%%%%%%%%%% HiLog %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-flora_write_hilog(Basename,Args,Workspace) :-
-	%% Construct hilog term
-	HTerm =.. [WRAP_HILOG,Basename|Args],
-	write_hilog(HTerm),
-	write_workspace(Workspace).
-
-%%%%%%%%%%%%%%%%%%%%%% Prolog %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% classify_call would classify WRAP_HILOG(....) as prolog, because
-%% it is a term and not a predicate
-flora_write_prolog(Call) :-
-	is_hilog(Call),
-	!,
-	write_hilog(Call).
-flora_write_prolog(Call) :-
-	is_flora_builtin(Call),
-	Call =.. [F|Args],
-	length(Args,Arity),
-	flora_write_builtin(F,Arity,Args).
-flora_write_prolog(Call) :-
-	Call =.. [F|Args],
-	(Args == [] -> print_items((Call,'@prolog()'))
-	; print_items((F,'(')),
-	    write_hilog_args(Args),
-	    flora_write_dbg_item(')@prolog()')
-	).
-
-flora_write_builtin(F,0,_) :- !, flora_write_dbg_item(F).
-%% This would have to be expanded to deal with unary ops
-flora_write_builtin(F,1,[Arg]) :- !,
-	print_items((F,'(')),
-	write_hilog(Arg),
-	flora_write_dbg_item(')').
-%% This deals with binary ops
-flora_write_builtin(F,2,[Arg1,Arg2]) :- !,
-	((flora_opdef(_,xfx,F); flora_opdef(_,yfx,F); flora_opdef(_,xfy,F))
-	-> write_hilog(Arg1), print_items((' ',F,' ')), write_hilog(Arg2)
-	;  print_items((F,'(')),
-	    write_hilog(Arg1), flora_write_dbg_item(','), write_hilog(Arg2),
-	    flora_write_dbg_item(')')
-	).
-flora_write_builtin(F,_,Args) :-
-	print_items((F,'(')),
-	write_hilog_args(Args),
-	flora_write_dbg_item(')').
-
-%%%%%%%%%%%%%%%%%%%%%% IF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-flora_print_if_statement(Cond,Then) :-
-	flora_write_dbg_item('IF ('),
-	flora_write_goal(Cond),
-	flora_write_dbg_item(') THEN ('),
-	flora_write_goal(Then),
-	flora_write_dbg_item(')').
-
-flora_print_if_statement(Cond,Then,Else) :-
-	flora_write_dbg_item('IF ('),
-	flora_write_goal(Cond),
-	flora_write_dbg_item(') THEN ('),
-	flora_write_goal(Then),
-	flora_write_dbg_item(') ELSE ('),
-	flora_write_goal(Else),
-	flora_write_dbg_item(')').
-
-%%%%%%%%%%%%%%%%%%%%%% UNLESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-flora_print_unless(Cond,Action) :-
-	flora_write_dbg_item('UNLESS ('),
-	flora_write_goal(Cond),
-	print_items((') ', 'DO', ' (')),
-	flora_write_goal(Action),
-	flora_write_dbg_item(')').
-
-
-%%%%%%%%%%%%%%%%%%%%%% WHILE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-flora_print_while(LoopType,Cond,Action) :-
-	flora_write_dbg_item('WHILE ('),
-	flora_write_goal(Cond),
-	print_items((') ', LoopType, ' (')),
-	flora_write_goal(Action),
-	flora_write_dbg_item(')').
-
-%%%%%%%%%%%%%%%%%%%%%% UNTIL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-flora_print_until(LoopType,Action,Cond) :-
-	print_items((LoopType, ' (')),
-	flora_write_goal(Action),
-	flora_write_dbg_item(') UNTIL ( '),
-	flora_write_goal(Cond),
-	flora_write_dbg_item(')').
-
-
-%%%%%%%%%%%%%%%%%%%%% Updates %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-is_update_call(FLLIBINSERT, FL_INSERT).
-is_update_call(FLLIBINSERTALL, FL_INSERTALL).
-is_update_call(FLLIBBTINSERT, FL_BTINSERT).
-is_update_call(FLLIBBTINSERTALL, FL_BTINSERTALL).
-is_update_call(FLLIBDELETE, FL_DELETE).
-is_update_call(FLLIBDELETEALL, FL_DELETEALL).
-is_update_call(FLLIBBTDELETE, FL_BTDELETE).
-is_update_call(FLLIBBTDELETEALL, FL_BTDELETEALL).
-is_update_call(FLLIBERASE, FL_ERASE).
-is_update_call(FLLIBERASEALL, FL_ERASEALL).
-is_update_call(FLLIBBTERASE, FL_BTERASE).
-is_update_call(FLLIBBTERASEALL, FL_BTERASEALL).
-
-flora_write_update(UpdName,UpdLiterals) :-
-	print_items((UpdName,'{')),
-	write_update_literals(UpdLiterals),
-	flora_write_dbg_item('}').
-flora_write_update(UpdName,UpdLiterals,Query) :-
-	print_items((UpdName,'{')),
-	write_update_literals(UpdLiterals),
-	flora_write_dbg_item(' | '),
-	flora_write_goal(Query),
-	flora_write_dbg_item('}').
-write_update_literals([]).
-write_update_literals([L|Rest]) :-
-	L = FLSYSDBUPDATE(Literal,_Storage),
-	flora_write_goal(Literal),
-	(Rest \== [] -> flora_write_dbg_item(','); true),
-	write_update_literals(Rest).
-
-
-%%%%%%%%%%%%%%%%%%%%% Aggregate Ops %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/*
-flora_write_aggregate(AggrName,AggrVar,GroupVarList,
-			      Query,AggrResultVar,ComparisonCall) :- 
-	ComparisonCall =.. [Comparison,ComparisonVar,AggrResultVar],
-	print_items((ComparisonVar,Comparison,AggrName,'{',
-		     AggrVar,GroupVarList,' | ')),
-	flora_write_goal(Query),
-	flora_write_dbg_item('}').
-*/
-flora_write_aggregate(AggrName,AggrVar,GroupVarList,Query,AggrResult) :- 
-	write_hilog(AggrResult),
-	print_items((' = ',AggrName,'{',AggrVar,GroupVarList,' | ')),
-	flora_write_goal(Query),
-	flora_write_dbg_item('}').
-
-is_aggregate_call(FLLIBMIN,FL_MIN).
-is_aggregate_call(FLLIBMAX,FL_MAX).
-is_aggregate_call(FLLIBSUM,FL_SUM).
-is_aggregate_call(FLLIBAVG,FL_AVG).
-is_aggregate_call(FLLIBCOUNT,FL_COUNT).
-is_aggregate_call(FLLIBCOLLECTSET,FL_COLLECTSET).
-is_aggregate_call(FLLIBCOLLECTBAG,FL_COLLECTBAG).
-
-
-%%%%%%%%%%%%%%%%%%%%%% Classifier %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-classify_call(Call, Type,Basename,ArgList,Workspace) :-
-	flora_decode_predicate(Call,Type1,Workspace,Prefix,Basename1,ArgList1),
-	%% The following is a debugging statement, 
-	%% to help weed out calls that should be suppressed
-	/*
-	flora_dbg_stream(Stream),
-	format(Stream,'~n~w~n~w~n~w~n~w~n~w~n~w~n',
-		      [Call,Type1,Workspace,Prefix,Basename1,ArgList]),
-	*/
-	(Type1 == (flora)
-	-> (Prefix=inheritance_
-	   -> Basename = Basename1, Type = (inheritance), ArgList = ArgList1
-	   
-	   ; Prefix=dyna_ % This is actually hidden (possible future use)
-	   -> Basename = Basename1, Type = (dynhead_before), ArgList = ArgList1
-	   ; Prefix=dynz_ % This is actually hidden (possible future use)
-	   -> Basename = Basename1, Type = (dynhead_after), ArgList = ArgList1
-
-	   ;   %% must be a hilog predicate derivative formed by specialization
-	       %% such as FLORA_PREFIX'usermod''main''flapply_#303'
-	       str_cat(WRAP_HILOG,'_',Prefix)
-	   ->  Type = (hilog), ArgList1 = [Basename | ArgList]
-	   ; Type = Type1, Basename = Basename1, ArgList = ArgList1
-	   )
-	; Type1 == (prolog), Basename1 = FLORA_DB_FIND_PREDICATE,
-	    Call =.. [FLORA_DB_FIND_PREDICATE,Trie,RealCall],
-	    flora_match_substring(FLORA_PREFIX,Trie,forward,0,_)
-	->  flora_write_dbg_item('(Checking against base facts) '),
-	    flora_decode_predicate(RealCall,Type,Workspace,_,Basename,ArgList)
-	; Type = Type1, Basename = Basename1, ArgList = ArgList1
-	).
-
-%%%%%%%%%%%%%%%%%%%%% Write Utils %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-write_value(Val) :-
-	atomic(Val),
-	!,
-	flora_write_dbg_item(Val).
-write_value(Val) :-
-	is_charlist(Val),
-	!,
-	flora_write_dbg_item('"~w"', [Val]).
-write_value(Val) :- var(Val), !, flora_write_dbg_item( Val).
-write_value(=(_N,Var)) :- !, flora_write_dbg_item( Var).
-write_value(WRAP_FDSKOLEM(X,Y)) :- !,
-	write_value(X), flora_write_dbg_item('.'), write_value(Y).
-write_value(WRAP_IFDSKOLEM(X,Y)) :- !,
-	write_value(X), flora_write_dbg_item('!'), write_value(Y).
-write_value(Val) :-
-	is_flogic(Val),
-	!,
-	flora_write_goal(Val).
-write_value(Val) :-
-	is_commalist(Val),
-	!,
-	flora_write_dbg_item('('),
-	write_hilog_args_commalist(Val),
-	flora_write_dbg_item(')').
-write_value(Val) :-
-	is_list_term(Val),
-	!,
-	flora_write_dbg_item('['),
-	write_hilog_args(Val),
-	flora_write_dbg_item(']').
-write_value(Val) :-
-	is_disjunction(Val),
-	!,
-	write_term_disjunction(Val).
-write_value(Val) :-
-	is_hilog(Val),
-	!,
-	write_hilog(Val).
-write_value(Val) :-
-	is_prolog(Val),
-	!,
-	flora_write_dbg_item(Val).
-
-write_hilog(Val) :-
-	(atomic(Val);var(Val)),
-	!,
-	(atom(Val), flora_decode_predicate(Val,_,WS,_,Basename,_),
-	    nonvar(WS), nonvar(Basename)
-	->  flora_write_dbg_item(Basename) ,write_workspace(WS)
-	;   flora_write_dbg_item(Val)
-	).
-
-write_hilog(FLLIBMODLIT(Wrap,Args,Module)) :- !,
-	flora_write_goal(FLLIBMODLIT(Wrap,Args,Module)).
-
-write_hilog(Val) :-
-	is_commalist(Val),
-	!,
-	flora_write_dbg_item('('),
-	write_hilog_args_commalist(Val),
-	flora_write_dbg_item(')').
-write_hilog(Val) :-
-	is_list_term(Val),
-	!,
-	flora_write_dbg_item('['),
-	write_hilog_args(Val),
-	flora_write_dbg_item(']').
-write_hilog(Val) :-
-	is_disjunction(Val),
-	!,
-	write_term_disjunction(Val).
-write_hilog(Val) :-
-	is_flogic(Val),
-	!,
-	flora_write_goal(Val).
-write_hilog(Val) :-
-	(\+callable(Val) -> abort(('Ill-formed HiLog term,', Val))
-	;
-	    %% check if there is a workspace
-	    (flora_decode_predicate(Val,_,WS,_,_,_), ! ; true),
-	    Val =.. [Funct,Head|Args],
-	    (str_sub(WRAP_HILOG,Funct)
-	    -> write_hilog(Head),
-		(Args == [], !
-		;
-		    flora_write_dbg_item( '('),
-		    write_hilog_args(Args),
-		    flora_write_dbg_item( ')')
-		),
-		(nonvar(WS) -> write_workspace(WS); true)
-	    ; % Not a hilog term
-		write_value(Val)
-	    )
-	).
-
-write_hilog_args([]) :- !.
-write_hilog_args([Arg|Rest]) :-
-	!,
-	write_hilog(Arg),
-	(Rest == [], !
-	; var(Rest) -> print_items(('|',Rest))
-	; flora_write_dbg_item(','),
-	  write_hilog_args(Rest)
-	).
-
-write_hilog_args_commalist(T) :- var(T), !, flora_write_dbg_item(T).
-write_hilog_args_commalist(','(H,T)) :-
-	!,
-	write_hilog(H),
-	flora_write_dbg_item(','),
-	write_hilog_args_commalist(T).
-write_hilog_args_commalist(T) :-
-	!,
-	write_hilog(T).
-
-write_term_disjunction(';'(L,R)) :-
-	flora_write_dbg_item('('),
-	write_hilog(L),
-	flora_write_dbg_item(';'),
-	write_hilog(R),
-	flora_write_dbg_item(')').
-
-
-write_workspace(WS) :-
-	(WS==main -> true
-	;
-	    flora_write_dbg_item('@~w',[WS])
-	).
-
-
-/*
-%% Extracts and writes variables from the list [=(name,internalVar), ...]
-%% or from the list [internalVar, internalVar, ...]
-flora_write_vars(V) :- V== [], !.
-flora_write_vars([V|Rest]) :- 
-	var(V), !, flora_write_vars(V,Rest).
-flora_write_vars([=(_N,V)|Rest]) :- 
-    	!, flora_write_vars(V,Rest).
-
-flora_write_vars(V,Rest) :-
-	flora_write_dbg_item(V),
-	(Rest == [] -> true
-	 ; flora_write_dbg_item(','), flora_write_vars(Rest)
-	).
-*/
-
-print_items(X) :- var(X), !, flora_write_dbg_item(X).
-print_items(','(Item,Rest)) :-
-	!,
-	flora_write_dbg_item(Item),
-	print_items(Rest).
-print_items(Item) :- flora_write_dbg_item(Item).
 
 /*********************************************************************/
 
@@ -827,13 +198,14 @@ flora_build_bridge_to_xsb_debugger :-
 	       \+flora_switch(low_level_trace),flora_trace_this_noprint(X/Y))),
 	assert((trace_this_print(X,Y) :-
 	       \+flora_switch(low_level_trace),flora_trace_this_print(X/Y))),
-	%% Rule to handle system modules.
+	%% Rule for handling system modules.
 	%% This prevents tracing inside flora system modules.
 	%% We might add a switch that would enable this optionally.
-	%% Not clear if this useful.
+	%% Not clear if this is useful.
 	assert((show_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_decode_predicate(X,_,WS,_,_,_),
+		functor(PX,X,Y),
+		flora_decode_predicate(PX,_,WS,_,_,_),
 		flora_module_name(WS,systemmodule,_)
 	       )),
 	%% Rules for prefixes of predicates that need 
@@ -846,25 +218,25 @@ flora_build_bridge_to_xsb_debugger :-
 	       )),
 	assert((hide_this_show(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_hide_this_show(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		( flora_hide_this_show(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
 		 ; flora_hide_this_show(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )),
 	assert((show_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_show_this_hide(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		( flora_show_this_hide(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
 		 ; flora_show_this_hide(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
                 )
 	       )),
 	assert((trace_this_noprint(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_trace_this_noprint(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		( flora_trace_this_noprint(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
 		 ; flora_trace_this_noprint(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )),
 	assert((trace_this_print(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_trace_this_print(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		( flora_trace_this_print(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
 		 ; flora_trace_this_print(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )).

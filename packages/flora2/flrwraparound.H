@@ -53,7 +53,6 @@
 	flora_error_line/2
    from flrprint.
 
-
 :- import process_control/2 from shell.
 
 :- import xpp_process_file/3 from parse.

@@ -1,7 +1,7 @@
 
 :- import append/3, member/2, length/2 from basics.
 
-:- import variant/2 from subsumes.
+:- import subsumes/2,variant/2 from subsumes.
 
 :- import
 	flora_set_counter/2,

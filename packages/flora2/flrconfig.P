@@ -3,31 +3,34 @@
 
 :- import path_sysop/3 from file_io.
 :- import
-	xsb_configuration/2,
-	windows_os/0
+	xsb_configuration/2
    from xsb_configuration.
+
+:- import flora_running_under/1 from flrporting.
 
 ?- path_sysop(expand,'.',FloraDir),
    xsb_configuration(install_dir,InstallDir),
    xsb_configuration(config_bindir,ConfigBinDir),
+   (flora_running_under(windows)
+   -> PrologPath = '.prolog_path_wind'
+   ;
+       PrologPath = '.prolog_path'
+   ),
    telling(F),
-   tell('.prolog_path'),
-   (windows_os
+   tell(PrologPath),
+   (flora_running_under(windows)
    -> write('PROLOG = '), write(ConfigBinDir), writeln('\xsb'),
       write('PROLOGDIR = '), writeln(InstallDir)
    ;
       writeln(ConfigBinDir)
    ),
    told,
-   tell('.flora_path'),
-   write('#define FLORA_INSTALL_DIR  '), writeq(FloraDir), nl,
-   told,
-   (windows_os
+   (flora_running_under(windows)
    -> tell('runflora.bat'),
        writeln('@echo OFF'),
        write('@set FLORADIR="'), writeq(FloraDir), write('"'), nl,
        write('@set PROLOG='), write(ConfigBinDir), writeln('\xsb'),
-       writeln('@%PROLOG% -e "asserta(library_directory(%FLORADIR%)). [flora2devel]. flora_shell." %1 %2 %3 %4 %5 %6 %7')
+       writeln('@%PROLOG% -e "asserta(library_directory(%FLORADIR%)). (import flora_configuration/2 from flrregistry). assert(flora_configuration(installdir,%FLORADIR%)). [flora2devel]. flora_shell." %1 %2 %3 %4 %5 %6 %7')
    ;
        tell('runflora'),
        writeln('#! /bin/sh'),
@@ -38,7 +41,7 @@
        nl,
        write('FLORADIR="'), writeq(FloraDir), write('"'), nl,
        write('PROLOG='), write(ConfigBinDir), writeln('/xsb'),
-       writeln('$PROLOG -e "asserta(library_directory($FLORADIR)). [flora2devel]. flora_shell." $extra_args')
+       writeln('$PROLOG -e "asserta(library_directory($FLORADIR)). (import flora_configuration/2 from flrregistry). assert(flora_configuration(installdir,$FLORADIR)). [flora2devel]. flora_shell." $extra_args')
    ),
    told,
    tell(F).

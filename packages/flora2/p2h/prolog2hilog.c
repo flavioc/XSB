@@ -37,6 +37,11 @@
 #include "error_xsb.h"
 #include "cinterf.h"
 
+#define FLORA_META_PREFIX      "_$_$_flora'mod"
+#define FLORA_LIB_PREFIX       "fllib"
+#define FLORA_META_PREFIX_LEN  14
+#define FLORA_LIB_PREFIX_LEN    5
+
 
 #if 0
 #define P2HDEBUG
@@ -54,6 +59,7 @@ static prolog_term prolog2hilog(prolog_term pterm, char *apply, int unify_vars);
 static char *pterm2string(prolog_term term);
 inline static int is_hilog(prolog_term term, char *apply_funct);
 inline static int is_special_form(prolog_term term);
+inline static int is_formula(prolog_term term);
 static prolog_term map_special_form(prolog_term (*func)(), prolog_term term, char *apply, int unify_vars);
 static prolog_term map_list(prolog_term func(), prolog_term term, char *apply, int unify_vars);
 
@@ -174,6 +180,8 @@ static prolog_term hilog2prolog(prolog_term hterm, char *apply, int unify_vars)
 
   /* Don't convert if already Prolog */
   if (!is_hilog(hterm,apply)) return hterm;
+  /* Don't convert if formula (predicate or molecule) */
+  if (is_formula(hterm)) return hterm;
 
   arity=p2c_arity(hterm);
 
@@ -227,6 +235,8 @@ static prolog_term prolog2hilog(prolog_term pterm, char *apply, int unify_vars)
 
   /* Don't convert if already HiLog */
   if (is_hilog(pterm,apply)) return pterm;
+  /* Don't convert if formula (predicate or molecule) */
+  if (is_formula(pterm)) return pterm;
 
   arity = p2c_arity(pterm);
   c2p_functor(apply,arity+1,hterm);
@@ -254,21 +264,29 @@ static prolog_term map_list(prolog_term func(), prolog_term termList, char *appl
   prolog_term listHead, listTail;
   prolog_term outList=p2p_new(), outListHead, outListTail;
   prolog_term temp_term;
+  xsbBool mustExit=FALSE;
+
 
   listTail = termList;
   outListTail = outList;
 
-  while (!is_nil(listTail)) {
-    c2p_list(outListTail);
-    listHead = p2p_car(listTail);
-    outListHead = p2p_car(outListTail);
-    temp_term = func(listHead,apply, unify_vars);
-    p2p_unify(outListHead, temp_term);
-    listTail = p2p_cdr(listTail);
-    outListTail = p2p_cdr(outListTail);
+  while (!is_nil(listTail) && !mustExit) {
+    if (is_list(listTail)) {
+      c2p_list(outListTail);
+      listHead = p2p_car(listTail);
+      outListHead = p2p_car(outListTail);
+      temp_term = func(listHead,apply, unify_vars);
+      p2p_unify(outListHead, temp_term);
+      listTail = p2p_cdr(listTail);
+      outListTail = p2p_cdr(outListTail);
+    } else {
+      p2p_unify(listTail,outListTail);
+      mustExit = TRUE;
+    }
   }
 
-  c2p_nil(outListTail); /* bind tail to nil */
+ if (is_nil(listTail)) 
+   c2p_nil(outListTail); /* bind tail to nil */
   
   return outList;
 }
@@ -303,6 +321,8 @@ static char *pterm2string(prolog_term term)
 } 
 
 
+/* This detects both HiLog terms and predicates, but we really need to check
+   for HiLog terms only */
 static int is_hilog(prolog_term term, char *apply_funct)
 {
   size_t length_diff;
@@ -316,6 +336,20 @@ static int is_hilog(prolog_term term, char *apply_funct)
      HiLog terms have functor=apply_functor.
      HiLog predicates have complex functor, whose tail matches flapply */
   return (strcmp(apply_funct, func+length_diff)==0);
+}
+
+
+/* Check if term represents a formula rather than a term */
+static int is_formula(prolog_term term)
+{
+  char *functor;
+  if (is_scalar(term) || is_list(term)) return FALSE;
+
+  functor = p2c_functor(term);
+  return
+    (strncmp(functor, FLORA_META_PREFIX, FLORA_META_PREFIX_LEN)==0)
+    ||
+    (strncmp(functor, FLORA_LIB_PREFIX, FLORA_LIB_PREFIX_LEN)==0);
 }
 
 

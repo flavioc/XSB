@@ -36,7 +36,23 @@
 	flora_decode_module_prefix/3
    from flrwrapper.
 
+:- import flora_increment_counter/4 from flrporting.
+
+:- import convert_to_body_literal/2 from flrcanon.
+
+:- import
+	flora_temp_protect_call/2,
+	flora_temp_unprotect_call/1
+    from flrundefined.
+
+:- import
+	flora_in_debug_mode/1,
+	flora_debug_module_registry/1
+   from flrregistry.
+
 :- import flora_error_line/2 from flrprint.
+
+:- import flora_abort/1 from flrutils.
 
 
 /*********************************************************************
@@ -44,71 +60,84 @@
   FLLIBMODLIT and FLLIBMODOBJ.
 
   FLLIBMODLIT is used when the compiler encounters literal@Variable
-  where literal is F-logic, HiLog, or Firstorder
+  where literal is F-logic or HiLog
   FLLIBMODOBJ is used when compiler finds term@Variable inside a predicate,
   e.g., f(g@V)
 *********************************************************************/
 
 
 /*********************************************************************
-  fllibmodlit(+Functor,+Args,+ModuleName)
+  FLLIBMODLIT(+Functor,+Args,+ModuleName)
 *********************************************************************/
-fllibmodlit(F,Arg,ModuleName) :-
-	( flora_check_module_name(ModuleName) ->
-	    (var(Arg) -> flora_error_line('Uninstantiated literal, ~w@~w',
-					  [Arg,ModuleName]),
-			 throw(FLORA_ABORT)
-	    ; (
-		is_list(Arg), Arg = Args, !, % Term@X
-	        flora_module_predicate(F,Args,ModuleName,P)
-	      ; atom(Arg), !,	% Var@..., Var bound to atom
-		(	      % if already a hilog predicate -- use it
-		    flora_decode_module_prefix(Arg,_,_), Arg = P, !
-		%% else construct it
-		; flora_module_predicate(WRAP_HILOG,[Arg],ModuleName,P)
-		)
-	      ; Arg =.. [Funct|Args], !, % Var@..., Var bound to compound
-		(   % if already a hilog or flogic predicate -- use it
-		    flora_decode_module_prefix(Funct,_,_), Arg = P, !
-		%% else construct it
-		; flora_module_predicate(Funct,Args,ModuleName,P)
-		)
-	      ),
-	      !,
-	      call(P)
-	    )
-	;
-	  throw(FLORA_ABORT)
-	).
-
-
-/*********************************************************************
-  fllibmodobj(+Functor,+Args,+ModuleName,-Predicate)
-*********************************************************************/
-fllibmodobj(F,Arg,ModuleName,P) :-
-	( flora_check_module_name(ModuleName) ->
-	    (var(Arg) -> flora_error_line('Uninstantiated literal, ~w@~w',
-					  [Arg,ModuleName]),
-			 throw(FLORA_ABORT)
-	    ; ( 
+FLLIBMODLIT(F,Arg,ModuleName) :-
+	%% If module is a variable, we must protect the call
+	%% from undefinedness checks
+	(var(ModuleName) -> ProtectCall = true ; true),
+	(var(Arg)
+	-> flora_abort([Arg,'@',ModuleName,': Attempt to call uninstantiated literal'])
+	; flora_check_module_name(ModuleName),
+	    (
+	      (
 		is_list(Arg), Arg = Args, !, % Term@X
 		flora_module_predicate(F,Args,ModuleName,P)
 	      ; atom(Arg), !,	% Var@..., Var bound to atom
-		(   % if already a hilog predicate -- use it
+		( %% if already a hilog predicate -- use it -- Is this case possible??
 		    flora_decode_module_prefix(Arg,_,_), Arg = P, !
 		%% else construct it
 		; flora_module_predicate(WRAP_HILOG,[Arg],ModuleName,P)
 		)
 	      ; Arg =.. [Funct|Args], !, % Var@..., Var bound to compound
-		(   % if already a hilog or flogic predicate -- use it
+		( %% if already a hilog or flogic predicate -- use it
 		    flora_decode_module_prefix(Funct,_,_), Arg = P, !
 		%% else construct it
 		; flora_module_predicate(Funct,Args,ModuleName,P)
 		)
 	      )
+	    ->
+	      %% Protect call P from undefinedness check
+	      (nonvar(ProtectCall),
+		  flora_in_debug_mode(_),
+		  flora_debug_module_registry(ModuleName)
+	      -> flora_increment_counter(FLORA_SYMBOL('protect_undef_call'),1,_,Id),
+		  flora_temp_protect_call(P,Id)
+	      ; Id = 0
+	      ),
+	      %% Whether P succeeds or fails we must remove the temporary
+	      %% skeleton from the set of facts protected from undefinedness
+	      %% checking
+	      (call(P), (Id > 0 -> flora_temp_unprotect_call(Id) ; true)
+	      ; Id > 0, flora_temp_unprotect_call(Id), fail
+	      )
 	    )
-	;
-	  throw(FLORA_ABORT)
-	),
-	!.
+	).
+
+
+/*********************************************************************
+  FLLIBMODOBJ(+Functor,+Args,+ModuleName,-Predicate)
+*********************************************************************/
+FLLIBMODOBJ(F,Arg,ModuleName,Pout) :-
+	(var(Arg)
+	-> flora_abort([Arg,'@',ModuleName,': Attempt to query uninstantiated literal'])
+	; flora_check_module_name(ModuleName),
+	    (
+	      ( 
+		is_list(Arg), Arg = Args, !, % Term@X
+		flora_module_predicate(F,Args,ModuleName,P)
+	      ; atom(Arg), !,	% Var@..., Var bound to atom
+		( %% if already a hilog predicate -- use it
+		    flora_decode_module_prefix(Arg,_,_), Arg = P, !
+		%% else construct it
+		; flora_module_predicate(WRAP_HILOG,[Arg],ModuleName,P)
+		)
+	      ; Arg =.. [Funct|Args], !, % Var@..., Var bound to compound
+		( %% if already a hilog or flogic predicate -- use it
+		    flora_decode_module_prefix(Funct,_,_), Arg = P, !
+		%% else construct it
+		; flora_module_predicate(Funct,Args,ModuleName,P)
+		)
+	      )
+	    -> true
+	    ),
+	    convert_to_body_literal(P,Pout)
+	).
 

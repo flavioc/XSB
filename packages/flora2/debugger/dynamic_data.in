@@ -172,14 +172,25 @@ flora_hide_this_hide(WRAP_IMVDDEF/2).
 flora_hide_this_hide(WRAP_EXISTS/1).
 flora_hide_this_hide(WRAP_OBJEQL/2).
 
-flora_hide_this_hide(match(candidate_object/_)).
-
 /***************************************************************************
   intermediate F-logic predicates that appear in the trailer
 ***************************************************************************/
 
 flora_hide_this_hide(silent_sub/2).
 flora_show_this_hide(inheritance_sub/2).
+flora_show_this_hide(inheritance_ifd/3).
+flora_show_this_hide(inheritance_imvd/3).
+flora_show_this_hide(inheritance_imvddef/2).
+flora_show_this_hide(inheritance_ifd_eql/3).
+flora_show_this_hide(inheritance_imvd_eql/3).
+flora_show_this_hide(inheritance_imvddef_eql/2).
+
+flora_show_this_hide(match((local_)/2)).
+flora_show_this_hide(match(multiple_object_/_)).
+flora_show_this_hide(match(multiple_class_/_)).
+flora_show_this_hide(match(candidate_object_/_)).
+flora_show_this_hide(match(candidate_class_/_)).
+
 
 /*
     %% These are no longer used

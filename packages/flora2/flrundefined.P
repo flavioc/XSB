@@ -418,11 +418,10 @@ var_list(N, [_|Rest]) :-
 	var_list(M, Rest).
 
 /*****************************************
- * flora_define_predicate(+Predicate)
- * compute the skeleton of Predcate
- * and insert it to the corresponding trie
- * (for dynamically inserted rule heads)
- *****************************************/
+* flora_define_predicate(+Predicate)
+* compute the skeleton of Predcate and insert it to the corresponding trie
+* (for the heads of dynamically inserted rules)
+*****************************************/
 flora_define_predicate(Predicate) :-
         flora_decode_predicate(Predicate,PType,MName,_WPrefix,PSymbol,AList),
         flora_module_type_and_name(MName,ModuleType,ModuleName),
@@ -433,7 +432,7 @@ flora_define_predicate(Predicate) :-
 	),
         candidate_list([QCode],ModuleType,ModuleName,[Skeleton]),
         flora_module_storage(ModuleType,ModuleName,fld,FldStorage),
-	FLORA_DB_INSERT(FldStorage,Skeleton,_Insert).
+	flora_db_insert_base(FldStorage,Skeleton).
 
 /************************************************************
  * flora_module_type_and_name(+MName,-ModuleType,-ModuleName)
@@ -449,6 +448,7 @@ flora_module_type_and_name(MName,ModuleType,ModuleName) :-
 /*********************************************************************
  * flora_module_storage(+ModuleType,+ModuleName,+StorageType,-Storage)
  *********************************************************************/
+ :- table flora_module_storage/4.
 flora_module_storage(ModuleType,ModuleName,StorageType,Storage) :-
 	( ModuleType==user ->
             (StorageType==fdb ->
@@ -465,6 +465,44 @@ flora_module_storage(ModuleType,ModuleName,StorageType,Storage) :-
 	),
 	flora_concat_atoms([S, ModuleName],Storage).
 
+/*****************************************************************************
+*    flora_temp_protect_call(+Predicate,+Id)
+*    flora_temp_unprotect_call(+Id) :-
+* +Predicate is the call to be recorded as temporarily protected
+*            from the undefinedness check.
+* +Id is a unique Id that is used to delete the call from the registry.
+*
+* This is similar to flora_define_predicate/1 above.
+*
+* Compute the skeleton of Predcate and insert it to a temporary storage
+* to prevent signalling undefinedness errrors. This is used for calls
+* like Call@Var in flrdynmod.P, because when Var is a variable then
+* undefinedness check for Call doesn't make sense.
+*****************************************************************************/
+flora_temp_protect_call(Predicate,Id) :-
+        flora_decode_predicate(Predicate,PType,MName,_WPrefix,PSymbol,AList),
+        flora_module_type_and_name(MName,ModuleType,ModuleName),
+	( (PType==hilog) ->
+	    QCode = [WRAP_HILOG,PSymbol|AList]
+	;
+	    QCode = [PSymbol|AList]
+	),
+        candidate_list([QCode],ModuleType,ModuleName,[Skeleton]),
+	assert(flora_disabled_undefinedness_check_registry(MName,Id,Skeleton)).
+
+flora_temp_unprotect_call(Id) :-
+	retractall(flora_disabled_undefinedness_check_registry(_,Id,_)).
+
+%% Tell if call is protected
+temporarily_protected_call(PredicateSkel) :-
+	flora_disabled_undefinedness_check_registry(_Mod,_Id,PredicateSkel).
+
+
+/****************************************************************************
+**  defined_by(+What,-ByWhat)
+**  +What is a list that represents a query.
+**  -ByWhat is a representation of a rule head that might define the call.
+****************************************************************************/
 defined_by([WRAP_ISA,X,Y],[WRAP_ISA,X,Y]).
 defined_by([WRAP_ISA,X,Y],[WRAP_SUB,X,Y]).
 defined_by([WRAP_SUB,X,Y],[WRAP_SUB,X,Y]).
@@ -523,16 +561,22 @@ candidate_list([QCode|Rest],ModuleType,ModuleName,[QSk|CanRest]) :-
         candidate_list(Rest,ModuleType,ModuleName,CanRest).
 
 check_candidate_list([QSk|L],FdbStorage,Q) :-
-	FLORA_DB_FIND(FdbStorage,QSk),!,Q=QSk;
+	flora_db_find_base(FdbStorage,QSk),!,Q=QSk;
         check_candidate_list(L,FdbStorage,Q).
 
+%% Check skeletons in the candidate list against temporarily protected calls
+%% Succeeds, if matches
+check_temporarily_protected_calls([QSk|L]) :-
+	temporarily_protected_call(QSk), !;
+	check_temporarily_protected_calls(L).
+
 /*****************************************
- * flora_error_undefined(+Predicate)
- * if a fact with the same skeleton as
- * Predicate, then it is not really
- * undefined(fact is inserted at run time)
- * else print 'undefined predicate message
- *****************************************/
+* flora_error_undefined(+Predicate)
+* if a fact with the same skeleton as
+* Predicate, then it is not really
+* undefined(fact is inserted at run time)
+* else print 'undefined predicate message
+*****************************************/
 flora_error_undefined(Predicate) :-
 	flora_decode_predicate(Predicate, PType, MName,
 			       _WPrefix, PSymbol, AList),
@@ -548,8 +592,7 @@ flora_error_undefined(Predicate) :-
 	),
 
 	(check_candidate_list(CanList,FdbStorage,QSk) ->
-	    flora_decode_predicate(QSk, _PT, _MN,
-		       _WPrefix, _PS, FAList),
+	    flora_decode_predicate(QSk, _PT, _MN, _WPrefix, _PS, FAList),
 	    ( (PType==hilog) ->
 	        FCode = [WRAP_HILOG,PSymbol|FAList]
 	    ;
@@ -559,25 +602,29 @@ flora_error_undefined(Predicate) :-
 	    FSkeleton = [_FFunct|FArgs],
 	    QSk =.. [QNewFunct|_QArgs],
 	    FSk =.. [QNewFunct|FArgs],
-	    FLORA_DB_INSERT(FldStorage,FSk,_Insert),
+	    flora_db_insert_base(FldStorage,FSk),
 	    !,
 	    fail
+	; check_temporarily_protected_calls(CanList) -> fail
 	;
 	    predicate_msg(PSymbol, AList, PMsg),
 	    ( PType==flogic, (PSymbol==WRAP_ISA ; PSymbol==WRAP_SUB) ->
 		TypeMsg = 'Undefined class'
 	    ; PType==flogic ->
 	 	TypeMsg = 'Undefined method'
-		;
+	    ;
 		TypeMsg = 'Undefined predicate'
 	    ),
 	    ( MName=flora(Name) ->
-		flora_error_line('~w ~w in system module ~w', [TypeMsg,PMsg,Name])
+		flora_concat_items([TypeMsg,' ',PMsg,' in system module ',Name],
+				   ErrorMsg)
 	    ;
-		flora_error_line('~w ~w in user module ~w', [TypeMsg,PMsg,MName])
+		flora_concat_items([TypeMsg,' ',PMsg,' in user module ',MName],
+				   ErrorMsg)
 	    )
 	),
-	throw(FLORA_UNDEFINED_EXCEPTION(Predicate)).
+	close_open_tables,
+	throw(FLORA_UNDEFINED_EXCEPTION(Predicate,ErrorMsg)).
 
 /**************************************************
  * predicate_msg(+PredicateSymbol, +ArgList, -PMsg)

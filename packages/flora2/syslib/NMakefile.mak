@@ -1,6 +1,6 @@
 # Make file for Microsoft NMAKE
 
-!include ..\.prolog_path
+!include ..\.prolog_path_wind
 
 OBJEXT = .xwam
 PROLOGEXT = .P
@@ -16,12 +16,16 @@ ALLOBJS =  flranswer$(OBJEXT) \
 	   flraggmax$(OBJEXT) \
 	   flraggmin$(OBJEXT) \
 	   flraggsum$(OBJEXT) \
-	   flrstorage$(OBJEXT) \
+	   flrstorageutils$(OBJEXT) \
+	   flrstoragebase$(OBJEXT) \
 	   flrdbop$(OBJEXT) \
 	   flrbtdbop$(OBJEXT) \
 	   flrshdirect$(OBJEXT) \
 	   flrdynmod$(OBJEXT) \
 	   flrequality$(OBJEXT) \
+	   flrtables$(OBJEXT) \
+	   flrimportedcalls$(OBJEXT) \
+	   flrerrhandler$(OBJEXT) \
 	   flrimport$(OBJEXT)
 
 OPTIONS = [optimize]

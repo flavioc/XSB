@@ -52,23 +52,19 @@ libpath[#query(_Path)] :-
 tables[#abolish] :- abolish_all_tables@prolog().
 
 abort(X) :-
-	flP2H(PX,X)@prolog(),
-	flora_error_heading@prolog(flrprint),
-	flora_stderr_string('[Runtime] ')@prolog(flrprint),
-	message(PX,STDERR)@prolog(standard),
-	flora_stderr_nl@prolog(flrprint),
-	throw(FLORA_ABORT).
+	p2h{PX,X},
+	flora_abort(PX).
 
 warning(X) :-
-	flP2H(PX,X)@prolog(),
+	p2h{PX,X},
 	flora_warning_heading@prolog(flrprint),
-	flora_stderr_string('[Runtime] ')@prolog(flrprint),
+	%%flora_stderr_string('[Runtime] ')@prolog(flrprint),
 	message(PX,STDERR)@prolog(standard),
 	flora_stderr_nl@prolog(flrprint).
 
 %% Put a message on stderr
 message(X) :-
-	flP2H(PX,X)@prolog(),
+	p2h{PX,X},
 	message(PX,STDERR)@prolog(standard),
 	flora_stderr_nl@prolog(flrprint).
 
@@ -177,8 +173,9 @@ turn_off_debug_all([H|L]) :-
 turn_off_debug(Module) :-
 	retractall(flora_debug_module_registry(Module)@prolog(flrregistry))@prolog().
 
-%% Takes a call, P. If P is false then fails. If P is true or undefined, succeeds.
-%% If P is true, then List is []. If P is undefined, then List is the residual of P.
+%% Takes a call, P. If P is false then fails. If P is true or
+%% undefined, succeeds.  If P is true, then List is []. If P is
+%% undefined, then List is the residual of P.
 table_state(Pred,List) :-
     flora_decode_predicate(Pred,hilog,Module,_Prefix,PName,AList)@prolog(flrwrapper),
     flora_tabled_hilog_module_predicate_symbol(Module,Wrapper)@prolog(flrwrapper),

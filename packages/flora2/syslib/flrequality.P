@@ -33,6 +33,8 @@
 :- import flloadtrailer/1, flloadtrailer/2 from flrutils.
 :- import flora_trailer_registry/1 from flrregistry.
 
+:- import flora_abort/0 from flrutils.
+
 
 
 
@@ -44,11 +46,11 @@ fllibequality(A) :-
 		(flora_trailer_registry(FLORA_DEFAULT_WORKSPACE),!;
 		assert(flora_trailer_registry(FLORA_DEFAULT_WORKSPACE)))
 	;
-		throw(FLORA_ABORT)
+		flora_abort
 	).
 fllibequality(A,M) :-
 	( flloadtrailer(A,M) ->
 		(flora_trailer_registry(M),!;assert(flora_trailer_registry(M)))
 	;
-		throw(FLORA_ABORT)
+		flora_abort
 	).

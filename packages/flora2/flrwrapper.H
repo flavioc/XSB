@@ -31,13 +31,18 @@
 	flora_concat_atoms/2
     from flrporting.
 
+:- import flora_module_registry/1 from flrregistry.
+
 :- dynamic flora_flogic_fact_wrapper(_,_).
 :- dynamic flora_current_flogic_module(_).
+:- dynamic flora_encoded_call_cache(_,_,_,_,_).
+:- dynamic flora_encoded_call_cache(_,_,_,_).
+:- dynamic flora_decoded_predicate_cache(_,_,_,_,_,_).
 
 :- index(flora_flogic_fact_wrapper/2,trie).
 :- index(flora_current_flogic_module/1,trie).
 
-:- import flora_error_line/2 from flrprint.
+:- import flora_abort/1 from flrutils.
 
 :- export
 	flora_user_module_predicate/4,
@@ -81,7 +86,7 @@
 	flora_is_flogic_base/1,
 
 	flora_setup_flogic_fact_wrapper/1,
-	flora_flogic_fact_swrapper/2,
+	flora_flogic_fact_wrapper/2,
 
 	flora_decode_predicate/6,
 	flora_decode_module_name/2,

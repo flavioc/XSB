@@ -2,8 +2,8 @@
 *.O
 cmd...
 *.tmp
-.prolog_path
-.flora_path
+.prolog_path*
+.flora_path*
 runflora
 runflora.bat
 *.gz

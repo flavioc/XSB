@@ -34,16 +34,6 @@
 :- import append/3 from basics.
 
 :- import
-	flora_error_line/1,
-	flora_error_heading/0,
-	flora_stderr_string/1,
-	flora_stderr_nl/0
-   from flrprint.
-
-:- import flora_display_error/1 from flrdisplay.
-
-:- import
-	flora_module_predicate/4,
 	flora_fdb_storage_name/2,
 	flora_check_module_name/1,
 	flora_decode_module_name/2,
@@ -58,8 +48,26 @@
 	flora_storage_check_module_name/1,
 	flora_storage_check_deletepredicate/2,
 	flora_storage_convertlist/3,
-	flora_storage_is_negation_symbol/1
-   from flrstorage.
+	flora_storage_is_negation_symbol/1,
+        flora_storage_check_existence/1
+   from flrstorageutils.
+
+:- import
+	flora_db_find_base/2,
+	flora_db_insert_base/2,
+	flora_db_delete_base/2
+   from flrstoragebase.
+
+:- import 
+	get_canonical_form/2,
+	convert_to_head_literal/2
+   from flrcanon.
+
+:- import flora_refresh_tables/1 from flrtables.
+
+:- import flora_abort/0, flora_abort/1 from flrutils.
+:- import flora_decode_goal_as_atom/2 from flrdecode.
+
 
 /*********************************************************************
   This file is for the following non-backtrackable FLORA database
@@ -89,31 +97,27 @@ flora_storage_insertfacts([]) :- !.
 flora_storage_insertfacts([P|_T]) :-
 	var(P),
 	!,
-	flora_error_line('uninstantiated argument of insert operation'),
-	throw(FLORA_ABORT).
+	flora_abort('Uninstantiated argument in insert{...}').
 
-flora_storage_insertfacts([FLSYSDBUPDATE(P,StorageName)|T]) :-
+flora_storage_insertfacts([FLSYSDBUPDATE(P,StorageName,Module)|T]) :-
 	!,
-	FLORA_DB_INSERT(StorageName,P,_Inserted),
+        flora_storage_check_existence(Module),
+	flora_internal_db_insert(StorageName,P),
 	flora_storage_insertfacts(T).
 
 flora_storage_insertfacts([FLLIBMODLIT(F,Args,ModuleName)|T]) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
-	flora_module_predicate(F,Args,ModuleName,P),
+	get_canonical_form(FLLIBMODLIT(F,Args,ModuleName), (_,_,_,P)),
 	flora_fdb_storage_name(ModuleName,StorageName),
-	FLORA_DB_INSERT(StorageName,P,_Inserted),
-	!,
+	flora_internal_db_insert(StorageName,P),
 	flora_storage_insertfacts(T).
 
 flora_storage_insertfacts([FLLIBMODOBJ(F,Args,ModuleName,O)|T]) :-
 	!,
-	( flora_check_module_name(ModuleName) ->
-	    flora_module_predicate(F,Args,ModuleName,O),
-	    flora_storage_insertfacts(T)
-	;
-	  throw(FLORA_ABORT)
-	).
+	flora_check_module_name(ModuleName),
+	FLLIBMODOBJ(F,Args,ModuleName,O),
+	flora_storage_insertfacts(T).
 
 flora_storage_insertfacts([','(C1,C2)|T]) :-
 	!,
@@ -125,31 +129,31 @@ flora_storage_insertfacts([P|T]) :-
 	%% This is a meta programming feature, since a variable can appear
 	%% in the list of literals to be updated.
 	functor(P,F,N),
-	( flora_decode_module_name(F,ModuleName) ->
+	( flora_decode_module_name(P,ModuleName) ->
 	    flora_storage_check_module_name(ModuleName),
 	    flora_fdb_storage_name(ModuleName,StorageName),
-	    FLORA_DB_INSERT(StorageName,P,_Inserted),
+	    convert_to_head_literal(P,HeadP),
+	    flora_internal_db_insert(StorageName,HeadP),
 	    flora_storage_insertfacts(T)
 
 	; N == 2, F == ';' ->
-	    flora_error_line('Insertion of disjunction is not allowed!'),
-	    throw(FLORA_ABORT)
+	    flora_decode_goal_as_atom(P,PA),
+	    flora_abort(['Insertion of disjunctive information is not allowed, ',
+			 PA])
 
 	; N == 1, flora_storage_is_negation_symbol(F) ->
-	    flora_error_line('Insertion of negation is not allowed!'),
-	    throw(FLORA_ABORT)
+	    flora_decode_goal_as_atom(P,PA),
+	    flora_abort(['Insertion of negative information is not allowed, ',
+			 PA])
 	;
-	  flora_error_heading,
-	  flora_stderr_string('Insertion of '),
-	  ( F == WRAP_HILOG ->
-	      flora_stderr_string('HiLog term ')
-	  ;
-	    flora_stderr_string('Prolog term ')
-	  ),
-	  flora_display_error(P),
-	  flora_stderr_string(' is not allowed!'),
-	  flora_stderr_nl,
-          throw(FLORA_ABORT)
+	    flora_decode_goal_as_atom(P,PA),
+	    ( F == WRAP_HILOG ->
+		flora_abort(['Attempt to insert a HiLog term (non-fact), ',
+			     PA])
+	    ;
+		flora_abort(['Attempt to insert a Prolog term (non-fact), ',
+			     PA])
+	    )
 	).
 
 
@@ -195,22 +199,22 @@ FLLIBDELETE(List) :- FLLIBDELETE(List,true).
 FLLIBDELETE([P],true) :-
 	var(P),
 	!,
-	flora_error_line('uninstantiated argument of delete operation'),
-	throw(FLORA_ABORT).
+	flora_abort('Uninstantiated argument in delete{...}').
 
-FLLIBDELETE([FLSYSDBUPDATE(P,StorageName)],true) :-
+FLLIBDELETE([FLSYSDBUPDATE(P,StorageName,Module)],true) :-
 	!,
-	FLORA_DB_FIND(StorageName,P),
-	FLORA_DB_DELETE(StorageName,P,_Deleted).
+        flora_storage_check_existence(Module),
+	flora_db_find_base(StorageName,P),
+	flora_internal_db_delete(StorageName,P).
 
 FLLIBDELETE([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
-	flora_module_predicate(F,Args,ModuleName,P),
+	get_canonical_form(FLLIBMODLIT(F,Args,ModuleName), (_,_,_,P)),
 	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
-	FLORA_DB_FIND(StorageName,P),
-	FLORA_DB_DELETE(StorageName,P,_Deleted).
+	flora_db_find_base(StorageName,P),
+	flora_internal_db_delete(StorageName,P).
 
 FLLIBDELETE(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
@@ -227,7 +231,8 @@ flora_storage_deletelist([]) :- !.
 
 flora_storage_deletelist([FLSYSDBUPDATE(P,StorageName)|L]) :-
 	!,
-	FLORA_DB_DELETE(StorageName,P,_Deleted),
+	convert_to_head_literal(P,HeadP),
+	flora_internal_db_delete(StorageName,HeadP),
 	flora_storage_deletelist(L).
 
 flora_storage_deletelist([H|L]) :-
@@ -242,7 +247,7 @@ flora_storage_deletelist([H|L]) :-
   Note: This predicate always succeeds.
 *****************************************************************************/
 flora_storage_deleteall(P,StorageName) :-
-	findall(FLSYSDBUPDATE(P,StorageName),FLORA_DB_FIND(StorageName,P),L),
+	findall(FLSYSDBUPDATE(P,StorageName),flora_db_find_base(StorageName,P),L),
 	!,
 	flora_storage_deletelist(L).
 
@@ -262,17 +267,17 @@ FLLIBDELETEALL(List) :- FLLIBDELETEALL(List,true).
 FLLIBDELETEALL([P],true) :-
 	var(P),
 	!,
-	flora_error_line('uninstantiated argument of delete operation'),
-	throw(FLORA_ABORT).
+	flora_abort('Uninstantiated argument in deleteall{...}').
 
-FLLIBDELETEALL([FLSYSDBUPDATE(P,StorageName)],true) :-
+FLLIBDELETEALL([FLSYSDBUPDATE(P,StorageName,Module)],true) :-
 	!,
+        flora_storage_check_existence(Module),
 	flora_storage_deleteall(P,StorageName).
 
 FLLIBDELETEALL([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
-	flora_module_predicate(F,Args,ModuleName,P),
+	get_canonical_form(FLLIBMODLIT(F,Args,ModuleName), (_,_,_,P)),
 	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
 	flora_storage_deleteall(P,StorageName).
@@ -334,8 +339,8 @@ flora_erase_facts([H|Fs]) :-
   flora_erase_one_fact(+Fact,+StorageName)
 
   Note: For an F-logic fact this predicate continues to trace links and
-        delete other F-logic facts. It always succeeds. It works for either
-        a Flora user module or a Flora system module.
+        delete other F-logic facts. It always succeeds. Works for 
+        Flora user modules and system modules.
 *****************************************************************************/
 flora_erase_one_fact(Fact,StorageName) :-
 	Fact =.. [Funct|Args],
@@ -400,14 +405,14 @@ flora_erase_objects([O|OList],StorageName) :-
 	Wimvd =.. [WSBimvd,O,_,X],
 	Wmvdsig =.. [WSBmvdsig,O,_,X],
 	Wimvdsig =.. [WSBimvdsig,O,_,X],
-	findall(X,( FLORA_DB_FIND(StorageName,Wfd)
-                  ; FLORA_DB_FIND(StorageName,Wifd)
-	          ; FLORA_DB_FIND(StorageName,Wfdsig)
-                  ; FLORA_DB_FIND(StorageName,Wifdsig)
-                  ; FLORA_DB_FIND(StorageName,Wmvd)
-                  ; FLORA_DB_FIND(StorageName,Wimvd)
-                  ; FLORA_DB_FIND(StorageName,Wmvdsig)
-                  ; FLORA_DB_FIND(StorageName,Wimvdsig)
+	findall(X,( flora_db_find_base(StorageName,Wfd)
+                  ; flora_db_find_base(StorageName,Wifd)
+	          ; flora_db_find_base(StorageName,Wfdsig)
+                  ; flora_db_find_base(StorageName,Wifdsig)
+                  ; flora_db_find_base(StorageName,Wmvd)
+                  ; flora_db_find_base(StorageName,Wimvd)
+                  ; flora_db_find_base(StorageName,Wmvdsig)
+                  ; flora_db_find_base(StorageName,Wimvdsig)
 	          ),
                 AddedOList
                ),
@@ -478,3 +483,12 @@ flora_eraseall_facts([Fs|FL]) :-
 	!,
 	flora_erase_facts(Fs),
 	flora_eraseall_facts(FL).
+
+
+flora_internal_db_insert(StorageName,Call) :-
+	flora_db_insert_base(StorageName,Call),
+	flora_refresh_tables(Call).
+
+flora_internal_db_delete(StorageName,Call) :-
+	flora_db_delete_base(StorageName,Call),
+	flora_refresh_tables(Call).

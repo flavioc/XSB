@@ -141,8 +141,8 @@ ALGORITHM REVISED
       When flora_error_undefined(P) is called, we compute the skeleton of P,
       check whether there is a fact in the fdb storage that have the same
       skeleton.  If so, build the skeleton of the fact, insert it into fld
-      storage, then fail; otherwise, print error message and throw 
-      FLORA_UNDEFINED_EXCEPTION(P).
+      storage, then fail; otherwise, throw 
+      FLORA_UNDEFINED_EXCEPTION(P,ErrorMessage).
 
 
 SKELETONS

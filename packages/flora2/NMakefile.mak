@@ -49,13 +49,13 @@ ALLOBJS = flrarguments$(OBJEXT) \
 	  flrundefined$(OBJEXT) \
 	  flrundefhook$(OBJEXT) \
 	  flrutils$(OBJEXT) \
-	  flrversion${OBJEXT} \
+	  flrversion$(OBJEXT) \
 	  flrwraparound$(OBJEXT) \
 	  flrwrapper$(OBJEXT)
 
 OPTIONS = [optimize]
 
-!include .prolog_path
+!INCLUDE .prolog_path_wind
 
 .SUFFIXES: $(PROLOGEXT) $(OBJEXT)
 

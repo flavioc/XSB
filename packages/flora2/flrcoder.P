@@ -46,12 +46,14 @@ is_prfact(PRFACT(Head),Head).
 is_prquery(PRQUERY(Goal),Goal).
 is_prdirective(PRDIRECTIVE(Direct),Direct).
 
+is_prdynrule(PRDYNRULE(Head,Body,HVars,BVars),Head,Body,HVars,BVars).
+
 is_prreify(PRREIFY(Formula),Formula).
 
 is_prcommand(PRCOMMAND(C),C).
 is_prtable(PRTABLE(P,A),P,A).
-is_primport(PRIMPORT(P,A,M),P,A,M).
-is_prcmpopt(PRCMPOPT(OptList),OptList).
+is_primport(PRIMPORT(P,A,M),P,A,M).      % prolog's :- import (for output only)
+is_prcmpopt(PRCMPOPT(OptList),OptList).  % :- compiler_options/1 directive
 
 is_prconstraint(PRCONSTRAINT(Constr),Constr).
 
@@ -214,12 +216,20 @@ is_fllibdb(FLLIBDELETEALL) :- !.
 is_fllibdb(FLLIBERASE) :- !.
 is_fllibdb(FLLIBERASEALL) :- !.
 
+is_fllibdb(FLLIBREFRESH) :- !.
+
 is_fllibdb(FLLIBBTINSERT) :- !.
 is_fllibdb(FLLIBBTINSERTALL) :- !.
 is_fllibdb(FLLIBBTDELETE) :- !.
 is_fllibdb(FLLIBBTDELETEALL) :- !.
 is_fllibdb(FLLIBBTERASE) :- !.
 is_fllibdb(FLLIBBTERASEALL) :- !.
+
+is_ruleupdate(FLLIBINSERTRULE_A) :- !.
+is_ruleupdate(FLLIBINSERTRULE_Z) :- !.
+is_ruleupdate(FLLIBDELETERULE_A) :- !.
+is_ruleupdate(FLLIBDELETERULE_Z) :- !.
+is_ruleupdate(FLLIBDELETERULE) :- !.
 
 /****************************************************************************
   get_fingerprint(+Funct,+Arity,-WrappedF,-NewF,-NewArity,-ArgList)
@@ -622,15 +632,6 @@ flora_write_struct(Term,_Prefix) :-
 	write_canonical(D).
 
 
-%%flora_write_struct(Term,_Prefix) :-
-%%	is_prdynamic(Term,P,A),
-%%	!,
-%%	flora_write_atom('dynamic(/('),
-%%	flora_write_predicate_symbol(P,A),
-%%	put(0',),
-%%	write(A),
-%%	flora_write_atom('))'), nl.
-
 flora_write_struct(Term,_Prefix) :-
 	is_prcmpopt(Term,OptList),
 	!,
@@ -658,7 +659,6 @@ flora_write_struct(Term,_Prefix) :-
 	atomic(Term),
 	!,
 	write_canonical(Term).
-
 
 /****************************************************************************
   flora_write_variable(+Name)
@@ -924,7 +924,7 @@ flora_write_syslib(Lib,N,Args,Prefix) :-
 	).
 
 flora_write_syslib(Lib,1,[WrappedList],_Prefix) :-
-	(Lib==FLLIBINSERTRULE_A; Lib==FLLIBINSERTRULE_Z),
+        is_ruleupdate(Lib),
 	!,
 	write_canonical(Lib),
 	put(0'(), put(0'[),
@@ -938,34 +938,42 @@ flora_write_syslib(F,N,Args,Prefix) :-
 
 /****************************************************************************
   flora_write_dynrulelist(+DynRuleList,+Lib)
-  Lib can be FLLIBINSERTRULE_A or FLLIBINSERTRULE_Z
-  dynrule is similar to rule but its head is a list
+  Lib can be FLLIBINSERTRULE_A, FLLIBINSERTRULE_Z, FLLIBDELETERULE_A,
+  or FLLIBDELETERULE_Z, FLLIBDELETE. dynrule is similar to rule but its
+  head is a list
 ****************************************************************************/
 flora_write_dynrulelist([],_Lib) :- !.
 flora_write_dynrulelist([Term],Lib) :-
-	is_prrule(Term,HeadList,Body),
+	is_prdynrule(Term,HeadList,Body,HVars,BVars),
 	!,
 	flora_write_atom(FLSYSRULEUPDATE),
 	put(0'(),
 	flora_set_counter(using_debug_prefix,0),
 	is_prlist(HeadList,Head,_T,_I),
 	put(0'[),
-	(Lib==FLLIBINSERTRULE_A ->
+	((Lib==FLLIBINSERTRULE_A;Lib==FLLIBDELETERULE_A) ->
 	    flora_write_structlist(Head,FLDYNAPREFIX)
 	;
-	    flora_write_structlist(Head,FLDYNZPREFIX)
+	    ((Lib==FLLIBINSERTRULE_Z;Lib==FLLIBDELETERULE_Z) ->
+	        flora_write_structlist(Head,FLDYNZPREFIX)
+            ;
+	        flora_write_structlist(Head,FLHEADPREFIX)
+            )
 	),
 	put(0']),
 	flora_set_counter(using_debug_prefix,1),
 	put(0',),
 	flora_write_struct(Body,FLBODYPREFIX),
+	put(0',),
+        flora_write_struct(HVars,FLBODYPREFIX),
+	put(0',),
+        flora_write_struct(BVars,FLBODYPREFIX),
 	flora_write_atom(')').
 
 flora_write_dynrulelist([H|L],Lib) :-
 	flora_write_dynrulelist([H],Lib),
 	put(0',),
 	flora_write_dynrulelist(L,Lib).
-
 
 /****************************************************************************
   flora_write_newpred(+F,+N,+Args,+Prefix)
@@ -1185,6 +1193,11 @@ flora_build_struct(Term,DWS,_Prefix,VarList,Code,Spec) :-
 	flora_build_struct(Term1,DWS,FLBODYPREFIX,VarList,Code,Spec),
 	flora_set_counter(using_debug_prefix,OldDbgPref).
 
+flora_build_struct(Term,DWS,_Prefix,_VarList,Code,(Code,Index)) :-
+	is_prnewoid(Term,Oid,Index),
+	!,
+	flora_build_newoid(Oid,DWS,Code).
+
 flora_build_struct(Term,DWS,Prefix,VarList,Code,(CodeInd,Index)) :-
 	is_flogic(Term,F,N,Args),
 	!,
@@ -1303,8 +1316,8 @@ flora_build_wsstruct(Term,WS,DWS,Prefix,VarList,Code,(CodeInd,NO_INDEX)) :-
   flora_build_sysmod(+Term,+Workspace,+DefaultWorkspace,+Prefix,?VarList,-Code)
 ****************************************************************************/
 flora_build_sysmod(Term,WS,DWS,Prefix,VarList,Code,(CodeInd,NO_INDEX)) :-
-	( is_pratomlit(Term,Atom,_Index) ->
-	    flora_build_atomlit(SYSTEMMODULE,Atom,WS,Prefix,Code,CodeInd)
+	( is_pratomlit(Term,Atom,Index) ->
+	    flora_build_atomlit(SYSTEMMODULE,(Atom,Index),WS,Prefix,Code,CodeInd)
 
 	; is_prtermlit(Term,FObj,N,ObjList) ->
 	    flora_build_termlit(SYSTEMMODULE,FObj,N,ObjList,WS,DWS,Prefix,VarList,Code,CodeInd)
@@ -1355,11 +1368,11 @@ flora_build_termlit(Mode,Funct,N,Args,WS,DWS,Prefix,VarList,Code,CodeInd) :-
 flora_build_prolog(F,N,Args,DWS,Prefix,VarList,Code,CodeInd) :-
 	( N == 0 ->
 	    Code=F,
-        CodeInd=F
+	    CodeInd=F
 	;
-	  flora_build_structlist(Args,DWS,Prefix,VarList,ACode,ACodeInd),
-	  Code =.. [F|ACode],
-	  CodeInd =.. [F|ACodeInd]
+	    flora_build_structlist(Args,DWS,Prefix,VarList,ACode,ACodeInd),
+	    Code =.. [F|ACode],
+	    CodeInd =.. [F|ACodeInd]
         ).
 
 
@@ -1428,14 +1441,14 @@ flora_build_syslib(Lib,N,Args,DWS,Prefix,VarList,Code,CInd) :-
 	),
 	!,
 	( Lib == FLLIBMODLIT ->
-		flora_build_prolog(FLLIBMODLIT,3,[PF,PArgs,WS],DWS,Prefix,VarList,Code,CInd)
+	    flora_build_prolog(FLLIBMODLIT,3,[PF,PArgs,WS],DWS,Prefix,VarList,Code,CInd)
 	;
-		flora_build_prolog(FLLIBMODOBJ,4,[PF,PArgs,WS,Object],
-		                   DWS,Prefix,VarList,Code,CInd)
+	    flora_build_prolog(FLLIBMODOBJ,4,[PF,PArgs,WS,Object],
+			       DWS,Prefix,VarList,Code,CInd)
 	).
 
 flora_build_syslib(Lib,1,[WrappedList],DWS,Prefix,VarList,Code,CInd) :-
-	(Lib==FLLIBINSERTRULE_A; Lib==FLLIBINSERTRULE_Z),
+	is_ruleupdate(Lib),
 	!,
 	is_prlist(WrappedList,List,_T,_I),
 	flora_build_dynrulelist(List,Lib,DWS,Prefix,VarList,RLCode,RLCInd),
@@ -1451,18 +1464,24 @@ flora_build_syslib(Lib,N,Args,DWS,Prefix,VarList,Code,CodeInd) :-
 ****************************************************************************/
 flora_build_dynrulelist([],_Lib,_DWS,_Prefix,_VarList,[],[]) :- !.
 flora_build_dynrulelist([Term|T],Lib,DWS,Prefix,VarList,[Code|TCode],[CInd|TCInd]) :-
-	is_prrule(Term,HeadList,Body),
+	is_prdynrule(Term,HeadList,Body,HVars,BVars),
 	flora_set_counter(using_debug_prefix,0),
 	is_prlist(HeadList,Head,_T,_I),
-	(Lib==FLLIBINSERTRULE_A ->
+	((Lib==FLLIBINSERTRULE_A;Lib==FLLIBDELETERULE_A) ->
 	    flora_build_structlist(Head,DWS,FLDYNAPREFIX,VarList,HCode,HICode)
 	;
-	    flora_build_structlist(Head,DWS,FLDYNZPREFIX,VarList,HCode,HICode)
+	    ((Lib==FLLIBINSERTRULE_A;Lib==FLLIBDELETERULE_A) ->
+	        flora_build_structlist(Head,DWS,FLDYNZPREFIX,VarList,HCode,HICode)
+            ;
+	        flora_build_structlist(Head,DWS,FLHEADPREFIX,VarList,HCode,HICode)
+            )
 	),
 	flora_set_counter(using_debug_prefix,1),
 	flora_build_struct(Body,DWS,FLBODYPREFIX,VarList,BCode,BICode),
-	Code =.. [FLSYSRULEUPDATE,HCode,BCode],
-	CInd =.. [FLSYSRULEUPDATE,HICode,BICode],
+	flora_build_struct(HVars,DWS,FLBODYPREFIX,VarList,HVCode,HVICode),
+	flora_build_struct(BVars,DWS,FLBODYPREFIX,VarList,BVCode,BVICode),
+	Code =.. [FLSYSRULEUPDATE,HCode,BCode,HVCode,BVCode],
+	CInd =.. [FLSYSRULEUPDATE,HICode,BICode,HVICode,BVICode],
 	flora_build_dynrulelist(T,Lib,DWS,Prefix,VarList,TCode,TCInd).
 
 /****************************************************************************
@@ -1470,3 +1489,10 @@ flora_build_dynrulelist([Term|T],Lib,DWS,Prefix,VarList,[Code|TCode],[CInd|TCInd
 ****************************************************************************/
 flora_build_newpred(F,N,Args,DWS,Prefix,VarList,Code,CodeInd) :-
 	flora_build_wsliteral(USERMODULE,F,N,Args,DWS,DWS,Prefix,VarList,Code,CodeInd).
+
+/****************************************************************************
+  flora_build_newoid(+Oid,+DWS,-Code)
+****************************************************************************/
+flora_build_newoid(Oid,_DWS,Code) :-
+	flora_concat_atoms([FLORA_SYMBOL,'''',Oid],Code).
+

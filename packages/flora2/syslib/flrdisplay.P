@@ -31,14 +31,13 @@
 #include "standard.h"
 
 
-:- import flora_concat_atoms/2, flora_term_to_atom/2 from flrporting.
 :- import flora_err_stream/1, flora_fdbk_stream/1 from flrprint.
+:- import flora_write_oid/2 from flrdecode.
 
 :- export
 	flora_display_error/1,
 	flora_display_feedback/1,
-	flora_write_string/2,
-	flora_write/2.
+	flora_write_string/2.
 
 
 /********************************************************************/
@@ -47,115 +46,10 @@
 flora_display_error(InTerm) :-
 	flora_err_stream(Stream),
 	!,
-	flora_write_string(InTerm,OutStr),
-	write(Stream,OutStr).
+	flora_write_oid(Stream,InTerm).
 
 flora_display_feedback(InTerm) :-
 	flora_fdbk_stream(Stream),
 	!,
-	flora_write_string(InTerm,OutStr),
-	write(Stream,OutStr).
+	flora_write_oid(Stream,InTerm).
 
-
-/********************************************************************/
-%% Write Flora term to string
-%% This shouldn't be re-satisfiable, so we put cut at the end
-flora_write_string(InTerm,Str) :-
-	flora_write_string1(InTerm, AtomList, Tail), Tail = [],
-	flora_concat_atoms(AtomList,Str),
-	!.
-
-
-/********************************************************************/
-%% Tail/NewTail is a difference list that represents
-%% the processed parts of InTerm
-flora_write_string1(InTerm, Tail, NewTail) :-
-	var(InTerm),
-	!,
-	flora_term_to_atom(InTerm,InTermAtom),
-	Tail = [InTermAtom | NewTail].
-
-flora_write_string1(X, Tail, NewTail) :-
-	atom(X),
-	!,
-	Tail = [X | NewTail].
-
-flora_write_string1(X, Tail, NewTail) :-
-	number(X),
-	number_codes(X,Codes),
-	atom_codes(Atm,Codes),
-	!,
-	Tail = [Atm | NewTail].
-
-flora_write_string1([], Tail, NewTail) :- 
-	Tail = ['[]' | NewTail].
-
-flora_write_string1([H|T], Tail, NewTail) :-
-	Str = [H|T],
-	is_charlist(Str),
-	!,
-	atom_codes(Atm1,Str),
-	flora_concat_atoms(['"', Atm1, '"'], Atm),
-	Tail = [Atm | NewTail].
-
-flora_write_string1([H|T], Tail, NewTail) :-
-	!,
-	Tail = ['[' | NewTail1],
-	flora_write_args([H|T], NewTail1 , NewTail2),
-	NewTail2 = [']' | NewTail].
-
-flora_write_string1(X,Tail, NewTail) :-
-	X =.. [WRAP_HILOG,Funct|Args],
-	!,
-	flora_write_string1(Funct,Tail,NewTail1),
-	NewTail1 = ['(' | NewTail2],
-	flora_write_args(Args,NewTail2,NewTail3),
-	NewTail3 = [')'| NewTail].
-
-flora_write_string1(WRAP_FDSKOLEM(O1,O2),Tail, NewTail) :-
-	!,
-	flora_write_string1(O1,Tail,NewTail1),
-	NewTail1 = ['.' | NewTail2],
-	flora_write_string1(O2,NewTail2,NewTail).
-
-flora_write_string1(WRAP_IFDSKOLEM(O1,O2),Tail,NewTail) :-
-	!,
-	flora_write_string1(O1,Tail,NewTail1),
-	NewTail1 = ['!' | NewTail2],
-	flora_write_string1(O2,NewTail2,NewTail).
-
-flora_write_string1(X,Tail,NewTail) :-
-	X =.. [Funct|Args],
-	!,
-	Tail = [Funct, '(' | NewTail1],
-	flora_write_args(Args,NewTail1,NewTail2),
-	NewTail2 = [')' | NewTail].
-
-
-/********************************************************************/
-%% The first argument is a list of terms.
-flora_write_args([],_Tail,_NewTail) :- !.
-
-%% This catches lists [X|Y] where Y is a var.
-flora_write_args([X|Y],Tail,NewTail) :-
-	var(Y),
-	!,
-	flora_write_string1(X,Tail,NewTail1),
-	NewTail1 = ['|' | NewTail2],
-	flora_write_string1(Y,NewTail2,NewTail).
-
-flora_write_args([X],Tail,NewTail) :-
-        !,
-        flora_write_string1(X,Tail,NewTail).
-
-flora_write_args([X1,X2|Xs],Tail,NewTail) :-
-	!,
-        flora_write_string1(X1,Tail,NewTail1),
-	NewTail1 = [',' | NewTail2],
-        flora_write_args([X2|Xs],NewTail2,NewTail).
-
-%% This catches lists [X|Y] where Y is not in a list form.
-flora_write_args([X|Y],Tail,NewTail) :-
-	flora_write_string1(X,Tail,NewTail1),
-	NewTail1 = ['|' | NewTail2],
-	flora_write_string1(Y,NewTail2,NewTail).

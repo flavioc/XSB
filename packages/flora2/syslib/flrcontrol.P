@@ -104,6 +104,13 @@ FLLIBWHILELOOP(Cond,Action) :-
 	%% Must copy_term Action&Cond together so the variables
 	%% will be preserved
 	copy_term((Action,Cond),(Action1,Cond1)),
+	(call(Cond1) ->
+	    (call(Action1), !, FLLIBWHILELOOP(Cond,Action)
+	    ; fail
+	    )
+	; true
+	).
+	/*
 	FLORA_SYMBOL('catch')(
 			      (call(Cond1) ->
 				  (call(Action1), ! ; throw(quitLoop)),
@@ -113,6 +120,7 @@ FLLIBWHILELOOP(Cond,Action) :-
 			      quitLoop, % catcher
 			      fail % fail if action failed
 			     ).
+	*/
 
 %% Cond shouldn't be tabled!!! Otherwise "not" barks!!!
 %% We can't use FLORA_TNOT instead of "not" because FLORA_TNOT

@@ -1,0 +1,133 @@
+/* File:      flrtables.P
+**
+** Author(s): Michael Kifer
+**
+** Contact:   flora-users@lists.sourceforge.net
+**
+** Copyright (C) The Research Foundation of SUNY, 2003
+**
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+%% Calls that abolish tables of predicates and calls.
+%% modified from XSB's tables.P
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+#include "flora_porting.flh"
+#include "builtin.h"
+
+
+:- export
+	flora_abolish_table_predicate/1,
+	flora_abolish_table_predicate/2,
+	flora_abolish_table_call/1,
+	flora_abolish_table_call/2,
+	flora_refresh_tables/1,
+	FLLIBREFRESH/1.
+:- import table_state/4, get_calls/3, abolish_table_pred/1  from tables.
+:- import
+	%%flora_cleanup_negation/1,
+	flora_cleanup_negation/0
+   from flrnegation.
+:- import FLORA_SYMBOL('refresh_table_for')/1 from usermod.
+:- import flora_warning_line/2 from flrprint.
+:- import flora_decode_goal_as_atom/2 from flrdecode.
+
+
+FLLIBREFRESH(CallList) :-
+	flora_refresh_list(CallList).
+
+flora_refresh_list([]).
+flora_refresh_list([H|T]) :-
+	flora_refresh_tables(H),
+	flora_refresh_list(T).
+
+%% refresh tables for call
+flora_refresh_tables(Call) :-
+	FLORA_SYMBOL('refresh_table_for')(Call),
+	flora_cleanup_negation,
+	%%flora_cleanup_negation(Call),
+	!.
+flora_refresh_tables(_).
+
+
+
+%% Call must be of the form p(_,_) -- it is an internal Flora-2 predicate
+%% This is a safe way of abolishing all predicate's tables
+flora_abolish_table_predicate(Call) :-
+	flora_abolish_table_predicate(Call,abolish_table_pred_hook(_Error)).
+	%%flora_abolish_table_predicate(Call,throw(_ErrorType)).
+flora_abolish_table_predicate(Call,Hook) :-
+	( get_calls(Call,Handle,_Template)
+	->
+	    table_state(Handle,_PredType,_CallType,AnsSetStatus),
+	    (   AnsSetStatus = incomplete
+	    ->  arg(1,Hook,table_error(abolishing_incomplete_call,Call)),
+		call(Hook)
+	    ;  abolish_table_pred(Call)
+	    )
+	; true
+	).
+
+abolish_table_pred_hook(Error) :-
+	Error = table_error(abolishing_incomplete_call,Call),
+	(Call =.. [tabled_unnumber_call, Call1]
+	-> Comment = 'negation of'
+	;  Comment = '', Call1 = Call
+	),
+	flora_decode_goal_as_atom(Call1,CallStr),
+	flora_warning_line('Attempt to discard incomplete table while computing ~w ~w',
+			   [Comment,CallStr]).
+
+
+%% Safe way of abolishing a table for a call and the unifying calls
+flora_abolish_table_call(Call) :-
+        flora_abolish_table_call(Call,abolish_table_call_hook(_Error)).
+
+flora_abolish_table_call(Call,Hook) :-
+	get_calls(Call,Handle,_Template),
+	table_state(Handle,PredType,_CallType,AnsSetStatus),
+	(   AnsSetStatus = undefined
+	->  throw(table_error(abolishing_undefined_call,Call))
+	;   AnsSetStatus = incomplete
+	->  arg(1,Hook,table_error(abolishing_incomplete_call,Call)),
+	    call(Hook)
+	;   PredType = subsumptive
+	->  arg(1,Hook,table_error(abolishing_subsumptive_call,Call)),
+	    call(Hook)
+	;   abolish_table_call_bi(Handle)
+	),
+	fail.
+flora_abolish_table_call(_Call,_Hook).
+
+abolish_table_call_hook(Error) :-
+	Error = table_error(Type,Call),
+	(Type == abolishing_incomplete_call
+	->  Comment = 'incomplete'
+	; Type == abolishing_subsumptive_call
+	->  Comment = 'subsumptive'
+	),
+	flora_decode_goal_as_atom(Call,CallStr),
+	flora_warning_line('Attempt to abolish ~w table for ~w',
+			   [Comment,CallStr]).
+
+
+abolish_table_call_bi(_Handle) :-
+	'_$builtin'(ABOLISH_TABLE_CALL).

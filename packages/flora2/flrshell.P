@@ -57,6 +57,13 @@ flora_shell_loop_body :-
         ),
 	flora_loop_guard(Status).
 
+
+flora_shell_loop_handler(Error) :-
+	var(Error),
+	!,
+	flora_error_line('Unbound variable thrown as exception - caught'), 
+	flora_stderr_nl,
+	fail.
 %% If end_of_flora_shell was thrown then true (exit)
 %% Othewrwise - fail (continue the loop)
 flora_shell_loop_handler(END_OF_FLORA_SHELL) :-
@@ -67,8 +74,9 @@ flora_shell_loop_handler(FLORA_CMD_LINE_ARGUMENT_DONE) :-
 flora_shell_loop_handler(FLORA_TOP_LEVEL) :-
 	!,
 	fail.
-flora_shell_loop_handler(FLORA_UNDEFINED_EXCEPTION(_)) :-
+flora_shell_loop_handler(FLORA_UNDEFINED_EXCEPTION(_,ErrorMsg)) :-
 	!,
+	flora_error_line(ErrorMsg),
 	fail.
 flora_shell_loop_handler(error(undefined_predicate(PredName,Arity,Module),_Msg)) :-
 	flora_undefined_predicate_hook(PredName,Arity,Module),
@@ -79,9 +87,13 @@ flora_shell_loop_handler(error(existence_error(module,Module),_Msg)) :-
 			 [Module]),
 	!,
 	fail.
-flora_shell_loop_handler('flora_abort') :-
+flora_shell_loop_handler(FLORA_ABORT) :-
 	!,
 	flora_stderr_string('++Abort[FLORA]'), flora_stderr_nl,
+	fail.
+flora_shell_loop_handler(FLORA_ABORT(Msg)) :-
+	!,
+	flora_stderr_string('++Abort[FLORA]> ~w', [Msg]), flora_stderr_nl,
 	fail.
 flora_shell_loop_handler('_$abort_ball') :-
 	!,
@@ -89,11 +101,11 @@ flora_shell_loop_handler('_$abort_ball') :-
 	fail.
 flora_shell_loop_handler('_$abort_ball'(Exception)) :-
 	!,
-	flora_stderr_string('++Abort[Prolog]: '),
+	flora_stderr_string('++Abort[Prolog]> '),
 	flora_stderr_string(Exception), flora_stderr_nl,
 	fail.
 flora_shell_loop_handler(Exception) :-
-	flora_stderr_string(Exception), flora_stderr_nl,
+	flora_error_line('~w', [Exception]), flora_stderr_nl,
 	fail.
 
 
@@ -105,6 +117,7 @@ flora_init_shell :-
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
 	flora_load_library(FLLIBDISPLAY),
+	flora_load_library(FLLIBIMPORTEDCALLS),
 	flloadtrailer(NONE),
 	(flora_banner_control(nobanner) ; flora_welcome_msg),
 	flAll,
@@ -117,8 +130,8 @@ flora_init_shell :-
 flora_welcome_msg :-
 	flora_configuration(version,V),
 	flora_stdmsg_string('~nFLORA-2 Version ~w~n~n',[V]),
-	flora_stdmsg_line('Type `flHelp.'' to show the help message.'),
-	flora_stdmsg_line('Type `flDemo(demoName).'' to run demos.'),
+	flora_stdmsg_line('Type `flHelp.'' to display help.'),
+	flora_stdmsg_line('Type `flDemo(demoName).'' to run a demo.'),
 	flora_stdmsg_nl,
 	!.
 
@@ -200,15 +213,15 @@ flHelp :-
 flReset(X) :-
 	var(X),
 	!,
-	flora_error_line("invalid argument to flReset"),
+	flora_error_line('invalid argument to flReset'),
 	fail.
 
 %%flReset(FL_PROLOG) :- !, flora_shreset_prolog.
-flReset(FL_ARGUMENTS) :- !, flora_shreset_arguments.
+%%flReset(FL_ARGUMENTS) :- !, flora_shreset_arguments.
 flReset(FL_OP) :- !, flora_shreset_operator.
 
 flReset(_) :-
-	flora_error_line("invalid argument to flReset"),
+	flora_error_line('invalid argument to flReset'),
 	!,
 	fail.
 

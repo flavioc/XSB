@@ -29,6 +29,9 @@
 
 #include "flora_porting.flh"
 
+
+:- import close_open_tables/0 from machine.
+
 :- import
 	flora_user_home/1,
 	flora_file_op/2,
@@ -38,8 +41,10 @@
 	flora_cputime/1,
 	flora_set_counter/2,
 	flora_concat_atoms/2,
+	flora_concat_items/2,
 	flora_copy_input/0,
-	flora_write_atom/1
+	flora_write_atom/1,
+	flora_running_under/1
    from flrporting.
 
 :- import format/2 from format.
@@ -63,10 +68,10 @@
 :- import xpp_process_file/3 from parse.
 
 :- import 
-	FLORA_DB_INSERT_PREDICATE/3,
-	FLORA_DB_COMMIT_PREDICATE/1,
-	FLORA_DB_RECLAIM_SPACE_PREDICATE/1
-   from storage.
+	flora_db_insert_base/2,
+	flora_db_commit/1,
+	flora_db_reclaim_space/1
+   from flrstoragebase.
 
 :- import bootstrap_flora/0 from flora2.
 
@@ -116,8 +121,6 @@
 	flora_debug_code/2
    from flrundefined.
 
-:- import flora_plg2hlg/4 from prolog2hilog.
-
 :- import flora_configuration/2,
 	flora_storage_registry/1,
 	flora_module_registry/1
@@ -153,8 +156,8 @@
 
 :- import
 	flora_module_name/3,
-	flora_module_name_error/1,
 	flora_fdb_storage_name/2,
+	flora_module_name_error/1,
 	%% support for undefinedness
 	flora_fld_storage_name/2
    from flrwrapper.
@@ -169,6 +172,8 @@
 :- dynamic flora_compiler_environment(_,_).
 
 :- export
+	flora_abort/0,
+	flora_abort/1,
 	flMaxerr/1,
 	flHalt/0,
 	flora_compile_internal/1,
@@ -176,8 +181,6 @@
 	flora_compile_system_module/1,
 	flora_load_module_internal/1,
 	flora_load_module_internal/2,
-	flP2H/2,
-	flora_post_p2h_conversion/2,
 	flDump/1,
 	flora_locate_file/3,
 	flora_FLH_filename/2,
@@ -199,6 +202,7 @@
 	flora_set_xpp_options_for_read/1,
 	flora_set_xpp_options_for_read/2,
 	flora_clear_xpp_options/0,
+        flora_add_xpp_options/1,
 	flora_list2conjunct/2,
 	flora_check_workspace/1,
 
@@ -212,6 +216,5 @@
 	flora_compile_system_module_by_ID/1,
 	flora_load_system_module_internal/1,
 	flora_measure_time/2,
-	flCompileInclude/1,
 
 	flora_patch_full_filename/1.

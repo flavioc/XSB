@@ -28,16 +28,16 @@
 
 
 %% Thrown when an undefined method is found and check_undefined is on
-#define FLORA_UNDEFINED_EXCEPTION     flora_undefined_exception
+#define FLORA_UNDEFINED_EXCEPTION     '_$flora_undefined'
 
 %% Thrown to return to top level
-#define FLORA_TOP_LEVEL	       	      flora_top_level
+#define FLORA_TOP_LEVEL	       	      '_$flora_top_level'
 
 %% Thrown to exit from FLORA shell
-#define END_OF_FLORA_SHELL    	      end_of_flora_shell
+#define END_OF_FLORA_SHELL    	      '_$end_of_flora_shell'
 
 %% Thrown by flora shell when it is finished with the command line argument
 %% passed from the OS shell
-#define FLORA_CMD_LINE_ARGUMENT_DONE  flora_cmd_line_argument_done
+#define FLORA_CMD_LINE_ARGUMENT_DONE  '_$flora_cmd_line_argument_done'
 
-#define FLORA_ABORT                   flora_abort
+#define FLORA_ABORT                   '_$flora_abort'

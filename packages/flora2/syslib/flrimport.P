@@ -1,4 +1,4 @@
-/* File:      flrimport.P
+/* File:      flrimport.P - implementation of flImport, Prolog/Flora interface
 **
 ** Author(s): kifer
 **
@@ -37,7 +37,7 @@ check_args(P,A,Module) :-
 	(functor(P,'/',_) -> true
 	; flora_error_line('flImport: ~w Arg 1 must have the form Pred/Arity',
 			   [P]),
-	    %% don't use throw(FLORA_ABORT) because this predicate can be
+	    %% don't use flora_abort here because this predicate can be
 	    %% called from pure prolog where this exception is not caught.
 	    %% It is also more correct to report this as a Prolog abort than
 	    %% Flora abort.

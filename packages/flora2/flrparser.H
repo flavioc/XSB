@@ -44,7 +44,8 @@
 
 :- import flora_prlgdef/2 from flrprolog.
 
-:- import flora_argdef/3, flora_conflict_arguments/3 from flrarguments.
+:- import flora_argdef/3 from flrarguments.
+%%:- import flora_conflict_arguments/3 from flrarguments.
 
 :- import flora_system_module/1 from flrlibman.
 

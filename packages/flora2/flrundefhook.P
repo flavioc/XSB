@@ -5,7 +5,7 @@
 **
 ** Contact:   flora-users@lists.sourceforge.net
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2001
+** Copyright (C) The Research Foundation of SUNY, 1999-2003
 **
 ** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -33,39 +33,41 @@
 /****************************************************************************
   flora_undefined_predicate_hook/1
 ****************************************************************************/
-%% Case for a call to a molecule
+
+%% Attempt to call a HiLog term as a predicate
+flora_undefined_predicate_hook(WRAP_HILOG,Arity,_PrologModule) :-
+	!,
+	RealArity is Arity - 1,
+	flora_error_line('Attempt to call a HiLog term of arity ~w as a predicate', [RealArity]).
+
+%% A call to a molecule
 flora_undefined_predicate_hook(PredName,Arity,PrologModule) :-
 	%% Decode the predicate symbol.
-	flora_decode_predicate(PredName,PredicateType,ModuleName,_,PredicateSymbol,_),
+	functor(PCall,PredName,Arity),
+	flora_decode_predicate(PCall,PredicateType,ModuleName,_,PredicateSymbol,_),
 	( PredicateType == (flogic) ->
 	    %% an F-logic predicate
 	    ( flLoadedModule(ModuleName) ->
 		%% This is very unlikely to happen unless something goes wrong.
-		flora_error_line('undefined F-logic molecule `~w'' in FLORA module `~w''',
+		flora_error_line('Attempt to call undefined F-logic molecule `~w'' in FLORA module `~w''',
 			         [PredicateSymbol,ModuleName])
 	    ;
-	        flora_error_line('calling an F-logic molecule in an unloaded FLORA module `~w''',
+	        flora_error_line('Attempt to call an F-logic molecule in an unloaded FLORA module `~w''',
                                  [ModuleName])
 	    )
 
 	; PredicateType == (hilog) ->
 	    %% a HiLog predicate
+	    RealArity is Arity - 1,
 	    ( flLoadedModule(ModuleName) ->
-		flora_error_line('undefined HiLog predicate in FLORA module `~w''',
-				 [ModuleName])
+		flora_error_line('Attempt to call undefined HiLog predicate of arity ~w in FLORA module `~w''',
+				 [RealArity,ModuleName])
 	    ;
-	      flora_error_line('calling a HiLog literal in an unloaded FLORA module `~w''',
-                               [ModuleName])
+	      flora_error_line('Attempt to call a HiLog predicate of arity ~w in an unloaded FLORA module `~w''',
+                               [RealArity,ModuleName])
 	    )
 	; PredicateType == (prolog) ->
-	    flora_error_line('attempt to call undefined Prolog predicate ~w/~w in module `~w''',
+	    flora_error_line('Attempt to call undefined Prolog predicate ~w/~w in module `~w''',
                                [PredName,Arity,PrologModule])
 
 	).
-
-%% Attempt to call a HiLog term as a predicate
-flora_undefined_predicate_hook(WRAP_HILOG,_Arity,_PrologModule) :-
-	!,
-	flora_error_heading,
-	flora_stderr_string('attempt to call a HiLog term as a predicate'),
-	flora_stderr_nl.

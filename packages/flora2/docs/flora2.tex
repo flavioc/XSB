@@ -121,7 +121,9 @@
 
 \newcommand{\bs}{\ensuremath{\backslash}}
 \newcommand{\FLIP}{{\mbox{\sc Flip}}\xspace}
-\newcommand{\FLORA}{{\mbox{${\cal F}${\small\it LORA}\rm\emph{-2}}}\xspace}
+\newcommand{\FLORA}{{\mbox{\sc ${\cal F}${lora}\rm\emph{-2}}}\xspace}
+%%\newcommand{\FLORA}{{\mbox{${\cal F}${\small\it LORA}\rm\emph{-2}}}\xspace}
+%%\newcommand{\FLORA}{{\mbox{\sc Flora}\rm\emph{-2}}\xspace}
 \newcommand{\FLORAone}{{\mbox{${\cal F}${\sc lora}}}\xspace}
 \newcommand{\FLORID}{{\mbox{\sc Florid}}\xspace}
 \newcommand{\fl}{\mbox{F-logic}\xspace}
@@ -146,7 +148,7 @@
 \title{
         \FLORA: User's Manual
            \\
-       {\Large Version 0.91}
+       {\Large Version 0.92}
        }
 
 \author{
@@ -181,49 +183,49 @@
 
 \section{Introduction}
 
-\FLORA is a sophisticated compiler and application development platform
-that translates a unified language of \fl \cite{KLW95}, HiLog
-\cite{hilog-jlp}, and Transaction Logic \cite{trans-chapter-98,trans-tcs94}
-into tabled Prolog code. It takes a program written in the \fl language
-with HiLog and Transaction Logic extensions (which must be in a file with
-extension {\tt .flr}, {\it e.g.}, {\tt file.flr}) and outputs a regular
-Prolog program (with extension {\tt .P}).  This program is then passed to
-XSB for compilation (which produces {\tt file.\ofile}) and execution,
-which, however, requires \FLORA runtime support.
+\FLORA is a sophisticated object-oriented knowledge base language and
+application development platform. It is implemented as a set of run-time
+libraries and a compiler that translates a unified language of \fl
+\cite{KLW95}, HiLog \cite{hilog-jlp}, and Transaction Logic
+\cite{trans-chapter-98,trans-tcs94} into tabled Prolog code.
+
+Applications of \FLORA include intelligent agents, Semantic Web, ontology
+management, integration of information, and others. 
 
 \index{FLIP}
 \index{FLORID}
 %%
-The programming language
-supported by \FLORA is a dialect of \fl with numerous extensions.  Some
-extensions are borrowed from \FLORID, a C++-based \fl system developed at
+The programming language supported by \FLORA is a dialect of \fl with
+numerous extensions, which include a natural way to do meta-programming in
+the style of HiLog and logical updates in the style of Transaction
+Logic. \FLORA was designed with extensibility and flexibility in mind, and
+it provides strong support for modular software design through its unique
+feature of dynamic modules.
+Other extensions, such as the versatile syntax of \FLORID path
+expressions, are borrowed from
+\FLORID, a C++-based \fl system developed at
 Freiburg University.\footnote{
   %%
   See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
   details.
   %%
-  }
+}
 %%
-In particular, \FLORA fully supports the versatile syntax of \FLORID path
-expressions. Other important extensions are motivated by the need to
-support a flexible module system (and enable modular software development
-in \fl) and in order to support HiLog \cite{hilog-jlp} and Transaction
-Logic \cite{trans-chapter-98,trans-iclp93,trans-tcs94}, both of which are
-smoothly integrated with \fl. Extensions aside, the syntax of \FLORA also
-differs in some important ways from \FLORID, from the original version of
-\fl, as described in \cite{KLW95}, and from an earlier implementation
-of \FLORAone. These syntactic changes were needed in order to bring the
-syntax of \FLORA closer to that of Prolog and make it possible to include
-typical Prolog programs into \FLORA programs without choking the compiler.
-Other syntactic deviations from the original F-logic syntax are a direct
-consequence of the added support for HiLog, which obviates the need for the
-``@'' sign in method invocations (this sign is now used to denote calls to
-\FLORA modules).
+Extensions aside, the syntax of \FLORA differs in many
+important ways from \FLORID, from the original version of \fl, as described
+in \cite{KLW95}, and from an earlier implementation of \FLORAone. These
+syntactic changes were needed in order to bring the syntax of \FLORA closer
+to that of Prolog and make it possible to include simple Prolog programs
+into \FLORA programs without choking the compiler.  Other syntactic
+deviations from the original F-logic syntax are a direct consequence of the
+added support for HiLog, which obviates the need for the ``@'' sign in
+method invocations (this sign is now used to denote calls to \FLORA
+modules).
 
 \FLORA is distributed in two ways. First, it is part of the official
 distribution of XSB and thus is installed together with XSB
 ({\tt http://xsb.sourceforge.net}). Second, a more
-up-to-date, bleeding edge version of \FLORA can be downloaded from its own
+up-to-date version of the system is available on \FLORA's
 Web site at
 %%
 \begin{quote}
@@ -236,7 +238,7 @@ to keep abreast with the development of \FLORA or if a newer version was
 released in-between the releases of XSB). The installation instructions are
 somewhat different in these two cases.
 
-\paragraph{Installting \FLORA under UNIX.}
+\paragraph{Installing \FLORA under UNIX.}
 To configure a version of \FLORA that was downloaded as part of the
 distribution of XSB, simply configure XSB as usual:
 %%
@@ -247,8 +249,6 @@ distribution of XSB, simply configure XSB as usual:
  makexsb packages
 \end{verbatim}
 %%
-(Under Windows, XSB is configured with the script {\tt makexsb\_wind} in
-directory {\tt XSB$\backslash$build}.)
 
 If you downloaded XSB from its CVS repository earlier and are updating your
 copy using the {\tt cvs update} command, then it might be a good idea to
@@ -261,12 +261,8 @@ also do the following:
 \end{verbatim}
 %%
 
-Under Windows also make sure that the {\tt packages} directory contains a
-shortcut called {\tt flora2.P} to the file
-{\tt packages$\backslash$flora2$\backslash$flora2.P}.
-
 To install the ``bleeding edge'' version of \FLORA from {\tt
-http://flora.sourceforge.net} you must download it (either as a tarball
+http://flora.sourceforge.net}, download it (either as a tarball
 or from CVS) into a separate directory \emph{outside} of the XSB
 installation tree. After unpacking (or checking out from CVS) the \FLORA
 sources will be placed in the subdirectory called {\tt flora2}. To
@@ -279,7 +275,8 @@ configure \FLORA, do the following:
 \end{verbatim}
 %%
 (assuming that XSB has been already installed and configured separately).
-If an XSB executable is not on your program search {\tt PATH}, then you
+If an XSB executable is not on your program search {\tt PATH}, then in the
+third command above you
 need to provide the XSB installation directory to {\tt makeflora} as
 an argument, {\it e.g.},
 %%
@@ -291,14 +288,20 @@ an argument, {\it e.g.},
 \paragraph{Installing \FLORA in Windows.}
 First, you need Microsoft's {\tt nmake}.
 Then use the following commands to configure
-\FLORA (assuming that XSB is installed and configured):
+\FLORA (assuming that XSB is already installed and configured):
 %%
-\begin{verbatim}
+\begin{alltt}
    cd flora2
    makeflora clean
-   makeflora path-to-prolog-executable
-\end{verbatim}
+   makeflora \emph{path-to-prolog-executable}
+\end{alltt}
 %%
+where \emph{path-to-prolog-executable} is the full path name of the XSB
+executable.
+
+In addition, make sure that the {\tt packages} directory contains a
+shortcut called {\tt flora2.P} to the file
+{\tt packages$\backslash$flora2$\backslash$flora2.P}.
 
 
 \paragraph{Running \FLORA.}
@@ -368,8 +371,8 @@ or even
 %%
 
 At this point, \FLORA takes over and \fl syntax becomes the
-norm. To get back to the Prolog command loop, type {\tt Control-D} (in
-Unix), Control-Z (Windows), or 
+norm. To get back to the Prolog command loop, type {\tt Control-D} 
+(Unix) or Control-Z (Windows), or 
 %%
 \begin{quote}
   \tt
@@ -382,7 +385,7 @@ If you are using \FLORA shell frequently, it pays to define an alias, say
 (in Bash):
 %%
 \begin{verbatim}
- alias flora2='xsb -e "[flora2], flora\_shell."'
+ alias flora2='xsb -e "[flora2], flora_shell."'
  alias runflora='~/bleeding-edge/flora2/runflora'
 \end{verbatim}
 %%
@@ -464,12 +467,13 @@ full advantage of the system; we will discuss the module system of \FLORA
 in Section~\ref{sec:flora-modules}.  Once the program is loaded, you can
 pose queries and invoke methods for the objects defined in the program.
 
-There is an important special of the {\tt flLoad} and {\tt [...]} command
+There is an important special case of the {\tt flLoad} and {\tt [...]} command
 when the file name is {\tt user}. In that case, instead of looking for the
 program file {\tt user.flr}, \FLORA starts reading user input. At this
 point, the user can start typing in program clauses, which the system saves
-in a temporary file. When the user is done and types {\tt Control-D} (end
-of file), the file is compiled and loaded. It is also possible to load such
+in a temporary file. When the user is done and types the end of file
+character {\tt Control-D} (Unix) or {\tt Control-Z} (Windows),
+the file is compiled and loaded. It is also possible to load such
 a program into a designated module, rather than the default one,
 using one of the following commands:
 %%
@@ -553,19 +557,13 @@ these tries are successful, an error is reported.
     Flush all tabled data. This is sometimes needed when Prolog's tabling 
     gets in the way. We describe tabling (as it pertains to \FLORA) in
     Section~\ref{sec-tabling-flora}.
-\item
-  \index{arguments!compiler directive}
-  %%
-  {\tt arguments Functor(\{oid$|$meta\}, ...)}:
-    Define the predicate meta signature in shell mode.
 \item {\tt op(Precedence,Associativity,Operator)}:
     Define an operator in shell mode.
 \item
   \index{{\tt flReset}}
   %%
-  {\tt flReset(\{arguments|op\})}:
-    Clear all dynamic {\tt arguments}  definitions or operator definitions
-    in the \FLORA shell.
+  {\tt flReset(\{op\})}:
+    Clear all operator definitions in the \FLORA shell.
 \item {\tt flAll}:
     Show all solutions (default). Affects subsequent queries only.
 \item {\tt flOne}:
@@ -582,7 +580,14 @@ these tries are successful, an error is reported.
 \item {\tt flHalt}:
     Quit both \FLORA and Prolog.
 \end{itemize}
-%
+%%
+
+In general, \FLORA built-in predicates whose name is of the form {\tt
+  fl[A-Z]...} are either the \FLORA shell commands or predicates that can
+be used in Prolog to control the execution of \FLORA modules. We will
+discuss the latter in Section~\ref{sec-flora-from-prolog}. Some of these
+commands --- mostly dealing with loading and compilation of \FLORA modules
+  --- can also be useful within \FLORA applications.
 
 All commands with a FILE argument passed to them use the Prolog
 {\tt library\_directory} predicate to search for the file, except that the
@@ -593,7 +598,7 @@ directories used by Prolog followed by the current directory.
 All Prolog commands can be executed from \FLORA shell, if the corresponding
 Prolog library has already been loaded.
 
-After a syntax, parsing, or compilation error, \FLORA shell will
+After a parsing or compilation error, \FLORA shell will
 discard tokens read from the current input stream until the end of file or a
 rule delimiter (``.'') is encountered. If \FLORA shell seems to be hanging
 after the message
@@ -1587,11 +1592,12 @@ The following rules apply when calling a literal defined in another module:
   \end{quote}
   %%
   {\tt goo/1} refers to the same functor both in module {\tt foomod} and in
-  the calling module. However, if the module is attached explicitly, as in
+  the calling module. However, if the module is attached explicitly
+  (see Section~\ref{sec-meta-reification}), as in
   \begin{quote}
-    \verb|?- foo(goo(a) @ goomod) @ foomod.|
+    \verb|?- foo(${goo(a) @ goomod}) @ foomod.|
   \end{quote}
-  %%
+  %%$
   then {\tt foo/1} is assumed to be a meta-predicate that receives the
   predicate {\tt goo/1}  as a parameter.
 \end{enumerate}
@@ -1617,7 +1623,7 @@ replaced with {\tt bar}. For instance,
 
    X=main
 
-   Yes.
+   Yes
 \end{verbatim}
 %%
 
@@ -1713,8 +1719,8 @@ compilation.
 %%
 Sometimes it is useful to know which user modules are loaded or if a
 particular user module is loaded (say, because your might want to load it,
-if not).  To find out which modules are loaded at the present time. Use the
-predicate {\tt flLoadedModule/1} for that. For instance, the first query,
+if not).  To find out which modules are loaded at the present time, use the
+predicate {\tt flLoadedModule/1}. For instance, the first query,
 below, succeeds if the module {\tt foo} is loaded. The second query
 succeeds and binds {\tt L} to the list of all user modules that are loaded
 at the present time.
@@ -1852,9 +1858,9 @@ is perfectly acceptable and is more efficient than
  ?-  member(f(a), [f(b),f(a)])@prologall basics.
 \end{verbatim}
 %%
-\index{flP2H/2}
+\index{p2h\{...\}}
 %%
-\FLORA provides a special predicate, {\tt flP2H/2}, which converts terms to
+\FLORA provides a special primitive, {\tt p2h\{...,...\}}, which converts terms to
 and from the HiLog representation, and the programmer can use it in
 conjunction with {\tt @prolog()} to achieve a greater degree of control
 over argument conversion. This issue is further discussed in
@@ -1862,7 +1868,7 @@ Section~\ref{sec-passing-args}.
 
 
 
-\subsection{Calling \FLORA from Prolog}
+\subsection{Calling \FLORA from Prolog}\label{sec-flora-from-prolog}
 
 Since Prolog does not understand \FLORA syntax, it can call only
 predicates defined in \FLORA programs. To call predicates
@@ -1898,10 +1904,10 @@ must be executed first.
 We will explain shortly which {\tt flImport} query should be used in what
 situation.
 
-{\bf Note:} If you are using an interim release of \FLORA, which is
-installed outside of the XSB directory structure, then you must let Prolog
-know the location of your distribution of \FLORA. This is done by executing
-{\tt asserta(library\_directory(path-to-flora))} {\it e.g.},
+{\bf Note:} If \FLORA is installed outside of the XSB directory structure,
+then you must let Prolog know the location of your distribution of \FLORA.
+This is done by executing {\tt asserta(library\_directory(path-to-flora))}
+{\it e.g.},
 %%
 \begin{verbatim}
  ?- asserta(library_directory('/home/me/flora2')).  
@@ -1929,13 +1935,12 @@ To call \FLORA from within a Prolog program, say {\tt test.P}, the
       {\tt :- import (flImport)/1 from flora2.}    
     \end{quote}
     %%
-    must appear at the top of {\tt test.P}.
-  \item The above {\tt flImport} queries must appear near the top of the
-    program (prior to any call to \FLORA predicates).
+    must appear near the top of {\tt test.P}, \emph{prior to any call} to
+    \FLORA predicates.
   \end{enumerate}
   %%
   
-  The first syntax for {\tt flImport} above is used to both import the
+  The first form for {\tt flImport} above is used to both import the
   predicate and also load the program file defining it into a given \FLORA
   user module. The second syntax is used when the flora program is already
   loaded into a module and we only need to import the corresponding
@@ -1979,7 +1984,7 @@ loaded using the following call:
 \end{quote}
 %%
 
-{\bf Note:} If you use an interim release of \FLORA that is installed
+{\bf Note:} If you use a release of \FLORA that is installed
 outside of the XSB directory tree, you must make sure that Prolog will find
 this installation and use it in preference to the \FLORA package that is
 located in your XSB distribution. One way of doing this was described
@@ -2002,7 +2007,7 @@ which uses the first argument as input and returns the result in the second
 argument, then one might need to use the following calling sequence:
 %%
 \begin{verbatim}
- ... :- ..., flP2H(In,InHilog), p(InHilog,OutHilog), flP2H(Out,OutHilog), ...
+ ... :- ..., p2h{In,InHilog}, p(InHilog,OutHilog), p2h{Out,OutHilog}, ...
 \end{verbatim}
 %%
 Here we assume that the Prolog module that calls the \FLORA predicate {\tt
@@ -2055,11 +2060,12 @@ such multi-file programs using a Makefile, like in C and C++.
 
 \subsection{More on Variables as Module Specifications}
 
-Earlier we mentioned that a user module specification can be a variable, {\it
-  e.g.}, {\tt a[m->b]@X}, which ranges over module names. This variable
-must be bound to a concrete module name before the call is made. However,
-this binding cannot be {\tt prolog()}, {\tt prolog(module)}, or {\tt
-  flora(module)}.
+Earlier we mentioned that a user module specification can be a variable,
+{\it e.g.}, {\tt a[m->b]@X}, which ranges over module names. This variable
+does not need to be bound to a concrete module name before the call is
+made.  If it is a variable, then {\tt X} will get successively bound to the
+user modules where {\tt a[m->b]} is true.  However, these bindings will not
+include {\tt prolog()}, {\tt prolog(module)}, or {\tt flora(module)}.
 
 Dynamic module bindings can be used to implement \emph{adaptive methods},
 which are used in  many types of applications, {\it e.g.}, agent
@@ -2274,7 +2280,7 @@ leaves it to the user to tell the compiler whether equality maintenance is
 needed.  Equality maintenance is discussed in Section~\ref{sec-eqmaintain}.
 
 
-\section{Truth Values, Object Values, and Meta Signatures}
+\section{Truth Values and Object Values}
 \label{sec-references}
 
 
@@ -2419,50 +2425,25 @@ into Prolog as follows:
 \end{quote}
 %%
 where {\tt F(P)} is an formula into which {\tt
-  P{\isa}manager[hobbies{\mvd}tennis]} is translated by the \FLORA
+  P{\isa}manager[hobbies{\mvd}tennis]} is compiled by the \FLORA
 compiler.\footnote{
   %%
   Something like {\tt isa(P,manager),mvd(P,hobbies,tennis)}.
   %%
   }
 %%
+\index{reification}
 Under this translation, findall/3 will find all instances of {\tt
   P} that make {\tt F(P)} true and return a list of such instances in the
-list {\tt L}. This feat is accomplished using the {\tt arguments} compiler
-directive.
-
-\index{predicate meta signature}
-\index{meta signature of a predicate}
-\index{compiler directive!{\tt arguments}}
-\index{arguments!compiler directive}
-\index{meta}
-\index{reification}
-%
-By default, when a truth-valued expression, $E$, such as an \fl molecule or
-a path expression, appears as an argument to a predicate or function
-symbol, {\it p}, the \FLORA compiler will pass the object value of the
-expression to {\it p}. In order to tell the compiler that the entire
-formula obtained by translating $E$ into Prolog is to be passed to $p$, we
-need to \emph{reify} $E$, {\it i.e.}, turn this formula as a whole into an
-object into an object. This is done by defining
-the \emph{meta signature} of $p$ using the compiler
-directive {\tt arguments}.  For instance, the following directive will make
-{\tt findall/3} work as intended:
+list {\tt L}. This is accomplished using the \emph{reification} feature of
+\FLORA: a formula is compiled into an object that represents \emph{it} if
+the formula is wrapped with the \$\{...\} construct as, {\it e.g.}, in
 %%
-\begin{qrules}
-:- arguments findall(oid,meta,oid).
-\end{qrules}
+\begin{alltt}
+ findall(P,\$\{P{\isa}manager[hobbies{\mvd}tennis]\},L)
+\end{alltt}
 %%
-\index{syntactic object}
-%%
-This signature declaration tells \FLORA that the first and the third
-arguments to {\tt findall/3} should be translated as oids, while the second
-argument of {\tt findall/3} should be treated as a {\em syntactic object\/}
-that represents formulas of the kind that might occur in the body of a
-rule.
-
-Another way to reify a formula is to use the \emph{reification operator},
-``\$\{...\}'', introduced in Section~\ref{sec-meta-reification}.
+Reification is further discussed in Section~\ref{sec-meta-reification}.
 
 
 \section{HiLog and Related Issues} \label{sec:hilog}
@@ -2637,15 +2618,15 @@ them:
 \begin{verbatim}
 ?- functor(X,f,3).
 X = f(_h455,_h456,_h457)
-Yes.
+Yes
 
 ?- compound(f(X)).
 X = _h472
-Yes.
+Yes
 
 ?- X =.. [f,a,b].
 X = f(a,b)
-Yes.
+Yes
 \end{verbatim}
 \end{quote}
 %%
@@ -2816,20 +2797,20 @@ system. As a result, XSB does not recognize terms passed to it from \FLORA
 as HiLog terms and, thus, many useful primitives will not work correctly.
 (Try {\tt ?- writeln(foo(abc))@prolog()} and see what happens.)
 
-\index{flP2H/2}
+\index{p2h\{...\}}
 \index{Prolog to HiLog conversion}
 \index{HiLog to Prolog conversion}
 %%
 To cope with the problem, \FLORA provides a primitive, {\tt
-  flP2H(Plg,Hlg)}, which does the translation. If the first argument,
-{\tt Plg}, is bound, the primitive binds the second argument to the
-Hilog representation of the term. If {\tt Plg} is already bound to a
-Hilog term, then {\tt Hlg} is bound to the same term without conversion.
-Similarly, if {\tt Hlg} is bound to a HiLog term, then {\tt Plg} gets
-bound to the Prolog representation of that term. If {\tt Hlg} is bound to
-a non-HiLog term, then {\tt Plg} gets bound to the same term without
-conversion. In all these cases, the call to flP2H/2 succeeds. If {\tt both}
-arguments are bound, then the call succeeds if and only if
+  p2h\{Plg,Hlg\}}, which does the translation. If the first argument, {\tt
+  Plg}, is bound, the primitive binds the second argument to the Hilog
+representation of the term. If {\tt Plg} is already bound to a Hilog term,
+then {\tt Hlg} is bound to the same term without conversion.  Similarly, if
+{\tt Hlg} is bound to a HiLog term, then {\tt Plg} gets bound to the Prolog
+representation of that term. If {\tt Hlg} is bound to a non-HiLog term,
+then {\tt Plg} gets bound to the same term without conversion. In all these
+cases, the call to {\tt p2h\{...\}} succeeds. If {\tt both} arguments are
+bound, then the call succeeds if and only if
 %%
 \begin{itemize}
 \item {\tt Plg} is a Prolog term and {\tt Hlg} is its HiLog
@@ -2841,25 +2822,32 @@ Note that if both {\tt Plg} and {\tt Hlg} are bound to the same
 \emph{HiLog term} then the predicate \emph{fails}. Thus, if you type the
 following queries into the \FLORA shell, they both succeed:
 %%
-{\tt
-\begin{quote}
-  ?- flP2H(X,f(a)), flP2H(X,X).  \\
-  ?- flP2H(f(a),f(a)).
-\end{quote}
-}
+\begin{verbatim}
+  ?- p2h{X,f(a)}, p2h{X,X}.
+\end{verbatim}
 %%
 but the following will fail:
 %%
 \begin{verbatim}
- ?- flP2H(f(a),X), flP2H(X,X).  
+  ?- p2h{f(a),X}, p2h{X,X}.
+  ?- p2h{f(a),f(a)}.
 \end{verbatim}
 %%
+The first query succeeds because {\tt X}  is bound to a prolog term, and by the
+above rules {\tt p2h\{X,X\}} is supposed to succeed. The second query fails
+because {\tt X} is bound to a HiLog term and, again by the above rules,
+{\tt p2h\{X,X\}} is supposed to fail.
+The reason why the last query fails is less obvious.
+In that query, both occurrences of {\tt f(a)} are HiLog terms, as are all
+terms that appear in a \FLORA program (unless they are marked with {\tt
+  @prolog} or {\tt @prologall()} module designations). Therefore, again by
+the rules above the query should fail.
 
-We should note that you should not try to convert certain Prolog terms to
+One should not try to convert certain Prolog terms to
 HiLog and expect them to be the same as similarly looking \FLORA terms. In
 particular, this applies to reified statements. For instance, if {\tt X =
-\${a[b->c]}} then {\tt ?- flP2H(X,Y), Y = \${a[b->c]}} is not expected to
-succeed. This is because {\tt flP2H/2} does not attempt to mimic the \FLORA
+\${a[b->c]}} then {\tt ?- p2h\{X,Y\}, Y = \${a[b->c]}} is not expected to
+succeed. This is because {\tt p2h\{...\}} does not attempt to mimic the \FLORA
 compiler in cases where conversion to HiLog (such as in case of reified
 statements) makes no sense. Doing so would have substantially increased the
 run-time overhead.
@@ -3020,7 +3008,7 @@ Furthermore, \FLORA allows one user module to set, at run time, the level
 of equality maintenance in another user module:
 %%
 \begin{quote}
-\verb!?- (equality flogic in modulename).!
+\verb!?- (equality flogic)@modulename.!
 \end{quote}
 %%
 \index{dynamic module}
@@ -3647,33 +3635,65 @@ XSB. It is known that subsumptive tabling can speed up certain queries by
 an order of magnitude. A future version of \FLORA might take advantage of
 this technique.
 
-\subsection{Abolishing Tables}
+\subsection{Discarding Information Stored in Prolog Tables}
 
-\index{abolish\_all\_tables}
-%%
 When Prolog (and \FLORA) evaluate a program, all tabled predicates are
 partially materialized and all the computed tuples are stored in Prolog
 tables. Thus, if you change the underlying set of facts (via insert and
 delete operations), the existing tables must be discarded in order to allow
-Prolog to recompute the results. This is accomplished by issuing the
-predicate {\tt abolish\_all\_tables/0} described in the XSB manual. We
-discuss updates in Section~\ref{sec-updates}.
+Prolog to recompute the results.  We discuss updates and the problems
+caused by tabling Section~\ref{sec-updates}.
 
-Note: {\tt abolish\_all\_tables/0} \emph{cannot} be used in
+\index{refresh\{...\}}
+%%
+There are two ways to discard tabled information in \FLORA. One, and the
+safest way is to use the operator {\tt refresh\{...\}}. Inside the braces
+you list the calls for which you want to discard table information.  For
+instance,
+%%
+\begin{verbatim}
+ flora2 ?- refresh{p(a,X), X[meth(_)->b]}.
+\end{verbatim}
+%%
+will discard any tabling information that is related to   {\tt p(a,X)}
+and {\tt X[meth(\_)->b]}.
+To affect the tables in another module, attach the module name to the
+corresponding literals. For instance,
+%%
+\begin{verbatim}
+ flora2 ?- refresh{(p(a,X), X[meth(_)->b])@foo}.
+\end{verbatim}
+%%
+
+\index{abolish\_all\_tables}
+%%
+Sometimes it may be desirable to discard \emph{all} table information in the
+current run of the program.
+This can be done by issuing the
+query {\tt ?- abolish\_all\_tables/0} described in the XSB manual.
+However, this should be done with great caution, because
+{\tt abolish\_all\_tables/0} is not a safe query (it can crush XSB!).
+
+If you really need to use {\tt abolish\_all\_tables/0}, it \emph{cannot} be
+used in the following cases:
 %%
 \begin{enumerate}
-  \item  the body of a rule that defines an object attribute or method
+  \item  in the body of a rule that defines an object attribute or method
   \item  in the body of a rule that defines a tabled HiLog predicate
 \end{enumerate}
 %%
-This is because internally the above entities are represented using tables
+This is because internally the above entities are represented using tabled
 predicates. Execution of {\tt abolish\_all\_tables/0} in the body of such a
-rule would destroy the table for the predicate being computed by the rule.
+rule would destroy the table for the predicate being computed by that rule.
 
 More generally, no tabled predicate or object molecule of the above sort
-can depend via rules --- directly or indirectly --- on {\tt abolish\_all\_tables/0}.
-However, it is safe to use this predicate in the body of a rule that
-defines a procedural method (defined next).
+can depend via rules --- directly or indirectly --- on {\tt
+  abolish\_all\_tables/0}.  However, it is safe to use this predicate in
+the body of a rule that defines a procedural method (defined next).
+
+\paragraph{Note:} Neither {\tt refresh\{...\}} nor {\tt
+  abolish\_all\_tables} can occur under the scope of the {\tt tnot}
+negation operator (directly or indirectly).
 
 
 \subsection{Procedural Methods}\label{sec-proc-methods}
@@ -3724,6 +3744,9 @@ XSB has two configuration modes that affect tabled predicates:
 \emph{batched} and \emph{local} (the default). These modes affect
 \emph{scheduling}, {\it i.e.}, the order in which answers to the literals
 in a rule body are computed.
+(The current release does not work under batched scheduling, so reading on
+is even more important to understand the flow of control under local
+evaluation.)
 
 Under the batched scheduling, the behavior is similar to that of Prolog.
 Under the local scheduling, answers to the entire clique of inter-dependent
@@ -3989,39 +4012,49 @@ query) or when the all-answers mode is suppressed by a cut as in
 In such cases, the first query will indeed insert only one fact, while the
 second will insert all.
 
-Note that literals appearing inside the update predicates are treated as
+Note that literals appearing inside an insert primitive (to the left of the
+\verb'|' symbol, if it is present) are treated as
 facts and should follow the syntactic rules for facts and literals in the
 rule head. In particular, multi-valued path expressions are not allowed.
-However, \FLORA permits database updates whose target is a user module
-other than the current one.  Thus, \FLORA module specifications \emph{are}
-allowed. As before, module specification is distributive through
-parentheses, so
+Similarly, module specifications inside update operators are illegal.
+However, it is allowed to insert facts into a different module so module
+specifications are permitted in the literals that appear in the 
+{\tt insert\{...\}} primitive:
 %%
 \begin{quote}
 \begin{verbatim}
 flora2 ?- insert{(mary[children->>frank], john[father->smith]) @ foomod}
 \end{verbatim}
 \end{quote}
-is equivalent to the following one:
+The above statement will insert {\tt mary[children->>frank]} and
+{\tt john[father->smith]} into module {\tt foomod}.
+
+Note that module specifications are also allowed in the
+\emph{condition} part of an update operator (to the right of the \verb'|'
+mark):
+%%
 \begin{quote}
-\verb|flora2 ?- insert{mary[children->>frank] @ foomod, john[father->smith] @ foomod}|
+\begin{verbatim}
+flora2 ?- insert{mary[children->>X]@foobar | adult(X)@infomod}
+\end{verbatim}
 \end{quote}
 
-However, @prolog(...) is not allowed: If you want to update a dynamic Prolog
-predicate, use {\tt assert/retract}:
+Updates to Prolog modules is accomplished using the usual
+Prolog's {\tt assert/retract}:
 %%
 \begin{quote}
  {\tt flora2 ?- assert(foo(a,b,c))@prolog().  }
 \end{quote}
 %%
-Well, not quite. Recall Section~\ref{sec-passing-args} on the issues
-concerning the difference between Prolog representation of terms and the
-one used in Prolog. The problem is that {\tt foo(a,b,c)} is a HiLog term that
-Prolog does not understand and will not associate it with the predicate {\tt
-  foo/3}  that it might have. To do it right, use explicit conversion:
+The following subtleties related to updates of Prolog modules are worth
+noting. Recall Section~\ref{sec-passing-args} on the issues concerning the
+difference between the HiLog representation of terms in \FLORA and the one
+used in Prolog. The problem is that {\tt foo(a,b,c)} is a HiLog term that
+Prolog does not understand and will not associate it with the predicate
+{\tt foo/3} that it might have. To do it right, use explicit conversion:
 %%
 \begin{quote}
- {\tt ?- flP2H(PrologRepr,foo(a,b,c)), assert(PrologRepr)@prolog().  }
+ {\tt ?- p2h\{PrologRepr,foo(a,b,c)\}, assert(PrologRepr)@prolog().  }
 \end{quote}
 %%
 This will insert {\tt foo(a,b,c)} into the default XSB module called {\tt
@@ -4253,19 +4286,19 @@ immediately after the \FLORA system starts:
 \begin{verbatim}
 flora2 ?- insert{p(a)}, fail.
 
-No.
+No
 
 flora2 ?- p(a).
 
-Yes.
+Yes
 
 flora2 ?- btinsert{q(a)}, fail.
 
-No.
+No
 
 flora2 ?- q(a).
 
-No.
+No
 \end{verbatim}
 \end{quote}
 In the above example, when the first \verb|fail| executes, the system
@@ -4307,61 +4340,170 @@ future release.
 
 \index{updates!and tabling}
 %%
-\paragraph{Updating tabled predicates or predicates on which tabled
-predicates depend.}
+\paragraph{Changing tabled predicates or predicates on which tabled
+  predicates depend.}
+%%
 We have earlier remarked in Section~\ref{sec-proc-methods} that tabling and
 database updates do not mix well.  One problem is that the results from
 previous queries are stored in Prolog tables, and database updates do not
-modify Prolog tables.  Thus, a user might get the following counterintuitive
-result:
+modify those tables.  Thus, in Prolog the user might get the following
+counterintuitive result, if the predicate {\tt p/1} is tabled:
+%%
+\begin{quote}
+\begin{verbatim}
+| ?- assert(p(a)).
+
+yes
+| ?- p(a)
+
+yes
+| ?- retract(p(a)), p(a).
+
+yes
+\end{verbatim}
+\end{quote}
+What is going on here?  The last positive answer is a consequence of the
+fact that Prolog tables remember that the fact {\tt p(a)} is true from the
+evaluation of the second query. So, when the same query is asked after {\tt
+  retract}, a ``stale'' answer is returned from the tables.  Similarly,
+tabling might interact poorly with {\tt assert} in the following case:
+\begin{quote}
+\begin{verbatim}
+| ?- p(b).
+
+no
+| ?- assert(p(b)), p(b).
+
+no
+\end{verbatim}
+\end{quote}
+The reason for the bad answer is, again, that Prolog remembers that {\tt p(b)}
+was false the last time it looked up this fact, even though this answer
+has become stale after the insertion.
+
+Fortunately, \FLORA is much more update-friendly than plain Prolog, and in
+situations similar to the above it will behave correctly:
 %%
 \begin{quote}
 \begin{verbatim}
 flora2 ?- insert{o[m->v]}.
 
-Yes.
+Yes
 
 flora2 ?- o[m->v].
 
-Yes.
+Yes
 
 flora2 ?- delete{o[m->v]}, o[m->v].
 
-Yes.
-\end{verbatim}
-\end{quote}
-The last positive answer is a consequence of the fact that Prolog tables
-remember that the query {\tt o[m->v]} is true. So, when the same query is
-asked after {\tt delete}, a ``stale'' answer is returned from the tables.
-Similarly, tabling might interact poorly with {\tt insert}:
-\begin{quote}
-\begin{verbatim}
-flora2 ?- o[m->v].
-
-No.
+No
 
 flora2 ?- insert{o[m->v]}, o[m->v].
 
-No.
+Yes
 \end{verbatim}
 \end{quote}
-The reason for this result is, again, that Prolog tables remember that {\tt
-  o[m->v]} is false. However, this result becomes stale after the
-insertion.
+%%
+Nevertheless, there still are problems with facts that
+depend through rules on facts that were inserted or deleted.  This
+problem is illustrated by the following program.
+%%
+\begin{quote}
+\begin{verbatim}
+a[b->c] :- d[e->f].  
+d[e->f].
+\end{verbatim}
+\end{quote}
+%%
+Consider the following a query
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- a[b->c].
+
+Yes
+\end{verbatim}
+\end{quote}
+%%
+Suppose that next we delete the fact {\tt d[e->f]}. Then we will get the
+following counterintuitive results:
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- delete{d[e->f]}.
+
+Yes
+
+flora2 ?- a[b->c].
+
+Yes
+\end{verbatim}
+\end{quote}
+%%
+The reason for this behavior is, as before, that the stale positive
+answer to the query {\tt a[b->c]} has been recorded in Prolog tables.
+In order to invalidate this answer it would be necessary to keep 
+track of the dependencies among different facts, which Prolog currently
+does not do (and it would be very hard and inefficient to keep this
+information at the \FLORA level).
+
+\index{refresh\{...\}}
+%%
+Nevertheless, \FLORA provides partial solution to this problem in the form
+of the {\tt refresh\{...\}} operator, which lets the programmer to explicitly
+remove stale answers from tables. For instance, in the above case we could
+do the following:
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- refresh{a[b->c]}, a[b->c].
+
+No
+\end{verbatim}
+\end{quote}
+%%
+In general, {\tt refresh\{...\}} can take a comma-separated list of facts to
+be purged from the tables, and the facts can even contain unbound variables.
+In the latter case, any stale call that unifies with the given facts will
+be refreshed. For instance,
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- refresh{a[b->X], c:Y, p(z,V)@foo}.
+
+Yes
+\end{verbatim}
+\end{quote}
+%%
+will refresh the tables for {\tt a[b->X]} and {\tt c:Y} in module {\tt
+  main}, and for {\tt p(z,V)} in module {\tt foo}.
 
 \index{abolish\_all\_tables}
 %%
-%% Unimplemented: tabling and updates
-In a future release, \FLORA will provide a workaround for these
-problems (and it is even possible that a future release of XSB will
-start doing the right thing in these situations). For now, the only
-remedy is to use a call to {\tt abolish\_all\_tables}, which will
-clear all tables.  However, at present, the only safe way to do this
-is by executing {\tt abolish\_all\_tables} as a \emph{separate} query.
+Sometimes it is desirable to completely get rid of all the information
+stored in tables (for instance, when it is hard to track down all the facts
+that might depend on the changed base facts. In such a case, the command
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- abolish_all_tables.
+\end{verbatim}
+\end{quote}
+%%
+can be used. However, this command is unsafe: If it is executed during the
+computation of a subquery that involves an \fl molecule or a tabled
+predicate, then the system might crash. (This is an unsafe, low level XSB
+builtin.)  The only safe way to execute {\tt abolish\_all\_tables} is as a
+\emph{separate} query.
 
-One other temporal solution could be to design your program in such a way
-that tabled predicates and F-molecules will not depend on the facts that
-are dynamically inserted or deleted.
+\paragraph{Note:} The update operators {\tt {\tt insert}/delete}, etc., the {\tt
+  refresh\{...\}} operator, or {\tt abolish\_all\_tables} cannot occur
+under the scope of the {\tt tnot} negation operator (directly or
+indirectly). If they do, XSB will likely crash. Typically it will first
+issue an error message telling you that an update has been issued under the
+scope of the negation operator.
+
+
 
 \paragraph{Tabled predicates that depend on update operations.}
 A related issue is that a tabled predicate (or an F-logic molecule)
@@ -4516,32 +4658,36 @@ methods if the logic of the program ensures that backtracking over those
 methods should not occur. 
 
 
-\section{Rule Insertion}
+\section{Insertion and Deletion of Rules into Modules}
 
 \index{rule insertion}
+\index{rule deletion}
 \index{rule!static}
 \index{rule!dynamic}
 \index{dynamic rule}
 \index{static rule}
 %%
-\FLORA supports \emph{non-backtrackable} insertion of rules into modules.
-A \FLORA module gets created when a program is loaded into it, as described
-in Section~\ref{sec-shell-commands}, or it can be created using the
-primitive {\tt newmodule}. Subsequently, rules can be added to an existing
-module. Rules that are inserted via the {\tt insertrule} command are
-called \emph{dynamic} and the rules loaded using the {\tt flLoad} or
-{\tt [...]} commands are called \emph{static} or \emph{compiled}.
-As mentioned in Section~\ref{sec-updates}, \FLORA predicates and molecules 
-can have both static and dynamic parts and no special declaration is
-required to make a predicate dynamic. The same molecule or a predicate can
-be defined by a mixture of static or dynamic rules.
+\FLORA supports \emph{non-backtrackable} insertion of rules into modules
+as well as deletion of inserted rules.  A \FLORA module gets created
+when a program is loaded into it, as described in
+Section~\ref{sec-shell-commands}, or it can be created using the
+primitive {\tt newmodule}. Subsequently, rules can be added to an
+existing module. Rules that are inserted via the {\tt insertrule}
+command are called \emph{dynamic} and the rules loaded using the {\tt
+flLoad} or {\tt [...]} commands are called \emph{static} or
+\emph{compiled}.  Dynamic rules can be deleted via the {\tt deleterule}
+command. As mentioned in Section~\ref{sec-updates}, \FLORA predicates
+and molecules can have both static and dynamic parts and no special
+declaration is required to make a predicate dynamic. The same molecule
+or a predicate can be defined by a mixture of static or dynamic rules.
 
-In this section, we will first look at the syntax of creating new modules.
-Then we will describe how to insert rules and, finally,  we address other
-related issues, including tabling, indexing, and the cut.
+In this section, we will first look at the syntax of creating new
+modules.  Then we will describe how to insert rules and delete
+rules. Finally, we address other related issues, including tabling,
+indexing, and the cut.
 
 
-\subsection{Creating a Module}
+\subsection{Creating a New Module at Run-time}
 
 
 \index{newmodule/1}
@@ -4566,7 +4712,7 @@ modules that are created by loading user programs.
 
 
 \subsection{Inserting Rules}
-
+\label{sec-insertingrule}
 
 \index{insertrule\_a}
 \index{insertrule\_z}
@@ -4613,6 +4759,59 @@ For this to be executed successfully, the module {\tt mod1} must already
 exist.
 
 
+\subsection{Deleting Rules}
+
+
+\index{deleterule\_a}
+\index{deleterule\_z}
+\index{deleterule}
+%%
+Rules inserted dynamically using {\tt insertrule\_a} can be deleted using
+the primitive {\tt deleterule\_a}, and rules inserted using {\tt
+  insertrule\_z} can be deleted using the primitive {\tt deleterule\_z}. If
+the user wishes to delete a rule that was previously inserted using either
+{\tt insertrule\_a} or {\tt insertrule\_z} then the premitive{\tt
+  deleterule} can be used. Similarly to rule insertion, several rules can be
+deleted in the same command:
+{\tt
+\begin{quote}
+\emph{delruleop}\{\emph{rulelist}\}
+\end{quote}
+}
+\noindent
+where \emph{delruleop} is either {\tt deleterule\_a} or {\tt deleterule\_z}
+and \emph{rulelist} is a comma-separated list of rules. Rules in the list
+mast be enclosed in parentheses and \emph{should not} terminate with a
+period.
+
+To delete the rules inserted in the second example of
+Section~\ref{sec-insertingrule}, we can use
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- deleterule_a{(X:student:-enroll(X,_T)),
+                       (X:student:-enroll(X,_T))@mod1}.
+\end{verbatim}
+\end{quote}
+or
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- deleterule{(X:student:-enroll(X,_T)),
+                       (X:student:-enroll(X,_T))@mod1}.
+\end{verbatim}
+\end{quote}
+
+The head of a rule to be deleted cannot be a variable and the module
+associated with any rule must be bound. For example, in
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- deleterule{(X:-Y@M1)@M2}.
+\end{verbatim}
+\end{quote}
+both X and M2 must be bound. However, Y and M1 can be unbound.
+
 \subsection{Tabling and Indexing of Dynamically Defined Predicates}
 
 If a rule needs to be inserted for a new predicate (which was not seen
@@ -4629,7 +4828,7 @@ following program:
 \begin{verbatim}
 ?- newmodule{mod1}. 
 ?- insertrule_a{(tc(X,Y):-e(X,Y))@mod1, (tc(X,Y):-tc(X,Z),e(Z,Y))@mod1}.
-?- insert{e(a,b)@mod1,e(b,c)@mod1}.
+?- insert{e(a,b)@mod1, e(b,c)@mod1}.
 ?- tc(X,Y)@mod1.
 \end{verbatim}
 \end{quote}
@@ -4682,18 +4881,21 @@ a runtime error will result.
 \paragraph{Indexing Dynamically Defined Predicates} Sometimes we need to
 index inserted rules in some module and \FLORA provides an indexing instruction
 for this purpose. For instance,
+\index{{\tt index} compiler directive}
+\index{compiler directive!{\tt index}}
 \begin{quote}
 \begin{verbatim}
 ?- newmodule{mod1}. 
-?- index(mod1,3-2).
+?- (index 3-2)@mod1.
 \end{verbatim}
 \end{quote}
 \noindent
 says that all HiLog predicates of arity 3 should be indexed on
 argument 2 provided that currently there are no such predicates defined.
 
-Similarly to the tabling instruction, the module name is optional, and there
-can be more than one arity-argument pairs in one indexing instruction.
+The module specification can be omitted, if {\tt mod1} is the default
+module {\tt main}, and there can be more than one arity-argument pair in
+one indexing instruction.
 
 \paragraph{A Problem with Cuts} What is behind rule insertion is pretty
 simple. As we know from Section~\ref{sec-updates}, every predicate and
@@ -4718,9 +4920,9 @@ q(b).
 \end{verbatim}
 \end{quote}
 \noindent
-we normally expect the answer is {\tt b} only. However, \FLORA
-will return two answers, {\tt a} and {\tt b}, because the cut affects only the
-dyna sub-part of p(X), instead of all the rules for {\tt p/1}.
+we normally expect the answer to be {\tt b} only. However, \FLORA will
+return two answers, {\tt a} and {\tt b}. This is because the cut affects
+only the dynamic part of p(X), instead of all the rules for {\tt p/1}.
 
 
 
@@ -5066,6 +5268,113 @@ then the user would have been rewarded with the following obscure message:
 It is trying to tell the user that a floating number is expected and the
 integer 3 will not do.
 
+\section{Exception Handling}\label{sec-errors}
+
+\index{catch\{...\}}
+\index{throw\{...\}}
+%%
+\FLORA supports the common catch/throw paradigm through the primitives {\tt
+  catch\{Goal,Error,Handler\}} and {\tt throw\{Error\}}.  Here {\tt Goal}
+can be any \FLORA query, {\tt Error} is a HiLog (or Prolog) term, and {\tt
+  Handler} is a \FLORA query that will be called if an exception that
+unifies with {\tt Error} is thrown during the execution of {\tt Goal}. For
+instance,
+
+%%
+\begin{verbatim}
+someQuery(Y) :- Y[value->X], X > 0, doSomethingUseful(X).  
+someQuery(Y) :- Y[value->X], X =< 0, throw{myError('X non-positive', X)}.
+
+?- p(Y), catch{someQuery(Y), myError(Reason,X), handleException(Reason,X)}.
+
+handleException(Reason,X) :- format('~w: X=~w~n',[Reason,X])@prolog(format), fail.
+\end{verbatim}
+%%
+The {\tt catch} construct first calls the query {\tt someQuery/1}. If {\tt
+  X} is positive then nothing special happens, the query executes normally,
+and {\tt catch\{...\}} has no effect.  However, if {\tt X} turns out to be
+non-positive then the query throws an exception {\tt myError('X {\tt
+    non-positive', X)}}, where {\tt X} is bound to the non-positive value
+that was deemed by the logic of the program to be an exceptional situation.
+The term thrown as an exception is then unified with the term {\tt
+  myError(Reason,X)} that was specified in {\tt catch\{...\}}. If the two
+terms do not unify ({\it e.g.}, if the error specified in {\tt catch} was
+something like {\tt myError(foo,X)}) then the exception is propagated
+upwards and if the user program does not catch it, the exception will
+eventually be caught by the \FLORA command loop. In out concrete case,
+however, the thrown term and the exception specified in {\tt catch} unify
+and thus {\tt handleException/2} is called with {\tt Reason} and {\tt X}
+bound by this unification.
+
+The queries {\tt Goal} and {\tt Handler} in the {\tt catch\{...\}}
+primitive can be \fl molecules, not just predicates. However, {\tt Error}
+--- both in {\tt catch} and in {\tt throw} --- must be HiLog or Prolog
+terms.  No molecules are allowed inside these terms unless they are
+reified. That is, {\tt myError('problem found', a[b->c])} will result in a
+parser error, but an exception of the form {\tt myError('problem found',
+  \$\{a[b->c]\})} is correct because the molecule is reified.
+
+Some exceptions are thrown by \FLORA itself, and applications might want
+to catch them:
+%%
+\begin{itemize}
+\item {\tt '\_\$flora\_undefined'(MethodSpec,ErrMsg)} --- thrown when undefinedness checking is
+  in effect (see Section~\ref{sec-undef}) and an attempt is made to execute
+  an undefined method or predicate. The first argument in the thrown
+  exception is a specification of the undefined predicate or the method 
+  that caused the exception. The second argument is the error message.
+\item {\tt '\_\$flora\_abort'} or {\tt '\_\$flora\_abort'(Message)} ---
+  thrown when \FLORA encounters other kinds of errors. This exception comes
+  in two flavors: with an error message and without.
+
+  A user program can also throw this exception when immediate exit to the
+  top level is required. The safest way to do so is by calling
+  {\tt abort(Message)@flora(sys)}, as explained in
+  Section~\ref{sec-flora-syscontrol}.
+\end{itemize}
+%%
+\index{FLORA\_UNDEFINED\_EXCEPTION}
+\index{FLORA\_ABORT}
+%%
+These exceptions are defined by \FLORA under the symbolic names {\tt
+  FLORA\_UNDEFINED\_EXCEPTION} and {\tt FLORA\_ABORT}. When a user
+application needs to catch these errors we recommend to include the file
+{\tt flora\_exceptions.flh} in the program and use the above symbolic
+names. For instance,
+%%
+\begin{verbatim}
+#include "flora_exceptions.flh"
+?- ..., catch{myQuery(Y),FLORA_UNDEFINED_EXCEPTION(MethSpec,_Msg),myHandler(MethSpec)}.
+?- ..., catch{yourQuery(Y),FLORA_ABORT(Message),yourHandler(Message)}.
+\end{verbatim}
+%%
+
+The {\tt catch\{...\}} primitive can also catch exceptions thrown by the
+underlying Prolog system. For this to happen you need to know the format
+({\it i.e.}, the exact terms) of the exceptions thrown by Prolog (which can
+be found in the manual). One exception that some sophisticated \FLORA
+program might need to catch is thrown by Prolog when a \FLORA application
+calls an undefined Prolog predicate. The format of the corresponding
+exception term is
+%%
+\begin{verbatim}
+error(undefined_predicate(PredName,Arity,Module)  
+\end{verbatim}
+%%
+where {\tt Module} is the name of the Prolog (not \FLORA) module in which
+the predicate {\tt PredName/Arity} was called. If you call a Prolog predicate
+in a Prolog module that does not exist, then Prolog will throw the exception
+%%
+\begin{verbatim}
+error(existence_error(module,Module)  
+\end{verbatim}
+%%
+Note that the thrown exception will contain a module name but not the predicate.
+
+Although Prolog (obviously) throws Prolog terms as exceptions, there is no
+need to worry about making sure that the terms caught by the \FLORA {\tt
+  catch\{...\}} primitive are also specified as Prolog terms. he primitive
+takes care of the Prolog-to-HiLog conversion automatically.
 
 
 \section{Debugging User Programs}\label{sec-debugging}
@@ -5124,22 +5433,25 @@ whether the checks are turned on or off globally. The second query reports
 on the state of the undefinedness checks in \FLORA module {\tt foo}, while
 the third query tells in which modules these checks are turned on.
 
-\index{catch/3}
+\index{catch\{...\}}
 %%
-The undefinedness exception in \FLORA can be caught using the {\tt
-  catch/3} builtin provided by the underlying Prolog engine. For instance, suppose
+The undefinedness exception in \FLORA can be caught using \FLORA's {\tt
+  catch\{...\}} builtin. For instance, suppose
 $FOO$ is a predicate or an F-molecule whose execution might trigger the
 undefinedness exception. Then we can catch this exception as follows:
 %%
 \begin{verbatim}
-  ..., catch(FOO, flora_undefined_exception(Call), handler(Call)), ...
+#include "flora_exceptions.flh"
+
+  ..., catch{FOO, FLORA_UNDEFINED_EXCEPTION(Call,ErrorMessage), handler(Call)}, ...
 \end{verbatim}
 %%
-(There is no need to indicate {\tt @prolog()} for {\tt catch/3} because
-{\tt catch/3} is also considered a \FLORA builtin.)
-Here {\tt handler/1} is a user-defined predicate (can be a molecule as well,
+Here {\tt FLORA\_UNDEFINED\_EXCEPTION} is the exception name defined in the
+\FLORA system file {\tt flora\_exceptions.flh}, which must be included as
+shown.
+The predicate {\tt handler/1} is user-defined (can be a molecule as well),
 which will be called when an undefinedness exception occurs. The variable
-{\tt Call}will be bound to an internal representation of the method or
+{\tt Call} will be bound to an internal representation of the method or
 predicate call that caused the exception. For instance, if we define
 %%
 \begin{verbatim}
@@ -5147,10 +5459,10 @@ predicate call that caused the exception. For instance, if we define
 \end{verbatim}
 %%
 then the undefinedness exception that occurs while executing $FOO$ will be
-ignored and the call to $FOO$ will succeed (but the error message would be
-printed nonetheless).
+ignored and the call to $FOO$ will succeed.
 
 
+\paragraph{Undefinedness check and meta-programming.}
 We should note one subtle interaction between these checks and
 meta-programming. Suppose your program does not have any class membership
 facts and the undefinedness checks are turned on. Then the meta-query
@@ -5197,12 +5509,41 @@ problem by posing the following query instead:
 \end{verbatim}
 %%
 
-The third way is to ignore the exception using the {\tt catch/3} builtin:
+\index{catch\{...\}}
+%%
+The third way is to ignore the exception using \FLORA's {\tt catch\{...\}}
+builtin (note the curly braces):
 %%
 \begin{verbatim}
- ?- catch(X:a, flora_undefined_exception(_), true).
+#include "flora_exception.flh"
+
+ ?- catch{X:a, FLORA_UNDEFINED_EXCEPTION(_,_)@prolog(), true}.
 \end{verbatim}
 %%
+
+\paragraph{Undefinedness check and update operators.}
+Although undefinedness checking can be turned on and off at will, it cannot
+always capture all cases correctly. Namely, if an insert or delete
+statement is executed while undefinedness checking is off, the
+corresponding methods will not be properly captured an spurious
+undefinedness errors might result.
+For instance, 
+%%
+\begin{verbatim}
+?- insert{a[meth->b]}, delete{a[meth->b]}.
+?- debug[#check_undefined(on)]@flora(sys).
+\end{verbatim}
+%%
+Then the query {\tt ?- a[meth->b]} will cause the undefinedness error. However,
+%%
+\begin{verbatim}
+?- insert{a[meth->b]}, delete{a[meth->b]}.
+?- debug[#check_undefined(on)]@flora(sys).
+?- a[meth->b].
+\end{verbatim}
+%%
+will not flag the method {\tt meth} as undefined.
+
 
 \subsection{Type Checking}\label{sec-typechecking}
 
@@ -5334,24 +5675,71 @@ bindings for {\tt X} in {\tt X[attr->Y]} that are not members of class {\tt
 time.
 
 
-\section{Summary of Compiler Directives} \label{sec-comp-directives}
+\section{Compiler Directives}
+\label{sec-comp-directives}
 
+\index{directive|see{compiler directive}}
 \index{compiler directive}
+\index{compiler directive!executable}
+\index{compiler directive!compile-time}
 %
-\index{compiler directive!{\tt index}}
-\index{compiler directive!{\tt equality}}
-\index{compiler directive!{\tt arguments}}
-\index{compiler directive!{\tt op}}
-%
-Like Prolog compiler, \FLORA compiler can take compiler directives, which
-begin with {\tt :-} in contrast to {\tt ?-} for queries.  \FLORA requires
-that all directives appear at the top of the program prior to the first
-appearance of a rule or a fact.  The following is a list of all the supported
-compiler directives:
+\paragraph{Executable vs. compile-time directives.}
+Like Prolog compiler, \FLORA compiler can take compiler directives.  Like
+in Prolog, these directives can be \emph{executable} or
+\emph{compile-time}, and this distinction is very important.
+Executable directives are treated as queries and they begin with {\tt ?-}.
+Compile-time directives begin with {\tt :-}.
+
+Executable directives are mostly used to control how the \FLORA shell
+interprets the expressions that the user types in. These directives have no
+effect during the compilation of program files. Instead, when they are
+executed as queries they affect the shell. In contrast, compile-time
+directives affect the compilation of the files they occur in. Also, if a
+module is loaded into the main module in the shell, then all compile time
+directives in that module are executed in the shell as well, so there is no
+need to explicitly execute these directives in the shell.
+\FLORA requires
+that all compile-time directives appear at the top of the program prior to
+the first appearance of a rule or a fact, because such a directive has
+effect only after it is found and processed.
+
+To better understand the issue, consider the following simple program
+(say, in file {\tt test.flr}):
 %%
-\begin{itemize}
-  \item {\tt equality none|basic|flogic}
-    \\
+\begin{verbatim}
+  :- op(400,xfx,fff).
+  a fff b.
+  ?- X fff Y.
+\end{verbatim}
+%%
+If you load this program then it will execute correctly and return the
+bindings {\tt a} and {\tt b} for {\tt X} and {\tt Y}, respectively.
+If you execute the same query {\tt X fff Y} in the \FLORA shell,
+the result will still be correct because \FLORA made sure that the
+directive {\tt op(400,xfx,fff)} in
+{\tt test.flr} was executed in the shell as well.
+On the other hand, if the program were
+%%
+\begin{verbatim}
+  ?- op(400,xfx,fff).
+  a fff b.
+  ?- X fff Y.
+\end{verbatim}
+%%
+then {\tt fff} would be known to the shell, but, unfortunately, we
+will not get that far to find out: The compiler will issue an error, since
+{\tt fff} will not be known as an operator during the compilation of the
+program.
+
+\paragraph{Summary of directives.}
+The following is a summary of all supported compiler directives:
+%%
+\begin{description}
+  \item[{\tt :- equality none|basic|flogic}]
+\index{{\tt equality} compiler directive}
+\index{compiler directive!{\tt equality}}
+%
+~~~\\
     Sets the equality maintenance level in the current user module.
     With {\tt none}, equality is not maintained, and the symbol {\tt :=:}
     works like an ordinary predicate.  With {\tt basic}, the predicate {\tt
@@ -5359,30 +5747,18 @@ compiler directives:
     for equality are enforced. With {\tt flogic}, the usual congruence
     axioms are maintained \emph{plus} the additional equality axiom for
     single-valued methods in \fl.
-\item {\tt equality none|basic|flogic} {\tt in}  \emph{module}
-  \\
+\item[{\tt ?- equality none|basic|flogic}]
+  ~~~\\
+  This is an executable version of the {\tt equality} directive.
+\item[{\tt ?- (equality none|basic|flogic)@\emph{module}}]
+  ~~~\\
   Same as above, except that equality maintenance is set for the specified
   user module.
-\item {\tt arguments} \emph{functor}(\emph{type}, ..., \emph{type}), where
-  \emph{type} is either {\tt oid} or {\tt meta}
-  \\
-  \index{meta}
-  \index{syntactic object}
-  %%
-  Specifies the meta signature to the given predicate, which tells how the
-  arguments of the predicate are to be compiled. The {\tt oid} type means
-  that the oid of the corresponding argument is computed and passed to the
-  predicate as an argument; {\tt meta} means that the argument is treated
-  as a \emph{syntactic object} and its entire structure is preserved. For
-  instance, if the argument is a formula (an \fl molecule, a conjunction or
-  a disjunction of literals), then it is converted to an object that
-  preserves the entire structure of the formula.  This type of compilation
-  is useful in meta-predicates, such as {\tt findall/3}, which need to
-  consider the truth value of some of their arguments rather than their
-  oid.
   
-\item {\tt index Arity-Argument}
-  \\
+\item[{\tt :- index \emph{Arity-Argument} }]
+\index{{\tt index} compiler directive}
+\index{compiler directive!{\tt index}}
+  ~~~\\
   Says that all HiLog predicates of arity {\tt Arity}should be indexed on
   argument number {\tt Argument} (the count starts at 1). This directive
   should appear at the beginning of a module to have any effect.
@@ -5395,20 +5771,38 @@ compiler directives:
   (regardless of what you say). Thus, this instruction is useful only for
   predicates with partially instantiated arguments that appear in the rule
   heads.
+\item[{\tt :- (index \emph{Arity-Argument})@\emph{module} }]
+~~~  \\
+  Same as above, except that the indexing of clauses will be done in the
+  specified module.
 
-\item {\tt op({\it precedence},{\it type},{\it operator})}
-  \\
+\item[{\tt :-  op({\it precedence},{\it type},{\it operator})}]
+\index{{\tt op} compiler directive}
+\index{compiler directive!{\tt op}}
+ ~~~ \\
   Defines \emph{operator} as a \FLORA operator with the given precedence
   and type. The \emph{type} is the same as in Prolog operators, {\it i.e.},
   {\tt fx}, {\tt xf}, {\tt xfy}, etc.
-\item {\tt op({\it precedence},{\it type},[{\it operator}, ..., {\it operator}])}
-  \\
+  Note that the {\tt op} directive is confined to
+  the module in which it is executed or defined. For instance, if
+  {\tt example.flr} has a call {\tt (a foo b)@bar}, the symbol {\tt foo} is
+  declared as an operator in the program loaded to module {\tt bar}, but not in
+  {\tt example.flr}, then a syntax error will result, because 
+   {\tt example.flr} does not know about the operator declaration for {\tt
+  foo}.
+\item[{\tt :-  op({\it precedence},{\it type},[{\it operator}, ..., {\it operator}])}]
+~~~  \\
   Same as above, except that this directive defines a list of operators
   with the same precedence and type.
-\item {\tt table {\it functor/arity}, ..., {\it functor/arity}}
+\item[{\tt ?-  op({\it precedence},{\it type},{\it operator})@\emph{module}}]
+ ~~~ \\
+  Same as above, except that a module is also given. However, unless the
+  module is {\tt main}, this directive acts as a no-op.
+\item[{\tt table {\it functor/arity}, ..., {\it functor/arity}}]
+  ~~~\\
   Requests that the specified first order predicates must be tabled.
   
-\end{itemize}
+\end{description}
 
 
 \section{\FLORA System Modules}\label{sec-service-libs}
@@ -5592,7 +5986,7 @@ storage.
 \end{itemize}
 %%
 
-\subsection{System Control}
+\subsection{System Control}\label{sec-flora-syscontrol}
 
 The system module {\tt sys} provides primitives that affect the global
 behavior of the system. It is accessible though the system module reference
@@ -5610,7 +6004,7 @@ behavior of the system. It is accessible though the system module reference
     {\tt Path} is bound, checks if the specified directory is on the
     library search path. Otherwise, binds (through backtracking) {\tt Path}
     to each directory on the library search path.
-  \item {\tt tables[\#abolish]} --- abolishes all tabled data in Prolog.
+  \item {\tt tables[\#abolish]} --- discards all tabled data in Prolog.
 \end{itemize}
 %%
 This module also provides the following amenities:
@@ -5880,10 +6274,10 @@ were inspired by the \FLIP compiler developed by Bertram Lud\"aescher.
 Michael Kifer helped design \FLORA, implemented the debugger, and some
 other features.
 
-Chang Zhao made a great many of crucial enhancements to the
+Chang Zhao made a great many of the crucial enhancements to the
 system, such as run-time undefinedness checks, the checker for
 dependency among tabled predicates and updates, tabling of HiLog
-predicates, and assertion and retraction of program rules.
+predicates, and dynamic insertion and deletion of program rules.
 
 
 \appendix
@@ -5935,7 +6329,7 @@ DoUntil    := do Body until Body
 LoopUntil  := loop Body until Body
 
 BodyLiteral := BinaryRelationship | ObjectSpecification | Term
-                | DBUpdate | Builtin | Loading
+                | DBUpdate | Refresh | Builtin | Loading
 
 Builtin := ArithmeticComparison, Unification, MetaUnification, etc.
 
@@ -5997,6 +6391,7 @@ DBUpdate := DBOp '{' UpdateList ('|' Body)? '}'
 DBOp := insert | insertall | delete | deleteall | erase | eraseall
 UpdateList := HeadLiteral ('@' atom)?
 UpdateList := UpdateList ',' UpdateList  
+Refresh := refresh '{' UpdateList '}'
 \end{verbatim}
 %%
 
@@ -6757,19 +7152,20 @@ patch rules. The file {\tt flrpatch.fli} is a template, and {\tt
   flrpatch.flh}, which contains the actual patch rules, is generated from
 {\tt flrpatch.fli} during the installation.
 
-The directory {\tt includes/} contains the header file, which defines the
-macros ({\it e.g.}, {\tt FLORA\_THIS\_WORKSPACE}) that wrap all the names with
-prefixes to separate the different modules of the user program.  The
-directory {\tt headerinc/} is another place where the template files are
-located. Each of these files contains just a few {\tt \#include}
-statements, mostly for the files in the {\tt closure/} directory (which, if
-you recall, contains pieces of the trailer). When the system is installed
-certain combinations of these files are concatenated and dumped into the
-{\tt trailer/} directory. Recall that the files in the {\tt trailer/}
-directory are trailers that implement the closure axioms (there are three
-trailers: without equality, with standard equality, and with \fl equality).
-This double-indirection is needed to simplify the installation procedure
-and to eliminate code duplication among the various trailers.
+The directory {\tt includes/} contains (among others) the header file,
+which defines the a number of important macros ({\it e.g.}, {\tt
+  FLORA\_THIS\_WORKSPACE}) that wrap all the names with prefixes to
+separate the different modules of the user program.  The directory {\tt
+  headerinc/} is another place where the template files are located. Each
+of these files contains just a few {\tt \#include} statements, mostly for
+the files in the {\tt closure/} directory (which, if you recall, contains
+pieces of the trailer). When the system is installed certain combinations
+of these files are concatenated and dumped into the {\tt trailer/}
+directory. Recall that the files in the {\tt trailer/} directory are
+trailers that implement the closure axioms (there are three trailers:
+without equality, with standard equality, and with \fl equality).  This
+double-indirection is needed to simplify the installation procedure and to
+eliminate code duplication among the various trailers.
 
 The directory {\tt p2h} contains (the only!) C program in the system. It
 implements conversion of Prolog terms to HiLog and back. Finally, the {\tt

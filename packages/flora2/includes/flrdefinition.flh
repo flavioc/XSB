@@ -6,9 +6,6 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
-:- import flora_plg2hlg/4 from prolog2hilog.
-:- import flora_post_p2h_conversion/2 from flrutils.
-
 :- import
         storage_delete_all/1,
    	storage_find_fact/2,
@@ -27,7 +24,6 @@
    from flrregistry.
 
 :- import flora_set_counter/2 from flrporting.
-
 :- import flora_error_undefined/1 from flrundefined.
 
 ?- storage_delete_all(FLORA_THIS_FLD_STORAGE).

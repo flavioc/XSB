@@ -66,13 +66,13 @@
 /**************************************
   errors reported by Flora Operator
 **************************************/
-#define NO_REDEFOP	'redefinition of standard operators is not allowed'
+#define NO_REDEFOP	'redefinition of standard operators is illegal'
 
 
 /**************************************
   errors reported by Flora Arguments directive
 **************************************/
-#define NO_REDEFARG	'redefinition of standard argument types is not allowed'
+#define NO_REDEFARG	'redefinition of standard argument types is illegal'
 
 
 /**************************************
@@ -85,23 +85,24 @@
 
 #mode save
 #mode nostring "\!#'"
-#define ERROR_ARGTYPE	'invalid argument type specification: FL_OID/FL_BODYFORMULA expected'
+%%#define ERROR_ARGTYPE	'invalid argument type specification: FL_OID/FL_BODYFORMULA expected'
 #mode restore
 
-#define ERROR_ARGUMENTS	'invalid arguments directive'
+%%#define ERROR_ARGUMENTS	'invalid arguments directive'
 #define ERROR_AGGREGT	'syntax error in aggregate body'
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
 #define ERROR_PRLGLIT	'invalid PROLOG literal'
+#define ERROR_HILGTERM	'invalid HiLog term'
 #define ERROR_WSNAME	'invalid module name'
-#define ERROR_SYSMOD	'updates of FLORA system modules are not allowed'
+#define ERROR_SYSMOD	'updates of FLORA system modules are illegal'
 #define ERROR_PATHEXP	'invalid path expression'
 #define ERROR_HDLITERAL 'invalid literal/molecule in rule head'
 #define ERROR_EXPINHEAD 'invalid path expression in rule head'
 #define ERROR_LOADLIST	'invalid list of loading commands'
 #define ERROR_LOADITEM	'invalid loading command'
 #define ERROR_LOADFILE	'invalid file name'
-#define ERROR_INSERT	'invalid literal to insert'
-#define ERROR_DELETE	'invalid literal to delete'
+#define ERROR_INSERT	'invalid literal in insert'
+#define ERROR_DELETE	'invalid literal in delete'
 #define ERROR_EXPINSERT 'invalid path expression in insert'
 #define ERROR_EXPDELETE 'invalid path expression in delete'
 #define ERROR_INDXDIREC	'invalid indexing directive'
@@ -125,23 +126,23 @@
 #define EXP_ARGS	'arguments expected'
 #define EXP_RULES	'rules expected'
 #define EXP_OPTLIST	'a list of xsb compiler options expected'
-#define NO_LISTTAIL	'list tail specification is not allowed in this context'
-#define NO_DISJUNCTION	'disjunction is not allowed in rule heads and facts'
-#define NO_NEGATION	'negation is not allowed in rule head'
+#define NO_LISTTAIL	'list tail specification is illegal in this context'
+#define NO_DISJUNCTION	'disjunction is illegal in rule heads and facts'
+#define NO_NEGATION	'negation is illegal in rule head'
 #define NO_WORKSPACE	'invalid use of module specification'
-#define NO_WSINRULEHEAD	'module specification is not allowed in rule head'
+#define NO_WSINRULEHEAD	'@module is illegal in rule heads and update primitives'
 #define NO_WSNESTING	'invalid nesting of module specifications'
-#define NO_REDEFINITION 'redefinition of built-ins in rule head is not allowed'
-#define NO_MULTIATT	'multivalued reference is not allowed in rule head'
-#define NO_AGGINHEAD	'aggregate is not allowed in rule head'
-#define NO_INSERT	'insertion into a built-in is not allowed'
-#define NO_DELETE	'deletion from a built-in is not allowed'
-#define NO_INSERTMULATT 'multivalued reference is not allowed in insert'
-#define NO_INSERTDISJUN	'disjunction is not allowed in insert'
-#define NO_DELETEDISJUN	'disjunction is not allowed in delete'
-#define NO_INSERTNEG	'negation is not allowed in insert'
-#define NO_DELETENEG	'negation is not allowed in delete'
-#define NO_PROLOGUPDATE 'updating Prolog predicates is not allowed'
+#define NO_REDEFINITION 'redefinition of built-ins in rule head is illegal'
+#define NO_MULTIATT	'multivalued reference is illegal in rule head'
+#define NO_AGGINHEAD	'aggregates are illegal in rule head'
+#define NO_INSERT	'insertion into a built-in is illegal'
+#define NO_DELETE	'deletion from a built-in is illegal'
+#define NO_INSERTMULATT 'multivalued reference is illegal in insert'
+#define NO_INSERTDISJUN	'disjunction is illegal in insert'
+#define NO_DELETEDISJUN	'disjunction is illegal in delete'
+#define NO_INSERTNEG	'negation is illegal in insert'
+#define NO_DELETENEG	'negation is illegal in delete'
+#define NO_PROLOGUPDATE 'updating Prolog predicates is illegal'
 #define UNKNOWN_AGGREGT 'unknown aggregate operator'
 #define UNKNOWN_DIRECT	'unknown compiler directive'
 #define UNREG_SYSMOD	'unregistered system module'
@@ -154,9 +155,10 @@
 #define UNEXPECTED_THEN	'unexpected then-statement'
 #define UNEXPECTED_ELSE	'unexpected else-statement'
 #define UNEXPECTED_CONTROL 'unexpected control statement'
-#define NO_UPDATEIF	'updating if-statement is not allowed'
-#define NO_UPDATETHEN	'updating then-statement is not allowed'
-#define NO_UPDATEELSE	'updating else-statement is not allowed'
+#define NO_UPDATEIF	'updating if-statement is illegal'
+#define NO_UPDATETHEN	'updating then-statement is illegal'
+#define NO_UPDATEELSE	'updating else-statement is illegal'
+#define REIFY_WRONG_ARGNUM	'more than 1 argument in reification operator'
 
 
 /**************************************
@@ -174,10 +176,10 @@
 /**************************************
   errors reported by Flora Compiler
 **************************************/
-#define REPEATED_GVAR	'repeated grouping variable is not allowed in aggregates'
+#define REPEATED_GVAR	'repeated grouping variables are illegal in aggregates'
 #define GVAR_NOTIN	'grouping variable not in aggregate body'
 #define AVAR_NOTIN	'aggregate variable not in aggregate body'
 #define ERROR_GVAR	'invalid grouping variable'
 #define ERROR_AVAR	'invalid aggregate variable'
-#define AVAR_ASGVAR	'aggregation variable is not allowed as grouping variable'
+#define AVAR_ASGVAR	'aggregation variables cannot be grouped by'
 #define VARWSINHEAD	'unbound module name in rule head'

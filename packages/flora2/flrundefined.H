@@ -33,12 +33,14 @@
 
 :- import length/2 from basics.
 
+:- import close_open_tables/0 from machine.
+
 :- import subsumes/2 from subsumes.
 
-:- import 
-	FLORA_DB_FIND_PREDICATE/2, 
-	FLORA_DB_INSERT_PREDICATE/3
-   from storage.
+:- import
+	flora_db_find_base/2,
+	flora_db_insert_base/2
+   from flrstoragebase.
 
 :- import
 	flora_write_atom/1,
@@ -46,6 +48,8 @@
 	flora_concat_atoms/2,
 	flora_concat_items/2
    from flrporting.
+
+:- import flora_disabled_undefinedness_check_registry/3 from flrregistry.
 
 :- import flora_prlgdef/2 from flrprolog.
 
@@ -61,9 +65,9 @@
 
 :- import flora_decode_predicate/6 from flrwrapper.
 
-:- import flora_error_line/2 from flrprint.
-
 :- export
 	flora_debug_code/2,
+	flora_temp_protect_call/2,
+	flora_temp_unprotect_call/1,
 	flora_define_predicate/1,
 	flora_error_undefined/1.

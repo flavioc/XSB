@@ -1,0 +1,142 @@
+/* File:      flrcanon.P
+**
+** Author(s): Michael Kifer
+**            Chang Zhao
+**
+** Contact:   flora-users@lists.sourceforge.net
+**
+** Copyright (C) The Research Foundation of SUNY, 2003
+**
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+:- dynamic
+	flora_body_to_head_conversion_cache(_,_),
+	flora_head_to_body_conversion_cache(_,_).
+
+:- import
+        flora_module_predicate/4,
+        flora_decode_predicate/6
+   from flrwrapper.
+
+:- import length/2 from basics.
+
+:- import
+        flora_concat_atoms/2
+   from flrporting.
+
+:- export
+	get_canonical_form/2,
+	convert_to_body_literal/2,
+	convert_to_head_literal/2.
+
+/******************************************************************************
+  get_canonical_form(+Term,-Canon)
+  get the canonical form Canon of the given Term. Canon is in the form
+  of (Wrap,Args,Module,Callable)
+******************************************************************************/
+%% Case of Var
+get_canonical_form(Term,(_,_,_,Term)) :-
+       var(Term),
+       !.
+
+%% Case of Var@...
+get_canonical_form(FLLIBMODLIT(FL_LIBMOD,Term,Mod),(Wrap,Args,Module,Callable)) :-
+	!,
+	get_canonical_form(Term,Canon),
+	Canon = (Wrap,Args,NewMod,Callable),
+	(var(Term) -> Module = Mod
+	;  var(NewMod) -> Module=Mod
+	;  Module = NewMod
+	).
+
+%% Case of nonvar@Var
+get_canonical_form(FLLIBMODLIT(Wrap,Args,Mod), (Wrap,Args,Mod,Callable)) :-
+	!,
+	(var(Mod) -> true
+	; flora_module_predicate(Wrap,Args,Mod,Callable)
+	).
+
+get_canonical_form(Term, Canon) :-
+	flora_decode_predicate(Term,Type,TermModuleName,Prefix,Wrapper,ArgL),
+	(Type = (hilog) ->
+	    Canon = (WRAP_HILOG,[Wrapper|ArgL],TermModuleName,_)
+	; (atom(Prefix) -> flora_concat_atoms([Prefix,Wrapper],Wrapper1)
+	  ; Wrapper1 = Wrapper
+	  ),
+	  Canon = (Wrapper1,ArgL,TermModuleName,Term)
+	).
+
+/****************************************************************************
+**       convert_to_head_literal(+Body,-Head)
+** Converts body form of Flora predicates to their head form;
+** if already head then leaves intact.
+** Caches its result for faster processing
+****************************************************************************/
+convert_to_head_literal(Body,Head) :-
+	var(Body),
+	!,
+	Head = Body.
+convert_to_head_literal(Body,Head) :-
+	flora_body_to_head_conversion_cache(Body,Head),
+	!.
+convert_to_head_literal(Body,Head) :-
+	flora_decode_predicate(Body,Type,ModuleName,_Prefix,MainWrapper,ArgL),
+	(Type = (hilog) -> Head = Body
+	;
+	    flora_module_predicate(MainWrapper,ArgL,ModuleName,Head)
+	),
+	functor(Body,BodyF,Arity),
+	functor(Head,HeadF,_),
+	length(NewArgs,Arity),
+	HeadTempl =.. [HeadF|NewArgs],
+	BodyTempl =.. [BodyF|NewArgs],
+	assert(flora_body_to_head_conversion_cache(BodyTempl,HeadTempl)).
+
+/****************************************************************************
+**       convert_to_body_literal(+Body,-Head)
+** Converts head form of Flora predicates to their body form;
+** if already head then leaves intact.
+** Caches its result for faster processing
+****************************************************************************/
+convert_to_body_literal(Head,Body) :-
+	var(Head),
+	!,
+	Body = Head.
+convert_to_body_literal(Head,Body) :-
+	flora_head_to_body_conversion_cache(Head,Body),
+	!.
+convert_to_body_literal(Head,Body) :-
+	flora_decode_predicate(Head,Type,ModuleName,_Prefix,MainWrapper,ArgL),
+	(Type = (hilog) -> Body = Head
+	;
+	    flora_concat_atoms([FLDEBUGPREFIX,MainWrapper],BodyWrapper),
+	    flora_module_predicate(BodyWrapper,ArgL,ModuleName,Body)
+	),
+	functor(Head,HeadF,Arity),
+	functor(Body,BodyF,_),
+	length(NewArgs,Arity),
+	HeadTempl =.. [HeadF|NewArgs],
+	BodyTempl =.. [BodyF|NewArgs],
+	assert(flora_head_to_body_conversion_cache(HeadTempl,BodyTempl)).
+

@@ -28,7 +28,10 @@
 
 FLORADIR = ..
 
-ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh flrdyna.flh flrdynz.flh
+ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh \
+	  flrdyna.flh flrdynz.flh \
+	  flrtable.flh flrhilogtable.flh \
+	  flrrefreshtable.flh
 
 PROLOG = none
 
@@ -37,6 +40,7 @@ PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 FLORA_INCLUDES_DIR = ../flrincludes
 
 FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
+FLORA_WSPREDICATES = $(FLORA_INCLUDES_DIR)/flora_wspredicates.flh
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(FLORADIR)/.flora_genincl_warn.tmp'
@@ -54,7 +58,7 @@ all: clean init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-%.flh: %.fli $(FLORA_TERMS)
+%.flh: %.fli $(FLORA_TERMS) $(FLORA_WSPREDICATES)
 	@echo 'flWrapAround($*).' >> cmd...
 
 

@@ -9,13 +9,13 @@ files="./flora2/LICENSE ./flora2/INSTALLATION \
     	./flora2/makeflora ./flora2/makeflora.bat \
         ./flora2/*.sh ./flora2/*.P ./flora2/*.H ./flora2/*.flh\
     	./flora2/closure/Makefile ./flora2/closure/NMakefile.mak \
-    	./flora2/closure/*.fli ./flora2/closure/includes/*.fli \
+    	./flora2/closure/*.fli \
     	./flora2/debugger/Makefile ./flora2/debugger/NMakefile.mak \
     	./flora2/debugger/*.in ./flora2/debugger/*.P \
     	./flora2/demos/*.flr ./flora2/demos/*.sh \
     	./flora2/demos/Makefile ./flora2/demos/NMakefile.mak \
     	./flora2/docs/flora2.pdf \
-    	./flora2/docs/technical.txt \
+    	./flora2/docs/*.txt \
     	./flora2/emacs/flora.el \
     	./flora2/flrincludes/*.flh \
     	./flora2/genincludes/Makefile ./flora2/genincludes/NMakefile.mak \
@@ -42,6 +42,23 @@ files="./flora2/LICENSE ./flora2/INSTALLATION \
 
     cd ../..
 
-    tar cvf flora2/flora2.tar $files
+    EXCLUDEFILE=flora2/admin/.excludedFiles
+
+    cat > $EXCLUDEFILE <<EOF
+CVS
+*.conf
+*.log
+.cvsignore
+.excludedFiles
+*.zip
+*.tar
+*.bz2
+*.gz
+*.Z
+*~
+*.bak
+EOF
+
+    tar cvf flora2/flora2.tar --exclude-from=$EXCLUDEFILE $files
 
     gzip -f flora2/flora2.tar

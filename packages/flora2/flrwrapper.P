@@ -28,6 +28,7 @@
 
 #include "flora_terms.flh"
 
+:- import length/2 from basics.
 
 /*****************************************************************************
   flora_user_module_predicate(+Functor,+Args,+Workspace,-Predicate)
@@ -37,9 +38,16 @@
   Flora user module.
 *****************************************************************************/
 flora_user_module_predicate(Functor,Args,WS,Predicate) :-
-	flora_concat_atoms([FLORA_USER_MODULE_PREFIX,'''',WS,'''',Functor],PF),
-	Predicate =.. [PF|Args].
+        flora_encoded_call_cache(Functor,Args,WS,user,Predicate),
+        !.
 
+flora_user_module_predicate(Functor,Args,WS,Predicate) :-
+	flora_concat_atoms([FLORA_USER_MODULE_PREFIX,'''',WS,'''',Functor],PF),
+        Predicate =.. [PF|Args],
+	functor(Predicate,_,Arity),
+        length(NewArgsTempl,Arity),
+        PredTemplate =.. [PF|NewArgsTempl],
+        assert(flora_encoded_call_cache(Functor,NewArgsTempl,WS,user,PredTemplate)).
 
 /*****************************************************************************
   flora_system_module_predicate(+Functor,+Args,+SysModID,-Predicate)
@@ -49,9 +57,16 @@ flora_user_module_predicate(Functor,Args,WS,Predicate) :-
   to a Flora system module.
 *****************************************************************************/
 flora_system_module_predicate(Functor,Args,SysModID,Predicate) :-
-	flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX,'''',SysModID,'''',Functor],PF),
-	Predicate =.. [PF|Args].
+        flora_encoded_call_cache(Functor,Args,SysModID,system,Predicate),
+        !.
 
+flora_system_module_predicate(Functor,Args,SysModID,Predicate) :-
+	flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX,'''',SysModID,'''',Functor],PF),
+        Predicate =.. [PF|Args],
+	functor(Predicate,_,Arity),
+        length(NewArgsTempl,Arity),
+        PredTemplate =.. [PF|NewArgsTempl],
+        assert(flora_encoded_call_cache(Functor,NewArgsTempl,SysModID,system,PredTemplate)).
 
 /*****************************************************************************
   flora_module_predicate(+Functor,+Args,+ModuleName,-Predicate)
@@ -62,10 +77,12 @@ flora_system_module_predicate(Functor,Args,SysModID,Predicate) :-
   It fails if the input is not a valid Flora module name. It is used for
   either F-logic or HiLog wrapper predicates.
 *****************************************************************************/
-%% Tabling this expensive predicate can speed up dynamic module calls
-%% like foo@X
-:- table flora_module_predicate/4.
-
+%% Cached predicate: although flora_user_module_predicate and
+%% flora_system_module_predicate are cached, we cache this one also, to speed
+%% up meta-ops
+flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
+	flora_encoded_call_cache(Functor,Args,ModuleName,Predicate),
+	!.
 flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
 	flora_module_name(ModuleName,Type,WS),
 	!,
@@ -75,8 +92,13 @@ flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
 	; Type == systemmodule ->
 	    flora_system_module_predicate(Functor,Args,WS,Predicate)
 	;
-	  fail
-	).
+	    fail
+	),
+	%% Cache the call
+	functor(Predicate,_,Arity),
+	length(ArgsTempl,Arity),
+	flora_encoded_call_cache(Functor,ArgsTempl,WS,_,PredTempl),
+	assert(flora_encoded_call_cache(Functor,ArgsTempl,ModuleName,PredTempl)).
 
 
 /*****************************************************************************
@@ -194,15 +216,23 @@ flora_tdyn_hilog_module_predicate_symbol(ModuleName,Predicate) :-
   "Type" is either "usermodule" or "systemmodule". "Workspace" is its name.
   If the input is not a valid Flora module name, "Type" is set to "invalid".
 *****************************************************************************/
+flora_module_name(FL_FLORALIB(WS),systemmodule,WS) :-
+	atom(WS),
+	!.
+
 flora_module_name(ModuleName,usermodule,ModuleName) :-
 	atom(ModuleName),
 	!.
 
 flora_module_name(FL_FLORALIB(WS),systemmodule,WS) :-
-	atom(WS),
-	!.
+	flora_module_registry(FL_FLORALIB(WS)).
 
-flora_module_name(_ModuleName,invalid,_WS).
+flora_module_name(ModuleName,usermodule,ModuleName) :-
+	(var(ModuleName) ; ModuleName \= FL_FLORALIB(_)),
+	flora_module_registry(ModuleName).
+
+flora_module_name(ModuleName,invalid,_WS) :-
+	\+ flora_module_registry(ModuleName).
 
 
 /*****************************************************************************
@@ -210,15 +240,17 @@ flora_module_name(_ModuleName,invalid,_WS).
 *****************************************************************************/
 flora_check_module_name(ModuleName) :-
 	flora_module_name(ModuleName,Type,_WS),
-	!,
-	(Type == invalid -> flora_module_name_error(ModuleName), fail; true).
+	(Type == invalid
+	-> flora_module_name_error(ModuleName)
+	; true
+	).
 
 
 /*****************************************************************************
   flora_module_name_error(+ModuleName)
 *****************************************************************************/
 flora_module_name_error(ModuleName) :-
-	flora_error_line("invalid Flora module name `~w'",ModuleName).
+	flora_abort([ModuleName, ': Invalid Flora module name']).
 
 
 /***************************************************************************
@@ -445,8 +477,12 @@ flora_is_flogic_base(WRAP_OBJEQL)     :- !.
         ArgsList=[]. In (3), PredicateSymbol=[] and ArgsList=[].
 
 *****************************************************************************/
-%% This is an expensive predicate -- table it
-:- table flora_decode_predicate/6.
+%% This predicate is cached
+flora_decode_predicate(Predicate,PredicateType,ModuleName,
+	               WrapPrefix,PredicateSymbol,ArgsList) :-
+	flora_decoded_predicate_cache(Predicate,PredicateType,ModuleName,
+				      WrapPrefix,PredicateSymbol,ArgsList),
+	!.
 
 flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	               WrapPrefix,PredicateSymbol,ArgsList) :-
@@ -472,12 +508,10 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	!,
 	( Wrapper == WRAP_HILOG ->
 	    %% a HiLog Predicate
-	    PredicateType=hilog,
-	    ( Args=[PredicateSymbol|ArgsList] ->
-		true
+	    PredicateType = (hilog),
+	    ( Args=[PredicateSymbol|ArgsList] -> true
 	    ;
-	      PredicateSymbol=[],
-	      ArgsList=[]
+		flora_abort([flora_decode_predicate, ': A zero-ary HiLog wrapper encountered - a possible FLORA-2 bug, ', Args])
 	    )
 	;
 	  %% either an F-logic wrapper or Flora system wrapper predicate
@@ -497,14 +531,33 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	    %% a Flora builtin predicate, like difobjeql/2
 	    PredicateType = (flora)
 	  )
-	).
+	),
+	%% Cache the result in the most general form
+	functor(Predicate,PredFunctor,Arity),
+        length(OldArgsTempl,Arity),
+	(PredicateType == (hilog)
+	%% OldArgsTempl = [] is impossible: a flora_abort would be issued first
+	-> OldArgsTempl = [PSTempl|NewArgsTempl]
+	;  NewArgsTempl = OldArgsTempl, PSTempl=PredicateSymbol
+	),
+	PredTemplate =.. [PredFunctor|OldArgsTempl],
+	assert(flora_decoded_predicate_cache(PredTemplate,PredicateType,
+					     ModuleName,WrapPrefix,
+					     PSTempl,NewArgsTempl)).
 
 flora_decode_predicate(Predicate,PredicateType,_ModuleName,
 		       _WrapPrefix,PredicateSymbol,ArgsList) :-
 	PredicateType = prolog,
 	%% prolog catches all other cases.
 	Predicate =.. [PredicateSymbol|ArgsList],
-	!.
+	!,
+	%% Cache the resuult in the most general form
+	functor(Predicate,_,Arity),
+        length(NewArgsTempl,Arity),
+	PredTemplate =.. [PredicateSymbol|NewArgsTempl],
+	assert(flora_decoded_predicate_cache(PredTemplate,PredicateType,
+					     _ModuleName,_WrapPrefix,
+					     PredicateSymbol,NewArgsTempl)).
 
 
 /*****************************************************************************

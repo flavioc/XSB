@@ -1,0 +1,74 @@
+/***************************************************************************
+  file: flrincludes/flrtable.fli
+
+  Author(s): Michael Kifer
+
+  Contact:   flora-users@lists.sourceforge.net
+
+  Copyright (C) The Research Foundation of SUNY, 2003
+
+  This file lists FLORA wrappers that must be tabled.
+  This file is used by the FLORA's build-time preprocessor, flrwraparound.P,
+  to convert .fli files into .flh files.
+***************************************************************************/
+
+
+
+#include "flora_terms.flh"
+#include "flora_wspredicates.flh"
+
+/***************************************************************************
+  tabling directives
+
+  Note: Tabling inferred_* predicates appears to be not necessary
+***************************************************************************/
+:- table
+	WRAP_SUB/2,
+	WRAP_ISA/2,	
+	WRAP_FD/3,	
+	WRAP_IFD/3,	
+	WRAP_MVD/3,	
+	WRAP_IMVD/3,	
+	WRAP_MVDDEF/2,
+	WRAP_IMVDDEF/2,
+	WRAP_FDSIG/3,
+	WRAP_FDSIGDEF/2,
+	WRAP_IFDSIG/3,
+	WRAP_IFDSIGDEF/2,
+	WRAP_MVDSIG/3,
+	WRAP_MVDSIGDEF/2,
+	WRAP_IMVDSIG/3,
+	WRAP_IMVDSIGDEF/2,
+	WRAP_METH/2,	
+	WRAP_IMETH/2,
+	WRAP_EXISTS/1,
+	WRAP_DIFFOBJEQL/2,
+	WRAP_FDDEF/2,
+	WRAP_IFDDEF/2.
+
+%% Subsumptive tabling doesn't support abolish_table_call, which Flora uses
+%% for insert{...}, delete{...}, so we force tabling to be variant.
+:- use_variant_tabling
+	WRAP_SUB/2,
+	WRAP_ISA/2,
+	WRAP_FD/3,
+	WRAP_IFD/3,
+	WRAP_MVD/3,
+	WRAP_IMVD/3,	
+	WRAP_MVDDEF/2,
+	WRAP_IMVDDEF/2,
+	WRAP_FDSIG/3,
+	WRAP_FDSIGDEF/2,
+	WRAP_IFDSIG/3,
+	WRAP_IFDSIGDEF/2,
+	WRAP_MVDSIG/3,
+	WRAP_MVDSIGDEF/2,
+	WRAP_IMVDSIG/3,
+	WRAP_IMVDSIGDEF/2,
+	WRAP_METH/2,	
+	WRAP_IMETH/2,
+	WRAP_EXISTS/1,
+	WRAP_DIFFOBJEQL/2,
+	WRAP_FDDEF/2,
+	WRAP_IFDDEF/2.
+

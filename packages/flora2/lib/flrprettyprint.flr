@@ -41,7 +41,6 @@
 %% Need to add signature printing
 
 :- table flora_in_between_isa/3, flora_in_between_sub/3.
-:- arguments flora_pp_write_comma_conditional(meta).
 
 %% Methods to ignore during pretty printing
 flora_print_ignore('________') :- true.
@@ -66,17 +65,17 @@ X[#pp_self(Module)] :-
 	flora_pp_immediate_classes(X,Module),
 	flora_pp_write_header(X),
 	flora_pp_write_body_scalar(X,Module),
-	flora_pp_write_comma_conditional(X[_->_, _->>_]@Module),
+	flora_pp_write_comma_conditional(${X[_->_, _->>_]@Module}),
 	flora_pp_write_body_set(X,Module),
-	flora_pp_write_comma_conditional(X[(_->_; _->>_),_*->_]@Module),
+	flora_pp_write_comma_conditional(${X[(_->_; _->>_),_*->_]@Module}),
 	flora_pp_write_body_iscalar(X,Module),
-	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_),_*->>_]@Module),
+	flora_pp_write_comma_conditional(${X[(_->_; _->>_;_*->_),_*->>_]@Module}),
 	flora_pp_write_body_iset(X,Module),
-	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_),_]@Module),
+	flora_pp_write_comma_conditional(${X[(_->_; _->>_;_*->_;_*->>_),_]@Module}),
 	flora_pp_write_body_bool(X,Module),
-	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_,_),*_]@Module),
+	flora_pp_write_comma_conditional(${X[(_->_; _->>_;_*->_;_*->>_,_),*_]@Module}),
 	flora_pp_write_body_ibool(X,Module),
-	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_,_,*_),#_]@Module),
+	flora_pp_write_comma_conditional(${X[(_->_; _->>_;_*->_;_*->>_,_,*_),#_]@Module}),
 	flora_pp_write_body_tran(X,Module),
 	nl@prolog(), writeln('].')@prolog(), nl@prolog().
 %% Print obj in Module to a Outfile

@@ -12,8 +12,7 @@ if "%PROLOG%" == "" goto end
 if "%PROLOG%" == "clean" nmake /f NMakefile.mak clean
 if "%PROLOG%" == "clean" goto end
 
-if not exist .prolog_path  echo. > .prolog_path
-if not exist .flora_path   echo. > .flora_path
+if not exist .prolog_path_wind  echo. > .prolog_path_wind
 
 REM  Generate the files that contain the Prolog & Flora installation directories
 REM  Generates runflora.bat file that can be used to run flora
@@ -21,6 +20,9 @@ REM  Generates runflora.bat file that can be used to run flora
 if exist runflora.bat  del runflora.bat
 call %PROLOG% -e "[flrconfig]. halt."
 
+cd p2h
+nmake /f NMakefile.mak
+cd ..
 nmake /f NMakefile.mak
 
 :end

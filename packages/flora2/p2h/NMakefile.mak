@@ -1,7 +1,7 @@
 # Make file for prolog2hilog.dll
 
 
-!include ..\.prolog_path
+!include ..\.prolog_path_wind
 
 MYPROGRAM = prolog2hilog
 

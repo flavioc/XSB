@@ -25,18 +25,16 @@
 */
 
 
-
 :- compiler_options([xpp_on]).
 
-:- import
-	flora_module_predicate/4,
-	flora_decode_predicate/6
-    from flrwrapper.
+:- import flora_module_predicate/4 from flrwrapper.
 
-:- import flora_concat_atoms/2 from flrporting.
+:- import
+	get_canonical_form/2,
+	convert_to_body_literal/2
+    from flrcanon.
 
 #include "flora_terms.flh"
-
 
 /******************************************************************************
   FLLIBUNIVEQFORM(?X,?Y)
@@ -90,8 +88,10 @@ FLLIBUNIVEQFORM(X,Y) :-
 
 %% Common (expensive) case
 FLLIBUNIVEQFORM(X,Y) :-
-	get_canonical_form(X,(Wrap,Args,Mod,Callable)),
-	get_canonical_form(Y,(Wrap,Args,Mod,Callable)),
+	get_canonical_form(X,(Wrap,Args,Mod,Callable1)),
+	convert_to_body_literal(Callable1,Callable),
+	get_canonical_form(Y,(_Wrap2,Args,Mod,Callable2)),
+	convert_to_body_literal(Callable2,Callable),
 	(var(Callable),nonvar(Wrap),nonvar(Args),nonvar(Mod)
 	-> flora_module_predicate(Wrap,Args,Mod,Callable)
 	;  var(Callable), nonvar(Wrap), nonvar(Args)
@@ -99,41 +99,6 @@ FLLIBUNIVEQFORM(X,Y) :-
 	-> Callable = FLLIBMODLIT(Wrap,Args,Mod)
 	;  true
 	).
-
-%% get_canonical_form(+Term,-Module,-CallableForm)
-%%     Term is either a Hilog/Prolog term or a reified statement
-%%     Canonical form is (Func,Args,Module,CallableForm)
-get_canonical_form(Term,(_,_,_,Term)) :-
-	var(Term),
-	!.
-
-%% Case of Var@...
-get_canonical_form(FLLIBMODLIT(FL_LIBMOD,Term,Mod),(Wrap,Args,Module,Callable)) :-
-	!,
-	get_canonical_form(Term,Canon),
-	Canon = (Wrap,Args,NewMod,Callable),
-	(var(Term) -> Module = Mod
-	;  var(NewMod) -> Module=Mod
-	;  Module = NewMod
-	).
-
-%% Case of nonvar@Var
-get_canonical_form(FLLIBMODLIT(Wrap,Args,Mod), (Wrap,Args,Mod,Callable)) :-
-	!,
-	(var(Mod) -> true
-	; flora_module_predicate(Wrap,Args,Mod,Callable)
-	).
-
-get_canonical_form(Term, Canon) :-
-	flora_decode_predicate(Term,Type,TermModuleName,Prefix,Wrapper,ArgL),
-	(Type = (hilog) ->
-	    Canon = (WRAP_HILOG,[Wrapper|ArgL],TermModuleName,_)
-	; (atom(Prefix) -> flora_concat_atoms([Prefix,Wrapper],Wrapper1)
-	  ; Wrapper1 = Wrapper
-	  ),
-	  Canon = (Wrapper1,ArgL,TermModuleName,Term)
-	).
-
 
 
 /******************************************************************************

@@ -24,10 +24,11 @@
 */
 
 #include "standard.h"
+#include "flora_terms.flh"
 
 %% The purpose of this library is to provide optimal conversion from
 %% HiLog to Prolog and back before passing the arguments to the I/O predicates.
-%% In addition, it passes the result through flora_write_string in order 
+%% In addition, it passes the result through flora_write_oid/1 in order 
 %% to ensure that all the FLORA module info and encoding is stripped.
 %%
 %% This all is ued for user-level output. For file I/O one should use
@@ -43,13 +44,13 @@ Port[#close] :- file_close(Port)@prolog(file_io).
 Port[#read(HResult)] :-
 	integer(Port),
 	!,
-	file_read(Port, PResult)@prolog(file_io), flP2H(PResult,HResult).
+	file_read(Port, PResult)@prolog(file_io), p2h{PResult,HResult}.
 Port[#write(Term)] :-
 	integer(Port),
 	!,
 	flora_write(Port,Term)@prolog(flrdisplay).
 stdread(HResult) :-
-	file_read(STDIN, PResult)@prolog(file_io), flP2H(PResult,HResult).
+	file_read(STDIN, PResult)@prolog(file_io), p2h{PResult,HResult}.
 stdwrite(Term) :-
 	flora_write(STDOUT,Term)@prolog(flrdisplay).
 
@@ -57,34 +58,34 @@ stdwrite(Term) :-
 %% Use arg(obj, obj, obj) to supply multiple arguments
 fmt_write(Format,O) :-
 	!,
-	flP2H(PO,O), florify_arguments(PO,FPO),
-	fmt_write(Format,FPO)@prolog().
+	florify_arguments(O,FO),
+	fmt_write(Format,FO)@prolog().
 FileHandle[#fmt_write(Format,O)] :-
-	flP2H(PO,O), florify_arguments(PO,FPO),
-	fmt_write(FileHandle,Format,FPO)@prolog().
+	florify_arguments(O,FO),
+	fmt_write(FileHandle,Format,FO)@prolog().
 fmt_write_string(String,Format,O) :-
 	!,
-	flP2H(PO,O), florify_arguments(PO,FPO),
-	fmt_write_string(String,Format,FPO)@prolog().
+	florify_arguments(O,FO),
+	fmt_write_string(String,Format,FO)@prolog().
 fmt_read(Format,Result,Status) :-
 	!,
 	fmt_read(Format,PResult,Status)@prolog(),
-	flP2H(PResult,Result).
+	p2h{PResult,Result}.
 FileHandle[#fmt_read(Format,Result,Status)] :-
 	fmt_read(FileHandle,Format,PResult,Status)@prolog(),
-	flP2H(PResult,Result).
+	p2h{PResult,Result}.
 
 Filehandle[#write_canonical(HTerm)] :-
-	flP2H(PTerm,HTerm),
+	p2h{PTerm,HTerm},
 	file_write_canonical(Filehandle,PTerm)@prolog(xsb_writ).
 write_canonical(HTerm) :-
-	flP2H(PTerm,HTerm), write_canonical(PTerm)@prolog().
+	p2h{PTerm,HTerm}, write_canonical(PTerm)@prolog().
 
 read_canonical(HTerm) :-
-	read_canonical(PTerm)@prolog(), flP2H(PTerm,HTerm). 
+	read_canonical(PTerm)@prolog(), p2h{PTerm,HTerm}. 
 Filehandle[#read_canonical(HTerm)] :-
 	file_read_canonical(Filehandle,PTerm,_)@prolog(machine),
-	flP2H(PTerm,HTerm). 
+	p2h{PTerm,HTerm}. 
 Filehandle[#readline(atom,String)] :-
 	!, file_read_line_atom(Filehandle,String)@prolog(file_io).
 Filehandle[#readline(charlist,String)] :-
@@ -104,23 +105,21 @@ readline(Request,_) :-
 %%%%%%%%%%%%%%%%%%%%
 
 write(O) :- !,
-	flP2H(PO,O), flora_write_string(PO,FloraTerm)@prolog(flrdisplay),
-	write(FloraTerm)@prolog().
+	flora_write_oid(O)@prolog(flrdecode).
 IOstream[#write(O)] :-
-	flP2H(PO,O),
-	flora_write_string(PO,FloraTerm)@prolog(flrdisplay),
-	writeln(IOstream,FloraTerm)@prolog().
+	flora_write_oid(IOstream,O)@prolog(flrdecode).
 writeln(O) :- !,
-	flP2H(PO,O), flora_write_string(PO,FloraTerm)@prolog(flrdisplay),
-	writeln(FloraTerm)@prolog().
+	flora_write_oid(O)@prolog(flrdecode),
+	nl@prolog().
 IOstream[#writeln(O)] :-
-	flP2H(PO,O), flora_write_string(PO,FloraTerm)@prolog(flrdisplay),
-	writeln(IOstream,FloraTerm)@prolog().
+	flora_write_oid(IOstream,O)@prolog(flrdecode),
+	nl(IOstream)@prolog().
 nl :- nl@prolog().
+nl(IOstream) :- nl(IOstream)@prolog().
 
-read(Result) :- !, read(PResult)@prolog(), flP2H(PResult,Result).
+read(Result) :- !, read(PResult)@prolog(), p2h{PResult,Result}.
 IOstream[#read(Result)] :-
-	read(IOstream,PResult)@prolog(), flP2H(PResult,Result).
+	read(IOstream,PResult)@prolog(), p2h{PResult,Result}.
 
 Filename[#see] :- see(Filename)@prolog().
 seen :- seen@prolog().
@@ -138,18 +137,22 @@ telling(Stream) :- telling(Stream)@prolog().
 %% This is used for fmt_write_* predicates. Takes a *prolog* term argument 
 %% of the form 
 %% _(arg1,...,argn) and returns _(arg1',..., argn'), where arg_i=arg_i'
-%% if arg_i is not compound. Otherwise we apply flora_write_string/2
+%% if arg_i is not compound. Otherwise we apply flora_write_oid/1
 %% This is needed in order make sure that arguments like f(a) are printed 
 %% as f(a) and not _flora'main'f(a) or something like that.
-florify_arguments(Term,OutTerm) :-
-	Term =.. [Fun|Args],
+florify_arguments(WrappedArgs,OutTerm) :-
+	WrappedArgs =.. [WRAP_HILOG, Fun | Args],
+	!,
 	florify_arglist(Args,OutList),
 	OutTerm =.. [Fun|OutList].
+%% single argument to fmt_write without the arg(...) envelope
+florify_arguments(Arg,OutTerm) :-
+	flora_decode_oid_as_atom(Arg,OutTerm)@prolog(flrdecode).
 florify_arglist([],[]) :- !.
 florify_arglist([Arg|Args], [OutArg| OutArgs]) :-
 	compound(Arg)@prolog(),
 	!,
-	flora_write_string(Arg,OutArg)@prolog(flrdisplay),
+	flora_decode_oid_as_atom(Arg,OutArg)@prolog(flrdecode),
 	florify_arglist(Args,OutArgs).
 florify_arglist([_Arg|Args], [_Arg| OutArgs]) :-
 	florify_arglist(Args,OutArgs).

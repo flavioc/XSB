@@ -24,6 +24,9 @@
 */
 
 
+
+:- import flora_abort/0 from flrutils.
+
 :- import flora_configuration/2 from flrregistry.
 
 :- import flora_syslib_loaded/1 from usermod.

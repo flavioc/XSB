@@ -85,11 +85,11 @@ flora_stdfdbk_line(M) :-
 	nl(Stream).
 
 
-flora_error_heading :- flora_stderr_string("++Error[FLORA]: ").
+flora_error_heading :- flora_stderr_string("++Error[FLORA]> ").
 flora_error_indentline :- flora_stderr_string("               ").
 
 
-flora_warning_heading :- flora_stdwarn_string("++Warning[FLORA]: ").
+flora_warning_heading :- flora_stdwarn_string("++Warning[FLORA]> ").
 flora_warning_indentline :- flora_stdwarn_string("                 ").
 
 

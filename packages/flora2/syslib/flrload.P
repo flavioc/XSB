@@ -53,6 +53,8 @@
 	flora_file_op/3
    from flrporting.
 
+:- import flora_abort/0 from flrutils.
+
 
 
 /********************************************************************/
@@ -148,6 +150,6 @@ flora_check__module_overriding(LoadFile,Workspace,HostFile,HostMod,[Line,Char]) 
 	flora_file_op(basename,HostFile,HostFileBasename),
 	flora_error_line('~w.flr: Literal [~w >> ~w] near line(~w)/char(~w) overrides the program in which it occurs',
 			 [HostFileBasename,LoadFile,HostMod,Line,Char]),
-	throw(FLORA_ABORT).
+	flora_abort.
 
 flora_check__module_overriding(_LoadFile,_Workspace,_HostFile,_HostMod,_Location).

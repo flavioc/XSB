@@ -35,6 +35,8 @@
 :- index(flora_hilogtable/2,trie).
 :- index(flora_not_tabled_head/2,trie).
 
+:- import flora_abort/0 from flrutils.
+
 :- import
 	is_prdirective/2,
 	is_prtable/3,
@@ -52,17 +54,12 @@
    from flrporting.
 
 :- import
-	flora_error_line/1,
-	flora_error_line/2
+	flora_error_line/1
    from flrprint.
 
 :- import
 	flora_storage_check_module_name/1
-   from flrstorage.
-
-:- import
-	flora_module_registry/1
-   from flrregistry.
+   from flrstorageutils.
 
 :- export
 	flora_hilogtable/2,

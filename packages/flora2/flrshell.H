@@ -50,9 +50,6 @@
 	flora_banner_control/1
    from flrporting.
 
-:- import flora_plg2hlg/4 from prolog2hilog.
-:- import flora_post_p2h_conversion/2 from flrutils.
-
 :- import pop_stdin/1 from push_io.
 
 :- import
@@ -85,6 +82,7 @@
 	flora_stdfdbk_line/0,
 	flora_stdfdbk_string/1,
 	flora_stderr_string/1,
+	flora_stderr_string/2,
 	flora_stderr_nl/0,
 	flora_error_line/1,
 	flora_error_line/2
@@ -93,8 +91,6 @@
 :- import
 	flMaxerr/1,
 	flHalt/0,
-	flP2H/2,
-	flCompileInclude/1,
 	flloadtrailer/1,
 	flora_shell_command_line/3,
 	flora_load_module_internal/1,

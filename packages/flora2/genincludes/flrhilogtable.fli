@@ -1,0 +1,66 @@
+/***************************************************************************
+  file: flrincludes/flrhilogtable.fli
+
+  Author(s): Chang Zhao
+
+  Contact:   flora-users@lists.sourceforge.net
+
+  Copyright (C) The Research Foundation of SUNY, 2003
+
+  This file lists FLORA wrappers that must be tabled.
+  This file is used by the FLORA's build-time preprocessor, flrwraparound.P,
+  to convert .fli files into .flh files.
+***************************************************************************/
+
+#include "flora_terms.flh"
+#include "flora_wspredicates.flh"
+
+
+/***************************************************************************
+  Hilog
+***************************************************************************/
+:- table
+	WRAP_TABLED_HILOG/2,
+	WRAP_TABLED_HILOG/3,
+	WRAP_TABLED_HILOG/4,
+	WRAP_TABLED_HILOG/5,
+	WRAP_TABLED_HILOG/6,
+	WRAP_TABLED_HILOG/7,
+	WRAP_TABLED_HILOG/8,
+	WRAP_TABLED_HILOG/9,
+	WRAP_TABLED_HILOG/10,
+	WRAP_TABLED_HILOG/11,
+	WRAP_TABLED_HILOG/12,
+	WRAP_TABLED_HILOG/13,
+	WRAP_TABLED_HILOG/14,
+	WRAP_TABLED_HILOG/15,
+	WRAP_TABLED_HILOG/16,
+	WRAP_TABLED_HILOG/17,
+	WRAP_TABLED_HILOG/18,
+	WRAP_TABLED_HILOG/19,
+	WRAP_TABLED_HILOG/20,
+	WRAP_TABLED_HILOG/21,
+	WRAP_TABLED_HILOG/22.
+
+:- use_variant_tabling
+	WRAP_TABLED_HILOG/2,
+	WRAP_TABLED_HILOG/3,
+	WRAP_TABLED_HILOG/4,
+	WRAP_TABLED_HILOG/5,
+	WRAP_TABLED_HILOG/6,
+	WRAP_TABLED_HILOG/7,
+	WRAP_TABLED_HILOG/8,
+	WRAP_TABLED_HILOG/9,
+	WRAP_TABLED_HILOG/10,
+	WRAP_TABLED_HILOG/11,
+	WRAP_TABLED_HILOG/12,
+	WRAP_TABLED_HILOG/13,
+	WRAP_TABLED_HILOG/14,
+	WRAP_TABLED_HILOG/15,
+	WRAP_TABLED_HILOG/16,
+	WRAP_TABLED_HILOG/17,
+	WRAP_TABLED_HILOG/18,
+	WRAP_TABLED_HILOG/19,
+	WRAP_TABLED_HILOG/20,
+	WRAP_TABLED_HILOG/21,
+	WRAP_TABLED_HILOG/22.

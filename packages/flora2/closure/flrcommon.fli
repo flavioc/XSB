@@ -10,68 +10,8 @@
 
 
 #include "flora_wspredicates.flh"
+#include "flora_porting.flh"
 
-
-/***************************************************************************
-  tabling directives
-
-  Note: Tabling inferred_* predicates appears to be not necessary
-***************************************************************************/
-:- table
-	sub/2,		%% inferred_sub/2,
-	isa/2,		%% inferred_isa/2,
-	fd/3,		%% inferred_fd/3,
-	ifd/3,		%% inferred_ifd/3,
-	mvd/3,		%% inferred_mvd/3,
-	imvd/3,		%% inferred_imvd/3,
-	mvddef/2,	%% inferred_mvddef/2,
-	imvddef/2,	%% inferred_imvddef/2,
-	fdsig/3,	%% inferred_fdsig/3,
-	fdsigdef/2,	%% inferred_fdsigdef/2,
-	ifdsig/3,	%% inferred_ifdsig/3,
-	ifdsigdef/2,	%% inferred_ifdsigdef/2,
-	mvdsig/3,	%% inferred_mvdsig/3,
-	mvdsigdef/2,	%% inferred_mvdsigdef/2,
-	imvdsig/3,	%% inferred_imvdsig/3,
-	imvdsigdef/2,	%% inferred_imvdsigdef/2,
-	meth/2,		%% inferred_meth/2,
-	imeth/2,	%% inferred_imeth/2,
-	exists/1,	%% inferred_exists/1,
-	diffobjeql/2,	%% inferred_objeql/2,
-	fddef/2,
-	ifddef/2.
-
-
-:- table
-	local_ifd/2,
-	local_fd/2,
-	local_imvd/2,
-	local_mvd/2,
-	%%override_class_ifd/3,
-	%%multiple_class_ifd/3,
-	candidate_class_ifd/3,
-	%%override_object_ifd/3,
-	%%multiple_object_ifd/3,
-	candidate_object_ifd/3,
-	%%override_class_imvd/3,
-	%%multiple_class_imvd/3,
-	candidate_class_imvd/3,
-	%%override_object_imvd/3,
-	%%multiple_object_imvd/3,
-	candidate_object_imvd/3.
-
-
-/*
-:- table
-	inferred_sub_eql/2,
-	inferred_isa_eql/2,
-	inferred_ifd_eql/3,
-	inferred_imvd_eql/3,
-	inferred_imvddef_eql/2,
-	inferred_fd_eql/3,
-	inferred_mvd_eql/3,
-	inferred_mvddef_eql/2.
-*/
 
 
 /***************************************************************************
@@ -124,13 +64,13 @@ candidate_class_ifd(C,MethSign,Class) :-
 	sub(Class,C),
 	local_ifd(C,MethSign),
 	C \= Class,
-	sk_not(override_class_ifd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_ifd(C,MethSign,Class)).
 
 candidate_class_ifd(C,MethSign,Class) :-
 	local_ifd(C,MethSign),
 	sub(Class,C),
 	C \= Class,
-	sk_not(override_class_ifd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_ifd(C,MethSign,Class)).
 
 
 multiple_class_ifd(C,MethSign,Class) :-
@@ -158,13 +98,13 @@ candidate_object_ifd(C,MethSign,Object) :-
 	isa(Object,C),
 	local_ifd(C,MethSign),
 	C \= Object,
-	sk_not(override_object_ifd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_ifd(C,MethSign,Object)).
 
 candidate_object_ifd(C,MethSign,Object) :-
 	local_ifd(C,MethSign),
 	isa(Object,C),
 	C \= Object,
-	sk_not(override_object_ifd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_ifd(C,MethSign,Object)).
 
 
 multiple_object_ifd(C,MethSign,Object) :-
@@ -192,13 +132,13 @@ candidate_class_imvd(C,MethSign,Class) :-
 	sub(Class,C),
 	local_imvd(C,MethSign),
 	C \= Class,
-	sk_not(override_class_imvd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_imvd(C,MethSign,Class)).
 
 candidate_class_imvd(C,MethSign,Class) :-
 	local_imvd(C,MethSign),
 	sub(Class,C),
 	C \= Class,
-	sk_not(override_class_imvd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_imvd(C,MethSign,Class)).
 
 
 multiple_class_imvd(C,MethSign,Class) :-
@@ -226,13 +166,13 @@ candidate_object_imvd(C,MethSign,Object) :-
 	isa(Object,C),
 	local_imvd(C,MethSign),
 	C \= Object,
-	sk_not(override_object_imvd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_imvd(C,MethSign,Object)).
 
 candidate_object_imvd(C,MethSign,Object) :-
 	local_imvd(C,MethSign),
 	isa(Object,C),
 	C \= Object,
-	sk_not(override_object_imvd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_imvd(C,MethSign,Object)).
 
 
 multiple_object_imvd(C,MethSign,Object) :-
@@ -270,7 +210,7 @@ mvdtolist(O,M,L) :-
 	findall(V,mvd(O,M,V),L).
 
 mvdtolist(O,M,[]) :-
-	sk_not(mvddef(O,M)).
+	FLORA_TNOT(mvddef(O,M)).
 
 
 imvdtolist(O,M,L) :-
@@ -278,7 +218,7 @@ imvdtolist(O,M,L) :-
 	findall(V,imvd(O,M,V),L).
  
 imvdtolist(O,M,[]) :-
-	sk_not(imvddef(O,M)).
+	FLORA_TNOT(imvddef(O,M)).
 
 
 /****************************************************************************

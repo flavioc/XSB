@@ -1,6 +1,6 @@
 # Make file for Microsoft NMAKE
 
-!include ..\.prolog_path
+!include ..\.prolog_path_wind
 
 OBJEXT = .xwam
 PROLOGEXT = .P

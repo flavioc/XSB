@@ -45,7 +45,7 @@
 
   The argument to this Macro should be quoted.
 ******************************************************************************/
-#deffast FLORA_SYMBOL(X)	FLORA_PREFIX#1
+#define FLORA_SYMBOL(X)	       	       	FLORA_PREFIX#1
 
 
 /******************************************************************************
@@ -53,8 +53,10 @@
 
   These strings should be quoted.
 ******************************************************************************/
-#define FLORA_USER_MODULE		'usermod'
-#define FLORA_SYSTEM_MODULE		'sysmod'
+%% Keep "mod" in the name of a formula wrapper rights after FLORA_PREFIX
+%% We rely on this to identify meta wrappers
+#define FLORA_USER_MODULE		'moduser'
+#define FLORA_SYSTEM_MODULE		'modsys'
 #define FLORA_USER_FDB_TRIE		'userfdbtrie'
 #define FLORA_SYSTEM_FDB_TRIE		'sysfdbtrie'
 
@@ -62,11 +64,6 @@
 #define FLORA_USER_FLD_TRIE		'userfldtrie'
 #define FLORA_SYSTEM_FLD_TRIE		'sysfldtrie'
 
-
-/******************************************************************************
-  This module predicate
-******************************************************************************/
-#define FLORA_THIS_MODULE_PREDICATE	FLORA_SYMBOL('flThisModule')
 
 
 /******************************************************************************

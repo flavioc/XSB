@@ -41,7 +41,7 @@ flora_op(1600,fx,FL_INDEX).
 %%flora_op(1600,fx,FL_DYNAMIC).
 %%flora_op(1600,fx,FL_EXPORT).
 %%flora_op(1600,fx,FL_IMPORT).
-flora_op(1600,fx,FL_ARGUMENTS).
+%%flora_op(1600,fx,FL_ARGUMENTS).
 %%flora_op(1600,fx,FL_PROLOG).
 flora_op(1600,fx,FL_EQUALITY).
 flora_op(1600,fx,FL_CMPOPT).
@@ -51,7 +51,6 @@ flora_op(1600,fx,FL_LOAD).
 flora_op(1600,fx,FL_DUMP).
 
 flora_op(1500,xfx,FL_FROM).
-flora_op(1500,xfx,FL_IN).
 flora_op(1500,xfy,FL_SEMICOLON).
 
 flora_op(1400,xfy,FL_COMMA).

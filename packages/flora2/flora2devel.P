@@ -26,13 +26,10 @@
 */
 
 
-:- compiler_options([xpp_on]).
-%% .flora_path contains #define FLORA_INSTALL_DIR
-#include ".flora_path"
-
 
 :- import flora_configuration/2 from flrregistry.
 :- import flora_concat_atoms/2,
+	flora_file_op/3,
 	flora_slash/1
     from flrporting.
 
@@ -41,23 +38,43 @@
    flora_configuration(develmode,no),
    abort('FLORA-2 is already loaded as a package: quit XSB then use `runflora''').
 
-?- retractall(flora_configuration(installdir,_)),
+?- %% Test if we are in the flora install directory
+   %% If not then put .. on the module load path, because this means that
+   %% we are in a subdirectory of the flora installation directory.
+   %% This is needed when flora2devel is caled from the make file.
+   catch((flora_slash(_), FloraInstallDirAbbrev='.'),
+	 _,
+	 %% This happens only in the make file
+	 (asserta(library_directory('..')), FloraInstallDirAbbrev = '..')
+	),
+
+   %% clean up flora_configuration
    retractall(flora_configuration(version,_)),
    retractall(flora_configuration(develmode,_)),
-   assert(flora_configuration(installdir,FLORA_INSTALL_DIR)),
-   assert(library_directory(FLORA_INSTALL_DIR)),
+
+   (flora_configuration(installdir,FloraInstallDir), !,
+       asserta(library_directory(FloraInstallDir))
+   ; 
+       %% Called from a makefile. In this case library_directory has '..' or
+       %% we are running in the Flora install dir and library_directory has '.'
+       flora_file_op(expand,FloraInstallDirAbbrev,FloraInstallDirExpanded),
+       assert(flora_configuration(installdir,FloraInstallDirExpanded))
+   ),
+
    assert(flora_configuration(develmode,yes)),
    [flrversion],
    flora_assert_directories([syslib,lib,debugger,pkgs,p2h]).
 
 ?- flora_slash(S),
-   flora_concat_atoms([FLORA_INSTALL_DIR,S,flora2], Flora2),
+   flora_configuration(installdir,FloraInstallDir),
+   flora_concat_atoms([FloraInstallDir,S,flora2], Flora2),
    [Flora2].
 
 
 flora_assert_directories([]).
 flora_assert_directories([H|T]) :-
 	flora_slash(S),
-	flora_concat_atoms([FLORA_INSTALL_DIR,S,H], Directory),
+	flora_configuration(installdir,FloraInstallDir),
+	flora_concat_atoms([FloraInstallDir,S,H], Directory),
 	assert(library_directory(Directory)),
 	flora_assert_directories(T).

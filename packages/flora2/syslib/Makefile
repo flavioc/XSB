@@ -28,28 +28,38 @@
 
 OBJEXT=.xwam
 PROLOGEXT = .P
+PROLOGHEADEREXT=.H
 
 PROLOG = none
 FLORADIR = ..
 
-ALLOBJS = flranswer${OBJEXT} \
-	  flrcontrol${OBJEXT} \
-	  flrdisplay${OBJEXT} \
-	  flrload${OBJEXT} \
-	  flraggavg${OBJEXT} \
-	  flraggcolbag${OBJEXT} \
-	  flraggcolset${OBJEXT} \
-	  flraggcount${OBJEXT} \
-	  flraggmax${OBJEXT} \
-	  flraggmin${OBJEXT} \
-	  flraggsum${OBJEXT} \
-	  flrstorage${OBJEXT} \
-	  flrdbop${OBJEXT} \
-	  flrbtdbop${OBJEXT} \
-	  flrshdirect${OBJEXT} \
-	  flrdynmod${OBJEXT} \
-	  flrequality${OBJEXT} \
-	  flrimport${OBJEXT}
+ALLOBJS = flranswer$(OBJEXT) \
+	  flrcontrol$(OBJEXT) \
+	  flrdisplay$(OBJEXT) \
+	  flrload$(OBJEXT) \
+	  flraggavg$(OBJEXT) \
+	  flraggcolbag$(OBJEXT) \
+	  flraggcolset$(OBJEXT) \
+	  flraggcount$(OBJEXT) \
+	  flraggmax$(OBJEXT) \
+	  flraggmin$(OBJEXT) \
+	  flraggsum$(OBJEXT) \
+	  flrstorageutils$(OBJEXT) \
+	  flrstoragebase$(OBJEXT) \
+	  flrdbop$(OBJEXT) \
+	  flrbtdbop$(OBJEXT) \
+	  flrshdirect$(OBJEXT) \
+	  flrdynmod$(OBJEXT) \
+	  flrdynrule$(OBJEXT) \
+	  flrequality$(OBJEXT) \
+	  flrnegation$(OBJEXT) \
+	  flrtables$(OBJEXT) \
+	  flrimportedcalls$(OBJEXT) \
+	  flrerrhandler$(OBJEXT)  \
+	  flrdecode$(OBJEXT)  \
+	  flrcanon$(OBJEXT)  \
+	  flrmetaops$(OBJEXT)  \
+	  flrimport$(OBJEXT)
 
 FLORA_INCLUDES_DIR = ../flrincludes
 DYN_INCLUDES_DIR = ../includes
@@ -69,79 +79,26 @@ STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling .../flora2/syslib:"
 
+.SUFFIXES: $(PROLOGEXT) $(PROLOGHEADEREXT) $(OBJEXT)
 
 all: init $(ALLOBJS) finish
 	./CompileChangedFiles.sh $(PROLOG_COMMAND)
 	@cat $(SVFILE)
 
 
-flranswer${OBJEXT} : flranswer$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flranswer,$(OPTION)).' >> cmd...
+%$(OBJEXT): %$(PROLOGEXT) $(FLORA_TERMS)
+	@echo 'mc($*,$(OPTION)).' >> cmd...
 
+%$(PROLOGEXT) : %$(PROLOGHEADEREXT)
+	./touch.sh $@
 
-flrcontrol${OBJEXT} : flrcontrol$(PROLOGEXT) $(FLORA_TERMS) $(XSB_STANDARD)
+flrcontrol$(OBJEXT) : flrcontrol$(PROLOGEXT) $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrcontrol,$(OPTION)).' >> cmd...
 
-flrdisplay${OBJEXT} : flrdisplay$(PROLOGEXT) $(FLORA_TERMS) $(XSB_STANDARD)
+flrdisplay$(OBJEXT) : flrdisplay$(PROLOGEXT) $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrdisplay,$(OPTION)).' >> cmd...
 
-
-flrload${OBJEXT} : flrload$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrload,$(OPTION)).' >> cmd...
-
-
-flraggavg${OBJEXT} :flraggavg$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flraggavg,$(OPTION)).' >> cmd...
-
-
-flraggcolbag${OBJEXT} : flraggcolbag$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flraggcolbag,$(OPTION)).' >> cmd...
-
-
-flraggcolset${OBJEXT} : flraggcolset$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flraggcolset,$(OPTION)).' >> cmd...
-
-
-flraggcount${OBJEXT} : flraggcount$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flraggcount,$(OPTION)).' >> cmd...
-
-
-flraggmax${OBJEXT} : flraggmax$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flraggmax,$(OPTION)).' >> cmd...
-
-
-flraggmin${OBJEXT} : flraggmin$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flraggmin,$(OPTION)).' >> cmd...
-
-
-flraggsum${OBJEXT} : flraggsum$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flraggsum,$(OPTION)).' >> cmd...
-
-
-flrstorage${OBJEXT} : flrstorage$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrstorage,$(OPTION)).' >> cmd...
-
-
-flrdbop${OBJEXT} : flrdbop$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrdbop,$(OPTION)).' >> cmd...
-
-
-flrbtdbop${OBJEXT} : flrbtdbop$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrbtdbop,$(OPTION)).' >> cmd...
-
-
-flrshdirect${OBJEXT} : flrshdirect$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrshdirect,$(OPTION)).' >> cmd...
-
-
-flrdynmod${OBJEXT} : flrdynmod$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrdynmod,$(OPTION)).' >> cmd...
-
-
-flrequality${OBJEXT} : flrequality$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrequality,$(OPTION)).' >> cmd...
-
-flrimport${OBJEXT}: flrimport$(PROLOGEXT) $(FLORA_TERMS) $(FLRHEADER)
+flrimport$(OBJEXT): flrimport$(PROLOGEXT) $(FLORA_TERMS) $(FLRHEADER)
 	@echo 'mc(flrimport,$(OPTION)).' >> cmd...
 
 
@@ -162,7 +119,7 @@ finish:
 
 
 clean:
-	/bin/rm -f core *~ .*~ *${OBJEXT} *.O *.bak .#*
+	/bin/rm -f core *~ .*~ *$(OBJEXT) *.O *.bak .#*
 
 
 .DONE:

@@ -1,9 +1,12 @@
 # Make file for Microsoft NMAKE
 
 
-ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh flrdyna.flh flrdynz.flh
+ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh \
+	  flrdyna.flh flrdynz.flh \
+	  flrtable.flh flrhilogtable.flh \
+	  flrrefreshtable.flh
 
-!include ..\.prolog_path
+!include ..\.prolog_path_wind
 
 .SUFFIXES: .fli .flh
 
@@ -23,5 +26,4 @@ flrindex_P.flh:
 
 
 .fli.flh:
-	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrutils]. import flCompileInclude/1 from flrutils. flCompileInclude(%|fF). halt."
-
+	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrwraparound]. import flWrapAround/1 from flrwraparound. flWrapAround(%|fF). halt." 

@@ -33,18 +33,14 @@
 	flora_match_substring/3
     from flrporting.
 
-:- import is_pratom/3 from flrcoder.
-
 :- import member/2, append/3, length/2 from basics.
 
 :- import sort/2, keysort/2, findall/3 from setof.
 
 :- import flora_define_operator/3 from flroperator.
 
-:- import
-	flora_argdef/3,
-	flora_define_arguments/3
-   from flrarguments.
+:- import flora_argdef/3 from flrarguments.
+%%:- import flora_define_arguments/3 from flrarguments.
 
 :- import flora_define_prolog/2 from flrprolog.
 

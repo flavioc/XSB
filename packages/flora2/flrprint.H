@@ -55,7 +55,6 @@
 	flora_warning_line/2,
 	flora_message_line/1,
 	flora_message_line/2,
-	flora_write_string/3,
 	flora_err_stream/1,
 	flora_warn_stream/1,
 	flora_msg_stream/1,

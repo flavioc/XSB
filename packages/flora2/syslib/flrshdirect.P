@@ -37,16 +37,15 @@
 
 :- import flora_shdefine_arguments/3 from flrarguments.
 
-:- import flora_storage_check_module_name/1 from flrstorage.
-
-:- import flora_module_registry/1 from flrregistry.
-
-:- import flora_error_line/1, flora_error_line/2 from flrprint.
+:- import flora_storage_check_module_name/1 from flrstorageutils.
 
 :- import
 	flora_dyna_hilog_user_module_predicate_symbol/2,
 	flora_dynz_hilog_user_module_predicate_symbol/2
    from flrwrapper.
+
+:- import flora_abort/1 from flrutils.
+
 
 /*****************************************************************************
   fllibshdirect
@@ -59,20 +58,26 @@
 fllibshdirect(FL_TABLE,Module,Funct,Arity) :-
 	flora_shdefine_hilogtable(Module,Funct,Arity).
 
-fllibshdirect(FL_OP,Preced,Assoc,Op) :-
-	flora_shdefine_operator(Preced,Assoc,Op).
+%% Executable version of this directive makes sense only in main
+%% module in the shell
+fllibshdirect(FL_OP,Module,Preced,Assoc,Op) :-
+	(Module == FLORA_DEFAULT_WORKSPACE ->
+	    flora_shdefine_operator(Preced,Assoc,Op)
+	; true
+	).
 
-fllibshdirect(FL_ARGUMENTS,Funct,Arity,Args) :-
-	flora_shdefine_arguments(Funct,Arity,Args).
+%% Executable version of this directive makes sense only in main
+%% module in the shell
+/** DEPRECATED
+fllibshdirect(FL_ARGUMENTS,Module,Funct,Arity,Args) :-
+	(Module == FLORA_DEFAULT_WORKSPACE ->
+	    flora_shdefine_arguments(Funct,Arity,Args)
+	; true
+	).
+**/
 
 fllibshdirect(FL_INDEX,Module,Arity,Position) :-
 	flora_storage_check_module_name(Module),
-	( flora_module_registry(Module) ->
-	    true
-	;
-	    flora_error_line("Module `~w' does not exist",[Module]),
-	    throw(FLORA_ABORT)
-	),
 	( integer(Arity), integer(Position), Position>0, Arity >= Position ->
 	    A is Arity+1,
             P is Position+1,
@@ -81,8 +86,5 @@ fllibshdirect(FL_INDEX,Module,Arity,Position) :-
             call(index(NewPA/A,P)),
             call(index(NewPZ/A,P))
 	;
-	    flora_error_line("Invalid argument for the index instruction"),
-	    throw(FLORA_ABORT)
+	    flora_abort("Invalid argument in index directive")
 	).
-
-

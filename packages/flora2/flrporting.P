@@ -43,11 +43,14 @@
 :- import substring/4 from string.
 :- import library_directory/1 from usermod.
 :- import xsb_configuration/2 from xsb_configuration.
-:- import path_sysop/2, path_sysop/3, copyIOport/2 from file_io.
+:- import
+	path_sysop/2, path_sysop/3, copyIOport/2,
+	file_read_line_atom/1, file_read_line_list/1
+	from file_io.
 
 :- import banner_control/1 from banner.
 
-:- import flora_error_line/2 from flrprint.
+:- import flora_abort/1 from flrutils.
 
 
 :- export
@@ -57,6 +60,8 @@
 	flora_running_under/1,
 	flora_file_op/2,
 	flora_file_op/3,
+	flora_read_line_as_atom/1,
+	flora_read_line_as_list/1,
 	flora_copy_input/0,
 	flora_user_home/1,
 	flora_atom_length/2,
@@ -152,8 +157,8 @@ flora_file_op(isabsolute,File)      :- path_sysop(isabsolute,File).
 flora_file_op(rename,File,ToFile)   :- path_sysop(rename,File,ToFile).
 flora_file_op(basename,File,Base)   :- path_sysop(basename,File,Base).
 flora_file_op(extension,File,Ext)   :- path_sysop(extension,File,Ext).
-flora_file_op(expand,File,Base)     :- path_sysop(expand,File,Base).
-flora_file_op(newerthan,File,Base)  :- path_sysop(newerthan,File,Base).
+flora_file_op(expand,File,Expanded) :- path_sysop(expand,File,Expanded).
+flora_file_op(newerthan,File,File2) :- path_sysop(newerthan,File,File2).
 flora_file_op(dirname,File,Dir)     :- path_sysop(dirname,File,Dir).
 flora_file_op(copy,From,To)         :- path_sysop(copy,From,To).
 
@@ -167,9 +172,7 @@ flora_copy_input :-
 
 flora_write_quoted_atom(Atom) :-
 	\+atom(Atom),
-	flora_error_line('flora_write_quoted_atom: Non-atom argument, ~w',
-			 [Atom]),
-	abort.
+	flora_abort(['flora_write_quoted_atom: Non-atom argument, ', Atom]).
 	
 flora_write_quoted_atom(Atom) :-
 	stat_flag(CURRENT_OUTPUT, StdOut),
@@ -178,6 +181,9 @@ flora_write_quoted_atom(Atom) :-
 flora_write_atom(Atom) :-
 	stat_flag(CURRENT_OUTPUT, StdOut),
 	file_puttoken(StdOut,TK_ATOM,Atom).
+
+flora_read_line_as_atom(Str) :- file_read_line_atom(Str).
+flora_read_line_as_list(Str) :- file_read_line_list(Str).
 
 
 :- table flora_running_under/1.

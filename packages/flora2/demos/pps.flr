@@ -120,7 +120,6 @@ addTo(golfCL,wheel155,1).
 // Queries
 
 :- table p1/2.
-:- arguments table_state(meta,oid).
 
 p1(S,ctrl_produces(P)) :- pps[produces(S)->>P].
 p1(P,ctrl_stop_in(S)) :- stop (P,S).

@@ -27,6 +27,7 @@
 
 OBJEXT=.xwam
 PROLOGEXT=.P
+PROLOGHEADEREXT=.H
 
 FLORADIR = .
 
@@ -63,6 +64,9 @@ FLORA_INCLUDES_DIR = flrincludes
 
 FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 FLORA_ERRORS = $(FLORA_INCLUDES_DIR)/flora_errors.flh
+FLORA_PORTING = $(FLORA_INCLUDES_DIR)/flora_porting.flh
+FLORA_EXTENSIONS = $(FLORA_INCLUDES_DIR)/flora_extensions.flh
+FLORA_WRAP = $(FLORA_INCLUDES_DIR)/flora_wrap.flh
 
 OPTION = [optimize]
 
@@ -75,6 +79,8 @@ SVFILE = '$(FLORADIR)/.flora_top_warn.tmp'
 STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling  .../flora2:"
+
+.SUFFIXES: $(PROLOGEXT) $(PROLOGHEADEREXT) $(OBJEXT)
 
 
 # acceptable targets are all (default), system, base, top
@@ -108,6 +114,12 @@ misc:
 	-cd docs && $(MAKE) PROLOG=$(PROLOG)
 
 
+%$(OBJEXT) : %$(PROLOGEXT) $(FLORA_TERMS) $(FLORA_PORTING) $(FLORA_EXTENSIONS) $(FLORA_WRAP)
+	@echo 'mc($*,$(OPTION)).' >> cmd...
+
+%$(PROLOGEXT) : %$(PROLOGHEADEREXT)
+	./touch.sh $@
+
 # always compile flora2devel to make sure that .xwam has the latest .flora_path
 flora2devel${OBJEXT} : flora2devel${PROLOGEXT} version.flh
 	@echo 'mc(flora2devel,$(OPTION)).' >> cmd...
@@ -115,92 +127,29 @@ flora2devel${OBJEXT} : flora2devel${PROLOGEXT} version.flh
 flrversion${OBJEXT}: flrversion${PROLOGEXT} version.flh
 	@echo 'mc(flrversion,$(OPTION)).' >> cmd...
 
-flroperator${OBJEXT} : flroperator${PROLOGEXT} flroperator.H $(FLORA_TERMS)
-	@echo 'mc(flroperator,$(OPTION)).' >> cmd...
-
-
-flrnodefp${OBJEXT} : flrnodefp${PROLOGEXT} flrnodefp.H $(FLORA_TERMS)
-	@echo 'mc(flrnodefp,$(OPTION)).' >> cmd...
-
-
-flrnowsp${OBJEXT} : flrnowsp${PROLOGEXT} flrnowsp.H $(FLORA_TERMS)
-	@echo 'mc(flrnowsp,$(OPTION)).' >> cmd...
-
-
-flrarguments${OBJEXT} : flrarguments${PROLOGEXT} flrarguments.H $(FLORA_TERMS)
-	@echo 'mc(flrarguments,$(OPTION)).' >> cmd...
-
-
-flrprolog${OBJEXT} : flrprolog${PROLOGEXT} flrprolog.H $(FLORA_TERMS)
-	@echo 'mc(flrprolog,$(OPTION)).' >> cmd...
-
-
-flrhilogtable${OBJEXT} : flrhilogtable${PROLOGEXT} flrhilogtable.H $(FLORA_TERMS)
-	@echo 'mc(flrhilogtable,$(OPTION)).' >> cmd...
-
-
-flrprint${OBJEXT} : flrprint${PROLOGEXT} flrprint.H
-	@echo 'mc(flrprint,$(OPTION)).' >> cmd...
-
-
-flrlibman${OBJEXT} : flrlibman${PROLOGEXT} flrlibman.H $(FLORA_TERMS)
-	@echo 'mc(flrlibman,$(OPTION)).' >> cmd...
-
-
-flrlexer${OBJEXT} : flrlexer${PROLOGEXT} flrlexer.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrlexer${OBJEXT} : flrlexer${PROLOGEXT} flrlexer.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS) $(FLORA_PORTING)
 	@echo 'mc(flrlexer,$(OPTION)).' >> cmd...
 
 
-flrcomposer${OBJEXT} : flrcomposer${PROLOGEXT} flrcomposer.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcomposer${OBJEXT} : flrcomposer${PROLOGEXT} flrcomposer.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS) $(FLORA_PORTING)
 	@echo 'mc(flrcomposer,$(OPTION)).' >> cmd...
 
 
-flrparser${OBJEXT} : flrparser${PROLOGEXT} flrparser.H $(FLORA_TERMS) $(FLORA_ERRORS)
+flrparser${OBJEXT} : flrparser${PROLOGEXT} flrparser.H $(FLORA_TERMS) $(FLORA_ERRORS) $(FLORA_PORTING)
 	@echo 'mc(flrparser,$(OPTION)).' >> cmd...
 
 
-flrcompiler${OBJEXT} : flrcompiler${PROLOGEXT} flrcompiler.H $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcompiler${OBJEXT} : flrcompiler${PROLOGEXT} flrcompiler.H $(FLORA_TERMS) $(FLORA_ERRORS) $(FLORA_PORTING)
 	@echo 'mc(flrcompiler,$(OPTION)).' >> cmd...
 
 
-flrdependency${OBJEXT} : flrdependency${PROLOGEXT} flrdependency.H $(FLORA_TERMS)
-	@echo 'mc(flrdependency,$(OPTION)).' >> cmd...
-
-
-flrcoder${OBJEXT} : flrcoder${PROLOGEXT} flrcoder.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcoder${OBJEXT} : flrcoder${PROLOGEXT} flrcoder.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS) $(FLORA_PORTING)
 	@echo 'mc(flrcoder,$(OPTION)).' >> cmd...
 
 
-flrundefined${OBJEXT} : flrundefined${PROLOGEXT} flrundefined.H $(FLORA_TERMS) 
-	@echo 'mc(flrundefined,$(OPTION)).' >> cmd...
-
-
-flrutils${OBJEXT} : flrutils${PROLOGEXT} flrutils.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) 
+flrutils${OBJEXT} : flrutils${PROLOGEXT} flrutils.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS)  $(FLORA_PORTING)
 	@echo 'mc(flrutils,$(OPTION)).' >> cmd...
 
-
-flrwrapper${OBJEXT} : flrwrapper${PROLOGEXT} flrwrapper.H $(FLORA_TERMS)
-	@echo 'mc(flrwrapper,$(OPTION)).' >> cmd...
-
-
-flrundefhook${OBJEXT} : flrundefhook${PROLOGEXT} flrundefhook.H $(FLORA_TERMS)
-	@echo 'mc(flrundefhook,$(OPTION)).' >> cmd...
-
-
-flrshell${OBJEXT} : flrshell${PROLOGEXT} flrshell.H $(FLORA_TERMS)
-	@echo 'mc(flrshell,$(OPTION)).' >> cmd...
-
-flrwraparound${OBJEXT} : flrwraparound${PROLOGEXT} flrwraparound.H $(FLORA_TERMS)
-	@echo 'mc(flrwraparound,$(OPTION)).' >> cmd...
-
-flrpretifydump${OBJEXT} : flrpretifydump${PROLOGEXT} $(FLORA_TERMS)
-	@echo 'mc(flrpretifydump,$(OPTION)).' >> cmd...
-
-flrporting${OBJEXT} : flrporting${PROLOGEXT} $(FLORA_TERMS)
-	@echo 'mc(flrporting,$(OPTION)).' >> cmd...
-
-flrregistry${OBJEXT} : flrregistry${PROLOGEXT} $(FLORA_TERMS)
-	@echo 'mc(flrregistry,$(OPTION)).' >> cmd...
 
 
 init:
@@ -221,7 +170,7 @@ finish:
 
 clean:
 	/bin/rm -f core *~ .*~ *${OBJEXT} *.O *.bak ../flora2${OBJEXT} .#*
-	/bin/rm -f .*.tmp .flora_path .prolog_path
+	/bin/rm -f .*.tmp .flora_path* .prolog_path*
 	cd closure && $(MAKE) clean
 	cd genincludes && $(MAKE) clean
 	cd syslib && $(MAKE) clean

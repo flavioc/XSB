@@ -167,6 +167,8 @@ flora_library_file(FLLIBBTDELETE,flrbtdbop,syslib) :- !.
 flora_library_file(FLLIBBTDELETEALL,flrbtdbop,syslib) :- !.
 flora_library_file(FLLIBBTERASE,flrbtdbop,syslib) :- !.
 flora_library_file(FLLIBBTERASEALL,flrbtdbop,syslib) :- !.
+flora_library_file(FLLIBREFRESH,flrtables,syslib) :- !.
+flora_library_file(FLLIBTABLES,flrtables,syslib) :- !.
 flora_library_file(FLLIBSHDIRECT,flrshdirect,syslib) :- !.
 flora_library_file(FLLIBDYNMOD,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBMODLIT,flrdynmod,syslib) :- !.
@@ -177,6 +179,9 @@ flora_library_file(FLLIBDYNRULE,flrdynrule,syslib) :- !.
 flora_library_file(FLLIBNEWMODULE,flrdynrule,syslib) :- !.
 flora_library_file(FLLIBINSERTRULE_A,flrdynrule,syslib) :- !.
 flora_library_file(FLLIBINSERTRULE_Z,flrdynrule,syslib) :- !.
+flora_library_file(FLLIBDELETERULE_A,flrdynrule,syslib) :- !.
+flora_library_file(FLLIBDELETERULE_Z,flrdynrule,syslib) :- !.
+flora_library_file(FLLIBDELETERULE,flrdynrule,syslib) :- !.
 
 flora_library_file(FLLIBCONTROL,flrcontrol,syslib) :- !.
 flora_library_file(FLLIBIFTHENELSE,flrcontrol,syslib) :- !.
@@ -192,11 +197,18 @@ flora_library_file(FLLIBUNIVEQFORM,flrmetaops,syslib) :- !.
 %% This handles both =.. and ~..
 flora_library_file(FLLIBMETAUNIV,flrmetaops,syslib) :- !.
 
+flora_library_file(FLLIBIMPORTEDCALLS,flrimportedcalls,syslib) :- !.
+
+flora_library_file(FLLIBCATCH,flrerrhandler,syslib) :- !.
+flora_library_file(FLLIBTHROW,flrerrhandler,syslib) :- !.
+flora_library_file(FLLIBERRHANDLER,flrerrhandler,syslib) :- !.
+
 
 /**************************************************************************
   Flora headers and trailers inclusion files
 ***************************************************************************/
 flora_library_file(FLHEADER,flrheader,header) :- !.
+flora_library_file(FLHEADER2,flrheader2,header) :- !.
 flora_library_file(FLDEFINITION,flrdefinition,header) :- !.
 flora_library_file(FLPATCH,flrpatch,header) :- !.
 flora_library_file(FLTRAILER,flrtrailer,header) :- !.
@@ -210,6 +222,11 @@ flora_library_file(FLINDEX_P,flrindex_P,header) :- !.
 %% for dynamically inserted rules
 flora_library_file(FLDYNA,flrdyna,header) :- !.
 flora_library_file(FLDYNZ,flrdynz,header) :- !.
+
+%% for refreshing tables
+flora_library_file(FLREFRESHTABLE,flrrefreshtable,header) :- !.
+
+flora_library_file(FLLIBIMPORTEDCALLS,flrimportedcalls,header) :- !.
 
 /**************************************************************************
   Flora system modules use the system libraries mechanism to include
@@ -225,7 +242,7 @@ flora_library_file(SysModID,BaseFile,SubDir) :-
 ***************************************************************************/
 flora_library_file(S,F,_) :-
 	flora_error_line("Unknown library ID `%S' or file `%S'", args(S,F)),
-	throw(FLORA_ABORT).
+	flora_abort.
 
 
 /*****************************************************************************

@@ -73,19 +73,19 @@ flora_prlg(FL_SYMAND,2) :- !.
 flora_prlg(FL_PLUS,1) :- !.
 flora_prlg(FL_MINUS,1) :- !.
 
+flora_prlg(flora_abort,0) :- !.
+flora_prlg(flora_abort,1) :- !.
+
 
 /****************************************************************************
-  XSB predicates
+  XSB predicates that are also useful in FLORA
 ****************************************************************************/
 flora_prlg(abolish_all_tables,0) :- !.
-flora_prlg(abort,0) :- !.
-flora_prlg(catch,3) :- !.
 flora_prlg(call,1) :- !.
 flora_prlg(compile,1) :- !.
 flora_prlg(fail,0) :- !.
 flora_prlg(findall,3) :- !.
 flora_prlg(true,0) :- !.
-flora_prlg(throw,1) :- !.
 flora_prlg(var,1) :- !.
 flora_prlg(nonvar,1) :- !.
 flora_prlg(atom,1) :- !.
@@ -94,11 +94,9 @@ flora_prlg(is_charlist,1) :- !.
 
 
 /****************************************************************************
-  FLORA shell predicates
+  FLORA shell commands and commands used to control FLORA from Prolog
 ****************************************************************************/
 flora_prlg(flLoadedModule,1) :- !.
-flora_prlg(flP2H,2) :- !.
-flora_prlg(flCompileInclude,1) :- !.
 flora_prlg(flHelp,0) :- !.
 flora_prlg(flReset,1) :- !.
 flora_prlg(flAll,0) :- !.

@@ -43,7 +43,7 @@
   causes the argument to be dumped into the output as is.
 
   The predicates listed in the other directives are wrapped with
-  FLORA_THIS_WORKSPACE(predicate), FLORA_FO_THIS_WORKSPACE(predicate),
+  FLORA_THIS_WORKSPACE(predicate), 
   or FLORA_THIS_FDB_STORAGE(predicate), respectively, for further processing 
   by the gpp preprocessor.
 */
@@ -55,6 +55,7 @@
 #include "flora_wrap.flh"
 
 :- dynamic wrap_arguments_directive/1.
+:- dynamic flora_wraparound_info/2.
 
 :- op(1100,fy,WRAP_WITH_WORKSPACE).
 :- op(1100,fy,WRAP_DUMP).
@@ -63,7 +64,7 @@
 
 :- op(1100,fx,WRAP_INDICES).
 
-:- op(1100,fx,FL_ARGUMENTS).
+%%:- op(1100,fx,FL_ARGUMENTS).
 :- op(1100,fx,FL_EQUALITY).
 
 :- bootstrap_flora.
@@ -151,7 +152,7 @@ wrapper_macro(WRAP_WITH_WORKSPACE,'FLORA_THIS_WORKSPACE').
 %% tells how to wrap a predicate spec
 wrapper(P/A, WrappedSpec, Changed) :- !,
 	(var(A) -> EncodedA = '$var' ; EncodedA = A),
-	(FLORA_DB_FIND_KEYPAIR(flora_compile_trie,P/EncodedA,EncodingType),
+	(flora_wraparound_info(P/EncodedA,EncodingType),
 	    wrapper_macro(EncodingType,WrapperMacroName)
 	-> 
 	    flora_concat_items([WrapperMacroName,'(',P,')'],WrappedP),
@@ -161,7 +162,7 @@ wrapper(P/A, WrappedSpec, Changed) :- !,
 	).
 wrapper(Spec, WrappedSpec, Changed) :-
 	Spec =.. [P|Args],
-	(FLORA_DB_FIND_KEYPAIR(flora_compile_trie,Spec,EncodingType),
+	(flora_wraparound_info(Spec,EncodingType),
 	    wrapper_macro(EncodingType,WrapperMacroName)
 	-> 
 	    flora_concat_items([WrapperMacroName,'(',P,')'],WP),
@@ -195,19 +196,20 @@ intern_predicate_specs(P,EncodingType) :-
 intern_predicate_spec(P,EncodingType) :-
 	P = '/'(Name,Arity),
 	!,
-	(var(Arity) -> FLORA_DB_INSERT_KEYPAIR(flora_compile_trie,'/'(Name,'$var'),EncodingType,_)
-	; FLORA_DB_INSERT_KEYPAIR(flora_compile_trie,P,EncodingType,_)
+	(var(Arity)
+	-> assert(flora_wraparound_info('/'(Name,'$var'),EncodingType))
+	; assert(flora_wraparound_info(P,EncodingType))
 	),
 	(var(Arity) -> true
 	;   functor(NewP,Name,Arity),
-	    FLORA_DB_INSERT_KEYPAIR(flora_compile_trie,NewP,EncodingType,_)
+	    assert(flora_wraparound_info(NewP,EncodingType))
 	).
 %% Spec of the form of the form name(_,...,_)
 intern_predicate_spec(P,EncodingType) :-
 	functor(P,Name,Arity), Arity >= 0,
 	!,
-	FLORA_DB_INSERT_KEYPAIR(flora_compile_trie,P,EncodingType,_),
-	FLORA_DB_INSERT_KEYPAIR(flora_compile_trie,Name/Arity,EncodingType,_).
+	assert(flora_wraparound_info(P,EncodingType)),
+	assert(flora_wraparound_info(Name/Arity,EncodingType)).
 intern_predicate_spec(P,EncodingType) :-
 	flora_error_line('[flWrapAround] Invalid predicate specification in a %s directive: %S', arg(EncodingType,P)).
 
@@ -240,7 +242,7 @@ dump_storage_rules(Rule) :- dump_storage_rule(Rule).
 
 %% A storage rule looks like this: rule(head-predicate/arity,body-predicate)
 dump_storage_rule(rule(HeadSpec,TailPred)) :-
-	dump_storage_rule(rule(HeadSpec,TailPred,normal)).
+	dump_storage_rule(rule(HeadSpec,TailPred,fdb)).
 
 dump_storage_rule(rule(HeadSpec,TailPred,Storage)) :-
     dump_storage_rule(rule(HeadSpec,TailPred,Storage,no_leading)).
@@ -250,10 +252,10 @@ dump_storage_rule(rule(HeadSpec,TailPred,Storage,Leading)) :-
 	dump_simple_goal(HeadSkeleton,0,Leading), writeln(' :-'),
 	indent(1),
 	( Storage=fld,
-	    write('FLORA_DB_FIND(FLORA_THIS_FLD_STORAGE,')
+	    write('flora_db_find_base(FLORA_THIS_FLD_STORAGE,')
 	;
-	  Storage=normal,
-	    write('FLORA_DB_FIND(FLORA_THIS_FDB_STORAGE,')
+	  Storage=fdb,
+	    write('flora_db_find_base(FLORA_THIS_FDB_STORAGE,')
 	),
 	%% attach tail's functor to Head's variables
 	HeadSkeleton =.. [_|HeadVars], BodySkeleton =.. [TailPred|HeadVars],

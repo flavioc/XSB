@@ -29,11 +29,6 @@
 
 :- import flLoadedModule/1 from flora2.
 
-:- import
-	flora_stderr_string/1,
-	flora_error_heading/0,
-	flora_stderr_nl/0,
-	flora_error_line/2
-   from flrprint.
+:- import flora_error_line/2 from flrprint.
 
 :- export flora_undefined_predicate_hook/3.
