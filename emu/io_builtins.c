@@ -678,25 +678,6 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
 }
 
 
-static int getvarnum(char *varname)
-{
-  int i;
-  int val = 0;
-  char tchar;
-  
-  if (varname[1] == 0) return 0;
-  if ((varname[1] < '1') || (varname[1] > '9')) return -1;
-  i = 1;
-  while (1) {
-    tchar = varname[i++];
-    if (tchar == 0) break;
-    if ((tchar < '0') || (tchar > '9')) return -1;
-    val = 10*val+(tchar-'0');
-  }
-  return val;
-}
-
-
 /* Read a canonical term from XSB I/O port in r1 and put answer in variable in
    r2; r3 set to 0 if ground fact (non zero-ary), to 1 if variable or :-.
    Fail on EOF */
@@ -707,7 +688,6 @@ int read_canonical(void)
   STRFILE *instr;
   int prevchar, arity, i;
   Cell op1, j;
-  Cell tvar;
 #define FUNFUN 0
 #define FUNLIST 1
 #define FUNDTLIST 2
@@ -729,7 +709,6 @@ int read_canonical(void)
     Cell varid;
     prolog_term varval;
   } vars[MAXVAR];
-  int nvartop = 0;
   int cvarbot = MAXVAR-1;
 
   Pair sym;
@@ -886,27 +865,16 @@ int read_canonical(void)
 		prevchar = token->nextch;
 		break;
       case TK_VVAR:
-		varfound = TRUE;
-		tvar = getvarnum(token->value);
-		if (tvar >= 0) {
-		  if (tvar == 0) i = nvartop;
-		  else {
-			i = 0;
-			while (i<nvartop) {
-			  if (tvar == vars[i].varid) break;
-			  i++;
-			}
-		  }
-		  if (i == nvartop) {
-			vars[nvartop].varid = tvar;
-			vars[nvartop].varval = 0;
-			nvartop++;
-		  }
+	        if ((token->value)[1] == 0) { /* anonymous var */
+		  i = cvarbot;
+		  vars[cvarbot].varid = (Cell) "_";
+		  vars[cvarbot].varval = 0;
+		  cvarbot--;
 		  opstk[optop].typ = TK_VAR;
 		  opstk[optop++].op = (prolog_term) i;
 		  postopreq = TRUE;
 		  break;
-		}
+		}  /* else fall through and treat as regular var*/
       case TK_VAR:
 		varfound = TRUE;
 		cvar = (char *)string_find(token->value,1);
