@@ -171,6 +171,7 @@ open(user,write,userin):-!,
 open(user,read,userin):-!, 
 	see0(userin).
 open(F,read,F):-!, 
+	seeing(CurFile),
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
 	( file_open(Name, r, File),		% 0: "r"
@@ -184,8 +185,9 @@ open(F,read,F):-!,
 	stat_set_flag(CURRENT_INPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
-	see0(userin).
+	see0(CurFile).
 open(F,write,F):-!, 
+	telling(CurFile),
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
 	( file_open(Name, w, File),		% 0: "w"
@@ -199,8 +201,9 @@ open(F,write,F):-!,
 	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
-	tell0(userout).
+	tell0(CurFile).
 open(F,append,F):-!, 
+	telling(CurFile),
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
 	( file_open(Name, a, File),		% 0: "a"
@@ -214,7 +217,7 @@ open(F,append,F):-!,
 	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
-	tell0(userout).
+	tell0(CurFile).
 
 open(File,w,File):-!, 
 	open(File,write,userin).
