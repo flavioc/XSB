@@ -291,12 +291,12 @@ STD_FPREFIX(eql)(X,Y) :-
 
 STD_FPREFIX(metheql)(X,Y) :-
 	( nonvar(X) ->
-	    functor(X,flora_@,N), N >= 1,
-	    functor(Y,flora_@,N)
+	    functor(X,'flora_@',N), N >= 1,
+	    functor(Y,'flora_@',N)
 
 	  ; nonvar(Y) ->
-	    functor(Y,flora_@,N), N >= 1,
-	    functor(X,flora_@,N)
+	    functor(Y,'flora_@',N), N >= 1,
+	    functor(X,'flora_@',N)
 	),
 	STD_FPREFIX(argeql)(X,Y,N),
 	not X=Y.
