@@ -90,7 +90,6 @@ Todo:
 
 #include <string.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <sys/stat.h>
 
 #include "auxlry.h"

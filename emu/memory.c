@@ -44,7 +44,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 
 #include "auxlry.h"
 #include "cell.h"      /* CPtr */

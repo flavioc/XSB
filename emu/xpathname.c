@@ -43,9 +43,6 @@
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
 
-#ifndef NeXT
-#include <malloc.h>
-#endif
 
 #if (!defined(WIN_NT))
 #include <pwd.h>

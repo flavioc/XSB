@@ -31,10 +31,6 @@
 #include <setjmp.h>
 #include <stdlib.h>
 
-#ifndef NeXT
-#include <malloc.h>
-#endif
-
 
 #include "auxlry.h"
 #include "cell.h"

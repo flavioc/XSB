@@ -495,14 +495,6 @@ test "${have_errors}" = "yes" &&
 			sys/time.h
 			sys/resource.h])
 
-# autoconf fails to properly detect malloc.h under FreeBSD
-# so we test for malloc() instead
-dnl AC_MSG_CHECKING(for malloc.h)
-dnl AC_TRY_CPP([#include <malloc.h>],have_malloc=yes,have_malloc=no)
-dnl AC_MSG_RESULT($have_malloc)
-dnl test "${have_malloc}" = "no" &&
-dnl    AC_MSG_ERROR([malloc.h is missing on your system])
-
 AC_CHECK_FUNCS(malloc, have_malloc=yes,have_malloc=no)
 test "${have_malloc}" = "no" &&
     AC_MSG_ERROR([malloc() is missing on your system])
