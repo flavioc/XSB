@@ -30,11 +30,17 @@
 /* setof(?Template, +Call, ?Set)					*/
 /*======================================================================*/
 
+%% The bagof1 hack is needed to make sure that setof is traced properly 
+%% by the debugger. That is, bagof/3 is printed, but nothing is traced 
+%% after that until we hit the call to Generator.
 setof(Template, Generator, Set) :-
-	bagof(Template, Generator, Bag),
+	bagof1(Template, Generator, Bag),
 	sort(Bag, Set0),
 	Set=Set0.
 
+%% MK: the tabled versions: tbagof/tsetof/tfindall aren't traced
+%% properly by the debugger. Can be done the same way as I did
+%% for bagof/setof/findall
 tsetof(Template, Generator, Set) :-
 	tbagof(Template, Generator, Bag),
 	sort(Bag, Set0),
@@ -45,15 +51,19 @@ tsetof(Template, Generator, Set) :-
 /* bagof(?Template, +Call, ?Bag)					*/
 /*======================================================================*/
 
-bagof(Template, Generator, Bag) :-
+bagof(Template, Generator, Bag) :- bagof1(Template, Generator, Bag).
+%% The bagof1 hack is needed to make sure that bagof is traced properly 
+%% by the debugger. That is, bagof/3 is printed, but nothing is traced 
+%% after that until we hit the call to Generator.
+bagof1(Template, Generator, Bag) :-
 	excess_vars(Generator, Template, [], VarList), 
 	VarList \== [], !,
 	Key =.. ['$'|VarList],
-	findall(Key-Template, Generator, Bags0),
+	findall(Key-Template, Generator, Bags0, []),
 	keysort(Bags0, Bags),	% This performs the groupby
 	pick(Bags, Key, Bag).
-bagof(Template, Generator, Bag) :-
-	findall(Template, Generator, Bag),
+bagof1(Template, Generator, Bag) :-
+	findall(Template, Generator, Bag, []),
 	Bag \== [].	% If Bag=[] then bagof/3 and setof/3 should fail.
 
 tbagof(Template, Generator, Bag) :-
