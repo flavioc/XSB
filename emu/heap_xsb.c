@@ -334,8 +334,23 @@ xsbBool glstack_realloc(int new_size, int arity)
 
   new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
   if (new_heap_bot == NULL) {
-    xsb_mesg("Not enough core to resize the Heap and Local Stack!");
-    return 1; /* return an error output -- will be picked up later */
+    if (2*glstack.size == new_size) { /* if trying to double, try backing off, may not help */
+      int increment = new_size;
+      while (new_heap_bot == NULL && increment > 40) {
+	increment = increment/2;
+	new_size = glstack.size + increment;
+	new_size_in_bytes = new_size*K ;
+	new_size_in_cells = new_size_in_bytes/sizeof(Cell) ;
+	new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
+      }
+      if (new_heap_bot == NULL) {
+	xsb_mesg("Not enough core to resize the Heap and Local Stack!");
+	return 1; /* return an error output -- will be picked up later */
+      }
+    } else {
+      xsb_mesg("Not enough core to resize the Heap and Local Stack!");
+      return 1; /* return an error output -- will be picked up later */
+    }
   }
   heap_offset = new_heap_bot - heap_bot ;
   new_ls_bot = new_heap_bot + new_size_in_cells - 1 ;
