@@ -131,7 +131,7 @@
 	compiled_to_dynamic/2,
 	db_get_clause/8,
 	db_retract0/2,
-	db_build_prref/5,
+	db_build_prref/3,
 	db_remove_prref/1,
 	get_emu_dependent_const/2,
 	oracle_query/7,

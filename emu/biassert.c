@@ -59,6 +59,9 @@
 
 extern Cell val_to_hash(Cell);
 
+extern tab_inf_ptr first_tip;
+extern tab_inf_ptr last_tip;
+
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer.			*/
 /*======================================================================*/
@@ -638,6 +641,7 @@ int assert_code_to_buff(/* Clause, Size */)
   prolog_term Clause;
   prolog_term Head, Body;
   int Location;
+  int Loc_size;
   RegStat Reg;
   int Arity;
   int has_body;
@@ -674,6 +678,8 @@ int assert_code_to_buff(/* Clause, Size */)
   Arity = arity(Head);
   Location = 0;
   Loc = &Location;
+  dbgen_instB_ppvw(test_heap,Arity,0);  /* size will be backpatched*/
+  Loc_size = *Loc - sizeof(Cell);
   if (has_body) Reg = reg_init(max(Arity,(int)get_arity(get_str_psc(Body))));
   else Reg = reg_init(Arity);
   for (Argno = 1; Argno <= Arity; Argno++) {
@@ -688,6 +694,7 @@ int assert_code_to_buff(/* Clause, Size */)
     dbgen_instB_pppw(execute, get_str_psc(Body) );
   } else dbgen_instB_ppp(proceed );
   Size = *Loc;
+  write_word(Buff,&Loc_size,(Size/sizeof(Cell)));  /* backpatch max heap needed*/
   ctop_int(2,Size);
   return TRUE;
 }
@@ -1949,34 +1956,38 @@ bool compiled_to_dynamic( /* +PSC, +OldPred */ )
     return TRUE ;
 }
 
-bool db_build_prref( /* Arity, FirstTIP, -TIP, -PrRef, -PrEntry */ )
-{   CPtr p, tip, tp ;
+bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
+{   CPtr p, /* tip, */ tp ;
+    tab_inf_ptr tip; 
     int Loc ;
-    Integer Arity = ptoc_int(1);
-    CPtr FirstTIP = (CPtr)ptoc_int(2);
+    Psc PSC = (Psc)ptoc_int(1);
+    Integer Arity = get_arity(PSC);
+    Integer Tabled = ptoc_int(2);
 
     p = (CPtr)mem_alloc(4*sizeof(Cell));
     Loc = 0 ;
     dbgen_inst_ppp(fail,p,&Loc) ;
     p[2] = (Cell)p ;
-    if( (Integer)FirstTIP != - 1 )
-    {	tip = (CPtr)mem_alloc(4*sizeof(Cell)) ;
-	tip[0] = 0 ; 
-	tip[1] = 0 ;
-	tp  = (CPtr)mem_alloc(9*sizeof(Cell)) ;
+    if( Tabled )
+      {	tip = (tab_inf_ptr)mem_alloc(sizeof(struct tab_info));
+	ti_next_tip(tip) = 0;
+	ti_call_trie_root(tip) = 0;
+	ti_psc_ptr(tip) = PSC;
+	if (first_tip == 0) first_tip = tip;
+	else ti_next_tip(last_tip) = (CPtr)tip;
+	last_tip = tip;
+	tp  = (CPtr)mem_alloc(8*sizeof(Cell)) ;
 	Loc = 0 ;
 	dbgen_inst_ppvww(tabletrysingle,Arity,(tp+3),tip,tp,&Loc) ;
-	dbgen_inst_ppp(allocate,tp,&Loc) ;
+	dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
 	dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
 	dbgen_inst_ppvw(calld,3,p,tp,&Loc) ;
 	dbgen_inst_pvv(new_answer_dealloc,Arity,2,tp,&Loc) ;
-	dbgen_inst_ppp(proceed,tp,&Loc) ;
-	ctop_int(3,(Integer)tip) ;
-	ctop_int(5,(Integer)tp) ;
+	set_ep(PSC, (pb)tp);
     }
-    else ctop_int(5,(Integer)p) ;
-    ctop_int(4,(Integer)p) ;
+    else set_ep(PSC, (pb)p);
 
+    ctop_int(3,(Integer)p) ;
     return TRUE ;
 }
 

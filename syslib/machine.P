@@ -149,7 +149,7 @@ compiled_to_dynamic(_PSC,_NewPred) :- '_$builtin'(135).
 db_retract0(_Clause,_DontReclaim) :- '_$builtin'(136).
 db_get_clause(_CC0,_CI,_CIL,_PrRef,_Index,_Clause,_Type,_Entry) :- 
 	'_$builtin'(137).
-db_build_prref(_Arity,_FirstTIP,_TIP,_PrRef,_PrEntry) :- '_$builtin'(138).
+db_build_prref(_PSC,_Tabled,_PrRef) :- '_$builtin'(138).
 db_remove_prref(_Prref) :- '_$builtin'(139).
 
 get_emu_dependent_const(_ConstName, _Value) :- '_$builtin'(156).
