@@ -293,8 +293,8 @@ case check_complete: {
 	delayreg = tcp_pdreg(orig_breg);
 	restore_some_wamregs(orig_breg, ereg);
 	/* restore_trail_condition_registers - because success path
-	   * will be followed
-	   */
+	 * will be followed
+	 */
 	ebreg = cp_ebreg(tcp_prevbreg(orig_breg));
 	hbreg = cp_hreg(tcp_prevbreg(orig_breg));
 #ifdef CHAT
