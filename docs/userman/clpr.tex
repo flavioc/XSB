@@ -1,0 +1,226 @@
+\chapter{{\tt clpr}: The CPL(R) package}
+%===========================
+
+XSB's tabling engine supports the use of attributed variables (Section
+\ref{sec:attributed-variables}), which in turn have been used to port
+real constraints to XSB under the CLP(R) library of Christian
+Holzbauer \cite{Holz95}.  Constraint equations are represented using
+the Prolog syntax for evaluable functions (Volume 1, Section
+6.2.1).  Formally:
+
+{\it
+\begin{tabbing}
+12 \= 12345678901234567890 \= 12345678901234567890 \=	\kill
+\> ConstraintSet --$>$   \>  C     \\
+\> \>                      $|$ C {\tt ,} C   \\
+\\
+\> C --$>$ \> Expr {\tt =:=} Expr \> {\rm equation} \\
+\>    \> $|$ Expr {\tt =} Expr \> {\rm equation} \\
+\>    \> $|$ Expr {\tt $<$} Expr \> {\rm strict inequation} \\
+\>    \> $|$ Expr {\tt $>$} Expr \> {\rm nonstrict inequation} \\
+\>    \> $|$ Expr {\tt =$<$} Expr \> {\rm nonstrict inequation} \\
+\>    \> $|$ Expr {\tt $>$=} Expr \> {\rm disequation} \\
+\\
+\> Expr --$>$  \> variable \> {\rm Prolog variable} \\
+\> \> $|$ number \> {\rm floating point number} \\
+\> \> $|$ {\tt +} Expr \\
+\> \> $|$ {\tt -} Expr \\
+\> \> $|$ Expr {\tt +}  Expr \\
+\> \> $|$ Expr {\tt -} Expr \\
+\> \> $|$ Expr {\tt *} Expr \\
+\> \> $|$ Expr {\tt /} Expr \\
+\> \> $|$ {\tt abs($Expr$)} \\
+\> \> $|$ {\tt sin($Expr$)} \\
+\> \> $|$ {\tt cos($Expr$)} \\
+\> \> $|$ {\tt tan($Expr$)} \\
+\> \> $|$ {\tt pow($Expr$,$Expr$)} \> {\rm raise to the power} \\
+\> \> $|$ {\tt exp($Expr$,$Expr$)} \> {\rm raise to the power} \\
+\> \> $|$ {\tt min($Expr$,$Expr$)} \> {\rm minimum of two expressions} \\
+\> \> $|$ {\tt max($Expr$,$Expr$)} \> {\rm maximum of two expressions} \\
+\> \> $|$ \verb|#|(Expr) \> {\rm symbolic numerical constants} 
+\end{tabbing}
+}
+
+The CLP(R) library supports solutions of linear equations and
+inequalities over the real numbers and the lazy treatement of
+nonlinear equations.  In displaying sets of equations and
+disequations, the library removes redundancies, performs projections,
+and provides for linear optimization.  The goal of the XSB port is to
+provide the same CLP(R) functionality as in other platforms, but also
+to allow constraints to be used by tabled predicates.  This section
+provides a general introduction to the CLP(R) functionality available
+in XSB, for further information see {\tt
+http://www.ai.univie.ac.at/clpqr}.
+
+The {\tt clpr} package may be loaded by the command {\tt [clpr]}.
+Loading the package imports exported predicates from the various files
+in the {\tt clpr} package into {\tt usermod} (see Volume 1, Section
+3.3) so that they may be used in the interpreter.  Modules that use
+the exported predicates need to explicitly import them from the files
+in which they are defined (e.g. {\tt bv}, as shown below).
+
+\begin{description}
+\ournewitem{\{+Constraints\}} {} \index{{\tt \{\}/1}}
+
+When the CLP(R) package is loaded, inclusion of equations in braces
+({\tt \{\}}) adds the equations to the constraint store where they are
+checked for satisfiability.
+
+{\small
+\begin{verbatim}
+
+     | ?- [clpr].
+     [clpr loaded]
+     [itf3 loaded]
+     [nf loaded]
+
+     yes
+
+     | ?- {X = Y+1, Y = 3*X}.
+
+     X = -0.5000
+     Y = -1.5000;
+
+     yes
+\end{verbatim}
+}
+
+\ournewitem{entailed(Constraint)} {} \index{{\tt entailed/1}}
+
+Succeeds if {\tt Constraint} is logically implied by the current
+constraint store.  {\tt entailed/1} does not change the constraint
+store.
+
+{\small
+\begin{verbatim}
+
+| ?- {A =< 4},entailed(A =\= 5).
+
+yes   
+\end{verbatim}
+}
+
+{\em Note: this predicate does not always work in \version, due to a
+bug in cutting over interrupts for attributed variables.}
+
+\ournewitem{inf(+Expr,-Val)} {bv} \index{{\tt inf/2}}
+
+\ournewitem{sup(+Expr,-Val)} {bv} \index{{\tt sup/2}}
+
+\ournewitem{minimize(Expr)} {bv} \index{{\tt minimize/1}}
+
+\ournewitem{maximize(Expr)} {bv} \index{{\tt maximize/1}}
+
+These four related predicates provide various mechanisms to compute
+the maximum and minimum of expressions over variables in a constraint
+store.  In the case where the expression is not bounded from above
+over the reals {\tt sup/2} and {\tt maximize/1} will fail; similarly
+if the expression is not bounded from below {\tt inf/2} and {\tt
+minimize/1} will fail.
+
+{\small
+\begin{verbatim}
+
+| ?- {X = 2*Y,Y >= 7},inf(X,F).
+
+X = _h8841
+Y = _h9506
+F = 14.0000
+
+| ?- {X = 2*Y,Y >= 7},minimize(X).
+
+X = 14.0000
+Y = 7.0000
+
+| ?- {X = 2*Y,Y =< 7},maximize(X-2).
+
+X = 14.0000
+Y = 7.0000
+
+| ?- {X = 2*Y,Y =< 7},sup(X-2,Z).
+
+X = _h8975
+Y = _h9640
+Z = 12.0000
+
+yes
+| ?- {X = 2*Y,Y =< 7},maximize(X-2).
+
+X = 14.0000
+Y = 7.0000
+
+yes
+\end{verbatim}
+}
+
+\ouritem{bb\_inf(+IntegerList,+Expr,-Inf,-Vertex, +Eps)}  
+
+Works like {\tt inf/2} in {\tt Expr} but assumes that all the
+variables in {\tt IntegerList} have integral values.  {\tt Eps} is a
+positive number between $0$ and $0.5$ that specifies how close an
+element of {\tt IntegerList} must be to an integer to be considered
+integral -- i.e. for such an {\tt X}, {\tt abs(round(X) - X) < Eps}.
+Upon success, {\tt Vertex} is instantiated to the integral values of
+all variables in {\tt IntegerList}.  {\tt bb\_inf/5} works properly for
+non-strict inequalities only.
+
+\begin{verbatim}
+| ?- {X > Y + Z,Y > 1, Z > 1},bb_inf([Y,Z],X,Inf,Vertex,0).
+
+X = _h14286
+Y = _h10914
+Z = _h13553
+Inf = 4.0000
+Vertex = [2.0000,2.0000]
+
+yes
+\end{verbatim}
+
+\ouritem{bb\_inf(+IntegerList,+Expr,-Inf)}  
+
+Works like {\tt bb\_inf/5}, but with the neighborhood, {\tt Eps}, set
+to {\tt 0.001}.
+
+\begin{verbatim}
+|?- {X >= Y+Z, Y > 1, Z > 1}, bb_inf([Y,Z],X,Inf)
+
+X = _h14289
+Y = _h10913
+Z = _h13556
+Inf = 4.
+
+yes
+\end{verbatim}
+
+\ournewitem{dump(+ConstraintSet,+NewVars,-CodedTerm} {clpr} 
+\index{{\tt \{\}/1}}
+
+(No documentation yet available).
+
+\comment{
+This predicate allows one to rewrite the set of constraints in {\tt
+ConstriantSet} using the 
+
+
+| ?- import dump/3 from dump.
+
+yes
+| ?- {X = Y+1, Y = 3*X}.
+
+X = -0.5000
+Y = -1.5000;
+
+no
+| ?- {X > Y+1, Y > 2},
+     dump([X,Y], [x,y], CS),
+     writeln(CS).
+[y > 2.0000,x - y > 1.0000]
+
+X = _h17748
+Y = _h17139
+CS = [y > 2.0000,x - y > 1.0000];
+}
+
+\end{description}
+
+
