@@ -138,12 +138,21 @@
 	'$$findall_add'/3,
 	'$$findall_get_solutions'/4,
 	socket_request/7,
+	set_arg/3,
 	put_attributes/2,
-	get_attributes/3,
+	get_attributes/2,
 	delete_attributes/1,
         attv_unify/2,
+        put_attr/3,
+        get_attr/3,
+        del_attr/2,
+        install_verify_attribute_handler/4,
+        verify_attribute_handler/4,
 	globalvar/1,
         interprolog_callback/3.
+
+:- import assert/1, retract/1 from assert.
+:- import write/1, writeln/1 from standard.
 
 :- export 
 	file_function/7, conname/2, conpsc/2, machine_file_exists/1,

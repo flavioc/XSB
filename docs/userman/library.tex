@@ -171,146 +171,83 @@ Attributed variables are a special data type that associates variables
 with arbitrary attributes as well as supports extensible unification.
 Attributed variables have proven to be a flexible and powerful mechanism
 to extend a classic logic programming system with the ability of
-constraint solving.  They have been implemented in SICStus \footnote{In
-  XSB, we try to keep the implementation of attributed variables to be
-  compatible with SICStus.} \cite{sicstus-manual} and ECL$^i$PS$^e$
-\cite{eclipse-manual}.
+constraint solving.  They have been implemented in SICStus \cite{sicstus-manual}, 
+ECL$^i$PS$^e$ \cite{eclipse-manual} and hProlog \footnote{In XSB we try
+to keep the implementation of attributed variables compatible with hProlog.} \cite{hprolog}.
 
-Attributes of variables are compound terms whose arguments are the
-actual attribute values.  They are defined with a declaration
+In XSB attributed variabels now comes with a new interface.  It  allows the
+programmer more control over structuring attributes than in SICStus.
 
-\demo{:- attribute $AttributeSpec, \ldots, AttributeSpec$.}
+\subsection{Lowlevel Interface}
 
-\noindent where each $Attributes$ has the form $Functor/Arity$.  Each
-file can have at most one such declaration.
+Attributes of variables are pairs of module names and values. A module name can be any atom.
+A value can be any XSB value (term, variable, atom, \ldots). Any variable has at most one 
+attribute for a particular module.
 
-Having declared some attribute names, these attributes can be added,
-updated and deleted from unbound variables using the following two
-predicates (\texttt{get\_atts/2} and \texttt{put\_atts/2}) defined in
-the module \texttt{atts}.  For each declared attribute name, any
-variable can have at most one such attribute (initially it has none).
+Attributes can be manipulated with the following three predicates (\texttt{get\_attr/3},
+\texttt{put\_attr/3} and \texttt{del\_attr/2}) defined in the module \texttt{machine}.
 
 \begin{description}
-\ournewitem{get\_atts(-Var, ?AccessSpec)}{atts}\index{{\tt get\_atts/2}}
-    Gets the attributes of \texttt{Var} according to
-    \texttt{AccessSpec}. If \texttt{AccessSpec} is unbound, it will be
-    bound to a list of all set attributes of \texttt{Var}.  Non-variable
-    terms in \texttt{Var} cause a type error.  \texttt{AccessSpec} is
-    either \texttt{+(Attribute)}, \texttt{-(Attribute)}, or a list of
-    such (prefix \texttt{+} may be dropped for convenience).  The
-    prefixes in the \texttt{AccessSpec} have the following meaning:
+\ournewitem{get\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{get\_attr/3}}
+   Gets the value of the attribute of \texttt{Var} in module \texttt{Mod}. Non-variable
+   terms in \texttt{Var} cause a type error. \texttt{Val} will be unified with the
+   value of the attribute, if it exists. Otherwise the predicate fails.
 
-    \begin{description}
-    \item[\texttt{+(Attribute)}:]
-      The corresponding actual attribute must be present and is unified
-      with \texttt{Attribute}.
+\ournewitem{put\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{put\_attr/3}}
+   Sets the value of the attribute of \texttt{Var} in module \texttt{Mod}. Non-variable
+   terms in \texttt{Var} cause a type error. The previous value of the attribute is
+   overwritten, if it exists.
 
-    \item[\texttt{-(Attribute)}:]
-      The corresponding actual attribute must be absent.  The arguments
-      of \texttt{Attribute} are ignored, only the name and arity are
-      relevant.
-    \end{description}
-
-\ournewitem{put\_atts(-Var, +AccessSpec)}{atts}\index{{\tt put\_atts/2}}
-    Sets the attributes of \texttt{Var} according to
-    \texttt{AccessSpec}.  Non-variable terms in \texttt{Var} cause a
-    type error.  The effect of \texttt{put\_atts/2} are undone on
-    backtracking.  The prefixes of \texttt{AccessSpec} have the
-    following meaning:
-
-    \begin{description}
-    \item[\texttt{+(Attribute)}:]
-      The corresponding actual attribute is set to \texttt{Attribute}.
-      If the actual attribute was already present, it is simply
-      replaced.
-
-    \item[\texttt{-(Attribute)}:]
-      The corresponding actual attribute is removed.  If the actual
-      attribute is already absent, nothing happens.
-
-    \end{description}
-
+\ournewitem{del\_attr(-Var, +Mod)}{machine}\index{\texttt{del\_attr/2}}
+   Removes the attribute of \texttt{Var} in module \texttt{Mod}. Non-variable
+   terms in \texttt{Var} cause a type error. The previous value of the attribute
+   is removed, if it exists. 
 \end{description}
 
-In a file that contains an attribute declaration, one has an opportunity
-to extend the default unification algorithm by defining the following
-predicate:
+One has to extend the default unification algorithm for used attributes by installing
+a handler in the following way:
 
-\demo{verify\_attributes(-Var, +Value)}
+\demo{:- install\_verify\_attribute\_handler($+Mod, -AttrValue, -Target, +Handler$)}
 
-This predicate is called whenever an attributed variable \texttt{Var}
-(which has at least one attribute) is about to be bound to
-\texttt{Value} (a non-variable term or another attributed variable).
-When \texttt{Var} is to be bound to \texttt{Value}, a special interrupt
-called \emph{attributed variable interrupt} is triggered, and then XSB's
-interrupt handler (written in Prolog) calls
-\texttt{verify\_attributes/2}.  If it fails, the unification is deemed
-to have failed.  It may succeed non-deterministically, in which case the
-unification might backtrack to give another answer.
+\noindent The \texttt{install\_verify\_attribute\_handler/4}\index{\texttt{install\_verify\_attribute\_handler/4}} 
+predicate is defined in module \texttt{machine}. $Mod$ is the attribute Module
+and $Handler$ is a term with arguments $AttrValue$ and $Target$. The $Handler$
+term has to correspond to a handler predicate that takes the value of the
+attribute ($AttrValue$) and the term that the attributed value is bound to
+($Target$) as arguments.
 
-If \texttt{Value} is a non-variable term, \texttt{verify\_attributes/2}
-usually inspects the attributes of \texttt{Var} and check whether they
-are compatible with \texttt{Value} and fail otherwise.  If
-\texttt{Value} is another attributed variable,
-\texttt{verify\_attributes/2} will typically merge the attributes of
-\texttt{Var} and \texttt{Value}, bind \texttt{Var} to \texttt{Value},
-and then update their attributes.  In either case,
-\texttt{verify\_attributes/2} may determine the attributes of
-\texttt{Var} (or \texttt{Value}) by calling \texttt{get\_atts/2}.
-
-The predicate \texttt{verify\_attributes/2} is also called
-\emph{user-defined unification handler}.  To help users define this
-handler, the following predicate is provided in module \texttt{machine},
-which can be used to bind an attributed variable to an arbitrary term
-(might be another attributed variable) without triggering attributed
-variable interrupt and thus another level call of
-\texttt{verify\_attributes/2}:
-
-\begin{description}
-
-\ournewitem{attv\_unify(-Var, +Value)}{machine}\index{{\tt
-    attv\_unify/2}}
-This is an internal built-in predicate which is supposed to be used only
-in the definition of \texttt{verify\_attributes/2}.  It binds the
-attributed variable \texttt{Var} to \texttt{Value} without triggering
-attributed variable interrupt.  \texttt{Value} is a non-variable term or
-another attributed variable.
-
-\end{description}
+The handler is called after the unification of an attributed variable with a
+term or other attributed variable, if the attributed variable has an attribute
+in the corresponding module. The two arguments of the unification are already
+bound at the time the handler is called, i.e. the handler is a post-unify handler.
 
 Here, by giving the implementation of a simple finite domain constraint
-solver (see the file \texttt{fd.P} below), we show how these predicates
-for attributed variables can be used.  In this example, only one
-attribute is declared: \texttt{dom/1}, and the value of this attribute
-is a list of terms.
+solver (see the file \texttt{fd.P} below), we show how these lowlevel predicates
+for attributed variables can be used.  In this example, an attribute in the module
+\texttt{fd} is used and the value of this attribute is a list of terms.
 
 \begin{small}
 \begin{verbatim}
 %% File: fd.P
 %%
-%% A simple finite domain constrait solver implemented using attributed
-%% variables.  
+%% A simple finite domain constrait solver implemented using the lowlevel 
+%% attributes variables interface.  
 
-:- import put_atts/2, get_atts/2 from atts.
-:- import attv_unify/2 from machine.
+:- import put_attr/3, get_attr/3, del_attr/3, 
+   install_verify_attribute_handler/4 from machine.
 :- import member/2 from basics.
 
-:- attribute dom/1.
+:- install_verify_attribute_handler(fd,AttrValue,Target,fd_handler(AttrValue,Target)).
 
-verify_attributes(Var, Value) :-
-        get_atts(Var, dom(Da)),
-        (var(Value)                          % Value is an attributed variable
-         -> get_atts(Value, dom(Db)),        % has a domain
-            intersection(Da, Db, [E|Es]),    % intersection not empty
-            (Es = []                         % exactly one element
-             -> attv_unify(Var, Value),      % bind Var to Value
-                attv_unify(Var, E)           % bind Var (and Value) to E
-             ;  attv_unify(Var, Value),      % bind Var to Value
-                put_atts(Value, dom([E|Es])) % update Var's (and Value's)
-                                             % attributes
-            )
-         ;  member(Value, Da),               % is Value a member of Da?
-            attv_unify(Var, Value)           % bind Var to Value
+fd_handler(Da, Target) :-
+        (var(Target),                       % Target is an attributed variable
+         get_attr(Target, fd, Db) ->            % has a domain
+           intersection(Da, Db, [E|Es]),    % intersection not empty
+           (Es = [] ->                      % exactly one element
+              Target = E                    % bind Var (and Value) to E
+           ;  put_attr(Target, fd, [E|Es]) % update Var's (and Value's)
+           )
+        ;  member(Target, Da)               % is Target a member of Da?
         ).
 
 intersection([], _, []).
@@ -322,67 +259,23 @@ intersection([_|T], L2, L3) :-
 
 domain(X, Dom) :- 
         var(Dom), !, 
-        get_atts(X, dom(Dom)). 
+        get_attr(X, fd, Dom). 
 domain(X, List) :- 
         List = [El|Els],                     % at least one element 
         (Els = []                            % exactly one element
          -> X = El                           % implied binding 
-         ;  put_atts(Fresh, dom(List)),      % create a new attributed variable
-            X = Fresh                        % may call verify_attributes/2
+        ;  put_attr(Fresh, fd, List),       % create a new attributed variable
+           X = Fresh                         % may call verify_attributes/2
         ).
 
 show_domain(X) :-                            % print out the domain of X
         var(X),                              % X must be a variable
-        get_atts(X, dom(D)),
+        get_attr(X, fd, D),
         write('Domain of '), write(X),
         write(' is '), writeln(D).
+
 \end{verbatim}
 \end{small}
-
-The output of some example queries are listed below, from which we can
-see how attributed variables are unified using
-\texttt{verify\_attributes/2}:
-
-\begin{small}
-\begin{verbatim}
-    | ?- [fd].
-    [fd loaded]
-    
-    yes
-    | ?- domain(X,[5,6,7,1]), domain(Y,[3,4,5,6]), domain(Z,[1,6,7,8]),
-         show_domain(X), show_domain(Y), show_domain(Z).
-    Domain of _h474 is [5,6,7,1]
-    Domain of _h503 is [3,4,5,6]
-    Domain of _h532 is [1,6,7,8]
-    
-    X = _h474
-    Y = _h503
-    Z = _h532
-    
-    yes
-    | ?- domain(X,[5,6,7,1]), domain(Y,[3,4,5,6]), domain(Z,[1,6,7,8]),
-         X = Y, show_domain(X), show_domain(Y), show_domain(Z).
-    Domain of _h640 is [5,6]
-    Domain of _h640 is [5,6]
-    Domain of _h569 is [1,6,7,8]
-    
-    X = _h640
-    Y = _h640
-    Z = _h569
-    
-    yes
-    | ?- domain(X,[5,6,7,1]), domain(Y,[3,4,5,6]), domain(Z,[1,6,7,8]),
-         X = Y, Y = Z.
-    
-    X = 6
-    Y = 6
-    Z = 6
-    
-    yes
-    | ?- 
-\end{verbatim}
-\end{small}
-
 
 \section{Asserting Dynamic Code} \label{LoadDyn}
 %===============================================

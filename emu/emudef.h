@@ -109,7 +109,9 @@ int asynint_val = 0;
   else if (isnil(op)) {XSB_Next_Instr();} /* op == [] */		\
   else if (isattv(op)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_nil, interrupt needed\n"));	\
-    add_interrupt(op, makenil);						\
+    /* add_interrupt(op, makenil);	*/				\
+    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makenil);   		\
+    bind_copy((CPtr)dec_addr(op1), makenil);                  		\
   }									\
   else Fail1;	/* op is LIST, INT, or FLOAT */
 
@@ -126,7 +128,9 @@ int asynint_val = 0;
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_con, interrupt needed\n"));	\
-    add_interrupt(OP1, makestring((char *)OP2));			\
+    /* add_interrupt(OP1, makestring((char *)OP2)); */			\
+    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makestring((char *)OP2));   	\
+    bind_string((CPtr)dec_addr(op1),(char *)OP2);     	\
   }									\
   else Fail1;
 
@@ -145,7 +149,9 @@ int asynint_val = 0;
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_num, interrupt needed\n"));	\
-    add_interrupt(OP1, OP2);					        \
+    /* add_interrupt(OP1, OP2); */				        \
+    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),OP2);        		\
+    bind_int_tagged((CPtr)dec_addr(op1), OP2);                 		\
   }									\
   else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
 
@@ -162,7 +168,9 @@ int asynint_val = 0;
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
-    add_interrupt(OP1, OP2);			                        \
+    /* add_interrupt(OP1, OP2); */				        \
+    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),OP2);        		\
+    bind_float_tagged((CPtr)dec_addr(op1), OP2);                 		\
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
 
@@ -187,7 +195,9 @@ int asynint_val = 0;
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n"));	\
-    add_interrupt(OP1, makecs(hreg));					\
+    /* add_interrupt(OP1, makecs(hreg)); */				\
+    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg));        \
+    bind_copy((CPtr)dec_addr(op1), makecs(hreg));                       \
     new_heap_functor(hreg, (Psc)OP2);					\
     flag = WRITE;							\
   }									\
@@ -208,7 +218,9 @@ int asynint_val = 0;
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_list_sym, interrupt needed\n"));	\
-    add_interrupt(OP1, makelist(hreg));					\
+    /* add_interrupt(OP1, makelist(hreg)); */				\
+    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makelist(hreg));      \
+    bind_copy((CPtr)dec_addr(op1), makelist(hreg));                     \
     flag = WRITE;							\
   }									\
   else Fail1;
@@ -217,18 +229,34 @@ int asynint_val = 0;
 
 /*
  * In getattv, the flag will always be WRITE.  The unification will be
- * done by the attv unification handlers.
+ * done here...
+ * This operation is used in the getattv instruction, emitted for
+ * asserted code with attributed variables.
+ *
+ * The way to do it:
+ * 
+ * href      ->  Op1   
+ * href + 1  ->  _
+ *
+ * Put [reference to href + 1|X] in the interrupt queue.
+ *
+ * Set the WRITE flag to have the next instructions put the attribute
+ * at href + 1.
+ *
+ * The interrupt should not be handled before the attribute is created.
  */
 #define nunify_with_attv(OP1) {					\
   XSB_Deref(OP1);	       					\
   if (isref(OP1)) {						\
     bind_attv((CPtr)(OP1), hreg);				\
+    new_heap_free(hreg);	/* the VAR part of the attv */	\
   }								\
   else {							\
     xsb_dbgmsg((LOG_ATTV,">>>> nunify_with_attv, interrupt needed\n"));	\
-    add_interrupt(makeattv(hreg), OP1);				\
+    /* add_interrupt(makeattv(hreg), OP1); */			\
+    *hreg = OP1; hreg++;						\
+    add_interrupt(hreg, OP1);					\
   }								\
-  new_heap_free(hreg);		/* the VAR part of the attv */	\
   flag = WRITE;							\
 }
 

@@ -1170,7 +1170,11 @@ int builtin_call(byte number)
     /* used in file_read.P, array.P, array1.P */
     int  disp = ptoc_int(2);
     Cell term = ptoc_tag(1);
-    if (!ptoc_int(4)) { pushtrail(clref_val(term)+disp,cell(reg+3));}
+    if (ptoc_int(4) > 0) {
+      pushtrail(clref_val(term)+disp,cell(reg+3));
+    } else if (ptoc_int(4) < 0) {
+      push_pre_image_trail(clref_val(term)+disp, cell(reg+3));
+    }
     bld_copy(clref_val(term)+disp, cell(reg+3));
     break;
   }
@@ -2300,7 +2304,7 @@ int builtin_call(byte number)
     break;
   }
 
-  case PUT_ATTRIBUTES: { /* R1: -Var; R2: +Atts */
+  case PUT_ATTRIBUTES: { /* R1: -Var; R2: +List */
     Cell attv = ptoc_tag(1);
     Cell atts = ptoc_tag(2);
     if (isref(attv)) {		/* attv is a free var */
@@ -2325,17 +2329,15 @@ int builtin_call(byte number)
     break;
   }
 
-  case GET_ATTRIBUTES: { /* R1: +Var; R2: -Vector; R3: -OldMask */
+  case GET_ATTRIBUTES: { /* R1: +Var; R2: -List */
     Cell attv = ptoc_tag(1);
     if (isref(attv)) {		/* a free var */
-      /* ctop_tag(2, makenil); */ /* keep it as a free var */
-      ctop_tag(3, makeint(0));
+	return FALSE;
     }
     else if (isattv(attv)) {
-      CPtr vector;
-      vector = (CPtr)dec_addr(attv) + 1;
-      ctop_tag(2, cell(vector));
-      ctop_tag(3, cell(clref_val(cell(vector)) + 1));
+      CPtr list;
+      list = (CPtr)dec_addr(attv) + 1;
+      ctop_tag(2, cell(list));
     }
     else xsb_abort("[GET_ATTRIBUTES] Argument 1 is not an attributed variable");
     break;
