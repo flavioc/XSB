@@ -104,7 +104,7 @@ db_retractall(_,_).
 
 db_retract_abol(Prref1) :-
 	buff_byte(Prref1,0,Op1),
-	(Op1 =:= 197	% tabletryfail
+	((Op1 =:= 197 ; Op1 =:= 192)   % tabletryfail or tabletrysingle
 	 ->	buff_word(Prref1,24,Prref)
 	 ;	Prref = Prref1
 	),
