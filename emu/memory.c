@@ -168,12 +168,14 @@ void tcpstack_realloc(long new_size) {
    *  pointer to mark the bottom of the Trail.  The TRx reg's point to the
    *  previous-link field of the Trail frames (i.e., the last field).
    */
+#ifndef CHAT
   if (trail_offset != 0) {
     for (trail_link = (CPtr *)new_trail;
 	 trail_link <= (CPtr *)(trail_top + trail_offset);
 	 trail_link = trail_link + 3)
       *trail_link = (CPtr)((byte *)*trail_link + trail_offset);
   }
+#endif
 
   /* Update the CP Stack pointers
      ---------------------------- */
