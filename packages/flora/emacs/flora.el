@@ -148,7 +148,7 @@
   (define-key map "\t" 'flora-indent-line)
   (define-key map "\C-c\C-l" 'flora-switch-to-flora-buffer)
   (define-key map "\C-c\C-b" 'flora-consult-buffer)
-  (define-key map "M-\t" 'comint-dynamic-complete)
+  (define-key map "\M-\t" 'comint-dynamic-complete)
   (define-key map "\C-c\C-r" 'flora-consult-region)
   (define-key map "\C-c\C-c" 'flora-consult-first)
   (define-key map "\C-c\C-a" 'flora-consult-file)
