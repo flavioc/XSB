@@ -50,6 +50,7 @@ standard_symbol('C', 3, dcg).
 standard_symbol(call, 1, standard).
 standard_symbol(callable, 1, standard).
 standard_symbol(cd, 1, shell).
+standard_symbol(cwd, 1, shell).
 standard_symbol(clause, 2, assert).
 standard_symbol(close, 1, standard).
 standard_symbol(compare, 3, standard).
