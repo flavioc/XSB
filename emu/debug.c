@@ -347,16 +347,16 @@ static void monitor_register_watch(void)
 {
   if (reg_watch.heap_flag) 
     if (reg_watch.heap_val == hreg)
-     xsb_dbgmsgprintf("!!! hreg == %p, %d", hreg, xctr);
+     xsb_dbgmsg("!!! hreg == %p, %d", hreg, xctr);
   if (reg_watch.stack_flag) 
     if (reg_watch.stack_val == ereg)
       xsb_dbgmsg("!!! ereg == %p, %d", ereg, xctr);
   if (reg_watch.choice_flag) 
     if (reg_watch.choice_val == breg)
-     xsb_dbgmsgprintf("!!! breg == %p, %d", breg, xctr);
+     xsb_dbgmsg("!!! breg == %p, %d", breg, xctr);
   if (reg_watch.trail_flag) 
     if ((CPtr *) reg_watch.trail_val == trreg)
-     xsb_dbgmsgprintf("!!! trreg == %p, %d", trreg, xctr);
+     xsb_dbgmsg("!!! trreg == %p, %d", trreg, xctr);
 }
 
 /*----------------------------------------------------------------------*/
@@ -573,7 +573,7 @@ static void print_cell(char *addrtype, CPtr addr, Cell term, char *more_info)
 {
   switch (cell_tag(term)) {
   case REF: case REF1:
-    fprintf("%s %p: REF (tag=%ld), value=0x%p",
+    fprintf(stddbg, "%s %p: REF (tag=%ld), value=0x%p",
 	    addrtype, addr, cell_tag(term), ref_val(term));
     break;
   case CS: 
