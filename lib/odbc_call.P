@@ -1280,7 +1280,13 @@ odbc_shutdown :-
 	odbc_disconnect(0).
 
 odbc_close :-
-	odbc_close(_Connection).
+	findall(Connection,
+		odbc_connection(Connection,_ConnHandle),
+		Connections),
+	member(Connection,Connections),
+	odbc_close(Connection),
+	fail.
+odbc_close.
 
 odbc_close(Connection) :- 
 	odbc_connection(Connection,ConnHandle),
