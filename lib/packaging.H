@@ -29,8 +29,8 @@
 
 :- import (dynamic)/1, assert/1, retract/1
    from assert.
-:- import abort/1
-   from standard.
+
+%% :- import abort/1 from standard.
 
 :- import slash/1, expand_filename/2
    from machine.
