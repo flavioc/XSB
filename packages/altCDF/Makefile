@@ -28,8 +28,7 @@ OBJEXT=.xwam
 ALL = 	cdf_checks${OBJEXT} cdf_comps_share${OBJEXT} cdf_concurrency${OBJEXT} \
 	cdf_config${OBJEXT} \
 	cdf_exceptions${OBJEXT} cdf_init_cdf${OBJEXT} \
-	cdf_io${OBJEXT} cdf_oblivion${OBJEXT} cdf_utilities${OBJEXT} \
-	cdf_xj${OBJEXT}
+	cdf_io${OBJEXT} cdf_oblivion${OBJEXT} cdf_utilities${OBJEXT} 
 
 EMU_INCLUDES = 
 PROLOG_INCLUDES = 
