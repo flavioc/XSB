@@ -706,18 +706,22 @@ int read_canonical(void)
   FILE *filep;
   STRFILE *instr;
   int prevchar, arity, i;
-  Cell op1;
-  int tvar;
+  Cell op1, j;
+  Cell tvar;
+#define FUNFUN 0
+#define FUNLIST 1
+#define FUNDTLIST 2
   struct funstktype {
-    char *fun;
-    Integer funop;
-  } funstk[200];
+    char *fun;		/* functor name */
+    Integer funop;	/* index into opstk of first operand */
+	int funtyp;		/* 0 if functor, 1 if list, 2 if dotted-tail list */
+  } funstk[400];
   Cell funtop = 0;
 
   struct opstktype {
     int typ;
     prolog_term op;
-  } opstk[200];
+  } opstk[400];
   Cell optop = 0;
 
 #define MAXVAR 400
@@ -731,7 +735,7 @@ int read_canonical(void)
   Pair sym;
   Float float_temp;
   char *cvar;
-  int postopreq = 0, varfound = 0;
+  int postopreq = FALSE, varfound = FALSE;
   long tempfp;
   prolog_term term;
   void ctop_tag(int, Cell);
@@ -753,141 +757,193 @@ int read_canonical(void)
   prevchar = 10;
 
   while (1) {
-    token = GetToken(filep,instr,prevchar);
-    /* print_token(token->type,token->value); */
-    prevchar = token->nextch;
-    if (postopreq) {  /* must be an operand follower: , or ) */
+	token = GetToken(filep,instr,prevchar);
+/*	print_token((int)(token->type),(char *)(token->value)); */
+	prevchar = token->nextch;
+	if (postopreq) {  /* must be an operand follower: , or ) or | or ] */
       if (token->type == TK_PUNC) {
-	if (*token->value == ')') {
-	  funtop--;
-	  arity = optop - funstk[funtop].funop;
-	  sreg = hreg;
-	  op1 = funstk[funtop].funop;
-	  if ((arity == 2) && !(strcmp(funstk[funtop].fun,"."))) {
-	    if (opstk[op1].typ == TK_VAR) { setvar(op1) }
-	    else cell(sreg) = opstk[op1].op;
-	    sreg++;
-	    if (opstk[op1+1].typ == TK_VAR) { setvar(op1+1) }
-	    else cell(sreg) = opstk[op1+1].op;
-	    sreg++;
-	    opstk[op1].op = makelist(hreg);
-	    opstk[op1].typ = TK_FUNC;
-	  } else {
-	    sym = (Pair)insert(funstk[funtop].fun,arity,
-			       (Psc)flags[CURRENT_MODULE],&i);
-	    new_heap_functor(sreg, sym->psc_ptr);
-	    for (i=op1; i<optop; sreg++,i++) {
-	      if (opstk[i].typ == TK_VAR) { setvar(i) }
-	      else cell(sreg) = opstk[i].op;
-	    }
-	    opstk[op1].op = makecs(hreg);
-	    opstk[op1].typ = TK_FUNC;
-	  }
-	  optop = op1;
-	  optop++;
-	  hreg += arity + 1;
-	} else if (*token->value == ',')  postopreq = 0;
-	else return read_can_error(filep,instr,prevchar);
+		if (*token->value == ')') {
+		  funtop--;
+		  if (funstk[funtop].funtyp != FUNFUN)	/* ending a list, oops */
+		    return read_can_error(filep,instr,prevchar);
+		  arity = optop - funstk[funtop].funop;
+		  sreg = hreg;
+		  op1 = funstk[funtop].funop;
+		  if ((arity == 2) && !(strcmp(funstk[funtop].fun,"."))) {
+			if (opstk[op1].typ == TK_VAR) { setvar(op1) }
+			else cell(sreg) = opstk[op1].op;
+			sreg++;
+			if (opstk[op1+1].typ == TK_VAR) { setvar(op1+1) }
+			else cell(sreg) = opstk[op1+1].op;
+			sreg++;
+			opstk[op1].op = makelist(hreg);
+			opstk[op1].typ = TK_FUNC;
+		  } else {
+			sym = (Pair)insert(funstk[funtop].fun,(char)arity,
+				       (Psc)flags[CURRENT_MODULE],&i);
+			new_heap_functor(sreg, sym->psc_ptr);
+			for (j=op1; j<optop; sreg++,j++) {
+			  if (opstk[j].typ == TK_VAR) { setvar(j) }
+			  else cell(sreg) = opstk[j].op;
+			}
+			opstk[op1].op = makecs(hreg);
+			opstk[op1].typ = TK_FUNC;
+		  }
+		  optop = op1;
+		  optop++;
+		  hreg += arity + 1;
+		} else if (*token->value == ']') {	/* end of list */
+		  funtop--;
+		  if (funstk[funtop].funtyp == FUNFUN)
+			return read_can_error(filep,instr,prevchar);
+		  sreg = hreg;
+		  op1 = funstk[funtop].funop;
+
+		  if (opstk[op1].typ == TK_VAR) { setvar(op1) }
+		  else cell(sreg) = opstk[op1].op;
+		  sreg++;
+		  if ((op1+1) == optop) {
+			cell(sreg) = makenil;
+			sreg++;
+		  } else {
+			for (j=op1+1; j<optop-1; j++) {
+			  cell(sreg) = makelist(sreg+1);
+			  sreg++;
+			  if (opstk[j].typ == TK_VAR) { setvar(j) }
+			  else cell(sreg) = opstk[j].op;
+			  sreg++;
+			}
+			j = optop-1;
+			if (funstk[funtop].funtyp == FUNLIST) {
+			  cell(sreg) = makelist(sreg+1);
+			  sreg++;
+			  if (opstk[j].typ == TK_VAR) { setvar(j) }
+			  else cell(sreg) = opstk[j].op;
+			  sreg++;
+			  cell(sreg) = makenil;
+			  sreg++;
+			} else {
+			  if (opstk[j].typ == TK_VAR) { setvar(j) }
+			  else cell(sreg) = opstk[j].op;
+			  sreg++;
+			}
+		  }
+		  opstk[op1].op = makelist(hreg);
+		  opstk[op1].typ = TK_FUNC;
+		  optop = op1;
+		  optop++;
+		  hreg = sreg;
+		} else if (*token->value == ',') {
+		  postopreq = FALSE;
+		} else if (*token->value == '|') {
+		  postopreq = FALSE;
+		  if (funstk[funtop-1].funtyp != FUNLIST) 
+			return read_can_error(filep,instr,prevchar);
+		  funstk[funtop-1].funtyp = FUNDTLIST;
+		} else return read_can_error(filep,instr,prevchar);
       } else {  /* check for neg numbers and backpatch if so */
-	if (opstk[optop-1].typ == TK_ATOM && 
-	    !strcmp("-",string_val(opstk[optop-1].op))) {
-	  if (token->type == TK_INT) {
-	    opstk[optop-1].typ = TK_INT;
-	    opstk[optop-1].op = makeint(-(*(int *)token->value));
-	  }
-	  else if (token->type == TK_REAL) {
-	    opstk[optop-1].typ = TK_REAL;
-	    float_temp = (Float) *(double *)(token->value);
-	    opstk[optop-1].op = makefloat(-float_temp);
-	  } else return read_can_error(filep,instr,prevchar);
-	} else return read_can_error(filep,instr,prevchar);
+		if (opstk[optop-1].typ == TK_ATOM && 
+				!strcmp("-",string_val(opstk[optop-1].op))) {
+		  if (token->type == TK_INT) {
+			opstk[optop-1].typ = TK_INT;
+			opstk[optop-1].op = makeint(-(*(int *)token->value));
+		  } else if (token->type == TK_REAL) {
+			opstk[optop-1].typ = TK_REAL;
+			float_temp = (Float) *(double *)(token->value);
+			opstk[optop-1].op = makefloat(-float_temp);
+		  } else return read_can_error(filep,instr,prevchar);
+		} else return read_can_error(filep,instr,prevchar);
       }
     } else {  /* must be an operand */
       switch (token->type) {
       case TK_PUNC:
-	if (*token->value == '[') {
-	  token = GetToken(filep,instr,prevchar);
-	  /* print_token(token->type,token->value); */
-	  prevchar = token->nextch;
-	  if (*token->value == ']') {
-	    opstk[optop].typ = TK_ATOM;
-	    opstk[optop++].op = makenil;
-	    postopreq = 1;
-	    break;
-	  }
-	  else return read_can_error(filep,instr,prevchar);
-	}
-	/* let a punctuation mark be a functor symbol */
+		if (*token->value == '[') {
+		  if(token->nextch == ']') {
+			token = GetToken(filep,instr,prevchar);
+			/* print_token(token->type,token->value); */
+			prevchar = token->nextch;
+			opstk[optop].typ = TK_ATOM;
+			opstk[optop++].op = makenil;
+			postopreq = TRUE;
+		  } else {	/* beginning of a list */
+			funstk[funtop].funop = optop;
+			funstk[funtop].funtyp = FUNLIST;	/* assume regular list */
+			funtop++;
+		  }
+		  break;
+		}
+	  /* let a punctuation mark be a functor symbol */
       case TK_FUNC:
-	funstk[funtop].fun = (char *)string_find(token->value,1);
-	funstk[funtop].funop = optop;
-	funtop++;
+		funstk[funtop].fun = (char *)string_find(token->value,1);
+		funstk[funtop].funop = optop;
+		funstk[funtop].funtyp = FUNFUN;	/* functor */
+		funtop++;
 
-	token = GetToken(filep,instr,prevchar);
-	/* print_token(token->type,token->value); */
-	prevchar = token->nextch;
-	if ((token->type != TK_PUNC) || (*token->value != '(')) 
-	  return read_can_error(filep,instr,prevchar);
-	break;
+		if (token->nextch != '(')
+			return read_can_error(filep,instr,prevchar);
+		token = GetToken(filep,instr,prevchar);
+		/* print_token(token->type,token->value); */
+		prevchar = token->nextch;
+		break;
       case TK_VVAR:
-	varfound = 1;
-	tvar = getvarnum(token->value);
-	if (tvar >= 0) {
-	  if (tvar == 0) i = nvartop;
-	  else {
-	    i = 0;
-	    while (i<nvartop) {
-	      if (tvar == vars[i].varid) break;
-	      i++;
-	    }
-	  }
-	  if (i == nvartop) {
-	    vars[nvartop].varid = tvar;
-	    vars[nvartop].varval = 0;
-	    nvartop++;
-	  }
-	  opstk[optop].typ = TK_VAR;
-	  opstk[optop++].op = (prolog_term) i;
-	  postopreq = 1;
-	  break;
-	}
+		varfound = TRUE;
+		tvar = getvarnum(token->value);
+		if (tvar >= 0) {
+		  if (tvar == 0) i = nvartop;
+		  else {
+			i = 0;
+			while (i<nvartop) {
+			  if (tvar == vars[i].varid) break;
+			  i++;
+			}
+		  }
+		  if (i == nvartop) {
+			vars[nvartop].varid = tvar;
+			vars[nvartop].varval = 0;
+			nvartop++;
+		  }
+		  opstk[optop].typ = TK_VAR;
+		  opstk[optop++].op = (prolog_term) i;
+		  postopreq = TRUE;
+		  break;
+		}
       case TK_VAR:
-	varfound = 1;
-	cvar = (char *)string_find(token->value,1);
-	i = MAXVAR-1;
-	while (i>cvarbot) {
-	  if (cvar == (char *)vars[i].varid) break;
-	  i--;
-	}
-	if (i == cvarbot) {
-	  vars[cvarbot].varid = (Cell) cvar;
-	  vars[cvarbot].varval = 0;
-	  cvarbot--;
-	}
-	opstk[optop].typ = TK_VAR;
-	opstk[optop++].op = (prolog_term) i;
-	postopreq = 1;
-	break;
+		varfound = TRUE;
+		cvar = (char *)string_find(token->value,1);
+		i = MAXVAR-1;
+		while (i>cvarbot) {
+		  if (cvar == (char *)vars[i].varid) break;
+		  i--;
+		}
+		if (i == cvarbot) {
+		  vars[cvarbot].varid = (Cell) cvar;
+		  vars[cvarbot].varval = 0;
+		  cvarbot--;
+		}
+		opstk[optop].typ = TK_VAR;
+		opstk[optop++].op = (prolog_term) i;
+		postopreq = TRUE;
+		break;
       case TK_REAL:
-	opstk[optop].typ = TK_REAL;
-	float_temp = (float) *(double *)(token->value);
-	opstk[optop++].op = makefloat(float_temp);
-	postopreq = 1;
-	break;
+		opstk[optop].typ = TK_REAL;
+		float_temp = (float) *(double *)(token->value);
+		opstk[optop++].op = makefloat(float_temp);
+		postopreq = TRUE;
+		break;
       case TK_INT:
-	opstk[optop].typ = TK_INT;
-	opstk[optop++].op = makeint(*(long *)token->value);
-	postopreq = 1;
-	break;
+		opstk[optop].typ = TK_INT;
+		opstk[optop++].op = makeint(*(long *)token->value);
+		postopreq = TRUE;
+		break;
       case TK_ATOM:
-	opstk[optop].typ = TK_ATOM;
-	opstk[optop++].op = makestring((char *)string_find(token->value,1));
-	postopreq = 1;
-	break;
+		opstk[optop].typ = TK_ATOM;
+		opstk[optop++].op = makestring((char *)string_find(token->value,1));
+		postopreq = TRUE;
+		break;
       case TK_EOF:
-	ctop_string(2,string_find("end_of_file",1));
-	ctop_int(3,0);
-	return TRUE;
+		ctop_string(2,string_find("end_of_file",1));
+		ctop_int(3,0);
+		return TRUE;
       default: return read_can_error(filep,instr,prevchar);
       }
     }
@@ -899,17 +955,16 @@ int read_canonical(void)
       term = opstk[0].op;
       ctop_tag(2,term);
       if (varfound || 
-	  (isconstr(term) && !strcmp(":-",get_name(get_str_psc(term)))) ||
-	  isstring(term)) {
-	ctop_int(3,0);
-	prevpsc = 0;
+			(isconstr(term) && !strcmp(":-",get_name(get_str_psc(term)))) ||
+			isstring(term)) {
+		ctop_int(3,0);
+		prevpsc = 0;
       }
       else if (get_str_psc(term) == prevpsc) {
-	ctop_int(3, (Integer)prevpsc);
-      }
-      else {
-	prevpsc = get_str_psc(term);
-	ctop_int(3,0);
+		ctop_int(3, (Integer)prevpsc);
+      } else {
+		prevpsc = get_str_psc(term);
+		ctop_int(3,0);
       }
       return TRUE;
     }

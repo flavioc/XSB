@@ -44,7 +44,6 @@ file_nl(File) :- (windows_os_loader
 		 ).
 
 
-
 		/**************************/
 		/*	file_write/2	  */
 		/**************************/
@@ -665,7 +664,7 @@ l_write_canonical(File, []) :-
 	%%file_put(File, 93).	% ']'
 	file_put(File, CH_LBRACKET),	% [
 	file_put(File, CH_RBRACKET).	% ]
-l_write_canonical(File, [X|Y]) :-
+/**l_write_canonical(File, [X|Y]) :-
 	!,
 	file_puttoken(File, 5, '''.''('),
 	l_write_canonical(File, X),
@@ -676,6 +675,12 @@ l_write_canonical(File, [X|Y]) :-
 	%% NEW
 	%%file_put(File, 41).		% ')'
 	file_put(File, CH_RPAREN).	% )
+**/
+l_write_canonical(File, [X|Y]) :- !,
+	file_put(File, CH_LBRACKET),
+	l_write_canonical(File, X),
+	l_writelisttail_canonical(File, Y),
+	file_put(File, CH_RBRACKET).
 l_write_canonical(File, Atom) :-
 	term_type(Atom, Type),
 	Type =:= 5,
@@ -714,6 +719,22 @@ l_writearg_canonical(File, Term, N, M) :-
 	term_arg(Term, L, X),
 	l_write_canonical(File, X),
 	l_writearg_canonical(File, Term, N, L).
+
+l_writelisttail_canonical(File, Var) :-
+	term_type(Var, Type),
+	Type =:= 0,
+	!,
+	file_put(File, CH_BAR),
+	file_puttoken(File, 0, Var).
+l_writelisttail_canonical(_File, []) :- !.
+l_writelisttail_canonical(File, [X|Y]) :-
+	!,
+	file_put(File, CH_COMMA),
+	l_write_canonical(File, X),
+	l_writelisttail_canonical(File,Y).
+l_writelisttail_canonical(File, X) :-
+	file_put(File, CH_BAR),
+	l_write_canonical(File, X).
 
 end_of_file.
 
