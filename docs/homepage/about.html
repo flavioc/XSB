@@ -47,15 +47,13 @@ efficiently returns the first answer to a query.
 
 <li> Versions 2.5 and later have as their default stack management
 configuration the SLGWAM configuration, for which a choice of three
-heap garbage collectors are available.  An alternative stack
-management configuration, Chat, is also available for which a choice
-of two heap garbage collectors are available.
+heap garbage collectors are available.  
 </ul>
 
 <h3>
 <a NAME="SECTION00003000000000000000"></a>Indexing and Dynamic Code</h3>
 XSB contains a variety of features to support in-memory data-oriented applications.
-Using these features, knowledge bases of up to one million clauses can
+Using these features, knowledge bases with millions of clauses can
 be quickly loaded and efficiently indexed.
 <ul>
 <li>
@@ -79,36 +77,29 @@ can be used to optimize many Prolog programs.</li>
 
 
 <h3>
-<a NAME="SECTION00002000000000000000"></a>Interfaces</h3>
-XSB supports a variety of interfaces.  All source code is available so
-that the interfaces can be tuned as needed or ported to other Prologs.
+<a NAME="SECTION00002000000000000000"></a>Interfaces</h3> XSB supports a variety of interfaces.  All source code is available so that the
+interfaces can be tuned as needed or ported to other Prologs (as some
+have been!)
 </li>
 <ul>
 <li>
-Interfaces to call C functions or to be called by them, under UNIX.</li>
+Interfaces under UNIX and Cygwin, to call C functions or to be called by them.</li>
 
 <li>
-An interface to Oracle that</li>
+An ODBC interface, to call data stored in a database accessable by an
+ODBC driver.  This interface translates Datalog clauses into SQL
+automatically.</li>
 
-<ul>
-<li>
-efficiently generates SQL code for Prolog queries on-demand, making use
-of Level 4 of Oracle's ProC.</li>
-
-<li>
-translates Datalog clauses into SQL automatically.</li>
-</ul>
-
-<li>
-An ODBC interface, to call data stored by other Windows applications.</li>
-<li>
-A DLL interface so that XSB can be called from within a Windows application.</li>
+<li> An alternate interface that supports access to multiple drivers,
+including mySQL drivers.
 
 <li>
       Java interfaces provided through <a
 	href="http://www.declarativa.com/interprolog">InterProlog</a> and 
 	<a href="http://www-db.stanford.edu/~stefan/rdf/yajxb/">
 	      YAJXB</a></li>
+
+<li> An interface to Perl, and especially to its pattern-matching facilities.
 
 <li>
 Interfaces to libwww rourines and various pattern-matching utilities,
@@ -137,13 +128,31 @@ the same speed as compiled first-order predicates.</li>
 Includes a fully integrated HiLog preprocessor. HiLog terms can be used
 anywhere in XSB, including the interpreter level.</li>
 
-<br>Provides a number of meta-logical standard predicates for HiLog terms.</ul>
+<li>Provides a number of meta-logical standard predicates for HiLog terms.</ul>
+</ul>
+
+
+<h3>
+<a NAME="SECTION00002000000000000000"></a>Packages</h3> In addition to those mentioned above, several important packages are maintained on
+top of XSB, including 
+<ul>
+<li> Flora: a highly sophisticated and efficient implementation of
+	F-logic 
+
+<li> XMC: a temporal-logic model checker for verifying properties of
+	concurrent programs. and containing a graphical user
+	interface.
+
+<li> xsbdoc: a mechanism for generating manuals for XSB libraries and
+	applications using principles of literate programming.
+	Manuals can be generated in a variety of formats, including
+	html, pdf, ps, and even ASCII text.
 </ul>
 
 <p>
 XSB has been tested on over a dozen hardware and operating system
 platforms under Microsoft Windows 95/98, Windows NT, Windows 2000 and
-various versions of 32-bit UNIX. XSB 2.0 has been ported to 64-bit
+various versions of 32-bit UNIX. XSB  has also been ported to 64-bit
 architectures and has been tested on 64-bit SGI machines. Various
 versions of XSB have been used to construct large-scale commercial
 systems for the U.S. Customs Service, the U.S. Defense Logistics

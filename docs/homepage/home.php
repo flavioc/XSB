@@ -46,21 +46,31 @@ The XSB Programmers' Manual:
 	<li>PDF version: <a href="manual/manual1.pdf">Volume 1</a> and <a href="manual/manual2.pdf">Volume 2</a></li>
 	</ul>
 </li>
-
-<li>
-Other Documentation:
-	<ul>
-	<li> Package Documentation: The xsbdoc Documentation Generator.  <a href="../../packages/xsbdoc/doc/xsbdoc1.ps">Postscript</a>; <a href="../../packages/xsbdoc/doc/xsbdoc1.pdf">PDF</a></li>
-	<li> Package Documentation: XASP: Answer Set Programming with XSB.  <a href="../../packages/xasp/doc/main.ps">Postscript</a>; <a href="../../packages/xasp/doc/main.pdf">PDF</a></li>
 	<li><a href="vb_dll.html">How to Use XSB DLL from Visual Basic</a></li>
+
+<pre>
+</pre>
+<li>
+Packages.  A number of packages have been written for XSB.   They may be maintained, updated and distributed separately from XSB.  They also may have been updated later than the last release of the core XSB system, check the links of the particular package to determine this.
+<pre>
+</pre>
+
+
+<ul>
+<li> The following packages are distributed by default with XSB.  </li>
+	<ul>
+<li>
+<a href="packages/chr.html">The CHR package of constraint handling rules</a> <img SRC="new.gif" IMG align=TOP></li>
+
+<li> <a href="packages/xsbdoc.html">The xsbdoc Documentation Generator</a></li>
+
+<li> <a href="packages/xasp.html">XASP: Answer Set Programming with XSB</a>  </li>
 </ul>
 
 
 <pre>
-
 </pre>
-<li> Large projects that use XSB (and are distributed with it as 
-     <a href="packages.html">packages</a>):
+<li> The following large projects use XSB or have been ported to it.  (and are distributed with it as packages):
         <ul>
          <li> <a href="http://flora.sourceforge.net/" target="new_window">FLORA</a>: An
 	      object-oriented language for building knowledge-intensive
@@ -68,10 +78,10 @@ Other Documentation:
     	      Transaction Logic.
          <li> <a href="http://www.cs.sunysb.edu/~lmc/" target="new_window">XMC</a>: The
 	     Logic-Based Model Checking Project
+<li> <a href="???"> The W4 Project </a>: Web utilities, including a fully-compliant XML parser and tripleware...<img SRC="new.gif" IMG align=TOP>
         </ul>
 </li>
 <pre>
-
 </pre>
 
 <li>
@@ -82,7 +92,10 @@ Interfaces to Java (distributed separately):
 	<li><a href="http://www.declarativa.com/interprolog">Interprolog</a>
 	</ul>
 </li>
+</ul>
 
+<pre>
+</pre>
 <li>
 <a href="nsf-acks.html">Acknowledgement of Support</a></li>
 </ul>
