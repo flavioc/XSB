@@ -2109,7 +2109,7 @@ xsbBool db_get_last_clause( /*+(PrRef)Pred, -(ClRef)Clause,
 xsbBool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type, -EntryPoint, -NewCI, -NewCIL */ )
 {
   PrRef Pred = (PrRef)ptoc_int(4);
-  int IndexLevel, IndexArg, nimInds ;
+  int IndexLevel = 0, IndexArg = 0, nimInds ;
   ClRef Clause ;
   prolog_term Head = reg_term(5);
   CPtr EntryPoint = 0;
