@@ -39,45 +39,64 @@ str_cat or str_len.
 
 TLS: 12/03 I thought this might be more useful if I added a flatten,
 	so that substrings could be passed in as lists. 
+DSW: 3/04 rewritten to single pass for efficiency
 */
  
-concat_atom(Listin,Atom):-
-            flatten(Listin,Atomlist),
-	atom_to_charlist(Atomlist,Charlist1),
-	flatten(Charlist1,Charlist),
-	atom_codes(Atom,Charlist).
+concat_atom(L,A) :-
+	c_atom(L,[],AC),
+	atom_codes(A,AC).
 
-atom_to_charlist([],[]).
-atom_to_charlist([Atom|Rest],[List|Lrest]):- 
-	(atom(Atom)
-	 ->	atom_codes(Atom,List)
-	 ; number(Atom)
-	 ->	number_codes(Atom,List)
-	),
-	atom_to_charlist(Rest,Lrest).
+c_atom(A,L0,L) :-
+	(A == []
+	 ->	L = L0
+	 ; A @= [_|_]
+	 ->	A = [A1|R],
+		(R == []
+		 ->	c_atom(A1,L0,L)
+		 ;	c_atom(R,L0,L1),
+			c_atom(A1,L1,L)
+		)
+	 ;	(atom(A)
+		 ->	atom_codes(A,AC)
+		 ;	number(A)
+		 ->	number_codes(A,AC)
+		),
+		(L0 == []
+		 ->	L = AC
+		 ;	append(AC,L0,L)
+		)
+	).
+
 
 %---
-concat_atom(Atomlist,Sep,Atom):-
-	atom(Sep),
-	atom_codes(Sep,Slist),
-	atom_to_charlist(Atomlist,Slist,Charlist1),
-	flatten(Charlist1,Charlist),
-	atom_codes(Atom,Charlist).
+concat_atom(L,S,A) :-
+	atom(S),
+	atom_codes(S,St),
+	c_atom(L,St,[],AC),
+	atom_codes(A,AC).
 
-atom_to_charlist([],_,[]).
-atom_to_charlist([Atom],_,[List]):- !,
-	(atom(Atom)
-	 ->	atom_codes(Atom,List)
-	 ; number(Atom)
-	 ->	number_codes(Atom,List)
+c_atom(A,S,L0,L) :-
+	(A == []
+	 ->	L = L0
+	 ; A @= [_|_]
+	 ->	A = [A1|R],
+		(R == []
+		 ->	c_atom(A1,S,L0,L)
+		 ;	c_atom(R,S,L0,L1),
+			c_atom(A1,S,L1,L)
+		)
+	 ;	(atom(A)
+		 ->	atom_codes(A,AC)
+		 ;	number(A)
+		 ->	number_codes(A,AC)
+		),
+		(L0 == []
+		 ->	L = AC
+		 ;	append(S,L0,L1),
+			append(AC,L1,L)
+		)
 	).
-atom_to_charlist([Atom|Rest],Slist,[List,Slist|Lrest]):- 
-	(atom(Atom)
-	 ->	atom_codes(Atom,List)
-	 ; number(Atom)
-	 ->	number_codes(Atom,List)
-	),
-	atom_to_charlist(Rest,Slist,Lrest).
+
 
 %% Get substring of String beginning at from and ending at To.
 %% Negative "To" counts from the end. Unbount "To" means use the end of string
