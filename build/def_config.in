@@ -114,7 +114,8 @@
 #undef FOREIGN_AOUT
 
 #ifdef ___ALWAYS_TRUE___
-#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF))
+#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF) \
+	|| defined(FOREIGN_WIN32))
 #define FOREIGN
 #endif
 #endif
