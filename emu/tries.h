@@ -117,7 +117,7 @@ extern void	abolish_trie(void);
 extern void	aux_call_info(void);
 extern void	prolog_newnode(void);
 extern void	remove_open_tries(CPtr);
-extern void	get_lastnode_and_retskel(void);
+extern void	get_lastnode_cs_retskel(void);
 extern void     load_solution_trie(int, CPtr, NODEptr);
 extern bool     variant_call_search(int, CPtr, CPtr *);
 extern NODEptr  one_term_chk_ins(CPtr,CPtr,int *);
@@ -135,6 +135,7 @@ extern void     bottom_up_unify(void);
 extern CPtr VarPosReg;
 extern CPtr ans_var_pos_reg;
 extern int num_vars_in_var_regs;
+extern int global_num_vars;
 
 /* used for statistics */
 extern long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
@@ -288,7 +289,8 @@ extern void ctop_tag(int, Cell);
 extern CPtr * Addr_Stack;
 extern int addr_stack_size; 
 extern Cell * reg_array;
-extern int  reg_array_size;
+extern int reg_array_size;
+extern int delay_it;
 
 #define DEFAULT_ARRAYSIZ 512 
 
