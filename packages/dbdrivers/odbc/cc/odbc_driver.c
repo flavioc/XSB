@@ -5,6 +5,8 @@
 ** This is the ODBC driver for connecting to a database.
 */
 
+#include "xsb_config.h"
+
 #ifdef WIN_NT
 #include <windows.h>
 #endif
