@@ -78,7 +78,7 @@
     '("\\(\\*?->>\\|\\*?->\\|\\*?=>>\\|\\*?=>\\)"
       1 'flora-font-lock-arrow-face)
     ;; for objects
-    '("\\([A-Za-z0-9][A-Za-z0-9!.]*\\) *\\["
+    '("\\([A-Za-z0-9_][A-Za-z0-9_!.]*\\) *\\["
       1 'font-lock-variable-name-face)
     '("\\b\\(not\\|avg\\|sum\\|count\\|collectset\\|collectbag\\|assert\\|retract\\|erase\\|retractall\\)\\b"
       1 'font-lock-keyword-face)
@@ -88,7 +88,7 @@
       1 'bold)
     '("\\b\\(index\\|from\\|table\\|import\\|export\\)\\b"
       1 'flora-font-lock-system-face)
-    '("\\(\\b[A-Za-z0-9]+\\b\\) *\\*?[---=]>"
+    '("\\(\\b[A-Za-z0-9_]+\\b *\\((\\b[^)]+\\b)\\)?\\)[ \t\n]*\\(@[ \t\n]*([^)]+)[ \t\C-m]*\\)?\\*?[---=]>"
       1 'font-lock-function-name-face)
     )
   "Additional expressions to highlight in flora mode.")
