@@ -1269,118 +1269,173 @@ time. Moreover, to call a predicate from another module, that predicate
 must be imported explicitly and referred to by the same name.
 
 
-\subsection{Referencing Literals in Other Modules}
+\subsection{Calling Methods and Predicates Defined in Other Modules}
 
 
 \index{module!reference}
 %
-The syntax to refer to literals defined in other modules is as follows:
+If \emph{literal} is an F-molecule or a predicate defined in another
+module, it can be called using the following syntax:
+%%
 \begin{quote}
-\verb|literal @ module| \footnote{
-%
-If the name of a \FLORA module contains the character ``{\tt '}'', the
-\FLORA undefined predicate handler may not work properly in some cases.
-%
-}
+\emph{literal} @ \emph{module} 
 \end{quote}
-where {\tt literal} can be any predicate or F-molecule. For instance,
-\verb|foo(a) @ foomod| refers to {\tt foo(a)} in the module named
-{\tt foomod}, be it specified as a fact or defined by a rule.
+%%
+The name of the module can be any alphanumeric symbol.\footnote{
+  %%
+  In fact, any symbol is allowed. However, it cannot contain the quote
+  symbol, ``{\tt '}''.
+  %%
+  }
+%%
+For instance, \verb|foo(a) @ foomod| tests whether {\tt foo(a)} is true in
+the module named {\tt foomod}, and {\tt mary[children\mvd X]@genealogy}
+queries the information on {\tt mary}'s children available in the module
+{\tt genealogy}. More interestingly, the module specifier can be a variable
+that gets bound to a module name at run time. For instance, 
+%%
+\begin{quote}
+ {\tt
+   ..., Agent=zagat, ..., newyork[dinner(italian) \mvd X]@Agent.
+   }
+\end{quote}
+%%
+A call to a literal with an unbound module specification or one that is not
+bound to a symbol will result in a runtime error.
 
 \index{module!rules}
-%
-By default, if not followed by the ``\verb|@|'' sign and a module
-name, all literals only refer to the module where they reside. To specify
-literal references in a \FLORA program, the following rules need to be
-followed:
+%%
+When calling the literals defined in the same module, the {\tt @{\it
+    module}} notation is not needed, of course. (In fact, since a program
+does not know where it will be loaded, using the @-notation to call a
+literal in the same module is hard. However, it is possible with the help
+of the special predicate {\tt flThisModule/1}, described later, and is left
+as an exercise.)
+
+The following rules apply when calling a literal defined in another module:
+%%
 \begin{enumerate}
-\item The name of the module can be specified using an atom or a variable.
-      If a variable is used, then it must be bound to an atom at runtime
-      when this reference is evaluated.
-
 \item Literal reference cannot appear in a rule head or be specified as
-      a fact. For example, the following program will generate
-      parsing errors in \FLORA:
-      \begin{quote}
-      \verb|john[father->smith] @ foomod.| \\
-      \verb|foo(X) @ foomod :- goo(X).|
-      \end{quote}
+  a fact. For example, the following program will generate
+  a parsing error
+  %%
+  \begin{quote}
+    \verb|john[father->smith] @ foomod.| \\
+    \verb|foo(X) @ foomod :- goo(X).|
+  \end{quote}
+  %%
+  because defining a literal that belongs to another module does not make
+  sense.
+  
+\item Module specification is distributive over logical connectives,
+  including the conjunction operator, ``\verb|,|'', the disjunction,
+  ``\verb|;|'', and the negation operators, ``\verb|\+| and
+  ``\verb|tnot|''. For example, the formula below:
+  %%
+  \begin{quote}
+    \verb|(john[father->smith], tnot smith[spouse->mary]) @ foomod|
+  \end{quote}
+  is equivalent to the following formula:
+  \begin{quote}
+    \verb|john[father->smith] @ foomod, tnot (smith[spouse->mary] @ foomod)|
+  \end{quote}
 
-\item Module name specification is distributive over logical connectives,
-      including the conjunction operator, ``\verb|,|'', the disjunction operator,
-      ``\verb|;|'', and the negation operators, ``\verb|~|'', ``\verb|\+|,
-      ``\verb|not|'', and ``\verb|tnot|''. For example, the formula below:
-      \begin{quote}
-      \verb|(john[father->smith], tnot smith[spouse->mary]) @ foomod|
-      \end{quote}
-      is equivalent to the following formula:
-      \begin{quote}
-      \verb|john[father->smith] @ foomod; tnot (smith[spouse->mary] @ foomod)|
-      \end{quote}
-
-\item Module name specifications can be nested. The one closest to a literal
-      takes effect. For example, the formula below:
-      \begin{quote}
-      \verb|(foo(a), goo(b) @ goomod, hoo(c)) @ foomod|
-      \end{quote}
-      is equivalent to the following formula:
-      \begin{quote}
-      \verb|foo(X) @ foomod, goo(b) @ goomod, hoo(c) @ foomod|
-      \end{quote}
-
-\item Module name specification propogates to any F-molecule appearing
-      in the argument position of a predicate for which the module name is
-      specified. For example, the formula below:
-      \begin{quote}
-      \verb|foo(a.b[c->d]) @ foomod|
-      \end{quote}
-      is equivalent to the following formula:
-      \begin{quote}
-      \verb|a[b->X] @ foomod, X[c->d] @ foomod, foo(X) @ foomod|
-      \end{quote}
-
-\item However, module name specification does not affect the translation of
-      any term in the argument position unless a module name is explicitly
-      specified for it. For example, the \FLORA queries below:
-      \begin{quote}
-      \verb|?- foo(goo(a[c->d])) @ foomod.| \\
-      \\
-      \verb|?- foo(goo(a[c->d]) @ goomod) @ foomod.|
-      \end{quote}
-      will be compiled into the following XSB queries, respectively:
-      \begin{quote}
-      \verb|?- '_$_$_flora''foomod''fd'(a,b,c),| \\
-      \verb|   '_$_$_flora''foomod''flapply'(foo,flapply(goo,a)).| \\
-      \\
-      \verb|?- '_$_$_flora''goomod''fd'(a,b,c),| \\
-      \verb|   '_$_$_flora''foomod''flapply'(foo,'_$_$_flora''goomod''flapply'(goo,a)).|
-      \end{quote}
+\item Module specifications can be nested. The one closest to a literal
+  takes effect. For example,
+  \begin{quote}
+    \verb|(foo(a), goo(b) @ goomod, hoo(c)) @ foomod|
+  \end{quote}
+  is equivalent to
+  \begin{quote}
+    \verb|foo(X) @ foomod, goo(b) @ goomod, hoo(c) @ foomod|
+  \end{quote}
+  
+\item The module specification propogates to any F-molecule appearing
+  in the argument of a predicate for which the module is
+  specified. For example,
+  \begin{quote}
+    \verb|foo(a.b[c->d]) @ foomod|
+  \end{quote}
+  %%
+  is equivalent to
+  %%
+  \begin{quote}
+    \verb|a[b->X] @ foomod, X[c->d] @ foomod, foo(X) @ foomod|
+  \end{quote}
+  
+\item Module specifications do not affect function terms that are not
+  predicates or method names, unless such a specification is explicitly
+  attached to such a term. For instance, in
+  %%
+  \begin{quote}
+    \verb|?- foo(goo(a)) @ foomod.|
+  \end{quote}
+  %%
+  {\tt goo/1} refers to the same functor both in module {\tt foomod} and in
+  the calling module. However, if the module is attched explicitly, as in
+  \begin{quote}
+    \verb|?- foo(goo(a) @ goomod) @ foomod.|
+  \end{quote}
+  %%
+  then {\tt foo/1} is assumed to be a meta-predicate that receives the
+  predicate {\tt goo/1}  as a parameter.
 \end{enumerate}
 
 
+\subsection{Finding the Current Module Name}
 
-\subsection{Loading Files}
+\index{module!{\tt flThisModule}}
+%
+Since a \FLORA program can be loaded into any module, the program does not
+have a priori knowledge of the module it will be executing in. However, the
+program can determine its module at runtime using the special predicate
+{\tt flThisModule/1}.  This predicate accepts a variable argument and binds
+it to the name of the \FLORA module into which the program was loaded.
+
+
+
+
+\subsection{Loading Files into Modules}\label{sec-loading-mods}
 
 %
 
-Since a program can be loaded into any module, different byte code of
-the same program needs to be generated for each different module.  The
-command {\tt flCompile(file>>module)} can be called to generate the
-byte code for the program to be loaded into the module named
-{\tt module}. The name of the byte code file is the module name appended
-to the program file name. For instance, {\tt flCompile(myprog>>foomod)}
-would generate the byte code {\tt myprog\_foomod.O}.
+\FLORA provides commands for compiling and loading program files into
+specified modules.
+The
+command 
+%%
+\begin{quote}
+  {\tt ?- flCompile({\it file}>>{\it module}).}
+\end{quote}
+%%
+generates the byte code for the program to be loaded into the module named
+{\tt module}. The name of the byte code for the program in \emph{file}.flr,
+which can later be loaded into the specified module. In practice this means
+that the compiler generates files named \emph{file\_module.P} and
+\emph{file\_module.O} with symbols appropriately renamed to avoid clashes.
 
+If no module is specified, the command
+%%
+\begin{quote}
+ \tt
+ ?- flCompile({\it file}).
+\end{quote}
+%%
+compiles {\it file}.flr for the default module {\tt main}.
 
 
 \index{loading files}
 %
-Like XSB, \FLORA also supports the list notation to load a list of
-files. For instance, the following command:
+Like XSB, \FLORA also allows the user to compile and load program files at
+the same time: If the file was not compiled before (or if the program file
+is newer), the program is compiled before being loaded.
+For instance, the following command:
 \begin{quote}
 \verb|[myprog1, myprog2]|
 \end{quote}
-will try to load the two programs {\tt myprog1} and {\tt myprog2}.
+will loads both {\tt myprog1} and {\tt myprog2} into the default module
+{\tt main}. If either {\tt myprog1.flr} or {\tt myprog2.flr} is stale, it
+is compiled first.
 
 Both XSB files and \FLORA files can appear in the list. Note
 that the names of XSB source files have {\tt .P} as extension,
@@ -1390,28 +1445,38 @@ have {\tt .flr}. If a file name is not specified with an extension,
 or none: \FLORA source files, XSB source files, and XSB byte code
 files.
 
-For \FLORA programs, an optional module name can be specified using
-the syntax bellow:
+An optional module name can be used to load the program into a specified
+module:
 \begin{quote}
-\verb|[..., program >> module, ...]|
+  \tt
+[..., {\it program\/} >> {\it module}, ...]
 \end{quote}
+%%
 For instance, the following command:
+%%
 \begin{quote}
 \verb|[myprog >> foomod]|
 \end{quote}
-will try to load the \FLORA program {\tt myprog} into the \FLORA
-module named {\tt foomod}.
+%%
+loads the \FLORA program {\tt myprog.flr} into the module named {\tt
+  foomod}, compiling it if necessary.
 
-If a module name is specified using the {\tt >>} syntax, then
-\FLORA will only search for \FLORA programs. On the other hand,
-if a module name is not specified for a \FLORA program, then this
-program will be loaded into the default \FLORA module named
-{\tt main}. As an example, the following command:
+Mixed module specifications are also possible. For instance, 
 \begin{quote}
 \verb|['myprog.flr', mydb >> foomod]|
 \end{quote}
-will load the \FLORA file {\tt myprog.flr} into module {\tt main} and
+loads {\tt myprog.flr} into module {\tt main} and
 {\tt mydb.flr} into module {\tt foomod}.
+
+Note that the {\tt [...]} command can also load and compile XSB programs.
+The overall algorithm is as follows. If the file suffix is specified
+explicitly, the corresponding file is assumed to be a \FLORA file, an XSB
+file, or a byte code depending on the suffix: {\tt .flr}, {\tt .P}, or {\tt
+  .O}. If the suffix is not given explicitly, the compiler first checks if
+{\it file}.{\tt flr} exists. If so, the file assumed to be a \FLORA program
+and is compiled as such. If {\it file}.{\tt flr} is not found, but {\it
+  file}.{\tt P} or {\it file}.{\tt O} is, the file is passed to XSB for
+compilation.
 
 
 \subsection{\FLORA Predicates and Prolog Predicates}
@@ -1640,24 +1705,6 @@ preprocessing command that is recognized by {\tt gpp} can appear in
 a \FLORA program (refer to the XSB manual for more information on
 {\tt gpp}). The above mentioned \verb|#include "file_name"| is one
 of the preprocessing commands supported by {\tt gpp}.
-
-
-\subsection{The Current Module Name}
-
-
-\index{module!{\tt flThisModule}}
-%
-Although a \FLORA program can be loaded into any arbitrary module, the
-program itself can call the predicate {\tt flThisModule/1} to retrieve
-the name of the module into which it is loaded at runtime.
-
-By default, {\tt flThisModule/1} is declared for each compiled \FLORA program
-as follows:
-\begin{quote}
-\verb|:- flPredicate flThisModule/1.|
-\end{quote}
-It accepts one argument and will bind it to the name of the \FLORA
-module.
 
 
 \subsection{Abolishing \FLORA Predicates}
