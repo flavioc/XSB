@@ -1289,7 +1289,8 @@ restore_sub:
   register CPtr tbreg;
 
   tbreg = breg;
-  switch_envs(tbreg);
+  /*   switch_envs(tbreg); */
+  undo_bindings(tbreg);
   ptcpreg = cp_ptcp(tbreg);
   delayreg = cp_pdreg(tbreg);
   restore_some_wamregs(tbreg, ereg);
