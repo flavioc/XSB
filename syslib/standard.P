@@ -757,6 +757,10 @@ repeat :- true; repeat.
 
 (A->B) :- call_c(A) -> call_c(B).
 
+(Mod:Call) :-
+	term_new_mod(Mod,Call,MCall),
+	call0(MCall).
+
 %  The following two predicates are added after David''s request (they
 %  are really inline predicates) but they better be exported by this
 %  module and imported in global (user) module.

@@ -346,6 +346,8 @@ standard_symbol(('.'), 2, consult).
 standard_symbol((';'), 2, standard).
 standard_symbol((','), 2, standard).
 standard_symbol(('->'), 2, standard).
+standard_symbol((:), 2, standard).
+standard_metapredicate((:),2,2).
 standard_symbol(('^'), 2, setof).
 
 standard_symbol((:-), 2, usermod).
