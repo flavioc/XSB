@@ -110,14 +110,14 @@ l_write(File, T, Prec, D) :- 	% functor(T, OP, N),
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
-			l_writepreop(File, Name, T, Prec, Opprec, Nprec, D1)
+			l_writepreop(File, Name, T, Prec, Opprec, Nprec, D)
 		; '_$op'(Opprec, fy, OP) ->
-			l_writepreop(File, Name, T, Prec, Opprec, Opprec, D1)
+			l_writepreop(File, Name, T, Prec, Opprec, Opprec, D)
 		; '_$op'(Opprec, xf, OP) ->
 			Nprec is Opprec-1, 
-			l_writepostop(File, Name, T, Prec, Opprec, Nprec, D1)
+			l_writepostop(File, Name, T, Prec, Opprec, Nprec, D)
 		; '_$op'(Opprec, yf, OP) ->
-			l_writepostop(File, Name, T, Prec, Opprec, Opprec, D1)
+			l_writepostop(File, Name, T, Prec, Opprec, Opprec, D)
 		; Name == {} ->
 			l_write_curly(File, T, D1)
 		; l_writestr(File, Name, N, T, D1)
@@ -125,13 +125,13 @@ l_write(File, T, Prec, D) :- 	% functor(T, OP, N),
 	; N=:=2 ->
 		( '_$op'(Opprec, xfx, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Nprec, D1)
+			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Nprec, D)
 		; '_$op'(Opprec, xfy, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Opprec, D1)
+			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Opprec, D)
 		; '_$op'(Opprec, yfx, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Opprec, Nprec, D1)
+			l_writebinop(File, Name, T, Prec, Opprec, Opprec, Nprec, D)
 		; Name == apply ->
 			l_hilog_writestr(File, N, T, D) 
 		; l_writestr(File, Name, N, T, D1)
@@ -200,33 +200,36 @@ l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp, D) :-
 	).
 
 'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D) :-
-	l_write(File, Arg1, Newlp, D),
+        D1 is D - 1,
+	l_write(File, Arg1, Newlp, D1),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
 	file_puttoken(File, TK_INOP, Op),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
-	l_write(File, Arg2, Newrp, D).
+	l_write(File, Arg2, Newrp, D1).
 
 l_writepreop(File, Op, Term, Oldp, Curp, Newp, D) :- 
 	term_arg(Term, 1, Arg),
+	D1 is D - 1,
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
 		file_puttoken(File, TK_PREOP, Op),
-		l_write(File, Arg, Newp, D),
+		l_write(File, Arg, Newp, D1),
 		file_put(File, 41)		% ')'
 	;
 		file_puttoken(File, TK_PREOP, Op),
-		l_write(File, Arg, Newp, D)
+		l_write(File, Arg, Newp, D1)
 	).
 
 l_writepostop(File, Op, Term, Oldp, Curp, Newp, D) :- 
 	term_arg(Term, 1, Arg),
+	D1 is D - 1,
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
-		l_write(File, Arg, Newp, D),
+		l_write(File, Arg, Newp, D1),
 		file_puttoken(File, TK_POSTOP, Op),
 		file_put(File, 41)		% ')'
 	;
-		l_write(File, Arg, Newp, D),
+		l_write(File, Arg, Newp, D1),
 		file_puttoken(File, TK_POSTOP, Op)
 	).
 
