@@ -120,9 +120,9 @@ Cell build_interrupt_chain(void) {
 
   num = int_val(cell(interrupt_reg));
   for (i = 0; i < num; i++) {
-    bind_list(tmp, hreg);
+    bld_list(tmp, hreg);
     sreg = hreg + 2;
-    bind_list(hreg, sreg); hreg++;
+    bld_list(hreg, sreg); hreg++;
     if (i == (num - 1)) {
       bind_nil(hreg);
     }
