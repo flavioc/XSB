@@ -129,6 +129,8 @@ rm(Name) :- sys_unlink(Name, Res), Res =:= 0.
 %% current working directory
 cwd(Name) :- sys_cwd(Name, Res), Res =:= 0.
 
+create_lockfile(Name) :- sys_create(Name,Res), Res >= 0.
+
 edit(File) :- 
 	expand_filename(File, FileName), 
 	shell(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, XSB_SRC_EXTENSION_ATOM]).
@@ -157,4 +159,5 @@ sys_cwd(Name, Res)   	    :-	sys_syscall(SYS_cwd, Res, Name, _).
 sys_mkdir(Name, Res)   	    :-	sys_syscall(SYS_mkdir, Res, Name, _).
 sys_rmdir(Name, Res)   	    :-	sys_syscall(SYS_rmdir, Res, Name, _).
 sys_filecopy(Source,Dest,Res)  :-  sys_syscall(SYS_filecopy, Res, Source, Dest).
+sys_create(Name,Res)      :-  sys_syscall(SYS_create, Res, Name, _).
 
