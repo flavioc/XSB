@@ -1,0 +1,208 @@
+
+%\documentclass[11pt]{article}
+
+%\pagestyle{headings}
+%\bibliographystyle{plain}
+%\newtheorem{example}{Example}[section]
+
+
+\newcommand{\FLIP}{{\mbox{\sc Flip}}\xspace}
+\newcommand{\FLORA}{{\mbox{\sc ${\cal F}${lora}\rm\emph{-2}}}\xspace}
+\newcommand{\FLORAone}{{\mbox{${\cal F}${\sc lora}}}\xspace}
+\newcommand{\FLORID}{{\mbox{\sc Florid}}\xspace}
+\newcommand{\fl}{\mbox{F-logic}\xspace}
+
+
+
+%\begin{document}
+
+
+%\pagenumbering{arabic}
+%\setcounter{page}{1}
+
+
+%\section{FLORA-2}
+
+\FLORA is a sophisticated object-oriented knowledge base language and
+application development platform. It is implemented as a set of run-time
+libraries and a compiler that translates a unified language of \fl
+\cite{KLW95}, HiLog \cite{hilog-jlp}, and Transaction Logic
+\cite{trans-chapter-98,trans-tcs94} into tabled Prolog code.
+
+Applications of \FLORA include intelligent agents, Semantic Web, ontology
+management, integration of information, and others. 
+
+\index{FLIP}
+\index{FLORID}
+%%
+The programming language supported by \FLORA is a dialect of \fl with
+numerous extensions, which include a natural way to do meta-programming in
+the style of HiLog and logical updates in the style of Transaction
+Logic. \FLORA was designed with extensibility and flexibility in mind, and
+it provides strong support for modular software design through its unique
+feature of dynamic modules.
+Other extensions, such as the versatile syntax of \FLORID path
+expressions, are borrowed from
+\FLORID, a C++-based \fl system developed at
+Freiburg University.\footnote{
+  %%
+  See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
+  details.
+  %%
+}
+%%
+Extensions aside, the syntax of \FLORA differs in many
+important ways from \FLORID, from the original version of \fl, as described
+in \cite{KLW95}, and from an earlier implementation of \FLORAone. These
+syntactic changes were needed in order to bring the syntax of \FLORA closer
+to that of Prolog and make it possible to include simple Prolog programs
+into \FLORA programs without choking the compiler.  Other syntactic
+deviations from the original F-logic syntax are a direct consequence of the
+added support for HiLog, which obviates the need for the ``@'' sign in
+method invocations (this sign is now used to denote calls to \FLORA
+modules).
+
+\FLORA is distributed in two ways. First, it is part of the official
+distribution of XSB and thus is installed together with XSB.  Second, a
+more up-to-date version of the system is available on \FLORA's Web site at
+%%
+\begin{quote}
+  {\tt http://flora.sourceforge.net}
+\end{quote}
+%%
+These two versions can be
+installed at the same time and used independently ({\it e.g.}, if you want
+to keep abreast with the development of \FLORA or if a newer version was
+released in-between the releases of XSB). The installation instructions are
+somewhat different in these two cases. Here we only describe the process of
+configuring the version \FLORA included with XSB.
+
+\paragraph{Installing \FLORA under UNIX.}
+To configure a version of \FLORA that was downloaded as part of the
+distribution of XSB, simply configure XSB as usual:
+%%
+\begin{verbatim}
+ cd XSB/build
+ configure
+ makexsb
+\end{verbatim}
+%%
+and then run
+%%
+\begin{verbatim}
+ makexsb packages 
+\end{verbatim}
+%%
+
+If you downloaded XSB from its CVS repository earlier and are updating your
+copy using the {\tt cvs update} command, then it might be a good idea to
+also do the following: 
+%%
+\begin{verbatim}
+ cd packages/flora2
+ makeflora clean
+ makeflora
+\end{verbatim}
+%%
+
+\paragraph{Installing \FLORA in Windows.}
+First, you need Microsoft's {\tt nmake}.
+Then use the following commands to configure
+\FLORA (assuming that XSB is already installed and configured):
+%%
+\begin{verbatim}
+   cd flora2
+   makeflora clean
+   makeflora path-to-prolog-executable
+\end{verbatim}
+%%
+Also make sure that the {\tt packages} directory contains a
+shortcut called {\tt flora2.P} to the file
+{\tt packages$\backslash$flora2$\backslash$flora2.P}.
+
+
+\paragraph{Running \FLORA.}
+\FLORA is fully integrated into the underlying XSB engine, including its
+module system. In particular, \FLORA modules can invoke predicates defined in
+other Prolog modules, and Prolog modules can query the objects defined in
+\FLORA modules. 
+
+\index{local scheduling in XSB}
+%%
+Due to certain problems with XSB, \FLORA runs best when XSB is configured
+with \emph{local} scheduling, which is the default XSB configuration.
+However, with this type of scheduling, many Prolog intuitions that relate
+to the operational semantics do not work. Thus, the programmer must think
+``more declaratively'' and, in particular, to not rely on the 
+order in which answers are returned.
+
+
+\index{runflora script}
+\label{runflora-page}
+%%
+The easiest way to get a feel of the system
+is to start \FLORA shell and begin to enter queries interactively.
+The simplest way to do this is to use the shell script
+%%
+\begin{verbatim}
+ .../flora2/runflora  
+\end{verbatim}
+%%
+where ``...'' is the directory where \FLORA is downloaded. For instance, to
+invoke the version supplied with XSB, you would type something like
+%%
+\begin{verbatim}
+   ~/XSB/packages/flora2/runflora
+\end{verbatim}
+%%
+
+At this point, \FLORA takes over and \fl syntax becomes the
+norm. To get back to the Prolog command loop, type {\tt Control-D} 
+(Unix) or Control-Z (Windows), or 
+%%
+\begin{quote}
+  \tt
+| ?- flEnd.  
+\end{quote}
+%%
+
+\noindent
+If you are using \FLORA shell frequently, it pays to define an alias, say
+(in Bash):
+%%
+\begin{verbatim}
+ alias runflora='~/XSB/packages/flora2/runflora'
+\end{verbatim}
+%%
+\FLORA can then be invoked directly from the shell prompt by typing
+{\tt runflora}. 
+%%
+It is even possible to tell \FLORA to execute commands on start-up.
+For instance, 
+%%
+\begin{verbatim}
+ foo>  runflora -e "flHelp."
+\end{verbatim}
+%%
+will cause the system to execute the help command right after after the
+initialization. Then the usual \FLORA shell prompt is displayed.
+
+\noindent
+\FLORA comes with a number of demo programs that live in
+%%
+\begin{quote}
+ \verb|.../flora2/demos/|  
+\end{quote}
+%%
+The demos can be run issuing the command
+``\verb|flDemo(demo-filename).|''
+at the \FLORA prompt, {\it e.g.},
+%%
+\begin{quote}
+ \verb|flora2 ?- flDemo(flogic_basics).|
+\end{quote}
+%%
+There is no need to change to the demo directory, as {\tt flDemo} knows
+where to find these programs.
+
+%\end{document}
