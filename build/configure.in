@@ -662,22 +662,9 @@ fi
 
 
 dnl --with-libwww=DIR
-libwww_support="no"
-if test -n "$with_libwww" ; then
-   if test -x "$with_libwww/bin/libwww-config"; then
-      libwww_config_prog="$with_libwww/bin/libwww-config"
-      libwww_support="yes"
-   elif test -r "$with_libwww/libwww-config" ; then
-      libwww_config_prog="$with_libwww/libwww-config"
-      libwww_support="yes"
-   fi
-fi
-if test "$libwww_support" = "yes" ; then
-   test "${enable_debug+yes}" = "yes" && libwww_debug=" -g"
-   libwww_ccflags="$libwww_debug `sh $libwww_config_prog --cflags`"
-   libwww_ldflags="`sh $libwww_config_prog --libs`"
-   libwww_libdir="$with_libwww"/lib
-fi
+cd $topdir/packages/libwww
+configure --with-config="$canonical" --with-libwww="$with_libwww" > /dev/null
+cd $build_dir
 
 
 dnl check for Make feature
@@ -947,10 +934,6 @@ AC_SUBST(perl_cc_compiler)
 AC_SUBST(perl_ccflags)
 AC_SUBST(perl_libs)
 
-AC_SUBST(libwww_support)
-AC_SUBST(libwww_ccflags)
-AC_SUBST(libwww_ldflags)
-AC_SUBST(libwww_libdir)
 
 # Java support
 AC_CHECK_PROG(java_support, javac, "yes", "no")
@@ -1417,9 +1400,9 @@ if test -n "$site_dynamic_libraries" ; then
    done
 fi
 
-echo "	POSIX regexp matching libraries:		  $regmatch_support"
-echo "	POSIX wildcard matching libraries:		  $wildmatch_support"
-echo "	Perl support:					  $perl_support"
+echo "  POSIX regexp matching libraries:		  $regmatch_support"
+echo "  POSIX wildcard matching libraries:		  $wildmatch_support"
+echo "  Perl support:					  $perl_support"
 
 if test "$perl_support" = "yes"; then
    cat <<EOT
@@ -1430,13 +1413,7 @@ if test "$perl_support" = "yes"; then
 EOT
 fi
 
-echo "	libwww support: 				  $libwww_support"
-if test "$libwww_support" = "yes"; then
-   cat <<EOT
-  Libwww C flags:				  $libwww_ccflags
-  Libwww loader flags:				  $libwww_ldflags
-EOT
-fi
+cat $topdir/packages/libwww/Installation_summary
 
 if test -n "$javac"; then
    cat <<EOT

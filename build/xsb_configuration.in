@@ -53,12 +53,6 @@ xsb_configuration(perl_cc_compiler, '@perl_cc_compiler@').
 xsb_configuration(perl_ccflags, '@perl_ccflags@').
 xsb_configuration(perl_libs, '@perl_libs@').
 
-%% Stuff to be included with -I and -L options in .H files
-xsb_configuration(libwww_support, '@libwww_support@').
-xsb_configuration(libwww_ccflags, '@libwww_ccflags@').
-xsb_configuration(libwww_ldflags, '@libwww_ldflags@').
-xsb_configuration(libwww_libdir,  '@libwww_libdir@').
-
 /* Java compiler */
 xsb_configuration(javac, '@javac@').
 

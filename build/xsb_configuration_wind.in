@@ -65,13 +65,6 @@ xsb_configuration(perl_cc_compiler, '').
 xsb_configuration(perl_ccflags, '').
 xsb_configuration(perl_libs, '').
 
-%% Change libwww_support to yes and set the directories appropriately
-xsb_configuration(libwww_support, 'no').
-xsb_configuration(libwww_ccflags, '').
-xsb_configuration(libwww_ldflags, '').
-xsb_configuration(libwww_libdir,  '@libwww_libdir@').
-
-
 xsb_configuration(site_dir, 'C:\xsb_site').
 xsb_configuration(srcdir, 'C:\xsb').
 

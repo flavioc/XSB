@@ -1,8 +1,10 @@
-/* File:      libwww.P
+%% @configure_input@
+
+/* File:      libwww_init.in -- configuration info for libwww
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1999
+** Copyright (C) The Research Foundation of SUNY, 2001
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -22,25 +24,10 @@
 ** 
 */
 
-:- import xsb_configuration/2 from xsb_configuration.
-:- import bootstrap_package/2 from packaging.
-:- import abort/1 from standard.
-:- import libwww_info/2 from libwww_init.
 
+:- export libwww_info/2.
 
-%% bootstrap(package-dirname-as-string, package-name-as-symbol).
-%% This also asserts 
-%% package_configuration(dir(PackageName), FullPackageDirname)
-%% some packages use it.
-
-:- export libwww_request/1.
-:- import do_libwww_request___/1 from libwww_request.
-
-:- bootstrap_package('libwww', libwww),
-	(   libwww_info(support, yes)
-	->  [libwwwconfig]
-	;   abort('The libwww package has not been configured')
-	).
-
-
-libwww_request(X) :- do_libwww_request___(X).
+libwww_info(support, '@support@').
+libwww_info(libdir,  '@libdir@').
+libwww_info(ccflags, '@ccflags@').
+libwww_info(ldflags, '@ldflags@').

@@ -26,7 +26,7 @@
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
-:- import xsb_configuration/2 from xsb_configuration.
+:- import libwww_info/2 from libwww_init.
 :- import compile_so/3, runtime_loader_flag/3 from foreign.
 :- import rename/2 from shell.
 
@@ -78,9 +78,9 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 
     %% If Module isn't compiled or is old --- recompile
     ;   xsb_configuration(compiler, CC),
-	xsb_configuration(libwww_ldflags, LoaderFlags0),
-	xsb_configuration(libwww_ccflags, CC_opts),
-	xsb_configuration(libwww_libdir, LibwwwLibdir),
+	libwww_info(ldflags, LoaderFlags0),
+	libwww_info(ccflags, CC_opts),
+	libwww_info(libdir, LibwwwLibdir),
 	xsb_configuration(config_libdir, ConfigLibdir),
 
 	runtime_loader_flag(CC, LibwwwLibdir, RunpathFlag),
