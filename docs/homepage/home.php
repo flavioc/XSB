@@ -14,7 +14,8 @@ Welcome to the Home of XSB! </h1>
 <p><b><i>XSB</i></b>
  is a Logic Programming and Deductive Database system for Unix and Windows.
 It is being developed at <a href="http://www.cs.sunysb.edu/"> 
-The Computer Science Department, SUNY Stony Brook</a>, in collaboration with
+The Computer Science Department, Stony Brook University</a>, in
+ collaboration with 
    <a href="http://www.kuleuven.ac.be/">Katholieke Universiteit Leuven</a>,
  <a href="http://www.unl.pt/">Universidade Nova de Lisboa</a>, 
 and <a href="http://www.uu.se/">Uppsala Universitet</a>.

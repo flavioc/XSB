@@ -34,7 +34,7 @@
 <h4> Our snail address is: </h4>
 <address>
 Computer Science Department<br>
-State University of New York at Stony Brook<br>
+Stony Brook University<br>
 Stony Brook, NY 11794-4400<br>
 +1-631-632-8470/8471 (Tel)<br>
 +1-631-632-8334 (Fax)<br>

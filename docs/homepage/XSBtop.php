@@ -6,7 +6,8 @@
     <td width="130" align="center" height="100" rowspan="2"><img src="xsb-logo-anim2.gif" alt="xsb logo anim" width="120" height="80"> 
     </td>
     <td width="495" align="center" height="90" colspan="4" rowspan=2><img src="xsb-group.gif" alt="xsb-group" width="480" height="92"></td>
-<td width=70 align="center" height=65 valign="middle"><A href="http://www.sunysb.edu">
+<td width=70 align="center" height=65 valign="middle"><A
+href="http://www.stonybrook.edu/" target="middle_window">
 <img src="Stonyxsb.gif" alt="Stony Brook" width="70" border="0"></A></td>
     <td width="90" height="65" align="center"><A HREF="http://www.kuleuven.ac.be/kuleuven/" target="middle_window"><img src="leuven.gif" alt="Katholieke Universiteit Leuven" BORDER="0" height="50" width="65"></a></td>
 	<td width="1" height="25"></td>
