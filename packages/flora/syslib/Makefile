@@ -1,8 +1,8 @@
-## File:      packages/flora/lib/Makefile
-## Author(s): kifer (adapted from lib/Makefile)
+## File:      packages/flora/syslib/Makefile
+## Author(s): kifer
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
-## Copyright (C) The Research Foundation of SUNY, 1998
+## Copyright (C) The Research Foundation of SUNY, 1999
 ## 
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
