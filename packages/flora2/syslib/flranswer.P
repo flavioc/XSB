@@ -29,6 +29,7 @@
 :- compiler_options([xpp_on]).
 
 #include "char_defs.h"
+#include "flag_defs_xsb.h"
 #include "standard.h"
 #include "flora_terms.flh"
 
@@ -175,7 +176,7 @@ flora_findall(_NVs,_Gs,_TempL) :-
 /********************************************************************/
 flora_handle_trace :-
     	( flora_switch(trace) ->
-	    (stat_flag(6,Trace), Trace = 0 -> trace; true)
+	    (stat_flag(TRACE,Trace), Trace = 0 -> trace; true)
 	;
 	  true
 	).
@@ -183,7 +184,7 @@ flora_handle_trace :-
 
 /********************************************************************/
 flora_handle_notrace :-
-    	(stat_flag(6,Trace), Trace > 0 -> notrace; true).
+    	(stat_flag(TRACE,Trace), Trace > 0 -> notrace; true).
 
 
 /********************************************************************/
