@@ -491,11 +491,19 @@ Gotchas and experience
    copy with the repository.
 
 3.1 There's a -z option that enables gzip compression before the transmission
-   of files. I find -z 3 an ok setting - you can turn it on by default
+   of files. I find -z3 an ok setting - you can turn it on by default
    setting a line in the file ~/.cvsrc (which specifies default command
    options):
 
-       cvs -z 3
+       cvs -z3
+
+   Another useful option is:
+
+       update -P
+
+   This makes sure that if a new directory is added to the repository, then
+   this directory is also added to your copy. The default is not to add,
+   for some reason.
 
 4. The test suite is real big---bigger than the rest of XSB!
    If you modify it, please check it in.
