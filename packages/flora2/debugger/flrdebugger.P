@@ -666,7 +666,10 @@ flora_read_debugger_data(WS,Datafile) :-
 	    (T = end_of_file -> true
 	    	    	     ;  assert(T), fail
 	    ),
-	process_control(CPP_process, wait),
+	process_control(CPP_process, wait(ExitStatus)),
+	(ExitStatus==0, !
+	; abort(('[Debugger] Error while preprocessing ', Datafile))
+	),
 	flora_clear_xpp_options,
 	file_close(IOportFromCPP),
 	conset(xpp_on,0),

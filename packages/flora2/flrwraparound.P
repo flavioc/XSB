@@ -110,7 +110,10 @@ wrapWorkspace(InFile) :-
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	process_fli_file,
 	%% Wait, not to leave zombies.
-	process_control(XPP_process,wait),
+	process_control(XPP_process,wait(ExitStatus)),
+	(ExitStatus==0, !
+	; flora_error_line('Error while preprocessing %s', InFile)
+	),
 	%% Release the file descriptor used to read from cpp.
 	file_close(IOportFromProc),
 	flora_clear_xpp_options,

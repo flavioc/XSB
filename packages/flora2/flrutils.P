@@ -806,7 +806,10 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,FileOptionList,CompileStatus),
 	%% Wait, not to leave zombies.
-	process_control(XPP_process,wait),
+	process_control(XPP_process,wait(ExitStatus)),
+	(ExitStatus==0, !
+	; flora_error_line('Error while preprocessing %s', InputFile)
+	),
 	%% Release the file descriptor used to read from cpp.
 	file_close(IOportFromProc),
 	see(PreInFile),
@@ -954,7 +957,10 @@ flora_load_dyn(InDBFile,ModuleName) :-
 	    flora_storage_name(ModuleName,StorageName),
 	    flora_read_canonical_and_insert(StorageName),
 	    %% Wait, not to leave zombies.
-	    process_control(XPP_process,wait),
+	    process_control(XPP_process,wait(ExitStatus)),
+	    (ExitStatus==0, !
+	    ; flora_error_line('Error while preprocessing %s', DBFile)
+	    ),
 	    %% Release the file descriptor used to read from cpp.
 	    file_close(IOportFromProc),
 	    flora_clear_xpp_options,
@@ -1527,7 +1533,10 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	file_open(DumpFileName,w,DumpPort),
 	xpp_process_file(FileName,XPP_process,IOportFromGPP),
 	copyIOport(IOportFromGPP,DumpPort),
-	process_control(XPP_process,wait),
+	process_control(XPP_process,wait(ExitStatus)),
+	(ExitStatus==0, !
+	; flora_error_line('Error while preprocessing %s', FileName)
+	),
 	flora_clear_xpp_options,
 	file_close(IOportFromGPP),
 	file_close(DumpPort),
@@ -1594,7 +1603,10 @@ flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
 	%% Wait, not to leave zombies.
-	process_control(XPP_process,wait),
+	process_control(XPP_process,wait(ExitStatus)),
+	(ExitStatus==0, !
+	; flora_error_line('Error while preprocessing %s', InputFile)
+	),
 	%% Release the file descriptor used to read from cpp.
 	file_close(IOportFromProc),
 	flora_clear_xpp_options,
