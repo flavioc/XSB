@@ -1,8 +1,8 @@
 ## File:      packages/perlmatch/Makefile
-## Author(s): kifer (adapted from lib/Makefile)
+## Author(s): kifer
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
-## Copyright (C) The Research Foundation of SUNY, 1998
+## Copyright (C) The Research Foundation of SUNY, 1998-1999
 ## 
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
@@ -25,6 +25,11 @@
 
 ALL = 	plmchconfig.O plmchshell.O
 
+EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
+	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
+	../emu/system.h ../emu/xsbsocket.h 
+PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
+
 Option = [optimize]
 
 #-----------------------------------------------------------------------#
@@ -36,23 +41,40 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 #
 #-----------------------------------------------------------------------#
 
+# Make sure warnings are saved in a file.
+SVFILE = '/tmp/perlmatch_warn'
+OWRITE = 1
+STDWARN = 3
+STDERR = 2
+HDRMSG = "While compiling XSB/packages/perlmatch:"
+
+
 # continue to the next when one error occurs
 .IGNORE:
 
 # suffix rules
 .SUFFIXES: .P .O .H
+
+all: init $(ALL) finish
+	@touch cmd...
+	$(Prolog) < cmd...
+	@rm cmd...
+	@cat $(SVFILE)
+
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 
-all: $(ALL)
-	@touch cmd...
-	$(Prolog) < cmd...
-	/bin/rm cmd...
+init:
+	/bin/rm -f $(SVFILE)
+	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
+	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
+	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
+	@echo "file_flush($(STDWARN), _)." >> cmd...
 
+finish:
+	@echo 'fmt_write($(STDWARN),"---------------------------------------------------\n",_).' >> cmd...
 
-
-# Unfortunately, this needs to be commented on the NeXT.
-# %.O:	%.H
 
 .DONE:
 	echo Done

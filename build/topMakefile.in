@@ -156,6 +156,7 @@ prepare:
 	  ln ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
 	  ln ${src_config_prefix}/emuMakefile ./Makefile 
 	@rm -f /tmp/xsb_*lib_warn
+	@rm -f /tmp/*match_warn
 	@rm -f /tmp/flora_*_warn
 
 emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
@@ -200,6 +201,7 @@ do_cleaning:
 	@cp ./Installation_summary $(src_config_prefix)
 	@echo ""
 	@cat /tmp/xsb_*lib_warn 2> /dev/null || echo ""
+	@cat /tmp/*match_warn 2> /dev/null || echo ""
 	@cat /tmp/flora_*_warn 2> /dev/null || echo ""
 
 inform_executable:
