@@ -29,9 +29,16 @@ socket_listen(Sockfd,Length) :- socket_request(2,Sockfd,Length,_,_,_).
 socket_accept(Sockfd,Sockfptr) :- socket_request(3,Sockfd,Sockfptr,_,_,_).
 socket_connect(Sockfd,Port,Hostname,Sockfptr) :- 
 	socket_request(4,0,Sockfd,Port,Hostname,Sockfptr).
-socket_flush(FileDes) :- file_function(0,FileDes,_,[],[],[],[]).  % for back comp
+				% for back compatibility
+socket_flush(FileDes) :- file_function(0,FileDes,_,[],[],[],[]).
 socket_close(Sockfd) :- socket_request(6,Sockfd,_,_,_,_).
 socket_recv(Sockfd, Msg) :- socket_request(7,Sockfd,Msg,_,_,_).
 socket_send(Sockfd, Msg) :- socket_request(8,Sockfd,Msg,_,_,_).
 socket_send_eof(Sockfd) :- socket_request(9,Sockfd,_,_,_,_).
 socket_send_asci(Sockfd,Msg) :- socket_request(10,Sockfd,Msg,_,_,_).
+
+socket_get0(Sockfd,Char,ErrorCode) :-
+	socket_request(11,Sockfd,Char,ErrorCode,_,_).
+socket_put(Sockfd,Char) :- socket_request(12,Sockfd, Char,_,_,_).
+socket_set_option(Sockfd,OptionName,Value) :-
+	socket_request(13,Sockfd, OptionName, Value,_,_).

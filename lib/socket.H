@@ -24,7 +24,8 @@
 
 :- export socket/1, socket_bind/2, socket_listen/2, socket_accept/2, 
      socket_connect/4, socket_flush/1, socket_close/1, socket_recv/2,
-     socket_send/2, socket_send_eof/1, socket_send_asci/2.
+     socket_send/2, socket_send_eof/1, socket_send_asci/2,
+     socket_get0/3, socket_put/2, socket_set_option/3.
 
 :- import socket_request/6,file_function/7 from machine.
 
