@@ -1262,7 +1262,7 @@ odbc_newconnection(Connection,ConnHandle) :-
 	(odbc_connection(_,_)	% init if first connection
 	 ->	true
 	 ;	init_gensym(table1),init_gensym(null),
-		assert(odbc_error_flg(off)),
+		assert(odbc_error_flg(fail)),
 		assert(odbc_show_query(on))
 	),
 	(var(Connection)
@@ -1287,6 +1287,7 @@ odbc_shutdown :-
 	retractall(odbc_error_flg(_)),
 	retractall(odbc_show_query(_)),
 	odbc_disconnect(0).
+
 
 odbc_close :-
 	findall(Connection,
@@ -1335,6 +1336,10 @@ odbc_connection_check(Connection,ConnHandle):-
 	    true
 	 ;  misc_error([Connection,' is not a valid ODBC connection.'])).
 
+findall_odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result):- 
+	findall(R,odbc_sql_i(ConnHandle,BindVals,SQLStmt,R),Results),
+	member(Result,Results).
+
 /* odbc_sql_i(+ConnHandle,+BindVals,+SQLStmt,?Result) */
 /* The most general sql call: */
 odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result) :-
@@ -1362,10 +1367,28 @@ odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result) :-
 		odbc_error('Parse error.')
 	).
 
+%---------------------------------------------------------------------------------
+% ODBC Import (and attach)
+%---------------------------------------------------------------------------------
+
 odbc_import(DbPredicate,SymName) :-
-	odbc_import(_Connection,DbPredicate,SymName).
+	odbc_import_1(_Connection,DbPredicate,SymName,option(false)).
+
+odbc_import(Connection,DbPredicate,PredName,Options) :-
+	check_odbc_import_options(Options,Findall),
+	odbc_import_1(Connection,DbPredicate,PredName,option(Findall)).
+
+check_odbc_import_options([],option(false)):-!.
+check_odbc_import_options([H|T],Findall):- !,
+	(member(findall(Boolean),[H|T]) -> 
+	    Findall = Boolean ; Findall = true).
+check_odbc_import_options(Input,_Findall):- 
+	domain_error(odbcImportOptionList,Input,odbc_import/4,4).
 
 odbc_import(Connection,DbPredicate,PredName) :-
+	odbc_import_1(Connection,DbPredicate,PredName,option(false)).
+
+odbc_import_1(Connection,DbPredicate,PredName,Options) :-
 	odbc_connection_check(Connection,ConnHandle),
 	\+attribute(_,PredName,_,_,_),
 	!,
@@ -1379,7 +1402,7 @@ odbc_import(Connection,DbPredicate,PredName) :-
 	%% --- asserts attribute(Num,PredName,Attr,Type,ConnH)
 	assert_import_attributes(PredName,Attributes,TableName,ConnHandle,1),
 	functor(SymPred,PredName,Arity),
-	odbc_query(Connection,SymPred,SymPred).
+	odbc_query(Connection,SymPred,SymPred,Options).
 odbc_import(_,PredName,_) :-
 	abort([PredName,' has already been used for odbc_import.']).
 
@@ -1504,16 +1527,16 @@ get_some_columns([Col|Columns],Cursor,[X|Row]) :-
 	).
 
 %%% assert rule to intercept any call and redirect to DB
-odbc_query(Head,Body) :-
-	odbc_query(_,Head,Body).
+odbc_query(Head,Body,Options) :-
+	odbc_query(_,Head,Body,Options).
 
-odbc_query(Connection,Head,Body) :-
+odbc_query(Connection,Head,Body,Options) :-
 	odbc_connection_check(Connection,ConnHandle),
 	\+ atomic(Head),
 	copy_term(Head,Head1),
 	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :-
-		odbc_link(reg,ConnHandle,Head,Head1,Body), !,
+		odbc_link(reg,ConnHandle,Head,Head1,Body,Options), !,
 		Head1)).
 
 odbc_deallocate_query(Head) :-
@@ -1527,14 +1550,15 @@ odbc_deallocate_query(ConnHandle,Head) :-
 
 %%% intercepts new-moded DB call, generates and asserts new clause to
 %%% (re)makes the DB call and makes the call.
-odbc_link(Type,ConnHandle,Head,Head1,DatabaseGoal) :-
+odbc_link(Type,ConnHandle,Head,Head1,DatabaseGoal,Options) :-
 	Head =.. [H|A],
 	Head1 =..[_|Args],
 	get_mode(Type,Args,Mode,A),
 	ProjectionTerm =.. [H|Mode],
 	translate(Type,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist),
 	!,
-	assert_call_rule(ProjectionTerm,Type,ConnHandle,SQLAtom,Blist).
+	assert_call_rule(ProjectionTerm,Type,ConnHandle,
+	                        SQLAtom,Blist,Options).
 
 get_mode(ins,Args,Mode,A) :- !,get_mode_ins(Args,Mode,A).
 get_mode(_,Args,Mode,A) :- get_mode(Args,Mode,A).
@@ -1594,7 +1618,8 @@ odbc_insert(Connection,Head,Body) :-
 		odbc_link(ins,ConnHandle,Head,Head1,Body), !,
 		Head1)).
 
-assert_call_rule(ProjectionTerm,Type,ConnHandle,SQLAtom,Blist) :-
+assert_call_rule(ProjectionTerm,Type,ConnHandle,SQLAtom,Blist,
+	            option(Findall)) :-
 	init_gensym(var),
 	init_gensym(rel),
 	init_gensym('BIND'),
@@ -1604,8 +1629,12 @@ assert_call_rule(ProjectionTerm,Type,ConnHandle,SQLAtom,Blist) :-
 	(Type == reg -> OutVars = OutVars0 ; OutVars = []),
 	RuleHead =..[Head|InVars],
 	converts(Args,Type,InVars,RuleBody),
-	asserta((RuleHead :- RuleBody, !,
-		 odbc_sql_i(ConnHandle,InBinds,SQLAtom,OutVars))).
+	(Findall == true -> 
+	    asserta((RuleHead :- RuleBody, !,
+		 findall_odbc_sql_i(ConnHandle,InBinds,SQLAtom,OutVars)))
+	     ; 
+	     asserta((RuleHead :- RuleBody, !,
+		 odbc_sql_i(ConnHandle,InBinds,SQLAtom,OutVars))) ).
 
 converts([H,H2|Rest],Type,[H1|Rest1],(X, RestX)) :-
         convert(H,Type,H1,X),
@@ -1785,14 +1814,45 @@ count_tuples(Call,Count) :-
 
 call1(X) :- call0(X).
 
-odbc_flag(fail_on_error,on,off) :-
+%--------------------------------------------------
+% Flags
+%--------------------------------------------------
+
+odbc_flag(fail_on_error,Val):- 
+	odbc_error_flg(Val).
+odbc_flag(show_query,Val):- 
+	odbc_show_query(Val).
+
+set_odbc_flag(fail_on_error,Val):- 
+	check_odbc_fail_on_error(Val),
+	retractall(odbc_error_flg(_)),
+	assert(odbc_error_flg(Val)).
+set_odbc_flag(show_query,Val):- 
+	check_odbc_show_query(Val),
+	retractall(odbc_show_query(_)),
+	assert(odbc_show_query(Val)).
+
+check_odbc_fail_on_error(Val):- 
+	(member(Val,[fail,ignore,throw]) -> 
+	    true
+	 ;  domain_error(odbc_fail_on_error_value,Val,set_odbc_flag/2,2) ).
+
+check_odbc_show_query(Val):- 
+	(member(Val,[on,off]) -> 
+	    true
+	 ;  domain_error(odbc_show_query_value,Val,set_odbc_flag/2,2) ).
+
+% Obsolescent -- they still work (buggily), but dont support throw.
+odbc_flag(fail_on_error,_on,off) :-
 	retract(odbc_error_flg(on)), assert(odbc_error_flg(off)).
-odbc_flag(fail_on_error, off, on) :-
+odbc_flag(fail_on_error, _off, on) :-
 	retract(odbc_error_flg(off)), assert(odbc_error_flg(on)).
-odbc_flag(show_query, off, on) :-
+odbc_flag(show_query, _off, on) :-
 	retract(odbc_show_query(off)), assert(odbc_show_query(on)).
-odbc_flag(show_query, on, off) :-
+odbc_flag(show_query, _on, off) :-
 	retract(odbc_show_query(on)), assert(odbc_show_query(off)).
+
+%--------------------------------------------------
 
 odbc_get_attr(ConnHandle,Tab,Col,Type) :-
 	find_free_cursor(ConnHandle,'GET ATTRIBUTES',Cursor),
@@ -1929,7 +1989,10 @@ odbc_deactivate_cursor(Cursor) :-
 
 odbc_error(ErrMsg) :-
 	write('ERR - ODBC: '),writeln(ErrMsg),
-	(odbc_error_flg(on) -> fail;true).
+	(odbc_error_flg(ignore) -> 
+	       true
+	    ; (odbc_error_flg(fail) -> fail
+	     ; xsb_backtrace(Bt),throw(error(odbc_error,ErrMsg,Bt)) ) ).
 
 odbc_connect(Server,Name,Passwd,ConnHandle) :-
 	odbc_exec_query(1,0,Server,Name,Passwd,ConnHandle).

@@ -237,6 +237,12 @@ check_number(Term,Predicate,Arg) :-
 	 ;  type_error(number,Term,Predicate,Arg) ).
 
 %-------------
+check_integer(Term,Predicate,Arg) :- 
+	(integer(Term) -> 
+	    true
+	 ;  type_error(number,Term,Predicate,Arg) ).
+
+%-------------
 % Checks that a term is ground
 check_ground(Term,Predicate,Arg) :- 
 	(ground(Term) -> 

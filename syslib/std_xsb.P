@@ -267,6 +267,7 @@ standard_symbol(set_global_compiler_options, 1, auxlry).
 standard_symbol(set_input, 1, standard).	%ISO
 standard_symbol(set_output, 1, standard).	%ISO
 standard_symbol(set_timer, 1, standard).
+standard_symbol(set_stream_position,2,file_io).     % ISO
 standard_symbol(setof, 3, setof).
 standard_symbol(shell, 1, shell).
 standard_symbol(shell, 2, shell).

@@ -207,7 +207,7 @@ object of type {\tt Obj\_type}, where {\tt Culprit} was observed.
 \section{Error Handling Predicates}
 
 \begin{description}
-\ouritem{throw(ErrorTermt}\index{\texttt{throw/1}} 
+\ouritem{throw(ErrorTerm)}\index{\texttt{throw/1}} 
 Throws the error {\tt ErrorTerm}.  Execution traverses up the choice
 point stack until a goal of the form {\tt catch(Goal,Term,Handler)} is
 found such that {\tt Term} unifies with {\tt ErrorTerm}.  In this
@@ -345,20 +345,29 @@ Aborting...
 \end{verbatim}
 }
 
+\ournewitem{check\_atom(Term,Predicate,Arg)}{error\_handler}
+\index{\texttt{check\_atom/3}}
+Checks that {\tt Term} is an atom.  If so, the predicate succeeds;
+if not it throws a type error.
 
-\ournewitem{check\_var(Term,Predicate,Arg)}{error\_handler}
-\index{\texttt{check\_var/3}}
-Checks that {\tt Term} is a variable.  If so, the predicate succeeds;
+\ournewitem{check\_ground(Term,Predicate,Arg)}{error\_handler}
+\index{\texttt{check\_ground/3}}
+Checks that {\tt Term} is ground.  If so, the predicate succeeds;
 if not it throws an instantiation error.
+
+\ournewitem{check\_integer(Term,Predicate,Arg)}{error\_handler}
+\index{\texttt{check\_integern/3}}
+Checks that {\tt Term} is an integer.  If so, the predicate succeeds;
+if not it throws a type error.
 
 \ournewitem{check\_nonvar(Term,Predicate,Arg)}{error\_handler}
 \index{\texttt{check\_nonvar/3}}
 Checks that {\tt Term} is not a variable.  If not, the predicate succeeds;
 if {\tt Term} is a variable,  it throws an instantiation error.
 
-\ournewitem{check\_ground(Term,Predicate,Arg)}{error\_handler}
-\index{\texttt{check\_ground/3}}
-Checks that {\tt Term} is ground.  If so, the predicate succeeds;
+\ournewitem{check\_var(Term,Predicate,Arg)}{error\_handler}
+\index{\texttt{check\_var/3}}
+Checks that {\tt Term} is a variable.  If so, the predicate succeeds;
 if not it throws an instantiation error.
 
 \ournewitem{check\_nonvar\_list(Term,Predicate,Arg)}{error\_handler}
@@ -367,11 +376,6 @@ Checks that {\tt Term} is a list, each of whose elements is ground.
 If so, the predicate succeeds; if not it throws an instantiation
 error.
 	    
-\ournewitem{check\_atom(Term,Predicate,Arg)}{error\_handler}
-\index{\texttt{check\_atom/3}}
-Checks that {\tt Term} is an atom.  If so, the predicate succeeds;
-if not it throws an instantiation error.
-
 \ournewitem{check\_stream(Stream,Predicate,Arg)}{error\_handler}
 \index{\texttt{check\_stream/3}}
 Checks that {\tt Stream} is a stream.  If so, the predicate succeeds;

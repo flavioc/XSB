@@ -23,6 +23,7 @@
 */
 
 :- compiler_options([xpp_on,sysmod]).
+
 #include "io_defs_xsb.h"
 #include "system_defs_xsb.h"
 #include "standard.h"
@@ -67,7 +68,8 @@ file_seek(IOport, Offset, Place, Ret) :-
 file_truncate(IOport, Length, Ret) :-
 	file_function(FILE_TRUNCATE, IOport, Length, Ret, _E, _,_).
 file_pos(IOport, Pos) :-
-	file_function(FILE_POS, IOport, Pos, _Ret, _E, _,_).
+	file_function(FILE_POS, IOport, Pos_1, _Ret, _E, _,_),
+	(Pos_1 < 0 -> Pos = end_of_file ; Pos = Pos_1).
 file_open(FileName, Mode_in, IOport) :-
 	preserve_numeric_calls(Mode_in,Mode),
 	file_function(XSB_FILE_OPEN, FileName, Mode, IOport, _E, _,_).
@@ -427,31 +429,23 @@ peek_char(Char):-
 % TLS: ISO interfaces to feof()
 at_end_of_stream:- 
 	stat_flag(CURRENT_INPUT, Str),
-	file_function(FILE_END_OF_FILE,Str,Ret,_Y,_Z, _,_),
-	Ret \== 0.
+	file_function(FILE_END_OF_FILE,Str,_Ret,_Y,_Z, _,_).
 	
 at_end_of_stream(S_or_A):- 
 	check_open_stream_or_alias(S_or_A,at_end_of_file/1,1,_Mode,Str),
-	file_function(FILE_END_OF_FILE,Str,Ret,_Y,_Z, _,_),
-	Ret \== 0.
+	file_function(FILE_END_OF_FILE,Str,_Ret,_Y,_Z, _,_).
 
 %-----------
 
-% TLS: ISO interface to file_seek/3.  For now, handling only text files,.
-set_stream_position(S_or_A,Position):- 
-	check_open_stream_or_alias(S_or_A,set_stream_position/2,1,_Md,Str),
-	check_position_term(Position),
-	Position = position(Origin,Offset),
-	file_seek(Str, Offset, Origin, Ret),
+% TLS: ISO interface to file_seek/3.  For now, handling only files,.
+set_stream_position(S_or_A,Offset):- 
+	check_open_stream_or_alias(S_or_A,set_stream_position/2,1,_Mde,Str),
+	stream_property(Str,reposition(true)),
+	check_integer(Offset,set_stream_position/2,1),
+	file_seek(Str, Offset, 0, Ret),
 	(Ret =:= 0 -> 
-	    permission_error(set_position,stream,Str,set_stream_position/2)
-	  ; true).
-
-check_position_term(Position):- 
-	((Position = position(0,Offset),integer(Offset)) -> 
-	  true
-             ; domain_error(position_term,Position,set_stream_position/1,1) ).
-
+	    true
+	  ; permission_error(set_position,stream,Str,set_stream_position/2) ).
 
 %-----------
 % TLS: ISO interface to file_flush/2
@@ -477,63 +471,101 @@ stream_property(S_or_A,Prop):-
 	current_stream_or_alias(S_or_A,Stream),
 	stream_property_1(Stream,Prop).
 
-stream_property_1(_Stream,type(text)).
 stream_property_1(Stream,alias(A)):- 
 	'_$alias'(A,Stream).
 stream_property_1(Stream,Property) :-
 	(Stream >= MIN_USR_OPEN_FILE -> 
 	    user_stream_property(Stream,Property)
-	 ;  system_stream_property(Stream,Property) ).
+	 ;  (Stream < 0 -> 
+	        atom_stream_property(Property)
+	      ; 
+	        system_stream_property(Stream,Property) ) ).
+stream_property_1(Stream,position(P)):- 
+	file_pos(Stream,P).
+stream_property_1(Stream,end_of_stream(E)):- 
+	(at_end_of_stream(Stream) -> E = at ; E = not).
 
 user_stream_property(Stream,Property):- 
 	user_stream_property_1(Property,Prop_type,Return),
 	file_function(STREAM_PROPERTY,Stream, Prop_type,Ret,_, _, _),
 	transform_property_returned(Prop_type,Ret,Return).
 
+user_stream_property_1(stream_class(C),STREAM_CLASS,C).
 user_stream_property_1(file_name(F),STREAM_FILE_NAME,F).
+user_stream_property_1(type(T),STREAM_TYPE,T).
 user_stream_property_1(mode(M),STREAM_MODE,M).
 user_stream_property_1(input,STREAM_INPUT,_).
 user_stream_property_1(output,STREAM_OUTPUT,_).
-user_stream_property_1(position(P),STREAM_POSITION,P).
-user_stream_property_1(end_of_stream(E),STREAM_END_OF_STREAM,E).
 user_stream_property_1(reposition(Bool),STREAM_REPOSITIONABLE,Bool).
+user_stream_property_1(eof_action(Act),STREAM_EOF_ACTION,Act).
+/* TLS: not yet done
+user_stream_property_1(end_of_stream(E),STREAM_END_OF_STREAM,E).
+*/
 
+system_stream_property(STDIN,stream_class(console)).
+system_stream_property(STDIN,type(text)).
 system_stream_property(STDIN,mode(read)).
 system_stream_property(STDIN,input).
-system_stream_property(STDIN,eof_action(reset)).
 system_stream_property(STDIN,reposition(false)).
+system_stream_property(STDIN,eof_action(reset)).
 
+system_stream_property(STDOUT,stream_class(console)).
+system_stream_property(STDOUT,type(text)).
 system_stream_property(STDOUT,mode(append)).
 system_stream_property(STDOUT,output).
-system_stream_property(STDOUT,eof_action(reset)).
 system_stream_property(STDOUT,reposition(false)).
+system_stream_property(STDOUT,eof_action(reset)).
 
+system_stream_property(STDERR,stream_class(console)).
+system_stream_property(STDERR,type(text)).
 system_stream_property(STDERR,mode(append)).
 system_stream_property(STDERR,output).
-system_stream_property(STDERR,eof_action(reset)).
 system_stream_property(STDERR,reposition(false)).
+system_stream_property(STDERR,eof_action(reset)).
 
+system_stream_property(STDWARN,stream_class(console)).
+system_stream_property(STDWARN,type(text)).
 system_stream_property(STDWARN,mode(append)).
 system_stream_property(STDWARN,output).
-system_stream_property(STDWARN,eof_action(reset)).
 system_stream_property(STDWARN,reposition(false)).
+system_stream_property(STDWARN,eof_action(reset)).
 
+system_stream_property(STDMSG,stream_class(console)).
+system_stream_property(STDMSG,type(text)).
 system_stream_property(STDMSG,mode(append)).
 system_stream_property(STDMSG,output).
-system_stream_property(STDMSG,eof_action(reset)).
 system_stream_property(STDMSG,reposition(false)).
+system_stream_property(STDMSG,eof_action(reset)).
 
+system_stream_property(STDDBG,stream_class(console)).
+system_stream_property(STDDBG,type(text)).
 system_stream_property(STDDBG,mode(append)).
 system_stream_property(STDDBG,output).
-system_stream_property(STDDBG,eof_action(reset)).
 system_stream_property(STDDBG,reposition(false)).
+system_stream_property(STDDBG,eof_action(reset)).
 
+system_stream_property(STDFDBK,stream_class(console)).
+system_stream_property(STDFDBK,type(text)).
 system_stream_property(STDFDBK,mode(append)).
 system_stream_property(STDFDBK,output).
-system_stream_property(STDFDBK,eof_action(reset)).
 system_stream_property(STDFDBK,reposition(false)).
+system_stream_property(STDFDBK,eof_action(reset)).
 
-transform_property_returned(STREAM_FILE_NAME,Ret,Ret).
+atom_stream_property(stream_class(atom)).
+atom_stream_property(type(text)).
+atom_stream_property(mode(read)).
+atom_stream_property(input).
+atom_stream_property(reposition(true)).
+atom_stream_property(eof_action(eof_code)).
+
+transform_property_returned(STREAM_CLASS,Ret,Ret_out):- 
+	transform_stream_class(Ret,Ret_out).
+transform_property_returned(STREAM_FILE_NAME,Ret,Ret):- 
+	atom(Ret).
+transform_property_returned(STREAM_TYPE,Ret,Ret_out):- 
+	(Ret == BINARY_FILE_STREAM -> 
+	    Ret_out = binary
+	  ; Ret_out = text).
 transform_property_returned(STREAM_MODE,Ret_in,Ret_out):- 
 	(Ret_in == READ_MODE -> 
 	    Ret_out = read
@@ -543,4 +575,18 @@ transform_property_returned(STREAM_MODE,Ret_in,Ret_out):-
 transform_property_returned(STREAM_INPUT,READ_MODE,input).
 transform_property_returned(STREAM_OUTPUT,Ret,output):- 
 	(Ret = WRITE_MODE ; Ret = APPEND_MODE),!.
+% TLS: assuming that strings and consoles are taken care of ...
+transform_property_returned(STREAM_REPOSITIONABLE,Ret,Ret_out):- 
+	(Ret == PIPE_STREAM -> 
+	    Ret_out = false
+	  ; Ret_out = true).
+% TLS: assuming that strings and consoles are taken care of ...
+transform_property_returned(STREAM_EOF_ACTION,Ret,Ret_out):- 
+	(Ret == PIPE_STREAM -> 
+	    Ret_out = error
+	  ; Ret_out = eof_code).
 
+transform_stream_class(TEXT_FILE_STREAM,file).
+transform_stream_class(BINARY_FILE_STREAM,file).
+transform_stream_class(PIPE_STREAM,pipe).
+transform_stream_class(CONSOLE_STREAM,console).

@@ -46,7 +46,8 @@
 
 :- import file_write/2 from xsb_writ.
 
-:- import domain_error/4,existence_error/4, 
+:- import check_integer/3,
+             domain_error/4,existence_error/4, 
              permission_error/4 from error_handler.
 
 :- export fmt_write_string/3, fmt_write/2, fmt_read/3,

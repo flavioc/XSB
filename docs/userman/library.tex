@@ -886,41 +886,41 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
 
 \begin{description}
 
-\ournewitem{current\_input\_port(-IOport)}{curr\_sym} \index{\texttt{current\_input\_port/}}
-   See {\tt current\_output\_port/1}.
-\ournewitem{current\_output\_port(-IOport)}{curr\_sym} \index{\texttt{current\_output\_port/}}
-   The above two predicates instantiate {\tt IOport} to the XSB I/O port
-   for the current user input and output ({\it i.e.}, the things 
-   that are manipulated through {\tt see/seen} and {\tt tell/told} predicates).
-   Once the I/O port is obtained, it is possible to safely use the
-   lower-level I/O predicates described below interchangeably with stream
-   I/O. 
+%\ournewitem{current\_input\_port(-IOport)}{curr\_sym} \index{\texttt{current\_input\_port/}}
+%   See {\tt current\_output\_port/1}.
+%\ournewitem{current\_output\_port(-IOport)}{curr\_sym} \index{\texttt{current\_output\_port/}}
+%   The above two predicates instantiate {\tt IOport} to the XSB I/O port
+%   for the current user input and output ({\it i.e.}, the things 
+%   that are manipulated through {\tt see/seen} and {\tt tell/told} predicates).
+%   Once the I/O port is obtained, it is possible to safely use the
+%   lower-level I/O predicates described below interchangeably with stream
+%   I/O. 
     
-\ournewitem{file\_open(+FileName,+Mode,-IOport)}{file\_io} \index{\texttt{file\_open/3}}
-    Opens a file with name {\tt FileName} to be accessed
-    in mode {\tt Mode} and returns a file-descriptor in {\tt IOport} that
-    can be used to access the file.  If {\tt Mode} is atom ``{\tt r}'', the
-    the file is opened for reading; if it is ``{\tt w}'', the file is
-    opened for writing; if it is ``{\tt a}'', the file is opened for
-    appending.  If {\tt Mode} is ``{\tt sr}'', then the string making
-    up the atom {\tt FileName} is treated as the contents of the file, and
-    a descriptor is returned that allows ``file'' access to that string.
-    This is how one can use XSB's term I/O routines to build terms from
-    atoms. Mode ``{\tt sw}'' is reserved for ``open string for writing,''
-    but this has not been implemented as of yet.
+%\ournewitem{file\_open(+FileName,+Mode,-IOport)}{file\_io} \index{\texttt{file\_open/3}}
+%    Opens a file with name {\tt FileName} to be accessed
+%    in mode {\tt Mode} and returns a file-descriptor in {\tt IOport} that
+%    can be used to access the file.  If {\tt Mode} is atom ``{\tt r}'', the
+%    the file is opened for reading; if it is ``{\tt w}'', the file is
+%    opened for writing; if it is ``{\tt a}'', the file is opened for
+%    appending.  If {\tt Mode} is ``{\tt sr}'', then the string making
+%    up the atom {\tt FileName} is treated as the contents of the file, and
+%    a descriptor is returned that allows ``file'' access to that string.
+%    This is how one can use XSB's term I/O routines to build terms from
+%    atoms. Mode ``{\tt sw}'' is reserved for ``open string for writing,''
+%    but this has not been implemented as of yet.
 
-    The old-style mode specification, 0 ({\tt OREAD}), 1 ({\tt OWRITE}), 2
-    ({\tt OAPPEND}), or 3 ({\tt OSTRING}), is also supported.
+%    The old-style mode specification, 0 ({\tt OREAD}), 1 ({\tt OWRITE}), 2
+%    ({\tt OAPPEND}), or 3 ({\tt OSTRING}), is also supported.
+%
+%\ournewitem{file\_close(+IOport)}{file\_io}\index{\texttt{file\_close/1}}
+%    Closes the file (or string) for descriptor {\tt IOport}.
 
-\ournewitem{file\_close(+IOport)}{file\_io}\index{\texttt{file\_close/1}}
-    Closes the file (or string) for descriptor {\tt IOport}.
-
-\ournewitem{ioport2iostream(+IOport, -Stream)}{file\_io}
-\index{\texttt{ioport2iostream/2}}
-Takes a valid open I/O port and returns an I/O stream. This stream can then
-be used by the standard I/O predicates, like see/1, tell/1, read/1, etc.
-The stream returns by this predicate is identified by a newly created atom,
-such as \verb|_$newstream_#123|. 
+%\ournewitem{ioport2iostream(+IOport, -Stream)}{file\_io}
+%\index{\texttt{ioport2iostream/2}}
+%Takes a valid open I/O port and returns an I/O stream. This stream can then
+%be used by the standard I/O predicates, like see/1, tell/1, read/1, etc.
+%The stream returns by this predicate is identified by a newly created atom,
+%such as \verb|_$newstream_#123|. 
 
 \ournewitem{file\_write(+IOport,+Term)}{xsb\_writ}
 \index{\texttt{file\_write/2}}
@@ -1232,50 +1232,62 @@ across UNIX and Windows commands, and they do not return any output of
 commands to Prolog.  Special predicates are provided to handle
 cross-platform compatability and to bring output into XSB.  
 
-\subsection{Executing Shell Commands}
-
 \begin{description}
-\ouritem{shell(+SystemCall)}\index{\texttt{shell/1}}
-    Calls the operating system with the atom {\tt SystemCall} as argument.
-    It succeeds if {\tt SystemCall} is executed successfully, otherwise it
-    fails.  As a notational convenience, the user can supply {\tt SystemCall} 
-    in the form of a list (something currently not possible for {\tt shell/2}).
+\ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
+\index{\texttt{expand\_filename/2}}
+%
+Expands the file name passed as the first argument and binds the
+variable in the second argument to the expanded name. This includes
+(1) expanding Unix tildas, (2) prepending {\tt FileName} to the
+current directory, and (3) ``rectifying'' the expanded file name.  In
+rectification, the expanded file name is ``rectified'' so that
+multiple repeated slashes are replaced with a single slash, the
+intervening ``./'' are removed, and ``../'' are applied so that the
+preceding item in the path name is deleted. For instance, if the
+current directory is {\tt /home}, then {\tt abc//cde/..///ff/./b} will
+be converted into {\tt /home/abc/ff/b}.
 
-    For example, the call:
+Under Windows, this predicates does rectification as described above,
+(using backslashes when appropriate), but it does not expand the
+tildas.
 
-    \demo{{\tt $|$ ?- shell('echo \$HOME').}}
+\ournewitem{expand\_filename\_no\_prepend(+FileName,-ExpandedName)}{shell}
+\index{\texttt{expand\_filename\_no\_prepend/2}}
+This predicate behaves as {\tt expand\_filename/2}, but only expands
+tildas and does rectification. It does not prepend the current working
+directory to relative file names.
 
-    \noindent
-    will output in the current output stream of \ourprolog\ the name of
-    the user's home directory; while the call:
+\ournewitem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
+\index{\texttt{parse\_filename/4}}
+This predicate parses file names by separating the directory part, the base
+name part, and file extension. If file extension is found, it is removed
+from the base name. Also, directory names are rectified and if a directory
+name starts with a tilde (in Unix), then it is expanded. Directory names
+always end with a slash or a backslash, as appropriate for the OS at hand.
 
-    \demo{{\tt $|$ ?- File = 'test.c', shell(['cc -c ', File]).}}
+For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
+{\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
+{\tt /home/john} is what {\tt $\sim$john} expands into).  
 
-    \noindent
-    will call the C compiler to compile the file {\tt test.c}.
+\ournewitem{sleep(+Seconds)}{shell}
+\index{\texttt{sleep/1}}
+Put XSB to sleep for a given number of seconds.
 
-    Note that in UNIX systems, since {\tt shell/1} is executed by
-    forking off a shell process, it cannot be used, for example, to
-    change the working directory of the interpreter.  For that reason
-    the standard predicate {\tt cd/1} described below should be used.
-
-%    {\em Note to DOS users.} \index{DOS}  The {\tt shell/1} command works
-%    for DOS through the underlying GNU djgpp mechanism used to stream \ourprolog.
-
-\ouritem{shell(+SystemCall, -Result)}\index{\texttt{shell/2}}
-    Calls the operating system with the atom {\tt SystemCall} as argument
-    and returns the result of the call in {\tt Result}.  In comparison with
-    {\tt shell/1} this predicate always succeeds, even if the {\tt SystemCall} 
-    cannot be successfully executed.
-
-\ournewitem{rm(+Path)}{shell}
-\index{\texttt{rm/1}}
-Remove file.
+\ournewitem{sys\_pid(-Pid)}{shell}
+\index{\texttt{pid/1}}
+Get Id of the current process.
 
 \end{description}
 
 %---------------------------------------------------------------------------------------
 \comment{
+TLS: Taken out of doc.  But I didn't touch the code, so as to not
+introduce any incompatabilities.
+
+\ournewitem{rm(+Path)}{shell}
+\index{\texttt{rm/1}}
+Remove file.
+
 \ouritem{ls}\index{\texttt{ls/0}} 
     Under UNIX, this command lists in the current output stream the files 
     in the system's current directory if it can do so.  If so, it succeeds.
@@ -1332,38 +1344,7 @@ Remove file.
           will call the emacs editor in reverse video for the file {\tt foo.P}
           in user's home directory.
     \end{enumerate}
-}
-%---------------------------------------------------------------------------------------
 
-\begin{description}
-\ournewitem{datime(?Date)}{standard}
-\index{\texttt{datime/1}}
-
-Unifies {\tt Date} to the current date, returned as a Prolog term,
-suitable for term comparison.  Note that {\tt datime/1} must be
-explicitly imported from the module {\tt standard}.
-
-Example:
-{\footnotesize
-\begin{verbatim}
-                > date
-                Mon Aug  9 16:19:44 EDT 2004
-                > nxsb1
-                XSB Version 2.6 (Duff) of June 24, 2003
-                [i686-pc-cygwin; mode: optimal; engine: slg-wam; gc: indirection; scheduling: local]
-
-                | ?- import datime/1 from standard
-
-                yes
-                | ?- datime(F).
-                F = datime(2004,8,9,20,20,23)
-
-                yes
-\end{verbatim}}
-
-%------------------------------------------------------------------------------------------------  
-\comment{
-% Moved doc to path_sysop...
 \ournewitem{file\_time(+FileName, -time(Time1,Time2))}{file\_io}
 \index{\texttt{file\_time/2}}
 
@@ -1394,9 +1375,6 @@ Change directory.
 \index{\texttt{rename/2}}
 Rename file.
 
-}
-%------------------------------------------------------------------------------------------------  
-
 \ournewitem{directory(+Path,?Directory)}{directry}
 \index{\texttt{directory/2}}
 
@@ -1406,44 +1384,7 @@ path.  Information about the files is similar to that obtained by {\tt ls
 Unix only, is slow, and should be reimplemented in C using {\tt opendir()}
 and {\tt readdir()}.
 
-\ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
-\index{\texttt{expand\_filename/2}}
-%
-Expands the file name passed as the first argument and binds the
-variable in the second argument to the expanded name. This includes
-(1) expanding Unix tildas, (2) prepending {\tt FileName} to the
-current directory, and (3) ``rectifying'' the expanded file name.  In
-rectification, the expanded file name is ``rectified'' so that
-multiple repeated slashes are replaced with a single slash, the
-intervening ``./'' are removed, and ``../'' are applied so that the
-preceding item in the path name is deleted. For instance, if the
-current directory is {\tt /home}, then {\tt abc//cde/..///ff/./b} will
-be converted into {\tt /home/abc/ff/b}.
-
-Under Windows, this predicates does rectification as described above,
-(using backslashes when appropriate), but it does not expand the
-tildas.
-
-\ournewitem{expand\_filename\_no\_prepend(+FileName,-ExpandedName)}{shell}
-\index{\texttt{expand\_filename\_no\_prepend/2}}
-This predicate behaves as {\tt expand\_filename/2}, but only expands
-tildas and does rectification. It does not prepend the current working
-directory to relative file names.
-
-\ournewitem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
-\index{\texttt{parse\_filename/4}}
-This predicate parses file names by separating the directory part, the base
-name part, and file extension. If file extension is found, it is removed
-from the base name. Also, directory names are rectified and if a directory
-name starts with a tilde (in Unix), then it is expanded. Directory names
-always end with a slash or a backslash, as appropriate for the OS at hand.
-
-For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
-{\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
-{\tt /home/john} is what {\tt $\sim$john} expands into).  
-
-%--------------------------------------------------------------------------------------------
-\comment{ TLS: I think I put this in, and I think its overtaken by
+TLS: I think I put this in, and I think its overtaken by
 file_read_line_list plus scan . 
 \ournewitem{file\_to\_list(S, List)}{scrptutls}
 \index{\texttt{file\_to\_list/2}}
@@ -1493,12 +1434,6 @@ application program responsibility.
 %%
 %%                yes
 %%\end{verbatim}}
-}
-%--------------------------------------------------------------------------------------------
-
-\ournewitem{sleep(+Seconds)}{shell}
-\index{\texttt{sleep/1}}
-Put XSB to sleep for a given number of seconds.
 
 \ouritem{ls}{shell}
 \index{\texttt{ls/0}}
@@ -1508,94 +1443,8 @@ Does {\tt ls -F} in Unix, and a {\tt dir} in Windows.
 \index{\texttt{edit/1}}
 Edit file using your favorite editor (specified by the environment variable
 {\tt EDITOR}. Unix only.
-
-\ournewitem{sys\_pid(-Pid)}{shell}
-\index{\texttt{pid/1}}
-Get Id of the current process.
-
-\end{description}
-
-\subsection{The {\tt path\_sysop/2} interface}
-%
-In addition, XSB provides the following unified interface to the
-operations on files. All these calls succeed iff the corresponding
-system call succeeds.  These calls work on both Windows and Unixes
-unless otherwise noted.
-%%
-\begin{description}
-  \ouritem{path\_sysop(isplain, +Path)}
-  \index{\texttt{path\_sysop/2}}
-  Succeeds, if {\tt Path} is a plain file.
-  \ouritem{path\_sysop(isdir, +Path)}
-  Succeeds, if {\tt Path} is a directory.
-  \ouritem{path\_sysop(rename, +OldPath, +NewPath)}
-  \index{\texttt{path\_sysop/3}}
-  Renames {\tt OldPath} into {\tt NewPath}.
-  \ouritem{path\_sysop(copy, +FromPath, +ToPath)}
-  \index{\texttt{path\_sysop/3}}
-  Copies {\tt FromPath} into {\tt ToPath}.
-  \ouritem{path\_sysop(rm, +Path)}
-  Removes the plain file {\tt Path}.
-  \ouritem{path\_sysop(rmdir, +Path)}
-  Deletes the directory {\tt Path}, succeeding only if the directory is empty.
-  \ouritem{path\_sysop(rmdir\_rec, +Path)}
-  Deletes the directory {\tt Path} along with any of its contents.
-  \ouritem{path\_sysop(unlink, +Path)}
-  Same as {\tt rm}.
-  \ouritem{path\_sysop(link, +SrsPath, +DestPath)}
-  Creates a hard link from {\tt SrsPath} to {\tt DestPath}. UNIX only.
-  \ouritem{path\_sysop(cwd, -Path)}
-  Binds {\tt Path} to the current working directory.
-  \ouritem{path\_sysop(chdir, +Path)}
-  Changes the current working directory to {\tt Path}.
-  \ouritem{path\_sysop(mkdir, +Path)}
-  Creates a new directory, {\tt Path}.
-  \ouritem{path\_sysop(exists, +Path)}
-  Succeeds if the file {\tt Path} exists.
-  \ouritem{path\_sysop(readable, +Path)}
-  Succeeds if {\tt Path} is a readable file.
-  \ouritem{path\_sysop(writable, +Path)}
-  Succeeds if {\tt Path} is a writable file.
-  \ouritem{path\_sysop(executable, +Path)}
-  Succeeds if {\tt Path} is an executable file.
-  \ouritem{path\_sysop(modtime, +Path, -Time)}
-  Returns a list that represents the last modification time of the file.
-  Succeeds if file exists. In this case, {\tt Time} is bound to a list
-  {\tt [high,low]} where {\tt low} is the least significant 24 bits of the
-  modification time and {\tt high} is the most significant bits (25th) and up.
-  {\tt Time} represents the last modification time of the file.
-  The actual value is thus $\tt high*2^{24} + low$, which represents the
-  number of seconds elapsed since 00:00:00 on
-       January 1, 1970, Coordinated Universal Time (UTC).
-  \ouritem{path\_sysop(newerthan, +Path1, +Path2)}
-  Succeeds is the last modification time of {\tt Path1} is higher than that
-  of {\tt Path2}. Also succeeds if {\tt Path1} exists but {\tt Path2} does
-  not.
-  \ouritem{path\_sysop(size, +Path, -Size)}
-  Returns a list that represents the byte size of {\tt Path}.
-  Succeeds if the file exists. In this case {\tt Size} is bound to the list
-  of the form {\tt [high,low]} where {\tt low} is the least significant 24
-  bits of the byte-size and {\tt high} is the most significant bits (25th)
-  and up. The actual value is thus $\tt high*2^{24} + low$.
-  \ouritem{path\_sysop(tmpfilename, -Name)}
-  Returns the name of a new temporary file. This is useful when the
-  application needs to open a completely new temporary file.
-  \ouritem{path\_sysop(extension, +Name, -Ext)}
-  Returns file name extension.
-  \ouritem{path\_sysop(basename, +Name, -Base)}
-  Returns the base name of the file name ({\it i.e.}, the name sans the
-  directory and the extension).
-  \ouritem{path\_sysop(dirname, +Name, -Dir)}
-  Returns the directory portion of the filename. The directory is slash or
-  backslash terminated.
-  \ouritem{path\_sysop(isabsolute, +Name)}
-  Succeeds if {\tt Name} is an absolute path name. File does not need to exist.
-  \ouritem{path\_sysop(expand, +Name, -ExpandedName)}
-  Binds {\tt ExpandedName} to the expanded absolute path name of {\tt Name}.
-  The file does not need to exist. Duplicate slashes, references to the
-  current and parent directories are factored out.
-\end{description}
-%%
+}
+%----------------------------------------------------------------------------------------
 
 \subsection{Communication with Subprocesses} \label{sec:subprocesses}
 
@@ -1612,7 +1461,7 @@ In addition, the predicate {\tt pipe\_open/2} described in this
 section lets one create any number of pipes (that do not need to be
 connected to the standard I/O streem) and talk to child processes
 through these pipes.
-
+%
 All predicates in this section, except {\tt pipe\_open/2} and {\tt
 fd2stream/2}, must be imported from module {\tt shell}.  The
 predicates {\tt pipe\_open/2} and {\tt fd2stream/2} must be imported
@@ -1650,8 +1499,7 @@ Here is a simple example of how it works.
 | ?- import file_nl/1 , file_write/2 from xsb_writ.  
 
 | ?- spawn_process([cat, '-'], To, From, Stderr, Pid),
-     file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_),
-     file_read_line_atom(From,Y).
+     writeln(To,'Hello cat!'), flush_output(To,_), file_read_line_atom(From,Y).
 
 To = 3
 From = 4
@@ -1665,33 +1513,34 @@ yes
 
 Here we created a new process, which runs the ``{\tt cat}'' program
 with argument ``--''. This forces {\tt cat} to read from standard
-input and write to standard output. The next line writes a
-newline-terminated string to the XSB stream {\tt To} the, which is
-bound to the standard input of the {\tt cat} process. The process then
-copies the input to the standard output.  Since standard output of the
-process is redirected to the XSB stream {\tt From}, the last line in
-our program is able to read it and return in the variable {\tt Y}.
-
-Note that in the second line we used {\tt file\_flush/2}. Flushing the
-output is extremely important here, because XSB I/O pipe (file)
+input and write to standard output. The next line writes an atom and
+newline to the XSB stream {\tt To}, which is bound to the standard
+input of the {\tt cat} process (proc id {\tt 14328}). The {\tt cat}
+process then copies the input to its standard output.  Since standard
+output of the cat process is redirected to the XSB stream {\tt From}
+in the parent process, the last line in our program is able to read it
+and return in the variable {\tt Y}.
+%
+Note that in the second line we used {\tt flush\_output/2}. Flushing
+the output is extremely important here, because XSB I/O pipe (file)
 streams are buffered.  Thus, {\tt cat} might not see its input until
 the buffer is filled up, so the above clause might hang. {\tt
-file\_flush/2} makes sure that the input is immediately available to
+flush\_output/2} makes sure that the input is immediately available to
 the subprocess.
 
 In addition to the above general schema, the user can tell
-\verb|spawn_process/5| to not open one of the communication streams or to
+\verb|spawn_process/5| not to open one of the communication streams or to
 use one of the existing communication streams.  This is useful when
 you do not expect to write or read to/from the subprocess or when one
 process wants to write to another (see the process plumbing example
 below).
-
+%
 To tell that a certain stream is not needed, it suffices to bind that
 stream to an atom.  For instance,
 %%
 \begin{verbatim}
 | ?- spawn_process([cat, '-'], To, none, none, _),
-     file_nl(To), file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_).
+     nl(To), writeln(To,'Hello cat!'), flush_output(To).
 
 
 To = 3,
@@ -1701,11 +1550,11 @@ Hello cat!
 reads from XSB and copies the result to standard output. Likewise,
 %%
 \begin{verbatim}
-| ?- spawn_process('cat test', none, From, none, _),
+| ?- spawn_process('cat library.tex', none, From, none, _),
      file_read_line_atom(From, S).
 
 From = 4
-S = The first line of file `test'
+S = \chapter{Library Utilities} \label{library_utilities}
 \end{verbatim}
 %%
 In each case, only one of the streams is open. (Note that the shell
@@ -1732,8 +1581,8 @@ sending it a goal to evaluate and obtaining the result:
 %%
 \begin{verbatim}
 | ?- spawn_process([xsb], To, From,Err,_),
-     file_write(To,'assert(p(1)).'), file_nl(To), file_flush(To,_),
-     file_write(To,'p(X), writeln(X).'), file_nl(To), file_flush(To,_), 
+     write(To,'assert(p(1)).'), flush_output(To,_),
+     write(To,'p(X), writeln(X).'), flush_output(To,_), 
      file_read_line_atom(From,XX).  
 
 XX = 1
@@ -1754,7 +1603,7 @@ Finally, we should note that the stream variables in the
 is an example:
 %%
 \begin{verbatim}
-| ?- file_open(test,w,Stream),
+| ?- open(test,write,Stream),
      spawn_process([cat, 'data'], none, FromCat1, none, _),
      spawn_process([sort], FromCat1,Stream, none, _).  
 \end{verbatim}
@@ -1798,10 +1647,9 @@ the following shell command:
   parent uses to communicate with the child. These are the streams
   that are provided in arguments 2,3,4 of {\tt spawn\_process}. The
   reason is that the child might terminate, but these streams to the
-  standard input of the child.  forts will remain open, since they
-  belong to the parent process. As a result, the parent will own
-  defunct I/O streams and might eventually run out of file
-  descriptors.
+  standard input of the child will remain open, since they belong to
+  the parent process. As a result, the parent will own defunct I/O
+  streams and might eventually run out of file descriptors or streams.
 \end{enumerate}
 
 \begin{description}
@@ -1844,7 +1692,9 @@ the following shell command:
     
     \emph{Note}: under Windows, the programmer's manual warns of dire
     consequences if one kills a process that has DLLs attached to it.
-\ouritem{get\_process\_table(-ProcessList)}\index{\texttt{get\_process\_table/1}} 
+%
+\ournewitem{get\_process\_table(-ProcessList)}{shell}
+\index{\texttt{get\_process\_table/1}} 
     This predicate is imported from module {\tt shell}.
     It binds {\tt ProcessList} to the list of terms, each describing one of
     the active XSB subprocesses (created via \verb|spawn_process/5|).
@@ -1856,27 +1706,28 @@ the following shell command:
     %%
     The first argument in the term is the process id of the corresponding
     process, the next three arguments describe the three standard streams
-    of the process, and the lat is an atom that shows the command line used
+    of the process, and the last is an atom that shows the command line used
     to invoke the process.
     This predicate always succeeds.
 
 \ouritem{shell(+CmdSpec,-StreamToProc, -StreamFromProc, -ProcStderr,
   -ErrorCode)}\index{\texttt{shell/5}} 
-    The arguments of this predicate are similar to those of
-    \verb|spawn_process|, except for the following:
-    (1) The first argument is an atom or a list of atoms, like in
-    \verb|spawn_process|. However, if it is a list of atoms, then the
-    resulting shell command is obtained by string concatenation. This is
-    different from \verb|spawn_process| where each member of the list must
-    represent an argument to the program being invoked (and which must be
-    the first member of that list).  (2) The last argument is the error
-    code returned by the shell command and not a process id. The code -1
-    and 127 mean that the shell command failed.
+%
+The arguments of this predicate are similar to those of
+\verb|spawn_process|, except for the following: (1) The first argument
+is an atom or a list of atoms, like in \verb|spawn_process|. However,
+if it is a list of atoms, then the resulting shell command is obtained
+by string concatenation. This is different from \verb|spawn_process|
+where each member of the list must represent an argument to the
+program being invoked (and which must be the first member of that
+list).  (2) The last argument is the error code returned by the shell
+command and not a process id. The code -1 and 127 mean that the shell
+command failed.
     
     The {\tt shell/5} predicate is similar to \verb|spawn_process| in
     that it spawns another process and can capture that process' input
     and output sreams.
-    
+%    
     The important difference, however, is that XSB will ways until the
     process spawned by {\tt shell/5} terminates. In contrast, the process
     spawned by \verb|spawn_process| will run concurrently with XSB.  In
@@ -1889,7 +1740,7 @@ the following shell command:
     the shell command is limited (1K is probably safe). This is because the
     shell command communicates with XSB via pipes, which have limited
     capacity.  So, if the pipe is filled, XSB will hang waiting for {\tt
-      shell/5} to finish and {\tt shel/5} will wait for XSB to consume data
+      shell/5} to finish and {\tt shell/5} will wait for XSB to consume data
     from the pipe.  Thus, use \verb|spawn_process/5| for any kind of
     significant data exchange between external processes and XSB.
   
@@ -1900,14 +1751,14 @@ the following shell command:
   args''. For instance,
 %%
 \begin{verbatim}
-| ?- file_open(test,w,IOport),
-     shell('cat | sort > data', IOport, none, none, ErrCode)
+| ?- open(test,write,Stream),
+     shell('cat | sort > data', Stream, none, none, ErrCode)
 \end{verbatim}
 %%
 As seen from this example, the same rules for blocking I/O streams
-apply to {\tt shell/5}. Finally, we should note that the already familiar
-standard predicates {\tt shell/1} and {\tt shell/2} are implemented using
-shell/5.
+apply to {\tt shell/5}. Finally, we should note that the already
+familiar standard predicates {\tt shell/1} and {\tt shell/2}
+(documented in Volume 1) are implemented using {\tt shell/5}.
 
 \paragraph{\em Notes:}
 %%
@@ -1923,28 +1774,25 @@ shell/5.
 %%
 
 \ouritem{pipe\_open(-ReadPipe, -WritePipe)}\index{\texttt{pipe\_open/2}} 
-  Open a new pipe and return the read end and the write end of that pipe.
-  If the operation fails, both {\tt ReadPipe} and {\tt WritePipe} are bound
-  to negative numbers.
-  
-  The pipes returned by the {\tt pipe\_open/2} predicate are small integers
-  that represent file descriptors used by the underlying OS. They are {\bf
-    not XSB I/O ports}, and they cannot be used for I/O directly. To
-  use them, one must call the {\tt fd2stream/2} predicate, as described
-  next.\footnote{
-    %%
-    XSB does not convert pipes into I/O ports automatically.
-    Because of the way XSB I/O ports are represented, they are not
-    inherited by the child process and they do not make sense to the child
-    process (especially if the child is not another xsb). Therefore, we
-    must pass the child processes an OS file descriptor instead. The child then
-    converts these descriptor into XSB I/O ports.
-    %%
-    }
-\ouritem{fd2iostream(+Pipe, -IOstream)}\index{\texttt{fd2iostream/2}} 
-Take a pipe and convert it to an XSB I/O stream. This predicate is
-needed because pipes must be associated with XSB I/O streams before
-any I/O can be done on them by an XSB program.
+Open a new pipe and return the read end and the write end of that
+pipe.  If the operation fails, both {\tt ReadPipe} and {\tt WritePipe}
+are bound to negative numbers.
+%  
+The pipes returned by the {\tt pipe\_open/2} predicate are small
+integers that represent file descriptors used by the underlying
+OS. They are {\bf not XSB I/O streams}, and they cannot be used for
+I/O directly. To use them, one must convert them to streams using {\tt
+open/3} or {\tt open/4}.~\footnote{
+%% 
+XSB does not convert pipe file descriptors into I/O streams
+automatically.  Because of the way XSB I/O streams are represented,
+they are not inherited by the child process and they do not make sense
+to the child process (especially if the child is not another XSB
+process). Therefore, we must pass the child processes an OS file
+descriptor instead. The child then converts these descriptor into XSB
+I/O streams.  
+%% 
+}
 
     The best way to illustrate how one can create a new pipe to a child
     (even if the child has been created earlier) is to show an example.
@@ -1964,38 +1812,37 @@ any I/O can be done on them by an XSB program.
     %%
     \begin{verbatim}
 %% parent.P      
-:- import pipe_open/2, fd2iostream/2, fmt_write/3, file_flush/2 from file_io.
+:- import pipe_open/2 from file_io.
 %% Create the pipe and pass it to the child process
 ?- pipe_open(RP,WP),
    %% WF is now the XSB I/O stream bound to the write part of the pipe
-   fd2iostream(WP,WF),
+   open(pipe(WP),write,WF),
    %% ProcInput becomes the XSB stream leading directly to the child's stdin
-   spawn_process(xsb, ProcInput, block, block, Process),
+   spawn_process(nxsb1, ProcInput, block, block, Process),
    %% Tell the child where the reading part of the pipe is
    fmt_write(ProcInput, "assert(pipe(%d)).\n", arg(RP)),
    fmt_write(ProcInput, "[child].\n", _),
-   file_flush(ProcInput, _),
+   flush_output(ProcInput, _),
    %% Pass a message through the pipe
    fmt_write(WF, "Hello!\n", _),
-   file_flush(WF, _),
+   flush_output(WF, _),
    fmt_write(ProcInput, "end_of_file.\n",_), % send end_of_file atom to child
-   file_flush(ProcInput, _),
+   flush_output(ProcInput, _),
    %% wait for child (so as to not leave zombies around; 
    %% zombies quit when the parent finishes, but they consume resources)
    process_control(Process, wait),
    %% Close the ports used to commuicate with the process
    %% Otherwise, the parent might run out of file descriptors 
    %% (if many processes were spawned)
-   file_close(ProcInput), file_close(WF).
+   close(ProcInput), close(WF).
     \end{verbatim}
     %%
     %%
     \begin{verbatim}
 %% child.P
-:- import fd2iostream/2 from file_io.
 :- import file_read_line_atom/2 from file_io.
 :- dynamic pipe/1.
-?- pipe(P), fd2iostream(P,F),
+?- pipe(P), open(pipe(P),read,F),
    %% Acknowledge receipt of the pipe
    fmt_write("\nPipe %d received\n", arg(P)),
    %% Get a message from the parent and print it to stdout
@@ -2033,12 +1880,18 @@ yes
     an XSB process can create a pipe using {\tt pipe\_open}
     (\emph{before} spawning a child process), pass one end of the pipe
     to a child process (which can be a C program), and use {\tt
-    fd2iostream} to convert the other end of the pipe to an XSB
-    stream. The C program, of course, does not need {\tt fd2ioport},
+    open/3} to convert the other end of the pipe to an XSB
+    stream. The C program, of course, does not need {\tt open/3},
     since it can use the pipe file handle directly. Likewise, a C
     program can spawn off an XSB process and pass it one end of a
     pipe.  The XSB child-process can then convert this pipe fd to a
-    file using {\tt fd2ioport} and then talk to the parent C program.
+    file using {\tt fd2iostream} and then talk to the parent C program.
+
+\ouritem{fd2iostream(+Pipe, -IOstream)}\index{\texttt{fd2iostream/2}} 
+Take a file descriptor and convert it to an XSB I/O stream. This
+predicate should be used only for user-defined I/O.  Otherwise, use
+{\tt open/\{3,4\}} when possible.
+
 
 %------------------------------------------------------------------------------------------
 \comment{

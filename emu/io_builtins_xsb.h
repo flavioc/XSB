@@ -26,15 +26,6 @@
 #include "io_defs_xsb.h"
 #include "token_xsb.h"
 
-/* TLS: The following data structure holds all info abt. streams that
-   we might eventually want to access from Prolog.  Names, etc come
-   from the definition of stream properties in "Prolog: the standard",
-   pg. 207-209.  Not everything is implemented, but I figured I'd set
-   things up so we can implement them when/as needed */
-
-#define TEXT_STREAM        0
-#define BINARY_STREAM    1
-
 #define ERROR_ON_EOF         0 
 #define EOF_CODE_ON_EOF   1
 #define RESET_ON_EOF          2

@@ -127,9 +127,8 @@ open(atom(Atom),Mode,Stream):- !,
 	    true
 	 ;  domain_error(read,Mode,open/3,2) ),
 	 file_open(Atom, sr, Stream),
-	 writeln(stream(Stream)),
-	 (Stream < -1000 -> 
-	    permission_error(open,file,Atom,open/3)
+	 (Stream = -1000 -> 
+	    permission_error(open,file,atom/1,open/3)
 	 ;  true).
 open(file(File),Mode,Stream):- !,
 	open(File,Mode,Stream).

@@ -150,6 +150,31 @@ current_functor(Name, Term_Indicator) :-
 	).
 
 
+/* ===== current_index/2 ====================================== */
+
+/*
+current_index(F/N,Index):-
+	functor(Term,F,N),
+	current_index(Term,Index).
+current_index(Term,Index):- 
+	'_$index(Term,Ind),
+	decode_index(Ind,Index).
+current_index(Term,trie):- 
+	'_$trie_asserted(Term).
+current_index(Term,[1]).
+
+decode_index([Ind|Rest],[Index|R]):- !,
+	decode_one_index(Ind,Index),
+	decode_index(Rest,R).
+
+decode_one_index(Ind,Index):- 
+	(0 < X,X <  256 -> 
+	    [Ind] = Index
+	 ;  decode_one_index_1(Ind,Index)).
+
+decode_index_1(Ind,Index): -
+*/	
+
 /* ===== current_input/1 ======================================= */
 % TLS: changed on 8/04 for new streams.
 

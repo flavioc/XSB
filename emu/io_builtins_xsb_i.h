@@ -91,9 +91,28 @@ inline static xsbBool file_function(void)
     ctop_int(3, (int) value);
     break;
   case FILE_SEEK: /* file_function(1,+IOport, +Offset, +Place, -Ret) */
-    SET_FILEPTR(fptr, ptoc_int(2));
-    value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
-    ctop_int(5, (int) value);
+    io_port = ptoc_int(2);
+    if (io_port < 0) {
+      if (ptoc_int(4) != 0) 
+	xsb_permission_error("file_seek","atom",ptoc_int(4),"file_seek",1); 
+      sfptr = iostrs[iostrdecode(io_port)];
+      value = ptoc_int(3);
+      length = sfptr->strcnt + sfptr->strptr - sfptr->strbase ;
+      if (value <= length) {
+	if (sfptr->strcnt == -1) length++;
+	sfptr->strptr = sfptr->strbase + value;
+	sfptr->strcnt = length - value;
+	ctop_int(5, 0);
+	/*	printf("base %x cur %x cnt %d\n",
+		sfptr->strbase,sfptr->strptr,sfptr->strcnt);*/
+      }
+      else ctop_int(5,-1);
+    }
+    else {
+      SET_FILEPTR(fptr, io_port);
+      value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
+      ctop_int(5, (int) value);
+    }
     break;
   case FILE_TRUNCATE: /* file_function(2,+IOport,+Length,-Ret,_) */
     size = ptoc_int(3);
@@ -117,7 +136,10 @@ inline static xsbBool file_function(void)
 	ctop_int(3, ftell(fptr));
     } else { /* reading from string */
       sfptr = strfileptr(io_port);
-      offset = sfptr->strptr - sfptr->strbase;
+      if (sfptr->strcnt == EOF) 
+	offset = EOF;
+      else 
+	offset = sfptr->strptr - sfptr->strbase;
       if (isnonvar(term))
 	return ptoc_int(3) == offset;
       else
@@ -229,7 +251,7 @@ inline static xsbBool file_function(void)
 	open_files[io_port].file_ptr = NULL;
 	open_files[io_port].file_name = NULL;
 	open_files[io_port].io_mode = '\0';
-	open_files[io_port].stream_type = NULL;
+	open_files[io_port].stream_type = 0;
 	if (flags[CURRENT_INPUT] == io_port) 
 	  { flags[CURRENT_INPUT] = STDIN;}
 	if (flags[CURRENT_OUTPUT] == io_port) 
@@ -631,8 +653,18 @@ inline static xsbBool file_function(void)
     int stream;
     stream = ptoc_int(2);
     switch (ptoc_int(3)) {
+
+      /* Type, Repos, eof_actions are all currently functions of class */
+    case STREAM_EOF_ACTION:
+    case STREAM_REPOSITIONABLE:
+    case STREAM_TYPE: 
+    case STREAM_CLASS: 
+      ctop_int(4, open_files[stream].stream_type);
+      break;
+    
     case STREAM_FILE_NAME:  
-      ctop_string(4, open_files[stream].file_name);
+      if (open_files[stream].stream_type < 3)
+	ctop_string(4, open_files[stream].file_name);
       break;
 
     case STREAM_MODE: 
@@ -700,9 +732,17 @@ inline static xsbBool file_function(void)
     break;
   }
 
+    /* TLS: range checking for streams done by is_valid_stream */
   case FILE_END_OF_FILE: {
-    ctop_int(3,feof(open_files[ptoc_int(2)].file_ptr));
-    return TRUE;
+
+    io_port = ptoc_int(2);
+    if (io_port < 0) {
+      sfptr = strfileptr(io_port);
+      return  (sfptr->strcnt == EOF);
+    }
+    else {
+      return (feof(open_files[ptoc_int(2)].file_ptr) != 0);
+    }
   }
 
   case FILE_PEEK: {

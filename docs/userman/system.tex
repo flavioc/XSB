@@ -116,16 +116,12 @@ provide a small step towards {\em logic programming ``in the large''}
 that facilitates large programs or projects to be put together from
 components which can be developed, compiled and tested separately.
 Also module systems enforce the {\em principle of information hiding}
-and can provide a basis for {\em data abstraction}.
-
-The module system of XSB, bears more similarities to an {\em
-atom-based} module system than that of most other Prologs.  Briefly,
-the main difference between atom-based module systems and
-predicate-based ones is that in an atom-based module system {\em any
-symbol in a module can be imported, exported or be a local symbol} as
-opposed to the predicate-based ones where this can be done only for
-predicate symbols~\footnote{Operator symbols can be exported as any
-other symbols, but their precedence must be redeclared in the
+and can provide a basis for {\em data abstraction}.  The module system
+of XSB, bears some similarities to an {\em atom-based} module system,
+where any symbol in a module can be imported, exported or be a local
+symbol, as opposed to the predicate-based ones where this can be done
+only for predicate symbols~\footnote{Operator symbols can be exported
+as any other symbols, but their precedence must be redeclared in the
 importing module.}.
 
 The following three files may be associated with a particular module:
@@ -283,7 +279,29 @@ module if and only if it includes an {\tt export/1} statement, and
 only {\tt import/1} statements affect dynamic loading and name
 resolution for predicates.
 
-%===============================================================
+\section{Standard Predicates in XSB} \label{sec:standard}
+%========================================================
+
+Whenever XSB is invoked, a large set of {\em standard} predicates are
+defined and can be called from the interpreter or other
+interface~\footnote{Such predicates are sometimes called ``builtins''
+in other Prologs.}.  These predicates include the various ISO
+predicates~\cite{}, along with predicates for tabling, I/O and for
+interaction with the operating system, for HiLog, and for other
+functionality.  Standard predicates are declared in the file {\tt
+\$XSB\_DIR/syslib/std\_xsb.P} and are covered in
+Chapter~\ref{standard} of this manual.  If a user wishes to redefine a
+standard predicate, she has several choices.  First, the appropriate
+fact in {\tt \$XSB\_DIR/syslib/std\_xsb.P} should be commented out.
+Once this is done, a user may define the predicate as any other user
+predicate.  Alternately, the compiler option {\tt allow\_redefinition}
+can be used to allow the compiler to redefine a standard predicate
+(Section~\ref{sec:CompilerOptions}).  If a user wants to make a new
+definition or new predicate standard, the safest course is to put the
+predicate into a module in the {\tt lib} directory, and add or modify
+an associated fact in {\tt \$XSB\_DIR/syslib/std\_xsb.P}.
+
+%========================================================
 \section{The Dynamic Loader and its Search Path} \label{LibPath}
 \index{load search path}
 
@@ -1764,6 +1782,37 @@ interfere with some of XSB's internal predicates.  The situation may
 be particularly severe for predicates like {\tt '\_\$builtin'/1} that
 are treated specially by the XSB compiler.
 
+\section{A Note on ISO Compatability} \label{sec:iso}
+
+In \version, an effort has been made to ensure compatability with the
+Prolog ISO standard.  In this section, we mention the differences with
+the ISO standard.  XSB implements almost all ISO builtins, although
+there are certain semantic differences between XSB's implementation
+and that of the ISO standard in certain cases.
+
+The main difference of XSB with the ISO standard is in terms of
+parsing....
+
+A second difference involves XSB's implementation of ISO streams.  XSB
+can create streams from several first class objects, including pipes,
+atoms, and consoles in addition to files.  However by default, XSB
+opens streams in binary mode, rather than text mode in opposition to
+the ISO standard, which opens streams in text mode.  This makes no
+difference in UNIX or LINUX, for which text and binary streams are
+identical, but does make a difference in Windows, where text files are
+processed more than binary files.
+
+The final difference involves error handling in XSB.  XSB implements a
+catch and throw mechanism that is similar to the ISO standard.  In
+addition, XSB usually thows errors under the same conditions as
+specified in the standard.  The only difference in error handling is
+in the types of errors that XSB throws: it may throw domain errors in
+some cases in which XSB throws type errors.  The reasons for this have
+to do with XSB's nascent type system, as described in
+Section~\ref{sec:types}.  This difference should cause minimal
+portability problems, as it only affects the type terms thrown at
+error, and these terms are implementation-dependant as defined in the
+standard.
 
 
 

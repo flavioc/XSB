@@ -229,6 +229,29 @@ get_test_name_price(Id,Nam,Pri) :-
 Note that to include a quote (') in an atom, it must be represented
 by using two quotes.
 
+\subsection{Cursor Management} \label{odbc:cursors}
+%=======================================================
+
+The XSB-ODBC interface is limited to using 100 open cursors.  When XSB
+systems use database accesses in a complicated manner, management of
+open cursors can be a problem due to the tuple-at-a-time access of
+databases from Prolog, and due to leakage of cursors through cuts and
+throws.  Often, it is more efficient to call the database through
+set-at-a-time predicates such as {\tt findall/3}, and then to
+backtrack through the returned information.  For instance, 
+the predicate {\tt findall\_odbc\_sql/4} can be defined as:
+\index{\texttt{findall\_odbc\_sql/4}}
+\index{\texttt{findall\_odbc\_sql/3}}
+%
+\begin{verbatim}
+findall_odbc_sql(ConnName,BindVals,SQLStmt,ResultRow):- 
+            findall(Res,odbc_sql(ConnName,BindVals,SQLStmt,Res),Results),
+            member(ResultRow,Results).
+\end{verbatim}
+%
+As a convenience, therefore, the predicates {\tt findall\_odbc\_sql/3}
+and {\tt findall\_odbc\_sql/4}.are defined in the ODBC interface.
+
 \subsection{Accessing Tables in Data Sources through the Relation Level}
 
 While all access to a database is possible using SQL as described
@@ -271,6 +294,88 @@ When connecting to multiple data sources, you should use the form:
                  'TableName'('FIELD1', 'FIELD2', ..., 'FIELDn'),
                  'PredicateName').
 \end{verbatim}
+
+
+\subsection{Using the Relation Level Interface}
+%===========================================
+
+Once the links between tables and predicates have been successfully established, 
+information can then be extracted from these tables using the corresponding 
+predicates.   Continuing from the above example, now rows from the table 
+{\tt Test} can be obtained:
+%
+\begin{verbatim}
+| ?- test(TId, TName, L, P).
+
+TId = t001
+TName = X-Ray
+L = 5
+P = 100 
+\end{verbatim}
+%
+Backtracking can then be used to retrieve the next row of the table {\tt Test}.
+
+Records with particular field values may be selected in the same way
+as in Prolog; no mode specification for database predicates is
+required. For example:
+%
+\begin{verbatim}
+| ?- test(TId, 'X-Ray', L, P).
+\end{verbatim}
+will automatically generate the query:
+\begin{verbatim}
+SELECT rel1.TId, rel1.TName, rel1.Length, rel1.Price
+FROM Test rel1
+WHERE rel1.TName = ?
+\end{verbatim}
+and 
+\begin{verbatim}
+| ?- test('NULL'(_), 'X-Ray',  L, P).
+\end{verbatim}
+generates: (See Section \ref{NULL-values})
+\begin{verbatim}
+SELECT NULL , rel1.TName, rel1.Length, rel1.Price
+FROM Test rel1
+WHERE rel1.TId IS NULL AND rel1.TName = ?
+\end{verbatim}
+%
+During the execution of this query the bind variable {\tt ?} will be bound
+to the value {\tt 'X-Ray'}.\newline
+
+Of course, the same considerations about cursors noted in
+Section~\ref{odbc:cursors} apply to the relation-level interface.
+Accordingly, the ODBC interface also defines the predicate {\tt
+odbc\_import/4} which allows the user to specify that rows are to be
+fetched through {\tt findall/3}.  For example, the call 
+%
+\begin{verbatim}
+odbc_import('Test'('TId','TName','Length','Price'),test,[findall(true)]).
+\end{verbatim}
+will behave as described above {\em but} will make all database calls
+through {\tt findall/3} and return rows by backtracking through a list
+rather than maintaining open cursors.
+\index{\texttt{odbc\_import/4}}
+
+%-------------------------------------------------
+
+Also as a courtesy to Quintus Prolog users we have provided
+compatibility support for some PRODBI predicates which access tables
+at a relational level~\footnote{This predicate is obsolescent and {\tt
+odbc\_import/\{2,3,4\}} should be used instead.}.
+
+\begin{verbatim}
+| ?- odbc_attach(PredicateName, table(TableName)).
+\end{verbatim}
+
+eg. invoke 
+\begin{verbatim}
+| ?- odbc_attach(test2, table('Test')).
+\end{verbatim}
+and then execute 
+\begin{verbatim}
+| ?- test2(TId, TName, L, P).
+\end{verbatim}
+to retrieve the rows.
 
 
 \subsection{Handling NULL values}\label{NULL-values}
@@ -363,84 +468,9 @@ when some free arguments of a delete predicate get bound by some preceding
 predicates.  For example in the following clause, the semantics is preserved 
 even if the {\tt Deptno} field is NULL for some rows.
 
-
 \begin{center}
-
 {\tt | ?- emp(\_,\_,\_,\_,Deptno), dept\_del(Deptno).}
 \end{center}
-
-\section{Cursor Management} \label{odbc:cursors}
-%=======================================================
-Since XSB-ODBC interface is a simulation of XSB-ORACLE interface on
-UNIX platform, it inherits all limitations of the XSB-ORACLE
-interface, i.e. it is limited to 100 open cursors, cursors could leak
-when using cuts and etc.  Hence the guidelines for XSB-ORACLE
-interface application developers are also for XSB-ODBC interface
-application developers.  
-
-\subsection{Using the Relation Level Interface}
-%===========================================
-
-Once the links between tables and predicates have been successfully established, 
-information can then be extracted from these tables using the corresponding 
-predicates.   Continuing from the above example, now rows from the table 
-{\tt Test} can be obtained:
-\begin{verbatim}
-
-| ?- test(TId, TName, L, P).
-
-TId = t001
-TName = X-Ray
-L = 5
-P = 100 
-\end{verbatim}
-
-Backtracking can then be used to retrieve the next row of the table {\tt Test}.
-
-Records with particular field values may be selected in the same way
-as in Prolog; no mode specification for database predicates is
-required. For example:
-\begin{verbatim}
-
-| ?- test(TId, 'X-Ray', L, P).
-\end{verbatim}
-will automatically generate the query:
-\begin{verbatim}
-SELECT rel1.TId, rel1.TName, rel1.Length, rel1.Price
-FROM Test rel1
-WHERE rel1.TName = ?
-\end{verbatim}
-and 
-\begin{verbatim}
-| ?- test('NULL'(_), 'X-Ray',  L, P).
-\end{verbatim}
-generates: (See Section \ref{NULL-values})
-\begin{verbatim}
-SELECT NULL , rel1.TName, rel1.Length, rel1.Price
-FROM Test rel1
-WHERE rel1.TId IS NULL AND rel1.TName = ?
-\end{verbatim}
-
-During the execution of this query the bind variable {\tt ?} will be bound
-to the value {\tt 'X-Ray'}.\newline
-
-Also as a courtesy to Quintus Prolog users we have provided
-compatibility support for some PRODBI predicates which access tables
-at a relational level~\footnote{This predicate is obsolescent and {\tt odbc\_import/\{2,3,4\}} should be used instead.}.
-
-\begin{verbatim}
-| ?- odbc_attach(PredicateName, table(TableName)).
-\end{verbatim}
-
-eg. invoke 
-\begin{verbatim}
-| ?- odbc_attach(test2, table('Test')).
-\end{verbatim}
-and then execute 
-\begin{verbatim}
-| ?- test2(TId, TName, L, P).
-\end{verbatim}
-to retrieve the rows.
 
 \subsection{The View Level Interface}
 %===========================================

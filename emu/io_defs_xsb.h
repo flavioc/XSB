@@ -59,6 +59,9 @@
 #define STREAM_POSITION                 4
 #define STREAM_END_OF_STREAM    5
 #define STREAM_REPOSITIONABLE    6
+#define STREAM_CLASS                      7
+#define STREAM_TYPE                        8
+#define STREAM_EOF_ACTION            9
 
 /* Need in here for stream_property/2 */
 #define MAX_OPEN_FILES    55
