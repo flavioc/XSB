@@ -3,6 +3,7 @@
 :- export 
 	  build_taxonomy/4,
 	  call_assert/1, 
+	  cdf_fix_dir/2,
 	  file_latest_version/3,
 	  odbc_sql_local/4,
 	  oms_ascii_scan/0,
@@ -11,12 +12,27 @@
 
 :- import oms_warning/2 from oms_exceptions.
 :- import (attribute)/3, retractallAttribute/3 from cdf_init_cdf.
-
-
-:- import member/2 from basics.
+:- import append/3, member/2 from basics.
+:- import short_directory/2 from directry.
 
 %------
 call_assert(Term):- (call(Term) -> true ; asserta(Term)).
+
+cdf_fix_dir(Dir,DirS) :-
+	(Dir == ''
+	 ->	DirS = Dir
+	 ;	friendly_atom_codes(Dir,DirC),
+		(append(_,[0'/],DirC)
+		 ->	DirS = Dir
+		 ;	append(DirC,[0'/],DirSC),
+			friendly_atom_codes(DirS,DirSC)
+		)
+	).
+
+friendly_atom_codes(A,Codes):- 
+	(atom(A) ; var(A)) -> atom_codes(A,Codes)
+	   ; writeln(non_atomic(A)),
+	     atom_codes(A,Codes) . 	% and so abort.
 
 %------
 oms_ascii_scan:- oms_warning(obsolete,

@@ -1,37 +1,39 @@
 :- compiler_options([ciao_directives]).
 
 :- export
-	isa/2, immediate_isa/2, implicit_isa/2,
-	hasAttr/3, immediate_hasAttr/3, 
-	allAttr/3, immediate_allAttr/3, 
-	classHasAttr/3, immediate_classHasAttr/3, 
+	isa/2, immed_isa/2, implicit_isa/2,
+	hasAttr/3, immed_hasAttr/3, 
+	allAttr/3, immed_allAttr/3, 
+	classHasAttr/3, immed_classHasAttr/3, 
 	newExtTerm/1, retractallExtTerm/1,
 	initialize_state/0,
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
 	cdf_set_log_on/0, cdf_set_log_off/0, cdf_reset_log/0, show_log/0,
-	newComponent/4, newComponent/3,
 	updateAttribute/5.
 
-% fool that module system... 
-:- export check_isa_types/1, check_ind_types/2.
+:- import check_implication/2, check_types/2 from cdf_checks.
 
-:- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3 from usermod.
-:- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3 from usermod.
+:- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3 
+							from usermod.
+
+:- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3 
+							from  usermod.
 :- import cdf_dirty/1, cdf_log_trie/1, 
 	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
-:- import component_table_ext/2 from usermod.
 
 :- import load_extensional_facts/1, load_intensional_rules/1 from 
 						cdf_io.
 :- import file_latest_version/3 from cdf_utilities.
-:- import cdf_warning/2, cdf_error/2 from cdf_exceptions.
+:- import cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, cdf_update_list/1 from cdf_cdf.
+:- import get_component_extensional/2, newComponent/4 
+	from cdf_components.
 
 :- import '_$index'/3 from file_op.
 %:- import conset/2, conget/2 from gensym.
 :- import concat_atom/2 from string.
-:- import ground/1, member/2, memberchk/2 from basics.
+:- import ground/1, member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import search_module/6 from consult.
 :- import new_trie/1, delete_trie/1, trie_interned/4, 
@@ -127,22 +129,28 @@ As mentioned in previous sections, CDF relations can define
 inheritable attributes which hold for isaes and objects, inheritable
 constraints on attributes, and non-inheritable properties of sets.
 
-@item @tt{id('CDF Classes',cdf)}: 
-@cindex{CDF Object-Object Relations}
+@item @tt{cid('CDF Classes',cdf)}: 
+@cindex{CDF Classes}
 
 Includes every object of any class.  Defined as an immediate
 subclass of @tt{id('CDF Root',cdf)}.
 
-@item @tt{id('CDF Object-Object Relations',cdf)}: 
+@item @tt{rid('CDF Object-Object Relations',cdf)}: 
 @cindex{CDF Object-Object Relations}
 
 Includes all inheritable relation tuples.  Defined as an immediate
 subrelation of @tt{id('CDF Root',cdf)}.
 
-@item @tt{id('CDF Class-Object Relations',cdf)}: 
+@item @tt{crid('CDF Class-Object Relations',cdf)}: 
 @cindex{CDF Class-Object Relations}
 
 Includes all non-inheritable class-object relation tuples.
+Defined as an immediate subrelation of @tt{id('CDF Root',cdf)}.
+
+@item @tt{crid('CDF Higher-Order Class-Object Relations',cdf)}: 
+@cindex{CDF Higher-Order Class-Object Relations}
+
+Includes all higher-order class-object relations on relations.
 Defined as an immediate subrelation of @tt{id('CDF Root',cdf)}.
 
 @item @tt{id('CDF Primitive Types',cdfpt)}: 
@@ -215,96 +223,8 @@ init_cdf_rels :-
 %-----------
 
 init_component_info :-
-	newComponent(cid(cdf,cdf),cid('.',cdf),check,OCid),
-	newExtTerm(classHasAttr_ext(OCid,sid(componentDepends,cdf),OCid)).
-
-/* New component initializes a new component, creating version,
-dependency and path information.  Given a previously existing component, 
-re-creating the component with the same path is a safe operation.
-
-	If Action unifies with check and
-		if a previous component exists with the same path, 
-			no action is taken; 
-		otherwise if a previous component exists with a different path,
- 			an error occurs. 
-	If Action is replace
-		if a previous component exists 
-		    its directoryPath is overwritten with the new path
-*/
-
-
-:- comment(hide,newComponent/3).	
-newComponent(Name,Path,Compout):- 
-	newComponent(Name,Path,check,Compout).
-
-:- comment(hide,newComponent/4).	
-newComponent(cid(Name,Name),Path,Action,
-			cid(component(cid(Name,Name),Pathout,Version),Name)):- 
-	newPathandVersion(Action,cid(Name,Name),Path,Pathout,Version).
-
-/* check gives an error if a component exists whose file path is not
-equal to PATH.  New components are created with filepath PATH and
-version 0 
-
-create renames the path of each component to PATH if its file path is
-not equal to PATH (apart from CDF which it leaves alone). If the
-component is new, or has had its file path reset, its version is 0,
-and its version is updated otherwise.
-
-in_place does not affect existing components.  New components are
-created with filepath PATH and version 0.
-
-The latter two should just be used in component updates. */
-
-newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
-	((classHasAttr(cid(Src,Src),sid(hasPath,Src),Path1),Path1 \= Path) ->
-	      cdf_error(component,['Creating a component path ',Path,
-			' for ',Src,' which has path ',Path1]) 
-	    ; 
-	      newExtTerm(classHasAttr_ext(cid(Src,Src),sid(hasPath,Src),
-						Path)) ),
-	(classHasAttr(cid(compName(cid(Src,Src),cid(Path,Src)),Src),
-			sid(hasVersion,Src),Version) -> 
-	     true 
-	   ; 
-	     newExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),Path),Src),
-			sid(hasVersion,Src),oid(0,Src))),
-	     Version = cid(0,cdf) ).
-newPathandVersion(create,cid('CDF',cdf),_Pathin,Path,V):- !,
-	immediate_classHasAttr(cid('CDF',cdf),sid(hasPath,cdf),Path),
-	immediate_classHasAttr(cid(compName(cid('CDF',cdf),Path),cdf),
-			sid(hasVersion,cdf),V).
-/* On create, even if the component has been loaded from somewhere else,  
-   it needs a new path and version, (obtained from the path). */
-newPathandVersion(create,cid(Src,Src),Pathin,Pathin,V1):- 
-        retractallExtTerm(classHasAttr_ext(cid(Src,Src),sid(hasPath,Src),_)),
-        retractallExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),_),Src),
-			 	cid(hasVersion,Src),_Int)),
-        newExtTerm(classHasAttr_ext(cid(Src,Src),sid(hasPath,Src),Pathin)),
-        concat_atom([Pathin,'/',Name],File),
-        (file_exists(File) ->
-  	     file_latest_version(Pathin,Name,Vold),
-	     V1 is Vold + 1
-	  ;  V1 = 0),
-       newExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),Pathin),Src),
-			sid(hasVersion,Src),cid(V1,Src))).
-/* Assumes merge_check has been done.  Do nothing if the component has been
-   loaded from somewhere.  Otherwise, create it with the new directory path, 
-   and check the directory for the proper version to make the component.  */
-newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):- 
-	(classHasAttr(cid(compName(cid(Src,Src),Path,Src)),sid(hasVersion,Src),V) -> 
-  	     true
-	  ; 
-    	     newExtTerm(classHasAttr_ext(cid(Src,Src),sid(hasPath,Src),Path)),
-	     concat_atom([Pathin,'/',Name],File),
-  	     (file_exists(File) ->
-  	         file_latest_version(Pathin,Name,Vold),
-	          V is Vold + 1
-	       ;  V = 0),
-	     newExtTerm(classHasAttr_ext(cid(Src,Src),sid(hasPath,Src),Pathin)),
-  	     newExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),Pathin),Src),
- 				  sid(hasVersion,Src),V)),
-	     Pathin = Path ).
+	newComponent(cid(cdf,cdf),cid('.',cdfpt),check,OCid),
+	newExtTerm(classHasAttr_ext(OCid,crid(componentDepends,cdf),OCid)).
 
 %%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -329,7 +249,7 @@ hierarchy by the isa axioms.
 
 @begin{itemize} @item @tt{implicit_isa(+,-)}: succeeds if @tt{C1} \=
 @tt{C2}, @tt{C1} is a subclass, (member, etc) of @tt{C2} by the isa
-axioms @em{and} for some @tt{C3} @tt{immediate_isa(C2,C3)} is
+axioms @em{and} for some @tt{C3} @tt{immed_isa(C2,C3)} is
 true.
 
 @item @tt{implicit_isa(-,+)}: fails.
@@ -341,7 +261,7 @@ The motivation for this partial implementation is as follows.  If both
 terms are ground, determining their relation in the isa hierarchy is
 linear in the sizes of the terms.  In all cases where variables are
 present, there is the possibility of backtracking through a large
-isa_relation.  For the instantiation pattern @tt{immediate_isa(+,-)}
+isa_relation.  For the instantiation pattern @tt{immed_isa(+,-)}
 this is addressed by searching through only those product identifiers
 that occur in the first argument of the immediate isa relation.
 Because of the assumption that product identifiers can occur only in
@@ -358,7 +278,7 @@ implicit_isa(SubCid,SupCid) :-
 	
 implicit_isa_bf(SubCid,SupCid):- 
         skeleton(SubCid,SubSkel), 
-	immediate_isa(SubSkel,_),
+	immed_isa(SubSkel,_),
 	term_isa(SubCid,SubSkel),
 	SubCid \== SubSkel,
 	SupCid = SubSkel.
@@ -384,20 +304,23 @@ term_isa_list([H|T],[H1|T1]):-
 	once(isa(H,H1)),
 	term_isa_list(T,T1).
 
-:- comment(immediate_isa/2, "@tt{immediate_isa(SubCid,SupCid)} is true
+:- comment(immed_isa/2, "@tt{immed_isa(SubCid,SupCid)} is true
 if there is a corresponding fact in @pred{isa_ext/2} or in the
 intensional rules.  It does not use the Implicit Isa Axiom or the
 Domain Containment Axiom, or reflexive or transitive closure.").
 
-immediate_isa(SubCid,SupCid) :- 
+immed_isa(SubCid,SupCid) :- 
+	check_types(query,isa(SubCid,SupCid)),
 	isa_ext(SubCid,SupCid).
-immediate_isa(CCid,PCid) :-
+immed_isa(CCid,PCid) :-
+	check_types(query,isa(CCid,PCid)),
 	isa_int(CCid,PCid).
 
 :- comment(isa/2, "The operational semantics of @tt{isa/2} is defined
 in @ref{Using CDF}").
 
 isa(Sub,Sup):- 
+	check_types(query,isa(Sub,Sup)),
 	(ground(Sub) -> 
 	    (ground(Sup) -> 
 	        isa_bb(Sub,Sup),!	% want det for bb.
@@ -416,19 +339,19 @@ isa_bb(Sub,Sup):-
 % Here use implicit bf specialization for first step, then look upwards 
 isa_bf(Sub,Sub).
 isa_bf(Sub,Sup):- 
-	(   immediate_isa(Sub,Mid)
+	(   immed_isa(Sub,Mid)
 	  ; implicit_isa_bf(Sub,Mid) ),
 	isa_bf_inner(Mid,Sup).
 
 isa_bf_inner(Sub,Sub).
 isa_bf_inner(Sub,Sup):- 
-	immediate_isa(Sub,Mid),
+	immed_isa(Sub,Mid),
 	isa_bf_inner(Mid,Sup).
 
 % Here implicit would fail; just do immediate, and look down. 
 isa_fx(Sub,Sub).
 isa_fx(Sub,Sup):- 
-	immediate_isa(Mid,Sup),
+	immed_isa(Mid,Sup),
 	isa_fx(Sub,Mid).
 
 :- comment(proper_isa/2, "@tt{proper_isa(Sub,Sup)} is true if @tt{Sub}
@@ -455,13 +378,15 @@ is_a_rel(RCid):-
 		member(RCid,RCids)
 	).
 
-:- comment(immediate_hasAttr/3, "@tt{immediate_hasAttr(SCid,RCid,TCid)}
+:- comment(immed_hasAttr/3, "@tt{immed_hasAttr(SCid,RCid,TCid)}
 accesses facts stored directly in @pred{hasAttr_ext/3} in the CDF state,
 as well as those defined via intensional rules.").
 
-immediate_hasAttr(SCid,RCid,TCid) :- 
+immed_hasAttr(SCid,RCid,TCid) :- 
+	check_types(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_ext(SCid,RCid,TCid).
-immediate_hasAttr(SCid,RCid,TCid) :-
+immed_hasAttr(SCid,RCid,TCid) :-
+	check_types(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_int(SCid,RCid,TCid).
 
 :- comment(hasAttr/3, "@tt{hasAttr(SCid,RCid,TCid)} defines the
@@ -473,12 +398,14 @@ parameters are returned.  ").
 
 hasAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
-	immediate_hasAttr(SCid,RCid,TCid).
+	immed_hasAttr(SCid,RCid,TCid).
 hasAttr(SCid,RCid,TCid) :- 
 	var(RCid), !,  %% relation is free var
 	is_a_rel(RCid),
+	check_types(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_2fix(SCid,RCid,TCid).
 hasAttr(SCid,RCid,TCid) :-
+	check_types(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_2inh(SCid,RCid,TCid).
 
 :- table hasAttr_2fix/3.
@@ -507,12 +434,12 @@ hasAttr_gen2(SCid,RCid,TCid) :-
 hasAttr_gen13(SCid,RCid,TCid) :-
 	(var(SCid)
 	 ->	(var(TCid)
-		 ->	immediate_hasAttr(SCid,RCid,TCid)
+		 ->	immed_hasAttr(SCid,RCid,TCid)
 		 ;	isa(TCidP,TCid),
-			immediate_hasAttr(SCid,RCid,TCidP)
+			immed_hasAttr(SCid,RCid,TCidP)
 		)
 	 ;      isa(SCid,SCidP),
-		immediate_hasAttr(SCidP,RCid,TCidP),
+		immed_hasAttr(SCidP,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP
 		 ;	isa(TCidP,TCid) 
@@ -540,15 +467,19 @@ Class-Object Relations',cdf)}.  If @tt{RCid} is unbound, all such
 (proper) subclasses are returned nondeterministically.").
 
 is_a_classHasAttr(RCid) :-
-	proper_isa(RCid,sid('CDF Class-Object Relations',cdf)).
+	proper_isa(RCid,crid('CDF Class-Object Relations',cdf)).
 
-:- comment(immediate_classHasAttr/3,
-"@tt{immediate_classHasAttr(SCid,RCid,TCid)} accesses facts stored
+:- comment(immed_classHasAttr/3,
+"@tt{immed_classHasAttr(SCid,RCid,TCid)} accesses facts stored
 directly in @pred{classHasAttr_ext/3} in the CDF state, as well as
 those defined via intensional rules.").
 
-immediate_classHasAttr(SCid,RCid,TCid) :- classHasAttr_ext(SCid,RCid,TCid).
-immediate_classHasAttr(SCid,RCid,TCid) :- classHasAttr_int(SCid,RCid,TCid).
+immed_classHasAttr(SCid,RCid,TCid) :- 
+	check_types(query,classHasAttr(SCid,RCid,TCid)),
+	classHasAttr_ext(SCid,RCid,TCid).
+immed_classHasAttr(SCid,RCid,TCid) :- 
+	check_types(query,classHasAttr(SCid,RCid,TCid)),
+	classHasAttr_int(SCid,RCid,TCid).
 
 :- comment(classHasAttr/3, "@tt{classHasAttr(SCid,RCid,TCid)} defines
 the semantic set-valued relation predicate, where @tt{SCid} is the
@@ -557,12 +488,14 @@ the target class ID. ").
 
 classHasAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
-	immediate_classHasAttr(SCid,RCid,TCid).
+	immed_classHasAttr(SCid,RCid,TCid).
 classHasAttr(SCid,RCid,TCid) :-
 	var(RCid), !,  %% relation is free var
 	is_a_classHasAttr(RCid),
+	check_types(query,classHasAttr(SCid,RCid,TCid)),
 	classHasAttr_2fix(SCid,RCid,TCid).
 classHasAttr(SCid,RCid,TCid) :-
+	check_types(query,classHasAttr(SCid,RCid,TCid)),
 	classHasAttr_2inh(SCid,RCid,TCid).
 
 :- table classHasAttr_2fix/3.
@@ -588,11 +521,11 @@ classHasAttr_gen2(SCid,RCid,TCid) :-
 classHasAttr_gen13(SCid,RCid,TCid) :-
 	(var(SCid)
 	 ->	(var(TCid)
-		 ->	immediate_classHasAttr(SCid,RCid,TCid)
+		 ->	immed_classHasAttr(SCid,RCid,TCid)
 		 ;	isa(TCidP,TCid),
-			immediate_classHasAttr(SCid,RCid,TCidP)
+			immed_classHasAttr(SCid,RCid,TCidP)
 		)
-	 ;      immediate_classHasAttr(SCid,RCid,TCidP),
+	 ;      immed_classHasAttr(SCid,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP
 		 ;	isa(TCidP,TCid) 
@@ -609,12 +542,16 @@ not_max_implicative_classHasAttr(Term,BindPat) :-
 
 %%% allAttr/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(immediate_allAttr/3, "@tt{immediate_allAttr(SCid,RCid,TCid)}
+:- comment(immed_allAttr/3, "@tt{immed_allAttr(SCid,RCid,TCid)}
 accesses facts stored directly in @pred{allAttr_ext/3} and information
 produced via @pred{allAttr_int/6}.").
 
-immediate_allAttr(SCid,RCid,TCid) :- allAttr_ext(SCid,RCid,TCid).
-immediate_allAttr(SCid,RCid,TCid) :- allAttr_int(SCid,RCid,TCid).
+immed_allAttr(SCid,RCid,TCid) :- 
+	check_types(query,allAttr(SCid,RCid,TCid)),
+	allAttr_ext(SCid,RCid,TCid).
+immed_allAttr(SCid,RCid,TCid) :- 
+	check_types(query,allAttr(SCid,RCid,TCid)),
+	allAttr_int(SCid,RCid,TCid).
 
 :- comment(allAttr/3, "@tt{allAttr(SCid,RCid,TCid)} defines the semantic
 schema relation predicate, where @tt{SCid} is the source class ID,
@@ -625,12 +562,14 @@ are returned.  ").
 
 allAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
-	immediate_allAttr(SCid,RCid,TCid).
+	immed_allAttr(SCid,RCid,TCid).
 allAttr(SCid,RCid,TCid) :-
 	var(RCid), !,  %% relation is free var
 	is_a_rel(RCid),
+	check_types(query,allAttr(SCid,RCid,TCid)),
 	allAttr_2fix(SCid,RCid,TCid).
 allAttr(SCid,RCid,TCid) :-
+	check_types(query,allAttr(SCid,RCid,TCid)),
 	allAttr_2inh(SCid,RCid,TCid).
 
 :- table allAttr_2fix/3.
@@ -656,12 +595,12 @@ allAttr_gen2(SCid,RCid,TCid) :-
 allAttr_gen13(SCid,RCid,TCid) :-
 	(var(SCid)
 	 ->	(var(TCid)
-		 ->	immediate_allAttr(SCid,RCid,TCid)
+		 ->	immed_allAttr(SCid,RCid,TCid)
 		 ;	isa(TCidP,TCid),
-			immediate_allAttr(SCid,RCid,TCidP)
+			immed_allAttr(SCid,RCid,TCidP)
 		)
 	 ;      isa(SCid,SCidP),
-		immediate_allAttr(SCidP,RCid,TCidP),
+		immed_allAttr(SCidP,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP
 		 ;	isa(TCidP,TCid) 
@@ -715,81 +654,6 @@ newExtTerm(Term,Upd0,Upd):-
 	  ; Upd0 = Upd).
 
 %-----------------------------------------------------------
-% Type checking.	
-% TLS: should be turned on and off...
-check_types(update,Term):- 
-	(type_table(Term,Typecall) -> 
-	    true
-	  ; cdf_warning(update,[Term,' is not an extensional fact and cannot ',
-				'be added.']),
-	    fail ),
-	call(Typecall).
-
-%------
-:- comment(hide,check_isa_types/1).
-check_isa_types(isa_ext(First,Second)):- 
-	(functor(First,F1,2) -> 
-	    true
-	  ; cdf_warning(update,[First,' in ',Term,' is not of proper type.']),
-	    fail ),
-	arg(1,First,A1),
-	check_arg_consist(A1,F1,First,Term),	
-	((Second = id('CDF Root',cdf) 
-	    ; functor(Second,F2,2),isa_consist(F1,F2)) -> 
-	    true
-	  ; cdf_warning(update,['Arguments in ',isa_ext(First,Second),
-				' are not of proper type.']),
-	    fail ),
-	arg(1,Second,A2),
-	check_arg_consist(A2,F2,Second,Term).
-
-isa_consist(F,F):-!.
-isa_consist(oid,cid).
-
-%------
-:- comment(hide,check_ind_types/2).
-
-check_ind_types(Term,List):- 
-	Term =.. [_|R],
-	check_ind_types_1(R,List,Term).
-
-check_ind_types_1([],[],_).
-check_ind_types_1([Id|T],[List|LT],Term):- 
-	(functor(Id,F,2),memberchk(F,List) -> 
-	    arg(1,Id,A),
-	    check_arg_consist(A,F,Id,Term)
-	  ; cdf_warning(update,[Id,' in ',Term,' is not of proper type.']),
-	    fail ),
-	check_ind_types_1(T,LT,Term).
-
-check_arg_consist(Nid,F,Id,Term):- 
-	(atomic(Nid) -> 
-	    true
-	  ; Nid =.. [_Funct|L],
-	    check_arg_consist_list(L,F,Id,Term) ).
-
-check_arg_consist_list([],_F,_Id,_Term). 
-check_arg_consist_list([Nid|T],F,Id,Term):- 
-	     (functor(Nid,F,2) -> 
-	         arg(1,Nid,A),
-		 check_arg_consist(A,F,Id,Term)
-	       ; cdf_warning(update,[Id,' in ',Term,' is ill-formed.']),
-		 fail ),
-	     check_arg_consist_list(T,F,Id,Term).
-	
-type_table(isa_ext(A,B),check_isa_types(isa_ext(A,B))).
-type_table(hasAttr_ext(A,B,C),check_ind_types(hasAttr_ext(A,B,C),
-				[ [cid,oid], [rid], [cid,oid] ] ) ).
-type_table(allAttr_ext(A,B,C),check_ind_types(allAttr_ext(A,B,C),
-				[ [cid,oid], [rid], [cid,oid] ] ) ).
-type_table(classHasAttr_ext(A,B,C),check_ind_types(classHasAttr_ext(A,B,C),
-					[ [cid], [sid], [cid,oid] ] ) ).
-
-% want to change so that it checks for implication also.
-check_implication(update,Term):- 
-	(call(Term) -> fail ; true).
-
-%----------------------------------------------------------------------
 %%%%%%%%%%  Retract tables as appropriate upon update; adjust dirty bits.
 
 :- comment(hide,assert_cdf/1).
@@ -808,11 +672,6 @@ assert_cdf_term(Term) :-
 	 ->	true
 	 ;	make_cdf_dirty(Name)
 	).
-
-get_component_extensional(Term,Component):- 
-	component_table_ext(Term,Arg),
-	arg(Arg,Term,CompId),
-	arg(2,CompId,Component).
 
 :- comment(hide,retractall_cdf/1).
 
@@ -1067,7 +926,7 @@ get_product_skeleton_list([H|T],[NH|NT]):-
 
 add_member_if_nec(_Oid,unk,Upd,Upd) :- !.
 add_member_if_nec(Oid,Cid,Upd,Upd) :-
-	immediate_memberof(Oid,Cid), !.
+	immed_memberof(Oid,Cid), !.
 add_member_if_nec(Oid,Cid,Upd0,Upd) :-
 	Upd0 = [asserta(memberof_ext(Oid,Cid))|Upd].
 
@@ -1100,9 +959,9 @@ if the attribute is not implied, regardless if it is maximally implied
 or not. */
 
 check_attribute(Oid,RCid,TCid) :-
-	(immediate_attribute(Oid,RCid,TCid) 
+	(immed_attribute(Oid,RCid,TCid) 
          ->	true
-	 ;	immediate_isa(Oid,SCid),
+	 ;	immed_isa(Oid,SCid),
 		irel(SCid,RCid,TCid)
 	).
 

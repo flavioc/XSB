@@ -4,15 +4,15 @@
 :- dynamic cdf_dirty/1.
 :- dynamic using_xj/0.
 
-component_table_ext(isa_ext(_,_),1).
-component_table_ext(hasAttr_ext(_,_,_),2).
-component_table_ext(allAttr_ext(_,_,_),2).
-component_table_ext(classHasAttr_ext(_,_,_),2).
+component_table_ext(isa_ext(_,_),1,[2]).
+component_table_ext(hasAttr_ext(_,_,_),2,[1,3]).
+component_table_ext(allAttr_ext(_,_,_),2,[1,3]).
+component_table_ext(classHasAttr_ext(_,_,_),2,[1,3]).
 
-component_table_int(isa_int(_,_),2,[arg(2,warn)]).
-component_table_int(hasAttr_int(_,_,_),4,[arg(1,warn),arg(3,no_warn)]).
-component_table_int(allAttr_int(_,_,_),4,[arg(1,warn),arg(3,no_warn)]).
-component_table_int(classHasAttr_int(_,_,_),4,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(isa_int(_,_),1,[arg(2,warn)]).
+component_table_int(hasAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(allAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(classHasAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
 
 component_table_int(assert_cdf_int(_),null,[]).
 component_table_int(retractall_cdf_int(_),null,[]).

@@ -665,7 +665,7 @@ identifiers for this new type of relation use the functor
 editor.  This display name can be represented by the fact
 
 @begin{verbatim}
-hasAttr(rid(endType,dla),crrid(displayName,dla),
+classHasAttr(rid(endType,dla),crrid(displayName,dla),
                                 cid('Suture End Type',dla))
 @end{verbatim}
 
@@ -673,7 +673,7 @@ Similarly the display name for @tt{crid(endTypeWeight,dla)} can be
 represented as 
 
 @begin{verbatim}
-hasAttr(crid(endTypeWeight,dla),crcrid(displayName,dla),
+classHasAttr(crid(endTypeWeight,dla),crcrid(displayName,dla),
                                 cid('Suture End Type Weight',dla))
 @end{verbatim}
 
@@ -1068,9 +1068,59 @@ Conformability checking is turned off by default.
 Further information on setting the checks is in @ref{cdf_checks.P
 (library)}.
 
-@section{Other Stuff}
+@section{Comparison and Discussion}
 
-Discuss indexing, tabling...
+There are at present a great many systems for managing and viewing
+ontologies, each of which varies in its aims and functionity.  
+
+@bf{Description Logics} Currently most description logics are based on
+an extension of the logic @em{ALC}.  Checking consistency for a finite
+set of @em{ALC} sentences is P-space complete @cite{SchmS91}.  The
+language of CDF presented so far is a special restriction of @em{ALC}
+if objects, higher-order relations, and product identifiers are
+removed.  Furthermore, consistency checking is decidable in polynomial
+time.  This language is referred to in @cite{Swif03} as a level-0 CDF
+language, and a prototype extension of CDF to allow arbitrary class
+expressions is described in @cite{Swif03} using the Answer Set
+Programming techniques available through XSB's XASP interface to check
+consistency of statements and perform classification.
+
+@bf{Object Logics} Unlike object logics such as FLORA
+@cite{guiz-flora-00}, no attempt is made to program rules in CDF:
+rather CDF is seen as a store of non-procedural knowledge to be
+augmented with rules written in XSB -- as a result CDF in principle
+can serve as a knowledge store for FLORA just as it can to any set of
+XSB rules.
+
+@bf{Ontology Systems} Various ontology systems have been created for
+ALC-like languages, for instance OilEd @cite{BHGS01} whose user
+interface is based on Protege @cite{protege}.  Many features of Oil
+are being included in the OWL standard @cite{PSHH03}.  As discussed
+above, level-0 CDF descriptions are not as powerful as full ALC, but
+CDF does introduce several new features not addressed in OWL.  First,
+CDF allows representation of objects, higher-order relations, and
+non-inheritable class-object relations.  In addition, since the
+language of CDF is based on identifiers, it becomes easy to define
+modular ontologies as building blocks of large ontologies.  And
+furthermore, the user of product identifiers provides an easy way to
+represent relations that are not naturally thought of as binary.
+
+@bf{The CDF implementation} The CDF language is tightly integrated
+with XSB, so that answers are returned only for those relations that
+are most specific to a query, and the @tt{isa/2} relation prunes its
+search when product identifiers are used.  The CDF component system
+allows modular components to be shared by different users, combined in
+different ways for various applications and updated separately when
+necessary.  The inclusion of intensional rules allows ontologies to be
+represented in a ""lazy"" manner that are too large to fit into
+memory, such as primitve classes and intensional disk-resident
+ontologies.  The database libraries allow CDF extensional facts in
+components to be maintained and incrementally saved on disk, fostering
+concurrent updates by different agents working on an ontology.
+Furthermore, a proprietary interface based on Interprolog
+@cite{Cale01} has been used to create a fully functional CDF Editor,
+along with numerous CDF-based commercial applications@footnote{The CDF
+Editor is a proprietary system owned by XSB, Inc.}.
 
 ").
 

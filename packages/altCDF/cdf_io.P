@@ -15,13 +15,13 @@
 
 :- import newExtTerm/1 from cdf_init_cdf.
 
-
+:- import cdf_fix_dir/2 from cdf_utilities.
 
 :- import cdf_error/2 from cdf_exceptions.
 
 
 
-:- import append/3, member/2,reverse/2 from basics.
+:- import member/2,reverse/2 from basics.
 :- import concat_atom/2 from string.
 %:- import load_dync/2 from consult.
 :- import path_sysop/2 from file_io.
@@ -44,17 +44,17 @@ to the current directory.
 ").
 
 dump_extensional_facts(Dir) :-
-	throw_oms_writable(Dir),
+	throw_cdf_writable(Dir),
 	dump_extensional_facts_1(Dir).
 
 dump_extensional_facts_1(Dir) :-
-	oms_fix_dir(Dir,DirS),
+	cdf_fix_dir(Dir,DirS),
   	concat_atom([DirS,'cdf_extensional.P'],File),
 	tell(File),
 	i2ie, hasattr2hasattre, strel2strele, allattr2allattre,
 	told.
 
-throw_oms_writable(Dir):-
+throw_cdf_writable(Dir):-
 	((slash(Slash),concat_atom([Dir,Slash,'cdf_extensional.P'],SchemaPath),
 	  path_sysop(writable, SchemaPath)) -> 
 	    true
@@ -93,22 +93,6 @@ allattr2allattre :-
 
 %-----------------------------------------------------------------
 
-oms_fix_dir(Dir,DirS) :-
-	(Dir == ''
-	 ->	DirS = Dir
-	 ;	friendly_atom_codes(Dir,DirC),
-		(append(_,[0'/],DirC)
-		 ->	DirS = Dir
-		 ;	append(DirC,[0'/],DirSC),
-			friendly_atom_codes(DirS,DirSC)
-		)
-	).
-
-friendly_atom_codes(A,Codes):- 
-	(atom(A) ; var(A)) -> atom_codes(A,Codes)
-	   ; writeln(non_atomic(A)),
-	     atom_codes(A,Codes) . 	% and so abort.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_extensional_facts/1,
@@ -126,7 +110,7 @@ load_extensional_facts([Dir|DirList]) :-
 	load_extensional_facts(Dir),
 	load_extensional_facts(DirList).
 load_extensional_facts(Dir) :-
-	oms_fix_dir(Dir,DirS),
+	cdf_fix_dir(Dir,DirS),
 	write('Loading '),write(Dir),write(':'),
 	reload_extensional(DirS).
 
