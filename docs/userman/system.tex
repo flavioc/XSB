@@ -827,10 +827,31 @@ The following options are currently recognized by the compiler:
 	recommended once the code has been debugged.
 
 
-\item[{\tt cpp\_on}]\index{{\tt cpp_on}}
+\item[{\tt cpp\_on}]\index{{\tt cpp\_on}}
   Pass the program through the C preprocessor before sending it to the XSB
   compiler. In this case, the source code can include the usual C
-  preprocessor directives, such as \#define, \#ifdef, and \#include.
+  preprocessor directives, such as \verb|#define|, \verb|#ifdef|, and
+  \verb|#include|. This option can be specified both as a parameter to
+  compile/2 and as part f the {\tt compiler\_options/1} directive inside
+  the source file.
+
+  XSB predefines the constant {\tt XSB\_PROLOG}, which can be used for
+  conditional compilation. For instance, you can write portable program
+  to run under XSB and and other prologs that support C-style
+  preprocessing and use conditional compilation to account for the
+  differences: 
+  %%
+  \begin{samepage}
+  \begin{verbatim}
+#ifdef XSB_PROLOG
+    XSB-specific stuff
+#else
+    other Prolog's stuff
+#endif
+    common stuff
+  \end{verbatim}
+  \end{samepage}
+  %%
 
   Because Prolog syntax is often at odds with the C syntax, the
   following must be kept in mind:
@@ -839,16 +860,17 @@ The following options are currently recognized by the compiler:
     \item  {\it Quotes\/}: C requires that quotes come in pairs, which is a
       problem if your program has statements like {\tt 0'x}. While this is
       not fatal, the C preprocessor issues anoying warnings. On top of
-      this, it might refuse to apply \#define macros to anything between
+      this, it might refuse to apply \verb|#define| macros to anything between
       this single quote and the next one (say, another {\tt 0'p} hundred
       lines below). It is recommended to pacify the preprocessor by putting
       a comment of the following form at the end of the line as follows: 
       %%
 \begin{verbatim}
-            put(0'p),       %  '
+            put(0'p),       %  here's that other quote
 \end{verbatim}
       %%
-      Another way to circumvent the problem is to use \#define, {\it e.g.}, 
+      Another way to circumvent the problem is to use \verb|#define|,
+      {\it e.g.}, 
       %%
 \begin{verbatim}
     #define CH_P  80

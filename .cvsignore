@@ -1,6 +1,7 @@
 .xsb
 bin
 config
+mswarnings
 obj.*
 site
 tests
