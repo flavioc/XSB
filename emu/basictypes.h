@@ -67,7 +67,7 @@ typedef unsigned long prolog_term;	/* opaque type definition */
 #define MAXBUFSIZE   1024  /* used when a large string buffer is needed */
 #endif
 
-#define K   1024
+#define K   1024  /* please make sure that K stays divisible by sizeof(Cell) */
 
 #define BASICTYPES_INCLUDED
 
