@@ -317,7 +317,7 @@ into the CDF.
 @item @tt{version(V)} where @tt{V} is a version number.  If the
 parameter list contains such a term, the loader attempts to load
 version @tt{V} of component.  The default action is to load the latest
-version of a component.
+version of a coimponent.
 
 @end{itemize}
 ").
@@ -468,8 +468,13 @@ load_component_dependencies_pass2(_,_).
 
 initialize_component(Name,Path):- 
 	slash(Slash),
-	concat_atom([Path,Slash,Name,'/initialization_file.P'],File),
-	(file_exists(File) -> load_dyn(File) ; true).
+	cwd(CurrDir),
+	concat_atom([Path,Slash,Name],InitDir),
+	cd(InitDir),
+	(file_exists('initialization_file.P') -> load_dyn('initialization_file.P') ; true),
+	cd(CurrDir).
+
+%	concat_atom([Path,Slash,Name,'/initialization_file.P'],File),
 
 %---------------
 

@@ -36,7 +36,7 @@
 
 :- import  get_intensional_mfile_expansion/2 from cdf_comps_share.
 
-:- import clause_assert/2 from cdf_exceptions.
+:- import clause_assert/2 from cdf_utilities.
 
 :- import cdf_fix_dir/2 from cdf_utilities.
 

@@ -517,8 +517,10 @@ isa_nocheck(Sub,Sup):-
 
 isa_bb(Sub,Sup):- isa_bf(Sub,Sup).
 isa_bb(Sub,Sup):- 
-	arg(1,Sub,Suba),structure(Suba),
-	arg(1,Sup,Supa),structure(Supa),
+	cdf_id_fields(Sub,_,Suba,_),
+	structure(Suba),
+	cdf_id_fields(Sup,_,Supa,_),
+	structure(Supa),
 	implicit_isa_bb(Sub,Sup).
 
 % Here use implicit bf specialization for first step, then look upwards 
@@ -1012,6 +1014,7 @@ classHasAttr_1fix(SCid,Rid,TCid) :-
 	OutTerm = rln(SCid,Rid,TCid),
 	copy_term(OutTerm,BindPat),
 	classHasAttr_1fix_sub(SCid,Rid,TCid),
+%	writeln(classHasAttr_1fix_sub_1(SCid,Rid,TCid)),
 	(not_max_implicative_classHasAttr_1fix(OutTerm,BindPat) -> fail ; true).
 
 :- table classHasAttr_1fix_sub/3.
@@ -1023,7 +1026,10 @@ classHasAttr_1fix_sub(SCid,Rid,TCid):-
 not_max_implicative_classHasAttr_1fix(Term,BindPat) :-
 	BindPat = rln(SCidO,RidO,TCidO),
 	Term = rln(SCid,Rid,TCid),
+	cdf_id_fields(SCid,_Type,Id,_Comp),
+	(atom(Id) -> SCid = SCidO ; true),
 	classHasAttr_1fix_sub(SCidO,RidO,TCidO),
+%	writeln(classHasAttr_1fix_sub_2(SCidO,RidO,TCidO)),
 	\+ (BindPat = Term),	
 	SCid = SCidO,
 	once(explosive_isa(RidO,Rid)),	
