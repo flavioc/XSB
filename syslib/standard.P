@@ -201,6 +201,16 @@ open(F,append,F):-!,
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
 
+open(File,w,File):-!, 
+	open(File,write,userin).
+open(File,r,File):-!, 
+	open(File,read,userin).
+open(File,a,File):-!, 
+	open(File,append,File).
+%% catch wrong mode
+open(File,Mode,File):- 
+	abort([Mode, ': unknown file mode in OPEN/2-3']).
+
 close(user) :- !.
 close(userin) :- !.
 close(userout) :- !.
@@ -268,8 +278,9 @@ writeq(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_quoted(File, T).
 
 
 write_canonical(Ostr,Term):- tell(Ostr),
-			     file_write_canonical(Ostr,Term),
-			     tell(userout).
+	stat_flag(CURRENT_OUTPUT, IOport),
+	file_write_canonical(IOport,Term),
+	tell(userout).
 
 write_canonical(T) :-
 	stat_flag(CURRENT_OUTPUT, File),
