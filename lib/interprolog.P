@@ -29,7 +29,7 @@
 
 :- ( xsb_configuration(javac, '') -> true
 	;
-	 abort('Your system doesn't seem to have the Java compiler, javac, installed')
+	 abort('Your system doesn''t seem to have the Java compiler, javac, installed')
    ),
    ( getenv('JAVA_HOME', JH), getenv('SWING_HOME', SH) ->
 	abort('InterProlog requires that the environment variables JAVA_HOME and SWING_HOME must be set')

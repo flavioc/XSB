@@ -29,9 +29,8 @@
 # For that reason, self-make is always suggested.
 #-----------------------------------------------------------------------#
 
-ALL = 	aggregs.O array.O array1.O copyterm.O \
-	db.O dbclause.O dbcmpl.O directry.O \
-	intern.O num_vars.O odbc_call.O ordsets.O ora_call.O record.O \
+ALL = 	aggregs.O array.O array1.O copyterm.O directry.O \
+	intern.O odbc_call.O ordsets.O ora_call.O record.O \
 	scrptutl.O socket.O interprolog.O
 
 Option = [sysmod,optimize]
