@@ -129,7 +129,7 @@ help :-
 	flora_stdmsg_line('o prolog Functor/Arity'),
 	flora_stdmsg_line('    define Functor/Arity as Prolog in shell mode'),
 	flora_stdmsg_line('o nohilog Functor/Arity'),
-	flora_stdmsg_line('    define Functor/Arity as non-Hilog in shell mode'),
+	flora_stdmsg_line('    define Functor/Arity as non-HiLog in shell mode'),
 	flora_stdmsg_line('o sign Functor({oid|form}[,{oid|form}]*)'),
 	flora_stdmsg_line('    define predicate signature in shell mode'),
 	flora_stdmsg_line('o op(Precedence,Associativity,Operator)'),

@@ -29,7 +29,7 @@
 
 #define NEWVAR		newvar
 #define NEWPREDICATE	newpredicate
-#define NEWOID		newoid
+#define NEWOID		FLORA_PREFIX'newoid'
 #define TMPDIRECT	tmpdirect
 #define TMPOPTION	tmpoption
 
