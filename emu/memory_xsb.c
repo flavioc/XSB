@@ -62,7 +62,7 @@
 
 #if defined(GENERAL_TAGGING)
 extern long int next_free_code;
-extern Integer enc[], dec[];
+extern unsigned long enc[], dec[];
 
 void extend_enc_dec_as_nec(void *lptr, void *hptr) {
     unsigned long nibble;
