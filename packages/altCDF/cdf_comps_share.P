@@ -28,7 +28,8 @@
 	  component_table_ext/3,component_table_int/3 from usermod.
 
 :- import cdf_warning/2 from cdf_exceptions.
-:- import check_atom/3, check_ground/3 from error_handler.
+:- import check_atom/3, check_ground/3,
+	 permission_error/4 from error_handler.
 
 :- import call_assert/1, file_latest_version/3 from cdf_utilities.
 :- import xsb_configuration/2 from xsb_configuration.
@@ -547,7 +548,10 @@ get_full_path_and_loadname(Name,Path,Vin,Abs,V,Loadname):-
 	(Vin = version(V) -> 
 	    file_find_version_name(Abs,Name,V,Loadname)
 	 ; 
-	    Loadname = Name,file_latest_version(Abs,Name,V) ).
+	    Loadname = Name,file_latest_version(Abs,Name,V) ),!.
+get_full_path_and_loadname(Name,Path,_Vin,_Abs,_V,_Loadname):- 
+	permission_error(expand_filename,path,(Path,' , ',Name),
+	                         'get_full_path_and_loadname/6').
 
 file_find_version_name(Path,Name,Version,Loadname):- 
 	file_latest_version(Path,Name,V),
@@ -773,6 +777,7 @@ reload_extensional(Dir,CPath):-
 reload_extensional(CPath) :-
 	repeat,
 	read_canonical(Term),
+	writeln(Term),
 	(Term == end_of_file
 	 ->	!
 	 ; Term = :-(_)

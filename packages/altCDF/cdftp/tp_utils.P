@@ -1,9 +1,8 @@
 
-:- export  prettyPrintCE/1,tp_prettyPrintCE/1,
+:- export  tp_prettyPrintCE/2,
               tp_gensym/2, tp_gennum/1, reset_gennum/0, tp_testgennum/1,
-	  tp_writeln/1.
+	  tp_writeln/2, set_debug_on/1, set_debug_off/0.
 
-:- import on/0, debugging/1 from usermod.
 :- import conset/2,conget/2 from gensym.
 :- import member/2 from basics.
 
@@ -13,7 +12,8 @@ reset_gennum:- conset(tp_gennum_val, 0).
 
 /*----gennum------------------------------------------------------------*/
 
-tp_gennum(N) :- conget(tp_gennum_val, O), N is O + 1, conset(tp_gennum_val, N).
+tp_gennum(N) :- 
+	conget(tp_gennum_val, O), N is O + 1, conset(tp_gennum_val, N).
 
 /*----gensym------------------------------------------------------------*/
 
@@ -26,9 +26,9 @@ tp_gensym(_Root, N) :-
 
 /*----gennum------------------------------------------------------------*/
 
-tp_prettyPrintCE(CE):- 
+tp_prettyPrintCE(N,CE):-
 	debugging(X),
-            (X = on ->  prettyPrintCE(CE) ; true).
+	(X >= N -> prettyPrintCE(CE) ; true).
 
 prettyPrintCE(CE):- prettyPrintCE(CE,0).
 
@@ -69,19 +69,32 @@ largeCE(CE):-
 	functor(CE,F,_),
 	member(F,[',' , ';' , exists , all, atMost , atLeast]).
 
-tp_writeln(Term):-
+%---------------------------------------------------------
+/* Dont know if this is consistent, but 
+   0 is everything
+   1 show all ids checked, LCEs and structures
+   2 shows all ids checked and LCEs
+   3 shows ids checked
+*/
+
+:- local debugging/1.
+
+:- dynamic debugging/1.
+
+:- set_debug_on(2).
+
+set_debug_off:- 
+	retractall(debugging(_)),
+	assert(debugging(0)).
+
+set_debug_on(N):- 
+	retractall(debugging(_)),
+	assert(debugging(N)).
+
+tp_writeln(N,Term):-
 	debugging(X),
-	(X = on -> writeln(Term) ; true).
+	(X >= N -> tab(N),writeln(Term) ; true).
 
+%---------------------------------------------------------
 end_of_file.
-
-reset_atomnum:- conset(tp_atomnum, 0).  %true is 1.
-
-
-tp_incatomnum(Inc) :- conget(tp_atomnum, O), 
-		    N is O + Inc, conset(tp_atomnum, N).
-
-tp_testatomnum(N):- conget(tp_atomnum, N).
-
-?- reset_atomnum.
 

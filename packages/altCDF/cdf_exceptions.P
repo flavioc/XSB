@@ -9,43 +9,23 @@
 
 :- import using_xj/0 from usermod.
 
-:- comment(module,"This module is designed to handle different kinds
-of ""exceptions"" that arise in execution of CDF.  The word
-""exceptions"" is used to cover both @em{warnings} and @em{errors}.
-An error is defined as an exception that causes a special action
-(usually a message) along with a change in execution; a warning causes
-a special action (again, usually a message) but no change in
-execution.  Accordingly CDF errors are handled via @tt{cdf_error/2}
-which uses Prolog catch and throw mechanism, while CDF warnings are
-handled directly by the predicate @tt{cdf_warning/2}.
+:- comment(module,"This module was originally designed to handle
+different kinds of ""exceptions"" that arise in execution of CDF.  In
+CDF, a distinction is made between errors that are thrown to the
+nearest catcher, and warnings in which an action is taken (usually
+writing a message out to the console or a log along with possibly
+failing.
 
-Exceptions and warnings are typed.  While the typing is uncertain at
-this point, the current types are: @tt{update} if the exception arose
-while trying to update CDFS; and @tt{consistency} if the exception
-arose while trying to check the CDF for consistency.  @bf{Need to
-update this, as new warnings and errors have been added}.
+Errors per se in cdf are best handled using the mechanisms for
+throwing errors as described in the XSB manual.  @module{cdf_config}
+contains a rule for @pred{default_user_error_handler/2}, which checks
+to see if the dynamic preicate @tt{using_xj/0} has been defined.  If
+not, a message rris written to XSB's standard warning stream.  If so,
+a message is displayed via a GUI window.").
 
-Both @tt{cdf_error/2} and @tt{cdf_warning/2} check to see if the
-dynamic preicate @tt{using_xj/0} has been defined.  If not, a message
-rris written to XSB's standard error or standard warning stream.  If so,
-a message is displayed via a GUI window and, in the case of an error,
-something or other happens to control (currently there are just stubs).
-").
-
-:- comment(cdf_error/2,"@tt{cdf_error(Type,Error)} can be used to
-handle errors of different types -- currently
-@tt{consistency_warning} and @tt{update_warning}.  Actions taken
-depend on whether @pred{using_xj/0} is defined or not.
-
-In order for @tt{cdf_error/2} to work properly, some ancestor,
-@tt{Goal} for it must be called in the scope of a catch statement of
-the form
-
-@tt{catch(Goal,cdf_error(Type,List),handle_cdf_error(Type,List))}.
-
-Otherwise, @tt{cdf_error/2} will be handled by the default error
-handler.
-").
+:- comment(cdf_message/1,"The predicate @tt{cdf_message(List)} writes
+a message either to the CDF log or to the XSBs standard message
+stream.").
 
 cdf_message(List):- 
 	(using_xj -> 

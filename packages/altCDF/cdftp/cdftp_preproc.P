@@ -2,6 +2,8 @@
 :- document_export cdftp_preprocess/3.
 :- document_import topIdentifier/1 from cdftp_cdfsc.
 
+:- import domain_error/4 from error_handler.
+
 cdftp_preprocess(In,Out,N):- 
 	safe_list_to_comma(In,Mid),
 	preprocess1(Mid,Out,0,N).
@@ -59,8 +61,13 @@ preprocess1(sameAs(R1,C1,R2,C2),sameAs(R11,C11,R21,C21),NIn,NOut):- !,
 	preprocess1(C2,C21,NMid,NOut).
 preprocess1(not(Class),C1,NIn,NOut):- !,
 	preprocessNot(Class,C1,NIn,NOut).
-preprocess1(oid(Id,Cmpt),unique(cid(Id,Cmpt)),N,N).
-preprocess1(Class,Class,N,N).
+preprocess1(component(Cmpt),component(Cmpt),N,N):- !.
+preprocess1(oid(Id,Cmpt),unique(cid(Id,Cmpt)),N,N):- !.
+preprocess1(unique(cid(Id,Cmpt)),unique(cid(Id,Cmpt)),N,N):- !.
+preprocess1(cid(Id,Cmpt),cid(Id,Cmpt),N,N):- !.
+preprocess1(Other,_,_Nin,_Nin):-
+	domain_error(['class expression constructor'],Other,
+	                     'preprocess1/4',1).
 
 preprocessNot(','(A,B),';'(A1,B1),NIn,NOut):- !, 
 	preprocessNot(A,A1,NIn,NMid),
@@ -102,8 +109,12 @@ preprocessNot(sameAs(R1,C1,R2,C2),
 preprocessNot(not(Class),C1,NIn,NOut):- !,
 	% Should fail here if class is cdfroot.
 	preprocess1(Class,C1,NIn,NOut).
-preprocessNot(oid(Id,Cmpt),not(unique(Id,Cmpt)),Nin,Nin).
-preprocessNot(Class,not(Class),Nin,Nin).    % includes unique.
+preprocessNot(oid(Id,Cmpt),not(unique(Id,Cmpt)),Nin,Nin):- !.
+preprocessNot(unique(cid(Id,Cmpt)),not(unique(Id,Cmpt)),Nin,Nin):- !.
+preprocessNot(cid(Class,Cmpt),not(cid(Class,Cmpt)),Nin,Nin):- !.
+preprocessNot(Other,_,_Nin,_Nin):-
+	domain_error(['class expression constructor'],Other,
+	                     'preprocessNot/4',1).
 
 preprocRel(inv(inv(R)),R1):- !,
 	preprocRel(R,R1).

@@ -5,14 +5,14 @@
 	retract_intensional_rules/1,
 	cdf_exists/1.
 
-:- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3,
-	necessCond_ext/2, %ic_ext/1, 
-	minAttr_ext/4, maxAttr_ext/4
+:- import allAttr_ext/3, isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, 
+	minAttr_ext/4, maxAttr_ext/4,
+	necessCond_ext/2, coversAttr_ext/3 
 		 from usermod.
 
-:- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3,
-	  necessCond_int/2, % ic_int/1, 
-	  minAttr_int/4, maxAttr_int/4
+:- import isa_int/2, allAttr_int/3, hasAttr_int/3, classHasAttr_int/3, 
+	  minAttr_int/4, maxAttr_int/4,
+	  necessCond_int/2, coversAttr_int/3
 		 from usermod.
 
 :- import component_table_int/3 from usermod.
@@ -76,9 +76,9 @@ sort_and_write_terms(Terms) :-
 sort_and_write_terms(_Terms).
 
 cdf_ext_inst(Term):-
-	(Term = allAttr_ext(_,_,_) ; 
+	(Term = isa_ext(_,_) ; Term = allAttr_ext(_,_,_) ; 
 	 Term = classHasAttr_ext(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
-             Term = necessCond_ext(_,_) ; Term = isa_ext(_,_) ; 
+             Term = necessCond_ext(_,_) ; coversAttr_ext(_,_,_) ; 
 	 Term = minAttr_ext(_,_,_,_) ; Term = maxAttr_ext(_,_,_,_) ).
 
 dump_extensional_facts_2:- 
@@ -119,6 +119,7 @@ reload_extensional(Dir):-
 reload_extensional :-
 	repeat,
 	read_canonical(Term),
+%	writeln(Term),
 	(Term == end_of_file
 	 ->	!
 	 ; Term = :-(_)
@@ -136,6 +137,12 @@ information is then retracted.").
 
 /* TLS: question: should this do an assert or a newExtTerm? */
 merge_intensional_rules :-
+	 isa_int(CCid,PCid),\+ isa_ext(CCid,PCid),
+	 asserta(isa_ext(CCid,PCid)),
+	 fail
+	 ;
+	 retractall(isa_int(_,_)),
+
 	 allAttr_int(SCid,RCid,TCid), \+allAttr_ext(SCid,RCid,TCid),
 	 asserta(allAttr_ext(SCid,RCid,TCid)),
 	 fail
@@ -160,11 +167,11 @@ merge_intensional_rules :-
 	 ;
 	 retractall(necessCond_int(_,_)),
 
-	 isa_int(CCid,PCid),\+ isa_ext(CCid,PCid),
-	 asserta(isa_ext(CCid,PCid)),
+	 coversAttr_int(SCid,RCid,TCid),  \+coversAttr_ext(SCid,RCid,TCid),
+	 asserta(coversAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
-	 retractall(isa_int(_,_)),
+	 retractall(coversAttr_int(_,_,_)),
 
 	 minAttr_int(SCid,RCid,TCid,N),  \+minAttr_ext(SCid,RCid,TCid,N),
 	 asserta(minAttr_ext(SCid,RCid,TCid,N)),
@@ -229,7 +236,7 @@ load_intensional_rules(Path,Name):-
    	    see(File),
 	    read_intensional_rules_1(Name),
 	    seen
-	  ; existence_error(read,file,File,'load_intensional_rules/2') ).
+	  ; existence_error(file,File,'load_intensional_rules/2',2) ).
 
 retract_intensional_rules(Name):- 
 	component_table_int(Head,_,_),
@@ -253,35 +260,56 @@ read_intensional_rules_2(end_of_file,_Name).
 read_intensional_rules_2('<='(Head,Body),Name):- !,
 	dlrule_to_cdf('<='(Head,Body),CDFList),
 	member((:-(H,B)),CDFList),
-	transform_intensional_rules(H,NewHead,Name),
-	asserta((:-(H,NewHead))),
-	asserta((:-(NewHead,B))),
+	transform_intensional_rules(H,BlankBody,NewHead,Name),
+%	transform_intensional_rules(H,NewHead,Name),
+	functor(H,T,A),
+	functor(BlankHead,T,A),
+	BlankHead =.. [_|Args],
+	BlankBody =.. [_|Args],
+	clause_assert(BlankHead,BlankBody),
+	assert((:-(NewHead,B))),
 	fail.
 % these should be executable directives ala table.
 read_intensional_rules_2((:-(Query)),_Name):- !,
 	call(Query),
 	fail.
 read_intensional_rules_2((Head :- Body),Name):- !,
-	transform_intensional_rules(Head,NewHead,Name),
-	asserta((:-(Head,NewHead))),
-	asserta((:-(NewHead,Body))),
+	transform_intensional_rules(Head,BlankBody,NewHead,Name),
+	functor(Head,T,A),
+	functor(BlankHead,T,A),
+	BlankHead =.. [_|Args],
+	BlankBody =.. [_|Args],
+	clause_assert(BlankHead,BlankBody),
+	assert((:-(NewHead,Body))),
 	fail.
 %read_intensional_rules_2(auxiliary_cdf_rule(Head,Body),Name):- !,
 %	auxiliary_cdf_rule(Name,Head,Body):- !,
 %	asserta((:-(Head,Body))),
 %	fail.
-read_intensional_rules_2(T,Name):- 
-	transform_intensional_rules(T,NewHead,Name),
-	asserta((:-(T,NewHead))),
-	asserta(NewHead),
+read_intensional_rules_2(Head,Name):- 
+	transform_intensional_rules(Head,BlankBody,NewHead,Name),
+%	transform_intensional_rules(T,NewHead,Name),
+	functor(Head,T,A),
+	functor(BlankHead,T,A),
+	BlankHead =.. [_|Args],
+	BlankBody =.. [_|Args],
+	clause_assert(BlankHead,BlankBody),
+	assert(NewHead),
 	fail.
 
-transform_intensional_rules(Head,NewHead,Name):- 
+clause_assert(Head,Body):- 
+	(clause(Head,Body) -> true ; asserta((:-(Head,Body)))).
+
+% hasAttr_int(_,_,_) , hasAttr_int_Name(_,_,_)  ; hasAttr_int_name(<Orig stuff>) 
+transform_intensional_rules(Head,BlankHead,NewHead,Name):- 
 	component_table_int(Head,_,_),
 	Head =.. [F|T],
+	functor(Head,F,N),
 	concat_atom([F,'_',Name],NewF),
-	NewHead =.. [NewF|T],!.
-transform_intensional_rules(Head,_NewHead,Name):- 
+	NewHead =.. [NewF|T],
+	functor(BlankHead,NewF,N),
+	!.
+transform_intensional_rules(Head,_BlankHead,_NewHead,Name):- 
 	cdf_warning(rule_load,['Cannot intern intensional rule with head ',
 	                                  Head,' for directory ',Name]),
 	fail.

@@ -1,20 +1,19 @@
 :- compiler_options([xpp_on]).
 
-#include "./cdf_definitions.h"
-
 :- export
             abolish_cdf_tables/0,
-	explosive_isa/2,
 	cdf_id_fields/4,
 	cdf_root/1,
-%	ic/1, 
-	necessCond/2,
+	concrete_component/1,
+	necessCond/2, immed_necessCond/2,
+	explosive_isa/2,
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
 	hasAttr/3, immed_hasAttr/3,
 	allAttr/3, immed_allAttr/3, 
 	minAttr/4, immed_minAttr/4, 
 	maxAttr/4, immed_maxAttr/4, 
 	classHasAttr/3, immed_classHasAttr/3, 
+	coversAttr/3, immed_coversAttr/3,
 	in_hierarchy/1,
 	newExtTerm/1, newExtTerm/2, retractallExtTerm/1,
 	initialize_state/0, system_component/1, initialize_cdf/0,
@@ -22,6 +21,8 @@
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
 	updateExtTerm/3.
+
+#include "./cdf_definitions.h"
 
 :- (search_module(cdf_xj,_,_,_,_,_)
     ->	   consult(cdf_xj)
@@ -33,17 +34,19 @@
 :- import apply_checks/2 
 	from cdf_checks.
 
-:- import necessCond_ext/2, %ic_ext/1, 
-              isa_ext/2, hasAttr_ext/3, minAttr_ext/4,
-	  classHasAttr_ext/3, allAttr_ext/3,maxAttr_ext/4
-						from usermod.
+:- import  isa_ext/2, allAttr_ext/3, hasAttr_ext/3,
+	classHasAttr_ext/3, 
+	minAttr_ext/4,   maxAttr_ext/4, 
+  	  necessCond_ext/2, coversAttr_ext/3		from usermod.
+
+:- import  isa_int/2, hasAttr_int/3, minAttr_int/4,
+	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4,
+	  necessCond_int/2, coversAttr_int/3                   from
+      usermod.
+
+:- import cdf_index/3,cdf_index/4 from usermod.
 
 :- import call0/1 from machine.
-
-:- import necessCond_int/2, %ic_int /1, 
-	  isa_int/2, hasAttr_int/3, minAttr_int/4,
-	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4
-						from  usermod.
 
 :- import cdf_set_log_off/0, cdf_log/1, cdf_reset_log/0
 	from cdf_concurrency.	
@@ -59,8 +62,9 @@
 
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
 	from cdf_xj.
-
 :- import cdf_message/1 from cdf_exceptions.
+
+:- import check_var/3 from error_handler.
 
 :- import '_$index'/3 from file_op.
 %%:- import conset/2, conget/2, coninc/1 from gensym.
@@ -80,43 +84,31 @@
 
 %%%%%%%%%%%%% Core Declarations 
 
+% TLS: moved cdf_index/3 to 
+% cdf_configure -- this way we can all set our own indices.
+
 cdf_dynamic(compdlrule/3).
 cdf_dynamic(compdltrans/3).
 
-cdf_dynamic(necessCond_ext/2).
-cdf_index(necessCond_ext,2,[*(1)]).
-
 cdf_dynamic(isa_ext/2).
-cdf_index(isa_ext,2,[*(1),*(2)],5001).
-
-cdf_dynamic(hasAttr_ext/3).
-%%cdf_index(hasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
-cdf_index(hasAttr_ext,3,[*(1) + *(2) + *(3),*(1) + *(2),*(2) + *(3)]).
-cdf_dynamic(minAttr_ext/4).
-cdf_index(minAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
-cdf_dynamic(classHasAttr_ext/3).
-cdf_index(classHasAttr_ext,3,[*(1) + *(2) + *(3),*(1) + *(2),*(2) + *(3)]).
 cdf_dynamic(allAttr_ext/3). 
-cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+cdf_dynamic(hasAttr_ext/3).
+cdf_dynamic(classHasAttr_ext/3).
+cdf_dynamic(minAttr_ext/4).
 cdf_dynamic(maxAttr_ext/4). 
-cdf_index(maxAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
+cdf_dynamic(necessCond_ext/2).
+cdf_dynamic(coversAttr_ext/3).
 
 %%%%%%%%%%%%% Declarations for External Intensional View
 
-%cdf_dynamic(ic_int/1).
-
-cdf_dynamic(necessCond_int/2).
-
 cdf_dynamic(isa_int/2).
-
+cdf_dynamic(allAttr_int/3).
 cdf_dynamic(hasAttr_int/3).
 cdf_dynamic(classHasAttr_int/3).
-cdf_dynamic(allAttr_int/3).
-
 cdf_dynamic(minAttr_int/4).
 cdf_dynamic(maxAttr_int/4).
-
-cdf_index(_,_,_,_):- fail.
+cdf_dynamic(necessCond_int/2).
+cdf_dynamic(coversAttr_int/3).
 
 %%%%%%%%%%%%% Declarations for caching and XJ interface
 /* TLS
@@ -308,8 +300,13 @@ cdf_id_fields2(crid(N,S),crid,N,S).
 cdf_id_fields2(crrid(N,S),crrid,N,S).
 cdf_id_fields2(crcrid(N,S),crcrid,N,S).
 
+concrete_component(cdftm).
+concrete_component(cdfpt).
+
 product_identifier(Id):- 
-	cdf_id_fields(Id,_F,I,_S),
+	cdf_id_fields(Id,_F,I,Comp),
+	nonvar(Comp),
+	\+ concrete_component(Comp),
 	structure(I).
 
 %%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -510,8 +507,13 @@ isa_bf(Sub,Sup):-
 
 #if TABLEDISA
 :- table isa_bf_maybe_table/2.
+
 #endif
 
+% TLS: this is to handle bb intensional rules like in cdftm.
+isa_bf_maybe_table(Sub,Sup):- 
+	nonvar(Sup),
+	isa_int(Sub,Sup).
 isa_bf_maybe_table(Sub,Sup):- 
 	(   immed_isa1(Sub,Mid)
 	  ; implicit_isa_bf(Sub,Mid) ),
@@ -600,13 +602,14 @@ into their constituent identifiers and @tt{explosive_isa/2} is
 recursively called on each of these.  ").
 
 explosive_isa(Id1,Id2):- 
-	((cdf_id_fields(Id1,F,N1,S),cdf_id_fields(Id2,F,N2,S),
-	  (structure(N1) ; structure(N2))) -> 
-	    make_terms_if_necess(N1,N2),
-	    N1 =.. [_|Args1],
-	    N2 =.. [_|Args2],
-	    explosive_isa_list(Args1,Args2)
-        ;   isa(Id1,Id2) ).
+	  ( ((product_identifier(Id1) ; product_identifier(Id2)),   
+	      cdf_id_fields(Id1,F,N1,S),
+	      cdf_id_fields(Id2,F,N2,S)) -> 
+	              make_terms_if_necess(N1,N2),
+		  N1 =.. [_|Args1],
+		  N2 =.. [_|Args2],
+		  explosive_isa_list(Args1,Args2)
+	      ;       isa(Id1,Id2) ).
 
 make_terms_if_necess(N1,N2):- 
 	(structure(N1) -> 
@@ -621,7 +624,7 @@ explosive_isa_list([Arg1|R1],[Arg2|R2]):-
     explosive_isa_list(R1,R2).
 
 
-%%%%%%%%%%%%%%%%%% hasAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%% hasAttr %%%%%%%%%%%%%%%%%%%%
 
 :- comment(immed_hasAttr/3, "@tt{immed_hasAttr(SCid,Rid,TCid)}
 accesses facts stored directly in @pred{hasAttr_ext/3} in the CDF state,
@@ -1272,15 +1275,194 @@ not_max_implicative_maxAttr_23fix(Term,BindPat) :-
 	once(explosive_isa(TCidO,TCid)),
 	varLTE(M,N).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%necessCond %%%%%%%%%%%%%%%%%%
 
-%ic(Formula):- ic_ext(Formula).
-%ic(Formula):- ic_int(Formula).
+immed_necessCond(Class,Formula):- 
+	apply_checks(query,necessCond_ext(Class,Formula)),
+	check_var(Formula,'immed_necessCond/2',2),
+	immed_necessCond(Class,Formula).
 
-necessCond(Class,Formula):- necessCond_ext(Class,Formula).
-necessCond(Class,Formula):- necessCond_int(Class,Formula).
+immed_necessCond1(Class,Formula):- 
+	necessCond_ext(Class,Formula).
+immed_necessCond1(Class,Formula):- 
+	necessCond_int(Class,Formula).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+necessCond(Class,Formula):- 
+	gens_good_isas(Class),!,
+	check_var(Formula,'inecessCond/2',2),
+   	necessCond_1fix(Class,Formula).
+necessCond(Class,Formula):- 
+	check_var(Formula,'inecessCond/2',2),
+	immed_necessCond1(ClassAb,Formula),
+	once(explosive_isa(Class,ClassAb)).
+
+% Tabling for now -- because isa might not always be tabled.
+:- table necessCond_1fix/2.
+necessCond_1fix(Class,Formula) :-
+	isa(Class,ClassP), 
+	immed_necessCond1(ClassP,Formula).
+
+%%%%%%%%%%%%%% coversAttr %%%%%%%%%%%%%%%%%%%%
+
+:- comment(immed_coversAttr/3, "@tt{immed_coversAttr(SCid,Rid,TCid)}
+accesses facts stored directly in @pred{coversAttr_ext/3} in the CDF state,
+as well as those defined via intensional rules.").
+
+immed_coversAttr(SCid,Rid,TCid) :- 
+	apply_checks(query,coversAttr_ext(SCid,Rid,TCid)),
+	immed_coversAttr1(SCid,Rid,TCid).
+	
+immed_coversAttr1(SCid,Rid,TCid) :-
+	coversAttr_ext(SCid,Rid,TCid).
+immed_coversAttr1(SCid,Rid,TCid) :-
+	coversAttr_int(SCid,Rid,TCid).
+
+:- comment(coversAttr/3, "@tt{coversAttr(SCid,Rid,TCid)} defines the
+inheritable relation predicate, from an object to all elements in a
+set.  @tt{SCid} is the source class or object ID, @tt{Rid} is the
+relation ID, and @tt{TCid} is the target class or object ID.  For
+these inheritable relations, the taxonomy is traversed and variables
+are bound only to values that carry the most information.
+
+It is useful to contrast @pred{coversAttr/3} to @pred{hasAttr/3}.  In
+the case where Source and Target are class ids, the semantics of
+@tt{hasAttr(Source,Relation,Target)} is
+
+@begin{center}
+forall Elt [isa(Elt,Source) implies  exists Targ [rel(X,Relation,Targ)
+and elt(Targ,Target)]] 
+@end{center}
+
+Note that from this axiom and the inheritance axioms in CDF, hasAttr/3
+inheraits ""upward"" in its third argument.  That is if
+@tt{isa(Target,LargerTarget)} holds, and
+@tt{hasAttr(Source,Relation,Target)}, then
+@tt{hasAttr(Source,Relation,LargerTarget)} also holds.  However,
+@tt{hasAttr(Source,Relation,SmallerTarget)} does not necessarily hold
+if SmallerTarget is a proper subset of, or object in, LargerTarget.
+
+This is not always the desired semantics for all applications.  For
+instance, if a shipper ships to anywhere in New York State, then he
+ships to Long Island, but not necessarily to anywhere in the North
+Eastern US.  If we want to make Long Island places a subclass of New
+York State places which are a subclass of North Eastern US places,
+then we need a different kind of inheritance.  This is provided for by
+@tt{coversAttr(Source,Relation,Target)} defined as 
+
+@begin{center}
+forall Elt [isa(Elt,Source) implies forall Targ [elt(Targ,Target)
+                                              implies rel(Elt,Relation,Targ) ]]
+@End{center}
+
+It is easy to see that @tt{coversAttr/3} has a form of 3rd argument
+inheritance that can properly model the above transportation example.
+In addition, it can also be seen that first and second argument
+inheritance in @tt{coversAttr/3} works in the same manner as
+@tt{hasAttr}.
+
+An index I is used only if all arguments that I uses consist of ground
+atomic identifiers.").
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+coversAttr(SCid,Rid,TCid):- 
+	apply_checks(query,coversAttr_ext(SCid,Rid,TCid)),
+	coversAttr1(SCid,Rid,TCid).
+	
+% cdf_index(coversAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+coversAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(SCid),
+	gens_good_isas(Rid),!,
+   	coversAttr_12fix(SCid,Rid,TCid).
+coversAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(SCid),!,
+   	coversAttr_1fix(SCid,Rid,TCid).
+coversAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(Rid),
+	gens_good_isas(TCid),!,
+   	coversAttr_23fix(SCid,Rid,TCid).
+coversAttr1(SCid,Rid,TCid) :-
+	immed_coversAttr1(SCidAb,RidAb,TCidAb),
+	once(explosive_isa(SCid,SCidAb)),
+	once(explosive_isa(RidAb,Rid)),
+	once(explosive_isa(TCid,TCidAb)).
+
+/**********/
+
+:- table coversAttr_12fix/3.
+coversAttr_12fix(SCid,Rid,TCid) :-
+	OutTerm = rln(SCid,Rid,TCid),
+	copy_term(OutTerm,BindPat),
+	coversAttr_12fix_sub(SCid,Rid,TCid),
+	(not_max_implicative_coversAttr_12fix(OutTerm,BindPat) -> fail ; true).
+
+:- table coversAttr_12fix_sub/3.
+coversAttr_12fix_sub(SCid,Rid,TCid) :-
+	isa(SCid,SCidP), %\+ cdf_root(SCidP),
+	isa(RidC,Rid),
+	immed_coversAttr1(SCidP,RidC,TCidC),
+	once(explosive_isa(TCid,TCidC)).
+
+% Succeeds if Term is maximally implicative for binding pattern,
+% i.e. there is no other Term that unifies with BindPat implied by
+% the axioms of the CDF state that implies Term, other than Term itself.
+not_max_implicative_coversAttr_12fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RidO,TCidO),
+	Term = rln(SCid,Rid,TCid),
+	coversAttr_12fix_sub(SCidO,RidO,TCidO),
+	\+ (BindPat = Term),	
+	once(explosive_isa(RidO,Rid)),	
+	once(explosive_isa(SCid,SCidO)),	
+	once(explosive_isa(TCid,TCidO)).	
+
+%----------
+:- table coversAttr_1fix/3.
+coversAttr_1fix(SCid,Rid,TCid) :-
+	OutTerm = rln(SCid,Rid,TCid),
+	copy_term(OutTerm,BindPat),
+	coversAttr_1fix_sub(SCid,Rid,TCid),
+	(not_max_implicative_coversAttr_1fix(OutTerm,BindPat) -> fail ; true).
+
+:- table coversAttr_1fix_sub/3.
+coversAttr_1fix_sub(SCid,Rid,TCid):- 
+	isa(SCid,SCidP), 
+	immed_coversAttr1(SCidP,RidC,TCidC),
+	once(explosive_isa(RidC,Rid)),
+	once(explosive_isa(TCid,TCidC)).
+
+not_max_implicative_coversAttr_1fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RidO,TCidO),
+	Term = rln(SCid,Rid,TCid),
+	coversAttr_1fix_sub(SCidO,RidO,TCidO),
+	\+ (BindPat = Term),	
+	once(explosive_isa(RidO,Rid)),	
+	once(explosive_isa(SCid,SCidO)),	
+	once(explosive_isa(TCid,TCidO)).	
+%----------
+:- table coversAttr_23fix/3.
+coversAttr_23fix(SCid,Rid,TCid) :-
+	OutTerm = rln(SCid,Rid,TCid),
+	copy_term(OutTerm,BindPat),
+	coversAttr_23fix_sub(SCid,Rid,TCid),
+	(not_max_implicative_coversAttr_23fix(OutTerm,BindPat) -> fail ; true).
+
+:- table coversAttr_23fix_sub/3.
+coversAttr_23fix_sub(SCid,Rid,TCid):- 
+	isa(RidC,Rid),
+	isa(TCid,TCidC),
+	immed_coversAttr1(SCidP,RidC,TCidC),
+	once(explosive_isa(SCid,SCidP)). %\+ cdf_root(SCidP).
+
+not_max_implicative_coversAttr_23fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RidO,TCidO),
+	Term = rln(SCid,Rid,TCid),
+	coversAttr_23fix_sub(SCidO,RidO,TCidO),
+	\+ (BindPat = Term),	
+	once(explosive_isa(RidO,Rid)),	
+	once(explosive_isa(SCid,SCidO)),	
+	once(explosive_isa(TCid,TCidO)).	
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(retractallExtTerm/1, "@tt{retractallExtTerm(Term)} retracts
 all extensional CDF facts that unify with the parameters.  Note that
@@ -1372,7 +1554,9 @@ abolish_cdf_tables:-
 	abolish_allAttr_inherits,
 	abolish_classHasAttr_inherits,
 	abolish_maxAttr_inherits,
-	abolish_minAttr_inherits.
+	abolish_minAttr_inherits,
+	abolish_coversAttr_inherits,
+	abolish_necessCond_inherits.
 
 #if TABLEDISA
 abolish_isas:- 
@@ -1386,16 +1570,20 @@ abolish_isas:-
 	abolish_table_pred(table_isa(_,_)).
 #endif
 
-abolish_nec_tables(minAttr_ext(_,_,_,_)) :- !,
-	abolish_minAttr_inherits.
-abolish_nec_tables(maxAttr_ext(_,_,_,_)) :- !,
-	abolish_maxAttr_inherits.
 abolish_nec_tables(hasAttr_ext(_,_,_)) :- !,
 	abolish_hasAttr_inherits.
+abolish_nec_tables(coversAttr_ext(_,_,_)) :- !,
+	abolish_coversAttr_inherits.
 abolish_nec_tables(allAttr_ext(_,_,_)) :- !,
 	abolish_allAttr_inherits.
 abolish_nec_tables(classHasAttr_ext(_,_,_)) :- !,
 	abolish_classHasAttr_inherits.
+abolish_nec_tables(minAttr_ext(_,_,_,_)) :- !,
+	abolish_minAttr_inherits.
+abolish_nec_tables(maxAttr_ext(_,_,_,_)) :- !,
+	abolish_maxAttr_inherits.
+abolish_nec_tables(necessCond_ext(_,_)) :- !,
+	abolish_necessCond_inherits.
 abolish_nec_tables(isa_ext(_,_)) :- !,
             abolish_isas,
 	abolish_hasAttr_inherits,
@@ -1405,14 +1593,6 @@ abolish_nec_tables(isa_ext(_,_)) :- !,
 	abolish_minAttr_inherits.
 abolish_nec_tables(_).
 
-abolish_minAttr_inherits :-
-	abolish_table_pred(minAttr_1fix(_,_,_,_)),
-	abolish_table_pred(minAttr_12fix(_,_,_,_)),
-	abolish_table_pred(minAttr_23fix(_,_,_,_)),
-	abolish_table_pred(minAttr_1fix_sub(_,_,_,_)),
-	abolish_table_pred(minAttr_12fix_sub(_,_,_,_)),
-	abolish_table_pred(minAttr_23fix_sub(_,_,_,_)).
-
 abolish_hasAttr_inherits :-
 	abolish_table_pred(hasAttr_1fix(_,_,_)),
 	abolish_table_pred(hasAttr_12fix(_,_,_)),
@@ -1420,6 +1600,14 @@ abolish_hasAttr_inherits :-
 	abolish_table_pred(hasAttr_1fix_sub(_,_,_)),
 	abolish_table_pred(hasAttr_12fix_sub(_,_,_)),
 	abolish_table_pred(hasAttr_23fix_sub(_,_,_)).
+
+abolish_coversAttr_inherits :-
+	abolish_table_pred(coversAttr_1fix(_,_,_)),
+	abolish_table_pred(coversAttr_12fix(_,_,_)),
+	abolish_table_pred(coversAttr_23fix(_,_,_)),
+	abolish_table_pred(coversAttr_1fix_sub(_,_,_)),
+	abolish_table_pred(coversAttr_12fix_sub(_,_,_)),
+	abolish_table_pred(coversAttr_23fix_sub(_,_,_)).
 
 abolish_classHasAttr_inherits :- true.
 /*	abolish_table_pred(classHasAttr_1fix(_,_,_)),
@@ -1445,15 +1633,31 @@ abolish_maxAttr_inherits :-
 	abolish_table_pred(maxAttr_12fix_sub(_,_,_,_)),
 	abolish_table_pred(maxAttr_23fix_sub(_,_,_,_)).
 
-%%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+abolish_minAttr_inherits :-
+	abolish_table_pred(minAttr_1fix(_,_,_,_)),
+	abolish_table_pred(minAttr_12fix(_,_,_,_)),
+	abolish_table_pred(minAttr_23fix(_,_,_,_)),
+	abolish_table_pred(minAttr_1fix_sub(_,_,_,_)),
+	abolish_table_pred(minAttr_12fix_sub(_,_,_,_)),
+	abolish_table_pred(minAttr_23fix_sub(_,_,_,_)).
+
+abolish_necessCond_inherits :-
+	abolish_table_pred(coversAttr_1fix(_,_)).
+
+%%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% performance testing predicate
 :- comment(hide,set_chk_index/0).
 set_chk_index :-
 	set_chk_index(isa_ext(_,_)),
 	set_chk_index(hasAttr_ext(_,_,_)),
+	set_chk_index(allAttr_ext(_,_,_)),
+	set_chk_index(coversAttr_ext(_,_,_)),
 	set_chk_index(classHasAttr_ext(_,_,_)),
-	set_chk_index(allAttr_ext(_,_,_)).
+	set_chk_index(minAttr_ext(_,_,_,_)),
+	set_chk_index(maxAttr_ext(_,_,_,_)),
+	set_chk_index(necessCond_ext(_,_)).
+
 
 set_chk_index(Goal) :-
 	asserta((Goal :- chk_index(Goal))).
@@ -1575,19 +1779,4 @@ count_success_1(Term):-
 	conget('_$size_matters'),
 	fail.
 count_success_1(_).
-
-:- comment(is_a_classHasAttr/1, "@tt{is_a_classHasAttr(Rid)} checks
-that @tt{Rid} is the class ID of a subclass of @tt{id('CDF
-Class-Object Relations',cdf)}.  If @tt{Rid} is unbound, all such
-(proper) subclasses are returned nondeterministically.").
-
-is_a_classHasAttr(Rid) :-
-	proper_isa(Rid,crid('CDF Class-Object Relations',cdf)).
-
-abstract_identifier(Id,IdAb):- 
-	cdf_id_fields(Id,F,I,S),
-	(structure(Id) -> 
-		functor(I,N,A),functor(I1,N,A),
-		cdf_id_fields(IdAb,F,I1,S)
-	; 	Id = IdAb).
 

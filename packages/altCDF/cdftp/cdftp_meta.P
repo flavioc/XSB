@@ -1,9 +1,8 @@
 :- compiler_options([spec_off]).
 
 :- document_export 
-            checkContexts/4,
-            sat_test/1,
-	set_debug_off/0, set_debug_on/0,
+            checkContexts/6,
+            sat_test/1,sat/3,
 	subsumes/2.
 
 :- document_import tp_subclass/2,topIdentifier/1,bottomIdentifier/1
@@ -13,29 +12,16 @@
 
 :- import member/2,memberchk/2, length/2,append/3,ith/3 from basics.
 :- import reset_gennum/0,tp_gennum/1,tp_gensym/2,
-	tp_writeln/1 from tp_utils.
+	tp_writeln/2 from tp_utils.
 
 :- [cdftp_getObj].
-
-:- dynamic debugging/1.
-
-:- set_debug_on.
-
-set_debug_off:- 
-	retractall(debugging(_)),
-	assert(debugging(off)).
-
-set_debug_on:- 
-	retractall(debugging(_)),
-	assert(debugging(on)).
 
 nonDetType(acyclic).
 %nonDetType(all).
 
 sat_test(Expr):- 
-	(sat(Expr,AbdIn,ConstIn,_N) ->
-%	    apply_ics(AbdIn,AbdOut,ConstIn,ConstOut),
-	    tp_writeln(world(AbdIn,ConstIn))
+	(sat(Expr,_AbdIn,_ConstIn,_N) -> 
+	    true
 	  ; writeln(cannot_satisfy(Expr)),fail).
 	
 sat(Expr):- sat(Expr,_,_,_).
@@ -76,16 +62,21 @@ No metanot needed.  Nots are pushed in preproc.
 
 %------------------------------------------------------------------------------------------
 
+sat(ExprIn,AbdOut,ConstOut):- 
+	sat(ExprIn,AbdOut,ConstOut,_N).
+
 sat(ExprIn,AbdOut,ConstOut,_N):- 
 	cdftp_preprocess(ExprIn,Expr,_N),
 	reset_gennum,
-%	(integer(N) -> 
-%	    true 
-%	  ; cdf_error(tp,['Unknown number of classes in ',Expr]),fail),
 	tp_gennum(N),
 	meta(Expr,N,abd([],[N]),AbdOut,[],ConstOut),
-%	tp_writeln('checking :'),tp_writeln(const(ConstOut)),tp_writeln(AbdOut),
-	checkFinalConstraints(ConstOut,AbdOut).
+	checkFinalConstraints(ConstOut,AbdOut),
+	tp_writeworld(ConstOut,AbdOut).
+
+tp_writeworld(ConstOut,AbdOut):- 
+	tp_writeln(3,'Brave New World:'),
+	tp_writeln(3,const(ConstOut)),
+	tp_writeln(3,AbdOut).
 
 subsumes(Big,Little):- \+ sat((Little,not(Big))).
 
@@ -440,12 +431,20 @@ createNewElts(N,[New|Rest]):-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-checkContexts(Structure,WorldList,CtxtSort,Worlds):- 
+checkContexts(Constraints,AncList,Structure,WorldList,CtxtSort,Worlds):- 
+	omit_negative_loops(Constraints,AncList),
 	length(WorldList,Worlds),
 	functor(Contexts,contexts,Worlds),
 	functor(CtxtSort,contexts,Worlds),
 	checkContexts_1(Structure,Contexts,Worlds,WorldList,CtxtSort).
 	
+omit_negative_loops([],_AncList).
+omit_negative_loops([Elt|Rest],AncList):- 
+	(Elt = elt(_,not(Id)) -> 
+	    \+ member(Id,AncList)
+	  ; true),
+	  omit_negative_loops(Rest,AncList).
+
 checkContexts_1([],CtxtIn,Num,_WL,CtxtSort):- 
 	cauterizeContexts(0,Num,CtxtIn,CtxtSort).
 checkContexts_1([elt(N,Class)|Rest],CtxtIn,Num,WorldList,CtxtSort):- !,

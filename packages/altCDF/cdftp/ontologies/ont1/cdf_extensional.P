@@ -8,6 +8,9 @@ isa_ext(cid(electronicPart,o1),cid('CDF Classes',cdf)).
     isa_ext(cid(quadStereo,o1),cid(stereo,o1)).  % defined by rules.
   isa_ext(cid(amplifier,o1),cid(electronicPart,o1)).
   isa_ext(cid(speaker,o1),cid(electronicPart,o1)).
+    isa_ext(oid(spender,o1),cid(speaker,o1)).
+    isa_ext(oid(advent,o1),cid(speaker,o1)).
+    isa_ext(oid(ba,o1),cid(speaker,o1)).
 
 isa_ext(cid(size,o1),cid('CDF Classes',o1)).
   isa_ext(cid(big,o1),cid(size,o1)).
@@ -18,8 +21,8 @@ necessCond_ext(cid(big,o1),vid(not(cid(small,o1)))).
 hasAttr_ext(cid(stereo,o1),rid(hasAmplifier,o1),cid(size,o1)).
 
 necessCond_ext(cid(speaker,o1),vid(exists(rid(hasManufacturer,o1),
-	                                            ';'(cid(spender,o1),
-					 ';'(cid(advent,o1),cid(ba,o1)))))).
+	                                            ';'(oid(spender,o1),
+					 ';'(oid(advent,o1),oid(ba,o1)))))).
 
 %minAttr_ext(cid(expensiveStereo,o1),rid(hasSpeaker,o1),cid(speaker,o1),1).
 % Note that this increases the search space for 
@@ -33,6 +36,33 @@ hasAttr_ext(cid(expensiveStereo,o1),rid(hasAmplifier,o1),cid(big,o1)).
 maxAttr_ext(cid(bookshelfStereo,o1),rid(hasAmplifier,o1),cid(size,o1),1).
 hasAttr_ext(cid(bookshelfStereo,o1),rid(hasAmplifier,o1),cid(small,o1)).
 
+necessCond_ext(cid(incon,o1),vid(not(cid(incon,o1)))).
+
+necessCond_ext(cid(con,o1),vid(';'(not(cid(con,o1)),cid(atomicClass,o1))) ).
+
+%--------------------------------------------------------------------------------------------------
+
+hasAttr_ext(oid('Jocasta',oed),rid(hasChild,oed),oid('Oedipus',oed)).
+hasAttr_ext(oid('Oedipus',oed),rid(hasChild,oed),oid('Polyneikes',oed)).
+hasAttr_ext(oid('Jocasta',oed),rid(hasChild,oed),oid('Polyneikes',oed)).
+hasAttr_ext(oid('Polyneikes',oed),rid(hasChild,oed),oid('Thersandros',oed)).
+
+isa_ext(oid('Oedipus',oed),cid(patricide,oed)).
+
+necessCond_ext(cid('Thersandros',oed),vid(not(cid(patricide,oed)))).
+
 end_of_file.
 
+Must Jocasta have a child that is a patricide who has a child who is
+not a patricide?
 
+oidEntails(oid('Jocasta',oed), exists(rid(hasChild,oed),(cid(patricide,oed),
+                                               exists(rid(hasChild,oed),not(cid(patricide,oed)))))).
+
+Reason on cases: 
+1) If Polyneikes is a patricide, then model is Joc - Poly - Thers
+2) If Polyneikes is not a patricide, then model is Joc - Oed - Poly
+
+To find out if \phi is entailed by a kb, 
+	find not \phi and discover whether not \phi is consistent with the lce for phi
+if it is consistent, find each context and see if that is inconsistent.

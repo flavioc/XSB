@@ -1,16 +1,19 @@
+% TLS: remember to consult altCDF to get the paths right.
 
 % xsbdoc_main/1 indicates the main file used for the manual.
-xsbdoc_main('main.P').
+xsbdoc_main('./main.P').
 
 % xsbdoc_component/1 indicates the files used for each chapter.
 xsbdoc_component('../cdf_init_cdf.P').
 xsbdoc_component('../cdf_io.P').
+xsbdoc_component('../cdf_config.P').
 xsbdoc_component('../cdf_exceptions.P').
 xsbdoc_component('../cdf_comps_share.P').
 xsbdoc_component('../cdf_checks.P').
 xsbdoc_component('../cdf_oblivion.P').
-%xsbdoc_component('c:/xsbsys/XSBCVS/XSBCVS/lib/cdf/cdf_comps_noshare.P').
+xsbdoc_component('../cdftp/cdftp_chkCon.P').
 
+%xsbdoc_component('c:/xsbsys/XSBCVS/XSBCVS/lib/cdf/cdf_comps_noshare.P').
 %xsbdoc_component('../cdf_db_updatable.P').
 %xsbdoc_component('../cdf_db_storage.P').
 %xsbdoc_component('../cdf_diffs.P').

@@ -158,12 +158,13 @@ to and loading them from a component.
 :- export check_isa_types/4, check_ind_types/3.
 
 :- import cdf_warning/2 from cdf_exceptions.
-:- import in_hierarchy/1,
-	  newExtTerm/1,retractallExtTerm/1,
+:- import  concrete_component/1, 
 	  immed_allAttr/3, 
 	  immed_classHasAttr/3, 
 	  immed_hasAttr/3, isa/2,
 	  immed_minAttr/4,immed_maxAttr/4,
+	  in_hierarchy/1,
+	  newExtTerm/1,retractallExtTerm/1,
 	  cdf_id_fields/4 from cdf_init_cdf.
 :- import get_component_extensional/2 from cdf_comps_share.
 
@@ -315,10 +316,10 @@ cdfCheckPosInt(Id,Term):-
 	 domain_error(positive_integer,Term,cdfCheckPosint,3) ).
 
 %TLS could perhaps also test to see that F \in oid,cid
-check_arg_consist(cdfpt,_Nid,_F,_Id,_Context,_Term):- !.
+%check_arg_consist(cdfpt,_Nid,_F,_Id,_Context,_Term):- !.
 %	check_primitive_type(Nid,Context,Term).
-check_arg_consist(_Src,Nid,F,Id,Context,Term):- 
-	(structure(Nid) -> 
+check_arg_consist(Src,Nid,F,Id,Context,Term):- 
+	((structure(Nid),\+ concrete_component(Src)) -> 
 	    Nid =.. [_Funct|L],
 	    check_arg_consist_list(L,F,Id,Context,Term) 
 	  ; true).
@@ -328,8 +329,10 @@ check_arg_consist_list([Nid|T],F,Id,Context,Term):-
 	(var(Nid) -> 
 	    true
 	  ; 
-	    (cdf_id_fields(Nid,F,A,Src) -> 
-		check_arg_consist(Src,A,F,Id,Context,Term)
+	    (cdf_id_fields(Nid,F,A,Src) ->  
+		(\+ concrete_component(Src) -> 
+		    true
+		  ; check_arg_consist(Src,A,F,Id,Context,Term) )
 	      ; cdf_warning(Context,[Id,' in ',Term,' is ill-formed.']),
 		fail ) ),
 	  check_arg_consist_list(T,F,Id,Context,Term).
@@ -393,6 +396,19 @@ type_table(classHasAttr_ext(A,B,C),check_ind_types(_,classHasAttr_ext(A,B,C),
 type_table(classHasAttr_int(A,B,C),check_ind_types(_,classHasAttr(A,B,C),
 			[ [cid,rid,crid], [crid,crrid,crcrid], [cid,oid] ] ) ).
 
+type_table(coversAttr(A,B,C),check_ind_types(_,coversAttr(A,B,C),
+				[ [cid,oid], [rid], [cid,oid] ] ) ).
+type_table(coversAttr_ext(A,B,C),check_ind_types(_,coversAttr_ext(A,B,C),
+				[ [cid,oid], [rid], [cid,oid] ] ) ).
+type_table(coversAttr_int(A,B,C),check_ind_types(_,coversAttr_int(A,B,C),
+				[ [cid,oid], [rid], [cid,oid] ] ) ).
+
+type_table(necessCond(A,B),check_ind_types(_,necessCond(A,B),
+				[[cid], [vid] ] )).
+type_table(necessCond_ext(A,B),check_ind_types(_,necessCond_ext(A,B),
+				[[cid], [vid] ] )).
+type_table(necessCond_int(A,B),check_ind_types(_,necessCond_int(A,B),
+				[[cid], [vid] ] )).
 
 %----------------------------------------------------------------------
 
