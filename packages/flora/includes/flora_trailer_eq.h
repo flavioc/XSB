@@ -245,23 +245,31 @@ VAR_FPREFIX(conflict_imvd)(Class,Super,Method) :-
 /*****************************************************************************
   rules for congruence due to single-valued methods
 *****************************************************************************/
+:- table wfs_true/1, wfs_maybe/1, wfs_false/1.
+wfs_true(Call) :- (Call, fail; get_residual(Call,[])).
+
 :- table VAR_FPREFIX(eql)/2.
 :- table VAR_FPREFIX(metheql)/2.
 
+VAR_FPREFIX(eql)(X,Y) :- X == Y.
+
 VAR_FPREFIX(eql)(X,Y) :-
-	VAR_FPREFIX(fd)(O,M1,X),
+	X @< Y,
+	wfs_true(VAR_FPREFIX(fd)(O,M1,X)),
 	(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
-	VAR_FPREFIX(fd)(O,M2,Y),
+	wfs_true(VAR_FPREFIX(fd)(O,M2,Y)),
 	not X=Y.
 
 VAR_FPREFIX(eql)(X,Y) :-
+	X @< Y,
 	VAR_FPREFIX(eql)(O1,O2),
-	VAR_FPREFIX(fd)(O1,M1,X),
+	wfs_true(VAR_FPREFIX(fd)(O1,M1,X)),
 	(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
-	VAR_FPREFIX(fd)(O2,M2,Y),
+	wfs_true(VAR_FPREFIX(fd)(O2,M2,Y)),
 	not X=Y.
 
 VAR_FPREFIX(eql)(X,Y) :-
+	X @< Y,
 	VAR_FPREFIX(eql)(X,Z),
 	VAR_FPREFIX(eql)(Z,Y),
 	not X=Y.
@@ -286,7 +294,7 @@ VAR_FPREFIX(argeql)(X,Y,N) :-
 	N >= 1,
 	arg(N,X,Xn),
 	arg(N,Y,Yn),
-	(Xn=Yn ; VAR_FPREFIX(eql)(Xn,Yn)),
+	(Xn=Yn ; wfs_true(VAR_FPREFIX(eql)(Xn,Yn))),
 	M is N-1,
 	VAR_FPREFIX(argeql)(X,Y,M).
 
