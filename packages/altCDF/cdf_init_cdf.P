@@ -605,7 +605,7 @@ allAttr_gen13(SCid,RCid,TCid) :-
 		 ;	isa(TCidP,TCid),
 			immed_allAttr(SCid,RCid,TCidP)
 		)
-	 ;      isa(SCid,SCidP),
+	 ;      isa(SCid,SCidP), SCidP \== id('CDF Root',cdf),
 		immed_allAttr(SCidP,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP
