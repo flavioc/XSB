@@ -612,9 +612,11 @@ information about the function and arity of a predicate.  If {\tt p/2}
 is a predicate, its skeleton can be represented as {$p(\langle arg1
 \rangle,\langle arg2 \rangle)$} where {\em arg1} and {\em arg2} can be
 any instantiation pattern.  Thus the information derived from the
-skeletons {\em p(1,2)} and {\em p(A,B)} would be the same.
+skeletons {\em p(1,2)} and {\em p(A,B)} would be the same.  For other
+terminology connected with tabling, see Section
+\ref{tabling_overview}.
 
-The user should be aware that skeletons which are dynamically created
+The user should be aware that skeletons that are dynamically created
 (e.g. by {\tt functor/3}) are located in {\tt usermod}
 (cf. Section~\ref{Modules}).  In such a case, the tabling predicates
 below may not behave in the desired manner if the tabled predicates
@@ -873,16 +875,13 @@ Exception:
     \end{description}
 
 
-\ournewitem{get\_residual(?Skeleton,?Delay\_list)}{Tabling}
+\ournewitem{get\_residual(?Atom,?Delay\_list)}{Tabling}
 \index{{\tt get\_residual/2}}
 %
-{\tt get\_residual/2} is used to backtrack through answers that unify
-with a skeleton.  These answers may in fact come from any call that
-unifies with {\tt Skeleton}.  Since the {\tt Delay\_list} of an answer
-consists of those literals whose truth value is unknown in the
-well-founded model of the program (see Section \ref{tabling_overview})
-{\tt get\_residual/2} can be useful when extensions of the
-well-founded model are desired.  Consider the program
+Given completed tables subgoals that unify with {\tt Atom}, {\tt
+get\_residual/2} is used to backtrack through answers in these tables.
+These answers may in fact come from $any$ completed subgoal that
+unifies with {\tt Atom} as can be seen from the following example.
 
 For the following program and table
      \begin{center}
@@ -899,36 +898,32 @@ For the following program and table
      \begin{tabular}{||l|l||}   \hline
      {\em Call}			& {\em Returns} \\ \hline \hline
      p(1,X)			& p(1,2) \\ 
- 	       			& p(1,3):- tnot(p(2,3)) \\
- 	       			& p(2,3):- tnot(p(1,3)) \\ \hline
+ 	       			& p(1,3):- tnot(p(2,3)) \\ \hline
      p(1,3)			& p(1,3):- tnot(p(2,3)) \\ \hline
      p(2,3)			& p(2,3):- tnot(p(1,3)) \\ \hline
      \end{tabular}
      \end{tabular}
      \end{center}
-calls to {\tt get\_residual/2} will act as follows
+The completed subgoals are {\tt p(1,X)}, {\tt p(1,3)}, and {\tt
+p(2,3)}.  Calls to {\tt get\_residual/2} will act as follows
 %
 {\footnotesize 
 \begin{verbatim} 
                    | ?- get_residual(p(X,Y),List).
 
-                   X = 1
+                   X = 1                          % from subgoal p(1,X)
                    Y = 2
                    List = [];
 
-                   X = 1
+                   X = 1                          % from subgoal p(1,X)
                    Y = 3
                    List = [tnot(p(2,3))];
 
-                   X = 2
-                   Y = 3
-                   List = [tnot(p(1,3))];
-
-                   X = 1
+                   X = 1                          % from subgoal p(1,3)
                    Y = 3
                    List = [tnot(p(2,3))];
 
-                   X = 2
+                   X = 2                          % from subgoal p(2,3)
                    Y = 3
                    List = [tnot(p(1,3))];
 
@@ -936,6 +931,10 @@ calls to {\tt get\_residual/2} will act as follows
 
      \end{verbatim}
      }
+Since the {\tt Delay\_list} of an answer consists of those literals
+whose truth value is unknown in the well-founded model of the program
+(see Section \ref{tabling_overview}) {\tt get\_residual/2} can be
+useful when extensions of the well-founded model are desired.
 
 \ournewitem{delete\_return(+Subgoal\_Structure\_Pointer,+LeafNode)}{Tabling}
 \index{{\tt delete\_returns/2}}
