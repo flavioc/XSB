@@ -86,6 +86,8 @@ call_one_hook(Hook) :-
 	;   abort(['CALL_XSB_HOOK: ',HookName, ' is not the name of a hook'])
 	).
 
+:- index call_xsb_hook/2-2.
+
 %% executes all hooks of a given type
 call_xsb_hook(Hook,all) :- call_one_hook(Hook), fail.
 call_xsb_hook(_Hook,all).
@@ -108,6 +110,8 @@ call_one_hook(Hook,ArgList) :-
 	    )
 	;   abort(['CALL_XSB_HOOK: ',HookName, ' is not the name of a hook'])
 	).
+
+:- index call_xsb_hook/3-3.
 
 call_xsb_hook(Hook,ArgList,all) :- call_one_hook(Hook,ArgList), fail.
 call_xsb_hook(_Hook,_ArgList,all).
