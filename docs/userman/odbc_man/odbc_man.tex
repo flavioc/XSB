@@ -511,8 +511,8 @@ dictionaries.  Users of Quintus Prolog may note that these predicates are all
 PRODBI compatible.  A brief description of these predicates is as follows:
 \begin{description}
 
-\item[odbc\_show\_schema(accessible)]
-         Shows all accessible table names for the user.  This list can be long!
+\item[odbc\_show\_schema(accessible(Owner))]
+        Shows the names of all accessible tables that are owned by Owner. (This list can be long!) If Owner is a variable, all tables will be shown, grouped by owner.
 
 \item[odbc\_show\_schema(user)]
         Shows just those tables that belongs to user.
@@ -530,7 +530,7 @@ PRODBI compatible.  A brief description of these predicates is as follows:
 For retrieving above information use:
 \begin{itemize}
 
-\item odbc\_get\_schema(accessible,List)
+\item odbc\_get\_schema(accessible(Owner),List)
 \item odbc\_get\_schema(user,List)
 \item odbc\_get\_schema(arity('Table'),List)
 \item odbc\_get\_schema(columns('Table'),List)
