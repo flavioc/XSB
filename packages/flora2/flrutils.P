@@ -171,29 +171,34 @@ flloadtrailer(TrailerName,Workspace) :-
 	    flora_error_line("Equality must be `%s', or `%s', or `%s'!",args(NONE,BASIC,FLOGIC)),
 	    fail
 	;
+	  %% Get the trailer file name in Flora package.
 	  flora_check_workspace(Workspace),
 	  package_configuration(dir(flora),FloraDir),
 	  slash(S),
 	  flora_trailer_filename(TrailerName,TrailerFileName),
 	  fmt_write_string(TrailerFullName,"%s%strailer%s%s",args(FloraDir,S,S,TrailerFileName)),
-	  flora_FLH_filename(TrailerFullName,TrailerFLHFile),
-	  flora_setup_workspace(TrailerFLHFile,Workspace),
-	  flora_set_xpp_options,
-	  compile(TrailerFullName,[optimize,spec_repr]),
-	  consult(TrailerFullName),
-	  %% Check if the patch needs to be loaded.
-	  flora_wspredicate(FLORA_THIS_MODULE,[],Workspace,Predicate),
-	  ( current_predicate(Predicate/1) ->
+
+	  %% Get file names in user dir.
+	  flora_user_flora_dir(UserFloraDir),
+	  fmt_write_string(UserTrailerName,"%s%s%s",args(UserFloraDir,S,TrailerFileName)),
+	  flora_WSP_filename(UserTrailerName,Workspace,UserTrailerWSPFile),
+	  flora_WSO_filename(UserTrailerName,Workspace,UserTrailerWSOFile),
+	  flora_FLH_filename(UserTrailerName,UserTrailerFLHFile),
+	  %% Load the trailer.
+	  ( flora_file_newerthan(UserTrailerWSOFile,TrailerFullName) ->
 	      true
 	  ;
-	    flora_patch_filename(PatchName),
-	    fmt_write_string(PatchFullName,"%s%strailer%s%s",args(FloraDir,S,S,PatchName)),
-	    flora_FLH_filename(PatchFullName,PatchFLHFile),
-	    flora_setup_workspace(PatchFLHFile,Workspace),
-	    compile(PatchFullName,[optimize,spec_repr]),
-	    consult(PatchFullName)
-	  ),		
-	  flora_clear_xpp_options
+	    flora_copy_file(TrailerFullName,UserTrailerWSPFile),
+	    flora_setup_workspace(UserTrailerFLHFile,Workspace),
+	    flora_set_xpp_options,
+	    compile(UserTrailerWSPFile,[optimize,spec_repr]),
+	    flora_clear_xpp_options
+	  ),
+	  consult(UserTrailerWSOFile),
+	  !,
+	  %% Check if the patch needs to be loaded.
+	  flora_wspredicate(FLORA_THIS_MODULE,[],Workspace,Predicate),
+	  (current_predicate(Predicate/1) -> true; flloadpatch(Workspace))
         ),
 	!.
 
@@ -237,6 +242,34 @@ flora_trailer_include(FLOGIC,[FLEQLTRAILER,FLSCALAREQL]).
 
 
 /**********************************************************************
+  flloadpatch(+Workspace)
+**********************************************************************/
+flloadpatch(Workspace) :-
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	flora_patch_filename(PatchName),
+	fmt_write_string(PatchFullName,"%s%strailer%s%s",args(FloraDir,S,S,PatchName)),
+	%% Get file names in user dir.
+	flora_user_flora_dir(UserFloraDir),
+	fmt_write_string(UserPatchName,"%s%s%s",args(UserFloraDir,S,PatchName)),
+	flora_WSP_filename(UserPatchName,Workspace,UserPatchWSPFile),
+	flora_WSO_filename(UserPatchName,Workspace,UserPatchWSOFile),
+	flora_FLH_filename(UserPatchName,UserPatchFLHFile),
+	%% Load the patch.
+	( flora_file_newerthan(UserPatchWSOFile,PatchFullName) ->
+	    true
+	;
+	  flora_copy_file(PatchFullName,UserPatchWSPFile),
+	  flora_setup_workspace(UserPatchFLHFile,Workspace),
+	  flora_set_xpp_options,
+	  compile(UserPatchWSPFile,[optimize,spec_repr]),
+	  flora_clear_xpp_options
+        ),
+	consult(UserPatchWSOFile),
+	!.
+
+
+/**********************************************************************
   flsetuppatch
 **********************************************************************/
 flsetuppatch :-
@@ -264,6 +297,28 @@ flsetuppatch :-
 
 
 flora_patch_filename('patch.P').
+
+
+/*************************************************************************
+  flora_user_flora_dir(-Dir)
+*************************************************************************/
+flora_user_flora_dir(Dir) :-
+	( package_configuration(user_dir(flora),Dir) ->
+	    true
+	;
+	  xsb_configuration(user_home,UserHome),
+	  slash(S),
+	  fmt_write_string(Dir,"%s%s.xsb%sflora",args(UserHome,S,S)),
+          ( file_exists(Dir) ->
+	      true
+	  ;
+	    fmt_write_string(Cmd,"mkdir %s",args(Dir)),
+	    shell(Cmd,Res),
+	    Res =:= 0
+	  ),
+	  assert(package_configuration(user_dir(flora),Dir))
+	),
+	!.
 
 
 /*************************************************************************
