@@ -24,7 +24,8 @@
 
 
 :- export new_trie/1, trie_intern/5, trie_intern/4, trie_interned/4,
-	  trie_intern/3, trie_interned/3, trie_unintern/2, delete_trie/1.
+	  trie_intern/3, trie_interned/3, trie_unintern/2, delete_trie/1,
+	  trie_unintern_nr/2, unmark_uninterned_nr/2.
 
 :- import integer/1, abort/1 from standard.
 :- import get_lastnode_cs_retskel/3 from tables.
@@ -118,6 +119,24 @@ trie_unintern(R,L) :-
 	abort(('Incorrect Arguments to',trie_unintern(R,L))).
 
 /*--------------------------------------------------
+trie_unintern_nr(+Root, +Leaf)
+--------------------------------------------------*/
+trie_unintern_nr(Root,Leaf) :- 
+	integer(Root),
+	integer(Leaf),
+	!,
+	 trie_dispose_nr(Leaf).
+
+/*--------------------------------------------------
+unmark_uninterned_nr(+Root, +Leaf)
+--------------------------------------------------*/
+unmark_uninterned_nr(Root,Leaf) :- 
+	integer(Root),
+	integer(Leaf),
+	!,
+	 trie_undispose(Root,Leaf).
+
+/*--------------------------------------------------
 delete_trie(+Root)
 --------------------------------------------------*/
 /*delete_trie(Root) :-
@@ -139,6 +158,8 @@ i_trie_interned(_Term,_Root,_Leaf) :- '_$builtin'(161).
 trie_dispose(_Root,_Leaf) :- '_$builtin'(162).
 bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(163).
 delete_trie(_Root,_Usage) :- '_$builtin'(164).
+trie_dispose_nr(_Leaf) :- '_$builtin'(165).
+trie_undispose(_Root,_Leaf) :- '_$builtin'(166).
 
 
 

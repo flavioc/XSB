@@ -23,12 +23,14 @@
 */
 
 
-/* mark node as deleted */
-#define mark_leaf_node_del(X)  DelFlag(X) = 1
+/* mark node as deleted 
+#define mark_leaf_node_del(X)  DelFlag(X) = 1 */
+
+#define mark_leaf_node_del(X)  DelFlag(X) = Instr(X)
 #define del_ret_node(X)  DelFlag(aln_answer_ptr(X)) = 1
 #define is_del_ret_node(X)  DelFlag(aln_answer_ptr(X)) == 1 
 
-#define is_not_deleted(X)      DelFlag(X) != 1
+#define is_not_deleted(X)      DelFlag(X) == 0
 
 struct HASHhdr {
   struct HASHhdr *next, *prev;
