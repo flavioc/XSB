@@ -22,6 +22,8 @@
 ** 
 */
 
+#undef __STRICT_ANSI__
+
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
@@ -776,8 +778,9 @@ xsbBool xsb_socket_request(void)
     return FALSE;
   }
 
-  xsb_bug("SOCKET_REQUEST case %d has no return clause",
-	  ptoc_int(1));
+  /* This trick would report a bug, if a newly added case
+     doesn't have a return clause */
+  xsb_bug("SOCKET_REQUEST case %d has no return clause", ptoc_int(1));
 }
 
 

@@ -24,6 +24,8 @@
 
 
 
+#undef __STRICT_ANSI__
+
 #include "xsb_config.h"
 
 #ifdef WIN_NT
