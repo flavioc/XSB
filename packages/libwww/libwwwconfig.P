@@ -1,0 +1,86 @@
+/* File:      libwwwconfig.P -- loader for the libwww foreign module
+** Author(s): kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1999
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- import slash/1, str_cat/3, machine_file_exists/1 from machine.
+:- import fmt_write_string/3, file_time/2 from file_io.
+:- import search_module/6 from consult.
+:- import xsb_configuration/2 from xsb_configuration.
+
+%% Construct the file cc/libwwwconfig.H on the fly
+make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
+	slash(Slash),
+	xsb_configuration(configuration, XSBconfiguration),
+	package_configuration(dir(regmatch), LibwwwDir),
+	fmt_write_string(LD_directives_file,
+			 '%s%scc%sxsb_libwww.H', f(LibwwwDir, Slash, Slash)),
+    tell(LD_directives_file),
+    writeln('%% This file is generated on-the-fly by libwwwconfig.P'),
+    writeln('%% Do not edit--any changes will be written over.'),
+    write('%% XSB config:     '), writeln(XSBconfiguration),
+    write('%% XSB CC:         '), writeln(CC),
+    write('%% Compiler flags: '), writeln(CC_opts),
+    writeln(':- import slash/1 from machine.'),
+    writeln(':- export ????.'),
+    write(':- ldoption('''),
+    write(LoaderFlags),
+    writeln(''').'),
+    told.
+    
+
+:-  package_configuration(dir(regmatch), LibwwwDir),
+    slash(Slash),
+    fmt_write_string(Module,
+		     '%s%scc%slibwwwconfig', f(LibwwwDir, Slash, Slash)),
+    (  %% avoid recompilation: check if xsb_libwww.O exists and 
+       %% is newer than xsb_libwww.c.
+       search_module('xsb_libwww',Dir,_Mod,_Ext,_Base,ModuleO),
+       str_cat(Module, '.c', ModuleSourceFile),
+       str_cat(Module, '.H', ModuleH),
+       machine_file_exists(ModuleH),
+       file_time(ModuleO, time(CT1,CT2)),
+       file_time(ModuleSourceFile, time(ST1,ST2)),
+       time(ST1,ST2) @< time(CT1,CT2)
+	       %% module compiled and is current, so just load
+	       -> [xsb_libwww]
+
+      %% If Module isn't compiled or is old --- recompile
+      ; xsb_configuration(compiler, CC),
+	xsb_configuration(loader_flags, LoaderFlags),
+	xsb_configuration(compiler_flags, CCflags),
+	xsb_configuration(emudir, EmuDir),
+	fmt_write_string(CC_opts,
+			 ' %s %s -I%s',
+			 f(CCflags,LoaderFlags,EmuDir)),
+	make_xsb_libwwwH(CC, CC_opts, LoaderFlags),
+	xsb_configuration(config_libdir, ConfigLibdir),
+	str_cat(Module, '.O', Objfile),
+	consult(Module, [cc(CC), cc_opts(CC_opts)]),
+	shell(['mv', ' -f ', Objfile, ' ', ConfigLibdir]),
+	%% Note: the .so ending is heavily Unix-centered. I dunno what this
+	%% corresponds to in windows. - mk
+	str_cat(Module, '.so', SharedLib),
+	shell(['cp', ' -f ', SharedLib, ' ', ConfigLibdir]),
+	shell(['rm', ' -f ', SharedLib])
+     ).
