@@ -375,7 +375,31 @@ because you can keep abreast with the changes others are making to the main
 trunk. When you are done, CVS provides support for merging your branch into
 the main trunk.
 
-CVS manual gives many more details on that.
+Here is a summary of how to do it. CVS manual gives many more details on that.
+
+#tag the current stable version:
+cvs tag xsb-1-x-stable-foo .
+# create a new branch, call it my-new-branch
+cvs rtag -b -r xsb-1-x-stable-foo my-new-branch xsbdevel
+
+The above says: create a branch of the module xsbdevel, called
+my-new-branch, and rooted at the common version xsb-1-x-stable-foo. This
+also means that you can create a branch rooted at some other, prior
+version.
+
+The last step is to checkout the new branch into a new directory:
+
+cd xsb/my-new-branch
+cvs checkout -r my-new-branch xsbdevel
+
+Now you just work with this branch normally. All your commits will go into
+that branch and they won't interfere with the main xsb version.
+You can also periodically merge the changes made to the main trunk into
+your branch.
+
+When you are satisfied with the stability of your branch, you can merge it
+back into the main trunk. This is best done using pcl-cvs and Ediff, since
+such a procedure requires a lot of care.
 
 
 Monitoring changes to files
