@@ -31,3 +31,6 @@
 #define OWRITE	     1	  /* open for write       */
 #define OAPPEND	     2	  /* open for append      */
 #define OSTRING	     3	  /* open for as a string */
+
+#define AF_INET     0	  /* XSB-side request for Internet domain */
+#define AF_UNIX     1     /* XSB-side request for UNIX domain */

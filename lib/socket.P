@@ -22,23 +22,60 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+#include "io_defs.h"
+#include "standard.h"
+#include "xsbsocket.h"
 
-socket(Sockfd) :- socket_request(0,0,Sockfd,_,_,_). % Domain=AF_INET
-socket_bind(Sockfd,Port) :- socket_request(1,0,Sockfd,Port,_,_).
-socket_listen(Sockfd,Length) :- socket_request(2,Sockfd,Length,_,_,_).
-socket_accept(Sockfd,Sockfptr) :- socket_request(3,Sockfd,Sockfptr,_,_,_).
-socket_connect(Sockfd,Port,Hostname,Sockfptr) :- 
-	socket_request(4,0,Sockfd,Port,Hostname,Sockfptr).
-				% for back compatibility
-socket_flush(FileDes) :- file_function(0,FileDes,_,[],[],[],[]).
-socket_close(Sockfd) :- socket_request(6,Sockfd,_,_,_,_).
-socket_recv(Sockfd, Msg) :- socket_request(7,Sockfd,Msg,_,_,_).
-socket_send(Sockfd, Msg) :- socket_request(8,Sockfd,Msg,_,_,_).
-socket_send_eof(Sockfd) :- socket_request(9,Sockfd,_,_,_,_).
-socket_send_asci(Sockfd,Msg) :- socket_request(10,Sockfd,Msg,_,_,_).
+%% socket_flush:  for back compatibility
+socket_flush(FileDes) :- file_function(FILE_FLUSH,FileDes,_,[],[],[],[]).
 
-socket_get0(Sockfd,Char,ErrorCode) :-
-	socket_request(11,Sockfd,Char,ErrorCode,_,_).
-socket_put(Sockfd,Char) :- socket_request(12,Sockfd, Char,_,_,_).
+%% Socket cals with error
+socket(Sockfd,Error) :-
+	socket_request(SOCKET_ROOT,AF_INET,Sockfd,Error,_,_,_).
+socket_bind(Sockfd,Port,Error) :-
+	socket_request(SOCKET_BIND,AF_INET,Sockfd,Port,Error,_,_).
+socket_listen(Sockfd,Length,Error) :-
+	socket_request(SOCKET_LISTEN,Sockfd,Length,Error,_,_,_).
+socket_accept(Sockfd,Sockfptr,Error) :-
+	socket_request(SOCKET_ACCEPT,Sockfd,Sockfptr,Error,_,_,_).
+socket_connect(Sockfd,Port,Hostname,Sockfptr,Error) :- 
+	socket_request(SOCKET_CONNECT,AF_INET,Sockfd,Port,
+		       Hostname,Sockfptr,Error).
+socket_close(Sockfd,Error) :-
+	socket_request(SOCKET_CLOSE,Sockfd,Error,_,_,_,_).
+socket_recv(Sockfd, Msg,Error) :-
+	socket_request(SOCKET_RECV,Sockfd,Msg,Error,_,_,_).
+socket_send(Sockfd, Msg,Error) :-
+	socket_request(SOCKET_SEND,Sockfd,Msg,Error,_,_,_).
+socket_send_eof(Sockfd,Error) :-
+	socket_request(SOCKET_SEND_EOF,Sockfd,Error,_,_,_,_).
+socket_send_asci(Sockfd,Msg,Error) :-
+	socket_request(SOCKET_SEND_ASCI,Sockfd,Msg,Error,_,_,_).
+
+socket_get0(Sockfd,Char,Error) :-
+	socket_request(SOCKET_GET0,Sockfd,Char,Error,_,_,_).
+socket_put(Sockfd,Char,Error) :-
+	socket_request(SOCKET_PUT,Sockfd, Char,Error,_,_,_).
 socket_set_option(Sockfd,OptionName,Value) :-
-	socket_request(13,Sockfd, OptionName, Value,_,_).
+	socket_request(SOCKET_SET_OPTION,Sockfd, OptionName, Value,_,_,_).
+
+%% Versions without the Error argument, for backward compatibility
+socket(Sockfd) :- socket(Sockfd,_).
+socket_bind(Sockfd,Port) :- socket_bind(Sockfd,Port,_).
+socket_listen(Sockfd,Length) :- socket_listen(Sockfd,Length,_).
+socket_accept(Sockfd,Sockfptr) :- socket_accept(Sockfd,Sockfptr,_).
+socket_connect(Sockfd,Port,Hostname,Sockfptr) :- 
+	socket_connect(Sockfd,Port,Hostname,Sockfptr,_).
+socket_close(Sockfd) :- socket_close(Sockfd,_).
+socket_recv(Sockfd, Msg) :- socket_recv(Sockfd, Msg, _).
+socket_send(Sockfd, Msg) :- socket_send(Sockfd, Msg, _).
+socket_send_eof(Sockfd) :- socket_send_eof(Sockfd,_).
+socket_send_asci(Sockfd,Msg) :- socket_send_asci(Sockfd,Msg,_).
+
+%% socket_get0 already had Error code arg in the old days
+
+socket_put(Sockfd,Char) :- socket_put(Sockfd,Char,_).
+
+%% socket_set_option doesn''t need error code, so
+

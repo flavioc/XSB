@@ -137,17 +137,17 @@ bool xsb_socket_request(void)
   int i;
 
   switch (ptoc_int(1)) {
-  case SOCKET_ROOT: /* socket_request(0,+domain,-socket_fd) */
-    /* jf: for now only support AF_INET */
+  case SOCKET_ROOT:
+    /* socket_request(SOCKET_ROOT,+domain,-socket_fd,-Error,_,_,_) 
+       Currently only AF_INET domain */
     domain = ptoc_int(2); 
     if (domain == 0) domain = AF_INET;
     else if (domain == 1){
-      /* domain = AF_UNIX; */
-      domain = AF_INET;
-      xsb_warn("SOCKET_REQUEST: default domain is AF_INET");
+      domain = AF_UNIX;
+      xsb_abort("SOCKET_REQUEST: domain AF_INET is not implemented");
     }
     else  {
-      xsb_warn("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
+      xsb_abort("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
       return FALSE;
     }
     
@@ -159,11 +159,22 @@ bool xsb_socket_request(void)
 
     ctop_int(3, (SOCKET) sock_handle);
     break;
-  case SOCKET_BIND: /* socket_request(1,+domain,+sock_handle,+port) */
-    /* jf: for now only support AF_INET, ignore param */
-    /* domain = ptoc_int(2); */
+  case SOCKET_BIND:
+    /* socket_request(SOCKET_BIND,+domain,+sock_handle,+port,-Error,_,_) 
+       Currently only supports AF_INET */
     sock_handle = (SOCKET) ptoc_int(3);
     portnum = ptoc_int(4);
+
+    domain = ptoc_int(2);
+    if (domain == 0) domain = AF_INET;
+    else if (domain == 1){
+      domain = AF_UNIX;
+      xsb_abort("SOCKET_REQUEST: domain AF_INET is not implemented");
+    }
+    else  {
+      xsb_abort("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
+      return FALSE;
+    }
     
     /* Bind server to the agreed upon port number.
     ** See commdef.h for the actual port number. */
@@ -180,7 +191,8 @@ bool xsb_socket_request(void)
       return FALSE;
     }
     break;
-  case SOCKET_LISTEN:  /* socket_request(2,+sock_handle,+length) */
+  case SOCKET_LISTEN: 
+    /* socket_request(SOCKET_LISTEN,+sock_handle,+length,-Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     retcode = listen(sock_handle, ptoc_int(3));
     if (SOCKET_OP_FAILED(retcode)) {
@@ -188,8 +200,9 @@ bool xsb_socket_request(void)
       return FALSE;
     }
     break;
-  case SOCKET_ACCEPT: { /* socket_request(3,+sock_handle,-sockfptr) */
-    /* returns Prolog stream number: an index into xsb openfile table */
+  case SOCKET_ACCEPT: {
+    /* socket_request(SOCKET_ACCEPT,+sock_handle,-sockfptr, -Error,_,_,_) 
+       returns Prolog stream number: an index into xsb openfile table */
     sock_handle_in = (SOCKET) ptoc_int(2);
     
     sock_handle = accept(sock_handle_in, NULL, NULL);
@@ -219,12 +232,22 @@ bool xsb_socket_request(void)
   }
   
   case SOCKET_CONNECT:
-    /* socket_request(4,+domain,+sock_handle,+port,+hostname,-sockfptr) 
-     * jf: domain is ignored for now
-     */
-    /* Returns Prolog stream number: index into XSB openfile table */
+    /* socket_request(SOCKET_CONNECT,+domain,+sock_handle,+port,
+       	       	       +hostname,-sockfptr,-Error)
+       Returns Prolog stream number: index into XSB openfile table */
     sock_handle = (SOCKET) ptoc_int(3);
     portnum = ptoc_int(4);
+
+    domain = ptoc_int(2);
+    if (domain == 0) domain = AF_INET;
+    else if (domain == 1){
+      domain = AF_UNIX;
+      xsb_abort("SOCKET_REQUEST: domain AF_INET is not implemented");
+    }
+    else  {
+      xsb_abort("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
+      return FALSE;
+    }
     
     /*** prepare to connect ***/
     FillWithZeros(socket_addr);
@@ -265,17 +288,20 @@ bool xsb_socket_request(void)
     i = xsb_intern_file(sockptr,"SOCKET_CONNECT");
     ctop_int(6, i);
     break;
-  case SOCKET_CLOSE:	/* socket_request(6,+sock_handle) */
+  case SOCKET_CLOSE:	
+    /* socket_request(SOCKET_CLOSE,+sock_handle,-Error,_,_,_,_) */
     closesocket((SOCKET) ptoc_int(2));
     break;
-  case SOCKET_RECV:
+  case SOCKET_RECV:    
+    /* socket_request(SOCKET_RECV,+Sockfd, -Msg, -Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     sock_msg = calloc(1024, sizeof(char));
     rc = readmsg(sock_handle, sock_msg,1024);
     ctop_string(3, (char*) string_find((char*) sock_msg,1));
     free(sock_msg);
     break;
-  case SOCKET_SEND:
+  case SOCKET_SEND:   
+    /* socket_request(SOCKET_SEND,+Sockfd, -Msg, -Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     sock_msg = calloc(1024, sizeof(char));
     strcpy((char*) sock_msg, (char*) ptoc_string(3));
@@ -284,7 +310,8 @@ bool xsb_socket_request(void)
     /*send(sock_handle, "\n", strlen("\n"),0),*/
     free(sock_msg);
     break;
-  case SOCKET_SEND_ASCI:
+  case SOCKET_SEND_ASCI: 
+    /* socket_request(SOCKET_SEND_ASCI,+Sockfd,-Msg,-Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     rc = ptoc_int(3);
     sock_msg = calloc(1024, sizeof(char));
@@ -296,15 +323,16 @@ bool xsb_socket_request(void)
     /*send(sock_handle, "\n", strlen("\n"),0);*/
     free(sock_msg);
     break;
-  case SOCKET_SEND_EOF:
+  case SOCKET_SEND_EOF:   
+    /* SOCKET_SEND_EOF(SOCKET_SEND_EOF,+Sockfd,-Error,_,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
     last[0] = EOF;
     send(sock_handle, last, 1, 0);
     send(sock_handle, "`", strlen("`"),0);
     break;
-  case SOCKET_GET0: /* socket_request(11,+Sockfd,-C,-Error,_,_) */
+  case SOCKET_GET0:
+    /* socket_request(SOCKET_GET0,+Sockfd,-C,-Error,_,_,_) */
     sock_handle = (SOCKET) ptoc_int(2);
-    /*JPS: rc = readmsg(socketfd, &ch, 1);*/
     rc = recv (sock_handle,&ch,1,0);
     if (rc == 1)
       ctop_int(3,(unsigned char)ch);
@@ -313,17 +341,16 @@ bool xsb_socket_request(void)
       ctop_int(4,WSAGetLastError());
     }
     break;
-  case SOCKET_PUT: { /* socket_request(12,+Sockfd,+C,_,_,_) */
-    /* We should fail on error...*/
+  case SOCKET_PUT: {
+    /* socket_request(SOCKET_PUT,+Sockfd,+C,-Error_,_,_) */
     static char tmpch[4];
     sock_handle = (SOCKET) ptoc_int(2);
-    /* JPS: sprintf(tmpch,"%c",ptoc_int(3));*/
     tmpch[0] = (char)ptoc_int(3);
     send(sock_handle, tmpch, 1, 0);
     break;
   }
   case SOCKET_SET_OPTION: {
-    /* socket_request(12,+Sockfd,+OptionName,+Value,_,_) */
+    /* socket_request(SOCKET_SET_OPTION,+Sockfd,+OptionName,+Value,_,_,_) */
 
     char *option_name;
     /* Set the "linger" parameter to a small number of seconds */
@@ -348,7 +375,7 @@ bool xsb_socket_request(void)
 	return FALSE;
       }
     } else {
-      xsb_warn("SOCKET_SET_OPTION: Invalied option, `%s'", option_name);
+      xsb_warn("SOCKET_SET_OPTION: Invalid option, `%s'", option_name);
       return FALSE;
     }
     
