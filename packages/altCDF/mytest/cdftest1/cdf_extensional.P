@@ -79,4 +79,6 @@ maxAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test),2).
 
 maxAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),
 	                                                         cid(c12,test),2).
- 
+
+% nothing can be both a c12 and a c2.
+ic_ext(','(cid(c12,test),cid(c2,test))).

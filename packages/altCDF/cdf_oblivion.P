@@ -152,21 +152,6 @@ gc_allrels_fail :- gc_hasAttr_fail.
 gc_allrels_fail :- gc_allAttr_fail.
 gc_allrels_fail :- gc_classHasAttr_fail.
 
-gc_minAttr_fail :-
-	orphan_minAttr(A,B,C),
-	retractallExtTerm(minAttr_ext(A,B,C,_)),
-	fail.
-
-gc_maxAttr_fail :-
-	orphan_maxAttr(A,B,C),
-	retractallExtTerm(maxAttr_ext(A,B,C,_)),
-	fail.
-
-gc_hasAttr_fail :-
-	orphan_hasAttr(A,B,C),
-	retractallExtTerm(hasAttr_ext(A,B,C)),
-	fail.
-
 gc_allAttr_fail :-
 	orphan_allAttr(A,B,C),
 	retractallExtTerm(allAttr_ext(A,B,C)),
@@ -177,29 +162,51 @@ gc_classHasAttr_fail :-
 	retractallExtTerm(classHasAttr_ext(A,B,C)),
 	fail.
 
-orphan_minAttr(A,B,C) :-
-	minAttr_ext(A,B,C,_),
+gc_hasAttr_fail :-
+	orphan_hasAttr(A,B,C),
+	retractallExtTerm(hasAttr_ext(A,B,C)),
+	fail.
+
+gc_maxAttr_fail :-
+	orphan_maxAttr(A,B,C),
+	retractallExtTerm(maxAttr_ext(A,B,C,_)),
+	fail.
+
+gc_minAttr_fail :-
+	orphan_minAttr(A,B,C,N),
+	retractallExtTerm(minAttr_ext(A,B,C,N)),
+	fail.
+
+
+orphan_allAttr(A,B,C) :-
+	allAttr_ext(A,B,C),
 	\+ (explicit_implicit_isa(A), 
 	     explicit_implicit_isa(B), 
 	     explicit_implicit_isa(C)).
 	 
-orphan_maxAttr(A,B,C) :-
-	maxAttr_ext(A,B,C,_),
+orphan_classHasAttr(A,B,C) :-
+	classHasAttr_ext(A,B,C),
 	\+ (explicit_implicit_isa(A), 
 	     explicit_implicit_isa(B), 
 	     explicit_implicit_isa(C)).
 	 
 orphan_hasAttr(A,B,C) :-
 	hasAttr_ext(A,B,C),
-	\+ (explicit_implicit_isa(A), explicit_implicit_isa(B), explicit_implicit_isa(C)).
+	\+ (explicit_implicit_isa(A), 
+	     explicit_implicit_isa(B), 
+	     explicit_implicit_isa(C)).
 	 
-orphan_allAttr(A,B,C) :-
-	allAttr_ext(A,B,C),
-	\+ (explicit_implicit_isa(A), explicit_implicit_isa(B), explicit_implicit_isa(C)).
+orphan_maxAttr(A,B,C,N) :-
+	maxAttr_ext(A,B,C,N),
+	\+ (explicit_implicit_isa(A), 
+	     explicit_implicit_isa(B), 
+	     explicit_implicit_isa(C)).
 	 
-orphan_classHasAttr(A,B,C) :-
-	classHasAttr_ext(A,B,C),
-	\+ (explicit_implicit_isa(A), explicit_implicit_isa(B), explicit_implicit_isa(C)).
+orphan_minAttr(A,B,C,N) :-
+	minAttr_ext(A,B,C,N),
+	\+ (explicit_implicit_isa(A), 
+	     explicit_implicit_isa(B), 
+	     explicit_implicit_isa(C)).
 	 
 /* Delete a class, all its subclasses, and all their relations and attributes */
 delete_class_cascade(ACid) :-

@@ -1,46 +1,66 @@
 
-:- [cdftp_chkCon].
+:- [cdftp_meta].
+:- [cdftp_cdfsc].
 :- [altCDF].
 
 :- import allAttr/3, classHasAttr/3, hasAttr/3, 
 	   isa/2, maxAttr/4, minAttr/4 from cdf_init_cdf.
-:- import cdf_id_fields/4, system_component/1 from cdf_init_cdf.
+:- import cdf_id_fields/4, system_component/1,abolish_cdf_tables/0
+	    from cdf_init_cdf.
+:- import conset/2, conget/2, coninc/1 from gensym.
+:- import message/1 from standard.
 
 descend_all:- 
+	cputime(Start),
+	conset(descend,0),
+	descend_all_1,
+	cputime(End),
+	Tot is End - Start,
+	conget(descend,N),
+	message(['Cputime ',Tot,' for ',N,' Classes.']).
+
+descend_all_1:- 
 	isa_ext(X,cid('CDF Classes',cdf)),
 	descend(X).
+descend_all_1.
 
 :- table descend/1.
-descend(Class):- 
+descend(Class):-
+	abolish_cdf_tables,
+	coninc(descend),
 	check_consist(Class),
 	isa_ext(cid(NewClass,S),Class),
 	descend(cid(NewClass,S)),
 	fail.
-	
+
+% atomic	
 check_consist(Class):-
-	cdf_id_fields(Class,_B,_C,Comp),
+	cdf_id_fields(Class,cid,_C,Comp),
 	\+ system_component(Comp),
 	findall(Conj,cdf_to_ce(Class,Conj),CEList),
-	writeln(ce(Class,CEList)),
+	tp_writeln(ce(Class,CEList)),
 	sat_test([Class|CEList]).
 
-cdf_to_ce(Class,exists(R,C)):- 
-	(hasAttr(Class,R,C) ; classHasAttr(Class,R,C)),
+cdf_to_ce(Class,Form):- 
+	(hasAttr(Class,R,C) ; immed_classHasAttr(Class,R,C)),
 	(C = oid(_,_) -> 
-	    cdf_warning(tp,['omitting ',hasAttr(Class,R,C),' in consist check'])
-	  ; true).
-cdf_to_ce(Class,atLeast(N,R,C)):- 
+	    cdf_warning(tp,['omitting ',hasAttr(Class,R,C),
+	                            ' in consist check'])
+	  ; Form = exists(R,C)).
+cdf_to_ce(Class,Form):- 
 	minAttr(Class,R,C,N),
 	(C = oid(_,_) -> 
-	    cdf_warning(tp,['omitting ',hasAttr(N,Class,R,C),' in consist check'])
-	  ; true).
-cdf_to_ce(Class,all(R,C)):- 
+	    cdf_warning(tp,['omitting ',hasAttr(N,Class,R,C),
+	                            ' in consist check'])
+	  ; Form = atLeast(N,R,C)).
+cdf_to_ce(Class,Form):- 
 	allAttr(Class,R,C),
 	(C = oid(_,_) -> 
 	    cdf_warning(tp,['omitting ',allAttr(Class,R,C),' in consist check'])
-	  ; true).
-cdf_to_ce(Class,atMost(R,C)):- 
+	  ; Form = all(R,C)).
+cdf_to_ce(Class,Form):- 
 	maxAttr(Class,R,C,N),
 	(C = oid(_,_) -> 
-	    cdf_warning(tp,['omitting ',allAttr(N,Class,R,C),' in consist check'])
-	  ; true).
+	    cdf_warning(tp,['omitting ',maxAttr(N,Class,R,C),
+	                            ' in consist check'])
+	  ; Form = atMost(N,R,C, N)).

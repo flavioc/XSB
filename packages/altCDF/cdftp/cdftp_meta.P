@@ -2,16 +2,20 @@
 
 :- import member/2,length/2,append/3 from basics.
 :- import reset_gennum/0,tp_gensym/2 from tp_utils.
-:- [getObj].
+:- [cdftp_getObj].
 :- [cdftp_preproc].
+
+
+debugging(off).
 
 %nonDetType(acyclic).
 nonDetType(all).
 
 sat_test(Exprin):- 
 	preprocess(Exprin,Expr),
-	(sat(Expr,AbdOut,ConstOut) ->
-	    writeln(world(AbdOut,ConstOut))
+	(sat(Expr,AbdIn,ConstIn) ->
+	    apply_ics(AbdIn,AbdOut,ConstIn,ConstOut),
+	    tp_writeln(world(AbdOut,ConstOut))
 	  ; writeln(cannot_satisfy(Expr)),fail).
 	
 sat(Expr):- sat(Expr,_,_).
@@ -299,6 +303,19 @@ finalConstraintFailure(Const,Const,Abd):-
 	         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% TLS: probably need to do LFP
+apply_ics(abd(Abdin,Elts),AbdOut,ConstIn,ConstOut):- 
+	findall(not(Ic),ic(Ic),IcList),
+	list_to_comma(IcList,Ics),
+	apply_ics_1(Elts,Ics,abd(Abdin,Elts),AbdOut,ConstIn,ConstOut),!.
+
+apply_ics_1([],_Ics,Abd,Abd,Const,Const).
+apply_ics_1([Elt|Rest],Ics,AbdIn,AbdOut,ConstIn,ConstOut):- 
+	meta(Ics,Elt,AbdIn,AbdMid,ConstIn,ConstMid), 
+	apply_ics_1(Rest,Ics,AbdMid,AbdOut,ConstMid,ConstOut).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 abduced_subrel(rel(E,R,E1),Struct):- 
 	abduced(rel(E,Rsub,E1),Struct),
 	tp_subclass(Rsub,R).
@@ -346,6 +363,11 @@ createNewElts(N,[New|Rest]):-
 	N1 is N - 1,
 	createNewElts(N1,Rest).
 
+tp_writeln(Term):-
+	debugging(X),
+	(X = on -> writeln(Term) ; true).
+
+/*
 tp_subclass(_,cdfroot).
 
 tp_subclass(X,X).
@@ -356,6 +378,7 @@ tp_subclass(cc1,cc3).
 tp_subclass(rr1,rr2).
 tp_subclass(rr2,rr3).
 tp_subclass(rr1,rr3).
+*/
 
 end_of_file.
 choose1(N,Eset,Set,New):- 

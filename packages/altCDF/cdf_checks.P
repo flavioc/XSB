@@ -467,6 +467,7 @@ classification_type(crid,crid('CDF Class-Object Relations',cdf)).
 %classification_type(crrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
 %classification_type(crcrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
 
+%-----------------------------------------------------------------
 :- comment(check_redundancies/2,"
 
 @tt{check_redundancies/2}  checks for redundancies in the immediate
@@ -474,20 +475,29 @@ predicates of a module  I.e., it finds tuples that could be deleted
 without changing the semantics of the predicate.  The redundancies are
 currently emitted as a warning, but the predicate could be modified to
 delete them.  
+").
 
-@tt{check_redundancies/2} uses marginals to try to determine which
-index is better to use.	").
 %TLS the original was saved after end_of_file.
 
+:- import conset/2, conget/2, coninc/1 from gensym.
+:- import message/1 from standard.
+
 check_redundancies(Context,f(Component,Mode)):- 
+	cputime(Start),
+	conset(redund,0),
 	allAttr_redundancy_check(Context,Component,Mode),
 	classHasAttr_redundancy_check(Context,Component,Mode),
 	hasAttr_redundancy_check(Context,Component,Mode),
 	maxAttr_redundancy_check(Context,Component,Mode),
-	minAttr_redundancy_check(Context,Component,Mode).
-
+	minAttr_redundancy_check(Context,Component,Mode),
+	cputime(End),
+	Tot is End - Start,
+	conget(redund,N),
+	message(['Redundancy Cputime ',Tot,' for ',N,' Fact checks.']).
+ 
 allAttr_redundancy_check(Context,Component,Mode) :-
 	 allAttr_ext(S,R,T),
+             coninc(redund),
 	 get_component_extensional(allAttr_ext(S,R,T),Component),
 	 allAttr_redundancy_check_1(Context,Component,allAttr(S,R,T),Mode),
 	 fail.
@@ -506,6 +516,7 @@ allAttr_redundancy_check_1(Context,Component,allAttr(S,R,T),Mode):-
 
 classHasAttr_redundancy_check(Context,Component,Mode) :-
 	 classHasAttr_ext(S,R,T),
+             coninc(redund),
 	 get_component_extensional(classHasAttr_ext(S,R,T),Component),
 	 classHasAttr_redundancy_check_1(Context,Component,
 	                                                     classHasAttr(S,R,T),Mode),
@@ -527,6 +538,7 @@ classHasAttr_redundancy_check_1(Context,Component,
 
 hasAttr_redundancy_check(Context,Component,Mode) :-
 	 hasAttr_ext(S,R,T),
+             coninc(redund),
 	 get_component_extensional(hasAttr_ext(S,R,T),Component),
 	 hasAttr_redundancy_check_1(Context,Component,hasAttr(S,R,T),
 	                                            Mode),
@@ -546,6 +558,7 @@ hasAttr_redundancy_check_1(Context,Component,hasAttr(S,R,T),Mode):-
 
 minAttr_redundancy_check(Context,Component,Mode) :-
 	 minAttr_ext(S,R,T,N),
+             coninc(redund),
 	 get_component_extensional(minAttr_ext(S,R,T,N),Component),
 	 minAttr_redundancy_check_1(Context,Component,minAttr(S,R,T,N),
                                                          Mode),
@@ -565,6 +578,7 @@ minAttr_redundancy_check_1(Context,Component,minAttr(S,R,T,N),Mode):-
 
 maxAttr_redundancy_check(Context,Component,Mode) :-
 	 maxAttr_ext(S,R,T,N),
+             coninc(redund),
 	 get_component_extensional(maxAttr_ext(S,R,T,N),Component),
 	 maxAttr_redundancy_check_1(Context,Component,maxAttr(S,R,T,N),
 	                                             Mode),
@@ -582,11 +596,38 @@ maxAttr_redundancy_check_1(Context,Component,maxAttr(S,R,T,N),Mode):-
 	   ; 
                  fail),!.
 
+%-----------------------------------------------------------------
+
 check_object_constraints(Context,Component):- 
+	cputime(Start),
+	conset(object,0),
+	check_allAttr_constraints(Context,Component),
 	check_minAttr_constraints(Context,Component),
-	check_maxAttr_constraints(Context,Component).
+	check_maxAttr_constraints(Context,Component),
+	cputime(End),
+	Tot is End - Start,
+	conget(object,N),
+	message(['Object Check Cputime ',Tot,' for ',N,' Fact checks.']).
+
+check_allAttr_constraints(Context,Component):- 
+	coninc(object),
+	immed_allAttr(S,R,T),
+	get_component_extensional(allAttr_ext(S,R,T),Component),
+	check_allAttr_constraints_1(Context,allAttr(S,R,T)),
+	fail.
+check_allAttr_constraints(_Context,_Component).
+
+check_allAttr_constraints_1(Context,allAttr(S,R,T)):- 
+	isa(oid(Oid,Src),S),
+	hasAttr(oid(Oid,Src),R,T1),
+	(isa(T1,T) -> 
+	    true
+	  ; cdf_warning(Context,[hasAttr(oid(Oid,Src),R,T1),' does not ',
+	                                     'explicitly satisfy the ',
+                                                 'constraint ',allAttr(S,R,T)]) ).
 
 check_minAttr_constraints(Context,Component):- 
+	coninc(object),
 	immed_minAttr(S,R,T,N),
 	get_component_extensional(minAttr_ext(S,R,T,N),Component),
 	check_minAttr_constraints_1(Context,minAttr(S,R,T,N)),
@@ -604,6 +645,7 @@ check_minAttr_constraints_1(Context,minAttr(S,R,T,N)):-
                                                  ' constraint ',minAttr(S,R,T,N)]) ).
 
 check_maxAttr_constraints(Context,Component):- 
+	coninc(object),
 	immed_maxAttr(S,R,T,N),
 	get_component_extensional(maxAttr_ext(S,R,T,N),Component),
 	check_maxAttr_constraints_1(Context,maxAttr(S,R,T,N)),

@@ -1,7 +1,9 @@
 :- export
+            abolish_cdf_tables/0,
 	explosive_isa/2,
 	cdf_id_fields/4,
 	cdf_root/1,
+	ic/1, 
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
 	hasAttr/3, immed_hasAttr/3, 
 	allAttr/3, immed_allAttr/3, 
@@ -26,11 +28,11 @@
 :- import apply_checks/2 
 	from cdf_checks.
 
-:- import isa_ext/2, hasAttr_ext/3, minAttr_ext/4,
+:- import ic_ext/1, isa_ext/2, hasAttr_ext/3, minAttr_ext/4,
 	  classHasAttr_ext/3, allAttr_ext/3,maxAttr_ext/4
 						from usermod.
 
-:- import isa_int/2, hasAttr_int/3, minAttr_int/4,
+:- import ic_int/1, isa_int/2, hasAttr_int/3, minAttr_int/4,
 	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4
 						from  usermod.
 
@@ -58,6 +60,9 @@
 
 %%%%%%%%%%%%% Core Declarations 
 
+cdf_dynamic(ic_ext/1).
+cdf_index(ic_ext,1,[]).
+
 cdf_dynamic(isa_ext/2).
 cdf_index(isa_ext,2,[*(1),*(2)]).
 
@@ -73,6 +78,8 @@ cdf_dynamic(maxAttr_ext/4).
 cdf_index(maxAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
 
 %%%%%%%%%%%%% Declarations for External Intensional View
+
+cdf_dynamic(ic_int/1).
 
 cdf_dynamic(isa_int/2).
 
@@ -430,6 +437,10 @@ immed_isa1(CCid,PCid) :-
 	isa_int(CCid,PCid).
 
 %------------------------------------
+
+:- table table_isa/2.
+table_isa(X,Y):- isa(X,Y).
+
 :- comment(isa/2, "The operational semantics of @tt{isa/2} is defined
 in @ref{Using CDF}").
 
@@ -441,7 +452,7 @@ isa(Sub,Sup):-
 	      ; isa_bf(Sub,Sup))	
 	  ; isa_fx(Sub,Sup)).
 
-% Here use implicit bb specialization for first step as al alternative
+% Here use implicit bb specialization for first step as alternative
 % to the bf mode.
 
 isa_bb(Sub,Sup):- isa_bf(Sub,Sup).
@@ -453,19 +464,19 @@ isa_bb(Sub,Sup):-
 % Here use implicit bf specialization for first step, then look upwards 
 isa_bf(Sub,Sub).
 isa_bf(Sub,Sup):- 
-	(   immed_isa(Sub,Mid)
+	(   immed_isa1(Sub,Mid)
 	  ; implicit_isa_bf(Sub,Mid) ),
 	isa_bf_inner(Mid,Sup).
 
 isa_bf_inner(Sub,Sub).
 isa_bf_inner(Sub,Sup):- 
-	immed_isa(Sub,Mid),
+	immed_isa1(Sub,Mid),
 	isa_bf_inner(Mid,Sup).
 
 % Here implicit would fail; just do immediate, and look down. 
 isa_fx(Sub,Sub).
 isa_fx(Sub,Sup):- 
-	immed_isa(Mid,Sup),
+	immed_isa1(Mid,Sup),
 	isa_fx(Sub,Mid).
 
 :- comment(proper_isa/2, "@tt{proper_isa(Sub,Sup)} is true if @tt{Sub}
@@ -607,7 +618,7 @@ hasAttr_1fix(SCid,Rid,TCid) :-
 
 :- table hasAttr_1fix_sub/3.
 hasAttr_1fix_sub(SCid,Rid,TCid):- 
-	isa(SCid,SCidP), %\+ cdf_root(SCidP),
+	table_isa(SCid,SCidP), 
 	immed_hasAttr(SCidP,RidC,TCidC),
 	once(explosive_isa(RidC,Rid)),
 	once(explosive_isa(TCidC,TCid)).
@@ -753,7 +764,7 @@ minAttr_1fix(SCid,Rid,TCid,N) :-
 
 :- table minAttr_1fix_sub/4.
 minAttr_1fix_sub(SCid,Rid,TCid,N):- 
-	isa(SCid,SCidP), %\+ cdf_root(SCidP),
+	table_isa(SCid,SCidP), 
 	immed_minAttr(SCidP,RidC,TCidC,M),
 	once(explosive_isa(RidC,Rid)),
 	once(explosive_isa(TCidC,TCid)),
@@ -989,7 +1000,7 @@ allAttr_1fix(SCid,Rid,TCid) :-
 
 :- table allAttr_1fix_sub/3.
 allAttr_1fix_sub(SCid,Rid,TCid):- 
-	isa(SCid,SCidP), %\+ cdf_root(SCidP),
+	table_isa(SCid,SCidP), %\+ cdf_root(SCidP),
 	immed_allAttr(SCidP,RidC,TCidC),
 	once(explosive_isa(Rid,RidC)),
 	once(explosive_isa(TCidC,TCid)).
@@ -1109,7 +1120,7 @@ maxAttr_1fix(SCid,Rid,TCid,N) :-
 
 :- table maxAttr_1fix_sub/4.
 maxAttr_1fix_sub(SCid,Rid,TCid,N):- 
-	isa(SCid,SCidP), 
+	table_isa(SCid,SCidP), 
 	immed_maxAttr(SCidP,RidC,TCidC,M),
 	once(explosive_isa(Rid,RidC)),
 	once(explosive_isa(TCidC,TCid)),
@@ -1150,6 +1161,11 @@ not_max_implicative_maxAttr_23fix(Term,BindPat) :-
 	once(explosive_isa(SCid,SCidO)),	
 	once(explosive_isa(TCidO,TCid)),
 	varLTE(M,N).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ic(Formula):- ic_ext(Formula).
+ic(Formula):- ic_int(Formula).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1237,6 +1253,14 @@ retractall_cdf_term(Term) :-
 	fail.
 retractall_cdf_term(_).
 
+abolish_cdf_tables:-
+	abolish_table_pred(table_isa(_,_)),
+	abolish_hasAttr_inherits,
+	abolish_allAttr_inherits,
+	abolish_classHasAttr_inherits,
+	abolish_maxAttr_inherits,
+	abolish_minAttr_inherits.
+
 abolish_nec_tables(minAttr_ext(_,_,_,_)) :- !,
 	abolish_minAttr_inherits.
 abolish_nec_tables(maxAttr_ext(_,_,_,_)) :- !,
@@ -1247,10 +1271,13 @@ abolish_nec_tables(allAttr_ext(_,_,_)) :- !,
 	abolish_allAttr_inherits.
 abolish_nec_tables(classHasAttr_ext(_,_,_)) :- !,
 	abolish_classHasAttr_inherits.
-abolish_nec_tables(subclass_ext(_,_)) :- !,
+abolish_nec_tables(isa_ext(_,_)) :- !,
+	abolish_table_pred(table_isa(_,_)),
 	abolish_hasAttr_inherits,
 	abolish_allAttr_inherits,
-	abolish_classHasAttr_inherits.
+	abolish_classHasAttr_inherits,
+	abolish_maxAttr_inherits,
+	abolish_minAttr_inherits.
 abolish_nec_tables(_).
 
 abolish_minAttr_inherits :-
