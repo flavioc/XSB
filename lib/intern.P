@@ -80,7 +80,7 @@ Leaf Parameters are incorrect)
 --------------------------------------------------*/
 
 trie_interned(Term,Root,Leaf,Skel) :-
-	var(Leaf),
+	var(Leaf), !,
 	i_trie_interned(Term,Root,Leaf),
 	get_lastnode_cs_retskel(_,Leaf,_,Skel1),
 	Skel1 = Skel.
