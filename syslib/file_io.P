@@ -268,6 +268,7 @@ path_sysop(cwd, Path) :- !, cwd(Path).
 path_sysop(chdir, Path) :- !, cd(Path).
 path_sysop(mkdir, Path) :- !, sys_mkdir(Path,Res), Res=:=0.
 path_sysop(rmdir, Path) :- !, sys_rmdir(Path,Res), Res=:=0.
+path_sysop(exists, Path) :- !, file_exists(Path).
 path_sysop(readable, Path) :- !, sys_access(Path, 'r', Res), Res =:= 0.
 path_sysop(writable, Path) :- !, sys_access(Path, 'w', Res), Res =:= 0.
 path_sysop(executable, Path) :- !, sys_access(Path, 'x', Res), Res =:= 0.

@@ -1357,12 +1357,14 @@ corresponding system call succeeds.
   Creates a new directory, {\tt Path}.
   \ournewitem{path\_sysop(rmdir, +Path)}{file\_io}
   Deletes the directory {\tt Path}.
+  \ournewitem{path\_sysop(exists, +Path)}{file\_io}
+  Succeeds if the file {\tt Path} exists.
   \ournewitem{path\_sysop(readable, +Path)}{file\_io}
-  Succeeds if {\tt Path} is readable.
+  Succeeds if {\tt Path} is a readable file.
   \ournewitem{path\_sysop(writable, +Path)}{file\_io}
-  Succeeds if {\tt Path} is writable.
+  Succeeds if {\tt Path} is a writable file.
   \ournewitem{path\_sysop(executable, +Path)}{file\_io}
-  Succeeds if {\tt Path} is executable.
+  Succeeds if {\tt Path} is an executable file.
   \ournewitem{path\_sysop(modtime, +Path, -Time)}{file\_io}
   Returns a list that represents the last modification time of the file.
   Succeeds if file exists. In this case, {\tt Time} is bound to a list

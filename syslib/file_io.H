@@ -30,7 +30,9 @@
       from machine.
 :- import conpsc/2, psc_set_type/2, psc_set_prop/2 from machine.
 
-:- import abort/1, atom_codes/2, '\='/2, repeat/0
+:- import
+	abort/1, atom_codes/2, '\='/2, repeat/0,
+	file_exists/1
       from standard.
 
 :- import gensym/2 from gensym.
