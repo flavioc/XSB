@@ -588,7 +588,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   get_obj_byte(&t_env);
   /* this simple check can avoid worse situations in case of compiler bugs */
   if (t_env > T_GLOBAL) 
-    xsb_abort("LOADER: The loaded object file %s.O is corrupted",
+    xsb_abort("[LOADER] The loaded object file %s.O is corrupted",
 	      cur_mod->nameptr);
 
   get_obj_byte(&t_type);
@@ -673,7 +673,7 @@ static byte *loader1(FILE *fd, int exp)
   get_obj_byte(&name_len);
 
   if (name_len >= FOREIGN_NAMELEN)
-    xsb_abort("LOADER: foreign module name is too long");
+    xsb_abort("[LOADER] Foreign module name is too long");
 
   get_obj_string(name, name_len);
   name[(int)name_len] = 0;
@@ -696,7 +696,7 @@ static byte *loader1(FILE *fd, int exp)
     get_obj_byte(&name_len);
 
     if (name_len >= FOREIGN_NAMELEN)
-      xsb_abort("LOADER: module name is too long");
+      xsb_abort("[LOADER] Module name is too long");
 
     get_obj_string(name, name_len);
     name[(int)name_len] = 0;
@@ -730,9 +730,14 @@ static byte *loader1(FILE *fd, int exp)
 	TIF_PSC(tip) = (ptr->psc_ptr);
       }
       break;
-    default:
-      xsb_error("the predicate %s/%d cannot be loaded", name, arity);
+    case T_DYNA:
       unload_seg(seg_first_inst);
+      xsb_abort("[LOADER] Trying to compile a dynamic predicate, %s/%d",
+		name, arity);
+      return NULL;
+    default:
+      unload_seg(seg_first_inst);
+      xsb_abort("[LOADER] The predicate %s/%d cannot be loaded", name, arity);
       return NULL;
     }
   } while (1==1);
@@ -759,7 +764,7 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 
   get_obj_byte(&name_len);
   if (name_len >= FOREIGN_NAMELEN) {
-    xsb_error("LOADER: foreign module name is too long");
+    xsb_error("[LOADER] Foreign module name is too long");
     return FALSE;
   }
   get_obj_string(name, name_len);
