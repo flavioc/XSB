@@ -67,8 +67,8 @@ default_sys_error_handler(error(Error,Msg,Backtrace)) :-
 default_sys_error_handler(error(Error,Msg)) :-
 	get_sys_error_description(error(Error,Msg),NewMsg),
 	messageln(NewMsg,STDERR).
-default_sys_error_handler(error(Error,Msg)) :-
-	messageln(('Unhandled Exception: ',error(Error,Msg)),STDERR).
+default_sys_error_handler(X) :-
+	messageln(('Unhandled Exception: ',X),STDERR).
 
 % get_sys_error_description/3
 get_sys_error_description('_$abort_ball'(AbortMsgs, Backtrace), ExceptionDescription, BacktraceList) :- !,
