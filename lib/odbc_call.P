@@ -1870,7 +1870,11 @@ odbc_user_tables(ConnHandle,Tab) :-
     
 
 odbc_data_sources(DataSourceName,Description) :-
+	var(DataSourceName), !,
 	odbc_data_sources(1,DataSourceName,Description).
+odbc_data_sources(DataSourceName,Description) :-
+	findall((Dsn,Descr),odbc_data_sources(Dsn,Descr),L),
+	memberchk((DataSourceName,Description),L).
 
 odbc_data_sources(N,DataSourceName,Description) :-
 	odbc_data_sources(N,DataSourceName,Description,RetVal),

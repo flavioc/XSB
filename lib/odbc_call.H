@@ -51,7 +51,7 @@
 
 :- import call0/1, odbc_exec_query/6 from machine.
 :- import conset/2, conget/2, coninc/1 from gensym.
-:- import length/2, append/3, member/2, copy_term/2 from basics.
+:- import length/2, append/3, member/2, copy_term/2, memberchk/2 from basics.
 
 :- import (dynamic)/1, retractall/1, abolish/1, asserta/1, assert/1,
 	retract/1
