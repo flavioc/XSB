@@ -9,7 +9,7 @@
 
 \section{Introduction}
 This suite of packages consists of the {\tt sgml} package, which can parse
-HTML, XML, and even SGML documents and the {\tt xpath} package, which
+XML, HTML, XHTML, and even SGML documents and the {\tt xpath} package, which
 supports XPath queries on XML documents.  The {\tt sgml} package is an
 adaptation of a similar package in SWI Prolog and a port of SWI's codebase with
 some minor changes. The {\tt xpath} package provides an interface to the
@@ -112,7 +112,7 @@ will parse the document and bind {\tt Term} to the following Prolog term:
 
 \index{{\tt CDATA}}
 \noindent
-The XML document is converted to a list of Prolog terms of the form {\tt
+The XML document is converted into a list of Prolog terms of the form {\tt
   element(\emph{Name},\emph{Attributes},\emph{Content})}.  Each term
 corresponds to an XML element. \emph{Name} represents the name of the element.
 \emph{Attributes} is a list of attribute-value pairs of the element.  
@@ -140,18 +140,18 @@ for details.
 SGML, HTML, and XML documents are parsed by the predicate
 {\bf load\_structure/4}, which has many options. For 
 convenience, a number of commonly used shorthands are provided
-to parse SGML, XML and HTML documents
+to parse SGML, XML, HTML, and XHTML documents
 respectively.
 %%
 \begin{description}
   \index{load\_sgml\_structure/3}
-\item[{\bf load\_sgml\_structure}{\bf (}{\it +Source, -ListOfContent,
-    -Warn}{\bf )}]\mbox{}
+\item[load\_sgml\_structure({\it +Source, -Content, -Warn})]\mbox{}
   \index{load\_xml\_structure/3}
-\item[{\bf load\_xml\_structure}{\bf (}{\it +Source, -ListOfContent,
-    -Warn}{\bf )}]\mbox{}
+\item[load\_xml\_structure({\it +Source, -Content, -Warn})]\mbox{}
   \index{load\_html\_structure/3}
-\item[{\bf load\_html\_structure}{\bf (}{\it +Source, -Content, -Warn}{\bf )}]\mbox{}
+\item[load\_html\_structure({\it +Source, -Content, -Warn})]\mbox{}
+  \index{load\_xhtml\_structure/3}
+\item[load\_xhtml\_structure({\it +Source, -Content, -Warn})]\mbox{}
 \end{description}
 %%
 The parameters of these predicates have the same meaning as those in {\bf
@@ -165,18 +165,18 @@ needed only for advanced uses of the package.
 
 \begin{description}
   \index{load\_structure/4}
-\item[{\bf load\_structure}{\bf (}{\it +Source, -ListOfContent, +Options, -Warn}{\bf )}]\mbox{}
+\item[{\bf load\_structure}{\bf (}{\it +Source, -Content, +Options, -Warn}{\bf )}]\mbox{}
   \\
   {\it Source} can have one of the following forms:
    {\tt url({\it {url}})}, {\tt file({\it file name})},
   {\tt string({\it 'document as a Prolog atom'})}.
-  The parsed document is returned in {\it ListOfContent}.
+  The parsed document is returned in {\it Content}.
   {\it Warn} is bound to a (possibly empty) list of warnings generated
   during the parsing process.
   {\it Options} is a list of parameters that control parsing, which are
   described later.
 
-  The list {\it ListOfContent}  can have the following members:
+  The list {\it Content}  can have the following members:
 %%
   \begin{description}
     \index{{\tt CDATA}}
@@ -185,11 +185,11 @@ needed only for advanced uses of the package.
 
     \index{{\tt NAMES}}
     \index{{\tt NUMBER}}
-  \item[{\bf element}{\bf (}{\it Name, ListOfAttributes, ListOfContent}{\bf
+  \item[{\bf element}{\bf (}{\it Name, Attributes, Content}{\bf
     )}]\mbox{}\\{\it Name} is the name of the element tag. Since SGML is 
     case-insensitive, all element names are returned as lowercase atoms.
     
-    {\it ListOfAttributes} is a list of pairs the form {\it Name}={\it
+    {\it Attributes} is a list of pairs the form {\it Name}={\it
       Value}, where \emph{Name} is the name of an attribute and
     \emph{Value} is its value.  Values of type {\tt CDATA} are represented
     as atoms. The values of multi-valued attributes ({\tt NAMES},
@@ -202,7 +202,7 @@ needed only for advanced uses of the package.
     specify that these values must be converted to
     Prolog integers.
     
-    {\it ListOfContent} is a list that represents
+    {\it Content} is a list that represents
     the content for the element.
 
   \item[{\bf entity}{\bf (}{\it Code}{\bf )}]\mbox{}\\
@@ -356,11 +356,11 @@ modes are:
   any standard: XML 1.0 allows only {\tt default} and {\tt preserve}.
 %%
 \begin{verbatim}
-Consider adjacent <b>bold</b> <ul>and</ul> <it>italic</it> words.
+    Consider adjacent <b>bold</b> <ul>and</ul> <it>italic</it> words.
 \end{verbatim}
   %%
   The parsed term will be
-  {\tt ['Consider adjacent',element(b,[],[bold]),element(ul,[],[and]),element(it,[],[italics]),words]}.
+  {\tt ['Consider adjacent',element(b,[],[bold]),element(ul,[], [and]),element(it,[],[italics]),words]}.
 
 
 \end{description}
@@ -487,8 +487,8 @@ for handling the DTD.
   \index{doctype}
 \item[{\bf dtd}{\bf (}{\it +DocType, -DTD, -Warn}{\bf )}]\mbox{}\\
   Certain DTDs are part of the system and have known
-  doctypes. Currently, 'HTML' is the only recognized built-in
-  doctype in the SGML mode. 
+  doctypes. Currently, 'HTML' and 'XHTML' are the only recognized built-in
+  doctypes.
   Such a DTD can be used for parsing simply by
   specifying the doctype.  Thus, the {\tt dtd/3} predicate takes the
   doctype name, finds the DTD associated with the given doctype, and
@@ -787,9 +787,10 @@ In particular, XInclude is not implemented.
   {\bf free\_sgml\_parser/1}&Destroy a parser\\
   {\bf load\_dtd/2}&Read DTD information from a file\\
   {\bf load\_structure/4}&Parse XML/SGML/HTML data into Prolog term\\
-  {\bf load\_html\_structure/3}&Parse HTML file into Prolog term\\
   {\bf load\_sgml\_structure/3}&Parse SGML file into Prolog term \\
+  {\bf load\_html\_structure/3}&Parse HTML file into Prolog term\\
   {\bf load\_xml\_structure/3}&Parse XML file into Prolog term\\
+  {\bf load\_xhtml\_structure/3}&Parse XHTML file into Prolog term\\
   {\bf new\_dtd/2}&Create a DTD object\\
   {\bf new\_sgml\_parser/2}&Create a new parser\\
   {\bf open\_dtd/3}&Open a DTD object as an output stream\\

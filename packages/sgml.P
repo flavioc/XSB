@@ -22,6 +22,7 @@
 :- export 
 	load_structure/4, 
 	load_html_structure/3,
+	load_xhtml_structure/3,
 	load_xml_structure/3,
 	load_sgml_structure/3,
 	new_sgml_parser/3,
@@ -132,6 +133,10 @@ doctype(Parser, Doctype, 'Yes', Warn) :-
 	pl_doctype(Parser, Doctype),
 	throw_error(Error).
 
+dtd('HTML', Dtd, Warn):-
+	dtd_warn(html, Dtd, Warn),
+	pl_finalize_warn(Warn).
+
 dtd(html, Dtd , Warn):- 
 	dtd_warn(html, Dtd , Warn),
 	pl_finalize_warn(Warn).
@@ -139,20 +144,33 @@ dtd(html, Dtd , Warn):-
 dtd_warn('html', Dtd , Warn):- 
 	pl_allocate_error_term(Error, Warn),
 	pl_new_dtd('html', Dtd), 
-	filesdir(Dtdfile),
-	pl_open_dtd(Dtd, [source(file(Dtdfile))]),
-	throw_error(Error).
-
-dtd_warn('HTML', Dtd, Warn):- 
-	pl_allocate_error_term(Error, Warn),
-	pl_new_dtd('HTML', Dtd),
-	filesdir(Dtdfile), 
+	filesdir(Dtdfile, 'HTML4.dtd'),
 	pl_open_dtd(Dtd, [source(file(Dtdfile))]),
 	throw_error(Error).
 
 load_html_structure(Source, Term, Warn) :- 
 	dtd_warn('html', Dtd, Warn), 
 	load_structure_warn(Source, Term,[Dtd, dialect(sgml)], Warn),
+	pl_finalize_warn(Warn).
+
+dtd('xhtml', Dtd, Warn):-
+	dtd_warn('xhtml', Dtd, Warn),
+	pl_finalize_warn(Warn).
+
+dtd('XHTML', Dtd, Warn):-
+	dtd_warn('xhtml', Dtd, Warn),
+	pl_finalize_warn(Warn).
+
+dtd_warn('xhtml', Dtd, Warn):-
+        pl_allocate_error_term(Error, Warn),
+	pl_new_dtd('xhtml', Dtd), 
+	filesdir(Dtdfile, 'xhtml1-transitional.dtd'),
+	pl_open_dtd(Dtd, [source(file(Dtdfile))]),
+	throw_error(Error).
+
+load_xhtml_structure(Source, Term, Warn) :- 
+	dtd_warn('xhtml', Dtd, Warn), 
+	load_structure_warn(Source, Term,[Dtd, dialect(xml)], Warn),
 	pl_finalize_warn(Warn).
 
 load_xml_structure(Source, Term, Warn) :- 
@@ -193,14 +211,17 @@ set_parser_options(_, []).
 select_dtd([X|_], DTD, Doctype, ExplicitDTD):-
 	select(X, DTD, Doctype, ExplicitDTD),!.
 
-select_dtd([_|T], DTD, Doctype, ExplicitDTD) :- select_dtd(T, DTD, Doctype, ExplicitDTD).
+select_dtd([_|T], DTD, Doctype, ExplicitDTD) :-
+	select_dtd(T, DTD, Doctype, ExplicitDTD).
 
 select_dtd([], _, _, 'No').
 
 select(dtd_struct(DTD, Doctype), DTD, Doctype, 'Yes').
 
-filesdir(SgmlDir) :-
+filesdir(SgmlDir, FileName) :-
         xsb_configuration(packagesdir, PackDir),
         slash(Slash),
-        fmt_write_string(SgmlDir, '%s%ssgml%scc%sdtd%sHTML4.dtd', f(PackDir, Slash, Slash, Slash, Slash)).
+        fmt_write_string(SgmlDir,
+			 '%s%ssgml%scc%sdtd%s%s',
+			 f(PackDir, Slash, Slash, Slash, Slash, FileName)).
 

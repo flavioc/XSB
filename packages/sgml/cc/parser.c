@@ -1438,17 +1438,36 @@ putchar_dtd_parser(dtd_parser *p, int chr)
 	terminate_icharbuf(p->buffer);
 	p->state = p->cdata_state;
 
-	if ( p->mark_state == MS_INCLUDE )
+	/* Added to handle cases where there is cdata of the form &xyz
+	   which is not an entity*/
+
+	if(  (f[CF_ERC] != chr) && (chr != '@') && !HasClass( dtd, chr, CH_WHITE) && !HasClass( dtd, chr, CH_RE) && !HasClass( dtd, chr, CH_RS) && (f[CF_ERO] != chr))
+	  {
+	    int i = 0; 
+
+	    add_ocharbuf( p->cdata, '&');
+	    for( i = 0; i < p->buffer->size; i++)
+	      {
+		add_cdata(p, dtd->charmap->map[p->buffer->data[i]]);
+	      }
+	    goto reprocess;
+	  }
+
+        if ( p->mark_state == MS_INCLUDE )
 	  { 
 	    WITH_PARSER(p, process_entity(p, p->buffer->data));
 	  }
-      	
+      	 
 	empty_icharbuf(p->buffer);
-                                                                               
-	if ( chr == CR )
+
+       	if ( chr == CR ){
 	  p->state = S_ENTCR;
-	else if ( f[CF_ERC] != chr && chr != '\n' )
+	  break;
+	}
+	else if ( f[CF_ERC] != chr && chr != '\n' ) {
 	  goto reprocess;
+	}
+
 	break;
       }
 
@@ -1801,7 +1820,7 @@ gripe(dtd_error_id e, ...)
     case ERC_NOT_ALLOWED_PCDATA:
       {   char *text = va_arg(args, char *);
 	text[ strlen(text) - 1] = '\0';
-	sprintf(buf, "#PCDATA (\"%s\") not allowed here", text);
+	sprintf(buf, "#PCDATA (\"%s\") not allowed here", str_summary(text,25));
 	error.argv[0] = buf;
 	error.severity = ERS_WARNING;
       	e = ERC_VALIDATE;
@@ -2225,7 +2244,7 @@ sgml_process_stream(dtd_parser *p, char *buf, unsigned flags, int source_len)
   for( ; i<=source_len ; i++)
     { int p2 = buf[i];
                                                                                
-      if ( p2 == EOF )
+      if ( p2 == EOF || p2 == '\0')
 	{ putchar_dtd_parser(p, p0);
 	  if ( p1 != LF )
 	    putchar_dtd_parser(p, p1);
@@ -2766,9 +2785,9 @@ process_declaration(dtd_parser *p, const ichar *decl)
       if ( p->on_decl )
 	(*p->on_decl)(p, decl);
 
-      if ( (s = isee_identifier(dtd, decl, "entity")) )
+      if ( (s = isee_identifier(dtd, decl, "entity")) ){
 	process_entity_declaration(p, s);
-
+      }
       else if ( (s = isee_identifier(dtd, decl, "element")) )
 	{
 	  process_element_declaraction(p, s);
@@ -4772,18 +4791,12 @@ entity_file(dtd *dtd, dtd_entity *e)
   switch(e->type)
     { case ET_SYSTEM:
     case ET_PUBLIC:
-      { const char *f;
-           
+      {            
 	if( e->exturl)
 	  {
-	    f = e->exturl;
+	    file = e->exturl;
 	    	    
-	    if ( is_absolute_path(f) || !e->baseurl )
-	      file = (char *)f;
-	    else
-	      file = localpath(e->baseurl, f);
-                   
-	    return file;
+      	    return file;
 	  }
 	return NULL;
       }
@@ -6113,8 +6126,14 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
     {
       if (att->definition->type == AT_CDATA)
 	{
-	  int hasent = FALSE;
+	  int hasent = FALSE, hasento = FALSE;
 	  ichar const ero = dtd->charfunc->func[CF_ERO];    /* & */
+
+	  /*Fix by Rohan*/
+	  /* The attribute contains an entity only if there is an opening &
+	     and a closing ;*/
+	  ichar const erc = dtd->charfunc->func[CF_ERC];
+
 	  ichar *q;
 	  
 	  for (d = q = tmp; *d; *q++ = *d++)
@@ -6127,8 +6146,18 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
 		} 
 	      else if (*d == ero)
 		{ 
-		  hasent = TRUE;        /* notice char/entity references */
+		  hasento = TRUE;        /* notice char/entity references */
 		}
+	      else if( hasento == TRUE && (*d == erc || *d == ero || *d == '@' || HasClass( dtd, *d, CH_WHITE) || HasClass( dtd, *d, CH_RE) || HasClass( dtd, *d, CH_RS) ))
+		{
+		  hasent = TRUE;
+		}
+	      else if( hasento == TRUE && (*d != erc && *d != ero && *d != '@' && !HasClass( dtd, *d, CH_WHITE)  && !HasClass( dtd, *d, CH_NAME) && !HasClass( dtd, *d, CH_RE) && !HasClass( dtd, *d, CH_RS) ))
+		{
+		  hasento = FALSE;
+		  hasento = FALSE;
+		}
+
 #ifdef UTF8
 	      else if ( p->utf8_decode && ISUTF8_MB(*d) )
 		{ 
@@ -6143,12 +6172,12 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
 	    {
 	      expand_entities(p, tmp, cdata, MAXSTRINGLEN);
 	      buf = (ichar *) cdata;
+	      hasent = hasento = FALSE;
 	    }
 	}
       else
 	{
 	  ichar *d;
-
 	  expand_entities(p, tmp, cdata, MAXSTRINGLEN);
 	  buf = (ichar *) cdata;
 

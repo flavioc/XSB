@@ -154,7 +154,7 @@ int get_file_www(char *server, char *fname, char **source)
 	
 	pptr = (struct in_addr **) hp->h_addr_list;
 	
-	/* Open the sicket connection */	
+	/* Open the socket connection */	
 	for ( ; *pptr != NULL; pptr++) {
 	  
 	  sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -182,6 +182,7 @@ int get_file_www(char *server, char *fname, char **source)
 	
 
 	/*Issue the http get filename command*/
+	//   	printf("Server [%s] Fname [%s]\n", server, fname);	
 	
 	sprintf( *source, "GET %s\n\n", fname);
 	len = strlen( *source);
@@ -190,6 +191,7 @@ int get_file_www(char *server, char *fname, char **source)
 		    
 	i=0;
 	maxlen = 0;
+
 	/* Download the file */
 	while( (len != 0)  && ( len != -1)){
 	  *source = (char*) realloc( *source, ((i+1) * MAXSTRLEN) + 1);
@@ -202,126 +204,151 @@ int get_file_www(char *server, char *fname, char **source)
 	  }
 	  i++;
 	}
-		
+	
+	//        printf("Downloaded [%s]\n", *source);
 	/*Handle http errors*/
 
-	if( strstr( *source, "Error 400")!= NULL){
+	if( (strstr( *source, "Error 400")!= NULL)
+	    || (strstr( *source, "400 Bad Request")!=NULL)){
 	  strcpy( *source, "400 Bad Request");
 	  return FALSE;
 	}
 	
-	if( strstr( *source, "Error 401")!= NULL){
+	if( (strstr( *source, "Error 401")!= NULL)
+	    || (strstr( *source, "401 Unauthorized")!=NULL)){
 	  strcpy( *source, "401 Unauthorized");
 	  return FALSE;
 	}
 	
-	if( strstr( *source, "Error 402")!= NULL){
+	if( (strstr( *source, "Error 402")!= NULL)
+	|| (strstr( *source, "402 Payment Required")!=NULL)){
 	  strcpy( *source, "402 Payment Required");
 	  return FALSE;
 	}
 	
-	if( strstr( *source, "Error 403")!= NULL){
+	if( (strstr( *source, "Error 403")!= NULL)
+	    || strstr( *source, "403 Forbidden")!=NULL){
 	  strcpy( *source, "403 Forbidden");
 	  return FALSE;
 	}
 	
-	if( strstr( *source, "Error 404")!= NULL){
-	  
-	  strcpy( *source, "Error 404 File not found");
-	  return FALSE;
-	}
+	if( (strstr( *source, "Error 404")!= NULL) 
+	    || (strstr( *source, "404 Not Found")!=NULL)){
+	    strcpy( *source, "Error 404 File not found");
+	    return FALSE;
+	  }
 	
-	if( strstr( *source, "Error 405")!= NULL){
+	if( (strstr( *source, "Error 405")!= NULL)
+	    || (strstr( *source, "405 Method Not Allowed")!=NULL)){
 	  strcpy( *source, "405 Method Not Allowed");
 	  return FALSE;
 	}
 	
-	if( strstr( *source, "Error 406")!= NULL){
+	if( (strstr( *source, "Error 406")!= NULL)
+	    || (strstr( *source, "406 Not Acceptable")!=NULL)){
 	  strcpy( *source, "406 Not Acceptable");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 407")!= NULL){
+	if( (strstr( *source, "Error 407")!= NULL)
+	    || (strstr( *source, "407  Proxy Authentication Required")!=NULL)  ){
 	  strcpy( *source, "407 Proxy Authentication Required");
 	  return FALSE;
 	}
 	
 	
-	if( strstr( *source, "Error 408")!= NULL){
+	if( (strstr( *source, "Error 408")!= NULL)
+	|| (strstr( *source, "408 Request Timeout")!=NULL)){
 	  strcpy( *source, "408 Request Timeout");
 	  return FALSE;
 	}
 
-
-	if( strstr( *source, "Error 409")!= NULL){
+	if( (strstr( *source, "Error 409")!= NULL)
+	|| (strstr( *source, "409 Conflict")!=NULL)){
 	  strcpy( *source, "409 Conflict");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 410")!= NULL){
+
+	if( (strstr( *source, "Error 410")!= NULL)
+	 || (strstr( *source, "410 Gone")!=NULL)){
 	  strcpy( *source, "410 Gone");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 411")!= NULL){
+	if( (strstr( *source, "Error 411")!= NULL)
+	  || (strstr( *source, "411 Length Required")!=NULL)){
 	  strcpy( *source, "411 Length Required"); ;
 	  return FALSE;
 	}
-	if( strstr( *source, "Error 412")!= NULL){
+	if( (strstr( *source, "Error 412")!= NULL)
+	|| (strstr( *source, "412 Precondition failed")!=NULL)){
 	  strcpy( *source, "412 Precondition Failed");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 413")!= NULL){
+	if( (strstr( *source, "Error 413")!= NULL)
+	|| (strstr( *source, "413 Request Entity Too Large")!=NULL)){
 	  strcpy( *source, "413 Request Entity Too Large");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 414")!= NULL){
-	  strcpy( *source, "414 Request-URI Too Longe") ;
+	if( (strstr( *source, "Error 414")!= NULL)
+	|| (strstr( *source, "414 Request-URI Too Long")!=NULL)){
+	  strcpy( *source, "414 Request-URI Too Long") ;
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 415")!= NULL){
+	if( (strstr( *source, "Error 415")!= NULL)
+	|| (strstr( *source, "Error 415")!=NULL)){
 	  strcpy( *source, "415 Unsupported Media Type");
 	  return FALSE;
 	}
 	
-	if( strstr( *source, "Error 416")!= NULL){
+	if( (strstr( *source, "Error 416")!= NULL)
+	|| (strstr( *source, "416 Requested Range Not Satisfiable")!=NULL)){
 	  strcpy( *source, "416 Requested Range Not Satisfiable");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 417")!= NULL){
+	if( (strstr( *source, "Error 417")!= NULL)
+	|| (strstr( *source, "417 Expectation Failed")!=NULL)){
 	  strcpy( *source,  "417 Expectation Failed");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 500")!= NULL){
+	if( (strstr( *source, "Error 500")!= NULL)
+	|| (strstr( *source, "500 Internal Server Error")!=NULL)){
 	  strcpy( *source, "500 Internal Server Error");
 	  return FALSE;
 	}
 	 
-	if( strstr( *source, "Error 501")!= NULL){
+	if( (strstr( *source, "Error 501")!= NULL)
+	|| (strstr( *source, "501 Not Implemented")!=NULL)){
 	  strcpy( *source, "501 Not Implemented");
 	  return FALSE;
 	}
-	if( strstr( *source, "Error 502")!= NULL){
+	if( (strstr( *source, "Error 502")!= NULL)
+	|| (strstr( *source, "502 Bad Gateway")!=NULL)){
 	  strcpy( *source, "502 Bad Gateway");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 503")!= NULL){
-	  strcpy( *source, "503 Service Unavailable") ;
+	if( (strstr( *source, "Error 503")!= NULL)
+	|| (strstr( *source, "503 Service Unavailable")!=NULL)){
+	  strstr( *source, "503 Service Unavailable") ;
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 504")!= NULL){
+	if( (strstr( *source, "Error 504")!= NULL)
+	    || (strstr( *source, "504 Gateway Timeout")!=NULL))
+	  {
 	  strcpy( *source, "504 Gateway Timeout");
 	  return FALSE;
 	}
 
-	if( strstr( *source, "Error 505")!= NULL){
+	if( (strstr( *source, "Error 505")!= NULL)
+	|| (strstr( *source, "505 HTTP Version Not Supported")!=NULL)){
 	  strcpy( *source, "505 HTTP Version Not Supported");
 	  return FALSE;
 	}

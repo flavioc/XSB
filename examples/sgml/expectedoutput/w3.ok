@@ -44,23 +44,21 @@ generous support of W3C10.]),
 ,element(p,[class = invisible],[element(a,[title = Skip News,href = #search,shape = rect],[Skip to
 Search])]),
 
-,element(div,[class = item,id = x20050215a],[
-,element(h3,[class = headline],[element(img,[alt = ,width = 17,height = 11,src = /Icons/right],[]),Character Model for the World Wide Web Is a W3C
-Recommendation]),
+,element(div,[class = item,id = x20050228a],[
+,element(h3,[class = headline],[element(img,[alt = ,width = 17,height = 11,src = /Icons/right],[]),W3C Hosts Fifth Annual Technical Plenary Week]),
 
-,element(p,[],[element(span,[class = date],[2005-02-15:]), The World Wide Web Consortium
-today released ,element(a,[href = /TR/2005/REC-charmod-20050215/,shape = rect],[Character Model
-for the World Wide Web 1.0: Fundamentals]), as a W3C Recommendation.
-The document allows Web applications to transmit and process the
-characters of the world's languages. Building on the Universal
-Character Set defined by Unicode and ISO/IEC 10646, it gives authors of
-specifications, software developers, and content developers a common
-reference for text manipulation. Read the ,element(a,[href = /2005/02/charmod-pressrelease,shape = rect],[press release]), and visit the
-,element(a,[href = /International/,shape = rect],[Internationalization home page]),.
-,element(span,[class = archive],[(,element(a,[rel = details,title = Character Model for the World Wide Web Is a W3C Recommendation,href = /News/2005#item23,shape = rect],[News archive]),)])]),
+,element(p,[],[element(img,[style = float: left; border-right: 3px solid #fff;,alt = photo of the W3C Technical Plenary in Boston,src = /2005/03/plenary-scaled.jpg],[]),element(span,[class = date],[2005-02-28:]),
+W3C holds its ,element(a,[href = /2004/12/allgroupoverview.html,shape = rect],[Technical
+Plenary Week]), from 28 February - 4 March in Boston, Massachusetts,
+USA where 30 W3C Working Groups and Interest Groups hold face-to-face
+meetings. Participants and invited guests attend plenary day for talks
+and demos on extensibility and versioning, XML, test suites, Web
+applications, Web site usability and design, multimodal interaction and
+voice. Learn how to ,element(a,[href = /Consortium/Prospectus/Joining,shape = rect],[join
+W3C]), and read ,element(a,[href = /Consortium/,shape = rect],[about W3C]),. ,element(span,[class = archive],[(Photo: Max Froumentin. ,element(a,[rel = details,title = W3C Hosts 5th Annual Technical Plenary Week,href = /News/2005#item32,shape = rect],[News archive]),)])]),
 ]),
 
-,element(div,[class = item,id = x20050225a],[
+,element(div,[style = clear: both;,class = item,id = x20050225a],[
 ,element(h3,[],[element(img,[alt = ,width = 17,height = 11,src = /Icons/right],[]),Internationalization Articles Published]),
 
 ,element(p,[],[element(span,[class = date],[2005-02-25:]), The Internationalization GEO
@@ -159,35 +157,6 @@ Identifiers]), (IRIs) and helps to deploy quality implementations by
 maintaining testing materials. Participation is open to ,element(a,[href = /Consortium/Member/List,shape = rect],[W3C Members]), and the public. ,element(span,[class = archive],[(,element(a,[rel = details,title = W3C Launches URI Interest Group,href = /News/2005#item26,shape = rect],[News archive]),)])]),
 ]),
 
-,element(div,[class = item,id = x20050215b],[
-,element(h3,[],[element(img,[alt = ,width = 17,height = 11,src = /Icons/right],[]),Working
-Drafts: Web Services Addressing]),
-
-,element(p,[],[element(span,[class = date],[2005-02-15:]), The Web Services Addressing
-Working Group has released three updated Working Drafts. ,element(a,[href = /TR/2005/WD-ws-addr-core-20050215/,shape = rect],[Web Services Addressing - Core]),
-enables message transmission through networks that include processing
-nodes such as endpoint managers, firewalls, and gateways in a
-transport-neutral manner. ,element(a,[href = /TR/2005/WD-ws-addr-wsdl-20050215/,shape = rect],[WSDL Binding]), defines how the
-core specification's properties are described in the Web Services
-Description Language (,element(a,[href = /TR/wsdl20/,shape = rect],[WSDL]),). ,element(a,[href = /TR/2005/WD-ws-addr-soap-20050215/,shape = rect],[SOAP Binding]), defines their
-association to ,element(a,[href = /TR/soap12-part1/,shape = rect],[SOAP]), messages. Read
-about ,element(a,[href = /2002/ws/,shape = rect],[Web services]),. ,element(span,[class = archive],[(,element(a,[rel = details,title = Working Drafts: Web Services Addressing,href = /News/2005#item24,shape = rect],[News
-archive]),)])]),
-]),
-
-,element(div,[class = item,id = x20050214b],[
-,element(h3,[],[element(img,[alt = ,width = 17,height = 11,src = /Icons/right],[]),Call for
-Participation: W3C Workshop on Rule Languages for Interoperability]),
-
-,element(p,[],[element(span,[class = date],[2005-02-14:]), Position papers are due 18
-March for the ,element(a,[href = /2004/12/rules-ws/cfp,shape = rect],[W3C Workshop on Rule
-Languages for Interoperability]), to be held 27-28 April in
-Washington, DC, USA. This workshop will bring together rule system
-vendors, rule users with a need for interoperability, and others to
-work toward developing a standard rule language, a key next step in
-promoting data exchange on the Web. Read about ,element(a,[href = /2003/08/Workshops/,shape = rect],[W3C workshops]), and visit the ,element(a,[href = /2001/sw/,shape = rect],[Semantic Web home page]),. ,element(span,[class = archive],[(,element(a,[rel = details,title = Call for Participation: W3C Workshop on Rule Languages for Interoperability,href = /News/2005#item22,shape = rect],[News archive]),)])]),
-]),
-
 ,element(h3,[class = pastNews],[element(a,[href = /News/2005,shape = rect],[Past News])]),
 ]),element(div,[class = navBlock],[
 ,element(h2,[class = navhead],[element(a,[name = search,id = search,shape = rect],[Search])]),
@@ -207,7 +176,12 @@ Lists])]),
 
 ,element(h2,[class = navhead],[element(a,[name = contents,id = contents,shape = rect],[Members])]),
 
-,element(div,[class = hpmt],[element(div,[class = hpmt-name],[Nokia]),element(div,[class = hpmt-logo],[element(a,[href = http://www.nokia.com/nokia/0,1522,,00.html?orig=/webservices,shape = rect],[element(img,[alt = Nokia,src = http://www.w3.org/Consortium/Member/Testimonial/Logo/50],[])])]),element(p,[class = hpmt-testimonial],[Nokia is the world leader in mobile communications, driving the growth and sustainability of the broader mobility industry. Nokia sees that contribution to, and adoption of, W3C specifications are essential for widespread use of the Web, with any user device. ,element(a,[class = hpmt-more,href = http://www.w3.org/Consortium/Member/Testimonial/List,shape = rect],[(Member testimonials)])])]),
+,element(div,[class = hpmt],[element(div,[class = hpmt-name],[Web3D Consortium]),element(div,[class = hpmt-logo],[element(a,[href = http://www.web3d.org,shape = rect],[element(img,[alt = Web3D Consortium,src = http://www.w3.org/Consortium/Member/Testimonial/Logo/393],[])])]),element(p,[class = hpmt-testimonial],[The Web3D Consortium, like W3C, supports open standardization.
+Web3D's open standards for real-time 3D communication include
+X3D, a powerful and extensible XML-based ISO standard for 
+3D visual effects, behavioral modeling, interaction and 
+interoperability. Web3D membership includes companies, 
+institutions, working groups and individuals. ,element(a,[class = hpmt-more,href = http://www.w3.org/Consortium/Member/Testimonial/List,shape = rect],[(Member testimonials)])])]),
 
 ,element(ul,[],[element(li,[],[element(a,[href = /Member/,class = navlink,shape = rect],[Member Home Page])]),element(li,[],[element(a,[href = /Submission/,class = navlink,shape = rect],[Member Submissions])]),element(li,[],[element(a,[href = /Consortium/Member/List,class = navlink,shape = rect],[Current
 Members])]),element(li,[],[element(a,[href = /Consortium/Recruitment/Fellows,class = navlink,shape = rect],[W3C
