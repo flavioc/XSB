@@ -669,18 +669,18 @@ the file a declaration
 {\tt :- multifile <Predicate\_List> .} \\
 \end{center}
 where {\tt Predicate\_List} is a list of predicates in {\em
-functor/arity} form.  The effect of this declaration is to delete {\em
-only} those clauses of {\tt predicate/arity} that were defined in the
+functor/arity\/} form.  The effect of this declaration is to delete {\em
+only\/} those clauses of {\tt predicate/arity} that were defined in the
 file itself.
 
 After loading the module, all exported predicates of that module are
 imported into the current environment (the current working
-module {\tt usermod}).  For non-modules (see section~\ref{Modules}),
-all predicates are imported into thecurrent working module.
+module {\tt usermod}).  For non-modules (see Section~\ref{Modules}),
+all predicates are imported into the current working module.
 
 Finally any queries --- that is, any terms with principal functor {\tt
 ':-'/1} that are not directives like the ones described in
-section~\ref{the_compiler} --- are executed in the order that they are
+Section~\ref{the_compiler} --- are executed in the order that they are
 encountered.
 
 \section{The Compiler} \label{the_compiler} \index{Compiler}
