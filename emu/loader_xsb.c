@@ -604,22 +604,31 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
     if (t_env == T_IMPORTED) {
       byte t_modlen;
       char modname[MAXNAME+1];
+
       get_obj_byte(&t_modlen);
       get_obj_string(modname, t_modlen);
       modname[t_modlen] = '\0';
       temp_pair = insert_module(0, modname);
       mod = temp_pair->psc_ptr;
-    } else if (t_env == T_GLOBAL) mod = global_mod;
-    else mod = cur_mod;
+    } else if (t_env == T_GLOBAL) 
+      mod = global_mod;
+    else 
+      mod = cur_mod;
     temp_pair = insert(str.string, t_arity, mod, &is_new);
-    if (is_new && t_env==T_IMPORTED)
+    /*if (is_new && t_env==T_IMPORTED) */
+    /* make sure all data fields of predicates PSCs point to 
+       their corresponding module */
+    if (is_new || 
+	(get_type(temp_pair->psc_ptr) == T_ORDI &&
+	 get_data(temp_pair->psc_ptr) == NULL))
       set_data(temp_pair->psc_ptr, mod);
     /* set psc_data to the psc record of the module name */
     env_type_set(temp_pair->psc_ptr, t_env, t_type, (xsbBool)is_new);
     /* dsw added following, maybe wrongly */
     if (exp && t_env == T_EXPORTED) {
       /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */
-      if (is_new) set_data(temp_pair->psc_ptr, mod);
+      if (is_new) 
+	set_data(temp_pair->psc_ptr, mod);
       link_sym(temp_pair->psc_ptr, (Psc)flags[CURRENT_MODULE]);
     }
   }
@@ -741,6 +750,8 @@ static byte *loader1(FILE *fd, int exp)
       if ((tip = get_tip(ptr->psc_ptr)) != NULL) {
 	TIF_PSC(tip) = (ptr->psc_ptr);
       }
+      /* set data to point to module's psc */
+      set_data(ptr->psc_ptr, cur_mod);
       break;
     case T_DYNA:
       unload_seg(seg_first_inst);

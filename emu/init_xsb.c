@@ -760,6 +760,8 @@ void init_symbols(void)
   temp = insert("true", 0, global_mod, &new_indicator);
   true_psc = pair_psc(temp);
   true_sym = get_name(true_psc);
+  /* initialize data field of 'true's Psc to point to usermod */
+  set_data(true_psc, global_mod);
   /* create code for true/0 */
   {
     CPtr p;
