@@ -23,7 +23,20 @@
 */
 
 
+#ifndef BASICTYPES_INCLUDED
+
 typedef short  bool;
+
+#ifdef BITS64
+typedef long prolog_int ;
+#else
+typedef int prolog_int ;
+#endif
+
+typedef double prolog_float ;
+typedef int reg_num;
+typedef unsigned long prolog_term;	/* opaque type definition */
+
 
 #ifndef FALSE
 #define FALSE  0
@@ -52,3 +65,8 @@ typedef short  bool;
 #endif
 
 #define K   1024
+
+#define BASICTYPES_INCLUDED
+
+#endif
+
