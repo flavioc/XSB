@@ -441,8 +441,7 @@ case $CC in
    gcc)	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	c_inline_level="-finline-functions -Winline" 
-	CFLAGS="-Wall"
-#	CFLAGS="-ansi -pedantic"
+	CFLAGS="-Wall -ansi -pedantic"
 # -ansi & -pedantic are used only if not using threading
 	;;
    cc)  if test "$__sunpro_c" = "no"; then
