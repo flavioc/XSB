@@ -277,9 +277,61 @@ streams).
 	{\tt end\_of\_file} is reached before the current term is read.
     \end{description}
 
+%--------
+
 \ouritem{read(+Stream, ?Term)}\index{{\tt read/2}}
 	{\tt read/2} has the same behavior as {\tt read/1} but the
 	input stream is explicitly designated using the first argument.
+
+%--------
+\ouritem{read\_term(?Term,?OptionsList)}\index{{\tt read\_term/2}}
+%
+A term is read from the current input stream as in {\tt read/1}; but
+{\tt OptionsList} is a (possibly empty) list of {\em read options}
+that specifie additional behavior.  The read options include
+\begin{itemize}
+\item {\tt variables(Vars)}: once a term has been read, {\tt Vars} is a
+list of the variables in the term, in left-to-right order. 
+\item {\tt variable\_names(VN\_List)}: once a term has been read {\tt
+VN\_List} is a list of non-anonymous variables in the term.  The
+elements of the list have the form {\tt A = V} where {\tt V} is a
+non-anonymous variable of the term, and {\tt A} is the string used to
+denote the variable in the input stream.
+\item {\tt singletons(VS\_List)}: once a term has been read {\tt
+VN\_List} is a list of the non-anonymous {\tt singleton} varables in
+the term.  The elements of the list have the form {\tt A = V} where
+{\tt V} is a non-anonymous variable of the term, and {\tt A} is the
+string used to denote the variable in the input stream.
+\end{itemize}
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	{\tt OptionsList} is a variable, or is a list containing a
+			variable element.
+    \item[{\tt type\_error}]
+	{\tt OptionsList} is neither a list nor a variable
+    \item[{\tt domain\_error}]
+	{\tt OptionsList} contains a non-variable element that is not
+	a read option.
+    \item[{\tt existence\_error}]
+	{\tt end\_of\_file} is reached before the current term is read.
+    \end{description}
+
+%--------
+
+\ouritem{read\_term(+Stream, ?Term,?OptionsList)}\index{{\tt read\_term/3}}
+%
+{\tt read\_term/3} has the same behavior as {\tt read\_term/2} but
+the input stream is explicitly designated using the first argument.
+
+Exceptions are the same as {\tt read\_term/2}, but with the addition:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	{\tt Strean} is a variable.
+    \item[{\tt domain\_error}]
+	{\tt Stream} is not an XSB stream (currently an atom).
+    \end{description}
 
 \ouritem{write(?Term)}\index{{\tt write/1}}
     The HiLog term {\tt Term} is written to the current output stream, 
