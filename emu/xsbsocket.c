@@ -1,5 +1,4 @@
-/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
-/* File:      xsbsocket.i
+/* File:      xsbsocket.c
 ** Author(s): juliana, davulcu, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
@@ -23,6 +22,18 @@
 ** 
 */
 
+#include "configs/config.h"
+#include "debugs/debug.h"
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+/* special.h must be included after sys/stat.h */
+#include "configs/special.h"
+
 
 /* The socket material */
 
@@ -30,21 +41,29 @@
 #include <windows.h>
 #include <tchar.h>
 #include <io.h>
-#endif
-
-#ifndef WIN_NT
+#include <stdarg.h>
+#include <winsock.h>
+#include <wsipx.h>
+#else /* UNIX */
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif /* WIN_NT */
+#include <unistd.h> 
+#endif 
 
+#include "auxlry.h"
+#include "cell.h"
+#include "xsberror.h"
+#include "cinterf.h"
+
+#include "io_builtins.h"
 #include "xsbsocket.h"
 
 struct linger sock_linger_opt;
 
-char *get_host_IP(char *host_name_or_IP) {
+static char *get_host_IP(char *host_name_or_IP) {
   struct hostent *host_struct;
   struct in_addr *ptr;
 
@@ -99,7 +118,7 @@ int readmsg(SOCKET sock_handle, char *buff, int maxbuff)
 
 /* in order to save builtin numbers, create a single socket function with
  * options socket_request(SockOperation,....)  */
-inline static bool xsb_socket_request(void)
+bool xsb_socket_request(void)
 {
   int i;
 
@@ -123,16 +142,6 @@ inline static bool xsb_socket_request(void)
       xsb_warn("SOCKET_REQUEST: Cannot open stream socket");
       return FALSE;
     }
-
-    /* Set the "linger" parameter to a small number of seconds */
-    sock_linger_opt.l_onoff = TRUE;
-    sock_linger_opt.l_linger = 5;
-    if (setsockopt(sock_handle, SOL_SOCKET, SO_LINGER,
-		   (void *) &sock_linger_opt, sizeof(sock_linger_opt))
-	< 0) {
-      xsb_warn("SOCKET_REQUEST: Cannot set socket linger option");
-      return FALSE;
-    };
 
     ctop_int(3, (SOCKET) sock_handle);
     break;
@@ -298,6 +307,38 @@ inline static bool xsb_socket_request(void)
     tmpch[0] = (char)ptoc_int(3);
     send(sock_handle, tmpch, 1, 0);
     break;
+  }
+  case SOCKET_SET_OPTION: {
+    /* socket_request(12,+Sockfd,+OptionName,+Value,_,_) */
+
+    char *option_name;
+    /* Set the "linger" parameter to a small number of seconds */
+    sock_handle = (SOCKET) ptoc_int(2);
+    option_name = ptoc_string(3);
+
+    if (0==strcmp(option_name,"linger")) {
+      int  linger_time=ptoc_int(4);
+
+      if (linger_time < 0) {
+	sock_linger_opt.l_onoff = FALSE;
+	sock_linger_opt.l_linger = 0;
+      } else {
+	sock_linger_opt.l_onoff = TRUE;
+	sock_linger_opt.l_linger = linger_time;
+      }
+
+      if (setsockopt(sock_handle, SOL_SOCKET, SO_LINGER,
+		     (void *) &sock_linger_opt, sizeof(sock_linger_opt))
+	  < 0) {
+	xsb_warn("SOCKET_SET_OPTION: Cannot set socket linger time");
+	return FALSE;
+      }
+    } else {
+      xsb_warn("SOCKET_SET_OPTION: Invalied option, `%s'", option_name);
+      return FALSE;
+    }
+    
+    return TRUE;
   }
   
   default:

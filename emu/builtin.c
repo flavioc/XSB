@@ -37,6 +37,7 @@
 #ifdef WIN_NT
 #include <windows.h>
 #include <tchar.h>
+#include <io.h>
 #endif
 
 #include <errno.h>
@@ -52,8 +53,13 @@
 #include <stdarg.h>
 #include <winsock.h>
 #include <wsipx.h>
-#else
+#else /* Unix */
 #include <unistd.h> 
+#include <sys/socket.h>
+#include <sys/uio.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif /* WIN_NT */
 
 #include "auxlry.h"
@@ -122,6 +128,8 @@ extern char *expand_filename(char *filename);
 extern char *tilde_expand_filename(char *filename);
 extern bool is_absolute_filename(char *filename);
 extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
+
+extern bool xsb_socket_request(void);
 
 extern int  findall_init(void), findall_add(void), findall_get_solutions(void);
 extern int  copy_term(void);
@@ -603,9 +611,6 @@ void init_builtin_table(void)
 /* inlined definition of file_function */
 #include "io_builtins.i"
 
-#ifdef HAVE_SOCKET
-#include "xsbsocket.i"
-#endif /* HAVE_SOCKET */
 
 /* inlined functions for prolog standard builtins */
 #include "std_pred.i"
