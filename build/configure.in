@@ -100,6 +100,8 @@ fi
 
 if test "${with_wind+set}" = "set" ; then
    with_os=wind
+   # suppress config tag
+   config_tag=
 fi
 
 
@@ -226,11 +228,31 @@ if test "${enable_local_scheduling}" = "yes"; then
    xsb_scheduling_strategy=local
 fi
 
+dnl Choose an abstract machine for XSB
+engine_mode=chat
+
+AC_ARG_ENABLE(chat,
+[  --enable-chat	      compile using the new CHAT abstract machine;
+			     this is the default])
+AC_ARG_ENABLE(slg-wam,
+[  --enable-slg-wam	      compile using the olde SLG-WAM abstract machine;
+			     default is CHAT])
+if test "${with_slg_wam}" = "yes" ; then
+   enable_slg_wam=yes
+fi
+if test "${enable_slg_wam}" = "yes" ; then
+   engine_mode=slg-wam
+else
+   AC_DEFINE(CHAT)
+   AC_DEFINE(GC)
+   AC_DEFINE(WAM_TRAIL)
+fi
     
+
 config_prefix=${topdir}/config
 install_config_prefix=${prefix}/config
 
-if test "$config_tag" != "NONE" -a "$config_tag" != "none" -a -n "$config_tag" ; then
+if test "$config_tag" != "NONE" -a -n "$config_tag" ; then
 	config_tag="-$config_tag"
 fi
 
@@ -238,7 +260,7 @@ dnl Some more tags
 
 dnl If the user didn't specify --config-tag, check maybe -aout, -bits-64,
 dnl or -dbg are appropriate
-if test "${config_tag}" = "NONE" -o "${config_tag}" = "none" ; then
+if test "${config_tag}" = "NONE" ; then
     config_tag=
     dnl add -bits64 to the config tag, if --force64 is set on command line
     if test -n "$ac_force64" ; then
@@ -255,6 +277,9 @@ if test "${config_tag}" = "NONE" -o "${config_tag}" = "none" ; then
     dnl If local scheduling, add -lsh
     if test "${xsb_scheduling_strategy}" = "local" ; then
        config_tag="${config_tag}-lsh"
+    fi
+    if test "${engine_mode}" = "slg-wam" ; then
+       config_tag="${config_tag}-slg"
     fi
 fi
 
@@ -899,26 +924,6 @@ if test "${enable_profiling}" = "yes" ; then
   LDFLAGS="-pg ${LDFLAGS}"
 fi
 
-dnl Choose an abstract machine for XSB
-engine_mode=chat
-
-AC_ARG_ENABLE(chat,
-[  --enable-chat	      compile using the new CHAT abstract machine;
-			     this is the default])
-AC_ARG_ENABLE(slg-wam,
-[  --enable-slg-wam	      compile using the olde SLG-WAM abstract machine;
-			     default is CHAT])
-if test "${with_slg_wam}" = "yes" ; then
-   enable_slg_wam=yes
-fi
-if test "${enable_slg_wam}" = "yes" ; then
-   engine_mode=slg-wam
-else
-   AC_DEFINE(CHAT)
-   AC_DEFINE(GC)
-   AC_DEFINE(WAM_TRAIL)
-fi
-
 dnl experimental: use bp register for lpcreg
 dnl lfcastro
 #AC_ARG_ENABLE(bp-lpcreg,
@@ -1302,9 +1307,9 @@ if test -n "$site_dynamic_libraries" ; then
    done
 fi
 
-echo "	POSIX regexp matching libraries:		$regmatch_support"
-echo "	POSIX wildcard matching libraries:		$wildmatch_support"
-echo "	Perl support:					$perl_support"
+echo "  POSIX regexp matching libraries:	          $regmatch_support"
+echo "  POSIX wildcard matching libraries:	          $wildmatch_support"
+echo "  Perl support:				          $perl_support"
 
 if test "$perl_support" = "yes"; then
    cat <<EOT
@@ -1315,7 +1320,7 @@ if test "$perl_support" = "yes"; then
 EOT
 fi
 
-echo "	Libwww support: 				$libwww_support"
+echo "  libwww support: 			          $libwww_support"
 if test "$libwww_support" = "yes"; then
    cat <<EOT
   Libwww C flags:				  $libwww_ccflags
