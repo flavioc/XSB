@@ -113,6 +113,8 @@
 	flora_stderr_nl/0,
 	flora_stderr_string/1,
 	flora_stderr_string/2,
+	flora_stdwarn_string/1,
+	flora_stdwarn_string/2,
 	flora_stdmsg_nl/0,
 	flora_error_indentline/0,
 	flora_warning_indentline/0,

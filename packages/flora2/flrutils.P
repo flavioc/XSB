@@ -651,12 +651,12 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 	member(warning(WN),RuleStatus),
 	NewErrNum is ErrNum+EN,
 	NewWarnNum is WarnNum+WN,
-	( EN > 0 ->
+	( EN > 0 -> %% errors just found
 	    ( MaxErr \== FLORA_ALL, NewErrNum >= MaxErr ->
 		FileStatus=FLORA_FAILURE,
-		flora_stderr_string("\n++aborted after "),
-		flora_stderr_errorwarn(NewErrNum,NewWarnNum),
-		flora_stderr_string("\n")
+		flora_stderr_string("\n"),
+		flora_errorwarn_count(NewErrNum,NewWarnNum),
+		flora_stderr_string("\n++compilation aborted\n")
 
 	    ; flora_rule_delimeter_struct(_,_,_,_,_,RuleDelimeterToken),
 	      flora_not_end_of_input(RuleStatus), member(RuleDelimeterToken,Tokens) ->
@@ -668,12 +668,12 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
                                _CompiledRuleList,_FileOptionList,FileStatus)
 	    ;
 	      FileStatus=FLORA_FAILURE,
-	      flora_stderr_string("\n++"),
-	      flora_stderr_errorwarn(NewErrNum,NewWarnNum),
+	      flora_stderr_string("\n"),
+	      flora_errorwarn_count(NewErrNum,NewWarnNum),
 	      flora_stderr_string("\n++compilation aborted\n")
 	    )
 	;
-	  ( NewErrNum == 0 ->
+	  ( NewErrNum == 0 -> %% no error so far
 	      flora_tailappend(CompiledRuleList,FlattenedRules,NewCompiledRuleList),
 	      flora_tailappend(FileOptionList,RuleOptions,NewFileOptionList)
 	  ;
@@ -682,7 +682,7 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 	  ( flora_not_end_of_input(RuleStatus) ->
 	      flora_rpc_file(MaxErr,NewErrNum,NewWarnNum,
                              NewCompiledRuleList,NewFileOptionList,FileStatus)
-	  ;
+	  ; %% end of file already
 	    ( NewErrNum == 0 ->
 		NewCompiledRuleList=[],
 		NewFileOptionList=[],
@@ -690,14 +690,13 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 		( NewWarnNum == 0 ->
 		    true
 		;
-		  flora_stderr_string("\n++"),
-		  flora_stderr_errorwarn(NewErrNum,NewWarnNum),
-		  flora_stderr_string("\n")
+		  flora_stdwarn_string("\n"),
+		  flora_errorwarn_count(NewErrNum,NewWarnNum)
 		)
 	    ;
 	      FileStatus=FLORA_FAILURE,
-	      flora_stderr_string("\n++"),
-	      flora_stderr_errorwarn(NewErrNum,NewWarnNum),
+	      flora_stderr_string("\n"),
+	      flora_errorwarn_count(NewErrNum,NewWarnNum),
 	      flora_stderr_string("\n++compilation aborted\n")
 	    )
 	  )
@@ -838,24 +837,24 @@ flora_shell_command_line(Code,Options,Status) :-
 /*************************************************************************
   utilities
 *************************************************************************/
-flora_stderr_errorwarn(ErrNum,WarnNum) :-
+flora_errorwarn_count(ErrNum,WarnNum) :-
 	( ErrNum == 1 ->
-	    flora_stderr_string("1 error")
+	    flora_stderr_string("++1 error\n")
 
 	; ErrNum > 1 ->
-	    flora_stderr_string("%d errors",args(ErrNum))
+	    flora_stderr_string("++%d errors",args(ErrNum))
 	;
 	  true
         ),
-	(ErrNum > 0, WarnNum > 0 -> flora_stderr_string(","); true),
 	( WarnNum == 1 ->
-	    flora_stderr_string(" 1 warning")
+	    flora_stdwarn_string("++1 warning\n")
 
 	; WarnNum > 1 ->
-	    flora_stderr_string(" %d warnings",args(WarnNum))
+	    flora_stdwarn_string("++%d warnings\n",args(WarnNum))
 	;
 	  true
-        ).
+        ),
+	!.
 
 
 flora_last_element([T],T).
@@ -921,7 +920,7 @@ flora_composer_errorwarn(Tokens,[warning(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	flora_warning_line("[Composer] near line(%d)/char(%d) `%s' and near line(%d)/char(%d) `%s'",
 	                   args(BLN1,BCN1,TextStr1,BLN2,BCN2,TextStr2)),
 	flora_warning_indentline,
-	flora_stderr_string("%s\n",args(Msg)),
+	flora_stdwarn_string("%s\n",args(Msg)),
 	flora_composer_errorwarn(Tokens,L,ErrNum,WN),
 	WarnNum is WN+1.
 
@@ -978,7 +977,7 @@ flora_compiler_errorwarn(Tokens,[warning(Indx,Msg)|L],ErrNum,WarnNum) :-
 	flora_warning_line("[Compiler] near line(%d)/char(%d) `%s'",
                            args(BLN,BCN,TextStr)),
 	flora_warning_indentline,
-	flora_stderr_string("%s\n",args(Msg)),
+	flora_stdwarn_string("%s\n",args(Msg)),
 	flora_compiler_errorwarn(Tokens,L,ErrNum,WN),
 	WarnNum is WN+1.
 
