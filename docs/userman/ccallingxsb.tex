@@ -13,46 +13,50 @@ chapter.  Simple examples of the use of this interface are given in
 the {\tt XSB/examples/c\_calling\_XSB} subdirectory, in files {\tt
 cmain.c}, {\tt cmain2.c}, {\tt ctest.P}, and {\tt Makefile}.
 
-\section{C Functions for Calling \ourprolog}
+\section{C Functions for Calling XSB}
 
-\ourprolog\ provides several C functions (declared in {\tt
-XSB/emu/cinterf.h} and defined in \\ {\tt XSB/emu/cinterf.c}), which can
-be called from C to interact with \ourprolog\ as a subroutine. These
-functions allow a C program to initialize \ourprolog\ (most easily with
-a call to {\tt xsb\_init\_string(options)}) and then to interact with it
-to have it perform various functions.  One can send commands to have
-them evaluated by \ourprolog .  A command is a deterministic query which
-simply succeeds or fails (without returning any interesting data value.)
-One can also send a query to be evaluated and then retrieve, one at a
-time, the answers produced for it.  There are several levels of
-interface provided.  The highest level interface uses strings to
-communicate queries to \ourprolog\ and to get answers back.  The {\tt
+XSB provides several C functions (declared in {\tt XSB/emu/cinterf.h}
+and defined in \\ {\tt XSB/emu/cinterf.c}), which can be called from C
+to interact with \ourprolog\ as a subroutine. These functions allow a
+C program to initialize \ourprolog\ (most easily with a call to {\tt
+xsb\_init\_string(options)}) and then to interact with XSB to have it
+execute {\em commands} or {\em queries}. A command is a deterministic
+query which simply succeeds or fails (without returning any
+interesting data value.)  A non-deterministic query can be evaluated
+so that its answers are retrieved one at a time, as they are
+produced. There are several levels of interface provided.  The highest
+level interface uses the XSB-specific C-type definition for
+variable-length strings (Section \ref{sec-varstring}), to communicate
+queries to \ourprolog\ and to get answers back.  The {\tt
 xsb\_command\_string(cmd)} function allows you to pass a command as a
 (period-terminated) string to \ourprolog .  The {\tt
-xsb\_query\_string\_string(query,buff,sep)} function allows
-you to pass a query to XSB as a string, and have its (first) answer
-returned as a string.  Subsequent answers can be calculated and
-retrieved using {\tt xsb\_next\_string(buff,sep)}.
+xsb\_query\_string\_string(query,buff,sep)} function allows you to
+pass a query to XSB as a string, and have its (first) answer returned
+as a string.  Subsequent answers can be calculated and retrieved using
+{\tt xsb\_next\_string(buff,sep)}.
 
-The next level provides routines that return answers with an interface
-that does not require complex C types.  The routines at this level
-are: {\tt
-xsb\_query\_string\_string\_b(query,buff,bufflen,anslen,sep)}, {\tt
-xsb\_next\_string\_b(buff,bufflen,anslen,sep)}, and {\tt
-xsb\_get\_last\_answer(buff,bufflen,anslen)}.  They are normally
-intended to be used with the routines above.
+The second level provides routines that return answers with an
+interface that does not require variable-length strings.  The routines
+at this level are: 
+\begin{itemize}
+\item {\tt xsb\_query\_string\_string\_b(query,buff,bufflen,anslen,sep)}, 
+\item {\tt xsb\_next\_string\_b(buff,bufflen,anslen,sep)}, and
+\item  {\tt xsb\_get\_last\_answer(buff,bufflen,anslen)}.  
+\end{itemize}
+They are normally intended to be used with the initialization routines
+above.
 
 There are lower-level interfaces that allow you to manipulate directly
-the \ourprolog\ data structures (both to construct queries and to
-retrieve answers) and thus avoid the overhead of converting to and from
-strings.  See the detailed descriptions of the routines below to see how
-to use the lower level interface.
+the XSB data structures (both to construct queries and to retrieve
+answers) and thus avoid the overhead of converting to and from
+strings.  See the detailed descriptions of the routines below to see
+how to use the lower level interface.
 
 Currently, only one query can be active at a time.
 I.e., one must completely finish processing one query (either by
 retrieving all the answers for it, or by issuing a call to {\tt
 xsb\_close\_query()}, before trying to evaluate another.  The
-routines to perform all these functions are described following:
+routines to perform all these functions are described below:
 
 \begin{description}
 \ouritem{int xsb\_init(int argc, char *argv[])} \index{{\tt xsb\_init}}
