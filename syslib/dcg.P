@@ -45,8 +45,6 @@
 /*	  expansion is not just optimized, but it can have a different	*/
 /*	  (unintended) meaning if a/2 is called with the second		*/
 /*	  argument bound.						*/
-/*	  If you insist on using the wrong expansion, interchange this	*/
-/*	  file with file dcg_qsc.P found in this directory.		*/
 /*----------------------------------------------------------------------*/
 
 set_dcg_style(xsb) :-      stat_set_flag(18, 0), !.
@@ -211,10 +209,7 @@ dcg_body_nonvar(Phrase_Type, List, Rest, Goal) :-
 xsb_dcg_body_nonvar(','(Term1,Term2), In, Out, ','(Goal1,Goal2)) :-
 	!,
 	dcg_body(Term1, In, Middle, Goal1),
-	( (Term2 == '!' ; Term2 == '{}'('!')) ->
-		Goal2 = ('!', Middle = Out)  /* Make the expansion steadfast. */
-	; dcg_body(Term2, Middle, Out, Goal2)
-	).
+	dcg_body(Term2, Middle, Out, Goal2).
 xsb_dcg_body_nonvar(';'(Term1,Term2), In, Out, ';'(Goal1,Goal2)) :-
 	!,
 	dcg_body(Term1, In, Out, Goal1),
@@ -236,10 +231,12 @@ xsb_dcg_body_nonvar('{}'(G), In, Out, Goal) :-
 	!,
 	( G == '!' -> Goal = G, In = Out	/* A {!} is the same as a !. */
 		    ; Goal = (G, In = Out) ).
-xsb_dcg_body_nonvar('!', In, In, '!') :- 
-	!.
-xsb_dcg_body_nonvar([], In, Out, (In = Out)) :-
-	!.
+xsb_dcg_body_nonvar('!', In, Out, Goal) :- 
+	!,
+	Goal = ('!', In = Out).   /* make the expansion steadfast */
+xsb_dcg_body_nonvar([], In, Out, Goal) :-
+	!,
+	Goal = (In = Out).
 xsb_dcg_body_nonvar(L, In, Out, Goal) :-
 	( (L = [_|_] ->
 		( is_list(L) -> 		/* proper list of terminals */
