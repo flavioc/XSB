@@ -471,14 +471,18 @@ typically called just before returning to the top level.
 	\>   \>     Yes master >
     }
 
-\ouritem{garbage\_collection(+Option)}\index{{\tt garbage\_collection/1}}
-    Sets the system so that subsequent heap garbage collecting will be
-    done according to the specified {\tt Option}.  {\tt Option} may be
-    the atom \verb|none| indicating that heap garbage collection is
-    turned off; it may be the atom \verb|sliding| indicating that
-    sliding garbage collection will be done; or it may be the atom
-    \verb|copying| indicating that the copying garbage collector will
-    be used.
+\ouritem{garbage\_collection(+Option)}\index{{\tt
+    garbage\_collection/1}} Sets the system so that subsequent heap
+    garbage collecting will be done according to the specified {\tt
+    Option}.  {\tt Option} may be the atom \verb|none| indicating that
+    heap garbage collection is turned off; it may be the atom
+    \verb|sliding| indicating that sliding garbage collection will be
+    done; the atom \verb|copying| indicating that the copying garbage
+    collector will be used; or it may be the atom \verb|indirection|
+    indicating that the indirect-sliding garbage collector will be
+    used.  The indirect-sliding garbage collector is not implemented
+    for CHAT, therefore this option will have no effect on engines
+    configured for CHAT.
  
 \ouritem{cputime(-CPU\_Time)}\index{{\tt cputime/1}}
     Returns the {\tt CPU\_Time} at the time of the call in seconds.
@@ -496,7 +500,7 @@ single unit so that each stack grows together; information is provided
 on the current allocation for the stacks as well as on the stack sizes
 themselves.  (See Section~\ref{sec:EmuOptions} for the memory
 re-allocation algorithm).  For maximum space used by each of these
-stacks, use the {\tt '-s'} option.
+stacks, use the {\tt '-s'} command-line option.
 %
 \item Trail and choice point stack (see e.g. \cite{AitK90}).  Memory
 for these two WAM stacks is allocated as a single unit so that each
@@ -505,7 +509,7 @@ allocation for the stacks as well as on the stack sizes themselves.
 The (re-)allocation follows the algorithm sketched in
 Section~\ref{sec:EmuOptions}).  (See Section~\ref{sec:EmuOptions} for
 the memory re-allocation algorithm).  For maximum space used by each
-of these stacks, use the {\tt '-s'} option.
+of these stacks, use the {\tt '-s'} command-line option.
 % TLS: this had been taken out a version or two ago.
 %	  \item SLG subgoal space (tablestack)
 \item SLG unification stack.  This stack is used as a space to copy
@@ -521,7 +525,10 @@ subgoals.  One completion stack frame is allocated per tabled subgoal
 tries) \cite{RRSSW98}.
 \end{itemize}
 \item Information about the number of tabling operations performed in
-the session.
+the session.  Note that the statistics are divided up between calls to
+predicates that use variant tabling and those that use (call)
+subsumptive tabling (see Section \ref{sec:TablingStrategies} and
+\cite{TST99}).
 \begin{itemize}
 \item Call Subsumption Subgoal Operations.  For predicates that use
 subsumptive tabling, the total number of subsumptive subgoal calls is
@@ -532,11 +539,12 @@ tables is given, along with the number of subsumed calls to completed
 tables.  Finally, the total number of subsumptive table entries
 overall is given, including all producer and consumer calls.
 %
-\item Call Subsumption Answer Operations.  The number of {\tt
-answer ident} operations represents the number of copies of answer
-lists made from producer table entries to subsumed consumer table
-entries.  In addition, the number of consumptions performed by all
-consuming subsumptive table entries is also given.
+\item Call Subsumption Answer Operations.  In call subsumptive
+tabling, answer lists are copied from producer subgoals to subsumed
+consumer subgoals (this opration is not required in variant tabling).
+The number of {\tt answer ident} operations represents the number of
+times this copy is done.  In addition, the number of consumptions
+performed by all consuming subsumptive table entries is also given.
 %
 \item Call Variance Subgoal Operations.  For call variance the number
 of subgoal check/insert operations is given along with the unique
@@ -563,21 +571,18 @@ that are shared.  The third line represents the number of tabled
 environments that have been restored, or copied back into execution
 stacks, along with the total amount of memory copied.
 
-\item Garbage Collection Information.  This information is currently
-available only with the CHAT compilation.
+\item Garbage Collection Information.  Time spent garbage collecting
+and number of heap cells collected.
 
 \item Information about process CPU and clock time.
     \end{itemize}
 
-    As mentioned above, if the emulator is invoked with the {\tt '-s'}
-    option (see Section~\ref{sec:EmuOptions}), information is printed
-    out about 
-\begin{itemize} 
-\item Maximum use of the memory areas.
-\end{itemize} 
-However, as the {\tt '-s'} option slows down the emulator by at least
-10\%, benchmarks of time should be performed separately from
-benchmarks of space.
+As mentioned above, if the emulator is invoked with the {\tt '-s'}
+    option (see Section~\ref{sec:EmuOptions}), additional information
+    is printed out about maximum use of each execution stack and table
+    space.  However, the {\tt '-s'} option can substantially slow down
+    the emulator so benchmarks of time should be performed separately
+    from benchmarks of space.
 
 {\bf Example}: The following printout shows how the {\tt statistics/0}
 output looks if it is invoked with the {\tt '-s'} option (without it

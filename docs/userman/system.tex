@@ -47,41 +47,58 @@ while it is executing a query, strike \verb'CTRL-c'.
 \section{The System and its Directories}
 %=======================================
 The XSB system, when installed, resides in a single directory that
-contains the following subdirectories:
+contains several subdirectories.  For completeness, we review the
+information in all subdirectories.
 \begin{enumerate}
-\item {\tt build}
-\item {\tt docs}
-\item {\tt emu}
-\item {\tt etc}
-\item {\tt examples}
-\item {\tt cmplib}
-\item {\tt lib}
-\item {\tt packages}
-\item {\tt syslib}
+\item {\tt bin} contains scripts which call XSB executables
+for various configurations.
+%
+\item {\tt build} contains XSB configuration scripts.  You must
+already be familiar with the {\tt build} directory, which is what you
+must have used to build XSB.
+%
+\item {\tt config} contains executables and other files specific to
+particular configurations.
+%
+\item {\tt docs} contains the user manuals and other documentation,
+including the technical documentation manual for developers.
+%
+\item {\tt emu} contains the C source code for the XSB emulator, for
+I/O and for various interfaces.
+%
+\item {\tt etc} contains miscellaneous files used by XSB.
+%
+\item {\tt examples} contains some basic examples for Prolog, tabling,
+and HiLog.
+%
+\item {\tt cmplib} contains Prolog source and object code for the
+compiler. 
+%
+\item {\tt gpp} contains a copy of the Gnu pre-processor used to
+preprocess Prolog files.
+%
+\item {\tt lib} contains Prolog source and object code for extended
+libraries. 
+%
+\item {\tt packages} The directory {\tt packages} contains the various
+applications, such as FLORA, the XMC model checker and many others.
+These applications are written in XSB and can be quite useful, but are
+not part of the XSB system per se.
+%
+\item {\tt Prolog\_includes} contains include files for the Prolog
+libraries, which are preprocessed using GPP.
+%
+\item {\tt syslib} contains Prolog source and object code for core XSB
+libraries. 
 \end{enumerate}
 
-The directory {\tt emu} contains the source and object code for
-the XSB emulator, which is written in C.
-
-The directories {\tt syslib}, {\tt cmplib} and {\tt lib} contain source
-and object code for the basic Prolog libraries, the compiler, and the
-extended Prolog libraries, respectively.  All the source programs
+Normally, only the documentation and files in the Prolog
+subdirectories, particularly {\tt examples}, {\tt lib}, and {\tt
+packages} will be of interest to users.  All Prolog source programs
 are written in XSB, and all object (byte code) files contain SLG-WAM
-instructions that can be executed by the emulator.  These byte-coded 
-instructions are machine-independent, so usually no installation 
+instructions that can be executed by the emulator.  These byte-coded
+instructions are machine-independent, so usually no installation
 procedure is needed for the byte code files.
-
-The directory {\tt packages} contains the various applications, written in
-XSB, which are not part of the system per se.
-
-You must already be familiar with the {\tt build} directory, which is what
-you must have used to build XSB. This directory contains XSB configuration
-scripts.  The directory {\tt etc} contains miscellaneous files used by XSB.
-
-The directory {\tt docs} contains this manual in \LaTeX, dvi and Postscipt
-format, and the directory {\tt examples} contains sample programs to 
-demonstrate various features of XSB\@.
-
 
 \section{The Module System of XSB} \label{Modules}
 %========================================================
@@ -234,7 +251,7 @@ other systems where it must be explicitly specified for non-system
 libraries.
 
 When a predicate imported from another module (see
-section~\ref{Modules}) is called during execution, the dynamic loader
+Section~\ref{Modules}) is called during execution, the dynamic loader
 is invoked automatically if the module is not yet loaded into the
 system, The default action of the dynamic loader is to search for the
 byte code file of the module first in the system library directories
@@ -302,14 +319,17 @@ The list of module names in XSB's system library directories can be
 found by looking through the directories {\tt
 \$XSB\_DIR/\{syslib,cmplib,lib\}}.
 
+\index{packages}
 Apart from the user libraries, XSB now has a simple packaging system.
 A {\em package\/} is an application consisting of one or more files that
 are organized in a subdirectory of one of the XSB system or user libraries.
 The system directory \verb|$XSB_DIR/packages| has several examples
 %%$
-of such packages. Packages are convenient as a means of organizing
-large XSB applications, and for simplifying user interaction with such
-applications. User-level packaging is implemented through the predicate
+of such packages, many of which are documented in Volume 2 of this
+manual.  Packages are convenient as a means of organizing large XSB
+applications, and for simplifying user interaction with such
+applications.  User-level packaging is implemented through the
+predicate
 %%
 \begin{verbatim}
      bootstrap_userpackage(+LibraryDir, +PackageDir, +PackageName).
@@ -348,10 +368,10 @@ follow:
   predicates are can now be imported from just one module, {\tt foobar}.
 \end{enumerate}
 %%
-In addition to adding the appropriate directory to the library search path,
-the predicate \verb|bootstrap_userpackage/3| also adds information to the
-predicate \verb|package_configuration/3|, so that other applications could
-query the information about loaded packages.
+In addition to adding the appropriate directory to the library search
+path, the \verb|bootstrap_userpackage/3| predicate also adds
+information to the predicate \verb|package_configuration/3|, so that
+other applications could query the information about loaded packages.
 
 Packages can also be unloaded using the predicate
 \verb|unload_package/1|. For instance, 
@@ -366,16 +386,20 @@ and deletes the associated information from \verb|package_configuration/3|.
 \index{{\tt unload\_package/1}}
 \index{{\tt package\_configuration/2}}
 
+Finally, if you developed and tested  a package that you think is
+generally useful and you would like to distribute it with XSB, please
+contact {\tt xsb-development@sourceforge.net}.
+
 
 \subsection{Dynamically loading predicates in the interpreter}
 %=============================================================
 Modules are usually loaded into an environment when they are consulted
-(see section~\ref{Consulting}).  Specific predicates from a module can
-also be imported into the run-time environment through the standard 
+(see Section~\ref{Consulting}).  Specific predicates from a module can
+also be imported into the run-time environment through the standard
 predicate {\tt import PredList from Module}\index{{\tt import/1}}.
-Here, {\tt PredList} can either be a Prolog list or a comma list.  (The
-{\tt import/1} can also be used as a directive in a source module 
-(see section~\ref{Modules}). \index{standard predicates}
+Here, {\tt PredList} can either be a Prolog list or a comma list.
+(The {\tt import/1} can also be used as a directive in a source module
+(see Section~\ref{Modules}). \index{standard predicates}
 
 We provide a sample session for compiling, dynamically loading, and 
 querying a user-defined module named {\tt quick\_sort}.
@@ -464,7 +488,7 @@ cmd_loop_driver:
          -o N : allocate N KB for the SLG completion stack
          -u N : allocate N KB for the SLG unification stack
            -r : turn off automatic stack expansion
-   -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
+   -g gc_type : choose the garbage collection ("none", "indirection", sliding", or "copying") 
            -s : maintain detailed statistical information
            -S : set default tabling method to subsumption-based
            -T : print a trace of each called predicate
@@ -531,13 +555,17 @@ The order in which these options appear makes no difference.
   here instead of the standard XSB interpreter. This is most useful when
   XSB is used as a server.
 \item[{\tt -r}] Turns off automatic stack expansion.
+%
+\index{garbage collection}
 \item[{\tt -g gc\_type}] Chooses the garbage collection strategy that
-    is employed; choice of the strategy is between {\tt "none"} (meaning
-    perform no garbage collection), or garbage collection based on
-    {\tt "sliding"} or on {\tt "copying"}.  Since garbage collection is
-    only available when the emulator is based on a CHAT model (see also
-    the installation options), this option only makes sense in this
-    context; it is ineffective when the emulator is SLG-WAM based.
+is employed; choice of the strategy is between {\tt "none"} (meaning
+perform no garbage collection), or garbage collection based on {\tt
+sliding} on {\tt copying}, or on {\tt indirection} (See
+\cite{CATmem@ISMM-98} for descriptions of the first two garbage
+collectors, and \cite{CaSC01} for a description of the third).  The
+choice {\tt indirection} is not available on CHAT, and this choice
+will be ineffective on emulators configured for CHAT.
+%
 \item[{\tt -s}] Maintains information on the size of program stacks 
     for the predicate {\tt statistics/0}.  This option may be expected
     to slow execution by around 10\%.  Default: off.
@@ -595,20 +623,19 @@ possible to do so with available system memory.  At that point XSB
 tries to find the maximal amount of space that will still fit in
 system memory.  Garbage collection is automatically performed for
 retracted clauses.  In addition, heap garbage collection is
-automatically included when the {\tt --enable-chat} configuration
-option is used.  (It can be turned off; see the predicate {\tt
-garbage\_collection/1}.)
+automatically included in XSB \cite{CaSC01,CATmem@ISMM-98}.  (To
+change the algorithm used for heap garbage collection or to turn it
+off altogether, see the predicate {\tt garbage\_collection/1} or
+Section~\ref{sec:EmuOptions} for command-line options).
 
 The program area (the area into which the code is loaded) is also
 dynamically expanded as needed, and the area occupied by dynamic code
 (created using {\tt assert/1}, or the standard predicate {\tt
-load\_dyn/1}) is reclaimed when that code is retracted.  Version 1.8
-improves memory management for retracted dynamic code.
-
-\version{} provides memory management for table space as well.  Space for
-tables is dynamically allocated as needed and reclaimed through use of
-the predicate {\tt abolish\_all\_tables/0}
-%, {\tt, abolish\_table\_pred/1} and {\tt abolish\_table\_call/1}.  
+load\_dyn/1}) is reclaimed when that code is retracted.  \version{}
+provides memory management for table space as well.  Space for tables
+is dynamically allocated as needed and reclaimed through use of the
+predicates {\tt abolish\_all\_tables/0} and {\tt abolish\_table\_pred/1}
+%,{\tt abolish\_table\_call/1}.  
 (see Section~\ref{sec:TablingPredicates}).
 
 \section{Compiling and Consulting} \label{Consulting}
@@ -629,7 +656,7 @@ most convenient method for entering rules into XSB's database.  Though
 \end{center} 
 At the time of the call both of its arguments should be instantiated
 (ground).  {\tt FileList} is a list of filenames or module names (see
-section~\ref{Modules}) and {\tt CompilerOptionList} is a list of
+Section~\ref{Modules}) and {\tt CompilerOptionList} is a list of
 options that are to be passed to the compiler when (and if) it should
 be invoked.  For a detailed description of the format and the options
 that can appear in this list see Section~\ref{the_compiler}.
@@ -666,13 +693,13 @@ FileName} is absolute (i.e. in UNIX contains a slash {\tt '/'})
 determination of the proper directory prefix is straightforward.
 However, the user may also enter a name without any directory
 prefix. In this case, the directory prefix is a directory in the
-dynamic loader path (see section~\ref{LibPath}) where the source file
+dynamic loader path (see Section~\ref{LibPath}) where the source file
 exists.  Once the directory prefix is determined, the file name is
 checked for an extension.  If there is no extension the loader first
 checks for a file in the directory with the {\tt .P} extension, (or
 {\tt .c} for foreign modules) before searching for a file without the
 extension.  Note that since directories in the dynamic loader path are
-searched in a predetermined order (see section~\ref{LibPath}), if the
+searched in a predetermined order (see Section~\ref{LibPath}), if the
 same file name appears in more than one of these directories, the
 compiler will consult the first one it encounters.
 
@@ -683,7 +710,7 @@ size.  This default compile is set to be 20,000 bytes (in {\tt
 cmplib/config.P}), but can be reset by the user.  If the source file
 is larger than the default compile size, the file will be loaded using
 {\tt load\_dyn/1}, and otherwise it will be compiled ({\tt
-load\_dyn/1} can also be called separately, see the section {\it
+load\_dyn/1} can also be called separately, see the Section {\it
 Asserting Dynamic Code} for details.
 While {\tt load\_dyn} gives reasonably good execution times,
 compilation can always be done by using {\tt compile/[1,2]}

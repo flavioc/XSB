@@ -606,33 +606,31 @@ described only briefly.
 	{\tt P} is not a call to a tabled predicate.
     \end{description}
 
-%\ournewitem{'t not'(+P)}{Tabling}\index{{\tt 't not'/1}}
-%    Same as {\tt tnot/1} but does not check for floundering.  This predicate
-%    is not standard, but should be explicitly imported from module {\tt
-%    tables}.  Since it is not safe, its use is discouraged.
-    
-    \ournewitem{sk\_not(+P)}{Tabling}\index{{\tt sk\_not/1}}
-    %%
-    Same as {\tt tnot/1} but permits variables in its subgoal argument.
-    This replaces the {\tt 't not'/1} predicate of earlier XSB versions
-    whose implementation and semantics were dubious. The semantics in the
-    case of unbound variables is as follows:
-    %%
-    \begin{quote}
-      \tt
-      ... :- ...,~sk\_not(p(X)),~...
-    \end{quote}
-    %%
-    is equivalent to
-    %%
-    \begin{quote}
-      \tt
-      ... :- ..., tnot(pp),~...\\
-      pp :- p(X).
-    \end{quote}
-    %%
-    where {\tt pp} is a new proposition. Thus, the unbound variable $X$ is
-    treated as $\tt tnot(\exists X (p(X)))$.
+
+    \ournewitem{sk\_not(+P)}{Tabling}\index{{\tt sk\_not/1}} 
+%% 
+If {\tt +P} is a tabled predicate, {\tt sk\_not/1} acts as {\tt tnot/1}
+    but permits variables in its subgoal argument.  This replaces the
+    {\tt 't not'/1} predicate of earlier XSB versions whose
+    implementation and semantics were dubious. The semantics in the
+    case of unbound variables is as follows: 
+%% 
+\begin{quote} 
+\tt ... :- ...,~sk\_not(p(X)),~...  \end{quote} 
+%% 
+is equivalent to 
+%%
+\begin{quote}
+ \tt ... :- ..., tnot(pp),~...\\ pp :- p(X).
+\end{quote} 
+%% 
+where {\tt pp} is a new proposition. Thus, the unbound variable $X$ is
+treated as $\tt tnot(\exists X (p(X)))$.
+
+If {\tt +P} is a non-tabled predicate ensures that {\tt +P} is ground
+and called via a tabled predicate so that {\tt sk\_not/1} can be used
+with non-tabled predicates as well, regardless of whether {\tt +P} is
+ground or not.
 
 \ouritem{P -> Q ; R}\index{{\tt ->/2}} 
     Analogous to if {\tt P} then {\tt Q} else {\tt R}, i.e.\ defined as 
@@ -1553,13 +1551,14 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 Often there are many solutions to a problem and it is necessary
 somehow to compare these solutions with one another.  The most general
 way of doing this is to collect all the solutions into a list, which
-may then be processed in any way desired.  So XSB provides several
-builtin all-solutions predicates which collect solutions into lists.
-Sometimes however, one wants simply to perform some aggregate
-operation over the set of solutions, for example to find the maximum
-or minimum of the set of solutions.  \ourprolog\ uses tabling and
-HiLog to provide a general and powerful aggregation facility through
-the use of two new builtins.
+may then be processed in any way desired.  So XSB provides
+ISO-standard predicates such as {\tt setof/3}, {\tt bagof/3}, and {\tt
+findall/3} to collect solutions into lists.  Sometimes however, one
+wants simply to perform some aggregate operation over the set of
+solutions, for example to find the maximum or minimum of the set of
+solutions.  XSB uses tabling and HiLog to provide a general and
+powerful aggregation facility as discussed in Section
+\ref{tabling_aggregate_predicates}.
 
 \begin{description}
 \ouritem{setof(?X, +Goal, ?Set)}\index{{\tt setof/3}}
@@ -1608,6 +1607,11 @@ the use of two new builtins.
 \index{{\tt tfindall/3}}
 %\predindex{tfindall/3~(L)}
 \label{tfindall/3}
+
+    {\em Note: {\tt tfindall/3} may be deprecated in current versions.
+    Please use the predicates described in
+    Section~\ref{tabling_aggregate_predicates} if possible}.
+
     Like {\tt findall/3}, {\tt tfindall/3} treats all variables in
     {\tt Goal} that do not occur in {\tt X} as existential.  However,
     in {\tt tfindall/3}, the {\tt Goal} must be a call to a single
@@ -1673,6 +1677,10 @@ the use of two new builtins.
 \index{{\tt tsetof/3}}
 \index{{\tt tbagof/3}}
 
+    {\em Note: {\tt tbagof/3} and {\tt tsetof/3} may be deprecated in
+    current versions.  Please use the predicates described in
+    Section~\ref{tabling_aggregate_predicates} if possible.}
+
 The standard predicates {\tt tbagof/3} and {\tt tsetof/3} provide
 tabled versions of {\tt bagof/3} and {\tt setof/3} in a similar manner
 to the way in which {\tt tfindall/3} provides a tabled version of {\tt
@@ -1686,7 +1694,7 @@ findall/3}.
     {\tt setof/3} and {\tt bagof/3} constructs is superfluous.
 \end{description}
 
-\subsection{Tabling Aggregate Predicates}
+\subsection{Tabling Aggregate Predicates}\label{tabling_aggregate_predicates}
 %-------------------------------------------------------------------------
 \index{aggregate predicates!tabling} \index{tabling!aggregate predicates}
 %-------------------------------------------------------------------------

@@ -8,16 +8,16 @@
 
 In XSB, tables are designed so that they can be used transparently by
 computations.  However, it is necessary to first inform the system of
-which, or whether, predicates should be evaluated using tabled
-resolution (\refsec{sec:CompilerOptions}), and according to which
-strategy (\refsec{sec:TablingStrategies}).  Further,
-it is often useful to be able to explicitly inspect a table, or to
-alter its state.  The predicates described in this section are
-provided for these purposes.  In order to ground the discussion of
-these predicates, we continue our overview of tables and table
-creation from \refchap{chap:TablingOverview}.  For a detailed
-description of the implementation of tables in XSB, the reader is
-referred to~\cite{RRSSW98,TST99,CuSW99b}.
+which predicates should be evaluated using tabled resolution
+(\refsec{sec:CompilerOptions}), and whether variant or subsumptive
+tabling shoud be used (\refsec{sec:TablingStrategies}).  Further, it
+is often useful to be able to explicitly inspect a table, or to alter
+its state.  The predicates described in this section are provided for
+these purposes.  In order to ground the discussion of these
+predicates, we continue our overview of tables and table creation from
+\refchap{chap:TablingOverview}.  For a detailed description of the
+implemntation of table access routines in XSB, the reader is referred
+to~\cite{RRSSW98,TST99,CuSW99b}.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -38,13 +38,17 @@ can be classified as either (a) a \emph{generator}, or \emph{producer},
 of an answer set, or (b) a \emph{consumer} of the answer set of some
 subgoal in the table.  Creation of a table entry relies not only on the
 call and the subgoals already present in the table, but upon the tabling
-strategy as well.  We note that a table constructed using a
-subsumption-based strategy may hence contain a producing subgoal which
-is subsumed by another.  Under certain circumstances, it is also
-convenient to store certain subsumed (consumer) subgoals in the
-table~\cite{TST99}.  We bring these issues to the user's attention as
-inspection of a table may reveal such entries.
+strategy as well.  
 
+\comment{ TLS: this wasn't entirely clear to me, so it may be
+confusing to users. 
+
+We note that a table constructed using a subsumption-based strategy
+may hence contain a producing subgoal which is subsumed by another.
+Under certain circumstances, it is also convenient to store certain
+subsumed (consumer) subgoals in the table~\cite{TST99}.  We bring
+these issues to the user's attention as inspection of a table may
+reveal such entries.  }
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \subsubsection*{Answers, Returns, and Templates}
@@ -72,7 +76,7 @@ substitution mapping variables of its producer to subterms of the
 call.  This template can then be used to select returns from the
 producer which satisfy the consuming call.  Note, then, that a return
 template of a \emph{subsumed} subgoal may show partial instantiations.
-Return templates are also represented as terms of \retn in the manner
+Return templates are also represented as \retn{} terms in the manner
 described above.
 
 \begin{example}
@@ -892,6 +896,8 @@ tabled remain so, but their table entries, if any, are deleted.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \comment{
+TLS: taken out when builtins for subsumptive tabling were introduced.
+
 \ournewitem{abolish\_table\_call(+CallTerm)}{Tabling}
 \index{{\tt abolish\_table\_call/1}}
 %

@@ -1,11 +1,12 @@
 \chapter{Hooks} \label{hooks}
 
-Sometimes it is useful to let the user application catch certain events
-that occur during XSB execution. For instance, when the user asserts or
-retracts a clause, when it encounters an undefined predicate, etc.
-XSB has a general mechanism by which the user program can register
-\emph{hooks} to handle certain supported events. All the
-predicates described below must be imported from {\tt xsb\_hook}.
+Sometimes it is useful to let the user application catch certain
+events that occur during XSB execution. For instance, when the user
+asserts or retracts a clause, when an evaluation encounters an
+undefined predicate, etc.  XSB has a general mechanism by which the
+user program can register \emph{hooks} to handle certain supported
+events. All the predicates described below must be imported from {\tt
+xsb\_hook}.
 
 \section{Adding and Removing Hooks}
 

@@ -11,22 +11,26 @@
 Day-to-day care and feeding of XSB including bug fixes, ports, and
 configuration management has been done by Kostis Sagonas, David
 Warren, Terrance Swift, Prasad Rao, Steve Dawson, Juliana Freire,
-Ernie Johnson, Baoqiu Cui, Michael Kifer, and Bart Demoen.
+Ernie Johnson, Baoqiu Cui, Michael Kifer, Bart Demoen and Luis F.
+Castro.
 
 In \version, the core engine development of the SLG-WAM has been
-mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao, and
-Juliana Freire.  The breakdown, roughly, was that Terrance Swift wrote
-the initial tabling engine and builtins.  Prasad Rao reimplemented the
+mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao,
+Juliana Freire, Ernie Johnson, and Luis Castro.  The breakdown,
+very roughly, was that Terrance Swift wrote the initial tabling
+engine, the SLG-WAM, and builtins.  Prasad Rao reimplemented the
 engine's tabling subsystem to use tries for variant-based table access
-while Kostis Sagonas implemented most of tabled negation.  Juliana
-Freire revised the table scheduling mechanism starting from
-Version~1.5.0 to create a more efficient engine, and implemented the
-engine for local evaluation.
+and Ernie Johnson extended these routines in a number of ways,
+including adding call subsumption.  Kostis Sagonas implemented most of
+tabled negation.  Juliana Freire revised the table scheduling
+mechanism starting from Version~1.5.0 to create a more efficient
+engine, and implemented the engine for local evaluation.  Finally,
+Luis Castro rewrote the emulator to use jump tables and wrote a
+heap-garbage collector for the engine.
 
 Starting from XSB Version~2.0, XSB includes another tabling engine,
 CHAT, which was designed and developed by Kostis Sagonas and Bart
-Demoen.  CHAT supports heap garbage collection (both based on a
-mark\&slide and on a mark\&copy algorithm) which was developed and
+Demoen.  CHAT supports heap garbage collection which was developed and
 implemented by Bart Demoen and Kostis Sagonas.
 
 Memory expansion code for WAM stacks was written by Ernie Johnson and
@@ -37,25 +41,25 @@ with 64-bit architectures.  Assert and retract code was based on code
 written by Jiyang Xu and significantly revised by David S. Warren and
 Rui Marques.  Trie assert and retract code was written by Prasad Rao.
 The current version of {\tt findall/3} was re-written from scratch by
-Bart Demoen.  In Version~2.3, the tabling subsystem and its interface
-to the engine have been extended for the support of subsumption-based
-tabling.  This extension was developed and implemented by
-Ernie~Johnson.
+Bart Demoen.  
 
 In the XSB complier, Kostis Sagonas was responsible for HiLog
 compilation and associated builtins.  Steve Dawson implemented
 Unification Factoring.  The {\tt auto\_table} and {\tt suppl\_table}
 directives were written by Kostis Sagonas.  The DCG expansion module
-was written by Kostis Sagonas.  The handling of the {\tt multifile}
-directive was written by Baoqiu Cui.  C.R. Ramakrishnan wrote the mode
-analyzer for XSB.  The safety check for tabling within the scope of
-cuts was written by Kate Dvortsova.
+was written by Kostis Sagonas for non-tabled code and by Baoqiu Cui,
+Terrance Swift and David Warren for tabled code.  The handling of the
+{\tt multifile} directive was written by Baoqiu Cui. C.R. Ramakrishnan
+wrote the mode analyzer for XSB.
 
 Michael Kifer rewrote parts of the XSB code to make XSB configurable
-with GNU's Autoconf.  Harald Schroepfer helped the XSB group with the
-Solaris port, and Yiorgos Adamopoulos suggested the bits to use for
-the HP-700 series port.  Steven Dawson, Larry B. Daniel and Franklin
-Chen were responsible for the MkLinux and Solaris x86 ports.
+with GNU's Autoconf, revised the socket handling routines, and added
+many new file\_io predicates.  
+
+\comment{ Harald Schroepfer helped the XSB group with the Solaris
+port, and Yiorgos Adamopoulos suggested the bits to use for the HP-700
+series port.  Steven Dawson, Larry B. Daniel and Franklin Chen were
+responsible for the MkLinux and Solaris x86 ports.  }
 
 GPP, the source code preprocessor used by XSB, was written by Denis Auroux.
 He also wrote the GPP manual reproduced in Appendix A.

@@ -12,11 +12,13 @@ found in Logic Programming systems, including
   implementation of annotated variables and a package, {\tt clpqr} for
   handling real constraints;
 \item A compiled HiLog implementation;
-\item A variety of indexing techniques for asserted code, along with a
-  novel transformation technique called {\em unification factoring} that
-  can improve program speed and indexing for compiled code;
+\item A variety of indexing techniques for asserted code and both
+backtrackable and non-backtrackable updates to asserted code.
+\item A novel transformation technique called {\em unification
+factoring} that can improve program speed and indexing for compiled
+code; 
 \item A number of interfaces to other software systems, such a C, Java,
-  Perl and Oracle.
+  Perl, ODBC, SModels \cite{NiSi97}, and Oracle.
 \item Extensive pattern matching libraries, and interfaces to libwwww
   routines, all of which are especially useful for Web applications.
 \item Preprocessors and Interpreters so that XSB can be used to evaluate
@@ -192,19 +194,18 @@ The general technique is described in \cite{DRSS96}, and the XSB
 directives needed to use it are covered in Section
 \ref{the_compiler}.
 
-\index{InterProlog}
-A number of interfaces are available to link XSB to other systems.  In
-UNIX systems XSB can be directly linked into C programs; in
-Windows-based system XSB can be linked into C programs through a DLL
-interface.  On either class of operating system, C functions can be
-made callable from XSB either directly within a process, or using a
-socket library.  XSB can also inter-communicate with Java through the
-InterProlog interface, \footnote{InterProlog is available at {\tt
-www.declarativa.com/InterProlog/default.htm}.}.  XSB can access
-external data in a variety of ways: through an Oracle interface,
-through an ODBC interface, or through a variety of mechanisms to read
-data from flat files.  These interfaces are all described in Volume 2
-of this manual.
+\index{InterProlog} A number of interfaces are available to link XSB
+to other systems.  In UNIX systems XSB can be directly linked into C
+programs; in Windows-based system XSB can be linked into C programs
+through a DLL interface.  On either class of operating system, C
+functions can be made callable from XSB either directly within a
+process, or using a socket library.  XSB can also inter-communicate
+with Java through the InterProlog interface, \footnote{InterProlog is
+available at {\tt www.declarativa.com/InterProlog/default.htm}.}.  XSB
+can access external data in a variety of ways: through an ODBC
+interface, through an Oracle interface, or through a variety of
+mechanisms to read data from flat files.  These interfaces are all
+described in Volume 2 of this manual.
 
 \index{Flora} 
 

@@ -25,10 +25,10 @@ and practical evaluation strategies for it, are provided
 in~\cite{ChWa96,Swif99b,SaSW99,FSW98}.  The engine of XSB, the
 SLG-WAM, is an extension of the WAM \cite{DHWa83,AitK90}, and is
 described in~\cite{SaSw98,RRSSW98,JFLP-Scheduling,SaSW96,
-ChSW95,CAT@PLILP-98,TST99,CuSW99b} as it is implemented in \version{}
-and its performance analyzed. Examples of large-scale applications
-that use tabling are overviewed in~\cite{syntactica, semantica,
-CoDS96, DRW96, RRRSSW97, Boul97,CuSW99a,GSTPD00}.
+ChSW95,CAT@PLILP-98,TST99,CuSW99b,CaSW02} as it is implemented in
+\version{} and its performance analyzed. Examples of large-scale
+applications that use tabling are overviewed in~\cite{syntactica,
+semantica, CoDS96, DRW96, RRRSSW97, Boul97,CuSW99a,GSTPD00}.
 
 %=====================================================================
 
@@ -1107,7 +1107,7 @@ ground program, if it is ensured that residual clauses are produced
 for {\em all} atoms, using the residual program may bring a
 performance gain since the search space of algorithms to compute
 stable models will be correspondingly reduced.  In fact, by using XSB
-in conjunction with a Stable Model generator, Smodels \cite{NiSi96},
+in conjunction with a Stable Model generator, Smodels \cite{NiSi97},
 an efficient system has been devised for model checking of concurrent
 systems that is 10-20 times faster than competing systems
 \cite{LiRS98}.  
@@ -1268,20 +1268,20 @@ tabled aggregation, non-optimal answers from a given subgoal $S$ must
 be returned within the SCC of $S$, but not outside the SCC.  This
 action is performed by {\em Local Scheduling}.
 
-It is illustrative to compare local scheduling to {\em Batched
-Scheduling} the default scheduling of XSB\@.  Batched scheduling returns
-answers as they are derived, and resembles Prolog's tuple at a time
-scheduling.  Local scheduling was shown to be quite efficient in terms
-of time and space in \cite{JFLP-Scheduling}, and is the fastest
+It is illustrative to compare local scheduling, the default scheduling
+stratey of XSB, to {\em Batched Scheduling}.  Batched scheduling
+returns answers as they are derived, and resembles Prolog's tuple at a
+time scheduling.  Local scheduling was shown to be quite efficient in
+terms of time and space in \cite{JFLP-Scheduling}, and is the fastest
 scheduling strategy that we know of for computing a sequence of
 answers.  The same paper also introduced Local Scheduling, which
 computes all answers for each SCC and return only the best answer (or
 answers) out of the SCC, when the SCC is completely evaluated ---
 exactly the thing for tabled aggregation.
 
-XSB can be configured to use local scheduling via the configuration
-option {\tt --enable-local-scheduling} and remaking XSB\@.  This will
-not affect the default version of XSB, which will also remain
+XSB can be configured to use batched scheduling via the configuration
+option {\tt --enable-batched-scheduling} and remaking XSB\@.  This
+will not affect the default version of XSB, which will also remain
 available.
 
 

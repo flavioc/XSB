@@ -123,7 +123,7 @@ Here are some ways that are guaranteed to not work in some or all cases:
   Otherwise, it will revert to {\tt cc} or {\tt acc}.  Some versions of
   {\tt gcc} are broken, in which case you would have to give {\tt
     configure} an additional directive {\tt --with-cc}. If you must use
-  some special comiler, use {\tt --with-cc=your-own-compiler}.  You can
+  some special compiler, use {\tt --with-cc=your-own-compiler}.  You can
   also {\tt --disable-optimization} (to change the default), {\tt
     --enable-debug}, and there are many other options.  Type {\tt configure
     --help} to see them all. Also see the file \verb'$XSB_DIR/INSTALL' for
@@ -146,25 +146,32 @@ users need not concern themselves with these options.
 \item[Type of Scheduling Strategy.]  The ordering of operations within
 a tabled evaluation can drastically affect its performance.  XSB
 provides two scheduling strategies: Batched Evaluation and Local
-Evaluation.  Batched Evaluation is the default scheduling strategy for
-XSB and evaluates queries to reduce the time to the first answer of a
-query.  Local Evaluation can be chosen via the {\tt
---enable-local-scheduling} configure option.  Detailed explanations
-can be found in \cite{JFLP-Scheduling}.
+Evaluation.  Local Evaluation ensures that, whenever possible,
+subgoals are fully evaluated before there answers are returned, and
+provides superior behavior for programs in which tabled negation is
+used.  Batched Evaluation evaluates queries to reduce the time to the
+first answer of a query.  Both evaluation methods can be useful for
+different programs.  Since Version 2.4, Local Evaluation has been the
+default evaluation method for XSB.  Batched Evaluation can be chosen
+via the {\tt --enable-batched-scheduling} configure option.  Detailed
+explanations of the scheduling strategies can be found in
+\cite{JFLP-Scheduling}, and further experimentation in \cite{CaSW02}.
+
 %
 \index{memory management}
 \index{garbage collection}
 \item[Type of Memory Management.]  Routines for managing execution
 stacks for tabled evaluations can be quite complex, due to
-interdependencies of tabled subgoals.  Indeed, memory management
-algorithms can be based on common elements are shared among
-computation states or are copied.  The default configuration of XSB
-shares these elements while the option {\tt --enable-chat} copies
-these elements.  While sharing and copying have minor performance
-differences, the main reason to try the {\tt --enable-chat}
-configuration is to use a heap garbage collector that has been written
-for it.  See \cite{SaSw98,CAT@PLILP-98,CATmem@ISMM-98,CHAT@PADL-99}
-for in-depth discussion of the engine memory management.
+interdependencies of tabled subgoals.  Stack management algorithms can
+be based on common elements are shared among computation states or are
+copied.  The default configuration of XSB (sometimes called the
+SLG-WAM configuration) shares these elements while the option {\tt
+--enable-chat} copies these elements.  Each of these configurations
+has advantages.  The Chat configuration is faster and requires less
+space for Prolog execution, while the SLG-WAM configuration is faster
+and requires less space for large tabled evaluations.  See
+\cite{SaSw98,CHAT@PADL-99,CaSW02,CAT@PLILP-98,CATmem@ISMM-98} for
+in-depth discussion of the engine memory management.
 \end{description}
 
 \subsection{Possible Installation Problems}
