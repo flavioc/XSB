@@ -626,3 +626,9 @@ void tstCreateStructures(TSTNptr);
 #define remove_open_tables() remove_open_tries(COMPLSTACKBOTTOM)
 
 /*----------------------------------------------------------------------*/
+
+#define get_var_and_attv_nums(var_num, attv_num, tmp_int)	\
+  var_num = tmp_int & 0xffff;					\
+  attv_num = tmp_int >> 16
+
+/*----------------------------------------------------------------------*/
