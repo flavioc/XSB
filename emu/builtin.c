@@ -468,7 +468,6 @@ void init_builtin_table(void)
   set_builtin_table(STR_LEN, "str_len");
   set_builtin_table(STR_CAT, "str_cat");
   set_builtin_table(STR_CMP, "str_cmp");
-  set_builtin_table(STR_HSH, "str_hsh");
   set_builtin_table(STR_SUB, "str_sub");
   set_builtin_table(DIRNAME_CANONIC, "dirname_canonic");
   set_builtin_table(CALL0, "call0");
@@ -479,11 +478,11 @@ void init_builtin_table(void)
   set_builtin_table(BUFF_DEALLOC, "buff_dealloc");
   set_builtin_table(BUFF_CELL, "buff_cell");
   set_builtin_table(BUFF_SET_CELL, "buff_set_cell");
-  set_builtin_table(COPY_TERM,"copy_term");
+  set_builtin_table(COPY_TERM0,"copy_term0");
   set_builtin_table(PSC_INSERT, "psc_insert");
   set_builtin_table(PSC_IMPORT, "psc_import");
   set_builtin_table(PSC_INSERTMOD, "psc_insertmod");
-  set_builtin_table(LOAD_SEG, "load_seg");
+
   set_builtin_table(FILE_GETTOKEN, "file_gettoken");
   set_builtin_table(FILE_PUTTOKEN, "file_puttoken");
   set_builtin_table(TERM_HASH, "term_hash");
@@ -809,7 +808,7 @@ int builtin_call(byte number)
     }
     break;
     
-  case COPY_TERM: /* R1: +term to copy; R2: -variant */
+  case COPY_TERM0: /* R1: +term to copy; R2: -variant */
     copy_term();
     break;
     
@@ -911,11 +910,6 @@ int builtin_call(byte number)
     } else return FALSE;
   case STR_CMP:		/* R1: +Str1; R2: +Str2: R3: -Res */
     ctop_int(3, strcmp(ptoc_string(1), ptoc_string(2)));
-    break;
-  case STR_HSH:		/* R1: +String; R2: +Arity;
-			   R3: +HashSize: R4: -Value */
-    value = hash(ptoc_string(1), ptoc_int(2), ptoc_int(3));
-    ctop_int(4, value);
     break;
   case STR_SUB:   /* R1: +Substring; R2: +String; R3: -Pos */
     term = ptoc_tag(1);
@@ -1052,16 +1046,6 @@ int builtin_call(byte number)
                         /* R3: -PSC of the Module entry */
     sym = insert_module(ptoc_int(2), ptoc_string(1));
     ctop_addr(3, pair_psc(sym));
-    break;
-  case LOAD_SEG:		/* R1: +segment number */
-				/* R2: +text bytes */
-				/* R3: +index bytes */
-				/* R4: +File name */
-				/* R5: -Initial address */	  
-    tmpval = ptoc_int(4);
-    value = (Integer)load_seg(ptoc_int(1), ptoc_int(2),
-			      ptoc_int(3), fileptr(tmpval));
-    ctop_int(5, value);
     break;
   case TERM_HASH:		/* R1: +Term	*/
 				/* R2: +Size (of hash table) */
