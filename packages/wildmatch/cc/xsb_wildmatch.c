@@ -83,7 +83,7 @@ int do_wildmatch__(void)
     wild_ptr = p_charlist_to_c_string(wild_term, &wild_buffer,
 				      "WILDMATCH", "wildcard");
   else
-    xsb_abort("WILDMATCH: Wildcard (Arg 1) must be an atom or a character list");
+    xsb_abort("[WILDMATCH] Wildcard (Arg 1) must be an atom or a character list");
 
   /* check string to be matched */
   if (is_string(input_string_term))
@@ -93,7 +93,7 @@ int do_wildmatch__(void)
 					  &input_string_buffer,
 					  "WILDMATCH", "input string");
   } else
-    xsb_abort("WILDMATCH: Input string (Arg 2) must be an atom or a character list");
+    xsb_abort("[WILDMATCH] Input string (Arg 2) must be an atom or a character list");
 
   /* if the FNM_CASEFOLD flag is not supported,
      convert everything to lowercase before matching */
@@ -145,7 +145,7 @@ int do_glob_directory__(void)
 				      "GLOB_DIRECTORY", "wildcard");
   }
   else
-    xsb_abort("GLOB_DIRECTORY: Wildcard (Arg 1) must be an atom or a character list");
+    xsb_abort("[GLOB_DIRECTORY] Wildcard (Arg 1) must be an atom or a character list");
 
   file_vector.gl_offs = 0; /* put results right in the first element of
 			     file_vector */
@@ -159,13 +159,13 @@ int do_glob_directory__(void)
   case 0: break;
   default:
     globfree(&file_vector);
-    xsb_abort("GLOB_DIRECTORY: Can't read directory or out of memory");
+    xsb_abort("[GLOB_DIRECTORY] Can't read directory or out of memory");
   }
 
   /* matched successfully: now retrieve results */
   listTail = listOfMatches = reg_term(3);
   if (! is_var(listTail))
-    xsb_abort("GLOB_DIRECTORY: Argument 7 (list of matches) must be an unbound variable");
+    xsb_abort("[GLOB_DIRECTORY] Argument 7 (list of matches) must be an unbound variable");
 
   for (i=0; i<file_vector.gl_pathc; i++) {
     c2p_list(listTail); /* make it into a list */
@@ -220,12 +220,12 @@ int do_convert_string__(void)
 
   output_term = reg_term(2);
   if (! is_var(output_term))
-    xsb_abort("CONVERT_STRING: Output string (Arg 2) must be a variable");
+    xsb_abort("[CONVERT_STRING] Output string (Arg 2) must be a variable");
 
   /* If arg 3 is bound to anything, then consider this as ignore case flag */
   conversion_flag_term = reg_term(3);
   if (! is_string(conversion_flag_term))
-    xsb_abort("CONVERT_STRING: Conversion flag (Arg 3) must be an atom");
+    xsb_abort("[CONVERT_STRING] Conversion flag (Arg 3) must be an atom");
 
   conversion_flag = string_val(conversion_flag_term);
 
@@ -238,14 +238,14 @@ int do_convert_string__(void)
 					  "STRING_CONVERT", "input string");
     to_string_conversion_required = TRUE;
   } else
-    xsb_abort("CONVERT_STRING: Input string (Arg 1) must be an atom or a character list");
+    xsb_abort("[CONVERT_STRING] Input string (Arg 1) must be an atom or a character list");
 
   if (0==strcmp(conversion_flag,"tolower"))
     output_ptr = lowercase_string(input_string);
   else if (0==strcmp(conversion_flag,"toupper"))
     output_ptr = uppercase_string(input_string);
   else
-    xsb_abort("CONVERT_STRING: Valid conversion flags (Arg 3): `tolower', `toupper'");
+    xsb_abort("[CONVERT_STRING] Valid conversion flags (Arg 3): `tolower', `toupper'");
 
   if (to_string_conversion_required)
     c_string_to_p_charlist(output_ptr,output_term,"CONVERT_STRING","Arg 2");

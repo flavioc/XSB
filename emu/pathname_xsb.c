@@ -163,7 +163,7 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
       /*  The system has no info on this user, so we can't
 	  construct the absolute path -- abort. */
       char message[100];
-      sprintf(message, "`%s': unknown user\n", username);
+      sprintf(message, "[PATHNAME] `%s': unknown user\n", username);
       xsb_abort(message);
     } else
       path_prefix = pw_struct -> pw_dir;
@@ -251,7 +251,8 @@ DllExport char * call_conv strip_names_from_path(char* path, int how_many)
 
   for (i=0; i < how_many; i++) {
     if (abort_flag) {
-      xsb_abort("There is no directory %d levels below %s", how_many, path);
+      xsb_abort("[PATHNAME] There is no directory %d levels below %s",
+		how_many, path);
     }
     cutoff_ptr = strrchr(buffer, SLASH);
     if (cutoff_ptr == NULL)
@@ -400,7 +401,8 @@ static char *rectify_pathname(char *inpath, char *outpath) {
     nameidx++;
     inptr1=inptr2;
     if (nameidx >= MAXPATHNAMES)
-      xsb_abort("Number of file names in the full path name exceeds maximum");
+      xsb_abort("[PATHNAME] Directory depth in pathname exceeds maximum, %s",
+		inpath);
   }
 
   /* at this point, we've copied all file names into names array and eliminated

@@ -115,7 +115,7 @@ int do_regmatch__(void)
     regexp_ptr = p_charlist_to_c_string(regexp_term, &regexp_buffer,
 					"RE_MATCH", "regular expression");
   else
-    xsb_abort("RE_MATCH: Arg 1 (the regular expression) must be an atom or a character list");
+    xsb_abort("[RE_MATCH] Arg 1 (the regular expression) must be an atom or a character list");
 
   input_term = reg_term(2);  /* Arg2: string to find matches in */
   if (is_string(input_term)) /* check it */
@@ -124,14 +124,14 @@ int do_regmatch__(void)
     input_string = p_charlist_to_c_string(input_term, &input_buffer,
 					  "RE_MATCH", "input string");
   } else
-    xsb_abort("RE_MATCH: Arg 2 (the input string) must be an atom or a character list");
+    xsb_abort("[RE_MATCH] Arg 2 (the input string) must be an atom or a character list");
   
   offset_term = reg_term(3); /* arg3: offset within the string */
   if (! is_int(offset_term))
-    xsb_abort("RE_MATCH: Arg 3 (the offset) must be an integer");
+    xsb_abort("[RE_MATCH] Arg 3 (the offset) must be an integer");
   offset = int_val(offset_term);
   if (offset < 0 || offset > strlen(input_string))
-    xsb_abort("RE_MATCH: Arg 3 (=%d) must be between 0 and %d",
+    xsb_abort("[RE_MATCH] Arg 3 (=%d) must be between 0 and %d",
 	      offset, strlen(input_string));
 
   /* arg 4 specifies flags: _, number, list [extended,ignorecase] */
@@ -203,7 +203,7 @@ int do_bulkmatch__(void)
     regexp_ptr = p_charlist_to_c_string(regexp_term, &regexp_buffer,
 					"RE_BULKMATCH", "regular expression");
   else
-    xsb_abort("RE_BULKMATCH: Arg 1 (the regular expression) must be an atom or a character list");
+    xsb_abort("[RE_BULKMATCH] Arg 1 (the regular expression) must be an atom or a character list");
 
   input_term = reg_term(2);  /* Arg2: string to find matches in */
   if (is_string(input_term)) /* check it */
@@ -212,16 +212,16 @@ int do_bulkmatch__(void)
     input_string = p_charlist_to_c_string(input_term, &input_buffer,
 					  "RE_BULKMATCH", "input string");
   } else
-    xsb_abort("RE_BULKMATCH: Arg 2 (the input string) must be an atom or a character list");
+    xsb_abort("[RE_BULKMATCH] Arg 2 (the input string) must be an atom or a character list");
 
   input_len = strlen(input_string);
   
   offset_term = reg_term(3); /* arg3: offset within the string */
   if (! is_int(offset_term))
-    xsb_abort("RE_BULKMATCH: Arg 3 (the offset) must be an integer");
+    xsb_abort("[RE_BULKMATCH] Arg 3 (the offset) must be an integer");
   offset = int_val(offset_term);
   if (offset < 0 || offset > input_len)
-    xsb_abort("RE_BULKMATCH: Arg 3 (=%d) must be between 0 and %d", input_len);
+    xsb_abort("[RE_BULKMATCH] Arg 3 (=%d) must be between 0 and %d", input_len);
 
    /* arg 4 specifies flags: _, number, list [extended,ignorecase] */
   match_flags = make_flags(reg_term(4), "RE_BULKMATCH");
@@ -293,23 +293,23 @@ int do_regsubstitute__(void)
 					  "RE_SUBSTITUTE", "input string");
     conversion_required = TRUE;
   } else
-    xsb_abort("RE_SUBSTITUTE: Arg 1 (the input string) must be an atom or a character list");
+    xsb_abort("[RE_SUBSTITUTE] Arg 1 (the input string) must be an atom or a character list");
 
   input_len = strlen(input_string);
 
   /* arg 2: substring specification */
   subst_spec_list_term = reg_term(2);
   if (!is_list(subst_spec_list_term) && !is_nil(subst_spec_list_term))
-    xsb_abort("RE_SUBSTITUTE: Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
+    xsb_abort("[RE_SUBSTITUTE] Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
   subst_str_list_term = reg_term(3);
   if (! is_list(subst_str_list_term))
-    xsb_abort("RE_SUBSTITUTE: Arg 3 must be a list of strings");
+    xsb_abort("[RE_SUBSTITUTE] Arg 3 must be a list of strings");
 
   output_term = reg_term(4);
   if (! is_var(output_term))
-    xsb_abort("RE_SUBSTITUTE: Arg 4 (the output) must be an unbound variable");
+    xsb_abort("[RE_SUBSTITUTE] Arg 4 (the output) must be an unbound variable");
 
   subst_spec_list_term1 = subst_spec_list_term;
   subst_str_list_term1 = subst_str_list_term;
@@ -319,7 +319,7 @@ int do_regsubstitute__(void)
     goto EXIT;
   }
   if (is_nil(subst_str_list_term1))
-    xsb_abort("RE_SUBSTITUTE: Arg 3 must not be an empty list");
+    xsb_abort("[RE_SUBSTITUTE] Arg 3 must not be an empty list");
 
   do {
     subst_reg_term = p2p_car(subst_spec_list_term1);
@@ -336,14 +336,14 @@ int do_regsubstitute__(void)
 					      "RE_SUBSTITUTE",
 					      "substitution string");
       } else 
-	xsb_abort("RE_SUBSTITUTE: Arg 3 must be a list of strings");
+	xsb_abort("[RE_SUBSTITUTE] Arg 3 must be a list of strings");
     }
 
     beg_term = p2p_arg(subst_reg_term,1);
     end_term = p2p_arg(subst_reg_term,2);
 
     if (!is_int(beg_term) || !is_int(end_term))
-      xsb_abort("RE_SUBSTITUTE: Non-integer in Arg 2");
+      xsb_abort("[RE_SUBSTITUTE] Non-integer in Arg 2");
     else{
       beg_offset = int_val(beg_term);
       end_offset = int_val(end_term);
@@ -352,7 +352,7 @@ int do_regsubstitute__(void)
     if (end_offset < 0)
       end_offset = input_len;
     if ((end_offset < beg_offset) || (beg_offset < last_pos))
-      xsb_abort("RE_SUBSTITUTE: Substitution regions in Arg 2 not sorted");
+      xsb_abort("[RE_SUBSTITUTE] Substitution regions in Arg 2 not sorted");
 
     /* do the actual replacement */
     XSB_StrAppendBlk(&output_buffer,input_string+last_pos,beg_offset-last_pos);
@@ -413,33 +413,33 @@ int do_regsubstring__(void)
 					  "RE_SUBSTRING", "input string");
     conversion_required = TRUE;
   } else
-    xsb_abort("RE_SUBSTRING: Arg 1 (the input string) must be an atom or a character list");
+    xsb_abort("[RE_SUBSTRING] Arg 1 (the input string) must be an atom or a character list");
 
   input_len = strlen(input_string);
 
   /* arg 2: beginning offset */
   beg_offset_term = reg_term(2);
   if (! is_int(beg_offset_term))
-    xsb_abort("RE_SUBSTRING: Arg 2 (the beginning offset) must be an integer");
+    xsb_abort("[RE_SUBSTRING] Arg 2 (the beginning offset) must be an integer");
   beg_offset = int_val(beg_offset_term);
   if (beg_offset < 0 || beg_offset > input_len)
-    xsb_abort("RE_SUBSTRING: Arg 2 (=%d) must be between 0 and %d",  
+    xsb_abort("[RE_SUBSTRING] Arg 2 (=%d) must be between 0 and %d",  
 	      beg_offset, input_len);
 
   /* arg 3: ending offset */
   end_offset_term = reg_term(3);
   if (! is_int(end_offset_term))
-    xsb_abort("RE_SUBSTRING: Arg 3 (the ending offset) must be an integer");
+    xsb_abort("[RE_SUBSTRING] Arg 3 (the ending offset) must be an integer");
   end_offset = int_val(end_offset_term);
   if (end_offset < 0)
     end_offset = input_len;
   else if (end_offset > input_len || end_offset < beg_offset)
-    xsb_abort("RE_SUBSTRING: Arg 3 (=%d) must be < 0 or between %d and %d",
+    xsb_abort("[RE_SUBSTRING] Arg 3 (=%d) must be < 0 or between %d and %d",
 	      end_offset, beg_offset, input_len);
 
   output_term = reg_term(4);
   if (! is_var(output_term))
-    xsb_abort("RE_SUBSTRING: Arg 4 (the output string) must be an unbound variable");
+    xsb_abort("[RE_SUBSTRING] Arg 4 (the output string) must be an unbound variable");
 
   /* do the actual replacement */
   substring_len = end_offset-beg_offset;
@@ -494,14 +494,14 @@ static int make_flags(prolog_term flag_term, char *context)
     return 0; /* basic, case-sensitive */
 
   if (! is_list(flag_term))
-    xsb_abort("%s: Arg 4 (flags) must be a variable, an integer, or a list",
+    xsb_abort("[%s] Arg 4 (flags) must be a variable, an integer, or a list",
 	      context);
 
   do {
     head_trm = p2p_car(aux_list);
     aux_list = p2p_cdr(aux_list);
     if (!is_string(head_trm))
-      xsb_abort("%s: Arg 4: allowed flags are `extended' and `ignorecase'",
+      xsb_abort("[%s] Arg 4: allowed flags are `extended' and `ignorecase'",
 		context);
     head = string_val(head_trm);
     if (strcmp(head,"extended")==0)
@@ -558,7 +558,7 @@ static int xsb_re_match(char *regexp_ptr, char *match_str, int flags,
     else {
       regexp_tbl[idx].original = NULL;
       regerror(err_code, compiled_re, err_msg, ERR_MSG_LEN);
-      xsb_abort("%s: %s", context, err_msg);
+      xsb_abort("[%s] %s", context, err_msg);
     }
   }
 
@@ -569,7 +569,7 @@ static int xsb_re_match(char *regexp_ptr, char *match_str, int flags,
 
   if (err_code != 0) {
     regerror(err_code, compiled_re, err_msg, ERR_MSG_LEN);
-    xsb_abort("%s: %s", context, err_msg);
+    xsb_abort("[%s] %s", context, err_msg);
   }
 
   return TRUE;

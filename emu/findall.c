@@ -103,12 +103,12 @@ int findall_init_c()
 	}
 
   if (nextfree < 0) /* could realloc here - too lazy to do it */
-	xsb_abort("FINDALL: maximum number of active findalls reached");
+	xsb_abort("[FINDALL] Maximum number of active findalls reached");
   thisfree = nextfree;
 	/* no checking - no trailing - just use findall_init correct :-) */
   p = findall_solutions + nextfree ;
   if (!(w = (CPtr)malloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
-	xsb_abort("FINDALL: not enough memory");
+	xsb_abort("[FINDALL] Not enough memory");
 
   *w = 0 ;
   p->first_chunk = p->current_chunk = w ;

@@ -1414,7 +1414,7 @@ void remove_open_tries(CPtr bottom_parameter)
     CallStrPtr = (VariantSF)compl_subgoal_ptr(openreg);
     if (!is_completed(CallStrPtr)) {
       if (warned == FALSE) {
-	xsb_warn("Removing incomplete tables...");
+	xsb_mesg("Removing incomplete tables...");
 	check_table_cut = FALSE;  /* permit cuts over tables */
 	warned = TRUE;
       }

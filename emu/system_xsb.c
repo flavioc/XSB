@@ -119,7 +119,7 @@ int sys_syscall(int callno)
       ctop_string(3,string_find(current_dir,1));
     break;
   }
-  default: xsb_abort("Unknown system call number, %d", callno);
+  default: xsb_abort("[SYS_SYSCALL] Unknown system call number, %d", callno);
   }
   return result;
 }
@@ -175,7 +175,7 @@ xsbBool sys_system(int callno)
     else if (is_string(cmdspec_term))
       shell_cmd = string_val(cmdspec_term);
     else
-      xsb_abort("%s: Arg 1 must be an atom or a list [command, arg, ...]",
+      xsb_abort("[%s] Arg 1 must be an atom or a list [command, arg, ...]",
 		callname);
 
     /* the user can indicate that he doesn't want either of the streams created
@@ -200,12 +200,12 @@ xsbBool sys_system(int callno)
     }
 
     if (!is_var(reg_term(6)))
-      xsb_abort("%s: Arg 5 (process id) must be a variable", callname);
+      xsb_abort("[%s] Arg 5 (process id) must be a variable", callname);
 
     if (params_are_in_a_list) {
       /* fill in the params[] array */
       if (is_nil(cmdspec_term))
-	xsb_abort("%s: Arg 1 must not be an empty list", callname);
+	xsb_abort("[%s] Arg 1 must not be an empty list", callname);
       
       cmdlist_temp_term = cmdspec_term;
       do {
@@ -215,12 +215,12 @@ xsbBool sys_system(int callno)
 	  cmd_or_arg = string_val(cmd_or_arg_term);
 	}
 	else 
-	  xsb_abort("%s: Non string list member in the Arg",
+	  xsb_abort("[%s] Non string list member in the Arg",
 		    callname);
 	
 	params[idx++] = cmd_or_arg;
 	if (idx > MAX_SUBPROC_PARAMS)
-	  xsb_abort("%s: Too many arguments passed to subprocess",
+	  xsb_abort("[%s] Too many arguments passed to subprocess",
 		    callname);
 	
       } while (!is_nil(cmdlist_temp_term));
@@ -239,7 +239,7 @@ xsbBool sys_system(int callno)
     
     /* -1 means: no space left */
     if ((tbl_pos = get_free_process_cell()) < 0) {
-      xsb_warn("Can't create subprocess: XSB process table is full");
+      xsb_warn("Can't create subprocess because XSB process table is full");
       return FALSE;
     }
 
@@ -252,7 +252,7 @@ xsbBool sys_system(int callno)
 			      fromproc_stderr_fptr);
 
     if (pid_or_status < 0) {
-      xsb_warn("%s: Subprocess creation failed",
+      xsb_warn("[%s] Subprocess creation failed",
 	       callname);
       return FALSE;
     }
@@ -294,7 +294,7 @@ xsbBool sys_system(int callno)
     init_process_table();
 
     if (!is_var(table_term))
-      xsb_abort("GET_PROCESS_TABLE: Arg 1 must be a variable");
+      xsb_abort("[GET_PROCESS_TABLE] Arg 1 must be a variable");
 
     table_term_tail = table_term;
     for (i=0; i<MAX_SUBPROC_NUMBER; i++) {
@@ -323,11 +323,11 @@ xsbBool sys_system(int callno)
     init_process_table();
 
     if (!is_int(pid_term))
-      xsb_abort("PROCESS_STATUS: Arg 1 (process id) must be an integer");
+      xsb_abort("[PROCESS_STATUS] Arg 1 (process id) must be an integer");
     pid = int_val(pid_term);
 
     if (!is_var(status_term))
-      xsb_abort("PROCESS_STATUS: Arg 2 (process staus) must be a variable");
+      xsb_abort("[PROCESS_STATUS] Arg 2 (process staus) must be a variable");
     
     switch (process_status(pid)) {
     case RUNNING:
@@ -360,11 +360,11 @@ xsbBool sys_system(int callno)
     init_process_table();
 
     if (!is_int(pid_term))
-      xsb_abort("PROCESS_CONTROL: Arg 1 (process id) must be an integer");
+      xsb_abort("[PROCESS_CONTROL] Arg 1 (process id) must be an integer");
     pid = int_val(pid_term);
 
     if (!is_string(signal_term))
-      xsb_abort("PROCESS_CONTROL: Arg 2 (process status) must be a variable");
+      xsb_abort("[PROCESS_CONTROL] Arg 2 (process status) must be a variable");
     signal = string_val(signal_term);
 
     if (strcmp(signal, "kill")==0) {
@@ -381,12 +381,12 @@ xsbBool sys_system(int callno)
       return TRUE;
     }
 
-    xsb_warn("PROCESS_CONTROL: Invalid signal, %s", signal);
+    xsb_warn("[PROCESS_CONTROL] Invalid signal, %s", signal);
     return FALSE;
   }
 
   default:
-    xsb_abort("SYS_SYSTEM: wrong call number (an XSB bug)");
+    xsb_abort("[SYS_SYSTEM] Wrong call number (an XSB bug)");
   } /* end case */
   return TRUE;
 }
@@ -409,17 +409,17 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
 
   if ( (pipe_to_proc != NULL) && PIPE(pipe_to_proc) < 0 ) {
     /* can't open pipe to process */
-    xsb_warn("SPAWN_PROCESS: Can't open pipe for subprocess input");
+    xsb_warn("[SPAWN_PROCESS] Can't open pipe for subprocess input");
     return PIPE_TO_PROC_FAILED;
   }
   if ( (pipe_from_proc != NULL) && PIPE(pipe_from_proc) < 0 ) {
     /* can't open pipe from process */
-    xsb_warn("SPAWN_PROCESS: Can't open pipe for subprocess output");
+    xsb_warn("[SPAWN_PROCESS] Can't open pipe for subprocess output");
     return PIPE_FROM_PROC_FAILED;
   }
   if ( (pipe_from_stderr != NULL) && PIPE(pipe_from_stderr) < 0 ) {
     /* can't open stderr pipe from process */
-    xsb_warn("SPAWN_PROCESS: Can't open pipe for subprocess errors");
+    xsb_warn("[SPAWN_PROCESS] Can't open pipe for subprocess errors");
     return PIPE_FROM_PROC_FAILED;
   }
 
@@ -439,19 +439,19 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   stdout_saved = dup(fileno(stdout));
   stderr_saved = dup(fileno(stderr));
   if ((fileno(stdin) < 0) || (stdin_saved < 0))
-    xsb_warn("SPAWN_PROCESS: Bad stdin=%d; stdin closed by mistake?",
+    xsb_warn("[SPAWN_PROCESS] Bad stdin=%d; stdin closed by mistake?",
 	     fileno(stdin));
   if ((fileno(stdout) < 0) || (stdout_saved < 0))
-    xsb_warn("SPAWN_PROCESS: Bad stdout=%d; stdout closed by mistake?",
+    xsb_warn("[SPAWN_PROCESS] Bad stdout=%d; stdout closed by mistake?",
 	     fileno(stdout));
   if ((fileno(stderr) < 0) || (stderr_saved < 0))
-    xsb_warn("SPAWN_PROCESS: Bad stderr=%d; stderr closed by mistake?",
+    xsb_warn("[SPAWN_PROCESS] Bad stderr=%d; stderr closed by mistake?",
 	     fileno(stderr));
 
   if (pipe_to_proc != NULL) {
     /* close child stdin, bind it to the reading part of pipe_to_proc */
     if (dup2(pipe_to_proc[0], fileno(stdin)) < 0) {
-      xsb_warn("SPAWN_PROCESS: Can't connect pipe %d to subprocess stdin",
+      xsb_warn("[SPAWN_PROCESS] Can't connect pipe %d to subprocess stdin",
 	       pipe_to_proc[0]);
       return PIPE_TO_PROC_FAILED;
     }
@@ -460,7 +460,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   /* if stdin must be captured in an existing I/O port -- do it */
   if (toprocess_fptr != NULL)
     if (dup2(fileno(toprocess_fptr), fileno(stdin)) < 0) {
-      xsb_warn("SPAWN_PROCESS: Can't connect stream %d to subprocess stdin",
+      xsb_warn("[SPAWN_PROCESS] Can't connect stream %d to subprocess stdin",
 	       fileno(toprocess_fptr));
       return PIPE_TO_PROC_FAILED;
     }
@@ -468,7 +468,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   if (pipe_from_proc != NULL) {
     /* close child stdout, bind it to the write part of pipe_from_proc */
     if (dup2(pipe_from_proc[1], fileno(stdout)) < 0) {
-      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stdout to pipe %d",
+      xsb_warn("[SPAWN_PROCESS] Can't connect subprocess stdout to pipe %d",
 	       pipe_from_proc[1]);
       return PIPE_TO_PROC_FAILED;
     }
@@ -477,7 +477,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   /* if stdout must be captured in an existing I/O port -- do it */
   if (fromprocess_fptr != NULL)
     if (dup2(fileno(fromprocess_fptr), fileno(stdout)) < 0) {
-      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stdout to stream %d",
+      xsb_warn("[SPAWN_PROCESS] Can't connect subprocess stdout to stream %d",
 	       fileno(fromprocess_fptr));
       return PIPE_TO_PROC_FAILED;
     }
@@ -485,7 +485,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   if (pipe_from_stderr != NULL) {
     /* close child stderr, bind it to the write part of pipe_from_proc */
     if (dup2(pipe_from_stderr[1], fileno(stderr)) < 0) {
-      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stderr to pipe %d",
+      xsb_warn("[SPAWN_PROCESS] Can't connect subprocess stderr to pipe %d",
 	       pipe_from_stderr[1]);
       return PIPE_TO_PROC_FAILED;
     }
@@ -494,7 +494,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   /* if stderr must be captured in an existing I/O port -- do it */
   if (fromproc_stderr_fptr != NULL)
     if (dup2(fileno(fromproc_stderr_fptr), fileno(stderr)) < 0) {
-      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stderr to stream %d",
+      xsb_warn("[SPAWN_PROCESS] Can't connect subprocess stderr to stream %d",
 	       fileno(fromproc_stderr_fptr));
       return PIPE_TO_PROC_FAILED;
     }
@@ -508,7 +508,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
 
     if (pid < 0) {
       /* failed */
-      xsb_warn("SPAWN_PROCESS: Can't fork off subprocess");
+      xsb_warn("[SPAWN_PROCESS] Can't fork off subprocess");
       return pid;
     } else if (pid == 0) {
       /* child process */
@@ -651,7 +651,7 @@ static void split_string(char *string, char *params[], char *callname)
   static char buffer[MAXPATHLEN];
 
   if (buflen > MAXPATHLEN - 1)
-    xsb_abort("%s: Command string too long",
+    xsb_abort("[%s] Command string too long",
 	      callname);
 
   strncpy(buffer, string, MAXPATHLEN);

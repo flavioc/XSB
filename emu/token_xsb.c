@@ -958,7 +958,7 @@ case deleted ****/
 
         }
         /* There is no way we can get here */
-        xsb_abort("Internal error: InType(%d)==%d\n", c, InType(c));
+        xsb_abort("[Internal error] InType(%d)==%d\n", c, InType(c));
         /*NOTREACHED*/
 	return FALSE; /* to pacify the compiler */
 }

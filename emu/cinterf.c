@@ -126,7 +126,7 @@ DllExport xsbBool call_conv c2p_int(Integer val, prolog_term var)
 	bind_int(vptr(v), val);
 	return TRUE;
     } else {
-	xsb_warn("C2P_INT: Argument 2 must be a variable");
+	xsb_warn("[C2P_INT] Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -138,7 +138,7 @@ DllExport xsbBool call_conv c2p_float(double val, prolog_term var)
 	bind_float(vptr(v), (Float)(val));
 	return TRUE;
     } else {
-	xsb_warn("C2P_FLOAT: Argument 2 must be a variable");
+	xsb_warn("[C2P_FLOAT] Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -150,7 +150,7 @@ DllExport xsbBool call_conv c2p_string(char *val, prolog_term var)
 	bind_string(vptr(v), (char *)string_find(val, 1));
 	return TRUE;
     } else {
-	xsb_warn("C2P_STRING: Argument 2 must be a variable");
+	xsb_warn("[C2P_STRING] Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -165,7 +165,7 @@ DllExport xsbBool call_conv c2p_list(prolog_term var)
 	bind_list(vptr(v), sreg);
 	return TRUE;
     } else {
-	xsb_warn("C2P_LIST: Argument must be a variable");
+	xsb_warn("[C2P_LIST] Argument must be a variable");
 	return FALSE;
     }
 }
@@ -177,7 +177,7 @@ DllExport xsbBool call_conv c2p_nil(prolog_term var)
        bind_nil(vptr(v));
        return TRUE;
     } else {
-	xsb_warn("C2P_NIL: Argument must be a variable");
+	xsb_warn("[C2P_NIL] Argument must be a variable");
 	return FALSE;
     }
 }
@@ -202,7 +202,7 @@ DllExport xsbBool call_conv c2p_functor(char *functor, int arity, prolog_term va
 	for (i=0; i<arity; sreg++,i++) { bld_free(sreg); }
 	return TRUE;
     } else {
-	xsb_warn("C2P_FUNCTOR: Argument 3 must be a variable");
+	xsb_warn("[C2P_FUNCTOR] Argument 3 must be a variable");
 	return FALSE;
     }
 }
@@ -303,7 +303,7 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
   prolog_term list = term, list_head;
 
   if (!is_list(list)) {
-    xsb_abort("%s: %s is not a list of characters", in_func, where);
+    xsb_abort("[%s] %s is not a list of characters", in_func, where);
   }
 
   XSB_StrSet(buf, "");
@@ -312,12 +312,12 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
     if (is_nil(list)) break;
     list_head = p2p_car(list);
     if (!is_int(list_head)) {
-      xsb_abort("%s: A Prolog string (a character list) expected, %s",
+      xsb_abort("[%s] A Prolog string (a character list) expected, %s",
 		in_func, where);
     }
     head_val = int_val(list_head);
     if (head_val < 0 || head_val > 255) {
-      xsb_abort("%s: A Prolog string (a character list) expected, %s",
+      xsb_abort("[%s] A Prolog string (a character list) expected, %s",
 		in_func, where);
     }
 
@@ -381,7 +381,7 @@ void c_string_to_p_charlist(char *name, prolog_term list,
   int len=strlen(name), i;
 
   if (isnonvar(list)) {
-    xsb_abort("%s: A variable expected, %s", in_func, where);
+    xsb_abort("[%s] A variable expected, %s", in_func, where);
   }
   if (len == 0) {
     bind_nil((CPtr)(list));
@@ -1098,7 +1098,7 @@ void print_pterm(prolog_term term, int toplevel, VarString *straddr)
       }
       XSB_StrAppend(straddr, ")");
     }
-  } else xsb_warn("PRINT_PTERM: Unrecognized prolog term type");
+  } else xsb_warn("[PRINT_PTERM] Unrecognized prolog term type");
 }
 
 /************************************************************************/
@@ -1173,7 +1173,7 @@ DllExport int call_conv xsb_init_string(char *cmdline_param) {
 
 	if (strlen(cmdline_param) > 2*MAXPATHLEN) {
 	    xsb_warn("**************************************************************************");
-	    xsb_warn("XSB_INIT_STRING: %18s...: command used to call XSB server is too long",
+	    xsb_warn("[XSB_INIT_STRING] %18s...: command used to call XSB server is too long",
 		    cmdline_param);
 	    xsb_warn("**************************************************************************");
 	    exit(1);

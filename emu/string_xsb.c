@@ -135,14 +135,14 @@ xsbBool substring(void)
 					  "SUBSTRING", "input string");
     conversion_required = TRUE;
   } else
-    xsb_abort("SUBSTRING: Arg 1 (the input string) must be an atom or a character list");
+    xsb_abort("[SUBSTRING] Arg 1 (the input string) must be an atom or a character list");
 
   input_len = strlen(input_string);
 
   /* arg 2: beginning offset */
   beg_offset_term = reg_term(2);
   if (! is_int(beg_offset_term))
-    xsb_abort("SUBSTRING: Arg 2 (the beginning offset) must be an integer");
+    xsb_abort("[SUBSTRING] Arg 2 (the beginning offset) must be an integer");
   beg_offset = int_val(beg_offset_term);
   if (beg_offset < 0)
     beg_offset = 0;
@@ -154,7 +154,7 @@ xsbBool substring(void)
   if (is_var(end_offset_term))
     end_offset = input_len;
   else if (! is_int(end_offset_term))
-    xsb_abort("SUBSTRING: Arg 3 (the end offset) must be integer or _");
+    xsb_abort("[SUBSTRING] Arg 3 (the end offset) must be integer or _");
   else end_offset = int_val(end_offset_term);
 
   if (end_offset < 0)
@@ -166,7 +166,7 @@ xsbBool substring(void)
 
   output_term = reg_term(4);
   if (! is_var(output_term))
-    xsb_abort("SUBSTRING: Arg 4 (the output string) must be an unbound variable");
+    xsb_abort("[SUBSTRING] Arg 4 (the output string) must be an unbound variable");
 
   /* do the actual replacement */
   substring_len = end_offset-beg_offset;
@@ -221,23 +221,23 @@ xsbBool string_substitute(void)
 					  "STRING_SUBSTITUTE", "input string");
     conversion_required = TRUE;
   } else
-    xsb_abort("STRING_SUBSTITUTE: Arg 1 (the input string) must be an atom or a character list");
+    xsb_abort("[STRING_SUBSTITUTE] Arg 1 (the input string) must be an atom or a character list");
 
   input_len = strlen(input_string);
 
   /* arg 2: substring specification */
   subst_spec_list_term = reg_term(2);
   if (!is_list(subst_spec_list_term) && !is_nil(subst_spec_list_term))
-    xsb_abort("STRING_SUBSTITUTE: Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
+    xsb_abort("[STRING_SUBSTITUTE] Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
   subst_str_list_term = reg_term(3);
   if (! is_list(subst_str_list_term))
-    xsb_abort("STRING_SUBSTITUTE: Arg 3 must be a list of strings");
+    xsb_abort("[STRING_SUBSTITUTE] Arg 3 must be a list of strings");
 
   output_term = reg_term(4);
   if (! is_var(output_term))
-    xsb_abort("STRING_SUBSTITUTE: Arg 4 (the output) must be an unbound variable");
+    xsb_abort("[STRING_SUBSTITUTE] Arg 4 (the output) must be an unbound variable");
 
   subst_spec_list_term1 = subst_spec_list_term;
   subst_str_list_term1 = subst_str_list_term;
@@ -247,7 +247,7 @@ xsbBool string_substitute(void)
     goto EXIT;
   }
   if (is_nil(subst_str_list_term1))
-    xsb_abort("STRING_SUBSTITUTE: Arg 3 must not be an empty list");
+    xsb_abort("[STRING_SUBSTITUTE] Arg 3 must not be an empty list");
 
   do {
     subst_reg_term = p2p_car(subst_spec_list_term1);
@@ -264,14 +264,14 @@ xsbBool string_substitute(void)
 					      "STRING_SUBSTITUTE",
 					      "substitution string");
       } else 
-	xsb_abort("STRING_SUBSTITUTE: Arg 3 must be a list of strings");
+	xsb_abort("[STRING_SUBSTITUTE] Arg 3 must be a list of strings");
     }
 
     beg_term = p2p_arg(subst_reg_term,1);
     end_term = p2p_arg(subst_reg_term,2);
 
     if (!is_int(beg_term) || !is_int(end_term))
-      xsb_abort("STRING_SUBSTITUTE: Non-integer in Arg 2");
+      xsb_abort("[STRING_SUBSTITUTE] Non-integer in Arg 2");
     else{
       beg_offset = int_val(beg_term);
       end_offset = int_val(end_term);
@@ -280,7 +280,7 @@ xsbBool string_substitute(void)
     if (end_offset < 0)
       end_offset = input_len;
     if ((end_offset < beg_offset) || (beg_offset < last_pos))
-      xsb_abort("STRING_SUBSTITUTE: Substitution regions in Arg 2 not sorted");
+      xsb_abort("[STRING_SUBSTITUTE] Substitution regions in Arg 2 not sorted");
 
     /* do the actual replacement */
     XSB_StrAppendBlk(&output_buffer,input_string+last_pos,beg_offset-last_pos);

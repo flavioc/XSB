@@ -357,7 +357,7 @@ static void vs_adjust_size(VarString *vstr, int minsize)
 #else
     vstr->size        = 0;
     vstr->length      = 0;
-    xsb_abort("No room expand a variable-length string");
+    xsb_abort("No room to expand a variable-length string");
 #endif
   }
 

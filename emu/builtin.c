@@ -179,10 +179,10 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   case XSB_ATTV:
   case XSB_STRUCT:
   case XSB_LIST:
-  case XSB_FLOAT: xsb_abort("PTOC_INT: Integer argument expected");
+  case XSB_FLOAT: xsb_abort("[PTOC_INT] Integer argument expected");
   case XSB_STRING: return (prolog_int)string_val(addr);	/* dsw */
   case XSB_INT: return int_val(addr);
-  default: xsb_abort("PTOC_INT: Argument of unknown type");
+  default: xsb_abort("[PTOC_INT] Argument of unknown type");
   }
   return FALSE;
 }
@@ -202,10 +202,10 @@ DllExport prolog_float call_conv ptoc_float(int regnum)
   case XSB_LIST:
   case XSB_INT:
   case XSB_STRING:
-    xsb_abort("PTOC_FLOAT: Float argument expected");
+    xsb_abort("[PTOC_FLOAT] Float argument expected");
   case XSB_FLOAT: return (prolog_float)float_val(addr);
   default:
-    xsb_abort("PTOC_FLOAT: Argument of unknown type");
+    xsb_abort("[PTOC_FLOAT] Argument of unknown type");
   }
   return 0.0;
 }
@@ -224,11 +224,11 @@ DllExport char* call_conv ptoc_string(int regnum)
   case XSB_STRUCT:  
   case XSB_LIST:
   case XSB_FLOAT:
-    xsb_abort("PTOC_STRING: String (atom) argument expected");
+    xsb_abort("[PTOC_STRING] String (atom) argument expected");
   case XSB_INT: return (char *)int_val(addr);
   case XSB_STRING: return string_val(addr); 
   default:
-    xsb_abort("PTOC_STRING: Argument of unknown type");
+    xsb_abort("[PTOC_STRING] Argument of unknown type");
   }
   return "";
 }
@@ -254,13 +254,13 @@ void constructString(Cell addr, int ivstr)
   case XSB_REF1:
   case XSB_ATTV:
   case XSB_FLOAT:
-    xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+    xsb_abort("[PTOC_LONGSTRING] Argument of unknown type");
   case XSB_STRUCT:  
     if (get_str_psc(addr) == comma_psc) {
       constructString(cell(clref_val(addr)+1),ivstr);
       addr = cell(clref_val(addr)+2);  /* tail recursion opt */
       goto constructStringBegin;
-    } else xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+    } else xsb_abort("[PTOC_LONGSTRING] Argument of unknown type");
   case XSB_LIST:
     constructString(cell(clref_val(addr)),ivstr);
     addr = cell(clref_val(addr)+1);  /* tail recursion opt */
@@ -271,13 +271,13 @@ void constructString(Cell addr, int ivstr)
       charstr[0] = val;
       XSB_StrAppend(LSBuff[ivstr],charstr);
       return;
-    } else xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+    } else xsb_abort("[PTOC_LONGSTRING] Argument of unknown type");
   case XSB_STRING: 
     if (isnil(addr)) return;
     XSB_StrAppend(LSBuff[ivstr],string_val(addr));
     return;
   default:
-    xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+    xsb_abort("[PTOC_LONGSTRING] Argument of unknown type");
   }
 }
 
@@ -324,10 +324,10 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)
   if (isref(addr)) {
     bind_int(vptr(addr), value);
     if (value != ptoc_int(regnum))
-      xsb_warn("CTOP_INT: OVERFLOW %x (Reg = %d)\n", value, regnum);
+      xsb_warn("[CTOP_INT] OVERFLOW %x (Reg = %d)\n", value, regnum);
   }
   else
-    xsb_abort("CTOP_INT: Wrong type of argument %lx (Reg = %d)", addr, regnum);
+    xsb_abort("[CTOP_INT] Wrong type of argument %lx (Reg = %d)", addr, regnum);
 }
 
 
@@ -340,7 +340,7 @@ DllExport void call_conv ctop_float(int regnum, prolog_float value) /* from floa
   if (isref(addr)) {
     bind_float(vptr(addr), value);
   }
-  else xsb_abort("CTOP_FLOAT: Wrong type of argument: %lux", addr);
+  else xsb_abort("[CTOP_FLOAT] Wrong type of argument: %lux", addr);
 }
 
 /* take a C string, form a string node */
@@ -354,7 +354,7 @@ DllExport void call_conv ctop_string(int regnum, char *value)
     bind_string(vptr(addr), value);
   }
   else
-    xsb_abort("CTOP_STRING: Wrong type of argument: %lux", addr);
+    xsb_abort("[CTOP_STRING] Wrong type of argument: %lux", addr);
 }
 
 inline static void ctop_constr(int regnum, Pair psc_pair)
@@ -365,7 +365,7 @@ inline static void ctop_constr(int regnum, Pair psc_pair)
   if (isref(addr)) {
     bind_cs(vptr(addr), psc_pair);
   }
-  else xsb_abort("CTOP_CONSTR: Wrong type of argument: %lux", addr);
+  else xsb_abort("[CTOP_CONSTR] Wrong type of argument: %lux", addr);
 }
 
 /*
@@ -381,7 +381,7 @@ inline static void ctop_tag(int regnum, Cell term)
     bind_copy(vptr(addr), term);
   }
   else
-    xsb_abort("CTOP_TAG: Wrong type of argument: %lux", addr);
+    xsb_abort("[CTOP_TAG] Wrong type of argument: %lux", addr);
 }
 
 
@@ -449,7 +449,7 @@ static int ground(CPtr temp)
       return flag;
     }
   default:
-    xsb_abort("In ground/1: Term with unknown tag (%d)",
+    xsb_abort("[ground/1] Term with unknown tag (%d)",
 	      (int)cell_tag(temp));
     return -1;	/* so that g++ does not complain */
   }
@@ -1092,7 +1092,7 @@ int builtin_call(byte number)
     value = ((ptoc_int(3)+7)>>3)<<3;	/* alignment */
     value *= ZOOM_FACTOR ;
     if (value > disp) {
-      xsb_warn("BUFF_DEALLOC: New Buffer Size (%d) Cannot exceed the old one (%d)!!",
+      xsb_warn("[BUFF_DEALLOC] New Buffer Size (%d) Cannot exceed the old one (%d)!!",
 	       value, disp);
       break;
     }
@@ -1163,7 +1163,7 @@ int builtin_call(byte number)
     case XSB_LIST:
       bld_list(vptr(addr+disp), (CPtr)ptoc_int(4)); break;
     default:
-      xsb_warn("BUFF_SET_CELL: Type %d is not implemented", value);
+      xsb_warn("[BUFF_SET_CELL] Type %d is not implemented", value);
     }
     break;
   }
@@ -1359,7 +1359,7 @@ int builtin_call(byte number)
     case TK_POSTOP : print_op(fptr, ptoc_string(3), 3); break;
     case TK_QATOM  : print_qatom(fptr, ptoc_string(3)); break;
     case TK_QSTR   : fprintf(fptr, "\"%s\"", ptoc_string(3)); break;
-    default : xsb_abort("FILE_PUTTOKEN: Unknown token type");
+    default : xsb_abort("[FILE_PUTTOKEN] Unknown token type");
     }
     break;
   }
@@ -1458,7 +1458,7 @@ int builtin_call(byte number)
     hostptr = gethostbyname(ptoc_string(1));
     memmove(ptoc_string(2), hostptr->h_addr, hostptr->h_length);
 #else
-    xsb_abort("SYS_GETHOST: Operation not available for this configuration");
+    xsb_abort("[SYS_GETHOST] Operation not available for this configuration");
 #endif
     break;
   }
@@ -1997,7 +1997,7 @@ int builtin_call(byte number)
       delete_interned_trie(tmpval);
     }
     else {
-      xsb_abort("DELETE_TRIE: Invalid use of this operation");
+      xsb_abort("[DELETE_TRIE] Invalid use of this operation");
     }
     break;
 
@@ -2089,7 +2089,7 @@ int builtin_call(byte number)
     xsbBool retcode;
     size_var = reg_term(2);
     if (! is_var(size_var)) {
-      xsb_abort("IS_CHARLIST: Arg 2 must be a variable");
+      xsb_abort("[IS_CHARLIST] Arg 2 must be a variable");
     }
     retcode = is_charlist(reg_term(1), &size);
     c2p_int(size,size_var);
@@ -2117,7 +2117,7 @@ int builtin_call(byte number)
       force_answer_true(as_leaf);
     else if (!strcmp(tmpstr, "false"))
       force_answer_false(as_leaf);
-    else xsb_abort("FORCE_TRUTH_VALUE: Argument 2 has unknown truth value");
+    else xsb_abort("[FORCE_TRUTH_VALUE] Argument 2 has unknown truth value");
     break;
   }
 
@@ -2142,7 +2142,7 @@ int builtin_call(byte number)
 	bld_copy(hreg, atts); hreg++;
       }
     }
-    else xsb_abort("PUT_ATTRIBUTES: Argument 1 is nonvar");
+    else xsb_abort("[PUT_ATTRIBUTES] Argument 1 is nonvar");
     break;
   }
 
@@ -2158,7 +2158,7 @@ int builtin_call(byte number)
       ctop_tag(2, cell(vector));
       ctop_tag(3, cell(clref_val(cell(vector)) + 1));
     }
-    else xsb_abort("GET_ATTRIBUTES: Argument 1 is not an attributed variable");
+    else xsb_abort("[GET_ATTRIBUTES] Argument 1 is not an attributed variable");
     break;
   }
 

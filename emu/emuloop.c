@@ -1266,7 +1266,7 @@ contcase:     /* the main loop */
     switch (get_type(psc)) {
     case T_PRED:
     case T_DYNA:
-      xsb_abort("System Error: trying to load an already loaded pred");
+      xsb_abort("[EMULOOP] Trying to load an already loaded pred");
     default:
       /* printf("loading module %s for %s/%d\n",
 	 get_name(get_data(psc)),get_name(psc),get_arity(psc)); */

@@ -76,7 +76,7 @@ void smAllocateBlock(Structure_Manager *pSM) {
 #endif
   pNewBlock = malloc(SM_NewBlockSize(*pSM));
   if ( IsNULL(pNewBlock) )
-    xsb_abort("Ran out of memory in allocation of %s block\n",
+    xsb_abort("[smAllocateBlock] Out of memory in allocation of %s block\n",
 	      SM_StructName(*pSM));
   SMBlk_NextBlock(pNewBlock) = SM_CurBlock(*pSM);
   SM_CurBlock(*pSM) = pNewBlock;

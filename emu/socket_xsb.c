@@ -170,7 +170,7 @@ static int readmsg(SOCKET sock_handle, char **msg_buff)
   msglen = ntohl(net_encoded_len);
 
   if ((*msg_buff = (char *)calloc(msglen+1, sizeof(char))) == NULL) {
-    xsb_abort("SOCKET_RECV: Can't allocate memory for the message buffer");
+    xsb_abort("[SOCKET_RECV] Can't allocate memory for the message buffer");
   }
 
   actual_len = (long) recvfrom(sock_handle,*msg_buff,msglen,0,NULL,0);
@@ -179,7 +179,7 @@ static int readmsg(SOCKET sock_handle, char **msg_buff)
   /* The following should never arise. Points to a bug: some kind of mismatch
      between the communicating machines. */
   if ((unsigned int)actual_len != msglen)
-    xsb_warn("SOCKET_RECV: msg length %ld differs from the header value %ld",
+    xsb_warn("[SOCKET_RECV] Message length %ld differs from the header value %ld",
 	     msglen, actual_len);
 
   return SOCK_OK;
@@ -216,9 +216,9 @@ static void socket_connect(xsbTimeout *pptr) {
     if (domain == 0) domain = AF_INET;
     else if (domain == 1) {
       domain = AF_UNIX;
-      xsb_abort("SOCKET_REQUEST: Domain AF_UNIX is not implemented");
+      xsb_abort("[SOCKET_REQUEST] Domain AF_UNIX is not implemented");
     } else  {
-      xsb_abort("SOCKET_REQUEST: Invalid domain. Valid domains are: 0(AF_INET), 1(AF_UNIX)");           
+      xsb_abort("[SOCKET_REQUEST] Invalid domain. Valid domains are: 0(AF_INET), 1(AF_UNIX)");           
     }
 
     /*** prepare to connect ***/
@@ -252,7 +252,7 @@ static void socket_send(xsbTimeout *pptr) {
     if ((pptr->sockdata
 	 = calloc(strlen(send_msg_aux)+XSB_MSG_HEADER_LENGTH+1,sizeof(char)))
 	== NULL) {
-      xsb_abort("SOCKET_SEND: Can't allocate memory for the message buffer");
+      xsb_abort("[SOCKET_SEND] Can't allocate memory for the message buffer");
     }
     msg_body_len = strlen(send_msg_aux);
     network_encoded_len = (unsigned int) htonl((unsigned long int)
@@ -309,9 +309,9 @@ xsbBool xsb_socket_request(void)
     if (domain == 0) domain = AF_INET;
     else if (domain == 1){
       domain = AF_UNIX;
-      xsb_abort("SOCKET_REQUEST: Domain AF_INET is not implemented");
+      xsb_abort("[SOCKET_REQUEST] Domain AF_INET is not implemented");
     } else  {
-      xsb_abort("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
+      xsb_abort("[SOCKET_REQUEST] Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
       return FALSE;
     }
     
@@ -338,9 +338,9 @@ xsbBool xsb_socket_request(void)
     if (domain == 0) domain = AF_INET;
     else if (domain == 1){
       domain = AF_UNIX;
-      xsb_abort("SOCKET_REQUEST: domain AF_INET is not implemented");
+      xsb_abort("[SOCKET_REQUEST] domain AF_INET is not implemented");
     } else  {
-      xsb_abort("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
+      xsb_abort("[SOCKET_REQUEST] Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
       return FALSE;
     }
     
@@ -486,7 +486,7 @@ xsbBool xsb_socket_request(void)
       ecode = SOCK_EOF;
       break;
     default:
-      xsb_abort("SOCKET_RECV: XSB bug: invalid return code from readmsg");
+      xsb_abort("[SOCKET_RECV] XSB bug: invalid return code from readmsg");
     }
     
     if (pSock->sockdata != NULL) 
@@ -607,11 +607,11 @@ xsbBool xsb_socket_request(void)
       if (setsockopt(sock_handle, SOL_SOCKET, SO_LINGER,
 		     (void *) &sock_linger_opt, sizeof(sock_linger_opt))
 	  < 0) {
-	xsb_warn("SOCKET_SET_OPTION: Cannot set socket linger time");
+	xsb_warn("[SOCKET_SET_OPTION] Cannot set socket linger time");
 	return FALSE;
       } 
      }else {
-      xsb_warn("SOCKET_SET_OPTION: Invalid option, `%s'", option_name);
+      xsb_warn("[SOCKET_SET_OPTION] Invalid option, `%s'", option_name);
       return FALSE;
     }
     
@@ -638,7 +638,7 @@ xsbBool xsb_socket_request(void)
     for (i=0;i<MAXCONNECT;i++) {
       if ((connections[i].empty_flag==FALSE) &&
 	  (strcmp(connection_name,connections[i].connection_name)==0)) 	
-	xsb_abort("SOCKET_SET_SELECT: Connection `%s' already exists!",
+	xsb_abort("[SOCKET_SET_SELECT] Connection `%s' already exists!",
 		  connection_name);
     }
 
@@ -663,9 +663,9 @@ xsbBool xsb_socket_request(void)
 	  max(max(rmax_fd,wmax_fd), emax_fd);
       } else 
 	/* if this one is reached, it is probably a bug */
-	xsb_abort("SOCKET_SET_SELECT: All connections are busy!");
+	xsb_abort("[SOCKET_SET_SELECT] All connections are busy!");
     } else
-      xsb_abort("SOCKET_SET_SELECT: Max number of collections exceeded!");
+      xsb_abort("[SOCKET_SET_SELECT] Max number of collections exceeded!");
 	
     return TRUE;
   }
@@ -728,7 +728,7 @@ xsbBool xsb_socket_request(void)
       }
     }
     if( i >= MAXCONNECT )  /* if no matching connection_name */
-      xsb_abort("SOCKET_SELECT: connection `%s' doesn't exist",
+      xsb_abort("[SOCKET_SELECT] connection `%s' doesn't exist",
                 connection_name); 
     
     /* compute maxfd for select call */
@@ -774,7 +774,7 @@ xsbBool xsb_socket_request(void)
   }
 
   default:
-    xsb_warn("SOCKET_REQUEST: Invalid socket request %d", (int) ptoc_int(1));
+    xsb_warn("[SOCKET_REQUEST] Invalid socket request %d", (int) ptoc_int(1));
     return FALSE;
   }
 
@@ -790,7 +790,7 @@ static xsbBool set_error_code(int ErrCode, int ErrCodeArgNumber, char *Where)
   
   ecode_value_term = reg_term(ErrCodeArgNumber);
   if (!is_var(ecode_value_term) && !is_int(ecode_value_term))
-    xsb_abort("%s: Arg %d (the error code) must be a variable or an integer!",
+    xsb_abort("[%s] Arg %d (the error code) must be a variable or an integer!",
 	      Where, ErrCodeArgNumber);
 
   c2p_int(ErrCode, ecode_arg_term);
@@ -951,7 +951,7 @@ static void select_destroy(char *connection_name)
   
   /* if no matching connection_name */
   if (!connectname_found)
-    xsb_abort("SOCKET_SELECT_DESTROY: connection `%s' doesn't exist", 
+    xsb_abort("[SOCKET_SELECT_DESTROY] connection `%s' doesn't exist", 
 	      connection_name);
   
 }
@@ -974,7 +974,7 @@ static int getsize (prolog_term list)
   while (!is_nil(list)) {
     head = p2p_car(list);
     if(!is_int(head)) 
-      xsb_abort("Socket descriptors must be integers!");
+      xsb_abort("A non-integer socket descriptor encountered in a socket operation");
     list = p2p_cdr(list);
     size++;
   }

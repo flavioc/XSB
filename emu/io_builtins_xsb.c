@@ -92,7 +92,7 @@ char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
 /* type is a char: 's', 'i', 'f' */
 #define TYPE_ERROR_CHK(ch_type, Label) \
         if (current_fmt_spec->type != ch_type) { \
-	    xsb_abort("%s: Type mismatch in argument value %d", Label, i); \
+	    xsb_abort("[%s] Type mismatch in argument value %d", Label, i); \
         }
 
 #define PRINT_ARG(arg) switch (current_fmt_spec->size) { \
@@ -104,7 +104,7 @@ char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
 	        break; \
 	}
 #define CHECK_ARITY(i, Arity, Label) if (i > Arity) { \
-	      xsb_abort("%s: Not enough arguments for given format", Label); \
+	      xsb_abort("[%s] Not enough arguments for given format", Label); \
 	}
 
 #ifdef HAVE_SNPRINTF
@@ -176,7 +176,7 @@ xsbBool formatted_io (void)
   case FMT_WRITE_STRING: return fmt_write_string();
   case FMT_READ: return fmt_read();
   default:
-    xsb_abort("FORMATTED_IO: Invalid operation number: %d", ptoc_int(1));
+    xsb_abort("[FORMATTED_IO] Invalid operation number: %d", ptoc_int(1));
   }
   return TRUE; /* just to get rid of compiler warning */
 }
@@ -211,7 +211,7 @@ xsbBool fmt_write(void)
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE: Format must be an atom or a character string");
+    xsb_abort("[FMT_WRITE] Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
   if (is_functor(ValTerm))
@@ -250,7 +250,7 @@ xsbBool fmt_write(void)
     if (current_fmt_spec->type == '.') {
       PRINT_ARG("");
       if (i < Arity)
-	xsb_warn("FMT_WRITE: More arguments than format specifiers");
+	xsb_warn("[FMT_WRITE] More arguments than format specifiers");
       goto EXIT_WRITE;
     }
 
@@ -293,7 +293,7 @@ xsbBool fmt_write(void)
       float_arg = float_val(Arg);
       PRINT_ARG(float_arg);
     } else {
-      xsb_abort("FMT_WRITE: Argument %d has illegal type", i);
+      xsb_abort("[FMT_WRITE] Argument %d has illegal type", i);
     }
     current_fmt_spec = next_format_substr(Fmt,
 					  0 /* don't initialize */,
@@ -350,7 +350,7 @@ xsbBool fmt_write_string(void)
   XSB_StrSet(&OutString,"");
 
   if (isnonvar(reg_term(2)))
-    xsb_abort("FMT_WRITE_STRING: Arg 1 must be an unbound variable");
+    xsb_abort("[FMT_WRITE_STRING] Arg 1 must be an unbound variable");
   
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
@@ -359,7 +359,7 @@ xsbBool fmt_write_string(void)
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE_STRING: Format must be an atom or a character string");
+    xsb_abort("[FMT_WRITE_STRING] Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
   if (is_functor(ValTerm))
@@ -398,7 +398,7 @@ xsbBool fmt_write_string(void)
     if (current_fmt_spec->type == '.') {
       SPRINT_ARG("");
       if (i < Arity)
-	xsb_warn("FMT_WRITE_STRING: More arguments than format specifiers");
+	xsb_warn("[FMT_WRITE_STRING] More arguments than format specifiers");
       goto EXIT_WRITE_STRING;
     }
 
@@ -442,7 +442,7 @@ xsbBool fmt_write_string(void)
       float_arg = float_val(Arg);
       SPRINT_ARG(float_arg);
     } else {
-      xsb_abort("FMT_WRITE_STRING: argument %d has illegal type", i);
+      xsb_abort("[FMT_WRITE_STRING] Argument %d has illegal type", i);
     }
     current_fmt_spec = next_format_substr(Fmt,
 					  0 /* don't initialize */,
@@ -499,7 +499,7 @@ xsbBool fmt_read(void)
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_READ: Format must be an atom or a character string");
+    xsb_abort("[FMT_READ] Format must be an atom or a character string");
 
   AnsTerm = reg_term(4);
   if (is_functor(AnsTerm))
@@ -524,7 +524,7 @@ xsbBool fmt_read(void)
 
   /* status variable */
   if (isnonvar(reg_term(5)))
-    xsb_abort("FMT_READ: Arg 4 must be an unbound variable");
+    xsb_abort("[FMT_READ] Arg 4 must be an unbound variable");
 
   current_fmt_spec = next_format_substr(Fmt,
 					1,   /* initialize    	      	     */
@@ -553,7 +553,7 @@ xsbBool fmt_read(void)
     case '.': /* last format substring (and has no conversion spec) */
       curr_assignment = fscanf(fptr, current_fmt_spec->fmt);
       if (is_var(Arg))
-	xsb_warn("FMT_READ: More arguments than format specifiers");
+	xsb_warn("[FMT_READ] More arguments than format specifiers");
       goto EXIT_READ;
     case 's':
       XSB_StrEnsureSize(&StrArgBuf, MAX_IO_BUFSIZE);
@@ -580,7 +580,7 @@ xsbBool fmt_read(void)
       int_arg += chars_accumulator;
       if (is_var(Arg))
 	c2p_int(int_arg,Arg);
-      else xsb_abort("FMT_READ: argument %i must be a variable", i);
+      else xsb_abort("[FMT_READ] Argument %i must be a variable", i);
       break;
     case 'i':
       curr_assignment = fscanf(fptr, aux_fmt.string,
@@ -605,7 +605,7 @@ xsbBool fmt_read(void)
       c2p_float(float_arg, Arg);
       break;
     default:
-      xsb_abort("FMT_READ: unsupported format specifier for argument %d", i);
+      xsb_abort("[FMT_READ] Unsupported format specifier for argument %d", i);
     }
 
     chars_accumulator +=curr_chars_consumed;
@@ -669,7 +669,7 @@ CPtr init_term_buffer() {
 
 #define ensure_term_space(ptr,size) \
   if ((ptr+size) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {\
-	if (!get_more_chunk()) xsb_abort("no space for term buffer") ;\
+	if (!get_more_chunk()) xsb_abort("Cannot allocate space for term buffer") ;\
 	ptr = current_findall->top_of_chunk ;\
   }
 
@@ -944,7 +944,7 @@ int read_canonical(void)
       case TK_VVAR:
 	        if ((token->value)[1] == 0) { /* anonymous var */
 		  if (cvarbot < 0)
-		    xsb_abort("READ_CANONICAL: too many variables in term");
+		    xsb_abort("[READ_CANONICAL] too many variables in term");
 		  i = cvarbot;
 		  vars[cvarbot].varid = (Cell) "_";
 		  vars[cvarbot].varval = 0;
@@ -966,7 +966,7 @@ int read_canonical(void)
 		}
 		if (i == cvarbot) {
 		  if (cvarbot < 0)
-		    xsb_abort("READ_CANONICAL: too many variables in term");
+		    xsb_abort("[READ_CANONICAL] too many variables in term");
 		  vars[cvarbot].varid = (Cell) cvar;
 		  vars[cvarbot].varval = 0;
 		  cvarbot--;
@@ -1052,7 +1052,7 @@ int read_canonical(void)
 	check_glstack_overflow(3, pcreg, (size+1)*sizeof(Cell), goto contcase) ;
 	arg2 = ptoc_tag(2);
 	if (isnonvar(arg2)) 
-	  xsb_abort("READ_CANONICAL: argument must be a variable");
+	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
 	bind_ref((CPtr)arg2,hreg);  /* build a new var to trail binding */
 	new_heap_free(hreg);
 	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
@@ -1154,12 +1154,12 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
   expect = exclude = "";
   while ((pos < workspace.length) && keep_going) {
     if (strchr(exclude, workspace.string[pos]) != NULL) {
-      xsb_abort("FMT_READ/WRITE: illegal format specifier `%c' in: %s",
+      xsb_abort("[FMT_READ/WRITE] Illegal format specifier `%c' in: %s",
 		workspace.string[pos],
 		workspace.string+current_substr_start);
     }
     if (strlen(expect) && strchr(expect, workspace.string[pos]) == NULL) {
-      xsb_abort("FMT_READ/WRITE: illegal format specifier `%c' in: %s",
+      xsb_abort("[FMT_READ/WRITE] Illegal format specifier `%c' in: %s",
 		workspace.string[pos],
 		workspace.string+current_substr_start);
     }
@@ -1234,7 +1234,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
       workspace.string[pos-1] = 's';
       break;
     case 'p':
-      xsb_abort("FMT_READ/WRITE: Format specifier %%p not supported: %s",
+      xsb_abort("[FMT_READ/WRITE] Format specifier %%p not supported: %s",
 		workspace.string+current_substr_start);
     case 'n':
       if (read_op) {
@@ -1243,17 +1243,17 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 	keep_going = FALSE;
 	break;
       }
-      xsb_abort("FMT_WRITE: Format specifier %%n not supported: %s",
+      xsb_abort("[FMT_WRITE] Format specifier %%n not supported: %s",
 		workspace.string+current_substr_start);
     case '[':
       /* scanf feature: [...] */
       if (!read_op) {
-	xsb_abort("FMT_WRITE: Format specifier [ is invalid for output: %s",
+	xsb_abort("[FMT_WRITE] Format specifier [ is invalid for output: %s",
 		  workspace.string+current_substr_start);
       }
       while ((pos < workspace.length) && (workspace.string[pos++] != ']'));
       if (workspace.string[pos-1] != ']') {
-	xsb_abort("FMT_READ: Format specifier [ has no matching ] in: %s",
+	xsb_abort("[FMT_READ] Format specifier [ has no matching ] in: %s",
 		  workspace.string+current_substr_start);
       }
       result.type = 's';
@@ -1280,7 +1280,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
       break;
 
     default:
-      xsb_abort("FMT_READ/WRITE: character `%c' in illegal format context: %s",
+      xsb_abort("[FMT_READ/WRITE] Character `%c' in illegal format context: %s",
 		workspace.string[pos-1],
 		workspace.string+current_substr_start);
     }
@@ -1303,7 +1303,7 @@ int xsb_intern_file(FILE *fptr, char *context)
 
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES && open_files[i] != NULL; i++);
   if (i == MAX_OPEN_FILES) {
-    xsb_warn("%s: Too many open files", context);
+    xsb_warn("[%s] Too many open files", context);
     return -1;
   } else 
     open_files[i] = fptr;

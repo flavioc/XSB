@@ -86,7 +86,7 @@ void do_libwww_request___()
 
   /* use abort here, because this is a programmatic mistake */
   if (!is_list(request_term_list))
-    libwww_abort_all("LIBWWW_REQUEST: Argument must be a list of requests");
+    libwww_abort_all("[LIBWWW_REQUEST] Argument must be a list of requests");
 
   request_list_tail = request_term_list;
   total_number_of_requests=0;
@@ -213,7 +213,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
 	else
 	  c2p_int(WWW_EXPIRED_DOC, context->status_term);
       } else
-	libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 5 (Status) must be unbound variable",
+	libwww_abort_all("[LIBWWW_REQUEST] Request %s: Arg 5 (Status) must be unbound variable",
 			 RequestID(request));
       /* set the result params (header info); */
       extract_request_headers(header_req);
@@ -283,7 +283,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     }
     break;
   default:
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: Invalid request type",
+    libwww_abort_all("[LIBWWW_REQUEST] Request %d: Invalid request type",
 		     request_id);
   }
 
@@ -329,7 +329,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     if (is_var(context->status_term))
       c2p_int(WWW_URI_SYNTAX, context->status_term);
     else
-      libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 5 (Status) must be unbound variable",
+      libwww_abort_all("[LIBWWW_REQUEST] Request %s: Arg 5 (Status) must be unbound variable",
 		       RequestID(request));
 
     c2p_nil(context->result_params);
@@ -415,7 +415,7 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
   REQUEST_CONTEXT *context;
 
   if ((context=(REQUEST_CONTEXT *)calloc(1,sizeof(REQUEST_CONTEXT))) == NULL)
-    libwww_abort_all("LIBWWW_REQUEST: Not enough memory");
+    libwww_abort_all("[LIBWWW_REQUEST] Not enough memory");
 
   context->request_id = request_id;
   context->subrequest_id = 0;
@@ -449,16 +449,16 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
   /* output */
   context->result_params = p2p_arg(req_term,3);
   if(!is_var(context->result_params))
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 3 (Result parameters) must be unbound variable", request_id);
+    libwww_abort_all("[LIBWWW_REQUEST] Request %d: Arg 3 (Result parameters) must be unbound variable", request_id);
   c2p_list(context->result_params);
 
   context->request_result = p2p_arg(req_term,4);
   if(!is_var(context->request_result))
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be unbound variable", request_id);
+    libwww_abort_all("[LIBWWW_REQUEST] Request %d: Arg 4 (Result) must be unbound variable", request_id);
 
   context->status_term = p2p_arg(req_term,5);
   if(!is_var(context->status_term))
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 5 (Status) must be unbound variable", request_id);
+    libwww_abort_all("[LIBWWW_REQUEST] Request %d: Arg 5 (Status) must be unbound variable", request_id);
 
   /* attach context to the request */
   HTRequest_setContext(request, (void *) context);
@@ -594,7 +594,7 @@ PRIVATE char *extract_uri(prolog_term req_term, HTRequest *request,
   else {
     release_libwww_request(request);
     /* use abort here, because it is a programmatic mistake */
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: Arg 1 (URI) must be an atom or a string", request_id);
+    libwww_abort_all("[LIBWWW_REQUEST] Request %d: Arg 1 (URI) must be an atom or a string", request_id);
   }
   return uri;
 }
@@ -615,7 +615,7 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
 
   if (!is_list(req_params) && !is_var(req_params) && !is_nil(req_params))
-    libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 2 (Request params) must be a list or a variable",
+    libwww_abort_all("[LIBWWW_REQUEST] Request %s: Arg 2 (Request params) must be a list or a variable",
 		     RequestID(request));
   while(is_list(req_params) && !is_nil(req_params)) {
     param = p2p_car(req_params);
@@ -624,7 +624,7 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
     switch (paramfunctor[0]) {
     case 't': case 'T': /* user-specified timeout */ 
       if (!is_int(p2p_arg(param, 1)))
-	libwww_abort_all("LIBWWW_REQUEST: Request %s: Timeout parameter must be an integer",
+	libwww_abort_all("[LIBWWW_REQUEST] Request %s: Timeout parameter must be an integer",
 			 RequestID(request));
       context->timeout = p2c_int(p2p_arg(param, 1)) * 1000;
       if (context->timeout <= 0)
@@ -632,7 +632,7 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
       break;
     case 'i': case 'I': /* if-modified-since */
       if (!is_string(p2p_arg(param, 1)))
-	libwww_abort_all("LIBWWW_REQUEST: Request %s: If_modified_since parameter must be a string",
+	libwww_abort_all("[LIBWWW_REQUEST] Request %s: If_modified_since parameter must be a string",
 		  RequestID(request));
       context->user_modtime =
 	(long)HTParseTime(string_val(p2p_arg(param,1)), NULL, YES);
@@ -699,21 +699,21 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
 	  context->suppress_is_default=TRUE;
 	  init_tag_table(select_term, &(context->selected_tags_tbl));
 	} else
-	  libwww_abort_all("LIBWWW_REQUEST: Request %d: In Arg 2, selection(CHOOSE,_,_): CHOOSE must be a var or a list");
+	  libwww_abort_all("[LIBWWW_REQUEST] Request %d: In Arg 2, selection(CHOOSE,_,_): CHOOSE must be a var or a list");
 
 	if (is_list(suppressed_term)) {
 	  init_tag_table(suppressed_term, &(context->suppressed_tags_tbl));
 	} else if (!is_var(suppressed_term))
-	  libwww_abort_all("LIBWWW_REQUEST: Request %s: In Arg 2, selection(_,SUPPRESS,_): SUPPRESS must be a var or a list",
+	  libwww_abort_all("[LIBWWW_REQUEST] Request %s: In Arg 2, selection(_,SUPPRESS,_): SUPPRESS must be a var or a list",
 			   RequestID(request));
 	
 	if (is_list(strip_term)) {
 	  init_tag_table(strip_term, &(context->stripped_tags_tbl));
 	} else if (!is_var(strip_term))
-	  libwww_abort_all("LIBWWW_REQUEST: Request %s: In Arg 2, selection(_,_,STRIP): STRIP must be a var or a list",
+	  libwww_abort_all("[LIBWWW_REQUEST] Request %s: In Arg 2, selection(_,_,STRIP): STRIP must be a var or a list",
 			   RequestID(request));
       } else {
-	libwww_abort_all("LIBWWW_REQUEST: Request %s: In Arg 2, wrong number of arguments in selection parameter",
+	libwww_abort_all("[LIBWWW_REQUEST] Request %s: In Arg 2, wrong number of arguments in selection parameter",
 			 RequestID(request));
       }
       break;
@@ -732,7 +732,7 @@ PRIVATE HTAssocList *get_form_params(prolog_term form_params, int request_id)
   HTAssocList *formfields=NULL;
 
   if (!is_list(form_params))
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: List of form parameters must not be empty",
+    libwww_abort_all("[LIBWWW_REQUEST] Request %d: List of form parameters must not be empty",
 		     request_id);
   
   while (!is_nil(form_params)) {
@@ -743,7 +743,7 @@ PRIVATE HTAssocList *get_form_params(prolog_term form_params, int request_id)
     if (is_string(head))
       string = p2c_string(head);
     else
-      libwww_abort_all("LIBWWW_REQUEST: Request %d: Non-string in form parameter list",
+      libwww_abort_all("[LIBWWW_REQUEST] Request %d: Non-string in form parameter list",
 		       request_id);
 
     form_params = p2p_cdr(form_params);
@@ -762,7 +762,7 @@ PRIVATE REQUEST_TYPE get_request_type(prolog_term req_term, int request_id)
 {
   char *functor;
   if (!is_functor(req_term)) {
-    libwww_abort_all("LIBWWW_REQUEST: Request %d: Bad request syntax",
+    libwww_abort_all("[LIBWWW_REQUEST] Request %d: Bad request syntax",
 		     request_id);
   }
   functor = p2c_functor(req_term);
@@ -772,7 +772,7 @@ PRIVATE REQUEST_TYPE get_request_type(prolog_term req_term, int request_id)
   if (strncmp("rdfparse",functor,3)==0) return RDFPARSE;
   if (strncmp("htmlparse",functor,3)==0) return HTMLPARSE;
   if (strncmp("header",functor,3)==0) return HEADER;
-  libwww_abort_all("LIBWWW_REQUEST: Request %d: Invalid request type: %s",
+  libwww_abort_all("[LIBWWW_REQUEST] Request %d: Invalid request type: %s",
 		   request_id, functor);
   return TRUE; /* just to pacify the compiler */
 }
@@ -790,7 +790,7 @@ PRIVATE void init_htable(HASH_TABLE *htable, int size, REQUEST_TYPE type)
   htable->type = type;
   htable->size = size;
   if ((htable->table=(HKEY *)calloc(size, sizeof(HKEY))) == NULL )
-    libwww_abort_all("LIBWWW_REQUEST: Not enough memory");
+    libwww_abort_all("[LIBWWW_REQUEST] Not enough memory");
   for (i=0; i<size; i++)
     if (type == HTMLPARSE)
       htable->table[i].intkey = -1;
@@ -943,7 +943,7 @@ PRIVATE int request_termination_handler (HTRequest   *request,
     char *result_as_string = HTChunk_toCString(context->result_chunk);
 
     if (!is_var(context->request_result))
-      libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 4 (Result) must be unbound variable",
+      libwww_abort_all("[LIBWWW_REQUEST] Request %s: Arg 4 (Result) must be unbound variable",
 		       RequestID(request));
 
     if (result_as_string) {
@@ -1034,7 +1034,7 @@ void add_result_param(prolog_term *result_param,
     listHead = p2p_car(*result_param);
   else {
     print_prolog_term(*result_param, "In add_result_param: result_param");
-    libwww_abort_all("LIBWWW_REQUEST: Bug: result_param is not a list");
+    libwww_abort_all("[LIBWWW_REQUEST] Bug: result_param is not a list");
   }
   c2p_functor(functor, cnt, listHead);
   va_start(ap,cnt);
@@ -1061,7 +1061,7 @@ PRIVATE prolog_term get_result_param_stub(prolog_term *result_param)
     listHead = p2p_car(*result_param);
   else {
     print_prolog_term(*result_param, "In get_result_param_stub: result_param");
-    libwww_abort_all("LIBWWW_REQUEST: Bug: result_param is not a list");
+    libwww_abort_all("[LIBWWW_REQUEST] Bug: result_param is not a list");
   }
   *result_param = p2p_cdr(*result_param);
   c2p_list(*result_param);
@@ -1146,7 +1146,7 @@ REQUEST_CONTEXT *set_subrequest_context(HTRequest *request,
   HTStream *target;
 
   if ((context=(REQUEST_CONTEXT *)calloc(1,sizeof(REQUEST_CONTEXT))) == NULL)
-    libwww_abort_all("LIBWWW_REQUEST: Not enough memory");
+    libwww_abort_all("[LIBWWW_REQUEST] Not enough memory");
 
   context->request_id = parent_context->request_id;
   context->subrequest_id = ++(parent_context->subrequest_id);

@@ -389,13 +389,13 @@ static void assertcmp_printerror(int num)
 {
     switch (num) {
     case ERR_FUNCTOR:
-	xsb_abort("Assert: functor expected");
+	xsb_abort("[Assert] functor expected");
 	break;
     case ERR_REGISTER:
-	xsb_abort("Assert: need too many registers");
+	xsb_abort("[Assert] need too many registers");
 	break;
     default: 
-	xsb_abort("Assert: error occured in assert_cmp");
+	xsb_abort("[Assert] error occured in assert_cmp");
     }
 }
 

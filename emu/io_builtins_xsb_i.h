@@ -185,7 +185,7 @@ inline static xsbBool file_function(void)
       default: mode = -1;
       }
     } else
-      xsb_abort("FILE_OPEN: File opening mode must be an atom or an integer");
+      xsb_abort("[FILE_OPEN] File opening mode must be an atom or an integer");
 
     switch (mode) {
       /* "b" does nothing, but POSIX allows it */
@@ -199,7 +199,7 @@ inline static xsbBool file_function(void)
 	ctop_int(4, -1000);
       return TRUE;
     case OSTRINGW:
-      xsb_abort("FILE_OPEN: Output to strings has not been implemented yet");
+      xsb_abort("[FILE_OPEN] Output to strings has not been implemented yet");
       ctop_int(4, -1000);
       return TRUE;
     default:
@@ -282,7 +282,7 @@ inline static xsbBool file_function(void)
     else if (is_string(pterm))
       addr = string_val(pterm);
     else
-      xsb_abort("FILE_PUTBUF: Output argument must be an atom or a character list");
+      xsb_abort("[FILE_PUTBUF] Output argument must be an atom or a character list");
     size = ptoc_int(3);
     offset = ptoc_int(5);
     length = strlen(addr);
@@ -332,7 +332,7 @@ inline static xsbBool file_function(void)
     else if (is_string(pterm))
       addr = string_val(pterm);
     else
-      xsb_abort("FILE_WRITE_LINE: Output arg must be an atom or a char list");
+      xsb_abort("[FILE_WRITE_LINE] Output arg must be an atom or a char list");
     offset = ptoc_int(4);
     size = strlen(addr)-offset;
     SET_FILEPTR(fptr, ptoc_int(2));
@@ -363,7 +363,7 @@ inline static xsbBool file_function(void)
       default: mode = -1;
       }
     } else
-      xsb_abort("FILE_REOPEN: Open mode must be an atom or an integer");
+      xsb_abort("[FILE_REOPEN] Open mode must be an atom or an integer");
 
     switch (mode) {
       /* "b" does nothing, but POSIX allows it */
@@ -371,11 +371,11 @@ inline static xsbBool file_function(void)
     case OWRITE:  strmode = "wb";  break; /* WRITE_MODE */
     case OAPPEND: strmode = "ab";  break; /* APPEND_MODE */
     case OSTRINGR:
-      xsb_abort("FILE_REOPEN: Reopening of strings hasn't been implemented");
+      xsb_abort("[FILE_REOPEN] Reopening of strings hasn't been implemented");
       ctop_int(5, -1000);
       return TRUE;
     case OSTRINGW:
-      xsb_abort("FILE_REOPEN: Reopening of strings hasn't been implemented");
+      xsb_abort("[FILE_REOPEN] Reopening of strings hasn't been implemented");
       ctop_int(5, -1000);
       return TRUE;
     default:
@@ -574,7 +574,7 @@ inline static xsbBool file_function(void)
   }
 
   default:
-    xsb_abort("Invalid file function request %d\n", ptoc_int(1));
+    xsb_abort("[FILE_FUNCTION]: Invalid file operation, %d\n", ptoc_int(1));
   }
   
   return TRUE;
