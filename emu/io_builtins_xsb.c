@@ -1621,7 +1621,7 @@ void wcan_append_string_chk(char *string)
   }
 }
 
-void write_canonical_term(Cell prologterm)
+DllExport void write_canonical_term(Cell prologterm)
 {
   XSB_Deref(prologterm);
   switch (cell_tag(prologterm)) 
