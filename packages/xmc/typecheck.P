@@ -834,7 +834,7 @@ dbg_tc(X) :-
     dbg_tc1(X).
 dbg_tc(_).
 dbg_tc1([F | T]) :-
-    F, dbg_tc1(T).
+    call(F), dbg_tc1(T).
 dbg_tc1([]).
 
 writel([X | Xs]) :-
