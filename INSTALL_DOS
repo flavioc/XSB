@@ -1,9 +1,8 @@
 
-    Yet to be figured out. See emu/pcdos/README for some hints.
 
 1. Check the file 
 
-       emu/pcdos/config.h
+       config/x86-pc-pcdos/config.h
 
    You may have to change some variables there. These variables have
    comments that explain the purpose of each variable that might need to be
@@ -11,7 +10,15 @@
 
    When done, copy this file to emu/configs/config.h
 
-2. IF YOU ARE DEBUGGING:
-   Check the files in emu/debugs/ and DEFINE the appropriate debugging
+2. Check the file 
+
+       config/x86-pc-pcdos/configuration.P
+
+   Again, some variables there might need to be changed.
+
+3. IF YOU ARE DEBUGGING:
+   Check the files in emu/debugs/ and #define the appropriate debugging
    flags.
 
+
+4. To be figured out.

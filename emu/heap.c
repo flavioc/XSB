@@ -57,6 +57,8 @@ This module provides
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/stat.h>
+/* special.h must be included after sys/stat.h */
+#include "configs/special.h"
 
 #include "auxlry.h"
 #include "cell.h"

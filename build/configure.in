@@ -203,27 +203,64 @@ echo ""
 echo "Building XSB Version ${xsb_version} (${xsb_codename}) of ${xsb_release_date}"
 echo ""
 
-dnl Check configuration
-if test "$configuration" = "NONE" ; then
-  echo '- You did not tell me what kind of host system you want to configure.
+# check for NT and DOS configurations
+case "$with_os" in
+  win* | *nt*) dnl Windows
+	canonical=x86-pc-windows
+	host_os=windows
+	os_type=windows
+	os_version=
+	host_vendor=pc
+	host_cpu=x86
+	configuration_templ=xsb_configuration_nt.in
+	config_dot_h_templ=def_config_nt.in
+	echo 'Checking host system type... Windows NT/95/98'
+	;;
+  pcdo*) dnl PC DOS
+	canonical=x86-pc-pcdos
+	host_os=pcdos
+	os_type=pcdos
+	os_version=
+	host_vendor=pc
+	host_cpu=x86
+	configuration_templ=xsb_configuration_pcdos.in
+	config_dot_h_templ=def_config_pcdos.in
+	echo 'Checking host system type... PC DOS'
+	;;
+  *)    dnl check for unknown OS
+	if test -n "$with_os" ; then
+	   echo "OS \`$with_os' is not supported"
+	   exit 1
+	fi
+	configuration_templ=xsb_configuration.in
+	config_dot_h_templ=def_config.in
+
+	dnl Check configuration for a Unix variant
+	if test "$configuration" = "NONE" ; then
+	    echo '
+- You did not tell me what kind of host system you want to configure.
 - I will attempt to guess the kind of system this is.
 ' 1>&6
-	AC_CANONICAL_HOST
-	canonical=$host
-	configuration=$host_alias
-else
-  canonical=`${CONFIG_SHELL-/bin/sh} ./config.sub $configuration 2>&1`
-  
-  
-  AC_CANONICAL_HOST
-  if test -n "`echo "$canonical" | sed -e [s/${configuration}//]`" ; then
-	echo $canonical
-	echo ""
-	exit 1
-  else
-        AC_CHECKING(host system type... $canonical)
-  fi
-fi
+	    AC_CANONICAL_HOST
+	    canonical=$host
+	    configuration=$host_alias
+	else
+	    canonical=`${CONFIG_SHELL-/bin/sh} ./config.sub $configuration 2>&1`
+	  
+  	    AC_CANONICAL_HOST
+	    if test -n "`echo "$canonical" | sed -e [s/${configuration}//]`" ; then
+		echo $canonical
+		echo ""
+		exit 1
+  	    else
+        	AC_CHECKING(host system type... $canonical)
+	    fi
+	fi
+
+	;;
+esac
+
+
 
 
 # arch-independent XSB directories
@@ -281,8 +318,12 @@ arch_install_bindir=${arch_install_config_prefix}/bin
 arch_install_config_libdir=${arch_install_config_prefix}/lib
 
 
-AC_CONFIG_HEADER([${arch_config_prefix}/config.h:def_config.in
-		  ${arch_config_prefix}/debug.h:def_debug.in])
+# When running autoheader, uncoment thse 2 lines and comment the next 2
+dnl AC_CONFIG_HEADER([${arch_config_prefix}/config.h:def_config.h
+dnl		  ${arch_config_prefix}/debug.h:def_debug.in])
+
+AC_CONFIG_HEADER([${arch_config_prefix}/config.h:${config_dot_h_templ}
+${arch_config_prefix}/debug.h:def_debug.in])
 
 
 dnl Find the source directory.
@@ -723,7 +764,6 @@ else
    compile_mode=optimal
 fi
 
-AC_DEFINE_UNQUOTED(COMPILE_MODE, "${compile_mode} mode")
 
 ### Specify what we'll be editing into Makefile and config.h.
 AC_SUBST(xsb_version)
@@ -787,11 +827,7 @@ test -f "$cache_file" ||  \
 
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
-	    ${arch_config_file}:xsb_configuration.in
-	    ${emudir}/nt/config.h:def_config_nt.in
-	    ${emudir}/nt/configuration.P:xsb_configuration_nt.in
-	    ${emudir}/pcdos/config.h:def_config_pcdos.in
-	    ${emudir}/pcdos/configuration.P:xsb_configuration_pcdos.in
+	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in

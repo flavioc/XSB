@@ -33,9 +33,6 @@
 
 /******* VARIABLES THAT MIGHT NEED TO BE SET MANUALLY ****************/
 
-/* Whether profile mode, normal mode, optimal, debug mode */
-#define COMPILE_MODE "optimal mode"
-
 /* Use local eval strategy. Default is `batched' */
 #undef LOCAL_EVAL
 
@@ -77,24 +74,23 @@
 /**** CHECK, if needed! */
 #define bcopy(A,B,L) memmove(B,A,L)
 
+
 /* It seems from the code in builtin.c that under DJGPP slashes are normal, but
    I dunno -mk */ 
 #define SLASH '/'
 
 /*  Files needed for XSB to get the configuration information */
-#define CONFIGURATION "x86-pc-dos"
+#undef CONFIGURATION
+#undef FULL_CONFIG_NAME
 
 /* Define if you have the gethostbyname function.  */
 #define HAVE_GETHOSTBYNAME 1
 
-/* Define if you have the gettimeofday function.  */
-#define HAVE_GETTIMEOFDAY 1
 
 /* Define if you have the mkdir function.  */
 #define HAVE_MKDIR 1
 
 /* Define if you have the snprintf function.  */
-/* Check??????*/
 #define HAVE_SNPRINTF 1
 
 /* Define if you have the socket function.  */
@@ -111,13 +107,3 @@
 
 /* Define if you have the <string.h> header file.  */
 #define HAVE_STRING_H 1
-
-/* Define if you have the <sys/resource.h> header file.  */
-#define HAVE_SYS_RESOURCE_H 1
-
-/* Define if you have the <sys/time.h> header file.  */
-#define HAVE_SYS_TIME_H 1
-
-/* Define if you have the <unistd.h> header file.  */
-#define HAVE_UNISTD_H 1
-

@@ -41,7 +41,19 @@ The following is a list of instructions on how to ftp and install XSB.
 	This directory should now contain some files (among which there should
 	be one named "makeall"), and the following 7 directories: 
 
-		build, cmplib, emu, examples, lib, manual, and syslib.
+		build/
+		cmplib/
+		emu/
+		etc/
+		examples/
+		lib/
+		docs/
+		syslib/
+		packages/
+
+	For Windows and DOS it should also contain:
+
+		config/
 
 	Note that after the installation of XSB the directory structure of XSB
 	should be maintained.  However, you can build XSB for installation
@@ -69,7 +81,7 @@ The following is a list of instructions on how to ftp and install XSB.
                 rm ../XSB.tar.gz   or   rm ../XSB.tar.Z
 
     12) The XSB Programmer's Manual (in LateX, dvi and Postcript format)
-	resides in the directory manual.  In case the dvi or Postcript
+	resides in the directory docs.  In case the dvi or Postcript
 	files are corrupted, you can type "latex manual" twice in the
 	manual directory to obtain the manual.dvi file.
 

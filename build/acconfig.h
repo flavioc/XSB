@@ -167,6 +167,7 @@
 #endif
 #endif
 
+
 /* Debugging variables are set in debug.h, not here.
    We include these dummy definitions only to avoid the autoheader warnings */
 #if 0
@@ -179,9 +180,6 @@
 /*  File needed for XSB to get the configuration information */
 #undef CONFIGURATION
 #undef FULL_CONFIG_NAME
-
-/* Whether profile mode, normal mode, optimal, debug mode */
-#undef COMPILE_MODE
 
 
 

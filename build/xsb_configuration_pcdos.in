@@ -39,17 +39,11 @@
 :- import stat_flag/2, intern_string/2, fmt_write_string/3, slash/1
    from machine.
 
-xsb_configuration(compiler, 'gcc').
 
-%%% Set the flags appropriately for DOS
+%%% Set these appropriately for DOS
+xsb_configuration(compiler, 'gcc').
 xsb_configuration(compiler_flags, ' -O4 -ansi -pedantic -Wall').
 xsb_configuration(loader_flags, ' -lsocket -lm -lnsl -ldl').
-
-%% Set the right compile mode
-xsb_configuration(compile_mode, 'optimal').
-
-xsb_configuration(scheduling_strategy, '(batched)').
-xsb_configuration(site_dir, 'C:\xsb_site').
 
 xsb_configuration(perl_support, 'no').
 %% The folowing two must not be set, if perl_support=no
@@ -58,14 +52,21 @@ xsb_configuration(perl_cc_compiler, '').
 xsb_configuration(perl_ccflags, '').
 xsb_configuration(perl_libs, '').
 
-/* Java support */
+xsb_configuration(site_dir, 'C:\xsb_site').
+xsb_configuration(srcdir, 'C:\xsb').
+
+/* Java compiler */
 xsb_configuration(javac, '').
 
 %%%% It is UNLIKELY that you will need to change the following settings:
 %%
-xsb_configuration(os_version, '').
-xsb_configuration(host_vendor, 'pc').
-xsb_configuration(host_cpu,  'x86').
+xsb_configuration(os_version, '@os_version@').
+xsb_configuration(host_vendor, '@host_vendor@').
+xsb_configuration(host_cpu,  '@host_cpu@').
+
+%% Set the right compile mode and XSB scheduling strategy
+xsb_configuration(compile_mode, '@compile_mode@').
+xsb_configuration(scheduling_strategy, '(@xsb_scheduling_strategy@)').
 
 %%%%% DON'T EDIT BELOW HERE!!!!
 %%
@@ -79,10 +80,13 @@ xsb_configuration(codename, '@xsb_codename@').
 xsb_configuration(release_date,
 		  date(@release_year@, @release_month@, @release_day@)).
 
-xsb_configuration(configuration, 'x86-pc-dos').
-xsb_configuration(architecture, 'x86-pc-dos').
-xsb_configuration(host_os, 'pcdos').
-xsb_configuration(os_type, 'pcdos').
+%% Configuration looks as follows: machine-vendor-os-tag
+xsb_configuration(configuration, '@canonical@@config_tag@').
+%% Architecture is: machine-vendor-os (like configuration, but no tag)
+xsb_configuration(architecture, '@canonical@').
+
+xsb_configuration(host_os, '@host_os@').
+xsb_configuration(os_type, '@os_type@').
 
 /* This is where XSB is currently installed. It is not cast in stone, and
    the whole enchelada can be moved. */
@@ -94,8 +98,6 @@ xsb_configuration(install_dir, InstallDir) :-
    This is where we expect to find the .xsb directory */
 xsb_configuration(user_home, Home) :-
     	 stat_flag(22, Home1), intern_string(Home1, Home).
-
-xsb_configuration(srcdir, '@topdir@').
 
 /* Where XSB scripts are residing */
 xsb_configuration(scriptdir, ScriptDir) :-

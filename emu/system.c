@@ -32,9 +32,10 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+/* special.h must be included after sys/stat.h */
+#include "configs/special.h"
 
 #ifdef WIN_NT
-/* added by Juliana 03/10/97 */
 #include <direct.h>
 #include <io.h>
 #else

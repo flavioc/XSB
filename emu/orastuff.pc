@@ -29,7 +29,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include "config.h"
+#include "configs/config.h"
 #include "cell.h"
 #include "flags.h"
 

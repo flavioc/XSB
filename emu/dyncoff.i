@@ -33,6 +33,8 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+/* special.h must be included after sys/stat.h */
+#include "configs/special.h"
 #include <errno.h>
 #include <stdio.h>
 

@@ -1,0 +1,73 @@
+
+    Instructions for Preparing an XSB Release
+    =========================================
+
+NOTE: Autoconf must be installed. 
+      Releases can only be created under a Unix system
+
+1. Windows NT/95/98 or DOS:
+
+       cd build
+       autoconf
+   Windows:
+       ./configure --with-os=windows
+   DOS:
+       ./configure --with-os=pcdos
+
+   Note: you MUST run configure, or else certain important files won't be
+	 created! Windows users cannot run the configure script!
+
+   Windows:
+	cp config/x86-pc-windows/config.h  emu/configs/
+   DOS:
+	config/x86-pc-pcdos/config.h  emu/configs/
+
+   Make whatever is needed to include the XSB documentation.
+
+   Tar up or zip these directories:
+       
+       Windows:
+	   config/x86-pc-windows
+       DOS:
+	   config/x86-pc-pcdos
+       ALL:
+	   emu
+	   etc
+	   lib
+	   syslib
+	   cmplib
+	   packages
+	   examples
+	   build
+	   doc?????????
+
+2. Unix:
+
+   cd build
+   autoconf
+
+   NOTE: don't run ./configure! Unix users must run it by themselves!
+
+   Make whatever is needed to include the XSB documentation.
+
+   Tar up these directories:
+
+       emu
+       etc
+       lib
+       syslib
+       cmplib
+       packages
+       examples
+       build
+       doc?????????
+
+3. ALL:
+
+   These top level files must be included in the Tar file:
+
+   FAQ
+   INSTALL*
+   LICENSE
+   README
+

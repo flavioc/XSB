@@ -35,22 +35,27 @@
 :- import stat_flag/2, intern_string/2, fmt_write_string/3, slash/1
    from machine.
 
-%% Configuration looks as follows: machine-vendor-os-tag
-xsb_configuration(configuration, '@canonical@@config_tag@').
-
-%% Architecture is: machine-vendor-os (like configuration, but no tag)
-xsb_configuration(architecture, '@canonical@').
-
-xsb_configuration(host_os, '@host_os@').
-xsb_configuration(os_version, '@os_version@').
-xsb_configuration(os_type, '@os_type@').
-xsb_configuration(host_vendor, '@host_vendor@').
-xsb_configuration(host_cpu,  '@host_cpu@').
 
 xsb_configuration(compiler, '@CC@').
 xsb_configuration(compiler_flags, '@CFLAGS@').
 xsb_configuration(loader_flags, '@LDFLAGS@').
+
+xsb_configuration(perl_support, '@perl_support@').
+xsb_configuration(perl_archlib, '@perl_archlib@').
+xsb_configuration(perl_cc_compiler, '@perl_cc_compiler@').
+xsb_configuration(perl_ccflags, '@perl_ccflags@').
+xsb_configuration(perl_libs, '@perl_libs@').
+
+/* Java compiler */
+xsb_configuration(javac, '@javac@').
+
+xsb_configuration(os_version, '@os_version@').
+xsb_configuration(host_vendor, '@host_vendor@').
+xsb_configuration(host_cpu,  '@host_cpu@').
+
 xsb_configuration(compile_mode, '@compile_mode@').
+
+xsb_configuration(scheduling_strategy, '(@xsb_scheduling_strategy@)').
 
 xsb_configuration(major_version, '@xsb_major_version@').
 xsb_configuration(minor_version, '@xsb_minor_version@').
@@ -61,16 +66,13 @@ xsb_configuration(codename, '@xsb_codename@').
 xsb_configuration(release_date,
 		  date(@release_year@, @release_month@, @release_day@)).
 
-xsb_configuration(scheduling_strategy, '(@xsb_scheduling_strategy@)').
+%% Configuration looks as follows: machine-vendor-os-tag
+xsb_configuration(configuration, '@canonical@@config_tag@').
+%% Architecture is: machine-vendor-os (like configuration, but no tag)
+xsb_configuration(architecture, '@canonical@').
 
-xsb_configuration(perl_support, '@perl_support@').
-xsb_configuration(perl_archlib, '@perl_archlib@').
-xsb_configuration(perl_cc_compiler, '@perl_cc_compiler@').
-xsb_configuration(perl_ccflags, '@perl_ccflags@').
-xsb_configuration(perl_libs, '@perl_libs@').
-
-/* Java support */
-xsb_configuration(javac, '@javac@').
+xsb_configuration(host_os, '@host_os@').
+xsb_configuration(os_type, '@os_type@').
 
 /* This is where XSB is currently installed. It is not cast in stone, and
    the whole enchelada can be moved. */

@@ -25,7 +25,13 @@
 #include "configs/config.h"
 #include "debugs/debug.h"
 
+#ifdef WIN_NT
+#include <direct.h>
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -34,6 +40,8 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+/* special.h must be included after sys/stat.h */
+#include "configs/special.h"
 
 #ifndef NeXT
 #include <malloc.h>

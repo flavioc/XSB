@@ -46,6 +46,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+/* special.h must be included after sys/stat.h */
+#include "configs/special.h"
 
 #ifdef WIN_NT
 #include <stdarg.h>
@@ -617,8 +619,8 @@ int  builtin_call(byte number)
       case 2: fptr = fopen(addr, "ab"); break; /* APPEND_MODE */
       }
       if (fptr) {
-	if (!stat(addr, &stat_buff) &&
-	    (stat_buff.st_mode & S_IFMT) != S_IFDIR) {
+	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode)) {
+	  /* file exists and isn't a dir */
 	  for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
 	  if (i == MAX_OPEN_FILES) xsb_abort("Too many open files");
 	  else {
