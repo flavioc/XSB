@@ -23,7 +23,7 @@
 ##
 
 
-SUBDIR = cmplib syslib lib packages
+SUBDIR = cmplib syslib lib
 XSB=./bin/xsb
 
 all: $(SUBDIR)

@@ -150,7 +150,11 @@ arch_config_objlibdir=$(src_config_prefix)/saved.o
 emumake_goal=@emumake_goal@
 
 # Normal user
-all: prepare emu xsbmod xsbdll gpp remake_dot_O_files configure_packages_src register emu_clean 
+all: prepare emu xsbmod xsbdll gpp remake_dot_O_files register emu_clean 
+
+# Packages
+packages: configure_packages_src
+	cd $(srcdir); make XSB=$(src_scriptdir)/xsb$(config_tag) packages
 
 # Developer who just checked out or updated CVS copy
 devel: prepare emu xsbmod xsbdll gpp remake_dot_O_files configure_packages_src emu_clean
