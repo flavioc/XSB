@@ -184,7 +184,7 @@ xsbBool sys_system(int callno)
   case IS_DIRECTORY:
   case STAT_FILE_TIME:
   case STAT_FILE_SIZE:
-    return file_stat(callno, ptoc_string(2));
+    return file_stat(callno, ptoc_longstring(2));
   case EXEC: {
 #ifdef HAVE_EXECVP
     /* execs a new process in place of XSB */
