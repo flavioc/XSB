@@ -37,12 +37,13 @@
 
 
 #include "interface.h"
-#include "perlpattern.c"          /*pattern match basic functions */   
+#include "perlpattern.c"          /* pattern match basic functions */   
 
 void build_sub_match_spec( void );
 int is_global_pattern( char *);
 int global_pattern_mode = FALSE;
 
+extern void xsb_abort(char *, ...);
 
 #define xsb_warn(warning)	fprintf(stderr, "++Warning: %s\n", warning)
 
