@@ -27,15 +27,39 @@
 /*  Table Information Structure.					*/
 /*----------------------------------------------------------------------*/
 
-typedef struct tab_info {
-  CPtr next_tip;	/* pointer to next table info frame */
-  CPtr call_trie_root;	/* pointer to the root of the call trie */
-  Psc  psc_ptr;		/* pointer to the PSC record of the subgoal */
-} *tab_inf_ptr;
+/*
+ * The way in which similar tabled calls are identified during Call
+ * Check/Insert.
+ */
+typedef enum {
+    VARIANT_TM,  SUBSUMPTIVE_TM
+} TablingMethod;
 
-#define ti_next_tip(TipPtr)		((tab_inf_ptr)TipPtr)->next_tip
-#define ti_call_trie_root(TipPtr)	((tab_inf_ptr)TipPtr)->call_trie_root
-#define ti_psc_ptr(TipPtr)		((tab_inf_ptr)TipPtr)->psc_ptr
+typedef struct Table_Info_Frame *TIFptr;
+typedef struct Table_Info_Frame {
+    TIFptr next_tif;	  /* pointer to next table info frame */
+    BTNptr call_trie;	  /* pointer to the root of the call trie */
+    Psc  psc_ptr;	  /* pointer to the PSC record of the subgoal */
+    TablingMethod method;
+} TableInfoFrame;
+
+#define TIF_NextTIF(pTIF)	   ( (pTIF)->next_tif )
+#define TIF_CallTrie(pTIF)	   ( (pTIF)->call_trie )
+#define TIF_PSC(pTIF)		   ( (pTIF)->psc_ptr )
+#define TIF_TablingMethod(pTIF)	   ( (pTIF)->method )
+
+#define IsVariantPredicate(pTIF)	( (pTIF)->method == VARIANT_TM )
+#define IsSubsumptivePredicate(pTIF)	( (pTIF)->method == SUBSUMPTIVE_TM )
+
+#include "flags.h"
+
+#define New_TIF(pTIF,pPSC) {				\
+   pTIF = malloc(sizeof(TableInfoFrame));		\
+   TIF_NextTIF(pTIF) = NULL;				\
+   TIF_CallTrie(pTIF) = NULL;				\
+   TIF_PSC(pTIF) = pPSC;				\
+   TIF_TablingMethod(pTIF) = flags[TABLING_METHOD];	\
+ }
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
@@ -176,11 +200,11 @@ struct completion_stack_frame {
       */
 struct subgoal_frame {
   SGFrame next_subgoal;
-  NODEptr ans_root_ptr;	/* Root of the return trie */
+  BTNptr ans_root_ptr;	/* Root of the return trie */
 #if (!defined(CHAT))
   CPtr asf_list_ptr;	/* Pointer to list of (CP) active subgoal frames */
 #endif
-  tab_inf_ptr tip_ptr;	/* Used only in remove_open_tries */
+  TIFptr tip_ptr;	/* Used only in remove_open_tries */
   CPtr compl_stack_ptr;	/* Pointer to subgoal's completion stack frame */
 #ifdef CHAT
   CPtr compl_suspens_ptr; /* pointer to CHAT area; type is chat_init_pheader */
@@ -189,7 +213,7 @@ struct subgoal_frame {
 #endif
   ALNptr ans_list_ptr;	/* Pointer to the list of returns in the ret trie */
   SGFrame prev_subgoal;
-  NODEptr leaf_ptr;	/* Used only in remove_open_tries */
+  BTNptr leaf_ptr;	/* Used only in remove_open_tries */
   CPtr  cp_ptr;         /* Pointer to the Generator CP */
   ALNptr ans_list_tail;  /* pointer to the tail of the answer list */
   CPtr compl_flag;      /* jf: indicate whether subg is completed */
@@ -229,23 +253,22 @@ extern ALNptr empty_return();
  * so, in some sense making this macro independent of the number of fields.
  */
 
-#define create_subgoal_frame(storeptr,LeafPtr,TableInfo){\
-   SGFrame NewFrame; \
-   if ((NewFrame = (SGFrame)calloc(1,sizeof(struct subgoal_frame))) == NULL){\
-	xsb_exit("Out of Memory\n");\
-   } else {\
-	storeptr = (CPtr) NewFrame;\
-	subg_tip_ptr(NewFrame) = TableInfo;\
-	subg_leaf_ptr(NewFrame) = LeafPtr; \
-        BTN_SetSF(LeafPtr,NewFrame);\
-	subg_compl_stack_ptr(NewFrame) = (CPtr)(openreg - COMPLFRAMESIZE); \
-	subg_ans_list_ptr(NewFrame) = (ALNptr) empty_return(); \
-	if (subg_structure_list != NULL)\
-	  subg_prev_subgoal(subg_structure_list) = NewFrame;\
-	subg_next_subgoal(NewFrame) = subg_structure_list;\
-	subg_structure_list = NewFrame;\
-  }\
-}
+#define create_subgoal_frame(NewFrame,LeafPtr,TableInfo) {		 \
+   NewFrame = calloc(1,sizeof(struct subgoal_frame));			 \
+   if ( IsNULL(NewFrame) )						 \
+     xsb_exit("Out of Memoryn");					 \
+   else {								 \
+     subg_tip_ptr(NewFrame) = TableInfo;				 \
+     subg_leaf_ptr(NewFrame) = LeafPtr; 				 \
+     BTN_SetSF(LeafPtr,NewFrame);					 \
+     subg_compl_stack_ptr(NewFrame) = (CPtr)(openreg - COMPLFRAMESIZE);  \
+     subg_ans_list_ptr(NewFrame) = empty_return(); 			 \
+     if ( IsNonNULL(subg_structure_list) )				 \
+       subg_prev_subgoal(subg_structure_list) = NewFrame;		 \
+     subg_next_subgoal(NewFrame) = subg_structure_list;			 \
+     subg_structure_list = NewFrame;					 \
+   }									 \
+ }
 
 #define free_subgoal_frame(x){\
    if (subg_prev_subgoal(x) == NULL) {\

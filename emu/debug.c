@@ -452,9 +452,9 @@ static void print_term_of_subgoal(FILE *fp, int *i)
 
 void print_subgoal(FILE *fp, SGFrame subg)
 {
-  NODEptr leaf;
+  BTNptr leaf;
   int  i = 0;
-  Psc  psc = ti_psc_ptr(subg_tip_ptr(subg));
+  Psc  psc = TIF_PSC(subg_tip_ptr(subg));
 
   for (leaf = subg_leaf_ptr(subg); leaf != NULL; leaf = Parent(leaf)) {
     cell_array[i++] = Atom(leaf);
@@ -486,7 +486,7 @@ static void print_delay_element(FILE *fp, Cell del_elem)
       tmp_cell = cell(cptr + 1);
       print_subgoal(fp, (SGFrame) addr_val(tmp_cell)); fprintf(fp, ",");
       tmp_cell = cell(cptr + 2);
-      fprintf(fp, "%p", (NODEptr) addr_val(tmp_cell)); fprintf(fp, ",");
+      fprintf(fp, "%p", (BTNptr) addr_val(tmp_cell)); fprintf(fp, ",");
       tmp_cell = cell(cptr + 3);
       if (isinteger(tmp_cell)) {
 	fprintf(fp, "NEG");

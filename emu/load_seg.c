@@ -59,9 +59,9 @@
 
 /* === cross session variables ========================================	*/
 
-static struct tab_info *tab_info_ptr;
+static TIFptr tab_info_ptr;
 
-tab_inf_ptr first_tip = 0, last_tip = 0;
+TIFptr first_tip = 0, last_tip = 0;
 static pseg last_text = 0;	/* permanent var, chain of text seg */
 extern pw   *reloc_table; /* passed in parameter, but valid only once */
 
@@ -366,11 +366,9 @@ static int load_text(int seg_num, int text_bytes, int *current_tab)
 	 case T:	  
            *current_tab = 1;	/* flag for load index */
 	   if (current_opcode == tabletry || current_opcode == tabletrysingle) {
-	     tab_info_ptr = (tab_inf_ptr) mem_alloc(sizeof(struct tab_info));
-   	     ti_next_tip(tab_info_ptr) = 0;
-   	     ti_call_trie_root(tab_info_ptr) = 0;
+	     New_TIF(tab_info_ptr,NULL);
 	     if (first_tip == 0) first_tip = tab_info_ptr;
-	     else ti_next_tip(last_tip) = (CPtr) tab_info_ptr;
+	     else TIF_NextTIF(last_tip) = tab_info_ptr;
 	     last_tip = tab_info_ptr;
 	   }
            get_obj_word(&tab_config_hold);          /* space holder */

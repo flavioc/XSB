@@ -24,6 +24,9 @@
 */
 
 
+#ifndef SYSTEM_FLAGS
+
+#define SYSTEM_FLAGS
 extern Cell flags[];		/* System flags + user flags */
 
 /* -------- system flags --------------------------------------------------*/
@@ -93,3 +96,9 @@ As best as I can tell, only the following exist/are used:
 #define ORA_INPUTARRAY_LENGTH     58   /* max # simultaneous input tuples */
 #define ORA_INPUTARRAY_WIDTH      59   /* max size of each input value    */
 #define ORA_OUTPUTARRAY_LENGTH    60   /* max # simultaneous output tuples */
+
+
+#define TABLING_METHOD	61   /* Method used to evaluate tabled calls:
+				variant or subsumption */
+
+#endif

@@ -161,6 +161,8 @@ extern void init_builtin_table(void);
 #define TRIE_DISPOSE_NR         165
 #define TRIE_UNDISPOSE          166
 
+#define SET_SUBSUMPTIVE_EVAL	170
+
 /* This is the builtin where people should put their private, experimental
    builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO DO
    IT. Note: even though this is a single builtin, YOU CAN SIMULATE ANY NUMBER

@@ -59,8 +59,8 @@
 
 extern Cell val_to_hash(Cell);
 
-extern tab_inf_ptr first_tip;
-extern tab_inf_ptr last_tip;
+extern TIFptr first_tip;
+extern TIFptr last_tip;
 
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer.			*/
@@ -1984,7 +1984,7 @@ bool compiled_to_dynamic( /* +PSC, +OldPred */ )
 bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
 {
   CPtr p, tp;
-  tab_inf_ptr tip;
+  TIFptr tip;
   int Loc;
   Psc psc = (Psc)ptoc_int(1);
   Integer Arity = get_arity(psc);
@@ -2000,12 +2000,9 @@ bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
   p[2] = (Cell)p ;
   if ( Tabled )
     {
-      tip = (tab_inf_ptr)mem_alloc(sizeof(struct tab_info));
-      ti_next_tip(tip) = 0;
-      ti_call_trie_root(tip) = 0;
-      ti_psc_ptr(tip) = psc;
+      New_TIF(tip,psc);
       if (first_tip == 0) first_tip = tip;
-      else ti_next_tip(last_tip) = (CPtr)tip;
+      else TIF_NextTIF(last_tip) = tip;
       last_tip = tip;
       tp  = (CPtr)mem_alloc(FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ;
       Loc = 0 ;
@@ -2058,9 +2055,9 @@ static inline int clref_trie_asserted(CPtr Clref) {
 
 static void abolish_trie_asserted_stuff(CPtr b) {
 
-   NODEptr pRoot;
+   BTNptr pRoot;
    
-   pRoot = (NODEptr)*(b + 3);
+   pRoot = (BTNptr)*(b + 3);
    switch_to_trie_assert;
    delete_trie(pRoot);
    switch_from_trie_assert;
@@ -2165,7 +2162,7 @@ int trie_assert(void)
   int  Arity;
 #endif
   CPtr Trie_Asserted_Clref = NULL;
-  NODEptr inst_node_ptr;
+  BTNptr inst_node_ptr;
   int  found = 1;
 
 
@@ -2210,7 +2207,7 @@ int trie_assert(void)
     db_addbuff(get_arity(psc) + 1,(ClRef)Trie_Asserted_Clref,(PrRef)Prref,1,2);
   }
   else
-    inst_node_ptr = (NODEptr)*(Trie_Asserted_Clref +3);
+    inst_node_ptr = (BTNptr)*(Trie_Asserted_Clref +3);
 
   one_term_chk_ins((CPtr)Clause,inst_node_ptr,&found);
 
@@ -2223,7 +2220,7 @@ int trie_assert(void)
 int trie_retract(void)
 {
   CPtr Clref;
-  NODEptr inst_node_ptr;
+  BTNptr inst_node_ptr;
 
   Clref = (CPtr)ptoc_int(1);
   if (Clref == NULL) {
@@ -2235,7 +2232,7 @@ int trie_retract(void)
     return FALSE;
   }
   else {
-    inst_node_ptr = (NODEptr)*(Clref +3);
+    inst_node_ptr = (BTNptr)*(Clref +3);
 #ifdef DEBUG_T
     printf(" Deleting from Instrn Node %p\n",  inst_node_ptr );
     printf(" Before: Child of Instrn Node %p\n", Child(inst_node_ptr));

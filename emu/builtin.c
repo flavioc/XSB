@@ -105,9 +105,12 @@
 
 /*======================================================================*/
 
-extern tab_inf_ptr get_tip(Psc);
-extern tab_inf_ptr first_tip;
-extern tab_inf_ptr last_tip;
+/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
+extern FILE *fdopen(int fildes, const char *type);
+
+extern TIFptr get_tip(Psc);
+extern TIFptr first_tip;
+extern TIFptr last_tip;
 
 extern int  sys_syscall(int);
 extern bool sys_system(int);
@@ -131,8 +134,8 @@ extern bool xsb_socket_request(void);
 extern int  findall_init(void), findall_add(void), findall_get_solutions(void);
 extern int  copy_term(void);
 
-extern void force_answer_true(NODEptr);
-extern void force_answer_false(NODEptr);
+extern void force_answer_true(BTNptr);
+extern void force_answer_false(BTNptr);
 
 #if (defined(DEBUG) && defined(DEBUG_DELAY))
 extern void print_delay_list(FILE *, CPtr);
@@ -623,10 +626,10 @@ int builtin_call(byte number)
   
   DL dl;				/* for residual program */
   DE de;				/* for residual program */
-  NODEptr as_leaf;			/* for residual program */
+  BTNptr as_leaf;			/* for residual program */
   Cell delay_lists;			/* for residual program */
   CPtr dls_head, dls_tail = NULL;	/* for residual program */
-  tab_inf_ptr tip;
+  TIFptr tip;
   Psc  psc;
   Pair sym;
   CPtr subgoal_ptr, t_ptcp;
@@ -1343,9 +1346,9 @@ int builtin_call(byte number)
       xsb_abort("Cannot abolish tables of untabled predicate %s/%d",
 		get_name(psc), get_arity(psc));
     } else {
-      NODEptr CallRoot = (NODEptr)ti_call_trie_root(tip);
+      BTNptr CallRoot = TIF_CallTrie(tip);
 
-      ti_call_trie_root(tip) = NULL;
+      TIF_CallTrie(tip) = NULL;
       delete_predicate_table(CallRoot);
     }
     break;
@@ -1363,9 +1366,9 @@ int builtin_call(byte number)
     return trie_retract_safe();
   case TRIE_DELETE_TERM:
     if (ptoc_int(3) == 0)
-      delete_branch((NODEptr)ptoc_int(1),(NODEptr *)ptoc_int(2)); 
+      delete_branch((BTNptr)ptoc_int(1),(BTNptr *)ptoc_int(2)); 
     else
-      delete_return((NODEptr)ptoc_int(1),(SGFrame)ptoc_int(2)); 
+      delete_return((BTNptr)ptoc_int(1),(SGFrame)ptoc_int(2)); 
     break;
   case TRIE_GET_RETURN:
     pcreg = trie_get_returns_for_call();
@@ -1419,10 +1422,10 @@ int builtin_call(byte number)
     trie_dispose();
     break;
   case TRIE_DISPOSE_NR:
-    safe_delete_branch((NODEptr)ptoc_int(1));
+    safe_delete_branch((BTNptr)ptoc_int(1));
     break;
   case TRIE_UNDISPOSE:
-    undelete_branch((NODEptr) ptoc_int(2));
+    undelete_branch((BTNptr) ptoc_int(2));
     break;
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify() );
@@ -1437,6 +1440,30 @@ int builtin_call(byte number)
     }
     break;
 
+  case SET_SUBSUMPTIVE_EVAL: {    /* R1: +Term */
+    Psc psc;
+    TIFptr tif;
+
+    psc = get_str_psc(ptoc_tag(1));
+    tif = get_tip(psc);
+    if ( IsNonNULL(tif) ) {
+      if ( IsNULL(TIF_CallTrie(tif)) ) {
+	TIF_TablingMethod(tif) = SUBSUMPTIVE_TM;
+	return TRUE;
+      }
+      else {
+	xsb_warn("Cannot change tabling method for tabled predicate %s/%d\n"
+		  "\t    Calls to %s/%d have already been issued\n",
+		  get_name(psc), get_arity(psc),
+		  get_name(psc), get_arity(psc));
+	return FALSE;
+      }
+    }
+    else {
+      xsb_warn("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
+      return FALSE;
+    }
+  }
   case PRINT_CHAT: print_chat(1) ; return TRUE ;
   case PRINT_LS: print_ls(1) ; return TRUE ;
   case PRINT_TR: print_tr(1) ; return TRUE ;
@@ -1482,7 +1509,7 @@ int builtin_call(byte number)
 #endif
 
   case FORCE_TRUTH_VALUE: /* +R1: AnsLeafPtr; +R2: TruthValue */
-    as_leaf = (NODEptr) ptoc_addr(1);
+    as_leaf = (BTNptr) ptoc_addr(1);
     tmpstr = ptoc_string(2);
     if (!strcmp(tmpstr, "true"))
       force_answer_true(as_leaf);
@@ -1502,12 +1529,12 @@ int builtin_call(byte number)
 
 static void abolish_table_info(void)
 {
-  tab_inf_ptr temp;
+  TIFptr pTIF;
 
-  temp = first_tip;
-  while (temp != 0) {
-    ti_call_trie_root(temp) = 0;
-    temp = (tab_inf_ptr) ti_next_tip(temp);
+  pTIF = first_tip;
+  while ( IsNonNULL(pTIF) ) {
+    TIF_CallTrie(pTIF) = NULL;
+    pTIF = TIF_NextTIF(pTIF);
   }
   reset_freeze_registers;
   openreg = COMPLSTACKBOTTOM;

@@ -96,9 +96,9 @@ void build_delay_list(CPtr delay_list, DE de)
   int  i, j, arity;
   CPtr head, tail;
   SGFrame subg;
-  NODEptr ans_subst;
+  BTNptr ans_subst;
 #ifdef DEBUG_DELAYVAR
-  NODEptr subs_factp;
+  BTNptr subs_factp;
 #endif
   CPtr *tmp_var_addr;
   CPtr oldhreg = hreg;
@@ -116,7 +116,7 @@ void build_delay_list(CPtr delay_list, DE de)
       build_delay_list(tail, de_next(de)); /* recursive call */
       head = hreg;
       subg = de_subgoal(de);
-      psc = ti_psc_ptr(subg_tip_ptr(subg));
+      psc = TIF_PSC(subg_tip_ptr(subg));
       arity = get_arity(psc);
       if ((ans_subst = de_ans_subst(de)) == NULL) { /* Negative DE */
         follow(oldhreg) = makecs(hreg);
@@ -232,7 +232,7 @@ void build_delay_list(CPtr delay_list, DE de)
 
             fprintf(stderr, "Stored Subs Fact: <");
             {
-              NODEptr x = subs_factp;
+              BTNptr x = subs_factp;
 	      if (x == NULL) fprintf(stderr, ">>>> subs_factp is NULL\n");
               while(x != NULL){
                 print_trie_atom(Atom(x));

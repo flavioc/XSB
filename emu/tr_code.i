@@ -137,10 +137,10 @@ int global_num_vars;
 
 CPtr    tbreg;
 #ifdef LOCAL_EVAL
-NODEptr TrieRootPtr;
+BTNptr TrieRootPtr;
 #endif
-NODEptr NodePtr,Last_Nod_Sav;
-NODEptr *hash_base; 
+BTNptr NodePtr,Last_Nod_Sav;
+BTNptr *hash_base; 
 CPtr    temp_ptr_for_hash;
 int     hash_offset, hashed_hash_offset;
 /*

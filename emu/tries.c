@@ -56,7 +56,7 @@
 extern Psc term_psc(Cell);
 extern Cell ptoc_tag(int);
 extern void ctop_tag(int, Cell);
-extern tab_inf_ptr get_tip(Psc);
+extern TIFptr get_tip(Psc);
 #ifdef DPVR_DEBUG_BD
 extern void printterm(Cell, byte, int);
 #endif
@@ -1085,7 +1085,7 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
  
 /*----------------------------------------------------------------------*/
 
-#define recvariant_call(flag,TrieType)\
+#define recvariant_call(flag,TrieType,xtemp1)\
 {\
   int  j;\
 \
@@ -1149,64 +1149,63 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
 void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
 {
     Psc  psc;
-    CPtr xtemp1;
+    CPtr call_arg;
     int  arity, i, j, flag = 1;
     Cell tag = FREE, item;
-    CPtr cptr, tVarPosReg;
-    tab_inf_ptr pTIF;
+    CPtr cptr, VarPosReg, tVarPosReg;
+    TIFptr pTIF;
 
 
     subg_chk_ins++;
     pTIF = CallInfo_TableInfo(*call_info);
-    if ( IsNULL(ti_call_trie_root(pTIF)) )
-      ti_call_trie_root(pTIF) =
-	(CPtr) newBasicTrie(ti_psc_ptr(pTIF),CALL_TRIE_TT);
-    Paren = (BTNptr)ti_call_trie_root(pTIF);
+    if ( IsNULL(TIF_CallTrie(pTIF)) )
+      TIF_CallTrie(pTIF) = newBasicTrie(TIF_PSC(pTIF),CALL_TRIE_TT);
+    Paren = TIF_CallTrie(pTIF);
     GNodePtrPtr = &BTN_Child(Paren);
-    arity = CallInfo_Arity(*call_info);
+    arity = CallInfo_CallArity(*call_info);
     cptr = CallInfo_Arguments(*call_info);
-    tVarPosReg = VarPosReg;
+    tVarPosReg = VarPosReg = CallInfo_VarVectorLoc(*call_info);
     ctr = 0;
 
     for (i=1; i<=arity; i++) {
-      xtemp1 = (CPtr) (cptr + i);            /* Note! */
-      cptr_deref(xtemp1);
-      tag = cell_tag(xtemp1);
+      call_arg = (CPtr) (cptr + i);            /* Note! */
+      cptr_deref(call_arg);
+      tag = cell_tag(call_arg);
       switch (tag) {
         case FREE: case REF1:
-	  if (! IsStandardizedVariable(xtemp1)) {
+	  if (! IsStandardizedVariable(call_arg)) {
 	    /*
 	     * Save pointers of the substitution factor of the call
 	     * into CP stack.  Each pointer points to a variable in 
 	     * the heap.  The variables may get bound in the later
 	     * computation.
 	     */
-	    *(--VarPosReg) = (Cell) xtemp1;
-	    StandardizeVariable(xtemp1,ctr);
+	    *(--VarPosReg) = (Cell) call_arg;
+	    StandardizeVariable(call_arg,ctr);
 	    one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			     CALL_TRIE_TT);
 	    ctr++;
 	  } else {
-	    one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),CALL_TRIE_TT);
+	    one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(call_arg)),CALL_TRIE_TT);
 	  }
 	  break;
 	case STRING: case INT: case FLOAT:
-	  one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), CALL_TRIE_TT);
+	  one_node_chk_ins(flag, EncodeTrieConstant(call_arg), CALL_TRIE_TT);
 	  break;
 	case LIST:
-	  one_node_chk_ins(flag, EncodeTrieList(xtemp1), CALL_TRIE_TT);
-	  pdlpush(cell(clref_val(xtemp1)+1));
-	  pdlpush(cell(clref_val(xtemp1)));
-	  recvariant_call(flag,CALL_TRIE_TT);
+	  one_node_chk_ins(flag, EncodeTrieList(call_arg), CALL_TRIE_TT);
+	  pdlpush(cell(clref_val(call_arg)+1));
+	  pdlpush(cell(clref_val(call_arg)));
+	  recvariant_call(flag,CALL_TRIE_TT,call_arg);
 	  break;
 	case CS:
-	  psc = (Psc)follow(cs_val(xtemp1));
+	  psc = (Psc)follow(cs_val(call_arg));
 	  item = makecs(psc);
 	  one_node_chk_ins(flag, item, CALL_TRIE_TT);
 	  for (j=get_arity(psc); j>=1 ; j--) {
-	    pdlpush(cell(clref_val(xtemp1)+j));
+	    pdlpush(cell(clref_val(call_arg)+j));
 	  }
-	  recvariant_call(flag,CALL_TRIE_TT);
+	  recvariant_call(flag,CALL_TRIE_TT,call_arg);
 	  break;
 	default:
 	  xsb_abort("Bad type tag in variant_call_search...\n");
@@ -1272,6 +1271,7 @@ void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
     CallLUR_Leaf(*results) = Paren;
     CallLUR_Subsumer(*results) = BTN_GetSF(Paren);
     CallLUR_VariantFound(*results) = flag;
+    CallLUR_VarVector(*results) = VarPosReg;
     return;
 }
 
@@ -1285,7 +1285,7 @@ static void remove_calls_and_returns(SGFrame CallStrPtr)
   /* Delete the call entry
      --------------------- */
   delete_branch(subg_leaf_ptr(CallStrPtr),
-		(BTNptr *)&ti_call_trie_root(subg_tip_ptr(CallStrPtr)));
+		&TIF_CallTrie(subg_tip_ptr(CallStrPtr)));
 
   /* Delete its answers
      ------------------ */
@@ -1540,9 +1540,10 @@ byte * trie_get_calls(void)
 {
    Cell call_term;
    Psc psc_ptr;
+   TIFptr tip_ptr;
+   BTNptr call_trie_root;
+   CPtr cptr;
    int i;
-   tab_inf_ptr tip_ptr;
-   CPtr cptr, call_trie_root;
 
    call_term = ptoc_tag(1);
    if ((psc_ptr = term_psc(call_term)) != NULL) {
@@ -1551,7 +1552,7 @@ byte * trie_get_calls(void)
        xsb_abort("get_calls/3 called with non-tabled predicate");
        return (byte *)&fail_inst;
      }
-     call_trie_root = ti_call_trie_root(tip_ptr);
+     call_trie_root = TIF_CallTrie(tip_ptr);
      if (call_trie_root == NULL)
        return (byte *)&fail_inst;
      else {

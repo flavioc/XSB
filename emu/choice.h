@@ -80,6 +80,8 @@ typedef struct choice_point {
 #endif
 
 /*----------------------------------------------------------------------*/
+/* Table-Producer Choice Point						*/
+/*----------------------------------------------------------------------*/
 
 typedef struct tabled_choice_point {
     byte *next_clause;	/* the entry of next choice */
@@ -153,125 +155,52 @@ typedef struct tabled_choice_point {
     mark_as_completed(SUBGOAL);
 #endif
 
-/*----------------------------------------------------------------------*/
-/* The following CP is used in the tabletrysingle to check completion.	*/
-/*----------------------------------------------------------------------*/
+
+#define _SaveProducerCPF_common(TopCPS, Cont, pSF) {	\
+   TopCPS -= TCP_SIZE;					\
+   tcp_ptcp(TopCPS) = ptcpreg;				\
+   tcp_pdreg(TopCPS) = delayreg;			\
+   tcp_ereg(TopCPS) = ereg;				\
+   tcp_cpreg(TopCPS) = cpreg;				\
+   tcp_trreg(TopCPS) = trreg;				\
+   tcp_hreg(TopCPS) = hreg;				\
+   tcp_ebreg(TopCPS) = ebreg;				\
+   tcp_subgoal_ptr(TopCPS) = (CPtr)pSF;			\
+   tcp_prevbreg(TopCPS) = breg;				\
+   tcp_pcreg(TopCPS) = Cont;				\
+ }
 
 #ifdef CHAT
 
-#define save_singleclause_choicepoint(t_breg,t_ereg,tbreg,prev) \
-    t_breg -= TCP_SIZE; \
-    tcp_chat_roots(t_breg) = NULL; \
-    tcp_subgoal_ptr(t_breg) = tbreg; \
-    tcp_ptcp(t_breg) = ptcpreg; \
-    tcp_pdreg(t_breg) = delayreg; \
-    tcp_prevbreg(t_breg) = prev; \
-    tcp_ereg(t_breg) = t_ereg; \
-    tcp_cpreg(t_breg) = cpreg; \
-    tcp_trreg(t_breg) = trreg; \
-    tcp_hreg(t_breg) = hreg; \
-    tcp_ebreg(t_breg) = ebreg; \
-    tcp_pcreg(t_breg) = (pb) &check_complete_inst;
-
-/* save solution & save lookup are the same (but for their tcp_pcreg())	*/
-
-#define save_generator_choicepoint(t_breg,t_ereg,subg,prev) \
-    t_breg -= TCP_SIZE; \
-    tcp_chat_roots(t_breg) = NULL; \
-    tcp_subgoal_ptr(t_breg) = subg; \
-    tcp_ptcp(t_breg) = ptcpreg; \
-    tcp_pdreg(t_breg) = delayreg; \
-    tcp_prevbreg(t_breg) = prev; \
-    tcp_ereg(t_breg) = t_ereg; \
-    tcp_cpreg(t_breg) = cpreg; \
-    tcp_trreg(t_breg) = trreg; \
-    tcp_hreg(t_breg) = hreg; \
-    tcp_ebreg(t_breg) = ebreg; \
-    tcp_pcreg(t_breg) = lpcreg
+#define SaveProducerCPF(TopCPS, Cont, pSF, Arity) {	\
+   _SaveProducerCPF_common(TopCPS, Cont, pSF);		\
+   tcp_chat_roots(TopCPS) = NULL;			\
+ }
 
 #else	/* !defined(CHAT) */
 
-#ifdef LOCAL_EVAL
-#define save_singleclause_choicepoint(t_breg,t_ereg,tbreg,prev,arity) \
-    t_breg -= TCP_SIZE; \
-    tcp_bfreg(t_breg) = bfreg; \
-    tcp_efreg(t_breg) = efreg; \
-    tcp_trfreg(t_breg) = trfreg; \
-    tcp_hfreg(t_breg) = hfreg; \
-    tcp_ptcp(t_breg) = ptcpreg; \
-    tcp_pdreg(t_breg) = delayreg; \
-    tcp_ereg(t_breg) = t_ereg; \
-    tcp_cpreg(t_breg) = cpreg; \
-    tcp_trreg(t_breg) = trreg; \
-    tcp_hreg(t_breg) = hreg; \
-    tcp_ebreg(t_breg) = ebreg; \
-    tcp_subgoal_ptr(t_breg) = tbreg; \
-    tcp_prevbreg(t_breg) = prev; \
-    tcp_tag(t_breg) = CHECK_COMPLETE_TAG; \
-    tcp_arity(t_breg) = (int) arity; \
-    tcp_trie_return(t_breg) = NULL; \
-    tcp_pcreg(t_breg) = (pb) &check_complete_inst;
-#else
-#define save_singleclause_choicepoint(t_breg,t_ereg,tbreg,prev,arity) \
-    t_breg -= TCP_SIZE; \
-    tcp_bfreg(t_breg) = bfreg; \
-    tcp_efreg(t_breg) = efreg; \
-    tcp_trfreg(t_breg) = trfreg; \
-    tcp_hfreg(t_breg) = hfreg; \
-    tcp_ptcp(t_breg) = ptcpreg; \
-    tcp_pdreg(t_breg) = delayreg; \
-    tcp_ereg(t_breg) = t_ereg; \
-    tcp_cpreg(t_breg) = cpreg; \
-    tcp_trreg(t_breg) = trreg; \
-    tcp_hreg(t_breg) = hreg; \
-    tcp_ebreg(t_breg) = ebreg; \
-    tcp_subgoal_ptr(t_breg) = tbreg; \
-    tcp_prevbreg(t_breg) = prev; \
-    tcp_pcreg(t_breg) = (pb) &check_complete_inst;
-#endif /* LOCAL_EVAL */
-
-/* save solution & save lookup are the same (but for their tcp_pcreg())	*/
+#define _SaveProducerCPF_slg(TopCPS, Cont, pSF) {	\
+   _SaveProducerCPF_common(TopCPS, Cont, pSF);		\
+   tcp_bfreg(TopCPS) = bfreg;				\
+   tcp_efreg(TopCPS) = efreg;				\
+   tcp_trfreg(TopCPS) = trfreg;				\
+   tcp_hfreg(TopCPS) = hfreg;				\
+ }
 
 #ifdef LOCAL_EVAL
-#define save_generator_choicepoint(t_breg,t_ereg,subg,prev,arity) \
-    t_breg -= TCP_SIZE; \
-    tcp_bfreg(t_breg) = bfreg; \
-    tcp_efreg(t_breg) = efreg; \
-    tcp_trfreg(t_breg) = trfreg; \
-    tcp_hfreg(t_breg) = hfreg; \
-    tcp_ptcp(t_breg) = ptcpreg; \
-    tcp_pdreg(t_breg) = delayreg; \
-    tcp_ereg(t_breg) = t_ereg; \
-    tcp_cpreg(t_breg) = cpreg; \
-    tcp_trreg(t_breg) = trreg; \
-    tcp_hreg(t_breg) = hreg; \
-    tcp_ebreg(t_breg) = ebreg; \
-    tcp_subgoal_ptr(t_breg) = subg; \
-    tcp_prevbreg(t_breg) = prev; \
-    tcp_tag(t_breg) = CHECK_COMPLETE_TAG; \
-    tcp_arity(t_breg) = (int) arity; \
-    tcp_trie_return(t_breg) = (ALNptr) NULL; \
-    tcp_pcreg(t_breg) = lpcreg
+#define SaveProducerCPF(TopCPS, Cont, pSF, Arity) {	\
+   _SaveProducerCPF_slg(TopCPS, Cont, pSF);		\
+   tcp_tag(TopCPS) = CHECK_COMPLETE_TAG;		\
+   tcp_arity(TopCPS) = (int) Arity;			\
+   tcp_trie_return(TopCPS) = NULL;			\
+ }
 #else
-#define save_generator_choicepoint(t_breg,t_ereg,subg,prev,arity) \
-    t_breg -= TCP_SIZE; \
-    tcp_bfreg(t_breg) = bfreg; \
-    tcp_efreg(t_breg) = efreg; \
-    tcp_trfreg(t_breg) = trfreg; \
-    tcp_hfreg(t_breg) = hfreg; \
-    tcp_ptcp(t_breg) = ptcpreg; \
-    tcp_pdreg(t_breg) = delayreg; \
-    tcp_ereg(t_breg) = t_ereg; \
-    tcp_cpreg(t_breg) = cpreg; \
-    tcp_trreg(t_breg) = trreg; \
-    tcp_hreg(t_breg) = hreg; \
-    tcp_ebreg(t_breg) = ebreg; \
-    tcp_subgoal_ptr(t_breg) = subg; \
-    tcp_prevbreg(t_breg) = prev; \
-    tcp_pcreg(t_breg) = lpcreg
+#define SaveProducerCPF(TopCPS, Cont, pSF, Arity)	\
+   _SaveProducerCPF_slg(TopCPS, Cont, pSF)
 #endif
 
 #endif	/* of CHAT */
+
 
 /*----------------------------------------------------------------------*/
 /* Consumer Choice Point						*/
@@ -316,37 +245,31 @@ typedef struct consumer_choice_point {
 #define is_consumer_choicepoint(b) \
     (cp_pcreg(b) == (byte *) &answer_return_inst)
 
+
+#define _SaveConsumerCPF_common(TopCPS,SF,PrevConsumer) {	\
+   TopCPS -= NLCPSIZE; 						\
+   nlcp_trie_return(TopCPS) = subg_ans_list_ptr(SF); 		\
+   nlcp_subgoal_ptr(TopCPS) = (CPtr)SF;				\
+   nlcp_prevlookup(TopCPS) = PrevConsumer;			\
+   nlcp_ptcp(TopCPS) = ptcpreg; 				\
+   nlcp_pdreg(TopCPS) = delayreg; 				\
+   nlcp_prevbreg(TopCPS) = breg; 				\
+   nlcp_ereg(TopCPS) = ereg; 					\
+   nlcp_cpreg(TopCPS) = cpreg; 					\
+   nlcp_trreg(TopCPS) = trreg; 					\
+   nlcp_hreg(TopCPS) = hreg; 					\
+   nlcp_ebreg(TopCPS) = ebreg; 					\
+   nlcp_pcreg(TopCPS) = (pb) &answer_return_inst; 		\
+ }
+
 #ifdef CHAT
-#define save_consumer_choicepoint(t_breg,t_ereg,subg,prevbreg) \
-    t_breg -= NLCPSIZE; \
-    nlcp_chat_area(t_breg) = NULL; \
-    nlcp_trie_return(t_breg) = subg_ans_list_ptr(subg); \
-    nlcp_subgoal_ptr(t_breg) = subg; \
-    nlcp_ptcp(t_breg) = ptcpreg; \
-    nlcp_pdreg(t_breg) = delayreg; \
-    nlcp_prevbreg(t_breg) = prevbreg; \
-    nlcp_ereg(t_breg) = t_ereg; \
-    nlcp_cpreg(t_breg) = cpreg; \
-    nlcp_trreg(t_breg) = trreg; \
-    nlcp_hreg(t_breg) = hreg; \
-    nlcp_ebreg(t_breg) = ebreg; \
-    nlcp_prevlookup(t_breg) = 0; \
-    nlcp_pcreg(t_breg) = (pb) &answer_return_inst;
+#define SaveConsumerCPF(TopCPS,SF,PrevConsumer) {	\
+   _SaveConsumerCPF_common(TopCPS,SF,PrevConsumer);	\
+    nlcp_chat_area(TopCPS) = NULL;			\
+ }
 #else
-#define save_consumer_choicepoint(t_breg,t_ereg,subg,prevlookup,prevbreg) \
-    t_breg -= NLCPSIZE; \
-    nlcp_trie_return(t_breg) = subg_ans_list_ptr(subg); \
-    nlcp_prevlookup(t_breg) = prevlookup; \
-    nlcp_subgoal_ptr(t_breg) = subg; \
-    nlcp_ptcp(t_breg) = ptcpreg; \
-    nlcp_pdreg(t_breg) = delayreg; \
-    nlcp_prevbreg(t_breg) = prevbreg; \
-    nlcp_ereg(t_breg) = t_ereg; \
-    nlcp_cpreg(t_breg) = cpreg; \
-    nlcp_trreg(t_breg) = trreg; \
-    nlcp_hreg(t_breg) = hreg; \
-    nlcp_ebreg(t_breg) = ebreg; \
-    nlcp_pcreg(t_breg) = (pb) &answer_return_inst;
+#define SaveConsumerCPF(TopCPS,SF,PrevConsumer)		\
+   _SaveConsumerCPF_common(TopCPS,SF,PrevConsumer)
 #endif
 
 /*----------------------------------------------------------------------*/

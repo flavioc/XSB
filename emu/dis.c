@@ -44,7 +44,7 @@
 
 /* --------------- The following are working variables ----------------	*/
 
-extern tab_inf_ptr get_tip(Psc);
+extern TIFptr get_tip(Psc);
 
 /*static FILE *filedes ;*/
 #define filedes stdout

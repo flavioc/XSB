@@ -259,7 +259,7 @@ static BTNptr variant_call_lookup(int arity, CPtr argVector, BTNptr callTrie) {
 }
 
 
-CPtr get_subgoal_ptr(Cell callTerm, tab_inf_ptr pTIF) {
+CPtr get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
 
   int arity;
   BTNptr pTrieRepOfCall;
@@ -267,7 +267,7 @@ CPtr get_subgoal_ptr(Cell callTerm, tab_inf_ptr pTIF) {
 
   arity = get_arity(term_psc(callTerm));
   pTrieRepOfCall = variant_call_lookup(arity, (CPtr)cs_val(callTerm),
-				       (BTNptr)ti_call_trie_root(pTIF));
+				       TIF_CallTrie(pTIF));
   if ( IsNonNULL(pTrieRepOfCall) )
     return (CPtr)BTN_GetSF(pTrieRepOfCall);
   else
@@ -983,7 +983,7 @@ void trie_dispose(void)
 
 void delete_interned_trie(int tmpval) {
   /*
-   * We can only delete a valid NODEptr, so that only those sets
+   * We can only delete a valid BTNptr, so that only those sets
    * that were used before can be put into the free set list.
    */
   if ((Set_ArrayPtr[tmpval] != NULL) &&
@@ -996,7 +996,7 @@ void delete_interned_trie(int tmpval) {
      * Some simple encoding is needed, because in trie_interned/4 we
      * have to know this set is already deleted.
      */
-    Set_ArrayPtr[tmpval] = (NODEptr) (first_free_set << 2 | DELETED_SET);
+    Set_ArrayPtr[tmpval] = (BTNptr) (first_free_set << 2 | DELETED_SET);
     first_free_set = tmpval;
   }
 }

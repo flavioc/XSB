@@ -242,9 +242,6 @@ void tcpstack_realloc(long new_size) {
 #endif
   if (root_address != NULL)
     root_address = (CPtr)((byte *)root_address + cps_offset);
-  /* I'm not sure if the following is REALLY needed - RFM */
-  if (VarPosReg != NULL)
-    VarPosReg = (CPtr)((byte*)VarPosReg + cps_offset) ;
 }
 
 /* ------------------------------------------------------------------------- */

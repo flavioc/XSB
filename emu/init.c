@@ -203,6 +203,7 @@ char *init_para(int argc, char *argv[])
 
 
   xsb_mode = DEFAULT;
+  flags[TABLING_METHOD] = VARIANT_TM;
 
 
   /* Modify Parameters Using Command Line Options
@@ -281,6 +282,9 @@ char *init_para(int argc, char *argv[])
       break;
     case 's':
       flags[TRACE_STA] = call_intercept = 1;
+      break;
+    case 'S':
+      flags[TABLING_METHOD] = SUBSUMPTIVE_TM;
       break;
     case 'd':
       if ( (xsb_mode != DEFAULT) && (xsb_mode != CUSTOM_BOOT_MODULE) )

@@ -125,7 +125,7 @@ static Pair make_psc_pair(Psc psc_ptr, Pair *link_ptr) {
 
 /* === get_tip: get the TIP from a PSC record =========================	*/
 
-tab_inf_ptr get_tip(Psc temp) 
+TIFptr get_tip(Psc temp) 
 {
     CPtr temp1 ;
 
@@ -137,11 +137,11 @@ tab_inf_ptr get_tip(Psc temp)
 	  switch (*(pb)temp1) {
 	    case tabletry:
 	    case tabletrysingle:
-	      return (tab_inf_ptr) (temp1[2]) ;
+	      return (TIFptr) (temp1[2]) ;
 	    case test_heap:
 	      if (*(pb)(temp1+2) == tabletry ||
 		  *(pb)(temp1+2) == tabletrysingle)
-		return (tab_inf_ptr) (temp1[4]) ;
+		return (TIFptr) (temp1[4]) ;
 	      else return NULL;
 	      break;
 	    case switchon3bound:
@@ -149,15 +149,15 @@ tab_inf_ptr get_tip(Psc temp)
 	    case switchonterm:
 	      if (  *(pb) (temp1+3) == tabletry 
 	        ||  *(pb) (temp1+3) == tabletrysingle) 
-		return (tab_inf_ptr) (temp1[5]) ;
-	      else return (tab_inf_ptr) NULL;
+		return (TIFptr) (temp1[5]) ;
+	      else return (TIFptr) NULL;
 	    default:
-	      return (tab_inf_ptr) NULL;
+	      return (TIFptr) NULL;
 	  }
 	}
-	else return (tab_inf_ptr) NULL;
+	else return (TIFptr) NULL;
       default: 
-	return (tab_inf_ptr) NULL;
+	return (TIFptr) NULL;
     }
 }
 

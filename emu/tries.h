@@ -195,29 +195,33 @@ typedef struct Answer_List_Node {
  *                         ======================
  *
  *  Data structures for parameter passing to and from the call
- *  check/insert routine.
+ *  check/insert routines.
  */
 
 typedef struct Call_Info_For_Trie_Insertion {
-  struct tab_info *table_info_record;
-  int arity;
-  CPtr arg_ptr_array;
+  struct Table_Info_Frame *table_info_record;
+  int call_arity;
+  CPtr arg_vector;
+  CPtr var_vector_loc;     /* location to store the call var vector */
 } CallInfoRecord;
 
 #define CallInfo_TableInfo(CallInfo)	( (CallInfo).table_info_record )
-#define CallInfo_Arity(CallInfo)	( (CallInfo).arity )
-#define CallInfo_Arguments(CallInfo)	( (CallInfo).arg_ptr_array )
+#define CallInfo_CallArity(CallInfo)	( (CallInfo).call_arity )
+#define CallInfo_Arguments(CallInfo)	( (CallInfo).arg_vector )
+#define CallInfo_VarVectorLoc(CallInfo)	( (CallInfo).var_vector_loc )
 
 
 typedef struct Call_Check_Insert_Results {
   BTNptr call_trie_term;
   struct subgoal_frame *subsumers_sgf;
   int variant_found;
+  CPtr var_vector;         /* pointer to the vector of call variables */
 } CallLookupResults;
 
 #define CallLUR_Leaf(CLUR)		( (CLUR).call_trie_term )
 #define CallLUR_Subsumer(CLUR)		( (CLUR).subsumers_sgf )
 #define CallLUR_VariantFound(CLUR)	( (CLUR).variant_found )
+#define CallLUR_VarVector(CLUR)		( (CLUR).var_vector )
 
 
 /*-- exported trie functions ------------------------------------------*/
@@ -247,7 +251,6 @@ extern bool     bottom_up_unify(void);
 /*---------------------------------------------------------------------*/
 
 /* slg variables */
-extern CPtr VarPosReg;
 extern CPtr ans_var_pos_reg;
 extern int  num_vars_in_var_regs;
 extern int  global_num_vars;

@@ -28,13 +28,11 @@
 #include "debugs/debug_delay.h"
 
 
-#define ARITY	op1
-#define Yn	op2
-#define LABEL	op3
+#define ARITY	op1	/* register Cell */
+#define Yn	op2	/* register Cell */
+#define LABEL	op3	/* CPtr */
 #ifdef CHAT
-#define COMPL_STK_FRAME	xtemp3
-#else
-#define PREV_CONSUMER	xtemp3
+#define COMPL_STK_FRAME	xtemp3	/* The rest are CPtr's ... */
 #endif
 #define GENERATOR_CP	xtemp3
 #define COMPL_SUSP_ENV	xtemp3
@@ -50,6 +48,7 @@
  *    3rd word: pointer to pred's TableInfo record
  */
 case tabletry:
+case tabletrysingle: {
   /*
    *  Retrieve instruction arguments and test the CP stack for overflow.
    *  (This latter operation should be performed first since the call
@@ -57,71 +56,94 @@ case tabletry:
    *  top of the CP stack.)  The local PCreg, "lpcreg", is incremented
    *  to point to the instruction to be executed should this one fail.
    */
-  xwammode = 1;
-  ppad;   ARITY = (Cell)(*lpcreg++);  pad64;		/* op1 */
-  LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;	/* op3 */
-  xcurcall = (* (CPtr *) lpcreg);		/* table info record */
-  ADVANCE_PC;  /* lpcreg points to next instruction, e.g. tabretry */
+  byte this_instr = *(lpcreg - 1);
+  byte *continuation;
+  CallInfoRecord callInfo;
+  CPtr producerCPF;
 
-  VarPosReg = top_of_cpstack;
-  check_tcpstack_overflow(VarPosReg);
-  check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
+  xwammode = 1;
+  CallInfo_Arguments(callInfo) = reg;
+  ppad;   CallInfo_CallArity(callInfo) = (Cell)(*lpcreg++);  pad64;
+  LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;
+  CallInfo_TableInfo(callInfo) = (* (TIFptr *) lpcreg);  ADVANCE_PC;
+
+  check_tcpstack_overflow;
+  CallInfo_VarVectorLoc(callInfo) = top_of_cpstack;
+
+  if ( this_instr == tabletry ) {
+    /* lpcreg was left pointing to the next clause, e.g. tableretry */
+    continuation = lpcreg;
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
+  }
+  else
+    continuation = (pb) &check_complete_inst;
   /*
    *  Perform a variant call-check/insert operation on the current call.
    *  The variables of this call are pushed on top of the CP stack, along
    *  with the number found (encoded as a Prolog INT) .  This forms the
    *  call's answer template (AT).  A pointer to this size, followed by
    *  the reverse template vector (as described above), is returned in
-   *  VarPosReg.
+   *  CallLUR_VarVector(lookupResults).
    */
-  CallInfo_TableInfo(callInfo) = (tab_inf_ptr)xcurcall;
-  CallInfo_Arity(callInfo) = ARITY;
-  CallInfo_Arguments(callInfo) = reg;
-  variant_call_search(&callInfo,&lookupResults);
+  if ( IsVariantPredicate(CallInfo_TableInfo(callInfo)) )
+    variant_call_search(&callInfo,&lookupResults);
+  else
+    xsb_exit("Subsumptive predicates not supported yet!");
 
-  if ( CallLUR_VariantFound(lookupResults) ) {
-    xcurcall = (CPtr) CallLUR_Subsumer(lookupResults);  /* subgoal frame */
-    if (is_completed(xcurcall)) {
-      if (has_answer_code(xcurcall)) goto return_table_code;
-      else { Fail1; goto contcase; }
-    }
-    else goto lay_down_consumer;
-  }
-  else {
-    /*
-     *  A new call has been entered into the table.  Create, initialize,
-     *  and associate a subgoal frame -- pointed to by xcurcall -- with
-     *  this new call entry, represented by a ptr to a leaf BTN.  Create
-     *  a producer CPF, on top of the answer template, and begin program
-     *  clause resolution.
-     */
-    create_subgoal_frame(xcurcall, CallLUR_Leaf(lookupResults),
-			 CallInfo_TableInfo(callInfo));
+  if ( IsNULL(CallLUR_Subsumer(lookupResults)) ) {
+    /* New Producer
+       ------------ */
+    create_subgoal_frame( CallLUR_Subsumer(lookupResults),
+			  CallLUR_Leaf(lookupResults),
+			  CallInfo_TableInfo(callInfo) );
+    producerCPF = CallLUR_VarVector(lookupResults);
     save_find_locx(ereg);
-    save_registers(VarPosReg, (int)ARITY, i, rreg);
-    /*
-     * Set a choice point generating node-the solution node is responsible
-     * for going through the different choices and for starting the check
-     * complete when it runs out of alternatives
-     * the variables in the call are stored right before this CP
-     * uses: bfreg,efreg,trfreg,hfreg,ereg,cpreg,trreg,hreg,ebreg,tbreg,
-     * prev=breg,lpcreg
-     */
-#ifdef CHAT
-    save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg);
-#else
-    save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
-#endif
-    push_completion_frame((SGFrame)xcurcall);
-    ptcpreg = xcurcall;
-    subg_cp_ptr(xcurcall) = breg = VarPosReg;
+    save_registers(producerCPF, CallInfo_CallArity(callInfo), i, rreg);
+    SaveProducerCPF(producerCPF, continuation, CallLUR_Subsumer(lookupResults),
+		    CallInfo_CallArity(callInfo));
+
+    push_completion_frame(CallLUR_Subsumer(lookupResults));
+    ptcpreg = (CPtr)CallLUR_Subsumer(lookupResults);
+    subg_cp_ptr(CallLUR_Subsumer(lookupResults)) = breg = producerCPF;
     delayreg = NULL;
     if (root_address == 0) root_address = breg;
     hbreg = hreg;
     lpcreg = (byte *) LABEL;	/* branch to program clause */
     goto contcase;
-  } 
-
+  }
+  else if ( is_completed(CallLUR_Subsumer(lookupResults)) ) {
+    /* Unify Call with Answer Trie
+       --------------------------- */
+    if (has_answer_code(CallLUR_Subsumer(lookupResults))) {
+#ifdef DEBUG_DELAY
+      xsb_warn("Returning answers from a COMPLETED table...");
+#endif
+      CallNumVar = int_val(cell(CallLUR_VarVector(lookupResults)));
+      num_vars_in_var_regs = -1;
+      reg_arrayptr = reg_array-1;
+      for (i = 1; i <= CallNumVar; i++) {
+	pushreg(cell(CallLUR_VarVector(lookupResults)+i));
+      }
+      delay_it = 1;
+      lpcreg = (byte *)subg_ans_root_ptr(CallLUR_Subsumer(lookupResults));
+      goto contcase;
+    }
+    else {
+      Fail1;
+      goto contcase;
+    }
+  }
+  else if ( CallLUR_VariantFound(lookupResults) ) {
+    /* Previously Seen Subsumed Call
+       ----------------------------- */
+    goto lay_down_consumer;
+  }
+  else {
+    /* New Subsumed Call
+       ----------------- */
+    xsb_exit("New Subsumed Call: Should not yet reach this block");
+  }
+}
 
 /*----------------------------------------------------------------------*/
 /*  Returns answers to consumers.  This can happen either when the	*/
@@ -461,78 +483,6 @@ case tabletrust:
 #include "complete.i"
 
 /*----------------------------------------------------------------------*/
-
-/*
- *  Instruction format:
- *    1st word: opcode X X pred_arity
- *    2nd word: prg_clause_label
- *    3rd word: pointer to pred's TableInfo record
- */
-case tabletrysingle:
-  /*
-   *  Retrieve instruction arguments and test the CP stack for overflow.
-   *  (This latter operation should be performed first since the call
-   *  lookup operation will be pushing info there WITHOUT adjusting the
-   *  top of the CP stack.)  The local PCreg, "lpcreg", is incremented
-   *  to point to the instruction to be executed should this one fail.
-   */
-  xwammode = 1;
-  ppad;   ARITY = (Cell)(*lpcreg++);  pad64;		/* op1 */
-  LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;	/* op3 */
-  xcurcall = * (CPtr *) lpcreg;		/* table info record */
-  ADVANCE_PC;
-
-  VarPosReg = top_of_cpstack;
-  check_tcpstack_overflow(VarPosReg);
-  /*
-   *  Perform a variant call-check/insert operation on the current call.
-   *  The variables of this call are pushed on top of the CP stack, along
-   *  with the number found (encoded as a Prolog INT) .  This forms the
-   *  call's answer template (AT).  A pointer to this size, followed by
-   *  the reverse template vector (as described above), is returned in
-   *  VarPosReg.
-   */
-  CallInfo_TableInfo(callInfo) = (tab_inf_ptr)xcurcall;
-  CallInfo_Arity(callInfo) = ARITY;
-  CallInfo_Arguments(callInfo) = reg;
-  variant_call_search(&callInfo,&lookupResults);
-
-  if ( CallLUR_VariantFound(lookupResults) ) {
-    xcurcall = (CPtr) CallLUR_Subsumer(lookupResults);  /* subgoal frame */
-    if (is_completed(xcurcall)) {
-      if (has_answer_code(xcurcall)) goto return_table_code;
-      else { Fail1; goto contcase; }
-    }
-    else goto lay_down_consumer;
-  }
-  else {
-    /*
-     *  A new call has been entered into the table.  Create, initialize,
-     *  and associate a subgoal frame with this new call entry,
-     *  represented by a ptr to a leaf BTN.  Create a producer CPF, on
-     *  top of the answer template, and begin program clause resolution.
-     */
-    create_subgoal_frame(xcurcall, CallLUR_Leaf(lookupResults),
-			 CallInfo_TableInfo(callInfo));
-    save_find_locx(ereg);
-    save_registers(VarPosReg, (int)ARITY, i, rreg);
-#ifdef CHAT
-    save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg);
-#else
-    save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
-#endif
-    push_completion_frame((SGFrame) xcurcall);
-    ptcpreg = xcurcall;
-    subg_cp_ptr(xcurcall) = breg = VarPosReg;
-    delayreg = NULL;
-    if (root_address == 0) root_address = breg;
-    hbreg = hreg;
-    lpcreg = (byte *) LABEL; /* go to clause ep */
-    goto contcase;
-  }
-
-
-/*----------------------------------------------------------------------*/
 /* resume_compl_suspension                                		*/
 /*----------------------------------------------------------------------*/
 
@@ -585,45 +535,35 @@ case resume_compl_suspension:
 
 /*----------------------------------------------------------------------*/
 
-return_table_code:
-#ifdef DEBUG_DELAY
-    xsb_warn("Returning answers from a COMPLETED table...");
-#endif
-    CallNumVar = int_val(cell(VarPosReg));
-    num_vars_in_var_regs = -1;
-    reg_arrayptr = reg_array-1;
-    for (i = 1; i <= CallNumVar; i++) {
-      pushreg(cell(VarPosReg+i));
-    }
-    delay_it = 1;
-    lpcreg = (byte *)subg_ans_root_ptr(xcurcall);
-    goto contcase;
+lay_down_consumer: {
 
-/*----------------------------------------------------------------------*/
+    CPtr prev_consumer_cpf;
 
-lay_down_consumer:
-    adjust_level(subg_compl_stack_ptr(xcurcall));
+    adjust_level(subg_compl_stack_ptr(CallLUR_Subsumer(lookupResults)));
     save_find_locx(ereg);
 #if (!defined(CHAT))
     efreg = ebreg;
     if (trreg > trfreg) trfreg = trreg;
     if (hfreg < hreg) hfreg = hreg;
-    PREV_CONSUMER = subg_asf_list_ptr(xcurcall);
-    save_consumer_choicepoint(VarPosReg,ereg,xcurcall,PREV_CONSUMER,breg);
+    prev_consumer_cpf = subg_asf_list_ptr(CallLUR_Subsumer(lookupResults));
 #else
-    save_consumer_choicepoint(VarPosReg,ereg,xcurcall,breg);
+    prev_consumer_cpf = NULL;
 #endif
+    SaveConsumerCPF( CallLUR_VarVector(lookupResults),
+		     CallLUR_Subsumer(lookupResults),
+		     prev_consumer_cpf );
 #if (!defined(CHAT))
-    subg_asf_list_ptr(xcurcall) = /* new consumer into front */
-    bfreg =
+    /* new consumer into front */
+    subg_asf_list_ptr(CallLUR_Subsumer(lookupResults)) = bfreg =
 #endif
-    breg = VarPosReg;
+    breg = CallLUR_VarVector(lookupResults);
+
 #ifdef CHAT
-    compl_cons_copy_list(subg_compl_stack_ptr(xcurcall)) =
-	nlcp_chat_area(breg) = (CPtr) save_a_consumer_copy((SGFrame)xcurcall,
+    compl_cons_copy_list(subg_compl_stack_ptr(CallLUR_Subsumer(lookupResults))) =
+	nlcp_chat_area(breg) = (CPtr) save_a_consumer_copy((SGFrame)CallLUR_Subsumer(lookupResults),
 							   CHAT_CONS_AREA);
 #endif
-    OldRetPtr = subg_answers(xcurcall);
+    OldRetPtr = subg_answers(CallLUR_Subsumer(lookupResults));
     if (OldRetPtr) {
 #ifdef CHAT      /* for the time being let's update consumed answers eagerly */
       nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
@@ -642,7 +582,8 @@ lay_down_consumer:
 		delayreg);
 	fprintf(stderr, "\n>>>> delay_positively in lay_down_active\n");
 	fprintf(stderr, ">>>> subgoal = ");
-	print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
+	print_subgoal(stderr, (SGFrame) CallLUR_Subsumer(lookupResults));
+	fprintf(stderr, "\n");
 #endif
 	{
 	  int i;
@@ -654,7 +595,8 @@ lay_down_consumer:
 	   * delay_positively().
 	   */
 	  if (num_heap_term_vars == 0) {
-	    delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
+	    delay_positively(CallLUR_Subsumer(lookupResults),
+			     aln_answer_ptr(nlcp_trie_return(breg)),
 			     makestring((char *) ret_psc[0]));
 	  }
 	  else {
@@ -662,7 +604,8 @@ lay_down_consumer:
 	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
 	    for (i = 0; i < num_heap_term_vars; i++)
 	      cell(hreg++) = (Cell) var_addr[i];
-	    delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
+	    delay_positively(CallLUR_Subsumer(lookupResults),
+			     aln_answer_ptr(nlcp_trie_return(breg)),
 			     makecs(temp_hreg));
 	  }
 	}
@@ -677,6 +620,5 @@ lay_down_consumer:
       Fail1;
     }
     goto contcase;
-
+}
 /*----------------------------------------------------------------------*/
-

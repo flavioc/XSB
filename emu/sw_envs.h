@@ -23,9 +23,6 @@
 */
 
 
-#define STARTTRREG xtemp1
-#define ENDTRREG xtemp2
-
 #if (!defined(CHAT))
 #define freeze_and_switch_envs(tbreg, CPsize)\
     if (bfreg > breg) {\
@@ -41,26 +38,30 @@
 #ifdef CHAT
 #define switch_envs(tbreg)	undo_bindings(tbreg)
 #else
-#define switch_envs(tbreg)	{\
-    STARTTRREG = (CPtr) trreg;\
-    ENDTRREG = (CPtr) cp_trreg(tbreg);\
-    trreg = cp_trreg(tbreg);\
-    if (STARTTRREG != ENDTRREG) {\
-      do {\
-	while (STARTTRREG > ENDTRREG) {\
-	  untrail((CPtr) trail_variable(STARTTRREG));\
-	  STARTTRREG = (CPtr) trail_parent(STARTTRREG);\
-	}\
-	while (ENDTRREG > STARTTRREG) {\
-	  ENDTRREG = (CPtr) trail_parent(ENDTRREG);\
-	}\
-      } while (STARTTRREG != ENDTRREG);\
-      ENDTRREG = (CPtr) trreg;\
-      while (ENDTRREG > STARTTRREG) {\
-	cell((CPtr) trail_variable(ENDTRREG)) = (Cell) trail_value(ENDTRREG);\
-	ENDTRREG = (CPtr) trail_parent(ENDTRREG);\
-      }\
-    }\
+#define switch_envs(tbreg) {				\
+							\
+   CPtr *start_trreg, *end_trreg;			\
+							\
+   start_trreg = trreg;					\
+   end_trreg = cp_trreg(tbreg);				\
+   trreg = cp_trreg(tbreg);				\
+   if (start_trreg != end_trreg) {			\
+     do {						\
+       while (start_trreg > end_trreg) {		\
+	 untrail((CPtr) trail_variable(start_trreg));	\
+	 start_trreg = trail_parent(start_trreg);	\
+       }						\
+       while (end_trreg > start_trreg) {		\
+	 end_trreg = trail_parent(end_trreg);		\
+       }						\
+     } while (start_trreg != end_trreg);		\
+     end_trreg = trreg;					\
+     while (end_trreg > start_trreg) {			\
+       cell((CPtr) trail_variable(end_trreg)) =		\
+	 (Cell) trail_value(end_trreg);			\
+       end_trreg = trail_parent(end_trreg);		\
+     }							\
+   }							\
   }
 #endif
 
