@@ -24,7 +24,7 @@
 
 
 :- import
-	stat_flag/2, file_function/5,
+	stat_flag/2, file_function/7,
     	file_stat/3, formatted_io/5, intern_string/2
       from machine.
 
@@ -37,7 +37,11 @@
 	  file_flush/2, file_seek/4, file_truncate/3,
 	  file_pos/2, file_size/2, file_time/2,
 	  file_open/3, file_close/1, file_get/2, file_put/2,
-	  file_getbuf/4, file_putbuf/4,
+	  file_getbuf/4,
+	  file_getbuf_atom/4, file_getbuf_atom/3,
+	  file_getbuf_list/4, file_getbuf_list/3,
+	  file_putbuf/5, file_putbuf/4,
+	  file_write_line/2, file_write_line/3,
       	  file_read_line/3,
 	  file_read_line_atom/2, file_read_line_atom/3,
 	  file_read_line_list/2, file_read_line_list/3.

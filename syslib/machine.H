@@ -136,7 +136,7 @@
 	socket_request/6.
 
 :- export 
-	file_function/5,
+	file_function/7,
 	psc_insert/3, psc_set_env/2, conname/2, conpsc/2, 
 	machine_file_exists/1, backtrackable_buff_set_word/4,
   	is_backslashing_os/0, is_pcdos/0, slash/1.

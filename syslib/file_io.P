@@ -28,11 +28,11 @@
 	       /********************************/
 
 fmt_write(Fmt, Args) :-
-       stat_flag(11, File), 
-	fmt_write(File, Fmt, Args).
+       stat_flag(11, FileDes),   % Current output
+	fmt_write(FileDes, Fmt, Args).
 
-fmt_write(File, Fmt, Args) :-
-       ( callable(Args) -> formatted_io(1, File, Fmt, Args, _Ret)
+fmt_write(FileDes, Fmt, Args) :-
+       ( callable(Args) -> formatted_io(1, FileDes, Fmt, Args, _Ret)
          ;
 	 abort('Usage: fmt_write([+FileDes,] +FmtString, args(+A1,+A2,...))')
        ).
@@ -45,12 +45,12 @@ fmt_write_string(Str, Fmt, Args) :-
 
 
 fmt_read(Fmt,Result,Status) :-
-        stat_flag(10, File),
-	fmt_read(File, Fmt,Result,Status).
+        stat_flag(10, FileDes),  % Current input
+	fmt_read(FileDes, Fmt,Result,Status).
 
-fmt_read(File, Fmt, Result, Status) :-
+fmt_read(FileDes, Fmt, Result, Status) :-
 	(compound(Result), var(Status)
-		     -> formatted_io(3, File, Fmt, Result, Status)
+		     -> formatted_io(3, FileDes, Fmt, Result, Status)
 	;
 	 abort('Usage: fmt_read([+FileDes,] +FmtString, result(-R1,-R2,...), -RetCode)')
     	).
@@ -62,33 +62,83 @@ fmt_read(File, Fmt, Result, Status) :-
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
 
-file_flush(File, Ret) :- file_function(0, File, Ret, _D, _E).
-file_seek(File, Offset, Place, Ret) :-
-	 file_function(1, File, Offset, Place, Ret).
-file_truncate(File, Length, Ret) :- file_function(2, File, Length, Ret, _E).
-file_pos(File, Pos) :- file_function(3, File, Pos, _Ret, _E).
+file_flush(FileDes, Ret) :- file_function(0, FileDes, Ret, _D, _E, _,_).
+file_seek(FileDes, Offset, Place, Ret) :-
+	file_function(1, FileDes, Offset, Place, Ret, _,_).
+file_truncate(FileDes, Length, Ret) :-
+	file_function(2, FileDes, Length, Ret, _E, _,_).
+file_pos(FileDes, Pos) :- file_function(3, FileDes, Pos, _Ret, _E, _,_).
 file_open(FileName, RWMode, FileDes) :-
-	file_function(4, FileName, RWMode, FileDes, _E).
-file_close(FileDes) :- file_function(5,FileDes,_X,_Y,_Z).
-file_get(FileDes,Char) :- file_function(6, FileDes, Char, _X, _Y).
-file_put(FileDes,Char) :- file_function(7, FileDes, Char, _X, _Y).
-file_getbuf(FileDes, ByteCount, ToString, Offset) :-
-	file_function(8, FileDes, ByteCount, ToString, Offset).
-file_putbuf(FileDes, ByteCount, FromString, Offset) :-
-	file_function(9, FileDes, ByteCount, FromString, Offset).
+	file_function(4, FileName, RWMode, FileDes, _E, _,_).
+file_close(FileDes) :- file_function(5,FileDes,_X,_Y,_Z, _,_).
+file_get(FileDes,Char) :- file_function(6, FileDes, Char, _X, _Y, _,_).
+file_put(FileDes,Char) :- file_function(7, FileDes, Char, _X, _Y, _,_).
+
+%% These are lower level than file_read_line_atom/list
+%% Therefore, they don't check their arguments.
+%% file_getbuf doesn't intern ToString.
+file_getbuf(FileDes, ByteCount, ToString, BytesRead) :-
+	file_function(8, FileDes, ByteCount, ToString, BytesRead,_,_).
+
+file_getbuf_atom(FileDes, ByteCount, ToAtom, BytesRead) :-
+	(var(ToAtom), var(BytesRead) ->
+	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    intern_string(TmpStr, ToAtom)
+	;
+	 abort('Usage: file_getbuf_atom([+FileDes,] +ByteCount, -ToAtom, -BytesRead)')
+        ).
+
+file_getbuf_atom(ByteCount, ToAtom, BytesRead) :-
+	stat_flag(10, FileDes),
+	(var(ToAtom), var(BytesRead) ->
+	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    intern_string(TmpStr, ToAtom)
+	;
+	 abort('Usage: file_getbuf_atom([+FileDes,] +ByteCount, -ToAtom, -BytesRead)')
+        ).
+
+file_getbuf_list(FileDes, ByteCount, ToList, BytesRead) :-
+	(var(ToList), var(BytesRead) ->
+	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    atom_chars(TmpStr, ToList)
+	;
+	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
+
+file_getbuf_list(ByteCount, ToList, BytesRead) :-
+	stat_flag(10, FileDes),
+	(var(ToList), var(BytesRead) ->
+	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    atom_chars(TmpStr, ToList)
+	;
+	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
+
+file_putbuf(FileDes, ByteCount, FromString, Offset, BytesWritten) :-
+	(var(BytesWritten) ->
+	    file_function(9, FileDes, ByteCount, FromString, Offset, BytesWritten,_)
+	;
+	abort('Usage: file_putbuf([+FileDes,] +ByteCount, +FromString, +Offset, -BytesWritten)')
+    ).
+
+file_putbuf(ByteCount, FromString, Offset, BytesWritten) :-
+	stat_flag(11, FileDes),
+	(var(BytesWritten) ->
+	    file_function(9, FileDes, ByteCount, FromString, Offset, BytesWritten,_)
+	;
+	abort('Usage: file_putbuf([+FileDes,] +ByteCount, +FromString, +Offset, -BytesWritten)')
+	).
 
 %% This doesn't intern Str
-file_read_line(File, Str, IsFullLine) :-
+file_read_line(FileDes, Str, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(10, File, Str, IsFullLine, _)
+	    file_function(10, FileDes, Str, IsFullLine, _, _,_)
 	    ;
 	    abort('Usage: file_read_line([+FileDes,] -InputStr, -IsFullLine)')
         ).
 
 %% Like file_read_line, but Str becomes an interned atom
-file_read_line_atom(File, Str, IsFullLine) :-
+file_read_line_atom(FileDes, Str, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(10, File, UnStr, IsFullLine, _),
+	    file_function(10, FileDes, UnStr, IsFullLine, _, _,_),
 	    intern_string(UnStr,Str)
 	    ;
 	    abort('Usage: file_read_line_atom([+FileDes,] -InputStr, -IsFullLine)')
@@ -97,13 +147,13 @@ file_read_line_atom(File, Str, IsFullLine) :-
 %% Read line from current input stream (previously set by 'see')
 %% Intern string
 file_read_line_atom(Str, IsFullLine) :-
-	stat_flag(10, File),
-	file_read_line_atom(File, Str, IsFullLine).
+	stat_flag(10, FileDes),  % Current input
+	file_read_line_atom(FileDes, Str, IsFullLine).
 
 %% Like file_read_line_atom, but returns list of characters
-file_read_line_list(File, CharLst, IsFullLine) :-
+file_read_line_list(FileDes, CharLst, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(10, File, Str, IsFullLine, _),
+	    file_function(10, FileDes, Str, IsFullLine, _, _,_),
 	    atom_chars(Str,CharLst)
 	    ;
 	    abort('Usage: file_read_line_list([+FileDes,] -InputStr, -IsFullLine)')
@@ -112,8 +162,18 @@ file_read_line_list(File, CharLst, IsFullLine) :-
 %% Read line from current input stream (previously set by 'see')
 %% Return list of chars
 file_read_line_list(Lst, IsFullLine) :-
-	stat_flag(10, File),
-	file_read_line_list(File, Lst, IsFullLine).
+	stat_flag(10, FileDes),  % Current input
+	file_read_line_list(FileDes, Lst, IsFullLine).
+
+%% Write Str out to FileDes. Str must be atom or list of chars.
+%% This is checked in C, by the builtin.
+file_write_line(FileDes, Str, Offset) :-
+	file_function(11, FileDes, Str, Offset, _,_,_).
+
+%% Same as file_write_line/3, but write to current output
+file_write_line(Str, Offset) :-
+	stat_flag(11, FileDes),  % Current output
+	file_function(11, FileDes, Str, Offset, _,_,_).
 
 
 /***************************************************************/
@@ -122,6 +182,6 @@ file_read_line_list(Lst, IsFullLine) :-
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
 
-file_time(File, Time) :- file_stat(File,0,Time).
-file_size(File, Size) :- file_stat(File,1,Size).
+file_time(FileName, Time) :- file_stat(FileName,0,Time).
+file_size(FileName, Size) :- file_stat(FileName,1,Size).
 

@@ -126,7 +126,7 @@ is_xwammode(_Flag) :- '_$builtin'(117).
 close_open_tables :- '_$builtin'(118).
 print_predicate_table(_Psc):- '_$builtin'(120).
 
-file_function(_Function, _A, _B, _C, _D) :- '_$builtin'(122).
+file_function(_Function, _A, _B, _C, _D, _E, _F) :- '_$builtin'(123).
 
 slash(_Slash) :- '_$builtin'(124).
 

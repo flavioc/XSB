@@ -139,7 +139,7 @@ inline_builtin(close_open_tables, 0, 118).
 
 inline_builtin(print_predicate_table, 1, 120).
 
-inline_builtin(file_function, 5, 122).
+inline_builtin(file_function, 7, 123).
 
 inline_builtin(slash, 1, 124).
 
