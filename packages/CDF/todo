@@ -1,0 +1,149 @@
+
+Should we disallow v x v bindings in immediate_subclass,
+immediate_membrof?
+
+intensional -- get_object_int(Oid,Name,NatId,Source)
+
+memberof oms_root as default.  change from unk.
+
+think hard about changing intensional stuff.
+
+
+
+
+
+Primitive Classes (No parameterized types).
+1) Add necessary conditions.
+	Each class can have more than one necessary condition.
+	Revise subsumption algorithm, 
+	Propagation to Objects.
+	Checking consistency,
+	Querying algorithm
+
+2) Add Rules for Primitive Classes.
+	Write to see what a class subsumes.
+
+3) Defined Classes.
+	Start to incorporate these into rest of CDF.
+
+Would like to prove equivalence of irels with exists and schrels with
+alls.  We can prove that for a primitive class
+
+P \subseteq exists(R,C) == irel(P,necess_cond,C)
+
+and also that 
+
+P \subseteq exists(R,P') == irel(P,R,P')
+
+P \subseteq all(R,P') == schrel(P,R,P')
+
+Subsuming: 
+  Do I need to check subsumption against other defined classes?
+How to represent defined classes?
+A class can have at most 1 definition -- need to enforce.
+A defined class can have no immediate memberofs.
+
+Probably need to check for 2-way subsumption in definitions.
+
+Problems with queries.
+
+Check up on NewAttribute
+
+Exceptions with Harpreet
+
+Find out abt. OMS RDF
+
+1) Add relations for Class Expressions
+	Rectify class expressions
+
+2) Figure out about class rules.
+
+exists(uncle,male) \subseteq exists(parent,exists(brother,male))
+
+exists(uncle,male) \subseteq exists(parent,
+                                    exists(broter,(exists(spouse,male))))
+
+X subset Y and X subset Z => X subset (Y or Z).
+
+Applying rules: 
+	
+	Find everything that the right hand side subsumes.
+
+----------------------------------------------------------------------
+Queries: 
+
+Make it transparent when we can deal with a source or a class.
+
+Dont know if this is quite right:
+@item @tt{attr(id(Source,Ssrc),id(Relation,Rsrc),id(Target,Tsrc))}
+assumes that @tt{Source} is an object.
+
+Don't know if we can have an attribute as well as an attribute object.
+
+In query interface, change args.
+
+add is_object to query interface.
+
+----------------------------------------------------------------------
+
+Maybe some problem with standardize value.
+
+Adding singly-sourced ordsets.
+  -- should ordsets be a primitive type?
+  -- how do you specify the elements of a domain?
+  -- should we keep these elements as numbers or in external form?
+     (and so convert set/2 -> set/1.
+  -- oms_primitive class for sets?
+
+Think about sending indexing to a separate file.
+
+oms_filters  pair to key probably doesnt work.
+
+at some point check the tms_ stuff in this dir and take out.
+
+-----------------
+Database.
+
+make sure we execute an obdc_close on halt.
+
+----------------------------------------------------------------------
+
+ODE port
+
+ode_genrepsoms: genreps_properties -- cant we rewrite with sources?
+
+replacements: find out about these, including number context.
+
+genreps_properties: dont need is_a_relation.
+
+question on ode initialization.
+
+Ode abbreviation - hasODEAbbreviation
+
+A:SNS , A:SNS:All-All
+
+A:Suture, nonabsorbable, surgical:all-all ->
+A:suture,nonabsorbable,surgical -> ODE abbreviations.
+
+Now, all-all has many ode abbreviations to atoms.
+And 'ode word' is Suture, nonabsorbable, surgical.
+
+New stuff gensubdomains, genpardomains
+Why not call for add_replace?
+
+genreps_enum_domains == ENUM.
+
+parser:processtms: Description string -- why variable?
+
+what class should an ODC Description be? ODE?
+
+Question abt processomsData: schema info?
+
+Extract property value pairs: paramtype.
+
+Question on nsns_rel -- what shd be output?  OMS_par among others.
+elim_variants probably can be removed.
+
+question on rel_format nid/name of objects.
+
+---------------
