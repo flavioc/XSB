@@ -30,9 +30,7 @@
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
 
-
 %   file_read(+File, -Answer).
-
 file_read(File, Answer) :- 
 	file_read(File, Answer, _).
 
@@ -66,8 +64,6 @@ file_read(File, Answer, Variables) :-
 	!,
 	Answer = Term.
 
-
-
 %   read_all(+Tokens)
 %   checks that there are no unparsed tokens left over.
 
@@ -75,7 +71,6 @@ read_all([]) :- !.
 read_all(S) :- read_record_error(S).
 	/* something left over after entire expression. May always
 	   be detected earlier and hence redundant. */
-
 
 %   read_expect(Token, TokensIn, TokensOut)
 %   reads the next token, checking that it is the one expected, and
@@ -122,8 +117,23 @@ read_ambigop(F, L1, O1, R1, L2, O2) :-
 %   parses a Token List in a context of given Precedence,
 %   returning a Term and the unread Left Over token list.
 
+/* TLS, 11/03: applied Paul Broome's patch to first clause.  This allows
+     proper parsing of a term abutting an infix operator on the right, e.g. 
+     a+(b/c) */
 read4([Token|RestTokens], Precedence, Term, LeftOver) :-
-        read5(Token, RestTokens, Precedence, Term, LeftOver).
+        read5(Token, RestTokens, Precedence, LeftTerm, LeftLeftOver),
+        (  (LeftLeftOver = [func(Functor)|Remain],
+	 read_infixop(Functor, _L, O, _R),
+	 Precedence >= O,
+	 \+ '_$hilog_symbol'(Functor),
+	 read4(Remain,O,RightTerm,LeftOver),
+	 'read=..'(Term,[Functor,LeftTerm,RightTerm]))
+          ; (Term = LeftTerm,
+	  LeftOver = LeftLeftOver)  ),
+%	  Tokens = [Token|RestTokens],
+	  !.
+%read4([Token|RestTokens], Precedence, Term, LeftOver) :-
+%        read5(Token, RestTokens, Precedence, Term, LeftOver).
 read4([], _, _, _) :-  
 	read_record_error([]).   /* a token was expected, i.e. after an "[" */
 
@@ -677,8 +687,7 @@ l_length([_|Y], N) :- l_length(Y, N1), N is N1 + 1.
 
 read_writecon(X) :- file_write0(STDERR, X).
 
-
-/*==========================================================================*/
+/*==============================================================*/
 /*									    */
 %   read_tokens(+File, -TokenList, -Dictionary)
 %   returns a list of tokens.  It is needed to "prime" read_tokens/2
@@ -691,7 +700,7 @@ read_writecon(X) :- file_write0(STDERR, X).
 %   for compatibility, and (b) there are good practical reasons for wanting
 %   this behaviour. 
 /*									    */
-/*==========================================================================*/
+/*==============================================================*/
 
 read_tokens(File, Char, TokenList, Dict) :-
 %	read_next_token(Char, Type, Value, NextChar),	      % Prolog Version
@@ -712,7 +721,7 @@ read_proc_token(tk_atom, V, atom(Sym), _Dict) :-
 read_proc_token(tk_list, V, string(String), _Dict) :-
 	read_getcon(V, String).
 read_proc_token(tk_punc, V, punc(V), _Dict).
-read_proc_token(tk_hpunc, V, h_punc(V), _Dict).			% For HiLog
+read_proc_token(tk_hpunc, V, h_punc(V), _Dict).		% For HiLog
 read_proc_token(tk_varfunc, V, varfunc(R,Name), Dict) :-	% For HiLog
 	read_getcon(V, Name),
 	read_lookup(Dict, vv(Name, R)).
