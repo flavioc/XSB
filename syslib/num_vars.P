@@ -1,4 +1,4 @@
-/* File:      numbervars.P
+/* File:      num_vars.P
 ** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

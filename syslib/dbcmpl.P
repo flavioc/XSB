@@ -24,15 +24,6 @@
 */
 
 
-:- export dbgen_inst/4.
-:- export dbgen_opcode/3.
-
-:- import asm_inst/4 from asm_inst.
-:- import buff_set_byte/3, term_psc/2,
-	  buff_set_word/3, term_type/2,
-	  buff_set_cell/4
-    from machine.
-
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer			*/
 /*======================================================================*/
