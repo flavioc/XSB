@@ -1011,6 +1011,11 @@ bound/bound call), subsumed terms are handled.  ").
 
 subrel(Sub,Sup):- subclass(Sub,Sup).
 
+subrelation(SRCid,RCid) :-  %%dsw: I think we want to stop at Inh Rel?
+	class(IRelCid,_,'OMS Inheritable Relationships','OMS'),
+	subclass(SRCid,RCid),
+	proper_subclass(RCid,IRelCid).
+
 immediate_subrel(Sub,Sup):- immediate_subclass(Sub,Sup).
 
 %%% RELATIONSHIP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1920,8 +1925,7 @@ information concerning it in @pred{immediate_attribute_int/6} could
 still have (inherited) attribute information.").
 
 attribute(Oid,RCid,TCid) :-
-	immediate_attribute(Oid,RCid,TCid).  
-
+	attribute_dir(Oid,RCid,TCid).
 attribute(Oid,RCid,TCid) :-
 	(nonvar(Oid)
 	 ->	immediate_memberof(Oid,SCid),
@@ -1929,12 +1933,16 @@ attribute(Oid,RCid,TCid) :-
 	 ;      relationship(SCid,RCid,TCid),
 		immediate_memberof(Oid,SCid)
 	),
-	((immediate_attribute(Oid,ORCid,OTCid),
-	  subclass(RCid,ORCid),
-	  subclass(OTCid,TCid))
-	 ->	fail
-	 ;	true
-	).
+	\+ attribute_dir(Oid,RCid,TCid).
+
+attribute_dir(Oid,RCid,TCid) :-
+	(nonvar(RCid)
+	 ->	subrelation(ORCid,RCid),
+		immediate_attribute(Oid,ORCid,OTCid)
+	 ;	immediate_attribute(Oid,ORCid,OTCid),
+		subrelation(ORCid,RCid)
+	),
+	(subclass(OTCid,TCid)->true;fail).
 
 /* check_attribute(+,+,+).  This predicate should be used *only* in
 newAttribute. The idea is that newAttribute should add a new attribute
@@ -2066,7 +2074,12 @@ meaning is that object @tt{Oid} has an @tt{RCid} relation to object
 	fail.***/
 
 attribute_object(Oid,RCid,TOid) :-
-	immediate_attribute_object(Oid,RCid,TOid).
+	(nonvar(RCid)
+	 ->	subrelation(ORCid,RCid),
+		immediate_attribute_object(Oid,ORCid,TOid)
+	 ;	immediate_attribute_object(Oid,ORCid,TOid),
+		subrelation(ORCid,RCid)
+	).
 attribute_object(Oid,RCid,TOid) :-
 	attribute(Oid,RCid,object(TOid)).
 
