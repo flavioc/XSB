@@ -111,17 +111,20 @@ char *p_charlist_to_c_string(prolog_term, char *, char *);
 
 #else
 /* like PRINT_ARG, but uses sprintf -- used with compilers that don't have
-   snprintf. */
+   snprintf. 
+   In some systems sprintf returns it's first argument, so have to use
+   strlen for portability.
+   */
 #define SPRINT_ARG(arg) switch (current_fmt_spec->size) { \
-        case 1: bytes_formatted=sprintf(ptr_OutString, \
-     	     	     	     	     	current_fmt_spec->fmt, arg); \
+        case 1: sprintf(ptr_OutString, current_fmt_spec->fmt, arg); \
+		bytes_formatted = strlen(ptr_OutString); \
 	        break; \
-	case 2: bytes_formatted=sprintf(ptr_OutString, \
-					current_fmt_spec->fmt, width, arg); \
+	case 2: sprintf(ptr_OutString, current_fmt_spec->fmt, width, arg); \
+		bytes_formatted = strlen(ptr_OutString); \
 	        break; \
-	case 3: bytes_formatted=sprintf(ptr_OutString, \
-					current_fmt_spec->fmt, \
+	case 3: sprintf(ptr_OutString, current_fmt_spec->fmt, \
 					width, precision, arg); \
+		bytes_formatted = strlen(ptr_OutString); \
 	        break; \
 	}
 #endif
@@ -952,7 +955,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
       break;
     case 's':
       keep_going = FALSE;
-      result.type = 's'; /* float */
+      result.type = 's'; /* string */
       break;
     case 'p':
       xsb_abort("Format specifier %%p not supported: %s",
