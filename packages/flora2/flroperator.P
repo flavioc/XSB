@@ -30,37 +30,37 @@
 #include "flora_terms.flh"
 
 
-flora_op(1600,xfx,FL_IMPLYOP).
-flora_op(1600,fx,FL_IMPLYOP).
-flora_op(1600,fx,FL_QUERYOP).
+flora_op(1700,xfx,FL_IMPLYOP).
+flora_op(1700,fx,FL_IMPLYOP).
+flora_op(1700,fx,FL_QUERYOP).
 
-flora_op(1500,fx,FL_HILOG).
-flora_op(1500,fx,FL_DYNAMIC).
-flora_op(1500,xfx,FL_BAR).
-flora_op(1500,fx,FL_TABLE).
-flora_op(1500,fx,FL_INDEX).
-flora_op(1500,fx,FL_EXPORT).
-flora_op(1500,fx,FL_IMPORT).
-flora_op(1500,fx,FL_SIGNATURE).
-flora_op(1500,fx,FL_PROLOG).
-flora_op(1500,fx,FL_NONHILOGPREDICATE).
-flora_op(1500,fx,FL_PREDICATE).
-flora_op(1500,fx,FL_HILOGTABLE).
-flora_op(1500,fx,FL_EQUALITY).
-flora_op(1500,fx,FL_ABOLISH).
+flora_op(1600,fx,FL_HILOG).
+flora_op(1600,fx,FL_DYNAMIC).
+flora_op(1600,xfx,FL_BAR).
+flora_op(1600,fx,FL_TABLE).
+flora_op(1600,fx,FL_INDEX).
+flora_op(1600,fx,FL_EXPORT).
+flora_op(1600,fx,FL_IMPORT).
+flora_op(1600,fx,FL_SIGNATURE).
+flora_op(1600,fx,FL_PROLOG).
+flora_op(1600,fx,FL_NONHILOGPREDICATE).
+flora_op(1600,fx,FL_PREDICATE).
+flora_op(1600,fx,FL_HILOGTABLE).
+flora_op(1600,fx,FL_EQUALITY).
+flora_op(1600,fx,FL_ABOLISH).
 
-flora_op(1500,fx,FL_COMPILE).
-flora_op(1500,fx,FL_LOAD).
+flora_op(1600,fx,FL_COMPILE).
+flora_op(1600,fx,FL_LOAD).
 
-flora_op(1400,xfx,FL_FROM).
-flora_op(1400,xfx,FL_IN).
-flora_op(1400,xfy,FL_SEMICOLON).
+flora_op(1500,xfx,FL_FROM).
+flora_op(1500,xfx,FL_IN).
+flora_op(1500,xfy,FL_SEMICOLON).
 
-flora_op(1300,xfy,FL_COMMA).
+flora_op(1400,xfy,FL_COMMA).
 
-flora_op(1200,fy,FL_IF).
-flora_op(1200,xfy,FL_THEN).
-flora_op(1200,xfy,FL_ELSE).
+flora_op(1300,fy,FL_IF).
+flora_op(1300,xfy,FL_THEN).
+flora_op(1300,xfy,FL_ELSE).
 
 flora_op(1200,fy,FL_TNOT).
 flora_op(1200,fy,FL_NOT).
