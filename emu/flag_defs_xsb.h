@@ -110,6 +110,8 @@ interrupt flag
 #define TABLING_METHOD	  61      /* Default method used to evaluate tabled
 				     calls:  variant or subsumptive */
 
+#define MAXTOINDEX 5              /* depth in term to go when using deep indexing */
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* Banner control values recognized on the Prolog side. 

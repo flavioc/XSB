@@ -1336,26 +1336,6 @@ static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
     else return OldTabSize ;
 }
 
-static int can_hash(int Ind, prolog_term Head )
-{
-  int i, j;
-  prolog_term arg;
-
-  if (Ind < 256) {  /* handle usual case specially */
-    arg = p2p_arg(Head, Ind);
-    return (!(isref(arg)) && !(isattv(arg)));
-  } else {
-    for (i = 2; i >= 0; i--) {
-      j = (Ind >> (i*8)) & 0xff;
-      if (j > 0) {
-	arg = p2p_arg(Head,j);
-	if (isref(arg) || isattv(arg)) return 0;
-      }
-    }
-  }
-  return TRUE;
-}
-
 static int hash_val(int Ind, prolog_term Head, int TabSize )
 /* assumes we can hash to this Ind */
 {
@@ -1363,19 +1343,64 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
   int i, j ;
   prolog_term Arg ;
 
-  if (Ind < 256) {  /* handle usual case specially */
+  if (Ind <= 0xff) {  /* handle usual case specially */
     Arg = p2p_arg(Head,Ind) ;
     /* The following line is a hack and should be taken out
      * when the compiler change for indexing []/0 is made. */
     if (isnil(Arg)) Hashval = ihash(0, TabSize);
+    else if (isref(Arg) || isattv(Arg)) Hashval = -1;
     else Hashval = ihash(val_to_hash(Arg), TabSize);
   } else {   /* handle joint indexes */
     for (i = 2; i >= 0; i--) {
       j = (Ind >> (i*8)) & 0xff;
       if (j > 0) {
-        Arg = p2p_arg(Head,j);
-        Hashval += Hashval + ihash(val_to_hash(Arg), TabSize);
-    } }
+	if (j <= 0x80) {
+	  Arg = p2p_arg(Head,j);
+	  Hashval += Hashval + ihash(val_to_hash(Arg), TabSize);
+	} else {
+	  prolog_term *stk[MAXTOINDEX], term;
+	  int k, depth = 0, argsleft[MAXTOINDEX];
+	  argsleft[0] = 1;
+	  term = Head; XSB_Deref(term);
+	  stk[0] = clref_val(term)+ (j - 0x80);
+	  for (k = MAXTOINDEX; k > 0; k--) {
+	    /*printf("depth = %d, left = %d\n",depth,argsleft[depth]);*/
+	    if (depth < 0) break; /* out of for */
+	    term = *stk[depth];
+	    argsleft[depth]--;
+	    if (argsleft[depth] <= 0) depth--;
+	    else stk[depth]++;
+	    XSB_Deref(term);
+	    switch (cell_tag(term)) {
+	    case XSB_FREE:
+	    case XSB_REF1:
+	    case XSB_ATTV:
+	      return -1;
+	    case XSB_INT: 
+	    case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
+	      term = (Cell)int_val(term);
+	      break;
+	    case XSB_LIST:
+	      depth++;
+	      argsleft[depth] = 2;
+	      stk[depth] = clref_val(term);
+	      term = (Cell)(list_str); 
+	      break;
+	    case XSB_STRUCT:
+	      depth++;
+	      argsleft[depth] = get_arity(get_str_psc(term));
+	      stk[depth] = clref_val(term)+1;
+	      term = (Cell)get_str_psc(term);
+	      break;
+	    case XSB_STRING:
+	      term = (Cell)string_val(term);
+	      break;
+	    }
+	    Hashval += Hashval + ihash(term, TabSize);
+	  }
+	}
+      }
+    }
     Hashval %= TabSize;
   }
   return Hashval ;
@@ -1390,7 +1415,7 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind )
    MakeClRef(NewSOB,SOB_RECORD,9+ThisTabSize);
 /*   xsb_dbgmsg((LOG_DEBUG,"New SOB %p, size = %d", NewSOB, ThisTabSize)); */
    Loc = 0 ;
-   dbgen_inst3_sob( Ind>255 ? switchon3bound : switchonbound,
+   dbgen_inst3_sob( Ind>0xff ? switchon3bound : switchonbound,
  	  Ind,ClRefHashTable(NewSOB),ThisTabSize,&ClRefSOBInstr(NewSOB),&Loc);
    /* set the PrRef inside SOB */
    Loc = 0 ;
@@ -1485,12 +1510,8 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
   for (Inum = 1; Inum <= NI; Inum++) {
     SOBbuff = AZ == 0 ? Pred->FirstClRef : Pred->LastClRef ;
     Ind = Index[Inum];
-    if( can_hash(Ind, Head) )
-	Hashval = hash_val(Ind, Head, ThisTabSize) ;
-    else
-    {   Hashval = 0; 
-	ThisTabSize = 1;
-    }
+    Hashval = hash_val(Ind, Head, ThisTabSize) ;
+    if (Hashval < 0) {Hashval = 0; ThisTabSize = 1;}
     if (PredOpCode(Pred) == fail || ClRefType(SOBbuff) != SOB_RECORD
 	|| ClRefHashSize(SOBbuff) != ThisTabSize
 	|| ClRefSOBArg(SOBbuff,1) != (byte)(Ind>>16)  /* for byte-back */
@@ -1575,7 +1596,7 @@ static ClRef first_clref( PrRef Pred, prolog_term Head,
     {
 	Ind = ((ClRefSOBArg(s,1) << 8) | ClRefSOBArg(s,2) ) << 8 |
 		ClRefSOBArg(s,3) ;
-	if( can_hash(Ind,Head) )
+	if( hash_val(Ind,Head,1) >= 0 )
 	{   *Index = Ind ; *ILevel = i ;
 	    /* This is the index we're going to use */
 	    break ;

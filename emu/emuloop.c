@@ -961,18 +961,66 @@ contcase:     /* the main loop */
   XSB_Start_Instr(switchon3bound,_switchon3bound) /* RRR-L-L */
     Def3ops
     int  i, j = 0;
+    int indexreg[3];
     Cell opa[3]; 
-    /* op1 is register, op2 is hash table offset, op3 is modulus */
+    /* op1 is register contents, op2 is hash table offset, op3 is modulus */
+    indexreg[0] = get_axx;
+    indexreg[1] = get_xax;
+    indexreg[2] = get_xxa;
+
     if (*lpcreg == 0) { opa[0] = 0; }
-    else opa[0] = Register(get_rxx);
-    opa[1] = Register(get_xrx);
-    opa[2] = Register(get_xxr);
+    else opa[0] = Register((rreg + (indexreg[0] & 0x7f)));
+    opa[1] = Register((rreg + (indexreg[1] & 0x7f)));
+    opa[2] = Register((rreg + (indexreg[2] & 0x7f)));
     op2 = (Cell)(*(byte **)(lpcreg+sizeof(Cell)));
     op3 = *(CPtr *)(lpcreg+sizeof(Cell)*2); 
     /* This is not a good way to do this, but until we put retract into C,
        or add new builtins, it will have to do. */
     for (i = 0; i <= 2; i++) {
       if (opa[i] != 0) {
+        if (indexreg[i] > 0x80) {
+          int k, depth = 0;
+          Cell *stk[MAXTOINDEX];
+          int argsleft[MAXTOINDEX];
+          stk[0] = &opa[i];
+          argsleft[0] = 1;
+
+          for (k = MAXTOINDEX; k > 0; k--) {
+            if (depth < 0) break;
+            op1 = *stk[depth];
+            argsleft[depth]--;
+            if (argsleft[depth] <= 0) depth--;
+            else stk[depth]++;
+	    XSB_Deref(op1);
+	    switch (cell_tag(op1)) {
+	    case XSB_FREE:
+	    case XSB_REF1:
+	    case XSB_ATTV:
+	      ADVANCE_PC(size_xxxXX);
+	      XSB_Next_Instr();
+	    case XSB_INT: 
+	    case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
+	      op1 = (Cell)int_val(op1);
+	      break;
+	    case XSB_LIST:
+              depth++;
+              argsleft[depth] = 2;
+              stk[depth] = clref_val(op1);
+	      op1 = (Cell)(list_str); 
+	      break;
+	    case XSB_STRUCT:
+	      depth++;
+              argsleft[depth] = get_arity(get_str_psc(op1));
+              stk[depth] = clref_val(op1)+1;
+	      op1 = (Cell)get_str_psc(op1);
+	      break;
+	    case XSB_STRING:
+	      op1 = (Cell)string_val(op1);
+	      break;
+            }
+	    j = (j<<1) + ihash((Cell)op1, (Cell)op3);
+          }
+      } else {
 	op1 = opa[i];
 	XSB_Deref(op1);
 	switch (cell_tag(op1)) {
@@ -980,7 +1028,6 @@ contcase:     /* the main loop */
 	case XSB_REF1:
 	case XSB_ATTV:
 	  ADVANCE_PC(size_xxxXX);
-/*  	  goto sob3d2; */
 	  XSB_Next_Instr();
 	case XSB_INT: 
 	case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
@@ -998,8 +1045,9 @@ contcase:     /* the main loop */
 	default:
 	  xsb_error("Illegal operand in switchon3bound");
 	  break;
-	}
+        }
 	j = (j<<1) + ihash((Cell)op1, (Cell)op3);
+      }
       }
     }
     lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
