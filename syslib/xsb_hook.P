@@ -86,14 +86,18 @@ call_one_hook(Hook) :-
 	;   abort(['CALL_XSB_HOOK: ',HookName, ' is not the name of a hook'])
 	).
 
-:- index call_xsb_hook/2-2.
 
 %% executes all hooks of a given type
-call_xsb_hook(Hook,all) :- call_one_hook(Hook), fail.
-call_xsb_hook(_Hook,all).
+call_xsb_hook(Hook,HookType) :-
+	(HookType == all
+	 ->	call_xsb_hook_all(Hook)
+	 ; HookType = until_true
+	 ->	once(call_one_hook(Hook))
+	).
 
-%% stops after the first hook of the given type that succeeds
-call_xsb_hook(Hook,until_true) :- (call_one_hook(Hook) -> true; fail).
+call_xsb_hook_all(Hook) :- call_one_hook(Hook), fail.
+call_xsb_hook_all(_Hook).
+
 
 %% Execute hooks with arguments
 %% Assume that any hook accepts exactly one argument 
@@ -111,12 +115,15 @@ call_one_hook(Hook,ArgList) :-
 	;   abort(['CALL_XSB_HOOK: ',HookName, ' is not the name of a hook'])
 	).
 
-:- index call_xsb_hook/3-3.
+call_xsb_hook(Hook,ArgList,HookType) :-
+	(HookType == all
+	 ->	call_xsb_hook_all(Hook,ArgList)
+	 ; HookType == until_true
+	 ->	once(call_one_hook(Hook,ArgList))
+	).
 
-call_xsb_hook(Hook,ArgList,all) :- call_one_hook(Hook,ArgList), fail.
-call_xsb_hook(_Hook,_ArgList,all).
-call_xsb_hook(Hook,ArgList,until_true) :-
-	(call_one_hook(Hook,ArgList) -> true;fail).
+call_xsb_hook_all(Hook,ArgList) :- call_one_hook(Hook,ArgList), fail.
+call_xsb_hook_all(_Hook,_ArgList).
 
 %% Substitute ArgList for the first arg of the hook predicate to be called.
 %% Do all the necessary checks for arity and such
