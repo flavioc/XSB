@@ -56,7 +56,8 @@
 #include "configs/special.h"
 #include "binding.h"
 
-extern print_pterm(prolog_term term, int toplevel, char *straddr, int *ind);
+extern void print_pterm(prolog_term term,
+			int toplevel, char *straddr, int *ind);
 
 static FILE *fptr;			/* working variable */
     

@@ -77,7 +77,7 @@ void xsb_abort(char *description, ...)
 void arithmetic_abort(Cell op1, char *OP, Cell op2)
 {
   int  index;
-  char str_op1[30], str_op2[30];
+  char str_op1[MAXBUFSIZE], str_op2[MAXBUFSIZE];
 
   index = 0; print_pterm(op1, 1, str_op1, &index);
   index = 0; print_pterm(op2, 1, str_op2, &index);
@@ -97,7 +97,7 @@ void arithmetic_abort(Cell op1, char *OP, Cell op2)
 void arithmetic_abort1(char *OP, Cell op)
 {
   int  index = 0;
-  char str_op[30] = "_Var";
+  char str_op[MAXBUFSIZE] = "_Var";
   
   if (! isref(op)) print_pterm(op, 1, str_op, &index);
   xsb_abort("%s evaluable function %s/2\n%s %s(%s) %s",
@@ -108,7 +108,7 @@ void arithmetic_abort1(char *OP, Cell op)
 void arithmetic_comp_abort(Cell op1, char *OP, int op2)
 {
   int  index = 0;
-  char str_op1[30] = "_Var";
+  char str_op1[MAXBUFSIZE] = "_Var";
 
   if (! isref(op1)) print_pterm(op1, 1, str_op1, &index);
   xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
