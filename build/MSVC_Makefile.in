@@ -164,6 +164,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\scc_xsb.obj"
 	-@erase "$(OBJDIR)\slgdelay.obj"
 	-@erase "$(OBJDIR)\struct_manager.obj"
+	-@erase "$(OBJDIR)\sub_delete.obj"
 	-@erase "$(OBJDIR)\sub_insert.obj"
 	-@erase "$(OBJDIR)\subp.obj"
 	-@erase "$(OBJDIR)\system_xsb.obj"
@@ -220,6 +221,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/slgdelay.obj" \
 	"$(OBJDIR)/subp.obj" \
 	"$(OBJDIR)/struct_manager.obj" \
+	"$(OBJDIR)/sub_delete.obj" \
 	"$(OBJDIR)/sub_insert.obj" \
 	"$(OBJDIR)/scc_xsb.obj" \
 	"$(OBJDIR)/system_xsb.obj" \
