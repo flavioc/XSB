@@ -181,8 +181,6 @@
 
 #undef WAM_TRAIL
 
-#undef PTCP_IN_CP
-
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
 

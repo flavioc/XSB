@@ -149,8 +149,6 @@
 
 #undef WAM_TRAIL
 
-#undef PTCP_IN_CP
-
 #undef GC
 
 /* The number of bytes in a long.  */

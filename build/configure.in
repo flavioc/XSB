@@ -683,8 +683,6 @@ if test "${enable_chat}" = "yes" ; then
    AC_DEFINE(GC)
    AC_DEFINE(WAM_TRAIL)
    engine_mode=chat
-else
-   AC_DEFINE(PTCP_IN_CP)
 fi
 
 
