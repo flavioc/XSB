@@ -1,0 +1,151 @@
+\chapter{Hooks} \label{hooks}
+
+Sometimes it is useful to let the user application catch certain events
+that occur during XSB execution. For instance, when the user asserts or
+retracts a clause, when it encounters an undefined predicate, etc.
+XSB has a general mechanism by which the user program can register
+\emph{hooks} to handle certain supported events. All the
+predicates described below must be imported from {\tt xsb\_hook}.
+
+\section{Adding and Removing Hooks}
+
+A hook in XSB can be either a 0-ary predicate or a unary predicate.
+A 0-ary hook is called without parameters and unary hooks are called with
+one parameter. The nature of the parameter depends on the type of the hook,
+as described in the next subsection.
+
+
+\begin{description}
+\ouritem{add\_xsb\_hook(+HookSpec)} \index{{\tt add\_xsb\_hook/1}} 
+
+This predicate registers a hook; it must be imported from {\tt xsb\_hook}.
+{\tt HookSpec} has the following format:
+%%
+\begin{quote}
+ {\tt
+   hook-type(your-hook-predicate(\_))
+   }
+\end{quote}
+%%
+or, if it is a 0-ary hook:
+%%
+\begin{quote}
+  {\tt
+   hook-type(your-hook-predicate)
+   }  
+\end{quote}
+%%
+For instance, 
+%%
+\begin{verbatim}
+    :- add_xsb_hook(xsb_undefined_predicate_hook(foobar(_))).
+\end{verbatim}
+%%
+registers the hook {\tt foobar()} as a hook that should be called when XSB
+encounters an undefined predicate. Of course, your program must include
+clauses that define {\tt foobar/1}, or else an error will result.
+
+The predicate that defines the hook type must be imported from {\tt
+  xsb\_hook}:
+%%
+\begin{verbatim}
+    :- import xsb_undefined_predicate_hook/1 from xsb_hook.  
+\end{verbatim}
+%%
+or {\tt add\_xsb\_hook/1} will issue an error.
+
+\ouritem{remove\_xsb\_hook(+HookSpec)} \index{{\tt remove\_xsb\_hook/1}}
+
+Unregisters the specified XSB hook; imported from {\tt xsb\_hook}. For
+instance,
+%%
+\begin{verbatim}
+    :- remove_xsb_hook(xsb_undefined_predicate_hook(foobar(_))).
+\end{verbatim}
+%%
+As before, the predicate that defines the hook type must be imported from
+{\tt xsb\_hook}.
+\end{description}
+
+
+\section{Hooks Supported by XSB}
+
+The following predicates define the hook types supported by XSB. They must
+be imported from {\tt xsb\_hook}.
+
+\begin{description}
+\ouritem{xsb\_exit\_hook(\_)} \index{{\tt xsb\_exit\_hook/1}}
+
+These hooks are called just before XSB exits. You can register as many
+hooks as you want and all of them will be called on exit (but the order of
+the calls is not guaranteed). Exit hooks are all 0-ary and must be registered
+as such:
+%%
+\begin{verbatim}
+    :- add_xsb_hook(xsb_exit_hook(my_own_exit_hook)).
+\end{verbatim}
+%%
+
+\ouritem{xsb\_undefined\_predicate\_hook(\_)}
+\index{{\tt xsb_undefined_predicate_hook/1}}
+
+These hooks are called when an undefined predicate is encountered.
+Each such hook must be unary and registered appropriately:
+%%
+\begin{verbatim}
+    :- add_xsb_hook(xsb_undefined_predicate_hook(my_undef_pred_handler(_))).
+\end{verbatim}
+%%
+An undefined predicate hook receives an argument of the form {\tt
+  [pred-name, module-name, psc-record]}. Here {\tt pred-name} is the name
+of the predicate that triggered the event, {\tt module-name} is the name of
+the module of that predicate, and {\tt psc-record} is a handle to the PSC
+record for that predicate. The PSC record can be used by sophisticated
+handlers for undefined predicates. In most cases, however, a handler would
+use {\tt pred-name} and, possibly, {\tt module-name}.
+
+When an undefined predicate is encountered, XSB would call the hooks
+registered to handle this condition until it finds one that succeeds (or
+aborts). The order in which the hooks are called is not guaranteed and it
+is not a good idea to write hooks that rely on a specific order.
+
+A hook for undefined predicates must follow the following protocol: It
+should examine the information about the predicate and decide whether it
+wants to handle this particular predicate. If it does, then it should
+perform whatever it needs to and then succeed or abort. If it succeeds, XSB
+will not continue calling other hooks and the current program clause will
+{\em fail}. If the hook aborts, then the current program clause will
+\emph{abort}.  If the hook decides to \emph{not} handle the given
+predicate, then it should fail and XSB will then look at other hooks
+registered to handle undefined predicates. If none of the hooks succeeds,
+XSB aborts the current program clause.
+
+\ouritem{xsb\_assert\_hook(\_)} \index{{\tt xsb\_assert\_hook/1}}
+
+These hooks are called whenever the program asserts a clause. An assert
+hook must be a unary predicate, which expects the clause
+being asserted as a parameter. For instance,
+%%
+\begin{verbatim}
+    :- add_xsb_hook(xsb_assert_hook(my_assert_hook(_))).
+\end{verbatim}
+%%
+registers {\tt my\_assert\_hook/1} as an assert hook. One can register
+several assert hooks and all of them will be called (but the order is not
+guaranteed).
+
+\ouritem{xsb\_retract\_hook(\_)} \index{{\tt xsb\_retract\_hook/1}}
+
+These hooks are called whenever the program retracts a clause. A retract
+hook must be a unary predicate, which expects as a parameter a list of the
+form {\tt [Head,Body]}, which represent the head and the body parts of the
+clause being retracted. As with assert hooks, any number of retract hooks
+can be registered and all of them will be called in some order.
+
+\end{description}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 
