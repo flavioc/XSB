@@ -656,7 +656,7 @@ if test "${perl_support}" = "yes"; then
    perl_libs=`perl -MConfig -e 'print $Config{libs}'`
 
    # Perl base revision comes out as 5.0, so we strip .0
-   perl_baserev=`perl -MConfig -e 'print $Config{baserev}' | sed -e 's/\..*//'`
+   perl_baserev=`perl -MConfig -e 'print "$Config{baserev}\n"' | sed -e 's/\..*//'`
    perl_patchlevel=`perl -MConfig -e 'print $Config{patchlevel}'`
 
    # perl support doesn't work with perl < 5.004
