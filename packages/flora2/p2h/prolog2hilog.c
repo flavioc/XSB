@@ -165,9 +165,12 @@ static prolog_term hilog2prolog(prolog_term hterm, char *apply)
 
   pfunctor = p2p_arg(hterm,1);
   if (!is_string(pfunctor))
-    xsb_abort("PLG2HLG: HiLog term `%s' not convertable to Prolog.",
+    xsb_abort("PLG2HLG: HiLog term `%s' not convertible to Prolog.",
 	      pterm2string(hterm));
-  c2p_functor(string_val(pfunctor), arity-1, pterm);
+  if (arity > 1)
+    c2p_functor(string_val(pfunctor), arity-1, pterm);
+  else
+    return pfunctor;
 
 #ifdef P2HDEBUG_VERBOSE
   xsb_dbgmsg("h2p start: Pterm=%s", pterm2string(pterm));
