@@ -9,4 +9,3 @@
 #include "basictypes.h"
 
 prolog_term global_error_term, global_warning_term;
-

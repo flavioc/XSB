@@ -618,4 +618,3 @@ find_in_catalogue(int kind,
 
   return item->replacement;
 }
-
