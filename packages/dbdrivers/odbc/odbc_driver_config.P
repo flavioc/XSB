@@ -15,6 +15,7 @@
 :- import compile_so/3, runtime_loader_flag/3 from foreign.
 :- import path_sysop/3, path_sysop/2 from file_io.
 
+
 make_odbc_driverH(CC, CC_opts) :-
    	slash(Slash),
 	xsb_configuration(compiler, XCC),
@@ -32,20 +33,16 @@ make_odbc_driverH(CC, CC_opts) :-
 
 	    xsb_configuration(config_bindir, ConfigBindir),
 	    package_configuration(dir(odbc_driver), ODBCDriverDir),
-	    %% Doesn't seem to be used
-	    %% fmt_write_string(ODBCDriverO, '%s%scc%sodbc_driver.o', 
-	    %%  	     f(ODBCDriverDir, Slash, Slash)),
-	
-	    /*
 	    fmt_write_string(LD_flags,
-			     ' %s%sdriver_manager.dll -lodbc -lodbccp32" ',
-			     f(ConfigBindir, Slash, MSVCPath, MSVCPath))
-	    */
-	    %% Change MSVCPath if Visual Studio is installed in a different dir
-	    MSVCPath = 'C:\program files\microsoft visual studio\vc98\lib',
+			     ' %s %s%sdriver_manager.dll -lodbc32 -lodbccp32 ',
+			     f(ODBC_libdir_flag, ConfigBindir, Slash))
+
+	    %% If using MSVC libraries
+	    /*MSVCPath = 'C:\program files\microsoft visual studio\vc98\lib',
 	    fmt_write_string(LD_flags,
-			     ' %s%sdriver_manager.dll "%s\odbc32.lib" "%s\odbccp32.lib" ',
-			     f(ConfigBindir, Slash, MSVCPath, MSVCPath))
+	    		     ' %s%sdriver_manager.dll "%s\odbc32.lib" "%s\odbccp32.lib" ',
+			     f(ConfigBindir, Slash, MSVCPath, MSVCPath))*/
+
 	; %% windows specific stuff
 	    running_under(windows) -> true
 	; %% MacOS
@@ -147,7 +144,8 @@ make_odbc_driverH(CC, CC_opts) :-
 	;  %% windows specific stuff
 	    running_under(windows) ->
 	    make_odbc_driverH(CC, ''),
-	    [Basename]
+	    [Basename],
+	    force_rename(ObjfileX, LibObjFileX)
 	; %% else unix specific stuff
 	    fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', 
 			     f(PackagesDir, Slash, Slash)),
