@@ -103,7 +103,8 @@ cd(Path) :-
 	(   var(Path)
 	->  abort('Uninstantiated argument 1 of cd/1')
 	;   (   expand_filename(Path,Dir)
-	    ->	sys_chdir(Dir,Res),
+	    ->	slash(Slash),
+		sys_chdir([Dir,Slash],Res),
 		Res =:= 0
 	    ;	abort('Wrong type in argument 1 of cd/1')
 	    )

@@ -41,7 +41,7 @@
 :- import path_sysop/2 from file_io.
 :- import check_nonvar/3 from error_handler.
 :- import sys_system/7, expand_filename/2, sys_syscall/4,
-             tilde_expand_filename/2
+  tilde_expand_filename/2, slash/1
    from machine.
 :- import atom/1, abort/1, is_list/1 from standard.
 :- import xsb_configuration/2 from xsb_configuration.
