@@ -614,7 +614,7 @@ out_postcall(_,'+-',atomptr) :-
 	fmt_write('   c2p_string((char *)%s,%sOut);',args(Var,Var)),nl.
 
 out_funchead(FuncName) :-
-	fmt_write('int %s(void)',args(FuncName)),nl,
+	fmt_write('DllExport int call_conv %s(void)',args(FuncName)),nl,
         write('{'),nl.
 
 out_functail :- 
