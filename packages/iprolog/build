@@ -1,20 +1,21 @@
 #!/bin/sh
 ## This is the build file
 
-JAVA_BIN=/home/miti/Summer/j2sdk1.4.0_01/bin
-XSB_DIR=/home/miti/Summer/XSB
-
 rm -rf tempCompiled
 mkdir tempCompiled
 
-$JAVA_BIN/javac -d tempCompiled -classpath .:junit.jar:tests:tempCompiled tests/com/declarativa/interprolog/*.java tests/com/xsb/interprolog/*.java com/declarativa/interprolog/*.java com/declarativa/interprolog/util/*.java com/declarativa/interprolog/gui/*.java com/declarativa/interprolog/examples/*.java com/xsb/interprolog/*.java
+javac -d tempCompiled -classpath .:junit.jar:tests:tempCompiled tests/com/declarativa/interprolog/*.java tests/com/xsb/interprolog/*.java com/declarativa/interprolog/*.java com/declarativa/interprolog/util/*.java com/declarativa/interprolog/gui/*.java com/declarativa/interprolog/examples/*.java com/xsb/interprolog/*.java
 echo 'Step1 ----> Compiled the java files'
 
-command compilePs
+./compile_Ps
 echo 'Step2 ----> Compiled the .P files'
 
 cp com/declarativa/interprolog/*.O tempCompiled/com/declarativa/interprolog
 cp com/declarativa/interprolog/gui/*.O tempCompiled/com/declarativa/interprolog/gui
+
+cp com/declarativa/interprolog/*.xwam tempCompiled/com/declarativa/interprolog
+cp com/declarativa/interprolog/gui/*.xwam tempCompiled/com/declarativa/interprolog/gui
+
 # images folder is not present in tempCompiled
 mkdir tempCompiled/com/declarativa/interprolog/gui/images
 cp com/declarativa/interprolog/gui/images/* tempCompiled/com/declarativa/interprolog/gui/images
@@ -25,7 +26,7 @@ echo 'Step3 ----> Copied the *.O files in tempCompiled'
 rm ../interprolog.jar
 echo 'Step4 ----> removed the old interprolog.jar'
 
-$JAVA_BIN/jar cf ../interprolog.jar *
+jar cf ../interprolog.jar *
 echo 'Step5 ----> created a new interprolog.jar'
 
 cd ..
