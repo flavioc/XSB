@@ -33,8 +33,8 @@ char* errorMesg;
 char* errorNumber;
 
 extern void write_canonical_term(prolog_term term);
-extern char* wcan_string;
-extern int wcan_disp;
+char* wcan_string;
+int wcan_disp;
 
 
 DllExport int call_conv initialise(void)
