@@ -21,7 +21,7 @@
 	  format_module_usage/10,
 	  format_multiple_usage_header/3,
 	  format_native_declaration/3,
-	  format_other_assrt_header/2,
+%	  format_other_assrt_header/2,
 	  format_other_info/10,
 	  format_predicate_begin/6,
 	  format_predicate_comment/3,
@@ -45,33 +45,27 @@
 
 :- import  rewrite_command/4 from rewrite_command.
 
-:- import set_libs/1,
-	  atom_concat/2, atom_concat/3, 
-	  cleanup_c_itf_data/0, 
-	  error_message/2, 
+:- import error_message/2, 
 	  list_concat/2, note_message/1,
 	  optional_message/2, 
 	  xsbdoc_error/1,
 	  xsbdoc_warning/1
 		from ciaoaux.
 
-:- import base_name/2, message/1, ttyflush/0 from xsb_ciao.
-:- import current_prolog_flag/2, set_prolog_flag/2 from isopreds.
+:- import message/1, ttyflush/0 from xsb_ciao.
 :- import '_#clause'/2 from usermod.
 
-:- import format/3 from format.
 :- import append/3, length/2, member/2, reverse/2,copy_term/2 from basics.
 :- import concat_atom/2 from string.
 :- import pretty_print/2 from pretty_print.
-:- import list/1, string/1, character_code/1 from basic_props.
+:- import list/1 from basic_props.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Interfaces to asserted form of program.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defines(Goal):- 
 	'_#clause'(rule(Goal,_),_Ctr).
-
-/*
-:- pred clause_read(Base, Head, Body, VarNames, Source, Line0, Line1)
-*/
 
 clause_read(Head, Body, Ctr):- 
 	'_#clause'(rule(Head,Body),Ctr).
@@ -94,8 +88,23 @@ imports(File,F,A):-
 	'_#clause'(directive(document_import(from(Preds,File))),_Ctr),
 	comma_member(T,Preds),T = F / A.
 
-assertion_read(Goal,_Status,F,Body):- 
-	'_#clause'(directive(Term),_Ctr),
+/*
+assertion_read(Goal,_Status,F,Body,Source,Ctr):- 
+
+:- pred assertion_read(Goal,M,Status,Type,Body,Dict,Source,LB,LE) 
+
+assertion_body(Pred,Compat,Call,Succ,Comp,Comm,
+	      (Pred::Compat:Call=>Succ+Comp#Comm)).
+
+compat_prop(),
+call_prop()
+success_prop()
+global_prop()
+comment()
+*/
+
+assertion_read(Goal,_Status,F,Body,Ctr):- 
+	'_#clause'(directive(Term),Ctr),
 	functor(Term,F,1),
 	assertion_functor(F),
 	arg(1,Term,A),
@@ -114,20 +123,6 @@ get_assert_prop(global_prop,Body,D):-
 get_assert_prop(comment,Body,D):- 
 	(member(comment(D),Body) -> true ; D = [] ).
 
-/*
-assertion_read(Goal,_Status,F,Body,Source):- 
-
-:- pred assertion_read(Goal,M,Status,Type,Body,Dict,Source,LB,LE) 
-
-assertion_body(Pred,Compat,Call,Succ,Comp,Comm,
-	      (Pred::Compat:Call=>Succ+Comp#Comm)).
-
-compat_prop(),
-call_prop()
-success_prop()
-global_prop()
-comment()
-*/
 
 %% ---------------------------------------------------------------------------
 %% Intro
@@ -136,6 +131,7 @@ comment()
 :- comment(title,"Documentation generation library").
 
 :- comment(author,"Manuel Hermenegildo").
+:- comment(author,"Modified by Terrance Swift").
 
 :- comment(module,"
 
@@ -188,30 +184,6 @@ modtype(application).
 modtype(module).
 modtype(file).
 modtype(part).
-
-:- comment(filetype/1,"@includedef{filetype/1}").
-
-:- regtype filetype/1 # "Represents the level in the document hierarchy
-   of the file being documented".
-
-filetype(main(X)) :- 
-	maintype(X).
-filetype(component).
-
-:- comment(maintype/1,"@includedef{maintype/1}").
-
-:- regtype maintype/1.
-
-maintype(standalone).
-maintype(withcomponents).
-
-/*
-%% Should really use sourcename, but not really supported until we eliminate 
-%% the makefile completely
-:- regtype filename(X) # "@var{X} is the name of a file.".
-
-filename(X) :- atom(X).
-*/
 
 %% ---------------------------------------------------------------------------
 
@@ -387,7 +359,7 @@ do_get_last_version(Version,GVers,Dir,Opts) :-
 	get_comment_field(version_maintenance,dir(VDir)),
 	!,
 	%% version maintained in dir (computed relative to .pl file Dir!)
- 	atom_concat([Dir,'/',VDir,'/','GlobalChangeLog'],ChangeLogFile),
+ 	concat_atom([Dir,'/',VDir,'/','GlobalChangeLog'],ChangeLogFile),
 %	optional_message(
 %	   "Getting global version from ~w...",[ChangeLogFile],Opts),
 	(  file_exists(ChangeLogFile),
@@ -634,6 +606,7 @@ doc_predicates([P|Ps],IsDecl,File,Idxs,OS,Format,Opts) :-
 doc_predicate(F/A,IsDecl,File,Idxs,OS,Format,Opts):-
         optional_message(['Generating documentation for ',File,':',F/A],Opts),
  	functor(Pred,F,A),
+%	trace,
 	predicate_usages(Pred,IsDecl,Usages,_N,Multiple),
         predicate_level_comment(F/A,Format,Idxs,Opts,Comment,CommentHead),
 %        other_assertions(Pred,IsDecl,OtherAssrt,ON),
@@ -662,7 +635,7 @@ doc_predicate(F/A,IsDecl,File,Idxs,OS,Format,Opts):-
 /*	doc_other_assertions(OtherAssrt,ON,N,F/A,Idxs,PType,OS,Format,Opts),*/
 	doc_usages(Usages,        1,Multiple,F/A,Idxs,PType,OS,Format,Opts),
 	format_predicate_end(Format,OS).
-doc_predicate(F/A,_IsDecl,_M,_Base,_Idxs,_OS,_Format,_Opts):-
+doc_predicate(F/A,_IsDecl,_Base,_Idxs,_OS,_Format,_Opts):-
 	xsbdoc_error(['could not document predicate ',F/A]).
 
 get_table_type(F/A,tabled(variant)):- 
@@ -689,18 +662,16 @@ get_predicate_type(_TableType,IsDecl,F/A,Usages,PType):-
 %% (do not get decl or modedef assrts; if documenting decl or modedef, 
 %% then get only decl or modedef  assrts)
 
-predicate_usages(P,IsDecl,Usages,N,Multiple) :-
-	findall(assertion_read(P,Status,Type,NAss),
-	        ( assertion_read(P,Status,Type,NAss),
-		  (  nonvar(IsDecl)
-		  -> ( IsDecl = (decl) 
-		     -> Type = IsDecl
-		     ;  (\+ Type = (decl)) )
-		  ;  true ),
+predicate_usages(P,_IsDecl,Usages,N,Multiple) :-
+	setof([Ctr,assertion_read(P,Status,Type,NAss,Ctr)],
+	        ( assertion_read(P,Status,Type,NAss,Ctr),
 		  predfunctor(Type)
 		  ),
-		Usages),
+		Usages1),
+	!,
+	eliminate_counters(Usages1,Usages),
 	length(Usages,N), (N>1 -> Multiple=1; Multiple=0).
+predicate_usages(_P,_IsDecl,[],0,0).
 
 %% Get any comment declarations, compute CommentHead:
 predicate_level_comment(F/A,Format,Idxs,Opts,Comment,CommentHead) :-
@@ -739,7 +710,7 @@ look_for_pred_type([],_,Type) :-
 	!,
 	Type = (pred).
 look_for_pred_type(
-  	     [assertion_read(_P,_S,RType,_NAss)|R],_,Type):-
+  	     [assertion_read(_P,_S,RType,_NAss,_Ctr)|R],_,Type):-
 	handle_pred_type(RType,R,Type).
 
 /*
@@ -775,7 +746,7 @@ handle_pred_type(_AType,R,Type) :-
 
 predfunctor(pred).
 predfunctor(prop).
-predfunctor(decl). %% ??
+%predfunctor(decl). %% ??
 %predfunctor(func). %% ??
 %predfunctor(modedef).
 
@@ -800,33 +771,6 @@ get_native_declaration(Pred,dynamic):-
 	'_#clause'(directive(dynamic(F/A)),_).
 
 %% ---------------------------------------------------------------------------
-:- pred doc_other_assertions/9 # "Generates documentation for assertions 
-   other than @tt{pred} assertions.".
-%% ---------------------------------------------------------------------------
-
-doc_other_assertions(_OtherAssrt,0,_N,_P,_Idxs,_Type,_OS,_Format,_Opts) :-
-	!.
-doc_other_assertions(OtherAssrt,ON,N,P,Idxs,Type,OS,Format,Opts) :-
-	ON > 0,
-	N > 0,
-	!,
-	format_other_assrt_header(texinfo,OS),
-	doc_other_assrts(OtherAssrt,P,Idxs,Type,OS,Format,Opts).
-doc_other_assertions(OtherAssrt,ON,N,P,Idxs,Type,OS,Format,Opts) :-
-	ON > 0,
-	N = 0,
-	!,
-	doc_other_assrts(OtherAssrt,P,Idxs,Type,OS,Format,Opts).
-
-
-doc_other_assrts([],_P,_Idxs,_Type,_OS,_Format,_Opts) :-
-	!.
-doc_other_assrts([Assrt|Assrts],_P,Idxs,Type,OS,Format,Opts) :-
-	doc_usage(Assrt,_,-1,Idxs,Type,OS,Format,Opts),
-	!,
-	doc_other_assrts(Assrts,_P,Idxs,Type,OS,Format,Opts).
-
-%% ---------------------------------------------------------------------------
 :- pred doc_usages/9 # "Generates documentation for each ``usage'' of
    a predicate (as declared in a @tt{pred} assertion).".
 %% ---------------------------------------------------------------------------
@@ -843,13 +787,13 @@ doc_usages([Usage|Usages],N,Multiple,_P,Idxs,Type,OS,Format,Opts) :-
 
 %% If no info, then don't document!
 doc_usage(Assrt,_N,_Multiple,_Idxs,_Type,_OS,_Format,_Opts):-
-	Assrt = assertion_read(CP,_Status,_Type,NAss),
+	Assrt = assertion_read(CP,_Status,_Type,NAss,_Ctr),
 	NAss = [],
 	CP =.. [_|Args],
 	allvars(Args),
 	!.
 doc_usage(Assrt,N,Multiple,Idxs,Type,OS,Format,Opts):-
-	Assrt = assertion_read(P,Status,AType,Body),
+	Assrt = assertion_read(P,Status,AType,Body,_Ctr),
 %	assertion_body(P,DP,CP,AP,GP,CO,NAss),
 	get_assert_prop(compat_prop,Body,DP),
 	get_assert_prop(call_prop,Body,CP),
@@ -990,12 +934,6 @@ doc_description(Desc,P,_Idxs,_OS,_Format,_Opts) :-
 doc_description(Desc,_P,Idxs,OS,Format,Opts) :- 
 	rewrite_docstring_opts(Format,Idxs,Opts,Desc,RDesc),
 	format_description(Format,RDesc,OS).
-
-getvarname([0'}|RI],RI,[]) :-
-	!.
-getvarname([C|RI],NRI,[C|RVarName]) :-
-	getvarname(RI,NRI,RVarName). 
-
 
 %% ---------------------------------------------------------------------------
 %% Information access...
@@ -1405,7 +1343,6 @@ spaces -->
 normal_char(X) --> [X], {X \== 0'@, X \== 0'{, X \== 0'} }.
 command_char(X) --> [X], {X \== 0'@, X \== 0'{, X \== 0'}, X \== 0' ,
 	                  X \== 0'\n, X \== 0'\t }.
-char_no_space_or_tab(X) --> [X], {X \== 0' , X \== 0'\t }.
 
 start     --> [0'@].
 open      --> [0'{].
@@ -1572,17 +1509,22 @@ try_command(ImageCommand,
             SP,Format,Idxs,Verb,Verb,NL,NNL,Opts,NStr,Tail) :-
 	ImageCommand =.. [image,ImageFileS|Rest],
 	atom_codes(RelFile,ImageFileS),
-	atom_concat('autofig',RelFile,NameRelFile),
+	concat_atom(['autofig',RelFile],NameRelFile),
 	atom_codes(NameRelFile,NameRelFileS),
+%	NameRelFile = autofig<File>
 	NewImageCommand =.. [image,NameRelFileS|Rest],
 	rewrite_command(Format,NewImageCommand,Idxs,XNewComm),
         !,
-	atom_concat(RelFile,'.eps',EpsRelFile),
-	absolute_file_name(library(EpsRelFile),EpsFile),
-	atom_concat(NameRelFile,'.eps',NameEpsRelFile),
+	concat_atom([NameRelFile,'.eps'],NameEpsRelFile),
+%	NameEpsRelFile = autofig<File>.eps
+
+	corrected_search_module(RelFile,Dir,_W,_E,_R),
+	concat_atom([Dir,RelFile,'.eps'],EpsFile),
+%	EpsFile = <DIR>/<FILE>.eps
+
 	optional_message(['-> Including image ',EpsFile,
-			  'in documentation as ',NameEpsRelFile],Opts),
-	atom_concat(['cp -f ', EpsFile, ' ', NameEpsRelFile],Command),
+			  'in documentation as NameEpsRelFile'],Opts),
+	concat_atom(['cp -f ', EpsFile, ' ', NameEpsRelFile],Command),
 	(  shell(Command)
 	-> true
 	;  error_message("could not copy image file ~w",[EpsFile]) ), 
@@ -1660,7 +1602,13 @@ eliminate_duplicates_([H|T],Seen,[H|NT]) :-
 	eliminate_duplicates_(T,[H|Seen],NT).
 
 
+/* Cannot use basic_props as this gives rise to a module problem */
+string([]).
+string([H|T]):- integer(H),string(T).
+
 end_of_file.
+
+
 %% ---------------------------------------------------------------------------
 :- pred generate_info_dir_entry(Main,Opts) 
    : filename * list(miscopt)
@@ -1842,7 +1790,7 @@ doc_predicate(F/A,IsDecl,M,Base,Idxs,OS,Format,Opts):-
 prop_format(Prop,BasicFormat,VarNames) :-
 	nonvar(Prop),
 	% Get assertion
-	assertion_read(Prop,_PStatus,PType,NAss),
+	assertion_read(Prop,_PStatus,PType,NAss,_Ctr),
 	/* want dictionary */
 	propfunctor(PType), %% prop, ...
 	%% Should add also ~imports(AM,F,A), but, since this is flagged 
@@ -1869,3 +1817,60 @@ mod_comment([C|RI],Dict,[C|O],Vars) :-
 	mod_comment(RI,Dict,O,Vars).
 mod_comment([],_,[],[]). 
 	
+%% ---------------------------------------------------------------------------
+:- pred doc_other_assertions/9 # "Generates documentation for assertions 
+   other than @tt{pred} assertions.".
+%% ---------------------------------------------------------------------------
+
+doc_other_assertions(_OtherAssrt,0,_N,_P,_Idxs,_Type,_OS,_Format,_Opts) :-
+	!.
+doc_other_assertions(OtherAssrt,ON,N,P,Idxs,Type,OS,Format,Opts) :-
+	ON > 0,
+	N > 0,
+	!,
+	format_other_assrt_header(texinfo,OS),
+	doc_other_assrts(OtherAssrt,P,Idxs,Type,OS,Format,Opts).
+doc_other_assertions(OtherAssrt,ON,N,P,Idxs,Type,OS,Format,Opts) :-
+	ON > 0,
+	N = 0,
+	!,
+	doc_other_assrts(OtherAssrt,P,Idxs,Type,OS,Format,Opts).
+
+
+doc_other_assrts([],_P,_Idxs,_Type,_OS,_Format,_Opts) :-
+	!.
+doc_other_assrts([Assrt|Assrts],_P,Idxs,Type,OS,Format,Opts) :-
+	doc_usage(Assrt,_,-1,Idxs,Type,OS,Format,Opts),
+	!,
+	doc_other_assrts(Assrts,_P,Idxs,Type,OS,Format,Opts).
+
+:- comment(filetype/1,"@includedef{filetype/1}").
+
+:- regtype filetype/1 # "Represents the level in the document hierarchy
+   of the file being documented".
+
+filetype(main(X)) :- 
+	maintype(X).
+filetype(component).
+
+:- comment(maintype/1,"@includedef{maintype/1}").
+
+:- regtype maintype/1.
+
+maintype(standalone).
+maintype(withcomponents).
+
+/*
+%% Should really use sourcename, but not really supported until we eliminate 
+%% the makefile completely
+:- regtype filename(X) # "@var{X} is the name of a file.".
+
+filename(X) :- atom(X).
+*/
+
+getvarname([0'}|RI],RI,[]) :-
+	!.
+getvarname([C|RI],NRI,[C|RVarName]) :-
+	getvarname(RI,NRI,RVarName). 
+
+char_no_space_or_tab(X) --> [X], {X \== 0' , X \== 0'\t }.

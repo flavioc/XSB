@@ -20,6 +20,9 @@
 
 	    typeindex/5, texinfo_escape_ats_etc/2. 	% for rewrite_command
 
+/* The following are to avoid useinfer messages */
+:- export supported_option/1.		
+
 :- import atom_concat/2, (data)/1 from ciaoaux.
 
 :- import format/3 from format.
@@ -139,36 +142,29 @@ supported_option(X) :-
 %% ---------------------------------------------------------------------------
 
 option_comment('-v',           'Verbose output (good for debugging).        ').
-option_comment('-nobugs',      'Do not include information on bugs.         ').
 option_comment('-noauthors',   'Do not include author names.                ').
+option_comment('-shorttoc',    'Produce shorter table of contents (no entries
+                                for individual defs of preds, props, etc.).').
+option_comment('-norefs',      'Do not include a ''References'' appendix.     ').
+
+option_comment('-nobugs',      'Do not include information on bugs.         ').
 option_comment('-noversion',   'Do not include version information.         ').
 option_comment('-nochangelog', 'Do not include change log.                  ').
 option_comment('-nopatches',   'Do not include comments for patches.        ').
-%% -modes and -headprops are used by normalizer!
-option_comment('-modes',       'Do not translate modes and their arguments
-	                        (except for properties)                     ').
-option_comment('-headprops',   'Do not move head properties to body.        ').
-
 option_comment('-literalprops','Do not use text to document properties.     ').
 option_comment('-nopropnames', 'Do not include property names in prop text. ').
 option_comment('-noundefined', 'Do not signal undefined properties in text. ').
 option_comment('-nopropsepln', 'Do not put each property in a separate line.').
 
-option_comment('-norefs',      'Do not include a ''References'' appendix.     ').
 option_comment('-nobullet',    'Do not generate initial bullet index        
                                 (.htmlbullet) with .htmlindex file. Select if
                                 only one manual will be installed in DOCDIR.').
 option_comment('-nosysmods',   'Do not include system modules in list of 
                                 libraries used.').
-option_comment('-noisoline',   'Do not include *textual* description that a 
-                                given usage conforms to the ISO standard.').
+%option_comment('-noisoline',   'Do not include *textual* description that a 
+%                                given usage conforms to the ISO standard.').
 option_comment('-propmods',    'Include module name to which props belong.').
-option_comment('-shorttoc',    'Produce shorter table of contents (no entries
-                                for individual defs of preds, props, etc.).').
-option_comment('-regtypeprops','Include in the doc for regtypes the global
-                                prop stating that they are indeed regtypes.').
 option_comment('-onesided',    'For printing on one side (default is two).').
-option_comment('-component',    'Include <File> as component.').
 
 %% ---------------------------------------------------------------------------
 :- pred typeindex(Type,Index,IType,Name,Comment) 
@@ -631,7 +627,7 @@ format_index(Name,Titleat,Commentat,IndexId,OS) :-
    chapter.".
 %% ---------------------------------------------------------------------------
 
-format_module_usage(texinfo,Name,Type,CExports,UMods,SysMods,Ops,NDecls,
+format_module_usage(texinfo,Name,_Type,CExports,UMods,SysMods,Ops,NDecls,
 		    Indices,OS) :-
 	texinfo_escape_ats_etc_all_atoms(Name,EName),
 	format_texinfo_section_name(EName,2,"Usage and interface",OS),
@@ -682,15 +678,6 @@ format_inputs_for_module(UMods,SysMods,OS,Indices):-
 %	format(OS, "@end itemize~n@end cartouche~n",[]).
 	writeln(OS,'@end itemize'),writeln(OS,'@end cartouche').
 
-
-filter_export_by_type([],_Type,[]).
-filter_export_by_type([export(F/A,Type)|CExps],TypeStr,[F/A|FExps]) :-
-	typetext(Type,TypeStr,_,_),
-	!,
-	filter_export_by_type(CExps,TypeStr,FExps).
-filter_export_by_type([_|CExps],TypeStr,FExps) :-
-	!,
-	filter_export_by_type(CExps,TypeStr,FExps).
 
 handle_export_cases([],_Type,_Indices,_OS).
 handle_export_cases([Exp|Exps],Type,Indices,OS) :- 
@@ -1006,8 +993,8 @@ format_native_declaration(texinfo,Type,OS) :-
 %% ---------------------------------------------------------------------------
 
 format_tabling_declaration(texinfo,TType,OS) :-
-	texinfo_escape_ats_etc_all_atoms(Type,EType),
-	format(OS,"~nThe predicate uses @emph{~w} tabling.~n~n",[TType]).
+	texinfo_escape_ats_etc_all_atoms(TType,EType),
+	format(OS,"~nThe predicate uses @emph{~w} tabling.~n~n",[EType]).
 
 %% ---------------------------------------------------------------------------
 :- comment(format_predicate_end(Format,OS),"This predicate defines the
@@ -1765,4 +1752,21 @@ end_of_file.
 :- comment(version(0*0+0,1996/10/10),"First prototype.").
 
 %% ---------------------------------------------------------------------------
+
+
+%% -modes and -headprops are used by normalizer!
+option_comment('-headprops',   'Do not move head properties to body.        ').
+option_comment('-modes',       'Do not translate modes and their arguments
+	                        (except for properties)                     ').
+option_comment('-regtypeprops','Include in the doc for regtypes the global
+                                prop stating that they are indeed regtypes.').
+
+filter_export_by_type([],_Type,[]).
+filter_export_by_type([export(F/A,Type)|CExps],TypeStr,[F/A|FExps]) :-
+	typetext(Type,TypeStr,_,_),
+	!,
+	filter_export_by_type(CExps,TypeStr,FExps).
+filter_export_by_type([_|CExps],TypeStr,FExps) :-
+	!,
+	filter_export_by_type(CExps,TypeStr,FExps).
 

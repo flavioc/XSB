@@ -1,11 +1,12 @@
 :- compiler_options([ciao_directives]).
 
-:- export xsbdoc/1,test/0,main/0.
+:- export xsbdoc/2,
+	  main/0,	% to avoid a useinfer warning.
+	  test/1,make_distclean/0.
 
 :- import format/3 from format.
 
-:- import usage_message/1,
-	  xsbdoc_bibfile/1,
+:- import xsbdoc_bibfile/1,
 	  xsbdoc_component/1,
 	  xsbdoc_index/1, 
 	  xsbdoc_main/1,
@@ -14,7 +15,7 @@
 	  xsbdoc_startpage/1
 	from usermod.
 
-:- import index_comment/2,option_comment/2 from autodocformats.
+:- import option_comment/2 from autodocformats.
 :- import corrected_search_module/5 from xsbdoc_term_proc.
 
 :- import concat_atom/2 from string.
@@ -42,7 +43,7 @@
 :- comment(subtitle,"Inspired by the Ciao lpdoc Document Generator").
 
 :- comment(author, "Terrance Swift").
-:- comment(author, "based in part on code by ").
+:- comment(author, "based in part on code and documentation by ").
 :- comment(author,"Manuel Hermenegildo and the CLIP Group").
 
 :- comment(copyright,"
@@ -66,19 +67,26 @@ To use xsbdoc, the package must be first loaded via the command
 @end{verbatim}
 
 The top-level interface of the @apl{xsbdoc} package consists of a
-single predicate, @pred{xsbdoc/1}, whose argument is the name of a
-Prolog format file that indicates the main file for the application,
-component files, and the various configuration options on which xsbdoc
-depends (see @ref{???} for more details.
-
+single predicate, @pred{xsbdoc/(FormatFile,GenerationType}.
+@tt{FormatFile} is the name of a Prolog format file that indicates the
+main file for the application, component files, and the various
+configuration options on which xsbdoc depends @tt{GenerationType} is
+one of the currently supported generation types -- @tt{ascii},
+@tt{ps}, @tt{html} and so on (see @ref{Generating Manuals} for more
+details.)
  ").
 
 %% ---------------------------------------------------------------------------
 %% Body
 %% ---------------------------------------------------------------------------
-test:- xsbdoc(xsbdoc_format).
+test(Type):- xsbdoc(xsbdoc_format,Type).
 
-xsbdoc(Format_file):- 
+/*
+Type can be dvi, ps, html, pdf
+makertf
+*/
+
+xsbdoc(Format_file,Generation_type):- 
 	clear_the_decks,
 	display_version,
 	throw_load_dyn(Format_file),
@@ -95,13 +103,29 @@ xsbdoc(Format_file):-
 	shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
 	shell_list(['texindex ',Base,'.?? ']),
 	shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
-	shell_list(['dvips ',Base,'.dvi',' -o ',Base,'.ps']),
+	perform_generation_type(Generation_type,Base,Components),
 	!.
-xsbdoc(Format_file):- 
-	format(user_error,"~nCould not process: ~w",[Format_file]),
-	report_usage.
+xsbdoc(Format_file,_):- 
+	format(user_error,"~nCould not process: ~w",[Format_file]).
 
-
+perform_generation_type(ascii,Main,List):- 
+	component_ascii([Main|List]),
+	shell_list(['mv -f ',Main,'.ascii ',Main,'.tempascii']),
+	add_spaces([List],Spacelist),
+	shell_list(['cat ',Main,'.tempascii ',Spacelist,' > ',Main,'.ascii']).
+perform_generation_type(dvi,_,_).
+perform_generation_type(ps,Base,_):- 
+	shell_list(['dvips ',Base,'.dvi -o ',Base,'.ps']).
+perform_generation_type(pdf,Base,_):- 
+	shell_list(['dvips ',Base,'.dvi -o ',Base,'.ps']),
+	shell_list(['ps2pdf ',Base,'.ps ',Base,'.pdf']).
+perform_generation_type(html,Main,List):- 
+	component_html([Main|List]),
+	concat_atom([Main,'_html'],Htmldir),
+	(file_exists(Htmldir) -> true ; 
+		shell_list(['mkdir ',Main,'_html']) ),
+	shell_list(['mv -f *.html ',Main,'_html']).
+	
 autodoc_fail(Q,W,E,R,T,Y,U):- 
 	autodoc(Q,W,E,R,T,Y,U),
 	fail.
@@ -119,6 +143,25 @@ xsbdoc_components(Components,Indices,Opts):-
 	             _StartPage,_PaperType,['-component'|Opts]),
 	fail.
 xsbdoc_components(_,_,_).
+
+component_html([]).
+component_html([P|T]):- 
+	corrected_search_module(P,_Dir,Base,_Src,_Isl), 
+	shell_list(['texi2html -expandinfo -split_chapter -menu ',
+		    Base,'.texic']),
+	component_html(T).
+
+component_ascii([]).
+component_ascii([P|T]):- 
+	corrected_search_module(P,_Dir,Base,_Src,_Isl), 
+	shell_list(['makeinfo  --no-validate --error-limit 100000 --force ',
+	            '--no-split --verbose --no-headers --fill-column=70 ',
+		    '--output=',Base,'.ascii ',Base,'.texic']),
+	component_ascii(T).
+
+add_spaces([],[]).
+add_spaces([File|R],[File,'.ascii '|R1]):- 
+	add_spaces(R,R1).
 
 throw_load_dyn(File):- 
 	load_dyn(File) -> true ; abort(('file not found ',File)).
@@ -155,23 +198,6 @@ xsbdoc_version("0.1").
 get_components(Vals):- 
 	findall(Val,xsbdoc_component(Val),Vals).
 
-report_usage :-
-	format(user,"Usage:~n~n",[]),
-	usage_message(Text), 
-	format(user,Text,[]),
-	format(user,"~nAcceptable index names:~n",[]),
-	( index_comment(Index,IText),
-          format(user,"    ~w~n    ~s~n~n",[Index,IText]),
-	  fail
-	; true ),
-	format(user,"~nAdditional options (MiscOpts):~n",[]),
-	( option_comment(Option,OText),
-          write((Option,OText)),nl,nl,
-	  fail
-	; true ).
-
-%% This is in narrow format because that way it looks nicer in a man page.
-
 shell_list(List):- 
 	flatten(List,List1),
 	concat_atom(List1,Command),
@@ -201,6 +227,42 @@ make_bibfiles(Main):-
 	    shell_list(['mv ',Main,'.refs.bbl ',Main,'refs.texic'])
 	  ; writeln('No Bibfiles found')).
 
+make_distclean:- 
+	shell('rm -f *.aux *.blg *.cp *.cps *.fn *.fns *.gl *.gls *.ky *.kys'),
+	shell('rm -f *.log *.pd *.pds *.pg *.pgs *.refs *.texic *.toc '),
+	shell('rm -f *.tp *.tps *.vr *.vrs'),
+	shell('rm -f autodocXXXXXX *.tempascii').
+
 main.
 
+:- comment(version(0*1+1,2001/11/01),"Celebrating the first version with a brand-new comment!").
+
+:- comment(bug,"Variable names are not propagated to documentation system.").
+
+:- comment(bug,"autotable/1 directive should be doc'd at interface of module").
+
+:- comment(bug,"load_dyn/1, load_dync/1 directives should be doc'd at 
+		interface of module").
+
+:- comment(bug,"Special indexing directives (e.g. tries) are not documented
+	        in predicate level documentation.").
+
 end_of_file.
+
+report_usage :-
+	format(user,"Usage:~n~n",[]),
+	usage_message(Text), 
+	format(user,Text,[]),
+	format(user,"~nAcceptable index names:~n",[]),
+	( index_comment(Index,IText),
+          format(user,"    ~w~n    ~s~n~n",[Index,IText]),
+	  fail
+	; true ),
+	format(user,"~nAdditional options (MiscOpts):~n",[]),
+	( option_comment(Option,OText),
+          write((Option,OText)),nl,nl,
+	  fail
+	; true ).
+
+%% This is in narrow format because that way it looks nicer in a man page.
+

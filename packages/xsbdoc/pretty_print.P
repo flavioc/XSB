@@ -1,8 +1,5 @@
 
 :- compiler_options([ciao_directives]).
-:- export pretty_print/2, pretty_print/3.
-
-:- import numbervars/3 from num_vars.
 
 /*
 :- module(pretty_print,

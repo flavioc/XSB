@@ -7,7 +7,6 @@
 	  messageln/1,
 	  prettyprint/2, 
 	  process_a_file/5,
-	  process_files_from/1,
 	  read_file_as_string/2,
 	  read_file_reset/0.
 
@@ -19,13 +18,12 @@
 :- import write_term/2 from write_term.
 :- import xsb_configuration/2 from usermod.
 
-:- import '_#clause'/2 from usermod.
-
 %:- import file_time/2 from file_io.
+
+:- import '_#clause'/2 from usermod.
 
 :- index('_#clause'/2,trie).
 
-:- dynamic '_#processed'/2.
 :- dynamic '_#ctr'/1.
 :- dynamic '_#clause'/2.
 
@@ -52,37 +50,13 @@ need to do process_file_assertions
 
 */
 
-/* Assuming for now that you're redoing everything when you call this. */
-process_files_from(Files) :-
-	read_file_reset,
-        process_files_from_1(Files).
-
-process_files_from_1([]) :- !.
-process_files_from_1([F|Fs]) :- !,
-        process_file_from(F),
-        process_files_from_1(Fs).
-process_files_from_1(File) :-
-        process_file_from(File).
-
 process_a_file(File,Dir,Base,SrcName,IsLib) :-
 	read_file_reset,
  	corrected_search_module(File,Dir,Base,SrcName,IsLib),
 	concat_atom([Dir,SrcName],Full),
-        ('_#processed'(Full, _Islib) -> 
-	    true
-	  ; 
-	    read_record_file(Full),
-            asserta('_#processed'(Full, IsLib))).
-
-/* search_module will have to change to handle 'string' */
-process_file_from(File) :-
- 	corrected_search_module(File,Dir,_Base,SrcName,IsLib),
-	concat_atom([Dir,SrcName],Full),
-        ('_#processed'(Full, _Islib) -> 
-	    true
-	  ; 
-	    read_record_file(Full),
-            asserta('_#processed'(Full, IsLib))).
+        read_record_file(Full),
+	concat_atom([Base,'.H'],Hname),
+	(file_exists(Hname) -> read_record_file(Hname) ; true).
 
 /* corrected_search_module(main,Dir,main,main.P,<true/false>) */
 corrected_search_module(Input,Dir,Base,Source,IsLib):- 
@@ -166,8 +140,7 @@ messageln(X):- message(X),message('
 
 read_file_reset:- 
 	retractall('_#clause'(_,_)),
-	retractall('_#ctr'(_)),
-	retractall('_#processed'(_,_)).
+	retractall('_#ctr'(_)).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -726,3 +699,26 @@ assert_term(File,Term):-
 assert_term(File,Term):- 
 	inc_ctr(N),
 	assert('_#clause'(File,N,rule(Term,true))).
+
+/* Assuming for now that you're redoing everything when you call this. */
+process_files_from(Files) :-
+	read_file_reset,
+        process_files_from_1(Files).
+
+process_files_from_1([]) :- !.
+process_files_from_1([F|Fs]) :- !,
+        process_file_from(F),
+        process_files_from_1(Fs).
+process_files_from_1(File) :-
+        process_file_from(File).
+
+/* search_module will have to change to handle 'string' */
+process_file_from(File) :-
+ 	corrected_search_module(File,Dir,_Base,SrcName,IsLib),
+	concat_atom([Dir,SrcName],Full),
+        ('_#processed'(Full, _Islib) -> 
+	    true
+	  ; 
+	    read_record_file(Full),
+            asserta('_#processed'(Full, IsLib))).
+
