@@ -533,7 +533,7 @@ assert_dependencies_for_path2(Name,New,Pathnew,Vnew):-
 load_component_pass2(Name,AbsPath,Vin,Anclist):- 
 	slash(Slash),
 	get_full_path_and_loadname(Name,AbsPath,Vin,_Full,_V,Loadname),
-	message(['Loading int rules and initializing component: ',
+	message(['Loading int rules and initializing componen: ',
 			AbsPath,Slash,Loadname]),nl,
 	load_component_dependencies_pass2(Name,Anclist),
 	concat_atom([AbsPath,Slash,Loadname],Dir),
@@ -861,11 +861,11 @@ information with current the path information is created if needed.
 
 create_dependencies_create([],_From,_Compid,_Dir).
 create_dependencies_create([ToName|T],FromName,Compid,Dir):- 
-	(FromName == ToName
-	 ->	true
-	 ;	%	writeln(cd_for(FromName,ToName)),
-		create_all_dependencies_create(ToName,Dir,Compid)
-	),
+	FromName \== ToName,!,
+%	writeln(cd_for(FromName,ToName)),
+	create_all_dependencies_create(ToName,Dir,Compid),
+	create_dependencies_create(T,FromName,Compid,Dir).
+create_dependencies_create([_|T],FromName,Compid,Dir):- 
 	create_dependencies_create(T,FromName,Compid,Dir).
 
 /* TLS: in first clause, we are not necessarily creating a component: 
@@ -1017,13 +1017,13 @@ compwrite_classHasAttr(Source):-
 	get_component_extensional(classHasAttr_ext(Src,Rel,Targ),Source),
 	%% relativize (sp?) dependency paths
 	(   Rel = crid(componentDepends,_)
-	->  Targ = cid(component(cid(TN,TN),cid(TPath,cdfpt),Version),SN),
+	->  Targ = cid(component(cid(TN,TN),cid(TPath,cdfpt),Version),TN),
 	    (	system_component(TN)
 	    ->	RTPath = ''
 	    ;	Src = cid(component(_,cid(SPath,cdfpt),_),_),
 		rel_path(SPath,TPath,RTPath)
 	    ),
-	    RTarg = cid(component(cid(TN,TN),cid(RTPath,cdfpt),Version),SN)
+	    RTarg = cid(component(cid(TN,TN),cid(RTPath,cdfpt),Version),TN)
 	;   RTarg = Targ
 	),
 	write_ext_term(classHasAttr_ext(Src,Rel,RTarg)),
@@ -1178,13 +1178,15 @@ pe_push_dir(Dir) :-
 	true.
 
 pe_pop_dir(Dir) :-
-	once(pe_dir_stack(Dir)),
+%	writeln(pe_pop_dir(Dir)),
+	pe_dir_stack(Dir),
 	retract(pe_dir_stack(Dir)),
 	retractall(pe_cwd(_)),
-	once(pe_dir_stack(NCwd)),
-	asserta(pe_cwd(NCwd)),
-%	writeln(pe_pop_dir(Dir)),
-	true.
+	!,
+	(  once(pe_dir_stack(NCwd))
+	-> asserta(pe_cwd(NCwd))
+	;  init_path_engine
+	).
 
 pe_decanon_path(Canon,Rel):- 
 	pe_cwd(Cwd),
