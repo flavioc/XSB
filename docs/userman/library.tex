@@ -408,6 +408,11 @@ predicates are described here.
     the end of the file, respectively. If the call is successful,
     {\tt Return} is set to zero.
 
+\ournewitem{file\_pos(+FileDes, -Position)}{file\_io}
+\index{{\tt file\_pos/2}}
+    Unifies {\tt Position} with the position inside the file indicated by
+    {\tt FileDes}.
+
 \ournewitem{file\_truncate(+FileDes, +Length, -Return)}{file\_io}
 \index{{\tt file\_truncate/3}}
     The regular file  referenced by file descriptor {\tt FileDes}
