@@ -22,6 +22,8 @@
 ** 
 */
 
+:- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
+#include "loader_defs.h"
  
 /************************************************************************/
 /*									*/
@@ -960,7 +962,7 @@ get_time(Type, Mod, Time) :-
 	).
 
 get_ext(decl, Ext) :- decl_ext(Ext).
-get_ext(prolog, '.P').
+get_ext(prolog, XSB_SRC_EXTENSION_ATOM).
 get_ext(header, Ext) :- hdr_ext(Ext).
 
 earlier(T1, T2) :- T1 @< T2 ; T1 == time(0,0).

@@ -80,7 +80,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* (1) create filename.so */
   
   strcpy(sofilename, pofilename);
-  /* replace the O suffix with the so suffix */
+  /* replace the .O suffix with the so suffix */
   strcpy(sofilename+strlen(pofilename)-1, "so");
   
   /* (1.5) include necessary paths into LD_LIBRARY_PATH

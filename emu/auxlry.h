@@ -65,7 +65,7 @@ extern int asynint_val;
 typedef enum XSB_Execution_Mode {
   DEFAULT,           /* mode has not been set by user */
   INTERPRETER,       /* currently the mode to be used in default condition */
-  DISASSEMBLE,       /* dissassemble .O file */
+  DISASSEMBLE,       /* dissassemble object file file */
   C_CALLING_XSB,
   CUSTOM_BOOT_MODULE,     /* user specifies boot module on the command line */
   CUSTOM_CMD_LOOP_DRIVER  /* user specifies command loop driver 

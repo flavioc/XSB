@@ -45,6 +45,7 @@
 #include "io_defs_xsb.h"
 #include "celltags_xsb.h"
 #include "psc_defs.h"
+#include "loader_defs.h"
 
 %% Provide tests for the respective OS.
 %% windows_os_loader is used only here and in parse.
@@ -165,14 +166,14 @@ load_library_directories :-
 	xsb_configuration(syslibdir, SyslibDir),
 	fmt_write_string(SysFileName, '%s%ssysinitrc', f(SyslibDir, Slash)),
 	reconsult(SysFileName),	        % SysFileName is mandatory.
-					% It is compiled if a .O file does
+					% It is compiled if a OBJO file does
 					% not exist or is obsolete.
 	%%
 	%% Construct site init file name
 	xsb_configuration(site_dir, SiteDir),
 	fmt_write_string(SiteFileName,'%s%ssiteinitrc', f(SiteDir,Slash)),
-	str_cat(SiteFileName, '.P', SiteFileNameP),
-	str_cat(SiteFileName, '.O', SiteFileNameO),
+	str_cat(SiteFileName, XSB_SRC_EXTENSION_ATOM, SiteFileNameP),
+	str_cat(SiteFileName, XSB_OBJ_EXTENSION_ATOM, SiteFileNameO),
 	%% Site init file isn't mandatory
 	( (machine_file_exists(SiteFileNameP)
 	   ; machine_file_exists(SiteFileNameO)) ->
@@ -183,8 +184,8 @@ load_library_directories :-
 	%% Construct user''s .xsb/xsbrc.P
 	xsb_configuration(user_home, HomeDir),
 	fmt_write_string(UsrFileN, '%s%s.xsb%sxsbrc', f(HomeDir,Slash,Slash)),
-	str_cat(UsrFileN, '.P', UserFileNameP),
-	str_cat(UsrFileN, '.O', UserFileNameO),
+	str_cat(UsrFileN, XSB_SRC_EXTENSION_ATOM, UserFileNameP),
+	str_cat(UsrFileN, XSB_OBJ_EXTENSION_ATOM, UserFileNameO),
 	%% User init file isn't mandatory
 	( (machine_file_exists(UserFileNameP)
 	   ; machine_file_exists(UserFileNameO)) ->
@@ -341,7 +342,7 @@ load(ModName) :-
 	->  fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
 	;   true
 	),
-	(   search_file(ModName, FileName_O, '.O'),
+	(   search_file(ModName, FileName_O, XSB_OBJ_EXTENSION_ATOM),
 	    code_load(FileName_O, Init, 0), % use the C loader
 	    (	Init =\= 0	% load succeeded
 	    ->	'_$cutto'(B),
@@ -352,10 +353,10 @@ load(ModName) :-
 		)
 	    )
 	->  true
-	%% If .O file doesn't exist or doesn't load,
-	%% but .P file exists somewhere on the load path
-	%% then recompile the .P file and load it.
-	;   (   search_file(ModName, FileName_P, '.P'),
+	%% If OBJ file doesn't exist or doesn't load,
+	%% but SRC file exists somewhere on the load path
+	%% then recompile the SRC file and load it.
+	;   (   search_file(ModName, FileName_P, XSB_SRC_EXTENSION_ATOM),
 		machine_file_exists(FileName_P)
 	    ->	reconsult(FileName_P)
 	    )
@@ -374,7 +375,8 @@ ll_code_call(A,B,C) :- code_call(A,B,C).
 
 /*
  *  Takes a filename (INT or STRING encoded pointer) and returns an
- *  absolute filename (STRING) with Extension (e.g., .P, .O) added to it.
+ *  absolute filename (STRING) with Extension
+ *  (e.g., XSB_SRC_EXTENSION_ATOM, XSB_OBJ_EXTENSION_ATOM) added to it.
  *  The extension should NOT already be a part of the incoming ModName.
  */
 

@@ -28,6 +28,10 @@
 */
 
 
+:- compiler_options([xpp_on,sysmod]).
+#include "loader_defs.h"
+
+
 :- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1.
 :- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3.
 
@@ -82,7 +86,7 @@ rm(Name) :-
 edit(File) :- 
 	obsolete('edit/1 in module unix', 'use edit/1 in module shell'),
 	expand_filename(File, FileName), 
-	unix(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, '.P']).
+	unix(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, XSB_SRC_EXTENSION_ATOM]).
 
 /*
 sys_exit() :- sys_syscall(1).

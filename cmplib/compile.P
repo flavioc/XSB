@@ -26,6 +26,7 @@
 
 :- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
 #include "flag_defs_xsb.h"
+#include "loader_defs.h"
 
 
 
@@ -93,7 +94,7 @@ compile(Modname, Basename, Options, ExportList) :-
 
 file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 	   SpecFile, TIFile, TableFile, OptFile) :-
-	str_cat(Basename, '.P', PFile),
+	str_cat(Basename, XSB_SRC_EXTENSION_ATOM, PFile),
 	hdr_ext(HExt), str_cat(Basename, HExt, HFile),
 	obj_ext(OExt), str_cat(Basename, OExt, OFile),
 	asm_ext(AExt), str_cat(Basename, AExt, AFile),
@@ -101,7 +102,7 @@ file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 	str_cat(Basename, '.spec', SpecFile),
 	str_cat(Basename, '.ti', TIFile),
 	str_cat(Basename, '.table', TableFile),
-	str_cat(Basename, '.P.opt', OptFile).
+	str_cat(PFile, '.opt', OptFile).
 
 initialize :-
 	conset('table #', 0),
@@ -193,10 +194,10 @@ compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
 	  abort
       ; option(asm_dump) -> 
 	  write_asmheader(AFile,Modname,SymTab, IsModule), % generate .A header
-	  asm_genheader(OFile, Modname, SymTab, IsModule), % generate .O header
+	  asm_genheader(OFile, Modname, SymTab, IsModule), % generate OBJ header
 	  compile0(Module, 1, AFile, OFile, TIFile, IsModule),
 	  myclose(AFile), myclose(OFile)
-      ; asm_genheader(OFile, Modname, SymTab, IsModule),   % generate .O header
+      ; asm_genheader(OFile, Modname, SymTab, IsModule),   % generate OBJ header
 	compile0(Module, 0, AFile, OFile, TIFile, IsModule),
 	myclose(OFile)
       ).
@@ -217,7 +218,7 @@ compile0(_, _, _, _, _, _).
 /* compile_predicate(+pred(Sym,Clauses,_), +GenAsm,	 		*/
 /*		     +AFile, +OFile, +IsModule, +SymTab)		*/
 /*	Compile the clauses of a single predicate into an assembly	*/
-/*	(*.A) file and/or an object (*.O) file.				*/
+/*	(*.A) file and/or an object file.				*/
 /*======================================================================*/
 
 compile_predicate(PredDef, GenAsm, AFile, OFile, TIFile, IsModule, SymTab) :-
@@ -304,7 +305,7 @@ compile_clauses([Clause|Clauses], Sym, PilCode, PilCodeR, Nin, Nout) :-
 /*======================================================================*/
 /* hack_self_compile/0							*/
 /*	Forces all the modules that are used by the XSB compiler to	*/
-/*	be loaded into the system before overwriting the .O file when	*/
+/*	be loaded into the system before overwriting the OBJ file when	*/
 /*	self-compiling the module (or the whole system).		*/
 /*======================================================================*/
 

@@ -22,6 +22,10 @@
 ** 
 */
 
+
+:- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
+#include "loader_defs.h"
+
  
 /************************************************************************/
 /*									*/
@@ -747,8 +751,8 @@ remove_asserted_stuff :-
 	retractall('_$call_user'(_)).
 
 declfilename_ext('.D').
-srcfilename_ext('.P').
-hdrfilename_ext('.H').
+srcfilename_ext(XSB_SRC_EXTENSION_ATOM).
+hdrfilename_ext(XSB_HDR_EXTENSION_ATOM).
 
 
 print_stats :-

@@ -65,6 +65,8 @@ xsb_version=@xsb_version@
 configuration=@canonical@
 config_tag=@config_tag@
 
+xsb_obj_extension=@xsb_obj_extension@
+
 # ==================== Where To Install XSB ====================
 
 # Everything is placed in subdirectories of this directory.  
@@ -188,7 +190,7 @@ gpp:
 smodels:
 	@cd $(src_pkgdir)/sModels; \
 	  echo "Compiling smodels interface"; \
-	  rm -f *.o Makefile *.h *.O *.so 2>/dev/null || echo ""; \
+	  rm -f *.o Makefile *.h *$(xsb_obj_extension) *.so 2>/dev/null || echo ""; \
 	  ln -s ${src_config_prefix}/smoMakefile ./Makefile; \
 	  make CROSS_SIMULATOR=@CROSS_SIMULATOR@ XSB=$(src_scriptdir)/xsb$(config_tag) @smodels_goal@ 2>&1\
 		 | tee -a ../../build/Installation_summary
@@ -338,7 +340,7 @@ copy_files::
 	    cp -f ${src_config_libdir}/xsb_configuration.* \
 	          ${install_config_libdir} ; \
 	    chmod 644 ${install_config_libdir}/xsb_configuration.* ; \
-	    ./touch.sh ${install_config_libdir}/xsb_configuration.O ; \
+	    ./touch.sh ${install_config_libdir}/xsb_configuration$(xsb_obj_extension) ; \
 	    cp -f ${src_config_prefix}/banner.msg ${src_config_prefix}/*.h \
 	          ${install_config_prefix} ; \
 	    chmod 644 ${install_config_prefix}/banner.msg \
@@ -356,23 +358,23 @@ copy_files::
 	    cp -f ${src_prolog_includes}/*.h ${install_prolog_includes} ; \
 	    chmod 644 ${install_prolog_includes}/*.h ; \
 	    echo "Copying lib..." ; \
-	    cp -f ${src_libdir}/*.O ${install_libdir} ; \
-	    chmod 644 ${install_libdir}/*.O ; \
+	    cp -f ${src_libdir}/*$(xsb_obj_extension) ${install_libdir} ; \
+	    chmod 644 ${install_libdir}/*$(xsb_obj_extension) ; \
 	    ./copysubdirs.sh ${src_libdir} ${install_libdir} ; \
 	    echo "Copying syslib..." ; \
-	    cp -f ${src_syslibdir}/*.O ${install_syslibdir} ; \
-	    chmod 644 ${install_syslibdir}/*.O ; \
+	    cp -f ${src_syslibdir}/*$(xsb_obj_extension) ${install_syslibdir} ; \
+	    chmod 644 ${install_syslibdir}/*$(xsb_obj_extension) ; \
 	    cp -f ${src_syslibdir}/debugger_data.P ${install_syslibdir} ; \
-	    chmod 644 ${install_syslibdir}/*.O ${install_syslibdir}/*.P ; \
+	    chmod 644 ${install_syslibdir}/*$(xsb_obj_extension) ${install_syslibdir}/*.P ; \
 	    ./copysubdirs.sh ${src_syslibdir} ${install_syslibdir} ; \
 	    echo "Copying cmplib..." ; \
-	    cp -f ${src_cmplibdir}/*.O ${install_cmplibdir} ; \
-	    chmod 644 ${install_cmplibdir}/*.O ; \
+	    cp -f ${src_cmplibdir}/*$(xsb_obj_extension) ${install_cmplibdir} ; \
+	    chmod 644 ${install_cmplibdir}/*$(xsb_obj_extension) ; \
 	    ./copysubdirs.sh ${src_cmplibdir} ${install_cmplibdir} ; \
 	    echo "Copying packages..."; \
-	    cp -f ${src_pkgdir}/*.O ${install_pkgdir}; \
+	    cp -f ${src_pkgdir}/*$(xsb_obj_extension) ${install_pkgdir}; \
 	    cp -f ${src_pkgdir}/*.P ${install_pkgdir}; \
-	    ./touch.sh ${install_pkgdir}/*.O; \
+	    ./touch.sh ${install_pkgdir}/*$(xsb_obj_extension); \
 	    ./copysubdirs.sh ${src_pkgdir} ${install_pkgdir} ; \
 	    echo "Copying etc..."; \
 	    cp -fr ${src_etcdir}/* ${install_etcdir}; \
@@ -387,11 +389,11 @@ copy_files::
 configure_packages_src: smodels
 	./pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
 	    	    	    	    	    tee -a Installation_summary ; \
-	  chmod 644  $(src_config_libdir)/xsb_configuration.O
+	  chmod 644  $(src_config_libdir)/xsb_configuration$(xsb_obj_extension)
 
 configure_packages_install:
 	@./pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
-	  chmod 644  $(install_config_libdir)/xsb_configuration.O
+	  chmod 644  $(install_config_libdir)/xsb_configuration$(xsb_obj_extension)
 
 remake_dot_O_files:
 	cd $(srcdir); make XSB=$(src_scriptdir)/xsb$(config_tag)
@@ -417,7 +419,7 @@ clean:
 	@-rm -f ${src_emudir}/*.o
 	@echo "Cleaning up packages"
 	@cd ../packages; ../build/clean_pkgs.sh
-	@-cd ${src_examples}; rm -f *.O *.o *~ */*.O */*.o */*~
+	@-cd ${src_examples}; rm -f *$(xsb_obj_extension) *.o *~ */*$(xsb_obj_extension) */*.o */*~
 	@echo "Cleaning up ${src_libdir}"
 	@-(cd ${src_libdir}; make clean)
 

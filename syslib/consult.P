@@ -27,6 +27,7 @@
 #include "standard.h"
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
+#include "loader_defs.h"
 
 compile(Path) :- compile(Path, []).	% compile with no options
 
@@ -42,19 +43,19 @@ compile(Path, Options) :- \+ (\+ (compile0(Path,Options))).
 compile0(Path, Options) :-
 	atom(Path),
 	search_module(Path, Dir, Mod, SExt, Base, _Obj),
-	SExt \== 'O',
+	SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT,
 	!,
 	compile_f(SExt, Base, Options, _, Mod, Dir).
 compile0(Path, _) :-
 	file_write0(STDERR, 'Cannot find the file/module '),
 	file_write0(STDERR, Path), file_nl(STDERR), fail.
 
-compile_f('P', Base, Opts, ExList, Mod, _) :- 
+compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- 
 	compile(Mod, Base, Opts, ExList).
 compile_f('c', Base, Opts, ExList, Mod, Dir) :- 
 	compile_cH(Mod, Base, Opts, ExList, Dir).
 compile_f('', Base, Opts, ExList, Mod, _) :-
-	str_cat(Base, '.P', FileName),
+	str_cat(Base, XSB_SRC_EXTENSION_ATOM, FileName),
 	sys_link(Base, FileName, _Result),
 	compile(Mod, Base, Opts, ExList),
 	rm(FileName).
@@ -90,7 +91,8 @@ reconsult0(Path, Options, Ensure_loaded) :-
 	 ->	compile_load_user(Options)
 	 ;	(search_module(Path, Dir, Mod, SExt, Base, Obj)
 		 ->	expand_filename(Obj,ExpObj),
-			((SExt \== 'O', i_want_compile(SExt, Base, Obj))
+			((SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT,
+			  i_want_compile(SExt, Base, Obj))
 			 ->	compile_f(SExt,Base,Options,_ExList,Mod,Dir),
 				load_exec(Obj, Mod),
 				(consult_file_loaded(ExpObj)
@@ -115,16 +117,16 @@ reconsult0(Path, Options, Ensure_loaded) :-
 i_want_compile(SExt, Base, Obj) :-
 	( not(file_exists(Obj)) -> true ; needs_recompile(SExt, Base, Obj) ).
 
-needs_recompile('P', Base, Obj) :-
-	( str_cat(Base, '.P', PFileName),
+needs_recompile(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Obj) :-
+	( str_cat(Base, XSB_SRC_EXTENSION_ATOM, PFileName),
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(PFileName, time(PTime1,PTime2)),
 	  time(OTime1,OTime2) @< time(PTime1,PTime2)
 	)
 	;
-	( str_cat(Base, '.H', HFileName),
+	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
 	  file_time(Obj, time(OTime1,Otime2)),
-	  %% If no .H file exists, then HTime = 0
+	  %% If no header file exists, then HTime = 0
 	  file_time(HFileName, time(HTime1,HTime2)), 
 	  time(OTime1,Otime2) @< time(HTime1,HTime2)
 	).	  
@@ -149,7 +151,7 @@ needs_recompile('c', Base, Obj) :-
 	  )
 	)
 	; 
-	( str_cat(Base, '.H', HFileName),
+	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(HFileName, time(HTime1,HTime2)), 
 	  time(OTime1,OTime2) @< time(HTime1,HTime2)
@@ -164,7 +166,7 @@ needs_recompile('c', Base, Obj) :-
 /*		1) the directory (Dir),					*/
 /*		2) the module name (Mod),				*/
 /*		3) the extension (SExt) of the source file		*/
-/*		   ('P'/'c'/''[other name]/'O'[object file only]),	*/
+/*		   ('P'/'c'/''[other name]/[object file only]), 	*/
 /*		4) the base name of the file (Base = Dir+Mod), and	*/
 /*		5) the object file name (Obj)				*/
 /* 	The call will fail if the specified file cannot be found.	*/
@@ -177,7 +179,7 @@ search_module(FileName, Dir, Mod, Ext, Base, Obj) :-
 	    real_search_module(Mod, Dir, Base, Ext)
 	; Dir = D, Ext = E, Base = B
 	),
-	str_cat(Base, '.O', Obj).
+	str_cat(Base, XSB_OBJ_EXTENSION_ATOM, Obj).
 
 /*======================================================================*/
 /* real_search_module(+ModName, -Dir, -Base, -Ext)			*/
@@ -223,8 +225,9 @@ co_code_call(A,B,C) :- code_call(A,B,C).
 
 compile_load_user(Options) :-
 	compile(user, user, Options, _), !,
-	load_exec('user.O', user),
-	rm('user.O').
+	str_cat(user,XSB_OBJ_EXTENSION_ATOM,user_obj_file),
+	load_exec(user_obj_file, user),
+	rm(user_obj_file).
 
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
@@ -293,8 +296,8 @@ get_HRname(SExt,Base,Hfname,Rfname) :-
 		Hfname = []
 	 ;      dotted_ext(SExt, DExt),
 	        str_cat(Base, DExt, Rfname),
-		(SExt == 'P'
-		 ->	str_cat(Base, '.H', Hfname0),
+		(SExt == XSB_SRC_EXTENSION_ATOM_SANS_DOT
+		 ->	str_cat(Base, XSB_HDR_EXTENSION_ATOM, Hfname0),
 			(file_exists(Hfname0)
 			 ->	Hfname = Hfname0
 			 ;	Hfname = []

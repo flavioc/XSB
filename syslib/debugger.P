@@ -29,6 +29,7 @@
 #include "char_defs.h"
 #include "sig_xsb.h"
 #include "standard.h"
+#include "loader_defs.h"
 
 :- set_inthandler('_$deb_spy'(_), MYSIG_SPY),
    set_inthandler('_$deb_trace'(_), MYSIG_TRACE).
@@ -39,7 +40,9 @@
 read_debugger_data :- '_$_debugger_data_loaded', !.
 read_debugger_data :- 
 	xsb_configuration(syslibdir, SysLib),
-	fmt_write_string(DebugDataFile, '%s/debugger_data.P', arg(SysLib)),
+	fmt_write_string(DebugDataFile,
+			 '%s/debugger_data%s',
+			 arg(SysLib,XSB_SRC_EXTENSION_ATOM)),
 	seeing(OldFile),
 	see(DebugDataFile),
 	repeat,

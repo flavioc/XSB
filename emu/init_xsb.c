@@ -56,6 +56,7 @@
 #include "choice.h"
 #include "flags_xsb.h"
 #include "loader_xsb.h"
+#include "loader_defs.h"
 #include "macro_xsb.h"
 #include "tr_utils.h"
 #include "export.h"
@@ -307,12 +308,12 @@ char *init_para(int argc, char *argv[])
 #endif
   flags[DCG_MODE] = XSB_STYLE_DCG;
 
-  /* Set default Prolog files.
-     ------------------------- */
+  /* Set default Prolog files. 
+     File extension XSB_OBJ_EXTENSION_STRING added later. */
 #ifdef WIN_NT
-  boot_module = "\\syslib\\loader.O";
+  boot_module = "\\syslib\\loader";
 #else
-  boot_module = "/syslib/loader.O";
+  boot_module = "/syslib/loader";
 #endif
 
   /* File extensions are automatically added for Loader-loaded files. */
@@ -555,7 +556,7 @@ char *init_para(int argc, char *argv[])
     xsb_mode = INTERPRETER;
 
   strlen_instdir = strlen(install_dir);
-  strlen_initfile = strlen(boot_module);
+  strlen_initfile = strlen(boot_module)+XSB_OBJ_EXTENSION_LENGTH;
   strlen_2ndfile = strlen(cmd_loop_driver);
 
   switch(xsb_mode) {
@@ -568,10 +569,12 @@ char *init_para(int argc, char *argv[])
      */
     flags[BOOT_MODULE] = (Cell) malloc(strlen_instdir + strlen_initfile + 1);
     flags[CMD_LOOP_DRIVER] = (Cell)malloc(strlen_instdir + strlen_2ndfile + 1);
-    sprintf( (char *)flags[BOOT_MODULE], "%s%s", install_dir,
-	     boot_module );
-    sprintf( (char *)flags[CMD_LOOP_DRIVER], "%s%s", install_dir,
-	     cmd_loop_driver );
+    sprintf( (char *)flags[BOOT_MODULE],
+	     "%s%s%s",
+	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
+    sprintf( (char *)flags[CMD_LOOP_DRIVER],
+	     "%s%s",
+	     install_dir, cmd_loop_driver );
     break;
   case CUSTOM_BOOT_MODULE:
     /*
@@ -579,7 +582,8 @@ char *init_para(int argc, char *argv[])
      *  standard one and possibly a top-level command loop driver as well.  In
      *  either case, we can 
      *  make no assumptions as to where these files exist, and so the 
-     *  user must supply an adequate filename in each case.
+     *  user must supply an adequate full path name in each case (including
+     *  extension).
      */
     flags[BOOT_MODULE] = (Cell) malloc(strlen_initfile + 1);
     flags[CMD_LOOP_DRIVER ] = (Cell) malloc(strlen_2ndfile + 1);
@@ -594,13 +598,15 @@ char *init_para(int argc, char *argv[])
      */
     flags[BOOT_MODULE] = (Cell) malloc(strlen_instdir + strlen_initfile + 1);
     flags[CMD_LOOP_DRIVER ] = (Cell) malloc(strlen_2ndfile + 1);
-    sprintf( (char *)flags[BOOT_MODULE], "%s%s", install_dir,
-	     boot_module );
+    sprintf( (char *)flags[BOOT_MODULE],
+	     "%s%s%s",
+	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
     strcpy( (char *)flags[CMD_LOOP_DRIVER ], cmd_loop_driver );
     break;
   case DISASSEMBLE:
     /*
      *  A loader file should have been specified for disassembling.
+     *  Should include extension and all.
      */
     flags[BOOT_MODULE] = (Cell) malloc(strlen_initfile + 1);
     strcpy( (char *)flags[BOOT_MODULE], boot_module );

@@ -30,6 +30,7 @@
 #include "system_defs_xsb.h"
 #include "builtin.h"
 #include "syscall_xsb.h"
+#include "loader_defs.h"
 
 
 /* Create subprocess. Redirect its standard input to StreamToProc
@@ -91,7 +92,7 @@ cwd(Name) :- sys_cwd(Name, Res), Res =:= 0.
 
 edit(File) :- 
 	expand_filename(File, FileName), 
-	shell(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, '.P']).
+	shell(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, XSB_SRC_EXTENSION_ATOM]).
 
 
 %% sys_exit(-ExitCode) exit subprocess unconditionally with ExitCode

@@ -64,6 +64,7 @@ all: init $(ALL) finish
 %.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
 	@cp -f $*.O $(OBJFILESAVED) || echo ""
 	echo 'mc($*, $(Option)).' >> cmd...
+
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
 %.P:   %.H

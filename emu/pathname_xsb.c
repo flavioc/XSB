@@ -54,6 +54,7 @@
 #include "cinterf.h"
 #include "error_xsb.h"
 #include "flags_xsb.h"
+#include "loader_defs.h"
 
 /*=========================================================================*/
 
@@ -538,8 +539,9 @@ char *existing_file_extension(char *basename)
   char filename[MAXPATHLEN];
   struct stat fileinfo;
 
-  strcpy(filename, basename); strcat(filename, ".P");
-  if (! stat(filename, &fileinfo)) return "P";
+  strcpy(filename, basename); strcat(filename, XSB_SRC_EXTENSION_STRING);
+  /*  +1 skips the "."   */
+  if (! stat(filename, &fileinfo)) return XSB_SRC_EXTENSION_STRING+1;
 
   strcpy(filename, basename); strcat(filename, ".c");
   if (! stat(filename, &fileinfo)) return "c";
@@ -547,8 +549,9 @@ char *existing_file_extension(char *basename)
   strcpy(filename, basename);
   if (! stat(filename, &fileinfo)) return ""; /* no extension */
 
-  strcpy(filename, basename); strcat(filename, ".O");
-  if (! stat(filename, &fileinfo)) return "O";
+  sprintf(filename, "%s%s", basename, XSB_OBJ_EXTENSION_STRING);
+  /*  +1 skips the "."   */
+  if (! stat(filename, &fileinfo)) return XSB_OBJ_EXTENSION_STRING+1;
 
   return NULL; /* signifies that the search was unsuccessful */
 }
