@@ -36,11 +36,6 @@
 #include <setjmp.h>
 #include <stdlib.h>
 
-#ifndef NeXT
-#include <malloc.h>
-#endif
-
-
 #include "auxlry.h"
 #include "cell.h"
 #include "xsberror.h"
@@ -59,7 +54,6 @@
 #include "xmacro.h"
 #include "tr_utils.h"
 #include "trassert.h"
-
 
 /* --- routines used from other files ---------------------------------	*/
 
@@ -100,7 +94,6 @@ extern Cell val_to_hash(Cell);
        write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
        write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);\
 	pad64bits(Loc);}
-
 
 #define dbgen_inst_ppv(Opcode,Arg1,Buff,Loc) {\
        dbgen_printinst(Opcode, Arg1, 0);\
@@ -610,7 +603,7 @@ static int *Loc;
 static int BLim = 0;
 static int Size;
 
-char *buff_realloc()
+static char *buff_realloc(void)
 {
   /*  fprintf(stderr,"Enter buff_realloc(%d) %X\n",Buff_size,Buff); */
   Buff_size = Buff_size + Buff_size;
@@ -629,12 +622,9 @@ static void db_putterm(int, prolog_term, RegStat);
 static void db_genmvs(struct instruction *, RegStat);
 static void db_gentopinst(prolog_term, int, RegStat);
 static void db_genterms(struct instruction *, RegStat);
-static void db_geninst(prolog_term, RegStat,
-		       struct instruction *);
-static void db_bldsubs(prolog_term, RegStat,
-		       struct flatten_elt *);
-static void db_genaput(prolog_term, int,
-		       struct instruction *, RegStat);
+static void db_geninst(prolog_term, RegStat, struct instruction *);
+static void db_bldsubs(prolog_term, RegStat, struct flatten_elt *);
+static void db_genaput(prolog_term, int, struct instruction *, RegStat);
 
 /*======================================================================*/
 /*  The following code compiles a clause into a local buffer.  It	*/
@@ -2011,7 +2001,38 @@ bool db_remove_prref( /* PrRef */ )
     return TRUE ;
 }
 
+/*----------------------------------------------------------------------*/
+/* some stuff for trie_assert                                           */
+/*----------------------------------------------------------------------*/
 
+#define clref_fld(x) ((CPtr) *(x +1))
+#define next_clref(x) ((CPtr) *(x +1))
+#define last_clref(PRREF)  ((CPtr)((PrRef)(PRREF))->LastClRef)
+#define try_type_instr_fld(x)  (ClRefTryOpCode(x))
+#define code_to_run(x)   (cell_opcode(ClRefEntryPoint(x)))
+#define first_instr_to_run(x)  (cell_opcode(ClRefWord(x,3)))
+
+/*----------------------------------------------------------------------*/
+
+static int clref_trie_asserted(CPtr Clref) {
+  return((code_to_run(Clref) == jump) && 
+	 (first_instr_to_run(Clref) == trie_assert_inst));
+}
+/*----------------------------------------------------------------------*/
+
+static void abolish_trie_asserted_stuff(CPtr b)
+{
+   NODEptr TNode;
+   
+   switch_to_trie_assert;
+   TNode = (NODEptr)*(b + 3);
+   delete_trie(Child(TNode));
+   free_node_function(TNode);
+   switch_from_trie_assert;
+   *(b + 3) = (Cell) 0;
+}
+
+/*----------------------------------------------------------------------*/
 
 static int another_buff(Cell Instr)
 {
@@ -2050,10 +2071,7 @@ int gen_retract_all(/* R1: + buff */)
       break;
     case COMPILED_CL:
       {
-	int clref_trie_asserted(CPtr);
-	void abolish_trie_asserted_stuff(CPtr);
-	
-	if(clref_trie_asserted((CPtr) buffer)){
+	if (clref_trie_asserted((CPtr) buffer)) {
 	  abolish_trie_asserted_stuff((CPtr) buffer);
         }
         else
@@ -2068,21 +2086,22 @@ int gen_retract_all(/* R1: + buff */)
   return TRUE;
 }
 
+/*---------------------------------------------------------------*/
 
-#define clref_fld(x) ((CPtr) *(x +1))
-#define next_clref(x) ((CPtr) *(x +1))
-#define last_clref(PRREF)  ((CPtr)((PrRef)(PRREF))->LastClRef)
-#define try_type_instr_fld(x)  (ClRefTryOpCode(x))
-#define code_to_run(x)   (cell_opcode(ClRefEntryPoint(x)))
-#define first_instr_to_run(x)  (cell_opcode(ClRefWord(x,3)))
-/*-----------------------------------------------------------------*/
-/*
-static void trie_assert_abort(prolog_term Clause, char *s){
-      fprintf(stderr,"Argument --->");
-      printterm(Clause,1,24);
-      xsb_abort(s); 
+static CPtr trie_asserted_clref(CPtr prref)
+{
+  CPtr Clref;
+
+  Clref = last_clref(prref);
+  if (try_type_instr_fld(prref) != fail) {
+    if ((code_to_run(Clref) == jump) &&
+	(first_instr_to_run(Clref) == trie_assert_inst))
+      return Clref;
+  }
+  return NULL;
 }
-*/
+
+/*---------------------------------------------------------------*/
 
 #ifdef DEBUG_T
 void print_bytes(CPtr x,int lo, int hi)
@@ -2094,38 +2113,15 @@ void print_bytes(CPtr x,int lo, int hi)
   for( i = lo; i <= hi ; i++){
     printf( " i = %d 4*i = %d  x[i] = %x \n",i,4*i, (int)*(x +i));
   }
-  printf("Instr = %s ---code to run %s----\n",(char *)inst_table[try_type_instr_fld(x)][0],(char *)inst_table[code_to_run(x)][0] );
+  printf("Instr = %s ---code to run %s----\n",
+	 (char *)inst_table[try_type_instr_fld(x)][0],
+	 (char *)inst_table[code_to_run(x)][0] );
 }
-#endif
-/*----------------------------------------------------------------*/
-
-int clref_trie_asserted(CPtr Clref) {
-  return((code_to_run(Clref) == jump) && 
-	 (first_instr_to_run(Clref) == trie_assert_inst));
-}
-
-/*---------------------------------------------------------------*/
-
-
-CPtr trie_asserted_clref(CPtr prref)
-{
-  CPtr Clref;
-
-  Clref = last_clref(prref);
-  if(try_type_instr_fld(prref) != fail){
-    if((code_to_run(Clref) == jump) &&  (first_instr_to_run(Clref) == trie_assert_inst))
-      return Clref;
-  }
-    return NULL;
-}
-
-#define DEBUG_T_not
 
 void show_clrefs(CPtr prref)
 {
 
-  CPtr Clref;
-  
+  CPtr Clref;  
   int limit = 5;
 
  if(try_type_instr_fld(prref) != fail)
@@ -2154,9 +2150,10 @@ void show_clrefs(CPtr prref)
 #endif
   }
 }
-
+#endif
 
 /*----------------------------------------------------------------*/
+
 int trie_assert(void)
 {
   Cell Clause;
@@ -2191,7 +2188,6 @@ int trie_assert(void)
   printf(" Prref %d ",(int)Prref);
   printf("\n");
 #endif
-
 
   Trie_Asserted_Clref = trie_asserted_clref(Prref);
 
@@ -2274,26 +2270,6 @@ int trie_retract_safe(void)
     safe_delete_branch(Last_Nod_Sav);
     return TRUE;
   }
-}
-/*-----------------------------------------------------------------*/
-
-void reclaim_space(void)
-{
-  fprintf(stderr,"Will be implemented soon\n");
-}
-
-/*-----------------------------------------------------------------*/
-
-void abolish_trie_asserted_stuff(CPtr b)
-{
-   NODEptr TNode;
-   
-   switch_to_trie_assert;
-   TNode = (NODEptr)*(b + 3);
-   delete_trie(Child(TNode));
-   free_node_function(TNode);
-   switch_from_trie_assert;
-   *(b + 3) = (Cell) 0;
 }
 
 /*-----------------------------------------------------------------*/
