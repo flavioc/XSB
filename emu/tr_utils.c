@@ -44,6 +44,7 @@
 #include "deref.h"
 #include "flags_xsb.h"
 #include "trie_internals.h"
+#include "tst_aux.h"
 #if (!defined(WAM_TRAIL))
 #include "cut_xsb.h"
 #endif
@@ -61,21 +62,14 @@
 
 /*----------------------------------------------------------------------*/
 
-#define dbind_ref_nth_var(addr,n) dbind_ref(addr,VarEnumerator[n])
-
 #define MAX_VAR_SIZE	200
-
-CPtr Temp_VarPosReg;
-CPtr call_vars[MAX_VAR_SIZE];
 
 #ifdef DEBUG
 extern void printterm(Cell, byte, int);
 #endif
 
-
 #include "ptoc_tag_xsb_i.h"
 #include "term_psc_xsb_i.h"
-
 
 /*----------------------------------------------------------------------*/
 
@@ -101,209 +95,248 @@ bool has_unconditional_answers(SGFrame subg)
 
 /*----------------------------------------------------------------------*/
 
-static int ctr;
-static BTNptr  *GNodePtrPtr;
-
-/*----------------------------------------------------------------------*/
-
-#define IsInsibling_rdonly(wherefrom,Found,item) {		\
-								\
-   LocalNodePtr = wherefrom;					\
-   while(LocalNodePtr && (BTN_Symbol(LocalNodePtr) != item))	\
-     LocalNodePtr = Sibl(LocalNodePtr);				\
-   if ( IsNULL(LocalNodePtr) )					\
-     Found = 0;							\
-   else {							\
-     Paren = LocalNodePtr;					\
-     GNodePtrPtr = &(Child(LocalNodePtr));  			\
-   }  								\
- }
-
-/*************************************************/
-#define one_node_chk(Found,Item) {					\
-									\
-  BTNptr LocalNodePtr;							\
-  Cell item;								\
-									\
-  item = (Cell) Item;							\
-  if ( IsNULL(*GNodePtrPtr) ) {						\
-    char message[80];							\
-    Found = 0;								\
-    sprintf(message,							\
-	    "Inconsistency in one_node_chk() (GNodePtrPtr = 0x%p)",	\
-	    GNodePtrPtr);				     		\
-    xsb_exit(message);							\
-  }									\
-  if ( IsHashHeader(*GNodePtrPtr) )					\
-    GNodePtrPtr =							\
-      CalculateBucketForSymbol(((BTHTptr)*GNodePtrPtr),item);		\
-  IsInsibling_rdonly(*GNodePtrPtr,Found,item);				\
-}
-/*********************************/
-
-
-#define recvariant_call_rdonly(flag) {					      \
-									      \
-   CPtr  xtemp1;							      \
-   int j;								      \
-									      \
-   while ( (!pdlempty) && flag ) {					      \
-     xtemp1 = (CPtr) pdlpop;						      \
-     cptr_deref( xtemp1);						      \
-     switch(cell_tag(xtemp1)) {						      \
-     case FREE:								      \
-     case REF1: 							      \
-       if (! IsStandardizedVariable(xtemp1)) {				      \
-	 *(--Temp_VarPosReg) =(Cell) xtemp1;				      \
-	 dbind_ref_nth_var(xtemp1,ctr);					      \
-	 one_node_chk(flag,EncodeNewTrieVar(ctr));			      \
-	 ctr++;								      \
-       }								      \
-       else								      \
-	 one_node_chk(flag,						      \
-		      EncodeTrieVar(IndexOfStdVar(xtemp1)));		      \
-       break;								      \
-     case STRING:							      \
-     case INT:								      \
-     case FLOAT: 							      \
-       one_node_chk(flag,xtemp1);					      \
-       break;								      \
-     case LIST:								      \
-       one_node_chk(flag,LIST);						      \
-       pdlpush( cell(clref_val(xtemp1)+1) );				      \
-       pdlpush( cell(clref_val(xtemp1)) );				      \
-       break;								      \
-     case CS:								      \
-       one_node_chk(flag,makecs(follow(cs_val(xtemp1))));		      \
-       for(j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--)	      \
-	 {pdlpush(cell(clref_val(xtemp1) +j));}				      \
-       break;								      \
-     default: 								      \
-       xsb_abort("Bad tag in recvariant_call_rdonly");			      \
-     }									      \
-   }									      \
-   resetpdl;								      \
-}
-
-/*----------------------------------------------------------------------*/
-
 /*
- * Totally pirated from variant_call_search().  Notice how the place where
- * the variables and number of them are pushed goes from high to low mem
- * (`call_vars' is a static array).  And the fact that the pointer name is
- * reminiscent of the one used in variant_call_search() (Temp_VarPosReg).
- *
- * `argVector' is a pointer to the argument vector, in low-to-high memory
- * format, beginning with the pointer to the PSC record.
- *
- * `callTrie' is a ptr to the root of the call trie.
- *
- * If an entry is found in the call trie correspnding to the given
- * argument vector, a pointer to the trie representation, in the form of a
- * leaf, is returned.  Otherwise NULL is returned.
+ * Given a term as an arity and array of subterms, determines whether
+ * this term is present in the given trie.  If an array is supplied,
+ * the variables in the term are copied into it, with the 0th element
+ * containing the count.  The leaf representing the term is returned
+ * if present, or NULL otherwise.
  */
 
-static BTNptr variant_call_lookup(int arity, CPtr argVector, BTNptr callTrie) {
+BTNptr trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
+		   Cell varArray[]) {
 
-    CPtr *xtrbase,xtemp1;
-    int i,j,flag = 1;
+  BTNptr trieNode;      /* Used for stepping down through the trie */
 
-    xtrbase = trreg;                                
-    ctr = 0;                                                    
-    Temp_VarPosReg = (CPtr)call_vars + MAX_VAR_SIZE - 1;
-    Paren = callTrie;
-    if ( IsNonNULL(Paren) )
-      GNodePtrPtr = &BTN_Child(Paren);
-    else
-      flag = 0;
+  Cell symbol;		/* Trie representation of current heap symbol,
+			   used for matching/inserting into a TSTN */
 
-    for (i = 1 ; (i<= arity) && flag ; i++) {                      
-      xtemp1 = (CPtr) (argVector + i);            /* Note! */                  
-      cptr_deref(xtemp1);                           
-      switch (cell_tag(xtemp1)) {                              
-        case FREE: case REF1:
-	  if (! IsStandardizedVariable(xtemp1)) {
-	    *(--Temp_VarPosReg) = (Cell) xtemp1;	
-	    dbind_ref_nth_var(xtemp1,ctr);                 
-	    one_node_chk(flag,EncodeNewTrieVar(ctr));           
-	    ctr++;
-	  } else {
-	    one_node_chk(flag,EncodeTrieVar(IndexOfStdVar(xtemp1)));
-	  }
-	  break;
-	case STRING: case INT: case FLOAT:            
-	  one_node_chk(flag,xtemp1);                     
-	  break;                                              
-	case LIST:                                           
-	  one_node_chk(flag,LIST);                       
-	  pdlpush(cell(clref_val(xtemp1)+1));
-	  pdlpush(cell(clref_val(xtemp1)));
-	  recvariant_call_rdonly(flag);                      
-	  break;                                              
-	case CS: 
-	  one_node_chk(flag,makecs(follow(cs_val(xtemp1))));     
-	  for (j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1; j--) {
-	    pdlpush(cell(clref_val(xtemp1)+j));
-	  }
-	  recvariant_call_rdonly(flag);                      
-	  break;                                              
-	default:                                             
-	  xsb_exit("Bad tag in variant_call_lookup()");
+  Cell subterm;		/* Used for stepping through the term */
+
+  int std_var_num;	/* Next available TrieVar index; for standardizing
+			   variables when interned */
+
+
+  if ( IsNULL(trieRoot) || IsNULL(BTN_Child(trieRoot)) )
+    return NULL;
+
+  else if ( nTerms > 0) {
+    trieNode = trieRoot;
+    std_var_num = 0;
+
+    Trail_ResetTOS;
+    TermStack_ResetTOS;
+    TermStack_PushLowToHighVector(termVector,nTerms);
+
+    while ( ! TermStack_IsEmpty && IsNonNULL(trieNode) ) {
+      subterm = TermStack_Pop;
+      deref(subterm);
+      switch (cell_tag(subterm)) {
+
+      case REF:
+      case REF1:
+	if ( ! IsStandardizedVariable(subterm) ) {
+	  StandardizeVariable(subterm, std_var_num);
+	  Trail_Push(subterm);
+	  symbol = EncodeNewTrieVar(std_var_num);
+	  std_var_num++;
 	}
-    }                
-    if ( (arity == 0) && (flag) ) {
-      one_node_chk(flag,(Cell)0);
+	else
+	  symbol = EncodeTrieVar(IndexOfStdVar(subterm));
+	break;
+
+      case STRING:
+      case INT:
+      case FLOAT:
+	symbol = EncodeTrieConstant(subterm);
+	break;
+
+      case CS:
+	symbol = EncodeTrieFunctor(subterm);
+	TermStack_PushFunctorArgs(subterm);
+	break;
+
+      case LIST:
+	symbol = EncodeTrieList(subterm);
+	TermStack_PushListArgs(subterm);
+	break;
+
+      default: 
+	/* Bad tag Error */
+	trieNode = NULL;
+	continue;
+      }
+
+      if ( IsHashHeader(BTN_Child(trieNode)) ) {
+	BTHTptr ht = BTN_GetHashHdr(trieNode);
+	trieNode = *CalculateBucketForSymbol(ht,symbol);
+      }
+      else
+	trieNode = BTN_Child(trieNode);
+      {
+	int chain_length;
+	SearchChainForSymbol(trieNode,symbol,chain_length);
+      }
     }
-    resetpdl;
-    *(--Temp_VarPosReg) = ctr;
-    table_undo_bindings(xtrbase);
-    if ( flag )
-      return Paren;
-    else
+
+    if ( IsNonNULL(varArray) ) {
+      int i;
+
+      varArray[0] = tstTrail.top - tstTrail.base;
+      for ( i = 1; i <= varArray[0]; i++ )
+	varArray[i] = (Cell)tstTrail.base[i - 1];
+    }
+
+    Trail_Unwind_All;
+    return trieNode;
+  }
+
+  else if ( IsEscapeNode(BTN_Child(trieRoot)) ) {
+    if ( IsNonNULL(varArray) )
+      varArray[0] = 0;
+    return BTN_Child(trieRoot);
+  }
+
+  else {  /* Error conditions */
+    if ( nTerms == 0 )
+      /* Malformed trie or nTerms is wrong */
       return NULL;
+    else
+      /* nTerms is less than 0 */
+      return NULL;
+  }
 }
 
+/*----------------------------------------------------------------------*/
 
-CPtr get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
+SGFrame get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
 
   int arity;
-  BTNptr pTrieRepOfCall;
+  BTNptr call_trie_leaf;
 
   arity = get_arity(term_psc(callTerm));
-  pTrieRepOfCall = variant_call_lookup(arity, (CPtr)cs_val(callTerm),
-				       TIF_CallTrie(pTIF));
-  if ( IsNonNULL(pTrieRepOfCall) )
-    return (CPtr)CallTrieLeaf_GetSF(pTrieRepOfCall);
+  call_trie_leaf = trie_lookup(arity, clref_val(callTerm) + 1,
+			       TIF_CallTrie(pTIF), NULL);
+  if ( IsNonNULL(call_trie_leaf) )
+    return CallTrieLeaf_GetSF(call_trie_leaf);
   else
     return NULL;
 }
 
 /*----------------------------------------------------------------------*/
-/* This function resembles an analogous function in tries.c.  It is
- * supposed to be used only after variant_call_lookup() has been
- * called and the variables in the substitution factor have been left in
- * the Temp_VarPosReg location (containing the arity) and in #arity
- * locations upwards.
- *----------------------------------------------------------------------*/
 
-void construct_ret_for_call(void)
-{
-    Pair sym;
-    Cell var;
-    int  arity, i, new;
+/*
+ * Given a vector of terms and their number, N, builds a ret/N structure
+ * on the heap containing those terms.  Returns this constructed term.
+ */
 
-    arity = cell(Temp_VarPosReg);
-    if (arity == 0) {
-      ctop_string(3, (char *) ret_psc[0]);
-    } else {
-      bind_cs((CPtr)ptoc_tag(1), hreg);
-      sym = insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
-      new_heap_functor(hreg, sym->psc_ptr);
-      for (i = arity; 0 < i; i--) {
-	var = cell(Temp_VarPosReg+i);
-	nbldval(var);
-      }
+Cell build_ret_term(int arity, Cell termVector[]) {
+
+  Pair sym;
+  CPtr ret_term;
+  int  i, new;
+
+  if ( arity == 0 )
+    return makestring(ret_psc[0]);  /* return as a term */
+  else {
+    ret_term = hreg;  /* pointer to where ret(..) will be built */
+    sym = insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
+    new_heap_functor(hreg, pair_psc(sym));
+    for ( i = 0; i < arity; i++ )
+      nbldval(termVector[i]);
+    return makecs(ret_term);  /* return as a term */
+  }
+}
+
+/*----------------------------------------------------------------------*/
+
+/*
+ * Create the answer template for a call with the given producer.
+ * The template is stored in an array supplied by the caller.
+ */
+
+void construct_answer_template(Cell callTerm, SGFrame producer,
+			       Cell template[]) {
+
+  Cell subterm, symbol;
+  int  i;
+
+  /*
+   * Store the symbols along the path of the more general call.
+   */
+  SymbolStack_ResetTOS;
+  SymbolStack_PushPath(subg_leaf_ptr(producer));
+
+  /*
+   * Push the arguments of the subsumed call.
+   */
+  TermStack_ResetTOS;
+  TermStack_PushFunctorArgs(callTerm);
+
+  /*
+   * Create the answer template while we process.  Since we know we have a
+   * more general subsuming call, we can greatly simplify the "matching"
+   * process: we know we either have exact matches of non-variable symbols
+   * or a variable paired with some subterm of the current call.
+   */
+  i = 1;
+  while ( ! TermStack_IsEmpty ) {
+    subterm = TermStack_Pop;
+    deref(subterm);
+    symbol = SymbolStack_Pop;
+    if ( IsTrieVar(symbol) && IsNewTrieVar(symbol) ) {
+      template[i] = subterm;
+      i++;
     }
+    else if ( IsTrieFunctor(symbol) )
+      TermStack_PushFunctorArgs(subterm)
+    else if ( IsTrieList(symbol) )
+      TermStack_PushListArgs(subterm)
+  }
+  template[0] = i - 1;
+}
+
+/*----------------------------------------------------------------------*/
+
+/*
+ * Given a term representing a tabled call, determine whether it is
+ * recorded in the Call Table.  If it is, then return a pointer to its
+ * subgoal frame and construct on the heap the answer template required
+ * to retrieve answers for this call.  Place a reference to this term in
+ * the location pointed to by the second argument.
+ */
+
+SGFrame get_call(Cell callTerm, Cell *retTerm) {
+
+  Psc  psc;
+  TIFptr tif;
+  int arity;
+  BTNptr call_trie_leaf;
+  SGFrame sf;
+  Cell callVars[MAX_VAR_SIZE + 1];
+
+
+  psc = term_psc(callTerm);
+  if ( IsNULL(psc) ) {
+    err_handle(TYPE, 1, "get_call", 3, "callable term", callTerm);
+    return NULL;
+  }
+  tif = get_tip(psc);
+  if ( IsNULL(tif) )
+    xsb_abort("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
+
+  arity = get_arity(term_psc(callTerm));
+  call_trie_leaf = trie_lookup(arity, clref_val(callTerm) + 1,
+			       TIF_CallTrie(tif), callVars);
+  if ( IsNULL(call_trie_leaf) )
+    return NULL;
+  else {
+    sf = CallTrieLeaf_GetSF(call_trie_leaf);
+    if ( ! SubgoalHasOwnAnswerSet(sf) )
+      construct_answer_template(callTerm, subg_producer(sf), callVars);
+    *retTerm = build_ret_term(callVars[0],&callVars[1]);
+    return sf;
+  }
 }
 
 /*======================================================================*/

@@ -23,12 +23,14 @@
 */
 
 
+extern SGFrame get_subgoal_ptr(Cell, TIFptr);
+extern SGFrame get_call(Cell, Cell *);
+extern Cell build_ret_term(int, Cell[]);
+extern void construct_answer_template(Cell, SGFrame, Cell[]);
 extern void breg_retskel(void);
-extern void construct_ret_for_call(void);
 extern void delete_predicate_table(BTNptr);
 extern void reclaim_del_ret_list(SGFrame);
 extern void delete_return(BTNptr, SGFrame);
-extern CPtr get_subgoal_ptr(Cell, TIFptr);
 extern void init_newtrie(void);
 extern void delete_branch(BTNptr, BTNptr *);
 extern void safe_delete_branch(BTNptr);
