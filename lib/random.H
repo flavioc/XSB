@@ -31,3 +31,4 @@
 	  setrand/1.
 
 :- import abort/1, integer/1 from standard.
+:- import keysort/2 from setof.

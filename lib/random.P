@@ -26,14 +26,17 @@
 
 #include "standard.h"
 
+%-----------------------------------------------------------------------
 % random(Num) binds Num to a floating number in [0.0, 1.0)
-
+%-----------------------------------------------------------------------
 random(Num) :-
 	wh_random(1, Num, _, _).
 
+
+%-----------------------------------------------------------------------
 % random(+L, +U, -R) binds R to a random integer in [L,U) when L and U
 % are integers, or to a random floating number in [L,U) otherwise.
-
+%-----------------------------------------------------------------------
 random(L, U, R) :-
 	L < U,
 	random(X),
@@ -42,15 +45,17 @@ random(L, U, R) :-
 	 ;	R is L + ((U - L) * X)
 	).
 
+%-----------------------------------------------------------------------
 % getrand(?State) tries to unify State with the term rand(X,Y,Z) where
 % X, Y, and Z are integers describing the state of the random generator.
-
+%-----------------------------------------------------------------------
 getrand(rand(X,Y,Z)) :-
 	wh_random(2, X, Y, Z).
 
+%-----------------------------------------------------------------------
 % Sets the state of the random generator. X, Y and Z must be integers
 % in the ranges [1,30269), [1,30307), [1,30323).
-
+%-----------------------------------------------------------------------
 setrand(rand(X,Y,Z)) :-
         (integer(X), X > 0, X < 30269
 	 ->	true
@@ -66,6 +71,53 @@ setrand(rand(X,Y,Z)) :-
         ),
 	wh_random(3, X, Y, Z).
 
-% The builtin predicate
+%-----------------------------------------------------------------------
+% randseq(+K, +N, -L) returns in L a random sequence of K integers in
+% the range of [1..N].  The result is in random order.
+%-----------------------------------------------------------------------
+randseq(K, N, L) :-
+	K >= 0, K =< N,
+	randseq1(K, N, L0),
+	keysort(L0, L1),
+	strip_keys(L1, L).
 
+randseq1(0, _, []) :- !.
+randseq1(K, N, [R-N|Ls]) :-
+	random(X),
+	X < K / N, !,
+	K1 is K - 1,
+	N1 is N - 1,
+	random(R),
+	randseq1(K1, N1, Ls).
+randseq1(K, N, Ls) :-
+	N1 is N - 1,
+	randseq1(K, N1, Ls).
+
+strip_keys([], []).
+strip_keys([_R-K|Lin], [K|Lout]) :-
+	strip_keys(Lin, Lout).
+
+%-----------------------------------------------------------------------
+% randset(+K, +N, -L) returns in L an ordered set of K integers in
+% the range of [1..N].  The result is in reversed order, with the
+% largest element at the beginning.
+%-----------------------------------------------------------------------
+randset(K, N, L) :-
+	K >= 0, K =< N,
+	randset1(K, N, L).
+
+randset1(0, _, []) :- !.
+randset1(K, N, [N|Ls]) :-
+	random(X),
+	X < K / N, !,
+	K1 is K - 1,
+	N1 is N - 1,
+	randset1(K1, N1, Ls).
+randset1(K, N, Ls) :-
+	N1 is N - 1,
+	randset1(K, N1, Ls).
+
+%-----------------------------------------------------------------------
+% The builtin predicate
+%-----------------------------------------------------------------------
 wh_random(_Type,_A,_B,_C) :- '_$builtin'(53).
