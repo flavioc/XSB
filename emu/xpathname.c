@@ -486,7 +486,7 @@ bool almost_search_module(char *filename)
     ctop_string(3, string_find(filename, 1)); /* Mod = FileName */
   } else { /* input argument is a full file name */
     if (! strcmp(extension, "")) {
-      extension = existing_file_extension(filename);
+      extension = existing_file_extension(fullname);
       if (! extension) return FALSE; /* file was not found */
     } else {
       if (stat(fullname, &fileinfo)) return FALSE; /* file not found */
