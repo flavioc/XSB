@@ -187,7 +187,7 @@ typedef struct {
     counter total;       /* - total number of call-check/insert ops */
     counter complete;    /* - calls which were satisfied by completed table */
     struct {
-      counter new;       /* - number of created producers */
+      counter n;         /* - number of created producers */
       counter vrnt;      /* - number of calls which are variants of an
 			   established producer */
     } producer;
@@ -210,7 +210,7 @@ extern NumSubOps numSubOps;
 
 #define NumSubOps_CallCheckInsert	   numSubOps.CallCI.total
 #define NumSubOps_CallToCompletedTable	   numSubOps.CallCI.complete
-#define NumSubOps_ProducerCall		   numSubOps.CallCI.producer.new
+#define NumSubOps_ProducerCall		   numSubOps.CallCI.producer.n
 #define NumSubOps_VariantCall		   numSubOps.CallCI.producer.vrnt
 #define NumSubOps_SubsumedCall		   numSubOps.CallCI.subsumed.total
 #define NumSubOps_SubsumedCallEntry	   numSubOps.CallCI.subsumed.entry
