@@ -191,6 +191,8 @@ strobj_struct(String,PRSTRING(String)).
 list_struct(List,Term,PRLIST(List,Term)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
+
+prologterm_struct(FL_ASSIGN,2,Args,PROLOGTERM(FL_IS,2,Args)) :- !.
 prologterm_struct(F,N,Args,PROLOGTERM(F,N,Args)).
 
 florasyslib_struct(F,N,Args,FLORASYSLIB(F,N,Args)) :- report_option(FLSYSLIB(F)).
