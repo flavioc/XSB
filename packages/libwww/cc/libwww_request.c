@@ -207,9 +207,12 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
 
       total_number_of_requests--;
       /* set result status */
-      if (is_var(context->status_term))
-	c2p_int(WWW_EXPIRED_DOC, context->status_term);
-      else
+      if (is_var(context->status_term)) {
+	if (context->last_modtime <= 0)
+	  c2p_int(HT_ERROR, context->status_term);
+	else
+	  c2p_int(WWW_EXPIRED_DOC, context->status_term);
+      } else
 	libwww_abort_all("LIBWWW_REQUEST: Request %s: Arg 5 (Status) must be unbound variable",
 			 RequestID(request));
       /* set the result params (header info); */
