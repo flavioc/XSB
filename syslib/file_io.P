@@ -237,6 +237,10 @@ copyIOport(_,_).
 file_time(FileName, Time) :-
 	sys_system(STAT_FILE_TIME,FileName,Time, _,_,_,_).
 
+file_size(FileName, Size) :-
+	sys_system(STAT_FILE_SIZE,FileName,[H,L], _,_,_,_),
+	Size is L + (H << 16).
+
 
 /************************************************************************
     	    	Path Operations
