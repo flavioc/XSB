@@ -58,6 +58,12 @@ double cpu_time(void)
   float time_sec;
 
 #if defined(WIN_NT)
+#ifndef _MSC_VER
+#define ULONGLONG unsigned long long
+#else
+#define ULONGLONG __int64
+#endif
+
   static int win_version = -1;
 
   if (win_version == -1) {
@@ -70,7 +76,7 @@ double cpu_time(void)
   if (win_version == VER_PLATFORM_WIN32_NT) {
     HANDLE thisproc;
     FILETIME creation, exit, kernel, user;
-    unsigned long long lkernel, luser;
+    ULONGLONG lkernel, luser;
     double stime, utime;
 
     thisproc = GetCurrentProcess();
@@ -79,9 +85,9 @@ double cpu_time(void)
        integers) into an appropriate float?              --lfcastro */
     /* the code below assumes sizeof(long long) == 8 */
     
-    lkernel = ((unsigned long long) kernel.dwHighDateTime << 32) + 
+    lkernel = ((ULONGLONG) kernel.dwHighDateTime << 32) + 
       kernel.dwLowDateTime;
-    luser = ((unsigned long long) kernel.dwHighDateTime << 32) + 
+    luser = ((ULONGLONG) kernel.dwHighDateTime << 32) + 
       kernel.dwLowDateTime;
 
     stime = lkernel / 1.0e7;
