@@ -636,13 +636,21 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 
 /************************************************************************
 *                                                                       *
-* Load_syms is a function which loads a symbol table given in a byte    *
-* code file into an appropriate format in the pcs table.  As part of    *
-* its function it resolves entry points for byte code intructions (call *
-* to relloc_addr), and maintains a tableau so that instructions with    *
-* indices into the psc table may have those indices resolved before     *
-* loading them in the intruction array (byte code program space).  The  *
-* intructions are loaded by a separate function.                        *
+ Load_syms loads a symbol table from a byte code file into an
+ appropriate format in the psc table (i.e. e.g. a chain, or a hash
+ table of chains if the module is global).  Among other functions, it
+ 
+ -- resolves entry points for byte code intructions (call to
+ relloc_addr), and maintains a tableau so that instructions with
+ indices into the psc table may have those indices resolved before
+ loading them in the intruction array (byte code program space).  The
+ intructions are loaded by a separate function.  
+
+ -- initizlizes psc records (via insert and sub-functions) so that the
+ default entry points of new, imported predicates is the undefined
+ predicate handler.  This e.p. will be over-written whenever the
+ module for the predicate is loaded.
+
 *                                                                       *
 ************************************************************************/
 
