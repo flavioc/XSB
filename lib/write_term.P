@@ -32,6 +32,8 @@
 
 :- import current_infixop/4, current_postfixop/3, current_prefixop/3
 								from xsb_ciao. 
+:- import write/1 from standard.
+
 %:- import get_atts/2 from atts.
 
 :- op(200,fy,(?)).

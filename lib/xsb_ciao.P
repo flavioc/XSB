@@ -9,6 +9,8 @@
 	asserta_fact/1, assertz_fact/1, 
 	retract_fact/1, retractall_fact/1.
 
+:- import asserta/1, assertz/1, retract/1, retractall/1 from assert.
+
 :- import file_flush/2 from file_io.
 :- import concat_atom/2 from string.
 :- import abort/1, atom/1, current_op/3, parse_filename/4 
