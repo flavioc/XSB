@@ -49,7 +49,3 @@
 #define FMT_WRITE_STRING   2
 #define FMT_READ       	   3
 
-
-/* OP numbers for file_stat */
-#define FILE_STAT_TIME	  0
-#define FILE_STAT_SIZE	  1

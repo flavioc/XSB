@@ -1360,6 +1360,25 @@ corresponding system call succeeds.
   Succeeds if {\tt Path} is writable.
   \ournewitem{path\_sysop(executable, +Path)}{file\_io}
   Succeeds if {\tt Path} is executable.
+  \ournewitem{path\_sysop(modtime, +Path, -Time)}{file\_io}
+  Returns a list that represents the last modification time of the file.
+  Succeeds if file exists. In this case, {\tt Time} is bound to a list
+  {\tt [high,low]} where {\tt low} is the least significant 24 bits of the
+  modification time and {\tt high} is the most significant bits (25th) and up.
+  {\tt Time} represents the last modification time of the file.
+  The actual value is thus $\tt high*2^{24} + low$, which represents the
+  number of seconds elapsed since 00:00:00 on
+       January 1, 1970, Coordinated Universal Time (UTC).
+  \ournewitem{path\_sysop(newerthan, +Path1, +Path2)}{file\_io}
+  Succeeds is the last modification time of {\tt Path1} is higher than that
+  of {\tt Path2}. Also succeeds if {\tt Path1} exists but {\tt Path2} does
+  not.
+  \ournewitem{path\_sysop(size, +Path, -Size)}{file\_io}
+  Returns a list that represents the byte size of {\tt Path}.
+  Succeeds if the file exists. In this case {\tt Size} is bound to the list
+  of the form {\tt [high,low]} where {\tt low} is the least significant 24
+  bits of the byte-size and {\tt high} is the most significant bits (25th)
+  and up. The actual value is thus $\tt high*2^{24} + low$.
 \end{description}
 %%
 

@@ -92,7 +92,6 @@
 #define SYS_GETHOST		 57
 #define SYS_ERRNO		 58
 
-#define FILE_STAT		 60
 #define FILE_WRITEQUOTED	 61
 #define GROUND  		 62
 

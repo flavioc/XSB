@@ -58,51 +58,6 @@ static void strclose(int i)
 }
 
 
-/* use stat() to get file mod time, size, and other things */
-/* file_stat(+FileName, +FuncNumber, -Result)	     	   */
-xsbBool file_stat(void)
-{
-  int retcode = stat(ptoc_string(1), &stat_buff);
-  int functor_arg3 = is_functor(reg_term(3));
-
-  switch (ptoc_int(2)) {
-  case 0:
-    /* This is DSW's hack to get 32 bit time values.
-       The idea is to call this builtin as file_time(File,time(T1,T2))
-       where T1 represents the most significant 8 bits and T2 represents
-       the least significant 24.
-       ***This probably breaks 64 bit systems, so David will look into it!
-       */
-    if (!retcode && functor_arg3) {
-      /* file exists & arg3 is a term, return 2 words*/
-      c2p_int(0xFFFFFF & stat_buff.st_mtime,p2p_arg(reg_term(3),2));
-      c2p_int(stat_buff.st_mtime >> 24,p2p_arg(reg_term(3),1));
-    } else if (!retcode) {
-      /* file exists, arg3 non-functor:  issue an error */
-      xsb_warn("Arg 2 in file_time must be a term: time(X,Y)");
-      ctop_int(3, (0x7FFFFFF & stat_buff.st_mtime));
-    } else if (functor_arg3) {
-      /* no file, and arg3 is functor: return two 0's */
-      c2p_int(0, p2p_arg(reg_term(3),2));
-      c2p_int(0, p2p_arg(reg_term(3),1));
-    } else {
-      /* no file, no functor: return 0 */
-      xsb_warn("Arg 2 in file_time must be a term: time(X,Y)");
-      ctop_int(3, 0);
-    }
-    break;
-  case 1: /* Take file size in 4-byte words */
-    /*** NOTE: File_size can handle only files up to 128K.
-	 We must use the same trick here as we did with file_time above */
-    if (!retcode)
-      /* file exists */
-      ctop_int(3, (0x7FFFFFF & (stat_buff.st_size >> 2)));
-    else /* no file */
-      ctop_int(3, 0);
-    break;
-  }
-  return TRUE;
-}
 
 /* file_flush, file_pos, file_truncate, file_seek */
 inline static xsbBool file_function(void)

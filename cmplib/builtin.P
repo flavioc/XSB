@@ -120,7 +120,6 @@ inline_builtin(sys_system, 7, SYS_SYSTEM).
 inline_builtin(sys_gethost, 2, SYS_GETHOST).
 inline_builtin(sys_errno, 1, SYS_ERRNO).
 
-inline_builtin(file_stat, 3, FILE_STAT).
 inline_builtin(file_writequoted, 2, FILE_WRITEQUOTED).
 inline_builtin(ground, 1, GROUND).
 

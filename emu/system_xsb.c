@@ -83,6 +83,7 @@ static struct proc_table_t {
   } process[MAX_SUBPROC_NUMBER];
 } xsb_process_table;
 
+static xsbBool file_stat(int callno, char *file);
 
 int sys_syscall(int callno)
 {
@@ -172,20 +173,11 @@ xsbBool sys_system(int callno)
     sleep(ptoc_int(2));
 #endif
     return TRUE;
-  case IS_PLAIN_FILE: {
-    struct stat stat_buff;
-    int retcode = stat(ptoc_string(2), &stat_buff);
-    if (retcode == 0 && S_ISREG(stat_buff.st_mode)) 
-      return TRUE;
-    else return FALSE;
-  }
-  case IS_DIRECTORY: {
-    struct stat stat_buff;
-    int retcode = stat(ptoc_string(2), &stat_buff);
-    if (retcode == 0 && S_ISDIR(stat_buff.st_mode)) 
-      return TRUE;
-    else return FALSE;
-  }
+  case IS_PLAIN_FILE:
+  case IS_DIRECTORY:
+  case STAT_FILE_TIME:
+  case STAT_FILE_SIZE:
+    return file_stat(callno, ptoc_string(2));
   case SHELL: /* smart system call: like SPAWN_PROCESS, but returns error code
 		 instead of PID. Uses system() rather than execvp.
 		 Advantage: can pass arbitrary shell command. */
@@ -737,4 +729,76 @@ static void split_string(char *string, char *params[], char *callname)
 
   return;
 }
+
+
+
+/* use stat() to get file mod time, size, and other things */
+/* file_stat(+FileName, +FuncNumber, -Result)	     	   */
+xsbBool file_stat(int callno, char *file)
+{
+  struct stat stat_buff;
+  int retcode = stat(file, &stat_buff);
+
+  switch (callno) {
+  case IS_PLAIN_FILE: {
+    if (retcode == 0 && S_ISREG(stat_buff.st_mode)) 
+      return TRUE;
+    else return FALSE;
+  }
+  case IS_DIRECTORY: {
+    if (retcode == 0 && S_ISDIR(stat_buff.st_mode)) 
+      return TRUE;
+    else return FALSE;
+  }
+  case STAT_FILE_TIME: {
+    /* This is DSW's hack to get 32 bit time values.
+       The idea is to call this builtin as file_time(File,time(T1,T2))
+       where T1 represents the most significant 8 bits and T2 represents
+       the least significant 24.
+       ***This probably breaks 64 bit systems, so David will look into it!
+       */
+    int functor_arg3 = is_functor(reg_term(3));
+    if (!retcode && functor_arg3) {
+      /* file exists & arg3 is a term, return 2 words*/
+      c2p_int(stat_buff.st_mtime >> 24,p2p_arg(reg_term(3),1));
+      c2p_int(0xFFFFFF & stat_buff.st_mtime,p2p_arg(reg_term(3),2));
+    } else if (!retcode) {
+      /* file exists, arg3 non-functor:  issue an error */
+      xsb_warn("Arg 3 (the time argument) must be of the form time(X,Y)");
+      ctop_int(3, (0x7FFFFFF & stat_buff.st_mtime));
+    } else if (functor_arg3) {
+      /* no file, and arg3 is functor: return two 0's */
+      c2p_int(0, p2p_arg(reg_term(3),2));
+      c2p_int(0, p2p_arg(reg_term(3),1));
+    } else {
+      /* no file, no functor: return 0 */
+      xsb_warn("Arg 3 (the time argument) must be of the form time(X,Y)");
+      ctop_int(3, 0);
+    }
+    return TRUE;
+  }
+  case STAT_FILE_SIZE: { /* Return size in bytes. */
+    /*** NOTE: Same hack as with time. However, return a list
+	 because the path_sysop() interface in file_io returns lists
+	 both for time and size. */
+    prolog_term size_lst = p2p_new();
+    prolog_term elt1, elt2, tail;
+    if (!retcode) {
+      /* file exists */
+      c2p_list(size_lst);
+      elt1 = p2p_car(size_lst);
+      tail = p2p_cdr(size_lst);
+      c2p_list(tail);
+      elt2 = p2p_car(tail);
+      tail = p2p_cdr(tail); c2p_nil(tail);
+      c2p_int(stat_buff.st_size >> 24, elt1);
+      c2p_int(0xFFFFFF & stat_buff.st_size, elt2);
+      p2p_unify(size_lst,reg_term(3));
+      return TRUE;
+    } else  /* no file */
+      return FALSE;
+  }
+  } /* switch */
+}
+
 

@@ -25,6 +25,7 @@
 
 :- compiler_options([xpp_on]).
 #include "io_defs_xsb.h"
+#include "system_defs_xsb.h"
 #include "standard.h"
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
@@ -211,15 +212,6 @@ ioport2iostream(IOport,Stream) :-
 	psc_set_type(PSC,T_FILE).
 
 
-/***************************************************************/
-/*    	      	      	      	      	      	      	       */
-/*       file_stat, file_size 	      	   	     	       */
-/*    	      	      	      	      	      	      	       */
-/***************************************************************/
-
-file_time(FileName, Time) :- file_stat(FileName,FILE_STAT_TIME,Time).
-file_size(FileName, Size) :- file_stat(FileName,FILE_STAT_SIZE,Size).
-
 /***************************************************************
 **
 ** print_file_contents/1
@@ -240,6 +232,11 @@ copyIOport(FromIOport, ToIOport) :-
 	fail.        	 %% so as to not leave choice points around
 copyIOport(_,_).
 
+/***************************************************************/
+
+file_time(FileName, Time) :-
+	sys_system(STAT_FILE_TIME,FileName,Time, _,_,_,_).
+
 
 /************************************************************************
     	    	Path Operations
@@ -259,5 +256,12 @@ path_sysop(rmdir, Path) :- sys_rmdir(Path,Res), Res=:=0.
 path_sysop(readable, Path) :- sys_access(Path, 'r', Res), Res =:= 0.
 path_sysop(writable, Path) :- sys_access(Path, 'w', Res), Res =:= 0.
 path_sysop(executable, Path) :- sys_access(Path, 'x', Res), Res =:= 0.
+path_sysop(modtime,Path,Time) :-
+	file_time(Path,time(Time1,Time2)), Time = [Time1,Time2], Time \= [0,0].
+path_sysop(newerthan,Path1,Path2) :-
+	file_time(Path1,time(Time11,Time12)),
+	file_time(Path2,time(Time21,Time22)),
+	time(Time11,Time12) @>= time(Time21,Time22).
+path_sysop(size,Path,Size) :- sys_system(STAT_FILE_SIZE,Path,Size, _,_,_,_).
 
 
