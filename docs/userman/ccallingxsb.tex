@@ -430,23 +430,25 @@ calling {\tt xsb\_query} or {\tt xsb\_query\_string}.  When called in
 \ourprolog, the query will have the {\tt N}$^{th}$ variable set to this
 value.
 
-\ouritem{void xsb\_var\_int((int) N)} \index{{\tt xsb\_var\_int}}
-    {\tt xsb\_var\_int} is called after {\tt xsb\_query} or {\tt
+\ouritem{prolog\_int xsb\_var\_int((int) N)} \index{{\tt xsb\_var\_int}} 
+{\tt xsb\_var\_int} is called after {\tt xsb\_query} or {\tt
 xsb\_query\_string} returns an answer.  It returns the value of the
 {\tt N}$^{th}$ variable in the query as set in the returned answer.
-This variable must have an integer value.
+This variable must have an integer value (which is cast to {\tt
+long} in a 64-bit architecture).
 
-\ouritem{void xsb\_var\_string((int) N)} \index{{\tt xsb\_var\_string}}
+\ouritem{char* xsb\_var\_string((int) N)} \index{{\tt xsb\_var\_string}}
     {\tt xsb\_var\_string} is called after {\tt xsb\_query} or {\tt
 xsb\_query\_string} returns an answer.  It returns the value of the
 {\tt N}$^{th}$ variable in the query as set in the returned answer.
 This variable must have an atom value.
 
-\ouritem{void xsb\_var\_float((int) N)} \index{{\tt xsb\_var\_float}}
+\ouritem{prolog\_float xsb\_var\_float((int) N)} \index{{\tt xsb\_var\_float}}
     {\tt xsb\_var\_float} is called after {\tt xsb\_query} or {\tt
-xsb\_query\_string} returns an answer.  It returns the value of the
-{\tt N}$^{th}$ variable in the query as set in the returned answer.
-This variable must have an floating point value.
+    xsb\_query\_string} returns an answer.  It returns the value of
+    the {\tt N}$^{th}$ variable in the query as set in the returned
+    answer.  This variable must have a floating point value (which is
+    cast to {\tt double} in a 64-bit architecture).
 
 
 \end{description}
