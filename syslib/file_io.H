@@ -25,7 +25,8 @@
 
 :- import
 	stat_flag/2, file_function/7,
-    	file_stat/3, formatted_io/5, intern_string/2
+	%%intern_string/2,
+    	file_stat/3, formatted_io/5 
       from machine.
 
 :- import
