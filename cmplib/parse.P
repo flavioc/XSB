@@ -310,13 +310,10 @@ multifile_query(ModName, Module) :-
 	;	true).
 
 
-%/////////////////////////////////////////////////////////////////////////
-
 /*======================================================================*/
 /* parse_clause(+Clause, +VariableList,					*/
 /*		#module(#SymTab,#DcList,#ClList,#QrList))		*/
 /*======================================================================*/
-
 
 parse_clause([], _, _) :- !.
 parse_clause([Cl|Cls], VariableList, Module) :- !,
@@ -455,7 +452,6 @@ parse_preddef(H, B, List, SymTab) :-
 	add_new_clause(clause(ArgList, Body, _), PCs),
 	sym_propin(pred, PredSym).
 
-
 /*======================================================================*/
 /* process queries --- same as process regular clauses, but adding	*/
 /* a predicate '_$main'/0.						*/
@@ -464,7 +460,6 @@ parse_preddef(H, B, List, SymTab) :-
 
 parse_query(B, List, SymTab) :-
 	parse_preddef('_$main', (B->fail), List, SymTab).
-
 
 /*======================================================================*/
 /* parse_list(+PredList, #SymTab, +SymbolProp, +Directive) 		*/
@@ -562,24 +557,26 @@ parse_ti(Pname/Arity, Type, SymTab) :- !,
 /* trans_goals(+Term, -Goal, #SymTab, +VidIn, -VidOut)			*/
 /*======================================================================*/
 
-trans_goals('$$var'(Vid), goal(Sym,[varocc(Vid)]), SymTab, VidIn, VidOut) :-
+trans_goals('$$var'(Vid), goal(Sym,[varocc(Vid)]), SymTab, VidIn, VidOut) :- !,
 	sym_insert(call, 1, [], SymTab, Sym),
 	( var(Vid) -> VidOut is VidIn + 1, Vid = VidOut
 			% The input term is the 1st occurance of a variable
 	; VidOut = VidIn
 	).
-trans_goals((A, B), and(Goal1, Goal2), SymTab, VidIn, VidOut) :- 
+trans_goals((A, B), and(Goal1, Goal2), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
 	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
-trans_goals((A; B), or(Goal1, Goal2), SymTab, VidIn, VidOut) :- 
+trans_goals((A; B), or(Goal1, Goal2), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
 	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
-trans_goals((A->B), if(Goal1, Goal2), SymTab, VidIn, VidOut) :- 
+trans_goals((A->B), if(Goal1, Goal2), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
 	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
-trans_goals('\+'(A), not(Goal1), SymTab, VidIn, VidOut) :- 
+trans_goals(not(A), not(Goal1), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
-trans_goals(fail_if(A), not(Goal1), SymTab, VidIn, VidOut) :- 
+trans_goals('\+'(A), not(Goal1), SymTab, VidIn, VidOut) :- !,
+	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
+trans_goals(fail_if(A), not(Goal1), SymTab, VidIn, VidOut) :- !, 
 	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
 trans_goals(T, Goal, SymTab, VidIn, VidOut) :-
 	trans_goal(T, Goal, SymTab, VidIn, VidOut).

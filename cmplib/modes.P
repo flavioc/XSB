@@ -171,7 +171,7 @@ declare_undefineds :-
 
 undefined_pred(Pred, Arity) :-
 	'_$predprop'((used), (Pred/Arity)),
-	not ( '_$predprop'((local), (Pred/Arity));
+	\+ ( '_$predprop'((local), (Pred/Arity));
 	     '_$predprop'((import), (Pred/Arity))
 	).
 

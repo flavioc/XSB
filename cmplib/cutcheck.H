@@ -26,8 +26,9 @@
 :- export build_graph/1. 
 
 :- import error/1 from auxlry.
+:- import select/3 from basics.
 :- import standard_symbol/3 from std_xsb.
-:- import sym_prop/2, sym_propin/2 from symtab. 
+:- import sym_name/3, sym_prop/2, sym_propin/2 from symtab. 
 
 /* -------------------- end of file cutcheck.H ------------------------ */
 
