@@ -278,7 +278,7 @@ no
 \end{verbatim}
 \end{small}
 
-There are sadditional sample programs in the {\tt examples} directory that
+There are additional sample programs in the {\tt examples} directory that
 exhibit most of the features of the foreign language interface.
 
 
@@ -293,14 +293,14 @@ For instance, if the term turns out to be a structure, then it can be
 decomposed and the functor can be extracted along with the arguments.
 If the term happens to be a list, then it can be processed in a loop and
 each list member can be further decomposed into its atomic components.
-The advanced interface also provides functions to chach the types of these
+The advanced interface also provides functions to check the types of these
 atomic components and for converting them into C types.
 
 As with the basic C interface, the file {\tt emu/cinterf.h} must be
 included in the C program in order to make the prototypes of the relevant
 functions known to the C compiler.
 
-The first set of functions is typically be used to check the type of the
+The first set of functions is typically used to check the type of
 Prolog terms passed into the C program. 
 %%
 \begin{description}
@@ -336,11 +336,11 @@ Prolog terms passed into the C program.
 
 
 After checking the types of the arguments passed in from the Prolog side,
-the next task is to convert this data into the types that C understands.
-This is done with the folowing functions. The first three convert between
-the basic types. The last two extract the functor name and the arity.
-Extraction of the components of a list and the arguments of a structured
-term is explained later.
+the next task usually is to convert Prolog data into the types understood
+by C.  This is done with the following functions. The first three convert
+between the basic types. The last two extract the functor name and the
+arity.  Extraction of the components of a list and the arguments of a
+structured term is explained later.
 
 \begin{description}
 \ouritem{int p2c\_int((prolog\_term) V)} \index{{\tt p2c\_int}}
@@ -357,7 +357,6 @@ term is explained later.
     p2c\_string} returns the name of that atom as a string. The
     pointer returned points to the actual atom name in \ourprolog 's
     space, and thus it must NOT be modified by the calling program.
-
 \ouritem{char *p2c\_functor((prolog\_term) V)} \index{{\tt p2c\_functor}}
     The prolog\_term argument must represent a structured term (not a
     list).  {\tt p2c\_functor} returns the name of the main functor
@@ -369,7 +368,6 @@ term is explained later.
     The prolog\_term argument must represent a structured term (not a
     list).  {\tt p2c\_arity} returns the arity of the main functor
     symbol of that term as an integer.
-
 \end{description}
 %%
 
@@ -393,7 +391,14 @@ effect of the function call.
     {\tt c2p\_string} binds the prolog\_term V (which must be a
     variable) to the atom whose name is the value of S, which must be
     of type char *.
+\end{description}
+%%
 
+The following functions create Prolog data structures within a C
+program. This is usually done in order to pass these structures back to
+the Prolog side.
+%%
+\begin{description}
 \ouritem{bool c2p\_functor((char *) S, (int) N, (prolog\_term) V)} \index{{\tt c2p\_functor}}
     {\tt c2p\_functor} binds the prolog\_term V (which must be a
     variable) to an open term whose main functor symbol is given by S
@@ -409,12 +414,17 @@ effect of the function call.
 \ouritem{bool c2p\_nil((prolog\_term) V)} \index{{\tt c2p\_nil}}
     {\tt c2p\_nil} binds the prolog\_term V (which must be a
     variable) to the atom \verb|[]| (nil).
+\ouritem{prolog\_term p2p\_new()} \index{{\tt p2p\_new}}
+    Create a new Prolog variable. This is sometimes needed when you want to
+    create a Prolog term on the C side and pass it to the Prolog side.
 \end{description}
+%%
+
 
 
 To use the above functions, one must be able to get access to the
 components of the structured Prolog terms.
-This is done using the following functions:
+This is done with the help of the following functions:
 
 \begin{description}
 \ouritem{prolog\_term p2p\_arg((prolog\_term) T, (int) A)} \index{{\tt p2p\_arg}}
@@ -451,7 +461,7 @@ For instance,
    tail = p2p_cdr(plist);         /* get the list tail  */
    arg  = p2p_arg(structure, 2);  /* get the second arg */
 
-   /* Assume that the list tail was suposed to be a prolog variable */
+   /* Assume that the list tail was supposed to be a prolog variable */
    if (is_var(tail))
       c2p_nil(tail);  /* terminate the list */
    else {
@@ -463,7 +473,7 @@ For instance,
 \end{verbatim}
 %%
 
-In the above program fragment, we asume that both the tail of the list and
+In the above program fragment, we assume that both the tail of the list and
 the second argument of the term were supposed to be bound to Prolog variables.
 In case of the tail, we check if this is, indeed, the case. In case of the
 argument, no checks are done; XSB will issue an error (which might be hard
@@ -471,17 +481,14 @@ to track down) if the second argument is not currently bound to a variable.
 
 The last batch of functions is useful for passing data in and out of the
 Prolog side of XSB. The first function is the only way to get a
-{\tt prolog\_term} out of the Prolog side; the other two functions are
+{\tt prolog\_term} out of the Prolog side; the second function is
 sometimes needed in order to pass complex structures from C into Prolog.
 %%
 \begin{description}
   \ouritem{prolog\_term reg\_term((int) R)} \index{{\tt reg\_term}}
-    Argument R is an argument number of the Prolog predicate imlemented by
+    Argument R is an argument number of the Prolog predicate implemented by
     this C function (range 1 to 255). The function {\tt
     reg\_term} returns the prolog\_term in that predicate argument.
-\ouritem{prolog\_term p2p\_new()} \index{{\tt p2p\_new}}
-    Create a new Prolog variable. This is sometimes needed when you want to
-    create a Prolog term on the C side and pass it to the Prolog side.
 \ouritem{prolog\_term p2p\_unify(prolog\_term T1, prolog\_term T2)}
     \index{{\tt p2p\_unify}}
     Unify the two Prolog terms. This is useful when an argument of the
