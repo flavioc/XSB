@@ -1,11 +1,11 @@
 %%
 %%  @configure_input@
 %%
-%%    THIS FILE IS FOR USE UNDER ---PC DOS---  ONLY
+%%    THIS FILE IS FOR USE UNDER ---NT or W95/98---  ONLY
 %%    YOU MIGHT NEED TO CHANGE SOME OF THE SETTINGS BELOW
 %%
 
-/* File:      xsb_configuration_msdos.in  
+/* File:      xsb_configuration_nt.in  
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -40,10 +40,10 @@
    from machine.
 
 
-%%% Set these appropriately for DOS
-xsb_configuration(compiler, 'gcc').
-xsb_configuration(compiler_flags, ' -O4 -ansi -pedantic -Wall').
-xsb_configuration(loader_flags, ' -lsocket -lm -lnsl -ldl').
+%%% Set these appropriately for NT or W95/98
+xsb_configuration(compiler, 'cc').
+xsb_configuration(compiler_flags, '').
+xsb_configuration(loader_flags, '').
 
 xsb_configuration(perl_support, 'no').
 %% The folowing two must not be set, if perl_support=no
@@ -52,8 +52,8 @@ xsb_configuration(perl_cc_compiler, '').
 xsb_configuration(perl_ccflags, '').
 xsb_configuration(perl_libs, '').
 
-xsb_configuration(site_dir, 'C:/xsb_site').
-xsb_configuration(srcdir, 'C:/xsb').
+xsb_configuration(site_dir, 'C:\xsb_site').
+xsb_configuration(srcdir, 'C:\xsb').
 
 /* Java compiler */
 xsb_configuration(javac, '').

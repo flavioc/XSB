@@ -1,0 +1,108 @@
+/*  @configure_input@ 
+**
+**   This file contains definitions for NT
+**
+**   Some variable may have to be changed manually.
+*/
+
+/* File:      def_config_nt.in
+** Author(s): kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+/******* VARIABLES THAT MIGHT NEED TO BE SET MANUALLY ****************/
+
+/* Use local eval strategy. Default is `batched' */
+#undef LOCAL_EVAL
+
+/* Define, if XSB is built with support for ORACLE DB */
+#undef ORACLE
+#undef ORACLE_DEBUG
+
+/* Define if XSB is built with support for ODBC */
+#undef XSB_ODBC
+
+/* If this is defined, winsock32.lib must also be included! */
+#define HAVE_SOCKET 1
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#define inline __inline__
+
+
+/******* END Variables to be set manually ****************/
+
+
+/**** DO NOT EDIT BELOW THIS LINE!!! *********************/
+
+
+#define WIN_NT 1
+#define CC "cc"
+#define RELEASE_DATE @xsb_release_date@
+#define XSB_VERSION "@xsb_full_version_name@"
+
+
+
+/* this is used by many to check if config.h was included in proper order */
+#ifndef CONFIG_INCLUDED
+#define CONFIG_INCLUDED
+#endif
+
+/* Use delay strategy */
+#define SLG_WITH_DELAY 1
+
+
+#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF))
+#define FOREIGN
+#endif
+
+#define bcopy(A,B,L) memmove(B,A,L)
+
+#define SLASH '\\'
+
+/*  Files needed for XSB to get the configuration information */
+#undef CONFIGURATION
+#undef FULL_CONFIG_NAME
+
+/* Define if you have the gethostbyname function.  */
+#define HAVE_GETHOSTBYNAME 1
+
+
+/* Define if you have the mkdir function.  */
+#define HAVE_MKDIR 1
+
+/* Define if you have the snprintf function.  */
+#define HAVE_SNPRINTF 1
+
+/* Define if you have the strdup function.  */
+#define HAVE_STRDUP 1
+
+/* Define if you have the <malloc.h> header file.  */
+#define HAVE_MALLOC_H 1
+
+/* Define if you have the <stdlib.h> header file.  */
+#define HAVE_STDLIB_H 1
+
+/* Define if you have the <string.h> header file.  */
+#define HAVE_STRING_H 1
+
