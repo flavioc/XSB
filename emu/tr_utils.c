@@ -1214,6 +1214,11 @@ static IGRptr getAndRemoveIGRnode(long rootn)
 
 
 
+/*
+ *  Insert "leafn" into the garbage list, "r".
+ *  This is done when leafn is deleted so that we could undelete it or later
+ *  garbage-collect it.
+ */
 static void insertLeaf(IGRptr r, BTNptr leafn)
 {
   /* Just make sure that the leaf is not already there */
@@ -1225,7 +1230,8 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   while(p != NULL){
     /*    xsb_warn("loopd"); */
     if(p -> leaf == leafn){
-      xsb_warn("Leaf node was previously deleted!");
+      if (IsDeletedNode(leafn))
+	xsb_bug("The leaf node being deleted has already been deleted");
       return;
     }
     p = p -> next;
@@ -1234,12 +1240,13 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   p -> next = r -> leaves;
   r -> leaves = p;
 }
+
+
 /*
  * This is builtin : TRIE_DISPOSE_NR(+ROOT, +LEAF), to
  * mark for  disposal a branch
  * of the trie rooted at Set_ArrayPtr[ROOT].
  */
-
 void trie_dispose_nr(void)
 {
   BTNptr Leaf;
@@ -1286,7 +1293,7 @@ void trie_undispose(long rootIdx, BTNptr leafn)
   IGRptr r = getIGRnode(rootIdx);
   IGLptr p = r -> leaves;
   if(p == NULL){
-    xsb_warn("Possible problem in trie_undispose\n");
+    xsb_warn("Possible problem in trie_undispose");
   } else{
     if(p -> leaf == leafn){
       r -> leaves = p -> next;
