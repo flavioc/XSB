@@ -26,7 +26,7 @@
 /* Experimentation with shortest path, using table builtins. */
 
 :- import subsumes_chk/2 from subsumes.
-:- import get_calls_for_table/3, get_returns_for_call/2 from tables.
+:- import get_calls_for_table/2, get_returns_for_call/2 from tables.
 
 :- table(sp/3).
 
@@ -47,7 +47,7 @@ sp(X,Y,C) :-
 
 
 none_better(X,Y,C) :-
-	get_calls_for_table(sp(X,_,_),Call,_Empty),
+	get_calls_for_table(sp(X,_,_),Call),
 	subsumes_chk(Call,sp(X,Y,_)),
 	!,
 	\+ (	get_returns_for_call(Call,Ret),
