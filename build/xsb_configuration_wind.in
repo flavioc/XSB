@@ -36,8 +36,10 @@
 
 :- export xsb_configuration/2.
 
-:- import stat_flag/2, intern_string/2, fmt_write_string/3, slash/1
+:- import stat_flag/2, intern_string/2, slash/1
    from machine.
+:- import fmt_write_string/3
+   from file_io.
 
 
 %%% Set these appropriately for NT or W95/98
