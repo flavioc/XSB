@@ -40,7 +40,7 @@
      from standard.
 :- import assert/1, retractall/1, (dynamic)/1 from assert.
 :- import sys_exit/1 from shell.
-:- import term_psc/2, term_type/2, psc_arity/2, term_arg/3, term_new/2
+:- import term_psc/2, term_type/2, psc_arity/2, term_arg/3
         from machine.
 
 /* ------------------------ end of file auxlry.H ---------------------- */

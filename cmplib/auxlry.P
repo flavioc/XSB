@@ -312,7 +312,7 @@ numbervars_cmplib(Y,I,J,N,A) :-
 %   integer values of N ranging from 0 up. This predicate was written since
 %   most of the calls to numbervars_cmplib/3 are of the form: numbervars_cmplib(Term,0,_)
  
-numbervars_cmplib(Term) :-
-        numbervars_cmplib(Term, 0, _).
+%numbervars_cmplib(Term) :-
+%        numbervars_cmplib(Term, 0, _).
 
 /* --------------------- end of file auxlry.P ------------------------- */
