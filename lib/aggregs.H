@@ -28,7 +28,9 @@
 
 :- export 
 	bagReduce/4,
+	bagReduce/5,
 	bagPO/3,
+	bagPO/4,
 	bagPO1/3,
 	bagOf/2,
 % to use bagMin, must define in usermod: 
@@ -55,9 +57,9 @@
 :- import apply/2,apply/3,apply/4 from usermod.
 
 
-:- import arg/3, call/1, functor/3, '=..'/2 from standard.
+:- import arg/3, call/1, call_c/1, atom/1, functor/3, '=..'/2 from standard.
 :- import member/2, copy_term/2, append/3 from basics.
-:- import sort/2, findall/3, bagof/3 from setof.
+:- import sort/2, findall/3, bagof/3, excess_vars/4 from setof.
 :- import get_returns/3, delete_return/2, (use_variant_tabling)/1 from tables.
 :- import (table)/1 from usermod.
 :- import variant/2 from subsumes.
