@@ -32,8 +32,8 @@
 %% package_configuration(dir(PackageName), FullPackageDirname)
 %% some packages use it.
 
-:- export regmatch/7.
-:- import do_regmatch__/7 from xsb_re_match.
+:- export re_match/7, re_subst/6.
+:- import do_regmatch__/7, do_regsubst__/6 from xsb_re_match.
 
 :- bootstrap_package('regmatch', regmatch),
    (xsb_configuration(regmatch_support, 'yes') -> [regmtchshell]
@@ -41,6 +41,8 @@
      abort('Your system does not seem to have the POSIX pattern matching library installed.')
      ).
 
-regmatch(Regexp,Str,IgnoreCase,Match,Prematch,Postmatch,ParenMatches) :-
+re_match(Regexp, Str, IgnoreCase, Match, Prematch, Postmatch ,ParenMatches) :-
 	do_regmatch__(Regexp, Str, IgnoreCase,
 	    	      Match, Prematch, Postmatch, ParenMatches).
+re_subst(Regexp, Str, IgnoreCase, WhichMatch, SubstString, OutStr) :-
+	do_regsubst__(Regexp, Str, IgnoreCase, WhichMatch, SubstString,OutStr).
