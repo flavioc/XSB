@@ -228,7 +228,8 @@ extern unsigned long allocated_de_space(int * num_blocks);
 extern unsigned long unused_de_space(void);
 extern unsigned long allocated_dl_space(int * num_blocks);
 extern unsigned long unused_dl_space(void);
-
+extern void simplify_pos_unsupported(NODEptr);
+extern void release_all_dls(ASI);
 
 #ifdef DEBUG
 extern void print_subgoal(FILE *, VariantSF);

@@ -689,6 +689,7 @@ void delete_return(BTNptr l, VariantSF sg_frame)
 {
   ALNptr a, n, next;
   NLChoice c;
+  int groundcall = FALSE;
 #ifdef CHAT
   chat_init_pheader chat_ptr;
 #else
@@ -700,7 +701,16 @@ void delete_return(BTNptr l, VariantSF sg_frame)
 #ifdef DEBUG_RECLAIM_DEL_RET
     xsb_dbgmsg("DELETE_NODE: %d - Par: %d", l, BTN_Parent(l));
 #endif
-/*    safe_delete_branch(l); */
+
+    /* deleting an answer makes it false, so we have to deal with 
+       delay lists */
+    if (is_conditional_answer(l)) {
+      ASI asi = Delay(l);
+      release_all_dls(asi);
+      if (l == subg_ans_root_ptr(sg_frame) &&
+	  IsEscapeNode(l))
+	groundcall=TRUE; /* do it here, when l is still valid */
+    }
 
   if (is_completed(sg_frame)) {
     safe_delete_branch(l);
@@ -768,6 +778,13 @@ void delete_return(BTNptr l, VariantSF sg_frame)
     if(next == NULL){ /* last answer */
       subg_ans_list_tail(sg_frame) = n;
     }      
+  }
+  if (is_conditional_answer(l)) {
+    simplify_pos_unsupported(l);
+    if (groundcall) {
+      mark_subgoal_failed(sg_frame);
+      simplify_neg_fails(sg_frame);
+    }
   }
 }
 
