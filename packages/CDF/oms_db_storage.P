@@ -1,4 +1,7 @@
 :- compiler_options([ciao_directives]).
+:- compiler_options([xpp_on]).
+#include "celltags_xsb.h"
+:- import term_type/2 from machine.
 
 :- document_export
 	clear_db_oms/1,
@@ -14,7 +17,6 @@
 :- import odbc_sql/4 from odbc_call.
 
 :- import member/2, ground/1 from basics.
-:- import get_term_vars/2 from basics.
 :- import call0/1 from machine.
 
 :- import arg/3 from standard.
@@ -538,7 +540,7 @@ class_int_cdb(Name,NatCid,Source) :-
 		 structure(NatCid1),
 		 \+ (get_term_vars(NatCid1,Vars),
 		     cache_class(Name,NatCid1,Source),
-		     if_most_general_term(Vars)),
+		     is_most_general_term(Vars)),
 		 assert(cache_class(Name,NatCid1,Source)),
 		 fail
 		 ;	
@@ -1026,3 +1028,37 @@ retractall_oms_int_cdb(oms_ao(SOid,RCid,TOid)) :-
 			)
 	 ;      writeln('ERROR Instantiation: retractall_attribute'(SOid,RCid,TOid))
 	).
+
+%---
+% get_term_vars accumulates variables in a term (backwards)
+get_term_vars(Term,Vars) :-
+	get_term_vars(Term,[],AllVars),
+	sort(AllVars,Vars).
+get_term_vars(Term,Vars0,Vars) :-
+	term_type(Term,Type),
+	(Type =:= XSB_STRING
+	 ->	Vars = Vars0
+	 ; Type =:= XSB_INT
+	 ->	Vars = Vars0
+	 ; Type =:= XSB_LIST
+	 ->	Term = [H|T],
+		get_term_vars(H,Vars0,Vars1),
+		get_term_vars(T,Vars1,Vars)
+	 ; Type =:= XSB_STRUCT
+	 ->	Term =.. [_|Args],
+		get_term_vars_list(Args,Vars0,Vars)
+	 ; Type =:= XSB_FREE
+	 ->	Vars = [Term|Vars0]
+	 ; Type =:= XSB_REF1
+	 ->	Vars = [Term|Vars0]
+	 ; Type =:= XSB_FLOAT
+	 ->	Vars = Vars0
+	 ; Type =:= XSB_ATTV
+	 ->	Vars = [Term|Vars0]
+	).
+
+get_term_vars_list([],Vars,Vars).
+get_term_vars_list([Term|Terms],Vars0,Vars) :-
+	get_term_vars(Term,Vars0,Vars1),
+	get_term_vars_list(Terms,Vars1,Vars).
+
