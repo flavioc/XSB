@@ -9,7 +9,7 @@
 /* This file provides the implementation for the native methods of NativeEngine.java, 
 as well as the XSB Prolog built-in used by InterProlog */
 #include <jni.h>
-#include "com_0002fxsb_0002finterprolog_0002fNativeEngine.h"
+#include "com_xsb_interprolog_NativeEngine.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
