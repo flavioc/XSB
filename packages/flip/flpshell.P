@@ -382,7 +382,11 @@ rundemo_(X) :-
 	run(X),
 	retract(library_directory(DemoDir)).
 
-%%rundemo_(X) :- rundemo(X).
+run_all_demos_ :- rundemo_(default),
+		     rundemo_(family_obj),
+		     rundemo_(family_rel),
+		     rundemo_(flogic_basics),
+		     rundemo_(rel_ops).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Find module in XSB library.
