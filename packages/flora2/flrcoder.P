@@ -666,7 +666,20 @@ flora_build_code(Term,DWS,Code) :-
 
 	; is_prquery(Term,GoalTerm) ->
 	    flora_build_query(GoalTerm,DWS,Code)
+
+	; is_prdirective(Term,Direct) ->
+	    flora_build_directive(Direct,DWS,Code)
 	).
+
+
+/****************************************************************************
+  flora_build_directive(+Term,+DefaultWorkspace,-Code)
+
+  Note: For now, only import directive is supported. The import directive
+        of XSB is callable.
+****************************************************************************/
+flora_build_directive(Term,DWS,Code) :-
+	flora_build_struct(Term,DWS,FLBODYPREFIX,_VarList,Code).
 
 
 /****************************************************************************
