@@ -70,6 +70,13 @@ int  num_heap_term_vars;
 CPtr *var_addr;
 int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
 Cell VarEnumerator[NUM_TRIEVARS];
+/*
+ * Array mini_trail[] is used to trail the variable bindings when we copy
+ * terms into tries.  The variables trailed using mini_trail are those
+ * that are bound to elements in VarEnumerator[].
+ */
+static CPtr mini_trail[NUM_TRIEVARS];
+static CPtr *mini_trail_top;
 
 /*----------------------------------------------------------------------*/
 
@@ -99,14 +106,14 @@ long term_stacksize = DEFAULT_ARRAYSIZ;
 /*----------------------------------------------------------------------*/
 /*********Simpler trails ****************/
 
-#define simple_dbind_ref(addr,val) \
-    bld_ref(addr,val);\
-    *(++temp_trreg) = addr;
+#define simple_dbind_ref(addr,val)		\
+    bld_ref(addr,val);				\
+    *(++mini_trail_top) = addr;
 
-#define simple_table_undo_bindings \
-    while (temp_trreg > trie_tr_base) {\
-	untrail(*temp_trreg);\
-	temp_trreg--;\
+#define simple_table_undo_bindings		\
+    while (mini_trail_top >= mini_trail) {	\
+	untrail(*mini_trail_top);		\
+	mini_trail_top--;			\
     }	
 
 /*----------------------------------------------------------------------*/
@@ -175,7 +182,6 @@ long term_stacksize = DEFAULT_ARRAYSIZ;
 
 static struct NODE dummy_ans_node = {0,0,1,0,NULL,NULL,NULL,0};
 
-static CPtr *trie_tr_base, *temp_trreg;
 static int AnsVarCtr, ctr;
 
 static NODEptr *GNodePtrPtr;
@@ -692,9 +698,11 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
  * This is a special version of recvariant_trie(), and it is only used by 
  * variant_trie_search().  The only difference between this and
  * recvariant_trie() is that this version will save the answer
- * substitution factor into the heap (see the following line):
+ * substitution factor into the heap (see the following lines):
  *
- * 	 bld_ref(hreg++, xtemp1));
+ * 	bld_free(hreg);
+ * 	bind_ref(xtemp1, hreg);
+ * 	xtemp1 = hreg++;
  */
 
 #define recvariant_trie_ans_subsf(flag)\
@@ -708,7 +716,9 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 	  switch (tag) {\
 	    case FREE: case REF1:\
 	      if (is_VarEnumerator(xtemp1)){\
-	        bld_ref(hreg++, xtemp1);\
+		bld_free(hreg);\
+		bind_ref(xtemp1, hreg);\
+		xtemp1 = hreg++;\
 	        simple_dbind_ref_nth_var(xtemp1,ctr);\
 	        one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));\
 	        ctr++;\
@@ -765,13 +775,7 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 
     ans_chk_ins++; /* Counter (answers checked & inserted) */
 
-#if (!defined(CHAT))
-    if (trfreg > trreg)
-      trie_tr_base = temp_trreg = trfreg;
-    else
-#endif
-      trie_tr_base = temp_trreg = trreg;
-
+    mini_trail_top = mini_trail - 1;
     AnsVarCtr = 0;
     ctr = 0;
     Paren = NOPAR; /* Initial value of Paren.  Paren is used in
@@ -796,16 +800,20 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 	   * 	simple_dbind_ref(xtemp1, VarEnumerator[ctr])
 	   * 			||
 	   * 	bld_ref(xtemp1, VarEnumerator[ctr]);
-	   * 	*(++temp_trreg) = xtemp1
+	   * 	*(++mini_trail_top) = xtemp1
 	   *
 	   * Notice that all the variables appear in the answer are bound
 	   * to elements in VarEnumerator[], and each element in
 	   * VarEnumerator[] is a free variable itself.  Besides, all
-	   * these variables are trailed (saved between trie_tr_base and
-	   * temp_trreg) and they will be used in delay_chk_insert() (in
-	   * function do_delay_stuff()).
+	   * these variables are trailed (saved in mini_trail[]) and they
+	   * will be used in delay_chk_insert() (in function
+	   * do_delay_stuff()).
 	   */
-	  bld_ref(hreg++, xtemp1);
+	  bld_free(hreg); /* To make sure there is no pointer from heap to 
+			   * local stack.
+			   */
+	  bind_ref(xtemp1, hreg);
+	  xtemp1 = hreg++;
 	  simple_dbind_ref_nth_var(xtemp1,ctr);
 	  j = (ctr | 0x10000);
 	  item = maketrievar(j);
@@ -923,20 +931,28 @@ void undo_answer_bindings() {
 /*
  * Function delay_chk_insert() is called in intern_delay_element() to
  * create the delay trie for the corresponding delay element.  This delay
- * trie contains the substitution factor of the answer to the subgoal
- * call of this delay element.  Its leaf node will be saved as a field,
+ * trie contains the substitution factor of the answer to the subgoal call
+ * of this delay element.  Its leaf node will be saved as a field,
  * de_subs_fact_leaf, in the delay element.
  *
  * This function is closely related to variant_trie_search(), because it
  * uses the value of AnsVarCtr that is set in variant_trie_search().  The
  * body of this function is almost the same as the core part of
  * variant_trie_search(), except that `ctr', the counter of the variables
- * in the answer, starts from AnsVarCtr.  Initially, before the first
- * delay element in the delay list of a subgoal (say p/2), is interned,
- * AnsVarCtr is the number of variables in the answer for p/2 and it was
- * set in variant_trie_search() when this answer was returned.  Then,
- * AnsVarCtr will be dynamically increased as more and more delay
- * elements for p/2 are interned.
+ * in the answer, starts from AnsVarCtr.  Initially, before the first delay
+ * element in the delay list of a subgoal (say p/2), is interned, AnsVarCtr
+ * is the number of variables in the answer for p/2 and it was set in
+ * variant_trie_search() when this answer was returned.  Then, AnsVarCtr
+ * will be dynamically increased as more and more delay elements for p/2
+ * are interned.
+ *
+ * After variant_trie_search() is finished, VarEnumerator[] contains the
+ * variables in the head of the corresponding clause for p/2.  When we call
+ * delay_chk_insert() to intern the delay list for p/2, VarEnumerator[]
+ * will be used again to bind the variables that appear in the body.
+ * Because we have to check if a variable in a delay element of p/2 is
+ * already in the head, the old bindings of variables to VarEnumerator[]
+ * are still needed.  So undo_answer_bindings has to be delayed.
  *
  * In the arguments, `arity' is the arity of the the answer substitution
  * factor, `cptr' points to the first field of term ret/n (the answer
@@ -1360,19 +1376,14 @@ NODEptr whole_term_chk_ins(Cell term, CPtr hook, int *flagptr)
     CPtr xtemp1;
     int  j, flag = 1;
     Cell tag = 0, item;
-    CPtr *trie_tr_base, *temp_trreg;
 
     xtemp1 = (CPtr) term;
     cptr_deref(xtemp1);
     tag = cell_tag(xtemp1);
     Paren = NOPAR;
     GNodePtrPtr = (NODEptr *) hook;
-#if (!defined(CHAT))
-    if (trfreg > trreg)
-      trie_tr_base = temp_trreg = trfreg;
-    else
-#endif
-      trie_tr_base = temp_trreg = trreg;
+
+    mini_trail_top = mini_trail - 1;
     ctr = 0;
 
     switch (tag) {
@@ -1420,9 +1431,7 @@ NODEptr whole_term_chk_ins(Cell term, CPtr hook, int *flagptr)
     }
     *flagptr = flag;
 
-    for (j = 0; j < ctr; j++) {
-      var_regs[j] = (CPtr)trie_tr_base[j + 1];
-    }
+    for (j = 0; j < ctr; j++) var_regs[j] = mini_trail[j];
     /*
      * Both global_num_vars and Last_Nod_Sav are needed by
      * get_lastnode_cs_retskel() (see trie_intern/5 in intern.P).
@@ -1442,7 +1451,6 @@ NODEptr one_term_chk_ins(CPtr termptr, CPtr hook, int *flagptr)
 {
     int  arity;
     CPtr cptr;
-    CPtr *trie_tr_base, *temp_trreg;
     CPtr xtemp1;
     int  i, j, flag = 1;
     Cell tag = 0, item;
@@ -1451,12 +1459,8 @@ NODEptr one_term_chk_ins(CPtr termptr, CPtr hook, int *flagptr)
     psc = term_psc((prolog_term)termptr);
     arity = get_arity(psc);
     cptr = (CPtr)cs_val(termptr);
-#if (!defined(CHAT))
-    if (trfreg > trreg)
-      trie_tr_base = temp_trreg = trfreg;
-    else
-#endif
-      trie_tr_base = temp_trreg = trreg;
+
+    mini_trail_top = mini_trail - 1;
     ctr = 0;
     Paren = NOPAR;
     GNodePtrPtr = (NODEptr *) hook;
