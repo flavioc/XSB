@@ -32,7 +32,7 @@ Option = [optimize]
 # Self-make: Version 1.4.1
 #
 XSB=../../bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000
+Prolog = $(XSB) -i -s -m 2000 -c 2000 -e 'set_dcg_style(standard).'
 #
 #-----------------------------------------------------------------------#
 
@@ -50,9 +50,6 @@ all: $(ALL)
 	/bin/rm cmd...
 	cd lib; make
 
-
-# Unfortunately, this needs to be commented on the NeXT.
-# %.O:	%.H
 
 .DONE:
 	echo Done
