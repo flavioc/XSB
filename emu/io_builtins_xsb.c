@@ -735,7 +735,6 @@ int read_canonical(void)
   int postopreq = FALSE, varfound = FALSE;
   long tempfp;
   prolog_term term;
-  void ctop_tag(int, Cell);
   
   tempfp = ptoc_int(1);
   if (tempfp == -1000) {
