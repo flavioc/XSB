@@ -243,7 +243,7 @@ static byte *loader1(FILE *fd, int exp)
 		if (seg_count == 1) first_inst = seg_first_inst;
 				/* 1st inst of file */
 	   /* set the entry point of the predicate */
-		ptr = (Pair)insert(name, arity, cur_mod, &is_new);
+		ptr = insert(name, arity, cur_mod, &is_new);
 		switch (get_type(ptr->psc_ptr)) {
 		  case T_ORDI:
 		  case T_UDEF:
@@ -338,7 +338,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	    mod = temp_pair->psc_ptr;
 	  } else if (t_env == T_GLOBAL) mod = global_mod;
 	  else mod = cur_mod;
-	  temp_pair = (Pair)insert(name, t_arity, mod, &is_new);
+	  temp_pair = insert(name, t_arity, mod, &is_new);
 	  if (is_new && t_env==T_IMPORTED)
 		set_ep(temp_pair->psc_ptr, (byte *)(mod));
 		/* set ep to the psc record of the module name */

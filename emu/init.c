@@ -281,7 +281,7 @@ char *init_para(int argc, char *argv[])
       else {
 	i++;
 	if (i < argc)
-	   sscanf(argv[i], "%ld", &pdl.init_size); /* JF: long */
+	   sscanf(argv[i], "%ld", &pdl.init_size);
 	 else
 	   xsb_warn("Missing size value");
       }
@@ -383,7 +383,6 @@ char *init_para(int argc, char *argv[])
 	   cmd_loop_driver = argv[i];
 	 else
 	   xsb_warn("Missing top-level command loop driver's file name");
-
       }
       break;
     case 'e':
@@ -459,7 +458,7 @@ char *init_para(int argc, char *argv[])
      *  it is known where these files exist, the full paths are built.
      */
     flags[BOOT_MODULE] = (Cell) malloc(strlen_instdir + strlen_initfile + 1);
-    flags[CMD_LOOP_DRIVER ] = (Cell)malloc(strlen_instdir + strlen_2ndfile + 1);
+    flags[CMD_LOOP_DRIVER] = (Cell)malloc(strlen_instdir + strlen_2ndfile + 1);
     sprintf( (char *)flags[BOOT_MODULE], "%s%s", install_dir,
 	     boot_module );
     sprintf( (char *)flags[CMD_LOOP_DRIVER ], "%s%s", install_dir,
@@ -655,24 +654,24 @@ void init_symbols(void)
   nil_sym = string_find("[]", 1);
 
   /* insert "."/2 into global list */
-  temp = (Pair)insert(".", 2, global_mod, &new_indicator);
+  temp = insert(".", 2, global_mod, &new_indicator);
   list_str = temp;
   list_psc = pair_psc(temp);
   list_dot = get_name(list_psc);
 
   /* insert symbol ","/2 */
-  temp = (Pair)insert(",", 2, global_mod, &new_indicator);
+  temp = insert(",", 2, global_mod, &new_indicator);
   comma_psc = pair_psc(temp);
 
   /* insert symbol tnot/1 into module tables */
   tp = (Pair)insert_module(0, "tables");		/* unloaded */
   tables_psc = pair_psc(tp);
-  temp = (Pair)insert("tnot", 1, tables_psc, &new_indicator);
+  temp = insert("tnot", 1, tables_psc, &new_indicator);
   tnot_psc = pair_psc(temp);
   set_ep(tnot_psc, (byte *)tables_psc);
   set_env(tnot_psc, T_UNLOADED);
   set_type(tnot_psc, T_ORDI);
-  temp = (Pair)insert("DL", 3, global_mod, &new_indicator);
+  temp = insert("DL", 3, global_mod, &new_indicator);
   delay_psc = pair_psc(temp);
 
   /* Initialize ret PSCs */
