@@ -252,7 +252,6 @@ void construct_ret_for_call(void)
 {
     Pair sym;
     Cell var;
-    Cell term;
     int  arity, i, new;
 
     arity = cell(Temp_VarPosReg);
