@@ -4,9 +4,9 @@
 
 % This module loads up the selected driver from the dbdrivers directory
 
-:- import bootstrap_package/2 from packaging.
-:- import fmt_write_string/3 from file_io.
-:- import slash/1 from machine.
+:- import bootstrap_package/2, package_configuration/2 from packaging.
+:- import fmt_write_string/3, file_time/2 from file_io.
+:- import slash/1, machine_file_exists/1 from machine.
 :- import rename/2 from shell.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import initialise/0 from driver_manager.
@@ -16,38 +16,53 @@
 :- 
 	bootstrap_package([dbdrivers,cc], dbdrivers1),
 	[db_interface],
+	slash(Slash),
 	Basename = driver_manager,
-	%% There is something weird with XSB: when it compiles driver_manager
-	%% under windows, it fails somewhere after the compilation.
-	%% So, we call [Basename] again in such a case in order to load
-	%% the driver.
-	([Basename], ! ; [Basename]),
-	(dbdrivers_running_under(cygwin) -> true
+	[Basename],	
+	(dbdrivers_running_under(cygwin) -> 
 		% cygwin specific stuff
+			
+		xsb_configuration(packagesdir, PackageDir),
+		xsb_configuration(config_bindir, ConfigBinDir),
+		fmt_write_string(DriverManagerDir, '%s%sdbdrivers%scc%s', 
+			f(PackageDir, Slash, Slash, Slash)),
+		fmt_write_string(DriverManagerDll, '%sdriver_manager.dll', 
+			f(DriverManagerDir)),
+		fmt_write_string(ConfigBinDll, '%s%sdriver_manager.dll', 
+			f(ConfigBinDir, Slash)),  
+		rename(DriverManagerDll, ConfigBinDll),
+		fmt_write_string(DriverManagerO, '%sdriver_manager.o',
+			f(DriverManagerDir)),
+		fmt_write_string(ConfigBinO, '%s%sdriver_manager.o',
+			f(ConfigBinDir, Slash)),
+		rename(DriverManagerO, ConfigBinO),
+		fmt_write_string(DriverManagerA, '%sdriver_manager.a',
+			f(DriverManagerDir)),
+		fmt_write_string(ConfigBinA, '%s%sdriver_manager.a',
+			f(ConfigBinDir, Slash)),
+		rename(DriverManagerA, ConfigBinA),
+		fmt_write_string(DriverManagerDef, '%sdriver_manager.def',
+			f(DriverManagerDir)),
+		fmt_write_string(ConfigBinDef, '%s%sdriver_manager.def',
+			f(ConfigBinDir, Slash)),
+		rename(DriverManagerDef, ConfigBinDef)
 	;
 	(dbdrivers_running_under(windows) -> true
 		% windows specific stuff
 	;
 		% else unix specific stuff 
 
-	    slash(Slash),
 		xsb_configuration(packagesdir, PackageDir),
-		fmt_write_string(DriverManagerDir, '%s%sdbdrivers', f(PackageDir, Slash)),
-	    fmt_write_string(SharedLibDriverManager,
-			     '%s%scc%s%s.so', 
-			     f(DriverManagerDir, Slash, Slash, Basename)),
-	    xsb_configuration(config_libdir, ConfigLibDir),
-	    fmt_write_string(LibDriverManager,
-			     '%s%s%s.so',
-			     f(ConfigLibDir, Slash, Basename)),
-	    rename(SharedLibDriverManager, LibDriverManager),
-		fmt_write_string(DriverManagerObjX, 
-				 '%s%scc%s%s.xwam',
-				  f(DriverManagerDir, Slash, Slash, Basename)),
-	    fmt_write_string(LibDriverManagerObjX,
-			     '%s%s%s.xwam',
-			     f(ConfigLibDir, Slash, Basename)),
-	    rename(DriverManagerObjX, LibDriverManagerObjX)
+		fmt_write_string(DriverManagerDir, '%s%sdbdrivers', 
+		f(PackageDir, Slash)),
+	   	fmt_write_string(SharedLibDriverManager,
+	   		'%s%scc%s%s.so', 
+	     	f(DriverManagerDir, Slash, Slash, Basename)),
+	   	xsb_configuration(config_libdir, ConfigLibDir),
+	   	fmt_write_string(LibDriverManager,
+	    	'%s%s%s.so',
+		f(ConfigLibDir, Slash, Basename)),
+	   	rename(SharedLibDriverManager, LibDriverManager)
 	)
 	),
 	initialise.
