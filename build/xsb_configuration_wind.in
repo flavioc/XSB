@@ -30,7 +30,7 @@
 */
 
 
-%% The predicate \`xsb_configuration' defined here offers
+%% The predicate "xsb_configuration" defined here offers
 %% extensive information on how XSB was built.
 %%
 
@@ -174,7 +174,7 @@ xsb_configuration(site_config_libdir, SiteConfigLibdir) :-
      slash(Slash),
      fmt_write_string(SiteConfigLibdir, '%s%slib', f(SiteConfigDir, Slash)).
 
-/* This is where user's arch-specific libraries are found by default.
+/* This is where user''s arch-specific libraries are found by default.
    This is primarily needed when we compile an external C program and need
    to move the *.so files out of the way.
    The reasons are:
