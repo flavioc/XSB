@@ -1,7 +1,7 @@
 /* File:      gpp.c  -- generic preprocessor
 ** Author:    Denis Auroux
 ** Contact:   auroux@math.polytechnique.fr
-** Version:   1.4
+** Version:   2.0
 ** 
 ** Copyright (C) Denis Auroux 1996, 1999
 ** 
@@ -95,6 +95,7 @@ typedef struct COMMENT {
   char *start;          /* how the comment/string starts */
   char *end;            /* how it ends */
   char quote;           /* how to prevent it from ending */
+  char warn;            /* a character that shouldn't be in there */
   int flags[3];         /* meta, user, text */
   struct COMMENT *next;
 } COMMENT;
@@ -257,7 +258,7 @@ void PopSpecs()
 }
 
 void usage() {
-  fprintf(stderr,"GPP Version 1.4 - Generic Preprocessor - (c) Denis Auroux 1996-99\n");
+  fprintf(stderr,"GPP Version 2.0 - Generic Preprocessor - (c) Denis Auroux 1996-99\n");
   fprintf(stderr,"Usage : gpp [-o outfile] [-I/include/path] [-Dname=val ...] [-z] [-x] [-m]\n");
   fprintf(stderr,"            [-n] [-C | -T | -H | -P | -U ... [-M ...]] [+c<n> str1 str2]\n");
   fprintf(stderr,"            [+s<n> str1 str2 c] [infile]\n\n");
@@ -495,7 +496,7 @@ int parse_comment_specif(char c)
   }
 }
 
-void add_comment(struct SPECS *S,char *specif,char *start,char *end,char quote)
+void add_comment(struct SPECS *S,char *specif,char *start,char *end,char quote,char warn)
 {
   struct COMMENT *p;
   
@@ -517,6 +518,7 @@ void add_comment(struct SPECS *S,char *specif,char *start,char *end,char quote)
   p->start=start;
   p->end=end;
   p->quote=quote;
+  p->warn=warn;
   if (strlen(specif)!=3) bug("Invalid comment/string modifier");
   p->flags[FLAG_META]=parse_comment_specif(specif[0]);
   p->flags[FLAG_USER]=parse_comment_specif(specif[1]);
@@ -624,6 +626,16 @@ int identifierEnd(int start)
   }
   while (!isdelim(c)) c=getChar(++start);
   return start;
+}
+
+int iterIdentifierEnd(int start)
+{
+  int x;
+  while(1) {
+    x=identifierEnd(start);
+    if (x==start) return x;
+    start=x;
+  }
 }
 
 int IsInCharset(CHARSET_SUBSET x,int c)
@@ -905,7 +917,7 @@ void initthings(int argc,char **argv)
             if (*s==0) s="ccc";
             if (!(*(++arg))) usage();
             if (!(*(++arg))) usage();
-            add_comment(S,s,strnl(*(arg-1)),strnl(*arg),0);
+            add_comment(S,s,strnl(*(arg-1)),strnl(*arg),0,0);
             break;
         case 's':
             s=(*arg)+2;
@@ -913,7 +925,7 @@ void initthings(int argc,char **argv)
             if (!(*(++arg))) usage();
             if (!(*(++arg))) usage();
             if (!(*(++arg))) usage();
-            add_comment(S,s,strnl(*(arg-2)),strnl(*(arg-1)),**arg);
+            add_comment(S,s,strnl(*(arg-2)),strnl(*(arg-1)),**arg,0);
             break;
         case 'z': 
             dosmode=0;
@@ -939,21 +951,21 @@ void initthings(int argc,char **argv)
       case 'C': ishelp|=ismode|hasmeta|usrmode; ismode=1;
                 S->User=KUser; S->Meta=KMeta;
                 S->preservelf=1;
-                add_comment(S,"ccc",strdup("/*"),strdup("*/"),0);
-                add_comment(S,"ccc",strdup("//"),strdup("\n"),0);
-                add_comment(S,"ccc",strdup("\\\n"),strdup(""),0);
-                add_comment(S,"sss",strdup("\""),strdup("\""),'\\');
-                add_comment(S,"sss",strdup("'"),strdup("'"),'\\');
+                add_comment(S,"ccc",strdup("/*"),strdup("*/"),0,0);
+                add_comment(S,"ccc",strdup("//"),strdup("\n"),0,0);
+                add_comment(S,"ccc",strdup("\\\n"),strdup(""),0,0);
+                add_comment(S,"sss",strdup("\""),strdup("\""),'\\','\n');
+                add_comment(S,"sss",strdup("'"),strdup("'"),'\\','\n');
                 break;
       case 'P': ishelp|=ismode|hasmeta|usrmode; ismode=1;
                 S->User=KUser; S->Meta=KMeta;
                 S->preservelf=1;
                 S->op_set=PrologOp;
-                add_comment(S,"css",strdup("\213/*"),strdup("*/"),0); /* \!o */
-                add_comment(S,"cii",strdup("\\\n"),strdup(""),0);
-                add_comment(S,"css",strdup("%"),strdup("\n"),0);
-                add_comment(S,"sss",strdup("\""),strdup("\""),0);
-                add_comment(S,"sss",strdup("\207'"),strdup("'"),0); /* \!# */
+                add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
+                add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
+                add_comment(S,"css",strdup("%"),strdup("\n"),0,0);
+                add_comment(S,"sss",strdup("\""),strdup("\""),0,'\n');
+                add_comment(S,"sss",strdup("\207'"),strdup("'"),0,'\n'); /* \!# */
                 break;
       case 'T': ishelp|=ismode|hasmeta|usrmode; ismode=1;
                 S->User=S->Meta=Tex;
@@ -1008,7 +1020,7 @@ void initthings(int argc,char **argv)
   }
 }
 
-int findCommentEnd(char *endseq,char quote,int pos,int flags)
+int findCommentEnd(char *endseq,char quote,char warn,int pos,int flags)
 {
   int i;
   char c;
@@ -1016,7 +1028,8 @@ int findCommentEnd(char *endseq,char quote,int pos,int flags)
   while (1) {
     c=getChar(pos);
     i=pos;
-    if (c==0) bug("Input ended in comment");
+    if (c==0) bug("Input ended while scanning a comment/string");
+    if (c==warn) { warn=0; warning("possible comment/string termination problem"); }
     if (matchSequence(endseq,&i)) return pos;
     if (c==quote) pos+=2;
     else if ((flags&PARSE_MACROS)&&(c==S->User.quotechar)) pos+=2;
@@ -1037,7 +1050,7 @@ void SkipPossibleComments(int *pos,int cmtmode,int silentonly)
       if (!(c->flags[cmtmode]&FLAG_IGNORE))
         if (!silentonly||(c->flags[cmtmode]==FLAG_COMMENT))
           if (matchStartSequence(c->start,pos)) {
-            *pos=findCommentEnd(c->end,c->quote,*pos,c->flags[cmtmode]);
+            *pos=findCommentEnd(c->end,c->quote,c->warn,*pos,c->flags[cmtmode]);
             matchEndSequence(c->end,pos);
             found=1;
             break;
@@ -1084,7 +1097,7 @@ int SplicePossibleUser(int *idstart,int *idend,int *sh_end,int *lg_end,
       argb[*argc]=pos;
       k=0;
       while(1) { /* look for mArgE, mArgSep, or comment-start */
-        pos=identifierEnd(pos);
+        pos=iterIdentifierEnd(pos);
         SkipPossibleComments(&pos,cmtmode,0);
         if (getChar(pos)==0) return (*sh_end>=0); /* EOF */
         if (strchr(S->User.stackchar,getChar(pos))) k++;
@@ -1138,7 +1151,7 @@ int findMetaArgs(int start,int *p1b,int *p1e,int *p2b,int *p2e,int *endm,int *ar
     *argc=0;
     k=0;
     while(1) { /* look for mArgE, mArgSep, or comment-start */
-      pos=identifierEnd(pos);
+      pos=iterIdentifierEnd(pos);
       SkipPossibleComments(&pos,FLAG_META,0);
       if (getChar(pos)==0) bug("unfinished macro argument");
       if (strchr(S->Meta.stackchar,getChar(pos))) k++;
@@ -1158,7 +1171,7 @@ int findMetaArgs(int start,int *p1b,int *p1e,int *p2b,int *p2e,int *endm,int *ar
   *p2b=pos;
   k=0;
   while(1) { /* look for mArgE or comment-start */
-    pos=identifierEnd(pos);
+    pos=iterIdentifierEnd(pos);
     SkipPossibleComments(&pos,FLAG_META,0);
     if (getChar(pos)==0) bug("unfinished macro");
     if (strchr(S->Meta.stackchar,getChar(pos))) k++;
@@ -1484,11 +1497,11 @@ void SetStandardMode(struct SPECS *P,char *opt)
   if (!strcmp(opt,"C")||!strcmp(opt,"cpp")) {
     P->User=KUser; P->Meta=KMeta;
     P->preservelf=1;
-    add_comment(P,"ccc",strdup("/*"),strdup("*/"),0);
-    add_comment(P,"ccc",strdup("//"),strdup("\n"),0);
-    add_comment(P,"ccc",strdup("\\\n"),strdup(""),0);
-    add_comment(P,"sss",strdup("\""),strdup("\""),'\\');
-    add_comment(P,"sss",strdup("'"),strdup("'"),'\\');
+    add_comment(P,"ccc",strdup("/*"),strdup("*/"),0,0);
+    add_comment(P,"ccc",strdup("//"),strdup("\n"),0,0);
+    add_comment(P,"ccc",strdup("\\\n"),strdup(""),0,0);
+    add_comment(P,"sss",strdup("\""),strdup("\""),'\\','\n');
+    add_comment(P,"sss",strdup("'"),strdup("'"),'\\','\n');
   }
   else if (!strcmp(opt,"TeX")||!strcmp(opt,"tex")) {
     P->User=Tex; P->Meta=Tex;
@@ -1506,11 +1519,11 @@ void SetStandardMode(struct SPECS *P,char *opt)
     P->User=KUser; P->Meta=KMeta;
     P->preservelf=1;
     P->op_set=PrologOp;
-    add_comment(P,"css",strdup("\213/*"),strdup("*/"),0); /* \!o */ 
-    add_comment(P,"cii",strdup("\\\n"),strdup(""),0);
-    add_comment(P,"css",strdup("%"),strdup("\n"),0);
-    add_comment(P,"sss",strdup("\""),strdup("\""),0);
-    add_comment(P,"sss",strdup("\207'"),strdup("'"),0);   /* \!# */
+    add_comment(P,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */ 
+    add_comment(P,"cii",strdup("\\\n"),strdup(""),0,0);
+    add_comment(P,"css",strdup("%"),strdup("\n"),0,0);
+    add_comment(P,"sss",strdup("\""),strdup("\""),0,'\n');
+    add_comment(P,"sss",strdup("\207'"),strdup("'"),0,'\n');   /* \!# */
   }
   else bug("unknown standard mode");
 }
@@ -1555,16 +1568,18 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
     S->stack_next->User.quotechar=args[0][0];
   }
   else if (idequal(C->buf+p1start,p1end-p1start,"comment")) {
-    if ((nargs<2)||(nargs>3)) bug("syntax error in #mode comment command");
+    if ((nargs<2)||(nargs>4)) bug("syntax error in #mode comment command");
     if (!opt) opt="ccc";
-    if (nargs==2) args[2]="";
-    add_comment(S->stack_next,opt,strdup(args[0]),strdup(args[1]),args[2][0]);
+    if (nargs<3) args[2]="";
+    if (nargs<4) args[3]="";
+    add_comment(S->stack_next,opt,strdup(args[0]),strdup(args[1]),args[2][0],args[3][0]);
   }
   else if (idequal(C->buf+p1start,p1end-p1start,"string")) {
-    if ((nargs<2)||(nargs>3)) bug("syntax error in #mode string command");
+    if ((nargs<2)||(nargs>4)) bug("syntax error in #mode string command");
     if (!opt) opt="sss";
-    if (nargs==2) args[2]="";
-    add_comment(S->stack_next,opt,strdup(args[0]),strdup(args[1]),args[2][0]);
+    if (nargs<3) args[2]="";
+    if (nargs<4) args[3]="";
+    add_comment(S->stack_next,opt,strdup(args[0]),strdup(args[1]),args[2][0],args[3][0]);
   }
   else if (idequal(C->buf+p1start,p1end-p1start,"save")
          ||idequal(C->buf+p1start,p1end-p1start,"push")) {
@@ -1687,7 +1702,7 @@ int ParsePossibleMeta()
     PushSpecs(S);
     S->preservelf=1;
     delete_comment(S,strdup("\""));
-    add_comment(S,"sss",strdup("\""),strdup("\""),'\\');
+    add_comment(S,"sss",strdup("\""),strdup("\""),'\\','\n');
   }
 
   nparam=findMetaArgs(nameend,&p1start,&p1end,&p2start,&p2end,&macend,&argc,argb,arge);
@@ -2069,7 +2084,7 @@ void ParseText()
     for (p=S->comments;p!=NULL;p=p->next)
       if (!(p->flags[C->ambience]&FLAG_IGNORE))
         if (matchStartSequence(p->start,&cs)) {
-          l=ce=findCommentEnd(p->end,p->quote,cs,p->flags[C->ambience]);
+          l=ce=findCommentEnd(p->end,p->quote,p->warn,cs,p->flags[C->ambience]);
           matchEndSequence(p->end,&l);
           if (p->flags[C->ambience]&OUTPUT_DELIM)
             sendout(C->buf+1,cs-1,0);
