@@ -158,7 +158,7 @@ cc_options(CC_Name, Options, CC_Opts) :-
 	(   memberchk(cc_opts(CC_Opts1), Options)
 	->  fmt_write_string(CC_Opts2, '-I%s -I%s %s',
 			     args(Emudir,ConfigDir,CC_Opts1))
-	;   str_cat('-I', Emudir, CC_Opts2)
+	;   fmt_write_string(CC_Opts2, '-I%s -I%s', args(Emudir, ConfigDir))
 	),
 	(  CC_Name == gcc 
 	-> str_cat(' -Wall ', CC_Opts2, CC_Opts)

@@ -597,7 +597,7 @@ basic_call(I,PSC,Call) :-
 	).
 
 
-%% nec since code_call must be last call in clause.
+%% need since code_call must be last call in clause.
 code_call_h(Code,Call,Nt) :- code_call(Code,Call,Nt).
 
 ll_write(X) :- file_write(STDDBG, X).
