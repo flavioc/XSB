@@ -63,7 +63,7 @@
 :- dynamic '_$_$_flora_switch'/1.
 
 /*********************************************************************/
-'_$_$_flora_shell' :-
+flora_shell :-
 	( package_configuration(dir(flora),FloraDir) ->
 	    true
 
@@ -188,6 +188,7 @@ help :-
 	writeln('  {FILE[.EXT],...}             : dynload a list of .flr or .P files'),
 	writeln('  rundemo(FILE[.flr])          : flconsult a demo from FLORA demos directory'),
 	writeln('  rundemo(FILE[.flr],[...])    : rundemo(FILE) with options [...]'),
+	writeln('  abolish_all_tables       : flush all tabled data'),
 	writeln('  all                          : show all solutions (default)'),
 	writeln('  one                          : show solutions one by one'),
 	writeln('  maxerr(all/N)                : set/show the max number of errors FLORA reports'),
