@@ -877,6 +877,8 @@ int read_canonical(void)
       case TK_PUNC:
 		if (*token->value == '[') {
 		  if(token->nextch == ']') {
+			if (optop >= OPSTK_SIZE)
+			  xsb_abort("read_canonical op stack overflow");
 			token = GetToken(filep,instr,prevchar);
 			/* print_token(token->type,token->value); */
 			prevchar = token->nextch;
@@ -885,6 +887,8 @@ int read_canonical(void)
 			optop++;
 			postopreq = TRUE;
 		  } else {	/* beginning of a list */
+			if (funtop >= OPSTK_SIZE)
+			  xsb_abort("read_canonical fun stack overflow");
 			funstk[funtop].funop = optop;
 			funstk[funtop].funtyp = FUNLIST;	/* assume regular list */
 			funtop++;
@@ -893,6 +897,8 @@ int read_canonical(void)
 		}
 	  /* let a punctuation mark be a functor symbol */
       case TK_FUNC:
+	        if (funtop >= OPSTK_SIZE)
+		  xsb_abort("read_canonical op stack overflow");
 		funstk[funtop].fun = (char *)string_find(token->value,1);
 		funstk[funtop].funop = optop;
 		funstk[funtop].funtyp = FUNFUN;	/* functor */
@@ -906,12 +912,17 @@ int read_canonical(void)
 		break;
       case TK_VVAR:
 	        if ((token->value)[1] == 0) { /* anonymous var */
+		  if (cvarbot < 0)
+		    xsb_abort("Too many variables in read_canonical term");
 		  i = cvarbot;
 		  vars[cvarbot].varid = (Cell) "_";
 		  vars[cvarbot].varval = 0;
 		  cvarbot--;
+		  if (optop >= OPSTK_SIZE)
+		    xsb_abort("read_canonical op stack overflow");
 		  opstk[optop].typ = TK_VAR;
-		  opstk[optop++].op = (prolog_term) i;
+		  opstk[optop].op = (prolog_term) i;
+		  optop++;
 		  postopreq = TRUE;
 		  break;
 		}  /* else fall through and treat as regular var*/
@@ -924,28 +935,42 @@ int read_canonical(void)
 		  i--;
 		}
 		if (i == cvarbot) {
+		  if (cvarbot < 0)
+		    xsb_abort("Too many variables in read_canonical term");
 		  vars[cvarbot].varid = (Cell) cvar;
 		  vars[cvarbot].varval = 0;
 		  cvarbot--;
 		}
+		if (optop >= OPSTK_SIZE)
+		  xsb_abort("read_canonical op stack overflow");
 		opstk[optop].typ = TK_VAR;
-		opstk[optop++].op = (prolog_term) i;
+		opstk[optop].op = (prolog_term) i;
+		optop++;
 		postopreq = TRUE;
 		break;
       case TK_REAL:
+	        if (optop >= OPSTK_SIZE)
+		  xsb_abort("read_canonical op stack overflow");
 		opstk[optop].typ = TK_REAL;
 		float_temp = (float) *(double *)(token->value);
-		opstk[optop++].op = makefloat(float_temp);
+		opstk[optop].op = makefloat(float_temp);
+		optop++;
 		postopreq = TRUE;
 		break;
       case TK_INT:
+	        if (optop >= OPSTK_SIZE)
+		  xsb_abort("read_canonical op stack overflow");
 		opstk[optop].typ = TK_INT;
-		opstk[optop++].op = makeint(*(long *)token->value);
+		opstk[optop].op = makeint(*(long *)token->value);
+		optop++;
 		postopreq = TRUE;
 		break;
       case TK_ATOM:
+	        if (optop >= OPSTK_SIZE)
+		  xsb_abort("read_canonical op stack overflow");
 		opstk[optop].typ = TK_ATOM;
-		opstk[optop++].op = makestring((char *)string_find(token->value,1));
+		opstk[optop].op = makestring((char *)string_find(token->value,1));
+		optop++;
 		postopreq = TRUE;
 		break;
       case TK_EOF:
