@@ -554,14 +554,14 @@ temporary file with a random name is used."
 If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
   (interactive "P")
   (let ((default-file (if (buffer-file-name)
-			  (file-name-nondirectory (buffer-file-name))
+			  (buffer-file-name)
 			"none")))
     (if (not (stringp file))
 	(setq file
 	      (read-file-name
 	       (format "File name to consult %s(%s): "
 		       (if dynamically "dynamically " "")
-		       default-file)
+		       (file-name-nondirectory default-file))
 	       nil default-file)))
     (if flora-offer-save
 	(save-some-buffers))
