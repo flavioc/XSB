@@ -32,25 +32,67 @@
  */
 
   switch (cursorHandle) {
-  case 0:   EXEC SQL DESCRIBE SELECT LIST FOR S0 INTO descriptor;  break;
-  case 1:   EXEC SQL DESCRIBE SELECT LIST FOR S1 INTO descriptor;  break;
-  case 2:   EXEC SQL DESCRIBE SELECT LIST FOR S2 INTO descriptor;  break;
-  case 3:   EXEC SQL DESCRIBE SELECT LIST FOR S3 INTO descriptor;  break;
-  case 4:   EXEC SQL DESCRIBE SELECT LIST FOR S4 INTO descriptor;  break;
-  case 5:   EXEC SQL DESCRIBE SELECT LIST FOR S5 INTO descriptor;  break;
-  case 6:   EXEC SQL DESCRIBE SELECT LIST FOR S6 INTO descriptor;  break;
-  case 7:   EXEC SQL DESCRIBE SELECT LIST FOR S7 INTO descriptor;  break;
-  case 8:   EXEC SQL DESCRIBE SELECT LIST FOR S8 INTO descriptor;  break;
-  case 9:   EXEC SQL DESCRIBE SELECT LIST FOR S9 INTO descriptor;  break;
-  case 10:  EXEC SQL DESCRIBE SELECT LIST FOR S10 INTO descriptor;  break;
-  case 11:  EXEC SQL DESCRIBE SELECT LIST FOR S11 INTO descriptor;  break;
-  case 12:  EXEC SQL DESCRIBE SELECT LIST FOR S12 INTO descriptor;  break;
-  case 13:  EXEC SQL DESCRIBE SELECT LIST FOR S13 INTO descriptor;  break;
-  case 14:  EXEC SQL DESCRIBE SELECT LIST FOR S14 INTO descriptor;  break;
-  case 15:  EXEC SQL DESCRIBE SELECT LIST FOR S15 INTO descriptor;  break;
-  case 16:  EXEC SQL DESCRIBE SELECT LIST FOR S16 INTO descriptor;  break;
-  case 17:  EXEC SQL DESCRIBE SELECT LIST FOR S17 INTO descriptor;  break;
-  case 18:  EXEC SQL DESCRIBE SELECT LIST FOR S18 INTO descriptor;  break;
-  case 19:  EXEC SQL DESCRIBE SELECT LIST FOR S19 INTO descriptor;  break;
-  case 20:  EXEC SQL DESCRIBE SELECT LIST FOR S20 INTO descriptor;  break;
+  case 0:
+    EXEC SQL DESCRIBE SELECT LIST FOR S0 INTO DESCRIPTOR descriptor;
+    break;
+  case 1:
+    EXEC SQL DESCRIBE SELECT LIST FOR S1 INTO DESCRIPTOR descriptor;
+    break;
+  case 2:
+    EXEC SQL DESCRIBE SELECT LIST FOR S2 INTO DESCRIPTOR descriptor;
+    break;
+  case 3:
+    EXEC SQL DESCRIBE SELECT LIST FOR S3 INTO DESCRIPTOR descriptor;
+    break;
+  case 4:
+    EXEC SQL DESCRIBE SELECT LIST FOR S4 INTO DESCRIPTOR descriptor;
+    break;
+  case 5:
+    EXEC SQL DESCRIBE SELECT LIST FOR S5 INTO DESCRIPTOR descriptor;
+    break;
+  case 6:
+    EXEC SQL DESCRIBE SELECT LIST FOR S6 INTO DESCRIPTOR descriptor;
+    break;
+  case 7:
+    EXEC SQL DESCRIBE SELECT LIST FOR S7 INTO DESCRIPTOR descriptor;
+    break;
+  case 8:
+    EXEC SQL DESCRIBE SELECT LIST FOR S8 INTO DESCRIPTOR descriptor;
+    break;
+  case 9:
+    EXEC SQL DESCRIBE SELECT LIST FOR S9 INTO DESCRIPTOR descriptor;
+    break;
+  case 10:
+    EXEC SQL DESCRIBE SELECT LIST FOR S10 INTO DESCRIPTOR descriptor;
+    break;
+  case 11:
+    EXEC SQL DESCRIBE SELECT LIST FOR S11 INTO DESCRIPTOR descriptor;
+    break;
+  case 12:
+    EXEC SQL DESCRIBE SELECT LIST FOR S12 INTO DESCRIPTOR descriptor;
+    break;
+  case 13:
+    EXEC SQL DESCRIBE SELECT LIST FOR S13 INTO DESCRIPTOR descriptor;
+    break;
+  case 14:
+    EXEC SQL DESCRIBE SELECT LIST FOR S14 INTO DESCRIPTOR descriptor;
+    break;
+  case 15:
+    EXEC SQL DESCRIBE SELECT LIST FOR S15 INTO DESCRIPTOR descriptor;
+    break;
+  case 16:
+    EXEC SQL DESCRIBE SELECT LIST FOR S16 INTO DESCRIPTOR descriptor;
+    break;
+  case 17:
+    EXEC SQL DESCRIBE SELECT LIST FOR S17 INTO DESCRIPTOR descriptor;
+    break;
+  case 18:
+    EXEC SQL DESCRIBE SELECT LIST FOR S18 INTO DESCRIPTOR descriptor;
+    break;
+  case 19:
+    EXEC SQL DESCRIBE SELECT LIST FOR S19 INTO DESCRIPTOR descriptor;
+    break;
+  case 20:
+    EXEC SQL DESCRIBE SELECT LIST FOR S20 INTO DESCRIPTOR descriptor;
+    break;
   }
