@@ -2618,21 +2618,69 @@ A small example that shows the use of these predicates is the following:
 }
 
 
-%\section{The Profiling Library}
+\section{The Profiling Library}
 %==============================
 
-%These predicates are available by loading the library through
-%{\tt [prof\_lib]}.
+XSB can provide Prolog-level profiling for Prolog programs, which
+allows the Prolog programmer to determine what proportion of time is
+spent executing code for each predicate.  To enable profiling, XSB
+must be started with the command line parameter of -p.  The module
+{\tt xsb\_profiling} contains the predicate {\tt profile\_call/1} that
+invokes profiling.
 
-%\begin{description}
-%\ournewitem{measure(+Call)}{prof\_lib}\index{{\tt measure/1}}
-%\predindex{measure/1~(L)}\label{p:measure}
-%     The same as {\tt once/1} (see the section {\it Meta-Predicates}
-%in Volume 1)
-%     but it also prints out statistical information about the call,
-%     that looks like the information printed out by predicate
-%     {\tt statistics/0} (see the section {\it Execution State} in Volume 1).
-%\end{description}
+\begin{description}
+\ournewitem{profile\_call(+Goal)}{xsb\_profiling}\index{profile\_call/1}
+
+Calls the goal {\tt Goal}, and when it first returns, prints out (on
+userout) a table of predicate names indicating for each, the
+percentage of time spent executing that predicate's code.  XSB must
+have been started with the -p command line parameter to obtain this
+table.  The percentages are accumulated by module.  {\tt Goal} may
+backtrack, but profiling is done only for the time to the first
+success.  So it is most appropriate to profile succeeding
+deterministic goals.
+\end{description}
+
+Profiling works by starting another thread that interrupts every 100th
+of a second and sets a flag so that the XSB emulator will determine
+the predicate of the currently executing code.  The printout also
+includes the total number of interrupts and for each predicate, the
+raw number of times its code was determined to be executing.  A
+predicate is printed only if its code was interrupted at least once.
+The numbers will be meaningful only for relatively long-running
+predicates, taking more than a couple of seconds.
+
+When an interrupt occurs, the {\bf next} WAM call, execute, proceed or
+trust instruction to be executed will log its associated predicate.
+The system does not keep track of code addresses for tries (used to
+represent the results of completed tables, and trie-indexed asserted
+code), so for some interrupts the associated executing predicate
+cannot be determined.  In these cases the interrupt is charged against
+an ``unknown/?'' pseudo-predicate, and this count is included in the
+output.
+
+Profiling does not give the context from which the predicate is
+called, so you may want to make renamed copies of basic predicates to
+use in particular circumstances to determine their times.
+
+Predicates compiled with the ``optimize'' option may provide
+misleading results under profiling.  Note that all system predicates
+(including those in {\tt basics}) are compiled with the ``optimize''
+option, by default.  That option causes tail-recursive predicates to
+use a ``jump'' instruction rather than an ``execute'' instruction to
+make the recursive call, and so an interrupt in such a loop will not
+be charged until the next {\bf logging} instruction is executed.  If
+much time is spent in the recursion, this might not be for a long
+time, and the interrupt might ultimately be charged to another
+predicate.  (If an interrupt has not been charged by the time of the
+next interrupt, it is lost.)
+
+Profiling currently works under Windows, and somewhat under Linux.
+For the profiling algorithm to work, the thread that wakes and sets
+the interrupt flag must be of high priority and given the CPU when it
+wants it.  I haven't figured out how to get this scheduling on some
+machines, so if you want profiling to work somewhere it doesn't, maybe
+you can help figure out how to get appropriate scheduling.
 
 %----------------------------------------------------------------------
 %\input{tr_assert}
@@ -2648,19 +2696,17 @@ A small example that shows the use of these predicates is the following:
 In \version, trie asserted code has been merged with standard asserted
 code.  If the user wishes to use tries for dynamic code, the
 recommended programming practice is as outlined in the section {\it
-Modification of the Database} in Volume 1.
-For compatibility with previous versions, the
-predicates {\tt trie\_assert/1}, {\tt trie\_retract/1}, {\tt
-trie\_retractall/1}, {\tt trie\_retract\_nr/1}, {\tt
-abolish\_trie\_asserted/1} and {\tt trie\_dynamic/1} can be imported
-from the module {\sf tables}.  However, if the current index
+Modification of the Database} in Volume 1.  For compatibility with
+previous versions, the predicates {\tt trie\_assert/1}, {\tt
+trie\_retract/1}, {\tt trie\_retractall/1}, {\tt trie\_retract\_nr/1},
+{\tt abolish\_trie\_asserted/1} and {\tt trie\_dynamic/1} can be
+imported from the module {\sf tables}.  However, if the current index
 specification of these predicates is {\tt trie} (again, see the
 section {\it Modification of the Database} in Volume 1, the predicates
-are defined as {\tt assert/1}, {\tt 
-retract/1}, {\tt retractall/1}, {\tt retract\_nr/1}, {\tt abolish/1}
-and {\tt dynamic/1} respectively.  If the index specification is other
-than {\tt tries}, the predicate will issue a warning message and have
-no effect on the database.
+are defined as {\tt assert/1}, {\tt retract/1}, {\tt retractall/1},
+{\tt retract\_nr/1}, {\tt abolish/1} and {\tt dynamic/1} respectively.
+If the index specification is other than {\tt tries}, the predicate
+will issue a warning message and have no effect on the database.
 
 \section{Low-level Trie Manipulation Utilities}
 
