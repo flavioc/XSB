@@ -141,7 +141,7 @@
 \newcommand{\dq}{\symbol{34}}
 
 
-\title{\FLORA: The Secret of Object-Oriented Logic Programming}
+\title{\FLORA's Secrets: An Object-Oriented Logic Programming and Deductive Database System}
 
 \author{
   Bertram Lud\"ascher
@@ -167,8 +167,8 @@ program. This program is then passed to XSB for compilation (yielding {\tt
   file.O}) and execution.
 
 \index{FLIP}
-The current version of \FLORA was implemented by Guizhen Yang under the
-supervision of Michael Kifer, but its  origins trace back to the \FLIP compiler
+The current version of \FLORA is implemented by Guizhen Yang under the
+supervision of Michael Kifer, and its  origins trace back to the \FLIP compiler
 developed by Bertram Lud\"aescher. The basic architectures of the two compilers
 are similar. However, unlike \FLIP, \FLORA is a complete application development
 platform with many features not found in \FLIP. It has a much more
@@ -1031,15 +1031,21 @@ aggregate must satisfy the following conditions:\\
 (1) Both $X$ and $Gs$ must
 appear in ${\it body}$; (2) $Gs$ should not contain $X$.
 
-The following aggregate operators are supported: {\it min}; {\it max}; {\it
-  count}; {\it sum}; {\it avg}. The operators {\it min} and {\it max} can
-be applied to any list of terms. the order is specified by the XSB operator
-{\tt @=<}.  In contrast, the operators {\it sum} and {\it avg} can take
-numbers only. If the aggregate variable is instantiated to a non-number,
-{\it sum} and {\it avg} will discard it and generate a runtime warning
-message.
+The following aggregate operators are supported: {\it min}, {\it max},
+{\it count}, {\it sum}, {\it avg}, {\it collectset} and {\it collectbag}.
 
-In general, aggregates can appear anywhere a number is allowed. Therefore,
+The operators {\it min} and {\it max} can be applied to any list of terms. The
+order is specified by the XSB operator {\tt @=<}.  In contrast, the operators
+{\it sum} and {\it avg} can take numbers only. If the aggregate variable is
+instantiated to a non-number, {\it sum} and {\it avg} will discard it and
+generate a runtime warning message.
+
+For each group, the operator {\it collectbag} collects all the bindings of
+the aggregation variable into a list. The operator {\it collectset} works similarly
+to {\it collectbag}, except that all the duplicates are removed from the
+result list.
+
+In general, aggregates can appear wherever a number or a list is allowed. Therefore,
 aggregates can be nested. The following examples illustrate the use of
 aggregates (some borrowed from the \FLORID manual):
 \begin{qrules}
