@@ -1,1 +1,4 @@
 *.xwam
+driver_manager.def
+driver_manager.exp
+driver_manager.lib
