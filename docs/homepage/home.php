@@ -34,7 +34,7 @@ and <a href="http://www.uu.se/">Uppsala Universitet</a>.
 
 <li>
 <a href="http://sourceforge.net/project/showfiles.php?group_id=1176"> Download the System</a>:
-	&nbsp; Current version: 2.5, released on March 11, 2002.<img SRC="new.gif" IMG align=TOP>
+	&nbsp; Current version: 2.6, released on June 14, 2003.<img SRC="new.gif" IMG align=TOP>
 </li>
 
 <li>
@@ -50,13 +50,17 @@ The XSB Programmers' Manual:
 <li>
 Other Documentation:
 	<ul>
+	<li> Package Documentation: The xsbdoc Documentation Generator.  <a href="../../packages/xsbdoc/doc/xsbdoc1.ps">Postscript</a>; <a href="../../packages/xsbdoc/doc/xsbdoc1.pdf">PDF</a></li>
+	<li> Package Documentation: XASP: Answer Set Programming with XSB.  <a href="../../packages/xasp/doc/main.ps">Postscript</a>; <a href="../../packages/xasp/doc/main.pdf">PDF</a></li>
 	<li><a href="vb_dll.html">How to Use XSB DLL from Visual Basic</a></li>
-	</ul>
-</li>
+</ul>
+
+
 <pre>
 
 </pre>
-<li> Large projects that use XSB (and are distributed with it):
+<li> Large projects that use XSB (and are distributed with it as 
+     <a href="packages.html">packages</a>):
         <ul>
          <li> <a href="http://flora.sourceforge.net/" target="new_window">FLORA</a>: An
 	      object-oriented language for building knowledge-intensive
