@@ -275,11 +275,11 @@ xsbBool fmt_write(void)
       XSB_StrSet(&StrArgBuf,"");
       print_pterm(Arg, TRUE, &StrArgBuf);
       PRINT_ARG(StrArgBuf.string);
-    } else if (is_string(Arg)) {
+    } else if (is_string(Arg) && !is_nil(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       str_arg = string_val(Arg);
       PRINT_ARG(str_arg);
-    } else if (is_list(Arg)) {
+    } else if (is_list(Arg) || is_nil(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
       str_arg = p_charlist_to_c_string(Arg, &StrArgBuf, "FMT_WRITE", aux_msg);

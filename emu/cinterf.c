@@ -302,7 +302,7 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
   int escape_mode=FALSE;
   prolog_term list = term, list_head;
 
-  if (!is_list(list)) {
+  if (!is_list(list) && !is_nil(list)) {
     xsb_abort("[%s] %s is not a list of characters", in_func, where);
   }
 
