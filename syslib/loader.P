@@ -256,9 +256,7 @@ load_pred0(PSC) :-
 	stat_set_flag(HITRACE, 0),	  % turn off hitrace
 	load_pred1(PSC),
 	stat_set_flag(HITRACE, Hitrace).  % resume hitrace status if successful
-%% In case of unsuccessful loading (predicate undefined),
-%% load_pred1 is expected either to abort or fail
-%% after calling the handler
+
 load_pred1(PSC) :-
 	'_$savecp'(B),
 	psc_name(PSC, Name),
@@ -281,19 +279,43 @@ load_pred1(PSC) :-
 		%% If predicate is undefined,
 		%% load_pred1 is expected either to abort or fail
 		%% after calling the handler
-		call_xsb_hook(xsb_undefined_predicate_hook(_),[Name,ModName,PSC],until_true) -> fail
-		;
-		%% module loaded, but pred/foreign-pred is not there
-		abort(['The predicate: ', Name, '/', Arity,
-		       ' is not defined in the module ', ModName])
+		call_undef_pred_handlers(Name,ModName,PSC,
+					 ['The predicate: ',
+					  Name, '/', Arity,
+					  ' is not defined in the module ',
+					  ModName])
 	    )
-	;
-	    %% If predicate is undefined,
-	    %%  load_pred1 is expected either to abort or fail
-	    %% after calling the handler
-	    call_xsb_hook(xsb_undefined_predicate_hook(_),[Name,usermod,PSC],until_true) -> fail
-	;   abort(['Undefined predicate: ', Name, '/', Arity])
+	;   call_undef_pred_handlers(Name,usermod,PSC,
+				      ['Undefined predicate: ',
+				       Name, '/', Arity])
 	).
+
+
+%% Invoke undefined pred handlers until one succeeds.
+%% If the successful handler sets the 4th arg to true, then succeed
+%% else fail.
+call_undef_pred_handlers(Name,ModName,PSC,AbortMsg) :-
+	call_xsb_hook(xsb_undefined_predicate_hook(_),
+		      [Name,ModName,PSC,RetCode],
+		      until_true)
+	%% found a handler that agrees to handle this predicate
+	->  (   RetCode==true
+	    ->  psc_type(PSC, Type1), 
+		(  Type1 =< T_ORDI  % pred is still undefined
+		%% The handler says re-issue the call, but the 
+		%% predicate remains undefined after the handler: 
+		%% fail the original call
+		-> fail
+		%% The predicate is defined after the handler did the work
+		%% So, then succeed and the call will be made
+		;  true
+		)
+	    %% If RetCode =\= true, then make load_pred1 fail
+	    %% and the call will not be made
+	    ;   fail
+	    )
+	%% if all else fails -- abort
+	;   abort(AbortMsg).
 
 
 /*

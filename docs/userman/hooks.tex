@@ -96,29 +96,65 @@ Each such hook must be unary and registered appropriately:
     :- add_xsb_hook(xsb_undefined_predicate_hook(my_undef_pred_handler(_))).
 \end{verbatim}
 %%
-An undefined predicate hook receives an argument of the form {\tt
-  [pred-name, module-name, psc-record]}. Here {\tt pred-name} is the name
-of the predicate that triggered the event, {\tt module-name} is the name of
-the module of that predicate, and {\tt psc-record} is a handle to the PSC
-record for that predicate. The PSC record can be used by sophisticated
-handlers for undefined predicates. In most cases, however, a handler would
-use {\tt pred-name} and, possibly, {\tt module-name}.
+An undefined predicate hook receives an argument, which is a list of the
+form {\tt [pred-name, module-name, psc-record, ContinuationInstruction]}.
+The first three elements in the list are bound and the fourth is free.  The
+first member, {\tt pred-name}, is the name of the predicate that was found
+to be undefined, {\tt module-name} is the name of the module of that
+predicate, and {\tt psc-record} is a handle to the PSC record for that
+predicate. The PSC record can be used by sophisticated handlers for
+undefined predicates. In most cases, however, a handler would use {\tt
+  pred-name} and, possibly, {\tt module-name}.  The last element of the
+list, {\tt ContinuationInstruction}, is supposed to be instantiated by the
+handler as described below.
 
 When an undefined predicate is encountered, XSB would call the hooks
 registered to handle this condition until it finds one that succeeds (or
-aborts). The order in which the hooks are called is not guaranteed and it
-is not a good idea to write hooks that rely on a specific order.
+aborts). The order in which the hooks are called is not guaranteed so one
+should not rely on a specific order.
 
-A hook for undefined predicates must follow the following protocol: It
+A hook for undefined predicates must follow the following protocol: A hook
 should examine the information about the predicate and decide whether it
-wants to handle this particular predicate. If it does, then it should
-perform whatever it needs to and then succeed or abort. If it succeeds, XSB
-will not continue calling other hooks and the current program clause will
-{\em fail}. If the hook aborts, then the current program clause will
-\emph{abort}.  If the hook decides to \emph{not} handle the given
-predicate, then it should fail and XSB will then look at other hooks
+wants to handle this particular undefined predicate.
+
+If the hook decides \emph{not} to handle the given
+predicate, then it should \emph{fail} and XSB will then look at other hooks
 registered to handle undefined predicates. If none of the hooks succeeds,
 XSB aborts the current program clause.
+
+If the hook decides that it wants to handle the undefined predicate, it
+should perform whatever actions are necessary for handling the event and
+then it must either \emph{abort} or \emph{succeed}.  If it aborts, then the
+current program clause (that called the undefined predicate) will also
+\emph{abort}.  If it succeeds, then the handler has a choice regarding the
+disposition of the original call to the undefined predicate. Namely, it can
+tell XSB to fail the call or it can tell it to \emph{repeat} the call. Of
+course, the latter makes sense only if the handler somehow caused the
+predicate to become defined ({\it e.g.}, by consulting an appropriate
+file).
+
+To force XSB to reissue the original call, the handler must bind the fourth
+argument, {\tt ContinuationInstruction}, to {\tt true}. If XSB detects that
+the predicate is still undefined, then it will fail the original call.  If
+{\tt ContinuationInstruction} is bound to anything else (or remains
+unbound), then XSB fails the original call.
+
+Here is an example:
+%%
+\begin{verbatim}
+    my_undef_pred_handler([Name,Modname,PSC,Continuation]) :-
+            (str_sub('foo',Name)
+             -> [foo_file], Continuation=true
+             ;  fail)
+\end{verbatim}
+%%
+This hook handles only the undefined predicates that contain {\tt foo} in
+their name.  If this hook is called and the undefined predicate happens to
+have {\tt foo} in its name, a file called {\tt foo\_file} is consulted and
+XSB is told to try the call again. If consulting {\tt foo\_file} still
+fails to define the predicate, then XSB will fail the call to the undefined
+predicate.
+
 
 \ouritem{xsb\_assert\_hook(\_)} \index{{\tt xsb\_assert\_hook/1}}
 
