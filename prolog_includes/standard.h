@@ -32,10 +32,10 @@
 #define STDFDBK	     6    /* output for XSB feedback
 			     (prompt/yes/no/Aborting/answers) */
 
-#define OREAD	     0	  /* open for read        */
-#define OWRITE	     1	  /* open for write       */
-#define OAPPEND	     2	  /* open for append      */
-#define OSTRING	     3	  /* open for as a string */
+#define OREAD	     0	  /* open for read            	    */
+#define OWRITE	     1	  /* open for write           	    */
+#define OAPPEND	     2	  /* open for append          	    */
+#define OSTRING	     3	  /* open as a string (for reading) */
 
 #define AF_INET     0	  /* XSB-side socket request for Internet domain */
 #define AF_UNIX     1     /* XSB-side socket request for UNIX domain */
