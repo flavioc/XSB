@@ -149,6 +149,7 @@ get_mod_pred_arity_list([Psc|Pscs], [ModPred|ModPreds]) :-
 list pair, with car=forward continuation, cdr=backward continuation.
 backward is [] if xsb not started with -p option */
 
+print_backtrace([[]]) :- !.  % if empty, don't print anything
 print_backtrace([For|Back]) :-
 	messageln('Forward Continuation...',STDERR),
 	print_mod_pred_arity_list(For),
