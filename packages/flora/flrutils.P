@@ -449,10 +449,9 @@ write_PAs([pa(P,A)|PAs]) :-
 /********************************************************************/
 unbound_warn(Form,L) :-
 	'_$_$_write_flora_warnheader',
-	write('unbound variable(s) '),
+	write('unsafe variable(s) '),
 	write_list(L),
-	write(' in a '),
-	writeln(Form).
+	writeln(' in a rule head or a fact.').
 
 
 /********************************************************************/
@@ -612,7 +611,7 @@ flora_file_exists(File) :-
 	    true
 	  ;
 	    displayln, flora_errheader, display(File),
-	    displayln(' does NOT exist !'), fail
+	    displayln(' does NOT exist!'), fail
 	).
 
 
@@ -637,7 +636,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 	    (MaxErr=all -> M is NewCount+1 ; M=MaxErr),
 	    ( M =< NewCount ->
 		Status=failure,
-		displayln, display('+++ aborted due to '),
+		displayln, display('++aborted due to '),
 		display(NewCount),
 		displayln(' error(s) found'), displayln
 
@@ -650,17 +649,17 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		  compile_flrfile(MaxErr,NewCount,Status,_,_)
 	      ;
 		Status=failure,
-		displayln, display('+++ '), display(NewCount),
+		displayln, display('++ '), display(NewCount),
 		displayln(' error(s) found'),
-		display('+++ aborted due to end of file'), displayln
+		display('++aborted due to end of file'), displayln
 	    )
 
 	  ;
 	    ( member(unbound_warning(Form,L),FlattenedRules) ->
-		displayln, flora_warnheader, display('unbound variable(s) '),
+		displayln, flora_warnheader, display('unsafe variable(s) '),
 		telling(CurrStream), tell(userout),
 		write_list(L), tell(CurrStream),
-		display(' in a '), displayln(Form)
+		displayln(' in a rule head of a fact.')
 	      ;
 		true
 	    ),
@@ -679,9 +678,9 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		    NewOpts=Temp2
 		  ;
 		    Status=failure,
-		    displayln, display('+++ '), display(ErrorCount),
+		    displayln, display('++'), display(ErrorCount),
 		    displayln(' error(s) found'),
-		    display('+++ aborted due to end of file'),
+		    display('++aborted due to end of file'),
 		    displayln 
 		)
 	      ;
@@ -692,7 +691,8 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 
 
 /********************************************************************/
-'_$_$_flora_read_parse_compile'(LoadMode,L,Tokens,FlattenedRules,Status,Opts) :-
+'_$_$_flora_read_parse_compile'(LoadMode,L,Tokens,
+			        FlattenedRules,Status,Opts) :-
 	set_load_mode(LoadMode),
 	read_parse_compile(L,Tokens,FlattenedRules,Status,Opts).
 

@@ -59,7 +59,8 @@ compile_flogic(rule(Head,HeadVars,Body,BodyVars),Rules,Opts) :-
 	append(BodyCode,AuxCode,AppendedBodyCode),
 	subtract_vars(HeadVars,BodyVars,V1),
 	subtract_vars(V1,AVs,UnboundHeadVars),
-	findall(X,member(var(X,_),UnboundHeadVars),U),
+	%% Don't issue "unsafe var" warning for anonymous vars in rule heads
+	findall(X,(member(var(X,_),UnboundHeadVars), not str_sub('_',X)),U),
 	( U \= [] ->
 	    W=unbound_warning(rule,U)
 
@@ -89,7 +90,8 @@ compile_flogic(fact(Head,HeadVars),Facts,Opts) :-
 	!,
 	lhs_flatten_list(Head,HeadCode,AuxCode,AVs),
 	subtract_vars(HeadVars,AVs,UnboundVars),
-	findall(X,member(var(X,_),UnboundVars),U),
+	%% Don't issue "unsafe var" warning for anonymous vars in rule heads
+	findall(X,(member(var(X,_),UnboundVars),not str_sub('_',X)),U),
 	( U \= [] ->
 	    W=unbound_warning(Form,U)
 

@@ -111,7 +111,7 @@ flora_pp_write_body_set(Obj) :-
 	sort(MethLst1, MethLst2),
 	flora_pp_write_body_set1(Obj, MethLst2).
 
-flora_pp_write_body_set1(Obj, []).
+flora_pp_write_body_set1(_Obj, []).
 flora_pp_write_body_set1(Obj, [MethInv|MethInvs]) :-
         MethInv = [M|Args],
 	%%printable_object[ignore(pretty) ->> {M}],
@@ -130,7 +130,7 @@ flora_pp_write_body_set1(Obj, [MethInv|MethInvs]) :-
 
 %% Write semicolon, if List is not an empty list
 flora_pp_write_semicolon_maybe([]) :- nl.
-flora_pp_write_semicolon_maybe([First| Rest]) :- writeln(';').
+flora_pp_write_semicolon_maybe([_First| _Rest]) :- writeln(';').
 
 
 flora_pp_write_method_invocation([]).
@@ -212,7 +212,7 @@ flora_pp_immediate_classes(Obj) :-
 	flora_pp_write_value(Obj), write('	:  '),
 	flora_pp_write_value(Class), nl,
 	fail.
-flora_pp_immediate_classes(_).
+flora_pp_immediate_classes(_Obj).
 
 flora_pp_immediate_superclasses(Class) :-
 	Class :: Super, ground(Super),
