@@ -321,7 +321,7 @@ not equal to @tt{C2} and @tt{C1} is lower than @tt{C2} on the isa
 hierarchy by the isa axioms.
 
 @begin{itemize} @item @tt{implicit_isa(+,-)}: succeeds if @tt{C1} \=
-@tt{C2}, @tt{C1} is a subclass, (member, etc) of @{C2} by the isa
+@tt{C2}, @tt{C1} is a subclass, (member, etc) of @tt{C2} by the isa
 axioms @em{and} for some @tt{C3} @tt{immediate_isa(C2,C3)} is
 true.
 
@@ -380,7 +380,7 @@ term_isa_list([H|T],[H1|T1]):-
 
 
 :- comment(immediate_isa/2, "@tt{immediate_isa(SubCid,SupCid)} is
-another name for @tt{explicit_isa/2.").
+another name for @tt{explicit_isa/2}.").
 
 immediate_isa(SubCid,SupCid) :- 
 	explicit_isa(SubCid,SupCid).
@@ -686,7 +686,7 @@ extensional term to the ontology.
 @begin{itemize}
 @item By default, checks are made that the identifiers in @tt{Term}
 are of the proper type and are consistent.  This can be turned off by
-???.} 
+@ref{???.}
 
 @item Checks may also be made that @tt{Term} is not already implied by
 the ontology before it can be added.  The default is not to make such
