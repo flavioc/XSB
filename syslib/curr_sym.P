@@ -458,23 +458,23 @@ module_properties(PSC, Property) :-
 
 xsb_flag(debugging, Debug) :-
 	stat_flag(DEBUG_ON, Value), 
-	( Value =:= 0 -> Debug = off
-		       ; Debug = on ).
+	( Value =:= 0 -> Debug = off ; Debug = on ).
 xsb_flag(tracing, Trace) :-
 	stat_flag(TRACE, Value), 
-	( Value =:= 0 -> Trace = off
-		       ; Trace = on ).
+	( Value =:= 0 -> Trace = off ; Trace = on ).
 %% Goal passed on cmd line
 xsb_flag(goal, Goal) :-
 	stat_flag(CMD_LINE_GOAL, GoalUninterned),
-	intern_string(GoalUninterned, Goal).      	
-
+	intern_string(GoalUninterned, Goal).
 xsb_flag(dcg_style, DcgMode) :-
 	stat_flag(DCG_MODE, Dcg_flag),
-	(Dcg_flag = 0 -> DcgMode = xsb
-    	    ;
-	  DcgMode = standard
-        ).
+	( Dcg_flag =:= 0 -> DcgMode = xsb ; DcgMode = standard ).
+xsb_flag(garbage_collection, GCmode) :-
+	stat_flag(GARBAGE_COLLECT, GCflag),
+	( GCflag =:= 0 -> GCmode = none
+	; GCflag =:= 1 -> GCmode = sliding
+	; GCflag =:= 2 -> GCmode = copying
+	).
 	
 /* ==================================================================== */
 
