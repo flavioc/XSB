@@ -684,8 +684,7 @@ void reclaim_ans_list_nodes(SGFrame sg_frame)
 void breg_retskel(void)
 {
     Pair    sym;
-    Cell    term; /* the function assumes that term is free on call !
-*/
+    Cell    term; /* the function assumes that term is free on call ! */
     SGFrame sg_frame;
     CPtr    tcp, cptr, where, sreg;
 #ifndef CHAT
@@ -730,15 +729,31 @@ void breg_retskel(void)
 
 /*----------------------------------------------------------------------*/
 
+#define ADJUST_SIZE 100
+
 NODEptr *Set_ArrayPtr = NULL;
+/*
+ * first_free_set is the index of the first deleted set.  The deleted
+ * tries are deleted in builtin DELETE_TRIE, and the corresponding
+ * elements in Set_ArrayPtr are linked to form a list.  So
+ * Set_ArrayPtr[first_free_set] contains the index of the next deleted
+ * set, ..., the last one contains 0.  If first_free_set == 0, that
+ * means no free set available.
+ */
+int first_free_set = 0;
 int Set_ArraySz = 100;
+/*
+ * num_sets is the number of sets have been used (including the fixed
+ * trie, Set_ArrayPtr[0] (see trie_intern/3)).  It is also the index for
+ * the next element to use when no free element is available.
+ */
 int num_sets = 1;
 
 /*----------------------------------------------------------------------*/
 
 void init_newtrie(void)
 {
-    Set_ArrayPtr = (NODEptr *)calloc(Set_ArraySz,sizeof(NODEptr));
+  Set_ArrayPtr = (NODEptr *) calloc(Set_ArraySz,sizeof(NODEptr));
 }
 
 /*----------------------------------------------------------------------*/
@@ -746,24 +761,29 @@ void init_newtrie(void)
 void newtrie(void)
 {
   int i;
-
-  if(Set_ArraySz == num_sets){
-    NODEptr *temp_arrayptr;
-
-    temp_arrayptr = Set_ArrayPtr;
-    Set_ArraySz  += 100;
-    Set_ArrayPtr  = (NODEptr *)calloc(Set_ArraySz ,sizeof(NODEptr));
-    /* A 100 more sets */
-    if (Set_ArrayPtr == NULL) {
-      xsb_exit("Out of memory in newtrie/1");
-    }
-    for (i = 0; i < num_sets; i++) {
-      Set_ArrayPtr[i] = temp_arrayptr[i];
-    }
-    free(temp_arrayptr); 
+  
+  if (first_free_set != 0) {	/* a free set is available */
+    i = first_free_set;		/* save it in i */
+    ctop_int(1, first_free_set);
+    first_free_set = (int) Set_ArrayPtr[first_free_set] >> 2;
+    Set_ArrayPtr[i] = NULL;	/* must be reset to NULL */
   }
-  ctop_int(1,num_sets);
-  num_sets ++;
+  else {
+    if (num_sets == Set_ArraySz) { /* run out of elements */
+      NODEptr *temp_arrayptr;
+
+      temp_arrayptr = Set_ArrayPtr;
+      Set_ArraySz += ADJUST_SIZE;  /* adjust the array size */
+      Set_ArrayPtr = (NODEptr *) calloc(Set_ArraySz ,sizeof(NODEptr));
+      if (Set_ArrayPtr == NULL)
+	xsb_exit("Out of memory in new_trie/1");
+      for (i = 0; i < num_sets; i++)
+	Set_ArrayPtr[i] = temp_arrayptr[i];
+      free(temp_arrayptr);
+    }
+    ctop_int(1, num_sets);
+    num_sets++;
+  }
 }
 
 /*----------------------------------------------------------------------*/
@@ -771,7 +791,7 @@ void newtrie(void)
 void trie_intern(void)
 {
   prolog_term term;
-  long RootIndex;
+  int RootIndex;
   int flag;
   NODEptr Leaf;
 
@@ -798,7 +818,7 @@ void trie_intern(void)
 
 int trie_interned(void)
 {
-  long RootIndex;
+  int RootIndex;
   int ret_val = FALSE;
   Cell Leafterm, trie_term;
 
@@ -806,7 +826,13 @@ int trie_interned(void)
   RootIndex = ptoc_int(2);
   Leafterm = ptoc_tag(3);
   
-  if (Set_ArrayPtr[RootIndex] != NULL) {
+  /*
+   * Only if Set_ArrayPtr[RootIndex] is a valid NODEptr can we run this
+   * builtin.  That means Set_ArrayPtr[RootIndex] can neither be NULL,
+   * nor a deleted set (deleted by builtin delete_trie/1).
+   */
+  if ((Set_ArrayPtr[RootIndex] != NULL) &&
+      (!((int) Set_ArrayPtr[RootIndex] & 0x3))) {
     deref(trie_term);
     deref(Leafterm);
     if (isref(Leafterm)) {  
@@ -825,6 +851,11 @@ int trie_interned(void)
 
 /*----------------------------------------------------------------------*/
 
+/*
+ * This is builtin #162: TRIE_DISPOSE(+ROOT, +LEAF), to dispose a branch
+ * of the trie rooted at Set_Array[ROOT].
+ */
+
 void trie_dispose(void)
 {
   NODEptr Leaf;
@@ -836,17 +867,6 @@ void trie_dispose(void)
   delete_branch(Leaf,(CPtr)&(Set_ArrayPtr[Rootidx]));
   switch_from_trie_assert;
   
-}
-
-/*----------------------------------------------------------------------*/
-
-void clear_interned_tries(void)
-{
-  int i;
-
-  num_sets = 1;
-  for(i = 0; i < Set_ArraySz; i++)
-    Set_ArrayPtr  = NULL;
 }
 
 /*----------------------------------------------------------------------*/
