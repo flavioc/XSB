@@ -221,7 +221,7 @@ void xsb_exit(char *description, ...)
 void err_handle(int description, int arg, char *f,
 		int ar, char *expected, Cell found)
 {
-  char message[160];	/* Allow 2 lines of error reporting.	*/
+  char message[240];	/* Allow 3 lines of error reporting.	*/
   
   switch (description) {
   case INSTANTIATION:
@@ -255,8 +255,8 @@ void err_handle(int description, int arg, char *f,
     break;
   default:
     sprintf(message, 
-	    "! %s error (not completely handled yet)\n",
-	    err_msg[description]);
+	    "! %s error (not completely handled yet): %s\n",
+	    err_msg[description], expected);
     break;
   }
   pcreg = exception_handler(message);

@@ -276,32 +276,37 @@ load_pred1(PSC) :-
 		%% module loaded, and pred/foreign-pred is there
 		'_$cutto'(B)
 		;
-		%% If predicate is undefined,
-		%% load_pred1 is expected either to abort or fail
-		%% after calling the handler
-		call_undef_pred_handlers(Name,ModName,PSC,
-					 ['The predicate: ',
-					  Name, '/', Arity,
-					  ' is not defined in the module ',
-					  ModName])
+		call_undef_pred_handlers(PSC, ['The predicate: ',
+					       Name, '/', Arity,
+					       ' is not defined in module ',
+					       ModName])
 	    )
-	;   call_undef_pred_handlers(Name,usermod,PSC,
-				      ['Undefined predicate: ',
-				       Name, '/', Arity])
+	;
+	    call_undef_pred_handlers(PSC, ['Undefined predicate: ',
+					   Name, '/', Arity])
 	).
 
 
 %% Invoke undefined pred handlers until one succeeds.
 %% If the successful handler sets the 4th arg to true, then succeed
 %% else fail.
-call_undef_pred_handlers(Name,ModName,PSC,AbortMsg) :-
-	call_xsb_hook(xsb_undefined_predicate_hook(_),
-		      [Name,ModName,PSC,RetCode],
-		      until_true)
+:- import conget/2, conset/2 from gensym.
+call_undef_pred_handlers(PSC,AbortMsg) :-
+	%% the _$_$_undefhook trick guards against Undefined preds in 
+	%% the hook themselves; prevents going into an infinite loop
+	( conget('_$_$_undefhook',0)
+	; abort(['[In undefined predicate handler] ' | AbortMsg])
+	),
+	conset('_$_$_undefhook',1),
+	!,
+	(   call_xsb_hook(xsb_undefined_predicate_hook(_),
+			  [PSC,RetCode],
+			  until_true),
+	    conset('_$_$_undefhook',0)
 	%% found a handler that agrees to handle this predicate
 	->  (   RetCode==true
 	    ->  psc_type(PSC, Type1), 
-		(  Type1 =< T_ORDI  % pred is still undefined
+		(  Type1 =< T_ORDI % pred is still undefined
 		%% The handler says re-issue the call, but the 
 		%% predicate remains undefined after the handler: 
 		%% fail the original call
@@ -315,7 +320,9 @@ call_undef_pred_handlers(Name,ModName,PSC,AbortMsg) :-
 	    ;   fail
 	    )
 	%% if all else fails -- abort
-	;   abort(AbortMsg).
+	;   conset('_$_$_undefhook',0),
+	    abort(AbortMsg)
+	).
 
 
 /*
