@@ -63,20 +63,20 @@ interpreter :-
         fail.
 
 interpreter :-
-	repeat,
-	pop_abort_cutpoint,
-	push_abort_cutpoint,    % reset abort cutpoint
-	trimcore,
-	stat_set_flag(5, 1, 1),	% hide call interceptions.
-	stat_set_flag(7, 0, 1),	% reset trace number
-	conset('_$break_level', 0),
-	print_debug_state,
-	prompt(Prompt,Prompt),
-	file_write(1, Prompt),
-	file_read(0, X, Vars),
-	(   nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
-	;   process_query(X, Vars)
-	).
+	x_interp_repeat,
+	    pop_abort_cutpoint,
+	    push_abort_cutpoint, % reset abort cutpoint
+	    trimcore,
+	    stat_set_flag(5, 1, 1), % hide call interceptions.
+	    stat_set_flag(7, 0, 1), % reset trace number
+	    conset('_$break_level', 0),
+	    print_debug_state,
+	    prompt(Prompt,Prompt),
+	    file_write(1, Prompt),
+	    file_read(0, X, Vars),
+	    (	nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
+	    ;	process_query(X, Vars)
+	    ).
 
 read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
 read_in_stop(end_of_file).	% pop a break level, out if at top
@@ -144,7 +144,7 @@ break :- conval('_$break_level', Blevel),
 	file_write(1, ') ]'),file_nl(1).
 
 readl_brklp1 :- 
-	repeat, 
+	x_interp_repeat, 
 		conval('_$break_level', Blevel),
 		file_write(1, Blevel), file_write(1, ': ?- '),
 		file_read(0, X, Vars),
@@ -153,23 +153,6 @@ readl_brklp1 :-
 		; process_query(X, Vars)
 		).
 
-
-/* === hide and expose ================================================= */
-
-/*
- *  No longer used within the system.  To be taken out if no problems arise.
- *   	-EJJ  4/97
- *
-'_$hide'(N) :- stat_flag(5, N), NewN is N + 1, stat_set_flag(5, NewN, 1).
-			% N = hide_state++
-'_$hide'(N) :- stat_flag(5, N), NewN is N - 1, stat_set_flag(5, NewN, 1), fail.
-			% hide_state--
-'_$expose'(N) :- stat_set_flag(5, N, 1).
-			% hide_state = N
-'_$expose'(N) :- N1 is N + 1, stat_set_flag(5, N1, 1), fail.
-			% hide_state = N+1, fail
- *
- */
 
 /* === interrupt handlers ============================================== */
 
@@ -200,6 +183,10 @@ version_message :-
 
 conset(Con, Val) :- conpsc(Con, PSC), psc_set_prop(PSC, Val).
 conval(Con, Val) :- conpsc(Con, PSC), psc_prop(PSC, Val).
+
+
+% The interpreter NEEDS this: do not use the one in standard.
+x_interp_repeat :- true ; x_interp_repeat.
 
 
 prompt(New,Old) :- prompt(New,Old,'_$main_prompt'(_)).
