@@ -22,6 +22,11 @@ must be configured to work with the Libwww library as follows:
     configure --with-libwww=directory-where-Libwww-is-installed  
 \end{verbatim}
 %%
+Note that the Libwww library {\bf cannot} be moved after you configured it.
+If it is moved, XSB will not be able to find it, because hard path names
+are built into some parts of this library at configuration time. Use the
+{\tt --prefix} argument of {\tt configure} to specify where you want to
+install the Libwww library.
 
 One of the most important aspects of the Libwww package is that it allows
 XSB to dispatch multiple HTTP requests, which interleave their Web access

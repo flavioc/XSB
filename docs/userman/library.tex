@@ -1911,26 +1911,38 @@ Similar to put/1, but works on sockets.
 %%
 
 \paragraph{Socket-probing.}
-These calls need more documentation.
+With the help of the predicate {\tt socket\_select/6} one can establish a
+group of asynchronous or synchronous socket connections. In the synchronous
+mode, this call is blocked until one of the sockets in the group becomes
+available for reading or writing, as described below.  In the asynchronous
+mode, this call is used to probe the sockets periodically, to find out
+which sockets have data available for reading or which sockets have room in
+the buffer to write to.
+
+The directory {\tt XSB/examples/socket/select/} has a number of examples of
+the use of the socket-probing calls.
 %%
 \begin{description}
-\ouritem{socket\_select(+SymConName,+Timeout,-ReadSockL,-WriteSockL,-ErrSockL,?ErrorCode)} \index{{\tt socket\_select/6}}
-{\tt SymConName} must be an atom that denotes an existing
-connection, which must be previously created with {\tt socket\_set\_select/4}
-(described below). {\tt ReadSockL}, {\tt WriteSockL},
-{\tt ErrSockL} are lists of socket handles (as returned by {\tt
-  socket/2}) that specify the available sockets that are available for
-reading, writing, or on which exception conditions occurred.
+  \ouritem{socket\_select(+SymConName,+Timeout,-ReadSockL,-WriteSockL,-ErrSockL,?ErrorCode)} \index{{\tt socket\_select/6}}
+  {\tt SymConName} must be an atom that
+  denotes an existing connection group, which must be previously created with
+  {\tt socket\_set\_select/4} (described below). {\tt ReadSockL}, {\tt
+    WriteSockL}, {\tt ErrSockL} are lists of socket handles (as returned by
+  {\tt socket/2}) that specify the available sockets that are available for
+  reading, writing, or on which exception conditions occurred.  {\tt
+    Timeout} must be an integer that specifies the timeout in seconds (0
+  means probe and exit immediately). If {\tt Timeout} is a variable, then
+  wait indefinitely until one of the sockets becomes available.
 
-\ouritem{socket\_set\_select(+SymConName,+ReadSockFdLst,+WriteSockFdLst,+ErrorSockFdLst)} \index{{\tt socket\_select\_destroy/4}}
-Creates a connection under the symbolic name {\tt SymConName}
+\ouritem{socket\_set\_select(+SymConName,+ReadSockFdLst,+WriteSockFdLst,+ErrorSockFdLst)} \index{{\tt socket\_set\_select/4}}
+Creates a connection group with the symbolic name {\tt SymConName}
 (an atom) for subsequent use by {\tt socket\_select/6}.
 {\tt ReadSockFdLst}, {\tt WriteSockFdLst}, and {\tt ErrorSockFdLst} are
-lists of sockets for which {\tt socket\_select/6} is to be monitoring read,
+lists of sockets for which {\tt socket\_select/6} will be used to monitor read,
 write, or exception conditions.
 
 \ouritem{socket\_select\_destroy(+SymConName)} \index{{\tt socket\_select\_destroy/1}}
-Destroys the specified connection.
+Destroys the specified connection group.
 
 \end{description}
 
@@ -2031,7 +2043,7 @@ promotion can be done using the following predicate:
 Once {\tt IOport} is obtained, all I/O primitives described in
 Section~\ref{sec-low-level-io} can be used. This is, perhaps, the easiest
 and the most convenient way to use sockets in XSB. (This feature has not
-been implemented for NT yet.)
+been implemented for Windows.)
 
 \noindent
 Here is an example of the use of this feature:
