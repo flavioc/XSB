@@ -151,18 +151,18 @@ to each other.
         this function binds that variable to a Prolog atom of value {\tt V}.
         In C, {\tt V} is of type {\tt char *}.
 
-	Note that the atom of value {\tt V} is not interned, i.e. it is 
-	not inserted into the Prolog atom table.  For that reason, the
-	{\tt string\_find(char *V, int Insert)} function should be used.
+        Note that the atom of value {\tt V} is not interned, i.e. it is 
+        not inserted into the Prolog atom table.  For that reason, the
+        {\tt string\_find(char *V, int Insert)} function should be used.
         Function {\tt string\_find()} searches the symbol table for
         the symbol, and if the symbol does not appear there and the
-	value of {\tt Insert} is non-zero, it inserts it.  Thus, the most
-	common use of this function is as follows:
-	\begin{center}
-	{\tt	ctop\_string(N, string\_find(V, 1))	}
-	\end{center}
-	Refer to the example {\tt simple\_foreign} in the {\tt examples}
-	directory to see a use of this function.
+        value of {\tt Insert} is non-zero, it inserts it.  Thus, the most
+        common use of this function is as follows:
+        \begin{center}
+        {\tt    ctop\_string(N, string\_find(V, 1))     }
+        \end{center}
+        Refer to the example {\tt simple\_foreign} in the {\tt examples}
+        directory to see a use of this function.
 \end{description}
 
 \subsubsection*{Examples of Using the Basic C interface}
@@ -769,6 +769,177 @@ bool do_bulkmatch__(void)
   return p2p_unify(output_term, reg_term(5));
 }
 \end{verbatim}
+
+\section{High Level Foreign Predicate Interface}
+
+The high level foreign predicate interface was designed to release,
+from the programmer, the burden of having to write specific code to
+transfer arguments to \ourprolog\ to C and vice-versa.
+
+By introducing a new and improved notation for describing C functions
+and its counterpart Prolog predicates in the .H files, this module is
+capable of automatically generating code (called \emph{wrappers})
+which will be responsible for translating Prolog terms and structures
+to proper C types, and vice-versa. The \emph{wrappers} are
+automatically used when compiling the foreign predicates\footnote{In
+  Windows, this is not true. Due to the complexity of creating
+  Makefiles for the different Windows compilers, it's not yet
+  implemented, and the user is responsible for compiling the foreign
+  module along with the created wrappers}.
+
+\subsection{Declaration of high level foreign predicates}
+
+The basic format of a foreign predicate declaration is:
+
+\begin{center}
+{\tt :- foreign\_pred \emph{predname}(\emph{[+-]parg1,
+  [+-]parg2,...}) from \emph{funcname}(\emph{carg1:type1, carg2:type2,
+  ...}):\emph{functype}.
+}
+\end{center}
+
+where:
+
+\begin{description}
+
+\ouritem{predname} is the name of the foreign predicate. This is the name
+of the Prolog predicate that will be created.
+
+\ouritem{parg1, parg2, ...} are the predicate arguments. Each argument is
+preceded by either '+' or '-', indicating its mode as, respectively,
+input or output.The names of the arguments are the same as the
+ones declared for the C function. Note that a C function argument may
+appear as at most two positions in the predicate argument list, as
+long as both have different modes. Also, the identifier
+\texttt{retval} is used to mean the return value of the C function,
+and if used has always to have mode '-'.
+
+\ouritem{funcname} is the name of the C function being
+\emph{wrapped}. This is the C function given by the user, which will
+be exported as a Prolog foreign predicate.
+
+\ouritem{carg1, carg2, ...} is the list of arguments of the C
+function. The names used for the arguments must match with the names
+used in the Prolog declaration.
+
+\ouritem{type1, type2, ...} are the types associated to the arguments of
+the C function. This is not the set of C types, but rather a set of
+descriptive types, defined below.
+
+\ouritem{functype} is the return type of the C function.
+
+\end{description}
+
+This notation allows the use of pre-defined C functions, which were
+not designed to be a prolog foreign predicate. Also, it's much useful
+when designing new foreign predicates, once the user can concentrate
+on the actual functionality of the C code, and not on details specific
+to how to transfer data to and from Prolog.
+
+Table~\ref{table:hltypes} shows which types are allowed in the C
+function declaration, and to which actual C types they relate. Note
+that the associate C type of a descriptive type may change according
+to the usage of the argument in the Prolog predicate definition.
+
+\begin{table}
+\label{table:hltypes}
+\scriptsize
+\begin{tabular}{||l|l|l|l||}
+\hline
+\hline
+Descriptive Type & Mode Usage & Associated C Type & Comments\\ 
+\hline
+\hline
+int & + & int  & integer numbers \\
+float & + & double & floating point numbers \\
+atom & + & unsigned long & atom represented as an unsigned long\\
+chars & + & char * & the textual representation of an atom is passed
+to C as a string \\
+chars(\emph{size}) & + & char * & the textual representation of an
+atom is passed to C \\
+& & & as a string in a buffer of size \emph{size} \\ 
+string & + & char * & a prolog list of characters is passed to C as a
+string \\
+string(\emph{size}) & + & char * & a prolog list of characters is
+passed to C as a string \\
+term & + & prolog\_term  & the unique representation of a term\\
+intptr & + & int * & the location of a given integer\\
+floatptr & + & double * & the location of a given floating point
+number \\
+atomptr & + & unsigned long * & the location of the unique
+representation of a given atom \\
+charsptr & + & char ** & the location of the textual representation of
+an atom \\
+stringptr & + & char ** & the location of the textual representation
+of a list of characters \\
+termptr & + & prolog\_term * & the location of the unique
+representation of a term \\
+\hline
+intptr & - & int * & the integer value returned is passed to Prolog \\
+floatptr & - & double * & the floating point number is passed back to
+Prolog \\
+charsptr & - & char ** & the string returned is passed to Prolog as an
+atom \\
+stringptr & - & char ** & the string returned is passed back as a list
+of characters \\
+atomptr & - & unsigned long * & the number returned is passed back to
+Prolog as the \\
+ & & & unique representation of an atom \\
+termptr & - & prolog\_term * & the number returned is passed to Prolog
+as the unique\\
+ & & & representation of a term \\
+\hline
+chars(\emph{size}) & +- & char * & the atom is copied from Prolog to a
+buffer, passed to C \\
+ & & & and converted back to Prolog afterwards \\
+string(\emph{size}) & +- & char * & the list of characters is copied
+from Prolog to a buffer, \\
+ & & & passed to C and back to Prolog afterwards \\
+intptr & +- & int * & an integer is passed from Prolog to C and from C
+back to Prolog \\
+floatptr & +- & double * & a float number is passed from Prolog to C,
+and back to Prolog \\
+atomptr & +- & unsigned long * & the unique representation of an atom
+is passed to C, and back to Prolog \\
+charsptr & +- & char ** & the atom is passed to C as a string, and 
+a string is passed to\\
+ & & & Prolog as an atom \\
+stringptr & +- & char ** & the list of characters is passed to C, and
+a string passed to Prolog \\
+ & & & as a list of characters \\
+termptr & +- & prolog\_term * & the unique representation of a term is
+passed to C, \\
+ & & & and back to Prolog \\
+\hline
+\hline
+\end{tabular}
+\caption{Allowed combinations of types and modes, and their meanings}
+\end{table}
+
+In all modes and types, checks are performed to ensure the types of
+the arguments. Also, all arguments of type '-' are checked to be free
+variables at call time.
+
+\subsection{Compiling the foreign module on Windows}
+
+As stated before, the system doesn't attempt to compile and build the
+DLL for the foreign module on Windows, due to the complexity of
+creating makefiles for the different compilers.
+
+In order to use this facility, the user has to create the DLL herself.
+The process is, roughly, as follows: first, she has to compile the
+module from within \ourprolog\. This will create the \ourprolog\ 
+specific object file, and the \emph{wrappers}. The \emph{wrappers} are
+created in a file named
+\texttt{xsb\_wrap\_}\emph{modulename}\texttt{.c}.
+
+Then, the user has to create a project, in her preferred compiler,
+for a dynamically-linked library. In this project, she will include
+the module source code, along with the \emph{wrapper} created by
+XSB. Also, this DLL should be linked against the library
+\texttt{XSB/config/x86-pc-windows/bin/xsb.lib}, which is provided with
+XSB.
+
 %%
 
 
