@@ -23,6 +23,10 @@ isa_ext(crid('Name',cdf),crid('CDF Class-Object Relations',cdf)).
 isa_ext(crrid('Name',cdf),crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
 isa_ext(crcrid('Name',cdf),crcrid('CDF Higher-Order (Class-Object)-Object Relations',cdf)).
 
+isa_ext(crid('Description',cdf),crid('CDF Class-Object Relations',cdf)).
+isa_ext(crrid('Description',cdf),crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
+isa_ext(crcrid('Description',cdf),crcrid('CDF Higher-Order (Class-Object)-Object Relations',cdf)).
+
 isa_ext(crid(componentDepends,cdf),crid('CDF Class-Object Relations',cdf)).
 isa_ext(crid(hasVersion,cdf),crid('CDF Class-Object Relations',cdf)).
 isa_ext(crid(hasPath,cdf),crid('CDF Class-Object Relations',cdf)).
