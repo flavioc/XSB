@@ -25,7 +25,7 @@
 
 :- export bootstrap_package/2, bootstrap_syspackage/2,
 	  bootstrap_sitepackage/2, bootstrap_userpackage/3,
-	  package_configuration/2, unload_package/1.
+	  unload_package/1.
 
 :- import (dynamic)/1, assert/1, retract/1
    from assert.

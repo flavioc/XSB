@@ -24,6 +24,7 @@
 
 
 :- dynamic package_configuration/2.
+:- import package_configuration/2 from usermod.
 :- import library_directory/1 from usermod.
 
 %% This predicate is suppsed to keep track of the packages.
