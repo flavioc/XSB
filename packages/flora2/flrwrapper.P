@@ -1,0 +1,165 @@
+/* File:      flrwrapper.P
+**
+** Author(s): Guizhen Yang 
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+
+/*****************************************************************************
+  flora_setup_flogic_base/0
+
+  Note: A wrapper for F-logic facts is encoded as follows:
+        "'"+FLFACTPREFIX+WRAP_PREDICATE
+*****************************************************************************/
+flora_setup_flogic_base :-
+	fmt_write_string(Bisa,"'%s%s",args(FLFACTPREFIX,WRAP_ISA)),
+	fmt_write_string(Bsub,"'%s%s",args(FLFACTPREFIX,WRAP_SUB)),
+	fmt_write_string(Bmeth,"'%s%s",args(FLFACTPREFIX,WRAP_METH)),
+	fmt_write_string(Bimeth,"'%s%s",args(FLFACTPREFIX,WRAP_IMETH)),
+	fmt_write_string(Btran,"'%s%s",args(FLFACTPREFIX,WRAP_TRAN)),
+	fmt_write_string(Bfd,"'%s%s",args(FLFACTPREFIX,WRAP_FD)),
+	fmt_write_string(Bifd,"'%s%s",args(FLFACTPREFIX,WRAP_IFD)),
+	fmt_write_string(Bfdsig,"'%s%s",args(FLFACTPREFIX,WRAP_FDSIG)),
+	fmt_write_string(Bifdsig,"'%s%s",args(FLFACTPREFIX,WRAP_IFDSIG)),
+	fmt_write_string(Bmvd,"'%s%s",args(FLFACTPREFIX,WRAP_MVD)),
+	fmt_write_string(Bimvd,"'%s%s",args(FLFACTPREFIX,WRAP_IMVD)),
+	fmt_write_string(Bmvdsig,"'%s%s",args(FLFACTPREFIX,WRAP_MVDSIG)),
+	fmt_write_string(Bimvdsig,"'%s%s",args(FLFACTPREFIX,WRAP_IMVDSIG)),
+	fmt_write_string(Bexists,"'%s%s",args(FLFACTPREFIX,WRAP_EXISTS)),
+	fmt_write_string(Bmvddef,"'%s%s",args(FLFACTPREFIX,WRAP_MVDDEF)),
+	fmt_write_string(Bimvddef,"'%s%s",args(FLFACTPREFIX,WRAP_IMVDDEF)),
+	assert(flora_flogic_base(WRAP_ISA,Bisa)),
+	assert(flora_flogic_base(WRAP_SUB,Bsub)),
+	assert(flora_flogic_base(WRAP_METH,Bmeth)),
+	assert(flora_flogic_base(WRAP_IMETH,Bimeth)),
+	assert(flora_flogic_base(WRAP_TRAN,Btran)),
+	assert(flora_flogic_base(WRAP_FD,Bfd)),
+	assert(flora_flogic_base(WRAP_IFD,Bifd)),
+	assert(flora_flogic_base(WRAP_FDSIG,Bfdsig)),
+	assert(flora_flogic_base(WRAP_IFDSIG,Bifdsig)),
+	assert(flora_flogic_base(WRAP_MVD,Bmvd)),
+	assert(flora_flogic_base(WRAP_IMVD,Bimvd)),
+	assert(flora_flogic_base(WRAP_MVDSIG,Bmvdsig)),
+	assert(flora_flogic_base(WRAP_IMVDSIG,Bimvdsig)),
+	assert(flora_flogic_base(WRAP_EXISTS,Bexists)),
+	assert(flora_flogic_base(WRAP_MVDDEF,Bmvddef)),
+	assert(flora_flogic_base(WRAP_IMVDDEF,Bimvddef)).
+
+
+/*****************************************************************************
+  flora_setup_flogic_wspredicate(+WS)
+  sets up the wrapper predicate names for F-logic facts in the module named WS.
+
+  Note: An F-logic wrapper predicate name is encoded as follows:
+        'FLORA_PREFIX''workspace''base_wrapper'
+*****************************************************************************/
+flora_setup_flogic_wspredicate(WS) :-
+	flora_flogic_workspace(WS),
+	!.
+
+flora_setup_flogic_wspredicate(WS) :-
+	retractall(flora_flogic_workspace(_WS)),
+	assert(flora_flogic_workspace(WS)),
+	fmt_write_string(WSBisa,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_ISA)),
+	fmt_write_string(WSBsub,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_SUB)),
+	fmt_write_string(WSBmeth,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_METH)),
+	fmt_write_string(WSBimeth,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMETH)),
+	fmt_write_string(WSBtran,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_TRAN)),
+	fmt_write_string(WSBfd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_FD)),
+	fmt_write_string(WSBifd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IFD)),
+	fmt_write_string(WSBfdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_FDSIG)),
+	fmt_write_string(WSBifdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IFDSIG)),
+	fmt_write_string(WSBmvd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVD)),
+	fmt_write_string(WSBimvd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVD)),
+	fmt_write_string(WSBmvdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVDSIG)),
+	fmt_write_string(WSBimvdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVDSIG)),
+	fmt_write_string(WSBexists,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_EXISTS)),
+	fmt_write_string(WSBmvddef,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVDDEF)),
+	fmt_write_string(WSBimvddef,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVDDEF)),
+	retractall(flora_flogic_wspredicate(_,_)),
+	assert(flora_flogic_wspredicate(WRAP_ISA,WSBisa)),
+	assert(flora_flogic_wspredicate(WRAP_SUB,WSBsub)),
+	assert(flora_flogic_wspredicate(WRAP_METH,WSBmeth)),
+	assert(flora_flogic_wspredicate(WRAP_IMETH,WSBimeth)),
+	assert(flora_flogic_wspredicate(WRAP_TRAN,WSBtran)),
+	assert(flora_flogic_wspredicate(WRAP_FD,WSBfd)),
+	assert(flora_flogic_wspredicate(WRAP_IFD,WSBifd)),
+	assert(flora_flogic_wspredicate(WRAP_FDSIG,WSBfdsig)),
+	assert(flora_flogic_wspredicate(WRAP_IFDSIG,WSBifdsig)),
+	assert(flora_flogic_wspredicate(WRAP_MVD,WSBmvd)),
+	assert(flora_flogic_wspredicate(WRAP_IMVD,WSBimvd)),
+	assert(flora_flogic_wspredicate(WRAP_MVDSIG,WSBmvdsig)),
+	assert(flora_flogic_wspredicate(WRAP_IMVDSIG,WSBimvdsig)),
+	assert(flora_flogic_wspredicate(WRAP_EXISTS,WSBexists)),
+	assert(flora_flogic_wspredicate(WRAP_MVDDEF,WSBmvddef)),
+	assert(flora_flogic_wspredicate(WRAP_IMVDDEF,WSBimvddef)).
+
+
+/*****************************************************************************
+  flora_flogic_predicate(+Funct,-Type,-Workspace)
+
+  Note: An F-logic wrapper predicate name is encoded as follows:
+        'FLORA_PREFIX''workspace''wrapper'
+*****************************************************************************/
+flora_flogic_predicate(Funct,Type,Workspace) :-
+	%% Check if the functor begins with FLORA_PREFIX followed by an '.
+	str_sub(FLORA_PREFIX,Funct,1),
+	str_sub('''',Funct,FLORA_PREFIX_LEN_PLUS1),
+	%% Locate F-logic wrapper predicate position and extract the wrapper.
+	atom_codes(Funct,FunctList),
+	reverse(FunctList,RevFunctList),
+	atom_codes(RevFunct,RevFunctList),
+	str_sub('''',RevFunct,N),
+	str_length(Funct,Len),
+	eval(Len-N,S),
+	substring(Funct,S,Len,Wrapper),
+	%% Extract the workspace name.
+	substring(Funct,FLORA_PREFIX_LEN_PLUS1,S,Workspace),
+	( flora_flogic_base(WRAP_ISA,Bisa), Wrapper == Bisa ->             Type=WRAP_ISA
+	; flora_flogic_base(WRAP_SUB,Bsub), Wrapper == Bsub ->             Type=WRAP_SUB
+	; flora_flogic_base(WRAP_FD,Bfd), Wrapper == Bfd ->                Type=WRAP_FD
+	; flora_flogic_base(WRAP_MVD,Bmvd), Wrapper == Bmvd ->             Type=WRAP_MVD
+	; flora_flogic_base(WRAP_IFD,Bifd), Wrapper == Bifd ->             Type=WRAP_IFD
+	; flora_flogic_base(WRAP_IMVD,Bimvd), Wrapper == Bimvd ->          Type=WRAP_IMVD
+	; flora_flogic_base(WRAP_METH,Bmeth), Wrapper == Bmeth ->          Type=WRAP_METH
+	; flora_flogic_base(WRAP_IMETH,Bimeth), Wrapper == Bimeth ->       Type=WRAP_IMETH
+	; flora_flogic_base(WRAP_EXISTS,Bexists), Wrapper == Bexists ->    Type=WRAP_EXISTS
+	; flora_flogic_base(WRAP_MVDDEF,Bmvddef), Wrapper == Bmvddef ->    Type=WRAP_MVDDEF
+	; flora_flogic_base(WRAP_IMVDDEF,Bimvddef), Wrapper == Bimvddef -> Type=WRAP_IMVDDEF
+	; flora_flogic_base(WRAP_TRAN,Btran), Wrapper == Btran ->          Type=WRAP_TRAN
+	; flora_flogic_base(WRAP_FDSIG,Bfdsig), Wrapper == Bfdsig ->       Type=WRAP_FDSIG
+	; flora_flogic_base(WRAP_IFDSIG,Bifdsig), Wrapper == Bifdsig ->    Type=WRAP_IFDSIG
+	; flora_flogic_base(WRAP_MVDSIG,Bmvdsig), Wrapper == Bmvdsig ->    Type=WRAP_MVDSIG
+	; flora_flogic_base(WRAP_IMVDSIG,Bimvdsig), Wrapper == Bimvdsig -> Type=WRAP_IMVDSIG
+	),
+	!.
+
+
+/*****************************************************************************
+  Set up the F-logic base predicate names when this module is loaded.
+*****************************************************************************/
+?- flora_setup_flogic_base.

@@ -42,6 +42,7 @@ ALLOBJS = flroperator.O \
 	  flrcompiler.O \
 	  flrcoder.O \
 	  flrutils.O \
+	  flrwrapper.O \
 	  flrshell.O
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
@@ -137,6 +138,10 @@ flrcoder.O : flrcoder.P flrcoder.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERROR
 
 flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
 	@echo 'mc(flrutils,$(OPTION)).' >> cmd...
+
+
+flrwrapper.O : flrwrapper.P flrwrapper.H $(FLORA_TERMS)
+	@echo 'mc(flrwrapper,$(OPTION)).' >> cmd...
 
 
 flrshell.O : flrshell.P flrshell.H $(FLORA_TERMS)
