@@ -25,7 +25,6 @@
 
 /* special debug includes */
 #include "debugs/debug_delay.h"
-#include "debugs/debug_kostis.h"
 
 
 #define ARITY	op1

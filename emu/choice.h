@@ -24,9 +24,6 @@
 */
 
 
-#include "debugs/debug_kostis.h"
-
-
 /* --- Types of Choice Points ----------------------------------------- */
 
 #define STANDARD_CP_FRAME       0
@@ -319,6 +316,7 @@ typedef struct consumer_choice_point {
 #ifdef CHAT
 #define save_consumer_choicepoint(t_breg,t_ereg,subg,prevbreg) \
     t_breg -= NLCPSIZE; \
+    nlcp_chat_area(t_breg) = NULL; \
     nlcp_trie_return(t_breg) = subg_ans_list_ptr(subg); \
     nlcp_subgoal_ptr(t_breg) = subg; \
     nlcp_ptcp(t_breg) = ptcpreg; \
@@ -373,10 +371,11 @@ typedef struct compl_susp_frame {
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
     CPtr subgoal_ptr;	/* pointer to the call structure */
     CPtr prevcsf;	/* previous completion suspension frame */
-    bool neg_loop;	/* true if the suspension is not LRD stratified */
+    Cell neg_loop;	/* !0 if the suspension is not LRD stratified */
 	     /* for CHAT this field appears in the place of nlcp_trie_return */
+             /* so please make sure that it has the same size as ALPtr */
 #ifdef CHAT
-    CPtr chat_area;	/* this field is needed now */
+    CPtr chat_area;	/* this field is needed for compl susp frames */
 #endif
 } *ComplSuspFrame;
 
@@ -418,7 +417,8 @@ typedef struct compl_susp_frame {
     csf_ptcp(WHERE) = T_PTCP; \
     csf_subgoal_ptr(WHERE) = (CPtr)SUBG; \
     csf_prevcsf(WHERE) = subg_compl_susp_ptr(SUBG); \
-    csf_neg_loop(WHERE) = FALSE
+    csf_neg_loop(WHERE) = FALSE; \
+    csf_chat_area(WHERE) = NULL
 #else
 #define save_compl_susp_frame(t_breg,t_ereg,subg,t_ptcp,CPREG) \
     t_breg -= CSF_SIZE; \
