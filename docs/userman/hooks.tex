@@ -87,7 +87,7 @@ as such:
 %%
 
 \ouritem{xsb\_undefined\_predicate\_hook(\_)}
-\index{{\tt xsb_undefined_predicate_hook/1}}
+\index{{\tt xsb\_undefined\_predicate\_hook/1}}
 
 These hooks are called when an undefined predicate is encountered.
 Each such hook must be unary and registered appropriately:
@@ -96,17 +96,42 @@ Each such hook must be unary and registered appropriately:
     :- add_xsb_hook(xsb_undefined_predicate_hook(my_undef_pred_handler(_))).
 \end{verbatim}
 %%
-An undefined predicate hook receives an argument, which is a list of the
-form {\tt [pred-name, module-name, psc-record, ContinuationInstruction]}.
-The first three elements in the list are bound and the fourth is free.  The
-first member, {\tt pred-name}, is the name of the predicate that was found
-to be undefined, {\tt module-name} is the name of the module of that
-predicate, and {\tt psc-record} is a handle to the PSC record for that
-predicate. The PSC record can be used by sophisticated handlers for
-undefined predicates. In most cases, however, a handler would use {\tt
-  pred-name} and, possibly, {\tt module-name}.  The last element of the
-list, {\tt ContinuationInstruction}, is supposed to be instantiated by the
-handler as described below.
+\index{PSC record}
+%%
+An undefined predicate hook receives one argument, a list of the form
+%%
+\begin{quote}
+  {\tt [PSC, ContinuationInstruction]} 
+\end{quote}
+%%
+The first element in the list, {\tt PSC}, is bound to a number that
+represents the internal data structure (the \emph{PSC record})
+corresponding to the undefined predicate. To extract the information about
+the predicate, one can use the following predicates defined in the module
+{\tt machine}:
+%%
+\begin{itemize}
+  \index{psc\_name/2}
+  \index{psc\_arity/2}
+  \index{psc\_prop/2}
+  \item  {\tt psc\_name(+PSC, -PredName)} -- returns the predicate name.
+  \item  {\tt psc\_arity(+PSC, -PredArity)} -- returns the predicate arity.
+  \item  {\tt psc\_prop(+PSC, -ModulePSC)} -- if the predicate is defined in
+    a module other than {\tt usermod}, {\tt ModulePSC} will be bound to a
+    non-zero number that represents the PSC record of the predicate's
+    module. Thus, the module name of the predicate can be obtained as follows:
+    %%
+    \begin{verbatim}
+        psc_prop(PSC,ModulePSC),
+        ( ModulePSC =\= 0 -> psc_name(ModulePSC, ModuleName)
+        ; ModuleName = usermod
+        )
+    \end{verbatim}
+    %%
+\end{itemize}
+%%
+The last element of the list, {\tt ContinuationInstruction}, is unbound and
+it is supposed to be instantiated by the handler as described below.
 
 When an undefined predicate is encountered, XSB would call the hooks
 registered to handle this condition until it finds one that succeeds (or
@@ -142,7 +167,9 @@ unbound), then XSB fails the original call.
 Here is an example:
 %%
 \begin{verbatim}
-    my_undef_pred_handler([Name,Modname,PSC,Continuation]) :-
+    :- import psc_name/2, psc_arity/2, psc_prop/2 from machine.
+    my_undef_pred_handler([PSC,Continuation]) :-
+            psc_name(PSC,Name), % obtain the name of the undefined predicate
             (str_sub('foo',Name)
              -> [foo_file], Continuation=true
              ;  fail)
