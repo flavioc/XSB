@@ -178,9 +178,11 @@ alloc_reg(VPrag,Tin,Tout) :-
 	vprag_occ(VPrag, Occ), ( Occ == f; Occ == v ),
 	!,
 	vprag_loc(VPrag, R),
-	( var(R), computil_find_reg(VPrag,Tin,R), hold(R, Tin, Tout)
-	; nonvar(R), Tin = Tout
-	).
+	(var(R)
+	 ->	computil_find_reg(VPrag,Tin,R), hold(R, Tin, Tout)
+	 ;	true
+	),
+	hold(R, Tin, Tout).
 alloc_reg(_Prag,T,T).
 
 computil_find_reg(VPrag,T,R) :-
