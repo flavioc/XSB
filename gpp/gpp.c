@@ -163,6 +163,7 @@ int nincludedirs;
 int execallowed;
 int dosmode;
 int autoswitch;
+char *include_directive_marker = NULL;
 
 /* controls if standard dirs, like /usr/include, are to be searched for
    #include and whether the current dir is to be searched first or last. */
@@ -290,6 +291,7 @@ void usage() {
   fprintf(stderr," -nostdinc : don't search standard directories for files to include\n\n");
   fprintf(stderr," -nocurinc : don't search the current directory for files to include\n\n");
   fprintf(stderr," -curdirinclast : search the current directory last\n\n");
+  fprintf(stderr," -includemarker : use next argument as a marker that tells\n\t\t  where #include was in the source file\n\n");
   exit(1);
 }
 
@@ -944,6 +946,10 @@ void initthings(int argc,char **argv)
     if (strcmp(*arg, "-curdirinclast") == 0) {
       CurDirIncLast = 1;
       NoCurIncFirst = 1;
+      continue;
+    }
+    if (strcmp(*arg, "-includemarker") == 0) {
+      include_directive_marker = *(++arg);
       continue;
     }
     if (**arg=='+') {
@@ -1925,7 +1931,15 @@ int ParsePossibleMeta()
 	     || !strcmp(incfile_name+strlen(incfile_name)-2,".c"))
            SetStandardMode(S,"C");
        }
+       if (include_directive_marker != NULL)
+	 fprintf(N->out->f,
+		 "%s 1 \"%s\" 1\n",
+		 include_directive_marker, C->filename);
        ProcessContext();
+       if (include_directive_marker != NULL)
+	 fprintf(N->out->f,
+		 "%s %d \"%s\" 2\n",
+		 include_directive_marker, N->lineno, N->filename);
        free(C);
        PopSpecs();
        C=N;
@@ -2223,8 +2237,13 @@ static void getDirname(char *fname, char *dirname)
     if (fname[i] == SLASH)
       break;
   }
-  strncpy(dirname,fname,i);
-  dirname[i] = SLASH;
+  if (i >= 0) {
+    strncpy(dirname,fname,i);
+    dirname[i] = SLASH;
+  } else
+    /* just a precaution: i must be -1 in this case anyway */
+    i = -1;
+
   dirname[i+1] = '\0';
 }
 
@@ -2244,6 +2263,8 @@ static FILE *openInCurrentDir(char *incfile)
 int main(int argc,char **argv)
 {
   initthings(argc,argv); 
+  if (include_directive_marker != NULL)
+    fprintf(C->out->f, "%s 1 \"%s\"\n", include_directive_marker, C->filename);
   ProcessContext();
   fclose(C->out->f);
   return 0;
