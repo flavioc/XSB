@@ -451,9 +451,9 @@ void intercept(Psc psc) {
 
 /* lose some precision in conversions from 32 bit formats */
 #ifdef BITS64
-#define FLOAT_MASK 0xfffffffffffffff0
+#define FLOAT_MASK 0xfffffffffffffff8
 #else
-#define FLOAT_MASK 0xfffffff0
+#define FLOAT_MASK 0xfffffff8
 #endif
 
 static union float_conv {
