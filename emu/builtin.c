@@ -135,11 +135,12 @@ extern xsbBool startInterruptThread(SOCKET intSocket);
 #endif
 
 long if_profiling = 0;
-long prof_unk_count = 0;
-long prof_total = 0;
-long total_prog_segments = 0;
-long prof_table_length = 0;
-long prof_table_count = 0;
+static long prof_unk_count = 0;
+static long prof_total = 0;
+
+static long total_prog_segments = 0;
+static long prof_table_length = 0;
+static long prof_table_count = 0;
 
 extern xsbBool startProfileThread();
 extern void dump_prof_table();
@@ -2261,8 +2262,6 @@ int builtin_call(byte number)
 	  if_profiling = 0;
 	} else if (call_type == 3) {
 	  retrieve_prof_table();
-	} else if (call_type == 4) {
-	  dump_prof_table();
 	} else {
 	  printf("Error: unknown profiling command\n");
 	}
@@ -2448,6 +2447,43 @@ ubi_btRootPtr RootPtr = NULL;
 ubi_btNodePtr prof_table;
 ubi_btNodePtr prof_table_free = NULL;
 
+typedef struct psc_profile_count_struct {
+  Psc psc;
+  int prof_count;
+} psc_profile_count;
+
+/* could use a splay tree to store and quickly find these entries if
+   this were to be too slow, or if we added returning to psc and so
+   got more. */
+
+static psc_profile_count *psc_profile_count_table = NULL;
+static int psc_profile_count_max = 0;
+static int psc_profile_count_num = 0;
+#define initial_psc_profile_count_size 100
+
+void add_to_profile_count_table(Psc apsc, int count) {
+  int i;
+  if (psc_profile_count_num >= psc_profile_count_max) {
+    if (psc_profile_count_table == NULL) {
+      psc_profile_count_max = initial_psc_profile_count_size;
+      psc_profile_count_table = (psc_profile_count *)
+	malloc(psc_profile_count_max*sizeof(psc_profile_count));
+    } else {
+      psc_profile_count_max = 2*psc_profile_count_max;
+      psc_profile_count_table = (psc_profile_count *)
+	realloc(psc_profile_count_table,psc_profile_count_max*sizeof(psc_profile_count));
+    }
+  }
+  for (i=0; i<psc_profile_count_num; i++)
+    if (psc_profile_count_table[i].psc == apsc) {
+      psc_profile_count_table[i].prof_count += count;
+      return;
+    }
+  psc_profile_count_table[psc_profile_count_num].psc = apsc;
+  psc_profile_count_table[psc_profile_count_num].prof_count = count;
+  psc_profile_count_num++;
+}
+
 int compareItemNode(ubi_btItemPtr itemPtr, ubi_btNodePtr nodePtr) {
   if (*itemPtr < nodePtr->code_begin) return -1;
   else if (*itemPtr == nodePtr->code_begin) return 0;
@@ -2461,7 +2497,7 @@ void log_prog_ctr(byte *pcreg) {
   prof_total++;
   if (NodePtr == NULL) prof_unk_count++;
   else if (pcreg <= NodePtr->code_end) {
-    (NodePtr->code_psc)->prof_ct++;
+    NodePtr->i_count++;
   }
   else prof_unk_count++;
 }
@@ -2489,6 +2525,7 @@ void add_prog_seg(Psc psc, byte *code_addr, long code_len) {
   newNode->code_begin = code_addr;
   newNode->code_end = code_addr+code_len;
   newNode->code_psc = psc;
+  newNode->i_count = 0;
   ubi_sptInsert(RootPtr,newNode,&(newNode->code_begin),NULL);
   //  printf("Adding segment for: %s/%d\n",get_name(newNode->code_psc),get_arity(newNode->code_psc));
   total_prog_segments++;
@@ -2501,6 +2538,8 @@ void remove_prog_seg(byte *code_addr) {
   if (oldNodePtr == NULL) printf("Error: code to delete not found: %p\n", code_addr);
   else {
     //    printf("Removing segment for: %s/%d\n",get_name(oldNodePtr->code_psc),get_arity(oldNodePtr->code_psc));
+    if (oldNodePtr->i_count != 0)
+      add_to_profile_count_table(oldNodePtr->code_psc, oldNodePtr->i_count);
     ubi_sptRemove(RootPtr,oldNodePtr);
     oldNodePtr->Link[0] = prof_table_free;
     prof_table_free = oldNodePtr;
@@ -2510,71 +2549,46 @@ void remove_prog_seg(byte *code_addr) {
 
 Psc p3psc = NULL;
 
-void retrieve_prof_table() { /* r2: +NodePtr, r3: -[PSC|Cnt], r4: -NextNodePtr */
-  ubi_btNodePtr PrevNodePtr, NodePtr;
+void retrieve_prof_table() { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt], r4: -NextNodePtr */
+  ubi_btNodePtr NodePtr;
   CPtr pscptrloc, modpscptrloc;
   Cell arg3;
-  int tmp;
+  int i,tmp;
+  Psc apsc;
 
-  PrevNodePtr = (ubi_btNodePtr) ptoc_int(2);
-  if (PrevNodePtr == NULL) NodePtr = ubi_btFirst(RootPtr->root);
-  else NodePtr = ubi_btNext(PrevNodePtr);
-  while (NodePtr != NULL && NodePtr->code_psc->prof_ct == 0) {
-    NodePtr = ubi_btNext(NodePtr);
+  i = ptoc_int(2);
+  if (i == 0) { // fill table
+    NodePtr = ubi_btFirst(RootPtr->root);
+    while (NodePtr != NULL) {
+      if (NodePtr->i_count != 0) {
+	add_to_profile_count_table(NodePtr->code_psc,NodePtr->i_count);
+	NodePtr->i_count = 0;
+      }
+      NodePtr = ubi_btNext(NodePtr);
+    }
   }
+
   if (p3psc == NULL) p3psc = insert("p",3,(Psc)flags[CURRENT_MODULE],&tmp)->psc_ptr;
   arg3 = ptoc_tag(3);
   bind_cs((CPtr)arg3,hreg);
   new_heap_functor(hreg,p3psc);
   pscptrloc = hreg++;
   modpscptrloc = hreg++;
-  if (NodePtr != NULL) {
-    follow(hreg++) = makeint(NodePtr->code_psc->prof_ct);
-    bld_oint(pscptrloc,(Integer)(NodePtr->code_psc));
-    bld_oint(modpscptrloc,(Integer)(NodePtr->code_psc->data));
-    NodePtr->code_psc->prof_ct = 0;
+  if (i < psc_profile_count_num) {
+    follow(hreg++) = makeint(psc_profile_count_table[i].prof_count);
+    apsc = psc_profile_count_table[i].psc;
+    bld_oint(pscptrloc,(Integer)(apsc));
+    bld_oint(modpscptrloc,(Integer)(apsc->data));
+    ctop_int(4,i+1);
   } else {
     follow(hreg++) = makeint(prof_unk_count);
     bld_int(pscptrloc,0);
     bld_int(modpscptrloc,0);
+    psc_profile_count_num = 0; // clear table
+    prof_total = 0;
     prof_unk_count = 0;
+    ctop_int(4,0);
   }
-  ctop_int(4,(Integer)NodePtr);
-}
-
-void dump_prof_table() {
-  ubi_btNodePtr NodePtr;
-  Psc temp_psc = NULL;
-  long percent;
-  long segs_scanned = 0;
-
-  NodePtr = ubi_trFirst(RootPtr->root);
-  while (NodePtr != NULL) {
-    segs_scanned++;
-    temp_psc = NodePtr->code_psc;
-    if (temp_psc->prof_ct > 0) {
-      percent = (100*temp_psc->prof_ct + prof_total/2)/prof_total;
-      if (percent > 0) {
-	printf("  %ld%% (%ld) %s/%d (%s)\n",percent,temp_psc->prof_ct, 
-	       get_name(temp_psc), get_arity(temp_psc),
-	       get_name(temp_psc->data));
-      }
-      temp_psc->prof_ct = 0;
-    }
-    temp_psc = temp_psc->data;
-    if (temp_psc != NULL) {
-      if (temp_psc->prof_ct > 0) {
-	percent = (100*temp_psc->prof_ct + prof_total/2)/prof_total;
-	printf("%ld%% (%ld) mod: %s/%d\n",percent,temp_psc->prof_ct, 
-	       get_name(temp_psc), get_arity(temp_psc));
-	temp_psc->prof_ct = 0;
-      }
-    }
-    NodePtr = ubi_btNext(NodePtr);
-  }
-  printf("%ld%% (%ld) Unknown\n",(100*prof_unk_count+prof_total/2)/prof_total,prof_unk_count);
-  printf("\n  %ld Total\n",prof_total);
-  printf("\n %ld Total program segments, %ld scanned\n",total_prog_segments,segs_scanned);
 }
 
 /*------------------------- end of builtin.c -----------------------------*/

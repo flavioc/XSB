@@ -41,7 +41,6 @@ struct psc_rec {
   byte arity;
   byte length;
   char *nameptr;
-  long prof_ct;			/* for profiling: count of times interrupted in this pred */
   struct psc_rec *data;      /* psc of module, if pred; otw data */
   byte *ep;                     /* entry point (initted to next word) */
   word load_inst;               /* byte-code load_pred, or call_forn */

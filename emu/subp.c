@@ -752,12 +752,12 @@ xsbBool startInterruptThread(SOCKET intSocket)
 
 extern long if_profiling;
 extern long prof_flag;
-extern long prof_unk_count;
-extern long prof_total;
 
 void setProfileBit(void *place_holder) {
   while (TRUE) {
-    if (if_profiling) asynint_val |= PROFINT_MARK;
+    if (if_profiling) {
+      asynint_val |= PROFINT_MARK;
+    }
 #ifdef WIN_NT
     Sleep(10);
 #else
@@ -790,7 +790,5 @@ xsbBool startProfileThread()
     if_profiling = 1;
   }
 #endif
-  prof_unk_count = 0;
-  prof_total = 0;
   return TRUE;
 }

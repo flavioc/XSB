@@ -105,7 +105,6 @@ static Psc make_psc_rec(char *name, char arity) {
   set_spy(temp, 0);
   set_arity(temp, arity);
   set_length(temp, length);
-  temp->prof_ct = 0;  /* here is the main overhead for Prolog profiling... */
   set_data(temp, 0);
   set_ep(temp,(byte *)&(temp->load_inst));
   set_name(temp, string_find(name, 1));
