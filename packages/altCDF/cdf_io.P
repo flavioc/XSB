@@ -3,7 +3,8 @@
 	dump_extensional_facts/1, 
 	load_intensional_rules/1,
 	merge_intensional_rules/0,
-	retract_intensional_rules/1.
+	retract_intensional_rules/1,
+	cdf_exists/1.
 
 %:- import (:-)/2 from usermod.
 
@@ -280,6 +281,13 @@ transform_intensional_rules(Head,NewHead,Name):-
 	Head =.. [F|T],
 	concat_atom([F,'_',Name],NewF),
 	NewHead =.. [NewF|T].
+
+:- comment(cdf_exists/1, "@tt{cdf_exists(Dir)} checks whether
+@tt{cdf_extensional.P} file is present in directory @tt{Dir}").
+
+cdf_exists(Dir):-
+	concat_atom([Dir,'/cdf_extensional.P'],SchemaFile),
+	file_exists(SchemaFile).
 
 end_of_file.
 
