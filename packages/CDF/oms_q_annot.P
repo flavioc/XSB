@@ -142,6 +142,14 @@ relaxing_query('::'(attr(A,B,C),widen(1,Scale,Actual)),Cutoff,Pen_in,Pen_out):-!
 	    weighted_attr_1(A,B,C,Scale,Cutoff,Actual,Pen_in,Pen_out)
 	  ; oms_warning(relaxation,('relaxation attempted with non-ground arg 1',
 	                          attr(A,B,C)::widen(1,Scale,Actual))) ).
+relaxing_query('::'(attr(A,B,C),opt(Penalty)),Cutoff,Pen_in,Pen_out):-!,
+	(attr(A,B,C),
+	 Pen_out = Pen_in
+	 ;
+	 \+ attr(A,B,C),
+	 Pen_out is Pen_in + Penalty,
+	 Pen_out =< Cutoff
+	).
 relaxing_query(attr(A,B,C),_Cutoff,Penalty,Penalty):-!,
 	attr(A,B,C).
 relaxing_query(isa(A,B),_Cutoff,Penalty,Penalty):-!,
