@@ -23,19 +23,22 @@
 /* The following are to avoid useinfer messages */
 :- export supported_option/1.		
 
-:- import atom_concat/2, (data)/1 from ciaoaux.
+
 
 :- import format/3 from format.
 :- import member/2 from basics.
 :- import display/2, 
 	  error_message/2, 
 	  list_concat/2, 
-%	  note_message/1, note_message/2, 
 	  optional_message/2, 
 	  xsbdoc_warning/1
 	from ciaoaux.
+:- import (data)/1 from ciaoaux.
+
 :- import current_infixop/4, current_postfixop/3, current_prefixop/3
 	from xsb_ciao.
+
+:- import concat_atom/2 from string.
 :- import write_term/3 from write_term.
 :- import version_descriptor/1, stringcommand/1 from comments.
 :- import rewrite_command/4 from rewrite_command.
@@ -181,9 +184,7 @@ option_comment('-onesided',    'For printing on one side (default is two).').
 %%%% Should not be empty...?
 :- data(typeindex/5).
 
-   typeindex(pred,   "pdindex","code",'Predicate/Method Definition Index','').
-   typeindex(prop,   "prindex","code",'Property Definition Index',        '').
-   typeindex(decl,   "deindex","code",'Declaration Definition Index',     '').
+   typeindex(pred,   "pdindex","code",'Predicate Definition Index','').
    typeindex(op,     "opindex","code",'Operator Definition Index',        '').
    typeindex(concept,"coindex",""    ,'Concept Definition Index',         '').
 %% Some versions of makeinfo get confused by this one (core dump!)
@@ -194,12 +195,14 @@ option_comment('-onesided',    'For printing on one side (default is two).').
  @code{info} format unfortunately only the first reference will appear in
  online versions of the document.').
 
+%   typeindex(lib,    "liindex","code",'Library/Module Definition Index',  '').
+%   typeindex(apl,    "apindex","code",'Application Index',                '').
 %% typeindex(func,   "fuindex","code",'Function/Method Definition Index', '').
-%% typeindex(lib,    "liindex","code",'Library/Module Definition Index',  '').
-%% typeindex(apl,    "apindex","code",'Application Index',                '').
 %  typeindex(regtype,"teindex","code",'Regular Type Definition Index',    '').
 %  typeindex(modedef,"moindex","code",'Mode Definition Index',            '').
 %  typeindex(file,   "fiindex","code",'File/Directory Index',             '').
+%   typeindex(prop,   "prindex","code",'Property Definition Index',        '').
+%   typeindex(decl,   "deindex","code",'Declaration Definition Index',     '').
 
 concepttype(index).
 concepttype(cindex).
@@ -284,9 +287,9 @@ format_header(OS,IName,INDName,ITitle,Title,Indices,Ifile,Ofile,
 	format(OS,"@setfilename ~w           ~n",[Name]),
 	format(OS,"@settitle ~s              ~n",[Title]),
 	writeln(OS,'@c @paragraphindent 0     '),
-	(  member('-onesided',Opts) 
-	-> writeln(OS,'@setchapternewpage on  ')
-	;  writeln(OS,'@setchapternewpage odd    ')),
+	(  member('-twosided',Opts) 
+	-> writeln(OS,'@setchapternewpage odd ')
+	;  writeln(OS,'@setchapternewpage on  ')),
 	writeln(OS,'@c @footnotestyle separate'),
 	
 	findall(_, ( typeindex(IdxName,Index,IType,_ITitle,_IComment),
@@ -494,7 +497,7 @@ format_intro(texinfo,main(MainType),_FileType,Name,NDName,Summary,Version,
 	( Summary = [] 
 	-> true
 	;  supported_format_suffix(texinfo,Suff),
-	   atom_concat([Name,'summary.',Suff],SummaryName),
+	   concat_atom([Name,'summary.',Suff],SummaryName),
 	   format_texinfo_components_include([SummaryName],OS),
 	   open(SummaryName,write,SummaryOS),
 	   format_texinfo_section(0,"Summary",SummaryOS),
@@ -508,7 +511,7 @@ format_intro(texinfo,main(MainType),_FileType,Name,NDName,Summary,Version,
 	   close(SummaryOS) ),
 
 	supported_format_suffix(texinfo,Suff),
-	atom_concat([Name,'intro.',Suff],IntroName),
+	concat_atom([Name,'intro.',Suff],IntroName),
 	format_texinfo_components_include([IntroName],OS),
 	open(IntroName,write,IntroOS),
 	(  MainType = standalone
@@ -560,7 +563,6 @@ format_intro(texinfo,component,FileType,_Name,_NDName,_Summary,_Version,
 format_includes_and_end_matter(texinfo,Name,Components,Indices,Opts,OS) :-
 
 	format_texinfo_components_include(Components,OS),
-	writeln(ftci(Components)),
 	(  member('-norefs',Opts)
 	-> true
 	;  supported_format_suffix(texinfo,Suff),
@@ -627,12 +629,17 @@ format_index(Name,Titleat,Commentat,IndexId,OS) :-
    chapter.".
 %% ---------------------------------------------------------------------------
 
-format_module_usage(texinfo,Name,_Type,CExports,UMods,SysMods,Ops,NDecls,
+format_module_usage(texinfo,Name,Type,CExports,UMods,SysMods,Ops,NDecls,
 		    Indices,OS) :-
 	texinfo_escape_ats_etc_all_atoms(Name,EName),
 	format_texinfo_section_name(EName,2,"Usage and interface",OS),
 	writeln(OS,'@cartouche'),
 	writeln(OS,'@itemize @bullet{}'),
+
+	( Type = comment(Comment) -> 
+	      format(OS,"~n@item @strong{Library usage:}~n~n",[]),
+	      format(OS,"~s~n",[Comment])
+            ; true),
 
 	format_exports_for_module(CExports,OS,Indices),
 	format_operators_for_module(Ops,OS,Indices),
@@ -661,7 +668,7 @@ format_operators_for_module(Ops,OS,Indices):-
 format_decls_for_module(NDecls,OS,Indices):- 
 	(NDecls = [] -> true
            ; 
-  	     nl(OS),writeln(OS,'@item @strong{New declarations defined:}'),
+  	     nl(OS),writeln(OS,'@item @strong{Module Level Declarations:}'),
 	     nl(OS),
 	     format_term_list_commas_period(NDecls,global,Indices,OS) ).
 
@@ -1283,7 +1290,7 @@ format_other_info(texinfo,main(standalone),Name,_NDName,Appendix,Ack,
 	Level = 0,
 	(  Appendix = []
         -> true 
-	;  atom_concat([Name,'appdx.',Suff],AppdxName),
+	;  concat_atom([Name,'appdx.',Suff],AppdxName),
 	   format_texinfo_components_include([AppdxName],OS),
 	   open(AppdxName,write,AppdxOS),
 	   format_texinfo_section(Level,"Other information",AppdxOS),
@@ -1292,7 +1299,7 @@ format_other_info(texinfo,main(standalone),Name,_NDName,Appendix,Ack,
 	),
 	(  Ack = []
         -> true 
-	;  atom_concat([Name,'ack.',Suff],AckName),
+	;  concat_atom([Name,'ack.',Suff],AckName),
 	   format_texinfo_components_include([AckName],OS),
 	   open(AckName,write,AckOS),
 	   format_texinfo_section(Level,"Acknowledgements",AckOS),
@@ -1301,7 +1308,7 @@ format_other_info(texinfo,main(standalone),Name,_NDName,Appendix,Ack,
 	),
 	(  Bugs = []
         -> true 
-	;  atom_concat([Name,'bugs.',Suff],BugsName),
+	;  concat_atom([Name,'bugs.',Suff],BugsName),
 	   format_texinfo_components_include([BugsName],OS),
 	   open(BugsName,write,BugsOS),
 	   format_texinfo_section(Level,
@@ -1313,7 +1320,7 @@ format_other_info(texinfo,main(standalone),Name,_NDName,Appendix,Ack,
 	),
 	(  Changes = []
         -> true 
-	;  atom_concat([Name,'changes.',Suff],ChName),
+	;  concat_atom([Name,'changes.',Suff],ChName),
 	   format_texinfo_components_include([ChName],OS),
 	   open(ChName,write,ChOS),
 	   format_texinfo_section(Level,"Version/Change Log",ChOS),

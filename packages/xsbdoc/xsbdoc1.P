@@ -1,10 +1,10 @@
 :- compiler_options([ciao_directives]).
 
 :- export xsbdoc/2,
-	  main/0,	% to avoid a useinfer warning.
+%	  main/0,	% to avoid a useinfer warning.
 	  test/1,make_distclean/0.
 
-:- import format/3 from format.
+:- import format/2 from format.
 
 :- import xsbdoc_bibfile/1,
 	  xsbdoc_component/1,
@@ -58,22 +58,6 @@ Copyright @copyright{} 1996-99 Manuel Hermenegildo/The CLIP Group.
 
 :- comment(module,"@include{Intro.xsbdoc}
 
-@section{xsbdoc usage}
-
-To use xsbdoc, the package must be first loaded via the command
-
-@begin{verbatim}
-         [xsbdoc].
-@end{verbatim}
-
-The top-level interface of the @apl{xsbdoc} package consists of a
-single predicate, @pred{xsbdoc/(FormatFile,GenerationType}.
-@tt{FormatFile} is the name of a Prolog format file that indicates the
-main file for the application, component files, and the various
-configuration options on which xsbdoc depends @tt{GenerationType} is
-one of the currently supported generation types -- @tt{ascii},
-@tt{ps}, @tt{html} and so on (see @ref{Generating Manuals} for more
-details.)
  ").
 
 %% ---------------------------------------------------------------------------
@@ -106,7 +90,7 @@ xsbdoc(Format_file,Generation_type):-
 	perform_generation_type(Generation_type,Base,Components),
 	!.
 xsbdoc(Format_file,_):- 
-	format(user_error,"~nCould not process: ~w",[Format_file]).
+	format("~nCould not process: ~w",[Format_file]).
 
 perform_generation_type(ascii,Main,List):- 
 	component_ascii([Main|List]),
@@ -189,9 +173,8 @@ get_options(StartPage,PaperType,Opts):-
 
 display_version:- 
 	xsbdoc_version(Version),
-	format(user,"xsbdoc ~s ",[Version]),
-	format(user,
-               "Using code modified from CLIP Group, T.U. of Madrid~n",[]).
+	format("xsbdoc ~s ",[Version]),
+	format("Using code modified from CLIP Group, T.U. of Madrid~n",[]).
 
 xsbdoc_version("0.1").
 
@@ -233,11 +216,10 @@ make_distclean:-
 	shell('rm -f *.tp *.tps *.vr *.vrs'),
 	shell('rm -f autodocXXXXXX *.tempascii').
 
-main.
-
 :- comment(version(0*1+1,2001/11/01),"Celebrating the first version with a brand-new comment!").
 
-:- comment(bug,"Variable names are not propagated to documentation system.").
+:- comment(bug,"Variable names are not propagated in head patterns of
+                :- pred assertions..").
 
 :- comment(bug,"autotable/1 directive should be doc'd at interface of module").
 
@@ -246,6 +228,10 @@ main.
 
 :- comment(bug,"Special indexing directives (e.g. tries) are not documented
 	        in predicate level documentation.").
+
+:- comment(bug,"Have not tested out _doc files; that more than one
+		bibfile can be used; that image files are
+		appropriately read.").
 
 end_of_file.
 

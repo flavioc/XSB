@@ -43,7 +43,7 @@ where @tt{head_pattern(HeadPattern)} and @tt{AssertionBody} are both
 
     Such patterns are certainly useful for documentation, and
     @apl{xsbdoc} is includes these patterns in the documentation it
-    generates (see @ref{???} for information on how to contol
+    generates (see @ref{Introduction} for information on how to contol
     formatting of such documentation).  However, such information can
     also be useful for compilation tools, such as a run-time test
     generator (under development) or static analysis.
@@ -291,8 +291,10 @@ nabody((Pred::Compat:Call=>Succ+Comp#Comm)):-
 	list(Comp,property),
 	docstring(Comm).
 
+/*
 :- (regtype) dictionary(D)
 	# "@var{D} is a dictionary of variable names.".
+*/
 
 dictionary([]).
 dictionary([N=V|D]):-

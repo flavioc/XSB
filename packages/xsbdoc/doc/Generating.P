@@ -13,6 +13,12 @@ tips}, and @concept{troubleshooting} advice.
 
 @section{Generating a manual} 
 
+To use xsbdoc, the package must be first loaded via the command
+
+@begin{verbatim}
+         [xsbdoc].
+@end{verbatim}
+
 The top-level command to generate documentation is 
 
 @begin{verbatim}

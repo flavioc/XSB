@@ -2,6 +2,8 @@
             docstring/1,stringcommand/1,
 	    version_descriptor/1.
 
+:- autotable.
+
 :- comment(title,"Enhancing Documentation with Machine-Readable Comments").
 
 :- comment(author,"Manuel Hermenegildo").
@@ -23,6 +25,11 @@
    @index{assertions} (see the @lib{assertions} library).
 
    ").
+
+:- comment(usage,"It is not necessary to use this library in user
+   programs.  Recognition of comments is handled automatically by
+   xsbdoc and the XSB compiler. 
+").
 
 % ----------------------------------------------------------------------------
 % Comment-related definitions
@@ -253,7 +260,7 @@
 
 :- pred comment(hide,PredName) 
 
-:: [comment("This usagehas an effect opposite to the previous usage: it
+:: [comment("This usage has an effect opposite to the previous usage: it
     signals that an exported predicate should @em{not} be 
     included in the documentation.
 

@@ -432,16 +432,18 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 
 	classify_import_files(SysFiles,UFiles,Opts),
 
-	% TLS: Multifiles, IUFiles (inc user), Modes, engfiles are empty.
-
 	findall(op(P,Prec,PredNames),
                    clause_read(1,op(P,Prec,PredNames),_),Ops),
+
+%	trace,
+
+	get_file_level_declarations(NDecls),
 
         format_module_usage(Format,Name,RModuleType,Exports,
 	 	                UFiles,SysFiles,Ops,NDecls,Idxs,OS),
 
 %        optional_message("Documenting (new) declarations...",Opts),
-	doc_decls(Name,NDecls,Base,Idxs,OS,Format,Opts),
+%	doc_decls(Name,NDecls,Base,Idxs,OS,Format,Opts),
 %        optional_message("Documenting (new) mode definitions...",Opts),
 %	doc_modes(Name,NModes,M,Base,Idxs,OS,Format,Opts),
 %        optional_message("Documenting exported predicates...",Opts),
@@ -451,7 +453,11 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 	optional_message('Documenting internal preds, etc. ...',Opts),
 	doc_internals(Name,Exports,Base,Idxs,OS,Format,Opts).
 
+get_file_level_declarations(NDecls):- 
+	findall(Decl,(clause_read(1,Decl,_Ctr),
+	              documentable_declaration(Decl)),NDecls).
 
+documentable_declaration(autotable).
 %% ---------------------------------------------------------------------------
 :- pred export_list/3 # "Builds the list of exported
    predicates. Handles the @pred{document_export} directive. ".
@@ -517,18 +523,6 @@ classify_files_1([File|Files],Lfiles,Ufiles,Opts):-
 	xsbdoc_warning(['Could not find import file ',File]),
 	classify_files_1(Files,Lfiles,Ufiles,Opts) .
 
-%% ---------------------------------------------------------------------------
-:- pred doc_decls/7
-   # "Generates documentation for the new declarations.".
-%% ---------------------------------------------------------------------------
-
-doc_decls(Name,Decls,Base,Idxs,OS,Format,Opts) :-
-	(  Decls = [] 
-	-> true
-        ;  format_predicates_begin(Format,Name,
-	                           "Documentation on new declarations",OS),
-	   doc_predicates(Decls,decl,Base,Idxs,OS,Format,Opts),
-	   format_predicates_end(Format,OS) ).
 
 %% ---------------------------------------------------------------------------
 :- pred doc_exports/8
@@ -1065,8 +1059,7 @@ detect_filetypes(Opts,Components,part,Level) :-
 	detect_filelevel(Opts,Components,Level).
 %% Application - no interface, so no complication
 detect_filetypes(Opts,Components,application,Level) :-
-	( defines(main)
-	; defines(main(_)) ),
+	member('-main',Opts),
 	!,
 	optional_message('File being documented as an application',Opts),
 	detect_filelevel(Opts,Components,Level).
@@ -1482,7 +1475,6 @@ try_command(includedef(PredS),
 %	   set_prolog_flag(write_strings,X),
 	   told,
 	   tell(Old),
-	   writeln(got_to_here),
 	   read_file(Tmp,Content), 
 %	   delete_file(Tmp),
 	   rewrite_command(Format,begin("verbatim"),Idxs,BVerb),
@@ -1874,3 +1866,16 @@ getvarname([C|RI],NRI,[C|RVarName]) :-
 	getvarname(RI,NRI,RVarName). 
 
 char_no_space_or_tab(X) --> [X], {X \== 0' , X \== 0'\t }.
+
+%% ---------------------------------------------------------------------------
+:- pred doc_decls/7
+   # "Generates documentation for the new declarations.".
+%% ---------------------------------------------------------------------------
+
+doc_decls(Name,Decls,Base,Idxs,OS,Format,Opts) :-
+	(  Decls = [] 
+	-> true
+        ;  format_predicates_begin(Format,Name,
+	                           "Documentation on new declarations",OS),
+	   doc_predicates(Decls,decl,Base,Idxs,OS,Format,Opts),
+	   format_predicates_end(Format,OS) ).
