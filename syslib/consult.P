@@ -42,7 +42,7 @@ compile(Path, Options) :- \+ (\+ (compile0(Path,Options))).
 
 compile0(Path, Options) :-
 	atom(Path),
-	search_module(Path, Dir, Mod, SExt, _HasObj, Base, _Obj),
+	search_module(Path, Dir, Mod, SExt, Base, _Obj),
 	SExt \== 'O',
 	!,
 	compile_f(SExt, Base, Options, _, Mod, Dir).
@@ -84,8 +84,8 @@ reconsult(Path, Options) :-
 
 reconsult0(Path, Options) :-
 	( Path == user -> compile_load_user(Options)
-	; ( search_module(Path, Dir, Mod, SExt, HasObj, Base, Obj) ->
-	      (	 ( SExt \== 'O', i_want_compile(SExt, Base, Obj, HasObj) )
+	; ( search_module(Path, Dir, Mod, SExt, Base, Obj) ->
+	      (	 ( SExt \== 'O', i_want_compile(SExt, Base, Obj) )
 	      ->  compile_f(SExt, Base, Options, _ExList, Mod, Dir),
 		  load_exec(Obj, Mod)
 	      ;	  load_exec(Obj, Mod)
@@ -95,8 +95,8 @@ reconsult0(Path, Options) :-
 	  )
 	).
 
-i_want_compile(SExt, Base, Obj, HasObj) :-
-	( HasObj =:= 0 -> true ; needs_recompile(SExt, Base, Obj) ).
+i_want_compile(SExt, Base, Obj) :-
+	( not(file_exists(Obj)) -> true ; needs_recompile(SExt, Base, Obj) ).
 
 needs_recompile('P', Base, Obj) :-
 	( str_cat(Base, '.P', PFileName),
@@ -139,38 +139,27 @@ needs_recompile('c', Base, Obj) :-
 
 
 /*======================================================================*/
-/*  search_module(+FileName, -Dir, -Mod, -SExt, -HasObj, -Base, -Obj)	*/
+/*  search_module(+FileName, -Dir, -Mod, -SExt, -Base, -Obj)	        */
 /*                                                                      */
-/*	Given a FileName (must be an atom), search_module/7 finds the	*/
+/*	Given a FileName (must be an atom), search_module/6 finds the	*/
 /*	location of the corresponding module and returns:		*/
 /*		1) the directory (Dir),					*/
 /*		2) the module name (Mod),				*/
 /*		3) the extension (SExt) of the source file		*/
 /*		   ('P'/'c'/''[other name]/'O'[object file only]),	*/
-/*		4) whether an object code file exists (HasObj = 0,1),	*/
-/*		5) the base name of the file (Base = Dir+Mod), and	*/
-/*		6) the object file name (Obj)				*/
+/*		4) the base name of the file (Base = Dir+Mod), and	*/
+/*		5) the object file name (Obj)				*/
 /* 	The call will fail if the specified file cannot be found.	*/
 /*     	       	       	       	       	       	       	       	        */
-/*  search_module/6 is like search_module/7, except that it drops    	*/
-/*     	       	    the HasObj argument. search_module/6 is exported    */
 /*======================================================================*/
 
-%% search_module/6
 search_module(FileName, Dir, Mod, Ext, Base, Obj) :-
-	search_module(FileName, Dir, Mod, Ext, _HasObj, Base, Obj).
-%% search_module/7
-search_module(FileName, Dir, Mod, Ext, HasObj, Base, Obj) :-
 	almost_search_module(FileName, D, Mod, E, B),
 	( D == '', FileName == Mod -> % only a module name was given
 	    real_search_module(Mod, Dir, Base, Ext)
 	; Dir = D, Ext = E, Base = B
 	),
-	get_object_file(Base, HasObj, Obj).
-
-get_object_file(Base, HasObj, Obj) :-
-	str_cat(Base, '.O', Obj),
-	( file_exists(Obj) -> HasObj = 1 ; HasObj = 0 ).
+	str_cat(Base, '.O', Obj).
 
 /*======================================================================*/
 /* real_search_module(+ModName, -Dir, -Base, -Ext)			*/
@@ -255,7 +244,7 @@ load_dyn(File) :-
 	load_dyn0(SExt,Base,Mod).
 
 get_fname(Filename,SExt,Base,Mod) :-
-	( search_module(Filename,_Dir,Mod,SExt,_HasObj,Base,_Obj) -> true
+	( search_module(Filename,_Dir,Mod,SExt,Base,_Obj) -> true
 	; warning('Cannot find file'(Filename)), fail
 	).
 
