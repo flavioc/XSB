@@ -760,6 +760,20 @@ void init_symbols(void)
   temp = insert("true", 0, global_mod, &new_indicator);
   true_psc = pair_psc(temp);
   true_sym = get_name(true_psc);
+  /* create code for true/0 */
+  {
+    CPtr p;
+    int Loc;
+    set_env(true_psc, T_VISIBLE);
+    set_type(true_psc, T_PRED);
+    p = (CPtr) mem_alloc(sizeof(PrRefData));
+    Loc = 0;
+    *(CPtr)((pb)p) = (Cell) 0;
+    *(CPtr)((pb)p) = (byte)proceed;
+    p[2] = (Cell) p;
+    set_ep(true_psc,(pb)p);
+  }
+  
 
   temp = insert(":-", 2, global_mod, &new_indicator);
   if_psc = pair_psc(temp);

@@ -260,7 +260,7 @@ standard_symbol(tphrase, 3, dcg).
 standard_symbol(tphrase_set_string, 1, dcg).
 standard_symbol(tphrase_string_length, 1, dcg).
 standard_symbol(tilde_expand_filename, 2, machine).
-standard_symbol(true, 0, standard).
+standard_symbol(true, 0, usermod).
 standard_symbol(trace, 0, debugger).
 standard_symbol(tsetof, 3, setof).
 standard_symbol(ttywrite, 1, standard).
