@@ -10,7 +10,7 @@ Make sure junk doesn't get added:
 Add file $CVSROOT/CVSROOT/cvsignore with this contents:
 
 *.dvi *.aux *.log *.lof *.lot *.toc *.idx *.bbl *.blg *.ilg *.ind *.pdx
-*.plg *.pnd *.ps *.so *.tar
+*.plg *.pnd *.ps *.so *.tar *.Z *.gz
 
 Other .cvsignore files directly in the XSB source tree take care of the rest
 
