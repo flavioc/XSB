@@ -2,5 +2,6 @@
 *.log
 *.status
 Installation*
-makexsb
 MS_VC_Mfile.mak
+makexsb
+xsb_wrap_smodels.c
