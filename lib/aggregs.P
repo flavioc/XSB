@@ -158,8 +158,8 @@ bagReduce1(Templ,Call,Res,Op,Id) :-
 	),
 	call(OCall),
 	(get_returns(Cs,Oskel,Leaf)
-	 ->	Var1 = ORes, call_c(Test), %Op(Templ,OTempl,Rebs),
-		Res \== OTempl,
+	 ->	Var1 = ORes, call_c(Test), %Op(ORes,OTempl,Res),
+		Res \== ORes,
 		delete_return(Cs,Leaf)
 	 ;	Var1 = Id, call_c(Test)   %Op(Id,OTempl,Res)
 	).
