@@ -38,13 +38,16 @@
 #include "choice.h"
 #include "flags.h"
 #include "psc.h"
+#include "heap.h"
 #include "xmacro.h"
 
 #ifdef CHAT
 #include "chat.h"
 #endif
 
-extern int count_subgoals(void);
+extern int count_subgoals(void);        /* defined in debug.c */
+
+/*======================================================================*/
 
 double time_start;
 
@@ -155,6 +158,7 @@ void total_stat(double elapstime)
     printf("\n");
   }
 
+  printf(" %6ld subgoals currently in tables\n", subg_count);
   printf(" %6ld subgoal check/insert attempts", subg_chk_ins);
   printf(" inserted %5ld subgoals in the tables\n", subg_inserts);
   printf(" %6ld answer  check/insert attempts", ans_chk_ins);
@@ -167,19 +171,21 @@ void total_stat(double elapstime)
 /* 	printf(" interned %5d dl lists in the tables\n\n", idl_count); */
 /*     } else printf("\n"); */
 
-#ifdef CHAT
   printf("\n");
+
+#ifdef CHAT
   print_chat_statistics();
 #endif
-  printf("\n  currently active:   %6ld subgoals, %5d levels\n\n",
-	 subg_count, level_num);
 #ifdef GC
+  printf("\n");
   print_gc_statistics();
 #endif
 
-  printf(" %.3f sec. cputime,  %.3f sec. elapsetime\n",
+  printf("  Time: %.3f sec. cputime,  %.3f sec. elapsetime\n",
 	 ttt.time_count, elapstime);
 }
+
+/*======================================================================*/
 
 void perproc_reset_stat(void)
 {
@@ -193,7 +199,11 @@ void perproc_reset_stat(void)
    time_start = cpu_time();
 }
 
+/*======================================================================*/
+
 void reset_stat_total(void)
 {
    ttt = trace_init;
 }
+
+/*======================================================================*/

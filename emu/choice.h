@@ -401,6 +401,11 @@ typedef struct compl_susp_frame {
 #endif
 
 #ifdef CHAT
+#define is_compl_susp_frame(b) \
+    (cp_pcreg(b) == (byte *) &resume_compl_suspension_inst)
+#endif
+
+#ifdef CHAT
 #define save_compl_susp_frame(WHERE,SUBG,T_PTCP,CPREG) \
     csf_pcreg(WHERE) = (pb) &resume_compl_suspension_inst; \
     csf_ebreg(WHERE) = ebreg; \
