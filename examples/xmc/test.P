@@ -1,6 +1,7 @@
 
 
 :- [gui, navigate, justify].
+
 :- import checkit/1, count/2 from count.
 :- import close_open_tables/0 from machine.
 

@@ -1244,6 +1244,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${scriptdir}/wxsb.bat:wxsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
 	    ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
+	    ${prefix}/packages/xmc.P:xmc.in
 	    ])
 
 chmod 644 ${arch_config_file}

@@ -24,10 +24,10 @@
 
 
 ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
-	sModels.O libwww.O clpr.O xsbdoc.O
+	sModels.O libwww.O clpr.O xsbdoc.O xmc.O
 
 SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww sModels \
-	clpqr xsbdoc
+	clpqr xsbdoc xmc
 
 Option = [optimize]
 
@@ -99,6 +99,9 @@ wildmatch::
 	@echo ""
 	cd wildmatch; make
 
+xmc::
+	@echo ""
+	cd xmc; make
 
 init:
 	/bin/rm -f $(SVFILE)
