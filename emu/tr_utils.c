@@ -679,36 +679,53 @@ void reclaim_ans_list_nodes(SGFrame sg_frame)
   }
 }
 
-/**************************************************/
-/*
- * NOTE:  The actual breg value is being passed, NOT just an offset!
- */
-void aux_breg_retskel(void)
-{
-  prolog_term retterm;
-  CPtr var_ctr, t_breg, cptr;
-  Psc psc_ptr;
-  int Arity, Nvars, i;
+/*----------------------------------------------------------------------*/
 
-  retterm = ptoc_tag(1);
-  t_breg = (CPtr)ptoc_int(2);
-  Arity = ptoc_int(3);
-  Nvars = ptoc_int(4);
-  ctop_int(5,(Integer)tcp_subgoal_ptr((TChoice)t_breg));
-  if (Nvars != 0) {
-    var_ctr = t_breg + (TCP_SIZE+Arity+Nvars);
-/* Now with the retskel */
-    deref(retterm);
-    if (isconstr(retterm)) {
-      psc_ptr = get_str_psc(retterm);
-      cptr = (CPtr)cs_val(retterm);
-      for (i = 0; i < Nvars; i++) {
-	*(cptr+i+1) = *(CPtr)(var_ctr-i);
-      }
+void breg_retskel(void)
+{
+    Pair    sym;
+    Cell    term; /* the function assumes that term is free on call !
+*/
+    SGFrame sg_frame;
+    CPtr    tcp, cptr, where, sreg;
+#ifndef CHAT
+    int     arity;
+#endif
+    int     breg_offset, Nvars, new, i;
+
+    breg_offset = ptoc_int(1);
+    tcp = (CPtr)((int)(tcpstack.high) - breg_offset);
+    sg_frame = (SGFrame)(tcp_subgoal_ptr(tcp));
+#ifdef CHAT
+    where = compl_hreg(subg_compl_stack_ptr(sg_frame));
+    Nvars = int_val(cell(where));
+    cptr = where - Nvars - 1;
+#else
+    arity = ptoc_int(2);
+    where = tcp + TCP_SIZE + (Cell)arity;
+    Nvars = cell(where);
+    cptr = where + Nvars;
+#endif
+    if (Nvars == 0) {
+      ctop_string(3, string_find("ret",1));
     } else {
-      xsb_abort("Non cs tag in retterm");
+      term = ptoc_tag(3);
+      sreg = hreg;
+      bind_cs((CPtr)term, sreg);
+      sym = (Pair)insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &new);
+      new_heap_functor(sreg, sym->psc_ptr);
+#ifdef CHAT
+      for (i = Nvars; i > 0; i--) {
+	bind_copy(sreg, (Cell)(*(CPtr)(cptr+i)));
+#else
+      for (i = 0; i < Nvars; i++) {
+	bind_copy(sreg, (Cell)(*(CPtr)(cptr-i)));
+#endif
+	sreg++;
+      }
+      hreg = sreg;
     }
-  }
+    ctop_int(4, (Integer)sg_frame);
 }
 
 /*----------------------------------------------------------------------*/

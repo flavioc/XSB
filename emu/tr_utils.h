@@ -23,7 +23,7 @@
 */
 
 
-extern void aux_breg_retskel(void);
+extern void breg_retskel(void);
 extern void trie_node_element(void);
 extern void construct_ret_for_call(void);
 extern void delete_predicate_table(void);

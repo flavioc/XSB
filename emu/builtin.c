@@ -1520,16 +1520,16 @@ int  builtin_call(byte number)
     construct_ret_for_call();
     break;
   case BREG_RETSKEL:
-    aux_breg_retskel();
+    breg_retskel();
     break;
   case GET_EMU_DEPENDENT_CONST:	/* r1: +name; r2: -int */
     tmpstr = ptoc_string(1);
     if (!strcmp(tmpstr, "call_hash_addr")) ctop_int(2, 1);
-    else if (!strcmp(tmpstr, "word_size")) ctop_int(2, sizeof(Cell));
     else if (!strcmp(tmpstr, "escape")) ctop_int(2, 0);
-    else if (!strcmp(tmpstr, "tcp_size")) ctop_int(2, TCP_SIZE);
-    else if (!strcmp(tmpstr, "cp_base"))
-      ctop_int(2, (Integer)tcpstack.high);
+    else {
+      xsb_abort("Unknown first arg in get_emu_dependent_const/2");
+      return FALSE;
+    }
     break;
 
   case TRIMCORE:
