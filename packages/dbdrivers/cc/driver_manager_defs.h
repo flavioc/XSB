@@ -5,6 +5,14 @@
 ** Data structures, function declarations for the driver_manager
 */
 
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+
+#ifdef WIN_NT
+#define XSB_DLL
+#endif
+
 
 #define MAX_CONNECTIONS 25
 #define MAX_QUERIES 25
@@ -87,13 +95,13 @@ struct driver
 
 union functionPtrs
 {
-	int (*connectDriver)(struct xsb_connectionHandle*);
-	int (*disconnectDriver)(struct xsb_connectionHandle*);
-	struct xsb_data** (*queryDriver)(struct xsb_queryHandle*);
-	int (*prepareStmtDriver)(struct xsb_queryHandle*);
-	struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
-	int (*closeStmtDriver)(struct xsb_queryHandle*);
-	char* (*errorMesgDriver)();
+	DllExport int call_conv (*connectDriver)(struct xsb_connectionHandle*);
+	DllExport int call_conv (*disconnectDriver)(struct xsb_connectionHandle*);
+	DllExport struct xsb_data** call_conv (*queryDriver)(struct xsb_queryHandle*);
+	DllExport int call_conv (*prepareStmtDriver)(struct xsb_queryHandle*);
+	DllExport struct xsb_data** call_conv (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
+	DllExport int call_conv (*closeStmtDriver)(struct xsb_queryHandle*);
+	DllExport char* call_conv (*errorMesgDriver)();
 };
 
 DllExport int call_conv registerXSBDriver(char* driver, int num);
