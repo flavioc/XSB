@@ -968,6 +968,28 @@ contcase:     /* the main loop */
     } 
     goto contcase;
 
+  /*
+   * Instruction `check_interrupt' is used before `new_answer_dealloc' to
+   * handle the pending attv interrupts.  It is similar to `call' but the
+   * second argument (S) is not used currently.
+   */
+  case check_interrupt: { /* PPA-S */
+    Pair true_pair;
+    int new_indicator;
+
+    pppad; pad64; op2word;
+    if (*asynint_ptr & ATTVINT_MARK) {
+      cpreg = lpcreg;
+      true_pair = insert("true", 0, global_mod, &new_indicator);
+      bld_cs(reg + 2, hreg);	/* see subp.c: build_call() */
+      new_heap_functor(hreg, pair_psc(true_pair));
+      bld_copy(reg + 1, build_interrupt_chain());
+      lpcreg = get_ep((Psc) flags[MYSIG_ATTV + 32]);
+      *asynint_ptr = 0;
+    }
+    goto contcase;
+  }
+
   case call: { /* PPA-S */
     Psc psc;
 

@@ -95,6 +95,7 @@ asm_inst(tabletry(A,L,Tbind),   12,     190,    [pp, a(A), l(L), i(Tbind)]).
 asm_inst(tabletrust(A,L), 	8,     	193,    [pp, a(A), l(L)]).
 asm_inst(tabconfig(Chs,Rhs), 	0,    	194,    [ppp, i(Chs), i(Rhs)]).
 asm_inst(tabletrysingle(A,L,Tbi),12,	197,	[pp, a(A), l(L), i(Tbi)]).
+asm_inst(check_interrupt(S,B),  8,	206,	[pp, a(B), s(S)]).
 asm_inst(new_answer_dealloc(A1,A2), 4,  207,    [p, a(A1), a(A2)]).
 
 asm_inst(term_comp(R1,R2,R),	4,	208,	[r(R1),r(R2),r(R)]).

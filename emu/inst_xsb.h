@@ -303,6 +303,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define answer_return		0xc7    /* c5 */
 #define resume_compl_suspension 0xc6    /* c6 */
 
+#define check_interrupt		0xce
 #define new_answer_dealloc	0xcf
 
 /* Term comparison inst */

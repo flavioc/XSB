@@ -177,7 +177,8 @@ tbody(if_then_else(Test,TGoal,FGoal),A,Pil,Pilr,Tin,Tout,M,_,
     merge(Tout1,Tout2,Tout), !.		/* branches of an i-t-e */
 tbody(nil,_,Pil,Pilr,T,T,_,_,_,Tabled,Tabar,_,_) :-
     ( Tabled =:= 0 -> Pil = [proceed|Pilr]
-    ; % handle tabled preds wo body.
+    ; % Handle tabled preds without body.
+      % No need to insert `check_interrupt' here.
       Pil = [new_answer_dealloc(Tabar,2)|Pilr] 
     ).
 
@@ -195,8 +196,10 @@ tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
         )
     ; ( LastLit =:= 1 ->
 	( Tabled =:= 1 ->      /* if tabled = 1, A>0 */
-		A1 is A-1, Pil1 = [call(Sym,A),new_answer_dealloc(Tabar,A1)
-				   |Pilr]
+		A1 is A-1,
+		Pil1 = [call(Sym,A),
+			check_interrupt(Sym,A),
+			new_answer_dealloc(Tabar,A1)|Pilr]
 	 ; ( A > 0 -> Pil1 = [deallocate,execute(Sym)|Pilr]
 	   ;          Pil1 = [execute(Sym)|Pilr] )
 	 )
@@ -210,7 +213,9 @@ tbody(inlinegoal(Pred,_Ar,Args),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,
     geninline(Pred,Args,HoldRegs,Pil,Pil1,Tin,Tout,Sym,NC),
     ( LastLit =:= 1 ->
 	( Tabled =:= 1 ->      /* if tabled = 1, A>0 */
-		A1 is A-1, Pil1 = [new_answer_dealloc(Tabar,A1)|Pilr]
+		A1 is A-1,
+		Pil1 = [check_interrupt(Sym,A),
+			new_answer_dealloc(Tabar,A1)|Pilr]
 	 ; ( A > 0 -> Pil1 = [deallocate,proceed|Pilr]
 	   ;          Pil1 = [proceed|Pilr] )
 	 )
