@@ -43,7 +43,7 @@ the corresponding variables from NewVars.
 	  all_attribute_goals/3.
 
 :- import empty_assoc/1, get_assoc/3, put_assoc/4, assoc_to_list/2
-   from assoc.
+   from assoc_xsb.
 
 :- import ordering/1 from ordering.
 :- import dump_linear/4, dump_nonzero/4 from usermod.
