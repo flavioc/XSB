@@ -1298,7 +1298,7 @@ odbc_close :-
 odbc_close.
 
 odbc_close(Connection) :-
-	odbc_connection(Connection,ConnHandle),
+	odbc_connection_check(Connection,ConnHandle),
 	!,
 	odbc_disconnect(ConnHandle),
 	retractall(odbc_connection(Connection,ConnHandle)),
@@ -1327,9 +1327,13 @@ odbc_sql(BindVals,SQLStmt,Result) :-
 	odbc_sql(_Connection,BindVals,SQLStmt,Result).
 
 odbc_sql(Connection,BindVals,SQLStmt,Result) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result).
+
+odbc_connection_check(Connection,ConnHandle):- 
+	(odbc_connection(Connection,ConnHandle) -> 
+	    true
+	 ;  misc_error([Connection,' is not a valid ODBC connection.'])).
 
 /* odbc_sql_i(+ConnHandle,+BindVals,+SQLStmt,?Result) */
 /* The most general sql call: */
@@ -1362,11 +1366,7 @@ odbc_import(DbPredicate,SymName) :-
 	odbc_import(_Connection,DbPredicate,SymName).
 
 odbc_import(Connection,DbPredicate,PredName) :-
-	(odbc_connection(Connection,ConnHandle)
-	 ->	true
-	 ;	abort(['No ODBC Connection: ',Connection]),
-		fail
-	),
+	odbc_connection_check(Connection,ConnHandle)
 	\+attribute(_,PredName,_,_,_),
 	!,
 	DbPredicate =.. [TableName|Attributes],
@@ -1508,8 +1508,7 @@ odbc_query(Head,Body) :-
 	odbc_query(_,Head,Body).
 
 odbc_query(Connection,Head,Body) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	\+ atomic(Head),
 	copy_term(Head,Head1),
 	assert(odbc_asserted_query(ConnHandle,Head1)),
@@ -1551,29 +1550,25 @@ odbc_transaction(Command) :-
 	odbc_transaction(_Connection,Command).
 
 odbc_transaction(Connection,commit) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	odbc_commit(ConnHandle,RetVal),
 	(RetVal =:=1
 	 ->	odbc_error('ODBC Commit Error.')
 	 ;	true
 	).
 odbc_transaction(Connection,rollback) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	odbc_rollback(ConnHandle,RetVal),
 	(RetVal =:=1
 	 ->	odbc_error('ODBC Commit Error.')
 	 ;	true
 	).
 odbc_transaction(Connection,autocommit(on)) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	odbc_connect_option(ConnHandle,1,102,1,RetVal),
 	RetVal =:= 0.
 odbc_transaction(Connection,autocommit(off)) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	odbc_connect_option(ConnHandle,1,102,0,RetVal),
 	RetVal =:= 0.
 
@@ -1582,8 +1577,7 @@ odbc_delete(Head,Body) :-
 	odbc_delete(_Conn,Head,Body).
 
 odbc_delete(Connection,Head, Body) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	copy_term(Head,Head1),
 	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :-
@@ -1593,8 +1587,7 @@ odbc_delete(Connection,Head, Body) :-
 odbc_insert(Head, Body) :-
 	odbc_insert(_Connection,Head,Body).
 odbc_insert(Connection,Head,Body) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	copy_term(Head,Head1),
 	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :-
@@ -1642,15 +1635,13 @@ writelistln([H|T]) :-
 odbc_get_schema(Command,Row) :-
 	odbc_get_schema(_Conn,Command,Row).
 odbc_get_schema(Connection,Command,Row) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	odbc_get_schema1(Command,ConnHandle,Row).
 
 odbc_show_schema(Command) :-
 	odbc_show_schema(_Conn,Command).
 odbc_show_schema(Connection,Command) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	odbc_show_schema1(Command,ConnHandle).
 
 odbc_get_schema1(tuples(Table),ConnHandle,Row) :-
@@ -1721,8 +1712,7 @@ odbc_attach(Pred,Table) :-
 	odbc_attach(_Connection,Pred,Table).
 
 odbc_attach(Connection,Pname,table(Table)) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	(table_arity(ConnHandle,Table,_)
 	 ->	true
 	 ;	conset(col, 1),
@@ -1734,8 +1724,7 @@ odbc_attach(Connection,Pname,table(Table)) :-
 	odbc_import(Connection,DBPred,Pname).
 
 odbc_attach(Connection,Pname,table(Table, List)) :-
-	odbc_connection(Connection,ConnHandle),
-	!,
+	odbc_connection_check(Connection,ConnHandle),
 	(table_arity(ConnHandle,Table,_)
 	 ->	true
 	 ;	conset(col, 1),
@@ -1848,8 +1837,7 @@ odbc_accessible_tables(ConnHandle,User,Tab) :-
 	).
 
 odbc_user_tables(Tab) :-
-	odbc_connection(_Conn,ConnHandle),
-	!,
+	odbc_connection_check(_Conn,ConnHandle),
 	odbc_user_tables(ConnHandle,Tab).
 
 odbc_user_tables(ConnHandle,Tab) :-
@@ -1887,12 +1875,10 @@ odbc_data_sources(N,DataSourceName,Description) :-
 odbc_data_sources(_,DataSourceName,Description) :-
 	odbc_data_sources(2,DataSourceName,Description).
 
-
 odbc_get_info(InfoType, Info) :-
 	odbc_get_info(_, InfoType, Info).
 odbc_get_info(Connection, InfoType, Info) :-
-	odbc_connection(Connection, ConnHandle),
-	!,
+	odbc_connection_check(Connection, ConnHandle),
 	(integer(InfoType)
 	 ->	(var(Info)
 		 ->	odbc_get_info(ConnHandle, InfoType, I, Ret),
