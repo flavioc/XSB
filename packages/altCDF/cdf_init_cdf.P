@@ -22,7 +22,7 @@
             retractallExtTerm/1, retracteachExtTerm/1,
 	newIntRule/3, newIntRule/4, newIntRuleBatch/4,
             retractallIntRule/3,
-	newDLRule/3, newDLRule/4, newDLRuleBatch/4,
+	newDLRule/3, 
             retractallDLRule/3,
 	assert_cdf/1, retractall_cdf/1,
 	assert_cdf_term/1, retractall_cdf_term/1,
@@ -2062,14 +2062,14 @@ cdf_update_term(retractall(Term),CFlg) :-
 
 cdf_update_term(asserta(Term),CFlg) :-
 	assert_cdf(Term),
-	invalidate_tables_for(Term,assert)
+	invalidate_tables_for(Term,assert).
 
 cdf_update_term(retractall(Term),CFlg) :-
 	retractall_cdf(Term),
-	invalidate_tables_for(Term,retract)
+	invalidate_tables_for(Term,retract).
 
 maybe_invalidate_cache(_Flg,Term,Mode):- 
-	invalidate_tables_for(Term,Mode) 
+	invalidate_tables_for(Term,Mode).
 
 #endif
 
