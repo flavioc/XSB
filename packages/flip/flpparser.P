@@ -49,7 +49,7 @@ head(H)                 -->	term_list(H).
 
 term_list([X|L])        -->	term(X), term_list1(L).
 
-term_list1(L)           -->	[','], term_list(L).	% mehrdeutig
+term_list1(L)           -->	[','], term_list(L).	% ambiguous
 term_list1([])		-->	[].
 
 body(B)                 -->	literal_list(B).
@@ -64,7 +64,7 @@ literal(non(T))         -->	[identifier(not)], term(T).
 literal(non(T))         -->	[atom(' ~')], term(T).
 
 
-% mehrdeutig: 
+% ambiguous: 
 %	o[].	bis 'o'  wird ein pterm gelesen
 %	j:p=m	bis 'j:p' wir ein f_mol gelesen
 
@@ -109,7 +109,7 @@ sm_list(Oi,MRi,Oo,MRo)	-->	specification0(S),
 sm_list(Oi,MRi,Oi,MRi)  -->	[]. 
 
 
-object(O)               -->	id_term(O).		% mehrdeutig
+object(O)               -->	id_term(O).		% ambiguous
 %object(O)               -->	['('], path(O), [')'].
 object(O)               -->	['('], path(O), [')'].
 
@@ -157,7 +157,7 @@ rest_meth_list([])      -->	[].
 
 path_list([P|L])	-->	path(P), path_list1(L).
 				
-path_list1(L)		-->	[','], path_list(L).	% mehrdeutig
+path_list1(L)		-->	[','], path_list(L).	% ambiguous
 path_list1([])		-->	[].
 
 
