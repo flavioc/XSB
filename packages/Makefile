@@ -52,20 +52,20 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 
 
 all: $(ALL) $(SUBDIR)
-	echo 'statistics.' >> cmd...
+	@touch cmd...
 	$(Prolog) < cmd...
 	/bin/rm cmd...
 
 slx::
-	echo ""
+	@echo ""
 	cd slx; make
 
 flip::
-	echo ""
+	@echo ""
 	cd flip; make
 
 perlmatch::
-	echo ""
+	@echo ""
 	cd perlmatch; make
 
 
@@ -73,4 +73,4 @@ perlmatch::
 # %.O:	%.H
 
 .DONE:
-	echo Done
+	@echo Done

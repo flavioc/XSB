@@ -28,17 +28,17 @@ SUBDIR = syslib lib cmplib packages
 all: $(SUBDIR)
 
 syslib::
-	echo ""
+	@echo ""
 	cd syslib; make
 
 lib::
-	echo ""
+	@echo ""
 	cd lib; make
 
 cmplib::
-	echo ""
+	@echo ""
 	cd cmplib; make
 
 packages::
-	echo ""
+	@echo ""
 	cd packages; make
