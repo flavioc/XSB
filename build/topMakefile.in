@@ -322,8 +322,11 @@ distclean:
 
 # clean only the object code for this architecture
 clean:
-	rm -f ${src_config_objlibdir}/*
-	rm -f ${src_emudir}/*.o
+	@echo "Cleaning up ${src_config_objlibdir}"
+	@rm -f ${src_config_objlibdir}/*
+	@echo "Cleaning up ${src_emudir}"
+	@rm -f ${src_emudir}/*.o
+	@cd ../packages; ../build/clean_pkgs.sh
 
 # recreate the makefiles
 again: Makefile.in emuMakefile.in config.status ${src_config_prefix}/config.cache
