@@ -119,7 +119,8 @@ extern void handle_tcpstack_overflow(void);
 extern byte *inst_begin;       /* ptr to beginning of instruction array. */
 
 extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
-	    resume_compl_suspension_inst, fail_inst, halt_inst, proceed_inst;
+	    resume_compl_suspension_inst, fail_inst, halt_inst, proceed_inst,
+	    reset_inst;
 
 
 /* Stack Overflow Checkers

@@ -37,7 +37,7 @@ extern void init_inst_table(void);
 #define C 5	/* constant symbol */
 #define L 6	/* label (address) */
 #define G 7	/* string */
-#define N 8	/* number (integer - rfm) */
+#define N 8	/* number (integer) */
 #define I 9	/* 2nd & 3rd arguments of switchonbound */
 #define P 10	/* pad */
 #define X 11	/* not present */
