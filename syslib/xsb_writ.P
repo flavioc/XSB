@@ -67,41 +67,60 @@ write_float(Num) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-l_write(File, Var, _) :- 
+:- local '_$lwrite_depth_level'.
+:- conset('_$lwrite_depth_level', 64).
+
+set_file_write_depth(X) :-
+	conset('_$lwrite_depth_level',X).
+
+get_file_write_depth(X) :-
+	conget('_$lwrite_depth_level',X).
+
+l_write(File,T,Prec) :-
+	conget('_$lwrite_depth_level',Level),
+	l_write(File,T,Prec,Level).
+
+l_write(File,_,_,0) :-
+	!,
+	file_puttoken(File, TK_ATOM, '...').
+l_write(File, Var, _, _D) :- 
 	term_type(Var, Type), 
 	(Type =:= XSB_FREE; Type =:= XSB_ATTV),
 	!, 
 	file_puttoken(File, Type, Var).
-l_write(File, '$VAR'(N), _) :- 
-	!, 
-	l_writevar(File, N, 0).
-l_write(File, [X|Y], _) :- 
+l_write(File, '$VAR'(N), _, D) :- 
+	!,
+	D1 is D - 1,
+	l_writevar(File, N, 0, D1).
+l_write(File, [X|Y], _, D) :- 
 	!, 
 	file_put(File, 91), 	% '['
-	l_write(File, X, 999), 
-	l_writetail(File, Y).
-l_write(File, T, Prec) :- 	% functor(T, OP, N),
+	D1 is D - 1,
+	l_write(File, X, 999, D1),
+	l_writetail(File, Y, D1).
+l_write(File, T, Prec, D) :- 	% functor(T, OP, N),
 	term_type(T, Type), 
 	Type =:= XSB_STRUCT, !,		
 	term_psc(T, PSC), 
 	psc_arity(PSC, N),
 	psc_name(PSC, Name),
 	OP = Name,
+	D1 is D - 1,
 	( N=:=0 -> file_puttoken(File, TK_ATOM, Name)
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
-			l_writepreop(File, Name, T, Prec, Opprec, Nprec)
+			l_writepreop(File, Name, T, Prec, Opprec, Nprec, D1)
 		; '_$op'(Opprec, fy, OP) ->
-			l_writepreop(File, Name, T, Prec, Opprec, Opprec)
+			l_writepreop(File, Name, T, Prec, Opprec, Opprec, D1)
 		; '_$op'(Opprec, xf, OP) ->
 			Nprec is Opprec-1, 
-			l_writepostop(File, Name, T, Prec, Opprec, Nprec)
+			l_writepostop(File, Name, T, Prec, Opprec, Nprec, D1)
 		; '_$op'(Opprec, yf, OP) ->
-			l_writepostop(File, Name, T, Prec, Opprec, Opprec)
+			l_writepostop(File, Name, T, Prec, Opprec, Opprec, D1)
 		; Name == {} ->
-			l_write_curly(File, T)
-		; l_writestr(File, Name, N, T)
+			l_write_curly(File, T, D1)
+		; l_writestr(File, Name, N, T, D1)
 		)
 	; N=:=2 ->
 		( '_$op'(Opprec, xfx, OP) ->
@@ -114,19 +133,19 @@ l_write(File, T, Prec) :- 	% functor(T, OP, N),
 			Nprec is Opprec-1,
 			l_writebinop(File, Name, T, Prec, Opprec, Opprec, Nprec)
 		; Name == apply ->
-			l_hilog_writestr(File, N, T) 
-		; l_writestr(File, Name, N, T)
+			l_hilog_writestr(File, N, T, D) 
+		; l_writestr(File, Name, N, T, D1)
 		)
 	; ( Name == apply -> 
-              l_hilog_writestr(File, N, T)
-	  ; l_writestr(File, Name, N, T)
+              l_hilog_writestr(File, N, T, D)
+	  ; l_writestr(File, Name, N, T, D1)
 	  )
 	).
-l_write(File, T, _) :- 
+l_write(File, T, _, _D) :- 
 	term_type(T, Type),
 	file_puttoken(File, Type, T).
 
-l_writevar(File, N, Quoted) :-
+l_writevar(File, N, Quoted, D) :-
 	( integer(N) ->
 		OrdLetter is N mod 26,
 		ChrLetter is CH_A + OrdLetter,	% Char A
@@ -141,31 +160,32 @@ l_writevar(File, N, Quoted) :-
 	    file_put(File, CH_QUOTE)
 	  ),
 	  file_put(File, CH_LPAREN),
-	  l_write(File, N, 999),
+	  l_write(File, N, 999, D),
 	  file_put(File, CH_RPAREN)
 	).
 
-l_writestr(File, Name, N, Term) :-
+l_writestr(File, Name, N, Term, D) :-
 	file_puttoken(File, TK_ATOM, Name), 
 	file_put(File, CH_LPAREN),    % (
 	term_arg(Term, 1, X),
-	l_write(File, X, 999),
-        l_writearg(File, Term, N, 1), 
+	l_write(File, X, 999, D),
+        l_writearg(File, Term, N, 1, D), 
 	file_put(File, CH_RPAREN).    % )
 
-l_write_curly(File, Term) :- 
+l_write_curly(File, Term, D) :- 
 	file_put(File, CH_LBRACE),	% {
 	term_arg(Term, 1, Arg),
-	l_write(File, Arg, 999),
+	l_write(File, Arg, 999, D),
 	file_put(File, CH_RBRACE).	% }
 
-l_hilog_writestr(File, N, Term) :-
+l_hilog_writestr(File, N, Term, D) :-
 	term_arg(Term, 1, HiLogFunctor),
-        l_write(File, HiLogFunctor, 999),
+        l_write(File, HiLogFunctor, 999, D),
+	D1 is D - 1,
 	term_arg(Term, 2, FirstArg),
 	file_put(File, CH_LPAREN),	% (
-	l_write(File, FirstArg, 999), % write the first of the HiLog args
-	l_writearg(File, Term, N, 2), % write the rest  of the HiLog args
+	l_write(File, FirstArg, 999, D1), % write the first of the HiLog args
+	l_writearg(File, Term, N, 2, D1), % write the rest  of the HiLog args
 	file_put(File, CH_RPAREN).	% )
 
 l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp) :- 
@@ -180,63 +200,66 @@ l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp) :-
 	).
 
 'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp) :-
-	l_write(File, Arg1, Newlp),
+	l_write(File, Arg1, Newlp, D),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
 	file_puttoken(File, TK_INOP, Op),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
-	l_write(File, Arg2, Newrp).
+	l_write(File, Arg2, Newrp, D).
 
-l_writepreop(File, Op, Term, Oldp, Curp, Newp) :- 
+l_writepreop(File, Op, Term, Oldp, Curp, Newp, D) :- 
 	term_arg(Term, 1, Arg),
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
 		file_puttoken(File, TK_PREOP, Op),
-		l_write(File, Arg, Newp),
+		l_write(File, Arg, Newp, D),
 		file_put(File, 41)		% ')'
 	;
 		file_puttoken(File, TK_PREOP, Op),
-		l_write(File, Arg, Newp)
+		l_write(File, Arg, Newp, D)
 	).
 
-l_writepostop(File, Op, Term, Oldp, Curp, Newp) :- 
+l_writepostop(File, Op, Term, Oldp, Curp, Newp, D) :- 
 	term_arg(Term, 1, Arg),
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
-		l_write(File, Arg, Newp),
+		l_write(File, Arg, Newp, D),
 		file_puttoken(File, TK_POSTOP, Op),
 		file_put(File, 41)		% ')'
 	;
-		l_write(File, Arg, Newp),
+		l_write(File, Arg, Newp, D),
 		file_puttoken(File, TK_POSTOP, Op)
 	).
 
 
-l_writearg(_File, _T, N, N) :- !.
-l_writearg(File, T, N, M) :- 
+l_writearg(_File, _T, N, N, _D) :- !.
+l_writearg(File, T, N, M, D) :- 
 	L is M + 1, 
 	file_put(File, 44), 		% ','
 	term_arg(T, L, X),
-        l_write(File, X, 999), 
-	l_writearg(File, T, N, L).
+        l_write(File, X, 999, D), 
+	l_writearg(File, T, N, L, D).
 
-l_writetail(File, Var) :- 
+l_writetail(File, _, 0) :-
+	!,
+	file_put(File,93).
+l_writetail(File, Var, _D) :- 
 	term_type(Var, Type),
 	(Type =:= XSB_FREE; Type =:= XSB_ATTV),
 	!, 
 	file_put(File, 124), 		% '|'
 	file_puttoken(File, Type, Var), 
 	file_put(File, 93).		% ']'
-l_writetail(File, [X|Y]) :- 
+l_writetail(File, [X|Y], D) :- 
 	!, 
 	file_put(File, 44), 		% ','
-	l_write(File, X, 999), 
-	l_writetail(File, Y).
-l_writetail(File, []) :- 
+	l_write(File, X, 999, D), 
+	l_writetail(File, Y, D).
+l_writetail(File, [], _D) :- 
 	!, 
 	file_put(File, 93).		% ']'
-l_writetail(File, X) :- 
+l_writetail(File, X, D) :- 
 	file_put(File, 124), 		% '|'
-	l_write(File, X, 999), 
+	l_write(File, X, 999, D), 
 	file_put(File, 93).		% ']'
 
 
@@ -255,7 +278,7 @@ l_write_prolog(File, Var, _) :-
 	file_puttoken(File, Type, Var).
 l_write_prolog(File, '$VAR'(N), _) :- 
 	!,
-	l_writevar(File, N, 0).
+	l_writevar_prolog(File, N, 0).
 l_write_prolog(File, [X|Y], _) :- 
 	!, 
 	file_put(File, 91), 	% '['
@@ -302,6 +325,24 @@ l_write_prolog(File, T, _) :-
 	term_type(T, Type),
 	file_puttoken(File, Type, T).
 
+l_writevar_prolog(File, N, Quoted) :-
+	( integer(N) ->
+		OrdLetter is N mod 26,
+		ChrLetter is CH_A + OrdLetter,	% Char A
+		file_put(File, ChrLetter),
+		Number is N // 26,
+		( Number =:= 0 -> true
+		; file_puttoken(File, TK_VAR, Number) 
+		)
+	; ( Quoted =:= 0 -> file_puttoken(File, TK_ATOM, '$VAR')
+	  ; file_put(File, CH_QUOTE),
+	    file_puttoken(File, TK_ATOM, '$VAR'), 
+	    file_put(File, CH_QUOTE)
+	  ),
+	  file_put(File, CH_LPAREN),
+	  l_write_prolog(File, N, 999),
+	  file_put(File, CH_RPAREN)
+	).
 l_writestr_prolog(File, Name, N, Term) :-
 	file_puttoken(File, TK_ATOM, Name), 
 	file_put(File, 40), 		% '('
@@ -400,7 +441,7 @@ l_write_quoted(File, Var, _) :-
 	file_puttoken(File, Type, Var).
 l_write_quoted(File, '$VAR'(N), _) :- 
 	!,
-	l_writevar(File, N, 1).
+	l_writevar_prolog(File, N, 1).
 l_write_quoted(File, [], _) :-
 	!,
 	file_put(File, CH_LBRACKET),     % [
