@@ -80,11 +80,14 @@ parse1(Modname, File, Module) :-
 	(
 	    XPP_process == none, ! 
 	;   %% Wait, if cpp was spawned so as to not leave zombies
-	    process_control(XPP_process, wait(XPP_status)),
-	    (XPP_status == 0, !
-	    ; error(('While preprocessing ', File,
-		     '. Compilation aborted.')),
-		fail
+	    (   xsb_configuration(host_os,windows)
+	    -> (process_control(XPP_process,kill);true)
+	    ;  process_control(XPP_process, wait(XPP_status)),
+ 	       (   XPP_status == 0, !
+ 	       ;   error(('While preprocessing ', File,
+			  '. Compilation aborted.')),
+		   fail
+	       )
 	    ),
 	    %% Also, release the file descriptor used to read from cpp
 	    current_input_port(FromPort), file_close(FromPort),
