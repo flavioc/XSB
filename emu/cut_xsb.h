@@ -62,9 +62,11 @@
     case answer_return:                \
     case tabletrust:                   \
     case tableretry:                   \
-      if (!is_completed(tcp_subgoal_ptr(breg))) \
-          xsb_abort("Illegal cut over a tabled predicate (Inst:%1x)\n", \
-		    instruc);          \
+      if (!is_completed(tcp_subgoal_ptr(breg))) {\
+          Psc psc = TIF_PSC(subg_tif_ptr(tcp_subgoal_ptr(breg)));\
+          xsb_abort("Illegal cut over a tabled predicate: %s/%d\n", \
+		    get_name(psc), get_arity(psc));          \
+      }                                \
       break;                           \
     default:                           \
       break;                           \
