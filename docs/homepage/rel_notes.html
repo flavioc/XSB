@@ -38,12 +38,15 @@ numbers added.
 <p>
 Flora-2 is still a late alpha release, but there have been
 considerable improvements in stability and speed.
-This release fixes many bugs, eliminates some restritions, and adds some
+This release fixes many bugs, eliminates some restrictions, and adds
 new features.
 <ul>
 <li> The most important new feature is the ability to check for undefined
 predicates and methods in debug mode (see the manual regarding checking
-undefinedness). This feature simplifies debugging considerably.
+undefinedness checks). This feature simplifies debugging considerably.
+<li> Flora compiler now checks if a tabled predicate depends on an update
+operation and issues appropriate warnings. Such dependency is considered to be
+a likely program bug.
 <li> Numbered anonymous oids added (e.g., _#123). They behave like regular
 anonymous oids (_#) in the sense that they are substituted by a new oid.
 However, numbered oids can be referenced within the same clause (e.g.,
