@@ -852,7 +852,8 @@ is(Head, Expr) :- eval(Expr, Head).	% Pred eval/2 handles errors in is/2
 
 listing :- 
 	predicate_property(Head, (dynamic)),
-	nl,listing0(Head).
+	listing0(Head),
+	fail.
 listing.
 
 listing(X) :- var(X), !, listing.
@@ -875,6 +876,8 @@ listing0(Head) :-
 	write(Head),
 	pp_clause(Bod),
 	fail.
+listing0(Head) :-
+	(clause(Head,_) -> nl ; true).
 
 pp_clause(true) :- !,write('.'),nl.
 pp_clause(Bod) :- write(' :-'), nl, I=4, tab(I), 
