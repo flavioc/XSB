@@ -34,7 +34,7 @@ int numDrivers, numCHandles, numQHandles;
 char* errorMesg;
 char* errorNumber;
 
-void write_canonical_term(prolog_term term);
+DllExport extern void call_conv write_canonical_term(prolog_term term);
 char* wcan_string;
 int wcan_disp;
 
