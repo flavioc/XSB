@@ -84,9 +84,9 @@ CPP=cl.exe
 # Assume we are running NMAKE in the emu directory
 !IF  "$(DLL)" == "yes"
 # Put DLL in the saved.o directory
-OUTDIR=..\config\sparc-sun-solaris2.6\saved.o
+OUTDIR=..\config\i686-pc-linux-gnu\saved.o
 !ELSE
-OUTDIR=..\config\sparc-sun-solaris2.6\bin
+OUTDIR=..\config\i686-pc-linux-gnu\bin
 !ENDIF
 
 INTDIR=.
