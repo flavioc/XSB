@@ -42,7 +42,7 @@ make_xsb_re_matchH(CC, CC_opts, LoaderFlags) :-
     write('%% XSB CC:         '), writeln(CC),
     write('%% Compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
-    writeln(':- export do_regmatch__/7, do_regsubst__/6.'),
+    writeln(':- export do_regmatch__/5, do_regsubstitute__/5, do_regsubstring__/4, do_regcharlist_to_string__/2.'),
     write(':- ldoption('''),
     write(LoaderFlags),
     writeln(''').'),
