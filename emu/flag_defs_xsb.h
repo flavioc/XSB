@@ -76,7 +76,6 @@
  MYSIG_SPY        3    // _$deb_spy
  MYSIG_TRACE      4    // _$deb_trace
  MYSIG_ATTV       8    // _$attv_int
- MYSIG_PSC       14    // _$psc_int
  MYSIG_CLAUSE    16    // _$clause_int
 
 These values are added to INT_HANDLERS_FLAGS_START to obtain the actual
