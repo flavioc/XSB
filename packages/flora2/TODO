@@ -221,7 +221,7 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
    a patch rule for foo'mod/5 must be asserted, if it isn't already
    there.
 
-8. If then else
+DONE 8. If then else
     Right now if/then/else are defined in flroperator.P and syslib/flrcontrol.P
     However, the defs don't parse correctly some nested if-then-else
     expressions, such as if a then if b then c else f else g.
@@ -229,7 +229,8 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
     by the operators if/then/else, it would rearrange it to fix the
     associativity.
 
-9. Add while-do, unless-do and do-until to the parser.
+9. Add while-do, unless-do and do-until to the parser, like it is done for
+   if-the-else.
 
 10. Add the contraints syntax {...}.
 
@@ -282,15 +283,13 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
 
 17. Provide primitives
     :- firstorder foo/1 in modname.
-    :- hilog moo/2 in modname.
-    For symmetry, let us also have :- hilog moo/2. without the module.
 
     This is supposed to solve two problems: 
       a. to check for declaration mismatch at the module loading time as
 	  opposed to run time. 
-      b. to elimitate the limitation that if a symbol p is declared as
-      	 firstorder in module foo and module bar calls p(...)@foo, then p
-      	 must also be declared as firstorder in bar.
+      b. to elimitate the limitation that if a symbol, say p/2, is declared as
+      	 firstorder in module foo and module bar calls p(_,_)@foo, then
+         p/2 must also be declared as firstorder in bar.
 
     This will direct the compiler to make the right translation for things like
 
@@ -303,13 +302,18 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
     Each declaration will specify whether a particular predicate symbol is
     supposed to be first order or hilog in some particular module.
 
-    Declarations can come from explicit statements like
-    :- firstorder foo/1 in modname.
-    :- hilog moo/2 in modname.
-    :- firstorder foo/1.
-    :- hilog moo/2.
+    Declarations come from explicit statements like
 
-    or implicitly. A registry record is inserted whenever there is one of
+    :- firstorder foo/1 in modname.
+    :- firstorder foo/1.
+
+    or from implicit declarations, which come from calls like p(...)@foo.
+
+    The "in module" version declares it for the given module, and the
+    version without "in module" does it for the module in which this
+    declaration occurs.
+
+    A registry record is inserted whenever there is one of
     the above explicit declarations or when a module has a call p(...)@foo.
     (We won't be trying to catch anything like X(...)@foo, because it is
     not clear what to catch there).
@@ -317,24 +321,24 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
     The global registry contains declarations like these:
 
     FLORA_PREFIX'symbol_declaration(
-         symbol,for-which-module,who-declared,firstorder/hilog)
+         symbol/arity,for-which-module,who-declared,firstorder/hilog)
 
     When a new module is loaded, we should check if there are conflicts,
     i.e., if the registry records it has conflict with the records that are
     already in the registry. A conflict can be explicit or implicit.
     Explicit conflict is of the form
 
-      FLORA_PREFIX'symbol_declaration(p,foo,_,hilog)
-      FLORA_PREFIX'symbol_declaration(p,foo,_,firstorder)
+      FLORA_PREFIX'symbol_declaration(p/2,foo,_,hilog)
+      FLORA_PREFIX'symbol_declaration(p/2,foo,_,firstorder)
 
     Implicit conflict arises when we load module foo, which has no
-    declarations for p (so it is hilog), and the registry already has
+    declarations for p/2 (so it is hilog), and the registry already has
 
-      FLORA_PREFIX'symbol_declaration(p,foo,_,firstorder)
+      FLORA_PREFIX'symbol_declaration(p/2,foo,_,firstorder)
 
     Implicit conflict also arises when a module, foo, is loaded, doesn't
-    have declarations for a symbol, p (so it is hilog), and another module,
-    bar, is loaded later and has a declaration :- firstorder p in foo.
+    have declarations for a symbol, p/2 (so it is hilog), and another module,
+    bar, is loaded later and has a declaration :- firstorder p/2 in foo.
 
     Also, when a module, foo, is reloaded (i.e., another program is loaded into
     that module), we should first wipe out the declarations inserted by the
@@ -345,11 +349,11 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
     We should also use the registry in order to decide how to translate
     symbols in the FLORA shell. If the registry has no record of the form
 
-       FLORA_PREFIX'symbol_declaration(p,main,_,_)
+       FLORA_PREFIX'symbol_declaration(p/2,main,_,_)
 
     then p is hilog. If there is a record
 
-       FLORA_PREFIX'symbol_declaration(p,main,_,firstorder)
+       FLORA_PREFIX'symbol_declaration(p/2,main,_,firstorder)
 
     then it is firstorder. Such a record can be introduced by either main
     itself or by some other module.
@@ -358,12 +362,11 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
 
      ?- ..., literal@X, ...
 
-    Do we need to do anything special? An undefinedness error will be
-    issued at run time. Checking the registry isn't going to improve error
-    checking, because we can do the checking only at run time, not at the
-    module loading time.
+     We need to check the registry at run time, when X is bound to a module
+     name, to decide how to translate "literal": using hilog or first order
+     translation.
     
-17. Add a call(X) meta predicate.
+18. Add a call(X) meta predicate.
     The main point right now is that
 
     :- p(X), X.     (*)
@@ -437,3 +440,11 @@ DONE 24.  Implement a richer anonymous oid syntax.
 
 25. Make @prolog() have scope like any other @module, including overriding
     by declarations in the subscope, etc.
+
+26. Do the right thing when negation is applied to a formula that has a
+    mix of procedural and tabled things, and which has both
+    conjunctions and disjunctions.
+    Should we allow control constructs, such as if-then-else?
+    Probably this should be a job for the parser to check that control
+    constructs don't appear under the skope of \+ or tnot.
+
