@@ -1,5 +1,5 @@
 /* File:      slgdelay.c
-** Author(s): Kostis Sagonas
+** Author(s): Kostis Sagonas, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -46,400 +46,274 @@
 #include "subinst.h"
 #include "xsberror.h"
 
-/*----------------------------------------------------------------------*/
-
-#ifdef DEBUG
-#define IDE_TABLE_DEBUG
-#endif
-
-#ifdef IDE_TABLE_DEBUG
-extern void print_subgoal(FILE *, SGFrame);
-#endif
-
-
 static void simplify_neg_succeeds(SGFrame);
 static void simplify_pos_unsupported(NODEptr);
 static void simplify_pos_unconditional(NODEptr);
 
-/*----------------------------------------------------------------------*/
-/*  Global variables defined for delay element table and delay list	*/
-/*  table manipulation.							*/
-/*----------------------------------------------------------------------*/
+/*
+ * Some new global variables ...
+ */
 
-#define MAX_IDL_NUM	10177
-#define MAX_IDE_NUM	10177
+unsigned long de_block_size = 2048 * sizeof(struct delay_element);
+unsigned long dl_block_size = 2048 * sizeof(struct delay_list);
+unsigned long pnde_block_size = 2048 * sizeof(struct pos_neg_de_list);
 
-int ide_count = 0;
-int ide_chk_ins = 0;
+char *current_de_block = NULL;
+char *current_dl_block = NULL;
+char *current_pnde_block = NULL;
 
-static struct interned_delay_element **ide_tab;
+DE released_des = NULL;		/* the list of released DEs */
+DL released_dls = NULL;		/* the list of released DLs */
+PNDE released_pndes = NULL;	/* the list of released PNDEs */
 
-int idl_count = 0;
-int idl_chk_ins = 0;
+DE next_free_de = NULL;		/* next available free DE space */
+DL next_free_dl = NULL;		/* next available free DL space */
+PNDE next_free_pnde = NULL;	/* next available free PNDE space */
 
-static struct idl_table_entry **idl_tab;
+DE current_de_block_top = NULL;	/* the top of current DE block */
+DL current_dl_block_top = NULL;	/* the top of current DL block */
+PNDE current_pnde_block_top = NULL; /* the top of current PNDE block */
 
-/*----------------------------------------------------------------------*/
-/* Routines defined for internal debugging.                             */
-/*----------------------------------------------------------------------*/
+char *new_block;		/* used in new_entry() */
 
-#ifdef IDE_TABLE_DEBUG
-static void fprint_ide(FILE *fp, IDE ide)
+/*
+ * A macro definition for allocating a new entry of DE, DL, or PNDE.  To
+ * release such an entry, use definition release_entry (see below).
+ *
+ * new_entry(NEW_ENTRY,            -- pointer to the new entry
+ * 	     RELEASED,             -- pointer to the released entries
+ * 	     NEXT_FREE,            -- pointer to the next free entry
+ * 	     CURRENT_BLOCK,        -- pointer to the current block
+ * 	     CURRENT_BLOCK_TOP,    -- pointer to the current block top
+ * 	     NEXT_FUNCTION,        -- next function (eg. de_next)
+ * 	     ENTRY_TYPE,           -- type of the entry (eg. DE)
+ * 	     BLOCK_SIZE,           -- block size (for malloc a new block)
+ * 	     ABORT_MESG)           -- xsb_abort mesg when no enough memory
+ */
+
+#define new_entry(NEW_ENTRY,						\
+		  RELEASED,						\
+		  NEXT_FREE,						\
+		  CURRENT_BLOCK,					\
+		  CURRENT_BLOCK_TOP,					\
+		  NEXT_FUNCTION,					\
+		  ENTRY_TYPE,						\
+		  BLOCK_SIZE,						\
+		  ABORT_MESG)						\
+  if (RELEASED) {							\
+    NEW_ENTRY = RELEASED;						\
+    RELEASED = NEXT_FUNCTION(RELEASED);					\
+  }									\
+  else if (NEXT_FREE < CURRENT_BLOCK_TOP)				\
+    NEW_ENTRY = NEXT_FREE++;						\
+  else {								\
+    if ((new_block = (char *)malloc(BLOCK_SIZE + sizeof(Cell))) == NULL)\
+      xsb_abort(ABORT_MESG);						\
+    *(char **)new_block = CURRENT_BLOCK;				\
+    CURRENT_BLOCK = new_block;						\
+    NEXT_FREE = (ENTRY_TYPE)(new_block + sizeof(Cell));			\
+    CURRENT_BLOCK_TOP = (ENTRY_TYPE)(new_block + sizeof(Cell) + BLOCK_SIZE);\
+    NEW_ENTRY = NEXT_FREE++;						\
+  }
+
+#define release_entry(ENTRY_TO_BE_RELEASED,				\
+		      RELEASED,						\
+		      NEXT_FUNCTION)					\
+  NEXT_FUNCTION(ENTRY_TO_BE_RELEASED) = RELEASED;			\
+  RELEASED = ENTRY_TO_BE_RELEASED
+
+/*
+ * Assign one entry for delay_elem in the current DE (Delay Element)
+ * block.  A new block will be allocate if necessary.
+ */
+  
+static DE intern_delay_element(Cell delay_elem)
 {
-    fprintf(fp, " < ");
-    print_subgoal(fp, ide_subgoal(ide));
-    fprintf(fp, ", %p", ide_ans_subst(ide));
-    fprintf(fp, " > ");
-}
+  DE de;
+  CPtr cptr = (CPtr) cs_val(delay_elem);
+  /*
+   * All the following information about delay_elem is set in
+   * delay_negatively() or delay_positively().  Note that cell(cptr) is
+   * the delay_psc ('DL').
+   */
+  SGFrame subgoal = (SGFrame)cell(cptr + 1);
+  NODEptr ans_subst = (NODEptr)cell(cptr + 2);
+  CPtr ret_n = (CPtr) cs_val(cell(cptr + 3));
+  int arity;
+  
+  if (cell(cptr + 3) == NEG_DELAY)
+    arity = 0;
+  else
+    arity = get_arity((Psc) get_str_psc(cell(cptr + 3)));
 
-static void fprint_idl(FILE *fp, IDEs idl)
-{
-    fprintf(fp, "[");
-    while (idl != NULL) {
-      fprintf(fp, "%p", ides_ide(idl));
-      if ((idl = ides_next_ide(idl)) != NULL) fprintf(fp, ", ");
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> "); print_delay_list(stderr, delayreg);
+  fprintf(stderr, "\n");
+  fprintf(stderr, ">>>> (Intern ONE de) arity of answer subsf = %d\n", arity);
+#endif
+
+  if (!was_simplifiable(subgoal, ans_subst)) {
+    new_entry(de,
+	      released_des,
+	      next_free_de,
+	      current_de_block,
+	      current_de_block_top,
+	      de_next,
+	      DE,
+	      de_block_size,
+	      "No enough memory to expand DE space");
+    de_subgoal(de) = subgoal;
+    de_ans_subst(de) = ans_subst; /* Leaf of the answer (substitution) trie */
+    de_subs_fact(de) = NULL;
+    if (arity != 0) {
+      de_subs_fact_leaf(de) = (CPtr)delay_chk_insert(arity, ret_n + 1,
+						     &de_subs_fact(de));
     }
-    fprintf(fp, "]");
+    return de;
+  }
+  else return NULL;
 }
 
-void print_ide_tab(FILE *fp)
-{
-    int  i,j;
-    IDLs idl;
-    IDE  ide;
+/*
+ * Construct a delay list according to dlist.  Assign an entry in the
+ * current DL block for it.  A new DL block will be allocated if
+ * necessary.
+ */
 
-    fprintf(fp, "<======================= IDE Table ======================>\n");
-    if (ide_count) {
-      for (i = 0; i < MAX_IDE_NUM; i++) {
-	ide = (IDE)(*(ide_tab + i));
-	if (ide != NULL) {
-	  fprintf(fp, "Bucket #%4d:", i);
-	  while (ide != NULL) {
-	    fprint_ide(fp, ide);
-	    for (j = 0, idl = ide_idl_list(ide);
-		 idl != NULL; j++, idl = idl_list_next(idl))
-	      /* fprintf(fp, " --> %p", idl_list_idl(idl)) */;
-	    fprintf(fp, " (used in %d IDLs)\n", j);
-	    if ((ide = ide_next_ide(ide)) != NULL) fprintf(fp, "\t     ");
-	  }
-	}
-      }
+static DL intern_delay_list(CPtr dlist) /* assumes that dlist != NULL	*/
+{
+  DE head = NULL, de;
+  DL dl = NULL;
+
+  while (islist(dlist)) {
+    dlist = clref_val(dlist);
+    if ((de = intern_delay_element(cell(dlist))) != NULL) {
+      de_next(de) = head;
+      head = de;
     }
-    fprintf(fp, "<========================================================>\n");
+    dlist = (CPtr)cell(dlist+1);
+  }
+  if (head != NULL) {
+    new_entry(dl,
+	      released_dls,
+	      next_free_dl,
+	      current_dl_block,
+	      current_dl_block_top,
+	      dl_next,
+	      DL,
+	      dl_block_size,
+	      "No enough memory to expand DL space");
+    dl_de_list(dl) = head;
+    dl_asl(dl) = NULL;
+    return dl;
+  }
+  else return NULL;
 }
 
-void print_idl_tab(FILE *fp)
-{
-    int   i;
-    IDLT  idlt;
-    IDLUs idlu;
+/*
+ * For each delay element de in delay list dl, do one of the following
+ * things:
+ *
+ * 1) (If de is a negative DE) Add a NDE `pnde' to the nde_list of de's
+ *    subgoal frame.  Point de_pnde(de) to `pnde', and point
+ *    pnde_dl(pnde) to dl, pnde_de(pnde) to de.
+ *    
+ * 2) (If de is a positive DE) Add a PDE `pnde' to the pdes of the
+ *    Delay Info node of de's answer substitution leaf.  Point
+ *    de_pnde(de) to `pnde', and point pnde_dl(pnde) to dl, pnde_de(pnde)
+ *    to de.
+ */
 
-    fprintf(fp, "<======================= IDL Table ======================>\n");
-    if (idl_count) {
-      for (i = 0; i < MAX_IDL_NUM; i++) {
-	idlt = (IDLT)(*(idl_tab + i));
-	if (idlt != NULL) {
-	  fprintf(fp, "Bucket #%4d: ", i);
-	  while (idlt != NULL) {
-	    fprint_idl(fp, idlt_idl(idlt));
-	    fprintf(fp, " IDL of ");
-	    for (idlu = idlt_usage(idlt);
-		 idlu != NULL;
-		 idlu = idlu_next_usage(idlu))
-	      fprintf(fp, "%p  ", idlu_asl(idlu));
-	    fprintf(fp, "\n");
-	    if ((idlt = idlt_next_idlt(idlt)) != NULL) fprintf(fp, "\t      ");
-	  }
-	}
-      }
+static void record_de_usage(DL dl)
+{
+  DE de;
+  PNDE pnde;
+  NODEptr as_leaf;
+ 
+  de = dl_de_list(dl);
+  while (de != NULL) {
+    new_entry(pnde,
+	      released_pndes,
+	      next_free_pnde,
+	      current_pnde_block,
+	      current_pnde_block_top,
+	      pnde_next,
+	      PNDE,
+	      pnde_block_size,
+	      "No enough memory to expand PNDE space");
+    pnde_dl(pnde) = dl;
+    pnde_de(pnde) = de;
+    pnde_prev(pnde) = NULL;
+    if ((as_leaf = de_ans_subst(de)) == NULL) {	/* a negative DE */
+      pnde_next(pnde) = subg_nde_list(de_subgoal(de));
+      subg_nde_list(de_subgoal(de)) = pnde;
     }
-    fprintf(fp, "<========================================================>\n");
-}
-#endif
-
-/*----------------------------------------------------------------------*/
-/* Memory management variables, routines, and macros.                   */
-/*----------------------------------------------------------------------*/
-
-#define idet_alloc_chunk_size (512 * sizeof(struct interned_delay_element))
-#define idlt_alloc_chunk_size (1024 * sizeof(struct idl_table_entry))
-
-char *idet_space_chunk_ptr = NULL;
-char *idlt_space_chunk_ptr = NULL;
-
-static IDE  free_idets = NULL, free_idet_space = NULL, top_idet_space = NULL;
-static IDLT free_idlts = NULL, free_idlt_space = NULL, top_idlt_space = NULL;
-
-
-static IDE alloc_more_idet_space(void)
-{
-    char *t;
-
-    if ((t = (char *)malloc(idet_alloc_chunk_size+sizeof(Cell))) == NULL)
-      xsb_abort("No space to allocate more IDE table entries");
-    *(char **)t = idet_space_chunk_ptr;
-    idet_space_chunk_ptr = t;
-    free_idet_space = (IDE)(t+sizeof(Cell));
-    top_idet_space = (IDE)(t+idet_alloc_chunk_size+sizeof(Cell));
-    return free_idet_space++;
-}
-
-#define New_IDE_Entry(theIDE,theSUBG,theANS_SUBST) \
-    if (free_idets) {\
-      theIDE = free_idets; \
-      free_idets = ide_next_ide(free_idets); \
-    } else { \
-      if (free_idet_space < top_idet_space) { \
-	theIDE = free_idet_space++; \
-      } else { \
-        theIDE = alloc_more_idet_space(); \
-      } \
-    } \
-    ide_next_ide(theIDE) = NULL; \
-    ide_subgoal(theIDE) = theSUBG; \
-    ide_ans_subst(theIDE) = theANS_SUBST; \
-    ide_idl_list(theIDE) = NULL;
-
-
-static IDLT alloc_more_idlt_space(void)
-{
-    char *t;
-
-#ifdef IDE_TABLE_DEBUG
-    fprintf(stderr, "+++ Allocating more IDL space...\n");
-#endif
-    if ((t = (char *)malloc(idlt_alloc_chunk_size+sizeof(Cell))) == NULL)
-      xsb_abort("No space to allocate more IDL table entries");
-    *(char **)t = idlt_space_chunk_ptr;
-    idlt_space_chunk_ptr = t;
-    free_idlt_space = (IDLT)(t+sizeof(Cell));
-    top_idlt_space = (IDLT)(t+idlt_alloc_chunk_size+sizeof(Cell));
-    return free_idlt_space++;
-}
-
-#define New_IDLT_Entry(theIDLT,theIDL) \
-    if (free_idlts) {\
-      theIDLT = free_idlts; \
-      free_idlts = idlt_next_idlt(free_idlts); \
-    } else { \
-      if (free_idlt_space < top_idlt_space) { \
-	theIDLT = free_idlt_space++; \
-      } else { \
-        theIDLT = alloc_more_idlt_space(); \
-      } \
-    } \
-    idlt_next_idlt(theIDLT) = NULL; \
-    idlt_idl(theIDLT) = theIDL; \
-    idlt_usage(theIDLT) = NULL;
-
-
-void abolish_wfs_space(void)
-{
-    char *t;
-#ifndef LOCAL_EVAL
-    extern void abolish_edge_space();
-#endif
-
-  /* abolish IDE Table and IDL Table */
-    if (ide_tab) { free(ide_tab); ide_tab = NULL; }
-    if (idl_tab) { free(idl_tab); idl_tab = NULL; }
-    ide_count = idl_count = 0;
-
-    while (idet_space_chunk_ptr) {
-      t = *(char **)idet_space_chunk_ptr;
-      free(idet_space_chunk_ptr);
-      idet_space_chunk_ptr = t;
+    else {					/* a positive DE */
+      pnde_next(pnde) = asi_pdes((ASI)Delay(as_leaf));
+      asi_pdes((ASI)Delay(as_leaf)) = pnde;
     }
-    free_idets = free_idet_space = top_idet_space = NULL;
-    while (idlt_space_chunk_ptr) {
-      t = *(char **)idlt_space_chunk_ptr;
-      free(idlt_space_chunk_ptr);
-      idlt_space_chunk_ptr = t;
-    }
-    free_idlts = free_idlt_space = top_idlt_space = NULL;
-
-#ifndef LOCAL_EVAL
-    abolish_edge_space();
-#endif
+    de_pnde(de) = pnde;	/* record */
+    de = de_next(de);
+  }
 }
 
-/*----------------------------------------------------------------------*/
-/*----------------------------------------------------------------------*/
-
-static IDE intern_delay_element(Cell delay_elem)
-{
-    Cell    bucket;
-    IDE     idet_entry, ide;
-    CPtr    cptr = (CPtr)cs_val(delay_elem);
-    SGFrame subgoal = (SGFrame)cell(cptr+1);
-    NODEptr ans_subst = (NODEptr)cell(cptr+2);
-
-    if (!was_simplifiable(subgoal, ans_subst)) {
-      if (ide_count == 0) {
-	ide_tab = calloc(1, MAX_IDE_NUM * sizeof(IDE));
-	if (!ide_tab) xsb_exit("No memory for allocating IDE Table");
-      }
-      ide_chk_ins++;
-      bucket = ( ans_subst ? ihash(ans_subst, MAX_IDE_NUM)
-			   : ihash(subgoal, MAX_IDE_NUM) );
-#ifdef SERIOUS_PERFORMANCE_DEBUG
-      fprintf(stderr, "IDE Bucket # is %d\t(subg = %p, ans = %p)\n",
-		      bucket, subgoal, ans_subst);
-#endif
-      idet_entry = (IDE)(ide_tab + bucket);
-      for (ide = *((IDE *)idet_entry);
-	   ide != NULL;
-	   idet_entry = ide, ide = ide_next_ide(ide)) {
-	if (ide_subgoal(ide) == subgoal &&
-	    ide_ans_subst(ide) == ans_subst) {
-#ifdef SERIOUS_IDE_TABLE_DEBUG
-	  fprintf(stderr, "++Delay element found already interned\n");
-#endif
-	  return ide;
-	}
-      }
-      /* Does not exist in table: Insert it */
-      New_IDE_Entry(ide, subgoal, ans_subst);
-      *((IDE *)idet_entry) = ide;
-#ifdef SERIOUS_IDE_TABLE_DEBUG
-      fprintf(stderr, "++Delay element is new and now interned at %p\n", ide);
-#endif
-      ide_count++;
-      return ide;
-    } else { /* was simplifiable */
-      return NULL;
-    }
-}
-
-/*----------------------------------------------------------------------*/
-
-static bool idlcmp(IDEs idl1, IDEs idl2)
-{
-   for ( ; idl1 != NULL && idl2 != NULL;
-	idl1 = ides_next_ide(idl1), idl2 = ides_next_ide(idl2))
-     if (ides_ide(idl1) != ides_ide(idl2)) return FALSE;
-   return (idl1 == NULL && idl2 == NULL);
-}
-
-/*----------------------------------------------------------------------*/
-
-static IDLT intern_delay_list(CPtr dlist) /* assumes that dlist != NULL	*/
-{
-    Cell bucket = 0;
-    IDE  ide = NULL;
-    IDEs idl = NULL;
-    IDLT idlt_entry, idlt;
-    IDEs new_idl, idl_var;
-
-    /*--- Intern the elements of the DL and create the IDL ---*/
-#ifdef _DEBUG
-    fprintf(stderr, "IDL = [");
-#endif
-    while (islist(dlist)) {
-      dlist = clref_val(dlist);
-      if ((ide = intern_delay_element(cell(dlist))) != NULL) {
-#ifdef _DEBUG
-       fprintf(stderr, " %p", ide);
-#endif
-	bucket += ((Cell)ide % 10177);
-	new_unique_ide_node(ide, idl);
-      }
-      dlist = (CPtr)cell(dlist+1);
-    }
-#ifdef _DEBUG
-    fprintf(stderr, " ] ... ");
-#endif
-    if (idl != NULL) {	/* Not all delay literals of the DL were simplifiable */
-      if (idl_count == 0) {
-	idl_tab = calloc(1, MAX_IDL_NUM * sizeof(IDLT));
-	if (!idl_tab) xsb_exit("No memory for allocating IDL Table");
-      }
-      idl_chk_ins++;
-      bucket = ihash(bucket, MAX_IDL_NUM);
-#ifdef SERIOUS_PERFORMANCE_DEBUG
-      fprintf(stderr, "IDL Bucket # is %ld\n", bucket);
-#endif
-      /*--- Insert the created IDL in the IDL Table ---*/
-      idlt_entry = (IDLT)(idl_tab + bucket);
-      for (idlt = *((IDLT *)idlt_entry);
-	   idlt != NULL;
-	   idlt_entry = idlt, idlt = idlt_next_idlt(idlt)) {
-	if (idlcmp(idlt_idl(idlt), idl)) return idlt;
-      }
-      /* Does not exist in table: Insert it */
-      New_IDLT_Entry(idlt, idl);
-      *((IDLT *)idlt_entry) = idlt;
-      idl_count++;
-      return idlt;
-    } else return NULL;
-}
-
-/*----------------------------------------------------------------------*/
-
-static void record_ide_usage(IDLT idl_tab_entry)
-{
-    IDE	    ide;
-    IDEs    ides;
-    NODEptr as_leaf;
-    IDLs    new_idls, idls_var;
-
-    for (ides = idlt_idl(idl_tab_entry);
-	 ides != NULL; ides = ides_next_ide(ides)) {
-      ide = ides_ide(ides);
-      new_unique_idl_list_node(idl_tab_entry, ide_idl_list(ide));
-      if ((as_leaf = ide_ans_subst(ide)) == NULL) {  /* is negative IDE */
-#ifdef SERIOUS_IDE_TABLE_DEBUG
-	fprintf(stderr, "\tNegative ide");
-	fprint_ide(stderr, ide);
-	fprintf(stderr, "interned at %p\n", ide);
-#endif
-	subg_nide(ide_subgoal(ide)) = ide;
-      } else {
-#ifdef SERIOUS_IDE_TABLE_DEBUG
-	fprintf(stderr, "\tPositive ide");
-	fprint_ide(stderr, ide);
-	fprintf(stderr, "interned at %p\n", ide);
-#endif
-	asi_pide(((ASI)Delay(as_leaf))) = ide;
-      }
-    }
-}
-
-/*----------------------------------------------------------------------*/
+/*
+ * Function do_delay_stuff() is called in the SLG instruction
+ * `new_answer_dealloc', when an answer (new or not) is returned for the
+ * current call.  Here, `as_leaf' is the leaf node of the answer trie
+ * (TrieRetPtr, the return value of variant_trie_search), `subgoal' is
+ * the subgoal frame of the current call, and `sf_exists' tells whether
+ * this answer is new or not.
+ *
+ * At this time, `delayreg' is the delay register of the _current_ call.
+ * If it is not NULL, then it means this answer has some delay elements
+ * and is a conditional one.  (Remember, all the delay elements under
+ * this current call have been processed by delay_positively() or
+ * delay_negatively(), and `delayreg' has been updated and pointed to the
+ * delay list.  All the information about the delay list is still saved
+ * on the heap.)
+ *
+ * Function intern_delay_list() will be called to save the delay list
+ * information in the Delay Info node of current call's answer leaf.  It
+ * will call interned_delay_element(), which will call
+ * delay_chk_insert().  A delay trie is created by delay_chk_insert() for
+ * the corresponding delay element.
+ *
+ * When the delay trie has been created, and a pointer in the delay
+ * element (saved in the answer trie) has been set, we can say the
+ * conditional answer is now tabled.
+ */
 
 void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, bool sf_exists)
 {
-    ASI	  asi;
-    IDLs  new_idls;
-    IDLUs new_idlu, idlu_var;
-    IDLT  idl_tab_entry = NULL;
+    ASI	asi;
+    DL dl = NULL;
+
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> Start do_delay_stuff ...\n");
+    fprintf(stderr, ">>>> The delay list for this subgoal itself is:\n");
+    fprintf(stderr, ">>>> "); print_delay_list(stderr, delayreg);
+    fprintf(stderr, "\n");
+#endif
 
     if (delayreg != NULL && (!sf_exists || is_conditional_answer(as_leaf))) {
-      if ((idl_tab_entry = intern_delay_list(delayreg)) != NULL) {
-	mark_conditional_answer(as_leaf, subgoal, idl_tab_entry);
-	record_ide_usage(idl_tab_entry);
+      if ((dl = intern_delay_list(delayreg)) != NULL) {
+	mark_conditional_answer(as_leaf, subgoal, dl);
+	record_de_usage(dl);
       }
     }
-    /*--- Check for the derivation of an unconditional answer ---*/
+    /*
+     * Check for the derivation of an unconditional answer.
+     */
     if (sf_exists && is_conditional_answer(as_leaf) &&
-	(delayreg == NULL || idl_tab_entry == NULL)) {
-#ifdef __SIMPLIFICATION_DEBUG
-      fprintf(stderr, "----------------------------------------------------\n");
-#ifdef IDE_TABLE_DEBUG
-      fprintf(stderr, "Subgoal "); print_subgoal(stderr, subgoal);
-#endif
-      fprintf(stderr,
-	      "had conditional answers... now derived an unconditional one\n");
-      if (asi_pide(((ASI)Delay(as_leaf))) != NULL)
-	fprintf(stderr, "\t(already returned in interned delay lists)\n");
-      else fprintf(stderr, "\t(not interned yet)\n");
-      fprintf(stderr, "----------------------------------------------------\n");
-#endif
-    /*-- Initiate positive simplification in places where
-	 this answer substitution has already been returned --*/
+	(delayreg == NULL || dl == NULL)) {
+      /*
+       * Initiate positive simplification in places where this answer
+       * substitution has already been returned.
+       */
       simplify_pos_unconditional(as_leaf);
     }
-    if (is_unconditional_answer(as_leaf) && subg_nide(subgoal) != NULL) {
+    if (is_unconditional_answer(as_leaf) && subg_nde_list(subgoal) != NULL) {
       simplify_neg_succeeds(subgoal);
     }
 }
@@ -456,8 +330,14 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
       dlist = clref_val(dlist);
       cptr = (CPtr)cs_val(cell(dlist));
       subgoal = (SGFrame)cell(cptr+1);
-      ans_subst = (NODEptr)cell(cptr+2);
+      ans_subst = (NODEptr)cell(cptr+3);
       if (is_failing_delay_element(subgoal,ans_subst)) {
+#ifdef PROFILE
+	if (ans_subst == NULL) 
+	  subinst_table[NEW_ANSWER_SIMPL_NEG_FAIL][1]++;
+	else 
+	  subinst_table[NEW_ANSWER_SIMPL_POS_UNS][1]++;
+#endif
 	return TRUE;
       }
       dlist = (CPtr)cell(dlist+1);
@@ -465,285 +345,355 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
     return FALSE;
 }
 
-/*----------------------------------------------------------------------*/
-/*  From here on simplification starts...				*/
-/*----------------------------------------------------------------------*/
-
-static bool remove_ide_from_idl(IDE ide, IDLT *idl_tab_entry)
-{
-    IDEs idl = idlt_idl(*idl_tab_entry);
-    IDEs prev_idl = NULL;
-
-#ifdef __SIMPLIFICATION_DEBUG
-#ifdef IDE_TABLE_DEBUG
-    print_ide_tab(stderr); print_idl_tab(stderr);
-#endif
-#endif
-#ifdef PROFILE
-    subinst_table[SIMPL_REMOVE_DE][1]++;
-#endif 
-    for ( ; ides_ide(idl) != ide; prev_idl = idl, idl = ides_next_ide(idl))
-      ;
-#ifdef __SIMPLIFICATION_DEBUG
-    if (ides_ide(idl) == ide) {
-      fprintf(stderr, "! FOUND (idl = %p, next = %p)\n",idl,ides_next_ide(idl));
-    }
-#endif
-    if (prev_idl != NULL) { ides_next_ide(prev_idl) = ides_next_ide(idl); }
-    if (idl == idlt_idl(*idl_tab_entry)) {
-      idlt_idl(*idl_tab_entry) = ides_next_ide(idl);
-    }
-    /* return (bool) idlt_idl(*idl_tab_entry); */
-    return (NULL != idlt_idl(*idl_tab_entry));
-}
-
-/*----------------------------------------------------------------------*/
-
-static bool remove_idl_from_idl_list(IDLT idl_tab_entry, ASI *asi)
-{
-    IDLs idls = asi_idl_list(*asi);
-    IDLs prev_idls = NULL;
-
-#ifdef __SIMPLIFICATION_DEBUG
-#ifdef IDE_TABLE_DEBUG
-    print_ide_tab(stderr); print_idl_tab(stderr);
-#endif
-#endif
-#ifdef PROFILE
-    subinst_table[SIMPL_REMOVE_DL][1]++;
-#endif 
-    for ( ; idl_list_idl(idls) != idl_tab_entry; idls = idl_list_next(idls))
-      prev_idls = idls;
-    if (prev_idls != NULL) { idl_list_next(prev_idls) = idl_list_next(idls); }
-    if (idls == asi_idl_list(*asi)) {
-      asi_idl_list(*asi) = idl_list_next(idls);
-    }
-    /* return (bool) asi_idl_list(*asi); */
-    return (NULL != asi_idl_list(*asi));
-}
-
-/*----------------------------------------------------------------------*/
-
-static void handle_empty_idl_creation(IDLT *idl_tab_entry)
-{
-    IDLUs   idlu = idlt_usage(*idl_tab_entry);
-    NODEptr as_leaf;
-    SGFrame subgoal;
-
-/*  print_ide_tab(stderr); print_idl_tab(stderr); */
-
-#ifdef __SIMPLIFICATION_DEBUG
-    fprintf(stderr, "Resulting IDL (%p) is empty; ", *idl_tab_entry);
-    fprintf(stderr, "further simplifications to follow...\n");
-#endif
-    for ( ; idlu != NULL; idlu = idlu_next_usage(idlu)) {
-      as_leaf = idlu_asl(idlu);
-      if (is_conditional_answer(as_leaf)) { /* if it is still conditional */
-	subgoal = asi_subgoal((ASI) Delay(as_leaf));
-	simplify_pos_unconditional(as_leaf);
-	/*--- perform early completion if necessary ---*/
-	if (!is_completed(subgoal) && most_general_answer(as_leaf)) {
 /*
-	  if (subg_compl_susp_ptr(subgoal) != NULL) {
-	    fprintf(stderr, "SUBGOAL STILL HAS NEGATION SUSPENSIONS\n");
-	  }
+ * Function remove_de_from_dl(de, dl) removes de from dl when de is
+ * positive and succeeds, or negative and fails.  It is used in
+ * simplify_pos_unconditional() and simplify_neg_fails().
  */
-/*	  fprintf(stderr, "EARLY COMPLETION SHOULD HAPPEN HERE\n"); */
-	  tcp_pcreg(subg_cp_ptr(subgoal)) = (byte *) &check_complete_inst;
-	  mark_as_completed(subgoal);
-	}
-	simplify_neg_succeeds(subgoal);
-      }
-    }
-#ifdef __SIMPLIFICATION_DEBUG
-    fprintf(stderr, "about to forget usage... (current = %p, ",
-		    idlt_usage(*idl_tab_entry));
-#endif
-    idlt_usage(*idl_tab_entry) = NULL;	/* forget these uses */
-#ifdef __SIMPLIFICATION_DEBUG
-    fprintf(stderr, " new = %p)\n", idlt_usage(*idl_tab_entry));
-#endif
-}
 
-/*----------------------------------------------------------------------*/
-
-static void handle_unsupported_answer_subst(NODEptr *as_leaf)
+static bool remove_de_from_dl(DE de, DL dl)
 {
-    ASI     unsup_asi = (ASI) Delay(*as_leaf);
-    SGFrame unsup_subgoal = asi_subgoal(unsup_asi);
+  DE current = dl_de_list(dl);
+  DE prev_de = NULL;
 
-#ifdef __SIMPLIFICATION_DEBUG
-    fprintf(stderr, "Answer substitution of %s subgoal ",
-		    (is_completed(unsup_subgoal) ? "completed" : "incomplete"));
-    print_subgoal(stderr, unsup_subgoal);
-    fprintf(stderr, " has no supported conditional answers;\n");
-    fprintf(stderr, "further simplifications to follow...\n");
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start remove_de_from_dl()\n");
 #endif
-    delete_branch(*as_leaf, (CPtr)&subg_ans_root_ptr(unsup_subgoal));
-    simplify_pos_unsupported(*as_leaf);
-    if (is_completed(unsup_subgoal)) {
-      if (subgoal_fails(unsup_subgoal)) {
-	mark_subgoal_failed(unsup_subgoal);
-	simplify_neg_fails(unsup_subgoal);
-      }
-    }
+
+  while (current != de) {
+    prev_de = current;
+    current = de_next(current);
+  }
+  if (prev_de == NULL)		/* to remove the first DE */
+    dl_de_list(dl) = de_next(current);
+  else {
+    de_next(prev_de) = de_next(current);
+    release_entry(current, released_des, de_next);
+  }
+  return (NULL != dl_de_list(dl));
 }
 
-/*----------------------------------------------------------------------*/
-/*  simplify_pos_unconditional(AnswerSubstitution)			*/
-/*	When the AnswerSubstitution gets an unconditional answer, it	*/
-/*	removes the positive delay element of an AnswerSubstitution	*/
-/*	from the delay lists that contain it.				*/
-/*----------------------------------------------------------------------*/
+/*
+ * Function remove_dl_from_dl_list(dl, asi) removes dl from the DL list
+ * which is pointed by asi.  Called when a DE in dl is negative and
+ * succeeds, or positive and unsupported (in functions
+ * simplify_neg_succeeds() and simplify_pos_unsupported()).
+ */
+
+static bool remove_dl_from_dl_list(DL dl, ASI asi)
+{
+  DL current = asi_dl_list(asi);
+  DL prev_dl = NULL;
+
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start remove_dl_from_dl_list()\n");
+#endif
+
+  while (current != dl) {
+    prev_dl = current;
+    current = dl_next(current);
+  }
+  if (prev_dl == NULL)		/* to remove the first DL */
+    asi_dl_list(asi) = dl_next(current);
+  else
+    dl_next(prev_dl) = dl_next(current);
+
+  release_entry(current, released_dls, dl_next);
+  return (NULL != asi_dl_list(asi));
+}
+
+/*
+ * When a DL becomes empty (after remove_de_from_dl()), the answer
+ * substitution which uses this DL becomes unconditional.  Further
+ * simplification operations go on ...
+ *
+ * Remember: release_dl
+ */
+
+static void handle_empty_dl_creation(DL dl)
+{
+  NODEptr as_leaf = dl_asl(dl);
+  SGFrame subgoal;
+
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start handle_empty_dl_creation()\n");
+#endif
+
+  release_entry(dl, released_dls, dl_next);
+  if (is_conditional_answer(as_leaf)) {	/* if it is still conditional */
+    subgoal = asi_subgoal((ASI)Delay(as_leaf));
+    simplify_pos_unconditional(as_leaf);
+    /*--- perform early completion if necessary ---*/
+    if (!is_completed(subgoal) && most_general_answer(as_leaf)) {
+      tcp_pcreg(subg_cp_ptr(subgoal)) = (byte *) &check_complete_inst;
+      mark_as_completed(subgoal);
+    }
+    simplify_neg_succeeds(subgoal);
+  }
+}
+
+/*
+ * Run further simplifications when an answer substitution leaf,
+ * as_leaf, has no supported conditional answers.  This happens when
+ * all DLs of as_leaf are removed (by remove_dl_from_dl_list)
+ */
+
+static void handle_unsupported_answer_subst(NODEptr as_leaf)
+{
+  ASI unsup_asi = (ASI)Delay(as_leaf);
+  SGFrame unsup_subgoal = asi_subgoal(unsup_asi);
+
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start handle_unsupported_answer_subst()\n");
+#endif
+
+  delete_branch(as_leaf, (CPtr)&subg_ans_root_ptr(unsup_subgoal));
+  simplify_pos_unsupported(as_leaf);
+  if (is_completed(unsup_subgoal)) {
+    if (subgoal_fails(unsup_subgoal)) {
+      mark_subgoal_failed(unsup_subgoal);
+      simplify_neg_fails(unsup_subgoal);
+    }
+  }
+}
+
+/*
+ * When the answers substitution gets an unconditional answer, remove
+ * the positive delay literals of this answer substitution from the
+ * delay lists that contain them.
+ */
 
 static void simplify_pos_unconditional(NODEptr as_leaf)
 {
-    IDLs idls;
-    IDLT idl_tab_entry;
-    ASI  asi = (ASI) Delay(as_leaf);	/* never NULL when here */
-    IDE  pide = asi_pide(asi);		/* so this is always OK */
+  ASI asi = (ASI)Delay(as_leaf);
+  PNDE pde = asi_pdes(asi), tmp;
+  DE de;
+  DL dl;
 
-    /*-- First forget the delay lists of this answer substitution --*/
-    unmark_conditional_answer(as_leaf);
-
-#ifdef __SIMPLIFICATION_DEBUG
-    fprintf(stderr, "About to simplify pos. DE of AnsSubst %p...\n", as_leaf);
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start simplify_pos_unconditional()\n");
 #endif
-    if (pide != NULL) {
-      for (idls = ide_idl_list(pide); idls!=NULL; idls = idl_list_next(idls)) {
-	idl_tab_entry = idl_list_idl(idls);
-	if (idlt_idl(idl_tab_entry) != NULL) {
-	  if (!remove_ide_from_idl(pide, &idl_tab_entry)) {
-	    handle_empty_idl_creation(&idl_tab_entry);
-	  }
-	}
-      }
-      ide_idl_list(pide) = NULL;	/* Forget places containing pide */
-    }
+
+  unmark_conditional_answer(as_leaf);
+  while (pde != NULL) {
+    de = pnde_de(pde);
+    dl = pnde_dl(pde);
+    tmp = pnde_next(pde);
+    release_entry(pde, released_pndes, pnde_next);
+    pde = tmp;	/* the next PDE */
+    if (!remove_de_from_dl(de, dl))
+      handle_empty_dl_creation(dl);
+  }
+  asi_pdes(asi) = NULL;		/* forget this PDE list */
 }
 
-/*----------------------------------------------------------------------*/
-/*  simplify_neg_fails(SubGoal)						*/
-/*	When the SubGoal fails (is completed without any answers), it	*/
-/*	removes the negative delay element of SubGoal from the delay	*/
-/*	lists that contain it.						*/
-/*----------------------------------------------------------------------*/
+/*
+ * When the subgoal fails (is completed without any answers), remove
+ * the negative delay literals of this subgoal from the delay lists
+ * that contain them.
+ */
 
 void simplify_neg_fails(SGFrame subgoal)
 {
-    IDLs idls;
-    IDLT idl_tab_entry;
-    IDE	 nide = subg_nide(subgoal);
+  PNDE nde = subg_nde_list(subgoal), tmp;
+  DE de;
+  DL dl;
 
-#ifdef __SIMPLIFICATION_DEBUG
-    if (nide != NULL) {
-      fprintf(stderr, "About to simplify failing neg. DE of subgoal ");
-#ifdef IDE_TABLE_DEBUG
-      print_subgoal(stderr, subgoal);
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start simplify_neg_fails()\n");
 #endif
-      fprintf(stderr, " ...\n");
-    }
-#endif
-    if (nide != NULL) {
-      subg_nide(subgoal) = NULL;	/* forget this nide */
-      for (idls = ide_idl_list(nide); idls!=NULL; idls = idl_list_next(idls)) {
-	idl_tab_entry = idl_list_idl(idls);
-	if (idlt_idl(idl_tab_entry) != NULL) {
-	  if (!remove_ide_from_idl(nide, &idl_tab_entry)) {
-	    handle_empty_idl_creation(&idl_tab_entry);
-	  }
-	}
-      }
-      ide_idl_list(nide) = NULL;	/* Forget places containing nide */
-    }
+
+  subg_nde_list(subgoal) = NULL; /* forget this NDE list */
+  while (nde != NULL) {
+    de = pnde_de(nde); dl = pnde_dl(nde);
+    tmp = pnde_next(nde);
+    release_entry(nde, released_pndes, pnde_next);
+    nde = tmp;	/* the next NDE */
+    if (!remove_de_from_dl(de, dl))
+      handle_empty_dl_creation(dl);
+  }
 }
 
-/*----------------------------------------------------------------------*/
-/*  simplify_neg_succeeds(SubGoal)					*/
-/*	On occasion that the SubGoal succeeds (gets an unconditional	*/
-/*	answer that is identical to the subgoal), it deletes all delay	*/
-/*	lists that contain the negative delay element of that SubGoal.	*/
-/*----------------------------------------------------------------------*/
+#define remove_pnde(PNDE_HEAD, PNDE)					\
+  if (PNDE_HEAD == PNDE)						\
+    PNDE_HEAD = pnde_next(PNDE);					\
+  else									\
+    pnde_next(pnde_prev(PNDE)) = pnde_next(PNDE);			\
+  release_entry(PNDE, released_pndes, pnde_next)
+
+/*
+ * On occasion that the subgoal succeeds (gets an unconditional	
+ * answer that is identical to the subgoal), it deletes all delay	
+ * lists that contain a negative delay element with that subgoal.
+ * 
+ * Before remove_dl_from_dl_list(), all the DEs in the DL to be
+ * removed have to be released, and each P(N)DE which points to a DE
+ * in the DL has also to be released.
+ */
 
 static void simplify_neg_succeeds(SGFrame subgoal)
 {
-    IDLs    idls;
-    IDLUs   idlu;
-    ASI     used_asi;
-    NODEptr used_as_leaf;
-    IDLT    idl_tab_entry;
-    IDE	    nide = subg_nide(subgoal);
+  PNDE nde = subg_nde_list(subgoal), tmp_nde;
+  DL dl;
+  DE de, tmp_de;
+  ASI used_asi, de_asi;
+  NODEptr used_as_leaf;
 
-#ifdef __SIMPLIFICATION_DEBUG
-    if (nide != NULL) {
-      fprintf(stderr, "About to simplify successful neg. DE of subgoal ");
-#ifdef IDE_TABLE_DEBUG
-      print_subgoal(stderr, subgoal);
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start simplify_neg_succeeds()\n");
 #endif
-      fprintf(stderr, " ...\n");
-    }
-#endif
-    if (nide != NULL) {
-      subg_nide(subgoal) = NULL;	/* forget this nide */
-      for (idls = ide_idl_list(nide); idls!=NULL; idls = idl_list_next(idls)) {
-	idl_tab_entry = idl_list_idl(idls);
-	for (idlu = idlt_usage(idl_tab_entry);
-	     idlu != NULL;
-	     idlu = idlu_next_usage(idlu)) {
-	  used_as_leaf = idlu_asl(idlu);
-	  if (is_not_deleted(used_as_leaf) &&
-	      (used_asi = (ASI) Delay(used_as_leaf)) != NULL) {
-	    if (!remove_idl_from_idl_list(idl_tab_entry, &used_asi)) {
-	      handle_unsupported_answer_subst(&used_as_leaf);
-	    }
+
+  /*
+   * First, set this NDE list as NULL, because further simplification
+   * operations (invoked by handle_unsupported_answer_subst) may visit
+   * this NDE list again.  At that time, since this pointer is already
+   * NULL, nothing will be done.
+   */
+  subg_nde_list(subgoal) = NULL;
+
+  while (nde != NULL) {
+    dl = pnde_dl(nde); /* dl: to be removed */
+    used_as_leaf = dl_asl(dl);
+    if (is_not_deleted(used_as_leaf) &&
+	(used_asi = (ASI)Delay(used_as_leaf)) != NULL) {
+      de = dl_de_list(dl); /* to release all DEs in dl */
+      while (de != NULL) {
+	tmp_de = de_next(de);
+	if (de != pnde_de(nde)) { /*
+				   * except this NDE, which will be
+				   * released later (within the first
+				   * while loop) anyway
+				   */
+	  if (de_ans_subst(de) == NULL) { /* is NDE */
+	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
+	  }
+	  else {
+	    de_asi = (ASI)Delay(de_ans_subst(de));
+ 	    remove_pnde(asi_pdes(de_asi), de_pnde(de));
 	  }
 	}
+#ifdef DEBUG_DELAYVAR
+	fprintf(stderr, ">>>> release DE (in simplify_neg_succeeds)");
+#endif
+	release_entry(de, released_des, de_next);
+	de = tmp_de; /* next DE */
+      } /* while */
+
+      if (!remove_dl_from_dl_list(dl, used_asi)) {
+	handle_unsupported_answer_subst(used_as_leaf);
       }
-      ide_idl_list(nide) = NULL;	/* forget usage of this ide */
-    }
+    } /* if */
+    tmp_nde = pnde_next(nde); /* release unused NDE */
+    release_entry(nde, released_pndes, pnde_next);
+    nde = tmp_nde;
+  } /* while */
 }
 
-/*----------------------------------------------------------------------*/
-/*  simplify_pos_unsupported(AnswerSubstitution)			*/
-/*	On occasion that an AnswerSubstitution looses all its		*/
-/*	conditional answers, it deletes all delay lists that contain	*/
-/*	the positive delay element pointing to that AnswerSubstitution.	*/
-/*----------------------------------------------------------------------*/
+/*
+ * On occasion that an AnswerSubstitution looses all its conditional
+ * answers, it deletes all delay lists that contain a positive delay
+ * element pointing to that AnswerSubstitution.
+ */
 
 static void simplify_pos_unsupported(NODEptr as_leaf)
 {
-    IDLs    idls;
-    IDLUs   idlu;
-    ASI     used_asi;
-    NODEptr used_as_leaf;
-    IDLT    idl_tab_entry;
-    ASI     asi = (ASI) Delay(as_leaf);	/* never NULL when here */
-    IDE     pide = asi_pide(asi);	/* so this is always OK */
+  ASI asi = (ASI)Delay(as_leaf);
+  PNDE pde = asi_pdes(asi), tmp_pde;
+  DL dl;
+  DE de, tmp_de;
+  ASI used_asi, de_asi;
+  NODEptr used_as_leaf;
 
-#ifdef __SIMPLIFICATION_DEBUG
-    if (pide != NULL) {
-      fprintf(stderr,
-	      "About to simplify unsupported pos. DE of AnsSubst %p...\n",
-	      as_leaf);
-    }
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start simplify_pos_unsupported()\n");
 #endif
-    if (pide != NULL) {
-      for (idls = ide_idl_list(pide); idls!=NULL; idls = idl_list_next(idls)) {
-	idl_tab_entry = idl_list_idl(idls);
-	for (idlu = idlt_usage(idl_tab_entry);
-	     idlu != NULL;
-	     idlu = idlu_next_usage(idlu)) {
-	  used_as_leaf = idlu_asl(idlu);
-	  if (is_not_deleted(used_as_leaf) &&
-	      (used_asi = (ASI) Delay(used_as_leaf)) != NULL) {
-	    if (!remove_idl_from_idl_list(idl_tab_entry, &used_asi)) {
-	      handle_unsupported_answer_subst(&used_as_leaf);
-	    }
+
+  /* First, set this PDE list as NULL */
+  asi_pdes(asi) = NULL;
+
+  while (pde != NULL) {
+    dl = pnde_dl(pde); /* dl: to be removed */
+    used_as_leaf = dl_asl(dl);
+    if (is_not_deleted(used_as_leaf) &&
+	(used_asi = (ASI)Delay(used_as_leaf)) != NULL) {
+      de = dl_de_list(dl); /* to release all DEs in dl */
+      while (de != NULL) {
+	tmp_de = de_next(de);
+	if (de != pnde_de(pde)) {
+	  if (de_ans_subst(de) == NULL) { /* is NDE */
+	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
+	  }
+	  else {			  /* is PDE */
+	    de_asi = (ASI)Delay(de_ans_subst(de));
+	    remove_pnde(asi_pdes(de_asi), de_pnde(de));
 	  }
 	}
+#ifdef DEBUG_DELAYVAR
+	fprintf(stderr, ">>>> release DE (in simplify_pos_unsupported)");
+#endif
+	release_entry(de, released_des, de_next);
+	de = tmp_de; /* next DE */
+      } /* while */
+
+      if (!remove_dl_from_dl_list(dl, used_asi)) {
+	handle_unsupported_answer_subst(used_as_leaf);
       }
-      ide_idl_list(pide) = NULL;	/* forget usage of this ide */
-    }
+    } /* if */
+    tmp_pde = pnde_next(pde); /* release unused PDE */
+    release_entry(pde, released_pndes, pnde_next);
+    pde = tmp_pde;
+  } /* while */
+}
+
+void abolish_wfs_space(void)
+{
+  char *last_block;
+
+#ifndef LOCAL_EVAL
+    extern void abolish_edge_space();
+#endif
+
+  /* clear DE blocks */
+
+  while (current_de_block) {
+    last_block = *(char **)current_de_block;
+    free(current_de_block);
+    current_de_block = last_block;
+  }
+
+  /* clear DL blocks */
+
+  while (current_dl_block) {
+    last_block = *(char **)current_dl_block;
+    free(current_dl_block);
+    current_dl_block = last_block;
+  }
+
+  /* clear PNDE blocks */
+  
+  while (current_pnde_block) {
+    last_block = *(char **)current_pnde_block;
+    free(current_pnde_block);
+    current_pnde_block = last_block;
+  }
+
+  /* reset some pointers */
+  
+  released_des = NULL;
+  released_dls = NULL;
+  released_pndes = NULL;
+
+  next_free_de = NULL;
+  next_free_dl = NULL;
+  next_free_pnde = NULL;
+
+  current_de_block_top = NULL;
+  current_dl_block_top = NULL;
+  current_pnde_block_top = NULL;
+
+#ifndef LOCAL_EVAL
+    abolish_edge_space();
+#endif
 }
 
 /*---------------------- end of file slgdelay.c ------------------------*/
