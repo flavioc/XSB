@@ -59,7 +59,6 @@
 	file_puttoken/3,
 	code_call/3, 
 	call0/1,
-	code_load/2, 
 	code_load/3, 
 	load_seg/5, 
 	file_gettoken/5,
@@ -136,8 +135,7 @@
 	socket_request/6.
 
 :- export 
-	file_function/7,
-	psc_insert/3, psc_set_env/2, conname/2, conpsc/2, 
+	file_function/7, conname/2, conpsc/2, 
 	machine_file_exists/1, backtrackable_buff_set_word/4,
   	is_backslashing_os/0, is_pcdos/0, slash/1.
 

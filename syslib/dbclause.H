@@ -25,7 +25,7 @@
 	  
 :- export db_retract/3, db_retract_nr/3, db_reclaim_space/2.
 :- export db_clause/4.
-:- export db_retractall/2, db_abolish/2, '_$clause_int'/1.
+:- export db_retractall/2, db_abolish/1, '_$clause_int'/1.
 
 
 :- import asserti/2 from assert.

@@ -1,5 +1,5 @@
 /* File:      assert.H
-** Author(s): Kostis F. Sagonas, David S. Warren
+** Author(s): Kostis Sagonas, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -24,7 +24,6 @@
 */
 
 
-
 :- export assert0/1, assert/1, asserta/1, assertz/1, 
 	  asserti/2, assertai/2, assertzi/2.
 :- export retract/1, retractall/1, abolish/1, abolish/2. 
@@ -34,23 +33,20 @@
 :- export (dynamic)/1.
 :- export t_assert/2.
 
+
 :- import (=..)/2, functor/3, integer/1, callable/1,
 	  goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1
      from standard.
-
-:- import db_retract/3, db_retractall/2, db_abolish/2, db_clause/4,
+:- import db_retract/3, db_retractall/2, db_abolish/1, db_clause/4,
 	  db_retract_nr/3, db_reclaim_space/2
      from dbclause.
 :- import '_$index'/3, '_$trie_asserted'/1  from file_op.
 :- import psc_prop/2, psc_type/2, psc_set_type/2, psc_arity/2, buff_byte/3,
 	  buff_word/3, conpsc/2, assert_code_to_buff/2, assert_buff_to_clref/7,
 	  compiled_to_dynamic/2, psc_tabled/2, psc_set_prop/2, unload_seg/1,
-	  psc_set_env/2, db_build_prref/3
+	  db_build_prref/3
      from machine.
-
 :- import '_$table'/1 from file_op.
-
 :- import standard_symbol/3 from std_sbp.
-
 :- import default_assert_size/1 from config.
 :- import '_$multifile_retract'/3 from parse.

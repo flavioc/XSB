@@ -1,5 +1,5 @@
 /* File:      dbclause.P
-** Author(s): Kostis F. Sagonas, David S. Warren
+** Author(s): Kostis Sagonas, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -128,9 +128,9 @@ db_retract_abol(Prref1) :-
 	buff_set_byte(Prref,0,248).	% fail
 
 
-% db_abolish(+Call,+Prref) deletes all clauses of a predicate.
+% db_abolish(+Prref) deletes all clauses of a predicate.
 
-db_abolish(_Call,Prref) :-
+db_abolish(Prref) :-
 	db_retract_abol(Prref),
         db_remove_prref(Prref).
 

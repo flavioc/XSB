@@ -355,51 +355,51 @@ prolog_arglist(X, List, I, N) :-
 hilog_functor(T, F, N) :-
         term_type(T, Type),
         ( Type =:= 0 ->
-		( arity_integer(N) ->
-			( atomic(F) ->
-				( N =:= 0 ->
-					T = F
-				; ( '_$hilog_symbol'(F) ->
-					conname(apply, Name),
-					NewN is N + 1,
-					psc_insert(Name, NewN, PSC2),
-					term_new(PSC2, T),
-					arg(1, T, F)
-				  ; ( F == '.', N =:= 2 ->
-					T = [_|_]
-				    ; conname(F, Name),
-				      psc_insert(Name, N, PSC2),
-				      term_new(PSC2, T)
-				    )
-				  )
-				)
-			% Here F is either a variable or a compound term.
-			; ( N =:= 0 ->
-				abort('Wrong type in argument 2 of hilog_functor/3')
-			  ; conname(apply, Name),
+	    ( arity_integer(N) ->
+		( atomic(F) ->
+		    ( N =:= 0 ->
+			T = F
+		    ;	( '_$hilog_symbol'(F) ->
+			    conname(apply, Name),
 			    NewN is N + 1,
-			    psc_insert(Name, NewN, PSC2),
+			    psc_insert(Name, NewN, PSC2, 0),
 			    term_new(PSC2, T),
 			    arg(1, T, F)
-			  )
+			;   ( F == '.', N =:= 2 ->
+				T = [_|_]
+			    ;	conname(F, Name),
+				psc_insert(Name, N, PSC2, 0),
+				term_new(PSC2, T)
+			    )
 			)
-		; ( var(N) ->
-			abort('Uninstantiated argument 3 of hilog_functor/3')
-		  ; ( integer(N) ->
-			abort('Argument 3 of hilog_functor/3 must be in the range 0..255')
-		    ; abort('Wrong type in argument 3 of hilog_functor/3')
 		    )
-		  )
+		    % Here F is either a variable or a compound term.
+		;   ( N =:= 0 ->
+			abort('Wrong type in argument 2 of hilog_functor/3')
+		    ;	conname(apply, Name),
+			NewN is N + 1,
+			psc_insert(Name, NewN, PSC2, 0),
+			term_new(PSC2, T),
+			arg(1, T, F)
+		    )
 		)
-	; Type =:= 3 -> F = '.', N = 2
-	; atomic(T) -> F = T, N = 0
-	; T =.. [apply, F, FirstArg|Args] ->	% HiLog term found
-		length([FirstArg|Args], N)
-	; term_psc(T, PSC),
-	  psc_name(PSC, Name),
-	  psc_arity(PSC, Arity),
-	  F = Name,
-	  N = Arity
+	    ;	( var(N) ->
+		    abort('Uninstantiated argument 3 of hilog_functor/3')
+		;   ( integer(N) ->
+			abort('Argument 3 of hilog_functor/3 must be in the range 0..255')
+		    ;	abort('Wrong type in argument 3 of hilog_functor/3')
+		    )
+		)
+	    )
+	;   Type =:= 3 -> F = '.', N = 2
+	;   atomic(T) -> F = T, N = 0
+	;   T =.. [apply, F, FirstArg|Args] -> % HiLog term found
+	    length([FirstArg|Args], N)
+	;   term_psc(T, PSC),
+	    psc_name(PSC, Name),
+	    psc_arity(PSC, Arity),
+	    F = Name,
+	    N = Arity
 	).
 
 hilog_arg(I, T, A) :- hilog_arg(I, T, A).
