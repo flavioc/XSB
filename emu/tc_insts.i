@@ -195,7 +195,7 @@ case trie_no_cp_var:
 	printf("trie_no_cp_var\n");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
-	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
+	num_vars_in_var_regs = DecodeTrieVar(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -221,7 +221,7 @@ case trie_try_var:
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
 	hbreg = hreg;
-	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
+	num_vars_in_var_regs = DecodeTrieVar(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -243,7 +243,7 @@ case trie_retry_var:
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
-	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
+	num_vars_in_var_regs = DecodeTrieVar(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -266,7 +266,7 @@ case trie_trust_var:
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
 	restore_trail_condition_registers(breg);
-	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
+	num_vars_in_var_regs = DecodeTrieVar(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -626,7 +626,7 @@ case trie_assert_inst:
 
   NodePtr = (BTNptr) (lpcreg - 1);
   if (Child(NodePtr) != NULL) {
-    psc_ptr = TrieDecodePSC(NodePtr);
+    psc_ptr = DecodeTriePSC(BTN_Symbol(NodePtr));
     reg_arrayptr = reg_array -1;
     num_vars_in_var_regs = -1;
     save_find_locx(ereg);

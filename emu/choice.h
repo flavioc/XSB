@@ -100,7 +100,7 @@ typedef struct tabled_choice_point {
     CPtr efreg;
 #ifdef LOCAL_EVAL
     int tag;
-    ALPtr trie_return;
+    ALNptr trie_return;
     int arity;
 #endif
 #else
@@ -250,7 +250,7 @@ typedef struct tabled_choice_point {
     tcp_prevbreg(t_breg) = prev; \
     tcp_tag(t_breg) = CHECK_COMPLETE_TAG; \
     tcp_arity(t_breg) = (int) arity; \
-    tcp_trie_return(t_breg) = (ALPtr) NULL; \
+    tcp_trie_return(t_breg) = (ALNptr) NULL; \
     tcp_pcreg(t_breg) = lpcreg
 #else
 #define save_generator_choicepoint(t_breg,t_ereg,subg,prev,arity) \
@@ -289,7 +289,7 @@ typedef struct consumer_choice_point {
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
     CPtr subgoal_ptr;
     CPtr prevlookup;      
-    ALPtr trie_return;
+    ALNptr trie_return;
 #ifdef CHAT
     CPtr chat_area;	/* temporarily */
 #endif
@@ -376,7 +376,7 @@ typedef struct compl_susp_frame {
     CPtr prevcsf;	/* previous completion suspension frame */
     Cell neg_loop;	/* !0 if the suspension is not LRD stratified */
 	     /* for CHAT this field appears in the place of nlcp_trie_return */
-             /* so please make sure that it has the same size as ALPtr */
+             /* so please make sure that it has the same size as ALNptr */
 #ifdef CHAT
     CPtr chat_area;	/* this field is needed for compl susp frames */
 #endif

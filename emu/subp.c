@@ -51,7 +51,8 @@
 #include "deref.h"
 #include "flags.h"
 #include "binding.h"
-#include "tries.h"
+#include "trie_internals.h"
+#include "trassert.h"
 #include "choice.h"
 #include "token.h"
 #include "sig.h"
@@ -504,7 +505,8 @@ byte *exception_handler(char *string)
   fprintf(stderr, "%s! Aborting...\n", string);
   breg = (CPtr)(tcpstack.high - abort_cp_offset());
   hbreg = cp_hreg(breg);
-  ebreg = cp_ebreg(breg); 
+  ebreg = cp_ebreg(breg);
+  switch_from_trie_assert;      /* ensure table-trie space is default */
   remove_open_tables_reset_freezes();
   return cp_pcreg(breg); 
 }

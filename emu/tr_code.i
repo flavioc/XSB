@@ -47,13 +47,13 @@
 								\
    switch (cell_tag(Subterm)) {					\
    case STRING:  case INT:  case FLOAT:				\
-     symbol = TrieEncodeConstant(Subterm);			\
+     symbol = EncodeTrieConstant(Subterm);			\
      break;							\
    case LIST:							\
-     symbol = TrieEncodeList(Subterm);				\
+     symbol = EncodeTrieList(Subterm);				\
      break;							\
    case CS:							\
-     symbol = TrieEncodeFunctor(Subterm);			\
+     symbol = EncodeTrieFunctor(Subterm);			\
      break;							\
    default:							\
      fprintf(stderr,"Bad tag :Type %ld ",cell_tag(Subterm));	\

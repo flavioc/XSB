@@ -171,7 +171,6 @@ char *init_para(int argc, char *argv[])
   char *cmd_line_goal="true.";
   int strlen_instdir, strlen_initfile, strlen_2ndfile;
 
-  HASHrootptr = &HASHroot;
   init_newtrie();
   init_trie_aux_areas();
 

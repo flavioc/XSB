@@ -32,7 +32,7 @@
  * orig_breg is the address of the TCP
  */
 CPtr sched_answers(CPtr subg_struct, CPtr orig_breg, int leader) {
-  ALPtr tmp_ret_ptr;
+  ALNptr tmp_ret_ptr;
   CPtr first_sched_node, prev_node, active_node;
 
 #ifdef PROFILE

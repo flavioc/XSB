@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** 
+** $Id$
 ** 
 */
 
@@ -36,6 +36,7 @@
  */
 
 
+#include "struct_manager.h"
 #include "tries.h"
 
 
@@ -123,7 +124,7 @@
      TN_Instr(pTN) = (byte)trie_try_numcon;		\
      break;						\
    case TrieVar:					\
-     if (TrieVar_IsFirstOccurrence(Symbol))		\
+     if (IsNewTrieVar(Symbol))				\
        TN_Instr(pTN) = (byte)trie_try_var;		\
      else						\
        TN_Instr(pTN) = (byte)trie_try_val;		\
@@ -206,6 +207,9 @@
 #define IsDeletedNode(pTSC)	( TSC_Status(pTSC) != VALID_NODE_STATUS )
 
 #define MakeStatusValid(pTSC)	  TSC_Status(pTSC) = VALID_NODE_STATUS
+
+/* The following definition depends upon the instruction field having
+   already been set to a valid trie instruction code. */
 #define MakeStatusDeleted(pTSC)	  TSC_Status(pTSC) = TSC_Instr(pTSC)
 
 /*---------------------------------------------------------------------------*/
@@ -306,21 +310,27 @@ enum Types_of_Tries {
  *  tagged integers, starting from 0.
  */
 
-#define TrieEncodeFunctor(Cell_CS)	makecs(follow(clref_val(Cell_CS)))
-#define TrieEncodeList(Cell_LIST)	( (Cell)LIST )
-#define TrieEncodeConstant(Cell_Const)	( (Cell)Cell_Const )
-
-/* For initializing the Symbol field in root nodes with a predicate */
-#define TrieEncodePSC(pPSC)		makecs(pPSC)
-#define TrieDecodePSC(pRoot)		DecodeFunctorSymbol(TN_Symbol(pRoot))
-
-#define DecodeFunctorSymbol(Symbol)	(Psc)cs_val(Symbol)
-#define DecodeListSymbol(Symbol)	( Symbol )
-#define DecodeConstantSymbol(Symbol)	( Symbol )
-
 #define TrieSymbolType(Symbol)		cell_tag(Symbol)
 
-#define TrieSymbolHasType(pTN,Type)   (TrieSymbolType(TN_Symbol(pTN)) == Type)
+#define IsTrieList(Symbol)		( TrieSymbolType(Symbol) == LIST )
+#define IsTrieFunctor(Symbol)		( TrieSymbolType(Symbol) == CS )
+#define IsTrieVar(Symbol)		( TrieSymbolType(Symbol) == TrieVar )
+#define IsTrieConstant(Symbol)			\
+   ( (TrieSymbolType(Symbol) == STRING) ||	\
+     (TrieSymbolType(Symbol) == INT) ||		\
+     (TrieSymbolType(Symbol) == FLOAT) )
+
+#define EncodeTrieFunctor(Cell_CS)	makecs(follow(clref_val(Cell_CS)))
+#define EncodeTrieList(Cell_LIST)	( (Cell)LIST )
+#define EncodeTrieConstant(Cell_Const)	( (Cell)Cell_Const )
+
+#define DecodeTrieFunctor(Symbol)	(Psc)cs_val(Symbol)
+#define DecodeTrieList(Symbol)		( Symbol )
+#define DecodeTrieConstant(Symbol)	( Symbol )
+
+/* For initializing the Symbol field in root nodes with a predicate */
+#define EncodeTriePSC(pPSC)		makecs(pPSC)
+#define DecodeTriePSC(Symbol)		DecodeTrieFunctor(Symbol)
 
 /*
  *  Symbols in Escape nodes are never looked at, so we arbitrarily
@@ -332,11 +342,11 @@ enum Types_of_Tries {
 /* TrieVar Operations
  * ------------------
  *  Trie Variables are a type of symbol stored in a trie which represent
- *  variables.  In actuality, they are 'TrieVar'-tagged, non-negative
- *  integers.  Along a path in the trie, the same integered trievar
- *  represents the same variable.  Since it is sometimes useful to know
- *  whether a trievar has already been encountered higher up in the path,
- *  first occurrences of trievars contain an additional (bit) tag.
+ *  standardized variables.  In actuality, they are 'TrieVar'-tagged,
+ *  non-negative integers.  Along a path in the trie, the same integered
+ *  trievar represents the same variable.  Since it is sometimes useful to
+ *  know whether a trievar has already been encountered higher up in the
+ *  path, first occurrences of trievars contain an additional (bit) tag.
  *
  *  When interning a term into a trie, variables in the term must be
  *  marked as they are encountered (to handle nonlinearity).  Marking of
@@ -348,59 +358,30 @@ enum Types_of_Tries {
  *  marks the term's variable.
  */
 
-/* from tries.c:
- *  When a new variable is encountered for trie interning, it is
- *  represented in the trie by an int-encoded (shifted left so that a
- *  tag can be applied) number with a "TrieVar" tag.  This number is
- *  made up of a base number from a counter, which starts at 0, and is
- *  bit-ORed with the value 0x10000.  All subsequent occurrences of this
- *  variable in the term of the trie do not have this extra tag value
- *  ORed in.
- */
+#define NEW_TRIEVAR_TAG      0x10000
 
-#define TRIEVAR_FIRST_OCCURRENCE_TAG      0x10000
+#define EncodeNewTrieVar(Index)		maketrievar(Index | NEW_TRIEVAR_TAG)
+#define EncodeTrieVar(Index)		maketrievar(Index)
 
-#define TrieVar_EncodeFirstOccurrence(Index)		\
-   maketrievar(Index | TRIEVAR_FIRST_OCCURRENCE_TAG)
+#define DecodeTrieVar(Symbol)	  ( trievar_val(Symbol) & ~NEW_TRIEVAR_TAG )
 
-#define TrieVar_EncodeNum(Index)      maketrievar(Index)
-
-#define TrieVar_IsFirstOccurrence(TrieVar_Symbol)			\
-   ( trievar_val(TrieVar_Symbol) & TRIEVAR_FIRST_OCCURRENCE_TAG )
-
-#define TrieVar_DecodeNum(TrieVar_Symbol)				\
-   ( trievar_val(TrieVar_Symbol) & ~TRIEVAR_FIRST_OCCURRENCE_TAG )
+/* Use this test only after determining the Symbol to be a TrieVar */
+#define IsNewTrieVar(Symbol)	  ( trievar_val(Symbol) & NEW_TRIEVAR_TAG )
 
 
-#define Symbol_IsTrieVar(Symbol)    (TrieSymbolType(Symbol) == TrieVar)
+#define StandardizeVariable(DerefedVar,Index)	\
+   bld_ref(DerefedVar,VarEnumerator[Index])
 
-#define IsPtrIntoVarEnum(DerefedVar)					\
-   ( ((CPtr)(DerefedVar) >= VarEnumerator) &&				\
+#define IsStandardizedVariable(DerefedVar)			\
+   ( ((CPtr)(DerefedVar) >= VarEnumerator) &&			\
      ((CPtr)(DerefedVar) <= (VarEnumerator + NUM_TRIEVARS - 1)) )
 
 /*
  *  Given an address that has been determined to lie within the
  *  VarEnumerator array, determine its index within this array.
  */
-#define ConvertVarEnumPtrToIndex(pVarEnumCell)	\
+#define IndexOfStandardizedVariable(pVarEnumCell)	\
    ( (CPtr)(pVarEnumCell) - VarEnumerator )
-
-
-#define CPtr_DerefInPlace(pCell)   cptr_deref(pCell)
-#define Cell_DerefInPlace(Cell)    deref(Cell)
-
-#define SetVarToUnbound(pVar)   bld_ref(pVar, pVar);
-
-/*
- *  Derefs a symbol stored in a trie node by converting a TrieVar into
- *  an address, and then performing a normal deref operation.
- */
-#define TrieSymbol_DerefInPlace(Symbol)			\
-   if (Symbol_IsTrieVar(Symbol)) {			\
-     Symbol = VarEnumerator[TrieVar_DecodeNum(Symbol)];	\
-     Cell_DerefInPlace(Symbol);				\
-   }
-
 
 /*---------------------------------------------------------------------------*/
 
@@ -409,12 +390,12 @@ enum Types_of_Tries {
  *		         =======================
  */
 
-#define Search_TrieNode_Chain_for_Symbol(pTN,Symbol,ChainLength) {	\
-   ChainLength = 0;							\
-   while ( IsNonNULL(pTN) && (TN_Symbol(pTN) != Symbol) ) {		\
-     ChainLength++;							\
-     pTN = TN_Sibling(pTN);						\
-   }									\
+#define SearchChainForSymbol(Chain,Symbol,ChainLength) {	\
+   ChainLength = 0;						\
+   while ( IsNonNULL(Chain) && (TN_Symbol(Chain) != Symbol) ) {	\
+     ChainLength++;						\
+     Chain = TN_Sibling(Chain);					\
+   }								\
  }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -452,7 +433,7 @@ enum Types_of_Tries {
 #define TRIEVAR_BUCKET	0
 
 #define TrieHash(Symbol, HashMask)			\
-   ( Symbol_IsTrieVar(Symbol)				\
+   ( IsTrieVar(Symbol)					\
       ? TRIEVAR_BUCKET					\
       : ( ((Symbol) >> CELL_TAG_SIZE) & (HashMask) )	\
     )
@@ -486,18 +467,19 @@ enum Types_of_Tries {
 /*
  *  Insert a Trie Node into a hash table whose size is HashMask+1.
  */
-#define TrieHT_InsertNode(pBucketArray,HashMask,pTN) {			\
+#define TrieHT_InsertNode(pBucketArray,HashMask,pTrieNode) {		\
 									\
-   void **pBucket;							\
-									\
-   pBucket = (void **)pBucketArray + TrieHash(TN_Symbol(pTN),HashMask);	\
+   BTNptr pTN, *pBucket;						\
+          								\
+   pTN = (BTNptr)pTrieNode;						\
+   pBucket = (BTNptr *)pBucketArray + TrieHash(TN_Symbol(pTN),HashMask);\
    if ( IsNonNULL(*pBucket) ) {						\
      TN_ForceInstrCPtoTRY(pTN);						\
      TN_RotateInstrCPtoRETRYorTRUST(*pBucket);				\
    }									\
    else									\
      TN_ForceInstrCPtoNOCP(pTN);					\
-   TN_Sibling(pTN) = *pBucket;						\
+   BTN_Sibling(pTN) = *pBucket;						\
    *pBucket = pTN;							\
  }
 
@@ -531,19 +513,18 @@ enum Types_of_Tries {
 #define BTN_SetSF(pBTN,pSF)     BTN_Child(pBTN) = (BTNptr)(pSF)
 #define BTN_GetSF(pBTN)         ((SGFrame)BTN_Child(pBTN))
 
-/*
-#define BTNs_PER_BLOCK   8*K
-
-extern Structure_Manager smBTN;
-*/
+#define BTNs_PER_BLOCK   2*K
+extern Structure_Manager smTableBTN;
+extern Structure_Manager smAssertBTN;
+extern Structure_Manager *smBTN;
 
 /* Allocating New BTNs
    ------------------- */
 #define New_BTN(pBTN,TrieType,NodeType,Symbol,Parent,Sibling) {	\
-   SM_AllocateStruct(smBTN,pBTN);				\
+   SM_AllocateStruct(*smBTN,pBTN);				\
    TN_SetInstr(pBTN,Symbol);					\
    TN_ResetInstrCPs(pBTN,Sibling);				\
-   BTN_Padding(pBTN) = IPT_PADDING_VALUE;			\
+   BTHT_Status(pBTN) = VALID_NODE_STATUS;			\
    BTN_TrieType(pBTN) = TrieType;				\
    BTN_NodeType(pBTN) = NodeType;				\
    BTN_Symbol(pBTN) = Symbol;					\
@@ -565,10 +546,13 @@ extern Structure_Manager smBTN;
  */
 
 
+#define BTHTs_PER_BLOCK   16
+extern Structure_Manager smTableBTHT;
+extern Structure_Manager smAssertBTHT;
+extern Structure_Manager *smBTHT;
+
 #define New_BTHT(pBTHT,TrieType) {					\
-   pBTHT = malloc(sizeof(BasicTrieHT));					\
-   if ( IsNULL(pBTHT) )							\
-     xsb_abort("No room to allocate tabling hash table");		\
+   SM_AllocateStruct(*smBTHT,pBTHT);					\
    BTHT_Instr(pBTHT) = hash_opcode;					\
    BTHT_Status(pBTHT) = VALID_NODE_STATUS;				\
    BTHT_TrieType(pBTHT) = TrieType;					\
@@ -577,21 +561,63 @@ extern Structure_Manager smBTN;
    BTHT_NumBuckets(pBTHT) = TrieHT_INIT_SIZE;				\
    BTHT_BucketArray(pBTHT) =						\
      (BTNptr *)calloc(TrieHT_INIT_SIZE, sizeof(BTNptr));		\
-   if ( IsNULL(BTHT_BucketArray(pBTHT)) )				\
+   if ( IsNonNULL(BTHT_BucketArray(pBTHT)) )				\
+     BTHT_AddNewToAllocList(pBTHT) 					\
+   else {								\
+     SM_DeallocateStruct(*smBTHT,pBTHT);				\
      xsb_abort("No room to allocate buckets for tabling hash table");	\
-   BTHT_PrevBTHT(pBTHT) = HASHrootptr;					\
-   BTHT_NextBTHT(pBTHT) = BTHT_NextBTHT(HASHrootptr);			\
-   if ( IsNonNULL(BTHT_NextBTHT(HASHrootptr)) )				\
-     BTHT_PrevBTHT(BTHT_NextBTHT(HASHrootptr)) = pBTHT;			\
-   BTHT_NextBTHT(HASHrootptr) = pBTHT;					\
+   }									\
  }
 
+/*
+ * Allocated Hash Tables are maintained on a list to facilitate
+ * deallocation of the bucket arrays when the trie space is freed
+ * en masse.
+ */
+#define BTHT_AddNewToAllocList(pBTHT)					\
+   SM_AddToAllocList_DL(*smBTHT,pBTHT,BTHT_PrevBTHT,BTHT_NextBTHT)
+
+#define BTHT_RemoveFromAllocList(pBTHT)					 \
+   SM_RemoveFromAllocList_DL(*smBTHT,pBTHT,BTHT_PrevBTHT,BTHT_NextBTHT)
+
+/* Prepare for mass deallocation */
+#define BTHT_FreeAllocatedBuckets {				\
+   BTHTptr pBTHT;						\
+								\
+   for ( pBTHT = SM_AllocList(*smBTHT);  IsNonNULL(pBTHT);	\
+	 pBTHT = BTHT_NextBTHT(pBTHT) )				\
+     free(BTHT_BucketArray(pBTHT));				\
+ }
 
 /*===========================================================================*/
 
 /*
- *  Misc
+ *			      Subgoal Frames
+ *			      ==============
  */
+
+
+#define ALNs_PER_BLOCK     512
+extern Structure_Manager smALN;
+
+
+/* Allocating New ALNs
+   ------------------- */
+#define New_ALN(pALN, pTN, pNext) {		\
+   SM_AllocateStruct(smALN,pALN);		\
+   ALN_Answer(pALN) = pTN;			\
+   ALN_Next(pALN) = pNext;			\
+ }
+
+
+#define free_answer_list(SubgoalFrame) {			\
+   if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
+     SM_DeallocateStructList(smALN,				\
+			     subg_ans_list_ptr(SubgoalFrame),	\
+			     subg_ans_list_tail(SubgoalFrame))	\
+   else								\
+     SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame))	\
+ }
 
 
 

@@ -49,6 +49,10 @@ typedef unsigned long prolog_term;	/* opaque type definition */
 #endif
 
 
+#define IsNULL(ptr)      ( (ptr) == NULL )
+#define IsNonNULL(ptr)   ( (ptr) != NULL )
+
+
 #ifdef WIN_NT
 #define SLASH '\\'
 #else

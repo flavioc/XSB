@@ -228,7 +228,7 @@ static int emuloop(byte *startaddr)
 /* for slginsts.i
    -------------- */
   Cell  CallNumVar;
-  ALPtr OldRetPtr;
+  ALNptr OldRetPtr;
   NODEptr TrieRetPtr;
   CallInfoRecord callInfo;
   CallLookupResults lookupResults;

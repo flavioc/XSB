@@ -83,7 +83,7 @@ struct completion_stack_frame {
   CPtr    ptcp;
   CPtr    cons_copy_list; /* Pointer to a list of consumer copy frames */
 #endif
-  ALPtr   del_ret_list;   /* to reclaim deleted returns */
+  ALNptr   del_ret_list;   /* to reclaim deleted returns */
   int     visited;
   EPtr    DG_edges;
   EPtr    DGT_edges;
@@ -187,11 +187,11 @@ struct subgoal_frame {
 #else
   CPtr compl_suspens_ptr; /* CP Stack ptr */
 #endif
-  ALPtr ans_list_ptr;	/* Pointer to the list of returns in the ret trie */
+  ALNptr ans_list_ptr;	/* Pointer to the list of returns in the ret trie */
   SGFrame prev_subgoal;
   NODEptr leaf_ptr;	/* Used only in remove_open_tries */
   CPtr  cp_ptr;         /* Pointer to the Generator CP */
-  ALPtr ans_list_tail;  /* pointer to the tail of the answer list */
+  ALNptr ans_list_tail;  /* pointer to the tail of the answer list */
   CPtr compl_flag;      /* jf: indicate whether subg is completed */
   PNDE nde_list;	/* pointer to a list of negative DEs */
 } ;
@@ -216,7 +216,7 @@ struct subgoal_frame {
 #define subg_nde_list(b)	((SGFrame)(b))->nde_list
 
 extern SGFrame subg_structure_list;
-extern ALPtr empty_return();
+extern ALNptr empty_return();
 #define subg_answers(subg) aln_next_aln(subg_ans_list_ptr(subg))
 
 /*
@@ -239,7 +239,7 @@ extern ALPtr empty_return();
 	subg_leaf_ptr(NewFrame) = LeafPtr; \
         BTN_SetSF(LeafPtr,NewFrame);\
 	subg_compl_stack_ptr(NewFrame) = (CPtr)(openreg - COMPLFRAMESIZE); \
-	subg_ans_list_ptr(NewFrame) = (ALPtr) empty_return(); \
+	subg_ans_list_ptr(NewFrame) = (ALNptr) empty_return(); \
 	if (subg_structure_list != NULL)\
 	  subg_prev_subgoal(subg_structure_list) = NewFrame;\
 	subg_next_subgoal(NewFrame) = subg_structure_list;\
@@ -280,8 +280,8 @@ extern ALPtr empty_return();
 /*----------------------------------------------------------------------*/
 
 #define NO_ANSWERS	NULL
-#define UNCOND_ANSWERS	(ALPtr)1
-#define COND_ANSWERS	(ALPtr)2
+#define UNCOND_ANSWERS	(ALNptr)1
+#define COND_ANSWERS	(ALNptr)2
 
 /*----------------------------------------------------------------------*/
 /* The following 2 macros are to be used for incomplete subgoals.	*/

@@ -34,6 +34,7 @@ extern void init_newtrie(void);
 extern void delete_branch(BTNptr, BTNptr *);
 extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);
+extern void delete_trie(BTNptr);
 
 extern bool has_unconditional_answers(SGFrame);
 
@@ -41,7 +42,4 @@ extern void newtrie(void);
 extern void trie_intern(void);
 extern int  trie_interned(void);
 extern void trie_dispose(void);
-extern void delete_trie(BTNptr);
-
-extern BTNptr *Set_ArrayPtr;
-extern int first_free_set;
+extern void delete_interned_trie(int);

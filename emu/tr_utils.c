@@ -60,6 +60,8 @@
 
 /*----------------------------------------------------------------------*/
 
+#define dbind_ref_nth_var(addr,n) dbind_ref(addr,VarEnumerator[n])
+
 #define MAX_VAR_SIZE	200
 
 CPtr Temp_VarPosReg;
@@ -74,7 +76,7 @@ extern void printterm(Cell, byte, int);
 
 bool has_unconditional_answers(SGFrame subg)
 {
-  ALPtr node_ptr = subg_answers(subg);
+  ALNptr node_ptr = subg_answers(subg);
  
   /* Either subgoal has no answers or it is completed */
   /* and its answer list has already been reclaimed. */
@@ -146,16 +148,15 @@ static BTNptr  *GNodePtrPtr;
      switch(cell_tag(xtemp1)) {						      \
      case FREE:								      \
      case REF1: 							      \
-       if (! IsPtrIntoVarEnum(xtemp1)) {				      \
+       if (! IsStandardizedVariable(xtemp1)) {				      \
 	 *(--Temp_VarPosReg) =(Cell) xtemp1;				      \
-	 /*printf("var[%lx] at %lx is %d\n",ctr,Temp_VarPosReg -1, xtemp1);*/ \
 	 dbind_ref_nth_var(xtemp1,ctr);					      \
-	 one_node_chk(flag,TrieVar_EncodeFirstOccurrence(ctr));		      \
+	 one_node_chk(flag,EncodeNewTrieVar(ctr));			      \
 	 ctr++;								      \
        }								      \
        else								      \
 	 one_node_chk(flag,						      \
-		      TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)));   \
+		      EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)));    \
        break;								      \
      case STRING:							      \
      case INT:								      \
@@ -168,7 +169,6 @@ static BTNptr  *GNodePtrPtr;
        pdlpush( cell(clref_val(xtemp1)) );				      \
        break;								      \
      case CS:								      \
-       /*put root in trie */						      \
        one_node_chk(flag,makecs(follow(cs_val(xtemp1))));		      \
        for(j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--)	      \
 	 {pdlpush(cell(clref_val(xtemp1) +j));}				      \
@@ -217,13 +217,13 @@ static BTNptr variant_call_lookup(int arity, CPtr argVector, BTNptr callTrie) {
       cptr_deref(xtemp1);                           
       switch (cell_tag(xtemp1)) {                              
         case FREE: case REF1:
-	  if (! IsPtrIntoVarEnum(xtemp1)) {
+	  if (! IsStandardizedVariable(xtemp1)) {
 	    *(--Temp_VarPosReg) = (Cell) xtemp1;	
 	    dbind_ref_nth_var(xtemp1,ctr);                 
-	    one_node_chk(flag,TrieVar_EncodeFirstOccurrence(ctr));           
+	    one_node_chk(flag,EncodeNewTrieVar(ctr));           
 	    ctr++;
 	  } else {
-	    one_node_chk(flag,TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)));
+	    one_node_chk(flag,EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)));
 	  }
 	  break;
 	case STRING: case INT: case FLOAT:            
@@ -231,13 +231,12 @@ static BTNptr variant_call_lookup(int arity, CPtr argVector, BTNptr callTrie) {
 	  break;                                              
 	case LIST:                                           
 	  one_node_chk(flag,LIST);                       
-	  pdlpush(cell(clref_val(xtemp1)+1));  /* changed */
-	  pdlpush(cell(clref_val(xtemp1))) ;                 
+	  pdlpush(cell(clref_val(xtemp1)+1));
+	  pdlpush(cell(clref_val(xtemp1)));
 	  recvariant_call_rdonly(flag);                      
 	  break;                                              
 	case CS: 
 	  one_node_chk(flag,makecs(follow(cs_val(xtemp1))));     
-	  /* put root in trie */                               
 	  for (j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1; j--) {
 	    pdlpush(cell(clref_val(xtemp1)+j));
 	  }
@@ -342,37 +341,12 @@ struct freeing_stack_node{
     free(temp);\
 }
 
-/* Macros for freeing table-components
-   ----------------------------------- */
-#define free_node(node) {  /* basic trie nodes */	\
-     /*printf("Freeing node at %x\n",node);*/		\
-     Sibl(node) = free_trie_nodes;			\
-     free_trie_nodes = node;				\
-}
-
-#define free_anslistnode(node) {			\
-     /*printf("Freeing node at %x\n",node);*/		\
-     aln_next_aln(node) = free_answer_list_nodes;	\
-     free_answer_list_nodes = node;			\
-}
-
-#define free_answer_list(SubgoalFrame) {			\
-   if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
-     aln_next_aln(subg_ans_list_tail(SubgoalFrame)) =		\
-       free_answer_list_nodes;					\
-   else								\
-     aln_next_aln(subg_ans_list_ptr(SubgoalFrame)) =		\
-       free_answer_list_nodes;			       		\
-   free_answer_list_nodes = subg_ans_list_ptr(SubgoalFrame);	\
-}     
 
 static void free_trie_ht(BTHTptr ht) {
-  
-  BTHT_NextBTHT(BTHT_PrevBTHT(ht)) = BTHT_NextBTHT(ht);
-  if ( IsNonNULL(BTHT_NextBTHT(ht)) )
-    BTHT_PrevBTHT(BTHT_NextBTHT(ht)) = BTHT_PrevBTHT(ht);
+
+  BTHT_RemoveFromAllocList(ht);
   free(BTHT_BucketArray(ht));
-  free(ht);
+  SM_DeallocateStruct(*smBTHT,ht);
 }
 
 /*----------------------------------------------------------------------*/
@@ -441,7 +415,7 @@ void delete_predicate_table(BTNptr x)
 		  push_node(Sibl(rnod));
 		if ( ! IsLeafNode(rnod) )
 		  push_node(Child(rnod));
-		free_node(rnod);
+		SM_DeallocateStruct(*smBTN,rnod);
 	      }
 	    }
 	  } /* free answer trie */
@@ -451,7 +425,7 @@ void delete_predicate_table(BTNptr x)
 	else 
 	  push_node(Child(node));
       } /* there is a child of "node" */
-      free_node(node);
+      SM_DeallocateStruct(*smBTN,node);
     }
   }
 }
@@ -540,6 +514,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
   int num_left_in_hash;
   BTNptr prev, parent_ptr, *y1, *z;
 
+
   while ( IsNonNULL(lowest_node_in_branch) && 
 	  ( Contains_NOCP_Instr(lowest_node_in_branch) ||
 	    IsTrieRoot(lowest_node_in_branch) ) ) {
@@ -551,8 +526,8 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
     set_parent_and_node_hook(lowest_node_in_branch,hook,&parent_ptr,&y1);
     if (is_hash(*y1)) {
       z = Calculate_Bucket_for_Symbol(*y1,Atom(lowest_node_in_branch));
-      if ( IsNULL(*z) || (*z != lowest_node_in_branch) )
-	xsb_exit("delete_branch: trie node not found in hash table\n");
+      if ( *z != lowest_node_in_branch )
+	xsb_warn("delete_branch: trie node not found in hash table\n");
       *z = NULL;
       num_left_in_hash = --BTHT_NumContents((BTHTptr)*y1);
       if (num_left_in_hash  > 0) {
@@ -561,9 +536,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
 	 * the same chain.  Therefore we cannot delete the parent, and so
 	 * we're done.
 	 */
-	                        /* mark node as deleted (is this necessary?) */
-	MakeStatusDeleted(lowest_node_in_branch);
-	free_node(lowest_node_in_branch);       /* place it on the free list */
+	SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
 	return;
       }
       else
@@ -572,9 +545,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
     /*
      *  Remove this node and continue.
      */
-	                        /* mark node as deleted (is this necessary?) */
-    MakeStatusDeleted(lowest_node_in_branch);
-    free_node(lowest_node_in_branch);
+    SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
     lowest_node_in_branch = parent_ptr;
   }
   if (lowest_node_in_branch == NULL)
@@ -591,7 +562,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
       }
       else
 	z = y1;
-      *z =Sibl(lowest_node_in_branch);      
+      *z = Sibl(lowest_node_in_branch);      
     }
     else { /* not the first in the sibling chain */
       prev = get_prev_sibl(lowest_node_in_branch);      
@@ -599,30 +570,23 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
       if (Contains_TRUST_Instr(lowest_node_in_branch))
 	Instr(prev) -= 2; /* retry -> trust ; try -> nocp */
     }
-    free_node(lowest_node_in_branch);
+    SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
   }
 }
 
 /*----------------------------------------------------------------------*/
 
-void safe_delete_branch(BTNptr lowest_node_in_branch)
-{
+void safe_delete_branch(BTNptr lowest_node_in_branch) {
+
   byte choicepttype;
 
-  MakeStatusDeleted(lowest_node_in_branch); /* mark node as deleted */
+  MakeStatusDeleted(lowest_node_in_branch);
   choicepttype = 0x3 & Instr(lowest_node_in_branch);
-  Instr(lowest_node_in_branch) = choicepttype | 0x90; 
-  /*MakeStatusDeleted(lowest_node_in_branch);*/ /* mark node as deleted */
-  /* The following is a hack and is not working --- Kostis
-  Atom(lowest_node_in_branch) = Atom(lowest_node_in_branch) ^ 0x100000;
-    */
-
-/* Here I am assuming that the HASH mask is < 0x100000 (65536)
-   if it is not, the node will hash into another bucket, resulting  
-   in inappropriate behavior on deletion */
+  Instr(lowest_node_in_branch) = choicepttype | trie_no_cp_fail;
 }
 
-void undelete_branch(BTNptr lowest_node_in_branch){
+void undelete_branch(BTNptr lowest_node_in_branch) {
+
    byte choicepttype; 
    byte typeofinstr;
 
@@ -632,16 +596,16 @@ void undelete_branch(BTNptr lowest_node_in_branch){
 
      Instr(lowest_node_in_branch) = choicepttype | typeofinstr;
      MakeStatusValid(lowest_node_in_branch);
-     /*Atom(lowest_node_in_branch) = Atom(lowest_node_in_branch) ^ 0x100000;*/
    }
-   else{
-     fprintf(stderr,"system warning:Attempt to undelete a node that is not deleted\n");
-   }
+   else
+     fprintf(stderr,"system warning: Attempt to undelete a node that"
+	     " is not deleted\n");
  }
 
 /*----------------------------------------------------------------------*/
 
 void delete_trie(BTNptr root) {
+
   BTNptr sib, chil;  
 
   if ( IsNonNULL(root) ) {
@@ -666,7 +630,7 @@ void delete_trie(BTNptr root) {
       else
 	delete_trie(chil);
       delete_trie(sib);
-      free_node(root);
+      SM_DeallocateStruct(*smBTN,root);
     }
   }
 }
@@ -682,14 +646,13 @@ void delete_trie(BTNptr root) {
 /*----------------------------------------------------------------------*/
 
 /* This does not reclaim space for deleted nodes, only marks
- * the node as deleted (setting the del_flag), and change the
- * try instruction to fail.
+ * the node as deleted and changes the try instruction to fail.
  * The deleted node is then linked into the del_nodes_list
  * in the completion stack.
  */
 void delete_return(BTNptr l, SGFrame sg_frame) 
 {
-  ALPtr a, n, next;
+  ALNptr a, n, next;
   NLChoice c;
 #ifdef CHAT
   chat_init_pheader chat_ptr;
@@ -762,7 +725,7 @@ void delete_return(BTNptr l, SGFrame sg_frame)
  *----------------------------------------------------------------------*/
 
 void  reclaim_del_ret_list(SGFrame sg_frame) {
-  ALPtr x,y;
+  ALNptr x,y;
   
   x = compl_del_ret_list(subg_compl_stack_ptr(sg_frame));
   
@@ -770,7 +733,7 @@ void  reclaim_del_ret_list(SGFrame sg_frame) {
     y = x;
     x = aln_next_aln(x);
     delete_branch(aln_answer_ptr(y), &subg_ans_root_ptr(sg_frame));
-    free_anslistnode(y);
+    SM_DeallocateStruct(smALN,y);
   }
 }
  
@@ -778,7 +741,7 @@ void  reclaim_del_ret_list(SGFrame sg_frame) {
 
 void reclaim_ans_list_nodes(SGFrame sg_frame)
 {
-  ALPtr x, y;
+  ALNptr x, y;
  
   x = subg_answers(sg_frame);
  
@@ -791,7 +754,7 @@ void reclaim_ans_list_nodes(SGFrame sg_frame)
       subg_answers(sg_frame) = COND_ANSWERS;
     y = x;
     x = aln_next_aln(x);
-    free_anslistnode(y);
+    SM_DeallocateStruct(smALN,y);
   }
 }
 
@@ -1012,4 +975,28 @@ void trie_dispose(void)
   switch_to_trie_assert;
   delete_branch(Leaf, &(Set_ArrayPtr[Rootidx]));
   switch_from_trie_assert;
+}
+
+/*----------------------------------------------------------------------*/
+
+#define DELETED_SET 1
+
+void delete_interned_trie(int tmpval) {
+  /*
+   * We can only delete a valid NODEptr, so that only those sets
+   * that were used before can be put into the free set list.
+   */
+  if ((Set_ArrayPtr[tmpval] != NULL) &&
+      (!((long) Set_ArrayPtr[tmpval] & 0x3))) {
+    switch_to_trie_assert;
+    delete_trie(Set_ArrayPtr[tmpval]);
+    switch_from_trie_assert;
+    /*
+     * Save the value of first_free_set into Set_ArrayPtr[tmpval].
+     * Some simple encoding is needed, because in trie_interned/4 we
+     * have to know this set is already deleted.
+     */
+    Set_ArrayPtr[tmpval] = (NODEptr) (first_free_set << 2 | DELETED_SET);
+    first_free_set = tmpval;
+  }
 }

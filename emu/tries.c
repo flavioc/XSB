@@ -65,7 +65,8 @@ extern void printterm(Cell, byte, int);
 /* The following variables are used in other parts of the system        */
 /*----------------------------------------------------------------------*/
 
-NODEptr Paren;
+BTNptr Paren;
+SGFrame subg_structure_list;
 
 long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
 
@@ -80,28 +81,6 @@ Cell VarEnumerator[NUM_TRIEVARS];
  */
 static CPtr mini_trail[NUM_TRIEVARS];
 static CPtr *mini_trail_top;
-
-/*----------------------------------------------------------------------*/
-
-/* For Call and Answer Tries
-   ------------------------- */
-BasicTrieHT HASHroot = { { hash_opcode,
-			   VALID_NODE_STATUS,
-			   CALL_TRIE_TT,
-			   HASH_HEADER_NT},
-			 0, 0, NULL, NULL, NULL};
-
-/* For Assert and Intern Tries
-   --------------------------- */
-BasicTrieHT tra_HASHroot = { { hash_opcode,
-			       VALID_NODE_STATUS,
-			       ASSERT_TRIE_TT,
-			       HASH_HEADER_NT},
-			     0, 0, NULL, NULL, NULL};
-
-/* Denotes current HT resource list
-   -------------------------------- */
-BTHTptr HASHrootptr;
 
 /*----------------------------------------------------------------------*/
 /* Safe assignment -- can be generalized by type.
@@ -144,19 +123,15 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 /*----------------------------------------------------------------------*/
 /*********Simpler trails ****************/
 
-#define simple_dbind_ref(addr,val)		\
-    bld_ref(addr,val);				\
-    *(++mini_trail_top) = addr;
-
 #define simple_table_undo_bindings		\
     while (mini_trail_top >= mini_trail) {	\
 	untrail(*mini_trail_top);		\
 	mini_trail_top--;			\
     }	
 
-#define simple_dbind_ref_nth_var(addr,n) simple_dbind_ref(addr,VarEnumerator[n])
-#define bld_nth_var(addr,n)  bld_ref(addr,VarEnumerator[n])
-
+#define StandardizeAndTrailVariable(addr,n)	\
+   StandardizeVariable(addr,n);			\
+    *(++mini_trail_top) = addr;
 		
 /*----------------------------------------------------------------------*/
 /* Variables used only in this file                                     */
@@ -166,103 +141,40 @@ static BasicTrieNode dummy_ans_node = {{0,1,0,0},NULL,NULL,NULL,0};
 
 static int AnsVarCtr, ctr;
 
-static NODEptr *GNodePtrPtr;
+static BTNptr *GNodePtrPtr;
 
 /*----------------------------------------------------------------------*/
 
-static int trie_chunk_size = 2048 * sizeof(BasicTrieNode);
-
-char *trie_node_chunk_ptr = 0;
-
-NODEptr free_trie_nodes = 0;
-NODEptr free_trie_space = 0;
-NODEptr top_trie_space = 0;
-SGFrame subg_structure_list = NULL;
-
-NODEptr tra_free_trie_nodes = 0;
-NODEptr tra_free_trie_space = 0;
-NODEptr tra_top_trie_space = 0;
-char    *tra_trie_node_chunk_ptr = 0;
-
-NODEptr bak_free_trie_nodes = 0;
-NODEptr bak_free_trie_space = 0;
-NODEptr bak_top_trie_space = 0;
-char    *bak_trie_node_chunk_ptr = 0;
-
-static int answer_list_chunk_size = 512 * sizeof(struct answer_list_node);
-
-static char *answer_list_node_chunk_ptr = 0;
-
-ALPtr free_answer_list_nodes = 0;
-static ALPtr free_answer_list_space = 0;
-static ALPtr top_answer_list_space = 0;
-
-/*----------------------------------------------------------------------*/
-/* In the following, malloc() is used instead of mem_alloc() so that the
- * size of permanent space is not affected - Kostis.
+/*
+ *          T R I E   S T R U C T U R E   M A N A G E M E N T
+ *          =================================================
  */
-/*----------------------------------------------------------------------*/
 
-static NODEptr alloc_more_trie_space(void)
-{
-  char *t;
-  t = (char *)malloc(trie_chunk_size+sizeof(Cell));
-  if (!t) xsb_abort("No room to expand Trie space");
-  *(char **)t = trie_node_chunk_ptr;
-  trie_node_chunk_ptr = t;
-  free_trie_space = (NODEptr)(t+sizeof(Cell));
-  top_trie_space = (NODEptr)(t+trie_chunk_size+sizeof(Cell));
-  return free_trie_space++;
-}
+/* For Call and Answer Tries
+   ------------------------- */
+Structure_Manager smTableBTN  = SM_InitDecl(BasicTrieNode, BTNs_PER_BLOCK,
+					    "Basic Trie Node");
+Structure_Manager smTableBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
+					    "Basic Trie Hash Table");
 
-/*----------------------------------------------------------------------*/
+/* For Assert & Intern Tries
+   ------------------------- */
+Structure_Manager smAssertBTN  = SM_InitDecl(BasicTrieNode, BTNs_PER_BLOCK,
+					     "Basic Trie Node");
+Structure_Manager smAssertBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
+					     "Basic Trie Hash Table");
 
-static ALPtr alloc_more_answer_list_space(void)
-{
-  char *t;
-  t = (char *)malloc(answer_list_chunk_size+sizeof(Cell));
-  if (!t) xsb_abort("No room to expand Answer_List space");
-  *(char **)t = answer_list_node_chunk_ptr;
-  answer_list_node_chunk_ptr = t;
-  free_answer_list_space = (ALPtr)(t+sizeof(Cell));
-  top_answer_list_space = (ALPtr)(t+answer_list_chunk_size+sizeof(Cell));
-  return free_answer_list_space++;
-}
- 
-/*----------------------------------------------------------------------*/
+/* Maintains Current Structure Space
+   --------------------------------- */
+Structure_Manager *smBTN = &smTableBTN,
+                  *smBTHT = &smTableBTHT;
 
-#define NewNode(t,TrieType,NodeType,item,chil,sibl,nparen) {\
-  if (free_trie_nodes) {\
-    t = free_trie_nodes;\
-    free_trie_nodes = Sibl(free_trie_nodes);\
-  }\
-  else if (free_trie_space < top_trie_space) \
-    {t = free_trie_space++;}\
-  else {t = alloc_more_trie_space();}\
-  Sibl(t) = (NODEptr)sibl;\
-  Child(t)= (NODEptr)chil;\
-  Parent(t) =(NODEptr)nparen;\
-  MakeStatusValid(t);\
-  BTN_TrieType(t) = TrieType;\
-  BTN_NodeType(t) = NodeType;\
-  Atom(t) = (Cell)item;\
-  TN_SetInstr(t,item);\
-  TN_ResetInstrCPs(t,sibl);\
-}
 
-/*----------------------------------------------------------------------*/
- 
-#define NewAnsListNode(t) {\
-  if (free_answer_list_nodes) {\
-    t = free_answer_list_nodes;\
-    free_answer_list_nodes = aln_next_aln(free_answer_list_nodes);\
-  }\
-  else if (free_answer_list_space < top_answer_list_space) \
-    {t = free_answer_list_space++;}\
-  else {t = alloc_more_answer_list_space();}\
-  aln_answer_ptr(t) = NULL;\
-  aln_next_aln(t) = NULL;\
-  }
+/* Table Components
+   ---------------- */
+Structure_Manager smALN = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
+				      "Answer List Node");
+
 
 /*----------------------------------------------------------------------*/
 
@@ -290,8 +202,8 @@ BTNptr newBasicTrie(Psc predicate, int trie_type) {
 
   BTNptr pRoot;
 
-  NewNode( pRoot, trie_type, TRIE_ROOT_NT, TrieEncodePSC(predicate),
-	   NULL, NULL, NULL );
+  New_BTN( pRoot, trie_type, TRIE_ROOT_NT, EncodeTriePSC(predicate),
+	   NULL, NULL );
   BTN_Instr(pRoot) = trie_root;
   return pRoot;
 }
@@ -304,45 +216,22 @@ BTNptr newBasicTrie(Psc predicate, int trie_type) {
  *  asserted and interned).
  */
 
-void abolish_trie(void)
-{
-  char *t;
-  BTHTptr th, tht;
-  SGFrame temp;
+void abolish_trie(void) {
 
-  while (trie_node_chunk_ptr) {
-    t = *(char **)trie_node_chunk_ptr;
-    free(trie_node_chunk_ptr);
-    trie_node_chunk_ptr = t;
-  }
-  free_trie_nodes = 0;
-  free_trie_space = 0;
-  top_trie_space = 0;
+  SGFrame pSF;
 
-  th = BTHT_NextBTHT(HASHrootptr);
-  while (th) {
-    tht = BTHT_NextBTHT(th);
-    free(BTHT_BucketArray(th));
-    free(th);
-    th = tht;
-  }
-  BTHT_PrevBTHT(HASHrootptr) = BTHT_NextBTHT(HASHrootptr) = NULL;
-  /* Are the following fields being used for something? */
-  BTHT_NumBuckets(HASHrootptr) = BTHT_NumContents(HASHrootptr) = 0;
 
-  while (answer_list_node_chunk_ptr) {
-    t = *(char **)answer_list_node_chunk_ptr;
-    free(answer_list_node_chunk_ptr);
-    answer_list_node_chunk_ptr = t;
-  }
-  free_answer_list_nodes = 0;
-  free_answer_list_space = 0;
-  top_answer_list_space = 0;
+  SM_ReleaseResources(*smBTN);
+
+  BTHT_FreeAllocatedBuckets;
+  SM_ReleaseResources(*smBTHT);
+
+  SM_ReleaseResources(smALN);
 
   while(subg_structure_list != NULL){
-    temp = subg_structure_list;
+    pSF = subg_structure_list;
     subg_structure_list = subg_next_subgoal(subg_structure_list);
-    free(temp);
+    free(pSF);
   }
 }
 
@@ -350,45 +239,28 @@ void abolish_trie(void)
 /* The following exported routines are mainly used for statistics.	*/
 /*----------------------------------------------------------------------*/
 
-int allocated_trie_size(void)
-{
-  int size = 0;
-  char *t = trie_node_chunk_ptr;
+int allocated_trie_size(void) {
 
-  while (t) {
-    size = size + (trie_chunk_size+sizeof(Cell));
-    t = *(char **)t;
-  }
-  return size;
+  unsigned int  byte_usage;
+
+  SM_RawUsage(*smBTN,byte_usage);
+  return byte_usage;
 }
 
-/*--------------------------------------------------
-Include the number of "free nodes" in the list in 
-the free trie space
---------------------------------------------------*/
 
-static int num_free_nodes(void)
-{
-  int i = 0;
-  NODEptr p;
+int free_trie_size(void) {
 
-  p = free_trie_nodes;
-  while (p != NULL) {
-    i++;
-    p = Sibl(p);
-  }
-  return(i);
+  unsigned int  nFreeStructs;
+
+  SM_CountFreeStructs(*smBTN,nFreeStructs)
+  return ( nFreeStructs * sizeof(BasicTrieNode) );
 }
 
-int free_trie_size(void)
-{
-  return (top_trie_space - free_trie_space + num_free_nodes()) * sizeof(BasicTrieNode);
-}
 
 int allocated_trie_hash_size(void)
 {
   int size = 0;
-  BTHTptr th = BTHT_NextBTHT(HASHrootptr);
+  BTHTptr th = SM_AllocList(*smBTHT);
 
   while (th) {
     size = size + BTHT_NumContents(th);
@@ -400,19 +272,20 @@ int allocated_trie_hash_size(void)
 /*----------------------------------------------------------------------*/
 
 /* Used by one_node_chk_ins only. */
-#define IsInsibling(wherefrom,count,Found,item,TrieType)		   \
-{									   \
-  LocalNodePtr = wherefrom;						   \
-  while (LocalNodePtr && (BTN_Symbol(LocalNodePtr) != item)) {		   \
-    LocalNodePtr = Sibl(LocalNodePtr);					   \
-    count++;								   \
-  }									   \
-  if (!LocalNodePtr) {							   \
-    NewNode(LocalNodePtr,TrieType,INTERRIOR_NT,item,NULL,wherefrom,Paren); \
-    wherefrom = LocalNodePtr;  /* hook the new node into the trie */	   \
-    Found = 0;								   \
-  }									   \
-  Paren = LocalNodePtr;							   \
+#define IsInsibling(wherefrom,count,Found,item,TrieType)		\
+{									\
+  LocalNodePtr = wherefrom;						\
+  while (LocalNodePtr && (BTN_Symbol(LocalNodePtr) != item)) {		\
+    LocalNodePtr = BTN_Sibling(LocalNodePtr);				\
+    count++;								\
+  }									\
+  if ( IsNULL(LocalNodePtr) ) {						\
+    Found = 0;								\
+    New_BTN(LocalNodePtr,TrieType,INTERRIOR_NT,item,Paren,wherefrom);	\
+    count++;								\
+    wherefrom = LocalNodePtr;  /* hook the new node into the trie */	\
+  }									\
+  Paren = LocalNodePtr;							\
 }
 
 
@@ -453,10 +326,10 @@ int allocated_trie_hash_size(void)
 #define one_node_chk_ins(Found,item,TrieType) {				\
 									\
    int count = 0;							\
-   NODEptr LocalNodePtr;						\
+   BTNptr LocalNodePtr;							\
 									\
    if ( IsNULL(*GNodePtrPtr) ) {					\
-     NewNode(LocalNodePtr,TrieType,INTERRIOR_NT,item,NULL,NULL,Paren);	\
+     New_BTN(LocalNodePtr,TrieType,INTERRIOR_NT,item,Paren,NULL);	\
      *GNodePtrPtr = Paren = LocalNodePtr;				\
      Found = 0;								\
    }									\
@@ -471,13 +344,13 @@ int allocated_trie_hash_size(void)
      }									\
    }									\
    else {								\
-     BTNptr temp = Paren;						\
+     BTNptr pParent = Paren;						\
      IsInsibling(*GNodePtrPtr,count,Found,item,TrieType);		\
      if (IsLongSiblingChain(count))					\
        /* used to pass in GNodePtrPtr (ptr to hook) */			\
-       hashify_children(temp,TrieType);					\
+       hashify_children(pParent,TrieType);				\
    }									\
-   GNodePtrPtr = &(Child(LocalNodePtr));				\
+   GNodePtrPtr = &(BTN_Child(LocalNodePtr));				\
 }
 
 /*----------------------------------------------------------------------*/
@@ -508,13 +381,6 @@ static void hashify_children(BTNptr parent, int trieType) {
     TrieHT_InsertNode(tablebase, hashmask, btn);
     MakeHashedNode(btn);
   }
-#ifdef DEBUG_HASHTABLE
-  printf("Creating hash table for children of node:\n");
-  btnPrintBTN(parent);
-  printf("New Table Structure:  Base(%p), Size(%ld)\n",
-	 BTHT_BucketArray(ht), BTHT_NumBuckets(ht));
-  tsthtPrintSymbols((TSTHTptr)ht);
-#endif
 }
 
 /*-------------------------------------------------------------------------*/
@@ -551,24 +417,18 @@ void expand_trie_ht(BTHTptr pHT) {
   unsigned long  new_size;  /* double duty: new HT size, then hash mask */
 
 
-#ifdef DEBUG_HASHTABLE
-  printf("Current Table Structure:  Base(%p), Size(%ld)\n",
-	 TrieHT_BucketArray(pHT), TrieHT_NumBuckets(pHT));
-  tsthtPrintSymbols(pHT);
-#endif
-
   new_size = TrieHT_NewSize(pHT);
-  bucket_array = (BTNptr *)realloc( TrieHT_BucketArray(pHT),
+  bucket_array = (BTNptr *)realloc( BTHT_BucketArray(pHT),
 				     new_size * sizeof(BTNptr) );
   if ( IsNULL(bucket_array) )
     return;
 
-  upper_buckets = bucket_array + TrieHT_NumBuckets(pHT);
+  upper_buckets = bucket_array + BTHT_NumBuckets(pHT);
   for (bucket = upper_buckets;  bucket < bucket_array + new_size;  bucket++)
     *bucket = NULL;
-  TrieHT_NumBuckets(pHT) = new_size;
+  BTHT_NumBuckets(pHT) = new_size;
   new_size--;     /* 'new_size' is now the hashing mask */
-  TrieHT_BucketArray(pHT) = bucket_array;
+  BTHT_BucketArray(pHT) = bucket_array;
   for (bucket = bucket_array;  bucket < upper_buckets;  bucket++) {
     curNode = *bucket;
     *bucket = NULL;
@@ -578,11 +438,6 @@ void expand_trie_ht(BTHTptr pHT) {
       curNode = nextNode;
     }
   }
-#ifdef DEBUG_HASHTABLE
-  printf("New Table Structure:  Base(%p), Size(%ld)\n",
-	 TrieHT_BucketArray(pHT), TrieHT_NumBuckets(pHT));
-  tsthtPrintSymbols(pHT);
-#endif
 }
 
 /*----------------------------------------------------------------------*/
@@ -591,12 +446,12 @@ void expand_trie_ht(BTHTptr pHT) {
  * Push the symbols along the path from the leaf to the root in a trie
  * onto the termstack.
  */
-static void follow_par_chain(NODEptr pLeaf)
+static void follow_par_chain(BTNptr pLeaf)
 {
   term_stackptr = -1; /* Forcibly Empty term_stack */
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) ) {
-    push_term((Atom(pLeaf)));
-    pLeaf = Parent(pLeaf);
+    push_term((BTN_Symbol(pLeaf)));
+    pLeaf = BTN_Parent(pLeaf);
   }
 }
 
@@ -605,17 +460,13 @@ static void follow_par_chain(NODEptr pLeaf)
 /*
  * Given a hook to an answer-list node, returns the answer contained in
  * that node and updates the hook to the next node in the chain.
- * The return value is NULL when ... ???
  */
-NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
+BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 {
-  NODEptr TempPtr;
+  BTNptr TempPtr;
 
   TempPtr = aln_answer_ptr(*NextPtrPtr);
-  /* Why wouldn't this be a leaf? */
-  if (!(IsLeafNode(TempPtr))) TempPtr = NULL;
   *NextPtrPtr = aln_next_aln(*NextPtrPtr);
-
   return(TempPtr);
 }
 
@@ -630,8 +481,8 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
      switch( TrieSymbolType(xtemp2) )\
      {\
       case TrieVar: {\
-	int index = TrieVar_DecodeNum(xtemp2);\
-	if (TrieVar_IsFirstOccurrence(xtemp2)) {\
+	int index = DecodeTrieVar(xtemp2);\
+	if (IsNewTrieVar(xtemp2)) {\
           safe_assign(var_addr,index,Macro_addr,var_addr_arraysz);\
 	  *Macro_addr = (Cell)var_addr[index];\
 	  num_heap_term_vars++;\
@@ -643,17 +494,17 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
       case STRING:\
       case INT:\
       case FLOAT:\
-	*Macro_addr = DecodeConstantSymbol(xtemp2);\
+	*Macro_addr = DecodeTrieConstant(xtemp2);\
 	break;\
       case LIST: \
 	*Macro_addr = (Cell) makelist(hreg);\
 	hreg += 2;\
-	push_addr(hreg-1); /* changed */\
+	push_addr(hreg-1);\
 	push_addr(hreg-2);\
 	break;\
       case CS:\
 	*Macro_addr = (Cell) makecs(hreg);\
-	xtemp2 = (Cell) DecodeFunctorSymbol(xtemp2);\
+	xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);\
 	*hreg = xtemp2;\
 	rArity = (int) get_arity((Psc) xtemp2);\
 	for (rj= rArity; rj >= 1; rj --) {\
@@ -677,8 +528,8 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
   switch( TrieSymbolType(xtemp2) )\
    {\
     case TrieVar: {\
-        int index = TrieVar_DecodeNum(xtemp2);\
-	if (TrieVar_IsFirstOccurrence(xtemp2)) { /* diff with CHAT - Kostis */\
+        int index = DecodeTrieVar(xtemp2);\
+	if (IsNewTrieVar(xtemp2)) { /* diff with CHAT - Kostis */\
           safe_assign(var_addr,index,ataddr,var_addr_arraysz);\
 	  ret_val = (Cell)var_addr[index];\
 	  num_heap_term_vars++;\
@@ -690,18 +541,18 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
     case STRING:\
     case INT:\
     case FLOAT:\
-	ret_val = DecodeConstantSymbol(xtemp2);\
+	ret_val = DecodeTrieConstant(xtemp2);\
 	break;\
     case LIST: \
 	ret_val = (Cell) makelist(hreg) ;\
 	hreg += 2;\
-	push_addr(hreg-1);/* changed */\
+	push_addr(hreg-1);\
 	push_addr(hreg-2);\
 	rec_macro_make_heap_term(dummy_addr);\
 	break;\
     case CS:\
 	ret_val = (Cell) makecs(hreg);\
-	xtemp2 = (Cell) DecodeFunctorSymbol(xtemp2);\
+	xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);\
 	*hreg = xtemp2;\
 	mArity = (int) get_arity((Psc) xtemp2);\
 	for (mj= mArity; mj >= 1; mj--) {\
@@ -729,29 +580,29 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 	  tag = cell_tag(xtemp1);\
 	  switch (tag) {\
 	    case FREE: case REF1: \
-	      if (! IsPtrIntoVarEnum(xtemp1)) {\
-	        simple_dbind_ref_nth_var(xtemp1,ctr);\
-	        item = TrieVar_EncodeFirstOccurrence(ctr);\
+	      if (! IsStandardizedVariable(xtemp1)) {\
+	        StandardizeAndTrailVariable(xtemp1,ctr);\
+	        item = EncodeNewTrieVar(ctr);\
 	        one_node_chk_ins(flag, item, TrieType);\
 	        ctr++;\
 	      } else {\
-	        item = ConvertVarEnumPtrToIndex(xtemp1);\
-	        item = TrieVar_EncodeNum(item);\
+	        item = IndexOfStandardizedVariable(xtemp1);\
+	        item = EncodeTrieVar(item);\
                 one_node_chk_ins(flag, item, TrieType);\
 	      }\
             break;\
 	    case STRING: case INT: case FLOAT:\
-	      one_node_chk_ins(flag, TrieEncodeConstant(xtemp1), TrieType);\
+	      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);\
 	      break;\
 	    case LIST:\
-	      one_node_chk_ins(flag, TrieEncodeList(xtemp1), TrieType);\
-	      pdlpush(cell(clref_val(xtemp1)+1));/* changed */\
+	      one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);\
+	      pdlpush(cell(clref_val(xtemp1)+1));\
               pdlpush(cell(clref_val(xtemp1)));\
 	      break;\
 	    case CS:\
               psc = (Psc) follow(cs_val(xtemp1));\
               item = makecs(psc);\
-	      one_node_chk_ins(flag, item, TrieType); /*put root in trie */\
+	      one_node_chk_ins(flag, item, TrieType);\
 	      for (j = get_arity(psc); j>=1 ; j--) {\
   	         pdlpush(cell(clref_val(xtemp1)+j));\
               }\
@@ -786,29 +637,29 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
 	  tag = cell_tag(xtemp1);\
 	  switch (tag) {\
 	    case FREE: case REF1:\
-	      if (! IsPtrIntoVarEnum(xtemp1)){\
+	      if (! IsStandardizedVariable(xtemp1)){\
 		bld_free(hreg);\
 		bind_ref(xtemp1, hreg);\
 		xtemp1 = hreg++;\
-	        simple_dbind_ref_nth_var(xtemp1,ctr);\
-	        one_node_chk_ins(flag,TrieVar_EncodeFirstOccurrence(ctr),TrieType);\
+	        StandardizeAndTrailVariable(xtemp1,ctr);\
+	        one_node_chk_ins(flag,EncodeNewTrieVar(ctr),TrieType);\
 	        ctr++;\
 	      } else {\
-                one_node_chk_ins(flag,TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)),TrieType);\
+                one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),TrieType);\
 	      }\
               break;\
 	    case STRING: case INT: case FLOAT:\
-	      one_node_chk_ins(flag, TrieEncodeConstant(xtemp1), TrieType);\
+	      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);\
 	      break;\
 	    case LIST:\
-	      one_node_chk_ins(flag, TrieEncodeList(xtemp1), TrieType);\
-	      pdlpush(cell(clref_val(xtemp1)+1));/* changed */\
+	      one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);\
+	      pdlpush(cell(clref_val(xtemp1)+1));\
               pdlpush(cell(clref_val(xtemp1)));\
 	      break;\
 	    case CS:\
 	      psc = (Psc) follow(cs_val(xtemp1));\
 	      item = makecs(psc);\
-	      one_node_chk_ins(flag, item, TrieType); /*put root in trie */\
+	      one_node_chk_ins(flag, item, TrieType);\
 	      for (j = get_arity(psc); j>=1 ; j--) {\
   	         pdlpush(cell(clref_val(xtemp1)+j));\
 	      }\
@@ -835,14 +686,14 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
  * The returned value of this function is the leaf of the answer trie.  
  *----------------------------------------------------------------------*/
 
-NODEptr variant_trie_search(int arity, CPtr cptr,
+BTNptr variant_trie_search(int arity, CPtr cptr,
 			    CPtr subgoal_ptr, int *flagptr)
 {
     Psc   psc;
     CPtr  xtemp1;
     int   i, j, flag = 1;
     Cell  tag = FREE, item;
-    ALPtr answer_node;
+    ALNptr answer_node;
 
 
     ans_chk_ins++; /* Counter (answers checked & inserted) */
@@ -864,13 +715,11 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
       tag = cell_tag(xtemp1);
       switch (tag) {
       case FREE: case REF1:
-	if (! IsPtrIntoVarEnum(xtemp1)) {
+	if (! IsStandardizedVariable(xtemp1)) {
 	  /*
 	   * If this is the first occurrence of this variable, then:
 	   *
-	   * 	simple_dbind_ref_nth_var(xtemp1, ctr)
-	   * 			||
-	   * 	simple_dbind_ref(xtemp1, VarEnumerator[ctr])
+	   * 	StandardizeAndTrailVariable(xtemp1, ctr)
 	   * 			||
 	   * 	bld_ref(xtemp1, VarEnumerator[ctr]);
 	   * 	*(++mini_trail_top) = xtemp1
@@ -887,30 +736,30 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 			   */
 	  bind_ref(xtemp1, hreg);
 	  xtemp1 = hreg++;
-	  simple_dbind_ref_nth_var(xtemp1,ctr);
-	  item = TrieVar_EncodeFirstOccurrence(ctr);
+	  StandardizeAndTrailVariable(xtemp1,ctr);
+	  item = EncodeNewTrieVar(ctr);
 	  one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
 	  ctr++;
 	} else {
-	  item = ConvertVarEnumPtrToIndex(xtemp1);
-	  item = TrieVar_EncodeNum(item);
+	  item = IndexOfStandardizedVariable(xtemp1);
+	  item = EncodeTrieVar(item);
 	  one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
 	}
 	break;
       case STRING: case INT: case FLOAT:
-	one_node_chk_ins(flag, TrieEncodeConstant(xtemp1),
+	one_node_chk_ins(flag, EncodeTrieConstant(xtemp1),
 			 BASIC_ANSWER_TRIE_TT);
 	break;
       case LIST:
-	one_node_chk_ins(flag, TrieEncodeList(xtemp1), BASIC_ANSWER_TRIE_TT);
-	pdlpush(cell(clref_val(xtemp1)+1)); /* changed */
+	one_node_chk_ins(flag, EncodeTrieList(xtemp1), BASIC_ANSWER_TRIE_TT);
+	pdlpush(cell(clref_val(xtemp1)+1));
 	pdlpush(cell(clref_val(xtemp1)));
 	recvariant_trie_ans_subsf(flag, BASIC_ANSWER_TRIE_TT);
 	break;
       case CS:
 	psc = (Psc)follow(cs_val(xtemp1));
 	item = makecs(psc);
-	one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT); /* put root in trie */
+	one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
 	for (j = get_arity(psc); j >= 1 ; j--) {
 	  pdlpush(cell(clref_val(xtemp1)+j));
 	}
@@ -947,10 +796,10 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
     fprintf(stderr, ">>>> [V] AnsVarCtr = %d\n", AnsVarCtr);
 #endif
 
-    /* if there is no parent node, an ESCAPE node has to be created/found */
+    /* if there is no term to insert, an ESCAPE node has to be created/found */
 
     if (arity == 0) {
-      one_node_chk_ins(flag, (Cell)0, BASIC_ANSWER_TRIE_TT);
+      one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, BASIC_ANSWER_TRIE_TT);
       Instr(Paren) = trie_proceed;
     }
 
@@ -963,17 +812,14 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
       TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
       ans_inserts++;
 
-      NewAnsListNode(answer_node);
-      aln_answer_ptr(answer_node) = Paren;
+      New_ALN(answer_node,Paren,NULL);
       if(subg_ans_list_tail(subgoal_ptr) == NULL) { 
-	/* add a dummy node and the new answer*/ 
 	subg_answers(subgoal_ptr) = answer_node;
 	subg_ans_list_tail(subgoal_ptr) = answer_node;
       }
       else {
 	aln_next_aln(subg_ans_list_tail(subgoal_ptr)) = answer_node; 
-        aln_next_aln(answer_node) = NULL; 
-	subg_ans_list_tail(subgoal_ptr) = answer_node;	/* update tail */
+	subg_ans_list_tail(subgoal_ptr) = answer_node;
       }
     }
 
@@ -1032,7 +878,7 @@ void undo_answer_bindings() {
  * occur as single paths, there is currently no need for a root node.
  */
  
-NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
+BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
 {
     Psc  psc;
     Cell item;
@@ -1044,7 +890,7 @@ NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
 #endif
 
     Paren = NULL;
-    GNodePtrPtr = (NODEptr *) hook;
+    GNodePtrPtr = (BTNptr *) hook;
 
     ctr = AnsVarCtr;
 
@@ -1072,29 +918,28 @@ NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
       tag = cell_tag(xtemp1);
       switch (tag) {
       case FREE: case REF1:
-	if (! IsPtrIntoVarEnum(xtemp1)) {
-          simple_dbind_ref_nth_var(xtemp1,ctr);
-          one_node_chk_ins(flag,TrieVar_EncodeFirstOccurrence(ctr),
+	if (! IsStandardizedVariable(xtemp1)) {
+          StandardizeAndTrailVariable(xtemp1,ctr);
+          one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			   DELAY_TRIE_TT);
           ctr++;
         }
         else {
           one_node_chk_ins(flag,
-			   TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)),
+			   EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),
 			   DELAY_TRIE_TT);
         }
         break;
       case STRING: case INT: case FLOAT:
-        one_node_chk_ins(flag, TrieEncodeConstant(xtemp1), DELAY_TRIE_TT);
+        one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), DELAY_TRIE_TT);
         break;
       case LIST:
-        one_node_chk_ins(flag, TrieEncodeList(xtemp1), DELAY_TRIE_TT);
-        pdlpush(cell(clref_val(xtemp1)+1)); /* changed */
+        one_node_chk_ins(flag, EncodeTrieList(xtemp1), DELAY_TRIE_TT);
+        pdlpush(cell(clref_val(xtemp1)+1));
         pdlpush(cell(clref_val(xtemp1)));
         recvariant_trie(flag,DELAY_TRIE_TT);
         break;
       case CS:
-        /* put root in trie */
         one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))),DELAY_TRIE_TT);
         for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
           pdlpush(cell(clref_val(xtemp1)+j));
@@ -1159,7 +1004,7 @@ static void load_solution_from_trie(int arity, CPtr cptr)
  * `term'.  It appears that `term' is expected to be an unbound variable.
  * Also, `Root' does not appear to be used.
  */
-static void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf)
+static void bottomupunify(Cell term, BTNptr Root, BTNptr Leaf)
 {
   CPtr Dummy_Addr;
   Cell returned_val, xtemp2;
@@ -1196,13 +1041,13 @@ static void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf)
 bool bottom_up_unify(void)
 {
   Cell    term;
-  NODEptr root;
-  NODEptr leaf;
+  BTNptr root;
+  BTNptr leaf;
   int     rootidx;
-  extern  NODEptr *Set_ArrayPtr;
+  extern  BTNptr *Set_ArrayPtr;
 
 
-  leaf = (NODEptr) ptoc_int(3);   
+  leaf = (BTNptr) ptoc_int(3);   
   if( IsDeletedNode(leaf) )
     return FALSE;
 
@@ -1219,9 +1064,9 @@ bool bottom_up_unify(void)
  * `TriePtr' is a leaf in the answer trie, and `cptr' is a vector of
  * variables for receiving the substitution.
  */
-void load_solution_trie(int arity, CPtr cptr, NODEptr TriePtr)
+void load_solution_trie(int arity, CPtr cptr, BTNptr TriePtr)
 {
-   if (arity) {
+   if (arity > 0) {
      num_heap_term_vars = 0;
      follow_par_chain(TriePtr);
      load_solution_from_trie(arity,cptr);
@@ -1230,7 +1075,7 @@ void load_solution_trie(int arity, CPtr cptr, NODEptr TriePtr)
 
 /*----------------------------------------------------------------------*/
 
-void load_delay_trie(int arity, CPtr cptr, NODEptr TriePtr)
+void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
 {
    if (arity) {
      follow_par_chain(TriePtr);
@@ -1249,27 +1094,27 @@ void load_delay_trie(int arity, CPtr cptr, NODEptr TriePtr)
     cptr_deref(xtemp1);\
     switch(tag = cell_tag(xtemp1)) {\
       case FREE: case REF1: \
-        if (! IsPtrIntoVarEnum(xtemp1)) {\
+        if (! IsStandardizedVariable(xtemp1)) {\
 	  *(--VarPosReg) = (Cell) xtemp1;\
-	  bld_nth_var(xtemp1,ctr);\
-	  one_node_chk_ins(flag,TrieVar_EncodeFirstOccurrence(ctr),TrieType);\
+	  StandardizeVariable(xtemp1,ctr);\
+	  one_node_chk_ins(flag,EncodeNewTrieVar(ctr),TrieType);\
 	  ctr++;\
         } else{\
-	  one_node_chk_ins(flag,TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)),TrieType);\
+	  one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),TrieType);\
         }\
         break;\
       case STRING: case INT: case FLOAT:\
-	one_node_chk_ins(flag, TrieEncodeConstant(xtemp1), TrieType);\
+	one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);\
 	break;\
       case LIST:\
-	one_node_chk_ins(flag, TrieEncodeList(xtemp1), TrieType);\
-	pdlpush( cell(clref_val(xtemp1)+1) ); /* changed */\
+	one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);\
+	pdlpush( cell(clref_val(xtemp1)+1) );\
         pdlpush( cell(clref_val(xtemp1)) );\
 	break;\
       case CS:\
         psc = (Psc) follow(cs_val(xtemp1));\
 	item = makecs(psc);\
-	one_node_chk_ins(flag, item, TrieType); /*put root in trie */\
+	one_node_chk_ins(flag, item, TrieType);\
 	for (j=get_arity(psc); j>=1; j--) {\
 	  pdlpush(cell(clref_val(xtemp1)+j));\
 	}\
@@ -1329,7 +1174,7 @@ void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
       tag = cell_tag(xtemp1);
       switch (tag) {
         case FREE: case REF1:
-	  if (! IsPtrIntoVarEnum(xtemp1)) {
+	  if (! IsStandardizedVariable(xtemp1)) {
 	    /*
 	     * Save pointers of the substitution factor of the call
 	     * into CP stack.  Each pointer points to a variable in 
@@ -1337,27 +1182,27 @@ void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
 	     * computation.
 	     */
 	    *(--VarPosReg) = (Cell) xtemp1;
-	    bld_nth_var(xtemp1,ctr);
-	    one_node_chk_ins(flag,TrieVar_EncodeFirstOccurrence(ctr),
+	    StandardizeVariable(xtemp1,ctr);
+	    one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			     CALL_TRIE_TT);
 	    ctr++;
 	  } else {
-	    one_node_chk_ins(flag,TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)),CALL_TRIE_TT);
+	    one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),CALL_TRIE_TT);
 	  }
 	  break;
 	case STRING: case INT: case FLOAT:
-	  one_node_chk_ins(flag, TrieEncodeConstant(xtemp1), CALL_TRIE_TT);
+	  one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), CALL_TRIE_TT);
 	  break;
 	case LIST:
-	  one_node_chk_ins(flag, TrieEncodeList(xtemp1), CALL_TRIE_TT);
-	  pdlpush(cell(clref_val(xtemp1)+1));/* changed */
+	  one_node_chk_ins(flag, EncodeTrieList(xtemp1), CALL_TRIE_TT);
+	  pdlpush(cell(clref_val(xtemp1)+1));
 	  pdlpush(cell(clref_val(xtemp1)));
 	  recvariant_call(flag,CALL_TRIE_TT);
 	  break;
 	case CS:
 	  psc = (Psc)follow(cs_val(xtemp1));
 	  item = makecs(psc);
-	  one_node_chk_ins(flag, item, CALL_TRIE_TT); /* put root in trie */
+	  one_node_chk_ins(flag, item, CALL_TRIE_TT);
 	  for (j=get_arity(psc); j>=1 ; j--) {
 	    pdlpush(cell(clref_val(xtemp1)+j));
 	  }
@@ -1370,7 +1215,7 @@ void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
     resetpdl;
     
     if (arity == 0) {
-      one_node_chk_ins(flag, (Cell)0, CALL_TRIE_TT);
+      one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, CALL_TRIE_TT);
       Instr(Paren) = trie_proceed;
     }
 
@@ -1432,11 +1277,9 @@ void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
 
 /*----------------------------------------------------------------------*/
 
-/* why aren't answer list nodes freed, too? */
-
 static void remove_calls_and_returns(SGFrame CallStrPtr)
 {
-  ALPtr AListPtr, TAlistPtr;
+  ALNptr pALN;
 
 
   /* Delete the call entry
@@ -1446,16 +1289,16 @@ static void remove_calls_and_returns(SGFrame CallStrPtr)
 
   /* Delete its answers
      ------------------ */
-  AListPtr = subg_answers(CallStrPtr);
-  while (AListPtr != NULL) {
-    TAlistPtr = AListPtr;
-    AListPtr = aln_next_aln(AListPtr);
-    delete_branch(aln_answer_ptr(TAlistPtr), &subg_ans_root_ptr(CallStrPtr));
-  }
-  free_subgoal_frame(CallStrPtr);  /* does not free ALNs */
+  for ( pALN = subg_answers(CallStrPtr);  IsNonNULL(pALN);
+	pALN = ALN_Next(pALN) )
+    delete_branch(ALN_Answer(pALN), &subg_ans_root_ptr(CallStrPtr));
+
+  /* Delete the table entry
+     ---------------------- */
+  free_answer_list(CallStrPtr);
+  free_subgoal_frame(CallStrPtr);
 }
 
-/*----------------------------------------------------------------------*/
 
 void remove_open_tries(CPtr bottom_parameter)
 {
@@ -1474,6 +1317,7 @@ void remove_open_tries(CPtr bottom_parameter)
     openreg += COMPLFRAMESIZE;
   }
 }
+
 /*----------------------------------------------------------------------*/
 
 /*
@@ -1502,22 +1346,22 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
 
     switch (tag) {
     case FREE: case REF1:
-      if (! IsPtrIntoVarEnum(xtemp1)) {
-	simple_dbind_ref_nth_var(xtemp1,ctr);
-	one_node_chk_ins(flag,TrieVar_EncodeFirstOccurrence(ctr),
+      if (! IsStandardizedVariable(xtemp1)) {
+	StandardizeAndTrailVariable(xtemp1,ctr);
+	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			 INTERN_TRIE_TT);
 	ctr++;
       } else {
 	one_node_chk_ins(flag,
-			 TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)),
+			 EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),
 			 INTERN_TRIE_TT);
       }
       break;
     case STRING: case INT: case FLOAT:
-      one_node_chk_ins(flag, TrieEncodeConstant(xtemp1), INTERN_TRIE_TT);
+      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), INTERN_TRIE_TT);
       break;
     case LIST:
-      one_node_chk_ins(flag, TrieEncodeList(xtemp1), INTERN_TRIE_TT);
+      one_node_chk_ins(flag, EncodeTrieList(xtemp1), INTERN_TRIE_TT);
       pdlpush(cell(clref_val(xtemp1)+1));
       pdlpush(cell(clref_val(xtemp1)));
       recvariant_trie(flag,INTERN_TRIE_TT);
@@ -1591,30 +1435,29 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
       tag = cell_tag(xtemp1);
       switch (tag) {
 	case FREE: case REF1:
-	  if (! IsPtrIntoVarEnum(xtemp1)) {
-	    /*one_node_chk_ins(flag,FREE);*/
-	    simple_dbind_ref_nth_var(xtemp1,ctr);
-	    one_node_chk_ins(flag, TrieVar_EncodeFirstOccurrence(ctr),
+	  if (! IsStandardizedVariable(xtemp1)) {
+	    StandardizeAndTrailVariable(xtemp1,ctr);
+	    one_node_chk_ins(flag, EncodeNewTrieVar(ctr),
 			     ASSERT_TRIE_TT);
 	    ctr++;
 	  } else {
 	    one_node_chk_ins(flag,
-			     TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)),
+			     EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),
 			     ASSERT_TRIE_TT);
 	  }
           break;
 	case STRING: case INT: case FLOAT:
-	  one_node_chk_ins(flag, TrieEncodeConstant(xtemp1), ASSERT_TRIE_TT);
+	  one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), ASSERT_TRIE_TT);
 	  break;
 	case LIST:
-	  one_node_chk_ins(flag, TrieEncodeList(xtemp1), ASSERT_TRIE_TT);
-	  pdlpush(cell(clref_val(xtemp1)+1)); /* changed */
+	  one_node_chk_ins(flag, EncodeTrieList(xtemp1), ASSERT_TRIE_TT);
+	  pdlpush(cell(clref_val(xtemp1)+1));
 	  pdlpush(cell(clref_val(xtemp1)));
 	  recvariant_trie(flag,ASSERT_TRIE_TT);
 	  break;
 	case CS:
 	  psc = (Psc) follow(cs_val(xtemp1));
-	  one_node_chk_ins(flag, makecs(psc),ASSERT_TRIE_TT);  /* put root in trie */
+	  one_node_chk_ins(flag, makecs(psc),ASSERT_TRIE_TT);
 	  for (j = get_arity(psc); j >= 1 ; j--) {
 	    pdlpush(cell(clref_val(xtemp1)+j));
 	  }
@@ -1628,10 +1471,10 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
 
     simple_table_undo_bindings;
 
-    /* if there is no parent node, an ESCAPE node has to be created/found. */
+    /* if there is no term to insert, an ESCAPE node has to be created/found */
 
     if (arity == 0) {
-      one_node_chk_ins(flag, (Cell)0, ASSERT_TRIE_TT);
+      one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, ASSERT_TRIE_TT);
       Instr(Paren) = trie_proceed;
     }
 
@@ -1659,7 +1502,7 @@ byte * trie_get_returns_for_call(void)
   CPtr retskel, term1;
   int i;
   Psc psc_ptr;
-  NODEptr ans_root_ptr;
+  BTNptr ans_root_ptr;
   CPtr cptr;
 
 #ifdef DEBUG_DELAYVAR
@@ -1674,7 +1517,7 @@ byte * trie_get_returns_for_call(void)
     retskel = (CPtr)ptoc_tag(2);
     term1 = retskel;
     cptr_deref(term1);
-    num_vars_in_var_regs = -1; /* Bart added */
+    num_vars_in_var_regs = -1;
     if (isconstr(term1)) {
       psc_ptr = get_str_psc(retskel);
       reg_arrayptr = reg_array -1;
@@ -1770,7 +1613,7 @@ static void construct_ret(void)
 void get_lastnode_cs_retskel(void)
 {
   ctop_int(1, (Integer)Last_Nod_Sav);
-  ctop_int(2, (Integer)Child(Last_Nod_Sav));
+  ctop_int(2, (Integer)BTN_Child(Last_Nod_Sav));
   construct_ret();		/* build RetSkel in the 3rd argument */
 }
 
@@ -1778,13 +1621,12 @@ void get_lastnode_cs_retskel(void)
 /* creates an empty (dummy) answer.					*/
 /*----------------------------------------------------------------------*/
 
-ALPtr empty_return(void)
+ALNptr empty_return(void)
 {
-    ALPtr i;
+    ALNptr i;
   
     /* Used only in one context hence this abuse */
-    NewAnsListNode(i);
-    aln_answer_ptr(i) = &dummy_ans_node;
+    New_ALN(i,&dummy_ans_node,NULL);
     return i;
 }
 

@@ -29,11 +29,6 @@
 #define PUBLIC_TRIE_DEFS
 
 
-/* Temporary home
-   -------------- */
-#define IsNULL(ptr)      ( (ptr) == NULL )
-#define IsNonNULL(ptr)   ( (ptr) != NULL )
-
 
 /*===========================================================================*/
 
@@ -94,7 +89,7 @@ typedef struct InstructionPlusTypeFrame {
  *  points to a SubgoalFrame which contains additional info for that call.
  */
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*----------------------------------------------------------------------*/
 
 /*
  *                          Basic Trie Node
@@ -130,7 +125,10 @@ typedef struct Basic_Trie_Node *NODEptr;
 #define Sibl(X)		BTN_Sibling(X)
 #define Atom(X)		BTN_Symbol(X)
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#define Delay(X) (ASI) ((word) (BTN_Child(X)) & ~UNCONDITIONAL_MARK)
+
+/*----------------------------------------------------------------------*/
 
 /*
  *                      Basic Trie Hash Tables
@@ -160,20 +158,35 @@ typedef struct Basic_Trie_HashTable {
 
 #define BTHT_GetHashMask(pTHT)		( BTHT_NumBuckets(pTHT) - 1 )
 
-/*----------------------------------------------------------------------*/
+/*===========================================================================*/
 
-#define Delay(X) (ASI) ((word) (Child(X)) & ~UNCONDITIONAL_MARK)
+/*
+ *                             Answer List Node
+ *                             ----------------
+ *
+ *  A global resource for ALNs is currently implemented.  Blocks of
+ *  memory for ALN storage are allocated whenever this resource is
+ *  depleted.  All ALNs are allocated from this resource.  An "ALN
+ *  Structure Manager" maintains the list of unused ALNs and the list
+ *  of blocks of memory allocated for them.  To allow rapid deallocation
+ *  of these block-malloc'ed structures, the first word in the structure
+ *  must contain the field used to link them into a chain when in
+ *  use.
+ */
 
-/*----------------------------------------------------------------------*/
+typedef struct Answer_List_Node *ALNptr;
+typedef struct Answer_List_Node {
+  ALNptr link;
+  BTNptr answer_leaf;
+} AnsListNode;
 
-typedef struct answer_list_node *ALPtr;
-struct answer_list_node {
-  BTNptr answer_ptr;
-  ALPtr  next_aln;
-} ;
+/* - - Preferred macros - - - - */
+#define ALN_Next(pALN)		((pALN)->link)
+#define ALN_Answer(pALN)	((pALN)->answer_leaf)
 
-#define aln_answer_ptr(ALN)	(ALN)->answer_ptr
-#define aln_next_aln(ALN)	(ALN)->next_aln
+/* - - For backwards compatibility - - - - */
+#define aln_answer_ptr(ALN)	ALN_Answer(ALN)
+#define aln_next_aln(ALN)	ALN_Next(ALN)
 
 /*----------------------------------------------------------------------*/
 
@@ -181,8 +194,8 @@ struct answer_list_node {
  *                         Call Lookup Structures
  *                         ======================
  *
- *  Data structures for implementing better parameter passing to and from
- *  the call check/insert routine.
+ *  Data structures for parameter passing to and from the call
+ *  check/insert routine.
  */
 
 typedef struct Call_Info_For_Trie_Insertion {
@@ -224,7 +237,7 @@ extern void     load_solution_trie(int, CPtr, BTNptr);
 extern void     variant_call_search(CallInfoRecord *, CallLookupResults *);
 extern BTNptr   one_term_chk_ins(CPtr,BTNptr,int *);
 extern BTNptr   whole_term_chk_ins(Cell, BTNptr *, int *);
-extern BTNptr	get_next_trie_solution(ALPtr *);
+extern BTNptr	get_next_trie_solution(ALNptr *);
 extern BTNptr	variant_trie_search(int, CPtr, CPtr, int *);
 extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
 extern void     undo_answer_bindings(void);
@@ -243,8 +256,7 @@ extern int  global_num_vars;
 extern long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
 
 /* trie routine variables */
-extern BTNptr free_trie_nodes, Last_Nod_Sav, Paren;
-extern ALPtr   free_answer_list_nodes;
+extern BTNptr Last_Nod_Sav, Paren;
 
 /* registers for trie backtracking */
 extern CPtr reg_arrayptr, var_regs[];
@@ -288,9 +300,6 @@ extern CPtr reg_arrayptr, var_regs[];
 }
 /*----------------------------------------------------------------------*/
 
-extern BasicTrieHT HASHroot;
-extern BTHTptr HASHrootptr;
-
 extern CPtr *var_addr;
 extern int  var_addr_arraysz;
 
@@ -298,8 +307,6 @@ extern Cell VarEnumerator[];
 extern int  num_heap_term_vars;
 
 /*----------------------------------------------------------------------*/
-
-#define dbind_ref_nth_var(addr,n) dbind_ref(addr,VarEnumerator[n])
 
 extern Cell * reg_array;
 extern int reg_array_size;

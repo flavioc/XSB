@@ -97,8 +97,6 @@
 
 /*======================================================================*/
 
-#define DELETED_SET 1
-
 /* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
 extern FILE *fdopen(int fildes, const char *type);
 
@@ -1425,29 +1423,12 @@ int builtin_call(byte number)
     undelete_branch((NODEptr) ptoc_int(2));
     break;
   case BOTTOM_UP_UNIFY:
-    if ( ! bottom_up_unify() )
-      return FALSE;
+    return ( bottom_up_unify() );
     break;
   case DELETE_TRIE:
     if (strcmp(ptoc_string(2),"intern") == 0){
       tmpval = ptoc_int(1);
-      /*
-       * We can only delete a valid NODEptr, so that only those sets
-       * that were used before can be put into the free set list.
-       */
-      if ((Set_ArrayPtr[tmpval] != NULL) &&
-	  (!((long) Set_ArrayPtr[tmpval] & 0x3))) {
-	switch_to_trie_assert;
-	delete_trie(Set_ArrayPtr[tmpval]);
-	switch_from_trie_assert;
-        /*
-	 * Save the value of first_free_set into Set_ArrayPtr[tmpval].
-	 * Some simple encoding is needed, because in trie_interned/4 we
-	 * have to know this set is already deleted.
-	 */
-	Set_ArrayPtr[tmpval] = (NODEptr) (first_free_set << 2 | DELETED_SET);
-	first_free_set = tmpval;
-      }
+      delete_interned_trie(tmpval);
     }
     else {
       xsb_abort("DELETE_TRIE: Invalid use of this operation");

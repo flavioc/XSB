@@ -23,7 +23,12 @@
 */
 
 
+/*===========================================================================*/
+
 /*
+ *			SLG-WAM Stack Management
+ *			========================
+ *
  * Information on each independent data area needed by the slg-wam is kept
  * in one of these structures.  "low" and "high" point into memory to
  * delineate the bounds of the data area: "low" gets the address returned
