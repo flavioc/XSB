@@ -457,6 +457,7 @@ atom_codes(A, L) :- atom_codes(A, L).
 
 number_chars(T, L) :- number_chars(T, L).
 number_codes(T, L) :- number_codes(T, L).
+number_digits(T, L) :- number_digits(T, L).
 
 name(T, L) :-
 	term_type(T, Type),

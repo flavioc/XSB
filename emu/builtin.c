@@ -670,6 +670,7 @@ void init_builtin_table(void)
   set_builtin_table(NUMBER_CHARS, "number_chars");
   set_builtin_table(NUMBER_CODES, "number_codes");
   set_builtin_table(IS_CHARLIST, "is_charlist");
+  set_builtin_table(NUMBER_DIGITS, "number_digits");
 
   set_builtin_table(PUT, "put");
   set_builtin_table(TAB, "tab");

@@ -148,6 +148,7 @@ standard_symbol((notrace), 0, debugger).
 standard_symbol(number, 1, standard).
 standard_symbol(number_chars, 2, standard).
 standard_symbol(number_codes, 2, standard).
+standard_symbol(number_digits, 2, standard).
 standard_symbol(once, 1, standard).
 standard_symbol(op, 3, standard).
 standard_symbol(open, 3, standard).

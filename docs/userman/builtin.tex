@@ -1248,7 +1248,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	character list representation is not implemented yet).
      \end{description}
 
-\ouritem{atom\_codes(?Atom, ?CharList)}\index{{\tt atom\_codes/2}} 
+\ouritem{atom\_codes(?Atom, ?CharCodeList)}\index{{\tt atom\_codes/2}} 
     The standard predicate {\tt atom\_codes/2} performs the conversion 
     between an atom and its character list representation. 
     If {\tt Atom} is supplied (and is an atom), {\tt CharList} 
@@ -1316,7 +1316,13 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ouritem{number\_codes(?Number, ?CharList)}\index{{\tt number\_codes/2}} 
+\ouritem{atom\_chars(?Number, ?CharAtomList)}\index{{\tt atom\_chars/2}} 
+    Like \verb|atom_codes|, but the list returned (or input) is a list of
+    characters \emph{as atoms} rather than ASCII codes. For instance, 
+    \verb|atom_chars(abc,X)| binds {\tt X} to the list {\tt [a,b,c]}
+    instead of {\tt [97,98,99]}.
+
+\ouritem{number\_codes(?Number, ?CharCodeList)}\index{{\tt number\_codes/2}} 
     The standard predicate {\tt number\_codes/2} performs the conversion 
     between a number and its character list representation. 
     If {\tt Number} is supplied (and is a number), {\tt CharList} is
@@ -1363,6 +1369,20 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
     \item[{\tt range\_error}]
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
+
+\ouritem{number\_chars(?Number, ?CharAtomList)}\index{{\tt number\_chars/2}} 
+    Like \verb|number_codes|, but the list returned (or input) is a list of
+    characters \emph{as atoms} rather than ASCII codes. For instance, 
+    \verb|number_chars(123,X)| binds {\tt X} to the list {\tt ['1','2','3']}
+    instead of {\tt [49,50,51]}.
+\ouritem{number\_digits(?Number, ?DigitList)}\index{{\tt number\_digits/2}} 
+    Like \verb|number_chars|, but the list returned (or input) is a list of
+    digits \emph{as numbers} rather than ASCII codes (for floats, the atom
+    '.', '+' or '-', and 'e' will also be present in the list). For instance, 
+    \verb|number_digits(123,X)| binds {\tt X} to the list {\tt [1,2,3]}
+    instead of {\tt ['1','2','3']}, and \verb|number_digits(123.45,X)|
+    binds {\tt X} to {\tt [1,.,2,3,4,5,0,0,e,+,0,2]}.
+
 
 \end{description}
 

@@ -194,6 +194,7 @@
 #define TAB			211
 #define NUMBER_CODES		212
 #define IS_CHARLIST		213
+#define NUMBER_DIGITS		214
 
 #define SORT			220
 #define KEYSORT			221

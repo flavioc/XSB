@@ -194,6 +194,7 @@ inline_builtin(put, 1, PUT).
 inline_builtin(tab, 1, TAB).
 inline_builtin(number_codes, 2, NUMBER_CODES).
 inline_builtin(is_charlist, 2, IS_CHARLIST).
+inline_builtin(number_digits, 2, NUMBER_DIGITS).
 
 inline_builtin(sort, 2, SORT).
 inline_builtin(keysort, 2, KEYSORT).

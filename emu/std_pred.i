@@ -25,9 +25,12 @@
 
 
 /*----------------------------------------*/
+#include "builtin.h"
 #include "sp_unify.i"
 /*----------------------------------------*/
 
+static bool atom_to_list(int call_type);
+static bool number_to_list(int call_type);
 
 inline static bool functor_builtin(void)
 {
@@ -276,54 +279,61 @@ inline static bool hilog_arg(void)
 }
 
 
-inline static bool atom_codes(void)
+inline static bool atom_to_list(int call_type)
 {
   /* r1: ?term; r2: ?character list	*/
   int i, len;
   long c;
-  char *name;
+  char *atomname;
+  char tmpstr[2], *tmpstr_interned;
   Cell heap_addr, term, term2;
   Cell list, new_list;
   CPtr top = 0;
+  char *call_name = (call_type == ATOM_CODES ? "atom_codes" : "atom_chars");
+  char *elt_type = (call_type == ATOM_CODES ? "ASCII code" : "character atom");
 
   term = ptoc_tag(1);
   list = ptoc_tag(2);
-  if (!isnonvar(term)) {	/* use is: CHARS --> ATOM */
-    name = (char *)hreg; term2 = list;	/* use heap for temp storage */
+  if (!isnonvar(term)) {	/* use is: CODES/CHARS --> ATOM */
+    atomname = (char *)hreg; term2 = list;	/* use heap for temp storage */
     do {
       deref(term2);
       if (isnil(term2)) {
-	*name++ = '\0';
+	*atomname++ = '\0';
 	break;
       }
       if (islist(term2)) {
 	heap_addr = cell(clref_val(term2)); deref(heap_addr);
-	if (!isinteger(heap_addr)) {
+	if (((call_type==ATOM_CODES) && !isinteger(heap_addr))
+	    || ((call_type==ATOM_CHARS) && !isstring(heap_addr))) {
 	  if (isnonvar(heap_addr))
-	    err_handle(TYPE, 2, "atom_codes", 2, "integer", list);
-	  else err(INSTANTIATION, 2, "atom_codes", 2);
+	    err_handle(TYPE, 2, call_name, 2, elt_type, list);
+	  else err(INSTANTIATION, 2, call_name, 2);
 	  return FALSE;	/* fail */
 	}
-	c = int_val(heap_addr);
+	if (isinteger(heap_addr))
+	  c = int_val(heap_addr);
+	else /* ATOM CHARS */
+	  c = *string_val(heap_addr);
+
 	if (c < 0 || c > 255) {
-	  err_handle(RANGE, 2, "atom_codes", 2,
-		     "ASCII code", heap_addr);
+	  err_handle(RANGE, 2, call_name, 2, "ASCII code", heap_addr);
 	  return FALSE;	/* fail */
 	}
-	*name++ = c;
+	*atomname++ = c;
 	term2 = cell(clref_val(term2)+1);
       } else {
-	if (isref(term2)) err(INSTANTIATION, 2, "atom_codes", 2);
-	else err_handle(TYPE, 2, "atom_codes", 2, "list", term2);
+	if (isref(term2)) err(INSTANTIATION, 2, call_name, 2);
+	else err_handle(TYPE, 2, call_name, 2, "list", term2);
 	return FALSE;	/* fail */
       }
     } while (1);
     bind_string((CPtr)(term), (char *)string_find((char *)hreg, 1));
     return TRUE;
-  } else {	/* use is: ATOM --> CHARS */
+  } else {	/* use is: ATOM --> CODES/CHARS */
     if (isstring(term)) {
-      name = string_val(term);
-      len = strlen(name);
+      atomname = string_val(term);
+      len = strlen(atomname);
       if (len == 0) {
 	if (!isnonvar(list)) {
 	  bind_nil((CPtr)(list)); return TRUE;
@@ -332,60 +342,98 @@ inline static bool atom_codes(void)
       } else {
 	new_list = makelist(hreg);
 	for (i = 0; i < len; i++) {
-	  follow(hreg++) = makeint(*(unsigned char *)name);
-	  name++;
+	  if (call_type==ATOM_CODES)
+	    follow(hreg++) = makeint(*(unsigned char *)atomname);
+	  else {
+	    tmpstr[0]=*atomname;
+	    tmpstr[1]='\0';
+	    tmpstr_interned=string_find(tmpstr,1);
+	    follow(hreg++) = makestring(tmpstr_interned);
+	  }
+	  atomname++;
 	  top = hreg++;
 	  follow(top) = makelist(hreg);
-	} follow(top) = makenil;
+	}
+	follow(top) = makenil;
 	return unify(list, new_list);
       } 
-    } else err_handle(TYPE, 1, "atom_codes", 2, "atom", term);
+    } else err_handle(TYPE, 1, call_name, 2, "atom", term);
   }
   return TRUE;
 }
 
-inline static bool number_codes(void)
+inline static bool number_to_list(int call_type)
 {
-  int i;
+  int i, tmpval;
   long c;
-  char *name, str[256];	
+  char tmpstr[2], *tmpstr_interned;
+  char *numberAsString, str[256];	
   Cell heap_addr, term, term2;
   Cell list, new_list;
   char hack_char;	
   CPtr top = 0;
+  char *call_name =
+    (call_type == NUMBER_CODES ?
+     "number_codes" : (call_type == NUMBER_DIGITS?
+		       "number_digits" : "number_chars"));
+  char *elt_type =
+    (call_type == NUMBER_CODES ?
+     "integer" : (call_type == NUMBER_DIGITS? "digit" : "digit atom"));
+
 
   term = ptoc_tag(1);
   list = ptoc_tag(2);
-  if (!isnonvar(term)) {	/* use is: CHARS --> NUMBER */
-    name = str; term2 = list;
+  if (!isnonvar(term)) {	/* use is: CHARS/CODES --> NUMBER */
+    numberAsString = str; term2 = list;
     do {
       deref(term2);
       if (isnil(term2)) {
-	*name++ = '\0';
+	*numberAsString++ = '\0';
 	break;
       }
       if (islist(term2)) {
 	heap_addr = cell(clref_val(term2)); deref(heap_addr);
-	if (!isinteger(heap_addr)) {
+	if (((call_type==NUMBER_CODES) && (!isinteger(heap_addr)))
+	    || ((call_type==NUMBER_CHARS) && !isstring(heap_addr))
+	    || ((call_type==NUMBER_DIGITS)
+		&& !isstring(heap_addr)
+		&& !isinteger(heap_addr))) {
 	  if (isnonvar(heap_addr))
-	    err_handle(TYPE, 2, "number_chars",2, "integer",list);
-	  else err(INSTANTIATION, 2, "number_chars", 2);
+	    err_handle(TYPE, 2, call_name, 2, elt_type, list);
+	  else err(INSTANTIATION, 2, call_name, 2);
 	  return FALSE;	/* fail */
 	}
-	c = int_val(heap_addr);
+	if (call_type==NUMBER_CODES)
+	  c = int_val(heap_addr);
+	else if ((call_type==NUMBER_DIGITS) && (isinteger(heap_addr))) {
+	  tmpval = int_val(heap_addr);
+	  if ((tmpval < 0) || (tmpval > 9)) {
+	    err_handle(TYPE, 2, call_name, 2, elt_type, list);
+	    return FALSE;	/* fail */
+	  }
+	  c = (long) '0' + int_val(heap_addr);
+	} else if (isstring(heap_addr))
+	  c = *string_val(heap_addr);
+	else {
+	  err_handle(TYPE, 2, call_name, 2, "integer, digit, or atom", list);
+	  return FALSE;	/* fail */
+	}
+
 	if (c < 0 || c > 255) {
-	  err_handle(RANGE, 2, "number_chars", 2,
-		     "ASCII code", heap_addr);
+	  err_handle(RANGE, 2, call_name, 2, "ASCII code", heap_addr);
 	  return FALSE;	/* fail */
 	}
-	*name++ = c;
+	*numberAsString++ = c;
 	term2 = cell(clref_val(term2)+1);
       } else {
-	if (isref(term2)) err(INSTANTIATION, 2, "number_chars", 2);
-	else err_handle(TYPE, 2, "number_chars", 2, "list", term2);
+	if (isref(term2))
+	  err(INSTANTIATION, 2, call_name, 2);
+	else
+	  err_handle(TYPE, 2, call_name, 2, "list", term2);
 	return FALSE;	/* fail */
       }
     } while (1);
+
     if (sscanf(str, "%ld%c", &c, &hack_char) == 1) {
       bind_int((CPtr)(term), c);
     } else {
@@ -399,20 +447,37 @@ inline static bool number_codes(void)
 	}
       else return FALSE;	/* fail */
     }
-  } else {	/* use is: NUMBER --> CHARS */
+  } else {	/* use is: NUMBER --> CHARS/CODES/DIGITS */
     if (isinteger(term)) {
       sprintf(str, "%ld", (long)int_val(term));
     } else {
       if (isfloat(term)) {
-	sprintf(str, "%E", float_val(term));
+	sprintf(str, "%e", float_val(term));
       } else {
-	err_handle(TYPE, 1, "number_chars", 2, "number", term);
+	err_handle(TYPE, 1, call_name, 2, "number", term);
 	return FALSE;	/* fail */
       }
     }
     new_list = makelist(hreg);
     for (i=0; str[i] != '\0'; i++) {
-      follow(hreg++) = makeint((unsigned char)str[i]);
+      if (call_type==NUMBER_CODES)
+	follow(hreg++) = makeint((unsigned char)str[i]);
+      else if (call_type==NUMBER_CHARS) {
+	tmpstr[0] = str[i];
+	tmpstr[1] = '\0';
+	tmpstr_interned=string_find(tmpstr,1);
+	follow(hreg++) = makestring(tmpstr_interned);
+      } else { /* NUMBER_DIGITS */
+	tmpval = str[i] - '0';
+	if (0 <= tmpval && tmpval < 10)
+	  follow(hreg++) = makeint((unsigned char)str[i] - '0');
+	else {
+	  tmpstr[0] = str[i];
+	  tmpstr[1] = '\0';
+	  tmpstr_interned=string_find(tmpstr,1);
+	  follow(hreg++) = makestring(tmpstr_interned);
+	}
+      }
       top = hreg++;
       follow(top) = makelist(hreg);
     } follow(top) = makenil;

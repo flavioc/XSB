@@ -22,19 +22,25 @@ processes. See <a href="manual/manual2.pdf">XSB Manual, Voulume2, Communication
 with Subprocesses.</a>
 
 <p>
-<b>C preprocessor:</b>
-There is now a compiler option, <tt>cpp_on</tt>, which tells the XSB compiler
-to put the source through the C preprocessor.
+<b>XSB preprocessor:</b> There is now a compiler option, <tt>xpp_on</tt>, which
+tells the XSB compiler to put the source through a preprocessor. The default is
+<a href="http://www.math.polytechnique.fr/cmat/auroux/prog/gpp.html">gpp</a>, a
+powerful preprocessor that understands both C and Prolog syntax.
 
 <p>
 <B>Enhancements to the sockets interface:</B>
 New calls such as <tt>socket_set_option, socket_select,</tt>, etc.
+Certain socket calls and file I/O calls can be timed-out.
 
 <p>
 <b>I/O enhancements:</b>
-Certain socket calls and file I/O calls can be timed-out.
 There are several additions to the low-level I/O library, such as
 <tt>file_clone, file_reopen, pipe_open</tt>.
+Certain socket calls and file I/O calls can be timed-out.
+
+<p>
+<b>Call changes:</b>
+New calls: number_digits/2, number_codes/2, atom_codes/2.
 
 <p>
 <b>Debugger enhancements:</b>
@@ -49,6 +55,12 @@ facility.
 <li>
   <tt>unix/1</tt> is now called <tt>shell/1</tt>. It exists in module
   <tt>shell</tt>, and is imported from there automatically.
+<li>
+  The standard predicates
+  atom_chars/2 and number_codes/2 now behave as in the Prolog standard (return
+  lists of atoms rather than ASCII codes).
+  The old behavior is provided by the standard predicates atom_codes/2 and
+  number_codes/2.
 </ul>
 
 <hr>
