@@ -57,33 +57,6 @@ EXEC SQL INCLUDE sqlca;
 #define IsFailureStatus(Status)     (Status < SUCCESS)
 
 
-/*
- *  Boolean data type and its values. is defined elsewhere
-typedef enum Boolean {
-  FALSE = 0, TRUE = 1,
-  NO = 0, YES = 1
-} xsbBool;
- */
-
-
-#define IsNULL(Ptr)      (Ptr == NULL)
-#define IsNonNULL(Ptr)   (Ptr != NULL)
-
-
-/* ======================================================================== */
-
-/*
- *              X S B   F U N C T I O N   P R O T O T Y P E S
- *		=============================================
- */
-
-/* from psc.c */
-char* string_find(char *, int);
-
-/* from error_xsb.c */
-void xsb_abort(char *);
-
-
 /* ======================================================================== */
 
 /*

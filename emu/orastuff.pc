@@ -23,18 +23,23 @@
 */
 
 
+#include "xsb_config.h"
+#include "xsb_debug.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
 
-#include "xsb_config.h"
+#include "basicdefs.h"
+#include "basictypes.h"
 #include "cell_xsb.h"
+#include "cinterf.h"
+#include "psc_xsb.h"
 #include "flags_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
-#include "cinterf.h"
 
 EXEC SQL INCLUDE "orastuff.h";
 
