@@ -58,27 +58,26 @@ arguments:
 ----------------------------------------------------------------------------*/
 int try_match__( void )
 {
-
-   SV *text=newSV(0);       /*the storage for the string in embeded Perl*/
-   SV *string_buff=newSV(0);/*the storage for the string in embeded Perl*/
-   int was_match;           /*number of the matches*/
-   char *string = ptoc_string(1),
-        *pattern = ptoc_string(2);
-
-   sv_setpv(text, string );  /*store the string in the SV */
-
-   /* load the perl interpreter */
-   if (perlObjectStatus == UNLOADED )
-     load_perl__();
-
-   was_match = match(text, pattern );
-
-   global_pattern_mode = is_global_pattern(pattern);
-   
-   SvREFCNT_dec(string_buff);
-   SvREFCNT_dec(text);
+  SV *text=newSV(0);       /*the storage for the string in embeded Perl*/
+  SV *string_buff=newSV(0);/*the storage for the string in embeded Perl*/
+  int was_match;           /*number of the matches*/
+  char *string = ptoc_string(1),
+    *pattern = ptoc_string(2);
   
-   return(was_match);
+  sv_setpv(text, string );  /*store the string in the SV */
+  
+  /* load the perl interpreter */
+  if (perlObjectStatus == UNLOADED )
+    load_perl__();
+  
+  was_match = match(text, pattern );
+  
+  global_pattern_mode = is_global_pattern(pattern);
+  
+  SvREFCNT_dec(string_buff);
+  SvREFCNT_dec(text);
+  
+  return(was_match);
 }
 
 
@@ -91,7 +90,6 @@ If there is no calling of function try_match__() before, give warning!
 ----------------------------------------------------------------------------*/
 int next_match__( void )
 {
-
   int was_match;        /* return code */
 
    if ( matchPattern == NULL ) { /*didn't try_match__ before*/
@@ -105,7 +103,6 @@ int next_match__( void )
      return(was_match);
    /* always fail, if Perl pattern is not global */
    return FAILURE;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -120,7 +117,6 @@ argument:
 ----------------------------------------------------------------------------*/
 int do_bulk_match__( void )
 {
-
   AV *match_list;           /* AV storage of matches list*/
   SV *text=newSV(0);        /* storage for the embeded perl cmd */
   SV *string_buff=newSV(0); /* storage for the embedded perl cmd */
@@ -164,7 +160,7 @@ int do_bulk_match__( void )
   SvREFCNT_dec(text);
   
   ctop_int(3, num_match);           /*return the number of matches*/
-
+  return SUCCESS;
 }
 
 /*----------------------------------------------------------------------------
@@ -201,7 +197,7 @@ int perl_substitute__( void )
   SvREFCNT_dec(text);  /*release space*/
   
   ctop_string(3, string_find(substituteString,1));  /*return changed text*/
-  
+  return SUCCESS;
 }
 
 /*----------------------------------------------------------------------------
@@ -213,12 +209,11 @@ is ready to run.
 
 int load_perl__( void ) 
 {
-
   char *embedding[] = {"","-e","0"};  /* perl interpreter config params */
   int i;
 
   /* check if the perl interpreter is loaded already*/
-  if ( perlObjectStatus == LOADED ) return;
+  if ( perlObjectStatus == LOADED ) return SUCCESS;
 
   /*------------------------------------------------------------------------
     initial the global variables
@@ -239,7 +234,6 @@ int load_perl__( void )
   perlObjectStatus = LOADED;
 
   return (SUCCESS); 
-
 }
 
 /*---------------------------------------------------------------------------
@@ -285,13 +279,16 @@ int get_bulk_match_result__( void ) {
   }
 
   if ( bulkMatchList[ptoc_int(1)] == NULL )
-    return(FAILURE);        /*no match*/
+    return FAILURE;        /*no match*/
   else{
     int match_seq_number= ptoc_int(1);
     int match_array_sz= ptoc_int(3);
-    if (match_seq_number < match_array_sz)
-      c2p_string( bulkMatchList[match_seq_number], reg_term(2));
-    else return(FAILURE);
+    if (match_seq_number < match_array_sz) {
+      /* c2p_string( bulkMatchList[match_seq_number], reg_term(2)); */
+      ctop_string(2, (char *)string_find(bulkMatchList[match_seq_number],1));
+      return SUCCESS;
+    }
+    else return FAILURE;
   }
 }
 
@@ -376,7 +373,6 @@ int get_match_resultC__( void ) {
     c2p_string( matchResults[order], reg_term(2));
     return(SUCCESS);
   }
-
 }
 
 /*----------------------------------------------------------------------------
