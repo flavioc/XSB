@@ -24,7 +24,9 @@
 */
 
 
-#define REL_TAB_SIZE    32768
+#define REL_TAB_SIZE      32768
+#define FOREIGN_NAMELEN   128
+#define SHORT_LDOPTIONLEN 254
 
 /* Data structures holding the compiled code */
 

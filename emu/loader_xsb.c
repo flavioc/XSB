@@ -379,7 +379,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 					  num_index_reloc*sizeof(CPtr));
 	    if (!index_reloc) {
 	      xsb_error("Couldn't allocate index relocation space");
-	      return 0;
+	      return FALSE;
 	    }
 	  }
 	  index_reloc[cell(inst_addr)] = (CPtr)inst_addr;
@@ -409,9 +409,9 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
   }
   if (inst_addr != end_addr) {
     fprintf(stderr, "inst_addr %p, end_addr %p\n", inst_addr, end_addr);
-    return 0;
+    return FALSE;
   }
-  else return 1;
+  else return TRUE;
 }  /* end of load_text */
 
 /*----------------------------------------------------------------------*/
@@ -554,17 +554,20 @@ inline static char *get_obj_atom(FILE *fd, char *str)
   byte x;
   
   get_obj_data((&x),1);
-  if (x == 255) { /* handle unusual case specially */
+  /* ``x'' gets the length of the ldoption string or > SHORT_LDOPTIONLEN.
+     The latter means we have a long ldoption.
+     In this case, the length is stored in 4 bytes & we use get_obj_word_bb */
+  if (x > SHORT_LDOPTIONLEN) { /* handle unusual case specially */
     char *real_str;
     unsigned int len;
     get_obj_word_bb(&len);
     /* xsb_dbgmsg("get_obj_len = %d... Case is not handled yet!\n",len); */
     real_str = (char *)malloc(len);
-    get_obj_string(real_str, len); real_str[len] = 0;
+    get_obj_string(real_str, len); real_str[len] = '\0';
     return real_str;
   }
   else { /* optimize common case -- no malloc() */
-    get_obj_string(str, x); str[x] = 0;
+    get_obj_string(str, x); str[x] = '\0';
     return NULL;
   }
 }
@@ -573,7 +576,7 @@ inline static char *get_obj_atom(FILE *fd, char *str)
 
 static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 {
-  char str[256], *real_str;
+  char str[SHORT_LDOPTIONLEN+1], *real_str;
   int  is_new;
   byte t_arity, t_type, t_env;
   Pair temp_pair;
@@ -593,10 +596,10 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   else {
     if (t_env == T_IMPORTED) {
       byte t_modlen;
-      char modname[256];
+      char modname[MAXNAME+1];
       get_obj_byte(&t_modlen);
       get_obj_string(modname, t_modlen);
-      modname[t_modlen] = 0;
+      modname[t_modlen] = '\0';
       temp_pair = insert_module(0, modname);
       mod = temp_pair->psc_ptr;
     } else if (t_env == T_GLOBAL) mod = global_mod;
@@ -613,17 +616,17 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       link_sym(temp_pair->psc_ptr, (Psc)flags[CURRENT_MODULE]);
     }
   }
-  if (!temp_pair) return 0;
+  if (!temp_pair) return FALSE;
   
   if (real_str) { free(real_str); real_str = NULL; }
 
   /*	if (count >= REL_TAB_SIZE) {
 	xsb_dbgmsg("Reloc_table overflow");
-	return 0;
+	return FALSE;
 	}  */
   
   reloc_table[count] = (pw)temp_pair;
-  return 1;
+  return TRUE;
 }  /* load_one_sym */
 
 /************************************************************************
@@ -646,16 +649,16 @@ static bool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int exp)
   /* xsb_dbgmsg("reloc_table %x,psc_count %d",reloc_table,psc_count); */
 
   for (i = count; i < psc_count; i++) {
-    if (!load_one_sym(fd, cur_mod, i, exp)) return 0;
+    if (!load_one_sym(fd, cur_mod, i, exp)) return FALSE;
   }
-  return 1;
+  return TRUE;
 }
 
 /************************************************************************/
 
 static byte *loader1(FILE *fd, int exp)
 {
-  char name[128], arity;
+  char name[FOREIGN_NAMELEN], arity;
   byte name_len;
   int  is_new, seg_count;
   unsigned long psc_count;
@@ -667,9 +670,11 @@ static byte *loader1(FILE *fd, int exp)
  
   seg_count = 0; first_inst = 0;
   get_obj_byte(&name_len);
-  if (name_len < 128)
-    get_obj_string(name, name_len);
-  else xsb_exit("module name too long");
+
+  if (name_len >= FOREIGN_NAMELEN)
+    xsb_abort("LOADER: foreign module name is too long");
+
+  get_obj_string(name, name_len);
   name[(int)name_len] = 0;
   if (name_len==0) cur_mod = global_mod;
   else {
@@ -678,7 +683,7 @@ static byte *loader1(FILE *fd, int exp)
   }
   get_obj_word_bb(&psc_count);
   if (!load_syms(fd, (int)psc_count, 0, cur_mod, exp)) 
-    return 0;
+    return FALSE;
   /*	xsb_dbgmsg("symbol table of module %s loaded", name);	*/
   do {
     /*		xsb_dbgmsg("Seg count: %d",seg_count); */
@@ -688,16 +693,18 @@ static byte *loader1(FILE *fd, int exp)
     /* get the header of the segment */
     get_obj_byte(&arity);
     get_obj_byte(&name_len);
-    if (name_len < 127)
-      get_obj_string(name, name_len);
-    else xsb_exit("name %s too long");
+
+    if (name_len >= FOREIGN_NAMELEN)
+      xsb_abort("LOADER: module name is too long");
+
+    get_obj_string(name, name_len);
     name[(int)name_len] = 0;
     get_obj_word_bb(&text_bytes);
     /*		xsb_dbgmsg("Text Bytes %x %d",text_bytes,text_bytes);*/
     get_obj_word_bb(&index_bytes);
     /* load the text-index segment */
     seg_first_inst = load_seg(fd,seg_count,text_bytes,index_bytes);
-    if (!seg_first_inst) return 0;
+    if (!seg_first_inst) return FALSE;
     if (seg_count == 1) first_inst = seg_first_inst;
     /* 1st inst of file */
     /* set the entry point of the predicate */
@@ -743,15 +750,15 @@ static byte *loader1(FILE *fd, int exp)
 static byte *loader_foreign(char *filename, FILE *fd, int exp)
 {
   byte name_len, *instr;
-  char name[128], ldoption[256], *real_ldoption;
+  char name[FOREIGN_NAMELEN], ldoption[SHORT_LDOPTIONLEN+1], *real_ldoption;
   unsigned long psc_count;
   Psc  cur_mod;
   Pair ptr;
 
   get_obj_byte(&name_len);
-  if (name_len > 128) {
-    xsb_error("name of foreign module too long");
-    return 0;
+  if (name_len >= FOREIGN_NAMELEN) {
+    xsb_error("LOADER: foreign module name is too long");
+    return FALSE;
   }
   get_obj_string(name, name_len);
   name[name_len] = 0;
@@ -759,7 +766,7 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
   ptr = insert_module(T_MODU, name);
   cur_mod = ptr->psc_ptr;
   get_obj_word_bb(&psc_count);
-  if (!load_syms(fd, (int)psc_count, 0, cur_mod, exp)) return 0;
+  if (!load_syms(fd, (int)psc_count, 0, cur_mod, exp)) return FALSE;
   instr = load_obj(filename, cur_mod,
 		   (real_ldoption ? real_ldoption : ldoption));
   if (real_ldoption) { free(real_ldoption); real_ldoption = NULL; }
@@ -772,7 +779,7 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 /* Loads the file into permanent space.					*/
 /* Data segment first (mixed psc entries and name strings), then text	*/
 /* segment.  Under normal circumstances it returns the address of first	*/
-/* instruction; if errors occur, it returns 0.				*/
+/* instruction; if errors occur, it returns NULL.			*/
 /*									*/
 /************************************************************************/
 
@@ -783,22 +790,19 @@ byte *loader(char *file, int exp)
   FILE *fd;	      /* file descriptor */
   unsigned int magic_num;
   byte *first_inst = NULL;
-  char message[300];  /* Allow multiple lines of error reporting.    */
 
   fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
-  if (!fd) return 0;
+  if (!fd) return NULL;
   if (flags[HITRACE]) xsb_mesg("\n     ...... loading file %s", file);
   magic_num = read_magic(fd);
 
   if (magic_num == 0x11121304 || magic_num == 0x11121305) {
     if (!warned_old_obj) {
-      sprintf(message,
-	      "File \"%s\"\n"
-	      "\t   has byte code format that is NOT supported anymore.\n"
-	      "\t   Various strange things may happen and you are strongly\n"
-	      "\t   recommended to recompile it using XSB version > 2.01.",
-	      file);
-      xsb_warn(message);
+      xsb_warn("File \"%s\"\n"
+	       "\t   has old byte code format, which is likely to cause\n"
+	       "\t   unpredictable behavior.\n"
+	       "\t   Please recompile the file with XSB version > 2.01.",
+	       file);
       warned_old_obj = 1;
     }
   }
@@ -809,15 +813,12 @@ byte *loader(char *file, int exp)
 #ifdef FOREIGN
     first_inst = loader_foreign(file, fd, exp);
 #else
-    sprintf(message, "Trying to load in foreign file: %s\n", file);
-    xsb_abort(message);
+    xsb_abort("Loading a foreign file: %s", file);
 #endif
   }
   else {
-    sprintf(message,
-	    "File: %s does not have proper byte code format...\n%s",
-	    file, "\t Please recompile it");
-    xsb_abort(message);
+    xsb_abort("File: %s does not have proper byte code format...\n%s",
+	      file, "\t Please recompile it");
     first_inst = NULL;
   }
 

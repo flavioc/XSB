@@ -65,8 +65,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
 {
   char	*name;
   Pair	search_ptr;
-  char	sofilename[128];
-  int 	strl = strlen(pofilename);
+  char	sofilename[MAXPATHLEN];
   void	*handle;
   void	*funcep;
   char  *ldp1,*ldp2;
@@ -74,22 +73,17 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   static vstrDEFINE(ldstring_newenv);
   char  *libpath;
   char  ldtemp; 
-  int   slibpath;
   
   /* (1) create filename.so */
   
   strcpy(sofilename, pofilename);
-  sofilename[strl-1] = 's';
-  sofilename[strl]   = 'o';
-  sofilename[strl+1] = '\0';
+  /* replace the O suffix with the so suffix */
+  strcpy(sofilename+strlen(pofilename)-1, "so");
   
   /* (1.5) include necessary paths into LD_LIBRARY_PATH */
-  
   libpath = getenv("LD_LIBRARY_PATH");
   if (libpath == NULL)
     libpath = "";
-  slibpath = strlen(libpath);
-
   vstrSET(&ldstring_oldenv,"LD_LIBRARY_PATH=");
   vstrAPPEND(&ldstring_oldenv, libpath);
   vstrSETV(&ldstring_newenv,&ldstring_oldenv);
@@ -119,24 +113,29 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   }
   
   if (putenv(ldstring_newenv.string) != 0)
-    xsb_abort("LOAD_OBJ_DYN: can't adjust LD_LIBRARY_PATH");
-  
-  /* (2) open the needed object */
-  
-  if (( handle = dlopen(sofilename, RTLD_LAZY)) == 0 ) {
-    xsb_mesg("%s", dlerror());
-    return FALSE;
-  }
+    xsb_error("LOAD_OBJ_DYN: can't adjust LD_LIBRARY_PATH");
 
-  if (putenv(ldstring_oldenv.string) != 0)
-    xsb_abort("LOAD_OBJ_DYN: can't restore te value of LD_LIBRARY_PATH");
-  
-  
-  /* (3) find address of function and data objects
-  **
-  ** dyn_link_all(loc, cur_mod);
+  /*
+  xsb_dbgmsg("New LD_LIBRARY_PATH: %s", getenv("LD_LIBRARY_PATH"));
   */
   
+  /* (2) open the needed object */
+  handle = dlopen(sofilename, RTLD_LAZY);
+
+  if (putenv(ldstring_oldenv.string) != 0)
+    xsb_error("LOAD_OBJ_DYN: can't restore the value of LD_LIBRARY_PATH");
+  
+  /*
+  xsb_dbgmsg("Restored LD_LIBRARY_PATH: %s", getenv("LD_LIBRARY_PATH"));
+  */
+
+  if (handle == 0) {
+    xsb_mesg("%s", dlerror());
+    return NULL;
+  }
+
+  
+  /* (3) find address of function and data objects */
   search_ptr = (Pair)get_ep(cur_mod);
   
   while (search_ptr) {

@@ -99,7 +99,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   byte *start;	/* Changed from int -- Kostis.	*/
   int *loc;	/* Changed from int -- Kostis.	*/
   struct exec header;
-  char buff[256], subfile[128];
+  char buff[3*MAXPATHLEN], subfile[MAXPATHLEN];
   struct stat statbuff;
   
   sprintf(tfile, "/tmp/xsb-dyn.%d", (int)getpid());
@@ -127,10 +127,6 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* hex. Specifying -T is the same as using the -Ttext option.	*/
   sprintf(buff, "/usr/bin/ld -N -A %s -T %x -o %s %s %s -lc",
 	  executable, (int)start, tfile, subfile, ld_option);
-  if (strlen(buff) > 510) {
-    xsb_error("Buffer for ld command is too small");
-    exit (-1);
-  }
   system(buff);
   
   /* third step: check if the size of the buffer just allocated is	*/
