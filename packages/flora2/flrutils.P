@@ -726,13 +726,16 @@ flora_loaddyn_FDB_filename(DBFileName) :-
 	%% Output the base file name only. The full path will be taken
 	%% care of by flora_load_dyn and consult.
 	parse_filename(DBFileName,_Dir,Base,Ext),
-	writeln(':- import flora_load_dyn/2 from flrutils.'),
 	writeln('#if !defined(FLORA_FDB_FILENAME)'),
+	writeln(':- import flora_load_dyn/2 from flrutils.'),
 	current_output_port(OutPort),
 	fmt_write(OutPort, "#define FLORA_FDB_FILENAME  '%s.%s'", args(Base,Ext)),
 	nl,
-	writeln('#endif'),
 	writeln('?- flora_load_dyn(FLORA_FDB_FILENAME,FLORA_THIS_MODULE_NAME).'),
+	writeln('#else'),
+	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
+	writeln('?- flora_read_canonical_and_insert(FLORA_FDB_FILENAME,FLORA_THIS_STORAGE).'),
+	writeln('#endif'),
 	nl.
 
 
@@ -1002,21 +1005,33 @@ flora_read_canonical_and_insert(StorageName) :-
 	  fail
 	).
 
+/*************************************************************************
+  flora_read_canonical_and_insert(+File,+StorageName)
+  Same as flora_read_canonical_and_insert/1, but reads a file
+*************************************************************************/
+flora_read_canonical_and_insert(File,StorageName) :-
+	flora_message_line('dynamically loading %s into storage %s',
+			   args(File,StorageName)),
+	seeing(OldF),
+	see(File),
+	flora_read_canonical_and_insert(StorageName),
+	seen,
+	see(OldF).
 
 /*************************************************************************
  Commit all backtrackable updates to Flora storage
- Reclaims storage of deleted nodes.
 **************************************************************************/
 
 flora_commit_storage :-
 	(flora_storage_registry(StorageName),
 	    storage_commit(StorageName),
-	    storage_reclaim_space(StorageName),
 	    fail
 	; true).
 
 /*************************************************************************
  Collect garbage in Flora storage tries
+ Should be called only after it is certain that backtracking 
+ over deleted facts cannot occur.
 **************************************************************************/
 
 flora_reclaim_storage_space :-
@@ -1699,3 +1714,17 @@ flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	  flora_message_line('Done! CPU time used: %S seconds',args(T))
 	),
 	!.
+
+/*****************************************************************************
+   flora_measure_time(+Call,+Message)
+   Tells now much time the call has been executing.
+   Message is printed to identify the call.
+*****************************************************************************/
+
+flora_measure_time(Call,Message) :-
+	cputime(T1),
+	call(Call),
+	cputime(T2),
+	Delta is T2 - T1,
+	fmt_write('%s %f seconds', args(Message,Delta)),
+	nl.

@@ -203,6 +203,9 @@ flNoTrace :- flora_notrace.
 flTraceLow :-
 	flora_trace,
 	flora_set_switch(low_level_trace).
+flNoTraceLow :-
+	flora_notrace,
+	retractall(flora_switch(low_level_trace)).
 
 
 

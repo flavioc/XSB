@@ -59,7 +59,7 @@
 	flora_stdfdbk_line/1
    from flrprint.
 
-:- import flora_commit_storage/0 from flrutils.
+:- import flora_commit_storage/0, flora_reclaim_storage_space/0 from flrutils.
 
 :- import windows_os/0 from xsb_configuration.
 
@@ -100,44 +100,46 @@ fllibprogramans(Gs,NVs) :-
 ********************************************************************/
 flora_print_all(Gs,NVs) :-
 	cputime(T0),
-	( NVs == [] ->
-	    flora_if_then_else(flora_call(Gs),flora_write_Yes,flora_write_No)
+	( NVs == []
+	->  flora_if_then_else(flora_call(Gs),flora_write_Yes,flora_write_No)
 	;
-	  flora_findall(NVs,Gs,TempL),
-	  sort(TempL,L),
-	  cputime(T1),
-	  T is T1-T0,
-	  length(L,N),
-	  ( N == 0 -> flora_write_No
-	  ;
-	      flora_write_matches(L),
-	      ( flora_switch(chatter) ->
-		flora_stdfdbk_string("\n%d solution(s) in %S seconds",
-				     args(N,T)),
-	        (  windows_os, flora_stdfdbk_nl, !
+	    flora_findall(NVs,Gs,TempL),
+	    cputime(T1),
+	    T is T1-T0,
+	    flora_reclaim_storage_space,
+	    sort(TempL,L),
+	    length(L,N),
+	    ( N == 0 -> flora_write_No
+	    ;
+		flora_write_matches(L),
+		( flora_switch(chatter) ->
+		    flora_stdfdbk_string("\n%d solution(s) in %S seconds",
+					 args(N,T)),
+		    (  windows_os, flora_stdfdbk_nl, !
+		    ;
+			flora_stdfdbk_string(' on '),
+			shell(hostname,block,STDFDBK,block,_)
+		    )
 		;
-		   flora_stdfdbk_string(' on '),
-		   shell(hostname,block,STDFDBK,block,_)
-		)
-	      ;
-		  true
-	      ),
-	      flora_write_Yes
-	  )
+		    true
+		),
+		flora_write_Yes
+	    )
 	).
 
 
 /********************************************************************/
 flora_print_one(Gs,NVs) :-
-	( NVs == [] ->
-	    flora_if_then_else(flora_call(Gs), flora_write_Yes,flora_write_No)
+	( NVs == []
+	->  flora_if_then_else(flora_call(Gs), flora_write_Yes,flora_write_No)
 	;
-	  ( flora_call(Gs),
-	    flora_write_pairs(NVs),
-	    flora_fail_unless_return
-	  ;
-	    flora_write_No
-	  )
+	    ( flora_call(Gs),
+		flora_write_pairs(NVs),
+		flora_fail_unless_return
+	    ;
+		flora_write_No
+	    ),
+	flora_reclaim_storage_space
 	).
 
 

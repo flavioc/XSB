@@ -53,13 +53,13 @@ FL_IF(FL_THEN(Cond,_Then)) :- sk_not(Cond).
 %% We use catch/throw to achieve this
 FL_WHILE(FL_DO(Cond,Action)) :- 
 	FLORA_SYMBOL('catch')((call(Cond),
-		     (call(Action) -> flora_commit_storage, fail
-		     ; throw(quitLoop)
-		     )
-		    ; true
-		    ),
-		    quitLoop,	% catcher
-		    fail).	% fail, if condition was thrown
+			       (call(Action) -> flora_commit_storage, fail
+			       ; throw(quitLoop)
+			       )
+			      ; true
+			      ),
+			      quitLoop,	% catcher
+			      fail). % fail, if condition was thrown
 
 %% Fails only if Action becomes false before Cond becomes true
 FL_DO(FL_UNTIL(Action,Cond)) :-

@@ -680,11 +680,11 @@ print_items(Item) :- print_item(Item).
 
 flora_trace :-
 	assert(flora_switch(trace)),
-	retractall(flora_switch(low_level_trace)),
+	%%retractall(flora_switch(low_level_trace)),
 	flora_handle_trace.
 flora_notrace :-
 	retractall(flora_switch(trace)),
-	retractall(flora_switch(low_level_trace)),
+	%%retractall(flora_switch(low_level_trace)),
 	flora_handle_notrace.
 /*********************************************************************/
 

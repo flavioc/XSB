@@ -108,6 +108,7 @@ flora_prlg(FL_DUMP,1) :- !.
 flora_prlg(flTrace,0) :- !.
 flora_prlg(flNoTrace,0) :- !.
 flora_prlg(flTraceLow,0) :- !.
+flora_prlg(flNoTraceLow,0) :- !.
 flora_prlg(flChatter,0) :- !.
 flora_prlg(flNoChatter,0) :- !.
 

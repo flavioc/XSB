@@ -192,6 +192,8 @@
 	flora_reclaim_storage_space/0,
 	flora_commit_storage/0,
 	flora_load_dyn/2,
+	flora_read_canonical_and_insert/2,
 	flora_compile_system_module_by_ID/1,
 	flora_load_system_module_internal/1,
+	flora_measure_time/2,
 	flCompileInclude/1.

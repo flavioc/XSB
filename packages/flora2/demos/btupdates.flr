@@ -102,12 +102,13 @@ rr(3000) :- true.
 %% Add some more facts
 ?- insert{mary[salary(1999)->99]@mod2,mary[salary(1998)->88]@mod2}.
 %% This is like Query 7, but we don't use don't care vars
-%% and thus execute the loop several times. The reslt is that all facts 
+%% and thus execute the loop several times. The result is that all facts 
 %% about mary's salary are deleted
+
 ?- do btdelete{mary[salary(Y)->S]@mod2}
     	until (abolish_all_tables, 3 > count{YY| mary[salary(YY)->_]@mod2}).
 
-%% Should have only two facts of the form mary[salary(...)->...]
+%% Should have no facts of the form mary[salary(...)->...]
 ?- abolish_all_tables.
 ?- writeln('After query8:')@prolog(), mary[salary(Y)->V]@mod2.
 
