@@ -67,8 +67,9 @@ int_eq(Op, integer(N), N) :-
 /*     \ X:	  code(X, R), negate(R)			in R		*/
 /*   other unary builtin function:					*/
 /*     f(X):	  code(X, R), unifunc(FunNum,R)		in R		*/
-/*     X mod Y:	  code(X,R0),code(Y,R1),movreg(R0,R),idivreg(R1,R0)	*/
+/*     X rem Y:	  code(X,R0),code(Y,R1),movreg(R0,R),idivreg(R1,R0)	*/
 /*		  mulreg(R1,R0),subreg(R0,R) 		in R		*/
+/*     X mod Y:	  puts value in Registor of evaluated X                 */
 /*   other binary builtin function:					*/
 /*     f(X,Y):	  code(X,R1),code(Y,R2),Corres. Inst.	in R1		*/
 /*     ... ... 								*/
@@ -173,11 +174,19 @@ eval_binop(Op,E1,E2,R1,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
     eval_exp(E2,R2,Pilm,[Inst|Pilr],HoldR,Tmid1,Tmid2,PredSym,NC),
     eval_binoptab(Op,R1,R2,Inst),
     release_if_done0(E2,R2,HoldR,Tmid2,Tout).
-eval_binop(mod,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
+eval_binop(rem,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
     eval_exp(E1,R0,Pil,Pilm0,HoldR,Tin,Tmid,PredSym,NC),
     eval_exp(E2,R1,Pilm0,Pilm1,HoldR,Tmid,Tmid1,PredSym,NC),
     getreg(Tmid1,R),
     Pilm1 = [movreg(R0,R),idivreg(R1,R0),mulreg(R1,R0),subreg(R0,R)|Pilr],
+    release_if_done0(E1,R0,HoldR,Tmid1,Tmid2),
+    release_if_done0(E2,R1,HoldR,Tmid2,Tout).
+eval_binop(mod,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
+    eval_exp(E1,R0,Pil,Pilm0,HoldR,Tin,Tmid,PredSym,NC),
+    eval_exp(E2,R1,Pilm0,Pilm1,HoldR,Tmid,Tmid1,PredSym,NC),
+    getreg(Tmid1,R),
+    Pilm1 = [movreg(R0,R),divreg(R1,R0),unifunc(14,R0),
+			  mulreg(R1,R0),subreg(R0,R)|Pilr],
     release_if_done0(E1,R0,HoldR,Tmid1,Tmid2),
     release_if_done0(E2,R1,HoldR,Tmid2,Tout).
 eval_binop(Op,_,_,_,Pil,Pil,_,Tin,Tin,PredSym,NC) :-
