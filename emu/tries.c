@@ -731,11 +731,13 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
 	   * will be used in delay_chk_insert() (in function
 	   * do_delay_stuff()).
 	   */
+#ifndef IGNORE_DELAYVAR
 	  bld_free(hreg); /* To make sure there is no pointer from heap to 
 			   * local stack.
 			   */
 	  bind_ref(xtemp1, hreg);
 	  xtemp1 = hreg++;
+#endif
 	  StandardizeAndTrailVariable(xtemp1,ctr);
 	  item = EncodeNewTrieVar(ctr);
 	  one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
@@ -754,7 +756,11 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
 	one_node_chk_ins(flag, EncodeTrieList(xtemp1), BASIC_ANSWER_TRIE_TT);
 	pdlpush(cell(clref_val(xtemp1)+1));
 	pdlpush(cell(clref_val(xtemp1)));
+#ifndef IGNORE_DELAYVAR
 	recvariant_trie_ans_subsf(flag, BASIC_ANSWER_TRIE_TT);
+#else
+	recvariant_trie(flag, BASIC_ANSWER_TRIE_TT);
+#endif 
 	break;
       case CS:
 	psc = (Psc)follow(cs_val(xtemp1));
@@ -763,7 +769,11 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
 	for (j = get_arity(psc); j >= 1 ; j--) {
 	  pdlpush(cell(clref_val(xtemp1)+j));
 	}
+#ifndef IGNORE_DELAYVAR
 	recvariant_trie_ans_subsf(flag, BASIC_ANSWER_TRIE_TT);
+#else
+	recvariant_trie(flag, BASIC_ANSWER_TRIE_TT);
+#endif
 	break;
       default:
 	xsb_abort("Bad type tag in variant_trie_search()");
@@ -771,6 +781,7 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
     }
     resetpdl;                                                   
 
+#ifndef IGNORE_DELAYVAR
     /*
      * Put the substitution factor of the answer into a term ret/n (if 
      * the arity of the substitution factor is 0, then put integer 0
@@ -785,6 +796,9 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
       bld_int(ans_var_pos_reg, 0);
     else	
       bld_functor(ans_var_pos_reg, get_ret_psc(ctr));
+#else /* IGNORE_DELAYVAR */
+    undo_answer_bindings();
+#endif
 
     /*
      * Save the number of variables in the answer, i.e. the arity of
@@ -886,7 +900,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     int  i, j, tag = FREE, flag = 1;
  
 #ifdef DEBUG_DELAYVAR
-    xsb_dbemsg(">>>> start delay_chk_insert()");
+    xsb_dbgmsg(">>>> start delay_chk_insert()");
 #endif
 
     Paren = NULL;
@@ -895,7 +909,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     ctr = AnsVarCtr;
 
 #ifdef DEBUG_DELAYVAR
-    xsb_dbemsg(">>>> [D1] AnsVarCtr = %d", AnsVarCtr);
+    xsb_dbgmsg(">>>> [D1] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
     for (i = 0; i<arity; i++) {
@@ -954,7 +968,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     AnsVarCtr = ctr;
 
 #ifdef DEBUG_DELAYVAR
-    xsb_dbemsg(">>>> [D2] AnsVarCtr = %d", AnsVarCtr);
+    xsb_dbgmsg(">>>> [D2] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
     /*
@@ -1506,8 +1520,8 @@ byte * trie_get_returns_for_call(void)
   CPtr cptr;
 
 #ifdef DEBUG_DELAYVAR
-  xsb_dbemsg(">>>> (at the beginning of trie_get_returns_for_call");
-  xsb_dbemsg(">>>> num_vars_in_var_regs = %d)", num_vars_in_var_regs);
+  xsb_dbgmsg(">>>> (at the beginning of trie_get_returns_for_call");
+  xsb_dbgmsg(">>>> num_vars_in_var_regs = %d)", num_vars_in_var_regs);
 #endif
 
   call_str_ptr = (SGFrame) ptoc_int(1);
@@ -1527,7 +1541,7 @@ byte * trie_get_returns_for_call(void)
       }
     }
 #ifdef DEBUG_DELAYVAR
-    xsb_dbemsg(">>>> The end of trie_get_returns_for_call ==> go to answer trie");
+    xsb_dbgmsg(">>>> The end of trie_get_returns_for_call ==> go to answer trie");
 #endif
     delay_it = 0;  /* Don't delay the answer. */
     return (byte *)ans_root_ptr;
@@ -1561,7 +1575,7 @@ byte * trie_get_calls(void)
        num_vars_in_var_regs = -1;
        for (i = get_arity(psc_ptr); i>=1; i--) {
 #ifdef DEBUG_DELAYVAR
-	 xsb_dbemsg(">>>> push one cell");
+	 xsb_dbgmsg(">>>> push one cell");
 #endif
 	 pushreg(cell(cptr+i));
        }

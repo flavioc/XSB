@@ -43,6 +43,7 @@
  * the substitution factor of the answer in the delay element.
  */
 
+#ifndef IGNORE_DELAYVAR
 #ifdef DEBUG_DELAY
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
@@ -96,6 +97,15 @@ num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
       }									\
     }									\
   }
-#endif
+#endif /* DEBUG_DELAY */
+#else  /* IGNORE_DELAYVAR */
+#define handle_conditional_answers {			\
+  if (is_conditional_answer(NodePtr)) {			\
+    SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));	\
+    delay_positively(SUBGOAL, NodePtr,			\
+		     makestring((char *) ret_psc[0]));	\
+  }							\
+}
+#endif /* IGNORE_DELAYVAR */
 
 /*---------------------- end of file tr_delay.h ------------------------*/

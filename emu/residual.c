@@ -254,7 +254,9 @@ void build_delay_list(CPtr delay_list, DE de)
 		   num_heap_term_vars);
 #endif /* DEBUG_DELAYVAR */
 	
+#ifndef IGNORE_DELAYVAR
 	load_delay_trie(i, &cell_array[i-1], de_subs_fact_leaf(de));
+#endif
 	
 #ifdef DEBUG_DELAYVAR
 	xsb_dbgmsg(">>>> num_heap_term_vars becomes %d",
