@@ -112,8 +112,8 @@ bldvarinst(VPrag, Pil, Pilr, Tin, Tout) :-
 	(Occ == v
 	 ->	Tout = Tin,
 		%%bldvar_v(Typ,Loc,Pil,Pilr)
-		vprag_loc(VPrag,256),
-	Pil = [bldavar|Pilr]
+		(vprag_loc(VPrag,256) -> true ; true),
+		Pil = [bldavar|Pilr]
 	; Occ == f
 	 ->	alloc_reg(VPrag,Tin,Tout),
 		vprag_loc(VPrag,Loc),

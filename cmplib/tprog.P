@@ -136,6 +136,7 @@ theadpars([Par|Rest], N, Pil, Pilr, TRin, TRout) :-
 
 tbody(and(Goal,Goals),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,Tabled,Tabar,Sym,NC) :-
     tbody(Goal,A,Pil,Pil1,Tin,Tmid,midgoal,no,HoldRegs,Tabled,Tabar,Sym,NC),
+    !,
     tbody(Goals,A,Pil1,Pilr,Tmid,Tout,Meet,no,HoldRegs,Tabled,Tabar,Sym,NC),
     !.
 tbody(or(Goal,Goals),A,Pil,Pilr,Tin,[],Meet,Nested,HoldRegs,Tabled,Tabar,Sym,NC) :-
