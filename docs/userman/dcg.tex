@@ -47,12 +47,13 @@ An overview of the syntax of DCGs supported by \ourprolog\ is as follows:
       codes, they can be written (as elsewhere) as strings.
 \item Extra conditions, expressed in the form of Prolog predicate calls, 
       can be included in the body (right-hand side) of a grammar rule by 
-      enclosing such conditions in curly brackets, {\tt '\{'} and {\tt '\}'}.
+      enclosing such conditions in curly brackets, {\tt '$\{$'} and
+      {\tt '$\}$'}.
       For example, one can write:
       \begin{center}
-                {\tt positive\_integer(N) --> [N], \{integer(N), N > 0\}.}
-                \footnote{A term like {\tt \{foo\}} is just a syntactic-sugar
-                          for the term {\tt '\{\}'(foo)}.}
+                {\tt positive\_integer(N) --> [N], $\{$integer(N), N > 0$\}$.}
+                \footnote{A term like {\tt $\{$foo$\}$} is just a
+			  syntactic-sugar for the term {\tt '$\{\}$'(foo)}.}
       \end{center}
 \item The left hand side of a DCG rule must consist of a single non-terminal,
       possibly followed by a sequence of terminals (which must be written as
@@ -141,8 +142,8 @@ into themselves. For example,
 
 \stuff{
 \> \> positive\_number(X) --> \\
-\> \> \> [N], \{integer(N), N > 0\}, \\
-\> \> \> fraction(F), \{form\_number(N, F, X)\}.}
+\> \> \> [N], $\{$integer(N), N > 0$\}$, \\
+\> \> \> fraction(F), $\{$form\_number(N, F, X)$\}$.}
 
 \noindent
 translates to:
@@ -181,7 +182,7 @@ Disjunction has a fairly obvious translation.  For example, the DCG clause:
 
 \stuff{
 \> \> expr(E) --> \\
-\> \> \> \ \ expr(X), "+", term(Y), \{E is X+Y\} \\
+\> \> \> \ \ expr(X), "+", term(Y), $\{$E is X+Y$\}$ \\
 \> \> \>   | term(E).
 }
 
