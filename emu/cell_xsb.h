@@ -174,7 +174,7 @@ extern Float getfloatval(Cell);
 /* BIG_MEM allows Solaris/Sun machines to use 1 gig of memory */
 
 #define enc_int(val)  (((Integer)(val) << 3))
-#define dec_int(val)  ((Integer)(val) >> 3) 
+#define dec_int(val)  ((Integer)(val) >> 3)
 
 #define enc_addr(addr) ((Cell)(addr) << 1)
 #define dec_addr(dcell) (((Cell)(dcell) >> 1) & 0x7ffffffc)

@@ -43,18 +43,19 @@
   case REAL:		/* r1: ?term */
     return isfloat(ptoc_tag(1));
     
-  case NUMBER:	/* r1: ?term */
-    return isnumber(ptoc_tag(1));
-    
+  case NUMBER:	/* r1: ?term */ {
+      int tag = ptoc_tag(1);
+      return (isnumber(tag) || isboxedinteger(tag));
+  }
   case ATOMIC: {	/* r1: ?term */
     Cell term = ptoc_tag(1);
-    return isatomic(term);
+    return (isatomic(term) || isboxedinteger(term));
   }
 
   case COMPOUND: {	/* r1: ?term */
     Cell term = ptoc_tag(1);
-    return ((isconstr(term) && get_arity(get_str_psc(term))) ||
-	    (islist(term)));
+    return (((isconstr(term) && get_arity(get_str_psc(term))) ||
+	    (islist(term))) && !isboxedinteger(term));
   }
 
   case CALLABLE: {	/* r1: ?term */

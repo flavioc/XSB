@@ -45,7 +45,7 @@ inline static xsbBool functor_builtin(void)
 
   term = ptoc_tag(1);
   if (isnonvar(term)) {
-    if (isconstr(term)) {
+    if (isconstr(term) && !isboxedinteger(term)) {
       psc = get_str_psc(term);
       name = get_name(psc);
       arity = get_arity(psc);
@@ -59,6 +59,7 @@ inline static xsbBool functor_builtin(void)
   } else {	/* term is a variable */
     functor = ptoc_tag(2);
     if (isstring(functor) || isinteger(functor) || isfloat(functor) ||
+	isboxedinteger(functor) ||
 	(isconstr(term) && get_arity(get_str_psc(term)) == 0)) {
       arity = ptoc_tag(3);
       /* tls: added !isnumber conjunct */
@@ -159,7 +160,8 @@ inline static xsbBool univ_builtin(void)
   list = ptoc_tag(2);
   if (isnonvar(term)) {	/* Usage is deconstruction of terms */
     new_list = makelist(hreg);
-    if (isconstr(term) && (arity = (get_arity(get_str_psc(term))))) {
+    if (isatomic(term) || isboxedinteger(term)) { follow(hreg++) = term; top = hreg++; }
+    else if (isconstr(term) && (arity = (get_arity(get_str_psc(term))))) {
       follow(hreg++) = makestring(get_name(get_str_psc(term)));
       top = hreg++;
       for (i = 1 ; i <= arity ; i++) {
@@ -167,7 +169,6 @@ inline static xsbBool univ_builtin(void)
 	follow(top) = (Cell)(clref_val(term)+i); top = hreg++;
       }
     }
-    else if (isatomic(term)) { follow(hreg++) = term; top = hreg++; }
     else { /* term is list */
       follow(hreg++) = makestring(list_dot);
       top = hreg++;
@@ -233,7 +234,7 @@ inline static xsbBool univ_builtin(void)
 	  }
 	} return TRUE;
       }
-      if (isnumber(cell(head)) && isnil(cell(head+1))) { /* list=[num] */
+      if ((isnumber(cell(head)) || isboxedinteger(cell(head))) && isnil(cell(head+1))) { /* list=[num] */
 	bind_copy((CPtr)term, cell(head));	 /* term<-num  */
 	return TRUE;	/* succeed */
       }
