@@ -30,6 +30,7 @@
 	etnot/1,
 	get_returns_for_call/2,
 	get_calls_for_table/3,
+	get_calls_for_table/2,
 	robust_term_psc/2,
 	set_pil_on/0, set_pil_off/0, /* convenience */
 	set_prof_on/1, set_prof_off/0, /* convenience */

@@ -22,7 +22,8 @@
 ** 
 */
 
-
+get_calls_for_table(Skel,Call):- 
+	get_calls_for_table(Skel,Call,_).
 
 /* need to come to a decision about F/A */
 
