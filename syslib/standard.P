@@ -1,5 +1,5 @@
 /* File:      standard.P
-** Author(s): Sagonas, Warren, Kifer, Cui, Demoen, Swift
+** Author(s): Sagonas, Warren, Kifer, Cui, Demoen, Swift and others
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -28,7 +28,8 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod, optimize, xpp_on]).
+:- compiler_options([sysmod, optimize, xpp_on,ciao_directives]).
+% Ciao directives added for documentation.
 
 #include "celltags_xsb.h"
 #include "flag_defs_xsb.h"
@@ -279,6 +280,7 @@ writeln(Ostr,Term):- tell(Ostr),writeln(Term),tell(userout).
 
 writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 
+% yes, according to the manual this is what it should do.
 display(T) :- telling(F), tell(userout), write(T), told, tell(F).	
 
 
@@ -305,6 +307,8 @@ print(T) :-	% Not what is supposed 2 B
 	telling(F), tell(userout), write(T), told, tell(F).
 
 
+%---------------------------------------------------------------%
+	
 
 			/**********************/
 			/*    META-LOGICAL    */

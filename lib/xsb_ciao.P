@@ -1,0 +1,23 @@
+
+:- export current_infixop/4, current_postfixop/3, current_prefixop/3.
+
+% Ciao idioms and support -- adapted from operators.pl
+current_prefixop(Op,_,Prec):- 
+	current_op(Prec, Type, Op),
+	op_ass(Type,_,_,_,pre).
+
+current_postfixop(Op,Prec,_):- 
+	current_op(Prec, Type, Op),
+	op_ass(Type,_,_,_,post).
+
+current_infixop(Op,L,Prec,R):- 
+	current_op(Prec, Type, Op),
+	op_ass(Type,L,Prec,R,in).
+
+op_ass(fy, 0, Prec, Prec, pre).
+op_ass(fx, 0, Prec, Less, pre) :- Less is Prec-1.
+op_ass(yfx, Prec, Prec, Less, in) :- Less is Prec-1.
+op_ass(xfy, Less, Prec, Prec, in) :- Less is Prec-1.
+op_ass(xfx, Less, Prec, Less, in) :- Less is Prec-1.
+op_ass(yf, Prec, Prec, 0, post).
+op_ass(xf, Less, Prec, 0, post) :- Less is Prec-1.

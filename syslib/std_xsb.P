@@ -254,14 +254,16 @@ standard_symbol(sys_exit, 1, shell).
 standard_symbol(var, 1, standard).
 standard_symbol(write, 1, standard).
 standard_symbol(write, 2, standard).
-standard_symbol(writeln, 1, standard).
-standard_symbol(writeln, 2, standard).
-standard_symbol(write_prolog, 1, standard).
-standard_symbol(write_prolog, 2, standard).
-standard_symbol(writeq, 1, standard).
-standard_symbol(writeq, 2, standard).
 standard_symbol(write_canonical, 1, standard).
 standard_symbol(write_canonical, 2, standard).
+standard_symbol(write_prolog, 1, standard).
+standard_symbol(write_prolog, 2, standard).
+standard_symbol(write_term, 1, standard).
+standard_symbol(write_term, 2, standard).
+standard_symbol(writeln, 1, standard).
+standard_symbol(writeln, 2, standard).
+standard_symbol(writeq, 1, standard).
+standard_symbol(writeq, 2, standard).
 standard_symbol(xsb_flag, 2, curr_sym).
 standard_symbol((attribute), 1, atts).
 
