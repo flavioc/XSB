@@ -87,25 +87,50 @@ unsigned long next_prime(unsigned long some_int) {
 unsigned long hash(char *obj_name, byte arity, unsigned long hash_table_size) {
 
   unsigned long hashval, temp;
-  int i, j;
+  int i, j, k;
 
   hashval = 0;
   if (*obj_name != '\0')
-    for (i = 4; i >= 0; i--) {
-      temp = 0;
-      for (j = 0; j < 5; j++) {
-	temp = (temp << i) + *obj_name;
-	obj_name++;
-	if (*obj_name == '\0') {
-	  hashval = hashval + temp;
-	  goto Done;
+    for (k=0; k<10; k++) {
+      for (i = 4; i >= 0; i--) {
+	temp = 0;
+	for (j = 0; j < 5; j++) {
+	  temp = (temp << i) + *obj_name;
+	  obj_name++;
+	  if (*obj_name == '\0') {
+	    hashval = hashval + temp;
+	    goto Done;
+	  }
 	}
+	hashval = hashval + temp;
       }
-      hashval = hashval + temp;
     }
  Done:
   return ((hashval + arity) MOD hash_table_size);
 }
+
+/* unsigned long hash(char *obj_name, byte arity, unsigned long hash_table_size) { */
+
+/*   unsigned long hashval, temp; */
+/*   int i, j; */
+
+/*   hashval = 0; */
+/*   if (*obj_name != '\0') */
+/*     for (i = 4; i >= 0; i--) { */
+/*       temp = 0; */
+/*       for (j = 0; j < 5; j++) { */
+/* 	temp = (temp << i) + *obj_name; */
+/* 	obj_name++; */
+/* 	if (*obj_name == '\0') { */
+/* 	  hashval = hashval + temp; */
+/* 	  goto Done; */
+/* 	} */
+/*       } */
+/*       hashval = hashval + temp; */
+/*     } */
+/*  Done: */
+/*   return ((hashval + arity) MOD hash_table_size); */
+/* } */
 
 
 /*
