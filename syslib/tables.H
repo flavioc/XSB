@@ -43,9 +43,10 @@
 :- import ground/1, member/2, copy_term/2 from basics.
 :- import retract/1, retract_nr/1, retractall/1,
 	  (dynamic)/1, t_assert/2 from assert.
-:- import call/1, tcall/1, abort/1, functor/3 from standard.  
+:- import call/1, tcall/1, abort/1, functor/3, (=..)/2, is_attv/1
+	  from standard.  
 :- import abolish_table_info/0, is_incomplete/4, get_ptcp/1, slg_not/1,
-	  get_subgoal_ptr/2 from machine.
+	  get_subgoal_ptr/2, delete_attributes/1 from machine.
 :- import numbervars/3, unnumbervars/2 from num_vars.
 :- import (table)/1 from usermod.
 

@@ -253,6 +253,12 @@ get_returns(TableEntry, ReturnTemplate) :-
 	findall('_$get_returns'(TableEntry,ReturnTemplate),
 		trie_get_return(TableEntry,ReturnTemplate),
 		ReturnsList),
+	% As ReturnTemplate may contain attributed variables (from the
+	% call), which may have been changed in the answer, directly
+	% calling member/2 may trigger attv interrupts.  To avoid this,
+	% we need to change all attributed variables in ReturnTemplate
+	% to free regular variables.
+	change_attv_to_var(ReturnTemplate),
 	member('_$get_returns'(TableEntry,ReturnTemplate),ReturnsList).
 
 get_returns(TableEntry, RetTmplt, RetLeaf) :-
@@ -263,6 +269,24 @@ get_returns(TableEntry, RetTmplt, RetLeaf) :-
 		),
 		ReturnsList),
 	member('_$get_returns'(TableEntry,RetTmplt,RetLeaf),ReturnsList).
+
+/*
+ * change_attv_to_var(+ReturnTemplate)
+ *   Changes all the attributed variables in ReturnTemplate (ret/n) to
+ *   regular variables.
+ */
+ 
+change_attv_to_var(ReturnTemplate) :-
+	ReturnTemplate =.. [ret|Vars],
+	change_attv_to_var1(Vars).
+
+change_attv_to_var1([]).
+change_attv_to_var1([V|Vs]) :-
+	(is_attv(V)
+	 ->	delete_attributes(V)
+	 ;	true
+	),
+	change_attv_to_var1(Vs).	
 
 
 trie_get_return(_TableEntryHandle,_ReturnTemplate) :-
