@@ -1,3 +1,32 @@
+/* File:      hashtable_xsb.c  -- a simple generic hash table ADT
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 2002
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*
+#define DEBUG_HASHTABLE
+*/
+
 
 #include "xsb_config.h"
 #include "xsb_debug.h"
@@ -31,8 +60,8 @@
     	((xsbBucket *)(htable->table + (htable->bucket_size * I)))
 /* these two make sense only for top buckets, because we deallocate overflow
    buckets when they become free. */
-#define mark_bucket_free(bucket)   (bucket->name = (Cell)0)
-#define is_free_bucket(bucket)     (bucket->name == (Cell)0)
+#define mark_bucket_free(bucket,size)   memset(bucket,(Cell)0,size)
+#define is_free_bucket(bucket)          (bucket->name == (Cell)0)
 
 static void init_hashtable(xsbHashTable *table);
 
@@ -59,8 +88,15 @@ xsbBucket *search_bucket(Cell name,
 	    /* use memcpy() because client bucket might have extra fields */
 	    memcpy(prev, bucket, table->bucket_size);
 	    free(bucket);
-	  } else
-	    mark_bucket_free(prev);
+	  } else {
+	    mark_bucket_free(prev,table->bucket_size);
+#ifdef DEBUG_HASHTABLE
+	    printf("SEARCH_BUCKET: Destroying storage handle for %s\n",
+		   string_val(name));
+	    printf("SEARCH_BUCKET: Bucket nameptr is %p, next bucket %p\n",
+		   prev->name, prev->next);
+#endif
+	  }
 	} else {
 	  /* Not top bucket: rearrange pointers & free space */
 	  prev->next = bucket->next;
