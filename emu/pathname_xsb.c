@@ -195,37 +195,23 @@ char *tilde_expand_filename(char *filename) {
  */
 
 char *expand_filename(char *filename) {
-  char aux_filename[MAXPATHLEN], aux_filename2[MAXPATHLEN];
-  static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
-  
-#if defined(WIN_NT)
+  char aux_filename[MAXPATHLEN],
+    aux_filename2[MAXPATHLEN];
+  static char absolute_filename[MAXPATHLEN];
 
-  if ( is_absolute_filename(filename) ) {
+  if (is_absolute_filename(filename)) {
     return rectify_pathname(filename, absolute_filename);
+#ifndef WIN_NT
+  } else if (filename[0] == '~') {
+    return tilde_expand_filename(filename);
+#endif
   } else {
     getcwd(aux_filename2, MAXPATHLEN-1);
-    sprintf(aux_filename, "%s%c%s", aux_filename2, SLASH, filename);
+    sprintf(aux_filename, "%s%c%s", aux_filename2,
+	    SLASH, filename);
     return rectify_pathname(aux_filename, absolute_filename);
   }
-
-#else /* For UNIX systems */
-
-  if (is_absolute_filename(filename))
-    /* rectify and put in string tbl */
-    return rectify_pathname(filename, absolute_filename);
-
-  /* The file name is absolute, but the initial `~' must be expanded. */
-  else if (filename[0] == '~') 
-    return tilde_expand_filename(filename);
-
-  else {     /*  The file name is not absolute. */
-    getcwd(aux_filename2, MAXPATHLEN-1);
-    sprintf(aux_filename, "%s%c%s", aux_filename2, SLASH, filename);
-    return rectify_pathname(aux_filename, absolute_filename);
-  }
-#endif /* of def for Unix */
 }
-
 
 /* strip names from the back of path 
    PATH is the path name from which to strip.
