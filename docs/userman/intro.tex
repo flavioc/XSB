@@ -68,11 +68,12 @@ other tabling methods such as OLDT resolution~\cite{TaSa86} (see
 Chapter
 \ref{tabling_overview} for details).
 
+\begin{example} \label{ex:Russell}
 The use of tabling also makes possible the evaluation of programs with
 non-stratified negation through its implementation of the {\em
 well-founded semantics} \cite{VGRS91}.  When logic programming rules
 have negation, paradoxes become possible.  As an example consider one
-of Russel's paradoxes --- 
+of Russell's paradoxes --- 
 the barber in a town shaves every person who does not shave himself ---
 written as a logic program.
 \begin{center}
@@ -95,6 +96,7 @@ treat{\tt shaves(barber,barber)} as either true or false, but as {\em
 undefined}. 
 Prolog, of course, would enter an infinite loop.  XSB's treatment of
 negation is discussed further in Chapter \ref{tabling_overview}.
+\end{example}
 
 The second important extension in XSB is support of HiLog
 programming \cite{ChKW93,SaWa95}.  HiLog allows a form of 

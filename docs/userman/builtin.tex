@@ -390,7 +390,8 @@ described only briefly.
 \end{description}
 
 
-\section{Negation and Control}\index{control}
+\section{Negation and Control}\label{sec:control}
+\index{control}
 
 \begin{description}
 \ouritem{\cut}\index{{\cut}} 
@@ -1546,20 +1547,32 @@ predicate \verb|bagReduce/4|.
 \begin{description}
 
 \ournewitem{bagReduce(?SetPred,?Arg,+Op,+Id)}{HiLog,Tabling}
-\index{{\tt bagReduce/4}}
-    {\tt SetPred} must be a HiLog set specification, i.e., a unary
-    HiLog predicate.  {\tt Op} must be a Hilog operation, i.e., a 3-ary
-    HiLog predicate that defines an associative operator.  The predicate
-    must define a binary function in which the first two arguments
-    determine the third.  {\tt Id} must be the identity of the operator.
-    {\tt bagReduce} returns with {\tt Arg} bound to the ``reduce'' of the
-    elements of the bag determined by {\tt SetPred} under the operation {\tt
-    Op}.  I.e., {\tt Arg} becomes the result of applying the operator to
-    all the elements in the bag that unify with {\tt Arg}.  See the {\tt
-    bagSum} operator below to see an example of {\tt bagReduce}'s use.
+\ournewitem{filterReduce(?SetPred,?Arg,+Op,+Id)}{HiLog,Tabling}
+\index{{\tt bagReduce/4}} 
+\index{{\tt filterReduce/4}} 
+{\tt SetPred} must be a HiLog set specification, i.e., a unary HiLog
+predicate.  {\tt Op} must be a Hilog operation, i.e., a 3-ary HiLog
+predicate that defines an associative operator.  The predicate must
+define a binary function in which the first two arguments determine
+the third.  {\tt Id} must be the identity of the operator.  {\tt
+bagReduce} returns with {\tt Arg} bound to the ``reduce'' of the
+elements of the bag determined by {\tt SetPred} under the operation
+{\tt Op}.  I.e., {\tt Arg} becomes the result of applying the operator
+to all the elements in the bag that unify with {\tt SetPred}.  See the
+{\tt bagSum} operator below to see an example of {\tt bagReduce}'s
+use.
+
+{\tt filterReduce/4} acts as {\tt bagReduce/4} with two differences.
+First, it does not depend on HiLog, so that {\tt filterReduce/4} will
+be more robust especially when XSB's module system is used.  In
+addition, {\tt filterReduce/4} aggregates solutions to {\tt Pred}
+using a variance rather than unification.  An example of the use of
+{\tt filterReduce/4} is given in Chapter \ref{tabling_overview}.
 
 \ournewitem{bagPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
+\ournewitem{filterPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
 \index{{\tt bagPO/4}}
+\index{{\tt filterPO/4}}
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt Order} must be a binary Hilog relation that
     defines a partial order.  {\tt bagPO} returns nondeterministically
@@ -1568,7 +1581,12 @@ predicate \verb|bagReduce/4|.
     being subsumption to reduce a set of answers and keep only the most
     general answers.
 
-    See the {\tt bagMax} operator below to see an example of {\tt bagPO}'s use.
+    See the {\tt bagMax} operator below to see an example of {\tt
+    bagPO}'s use.
+
+{\tt filterPO/4} acts as {\tt bagPO/4} with the single difference that
+it does not depend on HiLog, so that {\tt filterPO/4} will be more
+robust especially when XSB's module system is used.
 
 \ournewitem{bagMax(?SetPred,?Arg)}{HiLog,Tabling}
 \index{{\tt bagMax/2}}

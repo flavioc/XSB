@@ -100,18 +100,6 @@ Title = {Beyond Depth-First: Improving Tabled Logic Programs through
 Journal = {Journal of Functional and Logic Programming}, 
 Year = 1998 }
 
-@article{SaSw98,
-   AUTHOR = {K. Sagonas and T. Swift},
-    TITLE = {An Abstract Machine for Tabled Execution
-	     of Fixed-Order Stratified Logic Programs},
-     Journal = TOPLAS,
-     Month = {May},
-     Volume = 20,
-     Number = 3,
-     Pages = "586 - 635",
-     YEAR = {1998},
-}
-
 @inproceedings{ NiSi96,
 AUTHOR = "I. Niemela and P. Simons",
 TITLE = "Efficient Implementation of the Well-Founded and Stable Model
@@ -127,12 +115,15 @@ TITLE = "Logic Program Updates",
 INSTITUTION = "Universidade Nova de Lisboa",
 YEAR = 1997 }
 
-@techreport{RaSm97,
-Author = {C.R. Ramakrishnan and S. Smolka},
- Title = {Fully local and efficient evaluation of alternating fixed points}, 
-Institution = {SUNY Stony Brook}, 
-Year = 1997
-}
+@inproceedings{LiRS98,
+Author = {X. Liu and C. R. Ramakrishnan and S. Smolka},
+Title = {Fully local and efficient evaluation of alternating fixed points}, 
+Booktitle = "TACAS 98: Tools and Algorithms for Construction and
+                  Analysis of Systems",  
+PAGES = "5-19",
+Publisher = "Springer-Verlag",
+Year = 1998}
+% LNCS 1384,
 
 @inproceedings{ABW88,
 AUTHOR = "K. Apt and H. Blair and A. Walker",
@@ -623,6 +614,12 @@ title = "Deductive database support for data visualization",
 institution = "U. Toronto",
 YEAR = 1994 }
 
+@unpublished{ CuSW99,
+AUTHOR = {B. Cui and T. Swift and D. S. Warren},
+TITLE = "A Case Study in Using Preference Logic Grammars for Knowledge Representation",
+NOTE = "Available at http://www.cs.sunysb.edu/$\tilde{\ }$tswift",
+YEAR = 1998 }
+
 @inproceedings{DaNP94,
 Author="C. Damasio and W. Nejdl and L. Pereira",
 Title= "Revise: an extended logic programming system for revising
@@ -705,10 +702,11 @@ NOTE = "Eliat, Israel.  To Appear",
 YEAR = 1995 }
 
 @inproceedings{DRW96,
-AUTHOR = "S. Dawson and C.R. Ramakrishnan and D.S. Warren",
+AUTHOR = {S. Dawson and C. R. Ramakrishnan and D. S. Warren},
 TITLE = "Practical Program Analysis Using General Purpose Logic Programming Systems --- A Case Study",
 BOOKTITLE = "ACM PLDI",
-NOTE = "To Appear",
+MONTH = may,
+PAGES = "117--126",
 YEAR = 1996 }
 
 @manual{Debr88,
@@ -1900,11 +1898,11 @@ JOURNAL = "Journal of Logic Programming",
   PAGES = {31--54}
 }
 
-@techreport{ FSW98,
+@inproceedings{ FSW98,
 Author = "J. Freire and T. Swift and D. Warren",
-Title = "A Formal Framework for Scheduling in SLG",
-INSTITUTION = "SUNY at Stony Brook",
-YEAR = 1993 }
+Title = "A Formal Framework for Scheduling in {SLG}",
+Booktitle = "International Workshop on Tabling in Parsing and Deduction",
+YEAR = 1998 }
 
 @inproceedings{ RRSW94, 
 AUTHOR = "P. Rao and I.V. Ramakrishnan and T. Swift and D.S. Warren",
@@ -2076,19 +2074,24 @@ TITLE = "An overview of the design and implementation of XSB",
 INSTITUTION = "SUNY at Stony Brook",
 YEAR = 1993 }
 
+@article{SaSw98,
+   AUTHOR = {K. Sagonas and T. Swift},
+    TITLE = {An Abstract Machine for Tabled Execution
+	     of Fixed-Order Stratified Logic Programs},
+     Journal = TOPLAS,
+     Month = {May},
+     Volume = 20,
+     Number = 3,
+     Pages = "586 - 635",
+     YEAR = {1998},
+}
+
 @inproceedings{ SaSW94,
 AUTHOR = "K. Sagonas and T. Swift and D.S. Warren",
 TITLE = "{XSB} as an Efficient Deductive Database Engine",
 BOOKTITLE = "Proc. of SIGMOD 1994 Conference",
 ORGANIZATION = "ACM",
 YEAR = 1994 }
-
-@inproceedings{ SaSW95a,
-AUTHOR = "K. Sagonas and T. Swift and D.S. Warren",
-TITLE = "The Limits of Fixed-Order Computation",
-Booktitle = "International Workshop on Logic and Databases",
-PUBLISHER = "LNAI: Springer-Verlag",
-YEAR = 1995 }
 
 @inproceedings{ SaSW95b, 
 AUTHOR = "K. Sagonas and T. Swift and D.S. Warren", 
@@ -2105,7 +2108,7 @@ BOOKTITLE = "Joint International Conference and Symposium on Logic
 PAGES = "274-289",
 YEAR = 1996 }
 
-@inproceedings{ SaWa95,
+@inproceedings{ SaWa96,
 AUTHOR = "K. Sagonas and D.S. Warren",
 TITLE = "Efficient Execution of {HiLog} in {WAM}-based {P}rolog 
 		Implementations",
@@ -2113,7 +2116,15 @@ BOOKTITLE = "International Conference on Logic Programming",
 NOTE = "To Appear",
 YEAR = "1995"}
 
-@inproceedings{ SaWa96,
+@article{ SaSW99,
+AUTHOR = "K. Sagonas and T. Swift and D. S. Warren",
+TITLE = "The Limits of Fixed-Order Computation",
+Journal = "Theoretical Computer Science",
+Note = "To apperar.  Preliminary version apeared in International
+                  Workshop on Logic and Databases, LNCS.", 
+Year = 1999 }
+
+@inproceedings{ SaWa95,
 AUTHOR = "K. Sagonas and D.S. Warren",
 TITLE = "Efficient Execution of {HiLog} in {WAM}-based {P}rolog 
 		Implementations",
@@ -2357,6 +2368,14 @@ Journal = "Annals of Mathematics and Artificial Intelligence",
 Note = "To Appear.  Available at http://cs.sunysb.edu/~tswift",
 YEAR = 1999 }
  
+@inproceedings{ Swif99b, 
+AUTHOR = "T. Swift", 
+TITLE = "A New Formulation of Tabled Resolution with Delay", 
+BOOKTITLE = {EPIA}, 
+NOTE = {Available at http://www.cs.sunysb.edu/$\tilde{\ }$tswift},
+YEAR = 1999
+}
+
 @inproceedings{ TAKI1,
 AUTHOR = "Kazuo Taki and K. Nakajima and H. Nakashima and Morohito Ikeda",
 TITLE = "Performance and Architectural Evaluation of the PSI Machine",
