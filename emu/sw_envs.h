@@ -1,5 +1,5 @@
 /* File:      sw_envs.h
-** Author(s): Kostis Sagonas
+** Author(s): Terry Swift, Rui Marques, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1998
