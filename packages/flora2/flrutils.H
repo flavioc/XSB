@@ -34,8 +34,6 @@
 
 :- import member/2 from basics.
 
-:- import shell/2 from shell.
-
 :- import assert/1, retractall/1 from assert.
 
 :- import compile/2, consult/1 from consult.
