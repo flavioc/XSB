@@ -232,7 +232,7 @@ int *asynint_ptr = &asynint_val;
 
 #define call_sub(PSC) {							\
   if ( (*asynint_ptr > 0) | call_intercept     	      	      	        \
-       | int_val(cell(interrupt_reg)) | flags[PSC_INT] ) {     	        \
+       | int_val(cell(interrupt_reg)) ) { 		    	        \
     if (*asynint_ptr > 0) { /* non-attv interrupt detected */		\
       if (*asynint_ptr == KEYINT_MARK) {				\
         synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));		\
@@ -261,12 +261,6 @@ int *asynint_ptr = &asynint_val;
       intercept(PSC);							\
       lpcreg = pcreg;							\
     }									\
-    if (flags[PSC_INT]) {    	     	     	     	     	     	\
-      pcreg = lpcreg;							\
-      synint_proc(PSC, MYSIG_PSC, pcreg-2*sizeof(Cell));      	     	\
-      flags[PSC_INT] = (Cell)0; /* reset it only after synint_proc() */	\
-      lpcreg = pcreg;							\
-    }	     	     	     	     	     	     	     	     	\
   } else {								\
     lpcreg = (pb)get_ep(PSC);						\
     /* check_glstack_overflow(get_arity(PSC),	  */    		\

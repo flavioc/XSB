@@ -117,7 +117,7 @@ extern xsbBool private_builtin(void);
 extern void xsb_segfault_quitter(int err);
 
 #ifdef WIN_NT
-extern boolean startInterruptThread(SOCKET intSocket);
+extern xsbBool startInterruptThread(SOCKET intSocket);
 #endif
 
 extern xsbBool assert_code_to_buff(void), assert_buff_to_clref(void);

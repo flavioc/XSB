@@ -57,7 +57,6 @@
 #define INSTALL_DIR	23	/* set dynamically in orient_xsb.c         */
 
 #define CLAUSE_INT	24	/* for clause interrupt			YW */
-#define PSC_INT	   	25	/* for PSC interrupt			MK */
 
 #define CONFIG_FILE	26	/* Where xsb_configuration.P lives	   */
 /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */

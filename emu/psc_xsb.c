@@ -218,12 +218,6 @@ static Pair insert0(char *name, byte arity, Pair *search_ptr, int *is_new)
     if (pair==NULL) {
       *is_new = 1;
       pair = make_psc_pair(make_psc_rec(name,arity), search_ptr);
-      if (arity > 0 && flags[MYSIG_PSC+INT_HANDLERS_FLAGS_START]) {
-	/* save the newly created PSC and set the interrupt flag */
-	/*
-	flags[PSC_INT] = (Cell)pair_psc(pair); 
-	*/
-      }
     }
     else
       *is_new = 0;

@@ -323,20 +323,6 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
       bld_int(reg+2, intcode);
       pcreg = get_ep(psc);
       break;
-    case MYSIG_PSC:		/* 14 */
-      /*
-      if (psc)
-	bld_cs(reg+1, build_call(psc));
-      */
-      printf("a called psc=%s \n", get_name(psc));
-      printf("aa createdPSC=%s \n", get_name((Psc)flags[PSC_INT]));
-      psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
-      printf("aaa inthandler=%s \n", get_name(psc));
-      /*
-      bld_int(reg+2, intcode);
-      */
-      pcreg = get_ep(psc);
-      break;
     case MYSIG_ATTV:		/*  8 */
       /* the old call must be built first */
       if (psc)
@@ -745,7 +731,7 @@ void checkJavaInterrupt(void *info)
   }
 }
 
-boolean startInterruptThread(SOCKET intSocket)
+xsbBool startInterruptThread(SOCKET intSocket)
 {
   xsb_mesg("Beginning interrupt thread on socket %ld",(int)intSocket);
 #ifdef _MT

@@ -97,7 +97,6 @@ interpreter :-
 interpreter1 :-
 	%% don't set MYSIG_PSC earlier, because XSB will start calling 
 	%% the handler when it starts up, which will cause a lot of grief
-	set_inthandler('_$psc_int'(_), MYSIG_PSC),
 	x_interp_repeat,
 	trimcore,
 	retractall('$$exception_ball'(_)),
@@ -220,12 +219,6 @@ readl_brklp1 :-
 '_$keyboard_int'(Call) :- 
 	is_xwammode(Flag),
 	( Flag =:= 1 -> abort ; break, call_c(Call) ).
-
-:- import psc_name/2 from machine.
-'_$psc_int'(Call) :-
-        term_psc(Call, Psc), psc_name(Psc, Name),
-	fmt_write(STDMSG, "%s %S\n", f(Name,Call)).
-        
 
 '_$attv_int'(Intlist, Call) :-
 % 	file_write(1, '.... in _$attv_int/2'), file_nl(1),

@@ -414,6 +414,10 @@ static char *rectify_pathname(char *inpath, char *outpath) {
     outidx++;
   }
   if (leading_slash2) {
+#if defined(CYGWIN)
+    strncpy(outpath+outidx,"cygdrive",8);
+    outidx += 8;
+#endif
     outpath[outidx] = SLASH;
     outidx++;
   }
