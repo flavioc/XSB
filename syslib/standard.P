@@ -863,7 +863,7 @@ not(Term) :-  (call(Term), nop, !, fail) ; true.
 %% true/0 is now defined in emu/init_xsb.c. This is so that we can
 %% maintain its psc in a global variable and use it when adding an
 %% interrupt, instead of always searching for it.       --lfcastro
-%%true. 		% including this used to cause compiling error, now not
+true. 		% including this used to cause compiling error, now not
 
 otherwise.	% same as true
 

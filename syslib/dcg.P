@@ -63,6 +63,19 @@ reset_dcg_mode :-
 	        assert(word([Token|Tokens],Token,Tokens))
 	).
 
+:- dynamic dynamic_supports_table/2.
+set_dcg_supported_table(TSkel) :-
+	table_state(TSkel,PType,_CType,_AStat),
+	PType \== undefined,
+	(dynamic_supports_table(word(_,_,_),TSkel)
+	 ->	true
+	 ;	assert(dynamic_supports_table(word(_,_,_),TSkel))
+	).
+
+tphrase_set_string_auto_abolish(List) :-
+	abolish_invalid_table_pred(word(_,_,_)),
+	tphrase_set_string_keeping_tables(List).
+
 tphrase_set_string(List) :-
 	abolish_all_tables,   % since changing EDB tables depend on.
 	tphrase_set_string_keeping_tables(List).

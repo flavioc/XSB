@@ -411,22 +411,40 @@ abolish_table_pred(Spec) :-
 
 abolish_table_predicate(Predicate) :- abolish_table_predicate(Predicate).
 
+:- dynamic dynamic_supports_table/2.
+
+abolish_invalid_table_pred(DynSpec) :-
+	dynamic_supports_table(DynSpec,TableSpec),
+	abolish_table_predicate(TableSpec),
+	fail.
+abolish_invalid_table_pred(_DynSpec).	
+
 abolish_module_tables(_Predicate) :-
 	'_$builtin'(ABOLISH_MODULE_TABLES).
 
 abolish_table_call(Call) :-
 	get_calls(Call,Handle,_Template),
 	table_state(Handle,PredType,_CallType,AnsSetStatus),
-	(   AnsSetStatus = undefined
+	(   AnsSetStatus == undefined
 	->  throw(error(table_error(abolishing_undefined_call)))
-	;   AnsSetStatus = incomplete
+	;   AnsSetStatus == incomplete
 	->  throw(error(table_error(abolishing_incomplete_call)))
-	;   PredType = subsumptive
+	;   PredType == subsumptive
 	->  throw(error(table_error(abolishing_subsumptive_call)))
 	;   abolish_table_call_bi(Handle)
 	),
 	fail.
 abolish_table_call(_Call).
+
+abolish_invalid_table_call(DynSpec) :-
+	dynamic_supports_table(DynSpec,TableSpec),
+	(is_most_general_term(TableSpec)
+	 ->	abolish_table_predicate(TableSpec),
+		fail
+	 ;	abolish_table_call(TableSpec),
+		fail
+	).
+abolish_invalid_table_call(_DynSpec).	
 
 abolish_table_call_bi(_Handle) :-
 	'_$builtin'(ABOLISH_TABLE_CALL).
