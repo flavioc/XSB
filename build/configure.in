@@ -1243,7 +1243,7 @@ case "$canonical" in
 		;;
      *linux*) AC_DEFINE(LINUX)
 	      AC_DEFINE(_GNU_SOURCE)
-	      if test $((`uname -r | cut -d "." -f "1 2"`)) == 2.6; then
+	      if test "`uname -r | cut -d "." -f "1 2"`" = "2.6"; then
 		echo "Guessing the tagging for this version of Linux"
 		AC_DEFINE(GUESS_TAGGING)
 	      fi
