@@ -57,7 +57,7 @@ extern void xsb_timer_handler(int signo);
 #ifdef WIN_NT
 #define SETALARM            ;
 #define TURNOFFALARM        KillTimer(NULL,xsb_timer_id); flags[SYS_TIMER] = 0
-#define CHECK_TIMER_SET     (flags[SYS_TIMER] > 0)
+#define CHECK_TIMER_SET     ((int)flags[SYS_TIMER] > 0)
 #define SET_TIMER       \
    xsb_timer_id = SetTimer(NULL,0,(UINT)(1000*(int)flags[SYS_TIMER]), \
 				  (TIMERPROC)xsb_timer_handler)
@@ -69,7 +69,7 @@ extern void xsb_timer_handler(int signo);
 #define SETALARM     	    (signal(SIGALRM, xsb_timer_handler))	
 /* turn off the timer */
 #define TURNOFFALARM        alarm(0); flags[SYS_TIMER] = 0
-#define CHECK_TIMER_SET     (flags[SYS_TIMER] > 0)
+#define CHECK_TIMER_SET     ((int)flags[SYS_TIMER] > 0)
 #define SET_TIMER           alarm(flags[SYS_TIMER])
 #define OP_TIMED_OUT        (sigsetjmp(xsb_timer_env,1) != 0)
 #endif
