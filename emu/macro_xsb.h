@@ -1,5 +1,5 @@
 /* File:      macro_xsb.h
-** Author(s): Swift, Sagonas, Rao, Freire
+** Author(s): Swift, Sagonas, Rao, Freire, Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------*/
 
-typedef struct subgoal_frame *SGFrame;
+typedef struct subgoal_frame *VariantSF;
 
 /*===========================================================================*/
 
@@ -49,7 +49,7 @@ typedef struct Table_Info_Frame {
   Psc  psc_ptr;			/* pointer to the PSC record of the subgoal */
   TabledEvalMethod method;	/* eval pred using variant or subsumption? */
   BTNptr call_trie;		/* pointer to the root of the call trie */
-  SGFrame subgoals;		/* chain of predicate's subgoals */
+  VariantSF subgoals;		/* chain of predicate's subgoals */
   TIFptr next_tif;		/* pointer to next table info frame */
 } TableInfoFrame;
 
@@ -122,7 +122,7 @@ struct ascc_edge {
 /*----------------------------------------------------------------------*/
 
 struct completion_stack_frame {
-  SGFrame subgoal_ptr;
+  VariantSF subgoal_ptr;
   int     level_num;
 #ifdef CHAT
   CPtr    hreg;	          /* for accessing the substitution factor */
@@ -252,8 +252,8 @@ enum SubgoalFrameType {
   VARIANT_PRODUCER_SFT, SUBSUMPTIVE_PRODUCER_SFT, SUBSUMED_CONSUMER_SFT
 };
 
-/* Variant Subgoal Frame
-   --------------------- */
+/* Variant (Producer) Subgoal Frame
+   -------------------------------- */
 typedef struct subgoal_frame {
   byte sf_type;		  /* The type of subgoal frame */
   byte is_complete;	  /* If producer, whether its answer set is complete */
@@ -279,63 +279,77 @@ typedef struct subgoal_frame {
   PNDE nde_list;	  /* pointer to a list of negative DEs */
 } variant_subgoal_frame;
 
-#define subg_sf_type(b)		((SGFrame)(b))->sf_type
-#define subg_is_complete(b)	((SGFrame)(b))->is_complete
-#define subg_is_reclaimed(b)	((SGFrame)(b))->is_reclaimed
-#define subg_prev_subgoal(b)	((SGFrame)(b))->prev_subgoal
-#define subg_next_subgoal(b)	((SGFrame)(b))->next_subgoal
-#define subg_tif_ptr(b)		((SGFrame)(b))->tif_ptr
-#define subg_leaf_ptr(b)	((SGFrame)(b))->leaf_ptr
-#define subg_ans_root_ptr(b)	((SGFrame)(b))->ans_root_ptr
-#define subg_ans_list_ptr(b)	((SGFrame)(b))->ans_list_ptr
-#define subg_ans_list_tail(b)	((SGFrame)(b))->ans_list_tail
-#define subg_cp_ptr(b)		((SGFrame)(b))->cp_ptr
+#define subg_sf_type(b)		((VariantSF)(b))->sf_type
+#define subg_is_complete(b)	((VariantSF)(b))->is_complete
+#define subg_is_reclaimed(b)	((VariantSF)(b))->is_reclaimed
+#define subg_prev_subgoal(b)	((VariantSF)(b))->prev_subgoal
+#define subg_next_subgoal(b)	((VariantSF)(b))->next_subgoal
+#define subg_tif_ptr(b)		((VariantSF)(b))->tif_ptr
+#define subg_leaf_ptr(b)	((VariantSF)(b))->leaf_ptr
+#define subg_ans_root_ptr(b)	((VariantSF)(b))->ans_root_ptr
+#define subg_ans_list_ptr(b)	((VariantSF)(b))->ans_list_ptr
+#define subg_ans_list_tail(b)	((VariantSF)(b))->ans_list_tail
+#define subg_cp_ptr(b)		((VariantSF)(b))->cp_ptr
 #if (!defined(CHAT))
-#define subg_asf_list_ptr(b)	((SGFrame)(b))->asf_list_ptr
+#define subg_asf_list_ptr(b)	((VariantSF)(b))->asf_list_ptr
 #endif
 /* use this for mark as completed == 0 */
-#define subg_compl_stack_ptr(b)	((SGFrame)(b))->compl_stack_ptr
-#define subg_compl_susp_ptr(b)	((SGFrame)(b))->compl_suspens_ptr
-#define subg_nde_list(b)	((SGFrame)(b))->nde_list
+#define subg_compl_stack_ptr(b)	((VariantSF)(b))->compl_stack_ptr
+#define subg_compl_susp_ptr(b)	((VariantSF)(b))->compl_suspens_ptr
+#define subg_nde_list(b)	((VariantSF)(b))->nde_list
 
 
-/* Subsumption Subgoal Frame
-   ------------------------- */
-typedef struct SubsumptiveSubgoalFrame *SubsumptiveSF;
-typedef struct SubsumptiveSubgoalFrame {
-  variant_subgoal_frame var_sf;
-  SubsumptiveSF producer;     /* The subgoal frame from whose answer set
-				 answers are collected into the answer list */
-  SubsumptiveSF consumers;    /* List of properly subsumed subgoals which
-				 consume from a producer's answer set */
-  TimeStamp ts;		      /* Time stamp to use during next answer ident */
-} subsumptive_subgoal_frame;
+/* Subsumptive Producer Subgoal Frame
+   ---------------------------------- */
+typedef struct SubsumedConsumerSubgoalFrame *SubConsSF;
+typedef struct SubsumptiveProducerSubgoalFrame *SubProdSF;
+typedef struct SubsumptiveProducerSubgoalFrame {
+  variant_subgoal_frame  var_sf;
+  SubConsSF  consumers;		/* List of properly subsumed subgoals which
+				   consume from a producer's answer set */
+} subsumptive_producer_sf;
 
-#define subg_producer(SF)	((SubsumptiveSF)(SF))->producer
-#define subg_consumers(SF)	((SubsumptiveSF)(SF))->consumers
-#define subg_timestamp(SF)	((SubsumptiveSF)(SF))->ts
+#define subg_consumers(SF)	((SubProdSF)(SF))->consumers
+
+
+/* Subsumed Consumer Subgoal Frame
+ * -------------------------------
+ *  Position of shared fields MUST correspond to that of variant_subgoal_frame.
+ */
+typedef struct SubsumedConsumerSubgoalFrame {
+  byte sf_type;		   /* The type of subgoal frame */
+  byte junk[2];
+  TIFptr tif_ptr;	   /* Table of which this call is a part */
+  BTNptr leaf_ptr;	   /* Handle for call in the CallTrie */
+  SubProdSF producer;	   /* The subgoal frame from whose answer set answers
+			      are collected into the answer list */
+  ALNptr ans_list_ptr;	   /* Pointer to the list of returns in the ret trie */
+  ALNptr ans_list_tail;	   /* Pointer to the tail of the answer list */
+  TimeStamp ts;		   /* Time stamp to use during next answer ident */
+  SubConsSF consumers;	   /* Chain link for properly subsumed subgoals */
+} subsumptive_consumer_sf;
+
+#define conssf_producer(SF)	((SubConsSF)(SF))->producer
+#define conssf_timestamp(SF)	((SubConsSF)(SF))->ts
+#define conssf_consumers(SF)	((SubConsSF)(SF))->consumers
 
 
 /* beginning of REAL answers in the answer list */
 #define subg_answers(subg)	ALN_Next(subg_ans_list_ptr(subg))
 
 
-#define IsVariantSF(pSF)	( subg_sf_type(pSF) == VARIANT_PRODUCER_SFT )
-#define IsSubsumptiveSF(pSF)				\
-   ( (subg_sf_type(pSF) == SUBSUMPTIVE_PRODUCER_SFT) ||	\
-     (subg_sf_type(pSF) == SUBSUMED_CONSUMER_SFT) )
+#define IsVariantSF(pSF)      (subg_sf_type(pSF) == VARIANT_PRODUCER_SFT)
+#define IsSubProdSF(pSF)      (subg_sf_type(pSF) == SUBSUMPTIVE_PRODUCER_SFT)
+#define IsSubConsSF(pSF)      (subg_sf_type(pSF) == SUBSUMED_CONSUMER_SFT)
 
-#define IsVariantProducer(pSF)		\
-   ( subg_sf_type(pSF) == VARIANT_PRODUCER_SFT )
-#define IsSubsumptiveProducer(pSF)	\
-   ( subg_sf_type(pSF) == SUBSUMPTIVE_PRODUCER_SFT )
-#define IsProperlySubsumed(pSF)		\
-   ( subg_sf_type(pSF) == SUBSUMED_CONSUMER_SFT )
+#define IsVariantProducer(pSF)		IsVariantSF(pSF)
+#define IsSubsumptiveProducer(pSF)	IsSubProdSF(pSF)
+#define IsProperlySubsumed(pSF)		IsSubConsSF(pSF)
 
 #define IsProducingSubgoal(pSF)		\
    ( IsVariantProducer(pSF) || IsSubsumptiveProducer(pSF) )
 
-#define ProducerHasConsumers(pSF)	\
+#define ProducerSubsumesSubgoals(pSF)	\
    ( IsSubsumptiveProducer(pSF) && IsNonNULL(subg_consumers(pSF)) )
 
 
@@ -370,12 +384,12 @@ typedef struct SubsumptiveSubgoalFrame {
  * Determines whether a producer subgoal has added answers to its set
  * since the given consumer last collected relevant answers from this set.
  */
-#define ConsumerCacheNeedsUpdating(ConsSF,ProdSF)		\
+#define MoreAnswersAvailable(ConsSF,ProdSF)			\
    ( IsNonNULL(subg_ans_root_ptr(ProdSF)) &&			\
      (TSTN_TimeStamp((TSTNptr)subg_ans_root_ptr(ProdSF)) >	\
-      subg_timestamp(ConsSF)) )
+      conssf_timestamp(ConsSF)) )
 
-extern ALNptr empty_return();
+extern ALNptr empty_return(void);
 
 
 /* Appending to the Answer List of a SF
@@ -413,7 +427,8 @@ extern ALNptr empty_return();
 #define SUBGOAL_FRAMES_PER_BLOCK    16
 
 extern struct Structure_Manager smVarSF;
-extern struct Structure_Manager smSubSF;
+extern struct Structure_Manager smProdSF;
+extern struct Structure_Manager smConsSF;
 
 
 /* Subgoal Frame (De)Allocation
@@ -443,11 +458,9 @@ extern struct Structure_Manager smSubSF;
      subg_sf_type(pNewSF) = VARIANT_PRODUCER_SFT;			    \
    }									    \
    else {								    \
-     SM_AllocateStruct(smSubSF,pNewSF);					    \
-     pNewSF = memset(pNewSF,0,sizeof(subsumptive_subgoal_frame));	    \
+     SM_AllocateStruct(smProdSF,pNewSF);				    \
+     pNewSF = memset(pNewSF,0,sizeof(subsumptive_producer_sf));		    \
      subg_sf_type(pNewSF) = SUBSUMPTIVE_PRODUCER_SFT;			    \
-     subg_producer(pNewSF) = pNewSF;		   			    \
-     subg_timestamp(pNewSF) = PRODUCER_SF_INITIAL_TS;			    \
    }									    \
    subg_tif_ptr(pNewSF) = TableInfo;					    \
    subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); \
@@ -461,10 +474,10 @@ extern struct Structure_Manager smSubSF;
 #define FreeProducerSF(SF) {					\
    subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
 		      TIF_Subgoals(subg_tif_ptr(SF)));		\
-   if ( IsVariantPredicate(subg_tif_ptr(SF)) )			\
+   if ( IsVariantSF(SF) )					\
      SM_DeallocateStruct(smVarSF,SF)				\
    else								\
-     SM_DeallocateStruct(smSubSF,SF)				\
+     SM_DeallocateStruct(smProdSF,SF)				\
  }
 
 
@@ -487,23 +500,23 @@ extern struct Structure_Manager smSubSF;
 
 void tstCreateStructures(TSTNptr);
 
-#define NewConsumerSF(SF,Leaf,TableInfo,Producer) {		\
+#define NewSubConsSF(SF,Leaf,TableInfo,Producer) {		\
 								\
    void *pNewSF;						\
 								\
-   SM_AllocateStruct(smSubSF,pNewSF);				\
-   pNewSF = memset(pNewSF,0,sizeof(subsumptive_subgoal_frame));	\
+   SM_AllocateStruct(smConsSF,pNewSF);				\
+   pNewSF = memset(pNewSF,0,sizeof(subsumptive_consumer_sf));	\
    subg_sf_type(pNewSF) = SUBSUMED_CONSUMER_SFT;		\
    subg_tif_ptr(pNewSF) = TableInfo;				\
    subg_leaf_ptr(pNewSF) = Leaf;				\
    CallTrieLeaf_SetSF(Leaf,pNewSF);				\
-   subg_ans_list_ptr(pNewSF) = empty_return();			\
-   subg_producer(pNewSF) = (SubsumptiveSF)Producer;		\
-   if ( ! ProducerHasConsumers(Producer) )			\
+   conssf_producer(pNewSF) = (SubProdSF)Producer;		\
+   if ( ! ProducerSubsumesSubgoals(Producer) )			\
      tstCreateStructures((TSTNptr)subg_ans_root_ptr(Producer));	\
-   subg_consumers(pNewSF) = subg_consumers(Producer);		\
+   subg_ans_list_ptr(pNewSF) = empty_return();			\
+   conssf_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
+   conssf_consumers(pNewSF) = subg_consumers(Producer);		\
    subg_consumers(Producer) = pNewSF;				\
-   subg_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
    SF = pNewSF;							\
 }
 

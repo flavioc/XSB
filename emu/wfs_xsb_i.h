@@ -119,16 +119,16 @@ static void reclaim_edge_space(ComplStackFrame csf_ptr)
 
 #ifdef CHAT
 #define first_consumer(SUBG,CSF) (compl_cons_copy_list(CSF))
-#define ptcp_of_gen(SUBG,CSF)	 ((SGFrame)(compl_ptcp(CSF)))
+#define ptcp_of_gen(SUBG,CSF)	 ((VariantSF)(compl_ptcp(CSF)))
 #define ptcp_of_cons(CONS_CP) \
-	((SGFrame)(nlcp_ptcp((&chat_get_cons_start((chat_init_pheader)CONS_CP)))))
+	((VariantSF)(nlcp_ptcp((&chat_get_cons_start((chat_init_pheader)CONS_CP)))))
 #define ptcp_of_csusp(CSUSP_CP) \
-	((SGFrame)(csf_ptcp((&chat_get_cons_start((chat_init_pheader)CSUSP_CP)))))
+	((VariantSF)(csf_ptcp((&chat_get_cons_start((chat_init_pheader)CSUSP_CP)))))
 #else
 #define first_consumer(SUBG,CSF) (subg_asf_list_ptr(SUBG))
-#define ptcp_of_gen(SUBG,CSF)	 ((SGFrame)(tcp_ptcp(subg_cp_ptr(SUBG))))
-#define ptcp_of_cons(CONS_CP)	 ((SGFrame)(nlcp_ptcp(CONS_CP)))
-#define ptcp_of_csusp(CSUSP_CP)	 ((SGFrame)(csf_ptcp(CSUSP_CP)))
+#define ptcp_of_gen(SUBG,CSF)	 ((VariantSF)(tcp_ptcp(subg_cp_ptr(SUBG))))
+#define ptcp_of_cons(CONS_CP)	 ((VariantSF)(nlcp_ptcp(CONS_CP)))
+#define ptcp_of_csusp(CSUSP_CP)	 ((VariantSF)(csf_ptcp(CSUSP_CP)))
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -137,7 +137,7 @@ static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
 {
     EPtr eptr;
     CPtr asf, nsf;
-    SGFrame p, source_subg;
+    VariantSF p, source_subg;
     ComplStackFrame csf1, csf2;
 
     csf1 = leader_compl_frame;
@@ -176,11 +176,11 @@ static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
 
 static void batched_compute_wfs(CPtr leader_compl_frame, 
 				CPtr leader_breg, 
-				SGFrame leader_subg)
+				VariantSF leader_subg)
 {  
   CPtr ComplStkFrame; /* CopyFrame */
   xsbBool sccs_needed;
-  SGFrame curr_subg;
+  VariantSF curr_subg;
 #if (!defined(CHAT))
   CPtr cont_breg = leader_breg;
 #endif
@@ -252,7 +252,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     
     while (ComplStkFrame >= openreg) {
       CPtr    susp_csf;
-      SGFrame susp_subgoal;
+      VariantSF susp_subgoal;
 
       curr_subg = compl_subgoal_ptr(ComplStkFrame);
       if (!is_completed(curr_subg)) {
@@ -270,7 +270,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 		non_lrd_stratified = TRUE;
 #ifdef DELAY_DEBUG
 		fprintf(stddbg, "\t   Subgoal ");
-		print_subgoal(stddbg, (SGFrame)susp_subgoal);
+		print_subgoal(stddbg, (VariantSF)susp_subgoal);
 		fprintf(stddbg, " depends negatively on subgoal ");
 		print_subgoal(stddbg, curr_subg);
 		fprintf(stddbg, "\n");

@@ -145,7 +145,7 @@ extern Pair build_call(Psc);
 #ifdef DEBUG
 extern void debug_inst(byte *, CPtr);
 extern void print_completion_stack(void);
-extern void print_subgoal(FILE *, SGFrame);
+extern void print_subgoal(FILE *, VariantSF);
 extern void print_delay_list(FILE *, CPtr);
 extern void printterm(Cell, byte, int);
 #endif

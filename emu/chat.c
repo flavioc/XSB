@@ -272,7 +272,7 @@ static void chat_free_chat_area(chat_init_pheader phead, xsbBool mode)
 /* Frees all Chat-areas of consumers of subgoal "subg_ptr"		*/
 /*----------------------------------------------------------------------*/
 
-void chat_free_cons_chat_areas(SGFrame subg_ptr)
+void chat_free_cons_chat_areas(VariantSF subg_ptr)
 {
     ComplStackFrame csf;
     chat_init_pheader chat_ptr, chat_ptr_tmp;
@@ -291,7 +291,7 @@ void chat_free_cons_chat_areas(SGFrame subg_ptr)
 /* Frees all Chat-areas of completion suspensions of subgoal "subg_ptr"	*/
 /*----------------------------------------------------------------------*/
 
-void chat_free_compl_susp_chat_areas(SGFrame subg_ptr)
+void chat_free_compl_susp_chat_areas(VariantSF subg_ptr)
 {
     chat_init_pheader ptr;
 
@@ -475,7 +475,7 @@ CPtr chat_restore_compl_susp(chat_init_pheader pheader, CPtr h, CPtr eb)
     chat_fill_prevb(pheader, breg);
 #ifdef Chat_DEBUG
     if (is_generator_choicepoint(breg)) {
-      SGFrame subg = (SGFrame)tcp_subgoal_ptr(breg);
+      VariantSF subg = (VariantSF)tcp_subgoal_ptr(breg);
       fprintf(stddbg, "Subgoal = %p", subg);
       if (is_completed(subg)) {
 	xsb_dbgmsg(" is completed; clobbering its TCP[next_clause]");
@@ -758,7 +758,7 @@ static chat_init_pheader chat_save_consumer_state(int incremental,
 /*   choice points between the current top and the previous generator   */
 /*----------------------------------------------------------------------*/
 
-chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
+chat_init_pheader save_a_consumer_copy(VariantSF subg_ptr, int incremental)
 {
     CPtr b, h, eb;
     TChoice prev_tcp;
@@ -848,7 +848,7 @@ chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
 
 #ifdef LOCAL_EVAL
 
-chat_init_pheader save_a_consumer_for_generator(SGFrame subg_ptr)
+chat_init_pheader save_a_consumer_for_generator(VariantSF subg_ptr)
 {
     TChoice prev_tcp;
     int     subst_fact_var_num;
@@ -928,7 +928,7 @@ chat_init_pheader save_a_consumer_for_generator(SGFrame subg_ptr)
 /* save_a_chat_compl_susp                                               */
 /*----------------------------------------------------------------------*/
 
-chat_init_pheader save_a_chat_compl_susp(SGFrame subg_ptr, CPtr ptcp, byte *cp)
+chat_init_pheader save_a_chat_compl_susp(VariantSF subg_ptr, CPtr ptcp, byte *cp)
 {
     CPtr b, h, eb;
     TChoice prev_tcp;

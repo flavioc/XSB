@@ -74,7 +74,7 @@ extern void printterm(Cell, byte, int);
 
 /*----------------------------------------------------------------------*/
 
-xsbBool has_unconditional_answers(SGFrame subg)
+xsbBool has_unconditional_answers(VariantSF subg)
 {
   ALNptr node_ptr = subg_answers(subg);
  
@@ -605,7 +605,7 @@ BTNptr subsumptive_trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
 
 /*----------------------------------------------------------------------*/
 
-SGFrame get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
+VariantSF get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
 
   int arity;
   BTNptr call_trie_leaf;
@@ -651,7 +651,7 @@ Cell build_ret_term(int arity, Cell termVector[]) {
  * The template is stored in an array supplied by the caller.
  */
 
-void construct_answer_template(Cell callTerm, SubsumptiveSF producer,
+void construct_answer_template(Cell callTerm, SubProdSF producer,
 			       Cell template[]) {
 
   Cell subterm, symbol;
@@ -702,13 +702,13 @@ void construct_answer_template(Cell callTerm, SubsumptiveSF producer,
  * the location pointed to by the second argument.
  */
 
-SGFrame get_call(Cell callTerm, Cell *retTerm) {
+VariantSF get_call(Cell callTerm, Cell *retTerm) {
 
   Psc  psc;
   TIFptr tif;
   int arity;
   BTNptr call_trie_leaf;
-  SGFrame sf;
+  VariantSF sf;
   Cell callVars[MAX_VAR_SIZE + 1];
 
 
@@ -729,7 +729,7 @@ SGFrame get_call(Cell callTerm, Cell *retTerm) {
   else {
     sf = CallTrieLeaf_GetSF(call_trie_leaf);
     if ( IsProperlySubsumed(sf) )
-      construct_answer_template(callTerm, subg_producer(sf), callVars);
+      construct_answer_template(callTerm, conssf_producer(sf), callVars);
     *retTerm = build_ret_term(callVars[0],&callVars[1]);
     return sf;
   }
@@ -814,7 +814,7 @@ static void delete_variant_table(BTNptr x) {
 	  /*
 	   * Remove the subgoal frame and its dependent structures
 	   */
-	  SGFrame pSF = CallTrieLeaf_GetSF(node);
+	  VariantSF pSF = CallTrieLeaf_GetSF(node);
 	  if ( IsNonNULL(subg_ans_root_ptr(pSF)) ) {
 	    call_nodes_top = node_stk_top;
 	    push_node((BTNptr)subg_ans_root_ptr(pSF));
@@ -1180,7 +1180,7 @@ void delete_trie(BTNptr iroot) {
  * The deleted node is then linked into the del_nodes_list
  * in the completion stack.
  */
-void delete_return(BTNptr l, SGFrame sg_frame) 
+void delete_return(BTNptr l, VariantSF sg_frame) 
 {
   ALNptr a, n, next;
   NLChoice c;
@@ -1254,7 +1254,7 @@ void delete_return(BTNptr l, SGFrame sg_frame)
  * completion stack), and reclaim the leaves and corresponding branches
  *----------------------------------------------------------------------*/
 
-void  reclaim_del_ret_list(SGFrame sg_frame) {
+void  reclaim_del_ret_list(VariantSF sg_frame) {
   ALNptr x,y;
   
   x = compl_del_ret_list(subg_compl_stack_ptr(sg_frame));
@@ -1281,7 +1281,7 @@ void breg_retskel(void)
 {
     Pair    sym;
     Cell    term;
-    SGFrame sg_frame;
+    VariantSF sg_frame;
     CPtr    tcp, cptr, where;
     int     new, i;
 #ifndef CHAT
@@ -1291,7 +1291,7 @@ void breg_retskel(void)
 
     breg_offset = ptoc_int(1);
     tcp = (CPtr)((Integer)(tcpstack.high) - breg_offset);
-    sg_frame = (SGFrame)(tcp_subgoal_ptr(tcp));
+    sg_frame = (VariantSF)(tcp_subgoal_ptr(tcp));
 #ifdef CHAT
     where = compl_hreg(subg_compl_stack_ptr(sg_frame));
     Nvars = int_val(cell(where)) & 0xffff; /* See get_var_and_attv_nums() */

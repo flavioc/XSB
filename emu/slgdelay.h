@@ -85,7 +85,7 @@ typedef struct pos_neg_de_list	*PNDE;
 
 typedef struct AS_info {
   PNDE	  pdes;		/* pos DEs that refer to this answer substitution */
-  SGFrame subgoal;	/* subgoal to which this answer substitution belongs */
+  VariantSF subgoal;	/* subgoal to which this answer substitution belongs */
   DL	  dl_list;	/* delay lists that this answer substitution has */
 } *ASI;
 
@@ -103,7 +103,7 @@ typedef struct AS_info {
 /*--------------------------------------------------------------------*/
 
 struct delay_element {
-  SGFrame subgoal;	/* pointer to the subgoal frame of this DE */
+  VariantSF subgoal;	/* pointer to the subgoal frame of this DE */
   NODEptr ans_subst;	/* pointer to an answer substitution leaf */
   DE	  next;		/* pointer to the next DE in the same DL */
   PNDE	  pnde;		/* pointer to the element in PDE list or NDE
@@ -221,8 +221,8 @@ extern xsbBool neg_delay;
 
 extern xsbBool answer_is_junk(CPtr);
 extern void abolish_wfs_space(void);
-extern void simplify_neg_fails(SGFrame);
-extern void do_delay_stuff(NODEptr, SGFrame, xsbBool);
+extern void simplify_neg_fails(VariantSF);
+extern void do_delay_stuff(NODEptr, VariantSF, xsbBool);
 extern unsigned long allocated_de_space(int * num_blocks);
 extern unsigned long unused_de_space(void);
 extern unsigned long allocated_dl_space(int * num_blocks);
@@ -230,7 +230,7 @@ extern unsigned long unused_dl_space(void);
 
 
 #ifdef DEBUG
-extern void print_subgoal(FILE *, SGFrame);
+extern void print_subgoal(FILE *, VariantSF);
 extern void print_delay_list(FILE *, CPtr);
 #endif
 

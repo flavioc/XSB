@@ -111,14 +111,14 @@ extern void abolish_cr_space(void);
 extern void reclaim_cr_space(TChoice);
 extern void print_chat_statistics(void);
 extern void reset_chat_statistics(void);
-extern void chat_free_cons_chat_areas(SGFrame);
-extern void chat_free_compl_susp_chat_areas(SGFrame);
+extern void chat_free_cons_chat_areas(VariantSF);
+extern void chat_free_compl_susp_chat_areas(VariantSF);
 extern CPtr chat_restore_consumer(chat_init_pheader);
 extern CPtr chat_restore_compl_susp(chat_init_pheader,CPtr,CPtr);
 extern void chat_update_compl_susp(chat_init_pheader);
 extern void chat_restore_compl_susp_trail(chat_init_pheader);
-extern chat_init_pheader save_a_consumer_copy(SGFrame,int);
-extern chat_init_pheader save_a_chat_compl_susp(SGFrame,CPtr,byte *);
+extern chat_init_pheader save_a_consumer_copy(VariantSF,int);
+extern chat_init_pheader save_a_chat_compl_susp(VariantSF,CPtr,byte *);
 extern void chat_free_cp_compl_susp_chat_areas(ComplSuspFrame);
 
 extern void chat_set_chained(CPtr);
@@ -127,7 +127,7 @@ extern Integer  chat_is_chained(CPtr);
 
 #ifdef LOCAL_EVAL
 extern CPtr chat_free_compl_susp_chat_area(chat_init_pheader);
-extern chat_init_pheader save_a_consumer_for_generator(SGFrame);
+extern chat_init_pheader save_a_consumer_for_generator(VariantSF);
 #endif
 
 extern chat_init_pheader chat_link_headers;

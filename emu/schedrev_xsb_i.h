@@ -33,11 +33,19 @@
  * consumers (NULL if no such consumers of this producer exist).
  */
 
-static CPtr sched_answers(SGFrame producer_sf, CPtr producer_cpf,
+#define ScheduleConsumer(Consumer,First,Last) {		\
+   if ( IsNonNULL(Last) )				\
+     nlcp_prevbreg(Last) = Consumer;			\
+   else	 /* record first consumer to backtrack to */	\
+     First = Consumer;					\
+   Last = Consumer;					\
+ }
+
+static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 			  xsbBool is_leader) {
-  ALNptr answer_set;
+
   CPtr first_sched_cons, last_sched_cons, consumer_cpf;
-  SGFrame consumer_sf;
+
 
 #ifdef PROFILE
   subinst_table[SCHED_ANSWERS][1]++;
@@ -46,35 +54,36 @@ static CPtr sched_answers(SGFrame producer_sf, CPtr producer_cpf,
   first_sched_cons = last_sched_cons = NULL;
   consumer_cpf = subg_asf_list_ptr(producer_sf);
 
-  /* The producer has answers and consuming calls */  
+  /**** The producer has answers and consuming calls ****/  
   if ( has_answers(producer_sf) && IsNonNULL(consumer_cpf) ) {
 #ifdef DEBUG_REV
     xsb_dbgmsg("SchedAnswers: consumer_cpf=%d,producer_sf=%d",
 	       (int)consumer_cpf,(int)producer_sf);
 #endif
-    /* Check each consumer for unresolved answers */
-    while ( IsNonNULL(consumer_cpf) ) {
-      consumer_sf = (SGFrame)nlcp_subgoal_ptr(consumer_cpf);
-      answer_set = ALN_Next(nlcp_trie_return(consumer_cpf));
-      if ( IsNULL(answer_set) && (consumer_sf != producer_sf) )
-	if ( ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
-	  switch_envs(consumer_cpf);
-	  answer_set =
-	    table_retrieve_answers(producer_sf,consumer_sf,
-				   consumer_cpf + NLCPSIZE);
-	}
-      /* if there is a new answer, schedule the consumer */
-      if ( IsNonNULL(answer_set) ) { 
-	if ( IsNonNULL(last_sched_cons) )
-	  nlcp_prevbreg(last_sched_cons) = consumer_cpf;
-	else	 /* record first consumer to backtrack to */
-	  first_sched_cons = consumer_cpf;
-	last_sched_cons = consumer_cpf;
+    /**** Check each consumer for unresolved answers ****/
+    if ( IsSubsumptiveProducer(producer_sf) )
+      while ( IsNonNULL(consumer_cpf) ) {
+	ALNptr answer_set = ALN_Next(nlcp_trie_return(consumer_cpf));
+	SubConsSF consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
+	if ( IsNULL(answer_set) && ((VariantSF)consumer_sf != producer_sf) )
+	  if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
+	    switch_envs(consumer_cpf);
+	    answer_set =
+	      table_retrieve_answers((SubProdSF)producer_sf, consumer_sf,
+				     consumer_cpf + NLCPSIZE);
+	  }
+	if ( IsNonNULL(answer_set) )
+	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);
+	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }
-      consumer_cpf = nlcp_prevlookup(consumer_cpf);
-    }
+    else
+      while ( IsNonNULL(consumer_cpf) ) {
+	if ( IsNonNULL(ALN_Next(nlcp_trie_return(consumer_cpf))) )
+	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);
+	consumer_cpf = nlcp_prevlookup(consumer_cpf);
+      }
     
-    /* The last consumer always has to backtrack to the producer */
+    /**** The last consumer always backtracks to the producer ****/
     if ( IsNonNULL(last_sched_cons) )
       nlcp_prevbreg(last_sched_cons) = producer_cpf;
   } /* if any answers and active nodes */
@@ -124,9 +133,9 @@ static CPtr sched_answers(SGFrame producer_sf, CPtr producer_cpf,
  * I cannot remember why...
  */
 
-static CPtr find_fixpoint(SGFrame subg, CPtr producer_cpf) {
+static CPtr find_fixpoint(VariantSF subg, CPtr producer_cpf) {
 
-  SGFrame currSubg;
+  VariantSF currSubg;
   CPtr complFrame; /* completion frame for currSubg */
   CPtr tcp; /* choice point for currSubg */
   CPtr sched_chain = 0, prev_sched = 0, tmp_sched = 0; /* build sched chain */

@@ -32,7 +32,7 @@ case check_complete: {
   CPtr    cs_ptr;
   CPtr    orig_breg = breg;
   xsbBool    leader = FALSE;
-  SGFrame subgoal;
+  VariantSF subgoal;
 #ifdef LOCAL_EVAL
   int     i;
 #endif
@@ -42,7 +42,7 @@ case check_complete: {
   ptcpreg = tcp_ptcp(breg);
   delayreg = tcp_pdreg(breg);
 
-  subgoal = (SGFrame) tcp_subgoal_ptr(breg);	/* subgoal that is checked */
+  subgoal = (VariantSF) tcp_subgoal_ptr(breg);	/* subgoal that is checked */
 
 #ifdef DEBUG_DELAY
   fprintf(stderr, ">>>> check_complete is called.  The checked subgoal is: ");
@@ -169,7 +169,7 @@ case check_complete: {
 #ifdef LOCAL_EVAL
 /*--------------------------------------------------------------------------*/
   {
-    SGFrame compl_subg; /* subgoal to be completed */
+    VariantSF compl_subg; /* subgoal to be completed */
     CPtr cc_tbreg = orig_breg;
     CPtr ComplStkFrame = cs_ptr;
 

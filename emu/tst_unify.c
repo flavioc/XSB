@@ -114,11 +114,11 @@ static void consumption_error(char *string) {
   xsb_abort(string);
   /* get consumer SF from the CPS, using the ptr to AnsTmplt */
 /*   { */
-/*     SGFrame pSF; */
+/*     VariantSF pSF; */
 /*     CPtr pCPF; */
 
 /*     pCPF = pAnsTmplt - sizeTmplt - NLCPSIZE; */
-/*     pSF = (SGFrame)nlcp_subgoal_ptr(pCPF); */
+/*     pSF = (VariantSF)nlcp_subgoal_ptr(pCPF); */
 /*     printAnswerList(subg_answers(pSF)); */
 /*     fprintf(stderr,"\n\n"); */
 /*     *(CPtr)0 = 0; */

@@ -36,14 +36,14 @@ CPtr decode_ptr(Cell);
 int decode_int(Cell);
 int decode_tag(Cell);
 
-SGFrame findSF_forAnswerRoot(TSTNptr);
-SGFrame findSF_forAnswerLeaf(TSTNptr);
-SGFrame findProdSF_for_ConsSF(SGFrame);
-int containsSF(SGFrame, SGFrame);
+VariantSF findSF_forAnswerRoot(TSTNptr);
+VariantSF findSF_forAnswerLeaf(TSTNptr);
+VariantSF findProdSF_for_ConsSF(VariantSF);
+int containsSF(VariantSF, VariantSF);
 
 void triePrintPath(BTNptr, xsbBool);
-void sfPrintGoal(SGFrame, xsbBool);
-void sfPrintConsGoals(SGFrame);
+void sfPrintGoal(VariantSF, xsbBool);
+void sfPrintConsGoals(VariantSF);
 
 void printAnswerTemplate(CPtr, int);
 void printAnswerList(ALNptr);

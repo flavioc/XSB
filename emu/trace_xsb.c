@@ -105,11 +105,10 @@ void total_stat(double elapstime) {
     abtn,		/* Asserted Basic Trie Nodes */
     tstn,		/* Time Stamp Trie Nodes */
     aln,		/* Answer List Nodes */
-    tsi;		/* Time Stamp Indices (Index Entries/Nodes) */
-
-  SubgStats
+    tsi,		/* Time Stamp Indices (Index Entries/Nodes) */
     varsf,		/* Variant Subgoal Frames */
-    subsf;		/* Subsumptive Subgoal Frames */
+    prodsf,		/* Subsumptive Producer Subgoal Frames */
+    conssf;		/* Subsumptive Consumer Subgoal Frames */
 
   HashStats
     tbtht,		/* Table Basic Trie Hash Tables */
@@ -132,17 +131,18 @@ void total_stat(double elapstime) {
 
   tbtn = node_statistics(&smTableBTN);
   tbtht = hash_statistics(&smTableBTHT);
-  varsf = subgoal_statistics(&smVarSF);
-  subsf = subgoal_statistics(&smSubSF);
+  varsf = node_statistics(&smVarSF);
+  prodsf = node_statistics(&smProdSF);
+  conssf = node_statistics(&smConsSF);
   aln = node_statistics(&smALN);
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
   tsi = node_statistics(&smTSIN);
 
-  tablespace_alloc =
-    CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,subsf,aln,tstn,tstht,tsi);
-  tablespace_used =
-    CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,subsf,aln,tstn,tstht,tsi);
+  tablespace_alloc = CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,prodsf,
+						 conssf,aln,tstn,tstht,tsi);
+  tablespace_used = CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,prodsf,
+					       conssf,aln,tstn,tstht,tsi);
 
   abtn = node_statistics(&smAssertBTN);
   abtht = hash_statistics(&smAssertBTHT);
@@ -223,8 +223,8 @@ void total_stat(double elapstime) {
 	   ttt.maxopenstack_count,
 	   (ttt.maxopenstack_count/sizeof(struct completion_stack_frame)));
 
-    update_maximum_tablespace_stats(&tbtn,&tbtht,&varsf,&subsf,&aln,
-				    &tstn,&tstht,&tsi);
+    update_maximum_tablespace_stats(&tbtn,&tbtht,&varsf,&prodsf,&conssf,
+				    &aln,&tstn,&tstht,&tsi);
     printf("  Maximum table space used:  %ld bytes\n",
 	   maximum_total_tablespace_usage());
     printf("\n");

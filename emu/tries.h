@@ -306,10 +306,19 @@ extern void     undo_answer_bindings(void);
 extern void	load_delay_trie(int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(void);
 
+/*
+ * The following typedef is to support a function prototype ONLY and
+ * should NOT be used for any other reason.  Its sole purpose is to
+ * get around a compiler -- or specification -- limitation regarding
+ * arguments in function prototypes.  See macro_xsb.h for the
+ * preferred name.
+ */
+typedef struct SubsumptiveProducerSubgoalFrame SPSF;
+
 void	subsumptive_call_search(TabledCallInfo *, CallLookupResults *);
-TSTNptr	subsumptive_answer_search(int,CPtr,struct subgoal_frame *,xsbBool *);
-void	consume_subsumptive_answer(BTNptr,int,CPtr);
-ALNptr	retrieve_unifying_answers(TSTNptr,TimeStamp,int,CPtr);
+TSTNptr	subsumptive_answer_search(int, CPtr, SPSF *, xsbBool *);
+void	consume_subsumptive_answer(BTNptr, int, CPtr);
+ALNptr	retrieve_unifying_answers(TSTNptr, TimeStamp, int, CPtr);
 void	delete_subsumptive_table(struct Table_Info_Frame *);
 
 /*---------------------------------------------------------------------*/

@@ -115,7 +115,7 @@ case tabletrysingle: {
   byte *continuation;
   TabledCallInfo callInfo;
   CallLookupResults lookupResults;
-  SGFrame producer_sf, consumer_sf;
+  VariantSF producer_sf, consumer_sf;
   CPtr answer_template;
   int template_size, attv_num, tmp;
 
@@ -228,7 +228,7 @@ case tabletrysingle: {
 
     /* New Properly Subsumed Call
        -------------------------- */
-    NewConsumerSF( consumer_sf, CallLUR_Leaf(lookupResults),
+    NewSubConsSF( consumer_sf, CallLUR_Leaf(lookupResults),
 		   CallInfo_TableInfo(callInfo), producer_sf );
 
   /*
@@ -265,9 +265,10 @@ case tabletrysingle: {
        ------------------------------- */
     answer_set = subg_answers(consumer_sf);
     if ( IsNULL(answer_set) && (consumer_sf != producer_sf) )
-      if ( ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) )
+      if ( MoreAnswersAvailable(consumer_sf,producer_sf) )
 	answer_set =
-	  table_retrieve_answers(producer_sf,consumer_sf,answer_template);
+	  table_retrieve_answers((SubProdSF)producer_sf,
+				 (SubConsSF)consumer_sf, answer_template);
 
     if ( IsNonNULL(answer_set) ) {
       int tmp;
@@ -354,7 +355,7 @@ case tabletrysingle: {
  */
 
 case answer_return: {
-  SGFrame consumer_sf;
+  VariantSF consumer_sf;
   ALNptr answer_set;
   BTNptr answer_leaf;
   CPtr answer_template;
@@ -363,14 +364,15 @@ case answer_return: {
   /* Locate relevant answers
      ----------------------- */
   answer_set = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
-  consumer_sf = (SGFrame)nlcp_subgoal_ptr(breg);
+  consumer_sf = (VariantSF)nlcp_subgoal_ptr(breg);
   answer_template = breg + NLCPSIZE;
   if ( IsNULL(answer_set) && IsProperlySubsumed(consumer_sf) ) {
-    SGFrame producer_sf = (SGFrame)subg_producer(consumer_sf);
-    if ( ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
+    SubProdSF producer_sf = conssf_producer(consumer_sf);
+    if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
       switch_envs(breg);
       answer_set =
-	table_retrieve_answers(producer_sf,consumer_sf,answer_template);
+	table_retrieve_answers(producer_sf, (SubConsSF)consumer_sf,
+			       answer_template);
     }
   }
 
@@ -468,7 +470,7 @@ case new_answer_dealloc: {
 
   CPtr producer_cpf, producer_csf, answer_template;
   int template_size, attv_num, tmp;
-  SGFrame producer_sf;
+  VariantSF producer_sf;
   xsbBool isNewAnswer = FALSE;
   BTNptr answer_leaf;
 
@@ -476,7 +478,7 @@ case new_answer_dealloc: {
   ARITY = (Cell) (*lpcreg++);
   Yn = (Cell) (*lpcreg++);
   pad64;
-  producer_sf = (SGFrame)cell(ereg-Yn);
+  producer_sf = (VariantSF)cell(ereg-Yn);
   producer_cpf = subg_cp_ptr(producer_sf);
 
 #ifdef DEBUG_DELAYVAR

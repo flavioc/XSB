@@ -65,19 +65,19 @@ static void free_tsi(TSTHTptr tstht) {
 			    TSTHT_IndexHead(tstht));
 }
 
-static void free_producer_sf(SGFrame sf) {
+static void free_producer_sf(VariantSF sf) {
   FreeProducerSF(sf);
 }
 
-static void free_consumer_sf(SGFrame sf) {
-  SM_DeallocateStruct(smSubSF,sf);
+static void free_consumer_sf(VariantSF sf) {
+  SM_DeallocateStruct(smConsSF,sf);
 }
 
 /*
  * Answer List of a Consumer may already be completely deallocated, even
  * the dummy node.
  */
-static void free_al(SGFrame sf) {
+static void free_al(VariantSF sf) {
   if ( IsNonNULL(subg_ans_list_ptr(sf)) )
     free_answer_list(sf);
 }
@@ -97,7 +97,7 @@ static void delete_tstht(TSTHTptr tstht) {
   free_tstht(tstht);
 }
 
-static void delete_sf(SGFrame sf) {
+static void delete_sf(VariantSF sf) {
   free_al(sf);
   if ( IsProducingSubgoal(sf) )
     free_producer_sf(sf);
@@ -122,8 +122,7 @@ static void delete_tst_answer_set(TSTNptr root) {
   if ( IsNULL(root) )
     return;
 
-  if ( ! IsLeafNode(root) ) {
-    if ( IsHashHeader(TSTN_Child(root)) ) {
+  if ( IsHashHeader(TSTN_Child(root)) ) {
     hash_hdr = TSTN_GetHashHdr(root);
     for ( i = 0;  i < TSTHT_NumBuckets(hash_hdr);  i++ )
       for ( current = TSTHT_BucketArray(hash_hdr)[i];
@@ -132,14 +131,13 @@ static void delete_tst_answer_set(TSTNptr root) {
 	delete_tst_answer_set(current);
       }
     delete_tstht(hash_hdr);
-    }
-    else
-      for ( current = TSTN_Child(root);  IsNonNULL(current);
-	    current = sibling ) {
-	sibling = TSTN_Sibling(current);
-	delete_tst_answer_set(current);
-      }
   }
+  else if ( ! IsLeafNode(root) )
+    for ( current = TSTN_Child(root);  IsNonNULL(current);
+	  current = sibling ) {
+      sibling = TSTN_Sibling(current);
+      delete_tst_answer_set(current);
+    }
   free_tstn(root);
 }
 
@@ -182,19 +180,19 @@ void delete_call_index(BTNptr root) {
 
 void delete_subsumptive_table(TIFptr tif) {
 
-  SubsumptiveSF cur_prod, next_prod,
-                cur_cons, next_cons;
+  SubProdSF cur_prod, next_prod;
+  SubConsSF cur_cons, next_cons;
 
-  for ( cur_prod = (SubsumptiveSF)TIF_Subgoals(tif);
+  for ( cur_prod = (SubProdSF)TIF_Subgoals(tif);
 	IsNonNULL(cur_prod);  cur_prod = next_prod ) {
     for ( cur_cons = subg_consumers(cur_prod);
 	  IsNonNULL(cur_cons);  cur_cons = next_cons ) {
-      next_cons = subg_consumers(cur_cons);
-      delete_sf((SGFrame)cur_cons);
+      next_cons = conssf_consumers(cur_cons);
+      delete_sf((VariantSF)cur_cons);
     }
-    next_prod = (SubsumptiveSF)subg_next_subgoal(cur_prod);
+    next_prod = (SubProdSF)subg_next_subgoal(cur_prod);
     delete_tst_answer_set((TSTNptr)subg_ans_root_ptr(cur_prod));
-    delete_sf((SGFrame)cur_prod);
+    delete_sf((VariantSF)cur_prod);
   }
   delete_call_index(TIF_CallTrie(tif));
 }

@@ -557,7 +557,7 @@ extern void     hashify_children(BTNptr, int);
 /* For leaves of Call Tries
    ------------------------ */
 #define CallTrieLeaf_SetSF(pBTN,pSF)     BTN_Child(pBTN) = (BTNptr)(pSF)
-#define CallTrieLeaf_GetSF(pBTN)         ((SGFrame)BTN_Child(pBTN))
+#define CallTrieLeaf_GetSF(pBTN)         ((VariantSF)BTN_Child(pBTN))
 
 /* Allocating New BTNs
    ------------------- */

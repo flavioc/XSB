@@ -69,29 +69,6 @@ typedef struct {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-/* For Subgoal Frames
-   ------------------ */
-typedef struct {
-  NodeStats sf;          /* general stats about Subgoal Frames */
-  counter nProducers;    /* number of producer subgoal frames */
-  counter nConsumers;    /* subgoal frames for consuming (subsumed) subgoals */
-} SubgStats;
-
-#define SubgStats_NumBlocks(SS)		NodeStats_NumBlocks((SS).sf)
-
-#define SubgStats_NumAllocFrames(SS)	NodeStats_NumAllocNodes((SS).sf)
-#define SubgStats_NumFreeFrames(SS)	NodeStats_NumFreeNodes((SS).sf)
-#define SubgStats_NumUsedFrames(SS)	NodeStats_NumUsedNodes((SS).sf)
-#define SubgStats_NumProducers(SS)	( (SS).nProducers )
-#define SubgStats_NumConsumers(SS)	( (SS).nConsumers )
-
-#define SubgStats_FrameSize(SS)		NodeStats_NodeSize((SS).sf)
-#define SubgStats_SizeAllocFrames(SS)	NodeStats_SizeAllocNodes((SS).sf)
-#define SubgStats_SizeFreeFrames(SS)	NodeStats_SizeFreeNodes((SS).sf)
-#define SubgStats_SizeUsedFrames(SS)	NodeStats_SizeUsedNodes((SS).sf)
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 /* For Hash Tables
    --------------- */
 typedef struct {
@@ -134,7 +111,6 @@ typedef struct {
 
 /* Collection Routines
    ------------------- */
-SubgStats subgoal_statistics(Structure_Manager *);
 NodeStats node_statistics(Structure_Manager *);
 HashStats hash_statistics(Structure_Manager *);
 
@@ -142,23 +118,27 @@ HashStats hash_statistics(Structure_Manager *);
 
 /* Helpful Totaling Routines
    ------------------------- */
-#define CurrentTotalTableSpaceAlloc(BTN,BTHT,VARSF,SUBSF,ALN,TSTN,TSTHT,TSI)  \
-   ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +      \
-     SubgStats_SizeAllocFrames(VARSF)  +  SubgStats_SizeAllocFrames(SUBSF)  + \
-     NodeStats_SizeAllocNodes(TSTN)  +  HashStats_SizeAllocTotal(TSTHT)  +    \
-     NodeStats_SizeAllocNodes(TSI)  +  NodeStats_SizeAllocNodes(ALN) )
+#define CurrentTotalTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	    \
+				    ALN,TSTN,TSTHT,TSI)			    \
+  ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
+    NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(PRODSF)  + \
+    NodeStats_SizeAllocNodes(CONSSF)  +  NodeStats_SizeAllocNodes(ALN)  +   \
+    NodeStats_SizeAllocNodes(TSTN)  +  HashStats_SizeAllocTotal(TSTHT)  +   \
+    NodeStats_SizeAllocNodes(TSI) )
 
-#define CurrentTotalTableSpaceUsed(BTN,BTHT,VARSF,SUBSF,ALN,TSTN,TSTHT,TSI) \
-   ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	    \
-     SubgStats_SizeUsedFrames(VARSF)  +  SubgStats_SizeUsedFrames(SUBSF)  + \
-     NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +    \
-     NodeStats_SizeUsedNodes(TSI)  +  NodeStats_SizeUsedNodes(ALN) )
+#define CurrentTotalTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	  \
+				   ALN,TSTN,TSTHT,TSI) 			  \
+  ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	  \
+    NodeStats_SizeUsedNodes(VARSF)  +  NodeStats_SizeUsedNodes(PRODSF)  + \
+    NodeStats_SizeUsedNodes(CONSSF)  +  NodeStats_SizeUsedNodes(ALN)  +	  \
+    NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
+    NodeStats_SizeUsedNodes(TSI) )
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* Printing Routines
    ----------------- */
-void print_detailed_tablespace_stats();
+void print_detailed_tablespace_stats(void);
 
 /*-------------------------------------------------------------------------*/
 
@@ -169,23 +149,24 @@ void print_detailed_tablespace_stats();
 
 /* Reset Usage
    ----------- */
-void reset_maximum_tablespace_stats();
+void reset_maximum_tablespace_stats(void);
 
 /* Poll Current Usage for New Maximum
    ---------------------------------- */
-void compute_maximum_tablespace_stats();
+void compute_maximum_tablespace_stats(void);
 void update_maximum_tablespace_stats(NodeStats *btn, HashStats *btht,
-				     SubgStats *varsf, SubgStats *subsf,
-				     NodeStats *aln, NodeStats *tstn,
-				     HashStats *tstht, NodeStats *tsi);
+				     NodeStats *varsf, NodeStats *prodsf,
+				     NodeStats *conssf, NodeStats *aln,
+				     NodeStats *tstn, HashStats *tstht,
+				     NodeStats *tsi);
 
 /* Read Currently Recorded Maximum Values
    -------------------------------------- */
-/* One should first force a check of the maximum usage before querying
-   for these values. */
-counter maximum_answer_list_nodes();
-counter maximum_timestamp_index_nodes();
-unsigned long  maximum_total_tablespace_usage();
+/**** One should first force a check of the maximum usage before ****/
+/**** querying for these values. ****/
+counter maximum_answer_list_nodes(void);
+counter maximum_timestamp_index_nodes(void);
+unsigned long  maximum_total_tablespace_usage(void);
 
 /*=========================================================================*/
 
@@ -238,8 +219,8 @@ extern NumSubOps numSubOps;
 #define NumSubOps_AnswerRetrieval	   numSubOps.retrieval
 
 
-void reset_subsumption_stats();
-void print_detailed_subsumption_stats();
+void reset_subsumption_stats(void);
+void print_detailed_subsumption_stats(void);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 

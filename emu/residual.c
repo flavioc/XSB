@@ -47,7 +47,7 @@
 /*----------------------------------------------------------------------*/
 
 #ifdef DEBUG_RESIDUAL
-extern void print_subgoal(FILE *, SGFrame);
+extern void print_subgoal(FILE *, VariantSF);
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -97,7 +97,7 @@ void build_delay_list(CPtr delay_list, DE de)
   Psc  psc;
   int  i, j, arity;
   CPtr head, tail;
-  SGFrame subg;
+  VariantSF subg;
   BTNptr ans_subst;
 #ifdef DEBUG_DELAYVAR
   BTNptr subs_factp;

@@ -88,112 +88,115 @@ void tstInitDataStructs() {
  */
 
 
-void printNodeType(byte fieldNodeType) {
+char *stringNodeType(byte fieldNodeType) {
 
   switch (fieldNodeType) {
   case TRIE_ROOT_NT:
-    printf("TRIE_ROOT_NT");
-    break;
+    return("TRIE_ROOT_NT");
   case HASH_HEADER_NT:
-    printf("HASH_HEADER_NT");
-    break;
+    return("HASH_HEADER_NT");
   case LEAF_NT:
-    printf("LEAF_NT");
-    break;
+    return("LEAF_NT");
   case HASHED_LEAF_NT:
-    printf("HASHED_LEAF_NT");
-    break;
+    return("HASHED_LEAF_NT");
   case INTERRIOR_NT:
-    printf("INTERRIOR_NT");
-    break;
+    return("INTERRIOR_NT");
   case HASHED_INTERRIOR_NT:
-    printf("HASHED_INTERRIOR_NT");
-    break;
+    return("HASHED_INTERRIOR_NT");
   default:
-    printf("Bad NodeType (%c)", fieldNodeType);
-    break;
+    {
+      char t[20], *s;
+      sprintf(t, "unknown (%c)", fieldNodeType);
+      if ( IsNULL(s = malloc(strlen(t)+1)) )
+	return("unknown");
+      else {
+	strcpy(s,t);
+	return(s);
+      }
+    }
   }
 }
 
 
-void printTrieType(byte fieldTrieType) {
+char *stringTrieType(byte fieldTrieType) {
 
   switch (fieldTrieType) {
   case CALL_TRIE_TT:
-    printf("CALL_TRIE_TT");
-    break;
+    return("CALL_TRIE_TT");
   case BASIC_ANSWER_TRIE_TT:
-    printf("BASIC_ANSWER_TRIE_TT");
-    break;
+    return("BASIC_ANSWER_TRIE_TT");
   case TS_ANSWER_TRIE_TT:
-    printf("TS_ANSWER_TRIE_TT");
-    break;
+    return("TS_ANSWER_TRIE_TT");
   case DELAY_TRIE_TT:
-    printf("DELAY_TRIE_TT");
-    break;
+    return("DELAY_TRIE_TT");
   case ASSERT_TRIE_TT:
-    printf("ASSERT_TRIE_TT");
-    break;
+    return("ASSERT_TRIE_TT");
   case INTERN_TRIE_TT:
-    printf("INTERN_TRIE_TT");
-    break;
+    return("INTERN_TRIE_TT");
   default:
-    printf("Bad TrieType (%c)", fieldTrieType);
-    break;
+    {
+      char t[20], *s;
+      sprintf(t, "unknown (%c)", fieldTrieType);
+      if ( IsNULL(s = malloc(strlen(t)+1)) )
+	return("unknown");
+      else {
+	strcpy(s,t);
+	return(s);
+      }
+    }
   }
 }
 
 
-void printTrieSymbol(Cell symbol) {
+void printTrieSymbol(FILE *fp, Cell symbol) {
 
   if ( symbol == ESCAPE_NODE_SYMBOL )
-    printf("%lu [ESCAPE_NODE_SYMBOL]", ESCAPE_NODE_SYMBOL);
+    fprintf(fp, "%lu [ESCAPE_NODE_SYMBOL]", ESCAPE_NODE_SYMBOL);
   else {
     switch(TrieSymbolType(symbol)) {
     case XSB_INT:
-      printf(IntegerFormatString, int_val(symbol));
+      fprintf(fp, IntegerFormatString, int_val(symbol));
       break;
     case XSB_FLOAT:
-      printf("%f", float_val(symbol));
+      fprintf(fp, "%f", float_val(symbol));
       break;
     case XSB_STRING:
-      printf("%s", string_val(symbol));
+      fprintf(fp, "%s", string_val(symbol));
       break;
     case XSB_TrieVar:
-      printf("V" IntegerFormatString, DecodeTrieVar(symbol));
+      fprintf(fp, "V" IntegerFormatString, DecodeTrieVar(symbol));
       break;
     case XSB_STRUCT:
       {
 	Psc psc = DecodeTrieFunctor(symbol);
-	printf("%s/%d", get_name(psc), get_arity(psc));
+	fprintf(fp, "%s/%d", get_name(psc), get_arity(psc));
       }
       break;
     case XSB_LIST:
-      printf("LIST");
+      fprintf(fp, "LIST");
       break;
     default:
-      printf("Unknown symbol (tag = %ld)", cell_tag(symbol));
+      fprintf(fp, "Unknown symbol (tag = %ld)", cell_tag(symbol));
       break;
     }
   }
 }
 
 
-void printTrieNode(BTNptr pTN) {
+void printTrieNode(FILE *fp, BTNptr pTN) {
 
-  printf("Trie Node: Addr(%p)", pTN);
+  fprintf(fp, "Trie Node: Addr(%p)", pTN);
   if ( IsDeletedNode(pTN) )
-    printf("  (DELETED)");
-  printf("\n\tInstr(%s), NodeType(", inst_name(TN_Instr(pTN)));
-  printNodeType(TN_NodeType(pTN));
-  printf(")\n\tTrieType(");
-  printTrieType(TN_TrieType(pTN));
-  printf("), Symbol(");
-  printTrieSymbol(TN_Symbol(pTN));
-  printf(")");
+    fprintf(fp, "  (DELETED)");
+  fprintf(fp, "\n\tInstr(%s), NodeType(%s)\n\tTrieType(%s), Symbol(",
+	  inst_name(TN_Instr(pTN)),
+	  stringNodeType(TN_NodeType(pTN)),
+	  stringTrieType(TN_TrieType(pTN)));
+  printTrieSymbol(fp, TN_Symbol(pTN));
+  fprintf(fp, ")");
   if ( IsInTimeStampedTrie(pTN) )
-    printf(", TimeStamp(%ld)", TSTN_TimeStamp((TSTNptr)pTN));
-  printf("\n\tParent(%p), Child(%p), Sibling(%p)\n",
+    fprintf(fp, ", TimeStamp(%ld)", TSTN_TimeStamp((TSTNptr)pTN));
+  fprintf(fp, "\n\tParent(%p), Child(%p), Sibling(%p)\n",
 	 TN_Parent(pTN), TN_Child(pTN), TN_Sibling(pTN));
 }
 
@@ -203,16 +206,15 @@ void printTabledCall(TabledCallInfo callInfo) {
   int arity, i;
   Psc pPSC;
   
-  /* printterm() writes to stdout, therefore, so should this. */
   pPSC = TIF_PSC(CallInfo_TableInfo(callInfo));
-  printf( "%s(", get_name(pPSC) );
+  fprintf(stddbg, "%s(", get_name(pPSC));
   arity = CallInfo_CallArity(callInfo);
   for (i = 1; i <= arity; i++) {
     printterm( (Cell)(CallInfo_Arguments(callInfo)+i), 1, 8 );
     if (i < arity)
-      printf( "," );
+      fprintf(stddbg, ",");
   }
-  printf( ")" );
+  fprintf(stddbg, ")");
 }
 
 
@@ -230,37 +232,6 @@ int decode_tag(Cell cell) {
   return ( cell_tag(cell) );
 }
 
-/*
-SGFrame findSF_forAnswerRoot(TSTNptr tst) {
-
-  TIFptr pTIF;
-  SGFrame sf;
-
-  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
-    for ( sf = TIF_Subgoals(tif);  IsNonNULL(sf);
-	  sf = subg_next_subgoal(sf) )
-      if ( subg_ans_root_ptr(sf) == tst )
-	return sf;
-  return NULL;
-}
-*/
-
-/*
-int containsSF(SGFrame pProducerSF, SGFrame pConsumerSF) {
-
-  SGFrame pSF;
-  int consFound = 0;
-
-  printf("Chained Consumers of Producer %p:\n", pProducerSF);
-  for ( pSF = subg_Consumers(pProducerSF);  IsNonNULL(pSF);
-        pSF = subg_Consumers(pSF) ) {
-    printf("%p\n", pSF);
-    if ( pSF == pConsumerSF )
-      consFound = 1;
-  }
-  return consFound;
-}
-*/
 /*-----------------------------------------------------------------------*/
 
 /*
@@ -402,7 +373,7 @@ void printAnswerTemplate(CPtr pAnsTmplt, int size) {
 
 /* Printing a SF's associated Call
    ------------------------------- */
-void sfPrintGoal(SGFrame pSF, xsbBool printAddr) {
+void sfPrintGoal(VariantSF pSF, xsbBool printAddr) {
 
   Psc pPSC;
 
@@ -416,9 +387,9 @@ void sfPrintGoal(SGFrame pSF, xsbBool printAddr) {
 
 /* Printing Subsumed Calls
    ----------------------- 
-void sfPrintConsGoals(SGFrame pProd) {
+void sfPrintConsGoals(VariantSF pProd) {
 
-  SGFrame pCons;
+  VariantSF pCons;
 
   printf("Producer:\n  ");
   sfPrintGoal(pProd,YES);

@@ -152,7 +152,7 @@ extern int clean_up_block();
 
 #if (defined(DEBUG) && defined(DEBUG_DELAY))
 extern void print_delay_list(FILE *, CPtr);
-extern void print_subgoal(FILE *, SGFrame);
+extern void print_subgoal(FILE *, VariantSF);
 extern void printterm(Cell, byte, int);	/* used in bineg_xsb_i.h */
 #endif
 
@@ -715,7 +715,7 @@ void init_builtin_table(void)
 
 inline static xsbBool is_completed_table(TIFptr tif) {
 
-  SGFrame sf;
+  VariantSF sf;
 
   for ( sf = TIF_Subgoals(tif);  IsNonNULL(sf);  sf = subg_next_subgoal(sf) )
     if ( ! is_completed(sf) )
@@ -1583,7 +1583,7 @@ int builtin_call(byte number)
     const int regAnsSetStatus = 4;   /* out: status (as INT) */
 
     int pred_type, goal_type, answer_set_status;
-    SGFrame goalSF, subsumerSF;
+    VariantSF goalSF, subsumerSF;
     Cell goalTerm;
 
     goalTerm = ptoc_tag(regGoalHandle);
@@ -1595,7 +1595,7 @@ int builtin_call(byte number)
 	return FALSE;	/* fail */
       }
       if ( IsProperlySubsumed(goalSF) )
-	subsumerSF = (SGFrame)subg_producer(goalSF);
+	subsumerSF = (VariantSF)conssf_producer(goalSF);
       else
 	subsumerSF = goalSF;
       pred_type = TIF_EvalMethod(subg_tif_ptr(subsumerSF));
@@ -1631,11 +1631,16 @@ int builtin_call(byte number)
 	  goalSF = subsumerSF = NULL;
 	else if ( path_type == VARIANT_PATH ) {
 	  goalSF = CallTrieLeaf_GetSF(leaf);
-	  subsumerSF = (SGFrame)subg_producer(goalSF);
+	  if ( IsProperlySubsumed(goalSF) )
+	    subsumerSF = (VariantSF)conssf_producer(goalSF);
+	  else
+	    subsumerSF = goalSF;
 	}
 	else {
 	  goalSF = NULL;
-	  subsumerSF = (SGFrame)subg_producer(CallTrieLeaf_GetSF(leaf));
+	  subsumerSF = CallTrieLeaf_GetSF(leaf);
+	  if ( IsProperlySubsumed(subsumerSF) )
+	    subsumerSF = (VariantSF)conssf_producer(subsumerSF);
 	}
       }
     }
@@ -1707,7 +1712,7 @@ int builtin_call(byte number)
     if (ptoc_int(3) == 0)
       delete_branch((BTNptr)ptoc_int(1),(BTNptr *)ptoc_int(2)); 
     else
-      delete_return((BTNptr)ptoc_int(1),(SGFrame)ptoc_int(2)); 
+      delete_return((BTNptr)ptoc_int(1),(VariantSF)ptoc_int(2)); 
     break;
   case TRIE_GET_RETURN:
     pcreg = trie_get_returns_for_call();
@@ -1733,7 +1738,7 @@ int builtin_call(byte number)
     const int regRetTerm  = 3;   /* out: answer template in ret/N form */
 
     Cell ret;
-    SGFrame sf;
+    VariantSF sf;
 
     sf = get_call(ptoc_tag(regCallTerm), &ret);
     if ( IsNonNULL(sf) ) {

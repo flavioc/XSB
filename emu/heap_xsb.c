@@ -872,7 +872,7 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
 static int chat_mark_substitution_factor(void)
 {
   CPtr compl_fr;
-  SGFrame subg_ptr;
+  VariantSF subg_ptr;
   CPtr region_to_mark, d;
   int  CallNumVar, m = 0;
 
@@ -1376,7 +1376,7 @@ void print_chat(int add)
 	  else fprintf(where,"CHAT area of UNKNOWN TYPE");
 #ifdef DEBUG
 	  fprintf(where," (subgoal = ");
-	  print_subgoal(where, (SGFrame)nlcp_subgoal_ptr(b));
+	  print_subgoal(where, (VariantSF)nlcp_subgoal_ptr(b));
 	  fprintf(where,")");
 #endif
 	  fprintf(where," @ %p:\n",initial_pheader);

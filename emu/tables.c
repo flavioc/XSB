@@ -53,9 +53,12 @@
 Structure_Manager smVarSF  = SM_InitDecl(variant_subgoal_frame,
 					 SUBGOAL_FRAMES_PER_BLOCK,
 					 "Variant Subgoal Frame");
-Structure_Manager smSubSF  = SM_InitDecl(subsumptive_subgoal_frame,
+Structure_Manager smProdSF = SM_InitDecl(subsumptive_producer_sf,
 					 SUBGOAL_FRAMES_PER_BLOCK,
-					 "Subsumptive Subgoal Frame");
+					 "Subsumptive Producer Subgoal Frame");
+Structure_Manager smConsSF = SM_InitDecl(subsumptive_consumer_sf,
+					 SUBGOAL_FRAMES_PER_BLOCK,
+					 "Subsumptive Consumer Subgoal Frame");
 Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
 					 "Answer List Node");
 
@@ -114,21 +117,19 @@ void table_call_search(TabledCallInfo *call_info, CallLookupResults *results) {
  * Template is a pointer to the first term in the vector, with the
  * elements arranged from high to low memory.
  */
-BTNptr table_answer_search(SGFrame producer, int size, int attv_num,
+BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
 			   CPtr template, xsbBool *is_new) {
 
-  BTNptr answer;
+  void *answer;
 
-  if ( IsSubsumptivePredicate(subg_tif_ptr(producer)) ) {
+  if ( IsSubsumptiveProducer(producer) ) {
     answer =
-      (BTNptr)subsumptive_answer_search(size,template,producer,is_new);
+      subsumptive_answer_search(size,template,(SubProdSF)producer,is_new);
     if ( *is_new ) {
-      ALNptr newALN;
-
-      subg_timestamp(producer)++;
 
       /* Put New Answer at End of Answer Chain
 	 ------------------------------------- */
+      ALNptr newALN;
       New_ALN(newALN, answer, NULL);
       SF_AppendNewAnswer(producer,newALN);
     }
@@ -198,7 +199,8 @@ void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr template,
  *  answers found, or NULL if no answers were found.
  */
 
-ALNptr table_retrieve_answers(SGFrame prodSF, SGFrame consSF, CPtr template) {
+ALNptr table_retrieve_answers(SubProdSF prodSF, SubConsSF consSF,
+			      CPtr template) {
 
   int size;
   TimeStamp ts;         /* for selecting answers from subsumer's AnsTbl */
@@ -207,17 +209,17 @@ ALNptr table_retrieve_answers(SGFrame prodSF, SGFrame consSF, CPtr template) {
 
 
 #ifdef DEBUG
-  if ( (consSF == prodSF) || (! IsSubsumptiveProducer(prodSF))
+  if ( ((SubProdSF)consSF == prodSF) || (! IsSubsumptiveProducer(prodSF))
        || (! IsProperlySubsumed(consSF)) )
     xsb_abort("Answer Retrieval apparently triggered for a variant!\n"
 	      "Perhaps SF type is corrupt?");
 #endif
   size = int_val(*template);
   template = template + size;
-  ts = subg_timestamp(consSF);
+  ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
   answers = retrieve_unifying_answers(tstRoot,ts,size,template);
-  subg_timestamp(consSF) = TSTN_TimeStamp(tstRoot);
+  conssf_timestamp(consSF) = TSTN_TimeStamp(tstRoot);
   if ( IsNonNULL(answers) )
     SF_AppendNewAnswerList(consSF,answers);
   return answers;
@@ -256,16 +258,16 @@ ALNptr table_retrieve_answers(SGFrame prodSF, SGFrame consSF, CPtr template) {
  *  contains the only reference to this function.
  */
 
-void table_complete_entry(SGFrame producerSF) {
+void table_complete_entry(VariantSF producerSF) {
 
-  SubsumptiveSF pSF;
+  SubConsSF pSF;
   ALNptr pRealAnsList, pALN, tag;
   TSTHTptr ht;
   TSINptr tsi_entry;
 
 
 #ifdef DEBUG_STRUCT_ALLOC
-  extern void print_subgoal(FILE *, SGFrame);
+  extern void print_subgoal(FILE *, VariantSF);
 
   print_subgoal(stderr,producerSF);
   fprintf(stderr, " complete... reclaiming structures.\n");
@@ -276,7 +278,7 @@ void table_complete_entry(SGFrame producerSF) {
 
   /* Reclaim Auxiliary Structures from the TST
      ----------------------------------------- */
-  if ( ProducerHasConsumers(producerSF) &&
+  if ( ProducerSubsumesSubgoals(producerSF) &&
        IsNonNULL(subg_ans_root_ptr(producerSF)) )
 
     for ( ht = TSTRoot_GetHTList(subg_ans_root_ptr(producerSF));
@@ -300,8 +302,7 @@ void table_complete_entry(SGFrame producerSF) {
 #endif
 
       /*** Because 'prev' field is first, the tail becomes the list head ***/
-      SM_DeallocateStructList(smTSIN,TSTHT_IndexTail(ht),
-			      TSTHT_IndexHead(ht));
+      SM_DeallocateStructList(smTSIN,TSTHT_IndexTail(ht),TSTHT_IndexHead(ht));
       TSTHT_IndexHead(ht) = TSTHT_IndexTail(ht) = NULL;
 
 #ifdef DEBUG_STRUCT_ALLOC
@@ -370,7 +371,7 @@ void table_complete_entry(SGFrame producerSF) {
 #endif
 
       subg_ans_list_ptr(pSF) = subg_ans_list_tail(pSF) = NULL;
-      pSF = subg_consumers(pSF);
+      pSF = conssf_consumers(pSF);
     }
   }
 
@@ -396,7 +397,8 @@ void release_all_tabling_resources() {
   SM_ReleaseResources(smTSIN);
   SM_ReleaseResources(smALN);
   SM_ReleaseResources(smVarSF);
-  SM_ReleaseResources(smSubSF);
+  SM_ReleaseResources(smProdSF);
+  SM_ReleaseResources(smConsSF);
 }
 
 /*-------------------------------------------------------------------------*/

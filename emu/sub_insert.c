@@ -478,7 +478,7 @@ static BTNptr construct_variant_call(xsbBool wantAnsTemp, CPtr *answer_temp) {
  */
 
 inline static CPtr compute_answer_template(TabledCallInfo *call_info,
-					   SubsumptiveSF subsumer,
+					   SubProdSF subsumer,
 					   CPtr answer_tmplt) {
 
   int sizeAnsTmplt, symbol_tag;
@@ -845,7 +845,7 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
 				itself: INT-encoded size followed by a vector
 				of subterms. */
 
-  SubsumptiveSF sf_with_ans_set;    /* Pointer to a producer; the subgoal from
+  SubProdSF sf_with_ans_set;    /* Pointer to a producer; the subgoal from
 				       which the call will consume */
 
   TIFptr pTIF;               /* TableInfoFrame of called predicate */
@@ -1153,7 +1153,7 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
     else {
       NumSubOps_ProducerCall++;
       Trail_Unwind_All;
-      CallLUR_Subsumer(*results) = NULL;  /* no subsumer, so no subg_frame */
+      CallLUR_Subsumer(*results) = NULL;  /* no SF found, so no subsumer */
       CallLUR_Leaf(*results) = construct_variant_call(YES,&answer_template);
       CallLUR_VariantFound(*results) = NO;
       CallLUR_VarVector(*results) = answer_template;
@@ -1184,8 +1184,8 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
 
   /* Set Correct Answer Template
      --------------------------- */
-  sf_with_ans_set = (SubsumptiveSF)CallTrieLeaf_GetSF(pParentBTN);
-  if ( subg_producer(sf_with_ans_set) == sf_with_ans_set ) {
+  sf_with_ans_set = (SubProdSF)CallTrieLeaf_GetSF(pParentBTN);
+  if ( IsSubsumptiveProducer(sf_with_ans_set) ) {
 #ifdef DEBUG_CALL_CHK_INS
     if ( strcmp(targetGN,goal_name) == 0 ) {
       printf("Found producer:\n  ");
@@ -1210,11 +1210,11 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
       printf("Found entry without own answer table:\n  ");
       sfPrintGoal(sf_with_ans_set,YES);
       printf("\nRecomputing template for:\n  ");
-      sfPrintGoal(subg_AnsTblSGF(sf_with_ans_set),YES);
+      sfPrintGoal(conssf_producer(sf_with_ans_set),YES);
       printf("\n");   /* continue with A.T. print, below */
     }
 #endif
-    sf_with_ans_set = subg_producer(sf_with_ans_set);
+    sf_with_ans_set = conssf_producer(sf_with_ans_set);
     if ( is_completed(sf_with_ans_set) )
       NumSubOps_CallToCompletedTable++;
     else
@@ -1228,7 +1228,7 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
   if ( strcmp(targetGN,goal_name) == 0 )
     printAnswerTemplate(answer_template + *answer_template, *answer_template);
 #endif
-  CallLUR_Subsumer(*results) = (SGFrame)sf_with_ans_set;
+  CallLUR_Subsumer(*results) = (VariantSF)sf_with_ans_set;
   CallLUR_Leaf(*results) = pParentBTN;
   CallLUR_VariantFound(*results) = variant_path;
   CallLUR_VarVector(*results) = answer_template;

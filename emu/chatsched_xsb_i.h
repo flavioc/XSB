@@ -28,9 +28,9 @@
 /* Returns NULL if there are no consumers that need scheduling.		*/
 /*----------------------------------------------------------------------*/
 
-static CPtr schedule_subgoal(SGFrame producer_sf, CPtr compl_fr)
+static CPtr schedule_subgoal(VariantSF producer_sf, CPtr compl_fr)
 {
-  CPtr consumer = NULL;
+  CPtr consumer_cpf = NULL;
   chat_init_pheader chat_ptr = NULL;
 
 #ifdef Chat_DEBUG
@@ -46,50 +46,62 @@ static CPtr schedule_subgoal(SGFrame producer_sf, CPtr compl_fr)
   /* there are consumers and answers */  
   if ((has_answers(producer_sf)) &&
       (chat_ptr = (chat_init_pheader)compl_cons_copy_list(compl_fr))) {
-    consumer = (CPtr)(&chat_get_cons_start(chat_ptr));
-    /* find the first consumer with unresolved answers, if any */
-    while ( IsNonNULL(chat_ptr) ) {
-      SGFrame consumer_sf = (SGFrame)nlcp_subgoal_ptr(consumer);
-      ALNptr answer_set = ALN_Next(nlcp_trie_return(consumer));
-      if ( IsNULL(answer_set) && (consumer_sf != producer_sf) )
-	if ( ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
-	  CPtr template, *baseTR;
 
-	  template = restore_answer_template(chat_ptr, &baseTR);
-	  answer_set = table_retrieve_answers(producer_sf, consumer_sf,
-					      template);
-	  undo_template_restoration(baseTR);
-	}
-      if ( IsNonNULL(answer_set) )
-	break;
-      else {
-	chat_ptr = (chat_init_pheader)nlcp_prevlookup(consumer);
-	if ( IsNonNULL(chat_ptr) )
-	  consumer = (CPtr)(&chat_get_cons_start(chat_ptr));
+    /**** find the first consumer with unresolved answers, if any ****/
+
+    if ( IsSubsumptiveProducer(producer_sf) ) {
+      SubConsSF consumer_sf;
+      ALNptr answer_set;
+      while ( IsNonNULL(chat_ptr) ) {
+	consumer_cpf = (CPtr)(&chat_get_cons_start(chat_ptr));
+	consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
+	answer_set = ALN_Next(nlcp_trie_return(consumer_cpf));
+	if ( IsNULL(answer_set) && ((VariantSF)consumer_sf != producer_sf) )
+	  if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
+	    CPtr template, *baseTR;
+
+	    template = restore_answer_template(chat_ptr, &baseTR);
+	    answer_set =
+	      table_retrieve_answers((SubProdSF)producer_sf, consumer_sf,
+				     template);
+	    undo_template_restoration(baseTR);
+	  }
+	if ( IsNonNULL(answer_set) )
+	  break;
+	else
+	  chat_ptr = (chat_init_pheader)nlcp_prevlookup(consumer_cpf);
       }
     }
-    if (chat_ptr != NULL) {
+    else
+      while ( IsNonNULL(chat_ptr) ) {
+	consumer_cpf = (CPtr)(&chat_get_cons_start(chat_ptr));
+	if ( IsNonNULL(ALN_Next(nlcp_trie_return(consumer_cpf))) )
+	  break;
+	else
+	  chat_ptr = (chat_init_pheader)nlcp_prevlookup(consumer_cpf);
+      }
+    if ( IsNonNULL(chat_ptr) ) {
       /* Reinstall the consumer and return the value of breg */
 #ifdef Chat_DEBUG
       fprintf(stddbg,"restoring consumer...");
 #endif
-      consumer = chat_restore_consumer(chat_ptr);
+      consumer_cpf = chat_restore_consumer(chat_ptr);
 #ifdef Chat_DEBUG
       fprintf(stddbg,"done\n");
 #endif
     } else {
-      consumer = NULL;
+      consumer_cpf = NULL;
     }
   } /* if there are answers and consumers */
 
-  return consumer;
+  return consumer_cpf;
 }
 
 /*----------------------------------------------------------------------*/
 
-static CPtr chat_fixpoint(SGFrame subg_ptr, TChoice leader_tcp)
+static CPtr chat_fixpoint(VariantSF subg_ptr, TChoice leader_tcp)
 {
-  SGFrame currSubg;
+  VariantSF currSubg;
   CPtr complFrame; /* completion stack frame for currSubg */
   CPtr sched_breg;
 
@@ -125,7 +137,7 @@ static CPtr chat_fixpoint(SGFrame subg_ptr, TChoice leader_tcp)
 /* areas that need it -- in effect, chat areas have a tree form.       	*/
 /*----------------------------------------------------------------------*/
 
-static void chat_incremental_copy(SGFrame subg_ptr)
+static void chat_incremental_copy(VariantSF subg_ptr)
 {
     CRPtr	      cr;
     TChoice	      tcp_ptr;

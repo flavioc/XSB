@@ -116,7 +116,7 @@ void tcpstack_realloc(long new_size) {
   /* Variables for Updating Incomplete Subgoal's SGFs
      ------------------------------------------------- */
   ComplStackFrame csf_ptr;    /* for stepping through the ComplStack */
-  SGFrame subg_ptr;           /* and altering the CP ptrs in the SGFs */
+  VariantSF subg_ptr;           /* and altering the CP ptrs in the SGFs */
 
 
   if (new_size == tcpstack.size)
@@ -216,7 +216,7 @@ void tcpstack_realloc(long new_size) {
   for (csf_ptr = (ComplStackFrame)openreg;
        csf_ptr < (ComplStackFrame)complstack.high;
 	 csf_ptr++) {
-    subg_ptr = (SGFrame)compl_subgoal_ptr(csf_ptr);
+    subg_ptr = (VariantSF)compl_subgoal_ptr(csf_ptr);
     /* Alter specific fields
        --------------------- */
 #if (!defined(CHAT))
@@ -281,7 +281,7 @@ void complstack_realloc (long new_size) {
   byte *cs_top;     /* ptr to topmost byte on the complstack */
 
   ComplStackFrame csf_ptr;
-  SGFrame subg_ptr;
+  VariantSF subg_ptr;
 
   
   if (new_size == complstack.size)

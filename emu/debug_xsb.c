@@ -89,7 +89,7 @@ static int count_producer_subgoals(void)
 {
   int i;
   TIFptr tif;
-  SGFrame temp_ptr;
+  VariantSF temp_ptr;
 
   i = 0;
   for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
@@ -461,7 +461,7 @@ static void print_term_of_subgoal(FILE *fp, int *i)
 
 /*----------------------------------------------------------------------*/
 
-void print_subgoal(FILE *fp, SGFrame subg)
+void print_subgoal(FILE *fp, VariantSF subg)
 {
   BTNptr leaf;
   int  i = 0;
@@ -495,7 +495,7 @@ static void print_delay_element(FILE *fp, Cell del_elem)
     fprintf(fp, "%s(", get_name(psc));
     cptr = (CPtr)cs_val(del_elem);
     tmp_cell = cell(cptr + 1);
-    print_subgoal(fp, (SGFrame) addr_val(tmp_cell)); fprintf(fp, ",");
+    print_subgoal(fp, (VariantSF) addr_val(tmp_cell)); fprintf(fp, ",");
     tmp_cell = cell(cptr + 2);
     fprintf(fp, "%p", (BTNptr) addr_val(tmp_cell)); fprintf(fp, ",");
     tmp_cell = cell(cptr + 3);
@@ -1052,14 +1052,14 @@ void print_completion_stack(void)
 {
   int i = 0;
   EPtr eptr;
-  SGFrame subg;
+  VariantSF subg;
   CPtr temp = openreg;
 
   fprintf(stddbg,"openreg -> ");
   while (temp < COMPLSTACKBOTTOM) {
     if ((i % COMPLFRAMESIZE) == 0) {
       fprintf(stddbg,EOFR);	/* end of frame */
-      subg = (SGFrame) *temp;
+      subg = (VariantSF) *temp;
       print_subg_header(subg);
     }
     fprintf(stddbg,"Completion Stack %p: %lx\t(%s)",
@@ -1115,9 +1115,9 @@ char *stringTabledEvalMethod(TabledEvalMethod method) {
  * frames encountered in each direction.
  */
 
-void subg_dll_length(SGFrame dll, counter *forward, counter *back) {
+void subg_dll_length(VariantSF dll, counter *forward, counter *back) {
 
-  SGFrame cur, prev;
+  VariantSF cur, prev;
   counter f, b;
 
   /* Count the number of frames on the chain from `dll' forward. */
@@ -1189,7 +1189,8 @@ void print_tables(void)
   int i = 0;
   char ans = 'y';
   TIFptr tif;
-  SGFrame subg;
+  VariantSF subg;
+  SubConsSF cons;
 
   i = count_producer_subgoals();
   xsb_dbgmsg("\t There are %d producer subgoal structures...", i);
@@ -1208,24 +1209,35 @@ void print_tables(void)
 		 stringSubgoalFrameType(subg_sf_type(subg)),
 		 (subg_is_complete(subg) ? "YES" : "NO"),
 		 (subg_is_reclaimed(subg) ? "YES" : "NO"));
-#ifdef CHAT
-      xsb_dbgmsg("  next_subg = %6p,  ans_root_ptr = %6p,",
-		 subg_next_subgoal(subg), subg_ans_root_ptr(subg));
-#else
-      xsb_dbgmsg("  next_subg = %6p,  ans_root_ptr = %6p,   asf_list_ptr = %p,",
-		 subg_next_subgoal(subg), subg_ans_root_ptr(subg),
-		 subg_asf_list_ptr(subg));
+      xsb_dbgmsg("  tif_ptr = %p,  leaf_ptr = %p,  ans_root_ptr = %p,\n"
+		 "  ans_list_ptr = %p,   ans_list_tail = %p,\n"
+		 "  next_subgoal = %p,  prev_subgoal = %p,  cp_ptr = %p",
+		 subg_tif_ptr(subg), subg_leaf_ptr(subg),
+		 subg_ans_root_ptr(subg),
+		 subg_ans_list_ptr(subg), subg_ans_list_tail(subg),
+		 subg_next_subgoal(subg), subg_prev_subgoal(subg), 
+		 subg_cp_ptr(subg));
+#ifndef CHAT
+      xsb_dbgmsg("  asf_list_ptr = %p,", subg_asf_list_ptr(subg));
 #endif
-      xsb_dbgmsg("  tif_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,",
-		 subg_tif_ptr(subg), subg_compl_stack_ptr(subg),
-		 subg_compl_susp_ptr(subg));
-      xsb_dbgmsg("  ans_list = %6p,    leaf_ptr = %6p,        cp_ptr = %p",
-		 subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
-      xsb_dbgmsg("  nide = %p", subg_nde_list(subg));
-      if ( IsSubsumptiveSF(subg) )
-	xsb_dbgmsg("  producer = %p,  consumers = %p,  timestamp = %ul",
-		   subg_producer(subg), subg_consumers(subg),
-		   subg_timestamp(subg));
+      xsb_dbgmsg("  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
+		 "  nde_list = %p",
+		 subg_compl_stack_ptr(subg), subg_compl_susp_ptr(subg),
+		 subg_nde_list(subg));
+      if ( IsSubProdSF(subg) ) {
+	xsb_dbgmsg("  consumers = %p", subg_consumers(subg));
+	for ( cons = subg_consumers(subg);  IsNonNULL(cons);
+	      cons = conssf_consumers(cons) )
+	  xsb_dbgmsg("Consumer  %p\n"
+		     "  sf_type = %11s,  tif_ptr = %p,         leaf_ptr = %p\n"
+		     "  producer = %10p,  ans_list_ptr = %p,"
+		     "  ans_list_tail = %p\n"
+		     "  ts = %ul,  consumers = %p",
+		     cons, subg_sf_type(cons), subg_tif_ptr(cons),
+		     subg_leaf_ptr(cons), conssf_producer(cons),
+		     subg_ans_list_ptr(cons), subg_ans_list_tail(cons),
+		     conssf_timestamp(cons), conssf_consumers(cons));
+      }
       subg = subg_next_subgoal(subg);
       if (subg != NULL)
 	fprintf(stddbg, EOSUBG);

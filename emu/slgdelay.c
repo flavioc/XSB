@@ -47,7 +47,7 @@
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 
-static void simplify_neg_succeeds(SGFrame);
+static void simplify_neg_succeeds(VariantSF);
 static void simplify_pos_unsupported(NODEptr);
 static void simplify_pos_unconditional(NODEptr);
 
@@ -236,14 +236,14 @@ static DE intern_delay_element(Cell delay_elem)
    * delay_negatively() or delay_positively().  Note that cell(cptr) is
    * the delay_psc ('DL').
    */
-  SGFrame subgoal;
+  VariantSF subgoal;
   NODEptr ans_subst;
   CPtr ret_n = 0;
   int arity;
   Cell tmp_cell;
 
   tmp_cell = cell(cptr + 1);
-  subgoal = (SGFrame) addr_val(tmp_cell);
+  subgoal = (VariantSF) addr_val(tmp_cell);
   tmp_cell = cell(cptr + 2);
   ans_subst = (NODEptr) addr_val(tmp_cell);
   tmp_cell = cell(cptr + 3);
@@ -432,7 +432,7 @@ static void record_de_usage(DL dl)
  * conditional answer is now tabled.
  */
 
-void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, xsbBool sf_exists)
+void do_delay_stuff(NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
 {
     ASI	asi;
     DL dl = NULL;
@@ -471,7 +471,7 @@ void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, xsbBool sf_exists)
 xsbBool answer_is_junk(CPtr dlist)	  /* assumes that dlist != NULL */
 {
     CPtr    cptr;
-    SGFrame subgoal;
+    VariantSF subgoal;
     NODEptr ans_subst;
     Cell tmp_cell;
 
@@ -479,7 +479,7 @@ xsbBool answer_is_junk(CPtr dlist)	  /* assumes that dlist != NULL */
       dlist = clref_val(dlist);
       cptr = (CPtr) cs_val(cell(dlist));
       tmp_cell = cell(cptr + 1);
-      subgoal = (SGFrame) addr_val(tmp_cell);
+      subgoal = (VariantSF) addr_val(tmp_cell);
       tmp_cell = cell(cptr + 2);
       ans_subst = (NODEptr) addr_val(tmp_cell);
       if (is_failing_delay_element(subgoal,ans_subst)) {
@@ -556,7 +556,7 @@ static void handle_empty_dl_creation(DL dl)
 {
   NODEptr as_leaf = dl_asl(dl);
   ASI asi = Delay(as_leaf);
-  SGFrame subgoal;
+  VariantSF subgoal;
 
 #ifdef DEBUG_DELAYVAR
   fprintf(stddbg, ">>>> start handle_empty_dl_creation()\n");
@@ -606,7 +606,7 @@ static void handle_empty_dl_creation(DL dl)
 static void handle_unsupported_answer_subst(NODEptr as_leaf)
 {
   ASI unsup_asi = Delay(as_leaf);
-  SGFrame unsup_subgoal = asi_subgoal(unsup_asi);
+  VariantSF unsup_subgoal = asi_subgoal(unsup_asi);
 
 #ifdef DEBUG_DELAYVAR
   fprintf(stddbg, ">>>> start handle_unsupported_answer_subst()\n");
@@ -695,7 +695,7 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
  * that contain them.
  */
 
-void simplify_neg_fails(SGFrame subgoal)
+void simplify_neg_fails(VariantSF subgoal)
 {
   PNDE nde;
   DE de;
@@ -731,7 +731,7 @@ void simplify_neg_fails(SGFrame subgoal)
  * in the DL has also to be released.
  */
 
-static void simplify_neg_succeeds(SGFrame subgoal)
+static void simplify_neg_succeeds(VariantSF subgoal)
 {
   PNDE nde;
   DL dl;
@@ -877,7 +877,7 @@ void abolish_wfs_space(void)
 
 void force_answer_true(NODEptr as_leaf)
 {
-  SGFrame subgoal;
+  VariantSF subgoal;
   
   if (is_conditional_answer(as_leaf)) {
     subgoal = asi_subgoal(Delay(as_leaf));
@@ -889,7 +889,7 @@ void force_answer_true(NODEptr as_leaf)
 void force_answer_false(NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
-  SGFrame subgoal;
+  VariantSF subgoal;
 
   if (is_conditional_answer(as_leaf)) {
     subgoal = asi_subgoal(asi);
