@@ -288,7 +288,6 @@ case check_complete: {
 	  pushreg(*cptr);
 	  VarsInCall++;
 	} /* for (i=0... */
-        reg_arrayptr = reg_array -1;
 	num_vars_in_var_regs = -1;
 	lpcreg = (byte *)subg_ans_root_ptr(SUBGOAL);
 	/* backtrack to prev tabled subgoal after returning answers */
