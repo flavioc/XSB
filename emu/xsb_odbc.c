@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "cinterf.h"
+#include "export.h"
 
 #define MAXCURSORNUM                    20
 #define MAXCOLS                         100

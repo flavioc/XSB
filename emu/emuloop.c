@@ -63,6 +63,7 @@
 #include "tr_utils.h"
 #include "cut.h"
 #include "export.h"
+
 CPtr	VarPosReg;
 /*
  * Variables ans_var_pos_reg is a pointer to substitution factor of an
