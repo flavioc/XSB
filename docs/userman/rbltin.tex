@@ -480,9 +480,7 @@ typically called just before returning to the top level.
     done; the atom \verb|copying| indicating that the copying garbage
     collector will be used; or it may be the atom \verb|indirection|
     indicating that the indirect-sliding garbage collector will be
-    used.  The indirect-sliding garbage collector is not implemented
-    for CHAT, therefore this option will have no effect on engines
-    configured for CHAT.
+    used.  
  
 \ouritem{cputime(-CPU\_Time)}\index{{\tt cputime/1}}
     Returns the {\tt CPU\_Time} at the time of the call in seconds.
@@ -557,20 +555,6 @@ with the number of answers actually inserted into the table and the
 number of redundant answers derived.
 \end{itemize}
 %
-\item CHAT memory operations (compilation under CHAT only).  As
-described in \cite{CHAT@PADL-99} CHAT requires an extra memory area
-beyond the WAM execution stacks, completion stack and table space.
-This memory area is used to copy parts of suspended environments for
-tabled subgoals that may be awaiting answers.  The first line
-represents the current amount of CHAT memory, the maximal amount, and
-unused CHAT space not restored to the operating system.  The second
-line represents the number of suspended tabled environments saved, as
-well as the number of CHAT increments (portions of an envionment)
-required to save these suspensioons and the number of these increments
-that are shared.  The third line represents the number of tabled
-environments that have been restored, or copied back into execution
-stacks, along with the total amount of memory copied.
-
 \item Garbage Collection Information.  Time spent garbage collecting
 and number of heap cells collected.
 
@@ -622,11 +606,6 @@ Tabling Operations
             0 call check/insert ops: 0 generators, 0 consumers.
   Total Answer Operations: 
             0 answer check/insert ops: 0 unique inserts, 0 redundant.
-
-CHAT Operations
-  total size CHAT areas: 0 b; high water mark: 0 b; not freed: 0 b
-  suspensions saved: 0; increments saved: 0; shared increments: 0
-  number of restored suspensions: 0; total restored memory: 0 b
 
 {GC}    0 heap garbage collections by copying: collected 0 cells in 0.000000 millisecs
 
@@ -810,9 +789,9 @@ CHAT Operations
     the tables were created during the aborted computation.
 
     {\tt abort/0} is implemented by throwing the term {\tt
-    '_$abort_ball/0}.  Implementations that wish to override the
+    '\_\$abort\_ball'/0}.  Implementations that wish to override the
     default behavior of {\tt abort/0} must call a top-level goal via
-    {\tt catch/1} and ensure that {\tt '_$abort_ball/0'} is handled.
+    {\tt catch/1} and ensure that {\tt '\_\$abort\_ball'/0} is handled.
 
 \ouritem{abort(+Message)}\index{{\tt abort/1}} \index{{\tt STDERR}}
     Acts as {\tt abort/0} but sents {\tt Message} to {\tt STDERR}
