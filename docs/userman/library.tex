@@ -480,7 +480,7 @@ predicates are described here.
 \index{{\tt file\_read\_line\_atom/3}}
     This predicate is like \verb|file_read_line|, but the line read from
     the input is interned. Therefore, {\tt String} is instantiated
-    to a normal atom.
+    to a normal atom. This predicate fails on reaching the end of file.
     
     {\bf Important}: At present, XSB does not have atom table garbage
     collector. Therefore, each line read from the file using this predicate
@@ -499,6 +499,7 @@ predicates are described here.
     the input is converted into a list of characters.
     This predicate is \emph{much} more efficient than {{\tt fget\_line/3}}
     (see below), and is recommended when speed is important.
+    This predicate fails on reaching the end of file.
 
 \ournewitem{file\_read\_line\_list(-String,-IsFullLine)}{file\_io}
 \index{{\tt file\_read\_line\_list/2}}
@@ -511,6 +512,9 @@ predicates are described here.
     unifies {\tt Inlist} to the list of ASCII integers representing the
     characters in the line, and {\tt Next} to the line terminator, either
     a newline ({\tt 10}) or EOF ({\tt-1}).
+    
+    This predicate exists for backward compatibility. It is very
+    inefficient compared to \verb|file_read_line_list|.
 
 \ournewitem{file\_write\_line(+FileDes, +String, +Offset)}{file\_io}
 \index{{\tt file\_write\_line/3}}
@@ -528,48 +532,54 @@ predicates are described here.
    output stream.
 
 
-\ournewitem{file\_getbuf(+FileDes, +ByteCount, -String, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf(+FileDes, +BytesRequested, -String, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf/4}}
-Read {\tt ByteCount} bytes from file represented by file descriptor {\tt
+Read {\tt BytesRequested} bytes from file represented by file descriptor {\tt
   FileDes} (which must already be open for reading) into variable {\tt
-  String}. This is analogous to {\tt fread} in C.  
+  String}. This is analogous to {\tt fread} in C.  This predicate always
+succeeds. It does not distinguish between a file error and end of file.
+You can determine if either of these conditions has happened by verifying
+that $\tt BytesRead < BytesRequested$.
 
 Note: The string read is {\bf not} interned. Please see exlanations to
 \verb|file_read_line| on this matter. Because of the difficulties in using
 this predicate, the predicates \verb|file_getbuf_atom| and
 \verb|file_getbuf_list| are often better alternatives.
 
-\ournewitem{file\_getbuf\_atom(+FileDes, +ByteCount, -String, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf\_atom(+FileDes, +BytesRequested, -String, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf\_atom/4}}
 Like \verb|file_getbuf|, but {\tt String} is instantiated to an interned atom.
 
 Note: because XSB does not have an atom table garbage collector yet, this
 predicate should not be used to read large files.
 
-\ournewitem{file\_getbuf\_atom(+ByteCount, -String, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf\_atom(+BytesRequested, -String, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf\_atom/3}}
 Like \verb|file_getbuf_atom/4|, but reads from the currently open input stream
-(using {\tt see/1}).
+(using {\tt see/1}). This predicate always
+succeeds. It does not distinguish between a file error and end of file.
+You can determine if either of these conditions has happened by verifying
+that $\tt BytesRead < BytesRequested$.
 
-\ournewitem{file\_getbuf\_list(+FileDes, +ByteCount, -CharList, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf\_list(+FileDes, +BytesRequested, -CharList, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf\_list/4}}
 Like \verb|file_getbuf_atom/4|, but {\tt CharList} is instantiated to a list
 of characters that represent the string read from the input.
 
-\ournewitem{file\_getbuf\_list(+ByteCount, -String, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf\_list(+BytesRequested, -String, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf\_list/3}}
 Like \verb|file_getbuf_list/3|, but reads from the currently open input stream
 ({\it i.e.}, with {\tt see/1}).
 
 
-\ournewitem{file\_putbuf(+FileDes, +ByteCount, +String, +Offset, -BytesWritten)}{file\_io}
+\ournewitem{file\_putbuf(+FileDes, +BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
 \index{{\tt file\_putbuf/5}}
-Write {\tt ByteCount} bytes into file represented by file descriptor {\tt
+Write {\tt BytesRequested} bytes into file represented by file descriptor {\tt
   FileDes} (which must already be open for writing) from variable {\tt
   String} at position {\tt Offset}. This is analogous to C {\tt fwrite}.
 The value of {\tt String} can be an atom or a list of ASCII characters.
 
-\ournewitem{file\_putbuf(+ByteCount, +String, +Offset, -BytesWritten)}{file\_io}
+\ournewitem{file\_putbuf(+BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
 \index{{\tt file\_putbuf/4}}
 Like \verb|file_putbuf/3|, but output goes to the currently open output stream.
 
