@@ -105,12 +105,12 @@ flora_load_module_internal(InFile) :-
 
 	; flora_locate_file(File,XSB_PFILE_EXT,PFile) ->
 	    flora_stdmsg_nl,
-	    flora_message_line('consulting %s',args(PFile)),
+	    flora_message_line('Consulting %s',args(PFile)),
 	    consult(PFile)
 
 	; flora_locate_file(File,XSB_OFILE_EXT,OFile) ->
 	    flora_stdmsg_nl,
-	    flora_message_line('consulting %s',args(OFile)),
+	    flora_message_line('Consulting %s',args(OFile)),
 	    consult(OFile)
 
 	; parse_filename(File,_,_,Ext),
@@ -323,7 +323,7 @@ flora_rename_file(F1,F2) :-
 	( (path_sysop(unlink,F2), !; true),
 	  path_sysop(rename,F1,F2), !
 	;
-	    flora_error_line("Something wrong: Can't rename %s to %s\n",
+	    flora_error_line("Something wrong -- can't rename %s to %s\n",
 			     args(F1,F2)),
 	    abort
 	).
@@ -348,7 +348,7 @@ flora_flcompile(FlrFile,ModuleName) :-
 	    fail
 	;
 	  flora_mainO_filename(FlrFile,MOFile),
-	  flora_message_line('calling XSB compiler'),
+	  flora_message_line('Calling XSB compiler'),
 	  (
 	    %% Issue only important preprocessor warnings
 	    %% to avoid warnings when atoms or strings have \n in them
@@ -423,7 +423,7 @@ flora_load_system_module_internal(SysModID) :-
 	      fail
 	    ),
 	    !,
-	    flora_message_line('loading FLORA system module %s',
+	    flora_message_line('Loading FLORA system module %s',
 			       args(SysModID)),
 	    %% Issue only important preprocessor warnings
 	    %% to avoid warnings when atoms or strings have \n in them
@@ -444,6 +444,7 @@ flora_load_system_module_internal(SysModID) :-
   flora_compile_system_module_by_ID(+SysModID)
 
   Compile a Flora system module in the lib/ directory according to its ID.
+  This is like flora_load_system_module_internal/1 but doesn't load the file
 ******************************************************************************/
 flora_compile_system_module_by_ID(SysModID) :-
 	%% Retrieve the file name and its subdir.
@@ -451,13 +452,15 @@ flora_compile_system_module_by_ID(SysModID) :-
 	%% Compute the Flora file name.
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
-	fmt_write_string(FlrFile,"%s%s%s%s%s.flr",args(FloraDir,S,SubDir,S,BaseName)),
+	fmt_write_string(FlrFile,"%s%s%s%s%s.flr",
+			 args(FloraDir,S,SubDir,S,BaseName)),
 	( path_sysop(exists,FlrFile) ->
 	    flora_module_name(ModuleName,systemmodule,SysModID),
 	    flora_flcompile(FlrFile,ModuleName)
 	;
 	  flora_stderr_nl,
-	  flora_error_line('Flora system module file %s does not exist!',args(FlrFile)),
+	  flora_error_line('Flora system module file %s does not exist!',
+			   args(FlrFile)),
 	  !,
           fail
 	),
@@ -494,7 +497,7 @@ flora_flload(FlrFile,Workspace) :-
 	  )
 	),
 	!,
-	flora_message_line('loading %s into module %s',args(FlrFile,Workspace)),
+	flora_message_line('Loading %s into module %s',args(FlrFile,Workspace)),
 	( flora_file_newerthan(WSOFile,MPFile) ->
 	    true
 	;
@@ -647,7 +650,7 @@ flora_dump_filename(File,DFile) :-
 *************************************************************************/
 flora_check_filename(Name) :-
 	( not atom(Name) ->
-	    flora_error_line('invalid file name'),
+	    flora_error_line('Invalid file name'),
 	    fail
 	;
 	  true
@@ -656,11 +659,11 @@ flora_check_filename(Name) :-
 
 flora_check_workspace(Name) :-
 	( var(Name) ->
-	    flora_error_line('uninstantiated module name'),
+	    flora_error_line('Uninstantiated module name'),
 	    fail
 	; not (atom(Name), is_alphanumeric(Name)) ->
 	    flora_error_heading,
-	    flora_stderr_string('invalid module name (not alphanumeric): '),
+	    flora_stderr_string('Invalid module name (not alphanumeric): '),
 	    flora_stderr_write(Name),
 	    flora_stderr_nl,
 	    fail
@@ -721,7 +724,7 @@ flora_set_xpp_options(Purpose) :-
 	assert(xpp_options(StandardOpt)).
 
 
-%% It is always called before invoking GPP.
+%% This is always called before invoking GPP.
 %% If ModuleName looks like a system module name (flora(_)) then adds
 %% extra options for compiling system modules.
 %% Note: This predicate should not be called before a previous call of
@@ -846,7 +849,7 @@ flora_include_file([Opt|OptList],Status) :-
 	).
 
 flora_include_file(_OptList,FLORA_FAILURE) :-
-	  flora_error_line('system file corrupted!').
+	  flora_error_line('System file corrupted!').
 
 
 /*************************************************************************
@@ -892,7 +895,7 @@ flora_reset_modules_for_shell :-
 flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	flora_maxerr(MaxErrNum),
 	flora_stdmsg_nl,
-	flora_message_line('compiling %s',args(InputFile)),
+	flora_message_line('Compiling %s',args(InputFile)),
 	cputime(T0),
 	seeing(PreInFile),
 	%% Disable the compilation for FLORA template include file.
@@ -984,12 +987,12 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
-		  flora_message_line('including full F-logic equality maintenance'),
+		  flora_message_line('Including full F-logic equality maintenance'),
 		  flora_include_file([FLEQLTRAILER,FLSCALAREQL], FileStatus)
 
 
 	      ; member(FLEQLBASIC,FileOptionList) ->
-	          flora_message_line('including basic equality maintenance'),
+	          flora_message_line('Including basic equality maintenance'),
 		  flora_include_file([FLEQLTRAILER],FileStatus)
 	      ;
 	        flora_include_file([FLTRAILER],FileStatus)
@@ -1052,7 +1055,7 @@ flora_load_dyn(InDBFile,ModuleName) :-
 	),
 	!,
 	( flora_locate_file(InDBFileAbs,DBFile) ->
-	    flora_message_line('dynamically loading %s into module %S',
+	    flora_message_line('Dynamically loading %s into module %S',
 			       args(DBFile,ModuleName)),
 	    cputime(T0),
 	    seeing(PreInFile),
@@ -1100,7 +1103,7 @@ flora_load_dyn_fld(InFLDFile,ModuleName) :-
 	),
 	!,
 	( flora_locate_file(InFLDFileAbs,FLDFile) ->
-	    flora_message_line('dynamically loading %s into module %S',
+	    flora_message_line('Dynamically loading %s into module %S',
 			       args(FLDFile,ModuleName)),
 	    cputime(T0),
 	    seeing(PreInFile),
@@ -1130,7 +1133,7 @@ flora_load_dyn_fld(InFLDFile,ModuleName) :-
 /*************************************************************************
   flora_read_canonical_and_insert(+StorageName)
 
-  It reads the current input in canonical form and inserts all facts
+  Read the current input in canonical form and insert all facts
   into the storage trie.
 *************************************************************************/
 flora_read_canonical_and_insert(StorageName) :-
@@ -1147,7 +1150,7 @@ flora_read_canonical_and_insert(StorageName) :-
   Same as flora_read_canonical_and_insert/1, but reads a file
 *************************************************************************/
 flora_read_canonical_and_insert(File,StorageName) :-
-	flora_message_line('dynamically loading %s into storage %s',
+	flora_message_line('Dynamically loading %s into storage %s',
 			   args(File,StorageName)),
 	seeing(OldF),
 	see(File),
@@ -1248,10 +1251,10 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 
 /*************************************************************************
   flora_discard_tokens/0
-  scans the input until a rule delimeter is found. It fails if eof.
+  Scan the input until a rule delimeter is found. Fails if eof.
 *************************************************************************/
 flora_discard_tokens :-
-	flora_warning_line('discarding tokens (rule delimeter `.'' or EOF expected)'),
+	flora_warning_line('Discarding tokens (rule delimeter `.'' or EOF expected)'),
 	repeat,
 	flora_tokens(Tokens,Status),
 	flora_rule_delimeter_struct(_Txt,_LN1,_CN1,_LN2,_CN2,RuleDelimeterToken),
@@ -1329,7 +1332,7 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 /*************************************************************************
   flora_construct_query_term(+InputTokens,-Tokens)
 
-  It constructs a query term from the shell command line input. Two extra
+  Construct a query term from the shell command line input. Two extra
   pair of parentheses are added to enclose the input. This is to prevent
   the query term from being intepreted as having arity other than one.
 *************************************************************************/
@@ -1666,7 +1669,7 @@ flMaxerr(X) :-
 	    flora_maxerr(X)
 
 	; X \== FLORA_ALL, (not integer(X); X < 1) ->
-	    flora_error_line('invalid argument to maxerr'),
+	    flora_error_line('Invalid argument to maxerr'),
 	    fail
 	;
 	  retractall(flora_maxerr(_)),
@@ -1699,7 +1702,7 @@ flDump(InFile) :-
 /*************************************************************************
   flora_dump_file(+File,+Workspace,+SquashingOption)
 
-  It expects a Flora file as input and dumps the .P file in a more readable
+  Expects a Flora file as input and dumps the .P file in a more readable
   format. If SquashingOption == squash, ignore Workspace in the final round 
   of gpp pre-processing.
 *************************************************************************/
@@ -1797,8 +1800,8 @@ flora_gpp_dumpfile(FileName,_DumpFileName,_Workspace) :-
 /*************************************************************************
   flCompileInclude(+File)
 
-  This is used only in the closure/Makefile
-  It takes a trailer template and wraps it with the workspace and 
+  This call is used only in the closure/Makefile
+  Takes a trailer template and wraps it with the workspace and 
   flora prefixes. This way the trailer is easier to maintain and understand.
 
   The included file is treated as a Flora program, so the compiler wraps it 
@@ -1838,7 +1841,7 @@ flCompileInclude(File) :-
 *************************************************************************/
 flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	flora_stdmsg_nl,
-	flora_message_line('compiling FLORA template include file %s',args(InputFile)),
+	flora_message_line('Compiling FLORA template include file %s',args(InputFile)),
 	cputime(T0),
 	seeing(PreInFile),
 	%% Enable the compilation for FLORA template include files.
