@@ -38,6 +38,7 @@ ALLOBJS = flranswer.O \
 	  flraggmax.O \
 	  flraggmin.O \
 	  flraggsum.O \
+	  flrstorage.O \
 	  flrdbop.O \
 	  flrbtdbop.O \
 	  flrshdirect.O \
@@ -54,6 +55,7 @@ EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 
 XSB_CHAR_DEFS = $(XSBDIR)/prolog_includes/char_defs.h
 XSB_STANDARD = $(XSBDIR)/prolog_includes/standard.h
+XSB_EMU_FLAG_DEFS = $(XSBDIR)/emu/flag_defs_xsb.h
 
 FLORA_INCLUDES_DIR = ../includes
 
@@ -81,15 +83,15 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flranswer.O : flranswer.P $(XSB_CHAR_DEFS) $(XSB_STANDARD) $(FLORA_TERMS)
+flranswer.O : flranswer.P $(XSB_CHAR_DEFS) $(XSB_EMU_FLAG_DEFS) $(XSB_STANDARD) $(FLORA_TERMS)
 	@echo 'mc(flranswer,$(OPTION)).' >> cmd...
 
 
-flrdisplay.O : flrdisplay.P $(FLORA_TERMS)
+flrdisplay.O : flrdisplay.P $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrdisplay,$(OPTION)).' >> cmd...
 
 
-flrload.O : flrload.P $(XSB_STANDARD) $(FLORA_TERMS)
+flrload.O : flrload.P $(FLORA_TERMS)
 	@echo 'mc(flrload,$(OPTION)).' >> cmd...
 
 
@@ -119,6 +121,10 @@ flraggmin.O : flraggmin.P $(FLORA_TERMS)
 
 flraggsum.O : flraggsum.P $(FLORA_TERMS)
 	@echo 'mc(flraggsum,$(OPTION)).' >> cmd...
+
+
+flrstorage.O : flrstorage.P $(FLORA_TERMS)
+	@echo 'mc(flrstorage,$(OPTION)).' >> cmd...
 
 
 flrdbop.O : flrdbop.P $(FLORA_TERMS)
@@ -158,6 +164,10 @@ init:
 
 finish:
 	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
+
+
+clean:
+	/bin/rm -f *~ *O
 
 
 .DONE:

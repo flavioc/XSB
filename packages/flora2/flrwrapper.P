@@ -217,3 +217,21 @@ flora_wspredicate(Functor,Args,WS,Predicate) :-
 	;
 	  abort
 	).
+
+
+/*****************************************************************************
+  flora_is_general_predicate(+Funct,-Workspace)
+*****************************************************************************/
+flora_is_general_predicate(Funct,WS) :-
+	( flora_flogic_predicate(Funct,WS,_Pos,_Base)
+	; flora_hilog_predicate(Funct,WS)
+	; flora_nohilog_predicate(Funct,_P,WS)
+	),
+	!.
+
+
+/*****************************************************************************
+  flora_storage_name(+Workspace,-Name)
+*****************************************************************************/
+flora_storage_name(WS,Name) :-
+	fmt_write_string(Name,"%s'%s",args(FLORA_STORAGE_PREFIX,WS)).

@@ -1,0 +1,122 @@
+/* File:      flrstorage.P
+**
+** Author(s): Guizhen Yang 
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+
+:- import storage_find_fact/2 from storage.
+
+:- import
+	flora_error_line/1,
+	flora_error_heading/0,
+	flora_stderr_string/1,
+	flora_stderr_nl/0
+   from flrprint.
+
+:- import flora_stderr_write/1 from flrdisplay.
+
+:- import
+	flora_wspredicate/4,
+	flora_is_general_predicate/2,
+	flora_storage_name/2
+   from flrwrapper.
+
+:- import FLSYSDBUPDATE/2, FLLIBMODLIT/3, FLLIBMODOBJ/4 from usermod.
+
+:- export
+	flora_storage_check_deletepredicate/2,
+	flora_storage_convertlist/3.
+
+
+/*****************************************************************************
+  flora_storage_check_deletepredicate(+P,-StorageName)
+*****************************************************************************/
+flora_storage_check_deletepredicate(P,_StorageName) :-
+	var(P),
+	!,
+	flora_error_line('uninstantiated argument of delete operation'),
+	abort.
+
+flora_storage_check_deletepredicate(P,StorageName) :-
+	%% This is a meta programming feature.
+	functor(P,F,_N),
+	( flora_is_general_predicate(F,WS) ->
+	    flora_storage_name(WS,StorageName),
+	    storage_find_fact(StorageName,P)
+	;
+	  flora_error_heading,
+	  ( F == WRAP_HILOG ->
+	      flora_stderr_string('It is not allowed to delete HiLog term ')
+	  ;
+	    flora_stderr_string('It is not allowed to delete Prolog term ')
+	  ),
+	  flora_stderr_write(P),
+	  flora_stderr_string(' !'),
+	  flora_stderr_nl,
+          abort
+	).
+
+
+/*****************************************************************************
+  flora_storage_convertlist(+List,-CallList,-FactList)
+*****************************************************************************/
+flora_storage_convertlist([],[],[]) :- !.
+
+flora_storage_convertlist([P|Fs],
+	                  [flora_storage_check_deletepredicate(P,StorageName)|CL],
+			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
+	var(P),
+	!,
+	flora_storage_convertlist(Fs,CL,FL).
+
+flora_storage_convertlist([FLSYSDBUPDATE(P,StorageName)|Fs],
+                          [storage_find_fact(StorageName,P)|CL],
+			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
+	!,
+	flora_storage_convertlist(Fs,CL,FL).
+
+flora_storage_convertlist([FLLIBMODLIT(F,Args,WS)|Fs],
+                          [flora_wspredicate(F,Args,WS,P),
+			   flora_storage_name(WS,StorageName),
+                           storage_find_fact(StorageName,P)|CL
+			  ],
+			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
+	!,
+	flora_storage_convertlist(Fs,CL,FL).
+
+flora_storage_convertlist([FLLIBMODOBJ(F,Args,WS,Obj)|Fs],
+                          [flora_wspredicate(F,Args,WS,Obj)|CL],
+			  FL) :-
+	!,
+	flora_storage_convertlist(Fs,CL,FL).
+
+flora_storage_convertlist([P|Fs],
+	                  [flora_storage_check_deletepredicate(P,StorageName)|CL],
+			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
+	flora_storage_convertlist(Fs,CL,FL).
+

@@ -166,12 +166,13 @@
 #define FL_FROM			(from)
 #define FL_SIGNATURE		(flSign)
 #define FL_OID			(oid)
-#define FL_FORMULAR		(form)
+#define FL_BODYFORMULAR		(bform)
 #define FL_PROLOG		flProlog
 #define FL_PROLOGALL		flPrologAll
 #define FL_PLIB			prologlib
-#define FL_NOHILOG		flPredicate
-#define FL_NOHILOGALL		flPredicateAll
+#define FL_NONHILOGPREDICATE	flNonHilogPredicate
+#define FL_PREDICATE		flPredicate
+#define FL_PREDICATEALL		flPredicateAll
 #define FL_HILOGTABLE		flHilogTable
 #define FL_EQUALITY		flEquality
 #define FL_ABOLISH		flAbolish
@@ -215,7 +216,7 @@
   FLIMPORT(Functor,Arity)
   FLSIGN(Functor,Arity,Args)
   FLPROLOG(Functor,Arity)
-  FLNOHILOG(Functor,Arity)
+  FLPREDICATE(Functor,Arity)
   FLOPDEF(Predecence,Associativity,Op)
   FLINDEX(Functor,Arity,Name)
   FLHILOGTABLE(Arity)
@@ -268,7 +269,8 @@
 #define FLSIGNATURE		flsignature
 #define FLPROLOG		flprolog
 #define FLOPDEF			flopdef
-#define FLNOHILOG		flnohilog
+#define FLNONHILOGPREDICATE	flnonhilogpredicate
+#define FLPREDICATE		flpredicate
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
 #define FLEQUALITY		flequality
@@ -322,6 +324,7 @@
 #define PRINDEX			prindex
 #define PRHILOGTABLE		prhilogtable
 #define PRTHISMODULE		prthismodule
+#define PRSTORAGE		prstorage
 
 #define PRATOM			pratom
 #define PRNUMBER		prnumber
@@ -483,13 +486,14 @@
 #define FLORA_NOT_EOF		not_eof
 
 #define FLSYSLIB		flsyslib
+#define FLSYSDBUPDATE		flsysdbupdate
 
 #define FLORA_PREFIX		'_$_$_flora'
 #define FLORA_PREFIX_LEN_PLUS1	11
 
 #define FLORA_THIS_MODULE	flThisModule
 
-#define FLORA_STORAGE_NAME	FLORA_PREFIX'flstorage'
+#define FLORA_STORAGE_PREFIX	'_$_$_flora_storage'
 
 
 /****************************************************************************

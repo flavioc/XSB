@@ -171,7 +171,7 @@ reset(X) :-
 	fail.
 
 reset(FL_PROLOG) :- !, flora_shreset_prolog.
-reset(FL_NOHILOG) :- !, flora_shreset_nohilog.
+reset(FL_PREDICATE) :- !, flora_shreset_nohilog.
 reset(FL_SIGNATURE) :- !, flora_shreset_signature.
 reset(FL_OP) :- !, flora_shreset_operator.
 

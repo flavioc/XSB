@@ -13,59 +13,46 @@
 
 
 #include "flora_terms.flh"
-#include "flrpred.fli"
+
+
+:- import storage_find_fact/2 from storage.
 
 
 /**************************************************************************
   F-logic
 ***************************************************************************/
-:- import storage_find_fact/2 from storage.
-:- flSign storage_find_fact(oid,form).
-
-
-derived_sub(X,Y) :- storage_find_fact(FLORA_STORAGE_NAME,base_sub(X,Y)).
-derived_isa(O,C) :- storage_find_fact(FLORA_STORAGE_NAME,base_isa(O,C)).
-derived_ifd(C,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_ifd(C,A,V)).
-derived_imvd(C,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_imvd(C,A,V)).
-derived_imvddef(C,A) :- storage_find_fact(FLORA_STORAGE_NAME,base_imvddef(C,A)).
-derived_fd(O,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_fd(O,A,V)).
-derived_mvd(O,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_mvd(O,A,V)).
-derived_mvddef(O,A) :- storage_find_fact(FLORA_STORAGE_NAME,base_mvddef(O,A)).
-derived_meth(O,M) :- storage_find_fact(FLORA_STORAGE_NAME,base_meth(O,M)).
-derived_imeth(C,M) :- storage_find_fact(FLORA_STORAGE_NAME,base_imeth(C,M)).
-derived_tran(O,T) :- storage_find_fact(FLORA_STORAGE_NAME,base_tran(O,T)).
-derived_fdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_fdsig(O,M,R)).
-derived_ifdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_ifdsig(O,M,R)).
-derived_mvdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_mvdsig(O,M,R)).
-derived_imvdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_imvdsig(O,M,R)).
-derived_exists(X) :- storage_find_fact(FLORA_STORAGE_NAME,base_exists(X)).
-derived_objeql(X,Y) :- storage_find_fact(FLORA_STORAGE_NAME,base_objeql(X,Y)).
+:- flPredicate
+	derived_sub/2,
+	derived_isa/2,
+	derived_ifd/3,
+	derived_imvd/3,
+	derived_imvddef/2,
+	derived_fd/3,
+	derived_mvd/3,
+	derived_mvddef/2,
+	derived_meth/2,
+	derived_imeth/2,
+	derived_tran/2,
+	derived_fdsig/3,
+	derived_ifdsig/3,
+	derived_mvdsig/3,
+	derived_imvdsig/3,
+	derived_exists/1,
+	derived_objeql/2.
 
 
 /**************************************************************************
   HiLog
 ***************************************************************************/
-:- flPredicate WRAP_HILOG/1.
-:- flPredicate WRAP_HILOG/2.
-:- flPredicate WRAP_HILOG/3.
-:- flPredicate WRAP_HILOG/4.
-:- flPredicate WRAP_HILOG/5.
-:- flPredicate WRAP_HILOG/6.
-:- flPredicate WRAP_HILOG/7.
-:- flPredicate WRAP_HILOG/8.
-:- flPredicate WRAP_HILOG/9.
-:- flPredicate WRAP_HILOG/10.
-:- flPredicate WRAP_HILOG/11.
-
-
-WRAP_HILOG(A1) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1)).
-WRAP_HILOG(A1,A2) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2)).
-WRAP_HILOG(A1,A2,A3) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3)).
-WRAP_HILOG(A1,A2,A3,A4) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4)).
-WRAP_HILOG(A1,A2,A3,A4,A5) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5)).
-WRAP_HILOG(A1,A2,A3,A4,A5,A6) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6)).
-WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7)).
-WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8)).
-WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9)).
-WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9,A10) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9,A10)).
-WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11)).
+:- flPredicate
+	WRAP_HILOG/1,
+	WRAP_HILOG/2,
+	WRAP_HILOG/3,
+	WRAP_HILOG/4,
+	WRAP_HILOG/5,
+	WRAP_HILOG/6,
+	WRAP_HILOG/7,
+	WRAP_HILOG/8,
+	WRAP_HILOG/9,
+	WRAP_HILOG/10,
+	WRAP_HILOG/11.

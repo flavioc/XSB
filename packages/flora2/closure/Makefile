@@ -75,7 +75,7 @@ flrdbdyn.flh : flrdbdyn.fli flrpred.fli
 	@echo 'flCompileInclude(flrdbdyn).' >> cmd...
 
 
-flrpatch.flh : flrpatch.fli flrpred.fli $(FLORA_TERMS)
+flrpatch.flh : flrpatch.fli $(FLORA_TERMS)
 	@echo 'flCompileInclude(flrpatch).' >> cmd...
 
 
@@ -94,6 +94,10 @@ init:
 
 finish:
 	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
+
+
+clean:
+	/bin/rm -f *~ *.flh
 
 
 .DONE:

@@ -29,7 +29,7 @@
 #include "flora_terms.flh"
 
 
-flora_sign((findall),3,[FL_OID,FL_FORMULAR,FL_OID]) :- !.
+flora_sign((findall),3,[FL_OID,FL_BODYFORMULAR,FL_OID]) :- !.
 
 
 /****************************************************************************

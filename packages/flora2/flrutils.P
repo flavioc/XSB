@@ -44,7 +44,6 @@
 
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
-#include "standard.h"
 #include "flora_terms.flh"
 
 
@@ -500,7 +499,7 @@ flora_check_workspace(Name) :-
 	; not atom(Name) ->
 	    flora_error_heading,
 	    flora_stderr_string('invalid module name: '),
-	    flora_write(STDERR,Name),
+	    flora_stderr_write(Name),
 	    flora_stderr_nl,
 	    fail
 	;

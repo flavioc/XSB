@@ -29,8 +29,6 @@
 #include "flora_terms.flh"
 
 
-:- import var/1, call/1 from standard.
-
 :- import
 	storage_find_fact/2,
 	storage_insert_fact_bt/3,
@@ -43,16 +41,30 @@
 
 :- import flora_register_syslib/1 from flrlibman.
 
-:- import flora_error_line/1 from flrprint.
+:- import
+	flora_error_line/1,
+	flora_error_heading/0,
+	flora_stderr_string/1,
+	flora_stderr_nl/0
+   from flrprint.
+
+:- import flora_stderr_write/1 from flrdisplay.
 
 :- import
 	flora_setup_flogic_bswrapper/1,
 	flora_flogic_bswrapper/2,
 	flora_flogic_predicate/4,
-	flora_wspredicate/4
+	flora_wspredicate/4,
+	flora_is_general_predicate/2,
+	flora_storage_name/2
    from flrwrapper.
 
 :- import flora_list2conjunct/2 from flrutils.
+
+:- import
+	flora_check_deletepredicate/2,
+	flora_storage_convertlist/3
+   from flrstorage.
 
 
 /*********************************************************************
@@ -87,26 +99,48 @@ fllibbtinsert(List,Condition) :-
 *****************************************************************************/
 flora_storage_insertfacts_bt([]) :- !.
 
-flora_storage_insertfacts_bt([H|_T]) :-
-	var(H),
+flora_storage_insertfacts_bt([P|_T]) :-
+	var(P),
 	!,
-	flora_error_line('uninstantiated argument of btinsert operation'),
+	flora_error_line('uninstantiated argument of backtrackable insert operation'),
 	abort.
 
-flora_storage_insertfacts_bt([FLLIBMODLIT(P,Args,WS)|T]) :-
+flora_storage_insertfacts_bt([FLSYSDBUPDATE(P,StorageName)|T]) :-
 	!,
-	flora_wspredicate(P,Args,WS,H),
-	storage_insert_fact_bt(FLORA_STORAGE_NAME,H,_Inserted),
+	storage_insert_fact_bt(StorageName,P,_Inserted),
 	flora_storage_insertfacts_bt(T).
 
-flora_storage_insertfacts_bt([FLLIBMODOBJ(P,Args,WS,O)|T]) :-
+flora_storage_insertfacts_bt([FLLIBMODLIT(F,Args,WS)|T]) :-
 	!,
-	flora_wspredicate(P,Args,WS,O),
+	flora_wspredicate(F,Args,WS,P),
+	flora_storage_name(WS,StorageName),
+	storage_insert_fact_bt(StorageName,P,_Inserted),
 	flora_storage_insertfacts_bt(T).
 
-flora_storage_insertfacts_bt([H|T]) :-
-	storage_insert_fact_bt(FLORA_STORAGE_NAME,H,_Inserted),
+flora_storage_insertfacts_bt([FLLIBMODOBJ(F,Args,WS,O)|T]) :-
+	!,
+	flora_wspredicate(F,Args,WS,O),
 	flora_storage_insertfacts_bt(T).
+
+flora_storage_insertfacts_bt([P|T]) :-
+	%% This is a meta programming feature.
+	functor(P,F,_N),
+	( flora_is_general_predicate(F,WS) ->
+	    flora_storage_name(WS,StorageName),
+	    storage_insert_fact_bt(StorageName,P,_Inserted),
+	    flora_storage_insertfacts_bt(T)
+	;
+	  flora_error_heading,
+	  ( F == WRAP_HILOG ->
+	      flora_stderr_string('It is not allowed to insert HiLog term ')
+	  ;
+	    flora_stderr_string('It is not allowed to insert Prolog term ')
+	  ),
+	  flora_stderr_write(P),
+	  flora_stderr_string(' !'),
+	  flora_stderr_nl,
+          abort
+	).
 
 
 /*********************************************************************
@@ -163,45 +197,28 @@ fllibbtdelete(List) :- fllibbtdelete(List,true).
 fllibbtdelete([P],true) :-
 	var(P),
 	!,
-	flora_error_line('uninstantiated argument of delete operation'),
+	flora_error_line('uninstantiated argument of backtrackable delete operation'),
 	abort.
 
-fllibbtdelete([P],true) :-
+fllibbtdelete([FLSYSDBUPDATE(P,StorageName)],true) :-
 	!,
-	( P = FLLIBMODLIT(F,Args,WS) ->
-	    flora_wspredicate(F,Args,WS,X)
-	;
-	  X=P
-	),
-	storage_delete_fact_bt(FLORA_STORAGE_NAME,X,_Deleted).
+	storage_find_fact(StorageName,P),
+	storage_delete_fact_bt(StorageName,P,_Deleted).
+
+fllibbtdelete([FLLIBMODLIT(F,Args,WS)],true) :-
+	!,
+	flora_wspredicate(F,Args,WS,P),
+	flora_storage_name(WS,StorageName),
+	!,
+	storage_find_fact(StorageName,P),
+	storage_delete_fact_bt(StorageName,P,_Deleted).
 
 fllibbtdelete(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
 	flora_list2conjunct([Condition|CallList],Goal),
+	!,
 	call(Goal),
 	flora_storage_deletelist_bt(FactList).
-
-
-/*****************************************************************************
-  flora_storage_convertlist(+List,-CallList,-FactList)
-*****************************************************************************/
-flora_storage_convertlist([],[],[]) :- !.
-
-flora_storage_convertlist([FLLIBMODLIT(P,Args,WS)|Fs],
-                          [flora_wspredicate(P,Args,WS,F),storage_find_fact(FLORA_STORAGE_NAME,F)|CL],
-			  [F|FL]) :-
-	!,
-	flora_storage_convertlist(Fs,CL,FL).
-
-flora_storage_convertlist([FLLIBMODOBJ(P,Args,WS,Obj)|Fs],
-                          [flora_wspredicate(P,Args,WS,Obj)|CL],
-			  FL) :-
-	!,
-	flora_storage_convertlist(Fs,CL,FL).
-
-flora_storage_convertlist([F|Fs],[storage_find_fact(FLORA_STORAGE_NAME,F)|CL],FL) :-
-	!,
-	flora_storage_convertlist(Fs,CL,FL).
 
 
 /*****************************************************************************
@@ -209,21 +226,10 @@ flora_storage_convertlist([F|Fs],[storage_find_fact(FLORA_STORAGE_NAME,F)|CL],FL
 *****************************************************************************/
 flora_storage_deletelist_bt([]) :- !.
 
-flora_storage_deletelist_bt([P|L]) :-
+flora_storage_deletelist_bt([FLSYSDBUPDATE(P,StorageName)|L]) :-
 	!,
-	storage_delete_fact_bt(FLORA_STORAGE_NAME,P,_Deleted),
+	storage_delete_fact_bt(StorageName,P,_Deleted),
 	flora_storage_deletelist_bt(L).
-
-
-/*****************************************************************************
-  flora_storage_insertlist_bt(+List)
-*****************************************************************************/
-flora_storage_insertlist_bt([]) :- !.
-
-flora_storage_insertlist_bt([P|L]) :-
-	!,
-	storage_insert_fact_bt(FLORA_STORAGE_NAME,P,_Inserted),
-	flora_storage_insertlist_bt(L).
 
 
 /*********************************************************************
@@ -233,12 +239,12 @@ flora_storage_insertlist_bt([P|L]) :-
 
 
 /*****************************************************************************
-  flora_storage_deleteall_bt(+Predicate)
+  flora_storage_deleteall_bt(+Predicate,+StorageName)
 
   Note: This predicate always succeeds.
 *****************************************************************************/
-flora_storage_deleteall_bt(P) :-
-	findall(P,storage_find_fact(FLORA_STORAGE_NAME,P),L),
+flora_storage_deleteall_bt(P,StorageName) :-
+	findall(FLSYSDBUPDATE(P,StorageName),storage_find_fact(StorageName,P),L),
 	!,
 	flora_storage_deletelist_bt(L).
 
@@ -258,25 +264,26 @@ fllibbtdeleteall(List) :- fllibbtdeleteall(List,true).
 fllibbtdeleteall([P],true) :-
 	var(P),
 	!,
-	flora_error_line('uninstantiated argument of btdeleteall operation'),
+	flora_error_line('uninstantiated argument of backtrackable delete operation'),
 	abort.
 
-fllibbtdeleteall([P],true) :-
+fllibbtdeleteall([FLSYSDBUPDATE(P,StorageName)],true) :-
 	!,
-	( P = FLLIBMODLIT(F,Args,WS) ->
-	    flora_wspredicate(F,Args,WS,X)
-	;
-	  X=P
-	),
+	flora_storage_deleteall_bt(P,StorageName).
+
+fllibbtdeleteall([FLLIBMODLIT(F,Args,WS)],true) :-
 	!,
-	flora_storage_deleteall_bt(X).
+	flora_wspredicate(F,Args,WS,P),
+	flora_storage_name(WS,StorageName),
+	!,
+	flora_storage_deleteall_bt(P,StorageName).
 
 fllibbtdeleteall(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
 	flora_list2conjunct([Condition|CallList],Goal),
 	findall(FactList,Goal,FsList),
 	!,
-	flora_btdeleteall_facts(FsList,_DeletedFsList).
+	flora_btdeleteall_facts(FsList).
 
 
 /*****************************************************************************
@@ -284,19 +291,11 @@ fllibbtdeleteall(List,Condition) :-
 
   Note: This predicate always succeeds.
 *****************************************************************************/
-flora_btdeleteall_facts([],[]) :- !.
+flora_btdeleteall_facts([]) :- !.
 
-flora_btdeleteall_facts([Fs|FL],[Fs|DFL]) :-
+flora_btdeleteall_facts([Fs|FL]) :-
 	flora_storage_deletelist_bt(Fs),
-	!,
-	%% Make this predicate backtrackable.
-	flora_storage_insertlist_bt(Fs),
-	!,
-	flora_storage_deletelist_bt(Fs),
-	flora_btdeleteall_facts(FL,DFL).
-
-flora_btdeleteall_facts([_Fs|FL],DFL) :-
-	flora_btdeleteall_facts(FL,DFL).
+	flora_btdeleteall_facts(FL).
 
 
 /*********************************************************************
@@ -327,19 +326,19 @@ fllibbterase(List,Condition) :-
 *****************************************************************************/
 flora_bterase_facts([]) :- !.
 
-flora_bterase_facts([F|Fs]) :-
+flora_bterase_facts([FLSYSDBUPDATE(P,StorageName)|Fs]) :-
 	!,
-	flora_bterase_one_fact(F),
+	flora_bterase_one_fact(P,StorageName),
 	flora_bterase_facts(Fs).
 
 
 /*****************************************************************************
-  flora_bterase_one_fact(+Fact)
+  flora_bterase_one_fact(+Fact,+StorageName)
 
   Note: For an F-logic fact this predicate continues to trace links and
         delete other F-logic facts. It always succeeds.
 *****************************************************************************/
-flora_bterase_one_fact(Fact) :-
+flora_bterase_one_fact(Fact,StorageName) :-
 	Fact =.. [Funct|Args],
 	( flora_flogic_predicate(Funct,Workspace,_Position,Base) ->
 	    ( Base == WRAP_ISA     -> Args=[O,_C]
@@ -367,16 +366,16 @@ flora_bterase_one_fact(Fact) :-
 	    true
 	;
 	  flora_setup_flogic_bswrapper(Workspace),
-	  flora_bterase_objects([O])
+	  flora_bterase_objects([O],StorageName)
 	).
 
 
 /*****************************************************************************
-  flora_bterase_objects(+ObjectList)
+  flora_bterase_objects(+ObjectList,+StorageName)
 *****************************************************************************/
-flora_bterase_objects([]) :- !.
+flora_bterase_objects([],_StorageName) :- !.
 
-flora_bterase_objects([O|OList]) :-
+flora_bterase_objects([O|OList],StorageName) :-
 	!,
 	flora_flogic_bswrapper(WRAP_ISA,WSBisa),
 	flora_flogic_bswrapper(WRAP_SUB,WSBsub),
@@ -402,14 +401,14 @@ flora_bterase_objects([O|OList]) :-
 	Wimvd =.. [WSBimvd,O,_,X],
 	Wmvdsig =.. [WSBmvdsig,O,_,X],
 	Wimvdsig =.. [WSBimvdsig,O,_,X],
-	findall(X,( storage_find_fact(FLORA_STORAGE_NAME,Wfd)
-                  ; storage_find_fact(FLORA_STORAGE_NAME,Wifd)
-	          ; storage_find_fact(FLORA_STORAGE_NAME,Wfdsig)
-                  ; storage_find_fact(FLORA_STORAGE_NAME,Wifdsig)
-                  ; storage_find_fact(FLORA_STORAGE_NAME,Wmvd)
-                  ; storage_find_fact(FLORA_STORAGE_NAME,Wimvd)
-                  ; storage_find_fact(FLORA_STORAGE_NAME,Wmvdsig)
-                  ; storage_find_fact(FLORA_STORAGE_NAME,Wimvdsig)
+	findall(X,( storage_find_fact(StorageName,Wfd)
+                  ; storage_find_fact(StorageName,Wifd)
+	          ; storage_find_fact(StorageName,Wfdsig)
+                  ; storage_find_fact(StorageName,Wifdsig)
+                  ; storage_find_fact(StorageName,Wmvd)
+                  ; storage_find_fact(StorageName,Wimvd)
+                  ; storage_find_fact(StorageName,Wmvdsig)
+                  ; storage_find_fact(StorageName,Wimvdsig)
 	          ),
                 AddedOList
                ),
@@ -432,23 +431,23 @@ flora_bterase_objects([O|OList]) :-
 	Pmvddef =.. [WSBmvddef,O,_],
 	Pimvddef =.. [WSBimvddef,O,_],
 	!,
-	flora_storage_deleteall_bt(Pisa),
-	flora_storage_deleteall_bt(Psub),
-	flora_storage_deleteall_bt(Pmeth),
-	flora_storage_deleteall_bt(Pimeth),
-	flora_storage_deleteall_bt(Ptran),
-	flora_storage_deleteall_bt(Pfd),
-	flora_storage_deleteall_bt(Pifd),
-	flora_storage_deleteall_bt(Pfdsig),
-	flora_storage_deleteall_bt(Pifdsig),
-	flora_storage_deleteall_bt(Pmvd),
-	flora_storage_deleteall_bt(Pimvd),
-	flora_storage_deleteall_bt(Pmvdsig),
-	flora_storage_deleteall_bt(Pimvdsig),
-	flora_storage_deleteall_bt(Pexists),
-	flora_storage_deleteall_bt(Pmvddef),
-	flora_storage_deleteall_bt(Pimvddef),
-	flora_bterase_objects(NextOList).
+	flora_storage_deleteall_bt(Pisa,StorageName),
+	flora_storage_deleteall_bt(Psub,StorageName),
+	flora_storage_deleteall_bt(Pmeth,StorageName),
+	flora_storage_deleteall_bt(Pimeth,StorageName),
+	flora_storage_deleteall_bt(Ptran,StorageName),
+	flora_storage_deleteall_bt(Pfd,StorageName),
+	flora_storage_deleteall_bt(Pifd,StorageName),
+	flora_storage_deleteall_bt(Pfdsig,StorageName),
+	flora_storage_deleteall_bt(Pifdsig,StorageName),
+	flora_storage_deleteall_bt(Pmvd,StorageName),
+	flora_storage_deleteall_bt(Pimvd,StorageName),
+	flora_storage_deleteall_bt(Pmvdsig,StorageName),
+	flora_storage_deleteall_bt(Pimvdsig,StorageName),
+	flora_storage_deleteall_bt(Pexists,StorageName),
+	flora_storage_deleteall_bt(Pmvddef,StorageName),
+	flora_storage_deleteall_bt(Pimvddef,StorageName),
+	flora_bterase_objects(NextOList,StorageName).
 
 
 /*********************************************************************
@@ -471,8 +470,8 @@ fllibbteraseall(List,Condition) :-
 	flora_list2conjunct([Condition|CallList],Goal),
 	findall(FactList,Goal,FsList),
 	!,
-	flora_btdeleteall_facts(FsList,DeletedFsList),
-	flora_bteraseall_facts(DeletedFsList).
+	flora_btdeleteall_facts(FsList),
+	flora_bteraseall_facts(FsList).
 
 
 /*****************************************************************************

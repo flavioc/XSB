@@ -52,7 +52,7 @@
 fllibshdirect(FL_PROLOG,Funct,Arity) :-
 	flora_shdefine_prolog(Funct,Arity).
 
-fllibshdirect(FL_NOHILOG,Funct,Arity) :-
+fllibshdirect(FL_PREDICATE,Funct,Arity) :-
 	flora_shdefine_nohilog(Funct,Arity).
 
 fllibshdirect(FL_OP,Preced,Assoc,Op) :-

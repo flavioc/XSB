@@ -49,6 +49,7 @@ is_prindex(PRINDEX(P,A,N),P,A,N).
 is_prhilogtable(PRHILOGTABLE(A),A).
 
 is_prthismodule(PRTHISMODULE(PRTHISMODULE)).
+is_prstorage(PRSTORAGE(WS),WS).
 is_pratom(PRATOM(Atom),Atom).
 is_prnumber(PRNUMBER(Number),Number).
 is_prvariable(PRVARIABLE(Name),Name).
@@ -437,6 +438,17 @@ flora_write_struct(Term,_Prefix) :-
 	is_prthismodule(Term),
 	!,
 	write('VAR_WORKSPACE').
+
+flora_write_struct(Term,_Prefix) :-
+	is_prstorage(Term,WSTerm),
+	!,
+	write('WSSTORAGE('),
+	( is_prthismodule(WSTerm) ->
+	    write('VAR_WORKSPACE')
+	;
+	  flora_write_functor(WSTerm)
+	),
+	write(')').
 
 flora_write_struct(Term,_Prefix) :-
 	atomic(Term),
@@ -900,7 +912,7 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	    Code=table(P/A)
 
 	; flora_nohilogdef(P,A) ->
-	    flora_build_workspace(P,DWS,NewP),
+	    flora_wspredicate(P,[],DWS,NewP),
 	    Code=table(NewP/A)
 	;
 	  Code=table(P/A)
@@ -910,7 +922,7 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	is_prhilogtable(Term,A),
 	!,
 	eval(A+1,N),
-	flora_build_workspace(WRAP_HILOG,DWS,NewP),
+	flora_wspredicate(WRAP_HILOG,[],DWS,NewP),
 	Code=table(NewP/N).
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
@@ -920,7 +932,7 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	    Code=dynamic(P/A)
 
 	; flora_nohilogdef(P,A) ->
-	    flora_build_workspace(P,DWS,NewP),
+	    flora_wspredicate(P,[],DWS,NewP),
 	    Code=dynamic(NewP/A)
 	;
 	  Code=dynamic(P/A)
@@ -933,11 +945,21 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	    Code=index(P/A,N)
 
 	; flora_nohilogdef(P,A) ->
-	    flora_build_workspace(P,DWS,NewP),
+	    flora_wspredicate(P,[],DWS,NewP),
 	    Code=index(NewP/A,N)
 	;
 	  Code=index(P/A,N)
 	).
+
+flora_build_struct(Term,DWS,_Prefix,_VarList,DWS) :-
+	is_prthismodule(Term),
+	!.
+
+flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
+	is_prstorage(Term,WSTerm),
+	!,
+	(is_prthismodule(WSTerm) -> WS=DWS; WS=WSTerm),
+	flora_storage_name(WS,Code).
 
 flora_build_struct(Term,_DWS,_Prefix,_VarList,Term) :-
 	atomic(Term),
@@ -973,25 +995,11 @@ flora_build_wsstruct(Term,WS,DWS,Prefix,VarList,Code) :-
 
 
 /****************************************************************************
-  flora_build_workspace(+Functor,+Workspace,-Code)
-
-  Note: This function must conform to the way macro is defined for workspace.
-****************************************************************************/
-flora_build_workspace(Funct,WS,Code) :-
-	fmt_write_string(Code,"%s'%s'%s",args(FLORA_PREFIX,WS,Funct)).
-
-
-/****************************************************************************
   flora_build_wsliteral(+Funct,+Arity,+Args,+WS,+DWS,+Prefix,?VarList,-Code)
 ****************************************************************************/
-flora_build_wsliteral(F,N,Args,WS,DWS,Prefix,VarList,Code) :-
-	flora_build_workspace(F,WS,FCode),
-	( N == 0 ->
-	    Code=FCode
-	;
-	  flora_build_structlist(Args,DWS,Prefix,VarList,ACode),
-	  Code =.. [FCode|ACode]
-        ).
+flora_build_wsliteral(F,_N,Args,WS,DWS,Prefix,VarList,Code) :-
+	flora_build_structlist(Args,DWS,Prefix,VarList,ACode),
+	flora_wspredicate(F,ACode,WS,Code).
 
 
 /****************************************************************************

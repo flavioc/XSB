@@ -33,11 +33,11 @@
 
 :- import str_cat/3 from string.
 
-:- import fmt_write_string/3 from file_io.
-
 :- import flora_nohilogdef/2 from flrnohilog.
 
 :- import flora_prlgdef/2 from flrprolog.
+
+:- import flora_wspredicate/4, flora_storage_name/2 from flrwrapper.
 
 :- export
 	flora_divide_program/3,

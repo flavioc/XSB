@@ -28,11 +28,20 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "standard.h"
 
 
 :- import file_write/2 from xsb_writ.
 
-:- export flora_write/2.
+:- export
+	flora_stderr_write/1,
+	flora_stdfdbk_write/1,
+	flora_write/2.
+
+
+/********************************************************************/
+flora_stderr_write(X) :- flora_write(STDERR,X).
+flora_stdfdbk_write(X) :- flora_write(STDFDBK,X).
 
 
 /********************************************************************/

@@ -41,7 +41,7 @@
 
 :- import flora_error_line/4 from flrprint.
 
-:- import flora_wspredicate/4 from flrwrapper.
+:- import flora_wspredicate/4, flora_storage_name/2 from flrwrapper.
 
 
 /*********************************************************************
@@ -78,19 +78,20 @@ flora_abolish([F/A],WS) :-
 	    abort
 	;
 	  flora_wspredicate(F,[],WS,P),
+	  flora_storage_name(WS,StorageName),
 	  abolish(P/A),
 	  functor(Fact,P,A),
-	  findall(Fact,storage_find_fact(FLORA_STORAGE_NAME,Fact),FactList),
-	  flora_storage_abolishlist(FactList)
+	  findall(Fact,storage_find_fact(StorageName,Fact),FactList),
+	  flora_storage_abolishlist(FactList,StorageName)
 	).
 
 
 /*****************************************************************************
-  flora_storage_abolishlist(+FactList)
+  flora_storage_abolishlist(+FactList,+StorageName)
 *****************************************************************************/
-flora_storage_abolishlist([]) :- !.
+flora_storage_abolishlist([],_StorageName) :- !.
 
-flora_storage_abolishlist([F|L]) :-
+flora_storage_abolishlist([F|L],StorageName) :-
 	!,
-	storage_delete_fact(FLORA_STORAGE_NAME,F,_Deleted),
+	storage_delete_fact(StorageName,F,_Deleted),
 	flora_storage_abolishlist(L).

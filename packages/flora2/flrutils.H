@@ -130,7 +130,7 @@
 	flora_message_line/2
    from flrprint.
 
-:- import flora_write/2 from flrdisplay.
+:- import flora_stderr_write/1 from flrdisplay.
 
 :- import flora_include/2 from flrlibman.
 

@@ -27,8 +27,8 @@
 
 :- compiler_options([xpp_on]).
 
-#include "standard.h"
 #include "flora_terms.flh"
+
 
 :- import flora_register_syslib/1 from flrlibman.
 
@@ -44,7 +44,7 @@
 	flLoad/2
    from flrutils.
 
-:- import flora_write/2 from flrdisplay.
+:- import flora_stderr_write/1 from flrdisplay.
 
 
 /*********************************************************************
@@ -93,7 +93,7 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace)) :-
 	      ;
 	        flora_error_heading,
 		flora_stderr_string('invalid module name: '),
-		flora_write(STDERR,Workspace),
+		flora_stderr_write(Workspace),
 		flora_stderr_nl
 	      ),
 	      !,
@@ -103,7 +103,7 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace)) :-
 	  flora_stderr_nl,
 	  flora_error_heading,
 	  flora_stderr_string('file name '),
-	  flora_write(STDERR,FileName),
+	  flora_stderr_write(FileName),
 	  flora_stderr_string(' invalid for loading'),
 	  flora_stderr_nl,
 	  !,
@@ -114,7 +114,7 @@ flora_load_file(X) :-
 	flora_stderr_nl,
 	flora_error_heading,
 	flora_stderr_string('file name '),
-	flora_write(STDERR,X),
+	flora_stderr_write(X),
 	flora_stderr_string(' invalid for loading'),
 	flora_stderr_nl,
 	!,

@@ -139,7 +139,7 @@ flrcoder.O : flrcoder.P flrcoder.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERROR
 	@echo 'mc(flrcoder,$(OPTION)).' >> cmd...
 
 
-flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(XSB_STANDARD) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
 	@echo 'mc(flrutils,$(OPTION)).' >> cmd...
 
 
@@ -168,6 +168,15 @@ init:
 
 finish:
 	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
+
+
+clean:
+	/bin/rm -f *~ *.O
+	cd syslib; $(MAKE) clean
+	cd closure; $(MAKE) clean
+	cd trailer; $(MAKE) clean
+	/bin/rm -f closureinc/*~
+	/bin/rm -f syslibinc/*~
 
 
 .DONE:

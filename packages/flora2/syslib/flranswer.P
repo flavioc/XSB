@@ -59,7 +59,7 @@
 	flora_stdfdbk_line/1
    from flrprint.
 
-:- import flora_write/2 from flrdisplay.
+:- import flora_stdfdbk_write/1 from flrdisplay.
 
 :- dynamic flora_switch(_).
 
@@ -210,5 +210,5 @@ flora_write_pairs([]).
 flora_write_pairs([N=V|NVs]) :-
 	flora_stdfdbk_nl,
 	flora_stdfdbk_string("%s = ",args(N)),
-	flora_write(STDFDBK,V),
+	flora_stdfdbk_write(V),
 	flora_write_pairs(NVs).

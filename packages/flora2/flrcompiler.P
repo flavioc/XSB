@@ -59,7 +59,8 @@ is_flimport(FLIMPORT(P,A,M),P,A,M).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 is_flsignature(FLSIGNATURE(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
-is_flnohilog(FLNOHILOG(F,N),F,N).
+is_flnonhilogpredicate(FLNONHILOGPREDICATE(F,N),F,N).
+is_flpredicate(FLPREDICATE(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
 is_flhilogtable(FLHILOGTABLE(A),A).
 is_flequality(FLEQUALITY(A),A).
@@ -187,6 +188,7 @@ list_struct(List,Term,PRLIST(List,Term)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
+storage_struct(WS,PRSTORAGE(WS)).
 
 workspacelit_struct(P,WS,Code) :-
 	( is_flatom(WS,WSAtom) ->
@@ -212,6 +214,8 @@ prologterm_struct(FL_ASSIGN,2,Args,PROLOGTERM(FL_IS,2,Args)) :- !.
 prologterm_struct(F,N,Args,PROLOGTERM(F,N,Args)).
 
 florasyslib_struct(F,N,Args,FLORASYSLIB(F,N,Args)) :- report_option(FLSYSLIB(F)).
+
+is_florasyslib_struct(FLORASYSLIB(_F,_N,_Args)).
 
 termobj_struct(FObj,N,ObjList,PRTERM(FObj,N,ObjList)).
 
@@ -418,6 +422,7 @@ new_predicate(Name) :-
 /****************************************************************************
   reset_newvar/0
   new_varobj(-CompiledVarObj)
+  new_varobjlist(+Number,-List)
 ****************************************************************************/
 reset_newvar :- conset(NEWVAR,1).
 
@@ -429,6 +434,14 @@ new_varobj(VarObj) :-
 	atom_codes(NAtm,NLst),
 	str_cat(NEWVAR,NAtm,Name),
 	varobj_struct(Name,VarObj).
+
+
+new_varobjlist(0,[]) :- !.
+
+new_varobjlist(N,[VarObj|L]) :-
+	new_varobj(VarObj),
+	M is N-1,
+	new_varobjlist(M,L).
 
 
 /****************************************************************************
@@ -829,8 +842,21 @@ compile_direct(DirectTerm,[],[]) :-
 	flora_define_prolog(P,N),
 	!.
 
+compile_direct(DirectTerm,[Code],[]) :-
+	is_flpredicate(DirectTerm,P,N),
+	flora_define_nohilog(P,N),
+	%% Generate the patch rule.
+	atomobj_struct(P,PCode),
+	new_varobjlist(N,ArgsCode),
+	termlit_struct(PCode,N,ArgsCode,HCode),
+	thismodule_struct(WS),
+	storage_struct(WS,SCode),
+	prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
+	rule_struct(HCode,BCode,Code),
+	!.
+
 compile_direct(DirectTerm,[],[]) :-
-	is_flnohilog(DirectTerm,P,N),
+	is_flnonhilogpredicate(DirectTerm,P,N),
 	flora_define_nohilog(P,N),
 	!.
 
@@ -1160,7 +1186,7 @@ compile_signpathexplist([T|L],[FL_OID|SignList],[TObj|LObj],Code,Status) :-
 	  Status=S
         ).
 
-compile_signpathexplist([T|L],[FL_FORMULAR|SignList],[TCode|LObj],Code,Status) :-
+compile_signpathexplist([T|L],[FL_BODYFORMULAR|SignList],[TCode|LObj],Code,Status) :-
 	!,
 	compile_body(T,TCode,S),
 	( S == [] ->
@@ -1933,7 +1959,7 @@ compile_wsflsignpathexplist([T|L],[FL_OID|SignList],WS,[TObj|LObj],Code,Status) 
 	  Status=S
         ).
 
-compile_wsflsignpathexplist([T|L],[FL_FORMULAR|SignList],WS,[TCode|LObj],Code,Status) :-
+compile_wsflsignpathexplist([T|L],[FL_BODYFORMULAR|SignList],WS,[TCode|LObj],Code,Status) :-
 	!,
 	%% workspace not distributive over nested "form"
 	compile_body(T,TCode,S),
@@ -2752,7 +2778,7 @@ compile_head_wsflobjeql(Obj1,Obj2,WS,CodeList,Status) :-
   compile_flinsert(+Op,+List,+Cond,-Code,-Status)
 ****************************************************************************/
 compile_flinsert(Op,List,Cond,Code,Status) :-
-	compile_flinsert_list(List,CodeList,S),
+	compile_flinsert_literals(List,CodeList,S),
 	( S == [] ->
 	    compile_body(Cond,CondCode,Status),
 	    ( Status == [] ->
@@ -2770,13 +2796,21 @@ compile_flinsert(Op,List,Cond,Code,Status) :-
   compile_flinsert(+Op,+List,-Code,Status)
 ****************************************************************************/
 compile_flinsert(Op,List,Code,Status) :-
-	compile_flinsert_list(List,CodeList,Status),
+	compile_flinsert_literals(List,CodeList,Status),
 	( Status == [] ->
 	    list_struct(CodeList,[],ListCode),
 	    insert_struct(Op,ListCode,Code)
 	;
 	  true
         ).
+
+
+/****************************************************************************
+  compile_flinsert_literals(+List,-DBCodeList,-Status)
+****************************************************************************/
+compile_flinsert_literals(List,DBCodeList,Status) :-
+	compile_flinsert_list(List,CodeList,Status),
+	(Status == [] -> compile_dbupdate_list(CodeList,DBCodeList); true).
 
 
 /****************************************************************************
@@ -2804,7 +2838,7 @@ compile_flinsert_list([H|T],CodeList,Status) :-
   compile_fldelete(+Op,+List,+Cond,-Code,-Status)
 ****************************************************************************/
 compile_fldelete(Op,List,Cond,Code,Status) :-
-	compile_fldelete_list(List,CodeList,S),
+	compile_fldelete_literals(List,CodeList,S),
 	( S == [] ->
 	    compile_body(Cond,CondCode,Status),
 	    ( Status == [] ->
@@ -2822,13 +2856,21 @@ compile_fldelete(Op,List,Cond,Code,Status) :-
   compile_fldelete(+Op,+List,-Code,-Status)
 ****************************************************************************/
 compile_fldelete(Op,List,Code,Status) :-
-	compile_fldelete_list(List,CodeList,Status),
+	compile_fldelete_literals(List,CodeList,Status),
 	( Status == [] ->
 	    list_struct(CodeList,[],ListCode),
 	    delete_struct(Op,ListCode,Code)
 	;
 	  true
         ).
+
+
+/****************************************************************************
+  compile_fldelete_literals(+List,-DBCodeList,-Status)
+****************************************************************************/
+compile_fldelete_literals(List,DBCodeList,Status) :-
+	compile_fldelete_list(List,CodeList,Status),
+	(Status == [] -> compile_dbupdate_list(CodeList,DBCodeList); true).
 
 
 /****************************************************************************
@@ -2851,6 +2893,25 @@ compile_fldelete_list([H|T],CodeList,Status) :-
 	;
 	  Status=S
         ).
+
+
+/****************************************************************************
+  compile_dbupdate_list(+CodeList,-DBCodeList)
+****************************************************************************/
+compile_dbupdate_list([],[]) :- !.
+
+compile_dbupdate_list([C|CL],[C|DBCodeList]) :-
+	( is_varobj_struct(C)
+        ; is_florasyslib_struct(C)
+	),
+	!,
+	compile_dbupdate_list(CL,DBCodeList).
+
+compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
+	(workspace_struct(_P,WS,C) -> true; thismodule_struct(WS)),
+	storage_struct(WS,SCode),
+	prologterm_struct(FLSYSDBUPDATE,2,[C,SCode],DBCode),
+	compile_dbupdate_list(CL,DBCodeList).
 
 
 /****************************************************************************
@@ -2920,10 +2981,10 @@ compile_execdirect(DirectTerm,Code) :-
 	    (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
 	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_PROLOG,FunctCode,ArityCode],Code)
 
-	; is_flnohilog(DirectTerm,Funct,Arity) ->
+	; is_flpredicate(DirectTerm,Funct,Arity) ->
 	    (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
 	    (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
-	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_NOHILOG,FunctCode,ArityCode],Code)
+	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_PREDICATE,FunctCode,ArityCode],Code)
 
 	; is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
 	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_OP,Precedence,Associativity,Op],Code)
