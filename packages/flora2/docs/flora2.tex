@@ -4480,6 +4480,18 @@ The latter feature is usually useful only in conjunction with the aforesaid
 prompt-off mode. See the XSB manual for additional information on debugger
 control.
 
+\FLORA provides a convenient shortcut that capture some of the most common
+uses of the aforesaid {\tt debug\_ctl} interface. Executing
+%%
+\begin{quote}
+  {\tt ?- flTrace(filename).}
+\end{quote}
+%%
+will switch \FLORA to non-interactive trace mode
+and the entire trace will be dumped to file {\tt filename}.
+Note that you have to execute {\tt flNoTrace} or exit XSB in order for the
+entire file to be flushed on disk.
+
 \index{flTraceLow}
 %%
 \paragraph{Low-level tracing.}
@@ -4489,6 +4501,14 @@ subgoals to subgoals that are found in the user program and are thus
 meaningful to the programmer. With low-level tracing, the debugger displays
 the actual XSB subgoals (of the compiled .P program) that are being
 executed. This facility is useful for debugging \FLORA runtime libraries.
+
+As with {\tt flTrace}, \FLORA provides a convenient shortcut that allows
+the entire execution trace to be dumped into a file:
+%%
+\begin{quote}
+ \tt ?- flTraceLow(filename).  
+\end{quote}
+%%
 
 {\bf Note:} \FLORA turns on various XSB optimizations. Some (like
 specialization and unification factoring) can cause certain subgoals to

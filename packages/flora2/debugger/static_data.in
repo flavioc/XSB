@@ -38,8 +38,10 @@ hide_this_hide(flora_shell_command_line,3).
 hide_this_hide(flora_write_goal,1).
 
 hide_this_hide(flTrace,0).
+hide_this_hide(flTrace,1).
 hide_this_hide(flNoTrace,0).
 hide_this_hide(flTraceLow,0).
+hide_this_hide(flTraceLow,1).
 hide_this_hide(flNoTraceLow,0).
 
 hide_this_hide(flOne,0).

@@ -107,5 +107,4 @@
    from flrdebugger.
 
 :- dynamic flora_switch(_).
-
 :- index(flora_switch/1,trie).
