@@ -1,10 +1,9 @@
-/* File:      flrimport.H
-**
+/* -*-prolog-mode-*-
+** File:      prolog_includes/flora2.Ph
 ** Author(s): kifer
-**
 ** Contact:   xsb-contact@cs.sunysb.edu
-**
-** Copyright (C) The Research Foundation of SUNY, 1999-2001
+** 
+** Copyright (C) The Research Foundation of SUNY, 2001
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -21,17 +20,13 @@
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
-**
+** 
 */
 
 
-:- import term_new/2, term_psc/2 from machine.
-:- import flora_load_module_internal/2 from flrutils.
-:- import flora_wssymbol/3, flora_wshilog/2 from flrwrapper.
-:- export
-	flImportFloraPred/4,
-	flImportProlog/4,
-	flImportHiLog/4.
-
-
-
+:- bootstrap_flora.
+:- import 
+	(flImport)/1,
+	(flLoad)/1,
+	(flModule)/1
+   from flora2.

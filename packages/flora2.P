@@ -44,6 +44,10 @@
 	flImportFloraPred/4
    from flrimport.
 
+:- import
+	flora_load_module_internal/2, flora_load_module_internal/1
+   from flrutils.
+
 :- import fmt_write_string/3 from file_io.
 
 :- import flora_shell_loop/0 from usermod.
@@ -54,7 +58,7 @@
 
 :- import (dynamic)/1, assert/1 from assert.
 
-:- import abort/1, (index)/2, op/3 from standard.
+:- import abort/1, (index)/2, op/3, atom/1 from standard.
 
 :- import notrace/0 from debugger.
 
@@ -69,7 +73,9 @@
 :- export
 	bootstrap_flora/0,
 	unstrap_flora/0,
-	flImport/1,
+	(flImport)/1,
+	(flLoad)/1,
+	(flLoad)/2,
 	flora_shell/0.
 
 
@@ -132,6 +138,9 @@ flora_shell :-
   Syntax:
       :- flImport [flHilog|flProlog|flPredicate] Pred/Arity as Pred1(_,_,...)
                                 from File[.flr]>>FloraModule
+  or
+      :- flImport [flHilog|flProlog|flPredicate] Pred/Arity as Pred1(_,_,...)
+                                from FloraModule
 ************************************************************************/
 
 :- op(1150,fx,(flProlog)).
@@ -140,12 +149,31 @@ flora_shell :-
 
 :- op(500,yfx,(as)).
 :- op(1170,fx,(flImport)).
+
+:- op(1050,fx,(flLoad)).	% loads file into module: flLoad(File>>Module)
+:- op(1050,fx,(flModule)).	% checks if the module is loaded
 %% The other operators, '>>' and 'from' are already defined in XSB
 
-flImport(flHilog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
-	flImportHiLog(What,AsWhat,File,Module).
-flImport(flProlog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
-	flImportProlog(What,AsWhat,File,Module).
+flImport(flHilog(from(as(What,AsWhat),FileMod))) :- !,
+	(atom(FileMod) 
+	-> flImportHiLog(What,AsWhat,_,FileMod)
+	; FileMod = File>>Module 
+	-> flImportHiLog(What,AsWhat,File,Module)
+	).
+
+flImport(flProlog(from(as(What,AsWhat), FileMod))) :- !,
+	(atom(FileMod)
+	-> flImportProlog(What,AsWhat,_,FileMod)
+	; FileMod = File>>Module 
+	-> flImportProlog(What,AsWhat,File,Module)
+	).
 flImport(flPredicate(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
-	flImportFloraPred(What,AsWhat,File,Module).
+	(atom(FileMod)
+	-> flImportFloraPred(What,AsWhat,_,FileMod)
+	; FileMod = File>>Module 
+	-> flImportFloraPred(What,AsWhat,File,Module)
+	).
 flImport(X) :- abort(['Invalid flImport syntax: ', X]).
+
+flLoad(File>>Workspace) :- flora_load_module_internal(File,Workspace).
+flLoad(Workspace) :- flora_load_module_internal(Workspace).

@@ -81,14 +81,14 @@ flCompile(File,Workspace) :-
 /*************************************************************************
   flConsult(+File)
 *************************************************************************/
-flConsult(File) :- flLoad(File).
+flConsult(File) :- flora_load_module_internal(File).
 
 
 /**********************************************************************
-  flLoad(+File,+Workspace)
+  flora_load_module_internal(+File,+Workspace)
   File must be a FLORA file.
 **********************************************************************/
-flLoad(File,Workspace) :-
+flora_load_module_internal(File,Workspace) :-
 	flora_check_filename(File),
 	flora_check_workspace(Workspace),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
@@ -110,10 +110,10 @@ flLoad(File,Workspace) :-
 
 
 /**********************************************************************
-  flLoad(+File)
+  flora_load_module_internal(+File)
   File may be a FLORA file, .P file, or .O file.
 **********************************************************************/
-flLoad(File) :-
+flora_load_module_internal(File) :-
 	flora_check_filename(File),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,FLORA_DEFAULT_WORKSPACE)
