@@ -48,6 +48,12 @@ case check_complete: {
 
   SUBGOAL = tcp_subgoal_ptr(breg);	/* get the subgoal that is checked */
 
+#ifdef DEBUG_DELAY
+  xcurcall = SUBGOAL;
+  fprintf(stderr, ">>>> check_complete is called.  The checked subgoal is: ");
+  print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
+#endif
+
   CC_CSPTR = subg_compl_stack_ptr(SUBGOAL);
 
   if ((prev_compl_frame(CC_CSPTR) >= COMPLSTACKBOTTOM || is_leader(CC_CSPTR))) {
@@ -292,6 +298,7 @@ case check_complete: {
 	lpcreg = (byte *)subg_ans_root_ptr(SUBGOAL);
 	/* backtrack to prev tabled subgoal after returning answers */
 	breg =  tcp_prevbreg(orig_breg); /* orig_???*/ 
+	delay_it = 1;
 	goto contcase;
       } /* if there are answers */   
       else { /* no answers to return */
