@@ -118,6 +118,8 @@ help :-
 	flora_stdmsg_line('    load FILE.flr (into the default module `main''), or FILE.P or FILE.O'),
 	flora_stdmsg_line('o [FILE[.{P|O|flr}][>> Module],...]'),
 	flora_stdmsg_line('    load a list of .flr (into the module `Module''), .P, or .O files'),
+	flora_stdmsg_line('o rundemo(FILE)'),
+	flora_stdmsg_line('    flconsult a demo from FLORA demos directory'),
 	flora_stdmsg_line('o flloadtrailer({standard|equality},Module)'),
 	flora_stdmsg_line('    load the standard/equality trailer into the module `Module'''),
 	flora_stdmsg_line('o flloadtrailer({standard|equality})'),
