@@ -2,6 +2,7 @@
 
 :- import member/2,length/2,append/3 from basics.
 :- import reset_gennum/0,tp_gensym/2 from tp_utils.
+
 :- [cdftp_getObj].
 :- [cdftp_preproc].
 
@@ -17,21 +18,24 @@ set_debug_on:-
 	retractall(debugging(_)),
 	assert(debugging(on)).
 
-%nonDetType(acyclic).
-nonDetType(all).
+nonDetType(acyclic).
+%nonDetType(all).
 
-sat_test(Exprin):- 
-	preprocess(Exprin,Expr),
-	(sat(Expr,AbdIn,ConstIn) ->
-	    apply_ics(AbdIn,AbdOut,ConstIn,ConstOut),
-	    tp_writeln(world(AbdOut,ConstOut))
+sat_test(Expr,N):- 
+	(sat(Expr,AbdIn,ConstIn,N) ->
+%	    apply_ics(AbdIn,AbdOut,ConstIn,ConstOut),
+	    tp_writeln(world(AbdIn,ConstIn))
 	  ; writeln(cannot_satisfy(Expr)),fail).
 	
 sat(Expr):- sat(Expr,_,_).
 
-sat(Expr,AbdOut,ConstOut):- 
+sat(Expr,AbdOut,ConstOut,N):- 
 	reset_gennum,
+	(integer(N) -> 
+	    true 
+	  ; cdf_error(tp,['Unknown number of classes in ',Expr]),fail),
 	meta(Expr,x,abd([],[x]),AbdOut,[],ConstOut),
+	writeln('....checking'(ConstOut,AbdOut)),
 	checkFinalConstraints(ConstOut,AbdOut).
 
 subsumes(Big,Little):- \+ sat((Little,not(Big))).
@@ -312,17 +316,6 @@ finalConstraintFailure(Const,Const,Abd):-
 	         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% TLS: probably need to do LFP
-apply_ics(abd(Abdin,Elts),AbdOut,ConstIn,ConstOut):- 
-	findall(not(Ic),ic(Ic),IcList),
-	list_to_comma(IcList,Ics),
-	apply_ics_1(Elts,Ics,abd(Abdin,Elts),AbdOut,ConstIn,ConstOut),!.
-
-apply_ics_1([],_Ics,Abd,Abd,Const,Const).
-apply_ics_1([Elt|Rest],Ics,AbdIn,AbdOut,ConstIn,ConstOut):- 
-	meta(Ics,Elt,AbdIn,AbdMid,ConstIn,ConstMid), 
-	apply_ics_1(Rest,Ics,AbdMid,AbdOut,ConstMid,ConstOut).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 abduced_subrel(rel(E,R,E1),Struct):- 
@@ -397,3 +390,16 @@ choose1(N,Eset,Set,New):-
 	      createNewElts(Diff,New),
 	      append(Eset,New,Set)
 	   ;  choose2(N,Eset,Set)).
+
+
+% TLS: probably need to do LFP
+apply_ics(abd(Abdin,Elts),AbdOut,ConstIn,ConstOut):- 
+	findall(not(Ic),ic(Ic),IcList),
+	list_to_comma(IcList,Ics),
+	apply_ics_1(Elts,Ics,abd(Abdin,Elts),AbdOut,ConstIn,ConstOut),!.
+
+apply_ics_1([],_Ics,Abd,Abd,Const,Const).
+apply_ics_1([Elt|Rest],Ics,AbdIn,AbdOut,ConstIn,ConstOut):- 
+	meta(Ics,Elt,AbdIn,AbdMid,ConstIn,ConstMid), 
+	apply_ics_1(Rest,Ics,AbdMid,AbdOut,ConstMid,ConstOut).
+

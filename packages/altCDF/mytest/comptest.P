@@ -1,7 +1,8 @@
 
 :- [altcdf].
 
-:- import load_extensional_facts/1 from cdf_io.
+:- import load_extensional_facts/1,
+	  load_intensional_rules/1 from cdf_io.
 :- import update_all_components/2 from cdf_comps_noshare.
 :- import load_component/3 from cdf_comps_share.
 :- import retractallExtTerm/1 from cdf_init_cdf.
@@ -11,7 +12,10 @@ reset:-
 
 updtest1:- 
 	load_extensional_facts('cdftest1'),
+	load_intensional_rules('cdftest1'),
 	update_all_components('mytest/cdfcomp1',[action(create)]).
+
+mkinit:- shell('cp cdftest1/initialization_file.P cdfcomp1/test').
 
 loadtest1:- 
 	load_component(testo1,'mytest/cdfcomp1',[]).
@@ -60,14 +64,3 @@ check_deps :-
 
 
 end_of_file.
-
-try in different sessions
-
-updtest1.
-
- loadtest1, loadtest2, 
-
-updtest1  
-
-oadtest1,loadtest1.
-  

@@ -1,4 +1,3 @@
-
 isa_ext(cid(electronicPart,o1),cid('CDF Classes',cdf)).
   isa_ext(cid(stereo,o1),cid(electronicPart,o1)).
     isa_ext(cid(expensiveStereo,o1),cid(stereo,o1)).
@@ -8,17 +7,30 @@ isa_ext(cid(electronicPart,o1),cid('CDF Classes',cdf)).
   isa_ext(cid(amplifier,o1),cid(electronicPart,o1)).
   isa_ext(cid(speaker,o1),cid(electronicPart,o1)).
 
-isa_ext(cid(size,o1),cid(cdfroot,o1)).
+isa_ext(cid(size,o1),cid('CDF Classes',o1)).
   isa_ext(cid(big,o1),cid(size,o1)).
   isa_ext(cid(small,o1),cid(size,o1)).
 
-hasAttr_ext(cid(stereo,o1),rid(amplifier,o1),cid(size,o1)).
+necessCond_ext(cid(big,o1),vid(not(cid(small,o1)))).
 
-maxAttr_ext(cid(expensiveStereo,o1),rid(amplifier,o1),cid(big,o1),1).
+hasAttr_ext(cid(stereo,o1),rid(hasAmplifier,o1),cid(size,o1)).
 
-maxAttr_ext(cid(bookshelfStereo,o1),rid(amplifier,o1),cid(small,o1),1).
+necessCond_ext(cid(speaker,o1),vid(exists(rid(hasManufacturer,o1),
+	                                            ';'(cid(spender,o1),
+					 ';'(cid(advent,o1),cid(ba,o1)))))).
+
+%minAttr_ext(cid(expensiveStereo,o1),rid(hasSpeaker,o1),cid(speaker,o1),1).
+% Note that this increases the search space for 
+% expBookStereo 
+minAttr_ext(cid(expensiveStereo,o1),rid(hasSpeaker,o1),cid(speaker,o1),4).
+
+% Contradiction here: cant have big and small for expBookStereo
+maxAttr_ext(cid(expensiveStereo,o1),rid(hasAmplifier,o1),cid(size,o1),1).
+hasAttr_ext(cid(expensiveStereo,o1),rid(hasAmplifier,o1),cid(big,o1)).
+
+maxAttr_ext(cid(bookshelfStereo,o1),rid(hasAmplifier,o1),cid(size,o1),1).
+hasAttr_ext(cid(bookshelfStereo,o1),rid(hasAmplifier,o1),cid(small,o1)).
 
 end_of_file.
 
-ic((big,small)).
 

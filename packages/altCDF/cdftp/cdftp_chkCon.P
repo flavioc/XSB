@@ -4,6 +4,7 @@
 :- [altCDF].
 
 :- import allAttr/3, immed_classHasAttr/3, hasAttr/3, 
+	   necessCond/2,
 	   isa/2, maxAttr/4, minAttr/4 from cdf_init_cdf.
 :- import cdf_id_fields/4, system_component/1,abolish_cdf_tables/0
 	    from cdf_init_cdf.
@@ -31,8 +32,8 @@ classify(Expr,Class):-
 	cdf_id_fields(Class,cid,_C,Comp),
 	\+ system_component(Comp),
 	findall(Conj,cdf_to_ce(Class,Conj),CEList),
-	tp_writeln(ce(Class,CEList)),
-	preprocess([Class|CEList],CEForm),
+	preprocess([Class|CEList],CEForm,_N),
+	tp_writeln(CEForm),
 	subsumes(CEForm,Expr),
 	(\+ isa_ext(cid(_,_),Class) -> 
 	      writeln(classifying(Expr,Class))
@@ -66,26 +67,65 @@ descend(Class):-
 	descend(cid(NewClass,S)),
 	fail.
 
+
+%--------------------------------------------------
+
+expand_all:- 
+	cputime(Start),
+	conset(expand,0),
+	expand_all_1,
+	cputime(End),
+	Tot is End - Start,
+	conget(expand,N),
+	message(['Cputime ',Tot,' for ',N,' Classes.']).
+
+expand_all_1:- 
+	isa_ext(X,cid('CDF Classes',cdf)),
+	expand(X),
+	fail.
+expand_all_1.
+
+:- table expand/1.
+expand(Class):-
+	abolish_cdf_tables,
+	coninc(expand),
+	expand1(Class),
+	isa_ext(cid(NewClass,S),Class),
+	expand(cid(NewClass,S)),
+	fail.
+
+expand1(Class):-
+	cdf_id_fields(Class,cid,_C,Comp),
+	\+ system_component(Comp),
+	findall(Conj,cdf_to_ce(Class,Conj),CEList),
+	preprocess(CEList,CEForm,N),
+	writeln(ce(Class,CEForm),N).
+
+%----------------------------------------------------
+
 % atomic	
 check_consist(Class):-
 	cdf_id_fields(Class,cid,_C,Comp),
 	\+ system_component(Comp),
 	findall(Conj,cdf_to_ce(Class,Conj),CEList),
-	tp_writeln(ce(Class,CEList)),
-	sat_test([Class|CEList]).
+	preprocess([Class|CEList],CEForm,_N),
+	tp_writeln(ce(CEForm)),
+	sat_test(CEForm,N).
 
 cdf_to_ce(Class,Form):- 
 	(hasAttr(Class,R,C) ; immed_classHasAttr(Class,R,C)),
 	(C = oid(_,_) -> 
 	    cdf_warning(tp,['omitting ',hasAttr(Class,R,C),
 	                            ' in consist check'])
-	  ; Form = exists(R,C)).
+	  ;  \+ (minAttr(Class,R,C,N),N > 1),
+	     Form = exists(R,C)).
 cdf_to_ce(Class,Form):- 
 	minAttr(Class,R,C,N),
 	(C = oid(_,_) -> 
 	    cdf_warning(tp,['omitting ',hasAttr(N,Class,R,C),
 	                            ' in consist check'])
-	  ; Form = atLeast(N,R,C)).
+	  ;  \+ (N == 1,hasAttr(Class,R,C)),
+                  Form = atLeast(N,R,C)).
 cdf_to_ce(Class,Form):- 
 	allAttr(Class,R,C),
 	(C = oid(_,_) -> 
@@ -96,4 +136,6 @@ cdf_to_ce(Class,Form):-
 	(C = oid(_,_) -> 
 	    cdf_warning(tp,['omitting ',maxAttr(N,Class,R,C),
 	                            ' in consist check'])
-	  ; Form = atMost(N,R,C, N)).
+	  ; Form = atMost(N,R,C)).
+cdf_to_ce(Class,Form):- 
+	necessCond(Class,vid(Form)).

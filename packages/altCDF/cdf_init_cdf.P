@@ -3,7 +3,8 @@
 	explosive_isa/2,
 	cdf_id_fields/4,
 	cdf_root/1,
-	ic/1, 
+%	ic/1, 
+	necessCond/2,
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
 	hasAttr/3, immed_hasAttr/3, 
 	allAttr/3, immed_allAttr/3, 
@@ -28,11 +29,13 @@
 :- import apply_checks/2 
 	from cdf_checks.
 
-:- import ic_ext/1, isa_ext/2, hasAttr_ext/3, minAttr_ext/4,
+:- import necessCond_ext/2, %ic_ext/1, 
+              isa_ext/2, hasAttr_ext/3, minAttr_ext/4,
 	  classHasAttr_ext/3, allAttr_ext/3,maxAttr_ext/4
 						from usermod.
 
-:- import ic_int/1, isa_int/2, hasAttr_int/3, minAttr_int/4,
+:- import necessCond_int/2, %ic_int /1, 
+	  isa_int/2, hasAttr_int/3, minAttr_int/4,
 	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4
 						from  usermod.
 
@@ -60,8 +63,11 @@
 
 %%%%%%%%%%%%% Core Declarations 
 
-cdf_dynamic(ic_ext/1).
-cdf_index(ic_ext,1,[]).
+%cdf_dynamic(ic_ext/1).
+%cdf_index(ic_ext,1,[]).
+
+cdf_dynamic(necessCond_ext/2).
+cdf_index(necessCond_ext,2,[*(1)]).
 
 cdf_dynamic(isa_ext/2).
 cdf_index(isa_ext,2,[*(1),*(2)]).
@@ -79,7 +85,9 @@ cdf_index(maxAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
 
 %%%%%%%%%%%%% Declarations for External Intensional View
 
-cdf_dynamic(ic_int/1).
+%cdf_dynamic(ic_int/1).
+
+cdf_dynamic(necessCond_int/2).
 
 cdf_dynamic(isa_int/2).
 
@@ -472,10 +480,35 @@ isa_bf_inner(Sub,Sup):-
 	isa_bf_inner(Mid,Sup).
 
 % Here implicit would fail; just do immediate, and look down. 
-isa_fx(Sub,Sub).
 isa_fx(Sub,Sup):- 
-	immed_isa1(Mid,Sup),
-	isa_fx(Sub,Mid).
+	 (nonvar(Sub),Sub = cid(_,_) -> 
+	    isa_subclass_fx(Sub,Sup)
+	      ; (nonvar(Sub),Sub = rid(_,_) -> 
+	             isa_subrel_fx(Sub,Sup)
+	           ; (nonvar(Sub),Sub = crid(_,_) -> 
+	                  isa_subcrel_fx(Sub,Sup)
+		    ; isa_nospec_fx(Sub,Sup) ) ) ).
+	         
+isa_nospec_fx(Sub,Sub).
+isa_nospec_fx(Sub,Sup):- 
+	immed_isa1(Sub,Sup),
+	isa_nospec_fx(Sub,Sup).
+
+isa_subclass_fx(Sub,Sub).
+isa_subclass_fx(Sub,Sup):- 
+	immed_isa1(cid(MN,MS),Sup),
+	isa_subclass_fx(Sub,cid(MN,MS)).
+
+isa_subrel_fx(Sub,Sub).
+isa_subrel_fx(Sub,Sup):- 
+	immed_isa1(rid(MN,MS),Sup),
+	isa_subrel_fx(Sub,rid(MN,MS)).
+
+isa_subcrel_fx(Sub,Sub).
+isa_subcrel_fx(Sub,Sup):- 
+	immed_isa1(crid(MN,MS),Sup),
+	isa_subcrel_fx(Sub,crid(MN,MS)).
+
 
 :- comment(proper_isa/2, "@tt{proper_isa(Sub,Sup)} is true if @tt{Sub}
 is lower in the isa hierarchy than @tt{Sup}, but is not the same
@@ -1172,8 +1205,11 @@ not_max_implicative_maxAttr_23fix(Term,BindPat) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-ic(Formula):- ic_ext(Formula).
-ic(Formula):- ic_int(Formula).
+%ic(Formula):- ic_ext(Formula).
+%ic(Formula):- ic_int(Formula).
+
+necessCond(Class,Formula):- necessCond_ext(Class,Formula).
+necessCond(Class,Formula):- necessCond_int(Class,Formula).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

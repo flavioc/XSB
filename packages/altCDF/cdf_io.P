@@ -8,11 +8,13 @@
 %:- import (:-)/2 from usermod.
 
 :- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3,
-	ic_ext/1, minAttr_ext/4, maxAttr_ext/4
+	necessCond_ext/2, %ic_ext/1, 
+	minAttr_ext/4, maxAttr_ext/4
 		 from usermod.
 
 :- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3,
-	  ic_int/1, minAttr_int/4, maxAttr_int/4
+	  necessCond_int/2, % ic_int/1, 
+	  minAttr_int/4, maxAttr_int/4
 		 from usermod.
 
 :- import component_table_int/3 from usermod.
@@ -74,7 +76,8 @@ sort_and_write_terms(_Terms).
 cdf_ext_inst(Term):-
 	(Term = allAttr_ext(_,_,_) ; 
 	 Term = classHasAttr_ext(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
-	 Term = ic_ext(_) ; Term = isa_ext(_,_) ; 
+%	 Term = ic_ext(_) 
+             Term = necessCond_ext(_,_) ; Term = isa_ext(_,_) ; 
 	 Term = minAttr_ext(_,_,_,_) ; Term = maxAttr_ext(_,_,_,_) ).
 
 dump_extensional_facts_2:- 
@@ -150,11 +153,14 @@ merge_intensional_rules :-
 	 ;
 	 retractall(hasAttr_int(_,_,_)),
 
-	 ic_int(Form),\+ ic_ext(Form),
-	 asserta(ic_ext(Form)),
+%	 ic_int(Form),\+ ic_ext(Form),
+%	 asserta(ic_ext(Form)),
+%	 fail
+	 necessCond_int(Class,Form),\+ necessCond_ext(Class,Form),
+	 asserta(necessCond_ext(Class,Form)),
 	 fail
 	 ;
-	 retractall(ic_int(_)),
+	 retractall(necessCond_int(_,_)),
 
 	 isa_int(CCid,PCid),\+ isa_ext(CCid,PCid),
 	 asserta(isa_ext(CCid,PCid)),
