@@ -10,9 +10,9 @@
 	in_hierarchy/1,
 	newExtTerm/1, newExtTerm/2, retractallExtTerm/1,
 	initialize_state/0, system_component/1, initialize_cdf/0,
+	initialize_state_nl/0, 
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
-	cdf_set_log_on/0, cdf_set_log_off/0, cdf_reset_log/0, show_log/0,
 	updateExtTerm/3.
 
 :- (search_module(cdf_xj,_,_,_,_,_)
@@ -29,17 +29,21 @@
 
 :- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3 
 							from  usermod.
-:- import cdf_flags/2, cdf_log_trie/1, 
+
+:- import cdf_set_log_off/0, cdf_log/1
+	from cdf_concurrency.	
+
+:- import cdf_flags/2, 
 	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 
 :- import cdf_flag/1, initial_cdf_flag/2 from usermod.
 
 :- import load_component/3 from cdf_components.
 
-:- import cdf_error/2 from cdf_exceptions.
+%%:- import cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
-%%	from cdf_xj.
-	from cdf_cdf.
+	from cdf_xj.
+%%	from cdf_cdf.
 :- import get_component_extensional/2 	from cdf_components.
 
 :- import '_$index'/3 from file_op.
@@ -47,8 +51,6 @@
 :- import ground/1, member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import search_module/6 from consult.
-:- import new_trie/1, delete_trie/1, trie_interned/4, 
-	  trie_unintern_nr/2, trie_intern/5 from intern.
 :- dynamic user_cdf_flag/2.
 :- import user_cdf_flag/2 from usermod.
 
@@ -63,9 +65,6 @@ cdf_dynamic(classHasAttr_ext/3).
 cdf_index(classHasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
 cdf_dynamic(allAttr_ext/3). 
 cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
-
-cdf_dynamic(cdf_log_trie/1).
-cdf_dynamic(cdf_logging_state/1).
 
 %%%%%%%%%%%%% Declarations for External Intensional View
 
@@ -100,8 +99,6 @@ cdf_dynamic(retractall_cdf_int/1).
 initialize_cdf:- 
 	init_dynamic_code,
 	init_index_std,
-	retractall(cdf_logging_state(_)),
-	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
 	initialize_cdf_flags,
 %	load_component(cdf,'',[]),
@@ -201,12 +198,13 @@ and relations, and resets internal state variables to values in the
 CDF configuration file. ").
 
 initialize_state:- 
-	reset_dynamics,
-	retractall(cdf_logging_state(_)),
-	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
 	retractall(cdf_flags(_,_)),
 	initialize_cdf_flags,
+	initialize_state_nl.
+
+initialize_state_nl :-
+	reset_dynamics,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
 	make_cdf_clean.
@@ -787,15 +785,16 @@ assert_cdf_term(Term) :-
 :- comment(hide,retractall_cdf/1).
 
 retractall_cdf(Term) :-
-	cdf_log(retractall(Term)),
 	retractall_cdf_term(Term),
 	abolish_nec_tables(Term).
  
 retractall_cdf_term(Term) :- 
 	retractall_cdf_int(Term),
+	cdf_log(retractall(Term)),
 	fail. 
 retractall_cdf_term(Term) :-
 	retract(Term),
+	cdf_log(retractall(Term)),
 	get_component_extensional(Term,Name),
 	(cdf_flags(dirty,Name)
 	 ->	true
@@ -833,75 +832,6 @@ abolish_allAttr_inherits :-
 	abolish_table_pred(allAttr_gen2(_,_,_)),
 	abolish_table_pred(allAttr_2fix(_,_,_)),
 	abolish_table_pred(allAttr_2inh(_,_,_)).
-
-%%% Logging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-:- comment(cdf_set_log_on/0,"This predicate creates a new log and
-ensures that logging will be performed for further updates until
-logging is turned off.").
-
-cdf_set_log_on:- cdf_logging_state(X),
-	       (X == on -> 
-		   true
-	          ;    retractall(cdf_logging_state(_)),
-	               asserta(cdf_logging_state(on)),
-		   (cdf_log_trie(_) -> 
-		        cdf_error(logging,['^%*&^%* log state inconsistent!',
-		                                     '(off to on)'])
-		     ;  new_trie(T),
-		         assert(cdf_log_trie(T)))).
-
-
-:- comment(cdf_set_log_off/0,"This predicate turns logging off, and
-deletes the current log, as it may have become out of date.").
-
-cdf_set_log_off:- cdf_logging_state(X),
-	       (X == off -> 
-		   true
-	          ;    retractall(cdf_logging_state(_)),
-	               asserta(cdf_logging_state(off)),
-		   (cdf_log_trie(T) -> 
-		        delete_trie(T),
-		        retractall(cdf_log_trie(_))
-		     ;  cdf_error(logging,['^%*&^%* log state inconsistent!',
-		                                     '(on to off)']))).
-
-:- comment(cdf_reset_log/0,"If logging is on, this predicate deletes
-the current log, and creates a new one.  If logging is off, no action
-is taken").
-
-cdf_reset_log:- 
-	(cdf_log_trie(X) -> 
-	    delete_trie(X),
-	    retractall(cdf_log_trie(X))
-	  ; true),
-	  new_trie(X),
-	  assert(cdf_log_trie(X)).
-
-/* Need to handle variables better.  */
-cdf_log(Term):- 
-	cdf_logging_state(X),
-	(X == on -> cdf_log_1(Term) ; true),
-	!.
-
-cdf_log_1(assert(Term)):- 
-	cdf_log_trie(T),
-	(trie_interned(retractall(Term),T,Leaf,_skel) -> 
-	    trie_unintern_nr(T,Leaf) ; true),
-	trie_intern(assert(Term),T,_,_,_).
-cdf_log_1(retractall(Term)):- 
-	cdf_log_trie(T),
-	(trie_interned(assert(Term),T,Leaf,_skel) -> 
-	    trie_unintern_nr(T,Leaf)  
-	  ; trie_intern(retractall(Term),T,_,_,_)).
-
-:- comment(hide,show_log/0).	
-show_log:- 
-	listing(cdf_logging_state(_)),
-	cdf_log_trie(T),
-	trie_interned(Term,T,_,_),
-	writeln(Term),
-	fail.
 
 %%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

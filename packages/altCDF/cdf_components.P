@@ -18,6 +18,7 @@
 	classHasAttr/3,
 	retractallExtTerm/1, newExtTerm/2, newExtTerm/1,
 	cdf_id_fields/4,
+	initialize_state_nl/0,
 	system_component/1 from cdf_init_cdf.
 
 :- import canonical_pathname/2, rel_path/3 from directry.
@@ -51,6 +52,12 @@
 :- import message/1 from standard.
 
 :- import pretty_print/1 from newpp.
+
+:- import rename/2 from shell.
+
+:- import cdf_reset_log/0, cdf_logging_state/1, cdf_apply_log/0,
+	cdf_set_log_on/0, cdf_set_log_off/0
+	from cdf_concurrency.
 
 :- ensure_loaded(cdf_config).
 
@@ -541,7 +548,7 @@ assert_dependencies_for_path2(Name,New,Pathnew,Vnew):-
 load_component_pass2(Name,AbsPath,Vin,Anclist):- 
 	slash(Slash),
 	get_full_path_and_loadname(Name,AbsPath,Vin,_Full,_V,Loadname),
-	message(['Loading int rules and initializing componen: ',
+	message(['Loading int rules and initializing component: ',
 			AbsPath,Slash,Loadname]),nl,
 	load_component_dependencies_pass2(Name,Anclist),
 	concat_atom([AbsPath,Slash,Loadname],Dir),
@@ -656,8 +663,8 @@ file_find_version_name(Path,Name,Version,Loadname):-
 "@tt{update_all_components(Dir,Option_list)} analyzes components of an
 CDF state and their dependencies, determining whether they need to be
 updated or not, and creating components when necessary.  When a
-component is created with path @tt{Dir}, the files @tt{data_cdfext.P},
-@tt{schema_cdfext.P} and @tt{cdf_intensional.P} are created.
+component is created with path @tt{Dir}, the files @tt{cdf_extensional.P}
+and @tt{cdf_intensional.P} are created.
 Initialization files must be added manually for new components.
 @tt{Option_list} contains a list of parameters which currently
 specifies the effect on previously existing components:
@@ -666,7 +673,7 @@ specifies the effect on previously existing components:
 @begin{itemize} 
 
 @item If @tt{Action} is @tt{create}, then a new set of components is
-created in @tt{Dir}.  Information not previously componetized is added
+created in @tt{Dir}.  Information not previously componentized is added
 to new components whose path is @tt{Dir} and whose version number is
 0.  Facts that are parts of previously created components are also
 written as subdirectories of @tt{Dir}; if their previous path was
@@ -678,7 +685,7 @@ version is set to 0.  In addition, the initialization file for @tt{C}
 is copied to @tt{Dir}.
 
 @item If @tt{Action} is @tt{in_place}, then components created in
-@tt{Dir} only for information that was not previously componetized.
+@tt{Dir} only for information that was not previously componentized.
 Facts that are parts of newly created components are dumped as
 subdirectories of @tt{Dir} which serves as their path, and their
 version number is 0.  Previously created components whose paths were
@@ -694,13 +701,13 @@ path information.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- dynamic temp_new_version(_,_).
+:- dynamic concurrency_conflict(_).
 
 update_all_components(In,Options):- 
 	update_setup(In,Options,Abs,Action),
 	analyze_component_1(Comp,Dep),
 	apply_checks(componentUpdate,Comp),
 	update_component_1(Action,Comp,Dep,Abs),
-	writeln(updated(Comp)),
 	fail.
 update_all_components(_Dir,_Options):- 
 	temp_new_version(Name,_),
@@ -710,16 +717,33 @@ update_all_components(_Dir,_Options):-
 	retractall(temp_new_version(_,_)).
 
 update_setup(In,Options,Abs,Action):-
+	writeln(calling_update_setup(In,Options,Abs,Action)),
 	init_path_engine,
 	pe_canon_path(In,Abs),
 	retractall(temp_new_version(_,_)),
-	(member(action(create),Options) -> 
-	    Action = create,initialize_for_create(Abs)
-	  ; Action = in_place,initialize_for_in_place(Abs) ),
-	((Action = in_place,merge_has_occurred) -> 
-	    cdf_error(update_components,['Cannot update in place: two ',
-		'components have been merged'])
-	    ; true ).
+	retractall(concurrency_conflict(_)),
+	(member(action(create),Options)
+	 ->	Action = create,
+		initialize_for_create(Abs)
+	 ; 	Action = in_place,
+		initialize_for_in_place(Abs),
+		(concurrency_conflict(_)
+		 ->	(cdf_logging_state(on)
+			 ->	load_most_recent_version_and_merge_updates,
+				update_setup(In,Options,NewAbs,Action),
+				NewAbs = Abs
+			 ;	cdf_error(update_components,['Cannot update in place: Version updated by someone else']),
+				fail
+			)
+		 ;	true
+		)
+	),
+	((Action = in_place,merge_has_occurred)
+	 ->	cdf_error(update_components,['Cannot update in place: two ',
+					     'components have been merged'])
+	 ;	true
+	),
+	writeln('setupped').
 %----------
 
 /* In initialize for create, old versions don't matter -- the only
@@ -740,17 +764,11 @@ initialize_for_create(_Dir).
 
 %----------
 
-/* TLS: this pass is needed becasue we dont know the order in which
-the name/list pairs will be returned. Thus if c is dirty, and a
-depends on b depends on c, we might get a,[b] back first, and b will
-be unmarked.  While we do the pass, we assert the new version so we
-dont get confused when doing the dependencies.  */
-
 initialize_for_in_place(Dir):- 
 	propagate_dirty_bits(Dir).
 
 /* TLS: We need dependencies so that versioning will work correctly.
-This pass is needed becasue we dont know the order in which the
+This pass is needed because we dont know the order in which the
 name/list pairs will be returned. Thus if c is dirty, and a depends on
 b depends on c, we might get a,[b] back first, and b will be unmarked.
 While we do the pass, we assert the new version so we dont get
@@ -761,7 +779,7 @@ propagate_dirty_bits(Dir):-
 	analyze_components(Name,_List),
 	propagate_for_name(Name),
 	(component_exists(Name) -> 
-	     versions_for_existing_component(Name)
+	     versions_for_existing_component(Dir,Name)
 	  ;  versions_for_new_component(Dir,Name) ),
   	fail.
 propagate_dirty_bits(_Dir).
@@ -772,15 +790,21 @@ versions_for_new_component(Dir,Name):-
 	(file_exists(File) ->
     	     file_latest_version(Dir,Name,V),
 	     V1 is V + 1,
-	     call_assert(temp_new_version(Name,V1))
+	     call_assert(temp_new_version(Name,V1)),
+	     assert(concurrency_conflict(Name))
 	  ;  call_assert(temp_new_version(Name,0)) ).
 
 /* also, adjust version here */
-versions_for_existing_component(Name):- 
+versions_for_existing_component(Dir,Name):- 
 	classHasAttr_ext(cid(compName(cid(Name,Name),cid(P,cdfpt)),Name),
 	                       crid(hasVersion,Name),cid(V,cdfpt)),
-        (needs_update(Name) -> 
-	      V1 is V + 1,
+        (needs_update(Name) ->
+	      file_latest_version(Dir,Name,V0),
+	      (V0 \== V
+	       ->     assert(concurrency_conflict(Name))
+	       ;      true
+	      ),
+	      V1 is V0 + 1,
 	      call_assert(temp_new_version(Name,V1)),
  	      retractallExtTerm(classHasAttr_ext(
  			            cid(compName(cid(Name,Name),
@@ -849,6 +873,32 @@ update_component_1(in_place,Name,Dep,Abs):-
 			   cid(components,cdf))),
 	create_dependencies_in_place(Dep,Name,NewCompid,Abs),
 	dump_component_1(Name,Newpath,Version,nocopy).
+
+load_most_recent_version_and_merge_updates :-
+	cdf_set_log_off,
+	collect_current_components(Components),
+	initialize_state_nl,
+	reload_current_versions(Components),
+	writeln(111),
+	cdf_apply_log,
+	writeln(222),
+	cdf_reset_log,
+	writeln(333),
+	cdf_set_log_on.
+
+collect_current_components(Components) :-
+	findall(compName(Name,Path),
+		(isa_ext(CompCid,cid(componentIDs,cdf)),
+		 CompCid = cid(Name,Name),
+		 classHasAttr_ext(CompCid,crid(hasPath,Name),cid(Path,cdfpt))
+		),
+		Components).
+
+reload_current_versions(Components) :-
+	member(compName(Name,Path),Components),
+	load_component(Name,Path,[]),
+	fail.
+reload_current_versions(_Components).
 
 %--------------------- 
 
@@ -1004,7 +1054,9 @@ make_component_dir(Dir,Name,Version,NameDir):-
 	  ; 
 	    LastVersion is Version - 1,
             concat_atom([Dir,Slash,Name,'_',LastVersion],LastDir),
-	    shell(['mv ',NameDir,' ',LastDir]) ),
+	    rename(NameDir,LastDir)
+	    %%%shell(['mv "',NameDir,'" "',LastDir,'"'])
+	),
         xsb_makedir(NameDir).
 
 
