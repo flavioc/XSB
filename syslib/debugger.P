@@ -51,7 +51,14 @@ read_debugger_data :-
 	    	    	     ;  assert(T), fail
 	    ),
 	seen,
-	see(OldFile).
+	see(OldFile),
+	initialize_IO_streams.
+
+initialize_IO_streams :-
+	conset('_$_$_stdout_dbg',STDOUT),
+	conset('_$_$_stddbg_dbg',STDDBG),
+	conset('_$_$_stderr_dbg',STDERR),
+	conset('_$_$_stwarn_dbg',STDWARN).
 
 /* -- tracing flags setting  -------------------------------------- */
 
