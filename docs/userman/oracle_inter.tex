@@ -58,7 +58,10 @@ negative knowledge through negation.
 \section{Installation}
 %======================
 
-The instructions below assume that Oracle is currently installed.
+General information on XSB installation procedures can be found in
+Chapter~2 of Volume~1 of the \emph{XSB Programmer's Manual}.  The
+following instructions build upon that foundation, and assume that
+Oracle component(s) are currently installed.
 
 \paragraph{Unix instructions:}
 \begin{enumerate}
@@ -75,34 +78,46 @@ or
 	\texttt{setenv LDFLAGS "-lclntsh -lcommon -lcore4 -lnlsrtl3"}
 \end{quote}
 %%
-depending on the shell that you are using.  Note that libraries might
-be different depending on the version of Oracle or the OS in use.
-Also, the order of these libraries in the list is usually important.
-Refer to your Oracle documentation.
+depending on the shell that you are using.  We have found that the
+required libraries are frequently dependent upon the version of
+Oracle, the version of any additional Oracle component~---~such as
+SQL*Net~---~and possibly the operating system.  Hence, they will
+likely differ from those shown.  We further warn that the \emph{order}
+in which the libraries are listed may be important.  We have also
+witnessed that certain libraries may require multiple listings.
+Please refer to your Oracle documentation.
 
-\item Run the XSB configuration script, {\tt configure}, with the
-additional options
+\item Change directory to \texttt{\$XSB\_DIR/build} and run the XSB
+configuration script, {\tt configure}, with the options
 \begin{quote}
 	{\tt --with-oracle}\quad
-	{\tt --site-static-libraries=ORACLE\_LIB\_PATH}
+	{\tt --site-static-libraries=\emph{OracleLibPath}}
 \end{quote}
-where {\tt ORACLE\_LIB\_PATH} is the directory that contains the Oracle
-client libraries.
+where \texttt{\emph{OracleLibPath}} is the directory that contains
+the Oracle client libraries.
 
-Sometimes, building Oracle requires that you use a C compiler other
-than the default one.  If such is the case, then additionally use the
-option
+With some configurations, compilation of Pro*C files requires that you
+use a C compiler other than the default one.  If such is the case,
+then additionally pass the option
 \begin{quote}
 	{\tt --with-cc=\emph{compiler}}
 \end{quote}
-to \texttt{configure}, indicating that \emph{\texttt{compiler}} should
-instead be used.
+to \texttt{configure}, indicating that compiler
+\emph{\texttt{compiler}} should instead be used.
+
+As a final measure, if Oracle include files cannot be located
+automatically, then employ the option
+\begin{quote}
+	{\tt --site-includes=\emph{OracleHeaderPath}}
+\end{quote}
+where \texttt{\emph{OracleHeaderPath}} is the directory that contains
+the Oracle client header files.
 
 Note the final message that {\tt configure} produces before
 completing.  It indicates how you should invoke \texttt{makexsb} to
-build an Oracle-enabled version of XSB\@.
+build an Oracle-enabled version of XSB (step~4).
 
-\item In the \texttt{emu/} directory, create the file
+\item Change directory to \texttt{\$XSB\_DIR/emu} and create the file
 \texttt{orastuff.c} from \texttt{orastuff.pc} by invoking the Pro*C
 preprocessor:
 \begin{quote}
@@ -119,13 +134,16 @@ linking options required by your Oracle installation.}
 \item Run {\tt makexsb} as directed by the message displayed at the
 end of the run of the \texttt{configure} script (from step~2).
 
+If errors ensue, then review the cause(s) and consider employing the
+additional options mentioned in step~2.  If one or more are
+appropriate, then apply them, repeating this process from that step.
+
 When {\tt makexsb} completes, it will provide you with the name of the
 XSB executable.  Unless you have used the configuration option
 \begin{quote}
 	{\tt --config-tag=\emph{tag}}
 \end{quote}
 this will likely be {\tt ../bin/xsb-ora}.
-
 \end{enumerate}
 
 \paragraph{Windows instructions:}
@@ -172,13 +190,12 @@ To reach a remote server you can use:
 where {\tt \emph{dblink}} contains the machine name, and optionally
 the protocol and server instance name.  For example
 \begin{quote}
- {\tt | ?- db\_open(oracle('SCOTT@T:compserv1gw:\emph{INST}', 'TIGER')).}
+ {\tt | ?- db\_open(oracle('SCOTT@T:compserv1gw:INST', 'TIGER')).}
 \end{quote}
 indicates to the runtime system that we want to contact an Oracle
 server instance on the host {\tt compserv1gw}, whose {\tt ORACLE\_SID}
-is {\tt \emph{INST}}, using the TCP/IP protocol.  Further, we want to
-access that database as the user \texttt{SCOTT} with password
-\texttt{TIGER}.
+is {\tt INST}, using the TCP/IP protocol.  Further, we want to access
+that database as the user \texttt{SCOTT} with password \texttt{TIGER}.
 
 To disconnect from the current session use:
 \begin{quote}
