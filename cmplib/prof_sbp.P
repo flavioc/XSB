@@ -114,8 +114,6 @@ coninc(Con) :-
 	conpsc(Con, Psc), psc_prop(Psc, N),
 	NewN is N+1, psc_set_prop(Psc, NewN).
 
-system(X) :- sys_system(X, _).
-
 write_int(Num) :- 
 	stat_flag(11, File),
 	file_puttoken(File, 16, Num).
