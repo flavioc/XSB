@@ -64,6 +64,10 @@ hide_this_hide(consult,1).
 hide_this_hide(reconsult,1).
 hide_this_hide(compile,1).
 
+hide_this_hide(abolish_table_pred,1).
+hide_this_hide(abolish_table_call,1).
+hide_this_hide(abolish_all_tables,0).
+
 %% trace inside these standard predicates
 trace_standard_predicate(call,1).
 %% but control debugger prompts that are actually printed
