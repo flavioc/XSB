@@ -37,6 +37,8 @@
 :- dynamic '_$apply_arity'(_).
 :- dynamic '_$multifile_retract'(_,_,_).
 
+:- dynamic xsb_cpp_include_dir(_).
+
 % '_$multifile'/1 and '_$multifile2'/3 will be retractd in useinfer/3.
 % '_$multifile1'/1 and '_$apply_arity'/1 will be retracted in parse/4
 % '_$multifile_retract'/3 will be retracted in parse/4.
@@ -100,18 +102,34 @@ open_or_cpp_file(File) :-
 	    xsb_configuration(install_dir, InstalDir),
 	    %% Construct the -Include directories
 	    (windows_os_loader -> IncludeFlag = '/I' ; IncludeFlag = '-I'),
-	    fmt_write_string(IncludeDirs,
-			     '%s%s/emu %s%s/prolog_includes %s%s/packages/flora/includes',
-			     args(IncludeFlag,InstalDir,
-				  IncludeFlag,InstalDir,
-				  IncludeFlag,InstalDir)),
+	    make_include_directive(Directive, IncludeFlag),
+	    slash(Slash),
+	    fmt_write_string(IncludeDirs, '%s%s%semu %s%s%sprolog_includes %s',
+			     args(IncludeFlag,InstalDir,Slash,
+				  IncludeFlag,InstalDir,Slash,
+				  Directive)),
 	    %% Constract the cpp command
-	    fmt_write_string(CPP_command,
-			     '%s %s -DXSB_PROLOG %s',
+	    fmt_write_string(CPP_command, '%s %s -DXSB_PROLOG %s',
 			     args(CPP, IncludeDirs, File)),
+	    fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
+	    message(CPP_command1),
 	    spawn_process(CPP_command, block, From, block, _),
 	    stat_set_flag(10, From)
 	).
+
+
+%% Make an include directive out of the dirs in xsb_cpp_include_dir/1
+%% The dirs are supplied by applications that keep include files
+%% in special places
+make_include_directive(Directive, Flag) :-
+	findall(X, xsb_cpp_include_dir(X), L),
+	make_include_directive1(Directive, Flag, L).
+make_include_directive1(Directive, Flag, [H|Tail]) :-
+	make_include_directive1(Directive1, Flag, Tail),
+	fmt_write_string(Directive, ' %s%s %s', args(Flag, H, Directive1)).
+make_include_directive1(' ',_, []).
+
+
 
 
 /*======================================================================*/

@@ -26,12 +26,12 @@
 
 :- export parse/4, get_symtab/2, parse_preddef/4.
 :- export get_p_mod/3, change_multifile_directive/3, 
-	open_or_cpp_file/1,
+	open_or_cpp_file/1, xsb_cpp_include_dir/1,
 	'_$multifile'/1, '_$multifile1'/1,
 	'_$multifile2'/3, '_$apply_arity'/1,
 	'_$multifile_retract'/3.
 
-:- import stat_flag/2, stat_set_flag/2 from machine.
+:- import stat_flag/2, stat_set_flag/2, slash/1 from machine.
 :- import closetail/1 from listutil.
 :- import inline_predicate/2 from builtin.
 :- import singleton_check/2 from singlton.
@@ -54,3 +54,5 @@
 
 :- import fmt_write_string/3 from file_io.
 :- import windows_os_loader/0 from loader.
+
+:- import findall/3 from setof.
