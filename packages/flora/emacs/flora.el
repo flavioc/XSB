@@ -225,6 +225,7 @@
 (defun flora-mode ()
   "Major mode for editing F-Logic code.
 Blank lines and `%%...' separate paragraphs.  `%'s start comments.
+
 Commands:
 \\{flora-mode-map}
 Entry to this mode calls the value of `flora-mode-hook'
@@ -443,18 +444,14 @@ Otherwise, just insert newline."
 The following commands are available:
 \\{inferior-flora-mode-map}
 
-Entry to this mode calls the value of `flora-mode-hook' with no arguments,
-if that value is non-nil.  Likewise with the value of `comint-mode-hook'.
-`flora-mode-hook' is called after `comint-mode-hook'.
+Entry to this mode calls the value of `inferior-flora-mode-hook' with no
+arguments, if that value is non-nil.  Likewise with the value of
+`comint-mode-hook'. 
+`inferior-flora-mode-hook' is called after `comint-mode-hook'.
 
 You can send text to the inferior flora from other buffers
-using the commands `process-send-region', `process-send-string' and \\[flora-consult-region].
-
-Commands:
-Tab indents for Flora; with argument, shifts rest
- of expression rigidly with the current line.
-Paragraphs are separated only by blank lines and '%%'.
-'%'s start comments.
+using the commands \\[flora-consult-buffer] \\[flora-consult-file], and
+\\[flora-consult-region]. 
 
 Return at end of buffer sends line as input.
 Return not at end copies rest of line to end and sends it.
@@ -466,13 +463,13 @@ Return not at end copies rest of line to end and sends it.
   (comint-mode)
   (setq major-mode 'inferior-flora-mode
 	mode-name "Inferior-Flora"
-	comint-prompt-regexp "^| [ ?][- ] *")
+	comint-prompt-regexp "flora *[ ?][- ] *")
   (flora-mode-variables)
   (if inferior-flora-mode-map nil
     (setq inferior-flora-mode-map (copy-keymap comint-mode-map))
     (flora-mode-commands inferior-flora-mode-map))
   (use-local-map inferior-flora-mode-map)
-  (run-hooks 'flora-mode-hook)
+  (run-hooks 'inferior-flora-mode-hook)
   (setq comint-input-ring-file-name 
 	(expand-file-name "~/.flora-history"))
   (or (file-exists-p comint-input-ring-file-name)
@@ -499,7 +496,7 @@ Return not at end copies rest of line to end and sends it.
 switch to the buffer."
   (interactive)
   (run-flora-background)
-  (show-flora-buffer))
+  (show-flora-buffer 'switch))
 
 (defun flora-consult-region (dynamically beg end)
   "Send the region to the Flora process.
@@ -597,14 +594,16 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
   (run-flora-background)
   (process-send-string flora-process-name flora-forget-string)
   (sit-for 2)
-  (run-flora))
+  (run-flora)
+  (sit-for 0))
 
 (defun flora-switch-to-flora-buffer ()
   (interactive)
   (run-flora-background)
   (pop-to-buffer flora-process-buffer))
 
-(defun show-flora-buffer ()
+;; SWITCH means switch to inferior Flora buffer
+(defun show-flora-buffer (&optional switch)
   (let ((wind (selected-window)))
     (with-temp-buffer
       (set-buffer flora-process-buffer)
@@ -613,7 +612,8 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
       ;; time is needed for XSB to return. otherwise, the point will be off
       (sit-for 1))
       (goto-char (1- (point-max)))
-    (select-window wind)))
+      (or switch
+	  (select-window wind))))
 
 
 (defun flora-make-temp-file (start end)
