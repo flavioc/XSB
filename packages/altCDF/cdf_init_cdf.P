@@ -1662,15 +1662,20 @@ newIntRuleBatch(Head,Body,Cmpt,Flag):-
 	  ; true).
 
 addIntRule(Head,Body,Cmpt):- 
-	cdf_log(assert((Head :- Body))),
 	apply_checks(newIntRuleSingle,Head),
 	transform_intensional_rules(Head,BlankBody,NewHead,Cmpt),
 	functor(Head,T,A),
 	functor(BlankHead,T,A),
 	BlankHead =.. [_|Args],
 	BlankBody =.. [_|Args],
-	clause_assert(BlankHead,BlankBody),
+	(clause(BlankHead,BlankBody)
+	 ->	true
+	 ;	BlankClause = :-(BlankHead,BlankBody),
+		assert(BlankClause),
+		cdf_log(assert(BlankClause))
+	),
 	assert((:-(NewHead,Body))),
+	cdf_log(assert(:-(NewHead,Body))),
 	(cdf_flags(dirty,Cmpt)
 	 ->	true
 	 ;	make_cdf_dirty(Cmpt)
@@ -1707,7 +1712,7 @@ retractallIntRule_1(Head,Body,Name) :-
 %	clause_assert(BlankHead,BlankBody),
 %	assert((:-(NewHead,Body))),
 	retract((NewHead :- Body)),
-	cdf_log(retractall((Head :- Body))),
+	cdf_log(retractall((NewHead :- Body))),
 	(cdf_flags(dirty,Name)
 	 ->	true
 	 ;	make_cdf_dirty(Name)
