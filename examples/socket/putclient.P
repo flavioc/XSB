@@ -1,3 +1,6 @@
+%% Client (putclient) and server (putserver) talk through 
+%% socket_put/socket_get0. Uses timeouts.
+
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
 #include "timer_defs_xsb.h"

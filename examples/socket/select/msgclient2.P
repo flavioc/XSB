@@ -1,3 +1,6 @@
+%% Like msgserver/client using socket_select, but here we use write 
+%% sockets and read sockets simultaneously.
+
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
 #include "timer_defs_xsb.h"

@@ -1,3 +1,7 @@
+%% Enhances msgclient/msgserver with socket_select.
+%% Shows how to create select group and use it.
+%% Uses regular and socket_select timeouts. 
+
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
 #include "timer_defs_xsb.h"

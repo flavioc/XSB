@@ -1,3 +1,8 @@
+%% Client (streamclient) and server (streamserver) talk to each other
+%% using regular file I/O. They convert socket descriptors into file
+%% streams. This works under Unix only, because one can't convert sockets
+%% into files under Windows.
+
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
 #include "timer_defs_xsb.h"

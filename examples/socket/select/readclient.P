@@ -1,3 +1,6 @@
+%% Readserver uses socket_select with multiple read sockets.
+%% Readclient writes to those sockets.
+
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
 #include "timer_defs_xsb.h"

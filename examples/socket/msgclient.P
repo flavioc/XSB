@@ -1,3 +1,7 @@
+%% Illustrates client (msgclient) and server (msgserver) talking 
+%% to each other using socket_send/socket_recv.
+%% Plays with timeouts.
+
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
 #include "timer_defs_xsb.h"
