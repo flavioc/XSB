@@ -1731,14 +1731,14 @@ bagAvg(Call,Avg) :-
 
 \end{description}
 
-
+%-------------------------------------------------------------------------
 \section{Comparison} \label{Comparison}
 \input{comparison}
-
+%-------------------------------------------------------------------------
 
 \section{Meta-Predicates} \label{meta_predicates}
 \begin{description}
-\ouritem{call(+X)}\index{{\tt call/1}} 
+\ouritem{call(#X)}\index{{\tt call/1}} 
 %\predindex{call/1~(P)}
     If {\tt X} is a nonvariable term in the program text, then it is 
     executed exactly as if {\tt X} appeared in the program text instead 
@@ -1769,35 +1769,33 @@ bagAvg(Call,Avg) :-
 	Argument 1 of {\tt call/1} is not a callable term.
     \end{description}
 
-\ouritem{+X}					      
+\ouritem{#X}					      
     (where {\tt X} is a variable) executes exactly the same as 
     {\tt call(X)}.
     However, the explicit use of {\tt call/1} is considered better
     programming practice.  The use of a top level variable subgoal
     elicits a warning from the compiler.
 
-\ouritem{once(+X)}
+\ouritem{once(#X)}
 \index{{\tt once/1}} 
-
-{\tt once/1} is defined as {\tt once(X):- call(X),!.}  {\tt once/1}
-should be used with care in tabled programs.  The compiler cannot
-determine whether a tabled predicate is called in the scope of {\tt
-once/1}, and such a call may lead to runtime errors.  If a tabled
-predicate may occur in the scope of {\tt once/1}, use {\tt
-table\_once/1} instead.
+    {\tt once/1} is defined as {\tt once(X):- call(X),!.}  {\tt
+    once/1} should be used with care in tabled programs.  The compiler
+    can not determine whether a tabled predicate is called in the
+    scope of {\tt once/1}, and such a call may lead to runtime errors.
+    If a tabled predicate may occur in the scope of {\tt once/1}, use
+    {\tt table\_once/1} instead.
 
     Exceptions: The same as {\tt call/1}.
 
-\ouritem{table\_once(+X)}
+\ouritem{table\_once(#X)}
 \index{{\tt table_once/1}} 
-
-{\tt table\_once/1} is a weaker form of {\tt once/1}, suitable for
-situations in which a single solution is desired for a subcomputation
-that may involve a call to a tabled predicate.  {\tt
-table\_once(?Pred)} succeeds only once even if there are many
-solutions to the subgoal {\tt Pred}.  However, it does not ``cut
-over'' the subcomputation started by the subgoal {\tt Pred}, thereby
-ensuring the correct evaluation of tabled subgoals.
+    {\tt table\_once/1} is a weaker form of {\tt once/1}, suitable for
+    situations in which a single solution is desired for a
+    subcomputation that may involve a call to a tabled predicate.  {\tt
+    table\_once(?Pred)} succeeds only once even if there are many
+    solutions to the subgoal {\tt Pred}.  However, it does not ``cut
+    over'' the subcomputation started by the subgoal {\tt Pred},
+    thereby ensuring the correct evaluation of tabled subgoals.
 
 \end{description}
 
