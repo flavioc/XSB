@@ -49,7 +49,7 @@
 /**************************************
   errors reported by Flora Composer
 **************************************/
-#define UNKNOWN_ERROR    'internal error (please report this through the bug tracking system at http://sourceforge.net/projects/flora)'
+#define UNKNOWN_ERROR    'internal error -- please report this problem using the bug tracking system at http://sourceforge.net/projects/flora'
 #define UNEXP_EOR	 'rule delimeter expected'
 #define UNEXP_OPERAND    'unexpected operand'
 #define UNEXP_OPERATOR   'unexpected operator'
