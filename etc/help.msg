@@ -44,6 +44,7 @@ Usage:	xsb [flags] [-l] [-i]
             -r : turn off automatic stack expansion
     -g gc_type : choose the garbage collection ("none", "sliding",
 						"indirection" or "copying")
+            -p : enable Prolog profiling thru use of profile_call/1
             -s : maintain detailed statistical information
 	    -S : set default tabling method to subsumption-based
             -T : print a trace of each called predicate
