@@ -449,6 +449,8 @@ classify_arg(Id,Upd1,Upd):-
 %	writeln(ca(Id)),
 	(in_hierarchy(Id) -> 
 	    Upd1 = Updmid
+	 ; Id = cid(Cmp,Cmp)
+	 -> Upd1 = Updmid
 	  ; functor(Id,F,_),
 	    classification_type(F,Sup),
 	    Upd1 = [isa_ext(Id,Sup)|Updmid]),
