@@ -75,10 +75,13 @@ buff_set_word(Buffer, Disp, Value) :- buff_set_word(Buffer, Disp, Value).
 buff_byte(Buffer, Disp, Value) :- buff_byte(Buffer, Disp, Value).
 buff_set_byte(Buffer, Disp, Value) :- buff_set_byte(Buffer, Disp, Value).
 code_call(CodeAddr, Term, Type) :- code_call(CodeAddr, Term, Type).
-str_len(String, Length) :- str_len(String, Length).
 
+substring(_String, _From, _To, _Result) :- '_$builtin'(SUBSTRING).
+str_len(String, Length) :- str_len(String, Length).
 str_cat(Str1, Str2, Str3) :- str_cat(Str1, Str2, Str3).
 str_cmp(Str1, Str2, Res) :- str_cmp(Str1, Str2, Res).
+string_substitute(_String, _SubstSpec, _SubstList, _Result) :-
+	'_$builtin'(STRING_SUBSTITUTE).
 
 call0(Term) :- call0(Term).
 stat_sta(X) :- stat_sta(X).

@@ -83,10 +83,12 @@ inline_builtin(buff_set_word, 3, BUFF_SET_WORD).
 inline_builtin(buff_byte, 3, BUFF_BYTE).
 inline_builtin(buff_set_byte, 3, BUFF_SET_BYTE).
 inline_builtin(code_call, 3, CODE_CALL).
-inline_builtin(str_len, 2, STR_LEN).
 
+inline_builtin(substring, 4, SUBSTRING).
+inline_builtin(str_len, 2, STR_LEN).
 inline_builtin(str_cat, 3, STR_CAT).
 inline_builtin(str_cmp, 3, STR_CMP).
+inline_builtin(string_substitute, 4, STRING_SUBSTITUTE).
 
 inline_builtin(call0, 1, CALL0).
 inline_builtin(stat_sta, 1, STAT_STA).

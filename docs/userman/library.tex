@@ -336,6 +336,7 @@ handled by the XSB compiler.
 
 
 \section{Lower-Level I/O}
+\label{sec-low-level-io}
 %======================
 
 XSB has various low-level routines that support input and output, at both
@@ -744,6 +745,132 @@ Like \verb|file_putbuf/3|, but output goes to the currently open output stream.
 
 
 \end{description}
+
+\section{String Manipulation}
+\label{sec-strings}
+
+XSB has a number of powerful builtins that simplify the job of string
+manipulation. These builting are especially powerful when they are combined
+with pattern-matching facilities provided by the {\tt regmatch} package
+described in Chapter~\ref{chap-posix}.
+
+\begin{description}
+\ournewitem{str\_sub(+Sub, +Str, ?Pos)}{string}
+\index{{\tt str\_sub/3}}
+
+Succeeds if {\tt Sub} is a substring of {\tt Str}. In that case, {\tt Pos}
+unifies with the position where the match occurred.
+
+\ournewitem{str\_cat(+Str1, +Str2, ?Result)}{string}
+\index{{\tt str\_cat/3}}
+
+Concatenates {\tt Str1} with {\tt Str2}. Unifies the result with {\tt Result}.
+
+In addition to this, the predicate \verb|fmt_write_string/3| described in
+Section~\ref{sec-low-level-io} can be used to concatenate strings and do
+much more. However, for simple string concatenation, {\tt str\_cat/3} is
+more efficient.
+
+\ournewitem{str\_length(+Str, ?Result)}{string}
+\index{{\tt str\_length/2}}
+
+Unifies the {\tt Result}  with the length of {\tt Str}.
+
+%%
+\ournewitem{substring(+String, +BeginOffset, +EndOffset, -Result)}{string}
+\index{{\tt substring/4}}
+%%
+{\tt String} can be an atom or a list of characters, and the offsets must
+be integers.  If {\tt EndOffset} is negative, endof({\tt String})+{\tt
+  EndOffset} is assumed. If {\tt EndOffset} is an unbound variable, then
+end of string is assumed. If {\tt BeginOffset} is less than 0, then 0 is
+assumed; if it is greater than the length of the string, then string end is
+assumed. If {\tt EndOffset} is non-negative, but is less than {\tt
+  BeginOffset}, then empty string is returned.
+
+The result returned in the fourth argument is a string, if {\tt String} is
+an atom, or a list of characters, if so is {\tt String}.
+
+The \verb|substring/4| predicate always succeeds (unless there is an error,
+such as wrong argument type).
+
+Here are some examples: 
+%%
+\begin{verbatim}
+| ?- substring('abcdefg', 3, 5, L).
+
+L = de
+
+| ?- substring("abcdefg", 4, -1, L).
+
+L = [101,102]
+\end{verbatim}
+%%
+({\it i.e.}, L = ef represented using ASCII codes).
+
+\ournewitem{string\_substitute(+String, +SubstrList, +SubstitutionList, -OutStr)}{string}
+\index{{\tt string\_substitute/4}}
+
+{\tt InputStr} can an atom or a list of characters.  {\tt SubstrList} must
+be a list of terms of the form {\tt s(BegOffset, EndOffset)}, where the name
+of the functor is immaterial.  The meaning of the offsets is the same as
+for {\tt re\_substring/4}.  Each such term specifies a substring (between
+{\tt BegOffset} and {\tt EndOffset}; negative {\tt EndOffset} stands for
+the end of string) to be replaced.  {\tt SubstitutionList} must be a list
+of atoms or character lists.
+
+This predicate replaces the substrings specified in {\tt SubstrList} with
+the corresponding strings from {\tt SubstitutionList}.  The result is
+returned in {\tt OutStr}. {\tt OutStr} is a list of characters, if so is
+{\tt InputStr}; otherwise, it is an atom.
+
+If {\tt SubstitutionList} is shorter than {\tt SubstrList} then the last
+string in {\tt SubstitutionList} is used for substituting the extra
+substrings specified in {\tt SubstitutionList}. As a special case, this
+makes it possible to replace all specified substrings with a single string.
+
+As in the case of {\tt re\_substring/4}, if {\tt OutStr} is an atom, it is
+not interned.  The user should either intern this string or convert it into
+a list, as explained previously.
+
+The \verb|re_substitute/4| predicate always succeeds.
+
+Here are some examples:
+%%
+\begin{verbatim}
+| ?- re_substitute('qaddf', [s(2,4)], ['123'] ,L).
+
+L = qa123f
+
+| ?- re_substitute('qaddf', [s(2,-1)], ['123'] ,L).
+
+L = qa123
+
+| ?- re_substitute("abcdefg", [s(4,-1)], ["123"],L).
+
+L = [97,98,99,100,49,50,51]
+
+| ?- re_substitute('1234567890123', [f(1,5),f(5,7),f(9,-2)], ["pppp", lll],X).
+
+X = 1pppplll89lll
+
+| ?- re_substitute('1234567890123', [f(1,5),f(6,7),f(9,-2)], ['---'],X).
+
+X = 1---6---89---
+
+| ?- re_bulkmatch('[^a-zA-Z0-9]+', '123&*-456 )7890| 123', 0, _, X),
+     re_substitute('123&*-456 )7890| 123', X, ['+++'], Y).
+
+X = [match(3,6),match(9,11),match(15,17)]
+Y = 123+++456+++7890+++123
+\end{verbatim}
+%%
+
+\end{description}
+%%
+
+
+
 
 \section{Script Writing Utilities}
 %========================

@@ -137,6 +137,11 @@ extern bool xsb_socket_request(void);
 extern int  findall_init(void), findall_add(void), findall_get_solutions(void);
 extern int  copy_term(void);
 
+extern bool substring(void);
+extern bool string_substitute(void);
+extern bool str_cat(void);
+extern bool str_sub(void);
+
 extern void force_answer_true(BTNptr);
 extern void force_answer_false(BTNptr);
 
@@ -556,6 +561,8 @@ void init_builtin_table(void)
   set_builtin_table(BUFF_BYTE, "buff_byte");
   set_builtin_table(BUFF_SET_BYTE, "buff_set_byte");
   set_builtin_table(CODE_CALL, "code_call");
+  set_builtin_table(SUBSTRING, "substring");
+  set_builtin_table(STRING_SUBSTITUTE, "string_substitute");
   set_builtin_table(STR_LEN, "str_len");
   set_builtin_table(STR_CAT, "str_cat");
   set_builtin_table(STR_CMP, "str_cmp");
@@ -717,7 +724,7 @@ int builtin_call(byte number)
   CPtr var;
   char *addr, *tmpstr;
   int  value, i, disp, arity, tmpval;
-  Cell term, term2;
+  Cell term;
   
   TIFptr tip;
   Psc  psc;
@@ -985,6 +992,11 @@ int builtin_call(byte number)
 #endif
     }
     break;
+  case SUBSTRING: /* R1: +String; R2,R3: +begin/end offset; R4: -OutSubstr */
+    return substring(); 
+  case STRING_SUBSTITUTE: /* R1: +Str, R2: [s(a1,b1),s(a2,b2),...], 
+			     R3: [str1,str2,...], R4: -OutStr */
+    return string_substitute();
   case STR_LEN:		/* R1: +String; R2: -Length */
     term = ptoc_tag(1);
     if (isstring(term)) {
@@ -992,36 +1004,12 @@ int builtin_call(byte number)
       return int_unify(makeint(strlen(addr)), ptoc_tag(2));
     } else return FALSE;
   case STR_CAT:		/* R1: +Str1; R2: +Str2: R3: -Str3 */
-    term = ptoc_tag(1);
-    term2 = ptoc_tag(2);
-    if (isstring(term) && isstring(term2)) {
-      char *str1 = string_val(term);
-      char *str2 = string_val(term2);
-
-      tmpstr = (char *)malloc(strlen(str1) + strlen(str2) + 1);
-      strcpy(tmpstr, str1);
-      strcat(tmpstr, str2);
-      str1 = string_find(tmpstr, 1);
-      free(tmpstr);
-      return atom_unify(makestring(str1), ptoc_tag(3));
-    } else return FALSE;
+    return str_cat();
   case STR_CMP:		/* R1: +Str1; R2: +Str2: R3: -Res */
     ctop_int(3, strcmp(ptoc_string(1), ptoc_string(2)));
     break;
   case STR_SUB:   /* R1: +Substring; R2: +String; R3: -Pos */
-    term = ptoc_tag(1);
-    term2 = ptoc_tag(2);
-    if (isstring(term) && isstring(term2)) { 
-      char *subptr = string_val(term);
-      char *stringptr = string_val(term2);
-      char *matchptr = strstr(stringptr, subptr);
-      int substr_pos = matchptr-stringptr+1; /* relative pos of substring */
-      if (matchptr == NULL)
-	return FALSE;
-      else {
-	return int_unify(makeint(substr_pos), ptoc_tag(3));
-      }
-    } else return FALSE;
+    return str_sub();
   case INTERN_STRING: /* R1: +String1; R2: -String2 ; Intern string */
     ctop_string(2, string_find(ptoc_string(1), 1));
     break;

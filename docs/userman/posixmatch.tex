@@ -1,4 +1,5 @@
 \chapter{XSB's POSIX Regular Expression and Wildcard Matching Packages}
+\label{chap-posix}
 
 \begin{center}
 {\Large {\bf By Michael Kifer}}
@@ -221,30 +222,10 @@ predicate \verb|re_substring/4|:
     re_substring(+String, +BeginOffset, +EndOffset, -Result).
 \end{verbatim}
 %%
-{\tt String} can be an atom or a list of characters, and the offsets must
-be integers.  If {\tt EndOffset} is negative, the end of {\tt String} is
-assumed.  The result returned in the fourth
-argument is a string, if {\tt String} is an atom, or a list of characters,
-if so is {\tt String}.
 
-The \verb|re_substring/4| predicate always succeeds.
-
-Here are some examples: 
-%%
-\begin{verbatim}
-| ?- re_substring('abcdefg', 3, 5, L).
-
-L = de
-
-| ?- re_substring("abcdefg", 4, -1, L).
-
-L = [101,102,103]
-\end{verbatim}
-%%
-({\it i.e.}, L = efg represented using ASCII codes).
-
-At present, the result returned by this predicate (when it is a string) is
-\emph{not} interned, so it is not a Prolog atom.  All you can do with this
+This predicate works exactly like {\tt substring/4} described in
+Section~\ref{sec-strings}, except that the resulting substring is
+not interned (if it is an atom). All you can do with this
 string is to immediately convert it into a list (using {\tt atom\_codes/2})
 or into a true atom (using {\tt intern\_string/2}, which must be imported
 from module machine).
@@ -253,7 +234,8 @@ The reason for these complications is to allow the user to control the size
 of the atom table. At present, XSB does not have atom table garbage
 collection, so heavy use of string manipulation functions can result in
 atom table overflow. This danger is particularly severe when XSB is used
-for processing HTML pages.
+for processing HTML pages. This predicate will become an alias to {\tt
+  substring/4} when atom garbage collection will be added to XSB.
 
 On the other hand, converting strings into lists (without interning them
 first) is safe, because lists are garbage-collected in XSB Version 2.0.
@@ -303,59 +285,11 @@ The predicate \verb|re_substitute/4| has the following invocation:
     re_substitute(+InputStr, +SubstrList, +SubstitutionList, -OutStr)  
 \end{verbatim}
 %%
-{\tt InputStr} can an atom or a list of characters.  {\tt SubstrList} must
-be a list of terms of the form {\tt s(BegOffset, EndOffset)}, where the name
-of the functor is immaterial.  The meaning of the offsets is the same as
-for {\tt re\_substring/4}.  Each such term specifies a substring (between
-{\tt BegOffset} and {\tt EndOffset}; negative {\tt EndOffset} stands for
-the end of string) to be replaced.  {\tt SubstitutionList} must be a list
-of atoms or character lists.
-
-This predicate replaces the substrings specified in {\tt SubstrList} with
-the corresponding strings from {\tt SubstitutionList}.  The result is
-returned in {\tt OutStr}. {\tt OutStr} is a list of characters, if so is
-{\tt InputStr}; otherwise, it is an atom.
-
-If {\tt SubstitutionList} is shorter than {\tt SubstrList} then the last
-string in {\tt SubstitutionList} is used for substituting the extra
-substrings specified in {\tt SubstitutionList}. As a special case, this
-makes it possible to replace all specified substrings with a single string.
-
-As in the case of {\tt re\_substring/4}, if {\tt OutStr} is an atom, it is
-not interned.  The user should either intern this string or convert it into
-a list, as explained previously.
-
-The \verb|re_substitute/4| predicate always succeeds.
-
-Here are some examples:
-%%
-\begin{verbatim}
-| ?- re_substitute('qaddf', [s(2,4)], ['123'] ,L).
-
-L = qa123f
-
-| ?- re_substitute('qaddf', [s(2,-1)], ['123'] ,L).
-
-L = qa123
-
-| ?- re_substitute("abcdefg", [s(4,-1)], ["123"],L).
-
-L = [97,98,99,100,49,50,51]
-
-| ?- re_substitute('1234567890123', [f(1,5),f(5,7),f(9,-2)], ["pppp", lll],X).
-
-X = 1pppplll89lll
-
-| ?- re_substitute('1234567890123', [f(1,5),f(6,7),f(9,-2)], ['---'],X).
-
-X = 1---6---89---
-
-| ?- re_bulkmatch('[^a-zA-Z0-9]+', '123&*-456 )7890| 123', 0, _, X),
-     re_substitute('123&*-456 )7890| 123', X, ['+++'], Y).
-
-X = [match(3,6),match(9,11),match(15,17)]
-Y = 123+++456+++7890+++123
-\end{verbatim}
+This predicate works exactly like {\tt string\_substitute/4} described in
+Section~\ref{sec-strings}, except that the result of the substitution is
+not interned (for the same reason as in {\tt re\_substring/4}. This
+predicate will become an alias to {\tt string\_substitute/4} when atom
+garbage collection will be added to XSB.
 %%
 
 \paragraph{Efficiency considerations.}

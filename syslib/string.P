@@ -66,6 +66,9 @@ atom_to_charlist([Atom|Rest],Slist,[List,Slist|Lrest]):-
 	atom_codes(Atom,List),
 	atom_to_charlist(Rest,Slist,Lrest).
 
+substring(String,From,To,Subst) :- substring(String,From,To,Subst).
+string_substitute(String,SubstSpec,SubstList,ResultStr) :-
+	string_substitute(String,SubstSpec,SubstList,ResultStr).
 str_length(Str, Len) :- str_len(Str, Len).
 
 str_cat(S1, S2, S3) :- str_cat(S1, S2, S3).

@@ -52,8 +52,10 @@
 #define CODE_CALL	24
 #define STR_LEN		25
 
+#define SUBSTRING       26
 #define STR_CAT		27
 #define STR_CMP		28
+#define STRING_SUBSTITUTE 29
 
 #define CALL0		31
 /* some other builtins that might need hard implementation */

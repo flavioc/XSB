@@ -423,10 +423,13 @@ synopsis is:
 	xsb [flags] -B boot_module [-D cmd_loop_driver] [-t] [-e goal]
 	xsb [flags] -B module_to_disassemble -d
 	xsb -[h | v]
+	xsb --help | --version | --nobanner | --quietload | --noprompt
 
-      	flags:
-	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -s | -T
-	    These are compiler flags.
+	memory management flags:
+	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -g gc_type
+	miscellaneous flags:
+	    -s | -T
+
 	module:
 	    Module to execute after XSB starts up.
 	    Module should have no suffixes, no directory part, and
@@ -461,8 +464,11 @@ synopsis is:
     -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
       	    -s : maintains more detailed statistical information
       	    -T : print a trace of each called predicate
-      	    -v : print the version and configuration information about XSB.
-      	    -h : print this help message
+ -v, --version : print the version and configuration information about XSB.
+    -h, --help : print this help message
+    --nobanner : don't show the XSB banner on startup
+   --quietload : don't show the `module loaded' messages
+    --noprompt : don't show prompt (for non-interactive use)
 
 \end{verbatim}
 The order in which these options appear makes no difference.
@@ -543,10 +549,18 @@ The order in which these options appear makes no difference.
     option is for internal debugging and is not fully supported.
     It is also not available when the system is being used at the non-debug
     mode (see Section~\ref{debugging}).
-\item[-e goal] Pass {\tt goal}  to XSB at starup. This goal is evaluated
+\item[{\tt -e goal}] Pass {\tt goal}  to XSB at starup. This goal is evaluated
     right before the first prompt is issued. For instance, 
     \verb'xsb -e "write('Hello!'), nl."'
     will print a heart-warming message when XSB starts up.
+  \item[{\tt --nobanner}] Start XSb without showing the startup banner.
+    Useful in batch scripts and for interprocess communication (when XSB is
+    launched as a subprocess).
+  \item[{\tt --quietload}] Do not tell when a new module gets loaded. Again, is
+    useful in non-interactive activities and for interprocess communication.
+  \item[{\tt --noprompt}] Do not show te XSB prompt. This is useful only in batch
+    mode and in interprocess communication when you do not want the prompt
+    to clutter the picture.
 \end{description}
 
 As an example, a program which uses more heap and local stack than the
