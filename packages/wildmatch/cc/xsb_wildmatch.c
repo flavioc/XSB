@@ -36,6 +36,13 @@
 #include "xsberror.h"
 #include "cinterf.h"
 
+/* Casefolding seems to be defined in some versions of gcc, but not in
+   others. So, it is really not that portable.
+*/
+#ifndef FNM_CASEFOLD
+#define FNM_CASEFOLD 0
+#endif
+
 extern char *p_charlist_to_c_string(prolog_term term, char *outstring,
 				    int outstring_size,
 				    char *in_func, char *where);
