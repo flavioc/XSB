@@ -103,13 +103,19 @@ date(date(Y,Mon,D,H,Min,S)):-
 
 % Crude but effective.  Returns stdout of a unix command as a list of
 % tokens. Obsolete!
-sysin(Command,List):-
-%	obsolete('sysin/1', 'shell/5'),
-	ca([Command,'> /tmp/XSBdir'],Com1),
-	unix(Com1),
-	open('/tmp/XSBdir',read,Str),
-	file_to_list(Str,0,List),
-	close(Str).
+% sysin(Command,List):-
+% %	obsolete('sysin/1', 'shell/5'),
+% 	ca([Command,'> /tmp/XSBdir'],Com1),
+% 	unix(Com1),
+% 	open('/tmp/XSBdir',read,Str),
+% 	file_to_list(Str,0,List),
+% 	close(Str).
+
+sysin(Command,List) :-
+	spawn_process(Command,_,Output,_,_),
+	file_to_list(Output,List).
+
+
 
 %% Obsolete
 file_to_list(_Str,-1,[]):-
