@@ -556,6 +556,15 @@ void tstCreateTSIs(TSTNptr);
  }
 
 /*----------------------------------------------------------------------*/
+#ifdef DEMAND
+#define Reset_Demand_Freeze_Registers \
+    bdfreg = bfreg; \
+    trdfreg = trfreg; \
+    hdfreg = hfreg; \
+    edfreg = efreg
+#else
+#define Reset_Demand_Freeze_Registers 
+#endif
 
 #define reset_freeze_registers \
     bfreg = (CPtr)(tcpstack.high) - CP_SIZE; \
@@ -563,7 +572,8 @@ void tstCreateTSIs(TSTNptr);
     hfreg = (CPtr)(glstack.low); \
     efreg = (CPtr)(glstack.high) - 1; \
     level_num = xwammode = 0; \
-    root_address = ptcpreg = NULL
+    root_address = ptcpreg = NULL; \
+    Reset_Demand_Freeze_Registers
 
 #define adjust_freeze_registers(tcp) \
     if (bfreg < tcp_bfreg(tcp)) { bfreg = tcp_bfreg(tcp); }	 \

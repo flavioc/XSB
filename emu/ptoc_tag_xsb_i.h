@@ -23,7 +23,8 @@
 ** 
 */
 
-
+#ifndef __PTOC_TAG_XSB_I_H__
+#define __PTOC_TAG_XSB_I_H__
 
 /*
  *  Returns the still-tagged value (a Cell) at the end of the deref chain
@@ -37,3 +38,5 @@ static inline Cell ptoc_tag(int regnum)
   XSB_Deref(addr);
   return addr;
 }
+
+#endif

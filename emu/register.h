@@ -56,6 +56,15 @@ extern CPtr ptcpreg;	/* parent tabled CP (subgoal)	*/
 extern CPtr delayreg;
 extern CPtr interrupt_reg;
 
+/*---- registers added for demand support ------------------------------*/
+#ifdef DEMAND
+/* demand-freeze registers */
+extern CPtr edfreg;
+extern CPtr bdfreg;
+extern CPtr hdfreg;
+extern CPtr *trdfreg;
+#endif
+
 /*---- other stuff added for the SLG-WAM -------------------------------*/
 
 extern int  xwammode;

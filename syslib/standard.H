@@ -55,6 +55,7 @@
 	read/1,		read/2,         real/1,		repeat/0,
 	see/1,		seeing/1,	seen/0,
         set_input/1,    set_output/1,  
+	demand_once/1,
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		telling/1,	told/0,
 	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 

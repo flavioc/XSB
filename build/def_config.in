@@ -268,3 +268,6 @@ the local program counter */
 
 /* electric fence needs a different tagging scheme */
 #undef ELECTRIC_FENCE
+
+/* demand support */
+#undef DEMAND

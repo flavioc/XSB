@@ -110,6 +110,10 @@
 #include "system_xsb.h"
 #include "random_xsb.h"
 
+#ifdef DEMAND
+#include "demand.h"
+#endif
+
 /*======================================================================*/
 
 extern int  sys_syscall(int);
@@ -675,6 +679,8 @@ void init_builtin_table(void)
   set_builtin_table(PARSE_FILENAME, "parse_filename");
   set_builtin_table(ALMOST_SEARCH_MODULE, "almost_search_module");
   set_builtin_table(EXISTING_FILE_EXTENSION, "existing_file_extension");
+
+  set_builtin_table(DO_ONCE, "do_once");
 
   set_builtin_table(PSC_ENV, "psc_env");
   set_builtin_table(PSC_SPY, "psc_spy");
@@ -1472,6 +1478,14 @@ int builtin_call(byte number)
     }
   }
 
+  case DO_ONCE: { /* R1: +Breg */
+#ifdef DEMAND
+    perform_once();
+#else
+    xsb_abort("This executable was not compiled with support for demand.\n");
+#endif
+    break;
+  }
   case GETENV:  {	/* R1: +environment variable */
 			/* R2: -value of that environment variable */
     char *env = getenv(ptoc_string(1));

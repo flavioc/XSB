@@ -732,6 +732,16 @@ goal_cut_untrans(X,Y) :- atom(X) -> conname(X,Y1),Y=Y1 ; Y=X.
 
 once(Term) :- call(Term), !.
 
+/* once over tabled predicates with demand support --lfcastro */
+demand_once(Goal) :-
+	'_$savecp'(Breg),
+	call(Goal),
+	write(calling(do_once(Breg))), writeln(.),
+	do_once(Breg).
+
+do_once(_Breg) :-
+	'_$builtin'(DO_ONCE).
+	
 repeat :- true; repeat.
 
 (A,B) :- call_c(A), call_c(B).	% must have no cuts

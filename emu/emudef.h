@@ -56,6 +56,15 @@ CPtr root_address;
 
 CPtr ptcpreg;
 CPtr delayreg;
+
+#ifdef DEMAND
+/* demand-freeze registers */
+CPtr edfreg;
+CPtr bdfreg;
+CPtr hdfreg;
+CPtr *trdfreg;
+#endif
+
 /*
  * interrupt_reg points to interrupt_counter, which stores the number of
  * interrupts in the interrupt chain for attributed variables.

@@ -102,6 +102,7 @@
 #define PARSE_FILENAME        	 69
 #define ALMOST_SEARCH_MODULE     70
 #define EXISTING_FILE_EXTENSION  71
+#define DO_ONCE                  72
 
 /* for efficiency, implemented these in C */
 #define CONGET_TERM	         75

@@ -96,7 +96,6 @@ AC_ARG_ENABLE(optimization,
 [  --disable-optimization     compile with no optimization (default: enabled)],
 			     disable_optimization=yes)
 
-
 if test "${with_debug}" = "yes" ; then
    enable_debug=yes
 fi
@@ -257,6 +256,16 @@ if test "${enable_gc_test}" = "yes" ; then
    gc_test=yes
 fi
 
+AC_ARG_ENABLE(demand,
+[  --enable-demand            compile with demand support])
+demand=no
+if test "${with_demand}" = "yes" ; then
+   enable_demand=yes
+fi
+if test "${enable_demand}" = "yes" ; then
+   AC_DEFINE(DEMAND)
+   demand=yes
+fi
 
 config_prefix=${topdir}/config
 install_config_prefix=${prefix}/config
@@ -1510,7 +1519,8 @@ Installation date: ${install_date}
   XSB abstract machine: 			  ${engine_mode}
   XSB scheduling strategy:			  ${xsb_scheduling_strategy}
   Garbage Collection Stress-Test:		  ${gc_test}
-  Jumptable-based emulator loop:		  ${jumptable}"
+  Jumptable-based emulator loop:		  ${jumptable}
+  Demand support:                                 ${demand}"
 
 
 
