@@ -38,6 +38,7 @@
 #include <direct.h>
 #include <io.h>
 #include <process.h>
+#include <winbase.h>
 #else
 #include <unistd.h>	
 #include <stddef.h>
@@ -115,7 +116,15 @@ bool sys_system(int callno)
 
   switch (callno) {
   case PLAIN_SYSTEM_CALL: /* dumb system call: no communication with XSB */
+    /* this call is superseded by shell and isn't used */
     ctop_int(3, system(ptoc_string(2)));
+    return TRUE;
+  case SLEEP_FOR_SECS:
+#ifdef WIN_NT
+    Sleep(ptoc_int(2) * 1000);
+#else
+    sleep(ptoc_int(2));
+#endif
     return TRUE;
   case SHELL: /* smart system call: like SPAWN_PROCESS, but returns error code
 		 instead of PID. Uses system() rather than execvp.

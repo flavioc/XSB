@@ -43,6 +43,7 @@
 #define CURRENT_MODULE	12	/* current module (0 = usermod)		YW */
 #define MOD_LIST	13	/* the list of module (Psc) entries	YR */
 
+#define SYS_TIMER       16      /* XSB Timer	    	    	    	MK */
 #define BANNER_CTL      17      /* Controls whether banner, "loaded" msgs
 				   are displayed; passed to Prolog side.
 				   Check BANNER_CTL values at the end      */

@@ -22,18 +22,20 @@
 ** 
 */
 
+
 #include "socket_defs_xsb.h"
 
 #ifdef WIN_NT
 #define BAD_SOCKET(sockfd)         sockfd==INVALID_SOCKET
 #define SOCKET_OP_FAILED(sockfd)   sockfd==SOCKET_ERROR
 #define IS_IP_ADDR(string)    	   inet_addr(string) != INADDR_NONE
+#define XSB_SOCKET_ERRORCODE	   WSAGetLastError()
 #else
 #define SOCKET 	        int
 #define SOCKADDR_IN 	struct sockaddr_in /* in windows, but not Unix */
 #define PSOCKADDR       struct sockaddr *  /* in windows, but not Unix */
 #define closesocket    	       	  close
-#define WSAGetLastError()      	  1       /* in windows; use 1 in Unix */
+#define XSB_SOCKET_ERRORCODE   	  errno
 #define BAD_SOCKET(sockfd)        sockfd<0
 #define SOCKET_OP_FAILED(sockfd)  sockfd<0
 #define IS_IP_ADDR(string)    	  inet_addr(string) != -1
@@ -44,3 +46,13 @@
 #else
 #define FillWithZeros(addr)    	  memset((char *)&addr, (int) 0, sizeof(addr));
 #endif
+
+#define MAXCONNECT 50	     /* max number of connections per socket_select */
+
+/* the length of the XSB header that contains the info on the size of the
+   subsequent message. Used by socket_send/socket_recv */
+#define XSB_MSG_HEADER_LENGTH  sizeof(int)
+
+/* These are used only by the readmsg function */
+#define SOCK_READMSG_FAILED  -1      /* failed socket call     	      	    */
+#define SOCK_READMSG_EOF     -2	     /* when EOF is reached    	       	    */

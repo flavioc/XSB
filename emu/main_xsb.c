@@ -24,7 +24,6 @@
 
 
 #include "configs/config.h"
-#include "basictypes.h"
 
 
 #ifdef WIN_NT
@@ -53,6 +52,7 @@
 #endif
 
 #include "orient_xsb.h"
+#include "basictypes.h"
 
 int main(int argc, char *argv[])
 { 

@@ -168,6 +168,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\system_xsb.obj"
 	-@erase "$(OBJDIR)\table_stats.obj"
 	-@erase "$(OBJDIR)\tables.obj"
+	-@erase "$(OBJDIR)\timer_xsb.obj"
 	-@erase "$(OBJDIR)\token_xsb.obj"
 	-@erase "$(OBJDIR)\trace_xsb.obj"
 	-@erase "$(OBJDIR)\tries.obj"
@@ -220,6 +221,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/system_xsb.obj" \
 	"$(OBJDIR)/table_stats.obj" \
 	"$(OBJDIR)/tables.obj" \
+	"$(OBJDIR)/timer_xsb.obj" \
 	"$(OBJDIR)/token_xsb.obj" \
 	"$(OBJDIR)/trace_xsb.obj" \
 	"$(OBJDIR)/tries.obj" \

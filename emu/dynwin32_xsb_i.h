@@ -35,6 +35,7 @@
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "memory_xsb.h"
+#include "error_xsb.h"
 #include "inst_xsb.h"
 #include "psc_xsb.h"
 

@@ -317,7 +317,7 @@ static char *rectify_pathname(char *inpath, char *outpath) {
   char *inptr1, *inptr2, *inpath_end;
   int length; /* length=inptr2-inptr1 */
   int i, outidx=0, nameidx=0; /* nameidx: 1st index to names */
-  bool leading_slash, trailing_slash;
+  bool leading_slash, leading_slash2, trailing_slash;
 
   tilde_expand_filename_norectify(inpath, expanded_inpath);
   
@@ -327,6 +327,12 @@ static char *rectify_pathname(char *inpath, char *outpath) {
 
   /* check if expanded inpath has trailing/leading slash */
   leading_slash = (*expanded_inpath == SLASH ? TRUE : FALSE);
+#ifdef WIN_NT
+  /* In windows, the leading \\foo means remote drive */
+  leading_slash2 = (*(expanded_inpath+1) == SLASH ? TRUE : FALSE);
+#else
+  leading_slash2 = FALSE;
+#endif
   trailing_slash = (*(inpath_end - 1) == SLASH ? TRUE : FALSE);
 
   while ( inptr2 < inpath_end ) {
@@ -386,6 +392,10 @@ static char *rectify_pathname(char *inpath, char *outpath) {
      So, we are ready to construct  the outpath. */
 
   if (leading_slash) {
+    outpath[outidx] = SLASH;
+    outidx++;
+  }
+  if (leading_slash2) {
     outpath[outidx] = SLASH;
     outidx++;
   }

@@ -1045,7 +1045,7 @@ int clenpterm(prolog_term term)
 char tempstring[MAXBUFSIZE];
 
 /* print a prolog_term into a buffer.
-(Atoms are quoted if !toplevel and it's necessary for Prolog reading) */
+   Atoms are quoted if !toplevel -- necessary for Prolog reading */
 void print_pterm(prolog_term term, int toplevel, char *straddr, int *ind)
 {
   int i;

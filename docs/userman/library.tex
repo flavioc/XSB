@@ -1455,24 +1455,54 @@ abnormality.
 
 \section{Socket I/O}
 
-The XSB socket library defines a number of predicates manipulating
-sockets. They are all rather straight-forward interfaces to the
-corresponding BSD-type socket functions with the same name. For detailed
-information on sockets, the reader is referred to the Unix man pages
-(another good source is \emph{Unix Network Programming}, by W. Richard
-Stevens).
+The XSB socket library defines a number of predicates for communication
+over BSD-style sockets. Most are modeled after and are interfaces to the
+socket functions with the same name. For detailed information on sockets,
+the reader is referred to the Unix man pages (another good source is
+\emph{Unix Network Programming}, by W.  Richard Stevens).  Several examples
+of the use of the XSB sockets interface can be found in the {\tt XSB/examples/}
+directory in the XSB distribution.
 
-To load the package, enter the query 
-\begin{verbatim}
-| ?- [sockets].
-\end{verbatim}
 
-Examples can be found in the examples directory in the XSB source tree.
+XSB supports two modes of communication via sockets: \emph{stream-oriented}
+and \emph{message-oriented}. In turn, stream-oriented communication can be
+\emph{buffered} or \emph{character-at-a-time}.
 
+To use \emph{buffered} stream-oriented communication, system socket
+handles must be converted to XSB I/O ports using {\tt fd2ioport/2} and then
+the regular low-level file I/O primitives (described in
+Section~\ref{sec-low-level-io}) are used. In stream-oriented communication,
+messages have no boundaries, and communication appears to the processes
+as reading and writing to a file.  At present, buffered stream-oriented
+communication works under Unix only.
+
+\emph{Character-at-a-time} stream communication is accomplished using
+the primitives {\tt socket\_put/3} and {\tt socket\_get0/3}. These
+correspond to the usual Prolog {\tt put/1} and {\tt get0/1} I/O primitives.
+
+In message-oriented communication, processes exchange messages that have
+well-defined boundaries. The communicating processes use {\tt
+  socket\_send/3} and {\tt socket\_recv/3} to talk to each other.
+XSB messages are represented as strings where the first four bytes
+({\tt sizeof(int)}) is an integer (represented in the binary network format
+--- see the functions {\tt htonl} and {\tt ntohl} in socket documentation)
+and the rest is the body of the message. The integer in the header
+represents the length of the message body.
+
+We now describe the XSB socket interface.  All predicates below must be
+imported from the module {\tt socket}. Note that almost all predicates have
+the last argument that unifies with the error code returned from the
+corresponding socket operation. This argument is explained separately.
+
+\paragraph{General socket calls.}
+These are used to open/close sockets, to establish connections, and set
+special socket options.
 \begin{description}
-\ouritem{socket(-Sockfd)}\index{{\tt socket/1}}
-    A socket Sockfd in the AF\_INET domain is created (AF\_UNIX is not
-implemented). 
+\ouritem{socket(-Sockfd, ?ErrorCode)}\index{{\tt socket/2}}
+    A socket {\tt Sockfd}  in the AF\_INET domain is created.
+    (The AF\_UNIX domain is not yet implemented). 
+    {\tt Sockfd} is bound to a small integer, called socket descriptor or
+    socket handle.
 
 \ouritem{socket\_set\_option(+Sockfd,+OptionName,+Value)}\index{{\tt socket\_set\_option/3}}
     Set socket option. At present, only the {\tt linger} option is
@@ -1482,146 +1512,258 @@ implemented).
     from/to the socket. {\tt Value} represents the number of seconds to linger.
     The value -1 means do not linger at all.
 
-\ouritem{socket\_close(+Sockfd)}\index{{\tt socket\_close/1}}
-    Sockfd is closed. Sockets used in socket\_connect/2 should not be
-closed by socket\_close/1 as they will be closed when the corresponding
-stream is closed.
+\ouritem{socket\_close(+Sockfd, ?ErrorCode)}\index{{\tt socket\_close/2}}
+    {\tt Sockfd} is closed. Sockets used in {\tt socket\_connect/2}  should
+    not be closed by {\tt socket\_close/1}  as they will be closed when the
+    corresponding stream is closed.
 
-\ouritem{socket\_bind(+Sockfd,+Port)}\index{{\tt socket\_bind/2}}
-   The socket Sockfd is bound to the address (Port is the port number).
+\ouritem{socket\_bind(+Sockfd,+Port, ?ErrorCode)}\index{{\tt socket\_bind/3}}
+   The socket {\tt Sockfd}  is bound to the specified local port number.
 
-\ouritem{socket\_connect(+Sockfd,+Port,+Hostname,SockIOport)}\index{{\tt socket\_connect/4}}
-    The socket Sockfd is connected to the address (Hostname and
-Port). SockIOport is an XSB I/O port on which items can be both read and
-    written. 
+\ouritem{socket\_connect(+Sockfd,+Port,+Hostname,?ErrorCode)}\index{{\tt socket\_connect/4}}
+    The socket Sockfd is connected to the address ({\tt Hostname}  and
+{\tt Port}). 
 
-\ouritem{socket\_listen(+Socket, +Length)}\index{{\tt socket\_listen/2}}
-    The socket Sockfd is defined to have a maximum backlog queue of
-Length pending connections.
+\ouritem{socket\_listen(+Socket, +Length, ?ErrorCode)}\index{{\tt socket\_listen/3}}
+    The socket {\tt Sockfd}  is defined to have a maximum backlog queue of
+{\tt Length}  pending connections.
 
-\ouritem{socket\_accept(+Sockfd,-SockIOport)}\index{{\tt socket\_accept/2}}
+\ouritem{socket\_accept(+Sockfd,-SockOut, ?ErrorCode)}\index{{\tt socket\_accept/3}}
     Block the caller until a connection attempt arrives. If the incoming 
     queue is not empty, the first connection request is accepted, the call
-    succeeds and binds SockIOport to an XSB I/O port that can be used for
+    succeeds and returns a new socket, {\tt SockOut}, which can be used for
     this new connection.
-
-\ouritem{socket\_flush(+SockIOport)}\index{{\tt socket\_flush/1}}
-    Any buffered data in the XSB I/O port SockIOport gets delivered.
-
-\ouritem{socket\_select} \index{{\tt socket\_select}} \emph{Not implemented.}
-
 \end{description}
 
-All streams above can be both read from and written on. All
-I/O-predicates operating on streams can be used, for example
-file\_read/2, file\_write/2, etc.
+\paragraph{Buffered, message-based communication.}
+These calls are similar to the {\tt recv} and {\tt send} calls in C, except
+that XSB wraps a higher-level message protocol around these low-level
+functions. More precisely, {\tt socket\_send/3} prepends a 4-byte field
+to each message, which indicates the length of the message
+body. When {\tt socket\_recv/3} reads a message, it first reads the 4-byte
+field to determine the length of the message and then reads the remainder
+of the message. 
 
+All this is transparent to the XSB user, but you should know these details
+if you want to use these details to communicate with external processes
+written in C and such. All this means that these external programs must
+implement the same protocol. The subtle point here is that different
+machines represent integers differently, so an integer must first be
+converted into the machine-independent network format using the functions
+{\tt htonl} and {\tt ntohl} provided by the socket library. For instance,
+to send a message to XSB, one must do something like this:
+%%
+\begin{verbatim}
+char *message, *msg_body;
+unsigned int msg_body_len, network_encoded_len;
 
-\comment{
+  msg_body_len = strlen(msg_body);
+  network_encoded_len = (unsigned int) htonl((unsigned long int) msg_body_len);
+  memcpy((void *) message, (void *) &network_encoded_len, 4);
+  strcpy(message+4, msg_body);
+\end{verbatim}
+%%
+To read a message sent by XSB, one can do as follows:
+%%
+\begin{verbatim}
+int actual_len;
+char lenbuf[4], msg_buff;
+unsigned int msglen, net_encoded_len;  
 
-TLS --- Im not quite sure that the sockets are ready for prime time.
+  actual_len = (long)recvfrom(sock_handle, lenbuf, 4, 0, NULL, 0);
+  memcpy((void *) &net_encoded_len, (void *) lenbuf, 4);
+  msglen = ntohl(net_encoded_len);
 
-\section{The Socket Library}
-
-As a convenience, XSB provides access to sockets through the following
-routines.  Currently only the domain {\tt AF\_INET} is supported.
-
+  msg_buff = calloc(msglen+1, sizeof(char))); // check if this suceeded!!!
+  recvfrom(sock_handle, msg_buff, msglen, 0, NULL, 0);
+\end{verbatim}
+%%
+If making the external processes follow the XSB protocol is not practical
+(because you did not write these programs), then you should use the
+character-at-a-time interface or, better, the buffered
+stream-based interface both of which are described in this section.
+At present, however, the buffered stream-based interface does not work on
+Windows.
+%%
 \begin{description}
-\ournewitem{socket(-Socket\_fd)}{socket}
+\ouritem{socket\_recv(+Sockfd,-Message, ?ErrorCode)}\index{{\tt socket\_recv/3}}
+    Receives a message from the connection identified by the socket descriptor
+    {\tt Sockfd}. Binds {\tt Message} to the message. {\tt socket\_recv/3}
+    provides a message-oriented interface. It understands message
+    boundaries set by {\tt socket\_send/3}.
 
-\ournewitem{socket\_request(+Socket\_fd,+Port,+Hostname,+SockIOport)}{socket}
-
-
-
-\ournewitem{socket\_bind(+Socket\_fd,+Port)}{socket}
-
-\ournewitem{socket\_listen(+Socket\_fd,+Length)}{socket}
-
-\ournewitem{socket\_accept(+Socket\_fd,SockIOport)}{socket}
-
-\ournewitem{socket\_connect(+Socket\_fd,Port,Hostname,SockIOport)}{socket}
-
-\ournewitem{socket\_flush(+Socket\_fd)}{socket}
-
-\ournewitem{socket\_close(+Socket\_fd)}{socket}
+\ouritem{socket\_send(+Sockfd,+Message, ?ErrorCode)}\index{{\tt socket\_send/3}}
+    Takes a message (which must be an atom) and sends it through the
+    connection specified by {\tt Sockfd}. {\tt socket\_send/3} provides
+    message-oriented communication. It prepends a 4-byte header to the
+    message, which tells {\tt socket\_recv/3} the length of the message body.
 
 \end{description}
 
-(dsw - This is stuff Hasan wrote, which ought to be formated, cleaned up and included: )
+\paragraph{Stream-oriented, character-at-a-time interface.}
+Internally, this interface uses the same {\tt sendto} and {\tt recvfrom}
+socket calls, but they are executed for each character separately.
+This interface is appropriate when the message format is not known or when
+message boundaries are determined using special delimiters.
 
-The following calls can be imported from the ``socket'' library.
-
-socket(-Sockfd) :
-Creates a new TCP communication end point of type AF_INET. Succeeds with
-binding Sockfd to a small integer called a socket descriptor.
-
-socket\_set\_option(+Sockfd,+OptionName,Value) :
-    Set socket option. At present, only the {\tt linger} option is
-    supported. ``Lingering'' is a situation when a socket continues to live
-    after it was shut down by the owner. This is used in order to let the
-    client program that uses the socket to finish reading or writing
-    from/to the socket. {\tt Value} represents the number of seconds to linger.
-    The value -1 means do not linger at all.
-
-
-socket_bind(+Sockfd, +Port) :
-Used for attaching a specific local (integer) Port for the socket with
-descriptor Sockfd.
-
-socket_listen(+Sockfd, +QueueLength) :
-Used for announcing willingness to accept connections at the socket identified
-with descriptor Sockfd. The (integer) QueueLength sets the length of the queue
-for the incoming connections at this socket.
-
-socket_accept(+Sockfd, -NewSockfd) :
-Block the caller until a connection attempt arrives. If the incoming queue is
-not empty, the first connection request is accepted, the call succeeds and
-binds NewSockfd with a socket descriptor that will be used for this new
-connection.
-
-socket_connect(+Sockfd, +Port, +Hostname, -SockIOport) :
-The caller identifies a server's IP address in Hostname and port in Port.
-TCP will attempt to establish a connection with the server using local socket
-with descriptor Sockfd. For information about SockIOport argument see the
-note below.
-
-socket_close(+Sockfd) :
-Terminates and closes a connection identified with the descriptor Sockfd.
-
-socket_recv(+Sockfd, -Data) :
-Receives a message from the connection identified with the descriptor Sockfd,
-strips off the special end_of_message symbol ```'' and binds it to variable Data.
-
-socket_send(+Sockfd, +Data) :
-Appends the end_of_message symbol ```'' to the atom Data and sends Data over
-the connection identified with the descriptor Sockfd.
-
-socket_send_eof(+Sockfd) :
-Sends the special EOF symbol appended with end_of_message symbol ```'' over
-the connection identified with the descriptor Sockfd.
-
-socket_send_asci(+Sockfd, Code) :
-Send the ascii character with ASCII code Code appended with end_of_message
-symbol ```''  over the connection identified with the descriptor Sockfd.
-
-
-Note: (UNIX only) file_write_canonical(+SockIOport, +Data)
-		  file_read_canonical(+SockIOport, -Data, -Psc) 
-		  socket_flush(+SockIOport)
-
-The above calls can be used for sending/flushing and receiving {\tt Data}
-over an XSB I/O port
-SockIOport associated with a socket. SockIOport can be
-either obtained from the socket_accept(+Sockfd, -SockIOport) in server mode
-or from socket_connect(+Sockfd, +Port, +Hostname, -SockIOport) in client mode.
-
-socket_get0(+Sockfd, -Char, -ErrorCode):
+{\tt socket\_get0/3} creates the end-of-file condition when it receives the
+end-of-file character {\tt CH\_EOF\_P} (a.k.a. 255) defined in {\tt
+  char\_defs.h} (which must be included in the XSB program). C programs
+that need to send an end-of-file character should send {\tt (char)-1}.
+%%
+\begin{description}
+\ouritem{socket\_get0(+Sockfd, -Char, ?ErrorCode)}\index{{\tt socket\_get0/3}}
 The equivalent of {\tt get0} for sockets.
 
-socket_put(+Sockfd, -Char):
+\ouritem{socket\_put(+Sockfd, +Char, ?ErrorCode)}\index{{\tt socket\_put/3}}
 Similar to put/1, but works on sockets.
+\end{description}
+%%
 
-}
+\paragraph{Socket-probing.}
+These calls need more documentation.
+%%
+\begin{description}
+\ouritem{socket\_select(+SymConName,+Timeout,-ReadSockL,-WriteSockL,-ErrSockL,?ErrorCode)} \index{{\tt socket\_select/6}}
+{\tt SymConName} must be an atom that denotes an existing
+connection, which must be previously created with {\tt socket\_set\_select/4}
+(described below). {\tt ReadSockL}, {\tt WriteSockL},
+{\tt ErrSockL} are lists of socket handles (as returned by {\tt
+  socket/2}) that specify the available sockets that are available for
+reading, writing, or on which exception conditions occurred.
+
+\ouritem{socket\_set\_select(+SymConName,+ReadSockFdLst,+WriteSockFdLst,+ErrorSockFdLst)} \index{{\tt socket\_select\_destroy/4}}
+Creates a connection under the symbolic name {\tt SymConName}
+(an atom) for subsequent use by {\tt socket\_select/6}.
+{\tt ReadSockFdLst}, {\tt WriteSockFdLst}, and {\tt ErrorSockFdLst} are
+lists of sockets for which {\tt socket\_select/6} is to be monitoring read,
+write, or exception conditions.
+
+\ouritem{socket\_select\_destroy(+SymConName)} \index{{\tt socket\_select\_destroy/1}}
+Destroys the specified connection.
+
+\end{description}
+
+
+\paragraph{Error codes.}
+The error code argument unifies with the error code returned by the
+corresponding socket commands. The error code -2 signifies
+\emph{timeout} for timeout-enabled primitives (see below). The error code
+of zero signifies normal termination. Positive error codes denote specific
+failures, as defined in BSD sockets. When such a failure occurs, an error
+message is printed, but the predicate succeeds anyway. The specific error
+codes are part of the socket documentation. Unfortunately, the symbolic
+names and error numbers of these failures are different between Unix
+compilers and Visual C++. Thus, there is no portable, reliable way to refer
+to these error codes. The only reliably portable error codes that can be 
+used in XSB programs defined through these symbolic constants:
+%%
+\begin{verbatim}
+#include "socket_defs_xsb.h"  
+
+#define SOCK_OK       0      /* indicates sucessful return from socket      */
+#define SOCK_EOF     -1      /* end of file in socket_recv, socket_get0     */
+
+#include "timer_defs_xsb.h"
+
+#define TIMEOUT_ERR -2    	       /* Timeout error code */
+\end{verbatim}
+%%
+
+\paragraph{Timeouts.}
+XSB socket interface allows the programer to specify timeouts for certain
+operations. If the operations does not finish within the specified period
+of time, the operation is aborted and the corresponding predicate succeeds
+with the {\tt TIMEOUT\_ERR} error code. The following primitives are
+timeout-enabled: {\tt socket\_connect/4}, {\tt socket\_recv/3},
+{\tt socket\_send/3}, {\tt socket\_get0/3}, and {\tt socket\_put/3}.
+To set a timeout value for any of the above primitives, the user should
+execute {\tt set\_timer/1} right before the subgoal to be timed. 
+
+The most common use of timeouts is to either abort or retry the operation
+that timed out. For the latter, XSB provides the {\tt sleep/1} primitive,
+which allows the program to wait for a few seconds before retrying.
+
+The {\tt set\_timer/1} and {\tt sleep/1} primitives are described below.
+They are standard predicates and do not need to be explicitly imported.
+%%
+\begin{description}
+\ouritem{set\_timer(+Seconds)}\index{{\tt set\_timer/1}}
+Set timeout value. If a timer-enabled goal executes after this value is
+set, the clock begins ticking. If the goal does not finish in time, it
+succeeds with the error code set to {\tt TIMEOUT\_ERR}. The timer is turned
+off after the goal executes (whether timed out or not and whether it
+succeeds or fails). This goal always succeeds.
+
+Note that if the timer is not set, the timer-enabled goals execute
+``normally,'' without timeouts. In particular, they might block (say, on
+{\tt socket\_recv}, if data is not available).
+
+\ouritem{sleep(+Seconds)}\index{{\tt sleep/1}}
+Put XSB to sleep for the specified number of seconds. Execution resumes
+after the {\tt Seconds} number of seconds. This goal always succeeds.
+\end{description}
+%%
+Here is an example of the use of the timer:
+%%
+\begin{samepage}
+\begin{verbatim}
+:- compiler_options([xpp_on]).
+#include "timer_defs_xsb.h"
+
+?- set_timer(3),  % wait for 3 secs
+   socket_recv(Sockfd, Msg, ErrorCode),
+   (ErrorCode == TIMEOUT_ERR
+   -> writeln('Socket read timed out, retrying'),
+      try_again(Sockfd)
+   ;  write('Data received: '), writeln(Msg)
+   ).
+\end{verbatim}
+\end{samepage}
+%%
+
+\noindent
+Apart from the above timer-enabled primitives, a timeout value can be given
+to {\tt socket\_select/6} directly, as an argument.
+
+
+\paragraph{Buffered, stream-oriented communication.}
+In Unix, socket descriptors can be ``promoted'' to file streams and the
+regular read/write commands can be used with such streams. In XSB, such
+promotion can be done using the following predicate:
+%%
+\begin{description}
+\ournewitem{fd2ioport(+Pipe, -IOport)}{shell}\index{{\tt fd2ioport/2}} 
+    Take a socket descriptor and convert it to an XSB I/O port that can be used
+    for regular file I/O. 
+\end{description}
+%%
+Once {\tt IOport} is obtained, all I/O primitives described in
+Section~\ref{sec-low-level-io} can be used. This is, perhaps, the easiest
+and the most convenient way to use sockets in XSB. (This feature has not
+been implemented for NT yet.)
+
+\noindent
+Here is an example of the use of this feature:
+%%
+\begin{samepage}
+\begin{verbatim}
+:- compiler_options([xpp_on]).
+#include "socket_defs_xsb.h"
+
+?- (socket(Sockfd, SOCK_OK)
+   ->   socket_connect(Sockfd1, 6020, localhost, Ecode),
+        (Ecode == SOCK_OK
+        -> fd2ioport(Sockfd, SockIOport),
+           file_write(SockIOport, 'Hello Server!')
+        ;  writeln('Can''t connect to server')
+        ),
+    ;   writeln('Can''t open socket'), fail
+    ).
+\end{verbatim}
+\end{samepage}
+%%
+
 
 \section{Arrays}
 %===============

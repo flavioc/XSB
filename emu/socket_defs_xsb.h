@@ -42,5 +42,13 @@
 #define SOCKET_SET_SELECT     14
 #define SOCKET_SELECT         15
 #define SOCKET_SELECT_DESTROY 16
-#define SET_TIMEOUT           17	
 
+
+#define SOCK_NOLINGER -1     /* the no-linger socket option */
+
+/* Some typical error codes for socket ops.
+   Positive codes are used for socket failures. 
+   They are returned by errno.
+   The other typical error code is TIMEOUT_ERR */
+#define SOCK_OK       0      /* indicates sucessful return from socket      */
+#define SOCK_EOF     -1      /* end of file in socket_recv, socket_get0     */

@@ -1012,4 +1012,11 @@ import(P/A, MName) :-
 	integer(A),
 	psc_import(PName, A, MName).
 
+
+/* Set system timer. If one of the following goals is timer-enabled 
+   (see timer_xsb.c) then timer alarm rings, unless the goal suceeds
+   before that */
+set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
+
+
 /* --------------------- end of file standard.P ----------------------- */

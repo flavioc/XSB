@@ -138,3 +138,5 @@
 
 #define CH_DELETE      	     127      /*  ^?	*/
 
+#define CH_EOF_C	     255      /* The C EOF character: (char) -1  */
+#define CH_EOF_P	     -1       /* The Prolog EOF character: -1    */

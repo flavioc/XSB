@@ -73,6 +73,7 @@
 	message/1,      message/2,
         warning/1,	push_abort_cutpoint/0,  pop_abort_cutpoint/0,
         abort/1,	abort/0,
+	set_timer/1,
 	(import)/1,	(multifile)/1.
 
 

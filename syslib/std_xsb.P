@@ -191,8 +191,10 @@ standard_symbol(seeing, 1, standard).
 standard_symbol(seen, 0, standard).
 
 standard_symbol(segfault_handler, 1, machine).
+standard_symbol(set_timer, 1, standard).
 
 standard_symbol(setof, 3, setof).
+standard_symbol(sleep, 1, shell).
 standard_symbol(skip, 1, standard).
 standard_symbol((sort), 2, setof).
 standard_symbol((spy), 1, debugger).

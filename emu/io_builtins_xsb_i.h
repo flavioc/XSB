@@ -433,13 +433,14 @@ inline static bool file_function(void)
     else if (fd_flags == O_WRONLY)
       mode = "wb";
     else {
-      /* can't determine the mode of the C fd -- return an invalid XSB fd */
-      ctop_int(3, -1);
-      break;
+      /* can't determine the mode of the C fd -- return "r+" */
+      mode = "r+";
     }
 #endif
 
     fptr = fdopen(pipe_fd, mode);
+
+    /* xsb_intern_file will return -1, if fdopen fails */
     ctop_int(3, xsb_intern_file(fptr, "FD2IOPORT"));
     break;
   }

@@ -61,7 +61,7 @@ unix(Command, Result) :-
 
 
 cd(Path) :- 
-	obsolete('cd/1 in module unix', 'use cd/1 in module'),
+	obsolete('cd/1 in module unix', 'use cd/1 in module shell'),
 	( atom(Path) -> 
 		expand_filename(Path, Dir), sys_chdir(Dir, Res), Res=:=0
 	; var(Path) ->
@@ -76,11 +76,11 @@ ls :-
 	unix('ls -F', Res), Res =:= 0.
 
 rm(Name) :-
-	obsolete('rm/1 in module unix', 'use rm/1 in module'),
+	obsolete('rm/1 in module unix', 'use rm/1 in module shell'),
 	sys_unlink(Name, Res), Res =:= 0.
 
 edit(File) :- 
-	obsolete('edit/1 in module unix', 'use edit/1 in module'),
+	obsolete('edit/1 in module unix', 'use edit/1 in module shell'),
 	expand_filename(File, FileName), 
 	unix(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, '.P']).
 
@@ -88,18 +88,22 @@ edit(File) :-
 sys_exit() :- sys_syscall(1).
  */
 sys_link(Source, Dest, Res) :-
-	obsolete('sys_link/3 in module unix', 'use sys_link/3 in module'),
+	obsolete('sys_link/3 in module unix',
+		 'use sys_link/3 in module shell'),
 	sys_syscall(  9, Res, Source, Dest).
 sys_unlink(Path, Res) 	    :- sys_syscall( 10, Res, Path).
 sys_chdir(Dir, Res)	    :- sys_syscall( 12, Res, Dir).
 sys_access(File, Mode, Res) :-
-	obsolete('sys_access/3 in module unix', 'use sys_access/3 in module'),
+	obsolete('sys_access/3 in module unix',
+		 'use sys_access/3 in module shell'),
 	sys_syscall( 33, Res, File, Mode).
 sys_stat(Path, Buff, Res)   :-
-	obsolete('sys_stat/1 in module unix', 'use sys_stat/1 in module'),
+	obsolete('sys_stat/1 in module unix',
+		 'use sys_stat/1 in module shell'),
 	sys_syscall( 38, Res, Path, Buff).
 sys_rename(Old, New, Res)   :-
-	obsolete('rename/3 in module unix', 'use rename/3 in module'),
+	obsolete('rename/3 in module unix',
+		 'use rename/3 in module shell'),
 	sys_syscall(128, Res, Old, New).
 
 

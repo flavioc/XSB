@@ -28,6 +28,11 @@ tells the XSB compiler to put the source through a preprocessor. The default is
 powerful preprocessor that understands both C and Prolog syntax.
 
 <p>
+<b>High-level C interface:</b> XSb can now automatically generate wrappers for
+the most common C functions. Such functions can now be simply declared using
+compiler directives and then be called from XSB.
+
+<p>
 <B>Enhancements to the sockets interface:</B>
 New calls such as <tt>socket_set_option, socket_select,</tt>, etc.
 Certain socket calls and file I/O calls can be timed-out.
@@ -45,7 +50,14 @@ some are new.
 
 <p>
 <b>Call changes:</b>
-New calls: number_digits/2, number_codes/2, atom_codes/2.
+New calls: number_digits/2, number_codes/2, atom_codes/2 replace atom_chars/2
+and number_chars/2.
+
+<p>
+<b>Atom length:</b>
+Atom length in compiled code is no longer limited to 255.
+The 255 limit on the size of ldoptions directive in the Foreign C interface
+has been removed as well.
 
 <p>
 <b>Debugger enhancements:</b>
@@ -54,9 +66,17 @@ facility.
 
 <h3>New Packages</h3>
 
+<p>
+<b>sModels</b>: Implements stable model semantics.
+
 <h3> Backward Incompatibility</h3>
 <p>
 <ul>
+<li> 
+   <b>Binary incompatibility!!!</b>
+   The fpormat of the XSB .O files has been changed. Make sure you recompile
+   all your programs! (The binaries that come with the XSB distribution have
+   the new format.)
 <li>
   <tt>unix/1</tt> is now called <tt>shell/1</tt>. It exists in module
   <tt>shell</tt>, and is imported from there automatically.
@@ -66,6 +86,23 @@ facility.
   lists of atoms rather than ASCII codes).
   The old behavior is provided by the standard predicates atom_codes/2 and
   number_codes/2.
+<li>
+  A number of backward-incompatible changes in socket calls.
+  First, the predicates socket_send_eof/1 and socket_send_asci/2 have been
+  removed. This functionality is available through other calls.
+  <p>
+  Second, all socket predicates now have an extra argument, the error code.
+  The old-style predicates have been preserved, but their behavior isn't
+  guaranteed to be 100% the same. The fileptr argument in socket_connect call
+  has been deleted. The fileptr argument in socket_accept no longer denotes an
+  XSB I/O port. Instead, it denoted a socket descriptor. It can be converted to
+  an I/O port using the new builtin fd2ioport.
+  <p>
+  socket_send/3 no longer appends the message delimited (the backquote).
+  Programs that rely on this feature will not work any longer.
+  Instead of this old hack, socket_send now prepends a 4-byte header that
+  specifies the length of the message body. The primitive socket_recv/3 uses it
+  to determine the length of the message it received.
 </ul>
 
 <hr>
@@ -129,7 +166,7 @@ The following incompatible changes have been made in XSB Version 2.0:
     longer supports mixing compiled and dynamic code for the same
     predicate. 
 <li> 
-    The predicate is_string/1, which ised to check if its argument is a list of
+    The predicate is_string/1, which used to check if its argument is a list of
     characters, is now replaced by the builtin is_charlist/1. There is now also
     is_charlist/2 (see the manual).
 </ul>

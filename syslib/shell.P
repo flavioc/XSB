@@ -65,6 +65,9 @@ process_status(Pid, Status) :- sys_system(PROCESS_STATUS,Pid,Status,_,_,_,_).
 process_control(Pid, Signal) :- sys_system(PROCESS_CONTROL,
 					   Pid, Signal, _,_,_,_).
 
+%% Sleep for the specified number of seconds
+sleep(Seconds) :- sys_system(SLEEP_FOR_SECS, Seconds,_,_,_,_,_).
+
 
 cd(Path) :- 
 	( atom(Path) -> 

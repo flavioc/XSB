@@ -23,15 +23,22 @@
 */
 
 #include "configs/config.h"
+
+#ifdef WIN_NT
 #include <windows.h>
 #include <SQL.H>
 #include <SQLEXT.H>
 #include <odbcinst.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+
 #include "cinterf.h"
+#include "cell_xsb.h"
+#include "error_xsb.h"
 #include "export.h"
 
 #define MAXCURSORNUM                    20
