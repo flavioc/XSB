@@ -4,6 +4,9 @@ init_smodels(+Query): initializes smodels with the residual program
 for Query.  Query must be a call to a tabled predicate that is
 currently completely evaluated (and should have a delay list).
 
+close_smodels: closes smodels.  Only necessary when cutting over
+retrieval of models.
+
 atom_handle(?Atom,?AtomHandle): is set by init_smodels to be true of
 the set of atoms in the residual program (and thus the herbrand base
 of the stable models.)  AtomHandle is an integer uniquely identifying
@@ -50,10 +53,7 @@ print_current_stable_model: prints the current stable model on STDFDBK.
 
 
 init_smodels(Query) :-
-	(atomtrie(_)
-         ->     close_smodels
-         ;      true
-        ),
+	close_smodels,
 	conset('_$smissm',0),
 	conset('_$smctr',0),
 	new_trie(AtomTrie),
@@ -98,14 +98,14 @@ num_resid_list([Lit|Lits],AtomTrie,[NumLit|NumDL0],NumDL,Rules0,Rules) :-
 get_the_delay_lists(Query,DLs) :-
 	excess_vars(Query,[],[],Vars),
 	get_calls(Query,S,R),
-	is_most_general_list(Vars),
+	is_most_general_term(Vars),
 	table_state(S,complete),
 	!,
 	% combine delay lists of subsuming answers.
 	findall(DLS,get_DLs(R,S,DLS),DLsList),
 	append_lists(DLsList,DLs).
 get_the_delay_lists(Query, _) :-
-	abort(('init_smodels: Query not completly evaluated: ',Query)).
+	abort(('init_smodels: Query not completely evaluated: ',Query)).
 
 get_DLs(R,S,DLs) :-
 	copy_term(R,R1),
@@ -150,13 +150,10 @@ atom_handle(Atom,Handle) :-
 	 ;      excess_vars(Atom,[],[],Vars),
 	        trie_interned(Atom,AtomTrie,Leaf,Skel),
 		is_most_general_term(Skel),
-		is_most_general_list(Vars),
+		is_most_general_term(Vars),
 		atomhandle(Handle,Leaf)
 	).
 
-is_most_general_list(L) :- \+ \+ imgl(L).
-imgl([]).
-imgl([L|Ls]) :- var(L), L=[], imgl(Ls).
 
 in_all_stable_models(Handle,Neg) :-
 	smodels_initted,
@@ -168,7 +165,7 @@ in_all_stable_models(Handle,Neg) :-
 	in_all_stable_models1(Handle,Neg).
 
 in_all_stable_models1(Handle,Neg) :-
-	(Neg == 0
+	(Neg =:= 0
          ->     smodelsSetNegCompute(Handle)
 	 ;      smodelsSetPosCompute(Handle)
         ),
@@ -177,7 +174,45 @@ in_all_stable_models1(Handle,Neg) :-
 	close_smodels,
 	Ret =:= 0.         
 
+pstable_model(Query0,Model,Flag) :-
+	make_call(Query0,Query,QueryVars,Neg),
+	get_calls(Query, S, R),
+	is_most_general_term(R),
+	is_most_general_term(QueryVars),
+	get_returns(S,R,Leaf),
+	get_delay_lists(Leaf,DLs),
+	(DLs == []
+         ->     (Neg =:= 0
+                 ->     Model = [Query0]
+	         ;      fail
+	        )
+	 ;      init_smodels(Query),
+	        (Flag =:= 1
+	         ->     (Neg =:= 0
+	                 ->     smodelsSetPosCompute(1)
+		         ;      smodelsSetNegCompute(1)
+		        )
+		 ;      true
+	        ),
+		a_stable_model,
+		current_stable_model(Model)
+	).
+
+
 answer_set(Query0) :-
+	make_call(Query0,Query,QueryVars,Neg),
+	get_calls(Query, S, R),
+	is_most_general_term(R),
+	is_most_general_term(QueryVars),
+	get_returns(S,R,Leaf),
+	get_delay_lists(Leaf,DLs),
+	(DLs == []
+         ->     true
+	 ;      init_smodels(Query),
+	        in_all_stable_models1(1,Neg)
+	).
+
+make_call(Query0,Query,QueryVars,Neg) :-
 	excess_vars(Query0,[],[],QueryVars),
 	(Query0 = tnot(Query1)
          ->     (QueryVars \== []
@@ -193,18 +228,8 @@ answer_set(Query0) :-
          ; State \== complete
          ->     Query = Query1,
 	        (call(Query1),fail ; true)
-	 ;      true
-        ),
-	get_calls(Query, S, R),
-	is_most_general_term(R),
-	is_most_general_list(QueryVars),
-	get_returns(S,R,Leaf),
-	get_delay_lists(Leaf,DLs),
-	(DLs == []
-         ->     true
-	 ;      init_smodels(Query),
-	        in_all_stable_models1(1,Neg)
-	).
+	 ;      Query = Query1
+        ).
 
 :- table table_call/1.
 table_call(Q) :- call(Q).
