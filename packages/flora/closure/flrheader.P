@@ -11,6 +11,8 @@
 :- table '_$_$_flora_mvs'/3.
 
 
+:- import member/2 from basics.
+
 :- import consult/1 from consult.
 
 :- import bootstrap_package/2, package_configuration/2 from packaging.

@@ -583,10 +583,10 @@ flatten_retract_spec(Obj,fn(M,A,R),W,Ps) :-
 	append(C1,C2,C3),
 	append(C3,[P2],Ps).
 
-flatten_retract_spec(Obj,set(M,A,Ps),W,Ps) :-
+flatten_retract_spec(Obj,set(M,A,POs),W,Ps) :-
 	!,
 	rhs_flatten_methappl(M,MObj,C1),
-	rhs_flatten_pathlist(Ps,PObjs,C2),
+	rhs_flatten_pathlist(POs,PObjs,C2),
 	dynword(A,DynA),
 	( PObjs = [] ->
 	    P1 =.. [DynA,Obj,MObj],
@@ -1049,7 +1049,9 @@ dynlist([],[]).
 dynlist([P|Ps],[DynP|DynPs]) :-
 	P =.. [F|L],
 	( (flora_word(fd,F);
+	   flora_word(mvd,F);
 	   flora_word(ifd,F);
+	   flora_word(imvd,F);
 	   flora_word(isa,F);
 	   flora_word(sub,F);
 	   flora_word(exists,F);

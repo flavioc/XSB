@@ -95,7 +95,7 @@
 	  ; G = '_$_$_flora_mvs_dyn'(_,_,O)  -> true
 	  ; NextAction=no
 	),
-	( NextAction=no ->
+	( NextAction==no ->
 	    true
 
 	  ; var(O) ->

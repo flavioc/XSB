@@ -356,8 +356,7 @@ read_string(0'\,Quote,Chars,Tokens,Status) :-
 	    )
 
 	  ; 
-	    (escape_char(C1,V) -> true ; V=C1),
-	    Chars=[V|Chs],
+	    (escape_char(C1,V) -> Chars=[V|Chs] ; Chars=[0'\,C1|Chs]),
 	    get0(C2),
 	    read_string(C2,Quote,Chs,Tokens,Status)
 	).
@@ -397,6 +396,7 @@ hex_symbol(Ch,Value) :-
 /****************************************************************************
   This table is for ASCII.
 ****************************************************************************/
+escape_char(0'\, 92).
 escape_char(0'n, 10).		% \n = NewLine
 escape_char(0'N, 10).		% \N = NewLine
 escape_char(0't,  9).		% \t = Tab
