@@ -46,5 +46,5 @@
 :- import close_open_tables/0, psc_data/2, psc_name/2, psc_arity/2,
              xsb_backtrace/1 from machine.
 :- import atom/1, messageln/2, throw/1 from standard.
-:- import concat_atom/2 from string.
+:- import concat_atom/2, term_to_atom/2 from string.
 

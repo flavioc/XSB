@@ -108,16 +108,20 @@ get_sys_error_description('_$abort_ball'(_Backtrace), 'Aborting...') :- !. %% no
 get_sys_error_description(error(instantiation_error,Msg), ExceptionDescription) :- !,
 	list_comma_list(MsgList, Msg),
 	concat_atom(['++Error[XSB/Runtime/P]: [Instantiation] '| MsgList], ExceptionDescription).
-get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDescription) :-
-	atom(Valid_type), atom(Culprit), !,
+get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDescription) :- !,
+	(atom(Valid_type) -> Valid_type_a = Valid_type ; term_to_atom(Valid_type, Valid_type_a)),
+	(atom(Culprit) -> Culprit_a = Culprit ; term_to_atom(Culprit, Culprit_a)), 
 	list_comma_list(MsgList, Msg),
-	concat_atom(['++Error[XSB/Runtime/P]: [Type (',Culprit,' in place of ',Valid_type,')] '| MsgList],
+	concat_atom(['++Error[XSB/Runtime/P]: Type ',Culprit_a,' in place of ',Valid_type_a,' '| MsgList],
 		    ExceptionDescription).
-get_sys_error_description(error(domain_error(Valid_type_in,Culprit),Msg), ExceptionDescription) :-
-	atom(Valid_type_in), atom(Culprit), !,
+get_sys_error_description(error(domain_error(Valid_type_in,Culprit),Msg), ExceptionDescription) :- !,
+	(atom(Culprit) -> Culprit_a = Culprit ; term_to_atom(Culprit, Culprit_a)),
 	list_comma_list(MsgList, Msg),
-	(Valid_type_in = [_|_] -> concat_atom(Valid_type_in,Valid_type) ; Valid_type = Valid_type_in),
-	concat_atom(['++Error[XSB/Runtime/P]: [Domain (',Culprit,' not in domain ',Valid_type,')] '| MsgList],
+	(Valid_type_in = [_|_]
+	 ->	concat_atom(Valid_type_in,Valid_type)
+	 ;	(atom(Valid_type_in) -> Valid_type = Valid_type_in ; term_to_atom(Valid_type_in, Valid_type))
+	),
+	concat_atom(['++Error[XSB/Runtime/P]: Domain ',Culprit_a,' not in domain ',Valid_type,' '| MsgList],
 		    ExceptionDescription).
 get_sys_error_description(error(existence_error(Object_type,Culprit),Msg), ExceptionDescription) :-
 	atom(Object_type), atom(Culprit), !,
