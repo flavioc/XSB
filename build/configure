@@ -3431,6 +3431,7 @@ EOF
 		builtins_opt_level=-${optimization_level-"O1"}
 		if test ! "$CC" = gcc ; then
 		    CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
+		    LDFLAGS="-64"
 		    LINKFLAGS="-64"
 		fi
 	     else
@@ -3523,21 +3524,21 @@ esac
 
 if test -z "$with_os" ; then
             echo $ac_n "checking for inline""... $ac_c" 1>&6
-echo "configure:3527: checking for inline" >&5
+echo "configure:3528: checking for inline" >&5
 if eval "test \"`echo '$''{'ac_cv_c_inline'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   ac_cv_c_inline=no
 for ac_kw in inline __inline__ __inline; do
   cat > conftest.$ac_ext <<EOF
-#line 3534 "configure"
+#line 3535 "configure"
 #include "confdefs.h"
 
 int main() {
 } $ac_kw foo() {
 ; return 0; }
 EOF
-if { (eval echo configure:3541: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:3542: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_inline=$ac_kw; break
 else
@@ -3580,12 +3581,14 @@ if test "${do_debugging}" = "yes" ; then
         CFLAGS="${CFLAGS} -gdwarf-2 -g3"
    else
 	CFLAGS="${CFLAGS} -g"
+	LDFLAGS="-g ${LDFLAGS}"
 	LINKFLAGS="-g ${LINKFLAGS}"
    fi
 fi
 
 if test "${has_gcc}" = "yes" -a "${host_os}" != "windows" ; then
       LD=gcc 
+   LINKFLAGS="-nodefaultlibs -nostartfiles ${LINKFLAGS}"
 else
    LD=ld
 fi

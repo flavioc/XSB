@@ -1279,6 +1279,7 @@ case "$canonical" in
 		builtins_opt_level=-${optimization_level-"O1"}
 		if test ! "$CC" = gcc ; then
 		    CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
+		    LDFLAGS="-64"
 		    LINKFLAGS="-64"
 		fi
 	     else
@@ -1362,6 +1363,7 @@ if test "${do_debugging}" = "yes" ; then
         CFLAGS="${CFLAGS} -gdwarf-2 -g3"
    else
 	CFLAGS="${CFLAGS} -g"
+	LDFLAGS="-g ${LDFLAGS}"
 	LINKFLAGS="-g ${LINKFLAGS}"
    fi
 fi
@@ -1369,6 +1371,7 @@ fi
 if test "${has_gcc}" = "yes" -a "${host_os}" != "windows" ; then
    dnl gcc is smarter when creating dynamic libraries in Unix
    LD=gcc 
+   LINKFLAGS="-nodefaultlibs -nostartfiles ${LINKFLAGS}"
 else
    LD=ld
 fi

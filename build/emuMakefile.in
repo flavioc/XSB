@@ -143,14 +143,14 @@ allORAOBJS = $(allOBJS) orastuff.o
 xsb:: $(allOBJS)
 	@echo ""; echo "Making XSB executable $(EXECUTABLE) "; echo ""
 	cd $(emudir); \
-	$(CC) -o $(EXECUTABLE) $(LINKFLAGS) $(allOBJS) $(LDFLAGS) 
+	$(CC) -o $(EXECUTABLE) $(allOBJS) $(LDFLAGS) 
 
 xsbora:: $(allORAOBJS)
 	@echo ""; \
 	  echo "Making XSB executable $(EXECUTABLE) with support for Oracle"; \
 	  echo ""
 	cd $(emudir); \
-	$(CC) -o $(EXECUTABLE) $(LINKFLAGS) $(allORAOBJS) $(LDFLAGS)
+	$(CC) -o $(EXECUTABLE) $(allORAOBJS) $(LDFLAGS)
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
