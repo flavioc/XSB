@@ -33,36 +33,62 @@
 
 
 /*****************************************************************************
-  rules for monotonic inheritance of behavior
+  rules for monotonic inheritance of signatures
 *****************************************************************************/
-:- table '_$_$_flora_fd'/3.
-:- table '_$_$_flora_mvd'/3.
-:- table '_$_$_flora_ifd'/3.
-:- table '_$_$_flora_imvd'/3.
+:- table '_$_$_flora_fs'/3.
+:- table '_$_$_flora_mvs'/3.
+:- table '_$_$_flora_ifs'/3.
+:- table '_$_$_flora_imvs'/3.
 
-'_$_$_flora_fd'(O,MethodArgs,R) :-
-	'_$_$_flora_ifd'(Class,MethodArgs,R),
+%% Instance
+'_$_$_flora_fs'(O,MethodArgs,R) :-
+	'_$_$_flora_fs'(Class,MethodArgs,R),
+	( '_$_$_flora_isa'(O,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,C), '_$_$_flora_isa'(O,C)
+	).
+'_$_$_flora_ifs'(O,MethodArgs,R) :-
+	'_$_$_flora_ifs'(Class,MethodArgs,R),
 	( '_$_$_flora_isa'(O,Class)
 	  ;
 	  '_$_$_flora_eql'(Class,C), '_$_$_flora_isa'(O,C)
 	).
 
-'_$_$_flora_mvd'(O,MethodArgs,R) :-
-	'_$_$_flora_imvd'(Class,MethodArgs,R),
+'_$_$_flora_mvs'(O,MethodArgs,R) :-
+	'_$_$_flora_mvs'(Class,MethodArgs,R),
+	( '_$_$_flora_isa'(O,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,C), '_$_$_flora_isa'(O,C)
+	).
+'_$_$_flora_imvs'(O,MethodArgs,R) :-
+	'_$_$_flora_imvs'(Class,MethodArgs,R),
 	( '_$_$_flora_isa'(O,Class)
 	  ;
 	  '_$_$_flora_eql'(Class,C), '_$_$_flora_isa'(O,C)
 	).
 
-'_$_$_flora_ifd'(Sub,MethodArgs,R) :-
-	'_$_$_flora_ifd'(Class,MethodArgs,R),
+%% Subclass
+'_$_$_flora_fs'(Sub,MethodArgs,R) :-
+	'_$_$_flora_fs'(Class,MethodArgs,R),
+	( '_$_$_flora_subclass'(Sub,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	).
+'_$_$_flora_ifs'(Sub,MethodArgs,R) :-
+	'_$_$_flora_ifs'(Class,MethodArgs,R),
 	( '_$_$_flora_subclass'(Sub,Class)
 	  ;
 	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
 	).
 
-'_$_$_flora_imvd'(Sub,MethodArgs,R) :-
-	'_$_$_flora_imvd'(Class,MethodArgs,R),
+'_$_$_flora_mvs'(Sub,MethodArgs,R) :-
+	'_$_$_flora_mvs'(Class,MethodArgs,R),
+	( '_$_$_flora_subclass'(Sub,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	).
+'_$_$_flora_imvs'(Sub,MethodArgs,R) :-
+	'_$_$_flora_imvs'(Class,MethodArgs,R),
 	( '_$_$_flora_subclass'(Sub,Class)
 	  ;
 	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)

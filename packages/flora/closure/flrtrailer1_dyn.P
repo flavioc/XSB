@@ -33,36 +33,62 @@
 
 
 /*****************************************************************************
-  rules for monotonic behavior inheritance
+  rules for monotonic inheritance of signatures
 *****************************************************************************/
-:- table '_$_$_flora_fd_dyn'/3.
-:- table '_$_$_flora_mvd_dyn'/3.
-:- table '_$_$_flora_ifd_dyn'/3.
-:- table '_$_$_flora_imvd_dyn'/3.
+:- table '_$_$_flora_fs_dyn'/3.
+:- table '_$_$_flora_mvs_dyn'/3.
+:- table '_$_$_flora_ifs_dyn'/3.
+:- table '_$_$_flora_imvs_dyn'/3.
 
-'_$_$_flora_fd_dyn'(O,MethodArgs,R) :-
-	'_$_$_flora_ifd_dyn'(Class,MethodArgs,R),
+%% Instance
+'_$_$_flora_fs_dyn'(O,MethodArgs,R) :-
+	'_$_$_flora_fs_dyn'(Class,MethodArgs,R),
+	( '_$_$_flora_isa_dyn'(O,Class)
+	  ;
+	  '_$_$_flora_eql_dyn'(Class,C), '_$_$_flora_isa_dyn'(O,C)
+	).
+'_$_$_flora_ifs_dyn'(O,MethodArgs,R) :-
+	'_$_$_flora_ifs_dyn'(Class,MethodArgs,R),
 	( '_$_$_flora_isa_dyn'(O,Class)
 	  ;
 	  '_$_$_flora_eql_dyn'(Class,C), '_$_$_flora_isa_dyn'(O,C)
 	).
 
-'_$_$_flora_mvd_dyn'(O,MethodArgs,R) :-
-	'_$_$_flora_imvd_dyn'(Class,MethodArgs,R),
+'_$_$_flora_mvs_dyn'(O,MethodArgs,R) :-
+	'_$_$_flora_mvs_dyn'(Class,MethodArgs,R),
+	( '_$_$_flora_isa_dyn'(O,Class)
+	  ;
+	  '_$_$_flora_eql_dyn'(Class,C), '_$_$_flora_isa_dyn'(O,C)
+	).
+'_$_$_flora_imvs_dyn'(O,MethodArgs,R) :-
+	'_$_$_flora_imvs_dyn'(Class,MethodArgs,R),
 	( '_$_$_flora_isa_dyn'(O,Class)
 	  ;
 	  '_$_$_flora_eql_dyn'(Class,C), '_$_$_flora_isa_dyn'(O,C)
 	).
 
-'_$_$_flora_ifd_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_ifd_dyn'(Class,MethodArgs,R),
+%% Subclass
+'_$_$_flora_fs_dyn'(Sub,MethodArgs,R) :-
+	'_$_$_flora_fs_dyn'(Class,MethodArgs,R),
+	( '_$_$_flora_subclass_dyn'(Sub,Class)
+	  ;
+	  '_$_$_flora_eql_dyn'(Class,S), '_$_$_flora_subclass_dyn'(Sub,S)
+	).
+'_$_$_flora_ifs_dyn'(Sub,MethodArgs,R) :-
+	'_$_$_flora_ifs_dyn'(Class,MethodArgs,R),
 	( '_$_$_flora_subclass_dyn'(Sub,Class)
 	  ;
 	  '_$_$_flora_eql_dyn'(Class,S), '_$_$_flora_subclass_dyn'(Sub,S)
 	).
 
-'_$_$_flora_imvd_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_imvd_dyn'(Class,MethodArgs,R),
+'_$_$_flora_mvs_dyn'(Sub,MethodArgs,R) :-
+	'_$_$_flora_mvs_dyn'(Class,MethodArgs,R),
+	( '_$_$_flora_subclass_dyn'(Sub,Class)
+	  ;
+	  '_$_$_flora_eql_dyn'(Class,S), '_$_$_flora_subclass_dyn'(Sub,S)
+	).
+'_$_$_flora_imvs_dyn'(Sub,MethodArgs,R) :-
+	'_$_$_flora_imvs_dyn'(Class,MethodArgs,R),
 	( '_$_$_flora_subclass_dyn'(Sub,Class)
 	  ;
 	  '_$_$_flora_eql_dyn'(Class,S), '_$_$_flora_subclass_dyn'(Sub,S)
