@@ -199,7 +199,7 @@ inform_module:
 	    echo ""
 
 register:
-	@register.sh
+	@./register.sh
 
 
 install:: copy_files configure_packages_install
@@ -255,12 +255,12 @@ copy_files::
 	  )
 
 configure_packages_src:
-	pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
+	./pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
 	    	    	    	    	    tee -a Installation_summary ; \
 	  chmod 644  $(src_config_prefix)/configuration.O
 
 configure_packages_install:
-	@pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
+	@./pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
 	  chmod 644  $(install_config_prefix)/configuration.O
 
 remake_dot_O_files:
