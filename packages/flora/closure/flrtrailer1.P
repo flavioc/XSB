@@ -401,8 +401,8 @@ STD_FPREFIX(mvd_rhs)(Object,Method,Result) :-
 
 STD_FPREFIX(mvd_rhs)(Object,Method,Result) :-
 	STD_FPREFIX(eql)(Object,O),
-	STD_FPREFIX(mvd)(O,M,Result,
-	(M=Method ; STD_FPREFIX(metheql)(M,Method))).
+	STD_FPREFIX(mvd)(O,M,Result),
+	(M=Method ; STD_FPREFIX(metheql)(M,Method)).
 
 STD_FPREFIX(mvd_rhs)(Object,Method,Result) :-
 	STD_FPREFIX(eql)(Result,R),
