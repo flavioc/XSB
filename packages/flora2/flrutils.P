@@ -63,8 +63,8 @@ flora_compile_internal(File,Workspace) :-
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flcompile(FlrFile,Workspace)
 
-	; parse_filename(File,_,_,Ext), not member(Ext,['',FLORA_FILE_EXT]),
-	    path_sysop(exists,File)
+	; parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_FILE_EXT,
+          path_sysop(exists,File)
 	->
 	    flora_stderr_nl,
 	    flora_error_line("%s: Filename extension must be %s!",
