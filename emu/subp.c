@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <signal.h>
+#include <string.h>
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -45,6 +46,7 @@
 #else
 #include <pthread.h>
 #include <sched.h>
+#include <unistd.h>
 #endif
 
 
