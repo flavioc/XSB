@@ -181,7 +181,6 @@ static int get_index_tab(int clause_no)
   Integer ival;
   Cell val;
 
-  hptr = hreg;
   size = hsize(clause_no);
 
   indextab = (struct hrec *)malloc(size*sizeof(struct hrec)); 
