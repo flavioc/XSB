@@ -114,17 +114,13 @@ void get_date(int *year, int *month, int *day,
 {
 #ifdef WIN_NT
     SYSTEMTIME SystemTime;
-    TIME_ZONE_INFORMATION tz;
-    GetLocalTime(&SystemTime);
+    GetSystemTime(&SystemTime);
     *year = SystemTime.wYear;
     *month = SystemTime.wMonth;
     *day = SystemTime.wDay;
     *hour = SystemTime.wHour;
     *minute = SystemTime.wMinute;
     *second = SystemTime.wSecond;
-    GetTimeZoneInformation(&tz);
-    *hour = *hour + tz.Bias/60;
-    *minute = *minute + tz.Bias % 60;
 #else
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
