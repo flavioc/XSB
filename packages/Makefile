@@ -23,9 +23,9 @@
 ##
 
 
-ALL = 	flip.O slx.O perlmatch.O
+ALL = 	flip.O slx.O perlmatch.O gap.O
 
-SUBDIR = flip slx perlmatch
+SUBDIR = flip slx perlmatch gap
 
 Option = [optimize]
 
@@ -67,6 +67,10 @@ flip::
 perlmatch::
 	@echo ""
 	cd perlmatch; make
+
+gap::
+	@echo ""
+	cd gap; make
 
 
 # Unfortunately, this needs to be commented on the NeXT.
