@@ -10,7 +10,7 @@
 	rename_things/1.
 
 :- import
-            isa/2, immed_isa/2,
+            immed_isa/2, proper_isa/2,
             retractallExtTerm/1,
 	    newExtTerm/1
 	from cdf_init_cdf.
@@ -182,12 +182,12 @@ things_to_delete are deleted. */
 
 %%%:- import conset/2, conget/2, coninc/1 from gensym.
 close_things_to_delete :-
-	%%write('closing...'),
+	write('closing...'),
 	%%conset(myctr,0),
 	(abolish_table_pred(disconnected(_)),
 	 retractall(things_in_closure(_)),
 	 things_to_delete(Thing),
-	 isa(SubThing,Thing), SubThing \== Thing,
+	 proper_isa(SubThing,Thing),
 	 disconnected(SubThing),
 	 \+ things_to_delete(SubThing),
 	 \+ things_in_closure(SubThing),
@@ -201,6 +201,7 @@ close_things_to_delete :-
 	%%writeln(done(CNT)).
 
 :- table disconnected/1.
+disconnected(X) :- X == cid('CDF Classes',cdf), !, fail. % root IS connected
 disconnected(X) :- things_to_delete(X).
 disconnected(X) :- findall(Y,immed_isa(X,Y),Ys), all_disconnected(Ys).
 
