@@ -44,6 +44,10 @@
 #include "subp.h"
 #include "emuloop.h"
 #include "cinterf.h"
+#include "self_orientation.h"
+
+char *expand_filename(char *);
+
 
 
 /*======================================================================*/
@@ -940,21 +944,19 @@ int xsb_answer_string(char *ans, int anslen, char *sep) {
 /*                                                                      */
 /************************************************************************/
 
-/* these are from self_orientation.c */
-extern void xsb_executable_full_path(char *);
-extern void set_xsbinfo_dir (void);
-extern void set_install_dir(void);
-extern void set_config_file(void);
-extern void set_user_home(void);
 
 int xsb_initted = 0;   /* if xsb has been called */
 
 DllExport int call_conv xsb_init(int argc, char *argv[])
 {
+  char executable1[MAXPATHLEN];
   if (xsb_initted) return(1);
 
-  /* set the name of the executable to the real name */
-  xsb_executable_full_path(argv[0]);
+  /* we rely on the caller to tell us in argv[0]
+     the absolute or relative path name to the XSB installation directory */
+  sprintf(executable1, "%s%cconfig%c%s%cbin%cxsb",
+	  argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
+  strcpy(executable, expand_filename(executable1));
 
   /* set install_dir, xsb_config_file, and user_home */
   set_install_dir();

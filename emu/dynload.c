@@ -26,7 +26,7 @@
 
 #include "configs/config.h"	/* This should appear BEFORE the ifdef!	*/
 
-extern char executable[];        /* from xmain.c */
+extern char executable[];        /* from self_orientation.c */
 
 #ifdef FOREIGN
 

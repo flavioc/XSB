@@ -52,11 +52,7 @@
 #endif
 #endif
 
-extern void xsb_executable_full_path(char *);
-extern void set_xsbinfo_dir (void);
-extern void set_install_dir(void);
-extern void set_config_file(void);
-extern void set_user_home(void);
+#include "self_orientation.h"
 
 int main(int argc, char *argv[])
 { 

@@ -128,7 +128,7 @@ static void check_create_dir(char *path) {
 }
 
 /* uses the global executable var */
-void xsb_executable_full_path(char *myname)
+char *xsb_executable_full_path(char *myname)
 {
   struct stat fileinfo;
   char *path = getenv("PATH");
@@ -144,10 +144,10 @@ void xsb_executable_full_path(char *myname)
 
 #ifdef WIN_NT
     strcat(executable, ".exe");
-#else
+#endif
 
   /* found executable by prepending cwd */
-  if (!stat(executable, &fileinfo)) return;
+  if (!stat(executable, &fileinfo)) return executable;
 
   /* Otherwise, search PATH environment var.
      This code is a modified "which" shell builtin */
@@ -178,7 +178,7 @@ void xsb_executable_full_path(char *myname)
 #else
     found = (0 == access(executable, 01));	/* executable */
 #endif
-    if (found) return;
+    if (found) return executable;
   }
 
   /* XSB executable isn't found after searching PATH */

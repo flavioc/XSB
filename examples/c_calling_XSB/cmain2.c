@@ -51,6 +51,8 @@
    headers */
 
 #include "../../emu/cinterf.h"
+extern char *xsb_executable_full_path(char *);
+extern char *strip_names_from_path(char*, int);
 
 int getline(s, lim)
 char s[];
@@ -111,7 +113,12 @@ int main(int argc, char *argv[])
   char *myargv[2];
   char query[256];
 
-  myargv[0] = argv[0];
+  /* xsb_init relies on the calling program to pass the absolute or relative
+     path name of the XSB installation directory. We assume that the current
+     program is sitting in the xsb executable directory
+     .../config/<architecture>/bin/...  To get installation directory, we strip
+     4 file names from the path. */
+  myargv[0] = strip_names_from_path(xsb_executable_full_path(argv[0]), 4);
   myargv[1] = "-n";
 
   /* Initialize xsb */
