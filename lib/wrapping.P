@@ -64,8 +64,8 @@ process_directive(Directive) :-
 	throw(error(cinterf_wrapper(undefined_directive(Directive)))).
 
 process_from(In,Out) :-
-%	xsb_configuration(engine,EngType),
-	process_from(In,Out,multi_threading).
+	xsb_configuration(engine_mode,EngType),
+	process_from(In,Out,EngType).
 		
 process_from(from(PDecl,CDecl),/(PredName,Arity),EngType) :-
 	write('/* New Definition: '),
@@ -164,9 +164,9 @@ out_all_postcall([argtype(Var,Type)|ArgType],ArgUse) :-
 	out_postcall(Var,Use,Type)).
 
 write_cargs([],EngType) :- !,
-	(EngType = multi_threading -> write('th_context *th') ; write(void)).
+	(EngType = 'multi-threading' -> write('th_context *th') ; write(void)).
 write_cargs(Listin,EngType) :-
-	(EngType = multi_threading -> 
+	(EngType = 'multi-threading' -> 
 	    List = [carg(th,'th_context *')|Listin]
 	  ; List = Listin),
 	List = [carg(Var,Type)|Rest],
@@ -204,10 +204,10 @@ process_cfunc(CFunc,Functor,LArgType,EngType) :-
 	add_thread_context(EngType,LArgType),
 	write(')').
 
-add_thread_context(multi_threading,LArgType):- 
+add_thread_context('multi-threading',LArgType):- 
 	(LArgType \== [] -> write(' , ') ; true),
-	write('th_context *th').
-add_thread_context(single_threading,_).
+	write('th_context *th'),!.
+add_thread_context(_,_).
 
 cargs_list(_,0,[]) :- !.
 cargs_list(CFunc,1,[]) :-
