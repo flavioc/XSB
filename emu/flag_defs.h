@@ -48,10 +48,10 @@
 
 #define GARBAGE_COLLECT 20      /* type of garbage collecion employed:     */
                                 /* 0 = none; 1 = sliding; 2 = copying.  NW */
-#define CMD_LINE_GOAL  	21	/* The Prolog goal passd on cmd 
+#define CMD_LINE_GOAL  	21	/* The Prolog goal passed on cmd 
 				   line with -e	       	       	           */
 #define USER_HOME  	22	/* $HOME, if not null. Else INSTALL_DIR    */
-#define INSTALL_DIR	23	/* determined dynamically in xmain.c   	   */
+#define INSTALL_DIR	23	/* set dynamically in self_orientation.c   */
 
 #define CLAUSE_INT	24	/* for clause interrupt			YW */
 

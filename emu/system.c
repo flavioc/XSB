@@ -245,7 +245,7 @@ bool sys_system(int callno)
       ctop_int(4, fromproc_stream);
     }
     if (fromstderr_needed) {
-      fromproc_stderr_fptr = fdopen(pipe_from_proc[0], "r");
+      fromproc_stderr_fptr = fdopen(pipe_from_stderr[0], "r");
       fromproc_stderr_stream
 	= xsb_intern_file(fromproc_stderr_fptr, callname);
       ctop_int(5, fromproc_stderr_stream);
@@ -418,7 +418,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
     if (dup2(pipe_to_proc[0], fileno(stdin)) < 0) {
       return PIPE_TO_PROC_FAILED;
     }
-    close(pipe_to_proc[0]); /* close the original read end of pipe */
+    close(pipe_to_proc[0]); /* close the parent read end of pipe */
   }
   /* if stdin must be captured in an existing I/O port -- do it */
   if (toprocess_fptr != NULL)
@@ -431,7 +431,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
     if (dup2(pipe_from_proc[1], fileno(stdout)) < 0) {
       return PIPE_TO_PROC_FAILED;
     }
-    close(pipe_from_proc[1]); /* close the original write end of pipe */
+    close(pipe_from_proc[1]); /* close the parent write end of pipe */
   }
   /* if stdout must be captured in an existing I/O port -- do it */
   if (fromprocess_fptr != NULL)
@@ -444,7 +444,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
     if (dup2(pipe_from_stderr[1], fileno(stderr)) < 0) {
       return PIPE_TO_PROC_FAILED;
     }
-    close(pipe_from_stderr[1]); /* close the original write end of pipe */
+    close(pipe_from_stderr[1]); /* close the parent write end of pipe */
   }
   /* if stderr must be captured in an existing I/O port -- do it */
   if (fromproc_stderr_fptr != NULL)
