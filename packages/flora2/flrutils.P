@@ -175,12 +175,24 @@ flloadtrailer(TrailerName,Workspace) :-
 	  slash(S),
 	  flora_trailer_filename(TrailerName,TrailerFileName),
 	  fmt_write_string(TrailerFullName,"%s%strailer%s%s",args(FloraDir,S,S,TrailerFileName)),
-	  flora_FLH_filename(TrailerFullName,FLHFile),
-	  flora_setup_workspace(FLHFile,Workspace),
+	  flora_FLH_filename(TrailerFullName,TrailerFLHFile),
+	  flora_setup_workspace(TrailerFLHFile,Workspace),
 	  flora_set_xpp_options,
 	  compile(TrailerFullName,[optimize,spec_repr]),
-	  flora_clear_xpp_options,
-	  consult(TrailerFullName)
+	  consult(TrailerFullName),
+	  %% Check if the patch needs to be loaded.
+	  flora_wspredicate(FLORA_THIS_MODULE,[],Workspace,Predicate),
+	  ( current_predicate(Predicate/1) ->
+	      true
+	  ;
+	    flora_patch_filename(PatchName),
+	    fmt_write_string(PatchFullName,"%s%strailer%s%s",args(FloraDir,S,S,PatchName)),
+	    flora_FLH_filename(PatchFullName,PatchFLHFile),
+	    flora_setup_workspace(PatchFLHFile,Workspace),
+	    compile(PatchFullName,[optimize,spec_repr]),
+	    consult(PatchFullName)
+	  ),		
+	  flora_clear_xpp_options
         ),
 	!.
 
@@ -201,7 +213,7 @@ flsetuptrailer(TrailerName) :-
 	tell(TrailerFullName),
 	flora_include_FLH_filename(TrailerFullName),
 	flora_trailer_include(TrailerName,TrailerInclude),
-	flora_include_file([FLHEADER,FLDEFINITION,FLDBDYN|TrailerInclude],HeaderStatus),
+	flora_include_file([FLHEADER,FLDBDYN|TrailerInclude],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -221,6 +233,36 @@ flora_trailer_filename(FLOGIC,'eqlflogic.P').
 flora_trailer_include(NONE,[FLTRAILER]).
 flora_trailer_include(BASIC,[FLEQLTRAILER]).
 flora_trailer_include(FLOGIC,[FLEQLTRAILER,FLSCALAREQL]).
+
+
+/**********************************************************************
+  flsetuppatch
+**********************************************************************/
+flsetuppatch :-
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	flora_patch_filename(PatchName),
+	fmt_write_string(PatchFullName,"%s%strailer%s%s",args(FloraDir,S,S,PatchName)),
+	flora_FLH_filename(PatchFullName,FLHFile),
+	flora_setup_workspace(FLHFile,FLORA_DEFAULT_WORKSPACE),
+	telling(PreOutFile),
+	tell(PatchFullName),
+	flora_include_FLH_filename(PatchFullName),
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH],HeaderStatus),
+	told,
+	tell(PreOutFile),
+	!,
+	( HeaderStatus == FLORA_FAILURE ->
+	    fail
+	;
+	  flora_set_xpp_options,
+	  compile(PatchFullName,[optimize,spec_repr]),
+	  flora_clear_xpp_options
+	),
+	!.
+
+
+flora_patch_filename('patch.P').
 
 
 /*************************************************************************
@@ -553,7 +595,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 	tell(PFileName),
 	flora_include_FLH_filename(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
-	flora_include_file([FLHEADER,FLDEFINITION|LibOptionList],HeaderStatus),
+	flora_include_file([FLHEADER,FLDBDYN,FLDEFINITION,FLPATCH|LibOptionList],HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;

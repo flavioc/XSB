@@ -112,9 +112,13 @@ flora_flogic_predicate(Funct,Workspace,Position,Base) :-
 	    Position=FLHEADPREFIX,
 	    substring(Wrapper,FLHEADPREFIX_LEN,WLen,Base)
 
-	; str_sub(FLBODYPREFIX,Wrapper,1),
+	; str_sub(FLBODYPREFIX,Wrapper,1) ->
 	    Position=FLBODYPREFIX,
 	    substring(Wrapper,FLBODYPREFIX_LEN,WLen,Base)
+
+	; str_sub(FLTRAILERPREFIX,Wrapper,1) ->
+	    Position=FLTRAILERPREFIX,
+	    substring(Wrapper,FLTRAILERPREFIX_LEN,WLen,Base)
 	),
 	!,
 	is_flogic_base(Base).
