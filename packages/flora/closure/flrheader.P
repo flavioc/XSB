@@ -25,6 +25,8 @@
 
 :- import '_$_$_flora_loadlist'/1, '_$_$_flora_dynloadlist'/1 from flrutils.
 
+:- import bootstrap_flora/0 from flora.
+
 
 /****************************************************************************/
 :- dynamic '_$_$_flora_fd_dyn'(_,_,_).
@@ -74,7 +76,8 @@
        ( package_configuration(dir(flora),D) ->
 	   true
 	 ;
-	   bootstrap_package(flora,flora),
+	   %% bootstrap_package(flora,flora),
+	   bootstrap_flora,
 	   package_configuration(dir(flora),D)
        ),
        slash(S),
