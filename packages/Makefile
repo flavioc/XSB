@@ -26,10 +26,10 @@ OBJEXT=.xwam
 
 ALL = 	slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
-	sModels${OBJEXT} libwww${OBJEXT} clpr${OBJEXT} xsbdoc${OBJEXT} \
+	xasp${OBJEXT} libwww${OBJEXT} clpr${OBJEXT} xsbdoc${OBJEXT} \
 	xmc${OBJEXT} iprolog${OBJEXT}
 
-SUBDIR = iprolog flora2 slx perlmatch gap regmatch wildmatch libwww sModels \
+SUBDIR = iprolog flora2 slx perlmatch gap regmatch wildmatch libwww xasp \
 	clpqr xsbdoc xmc iprolog
 
 Option = [optimize]
@@ -93,9 +93,9 @@ perlmatch::
 	@echo ""
 	cd perlmatch; make
 
-sModels::
+xasp::
 	@echo ""
-	cd sModels; make
+	cd xasp; make
 
 gap::
 	@echo ""
