@@ -37,7 +37,7 @@ the corresponding variables from NewVars.
 % 	    assoc_to_list/2
 % 	]).
 
-:- export dump/3, related_linear_vars/2.
+:- export dump/3, related_linear_vars/2,
 	  raise_exception/1,
 	  related_linear_vars/2,
 	  all_attribute_goals/3.
