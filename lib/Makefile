@@ -24,7 +24,7 @@
 ##
 
 
-ALL = 	aggregs.O array.O array1.O assoc.O \
+ALL = 	aggregs.O array.O array1.O assoc_xsb.O \
 	storage.O directry.O foreign.O \
 	intern.O obsolete.O odbc_call.O ordsets.O ora_call.O \
 	packaging.O random.O scrptutl.O socket.O ugraphs.O wrapping.O \
