@@ -207,7 +207,7 @@
   (define-key map "\C-c\C-c" 'flora-interrupt)
   (define-key map "\C-c\C-d" 'flora-quit)
   (define-key map "\C-m"     'flora-electric-return)
-  (define-key map "[return]" 'flora-electric-return)
+  (define-key map [return] 'flora-electric-return)
   (define-key map "*"	     'flora-electric-star)
   (define-key map "/"	     'flora-electric-slash))
 
@@ -471,8 +471,7 @@ Return not at end copies rest of line to end and sends it.
   (if inferior-flora-mode-map nil
     (setq inferior-flora-mode-map (copy-keymap comint-mode-map))
     (flora-mode-commands inferior-flora-mode-map))
-  ;; this seems redundant and also somehow binds "[" in the local map
-  ;;(use-local-map inferior-flora-mode-map)
+  (use-local-map inferior-flora-mode-map)
   (run-hooks 'inferior-flora-mode-hook)
   (setq comint-input-ring-file-name 
 	(expand-file-name "~/.flora-history"))
