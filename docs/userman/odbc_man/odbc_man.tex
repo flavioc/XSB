@@ -24,21 +24,21 @@ XSB-ODBC interface provides is as follows:
 \begin{itemize} 
 \item Concurrent access from multiple XSB processes to a single DBMS
 \item Full data access and cursor transparency including support for
-	\begin{itemize}
-	\item Full data recursion through XSB's tabling mechanism
-	\item Runtime type checking
-	\item Automatic handling of NULL values for insertion, 
-		deletion and querying
-	\item Partial recovery for cursor losses due to cuts
-	\end{itemize}
+        \begin{itemize}
+        \item Full data recursion through XSB's tabling mechanism
+        \item Runtime type checking
+        \item Automatic handling of NULL values for insertion, 
+                deletion and querying
+        \item Partial recovery for cursor losses due to cuts
+        \end{itemize}
 \item Full access to data source including
-	\begin{itemize}
-	\item Transaction support
-	\item Cursor reuse for cached SQL statements 
-		with bind variables (by avoiding re-parsing and re-declaring).
-	\item Caching compiler generated SQL statements with bind variables 
-		and efficient cursor management for cached statements
-	\end{itemize}
+        \begin{itemize}
+        \item Transaction support
+        \item Cursor reuse for cached SQL statements 
+                with bind variables (by avoiding re-parsing and re-declaring).
+        \item Caching compiler generated SQL statements with bind variables 
+                and efficient cursor management for cached statements
+        \end{itemize}
 \item A powerful Prolog / SQL compiler based on \cite{Drax92}.
 \item Full source code availability
 \item Independence from database schema by employing a {\it relation level}
@@ -48,7 +48,7 @@ XSB-ODBC interface provides is as follows:
 
 We use the {\tt Hospital} database as our example to illustrate 
 the usage of XSB-ODBC interface in this manual. We assume the basic 
-knowledge of MicroSoft ODBC interface and its ODBC administrator 
+knowledge of Microsoft ODBC interface and its ODBC administrator 
 throughout the text.  Please refer to ``Inside Windows$^{TM}$ 95''
  for information on this topic.
 
@@ -62,7 +62,7 @@ To load it, type in ``{\tt [odbc\_call].}'' at the XSB prompt.
 %=================================================
 
 Assuming that the data source to be connected to is available, i.e. it has an 
-entry in {\tt ODBC.INI} file which can be checked by running MicroSoft 
+entry in {\tt ODBC.INI} file which can be checked by running Microsoft 
 ODBC Administrator, it can be connected to in the following way: 
 
 \begin{center}
@@ -99,7 +99,7 @@ $($if it's available$)$ to see the asserted data dictionary information at any t
 The syntax of  {\tt odbc\_import/2} is as follows:
 
 \begin{center}
-{\tt | ?- odbc\_import('TableName'('FIELD1', 'FIELD2', ..., 'FIELDn', 'PredicateName').}
+{\tt | ?- odbc\_import('TableName'('FIELD1', 'FIELD2', ..., 'FIELDn'), 'PredicateName').}
 \end{center}
 
 where {\tt 'TableName'} is the name of the table that is desired for accessing
@@ -184,7 +184,7 @@ eg. invoke
 {\tt | ?- odbc\_attach(test2, table('Test')).} 
 \end{center}
 and then execute 
-\begin{center}	
+\begin{center}
 {\tt | ?- test2(TId, TName, L, P).}
 \end{center}
 to retrieve the rows.
@@ -214,9 +214,10 @@ One can use the view level interface through the predicate {\tt odbc\_query/2}:
 \begin{center}
 {\tt | ?- odbc\_query('RuleName'(ARG1, ..., ARGn), DatabaseGoal).}
 \end{center}
-All arguments are standard Prolog terms.  {\tt ARG1}, {\tt ARG2}, ..., 
-{\tt ARGn}defines the attributes to be retrieved from the database, while
-{\tt DatabaseGoal} defines the selection restrictions and join conditions.
+All arguments are standard Prolog terms.  {\tt ARG1}, {\tt ARG2}, ...,
+{\tt ARGn} defines the attributes to be retrieved from the database,
+while {\tt DatabaseGoal} defines the selection restrictions and join
+conditions.
 
 The compiler is a simple extension of \cite{Drax92} which generates SQL
 queries with bind variables and handles NULL values as described in
@@ -228,15 +229,15 @@ Database goals are translated according to the following rules
 from \cite{Drax92}:
 \begin{itemize}
 \item Disjunctive goals translate to distinct SQL queries
-	connected through the UNION operator.
+        connected through the UNION operator.
 \item Goal conjunctions translate to joins.
 \item Negated goals translate to negated EXISTS subqueries.
 \item Variables with single occurrences in the body are not
-	  translated.
+          translated.
 \item Free variables translate to grouping attributes.
 \item Shared variables in goals translate to equi-join conditions.
 \item Constants translate to equality comparisons of an attribute and
-	  the constant value.
+          the constant value.
 \item Nulls are translated to {\tt IS NULL} conditions.
 \end{itemize}
 For more examples and implementation details see \cite{Drax92}.
@@ -255,9 +256,9 @@ Assuming the declarations:
 use
 
 \begin{verbatim}
-	
+
 | ?- odbc_query(rule1(RoomNo,FName),
-	          (room(RoomNo,_,FId),floor(FId,FName))).
+                  (room(RoomNo,_,_,FId),floor(FId,_,FName))).
 yes
 
 | ?- rule1(RoomNo,FloorName).
@@ -454,19 +455,19 @@ PRODBI compatible.  A brief description of these predicates is as follows:
 \begin{description}
 
 \item[odbc\_show\_schema(accessible)]
-	 Shows all accessible table names for the user.  This list can be long!
+         Shows all accessible table names for the user.  This list can be long!
 
 \item[odbc\_show\_schema(user)]
-	Shows just those tables that belongs to user.
+        Shows just those tables that belongs to user.
 
 \item[odbc\_show\_schema(tuples('Table'))]
-	Shows the contents of the base table named {\tt 'Table'}.
+        Shows the contents of the base table named {\tt 'Table'}.
 
 \item[odbc\_show\_schema(arity('Table'))]
-	The number of fields in the table {\tt 'Table'}.
+        The number of fields in the table {\tt 'Table'}.
 
 \item[odbc\_show\_schema(columns('Table'))]
-	The field names of a table.
+        The field names of a table.
 \end{description}
 
 For retrieving above information use:
@@ -485,7 +486,7 @@ The results of above are returned in List as a list.
 \begin{description}
 
 \item[odbc\_create\_table('TableName','FIELDs')]
-	{\tt FIELDS} is the field specification as in SQL.
+        {\tt FIELDS} is the field specification as in SQL.
 \begin{verbatim}
 
 eg. odbc_create_table('MyTable', 'Col1 NUMBER,
@@ -495,8 +496,8 @@ eg. odbc_create_table('MyTable', 'Col1 NUMBER,
 
 
 \item[odbc\_create\_index('TableName','IndexName', index(\_,Fields))]
-	{\tt Fields} is the list of columns for which an index
-	is requested.  For example:
+        {\tt Fields} is the list of columns for which an index
+        is requested.  For example:
 \begin{center}
 
 {\tt odbc\_create\_index('Doctor', 'DocKey', index(\_,'DId')).}
@@ -514,12 +515,12 @@ inserting rows:
 \begin{description}
 
 \item[\mbox{odbc\_add\_record('Floor',['Seventh Floor','7'])}]
-	 arguments are a list composed of field values and the table name to
-	 insert the row.
+         arguments are a list composed of field values and the table name to
+         insert the row.
 
 \item[\mbox{odbc\_delete\_record('Floor', ['Seventh Floor',\_])}]
-	 to delete rows from {\tt 'Floor'} matching the list of values mentioned in
-	 second argument. 
+         to delete rows from {\tt 'Floor'} matching the list of values mentioned in
+         second argument. 
 \end{description}
 
 For other SQL statements use {\tt odbc\_sql/1} with the SQL statement as the 
@@ -536,9 +537,9 @@ permanent$)$  until the user expicitly issues a commit statement.
 The predicate {\tt odbc\_transaction/1} is provided in this sense. 
 \begin{description}
 \item[odbc\_transaction(commit)]
-	Commits all transactions up to this point.
+        Commits all transactions up to this point.
 \item[odbc\_transaction(rollback)]
-	Rolls back all transactions$($discard the changes made$)$  since 
+        Rolls back all transactions$($discard the changes made$)$  since 
 the last commit.
 \end{description}
 
@@ -612,23 +613,23 @@ for datails.
 %============================
 \begin{description}
 \item[ERR - DB: Connection failed] For some reason the attempt to connect
-	to data source failed.
-	\begin{itemize}
-	\item	Diagnosis: Try to see if the data source has been registered 
-                                  with MicroSoft ODBC Administrator, the username and 
+        to data source failed.
+        \begin{itemize}
+        \item   Diagnosis: Try to see if the data source has been registered 
+                                  with Microsoft ODBC Administrator, the username and 
                                   password are correct and MAXCURSORNUM is not set 
                                   to a very large number.
-	\end{itemize}
+        \end{itemize}
 
 \item[ERR - DB: Parse error] The SQL statement generated by the
-	                  Interface or the first argument to {\tt odbc\_sql/1} or 
-	               {\tt odbc\_sql\_select/2} can not be parsed by the data 
+                          Interface or the first argument to {\tt odbc\_sql/1} or 
+                       {\tt odbc\_sql\_select/2} can not be parsed by the data 
                               source driver.
-	\begin{itemize}
-	\item	Diagnosis: Check the SQL statement.  If our interface
-		generated the erroneous statement please contact us at
-		{\tt xsb-contact@cs.sunysb.edu}.
-	\end{itemize}
+        \begin{itemize}
+        \item   Diagnosis: Check the SQL statement.  If our interface
+                generated the erroneous statement please contact us at
+                {\tt xsb-contact@cs.sunysb.edu}.
+        \end{itemize}
 
 \item[ERR - DB: No more cursors left] Interface run out of non-active
 cursors either because of a leak (See Section \ref{oracle:use}) or no
@@ -636,7 +637,7 @@ more free cursors left.
 \begin{itemize}
 
 \item Diagnosis: System fails always with this error.  odbc\_transaction(rollback) or
-	   odbc\_transaction(commit) should resolve this by freeing all cursors.
+           odbc\_transaction(commit) should resolve this by freeing all cursors.
 \end{itemize}
 
 \item[ERR - DB: FETCH failed] Normally this error should not occur if the 
