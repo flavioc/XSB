@@ -199,6 +199,31 @@ fi
 if test -n "$enable_debugging" && test -z "$enable_debug" ; then
    enable_debug=$enable_debugging
 fi
+
+dnl Take care of the scheduling strategy
+xsb_scheduling_strategy=batched
+
+AC_ARG_ENABLE(local-scheduling,
+[  --enable-local-scheduling  compile using the local scheduling strategy;
+                             default is the batched strategy])
+AC_ARG_ENABLE(local-scheduling,
+[  --with-local-scheduling  compile using the local scheduling strategy;
+                            default is the batched strategy])
+dnl Allow some slack in how local scheduling is specified
+if test "${enable_local_sched}" = "yes" || \
+   test "${enable_local_schedule}" = "yes" || \
+   test "${enable_local}" = "yes" || \
+   test "${with_local_schedule}" = "yes" || \
+   test "${with_local_sched}" = "yes" || \
+   test "${with_local}" = "yes" ; then
+   enable_local_scheduling=yes
+fi
+
+if test "${enable_local_scheduling}" = "yes"; then
+   AC_DEFINE(LOCAL_EVAL)
+   xsb_scheduling_strategy=local
+fi
+
     
 config_prefix=${topdir}/config
 install_config_prefix=${prefix}/config
@@ -225,6 +250,10 @@ if test -z "${config_tag}" ; then
     dnl If debugging, add -dbg
     if test "${enable_debug}" ; then
        config_tag="${config_tag}-dbg"
+    fi
+    dnl If local scheduling, add -lsh
+    if test "${xsb_scheduling_strategy}" = "local" ; then
+       config_tag="${config_tag}-lsh"
     fi
 fi
 
@@ -890,24 +919,6 @@ dnl lfcastro
 #    AC_MSG_ERROR(Cannot use BP without -fomit-frame-pointer)
 #   fi
 #fi
-
-dnl Take care of the scheduling strategy
-xsb_scheduling_strategy=batched
-
-AC_ARG_ENABLE(local-scheduling,
-[  --enable-local-scheduling  compile using the local scheduling strategy;
-                             default is the batched strategy])
-dnl Allow some slack in how local scheduling is specified
-if test "${enable_local_sched}" = "yes" || \
-   test "${enable_local_schedule}" = "yes" || \
-   test "${enable_local_s}" = "yes" ; then
-   enable_local_scheduling=yes
-fi
-
-if test "${enable_local_scheduling}" = "yes"; then
-   AC_DEFINE(LOCAL_EVAL)
-   xsb_scheduling_strategy=local
-fi
 
 
 # Normally, the optimization level will be O4. 
