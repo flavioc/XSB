@@ -171,16 +171,17 @@ Explanations:
     xsbdocs	 -d docs       XSB/docs
     xsbtests     -d tests      XSB/tests
     xsbexamples  -d examples   XSB/examples
+    xsbadmin     -d admin      XSB/admin
 
 
     # Everything but admin, tests, examples, docs.
     xsbcore      -a !XSB/tests !XSB/admin !XSB/examples !XSB/docs XSB
 
     # What developers need, sans XSB/tests, because of the size of XSB/tests
-    xsbdevel     -a xsbcore XSB/admin XSB/docs
+    xsbdevel     -a !XSB/tests XSB
 
     # This is how we'll be making releases. (Need to decide on the docs)
-    xsbrelease   -a xsbcore xsbexamples
+    xsbrelease   -a !XSB/tests !XSB/admin !XSB/docs XSB
 
 NOTE: The modules xsbcore, xsbdevel, xsbrelease must be checked out from
       the ~/projects directory, and you must specify the repository.
