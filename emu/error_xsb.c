@@ -1,5 +1,5 @@
 /* File:      error_xsb.c
-** Author(s): Kostis F. Sagonas
+** Author(s): Sagonas, Demoen
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -38,6 +38,12 @@
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "cinterf.h"
+#include "tries.h"
+#include "choice.h"
+#include "inst_xsb.h"
+#include "macro_xsb.h"
+#include "tr_utils.h"
+#include "cut_xsb.h"
 
 extern void exit(int status);
 
@@ -252,4 +258,84 @@ void err_handle(int description, int arg, char *f,
   pcreg = exception_handler(message);
 }
 
-/*----------------------------------------------------------------------*/
+/*************************************************************************/
+/*
+   Builtins for exception handling using a Prolog-based catch-throw
+
+              $$set_scope_marker/0
+              $$unwind_stack/0
+              $$clean_up_block/0
+
+   Written by Bart Demoen, after the CW report 98:
+              A 20' implementation of catch and throw
+
+   7 Febr 1999
+
+*/
+
+static byte *scope_marker;
+
+int set_scope_marker()
+{
+  /*     printf("%x %x\n",cp_ereg(breg),ereg);*/
+   scope_marker = pcreg;
+   /* skipping a putpval and a call instruction */
+   /* is there a portable way to do this ?      */
+   /* instruction builtin has already made pcreg point to the putpval */
+   scope_marker += THROWPAD;
+   return(TRUE);
+} /* set_scope_marker */
+
+/* TLS: slightly modified to abort if throwing over an open table.
+   Im not positive if this is right */
+int unwind_stack()
+{
+   byte *cp, *cpmark;
+   CPtr e,b;
+   byte inst_cut_over;
+
+   cpmark = scope_marker;
+   /*   printf("sm 2 %d  x%x\n",scope_marker,scope_marker);*/
+   /* first find the right environment */
+   e = ereg;
+   cp = cpreg; /* apparently not pcreg ... maybe not good in general */
+   while ( (cp != cpmark) && e )
+     {
+       /*       printf("cp %d x%x\n",cp,cp);*/
+       cp = (byte *)e[-1];
+       e = (CPtr)e[0];
+     }
+
+   if ( ! e )
+     xsb_exit("Throw failed because no catcher for throw");
+
+   /* now find the corresponding breg */
+   b = breg;
+   while (cp_ereg(b) <= e) {
+     inst_cut_over = *cp_pcreg(b); 
+     CHECK_TABLE_CUT(inst_cut_over) ;      
+     b = cp_prevbreg(b);
+   }
+   inst_cut_over = *cp_pcreg(b); 
+   CHECK_TABLE_CUT(inst_cut_over) ;      
+   breg = b;
+   return(FALSE);
+
+} /* unwind_stack */
+
+
+int clean_up_block()
+{
+   byte inst_cut_over;
+   if (cp_ereg(breg) > ereg) {
+     /*     printf("%x %x\n",cp_ereg(breg),ereg); */
+     inst_cut_over = *cp_pcreg(breg); 
+     CHECK_TABLE_CUT(inst_cut_over) ;      
+     breg = (CPtr)cp_prevbreg(breg);
+   }
+   return(TRUE);
+
+} /* clean_up_block */
+
+/*---------------------------- end of error_xsb.c --------------------------*/
+

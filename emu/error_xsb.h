@@ -52,6 +52,17 @@
 			       UNDERFLOW clashes with some C compilers */
 #define ZERO_DIVIDE	16 
 
+/* TLS: used for determing the offset of a putpvar + call so that
+   the pc register can be saved so that the proper choice point can be
+   (in a necessarily roundabout manner) determined. 
+*/
+#ifdef BITS64
+#define THROWPAD 20
+#else 
+#define THROWPAD 12
+#endif 
+
+
 extern void xsb_exit(char *, ...);
 extern void xsb_abort(char *, ...);
 extern void xsb_bug(char *, ...);
@@ -85,5 +96,4 @@ extern jmp_buf xsb_abort_fallback_environment; /* Environment for abort
 
 /* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
 extern void xsb_segfault_catcher (int);
-
 
