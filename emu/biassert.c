@@ -65,8 +65,6 @@ extern TIFptr last_tip;
 /* dbgen_inst: Generate an instruction in the buffer.			*/
 /*======================================================================*/
 
-/* #define ASSERTDEBUG */
-
 #define write_word(Buff,Loc,w) { *(CPtr)((pb)Buff + *(Loc)) = (Cell)(w); *(Loc) += 4; \
 				pad64bits(Loc); }
 #define write_byte(Buff,Loc,w) { *(pb)((pb)Buff + *(Loc)) = (byte)(w); *(Loc) += 1; }
@@ -76,205 +74,6 @@ extern TIFptr last_tip;
 #else
 #define pad64bits(Loc)	{}
 #endif
-
-#ifdef ASSERTDEBUG
-#define dbgen_inst3_tv(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {\
-       dbgen_printinst3(Opcode, Arg1, Arg2, Arg3); \
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1);\
-       write_byte(Buff,Loc,Arg2); write_byte(Buff,Loc,Arg3);\
-	pad64bits(Loc);}
-
-#define dbgen_inst3_sob(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {\
-       dbgen_printinst3(Opcode, Arg1, Arg2, Arg3); \
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1>>16); \
-       write_byte(Buff,Loc,Arg1>>8); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2); write_word(Buff,Loc,Arg3);}
-
-#define dbgen_inst_pvv(Opcode,Arg1,Arg2,Buff,Loc) {\
-       dbgen_printinst(Opcode, Arg1, Arg2);\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);\
-	pad64bits(Loc);}
-
-#define dbgen_inst_ppv(Opcode,Arg1,Buff,Loc) {\
-       dbgen_printinst(Opcode, Arg1, 0);\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);\
-	pad64bits(Loc);}
-
-#define dbgen_inst_ppvw(Opcode,Arg1,Arg2,Buff,Loc) {\
-       dbgen_printinst(Opcode, Arg1, Arg2);\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2);}
-
-#define dbgen_inst_ppvww(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {\
-       dbgen_printinst(Opcode, Arg1, Arg2);\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2);\
-       write_word(Buff,Loc,Arg3);}
-
-#define dbgen_inst_pppw(Opcode,Arg1,Buff,Loc) {\
-       dbgen_printinst(Opcode, Arg1, 0);\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg1);}
-
-#define dbgen_inst_ppp(Opcode,Buff,Loc) {\
-       dbgen_printinst(Opcode, 0, 0);\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);\
-	pad64bits(Loc);}
-
-#define dbgen_instB3_tv(Opcode,Arg1,Arg2,Arg3) {\
-       dbgen_printinst3(Opcode, Arg1, Arg2, Arg3); \
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1);\
-       write_byte(Buff,Loc,Arg2); write_byte(Buff,Loc,Arg3);\
-	pad64bits(Loc);}
-
-#define dbgen_instB3_sob(Opcode,Arg1,Arg2,Arg3) {\
-       dbgen_printinst3(Opcode, Arg1, Arg2, Arg3); \
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1>>16); \
-       write_byte(Buff,Loc,Arg1>>8); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2); write_word(Buff,Loc,Arg3);}
-
-#define dbgen_instB_pvv(Opcode,Arg1,Arg2) {\
-       dbgen_printinst(Opcode, Arg1, Arg2);\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);\
-	pad64bits(Loc);}
-
-#define dbgen_instB_ppv(Opcode,Arg1) {\
-       dbgen_printinst(Opcode, Arg1,0);\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);\
-	pad64bits(Loc);}
-
-#define dbgen_instB_ppvw(Opcode,Arg1,Arg2) {\
-       dbgen_printinst(Opcode, Arg1,Arg2);\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2);}
-
-#define dbgen_instB_pppw(Opcode,Arg1) {\
-       dbgen_printinst(Opcode, 0, 0);\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg1);}
-
-#define dbgen_instB_ppp(Opcode) {\
-       dbgen_printinst(Opcode,0,0);\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);\
-	pad64bits(Loc);}
-
-#else
-#define dbgen_inst3_tv(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1);\
-       write_byte(Buff,Loc,Arg2); write_byte(Buff,Loc,Arg3);\
-	pad64bits(Loc);}
-
-#define dbgen_inst3_sob(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1>>16); \
-       write_byte(Buff,Loc,Arg1>>8); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2); write_word(Buff,Loc,Arg3);}
-
-#define dbgen_inst_pvv(Opcode,Arg1,Arg2,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);\
-	pad64bits(Loc);}
-
-#define dbgen_inst_ppv(Opcode,Arg1,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);\
-	pad64bits(Loc);}
-
-#define dbgen_inst_ppvw(Opcode,Arg1,Arg2,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2);}
-
-#define dbgen_inst_ppvww(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2);\
-       write_word(Buff,Loc,Arg3);}
-
-#define dbgen_inst_pppw(Opcode,Arg1,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg1);}
-
-#define dbgen_inst_ppp(Opcode,Buff,Loc) {\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);\
-	pad64bits(Loc);}
-
-#define dbgen_instB3_tv(Opcode,Arg1,Arg2,Arg3) {\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1);\
-       write_byte(Buff,Loc,Arg2); write_byte(Buff,Loc,Arg3);\
-	pad64bits(Loc);}
-
-#define dbgen_instB3_sob(Opcode,Arg1,Arg2,Arg3) {\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1>>16); \
-       write_byte(Buff,Loc,Arg1>>8); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2); write_word(Buff,Loc,Arg3);}
-
-#define dbgen_instB_pvv(Opcode,Arg1,Arg2) {\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);\
-	pad64bits(Loc);}
-
-#define dbgen_instB_ppv(Opcode,Arg1) {\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);\
-	pad64bits(Loc);}
-
-#define dbgen_instB_ppvw(Opcode,Arg1,Arg2) {\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg2);}
-
-#define dbgen_instB_pppw(Opcode,Arg1) {\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0); \
-	pad64bits(Loc);\
-       write_word(Buff,Loc,Arg1);}
-
-#define dbgen_instB_ppp(Opcode) {\
-       if (*Loc >= BLim) Buff = buff_realloc();\
-       write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0); \
-       write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);\
-	pad64bits(Loc);}
-#endif 
-
 
 #ifdef ASSERTDEBUG
 void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
@@ -388,7 +187,140 @@ void dbgen_printinst(Opcode, Arg1, Arg2)
 		      Opcode);
   }
 }
+
+#define dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3) \
+	dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
+
+#define dbgen_printinst_macro(Opcode, Arg1, Arg2) \
+	dbgen_printinst(Opcode, Arg1, Arg2)
+
+#else  /* ASSERTDEBUG */
+
+#define dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3)
+#define dbgen_printinst_macro(Opcode, Arg1, Arg2)
+
 #endif /* ASSERTDEBUG */
+
+
+#define dbgen_inst3_tv(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {	\
+  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1);	\
+  write_byte(Buff,Loc,Arg2); write_byte(Buff,Loc,Arg3);		\
+  pad64bits(Loc);						\
+}
+
+#define dbgen_inst3_sob(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {	\
+  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1>>16);	\
+  write_byte(Buff,Loc,Arg1>>8); write_byte(Buff,Loc,Arg1);	\
+  pad64bits(Loc);						\
+  write_word(Buff,Loc,Arg2); write_word(Buff,Loc,Arg3);		\
+}
+
+#define dbgen_inst_pvv(Opcode,Arg1,Arg2,Buff,Loc) {	\
+  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);	\
+  pad64bits(Loc);					\
+}
+
+#define dbgen_inst_ppv(Opcode,Arg1,Buff,Loc) {		\
+  dbgen_printinst_macro(Opcode, Arg1, 0);		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
+  pad64bits(Loc);					\
+}
+
+#define dbgen_inst_ppvw(Opcode,Arg1,Arg2,Buff,Loc) {	\
+  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
+  pad64bits(Loc);					\
+  write_word(Buff,Loc,Arg2);				\
+}
+
+#define dbgen_inst_ppvww(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {	\
+  dbgen_printinst_macro(Opcode, Arg1, Arg2);			\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);		\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);		\
+  pad64bits(Loc);						\
+  write_word(Buff,Loc,Arg2);					\
+  write_word(Buff,Loc,Arg3);					\
+}
+
+#define dbgen_inst_pppw(Opcode,Arg1,Buff,Loc) {		\
+  dbgen_printinst_macro(Opcode, Arg1, 0);		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);	\
+  pad64bits(Loc);					\
+  write_word(Buff,Loc,Arg1);				\
+}
+
+#define dbgen_inst_ppp(Opcode,Buff,Loc) {		\
+  dbgen_printinst_macro(Opcode, 0, 0);			\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);	\
+  pad64bits(Loc);					\
+}
+
+#define dbgen_instB3_tv(Opcode,Arg1,Arg2,Arg3) {		\
+  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);		\
+  if (*Loc >= BLim) Buff = buff_realloc();			\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1);	\
+  write_byte(Buff,Loc,Arg2); write_byte(Buff,Loc,Arg3);		\
+  pad64bits(Loc);						\
+}
+
+#define dbgen_instB3_sob(Opcode,Arg1,Arg2,Arg3) {		\
+  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);		\
+  if (*Loc >= BLim) Buff = buff_realloc();			\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1>>16);	\
+  write_byte(Buff,Loc,Arg1>>8); write_byte(Buff,Loc,Arg1);	\
+  pad64bits(Loc);						\
+  write_word(Buff,Loc,Arg2); write_word(Buff,Loc,Arg3);		\
+}
+
+#define dbgen_instB_pvv(Opcode,Arg1,Arg2) {		\
+  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
+  if (*Loc >= BLim) Buff = buff_realloc();		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);	\
+  pad64bits(Loc);					\
+}
+
+#define dbgen_instB_ppv(Opcode,Arg1) {			\
+  dbgen_printinst_macro(Opcode, Arg1,0);		\
+  if (*Loc >= BLim) Buff = buff_realloc();		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
+  pad64bits(Loc);					\
+}
+
+#define dbgen_instB_ppvw(Opcode,Arg1,Arg2) {		\
+  dbgen_printinst_macro(Opcode, Arg1, Arg2);		\
+  if (*Loc >= BLim) Buff = buff_realloc();		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
+  pad64bits(Loc);					\
+  write_word(Buff,Loc,Arg2);				\
+}
+
+#define dbgen_instB_pppw(Opcode,Arg1) {			\
+  dbgen_printinst_macro(Opcode, Arg1, 0);		\
+  if (*Loc >= BLim) Buff = buff_realloc();		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);	\
+  pad64bits(Loc);					\
+  write_word(Buff,Loc,Arg1);				\
+}
+
+#define dbgen_instB_ppp(Opcode) {			\
+  dbgen_printinst_macro(Opcode,0,0);			\
+  if (*Loc >= BLim) Buff = buff_realloc();		\
+  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
+  write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);	\
+  pad64bits(Loc);					\
+}
 
 
 /*======================================================================*/
