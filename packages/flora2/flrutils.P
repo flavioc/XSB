@@ -957,7 +957,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 
 	      ; member(FLEQLBASIC,FileOptionList) ->
 		  %% The basic equality trailer does not include the equality
-		  %% specified by the equailty rules (a:=:b).
+		  %% implied by single-valued methods.
 	          flora_message_line('Including basic equality maintenance'),
 		  flora_include_file([FLEQLTRAILER],FileStatus)
 
