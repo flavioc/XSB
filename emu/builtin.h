@@ -135,6 +135,7 @@ extern void init_builtin_table(void);
 #define DB_GET_CLAUSE		137
 #define DB_BUILD_PRREF		138
 #define DB_REMOVE_PRREF		139
+#define DB_RECLAIM0		140
 
 #define FORMATTED_IO            142
 #define TABLE_STATUS            143

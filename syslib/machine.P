@@ -139,10 +139,11 @@ file_read_canonical(_File,_Var,_Ret) :- '_$builtin'(133).
 gen_retract_all(_Buff) :- '_$builtin'(134).
 compiled_to_dynamic(_PSC,_NewPred) :- '_$builtin'(135).
 db_retract0(_Clause,_DontReclaim) :- '_$builtin'(136).
-db_get_clause(_CC0,_CI,_CIL,_PrRef,_Index,_Clause,_Type,_Entry) :- 
+db_get_clause(_CC0,_CI,_CIL,_PrRef,_Head,_Failed,_Clause,_Type,_Entry) :- 
 	'_$builtin'(137).
 db_build_prref(_PSC,_Tabled,_PrRef) :- '_$builtin'(138).
 db_remove_prref(_Prref) :- '_$builtin'(139).
+db_reclaim0(_Clause,_Type) :- '_$builtin'(140).
 
 formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
 	'_$builtin'(142).

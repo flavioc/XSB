@@ -113,7 +113,8 @@ extern bool private_builtin(void);
 
 extern bool assert_code_to_buff(void), assert_buff_to_clref(void),
   gen_retract_all(void), compiled_to_dynamic(void), db_retract0(void),
-  db_get_clause(void), db_build_prref(void), db_remove_prref(void);
+  db_get_clause(void), db_build_prref(void), db_remove_prref(void),
+  db_reclaim0(void);
 
 extern char *dirname_canonic(char *);
 extern char *expand_filename(char *filename);
@@ -518,6 +519,7 @@ void init_builtin_table(void)
   set_builtin_table(DB_GET_CLAUSE, "db_get_clause");
   set_builtin_table(DB_BUILD_PRREF, "db_build_prref");
   set_builtin_table(DB_REMOVE_PRREF, "db_remove_prref");
+  set_builtin_table(DB_RECLAIM0, "db_reclaim0");
 
   set_builtin_table(TABLE_STATUS, "table_status");
   set_builtin_table(GET_DELAY_LISTS, "get_delay_lists");
@@ -1285,6 +1287,9 @@ int builtin_call(byte number)
     break;
   case DB_REMOVE_PRREF:
     db_remove_prref();
+    break;
+  case DB_RECLAIM0:
+    db_reclaim0();
     break;
     
 /*----------------------------------------------------------------------*/

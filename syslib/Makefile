@@ -46,7 +46,7 @@ Option = [sysmod,optimize]
 #
 # Self-make: Version 1.9
 #
-XSB=../bin/xsb
+XSB=../bin/xsb-old
 Prolog = $(XSB)
 #
 #-------------------------------------------------------------------#

@@ -36,7 +36,7 @@
 
 db_retract(Head,Body,Prref) :-
 	goal_cut_trans_a(Body,Tbody,_),
-	db_get_clauses(Prref,0,Head,Clref,Typ,EntryP),
+	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
 	(	Result = trie, 
 		call_trie_retract(Head,Body,Clref,TrieNodeAddr)
@@ -50,7 +50,7 @@ db_retract(Head,Body,Prref) :-
 % Don't reclaim space
 db_retract_nr(Head,Body,Prref) :-
 	goal_cut_trans_a(Body,Tbody,_),
-	db_get_clauses(Prref,0,Head,Clref,Typ,EntryP),
+	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
 	(	Result = trie,
 		call_trie_retract_nr(Head,Body,TrieNodeAddr)
@@ -138,7 +138,7 @@ db_abolish(Prref) :-
 
 db_clause(Head,Body,Prref,Clref) :-
 	goal_cut_trans_a(Body,Tbody,_),
-	db_get_clauses(Prref,0,Head,Clref,Typ,EntryP),
+	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
 	(Typ =:= 2	% compiled code
 	 ->	chk_if_trie_assert(Clref,Result,_),
 		(Result = trie ->
@@ -208,13 +208,14 @@ db_do_call(Entry, Head) :-
 	buff_set_var(Buff,0,8,X),
 	X=Call.
 
-% db_get_clauses(+Prref,+Ind, +Term,-Clref,-Typ,Entp) returns Clrefs for each
-%	clause whose head might unify with Term. It uses the SOB index blocks
-%	to efficiently find them. It may return clauses whose head won't unify
-%	with Term. (Ind is no longer used.)
+% db_get_clauses(+Prref,+Ind, +Term, +Failed, -Clref,-Typ,Entp) returns Clrefs
+%       for each clause whose head might unify with Term. It uses the SOB 
+%       index blocks to efficiently find them. It may return clauses whose
+%	head won't unify with Term. (Ind is no longer used.)
+%	Failed means fetch retract(ed)_nr clauses.
 
-db_get_clauses( PrRef, _Index1, Head, ClRef, Typ, EntryP ) :-
-	db_get_clauses0( 0, _, _, PrRef, Head, ClRef, Typ, EntryP ).
+db_get_clauses( PrRef, _Index1, Head, Failed, ClRef, Typ, EntryP ) :-
+	db_get_clauses0( 0, _, _, PrRef, Head, Failed, ClRef, Typ, EntryP ).
 	
 
 % db_get_clauses0 calls the builtin, db_get_clause, to get the next ClRef.  It
@@ -222,23 +223,23 @@ db_get_clauses( PrRef, _Index1, Head, ClRef, Typ, EntryP ) :-
 %	deterministic retract doesn't lay down a choice point.  This makes
 %	the semantics of the new C retract more consistent with the old.
 
-db_get_clauses0(CurrCls0,CurrInd0,CurrILvl0,PrRef,Head,ClRef,Typ,EntryP) :-
-	db_get_clause(CurrCls0,CurrInd0,CurrILvl0,PrRef,Head,ClRef0,Typ0,EntryP0),
+db_get_clauses0(CurrCls0,CurrInd0,CurrILvl0,PrRef,Head,Failed,ClRef,Typ,EntryP) :-
+	db_get_clause(CurrCls0,CurrInd0,CurrILvl0,PrRef,Head,Failed,ClRef0,Typ0,EntryP0),
 	(ClRef0 =:= 0
 	 ->	!,fail
-	 ;	db_get_clauses1(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,
+	 ;	db_get_clauses1(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,Failed,
 			ClRef,Typ,EntryP,Typ0,EntryP0)
 	).
 
-db_get_clauses1(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,
+db_get_clauses1(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,Failed,
 			ClRef,Typ,EntryP,Typ0,EntryP0) :-
-	db_get_clause(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,ClRef1,Typ1,EntryP1),
+	db_get_clause(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,Failed,ClRef1,Typ1,EntryP1),
 	(ClRef1 =:= 0
 	 ->	!,
 		ClRef = ClRef0, Typ = Typ0, EntryP = EntryP0
 	 ;	(ClRef = ClRef0, Typ = Typ0, EntryP = EntryP0
 		 ;
-		 db_get_clauses1(ClRef1,CurrInd0,CurrILvl0,PrRef,Head,
+		 db_get_clauses1(ClRef1,CurrInd0,CurrILvl0,PrRef,Head,Failed,
 			ClRef,Typ,EntryP,Typ1,EntryP1)
 		)
 	).
@@ -248,33 +249,11 @@ db_get_clauses1(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,
 /* that were erased without reclaiming their space.			*/
 /************************************************************************/
 
-%%%% ??????
-
-%db_reclaim_space(Head,Prref):-
-%	db_get_clauses(Prref,0,Head,Clref,Typ,_IndLevel),
-%	erase_if_failed(Typ,Clref),
-%	fail.
+db_reclaim_space(Head,Prref):-
+	db_get_clauses(Prref,0,Head,1,Clref,Typ,_IndLevel),
+	db_reclaim0(Clref,Typ),
+	fail.
 db_reclaim_space(_,_).
-%
-%
-%erase_if_failed(2,Clref) :-
-%	chk_if_trie_assert(Clref,Result,_TrieNodeAddr),
-%	(Result = trie,
-%	 reclaim_some_space
-%	;
-%	Result = notrie,
-%%	abort('attempt to reclaim compiled code')
-%	).	
-%erase_if_failed(0,Clref) :-		% nonindexed ref
-%	buff_byte(Clref, 8, Op),	% must be a fail instruction
-%	Op =:= 248,
-%	db_erase(Clref).		% if so, erase it
-%erase_if_failed(3,Clref) :-		% an indexed ref
-%	buff_byte(Clref,11,Toskip),
-%	Addr is 12 + Toskip*2,
-%	buff_byte(Clref, Addr, Op),	% must be a fail instruction
-%	Op =:= 248,
-%	db_erase(Clref).		% if so, erase it.
 
 %==================================================
 % Trie Assert related code
