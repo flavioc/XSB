@@ -57,7 +57,7 @@ as a set of ground Prolog facts for the following predicates:
 practice, these facts may be defined either @em{extensionally}, or
 @em{intensionally} using XSB rules.  Most of the arguments of facts in
 a CDF instance are @em{identifiers}.  The actual syntax for
-identifiers in CDF will be interoduced in Section @ref{}; for now we
+identifiers in CDF will be introduced in Section @ref{}; for now we
 can equate identifiers with logical terms.  For the purposes of this
 section (though not of CDF) an @em{atomic identifier} can be thought
 of as an atomic term, while a product identifier can be thought of as
@@ -428,7 +428,7 @@ subclass(suturesRusPart,'OMS Root')
 schrel(dlaPart,suturesRusMatch,suturesRusPart) 
 @end{verbatim}
 
-@noindent This fragment indiates that a given @tt{dlaPart} may
+@noindent This fragment indicates that a given @tt{dlaPart} may
 have a @tt{suturesRusMatch} to a given
 @tt{suturesRusPart} -- but not necessarily -- an equivalent
 part may not be in the vendor's catalog.  However, the fragment
