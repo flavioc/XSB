@@ -125,13 +125,13 @@ Cell build_ret_term(int arity, Cell termVector[]) {
 
   Pair sym;
   CPtr ret_term;
-  int  i, new;
+  int  i, n;
 
   if ( arity == 0 )
     return makestring(ret_psc[0]);  /* return as a term */
   else {
     ret_term = hreg;  /* pointer to where ret(..) will be built */
-    sym = insert("ret", (byte)arity, (Psc)flags[CURRENT_MODULE], &new);
+    sym = insert("ret", (byte)arity, (Psc)flags[CURRENT_MODULE], &n);
     new_heap_functor(hreg, pair_psc(sym));
     for ( i = 0; i < arity; i++ )
       nbldval(termVector[i]);
@@ -147,7 +147,7 @@ Cell build_ret_term(int arity, Cell termVector[]) {
  */
 
 void construct_answer_template(Cell callTerm, SubProdSF producer,
-			       Cell template[]) {
+			       Cell templ[]) {
 
   Cell subterm, symbol;
   int  sizeAnsTmplt;
@@ -176,13 +176,13 @@ void construct_answer_template(Cell callTerm, SubProdSF producer,
     XSB_Deref(subterm);
     SymbolStack_Pop(symbol);
     if ( IsTrieVar(symbol) && IsNewTrieVar(symbol) )
-      template[++sizeAnsTmplt] = subterm;
+      templ[++sizeAnsTmplt] = subterm;
     else if ( IsTrieFunctor(symbol) )
       TermStack_PushFunctorArgs(subterm)
     else if ( IsTrieList(symbol) )
       TermStack_PushListArgs(subterm)
   }
-  template[0] = sizeAnsTmplt;
+  templ[0] = sizeAnsTmplt;
 }
 
 /*----------------------------------------------------------------------*/
@@ -790,7 +790,7 @@ void breg_retskel(void)
     Cell    term;
     VariantSF sg_frame;
     CPtr    tcp, cptr, where;
-    int     new, i;
+    int     n, i;
 #ifndef CHAT
     int     arity;
 #endif
@@ -815,7 +815,7 @@ void breg_retskel(void)
 /*
       sreg = hreg;
       bind_cs((CPtr)term, sreg);
-      sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &new);
+      sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &n);
       new_heap_functor(sreg, sym->psc_ptr);
 #ifdef CHAT
       for (i = Nvars; i > 0; i--) {
@@ -829,7 +829,7 @@ void breg_retskel(void)
       hreg = sreg;
 */
       bind_cs((CPtr)ptoc_tag(3), hreg);
-      sym = insert("ret", (byte)Nvars, (Psc)flags[CURRENT_MODULE], &new);
+      sym = insert("ret", (byte)Nvars, (Psc)flags[CURRENT_MODULE], &n);
       new_heap_functor(hreg, sym->psc_ptr);
 #ifdef CHAT
       for (i = Nvars; i > 0; i--) {

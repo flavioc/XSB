@@ -365,7 +365,7 @@ typedef struct SubsumedConsumerSubgoalFrame {
    subg_next_subgoal(pSF) = Chain;		\
    if ( IsNonNULL(Chain) )			\
      subg_prev_subgoal(Chain) = pSF;		\
-   NewChain = pSF;				\
+   NewChain = (VariantSF)pSF;				\
  }
 
 #define subg_dll_remove_sf(pSF,Chain,NewChain) {			 \
@@ -517,7 +517,7 @@ void tstCreateTSIs(TSTNptr);
    subg_ans_list_ptr(pNewSF) = empty_return();			\
    conssf_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
    conssf_consumers(pNewSF) = subg_consumers(Producer);		\
-   subg_consumers(Producer) = pNewSF;				\
+   subg_consumers(Producer) = (SubConsSF)pNewSF;		\
    SF = (VariantSF)pNewSF;					\
 }
 

@@ -163,13 +163,13 @@ void table_call_search(TabledCallInfo *call_info,
  */
 
 BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
-			   CPtr template, xsbBool *is_new) {
+			   CPtr templ, xsbBool *is_new) {
 
   void *answer;
 
   if ( IsSubsumptiveProducer(producer) ) {
     answer =
-      subsumptive_answer_search((SubProdSF)producer,size,template,is_new);
+      subsumptive_answer_search((SubProdSF)producer,size,templ,is_new);
     if ( *is_new ) {
       ALNptr newALN;
       New_ALN(newALN,answer,NULL);
@@ -187,7 +187,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 #endif /* IGNORE_DELAYVAR */
 
-    answer = variant_answer_search(size,attv_num,template,producer,&wasFound);
+    answer = variant_answer_search(size,attv_num,templ,producer,&wasFound);
 
 #ifdef DEBUG_DELAYVAR
 #ifndef IGNORE_DELAYVAR
@@ -220,7 +220,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
 
 
 void table_consume_answer(BTNptr answer, int size, int attv_num,
-			  CPtr template, TIFptr predicate) {
+			  CPtr templ, TIFptr predicate) {
 
   if (size == 0) {
     if ( ! IsEscapeNode(answer) )
@@ -229,10 +229,10 @@ void table_consume_answer(BTNptr answer, int size, int attv_num,
   }
   else {
     if ( IsSubsumptivePredicate(predicate) )
-      consume_subsumptive_answer(answer,size,template);
+      consume_subsumptive_answer(answer,size,templ);
     else
       /* this also tracks variables created during unification */
-      load_solution_trie(size,attv_num,template,answer);
+      load_solution_trie(size,attv_num,templ,answer);
   }
 }
 
