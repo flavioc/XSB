@@ -38,7 +38,7 @@
 
 void	table_call_search(TabledCallInfo *, CallLookupResults *);
 BTNptr	table_answer_search(SGFrame, int, CPtr, bool *);
-void	table_consume_answer(BTNptr, int, CPtr, TIFptr);
+void	table_consume_answer(BTNptr, int, int, CPtr, TIFptr);
 ALNptr	table_retrieve_answers(SGFrame, SGFrame, CPtr);
 void	table_complete_entry(SGFrame);
 

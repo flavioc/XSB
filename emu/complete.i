@@ -66,7 +66,7 @@ case check_complete: {
     }
     else { /* This code mimics the answer_return code */
       CPtr answer_template;
-      Cell template_size;
+      Cell template_size, attv_num;
       ALNptr answer_set;
       BTNptr answer_leaf;
 
@@ -76,10 +76,12 @@ case check_complete: {
 	tcp_trie_return(breg) = answer_set;   /* update answer continuation */
 	ARITY = tcp_arity(breg); 
 	answer_template = breg + TCP_SIZE + (Cell)ARITY;
-	template_size = int_val(cell(answer_template));
+
+	int tmp = int_val(cell(answer_template));
+	get_var_and_attv_nums(template_size, attv_num, tmp);
 	answer_template += template_size;
 	answer_leaf = ALN_Answer(answer_set);
-	table_consume_answer(answer_leaf,template_size,answer_template,
+	table_consume_answer(answer_leaf,template_size,attv_num,answer_template,
 			     subg_tif_ptr(subgoal));
 
 	/*

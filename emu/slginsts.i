@@ -118,7 +118,7 @@ case tabletrysingle: {
   CallLookupResults lookupResults;
   SGFrame producer_sf, consumer_sf;
   CPtr answer_template;
-  int template_size;
+  int template_size, attv_num;
 
   xwammode = 1;
   CallInfo_Arguments(callInfo) = reg + 1;
@@ -258,16 +258,19 @@ case tabletrysingle: {
 	table_retrieve_answers(producer_sf,consumer_sf,answer_template);
 
     if ( IsNonNULL(answer_set) ) {
+      int tmp;
 #ifdef CHAT      /* for the time being let's update consumed answers eagerly */
       nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(consumer_cpf)))) =
 #endif
       nlcp_trie_return(consumer_cpf) = answer_set; 
       hbreg = hreg;
       first_answer = ALN_Answer(answer_set);
-      template_size = int_val(cell(answer_template));
+
+      tmp = int_val(cell(answer_template));
+      get_var_and_attv_nums(template_size, attv_num, tmp);
       answer_template += template_size;
 
-      table_consume_answer(first_answer,template_size,answer_template,
+      table_consume_answer(first_answer,template_size,attv_num,answer_template,
 			   CallInfo_TableInfo(callInfo));
 
       if (is_conditional_answer(first_answer)) {
@@ -343,7 +346,7 @@ case answer_return: {
   ALNptr answer_set;
   BTNptr answer_leaf;
   CPtr answer_template;
-  int template_size;
+  int template_size, attv_num;
 
   /* Locate relevant answers
      ----------------------- */
@@ -359,7 +362,8 @@ case answer_return: {
   }
 
   if ( IsNonNULL(answer_set) ) {
-
+    int tmp;
+    
     /* Restore Consumer's state
        ------------------------ */
     switch_envs(breg);
@@ -371,10 +375,11 @@ case answer_return: {
        ----------------------- */
     nlcp_trie_return(breg) = answer_set;   /* update answer continuation */
     answer_leaf = ALN_Answer(answer_set);
-    template_size = int_val(cell(answer_template));
+    tmp = int_val(cell(answer_template));
+    get_var_and_attv_nums(template_size, attv_num, tmp);
     answer_template += template_size;
 
-    table_consume_answer(answer_leaf,template_size,answer_template,
+    table_consume_answer(answer_leaf,template_size,attv_num,answer_template,
 			 subg_tif_ptr(consumer_sf));
 
     if (is_conditional_answer(answer_leaf)) {

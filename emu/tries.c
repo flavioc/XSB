@@ -1039,10 +1039,19 @@ bool bottom_up_unify(void)
  * `TriePtr' is a leaf in the answer trie, and `cptr' is a vector of
  * variables for receiving the substitution.
  */
-void load_solution_trie(int arity, CPtr cptr, BTNptr TriePtr)
+void load_solution_trie(int arity, int attv_num, CPtr cptr, BTNptr TriePtr)
 {
+  CPtr xtemp;
+  
   num_heap_term_vars = 0;
   if (arity > 0) {
+    /* Initialize var_addr[] as the attvs in the call. */
+    if (attv_num > 0) {
+      for (xtemp = cptr; xtemp > cptr - arity; xtemp--) {
+	if (isattv(cell(xtemp)))
+	  var_addr[num_heap_term_vars++] = (CPtr) cell(xtemp);
+      }
+    }
     follow_par_chain(TriePtr);
     load_solution_from_trie(arity,cptr);
   }
