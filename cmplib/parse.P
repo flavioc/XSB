@@ -142,7 +142,13 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	((integer(FileName) ; var(FileName))
 	-> fmt_write_string(FullXPP_command,'%s',arg(XPP_command)),
 	    InputStream = FileName
-	; fmt_write_string(FullXPP_command,'%s %s',args(XPP_command,FileName)),
+	;
+	    (   xsb_configuration(host_os,windows)
+	    -> 
+		fmt_write_string(FullXPP_command,'%s ''"%s"''',args(XPP_command,FileName))
+	    ;
+		fmt_write_string(FullXPP_command,'%s "%s"',args(XPP_command,FileName))
+	    ),
 	    InputStream = block
 	),
 #ifdef DEBUG_GPP
