@@ -2,7 +2,6 @@
 
 XSBDIR=..\..\..
 MYPROGRAM=xpathparser
-LIBXML2DIR=C:\cse524\libxml2-2.6.14\libxml2-2.6.14\win32
 
 CPP=cl.exe
 OUTDIR=$(XSBDIR)\config\x86-pc-windows\bin
@@ -18,7 +17,7 @@ CLEAN :
 
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "$(XSBDIR)\config\x86-pc-windows" \
 		 /I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" /I "$(XSBDIR)\packages\xpath\cc"\
-		/I "$(LIBXML2DIR)\include" \
+		/I ".\include" \
 		 /D "WIN_NT" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
 		 /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c 
 	
@@ -34,7 +33,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 		/nologo /dll \
 		/machine:I386 /out:"$(OUTDIR)\$(MYPROGRAM).dll" \
 		/libpath:"$(XSBDIR)\config\x86-pc-windows\bin"	\
-		/libpath:"$(LIBXML2DIR)\lib"	
+		/libpath:.\bin
 LINK32_OBJS=  "$(INTDIR)\$(MYPROGRAM).obj"
 
 "$(OUTDIR)\$(MYPROGRAM).dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
