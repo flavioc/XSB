@@ -290,11 +290,11 @@ assert_oms_int_udb(oms_obj(Oid,Name,NatId,Source)) :-
 				],
 			       [])
 	),
-	writeln(added_new_obj(Oid,Name,NatId,Source)),
+	%% writeln(added_new_obj(Oid,Name,NatId,Source)),
 	asserta(ob_id_map(Oid,Name,NatId,Source)).
 
 assert_oms_int_udb(oms_mo(Oid,Cid)) :-
-	writeln(assert_mo(Oid,Cid)),
+	%% writeln(assert_mo(Oid,Cid)),
 	nonvar(Oid),
 	ob_id_map(Oid,_Name,NatId,Source),
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,MC,MS),
@@ -385,7 +385,7 @@ immediate_memberof_int_udb(NatOID,Source,NatCid,CSou) :-
 	).
 
 retractall_oms_int_udb(oms_mo(Oid,Cid)) :-
-	writeln(retracting(mo(Oid,Cid))),
+	%% writeln(retracting(mo(Oid,Cid))),
 	nonvar(Oid),
 	object(Oid,_,NatOid,Source),
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,MC,MCSou),
@@ -682,7 +682,7 @@ db_build_questions([_|As],['?,'|Q0],Q) :-
 	db_build_questions(As,Q0,Q).
 
 odbc_sql_local(Connection,Input,Statement,Output):- 
-	writeln('SQL_CALL'(Statement,Input)),
+	%% writeln('SQL_CALL'(Statement,Input)),
 	findall(O,odbc_sql(Connection,Input,Statement,O),Outputs1),
 	sort(Outputs1,Outputs),
 	member(Output,Outputs).
