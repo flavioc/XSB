@@ -8,6 +8,7 @@ typedef struct HT_err {
 	char * type;
 } HT_status;
 
+#define MAX_STATUS_MSG_INDEX 48 
 HT_status status_msg[] = {  
     { 100, "Continue",                                  "information" }, 
     { 101, "Switching Protocols",                       "information" }, 
