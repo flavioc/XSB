@@ -118,7 +118,7 @@ SWORD ODBCToXSBType(SWORD odbcType)
   case SQL_BINARY:
   case SQL_VARBINARY:
   case SQL_LONGVARBINARY:
-    return SQL_BINARY;
+    return SQL_C_BINARY;
   case SQL_DATE:
   case SQL_TIME:
   case SQL_TIMESTAMP:
@@ -1309,8 +1309,8 @@ void ODBCDescribeSelect()
       if (cur->ColTypes[j] == -9) cur->ColTypes[j] = SQL_VARCHAR;
       colnamelen = (colnamelen > 49) ? 49 : colnamelen;
       colname[colnamelen] = '\0';
-      if (!(cur->ColLen[j] =
-	    DisplayColSize(cur->ColTypes[j],collen,colname))) {
+      cur->ColLen[j] = DisplayColSize(cur->ColTypes[j],collen,colname);
+      if (!(cur->ColLen[j])) {
 	/* let SetCursorClose function correctly free all the memory allocated*/
 	/* for Data storage: cur->Data[j]'s*/
 	cur->NumCols = j; /* set so close frees memory allocated thus far*/
