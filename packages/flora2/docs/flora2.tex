@@ -300,43 +300,52 @@ where to find the demos.
 
 \section{\FLORA Shell Commands} \label{sec-shell-commands}
 
-The following \FLORA shell commands are supported:
+The following \FLORA shell commands are supported. All suffixes ({\tt .flr}
+{\tt .P}, {\tt .O}) mentioned in the commands below are optional.
 %\begin{verbatim}
 \begin{itemize}
 \item {\tt help}:
     show this help info
-\item {\tt compile(FILE[.P])}:
+\item {\tt compile(FILE.P)}:
     compile FILE.P; create FILE.O
-\item {\tt flCompile(FILE[.flr])}:
+\item {\tt flCompile(FILE.flr)}:
     compile FILE.flr for the default module `main'
-\item {\tt flCompile(FILE[.flr],Module)}:
-    compile FILE.flr for the module `Module'
-\item {\tt flConsult(FILE[.flr])}:
+\item {\tt flCompile(FILE.flr,Module)}:
+    compile FILE.flr for the module `{\tt Module}'
+\item {\tt flConsult(FILE.flr)}:
     load FILE.flr into the default module `main'
-\item {\tt flLoad(FILE[.flr],Module)}:
-    load FILE.flr into the module `Module'
-\item {\tt flLoad(FILE[.\{P$|$O$|$flr\}])}:
-    load FILE.flr (into the default module `main'), or FILE.P or FILE.O
-\item {\tt [FILE[.\{P$|$O$|$flr\}][$>>$ Module],...]}:
-    load a list of .flr (into the module `Module'), .P, or .O files
+\item {\tt flLoad(FILE.flr,Module)}:
+    load FILE.flr into the module `{\tt Module}'
+\item {\tt flLoad(FILE.\{P$|$O$|$flr\})}:
+    load the specified file into the default module `main'.
+\item {\tt [FILE.\{P$|$O$|$flr\} $>>$ Module,...]}:
+    load the files in the specified list into the module `{\tt Module}'
 \item {\tt rundemo(FILE)}:
     consult a demo from \FLORA demos directory
 \item {\tt flEquality(\{none$|$basic$|$flogic\},Module)} :
-    load the standard/basic equality/F-logic equality trailer into the module `Module'
+    set the level of support for the equality predicate {\tt :=:} in module
+    `{\tt Module}'. {\tt none}  means that {\tt :=:} is treated as a regular
+    predicate; {\tt basic} means that only standard first-order equality is
+    supported ({\it i.e.}, the usual congruence rules); {\tt flogic} means
+    that F-logic style equality is supported ({\it i.e.}, congruence plus
+    the axiom for scalar methods).
+
 \item {\tt flEquality \{none$|$basic$|$flogic\}}:
-    load the standard/basic equality/F-logic equality trailer into the default module `main'
+    set the level of support for the equality predicate {\tt :=:} in the
+    default module `main'.
 \item {\tt abolish\_all\_tables}:
     flush all tabled data
 \item {\tt flProlog Functor/Arity}:
     define Functor/Arity as Prolog in shell mode
 \item {\tt flPredicate Functor/Arity}:
     define Functor/Arity as non-HiLog in shell mode
-\item {\tt flSign Functor(\{oid$|$form\}[,\{oid$|$form\}]*)}:
+\item {\tt flSign Functor(\{oid$|$form\}, ...)}:
     define predicate signature in shell mode
 \item {\tt op(Precedence,Associativity,Operator)}:
     define an operator in shell mode
 \item {\tt reset(flProlog$|$flPredicate$|$flSign$|$op)}:
-    clear all dynamic flProlog/flPredicate/flSign/op definitions in shell mode
+    clear all dynamic flProlog/flPredicate/flSign/op definitions in the
+    \FLORA shell
 \item {\tt all}:
     show all solutions (default)
 \item {\tt one}:
@@ -897,7 +906,7 @@ experiments show that without equality checking \FLORA can run 2 -- 10 times
 faster in some cases.
 
 
-\subsection{Truth Value vs.\ Object Value}\label{sec-references}
+\subsection{Truth Value vs.\ Object Value and the flSign Compile Directive}\label{sec-references}
 
 
 Id-terms, \fl atoms, and path expressions can all be used 
