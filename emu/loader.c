@@ -50,6 +50,8 @@
 #include "xmacro.h"
 #include "xsberror.h"
 
+#define V2_OBJECT_FORMAT 1	/* temporarily */
+
 #ifdef FOREIGN
 #include "dynload.h"
 #endif
