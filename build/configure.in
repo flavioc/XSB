@@ -1319,7 +1319,6 @@ case "$canonical" in
 		 LDFLAGS="${LDFLAGS} -N"
 		;;
       *-cygwin*) AC_DEFINE(CYGWIN)
-		 AC_DEFINE(FOREIGN_WIN32)
 		 builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 		;;
 esac
