@@ -58,10 +58,10 @@ oms_to_cdf_class:-
 	atomic(NatId), % do not keep names for product types
 	(convert_system_name(cid(NatId, Source), NewId), isa_ext(NewId,_)
 	 ->	newExtTerm(isa_ext(crid('Name', NewSource), crid('Name', cdf))),
-		newExtTerm(classHasAttr_ext(NewId, crid('Name', NewSource), oid(Name, cdfpt)))
+		newExtTerm(classHasAttr_ext(NewId, crid('Name', NewSource), cid(Name, cdfpt)))
 	 ;	convert_system_name(rid(NatId, Source), NewId), isa_ext(NewId,_), 
 		newExtTerm(isa_ext(crrid('Name', NewSource), crrid('Name', cdf))),
-		newExtTerm(classHasAttr_ext(NewId, crrid('Name',NewSource), oid(Name, cdfpt)))
+		newExtTerm(classHasAttr_ext(NewId, crrid('Name',NewSource), cid(Name, cdfpt)))
 	),
 	fail.
 oms_to_cdf_class.
@@ -203,27 +203,27 @@ convert_system_name(cid('OMS Root', 'OMS'), cid('CDF Classes', cdf)):- !.
 convert_system_name(cid(integer(Int), 'OMS'), Id):- !,
 	(var(Int)
 	 ->	Id = cid(allIntegers, cdf)
-	 ;	Id = oid(Int, cdfpt)
+	 ;	Id = cid(Int, cdfpt)
 	).
 convert_system_name(cid(atom(Atom), 'OMS'), Id):- !,
 	(var(Atom)
 	 ->	Id = cid(allAtoms, cdf)
-	 ;	Id = oid(Atom, cdfpt)
+	 ;	Id = cid(Atom, cdfpt)
 	).
 convert_system_name(aint(AInt), 'OMS', Id):- !,
 	(var(AInt)
 	 ->	Id = cid(allAtomInts, cdf)
-	 ;	Id = oid(AInt, cdfpt)
+	 ;	Id = cid(AInt, cdfpt)
 	).
 convert_system_name(float(Float), 'OMS', Id):- !,
 	(var(Float)
 	 ->	Id = cid(allFloats, cdf)
-	 ;	Id = oid(Float, cdfpt)
+	 ;	Id = cid(Float, cdfpt)
 	).
 convert_system_name(boolean(Bool), 'OMS', Id):- !,
 	(var(Bool)
 	 ->	Id = cid(allBoolean, cdf)
-	 ;	Id = oid(Bool, cdfpt)
+	 ;	Id = cid(Bool, cdfpt)
 	).
 convert_system_name(clause(Clause,List), 'OMS', Id):- !,
 	(var(Clause), var(List)
@@ -237,9 +237,9 @@ convert_system_name(cid('[]', 'OMS'), cid('[]', cdf)):- !.
 convert_system_name(cid('OMS Relations', 'OMS'), _, _):- !, fail. % no such class anymore
 convert_system_name(cid('OMS', 'OMS'), cid(cdf, cdf)):- !.
 convert_system_name(cid('OMS Component', 'OMS'), cid('CDF Component', cdf)):- !. % is it there?
-convert_system_name(rid('componentDepends', 'OMS'), rid('componentDepends', cdf)):- !.
-convert_system_name(rid('hasPath', 'OMS'), rid('hasPath', cdf)):- !.
-convert_system_name(rid('hasVersion', 'OMS'), rid('hasVersion', cdf)):- !.
+convert_system_name(crid('componentDepends', 'OMS'), crid('componentDepends', cdf)):- !.
+convert_system_name(crid('hasPath', 'OMS'), crid('hasPath', cdf)):- !.
+convert_system_name(crid('hasVersion', 'OMS'), crid('hasVersion', cdf)):- !.
 convert_system_name(cid(compName('OMS', 'OMS', PathId, PathSource), 'OMS'),
 		    cid(compName(cid(cdf,cdf), NewPathId), cdf)):- !,
 	convert_system_name(cid(PathId, PathSource), NewPathId).	% what about component/3 ?
