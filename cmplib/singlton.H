@@ -1,5 +1,5 @@
 /* File:      singlton.H
-** Author(s): Debray, Sagonas
+** Author(s): Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998

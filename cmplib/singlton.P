@@ -1,5 +1,5 @@
 /* File:      singleton.P
-** Author(s): Xu, Sagonas
+** Author(s): Sagonas
 ** Modified by Swift to support read_term.
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
