@@ -27,22 +27,24 @@ make_odbc_driverH(CC, CC_opts) :-
 	%% Creates something like -Wl,-rpath,<libdir>
 	runtime_loader_flag(XCC, ODBC_libdir, OdbcRunpathFlag),
 	(running_under(cygwin) ->
-	% cygwin specific stuff
+				% cygwin specific stuff
 
-	xsb_configuration(config_bindir, ConfigBindir),
-	package_configuration(dir(odbc_driver), ODBCDriverDir),
-	fmt_write_string(ODBCDriverO, '%s%scc%sodbc_driver.o', 
-		f(ODBCDriverDir, Slash, Slash)),
+	    xsb_configuration(config_bindir, ConfigBindir),
+	    package_configuration(dir(odbc_driver), ODBCDriverDir),
+	    %% Doesn't seem to be used
+	    %% fmt_write_string(ODBCDriverO, '%s%scc%sodbc_driver.o', 
+	    %%  	     f(ODBCDriverDir, Slash, Slash)),
 	
-	%% change the path here if visual studio is installed in a different dir
-	
-	fmt_write_string(LD_flags,
-		' %s%sdriver_manager.dll "C:\program files\microsoft visual studio\vc98\lib\odbc32.lib" "C:\program files\microsoft visual studio\vc98\lib\odbccp32.lib" ',f(ConfigBindir, Slash))
+	    %% Change MSVCPath if Visual Studio is installed in a different dir
+	    MSVCPath = 'C:\program files\microsoft visual studio\vc98\lib',
+	    fmt_write_string(LD_flags,
+			     ' %s%sdriver_manager.dll "%s\odbc32.lib" "%s\odbccp32.lib" ',
+			     f(ConfigBindir, Slash, MSVCPath, MSVCPath))
 	;
-	running_under(windows) -> true
-	% windows specific stuff
+	    running_under(windows) -> true
+				% windows specific stuff
 	;
-	% unix specific stuff
+				% unix specific stuff
 	
 	fmt_write_string(LD_flags,
 		' %s %s %s%sdriver_manager.so %s%sodbc_driver.so -lodbc -ldl',
