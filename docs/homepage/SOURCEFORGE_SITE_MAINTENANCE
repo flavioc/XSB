@@ -14,9 +14,10 @@ changes to the Web site, run
 
     cvs update
 
-in /home/groups/xsb/htdocs/shadow_site on shell.sourceforge.net.  This
-should bring the shadow site up to date.  You can now check if everything
-is OK on the shadow site by visiting
+in /home/groups/x/xs/xsb/htdocs/shadow_site (new!) on
+shell.sourceforge.net.  (TLS: you need the xsb password for this).
+This should bring the shadow site up to date.  You can now check if
+everything is OK on the shadow site by visiting
 
     http://xsb.sourceforge.net/shadow_site/
 
