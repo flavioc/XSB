@@ -26,6 +26,18 @@
 #include "standard.h"
 #include "flora_exceptions.flh"
 
+:- export
+    	_[#add(_)],
+	_[#remove(_)],
+	_[#query(_)],
+	_[#abolish],
+	#abort(_),
+	#warning(_),
+	#message(_),
+	_[#check_undefined(_)],
+	_[#check_undefined(_,_)].
+	
+
 libpath[#add(Path)] :-
 	flora_file_op(expand,Path,ExpandedPath)@prolog(flrporting),
 	( flora_module_path_get(ExpandedPath)@prolog(flrporting) -> true
@@ -46,16 +58,16 @@ libpath[#query(Path)] :-
 	!,
 	flora_module_path_get(Path)@prolog(flrporting).
 libpath[#query(_Path)] :-
-	abort('libpath[#query(Path)]@flora(sys): Argument must be atom or variable')@flora(sys).
+	#abort('libpath[#query(Path)]@flora(sys): Argument must be atom or variable')@flora(sys).
 
 
 tables[#abolish] :- abolish_all_tables@prolog().
 
-abort(X) :-
+#abort(X) :-
 	p2h{PX,X},
 	flora_abort(PX).
 
-warning(X) :-
+#warning(X) :-
 	p2h{PX,X},
 	flora_warning_heading@prolog(flrprint),
 	%%flora_stderr_string('[Runtime] ')@prolog(flrprint),
@@ -63,7 +75,7 @@ warning(X) :-
 	flora_stderr_nl@prolog(flrprint).
 
 %% Put a message on stderr
-message(X) :-
+#message(X) :-
 	p2h{PX,X},
 	message(PX,STDERR)@prolog(standard),
 	flora_stderr_nl@prolog(flrprint).
@@ -87,28 +99,28 @@ debug[#check_undefined(on)] :-
 	        (flora_module_registry(M),
 		 \+ flora_debug_module_registry(M))@prolog(flrregistry),
 		ML)@prolog(),
-	turn_on_debug_all(ML)).
+	#turn_on_debug_all(ML)).
 	
 debug[#check_undefined(off)] :-
 	!,
 	retractall(flora_in_debug_mode(_)@prolog(flrregistry))@prolog(),
 	findall(M,flora_debug_module_registry(M)@prolog(flrregistry),ML)@prolog(),
-	turn_off_debug_all(ML).
+	#turn_off_debug_all(ML).
 
 debug[#check_undefined(InvalidOpt)] :-
 	%% Note: this abort is defined in this module
-	abort(('Invalid option in #check_undefined: ', InvalidOpt)),
+	#abort(('Invalid option in #check_undefined: ', InvalidOpt)),
 	fail.
 
 
 debug[#check_undefined(_Flag,Module)] :-
 	( var(Module)@prolog(),
 	    %% Note: this abort defined in this module
-	    abort(('Invalid module name in #check_undefined: ', Module))
+	    #abort(('Invalid module name in #check_undefined: ', Module))
 	; Module\=flora(_),
 	    \+ flora_module_registry(Module)@prolog(flrregistry),
 	    %% Note: this abort defined in this module
-	    abort(('Unloaded module name in #check_undefined: ', Module))
+	    #abort(('Unloaded module name in #check_undefined: ', Module))
 	).
 
 debug[#check_undefined(Flag,Module)] :-
@@ -136,7 +148,7 @@ debug[#check_undefined(on,Module)] :-
 	; Module\=flora(_), Mname=Module
 	),
 	(flora_debug_module_registry(Mname)@prolog(flrregistry),!
-        ; turn_on_debug(Mname)
+        ; #turn_on_debug(Mname)
         ).
 	
 debug[#check_undefined(off,Module)] :-
@@ -150,43 +162,25 @@ debug[#check_undefined(off,Module)] :-
 	),
 	(\+ flora_debug_module_registry(Mname)@prolog(flrregistry), !
 	;
-	    turn_off_debug(Mname)
+	    #turn_off_debug(Mname)
 	).
 
 debug[#check_undefined(InvalidOpt,_Module)] :-
 	%% Note: this abort is defined in this module
-	abort(('Invalid option in #check_undefined: ', InvalidOpt)).
+	#abort(('Invalid option in #check_undefined: ', InvalidOpt)).
 
-turn_on_debug_all([]) :- !.
-turn_on_debug_all([H|L]) :-
-	turn_on_debug(H),
-	turn_on_debug_all(L).
+#turn_on_debug_all([]) :- !.
+#turn_on_debug_all([H|L]) :-
+	#turn_on_debug(H),
+	#turn_on_debug_all(L).
 
-turn_on_debug(Module) :-
+#turn_on_debug(Module) :-
 	assert(flora_debug_module_registry(Module)@prolog(flrregistry))@prolog().
 
-turn_off_debug_all([]) :- !.
-turn_off_debug_all([H|L]) :-
-	turn_off_debug(H),
-	turn_off_debug_all(L).
+#turn_off_debug_all([]) :- !.
+#turn_off_debug_all([H|L]) :-
+	#turn_off_debug(H),
+	#turn_off_debug_all(L).
 
-turn_off_debug(Module) :-
+#turn_off_debug(Module) :-
 	retractall(flora_debug_module_registry(Module)@prolog(flrregistry))@prolog().
-
-%% Takes a call, P. If P is false then fails. If P is true or
-%% undefined, succeeds.  If P is true, then List is []. If P is
-%% undefined, then List is the residual of P.
-table_state(Pred,List) :-
-    flora_decode_predicate(Pred,hilog,Module,_Prefix,PName,AList)@prolog(flrwrapper),
-    flora_tabled_hilog_module_predicate_symbol(Module,Wrapper)@prolog(flrwrapper),
-    P =.. [Wrapper,0,PName|AList],
-    complete_table(P),
-    !,
-    NewP =.. [Wrapper,_RN,PName|AList],
-    get_residual(NewP,List)@prolog(tables).
-
-complete_table(P) :-
-    P,
-    fail.
-
-complete_table(_) :- !.

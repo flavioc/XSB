@@ -29,9 +29,8 @@
 #include "version.flh"
 
 :- import flora_configuration/2 from flrregistry.
-:- import package_configuration/2 from packaging.
 
-?- (flora_configuration(develmode,yes), !
+?- (flora_configuration(standalone,yes), !
    ;
        assert(package_configuration(version(flora),FLORA_VERSION))
    ), 

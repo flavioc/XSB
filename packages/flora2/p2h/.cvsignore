@@ -1,3 +1,7 @@
-*.xwam
 *.O
 *.so
+*.xwam
+prolog2hilog.def
+prolog2hilog.dll
+prolog2hilog.exp
+prolog2hilog.lib

@@ -17,7 +17,7 @@ ALL: $(ALLOBJS)
 
 
 .flr$(PROLOGEXT):
-	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. import (flCompile)/1 from flora2. flCompile(%|fF)."
+	$(PROLOG) -e "asserta(library_directory('..')). ['..\flora2']. import bootstrap_flora/0 from flora2. bootstrap_flora. import (flCompile)/1 from flora2. flCompile(%|fF)."
 
 
 CLEAN:

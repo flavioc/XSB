@@ -1,28 +1,28 @@
 /* Demo that mixes F-logic with Datalog. */
 
+:- ignore_depchk #edge(_,_).
 
-
-edge(a,b).
-edge(b,c).
-edge(c,b).
+#edge(a,b).
+#edge(b,c).
+#edge(c,b).
 
 string[reachableTo=>>string].
 
-X:activeNode[reachableTo->>Y] :- edge(X,Y).
-X:activeNode[reachableTo->>Y] :- edge(X,Z), Z[reachableTo->>Y].
+X:activeNode[reachableTo->>Y] :- #edge(X,Y).
+X:activeNode[reachableTo->>Y] :- #edge(X,Z), Z[reachableTo->>Y].
 
 
-show(X) :-
+#show(X) :-
 	X:activeNode,
 	write(X)@prolog(),
 	write('[reachableTo->>{')@prolog(),
 	findall(Y,X[reachableTo->>Y],L)@prolog(setof),
-	writelist(L),
+	#writelist(L),
 	writeln('}]')@prolog().
 
-writelist([X]) :- write(X)@prolog().
-writelist([X1,X2|Xs]) :-
-	write(X1)@prolog(), write(',')@prolog(), writelist([X2|Xs]).
+#writelist([X]) :- write(X)@prolog().
+#writelist([X1,X2|Xs]) :-
+	write(X1)@prolog(), write(',')@prolog(), #writelist([X2|Xs]).
 
 
-?- show(X).
+?- #show(X).

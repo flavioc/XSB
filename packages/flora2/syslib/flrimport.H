@@ -25,9 +25,14 @@
 */
 
 
-:- import copy_term/2 from basics.
+:- import
+	append/3,
+	copy_term/2
+   from basics.
 :- import flora_load_module_internal/2 from flrutils.
-:- import flora_hilog_module_predicate_symbol/2
+:- import 
+        flora_hilog_module_predicate_symbol/2,
+        flora_tabled_hilog_module_predicate_symbol/2
     from flrwrapper.
 :- import flora_error_line/1, flora_error_line/2 from flrprint.
 

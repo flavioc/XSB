@@ -49,7 +49,10 @@
 
 :- import format/2 from format.
 
-:- import member/2, append/3 from basics.
+:- import
+	member/2,
+	append/3
+    from basics.
 
 :- import current_loaded_file/1 from consult.
 
@@ -61,7 +64,11 @@
 	stat_set_flag/2
    from machine.
 
-:- import file_close/1 from file_io.
+:- import
+	file_close/1,
+	file_open/3,
+	ioport2iostream/2
+   from file_io.
 
 :- import process_control/2 from shell.
 
@@ -83,7 +90,8 @@
 	flora_symbol_token_struct/6,
 	flora_rule_delimeter_struct/6,
 	flora_blank_line/1,
-	flora_current_compile_filename/1
+	flora_current_compile_filename/1,
+        flora_compile_filename_by_token/2
    from flrlexer.
 
 :- import
@@ -92,16 +100,15 @@
 	flora_nth_token/2
    from flrcomposer.
 
+:- import
+	print_backtrace/1
+   from error_handler.
+
 :- import flora_reset_operator/0 from flroperator.
 
 :- import flora_reset_arguments/0 from flrarguments.
 
 :- import flora_reset_prolog/0 from flrprolog.
-
-:- import
-    flora_reset_hilogtable/0,
-    flora_table_info/1
-   from flrhilogtable.
 
 :- import flora_parse/3 from flrparser.
 
@@ -123,6 +130,7 @@
 
 :- import flora_configuration/2,
 	flora_storage_registry/1,
+	flora_trailer_registry/2,
 	flora_module_registry/1
    from flrregistry.
 
@@ -149,8 +157,11 @@
 
 :- import
 	flora_include/2,
-	flora_sysmod_file/3
+	flora_sysmod_file/3,
+	flora_load_library/1,
+	flora_load_system_module/1
    from flrlibman.
+
 
 :- import prettyprint_stdin/0 from flrpretifydump.
 
@@ -184,13 +195,13 @@
 	flDump/1,
 	flora_locate_file/3,
 	flora_FLH_filename/2,
-	flloadtrailer/1,
 	flloadtrailer/2,
-	flsetuptrailer/1,
-	flsetuppatch/0,
+	fltrailersemantics/2,
 	flora_end_of_input/1,
 	flora_not_end_of_input/1,
 	flora_shell_command_line/3,
+	flora_string_command_line/4,
+	flora_call_string_command/4,
 	flora_good_command/1,
 	flora_bad_command/1,
 	flora_noop_command/1,

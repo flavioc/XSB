@@ -40,6 +40,11 @@ flora_undefined_predicate_hook(WRAP_HILOG,Arity,_PrologModule) :-
 	RealArity is Arity - 1,
 	flora_error_line('Attempt to call a HiLog term of arity ~w as a predicate', [RealArity]).
 
+flora_undefined_predicate_hook(WRAP_TABLED_HILOG,Arity,_PrologModule) :-
+	!,
+	RealArity is Arity - 1,
+	flora_error_line('Attempt to call a tabled HiLog term of arity ~w as a predicate', [RealArity]).
+
 %% A call to a molecule
 flora_undefined_predicate_hook(PredName,Arity,PrologModule) :-
 	%% Decode the predicate symbol.
@@ -58,7 +63,7 @@ flora_undefined_predicate_hook(PredName,Arity,PrologModule) :-
 
 	; PredicateType == (hilog) ->
 	    %% a HiLog predicate
-	    RealArity is Arity - 1,
+	    RealArity is Arity - 2, % extra one for the caller arg
 	    ( flLoadedModule(ModuleName) ->
 		flora_error_line('Attempt to call undefined HiLog predicate of arity ~w in FLORA module `~w''',
 				 [RealArity,ModuleName])

@@ -36,18 +36,18 @@
 /*********************************************************************
   fllibcount(+Var,+VarList,+Goal,-Count)
 *********************************************************************/
-fllibcount(Var,[],Goal,Count) :-
+FLLIBCOUNT(Var,[],Goal,Count) :-
 	!,
 	findall(Var,Goal,Matches),
 	length(Matches,Count).
 
-fllibcount(Var,VarList,Goal,Count) :-
+FLLIBCOUNT(Var,VarList,Goal,Count) :-
 	ground(VarList),
 	!,
 	findall(Var,Goal,Matches),
 	length(Matches,Count).
 
-fllibcount(Var,VarList,Goal,Count) :-
+FLLIBCOUNT(Var,VarList,Goal,Count) :-
 	!,
 	findall(flora_result(Var,VarList),Goal,Matches),
 	findall(Grp,member(flora_result(_,Grp),Matches),L),

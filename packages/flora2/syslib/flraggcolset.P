@@ -36,18 +36,18 @@
 /*********************************************************************
   fllibcollectset(+Var,+VarList,+Goal,-Set)
 *********************************************************************/
-fllibcollectset(Var,[],Goal,Set) :-
+FLLIBCOLLECTSET(Var,[],Goal,Set) :-
 	!,
 	findall(Var,Goal,Bag),
 	sort(Bag,Set).
 
-fllibcollectset(Var,VarList,Goal,Set) :-
+FLLIBCOLLECTSET(Var,VarList,Goal,Set) :-
 	ground(VarList),
 	!,
 	findall(Var,Goal,Bag),
 	sort(Bag,Set).
 
-fllibcollectset(Var,VarList,Goal,Set) :-
+FLLIBCOLLECTSET(Var,VarList,Goal,Set) :-
 	!,
 	findall(flora_result(Var,VarList),Goal,Matches),
 	findall(Grp,member(flora_result(_,Grp),Matches),GL),

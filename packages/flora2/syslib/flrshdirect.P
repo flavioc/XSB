@@ -30,9 +30,6 @@
 #include "flora_exceptions.flh"
 
 
-
-:- import flora_shdefine_hilogtable/3 from flrhilogtable.
-
 :- import flora_shdefine_operator/3 from flroperator.
 
 :- import flora_shdefine_arguments/3 from flrarguments.
@@ -41,26 +38,23 @@
 
 :- import
 	flora_dyna_hilog_user_module_predicate_symbol/2,
-	flora_dynz_hilog_user_module_predicate_symbol/2
+	flora_dynz_hilog_user_module_predicate_symbol/2,
+	flora_tdyna_hilog_user_module_predicate_symbol/2,
+	flora_tdynz_hilog_user_module_predicate_symbol/2
    from flrwrapper.
 
 :- import flora_abort/1 from flrutils.
 
 
 /*****************************************************************************
-  fllibshdirect
+  FLLIBSHDIRECT
 
-  Processes directives in the flora shell (like table, op, etc.)
+  Processes directives in the flora shell (like op, etc.)
 *****************************************************************************/
-%%fllibshdirect(FL_PROLOG,Funct,Arity) :-
-%%	flora_shdefine_prolog(Funct,Arity).
-
-fllibshdirect(FL_TABLE,Module,Funct,Arity) :-
-	flora_shdefine_hilogtable(Module,Funct,Arity).
 
 %% Executable version of this directive makes sense only in main
 %% module in the shell
-fllibshdirect(FL_OP,Module,Preced,Assoc,Op) :-
+FLLIBSHDIRECT(FL_OP,Module,Preced,Assoc,Op) :-
 	(Module == FLORA_DEFAULT_WORKSPACE ->
 	    flora_shdefine_operator(Preced,Assoc,Op)
 	; true
@@ -69,22 +63,28 @@ fllibshdirect(FL_OP,Module,Preced,Assoc,Op) :-
 %% Executable version of this directive makes sense only in main
 %% module in the shell
 /** DEPRECATED
-fllibshdirect(FL_ARGUMENTS,Module,Funct,Arity,Args) :-
+FLLIBSHDIRECT(FL_ARGUMENTS,Module,Funct,Arity,Args) :-
 	(Module == FLORA_DEFAULT_WORKSPACE ->
 	    flora_shdefine_arguments(Funct,Arity,Args)
 	; true
 	).
 **/
 
-fllibshdirect(FL_INDEX,Module,Arity,Position) :-
+FLLIBSHDIRECT(FL_INDEX,Module,Arity,Position) :-
 	flora_storage_check_module_name(Module),
-	( integer(Arity), integer(Position), Position>0, Arity >= Position ->
-	    A is Arity+1,
+        (Arity=FL_TRAN(NA),!; NA=Arity),
+	( integer(NA), integer(Position), Position>0, NA >= Position ->
+	    A is NA+1,
             P is Position+1,
-            flora_dyna_hilog_user_module_predicate_symbol(Module,NewPA),
-            flora_dynz_hilog_user_module_predicate_symbol(Module,NewPZ),
+            (Arity=FL_TRAN(NA) ->
+                flora_dyna_hilog_user_module_predicate_symbol(Module,NewPA),
+                flora_dynz_hilog_user_module_predicate_symbol(Module,NewPZ)
+            ;
+                flora_tdyna_hilog_user_module_predicate_symbol(Module,NewPA),
+                flora_tdynz_hilog_user_module_predicate_symbol(Module,NewPZ)
+            ),
             call(index(NewPA/A,P)),
             call(index(NewPZ/A,P))
 	;
-	    flora_abort("Invalid argument in index directive")
+	    flora_abort('Invalid argument in index directive')
 	).

@@ -37,7 +37,7 @@
 :- dynamic flora_current_flogic_module(_).
 :- dynamic flora_encoded_call_cache(_,_,_,_,_).
 :- dynamic flora_encoded_call_cache(_,_,_,_).
-:- dynamic flora_decoded_predicate_cache(_,_,_,_,_,_).
+:- dynamic flora_decoded_predicate_cache(_,_,_,_,_,_,_).
 
 :- index(flora_flogic_fact_wrapper/2,trie).
 :- index(flora_current_flogic_module/1,trie).
@@ -69,9 +69,13 @@
 	flora_dynz_hilog_system_module_predicate_symbol/2,
 	flora_dynz_hilog_module_predicate_symbol/2,
 
-	flora_tdyn_hilog_user_module_predicate_symbol/2,
-	flora_tdyn_hilog_system_module_predicate_symbol/2,
-	flora_tdyn_hilog_module_predicate_symbol/2,
+	flora_tdyna_hilog_user_module_predicate_symbol/2,
+	flora_tdyna_hilog_system_module_predicate_symbol/2,
+	flora_tdyna_hilog_module_predicate_symbol/2,
+
+	flora_tdynz_hilog_user_module_predicate_symbol/2,
+	flora_tdynz_hilog_system_module_predicate_symbol/2,
+	flora_tdynz_hilog_module_predicate_symbol/2,
 
 	flora_module_name/3,
 	flora_check_module_name/1,
@@ -88,7 +92,9 @@
 	flora_setup_flogic_fact_wrapper/1,
 	flora_flogic_fact_wrapper/2,
 
+	is_flora_callable_literal/1,
 	flora_decode_predicate/6,
+	flora_decode_predicate/7,
 	flora_decode_module_name/2,
 	flora_decode_module_prefix/3,
 	flora_is_flogic_wrapper/3,

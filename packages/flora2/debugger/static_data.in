@@ -40,6 +40,10 @@ hide_this_hide(flora_write_goal,1).
 
 hide_this_hide(flora_debug_module_registry,1).
 
+hide_this_hide(flora_check_export_registry,3).
+hide_this_hide(flora_check_export_registry,4).
+hide_this_hide(flora_reset_export_registries,1).
+
 hide_this_hide(flTrace,0).
 hide_this_hide(flTrace,1).
 hide_this_hide(flNoTrace,0).
@@ -70,21 +74,30 @@ hide_this_hide(FLLIBLOAD,4).
 
 hide_this_hide(flora_insert_rules,2).
 
-hide_this_hide(flora_funct_arity,2).
+%% unclear why the next one is needed to supress 't_not' - maybe a bug in
+%% XSB debugger 
+hide_this_hide('t_not',3).
 
 trace_this_noprint(flora_findall,3).
+trace_this_noprint(FLORA_SYMBOL('catch'),3).
 
 show_this_hide(flora_db_find_base,2).
 show_this_hide(flora_plg2hlg,4).
+show_this_hide(flora_tnot,1).
+show_this_hide(flora_abort,1).
+show_this_hide(flora_abort,0).
+show_this_hide(flora_funct_arity,2).
+
+%% should really be hidden in XSB itself
+show_this_hide(format,2).
+show_this_hide(format,3).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% The following predicates are hidden only under flTrace, not flTraceLow %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+flora_hide_this_hide(flora_funct_arity/2).
 flora_hide_this_hide((FLORA_TNOT_PREDICATE)/1).
-%% unclear why the next one is needed to supress 't_not' - maybe a bug in
-%% XSB debugger 
-hide_this_hide('t_not',3).
 
 flora_show_this_hide((flCompile)/1).
 flora_show_this_hide((flLoad)/1).
@@ -125,6 +138,13 @@ flora_show_this_hide(FLLIBDELETEALL/1).
 flora_show_this_hide(FLLIBDELETE/2).
 flora_show_this_hide(FLLIBDELETE/1).
 
+flora_show_this_hide(FLLIBINSERTRULE/2).
+flora_show_this_hide(FLLIBINSERTRULE_A/2).
+flora_show_this_hide(FLLIBINSERTRULE_Z/2).
+flora_show_this_hide(FLLIBDELETERULE/2).
+flora_show_this_hide(FLLIBDELETERULE_A/2).
+flora_show_this_hide(FLLIBDELETERULE_Z/2).
+
 %% A ~ B
 flora_show_this_hide(FLLIBUNIVEQFORM/2).
 
@@ -138,6 +158,8 @@ flora_hide_this_hide(FLLIBSHDIRECT/3).
 flora_hide_this_hide(FLLIBSHDIRECT/4).
 flora_hide_this_hide(FLLIBSHDIRECT/5).
 
-trace_this_noprint(FLORA_SYMBOL('catch'),3).
+flora_hide_this_hide(FLLIBEXPORT/1).
+
+flora_hide_this_hide(FL_SILENT_EQUAL/2).
 
 FLORA_SYMBOL('debugger_static_data_loaded').

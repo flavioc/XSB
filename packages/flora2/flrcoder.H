@@ -29,12 +29,6 @@
 
 :- import append/3 from basics.
 
-:- import eval/2 from eval.
-
-:- import
-	flora_hilogtable/2
-   from flrhilogtable.
-
 :- import flora_prlgdef/2 from flrprolog.
 
 :- import flora_write_quoted_atom/1,
@@ -48,6 +42,7 @@
 	flora_user_module_predicate/4,
 	flora_system_module_predicate/4,
 	flora_user_fdb_storage_name/2,
+	flora_system_fdb_storage_name/2,
 	%% Storage for skeletons of defined predicates
 	flora_user_fld_storage_name/2
    from flrwrapper.
@@ -64,7 +59,7 @@
 	is_prrule/3,
 	is_prfact/2,
 	is_prdirective/2,
-	is_prtable/3,
+        is_prignoredep/2,
 	is_prthismodule/1,
 	is_prthisfdbstorage/1,
 	is_pratom/3,
@@ -88,7 +83,5 @@
 	is_prreify/2,
 	is_flogic/4,
 	is_fllibdb/1,
-	get_fingerprint/6,
-	check_tabled/2,
 	flora_write_struct/2,
 	flora_build_struct/6.

@@ -80,6 +80,7 @@ flora_system_module_predicate(Functor,Args,SysModID,Predicate) :-
 %% Cached predicate: although flora_user_module_predicate and
 %% flora_system_module_predicate are cached, we cache this one also, to speed
 %% up meta-ops
+%% Caching this predicate saves a LOT of time.
 flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
 	flora_encoded_call_cache(Functor,Args,ModuleName,Predicate),
 	!.
@@ -190,21 +191,39 @@ flora_dynz_hilog_module_predicate_symbol(ModuleName,Predicate) :-
 
 
 /*****************************************************************************
-  These procedures return the Tabled dynamic HiLog wrapper for a Flora
+  These procedures return the Tabled Dyna HiLog wrapper for a Flora
   user/system module.
 
-  flora_tdyn_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
-  flora_tdyn_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
-  flora_tdyn_hilog_module_predicate_symbol(+ModuleName,-Predicate)
+  flora_tdyna_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tdyna_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tdyna_hilog_module_predicate_symbol(+ModuleName,-Predicate)
 *****************************************************************************/
-flora_tdyn_hilog_user_module_predicate_symbol(WS,Predicate) :-
-	flora_user_module_predicate(WRAP_TDYN_HILOG,[],WS,Predicate).
+flora_tdyna_hilog_user_module_predicate_symbol(WS,Predicate) :-
+	flora_user_module_predicate(WRAP_TDYNA_HILOG,[],WS,Predicate).
 
-flora_tdyn_hilog_system_module_predicate_symbol(WS,Predicate) :-
-	flora_system_module_predicate(WRAP_TDYN_HILOG,[],WS,Predicate).
+flora_tdyna_hilog_system_module_predicate_symbol(WS,Predicate) :-
+	flora_system_module_predicate(WRAP_TDYNA_HILOG,[],WS,Predicate).
 
-flora_tdyn_hilog_module_predicate_symbol(ModuleName,Predicate) :-
-	flora_module_predicate(WRAP_TDYN_HILOG,[],ModuleName,Predicate).
+flora_tdyna_hilog_module_predicate_symbol(ModuleName,Predicate) :-
+	flora_module_predicate(WRAP_TDYNA_HILOG,[],ModuleName,Predicate).
+
+
+/*****************************************************************************
+  These procedures return the Tabled Dynz HiLog wrapper for a Flora
+  user/system module.
+
+  flora_tdynz_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tdynz_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tdynz_hilog_module_predicate_symbol(+ModuleName,-Predicate)
+*****************************************************************************/
+flora_tdynz_hilog_user_module_predicate_symbol(WS,Predicate) :-
+	flora_user_module_predicate(WRAP_TDYNZ_HILOG,[],WS,Predicate).
+
+flora_tdynz_hilog_system_module_predicate_symbol(WS,Predicate) :-
+	flora_system_module_predicate(WRAP_TDYNZ_HILOG,[],WS,Predicate).
+
+flora_tdynz_hilog_module_predicate_symbol(ModuleName,Predicate) :-
+	flora_module_predicate(WRAP_TDYNZ_HILOG,[],ModuleName,Predicate).
 
 
 /*****************************************************************************
@@ -250,7 +269,7 @@ flora_check_module_name(ModuleName) :-
   flora_module_name_error(+ModuleName)
 *****************************************************************************/
 flora_module_name_error(ModuleName) :-
-	flora_abort([ModuleName, ': Invalid Flora module name']).
+	flora_abort([ModuleName, ': Invalid FLORA-2 module name']).
 
 
 /***************************************************************************
@@ -405,6 +424,8 @@ flora_is_flogic_wrapper(WrapPrefix,Base) :-
 	; WrapPrefix=FLBODYPREFIX
 	; WrapPrefix=FLTRAILERPREFIX
 	; WrapPrefix=FLDEBUGPREFIX
+	; WrapPrefix=FLDYNAPREFIX
+	; WrapPrefix=FLDYNZPREFIX
 	),
 	!,
 	flora_is_flogic_base(Base).
@@ -444,20 +465,25 @@ flora_is_flogic_base(WRAP_OBJEQL)     :- !.
 
 /*****************************************************************************
   flora_decode_predicate(+Predicate,-PredicateType,-ModuleName,
+                         -Wrapper,
                          -WrapPrefix,-PredicateSymbol,-ArgsList)
 
   This procedure decodes a predicate and returns answers as follows:
 
   (1) PredicateType=flogic, if the predicate is encoded as:
 	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''flogic_wrapper'.
-      ModuleName is the Flora user/system module name. WrapPrefix is the
+      ModuleName is the Flora user/system module name.
+      Wrapper is the wrapper used to encode the correponding molecule.
+      WrapPrefix is the
       prefix of the wrapper (e.g., dyna_, derived_). PredicateSymbol specifies
       the type of the F-logic wrapper, e.g., fd, mvd, imvd, etc.
 
   (2) PredicateType=flora, if the predicate is encoded as:
 	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''flora_predicate'.
       This encoding is for Flora builtin predicates like those in the trailers
-      that are used to implement F-logic, e.g., immediate_sub. If the predicate
+      that are used to implement F-logic, e.g., immediate_sub.
+      Wrapper is the predicate used in the trailer.
+      If the predicate
       contains an `_' sign, then it is split into two parts: WrapPrefix is
       the prefix up until the last `_' while PredicateSymbol is the remaining
       string. For example, if the predicate is immediate_sub, then
@@ -465,26 +491,45 @@ flora_is_flogic_base(WRAP_OBJEQL)     :- !.
       and PredicateSymbol=flora_predicate.
 
   (3) PredicateType=hilog, if the predicate is encoded as:
-	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''WRAP_HILOG'.
-      ModuleName is the Flora user/system module name. WrapPrefix is undefined.
+      'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''WRAP_HILOG'.
+      or
+      'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''WRAP_TABLED_HILOG'.
+      ModuleName is the Flora user/system module name.
+      Wrapper is the WRAP_HILOG wrapper.
+      WrapPrefix is 't_' for tabled hilog and empty string for hilog
       PredicateSymbol is the functor of the HiLog predicate.
 
   (4) PredicateType=prolog, if the predicate is encoded other than all of the
-      above. ModuleName and WrapPrefix will be undefined.
+      above. ModuleName, Wrapper, and WrapPrefix will be variables.
 
   Note: This procedure can also be used to decode a predicate symbol (without
         any argument). In (1), (2) and (4), PredicateSymbol is defined and
         ArgsList=[]. In (3), PredicateSymbol=[] and ArgsList=[].
 
 *****************************************************************************/
-%% This predicate is cached
+
+%% Checks if Term is an F-logic or HiLog predicate that can be called
+is_flora_callable_literal(Predicate) :-
+	flora_decode_predicate(Predicate,_,ModuleName,_,_,_,_),
+	nonvar(ModuleName).
+%% flora_decode_predicate/6
 flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	               WrapPrefix,PredicateSymbol,ArgsList) :-
+	flora_decode_predicate(Predicate,PredicateType,ModuleName,
+		       _,
+	               WrapPrefix,PredicateSymbol,ArgsList).
+%% flora_decode_predicate/7
+%% This predicate is cached
+flora_decode_predicate(Predicate,PredicateType,ModuleName,
+		       Wrapper,
+	               WrapPrefix,PredicateSymbol,ArgsList) :-
 	flora_decoded_predicate_cache(Predicate,PredicateType,ModuleName,
+				      Wrapper,
 				      WrapPrefix,PredicateSymbol,ArgsList),
 	!.
 
 flora_decode_predicate(Predicate,PredicateType,ModuleName,
+		       Wrapper,
 	               WrapPrefix,PredicateSymbol,ArgsList) :-
 	%% This branch is to decode an F-logic, a HiLog, or a Flora predicate.
 	Predicate =.. [Funct|Args],
@@ -506,8 +551,13 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	%% Extract the predicate name.
 	flora_get_substring(RestFunct,M,-1,Wrapper),
 	!,
-	( Wrapper == WRAP_HILOG ->
+	( (Wrapper == WRAP_HILOG; Wrapper == WRAP_TABLED_HILOG) ->
 	    %% a HiLog Predicate
+            ( flora_match_substring('_',Wrapper,reverse,_,S) ->
+                flora_get_substring(Wrapper,0,S,WrapPrefix)
+            ;
+                WrapPrefix=''
+            ),
 	    PredicateType = (hilog),
 	    ( Args=[PredicateSymbol|ArgsList] -> true
 	    ;
@@ -542,10 +592,12 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	),
 	PredTemplate =.. [PredFunctor|OldArgsTempl],
 	assert(flora_decoded_predicate_cache(PredTemplate,PredicateType,
-					     ModuleName,WrapPrefix,
-					     PSTempl,NewArgsTempl)).
+					     ModuleName,
+					     Wrapper,
+					     WrapPrefix,PSTempl,NewArgsTempl)).
 
 flora_decode_predicate(Predicate,PredicateType,_ModuleName,
+		       PredicateSymbol,
 		       _WrapPrefix,PredicateSymbol,ArgsList) :-
 	PredicateType = prolog,
 	%% prolog catches all other cases.
@@ -556,7 +608,9 @@ flora_decode_predicate(Predicate,PredicateType,_ModuleName,
         length(NewArgsTempl,Arity),
 	PredTemplate =.. [PredicateSymbol|NewArgsTempl],
 	assert(flora_decoded_predicate_cache(PredTemplate,PredicateType,
-					     _ModuleName,_WrapPrefix,
+					     _ModuleName,
+					     PredicateSymbol,
+					     _WrapPrefix,
 					     PredicateSymbol,NewArgsTempl)).
 
 
@@ -586,6 +640,8 @@ flora_is_flogic_wrapper(Predicate,ModuleName,Base) :-
 
 /*****************************************************************************
   flora_is_dynamic_flogic_base(+Base,+Arity)
+
+  NOT USED????
 
   These predicates are wrappers for dynamic F-logic atoms which allow updates.
 *****************************************************************************/
@@ -617,20 +673,24 @@ flora_is_dynamic_flogic_base(WRAP_OBJEQL,2)  :- !.
   Note that either of these arguments must be bound.
 *****************************************************************************/
 flora_funct_arity(M,Funct/Arity/Type) :-
-	%% M is unbound but Funct/Arity/Type is known.
+	%% M is unbound but Funct/Arity/Type is known
 	var(M),
 	!,
+	(var(Funct)
+	-> flora_abort('Internal error: unbound call to flora_funct_arity/2')
+	; true
+	),
 	( Type == prolog ->
 	    functor(M,Funct,Arity)
 	;
 	  %% a HiLog term
 	  N is Arity+1,
-	  functor(M,WRAP_HILOG,N),
+	  (functor(M,WRAP_HILOG,N),!;functor(M,WRAP_TABLED_HILOG,N)),
 	  arg(1,M,Funct)
 	).
 
 flora_funct_arity(M,Funct/Arity/Type) :-
-	%% M is bound.
+	%% M is bound
 	functor(M,FunctTerm,N),
 	( N == 0 ->
 	    Funct=FunctTerm,
@@ -638,6 +698,12 @@ flora_funct_arity(M,Funct/Arity/Type) :-
 	    Type=prolog
 
 	; FunctTerm == WRAP_HILOG ->
+	    %% a HiLog term
+	    Type=hilog,
+	    Arity is N-1,
+	    arg(1,M,Funct)
+
+	; FunctTerm == WRAP_TABLED_HILOG ->
 	    %% a HiLog term
 	    Type=hilog,
 	    Arity is N-1,

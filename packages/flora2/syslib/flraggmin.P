@@ -36,20 +36,20 @@
 /*********************************************************************
   fllibmin(+Var,+VarList,+Goal,-Min)
 *********************************************************************/
-fllibmin(Var,[],Goal,Min) :-
+FLLIBMIN(Var,[],Goal,Min) :-
 	!,
 	findall(Var,Goal,Matches),
 	Matches=[H|L],
 	flora_minaux(L,H,Min).
 
-fllibmin(Var,VarList,Goal,Min) :-
+FLLIBMIN(Var,VarList,Goal,Min) :-
 	ground(VarList),
 	!,
 	findall(Var,Goal,Matches),
 	Matches=[H|L],
 	flora_minaux(L,H,Min).
 
-fllibmin(Var,VarList,Goal,Min) :-
+FLLIBMIN(Var,VarList,Goal,Min) :-
 	!,
 	findall(flora_result(Var,VarList),Goal,Matches),
 	findall(Grp,member(flora_result(_,Grp),Matches),GL),

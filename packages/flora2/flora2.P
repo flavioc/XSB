@@ -32,7 +32,6 @@
 
 :- import
 	bootstrap_package/2,
-	package_configuration/2,
 	unload_package/1
    from packaging.
 
@@ -42,6 +41,7 @@
 
 :- import
 	flora_load_module_internal/2, flora_load_module_internal/1,
+	flora_abort/1,
 	flora_compile_internal/2, flora_compile_internal/1
    from flrutils.
 
@@ -50,9 +50,12 @@
    from flrregistry.
 
 :- import flora_sysmod_file/3 from flrlibman.
+:- import flora_call_string_command/4 from flrutils.
 
-:- import slash/1 from machine.
-:- import str_cat/3 from string.
+:- import
+	flora_concat_atoms/2,
+	flora_slash/1
+   from flrporting.
 
 :- import flora_shell_loop/0 from usermod.
 
@@ -61,6 +64,10 @@
 :- import conget/2, conset/2 from gensym.
 
 :- import xpp_include_dir/1 from parse.
+
+:- import search_module/6 from consult.
+
+:- import slash/1 from machine.
 
 :- dynamic hide_this_show(_,_).
 :- index(hide_this_show/2,trie).
@@ -72,44 +79,48 @@
 	(flLoad)/1,
 	(flCompile)/1,
 	flLoadedModule/1,
+	flora_query/4,
 	flora_shell/0.
 
 
 /*****************************************************************************/
 
+?- search_module(flora2,Dir,_,_,_,_),
+   (search_module(floraInstallMode,_,_,_,_,_)
+   -> [floraInstallMode]
+   ;
+       slash(S),
+       str_cat(Dir,S,Dir1),
+       str_cat(Dir1,flora2,FloraDir),
+       asserta(library_directory(FloraDir)),
+       [floraInstallMode]
+   ).
+?- current_predicate(flrregistry:flora_configuration/2),
+   flora_configuration(standalone,no),
+   flora_configuration(standalone,yes),
+   abort('FLORA-2 is loaded as a package and as a standalone application').
 
 bootstrap_flora :-
-	%% Just check if flora_configuration is defined --
-	%% don't load flrregistry at this early stage
-	(current_predicate(flrregistry:flora_configuration/2)
-	-> \+flora_configuration(loaded,yes)
-	;  true
-	),
+	flora_configuration(installdir,FloraDir),
 	(
-	  current_predicate(flrregistry:flora_configuration/2),
-	  %% running FLORA as a development version
-	  flora_configuration(develmode,yes),
+	  %% running FLORA as a standalone version
+	  flora_configuration(standalone,yes),
 	  !,
-	  flora_configuration(installdir,FloraDir)
-	;
-	  %% running FLORA as a package
-	  bootstrap_package([flora2,syslib,lib,debugger,pkgs,p2h],flora),
-	  (flora_configuration(develmode,yes)
-	  -> abort('FLORA-2 has been loaded as a standalone application: quit XSB then run FLORA as a package')
-	  ; true
-	  ),
-	  assert(flora_configuration(develmode,no)),
+	  asserta(library_directory(FloraDir)),
 	  [flrversion],
-	  package_configuration(dir(flora),FloraDir),
-	  assert(flora_configuration(installdir,FloraDir))
+	  flora_assert_directories([syslib,lib,debugger,pkgs,p2h])
+	;
+	  %% running FLORA as an XSB package
+	  bootstrap_package([flora2,syslib,lib,debugger,pkgs,p2h],flora),
+	  [flrversion]
 	),
 	!,
 	assert(flora_configuration(loaded,yes)),
-	slash(S),
-	concat_atoms([FloraDir,S,closure],Closure),
-	concat_atoms([FloraDir,S,includes],Includes),
-	concat_atoms([FloraDir,S,flrincludes],FlrIncludes),
-	concat_atoms([FloraDir,S,genincludes],GenIncludes),
+	flora_slash(S),
+	flora_concat_atoms([FloraDir,S,closure],Closure),
+	flora_concat_atoms([FloraDir,S,includes],Includes),
+	flora_concat_atoms([FloraDir,S,flrincludes],FlrIncludes),
+	flora_concat_atoms([FloraDir,S,genincludes],GenIncludes),
 	assert(xpp_include_dir(Closure)),
 	assert(xpp_include_dir(Includes)),
 	assert(xpp_include_dir(FlrIncludes)),
@@ -119,12 +130,20 @@ bootstrap_flora :-
 
 bootstrap_flora.
 
+flora_assert_directories([]).
+flora_assert_directories([H|T]) :-
+	flora_slash(S),
+	flora_configuration(installdir,FloraInstallDir),
+	flora_concat_atoms([FloraInstallDir,S,H], Directory),
+	assert(library_directory(Directory)),
+	flora_assert_directories(T).
+
 
 /*****************************************************************************/
 unstrap_flora :-
 	flora_configuration(includedirs,IncludeDirs),
 	remove_include_dirs(IncludeDirs),
-	(flora_configuration(develmode,yes), ! ; unload_package(flora)),
+	(flora_configuration(standalone,yes), ! ; unload_package(flora)),
 	retractall(flora_configuration(loaded,_)),
 	conset(flora_shell_loaded,0).
 
@@ -175,14 +194,14 @@ flImport(from(as(What,AsWhat),FileMod)) :- !,
 	(atom(FileMod)  % in this case FileMod is a module name
 	-> (flLoadedModule(FileMod)
 	   -> flImportPredicate(What,AsWhat,_,FileMod)
-	   ;  abort(['Trying to import hilog predicate ', What,
+	   ;  flora_abort(['Trying to import hilog predicate ', What,
 		     ' from unloaded FLORA module ', FileMod])
 	   )
 	; FileMod = File>>Module 
 	-> flImportPredicate(What,AsWhat,File,Module)
 	).
 
-flImport(X) :- abort(['Invalid flImport syntax: ', X]).
+flImport(X) :- flora_abort(['Invalid flImport syntax: ', X]).
 
 flLoad(File>>Module) :- flora_load_module_internal(File,Module).
 flLoad(Module) :- flora_load_module_internal(Module).
@@ -193,7 +212,7 @@ flCompile(Module) :- flora_compile_internal(Module).
 %% tells if ModuleName is loaded
 flLoadedModule(ModuleName) :- 
 	flora_module_registry(ModuleName),
-	\+ flora_sysmod_file(ModuleName,_,_).
+	not flora_sysmod_file(ModuleName,_,_).
 
 
 /***************************************************************************/
@@ -205,9 +224,24 @@ remove_include_dirs([H|T]) :-
 	remove_include_dirs(T).
 
 
-concat_atoms([Atom1,Atom2],Atom) :- !, str_cat(Atom1,Atom2,Atom).
-concat_atoms([Atom1|AtomList],Atom) :-
-	concat_atoms(AtomList,Atom2),
-	str_cat(Atom1,Atom2,Atom).
-concat_atoms([],'').
-	
+/************************************************************************
+    flora_query(+String,+Vars,-Status,-Exception)
+
+   Execute a query specified in String.
+
+   String: A query string
+   Vars:   A list of the form [Name1=Var1, Name2=Var2,...].
+           Name is a name of a variable mentioned in String, for instance, 
+	   'X' (note: must be quoted, since it is an atom).
+	   Var is a variable where you want the binding for the variable 
+	   Name in String to be returned. For instance, 
+	   if String is 'p(X,Y).'
+	   Vars can be ['X' = Xyz, 'Y' = Qpr]
+	   Then Xyz will be bound to the value of X in p(X,Y) after
+	   the execution and Qpr will be bound to the value of Y in p(X,Y).
+   Status: indicates the status of compilation of the command in String.
+   Exception: is a possible exception during the runtime execution 
+              of the command in String.
+*************************************************************************/
+flora_query(String,Vars,Status,Exception) :-
+	flora_call_string_command(String,Vars,Status,Exception).

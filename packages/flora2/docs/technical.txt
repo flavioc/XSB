@@ -4,9 +4,9 @@ ALGORITHM
    1) When compiling a flora program with debug option turned on, we 
       take the intermediate representation of the program from the 
       compiler, compute skeletons for rule heads and facts (see below), and
-      remove duplications. These skeletons will be dumped into a file with 
-      extension .fld. When this program is loaded, the skeletons will
-      be loaded into the fld storage trie of the corresponding module.
+      remove duplicates. These skeletons are then dumped into a file with 
+      extension .fld. When the program is loaded, the skeletons are
+      loaded into the fld storage trie of the corresponding module.
       
    2) The basic idea is to add patch rules to trap undefined predicates.
       For example, if we have the following patch rules: 

@@ -30,6 +30,9 @@
 %% Thrown when an undefined method is found and check_undefined is on
 #define FLORA_UNDEFINED_EXCEPTION     '_$flora_undefined'
 
+%% Thrown when a non-exported predicate is accessed from another module.
+#define FLORA_NOT_EXPORTED_EXCEPTION     '_$flora_not_exported'
+
 %% Thrown to return to top level
 #define FLORA_TOP_LEVEL	       	      '_$flora_top_level'
 

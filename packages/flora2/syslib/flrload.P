@@ -115,9 +115,8 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace),HostFile,HostMod,Location) :-
 	;
 	  flora_stderr_nl,
 	  flora_error_heading,
-	  flora_stderr_string('file name '),
+	  flora_stderr_string('invalid file name: '),
 	  flora_display_error(FileName),
-	  flora_stderr_string(' invalid for loading'),
 	  flora_stderr_nl,
 	  !,
 	  fail
@@ -126,13 +125,16 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace),HostFile,HostMod,Location) :-
 flora_load_file(X,_,_,_) :-
 	flora_stderr_nl,
 	flora_error_heading,
-	flora_stderr_string('file name '),
+	flora_stderr_string('invalid file name: '),
 	flora_display_error(X),
-	flora_stderr_string(' invalid for loading'),
 	flora_stderr_nl,
 	!,
 	fail.
 
+
+/***************************************************************************
+  Don't allow a module to load into itself
+***************************************************************************/
 flora_check__module_overriding(_LoadFile,_Workspace,userin,main,_Location) :-
 	!.
 

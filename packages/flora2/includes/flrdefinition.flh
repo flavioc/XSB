@@ -4,6 +4,7 @@
   Author(s): Guizhen Yang
 
   This file is automatically included by the FLORA compiler.
+  This file is for comands that are to be executed once per module.
 ************************************************************************/
 
 :- import
@@ -19,12 +20,18 @@
 :- import flora_storage_registry/1,
      	  flora_debug_module_registry/1,
 	  flora_module_registry/1,
-	  flora_trailer_registry/1,
 	  flora_in_debug_mode/1
    from flrregistry.
 
+:- import FLORA_TNOT_PREDICATE/1 from flrnegation.
+
+:- import flora_db_find_base/2 from flrstoragebase.
+
 :- import flora_set_counter/2 from flrporting.
 :- import flora_error_undefined/1 from flrundefined.
+:- import flora_error_notexported/1 from flrundefined.
+:- import flora_check_export_registry/3 from flrexport.
+:- import flora_reset_export_registries/1 from flrexport.
 
 ?- storage_delete_all(FLORA_THIS_FLD_STORAGE).
 ?- flora_in_debug_mode(_), !,
@@ -45,7 +52,9 @@
       )
    ).
 
-?- retract(flora_trailer_registry(FLORA_THIS_MODULE_NAME)).
+%%%% Export predicate registries start%%%
+?- flora_reset_export_registries(FLORA_THIS_MODULE_NAME).
+%%%% Export predicate registries end%%%%
 
 
 /***********************************************************************/

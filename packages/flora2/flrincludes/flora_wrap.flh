@@ -7,5 +7,5 @@
 #define WRAP_DUMP             flora_wrap_dump
 #define WRAP_INDICES          flora_wrap_indices
 #define WRAP_STORAGE          flora_wrap_storage
-#define WRAP_MODULE           flora_wrap_module
+#define WRAP_COPY_UNQUOTED    flora_copy_unquoted
 

@@ -2,6 +2,7 @@ TABLING HILOG PREDICATES
 ========================
 Chang Zhao
 
+/************ DEPRECATED (except flora_compiler_options) BEGIN *************/
 
 1. Changes in the language
     1) Directives 'firstorder', 'firstorderall', and 'hilogtable' are no longer
@@ -127,4 +128,45 @@ Example:
    means to insert the rule before all static rules, dyna_flapply is used. If
    a rule is inserted by insertrule_z, which means to insert the rule after
    all static rules, dynz_flapply is used. 
+
+/****************************** DEPRECATED END *****************************/
+
+1. Changes in the language
+    1) Directives 'firstorder', 'firstorderall', 'hilogtable', and 'table'
+       are no longer needed.
+    2) Hilog predicates are tabled by default. Only hilog predicates led
+       by '#' are not tabled.
+       e.g. p(X) :- #q(X).
+       =>   t_flapply(p,X) :- flapply(q,X).
+       where t_flapply is the wrapper for tabled hilog and flapply is the 
+       wrapper for non-tabled hilog predicates. Both of them are prefixed 
+       with _$_$_flora_modspec_.
+
+       Terms are always wrapped by flapply. For example, the term p(X) will
+       be flapply(p,X), and the term #q(X) will be flapply(#,flapply(q,X)).
+
+    3) import syntax
+       import p/1 as ... from ... to import tabled p/1 
+       import #(q)/1 as ... from ... to import non-tabled q/1 
+    4) The syntax of index directive is now
+	:- index N-M
+       or
+	:- index #N-M
+       where both N and M are integers, 0<M<=N.
+
+       Suppose N1=N+1, M1=M+1, 
+       *) a compiler directive 'index N-M' is translated into 
+		:- index FLORA_THIS_WORKSPACE(t_flapply)/N1-M1.
+		?- index(FLORA_THIS_WORKSPACE(dyna_t_flapply)/N1,M1).
+		?- index(FLORA_THIS_WORKSPACE(dynz_t_flapply)/N1,M1).
+          a compiler directive 'index #N-M' is translated into 
+		:- index FLORA_THIS_WORKSPACE(flapply)/N1-M1.
+		?- index(FLORA_THIS_WORKSPACE(dyna_flapply)/N1,M1).
+		?- index(FLORA_THIS_WORKSPACE(dynz_flapply)/N1,M1).
+       *) an executable 'index(N-M)' is translated into
+	(fllibprogramans((index(FLORA_THIS_WORKSPACE(dyna_t_flapply)/N1,M1),
+			  index(FLORA_THIS_WORKSPACE(dynz_t_flapply)/N1,M1)),[])).
+          an executable 'index(#N-M)' is translated into
+	(fllibprogramans((index(FLORA_THIS_WORKSPACE(dyna_flapply)/N1,M1),
+			  index(FLORA_THIS_WORKSPACE(dynz_flapply)/N1,M1)),[])).
 

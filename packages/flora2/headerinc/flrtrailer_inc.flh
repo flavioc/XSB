@@ -1,12 +1,11 @@
 /************************************************************************
   file: headerinc/flrtrailer_inc.flh
 
-  Author(s): Guizhen Yang
+  Author(s): Michael Kifer
 
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
-#include "flrcommon.flh"
 #include "flrtrailer.flh"
 
 /***********************************************************************/

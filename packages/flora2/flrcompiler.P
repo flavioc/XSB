@@ -30,22 +30,28 @@
 #include "flora_errors.flh"
 #include "flora_terms.flh"
 #include "flora_porting.flh"
+#include "flora_exceptions.flh"
 
-#define NEWVAR		newvar
-#define NEWPREDICATE	newpredicate
-#define NEWOID          FL_NEWOID_SYM
-#define RULE_NUM        rule_num
-#define NEWOID_COUNT	FL_NEWOID_PREFIX
-#define TMPDIRECT	tmpdirect
-#define TMPOPTION	tmpoption
+#define NEWVAR	        	newvar
+#define NEWPREDICATE        	newpredicate
+#define NEWOID                  FL_NEWOID_SYM
+#define RULE_NUM                rule_num
+#define NEWOID_COUNT        	FL_NEWOID_PREFIX
+#define TMPDIRECT        	tmpdirect
+#define TMPOPTION	        tmpoption
+#define COMPILATION_CONTEXT	compcontext
+
+#define  BODYLITERAL     1
+#define  HEADLITERAL     2
 
 %% ruleoid is used for numbered anonymous oid generation
 :- dynamic ruleoid(_,_,_).
 :- dynamic TMPDIRECT(_).
-:- dynamic TMPOPTION(_).
+:- dynamic TMPOPTION(_,_).
+:- dynamic COMPILATION_CONTEXT(_).
 
 :- index(TMPDIRECT/1,trie).
-:- index(TMPOPTION/1,trie).
+:- index(TMPOPTION/2,trie).
 
 
 /****************************************************************************
@@ -54,19 +60,23 @@
 is_flrule(FLRULE(Head,Body),Head,Body).
 is_flfact(FLFACT(Head),Head).
 is_flquery(FLQUERY(Body),Body).
-is_fldirective(FLDIRECTIVE(DirectList),DirectList).
+is_fldirective(FLDIRECTIVE(DirectList,I),DirectList,I).
+
+is_flexport_list(FLEXPORT_LIST(Term),Term).
+is_flexport(FLEXPORT(Term,Modules,IsUpdatable),Term,Modules,IsUpdatable).
+is_flexport(FLEXPORT(DynamicModule,Term,Modules,IsUpdatable),DynamicModule,Term,Modules,IsUpdatable).
 
 is_fldynrule(FLDYNRULE(Head,Body),Head,Body).
 
 is_flcommand(FLCOMMAND(C),C).
-is_fltable(FLTABLE(P,A),P,A).
-is_fltable(FLTABLE(M,P,A),M,P,A).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 %%is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
 is_flindex(FLINDEX(A,P),A,P).
-is_flequality(FLEQUALITY(A),A).
+is_flsemantics(FLSEMANTICS(A),A).
+is_flsetsemantics(FLSETSEMANTICS(A),A).
 is_flcmpopt(FLCMPOPT(OptList),OptList).
+is_flignoredep(FLIGNOREDEP(PredList),PredList).
 %% These two are used for the build process only--want to get rid of them
 
 is_flconjunct(FLCONJUNCT(L,R),L,R).
@@ -80,8 +90,12 @@ is_flconstraint(FLCONSTRAINT(ConstrBody),ConstrBody).
 
 %% @module
 is_flworkspace(FLWORKSPACE(P,WS),P,WS).
-%% @flora(module)
+%% (dynrule)@module
+is_flruleworkspace(FLRULEWORKSPACE(R,WS),R,WS).
+%% P@flora(M)
 is_flfloralib(FLFLORALIB(P,M),P,M).
+%% flora(M) - the workspace itself
+is_flfloralib(FLFLORALIB(Mod), Mod).
 
 %% @prolog(M) and @prolog()
 is_flplib(FLPLIB(P,M),P,M).
@@ -124,8 +138,12 @@ is_flcatch(FLCATCH(Goal,Error,Handler),Goal,Error,Handler).
 is_flthrow(FLTHROW(Error),Error).
 is_flp2h(FLP2H(Prolog,Hilog),Prolog,Hilog).
 
+is_flnewoidop(FLNEWOIDOP(Var),Var).
+
 %% Op is needed for newmodule only because of its position information 
-is_flnewmodule(FLNEWMODULE(Op,ModList),Op,ModList).
+is_flcallermodule(FLCALLERMODULE(Op,Var),Op,Var).
+%% Op is needed for newmodule only because of its position information 
+is_flnewmodule(FLNEWMODULE(Op,Module),Op,Module).
 is_flupdaterule(FLUPDATERULE(Op,RuleList),Op,RuleList).
 
 is_flaggregate(FLAGGREGATE(Op,V,GV,Goal),Op,V,GV,Goal).
@@ -147,6 +165,7 @@ is_fltranspec(FLTRANSPEC(Tran),Tran).
 
 is_flobjeql(FLOBJEQL(O1,O2),O1,O2).
 is_flcut(FLCUT(I),I).
+is_flpassthru(FLPASSTRU(O),O).
 
 %% basic building blocks
 is_flatom(FLATOM(Atom,_I),Atom).
@@ -228,10 +247,16 @@ dynrule_struct(Head,Body,HVars,BVars,PRDYNRULE(Head,Body,HVars,BVars)).
 reify_struct(Formula,PRREIFY(Formula)).
 
 command_struct(C,PRCOMMAND(C)).
-table_struct(F,N,PRTABLE(F,N)).
 %% We keep the import directive's support mechanism for @prolog(module)
 import_struct(F,N,M,PRIMPORT(F,N,M)).
 cmpopt_struct(OptList,PRCMPOPT(OptList)).
+ignoredep_struct(SpecList,PRIGNOREDEP(SpecList)).
+
+is_prfact(PRFACT(Head),Head).
+
+%%empty module list, all modules allowed
+export_struct(TermList,Code) :-
+	florasyslib_struct(_Index,FLLIBEXPORT,_N,[TermList],Code).
 
 
 /****************************************************************************
@@ -290,9 +315,20 @@ atomobj_struct(FLATOM(Atom,I),PRATOM(Atom,I)) :- !.
 atomobj_struct(Atom,PRATOM(Atom,NO_INDEX)) :- atomic(Atom).
 atomobj_struct(Atom,Index,PRATOM(Atom,Index)).
 
-atomlit_struct(FLATOM(Atom,I),PRATOMLIT(Atom,I)).
+is_atomobj(PRATOM(Atom,I),Atom,I).
+
+atomlit_struct(_Context,FLATOM(Atom,I),PRATOMLIT([Atom],I)) :-
+	flora_prlgdef(Atom,_),
+	!.
+atomlit_struct(Context,FLATOM(Atom,I),PRATOMLIT([Atom,Caller],I)) :-
+	determine_caller_term(Context,Caller).
+
 numobj_struct(FLNUMBER(Number,I),PRNUMBER(Number,I)).
+
+varobj_struct(FLVAR(Name,Index),PRVARIABLE(Name,Index)).
 varobj_struct(Name,Index,PRVARIABLE(Name,Index)).
+varobj_struct(Name,PRVARIABLE(Name,NO_INDEX)).
+
 strobj_struct(FLSTRING(String,I),PRSTRING(String,I)).
 newoid_struct(Oid,Index,PRNEWOID(Oid,Index)).
 cut_struct(Index,PRCUT(Index)).
@@ -304,6 +340,38 @@ workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
 
+workspaceterm_struct(WS,PRWORKSPACETERM(WSTerm)) :-
+	compile_workspace_term(WS,WSTerm).
+
+compile_workspace_term(WS, CompiledWS) :-
+	(is_flatom(WS,Atom,_I) -> atomobj_struct(Atom,CompiledWS)
+	; is_flvar(WS,Var,_I) -> varobj_struct(Var,CompiledWS)
+	; is_fltoken(WS,FL_THISMODULE,_) -> thismodule_struct(CompiledWS)
+	; is_flfloralib(WS,Mod) -> 
+	    compile_workspace_term(Mod,WS1),
+	    floralib_struct(WS1, CompiledWS) 
+	; flora_error_line('[Compiler] bug: Invalid workspace term, ~w', [WS]),
+	    throw(FLORA_TOP_LEVEL)
+	).
+
+%% For dynamic rules - workspace of the rule: (rule)@WS
+%% Otherwise - current module.
+context_module_struct(WSTerm) :-
+	COMPILATION_CONTEXT(ruleworkspace(WSTerm)),
+	!.
+context_module_struct(WSTerm) :-
+	thismodule_struct(WSTerm),
+	!.
+
+%% Represents the special variable, which appears in the rule head, that is
+%% bound to the caller name 
+callermod_var_structure(PRDYNCALLERVAR(PRDYNCALLERVAR)) :-
+	%% In the head of dynamic rules
+	COMPILATION_CONTEXT(ruleworkspace(_)),
+	!.
+%% In other places in the head
+callermod_var_structure(PRCALLERVAR(PRCALLERVAR)).
+
 thisstorage_struct(fdb,PRTHISFDBSTORAGE(PRTHISFDBSTORAGE)).
 %% support for checking undefinedness
 thisstorage_struct(fld,PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
@@ -311,24 +379,57 @@ thisstorage_struct(fld,PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
 floralib_struct(WS,PRFLORALIB(WS)).
 storage_struct(WS,PRFDBSTORAGE(WS)).
 
-call_struct(VarName,Index,PRCALL(Var)) :- varobj_struct(VarName,Index,Var).
-termlit_struct(FObj,N,ObjList,PRTERMLIT(FObj,N,ObjList)).
+determine_caller_term(Context,Caller) :-
+	(Context==BODYLITERAL -> context_module_struct(Caller)
+	; Context==HEADLITERAL -> callermod_var_structure(Caller)
+	%% debug
+	; flora_error_line('[Compiler] bug: No caller for this context, ~w', [Context]),
+	    throw(FLORA_TOP_LEVEL)
+	).
+splice_in_caller_argument(Context,Args,NewArgs) :-
+	determine_caller_term(Context,Caller),
+	flatten([Args,Caller],NewArgs).
+
+termlit_struct(_Context,FObj,N,ObjList,Code) :-
+	is_atomobj(FObj,AtomName,_),
+	flora_prlgdef(AtomName,_),
+	!,
+	prologterm_struct(FObj,N,ObjList,Code).
+termlit_struct(Context,FObj,N,ObjList,PRTERMLIT(FObj,N1,Args)) :-
+	splice_in_caller_argument(Context,ObjList,Args),
+	length(Args,N1),
+	%% integrity check - debug
+	(N1 is N+1, !
+	; flora_error_line('[Compiler] bug: Assertion N=N1 failed in termlit structure: Obj=~w, Arity=~w, Args=~w, Context=~w',
+			   [FObj,N,ObjList,Context]),
+	    throw(FLORA_TOP_LEVEL)
+	).
+
+
+caller_binding_code(Binding,Code) :-
+	callermod_var_structure(CallerVar),
+	atomobj_struct(FL_SILENT_EQUAL,EqCode),
+	prologterm_struct(EqCode,2,[CallerVar,Binding],Code).
+
 
 workspacelit_struct(P,WS,Code) :-
+	thismodule_struct(ThisModuleName),
 	(is_flvar(WS,WSVarName,Index) ->
 	    varobj_struct(WSVarName,Index,WSVarCode),
 	    %% a call to a Flora user module
-	    florasyslib_struct(FLLIBMODLIT,2,[P,WSVarCode],Code)
+	    florasyslib_struct(Index,FLLIBMODLIT,3,[P,WSVarCode,ThisModuleName],Code)
 
-	%% X@module of X@flora(module)
-	; is_varobj_struct(P) ->
+	%% X@module or X@flora(module)
+        %% or #X@module or #X@flora(module)
+	; (is_varobj_struct(P);
+           P=PRTERMLIT(PRATOM(FL_TRAN,_TI),2,[PRVARIABLE(_Var,_VI),_Mod])) ->
 	    (is_flatom(WS,WSAtom,Index) -> atomobj_struct(WSAtom,Index,WSCode)
 	    %% ...@ _@
 	    ; is_fltoken(WS,FL_THISMODULE,_) -> thismodule_struct(WSCode)
 	    ;  WSCode = WS % if system module then it is already compiled
 	    ),
 	    %% a call to a module
-	    florasyslib_struct(FLLIBMODLIT,2,[P,WSCode],Code)
+	    florasyslib_struct(Index,FLLIBMODLIT,3,[P,WSCode,ThisModuleName],Code)
 
 	; is_flatom(WS,WSAtom,Index) ->
 	    atomobj_struct(WSAtom,Index,WSCode),
@@ -343,12 +444,13 @@ workspacelit_struct(P,WS,Code) :-
 	).
 
 workspaceobj_struct(P,WS,Object,Code) :-
+	thismodule_struct(ThisModuleName),
 	(is_flvar(WS,WSVarName,Index) ->
 	    varobj_struct(WSVarName,Index,WSVarCode),
 	    new_varobj(Index,Object),
 	    %% code to construct the object for foo@X in arg position,
 	    %% i.e., p(foo@X)
-	    florasyslib_struct(FLLIBMODOBJ,3,[P,WSVarCode,Object],Code)
+	    florasyslib_struct(Index,FLLIBMODOBJ,4,[P,WSVarCode,ThisModuleName,Object],Code)
 
 	; is_varobj_struct(P) ->
 	    (is_flatom(WS,WSAtom,Index) -> atomobj_struct(WSAtom,Index,WSCode)
@@ -358,7 +460,7 @@ workspaceobj_struct(P,WS,Object,Code) :-
 	    new_varobj(Index,Object),
 	    %% code to construct the object for X@... in arg position,
 	    %% i.e., p(X@...)
-	    florasyslib_struct(FLLIBMODOBJ,3,[P,WSCode,Object],Code)
+	    florasyslib_struct(Index,FLLIBMODOBJ,4,[P,WSCode,ThisModuleName,Object],Code)
 
 	; is_flatom(WS,WSAtom,Index) ->
 	    atomobj_struct(WSAtom,Index,WSCode),
@@ -381,8 +483,10 @@ prologliblit_struct(PrologTerm,PROLOGLIBLIT(PrologTerm)).
 
 %% Not all Flora system libraries encode textual information. Only
 %% those for aggregates and DB updates do.
-florasyslib_struct(F,N,Args,FLORASYSLIB(NO_INDEX,F,N,Args)) :- report_option(FLSYSLIB(F)).
-florasyslib_struct(Index,F,N,Args,FLORASYSLIB(Index,F,N,Args)) :- report_option(FLSYSLIB(F)).
+florasyslib_struct(F,N,Args,FLORASYSLIB(NO_INDEX,F,N,Args)) :-
+	report_option(FLSYSLIB(F),NO_INDEX).
+florasyslib_struct(Index,F,N,Args,FLORASYSLIB(Index,F,N,Args)) :-
+	report_option(FLSYSLIB(F),Index).
 
 is_florasyslib_struct(FLORASYSLIB(I,F,N,Args), I,F,N,Args).
 
@@ -400,6 +504,10 @@ throw_struct(Error,Code) :-
 p2h_struct(Prolog,Hilog,Code) :-
 	atomobj_struct(P2H_PREDICATE,P2HCode),
 	prologterm_struct(P2HCode,4,[Prolog,Hilog,WRAP_HILOG,P2H_DONOT_UNIFY_VARS],Code).
+
+%% newoid{...}
+newoidop_struct(Var,Code) :-
+	florasyslib_struct(FLLIBNEWOID,1,[Var],Code).
 
 insert_struct(Op,List,Cond,Code) :-
 	%% Index denotes the textual information for the insert
@@ -452,6 +560,7 @@ delete_syslib(FL_BTDELETEALL,FLLIBBTDELETEALL) :- !.
 delete_syslib(FL_BTERASE,FLLIBBTERASE) :- !.
 delete_syslib(FL_BTERASEALL,FLLIBBTERASEALL) :- !.
 
+updaterule_syslib(FL_INSERTRULE,FLLIBINSERTRULE_Z) :- !.
 updaterule_syslib(FL_INSERTRULE_A,FLLIBINSERTRULE_A) :- !.
 updaterule_syslib(FL_INSERTRULE_Z,FLLIBINSERTRULE_Z) :- !.
 updaterule_syslib(FL_DELETERULE_A,FLLIBDELETERULE_A) :- !.
@@ -480,107 +589,132 @@ aggregate_syslib(FL_COUNT,FLLIBCOUNT) :- !.
 aggregate_syslib(FL_COLLECTSET,FLLIBCOLLECTSET) :- !.
 aggregate_syslib(FL_COLLECTBAG,FLLIBCOLLECTBAG) :- !.
 
-objexists_struct(Obj,PREXISTS(Obj)).
+objexists_struct(Context,Obj,PREXISTS(Obj,Caller)) :-
+	determine_caller_term(Context,Caller).
 
-birelate_struct(Obj1,RelType,Obj2,Code) :-
+birelate_struct(LiteralContext,Obj1,RelType,Obj2,Code) :-
 	( is_isaspecop(RelType) ->
-	    isaspec_struct(Obj1,Obj2,Code)
+	    isaspec_struct(LiteralContext,Obj1,Obj2,Code)
 	;
 	  is_subspecop(RelType),
-	  subspec_struct(Obj1,Obj2,Code)
+	  subspec_struct(LiteralContext,Obj1,Obj2,Code)
         ).
 
-isaspec_struct(Obj1,Obj2,PRISA(Obj1,Obj2)).
-subspec_struct(Obj1,Obj2,PRSUB(Obj1,Obj2)).
+isaspec_struct(Context,Obj1,Obj2,PRISA(Obj1,Obj2,Caller)) :-
+	determine_caller_term(Context,Caller).
 
-fdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
+subspec_struct(Context,Obj1,Obj2,PRSUB(Obj1,Obj2,Caller)) :-
+	determine_caller_term(Context,Caller).
+
+
+fdattspec_struct(LiteralContext,Object,AttObj,RefType,ValObj,Code) :-
 	(
 	  is_fdspecop(RefType) ->
-	    fdspec_struct(Object,AttObj,ValObj,Code)
+	    fdspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
 	; is_ifdspecop(RefType) ->
-	    ifdspec_struct(Object,AttObj,ValObj,Code)
+	    ifdspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
         ).
 
-fdspec_struct(Object,AttObj,ValObj,PRFD(Object,AttObj,ValObj)).
-ifdspec_struct(Object,AttObj,ValObj,PRIFD(Object,AttObj,ValObj)).
+fdspec_struct(Context,Object,AttObj,ValObj,PRFD(Object,AttObj,ValObj,Caller)) :-
+	determine_caller_term(Context,Caller).
 
-%% This is called when someting like a.b[] is compiled.
-objattdef_struct(Obj,RefType,Att,Code) :-
+ifdspec_struct(Context,Object,AttObj,ValObj,PRIFD(Object,AttObj,ValObj,Caller)) :-
+	determine_caller_term(Context,Caller).
+
+%% This is called when someting like a.b[]@module is compiled.
+%% Why is compilation different from body_objref_struct, which is used for
+%% a.b[] (without the module)?
+objattdef_struct(LiteralContext,Obj,RefType,Att,Code) :-
 	( is_fdrefop(RefType) ->
-	    fddef_struct(Obj,Att,Code)
+	    fddef_struct(LiteralContext,Obj,Att,Code)
 
 	; is_ifdrefop(RefType) ->
-	    ifddef_struct(Obj,Att,Code)
+	    ifddef_struct(LiteralContext,Obj,Att,Code)
 
 	; is_mvdrefop(RefType) ->
-	    mvddef_struct(Obj,Att,Code)
+	    mvddef_struct(LiteralContext,Obj,Att,Code)
 	;
 	  is_imvdrefop(RefType),
-	  imvddef_struct(Obj,Att,Code)
+	  imvddef_struct(LiteralContext,Obj,Att,Code)
         ).
 
 %% This is for ->>, *->>, =>, *=>, =>>, *=>> when the attribute is defined,
 %% but its value is empty set
-mvdattdef_struct(Object,AttObj,RefType,Code) :-
+mvdattdef_struct(LiteralContext,Object,AttObj,RefType,Code) :-
 	( is_mvdspecop(RefType) ->
-	    mvddef_struct(Object,AttObj,Code)
+	    mvddef_struct(LiteralContext,Object,AttObj,Code)
 	;
 	  is_imvdspecop(RefType),
-	    imvddef_struct(Object,AttObj,Code)
+	    imvddef_struct(LiteralContext,Object,AttObj,Code)
 
 	; is_mvdsigspecop(RefType) ->
-	    mvdsigdef_struct(Object,AttObj,Code)
+	    mvdsigdef_struct(LiteralContext,Object,AttObj,Code)
 
 	; is_imvdsigspecop(RefType) ->
-	    imvdsigdef_struct(Object,AttObj,Code)
+	    imvdsigdef_struct(LiteralContext,Object,AttObj,Code)
 
 	; is_fdsigspecop(RefType) ->
-	    fdsigdef_struct(Object,AttObj,Code)
+	    fdsigdef_struct(LiteralContext,Object,AttObj,Code)
 
 	; is_ifdsigspecop(RefType) ->
-	    ifdsigdef_struct(Object,AttObj,Code)
+	    ifdsigdef_struct(LiteralContext,Object,AttObj,Code)
         ).
 
-fddef_struct(Object,AttObj,PRFDDEF(Object,AttObj)).
-ifddef_struct(Object,AttObj,PRIFDDEF(Object,AttObj)).
-mvddef_struct(Object,AttObj,PRMVDDEF(Object,AttObj)).
-imvddef_struct(Object,AttObj,PRIMVDDEF(Object,AttObj)).
-mvdsigdef_struct(Object,AttObj,PRMVDSIGDEF(Object,AttObj)).
-imvdsigdef_struct(Object,AttObj,PRIMVDSIGDEF(Object,AttObj)).
-fdsigdef_struct(Object,AttObj,PRFDSIGDEF(Object,AttObj)).
-ifdsigdef_struct(Object,AttObj,PRIFDSIGDEF(Object,AttObj)).
+fddef_struct(Context,Object,AttObj,PRFDDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+ifddef_struct(Context,Object,AttObj,PRIFDDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+mvddef_struct(Context,Object,AttObj,PRMVDDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+imvddef_struct(Context,Object,AttObj,PRIMVDDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+mvdsigdef_struct(Context,Object,AttObj,PRMVDSIGDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+imvdsigdef_struct(Context,Object,AttObj,PRIMVDSIGDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+fdsigdef_struct(Context,Object,AttObj,PRFDSIGDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+ifdsigdef_struct(Context,Object,AttObj,PRIFDSIGDEF(Object,AttObj,Caller)) :-
+		determine_caller_term(Context,Caller).
 
-mvdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
+mvdattspec_struct(LiteralContext,Object,AttObj,RefType,ValObj,Code) :-
 	(
 	  is_mvdspecop(RefType) ->
-	    mvdspec_struct(Object,AttObj,ValObj,Code)
+	    mvdspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
 
 	; is_imvdspecop(RefType) ->
-	    imvdspec_struct(Object,AttObj,ValObj,Code)
+	    imvdspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
 
 	; is_mvdsigspecop(RefType) ->
-	    mvdsigspec_struct(Object,AttObj,ValObj,Code)
+	    mvdsigspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
 
 	; is_imvdsigspecop(RefType) ->
-	    imvdsigspec_struct(Object,AttObj,ValObj,Code)
+	    imvdsigspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
 
 	%% Note: => and *=> are permitted to have multiple values
 	%%       (semantics is intersection)
 	; is_fdsigspecop(RefType) ->
-	    fdsigspec_struct(Object,AttObj,ValObj,Code)
+	    fdsigspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
 
 	; is_ifdsigspecop(RefType) ->
-	    ifdsigspec_struct(Object,AttObj,ValObj,Code)
+	    ifdsigspec_struct(LiteralContext,Object,AttObj,ValObj,Code)
         ).
 
-mvdspec_struct(Object,AttObj,ValObj,PRMVD(Object,AttObj,ValObj)).
-imvdspec_struct(Object,AttObj,ValObj,PRIMVD(Object,AttObj,ValObj)).
-mvdsigspec_struct(Object,AttObj,ValObj,PRMVDSIG(Object,AttObj,ValObj)).
-imvdsigspec_struct(Object,AttObj,ValObj,PRIMVDSIG(Object,AttObj,ValObj)).
-fdsigspec_struct(Object,AttObj,ValObj,PRFDSIG(Object,AttObj,ValObj)).
-ifdsigspec_struct(Object,AttObj,ValObj,PRIFDSIG(Object,AttObj,ValObj)).
+mvdspec_struct(Context,Object,AttObj,ValObj,PRMVD(Object,AttObj,ValObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+imvdspec_struct(Context,Object,AttObj,ValObj,PRIMVD(Object,AttObj,ValObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+mvdsigspec_struct(Context,Object,AttObj,ValObj,PRMVDSIG(Object,AttObj,ValObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+imvdsigspec_struct(Context,Object,AttObj,ValObj,PRIMVDSIG(Object,AttObj,ValObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+fdsigspec_struct(Context,Object,AttObj,ValObj,PRFDSIG(Object,AttObj,ValObj,Caller)) :-
+		determine_caller_term(Context,Caller).
+ifdsigspec_struct(Context,Object,AttObj,ValObj,PRIFDSIG(Object,AttObj,ValObj,Caller)) :-
+		determine_caller_term(Context,Caller).
 
 %% for +>> and *+>>
+%% appears only in the rule body
 incattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	( is_mvdincspecop(RefType) ->
 	    mvdincspec_struct(Object,AttObj,ValObj,Code)
@@ -590,11 +724,16 @@ incattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
         ).
 
 %% +>>
-mvdincspec_struct(Object,AttObj,ValObj,PRMVDINC(Object,AttObj,ValObj)).
+%% appears only in the rule body
+mvdincspec_struct(Object,AttObj,ValObj,PRMVDINC(Object,AttObj,ValObj,ThisModule)) :-
+	thismodule_struct(ThisModule).
 %% *+>>
-imvdincspec_struct(Object,AttObj,ValObj,PRIMVDINC(Object,AttObj,ValObj)).
+%% appears only in the rule body
+imvdincspec_struct(Object,AttObj,ValObj,PRIMVDINC(Object,AttObj,ValObj,ThisModule)) :-
+	thismodule_struct(ThisModule).
 
-%% ->->
+%% ->->, *->->
+%% appears only in the rule body
 tolistattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	( is_mvdtolistspecop(RefType) ->
 	    mvdtolistspec_struct(Object,AttObj,ValObj,Code)
@@ -603,45 +742,54 @@ tolistattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	  imvdtolistspec_struct(Object,AttObj,ValObj,Code)
         ).
 
-mvdtolistspec_struct(Object,AttObj,ValObj,PRMVDTOLIST(Object,AttObj,ValObj)).
-imvdtolistspec_struct(Object,AttObj,ValObj,PRIMVDTOLIST(Object,AttObj,ValObj)).
+mvdtolistspec_struct(Object,AttObj,ValObj,PRMVDTOLIST(Object,AttObj,ValObj,ThisModule)) :-
+	thismodule_struct(ThisModule).
+imvdtolistspec_struct(Object,AttObj,ValObj,PRIMVDTOLIST(Object,AttObj,ValObj,ThisModule)) :-
+	thismodule_struct(ThisModule).
 
-objref_struct(Obj,RefType,Att,Index,Val,Code) :-
+%% This is called when someting like a.b[] is compiled.
+body_objref_struct(Obj,RefType,Att,Index,Val,Code) :-
 	%% Index is the approximate textual information
 	%% for the new variable that represents an oid.
 	new_varobj(Index,Val),
 	( is_fdrefop(RefType) ->
-	    fdspec_struct(Obj,Att,Val,Code)
+	    fdspec_struct(BODYLITERAL,Obj,Att,Val,Code)
 
 	; is_ifdrefop(RefType) ->
-	    ifdspec_struct(Obj,Att,Val,Code)
+	    ifdspec_struct(BODYLITERAL,Obj,Att,Val,Code)
 
 	; is_mvdrefop(RefType) ->
-	    mvdspec_struct(Obj,Att,Val,Code)
+	    mvdspec_struct(BODYLITERAL,Obj,Att,Val,Code)
 	;
 	  is_imvdrefop(RefType),
-	  imvdspec_struct(Obj,Att,Val,Code)
+	  imvdspec_struct(BODYLITERAL,Obj,Att,Val,Code)
         ).
 
 head_objref_struct(Obj,RefType,Att,Index,Val,Code) :-
 	( is_fdrefop(RefType) ->
 	    fdskolem_struct(Obj,Att,Index,Val),
-	    fdspec_struct(Obj,Att,Val,Code)
+	    fdspec_struct(HEADLITERAL,Obj,Att,Val,Code)
 	;
 	  is_ifdrefop(RefType),
 	  ifdskolem_struct(Obj,Att,Index,Val),
-	  ifdspec_struct(Obj,Att,Val,Code)
+	  ifdspec_struct(HEADLITERAL,Obj,Att,Val,Code)
         ).
 
-%% Skolem functions encode textual information.
-fdskolem_struct(Obj,Att,Index,PRFDSKOLEM(Obj,Att,Index)) :- report_option(FLSKOLEM).
-ifdskolem_struct(Obj,Att,Index,PRIFDSKOLEM(Obj,Att,Index)) :- report_option(FLSKOLEM).
+%% Skolem functions also encode textual information.
+fdskolem_struct(Obj,Att,Index,PRFDSKOLEM(Obj,Att,Index)) :-
+	report_option(FLSKOLEM,Index).
+ifdskolem_struct(Obj,Att,Index,PRIFDSKOLEM(Obj,Att,Index)) :-
+	report_option(FLSKOLEM,Index).
 
-methspec_struct(Obj,Meth,PRMETH(Obj,Meth)).
-imethspec_struct(Obj,IMeth,PRIMETH(Obj,IMeth)).
-transpec_struct(Obj,Tran,PRTRAN(Obj,Tran)).
+methspec_struct(Context,Obj,Meth,PRMETH(Obj,Meth,Caller)) :-
+	determine_caller_term(Context,Caller).
+imethspec_struct(Context,Obj,IMeth,PRIMETH(Obj,IMeth,Caller)) :-
+	determine_caller_term(Context,Caller).
+transpec_struct(Context,Obj,Tran,PRTRAN(Obj,Tran,Caller)) :-
+	determine_caller_term(Context,Caller).
 
-objeql_struct(O1,O2,PROBJEQL(O1,O2)).
+objeql_struct(Context,O1,O2,PROBJEQL(O1,O2,Caller)) :-
+	determine_caller_term(Context,Caller).
 
 
 ifthenelse_struct(Cond,Then,Else,Code) :-
@@ -972,25 +1120,48 @@ check_vars(HeadTermList,BodyTerm,Status) :-
 	singleton_vars(SortedVars,SingletonVars),
 	singleton_warning(SingletonVars,Status,WarnTail),
 	subtract_vars(HeadVars,BodyVars,UnboundVars),
-	unbound_warning(UnboundVars,WarnTail,[]).
+	%% Don't issue the unbound var in the head warning for facts
+	(BodyTerm \= [] ->
+	    unbound_warning(UnboundVars,WarnTail,[])
+	;
+	    true
+	).
 
 
 /****************************************************************************
   clear_directive
   get_directive(-L)  
   report_directive(+Direct)
-  clear_option
-  get_option(-L)
-  report_option(+Option)
+  clear_options
+  get_options(-L)
+  report_option(+Option,+Index)
 ****************************************************************************/
 clear_directive :- retractall(TMPDIRECT(_)).
 get_directive(L) :- findall(D,TMPDIRECT(D),L).
 report_directive(Direct) :- assert(TMPDIRECT(Direct)).
 
 
-clear_option :- retractall(TMPOPTION(_)).
-get_option(L) :- findall(O,TMPOPTION(O),L).
-report_option(Option) :- assert(TMPOPTION(Option)).
+clear_options :- retractall(TMPOPTION(_,_)).
+get_options(L) :- findall((O,Idx),TMPOPTION(O,Idx),L).
+report_option(Option,Idx) :-
+	assert(TMPOPTION(Option,Idx)).
+
+clear_context(X) :- retractall(COMPILATION_CONTEXT(X)).
+report_context(X) :- assert(COMPILATION_CONTEXT(X)).
+
+%% Report options specified in the :- setsemantics{...} directive
+%% Since the argument is a parser list (sans the FLLIST wrapper), we need 
+%% to extract the actual values of terms in the list in order to pass
+%% to report_options/2.
+report_semantic_options([]).
+report_semantic_options([H|T]) :-
+	is_flplib(H,FlTerm),
+	is_flterm(FlTerm,Funct,_N,[Arg|_]),
+	is_flatom(Funct,FunctVal,Index),
+	is_flatom(Arg,ArgVal),
+	Option =.. [FunctVal,ArgVal],
+	report_option(Option,Index),
+	report_semantic_options(T).
 
 
 /****************************************************************************
@@ -999,7 +1170,8 @@ report_option(Option) :- assert(TMPOPTION(Option)).
 initialize_work :-
 	reset_newvar,
 	clear_directive,
-	clear_option.
+	clear_options,
+	clear_context(_).
 
 /****************************************************************************
   flora_reset_compiler/0
@@ -1036,11 +1208,11 @@ flora_compile(ParserTerm,CodeDiffList,OptionList,Status) :-
 	; is_flquery(ParserTerm,Body) ->
 	    compile_query(Body,CodeDiffList,Status)
 
-	; is_fldirective(ParserTerm,DirectList) ->
-	    compile_directive(DirectList,CodeDiffList,Status)
+	; is_fldirective(ParserTerm,DirectList,DirctIdx) ->
+	    compile_directive(DirectList,DirctIdx,CodeDiffList,Status)
         ),
 	!,
-	get_option(OptionList),
+	get_options(OptionList),
 	retractall(ruleoid(_,_,_)).
 	
 %% This rule is for debugging.
@@ -1069,51 +1241,41 @@ singleton_oid_warning([Index|L],WarnList,WarnTail) :-
 
 
 /****************************************************************************
-  compile_directive(+DirectList,-CodeDiffList,-Status)
-  compile_direct(DirectTerm,-CodeList,Status)
+  compile_directive(+DirectList,+DirctIdx,-CodeDiffList,-Status)
+  compile_direct(DirectTerm,+DirctIdx,-CodeList,Status)
 ****************************************************************************/
-compile_directive([],T-T,[]) :- !.
+compile_directive([],_,T-T,[]) :- !.
 
-compile_directive([D|L],CodeList-ListTail,Status) :-
-	compile_direct(D,DCodeList,S),
+compile_directive([D|L],DirIdx,CodeList-ListTail,Status) :-
+	compile_direct(D,DirIdx,DCodeList,S),
 	( S == [] ->
 	    append(DCodeList,T,CodeList),
-	    compile_directive(L,T-ListTail,Status)
+	    compile_directive(L,DirIdx,T-ListTail,Status)
 	;
 	  Status=S
         ).
 
 
 %% Some directives imply additional code.
-compile_direct(DirectTerm,[Code|ImpliedCode],[]) :-
+compile_direct(DirectTerm,_DirIdx,[Code|ImpliedCode],[]) :-
 	( is_flcommand(DirectTerm,C) ->
 	    command_struct(C,Direct),
 	    ImpliedCode = []
 
-	; is_fltable(DirectTerm,P,A) ->
-	    get_slash_sep_numbers(A,ATerm),
-	    ( is_flvar(P,PName,_PI) ->
-		flora_define_hilogtable(_,ATerm),
-		table_struct(_,ATerm,Direct)
-	    ;
-		is_flatom(P,PName,_PI),
-		flora_define_hilogtable(PName,ATerm),
-		table_struct(PName,ATerm,Direct)
-	    ),
-	    ImpliedCode = []
-
+	 ; is_flexport_list(DirectTerm,Term) ->
+	    compile_export(Term,Direct)
         ),
 	!,
 	directive_struct(Direct,Code).
 
-compile_direct(DirectTerm,[],[]) :-
+compile_direct(DirectTerm,DirIdx,[],[]) :-
 	is_flindex(DirectTerm,A,P),
-	report_option(FLINDEX(A,P)),
+	report_option(FLINDEX(A,P),DirIdx),
 	!.
 
 %% Operator definition. Must also induce executable op definition,
 %% to execute in the shell (restricted to "main" module)
-compile_direct(DirectTerm,[Code],Status) :-
+compile_direct(DirectTerm,_DirIdx,[Code],Status) :-
 	is_flopdef(DirectTerm,P,A,O),
 	flora_define_operator(P,A,O),
 	compile_exec_directive([FLOPDEF(P,A,O)],NULL,Code1,Status),
@@ -1131,35 +1293,25 @@ compile_direct(DirectTerm,[Code],Status) :-
 	!.
 **/
 
-compile_direct(DirectTerm,[],[]) :-
+compile_direct(DirectTerm,_Idx,[],[]) :-
 	is_flprolog(DirectTerm,P,N),
 	flora_define_prolog(P,N),
 	!.
 
-compile_direct(DirectTerm,CodeList,[]) :-
-	( is_flequality(DirectTerm,A) ->
-	    ( A == BASIC ->
-		report_option(FLEQLBASIC)
-
-	    ; A == FLOGIC ->
-	        report_option(FLEQLFLOGIC)
-
-	    ; A == NONE ->
-	        report_option(FLEQLNONE)
-	    ),
-	    thismodule_struct(M)
-
-	),
-	florasyslib_struct(FLLIBEQUALITY,2,[A,M],CCode),
-	query_struct(CCode,Code),
-	CodeList=[Code],
+compile_direct(DirectTerm,_Idx,CodeList,[]) :-
+	is_flsetsemantics(DirectTerm,OptionsList),
+	!,
+	is_fllist(OptionsList,L,_T,_I),
+	%%compile_fllist(L,T,I,OptionListCode,_OidCode,_Code,Status),
+	report_semantic_options(L),
+	CodeList = [],
 	!.
 
 %% :- compiler_options
-compile_direct(DirectTerm,[Code],[]) :-
+compile_direct(DirectTerm,Idx,[Code],[]) :-
 	is_flcmpopt(DirectTerm,OptList),
 	( member(XSB_SPECREPR,OptList) ->
-	    report_option(XSB_SPECREPR)
+	    report_option(XSB_SPECREPR,Idx)
 	;
 	    true
 	),
@@ -1167,6 +1319,31 @@ compile_direct(DirectTerm,[Code],[]) :-
 	directive_struct(OCode,Code),	
 	!.
 	
+%% :- ignore_depchk
+compile_direct(DirectTerm,_Idx,[Code],Status) :-
+	is_flignoredep(DirectTerm,SpecList),
+	compile_ignoredep_list(SpecList,SCode,Status),
+        !,
+        ( Status == [] ->
+	    ignoredep_struct(SCode,ICode),
+	    directive_struct(ICode,Code)
+        ;   true
+        ).
+
+
+/****************************************************************************
+  compile_ignoredep_list(+SpecList,-CodeList,-Status)
+  compile a list of ignoredep sepcifications
+****************************************************************************/
+compile_ignoredep_list([],[],[]) :- !.
+compile_ignoredep_list([H|L],[HCode|LCode],Status) :-
+        compile_body(H,HCode,S),
+        ( S == [] ->
+            compile_ignoredep_list(L,LCode,Status)
+        ;
+            Status = S
+        ).
+
 
 /****************************************************************************
   compile_flatomvar(+T,-Code)
@@ -1180,21 +1357,12 @@ compile_flatomvar(T,Code) :-
 	      atomobj_struct(T,Code)
 	    ).
 
+/*
 compile_flatomvar_list([],[]) :- !.
 compile_flatomvar_list([H|T],[HCode|TCode]) :-
 	compile_flatomvar(H,HCode),
 	compile_flatomvar_list(T,TCode).
-
-/****************************************************************************
-  get_slash_sep_numbers(+Old,-New)
-****************************************************************************/
-get_slash_sep_numbers(N,M) :-
-    is_flnumber(N,M),
-    !.
-
-get_slash_sep_numbers(FLTERM(FLATOM(FL_SLASH,_I),2,[N1,N2]),FL_SLASH(M1,M2)) :-
-    get_slash_sep_numbers(N1,M1),
-    is_flnumber(N2,M2).
+*/
 
 
 /****************************************************************************
@@ -1241,14 +1409,108 @@ compile_factlist(F,[FCode|ListTail]-ListTail) :-
 compile_query(Body,CodeList-ListTail,Status) :-
 	compile_body(Body,BodyCode,Status),
 	( Status == [] ->
+	    thismodule_struct(ThisMod),
+	    caller_binding_code(ThisMod,CallerBindingCode),
+	    conjunct_struct(CallerBindingCode,BodyCode,AugmentedBodyCode),
 	    collect_namevars(Body,NV),
 	    list_struct(NV,[],NVCode),
-	    florasyslib_struct(FLLIBANSWER,2,[BodyCode,NVCode],Goal),
+	    florasyslib_struct(FLLIBANSWER,2,[AugmentedBodyCode,NVCode],Goal),
 	    query_struct(Goal,QueryCode),
             get_directive(DirectCodeList),
 	    append(DirectCodeList,[QueryCode|ListTail],CodeList)
 	;
 	  true
+	).
+
+
+
+/***************************************************************************
+  Compile the export directive
+  The body can be a list of export terms, which are compiled individually.
+***************************************************************************/
+compile_export(BodyTerm,Code) :-
+	compile_export_predicate_list(BodyTerm,BodyTermCode),
+	list_struct(BodyTermCode,[],BodyTermCodeList),
+	export_struct(BodyTermCodeList,Code).
+
+
+/****************************************************************************
+  compile_export_predicate_list(+List,-Code)
+  To recursively compile a list of export predicates.
+****************************************************************************/
+compile_export_predicate_list([H|T],Code) :-
+	compile_export_predicate(H,HCode,_Status),
+	compile_export_predicate_list(T,TCode),
+	append([HCode],TCode,Code).
+	
+compile_export_predicate_list([],[]) :- !.
+
+
+/****************************************************************************
+  compile_export_predicate(+ExportTerm,-Code,-Status)
+****************************************************************************/
+compile_export_predicate(ExportTerm,Code,Status) :-
+	(
+		is_flexport(ExportTerm,BodyTerm,ModuleList,IsUpdatable)
+	;
+		is_flexport(ExportTerm,WS,BodyTerm,ModuleList,IsUpdatable)
+	),
+	is_flfact(BodyTerm,ParseBodyTerm),
+	%% compile_fact expects the argument to be a list.
+	%% Hence the ParseBodyTerm is enclosed in a list.
+	%%if they are uninitialized, they will be taken care at run-time.
+	compile_fact([ParseBodyTerm],ListBodyTermCode,_StatusFact),
+	compile_pathexp(ModuleList,ModuleListCode,_,_,_StatusModule),
+	compile_pathexp(IsUpdatable,IsUpdatableCode,_,_,_Status),
+	(
+		var(WS) -> 
+			true
+		;
+			compile_pathexp(WS,WSCode,_,_,Status)
+	),
+	%% It may be the case that the predicate itself is a comma separated list
+	%% Convert ListBodyTermCode from a difference list to a normal list
+	%% then wrap each element of the list in PREXPORT
+	compile_export_list_convert(ListBodyTermCode,WSCode,ModuleListCode,IsUpdatableCode,Code).
+
+
+/****************************************************************************
+  compile_export_list_convert(+Args,-Code)
+   Args is a difference list of the form : [H|_V] -_V.
+   Ground _V to [] and convert the diff list to a list
+   Then processes the list with compile_export_extract_facts
+****************************************************************************/
+compile_export_list_convert(ListBodyTermCode - T, WSCode, ModuleListCode,IsUpdatableCode,Code) :-
+	T = [],
+	%% ListBodyTermCode is a list of facts; process them
+	compile_export_extract_facts(ListBodyTermCode,[],WSCode,ModuleListCode,IsUpdatableCode,Code).
+
+
+/****************************************************************************
+  compile_export_extract_facts(+Args,+InitialTerm,+WSCode,+ModuleListCode,+IsUpdatableCode,-Code)
+  Encloses the individual predicates of the Args list in a PREXPORT struct. 
+  Then the whole list is compiled as a list_struct.
+****************************************************************************/
+compile_export_extract_facts([H|T],InitTerm,WSCode,ModuleListCode,IsUpdatableCode,Code) :-
+	is_prfact(H,HTermCode),
+	construct_export_struct(HTermCode,WSCode,IsUpdatableCode,ModuleListCode,HCode),
+	compile_export_extract_facts(T,[HCode|InitTerm],WSCode,ModuleListCode,IsUpdatableCode,Code).
+
+compile_export_extract_facts([],InitTerm,_WSCode,_ModuleListCode,_IsUpdatableCode,Code) :-
+	list_struct(InitTerm,[],Code).
+
+
+/****************************************************************************
+  construct_export_struct(+Term,+WSCode,+IsUpdatableCode,+ModuleListCode,-Code)
+  Constructs an appropriate prexport struct.
+****************************************************************************/
+construct_export_struct(TermCode,WSCode,IsUpdatableCode,ModuleListCode,Code) :-
+	thismodule_struct(ThisModule),
+	atomobj_struct(FLEXPORT,FCode),
+	( var(WSCode) ->
+		prologterm_struct(FCode,4,[IsUpdatableCode,ThisModule,ModuleListCode,TermCode],Code)
+	;
+		prologterm_struct(FCode,5,[WSCode,IsUpdatableCode,ThisModule,ModuleListCode,TermCode],Code)
 	).
 
 
@@ -1293,7 +1555,10 @@ compile_rulelist(HeadList,Body,[Code|CodeList]-ListTail) :-
 	allvars(HeadList,HeadVars),
 	length(HeadVars,N),
 	new_predicate(Name),
-	newpredicate_struct(Name,N,HeadVars,Newpredicate),
+	callermod_var_structure(CallerVarObj),
+	append(HeadVars,[CallerVarObj],HeadVarsAndCaller),
+	N1 is N+1,
+	newpredicate_struct(Name,N1,HeadVarsAndCaller,Newpredicate),
 	rule_struct(Newpredicate,Body,Code),
 	%% Split the atoms over this temp rule.
 	rule_difflist(HeadList,Newpredicate,CodeList-ListTail).
@@ -1345,10 +1610,30 @@ compile_head([ParserTerm|ParserTermList],Code,Status) :-
 /****************************************************************************
   compile_head_literal(+ParserTerm,-Code,-Status)
 
-  Code is conjucntions of atoms, which should be split into a list form later.
+  Code is conjunction of atoms, which should be split into a list form later.
 ****************************************************************************/
 compile_head_literal(ParserTerm,Code,Status) :-
-	( is_flterm(ParserTerm,Funct,N,Args) ->
+	( is_flterm(ParserTerm,Funct,1,[Arg]),
+            is_flatom(Funct,FL_TRAN,TranInd),
+            is_flvar(Arg,_VarName,_VarInd) ->
+          %% #X translated into #X@_@
+            atomobj_struct(Funct,FObj),
+            is_flvar(Arg,AName,AIndex),
+            compile_flvar(AName,AIndex,AObj),
+            thismodule_struct(ThisModule),
+	    termlit_struct(BODYLITERAL,FObj,1,[AObj],V),
+            florasyslib_struct(TranInd,FLLIBMODLIT,3,[V,ThisModule,ThisModule], Code),
+            Status=[]
+
+	; is_flvar(ParserTerm,_Name,Index) ->
+          %% X translated into X@_@
+            is_flvar(ParserTerm,VName,VIndex),
+            compile_flvar(VName,VIndex,V),
+            thismodule_struct(ThisModule),
+            florasyslib_struct(Index,FLLIBMODLIT,3,[V,ThisModule,ThisModule],Code),
+	    Status=[]
+
+	; is_flterm(ParserTerm,Funct,N,Args) ->
 	    compile_head_fltermlit(Funct,N,Args,Code,Status)
 
 	; is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
@@ -1363,12 +1648,18 @@ compile_head_literal(ParserTerm,Code,Status) :-
 	; is_flworkspace(ParserTerm,P,WS) ->
 	    compile_head_wsliteral(P,WS,Code,Status)
 
-        ; is_flvar(ParserTerm,Name,Index) ->
-	    compile_flvar(Name,Index,Code),
-            Status=[]
+	; is_flfloralib(ParserTerm,P,Module) ->
+	    compile_head_floraliblit(P,Module,Code,Status)
+
+        ; is_flvar(ParserTerm,_Name,Index) ->
+            varobj_struct(ParserTerm,V),
+            thismodule_struct(ThisModule),
+            florasyslib_struct(Index,FLLIBMODLIT,3,[V,ThisModule,ThisModule],Code),
+	    Status=[]
 	;
-	  atomlit_struct(ParserTerm,Code),
-	  Status=[]
+	    %% atom (0-ary predicate)
+	    atomlit_struct(HEADLITERAL,ParserTerm,Code),
+	    Status=[]
 	).
 
 
@@ -1412,12 +1703,33 @@ compile_body(ParserTerm,Code,Status) :-
 compile_body(ParserTerm,Code,Status) :-
 	compile_body_literal(ParserTerm,Code,Status).
 
-
 /****************************************************************************
   compile_body_literal(+ParserTerm,-Code,-Status)
 ****************************************************************************/
 compile_body_literal(ParserTerm,Code,Status) :-
-	( is_flterm(ParserTerm,Funct,N,Args) ->
+	( is_flterm(ParserTerm,Funct,1,[Arg]),
+            is_flatom(Funct,FL_TRAN,TranInd),
+            is_flvar(Arg,_VarName,_VarInd) ->
+	    %% #X translated into #X@_@
+            atomobj_struct(Funct,FObj),
+            is_flvar(Arg,AName,AIndex),
+            compile_flvar(AName,AIndex,AObj),
+            thismodule_struct(ThisModule),
+	    termlit_struct(BODYLITERAL,FObj,1,[AObj],V),
+            florasyslib_struct(TranInd,FLLIBMODLIT,3,[V,ThisModule,ThisModule], SpecCode),
+            OidCode=NULL,
+            Status=[]
+
+	; is_flvar(ParserTerm,_Name,Index) ->
+	    %% X translated into X@_@
+            is_flvar(ParserTerm,VName,VIndex),
+            compile_flvar(VName,VIndex,V),
+            thismodule_struct(ThisModule),
+            florasyslib_struct(Index,FLLIBMODLIT,3,[V,ThisModule,ThisModule], SpecCode),
+	    OidCode=NULL,
+	    Status=[]
+
+        ; is_flterm(ParserTerm,Funct,N,Args) ->
 	    compile_fltermlit(Funct,N,Args,OidCode,SpecCode,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
@@ -1467,6 +1779,16 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	    compile_fldelete(Op,List,SpecCode,Status),
 	    OidCode=NULL
 
+	%% Rule: can occur inside reify_op
+	; ParserTerm = [ReifiedRule|_],
+	    is_fldynrule(ReifiedRule,_H,_B) ->
+	    compile_reifyop(ParserTerm,SpecCode,OidCode,Status)
+
+	%% Rule: can occur inside reify_op
+	; ParserTerm = [ReifiedRule|_],
+	    is_flruleworkspace(ReifiedRule,_RealRule,_WS) ->
+	    compile_reifyop(ParserTerm,SpecCode,OidCode,Status)
+
 	; is_fltablerefresh(ParserTerm,List) ->
 	    compile_flrefresh(List,SpecCode,Status),
 	    OidCode=NULL
@@ -1483,11 +1805,25 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	    compile_flp2h(Prolog,Hilog,SpecCode,Status),
 	    OidCode=NULL
 
-	; is_flnewmodule(ParserTerm,Op,ModList) ->
+	; is_flnewoidop(ParserTerm,VarTerm) ->
+	    is_flvar(VarTerm,Name,Index),
+	    compile_flvar(Name,Index,VarCode),
+	    newoidop_struct(VarCode,SpecCode),
+	    Status = [],
+	    OidCode=NULL
+
+	; is_flnewmodule(ParserTerm,Op,Module) ->
 	    is_flatom(Op,_OpAtom,Index),
-	    compile_flatomvar_list(ModList,Mods),
-	    list_struct(Mods,[],ModlistCode),
-	    florasyslib_struct(Index,FLLIBNEWMODULE,1,[ModlistCode],SpecCode),
+	    compile_flatomvar(Module,ModCode),
+	    thismodule_struct(ThisModuleName),
+	    florasyslib_struct(Index,FLLIBNEWMODULE,2,[ThisModuleName,ModCode],SpecCode),
+	    Status=[],
+	    OidCode=NULL
+
+	; is_flcallermodule(ParserTerm,Op,Module) ->
+	    is_flatom(Op,_OpAtom,Index),
+	    compile_flatomvar(Module,ModCode),
+	    caller_binding_code(ModCode,SpecCode),
 	    Status=[],
 	    OidCode=NULL
 
@@ -1524,19 +1860,14 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	    Status=[]
 
 	; is_flatom(ParserTerm,_A) ->
-	    atomlit_struct(ParserTerm,SpecCode) ->
-	    OidCode=NULL,
-	    Status=[]
-
-	; is_flvar(ParserTerm,Name,Index) ->
-	    call_struct(Name,Index,SpecCode),
+	    atomlit_struct(BODYLITERAL,ParserTerm,SpecCode) ->
 	    OidCode=NULL,
 	    Status=[]
 
 	; is_flobjeql(ParserTerm,O1,O2) ->
 	    compile_flobjeql(O1,O2,OidCode,SpecCode,Status)
 
-	; is_fldirective(ParserTerm,DirectList) ->
+	; is_fldirective(ParserTerm,DirectList,_Idx) ->
 	    compile_exec_directive(DirectList,NULL,SpecCode,Status),
 	    OidCode=NULL
 	),
@@ -1663,6 +1994,16 @@ compile_pathexp(ParserTerm,Object,NULL,NULL,[]) :-
 	; is_fltoken(ParserTerm,FL_THISMODULE,_Index) ->
 	    thismodule_struct(Object)
 
+	%% Anonymous OIDs can appear in the "body": they can appear
+	%% in reified formulas, which are compiled as body literals
+	; is_fltoken(ParserTerm,FL_NEWOID,Index) ->
+	    new_oidobj(Index,Object)
+
+	%% A numbered OID, which appears in a reified formula in rule body
+	; is_fltoken(ParserTerm,FL_NEWOID,Num,Index) ->
+	    flora_get_counter(RULE_NUM, Rule_num), 
+	    new_oidobj(Rule_num,Num,Index,Object)
+
 	; is_flnumber(ParserTerm,_N) ->
 	    numobj_struct(ParserTerm,Object)
 
@@ -1738,7 +2079,10 @@ compile_pathexplist([T|L],[TObj|LObj],OidCode,Code,Status) :-
 
 
 /****************************************************************************
-  compile_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-OidCode,-Code,-Status)
+  compile_argpathexplist(+ParserTermList,+ArgTypeList,
+                         -ObjectList,-OidCode,-Code,-Status)
+  NOTE: This functionality is not exposed to the user.
+        Exists for findall, call, and get_residual (see flrarguments.P)
 ****************************************************************************/
 compile_argpathexplist([],[],[],NULL,NULL,[]).
 
@@ -1792,7 +2136,7 @@ compile_flload(LoadList,Code,Status) :-
 	    %% that loading of a file doesn't override the program
 	    %% in which the loading statement occurs
 	    list_struct([BLN,BCN],[],PositionCode),
-	    florasyslib_struct(FLLIBLOAD,
+	    florasyslib_struct(I,FLLIBLOAD,
 			       4,
 			       [ObjList,ProgramFile,Mod,PositionCode],LCode),
 	    conjunct_code([OCode,LCode],Code)
@@ -1842,7 +2186,7 @@ compile_fltermlit(Funct,N,Args,OidCode,Code,Status) :-
 	atomobj_struct(Funct,FObj),
 	compile_argpathexplist(Args,ArgTypes,AObj,OidCode,ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TCode),
+	    termlit_struct(BODYLITERAL,FObj,N,AObj,TCode),
 	    conjunct_code([TCode,ObjCode],Code)
 	;
 	  true
@@ -1851,7 +2195,7 @@ compile_fltermlit(Funct,N,Args,OidCode,Code,Status) :-
 compile_fltermlit(Funct,N,Args,OidCode,Code,Status) :-
 	compile_pathexplist([Funct|Args],[FObj|AObj],OidCode,ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TCode),
+	    termlit_struct(BODYLITERAL,FObj,N,AObj,TCode),
 	    conjunct_code([TCode,ObjCode],Code)
 	;
 	  true
@@ -1899,7 +2243,7 @@ compile_flobjref(ObjTerm,RefType,AttTerm,Object,OidCode,Code,Status) :-
 	( Status == [] ->
 	    %% Approximate the textual information for the new variable.
 	    approximate_index(AttTerm,Index),
-	    objref_struct(Obj,RefType,Att,Index,Object,TCode),
+	    body_objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    Code = OCode,
 	    conjunct_code([OidCodeList,TCode],OidCode)
 	;
@@ -1915,7 +2259,7 @@ compile_flobjref(ObjTerm,RefType,AttTerm,Object,OidCode,Code,Status) :-
 compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,OidCode,Code,Status) :-
 	compile_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OidCode,OCode,Status),
 	( Status == [] ->
-	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    birelate_struct(BODYLITERAL,Obj1,RelType,Obj2,TCode),
 	    conjunct_code([TCode,OCode],Code)
 	;
 	  true
@@ -1942,33 +2286,33 @@ compile_flobjspec(ObjTerm,SpecBody,Object,OidCode,Code,Status) :-
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
 		compile_pathexplist([OTerm,ATerm],[OObj,AObj],OidCode,ObjCode,Status),
 		( Status == [] ->
-		    objattdef_struct(OObj,RefType,AObj,TCode),
+		    approximate_index(ATerm,Index),
+		    body_objref_struct(OObj,RefType,AObj,Index,Object,TCode),
 		    conjunct_code([TCode,ObjCode],Code)
 		;
 		  true
 	        )
 	    ;
-		%% object exist statement: a.b.c[]
-		compile_pathexp(ObjTerm,Object,OidCode,ObjCode,Status),
-		( Status == [] ->
-		    objexists_struct(Object,ECode),
-		    conjunct_code([ECode,ObjCode],Code)
-		;
-		    true
-		)
+	      compile_pathexp(ObjTerm,Object,OidCode,ObjCode,Status),
+	      ( Status == [] ->
+		  objexists_struct(BODYLITERAL,Object,ECode),
+		  conjunct_code([ECode,ObjCode],Code)
+	      ;
+	        true
+	      )
 	    )
 	; % oid spec plus object spec. something like a.b[c->d]
 	    compile_pathexp(ObjTerm,Object,ObjOidCode,ObjCode,S),
-	  ( S == [] ->
-	      compile_flspecbody(Object,SpecBody,SpecOidCode,SpecCode,Status),
-	      (Status == [] ->
-		  conjunct_code([ObjCode,SpecCode],Code),
-		  conjunct_code([ObjOidCode,SpecOidCode],OidCode)
-	      ; true
-	      )
-	  ;
-	    Status=S
-          )
+	    ( S == []
+	    -> compile_flspecbody(Object,SpecBody,SpecOidCode,SpecCode,Status),
+		(Status == [] ->
+		    conjunct_code([ObjCode,SpecCode],Code),
+		    conjunct_code([ObjOidCode,SpecOidCode],OidCode)
+		; true
+		)
+	    ;
+		Status=S
+	    )
         ).
 
 /****************************************************************************
@@ -2032,7 +2376,7 @@ compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	!,
 	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
-	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    fdattspec_struct(BODYLITERAL,Object,AttObj,RefType,ValObj,SCode),
 	    %% SCode: code to produce object reference, attribute, and value
 	    %% OCode: code for the pure attribute spec of the object
 	    %% OidCode: code to produce the attribute and the value
@@ -2049,7 +2393,7 @@ compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	compile_pathexp(AttTerm,AttObj,AOidCode,ACode,S),
 	( S == [] ->
 	    ( ValTermList == [] ->
-		mvdattdef_struct(Object,AttObj,RefType,SCode),
+		mvdattdef_struct(BODYLITERAL,Object,AttObj,RefType,SCode),
 		conjunct_code([AOidCode,ACode,SCode],Code),
 		Status=[]
 	    ;
@@ -2095,13 +2439,32 @@ compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	  true
         ).
 
+%% Obj[true], Obj[fail], Obj[!] translate as true, fail, and !
+compile_flspecbody(_Object,SpecTerm,NULL,Code,Status) :-
+	is_flpassthru(SpecTerm,P),
+	is_flatom(P, Atom, I),
+	!,
+	(Atom==FL_CUT
+	-> cut_struct(I,Code)
+	; atomobj_struct(P,Code)
+	),
+	Status=[].
+
+%% Obj[X>Y], Obj[X=Y], etc.
+compile_flspecbody(_Object,SpecTerm,NULL,Code,Status) :-
+	is_flpassthru(SpecTerm,P),
+	is_flterm(P, Funct, N, Args),
+	!,
+	compile_prlgterm(Funct,N,Args,TCode,_OidCode,ACode,Status),
+	(Status == [] -> conjunct_code([ACode,TCode],Code); true).
+
 %% for O[BoolMeth]
 compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_flmethspec(SpecTerm,MethTerm),
 	!,
 	compile_pathexp(MethTerm,MethObj,OidCode,MCode,Status),
 	( Status == [] ->
-	    methspec_struct(Object,MethObj,SCode),
+	    methspec_struct(BODYLITERAL,Object,MethObj,SCode),
 	    %% Fold OidCode in front of the molecule
 	    conjunct_code([OidCode,MCode,SCode],Code)
 	;
@@ -2114,7 +2477,7 @@ compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	!,
 	compile_pathexp(IMethTerm,IMethObj,OidCode,IMCode,Status),
 	( Status == [] ->
-	    imethspec_struct(Object,IMethObj,SCode),
+	    imethspec_struct(BODYLITERAL,Object,IMethObj,SCode),
 	    %% Fold OidCode in front of the molecule
 	    conjunct_code([OidCode,IMCode,SCode],Code)
 	;
@@ -2127,7 +2490,7 @@ compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	!,
 	compile_pathexp(TranTerm,TranObj,OidCode,TCode,Status),
 	( Status == [] ->
-	    transpec_struct(Object,TranObj,SCode),
+	    transpec_struct(BODYLITERAL,Object,TranObj,SCode),
 	    conjunct_code([OidCode,TCode,SCode],Code)
 	;
 	  true
@@ -2145,7 +2508,7 @@ compile_mvdattspec(Object,AttObj,RefType,[T],OidCode,Code,Status) :-
 	!,
 	compile_pathexp(T,TObj,OidCode,TCode,Status),
 	( Status == [] ->
-	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+	    mvdattspec_struct(BODYLITERAL,Object,AttObj,RefType,TObj,SCode),
 	    conjunct_code([SCode,TCode],Code)
 	;
 	  true
@@ -2280,7 +2643,7 @@ allgvar_notin([H|T],[Msg|S],TS) :-
 compile_flobjeql(Obj1,Obj2,OidCode,Code,Status) :-
 	compile_pathexplist([Obj1,Obj2],[O1,O2],OidCode,OCode,Status),
 	( Status == [] ->
-	    objeql_struct(O1,O2,OECode),
+	    objeql_struct(BODYLITERAL,O1,O2,OECode),
 	    conjunct_code([OCode,OECode],Code)
 	;
 	  true
@@ -2315,7 +2678,7 @@ compile_head_fltermlit(Funct,N,Args,Code,Status) :-
 	atomobj_struct(Funct,FObj),
 	compile_head_argpathexplist(Args,ArgTypes,AObj,ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TObj),
+	    termlit_struct(HEADLITERAL,FObj,N,AObj,TObj),
 	    conjunct_struct(ObjCode,TObj,Code)
 	;
 	  true
@@ -2324,7 +2687,7 @@ compile_head_fltermlit(Funct,N,Args,Code,Status) :-
 compile_head_fltermlit(Funct,N,Args,Code,Status) :-
 	compile_head_pathexplist([Funct|Args],[FObj|AObj],ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TObj),
+	    termlit_struct(HEADLITERAL,FObj,N,AObj,TObj),
 	    conjunct_struct(ObjCode,TObj,Code)
 	;
 	  true
@@ -2359,7 +2722,10 @@ compile_head_fllist(ObjTermList,ObjTerm,Index,Object,Code,Status) :-
 
 
 /****************************************************************************
-  compile_head_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-Code,-Status)
+  compile_head_argpathexplist(+ParserTermList,+ArgTypeList,
+                              -ObjectList,-Code,-Status)
+  NOTE: This functionality is not exposed to the user.
+        Exists for findall, call, and get_residual (see flrarguments.P)
 ****************************************************************************/
 compile_head_argpathexplist([],[],[],NULL,[]).
 
@@ -2375,7 +2741,6 @@ compile_head_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],Code,Status) 
 
 compile_head_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],Code,Status) :-
 	!,
-	%%compile_body(T,TCode,S),
 	compile_body(T,TCode1,S),
 	reify_struct(TCode1,TCode),
 	( S == [] ->
@@ -2498,7 +2863,7 @@ compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status) :-
 compile_head_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,Code,Status) :-
 	compile_head_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCode,Status),
 	( Status == [] ->
-	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    birelate_struct(HEADLITERAL,Obj1,RelType,Obj2,TCode),
 	    conjunct_struct(OCode,TCode,Code)
 	;
 	  true
@@ -2515,7 +2880,7 @@ compile_head_flobjspec(ObjTerm,SpecBody,Object,Code,Status) :-
 	    ;
 	      compile_head_pathexp(ObjTerm,Object,ObjCode,Status),
 	      ( Status == [] ->
-		  objexists_struct(Object,ECode),
+		  objexists_struct(HEADLITERAL,Object,ECode),
 		  conjunct_struct(ObjCode,ECode,Code)
 	      ;
 	        true
@@ -2552,7 +2917,7 @@ compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	!,
 	compile_head_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],VACode,Status),
 	( Status == [] ->
-	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    fdattspec_struct(HEADLITERAL,Object,AttObj,RefType,ValObj,SCode),
 	    conjunct_struct(VACode,SCode,Code)
 	;
 	  true
@@ -2564,7 +2929,7 @@ compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	compile_head_pathexp(AttTerm,AObj,ACode,S),
 	( S == [] ->
 	    ( VL == [] ->
-		mvdattdef_struct(Object,AObj,RefType,SCode),
+		mvdattdef_struct(HEADLITERAL,Object,AObj,RefType,SCode),
 		conjunct_struct(ACode,SCode,Code),
 		Status=[]
 	    ;
@@ -2580,7 +2945,7 @@ compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	!,
 	compile_head_pathexp(MethTerm,MethObj,MCode,Status),
 	( Status == [] ->
-	    methspec_struct(Object,MethObj,SCode),
+	    methspec_struct(HEADLITERAL,Object,MethObj,SCode),
 	    conjunct_struct(MCode,SCode,Code)
 	;
 	  true
@@ -2591,7 +2956,7 @@ compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	!,
 	compile_head_pathexp(IMethTerm,IMethObj,IMCode,Status),
 	( Status == [] ->
-	    imethspec_struct(Object,IMethObj,SCode),
+	    imethspec_struct(HEADLITERAL,Object,IMethObj,SCode),
 	    conjunct_struct(IMCode,SCode,Code)
 	;
 	  true
@@ -2602,7 +2967,7 @@ compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	!,
 	compile_head_pathexp(TranTerm,TranObj,TCode,Status),
 	( Status == [] ->
-	    transpec_struct(Object,TranObj,SCode),
+	    transpec_struct(HEADLITERAL,Object,TranObj,SCode),
 	    conjunct_struct(TCode,SCode,Code)
 	;
 	  true
@@ -2617,7 +2982,7 @@ compile_head_mvdattspec(Object,AttObj,RefType,[T|L],Code,Status) :-
 	( S == [] ->
 	    compile_head_mvdattspec(Object,AttObj,RefType,L,LCode,Status),
 	    ( Status == [] ->
-		mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+		mvdattspec_struct(HEADLITERAL,Object,AttObj,RefType,TObj,SCode),
 		conjunct_struct(LCode,SCode,LSCode),
 		conjunct_struct(TCode,LSCode,Code)
 	    ;
@@ -2635,25 +3000,26 @@ compile_head_mvdattspec(Object,AttObj,RefType,[T|L],Code,Status) :-
 compile_head_flobjeql(Obj1,Obj2,Code,Status) :-
 	compile_head_pathexplist([Obj1,Obj2],[O1,O2],OCode,Status),
 	( Status == [] ->
-	    objeql_struct(O1,O2,OECode),
+	    objeql_struct(HEADLITERAL,O1,O2,OECode),
 	    conjunct_struct(OCode,OECode,Code),
-	    report_option(FLOBJEQLDEF)
+	    approximate_index(Obj1,Idx),
+	    report_option(FLOBJEQLDEF,Idx)
 	;
 	  true
 	).
 
 
 /****************************************************************************
-  compile_floraliblit(+ParserTerm,+Workspace,-Code,-Status)
+  compile_floraliblit(+ParserTerm,+Workspace,-OidCode,-Code,-Status)
 
   This procedure compiles a literal that is associated with a Flora system
   module specification.
 ****************************************************************************/
 compile_floraliblit(ParserTerm,WS,OidCode,Code,Status) :-
-	%% Flora system modules are like normal users modules except that
-	%% users cannot load into those areas.
+	%% Flora system modules are like normal user modules except that
+	%% users cannot load files into them
 	is_flatom(WS,WSName,Index),
-	report_option(FLSYSMOD(WSName)),
+	report_option(FLSYSMOD(WSName),Index),
 	atomobj_struct(WSName,Index,WSNameCode),
 	floralib_struct(WSNameCode,WSCode),
 	compile_wsliteral(ParserTerm,WSCode,OidCode,Code,Status).
@@ -2681,11 +3047,11 @@ compile_wsliteral(ParserTerm,WS,OidCode,WSCode,Status) :-
 	; is_flobjeql(ParserTerm,O1,O2) ->
 	    compile_wsflobjeql(O1,O2,WS,OidCode,WSCode,Status)
 
-	; is_fldirective(ParserTerm,DirectList) ->
+	; is_fldirective(ParserTerm,DirectList,_Idx) ->
 	    compile_exec_directive(DirectList,WS,WSCode,Status),
 	    OidCode=NULL
 	;
-	    atomlit_struct(ParserTerm,Code),
+	    atomlit_struct(BODYLITERAL,ParserTerm,Code),
 	    workspacelit_struct(Code,WS,WSCode),
 	    OidCode=NULL,
 	    Status=[]
@@ -2697,7 +3063,7 @@ compile_wsliteral(ParserTerm,WS,OidCode,WSCode,Status) :-
 ****************************************************************************/
 compile_floralibobj(ParserTerm,WS,Object,OidCode,Code,Status) :-
 	is_flatom(WS,WSName,Index),
-	report_option(FLSYSMOD(WSName)),
+	report_option(FLSYSMOD(WSName),Index),
 	atomobj_struct(WSName,Index,WSNameCode),
 	floralib_struct(WSNameCode,WSCode),
 	compile_wspathexp(ParserTerm,WSCode,Object,OidCode,Code,Status).
@@ -2707,10 +3073,10 @@ compile_floralibobj(ParserTerm,WS,Object,OidCode,Code,Status) :-
   compile_wspathexp(+ParserTerm,+Workspace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
 compile_wspathexp(ParserTerm,WS,Object,OidCode,Code,Status) :-
-	( %% pred(Term@...)
-	  %% Note: We have have to create code to compute X@.... We put this
-	  %% code in OidCode so that it would precede the code for pred(...)
-	  atomlit_struct(ParserTerm,A) ->
+	(   %% pred(Term@...)
+	    %% Note: We have have to create code to compute X@.... We put this
+	    %% code in OidCode so that it would precede the code for pred(...)
+	    atomlit_struct(BODYLITERAL,ParserTerm,A) ->
 	    workspaceobj_struct(A,WS,Object,OidCode),
 	    Code=NULL,
 	    Status=[]
@@ -2758,7 +3124,10 @@ compile_wsflpathexplist([T|L],WS,[TObj|LObj],OidCode,Code,Status) :-
 
 
 /****************************************************************************
-  compile_wsflargpathexplist(+ParserTermList,+ArgTypeList,+WS,-ObjectList,-OidCode,-Code,-Status)
+  compile_wsflargpathexplist(+ParserTermList,+ArgTypeList,+WS,
+                             -ObjectList,-OidCode,-Code,-Status)
+  NOTE: This functionality is not exposed to the user.
+        Exists for findall, call, and get_residual (see flrarguments.P)
 ****************************************************************************/
 compile_wsflargpathexplist([],[],_WS,[],NULL,NULL,[]) :- !.
 
@@ -2830,7 +3199,7 @@ compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	atomobj_struct(Funct,FObj),
 	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,OidCode,TCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,O),
+	    termlit_struct(BODYLITERAL,FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
 	    conjunct_code([TCode,WCode],Code)
 	;
@@ -2840,7 +3209,7 @@ compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],OidCode,TCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,O),
+	    termlit_struct(BODYLITERAL,FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
 	    conjunct_code([TCode,WCode],Code)
 	;
@@ -2878,7 +3247,7 @@ compile_wstermlit(Funct,N,Args,WS,OidCode,Code,Status) :-
 	atomobj_struct(Funct,FObj),
 	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,OidCode,ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TCode),
+	    termlit_struct(BODYLITERAL,FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
 	    conjunct_code([WSCode,ObjCode],Code)
 	;
@@ -2888,7 +3257,7 @@ compile_wstermlit(Funct,N,Args,WS,OidCode,Code,Status) :-
 compile_wstermlit(Funct,N,Args,WS,OidCode,Code,Status) :-
 	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],OidCode,ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TCode),
+	    termlit_struct(BODYLITERAL,FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
 	    conjunct_code([WSCode,ObjCode],Code)
 	;
@@ -2934,7 +3303,7 @@ compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,OidCode,Code,Status) :-
 	( Status == [] ->
 	    %% Approximate the textual information for the new variable.
 	    approximate_index(AttTerm,Index),
-	    objref_struct(Obj,RefType,Att,Index,Object,TCode),
+	    body_objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
 	    Code = OACode,
 	    conjunct_code([OidCodeList,WTCode],OidCode)
@@ -2949,7 +3318,7 @@ compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,OidCode,Code,Status) :-
 compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,OidCode,Code,Status) :-
 	compile_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OidCode,OCode,Status),
 	( Status == [] ->
-	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    birelate_struct(BODYLITERAL,Obj1,RelType,Obj2,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
 	    conjunct_code([WTCode,OCode],Code)
 	;
@@ -2976,7 +3345,7 @@ compile_wsflobjspec(ObjTerm,SpecBody,WS,Object,OidCode,Code,Status) :-
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
 		compile_wsflpathexplist([OTerm,ATerm],WS,[OObj,AObj],OidCode,ObjCode,Status),
 		( Status == [] ->
-		    objattdef_struct(OObj,RefType,AObj,TCode),
+		    objattdef_struct(BODYLITERAL,OObj,RefType,AObj,TCode),
 		    workspacelit_struct(TCode,WS,WTCode),
 		    conjunct_code([WTCode,ObjCode],Code)
 		;
@@ -2986,7 +3355,7 @@ compile_wsflobjspec(ObjTerm,SpecBody,WS,Object,OidCode,Code,Status) :-
 		%% object exists test: a.b.c[]@module
 		compile_wsflpathexp(ObjTerm,WS,Object,OidCode,ObjCode,Status),
 		( Status == [] ->
-		    objexists_struct(Object,ECode),
+		    objexists_struct(BODYLITERAL,Object,ECode),
 		    workspacelit_struct(ECode,WS,WSECode),
 		    conjunct_code([WSECode,ObjCode],Code)
 		;
@@ -3063,7 +3432,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	!,
 	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
-	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    fdattspec_struct(BODYLITERAL,Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
 	    %% WSCode: code to produce object reference, attribute, and value
 	    %% OCode: code for the pure attribute spec of the object
@@ -3080,7 +3449,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	compile_wsflpathexp(AttTerm,WS,AttObj,AOidCode,ACode,S),
 	( S == [] ->
 	    ( ValTermList == [] ->
-		mvdattdef_struct(Object,AttObj,RefType,SCode),
+		mvdattdef_struct(BODYLITERAL,Object,AttObj,RefType,SCode),
 		workspacelit_struct(SCode,WS,WSCode),
 		%% Fold OidCode in front of molecule
 		conjunct_code([AOidCode,ACode,WSCode],Code),
@@ -3129,6 +3498,25 @@ compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	  true
         ).
 
+%% Obj[true], Obj[fail], Obj[!] translate as true, fail, and !
+compile_wsflspecbody(_Object,SpecTerm,_WS,NULL,Code,Status) :-
+	is_flpassthru(SpecTerm,P),
+	is_flatom(P, Atom, I),
+	!,
+	(Atom==FL_CUT
+	-> cut_struct(I,Code)
+	; atomobj_struct(P,Code)
+	),
+	Status=[].
+
+%% Obj[X>Y], Obj[X=Y], etc.
+compile_wsflspecbody(_Object,SpecTerm,_WS,NULL,Code,Status) :-
+	is_flpassthru(SpecTerm,P),
+	is_flterm(P, Funct, N, Args),
+	!,
+	compile_prlgterm(Funct,N,Args,TCode,_OidCode,ACode,Status),
+	(Status == [] -> conjunct_code([ACode,TCode],Code); true).
+
 %% for O[BoolMeth]@module
 %% NULL means: consume OidCode for attr and val here -- don't pass up the chain
 compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
@@ -3136,7 +3524,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	!,
 	compile_wsflpathexp(MethTerm,WS,MethObj,OidCode,MCode,Status),
 	( Status == [] ->
-	    methspec_struct(Object,MethObj,SCode),
+	    methspec_struct(BODYLITERAL,Object,MethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
 	    conjunct_code([OidCode,MCode,WSCode],Code)
 	;
@@ -3150,7 +3538,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	!,
 	compile_wsflpathexp(IMethTerm,WS,IMethObj,OidCode,IMCode,Status),
 	( Status == [] ->
-	    imethspec_struct(Object,IMethObj,SCode),
+	    imethspec_struct(BODYLITERAL,Object,IMethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
 	    %% Fold OidCode in front of molecule
 	    conjunct_code([OidCode,IMCode,WSCode],Code)
@@ -3164,7 +3552,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	!,
 	compile_wsflpathexp(TranTerm,WS,TranObj,OidCode,TCode,Status),
 	( Status == [] ->
-	    transpec_struct(Object,TranObj,SCode),
+	    transpec_struct(BODYLITERAL,Object,TranObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
 	    conjunct_code([OidCode,TCode,WSCode],Code)
 	;
@@ -3181,7 +3569,7 @@ compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,OidCode,Code,Status) :-
 	!,
 	compile_wsflpathexp(T,WS,TObj,OidCode,TCode,Status),
 	( Status == [] ->
-	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+	    mvdattspec_struct(BODYLITERAL,Object,AttObj,RefType,TObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
 	    conjunct_code([WSCode,TCode],Code)
 	;
@@ -3209,7 +3597,7 @@ compile_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,OidCode,Code,Status) :-
 compile_wsflobjeql(Obj1,Obj2,WS,OidCode,Code,Status) :-
 	compile_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OidCode,OCode,Status),
 	( Status == [] ->
-	    objeql_struct(O1,O2,OECode),
+	    objeql_struct(BODYLITERAL,O1,O2,OECode),
 	    workspacelit_struct(OECode,WS,WSCode),
 	    conjunct_code([OCode,WSCode],Code)
 	;
@@ -3222,13 +3610,24 @@ compile_wsflobjeql(Obj1,Obj2,WS,OidCode,Code,Status) :-
   Compiling ${...}
 ****************************************************************************/
 compile_reifyop(Formula,Object,OidCode,Status) :-
+	Formula = [Rule|_],
+	(is_fldynrule(Rule,_Head,_Body)
+	; is_flruleworkspace(Rule,_RealRule,_WS)
+	),
+	!,
+	compile_fldynrule(Rule,Object,Status),
+	OidCode=NULL.
+
+compile_reifyop(Formula,Object,OidCode,Status) :-
 	compile_body(Formula,Object1,Status),
 	(is_florasyslib_struct(Object1, Index,FLLIBMODLIT,_N,Args)
-	%% It is compiled into a LIBMODLIT/2: replace with LIBMODOBJ
+	%% It is compiled into a LIBMODLIT/3: replace with LIBMODOBJ
 	->
 	    new_varobj(Index,Object),
 	    append(Args,[Object],NewArgs),
-	    florasyslib_struct(FLLIBMODOBJ,3,NewArgs,OidCode)
+	    %% LIBMODLIT/3 already has the caller argument -- no
+	    %% need to add it here
+	    florasyslib_struct(Index,FLLIBMODOBJ,4,NewArgs,OidCode)
 	;
 	    reify_struct(Object1,Object), OidCode = NULL
 	).
@@ -3438,7 +3837,7 @@ generate_convert_to_prolog_code([],_,NULL).
 generate_convert_to_prolog_code([AObjH|AObjT],[VarH|VarT],Code) :-
 	atomobj_struct(P2H_PREDICATE,FlP2H),
 	%% P2H_DONOT_UNIFY_VARS - do not unify when both args are vars
-	termlit_struct(FlP2H,4,[VarH,AObjH,WRAP_HILOG,P2H_DONOT_UNIFY_VARS],CodeH),
+	prologterm_struct(FlP2H,4,[VarH,AObjH,WRAP_HILOG,P2H_DONOT_UNIFY_VARS],CodeH),
 	generate_convert_to_prolog_code(AObjT,VarT,CodeT),
 	conjunct_code([CodeH,CodeT],Code).
 
@@ -3450,7 +3849,7 @@ generate_convert_from_prolog_code([],_,NULL).
 generate_convert_from_prolog_code([AObjH|AObjT],[VarH|VarT],Code) :-
 	atomobj_struct(P2H_PREDICATE,FlP2H),
 	%% P2H_UNIFY_VARS - unify when both args are vars
-	termlit_struct(FlP2H,4,[VarH,AObjH,WRAP_HILOG,P2H_UNIFY_VARS],CodeH),
+	prologterm_struct(FlP2H,4,[VarH,AObjH,WRAP_HILOG,P2H_UNIFY_VARS],CodeH),
 	generate_convert_from_prolog_code(AObjT,VarT,CodeT),
 	conjunct_code([CodeH,CodeT],Code).
 		
@@ -3458,11 +3857,11 @@ generate_convert_from_prolog_code([AObjH|AObjT],[VarH|VarT],Code) :-
 /****************************************************************************
   compile_head_wspathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
 
-  This procedure is called from compile_head_pathexp/4 and
-  compile_head_wsflpathexp/5 when a workspace is explicitly specified.
+  This procedure is called from compile_head_pathexp/5 and
+  compile_head_wsflpathexp/6 when a workspace is explicitly specified.
 ****************************************************************************/
 compile_head_wspathexp(ParserTerm,WS,Object,Code,Status) :-
-	( atomlit_struct(ParserTerm,A) ->
+	( atomlit_struct(HEADLITERAL,ParserTerm,A) ->
 	    workspaceobj_struct(A,WS,Object,Code),
 	    Status=[]
 
@@ -3478,6 +3877,22 @@ compile_head_wspathexp(ParserTerm,WS,Object,Code,Status) :-
 	  is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm),
 	  compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status)
 	).
+
+
+/****************************************************************************
+  compile_head_floraliblit(+ParserTerm,+Workspace,-Code,-Status)
+
+  This procedure compiles a literal that is associated with a Flora system
+  module specification.
+****************************************************************************/
+compile_head_floraliblit(ParserTerm,WS,Code,Status) :-
+	%% Flora system modules are like normal user modules except that
+	%% users cannot load files into them
+	is_flatom(WS,WSName,Index),
+	report_option(FLSYSMOD(WSName),Index),
+	atomobj_struct(WSName,Index,WSNameCode),
+	floralib_struct(WSNameCode,WSCode),
+	compile_head_wsliteral(ParserTerm,WSCode,Code,Status).
 
 
 /****************************************************************************
@@ -3501,7 +3916,7 @@ compile_head_wsliteral(ParserTerm,WS,Code,Status) :-
 	    workspacelit_struct(VarCode,WS,Code),
             Status=[]
 	;
-	  atomlit_struct(ParserTerm,ACode),
+	  atomlit_struct(HEADLITERAL,ParserTerm,ACode),
 	  workspacelit_struct(ACode,WS,Code),
 	  Status=[]
 	).
@@ -3509,7 +3924,9 @@ compile_head_wsliteral(ParserTerm,WS,Code,Status) :-
 
 /****************************************************************************
   compile_head_wsflargpathexplist(+ParserTermList,+ArgTypeList,+WS,
-                               -ObjectList,-Code,-Status)
+                                  -ObjectList,-Code,-Status)
+  NOTE: This functionality is not exposed to the user.
+        Exists for findall, call, and get_residual (see flrarguments.P)
 ****************************************************************************/
 compile_head_wsflargpathexplist([],[],_WS,[],NULL,[]) :- !.
 
@@ -3556,9 +3973,9 @@ compile_head_wsflpathexplist([T|L],WS,[TObj|LObj],Code,Status) :-
 /****************************************************************************
   compile_head_wsflpathexp(+ParserTerm,+WS,-Object,-Code,-Status)
 
-  Note: The difference between compile_head_wsflpathexp and compile_head_wspathexp
-        is that compile_head_wsflpathexp applies workspace only to F-Logic
-        constructs.
+  Note: The difference between compile_head_wsflpathexp and
+        compile_head_wspathexp is that compile_head_wsflpathexp
+	applies workspace only to F-Logic constructs.
 ****************************************************************************/
 compile_head_wsflpathexp(ParserTerm,WS,Object,Code,Status) :-
 	( is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
@@ -3602,7 +4019,7 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	atomobj_struct(Funct,FObj),
 	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,Code,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,O),
+	    termlit_struct(HEADLITERAL,FObj,N,AObj,O),
 	    %% WCode should be NULL here since it is already checked
 	    %% by the rule that the workspace is not a variable.
 	    workspaceobj_struct(O,WS,Object,_WCodeIsNULL)
@@ -3613,7 +4030,7 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],Code,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,O),
+	    termlit_struct(HEADLITERAL,FObj,N,AObj,O),
 	    %% WCode should be NULL here since it is already checked by the rule
 	    %% that the workspace is not a variable.
 	    workspaceobj_struct(O,WS,Object,_WCodeIsNULL)
@@ -3653,7 +4070,7 @@ compile_head_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	atomobj_struct(Funct,FObj),
 	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TCode),
+	    termlit_struct(HEADLITERAL,FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
 	    conjunct_struct(ObjCode,WSCode,Code)
 	;
@@ -3663,7 +4080,7 @@ compile_head_wstermlit(Funct,N,Args,WS,Code,Status) :-
 compile_head_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCode,Status),
 	( Status == [] ->
-	    termlit_struct(FObj,N,AObj,TObj),
+	    termlit_struct(HEADLITERAL,FObj,N,AObj,TObj),
 	    workspacelit_struct(TObj,WS,WSTObj),
 	    conjunct_struct(ObjCode,WSTObj,Code)
 	;
@@ -3718,7 +4135,7 @@ compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status) :-
 compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,Code,Status) :-
 	compile_head_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OCode,Status),
 	( Status == [] ->
-	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    birelate_struct(HEADLITERAL,Obj1,RelType,Obj2,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
 	    conjunct_struct(OCode,WTCode,Code)
 	;
@@ -3736,7 +4153,7 @@ compile_head_wsflobjspec(ObjTerm,SpecBody,WS,Object,Code,Status) :-
 	    ;
 	      compile_head_wsflpathexp(ObjTerm,WS,Object,ObjCode,Status),
 	      ( Status == [] ->
-		  objexists_struct(Object,ECode),
+		  objexists_struct(HEADLITERAL,Object,ECode),
 		  workspacelit_struct(ECode,WS,WSECode),
 		  conjunct_struct(ObjCode,WSECode,Code)
 	      ;
@@ -3774,7 +4191,7 @@ compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	!,
 	compile_head_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],VACode,Status),
 	( Status == [] ->
-	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    fdattspec_struct(HEADLITERAL,Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
 	    conjunct_struct(VACode,WSSCode,Code)
 	;
@@ -3787,7 +4204,7 @@ compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	compile_head_wsflpathexp(AttTerm,WS,AObj,ACode,S),
 	( S == [] ->
 	    ( VL == [] ->
-		mvdattdef_struct(Object,AObj,RefType,SCode),
+		mvdattdef_struct(HEADLITERAL,Object,AObj,RefType,SCode),
 		workspacelit_struct(SCode,WS,WSSCode),
 		conjunct_struct(ACode,WSSCode,Code),
 		Status=[]
@@ -3804,7 +4221,7 @@ compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	!,
 	compile_head_wsflpathexp(MethTerm,WS,MethObj,MCode,Status),
 	( Status == [] ->
-	    methspec_struct(Object,MethObj,SCode),
+	    methspec_struct(HEADLITERAL,Object,MethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
 	    conjunct_struct(MCode,WSSCode,Code)
 	;
@@ -3816,7 +4233,7 @@ compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	!,
 	compile_head_wsflpathexp(IMethTerm,WS,IMethObj,IMCode,Status),
 	( Status == [] ->
-	    imethspec_struct(Object,IMethObj,SCode),
+	    imethspec_struct(HEADLITERAL,Object,IMethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
 	    conjunct_struct(IMCode,WSSCode,Code)
 	;
@@ -3828,7 +4245,7 @@ compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	!,
 	compile_head_wsflpathexp(TranTerm,WS,TranObj,TCode,Status),
 	( Status == [] ->
-	    transpec_struct(Object,TranObj,SCode),
+	    transpec_struct(HEADLITERAL,Object,TranObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
 	    conjunct_struct(TCode,WSSCode,Code)
 	;
@@ -3842,7 +4259,7 @@ compile_head_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,Code,Status) :-
 	!,
 	compile_head_wsflpathexp(T,WS,TObj,TCode,S),
 	( S == [] ->
-	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
+	    mvdattspec_struct(HEADLITERAL,Object,AttObj,RefType,TObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
 	    conjunct_struct(TCode,WSSCode,TSCode),
 	    compile_head_wsmvdattspec(Object,AttObj,RefType,L,WS,LCode,Status),
@@ -3858,7 +4275,7 @@ compile_head_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,Code,Status) :-
 compile_head_wsflobjeql(Obj1,Obj2,WS,Code,Status) :-
 	compile_head_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OCode,Status),
 	( Status == [] ->
-	    objeql_struct(O1,O2,OECode),
+	    objeql_struct(HEADLITERAL,O1,O2,OECode),
 	    workspacelit_struct(OECode,WS,WSCode),
 	    conjunct_struct(OCode,WSCode,Code)
 	;
@@ -3913,12 +4330,14 @@ compile_flinsert_literals(List,DBCodeList,Status) :-
 ****************************************************************************/
 compile_flinsert_list([],NULL,[]) :- !.
 
+/*
 compile_flinsert_list([H|T],Code,Status) :-
 	is_flvar(H,VarName,Index),
 	!,
 	compile_flvar(VarName,Index,VarCode),
 	compile_flinsert_list(T,TCode,Status),
 	conjunct_struct(VarCode,TCode,Code).
+*/
 
 compile_flinsert_list([H|T],Code,Status) :-
 	%% Call compile_head_literal because path expressions should
@@ -3980,11 +4399,13 @@ compile_fldelete_literals(List,DBCodeList,Status) :-
 ****************************************************************************/
 compile_fldelete_list([],[],[]) :- !.
 
+/*
 compile_fldelete_list([H|T],[VarCode|TCodeList],Status) :-
 	is_flvar(H,VarName,Index),
 	!,
 	compile_flvar(VarName,Index,VarCode),
 	compile_fldelete_list(T,TCodeList,Status).
+*/
 
 compile_fldelete_list([H|T],CodeList,Status) :-
 	%% When delete list contains an object equality definition, the compiler
@@ -3994,7 +4415,8 @@ compile_fldelete_list([H|T],CodeList,Status) :-
 	!,
 	compile_flobjeql(O1,O2,OidCode,SpecCode,S),
 	conjunct_code([OidCode,SpecCode],HCode),
-	report_option(FLOBJEQLDEF),
+	approximate_index(O1,Idx),
+	report_option(FLOBJEQLDEF,Idx),
 	( S == [] ->
 	    compile_conjunct2list(HCode,HCodeList),
 	    compile_fldelete_list(T,TCodeList,Status),
@@ -4047,7 +4469,7 @@ compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
 	compile_dbupdate_list(CL,DBCodeList).
 
 /****************************************************************************
-  compile_flupdatetrule(+Op,+List,-Code,Status)
+  compile_flupdatetrule(+Op,+List,-Code,-Status)
 ****************************************************************************/
 compile_flupdaterule(Op,List,Code,Status) :-
 	is_flatom(Op,OpAtom,Index),
@@ -4060,9 +4482,31 @@ compile_flupdaterule(Op,List,Code,Status) :-
 	    true
         ).
 
+%% compile_fldynrule_list(+RuleList,-RuleListCode,-Status)
 compile_fldynrule_list([],[],[]) :- !.
 compile_fldynrule_list([H|L],[HCode|LCode],Status) :-
-	is_fldynrule(H,Head,Body),
+	compile_fldynrule(H,HCode,S),
+	(S == [] -> compile_fldynrule_list(L,LCode,Status)
+	; S = Status
+	).
+
+%% compile single dynamic rule
+%% compile_fldynrule(+R,-RCode,-Status)
+compile_fldynrule(R,RCode,Status) :-
+	is_flruleworkspace(R,Rule,WS),
+	!,
+	workspaceterm_struct(WS,WSTerm),
+	report_context(ruleworkspace(WSTerm)),
+	compile_fldynrule(Rule,RCode,Status),
+	clear_context(ruleworkspace(_)).
+
+compile_fldynrule(R,RCode,Status) :-
+	is_flvar(R,Name,Index),
+	varobj_struct(Name,Index,RCode),
+	Status=[].
+
+compile_fldynrule(R,RCode,Status) :-
+	is_fldynrule(R,Head,Body),
 	compile_head(Head,HeadCode,HS),
         collect_namevars(Head,HeadVars),
         list_struct(HeadVars,[],HVL),
@@ -4070,18 +4514,17 @@ compile_fldynrule_list([H|L],[HCode|LCode],Status) :-
 	remove_empty_list(HeadCodeListPre,HeadCodeList),
 	( HS == [] ->
 	    compile_body(Body,BodyCode,BS),
-	    ( BS == [] ->
-                collect_namevars(Body,BodyVars),
+	    (BS==[] ->
+		collect_namevars(Body,BodyVars),
                 list_struct(BodyVars,[],BVL),
 	        list_struct(HeadCodeList,[],HCL),
-		dynrule_struct(HCL,BodyCode,HVL,BVL,HCode),
-		compile_fldynrule_list(L,LCode,Status)
-	    ;
-	        Status=BS
+		dynrule_struct(HCL,BodyCode,HVL,BVL,RCode),
+		Status=[]
+	    ; Status=BS
 	    )
 	;
-	  Status=HS
-        ).
+	    Status=HS
+	).
 
 remove_empty_list([],[]) :- !.
 remove_empty_list([[]|L],NL) :- 
@@ -4166,20 +4609,13 @@ compile_execdirect_list([D|L],WS,[DCode|LCode]) :-
 
 
 /****************************************************************************
-  compile_execdirect(+Direct,-Code)
+  compile_execdirect(+Direct,+WS,-Code)
 ****************************************************************************/
 compile_execdirect(DirectTerm,_WS,Code) :-
-	( (is_fltable(DirectTerm,P,A),thismodule_struct(MCode),!;
-	      is_fltable(DirectTerm,M,P,A),compile_flatomvar(M,MCode)) ->
-	    compile_flatomvar(P,PCode),
-	    ( is_flterm(A,Funct,N,Args) ->
-		compile_fltermobj(Funct,N,Args,NCode,_OidCode,_RCode,_Status)
-	    ;
-		numobj_struct(A,NCode)
-	    ),
-	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_TABLE,MCode,PCode,NCode],Code)
-        ),
-	!.
+        %%to compile the export directive
+	is_flexport_list(DirectTerm,Term),
+        !,
+	compile_export(Term,Code).
 
 compile_execdirect(DirectTerm,WS,Code) :-
 	(WS == NULL -> thismodule_struct(Mod)
@@ -4193,12 +4629,28 @@ compile_execdirect(DirectTerm,WS,Code) :-
 	    florasyslib_struct(FLLIBSHDIRECT,5,[FL_ARGUMENTS,Mod,Funct,Arity,ArgsCode],Code)
 	**/
 
-	; is_flequality(DirectTerm,T) ->
-	    compile_flatomvar(T,TObj),
-	    florasyslib_struct(FLLIBEQUALITY,2,[TObj,Mod],Code)
+	; is_flsemantics(DirectTerm,OptionsList) ->
+	    is_fllist(OptionsList,L,T,I),
+	    %% compile_fllist shouldn't break here: parser checks everything
+	    compile_fllist(L,T,I,OptionListCode,_OidCode,_Code,_Status),
+	    thismodule_struct(ThisModuleName),
+	    florasyslib_struct(FLLIBSEMANTICS,3,[ThisModuleName,OptionListCode,Mod],Code)
+
+	; is_flsetsemantics(DirectTerm,OptionsList) ->
+	    is_fllist(OptionsList,L,T,I),
+	    %% compile_fllist shouldn't break here: parser checks everything
+	    compile_fllist(L,T,I,OptionListCode,_OidCode,_Code,_Status),
+	    thismodule_struct(ThisModuleName),
+	    florasyslib_struct(FLLIBSETSEMANTICS,3,[ThisModuleName,OptionListCode,Mod],Code)
 	
 	; is_flindex(DirectTerm,A,P) ->
-	    (numobj_struct(A,ACode);is_flvar(A,AN,AI),varobj_struct(AN,AI,ACode)),
+	    ( is_flterm(A,Funct,1,[NA]) ->
+	        atomobj_struct(Funct,FCode),
+                (numobj_struct(NA,AC);is_flvar(NA,AN,AI),varobj_struct(AN,AI,AC)),
+                prologterm_struct(FCode,1,[AC],ACode)
+            ; 
+	        (numobj_struct(A,ACode); is_flvar(A,AN,AI),varobj_struct(AN,AI,ACode))
+            ),
 	    (numobj_struct(P,PCode); is_flvar(P,PN,PI),varobj_struct(PN,PI,PCode)),
             florasyslib_struct(FLLIBSHDIRECT,4,[FL_INDEX,Mod,ACode,PCode],Code)
 	),

@@ -86,15 +86,26 @@ flImportPredicate(P,A,File,Module) :-
 	check_args(P,A,Module),
 	P = FuncP/ArityP,
 	%% attach the workspace
-	flora_hilog_module_predicate_symbol(Module,FloraHiLogWrap),
-	ArityP1 is ArityP + 1,
+        ( FuncP = FL_TRAN(KFuncP) ->
+            write('Non-tabled '), writeln(KFuncP),
+	    flora_hilog_module_predicate_symbol(Module,FloraHiLogWrap)
+        ;
+            KFuncP=FuncP,
+            write('Tabled '), writeln(KFuncP),
+	    flora_tabled_hilog_module_predicate_symbol(Module,FloraHiLogWrap)
+        ),
+	%% +1 due to HiLog, +1 due to Caller argument
+	ArityP1 is ArityP + 2,
 	functor(NewP,FloraHiLogWrap,ArityP1),
-	arg(1,NewP,FuncP),
+	arg(1,NewP,KFuncP),
 	duplicate(A,NewA,Args),
 	(import FloraHiLogWrap/ArityP1 from usermod), % import Flora Hilog pred
 	%% unify the args of P and A.
 	%% In HiLog the first arg is the predicate name, which is why _,_
-	NewP =.. [_,_|Args],
+	%% The last arg is WRAP_HILOG(FL_PROLOGMODULE), which indicates that
+	%% the flora predicate is called from a Prolog module
+	append([_,_|Args],[WRAP_HILOG(FL_PROLOGMODULE)],NewP_template),
+	NewP =.. NewP_template,
 	funish_up(NewA,NewP,File,Module).
 
 

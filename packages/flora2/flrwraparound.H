@@ -1,4 +1,4 @@
-/* File:      flrcompileinclude.P -- Workspace wrapper for .fli files
+/* File:      flrwraparound.P -- Workspace wrapper for .fli files
 **
 ** Author(s): kifer
 **

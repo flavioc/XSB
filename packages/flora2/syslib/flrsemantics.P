@@ -1,0 +1,54 @@
+/* File:      flrsemantics.P
+**
+** Author(s): Michael Kifer
+**
+** Contact:   flora-users@lists.sourceforge.net
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2003
+**
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+#include "flora_exceptions.flh"
+
+
+:- import flloadtrailer/2, fltrailersemantics/2, flora_abort/1 from flrutils.
+
+
+
+
+
+/*****************************************************************************
+  fllibsemantics(+CurrentModule,+Options, +TargetModule)
+  fllibsetsemantics(+CurrentModule,+Options, +TargetModule)
+
+  Loads trailer with given options into the target module.
+  The first argument, the current module, is provided for
+  the use by the encapsulation.
+*****************************************************************************/
+FLLIBSEMANTICS(_CurrentModule,Options,TargetModule) :-
+	fltrailersemantics(Options,TargetModule).
+
+FLLIBSETSEMANTICS(_CurrentModule,Options,TargetModule) :-
+	( flloadtrailer(Options,TargetModule), !
+	; 
+	    flora_abort(['Error occurred while adding semantic axioms to module ', TargetModule])
+	).

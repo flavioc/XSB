@@ -33,7 +33,12 @@
 	flora_match_substring/3
     from flrporting.
 
-:- import member/2, append/3, length/2 from basics.
+:- import
+	member/2,
+	append/3,
+	flatten/2,
+	length/2
+   from basics.
 
 :- import sort/2, keysort/2, findall/3 from setof.
 
@@ -42,11 +47,10 @@
 :- import flora_argdef/3 from flrarguments.
 %%:- import flora_define_arguments/3 from flrarguments.
 
-:- import flora_define_prolog/2 from flrprolog.
-
 :- import
-	flora_define_hilogtable/2
-   from flrhilogtable.
+	flora_define_prolog/2,
+	flora_prlgdef/2
+   from flrprolog.
 
 :- import
 	flora_token_text/6
@@ -59,6 +63,8 @@
 :- import
 	flora_compiler_environment/2
    from flrutils.
+
+:- import flora_error_line/2 from flrprint.
 
 :- export 
 	flora_reset_compiler/0, 

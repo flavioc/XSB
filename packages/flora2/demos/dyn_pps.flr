@@ -10,15 +10,6 @@
 
 ?- insert{a:=:a}.
 
-:- table
-	pps_insert/4,
-	pps_delete/4,
-	start/2,
-	stop/2,
-	change/3,
-	removeFrom/3,
-	addTo/3.
-
 // Rules
 
 ?- insertrule_a{O[M(T) -> Q] :-
@@ -102,8 +93,6 @@ addTo(golfCL,wheel155,1).
 
 // Queries
 
-:- table p1/2.
-
 p1(S,ctrl_produces(P)) :- pps[produces(S)->>P].
 p1(P,ctrl_stop_in(S)) :- stop (P,S).
 p1(O,ctrl_hascfg(T,Q)) :- O[hasConfig(T)->Q].
@@ -111,23 +100,24 @@ p1(O,ctrl_change(S)) :- change(O,S,hasConfig).
 // ttt2
 p1(P,ctrl_needspart(S,Q)) :- P.hasConfig(S)[needsPart->>Q].
 
-query :-
+#query :-
 	(p1(_X,_Y), fail
         ;
-	write_answers
+	#write_answers
         ).
-write_answers :- 
-	table_state(p1(X,Y),[])@flora(sys),
-	writeln(p1(X,Y))@flora(io),
+#write_answers :- 
+	get_residual(p1(X,Y),[])@prolog(tables),
+	#writeln(p1(X,Y))@flora(io),
 	flora_increment_counter(ans_count,1,_,_)@prolog(flrporting),
 	fail.
-write_answers :- 
-	write('Total number of answers: ')@flora(io),
+#write_answers :- 
+	#write('Total number of answers: ')@flora(io),
 	flora_get_counter(ans_count,C)@prolog(flrporting),
-	writeln(C)@flora(io),
+	#writeln(C)@flora(io),
 	flora_set_counter(ans_count,0)@prolog(flrporting).
 
-?- query.
+?- flora_set_counter(ans_count,0)@prolog(flrporting).
+?- #query.
 
 // answers
 /*

@@ -1,6 +1,7 @@
 /* File:      flrcompileinclude.P -- Workspace wrapper for .fli files
 **
-** Author(s): kifer
+** Author(s): Michael Kifer
+**            Chang Zhao
 **
 ** Contact:   flora-users@lists.sourceforge.net
 **
@@ -32,7 +33,6 @@
   :- WRAP_WITH_WORKSPACE predicate-list.
   :- WRAP_STORAGE predicate-list.
   :- WRAP_DEBUGMODULE predicate. 
-  :- WRAP_MODULE predicate.
 
   Predicates mentioned in these directives are 
   recorded and whenever they occur in other directives or rules
@@ -41,6 +41,13 @@
   :- WRAP_DUMP whatever.
 
   causes the argument to be dumped into the output as is.
+  No surrounding quotes are written out!
+
+  :- WRAP_COPY_UNQUOTED atom.
+
+  Whenever atom is encountered as an argument, it is copied over using
+  write/1, not write_canonical/1. As a result, whatever quotes are there
+  will be stripped.
 
   The predicates listed in the other directives are wrapped with
   FLORA_THIS_WORKSPACE(predicate), 
@@ -56,11 +63,12 @@
 
 :- dynamic wrap_arguments_directive/1.
 :- dynamic flora_wraparound_info/2.
+:- dynamic flora_wraparound_copy_spec/1.
 
 :- op(1100,fy,WRAP_WITH_WORKSPACE).
 :- op(1100,fy,WRAP_DUMP).
 :- op(1100,fy,WRAP_STORAGE).
-:- op(1100,fy,WRAP_MODULE).
+:- op(1100,fy,WRAP_COPY_UNQUOTED).
 
 :- op(1100,fx,WRAP_INDICES).
 
@@ -86,8 +94,7 @@ flWrapAround(File) :-
 	    wrapWorkspace(InFile,OutFile)
 	;
 	  flora_stderr_nl,
-	  flora_error_line("File %s[.%s] does not exist!",
-			   args(File,INFILE_EXT)),
+	  flora_error_line("File ~w[.~w] does not exist!", [File,INFILE_EXT]),
           fail
         ),
 	!.
@@ -110,7 +117,7 @@ wrapWorkspace(InFile) :-
 	%% Wait, not to leave zombies.
 	process_control(XPP_process,wait(ExitStatus)),
 	(ExitStatus==0, !
-	; flora_error_line('Error while preprocessing %s', InFile)
+	; flora_error_line('Error while preprocessing ~w', [InFile])
 	),
 	%% Release the file descriptor used to read from cpp.
 	file_close(IOportFromProc),
@@ -135,8 +142,8 @@ process_clause(X) :-
 	-> writeln(DumpString)
 	; is_directive(X,WRAP_STORAGE,RuleList)
 	-> dump_storage_rules(RuleList)
-	; is_directive(X,WRAP_MODULE,Pred)
-	-> dump_module_rule(Pred)
+	; is_directive(X,WRAP_COPY_UNQUOTED,String)
+	-> intern_copy_spec(String)
 	; is_directive(X,Directive,PredList)
 	-> dump_other_directive(Directive,PredList)
 	; %% assume it is a rule -- no queries
@@ -178,6 +185,7 @@ is_directive((:- WRAP_WITH_WORKSPACE PredList),WRAP_WITH_WORKSPACE,PredList) :- 
 is_directive((:- WRAP_INDICES IndexSpecList), WRAP_INDICES, IndexSpecList) :- !.
 is_directive((:- WRAP_DUMP Atom),WRAP_DUMP,Atom) :- !.
 is_directive((:- WRAP_STORAGE RuleList),WRAP_STORAGE,RuleList) :- !.
+is_directive((:- WRAP_COPY_UNQUOTED String), WRAP_COPY_UNQUOTED, String) :- !.
 %% for now, only handle simple directives of the form :- Directive PredList.
 is_directive(':-'(DirectiveBody),Directive,PredList) :-
         DirectiveBody =.. [Directive,PredList], !.
@@ -211,7 +219,10 @@ intern_predicate_spec(P,EncodingType) :-
 	assert(flora_wraparound_info(P,EncodingType)),
 	assert(flora_wraparound_info(Name/Arity,EncodingType)).
 intern_predicate_spec(P,EncodingType) :-
-	flora_error_line('[flWrapAround] Invalid predicate specification in a %s directive: %S', arg(EncodingType,P)).
+	flora_error_line('[flWrapAround] Invalid predicate specification in a ~w directive: ~w', [EncodingType,P]).
+
+intern_copy_spec(String) :-
+	assert(flora_wraparound_copy_spec(String)).
 
 
 dump_other_directive(Directive, PredSpecs) :-
@@ -245,7 +256,7 @@ dump_storage_rule(rule(HeadSpec,TailPred)) :-
 	dump_storage_rule(rule(HeadSpec,TailPred,fdb)).
 
 dump_storage_rule(rule(HeadSpec,TailPred,Storage)) :-
-    dump_storage_rule(rule(HeadSpec,TailPred,Storage,no_leading)).
+	dump_storage_rule(rule(HeadSpec,TailPred,Storage,no_leading)).
 
 dump_storage_rule(rule(HeadSpec,TailPred,Storage,Leading)) :-
 	spec2skeleton(HeadSpec,HeadSkeleton),
@@ -257,25 +268,10 @@ dump_storage_rule(rule(HeadSpec,TailPred,Storage,Leading)) :-
 	  Storage=fdb,
 	    write('flora_db_find_base(FLORA_THIS_FDB_STORAGE,')
 	),
-	%% attach tail's functor to Head's variables
-	HeadSkeleton =.. [_|HeadVars], BodySkeleton =.. [TailPred|HeadVars],
+	HeadSkeleton =.. [_|HeadVars],
+	BodySkeleton =.. [TailPred|HeadVars],
 	dump_simple_goal(BodySkeleton,0), writeln(').').
 	
-dump_module_rule(rule(HeadSpec,TailPred)) :-
-	spec2skeleton(HeadSpec,HeadSkeleton),
-	dump_simple_goal(HeadSkeleton,0), writeln(' :-'),
-	indent(1),
-	HeadSkeleton =.. [_|HeadVars],
-	dump_simple_goal(TailPred,0),
-	write('(FLORA_THIS_MODULE_NAME'),
-	( HeadVars == [] ->
-	    true
-	;
-	    write(','),
-	    write_args(HeadVars)
-	),
-	writeln(').').
-
 dump_rule((Head :- Body)) :- !,
 	dump_simple_goal(Head,0),
 	writeln(' :-'),
@@ -384,8 +380,13 @@ dump_simple_goal(Spec, Indent, Leading) :-
 
 write_args(Args) :-
 	Args=[First|Rest], !,
-	((atomic(First); var(First))
+	( var(First)
 	-> write_canonical(First)
+	; atomic(First)
+	-> (flora_wraparound_copy_spec(First)
+	   -> write(First)
+	   ;  write_canonical(First)
+	   )
 	; dump_simple_goal(First,0)
 	),
 	(Rest==[] -> true
@@ -405,4 +406,4 @@ flora_out_filename(File,OutFile) :-
 in2out_extension(INFILE_EXT,DATFILE_EXT) :- !.
 in2out_extension(FLIFILE_EXT,FLHFILE_EXT) :- !.
 in2out_extension(Ext,_) :-
-	flora_error_line('[flWrapAround] Unknown extension, %s', Ext).
+	flora_error_line('[flWrapAround] Unknown extension, ~w', [Ext]).

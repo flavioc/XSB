@@ -91,7 +91,8 @@ fllibprogramans(Gs,NVs) :-
 flora_print_all(Gs,NVs) :-
 	cputime(T0),
 	( NVs == []
-	->  flora_if_then_else(flora_call(Gs),flora_write_Yes,flora_write_No)
+	->
+	    flora_if_then_else(flora_call(Gs),flora_write_Yes,flora_write_No)
 	;
 	    flora_findall(NVs,Gs,TempL),
 	    cputime(T1),

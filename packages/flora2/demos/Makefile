@@ -45,7 +45,7 @@ Option = [optimize]
 # Self-make: Version 1.4.1
 #
 PROLOG = none
-PROLOG_COMMAND = $(PROLOG) -i -s -m 40000 -c 2000 -e 'segfault_handler(warn).'
+PROLOG_COMMAND = $(PROLOG) -i -s -m 40000 -c 4000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
 
@@ -74,7 +74,8 @@ init:
 	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN), _)." >> cmd...
-	@echo "['../flora2devel']." >> cmd...hdr
+	@echo "asserta(library_directory('..'))." >> cmd...hdr
+	@echo "['../flora2']." >> cmd...hdr
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...hdr
 	@echo "bootstrap_flora." >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr

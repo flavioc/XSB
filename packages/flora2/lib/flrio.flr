@@ -38,6 +38,40 @@
 %% I/O port based ops
 %%%%%%%%%%%%%%%%%%%%%%
 
+:- export
+         _[#open(_,_)],
+	 _[#close],
+	 _[#read(_)],
+	 #write(_),
+	 _[#write(_)],
+	 #stdread(_),
+	 #stdwrite(_),
+	 #fmt_write(_,_),
+	 _[#fmt_write(_,_)],
+	 #fmt_write_string(_,_,_),
+	 #fmt_read(_,_,_),
+	 _[#fmt_read(_,_,_)],
+	 _[#write_canonical(_)],
+	 #write_canonical(_),
+	 #read_canonical(_),
+	 _[#read_canonical(_)],
+	 _[#readline(_,_)],
+	 #readline(_,_),
+	 _[#writeln(_)],
+	 #writeln(_),
+	 #nl,
+	 #nl(_),
+	 _[#see],
+	 #see(_),
+	 #seen,
+	 #seeing(_),
+	 _[#tell],
+	 #tell(_),
+	 #told,
+	 _[#telling],
+	 #telling(_).
+
+
 Filename[#open(Mode,Port)] :- file_open(Filename,Mode,Port)@prolog(file_io).
 Port[#close] :- file_close(Port)@prolog(file_io).
 
@@ -49,25 +83,25 @@ Port[#write(Term)] :-
 	integer(Port),
 	!,
 	flora_write(Port,Term)@prolog(flrdisplay).
-stdread(HResult) :-
+#stdread(HResult) :-
 	file_read(STDIN, PResult)@prolog(file_io), p2h{PResult,HResult}.
-stdwrite(Term) :-
+#stdwrite(Term) :-
 	flora_write(STDOUT,Term)@prolog(flrdisplay).
 
 
 %% Use arg(obj, obj, obj) to supply multiple arguments
-fmt_write(Format,O) :-
+#fmt_write(Format,O) :-
 	!,
-	florify_arguments(O,FO),
+	#florify_arguments(O,FO),
 	fmt_write(Format,FO)@prolog().
 FileHandle[#fmt_write(Format,O)] :-
-	florify_arguments(O,FO),
+	#florify_arguments(O,FO),
 	fmt_write(FileHandle,Format,FO)@prolog().
-fmt_write_string(String,Format,O) :-
+#fmt_write_string(String,Format,O) :-
 	!,
-	florify_arguments(O,FO),
+	#florify_arguments(O,FO),
 	fmt_write_string(String,Format,FO)@prolog().
-fmt_read(Format,Result,Status) :-
+#fmt_read(Format,Result,Status) :-
 	!,
 	fmt_read(Format,PResult,Status)@prolog(),
 	p2h{PResult,Result}.
@@ -78,10 +112,10 @@ FileHandle[#fmt_read(Format,Result,Status)] :-
 Filehandle[#write_canonical(HTerm)] :-
 	p2h{PTerm,HTerm},
 	file_write_canonical(Filehandle,PTerm)@prolog(xsb_writ).
-write_canonical(HTerm) :-
+#write_canonical(HTerm) :-
 	p2h{PTerm,HTerm}, write_canonical(PTerm)@prolog().
 
-read_canonical(HTerm) :-
+#read_canonical(HTerm) :-
 	read_canonical(PTerm)@prolog(), p2h{PTerm,HTerm}. 
 Filehandle[#read_canonical(HTerm)] :-
 	file_read_canonical(Filehandle,PTerm,_)@prolog(machine),
@@ -91,44 +125,46 @@ Filehandle[#readline(atom,String)] :-
 Filehandle[#readline(charlist,String)] :-
 	!, file_read_line_list(Filehandle,String)@prolog(file_io).
 _Filehandle[#readline(Request,_)] :- 
-	abort(('Invalid readline format, ', Request))@flora(sys).
-readline(atom,String) :-
+	#abort(('Invalid readline format, ', Request))@flora(sys).
+#readline(atom,String) :-
 	!, file_read_line_atom(String)@prolog(file_io).
-readline(charlist,String) :-
+#readline(charlist,String) :-
 	!, file_read_line_list(String)@prolog(file_io).
-readline(Request,_) :- 
-	abort(('Invalid readline format, ', Request))@flora(sys).
+#readline(Request,_) :- 
+	#abort(('Invalid readline format, ', Request))@flora(sys).
 
 
 %%%%%%%%%%%%%%%%%%%%
 %% Stream-based I/O
 %%%%%%%%%%%%%%%%%%%%
 
-write(O) :- !,
+#write(O) :- !,
 	flora_write_oid(O)@prolog(flrdecode).
 IOstream[#write(O)] :-
 	flora_write_oid(IOstream,O)@prolog(flrdecode).
-writeln(O) :- !,
+#writeln(O) :- !,
 	flora_write_oid(O)@prolog(flrdecode),
 	nl@prolog().
 IOstream[#writeln(O)] :-
 	flora_write_oid(IOstream,O)@prolog(flrdecode),
 	nl(IOstream)@prolog().
-nl :- nl@prolog().
-nl(IOstream) :- nl(IOstream)@prolog().
+#nl :- nl@prolog().
+#nl(IOstream) :- nl(IOstream)@prolog().
 
-read(Result) :- !, read(PResult)@prolog(), p2h{PResult,Result}.
+#read(Result) :- !, read(PResult)@prolog(), p2h{PResult,Result}.
 IOstream[#read(Result)] :-
 	read(IOstream,PResult)@prolog(), p2h{PResult,Result}.
 
 Filename[#see] :- see(Filename)@prolog().
-seen :- seen@prolog().
-seeing(Stream) :- seeing(Stream)@prolog().
+#see(Filename) :- see(Filename)@prolog().
+#seen :- seen@prolog().
+#seeing(Stream) :- seeing(Stream)@prolog().
 
 Filename[#tell] :- tell(Filename)@prolog().
-tell(Filename) :- tell(Filename)@prolog().
-told :- told@prolog().
-telling(Stream) :- telling(Stream)@prolog().
+#tell(Filename) :- tell(Filename)@prolog().
+#told :- told@prolog().
+#telling(Stream) :- telling(Stream)@prolog().
+Stream[#telling] :- telling(Stream)@prolog().
 
 
 
@@ -140,19 +176,20 @@ telling(Stream) :- telling(Stream)@prolog().
 %% if arg_i is not compound. Otherwise we apply flora_write_oid/1
 %% This is needed in order make sure that arguments like f(a) are printed 
 %% as f(a) and not _flora'main'f(a) or something like that.
-florify_arguments(WrappedArgs,OutTerm) :-
-	WrappedArgs =.. [WRAP_HILOG, Fun | Args],
+#florify_arguments(WrappedArgs,OutTerm) :-
+	WrappedArgs =.. [Wrapper, Fun | Args],
+        (Wrapper==WRAP_HILOG;Wrapper==WRAP_TABLED_HILOG),
 	!,
-	florify_arglist(Args,OutList),
+	#florify_arglist(Args,OutList),
 	OutTerm =.. [Fun|OutList].
 %% single argument to fmt_write without the arg(...) envelope
-florify_arguments(Arg,OutTerm) :-
+#florify_arguments(Arg,OutTerm) :-
 	flora_decode_oid_as_atom(Arg,OutTerm)@prolog(flrdecode).
-florify_arglist([],[]) :- !.
-florify_arglist([Arg|Args], [OutArg| OutArgs]) :-
+#florify_arglist([],[]) :- !.
+#florify_arglist([Arg|Args], [OutArg| OutArgs]) :-
 	compound(Arg)@prolog(),
 	!,
 	flora_decode_oid_as_atom(Arg,OutArg)@prolog(flrdecode),
-	florify_arglist(Args,OutArgs).
-florify_arglist([_Arg|Args], [_Arg| OutArgs]) :-
-	florify_arglist(Args,OutArgs).
+	#florify_arglist(Args,OutArgs).
+#florify_arglist([_Arg|Args], [_Arg| OutArgs]) :-
+	#florify_arglist(Args,OutArgs).

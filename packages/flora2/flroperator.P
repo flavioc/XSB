@@ -36,15 +36,16 @@ flora_op(1700,fx,FL_QUERYOP).
 
 flora_op(1600,fx,FL_HILOG).
 flora_op(1600,xfx,FL_BAR).
-flora_op(1600,fx,FL_TABLE).
+%%flora_op(1600,fx,FL_TABLE).
 flora_op(1600,fx,FL_INDEX).
 %%flora_op(1600,fx,FL_DYNAMIC).
-%%flora_op(1600,fx,FL_EXPORT).
+flora_op(1600,fx,FL_EXPORT).
+flora_op(1300,fx,FL_UPDATABLE).
 %%flora_op(1600,fx,FL_IMPORT).
 %%flora_op(1600,fx,FL_ARGUMENTS).
 %%flora_op(1600,fx,FL_PROLOG).
-flora_op(1600,fx,FL_EQUALITY).
 flora_op(1600,fx,FL_CMPOPT).
+flora_op(1600,fx,FL_IGNOREDEP).
 
 flora_op(1600,fx,FL_COMPILE).
 flora_op(1600,fx,FL_LOAD).
@@ -52,12 +53,16 @@ flora_op(1600,fx,FL_DUMP).
 
 flora_op(1500,xfx,FL_FROM).
 flora_op(1500,xfy,FL_SEMICOLON).
+flora_op(1500,xfy,FL_OR).
 
 flora_op(1400,xfy,FL_COMMA).
+flora_op(1400,xfy,FL_AND).
 
 flora_op(1300,fy,FL_IF).
 flora_op(1300,xfy,FL_THEN).
 flora_op(1300,xfy,FL_ELSE).
+
+flora_op(1300,xfy,FL_LEFTARROW). % alternative if-then
 
 flora_op(1300,fy,FL_DO).       % do... until...
 flora_op(1300,fy,FL_LOOP).       % loop... until...
@@ -68,6 +73,7 @@ flora_op(1300,fy,FL_WHILE).
 flora_op(1300,fy,FL_UNLESS).
 
 flora_op(1200,fy,FL_TNOT).
+flora_op(1200,fy,FL_NOT).
 flora_op(1200,fy,FL_NEG).
 
 flora_op(1100,xfx,FL_FDARROW).
@@ -83,7 +89,7 @@ flora_op(1100,xfx,FL_INTOLISTARROW).
 flora_op(1100,xfx,FL_INFDSIGARR).
 flora_op(1100,xfx,FL_INMVDSIGARR).
 flora_op(1100,fx,FL_INMETH).
-flora_op(1100,fx,FL_TRAN).
+%%flora_op(1100,fx,FL_TRAN).
 
 flora_op(1000,xfx,FL_UNIVEQ).
 flora_op(1000,xfx,FL_UNIVNOTEQ).
@@ -135,6 +141,7 @@ flora_op(300,yfx,FL_MVD).
 flora_op(300,yfx,FL_INHERIFD).
 flora_op(300,yfx,FL_INHERIMVD).
 
+flora_op(250,fx,FL_TRAN).
 
 /****************************************************************************
   flora_opdef(+Precedence,+Associativity,+Op)

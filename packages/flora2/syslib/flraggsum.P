@@ -38,18 +38,18 @@
 /*********************************************************************
   fllibsum(+Var,+VarList,+Goal,-Sum)
 *********************************************************************/
-fllibsum(Var,[],Goal,Sum) :-
+FLLIBSUM(Var,[],Goal,Sum) :-
 	!,
 	findall(Var,Goal,Matches),
 	flora_sumaux(Matches,Sum).
 
-fllibsum(Var,VarList,Goal,Sum) :-
+FLLIBSUM(Var,VarList,Goal,Sum) :-
 	ground(VarList),
 	!,
 	findall(Var,Goal,Matches),
 	flora_sumaux(Matches,Sum).
 
-fllibsum(Var,VarList,Goal,Sum) :-
+FLLIBSUM(Var,VarList,Goal,Sum) :-
 	!,
 	findall(flora_result(Var,VarList),Goal,Matches),
 	findall(Grp,member(flora_result(_,Grp),Matches),GL),

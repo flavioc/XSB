@@ -29,9 +29,11 @@
 FLORADIR = ..
 
 ALLOBJS = flrcommon.flh \
-	flrtrailer.flh \
+	flrnoeqltrailer.flh \
 	flreqltrailer.flh \
-	flrscalareql.flh
+	flrscalareql.flh \
+	flrpredeql.flh \
+	flrprednoeql.flh
 
 PROLOG = none
 
@@ -61,7 +63,8 @@ all: clean init $(ALLOBJS) finish
 
 init:
 	/bin/rm -f $(SVFILE)
-	@echo "['../flora2devel']." >> cmd...
+	@echo "asserta(library_directory('..'))." >> cmd...
+	@echo "['../flora2']." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
 	@echo "import flWrapAround/1 from flrwraparound." >> cmd...

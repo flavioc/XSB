@@ -1,9 +1,11 @@
 # Make file for Microsoft NMAKE
 
 ALLOBJS = flrcommon.flh \
-          flrtrailer.flh \
+          flrnoeqltrailer.flh \
 	  flreqltrailer.flh \
-          flrscalareql.flh
+          flrscalareql.flh \
+	  flrpredeql.flh \
+	  flrprednoeql.flh
 
 !IF EXISTS (..\.prolog_path_wind) 
 !INCLUDE ..\.prolog_path_wind
@@ -20,5 +22,5 @@ CLEAN :
 	-@erase .#*
 
 .fli.flh:
-	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrwraparound]. import flWrapAround/1 from flrwraparound. flWrapAround(%|fF). halt."
+	$(PROLOG) -e "asserta(library_directory('..')). ['..\flora2']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrwraparound]. import flWrapAround/1 from flrwraparound. flWrapAround(%|fF). halt."
 

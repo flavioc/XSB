@@ -38,27 +38,27 @@ a[f->c].
 	a[f->X].
 ?-  mary[salary(Y)->V]@mod2.
 
-p(1993).
-p(1994).
-p(1996).
-p(1997).
-p(1998).
-%% Supposed to delete for all years in p/1. (1993 has already been deleted)
+#p(1993).
+#p(1994).
+#p(1996).
+#p(1997).
+#p(1998).
+%% Supposed to delete for all years in #p/1. (1993 has already been deleted)
 ?- writeln('Query 4 begins')@prolog().
 %% Note: if we use don't care variables, _Y,_V, below, then the query will
 %% be executed only ONCE, so only the salary for one year will be removed!!
-?- p(Y), btdelete{mary[salary(Y)->V]@mod2}.
+?- #p(Y), btdelete{mary[salary(Y)->V]@mod2}.
 %% mary's salary for 1995,1999 only
 ?- writeln('After query4:')@prolog(),
 	mary[salary(Y)->V]@mod2.
 
 
 ?- writeln('Query 5 begins')@prolog().
-q(2001,110).
-q(2002,111).
-q(2003,100).
+#q(2001,110).
+#q(2002,111).
+#q(2003,100).
 
-?- while q(Y,S) do
+?- while #q(Y,S) do
        btinsert{mary[salary(Y)->S]@mod2}.
 %% Should have salaries for 1995, 1999, 2001-2003
 ?- writeln('After query5:')@prolog(), mary[salary(Y)->V]@mod2.
@@ -66,10 +66,10 @@ q(2003,100).
 ?- writeln('Query 6 begins')@prolog().
 ?- insert{mary[salary(2010)->200]@mod2}.
 
-rr(2010) :- true.
-rr(3000) :- true.
+#rr(2010) :- true.
+#rr(3000) :- true.
 %% Here deletion for Y=3000 should fail and so the entire query should fail
-?- while rr(Y) do
+?- while #rr(Y) do
        btdelete{mary[salary(Y)->_]@mod2}.
 %% Should have salaries for 1995, 1999, 2001-2003
 ?- writeln('After query6:')@prolog(), mary[salary(Y)->V]@mod2.
@@ -102,5 +102,3 @@ rr(3000) :- true.
 
 %% Should have no facts of the form mary[salary(...)->...]
 ?- writeln('After query8:')@prolog(), mary[salary(Y)->V]@mod2.
-
-

@@ -6,17 +6,15 @@
 %%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
 %%% ===========================================================================
 
-?- newmodule{mod1,none}.
+?- newmodule{mod1}.
 
-?- insert{time_flies_like_an_arrow@mod1}.	% a 0-ary PREDICATE (proposition)
+?- insert{#time_flies_like_an_arrow@mod1}.	% a 0-ary PREDICATE (proposition)
 ?- insert{fruit_flies_like_an_apple[]@mod1}.	% an OBJECT with empty specification []
 
-?- table(mod1,tc/2).
+#e(a,b). #e(b,a). #e(b,c).			% a binary PREDICATE (graph)
+#e(b,d).
 
-e(a,b). e(b,a). e(b,c).			% a binary PREDICATE (graph)
-e(b,d).
-
-?- insertrule_z{(tc(X,Y) :- e(X,Y)@_@)@mod1}.		% a RULE and ...
+?- insertrule_z{(tc(X,Y) :- #e(X,Y)@_@)@mod1}.		% a RULE and ...
 ?- insertrule_z{(tc(X,Y) :- tc(X,Z), tc(Z,Y))@mod1}.	% ... a (doubly) RECURSIVE RULE
  
 ?- insert {
@@ -55,7 +53,7 @@ betty:employee@mod1}.
 %%% now ask some QUERIES here (or INTERACTIVELY from the FLORA SHELL)
 %%% ===========================================================================
 
-?- time_flies_like_an_arrow@mod1.	% ==> `yes'
+?- #time_flies_like_an_arrow@mod1.	% ==> `yes'
 
 ?- fruit_flies_like_a_banana[]@mod1.	% ==> `yes'
 

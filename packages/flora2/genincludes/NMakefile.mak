@@ -3,6 +3,7 @@
 
 ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh \
 	  flrdyna.flh flrdynz.flh \
+	  flrexportcheck.flh \
 	  flrtable.flh flrhilogtable.flh \
 	  flrrefreshtable.flh
 
@@ -21,7 +22,7 @@ CLEAN :
 	-@erase *.bak
 
 flrpreddef.flh:
-	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrwraparound]. flWrapAround(flrpreddef). halt."
+	$(PROLOG) -e "asserta(library_directory('..')). ['..\flora2']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrwraparound]. flWrapAround(flrpreddef). halt."
 
 flrindex_P.flh:
 	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrwraparound]. flWrapAround(flrindex_P). halt."

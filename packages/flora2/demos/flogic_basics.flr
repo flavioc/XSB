@@ -26,15 +26,17 @@
 %%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
 %%% ===========================================================================
 
-time_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
+:- ignore_depchk #e(_,_).
+
+#time_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
 fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
 
-:- table tc/2.
+%% :- table tc/2.
 
-e(a,b). e(b,a). e(b,c).			% a binary PREDICATE (graph)
-e(b,d).
+#e(a,b). #e(b,a). #e(b,c).			% a binary PREDICATE (graph)
+#e(b,d).
 
-tc(X,Y) :- e(X,Y).			% a RULE and ...
+tc(X,Y) :- #e(X,Y).			% a RULE and ...
 tc(X,Y) :- tc(X,Z), tc(Z,Y).		% ... a (doubly) RECURSIVE RULE
  
 person :: object.
@@ -72,7 +74,7 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 %%% now ask some QUERIES here (or INTERACTIVELY from the FLORA SHELL)
 %%% ===========================================================================
 
-?- time_flies_like_an_arrow.	% ==> `yes'
+?- #time_flies_like_an_arrow.	% ==> `yes'
 
 ?- fruit_flies_like_a_banana[].	% ==> `yes'
 

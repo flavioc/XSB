@@ -155,6 +155,7 @@ flora_library_file(FLLIBPROGRAMANS,flranswer,syslib) :- !.
 flora_library_file(FLLIBDISPLAY,flrdisplay,syslib) :- !.
 flora_library_file(FLLIBDBOP,flrdbop,syslib) :- !.
 flora_library_file(FLLIBINSERT,flrdbop,syslib) :- !.
+flora_library_file(FLLIBEXPORT,flrexport,syslib) :- !.
 flora_library_file(FLLIBINSERTALL,flrdbop,syslib) :- !.
 flora_library_file(FLLIBDELETE,flrdbop,syslib) :- !.
 flora_library_file(FLLIBDELETEALL,flrdbop,syslib) :- !.
@@ -173,7 +174,8 @@ flora_library_file(FLLIBSHDIRECT,flrshdirect,syslib) :- !.
 flora_library_file(FLLIBDYNMOD,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBMODLIT,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBMODOBJ,flrdynmod,syslib) :- !.
-flora_library_file(FLLIBEQUALITY,flrequality,syslib) :- !.
+flora_library_file(FLLIBSEMANTICS,flrsemantics,syslib) :- !.
+flora_library_file(FLLIBSETSEMANTICS,flrsemantics,syslib) :- !.
 
 flora_library_file(FLLIBDYNRULE,flrdynrule,syslib) :- !.
 flora_library_file(FLLIBNEWMODULE,flrdynrule,syslib) :- !.
@@ -203,17 +205,18 @@ flora_library_file(FLLIBCATCH,flrerrhandler,syslib) :- !.
 flora_library_file(FLLIBTHROW,flrerrhandler,syslib) :- !.
 flora_library_file(FLLIBERRHANDLER,flrerrhandler,syslib) :- !.
 
+flora_library_file(FLLIBNEWOID,flrnewoid,syslib) :- !.
+
 
 /**************************************************************************
   Flora headers and trailers inclusion files
 ***************************************************************************/
 flora_library_file(FLHEADER,flrheader,header) :- !.
 flora_library_file(FLHEADER2,flrheader2,header) :- !.
+flora_library_file(FLTRAILER,flrtrailer,header) :- !.
+flora_library_file(FLTRAILERREGISTRY,flrtrailerregistry,header) :- !.
 flora_library_file(FLDEFINITION,flrdefinition,header) :- !.
 flora_library_file(FLPATCH,flrpatch,header) :- !.
-flora_library_file(FLTRAILER,flrtrailer,header) :- !.
-flora_library_file(FLEQLTRAILER,flreqltrailer,header) :- !.
-flora_library_file(FLSCALAREQL,flrscalareql,header) :- !.
 
 %% support for undefinedness
 flora_library_file(FLPREDDEF,flrpreddef,header) :- !.
@@ -241,7 +244,7 @@ flora_library_file(SysModID,BaseFile,SubDir) :-
   catch error
 ***************************************************************************/
 flora_library_file(S,F,_) :-
-	flora_error_line("Unknown library ID `%S' or file `%S'", args(S,F)),
+	flora_error_line('Unknown library ID `~w'' or file `~w''', [S,F]),
 	flora_abort.
 
 

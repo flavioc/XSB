@@ -36,16 +36,16 @@
 /*********************************************************************
   fllibcollectbag(+Var,+VarList,+Goal,-Bag)
 *********************************************************************/
-fllibcollectbag(Var,[],Goal,Bag) :-
+FLLIBCOLLECTBAG(Var,[],Goal,Bag) :-
 	!,
 	findall(Var,Goal,Bag).
 
-fllibcollectbag(Var,VarList,Goal,Bag) :-
+FLLIBCOLLECTBAG(Var,VarList,Goal,Bag) :-
 	ground(VarList),
 	!,
 	findall(Var,Goal,Bag).
 
-fllibcollectbag(Var,VarList,Goal,Bag) :-
+FLLIBCOLLECTBAG(Var,VarList,Goal,Bag) :-
 	!,
 	findall(flora_result(Var,VarList),Goal,Matches),
 	findall(Grp,member(flora_result(_,Grp),Matches),GL),

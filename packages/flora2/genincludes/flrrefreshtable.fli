@@ -17,26 +17,26 @@
 
 %% ISA, SUB
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_SUB(X,Y)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_SUB(X,Y,_Caller)) :-
 	    	    !,
 	       	    flora_abolish_table_call(WRAP_SUB(X,Y))
 	  )).
 ?- assert((
-            FLORA_SYMBOL('refresh_table_for')(WRAP_ISA(X,Y)) :-
+            FLORA_SYMBOL('refresh_table_for')(WRAP_ISA(X,Y,_Caller)) :-
 	    	    !,
 		    flora_abolish_table_call(WRAP_ISA(X,Y))
 	  )).
 	
 %% FD, IFD, MVD, IMVD
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_FD(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_FD(X,Y,Z,_Caller)) :-
 	    	    !,
 	       	    flora_abolish_table_call(WRAP_FD(X,Y,Z)),
 	       	    flora_abolish_table_call(WRAP_FDDEF(X,Y))
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFD(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFD(X,Y,Z,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_IFD(X,Y,Z)),
 	    	    flora_abolish_table_call(WRAP_IFDDEF(X,Y)),
@@ -45,14 +45,14 @@
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVD(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVD(X,Y,Z,_Caller)) :-
 	    	    !,
 		    flora_abolish_table_call(WRAP_MVD(X,Y,Z)),
 	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y))
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMVD(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMVD(X,Y,Z,Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_IMVD(X,Y,Z)),
 	    	    flora_abolish_table_call(WRAP_IMVDDEF(X,Y)),
@@ -62,26 +62,26 @@
 
 %% FDSIG, IFDSIG, MVDSIG, IMVDSIG
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_FDSIG(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_FDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_FDSIG(X,Y,Z))
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDSIG(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_IFDSIG(X,Y,Z)),
 	    	    flora_abolish_table_call(WRAP_FDSIG(X,Y,Z))
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVDSIG(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_MVDSIG(X,Y,Z))
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDSIG(X,Y,Z)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_IMVDSIG(X,Y,Z)),
 	    	    flora_abolish_table_call(WRAP_MVDSIG(X,Y,Z))
@@ -92,12 +92,12 @@
 %% these two probably never need to be deleted explicitly
 %% because FDDEF and IFDDEF wrappers are always derived predicates
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_FDDEF(X,Y)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_FDDEF(X,Y,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDDEF(X,Y)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDDEF(X,Y,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_IFDDEF(X,Y)),
 	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y))
@@ -105,13 +105,13 @@
 */
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVDDEF(X,Y)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVDDEF(X,Y,_Caller)) :-
 	    	    !,
 		    flora_abolish_table_call(WRAP_MVDDEF(X,Y))
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMVDDEF(X,Y)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMVDDEF(X,Y,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_IMVDDEF(X,Y)),
 	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y))
@@ -119,16 +119,28 @@
 
 %% METH, IMETH
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_METH(X,Y)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_METH(X,Y,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_METH(X,Y))
 	  )).
 	
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMETH(X,Y)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMETH(X,Y,_Caller)) :-
 	    	    !,
 	    	    flora_abolish_table_call(WRAP_IMETH(X,Y)),
 	    	    flora_abolish_table_call(WRAP_METH(X,Y))
+	  )).
+
+%% EXISTS, OBJEQL
+?- assert((
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_EXISTS(X,_Caller)) :-
+	    	    !,
+	    	    flora_abolish_table_call(WRAP_EXISTS(X))
+	  )).
+?- assert((
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_OBJEQL(X,Y,_Caller)) :-
+	    	    !,
+	    	    flora_abolish_table_call(WRAP_DIFFOBJEQL(X,Y))
 	  )).
 
 
@@ -141,109 +153,129 @@
 **        revisit these rules.
 */
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,_Caller)) :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,_))
 	  )).
 ?- assert((
-    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21)) :-
+    	    FLORA_SYMBOL('refresh_table_for')(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,_Caller))
+	    :-
 	            !,
-	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21))
+	    	    flora_abolish_table_call(WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,_))
 	  )).
 
 

@@ -1,10 +1,10 @@
-/* File:      flrequality.P
+/* File:      flrnewoid.P
 **
-** Author(s): Guizhen Yang 
+** Author(s): Michael Kifer
 **
 ** Contact:   flora-users@lists.sourceforge.net
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2001
+** Copyright (C) The Research Foundation of SUNY, 2003
 **
 ** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,34 +23,15 @@
 ** 
 */
 
-
 :- compiler_options([xpp_on]).
-
 #include "flora_terms.flh"
-#include "flora_exceptions.flh"
+
+%% Dynamic generation of new oid
+
+:- export FLLIBNEWOID/1.
+:- import gensym/2 from gensym.
 
 
-:- import flloadtrailer/1, flloadtrailer/2 from flrutils.
-:- import flora_trailer_registry/1 from flrregistry.
-
-:- import flora_abort/0 from flrutils.
-
-
-
-
-/*****************************************************************************
-  fllibequality
-*****************************************************************************/
-fllibequality(A) :-
-	( flloadtrailer(A) ->
-		(flora_trailer_registry(FLORA_DEFAULT_WORKSPACE),!;
-		assert(flora_trailer_registry(FLORA_DEFAULT_WORKSPACE)))
-	;
-		flora_abort
-	).
-fllibequality(A,M) :-
-	( flloadtrailer(A,M) ->
-		(flora_trailer_registry(M),!;assert(flora_trailer_registry(M)))
-	;
-		flora_abort
-	).
+%% May need to be more sophisticated here
+FLLIBNEWOID(NewOid) :-
+	gensym(FL_NEWOID_DYNPREFIX,NewOid).

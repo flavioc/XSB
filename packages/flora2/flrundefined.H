@@ -54,6 +54,7 @@
 :- import flora_prlgdef/2 from flrprolog.
 
 :- import
+	is_flogic/4,
 	is_prrule/3,
 	is_prfact/2,
 	is_pratom/3,
@@ -65,9 +66,14 @@
 
 :- import flora_decode_predicate/6 from flrwrapper.
 
+:- import flora_decode_goal_as_atom/2 from flrdecode.
+
 :- export
 	flora_debug_code/2,
 	flora_temp_protect_call/2,
 	flora_temp_unprotect_call/1,
 	flora_define_predicate/1,
-	flora_error_undefined/1.
+	flora_error_undefined/1,
+	flora_error_notexported/1,
+	flora_error_invalid_export/1,
+	flora_module_type_and_name/3.

@@ -43,13 +43,15 @@
 
 :- import flora_decode_goal_as_atom/2 from flrdecode.
 
-:- import flora_abort/0, flora_abort/1 from flrutils.
+:- import flora_abort/0, flora_abort/1,
+	flora_load_system_module_internal/1
+	from flrutils.
 
 :- import
 	FLSYSDBUPDATE/2,
 	FLSYSDBUPDATE/3,
-	FLLIBMODLIT/3,
-	FLLIBMODOBJ/4
+	FLLIBMODLIT/4,
+	FLLIBMODOBJ/5
    from usermod.
 
 :- import
@@ -74,13 +76,17 @@ flora_storage_check_module_name(ModuleName) :-
 	flora_module_name(ModuleName,Type,WS),
 	( Type == invalid ->
 	    flora_module_name_error(ModuleName)
-	
-	; Type == systemmodule ->
-	    flora_abort(['Updates to system modules (',WS,') are not allowed'])
 	;
 	    true
 	),
-	flora_storage_check_existence(WS).
+	(Type == systemmodule
+	->
+	    (flora_module_registry(ModuleName), !
+	    ; flora_load_system_module_internal(WS)
+	    )
+	;
+	    flora_storage_check_existence(WS)
+	).
 
 /*****************************************************************************
   flora_storage_check_existence(+ModuleName)
@@ -91,7 +97,7 @@ flora_storage_check_existence(ModuleName) :-
         ( flora_module_registry(ModuleName) ->
             true
         ;
-            flora_abort(['Module ',ModuleName,' does not exist'])
+            flora_abort(['Module ',ModuleName,' is not loaded'])
         ).
 
 /*****************************************************************************
@@ -166,7 +172,7 @@ flora_storage_convertlist([FLSYSDBUPDATE(P,StorageName,Module)|Fs],
         flora_storage_check_existence(Module),
 	flora_storage_convertlist(Fs,CL,FL).
 
-flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName)|Fs],
+flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName,_Caller)|Fs],
                           [flora_storage_check_module_name(ModuleName),
 			   flora_module_predicate(F,Args,ModuleName,P),
 			   flora_fdb_storage_name(ModuleName,StorageName),
@@ -176,7 +182,7 @@ flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName)|Fs],
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
 
-flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,O)|Fs],
+flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,_Caller,O)|Fs],
                           [( flora_check_module_name(ModuleName) ->
 			       flora_module_predicate(F,Args,ModuleName,O)
 			   ;

@@ -24,25 +24,35 @@
 ***************************************************************************/
 :- table
 	WRAP_SUB/2,
-	WRAP_ISA/2,	
+	WRAP_ISA/2.
+:- table
 	WRAP_FD/3,	
-	WRAP_IFD/3,	
+	WRAP_IFD/3.
+:- table	
 	WRAP_MVD/3,	
-	WRAP_IMVD/3,	
+	WRAP_IMVD/3.
+:- table	
 	WRAP_MVDDEF/2,
-	WRAP_IMVDDEF/2,
+	WRAP_IMVDDEF/2.
+:- table
 	WRAP_FDSIG/3,
-	WRAP_FDSIGDEF/2,
+	WRAP_FDSIGDEF/2.
+:- table
 	WRAP_IFDSIG/3,
-	WRAP_IFDSIGDEF/2,
+	WRAP_IFDSIGDEF/2.
+:- table
 	WRAP_MVDSIG/3,
-	WRAP_MVDSIGDEF/2,
+	WRAP_MVDSIGDEF/2.
+:- table
 	WRAP_IMVDSIG/3,
-	WRAP_IMVDSIGDEF/2,
+	WRAP_IMVDSIGDEF/2.
+:- table
 	WRAP_METH/2,	
-	WRAP_IMETH/2,
+	WRAP_IMETH/2.
+:- table
 	WRAP_EXISTS/1,
-	WRAP_DIFFOBJEQL/2,
+	WRAP_DIFFOBJEQL/2.
+:- table
 	WRAP_FDDEF/2,
 	WRAP_IFDDEF/2.
 
@@ -50,25 +60,35 @@
 %% for insert{...}, delete{...}, so we force tabling to be variant.
 :- use_variant_tabling
 	WRAP_SUB/2,
-	WRAP_ISA/2,
+	WRAP_ISA/2.
+:- use_variant_tabling
 	WRAP_FD/3,
-	WRAP_IFD/3,
+	WRAP_IFD/3.
+:- use_variant_tabling
 	WRAP_MVD/3,
-	WRAP_IMVD/3,	
+	WRAP_IMVD/3.
+:- use_variant_tabling	
 	WRAP_MVDDEF/2,
-	WRAP_IMVDDEF/2,
+	WRAP_IMVDDEF/2.
+:- use_variant_tabling
 	WRAP_FDSIG/3,
-	WRAP_FDSIGDEF/2,
+	WRAP_FDSIGDEF/2.
+:- use_variant_tabling
 	WRAP_IFDSIG/3,
-	WRAP_IFDSIGDEF/2,
+	WRAP_IFDSIGDEF/2.
+:- use_variant_tabling
 	WRAP_MVDSIG/3,
-	WRAP_MVDSIGDEF/2,
+	WRAP_MVDSIGDEF/2.
+:- use_variant_tabling
 	WRAP_IMVDSIG/3,
-	WRAP_IMVDSIGDEF/2,
+	WRAP_IMVDSIGDEF/2.
+:- use_variant_tabling
 	WRAP_METH/2,	
-	WRAP_IMETH/2,
+	WRAP_IMETH/2.
+:- use_variant_tabling
 	WRAP_EXISTS/1,
-	WRAP_DIFFOBJEQL/2,
+	WRAP_DIFFOBJEQL/2.
+:- use_variant_tabling
 	WRAP_FDDEF/2,
 	WRAP_IFDDEF/2.
 

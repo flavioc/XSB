@@ -41,9 +41,12 @@
 #define FLORA_FAILURE		failure
 #define FLORA_SUCCESS		success
 #define FLORA_NOOP		noop
+#define FLORA_INVALID_INPUT	invalid_input
 #define FLORA_ALL		all
 #define FLORA_FILE		file
 #define FLORA_COMMANDLINE	commandline
+%% Used in flora_query_from_string - normal termination
+#define FLORA_NORMAL		normal
 
 
 ?- bootstrap_flora.
@@ -51,6 +54,7 @@
 
 /*************************************************************************
   flora_compile_internal(+File)
+  Compiles user modules
 *************************************************************************/
 flora_compile_internal(File) :-
 	flora_compile_internal(File,FLORA_DEFAULT_WORKSPACE).
@@ -58,13 +62,14 @@ flora_compile_internal(File) :-
 
 /******************************************************************************
   flora_compile_internal(+File,+Workspace)
+  Compiles user modules
   The OBJ file is renamed using the module name
 ******************************************************************************/
 flora_compile_internal(File,Workspace) :-
 	flora_check_filename(File),
 	flora_check_workspace(Workspace),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
-	    flora_flcompile(FlrFile,Workspace)
+	    flora_compile_then_prolog_compile(FlrFile,Workspace)
 	;
 	  flora_flrfilename_error(File),
 	  !,
@@ -138,160 +143,122 @@ flora_load_module_internal(InFile) :-
 
 
 /**********************************************************************
-  flloadtrailer(+TrailerName,+Workspace)
-  TrailerName must be either NONE, or BASIC, or FLOGIC.
+  flloadtrailer(+TrailerOptions,+Workspace)
+  TrailerOptions is a list [FL_EQUALITY(...),FL_INHERITANCE(...),FL_CUSTOM(...)]
+  The FLOBJEQLDEF option is also possible.
+  Maintains trailer registry.
+  Won't load trailer if the workspace has a trailer with identical semantics.
 **********************************************************************/
-flloadtrailer(TrailerName) :-
-	flloadtrailer(TrailerName,FLORA_DEFAULT_WORKSPACE).
-
-flloadtrailer(TrailerName,Workspace) :-
-	( TrailerName \== NONE, TrailerName \== BASIC, TrailerName \== FLOGIC ->
-	    flora_error_line('Equality mode can be only ~w, ~w, or ~w',
-                             [NONE,BASIC,FLOGIC]),
-	    fail
-	;
-	  %% Get the trailer file name in Flora package.
-	  flora_check_workspace(Workspace),
-	  flora_configuration(installdir,FloraDir),
-	  flora_slash(S),
-	  flora_trailer_filename(TrailerName,TrailerFileName),
-	  flora_concat_atoms([FloraDir,S,trailer,S,TrailerFileName],
-			     TrailerFullName),
-	  %% Get file names in user dir.
-	  flora_user_flora_dir(UserFloraDir),
-	  flora_concat_atoms([UserFloraDir,S,TrailerFileName],UserTrailerPFile),
-	  flora_mainO_filename(UserTrailerPFile,UserTrailerOFile),
-	  flora_WSO_filename(UserTrailerPFile,Workspace,UserTrailerWSOFile),
-	  %% Copy the main file to user directory.
-	  ( flora_file_newerthan(UserTrailerPFile,TrailerFullName) ->
-	      true
-	  ;
-	    flora_file_op(copy,TrailerFullName,UserTrailerPFile)
-	  ),
-	  ( flora_file_newerthan(UserTrailerWSOFile,UserTrailerPFile) ->
-	      true
-	  ;
-	    flora_set_xpp_options_for_compile(Workspace),
-	    %%compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
-	    compile(UserTrailerPFile,[optimize,ti_all]),
-	    flora_rename_file(UserTrailerOFile,UserTrailerWSOFile),
-	    flora_clear_xpp_options
-	  ),
-	  consult(UserTrailerWSOFile),
-	  !,
-	  %% Check if the patch needs to be loaded.
-	  %% Patch (.xsb/flora/patch.P) is loaded only once per workspace
-	  %% and only into the flora shell. The flora_module_registry/1 guard
-	  %% ensures this and that patch rules are never loaded into the same
-	  %% module as compiled programs.
-	  (flora_module_registry(Workspace) -> true
-	  ; flloadpatch(Workspace)
-	  )
-        ),
-	!.
-
-
-/**********************************************************************
-  flsetuptrailer(+TrailerName)
-  TrailerName must be either NONE, or BASIC, or FLOGIC.
-  This predicate is called in the Makefile.
-**********************************************************************/
-flsetuptrailer(TrailerName) :-
-	flora_configuration(installdir,FloraDir),
-	flora_slash(S),
-	flora_trailer_filename(TrailerName,TrailerFileName),
-	flora_concat_atoms([FloraDir,S,trailer,S,TrailerFileName],TrailerFullName),
-	telling(PreOutFile),
-	tell(TrailerFullName),
-	flora_trailer_include(TrailerName,TrailerInclude),
-	flora_include_file([FLHEADER,FLHEADER2|TrailerInclude],HeaderStatus),
-	told,
-	tell(PreOutFile),
+flloadtrailer(TrailerOptions,Workspace) :-
+	flora_check_workspace(Workspace),
+	%% Check trailer options
+	findall(O,flora_trailer_registry(Workspace,O),CurrentTrailerOptions),
+	(CurrentTrailerOptions == [],
+	    DefaultTrailerOptions = FLORA_DEFAULT_SEMANTICS,
+	    !
+	; DefaultTrailerOptions = CurrentTrailerOptions
+	),
+	sort(DefaultTrailerOptions,SortedDefaultTrailerOptions),
+	fixup_trailer_options(TrailerOptions,SortedDefaultTrailerOptions,NewTrailerOptions),
+	sort(NewTrailerOptions,SortedNewTrailerOptions),
+	( % requested opts = current default
+	    SortedDefaultTrailerOptions = SortedNewTrailerOptions,
+	    CurrentTrailerOptions \= [],  % not a new module
+	    !
+	; % Requested trailer options are different from current options
+	    flora_slash(S),
+	    flora_make_trailer_filename(SortedNewTrailerOptions,TrailerFileName),
+	    %% Get file names in user dir.
+	    flora_user_flora_dir(UserFloraDir),
+	    flora_concat_atoms([UserFloraDir,S,TrailerFileName],UserTrailerPFile),
+	    flora_mainO_filename(UserTrailerPFile,UserTrailerOFile),
+	    flora_WSO_filename(UserTrailerPFile,Workspace,UserTrailerWSOFile),
+	    %% Copy the main file to user directory.
+	    (
+	      %% Would be good to do something more sophisticated here.
+	      %% E.g., comparing with files in ./closure/ and the custom file
+	      flora_file_op(exists,UserTrailerPFile) -> true
+	    ;
+	      telling(PreOutFile),
+	      tell(UserTrailerPFile),
+	      writeln(':- compiler_options([xpp_on]).'),
+	      include_trailer_control_definitions(['LOADABLETRAILER'|SortedNewTrailerOptions]),
+	      flora_include_file([FLTRAILER],_FileStatus),
+	      told,
+	      tell(PreOutFile)
+	    ),
+	    check_custom_trailer_file(SortedNewTrailerOptions),
+	    ( flora_file_newerthan(UserTrailerWSOFile,UserTrailerPFile) ->
+		true
+	    ; 
+		flora_set_xpp_options_for_compile(Workspace),
+		%%compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
+		compile(UserTrailerPFile,[optimize,ti_all]),
+		flora_rename_file(UserTrailerOFile,UserTrailerWSOFile),
+		flora_clear_xpp_options
+	    ),
+	    consult(UserTrailerWSOFile)
+	),
 	!,
-	( HeaderStatus == FLORA_FAILURE ->
-	    fail
-	;
-	  flora_set_xpp_options_for_compile(FLORA_DEFAULT_WORKSPACE),
-	  %%compile(TrailerFullName,[optimize,spec_repr,ti_all]),
-	  compile(TrailerFullName,[optimize,ti_all]),
-	  flora_clear_xpp_options
+	%% Check if the patch needs to be loaded.
+	%% Patch (.xsb/flora/patch.P) is loaded only once per workspace
+	%% and only into the flora shell. The flora_module_registry/1 guard
+	%% ensures this and that patch rules are never loaded into the same
+	%% module as compiled programs.
+	(flora_module_registry(Workspace) -> true
+	; flloadpatch(Workspace)
 	),
 	!.
 
-flora_trailer_filename(NONE,'standard.P').
-flora_trailer_filename(BASIC,'eqlbasic.P').
-flora_trailer_filename(FLOGIC,'eqlflogic.P').
-
-flora_trailer_include(NONE,[FLTRAILER]).
-flora_trailer_include(BASIC,[FLEQLTRAILER]).
-flora_trailer_include(FLOGIC,[FLEQLTRAILER,FLSCALAREQL]).
+%% Unify TrailerOptions with the module semantics
+fltrailersemantics(TrailerOptions,Workspace) :-
+	flora_check_workspace(Workspace),
+	%% Check trailer options
+	findall(O,flora_trailer_registry(Workspace,O),CurrentTrailerOptions),
+	(CurrentTrailerOptions == []  % nonexisting module
+	-> CurrentTrailerOptions = TrailerOptions
+	;
+	    sort(CurrentTrailerOptions,SortedCurrentTrailerOptions),
+	    fixup_trailer_options(TrailerOptions,SortedCurrentTrailerOptions,NewTrailerOptions),
+	    sort(NewTrailerOptions,SortedNewTrailerOptions),
+	    SortedCurrentTrailerOptions = SortedNewTrailerOptions
+	).
 
 
 /**********************************************************************
   flloadpatch(+Workspace)
   This is loaded only in the shell and only once per workspace name.
-  Compiled programs have their patch rules included by the compiler,
+  Compiled programs have their patch rules included by flora_generate_Pfile/8,
   and they don't need flloadpatch/1. (In fact, compiled rules and patch
   rules clash and should never be loaded into the same workspace.
 **********************************************************************/
 flloadpatch(Workspace) :-
-	flora_configuration(installdir,FloraDir),
 	flora_slash(S),
-	flora_patch_filename(PatchName),
-	flora_concat_atoms([FloraDir,S,trailer,S,PatchName],PatchFullName),
 	%% Get file names in user dir.
 	flora_user_flora_dir(UserFloraDir),
-	flora_concat_atoms([UserFloraDir,S,PatchName],UserPatchPFile),
+	flora_concat_atoms([UserFloraDir,S,'patch.P'],UserPatchPFile),
 	flora_mainO_filename(UserPatchPFile,UserPatchOFile),
 	flora_WSO_filename(UserPatchPFile,Workspace,UserPatchWSOFile),
 	%% Copy the main file to user directory.
-	( flora_file_newerthan(UserPatchPFile,PatchFullName) -> true
+	( flora_file_op(exists,UserPatchPFile) -> true
 	;
-	  flora_file_op(copy,PatchFullName,UserPatchPFile)
+	    telling(PreOutFile),
+	    tell(UserPatchPFile),
+	    flora_include_file([FLHEADER,FLDEFINITION,FLHEADER2,FLPATCH,FLDYNA,
+				FLDYNZ,FLPREDDEF,FLREFRESHTABLE],_FileStatus),
+	    told,
+	    tell(PreOutFile)
 	),
-	( flora_file_newerthan(UserPatchWSOFile,UserPatchPFile) ->
-	    true
+	( flora_file_newerthan(UserPatchWSOFile,UserPatchPFile) -> true
 	;
-	  flora_set_xpp_options_for_compile(Workspace),
-	  %%compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
-	  compile(UserPatchPFile,[optimize,ti_all]),
-	  flora_rename_file(UserPatchOFile,UserPatchWSOFile),
-	  flora_clear_xpp_options
+	    flora_set_xpp_options_for_compile(Workspace),
+	    %%compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
+	    compile(UserPatchPFile,[optimize,ti_all]),
+	    flora_rename_file(UserPatchOFile,UserPatchWSOFile),
+	    flora_clear_xpp_options
         ),
 	consult(UserPatchWSOFile),
 	!.
-
-
-/**********************************************************************
-  flsetuppatch
-**********************************************************************/
-flsetuppatch :-
-	flora_patch_full_filename(PatchFullName),
-	telling(PreOutFile),
-	tell(PatchFullName),
-	flora_include_file([FLHEADER,FLDEFINITION,FLHEADER2,FLPATCH,FLDYNA,
-			    FLDYNZ,FLPREDDEF,FLREFRESHTABLE],
-			   HeaderStatus),
-	told,
-	tell(PreOutFile),
-	!,
-	( HeaderStatus == FLORA_FAILURE ->
-	    fail
-	;
-	  flora_set_xpp_options_for_compile(FLORA_DEFAULT_WORKSPACE),
-	  %%compile(PatchFullName,[optimize,spec_repr,ti_all]),
-	  compile(PatchFullName,[optimize,ti_all]),
-	  flora_clear_xpp_options
-	),
-	!.
-
-flora_patch_full_filename(PatchFullName) :-
-	flora_configuration(installdir,FloraDir),
-	flora_slash(S),
-	flora_patch_filename(PatchName),
-	flora_concat_atoms([FloraDir,S,trailer,S,PatchName],PatchFullName).
-
-flora_patch_filename('patch.P').
 
 
 /*************************************************************************
@@ -340,13 +307,14 @@ flora_rename_file(F1,F2) :-
 
 
 /*************************************************************************
-  flora_flcompile(+FlrFile,+ModuleName)
+  flora_compile_then_prolog_compile(+FlrFile,+ModuleName)
 
   This procedure is called to compile either a Flora user module or a
   Flora system module. In the former case, the module name is an atom
   whereas in the latter case the module name looks like flora(name).
+  It first calls the FLORA-2 compiler and then Prolog compiler.
 *************************************************************************/
-flora_flcompile(FlrFile,ModuleName) :-
+flora_compile_then_prolog_compile(FlrFile,ModuleName) :-
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
 	flora_FLD_filename(FlrFile,FLDFile),
@@ -395,7 +363,7 @@ flora_compile_system_module(File) :-
 	flora_sysmod_file(SysModID,BaseName,_SubDir),
 	( flora_locate_file(BaseName,FLORA_FILE_EXT,FlrFile) ->
 	    flora_module_name(ModuleName,systemmodule,SysModID),
-	    flora_flcompile(FlrFile,ModuleName)
+	    flora_compile_then_prolog_compile(FlrFile,ModuleName)
 	;
 	  flora_stderr_nl,
 	  flora_error_line('File ~w[.~w] does not exist',
@@ -425,10 +393,10 @@ flora_load_system_module_internal(SysModID) :-
 		true
 
 	    ; flora_file_op(exists,FlrFile) ->
-		flora_flcompile(FlrFile,ModuleName)
+		flora_compile_then_prolog_compile(FlrFile,ModuleName)
 	    ;
 	      flora_stderr_nl,
-	      flora_error_line('system module file `~w'' does not exist',
+	      flora_error_line('System module file `~w'' does not exist',
 			       [FlrFile]),
 	      !,
 	      fail
@@ -465,10 +433,10 @@ flora_compile_system_module_by_ID(SysModID) :-
 	flora_concat_atoms([FloraDir,S,SubDir,S,BaseName,'.flr'],FlrFile),
 	( flora_file_op(exists,FlrFile) ->
 	    flora_module_name(ModuleName,systemmodule,SysModID),
-	    flora_flcompile(FlrFile,ModuleName)
+	    flora_compile_then_prolog_compile(FlrFile,ModuleName)
 	;
 	  flora_stderr_nl,
-	  flora_error_line('system module file `~w'' does not exist',
+	  flora_error_line('System module file `~w'' does not exist',
 			   [FlrFile]),
 	  !,
           fail
@@ -588,6 +556,12 @@ flora_locate_file(In,Loc) :-
 	flora_file_op(expand,File,Loc),
 	flora_file_op(exists,Loc),
 	!.
+
+flora_locate_file(In,Loc) :-
+	flora_file_op(expand,In,Loc),
+	!,
+	flora_file_op(exists,Loc).
+
 
 
 /*************************************************************************
@@ -843,18 +817,13 @@ flora_not_end_of_input(Status) :- member(FLORA_NOT_EOF,Status).
   flora_reset_modules_for_file(+FullFileName)
 *************************************************************************/
 flora_reset_modules_for_file(FullFileName) :-
-	flora_reset_lexer(FullFileName),
 	flora_reset_composer,
+	flora_reset_lexer(FullFileName),
 	flora_reset_operator,
 	flora_reset_arguments,
 	flora_reset_prolog,
-	flora_reset_hilogtable,
 	flora_reset_compiler,
 	flora_set_counter(flora_shell_mode,0),
-
-    %% for hilog table
-    flora_set_counter(flora_rule_number,1),
-
 	retractall(flora_compiler_environment(_,_)),
 	assert(flora_compiler_environment(file,FullFileName)),
 	!.
@@ -864,8 +833,8 @@ flora_reset_modules_for_file(FullFileName) :-
   flora_reset_modules_for_shell/0
 *************************************************************************/
 flora_reset_modules_for_shell :-
-	flora_reset_lexer,
 	flora_reset_composer,
+	flora_reset_lexer,
 	flora_reset_compiler,
 	flora_set_counter(flora_shell_mode,1),
 	retractall(flora_compiler_environment(_,_)),
@@ -906,8 +875,12 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
+	    extract_trailer_options(InputFile,FileOptionList,
+				    %% Default options
+				    FLORA_DEFAULT_SEMANTICS,
+				    StrippedFileOptions,TrailerOptions),
 	    flora_measure_time(
-	    check_for_dependencies(CompiledRuleList,DepWarnList),
+			       check_for_dependencies(CompiledRuleList,DepWarnList),
 			       'Dependency checking time: '
 			      ),
 	    check_for_dependencies_errorwarn(DepWarnList,DepWarnNum,DepErrNum),
@@ -916,8 +889,16 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	    ( DepErrNum>0 ->
 		FileStatus=FLORA_FAILURE
 	    ;
-	        flora_generate_file(CompiledRuleList,FileOptionList,
-				    PFile,DBFile,FLDFile,FileStatus)
+		(check_custom_trailer_file(TrailerOptions)
+		->
+		    flora_generate_code(CompiledRuleList,
+					StrippedFileOptions,TrailerOptions,
+					PFile,DBFile,FLDFile,FileStatus)
+		; 
+		    flora_stderr_string('++compilation aborted'),
+		    flora_stderr_nl,
+		    FileStatus=FLORA_FAILURE
+		)
 	    )
         ),
 	flora_cputime(T1),
@@ -934,17 +915,19 @@ flora_compile_file(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
 
 
 /*************************************************************************
-  flora_generate_file(+CompiledRuleList,+FileOptionList,+PFile,+DBFile,+FLDFile,-FileStatus)
+  flora_generate_code(+CompiledRuleList,+FileOptionList,+TrailerOptions,+PFile,+DBFile,+FLDFile,-FileStatus)
 
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
-flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus) :-
+flora_generate_code(CompiledRuleList,FileOptionList,TrailerOptions,PFile,DBFile,FLDFile,FileStatus) :-
 	%% Generate FLD file for undefinedness checking
 	flora_debug_code(CompiledRuleList, FLDFile),
 	flora_divide_program(CompiledRuleList,RuleList,FactList),
 	sort(FileOptionList,FileOptions),
 	flora_measure_time(
-			   flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,
+			   flora_generate_Pfile(PFile,
+						FileOptions,TrailerOptions,
+						RuleList,FactList,
 						DBFile,FLDFile,PFileStatus),
 			   '[Coder] Generating P file'
 			   ),
@@ -964,7 +947,8 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
 
 
 /*************************************************************************
-  flora_generate_Pfile(+PFileName,+FileOptionList,+RuleList,+FactList,
+  flora_generate_Pfile(+PFileName,+FileOptionList,+TrailerOptions,
+                       +RuleList,+FactList,
                        +DBFile,+FLDFile,-FileStatus)
 
   Things to do:
@@ -975,7 +959,7 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
   (5) program.
   (6) trailer.
 *************************************************************************/
-flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,FileStatus) :-
+flora_generate_Pfile(PFileName,FileOptionList,TrailerOptions,RuleList,FactList,DBFile,FLDFile,FileStatus) :-
 	telling(PreOutFile),
 	tell(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
@@ -986,52 +970,26 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	flora_include_file([FLHEADER,FLHEADER2],FLHeaderStatus),
 	( FLHeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	;
-	  findall((Arity,Pos),member(FLINDEX(Arity,Pos),FileOptionList),IndexList),
-	  write_index_directives(IndexList),
-	  flora_include_file([FLDEFINITION,FLREFRESHTABLE,FLLIBIMPORTEDCALLS,
-			      FLINDEX_P,FLPATCH,FLDYNA|OptList],
-                           HeaderStatus),
-	  ( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
-	  ;
-	    (FactList == [] -> true; flora_insert_code_for_loaddyn_data(DBFile)),
-	    flora_insert_code_for_loaddyn_data(FLDFile),
+	    findall((Arity,Pos),member(FLINDEX(Arity,Pos),FileOptionList),IndexList),
+	    write_index_directives(IndexList),
+	    include_trailer_control_definitions(TrailerOptions),
+	    flora_include_file([FLDEFINITION,FLTRAILERREGISTRY,
+				FLREFRESHTABLE,FLLIBIMPORTEDCALLS,
+				FLINDEX_P,FLPATCH,FLDYNA|OptList],
+			       HeaderStatus),
+	    ( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
+	    ;
+		(FactList == [] -> true; flora_insert_code_for_loaddyn_data(DBFile)),
+		flora_insert_code_for_loaddyn_data(FLDFile),
 
-            %% Generate entries for tabled or non-tabled predicate registries
-            flora_table_info(RuleList),
-
-	    flora_extern_code(RuleList,CoderStatus),
-	    ( CoderStatus == [] ->
-	      ( member(FLEQLFLOGIC,FileOptionList) ->
-		  %% A directive in the program specifies the full equality trailer.
-		  %% This option adds FLSCALAREQL, which handles the equality
-		  %% implied by single-valued methods.
-		  flora_message_line('Including full F-logic equality maintenance'),
-		  flora_include_file([FLEQLTRAILER,FLSCALAREQL],FileStatus)
-
-	      ; member(FLEQLBASIC,FileOptionList) ->
-		  %% The basic equality trailer does not include the equality
-		  %% implied by single-valued methods.
-	          flora_message_line('Including basic equality maintenance'),
-		  flora_include_file([FLEQLTRAILER],FileStatus)
-
-	      ; member(FLEQLNONE,FileOptionList) ->
-		  %% Explicit directive takes precedence over any default.
-	          flora_message_line('Excluding equality maintenance'),
-		  flora_include_file([FLTRAILER],FileStatus)
-
-	      ; member(FLOBJEQLDEF,FileOptionList) ->
-		  flora_message_line('Including basic equality maintenance'),
-		  flora_include_file([FLEQLTRAILER],FileStatus)
-	      ;
-	        %% By default no equality is included.
-	        flora_include_file([FLTRAILER],FileStatus)
-	      ),
-	      flora_include_file([FLDYNZ,FLPREDDEF],FileStatus)
-	   ;
-	     flora_coder_error(CoderStatus),
-	     FileStatus=FLORA_FAILURE
-	   )
-	 )
+		flora_extern_code(RuleList,CoderStatus),
+		( CoderStatus == [] ->
+		    flora_include_file([FLTRAILER,FLDYNZ,FLPREDDEF],FileStatus)
+		;
+		    flora_coder_error(CoderStatus),
+		    FileStatus=FLORA_FAILURE
+		)
+	    )
         ),
 	told,
 	tell(PreOutFile),
@@ -1043,18 +1001,44 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
   :- index flapply/A1-P1.
   ?- index(dyna_flapply/A1,P1).
   ?- index(dynz_flapply/A1,P1).
+or
+  :- index t_flapply/A1-P1.
+  ?- index(dyna_t_flapply/A1,P1).
+  ?- index(dynz_t_flapply/A1,P1).
 *************************************************************************/
 write_index_directives([]) :- !.
 write_index_directives([(A,P)|L]) :-
-	A1 is A+1, P1 is P+1,
+        ( A=FL_TRAN(NA) ->
+            A1 is NA+1,
+            Type=nontabled
+        ;
+            A1 is A+1,
+            Type=tabled
+        ),
+	P1 is P+1,
 	flora_write_atom(':- index FLORA_THIS_WORKSPACE('),
-	flora_write_atom(WRAP_HILOG), flora_write_atom(')/'),
+        ( Type==nontabled ->
+	    flora_write_atom(WRAP_HILOG)
+        ;
+	    flora_write_atom(WRAP_TABLED_HILOG)
+        ),
+        flora_write_atom(')/'),
 	write(A1), put(0'-), write(P1), put(0'.), nl,
 	flora_write_atom('?- index(FLORA_THIS_WORKSPACE('),
-	flora_write_atom(WRAP_DYNA_HILOG), flora_write_atom(')/'),
+        ( Type==nontabled ->
+	    flora_write_atom(WRAP_DYNA_HILOG)
+        ;
+	    flora_write_atom(WRAP_TDYNA_HILOG)
+        ),
+        flora_write_atom(')/'),
 	write(A1), put(0',), write(P1), put(0')),put(0'.), nl,
 	flora_write_atom('?- index(FLORA_THIS_WORKSPACE('),
-	flora_write_atom(WRAP_DYNZ_HILOG), flora_write_atom(')/'),
+        ( Type==nontabled ->
+	    flora_write_atom(WRAP_DYNZ_HILOG)
+        ;
+	    flora_write_atom(WRAP_TDYNZ_HILOG)
+        ),
+        flora_write_atom(')/'),
 	write(A1), put(0',), write(P1), put(0')),put(0'.), nl,
 	write_index_directives(L).
 
@@ -1224,19 +1208,28 @@ flora_reclaim_storage_space :-
 	(flora_storage_registry(StorageName),
 	    flora_db_reclaim_space(StorageName),
 	    fail
-	; true).
+	; true
+	).
 
 
 /*************************************************************************
   flora_rpc_file(+MaxErr,+ErrNum,+WarnNum,-CompiledRuleList,-FileOptionList,-FileStatus)
+  flora_tailappend(+L1,+L2,-Result)
+
+  flora_rpc_file/6 calls the lexer/composer/compiler rule-by-rule.
+      Each time checks if there have been any errors. Collects options passed
+      in by the compiler into a list. These options tell which libraries
+      to load, how to compose the trailer, etc.
+  flora_tailappend/3: used to concatenate the options passed in by the
+      compiler efficiently, using difference lists.
 *************************************************************************/
-%% The first argument keeps track of the tail of a list.
+%% Third argument is bound to the tail of the list represented by first arg.
+%% flora_tailappend(X,[a,b],T) gives X=[a,b|T].
+%% Then T is passed to another flora_tailappend(T,[c,d],T1), etc.
 flora_tailappend(V,[],V) :- !.
 flora_tailappend([H|V],[H|L],T) :- flora_tailappend(V,L,T).
 
 
-%% Calls the compiler. This is used to wrap templates, like trailers, 
-%% with the WORKSPACE macros.
 flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus) :-
 	flora_read_parse_compile(FLORA_FILE,Tokens,
                                  CompiledRuleList-NewCompiledRuleList,
@@ -1245,7 +1238,7 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 	member(warning(WN),RuleStatus),
 	NewErrNum is ErrNum+EN,
 	NewWarnNum is WarnNum+WN,
-	( EN > 0 -> %% errors just found
+	( EN > 0 -> %% errors found in the latest compiled rule
 	    ( MaxErr \== FLORA_ALL, NewErrNum >= MaxErr ->
 		FileStatus=FLORA_FAILURE,
 		flora_stderr_nl,
@@ -1271,7 +1264,7 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 		flora_stderr_nl
 	    )
 	;
-	  ( NewErrNum == 0 -> %% no error so far
+	  ( NewErrNum == 0 -> %% no errors so far
 	      flora_tailappend(FileOptionList,RuleOptions,NewFileOptionList)
 	  ;
 	    true
@@ -1428,6 +1421,9 @@ flora_shell_command_line(Code,Options,Status) :-
 	flora_reset_modules_for_shell,
 	flora_read_parse_compile(FLORA_COMMANDLINE,Tokens,Rules-[],
                                  RuleOptions,RuleStatus),
+	%% Trailer options will always be empty list in the shell
+	strip_indices_from_options_and_split(RuleOptions,StrippedOptions,_TrailerOptions),
+	sort(StrippedOptions,Options),
 	member(error(ErrNum),RuleStatus),
 	( ErrNum > 0 ->
 	    ( flora_end_of_input(RuleStatus) ->
@@ -1455,7 +1451,6 @@ flora_shell_command_line(Code,Options,Status) :-
 	      CommandStatus=FLORA_FAILURE
 	    )
 	  ),
-	  sort(RuleOptions,Options),
 	  ( flora_end_of_input(RuleStatus) ->
 	      Status=[FLORA_EOF,CommandStatus]
 	  ;
@@ -1642,12 +1637,20 @@ flora_parser_error([error(Msg)|L],ErrNum) :-
 
 check_for_dependencies_errorwarn([],0,0) :- !.
 
-check_for_dependencies_errorwarn([warning(Msg)|L],WarnNum,ErrNum) :-
+check_for_dependencies_errorwarn([warning(HTK,BTK,(MH,MB))|L],WarnNum,ErrNum) :-
 	!,
-	( flora_current_compile_filename(FileName) ->
-	    flora_warning_line('[~w] [Dependency check] ~w', [FileName,Msg])
-	;
-	    flora_warning_line('[Dependency check] ~w', [Msg])
+	(
+         flora_compile_filename_by_token(HTK,HFileName),
+         flora_compile_filename_by_token(BTK,BFileName) ->
+	    flora_warning_line('[Dependency check] ~w in [~w] dependes on ~w in [~w]', [MH,HFileName,MB,BFileName])
+        ;
+         flora_compile_filename_by_token(HTK,HFileName),
+	    flora_warning_line('[Dependency check] ~w in [~w] dependes on ~w', [MH,HFileName,MB])
+        ;
+         flora_compile_filename_by_token(BTK,BFileName),
+	    flora_warning_line('[Dependency check] ~w dependes on ~w in [~w]', [MH,MB,BFileName])
+        ;
+	    flora_warning_line('[Dependency check] ~w dependes on ~w', [MH,MB])
 	),
 	check_for_dependencies_errorwarn(L,WN,ErrNum),
 	WarnNum is WN+1.
@@ -1730,10 +1733,9 @@ flora_coder_error([error(Msg)|L]) :-
 *****************************************************************************/
 flora_list2conjunct([G],G) :- !.
 
-flora_list2conjunct([G|L],Goal) :-
+flora_list2conjunct([G|L],(G,LG)) :-
 	!,
-	flora_list2conjunct(L,LG),
-	Goal =.. [',',G,LG].
+	flora_list2conjunct(L,LG).
 
 
 /*************************************************************************
@@ -1754,6 +1756,89 @@ flMaxerr(X) :-
 	).
 
 
+/*************************************************************************
+   flora_string_command_line(+String,-Code,-Options,-Status)
+
+   Read, parse, then compile a query from a string
+*************************************************************************/
+flora_string_command_line(String,Code,Options,Status) :-
+	file_open(String, sr, IOport),
+	ioport2iostream(IOport,Stream),
+	see(Stream),
+	!,
+	flora_shell_command_line(Code,Options,Status).
+
+
+
+/*************************************************************************
+   flora_call_string_command(+String,+Vars,-Status,-Exception)
+
+   Execute a query specified in String.
+
+   String: A query string
+   Vars:   A list of the form [Name1=Var1, Name2=Var2,...].
+           Name is a name of a variable mentioned in String, for instance, 
+	   'X' (note: must be quoted, since it is a name).
+	   Var is a variable where you want the bonding for the variable 
+	   Name in String to be returned. For instance, 
+	   if String is 'p(X,Y).'
+	   Vars can be ['X' = Xyz, 'Y' = Qpr]
+	   Then Xyz will be bound to the value of X in p(X,Y) after
+	   the execution and Qpr will be bound to the value of Y in p(X,Y).
+   Status: indicates the status of compilation of the command in String.
+   Exception: is a possible exception during the runtime execution 
+              of the command in String.
+*************************************************************************/
+
+flora_call_string_command(String,_UserVars,Status,_Exception) :-
+	\+ atom(String),
+	!,
+	Status = [FLORA_INVALID_INPUT, FLORA_FAILURE].
+flora_call_string_command(String,UserVars,Status,Exception) :-
+	flora_string_command_line(String,Code,Options,Status),
+	%% strip FLLIBSHELLANS from code and extract variables - we
+	%% want to control delivery of answers by an external caller
+	Code = FLLIBSHELLANS(Code1,Vars),
+	( flora_good_command(Status) ->
+	    flora_init_for_external_calls,
+	    findall(SysLibOp,member(FLSYSLIB(SysLibOp),Options),SysLibList),
+	    flora_load_library(SysLibList),
+	    findall(SysModOp,member(FLSYSMOD(SysModOp),Options),SysModList),
+	    flora_load_system_module(SysModList),
+	    catch(call(Code1),
+		  Exception,
+		  flora_string_command_handler(Exception)),
+	    (var(Exception)
+	    -> Exception = FLORA_NORMAL,
+		flora_bind_variables(UserVars,Vars)
+	    ;
+		true
+	    )
+	;
+	    true
+	).
+
+%% The error handler for executing commands read from strings.
+flora_string_command_handler(Exception) :-
+	seen,
+	xsb_flag(backtrace_on_error,BT),
+	(Exception = error(_Error,_Msg,Backtrace), BT == on
+	->
+	    print_backtrace(Backtrace)
+	;
+	    true
+	).
+
+flora_bind_variables([],_ResultVars).
+flora_bind_variables([Name=Var|RestUserVars],ResultVars) :-
+	(member(Name=Var, ResultVars) -> true ; true),
+	flora_bind_variables(RestUserVars,ResultVars).
+
+flora_init_for_external_calls :-
+	flora_load_library(FLLIBLOAD),
+	flora_load_library(FLLIBDISPLAY),
+	flora_load_library(FLLIBIMPORTEDCALLS),
+	flloadtrailer([FL_EQUALITY(NONE)],FLORA_DEFAULT_WORKSPACE).
 
 /*************************************************************************
   flHalt/0
@@ -1765,9 +1850,11 @@ flHalt :- halt.
   flDump/1
 *************************************************************************/
 flDump(InFile>>Workspace) :-
+	%% Include workspace in the dumped file
 	flora_dump_file(InFile,Workspace,dontsquash).
 
 flDump(InFile) :-
+	%% Ignore workspace in the dumped file
 	flora_dump_file(InFile,FLORA_DEFAULT_WORKSPACE,squash).
 
 
@@ -1812,8 +1899,7 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
 	    %% Dump the main .P file.
 	    flora_gpp_dumpfile(PFile,DumpPFile,NewWorkspace)
 	;
-	  flora_error_line('Failed to create the main dumpfile ~w',
-		           [PFile])
+	  flora_error_line('Failed to create the main dumpfile ~w', [PFile])
 	),
 	( flora_file_op(exists,FDBFile) ->
 	    %% Dump the .fdb file if it exists.
@@ -1860,7 +1946,7 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	prettyprint_stdin,
 	process_control(XPP_process,wait(ExitStatus)),
 	(ExitStatus==0, !
-	; flora_error_line('Error while preprocessing ~w', FileName)
+	; flora_error_line('Error while preprocessing ~w', [FileName])
 	),
 	flora_clear_xpp_options,
 	file_close(IOportFromGPP),
@@ -1903,6 +1989,233 @@ flora_abort :- close_open_tables, throw(FLORA_ABORT).
 flora_abort(Msg) :-
 	is_list(Msg), !,
 	flora_concat_items(Msg,AtomMsg),
-	close_open_tables, throw(FLORA_ABORT(AtomMsg)).
+	close_open_tables,
+	throw(FLORA_ABORT(AtomMsg)).
 flora_abort(Msg) :- close_open_tables, throw(FLORA_ABORT(Msg)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Generation of the trailer filename
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+    Create a proper trailer filename for the given options: equality,
+    inheritance, custom file
+*/
+flora_make_trailer_filename(TrailerOptions,TrailerFilerFN) :-
+	member(FL_EQUALITY(Equality),TrailerOptions),
+	member(FL_INHERITANCE(Inheritance),TrailerOptions),
+	member(FL_CUSTOM(Custom),TrailerOptions),
+	encode_path_as_filename(Custom,CustomFN),
+	flora_concat_atoms(['trailer$eq=',Equality,'+inh=',Inheritance,'+cus=',CustomFN,'.',PROLOG_PFILE_EXT], TrailerFilerFN).
+
+/*
+   Converts full path to a single filename that is acceptable to both Unix 
+   and Windows. The file name has no directory part. This ensures that
+   trailer names are uniquely identified by the custom part of the trailer
+   and the inheritance/equality parameters.
+   Maps: / -> _, \ -> =, : -> %, . -> $
+   Each occurrence of _, =, %, $ that is part of the input path is doubled 
+   in the output filename.
+*/
+encode_path_as_filename(InPath, OutFilename) :-
+	atom_codes(InPath,InPathList),
+	encode_pathList_as_filenameList(InPathList,OutFilenameList),
+	atom_codes(OutFilename,OutFilenameList).
+
+encode_pathList_as_filenameList([],[]) :- !.
+encode_pathList_as_filenameList([CH_SLASH|Rest],[CH_UNDERSCORE|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([CH_BACKSLASH|Rest],[CH_EQUAL|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([CH_DOT|Rest],[CH_DOLLAR|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([CH_COLON|Rest],[CH_PERCENT|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([CH_UNDERSCORE|Rest],[CH_UNDERSCORE,CH_UNDERSCORE|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([CH_EQUAL|Rest],[CH_EQUAL,CH_EQUAL|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([CH_PERCENT|Rest],[CH_PERCENT,CH_PERCENT|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([CH_DOLLAR|Rest],[CH_DOLLAR,CH_DOLLAR|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+encode_pathList_as_filenameList([Char|Rest],[Char|Rest1]) :-
+	!,
+	encode_pathList_as_filenameList(Rest,Rest1).
+
+
+%% Include #define statements according to TrailerOptions
+include_trailer_control_definitions(TrailerOptions) :-
+	nl,
+	writeln('/********** Trailer Control Variables ************/'),
+	nl,
+	(member('LOADABLETRAILER',TrailerOptions)
+	-> writeln('#define LOADABLETRAILER')
+	; true
+	),
+	member(FL_EQUALITY(EqType),TrailerOptions),
+	format('#define EQUALITY~w~n', [EqType]),
+	member(FL_INHERITANCE(InhType),TrailerOptions),
+	format('#define INHERITANCE~w~n', [InhType]),
+	member(FL_CUSTOM(CusFile),TrailerOptions),
+	(CusFile == NONE
+	-> writeln('#define CUSTOMnone')
+	; 
+	    %% file without quotes; quotes are added
+	    %% in assert(flora_trailer_registry(...)) calls
+	    format('#define CUSTOMTRAILER ~w~n', [CusFile])
+	),
+	nl,
+	!.
+include_trailer_control_definitions(TrailerOptions) :- 
+	flora_error_line('Bug in include_trailer_control_definitions. Options: ~w', [TrailerOptions]),
+	fail.
+
+
+
+
+/*
+   extract_trailer_options(+OldOptions,-NewOptions,-TrailerOptions)
+
+   Check for conflicting options in the trailer.
+   If no conflicts, split off trailer options, resolve defaults.
+   Strip indices from all options.
+*/
+
+extract_trailer_options(InputFile,OldOptions,Defaults,NewOptions,NewTrailerOptions) :-
+	%% this succeeds, if errors
+	\+ found_option_conflicts(InputFile,OldOptions),
+	strip_indices_from_options_and_split(OldOptions,NewOptions,TrailerOptions),
+	fixup_trailer_options(TrailerOptions,Defaults,NewTrailerOptions).
+
+found_option_conflicts(InputFile,OptList) :-
+	member((FL_EQUALITY(X),IdxX), OptList),
+	member((FL_EQUALITY(Y),IdxY), OptList),
+	X \= Y,
+	!,
+	print_option_conflict_error(InputFile,FL_EQUALITY,IdxX,IdxY).
+found_option_conflicts(InputFile,OptList) :-
+	member((FL_INHERITANCE(X),IdxX), OptList),
+	member((FL_INHERITANCE(Y),IdxY), OptList),
+	X \= Y,
+	!,
+	print_option_conflict_error(InputFile,FL_INHERITANCE,IdxX,IdxY).
+found_option_conflicts(InputFile,OptList) :-
+	member((FL_CUSTOM(X),IdxX), OptList),
+	member((FL_CUSTOM(Y),IdxY), OptList),
+	X \= Y,
+	!,
+	print_option_conflict_error(InputFile,FL_CUSTOM,IdxX,IdxY).
+
+print_option_conflict_error(InputFile,OptionName,Idx1,Idx2) :-
+	(flora_nth_token(Idx1,Tk1),
+	    flora_token_text(Tk1,_TextStr1,BLN1,_BCN1,_ELN1,_ECN1),
+	    flora_nth_token(Idx2,Tk2),
+	    flora_token_text(Tk2,_TextStr2,BLN2,_BCN2,_ELN2,_ECN2)
+	->
+	    flora_error_line('~w: Conflicting occurrences of option `~w'' in the directive `~w'' on lines ~w and ~w',
+	                     [InputFile,OptionName,FL_SEMANTICS,BLN1,BLN2])
+	;
+	    flora_error_line('~w: Conflicting occurrences of option `~w'' in the directive `~w''',
+	                     [InputFile,OptionName,FL_SEMANTICS])
+	).
+
+
+strip_indices_from_options_and_split([],[],[]).
+strip_indices_from_options_and_split([(Option,_I)|Rest],
+				     StrippedOptions,
+				     [Option|RestTrailer]) :-
+	(Option = FLOBJEQLDEF; Option = FL_EQUALITY(_);
+	    Option = FL_INHERITANCE(_); Option = FL_CUSTOM(_)),
+	!,
+	strip_indices_from_options_and_split(Rest,StrippedOptions,RestTrailer).
+strip_indices_from_options_and_split([(Option,_I)|Rest], [Option|StrippedRest], TrailerOptions) :-
+	strip_indices_from_options_and_split(Rest,StrippedRest,TrailerOptions).
+
+/*
+   Fix option defaults:
+       FLOBJEQLDEF overrides equality(none),
+       equality(none), inheritance(flogic), custom(none) are defaults.
+   Always succeeds.
+*/
+fixup_trailer_options(TrailerOptions,Defaults,NewTrailerOptions) :-
+	(member(FLOBJEQLDEF,TrailerOptions)
+	->
+	    delete_from_list(FLOBJEQLDEF,TrailerOptions,TrailerOptions1),
+	    /*
+	    %% This makes :=: in the head to override the explicit
+	    %% equality(non) option, but our stated policy is that
+	    %% the explicit directive overrides the implicit ones
+	    (member(FL_EQUALITY(EqType),TrailerOptions1)
+	    ->
+		(var(EqType) -> TrailerOptions2 = TrailerOptions1
+		;
+		    delete_from_list(FL_EQUALITY(NONE),TrailerOptions1,TrailerOptions2),
+		    NewTrailerOptions1 = [FL_EQUALITY(BASIC)|TrailerOptions2]
+		)
+	    ; member(FL_EQUALITY(_),TrailerOptions1)
+	    */
+	    ( member(FL_EQUALITY(_),TrailerOptions1)
+	    -> 
+		NewTrailerOptions1 = TrailerOptions1
+	    ; 
+		NewTrailerOptions1 = [FL_EQUALITY(BASIC)|TrailerOptions1]
+	    )
+	;
+	    NewTrailerOptions1 = TrailerOptions
+	),
+	(member(FL_EQUALITY(_),NewTrailerOptions1)
+	->
+	    NewTrailerOptions2 = NewTrailerOptions1
+	;
+	    member(FL_EQUALITY(EqType),Defaults),
+	    NewTrailerOptions2 = [FL_EQUALITY(EqType)|NewTrailerOptions1]
+	),
+	(member(FL_INHERITANCE(_),NewTrailerOptions2)
+	->
+	    NewTrailerOptions3 = NewTrailerOptions2
+	;
+	    member(FL_INHERITANCE(InhType),Defaults),
+	    NewTrailerOptions3 = [FL_INHERITANCE(InhType)|NewTrailerOptions2]
+	),
+	(member(FL_CUSTOM(File),NewTrailerOptions3)
+	->
+	    ( (var(File) ; File == NONE)
+	    -> NewTrailerOptions = NewTrailerOptions3
+	    ;
+		flora_file_op(expand,File,ExpandedFile),
+		delete_from_list(FL_CUSTOM(File),NewTrailerOptions3,NewTrailerOptions4),
+		NewTrailerOptions = [FL_CUSTOM(ExpandedFile)|NewTrailerOptions4]
+	    )
+	;
+	    member(FL_CUSTOM(CusFile),Defaults),
+	    NewTrailerOptions = [FL_CUSTOM(CusFile)|NewTrailerOptions3]
+	).
+
+check_custom_trailer_file(TrailerOptions) :-
+	( member(FL_CUSTOM(File),TrailerOptions)
+	->
+	    (File == NONE, !
+	    ;
+		flora_file_op(expand,File,ExpandedFile),
+		(flora_file_op(exists, ExpandedFile), !
+		; flora_error_line('Custom trailer file not found: ~w', [ExpandedFile]),
+		    fail
+		)
+	    )
+	;
+	    true
+	).
+
+
+delete_from_list(Element, [Element|Rest_Elements], Rest_Elements).
+delete_from_list(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
+	delete_from_list(Element, Rest_L1, Rest_L2).
 

@@ -37,7 +37,7 @@
 %% PROLOG builtins
 
 flora_nodefp(FL_SEMICOLON,2) :- !.
-flora_nodefp(FL_COMMA,2) :- !.
+flora_nodefp(FL_OR,2) :- !.
 
 flora_nodefp(FL_TNOT,1) :- !.
 flora_nodefp(FL_NEG,1) :- !.

@@ -51,15 +51,24 @@ flora_prlg(FL_LT,2) :- !.
 flora_prlg(FL_EQLT,2) :- !.
 flora_prlg(FL_GT,2) :- !.
 flora_prlg(FL_EQGT,2) :- !.
+
 flora_prlg(FL_RIGHTTO,2) :- !.
 flora_prlg(FL_LEFTTO,2) :- !.
 
 flora_prlg(FL_COMMA,2) :- !.
 flora_prlg(FL_SEMICOLON,2) :- !.
+flora_prlg(FL_AND,2) :- !.
+flora_prlg(FL_OR,2) :- !.
+
+flora_prlg(FL_NOT,1) :- !.
 
 flora_prlg(FL_PLUS,2) :- !.
 flora_prlg(FL_MINUS,2) :- !.
 flora_prlg(FL_SYMOR,2) :- !.
+
+flora_prlg(FL_EXP,2) :- !.
+flora_prlg(FL_EXP,1) :- !.
+flora_prlg(FL_LOG,1) :- !.
 
 flora_prlg(FL_FLOOR,1) :- !.
 flora_prlg(FL_ABS,1) :- !.
@@ -83,9 +92,9 @@ flora_prlg(flora_abort,1) :- !.
 flora_prlg(abolish_all_tables,0) :- !.
 flora_prlg(call,1) :- !.
 flora_prlg(compile,1) :- !.
-flora_prlg(fail,0) :- !.
+flora_prlg(FL_FAIL,0) :- !.
 flora_prlg(findall,3) :- !.
-flora_prlg(true,0) :- !.
+flora_prlg(FL_TRUE,0) :- !.
 flora_prlg(var,1) :- !.
 flora_prlg(nonvar,1) :- !.
 flora_prlg(atom,1) :- !.

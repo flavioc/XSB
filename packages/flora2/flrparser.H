@@ -23,7 +23,6 @@
 **
 */
 
-
 :- import append/3 from basics.
 
 :- import

@@ -38,7 +38,11 @@
    from flrporting.
 
 :- dynamic flora_file_stack/2.
+:- dynamic flora_file_list/2.
+:- dynamic flora_file_first_token/2.
+:- dynamic flora_file_last_token/2.
 :- index(flora_file_stack/2,trie).
+:- index(flora_file_list/2,trie).
 
 
 :- export
@@ -52,4 +56,5 @@
 	flora_blank_line/1,
 	flora_begin_file/1,
 	flora_end_file/1,
+        flora_compile_filename_by_token/2,
 	flora_current_compile_filename/1.

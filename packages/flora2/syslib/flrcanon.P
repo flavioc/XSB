@@ -35,11 +35,21 @@
 	flora_head_to_body_conversion_cache(_,_).
 
 :- import
+	is_flora_callable_literal/1,
         flora_module_predicate/4,
+        flora_decode_predicate/7,
         flora_decode_predicate/6
    from flrwrapper.
 
-:- import length/2 from basics.
+:- import append/3 from basics.
+
+:- import
+	flora_generalize_last/2
+   from flrtrim.
+
+:- import
+	length/2
+   from basics.
 
 :- import
         flora_concat_atoms/2
@@ -53,38 +63,109 @@
 /******************************************************************************
   get_canonical_form(+Term,-Canon)
   get the canonical form Canon of the given Term. Canon is in the form
-  of (Wrap,Args,Module,Callable)
+  of FLCANON(Wrap,Args,Module,Callable)
 ******************************************************************************/
 %% Case of Var
-get_canonical_form(Term,(_,_,_,Term)) :-
+get_canonical_form(Term,FLCANON(_,_,_,Term)) :-
        var(Term),
        !.
 
 %% Case of Var@...
-get_canonical_form(FLLIBMODLIT(FL_LIBMOD,Term,Mod),(Wrap,Args,Module,Callable)) :-
+get_canonical_form(FLLIBMODLIT(FL_LIBMOD,Term,Mod,_Caller),Canon) :-
+	var(Term),
 	!,
-	get_canonical_form(Term,Canon),
-	Canon = (Wrap,Args,NewMod,Callable),
-	(var(Term) -> Module = Mod
-	;  var(NewMod) -> Module=Mod
-	;  Module = NewMod
-	).
+        Canon = FLCANON(_,_,Mod,Term).
+
+%% Case of #Var@... where Var is unbound
+get_canonical_form(FLLIBMODLIT(WRAP_HILOG,[FL_TRAN,Term,_TC],Mod,_Caller),Canon) :-
+	var(Term),
+	!,
+        Canon = FLCANON(WRAP_HILOG,_,Mod,Term).
+
+%% Case of #Var@... where Var is bound to a predicate
+get_canonical_form(FLLIBMODLIT(WRAP_HILOG,[FL_TRAN,Term,_TC],Mod,_Caller),Canon) :-
+        !,
+        ( atom(Term) ->
+            ArgsOut=[Term,_],
+	    (var(Mod) -> 
+	        Canon = FLCANON(WRAP_HILOG,ArgsOut,Mod,_)
+	    ;
+	        flora_module_predicate(WRAP_HILOG,ArgsOut,Mod,Callable),
+	        Canon = FLCANON(WRAP_HILOG,ArgsOut,Mod,Callable)
+            )
+        ; is_flora_callable_literal(Term) ->
+            get_canonical_form(Term,Canon)
+        ; Term = FLLIBMODLIT(_W,_A,_M,_C) ->
+            get_canonical_form(Term,Canon),
+            Canon = FLCANON(_NW,_NA,NM,_NC),
+            ( var(NM) -> NM=Mod; true) 
+        ; Term =.. [WRAP_HILOG|As] ->
+            append(As,[_],ArgsOut),
+	    (var(Mod) -> 
+	        Canon = FLCANON(WRAP_HILOG,ArgsOut,Mod,_)
+	    ;
+	        flora_module_predicate(WRAP_HILOG,ArgsOut,Mod,Callable),
+	        Canon = FLCANON(WRAP_HILOG,ArgsOut,Mod,Callable)
+            )
+        ).
+
+get_canonical_form(FLLIBMODLIT(FL_LIBMOD,Term,Mod,Caller), Canon) :-
+	!,
+        ( atom(Term) ->
+            ArgsOut=[Term,_],
+	    (var(Mod) -> 
+	        Canon = FLCANON(WRAP_TABLED_HILOG,ArgsOut,Mod,_)
+	    ;
+	        flora_module_predicate(WRAP_TABLED_HILOG,ArgsOut,Mod,Callable),
+	        Canon = FLCANON(WRAP_TABLED_HILOG,ArgsOut,Mod,Callable)
+            )
+        ; is_flora_callable_literal(Term) ->
+            get_canonical_form(Term,Canon)
+        ; Term = FLLIBMODLIT(_W,_A,_M,_C) ->
+            get_canonical_form(Term,Canon),
+            Canon = FLCANON(_NW,_NA,NM,_NC),
+            ( var(NM) -> NM=Mod; true) 
+        ; Term = WRAP_HILOG(FL_TRAN,NewTerm) ->
+            get_canonical_form(FLLIBMODLIT(WRAP_HILOG,[FL_TRAN,NewTerm,_TC],Mod,Caller),Canon)
+        ; Term =.. [WRAP_HILOG|As] ->
+            append(As,[_],ArgsOut),
+	    (var(Mod) -> 
+	        Canon = FLCANON(WRAP_TABLED_HILOG,ArgsOut,Mod,_)
+	    ;
+	        flora_module_predicate(WRAP_TABLED_HILOG,ArgsOut,Mod,Callable),
+	        Canon = FLCANON(WRAP_TABLED_HILOG,ArgsOut,Mod,Callable)
+            )
+        ).
 
 %% Case of nonvar@Var
-get_canonical_form(FLLIBMODLIT(Wrap,Args,Mod), (Wrap,Args,Mod,Callable)) :-
+get_canonical_form(FLLIBMODLIT(Wrap,Args,Mod,_Caller), Canon) :-
 	!,
-	(var(Mod) -> true
-	; flora_module_predicate(Wrap,Args,Mod,Callable)
+	flora_generalize_last(Args,ArgsOut),
+	(var(Mod) -> 
+	    Canon = FLCANON(Wrap,ArgsOut,Mod,_)
+	;
+	    flora_module_predicate(Wrap,ArgsOut,Mod,Callable),
+	    Canon = FLCANON(Wrap,ArgsOut,Mod,Callable)
 	).
 
 get_canonical_form(Term, Canon) :-
-	flora_decode_predicate(Term,Type,TermModuleName,Prefix,Wrapper,ArgL),
-	(Type = (hilog) ->
-	    Canon = (WRAP_HILOG,[Wrapper|ArgL],TermModuleName,_)
-	; (atom(Prefix) -> flora_concat_atoms([Prefix,Wrapper],Wrapper1)
-	  ; Wrapper1 = Wrapper
-	  ),
-	  Canon = (Wrapper1,ArgL,TermModuleName,Term)
+	flora_decode_predicate(Term,Type,TermModuleName,Wrapper,WPrefix,PSym,ArgL),
+        ( ((Type==hilog);(Type==flogic);(Wrapper==WRAP_HILOG)) ->
+	    flora_generalize_last(ArgL,ArgLout),
+	    flora_generalize_last(Term,TermOut)
+        ;
+            ArgLout=ArgL,
+            TermOut=Term
+        ),
+	(Type == (hilog) % hilog predicate
+	->
+            flora_concat_atoms([WPrefix,WRAP_HILOG],PF),
+	    flora_module_predicate(PF,[PSym|ArgLout],TermModuleName,
+				   CallableHiLog),
+	    Canon = FLCANON(PF,[PSym|ArgLout],TermModuleName,
+			    CallableHiLog)
+	; 
+	    Canon = FLCANON(Wrapper,ArgLout,TermModuleName,TermOut)
 	).
 
 /****************************************************************************
@@ -102,7 +183,7 @@ convert_to_head_literal(Body,Head) :-
 	!.
 convert_to_head_literal(Body,Head) :-
 	flora_decode_predicate(Body,Type,ModuleName,_Prefix,MainWrapper,ArgL),
-	(Type = (hilog) -> Head = Body
+	(Type == (hilog) -> Head = Body
 	;
 	    flora_module_predicate(MainWrapper,ArgL,ModuleName,Head)
 	),
@@ -123,15 +204,22 @@ convert_to_body_literal(Head,Body) :-
 	var(Head),
 	!,
 	Body = Head.
+convert_to_body_literal(FLLIBMODLIT(Wrap,Args,Mod,_Caller),FLLIBMODLIT(Wrap,Args,Mod,_NewCaller)) :-
+	!.
+
 convert_to_body_literal(Head,Body) :-
 	flora_head_to_body_conversion_cache(Head,Body),
 	!.
 convert_to_body_literal(Head,Body) :-
 	flora_decode_predicate(Head,Type,ModuleName,_Prefix,MainWrapper,ArgL),
-	(Type = (hilog) -> Body = Head
+	(Type == (hilog) -> Body = Head
 	;
-	    flora_concat_atoms([FLDEBUGPREFIX,MainWrapper],BodyWrapper),
-	    flora_module_predicate(BodyWrapper,ArgL,ModuleName,Body)
+            (( Type == (flogic) ; Head =.. [WRAP_HILOG|_Args]) ->
+	        flora_concat_atoms([FLDEBUGPREFIX,MainWrapper],BodyWrapper),
+	        flora_module_predicate(BodyWrapper,ArgL,ModuleName,Body)
+            ;
+                Body = Head
+            )
 	),
 	functor(Head,HeadF,Arity),
 	functor(Body,BodyF,_),
@@ -139,4 +227,5 @@ convert_to_body_literal(Head,Body) :-
 	HeadTempl =.. [HeadF|NewArgs],
 	BodyTempl =.. [BodyF|NewArgs],
 	assert(flora_head_to_body_conversion_cache(HeadTempl,BodyTempl)).
+
 

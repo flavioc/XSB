@@ -29,6 +29,10 @@
 #define	LINE_NO		flora_lexer_line_no
 #define CHAR_NO		flora_lexer_char_no
 #define CURR_FILE	flora_lexer_current_file
+#define FILE_CNT	flora_lexer_file_count
+#define PENDING         0
+
+#define TKCNT           tkcnt           %% defined in composer
 
 #include "flora_characters.flh"
 #include "flora_errors.flh"
@@ -41,11 +45,13 @@
 ****************************************************************************/
 flora_reset_lexer :-
 	reset_file_stack,
+        reset_file_list,
 	flora_reset_charpos.
 
 
 flora_reset_lexer(FileName) :-
 	reset_file_stack,
+	reset_file_list,
 	flora_begin_file(FileName).
 
 
@@ -74,13 +80,28 @@ reset_file_stack :-
 	flora_set_counter(CURR_FILE,0),
 	retractall(flora_file_stack(_,_)).
 
+/****************************************************************************
+  reset_file_list/0
+  a list of files with their range of tokens
+****************************************************************************/
+reset_file_list :-
+	%% Set the beginning of list to 0.
+	flora_set_counter(FILE_CNT,0),
+        retractall(flora_file_first_token(_,_)),
+        retractall(flora_file_last_token(_,_)),
+	retractall(flora_file_list(_,_)).
 
 /****************************************************************************
   flora_begin_file(+FileName)
 ****************************************************************************/
 flora_begin_file(FileName) :-
 	flora_increment_counter(CURR_FILE,1,_,M),
+	flora_increment_counter(FILE_CNT,1,_,FCnt),
+        flora_get_counter(TKCNT,Tk),
+        assert(flora_file_first_token(FCnt,Tk)),
+        assert(flora_file_last_token(FCnt,PENDING)),
 	assert(flora_file_stack(M,FileName)),
+	assert(flora_file_list(FCnt,FileName)),
 	flora_reset_charpos.
 
 
@@ -89,7 +110,13 @@ flora_begin_file(FileName) :-
 ****************************************************************************/
 flora_end_file(LineNumber) :-
 	flora_increment_counter(CURR_FILE,-1,N,_M),
-	retractall(flora_file_stack(N,_)),
+        retract(flora_file_stack(N,_)),
+        %% the most near file beginning that waiting for an end
+        flora_file_last_token(FCnt,PENDING),
+        \+ (flora_file_last_token(FC,PENDING), FC > FCnt),
+        flora_get_counter(TKCNT,Tk),
+        retract(flora_file_last_token(FCnt,_)),
+        assert(flora_file_last_token(FCnt,Tk)),
 	set_charpos(LineNumber,1).
 
 
@@ -108,6 +135,35 @@ flora_current_compile_filename(Name) :-
 	flora_concat_atoms([Base,'.',Ext],Name)
 	),
 	!.
+
+/****************************************************************************
+  flora_compile_filename_by_token(+Token,-FileName)
+
+  This procedure returns the name of  the inner-most file in the file list 
+  to which the input token belongs.
+  It fails if a shell command is being processed.
+****************************************************************************/
+flora_compile_filename_by_token(TK,FileName) :-
+        flora_file_first_token(SP,FFToken),
+        flora_file_last_token(SP,FLToken),
+        FLToken > TK, TK >= FFToken,
+        \+ ( 
+            flora_file_last_token(SP1,FLT1), 
+            flora_file_first_token(SP1,FFT1), 
+            FLToken > FLT1, FLT1 > TK,
+            TK >= FFT1, FFT1 > FFToken
+        ),
+	flora_file_list(SP,Name),
+	parse_filename(Name,_,Base,Ext),
+	(Ext == '' -> FileName=Base
+	;
+	flora_concat_atoms([Base,'.',Ext],FileName)
+	),
+        !.
+
+%% The outermost file, whose last_token will never be set
+flora_compile_filename_by_token(_TK,FileName) :-
+        flora_current_compile_filename(FileName).
 
 
 /****************************************************************************
@@ -318,7 +374,7 @@ scan_line(Ch,LN1,CN1,LN,CN,[Ch|Chars],LN2,CN2,Tokens,Status) :-
 /****************************************************************************
   read_tokens(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
   parses tokens starting from Char. (NextLN,NextCN) is the position of the
-  next character to be read. Passing this information is to avoid bookkeeping
+  next character to be read. Passing this information avoids bookkeeping
   by flora_get_counter/flora_set_counter. Performance can be improved.
 ****************************************************************************/
 read_tokens(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status) :-
@@ -347,6 +403,7 @@ read_tokens(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status) :-
 	    Status=[FLORA_NOT_EOF,error(UNEXP_UNPRINT)],
 	    set_charpos(NextLN,NextCN)
 
+	%% Non-ASCII
 	; Char >= CH_DELETE ->
 	    flora_symbol_token_struct([Char],LineNo,CharNo,LineNo,CharNo,Token),
 	    TokenList=[Token],

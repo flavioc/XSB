@@ -32,8 +32,6 @@ ALLOBJS = flrarguments$(OBJEXT) \
 	  flrcompiler$(OBJEXT) \
 	  flrcoder$(OBJEXT) \
 	  flrdependency$(OBJEXT) \
-	  flora2devel$(OBJEXT) \
-	  flrhilogtable$(OBJEXT) \
 	  flrlexer$(OBJEXT) \
 	  flrlibman$(OBJEXT) \
 	  flrnodefp$(OBJEXT) \
@@ -61,16 +59,13 @@ OPTIONS = [optimize]
 
 .SUFFIXES: $(PROLOGEXT) $(OBJEXT)
 
+## p2h is handled specially, but makeflora
 ALL:: $(ALLOBJS)
-	cd p2h
-	nmake /f NMakefile.mak
-	cd ..\closure
+	cd closure
 	nmake /f NMakefile.mak
 	cd ..\genincludes
 	nmake /f NMakefile.mak
 	cd ..\syslib
-	nmake /f NMakefile.mak
-	cd ..\trailer
 	nmake /f NMakefile.mak
 	cd ..\lib
 	nmake /f NMakefile.mak
@@ -96,8 +91,6 @@ CLEAN :
 	nmake /f NMakefile.mak clean
 	cd ..\syslib
 	nmake /f NMakefile.mak clean
-	cd ..\trailer
-	nmake /f NMakefile.mak clean
 	cd ..\debugger
 	nmake /f NMakefile.mak clean
 	cd ..\pkgs
@@ -112,6 +105,6 @@ CLEAN :
 
 
 $(PROLOGEXT)$(OBJEXT):
-	$(PROLOG) -e "[flora2devel]. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
+	$(PROLOG) -e "['.\flora2']. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 

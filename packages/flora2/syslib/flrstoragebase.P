@@ -55,21 +55,31 @@
 	storage_reclaim_space/1
    from storage.
 
+:- import flora_trim_last/2 from flrtrim.
+
+%% Lop off the last argument before inserting/querying the database
 flora_db_insert_base(StorageName,Call) :-
-	storage_insert_fact(StorageName,Call,_ResultFlag).
+	flora_trim_last(Call, CallSansCaller),
+	storage_insert_fact(StorageName,CallSansCaller,_ResultFlag).
 
 flora_db_delete_base(StorageName,Call) :-
-	storage_delete_fact(StorageName,Call,_ResultFlag).
+	flora_trim_last(Call, CallSansCaller),
+	storage_delete_fact(StorageName,CallSansCaller,_ResultFlag).
 
 flora_db_insert_base_bt(StorageName,Call) :-
-	storage_insert_fact_bt(StorageName,Call,_ResultFlag).
+	flora_trim_last(Call, CallSansCaller),
+	storage_insert_fact_bt(StorageName,CallSansCaller,_ResultFlag).
 
 flora_db_delete_base_bt(StorageName,Call) :-
-	storage_delete_fact_bt(StorageName,Call,_ResultFlag).
+	flora_trim_last(Call, CallSansCaller),
+	storage_delete_fact_bt(StorageName,CallSansCaller,_ResultFlag).
 
+%% Used to search database of facts
 flora_db_find_base(StorageName,Call) :-
-	storage_find_fact(StorageName,Call).
+	flora_trim_last(Call, CallSansCaller),
+	storage_find_fact(StorageName,CallSansCaller).
 
+%% Commit and reclaim
 flora_db_commit(StorageName) :-
 	storage_commit(StorageName).
 

@@ -6,21 +6,32 @@
 	xsb_configuration/2
    from xsb_configuration.
 
-:- import flora_running_under/1 from flrporting.
+:- import
+	flora_slash/1,
+	flora_concat_atoms/2,
+	flora_running_under/1,
+	flora_file_op/3,
+	flora_convert_win_path_to_cygwin/2
+   from flrporting.
 
 ?- path_sysop(expand,'.',FloraDir),
    xsb_configuration(install_dir,InstallDir),
-   xsb_configuration(config_bindir,ConfigBinDir),
+   xsb_configuration(config_bindir,ConfigBinDirPrelim),
    (flora_running_under(windows)
-   -> PrologPath = '.prolog_path_wind'
+   ->  PrologPath = '.prolog_path_wind',
+       ConfigBinDir = ConfigBinDirPrelim
+   ; flora_running_under(cygwin)
+   ->  PrologPath = '.prolog_path_cygwin',
+       flora_convert_win_path_to_cygwin(ConfigBinDirPrelim,ConfigBinDir)
    ;
-       PrologPath = '.prolog_path'
+       PrologPath = '.prolog_path',
+       ConfigBinDir = ConfigBinDirPrelim
    ),
    telling(F),
    tell(PrologPath),
    (flora_running_under(windows)
-   -> write('PROLOG = '), write(ConfigBinDir), writeln('\xsb'),
-      write('PROLOGDIR = '), writeln(InstallDir)
+   -> write('PROLOG='), write(ConfigBinDir), writeln('\xsb'),
+      write('PROLOGDIR='), writeln(InstallDir)
    ;
       writeln(ConfigBinDir)
    ),
@@ -30,7 +41,7 @@
        writeln('@echo OFF'),
        write('@set FLORADIR="'), writeq(FloraDir), write('"'), nl,
        write('@set PROLOG='), write(ConfigBinDir), writeln('\xsb'),
-       writeln('@%PROLOG% -e "asserta(library_directory(%FLORADIR%)). (import flora_configuration/2 from flrregistry). assert(flora_configuration(installdir,%FLORADIR%)). [flora2devel]. flora_shell." %1 %2 %3 %4 %5 %6 %7')
+       writeln('@%PROLOG% -e "asserta(library_directory(%FLORADIR%)). (import flora_configuration/2 from flrregistry). [flora2]. flora_shell." %1 %2 %3 %4 %5 %6 %7')
    ;
        tell('runflora'),
        writeln('#! /bin/sh'),
@@ -41,7 +52,27 @@
        nl,
        write('FLORADIR="'), writeq(FloraDir), write('"'), nl,
        write('PROLOG='), write(ConfigBinDir), writeln('/xsb'),
-       writeln('$PROLOG -e "asserta(library_directory($FLORADIR)). (import flora_configuration/2 from flrregistry). assert(flora_configuration(installdir,$FLORADIR)). [flora2devel]. flora_shell." $extra_args')
+       writeln('$PROLOG -e "asserta(library_directory($FLORADIR)). (import flora_configuration/2 from flrregistry). [flora2]. flora_shell." $extra_args')
    ),
+   told,
+   %% If we are in the packages/flora2 directory and ../../emu exists, then
+   %% we are installing as a package; otherwise - standalone
+   tell('floraInstallMode.P'),
+   writeln(':- import flora_configuration/2 from flrregistry.'),
+   flora_slash(Slash),
+   flora_concat_atoms([InstallDir,Slash,packages,Slash,flora2],FloraPkgDir),
+   flora_file_op(expand,FloraPkgDir,FloraPkgDirExpanded),
+   flora_file_op(expand,FloraDir,FloraDirExpanded),
+   (FloraDirExpanded = FloraPkgDirExpanded
+   -> % installing as a package
+       writeln('?- assert(flora_configuration(standalone,no)).')
+   ;
+       writeln('?- assert(flora_configuration(standalone,yes)).')
+   ),
+   flora_concat_atoms(['?- assert(flora_configuration(installdir,''',
+		       FloraDirExpanded,
+		       ''')).'],
+		      InstallDirCmd),
+   writeln(InstallDirCmd),
    told,
    tell(F).

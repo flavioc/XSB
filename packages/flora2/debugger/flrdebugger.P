@@ -72,6 +72,8 @@
 	hide_this_show/2,
 	trace_this_noprint/2,
 	trace_this_print/2,
+	flora_always_hide_this_hide/1,
+	flora_always_hide_this_show/1,
 	flora_hide_this_hide/1,
 	flora_hide_this_show/1,
 	flora_show_this_hide/1,
@@ -113,12 +115,14 @@
    ; ioport2iostream(STDDBG,Stream), assert(flora_dbg_stream(Stream))
    ).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% flora_write_goal %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% flora_write_debug_call %%%%%%%%%%%%%%%%%%%%%%%%%
 
 flora_write_debug_call(Call) :-
-	flora_dbg_stream(Stream), flora_write_goal(Stream,Call).
+	flora_dbg_stream(Stream),
+	flora_write_goal(Stream,Call).
 
-flora_write_dbg_item(Item) :- flora_dbg_stream(Stream), write(Stream,Item).
+flora_write_dbg_item(Item) :-
+	flora_dbg_stream(Stream), write(Stream,Item).
 
 
 /*********************************************************************/
@@ -170,7 +174,7 @@ flora_read_debugger_data(WS,Datafile) :-
 	flora_set_counter(xpp_on,0),
 	(var(WS)
 	->  flora_message_line('Static debugger data loaded')
-	;   flora_message_line('Dynamic debugger data loaded for module ~w', WS)
+	;   flora_message_line('Dynamic debugger data loaded for module ~w', [WS])
 	),
 	!.
 
@@ -220,6 +224,7 @@ flora_build_bridge_to_xsb_debugger :-
 	       \+flora_switch(low_level_trace),
 		( flora_hide_this_show(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
 		 ; flora_hide_this_show(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
+		 ; flora_hide_this_show(propermatch(X1/Y)), atom(X),atom(X1), str_sub(X1,X), X1 \= X, !
 		)
 	       )),
 	assert((show_this_hide(X,Y) :-
@@ -238,6 +243,18 @@ flora_build_bridge_to_xsb_debugger :-
 	       \+flora_switch(low_level_trace),
 		( flora_trace_this_print(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
 		 ; flora_trace_this_print(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
+		)
+	       )),
+	%% Stuff to always hide
+	assert((hide_this_hide(X,Y) :- flora_always_hide_this_hide(X/Y))),
+	assert((hide_this_hide(X,Y) :-
+		(flora_always_hide_this_hide(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		 ; flora_always_hide_this_hide(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
+		)
+	       )),
+	assert((hide_this_show(X,Y) :-
+		(flora_always_hide_this_show(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		 ; flora_always_hide_this_show(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )).
 

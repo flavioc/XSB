@@ -6,7 +6,7 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
+#include "flrexportcheck.flh"
 #include "flrpatch.flh"
-
 /***********************************************************************/
 

@@ -27,13 +27,17 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 #include "flora_exceptions.flh"
 
+
+:- import append/3 from basics.
 
 :- import
 	flora_check_module_name/1,
 	flora_module_predicate/4,
-	flora_decode_module_prefix/3
+	flora_decode_predicate/7,
+	is_flora_callable_literal/1
    from flrwrapper.
 
 :- import flora_increment_counter/4 from flrporting.
@@ -50,10 +54,13 @@
 	flora_debug_module_registry/1
    from flrregistry.
 
-:- import flora_error_line/2 from flrprint.
-
 :- import flora_abort/1 from flrutils.
 
+:- import flora_add_last/3 from flrtrim.
+
+:- import flora_add_undef_export_call/2,
+	  flora_remove_undef_export_call/1
+   from flrexport.
 
 /*********************************************************************
   This file is for the following dynamic module references:
@@ -67,77 +74,170 @@
 
 
 /*********************************************************************
-  FLLIBMODLIT(+Functor,+Args,+ModuleName)
+  FLLIBMODLIT(+Functor,+Args,+ModuleName,+Caller)
 *********************************************************************/
-FLLIBMODLIT(F,Arg,ModuleName) :-
+FLLIBMODLIT(F,Arg,ModuleName,Caller) :-
 	%% If module is a variable, we must protect the call
 	%% from undefinedness checks
 	(var(ModuleName) -> ProtectCall = true ; true),
 	(var(Arg)
 	-> flora_abort([Arg,'@',ModuleName,': Attempt to call uninstantiated literal'])
 	; flora_check_module_name(ModuleName),
-	    (
-	      (
-		is_list(Arg), Arg = Args, !, % Term@X
-		flora_module_predicate(F,Args,ModuleName,P)
-	      ; atom(Arg), !,	% Var@..., Var bound to atom
-		( %% if already a hilog predicate -- use it -- Is this case possible??
-		    flora_decode_module_prefix(Arg,_,_), Arg = P, !
-		%% else construct it
-		; flora_module_predicate(WRAP_HILOG,[Arg],ModuleName,P)
-		)
-	      ; Arg =.. [Funct|Args], !, % Var@..., Var bound to compound
-		( %% if already a hilog or flogic predicate -- use it
-		    flora_decode_module_prefix(Funct,_,_), Arg = P, !
-		%% else construct it
-		; flora_module_predicate(Funct,Args,ModuleName,P)
-		)
-	      )
-	    ->
-	      %% Protect call P from undefinedness check
-	      (nonvar(ProtectCall),
-		  flora_in_debug_mode(_),
-		  flora_debug_module_registry(ModuleName)
-	      -> flora_increment_counter(FLORA_SYMBOL('protect_undef_call'),1,_,Id),
-		  flora_temp_protect_call(P,Id)
-	      ; Id = 0
+	    ( get_libmod_callable(F,Arg,ModuleName,Caller,P) ->
+              (P=FLLIBMODLIT(F,NArg,ModuleName,Caller) ->
+	        flora_abort(['#(',NArg,')@',ModuleName,': Attempt to call uninstantiated literal'])
+              ;
+                true
+              ),
+	      %% Assign a Id to be used by both the export & the undefinedness check.
+	      (nonvar(ProtectCall) ->
+	          (
+			%% New Id for protecting calls. Unique Id is used because
+			%% several calls to the same method/predicate may be in
+			%% progress at the same time, and we don't want to
+			%% inadvertantly unprotect a call that might still
+			%% need to be protected
+			%% the same Id is also used for the export call.
+			flora_increment_counter(FLORA_SYMBOL('protect_undef_call'),1,_,IdExport),
+			flora_add_undef_export_call(P,IdExport),
+			%% Protect call P from undefinedness check
+			(  flora_in_debug_mode(_),
+			   flora_debug_module_registry(ModuleName)
+			->  IdUndef = IdExport,
+			    flora_temp_protect_call(P,IdUndef)
+			;   
+			  IdUndef = 0
+			)
+		  )
+	      ;
+		  (
+			IdExport = 0,
+			IdUndef = 0
+		  )
 	      ),
 	      %% Whether P succeeds or fails we must remove the temporary
 	      %% skeleton from the set of facts protected from undefinedness
-	      %% checking
-	      (call(P), (Id > 0 -> flora_temp_unprotect_call(Id) ; true)
-	      ; Id > 0, flora_temp_unprotect_call(Id), fail
+	      %% checking in flrundefined.P so that undefinedness could be
+	      %% checked again for P.
+	      %% similarly remove the predicate from the export undef registry.
+	      %% It may be the case that Id is not equal to 0 but IdUndef is.
+	      (
+	        (
+		    call(P), 
+		    (IdExport > 0 ->  flora_remove_undef_export_call(IdExport)
+		    		  ;   true
+		    ),
+		    (IdUndef > 0 ->  flora_temp_unprotect_call(IdUndef)
+				 ;   true
+		    )
+		)
+	      ; 
+		IdExport > 0, flora_remove_undef_export_call(IdExport), fail
+	      ; 
+		IdUndef > 0, flora_temp_unprotect_call(IdUndef), fail
 	      )
 	    )
 	).
 
 
 /*********************************************************************
-  FLLIBMODOBJ(+Functor,+Args,+ModuleName,-Predicate)
+  FLLIBMODOBJ(+Functor,+Args,+ModuleName,+Caller,-Predicate)
 *********************************************************************/
-FLLIBMODOBJ(F,Arg,ModuleName,Pout) :-
+FLLIBMODOBJ(F,Arg,ModuleName,Caller,Pout) :-
 	(var(Arg)
-	-> flora_abort([Arg,'@',ModuleName,': Attempt to query uninstantiated literal'])
+	->
+	    Pout = FLLIBMODLIT(F,Arg,ModuleName,Caller)
+	    %%flora_abort([Arg,'@',ModuleName,': Attempt to query uninstantiated literal'])
 	; flora_check_module_name(ModuleName),
-	    (
-	      ( 
-		is_list(Arg), Arg = Args, !, % Term@X
-		flora_module_predicate(F,Args,ModuleName,P)
-	      ; atom(Arg), !,	% Var@..., Var bound to atom
-		( %% if already a hilog predicate -- use it
-		    flora_decode_module_prefix(Arg,_,_), Arg = P, !
-		%% else construct it
-		; flora_module_predicate(WRAP_HILOG,[Arg],ModuleName,P)
-		)
-	      ; Arg =.. [Funct|Args], !, % Var@..., Var bound to compound
-		( %% if already a hilog or flogic predicate -- use it
-		    flora_decode_module_prefix(Funct,_,_), Arg = P, !
-		%% else construct it
-		; flora_module_predicate(Funct,Args,ModuleName,P)
-		)
-	      )
-	    -> true
-	    ),
-	    convert_to_body_literal(P,Pout)
+	    ( get_libmod_callable(F,Arg,ModuleName,Caller,P) -> true ),
+            (P =FLLIBMODLIT(F,_NArg,ModuleName,Caller) ->
+	        Pout = FLLIBMODLIT(F,Arg,ModuleName,Caller)
+            ;
+	        convert_to_body_literal(P,Pout)
+            )
 	).
 
+/*********************************************************************
+  get_libmod_callable(+Functor,+Args,+ModuleName,+Caller,-Callable)
+
+  This is common part of FLLIBMODLIT and FLLIBMODOBJ. Takes a term and
+  a module and returns a callable structure (molecule or a predicate).
+  The input can also be already callable. In this case just return in.
+*********************************************************************/
+get_libmod_callable(F,Arg,ModuleName,Caller,P) :-
+        is_list(Arg), !, % Term@X
+	%% This case is compiled as FLLIBMODLIT(F,Args,WS,Caller)
+	%% so the caller is already accounted for
+        ( F == WRAP_HILOG ->
+            %% remove the #
+            Arg = [FL_TRAN,Term,TCaller],
+            ( atom(Term) ->
+                %% #atom@X
+                flora_module_predicate(F,[Term,TCaller],ModuleName,P)
+            ; var(Term) ->
+                P=FLLIBMODLIT(F,Term,ModuleName,Caller)
+            ; is_flora_callable_literal(Term) ->
+                Term = P
+            ;
+                %% #compound@X
+                Term =.. [WRAP_HILOG|As],
+                append(As,[TCaller],NewArg),
+                flora_module_predicate(F,NewArg,ModuleName,P)
+            )
+        ;
+            flora_module_predicate(F,Arg,ModuleName,P)
+        )
+        ; atom(Arg), !,	% Var@..., Var bound to atom
+	( % If already a hilog predicate-use it. Is this case possible?
+	    % else construct it
+	    Arg = P
+	)
+        ; is_nondistr_control(Arg), !,
+            Arg = P
+        ; is_distr_control(Arg,Op,ArgList), !,
+            distribute_workspace(F,ArgList,ModuleName,Caller,ArgListOut),
+            P =.. [Op|ArgListOut]
+	; %% Var@..., Var bound to compound
+	flora_decode_predicate(Arg,_,PredModName,Wrapper,_,_,Args), !,
+	( %% if already a hilog or flogic predicate -- use it
+	    nonvar(PredModName), Arg = P, !
+	  ; %% else construct it
+            ( Wrapper == WRAP_HILOG ->
+                ( Args=[FL_TRAN,Term] ->
+                    %% non-tabled hilog
+                    ( atom(Term) ->
+	                flora_add_last([Term],AugmentedArgs,Caller),
+	                flora_module_predicate(WRAP_HILOG,AugmentedArgs,ModuleName,P)
+                    ;
+                        Term =.. [WRAP_HILOG|As],
+                        flora_add_last(As,AugmentedArgs,Caller),
+	                flora_module_predicate(WRAP_HILOG,AugmentedArgs,ModuleName,P)
+                    )
+                ;
+                    %% tabled hilog
+	            flora_add_last(Args,AugmentedArgs,Caller),
+	            flora_module_predicate(WRAP_TABLED_HILOG,AugmentedArgs,ModuleName,P)
+                )
+            ;
+                %% Var@... where Var bound to a prolog predicate
+                Arg = P
+            )
+	).
+
+is_distr_control(','(B1,B2),',',[B1,B2]).
+is_distr_control(';'(B1,B2),';',[B1,B2]).
+
+is_nondistr_control(FLLIBIFTHENELSE(_Cond,_Then,_Else)).
+is_nondistr_control(FLLIBIFTHEN(_Cond,_Then)).
+is_nondistr_control(FLLIBUNLESSDO(_Cond,_Action)).
+is_nondistr_control(FLLIBWHILEDO(_Cond,_Action)).
+is_nondistr_control(FLLIBDOUNTIL(_Cond,_Action)).
+is_nondistr_control(FLLIBWHILELOOP(_Cond,_Action)).
+is_nondistr_control(FLLIBLOOPUNTIL(_Cond,_Action)).
+is_nondistr_control(FLORA_TNOT_PREDICATE(_Cond)).
+is_nondistr_control(not(_Cond)).
+is_nondistr_control(FLLIBMODLIT(_W,_A,_M,_C)).
+
+distribute_workspace(_F,[],_Mod,_Caller,[]) :- !.
+distribute_workspace(F,[H|L],Mod,Caller,[FLLIBMODLIT(F,H,Mod,Caller)|NL]) :-
+        distribute_workspace(F,L,Mod,Caller,NL).

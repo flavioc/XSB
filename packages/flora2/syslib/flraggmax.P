@@ -36,20 +36,20 @@
 /*********************************************************************
   fllibmax(+Var,+VarList,+Goal,-Max)
 *********************************************************************/
-fllibmax(Var,[],Goal,Max) :-
+FLLIBMAX(Var,[],Goal,Max) :-
 	!,
 	findall(Var,Goal,Matches),
 	Matches=[H|L],
 	flora_maxaux(L,H,Max).
 
-fllibmax(Var,VarList,Goal,Max) :-
+FLLIBMAX(Var,VarList,Goal,Max) :-
 	ground(VarList),
 	!,
 	findall(Var,Goal,Matches),
 	Matches=[H|L],
 	flora_maxaux(L,H,Max).
 
-fllibmax(Var,VarList,Goal,Max) :-
+FLLIBMAX(Var,VarList,Goal,Max) :-
 	!,
 	findall(flora_result(Var,VarList),Goal,Matches),
 	findall(Grp,member(flora_result(_,Grp),Matches),GL),

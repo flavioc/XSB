@@ -1,0 +1,138 @@
+/* File:      flrtrim.P - trim the caller argument from Flora literals
+**
+** Author(s): Michael Kifer
+**
+** Contact:   flora-users@lists.sourceforge.net
+**
+** Copyright (C) The Research Foundation of SUNY, 2003
+**
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+%% Trims the Caller argument from Flora literals.
+%% Used prior to inserting them into the database
+
+
+:- compiler_options([xpp_on]).
+
+
+:- import
+	reverse/2,
+	append/3,
+	length/2
+    from basics.
+:- export
+	flora_add_last/3,
+	flora_generalize_last/2,
+	flora_trim_last/2.
+
+:- dynamic flora_trim_cache/2.
+:- dynamic flora_generalization_cache/2.
+:- dynamic flora_add_arg_cache/3.
+
+%% Trims the last argument from both lists and predicates
+flora_trim_last(X,X) :-
+	var(X),
+	!.
+flora_trim_last(X,Y) :-
+	flora_trim_cache(X,Y),
+	!.
+flora_trim_last(X,Y) :-
+	is_list(X),
+	!,
+	length(X,InLen),
+	get_arg_templates(trim,InLen,InArgsTempl,OutArgsTempl),
+	assert(flora_trim_cache(InArgsTempl,OutArgsTempl)),
+	X=InArgsTempl,
+	Y=OutArgsTempl.
+flora_trim_last(X,Y) :-
+	functor(X,Fun,InLen),
+	get_arg_templates(trim,InLen,InArgsTempl,OutArgsTempl),
+	InPredTempl =.. [Fun|InArgsTempl],
+	OutPredTempl =.. [Fun|OutArgsTempl],
+	assert(flora_trim_cache(InPredTempl,OutPredTempl)),
+	X=InPredTempl,
+	Y=OutPredTempl.
+
+%% get_arg_templates(+Optype,+Len,-ListTempl1,-ListTempl2)
+%% Takes length, outputs a list template of the same length, ListTempl1
+%% If Optype=generalize
+%%    then ListTempl2 is ListTempl1 with last element changed to new variable
+%% If Optype=trim
+%%    then ListTempl2 is ListTempl1 with the last list element removed.
+%% If Optype=add
+%%    then ListTempl2 is ListTempl1 with one addl last list member, a  new var.
+get_arg_templates(generalize,Len,ListTempl1,ListTempl3) :-
+	length(ListTempl1,Len),
+	reverse(ListTempl1,ListTempl1reversed),
+	ListTempl1reversed = [_|ListTempl2reversed],
+	ListTempl3reversed = [_|ListTempl2reversed],
+	reverse(ListTempl3reversed,ListTempl3).
+get_arg_templates(trim,Len,ListTempl1,ListTempl2) :-
+	length(ListTempl1,Len),
+	reverse(ListTempl1,ListTempl1reversed),
+	ListTempl1reversed = [_|ListTempl2reversed],
+	reverse(ListTempl2reversed,ListTempl2).
+get_arg_templates(add,Len,ListTempl1,ListTempl4,LastVar) :-
+	length(ListTempl1,Len),
+	append(ListTempl1,[LastVar],ListTempl4).
+
+flora_generalize_last(X,X) :-
+	var(X),
+	!.
+flora_generalize_last(X,Y) :-
+	flora_generalization_cache(X,Y),
+	!.
+flora_generalize_last(X,Y) :-
+	is_list(X),
+	!,
+	length(X,InLen),
+	get_arg_templates(generalize,InLen,InArgsTempl,OutArgsTempl),
+	assert(flora_generalization_cache(InArgsTempl,OutArgsTempl)),
+	X=InArgsTempl,
+	Y=OutArgsTempl.
+flora_generalize_last(X,Y) :-
+	functor(X,Fun,InLen),
+	get_arg_templates(generalize,InLen,InArgsTempl,OutArgsTempl),
+	InPredTempl =.. [Fun|InArgsTempl],
+	OutPredTempl =.. [Fun|OutArgsTempl],
+	assert(flora_generalization_cache(InPredTempl,OutPredTempl)),
+	X=InPredTempl,
+	Y=OutPredTempl.
+
+flora_add_last(X,X,X) :-
+	var(X),
+	!.
+flora_add_last(X,Y,LastVar) :-
+	flora_add_arg_cache(X,Y,LastVar),
+	!.
+flora_add_last(X,Y,LastVar) :-
+	is_list(X),
+	!,
+	length(X,InLen),
+	get_arg_templates(add,InLen,InArgsTempl,OutArgsTempl,LastVar),
+	assert(flora_add_arg_cache(InArgsTempl,OutArgsTempl,LastVar)),
+	X=InArgsTempl,
+	Y=OutArgsTempl.
+flora_add_last(X,Y,LastVar) :-
+	functor(X,Fun,InLen),
+	get_arg_templates(add,InLen,InArgsTempl,OutArgsTempl,LastVar),
+	InPredTempl =.. [Fun|InArgsTempl],
+	OutPredTempl =.. [Fun|OutArgsTempl],
+	assert(flora_add_arg_cache(InPredTempl,OutPredTempl,LastVar)),
+	X=InPredTempl,
+	Y=OutPredTempl.

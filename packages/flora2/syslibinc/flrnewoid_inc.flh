@@ -1,7 +1,7 @@
 /************************************************************************
-  file: syslibinc/flrequality_inc.flh
+  file: syslibinc/flrnewoid_inc.flh
 
-  Author(s): Guizhen Yang
+  Author(s): Michael Kifer
 
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
@@ -16,7 +16,7 @@
 :- import flora_load_library/1 from flrlibman.
 #endif
 
-?- flora_load_library(FLLIBEQUALITY).
+?- flora_load_library(FLLIBNEWOID).
 
 /***********************************************************************/
 

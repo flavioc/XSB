@@ -9,6 +9,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flrheader.flh"
+#include "flora_porting.flh"
 
 /***********************************************************************/
 

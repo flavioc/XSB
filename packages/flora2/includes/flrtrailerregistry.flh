@@ -1,0 +1,49 @@
+/************************************************************************
+  file: includes/flrtrailerregistry.flh
+
+  Author(s): Michael Kifer
+
+  This file is automatically included by the FLORA compiler.
+************************************************************************/
+
+/**************** Deal with trailer registry ***************************/
+
+:- import flora_trailer_registry/2 from flrregistry.
+
+
+#if !defined(FLORA_TERMS_FLH)
+#define FLORA_TERMS_FLH
+#include "flora_terms.flh"
+:- import flora_load_library/1 from flrlibman.
+#endif
+
+?- retractall(flora_trailer_registry(FLORA_THIS_MODULE_NAME,_)).
+
+#ifdef EQUALITYnone
+?- assert(flora_trailer_registry(FLORA_THIS_MODULE_NAME,FL_EQUALITY(NONE))).
+#endif
+#ifdef EQUALITYbasic
+?- assert(flora_trailer_registry(FLORA_THIS_MODULE_NAME,FL_EQUALITY(BASIC))).
+#endif
+#ifdef EQUALITYflogic
+?- assert(flora_trailer_registry(FLORA_THIS_MODULE_NAME,FL_EQUALITY(FLOGIC))).
+#endif
+#ifdef INHERITANCEnone
+?- assert(flora_trailer_registry(FLORA_THIS_MODULE_NAME,FL_INHERITANCE(NONE))).
+#endif
+#ifdef INHERITANCEflogic
+?- assert(flora_trailer_registry(FLORA_THIS_MODULE_NAME,FL_INHERITANCE(FLOGIC))).
+#endif
+
+#mode save
+#mode nostring "\!#'"
+#ifdef CUSTOMTRAILER
+?- assert(flora_trailer_registry(FLORA_THIS_MODULE_NAME,FL_CUSTOM('CUSTOMTRAILER'))).
+#endif
+#mode restore
+
+#ifdef CUSTOMnone
+?- assert(flora_trailer_registry(FLORA_THIS_MODULE_NAME,FL_CUSTOM(NONE))).
+#endif
+
+

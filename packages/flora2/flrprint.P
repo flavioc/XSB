@@ -50,38 +50,40 @@
 *************************************************************************/
 flora_stderr_nl :- flora_err_stream(Stream), nl(Stream).
 %% Use format/3 so that we would be able to put formatting, like ~n in the Str
-flora_stderr_string(Str) :- flora_err_stream(Stream), format(Stream,Str,_).
+flora_stderr_string(Str) :- flora_err_stream(Stream), format(Stream,Str,[]).
 flora_stderr_string(Fmt,Args) :-
 	flora_err_stream(Stream),
 	format(Stream,Fmt,Args).
 
 
 flora_stdwarn_nl :- flora_warn_stream(Stream), nl(Stream).
-flora_stdwarn_string(Str) :- flora_warn_stream(Stream), format(Stream,Str,_).
+flora_stdwarn_string(Str) :- flora_warn_stream(Stream), format(Stream,Str,[]).
 flora_stdwarn_string(Fmt,Args) :- 
 	flora_warn_stream(Stream),
 	format(Stream,Fmt,Args).
 
 
 flora_stdmsg_nl :- flora_msg_stream(Stream), nl(Stream).
-flora_stdmsg_string(Str) :- flora_msg_stream(Stream), format(Stream,Str,_).
+flora_stdmsg_string(Str) :-
+	flora_msg_stream(Stream),
+	format(Stream,Str,[]).
 flora_stdmsg_string(Fmt,Args) :- 
 	flora_msg_stream(Stream),
 	format(Stream,Fmt,Args).
 flora_stdmsg_line(M) :-
 	flora_msg_stream(Stream),
-	format(Stream,M,_),
+	format(Stream,M,[]),
 	nl(Stream).
 
 
 flora_stdfdbk_nl :- flora_fdbk_stream(Stream), nl(Stream).
-flora_stdfdbk_string(Str) :- flora_fdbk_stream(Stream), format(Stream,Str,_).
+flora_stdfdbk_string(Str) :- flora_fdbk_stream(Stream), format(Stream,Str,[]).
 flora_stdfdbk_string(Fmt,Args) :- 
 	flora_fdbk_stream(Stream),
 	format(Stream,Fmt,Args).
 flora_stdfdbk_line(M) :-
 	flora_fdbk_stream(Stream),
-	format(Stream,M,_),
+	format(Stream,M,[]),
 	nl(Stream).
 
 

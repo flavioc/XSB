@@ -32,7 +32,10 @@
 
 
 
-:- import flatten/2 from basics.
+:- import
+	flatten/2,
+        append/3
+   from basics.
 
 :- import
 	flora_decode_predicate/6
@@ -51,6 +54,8 @@
 	flora_abort/1
     from flrutils.
 
+:- import flora_trim_last/2 from flrtrim.
+
 :- export 
 	flora_decode_goal_as_list/2,
 	flora_decode_goal_as_atom/2,
@@ -65,7 +70,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% flora_write_goal %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 flora_write_goal(Stream,Goal) :-
-	flora_decode_goal(Goal,Code),
+	flora_decode_goal(Goal,Code,0),
 	flatten(Code,FlatCode),
 	write_flat_code(Stream,FlatCode).
 
@@ -104,7 +109,7 @@ flora_decode_goal_as_atom(Goal,CodeAtom) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%% flora_decode_goal_as_list/2 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 flora_decode_goal_as_list(Goal,FlatCode) :-
-	flora_decode_goal(Goal,Code),
+	flora_decode_goal(Goal,Code,0),
 	flatten(Code,FlatCode).
 
 %%%%%%%%%%%%%%%%%%%%%%%% flora_decode_oid_as_atom/2 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,37 +123,35 @@ flora_decode_oid_as_list(Goal,FlatCode) :-
 	flatten(Code,FlatCode).
 
 
-%%%%%%%%%%%%%%%%%%%%% flora_decode_goal(+Goal,-Code) %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%% flora_decode_goal(+Goal,-Code,+Depth) %%%%%%%%%%%%%%%%%
 %% Returns a (possibly nested) list of atoms whose concatenation           %%
 %% represents a readable representation of Goal                            %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-flora_decode_goal(Call,[Call]) :- var(Call).
+flora_decode_goal(Call,[Call],_Depth) :- var(Call).
 
-flora_decode_goal(Call,Code) :-
+flora_decode_goal(Call,Code,Depth) :-
 	classify_call(Call, Type,Basename,ArgList,Workspace),
 	(Type = (basefact,CallType)
 	-> Code = ['(Checking against base facts) '|RestCode]
 	;  Code = RestCode, Type = CallType
 	),
+	Depth1 is Depth+1,
 	( CallType == (hilog)
-	-> decode_hilog_call(Basename,ArgList,Workspace,RestCode,0)
+	-> decode_hilog_call(Basename,ArgList,Workspace,RestCode,0,Depth1)
 	; CallType == (flogic)
-	-> decode_molecule(Basename,ArgList,Workspace,RestCode,0)
+	-> decode_molecule(Basename,ArgList,Workspace,RestCode,0,Depth1)
 	; CallType == (inheritance)
-	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0),
+	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0,Depth1),
 	    RestCode = ['(Trying to derive by inheritance) '|MolCode]
-	; CallType == (inheritance_candidate)
-	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0),
-	    RestCode = ['(Checking inheritance candidate) '|MolCode]
 	; CallType == (explicit_definition)
-	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0),
+	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0,Depth1),
 	    RestCode = ['(Checking explicit definition for method) '|MolCode]
 	; CallType == (dynhead_before)
-	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0),
+	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0,Depth1),
 	    RestCode = ['(Trying to derive via dynamic before-rules) '|MolCode]
 	; CallType == (dynhead_after)
-	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0),
+	-> decode_molecule(Basename,ArgList,Workspace,MolCode,0,Depth1),
 	    RestCode = ['(Trying to derive via dynamic after-rules) '|MolCode]
 	),
 	!.
@@ -158,27 +161,29 @@ flora_decode_goal(Call,Code) :-
 %% or Flora primitives like insert{...}, throw{...}, etc.
 %% Even if a call is a prolog call, its arguments can be Flora stuff, so
 %% decode_literal_internal/3 processes them accordingly.
-flora_decode_goal(Call,Code) :-
-	decode_literal_internal(Call,Code,0),
+flora_decode_goal(Call,Code,Depth) :-
+	Depth1 is Depth+1,
+	decode_literal_internal(Call,Code,0,Depth1),
 	!.
 
 %% Debugging
-flora_decode_goal(Call,_) :-
+flora_decode_goal(Call,_,_) :-
 	flora_abort([Call,': flora_decode_goal/2 failed to decode']).
 
 
 %%%%%%%%%%%%%%%%%%%% flora decode oid %%%%%%%%%%%%%%%%%%%%%%%
 %% Call is an oid, although it may be a reified term.
 flora_decode_oid(Call,Code) :-
-	decode_literal_internal(Call,Code,1).
+	decode_literal_internal(Call,Code,1,0).
 
 
 
-%%%%%%%%%%%%%%%%%%%% flora_head %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-decode_head(Head,HeadCode) :-
+%%%%%%%%%%%%%%%%%%%% decode_head %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+decode_head(Head,HeadCode,Depth) :-
+	Depth1 is Depth+1,
 	(is_list(Head)
-	-> decode_list_add_separator(Head,HeadCode,flora_decode_goal(_,_),', ')
-	; flora_decode_goal(Head,HeadCode)
+	-> decode_list_add_separator(Head,HeadCode,flora_decode_goal(_,_,Depth1),', ')
+	; flora_decode_goal(Head,HeadCode,Depth1)
 	).
 
 
@@ -186,52 +191,63 @@ decode_head(Head,HeadCode) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Decoding molecule %%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Level=0: top level; Level=1: reified predicate/molecule argument of a functor
-decode_molecule(Wrapper,ComponentList,Workspace,[ReifyStart,[MolCode|WCode],ReifyEnd],Level) :-
+decode_molecule(Wrapper,ComponentList,Workspace,[ReifyStart,[MolCode|WCode],ReifyEnd],Level,Depth) :-
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
+	Depth1 is Depth+1,
 	(flora_match_substring(FLDEBUGPREFIX,Wrapper,forward,0,End),! ; End=0),
 	flora_get_substring(Wrapper,End,_,BaseWrapper),
-	decode_list_as_list(ComponentList,ComponentListCode,decode_literal_internal(_,_,1)),
+	decode_list_as_list(ComponentList,ComponentListCode,decode_literal_internal(_,_,1,Depth1)),
 	decode_molecule_base(BaseWrapper,ComponentListCode,MolCode),
 	workspace_code(Workspace,WCode).
 
 %% Wrapper, Args, Code
-decode_molecule_base(WRAP_FD, [O,M,V], [O,'[',M,' -> ',V,']']).
-decode_molecule_base(WRAP_FD, [O,M], [O,'[',M,' -> ','_',']']).
-decode_molecule_base(WRAP_MVD, [O,M,V], [O,'[',M,' ->> ',V,']']).
-decode_molecule_base(WRAP_MVD, [O,M], [O,'[',M,' ->> ','_',']']).
-decode_molecule_base(WRAP_IFD, [O,M,V], [O,'[',M,' *-> ',V,']']).
-decode_molecule_base(WRAP_IFD, [O,M], [O,'[',M,' *-> ','_',']']).
-decode_molecule_base(WRAP_IMVD, [O,M,V], [O,'[',M,' *->> ',V,']']).
-decode_molecule_base(WRAP_IMVD, [O,M], [O,'[',M,' *->> ','_',']']).
-decode_molecule_base(WRAP_FDSIG, [O,M,V], [O,'[',M,' => ',V,']']).
-decode_molecule_base(WRAP_IFDSIG, [O,M,V], [O,'[',M,' *=> ',V,']']).
-decode_molecule_base(WRAP_MVDSIG, [O,M,V], [O,'[',M,' =>> ',V,']']).
-decode_molecule_base(WRAP_IMVDSIG, [O,M,V], [O,'[',M,' *=>> ',V,']']).
-decode_molecule_base(WRAP_MVDINC, [O,M,V], [O,'[',M,' +>> ',V,']']).
-decode_molecule_base(WRAP_IMVDINC, [O,M,V], [O,'[',M,' *+>> ',V,']']).
-decode_molecule_base(WRAP_MVDTOLIST, [O,M,V], [O,'[',M, ' ->-> ',V,']']).
-decode_molecule_base(WRAP_IMVDTOLIST, [O,M,V], [O,'[',M, ' *->-> ',V,']']).
-decode_molecule_base(WRAP_ISA, [O,C], [O,':',C]).
-decode_molecule_base(WRAP_SUB, [Sub,Sup], [Sub,'::',Sup]).
+decode_molecule_base(WRAP_FD, [O,M,V|_], [O,'[',M,' -> ',V,']']).
+decode_molecule_base(WRAP_FDDEF, [O,M|_], [O,'.',M,'[]']).
+decode_molecule_base(WRAP_MVD, [O,M,V|_], [O,'[',M,' ->> ',V,']']).
+decode_molecule_base(WRAP_MVDDEF, [O,M|_], [O,'..',M,'[]']).
+decode_molecule_base(WRAP_IFD, [O,M,V|_], [O,'[',M,' *-> ',V,']']).
+decode_molecule_base(WRAP_IFDDEF, [O,M|_], [O,'!',M,'[]']).
+decode_molecule_base(WRAP_IMVD, [O,M,V|_], [O,'[',M,' *->> ',V,']']).
+decode_molecule_base(WRAP_IMVDDEF, [O,M|_], [O,'!!',M,'[]']).
+decode_molecule_base(WRAP_FDSIG, [O,M,V|_], [O,'[',M,' => ',V,']']).
+decode_molecule_base(WRAP_IFDSIG, [O,M,V|_], [O,'[',M,' *=> ',V,']']).
+decode_molecule_base(WRAP_MVDSIG, [O,M,V|_], [O,'[',M,' =>> ',V,']']).
+decode_molecule_base(WRAP_IMVDSIG, [O,M,V|_], [O,'[',M,' *=>> ',V,']']).
+decode_molecule_base(WRAP_MVDINC, [O,M,V|_], [O,'[',M,' +>> ',V,']']).
+decode_molecule_base(WRAP_IMVDINC, [O,M,V|_], [O,'[',M,' *+>> ',V,']']).
+decode_molecule_base(WRAP_MVDTOLIST, [O,M,V|_], [O,'[',M, ' ->-> ',V,']']).
+decode_molecule_base(WRAP_IMVDTOLIST, [O,M,V|_], [O,'[',M, ' *->-> ',V,']']).
+decode_molecule_base(WRAP_ISA, [O,C|_], [O,':',C]).
+decode_molecule_base(WRAP_SUB, [Sub,Sup|_], [Sub,'::',Sup]).
 %% boolean method
-decode_molecule_base(WRAP_METH, [O,P], [O,'[',P,']']).
+decode_molecule_base(WRAP_METH, [O,P|_], [O,'[',P,']']).
 %% inheritable boolean method
-decode_molecule_base(WRAP_IMETH, [O,P], [O,'[*',P,']']).
+decode_molecule_base(WRAP_IMETH, [O,P|_], [O,'[*',P,']']).
 %% procedural boolean method
-decode_molecule_base(WRAP_TRAN, [O,P], [O,'[#',P,']']).
+decode_molecule_base(WRAP_TRAN, [O,P|_], [O,'[#',P,']']).
 
-decode_molecule_base(WRAP_OBJEQL, [O1,O2], [O1,' :=: ',O2]).
+decode_molecule_base(WRAP_OBJEQL, [O1,O2|_], [O1,' :=: ',O2]).
 
 %%%%%%%%%%%%%%%%%%%%% Decode HiLog Call %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Level=0: top level; Level=1: reified predicate/molecule argument of a functor
-decode_hilog_call(HiLogPred,Args,WS,[ReifyStart,Code,ReifyEnd],Level) :-
-	((Level==0; var(WS)) -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(HiLogPred,HiLogPredCode,1),
+%% Level=0: top level; Level=1: reified predicate argument of a functor
+decode_hilog_call(HiLogPred,Args,WS,[ReifyStart,Code,ReifyEnd],Level,Depth) :-
+	((Level==0; var(WS))
+	-> ReifyStart='',ReifyEnd=''
+	; ReifyStart='${',ReifyEnd='}'
+	),
+	Depth1 is Depth+1,
+	decode_literal_internal(HiLogPred,HiLogPredCode,1,Depth1),
 	Code = [HiLogPredCode|RestCode1],
-	(Args == [], RestCode1 = RestCode2, !
+	%% var(WS) means it is hilog term, not predicate
+	(var(WS)
+	-> Args = ArgsTruncated
 	;
-	    decode_list_add_separator(Args,ArgCode1,decode_literal_internal(_,_,1),','),
+	    flora_trim_last(Args,ArgsTruncated)
+	),
+	(ArgsTruncated == [] -> RestCode1 = RestCode2
+	;
+	    decode_list_add_separator(ArgsTruncated,ArgCode1,decode_literal_internal(_,_,1,Depth1),','),
 	    RestCode1 = ['(',ArgCode1,')'|RestCode2]
 	),
 	(nonvar(WS)
@@ -240,68 +256,86 @@ decode_hilog_call(HiLogPred,Args,WS,[ReifyStart,Code,ReifyEnd],Level) :-
 	; RestCode2 = []
 	).
 
+decode_hilog_term(HiLogPred,Args,Code,Depth) :-
+	Depth1 is Depth+1,
+	decode_literal_internal(HiLogPred,HiLogPredCode,1,Depth1),
+	Code = [HiLogPredCode|RestCode1],
+	(Args == [] -> RestCode1 = RestCode2
+	;
+	    decode_list_add_separator(Args,ArgCode1,decode_literal_internal(_,_,1,Depth1),','),
+	    RestCode1 = ['(',ArgCode1,')'|RestCode2]
+	),
+	RestCode2 = [].
+
+
 %%%%%%%%%%%%%%%%%%%%%% Decode Prolog Call %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% flora prolog-style builtin: declared as flora_prlg in flrprolog.P
-decode_prolog_call([F,Args,Arity],Code) :-
+decode_prolog_call([F,Args,Arity],Code,Depth) :-
 	flora_prlgdef(F,Arity),
 	!,
-	decode_builtin(F,Arity,Args,Code).
+	Depth1 is Depth+1,
+	decode_builtin(F,Arity,Args,Code,Depth1).
 %% prolog call
-decode_prolog_call([F,Args,_Arity],Code) :-
+decode_prolog_call([F,Args,_Arity],Code,Depth) :-
 	(Args == []
 	->  Code = [F,'@prolog()']
-	;   decode_list_add_separator(Args,ArgsCode,decode_literal_internal(_,_,1),','),
+	;
+	    Depth1 is Depth+1,
+	    decode_list_add_separator(Args,ArgsCode,decode_literal_internal(_,_,1,Depth1),','),
 	    Code = [F,'(',ArgsCode,')@prolog()']
 	).
 
-decode_builtin(F,0,_,[F]) :- !.
+decode_builtin(F,0,_,[F],_Depth) :- !.
 %% This would have to be expanded to deal with unary ops 
-%% (i.e., print them as ope arg)
-decode_builtin(F,1,[Arg],[F,'(',ArgCode,')']) :-
+%% (i.e., print them as op arg)
+decode_builtin(F,1,[Arg],[F,'(',ArgCode,')'],Depth) :-
 	!,
-	decode_literal_internal(Arg,ArgCode,1).
+	Depth1 is Depth+1,
+	decode_literal_internal(Arg,ArgCode,1,Depth1).
 %% This deals with binary ops
-decode_builtin(F,2,[Arg1,Arg2],Code) :-
+decode_builtin(F,2,[Arg1,Arg2],Code,Depth) :-
 	!,
-	decode_literal_internal(Arg1,Arg1Code,1),
-	decode_literal_internal(Arg2,Arg2Code,1),
+	Depth1 is Depth+1,
+	decode_literal_internal(Arg1,Arg1Code,1,Depth1),
+	decode_literal_internal(Arg2,Arg2Code,1,Depth1),
 	((flora_opdef(_,xfx,F); flora_opdef(_,yfx,F); flora_opdef(_,xfy,F))
 	->  Code = [Arg1Code, ' ', F, ' ', Arg2Code]
 	;   Code = [F,'(',Arg1Code,',',Arg2Code,')']
 	).
-decode_builtin(F,_,Args,[F,'(',ArgsCode,')']) :-
-	decode_list_add_separator(Args,ArgsCode,decode_literal_internal(_,_,1),',').
+decode_builtin(F,_,Args,[F,'(',ArgsCode,')'],Depth) :-
+	Depth1 is Depth+1,
+	decode_list_add_separator(Args,ArgsCode,decode_literal_internal(_,_,1,Depth1),',').
 
 
 %%%%%%%%%%%%%%%%%%%%%% IF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 decode_if_statement([Cond,Then],['IF (',CondCode,') THEN (',ThenCode,')']) :-
-	flora_decode_goal(Cond,CondCode),
-	flora_decode_goal(Then,ThenCode).
+	flora_decode_goal(Cond,CondCode,0),
+	flora_decode_goal(Then,ThenCode,0).
 decode_if_statement([Cond,Then,Else],['IF (',CondCode,') THEN (',ThenCode,') ELSE (',ElseCode,')']) :-
-	flora_decode_goal(Cond,CondCode),
-	flora_decode_goal(Then,ThenCode),
-	flora_decode_goal(Else,ElseCode).
+	flora_decode_goal(Cond,CondCode,0),
+	flora_decode_goal(Then,ThenCode,0),
+	flora_decode_goal(Else,ElseCode,0).
 
 %%%%%%%%%%%%%%%%%%%%%% UNLESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 decode_unless(Cond,Action,['UNLESS (',CondCode,') DO (',ActionCode,')']) :-
-	flora_decode_goal(Cond,CondCode),
-	flora_decode_goal(Action,ActionCode).
+	flora_decode_goal(Cond,CondCode,0),
+	flora_decode_goal(Action,ActionCode,0).
 
 
 %%%%%%%%%%%%%%%%%%%%%% WHILE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 decode_while(LoopType,Cond,Action,['WHILE (',CondCode,') ',LoopType,' (',ActionCode,')']) :-
-	flora_decode_goal(Cond,CondCode),
-	flora_decode_goal(Action,ActionCode).
+	flora_decode_goal(Cond,CondCode,0),
+	flora_decode_goal(Action,ActionCode,0).
 
 %%%%%%%%%%%%%%%%%%%%%% UNTIL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 decode_until(LoopType,Action,Cond,[LoopType,' (',ActionCode,') UNTIL (',CondCode,')']) :-
-	flora_decode_goal(Action,ActionCode),
-	flora_decode_goal(Cond,CondCode).
+	flora_decode_goal(Action,ActionCode,0),
+	flora_decode_goal(Cond,CondCode,0).
 
 
 %%%%%%%%%%%%%%%%%%%%% Updates %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -321,7 +355,8 @@ is_update_call(FLLIBBTERASEALL, FL_BTERASEALL).
 is_update_call(FLLIBINSERTRULE_A, FL_INSERTRULE_A).
 is_update_call(FLLIBINSERTRULE_Z, FL_INSERTRULE_Z).
 
-%% Level=0: top level; Level=1: reified predicate/molecule argument of a functor
+%% Level=0: top level;
+%% Level=1: reified predicate/molecule argument of a functor
 decode_update(UpdName,
 	      [UpdLiterals],
 	      [ReifyStart,UpdName,'{',UpdLiteralsCode,'}',ReifyEnd],
@@ -334,21 +369,27 @@ decode_update(UpdName,
 	      [ReifyStart,UpdName,'{',UpdLiteralsCode,'| ',QueryCode,'}',ReifyEnd],
 	      Level) :-
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(Query,QueryCode,0),
+	decode_literal_internal(Query,QueryCode,0,0),
 	decode_update_literals(UpdLiterals,UpdLiteralsCode).
 
 %% decodes lists of update literals [FLSYSDBUPDATE(Lit,_Storage,_Module),...]
 decode_update_literals([],[]) :- !.
 decode_update_literals([FLSYSDBUPDATE(Lit,_Storage,_Module)|T],[LitCode,Comma|TCode]) :-
 	!,
-	decode_literal_internal(Lit,LitCode,0),
+	decode_literal_internal(Lit,LitCode,0,0),
 	(T == [] -> Comma = '' ; Comma = ', '),
 	decode_update_literals(T,TCode).
-decode_update_literals([FLSYSRULEUPDATE(Head,Body)|T],
+decode_update_literals([FLSYSRULEUPDATE(Head,Body,_,_)|T],
 		       [[HeadCode,' :- ', BodyCode],Comma|TCode]) :-
-	decode_head(Head,HeadCode),
-        decode_literal_internal(Body,BodyCode,0),
+	!,
+	decode_head(Head,HeadCode,0),
+        decode_literal_internal(Body,BodyCode,0,0),
 	(T == [] -> Comma = '' ; Comma = ', '),
+	decode_update_literals(T,TCode).
+decode_update_literals([H|T],[HCode|TCode]) :-
+	H= FLLIBMODLIT(_,_,_,_),
+	!,
+	decode_literal_internal(H,HCode,0,0),
 	decode_update_literals(T,TCode).
 
 
@@ -360,13 +401,13 @@ decode_aggregate(AggName,AggVar,GrpVarList,Query,AggResult,
 		  '{',AggVar,GrpVarListCode,'| ',QueryCode,'}',ReifyEnd],
 		 Level) :-
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(AggResult,AggResultCode,0),
+	decode_literal_internal(AggResult,AggResultCode,0,0),
 	(GrpVarList==[]
 	-> GrpVarListCode = ''
 	;  decode_list_add_separator(GrpVarList,InterimCode,=(_,_),','),
 	    GrpVarListCode = ['[',InterimCode,']']
 	),
-	decode_literal_internal(Query,QueryCode,0).
+	decode_literal_internal(Query,QueryCode,0,0).
 
 is_aggregate_call(FLLIBMIN,FL_MIN).
 is_aggregate_call(FLLIBMAX,FL_MAX).
@@ -375,7 +416,34 @@ is_aggregate_call(FLLIBAVG,FL_AVG).
 is_aggregate_call(FLLIBCOUNT,FL_COUNT).
 is_aggregate_call(FLLIBCOLLECTSET,FL_COLLECTSET).
 is_aggregate_call(FLLIBCOLLECTBAG,FL_COLLECTBAG).
-		      
+
+%%%%%%%%%%%%%%%%%%%%%% Decode canonical form of a call %%%%%%%%%%%%%%%%%%%
+
+decode_canon(FLCANON(_,_,_,Callable), Decoding,Depth) :-
+	nonvar(Callable),
+	!,
+	Depth1 is Depth+1,
+	flora_decode_goal(Callable,Decoding,Depth1).
+
+decode_canon(FLCANON(InTerm,_,_Callable), Decoding,Depth) :-
+	var(InTerm),
+	!,
+	Depth1 is Depth+1,
+	flora_decode_goal(InTerm,Decoding,Depth1).
+
+decode_canon(FLCANON(Wrap,Args,Mod,_Callable), Decoding,Depth) :-
+	nonvar(Wrap),
+	is_list(Args),
+	!,
+	InTerm =.. [Wrap, Args],
+	Depth1 is Depth+1,
+	flora_decode_goal(InTerm,DecodedInTerm,Depth1),
+	workspace_code(Mod,ModCode),
+	Decoding = [DecodedInTerm,ModCode].
+
+%% If this happens then need to debug
+decode_canon(Canon,Canon,_Depth).
+
 
 %%%%%%%%%%%%%%%%%%%%% Flora built-in primitives foo{...} %%%%%%%%%%%%%%%%%
 decode_primitive(BuiltinName,ArgsCode,
@@ -390,11 +458,32 @@ decode_primitive(BuiltinName,ArgsCode,
 %% The last arg specifies the separator between list items          %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 decode_list_add_separator([],[],_,_) :- !.
+decode_list_add_separator([L|R],[CodeL,'| ',CodeR],ConversionCall,_Separator) :-
+	var(R),
+	!,
+	copy_term(ConversionCall,ConversionCall1),
+	arg(1,ConversionCall1,L),
+	call(ConversionCall1),
+	arg(2,ConversionCall1,CodeL),
+	arg(1,ConversionCall,R),
+	call(ConversionCall),
+	arg(2,ConversionCall,CodeR).
+
 decode_list_add_separator([L],[CodeL],ConversionCall,_Separator) :-
 	!,
 	arg(1,ConversionCall,L),
 	call(ConversionCall),
 	arg(2,ConversionCall,CodeL).
+decode_list_add_separator([L|R],[CodeL,'| ',CodeR],ConversionCall,_Separator) :-
+	R \= .(_,_),
+	!,
+	copy_term(ConversionCall,ConversionCall1),
+	arg(1,ConversionCall1,L),
+	call(ConversionCall1),
+	arg(2,ConversionCall1,CodeL),
+	arg(1,ConversionCall,R),
+	call(ConversionCall),
+	arg(2,ConversionCall,CodeR).
 decode_list_add_separator([L|R],[CodeL,Separator|CodeR],ConversionCall,Separator) :-
 	copy_term(ConversionCall,ConversionCall1),
 	arg(1,ConversionCall,L),
@@ -465,8 +554,6 @@ classify_call(Call, Type,Basename,ArgList,Workspace) :-
 	-> (Prefix==inheritance_
 	   -> Basename = Basename1, Type = (inheritance), ArgList = ArgList1
 
-	   ; (Prefix==candidate_class_ ; Prefix==candidate_object_)
-	   -> Basename = Basename1, Type = (inheritance_candidate), ArgList = ArgList1
 	   ; Prefix==local_
 	   -> Basename = Basename1, Type = (explicit_definition), ArgList = ArgList1
 	   
@@ -490,13 +577,31 @@ classify_call(Call, Type,Basename,ArgList,Workspace) :-
 	%% Hilog term that is not a hilog predicate
 	; Type1 == (prolog), Basename1 = WRAP_HILOG
 	->  Type = (hilog), ArgList1 = [Basename | ArgList]
+	; Type1 == (hilog), Prefix == ''
+        ->  divide_args(ArgList1,As,Mod),
+            (As == [] ->
+                Term = Basename1
+            ;
+                Term =.. [WRAP_HILOG,Basename1|As]
+            ),
+            ArgList = [Term,Mod],
+	    Type = (hilog), Basename = FL_TRAN
 	; Type = Type1, Basename = Basename1, ArgList = ArgList1
 	).
 
-%%%%%%%%%%%%%%%%%%%%% internal decode goal util %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+divide_args([H],[],H) :- !.
+divide_args([H|L1],[H|L2], M) :-
+        divide_args(L1,L2,M).
 
-%% Level=0: top level; Level=1: reified predicate/molecule argument of a functor
-decode_literal_internal(Call,Code,_Level) :-
+%%%%%%%%%%%%%%%%%%%% internal decode goal util %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Prevent loops on infinite terms
+decode_literal_internal(_Call,['...'],_Level,Depth) :-
+	Depth > 500,
+	!.
+
+%% Level=0: top level; Level=1: reified predicate/molecule arg of a functor
+decode_literal_internal(Call,Code,_Level,_Depth) :-
 	(atomic(Call);var(Call)),
 	!,
 	(atom(Call), flora_decode_predicate(Call,_,WS,_,Basename,_),
@@ -505,98 +610,187 @@ decode_literal_internal(Call,Code,_Level) :-
 	    Code = [Basename|WSCode]
 	; decode_anon_oid(Call,OidCode)
 	->  Code = OidCode
+	;   Call == []
+	->  Code = ['[',']']
 	;   Code = [Call]
 	).
 
-decode_literal_internal((NameOrVar = Var),[NameOrVar,' = ',Var],_Level) :-
+decode_literal_internal(FLLIBNEWMODULE(_ThisModule,NewModuleName),
+			[ReifyStart,FL_NEWMODULE,'{',NewModuleName,'}',ReifyEnd],
+			Level,_Depth) :-
+	!,
+	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}').
+
+decode_literal_internal((NameOrVar = Var),[NameOrVar,' = ',Var],_Level,_Depth) :-
 	var(Var),
 	(var(NameOrVar); atom(NameOrVar)),
 	!.
 
 %% This occurs when you have hilog-lit@Module, where Module is a var
-decode_literal_internal(FLLIBMODLIT(WRAP_HILOG,Args,Module),Code,Level) :-
+decode_literal_internal(FLLIBMODLIT(WRAP_HILOG,[FL_TRAN,Term,C],Module,_Caller),Code,Level,Depth) :-
+	!,
+	%% Don't increment nesting level
+	(nonvar(Term), !
+	; flora_abort('FLLIBMODLIT(WRAP_HILOG,[FL_TRAN,Term,C],Module,Caller): Internal error. Invalid goal in decode_literal_internal/3')
+	),
+        Term =.. [Basename|ArgList],
+	Depth1 is Depth+1,
+	(var(Module) ->
+	    decode_hilog_term(FL_TRAN,[Term],TermCode,Depth1),
+	    workspace_code(Module,ModuleCode),
+	    Code = [TermCode, ModuleCode]
+	;
+            append(ArgList,[C],AsCaller),
+	    decode_hilog_call(Basename,AsCaller,Module,Code,Level,Depth1)
+	).
+
+decode_literal_internal(FLLIBMODLIT(WRAP_TABLED_HILOG,Args,Module,_Caller),Code,Level,Depth) :-
 	!,
 	%% Don't increment nesting level
 	(nonvar(Args), !
-	; flora_abort('FLLIBMODLIT(WRAP_HILOG,Args,Module): Internal error: Invalid goal in decode_literal_internal/3')
+	; flora_abort('FLLIBMODLIT(WRAP_TABLED_HILOG,Args,Module,Caller): Internal error. Invalid goal in decode_literal_internal/3')
 	),
 	Args = [Basename|ArgList],
-	decode_hilog_call(Basename,ArgList,Module,Code,Level).
+	Depth1 is Depth+1,
+	(var(Module) ->
+	    flora_trim_last(ArgList,TrimmedArgs),
+	    decode_hilog_term(Basename,TrimmedArgs,TermCode,Depth1),
+	    workspace_code(Module,ModuleCode),
+	    Code = [TermCode, ModuleCode]
+	;
+	    decode_hilog_call(Basename,ArgList,Module,Code,Level,Depth1)
+	).
 
 %% This occurs when you have X@..., i.e., the literal part is a variable
-decode_literal_internal(FLLIBMODLIT(FL_LIBMOD,Args,Module),
-			[ReifyStart,ArgCode,'@',Module,ReifyEnd],
-			Level) :-
+decode_literal_internal(FLLIBMODLIT(FL_LIBMOD,Args,Module,_Caller),
+			[ReifyStart,ArgCode,ModuleCode,ReifyEnd],
+			Level,Depth) :-
 	!,
 	%% Don't increment nesting level
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	((var(Args) ; atomic(Args)) -> ArgCode = Args
-	;  decode_literal_internal(Args,ArgCode,Level)
-	).
+	((var(Args) ; atomic(Args))
+	-> ArgCode = Args
+	;
+	    Depth1 is Depth+1,
+	    decode_literal_internal(Args,ArgCode,Level,Depth1)
+	),
+	workspace_code(Module,ModuleCode).
 
 %% This occurs when you have flogic-lit@Module, where Module is a var
-decode_literal_internal(FLLIBMODLIT(Basename,Args,Module),Code,Level) :-
+decode_literal_internal(FLLIBMODLIT(Basename,Args,Module,_Caller),Code,Level,Depth) :-
 	!,
+	Depth1 is Depth+1,
 	%% Don't increment nesting level
-	decode_molecule(Basename,Args,Module,Code,Level).
+	decode_molecule(Basename,Args,Module,Code,Level,Depth1).
 
-decode_literal_internal(FLLIBREFRESH(GoalList),Code,Level) :-
+
+%% This occurs when you have hilog-lit@Module, where Module is a var
+decode_literal_internal(FLLIBMODOBJ(WRAP_HILOG,Args,Module,_Caller,ResultObj),
+			[ResCode,'=','${',Code,'}'],_Level,Depth) :-
 	!,
-	decode_list_add_separator(GoalList,GLCode,decode_literal_internal(_,_,0),', '),
+	(nonvar(Args), !
+	; flora_abort('FLLIBMODOBJ(WRAP_HILOG,Args,Module,Caller,Result): Internal error: Invalid goal in decode_literal_internal/3')
+	),
+	Args = [Basename|ArgList],
+	Depth1 is Depth+1,
+	(var(Module) ->
+	    flora_trim_last(ArgList,TrimmedArgs),
+	    decode_hilog_term(Basename,TrimmedArgs,TermCode,Depth1),
+	    workspace_code(Module,ModuleCode),
+	    Code = [TermCode, ModuleCode]
+	;
+	    decode_hilog_call(Basename,ArgList,Module,Code,0,Depth1)
+	),
+	decode_literal_internal(ResultObj,ResCode,1,Depth1).
+
+%% This occurs when you have X@..., i.e., the literal part is a variable
+decode_literal_internal(FLLIBMODOBJ(FL_LIBMOD,Args,Module,_Caller,ResultObj),
+			[ResCode, '=', '${',ArgCode,ModuleCode,'}'],
+			_Level,Depth) :-
+	!,
+	Depth1 is Depth+1,
+	((var(Args) ; atomic(Args)) -> ArgCode = Args
+	;  decode_literal_internal(Args,ArgCode,0,Depth1)
+	),
+	decode_literal_internal(ResultObj,ResCode,1,Depth1),
+	workspace_code(Module,ModuleCode).
+
+%% This occurs when you have flogic-lit@Module, where Module is a var
+decode_literal_internal(FLLIBMODOBJ(Basename,Args,Module,_Caller,ResultObj),
+			[ResCode,'=',Code],_Level,Depth) :-
+	!,
+	Depth1 is Depth+1,
+	%% Don't increment nesting level
+	decode_molecule(Basename,Args,Module,Code,1,Depth1),
+	decode_literal_internal(ResultObj,ResCode,1,Depth1).
+
+decode_literal_internal(FLCANON(X,Y,Mod,Callable), Code,_Level,Depth) :-
+	!,
+	Depth1 is Depth+1,
+	decode_canon(FLCANON(X,Y,Mod,Callable), Code,Depth1).
+
+
+decode_literal_internal(FLLIBREFRESH(_ThisModule,GoalList),Code,Level,Depth) :-
+	!,
+	Depth1 is Depth+1,
+	decode_list_add_separator(GoalList,GLCode,decode_literal_internal(_,_,0,Depth1),', '),
 	decode_primitive(FL_REFRESH,GLCode,Code,Level).
 
-decode_literal_internal(FLLIBCATCH(Call,Catcher,Handler),Code,Level) :-
-	decode_literal_internal(Call,CallCode,0),
-	decode_literal_internal(Catcher,CatcherCode,0),
-	decode_literal_internal(Handler,HandlerCode,0),
+decode_literal_internal(FLLIBCATCH(Call,Catcher,Handler),Code,Level,Depth) :-
+	Depth1 is Depth+1,
+	decode_literal_internal(Call,CallCode,0,Depth1),
+	decode_literal_internal(Catcher,CatcherCode,0,Depth1),
+	decode_literal_internal(Handler,HandlerCode,0,Depth1),
 	decode_primitive(FL_CATCH,[CallCode,',',CatcherCode,',',HandlerCode],Code,Level).
 
-decode_literal_internal(FLLIBTHROW(Catcher),Code,Level) :-
-	decode_literal_internal(Catcher,CatcherCode,0),
+decode_literal_internal(FLLIBTHROW(Catcher),Code,Level, Depth) :-
+	Depth1 is Depth+1,
+	decode_literal_internal(Catcher,CatcherCode,0,Depth1),
 	decode_primitive(FL_THROW,CatcherCode,Code,Level).
 
-decode_literal_internal(P2H_PREDICATE(Prolog,Hilog,_,_),Code,Level) :-
-	decode_literal_internal(Prolog,PrologCode,0),
-	decode_literal_internal(Hilog,HilogCode,0),
+decode_literal_internal(P2H_PREDICATE(Prolog,Hilog,_,_),Code,Level,Depth) :-
+	Depth1 is Depth+1,
+	decode_literal_internal(Prolog,PrologCode,0,Depth1),
+	decode_literal_internal(Hilog,HilogCode,0,Depth1),
 	decode_primitive(FL_P2H,[PrologCode,',',HilogCode],Code,Level).
 
-decode_literal_internal(FLLIBIFTHENELSE(Cond,Then,Else),[ReifyStart,Code,ReifyEnd],Level) :-
+decode_literal_internal(FLLIBIFTHENELSE(Cond,Then,Else),[ReifyStart,Code,ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	decode_if_statement([Cond,Then,Else],Code).
 
-decode_literal_internal(FLLIBIFTHEN(Cond,Then),[ReifyStart,Code,ReifyEnd],Level) :-
+decode_literal_internal(FLLIBIFTHEN(Cond,Then),[ReifyStart,Code,ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	decode_if_statement([Cond,Then],Code).
 
-decode_literal_internal(FLLIBUNLESSDO(Cond,Action),[ReifyStart,Code,ReifyEnd],Level) :-
+decode_literal_internal(FLLIBUNLESSDO(Cond,Action),[ReifyStart,Code,ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	decode_unless(Cond,Action,Code).
 
-decode_literal_internal(FLLIBWHILEDO(Cond,Action),[ReifyStart,Code,ReifyEnd],Level) :-
+decode_literal_internal(FLLIBWHILEDO(Cond,Action),[ReifyStart,Code,ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	decode_while('DO',Cond,Action,Code).
 
-decode_literal_internal(FLLIBWHILELOOP(Cond,Action),[ReifyStart,Code,ReifyEnd],Level) :-
+decode_literal_internal(FLLIBWHILELOOP(Cond,Action),[ReifyStart,Code,ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	decode_while('LOOP',Cond,Action,Code).
 
-decode_literal_internal(FLLIBDOUNTIL(Action,Cond),[ReifyStart,Code,ReifyEnd],Level) :-
+decode_literal_internal(FLLIBDOUNTIL(Action,Cond),[ReifyStart,Code,ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	decode_until('DO',Action,Cond,Code).
 
-decode_literal_internal(FLLIBLOOPUNTIL(Action,Cond),[ReifyStart,Code,ReifyEnd],Level) :-
+decode_literal_internal(FLLIBLOOPUNTIL(Action,Cond),[ReifyStart,Code,ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	decode_until('LOOP',Action,Cond,Code).
 
 %% flLoad in the form of [...]
-decode_literal_internal(FLLIBLOAD(Arg),[ReifyStart,'[',LoadCode,']',ReifyEnd],Level) :-
+decode_literal_internal(FLLIBLOAD(Arg),[ReifyStart,'[',LoadCode,']',ReifyEnd],Level,_Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
 	(Arg = '>>'(File,Module)
@@ -606,110 +800,142 @@ decode_literal_internal(FLLIBLOAD(Arg),[ReifyStart,'[',LoadCode,']',ReifyEnd],Le
 
 decode_literal_internal(FLLIBUNIVEQFORM(Left,Right),
 		     [ReifyStart,LeftCode,' ',FL_UNIVEQFORM,' ',RightCode,ReifyEnd],
-		     Level) :-
+		     Level,Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(Left,LeftCode,0),
-	decode_literal_internal(Right,RightCode,0).
+	Depth1 is Depth+1,
+	decode_literal_internal(Left,LeftCode,0,Depth1),
+	decode_literal_internal(Right,RightCode,0,Depth1).
 
-decode_literal_internal(WRAP_FDSKOLEM(X,Y),[XCode,'.',YCode],_Level) :-
+decode_literal_internal(WRAP_FDSKOLEM(X,Y),[XCode,'.',YCode],_Level,Depth) :-
 	!,
-	decode_literal_internal(X,XCode,0),
-	decode_literal_internal(Y,YCode,0).
-decode_literal_internal(WRAP_IFDSKOLEM(X,Y),[XCode,'!',YCode],_Level) :-
+	Depth1 is Depth+1,
+	decode_literal_internal(X,XCode,0,Depth1),
+	decode_literal_internal(Y,YCode,0,Depth1).
+decode_literal_internal(WRAP_IFDSKOLEM(X,Y),[XCode,'!',YCode],_Level,Depth) :-
 	!,
-	decode_literal_internal(X,XCode,0),
-	decode_literal_internal(Y,YCode,0).
+	Depth1 is Depth+1,
+	decode_literal_internal(X,XCode,0,Depth1),
+	decode_literal_internal(Y,YCode,0,Depth1).
 
 
 %% Call prolog predicate in a different module; must be before commalist
 %% We loose the module name in decoding
 decode_literal_internal((X =.. _List, call(X)),
-		     [ReifyStart,'call(',Code,')',ReifyEnd],
-		     Level) :-
+			[ReifyStart,'call(',Code,')',ReifyEnd],
+			Level,
+			Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(X,Code,0).
+	Depth1 is Depth+1,
+	decode_literal_internal(X,Code,0,Depth1).
 
 %% Aggregates should be handled before commalists
-decode_literal_internal((Call, AggResultVar=InterimResultVar),Code,Level) :-
+decode_literal_internal((Call, AggResultVar=InterimResultVar),Code,Level,_Depth) :-
+	compound(Call),
 	Call =.. [AggLib,AggVar,GrpVarList,Query,InterimResultVar],
 	is_aggregate_call(AggLib,AggName),
 	!,
 	decode_aggregate(AggName,AggVar,GrpVarList,Query,AggResultVar,Code,Level).
 
 %% commalist
-decode_literal_internal((L,R),[ReifyStart,'(',[LCode,', '|RCode],')',ReifyEnd],Level) :-
+decode_literal_internal((L,R),[ReifyStart,'(',[LCode,', '|RCode],')',ReifyEnd],Level,Depth) :-
 	!,
-	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(L,LCode,0),
-	decode_literal_internal(R,RCode,0).
+	%%(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
+	ReifyStart='',ReifyEnd='',
+	Depth1 is Depth+1,
+	decode_literal_internal(L,LCode,Level,Depth1),
+	decode_literal_internal(R,RCode,Level,Depth1).
 
 %% list
-decode_literal_internal(Call,['"', Code, '"'],_Level) :-
+decode_literal_internal(Call,['[', ']'],_Level,_Depth) :-
+	Call == [],
+	!.
+decode_literal_internal(Call,['"', Code, '"'],_Level,_Depth) :-
 	is_charlist(Call),
 	!,
 	atom_codes(Code,Call).
-decode_literal_internal('.'(H,T),['[',Code,']'],Level) :-
+decode_literal_internal('.'(H,T),['[',Code,']'],Level,Depth) :-
 	!,
-	decode_list_add_separator('.'(H,T),Code,decode_literal_internal(_,_,Level),', ').
-decode_literal_internal(';'(L,R),[ReifyStart,'(',LCode,'; ',RCode,')',ReifyEnd],Level) :-
+	Depth1 is Depth+1,
+	decode_list_add_separator('.'(H,T),Code,decode_literal_internal(_,_,Level,Depth1),', ').
+decode_literal_internal(';'(L,R),[ReifyStart,'(',LCode,'; ',RCode,')',ReifyEnd],Level,Depth) :-
 	!,
-	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(L,LCode,0),
-	decode_literal_internal(R,RCode,0).
+	Depth1 is Depth+1,
+	%%(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
+	ReifyStart='',ReifyEnd='',
+	decode_literal_internal(L,LCode,Level,Depth1),
+	decode_literal_internal(R,RCode,Level,Depth1).
 
 %% Can this happen?
-decode_literal_internal('->'(Call1,Call2),[ReifyStart,Call1Code,' -> ',Call2Code,ReifyEnd],Level) :-
+decode_literal_internal('->'(Call1,Call2),[ReifyStart,Call1Code,' -> ',Call2Code,ReifyEnd],Level,Depth) :-
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	decode_literal_internal(Call1,Call1Code,0),
-	decode_literal_internal(Call2,Call2Code,0).
+	Depth1 is Depth+1,
+	decode_literal_internal(Call1,Call1Code,Level,Depth1),
+	decode_literal_internal(Call2,Call2Code,Level,Depth1).
 
 %% call(...), tnot(...), not(...), \+ (...)
-decode_literal_internal(FLORA_TNOT_PREDICATE(Subcall),[ReifyStart,'(','tnot ',SubcallCode,')'],Level) :-
+decode_literal_internal(FLORA_TNOT_PREDICATE(Subcall),[ReifyStart,'(','not ',SubcallCode,')',ReifyEnd],Level,Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	flora_decode_goal(Subcall,SubcallCode).
-decode_literal_internal(tnot(Subcall),[ReifyStart,'(tnot ',SubcallCode,')',ReifyEnd],Level) :-
+	Depth1 is Depth+1,
+	flora_decode_goal(Subcall,SubcallCode,Depth1).
+decode_literal_internal(tnot(Subcall),[ReifyStart,'(not ',SubcallCode,')',ReifyEnd],Level,Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	flora_decode_goal(Subcall,SubcallCode).
-decode_literal_internal(not(Subcall),[ReifyStart,'(\+ ',SubcallCode,')',ReifyEnd],Level) :-
+	Depth1 is Depth+1,
+	flora_decode_goal(Subcall,SubcallCode,Depth1).
+decode_literal_internal(not(Subcall),[ReifyStart,'(\+ ',SubcallCode,')',ReifyEnd],Level,Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	flora_decode_goal(Subcall,SubcallCode).
-decode_literal_internal('\+'(Subcall),[ReifyStart,'(\+ ',SubcallCode,')',ReifyEnd],Level) :-
+	Depth1 is Depth+1,
+	flora_decode_goal(Subcall,SubcallCode,Depth1).
+decode_literal_internal('\+'(Subcall),[ReifyStart,'(\+ ',SubcallCode,')',ReifyEnd],Level,Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	flora_decode_goal(Subcall,SubcallCode).
-decode_literal_internal(call(Subcall),[ReifyStart,'call(',SubcallCode,')',ReifyEnd],Level) :-
+	Depth1 is Depth+1,
+	flora_decode_goal(Subcall,SubcallCode,Depth1).
+decode_literal_internal(call(Subcall),[ReifyStart,'call(',SubcallCode,')',ReifyEnd],Level,Depth) :-
 	!,
 	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
-	flora_decode_goal(Subcall,SubcallCode).
+	Depth1 is Depth+1,
+	flora_decode_goal(Subcall,SubcallCode,Depth1).
+
+decode_literal_internal(FLSYSRULEUPDATE([Head],Body,_,_),
+			[ReifyStart,HeadCode, ' :- ', BodyCode, ReifyEnd],
+			Level, Depth) :-
+	!,
+	(Level==0 -> ReifyStart='',ReifyEnd='' ; ReifyStart='${',ReifyEnd='}'),
+	Depth1 is Depth+1,
+	flora_decode_goal(Head,HeadCode,Depth1),
+	flora_decode_goal(Body,BodyCode,Depth1).
 
 %% An update
-decode_literal_internal(Call,Code,Level) :-
-	Call =.. [UpdPred,UpdLiterals|Query],
+decode_literal_internal(Call,Code,Level,_Depth) :-
+	compound(Call),
+	Call =.. [UpdPred,_ThisMofule,UpdLiterals|Query],
 	is_update_call(UpdPred,UpdName),
 	!,
 	(Query==[]
-	->  decode_update(UpdName,[UpdLiterals],Code,Level)
+	-> 
+	    decode_update(UpdName,[UpdLiterals],Code,Level)
 	; Query = [RealQuery],
 	    decode_update(UpdName,[UpdLiterals,RealQuery],Code,Level)
 	).
 
-decode_literal_internal(Call,Code,Level) :-
+decode_literal_internal(Call,Code,Level,Depth) :-
 	(\+callable(Call)
 	-> flora_abort([Call,': Ill-formed HiLog term in decode_literal_internal/3'])
 	;
+	    Depth1 is Depth+1,
 	    classify_call(Call,Type,BasenameOrPred,Args,WS),
 	    (Type == (hilog)
-	    -> decode_hilog_call(BasenameOrPred,Args,WS,Code,Level)
+	    -> decode_hilog_call(BasenameOrPred,Args,WS,Code,Level,Depth1)
 	    ; Type == (prolog)
 	    ->  functor(Call,Functor,Arity),
-		decode_prolog_call([Functor,Args,Arity],Code)
+		decode_prolog_call([Functor,Args,Arity],Code,Depth1)
 	    ; Type == (flogic)
-	    -> decode_molecule(BasenameOrPred,Args,WS,Code,Level)
+	    -> decode_molecule(BasenameOrPred,Args,WS,Code,Level,Depth1)
 	    ;			% cannot decode
 		flora_abort([Call,': decode_literal_internal/3 failed to decode'])
 	    )

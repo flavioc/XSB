@@ -24,10 +24,11 @@ ALLOBJS =  flranswer$(OBJEXT) \
 	   flrbtdbop$(OBJEXT) \
 	   flrshdirect$(OBJEXT) \
 	   flrdynmod$(OBJEXT) \
-	   flrequality$(OBJEXT) \
+	   flrsemantics$(OBJEXT) \
 	   flrtables$(OBJEXT) \
 	   flrimportedcalls$(OBJEXT) \
 	   flrerrhandler$(OBJEXT) \
+	   flrtrim$(OBJEXT) \
 	   flrimport$(OBJEXT)
 
 OPTIONS = [optimize]
@@ -44,6 +45,6 @@ CLEAN :
 
 
 $(PROLOGEXT)$(OBJEXT):
-	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
+	$(PROLOG) -e "asserta(library_directory('..')). ['..\flora2']. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 

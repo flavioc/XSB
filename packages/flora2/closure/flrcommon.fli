@@ -12,6 +12,9 @@
 #include "flora_wspredicates.flh"
 #include "flora_porting.flh"
 
+#include "flrtypes.fli"
+
+:- WRAP_COPY_UNQUOTED 'FLORA_THIS_MODULE_NAME'.
 
 
 /***************************************************************************
@@ -21,27 +24,27 @@
   the trailer dynamically loadable. Note that the program rules use wrapper
   predicates with the 'derived_' prefix.
 ***************************************************************************/
-inferred_sub(X,Y) :- derived_sub(X,Y).
-inferred_isa(O,C) :- derived_isa(O,C).
-inferred_fd(O,A,V) :- derived_fd(O,A,V).
-inferred_ifd(C,A,V) :- derived_ifd(C,A,V).
-inferred_mvd(O,A,V) :- derived_mvd(O,A,V).
-inferred_imvd(C,A,V) :- derived_imvd(C,A,V).
-inferred_mvddef(O,A) :- derived_mvddef(O,A).
-inferred_imvddef(C,A) :- derived_imvddef(C,A).
-inferred_fdsig(O,MethodArgs,R) :- derived_fdsig(O,MethodArgs,R).
-inferred_fdsigdef(O,MethodArgs) :- derived_fdsigdef(O,MethodArgs).
-inferred_ifdsig(O,MethodArgs,R) :- derived_ifdsig(O,MethodArgs,R).
-inferred_ifdsigdef(O,MethodArgs) :- derived_ifdsigdef(O,MethodArgs).
-inferred_mvdsig(O,MethodArgs,R) :- derived_mvdsig(O,MethodArgs,R).
-inferred_mvdsigdef(O,MethodArgs) :- derived_mvdsigdef(O,MethodArgs).
-inferred_imvdsig(O,MethodArgs,R) :- derived_imvdsig(O,MethodArgs,R).
-inferred_imvdsigdef(O,MethodArgs) :- derived_imvdsigdef(O,MethodArgs).
-inferred_meth(O,M) :- derived_meth(O,M).
-inferred_imeth(C,M) :- derived_imeth(C,M).
-inferred_tran(O,T) :- derived_tran(O,T).
-inferred_exists(X) :- derived_exists(X).
-inferred_objeql(X,Y) :- derived_objeql(X,Y).
+inferred_sub(X,Y) :- derived_sub(X,Y,'FLORA_THIS_MODULE_NAME').
+inferred_isa(O,C) :- derived_isa(O,C,'FLORA_THIS_MODULE_NAME').
+inferred_fd(O,A,V) :- derived_fd(O,A,V,'FLORA_THIS_MODULE_NAME').
+inferred_ifd(C,A,V) :- derived_ifd(C,A,V,'FLORA_THIS_MODULE_NAME').
+inferred_mvd(O,A,V) :- derived_mvd(O,A,V,'FLORA_THIS_MODULE_NAME').
+inferred_imvd(C,A,V) :- derived_imvd(C,A,V,'FLORA_THIS_MODULE_NAME').
+inferred_mvddef(O,A) :- derived_mvddef(O,A,'FLORA_THIS_MODULE_NAME').
+inferred_imvddef(C,A) :- derived_imvddef(C,A,'FLORA_THIS_MODULE_NAME').
+inferred_fdsig(O,MethodArgs,R) :- derived_fdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
+inferred_fdsigdef(O,MethodArgs) :- derived_fdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
+inferred_ifdsig(O,MethodArgs,R) :- derived_ifdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
+inferred_ifdsigdef(O,MethodArgs) :- derived_ifdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
+inferred_mvdsig(O,MethodArgs,R) :- derived_mvdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
+inferred_mvdsigdef(O,MethodArgs) :- derived_mvdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
+inferred_imvdsig(O,MethodArgs,R) :- derived_imvdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
+inferred_imvdsigdef(O,MethodArgs) :- derived_imvdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
+inferred_meth(O,M) :- derived_meth(O,M,'FLORA_THIS_MODULE_NAME').
+inferred_imeth(C,M) :- derived_imeth(C,M,'FLORA_THIS_MODULE_NAME').
+inferred_tran(O,T) :- derived_tran(O,T,'FLORA_THIS_MODULE_NAME').
+inferred_objeql(X,Y) :- derived_objeql(X,Y,'FLORA_THIS_MODULE_NAME').
+inferred_exists(X) :- derived_exists(X,'FLORA_THIS_MODULE_NAME').
 
 
 /*****************************************************************************
@@ -243,10 +246,11 @@ exists(X) :- imeth(X,_).
 
 
 /****************************************************************************
-  objeql/2
+  objeql/3
 ****************************************************************************/
-objeql(X,Y) :- (nonvar(X); nonvar(Y)), X=Y.
-objeql(X,Y) :- diffobjeql(X,Y).
+objeql(X,Y,_Caller) :- X=Y.
+%%objeql(X,Y,_Caller) :- (nonvar(X); nonvar(Y)), X=Y.
+objeql(X,Y,_Caller) :- diffobjeql(X,Y).
 
 
 /****************************************************************************
@@ -263,7 +267,10 @@ inheritance_ifd(C,M,V) :- inferred_ifd(C,M,V).
 inheritance_imvd(C,M,V) :- inferred_imvd(C,M,V).
 inheritance_imvddef(C,M) :- inferred_imvddef(C,M).
 
-%% Like inferred_* but the debugger will print it in a special way
+%% Like inferred_* but the debugger (actually the decoder, flrdecode.P)
+%% will print it in a special way
 inheritance_ifd_eql(C,M,V) :- inferred_ifd_eql(C,M,V).
 inheritance_imvd_eql(C,M,V) :- inferred_imvd_eql(C,M,V).
 inheritance_imvddef_eql(C,M) :- inferred_imvddef_eql(C,M).
+
+FL_SILENT_EQUAL(X,X).

@@ -36,8 +36,6 @@ ALLOBJS = flrarguments${OBJEXT} \
 	  flrcompiler${OBJEXT} \
 	  flrcoder${OBJEXT} \
 	  flrdependency${OBJEXT} \
-	  flora2devel${OBJEXT} \
-	  flrhilogtable${OBJEXT} \
 	  flrlexer${OBJEXT} \
 	  flrlibman${OBJEXT} \
 	  flrnodefp${OBJEXT} \
@@ -94,7 +92,7 @@ showerrors:
 	@cat $(FLORADIR)/.flora*.tmp
 	@rm $(FLORADIR)/.flora*.tmp
 
-top: init $(ALLOBJS) finish
+top: cleantemp init $(ALLOBJS) finish
 	./CompileChangedFiles.sh $(PROLOG_COMMAND)
 	@cat $(SVFILE)
 
@@ -102,7 +100,6 @@ core: top
 	cd closure && $(MAKE) PROLOG=$(PROLOG)
 	cd genincludes && $(MAKE) PROLOG=$(PROLOG)
 	cd syslib && $(MAKE) PROLOG=$(PROLOG)
-	cd trailer && $(MAKE) PROLOG=$(PROLOG)
 	cd debugger && $(MAKE) PROLOG=$(PROLOG)
 
 libs:
@@ -120,9 +117,6 @@ misc:
 %$(PROLOGEXT) : %$(PROLOGHEADEREXT)
 	./touch.sh $@
 
-# always compile flora2devel to make sure that .xwam has the latest .flora_path
-flora2devel${OBJEXT} : flora2devel${PROLOGEXT} version.flh
-	@echo 'mc(flora2devel,$(OPTION)).' >> cmd...
 
 flrversion${OBJEXT}: flrversion${PROLOGEXT} version.flh
 	@echo 'mc(flrversion,$(OPTION)).' >> cmd...
@@ -157,7 +151,8 @@ init:
 	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." > cmd...
 	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN),_)." >> cmd...
-	@echo "[flora2devel]." >> cmd...hdr
+	@echo "['./flora2']." >> cmd...hdr
+	@echo "retractall(xpp_options(_))." >> cmd...hdr
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr
 	@echo "file_clone($(STDWARN),$(STDERR),_)." >> cmd...hdr
@@ -168,7 +163,7 @@ finish:
 	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> cmd...
 
 
-clean:
+clean: cleantemp
 	/bin/rm -f core *~ .*~ *${OBJEXT} *.O *.bak ../flora2${OBJEXT} .#*
 	/bin/rm -f .*.tmp .flora_path* .prolog_path*
 	cd closure && $(MAKE) clean
@@ -177,7 +172,6 @@ clean:
 	cd lib && $(MAKE) clean
 	cd debugger && $(MAKE) clean
 	cd p2h && $(MAKE) clean
-	cd trailer && $(MAKE) clean
 	cd pkgs && $(MAKE) clean
 	cd demos && $(MAKE) clean
 	/bin/rm -f headerinc/*~ headerinc/.*~
@@ -185,7 +179,9 @@ clean:
 	/bin/rm -f libinc/*~ libinc/.*~
 	/bin/rm -f includes/*~ includes/.*~
 	/bin/rm -f flrincludes/*~ flrincludes/.*~
-	/bin/rm -f $(HOME)/.xsb/flora/*${PROLOGEXT} $(HOME)/.xsb/flora/*${OBJEXT}
+
+cleantemp:
+	/bin/rm -f "$(HOME)"/.xsb/flora/*${PROLOGEXT} "$(HOME)"/.xsb/flora/*${OBJEXT}
 
 veryclean: clean
 	cd docs && $(MAKE) clean

@@ -38,18 +38,18 @@
 /*********************************************************************
   fllibavg(+Var,+VarList,+Goal,-Avg)
 *********************************************************************/
-fllibavg(Var,[],Goal,Avg) :-
+FLLIBAVG(Var,[],Goal,Avg) :-
 	!,
 	findall(Var,Goal,Matches),
 	flora_avgaux(Matches,Avg).
 
-fllibavg(Var,VarList,Goal,Avg) :-
+FLLIBAVG(Var,VarList,Goal,Avg) :-
 	ground(VarList),
 	!,
 	findall(Var,Goal,Matches),
 	flora_avgaux(Matches,Avg).
 
-fllibavg(Var,VarList,Goal,Avg) :-
+FLLIBAVG(Var,VarList,Goal,Avg) :-
 	!,
 	findall(flora_result(Var,VarList),Goal,Matches),
 	findall(Grp,member(flora_result(_,Grp),Matches),GL),

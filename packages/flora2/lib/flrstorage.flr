@@ -25,15 +25,19 @@
 
 #include "standard.h"
 
+:- export
+        #commit,
+	#commit(_),
+	#purgedb(_).
 
-commit :- flora_commit_storage@prolog(flrutils).
+#commit :- flora_commit_storage@prolog(flrutils).
 
 %% This commit is only for user modules
-commit(Module) :-
+#commit(Module) :-
 	flora_user_storage_name(Module,StorageName)@prolog(flrwrapper),
 	storage_commit(StorageName)@prolog(storage),
 	storage_reclaim_space(StorageName)@prolog(storage).
 
-purgedb(Module) :-
+#purgedb(Module) :-
 	flora_user_storage_name(Module,StorageName)@prolog(flrwrapper),
 	storage_delete_all(StorageName)@prolog(storage).

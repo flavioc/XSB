@@ -58,6 +58,8 @@
 	xsb_undefined_predicate_hook/1
    from xsb_hook.
 
+:- import close_open_tables/0 from machine.
+
 :- import flora_undefined_predicate_hook/3 from flrundefhook.
 
 :- import
@@ -91,7 +93,7 @@
 :- import
 	flMaxerr/1,
 	flHalt/0,
-	flloadtrailer/1,
+	flloadtrailer/2,
 	flora_shell_command_line/3,
 	flora_load_module_internal/1,
 	flora_good_command/1,

@@ -1,4 +1,4 @@
-;;; flora.el --- a major mode for editing and running FLORA programs
+;;; flora.el --- a major mode for editing and running FLORA-2 programs
 
 ;; Authors:
 ;; Heinz Uphoff (uphoff@informatik.uni-freiburg.de)
@@ -9,10 +9,9 @@
 
 ;;; Commentary:
 
-;; This package provides a major mode for editing FLORA programs.  It knows
-;; about Flora syntax and comments (well, sort of), and can send
-;; regions, buffers, and files to an inferior F-Logic interpreter
-;; process.
+;; This package provides a major mode for editing FLORA-2 programs.  It knows
+;; about FLORA-2 syntax and comments (well, sort of), and can send
+;; regions, buffers, and files to an inferior interpreter process.
 
 ;; This package was adapted from flp.el by Michael Kifer.
 ;; In turn, flp.el, a major mode for FLORID, was adapted from prolog.el by
@@ -21,7 +20,7 @@
 ;;
 ;; Put
 ;;   (setq auto-mode-alist (cons '("\\.fl[rih]$" . flora-mode) auto-mode-alist))
-;;   (autoload 'flora-mode "flora" "Major mode for editing Flora programs." t)
+;;   (autoload 'flora-mode "flora" "Major mode for editing FLORA-2 programs." t)
 
 ;;; Code:
 
@@ -42,8 +41,11 @@
   "*Directory for temporary files.")
 
 ;; This path has to be set at installation of the F-Logic-System!!!
-(defvar flora-program-name "xsb"
-  "*Program name for invoking an inferior Flora with `run-flora'.")
+(defvar flora-program-name "~/FLORA/flora2/runflora"
+  "*Program name for invoking an inferior FLORA-2 with `run-flora'.")
+
+(defvar flora-command-line nil
+  "*FLORA-2 command to execute at startup.")
 
 (defvar flora-mode-syntax-table nil)
 (defvar flora-mode-abbrev-table nil)
@@ -52,17 +54,17 @@
 (defvar flora-forget-string "halt.\n\n"
   "*Reinitialise  system")
 
-(defconst flora-process-buffer "*flora*"
-  "Name of the Flora buffer.")
-(defconst flora-process-name "flora"
-  "Name of Flora process.")
+(defconst flora-process-buffer "*flora2*"
+  "Name of the FLORA-2 buffer.")
+(defconst flora-process-name "flora2"
+  "Name of FLORA-2 process.")
 
 (defvar flora-offer-save t
   "*If non-nil, ask about saving modified buffers before 
-\\[flora-consult-file] is run.")
+\\[flora-load-file] is run.")
 
 (defvar flora-electric nil
-  "*If t, typing RETURN automatically indents Flora lines.")
+  "*If t, typing RETURN automatically indents FLORA-2 lines.")
 
 (defvar flora-indent-width 4)
 
@@ -110,7 +112,7 @@
 
 (defconst flora-directives-regexp
   "index\\|from\\|hilogtable\\|hilogtableall\\|import\\|table\\|firstorder\\|firstorderall\\|arguments"
-  "Flora compiler directives without the \\( and \\).")
+  "FLORA-2 compiler directives without the \\( and \\).")
 
 (defconst flora-font-lock-keywords
    (list
@@ -121,7 +123,7 @@
     ;; for objects
     '("\\([A-Za-z0-9_][A-Za-z0-9_!.]*\\) *\\["
       1 'font-lock-variable-name-face)
-    '("\\b\\(\\\+\\|tnot\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|btinsertall\\|deleteall\\|btdeleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\\|if\\|then\\|else\\|while\\|do\\|until\\|unless\\|fl[A-Z][a-zA-Z]*\\)\\b"
+    '("\\b\\(\\\+\\|tnot\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|btinsertall\\|deleteall\\|btdeleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\\|insertrule_?[az]?\\|if\\|then\\|else\\|while\\|do\\|until\\|unless\\|fl[A-Z][a-zA-Z]*\\)\\b"
       1 'font-lock-keyword-face)
     '("\\(:\\||\\)" 
       1 'font-lock-type-face)
@@ -135,19 +137,21 @@
   "Additional expressions to highlight in flora mode.")
 
 (defvar flora-mode-menu
-  '(["Consult file"    flora-consult-file   t]
-    ["Consult buffer"  flora-consult-buffer t]
-    ["Consult region"  flora-consult-region t]
+  '(["Load FLORA-2 file"    flora-load-file   t]
+    ["Load FLORA-2 buffer"  flora-load-buffer t]
+    ["Load FLORA-2 region"  flora-load-region t]
     "---"
-    ["Consult file dynamically"    flora-consult-file-dynamically   t]
-    ["Consult buffer dynamically"  flora-consult-buffer-dynamically t]
-    ["Consult region dynamically"  flora-consult-region-dynamically t]
+    ["Load FLORA-2 file into module"    flora-load-file-to-module   t]
+    ["Load FLORA-2 buffer into module"  flora-load-buffer-to-module t]
+    ["Load FLORA-2 region into module"  flora-load-region-to-module t]
     "---"
-    ["Start Flora process"     run-flora    	    t]
-    ["Restart Flora process"   flora-restart	    t]
+    ["Execute region as a FLORA-2 query in main" flora-send-region-as-query t]
     "---"
-    ["Interrupt Flora process" flora-interrupt	    t]
-    ["Quit Flora process"      flora-quit    	    t]
+    ["Start FLORA-2 process"     run-flora    	    t]
+    ["Restart FLORA-2 process"   flora-restart	    t]
+    "---"
+    ["Interrupt FLORA-2 process" flora-interrupt	    t]
+    ["Quit FLORA-2 process"      flora-quit    	    t]
     ))
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -209,25 +213,26 @@
 (defun flora-mode-commands (map)
   (define-key map "\t" 'flora-indent-line)
   (define-key map "\C-c\C-l" 'flora-switch-to-flora-buffer)
-  (define-key map "\C-c\C-b" 'flora-consult-buffer)
-  (define-key map "\C-c\C-r" 'flora-consult-region)
-  (define-key map "\C-c\C-f" 'flora-consult-file)
+  (define-key map "\C-c\C-b" 'flora-load-buffer)
+  (define-key map "\C-c\C-r" 'flora-load-region)
+  (define-key map "\C-c\C-f" 'flora-load-file)
   (define-key map "\C-c\C-s" 'flora-restart)
   (define-key map "\C-c\C-c" 'flora-interrupt)
   (define-key map "\C-c\C-d" 'flora-quit)
+  (define-key map "\C-c\C-q" 'flora-send-region-as-query)
   (define-key map "*"	     'flora-electric-star)
   (define-key map "/"	     'flora-electric-slash))
 
 
-;; Set up Flora keymap
+;; Set up FLORA-2 keymap
 (if flora-mode-map
     nil
   (setq flora-mode-map (make-sparse-keymap))
   (flora-mode-commands flora-mode-map))
 
-;; Set up Flora menus
+;; Set up FLORA-2 menus
 (if window-system
-    (easy-menu-define flora-menubar flora-mode-map "Flora Commands"
+    (easy-menu-define flora-menubar flora-mode-map "FLORA-2 Commands"
 		      (cons "Flora" flora-mode-menu))
   )
 
@@ -244,13 +249,13 @@ if that value is non-nil."
   (kill-all-local-variables)
   (use-local-map flora-mode-map)
   (setq major-mode 'flora-mode)
-  (setq mode-name "Flora")
+  (setq mode-name "FLORA-2")
   (flora-mode-variables)
   (setq comint-prompt-regexp "flora + \\?- +")
   (run-hooks 'flora-mode-hook))
 
 (defun flora-indent-line (&optional whole-exp)
-  "Indent current line as Flora code.
+  "Indent current line as FLORA-2 code.
 With argument, indent any additional lines of the same clause
 rigidly along with this one (not yet)."
   (interactive "p")
@@ -299,7 +304,7 @@ This assumes that the point is inside a comment."
     ))
 
 (defun flora-indent-level ()
-  "Compute Flora indentation level."
+  "Compute FLORA-2 indentation level."
   (save-excursion
     (beginning-of-line)
     (skip-chars-forward " \t")
@@ -469,12 +474,12 @@ is inhibited."
 
 
 ;;;
-;;; Inferior Flora mode
+;;; Inferior FLORA-2 mode
 ;;;
 (defvar inferior-flora-mode-map nil)
 
 (defun inferior-flora-mode ()
-  "Major mode for interacting with an inferior Flora process.
+  "Major mode for interacting with an inferior FLORA-2 process.
 
 The following commands are available:
 \\{inferior-flora-mode-map}
@@ -485,8 +490,8 @@ arguments, if that value is non-nil.  Likewise with the value of
 `inferior-flora-mode-hook' is called after `comint-mode-hook'.
 
 You can send text to the inferior flora from other buffers
-using the commands \\[flora-consult-buffer] \\[flora-consult-file], and
-\\[flora-consult-region]. 
+using the commands \\[flora-load-buffer] \\[flora-load-file], and
+\\[flora-load-region]. 
 
 Return at end of buffer sends line as input.
 Return not at end copies rest of line to end and sends it.
@@ -497,7 +502,7 @@ Return not at end copies rest of line to end and sends it.
   (require 'comint)
   (comint-mode)
   (setq major-mode 'inferior-flora-mode
-	mode-name "Inferior-Flora"
+	mode-name "Inferior-FLORA-2"
 	comint-prompt-regexp "flora + \\?- +")
   (flora-mode-variables)
   (if inferior-flora-mode-map 
@@ -515,77 +520,77 @@ Return not at end copies rest of line to end and sends it.
 )
 
 (defun run-flora-background ()
-  "Run an inferior Flora process, input and output via buffer *flora*."
+  "Run an inferior FLORA-2 process, input and output via buffer *flora*."
   (if (not (get-process flora-process-name))
       (save-excursion
 	(set-buffer
-	 (make-comint flora-process-name
-		      flora-program-name
-		      nil
-		      "-e"
-		      "[flora2], flora_shell."))
+	 (if flora-command-line
+	     (make-comint flora-process-name
+			  flora-program-name
+			  nil
+			  "-e"
+			  flora-command-line)
+	   (make-comint flora-process-name flora-program-name))
+	 )
 	(inferior-flora-mode))))
 
 
 ;;;###autoload
 (defun run-flora ()
-  "Run an inferior Flora process, input and output via buffer *flora*, and
+  "Run an inferior FLORA-2 process, input and output via buffer *flora*, and
 switch to the buffer."
   (interactive)
   (run-flora-background)
   (show-flora-buffer 'switch))
 
-(defun flora-consult-region (dynamically beg end)
-  "Send the region to the Flora process.
-The region must be made by \"M-x run-flora\" or created here.
-If DYNAMICALLY (prefix arg) is not nil, consult dynamically."
-  (interactive "P\nr")
+(defun flora-load-region (&optional beg end module)
+  "Send the region to the FLORA-2 process.
+The region must be created in advance."
+  (interactive)
+  (or (and beg end)
+      (if (not (mark t))
+	  (error "No region specified"))
+      (setq beg (min (point) (mark t))
+	    end (max (point) (mark t))))
+  (message "m1: %S %S "  beg end)
   (let ((tmpfile-name (flora-make-temp-file beg end)))
     (run-flora-background)
     (save-excursion
-      (process-send-string flora-process-name 
-			   (format (if dynamically
-				       "<'%s'>.\n"
-				     "['%s'].\n")
-				   tmpfile-name)))
+      (process-send-string
+       flora-process-name 
+       (format "['%s' >> %s].\n" tmpfile-name (if module module "main"))
+       ))
     (show-flora-buffer)
     ))
 
-(defun flora-consult-region-as-query (beg end)
-  "Send the region to the Flora process as a query.
+(defun flora-send-region-as-query (&optional beg end)
+  "Send the region to the FLORA-2 process as a query.
 The region must be a valid query terminated with a period."
-  (interactive "P\nr")
+  (interactive "r")
   (run-flora-background)
   (save-excursion
     (process-send-region flora-process-name beg end)
     (process-send-string flora-process-name "\n"))
   (show-flora-buffer))
 
-(defun flora-consult-buffer (dynamically)
-  "Send the current buffer to the Flora process.
-Do not offer to save files.
-If buffer is associated with a file, then the buffer is saved in a temporary
-file with the same name, so that the consulted code will have the same module
-name as the original file. If the buffer is not associated with any file, a
-temporary file with a random name is used."
-  (interactive "P")
+(defun flora-load-buffer (&optional module)
+  "Send the current buffer to the FLORA-2 process.
+Does not offer to save files."
+  (interactive)
   (let ((file (file-name-nondirectory (buffer-file-name)))
 	flora-offer-save)
     (if file
 	(progn
 	  (setq file (concat flora-temp-file-prefix file))
 	  (write-region (point-min) (point-max) file)
-	  (flora-consult-file dynamically file))
-      (flora-consult-region 
-       (if dynamically
-	   t nil)
-       (point-min-marker) (point-max-marker)))
+	  (flora-load-file file module))
+      (flora-load-region 
+       (point-min-marker) (point-max-marker) module))
     ))
 
 
-(defun flora-consult-file (dynamically &optional file)
-  "Prompt for a file, offer to save all buffers, then run Flora on the file.
-If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
+(defun flora-load-file (&optional file module)
+  "Prompt for a file, offer to save all buffers, then run FLORA-2 on the file."
   (interactive "P")
   (let ((default-file (if (buffer-file-name)
 			  (buffer-file-name)
@@ -593,30 +598,35 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
     (if (not (stringp file))
 	(setq file
 	      (read-file-name
-	       (format "File name to consult %s(%s): "
-		       (if dynamically "dynamically " "")
+	       (format "File name to load (%s): "
 		       (file-name-nondirectory default-file))
 	       nil default-file)))
     (if flora-offer-save
 	(save-some-buffers))
     (run-flora-background)
-    (process-send-string flora-process-name
-			 (if dynamically
-			     (format "<'%s'>.\n" file)
-			   (format "['%s'].\n" file)))
+    (process-send-string
+     flora-process-name
+     (format "['%s' >> %s].\n" file (if module module "main")))
     (show-flora-buffer)))
 
-(defun flora-consult-file-dynamically ()
-  (interactive)
-  (flora-consult-file t))
+(defun flora-load-file-to-module (module)
+  "Prompt for a module into which to load the file. Then prompt for file."
+  (interactive "P")
+  (setq module (read-string "Module  to load to (main): " nil "main"))
+  (flora-load-file nil module))
 
-(defun flora-consult-buffer-dynamically ()
-  (interactive)
-  (flora-consult-buffer t))
+(defun flora-load-buffer-to-module (module)
+  "Prompt for a module into which to load the file."
+  (interactive "P")
+  (setq module (read-string "Module  to load to (main): " nil "main"))
+  (flora-load-buffer module))
 
-(defun flora-consult-region-dynamically (beg end)
-  (interactive "r")
-  (flora-consult-region t beg end))
+(defun flora-load-region-to-module (module)
+  "Prompt for a module into which to load the region."
+  (interactive "P")
+  (setq module (read-string "Module  to load to (main): " nil "main"))
+  (flora-load-region nil nil module))
+
 
 (defun flora-interrupt()
   (interactive)
@@ -639,7 +649,7 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
   (run-flora-background)
   (pop-to-buffer flora-process-buffer))
 
-;; SWITCH means switch to inferior Flora buffer
+;; SWITCH means switch to inferior FLORA-2 buffer
 (defun show-flora-buffer (&optional switch)
   (let ((wind (selected-window)))
     (with-temp-buffer
@@ -662,7 +672,7 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
 
 
 (defun flora-make-temp-file (start end)
-  (let* ((f (make-temp-name (concat flora-temp-file-prefix "flora"))))
+  (let* ((f (make-temp-name (concat flora-temp-file-prefix "flora2"))))
     
     ;; create the file
     (write-region start end

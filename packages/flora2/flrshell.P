@@ -32,16 +32,15 @@
 
 #include "flora_exceptions.flh"
 #include "flora_terms.flh"
-
-#define PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
-#define PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
-#define PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
+#include "flora_porting.flh"
 
 /*********************************************************************/
 flora_shell_loop :-
 	flora_init_shell,
 	repeat,
-	catch(flora_shell_loop_body, Exception, flora_shell_loop_handler(Exception)).
+	catch(flora_shell_loop_body,
+	      Exception,
+	      flora_shell_loop_handler(Exception)).
 
 flora_shell_loop_body :-
 	(flora_banner_control(noprompt) ; flora_shell_prompt),
@@ -78,13 +77,30 @@ flora_shell_loop_handler(FLORA_UNDEFINED_EXCEPTION(_,ErrorMsg)) :-
 	!,
 	flora_error_line(ErrorMsg),
 	fail.
+
+flora_shell_loop_handler(FLORA_NOT_EXPORTED_EXCEPTION(_,ErrorMsg)) :-
+	!,
+	flora_error_line(ErrorMsg),
+	fail.
+
 flora_shell_loop_handler(error(undefined_predicate(PredName,Arity,Module),_Msg)) :-
 	flora_undefined_predicate_hook(PredName,Arity,Module),
+	!,
+	fail.
+flora_shell_loop_handler(error(undefined_predicate(PredName,Arity,Module),_Msg,_Trace)) :-
+	flora_undefined_predicate_hook(PredName,Arity,Module),
+	!,
+	fail.
+flora_shell_loop_handler(error(existence_error(module,Module),_Msg,_Trace)) :-
+	flora_error_line('attempt to call a Prolog predicate in a not found module `~w''',
+			 [Module]),
+	close_open_tables,
 	!,
 	fail.
 flora_shell_loop_handler(error(existence_error(module,Module),_Msg)) :-
 	flora_error_line('attempt to call a Prolog predicate in a not found module `~w''',
 			 [Module]),
+	close_open_tables,
 	!,
 	fail.
 flora_shell_loop_handler(FLORA_ABORT) :-
@@ -93,18 +109,22 @@ flora_shell_loop_handler(FLORA_ABORT) :-
 	fail.
 flora_shell_loop_handler(FLORA_ABORT(Msg)) :-
 	!,
+	close_open_tables,
 	flora_stderr_string('++Abort[FLORA]> ~w', [Msg]), flora_stderr_nl,
 	fail.
 flora_shell_loop_handler('_$abort_ball') :-
 	!,
+	close_open_tables,
 	flora_stderr_string('++Abort[Prolog]'), flora_stderr_nl,
 	fail.
 flora_shell_loop_handler('_$abort_ball'(Exception)) :-
 	!,
+	close_open_tables,
 	flora_stderr_string('++Abort[Prolog]> '),
-	flora_stderr_string(Exception), flora_stderr_nl,
+	flora_error_line('~w', [Exception]), flora_stderr_nl,
 	fail.
 flora_shell_loop_handler(Exception) :-
+	close_open_tables,
 	flora_error_line('~w', [Exception]), flora_stderr_nl,
 	fail.
 
@@ -118,7 +138,7 @@ flora_init_shell :-
 	flora_load_library(FLLIBLOAD),
 	flora_load_library(FLLIBDISPLAY),
 	flora_load_library(FLLIBIMPORTEDCALLS),
-	flloadtrailer(NONE),
+	flloadtrailer([FL_EQUALITY(NONE)],FLORA_DEFAULT_WORKSPACE),
 	(flora_banner_control(nobanner) ; flora_welcome_msg),
 	flAll,
 	flChatter,
@@ -180,13 +200,6 @@ flHelp :-
 	flora_stdmsg_line('    load FILE.flr into the shell module `main'''),
 	flora_stdmsg_line('o flDemo(FILE)'),
 	flora_stdmsg_line('    run a demo from FLORA demos directory'),
-	flora_stdmsg_line('o FL_EQUALITY {none|basic|flogic}'),
-	flora_stdmsg_line('    set support for the equality predicate in the shell module `main'' to'),
-	flora_stdmsg_line('    none, standard first-order, or F-logic style'),
-	flora_stdmsg_line('o newmodule{MODULENAME [, none|basic|flogic]}'),
-	flora_stdmsg_line('    create new module MODULENAME with given equality maintenance level'),
-	flora_stdmsg_line('o FL_ARGUMENTS Functor({FL_OID|FL_BODYFORMULA},...)'),
-	flora_stdmsg_line('    define the predicate argument type in shell mode'),
 	flora_stdmsg_line('o FL_OP(Precedence,Associativity,Operator)'),
 	flora_stdmsg_line('    define an operator in shell mode'),
 	flora_stdmsg_line('o flReset(FL_ARGUMENTS|FL_OP)'),

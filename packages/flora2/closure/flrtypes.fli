@@ -1,0 +1,27 @@
+/***************************************************************************
+  file: closure/flrtypes.fli
+
+  Author(s): Michael Kifer
+
+  Contact:   flora-users@lists.sourceforge.net
+
+  Copyright (C) The Research Foundation of SUNY, 2004
+***************************************************************************/
+
+
+isa(X,integer) :- integer(X).
+isa(X,float) :- float(X).
+%% integer or float
+isa(X,number) :- number(X).
+%%isa(X,atomicId) :- atom(X).
+
+%% Type combinators
+%% The non-vars are just to take care of XSB bugs
+isa(X, (C1,C2)) :- nonvar(C1), nonvar(C2), isa(X,C1), isa(X,C2).
+isa(X, (C1;C2)) :- nonvar(C1), nonvar(C2), (isa(X,C1); isa(X,C2)).
+%%isa(X,not(C)) :- flora_tnot(isa(X,C)).
+
+/********************* End of standard type definitions *******************/
+
+
+

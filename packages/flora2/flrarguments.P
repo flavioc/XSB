@@ -33,7 +33,6 @@
 flora_arguments_spec((findall),3,[FL_OID,FL_BODYFORMULA,FL_OID]) :- !.
 flora_arguments_spec(call,1,[FL_BODYFORMULA]) :- !.
 flora_arguments_spec(get_residual,2,[FL_BODYFORMULA,FL_OID]) :- !.
-flora_arguments_spec(table_state,2,[FL_BODYFORMULA,FL_OID]) :- !.
 
 
 /****************************************************************************
