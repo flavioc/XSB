@@ -88,6 +88,10 @@ void total_stat(double elapstime)
   unsigned long lstktop, trie_alloc, trie_used, chat_alloc, chat_used,
                 total_alloc, total_used, gl_avail, tc_avail;
   unsigned long subg_count, subg_space, trie_hash_alloc;
+  unsigned long de_space_allocated, de_space_used;
+  unsigned long dl_space_allocated, dl_space_used;
+  int num_de_blocks, num_dl_blocks;
+  int de_count, dl_count;
 
   lstktop = (unsigned long)ereg;
 
@@ -96,6 +100,16 @@ void total_stat(double elapstime)
   trie_alloc = allocated_trie_size() + trie_hash_alloc;
   trie_used = trie_alloc - free_trie_size();
   subg_space = sizeof(Cell)*CALLSTRUCTSIZE*subg_count;
+
+  de_space_allocated = allocated_de_space(& num_de_blocks);
+  de_space_used = de_space_allocated - unused_de_space();
+  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_element);
+
+  dl_space_allocated = allocated_dl_space(& num_dl_blocks);
+  dl_space_used = dl_space_allocated - unused_dl_space();
+  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_list);
 
 #ifdef CHAT
   chat_alloc = chat_max_alloc();
@@ -164,12 +178,13 @@ void total_stat(double elapstime)
   printf(" %6ld answer  check/insert attempts", ans_chk_ins);
   printf(" inserted %5ld answers  in the tables\n", ans_inserts);
 
-/*     if (ide_count > 0) { */
-/* 	printf(" %5d ide tab check/insert attempts", ide_chk_ins); */
-/* 	printf(" interned %5d dl elems in the tables\n", ide_count); */
-/* 	printf(" %5d idl tab check/insert attempts", idl_chk_ins); */
-/* 	printf(" interned %5d dl lists in the tables\n\n", idl_count); */
-/*     } else printf("\n"); */
+  if (de_count > 0) {
+    printf("\n");
+    printf(" %6d DEs in the tables (space: %5ld bytes allocated, %5ld in use)\n",
+	   de_count, de_space_allocated, de_space_used);
+    printf(" %6d DLs in the tables (space: %5ld bytes allocated, %5ld in use)\n",
+	   dl_count, dl_space_allocated, dl_space_used);
+  }
 
   printf("\n");
 

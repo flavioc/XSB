@@ -221,6 +221,11 @@ extern bool answer_is_junk(CPtr);
 extern void abolish_wfs_space(void);
 extern void simplify_neg_fails(SGFrame);
 extern void do_delay_stuff(NODEptr, SGFrame, bool);
+extern unsigned long allocated_de_space(int * num_blocks);
+extern unsigned long unused_de_space(void);
+extern unsigned long allocated_dl_space(int * num_blocks);
+extern unsigned long unused_dl_space(void);
+
 
 #ifdef DEBUG
 extern void print_subgoal(FILE *, SGFrame);
