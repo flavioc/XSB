@@ -44,6 +44,11 @@ database and the dumping of an OMS from memory to an ODBC database.
 In the future they will allow all updates to such an OMS in memory to
 be immediately reflected back out to the stored DB.
 
+@section{Lazy Access to an OMS Stored in a RDB}
+
+A facility is also provided to lazily access an OMS stored externally
+as 9 relations in external form in a relational database.  
+
 ").
 
 %%:- export load_db_oms/3, dump_db_oms/3.
@@ -411,14 +416,6 @@ dump_db_attribute_object(Connection,Source) :-
 		 []),
 	fail.
 dump_db_attribute_object(_Connection,_Source).
-
-:- comment(module,"
-@section{Lazy Access to an OMS Stored in a RDB}
-
-A facility is also provided to lazily access an OMS stored externally
-as 9 relations in external form in a relational database.  
-
-").
 
 /********************************************************************************/
 /*										*/

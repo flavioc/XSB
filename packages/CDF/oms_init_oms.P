@@ -2,24 +2,23 @@
 
 :- document_export
 	class/4, newClass/5, retractallClass/4,
-	updateClass/4, updateObject/4,
+	updateClass/4, 
 	subclass/2, proper_subclass/2,
-	immediate_subclass/2, % if_subclass/2,
+	immediate_subclass/2, 
 	newSubclass/2, retractallSubclass/2,
-	is_a_relation/1,	relationship/3, 
-	immediate_relationship/3,immediate_irel/3, 
-	is_an_inheritable_relationship/1,
-	newRelationship/3, newRelationshipClass/4, newRelationshipClass/3,
-	retractallRelationship/3,
-	strel/3,	is_a_strel/1,
-	newStrel/3, newStrelClass/3, retractallStrel/3,	schrel/3,
-	immediate_schrel/3, is_a_schrel/1,
-	newSchrel/3, 	newSchrelClass/3, retractallSchrel/3,
-	object/4, newObject/5,retractallObject/4,
-	memberof/2,immediate_memberof/2, 
-	newMemberof/2,retractallmemberof/2,
-	(attribute)/3,immediate_attribute/3, 
-	newAttribute/3,retractallAttribute/3,
+	is_a_relation/1, is_an_inheritable_relation/1,
+	newRelName/5, newRelName/4, newRelName/3, subrel/2,
+	irel/3, immediate_irel/3, 
+	newIrel/3, retractallIrel/3,
+	schrel/3, immediate_schrel/3, 
+	newSchrel/3,  retractallSchrel/3,
+	newStrelName/5, newStrelName/4, strel/3, is_a_strel/1,
+	newStrel/3, retractallStrel/3,
+	object/4, newObject/5, retractallObject/4, updateObject/4,
+	memberof/2, immediate_memberof/2, 
+	newMemberof/2, retractallmemberof/2,
+	(attribute)/3, immediate_attribute/3, 
+	newAttribute/3, retractallAttribute/3,
             updateAttribute/5,
 	attribute_object/3,
 	newAttribute_object/3, retractallAttribute_object/3,
@@ -174,72 +173,53 @@ OMS includes these classes and relations.
 
 @begin{itemize}
 
-@item @index{OMS Root}: Class that is the root node of the Ontology.
-All classes are subclasses of @tt{OMS Root}, and all objects are
-members of @tt{OMS Root}.
+@item @tt{id(OMS Root,OMS)} @cindex{OMS Root}: Root node of the
+Ontology.  Includes all objects and relation tuples.  As a result, all
+classes are subclasses of @tt{id('OMS Root','OMS')} and  all relations are
+subrelations of @tt{id('OMS Root','OMS')}.
 
-@item @index{OMS Relations}:
-	Class that includes all relations --- inheritable or not.
-@footnote{For historical purposes, inheritable relations are sometimes
-called @em{relationships}.}  
-Defined as: 
-@begin{verbatim} 
-newClass('OMS Relations',RootCid,'OMS',RelCid)
-@end{verbatim}
+
+@item @tt{id('OMS Relations','OMS')}: @cindex{OMS Relations'}
+	Class that includes all relation tuples --- inheritable or
+not.  @footnote{For historical purposes, inheritable relations are
+sometimes called @em{relationships}.}  Defined as an immediate
+subrelation of @tt{id('OMS Root','OMS')}.
 
 As mentioned in @ref{A Quick Tour of the OMS}, OMS relations can
 define inheritable attributes which hold for subclasses and objects,
 inheritable schema constraints, and non-inheritable properties of
 sets.  Subclasses of @tt{OMS Relations} define inheritable attributes.
 
-@item @index{OMS Inheritable Relationships}:
-	Class that includes all inheritable relationships.
-Defined as:
-@begin{verbatim}
-newClass('OMS Inheritable Relationships',RelCid,'OMS',InheritableCid):
-@end{verbatim}
+@item @tt{id('OMS Inheritable Relations','OMS')}: 
+@cindex{OMS Inheritable Relations}
+	Includes all non-inheritable set-valued relation tuples.
+Defined as an immediate subrelation of @tt{id('OMS Relations','OMS')}.
 
-@item @index{OMS Set-Valued Relations}:
-	Class that includes all non-inheritable set-valued relations.
-Defined as:
-@begin{verbatim}
-newClass('OMS Set-Valued Relations',RelCid,'OMS',_SetValCid):
-@end{verbatim}
+@item @tt{id('OMS Set-Valued Relations','OMS')}: 
+@cindex{OMS Set-Valued Relations}
+	Includes all non-inheritable set-valued relation tuples.
+Defined as an immediate subrelation of @tt{id('OMS Relations','OMS')}.
 
-Inheritable Relations themselves may sometimes be transitive or
-symmetric.  If so, the relations are set as subclasses of the
-following Classes.
 
-@item  @index{OMS Transitive Relations}:
-Defined as:
-@begin{verbatim}
-newClass('OMS Transitive Relations',InheritableCid,'OMS',_TranCid):
-@end{verbatim}
+@item @tt{id('OMS Components','OMS')}: @cindex{OMS Components}
+	Includes all component names.  Defined as an immediate
+subclass of @tt{id('OMS Root','OMS')}.
 
-@item  @index{OMS Symmetric Relations}:
-Defined as:
-@begin{verbatim}
-newClass('OMS Symmetric Relations',InheritableCid,'OMS',_SymCid):
-@end{verbatim}
-
-@item @index{OMS Primitive Types}: The classes here are implemented as
-part of the undelying OMS code and avoids explicit class creation, for
-numbers, atoms, etc.  They are represented in XSB by structured terms.
-Defined as: 
-
-@begin{verbatim} 
-newClass('OMS Primitive Types',RootCid,'OMS',_PTypesCid),
-@end{verbatim}
+@item @tt{id('OMS Primitive Types','OMS')}: @cindex{OMS Primitive
+Types} The classes here are implemented as part of the undelying OMS
+code and avoids explicit class creation, for numbers, atoms, etc.
+They are represented in XSB by structured terms.  Defined as an
+immediate subclass of @tt{id('OMS Root','OMS')}.
 
 The primitive types supplied by the OMS are: 
 @begin{verbatim}
-            oms_cn(integer(X),'INTEGER/1',integer(X),'OMS').
-  	oms_cn(float(X),'FLOAT/1',float(X),'OMS').
-  	oms_cn(atom(X),'ATOM/1',atom(X),'OMS').
-  	oms_cn(cardinal(X),'CARDINAL/1',cardinal(X),'OMS').
-  	oms_cn(aint(X),'AINT/1',atom(X),'OMS').
-  	oms_cn(object(X),'OBJECT/1',object(Y,Z),'OMS').
-  	oms_cn(clause(X,Y),'CLAUSE/2',clause(X,Y),'OMS').
+       oms_cn(integer(X),'INTEGER/1',integer(X),'OMS').
+       oms_cn(float(X),'FLOAT/1',float(X),'OMS').
+       oms_cn(atom(X),'ATOM/1',atom(X),'OMS').
+       oms_cn(cardinal(X),'CARDINAL/1',cardinal(X),'OMS').
+       oms_cn(aint(X),'AINT/1',atom(X),'OMS').
+       oms_cn(object(X),'OBJECT/1',object(Y,Z),'OMS').
+       oms_cn(clause(X,Y),'CLAUSE/2',clause(X,Y),'OMS').
 @end{verbatim}
 
 @noindent The data structures represented by first three are
@@ -258,7 +238,6 @@ the underscore signifies an anonymous Prolog variable.
 instanitated integer, so that the usual ordering of integers is not
 maintained within the OMS.  Similarly, @tt{atom(_)} is the parent of
 each instantiated atom and so on.
-
 @end{itemize}
 "). 
 
@@ -319,7 +298,7 @@ init_schema_index_std :-
 	index(oms_rln(_,_,_),[1+2,1,2+3]),
 %%	index(oms_rln(_,_,_),[1+2,1,16'0283]),
 	%% oms_strel(SCid,RCid,TCid)
-	index(oms_strel(_,_,_),[1+2,1]),
+%	index(oms_strel(_,_,_),[1+2,1]),
 	%% oms_schrel(SCid,RCid,TCid)
 	index(oms_schrel(_,_,_),[1+2,1,2+3]).
 
@@ -388,17 +367,20 @@ init_component_info :-
 	newClass('compVers/2',RootCid,
 			compVers('OMS Root','OMS',integer(_),'OMS'),
 			'OMS',_CVid),
-	newComponent('OMS',_OCid,_Rcid).
+	newComponent('OMS',OCid,Rcid),
+	newStrel(OCid,Rcid,OCid).
 
-newComponent(Name,compVers(NameId,integer(V)),Relid):- 
+newComponent(Name,compVers(NameId,integer(V)),Depid):- 
 	class(GenCompid,_,'OMS Component','OMS'),
 	newClass(Name,GenCompid,Name,NameId),
-	(immediate_subclass(compVers(NameId,integer(V)),GenCompid) -> 
+	newStrelName(has_version,has_version,Name,VersId),
+	newStrelName(initialization_file,initialization_file,Name,_InitId),
+	(strel(NameId,VersId,integer(V)) -> 
 	     true 
 	   ; 
-	     newSubclass(compVers(NameId,integer(0)),GenCompid),
+	     newStrel(NameId,VersId,integer(0)),
 	     V = 0 ),
-	newRelationshipClass(componentDepends,Name,Relid).
+	newStrelName(componentDepends,componentDepends,Name,Depid).
 
 oms_primitive_type(X):- oms_primitive_class(X,_,_,_).
 
@@ -1018,26 +1000,38 @@ sc_child_exists(SCid):-
 		     'CID: ',SCid)),
 	  	   fail).
 
+%%% SUBREL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(subrel/2,"@tt{subrel(Sub,Sup)} is true if @tt{Sub} is
+semantically a subrelation of Sup.  For @pred{subrel/2} is the
+reflexive transitive closure of @pred{immediate_subrel/2} and tuple
+subsumption.  Only terms appearing in explicit relation definitions
+are generated (not all their instances), but for testing (i.e. a
+bound/bound call), subsumed terms are handled.  ").
+
+subrel(Sub,Sup):- subclass(Sub,Sup).
+
+immediate_subrel(Sub,Sup):- immediate_subclass(Sub,Sup).
+
 %%% RELATIONSHIP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(is_a_relation/1, "@pred{is_a_relation/1} is
-the disjunction of @pred{is_an_inheritabele_relationship/1},
-@pred{is_a_schrel/1} and @pred{is_a_strel/1}.").
+:- comment(is_a_relation/1, "@tt{is_a_relation(Id)} is true if @tt{Id)
+is an inheritable or set-valued relation. ").
 
 is_a_relation(RCid) :-
-	is_an_inheritable_relationship(RCid).
+	is_an_inheritable_relation(RCid).
 is_a_relation(RCid) :-
 	is_a_strel(RCid).
-is_a_relation(RCid) :-
-	is_a_schrel(RCid).
 
-%%% (Inheritable) RELATIONSHIP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Irels (nee relationships) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(is_an_inheritable_relationship/1,
-"@tt{is_an_inheritable__relationship(RCid)} checks that @tt{RCid} is
-the class ID of a subclass of @tt{OMS Inheritable Relationships}.  If
-@tt{RCid} is unbound, all such (proper) subclasses are returned
-nondeterministically.").
+:- comment(is_an_inheritable_relation/1,
+"@tt{is_an_inheritable_relation(RCid)} checks that @tt{RCid} is the
+identifier of a subrelation of @tt{id('OMS Inheritable
+Relations','OMS')}.  If @tt{RCid} is unbound, all such (proper)
+subrelations are returned nondeterministically.").
+
+is_an_inheritable_relation(RCid):- is_an_inheritable_relationship(RCid).
 
 is_an_inheritable_relationship(RCid) :-
 	class_nidbound(RelsCid,'OMS Inheritable Relationships',
@@ -1050,8 +1044,8 @@ is_an_inheritable_relationship(RCid) :-
 	).
 
 :- comment(immediate_irel/3, "@tt{immediate_irel(SCid,RCid,TCid)}
-accesses facts stored directly in @pred{oms_rln/3} in the ontology, or
-defined via intensional rules.").
+accesses facts stored directly in @pred{oms_rln/3} in the OMS state,
+as well as those defined via intensional rules.").
 
 immediate_irel(SCid,RCid,TCid) :- 
 	immediate_relationship(SCid,RCid,TCid).
@@ -1095,15 +1089,15 @@ immediate_relationship_int(SCid,RCid,TCid) :-
 			class_nidbound(TCid,_,TNatId,TSou)
 	) ).
 
-irel(SCid,RCid,TCid) :-
-	relationship(SCid,RCid,TCid).
-
-:- comment(relationship/3, "@tt{relationship(SCid,RCid,TCid)} defines
-the inheritable relationship predicate, where @tt{SCid} is the source
-Class ID, @tt{RCid} is the relationship class ID, and @tt{TCid} is the
-target class ID.  For these inheritable relationships, the taxonomy is
+:- comment(irel/3, "@tt{irel(SCid,RCid,TCid)} defines the inheritable
+relationship predicate, where @tt{SCid} is the source class ID,
+@tt{RCid} is the relationship class ID, and @tt{TCid} is the target
+class ID.  For these inheritable relationships, the taxonomy is
 traversed and the most specific relationships consistent with the
 parameters are returned.  ").
+
+irel(SCid,RCid,TCid) :-
+	relationship(SCid,RCid,TCid).
 
 relationship(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
@@ -1171,13 +1165,14 @@ of @tt{OMS Inheritable Relationships}").
 assert_relationship(SCid,RCid,TCid) :-
 	newRelationship(SCid,RCid,TCid).
 
-:- comment(retractallRelationship/3,
-"@tt{retractallRelationship(SCid,RCid,TCid)} retracts all stored
-inheritable relationship tuples that unify with the parameters.  Note
-that this is a syntactic operation that simply removes all matching
-tuples in @pred{oms_rln/3}.  It does not affect information derived
-via @pred{immediate_relationship_int/6}, and may not affect
-information derived via inheritance.").
+:- comment(retractallIrel/3, "@tt{retractallIrel(SCid,RCid,TCid)}
+retracts all explicitly defined inheritable relationship tuples that
+unify with the parameters.  Note that this operation simply removes
+all matching tuples in @pred{oms_rln/3}.  It does not affect
+information derived via @pred{immediate_relationship_int/6}, and may
+not affect information derived via inheritance.").
+
+retractalllrel(SCid,RCid,TCid) :- retractallRelationship(SCid,RCid,TCid).
 
 retractall_relationship(SCid,RCid,TCid) :-
 	retractallRelationship(SCid,RCid,TCid).
@@ -1185,17 +1180,17 @@ retractall_relationship(SCid,RCid,TCid) :-
 retractallRelationship(SCid,RCid,TCid) :-
 	oms_update_list([retractall(oms_rln(SCid,RCid,TCid))]).
 
-:- comment(newRelationship/3, "@tt{newRelationship(SCid,RCid,TCidA)}
-adds a new inheritable relationship to the ontology if it is n
-ot
-already implied (through inheritance, if applicable) by the
-relationships already in the ontology.").
-newRelationship(SCid,RCid,TCidA) :-
-	newRelationship(SCid,RCid,TCidA,Updates,[]),
-	oms_update_list(Updates).
+:- comment(newIrel/3, "@tt{newIrel(SCid,RCid,TCidA)} adds a new
+inheritable relationship to the ontology if it is not already implied
+(through inheritance, if applicable) by the irels already in the OMS
+state.").
 
 newIrel(SCid,RCid,TCidA):- 
 	newRelationship(SCid,RCid,TCidA).
+
+newRelationship(SCid,RCid,TCidA) :-
+	newRelationship(SCid,RCid,TCidA,Updates,[]),
+	oms_update_list(Updates).
 
 /* TLS main change is that I now also check that RCid is a class of
    relation */
@@ -1238,9 +1233,9 @@ relationship_target_class_exists(SCid):-
 %%% SET-VALUED RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(is_a_strel/1, "@tt{is_a_strel(RCid)} checks that @tt{RCid}
-is the class ID of a subclass of @tt{OMS Set-Valued Relations}.  If
-@tt{RCid} is unbound, all such (proper) subclasses are returned
-nondeterministically.").
+is the class ID of a subclass of @tt{id('OMS Set-Valued
+Relations','OMS')}.  If @tt{RCid} is unbound, all such (proper)
+subclasses are returned nondeterministically.").
 
 is_a_strel(RCid) :-
 	class(RelsCid,'OMS Set-Valued Relations',
@@ -1254,9 +1249,9 @@ is_a_strel(RCid) :-
 immediate_strel(SCid,RCid,TCid) :- strel(SCid,RCid,TCid).*/
 
 :- comment(strel/3, "@tt{strel(SCid,RCid,TCid)} defines the semantic
-set-valued relation predicate, where @tt{SCid} is the source Class
-ID, @tt{RCid} is the relation class ID, and @tt{TCid} is the
-target class ID. ").
+set-valued relation predicate, where @tt{SCid} is the source class ID,
+@tt{RCid} is the relation class ID, and @tt{TCid} is the target class
+ID. ").
 
 strel(SCid,RCid,TCid) :- oms_strel(SCid,RCid,TCid).
 strel(SCid,RCid,TCid) :- strel_int(SCid,RCid,TCid).
@@ -1341,19 +1336,6 @@ strel_target_class_exists(SCid):-
 
 %%% SCHEMA RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(is_a_schrel/1, "@tt{is_a_schrel(RCid)} checks
-that @tt{RCid} is the class ID of a subclass of @tt{OMS Schema
-Relations}.  If @tt{RCid} is unbound, all such (proper) subclasses
-are returned nondeterministically.").
-
-is_a_schrel(RCid) :-
-	class(RelsCid,'OMS Schema Relations',
-	              'OMS Schema Relations','OMS'),
-	(nonvar(RCid)
-	 ->	subclass(RCid,RelsCid), RCid \== RelsCid	% was if_
-	 ;	subclass_fb(RCid,RelsCid), RCid \== RelsCid
-	).
-
 :- comment(immediate_schrel/3, "@tt{immediate_schrel(SCid,RCid,TCid)}
 accesses facts stored directly in @pred{oms_schrel/3} and information
 produced via @pred{immediate_schrel_int/6}.").
@@ -1388,11 +1370,11 @@ immediate_schrel_int(SCid,RCid,TCid) :-
 			class(TCid,_,TNatId,TSou) ) ).
 
 :- comment(schrel/3, "@tt{schrel(SCid,RCid,TCid)} defines the semantic
-schema relation predicate, where @tt{SCid} is the source Class ID,
-@tt{RCid} is the relation class ID, and @tt{TCid} is the target
-class ID.  Since schema relations are inheritable, the taxonomy is
-traversed and the most specific schema relations consistent with the
-parameters are returned.  ").
+schema relation predicate, where @tt{SCid} is the source class ID,
+@tt{RCid} is the relation class ID, and @tt{TCid} is the target class
+ID.  Since schema relations are inheritable, the taxonomy is traversed
+and the most specific schema relations consistent with the parameters
+are returned.  ").
 
 schrel(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
@@ -2123,44 +2105,64 @@ newAttributeObject(SOid,RCid,TOid,Upd0,Upd) :-
 
 %%% MIXED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
-:-comment(newRelationshipClass/4,"
-newRelationshipClass(+Name,+Nid,+Source,-Cid) creates a class that is
-an immediate subclass of @tt{id('OMS Inheritable
-Relationships','OMS')}.  This predicate only creates a class, and does
-not create any specific relationship tuples").
+:- comment(newRelName/5,
+"@tt{newRelName(Name,ParentId,Nid,Source,NewId)} creates a name for an
+inheritable relation that is an immediate subrelation of @tt{ParentId}
+(which in turn must be a sub-relation of @tt{id('OMS Inheritable
+Relations','OMS')}).  This predicate only creates a relation name, and
+does not create any specific relation tuples").
+
+newRelName(Name,ParentId,Nid,Source,NewId) :-
+	newClass(Name,ParentId,Nid,Source,NewId).
+
+:-comment(newRelName/4,"newRelName(+Name,+Nid,+Source,-Cid) creates a
+relation that is an immediate subrelation of @tt{id('OMS Inheritable
+Relationships','OMS')}.  This predicate only creates the relation, and
+does not create any specific relationship tuples").
+
+newRel(Name,Nid,Source,NewCid) :-
+	newRelationshipClass(Name,Nid,Source,NewCid).
 
 newRelationshipClass(Name,Nid,Source,NewCid) :-
 	class(RelCid,'OMS Inheritable Relationships',
 		     'OMS Inheritable Relationships','OMS'),
 	newClass(Name,RelCid,Nid,Source,NewCid).
 
-:-comment(newRelationshipClass/3,"
-newRelationshipClass(+Nid,+Source,-Cid) acts as
-@pred{newRelationshipClass/4}, but assumes that the name of the class
-is the same as @tt{Nid}.").
+:-comment(newRelName/3,"newRelName(+Name,+Source,-Cid) creates a relation that
+is an immediate subrelation of @tt{id('OMS Inheritable
+Relationships','OMS')}, and assumes that @tt{Nid} is the same as
+@tt{Name}.  This predicate only creates the relation, and does not
+create any specific relationship tuples").
+
+newRel(Name,Source,NewCid) :- newRelationshipClass(Name,Source,NewCid).
 
 newRelationshipClass(Name,Source,NewCid) :-
 	class(RelCid,'OMS Inheritable Relationships',
 		     'OMS Inheritable Relationships','OMS'),
 	newClass(Name,RelCid,Source,NewCid).
 
-:- comment(newStrelClass/3,"Creates a class that is an immediate
-subclass of of @tt{OMS Set-Valued Relations}.  This predicate only
-creates a class, and does not create any specific relation tuples").
+:- comment(newStrelName/5,
+"@tt{newStrelName(Name,ParentId,Nid,Source,NewId)} creates a name for
+a set-valued relation that is an immediate subrelation of
+@tt{ParentId} (which in turn must be a sub-relation of @tt{id('OMS
+Set-Valued Relations','OMS')}).  This predicate only creates a
+relation name, and does not create any specific relation tuples").
 
-newStrelClass(Name,Source,NewCid) :-
+newStrelName(Name,ParentId,Nid,Source,NewId) :-
+	newClass(Name,ParentId,Nid,Source,NewId).
+
+:- comment(newStrelName/4, "@tt{newStrelName(Name,Nid,Source,NewId)}
+creates a name for a set-valued relation that is an immediate
+subrelation of @tt{id('OMS Set-Valued Relations','OMS')}.  This
+predicate only creates a relation name, and does not create any
+specific relation tuples").
+
+newStrelClass(Name,Nid,Source,NewId) :- newStrelName(Name,Nid,Source,NewId).
+
+newStrelName(Name,Nid,Source,NewId) :-
 	class(RelCid,'OMS Set-Valued Relations',
 		     'OMS Set-Valued Relations','OMS'),
-	newClass(Name,RelCid,Source,NewCid).
-
-:- comment(newSchrelClass/3,"Creates a class that is an immediate
-subclass of of @tt{OMS Schema Relations}.  This predicate only creates
-a class, and does not create any specific relation tuples").
-
-newSchrelClass(Name,Source,NewCid) :-
-	class(RelCid,'OMS Schema Relations',
-		     'OMS Schema Relations','OMS'),
-	newClass(Name,RelCid,Source,NewCid).
+	newClass(Name,RelCid,Nid,Source,NewId).
 
 %-----------------------------------------------------------------
 % General checks use in more than one create instruction
@@ -2587,85 +2589,6 @@ set_convert_ext_int([Nid|NR],[Cid|CR],S):-
 	ext_int(Cid,_Label,Nid,S),
 	set_convert_ext_int(NR,CR,S).
 
-/*
-oms_primitive_class(set(X),'SET/1',set(Y,Z),'OMS') :-
-	(nonvar(X) -> 
-	     set_convert_int_ext(X,Y,Z)
-             ;  (nonvar(Y),nonvar(Z) ->	
-	            set_convert_ext_int(Y,X,Z)
-	          ; true) ).
-*/
-
-@item @index{OMS Pragma}.  A user may wish to make certain
-semantically meaningful information about the ontology beyond the
-axioms in @ref{Semantic Axioms for the Programmer's View}.  In order
-to provide extra information the user may specify @em{pragma}.
-Pragmas are not explicitly checked by the OMS system: however pragmas
-may be checked by type-checking systems on top of the OMS, or and in
-the future, such checking may be merged into the OMS per se.  A pragma
-can be defined for a given class by the set-valued relation @tt{'OMS
-Pragma'} defined as: @begin{verbatim}
-       newStrelClass('OMS Pragma','OMS',PragmaRelCid).
-@end{verbatim}
-
-Targets of the @tt{OMS Pragma} relation are subclasses of the @tt{OMS
-Pragma Domain}, defined as 
-@begin{verbatim}
-       newClass('OMS Pragma',RootCid,'OMS',PragmaCid).
-@end{verbatim}
-
-The current Pragmas (i.e. subclasses of @tt{OMS Pragma}) are:
-@begin{itemize}
-@item @index{OMS Relation Maximum(integer(_))};  
-@item @index{OMS Relation Minimum(integer(_))}:
-	These pragma represent the minimum and maximum number of
-	values a relation may have for a single input.  They may be
-defined for Inheritable, Set-Valued, or Schema Relations.  Defined as:
-
-@begin{verbatim} 
-newClass('OMS Relation Maximum'(integer(_)),PragmaCid,'OMS',_AtmCid), 
-newClass('OMS Relation Minimum'(integer(_)),PragmaCid,'OMS',_AtlCid).  
-@end{verbatim}
-
-@item Class Roles.
-
-Most classes may have objects explicitly defined for them via the
-@pred{memberof/2} predicate, but in certain cases explicit object
-creation may either not make sense, or may be disallowed.  For
-parameterized classes, explicit object creation is disallowed because
-the members of parameterized classes are tuples formed over objects.
-Since there is currently no way in the OMS to create tuples of
-objects, explicit object creation is disallowed for parameterized
-classes, and enforced by the OMS.  In other cases, a user may decide
-that explicit creation be disallowed for a generic class: for instance
-it might make better sense in an application not to allow creation of
-objects directly from the class @em{Car}, but only from subclasses of
-@em{Car}, such as @em{Chevy} or @em{Volvo}.  An @em{abstract} class is
-a class which should have no direct members (i.e. although its
-subclasses, if any, may have members if they are not abstract).  A
-@em{concrete} class may have direct members.  All non-parameterized
-classes of the OMS are concrete; all parameterized classes of the OMS
-are abstract.  Defined as: 
-
-@tt{newClass('OMS Class Role Domain',PragmaCid,'OMS',ConCid)};
-
-@tt{newClass('OMS Abstract Class',ConCid,'OMS',_AbsCid)};
-
-@tt{newClass('OMS Concrete Class',ConCid,'OMS',_ConcrCid)}
-
-@item 	newClass('OMS Partition Class',PragmaCid,'OMS',_).
-
-OMS axioms state only that if class @em{a} is a subclass of class
-@em{b}, then every element of @em{a} is an element of @em{b}.  However
-there are other relations between sets that can be important for
-applications.  For instance, one might want to state that the
-immediate subclasses of a class @em{a} form a partition of its
-elements (i.e. each element of @em{a} belongs to one and only one
-subclass).  Enumerated types, for instance, could be declared in this
-way.  In the OMS, this property is declared by the pragma @em{OMS
-partition Class}.
-
-@end{itemize}
 
 /*
 class_nidbound(Cid,Label,NatCid,Sou):- 
@@ -2767,3 +2690,26 @@ standardize_value(integer(X),integer(Y)) :-
 	!.
 standardize_value(X,X).
 */
+
+:- comment(newSchrelClass/3,"Creates a class that is an immediate
+subclass of of @tt{OMS Schema Relations}.  This predicate only creates
+a class, and does not create any specific relation tuples").
+
+newSchrelClass(Name,Source,NewCid) :-
+	class(RelCid,'OMS Schema Relations',
+		     'OMS Schema Relations','OMS'),
+	newClass(Name,RelCid,Source,NewCid).
+
+:- comment(is_a_schrel/1, "@tt{is_a_schrel(RCid)} checks
+that @tt{RCid} is the class ID of a subclass of @tt{OMS Schema
+Relations}.  If @tt{RCid} is unbound, all such (proper) subclasses
+are returned nondeterministically.").
+
+is_a_schrel(RCid) :-
+	class(RelsCid,'OMS Schema Relations',
+	              'OMS Schema Relations','OMS'),
+	(nonvar(RCid)
+	 ->	subclass(RCid,RelsCid), RCid \== RelsCid	% was if_
+	 ;	subclass_fb(RCid,RelsCid), RCid \== RelsCid
+	).
+

@@ -1,18 +1,45 @@
+If a version conflict is detected between a component to be loaded and
+one already in the OMS state or about to be loaded,
+@tt{loadmerge_component/2} aborts without changing the OMS state.
+
+Synthesize retractallXXX with obliterateXXX.
+
+Maybe get rid of schema + data files?
+
+strelschrels.  Constraints on strels?
+
+Does update_components create internal component info?
+
+Warnings in arg 3.
+
+Log in doc. etc.
+
+Second and third argument inheritance for strels.
+
+Ontology vs. OMS instance vs. OMS state.
+
+Need consistency checking in newRelName newStrelName.
+
+might need newCrel.
+
+get rid of []?
+
+Intentional rules -- product classes get only direct dependencies.
+
 -----------------------------
 Components: 
 
-Meeting topics: 
+-- Probably need a component dirty for dump component or dump new version.
 
-	ExtInt assumptions.
+-- Renaming.  
 
-	Discuss multifile with Luis
+-- Finish Extint.  Update.
 
-	Class-based to relation-based.
+-- Merge Components.
 
-irel in loadmerge.
+-- Configurable components.
 
-Proper OMS versions.
-Probably need a component dirty for dump component or dump new version.
+-- Keeping track of files.
 
 update_components/2, fail if subdependencies are not
 themselves components.
@@ -22,11 +49,7 @@ Incorporate antirelationships in create_component, etc.
 Do I have an obj_nidbound?
 cp_product_object_extoms 
 
-If a version conflict is detected between a component to be loaded and
-one already in the OMS state or about to be loaded,
-@tt{loadmerge_component/2} aborts without changing the OMS state.
 
-Intentional rules -- product classes.
 
 -----------------------------
 

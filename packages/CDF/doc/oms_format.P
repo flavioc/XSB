@@ -6,13 +6,14 @@ xsbdoc_main('main.P').
 xsbdoc_component('../oms_init_oms.P').
 xsbdoc_component('../oms_io.P').
 xsbdoc_component('../oms_queries.P').
-xsbdoc_component('../oms_db_updatable.P').
 xsbdoc_component('../oms_components.P').
-xsbdoc_component('../oms_constraints.P').
+xsbdoc_component('../oms_db_updatable.P').
+xsbdoc_component('../oms_db_storage.P').
+%xsbdoc_component('../oms_constraints.P').
 xsbdoc_component('../oms_exceptions.P').
 xsbdoc_component('../oms_oblivion.P').
 xsbdoc_component('../oms_diffs.P').
-xsbdoc_component('../oms_filters.P').
+%xsbdoc_component('../oms_filters.P').
 %xsbdoc_component('../oms_rules.P').
 
 %xsbdoc_component('../oms_q_annot.P').

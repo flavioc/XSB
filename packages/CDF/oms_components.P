@@ -2,10 +2,11 @@
 
 :- document_export 
 	  analyze_components/2,
-          create_external_component/1,
+%          create_external_component/1,
 	  update_all_components/1,
 	  update_components/2,
-          loadmerge_component/2.
+          loadmerge_component/2,
+	  add_component_initializer/2.
 
 :- import slash/1 from machine.
 
@@ -15,6 +16,7 @@
 :- import message/1 from standard.
 :- import numbervars/3 from num_vars.
 :- import member/2 from basics.
+:- import pretty_print/1 from newpp.
 
 :- ensure_loaded(oms_io).
 :- ensure_loaded(oms_queries).
@@ -31,10 +33,10 @@ by allowing ontologies to be built from non-overlapping
 One method of partitioning facts in an OMS instance (whether it be a
 loaded state or set of external files) is to choose a @em{component
 argument} for each predicate type, and to set as the component of each
-fact the source of the identifier component argument.  (If the
+fact the source of the identifier in the component argument.  (If the
 identifier is a product identifier, the source is the source of the
-outer function symbol.  Using this method, the facts in an OMS
-instance may be partitioned in various ways.  
+outer function symbol).  Using this method, the facts in an OMS
+instance may be partitioned in various ways.
 
 A @em{class-based component system} chooses as component arguments:
 
@@ -72,46 +74,58 @@ associated with creating or modifying different relations and
 attributes for the same class or object.  The OMS uses a
 relation-based component system.
 
-In either case, one component @em{C1} depends on another component
-@em{C2} if @em{id(NID2,C2)} is a non-component argument in a fact in
-component @em{C1}; or if @em{id(NID2,C2)} occurs in a component
-argument in a fact in component @em{C1}.  This definition implies that
-a component in a constituent of a product identifier give rise to
-dependencies only if the product identifier is in the component
-argument of a fact.  By this definition, it is easy to see that
-component dependency need not be hierarchical so that two components
-may depend on one another; furthermore each component must depend on
-itself.  In addition, each component always depends on the component
-'OMS' by fiat.
+In either case, one component @em{C1} directly depends on another
+component @em{C2} if @em{id(NID2,C2)} is a non-component argument in a
+fact in component @em{C1}; or if @em{id(NID2,C2)} occurs in a
+component argument in a fact in component @em{C1}.  This definition
+implies that a component in a constituent of a product identifier give
+rise to dependencies dependencies only if the product identifier is in
+the component argument of a fact.  By this definition, it is easy to
+see that component dependency need not be hierarchical so that two
+components may directly depend on one another; furthermore each
+component must directly depend on itself.  In addition, each component
+always derectly depends on the component 'OMS' by fiat.  Component
+dependency is defined as the transitive closure of direct dependency.
 
 Dependency information is used to determine how to load a component
 and when to update it and is usually computed by the OMS.  Computing
 dependency information is easy for extensional facts, but computing
 dependency information for intensional rules is harder, as the
 component system would need to compute all answer substitutions to
-determine all dependencies, and this in impractical for some
-internsional rules.  Rather, dependencies are computed by checking the
-top-level arguments of intensional rules, which leads to a safe
+determine all dependencies, and this in impractical for some sets of
+intensional rules.  Rather, dependencies are computed by checking the
+top-level arguments of intensional rules, which leads to an
 under-approximation of the dependencies.
 
 When a user loads a component he or she loads information from files
 in external form (e.g. @tt{schema_omsext.P} and @tt{data_omsext.P}
-files), or in external intensional form @tt{oms_extint.P}.  The OMS
-cannot load as a component information in internal format (i.e. data
-in @tt{schema_oms.P} and @tt{data_oms.P} files) as ambiguity arises if
-one attempts to combine internal identifiers from different files.  It
-does however provide tools to create components from a current loaded
-OMS instance.
+files), or in external intensional form @tt{oms_intensional.P}.  The
+OMS cannot load as a component information in internal format
+(i.e. data in @tt{schema_oms.P} and @tt{data_oms.P} files) as
+ambiguity arises if one attempts to combine internal identifiers from
+different files.  It does however provide tools to create components
+from a current loaded OMS state.  
 
 Information about components resides in the OMS itself which
-represents a component name along with a version using the product
-class @tt{compVers(id(Name,Name),id(integer(Version),'OMS'))} (in the
-'OMS' component).  Information about a component and version is
-maintained as a subclass of @tt{id('OMS Component','OMS')}.  Component
-dependency is represented by the relation
-@em{id('componentDepends',Component)}.  An OMS state can contain only
+represents a component name as the class @tt{id(Name,Name)}, which is
+maintained as an immediate subclass of @tt{id('OMS Component','OMS')}.
+Since components are not expected to have members, information about
+them is maintained through @pred{strel/3} facts.  The version of
+component @tt{Name} is kept via the strel @tt{id(has_version,Name)},
+and its dependency information by the strel
+@tt{id('componentDepends',Component)}.  An OMS state can contain only
 one version for each component name, which constraint affects the
 behavior of certain or the routines below.
+
+Once version @tt{Version} of component @tt{Name} has been loaded,
+ the OMS checks to see whether it has a strel
+@tt{id(initialization_file,Name)} indicating an initialization file,
+represented as the primitive type @tt{atom/1}.  If so, the file is
+consulted, and the actions of the file are taken to be transparent to
+the 'OMS' (unless they explicitly call OMS routines).  As a
+convenience the predicate
+@pred{add_component_initializer(Component,File)} can be used to add
+@tt{File} as an initialization file for @tt{Component}.
 
 A convention is made that a component @tt{Name} with version @tt{V} is
 to be found in a directory named @tt{Name_V}. The OMS looks for these
@@ -122,12 +136,12 @@ Given an OMS state, a user may want to do several things.
 @begin{enumerate}
 
 @item A user may wish to create components from an OMS state, or to
-update components used by an OMS state.  One way to do this is by
-@tt{update_all_components(Dir)} which determines a class or relation
-based partition of the OMS instance, and computes all dependencies
-between these cells.  Cells that are not components are made into
-components (with version 0), and that are already components have
-their version number updated if necessary (by checking
+update components used by an OMS state.  One way to do this is by the
+predicate @tt{update_all_components(Dir)} which determines a class or
+relation based partition of the OMS instance, and computes all
+dependencies between these cells.  Cells that are not components are
+made into components (with version 0), and that are already components
+have their version number updated if necessary (by checking
 @tt{oms_dirty/1}).  New and updated components are written as
 subdirectories of @tt{Dir}.
 
@@ -154,14 +168,12 @@ component from a particular version.
 
 @tt{fast_loadmerge_component(Name.Version)} calls a
 @tt{fast_merge_omsext} which does no redundancy checking and so can be
-much faster than @t{_loadmerge_component(Name.Version)}.
+much faster than @tt{loadmerge_component(Name.Version)}.
 
-
-
-@item Finally, a user may analyze component dependency information via
-@tt{analyze_dependency/2}, which neither affects the OMS state, nor
-saves component information to files.  
-@end{enumerate} 
+@item Finally, a user may analyze component dependency information by
+backtracking through @tt{analyze_dependency/2}, which neither affects
+the OMS state, nor saves component information to files.
+@end{enumerate}
 
 @em{
 This version does not yet use dirty bits to determine when new
@@ -187,9 +199,9 @@ analyze_component_relation(Name,List):-
 
 analyze_component_relation_w_version(Name,Dep):-
 	analyze_component_relation_1(Name,Dep1),
-            get_version_info(Dep1,Dep)
-	  ; 
-	 get_version_info('OMS',Dep).
+        (get_version_info(Dep1,Dep)
+	   ; 
+	 get_version_info('OMS',Dep) ).
 
 :- table analyze_component_relation_1/2.
 analyze_component_relation_1(Name,Name):- 
@@ -212,8 +224,7 @@ analyze_component_relation_1(Name,Dep):-
 	analyze_attribute_object_r(Name,Dep).
 
 get_version_info(Name,CV):- 
-   (q_immediate_subclass(id(compVers(Name,Name,integer(Version),'OMS'),'OMS'),
-			 id('OMS Component','OMS')) -> 
+   (q_strel(id(Name,Name),id(has_version,Name),id(integer(Version),'OMS')) -> 
 	    CV = compVers(Name,Name,integer(Version),'OMS')
 	  ; CV = compVers(Name,Name,integer(0),'OMS')).
 	
@@ -311,14 +322,16 @@ check_component(Source,Component,Rule):-
 	(atom(Source) -> 
 	    Source = Component
 	 ;  oms_warning(component,
-	                         ['Cannot find component for intensional rule: ',Rule])).
+	                ['Cannot find component for intensional rule: ',
+			  Rule])).
 
 check_dependency(Source,Component,Arg,Rule):- 
 	(atom(Source) -> 
 	    Source = Component
 	 ;  oms_warning(component,
-	                         ['Cannot find dependencies in arg: ',Arg,
-			   'of intensional rule: ',Rule])).
+	                  ['Cannot find dependencies in arg: ',Arg,
+			   ' of intensional rule: ',Rule]),
+	    fail).
 
 /* Deep assumptions on XSB's multifile system */
 get_intensional_rule(Head,Body1):- 
@@ -356,10 +369,10 @@ analyze_subclass(Name,Dep):-
 	(Dep = Name
   	    ;  check_dependency(Sb,Dep,2,(':-'(Term),Body)) ).
 
- analyze_memberof(Name,Dep):-  
+analyze_memberof(Name,Dep):-  
 	oms_mo(Id1,Id2),
 	source_from_oid(Id1,Name),
-	(dep_from_oid(Id1,Dep) ; souce_from_cid(Id2,Dep)).
+	(dep_from_oid(Id1,Dep) ; source_from_cid(Id2,Dep)).
 analyze_memberof(Name,Dep):-  
 	Term = immediate_membeof_int(_A,Sa,_B,Sb),
 	get_intensional_rule(Term,Body),
@@ -374,20 +387,22 @@ the component @tt{Name}, and recursively, all other components upon
 which @tt{Name} depends.  If a file name or relative pathname is
 given, the component is found by searching through XSB library
 directories.  Otherwise, if a full pathname is given in Name, the
-component is obtained directly ").
+component is obtained directly. ").
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 loadmerge_component(Name,Version):- 
 	retract_omsext,
 	load_component(Name,Version),
 	message(['Merging in components.']),nl,
-	merge_omsext.
+	merge_omsext,
+	initialize_component(Name,Version).
 
 fast_loadmerge_component(Name,Version):- 
 	retract_omsext,
 	load_component(Name,Version),
 	message(['Merging in components.']),nl,
-	fast_merge_omsext.
+	fast_merge_omsext,
+	initialize_component(Name,Version).
 
 load_component(Name,Version):- 
 	message(['Loading component: ',Name,'_',Version]),nl,
@@ -395,11 +410,11 @@ load_component(Name,Version):-
 	find_component_dir(NewName,Full),
 	overload_omsext(Full),
 	is_component(Name),
-	load_extint(Full),
+	load_intensional_rules(Full,Name),
         load_component_dependencies(Name,Version).
 
 load_component_dependencies(Name,V):- 
-	relationship_ext(compVers(Name,Name,integer(V),'OMS'),'OMS',
+	strel_ext(compVers(Name,Name,integer(V),'OMS'),'OMS',
 			 componentDepends,Name,
 			 compVers(New,New,integer(Vnew),'OMS'),'OMS'),
 	((New = Name ; New = 'OMS' 
@@ -409,9 +424,12 @@ load_component_dependencies(Name,V):-
 	fail.
 load_component_dependencies(_,_).
 
-load_extint(Full):- 
-	concat_atom([Full,'/oms_extint.P'],File),
-	(file_exists(File) -> consult(File) ; true).
+initialize_component(Name,V):- 
+	q_strel(id(compVers(Name,Name,integer(V),'OMS'),'OMS'),
+	       id(initialization_file,Name),id(atom(File),'OMS')),
+	consult(File),
+	fail.
+initialize_component(_,_).
 
 /* TLS: assume that if a component is known, its dependencies are in
 _ext facts.  Also, need to create class_ext(Name,Name,Name) in order
@@ -426,7 +444,7 @@ components when necessary, and dumps facts and intensional rules for
 all components, as subdirectories of @tt{Dir}.  New versions are
 created for components that have been updated since they were
 loaded. ").
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%bb%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 update_all_components(Dir):- 
 	analyze_components(Comp,Dep),
@@ -457,7 +475,7 @@ create_dependencies_int_1([compVers(Name,Name,integer(V),'OMS')|T],
 	(V == 0 -> 
 	      newComponent(Name,NewCompId,_NewRelid) 
 	    ; class(NewCompId,_,compVers(Name,Name,integer(V),'OMS'),'OMS') ),
-	newIrel(Compid,Relid,NewCompId),
+	newStrel(Compid,Relid,NewCompId),
 	create_dependencies_int_1(T,Name,Compid,Relid).
 create_dependencies_int_1([_|T],Name,Compid,Relid):- 
 	create_dependencies_int_1(T,Name,Compid,Relid).
@@ -468,6 +486,7 @@ dump_component_1(Dir,Name,Version):-
 %----------
 
 dump_component_1_relation(Dir,Name,Version):- 
+	Name \== 'OMS',
 	slash(Slash),
   	concat_atom([Dir,Slash,Name,'_',Version],NewDir),
 	xsb_makedir(NewDir),
@@ -483,7 +502,12 @@ dump_component_1_relation(Dir,Name,Version):-
 	tell(DataFile),
 	compwrite_object(Name),compwrite_memberof(Name),
 	compwrite_attribute_r(Name),compwrite_attribute_object_r(Name),
+	told,
+	concat_atom([NewDir,Slash,'oms_intensional.P'],IntFile),
+	tell(IntFile),
+	write_component_intensional(Name),
 	told.
+
 
 compwrite_irel_r(Source):- 
 %	write_hdr(relationship_ext(_,_,_,_,_,_)),
@@ -611,6 +635,33 @@ overload_dync_1:-
 xsb_makedir(Dir):- 
 	(path_sysop(isdir,Dir) -> true ; path_sysop(mkdir,Dir)).
 
+write_component_intensional(Name):- 
+	intensional_head(Head,_Arg),
+	Head =.. [F|T],
+	concat_atom([F,'_',Name],NewF),
+	NewHead =.. [NewF|T],
+	clause(NewHead,Body), 
+	pretty_print(clause(Head,Body)),
+	fail.
+write_component_intensional(_).
+
+:- comment(add_component_initializer/2,
+"@tt{add_component_initializer(Component,File)} can be used to add
+@tt{File} as an initialization file for @tt{Component}.
+@tt{Component} must already exist as a component and be loaded into an
+OMS state, otherwise a warning is given and the predicate fails.").
+
+add_component_initializer(Comp,File):- 
+   (q_immediate_subclass(id(Comp,Comp),id('OMS Component','OMS')),
+    q_strel(id(Comp,Comp),id(has_version,Comp),id(integer(V),'OMS')) -> 
+	q_newStrel(id(compVers(id(Comp,Comp),id(integer(V),'OMS')),'OMS'),
+	          id(initialization_file,Comp),
+	          id(atom(File),'OMS'))
+     ; 
+	oms_warning(component,['Cannot initialize uncreated component ',
+				Comp]),
+	fail).
+
 end_of_file.
 
 @item A user may wish to create components from external files.  In
@@ -646,12 +697,10 @@ create_external_component(Name):-
 /* works on loaded, unmerged omsext */	
 create_dependencies_ext(Name):- 
 	find_component_dependency(Dep),
-	call_assert(relationship_ext(Name,Name,
-	                             componentDepends,Name,Dep,Dep)),
+	call_assert(strel_ext(Name,Name,componentDepends,Name,Dep,Dep)),
 	fail.
 create_dependencies(Name):- 
-	asserta(relationship_ext(Name,Name,
-	                         componentDepends,Name,Name,Name)).
+	asserta(strel_ext(Name,Name,componentDepends,Name,Name,Name)).
 
 %-----------
 /* checks whether a set of loaded,  non-merged external facts with
@@ -667,7 +716,7 @@ check_component(Name):-
 check_class(Name):- 
 	(class_ext(Q,W,N),N \== Name -> 
 	    oms_error(component,['Component specified by ',Name,
-	                                      ' has class with different source: ',
+                                      ' has class with different source: ',
 			              class_ext(Q,W,N)])
 	; 
 	   fail).
@@ -676,7 +725,7 @@ check_class(_).
 check_object(Name):- 
 	(object_ext(Q,W,N),N \== Name -> 
 	    oms_error(component,['Component specified by ',Name,
-	                                      ' has object with different source: ',
+                                      ' has object with different source: ',
 					      object_ext(Q,W,N)])
 	; 
 	   fail).
@@ -685,7 +734,7 @@ check_object(_).
 check_subclass(Name):- 
 	(subclass_ext(Q,N,W,E),N \== Name -> 
 	    oms_error(component,['Component specified by ',Name,
-	                                      ' has subclass with different source: ',
+                                      ' has subclass with different source: ',
 					      subclass_ext(Q,N,W,E)])
 	; 
 	   fail).
@@ -1028,4 +1077,13 @@ compwrite_attribute_object_c(Source):-
 	       attribute_object_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
 	fail.
 compwrite_attribute_object_c(_).
+
+analyze_components(Name,List):- 
+	abolish_table_pred(analyze_component_relation_1/2),
+	(oms_component_type(class_based) -> 
+ 	    analyze_component_class(Name1,List),
+	    get_version_info(Name1,Name)
+	  ; 
+ 	    analyze_component_relation(Name1,List),
+	    get_version_info(Name1,Name)).
 

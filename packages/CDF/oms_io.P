@@ -1,39 +1,46 @@
 :- compiler_options([ciao_directives]).
 
 :- document_export 
+%	load_omsext/1, 
+	load_mergeomsext/1, fast_load_mergeomsext/1,
+	dump_omsext/1,
+	merge_omsext/0, fast_merge_omsext/0,
 	load_oms/1, load_mergeoms/1, dump_oms/1, 
-	load_omsext/1, load_mergeomsext/1, dump_omsext/1, 
-	merge_omsext/0,
+	load_intensional_rules/1,
 	merge_intensional_oms/0, oms_exists/1.
 
 :- import time_message/2 from auxlry.
-:- import append/3, ground/1, member/2 from basics.
+:- import append/3, ground/1, member/2,reverse/2 from basics.
 :- import concat_atom/2 from string.
 :- import numbervars/3 from num_vars.
 :- import load_dync/2 from consult.
 :- import path_sysop/2 from file_io.
+:- import slash/1 from machine.
 
 :- ensure_loaded(oms_init_oms).
 
 :- comment(module, "These routines load OMS files from a disk file
-system into memory, save them from memory to disk, merge oms's and
-perform conversions to and from External Format if necessary.  
+system into memory, save them from memory to disk, merge information
+into an OMS and perform conversions to and from External Format if
+necessary.
 
-Information is loaded from or dumped to schema and data files.  Schema
-files contain information about classes, subclasses, relationships,
-schrels, and strels.  Data files contain information about objects,
-memberof relations, attributes, and attribute_object relations.  The
-actual form of this information differs depending on whether the files
-contain data in internal or External Format.  Data in External
-Intensional Format is not affected by these files.").
+Information may be loaded from or dumped to schema files and data.
+Schema files contain extensional information about classes,
+subclasses, relationships, schrels, and strels.  Data files contain
+extensional information about objects, memberof relations, attributes,
+and attribute_object relations.  The actual form of this information
+differs depending on whether the files contain data in internal or
+external Format.
+
+Files of intensional rules are not handled by these predicates, but
+may be loaded through @pred{load_component/1}").
 
 %-----------------------------------------------------------------
 	
-:- comment(dump_omsext/1, "@tt{dump_omsext(Directory)}: Translates
-in-memory facts in Internal Format to External Format, and writes the
-External Format facts to @tt{schema_omsext.P} and @tt{data_omsext.P}
-files in @tt{Directory}.  No data in External Intensional Format is
-dumped.
+:- comment(dump_omsext/1, "@tt{dump_omsext(Directory)}: Translates all
+in-memory extensional facts from internal format to external format,
+and writes facts to @tt{schema_omsext.P} and @tt{data_omsext.P} files
+in @tt{Directory}.  No intensional rules are dumped.
 
 @pred{dump_omsext/0} writes the *_omsext.P files to the current
 directory.
@@ -250,15 +257,16 @@ friendly_atom_codes(A,Codes):-
 %-----------------------------------------------------------------
 
 :- comment(dump_oms/1, "@tt{dump_oms(Directory)}: Writes in-memory
-Internal Format OMS facts to @tt{Directory} into @tt{schema_oms.P} and
-@tt{data_oms.P} files.  Information defined by External Intensional
-rules is not dumped.
+extensional facts to @tt{schema_oms.P} and @tt{data_oms.P} files in
+@tt{Directory}, retaining their internal format.  Intensional rules
+are not dumped.
 
 @pred{dump_oms/0} writes the files to the current directory.
+").
 
-@em{TLS: db stuff is not yet fully integrated: In addition, the call
-dump_oms(odbc(Server,Name,Passwd)) can be used to export to an
-external file.}").
+%@em{TLS: db stuff is not yet fully integrated: In addition, the call
+%dump_oms(odbc(Server,Name,Passwd)) can be used to export to an
+%external file.}
 
 dump_oms :- dump_oms('').
 
@@ -354,13 +362,13 @@ file_exists(Dir,Base):-
 %--------------------------------------------------------------------
 
 :- comment(load_omsext/1, "@tt{load_omsext(Directory)}: Dynamically
-loads @tt{schema_omsext.P} and data_omsext.P files (in External
-Format) from @tt{Directory}.  This information will not become
-accessible to the Programmer's View until it is translated into
-Internal Format by @pred{merge_omsext/0}.
-
-Loading an OMS will remove any OMS information currently in XSB in
-External Format.").  
+loads @tt{schema_omsext.P} and @tt{data_omsext.P} files from
+@tt{Directory} (i.e. extensional facts in external format).  This
+information will not become accessible to the Programmer's View until
+it is translated into internal format by @pred{merge_omsext/0} or
+@pred{fast_load_merge_omsext/0}.  Loading an OMS will remove any OMS
+information in external format previously asserted to the OMS
+state.").
 
 load_omsext :- load_omsext('').
 load_omsext(Dir) :-
@@ -377,16 +385,13 @@ dir_load_dync(Dir,Base) :-
 
 %--------------------------------------------------------------------
 
-:- comment(load_oms/1, "@tt{load_omsext(Directory)}: Dynamically loads
-@tt{schema_oms.P} and data_oms.P files (in Internal Format) from
-Directory, defining internal predicates in memory.  Initialization of
-OMS classes (e.g. @tt{OMS Root}) is not done: it is assumed that these
-classes are defined in the file to be loaded.  
-
-Loading an OMS will remove any OMS information currently in XSB in
-Internal Format.  If current OMS information should be saved when
-loading an OMS, use @pred{load_mergeoms/1}.  Information in External
-Intensional Format will not be affected by @pred{load_oms/1}.").
+:- comment(load_oms/1, "@tt{load_oms(Directory)}: Dynamically loads
+@tt{schema_oms.P} and @tt{data_oms.P} files (i.e. extensional facts in
+internal format) from @tt{Directory}.  A side-effect of this dynamic
+load is that any extensional facts previously in the OMS state are
+removed.  If current OMS information should be saved when loading an
+OMS, use @pred{load_mergeoms/1}.  Intensional rules are not affected
+by @pred{load_oms/1}.").
 
 load_oms :- load_oms('').
 
@@ -412,12 +417,14 @@ facts in External Format to Internal Format, combines these facts with
 the current store of information in Internal Format, and removes the
 External Format facts from memory once they have been merged.  Any
 information present in the OMS in Internal or External Intensional
-Format will persist after the new files have been merged.  Redundancy
-checks are performed -- e.g. that a relationship that has been added
-is implied by inheritance.
+Format will persist after the new files have been merged.  Certain
+redundancy checks are performed -- @tt{irel/3}, @tt{schrel/3},
+@tt{attribute/3}, @tt{subclass/2}, and @tt{memberof/2} facts are not
+added if they are otherwise implied by inheritance.
 
-For now, oms_caching is turned off for the extent of merge_omsext, 
-so that newXXX routines can be used.").
+For now, OMS caching is turned off for the extent of
+@tt{merge_omsext/0}, so that newXXX routines can be used
+efficiently.").
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 merge_omsext :-
@@ -582,11 +589,12 @@ facts with the current store of information in Internal Format, and
 removes the External Format facts from memory once they have been
 merged.  Any information present in the OMS in Internal or External
 Intensional Format will persist after the new files have been merged.
-Redundancy checks are not performed -- e.g. that a relationship that
-has been added is implied by inheritance.
+Redundancy checks are @em{not} performed -- @tt{irel/3},
+@tt{schrel/3}, @tt{attribute/3}, @tt{subclass/2}, and @tt{memberof/2}
+facts are added even if they are otherwise implied by inheritance.
 
-For now, oms_caching is turned off for the extent of merge_omsext, 
-so that newXXX routines can be used.").
+For now, oms_caching is turned off for the extent of
+@tt{fast_merge_omsext/0}, so that newXXX routines can be used.").
 
 fast_merge_omsext :-
 	cputime(Begin),
@@ -699,14 +707,15 @@ fast_attribute_object_extoms.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_mergeomsext/1, "@tt{load_mergeomsext(DirectoryList)}:
-loads and merges information in External Format from
+loads and merges extensional facts in external format contained in
 @tt{schema_omsext.P} and @tt{data_omsext.P} files from the directories
-in @tt{DirectoryList}.  Information from each directory is translated
-from external to Internal Format after it is loaded, and any External
-Format data and schema information that is loaded is retracted from
-memory once it is merged.  Any information present in the OMS in
-internal or External Intensional Format will persist after the new
-files have been loaded and merged.").
+in @tt{DirectoryList}.  The merge called checks for redundancy: if a
+faster merge is desired use @pred{fast_load_mergeomsext/1}.
+Extensional facts from these files are translated from external to
+internal format after it is loaded, and any extensional facts is
+external format that is loaded is retracted from memory once it is
+merged.  Any extensional facts in internal format and intensional
+facts will persist after the new files have been loaded and merged.").
 
 load_mergeomsext :-
 	load_mergeomsext1('').
@@ -740,18 +749,51 @@ retract_omsext:-
 	retractall(attribute_ext(_,_,_,_,_,_)),
 	retractall(attribute_object_ext(_,_,_,_,_,_)).
 
-%--------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(fast_load_mergeomsext/1,
+"@tt{fast_load_mergeomsext(DirectoryList)}: loads and merges
+extensional facts in external format contained in @tt{schema_omsext.P}
+and @tt{data_omsext.P} files from the directories in
+@tt{DirectoryList}.  The merge called does @em{not} perform redundancy
+checks.  If this is desired, use @pred{load_mergeomsext/1}.
+Extensional facts from these files are translated from external to
+internal format after it is loaded, and any extensional facts is
+external format that is loaded is retracted from memory once it is
+merged.  Any extensional facts in internal format and intensional
+facts will persist after the new files have been loaded and merged.").
+
+fast_load_mergeomsext :-
+	fast_load_mergeomsext1('').
+
+fast_load_mergeomsext(Dirs) :-
+	oms_initialize_ctrs,
+	fast_load_mergeomsext1(Dirs).
+
+fast_load_mergeomsext1([]).
+fast_load_mergeomsext1([Dir|Dirs]) :-
+	fast_load_mergeomsext2(Dir),
+	fast_load_mergeomsext1(Dirs).
+fast_load_mergeomsext1(Dir) :-
+	fast_load_mergeomsext2(Dir).
+
+fast_load_mergeomsext2(Dir) :-
+	oms_fix_dir(Dir,DirS),
+	dir_load_dync(DirS,schema_omsext),
+	dir_load_dync(DirS,data_omsext),
+	fast_merge_omsext,
+	retract_omsext.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_mergeoms/1, "@tt{load_mergeoms(DirectoryList)}: loads
-OMS information in @tt{schema_oms.P} and @tt{data_oms.P} files in
-directories in @tt{DirectoryList}.  The files loaded must contain data
-in Internal Format.
-
-Unlike @pred{load_oms/1}, @pred{load_mergeoms/1} will not abolish any
-OMS information in Internal Format already in memory; rather, it
-merges the information from the various files with that already
-loaded.  Data or schema information in External Intensional Format
-will not be affected by this predicate.  ").
+@tt{schema_oms.P} and @tt{data_oms.P} files from directories in
+@tt{DirectoryList}.  The files loaded must contain extensional data in
+internal format.  Unlike @pred{load_oms/1}, @pred{load_mergeoms/1}
+does not abolish any extsnsional OMS information already in memory;
+rather, it merges the information from the various files with that
+already loaded.  Intensional rules will not be affected by this
+predicate.  ").
 
 :- dynamic a_oldnewCid/2.
 :- index(a_oldnewCid(_,_),trie).
@@ -1050,7 +1092,10 @@ cvt_cid_nid(Cid,NNid,Src) :-
 
 %--------------------------------------------------------------
 
-:- comment(oms_exists/1, "Checks whether schema_oms.P and data_oms.P files are present in directory<code>Dir</code>").
+:- comment(oms_exists/1, "@tt{oms_exists(Dir)} checks whether
+@tt{schema_oms.P} and @tt{data_oms.P} files are present in directory
+@tt{Dir}").
+
 oms_exists(Dir):-
 	concat_atom([Dir,'/schema_oms.P'],SchemaFile),
 	file_exists(SchemaFile),
@@ -1072,6 +1117,107 @@ oms_writable(Dir):-
 		path_sysop(writable, DataPath)
 	 ;	true
 	).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(load_intensional_rules/1," @tt{load_intensional_rules(Dir)}
+ynamically loads intensional rules from @tt{oms_intensional.P} in
+@tt{Directory}.  This predicate is designed for the component system,
+but can be used outside of it.  The leaf directory name in @tt{Dir} is
+assumed to be the component name of the rules.  As the intensional
+rules are loaded, their functors are rewritten from @tt{XXX_int} to
+@tt{XXX_int_Name}, to avoid any conflicts with intensional rules
+loaded from other components or directories.").
+
+load_intensional_rules(Dir):- 
+	extract_file_name(Dir,Name),
+	load_intensional_rules(Dir,Name).	
+
+extract_file_name(File,Name):- 
+	atom_chars(File,Flist),
+	reverse(Flist,Rlist),
+	strip_extension(Rlist,Rl1),
+	read_till_slash(Rl1,Rn2),
+	reverse(Rn2,Nl),
+	atom_chars(Name,Nl).
+
+strip_extension(Rlist,Rl1):- 
+	(member('.',Rlist) -> 
+	    strip_extension_1(Rlist,Rl1) 
+	  ; Rl1 = Rlist).
+
+strip_extension_1(['.'|T],T):- !.
+strip_extension_1([_|T],Tnew):- 
+	strip_extension_1(T,Tnew).
+
+read_till_slash(L,L1):- 
+	slash(S),
+	(member(S,L) -> 	
+	    read_till_slash_1(L,L1,S)
+	  ; L = L1).
+
+read_till_slash_1([S|_R],[],S):- !.
+read_till_slash_1([H|R],[H|R1],S):- 
+	read_till_slash_1(R,R1,S).
+
+load_intensional(Full):- 
+	concat_atom([Full,'/oms_intensional.P'],File),
+	(file_exists(File) -> load_dync(File) ; true).
+
+load_intensional_rules(Path,Name):- 
+	retract_intensional_rules(Name),
+	concat_atom([Path,'/oms_intensional.P'],File),
+	(file_exists(File) -> 
+   	    see(File),
+	    read_intensional_rules_1(Name),
+	    seen
+	  ; true).
+
+retract_intensional_rules(Name):- 
+	intensional_head(Head,_Arg),
+	Head =.. [F|T],
+	concat_atom([F,'_',Name],NewF),
+	NewHead =.. [NewF|T],
+	retractall(NewHead),
+	retract((:-(Head,NewHead))),
+	fail.
+retract_intensional_rules(_).
+
+read_intensional_rules_1(Name):- 
+	repeat,
+	read(T),
+	(T = end_of_file -> 
+	   true 
+	 ; 
+	   T = (:-(Head,Body)),
+	   transform_intensional_rules(Head,NewHead,Name),
+	   asserta((:-(Head,NewHead))),
+	   asserta((:-(NewHead,Body))),
+	   fail).
+read_intensional_rules_1(_).
+
+transform_intensional_rules(Head,NewHead,Name):- 
+	intensional_head(Head,_Arg),
+	Head =.. [F|T],
+	concat_atom([F,'_',Name],NewF),
+	NewHead =.. [NewF|T].
+
+check_intensional_head(Head,Name):- 
+	(intensional_head(Head,_Arg) -> 
+	    true
+	  ; oms_warning(component,[Head,
+			' is not an intensional rule in component ',Name])).
+
+intensional_head(class_int(_,_,_),3).
+intensional_head(object_int(_,_,_),3).
+intensional_head(immediate_subclass_int(_,_,_,_),2).
+intensional_head(immediate_memberof_int(_,_,_,_),2).
+intensional_head(immediate_relationship_int(_,_,_,_,_,_),4).
+intensional_head(immediate_schrel_int(_,_,_,_,_,_),4).
+intensional_head(immediate_schrel_int(_,_,_,_,_,_),4).
+intensional_head(immediate_attribute_int(_,_,_,_,_,_),4).
+intensional_head(attribute_object_int(_,_,_,_,_,_),4).
+intensional_head(strel_int(_,_,_,_,_,_),4).
 
 end_of_file.
 
