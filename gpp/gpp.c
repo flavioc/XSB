@@ -910,9 +910,8 @@ int idequal(char *b,int l,char *s)
 {
   int i;
   
-  if ((int)strlen(s)!=l) return 0;
   for (i=0;i<l;i++) if (b[i]!=s[i]) return 0;
-  return 1;
+  return (s[l]==0);
 }
 
 int findIdent(char *b,int l)
