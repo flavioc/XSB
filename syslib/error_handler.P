@@ -49,8 +49,8 @@ default_error_handler(Error) :-
 	fail.
 
 /* messages are handled via abort/1.  */
-default_sys_error_handler('_$abort_ball').
-default_sys_error_handler('_$abort_ball'(Msg)) :-
+default_sys_error_handler('_$abort_ball'(_BackTrace)).
+default_sys_error_handler('_$abort_ball'(Msg,_BackTrace)) :-
 	messageln(Msg,STDERR).
 default_sys_error_handler(error(instantiation_error,Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Instantiation] ', Msg), 

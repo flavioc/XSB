@@ -116,7 +116,8 @@
           term_psc/2, term_new/2, term_new_mod/3, term_type/2  %%, close_open_tables/0
 	  from machine.
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
-          '$$clean_up_block'/0 
+	  '$$clean_up_block'/0,
+	  xsb_backtrace/1
      from machine. 
 :- import numbervars/1 from num_vars.
 :- import calculate_singleton/3 from singlton.

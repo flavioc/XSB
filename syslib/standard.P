@@ -1083,10 +1083,14 @@ contains_var([_|T]) :- contains_var(T).
 length([], N, N).
 length([_|R], M, N) :- N1 is M+1, length(R, N1, N).
 
-abort :- throw('_$abort_ball').
+abort :-
+	xsb_backtrace(BackTrace),
+	throw('_$abort_ball'(BackTrace)).
 
 %  abort/1
-abort(Msg) :- throw('_$abort_ball'(Msg)).
+abort(Msg) :-
+	xsb_backtrace(BackTrace),
+	throw('_$abort_ball'(Msg,BackTrace)).
 
 error_write(X):- 
 	message(X,STDERR).

@@ -62,6 +62,7 @@ psc_set_prop(PSC, Term) :- psc_set_prop(PSC, Term).
 psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
 psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
+psc_data(PSC, Data) :- psc_data(PSC, Data).
 
 term_new_mod(Mod, Term, NewTerm) :- term_new_mod(Mod, Term, NewTerm).
 term_psc(Term, PSC) :- term_psc(Term, PSC).
@@ -266,8 +267,10 @@ install_verify_attribute_handler(Mod,Attr,Value,Handler) :-
 private_builtin(_OpCode,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10) :-
 	'_$builtin'(PRIVATE_BUILTIN).
 
-xsb_backtrace :- xsb_backtrace(1).
-xsb_backtrace(_Opcode) :- '_$builtin'(XSB_BACKTRACE).
+xsb_backtrace :- xsb_backtrace(1,_).
+xsb_backtrace(Trace) :- xsb_backtrace(2,Trace).
+
+xsb_backtrace(_Opcode,_) :- '_$builtin'(XSB_BACKTRACE).
 
 segfault_handler(_Type) :- '_$builtin'(SEGFAULT_HANDLER).
 

@@ -40,6 +40,7 @@
 	psc_set_spy/2,
 	psc_ep/2,
 	psc_set_ep/2,
+	psc_data/2,
 	term_new_mod/3,
 	term_psc/2, 
 	term_type/2, 
@@ -151,7 +152,7 @@
         install_verify_attribute_handler/4,
         verify_attribute_handler/4,
 	globalvar/1,
-	xsb_backtrace/0,
+	xsb_backtrace/0, xsb_backtrace/1,
         interprolog_callback/3.
 
 :- import assert/1, retract/1 from assert.
