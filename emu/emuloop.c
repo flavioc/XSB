@@ -69,6 +69,7 @@
 #include "unify_xsb.h"
 #include "emuloop_aux.h"
 
+#include "hash_xsb.h"
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function
@@ -772,6 +773,16 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxa);
     Op2(get_xxxl);
+#if 0
+    { 
+      Psc mypsc = *(CPtr)(cpreg-4);
+      if (mypsc)
+	if (get_type(mypsc) == T_PRED) {
+	  fprintf(stddbg,"creating_cp(trymeelse(%s/%d), %p).\n",
+		  get_name(mypsc), get_arity(mypsc), breg);
+	}
+    }
+#endif
     ADVANCE_PC(size_xxxX);
     SUBTRYME
   XSB_End_Instr()
@@ -797,6 +808,16 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxa);
     op2 = (Cell)((Cell)lpcreg + sizeof(Cell)*2);
+#if 0
+    { 
+      Psc mypsc = *(CPtr)(cpreg-4);
+      if (mypsc)
+	if (get_type(mypsc) == T_PRED) {
+	  fprintf(stddbg,"creating_cp(try(%s/%d), %p).\n",
+		  get_name(mypsc), get_arity(mypsc), breg);
+	}
+    }
+#endif
     lpcreg = *(pb *)(lpcreg+sizeof(Cell)); /* = *(pointer to byte pointer) */
     SUBTRYME
   XSB_End_Instr()
@@ -1001,6 +1022,16 @@ contcase:     /* the main loop */
     Def2ops
     Op1(0);
     Op2(get_xxxl);
+#if 0
+    { 
+      Psc mypsc = *(CPtr)(cpreg-4);
+      if (mypsc)
+	if (get_type(mypsc) == T_PRED) {
+	  fprintf(stddbg,"creating_cp(trymeorelse(%s/%d), %p).\n",
+		  get_name(mypsc), get_arity(mypsc), breg);
+	}
+    }
+#endif
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     SUBTRYME
@@ -1243,6 +1274,9 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     psc = (Psc)op1;
+#ifdef CP_DEBUG
+    pscreg = psc;
+#endif
     call_sub(psc);
   XSB_End_Instr()
 
@@ -1351,6 +1385,9 @@ contcase:     /* the main loop */
     Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
     psc = (Psc)op1;
+#ifdef CP_DEBUG
+    pscreg = psc;
+#endif
     call_sub(psc);
   XSB_End_Instr()
 

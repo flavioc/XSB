@@ -867,6 +867,8 @@ static void write_out_profile(void)
       if (builtin_table[i][1] > 0 && builtin_table[i][0] != 0)
 	fprintf(stdout,"builtin(%s,%d,%d).\n",
 		BuiltinName(i), i, builtin_table[i][1]);
+    fprintf(stdout,"switch_envs(%d).\n",
+	    num_switch_envs);
   }
   else 
     fprintf(stdout,"Instruction profiling not turned On\n");
@@ -1602,6 +1604,7 @@ int builtin_call(byte number)
 	builtin_table[i][1] = 0;
 	subinst_table[i][1] = 0;
       }
+      num_switch_envs=0;
     }
     break;
   case WRITE_OUT_PROFILE:

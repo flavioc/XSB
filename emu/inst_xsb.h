@@ -161,6 +161,7 @@ extern void init_inst_table(void);
 
 #ifdef PROFILE
 extern Cell inst_table[BUILTIN_TBL_SZ][6];
+extern unsigned long num_switch_envs;
 #else
 extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #endif

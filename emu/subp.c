@@ -248,9 +248,11 @@ void print_statistics(int amount) {
     print_detailed_subsumption_stats();
     break;
   case 5:
-    dis(0); break;		/* output memory image; for debugging */
+    dis(0); 
+    break;		/* output memory image; for debugging */
   case 6:
-    dis(1); break;		/* output memory image; for debugging */
+    dis(1); 
+    break;		/* output memory image; for debugging */
   }
 }
 

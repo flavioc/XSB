@@ -22,6 +22,7 @@
 ** 
 */
 
+#include "psc_xsb.h"
 
 /* Argument Registers
    ------------------ */
@@ -39,6 +40,9 @@ extern CPtr sreg;	/* current build or unify field */
 extern byte *cpreg;	/* return point register        */
 extern byte *pcreg;	/* program counter              */
 
+#ifdef CP_DEBUG
+extern Psc pscreg;
+#endif
 /*---- registers added for the SLG-WAM ---------------------------------*/
 
 #if (!defined(CHAT))

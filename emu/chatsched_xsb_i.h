@@ -43,6 +43,10 @@ static CPtr schedule_subgoal(VariantSF producer_sf, CPtr compl_fr)
    else fprintf(stddbg, "NO answers\n");
 #endif
 
+#ifdef PROFILE
+   subinst_table[SCHED_ANSWERS][1]++;
+#endif
+
   /* there are consumers and answers */  
   if ((has_answers(producer_sf)) &&
       (chat_ptr = (chat_init_pheader)compl_cons_copy_list(compl_fr))) {
@@ -108,10 +112,18 @@ static CPtr chat_fixpoint(VariantSF subg_ptr, TChoice leader_tcp)
   fprintf(stddbg, "fixpoint subg_ptr = %p\n",subg_ptr);
 #endif
 
+#ifdef PROFILE
+  subinst_table[OUTER_FIXPOINT][1]++;
+#endif
+
   complFrame = openreg;
   /* for each subgoal in the ASCC, from youngest to leader (including) */
   while (complFrame <= subg_compl_stack_ptr(subg_ptr)) {
     currSubg = compl_subgoal_ptr(complFrame);
+
+#ifdef PROFILE
+    subinst_table[ITER_FIXPOINT][1]++;
+#endif
 
     /* if there are unresolved answers for currSubg */
     if ((sched_breg = schedule_subgoal(currSubg, complFrame))) {
@@ -168,12 +180,12 @@ static void chat_incremental_copy(VariantSF subg_ptr)
 #endif
       while (cr) {
 	chat_area = cr_root_area(cr);
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
 	if (chat_area != inc_chat_area) { /* added PATCH */
 #endif
 	  chat_set_ifather(chat_area, inc_chat_area);
 	  chat_increment_reference(inc_chat_area);
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
 	} else {
 	  xsb_warn("Oh, oh: again we are in a loop...");
 	  fprintf(stddbg, "chat_area = %p, subgoal = %p\n",chat_area,subg_ptr);

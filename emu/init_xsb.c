@@ -352,6 +352,9 @@ char *init_para(int argc, char *argv[])
 	if (strcmp(argv[i],"copying")==0)
 	  flags[GARBAGE_COLLECT] = COPYING_GC;
 	else
+        if (strcmp(argv[i],"indirection")==0)
+          flags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
+        else
 	if (strcmp(argv[i],"none")==0)
 	  flags[GARBAGE_COLLECT] = NO_GC;
 	else

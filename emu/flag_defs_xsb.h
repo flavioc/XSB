@@ -62,6 +62,11 @@
 /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
 #define CONFIG_NAME	28	/* this looks like this: cpu-vendor-os	   */
 
+/* the following three flags are only in effect when
+   the system is compiled with --enable-debug         --lfcastro           */
+#define VERBOSE_GC      29      /* be verbose on garbage collection        */
+#define COUNT_CHAINS    30      /* count size of chains on GC              */
+#define EXAMINE_DATA    31      /* examine data on GC                      */
 
 /*
  *  Flags 32-48 are reserved for Interrupt Handler PSCs.

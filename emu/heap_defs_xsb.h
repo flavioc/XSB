@@ -25,8 +25,9 @@
 
 /*--- The following is for the type of garbage collection to be used ---*/
 
-#define NO_GC      0
-#define SLIDING_GC 1
-#define COPYING_GC 2
+#define NO_GC           0
+#define SLIDING_GC      1
+#define COPYING_GC      2
+#define INDIRECTION_SLIDE_GC   3
 
 /*----------------------------------------------------------------------*/

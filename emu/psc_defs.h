@@ -22,6 +22,8 @@
 ** 
 */
 
+#ifndef _PSC_DEFS_
+#define _PSC_DEFS_
 
 #define T_VISIBLE	0
 #define T_HIDDEN	1
@@ -46,3 +48,4 @@
 #define T_IMPORTED 2
 #define T_GLOBAL   4
 
+#endif /* _PSC_DEFS_ */

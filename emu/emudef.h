@@ -41,6 +41,9 @@ CPtr sreg;		/* current build or unify field */
 byte *cpreg;		/* return point register        */
 byte *pcreg;		/* program counter              */
 CPtr ebreg;		/* breg into environment stack	*/
+#ifdef CP_DEBUG
+Psc pscreg;
+#endif
 
 #if (!defined(CHAT))
 CPtr efreg;

@@ -22,6 +22,11 @@
 ** 
 */
 
+#ifdef PROFILE
+#define PROFILE_SWITCH_ENV num_switch_envs++;
+#else
+#define PROFILE_SWITCH_ENV 
+#endif
 
 #if (!defined(CHAT))
 #define freeze_and_switch_envs(tbreg, CPsize)	\
@@ -37,7 +42,7 @@
 #endif
 
 #ifdef CHAT
-#define switch_envs(tbreg)	undo_bindings(tbreg)
+#define switch_envs(tbreg)	undo_bindings(tbreg) PROFILE_SWITCH_ENV
 #else
 /*
  * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following
@@ -47,6 +52,7 @@
 #define switch_envs(tbreg) {						\
   CPtr *start_trreg, *end_trreg, *parent, *tmp;				\
 									\
+  PROFILE_SWITCH_ENV                                                    \
   start_trreg = trreg;							\
   end_trreg = trreg = cp_trreg(tbreg);					\
   parent = trail_parent(end_trreg);					\

@@ -45,6 +45,9 @@ typedef struct choice_point {
     CPtr prev;		/* dynamic link */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;          /* pointer to parent tabled CP (subgoal) */
+#ifdef CP_DEBUG
+  Psc  psc;             /* PSC of predicate that created this CP */
+#endif    
 } *Choice;
 
 #define CP_SIZE	(sizeof(struct choice_point)/sizeof(CPtr))
@@ -59,6 +62,13 @@ typedef struct choice_point {
 #define cp_pdreg(b)		((Choice)(b))->pdreg
 #define cp_ptcp(b)              ((Choice)(b))->ptcp
 
+#ifdef CP_DEBUG
+#define cp_psc(b)               ((Choice)(b))->psc
+#define SAVE_PSC(b) cp_psc(b) = pscreg
+#else
+#define SAVE_PSC(b)
+#endif
+
 #define save_choicepoint(t_breg, t_ereg, next_clause, prev) \
     t_breg -= CP_SIZE; \
     cp_ptcp(t_breg) = ptcpreg; \
@@ -69,6 +79,7 @@ typedef struct choice_point {
     cp_trreg(t_breg) = trreg; \
     cp_hreg(t_breg) = hreg; \
     cp_ebreg(t_breg) = ebreg; \
+    SAVE_PSC(t_breg);          \
     cp_pcreg(t_breg) = next_clause
 
 /*----------------------------------------------------------------------*/
@@ -93,6 +104,9 @@ typedef struct tabled_choice_point {
     CPtr prev;		/* previous choicepoint */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
+#ifdef CP_DEBUG
+  Psc  psc;             /* PSC of predicate that created this CP */
+#endif    
     CPtr subgoal_ptr;	/* pointer to the subgoal frame */
 #if (!defined(CHAT))
 /* The following are needed to reclaim frozen space at SCC completion time */
@@ -122,6 +136,13 @@ typedef struct tabled_choice_point {
 #define tcp_pdreg(b)		((TChoice)(b))->pdreg
 #define tcp_ptcp(b)		((TChoice)(b))->ptcp
 #define tcp_subgoal_ptr(b)	((TChoice)(b))->subgoal_ptr
+
+#ifdef CP_DEBUG
+#define tcp_psc(b)              ((TChoice)(b))->psc
+#define SAVE_TPSC(b)            tcp_psc(b) = pscreg
+#else
+#define SAVE_TPSC(b)
+#endif
 
 #if (!defined(CHAT))
 #define tcp_bfreg(b)		((TChoice)(b))->bfreg
@@ -166,6 +187,7 @@ typedef struct tabled_choice_point {
    tcp_hreg(TopCPS) = hreg;				\
    tcp_ebreg(TopCPS) = ebreg;				\
    tcp_subgoal_ptr(TopCPS) = (CPtr)pSF;			\
+   SAVE_TPSC(TopCPS);                                   \
    tcp_prevbreg(TopCPS) = breg;				\
    tcp_pcreg(TopCPS) = Cont;				\
  }
@@ -216,6 +238,9 @@ typedef struct consumer_choice_point {
     CPtr prev;		/* prev top of choice point stack */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
+#ifdef CP_DEBUG
+  Psc  psc;             /* PSC of predicate that created this CP */
+#endif    
     CPtr subgoal_ptr;	/* where the answer list lives */
     CPtr prevlookup;	/* link for chain of consumer CPFs */
     ALNptr trie_return;	/* last answer consumed by this consumer */
@@ -245,6 +270,12 @@ typedef struct consumer_choice_point {
 #define is_consumer_choicepoint(b) \
     (cp_pcreg(b) == (byte *) &answer_return_inst)
 
+#ifdef CP_DEBUG
+#define nlcp_psc(b)              ((NLChoice)(b))->psc
+#define SAVE_NLPSC(b)            nlcp_psc(b) = pscreg
+#else
+#define SAVE_NLPSC(b)
+#endif
 
 #define _SaveConsumerCPF_common(TopCPS,SF,PrevConsumer) {	\
    TopCPS -= NLCPSIZE; 						\
@@ -257,6 +288,7 @@ typedef struct consumer_choice_point {
    nlcp_ereg(TopCPS) = ereg; 					\
    nlcp_cpreg(TopCPS) = cpreg; 					\
    nlcp_trreg(TopCPS) = trreg; 					\
+   SAVE_NLPSC(TopCPS);                                          \
    nlcp_hreg(TopCPS) = hreg; 					\
    nlcp_ebreg(TopCPS) = ebreg; 					\
    nlcp_pcreg(TopCPS) = (pb) &answer_return_inst; 		\

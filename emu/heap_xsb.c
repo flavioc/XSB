@@ -94,6 +94,8 @@ Todo:
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <time.h>  /* --lfcastro */
+#include <sys/resource.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
@@ -126,24 +128,28 @@ Todo:
 static float mark_threshold = 0.9F;
 #endif
 
-/* lfcastro: profiling: count size of deref-chains encountered during GC */
-/*  #define COUNT_VAR_CHAINS */
-/* lfcastro: profiling: count kinds of cells found during GC */
-/*  #define EXAMINE_DATA_ON_GC */
-
-#ifdef COUNT_VAR_CHAINS
-unsigned long long chains[64];
+#ifdef DEBUG
+#define GC_PROFILE
 #endif
 
-#ifdef EXAMINE_DATA_ON_GC
-unsigned long long tag_examined[8];
-unsigned long long deep_mark;
-unsigned long long current_mark;
+#ifdef GC_PROFILE
+
+static char count_chains=0, examine_data=0, verbose_gc=0;
+unsigned long chains[64];
+unsigned long tag_examined[9];
+unsigned long deep_mark;
+unsigned long current_mark;
 unsigned long old_gens;
 unsigned long current_gen;
 CPtr start_hbreg;
-/*  unsigned long long tag_examined_current[8]; */
-#endif
+unsigned long functor;
+unsigned long chain_from_ls;
+unsigned long active_cps, frozen_cps;
+void print_cpf_pred(CPtr cpf);
+
+#endif /* GC_PROFILE */
+
+#define REALLOC_DEBUG
 
 /*=========================================================================*/
 
@@ -197,7 +203,7 @@ static int print_anyway = 0 ;
 /*#define SAFE_GC*/
 
 /* if VERBOSE_GC is defined, garbage collection prints its statistics */
-/*  #define VERBOSE_GC */
+/* #define VERBOSE_GC */
 
 
 /*---------------------------------------------------------------------------*/
@@ -244,48 +250,39 @@ static char *tr_marks    = NULL ;
 #ifdef CHAT
 static char *compl_marks = NULL ;
 #endif
+#define INDIRECTION_SLIDE
+#ifdef INDIRECTION_SLIDE
+static CPtr *slide_buf= NULL;
+static unsigned long slide_top = 0;
+static int slide_buffering = 0;
+static unsigned long slide_buf_size = 0;
+#endif
 
 #define MARKED    1
 #define CHAIN_BIT 4                            
 
-#ifdef COUNT_VAR_CHAINS
-#define COUNT_CHAINS \
-    if ((tag == XSB_REF || tag == XSB_REF1) && \
-	points_into_heap((CPtr) *cell_ptr)) { \
-      int temp = 0; \
-      CPtr ptr = (CPtr) *cell_ptr; \
-      while (isref(ptr) && ptr != (CPtr) follow(ptr)) { \
-	temp ++; \
-	ptr = (CPtr) follow(ptr); \
-      } \
-      if (temp >= 64) \
-	xsb_abort("Chain too long!!!\n"); \
-      chains[temp]++; \
-    }
+#ifdef INDIRECTION_SLIDE
+#define TO_BUFFER(ptr) \
+{ \
+  if (slide_buffering) { \
+    slide_buf[slide_top] = ptr; \
+    slide_top++; \
+    slide_buffering = slide_top <= slide_buf_size; \
+  } \
+}
 #else
-#define COUNT_CHAINS
+#define TO_BUFFER(ptr)
 #endif
 
-
-#ifdef EXAMINE_DATA_ON_GC
+#ifdef GC_PROFILE
 #define h_mark(i) \
-{ CPtr cell_ptr; int tag, place;\
- place = i;\
- cell_ptr = (CPtr) heap_bot + place;\
- tag = cell_tag(*cell_ptr);\
-\
- COUNT_CHAINS \
- if (tag == XSB_REF || tag == XSB_REF1) { \
-   if (points_into_heap((CPtr) *cell_ptr)) \
-       tag_examined[tag]++; \
- } else \
-   tag_examined[tag]++;\
- if ((unsigned long) cell_ptr < (unsigned long) start_hbreg)\
-   deep_mark++;\
- else \
-   current_mark++;\
- heap_marks[place] |= MARKED;\
-}
+do { \
+  CPtr cell_ptr; int place;\
+  place = i;\
+  cell_ptr = (CPtr) heap_bot + place;\
+  inspect_ptr(cell_ptr);  \
+  heap_marks[place] |= MARKED;\
+} while (0)
 #else
 #define h_mark(i)          heap_marks[i] |= MARKED
 #endif
@@ -294,13 +291,84 @@ static char *compl_marks = NULL ;
 #define h_clear_mark(i)	   heap_marks[i] &= ~MARKED
 
 #define ls_marked(i)       (ls_marks[i])
+#ifdef GC_PROFILE
+#define ls_mark(i)         \
+do { \
+  int tag, place; \
+  CPtr ptr; \
+  place = i; \
+  ptr = (CPtr) ls_top + place; \
+  tag = cell_tag(*ptr); \
+  inspect_chain(ptr); \
+  ls_marks[place] |= MARKED; \
+} while (0)
+#else
 #define ls_mark(i)         ls_marks[i] |= MARKED
+#endif
 #define ls_clear_mark(i)   ls_marks[i] = 0
 
 /*=========================================================================*/
+#ifdef GC_PROFILE
+inline static void inspect_chain(CPtr cell_ptr)
+{
+  int tag;
+  tag = cell_tag(*cell_ptr);
+
+  if (count_chains) {
+    if ((tag == XSB_REF || tag == XSB_REF1) && 
+	points_into_heap((CPtr)*cell_ptr)) { 
+      int temp=0;
+      CPtr ptr = (CPtr) *cell_ptr;
+      if (points_into_ls(cell_ptr)) {
+	temp++;
+	ptr = (CPtr) follow(ptr);
+	chain_from_ls++;
+      }
+      while (isref(ptr) && ptr != (CPtr) follow(ptr)) {
+	temp++;
+	ptr = (CPtr) follow(ptr);
+      }
+      if (temp > 64)
+	xsb_abort("Chain too long when inspecting cell in %p.\n", cell_ptr);
+      ++chains[temp];
+    }
+  }
+}
+    
+inline static void inspect_ptr(CPtr cell_ptr)
+{
+  int tag;
+  tag = cell_tag(*cell_ptr);
+  
+  inspect_chain(cell_ptr);
+
+  if (examine_data) {
+    if (tag == XSB_REF || tag == XSB_REF1) {
+      if (points_into_heap((CPtr) *cell_ptr)) {
+	if (cell_ptr == (CPtr) *cell_ptr)
+	  ++tag_examined[8];
+	else
+	  tag_examined[tag]++;
+      }
+      else if (points_into_heap((CPtr) cell_ptr))
+	functor++;
+      else
+	fprintf(stddbg,"+++ outside pointer %p in %p.\n",
+		*(CPtr*)cell_ptr, (CPtr)cell_ptr);
+    } else
+      ++tag_examined[tag];
+    if ((unsigned long) cell_ptr < (unsigned long) start_hbreg)
+      ++deep_mark;
+    else
+      ++current_mark;
+  }
+}  
+
+#endif
+/*=========================================================================*/
 
 /* in the absence of serious bugs, the test is an invariant of the WAM */
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
 #define testreturnit(retp)   if (points_into_heap(retp)) return(retp)
 #else
 #define testreturnit(retp)   return(retp)
@@ -450,6 +518,7 @@ static int mark_cell(CPtr cell_ptr)
  safe_mark_more:
   i = cell_ptr - heap_bot ;
   if (h_marked(i)) goto pop_more ;
+  TO_BUFFER(cell_ptr);
   h_mark(i) ;
   m++ ;
 
@@ -470,6 +539,7 @@ static int mark_cell(CPtr cell_ptr)
     cell_ptr = ((CPtr)(cs_val(cell_val))) ;
     i = cell_ptr - heap_bot ;
     if (h_marked(i)) goto pop_more ;
+    TO_BUFFER(cell_ptr);
     h_mark(i) ; m++ ;
     cell_val = *cell_ptr;
     arity = get_arity((Psc)(cell_val)) ;
@@ -546,6 +616,7 @@ static int mark_root(Cell cell_val)
 	break ;
 	/* default: return(0); */
       }
+      TO_BUFFER(cell_ptr);
       h_mark(i) ; m = 1 ; 
       cell_val = *cell_ptr;
       arity = get_arity((Psc)(cell_val)) ;
@@ -589,8 +660,9 @@ inline static int mark_region(CPtr beginp, CPtr endp)
 {
   int marked = 0 ;
 
-  while (beginp <= endp)
+  while (beginp <= endp) {
     marked += mark_root(*(beginp++)) ;
+  }
 
   return(marked) ;
 } /* mark_region */
@@ -633,6 +705,9 @@ static int mark_query(void)
 	      {
 #if (EARLY_RESET == 1)
 		{
+		  /* instead of marking the word in the heap, 
+		     we make the trail cell point to itself */
+		  TO_BUFFER(trailed_cell);
 		  h_mark(i) ;
 		  total_marked++ ;
 		  bld_free(trailed_cell); /* early reset */
@@ -710,6 +785,12 @@ static int mark_query(void)
 
       e = cp_ereg(b) ;
       cp = cp_cpreg(b) ;
+#if defined(GC_PROFILE) && defined(CP_DEBUG)
+      if (examine_data) {
+	print_cpf_pred(b);
+	active_cps++;
+      }
+#endif
       b = cp_prevbreg(b) ;
     }
 
@@ -739,7 +820,8 @@ static int chat_mark_trail(CPtr *tr, int trlen)
 	  if (points_into_heap(trailed_cell))
 	    { i = trailed_cell - heap_bot ;
 	    if (! h_marked(i))
-	      { h_mark(i) ; /* it is correct to mark this cell, because the
+	      { TO_BUFFER(trailed_cell);
+		h_mark(i) ; /* it is correct to mark this cell, because the
 			       value is also marked
 			       avoiding to mark the cell would make chat
 			       trail compaction necessary
@@ -858,6 +940,10 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
   if (initial_pheader != NULL)
     do
       {
+#ifdef GC_PROFILE
+	if (examine_data)
+	  frozen_cps++;
+#endif
 	b = (CPtr)chat_get_args_start(initial_pheader);
 	/* marking of argument registers from consumer */
 	m += chat_mark_region(b,chat_get_nrargs(initial_pheader));
@@ -881,6 +967,7 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
 	      *hreg = (Cell)d;
 	      heap_top++;
 	      m += mark_root((Cell)d)+1; /* +1 because of the following line */
+	      TO_BUFFER(hreg);
 	      h_mark(hreg-heap_bot) ;
 	      hreg++;
 	    } else xsb_exit("Fatal: no heap space to mark Dreg of CHAT areas");
@@ -987,9 +1074,10 @@ static int mark_hreg_from_choicepoints(void)
 			  although a bit scary :-)
 		       */
       {
+	cell(h) = makeint(666) ;
+	TO_BUFFER(h);
 	h_mark(i) ;
 	m++ ;
-	cell(h) = makeint(666) ;
       }
     bprev = b; b = cp_prevbreg(b);
     }
@@ -1025,7 +1113,8 @@ int mark_heap(int arity, int *marked_dregs)
 
   /* the following seems unnecessary, but it is not !
      mark_heap() may be called directly and not only through gc_heap() */
-  slide = (flags[GARBAGE_COLLECT] == SLIDING_GC) ;
+  slide = (flags[GARBAGE_COLLECT] == SLIDING_GC) |
+    (flags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC);
 
   stack_boundaries ;
 
@@ -1039,12 +1128,33 @@ int mark_heap(int arity, int *marked_dregs)
     if (! compl_marks)
       xsb_exit("Not enough core to allocate chain bits for completion stack");
 #endif
+#ifdef INDIRECTION_SLIDE
+    /* space for keeping pointers to live data */
+    /* idea suggested by Vitor Santos Costa */
+/*     slide_buf_size = ((unsigned long)heap_top-(unsigned long)heap_bot)*0.2; */
+    slide_buf_size = (hreg+1-(CPtr)glstack.low)*0.2;
+#if 0
+    fprintf(stddbg,"{GC} Allocating slide_buf of size %d.\n", slide_buf_size);
+#endif
+    slide_buf = (CPtr *) calloc(slide_buf_size+1, sizeof(CPtr));
+    if (!slide_buf)
+      xsb_exit("Not enough space to allocate slide_buf");
+    slide_top=0;
+    if (flags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC)
+      slide_buffering=1;
+    else
+      slide_buffering=0;
+#endif
     /* these areas are not used in a copying collector */
     cp_marks = (char *)calloc(cp_bot - cp_top + 1,1);
     tr_marks = (char *)calloc(tr_top - tr_bot + 1,1);
     if ((! cp_marks) || (! tr_marks))
       xsb_exit("Not enough core to perform garbage collection chaining phase");
   }
+#ifdef INDIRECTION_SLIDE
+  else
+    slide_buffering=0;
+#endif
 
   heap_marks = (char * )calloc(heap_top - heap_bot + 2 + avail_dreg_marks,1);
   ls_marks   = (char * )calloc(ls_bot - ls_top + 1,1);
@@ -1060,11 +1170,14 @@ int mark_heap(int arity, int *marked_dregs)
   }
 
   if (slide)
-    { int put_on_heap;
-    put_on_heap = arity;
-    marked += put_on_heap;
-    while (put_on_heap > 0)
-      h_mark((heap_top - put_on_heap--)-heap_bot);
+    { 
+      int put_on_heap;
+      put_on_heap = arity;
+      marked += put_on_heap;
+      while (put_on_heap > 0) {
+	TO_BUFFER((heap_top-put_on_heap));
+	h_mark((heap_top - put_on_heap--)-heap_bot);
+      }
     }
 
 #ifdef CHAT
@@ -2020,6 +2133,173 @@ static void chat_chain_region(CPtr b, int len)
 	of the heap prior to marking
 */
 
+#ifdef INDIRECTION_SLIDE
+
+#define mem_swap(a,b) \
+{ unsigned long temp; \
+ temp = *a; \
+ *a = *b; \
+ *b = temp; \
+}
+#if 1 /* radix sort */
+
+/* counting sort used for each iteration of 
+   radix sort; assumes all pointers are
+   aligned, so end in '00'   --lfcastro    */
+void counting_sort(ulong *from, ulong *to, ulong size, int step) 
+{
+  ulong count[1024];
+  ulong i,j;
+
+  if (!count)
+    xsb_exit("Error allocating memory for counting_sort.\n");
+
+  for (i=0; i<1024; i++)
+    count[i]=0;
+
+  for (i=0; i<size; i++) {
+    j = *(from+i) >> (2+(10*step));
+    j = j & 0x3ff;
+    count[j]++;
+  }
+
+  for (i=1; i<1024; i++) 
+    count[i] = count[i] + count[i-1];
+    
+  for (i=size; i>0; i--) {
+    j = (*(from+i-1) >> (2+(10*step))) & 0x3ff;
+    *(to+count[j]-1) = *(from+i-1);
+    count[j]--;
+  }
+}
+
+static ulong *radix_sort(ulong *data, ulong size)
+{
+  ulong *newdata;
+  
+  newdata = calloc(slide_buf_size+1, sizeof(CPtr));  
+  if (!newdata)
+    xsb_exit("Memory allocation failed when sorting slide buffer.\n");
+  
+  counting_sort(data, newdata, size, 0);
+  counting_sort(newdata, data, size, 1);
+  counting_sort(data, newdata, size, 2);
+  return(newdata);
+}
+
+static void radix_sort_slide_buf(ulong size)
+{
+  ulong *tmp;
+#ifdef GC_PROFILE
+  ulong begin_sorting, end_sorting;
+
+  if (verbose_gc)
+    begin_sorting = cpu_time();
+#endif
+
+  tmp = radix_sort((ulong *) slide_buf, size);
+  free(slide_buf);
+  slide_buf = (CPtr *) tmp;
+
+#ifdef GC_PROFILE
+  if (verbose_gc) {
+    end_sorting = cpu_time();
+    fprintf(stddbg,"{GC} Sorting took %f ms.\n", 
+	    (double) (end_sorting - begin_sorting)*1000/CLOCKS_PER_SEC);
+  }
+#endif
+}
+
+#else /* quicksort */
+#define push_sort_stack(X,Y) \
+addr_stack[stack_index] = X;\
+size_stack[stack_index] = Y;\
+stack_index++
+#define pop_sort_stack(X,Y)\
+stack_index--; \
+X = addr_stack[stack_index]; \
+Y = size_stack[stack_index]
+#define sort_stack_empty \
+(stack_index == 0)
+
+static void randomize_data(unsigned long *data, unsigned long size)
+{
+  unsigned long i,j,t;
+
+  for (i=0; i<size; i++) {
+    j = (unsigned long) rand()*(size-1)/RAND_MAX;
+    mem_swap((data+i), (data+j));
+  }
+}
+
+static void sort_buffer(unsigned long *indata, unsigned long insize)
+{
+  unsigned long *left, *right, *pivot;
+  unsigned long *data, size;
+  unsigned long *addr_stack[4000];
+  unsigned long size_stack[4000];
+  int stack_index=0;
+  int leftsize;
+  ulong begin_sorting, end_sorting;
+  
+  randomize_data(indata,insize);
+
+  if (verbose_gc)
+    begin_sorting = cpu_time();
+  push_sort_stack(indata,insize);
+
+  while (!sort_stack_empty) {
+    
+    pop_sort_stack(data,size);
+
+    if (size < 1)
+      continue;
+
+    if (size == 1) {
+      if (data[0] > data[1])
+	mem_swap(data, (data+1));
+      continue;
+    }
+    
+    left = data;
+    right = &data[size];
+    
+    pivot = &data[size/2];
+    mem_swap(pivot, right);
+    
+    pivot = right;
+    
+    while (left < right) {
+      while ((*left < *pivot) && (left < right)) 
+	left++;
+      while ((*right >= *pivot) && (left < right))
+	right--;
+      if (left < right) { 
+	mem_swap(left,right);
+	left++;
+      }
+    }
+    if (right == data) {
+      mem_swap(right, pivot);
+      right++;
+    }
+    leftsize = right - data;
+    if (leftsize >= 1)
+      push_sort_stack(data,leftsize);
+    if ((size-leftsize) >= 1)
+      push_sort_stack(right,(size-leftsize));
+
+  } 
+  if (verbose_gc) {
+    end_sorting = cpu_time();
+    fprintf(stddbg,"{GC} Sorting took %f ms.\n", 
+	    (end_sorting - begin_sorting)*1000/CLOCKS_PER_SEC);
+  }
+}
+#endif
+
+#endif
+
 #ifdef GC
 
 static CPtr slide_heap(int num_marked)
@@ -2172,8 +2452,45 @@ static CPtr slide_heap(int num_marked)
 
     index = heap_top - heap_bot ;
     destination = heap_bot + num_marked - 1 ;
+#ifdef INDIRECTION_SLIDE
+    if (slide_buffering) {
+      unsigned long i;
+#ifdef GC_PROFILE
+      if (verbose_gc) {
+	fprintf(stddbg,"{GC} Using Fast-Slide scheme.\n");
+      }
+#endif
+      /* sort the buffer */
+      /* for the quicksort above, use the following line: */
+      /*      sort_buffer((unsigned long *)slide_buf, slide_top-1);*/
+      /* for radix sort: */
+      radix_sort_slide_buf(slide_top);
+
+      /* upwards phase */
+      for (i=slide_top; i > 0; i--) {
+	hptr = slide_buf[i-1];
+
+	if (h_is_chained(hptr)) {
+	  unchain(hptr,destination);
+	}
+	p = hp_pointer_from_cell(*hptr,&tag);
+	if (p &&(p<hptr)) {
+	  swap_with_tag(hptr,p,tag);
+	  if (h_is_chained(p))
+	    h_set_chained(hptr);
+	  else
+	    h_set_chained(p);
+	}
+	destination--;
+      }
+    } else {
+#ifdef GC_PROFILE
+      if (verbose_gc && flags[GARBAGE_COLLECT]==INDIRECTION_SLIDE_GC)
+	fprintf(stddbg,"{GC} Giving up Fast-Slide scheme.\n");
+#endif
+#endif
     for (hptr = heap_top - 1 ; hptr >= heap_bot ; hptr--)
-      {
+      { 
 	if (h_marked(hptr - heap_bot))
 	{ /* boxing */
 	  if (garbage)
@@ -2195,6 +2512,10 @@ static CPtr slide_heap(int num_marked)
 	index-- ;
       }
 
+#ifdef INDIRECTION_SLIDE
+    }
+    if (!slide_buffering)
+#endif
     if (garbage)
       /* the first heap cell is not marked */
       *heap_bot = makeint(garbage) ;
@@ -2204,6 +2525,38 @@ static CPtr slide_heap(int num_marked)
     /* one phase downwards - from bottom of heap to top of heap */
     index = 0 ;
     destination = heap_bot ;
+
+#ifdef INDIRECTION_SLIDE
+    if (slide_buffering) {
+      unsigned long i;
+      for (i=0; i<slide_top; i++) {
+	hptr = slide_buf[i];
+
+	/* lfcastro - debug */
+/* 	if (!h_marked(hptr - heap_bot)) */
+/* 	  xsb_exit("Heap pointer not marked, but in buffer.\n"); */
+
+	if (h_is_chained(hptr)) {
+	  unchain(hptr,destination);
+	}
+	if ((Cell)(hptr) == *hptr) /* undef */
+	  bld_free(destination);
+	else {
+	  p = hp_pointer_from_cell(*hptr,&tag);
+	  *destination = *hptr;
+	  if (p && (p > hptr)) {
+	    swap_with_tag(destination,p,tag);
+	    if (h_is_chained(p))
+	      h_set_chained(destination);
+	    else
+	      h_set_chained(p);
+	  }
+	  h_clear_mark((hptr-heap_bot));
+	}
+	destination++;
+      }	    
+    } else
+#endif
     for (hptr = heap_bot ; hptr < heap_top ; )
       {
 	if (h_marked(hptr - heap_bot))
@@ -2616,8 +2969,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 /* global variables used for statistics.                                */
 /*======================================================================*/
 
-static int total_time_gc = 0 ;
-static int total_collected = 0 ;
+static double total_time_gc = 0 ;
+static unsigned long total_collected = 0 ;
 
 /*======================================================================*/
 /* The main routine that performs garbage collection.                   */
@@ -2628,49 +2981,117 @@ int gc_heap(int arity)
 
 #ifdef GC
   CPtr p;
-  long  begin_marktime, end_marktime,
-#ifdef VERBOSE_GC
+  ulong  begin_marktime, end_marktime,
+#ifdef GC_PROFILE
        begin_slidetime, begin_copy_time,
 #endif
        end_slidetime, end_copy_time;
   int  marked = 0, marked_dregs = 0, i;
   int  start_heap_size;
 
+#ifdef GC_PROFILE
+  verbose_gc=flags[VERBOSE_GC];
+  examine_data=flags[EXAMINE_DATA];
+  count_chains=flags[COUNT_CHAINS];
+#endif
+
   if (flags[GARBAGE_COLLECT] != NO_GC) {
 
     num_gc++ ;
 
-#ifdef COUNT_VAR_CHAINS
-    { int i;
-    for (i=0; i<64; i++)
-      chains[i]=0;
-    }
-#endif
-#ifdef EXAMINE_DATA_ON_GC
-    { int i;
-    for (i=0; i<8; i++) {
-      tag_examined[i]=0;
-/*        tag_examined_current[i]=0; */
-    }
-    current_mark = deep_mark=0;
-    start_hbreg = cp_hreg(breg);
-    old_gens = ((unsigned long) start_hbreg - (unsigned long) glstack.low) / 
-      sizeof(CPtr);
-    current_gen = ((unsigned long) hreg - (unsigned long) start_hbreg) / 
-      sizeof(CPtr);
-    }
-#endif
+#ifdef GC_PROFILE
+    /* first, run the heap & collect info */
+    if (examine_data) {
+      CPtr cell_ptr;
+      unsigned long heap_traversed=0;
+      int i,tag;
+      functor = 0;
+      for (i=0; i<9; i++) 
+	tag_examined[i] = 0;
 
-    slide = (flags[GARBAGE_COLLECT] == SLIDING_GC) ;
+      stack_boundaries;
+
+      for (cell_ptr = (CPtr) glstack.low; cell_ptr < hreg; cell_ptr++) {
+        heap_traversed++;
+	tag = cell_tag(*cell_ptr);
+	if (tag == XSB_REF || tag == XSB_REF1) {
+	  if (points_into_heap((CPtr) *cell_ptr)) {
+	    if (cell_ptr == (CPtr) *cell_ptr) {
+	      ++tag_examined[8];
+	    } else {
+	      tag_examined[tag]++;
+	    }
+	  } else if (points_into_heap((CPtr) cell_ptr)) {
+	    functor++;
+	  } else {
+	    fprintf(stddbg,"+++ outside pointer %p in %p.\n",
+		    *(CPtr*)cell_ptr, (CPtr)cell_ptr);
+	  }
+	} else {
+	  ++tag_examined[tag];
+	}
+      }
+
+      fprintf(stddbg,"\n\n\n{GC} Prior to GC:\n");
+      fprintf(stddbg,"{GC} Cells visited:\n");
+      fprintf(stddbg, "{GC}    %ld variables.\n", tag_examined[8]);
+      fprintf(stddbg, "{GC}    %ld reference cells.\n", 
+	      tag_examined[XSB_REF] + tag_examined[XSB_REF1]);
+      fprintf(stddbg, "{GC}    %ld references from the local stack.\n",
+	      chain_from_ls);
+      fprintf(stddbg, "{GC}    %ld atom cells.\n", tag_examined[XSB_STRING]);
+      fprintf(stddbg, "{GC}    %ld integer cells.\n", tag_examined[XSB_INT]);
+      fprintf(stddbg, "{GC}    %ld float cells.\n", tag_examined[XSB_FLOAT]);
+      fprintf(stddbg, "{GC}    %ld list cells.\n", tag_examined[XSB_LIST]);
+      fprintf(stddbg, "{GC}    %ld structure cells.\n", 
+	      tag_examined[XSB_STRUCT]);
+      fprintf(stddbg, "{GC}    %ld functor cells.\n",functor);
+      fprintf(stddbg, "{GC}    %ld attributed variable cells.\n", 
+	      tag_examined[XSB_ATTV]);
+      fprintf(stddbg, "{GC}    %ld heap cells traversed.\n",
+	      heap_traversed);
+
+    }
+
+    if (count_chains) {
+      int i;
+      for (i=0; i<64; i++)
+	chains[i]=0;
+    }
+
+    if (examine_data){ 
+      int i;
+      for (i=0; i<9; i++) {
+	tag_examined[i]=0;
+	/*        tag_examined_current[i]=0; */
+      }
+      chain_from_ls = functor = 0;
+      current_mark = deep_mark=0;
+      start_hbreg = cp_hreg(breg);
+      old_gens = ((unsigned long) start_hbreg - (unsigned long) glstack.low) / 
+	sizeof(CPtr);
+      current_gen = ((unsigned long) hreg - (unsigned long) start_hbreg) / 
+	sizeof(CPtr);
+      active_cps = 0;
+      frozen_cps = 0;
+    }
+#endif /* GC_PROFILE */
+
+    slide = (flags[GARBAGE_COLLECT] == SLIDING_GC) | 
+      (flags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC);
 
     if (fragmentation_only) slide = FALSE;
     heap_early_reset = ls_early_reset = 0;
 
-#ifdef VERBOSE_GC
-    xsb_dbgmsg("\nHeap gc - arity = %d - used = %d - left = %d - #gc = %d",
-	       arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ;
+#ifdef GC_PROFILE
+    if (verbose_gc) {
+      xsb_dbgmsg("{GC} Heap gc - arity = %d - used = %d - left = %d - #gc = %d\n",
+		 arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ;
+    }
 #endif
-    begin_marktime = (long)(1000*cpu_time()) ;
+
+/*     begin_marktime = 1000*cpu_time(); */
+    begin_marktime = cpu_time();
 
     start_heap_size = hreg+1-(CPtr)glstack.low;
 
@@ -2697,7 +3118,8 @@ int gc_heap(int arity)
 
     marked = mark_heap(arity, &marked_dregs);
 
-    end_marktime = (long)(1000*cpu_time());
+/*     end_marktime = 1000*cpu_time(); */
+    end_marktime = cpu_time();
 
     if (fragmentation_only)
       {
@@ -2721,9 +3143,11 @@ int gc_heap(int arity)
 	goto end;
       }
 
-#ifdef VERBOSE_GC
-    xsb_dbgmsg("\nHeap gc - marking finished - #marked = %d - start compact",
-	       marked);
+#ifdef GC_PROFILE
+    if (verbose_gc) {
+      xsb_dbgmsg("{GC} Heap gc - marking finished - #marked = %d - start compact\n",
+		 marked);
+    }
 #endif
 
    /* An attempt to add some gc/expansion policy;
@@ -2731,21 +3155,26 @@ int gc_heap(int arity)
 #if (! defined(GC_TEST))
      if (marked > ((hreg+1-(CPtr)glstack.low)*mark_threshold))
       {
-#ifdef VERBOSE_GC
-        xsb_dbgmsg("\nHeap gc - marked too much - quitting gc") ;
+#ifdef GC_PROFILE
+	if (verbose_gc) {
+	  xsb_dbgmsg("{GC} Heap gc - marked too much - quitting gc\n") ;
+	}
 #endif
         if (slide)
           hreg -= arity;
-	total_time_gc += (end_marktime - begin_marktime);
+
+	total_time_gc += (double) 
+	  (end_marktime-begin_marktime)*1000/CLOCKS_PER_SEC;
 	chat_clear_marks();
         goto free_marks; /* clean-up temp areas and get out of here... */
       }
 #endif
 
     total_collected += (start_heap_size - marked);
+
     if (slide)
       {
-#ifdef VERBOSE_GC
+#ifdef GC_PROFILE
 	begin_slidetime = end_marktime;
 #endif
 	hreg = slide_heap(marked) ;
@@ -2779,21 +3208,26 @@ int gc_heap(int arity)
 	if (delayreg != NULL)
 	  delayreg = (CPtr)reg[arity--];
 
-	end_slidetime = (long)(1000*cpu_time());
+/* 	end_slidetime = 1000*cpu_time(); */
+	end_slidetime = cpu_time();
 
-	total_time_gc += (end_slidetime - begin_marktime);
-#ifdef VERBOSE_GC
-	xsb_dbgmsg("\nHeap gc end - mark time = %d; slide time = %d; total = %d\n",
-		   (end_marktime - begin_marktime),
-		   (end_slidetime - begin_slidetime),
-		   total_time_gc) ;
+	total_time_gc += (double) 
+	  (end_slidetime - begin_marktime)*1000/CLOCKS_PER_SEC;
+
+#ifdef GC_PROFILE
+	if (verbose_gc) {
+	  xsb_dbgmsg("{GC} Heap gc end - mark time = %f; slide time = %f; total = %f\n",
+	  (double)(end_marktime - begin_marktime)*1000/CLOCKS_PER_SEC,
+	  (double)(end_slidetime - begin_slidetime)*1000/CLOCKS_PER_SEC,
+	  total_time_gc) ;
+	}
 #endif
       }
     else
       { /* else we call the copying collector a la Cheney */
 	CPtr begin_new_heap, end_new_heap;
 
-#ifdef VERBOSE_GC
+#ifdef GC_PROFILE
 	begin_copy_time = end_marktime;
 #endif
 	begin_new_heap = (CPtr)malloc(marked*sizeof(Cell));
@@ -2804,14 +3238,19 @@ int gc_heap(int arity)
 	free(begin_new_heap);
 	adapt_hreg_from_choicepoints(hreg);
 	hbreg = cp_hreg(breg);
-	end_copy_time = (long)(1000*cpu_time());
+/* 	end_copy_time = (1000*cpu_time()); */
+	end_copy_time = cpu_time();
 
-	total_time_gc += (end_copy_time - begin_marktime);
-#ifdef VERBOSE_GC
-	xsb_dbgmsg("\nHeap gc end - mark time = %d; copy_time = %d; total = %d\n",
-		   (end_marktime - begin_marktime),
-		   (end_copy_time - begin_copy_time),
-		   total_time_gc) ;
+	total_time_gc += (double) 
+	  (end_copy_time - begin_marktime)*1000/CLOCKS_PER_SEC;
+
+#ifdef GC_PROFILE
+	if (verbose_gc) {
+	  fprintf(stddbg,"{GC} Heap gc end - mark time = %f; copy_time = %f; total = %f\n",
+	   (double)(end_marktime - begin_marktime)*1000/CLOCKS_PER_SEC,
+	   (double)(end_copy_time - begin_copy_time)*1000/CLOCKS_PER_SEC,
+	   total_time_gc) ;
+	}
 #endif
       }
 
@@ -2857,51 +3296,58 @@ int gc_heap(int arity)
 #ifdef CHAT
  end:
 
-#ifdef COUNT_VAR_CHAINS
-  {int i;
-  fprintf(stddbg,"\nReference Chains: \n");
-  for (i=0; i<64; i++)
-    if (chains[i])
-      fprintf(stddbg, "   chain[%d]=%lld\n",i,chains[i]);
+#ifdef GC_PROFILE
+
+  if (count_chains|examine_data) {
+    fprintf(stddbg, "\n{GC} Heap Garbage Collection #%d\n",num_gc);
+    fprintf(stddbg, "{GC} Heap early reset reclaimed %d cells.\n",
+	    heap_early_reset);
+    fprintf(stddbg, "{GC} Local early reset reclaimed %d cells.\n",
+	    ls_early_reset);
   }
-#endif
-#ifdef EXAMINE_DATA_ON_GC
-  fprintf(stddbg,"\nCells visited:\n");
-  fprintf(stddbg, "   %lld reference cells.\n", 
-	  tag_examined[XSB_REF] + tag_examined[XSB_REF1]);
-  fprintf(stddbg, "   %lld structure cells.\n", tag_examined[XSB_STRUCT]);
-  fprintf(stddbg, "   %lld integer cells.\n", tag_examined[XSB_INT]);
-  fprintf(stddbg, "   %lld list cells.\n", tag_examined[XSB_LIST]);
-  fprintf(stddbg, "   %lld atom cells.\n", tag_examined[XSB_STRING]);
-  fprintf(stddbg, "   %lld float cells.\n", tag_examined[XSB_FLOAT]);
-  fprintf(stddbg, "   %lld attributed variable cells.\n", 
-	  tag_examined[XSB_ATTV]);
-  if (current_gen > 0)
-    fprintf(stddbg, "Cells marked on current generation: %lld / %ld = %lld / 100\n",
-	    current_mark, current_gen, (current_mark*100/current_gen));
-  if (old_gens > 0)
-    fprintf(stddbg, "Cells marked on deep generations: %lld / %ld = %lld / 100\n",
-	    deep_mark, old_gens, (deep_mark*100/old_gens));
-  if (old_gens+current_gen > 0)
-    fprintf(stddbg, "Total cells marked: %lld / %ld = %lld / 100\n",
-	    deep_mark + current_mark, current_gen + old_gens,
-	    ((deep_mark+current_mark)*100/(current_gen+old_gens)));
-/*    fprintf(stddbg, "\nCells visited on current frame:\n"); */
-/*    fprintf(stddbg, "   %lld reference cells.\n",  */
-/*  	  tag_examined_current[XSB_REF] + tag_examined_current[XSB_REF1]); */
-/*    fprintf(stddbg, "   %lld structure cells.\n",  */
-/*  	  tag_examined_current[XSB_STRUCT]); */
-/*    fprintf(stddbg, "   %lld integer cells.\n",  */
-/*  	  tag_examined_current[XSB_INT]); */
-/*    fprintf(stddbg, "   %lld list cells.\n",  */
-/*  	  tag_examined_current[XSB_LIST]); */
-/*    fprintf(stddbg, "   %lld string cells.\n",  */
-/*  	  tag_examined_current[XSB_STRING]); */
-/*    fprintf(stddbg, "   %lld float cells.\n",  */
-/*  	  tag_examined_current[XSB_FLOAT]); */
-/*    fprintf(stddbg, "   %lld attributed variable cells.\n",  */
-/*  	  tag_examined_current[XSB_ATTV]); */
-#endif
+
+  if (count_chains) {
+    int i;
+    fprintf(stddbg,"{GC} Reference Chains: \n");
+    for (i=0; i<64; i++)
+      if (chains[i])
+	fprintf(stddbg, "{GC}  chain[%d]=%ld\n",i,chains[i]);
+  }
+
+  if (examine_data) {
+    fprintf(stddbg,"{GC} Active Choice-points: %ld\n", active_cps);
+    fprintf(stddbg,"{GC} Frozen Choice-points: %ld\n",frozen_cps);
+    fprintf(stddbg,"{GC} Local stack size: %d\n", ls_bot - ls_top);
+    fprintf(stddbg,"{GC} CP stack size: %d\n", cp_bot - cp_top);
+    fprintf(stddbg,"{GC} Trail stack size: %d\n", tr_top - tr_bot);
+    fprintf(stddbg,"{GC} Cells visited:\n");
+    fprintf(stddbg, "{GC}    %ld variables.\n", tag_examined[8]);
+    fprintf(stddbg, "{GC}    %ld reference cells.\n", 
+	    tag_examined[XSB_REF] + tag_examined[XSB_REF1]);
+    fprintf(stddbg, "{GC}    %ld references from the local stack.\n",
+	    chain_from_ls);
+    fprintf(stddbg, "{GC}    %ld atom cells.\n", tag_examined[XSB_STRING]);
+    fprintf(stddbg, "{GC}    %ld integer cells.\n", tag_examined[XSB_INT]);
+    fprintf(stddbg, "{GC}    %ld float cells.\n", tag_examined[XSB_FLOAT]);
+    fprintf(stddbg, "{GC}    %ld list cells.\n", tag_examined[XSB_LIST]);
+    fprintf(stddbg, "{GC}    %ld structure cells.\n", 
+	    tag_examined[XSB_STRUCT]);
+    fprintf(stddbg, "{GC}    %ld functor cells.\n",functor);
+    fprintf(stddbg, "{GC}    %ld attributed variable cells.\n", 
+	    tag_examined[XSB_ATTV]);
+
+    if (current_gen > 0)
+      fprintf(stddbg, "{GC} Cells marked on current generation: %ld / %ld = %ld / 100\n",
+	      current_mark, current_gen, (current_mark*100/current_gen));
+    if (old_gens > 0)
+      fprintf(stddbg, "{GC} Cells marked on deep generations: %ld / %ld = %ld / 100\n",
+	      deep_mark, old_gens, (deep_mark*100/old_gens));
+    if (current_gen + old_gens > 0)
+      fprintf(stddbg, "{GC} Total cells marked: %ld / %ld = %ld / 100\n",
+	      deep_mark + current_mark, current_gen + old_gens,
+	      ((deep_mark+current_mark)*100/(current_gen+old_gens)));
+  }
+#endif /* GC_PROFILE */
 
 #endif /* CHAT */
   return(TRUE);
@@ -2914,8 +3360,48 @@ void print_gc_statistics(void)
 {
   char *which = (slide) ? "sliding" : "copying" ;
 
-  printf("  %4d heap garbage collections by %s: collected %d cells in %d millisecs\n\n",
+  printf("{GC} %4d heap garbage collections by %s: collected %ld cells in %f millisecs\n\n",
 	 num_gc, which, total_collected, total_time_gc);
 }
 
 /*--------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/ 
+
+#if defined(GC_PROFILE) && defined(CP_DEBUG)
+void print_cpf_pred(CPtr cpf)
+{
+  char *lcpreg;
+  Psc psc;
+  
+#if 0
+  lcpreg = cp_cpreg(cpf);
+  psc = *(CPtr)(lcpreg-4);
+#else
+  psc = cp_psc(cpf);
+#endif
+  if (psc) {
+    switch(get_type(psc)) {
+    case T_PRED:
+      fprintf(stddbg,"choicepoint(address(%p),pred(%s/%d)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_DYNA:
+      fprintf(stddbg,"choicepoint(address(%p),dyna_pred(%s/%d)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_ORDI:
+      fprintf(stddbg,"choicepoint(address(%p),t_ordi).\n",
+	      cpf);
+      break;
+    case T_UDEF:
+      fprintf(stddbg,"choicepoint(address(%p),unloaded(%s/%p)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    default:
+      fprintf(stddbg,"choicepoint(address(%p),unknown_pred).\n", cpf);
+      break;
+    }
+  } else
+    fprintf(stddbg,"choicepoint(address(%p),unknown_psc).\n", cpf);
+}
+#endif
