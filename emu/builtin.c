@@ -485,6 +485,7 @@ static int ground(CPtr temp)
 
   case XSB_STRUCT:
     arity = (int) get_arity(get_str_psc(temp));
+    if (arity == 0) return TRUE;
     for (j=1; j < arity ; j++) 
       if (!ground(clref_val(temp)+j))
 	return FALSE;
