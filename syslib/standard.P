@@ -148,8 +148,7 @@ told :- conpsc(current_output, CuroutPsc),
 file_exists(F) :- 
 	( atom(F) ->
 		expand_filename(F, EF),
-		conname(EF, Name), 
-		machine_file_exists(Name)
+		machine_file_exists(EF)
 	; var(F) ->
 		abort('Uninstantiated argument 1 of file_exists/1')
 	; abort('Wrong type in argument 1 of file_exists/1')
@@ -166,11 +165,11 @@ open(user,read,userin):-!,
 open(F,read,F):-!, 
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
-	(file_open(Name, 0, File),		% 0: "r"
-	File > 0,                             % file F exists and
-	!,					% is readable.
-	psc_set_prop(PSC, File),
-	psc_set_type(PSC, 5)
+	( file_open(Name, 0, File),		% 0: "r"
+	  File > 0,                             % file F exists and
+	  !,					% is readable.
+	  psc_set_prop(PSC, File),
+	  psc_set_type(PSC, 5)
 	; abort([F,'not a file or not readable, cannot open'])
 	),
 	psc_prop(PSC, File0),
@@ -183,11 +182,11 @@ open(F,read,F):-!,
 open(F,write,F):-!, 
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
-	(file_open(Name, 1, File),		% 0: "w"
-	File > 0,                             % file F exists and
-	!,					% is readable.
-	psc_set_prop(PSC, File),
-	psc_set_type(PSC, 5)
+	( file_open(Name, 1, File),		% 0: "w"
+	  File > 0,                             % file F exists and
+	  !,					% is readable.
+	  psc_set_prop(PSC, File),
+	  psc_set_type(PSC, 5)
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
@@ -200,11 +199,11 @@ open(F,write,F):-!,
 open(F,append,F):-!, 
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
-	(file_open(Name, 2, File),		% 0: "a"
-	File > 0,                             % file F exists and
-	!,					% is readable.
-	psc_set_prop(PSC, File),
-	psc_set_type(PSC, 5)
+	( file_open(Name, 2, File),		% 0: "a"
+	  File > 0,                             % file F exists and
+	  !,					% is readable.
+	  psc_set_prop(PSC, File),
+	  psc_set_type(PSC, 5)
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
@@ -247,8 +246,6 @@ get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 char_blank(Ch) :- Ch >= 0, Ch =< 9.
 char_blank(Ch) :- Ch >= 11, Ch =< 32.
 
-%% NEW
-%%get0(C) :- stat_flag(10, File),	file_get(File, C0), C = C0.
 get0(C) :- stat_flag(CURRENT_INPUT, File), file_get(File, C0), C = C0.
 
 skip(C) :- get0(C0), (C0=C ; skip(C)).
@@ -263,14 +260,10 @@ tab(N) :- tab(N).
 
 read(Istr,T) :- see(Istr),read(T),see(userin).
 
-%% NEW
-%%read(T) :- stat_flag(10, File),	file_read(File, T).
 read(T) :- stat_flag(CURRENT_INPUT, File), file_read(File, T).
 
 write(Ostr,Term):- tell(Ostr),	write(Term),tell(userout).
 
-%% NEW
-%%write(T) :- stat_flag(11, File), file_write(File, T).
 write(T) :- stat_flag(CURRENT_OUTPUT, File), file_write(File, T).
 
 
