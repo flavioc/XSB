@@ -42,8 +42,8 @@
 
 %%:- import cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
-	from cdf_xj.
-%%	from cdf_cdf.
+%%	from cdf_xj.
+	from cdf_cdf.
 :- import get_component_extensional/2 	from cdf_components.
 
 :- import '_$index'/3 from file_op.
@@ -507,11 +507,12 @@ hasAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
 	immed_hasAttr(SCid,RCid,TCid).
 hasAttr(SCid,RCid,TCid) :- 
-	var(RCid), !,  %% relation is free var
+	\+ ground(RCid), !, 
 	is_a_rel(RCid),
 	check_types_checkflag(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_2fix(SCid,RCid,TCid).
 hasAttr(SCid,RCid,TCid) :-
+	% relation is ground.
 	check_types_checkflag(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_2inh(SCid,RCid,TCid).
 /**********/
@@ -598,11 +599,12 @@ classHasAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
 	immed_classHasAttr(SCid,RCid,TCid).
 classHasAttr(SCid,RCid,TCid) :-
-	var(RCid), !,  %% relation is free var
+	\+ ground(RCid), !, 
 	is_a_classHasAttr(RCid),
 	check_types_checkflag(query,classHasAttr(SCid,RCid,TCid)),
 	classHasAttr_2fix(SCid,RCid,TCid).
 classHasAttr(SCid,RCid,TCid) :-
+	%% relation is ground
 	check_types_checkflag(query,classHasAttr(SCid,RCid,TCid)),
 	classHasAttr_2inh(SCid,RCid,TCid).
 
@@ -672,11 +674,12 @@ allAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
 	immed_allAttr(SCid,RCid,TCid).
 allAttr(SCid,RCid,TCid) :-
-	var(RCid), !,  %% relation is free var
+	\+ ground(RCid), !,  
 	is_a_rel(RCid),
 	check_types_checkflag(query,allAttr(SCid,RCid,TCid)),
 	allAttr_2fix(SCid,RCid,TCid).
 allAttr(SCid,RCid,TCid) :-
+	%% relation is ground!!
 	check_types_checkflag(query,allAttr(SCid,RCid,TCid)),
 	allAttr_2inh(SCid,RCid,TCid).
 
