@@ -153,7 +153,7 @@ filterReduce1(Call,Op,Id,Res) :-
 		functor(Comp,Op,3),
 		functor(Idcomp,Op,3),
 	copy_term(Skel,Oskel),
-	get_new_call(Call,Nvar,New_call),   % rather than copy_term,
+	apply_last(Call,Nvar,New_call),   % rather than copy_term,
 					    % since we want variant.
 		arg(1,Idcomp,Id),arg(2,Idcomp,Nvar),arg(3,Idcomp,Res),
 		arg(1,Comp,Oopt),arg(2,Comp,Nvar),arg(3,Comp,Res),
@@ -175,10 +175,45 @@ filterReduce1(Call,Op,Id,Res) :-
 		Idcomp	
 	).
 
-get_new_call(Call,Res,Newcall):- 
+% Keep all lubs in a partial order (HiLog) PO(/2).
+filterPO(Call,Var,PO) :- filterPO1(Call,Var,PO), fail.
+filterPO(Call,Var,PO) :- filterPO1(Call,Var,PO).
+:- table filterPO1/3.
+filterPO1(Call,Var,PO) :- 
+	'_$savecp'(Breg),
+	breg_retskel(Breg,3,Skel,Cs),
+	copy_term(p(Call,Var,Skel),p(Call,Ovar,Oskel)),
+	apply_last(Call,[Var],Newcall),
+	call(Newcall),
+	((get_returns(Cs,Oskel,Leaf),
+	    (Ovar==Var 
+	    ->  true
+            ;   apply_last(PO,[Ovar,Var],PO_call),
+%	        writeln(p(2,PO_call)),
+		call(PO_call)))
+	 ->	fail
+	 ;	(findall(p(Cs,Ovar,Leaf),
+			 (get_returns(Cs,Oskel,Leaf), 
+			  apply_last(PO,[Var,Ovar],PO_call_1),
+%		          writeln(p(32,PO_call_1)),
+			  call(PO_call_1)
+%			  writeln(p(33,PO_call_1))
+			  ),
+			 Rets),
+		 sort(Rets,Rets1),
+		 member(p(Cs,Ovar,Leaf),Rets1),
+%		 writeln(deleting(Ovar)),
+		 delete_return(Cs,Leaf),
+		 fail
+		;
+		 true
+		)
+	).
+
+apply_last(Call,Var,Newcall):-
 	Call =.. List,
-	append(List,[Res],Newlist),
-	Newcall =.. Newlist,!.
+	append(List,Var,Newlist),
+	Newcall =.. Newlist.
 
 get_opt_non_opt(Call,Args,Opt):- 
 	Call =.. [_Functor|List],
