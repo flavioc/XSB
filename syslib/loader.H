@@ -29,7 +29,7 @@
 	%%reset_undef_pred_handlers/0,
 	windows_os_loader/0.
 
-:- import abort/1, catch/3,throw/1 from standard.
+:- import catch/3,throw/1 from standard.
 :- import default_error_handler/1 from error_handler.
 :- import conset/2 from gensym.
 :- import reconsult/1 from consult.
@@ -46,5 +46,6 @@
 	  unload_seg/1, machine_file_exists/1, call0/1,
 	  formatted_io/5, slash/1, dirname_canonic/2
    from machine.
+
 %%:- import call_xsb_hook/3, xsb_undefined_predicate_hook/1 from xsb_hook.
 
