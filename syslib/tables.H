@@ -29,7 +29,7 @@
 	  get_calls_for_table/2, get_returns_for_call/2,
 	  tfindall/3, tnot/1, 't not'/1, sk_not/1,
 	  delete_return/2,
-	  get_call/3, get_calls/3, get_delay_lists/3,
+	  get_call/3, get_calls/3, get_delay_lists/2,
           get_returns/2, get_returns/3,
 	  get_residual/2,
 	  get_lastnode_cs_retskel/4, /* because it is used in intern.P */
