@@ -398,7 +398,7 @@ static char *rectify_pathname(char *inpath, char *outpath) {
 
     switch (length) {
     case 1:
-      if (*inptr1 == '.') {
+      if (*inptr1 == '.' && inptr1 != expanded_inpath) {
 	inptr1 = inptr2;
 	continue; /* the loop */
       }
@@ -441,7 +441,7 @@ static char *rectify_pathname(char *inpath, char *outpath) {
     outpath[outidx] = SLASH;
     outidx++;
   }
-  if (leading_slash2) {
+  if (leading_slash && leading_slash2) {
 #if defined(CYGWIN)
     strncpy(outpath+outidx,"cygdrive",8);
     outidx += 8;
