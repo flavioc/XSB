@@ -59,7 +59,7 @@
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		telling/1,	told/0,
 	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 
-	true/0, 	var/1,		
+	true/0, 	var/1,		walltime/1,
 	write/1,	write/2,	write_prolog/1,	write_prolog/2,
 	writeln/1,	writeln/2,	writeq/1,	writeq/2,
 	write_canonical/1,  write_canonical/2,
@@ -90,7 +90,7 @@
 	  psc_arity/2, psc_import/3, psc_insert/4,
 	  psc_name/2, psc_set_prop/2, psc_prop/2, psc_type/2,
 	  stat_set_flag/2, stat_flag/2, psc_set_type/2, term_compare/3,
-	  stat_sta/1, stat_cputime/1, 
+	  stat_sta/1, stat_cputime/1, stat_walltime/1,
           term_psc/2, term_new/2, term_type/2  %%, close_open_tables/0
 	  from machine.
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 

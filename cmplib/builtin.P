@@ -101,6 +101,7 @@ inline_builtin(string_substitute, 4, STRING_SUBSTITUTE).
 inline_builtin(call0, 1, CALL0).
 inline_builtin(stat_sta, 1, STAT_STA).
 inline_builtin(stat_cputime, 1, STAT_CPUTIME).
+inline_builtin(stat_walltime, 1, STAT_WALLTIME).
 inline_builtin(code_load, 3, CODE_LOAD).
 inline_builtin(buff_set_var, 4, BUFF_SET_VAR).
 inline_builtin(buff_dealloc, 3, BUFF_DEALLOC).

@@ -904,6 +904,8 @@ pp_body(F,I) :-
 
 cputime(X) :- stat_cputime(X0), X is X0/1000.
 
+walltime(X) :- stat_walltime(X0), X is X0/1000.
+
 statistics :- stat_sta(1).
 
 statistics(X) :- stat_sta(X).

@@ -88,6 +88,7 @@ string_substitute(_String, _SubstSpec, _SubstList, _Result) :-
 call0(Term) :- call0(Term).
 stat_sta(X) :- stat_sta(X).
 stat_cputime(X) :- stat_cputime(X).
+stat_walltime(X) :- stat_walltime(X).
 code_load(ByteCodeFileName, InitAddr, Exp) :-
 	code_load(ByteCodeFileName, InitAddr, Exp).
 buff_set_var(Buff, Disp, BuffSize, Var) :-

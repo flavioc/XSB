@@ -66,6 +66,7 @@ standard_symbol(load_dync, 1, consult).			% Not ISO
 standard_symbol(read_canonical, 1, consult).
 standard_symbol(copy_term, 2, basics).
 standard_symbol(cputime, 1, standard).
+standard_symbol(walltime, 1, standard).
 standard_symbol(get_date, 5, standard).
 standard_symbol(current_atom, 1, curr_sym).
 standard_symbol(current_functor, 1, curr_sym).

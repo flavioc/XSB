@@ -158,6 +158,8 @@ extern int set_scope_marker();
 extern int unwind_stack();
 extern int clean_up_block();
 
+extern double realtime_count; /* from subp.c */
+
 /* ------- variables also used in other parts of the system -----------	*/
 
 Cell flags[64];			  /* System flags + user flags */
@@ -706,6 +708,7 @@ void init_builtin_table(void)
   set_builtin_table(DO_ONCE, "do_once");
 
   set_builtin_table(GET_DATE, "get_date");
+  set_builtin_table(STAT_WALLTIME, "stat_walltime");
 
   set_builtin_table(PSC_ENV, "psc_env");
   set_builtin_table(PSC_SPY, "psc_spy");
@@ -1249,6 +1252,12 @@ int builtin_call(byte number)
     ctop_int(4,hour);
     ctop_int(5,minute);
     ctop_int(6,second);
+    break;
+  }
+  case STAT_WALLTIME: {
+    int value;
+    value = (int) ((real_time() - realtime_count) * 1000);
+    ctop_int(1, value);
     break;
   }
   case CODE_LOAD:		/* R1: +FileName, bytecode file to be loaded */

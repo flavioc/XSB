@@ -111,6 +111,7 @@
 #define STORAGE_BUILTIN	       	 77
 
 #define GET_DATE                 80
+#define STAT_WALLTIME            81
 
 #define PSC_ENV		        100
 #define PSC_SPY		        101
