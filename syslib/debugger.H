@@ -80,5 +80,6 @@
 
 :- import conset/2, conget/2 from gensym.
 
+:- import (:-)/2 from usermod.
 
 /* --------------------- end of file debugger.H ----------------------- */
