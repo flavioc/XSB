@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#include <ctype.h>
 
 #define STACKDEPTH 50
 #define MAXARGS 100
