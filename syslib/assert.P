@@ -23,6 +23,7 @@
 */
 
 
+
 /*======================================================================*/
 /* Predicates to add dynamic clauses in Prolog's database:		*/
 /*  - assert(+Clause)							*/
