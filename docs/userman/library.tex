@@ -338,6 +338,11 @@ predicates are described here.
     to include a 
     newline, one must put a newline directly in the atom, and not use
     \verb|\n|.
+    Another difference is that, unlike most C compilers, XSB insists that a
+    single {\tt \%} in the format string signifies format conversion
+    specification. (Some C compilers might output {\tt \%} if it is not
+    folowed by a valid type conversion spec.) So, to output {\tt \%}
+    you must type {\tt \%\%}.
     {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)})  whose arguments
     will be unified with 
     the field values read in.  (The functor symbol of {\tt
@@ -358,6 +363,11 @@ predicates are described here.
     the C escape characters are NOT
     recognized.  So, for example, to include a newline, one must put
     a newline directly in the atom, and not use \verb|\n|.
+    Another difference is that, unlike most C compilers, XSB insists that a
+    single {\tt \%} in the format string signifies format conversion
+    specification. (Some C compilers might output {\tt \%} if it is not
+    folowed by a valid type conversion spec.) So, to output {\tt \%}
+    you must type {\tt \%\%}.
     {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments
     will be output. 
     The functor symbol of {\tt Term} is ignored.
