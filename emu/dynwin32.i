@@ -25,13 +25,13 @@
 */
 
 
+#include <stdio.h>
 #include <windows.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
 #include <errno.h>
-#include <stdio.h>
 
 #include "auxlry.h"
 #include "cell.h"
