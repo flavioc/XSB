@@ -32,11 +32,6 @@
 /*	 was added by David during that period.  Those changes made the	*/
 /*	 algorithm that infer_usage_of_symbol/4 implements linear on	*/
 /*	 the number of symbols in the symbol table.			*/
-/*	    On May of 1993, Kostis made some more improvements on the	*/
-/*	 speed of inferencing and took out the calls to the inference	*/
-/*	 of the exported types stuff.  An earlier version of XSB (say	*/
-/*	 XSB v1.0 Beta or even PSB) should be consulted if it is ever	*/
-/*	 decided to put the typing inference stuff back to XSB.		*/
 /************************************************************************/
 
 /*======================================================================*/
@@ -57,21 +52,21 @@
 
 useinfer(Module, IsModule, ExportList) :-
 	Module = module(SymTab,_DcList,ClList,_QrList),
-	extract_symlist(ex, ExList, SymTab),
+	extract_symlist(ex, ExSymList, SymTab),
 	sym_insert('_$main', 0, [], SymTab, SymMain),
-	( ExList == [] -> 
+	( ExSymList == [] -> 
 		IsModule = 0,		% No export list, is a global module
 		sym_propin(global, SymMain), 
 		infer_export_fill(SymTab, SymTab, ClList, global)
 	; IsModule = 1,
 	  ( sym_prop(im(_Mod),SymMain) -> true ; sym_propin((local),SymMain) ),
-	  infer_usage([SymMain|ExList], Module),
+	  infer_usage([SymMain|ExSymList], Module),
 	  infer_export_fill(SymTab, SymTab, ClList, (local)),
 	  infer_fillunused(SymTab)
 	),
 	retractall('_$multifile'(_)),
 	retractall('_$multifile2'(_,_,_)),
-	get_sym_names(ExList, ExportList).
+	get_sym_names(ExSymList, ExportList).
 
 
 /*======================================================================*/
@@ -211,7 +206,6 @@ infer_fillunused(SymTab) :-
 	infer_fillunused(RestTab).
 infer_fillunused(_).
 
-
 /*======================================================================*/
 /* add_if_necessary(+Sym, +InList, -OutList)				*/
 /*	Try to add symbol Sym in list InList giving OutList only when	*/
@@ -233,9 +227,9 @@ add_if_necessary(Sym, InList, OutList) :-
 /*----------------------------------------------------------------------*/
 
 get_sym_names([], []).
-get_sym_names([Sym|ExportList0], [N/A|ExportList]) :-
+get_sym_names([Sym|SymList], [N/A|PredList]) :-
         sym_name(Sym, N, A),
-        get_sym_names(ExportList0, ExportList).
+	get_sym_names(SymList, PredList).
 
 /*----------------------------------------------------------------------*/
 /* pred_implicitly_imported_from(+Sym, -Mod)				*/

@@ -117,7 +117,7 @@ inline_builtin(sys_errno, 1, SYS_ERRNO).
 
 inline_builtin(file_stat, 3, FILE_STAT).
 inline_builtin(file_writequoted, 2, FILE_WRITEQUOTED).
-inline_builtin(fast_ground, 1, FAST_GROUND).
+inline_builtin(ground, 1, GROUND).
 
 inline_builtin(intern_string, 2, INTERN_STRING).
 inline_builtin(expand_filename, 2, EXPAND_FILENAME).
@@ -130,8 +130,7 @@ inline_builtin(psc_spy, 2, PSC_SPY).
 inline_builtin(psc_tabled, 2, PSC_TABLED).
 
 % inline_builtin(is_incomplete, 4, IS_INCOMPLETE). % Should not be inlined -- Kostis !!
-% inline_builtin(get_osp_breg, 2, GET_OSP_BREG). % Not really used at this point
-% inline_builtin(cut_if_leader, 3, CUT_IF_LEADER). % Not really used at this point
+
 inline_builtin(get_ptcp, 1, GET_PTCP).
 inline_builtin(get_subgoal_ptr, 2, GET_SUBGOAL_PTR).
 inline_builtin(dereference_the_bucket, 2, DEREFERENCE_THE_BUCKET).
