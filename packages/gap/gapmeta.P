@@ -1,0 +1,154 @@
+/* File:      gapmeta.P
+** Author(s): Terrance Swift
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** 
+*/
+
+:- op(1200,xfx,<-).
+:- op(1000,xfy,and).
+:- op(1000,xfy,or).
+
+:- import append/3, copy_term/2, memberchk/2 from basics.
+:- import get_returns/3, delete_return/2, breg_retskel/4 from tables.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Meta Interpreter and Tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+meta(true):-!.
+meta(','(Term1,Term2)):-!,
+	meta(Term1),
+	meta(Term2).
+meta(Call:[Type,Var]):-!,
+	baglub(Type,Call,Var).
+meta(gap_not(Call:[Type,Var])):-!,
+	neg_baglub(Type,Call,Var).
+meta(Term):- call(Term).
+
+baglub(Type,Call,Res):- 
+	bottom(Type,Bot),
+	baglub1(Call,Type,Res1,Bot),
+	eval(Type,Res1,Res).
+
+neg_baglub(Type,Call,Res):- 
+	bottom(Type,Bot),
+	baglub1(Call,Type,Res1,Bot),
+	negate(Type,Res1,Neg_res),
+	eval(Type,Neg_res,Res).
+
+eval(_Type,Val1,_Val2):- var(Val1),!.
+eval(_Type,Val1,Val2):- var(Val2),Val1 = Val2,!.
+eval(Type,Val1,Val2):- gt1(Type,Val1,Val2).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% baglub1/4
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/* Note: this predicate follows the paradigm of predicates in
+aggregs.P, but does not use HiLog. */
+
+:- table baglub1/4.  
+baglub1(_,_,Bot,Bot).  		/* A:bottom is true of all atoms */
+baglub1(Call,Type,Res,Bot):-
+	'_$savecp'(Breg),
+	breg_retskel(Breg,4,Skel,Cs),
+				/* the previous two literals form a
+				   low-level hack to instantiate Cs to
+				   a pointer to the root of the answer
+				   trie for the current call (via Breg) */
+	copy_term(p(Call,Res,Skel),p(Call,Ovar,Oskel)),
+	meta_expand(Call:[Type,Nvar]),
+	(get_returns(Cs,Oskel,Leaf),
+ 	 lub(Type,Ovar,Nvar,Res),
+	 Res \== Ovar,
+	 delete_return(Cs,Leaf)
+				/* delete returns that have been
+				   lubbed over.  There "should" be at
+				   most one */
+	 ;
+  	 \+ get_returns(Cs,Oskel,Leaf),
+ 	 lub(Type,Bot,Nvar,Res)
+	).
+
+meta_expand(Term):-
+	'<-'(Term,Body),
+	meta(Body).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Code for Sample Lattices
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+lub(max,A,B,Max):-	max(A,B,Max).
+bottom(max,0).
+gt1(max,A,B):- max(A,B,A).
+
+max(One,Two,Max):- One > Two -> Max = One ; Max = Two.
+
+
+lub(min,A,B,Min):-	min(A,B,Min).
+bottom(min,infinity).
+gt1(min,A,B):- min(A,B,A).
+
+min(One,infinity,One):-!.
+min(infinity,Two,Two):-!.
+min(One,Two,Min):- One > Two -> Min = Two ; Min = One.
+
+lub(set,A,B,Union):-	append(A,B,App),sort(App,Union).
+bottom(set,[]).
+gt1(set,A,B):- subset(B,A).
+
+subset([],_).
+subset([H|T],List):-
+	memberchk(H,List),
+	subset(T,List).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Sample Programs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ex. ?- meta(sp(a,X):[min,T]).
+sp(X,Y) : [min,D1] <- sp(X,Z): [min,D2], edge(Z,Y,D), D1 is D2 + D.
+sp(X,Y) : [min,C] <- edge(X,Y,C).
+
+edge(a,d,1).
+edge(d,e,1).
+edge(e,c,1).
+edge(a,b,1).
+edge(b,a,1).
+edge(b,c,4).
+
+/* shows off XSB's lack of precision */
+% ex. ?- meta(p:[max,Y]).
+p: [max,Y] <- Y=0.
+p: [max,Y] <- p: [max,X],Y is (1+X)/2.
+
+% ex: ?- meta(r(X):[set,Y]).
+r(X):[set,V] <- q(X) : [set,V].
+
+% ex: ?- meta(p:[set,Y]).
+p:[set,V] <- q(_X) : [set,V].
+
+q(a) : [set,[a]] <- true.
+q(b) : [set,[b]] <- true.
+
+q(a,_X):[set,[a]] <- true.
+q(_X,b):[set,[b]] <- true.
+
+
