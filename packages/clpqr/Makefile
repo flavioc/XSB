@@ -23,6 +23,8 @@
 ## 
 ##
 
+XSBDIR=../..
+
 ALL = 	arith.O arith_r.O bv.O class.O clpr.O ineq.O itf3.O \
 	fourmotz.O nf.O ordering.O project.O redund.O store.O \
 	dump.O
@@ -35,10 +37,18 @@ Option = [spec_off]
 #
 # Self-make: Version 1.9 or higher
 #
-XSB=../bin/xsb
+XSB=$(XSBDIR)/bin/xsb
 Prolog = $(XSB)
 #
 #-----------------------------------------------------------------------#
+
+# Make sure warnings are saved in a file.
+SVFILE = '$(XSBDIR)/build/.clpqr.tmp'
+OWRITE = 1
+STDWARN = 3
+STDERR = 2
+HDRMSG = "While compiling XSB/packages/clpqr:"
+
 
 # continue to the next when one error occurs
 .IGNORE:
@@ -46,19 +56,27 @@ Prolog = $(XSB)
 # suffix rules
 .SUFFIXES: .P .O .H
 
-.H.P:
-	echo 'mc($*, $(Option)).' >> cmd...
+all: init $(ALL) finish
+	@touch cmd...
+	$(Prolog) < cmd...
+	@rm cmd...
+	@cat $(SVFILE)
 
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 
-all: $(ALL)
-	@touch cmd...
-	$(Prolog) < cmd...
-	/bin/rm cmd...
+init:
+	/bin/rm -f $(SVFILE)
+	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
+	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
+	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
+	@echo "file_flush($(STDWARN), _)." >> cmd...
 
-# Unfortunately, this needs to be commented on the NeXT.
-# %.O:	%.H
+finish:
+	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
+
 
 .DONE:
 	echo Done
+
