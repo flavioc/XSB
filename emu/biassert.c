@@ -1957,7 +1957,7 @@ bool compiled_to_dynamic( /* +PSC, +OldPred */ )
 }
 
 bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
-{   CPtr p, /* tip, */ tp ;
+{   CPtr p, tp ;
     tab_inf_ptr tip; 
     int Loc ;
     Psc PSC = (Psc)ptoc_int(1);
