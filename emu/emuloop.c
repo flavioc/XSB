@@ -74,6 +74,7 @@ extern tab_inf_ptr UglyHackForTip;
 
 #ifdef DEBUG
 extern void printterm(Cell, byte, int);
+extern void print_completion_stack(void);
 #endif
 
 /*----------------------------------------------------------------------*/
