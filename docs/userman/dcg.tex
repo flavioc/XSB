@@ -342,7 +342,7 @@ The library predicates of XSB that support DCGs are the following:
     true.  
 
     The database of {\tt word/3} facts is assumed to have been
-    previously set up via a call to {\tt tphrase\_set\_string/1}.  If
+    previously set up via a call to {\tt tphrase\_set\_string/1} (or variant).  If
     the databse of {\tt word/3} facts is empty, {\tt tphrase/1} will
     abort.
 
@@ -391,7 +391,7 @@ The library predicates of XSB that support DCGs are the following:
     begins.
 
 \ouritem{'C'(?L1, ?Terminal, ?L2)}\index{{\tt `C'/3}}
-    This predicate generally is of no concern to the user.  Rather it is used 
+This predicate generally is of no concern to the user.  Rather it is used 
     in the transformation of terminal symbols in 
     grammar rules and expresses the fact that {\tt L1} is connected 
     to {\tt L2} by the terminal {\tt Terminal}. This predicate is
@@ -405,8 +405,8 @@ The library predicates of XSB that support DCGs are the following:
     The name 'C' was chosen for this predicate so that another useful
     name might not be preempted.
 
-\ouritem{tphrase\_set\_string(+List)}\index{{\tt tphrase\_set\_string/1}} 
-    This predicate 
+\ouritem{tphrase\_set\_string(+List)}\index{{\tt tphrase\_set\_string/1}}
+This predicate 
 
 \begin{enumerate}
 \item abolishes all tables;
@@ -418,11 +418,24 @@ described in Section \ref{sec:dcg_tabling}.
 \noindent
 implicitly changing the DCG mode from list to datalog.
 
-\ouritem{tphrase\_set\_string\_keeping\_tables(+List)}\index{{\tt tphrase\_set\_string\_keeping\_tables/1}} 
-
-    This predicate is the same as {\tt tphrase\_set\_string}, execpt
+\ouritem{tphrase\_set\_string\_keeping\_tables(+List)}\index{{\tt tphrase\_set\_string\_keeping\_tables/1}}
+This predicate is the same as {\tt tphrase\_set\_string}, except
 it does not abolish any tables.  When using this predicate, the
 user is responsible for explicitly abolishing the necessary tables.
+
+\ouritem{tphrase\_set\_string\_auto\_abolish(+List)}\index{{\tt tphrase\_set\_string\_auto\_abolish/1}}
+This predicate is the same as {\tt tphrase\_set\_string}, except
+it abolishes tables that have been indicated as dcg-supported tables
+by a previous call to {\tt set\_dcg\_supported\_table/1}.
+
+\ouritem{set\_dcg\_supported\_table(+TabSkel)}\index{{\tt set\_dcg\_supported\_table/1}}
+This predicate is used to indicate to the DCG subsystem that a
+particular tabled predicate is part of a DCG grammar, and thus the
+contents of its table depends on the string being parsed.  {\tt
+TabSkel} must be the skeleton of a tabled predicate.  When {\tt
+tphrase\_set\_string\_auto\_abolish/1} is called, all tables that have
+been indicated as DCG-supported by a call to this predicate will be
+abolished.
 
 \ournewitem{dcg(+DCG\_Rule, ?Prolog\_Clause)}{dcg}
 \index{{\tt dcg/2}}
