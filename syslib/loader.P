@@ -412,11 +412,6 @@ libpath(P) :- libraries_loaded,
 	      library_directory(Dir), 
 	      expand_filename(Dir, P1),
 	      dirname_canonic(P1, P).
-libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),  % get the installation dir
-	      intern_string(InstallDir1, InstallDir),
-	      slash(Slash),
-	      %% <installdir>/lib/  (slash type depends on the OS)
-	      fmt_write_string(P, '%s%slib%s', f(InstallDir, Slash, Slash)).
 libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),
 	      intern_string(InstallDir1, InstallDir),
 	      slash(Slash),
@@ -427,6 +422,11 @@ libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),
 	      slash(Slash),
 	      %% <installdir>/cmplib/  (slash type depends on the OS)
 	      fmt_write_string(P,'%s%scmplib%s',f(InstallDir, Slash, Slash)).
+libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),  % get the installation dir
+	      intern_string(InstallDir1, InstallDir),
+	      slash(Slash),
+	      %% <installdir>/lib/  (slash type depends on the OS)
+	      fmt_write_string(P, '%s%slib%s', f(InstallDir, Slash, Slash)).
 libpath(P) :- slash(Slash), str_cat('.', Slash,P).
 
 /*

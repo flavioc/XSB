@@ -84,9 +84,6 @@
 	see(userin),
 	told,
 	tell(userout),
-	(conget('_$_deb_autopilot',2),!  % unless trace autopilot is permanent,
-	;   conset('_$_deb_autopilot',0) % reset debugger autopilot mode 
-	),
 	file_nl(STDFDBK), file_write(STDFDBK, 'flora ?- ').
 
 '_$_$_flora_loop_guard'(S) :- (member(eof,S) -> end ; fail).

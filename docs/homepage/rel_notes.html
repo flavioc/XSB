@@ -22,13 +22,24 @@ processes. See <a href="manual/manual2.pdf">XSB Manual, Voulume2, Communication
 with Subprocesses.</a>
 
 <p>
-<h>C preprocessor:</h>
+<b>C preprocessor:</b>
 There is now a compiler option, <tt>cpp_on</tt>, which tells the XSB compiler
 to put the source through the C preprocessor.
 
 <p>
 <B>Enhancements to the sockets interface:</B>
-New calls such as <tt>socket_set_option</tt>, etc.
+New calls such as <tt>socket_set_option, socket_select,</tt>, etc.
+
+<p>
+<b>I/O enhancements:</b>
+Certain socket calls and file I/O calls can be timed-out.
+There are several additions to the low-level I/O library, such as
+<tt>file_clone, file_reopen, pipe_open</tt>.
+
+<p>
+<b>Debugger enhancements:</b>
+Many additional options: profiling, verbose skip, extensive trace control
+facility.
 
 <h3>New Packages</h3>
 

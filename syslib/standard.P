@@ -66,8 +66,6 @@ see0(F) :-
 	; abort([F,'not a file or file not readable, cannot see!'])
 	),
 	psc_prop(PSC, File0),
-	%% NEW
-	%%stat_set_flag(10, File0),
 	stat_set_flag(CURRENT_INPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC).
@@ -88,8 +86,6 @@ seen :- conpsc(current_input, CurinPsc),
 		psc_set_type(FilePSC, 0)
 	; true
 	),
-	%% NEW
-	%%stat_set_flag(10, 0),
 	stat_set_flag(CURRENT_INPUT, 0),
 	conpsc(userin, UserPsc),
 	psc_set_prop(CurinPsc, UserPsc).
@@ -117,8 +113,6 @@ tell0(F) :-
 	; abort([F,': Not a file or file not writable, cannot tell!'])
 	),
 	psc_prop(PSC, File0),
-	%% NEW
-	%%stat_set_flag(11, File0),
 	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_output, CuroutPsc),
 	psc_set_prop(CuroutPsc, PSC).
@@ -139,8 +133,6 @@ told :- conpsc(current_output, CuroutPsc),
 		psc_set_type(FilePSC, 0)
 	; true
 	),
-	%% NEW
-	%%stat_set_flag(11, 1),
 	stat_set_flag(CURRENT_OUTPUT, 1),
 	conpsc(userout, UserPsc),
 	psc_set_prop(CuroutPsc, UserPsc).
@@ -173,8 +165,6 @@ open(F,read,F):-!,
 	; abort([F,'not a file or not readable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	%% NEW
-	%%stat_set_flag(10, File0),
 	stat_set_flag(CURRENT_INPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
@@ -190,8 +180,6 @@ open(F,write,F):-!,
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	%% NEW
-	%%stat_set_flag(11, File0),
 	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
@@ -207,8 +195,6 @@ open(F,append,F):-!,
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	%% NEW
-	%%stat_set_flag(11, File0),
 	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
@@ -231,10 +217,6 @@ close(F) :-
 
 nl(Ostr) :- tell(Ostr),nl,tell(userout).
 
-/* OLD
-nl :- (windows_os -> put(13), put(10) ;	  put(10) ).
-*/
-%% NEW
 nl :- (windows_os 
       ->  put(CH_RETURN), put(CH_NEWLINE)
       ;	  put(CH_NEWLINE) ).
@@ -242,7 +224,7 @@ nl :- (windows_os
 
 get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 
-%% charcters ignored (treat as blanks)
+%% characters ignored (treat as blanks)
 char_blank(Ch) :- Ch >= 0, Ch =< 9.
 char_blank(Ch) :- Ch >= 11, Ch =< 32.
 
@@ -269,8 +251,6 @@ write(T) :- stat_flag(CURRENT_OUTPUT, File), file_write(File, T).
 
 writeln(Ostr,Term):- tell(Ostr),writeln(Term),tell(userout).
 
-%% NEW
-%%writeln(T) :- stat_flag(11, File), file_write(File, T), file_nl(File).
 writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 
 display(T) :- telling(F), tell(userout), write(T), told, tell(F).	
@@ -278,15 +258,11 @@ display(T) :- telling(F), tell(userout), write(T), told, tell(F).
 
 write_prolog(Ostr,Term):- tell(Ostr),write_prolog(Term),tell(userout).
 
-%% NEW
-%%write_prolog(T) :- stat_flag(11, File), file_write_prolog(File, T).
 write_prolog(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_prolog(File, T).
 
 
 writeq(Ostr,Term):- tell(Ostr),	writeq(Term),tell(userout).
 
-%% NEW
-%%writeq(T) :- stat_flag(11, File), file_write_quoted(File, T).
 writeq(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_quoted(File, T).
 
 
@@ -294,8 +270,6 @@ write_canonical(Ostr,Term):- tell(Ostr),
 			     file_write_canonical(Ostr,Term),
 			     tell(userout).
 
-%% NEW
-%%write_canonical(T) :- stat_flag(11, File), file_write_canonical(File, T).
 write_canonical(T) :-
 	stat_flag(CURRENT_OUTPUT, File),
 	file_write_canonical(File, T).
@@ -991,27 +965,15 @@ messageln(Message, File) :-
 /* === expose a goal for tracing ====================================== */
  
 call_expose(Goal) :-
-	%% NEW
-	%%stat_flag(5,N),
 	stat_flag(HIDE_STATE,N),
 	(N =:= 0
 	 ->     call_c(Goal)
 	 ;      N1 is N-1,
-		%% NEW
-	        %%(stat_set_flag(5,N1)
 		(stat_set_flag(HIDE_STATE,N1)
 		 ;
-		 %% NEW
-		 %% stat_set_flag(5,N),fail
 		 stat_set_flag(HIDE_STATE,N),fail
 		),
 		call_c(Goal),
-	        %% NEW
-	        /* OLD
-		(stat_set_flag(5,N)
-		 ;
-		 stat_set_flag(5,N1),fail
-		*/
 		(stat_set_flag(HIDE_STATE,N)
 		 ;
 		 stat_set_flag(HIDE_STATE,N1),fail

@@ -76,9 +76,6 @@ interpreter1 :-
 	trimcore,
 	stat_set_flag(HIDE_STATE, 1), %% hide call interceptions.
 	stat_set_flag(INVOKE_NUM, 0),
-	(conget('_$_deb_autopilot',2),!  % unless trace autopilot is permanent,
-	;   conset('_$_deb_autopilot',0) % reset debugger autopilot mode 
-	),
 	conset('_$break_level', 0),
 	print_debug_state,
 	prompt(Prompt,Prompt),

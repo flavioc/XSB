@@ -1,8 +1,8 @@
 /* File:      debugger_data.P
-** Author(s): David S. Warren
+** Author(s): David S. Warren, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1993-1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -31,7 +31,8 @@
 **    trace_standard_predicate(Pred,Arity): normally trace doesn't go inside
 **    	      	      	      	      	    standard preds, ulsess this is set
 **    trace_this_print(P,A):      turn on trace user prompt and keep tracing
-**    trace_this_noprint(P,A):    turn off trace user prompt but keep tracing
+**    trace_this_noprint(P,A):    turn off trace user prompt but keep tracing;
+**    	      	      	      	  the prompt for P is not displayed
 **
 **    trace_this_enable_print_on_redo(P,A): these predicates turn on trace
 **    	      	      	      	      	    prompt on "Redo". We already must
@@ -42,7 +43,7 @@
 */
 
 
-% hide only this call, leave show on
+% hide only this call, trace embedded calls
 hide_this_show(call_expose,1).
 hide_this_show(',',2).
 hide_this_show(';',2).
@@ -51,6 +52,7 @@ hide_this_show('->',2).
 % hide this call and all embedded calls
 hide_this_hide('_$call',1).
 hide_this_hide(trace,0).
+hide_this_hide(debug_ctl,2).
 hide_this_hide(notrace,0).
 hide_this_hide(debug,0).
 hide_this_hide(nodebug,0).
@@ -62,23 +64,32 @@ hide_this_hide(consult,1).
 hide_this_hide(reconsult,1).
 hide_this_hide(compile,1).
 
-%% trace inside call
+%% trace inside these standard predicates
 trace_standard_predicate(call,1).
-%% but control the prompts that are actually printed
+%% but control debugger prompts that are actually printed
+%% trace inside call_c and print debugger prompts (but not call_c itself)
 trace_this_print(call_c, 1).
+%% trace inside call and goal_cut_trans, but don't print anything
 trace_this_noprint(call, 1).
 trace_this_noprint(goal_cut_trans, 3).
 
+%% Trace this standard predicate
 trace_standard_predicate(findall,3).
 %% but control the prompts that are actualy printed
 trace_this_noprint(findall, 4). %% this is an auxiliary pred for findall
 
+trace_standard_predicate(setof,3).
+trace_standard_predicate(bagof,3).
+trace_this_noprint(bagof1, 3).
+
+%% Trace this standard predicate
 trace_standard_predicate(once,1).
 
+%% On Redo, enable printing of debug prompts
 trace_this_enable_print_on_redo(call, 1).
 
 % call_c is eliminated, so what is called is traced.
-is_xpar_call(call_c,1).
+is_xpar_call(call_c, 1).
 
 
 '_$_debugger_data_loaded'.

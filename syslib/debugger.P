@@ -59,13 +59,81 @@ trace_stack_max :- stat_set_flag(TRACE_STA,1), debug.  % record max space usage
 notrace_stack_max :- stat_set_flag(TRACE_STA,0).       % undo above
 dump :- ll_write('dump not implemented yet').
 trace :- debug, stat_set_flag(TRACE,1).	    	       % trace = 1
-notrace :-
-	stat_set_flag(TRACE,0),	       	       	% trace = 0
-	nodebug.				% ??dsw added, (no load msgs)
+notrace :- stat_set_flag(TRACE,0),	       	       	% trace = 0
+	   nodebug.				% ??dsw added, (no load msgs)
 
-				% permanent autopilot, until turned off
-trace_autopilot(on) :- conset('_$_deb_autopilot', 2). 
-trace_autopilot(off) :- conset('_$_deb_autopilot', 0).
+%% Trace control
+debug_ctl(skip, print)   :- !, leash([]).
+debug_ctl(skip, noprint) :- !, leash(['Call','Exit','Redo','Fail']).
+debug_ctl(leash, L)      :- is_list(L), !, leash(L).
+debug_ctl(show, L)       :- is_list(L), !, show(L).
+
+debug_ctl(profile, off)  :- retractall('_$_deb_cputime_stack'(_)).
+debug_ctl(profile, on)   :- cputime_stack(_Rest), !.    % already set-no effect
+debug_ctl(profile, on)   :- set_cputime_stack([]).      % initialize stack
+
+%% redirect STDDBG, STDOUT to File. File can be /dev/tty
+debug_ctl(redirect,File) :-
+	file_reopen(File,w,STDDBG,_),
+	file_clone(STDDBG,STDERR,_),
+	file_clone(STDDBG,STDWARN,_),
+	file_clone(STDDBG,STDOUT,_).
+%% This won''t work on windows! What will?
+debug_ctl(redirect,tty) :-
+	file_reopen('/dev/tty',w,STDDBG,_),
+	file_reopen('/dev/tty',w,STDERR,_),
+	file_reopen('/dev/tty',w,STDWARN,_),
+	file_reopen('/dev/tty',w,STDOUT,_).
+
+debug_ctl(hide, L)   :- user_hide(L). % don''t trace inside the predicates in L
+debug_ctl(unhide, L) :- user_unhide(L). % cancel hide
+debug_ctl(hidden, L) :- user_hidden(L). % show which calls are hidden
+
+debug_ctl(X,Y) :- abort(('Invalid trace control option `', X,
+		     ''' or bad option value `', Y, '''')).
+
+cputime_stack(X) :- '_$_deb_cputime_stack'(X), is_list(X).
+set_cputime_stack(L) :- retractall('_$_deb_cputime_stack'(_)),
+			assert('_$_deb_cputime_stack'(L)).
+
+push_cputime :- 
+	cputime_stack(Rest), !,
+	cputime(T), L = [T|Rest],
+	set_cputime_stack(L).
+push_cputime.
+
+pop_cputime(CallNum,CallType,print) :-
+	cputime_stack([H|Rest]),
+	!,
+	cputime(T),
+	set_cputime_stack(Rest),
+	deb_writepref(cpu),
+	ll_write(' ('),ll_write(CallNum),ll_write(') '),
+	ll_write(CallType), ll_write(' cpu time: '),
+	Delta is T-H,
+	ll_write(Delta), ll_nl.
+pop_cputime(_CallNum,_CallType,noprint) :-
+	cputime_stack([_H|Rest]),
+	!,
+	set_cputime_stack(Rest).
+pop_cputime(_CallNum,_CallType,_).
+
+%% Hide (don''t trace) inside the argument predicates
+user_hide([]).
+user_hide([P/A|T]) :-
+	assert('_$_deb_user_hidden'(P,A)),
+	user_hide(T).
+
+%% Unhide all
+user_unhide(X) :- var(X), retractall('_$_deb_user_hidden'(_,_)).
+%% Unhide specific pred/arity pairs
+user_unhide([]).
+user_unhide([P/A|T]) :-
+	retractall('_$_deb_user_hidden'(P,A)),
+	user_unhide(T).
+
+%% Show preds hidden by the user
+user_hidden(L) :- setof(P/A, '_$_deb_user_hidden'(P,A), L).
 
 /* -- set debug on ------------------------------------------------ */
 
@@ -105,35 +173,30 @@ debugging :-
 	get_psc_info(Call, PSC, P, A),
 	%% set_print_control is needed here too, if is_xpar_call 
 	%% predicates are used to control printing
-	set_print_control(P,A,_Type),
-	(is_xpar_call(P,A)
-	 ->	term_arg(Call,1,Ncall),
-		'_$deb_trace'(Ncall)
-	 ; Call = '_$load_undef'(Ncall)
-	 ->	'_$deb_trace'(Ncall)
-	 ; must_load(PSC)
-	 ->	'_$deb_trace'(Call)
-	 ; hide_this_show(P,A)
-	 ->	basic_call(0,PSC,Call)	% and turn tracing back on
-	 ; hide_this_hide(P,A)
-	 ->	basic_call(1,PSC,Call)	% and leave tracing off
-	 ; show_this_hide_call(P,A)
-	 ->	stat_flag(INVOKE_NUM,N),
-	        ('_$_deb_print_hidden' -> true
-		; N1 is N+1,stat_set_flag(INVOKE_NUM,N1)
-		),		% invoke_num++
-		( S=\=0
-		 ->	basic_call(1,PSC,Call)	% skipping or quasi_skipping 
-		 ;	deb_enterpred(N, PSC, Call, intrace, L, 1)
-		)
-	 ;	stat_flag(INVOKE_NUM,N),
-	        ('_$_deb_print_hidden' -> true
-		; N1 is N+1,stat_set_flag(INVOKE_NUM,N1)
-		),		% invoke_num++
-		( S=\=0
-		 ->	basic_call(0,PSC,Call)	% skipping or quasi_skipping 
-		 ;	deb_enterpred(N, PSC, Call, intrace, L, 0)
-		)
+	set_print_control(P,A,_),
+	(   is_xpar_call(P,A)
+	->  term_arg(Call,1,Ncall), '_$deb_trace'(Ncall)
+	;   Call = '_$load_undef'(Ncall)
+	->  '_$deb_trace'(Ncall)
+	;   must_load(PSC)
+	->  '_$deb_trace'(Call)
+	;   hide_this_show(P,A)
+	->  basic_call(0,PSC,Call) % and turn tracing back on
+	;   hide_this_hide(P,A)
+	->  basic_call(1,PSC,Call) % and leave tracing off
+	;   show_this_hide_call(P,A)
+	->  stat_flag(INVOKE_NUM,N),
+	    N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
+	    (	S=\=0
+	    ->	basic_call(1,PSC,Call) % skipping/quasi_skipping, notrace
+	    ;	deb_enterpred(N, PSC, Call, intrace, L, 1)
+	    )
+	;   stat_flag(INVOKE_NUM,N),
+	    N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
+	    (	S=\=0
+	    ->	basic_call(0,PSC,Call) % skipping or quasi_skipping 
+	    ;	deb_enterpred(N, PSC, Call, intrace, L, 0)
+	    )
 	).
 
 
@@ -144,6 +207,8 @@ show_this_hide_call(P,A) :- trace_standard_predicate(P,A), !, fail.
 show_this_hide_call(P,A) :- standard_symbol(P,A,_).
 %% show_this_hide is constructed dynamically
 show_this_hide_call(P,A) :- show_this_hide(P,A).
+%% Preds hidden by the user
+show_this_hide_call(P,A) :- '_$_deb_user_hidden'(P,A).
 
 
 must_load(PSC) :-
@@ -169,9 +234,9 @@ must_load(PSC) :-
 	    stat_set_flag(INVOKE_NUM,N1), % invoke_num++
 	    stat_flag(SKIPPING, S),	% S = skipping
 	    psc_spy(PSC, K),
-	    (	S =:= 0, (K=:=128 ; K=:=192, indeed_spy(Call))
-	    ->	
-		stat_set_flag(TRACE, 1), % trace = 1
+	    (	S == 0, (K=:=128 ; K=:=192, indeed_spy(Call))
+	    ->	%% Not skipping
+		stat_set_flag(TRACE, 1),
 		deb_enterpred(N,PSC,Call,inspy, L, 0)
 	    ;	basic_call(0,PSC,Call) % skipping
 	    )
@@ -185,68 +250,70 @@ get_psc_info(Call, PSC, P, A) :-
 	 ;	term_psc(Call,PSC), psc_name(PSC,P), psc_arity(PSC,A)
 	).
 
+%% Restore showing trace on Redo for qualified predicates
 set_print_control(Pred, Arity, Type) :- 
 	Type == 'Redo',
 	!,
-	(trace_this_enable_print_on_redo(Pred,Arity) 
-	 -> (retractall('_$_deb_print_hidden') -> true
-	    ;	true
-	    )
-	; true
-	).
-set_print_control(_Pred, _Arity, Type) :- 
+	(trace_this_enable_print_on_redo(Pred,Arity) -> restore_shown ; true).
+%% Enable print trace on Fail or Exit
+set_print_control(Pred, Arity, Type) :- 
 	(Type == 'Exit' ; Type == 'Fail'),
 	!,
-	(retractall('_$_deb_print_hidden') -> true
-	;   true
-	).
-set_print_control(Pred, Arity, _Type) :-
-	(trace_this_print(Pred, Arity)
-	 ->     retractall('_$_deb_print_hidden')
-	 ;      true
-	),
-	(trace_this_noprint(Pred, Arity)
-	 ->     assert('_$_deb_print_hidden')
-	 ;      true
-	).
+	(trace_this_noprint(Pred, Arity) -> restore_shown ; true).
+%% On Call, enable printing the trace for some predicates (trace_this_print)
+%% and disable for others (trace_this_noprint)
+set_print_control(Pred, Arity, _) :-
+	!,
+	(trace_this_print(Pred, Arity) -> restore_shown ; true),
+	(trace_this_noprint(Pred, Arity) -> show_nothing ; true).
 
 
 indeed_spy(Call) :- \+ (\+ ('_b_SPY_condition'(Call))).
 
 /* main tracing interpreter-------------------------------------------*/
 
-deb_enterpred(N,PSC,Call,Spy,L,Tr) :- 		% L = 1
+deb_enterpred(N,PSC,Call,Spy,L,Tr) :- 		   % L = 1
 	%%ll_write('in debugger'),ll_nl,
+	conset('_$_verbose_skip_current_callno', N),
 	deb_traceget(N,Spy,'Call',Call,_),
+	push_cputime,		% push cpu time on the stack, if on
 	(   basic_call(Tr,PSC,Call),
+	    %% Call succeded
 	    (	stat_flag(HIDE_STATE,OV), NV is OV+1,
-		stat_set_flag(HIDE_STATE,NV), % hide_state ++
-		stat_set_flag(9, 0), % quasi_skipping = 0
-		stat_set_flag(8, 0), % skipping = 0
+		stat_set_flag(HIDE_STATE,NV),      % hide_state ++
+		stat_set_flag(QUASI_SKIPPING, 0),  % quasi_skipping = 0
+		stat_set_flag(SKIPPING, 0),        % skipping = 0
 		(   still_displaying(Spy)
-		->  deb_traceget(N,Spy,'Exit',Call,_)
+		->  conset('_$_verbose_skip_current_callno', N),
+		    deb_traceget(N,Spy,'Exit',Call,_),
+		    restore_leash % restore old leash after Exit
 		;   true
 		),
-		stat_set_flag(HIDE_STATE,OV) % hide_state --
-	    ;	
+		stat_set_flag(HIDE_STATE,OV)       % hide_state --
+	    ;	%% Redo
 		stat_flag(HIDE_STATE,OV), NV is OV+1,
-		stat_set_flag(HIDE_STATE,NV), % hide_state++
+		stat_set_flag(HIDE_STATE,NV),      % hide_state++
 		(   still_displaying(Spy)
-		->  deb_traceget(N,Spy,'Redo',Call,_)
+		->  conset('_$_verbose_skip_current_callno', N),
+		    deb_traceget(N,Spy,'Redo',Call,_),
+		    push_cputime   % push cpu time on the stack, if on
 		;   true
 		),
-		stat_set_flag(HIDE_STATE,OV), % hide_state --
+		stat_set_flag(HIDE_STATE,OV),      % hide_state --
 		fail
 	    )
 	;   
+	    %% Call failed
 	    stat_flag(HIDE_STATE,OV), NV is OV+1,
-	    stat_set_flag(HIDE_STATE,NV), % hide_state ++
-	    stat_set_flag(QUASI_SKIPPING, 0), % skipping = 0
-	    stat_set_flag(SKIPPING, 0), % quasi_skipping=0
-	    (	still_displaying(Spy) % if still tracing or debugging
-	    ->	deb_traceget(N,Spy,'Fail',Call,C2),
-		(   C2=:=CH_r	% r: retry, otherwise just fail 
-		->  stat_set_flag(INVOKE_NUM, N), % reset call number  
+	    stat_set_flag(HIDE_STATE,NV),     	   % hide_state ++
+	    stat_set_flag(QUASI_SKIPPING, 0), 	   % skipping = 0
+	    stat_set_flag(SKIPPING, 0),     	   % quasi_skipping=0
+	    (	still_displaying(Spy) 	           % if still tracing/debugging
+	    ->	conset('_$_verbose_skip_current_callno', N),
+		deb_traceget(N,Spy,'Fail',Call,C2),
+		restore_leash, % restore the old leash after Fail
+		(   C2=:=CH_r	    	    	   % r: retry; else just fail 
+		->  stat_set_flag(INVOKE_NUM, N),  % reset call number  
 		    deb_retry(Call,Spy)
 		;   L1 is L - 1, stat_set_flag(HIDE_STATE, L1), fail
 		)
@@ -269,20 +336,24 @@ still_displaying(Spy) :-
 deb_retry(Call,inspy)   :- !,'_$deb_spy'(Call).
 deb_retry(Call,intrace) :- '_$deb_trace'(Call).
 
+%% Print the type of port, print prompt, get user input (via deb_prompt)
 deb_traceget(N,Spy,Type,Call,C) :-
 	%% P-pred name, A- arity
 	get_psc_info(Call, _PSC, P, A),
 	set_print_control(P,A,_),
 	(   shown(Type,Spy)
-	->  ('_$_deb_print_hidden'
-	    ->	C = CH_NEWLINE
-	    ;	deb_writepref(Spy),
-		ll_write(' ('),ll_write(N),ll_write(') '),
-		ll_write(Type),ll_write(': '),
-		debug_display_call(Call),
-		deb_prompt(Type,Spy,C)
-	    )
-	;   C = CH_NEWLINE
+	->  (	(Type == 'Exit' ; Type == 'Fail')
+	    ->	pop_cputime(N,Type,print) % pop cputime stack & print cpu time
+	    ;	true),
+	    deb_writepref(Spy),
+	    ll_write(' ('), ll_write(N), ll_write(') '),
+	    ll_write(Type),ll_write(': '),
+	    debug_display_call(Call),
+	    deb_prompt(Type,Spy,C)
+	;   C = CH_NEWLINE,
+	    (	(Type == 'Exit' ; Type == 'Fail')
+	    ->	pop_cputime(N,Type,noprint)  % pop cputime stack & don''t print
+	    ;	true)
 	),
 	set_print_control(P,A,Type).
 
@@ -310,7 +381,7 @@ show0([X|R]) :-
 	 ->	assert0(shown(X,intrace)),
 		assert0(shown(X,inspy)),
 		show0(R)
-	 ;	abort('Illegal port identifier').
+	 ;	abort('DEBUGGER (show): Illegal debugger port').
 
 :- dynamic(leashed(_,_)).
 :- leash(['Call','Exit','Redo','Fail']).
@@ -322,20 +393,44 @@ leash0([X|R]) :-
 	 ->	assert0(leashed(X,intrace)),
 		assert0(leashed(X,inspy)),
 		leash0(R)
-	 ;	abort('Illegal port identifier').
+	 ;	abort('DEBUGGER (leash): Illegal debugger port').
+
+%% Restore the old leash saved in '_$_deb_old_leash'/1
+restore_leash :-
+	conget('_$_verbose_skip_anchor_callno', N),
+	conget('_$_verbose_skip_current_callno', N),
+	'_$_deb_old_leash'(X),
+	!,
+	leash(X),
+	retractall('_$_deb_old_leash'(_)).
+restore_leash.
+
+%% Restore the old shown saved in '_$_deb_old_show'/1 by show_nothing
+restore_shown :- '_$_deb_old_show'(X), !,
+	    	 show(X),
+		 retractall('_$_deb_old_show'(_)).
+restore_shown.
+
+%% Stop showing trace; save the old shown
+%% If showing nothing, then noop.
+show_nothing :- setof(X, shown(X,_), L),
+	    	L \= [],
+		!,
+	        retractall('_$_deb_old_show'(_)),
+	        assert('_$_deb_old_show'(L)),
+	        show([]).
+show_nothing.
 
 deb_writepref(inspy) :- ll_write('**').
 deb_writepref(intrace) :- ll_write('  ').
+deb_writepref(cpu) :- ll_write('..').
 
 
+%% Print debugger prompt, take user input
 deb_prompt(Type, Spy, C) :- 
 	(   leashed(Type,Spy)	% interactive
 	->  ll_flush,
-	    %% if autopilot=on, temporarily or permanently:
-	    (	conget('_$_deb_autopilot', Auto), Auto > 0
-	    ->	C1 = CH_NEWLINE, ll_nl	   %  pretend the user entered <CR>
-	    ;	deb_getonechar(C1)
-	    ),
+	    deb_getonechar(C1),
 	    (	leg_r(C1)
 	    ->	C = C1, deb_ug(C)
 	    ;	deb_prompt(Type,Spy,C)
@@ -349,7 +444,7 @@ deb_prompt(Type, Spy, C) :-
 leg_r(CH_NEWLINE).          leg_r(CH_a).  leg_r(CH_b).
 leg_r(CH_c).  leg_r(CH_e).  leg_r(CH_f).  leg_r(CH_l).
 leg_r(CH_n).  leg_r(CH_q).  leg_r(CH_r).  leg_r(CH_s).
-leg_r(CH_p).  % autopilot
+leg_r(CH_S).  % verbose skip
 
 deb_ug(CH_NEWLINE) :- !,stat_set_flag(TRACE, 1). %  <cr>: creep (trace = 1)
 deb_ug(CH_a) :- !,stat_set_flag(SKIPPING, 0),	 %  a: abort 
@@ -372,8 +467,19 @@ deb_ug(CH_q) :- !,stat_set_flag(QUASI_SKIPPING, 1).	%  q: quasi-skip
 deb_ug(CH_r) :- !.				%  r: retry (handled later)
 deb_ug(CH_s) :- !,stat_set_flag(QUASI_SKIPPING, 1), % s: skip. 
 		stat_set_flag(SKIPPING, 1). 	    % skipping=quasi_skipping=1
-deb_ug(CH_p) :- !,stat_set_flag(TRACE, 1),      %  autopilot till top level
-	    	conset('_$_deb_autopilot', 1).
+deb_ug(CH_S) :- !,     	       	       	       % like skip, but print the trace
+	%% Asserting hide_this_hide(setof,3) ensures that setof inside 
+	%% doesn''t get traced.
+	assert(hide_this_hide(setof,3)),
+	conget('_$_verbose_skip_current_callno', N),
+	conset('_$_verbose_skip_anchor_callno', N),
+	setof(X, leashed(X,_), L),
+	retractall('_$_deb_old_leash'(_)),
+	assert('_$_deb_old_leash'(L)),
+	leash([]),
+	%% Re-enable tracing of setof 
+	(retract(hide_this_hide(setof,3)), ! ; true),
+	stat_set_flag(TRACE, 1).
 
 deb_printhelp :- 
 	ll_write('   <cr>   creep          a      abort') ,ll_nl,
@@ -478,6 +584,7 @@ term_mod(Mod:Term,Psc,Newterm) :-
 	Newterm =.. [Pred|Args].
 
 %% must already have been loaded if necessary.
+%% I=0: turn trace on; I=1: turn trace off
 basic_call(I,PSC,Call) :-
 	psc_prop(PSC, Code),
 	psc_type(PSC, Nt),

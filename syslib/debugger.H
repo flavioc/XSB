@@ -28,49 +28,58 @@
 
 :- export debug/0, nodebug/0, dump/0, trace_stack_max/0, notrace_stack_max/0,
 	  (spy)/1, (nospy)/1, trace/0, notrace/0, piltrace/0, hitrace/0,
-	  nosimtrace/0, debugging/0, trace_autopilot/1.
+	  nosimtrace/0, debugging/0, debug_ctl/2.
 :- export '_$deb_trace'/1, '_$deb_spy'/1, '_b_SPY_condition'/1,
 	show/1, leash/1.
 
 :- import set_inthandler/2, '_$load_undef'/1, load_pred/1 from loader.
 :- import file_write/2 from xsb_writ.
-:- import =.. /2, functor/3, atom/1, warning/1, abort/0, abort/1, (import)/1
+
+:- import =.. /2, \= /2, functor/3, atom/1, is_list/1, cputime/1,
+    	warning/1, abort/0, abort/1, (import)/1
      from standard.
+:- import call/1, see/1, seen/0, repeat/0 from standard.
+:- import read/1 from standard.
+
+:- import assert/1 from assert.
 :- import (dynamic)/1, assert0/1, retract/1, retractall/1 from assert.
+
 :- import break/0, prompt/3 from x_interp.
 :- import term_psc/2, psc_insert/4, stat_flag/2, stat_set_flag/2, 
 	  psc_type/2, psc_prop/2,
 	  buff_byte/3, buff_set_byte/3, conname/2, code_call/3,
 	  psc_arity/2, psc_name/2, term_arg/3, term_type/2, term_new/2
      from machine.
-:- import file_get/2, file_put/2, file_flush/2
-     from file_io.
 :- import standard_symbol/3 from std_xsb.
 :- import predicate_property/2, current_predicate/1 from curr_sym.
-:- import findall/3 from setof.
+:- import findall/3, setof/3 from setof.
 
 % := hide debug/0.
 
-:- import read/1 from standard.
 :- import hide_this_show/2, hide_this_hide/2, show_this_hide/2,
 	trace_this_print/2, trace_this_noprint/2,
 	is_xpar_call/2,
 	trace_standard_predicate/2, debug_display_call_hook/1, 
 	trace_this_enable_print_on_redo/2,
-	'_$_deb_print_hidden'/0, '_$_debugger_data_loaded'/0
+	'_$_deb_user_hidden'/2,
+	'_$_deb_old_show'/1, '_$_debugger_data_loaded'/0,
+	'_$_deb_old_leash'/1, '_$_deb_cputime_stack'/1
    from usermod.
-:- import call/1, see/1, seen/0, repeat/0 from standard.
 :- import xsb_configuration/2 from xsb_configuration.
+
 :- import fmt_write_string/3 from file_io.
-:- import assert/1 from assert.
+:- import file_get/2, file_put/2, file_flush/2 from file_io.
+:- import file_reopen/4, file_clone/3 from file_io.
+
 :- dynamic debug_display_call_hook(_), '_$_debugger_data_loaded'/0.
+:- dynamic '_$_deb_old_leash'/1, '_$_deb_old_show'/1, '_$_deb_cputime_stack'/1.
+:- dynamic '_$_deb_user_hidden'/2.
 :- dynamic hide_this_hide(_,_), hide_this_show(_,_), show_this_hide(_,_).
 :- dynamic trace_this_noprint(_,_), trace_this_print(_,_), 
 	trace_standard_predicate(_,_), is_xpar_call(_,_),
-	trace_this_enable_print_on_redo(_,_),
-	'_$_deb_print_hidden'/0.
+	trace_this_enable_print_on_redo(_,_).
 
-:- import conget/2, conset/2 from prof_sbp.
+:- import conset/2, conget/2 from prof_sbp.
 
 
 /* --------------------- end of file debugger.H ----------------------- */
