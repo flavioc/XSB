@@ -28,16 +28,6 @@ a message either to the CDF log or to the XSBs standard message
 stream.").
 
 cdf_message(List):- 
-	(using_xj -> 
-	    cdf_message_xj(List)
-	  ;
-	    cdf_message_noxj(List)).
-
-cdf_message_noxj(Message):- 
-	messageln(Message, STDWARN).
-
-% Shd probably use logger.
-cdf_warning_xj(Message):- 
 	messageln(Message, STDWARN).
 
 :- comment(cdf_warning/2,"cdf_arning can be used to handle warnings of
