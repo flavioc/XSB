@@ -185,21 +185,6 @@ void initTSTRetrieve() {
    goto While_TSnotEmpty
 
 /*
- *  Backtracking if there are more CPs, else returns the list of answer
- *  leaf nodes.  This test replaces the use of the dummy CPF of the WAM.
- */
-#define Backtrack_Else_Return_AnswerList	\
-   if (! CPStack_IsEmpty) {			\
-     TST_Backtrack;				\
-     goto While_TSnotEmpty;			\
-   }						\
-   else {					\
-     Sys_Trail_Unwind(trail_base);		\
-     Restore_WAM_Registers;			\
-     return tstAnswerList;			\
-   }
-
-/*
  * Not really necessary to set the parent since it is only needed once a
  * leaf is reached and we step (too far) down into the trie, but that's
  * when its value is set.
@@ -905,7 +890,12 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
      *  searched and we return any answers found.
      */
 
-    Backtrack_Else_Return_AnswerList;
+    if ( CPStack_IsEmpty ) {
+      Sys_Trail_Unwind(trail_base);
+      Restore_WAM_Registers;
+      return tstAnswerList;
+    }
+    TST_Backtrack;
 
   } /* END while( ! TermStack_IsEmpty ) */
 
@@ -921,5 +911,11 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
    */
 
   ALN_InsertAnswer(tstAnswerList, parentTSTN);
-  Backtrack_Else_Return_AnswerList;
+  if ( CPStack_IsEmpty ) {
+    Sys_Trail_Unwind(trail_base);
+    Restore_WAM_Registers;
+    return tstAnswerList;
+  }
+  TST_Backtrack;
+  goto While_TSnotEmpty;
 }
