@@ -23,6 +23,9 @@
 ** 
 */
 
+:- compiler_options([xpp_on]).
+
+#define XSB_MAX_ATOM_LEN 255
 
 /*======================================================================*/
 /*  asm_gendata(+SymList)						*/ 
@@ -41,8 +44,10 @@ asm_putsym(Sym) :-
 	sym_env(Sym, Env), env_code(Env, DomCode),
 	sym_category(Sym, Cat), category_code(Cat, CatCode),
 	put(DomCode), put(CatCode), put(Arity),
-	( L < 256 -> put(L) 
-	; error('cannot generate byte-code for atoms having length > 255') 
+	(   L =< XSB_MAX_ATOM_LEN
+	->  put(L) 
+	;   error(('cannot generate byte-code for atoms longer than ',
+		   XSB_MAX_ATOM_LEN)) 
 	),
 	write(Name),
 	( DomCode =\= 2 -> true
