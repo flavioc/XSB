@@ -94,9 +94,8 @@ get_conditional_child(Child,Tran,Seq,Cond,AnsChild,Result) :-
 %----------------------------------------------------------------
 % get_local_process -- used for simulation
 %----------------------------------------------------------------
-get_local_process(State,Proc,Line,Char,VarString) :-
-	symlookup(State,Proc,(Line,Char),Var),
-	conv_binding_string(Var,VarString).
+get_local_process(State,Proc,Line,Char,Var) :-
+	symlookup(State,Proc,(Line,Char),Var).
 
 
 %-----------------------------------------------------------------
