@@ -950,9 +950,7 @@ AC_SUBST(engine_mode)
 
 dnl If the cache file doesn't exist, make it.
 test -f "$cache_file" ||  \
-     ( ((test -d "${arch_config_prefix}" || mkdir -p ${arch_config_prefix}) \
-		&& touch "$cache_file" ; chmod 644 "$cache_file") \
-        	|| echo "" )
+     ( ((test -d "${arch_config_prefix}" || mkdir -p ${arch_config_prefix}) && touch "$cache_file" ; chmod 644 "$cache_file") || echo "" )
 
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
