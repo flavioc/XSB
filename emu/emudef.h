@@ -69,8 +69,6 @@ CPtr interrupt_reg = &interrupt_counter;
  */ 
 byte *inst_begin;
 
-byte call_intercept = 0;	/* hitrace or trace_sta for efficiency */
-
 char *nil_sym;
 Pair list_str;
 
@@ -87,6 +85,7 @@ Psc ret_psc[MAX_ARITY];
 
 char *list_dot;
 
+int asynint_code = 0;
 int asynint_val = 0;
 int *asynint_ptr = &asynint_val;
 
@@ -234,19 +233,18 @@ int *asynint_ptr = &asynint_val;
 
 
 #define call_sub(PSC) {							\
-  if ( (*asynint_ptr > 0) | call_intercept     	      	      	        \
-       | int_val(cell(interrupt_reg)) ) { 		    	        \
-    if (*asynint_ptr > 0) { /* non-attv interrupt detected */		\
-      if (*asynint_ptr == KEYINT_MARK) {				\
+  if ( (*asynint_ptr) | int_val(cell(interrupt_reg)) ) {   	        \
+    if (*asynint_ptr) { /* non-attv intrpt */				\
+      if (*asynint_ptr & KEYINT_MARK) {					\
         synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));		\
         lpcreg = pcreg;							\
       }									\
       else								\
         lpcreg = (byte *)get_ep(PSC);					\
-      *asynint_ptr = 0;		         				\
+      *asynint_ptr = *asynint_ptr & ~KEYINT_MARK;			\
+      asynint_code = 0;		         				\
     }									\
-    else if (int_val(cell(interrupt_reg))) {				\
-      /* there is attv interrupt */					\
+    else if (int_val(cell(interrupt_reg))) { /* attv intrpt */		\
       synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\
       lpcreg = pcreg;							\
       /* Set PSC to '_$attv_int'/2, so that the later call of	*/	\
@@ -254,12 +252,7 @@ int *asynint_ptr = &asynint_val;
       /* '_$attv_int'/2.					*/	\
       PSC = (Psc) flags[MYSIG_ATTV+INT_HANDLERS_FLAGS_START];		\
     }									\
-    else { 								\
-        lpcreg = (pb)get_ep(PSC);					\
-        /* check_glstack_overflow(get_arity(PSC),	  */		\
-        /*                       lpcreg,OVERFLOW_MARGIN); */		\
-    }									\
-    if (call_intercept) { /* for debugging or for statistics */		\
+    if (*asynint_ptr & MSGINT_MARK) { /* for debug or for stats */	\
       pcreg = lpcreg;							\
       intercept(PSC);							\
       lpcreg = pcreg;							\

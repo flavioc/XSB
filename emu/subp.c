@@ -81,6 +81,7 @@
 double realtime_count;
 
 extern int *asynint_ptr;	/* 0 - no interrupt (or being processed) */
+extern int asynint_code;	/* 0 means keyboard interrupt */
 
 extern void dis(xsbBool), debug_call(Psc);
 extern void total_stat(double);
@@ -319,10 +320,9 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
     case MYSIG_SPY:		/*  3 */
     case MYSIG_TRACE:		/*  4 */
     case MYSIG_CLAUSE:		/* 16 */
-      if (psc)
-	bld_cs(reg+1, build_call(psc));
+      if (psc) bld_cs(reg+1, build_call(psc));
       psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
-      bld_int(reg+2, intcode);
+      bld_int(reg+2, asynint_code);
       pcreg = get_ep(psc);
       break;
     case MYSIG_ATTV:		/*  8 */
@@ -353,10 +353,11 @@ inline static void keyint_proc(int sig)
 #ifndef LINUX
   init_interrupt();  /* reset interrupt, if using signal */
 #endif
-  if ((*asynint_ptr & KEYINT_MARK) != 0) {
+  if (*asynint_ptr & KEYINT_MARK) {
     xsb_abort("unhandled keyboard interrupt");
   } else {
     *asynint_ptr |= KEYINT_MARK;
+    asynint_code = 0;
   }
 }
 

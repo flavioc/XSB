@@ -40,7 +40,7 @@ struct trace_str {		/* for tracing purpose below */
 
 extern struct trace_str tds;
 
-extern byte call_intercept;	/* hitrace or trace_sta for efficiency */
+extern int *asynint_ptr;
 
 #define local_global_exception(t_pcreg) \
  t_pcreg = exception_handler("! Local/Global Stack Overflow Exception\n")

@@ -39,7 +39,7 @@
 :- interpreter.
 
 interpreter :-
-        set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
+        set_inthandler('_$keyboard_int'(_,_), MYSIG_KEYB),
 	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV),
         stat_flag(BANNER_CTL, BannerCtl), % no-banner flag on cmd line
 	(   HideBanner is BannerCtl mod NOBANNER, HideBanner =:= 0
@@ -216,7 +216,7 @@ readl_brklp1 :-
 
 /* === interrupt handlers ============================================== */
 
-'_$keyboard_int'(Call) :- 
+'_$keyboard_int'(Call,_Code) :- 
 	is_xwammode(Flag),
 	( Flag =:= 1 -> abort ; break, call_c(Call) ).
 
