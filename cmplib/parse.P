@@ -95,7 +95,9 @@ open_or_cpp_file(File) :-
 	; 
 	    %% cpp_on is set: use preprocessor
 	    xsb_configuration(cpp, CPP),
-	    fmt_write_string(CPP_command, "%s %s", args(CPP, File)),
+	    fmt_write_string(CPP_command,
+			     "%s -DXSB_PROLOG %s",
+			     args(CPP, File)),
 	    spawn_process(CPP_command, block, From, block, _),
 	    stat_set_flag(10, From)
 	).
