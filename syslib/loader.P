@@ -308,7 +308,7 @@ load(ModName) :-
 	      ;	  true		% load foreign obj code succeeded
 	      )
 	  )
-	; fmt_write(STDERR, '! Cannot find the module: %s\n', arg(ModName)),
+	; fmt_write(STDERR, "! Cannot find the module: %s\n", arg(ModName)),
 	  fail
 	).
 
