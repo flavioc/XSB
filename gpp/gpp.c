@@ -1967,6 +1967,8 @@ int ParsePossibleMeta()
 	 fprintf(N->out->f,
 		 include_directive_marker,
 		 N->lineno, N->filename, "2");
+	 /* Need to leave the blank line in lieu of #include, like cpp does */
+	 fprintf(N->out->f,"\n");
        }
        free(C);
        PopSpecs();
