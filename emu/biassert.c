@@ -1224,7 +1224,7 @@ bool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
 
 /* Buff - another dangerous global -- rfm */
   
-  bcopy(Buff,((pb)Clause)+Location,Size); /* fill in clause with code from Buff */
+  memmove(((pb)Clause)+Location,Buff,Size); /* fill in clause with code from Buff */
   ctop_int(7, (Integer)Clause);
   
   if (NI <= 0) db_addbuff(Arity,Clause,Pred,AZ,1);
@@ -1927,7 +1927,7 @@ bool db_retract0( /* ClRef, retract_nr */ )
 bool compiled_to_dynamic( /* +PSC, +OldPred */ )
 {
     ClRef EntryCl ;
-    struct psc_rec * psc = (struct psc_rec *)ptoc_int(1);
+    Psc psc = (Psc)ptoc_int(1);
     int Arity = get_arity(psc) + 1;
     int Loc ;
     PrRef OldPred = (PrRef)ptoc_int(2),
@@ -2233,7 +2233,6 @@ int trie_retract(void)
   CPtr Clref;
 
   NODEptr inst_node_ptr;
-  extern NODEptr Last_Nod_Sav;
 
   switch_to_trie_assert;
   Clref = (CPtr)ptoc_int(1);
