@@ -585,6 +585,7 @@
 
 #define FL_WHILE		while
 #define FL_UNTIL		until
+#define FL_UNLESS		unless
 #define FL_DO			do
 #define FL_LOOP			loop
 

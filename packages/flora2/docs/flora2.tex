@@ -3741,7 +3741,11 @@ Other modules can then issue queries like
 procedural languages. These include {\tt if - then - else} and 
 a number of looping constructs.
 
-\paragraph{if-then-else.} This is the usual conditional control flow
+\paragraph{if-then-else.}
+%%
+\index{if-then-else}
+%%
+This is the usual conditional control flow
 construct supported by most programming languages.  For instance,
 %%
 \begin{quote}
@@ -3794,7 +3798,21 @@ the sense that backtrackable updates executed as part of an {\tt
 such updates are explicitly committed using the {\tt commit} method of the
 system module {\tt flora(db)} (see Section~\ref{sec:storage-ctl}).
 
+\paragraph{unless-do.}
+%%
+\index{unless-do}
+%%
+This construct is an abbreviation of {\tt if Cond then true else Action}.
+If {\tt Cond} is true, it succeeds without executing the action.
+Otherwise, it executes {\tt Action} and succeeds or fails depending on
+whether {\tt Action} succeeds or fails.
+
 \paragraph{while-do and do-until.}
+%%
+\index{while-do}
+\index{until}
+\index{do-until}
+%%
 These loops are similar to those in C, Java, and the like.
 In {\tt while Cond do Action}, {\tt Cond} is evaluated before each
 iteration. If it is true, {\tt Action} is executed. This statement succeeds

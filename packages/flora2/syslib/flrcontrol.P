@@ -42,6 +42,11 @@ FL_IF(FL_THEN(Cond,Then)) :- call(Cond), call(Then).
 FL_IF(FL_THEN(Cond,_Then)) :- sk_not(Cond).
 
 
+%% UNLESS ... DO ... is like IF...THEN true ELSE ...
+FL_UNLESS(FL_DO(Cond,_Action)) :- call(Cond).
+FL_UNLESS(FL_DO(Cond,Action)) :- sk_not(Cond), call(Action).
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%   while-do and do-until loops commit storage after each iteration
 %%%%   so they are not backtrackable (backtracking over updates can occur

@@ -123,6 +123,7 @@ flora_prlg(FL_IF,1) :- !.
 flora_prlg(FL_THEN,2) :- !.
 flora_prlg(FL_ELSE,2) :- !.
 
+flora_prlg(FL_UNLESS,1) :- !.
 flora_prlg(FL_WHILE,1) :- !.
 flora_prlg(FL_DO,2) :- !.
 flora_prlg(FL_LOOP,2) :- !.
