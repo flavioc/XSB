@@ -68,14 +68,14 @@ server :-
 
 server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
     writeln(serverloop1),
-    socket_select(test,5,Availr,Availw,Availe,Err),
-    writeln( socket_select(test,5,Availr,Availw,Availe,Err)),
+    socket_select(test,_,Availr,Availw,Availe,Err),
+    writeln( socket_select(test,notimeout,Availr,Availw,Availe,Err)),
     	
     (Availr == []
     ->  writeln('no available read socket...waiting'),
-	sleep(5), assert(timeout), fail
+	sleep(4), assert(timeout), fail
     ;  %% This tests the timer
-	set_timer(5),
+	set_timer(4),
 	write('Waiting for input... '),
 	socket_recv(Sockfd0, GoalStr,RetCode),
 	(RetCode == TIMEOUT_ERR

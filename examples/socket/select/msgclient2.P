@@ -75,30 +75,30 @@ client_loop(Sockfd0, Sockfd1) :-
   ;   nl,writeln(send(Goal)),
       fmt_write_string(GoalStr, '%S.', arg(Goal)),
 
-      socket_select(test2,_,Availr,Availw,Availe,Err),
+      socket_select(test2,6,Availr,Availw,Availe,Err),
       writeln( socket_select(test2,_,Availr,Availw,Availe,Err)),
-   ( Availw==[]
-   -> writeln('no available write socket')
-   ;  socket_send(Sockfd0, GoalStr, _Er), 
-       (Availr == []
-       ->  writeln('no available read socket')
-       ;   true
-       ),
-       writeln('Answers: '),
-       repeat,
-       socket_recv(Sockfd1, AnswerStr,_),
-       file_open(AnswerStr,sr,IOport),
-       file_read(IOport,Answer),
-       file_close(IOport),
-       (Answer==end_of_file 
-       -> !, true
-       ;  (   Answer == 'end' 
-	  ->  client_loop(Sockfd0, Sockfd1)
-	  ;   write('    '),
-	      write(Answer), nl, 
-	      fail
+      ( Availw==[]
+      -> writeln('no available write socket')
+      ;  socket_send(Sockfd0, GoalStr, _Er), 
+	  (Availr == []
+	  ->  writeln('no available read socket')
+	  ;   true
+	  ),
+	  writeln('Answers: '),
+	  repeat,
+	  socket_recv(Sockfd1, AnswerStr,_),
+	  file_open(AnswerStr,sr,IOport),
+	  file_read(IOport,Answer),
+	  file_close(IOport),
+	  (Answer==end_of_file 
+	  -> !, true
+	  ;  (   Answer == 'end' 
+	     ->  client_loop(Sockfd0, Sockfd1)
+	     ;   write('    '),
+		 write(Answer), nl, 
+		 fail
+	     )
 	  )
-       )
-   )
+      )
   ).
 
