@@ -402,7 +402,7 @@ using one of the following commands:
 When the user types in a query to the shell, the query is evaluated and the
 results are returned. A result is a tuple of values for each variable
 mentioned in the query, except for the \emph{anonymous variables}
-represented as ``{\tt \_}'' and named {\rm don't care variables}, which are
+represented as ``{\tt \_}'' and named {\em don't care variables}, which are
 preceded with the underscore, {\it e.g.}, {\tt \_abc}.
 
 By default, \FLORA prints out all answers. If only one is desired, type in
@@ -560,19 +560,20 @@ that are needed to build practical applications.
   the inheritance mechanism.
   
 \item \emph{Variables}: The variable ``\_'' is called \emph{anonymous}
-  variable. It is used whenever a \emph{unique} new variable is needed.
-  In particular, two different occurrences of ``\_'' in the same clause are
-  treated as different variables. The variables that start with an
-  underscore, e.g., {\tt \_foo}, are \emph{not} anonymous and two
-  different occurrences of such a variable in the same clause refer to the
-  same variable. Nevertheless, such variables have special status as far as
-  error checking is concerned. The practice of logic programming shows that
-  a singleton occurrence of a variable in a clause is often a mistake
-  due to misspelling. Therefore, \FLORA issues a warning when
-  it finds that some variable is mentioned only once in a clause. If such
-  an occurrence is truly intended, it must be replaced by an anonymous
-  variable or a variable that begins with the underscore to avoid the
-  warning message from \FLORA.
+  variable. It is used whenever a \emph{unique} new variable is needed.  In
+  particular, two different occurrences of ``\_'' in the same clause are
+  treated as \emph{different} variables. Named variables that start with an
+  underscore, e.g., {\tt \_foo}, are called \emph{don't care} variables.
+  Unlike anonymous variables, two different occurrences of such a variable
+  in the same clause refer to the \emph{same} variable. Nevertheless, don't
+  variables have special status when it comes to error checking
+  and returning answers.  The practice of logic programming shows that a
+  singleton occurrence of a variable in a clause is often a mistake due to
+  misspelling. Therefore, \FLORA issues a warning when it finds that some
+  variable is mentioned only once in a clause. If such an occurrence is
+  truly intended, it must be replaced by an anonymous variable or a don't
+  care variable to avoid the warning message from \FLORA. Also, bindings
+  for anonymous and don't care variables are not returned as answers.
 
   %%
   \index{Id-term}
@@ -1109,7 +1110,7 @@ In \FLORA arithmetic expressions are \emph{not} always evaluated. As in
 XSB, the arithmetic operators such as {\tt +}, {\tt -}, {\tt /}, and {\tt
   *}, are defined as normal binary functors. However, to evaluate
 arithmetic expressions, \FLORA provides two operators: {\tt is} and {\tt
-  :=}, which synonymous.  For example, {\tt X := 3+4} will bind {\tt X} to
+  :=}, which are synonymous.  For example, {\tt X := 3+4} will bind {\tt X} to
 the value {\tt 7}.
 
 When dealing with arithmetic expressions, the order of literals is
@@ -1156,7 +1157,7 @@ should be understood as
 %%
 Note that in first query does not have any variables, so after the
 evaluation the system would print either yes or no. To achieve the same
-behavior, we use \emph{semi-anonymous variables}, {\tt \_V1} and {\tt
+behavior, we use \emph{don't care variables}, {\tt \_V1} and {\tt
   \_V2}. If we used {\tt V1} and {\tt V2} instead, the values of these
 variables would have been printed out.
 
@@ -2975,6 +2976,7 @@ it follows that John is also a vegetarian, i.e.,
 
 
 \index{anonymous oid}
+\index{oid!anonymous}
 %
 For applications where oids are not important, \FLORA provides the
 compiler directive \verb|_#| to automatically generate a new
