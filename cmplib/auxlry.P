@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,optimize,sysmod]).
 #include "standard.h"
 
 
@@ -153,7 +153,9 @@ current_option(ciao_directives).
 set_ciao_opts:- 
 	op(500,yfx,#),
 	op(975, xfx,(=>)),
-	op(978, xfx,(::)).
+	op(978, xfx,(::)),
+	op(1100,fx,(document_export)),
+	op(1100,fx,(document_import)).
 
 
 /* options kept only for backwards compatibility;
