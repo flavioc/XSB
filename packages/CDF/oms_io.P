@@ -395,7 +395,7 @@ load_oms(odbc(Server,Name,Passwd)) :- !,
 	load_db_data(Server,Name,Passwd),
 	oms_initialize_ctrs.
 load_oms(Dir) :-
-	init_ext_dynamic,		
+	%init_ext_dynamic,		
 	% included since OMS may be init'd by load_oms/1 or oms_init_all/0
 	oms_fix_dir(Dir,DirS),
 	dir_load_dync(DirS,schema_oms),
