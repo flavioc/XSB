@@ -55,10 +55,10 @@ mno_cyg_inclib=@mno_cyg_inclib@
 mno_cyg_lib=@mno_cyg_lib@
 #cygconf=`(uname -m) 2>/dev/null` || cygconf=unknown
 cygconf=i686
-cygdirname=${cygconf}-ceygwin
+cygdirname=${cygconf}-pc-mingw32
 DLLTOOL=dlltool
 DLLNAME=xsb.dll
-DLL_LIBS=$(LDFLAGS) -L /usr/$(cygdirname)/lib -lmingw32 -lmoldname -lcrtdll -lkernel32 -L /usr/lib/gcc-lib/$(cygdirname)/2.9-cygwin-990830 -lgcc
+DLL_LIBS=$(LDFLAGS) -L /usr/$(cygdirname)/lib -lmingw32 -lmsvcrt -lmoldname -lcrtdll -lkernel32 -L /usr/lib/gcc-lib/$(cygdirname)/3.2 -lgcc
 LIB_OBJECTS=xsb.o dllinit_xsb.o
 BASE_FILE=xsb.base
 EXP_FILE=xsb.exp

@@ -216,6 +216,8 @@ module: prepare xsbmod do_cleaning inform_module
 
 dynmodule: prepare xsbdynmod 
 
+cygdll: prepare loccygdll do_cleaning inform_module
+
 # if supporting Oracle, then emumake_goal=xsbora; else emumake_goal=xsb
 # This invokes xsboramod and xsbmod goals in emuMakefile, respectively
 xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
@@ -228,6 +230,9 @@ xsbdynmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 
 xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	cd ${src_emudir}; make dll
+
+loccygdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+	cd ${src_emudir}; make cygdll
 
 emu_clean: do_cleaning inform_executable
 	chmod 644  $(src_config_libdir)/xsb_configuration$(xsb_obj_extension)

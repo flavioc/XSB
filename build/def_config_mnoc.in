@@ -58,6 +58,7 @@
 #define CC "cl.exe"
 #define RELEASE_DATE @xsb_release_date@
 #define XSB_VERSION "@xsb_full_version_name@"
+#define XSB_DLL
 #if (defined(XSB_DLL) || defined(XSB_DLL_C))
 #define FOREIGN_WIN32
 #endif

@@ -54,7 +54,7 @@ do
     case $option in
       --conf*=* ) suffix=`echo $option | sed -e 's/-.*=/-/'`
       ;;
-      fast|devel|superdevel|all|packages|module|dynmodule|smodels|install|clean|distclean|configclean)
+      fast|devel|superdevel|all|packages|module|dynmodule|smodels|install|clean|distclean|configclean|cygdll)
 	 force_devel=
 	 makeargs="$makeargs $option"
       ;;
