@@ -33,6 +33,7 @@
 #include "configs/special.h"
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "auxlry.h"
 #include "cell.h"
@@ -63,6 +64,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   void	*handle;
   void	*funcep;
   bool	dummy();
+  char  *ldp1,*ldp2;
   
   /* (1) create filename.so */
   
@@ -70,6 +72,21 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   sofilename[strl-1] = 's';
   sofilename[strl]   = 'o';
   sofilename[strl+1] = '\0';
+  
+  /* (1.5) include necessary paths into LD_LIBRARY_PATH */
+  
+  for (ldp1=ld_option; (*ldp1); ldp1++) {
+    if (*ldp1 == '-' && *(ldp1+1) == 'L') {
+      if (*(ldp1-1) == ' ') {
+	ldp2 = ++ldp1;
+	while(*ldp1 != ' ' && *ldp1 != '\0')
+	  ldp1++;
+	*ldp1 = '\0';
+	setenv("LD_LIBRARY_PATH",ldp2,1);
+	*ldp1 = ' ';
+      }
+    }
+  }
   
   /* (2) open the needed object */
   
@@ -89,7 +106,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     name = get_name(search_ptr->psc_ptr);
     
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
-      if ((funcep = (int (*)) dlsym(handle, name)) == NULL) {
+      if ((funcep = (int *) dlsym(handle, name)) == NULL) {
 	fprintf(stdwarn, "%s\n", dlerror());
 	xsb_warn("Cannot find foreign procedure %s", name);
 	set_ep(search_ptr->psc_ptr, (byte *)(dummy));
@@ -102,3 +119,4 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   }
   return (byte *)4;
 }
+
