@@ -22,6 +22,12 @@ must be configured to work with the Libwww library as follows:
     configure --with-libwww=directory-where-Libwww-is-installed  
 \end{verbatim}
 %%
+If you forgot to configure XSB for use with the Libwww library, you do not
+need to reconfigure and recompile XSB. Instead, you can {\tt cd} to
+{\tt packages/libwww} and type the above command in that directory.
+This will enable the previously compiled version of XSB to work with
+Libwww.
+
 Note that the Libwww library {\bf cannot} be moved after you configured it.
 If it is moved, XSB will not be able to find it, because hard path names
 are built into some parts of this library at configuration time. Use the
