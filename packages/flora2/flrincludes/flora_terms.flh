@@ -209,6 +209,11 @@
 #define FL_BTERASE		bterase
 #define FL_BTERASEALL		bteraseall
 
+#define FL_NEWMODULE		newmodule
+#define FL_INSERTRULE_A		insertrule_a
+#define FL_INSERTRULE_Z		insertrule_z
+
+
 #define FL_CONSTRAINT_START     '{'
 #define FL_CONSTRAINT_END       '}'
 
@@ -269,6 +274,9 @@
   FLINSERT(Op,LiteralList)
   FLDELETE(Op,LiteralList,Conditon)
   FLDELETE(Op,LiteralList)
+
+  FLNEWMODULE(Module)
+  FLINSERTRULE(Op,RuleList)
 
   FLIFTHEN(IfCondition,ThenStatement)
   FLIFTHENELSE(IfCondition,ThenStatement,ElseStatement)
@@ -333,6 +341,9 @@
 
 #define FLINSERT		flinsert
 #define FLDELETE		fldelete
+
+#define FLNEWMODULE		flnewmodule
+#define FLINSERTRULE		flinsertrule
 
 #define FLCONSTRAINT	        flconstraint
 
@@ -421,9 +432,13 @@
 #define PRFD			prfd
 #define PRIFD			prifd
 #define PRFDSIG			prfdsig
+#define PRFDSIGDEF		prfdsigdef
 #define PRMVDSIG		prmvdsig
+#define PRMVDSIGDEF		prmvdsigdef
 #define PRIFDSIG		prifdsig
+#define PRIFDSIGDEF		prifdsigdef
 #define PRIMVDSIG		primvdsig
+#define PRIMVDSIGDEF		primvdsigdef
 #define PRMVD			prmvd
 #define PRIMVD			primvd
 #define PRMVDINC		prmvdinc
@@ -445,6 +460,7 @@
 #define	WRAP_TABLED_HILOG	tabled_flapply
 #define WRAP_DYNA_HILOG		dyna_flapply
 #define WRAP_DYNZ_HILOG		dynz_flapply
+#define	WRAP_TDYN_HILOG		tabled_dyn_flapply
 #define	WRAP_ISA		isa
 #define	WRAP_SUB		sub
 #define	WRAP_METH		meth
@@ -453,11 +469,15 @@
 #define	WRAP_FD			fd
 #define	WRAP_IFD		ifd
 #define	WRAP_FDSIG		fdsig
+#define	WRAP_FDSIGDEF		fdsigdef
 #define	WRAP_IFDSIG		ifdsig
+#define	WRAP_IFDSIGDEF		ifdsigdef
 #define	WRAP_MVD		mvd
 #define	WRAP_IMVD		imvd
 #define	WRAP_MVDSIG		mvdsig
+#define	WRAP_MVDSIGDEF		mvdsigdef
 #define	WRAP_IMVDSIG		imvdsig
+#define	WRAP_IMVDSIGDEF		imvdsigdef
 #define	WRAP_MVDINC		mvdinc
 #define	WRAP_IMVDINC		imvdinc
 #define WRAP_MVDTOLIST		mvdtolist
@@ -481,11 +501,15 @@
 #deffast WRAP_D_FD		FLDEBUGPREFIX(fd)
 #deffast WRAP_D_IFD		FLDEBUGPREFIX(ifd)
 #deffast WRAP_D_FDSIG		FLDEBUGPREFIX(fdsig)
+#deffast WRAP_D_FDSIGDEF	FLDEBUGPREFIX(fdsigdef)
 #deffast WRAP_D_IFDSIG		FLDEBUGPREFIX(ifdsig)
+#deffast WRAP_D_IFDSIGDEF	FLDEBUGPREFIX(ifdsigdef)
 #deffast WRAP_D_MVD		FLDEBUGPREFIX(mvd)
 #deffast WRAP_D_IMVD		FLDEBUGPREFIX(imvd)
 #deffast WRAP_D_MVDSIG		FLDEBUGPREFIX(mvdsig)
+#deffast WRAP_D_MVDSIGDEF	FLDEBUGPREFIX(mvdsigdef)
 #deffast WRAP_D_IMVDSIG		FLDEBUGPREFIX(imvdsig)
+#deffast WRAP_D_IMVDSIGDEF	FLDEBUGPREFIX(imvdsigdef)
 #deffast WRAP_D_MVDINC		FLDEBUGPREFIX(mvdinc)
 #deffast WRAP_D_IMVDINC		FLDEBUGPREFIX(imvdinc)
 #deffast WRAP_D_MVDTOLIST	FLDEBUGPREFIX(mvdtolist)
@@ -530,6 +554,11 @@
 #define FLLIBBTDELETEALL	fllibbtdeleteall
 #define FLLIBBTERASE		fllibbterase
 #define FLLIBBTERASEALL		fllibbteraseall
+
+#define FLLIBDYNRULE		fllibdynrule
+#define FLLIBNEWMODULE		fllibnewmodule
+#define FLLIBINSERTRULE_A	fllibinsertrule_a
+#define FLLIBINSERTRULE_Z	fllibinsertrule_z
 
 #define FLLIBSHDIRECT		fllibshdirect
 
@@ -593,6 +622,9 @@
 %% support for undefinedness checking
 #define FLPREDDEF		flpreddef
 
+%% for dynamically inserted rules
+#define FLDYNA			fldyna
+#define FLDYNZ			fldynz
 
 /****************************************************************************
   default workspace
@@ -611,6 +643,8 @@
 
 #define FLSYSLIB		flsyslib
 #define FLSYSDBUPDATE		flsysdbupdate
+
+#define FLSYSRULEUPDATE		flsysruleupdate
 
 
 /****************************************************************************

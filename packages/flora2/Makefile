@@ -52,6 +52,7 @@ ALLOBJS = flrarguments${OBJEXT} \
 	  flrundefined${OBJEXT} \
 	  flrundefhook${OBJEXT} \
 	  flrutils${OBJEXT} \
+	  flrversion${OBJEXT} \
 	  flrwraparound${OBJEXT} \
 	  flrwrapper${OBJEXT}
 
@@ -67,7 +68,7 @@ OPTION = [optimize]
 
 # PROLOG is passed as an argument to make. Default is none, to trigger an error
 PROLOG=none
-PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
+PROLOG_COMMAND = $(PROLOG) -s -m 40000 -c 4000 -e 'segfault_handler(warn).'
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(FLORADIR)/.flora_top_warn.tmp'
@@ -110,6 +111,9 @@ misc:
 # always compile flora2devel to make sure that .xwam has the latest .flora_path
 flora2devel${OBJEXT} : flora2devel${PROLOGEXT} version.flh
 	@echo 'mc(flora2devel,$(OPTION)).' >> cmd...
+
+flrversion${OBJEXT}: flrversion${PROLOGEXT} version.flh
+	@echo 'mc(flrversion,$(OPTION)).' >> cmd...
 
 flroperator${OBJEXT} : flroperator${PROLOGEXT} flroperator.H $(FLORA_TERMS)
 	@echo 'mc(flroperator,$(OPTION)).' >> cmd...

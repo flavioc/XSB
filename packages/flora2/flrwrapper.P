@@ -168,6 +168,24 @@ flora_dynz_hilog_module_predicate_symbol(ModuleName,Predicate) :-
 
 
 /*****************************************************************************
+  These procedures return the Tabled dynamic HiLog wrapper for a Flora
+  user/system module.
+
+  flora_tdyn_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tdyn_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tdyn_hilog_module_predicate_symbol(+ModuleName,-Predicate)
+*****************************************************************************/
+flora_tdyn_hilog_user_module_predicate_symbol(WS,Predicate) :-
+	flora_user_module_predicate(WRAP_TDYN_HILOG,[],WS,Predicate).
+
+flora_tdyn_hilog_system_module_predicate_symbol(WS,Predicate) :-
+	flora_system_module_predicate(WRAP_TDYN_HILOG,[],WS,Predicate).
+
+flora_tdyn_hilog_module_predicate_symbol(ModuleName,Predicate) :-
+	flora_module_predicate(WRAP_TDYN_HILOG,[],ModuleName,Predicate).
+
+
+/*****************************************************************************
   flora_module_name(+ModuleName,-Type,-Workspace)
 
   The parameter "ModuleName" could be either the name of a Flora user module,
@@ -353,7 +371,6 @@ flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 flora_is_flogic_wrapper(WrapPrefix,Base) :-
 	( WrapPrefix=FLHEADPREFIX
 	; WrapPrefix=FLBODYPREFIX
-	; WrapPrefix=FLFACTPREFIX
 	; WrapPrefix=FLTRAILERPREFIX
 	; WrapPrefix=FLDEBUGPREFIX
 	),
@@ -377,9 +394,13 @@ flora_is_flogic_base(WRAP_MVDDEF)     :- !.
 flora_is_flogic_base(WRAP_IMVDDEF)    :- !.
 flora_is_flogic_base(WRAP_TRAN)       :- !.
 flora_is_flogic_base(WRAP_FDSIG)      :- !.
+flora_is_flogic_base(WRAP_FDSIGDEF)   :- !.
 flora_is_flogic_base(WRAP_IFDSIG)     :- !.
+flora_is_flogic_base(WRAP_IFDSIGDEF)  :- !.
 flora_is_flogic_base(WRAP_MVDSIG)     :- !.
+flora_is_flogic_base(WRAP_MVDSIGDEF)  :- !.
 flora_is_flogic_base(WRAP_IMVDSIG)    :- !.
+flora_is_flogic_base(WRAP_IMVDSIGDEF) :- !.
 flora_is_flogic_base(WRAP_MVDINC)     :- !.
 flora_is_flogic_base(WRAP_IMVDINC)    :- !.
 flora_is_flogic_base(WRAP_MVDTOLIST)  :- !.
@@ -398,7 +419,7 @@ flora_is_flogic_base(WRAP_OBJEQL)     :- !.
   (1) PredicateType=flogic, if the predicate is encoded as:
 	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''flogic_wrapper'.
       ModuleName is the Flora user/system module name. WrapPrefix is the
-      prefix of the wrapper (e.g., base_, derived_). PredicateSymbol specifies
+      prefix of the wrapper (e.g., dyna_, derived_). PredicateSymbol specifies
       the type of the F-logic wrapper, e.g., fd, mvd, imvd, etc.
 
   (2) PredicateType=flora, if the predicate is encoded as:
@@ -532,3 +553,44 @@ flora_is_dynamic_flogic_base(WRAP_MVDSIG,3)  :- !.
 flora_is_dynamic_flogic_base(WRAP_IMVDSIG,3) :- !.
 flora_is_dynamic_flogic_base(WRAP_EXISTS,1)  :- !.
 flora_is_dynamic_flogic_base(WRAP_OBJEQL,2)  :- !.
+
+
+/*****************************************************************************
+  flora_funct_arity(?M,?Funct/Arity/Type)
+
+  It takes a term (supposed to be a method with arguments) and extracts its
+  functor, arity, and type (either hilog or prolog).
+
+  Note that either of these arguments must be bound.
+*****************************************************************************/
+flora_funct_arity(M,Funct/Arity/Type) :-
+	%% M is unbound but Funct/Arity/Type is known.
+	var(M),
+	!,
+	( Type == prolog ->
+	    functor(M,Funct,Arity)
+	;
+	  %% a HiLog term
+	  N is Arity+1,
+	  functor(M,WRAP_HILOG,N),
+	  arg(1,M,Funct)
+	).
+
+flora_funct_arity(M,Funct/Arity/Type) :-
+	%% M is bound.
+	functor(M,FunctTerm,N),
+	( N == 0 ->
+	    Funct=FunctTerm,
+	    Arity=N,
+	    Type=prolog
+
+	; FunctTerm == WRAP_HILOG ->
+	    %% a HiLog term
+	    Type=hilog,
+	    Arity is N-1,
+	    arg(1,M,Funct)
+	;
+	  Funct=FunctTerm,
+	  Arity=N,
+	  Type=prolog
+	).

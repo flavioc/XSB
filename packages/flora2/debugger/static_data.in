@@ -29,9 +29,11 @@
 
 #mode standard Prolog
 
+#define FLORA_NO_EXECUTABLE_INCLUDES
 #include "flrheader.flh"
 #include "flora_terms.flh"
 #include "flora_porting.flh"
+#undef FLORA_NO_EXECUTABLE_INCLUDES
 
 
 %% These are handled even if flTracelow is in effect
@@ -65,15 +67,17 @@ hide_this_hide(flora_handle_end_of_call,0).
 
 hide_this_hide(flora_error_undefined,1).
 
-hide_this_hide(FLORA_DB_FIND_PREDICATE,2).
 hide_this_hide(FLORA_DB_RECLAIM_SPACE_PREDICATE,0).
 hide_this_hide(flora_commit_storage,0).
 hide_this_hide(flora_commit_storage,1).
 hide_this_hide(flora_load_file,1).
-hide_this_hide(FLLIBLOAD,1).
+hide_this_hide(FLLIBLOAD,4).
+
+hide_this_hide(flora_funct_arity,2).
 
 trace_this_noprint(flora_findall,3).
 
+show_this_hide(FLORA_DB_FIND_PREDICATE,2).
 show_this_hide(flP2H,2).
 
 %% These are handled by the debugger only if flTraceLow is NOT in effect.

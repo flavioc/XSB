@@ -16,15 +16,32 @@
 ***************************************************************************/
 
 
-#include "includes/flrpred.fli"
+#include "flora_wspredicates.flh"
 
 :- import flora_warning_line/1 from flrprint.
+:- import flora_funct_arity/2 from flrwrapper.
+
 
 /***************************************************************************
   closure rules for X::Y
+
+  The following rules are removed from the new trailer:
+
+  %% super_sub/2
+  super_sub(X,Y) :-
+	inferred_sub_eql(X,Z),
+	inferred_sub_eql(Z,Y).
+
+  super_sub(X,Y) :-
+	super_sub(X,Z),
+	inferred_sub_eql(Z,Y).
+
+  %% immediate_sub/2
+  immediate_sub(X,Y) :-
+	inferred_sub_eql(X,Y),
+	sk_not(super_sub(X,Y)).
 ***************************************************************************/
 %% inferred_sub_eql/2
-%% Means either inferred X::Y or X'::Y' and Y:=:Y' and X::X'
 inferred_sub_eql(X,Y) :-
 	inferred_sub(X,Y).
 
@@ -42,44 +59,33 @@ inferred_sub_eql(X,Y) :-
 	inferred_sub(OX,OY).
 
 
-%% super_sub/2
-%% Transitive closure of inferred_sub_eql/2
-super_sub(X,Y) :-
-	inferred_sub_eql(X,Z),
-	inferred_sub_eql(Z,Y).
-
-super_sub(X,Y) :-
-	super_sub(X,Z),
-	inferred_sub_eql(Z,Y).
-
-
-%% immediate_sub/2
-immediate_sub(X,Y) :-
-	inferred_sub_eql(X,Y),
-	sk_not(super_sub(X,Y)).
-
-
 %% sub/2
 sub(X,Y) :-
 	inferred_sub_eql(X,Y),
-	( X=Y, flora_warning_line('cycle in class hierarchy')
-	;
-	  true
-	).
+	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
 
 sub(X,Y) :-
-	super_sub(X,Y),
-	( X=Y, flora_warning_line('cycle in class hierarchy')
-	;
-	  true
-	).
+	silent_sub(X,Z),
+	inferred_sub_eql(Z,Y),
+	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
 
 
 /***************************************************************************
   closure rules for O:C
+
+  The following rules are removed from the new trailer:
+
+  %% super_isa/2
+  super_isa(O,C) :-
+	inferred_isa_eql(O,S),
+	sub(S,C).
+
+  %% immediate_isa/2
+  immediate_isa(O,C) :-
+	inferred_isa_eql(O,C),
+	sk_not(super_isa(O,C)).
 ***************************************************************************/
 %% inferred_isa_eql/2
-%% Means O:C or O'::C' and O':=:O, C':=:C
 inferred_isa_eql(O,C) :-
 	inferred_isa(O,C).
 
@@ -97,260 +103,329 @@ inferred_isa_eql(O,C) :-
 	inferred_isa(OX,CX).
 
 
-%% super_isa/2
-super_isa(O,C) :-
-	inferred_isa_eql(O,S),
-	sub(S,C).
-
-
-%% immediate_isa/2
-immediate_isa(O,C) :-
-	inferred_isa_eql(O,C),
-	sk_not(super_isa(O,C)).
-
-
 %% isa/2
 isa(O,C) :-
 	inferred_isa_eql(O,C).
 
 isa(O,C) :-
-	super_isa(O,C).
+	inferred_isa_eql(O,S),
+	sub(S,C).
 
 
 /*****************************************************************************
-  nonmonotonic inheritance of scalar attributes among classes
+  The following rules propogate the effects of equality.
 *****************************************************************************/
 %% inferred_ifd_eql/3
-inferred_ifd_eql(C,A,V) :-
-	inferred_ifd(C,A,V).
+inferred_ifd_eql(C,M,V) :-
+	inferred_ifd(C,M,V).
 
-inferred_ifd_eql(C,A,V) :-
+inferred_ifd_eql(C,M,V) :-
 	diffobjeql(C,CX),
-	inferred_ifd(CX,A,V).
+	inferred_ifd(CX,M,V).
 
-inferred_ifd_eql(C,A,V) :-
+inferred_ifd_eql(C,M,V) :-
 	diffobjeql(V,VX),
-	inferred_ifd(C,A,VX).
+	inferred_ifd(C,M,VX).
 
-inferred_ifd_eql(C,A,V) :-
+inferred_ifd_eql(C,M,V) :-
 	diffobjeql(C,CX),
 	diffobjeql(V,VX),
-	inferred_ifd(CX,A,VX).
+	inferred_ifd(CX,M,VX).
 
 
-%% defined_inferred_ifd/2
-defined_inferred_ifd(C,A) :-
-	inferred_ifd_eql(C,A,_V).
+%% inferred_fd_eql/3
+inferred_fd_eql(O,M,V) :-
+	inferred_fd(O,M,V).
+
+inferred_fd_eql(O,M,V) :-
+	diffobjeql(O,OX),
+	inferred_fd(OX,M,V).
+
+inferred_fd_eql(O,M,V) :-
+	diffobjeql(V,VX),
+	inferred_fd(O,M,VX).
+
+inferred_fd_eql(O,M,V) :-
+	diffobjeql(O,OX),
+	diffobjeql(V,VX),
+	inferred_fd(OX,M,VX).
 
 
-%% conflic_ifd/2
-conflict_ifd(C,A) :-
-	immediate_sub(C,S1),
-	immediate_sub(C,S2),
-	S1 \= S2,
-	ifddef(S1,A),
-	ifddef(S2,A).
-
-
-%% ifd/3
-ifd(C,A,V) :-
-	inferred_ifd_eql(C,A,V).
-
-ifd(C,A,V) :-
-	ifd(S,A,V),
-	immediate_sub(C,S),
-	sk_not(defined_inferred_ifd(C,A)),
-	sk_not(conflict_ifd(C,A)).
-
-
-/*****************************************************************************
-  nonmonotonic inheritance of (defined) multivalued attributes among classes
-*****************************************************************************/
 %% inferred_imvd_eql/3
-inferred_imvd_eql(C,A,V) :-
-	inferred_imvd(C,A,V).
+inferred_imvd_eql(C,M,V) :-
+	inferred_imvd(C,M,V).
 
-inferred_imvd_eql(C,A,V) :-
+inferred_imvd_eql(C,M,V) :-
 	diffobjeql(C,CX),
-	inferred_imvd(CX,A,V).
+	inferred_imvd(CX,M,V).
 
-inferred_imvd_eql(C,A,V) :-
+inferred_imvd_eql(C,M,V) :-
 	diffobjeql(V,VX),
-	inferred_imvd(C,A,VX).
+	inferred_imvd(C,M,VX).
 
-inferred_imvd_eql(C,A,V) :-
+inferred_imvd_eql(C,M,V) :-
 	diffobjeql(C,CX),
 	diffobjeql(V,VX),
-	inferred_imvd(CX,A,VX).
-
-
-%% defined_inferred_imvd/2
-defined_inferred_imvd(C,A) :-
-	inferred_imvd_eql(C,A,_V).
-
-defined_inferred_imvd(C,A) :-
-	inferred_imvddef_eql(C,A).
-
-
-%% conflict_imvd/2
-conflict_imvd(C,A) :-
-	immediate_sub(C,S1),
-	immediate_sub(C,S2),
-	S1 \= S2,
-	imvddef(S1,A),
-	imvddef(S2,A).
-
-
-%% imvd
-imvd(C,A,V) :-
-	inferred_imvd_eql(C,A,V).
-
-imvd(C,A,V) :-
-	imvd(S,A,V),
-	immediate_sub(C,S),
-	sk_not(defined_inferred_imvd(C,A)),
-	sk_not(conflict_imvd(C,A)).
+	inferred_imvd(CX,M,VX).
 
 
 %% inferred_imvddef_eql/2
-inferred_imvddef_eql(C,A) :-
-	inferred_imvddef(C,A).
+inferred_imvddef_eql(C,M) :-
+	inferred_imvddef(C,M).
 
-inferred_imvddef_eql(C,A) :-
+inferred_imvddef_eql(C,M) :-
 	diffobjeql(C,CX),
-	inferred_imvddef(CX,A).
+	inferred_imvddef(CX,M).
 
 
-%% imvddef/2
-imvddef(C,A) :-
-	inferred_imvddef_eql(C,A).
-
-imvddef(C,A) :-
-	imvddef(S,A),
-	immediate_sub(C,S),
-	sk_not(defined_inferred_imvd(C,A)),
-	sk_not(conflict_imvd(C,A)).
-
-imvddef(C,A) :-
-	imvd(C,A,_V).
-
-
-/*****************************************************************************
-  nonmonotonic inheritance of scalar attributes among objects
-*****************************************************************************/
-%% inferred_fd_eql/3
-inferred_fd_eql(O,A,V) :-
-	inferred_fd(O,A,V).
-
-inferred_fd_eql(O,A,V) :-
-	diffobjeql(O,OX),
-	inferred_fd(OX,A,V).
-
-inferred_fd_eql(O,A,V) :-
-	diffobjeql(V,VX),
-	inferred_fd(O,A,VX).
-
-inferred_fd_eql(O,A,V) :-
-	diffobjeql(O,OX),
-	diffobjeql(V,VX),
-	inferred_fd(OX,A,VX).
-
-
-%% defined_inferred_fd
-defined_inferred_fd(O,A) :-
-	inferred_fd_eql(O,A,_V).
-
-
-%% conflict_obj_ifd/2
-conflict_obj_ifd(O,A) :-
-	immediate_isa(O,C1),
-	immediate_isa(O,C2),
-	C1 \= C2,
-	ifddef(C1,A),
-	ifddef(C2,A).
-
-
-%% fd/3
-fd(O,A,V) :-
-	inferred_fd_eql(O,A,V).
-
-fd(O,A,V) :-
-	ifd(C,A,V),
-	immediate_isa(O,C),
-	sk_not(defined_inferred_fd(O,A)),
-	sk_not(conflict_obj_ifd(O,A)).
-
-
-/*****************************************************************************
-  nonmonotonic inheritance of (defined) multivalued attributes among objects
-*****************************************************************************/
 %% inferred_mvd_eql/3
-inferred_mvd_eql(O,A,V) :-
-	inferred_mvd(O,A,V).
+inferred_mvd_eql(O,M,V) :-
+	inferred_mvd(O,M,V).
 
-inferred_mvd_eql(O,A,V) :-
+inferred_mvd_eql(O,M,V) :-
 	diffobjeql(O,OX),
-	inferred_mvd(OX,A,V).
+	inferred_mvd(OX,M,V).
 
-inferred_mvd_eql(O,A,V) :-
+inferred_mvd_eql(O,M,V) :-
 	diffobjeql(V,VX),
-	inferred_mvd(O,A,VX).
+	inferred_mvd(O,M,VX).
 
-inferred_mvd_eql(O,A,V) :-
+inferred_mvd_eql(O,M,V) :-
 	diffobjeql(O,OX),
 	diffobjeql(V,VX),
-	inferred_mvd(OX,A,VX).
-
-
-%% defined_inferred_mvd/2
-defined_inferred_mvd(O,A) :-
-	inferred_mvd_eql(O,A,_V).
-
-defined_inferred_mvd(O,A) :-
-	inferred_mvddef_eql(O,A).
-
-
-%% conflict_obj_imvd/2
-conflict_obj_imvd(O,A) :-
-	immediate_isa(O,C1),
-	immediate_isa(O,C2),
-	C1 \= C2,
-	imvddef(C1,A),
-	imvddef(C2,A).
-
-
-%% mvd/3
-mvd(O,A,V) :-
-	inferred_mvd_eql(O,A,V).
-
-mvd(O,A,V) :-
-	imvd(C,A,V),
-	immediate_isa(O,C),
-	sk_not(defined_inferred_mvd(O,A)),
-	sk_not(conflict_obj_imvd(O,A)).
+	inferred_mvd(OX,M,VX).
 
 
 %% inferred_mvddef_eql/2
-inferred_mvddef_eql(O,A) :-
-	inferred_mvddef(O,A).
+inferred_mvddef_eql(O,M) :-
+	inferred_mvddef(O,M).
 
-inferred_mvddef_eql(O,A) :-
+inferred_mvddef_eql(O,M) :-
 	diffobjeql(O,OX),
-	inferred_mvddef(OX,A).
+	inferred_mvddef(OX,M).
 
 
-%% mvddef/2
-mvddef(O,A) :-
-	inferred_mvddef_eql(O,A).
+/*****************************************************************************
+  inheritable methods that are locally defined
 
-mvddef(O,A) :-
-	imvddef(C,A),
-	immediate_isa(O,C),
-	sk_not(defined_inferred_mvd(O,A)),
-	sk_not(conflict_obj_imvd(O,A)).
+  The argument "MethSign" is in the form of Funct/Arity/Type.
+*****************************************************************************/
+%% local_ifd/2
+local_ifd(S,MethSign) :-
+	var(MethSign),
+	!,
+	inferred_ifd_eql(S,M,_V),
+	%% Should have a cut here when XSB will allow
+	flora_funct_arity(M,MethSign).
 
-mvddef(O,A) :-
-	mvd(O,A,_V).
+local_ifd(S,MethSign) :-
+	flora_funct_arity(M,MethSign),
+	inferred_ifd_eql(S,M,_V).
+	%% Should have a cut here when XSB will allow
+
+
+%% local_fd/2
+local_fd(S,MethSign) :-
+	var(MethSign),
+	!,
+	inferred_fd_eql(S,M,_V),
+	%% Should have a cut here when XSB will allow
+	flora_funct_arity(M,MethSign).
+
+local_fd(S,MethSign) :-
+	flora_funct_arity(M,MethSign),
+	inferred_fd_eql(S,M,_V).
+	%% Should have a cut here when XSB will allow
+
+
+%% local_imvd/2
+local_imvd(S,MethSign) :-
+	var(MethSign),
+	inferred_imvd_eql(S,M,_V),
+	%% Should have a cut here when XSB will allow
+	flora_funct_arity(M,MethSign).
+
+local_imvd(S,MethSign) :-
+	var(MethSign),
+	!,
+	inferred_imvddef_eql(S,M),
+	flora_funct_arity(M,MethSign).
+
+local_imvd(S,MethSign) :-
+	flora_funct_arity(M,MethSign),
+	inferred_imvd_eql(S,M,_V).
+	%% Should have a cut here when XSB will allow
+
+local_imvd(S,MethSign) :-
+	flora_funct_arity(M,MethSign),
+	inferred_imvddef_eql(S,M).
+
+
+%% local_mvd/2
+local_mvd(S,MethSign) :-
+	var(MethSign),
+	inferred_mvd_eql(S,M,_V),
+	%% Should have a cut here when XSB will allow
+	flora_funct_arity(M,MethSign).
+
+local_mvd(S,MethSign) :-
+	var(MethSign),
+	!,
+	inferred_mvddef_eql(S,M),
+	flora_funct_arity(M,MethSign).
+
+local_mvd(S,MethSign) :-
+	flora_funct_arity(M,MethSign),
+	inferred_mvd_eql(S,M,_V).
+	%% Should have a cut here when XSB will allow
+
+local_mvd(S,MethSign) :-
+	flora_funct_arity(M,MethSign),
+	inferred_mvddef_eql(S,M).
+
+
+/*****************************************************************************
+  nonmonotonic multiple inheritance of scalar attributes
+  from superclasses to subclasses
+*****************************************************************************/
+ifd(C,M,V) :-
+	inferred_ifd_eql(C,M,V).
+
+ifd(C,M,V) :-
+	var(M),
+	!,
+	inheritance_ifd_eql(Super,M,V),
+	flora_funct_arity(M,MethSign),
+	sk_not(local_ifd(C,MethSign)),
+	candidate_class_ifd(Super,MethSign,C),
+	sk_not(multiple_class_ifd(Super,MethSign,C)).
+
+ifd(C,M,V) :-
+	flora_funct_arity(M,MethSign),
+	sk_not(local_ifd(C,MethSign)),
+	candidate_class_ifd(Super,MethSign,C),
+	inheritance_ifd_eql(Super,M,V),
+	sk_not(multiple_class_ifd(Super,MethSign,C)).
+
+
+/*****************************************************************************
+  nonmonotonic multiple inheritance of scalar attributes
+  from superclasses to instances/members
+*****************************************************************************/
+fd(O,M,V) :-
+	inferred_fd_eql(O,M,V).
+
+fd(O,M,V) :-
+	var(M),
+	!,
+	inheritance_ifd_eql(Super,M,V),
+	flora_funct_arity(M,MethSign),
+	sk_not(local_fd(O,MethSign)),
+	candidate_object_ifd(Super,MethSign,O),
+	sk_not(multiple_object_ifd(Super,MethSign,O)).
+
+fd(O,M,V) :-
+	flora_funct_arity(M,MethSign),
+	sk_not(local_fd(O,MethSign)),
+	candidate_object_ifd(Super,MethSign,O),
+	inheritance_ifd_eql(Super,M,V),
+	sk_not(multiple_object_ifd(Super,MethSign,O)).
+
+
+/*****************************************************************************
+  nonmonotonic multiple inheritance of multivalued attributes
+  from superclasses to subclasses
+*****************************************************************************/
+imvd(C,M,V) :-
+	inferred_imvd_eql(C,M,V).
+
+imvd(C,M,V) :-
+	var(M),
+	!,
+	inheritance_imvd_eql(Super,M,V),
+	flora_funct_arity(M,MethSign),
+	sk_not(local_imvd(C,MethSign)),
+	candidate_class_imvd(Super,MethSign,C),
+	sk_not(multiple_class_imvd(Super,MethSign,C)).
+
+imvd(C,M,V) :-
+	flora_funct_arity(M,MethSign),
+	sk_not(local_imvd(C,MethSign)),
+	candidate_class_imvd(Super,MethSign,C),
+	inheritance_imvd_eql(Super,M,V),
+	sk_not(multiple_class_imvd(Super,MethSign,C)).
+
+
+imvddef(C,M) :-
+	inferred_imvddef_eql(C,M).
+
+imvddef(C,M) :-
+	var(M),
+	!,
+	inheritance_imvddef_eql(Super,M),
+	flora_funct_arity(M,MethSign),
+	sk_not(local_imvd(C,MethSign)),
+	candidate_class_imvd(Super,MethSign,C),
+	sk_not(multiple_class_imvd(Super,MethSign,C)).
+
+imvddef(C,M) :-
+	flora_funct_arity(M,MethSign),
+	sk_not(local_imvd(C,MethSign)),
+	candidate_class_imvd(Super,MethSign,C),
+	inheritance_imvddef_eql(Super,M),
+	sk_not(multiple_class_imvd(Super,MethSign,C)).
+
+imvddef(C,M) :-
+	imvd(C,M,_V).
+	%% Should have a cut here when XSB will allow
+
+
+/*****************************************************************************
+  nonmonotonic multiple inheritance of multivalued attributes
+  from superclasses to instances/members
+*****************************************************************************/
+mvd(O,M,V) :-
+	inferred_mvd_eql(O,M,V).
+
+mvd(O,M,V) :-
+	var(M),
+	!,
+	inheritance_imvd_eql(Super,M,V),
+	flora_funct_arity(M,MethSign),
+	sk_not(local_mvd(O,MethSign)),
+	candidate_object_imvd(Super,MethSign,O),
+	sk_not(multiple_object_imvd(Super,MethSign,O)).
+
+mvd(O,M,V) :-
+	flora_funct_arity(M,MethSign),
+	sk_not(local_mvd(O,MethSign)),
+	candidate_object_imvd(Super,MethSign,O),
+	inheritance_imvd_eql(Super,M,V),
+	sk_not(multiple_object_imvd(Super,MethSign,O)).
+
+
+mvddef(O,M) :-
+	inferred_mvddef_eql(O,M).
+
+mvddef(O,M) :-
+	var(M),
+	!,
+	inheritance_imvddef_eql(Super,M),
+	flora_funct_arity(M,MethSign),
+	sk_not(local_mvd(O,MethSign)),
+	candidate_object_imvd(Super,MethSign,O),
+	sk_not(multiple_object_imvd(Super,MethSign,O)).
+
+mvddef(O,M) :-
+	flora_funct_arity(M,MethSign),
+	sk_not(local_mvd(O,MethSign)),
+	candidate_object_imvd(Super,MethSign,O),
+	inheritance_imvddef_eql(Super,M),
+	sk_not(multiple_object_imvd(Super,MethSign,O)).
+
+mvddef(O,M) :-
+	mvd(O,M,_V).
+	%% Should have a cut here when XSB will allow
 
 
 /*****************************************************************************
@@ -395,91 +470,159 @@ tran(O,T) :-
   monotonic inheritance of signatures
 *****************************************************************************/
 %% fdsig/3
-fdsig(O,MethodArgs,R) :-
-	inferred_fdsig(O,MethodArgs,R).
+fdsig(O,M,R) :-
+	inferred_fdsig(O,M,R).
 
-fdsig(O,MethodArgs,R) :-
+fdsig(O,M,R) :-
 	diffobjeql(O,OX),
-	inferred_fdsig(OX,MethodArgs,R).
+	inferred_fdsig(OX,M,R).
 
-fdsig(O,MethodArgs,R) :-
+fdsig(O,M,R) :-
 	diffobjeql(R,RX),
-	inferred_fdsig(O,MethodArgs,RX).
+	inferred_fdsig(O,M,RX).
 
-fdsig(O,MethodArgs,R) :-
+fdsig(O,M,R) :-
 	diffobjeql(O,OX),
 	diffobjeql(R,RX),
-	inferred_fdsig(OX,MethodArgs,RX).
+	inferred_fdsig(OX,M,RX).
 
-fdsig(O,MethodArgs,R) :-
+fdsig(O,M,R) :-
 	isa(O,C),
-	ifdsig(C,MethodArgs,R).
+	ifdsig(C,M,R).
+
+
+%% fdsigdef/2
+fdsigdef(O,M) :-
+	inferred_fdsigdef(O,M).
+
+fdsigdef(O,M) :-
+	diffobjeql(O,OX),
+	inferred_fdsigdef(OX,M).
+
+fdsigdef(O,M) :-
+	isa(O,C),
+	ifdsigdef(C,M).
+
+fdsigdef(O,M) :-
+	fdsig(O,M,_V).
+	%% Should have a cut here when XSB will allow
 
 
 %% ifdsig/3
-ifdsig(O,MethodArgs,R) :-
-	inferred_ifdsig(O,MethodArgs,R).
+ifdsig(C,M,R) :-
+	inferred_ifdsig(C,M,R).
 
-ifdsig(O,MethodArgs,R) :-
-	diffobjeql(O,OX),
-	inferred_ifdsig(OX,MethodArgs,R).
+ifdsig(C,M,R) :-
+	diffobjeql(C,CX),
+	inferred_ifdsig(CX,M,R).
 
-ifdsig(O,MethodArgs,R) :-
+ifdsig(C,M,R) :-
 	diffobjeql(R,RX),
-	inferred_ifdsig(O,MethodArgs,RX).
+	inferred_ifdsig(C,M,RX).
 
-ifdsig(O,MethodArgs,R) :-
-	diffobjeql(O,OX),
+ifdsig(C,M,R) :-
+	diffobjeql(C,CX),
 	diffobjeql(R,RX),
-	inferred_ifdsig(OX,MethodArgs,RX).
+	inferred_ifdsig(CX,M,RX).
 
-ifdsig(S,MethodArgs,R) :-
-	inheritance_sub(S,C),
-	ifdsig(C,MethodArgs,R).
+ifdsig(C,M,R) :-
+	inheritance_sub(C,S),
+	ifdsig(S,M,R).
+
+
+%% ifdsigdef/2
+ifdsigdef(C,M) :-
+	inferred_ifdsigdef(C,M).
+
+ifdsigdef(C,M) :-
+	diffobjeql(C,CX),
+	inferred_ifdsigdef(CX,M).
+
+ifdsigdef(C,M) :-
+	inheritance_sub(C,S),
+	ifdsigdef(S,M).
+
+ifdsigdef(C,M) :-
+	ifdsig(C,M,_V).
+	%% Should have a cut here when XSB will allow
 
 
 %% mvdsig/3
-mvdsig(O,MethodArgs,R) :-
-	inferred_mvdsig(O,MethodArgs,R).
+mvdsig(O,M,R) :-
+	inferred_mvdsig(O,M,R).
 
-mvdsig(O,MethodArgs,R) :-
+mvdsig(O,M,R) :-
 	diffobjeql(O,OX),
-	inferred_mvdsig(OX,MethodArgs,R).
+	inferred_mvdsig(OX,M,R).
 
-mvdsig(O,MethodArgs,R) :-
+mvdsig(O,M,R) :-
 	diffobjeql(R,RX),
-	inferred_mvdsig(O,MethodArgs,RX).
+	inferred_mvdsig(O,M,RX).
 
-mvdsig(O,MethodArgs,R) :-
+mvdsig(O,M,R) :-
 	diffobjeql(O,OX),
 	diffobjeql(R,RX),
-	inferred_mvdsig(OX,MethodArgs,RX).
+	inferred_mvdsig(OX,M,RX).
 
-mvdsig(O,MethodArgs,R) :-
+mvdsig(O,M,R) :-
 	isa(O,C),
-	imvdsig(C,MethodArgs,R).
+	imvdsig(C,M,R).
+
+
+%% mvdsigdef/2
+mvdsigdef(O,M) :-
+	inferred_mvdsigdef(O,M).
+
+mvdsigdef(O,M) :-
+	diffobjeql(O,OX),
+	inferred_mvdsigdef(OX,M).
+
+mvdsigdef(O,M) :-
+	isa(O,C),
+	imvdsigdef(C,M).
+
+mvdsigdef(O,M) :-
+	mvdsig(O,M,_V).
+	%% Should have a cut here when XSB will allow
 
 
 %% imvdsig/3
-imvdsig(O,MethodArgs,R) :-
-	inferred_imvdsig(O,MethodArgs,R).
+imvdsig(C,M,R) :-
+	inferred_imvdsig(C,M,R).
 
-imvdsig(O,MethodArgs,R) :-
-	diffobjeql(O,OX),
-	inferred_imvdsig(OX,MethodArgs,R).
+imvdsig(C,M,R) :-
+	diffobjeql(C,CX),
+	inferred_imvdsig(CX,M,R).
 
-imvdsig(O,MethodArgs,R) :-
+imvdsig(C,M,R) :-
 	diffobjeql(R,RX),
-	inferred_imvdsig(O,MethodArgs,RX).
+	inferred_imvdsig(C,M,RX).
 
-imvdsig(O,MethodArgs,R) :-
-	diffobjeql(O,OX),
+imvdsig(C,M,R) :-
+	diffobjeql(C,CX),
 	diffobjeql(R,RX),
-	inferred_imvdsig(OX,MethodArgs,RX).
+	inferred_imvdsig(CX,M,RX).
 
-imvdsig(S,MethodArgs,R) :-
-	inheritance_sub(S,C),
-	imvdsig(C,MethodArgs,R).
+imvdsig(C,M,R) :-
+	inheritance_sub(C,S),
+	imvdsig(S,M,R).
+
+
+%% imvdsigdef/2
+imvdsigdef(C,M) :-
+	inferred_imvdsigdef(C,M).
+
+imvdsigdef(C,M) :-
+	diffobjeql(C,CX),
+	inferred_imvdsigdef(CX,M).
+
+imvdsigdef(C,M) :-
+	inheritance_sub(C,S),
+	imvdsigdef(S,M).
+
+imvdsigdef(C,M) :-
+	imvdsig(C,M,_V).
+	%% Should have a cut here when XSB will allow
 
 
 /*****************************************************************************
@@ -509,5 +652,3 @@ diffobjeql(X,Y) :-
 	diffobjeql(X,Z),
 	diffobjeql(Z,Y),
 	X \= Y.
-
-

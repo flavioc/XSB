@@ -61,7 +61,7 @@
 	xsb_undefined_predicate_hook/1
    from xsb_hook.
 
-:- import flora_undefined_predicate_hook/1 from flrundefhook.
+:- import flora_undefined_predicate_hook/3 from flrundefhook.
 
 :- import
 	unstrap_flora/0
@@ -84,7 +84,10 @@
 	flora_stdmsg_string/2,
 	flora_stdfdbk_line/0,
 	flora_stdfdbk_string/1,
-	flora_error_line/1
+	flora_stderr_string/1,
+	flora_stderr_nl/0,
+	flora_error_line/1,
+	flora_error_line/2
    from flrprint.
 
 :- import

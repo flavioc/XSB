@@ -58,15 +58,49 @@ flora_shell_loop_body :-
 	flora_loop_guard(Status).
 
 %% If end_of_flora_shell was thrown then true (exit)
-%% Othewrwise - fail (continue the loop
+%% Othewrwise - fail (continue the loop)
+flora_shell_loop_handler(END_OF_FLORA_SHELL) :-
+	!.
+flora_shell_loop_handler(FLORA_CMD_LINE_ARGUMENT_DONE) :-
+	!,
+	fail.
+flora_shell_loop_handler(FLORA_TOP_LEVEL) :-
+	!,
+	fail.
+flora_shell_loop_handler(FLORA_UNDEFINED_EXCEPTION(_)) :-
+	!,
+	fail.
+flora_shell_loop_handler(error(undefined_predicate(PredName,Arity,Module),_Msg)) :-
+	flora_undefined_predicate_hook(PredName,Arity,Module),
+	!,
+	fail.
+flora_shell_loop_handler(error(existence_error(module,Module),_Msg)) :-
+	flora_error_line('attempt to call a Prolog predicate in a not found module `~w''',
+			 [Module]),
+	!,
+	fail.
+flora_shell_loop_handler('flora_abort') :-
+	!,
+	flora_stderr_string('++Abort[FLORA]'), flora_stderr_nl,
+	fail.
+flora_shell_loop_handler('_$abort_ball') :-
+	!,
+	flora_stderr_string('++Abort[Prolog]'), flora_stderr_nl,
+	fail.
+flora_shell_loop_handler('_$abort_ball'(Exception)) :-
+	!,
+	flora_stderr_string('++Abort[Prolog]: '),
+	flora_stderr_string(Exception), flora_stderr_nl,
+	fail.
 flora_shell_loop_handler(Exception) :-
-	Exception == end_of_flora_shell.
+	flora_stderr_string(Exception), flora_stderr_nl,
+	fail.
+
 
 
 /*********************************************************************/
 flora_init_shell :-
 	consult(flrundefhook),
-	add_xsb_hook(xsb_undefined_predicate_hook(flora_undefined_predicate_hook(_))),
 	consult(flrutils),
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
@@ -136,14 +170,16 @@ flHelp :-
 	flora_stdmsg_line('o FL_EQUALITY {none|basic|flogic}'),
 	flora_stdmsg_line('    set support for the equality predicate in the shell module `main'' to'),
 	flora_stdmsg_line('    none, standard first-order, or F-logic style'),
-	flora_stdmsg_line('o abolish_all_tables'),
-	flora_stdmsg_line('    flush all tabled data'),
+	flora_stdmsg_line('o newmodule{MODULENAME [, none|basic|flogic]}'),
+	flora_stdmsg_line('    create new module MODULENAME with given equality maintenance level'),
 	flora_stdmsg_line('o FL_ARGUMENTS Functor({FL_OID|FL_BODYFORMULA},...)'),
 	flora_stdmsg_line('    define the predicate argument type in shell mode'),
 	flora_stdmsg_line('o FL_OP(Precedence,Associativity,Operator)'),
 	flora_stdmsg_line('    define an operator in shell mode'),
 	flora_stdmsg_line('o flReset(FL_ARGUMENTS|FL_OP)'),
-	flora_stdmsg_line('    clear all dynamic FL_ARGUMENTS/FL_OP declarations'),
+	flora_stdmsg_line('    clear all dynamic FL_ARGUMENTS or operator (FL_OP) declarations'),
+	flora_stdmsg_line('o abolish_all_tables'),
+	flora_stdmsg_line('    flush all tabled data'),
 	flora_stdmsg_line('    in the FLORA shell'),
 	flora_stdmsg_line('o flAll'),
 	flora_stdmsg_line('    show all solutions (default)'),
@@ -154,9 +190,9 @@ flHelp :-
 	flora_stdmsg_line('o flTrace/flNoTrace'),
 	flora_stdmsg_line('    turn on/off FLORA trace'),
 	flora_stdmsg_line('o flEnd'),
-	flora_stdmsg_line('    say Ciao to FLORA, stay in XSB'),
+	flora_stdmsg_line('    say Ciao to FLORA, stay in Prolog'),
 	flora_stdmsg_line('o flHalt'),
-	flora_stdmsg_line('    quit both FLORA and XSB').
+	flora_stdmsg_line('    quit both FLORA and Prolog').
 #mode restore
 
 
@@ -190,7 +226,6 @@ flOne :-
 
 /*********************************************************************/
 flEnd :-
-	remove_xsb_hook(xsb_undefined_predicate_hook(flora_undefined_predicate_hook(_))),
 	unstrap_flora,
 	flora_stdmsg_line('~n~nCiao!'),
 	throw(END_OF_FLORA_SHELL).
@@ -214,7 +249,7 @@ flTrace(File) :-
 	dump_trace_to_file(File),
 	flTrace.
 
-%% Enables low-level XSB debugging
+%% Enables low-level Prolog debugging
 flTraceLow :-
 	flTrace,
 	flora_set_switch(low_level_trace).

@@ -24,7 +24,6 @@
 */
 
 
-:- import psc_name/2 from machine.
 
 :- import flora_decode_predicate/6 from flrwrapper.
 
@@ -37,4 +36,4 @@
 	flora_error_line/2
    from flrprint.
 
-:- export flora_undefined_predicate_hook/1.
+:- export flora_undefined_predicate_hook/3.

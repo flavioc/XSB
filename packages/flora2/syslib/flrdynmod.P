@@ -27,6 +27,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_exceptions.flh"
 
 
 :- import
@@ -56,7 +57,7 @@ fllibmodlit(F,Arg,ModuleName) :-
 	( flora_check_module_name(ModuleName) ->
 	    (var(Arg) -> flora_error_line('Uninstantiated literal, ~w@~w',
 					  [Arg,ModuleName]),
-			 abort
+			 throw(FLORA_ABORT)
 	    ; (
 		is_list(Arg), Arg = Args, !, % Term@X
 	        flora_module_predicate(F,Args,ModuleName,P)
@@ -77,7 +78,7 @@ fllibmodlit(F,Arg,ModuleName) :-
 	      call(P)
 	    )
 	;
-	  abort
+	  throw(FLORA_ABORT)
 	).
 
 
@@ -88,7 +89,7 @@ fllibmodobj(F,Arg,ModuleName,P) :-
 	( flora_check_module_name(ModuleName) ->
 	    (var(Arg) -> flora_error_line('Uninstantiated literal, ~w@~w',
 					  [Arg,ModuleName]),
-			 abort
+			 throw(FLORA_ABORT)
 	    ; ( 
 		is_list(Arg), Arg = Args, !, % Term@X
 		flora_module_predicate(F,Args,ModuleName,P)
@@ -107,7 +108,7 @@ fllibmodobj(F,Arg,ModuleName,P) :-
 	      )
 	    )
 	;
-	  abort
+	  throw(FLORA_ABORT)
 	),
 	!.
 

@@ -1,7 +1,7 @@
 # Make file for Microsoft NMAKE
 
 
-ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh
+ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh flrdyna.flh flrdynz.flh
 
 !include ..\.prolog_path
 

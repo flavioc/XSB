@@ -48,6 +48,32 @@
 #define  FLORA_DB_DELETE_PREDICATE    	    	storage_delete_fact
 #define  FLORA_DB_INSERT_BT_PREDICATE    	storage_insert_fact_bt
 #define  FLORA_DB_DELETE_BT_PREDICATE    	storage_delete_fact_bt
+#define FLORA_DB_INSERT_KEYPAIR_PREDICATE   storage_insert_keypair
+#define FLORA_DB_DELETE_KEYPAIR_PREDICATE   storage_delete_keypair
+#define FLORA_DB_FIND_KEYPAIR_PREDICATE     storage_find_keypair
+
+%% Some contexts don't like executable statements in included files.
+%% We can bracket them out there by defining FLORA_NO_EXECUTABLE_INCLUDES.
+#ifndef FLORA_NO_EXECUTABLE_INCLUDES
+:- import
+	FLORA_DB_FIND_PREDICATE/2,
+	FLORA_DB_INSERT_PREDICATE/3,
+	FLORA_DB_DELETE_PREDICATE/3,
+	FLORA_DB_INSERT_BT_PREDICATE/3,
+	FLORA_DB_DELETE_BT_PREDICATE/3,
+	FLORA_DB_INSERT_KEYPAIR_PREDICATE/4,
+	FLORA_DB_FIND_KEYPAIR_PREDICATE/3
+   from storage.
+%% Dummy use of symbols: To avoid compiler warnings
+?- fail, FLORA_DB_FIND_PREDICATE(_,_),
+         FLORA_DB_INSERT_PREDICATE(_,_,_),
+	 FLORA_DB_DELETE_PREDICATE(_,_,_),
+         FLORA_DB_INSERT_BT_PREDICATE(_,_,_),
+	 FLORA_DB_DELETE_BT_PREDICATE(_,_,_),
+	 FLORA_DB_INSERT_KEYPAIR_PREDICATE(_,_,_,_),
+	 FLORA_DB_FIND_KEYPAIR_PREDICATE(_,_,_).
+#endif
+
 
 #deffast FLORA_DB_FIND(Storage,Fact)     FLORA_DB_FIND_PREDICATE(Storage,Fact)
 #deffast FLORA_DB_INSERT(Storage,Fact,Status)  \
@@ -59,11 +85,10 @@
 #deffast FLORA_DB_DELETE_BT(Storage,Fact,Status)  \
                                          FLORA_DB_DELETE_BT_PREDICATE(#1,#2,#3)
 
-#define FLORA_DB_INSERT_KEYPAIR_PREDICATE   storage_insert_keypair
-#define FLORA_DB_FIND_KEYPAIR_PREDICATE     storage_find_keypair
-
 #deffast FLORA_DB_INSERT_KEYPAIR(Storage,Key,Fact,Status) \
 				 FLORA_DB_INSERT_KEYPAIR_PREDICATE(#1,#2,#3,#4)
+#deffast FLORA_DB_DELETE_KEYPAIR(Storage,Key,Status) \
+				 FLORA_DB_DELETE_KEYPAIR_PREDICATE(#1,#2,#3)
 #deffast FLORA_DB_FIND_KEYPAIR(Storage,Key,Fact)  \
                                  FLORA_DB_FIND_KEYPAIR_PREDICATE(#1,#2,#3)
 

@@ -61,10 +61,12 @@ is_fldirective(FLDIRECTIVE(DirectList),DirectList).
 
 is_flcommand(FLCOMMAND(C),C).
 is_fltable(FLTABLE(P,A),P,A).
+is_fltable(FLTABLE(M,P,A),M,P,A).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
 is_flindex(FLINDEX(A,P),A,P).
+is_flindex(FLINDEX(M,A,P),M,A,P).
 is_flequality(FLEQUALITY(A),A).
 is_flequality(FLEQUALITY(A,M),A,M).
 is_flcmpopt(FLCMPOPT(OptList),OptList).
@@ -120,6 +122,11 @@ is_flinsert(FLINSERT(Op,List,Cond),Op,List,Cond).
 is_flinsert(FLINSERT(Op,List),Op,List).
 is_fldelete(FLDELETE(Op,List,Cond),Op,List,Cond).
 is_fldelete(FLDELETE(Op,List),Op,List).
+
+%% Op is needed for newmodule only because of its position information 
+is_flnewmodule(FLNEWMODULE(Op,ModList),Op,ModList).
+is_flinsertrule(FLINSERTRULE(Op,RuleList),Op,RuleList).
+
 is_flaggregate(FLAGGREGATE(Op,V,GV,Goal),Op,V,GV,Goal).
 
 %% Binary relationship, like : or ::
@@ -222,7 +229,6 @@ command_struct(C,PRCOMMAND(C)).
 table_struct(F,N,PRTABLE(F,N)).
 %% We keep the import directive's support mechanism for @prolog(module)
 import_struct(F,N,M,PRIMPORT(F,N,M)).
-index_struct(A,P,PRINDEX(A,P)).
 cmpopt_struct(OptList,PRCMPOPT(OptList)).
 
 
@@ -246,7 +252,7 @@ tnot_struct(Goal,PRTNOT(Goal)) :-
 /****************************************************************************
   conjunct_code(+GoalList,-Code)
 
-  Takes a list of goals and constructs a disjunct:
+  Takes a list of goals and constructs a conjunct:
         prand(G1, prand(G2, G3))
   Discards NULLs
   If all are NULLs, returns NULL.
@@ -429,6 +435,9 @@ delete_syslib(FL_BTDELETEALL,FLLIBBTDELETEALL) :- !.
 delete_syslib(FL_BTERASE,FLLIBBTERASE) :- !.
 delete_syslib(FL_BTERASEALL,FLLIBBTERASEALL) :- !.
 
+insertrule_syslib(FL_INSERTRULE_A,FLLIBINSERTRULE_A) :- !.
+insertrule_syslib(FL_INSERTRULE_Z,FLLIBINSERTRULE_Z) :- !.
+
 aggregate_struct(Op,V,GV,B,Object,Code) :-
 	%% Index denotes the textual information for the aggregate
 	%% operator and represents the textual information for the
@@ -474,12 +483,8 @@ fdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 
 fdspec_struct(Object,AttObj,ValObj,PRFD(Object,AttObj,ValObj)).
 ifdspec_struct(Object,AttObj,ValObj,PRIFD(Object,AttObj,ValObj)).
-fdsigspec_struct(Object,AttObj,ValObj,PRFDSIG(Object,AttObj,ValObj)).
-mvdsigspec_struct(Object,AttObj,ValObj,PRMVDSIG(Object,AttObj,ValObj)).
-ifdsigspec_struct(Object,AttObj,ValObj,PRIFDSIG(Object,AttObj,ValObj)).
-imvdsigspec_struct(Object,AttObj,ValObj,PRIMVDSIG(Object,AttObj,ValObj)).
 
-
+%% This is called when someting like a.b[] is compiled.
 objattdef_struct(Obj,RefType,Att,Code) :-
 	( is_fdrefop(RefType) ->
 	    fddef_struct(Obj,Att,Code)
@@ -501,34 +506,59 @@ mvdattdef_struct(Object,AttObj,RefType,Code) :-
 	    mvddef_struct(Object,AttObj,Code)
 	;
 	  is_imvdspecop(RefType),
-	  imvddef_struct(Object,AttObj,Code)
+	    imvddef_struct(Object,AttObj,Code)
+
+	; is_mvdsigspecop(RefType) ->
+	    mvdsigdef_struct(Object,AttObj,Code)
+
+	; is_imvdsigspecop(RefType) ->
+	    imvdsigdef_struct(Object,AttObj,Code)
+
+	; is_fdsigspecop(RefType) ->
+	    fdsigdef_struct(Object,AttObj,Code)
+
+	; is_ifdsigspecop(RefType) ->
+	    ifdsigdef_struct(Object,AttObj,Code)
         ).
 
 fddef_struct(Object,AttObj,PRFDDEF(Object,AttObj)).
 ifddef_struct(Object,AttObj,PRIFDDEF(Object,AttObj)).
 mvddef_struct(Object,AttObj,PRMVDDEF(Object,AttObj)).
 imvddef_struct(Object,AttObj,PRIMVDDEF(Object,AttObj)).
+mvdsigdef_struct(Object,AttObj,PRMVDSIGDEF(Object,AttObj)).
+imvdsigdef_struct(Object,AttObj,PRIMVDSIGDEF(Object,AttObj)).
+fdsigdef_struct(Object,AttObj,PRFDSIGDEF(Object,AttObj)).
+ifdsigdef_struct(Object,AttObj,PRIFDSIGDEF(Object,AttObj)).
 
 mvdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	(
 	  is_mvdspecop(RefType) ->
 	    mvdspec_struct(Object,AttObj,ValObj,Code)
-	; is_imvdspecop(RefType),
+
+	; is_imvdspecop(RefType) ->
 	    imvdspec_struct(Object,AttObj,ValObj,Code)
+
 	; is_mvdsigspecop(RefType) ->
 	    mvdsigspec_struct(Object,AttObj,ValObj,Code)
-	; is_imvdsigspecop(RefType),
+
+	; is_imvdsigspecop(RefType) ->
 	    imvdsigspec_struct(Object,AttObj,ValObj,Code)
+
 	%% Note: => and *=> are permitted to have multiple values
 	%%       (semantics is intersection)
 	; is_fdsigspecop(RefType) ->
 	    fdsigspec_struct(Object,AttObj,ValObj,Code)
+
 	; is_ifdsigspecop(RefType) ->
 	    ifdsigspec_struct(Object,AttObj,ValObj,Code)
         ).
 
 mvdspec_struct(Object,AttObj,ValObj,PRMVD(Object,AttObj,ValObj)).
 imvdspec_struct(Object,AttObj,ValObj,PRIMVD(Object,AttObj,ValObj)).
+mvdsigspec_struct(Object,AttObj,ValObj,PRMVDSIG(Object,AttObj,ValObj)).
+imvdsigspec_struct(Object,AttObj,ValObj,PRIMVDSIG(Object,AttObj,ValObj)).
+fdsigspec_struct(Object,AttObj,ValObj,PRFDSIG(Object,AttObj,ValObj)).
+ifdsigspec_struct(Object,AttObj,ValObj,PRIFDSIG(Object,AttObj,ValObj)).
 
 %% for +>> and *+>>
 incattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
@@ -614,6 +644,7 @@ controlconstruct_struct(CondCode,ActionCode,Wrapper,Code) :-
 	florasyslib_struct(Wrapper,2,[CondCode,ActionCode],Code).
 
 constraint_struct(ConstrCode,PRCONSTRAINT(ConstrCode)).
+
 
 /****************************************************************************
   reset_newpredicate/0
@@ -1119,6 +1150,11 @@ compile_flatomvar(T,Code) :-
 	      atomobj_struct(T,Code)
 	    ).
 
+compile_flatomvar_list([],[]) :- !.
+compile_flatomvar_list([H|T],[HCode|TCode]) :-
+	compile_flatomvar(H,HCode),
+	compile_flatomvar_list(T,TCode).
+
 /****************************************************************************
   get_slash_sep_numbers(+Old,-New)
 ****************************************************************************/
@@ -1203,12 +1239,11 @@ compile_rule(Head,Body,CodeList-ListTail,Status) :-
 		compile_rulelist(HeadCodeList,BodyCode,T-ListTail),
 		check_vars(Head,Body,Status)
 	    ;
-	      Status=BS
+	        Status=BS
 	    )
 	;
 	  Status=HS
         ).
-
 
 /****************************************************************************
   compile_rulelist(+HeadCodeList,+BodyCode,-CodeDiffList)
@@ -1397,6 +1432,19 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	; is_fldelete(ParserTerm,Op,List) ->
 	    compile_fldelete(Op,List,SpecCode,Status),
 	    OidCode=NULL
+
+	; is_flnewmodule(ParserTerm,Op,ModList) ->
+	    is_flatom(Op,_OpAtom,Index),
+	    compile_flatomvar_list(ModList,Mods),
+	    list_struct(Mods,[],ModlistCode),
+	    florasyslib_struct(Index,FLLIBNEWMODULE,1,[ModlistCode],SpecCode),
+	    Status=[],
+	    OidCode=NULL
+
+	; is_flinsertrule(ParserTerm,Op,List) ->
+	    compile_flinsertrule(Op,List,SpecCode,Status),
+	    OidCode=NULL
+		
 
 	; is_flifthenelse(ParserTerm,Cond,Then,Else) ->
 	    compile_flifthenelse(Cond,Then,Else,SpecCode,Status),
@@ -1771,6 +1819,7 @@ compile_fllist(ObjTermList,ObjTerm,Index,Object,OidCode,Code,Status) :-
 	( S == [] ->
 	    ( ObjTerm == [] ->
 		Obj=[],
+		OidCodeObj=NULL,
 		ObjCode=NULL,
 		Status=[]
 	    ;
@@ -3963,6 +4012,45 @@ compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
 	prologterm_struct(FCode,2,[C,SCode],DBCode),
 	compile_dbupdate_list(CL,DBCodeList).
 
+/****************************************************************************
+  compile_flinsertrule(+Op,+List,-Code,Status)
+****************************************************************************/
+compile_flinsertrule(Op,List,Code,Status) :-
+	is_flatom(Op,OpAtom,Index),
+	compile_flinsertrule_list(List,CodeList,Status),
+	( Status == [] ->
+	    list_struct(CodeList,[],ListCode),
+	    insertrule_syslib(OpAtom,InsertruleLib),
+	    florasyslib_struct(Index,InsertruleLib,1,[ListCode],Code)
+	;
+	    true
+        ).
+
+compile_flinsertrule_list([],[],[]) :- !.
+compile_flinsertrule_list([H|L],[HCode|LCode],Status) :-
+	is_flrule(H,Head,Body),
+	compile_head(Head,HeadCode,HS),
+	compile_conjunct2list(HeadCode,HeadCodeListPre),
+	remove_empty_list(HeadCodeListPre,HeadCodeList),
+	( HS == [] ->
+	    compile_body(Body,BodyCode,BS),
+	    ( BS == [] ->
+	        list_struct(HeadCodeList,[],HCL),
+		rule_struct(HCL,BodyCode,HCode),
+		compile_flinsertrule_list(L,LCode,Status)
+	    ;
+	        Status=BS
+	    )
+	;
+	  Status=HS
+        ).
+
+remove_empty_list([],[]) :- !.
+remove_empty_list([[]|L],NL) :- 
+	!,
+	remove_empty_list(L,NL).
+remove_empty_list([H|L],[H|NL]) :- 
+	remove_empty_list(L,NL).
 
 /****************************************************************************
   compile_exec_directive(+DirectList,-Code,-Status)
@@ -3984,18 +4072,22 @@ compile_execdirect_list([D|L],[DCode|LCode]) :-
   compile_execdirect(+Direct,-Code)
 ****************************************************************************/
 compile_execdirect(DirectTerm,Code) :-
-	( is_fltable(DirectTerm,P,A) ->
+	( (is_fltable(DirectTerm,P,A),thismodule_struct(MCode),!;
+	   is_fltable(DirectTerm,M,P,A),compile_flatomvar(M,MCode)) ->
         compile_flatomvar(P,PCode),
         ( is_flterm(A,Funct,N,Args) ->
           compile_fltermobj(Funct,N,Args,NCode,_OidCode,_RCode,_Status)
         ;
           numobj_struct(A,NCode)
         ),
-        thismodule_struct(MCode),
         florasyslib_struct(FLLIBSHDIRECT,4,[FL_TABLE,MCode,PCode,NCode],Code)
 
-	; is_flindex(DirectTerm,A,P) ->
-	    index_struct(A,P,Code)
+	; (is_flindex(DirectTerm,A,P),thismodule_struct(MCode),!;
+	   is_flindex(DirectTerm,M,A,P),compile_flatomvar(M,MCode)) ->
+	    (numobj_struct(A,ACode);is_flvar(A,AN,AI),varobj_struct(AN,AI,ACode)),
+	    (numobj_struct(P,PCode); is_flvar(P,PN,PI),varobj_struct(PN,PI,PCode)),
+            florasyslib_struct(FLLIBSHDIRECT,4,[FL_INDEX,MCode,ACode,PCode],Code)
+
         ),
 	!.
 
@@ -4013,7 +4105,8 @@ compile_execdirect(DirectTerm,Code) :-
 compile_execdirect(DirectTerm,Code) :-
 	( is_flequality(DirectTerm,T) ->
 	    compile_flatomvar(T,TObj),
-	    florasyslib_struct(FLLIBEQUALITY,1,[TObj],Code)
+	    thismodule_struct(MObj),
+	    florasyslib_struct(FLLIBEQUALITY,2,[TObj,MObj],Code)
 
 	; is_flequality(DirectTerm,T,M) ->
 	    compile_flatomvar(T,TObj),

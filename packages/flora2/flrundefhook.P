@@ -34,9 +34,7 @@
   flora_undefined_predicate_hook/1
 ****************************************************************************/
 %% Case for a call to a molecule
-flora_undefined_predicate_hook([PscRecord,fail]) :-
-	%% Get the predicate symbol.
-	psc_name(PscRecord,PredName),
+flora_undefined_predicate_hook(PredName,Arity,PrologModule) :-
 	%% Decode the predicate symbol.
 	flora_decode_predicate(PredName,PredicateType,ModuleName,_,PredicateSymbol,_),
 	( PredicateType == (flogic) ->
@@ -59,16 +57,15 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	      flora_error_line('calling a HiLog literal in an unloaded FLORA module `~w''',
                                [ModuleName])
 	    )
+	; PredicateType == (prolog) ->
+	    flora_error_line('attempt to call undefined Prolog predicate ~w/~w in module `~w''',
+                               [PredName,Arity,PrologModule])
 
-	),
-	abort.
+	).
 
 %% Attempt to call a HiLog term as a predicate
-flora_undefined_predicate_hook([PscRecord,fail]) :-
-	psc_name(PscRecord,PredName),
-	PredName = WRAP_HILOG,
+flora_undefined_predicate_hook(WRAP_HILOG,_Arity,_PrologModule) :-
 	!,
 	flora_error_heading,
 	flora_stderr_string('attempt to call a HiLog term as a predicate'),
-	flora_stderr_nl,
-	abort.
+	flora_stderr_nl.

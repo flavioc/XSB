@@ -146,13 +146,15 @@
 \title{
         \FLORA: User's Manual
            \\
-       {\Large Version 0.90}
+       {\Large Version 0.91}
        }
 
 \author{
   {Guizhen Yang
-  \hspace{3cm}
-  Michael Kifer}
+  \hspace{1cm}
+  Michael Kifer
+  \hspace{1cm}
+  Chang Zhao}
   \\\\
   Department of Computer Science\\
   Stony Brook University\\
@@ -181,13 +183,13 @@
 
 \FLORA is a sophisticated compiler and application development platform
 that translates a unified language of \fl \cite{KLW95}, HiLog
-\cite{hilog-jlp}, and Transaction Logic \cite{trans-tcs94} into tabled
-Prolog code. It takes a program written in the \fl language with HiLog and
-Transaction Logic extensions (which must be in a file with extension {\tt
-  .flr}, {\it e.g.}, {\tt file.flr}) and outputs a regular Prolog program
-(with extension {\tt .P}).  This program is then passed to XSB for
-compilation (which produces {\tt file.\ofile}) and execution, which,
-however, requires \FLORA runtime support.
+\cite{hilog-jlp}, and Transaction Logic \cite{trans-chapter-98,trans-tcs94}
+into tabled Prolog code. It takes a program written in the \fl language
+with HiLog and Transaction Logic extensions (which must be in a file with
+extension {\tt .flr}, {\it e.g.}, {\tt file.flr}) and outputs a regular
+Prolog program (with extension {\tt .P}).  This program is then passed to
+XSB for compilation (which produces {\tt file.\ofile}) and execution,
+which, however, requires \FLORA runtime support.
 
 \index{FLIP}
 \index{FLORID}
@@ -206,7 +208,7 @@ In particular, \FLORA fully supports the versatile syntax of \FLORID path
 expressions. Other important extensions are motivated by the need to
 support a flexible module system (and enable modular software development
 in \fl) and in order to support HiLog \cite{hilog-jlp} and Transaction
-Logic \cite{trans-dbpl93,trans-iclp93,trans-tcs94}, both of which are
+Logic \cite{trans-chapter-98,trans-iclp93,trans-tcs94}, both of which are
 smoothly integrated with \fl. Extensions aside, the syntax of \FLORA also
 differs in some important ways from \FLORID, from the original version of
 \fl, as described in \cite{KLW95}, and from an earlier implementation
@@ -307,8 +309,14 @@ other Prolog modules, and Prolog modules can query the objects defined in
 can run, because it heavily relies on tabling and the well-founded
 semantics for negation, both of which are available only in XSB.
 
+\index{local scheduling in XSB}
+%%
 Due to certain problems with XSB, \FLORA runs best when XSB is configured
-with local scheduling, which is the default XSB configuration.
+with \emph{local} scheduling, which is the default XSB configuration.
+However, with this type of scheduling, many Prolog intuitions that relate
+to the operational semantics do not work. Thus, the programmer must think
+``more declaratively'' and, in particular, to not rely on the 
+order in which answers are returned.
 
 
 \index{runflora script}
@@ -484,9 +492,19 @@ mentioned in the query, except for the \emph{anonymous variables}
 represented as ``{\tt \_}'' and named {\em don't care variables}, which are
 preceded with the underscore, {\it e.g.}, {\tt \_abc}.
 
-By default, \FLORA prints out all answers. If only one is desired, type in
-the following command: {\tt flOne}. You can revert back to the all-answers
-mode by typing {\tt flAll}.
+By default, \FLORA prints out all answers. If only one at a time is
+desired, type in the following command: {\tt flOne}. You can revert back to
+the all-answers mode by typing {\tt flAll}. Note: {\tt flOne} and {\tt flAll}
+affect only the \emph{subsequent} queries. That is, in
+%%
+\begin{verbatim}
+ flora2 ?- flOne, goallist1.
+ flora2 ?- goallist2.
+\end{verbatim}
+%%
+the {\tt flOne} directive will affect {\tt goallist2},
+but \emph{not} {\tt goallist1}. This is because {\tt goallist1} executes in
+the same query as {\tt flOne} and thus is not affected by this directive.
 
 \FLORA shell includes many more commands beyond those mentioned above.
 These commands are listed below. However, at this point the purpose of some
@@ -535,17 +553,23 @@ these tries are successful, an error is reported.
     Flush all tabled data. This is sometimes needed when Prolog's tabling 
     gets in the way. We describe tabling (as it pertains to \FLORA) in
     Section~\ref{sec-tabling-flora}.
-\item {\tt arguments Functor(\{oid$|$meta\}, ...)}:
+\item
+  \index{arguments!compiler directive}
+  %%
+  {\tt arguments Functor(\{oid$|$meta\}, ...)}:
     Define the predicate meta signature in shell mode.
 \item {\tt op(Precedence,Associativity,Operator)}:
     Define an operator in shell mode.
-\item {\tt flReset(\{arguments|op\})}:
-    Clear all dynamic {\tt arguments/op}  definitions in the
-    \FLORA shell.
+\item
+  \index{{\tt flReset}}
+  %%
+  {\tt flReset(\{arguments|op\})}:
+    Clear all dynamic {\tt arguments}  definitions or operator definitions
+    in the \FLORA shell.
 \item {\tt flAll}:
-    Show all solutions (default).
+    Show all solutions (default). Affects subsequent queries only.
 \item {\tt flOne}:
-    Show solutions one by one.
+    Show solutions to subsequent queries one by one.
 \item {\tt flMaxerr(all$|$N)}:
     Set/show the maximum number of errors \FLORA reports.
 \item {\tt flTrace/flNoTrace}:
@@ -1393,13 +1417,7 @@ ways in the same program. Formally, a module is a pair that consists of a
 \emph{name} and a \emph{contents}. The name is just an alphanumeric symbol
 (the underscore, {\tt \_}, is also allowed), and the contents consists of
 the program code that is typically loaded from some file (but it can also
-be constructed dynamically by inserting facts\footnote{
-  %%
-  {\bf Unimplemented}: Dynamic insertion of rules will be implemented in
-  the future.
-  %%
-  }
-%%
+be constructed dynamically by inserting facts
 into another module).
 
 The basic idea behind \FLORA modularization is that reusable code libraries
@@ -2030,6 +2048,10 @@ For instance if file {\tt foo.flr} contains the following instructions:
 %%
 the effect is the same as if the above three files were concatenated
 together and stored in {\tt foo.flr}.
+Note, however, that when compiling {\tt foo.flr}, the compiler has no way
+of knowing if any of the included files have changed, because file
+inclusion is done by the preprocessor. So, it is recommended to compile
+such multi-file programs using a Makefile, like in C and C++.
 
 \subsection{More on Variables as Module Specifications}
 
@@ -2407,11 +2429,12 @@ compiler.\footnote{
 Under this translation, findall/3 will find all instances of {\tt
   P} that make {\tt F(P)} true and return a list of such instances in the
 list {\tt L}. This feat is accomplished using the {\tt arguments} compiler
-instruction.
+directive.
 
 \index{predicate meta signature}
 \index{meta signature of a predicate}
 \index{compiler directive!{\tt arguments}}
+\index{arguments!compiler directive}
 \index{meta}
 \index{reification}
 %
@@ -2456,20 +2479,21 @@ terms, predicate and function symbols, and even over atomic formulas. For
 instance,
 %%
 {\tt
-\begin{equation}
+\begin{qrules}
  ?- p(X), X(p).
-\end{equation}
+\end{qrules}
 }
 %%
 \noindent
 and
 %%
 {\tt
-\begin{equation}\label{eq-hilog-notallowed}
+\begin{qrules}\label{eq-hilog-notallowed}
  ?- p(X), X(p), X.  
-\end{equation}
+\end{qrules}
 }
 %%
+\noindent
 are perfectly legal queries. If {\tt p(a(b))}, {\tt a(b)(p)},
 and {\tt a(b)} are all true in the database, then $X=a$ is one of the
 answers to the query.
@@ -2734,6 +2758,9 @@ cool thing one should write:
 \end{verbatim}
 %%$
 
+The semantics of reification in \FLORA is described in
+\cite{reification-odbase-02}.
+
 \paragraph{Reification and meta-unification.}
 Reification should not be confused with meta-unification, although they are
 close concepts. A reified formula reflects the exact structure that is used
@@ -2901,6 +2928,7 @@ program using the predicate {\tt :=:}, e.g.,
 {\tt X:=:Y :- X[similar->Y].} \\
 \end{quote}
 
+\index{equality maintenance level}
 \paragraph{Equality maintenance levels.}
 Once an equality between terms is derived, this information may need to be
 propagated to all \fl 
@@ -3034,9 +3062,10 @@ instance, if {\tt student::person} and a program defines the signature
 succeeds with {\tt X=string}.
 
 \index{inheritance!non-monotonic}
-Behavioral inheritance is much more complicated. The problem  is that it is
-\emph{non-monotonic}. That is, the addition of new facts might obviate previously
-established inferences.
+%%
+Behavioral inheritance is much more
+complicated. It is \emph{non-monotonic} in the sense that
+addition of new facts might falsify previously true facts.
 
 \index{attribute!inheritable}
 \index{attribute!non-inheritable}
@@ -3045,15 +3074,19 @@ established inferences.
 inherit values from superclasses and those that do not. The syntax that we
 have seen so far applies to \emph{non-inheritable} attributes only.
 \emph{Inheritable attributes} are declared using the {\tt *=>} and {\tt *=>>}
-style arrows and defined using the {\tt *->} and {\tt *->>} style arrows. For
-instance, the following is a \FLORA program for the classical {\tt Royal
-Elephant} example:
+style arrows and defined using the {\tt *->} and {\tt *->>} style arrows.
+Note that while {\tt ->} and {\tt ->>} typically occur in facts and rules
+that define the properties of individual objects, {\tt *->} and {\tt *->>}
+normally occur in the definitions of classes.
+
+The following is a \FLORA program for the classical {\tt Royal Elephant}
+example:
 %%
 \begin{quote}
 \begin{verbatim}
 elephant[color*=>color].
 royal_elephant::elephant.
-clyde:elephant.
+clyde:royal_elephant.
 elephant[color*->gray].
 \end{verbatim}
 \end{quote}
@@ -3103,8 +3136,8 @@ royal_elephant[color*->white].
 %%
 Although we have previously established that {\tt clyde} is gray, this
 new information renders our earlier conclusion invalid. Indeed, Since
-{\tt clyde} is a royal elephant, he must be white, while being an
-elephant he must be gray.  The conventional wisdom in object-oriented
+{\tt clyde} is a royal elephant, it must be white, while being an
+elephant it must be gray.  The conventional wisdom in object-oriented
 languages, however, is that inheritance from more specific classes
 must take precedence. Thus, we must withdraw our earlier conclusion
 that {\tt clyde} is gray and infer that he is white:
@@ -3116,10 +3149,11 @@ clyde[color->white].
 \end{quote}
 %%
 
-Behavioral inheritance in \fl is discussed at length in \cite{KLW95}.
-The above problem of non-monotonicity is just a tip of the iceberg. Much
-more difficult problems arise when inheritance interacts with the regular
-deduction. To illustrate, consider the following program:
+Behavioral inheritance in \fl is discussed at length in
+\cite{inheritance-odbase-02}.  The above problem of non-monotonicity is
+just the tip of an iceberg. Much more difficult problems arise when
+inheritance interacts with regular deduction. To illustrate, consider
+the following program:
 %%
 \begin{quote}
 \begin{verbatim}
@@ -3169,57 +3203,79 @@ A semantics that favors the second interpretation was proposed in
 non-monotonic behavioral inheritance.  However, this semantics is very hard
 to implement efficiently, especially using a top-down deductive engine
 provided by the underlying Prolog engine. It is also unsatisfactory in many
-respects because it is not based on any model-theory. \FLORA uses a
+respects because it is not based on a model-theory. \FLORA uses a
 different, more cautious semantics for inheritance, which favors the first
-interpretation above.  The basic idea can be summarized using the following
-rules, which define how class instances inherit from the classes they
-belong to:
+interpretation above.
+
+The details of this semantics are described in
+\cite{inheritance-odbase-02}.  Under this semantics, {\tt clyde} will still
+inherit color white, but in the other two examples {\tt a[m->c]} is
+\emph{not} inherited.  The basic intuition can be summarized as follows:
 %%
-\begin{quote}
-\begin{verbatim}
-// inheritance rules for scalar attributes
-:- table defined/2, overwritten/3, conflict/3.
+\begin{enumerate}
+\item  Methods definitions in subclasses override the definitions that
+  appear in the superclasses.
+\item In case of a multiple inheritance conflict, the result of inheritance
+  is undefined. More precisely, \FLORA is based on a three-valued logic and
+  in this case the truth value is ``unknown.''
+\item  Inheritance from the same source through different paths is
+  \emph{not} considered a multiple inheritance conflict. For instance, in
+  %%
+  \begin{verbatim}
+      a:c.    c::e.      e[m->f].    
+      a:d.    d::e.
+  \end{verbatim}
+  %%
+  Even though we derive {\tt c[m->f]} and {\tt d[m->f]} by inheritance,
+  these two facts can be further inherited to {\tt a} since they came from
+  a single source {\tt e}.
 
-Obj[A->V] :- Obj:Class, Class[A*->V], tnot defined(Obj,A),
-             tnot overwritten(Obj,Class,A), tnot conflict(Obj,Class,A).
+  On the other hand, in a similar program
+  %%
+  \begin{verbatim}
+       a:c[m->f].    
+       a:d[m->f].     
+  \end{verbatim}
+  %%
+  inheritance does not take place (the truth value of {\tt a[m->f]} is
+  ``undefined''), because the two inheritance candidates, {\tt c[m->f]} and
+  {\tt d[m->f]}, are considered to be in conflict.
 
-defined(Obj,A) :- Obj[A->V].
-
-overwritten(Obj,Class,A) :- Obj:Class1, Class1::Class,
-                            Class1[A*->W], Class1 \= Class.
-
-conflict(Obj,Class,A) :- Obj:Super, Super[A*->V],
-                         tnot Super::Class, tnot Class::Super.
-
-// inheritance rules for multi-valued attributes
-:- table definedSet/2, overwrittenSet/3, conflictSet/3.
-
-Obj[A->>V] :- Obj:Class, Class[A*->>V], tnot definedSet(Obj,A),
-              tnot overwrittenSet(Obj,Class,A),
-              tnot conflictSet(Obj,Class,A).
-
-definedSet(Obj,A) :- Obj[A->>V].
-
-overwrittenSet(Obj,Class,A) :- Obj:Class1, Class1::Class,
-                               Class1[A*->>W], Class1 \= Class
-
-conflictSet(Obj,Class,A) :- Obj:Super, Super[A*->V],
-                            tnot Super::Class, tnot Class::Super.
-\end{verbatim}
-\end{quote}
+  Note that in the last example one might argue that even if we did inherit
+  both facts to {\tt a} there would be no discrepancy, because in both
+  cases the values of the attribute {\tt m} agree with each other.
+  However, \FLORA views this agreement accidental, as it depends on the
+  data currently stored in the database. Had one of the values changed to, say,
+  {\tt d[m->g]}, there would be a conflict.
+  
+\item At the level of methods of arity $>1$, a conflict is considered to have
+  taken place if there are two non-overwritten definitions of the same method
+  attached to two different superclasses. When deciding whether a conflict
+  has taken place we disregard the arguments of the method. For instance, in
+  %%
+  \begin{verbatim}
+       a:c[m(k)->f].    
+       a:d[m(u)->f].     
+  \end{verbatim}
+  %%
+  a multiple inheritance conflict has taken place even though in one case
+  the method {\tt m} is applied to object {\tt k}, while in the other it is
+  applied to object {\tt u}. On the other hand,
+  %%
+  \begin{verbatim}
+       a:c[m(k)->f].    
+       a:d[m(k,k)->f].     
+  \end{verbatim}
+  %%
+  do not conflict, because {\tt m/1} in the first case is a different
+  method than {\tt m/2} in the second.
+\end{enumerate}
+%%
 %%
 \index{well-founded semantics}
 %%
-Negation here is implemented using the {\em well-founded semantics}
-for negation \cite{gelder-alternating-89,gelder-ross-schlipf-91} (as
-indicated by the {\tt tnot} operator).  Similar rules are needed to
-describe how classes inherit from superclasses.
 
-Under this semantics, {\tt clyde} will still be white, but in the other two
-examples {\tt a[m->c]} is \emph{not} inherited. Details of this semantics
-and its model theory will be presented in a future paper.
-
-In the examples that we have seen so far, path expressions use only
+In the examples that we have seen so far, path expressions used only
 non-inheritable attributes. Clearly, there is no reason to disallow
 inheritable attributes in such expressions. To distinguish inheritable
 attributes from non-inheritable ones, \FLORA uses the symbols
@@ -3417,8 +3473,8 @@ can be simplified as boolean methods as follows:
 Conceptually, boolean methods are statements about objects whose truth
 value is the only concern. Boolean methods do not return any value (not
 even the value {\tt void}). Therefore, boolean methods {\tt cannot} appear
-in path expressions. For instance, \mbox{\tt john.is\_vegetarian} is
-illegal.
+in path expressions. For instance, \mbox{\tt john.is\_vegetarian}, where
+{\tt is\_vegetarian} is a binary method, is illegal.
 
 \index{method!boolean!inheritable}
 \index{boolean method!inheritable}
@@ -3558,11 +3614,11 @@ tabling of HiLog predicates.
  :- table p/2/1/3.  
 \end{verbatim}
 %%
-will cause a parsing error.  However, note that {\tt :- table p/1/3.} will
-table all predicates of the form {\tt p(a,b)(d)/1} as well. The difference
-is that it will also table {\tt p(a,b,c)(d)/1}, {\tt p(w)(f)/1}, etc.  In
-contrast, if {\tt :- table p/2/1/3.} were allowed, then the last two
-forms would not have been tabled.\footnote{
+will cause a parsing error.  However, note that {\tt :- table X/1/3.} will
+also table all 3-level predicates of the form {\tt p(\_,\_)(\_)/3}. The
+difference is that it will also table {\tt q(a,b,c)(d)/3}, {\tt r(w)(f)/3},
+etc.  In contrast, if {\tt :- table p/2/1/3.} were allowed, then the last
+two forms would not have been tabled.\footnote{
   %%
   The reason for not supporting this more elaborate tabling schema is
   because it is believed to be an overkill.
@@ -3652,12 +3708,84 @@ Like boolean methods, procedural methods can take arguments, but do not
 return any values.  The only difference is that procedural methods are
 \emph{not} tabled, while boolean methods are.
 
+\subsection{Operational Semantics of \FLORA}\label{sec-flora-procedural}
+
+Although \FLORA is a declarative language, it provides primitives, such as
+input/output, certain types of updates, cuts, etc., which have no logical
+meaning. In such cases, it is important to have an idea of the
+\emph{procedural semantics} of \FLORA. This procedural semantics is
+essentially the same as in XSB and when no tabled predicates or \fl molecules
+are involved, the behavior is the same as in Prolog. However, when tabled
+HiLog predicates or \fl molecules (other than procedural methods) are used
+the programmer must have some understanding of the way XSB evaluates tabled
+predicates.
+
+XSB has two configuration modes that affect tabled predicates:
+\emph{batched} and \emph{local} (the default). These modes affect
+\emph{scheduling}, {\it i.e.}, the order in which answers to the literals
+in a rule body are computed.
+
+Under the batched scheduling, the behavior is similar to that of Prolog.
+Under the local scheduling, answers to the entire clique of inter-dependent
+predicates is computed before the computation proceeds to the next literal
+in a rule body. The following little program illustrates the difference:
+%%
+\begin{verbatim}
+a:b.
+d:b.
+c:b.
+
+X[foo->Y] :- X:Y, writeln(X)@prolog().
+q(X,Y) :- X:Y, writeln(X)@prolog().
+
+?- X[foo->Y], writeln(done)@prolog().
+?- q(X,Y), writeln(done)@prolog().
+\end{verbatim}
+%%
+The two queries are essentially the same, the first is an \fl molecule
+and so it is implemented internally as a tabled XSB predicate. The second
+query is implemented as a non-tabled predicates.  Thus, despite the fact
+that the two queries are \emph{logically equivalent}, they are not
+\emph{operationally equivalent} under local scheduling.  Indeed, a simple
+experiment shows that the answers to the above two queries are produced in
+different orders (as seen by the order of execution of the print statement.
+In the first query, \verb|X[foo->Y]| is evaluated completely before
+proceeding to {\tt writeln(done)@prolog()} and thus the executions of {\tt
+  writeln(X)@prolog()} are grouped together. In the second case, executions
+of {\tt writeln(X)@prolog()} and {\tt writeln(done)@prolog()} alternate,
+because {\tt q/2}is not tabled by  default and thus its evaluation follows
+the usual Prolog semantics.
+
+On the other hand, if we add the directive
+%%
+\begin{verbatim}
+ :- table q/2.  
+\end{verbatim}
+%%
+then the two queries will behave the same, as both {\tt q/2} and
+\verb|X[foo->Y]| would then be implemented internally as tabled predicates.
+Likewise, if we replace {\tt foo} with {\tt \#foo} then the corresponding
+molecule would be represented internally as a non-tabled predicate.
+Thus, the two queries in the program
+%%
+\begin{verbatim}
+X[#foo(Y)] :- X:Y, writeln(X)@prolog().
+q(X,Y) :- X:Y, writeln(X)@prolog().
+
+?- X[#foo(Y)], writeln(done)@prolog().
+?- q(X,Y), writeln(done)@prolog().
+\end{verbatim}
+%%
+will produce the same result where {\tt a, b, c} and {\tt done}
+alternate in the output.
+
+
 
 \subsection{Cuts}
 
 
-\index{cuts in \FLORA}
-\index{cutting across tables}
+\index{cut!in \FLORA}
+\index{cut!across tables}
 %%
 No discussion of a logic programming language is complete without a few
 words about the infamous Prolog cut (!). Although Prolog cut has been
@@ -3672,17 +3800,43 @@ you have cut too much!
 
 The basic rule that can keep you out of trouble is: do not put a cut in the
 body of a rule \emph{after} any F-molecule or tabled 
-predicate. However, it is OK to to put a cut before any F-molecule. It is
+predicate. However, it is OK to put a cut before any F-molecule. It is
 even OK to have a cut in the body of a rule that \emph{defines} an
 F-molecule (again, provided that the body has no F-molecule to the left of
 that cut). If you need to use cuts, plan on using procedural methods or
 non-tabled predicates.
 
+\index{cut!and local scheduling}
+Also, when XSB is configured for \emph{local} scheduling, cuts across
+tables are much less likely, because under this strategy XSB tries to
+compute the entire clique of interrelated predicates \emph{before} it
+proceeds to the next body literal (which could be the dreadful cut).
+Thus, something like
+%%
+\begin{verbatim}
+ X[#foo(Y)] :- Z[moo->W], W:X, !, rest.  
+\end{verbatim}
+%%
+will not cause problems under the local scheduling, but
+%%
+\begin{verbatim}
+ X[foo->Y] :- Z[moo->W], W:X, !, rest.  
+\end{verbatim}
+%%
+will likely result in a runtime error. The reason is that in the first case
+the molecule \verb|X[#foo(Y)]| is implemented as a non-tabled predicate, so
+by the time the evaluation reaches the cut, both \verb|Z[moo->W]| and 
+{\tt W:X} will be evaluated completely and their tables will be marked as
+``complete.'' In contrast, in the second example, \verb|X[foo->Y]| is
+implemented as a tabled predicate, which is interrelated with the
+predicates that are used to implement \verb|Z[moo->W]| and 
+{\tt W:X}. Thus, the cut would occur in the middle of the computation of
+the table for \verb|X[foo->Y]| and an error will result.
+
 %% Unimplemented -- demand tabling
 In a future release, XSB will implement a different tabling schema. While
 cutting across tables will still be prohibited, it will provide an
-alternative mechanism that achieves many of the goals a cut is used to
-achieve.
+alternative mechanism that achieves many of the goals a cut is used for.
 
 
 \section{Updates}\label{sec-updates}
@@ -3729,11 +3883,12 @@ some facts to be updatable, use the following syntax:
 
 
 \FLORA updates can be \emph{non-backtrackable,} as in Prolog,
-or backtrackable, as in Transaction Logic \cite{trans-tcs94}.
+or backtrackable, as in Transaction Logic \cite{trans-chapter-98,trans-tcs94}.
 We first describe non-backtrackable updates.
 
 
-\subsection{Non-backtrackable Updates} \label{sec:non-backtrackable-updates}
+\subsection{Non-backtrackable (Non-logical) Updates}
+\label{sec:non-backtrackable-updates}
 
 \index{non-backtrackable update}
 \index{update!non-backtrackable}
@@ -3757,13 +3912,15 @@ user-defined predicate such as {\tt insert}.
 \emph{insop}\{\emph{literals} [| \emph{query}]\}
 \end{quote}
 }
+\noindent
 where {\it insop} stands for either {\tt insert} or {\tt insertall}.
 The
 {\it literals} part represents a comma separated list of literals,
 which can include
 predicates and \mbox{F-molecules}. The optional part, {\tt |}{\it query},
 is an additional condition that must be satisfied in order for
-\emph{literals} to be deleted.
+\emph{literals} to be inserted or deleted (depending on what \emph{insop}
+is).
 The semantics is that \emph{query} is posed first and, if it is
 satisfied, \emph{literals} is inserted (note that the query may affect the
 variable binding and thus the particular instance of \emph{literals} that
@@ -3771,7 +3928,7 @@ will be inserted). For instance, in
 \begin{quote}
 \begin{verbatim}
 flora2 ?- insert{p(a),mary[spouse->smith,children->>frank]}
-flora2 ?- insertall{P[spouse->S] | S[spouse->P]}
+flora2 ?- insert{P[spouse->S] | S[spouse->P]}
 \end{verbatim}
 \end{quote}
 %%
@@ -3781,6 +3938,7 @@ query {\tt S[spouse->P]} is posed and one answer (a binding for {\tt P} and
 the statement fails. Otherwise, the instance of {\tt P[spouse->S]} is
 inserted for that binding and the statement succeeds.
 
+The insert statement has two forms: {\tt insert} and {\tt insertall}
 The difference between {\tt insert} and {\tt insertall} is that {\tt
   insert} inserts only one instance of \emph{literals} that satisfies the
 formula, while {\tt insertall} inserts \emph{all} instances of the literals
@@ -3802,13 +3960,34 @@ In the first case, if {\tt p(x,y)} and {\tt r(y,z)} are true, then the fact
 then the update means the following:
 %%
 \begin{quote}
-  For each z such that r(y,z) holds, insert(x,y,z).
+  For each {\tt z}  such that {\tt r(y,z)}  holds, {\tt insert(x,y,z)}.
 \end{quote}
 %%
 \index{bulk insert}
 \index{insert!bulk}
 %%
 The primitive {\tt insertall} is also known as a bulk-insert operator.
+
+Unlike {\tt insert}, the operator {\tt insertall} always succeeds and it
+always leaves its free variables unbound.
+
+The difference between {\tt insert} and {\tt insertall} is more subtle than
+it may appear from the above discussion. In the all-answers mode, the above
+two queries will actually behave the same, because \FLORA will try to find
+all answers to the query {\tt p(X,Y), r(Y,Z)} and will do the 
+insertion for each answer. The difference becomes apparent if \FLORA is in
+one answer at a time mode (because {\tt flOne} was executed in a preceding
+query) or when the all-answers mode is suppressed by a cut as in
+{\tt
+\begin{quote}
+  flora2  ?- p(X,Y), insert\{q(X,Y,Z)|r(Y,Z)\}, !.\\
+  flora2  ?- p(X,Y), insertall\{q(X,Y,Z)|r(Y,Z)\}, !.
+\end{quote}
+}
+%%
+\noindent
+In such cases, the first query will indeed insert only one fact, while the
+second will insert all.
 
 Note that literals appearing inside the update predicates are treated as
 facts and should follow the syntactic rules for facts and literals in the
@@ -3837,7 +4016,7 @@ predicate, use {\tt assert/retract}:
 %%
 Well, not quite. Recall Section~\ref{sec-passing-args} on the issues
 concerning the difference between Prolog representation of terms and the
-one used in Prolog. The problem is that {\tt f(a,b,c)} is a HiLog term that
+one used in Prolog. The problem is that {\tt foo(a,b,c)} is a HiLog term that
 Prolog does not understand and will not associate it with the predicate {\tt
   foo/3}  that it might have. To do it right, use explicit conversion:
 %%
@@ -3889,10 +4068,10 @@ or {\tt @prologall()}:
 %%
 
 We should also mention one important difference between insertion of facts
-in \FLORA and Prolog. Prolog treats facts as a \emph{list}, so duplicates
-are allowed and the order matters. In contrast, \FLORA treats the database
-as a \emph{set} of facts with no duplicates. Thus, insertion of a fact that
-is already in the database has no effect.
+in \FLORA and Prolog. Prolog treats facts as members of a \emph{list}, so
+duplicates are allowed and the order matters. In contrast, \FLORA treats
+the database as a \emph{set} of facts with no duplicates. Thus, insertion
+of a fact that is already in the database has no effect.
 
 
 \index{non-backtrackable update!delete}
@@ -3926,27 +4105,28 @@ database is
 %%
 \begin{quote}
 \begin{verbatim}
-p(a). p(b). q(a). q(c).
+p(a). p(b). p(c). q(a). q(c).
 \end{verbatim}
 \end{quote}
 then the statement below:
 \begin{quote}
 \begin{verbatim}
-flora2 ?- delete{p(X)|q(X)}
+flora2 ?- deleteall{p(X)|q(X)}
 \end{verbatim}
 \end{quote}
-will succeed with the variable {\tt X} bound to {\tt a} and {\tt p(a)} will
-be deleted.  However, if the database contains only the facts {\tt p(b)}
-and {\tt q(c)}, then the above predicate will fail and the database will
-stay unchanged.
+will succeed with the variable {\tt X} bound to {\tt a} and {\tt c}, and
+{\tt p(a)}, {\tt p(c)} will be deleted.  However, if the database contains
+only the facts {\tt p(b)} and {\tt q(c)}, then the above predicate will
+succeed ({\tt deleteall}always succeeds) and the database will stay
+unchanged.
 
 \index{bulk delete}
 \index{delete!bulk}
 %%
 \FLORA provides four deletion primitives: {\tt delete}, {\tt deleteall},
 {\tt erase}, and {\tt eraseall}. The primitive {\tt delete} removes at most
-one fact from the database. The primitives {\tt deleteall} and {\tt
-  eraseall} are {\tt bulk delete} operations; {\tt erase} is kind of a
+one fact at a time from the database. The primitives {\tt deleteall} and
+{\tt eraseall} are {\bf bulk delete} operations; {\tt erase} is kind of a
 hybrid: it starts slowly, by deleting one fact, but may go on a joy ride
 and end up deleting much of your data. These primitives are described
 below.
@@ -3965,6 +4145,10 @@ below.
   \end{quote}
   will succeed with {\tt X} bound to either {\tt a} or {\tt b},
   depending on the ordering of facts in the database at runtime.
+
+  However, as with insertion, in the all-answers mode the above deletion
+  will take place for each binding that makes the query true. To avoid
+  this, use one answer at a time mode or the cut.
       
 \item In contrast to the plain {\tt delete} primitive, {\tt deleteall} will
   try to delete all bindings or matches.  Namely, for each binding of
@@ -3989,13 +4173,12 @@ below.
   and the query is {\tt ?- deleteall\{p(a),q(X)\}.} The effect will be 
   the deletion of {\tt p(a)} and of all the facts in {\tt q}. (If you
   wanted to delete just one fact in {\tt q}, {\tt delete} should
-  have been used.
+  have been used.)
   
   \smallskip
   
   Unlike the {\tt delete} predicate, {\tt deleteall} \emph{always}
-  succeeds. However, when it succeeds, {\tt deleteall} will leave
-  all variables unbound.
+  succeeds. Also, {\tt deleteall} leaves all variables unbound.
   
 \item {\tt erase} works like {\tt delete}, but with an object-oriented
   twist: For each \fl fact, $f$, that it deletes, {\tt erase} will
@@ -4014,11 +4197,11 @@ below.
   \emph{literal}. For each deleted object, it then finds all objects it
   references through its methods and deletes those. This continues
   recursively until nothing reachable is left.  This primitive always
-  succeeds.
+  succeeds and leaves its free variables unbound.
 \end{enumerate}
 
 
-\subsection{Backtrackable Updates}
+\subsection{Backtrackable (Logical) Updates}
 
 
 \index{backtrackable update}
@@ -4097,7 +4280,15 @@ Keep in mind that some things that Prolog programmers routinely do with
 {\tt assert} and {\tt retract} goes against the grain of the use of
 backtrackable updates. In particular, {\tt fail}-loops are not going to
 work (will leave the database unchanged) for obvious reasons. The {\tt
-  while} and {\tt until} loops should should be used in such situations.
+  while} and {\tt until} loops should be used in such situations.
+
+As before, {\tt btinsertall}, {\tt btdeleteall}, and {\tt bteraseall}
+primitives always succeed and leave the free variables unbound.  Likewise,
+in the all-answers mode, the primitives {\tt btinsert}, {\tt btdelete}, and
+{\tt bterase} behave similarly to the {\tt bt*all} versions in other
+respects, {\it i.e.}, they will insert or delete facts for every answer to
+the associated query. This can be prevented with the use of the cut or the
+{\tt flOne} directive.
 
 {\bf Unimplemented}: In the current release, arithmetic expressions in the
 query part of an update must have their variables be bound by the subgoals
@@ -4230,6 +4421,308 @@ Other modules can then issue queries like
            update(john[salary->X],john[salary->Y]).  
 \end{verbatim}
 %%
+
+\subsection{Updates and Negation}
+
+Negation applied to methods that have side effects is typically a rich source
+of trouble and confusion.
+
+\index{local scheduling in XSB}
+\index{batched scheduling in XSB}
+%%
+First of all, applying negation to \FLORA molecules that involve
+non-backtrackable updates does not have logical semantics, and thus the
+programmer must have good understanding of the \emph{procedural} semantics of
+\FLORA (Section~\ref{sec-flora-procedural}).
+In this case, negation applied to methods or predicates that produce
+side-effects through updates  or I/O is that of negation as failure
+(Section~\ref{sec-negation}).
+
+When only backtrackable updates are used, the semantics is well defined and
+is provided by \emph{Transaction Logic}
+\cite{trans-chapter-98,trans-tcs94}. In particular, negation is also well
+defined. However, simply negating an update, \emph{A} is useless in
+programming, since it simply means to jump to a random state that is not
+reachable via execution of \emph{A}.  As explained in
+\cite{trans-chapter-98,trans-tcs94}, negation is typically useful only in conjunction
+with $\wedge$, where it acts as a constraint, or with the hypothetical
+operator of possibility $\Diamond$. In most cases, when the programmer
+wants to apply negation to a method that performs logical (backtrackable)
+updates, he has $\tt \neg \Diamond method$ in mind, {\it i.e.}, a test to
+verify that execution of {\tt method} is not possible.
+
+%% Unimplemented -- Transaction Logic NAF
+At present this operator is not implemented in \FLORA and \verb|\+ method|
+or {\tt tnot method} will not produce correct results.  The difference with
+the logical formula $\tt \neg \Diamond method$ is that the latter does not
+change the current state of the underlying database, while \verb|\+ method|
+will try to execute {\tt method}. If it succeeds, then \verb|\+ method|
+will fail, but the changes made by {\tt method} will not be undone.
+
+
+\subsection{Words of (Extreme) Caution}
+
+\index{backtracking over updates in XSB}
+%%
+XSB has certain well-known bugs, which are very hard to fix and which can
+corrupt its internal state irreparably. One such thing is the issue of
+backtracking over updates; especially over deletions.
+
+Here we are not talking about \FLORA's backtrackable updates, which are
+implemented properly and are safe. Instead, a problem arises when
+backtracking over updates happens in the XSB program into which \FLORA
+programs are compiled. If this happens, the program might crash or produce
+random, unexplainable results. Unfortunately, it is not easy to spot such
+cases by just looking at a source code of your \FLORA program, because much
+is done by the runtime system behind the scene. Here we provide high-level
+tips that can help avoid the problem.
+
+First, make sure that when you use \emph{non}-backtrackable updates and
+your program backtracks over them, deleted facts are never queried again.
+This situation is analogous to backtracking over updates in XSB.
+
+Second, \FLORA may backtrack over updates if your top-level query calls an
+update directly or indirectly. This may happen when the interpreter is in
+the all-answers mode ({\tt flAll}) even if the logic of your program does
+not call for backtracking. Indeed, in the venerable Prolog way all answers
+can be obtained only by backtracking, and this is what \FLORA does behind
+the scene. In this situation, backtrackable updates are as vulnerable as
+non-backtrackable ones because after each iteration that returns an answer
+to the top level all updates are committed and can no longer be backtracked
+over (due to the aforesaid XSB bug).
+
+The only (more or less) sure remedy in this situation is to ensure that
+backtracking does not occur at the top level. For instance, if the
+top-level query is a procedural method, then semantically it would be
+correct to put a cut at the end of the query:
+%%
+\begin{verbatim}
+ ?- X[#some_method(SomeArgs)], something, !.
+\end{verbatim}
+%%
+\index{local scheduling in XSB}
+\index{batched scheduling in XSB}
+%%
+This will work if XSB is configured for the \emph{local} scheduling
+strategy (which is currently the default). If it is configured for
+the \emph{batched} strategy (see XSB manual for how to do it), then the
+above trick will work only is {\tt something} does not have tabled
+predicates or those predicates are fully evaluated by the time {\tt
+  something} succeeds (as is the case, for example, when those predicates
+are under the scope of {\tt findall}).
+
+In some cases cuts can be also inserted in the rules that define procedural
+methods if the logic of the program ensures that backtracking over those
+methods should not occur. 
+
+
+\section{Rule Insertion}
+
+\index{rule insertion}
+\index{rule!static}
+\index{rule!dynamic}
+\index{dynamic rule}
+\index{static rule}
+%%
+\FLORA supports \emph{non-backtrackable} insertion of rules into modules.
+A \FLORA module gets created when a program is loaded into it, as described
+in Section~\ref{sec-shell-commands}, or it can be created using the
+primitive {\tt newmodule}. Subsequently, rules can be added to an existing
+module. Rules that are inserted via the {\tt insertrule} command are
+called \emph{dynamic} and the rules loaded using the {\tt flLoad} or
+{\tt [...]} commands are called \emph{static} or \emph{compiled}.
+As mentioned in Section~\ref{sec-updates}, \FLORA predicates and molecules 
+can have both static and dynamic parts and no special declaration is
+required to make a predicate dynamic. The same molecule or a predicate can
+be defined by a mixture of static or dynamic rules.
+
+In this section, we will first look at the syntax of creating new modules.
+Then we will describe how to insert rules and, finally,  we address other
+related issues, including tabling, indexing, and the cut.
+
+
+\subsection{Creating a Module}
+
+
+\index{newmodule/1}
+%%
+The syntax for creating a new module is as follows:
+{\tt
+\begin{quote}
+\emph{newmodule}\{\emph{modulename} [, \emph{equalityMaintenanceLevel}]\}
+\end{quote}
+}
+\index{equality maintenance level}
+%%
+\noindent
+where {\tt equalityMaintenanceLevel} can be {\tt none}, {\tt basic}, or {\tt
+  flogic}, with {\tt none} being the default (see
+  Section~\ref{sec-eqmaintain} for the details about equality maintenance
+  in \FLORA). This creates a
+blank module with the given name and the equality maintenance level,
+provided that no existing module is using the same name. A module
+created using {\tt newmodule} can be used exactly the same way as the
+modules that are created by loading user programs.
+
+
+\subsection{Inserting Rules}
+
+
+\index{insertrule\_a}
+\index{insertrule\_z}
+%%
+Dynamic rules can be inserted before all static rules, using the primitive
+{\tt insertrule\_a}, or after all static rules, using the primitive {\tt
+  insertrule\_z}. Several rules can be inserted in the same command. The
+syntax of inserting a list of rules is as follows: {\tt
+\begin{quote}
+\emph{insruleop}\{\emph{rulelist}\}
+\end{quote}
+}
+\noindent
+where \emph{insruleop} is either {\tt insertrule\_a} or {\tt
+  insertrule\_z}, rulelist is a comma-separated list of rules.  The rules
+  being inserted \emph{should not} terminate with a
+period (unlike the static program rules):
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- insertrule_a{X:student:-enroll(X,_T)}.
+\end{verbatim}
+\end{quote}
+%%
+The above inserts the rule {\tt X:student :- enroll(X,\_T)} in
+front of the current module.
+
+If a rule is meant to be inserted into a module other than the current one,
+then the rule needs to be parenthesized \emph{and} the module name must be
+attached using the usual module operator {\tt @}. If \emph{several} rules
+need to be inserted using the same command, each rule must be
+parenthesized.  For example, the following statement inserts the same rule
+into two different modules: the current one and into module {\tt mod1}.
+%%
+\begin{quote}
+\begin{verbatim}
+flora2 ?- insertrule_a{(X:student:-enroll(X,_T)),
+                       (X:student:-enroll(X,_T))@mod1}.
+\end{verbatim}
+\end{quote}
+As a result, the rule {\tt X:student:-enroll(X,\_T)} will be inserted in
+front of each of these two modules.
+For this to be executed successfully, the module {\tt mod1} must already
+exist.
+
+
+\subsection{Tabling and Indexing of Dynamically Defined Predicates}
+
+If a rule needs to be inserted for a new predicate (which was not seen
+before), the system needs to know whether the predicate is to be tabled
+and how it should be indexed. By default, new predicates are not tabled and
+are indexed on the first argument. To change that,
+\FLORA provides instructions to table and index new predicates in
+modules. We will describe the syntax of the tabling and
+indexing instructions. 
+
+\paragraph{Tabling Dynamically Defined Predicates.} Suppose we have the
+following program: 
+\begin{quote}
+\begin{verbatim}
+?- newmodule{mod1}. 
+?- insertrule_a{(tc(X,Y):-e(X,Y))@mod1, (tc(X,Y):-tc(X,Z),e(Z,Y))@mod1}.
+?- insert{e(a,b)@mod1,e(b,c)@mod1}.
+?- tc(X,Y)@mod1.
+\end{verbatim}
+\end{quote}
+\noindent
+This program is not going to terminate unless we table {\tt tc/2} in {\tt
+  mod1}. To do so, the following executable directive can be used:
+%%
+\begin{quote}
+\begin{verbatim}
+?- table(mod1,tc/2).
+\end{verbatim}
+\end{quote}
+%%
+The module name is optional in the tabling directive. For instance,
+%%
+\begin{quote}
+\begin{verbatim}
+?- table(tc/2).
+\end{verbatim}
+\end{quote}
+%%
+tables {\tt tc/2} in the current module.  If we want to table more than one
+predicates for the same module in one tabling instruction, the predicates
+should be enclosed in parentheses. For example,
+\begin{quote}
+\begin{verbatim}
+?- table(mod2,(p/1/2,tc/2)). 
+\end{verbatim}
+\end{quote}
+\noindent
+tables {\tt p/1/2} and {\tt tc/2} in module {\tt mod2}.
+Please refer to Section~\ref{sec-tabling-flora} for more details on tabling
+in \FLORA.
+
+Note that when a tabling instruction is executed, there should be no rules
+(either static or inserted) that define the same predicate. Otherwise,
+the tabling directive will have no effect.
+The module must also exist prior to the execution of the tabling
+instruction. For instance,
+\begin{quote}
+\begin{verbatim}
+?- newmodule{mod1}. 
+?- table(mod1,tc/2).
+?- insertrule_a{(tc(X,Y):-e(X,Y))@mod1, (tc(X,Y):-tc(X,Z),e(Z,Y))@mod1}.
+\end{verbatim}
+\end{quote}
+will work, but if the newmodule/2 instruction were not executed prior then
+a runtime error will result.
+
+\paragraph{Indexing Dynamically Defined Predicates} Sometimes we need to
+index inserted rules in some module and \FLORA provides an indexing instruction
+for this purpose. For instance,
+\begin{quote}
+\begin{verbatim}
+?- newmodule{mod1}. 
+?- index(mod1,3-2).
+\end{verbatim}
+\end{quote}
+\noindent
+says that all HiLog predicates of arity 3 should be indexed on
+argument 2 provided that currently there are no such predicates defined.
+
+Similarly to the tabling instruction, the module name is optional, and there
+can be more than one arity-argument pairs in one indexing instruction.
+
+\paragraph{A Problem with Cuts} What is behind rule insertion is pretty
+simple. As we know from Section~\ref{sec-updates}, every predicate and
+object has a base part and a derived part. Now we further divide the
+derived part into three sub-parts: the \emph{dyna sub-part} (the part that
+precedes all other facts in the predicate), the static sub-part, and the
+\emph{dynz sub-part}. All rules inserted using {\tt insertrule\_a} go into
+the dyna sub-part; all the rules in the program file go into the static
+sub-part; and all the rules inserted using {\tt insertrule\_z} go into the
+dynz sub-part.
+
+This works well when there are no cuts in rules inserted by {\tt
+  insertrule\_a}. With the cuts, the program might not
+behave as expected. For example, if we have the following program:
+\begin{quote}
+\begin{verbatim}
+p(X) :- r(X).
+r(a).
+q(b).
+?- insertrule_a{p(X) :- q(X),!}.
+?- p(X).
+\end{verbatim}
+\end{quote}
+\noindent
+we normally expect the answer is {\tt b} only. However, \FLORA
+will return two answers, {\tt a} and {\tt b}, because the cut affects only the
+dyna sub-part of p(X), instead of all the rules for {\tt p/1}.
+
+
 
 \section{Control Flow Statements}\label{sec:control}
 
@@ -4411,21 +4904,21 @@ fail, and it is useless if the action is expected to always succeed.
 \section{Negation} \label{sec:negation}
 
 
-\FLORA supports two kinds of negation: the usual Prolog's
-negation as failure \cite{Cla78} and negation based on well-founded
-semantics \cite{gelder-alternating-89,gelder-ross-schlipf-91}. Both types
-of negation are compiled into clauses that invoke the corresponding
-operators in Prolog.
+\FLORA supports two kinds of negation: the usual Prolog's \emph{negation as
+  failure} \cite{Cla78} and negation based on \emph{well-founded semantics}  
+\cite{gelder-alternating-89,gelder-ross-schlipf-91}. Both types of negation
+are compiled into clauses that invoke the corresponding operators in
+Prolog.
 
-\subsection{Two Operators for Negation}
+\subsection{Two Operators for Negation}\label{sec-negation}
 \index{tnot}
 \index{\NAF}
 %%
-Negation as failure is specified using the operator \NAF.  Negation based
-on well-founded semantics is specified using the operator {\tt tnot}. The
-well-founded negation, {\tt tnot}, is applied to predicates that are tabled
-or to F-molecules that do not contain procedural methods (which are the
-only methods that are not tabled).
+Negation as failure is specified using the operator
+\NAF.  Negation based on well-founded semantics is specified using the
+operator {\tt tnot}.  The well-founded negation, {\tt tnot}, is applied to
+predicates that are tabled or to F-molecules that do not contain procedural
+methods (which are the only methods that are not tabled).
 
 For non-tabled predicates and procedural methods, \NAF is usually
 recommended (we assume that the user is familiar with the use of negation
@@ -4597,13 +5090,14 @@ about 50\% though), so we recommend this to be done during debugging only.
 
 \index{check\_undefined/1}
 \index{check\_undefined/2}
+\index{debug class}
 %%
 To enable runtime checks for undefined invocations, \FLORA provides two
 methods, which can be called at any time during program execution (and thus
 enable and disable the checks dynamically):
 %%
 \begin{verbatim}
-    ?- debug[#check_undefined(Flag)]@flora(sys).}
+    ?- debug[#check_undefined(Flag)]@flora(sys).
     ?- debug[#check_undefined(Flag,Module)]@flora(sys).
 \end{verbatim}
 %%
@@ -4684,8 +5178,8 @@ database and special-case them in the program. For instance, you could put
 the following facts into the program to silence the above errors:
 %%
 \begin{verbatim}
-    ads\_asd\_fsffdfd : ads\_asd\_fsffdfd.
-    ads\_asd\_fsffdfd[ads\_asd\_fsffdfd ->> ads\_asd\_fsffdfd].
+    ads_asd_fsffdfd : ads_asd_fsffdfd.
+    ads_asd_fsffdfd[ads_asd_fsffdfd ->> ads_asd_fsffdfd].
 \end{verbatim}
 %%
 You can then arrange the logic of your program so that anything that contains
@@ -5158,7 +5652,7 @@ the program clauses. For instance,
   p(_).
 \end{verbatim}
 %%
-This will not work in \FLORA, because {\tt p(\_)} will be treated as a
+This will \emph{not} work in \FLORA, because {\tt p(\_)} will be treated as a
 database fact, which is placed in no particular order with respect to the
 program. If you want the desired effect, represent the catch-all facts as
 rules: 
@@ -5166,7 +5660,7 @@ rules:
 \begin{verbatim}
   p(f(X)) :- ...
   p(g(X)) :- ...
-  %% If all else fails, simply succeed. Use the rule notation for p/1.
+  %% If all else fails, simply succeed. Use rule notation for p/1.
   p(_) :- true.
 \end{verbatim}
 %%
@@ -5360,10 +5854,12 @@ fact that certain features are yet to be implemented:
      ++Error[XSB]: [Compiler] '!' after table dependent symbol 
     \end{quote}
     %%
+    \index{local scheduling in XSB}
+    %%
     This is due to certain limitations in the implementation of tabled
     predicates in the XSB system. This problem will be eliminated in a
     future release of XSB. Meanwhile, as explained in the Introduction,
-    configuring XSB for SLG-WAM and local scheduling will avoid many of
+    configuring XSB for SLG-WAM and \emph{local} scheduling will avoid many of
     such errors.
   \item Error messages when \FLORA update predicates contain arithmetic
     expressions in the query part. This problem will be fixed in the
@@ -5379,7 +5875,7 @@ fact that certain features are yet to be implemented:
 \section{Authors}
 \FLORA was designed and implemented by Guizhen Yang. Some architectural
 ideas, such as the use of trailer files to implement the F-logic semantics,
-trace back to the \FLIP compiler developed by Bertram Lud\"aescher.
+were inspired by the \FLIP compiler developed by Bertram Lud\"aescher.
 
 Michael Kifer helped design \FLORA, implemented the debugger, and some
 other features.
@@ -5387,7 +5883,7 @@ other features.
 Chang Zhao made a great many of crucial enhancements to the
 system, such as run-time undefinedness checks, the checker for
 dependency among tabled predicates and updates, tabling of HiLog
-predicates, and assertion and retraction of general \FLORA program clauses.
+predicates, and assertion and retraction of program rules.
 
 
 \appendix
@@ -5842,7 +6338,8 @@ non-inheritable methods, directives, and all kinds of auxiliary predicates
 needed to improve efficiency.
 
 \FLORA facts, such as above, are then stored in a special data structure,
-called {\rm trie}, and are retrieved using  ``patch rules'' such as
+called {\rm trie}, and are retrieved using  ``patch rules'', which have the
+form
 %%
 \begin{verbatim}
  fd(Obj,Meth,Val) :- storage_find_fact(TrieName, fd(Obj,Meth,Val)).  
@@ -5902,19 +6399,19 @@ In auxiliary runtime libraries:
 d_fd  <-  fd
 d_ifd <- ifd
           fd <-      inferred_fd
-          fd <- tnot inferred_fd      <- derived_fd <- base_fd
-          fd <- tnot conflict_obj_ifd                            <- ifddef <- fd
+          fd <- tnot inferred_fd      <- derived_fd
+          fd <- tnot conflict_obj_ifd                     <- ifddef <- fd
           fd <-      ifd
           fd <-      immediate_isa
 
          ifd <-      immediate_sub
          ifd <-      inferred_ifd     <- derived_ifd
          ifd <- tnot inferred_ifd
-         ifd <- tnot conflict_ifd                                <- ifddef
+         ifd <- tnot conflict_ifd                         <- ifddef
 
       ifddef <-      ifd
 
-     base_fd <- storage_find_fact(...trie_name..., fd(...))
+  derived_fd <- storage_find_fact(...trie_name..., fd(...))
 \end{verbatim}
 %%
 Here we listed only the predicates that are used to model scalar
@@ -5982,7 +6479,9 @@ executed for a particular module, the trailer for that module must be
 compiled and loaded dynamically.  (The need for this compilation will
 become clear after we explain the implementation of the module system.)
 These trailers are stored in the user home directory in the subdirectory
-{\tt .xsb/flora/}.  As mentioned earlier, \FLORA uses different names for
+{\tt .xsb/flora/} rather than in the {\tt trailer/} subdirectory because
+to compile the trailers \FLORA needs write permission into the user file
+system.  As mentioned earlier, \FLORA uses different names for 
 the wrapper predicates that appear in the rule heads in user programs and
 those that appear in the rule heads in trailers. This makes it possible to
 load the trailers (by executing the {\tt equality} instruction) at any time
@@ -6152,18 +6651,18 @@ although they are represented using HiLog encoding using a single
 predicate, this predicate can have any arity.  At present we statically
 create patch rules for such predicates up to a certain large arity.  The
 static patch rules are located in {\tt genincludes/flrpatch.fli} (from
-which {\tt flrpatch.flh} is generated during the installation).
+which {\tt flrpatch.flh} is generated by the \FLORA installation script).
 
-One complication is that the file {\tt flrpatch.flh} must be compiled for
-the right module, so the preprocessor macro {\tt FLORA\_USER\_WORKSPACE} can
-be given value only when we load the patch rules into a specified module.
-If the directory {\tt genincludes} that holds {\tt flrpatch.flh} is not
-writable by the user (which is often the case, if XSB is installed in a
-shared public directory on the server) then it will not be possible to run
-any \FLORA programs at all. For this reason, a copy of the patch rules is
-stored in the user's home directory, {\tt .xsb/flora/}, in the file {\tt
-  patch.P}, so patch rules are always compiled in the user's home
-directory.
+For compiled programs, the patch rules are included into the compiled code
+by the \FLORA compiler. For the \FLORA shell, however, these rules are
+loaded when the corresponding shell module is created (either the default
+``main'' module or any module that was created by the {\tt newmodule}
+command. This patch file is loaded exactly once per shell module
+and is kept in the file
+{\tt .xsb/flora/patch.P}, in the user's home directory. It is copied into
+the user space from  {\tt trailer/patch.P} because this file must be
+compiled for different workspaces and therefore \FLORA needs write
+permission.
 
 
 \subsection{System Architecture}

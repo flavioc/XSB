@@ -37,7 +37,8 @@
 :- import flora_configuration/2 from flrregistry.
 :- import process_control/2 from shell.
 :- import xpp_process_file/3 from parse.
-:- import member/2, append/3, length/2 from basics.
+:- import member/2, length/2 from basics.
+%%:- import append/3 from basics.
 
 :- import flora_decode_predicate/6,
 	flora_module_name/3,
@@ -124,6 +125,12 @@ flora_write_goal(Call) :- var(Call), !, flora_write_dbg_item(Call).
 
 flora_write_goal(Call) :-
 	classify_call(Call, Type,Basename,ArgList,Workspace),
+	/*
+	%% Debugging
+	flora_dbg_stream(Stream),
+	format(Stream,'~n~w~n~w~n~w~n~w~n~w~n',
+		      [Call,Type,Workspace,Basename,ArgList]),
+	*/
 
 	( Type == (hilog)
 	-> flora_write_hilog(Basename,ArgList,Workspace)
@@ -132,14 +139,12 @@ flora_write_goal(Call) :-
 	; Type == (inheritance)
 	-> flora_write_dbg_item('(Trying to derive by inheritance) '),
 	    flora_write_flogic(Basename,ArgList,Workspace)
-	; Type == (definedvalue)
-	-> flora_write_dbg_item('derivable by deduction '),
-	    append(ArgList, ['...'], NewArgList),
-	    flora_write_flogic(Basename,NewArgList,Workspace)
-	; Type == (conflictvalue)
-	-> flora_write_dbg_item('inheritance conflict for '),
-	    append(ArgList, ['...'], NewArgList),
-	    flora_write_flogic(Basename,NewArgList,Workspace)
+	; Type == (dynhead_before)
+	-> flora_write_dbg_item('(Trying to derive by dynamic before-rules) '),
+	    flora_write_flogic(Basename,ArgList,Workspace)
+	; Type == (dynhead_after)
+	-> flora_write_dbg_item('(Trying to derive by dynamic after-rules) '),
+	    flora_write_flogic(Basename,ArgList,Workspace)
 	),
 	!.
 
@@ -568,28 +573,25 @@ classify_call(Call, Type,Basename,ArgList,Workspace) :-
 		      [Call,Type1,Workspace,Prefix,Basename1,ArgList]),
 	*/
 	(Type1 == (flora)
-	-> ((Prefix=immediate_ ; Prefix=inheritance_)
+	-> (Prefix=inheritance_
 	   -> Basename = Basename1, Type = (inheritance), ArgList = ArgList1
 	   
-	   ; Prefix=super_
-	   -> Basename = Basename1, Type = (flogic), ArgList = ArgList1
+	   ; Prefix=dyna_ % This is actually hidden (possible future use)
+	   -> Basename = Basename1, Type = (dynhead_before), ArgList = ArgList1
+	   ; Prefix=dynz_ % This is actually hidden (possible future use)
+	   -> Basename = Basename1, Type = (dynhead_after), ArgList = ArgList1
 
-	   ; Prefix=defined_inferred_
-	   -> Basename = Basename1, Type = (definedvalue), ArgList = ArgList1
-
-	   ; Prefix=conflict_obj_
-	   -> Type = (conflictvalue),
-	       ( Basename1 == ifd -> Basename = WRAP_FD
-	       ; Basename1 == imvd -> Basename = WRAP_MVD
-	       ; Basename = Basename1
-	       ),
-	       ArgList = ArgList1
 	   ;   %% must be a hilog predicate derivative formed by specialization
 	       %% such as FLORA_PREFIX'usermod''main''flapply_#303'
 	       str_cat(WRAP_HILOG,'_',Prefix)
 	   ->  Type = (hilog), ArgList1 = [Basename | ArgList]
 	   ; Type = Type1, Basename = Basename1, ArgList = ArgList1
 	   )
+	; Type1 == (prolog), Basename1 = FLORA_DB_FIND_PREDICATE,
+	    Call =.. [FLORA_DB_FIND_PREDICATE,Trie,RealCall],
+	    flora_match_substring(FLORA_PREFIX,Trie,forward,0,_)
+	->  flora_write_dbg_item('(Checking against base facts) '),
+	    flora_decode_predicate(RealCall,Type,Workspace,_,Basename,ArgList)
 	; Type = Type1, Basename = Basename1, ArgList = ArgList1
 	).
 
@@ -761,13 +763,11 @@ flora_notrace :-
 flora_debug_dyndata_file(Filename) :-
 	flora_configuration(installdir,FlrSysLib),
 	flora_slash(S),
-	flora_concat_atoms([FlrSysLib,S,debugger,S,'dynamic_data.dat'],
-			   Filename).
+	flora_concat_atoms([FlrSysLib,S,debugger,S,'dynamic_data.dat'],Filename).
 flora_debug_statdata_file(Filename) :-
 	flora_configuration(installdir,FlrSysLib),
 	flora_slash(S),
-	flora_concat_atoms([FlrSysLib,S,debugger,S,'static_data.dat'],
-			   Filename).
+	flora_concat_atoms([FlrSysLib,S,debugger,S,'static_data.dat'],Filename).
 
 %% If WS is a var -- loading static data
 %% Otherwise, loading dynamic data for the specified module
@@ -775,9 +775,7 @@ flora_read_debugger_data(WS,_Datafile) :-
 	%% Check if already loaded
 	(var(WS) 
 	-> current_predicate(FLORA_SYMBOL('debugger_static_data_loaded')/0)
-	; flora_module_predicate_symbol(debugger_data_loaded,
-						   WS,
-						   WSSym),
+	; flora_module_predicate_symbol(debugger_data_loaded, WS, WSSym),
 	    current_predicate(WSSym/0)
 	),
 	!.
@@ -790,7 +788,7 @@ flora_read_debugger_data(WS,Datafile) :-
 	repeat,
 	    file_read(IOportFromCPP,T),
 	    (T = end_of_file -> true
-	    	    	     ;  assert(T), fail
+	    ;  assert(T), fail
 	    ),
 	process_control(CPP_process, wait(ExitStatus)),
 	(ExitStatus==0, !
@@ -801,8 +799,7 @@ flora_read_debugger_data(WS,Datafile) :-
 	flora_set_counter(xpp_on,0),
 	(var(WS)
 	->  flora_message_line('Static debugger data loaded')
-	;   flora_message_line('Dynamic debugger data loaded for module ~w',
-			       WS)
+	;   flora_message_line('Dynamic debugger data loaded for module ~w', WS)
 	),
 	!.
 
@@ -843,32 +840,32 @@ flora_build_bridge_to_xsb_debugger :-
 	%% to be handled by the debugger
 	assert((hide_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_hide_this_hide(pref(X1/Y)), str_sub(X1,X,0), !
-		 ; flora_hide_this_hide(match(X1/Y)), str_sub(X1,X), !
+		(flora_hide_this_hide(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		 ; flora_hide_this_hide(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )),
 	assert((hide_this_show(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_hide_this_show(pref(X1/Y)), str_sub(X1,X,0), !
-		 ; flora_hide_this_show(match(X1/Y)), str_sub(X1,X), !
+		(flora_hide_this_show(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		 ; flora_hide_this_show(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )),
 	assert((show_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_show_this_hide(pref(X1/Y)), str_sub(X1,X,0), !
-		 ; flora_show_this_hide(match(X1/Y)), str_sub(X1,X), !
+		(flora_show_this_hide(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		 ; flora_show_this_hide(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
                 )
 	       )),
 	assert((trace_this_noprint(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_trace_this_noprint(pref(X1/Y)), str_sub(X1,X,0), !
-		 ; flora_trace_this_noprint(match(X1/Y)), str_sub(X1,X), !
+		(flora_trace_this_noprint(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		 ; flora_trace_this_noprint(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )),
 	assert((trace_this_print(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		(flora_trace_this_print(pref(X1/Y)), str_sub(X1,X,0), !
-		 ; flora_trace_this_print(match(X1/Y)), str_sub(X1,X), !
+		(flora_trace_this_print(pref(X1/Y)), atom(X),atom(X1), str_sub(X1,X,0), !
+		 ; flora_trace_this_print(match(X1/Y)), atom(X),atom(X1), str_sub(X1,X), !
 		)
 	       )).
 

@@ -1,0 +1,156 @@
+DYNAMICALLY CREATING MODULES AND INSERTING RULES
+================================================
+Chang Zhao, Nov. 25, 2002
+
+1. Syntax
+(1) create a module
+	newmodule{Module,TrailerType}
+    or
+	newmodule{Module}
+where Module is an atom or a regular variable, so is TrailerType. At runtime,
+the system will check to make sure Module is bound to some atom which is not 
+an existing module name, and TrailerType is one of NONE, BASIC, FLOGIC
+
+(2) insert a list of rules
+	insertrule_a{RuleList}
+    or
+	insertrule_z{RuleList}
+where RuleList is a comma-seperated list of rules in the form of
+	Rule
+    or
+	(Rule)@Module
+The syntax of Rule is the same as static rules expect that Rule doesn't have
+the delimter '.'. If there are more than one rules in the list, each rule
+should be included in a pair of parentheses. Module can be an atom, a regular
+variable, or _@. At runtime, the system will check to make sure that Module
+is bound to some already loaded module name.
+
+(3) table syntax
+The compile directive table can't be used to table predicates in other modules.
+To be able to table predicates in another module, the instruction
+	?- table(Module, SpecList).
+is used, where Module is an atom or a variable, and SpecList is a list of
+specifications in the form of Pred/Arity. An example is
+	?- table(mod1, (tc/1/2, e/2)).
+When this command is executed, the module must have been loaded and there is
+not a rule for that module satisfying both of the following:
+    a) the head is subsumed by Pred/Arity
+    b) when the rule is compiled/inserted, it's not tabled
+
+(4) index syntax
+Similarly, the compile directive index can't be used to index predicates in
+other modules. But the instruct index can:
+	?- index(Module, Arity-Position).
+The module must be a loaded user module, and both Arity and Position are
+positive integers with Arity>=Position. Assume A=Arity+1, P=Position+1,
+this instruction will be translated into
+	?- index(Wrap_dyna_hilog_of_Module/A,P).
+	?- index(Wrap_dynz_hilog_of_Module/A,P).
+
+(5) example
+A simple example is as follows:
+e(a,b). e(b,c). e(c,d).
+?- newmodule{mod1}.
+?- table(mod1, tc/2).
+?- M=mod1, insertrule_a{((tc(X,Y) :- e(X,Y)@_@)@M), 
+		        ((tc(X,Y) :- tc(X,Z),e(Z,Y)@_@)@M)
+		       }.
+?- tc(X,Y)@mod1.
+
+
+2. Implementation
+(1) new wrappers
+For hilog predicates, we have new wrappers WRAP_DYNA_HILOG, WRAP_DYNZ_HILOG,
+and WRAP_TDYN_HILOG. WRAP_DYNA_HILOG is used to wrap hilog rule heads which
+are inserted by insertrule_a. WRAP_DYNZ_HILOG is for those inserted by
+insertrule_z. WRAP_TDYN_HILOG is for dynamically inserted rules whose heads
+are tabled.  
+
+For flogic predicates, similarly we have WRAP_DYNA_... and WRAP_DYNZ_... 
+For example, for WRAP_ISA, we have added WRAP_DYNA_ISA and WRAP_DYNZ_ISA.
+
+(2) patch rules
+Let's take flapply/2 and isa/2 as examples to show patch rules for hilog and
+flogic.
+
+Between the patch rules from flrpatch.flh which are bridges to the fdb storage
+and the user program body, the following codes are added:
+?- abolish(WRAP_DYNA_HILOG/2).
+?- abolish(WRAP_DYNZ_HILOG/2).
+:- dynamic WRAP_DYNA_HILOG/2,WRAP_DYNZ_HILOG/2.
+WRAP_HILOG(X1,X2) :- WRAP_DYNA_HILOG(X1,X2).
+
+?- abolish(WRAP_TDYN_HILOG/3).
+:- table WRAP_TDYN_HILOG/3.
+:- dynamic WRAP_TDYN_HILOG/3.
+/* the purpose of the rule below is to make table_state/2@flora(sys) work
+WRAP_TABLED_HILOG(0,X1,X2) :- WRAP_TDYN_HILOG(_RuleNum,X1,X2).
+
+?- abolish(WRAP_DYNA_ISA/2).
+?- abolish(WRAP_DYNZ_ISA/2).
+:- dynamic WRAP_DYNA_ISA/2, WRAP_DYNZ_ISA/2.
+derived_isa(X,Y) :- WRAP_DYNA_ISA(X,Y).
+
+After the user program body, the following rules are added between trailer
+rules and rules for undefinedness checking:
+WRAP_HILOG(X1,X2) :- WRAP_DYNZ_HILOG(X1,X2).
+derived_isa(X,Y) :- WRAP_DYNZ_ISA(X,Y).
+
+(3) compilation
+Similar to insert and delete, newmodule and insertrule_a (insertrule_z) are
+compiled into system calls FLLIBNEWMODULE and FLLIBINSERTRULE_A
+(FLLIBINSERTRULE_Z), respectively. Something noticeable is that the split of
+rules does not occur at compile time. For example, 
+	o:c[a->v] :- Body
+is not split into
+	newpredicate :- Body
+	o:c :- newpredicate
+	o[a->v] :- newpredicate
+at compile time, but run time to insure the uniqueness of newpredicate. So
+after compilation, the head of a rule is a list with possibly more than
+one elements.
+
+The distribution of workspace occurs at compile time. FLLIBMODLIT is still used
+for variable module name.
+
+(4) execution
+FLLIBNEWMODULE(Module) is treated as FLLIBNEWMODULE(Module,NONE). 
+FLLIBNEWMODULE(Module,TrailerType) first checks to make sure Module is bound
+to an atom which is not an existing module name. Then it compiles and loads
+trailer/patch.P for the given module name. At last it loads the correct trailer.
+
+FLLIBINSERTRULE_A(RuleList) does the following for each element Rule in the
+list RuleList, where Rule is encoded as FLSYSRULEUPDATE(HeadList,Body):
+    a) remove fllibmodlit in Body where module name is already bound. Currently
+this is only done for the subgoals and control constructs but not for meta
+arguments.
+    b) if there is only one element Head in HeadList, go to c). else generate
+a new predicate in the same module as those in the HeadList. Its arguments
+are all the variables in Body. A global counter is maintained to generate
+new predicates. Assert a rule whose head is this new predicate and the body
+is Body. For each element Head in HeadList and the new predicate, do c).
+    c) for a rule to be inserted with Head and Body, first get rid of 
+fllibmodlit from Head if any. Then get the module name from Head and checks
+whether it is a loaded user module. The Head might be 
+	* a tabled hilog predicate Pred(Args)
+	  In this case, compute a new dynamic rule number RN and assert the
+	  following rules:
+	  WRAP_DYNA_HILOG(Pred,Args) :- WRAP_TDYN_HILOG(RN,Pred,Args).
+	  WRAP_TDYN_HILOG(RN,Pred,Args) :- Body.
+	  A global counter is maintained for RN.
+	* a hilog predicate Pred(Args) which is not tabled
+	  In this cse, assert the following rule and enter_not_tabled_registry
+	  with the fingerprint of the Head:
+	  WRAP_DYNA_HILOG(Pred,Args) :- Body.
+	* otherwise just assert
+	  Head :- Body.
+    d) insert the skeleton of the head into corresponding fld trie.
+
+FLLIBINSERTRULE_Z(RuleList) is almost the same as FLLIBINSERTRULE_A(RuleList),
+but just substitute WRAP_DYNA_HILOG with WRAP_DYNZ_HILOG.
+
+3. What's left
+(1) deleterule
+(2) cut in rules inserted by insertrule_a doesn't not work properly
+    
+

@@ -47,6 +47,8 @@
 
 :- import banner_control/1 from banner.
 
+:- import flora_error_line/2 from flrprint.
+
 
 :- export
 	flora_write_quoted_atom/1,
@@ -163,6 +165,12 @@ flora_copy_input :-
 	copyIOport(StdIn,StdOut).
 
 
+flora_write_quoted_atom(Atom) :-
+	\+atom(Atom),
+	flora_error_line('flora_write_quoted_atom: Non-atom argument, ~w',
+			 [Atom]),
+	abort.
+	
 flora_write_quoted_atom(Atom) :-
 	stat_flag(CURRENT_OUTPUT, StdOut),
 	file_writequoted(StdOut,Atom).

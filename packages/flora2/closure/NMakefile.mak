@@ -16,7 +16,6 @@ CLEAN :
 	-@erase *.flh
 	-@erase *.bak
 	-@erase .#*
-	-@erase includes\*~
 
 .fli.flh:
 	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrutils]. import flCompileInclude/1 from flrutils. flCompileInclude(%|fF). halt."

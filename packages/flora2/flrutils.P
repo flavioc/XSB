@@ -35,6 +35,7 @@
 #include "flora_terms.flh"
 #include "flora_porting.flh"
 #include "flora_extensions.flh"
+#include "flora_exceptions.flh"
 
 
 #define FLORA_FAILURE		failure
@@ -103,7 +104,15 @@ flora_load_module_internal(InFile) :-
 	; flora_locate_file(File,PROLOG_PFILE_EXT,PFile) ->
 	    flora_stdmsg_nl,
 	    flora_message_line('Consulting ~w',[PFile]),
-	    consult(PFile)
+	    %% Note: when the loaded file has prolog extension, we don't know
+	    %% if this is a Prolog module or a FLORA compiled output.
+	    %% So, we just in case arrange the GPP options, but don't rename
+	    %% the .xwam file. Maybe we should use a different extension for
+	    %% the target of FLORA compilation?
+	    flora_set_xpp_options_for_compile(FLORA_DEFAULT_WORKSPACE),
+	    flora_add_xpp_options('-warninglevel 1 '),
+	    consult(PFile),
+	    flora_clear_xpp_options
 
 	; flora_locate_file(File,PROLOG_OFILE_EXT,OFile) ->
 	    flora_stdmsg_nl,
@@ -171,6 +180,10 @@ flloadtrailer(TrailerName,Workspace) :-
 	  consult(UserTrailerWSOFile),
 	  !,
 	  %% Check if the patch needs to be loaded.
+	  %% Patch (.xsb/flora/patch.P) is loaded only once per workspace
+	  %% and only into the flora shell. The flora_module_registry/1 guard
+	  %% ensures this and that patch rules are never loaded into the same
+	  %% module as compiled programs.
 	  (flora_module_registry(Workspace) -> true
 	  ; flloadpatch(Workspace)
 	  )
@@ -216,6 +229,10 @@ flora_trailer_include(FLOGIC,[FLEQLTRAILER,FLSCALAREQL]).
 
 /**********************************************************************
   flloadpatch(+Workspace)
+  This is loaded only in the shell and only once per workspace name.
+  Compiled programs have their patch rules included by the compiler,
+  and they don't need flloadpatch/1. (In fact, compiled rules and patch
+  rules clash and should never be loaded into the same workspace.
 **********************************************************************/
 flloadpatch(Workspace) :-
 	flora_configuration(installdir,FloraDir),
@@ -249,13 +266,10 @@ flloadpatch(Workspace) :-
   flsetuppatch
 **********************************************************************/
 flsetuppatch :-
-	flora_configuration(installdir,FloraDir),
-	flora_slash(S),
-	flora_patch_filename(PatchName),
-	flora_concat_atoms([FloraDir,S,trailer,S,PatchName],PatchFullName),
+	flora_patch_full_filename(PatchFullName),
 	telling(PreOutFile),
 	tell(PatchFullName),
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLPREDDEF],HeaderStatus),
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLDYNA,FLDYNZ,FLPREDDEF],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -269,6 +283,11 @@ flsetuppatch :-
 	),
 	!.
 
+flora_patch_full_filename(PatchFullName) :-
+	flora_configuration(installdir,FloraDir),
+	flora_slash(S),
+	flora_patch_filename(PatchName),
+	flora_concat_atoms([FloraDir,S,trailer,S,PatchName],PatchFullName).
 
 flora_patch_filename('patch.P').
 
@@ -289,7 +308,7 @@ flora_user_flora_dir(Dir) :-
 		( flora_file_op(mkdir,Dir) -> true
 		;
 		    flora_error_line('Cannot create directory `~w''!',[Dir]),
-		    abort
+		    throw(FLORA_ABORT)
 		)
 	    ),
 	    assert(flora_configuration(userdir,Dir))
@@ -317,7 +336,7 @@ flora_rename_file(F1,F2) :-
 	;
 	    flora_error_line("Something wrong -- can't rename ~w to ~w~n",
 			     [F1,F2]),
-	    abort
+	    throw(FLORA_ABORT)
 	).
 
 
@@ -714,7 +733,7 @@ flora_set_xpp_options(Purpose,ModuleName) :-
 
 	; Type == invalid ->
 	    flora_module_name_error(WS),
-	    abort
+	    throw(FLORA_ABORT)
 	),
 	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
 	; Purpose==dump -> flora_xpp_standard_options_for_dump(StandardOpt)
@@ -922,8 +941,7 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
 	sort(FileOptionList,FileOptions),
 	flora_measure_time(
 			   flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,
-						DBFile,FLDFile,PFileStatus)
-			  ,
+						DBFile,FLDFile,PFileStatus),
 			   '[Coder] Generating P file'
 			   ),
 	( PFileStatus == FLORA_FAILURE ->
@@ -933,9 +951,8 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
 	      FileStatus=FLORA_SUCCESS
 	  ;
 	      flora_measure_time(
-				 flora_generate_DBfile(DBFile,FactList,FileStatus)
-				,
-				 '[Coder] Generating DB file '
+				 flora_generate_DBfile(DBFile,FactList,FileStatus),
+				 '[Coder] Generating DB file'
 				 )
 	  )
         ),
@@ -967,7 +984,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	;
 	  findall((Arity,Pos),member(FLINDEX(Arity,Pos),FileOptionList),IndexList),
 	  write_index_directives(IndexList),
-	  flora_include_file([FLDEFINITION,FLINDEX_P,FLPATCH|OptList],
+	  flora_include_file([FLDEFINITION,FLINDEX_P,FLPATCH,FLDYNA|OptList],
                            HeaderStatus),
 	  ( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	  ;
@@ -1004,7 +1021,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	        %% By default no equality is included.
 	        flora_include_file([FLTRAILER],FileStatus)
 	      ),
-	      flora_include_file([FLPREDDEF],FileStatus)
+	      flora_include_file([FLDYNZ,FLPREDDEF],FileStatus)
 	   ;
 	     flora_coder_error(CoderStatus),
 	     FileStatus=FLORA_FAILURE

@@ -91,19 +91,19 @@ patch$(PROLOGEXT) : $(GENINCLUDES)/flrpatch.flh $(GENINCLUDES)/flrpreddef.flh \
 	@echo 'flsetuppatch.' >> cmd...
 
 
-$(CLOSURE)/flrcommon.flh : $(CLOSURE)/flrcommon.fli $(CLOSURE)/includes/flrpred.fli
+$(CLOSURE)/flrcommon.flh : $(CLOSURE)/flrcommon.fli $(FLORA_INCLUDES_DIR)/flora_wspredicates.flh
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrtrailer.flh : $(CLOSURE)/flrtrailer.fli $(CLOSURE)/includes/flrpred.fli
+$(CLOSURE)/flrtrailer.flh : $(CLOSURE)/flrtrailer.fli $(FLORA_INCLUDES_DIR)/flora_wspredicates.flh
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flreqltrailer.flh : $(CLOSURE)/flreqltrailer.fli $(CLOSURE)/includes/flrpred.fli
+$(CLOSURE)/flreqltrailer.flh : $(CLOSURE)/flreqltrailer.fli $(FLORA_INCLUDES_DIR)/flora_wspredicates.flh
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrscalareql.flh : $(CLOSURE)/flrscalareql.fli $(CLOSURE)/includes/flrpred.fli
+$(CLOSURE)/flrscalareql.flh : $(CLOSURE)/flrscalareql.fli $(FLORA_INCLUDES_DIR)/flora_wspredicates.flh
 	@cd $(CLOSURE); make
 
 

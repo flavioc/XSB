@@ -62,6 +62,10 @@ flora_nodefp(FL_LEFTTO,2) :- !.
 
 flora_nodefp(FL_CUT,0) :- !.
 
+flora_nodefp(FL_IMPLYOP,2) :- !.
+flora_nodefp(FL_IMPLYOP,1) :- !.
+flora_nodefp(FL_QUERYOP,1) :- !.
+
 
 %% FLORA builtins
 flora_nodefp(FL_UNIVEQFORM,2) :- !.

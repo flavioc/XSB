@@ -32,9 +32,9 @@ ALL = 	aggregate${PROLOGEXT} benchmark${PROLOGEXT} \
 	clpdemo${PROLOGEXT} default${PROLOGEXT} family_obj${PROLOGEXT} \
 	family_rel${PROLOGEXT} flogic_basics${PROLOGEXT}\
 	metavar${PROLOGEXT} mix${PROLOGEXT} module1${PROLOGEXT}\
-	mod1${PROLOGEXT} clpdemo${PROLOGEXT} \
+	mod1${PROLOGEXT} \
 	mono_inherit${PROLOGEXT} rel_ops${PROLOGEXT}\
-	tree_traversal${PROLOGEXT} \
+	tree_traversal${PROLOGEXT} diamond${PROLOGEXT}\
 	btupdates${PROLOGEXT} pretty${PROLOGEXT}
 
 Option = [optimize]
@@ -45,7 +45,7 @@ Option = [optimize]
 # Self-make: Version 1.4.1
 #
 PROLOG = none
-PROLOG_COMMAND = $(PROLOG) -i -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
+PROLOG_COMMAND = $(PROLOG) -i -s -m 40000 -c 2000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
 
@@ -70,7 +70,7 @@ recompile: $(ALL) finish
 
 init:
 	rm -f $(SVFILE)
-	echo Initializing...
+	@echo Initializing...
 	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN), _)." >> cmd...

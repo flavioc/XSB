@@ -28,13 +28,8 @@
 
 #include "flora_terms.flh"
 #include "flora_porting.flh"
+#include "flora_exceptions.flh"
 
-
-:- import
-	FLORA_DB_FIND_PREDICATE/2,
-	FLORA_DB_INSERT_PREDICATE/3,
-	FLORA_DB_DELETE_PREDICATE/3
-   from storage.
 
 :- import append/3 from basics.
 
@@ -95,7 +90,7 @@ flora_storage_insertfacts([P|_T]) :-
 	var(P),
 	!,
 	flora_error_line('uninstantiated argument of insert operation'),
-	abort.
+	throw(FLORA_ABORT).
 
 flora_storage_insertfacts([FLSYSDBUPDATE(P,StorageName)|T]) :-
 	!,
@@ -117,7 +112,7 @@ flora_storage_insertfacts([FLLIBMODOBJ(F,Args,ModuleName,O)|T]) :-
 	    flora_module_predicate(F,Args,ModuleName,O),
 	    flora_storage_insertfacts(T)
 	;
-	  abort
+	  throw(FLORA_ABORT)
 	).
 
 flora_storage_insertfacts([','(C1,C2)|T]) :-
@@ -138,11 +133,11 @@ flora_storage_insertfacts([P|T]) :-
 
 	; N == 2, F == ';' ->
 	    flora_error_line('Insertion of disjunction is not allowed!'),
-	    abort
+	    throw(FLORA_ABORT)
 
 	; N == 1, flora_storage_is_negation_symbol(F) ->
 	    flora_error_line('Insertion of negation is not allowed!'),
-	    abort
+	    throw(FLORA_ABORT)
 	;
 	  flora_error_heading,
 	  flora_stderr_string('Insertion of '),
@@ -154,7 +149,7 @@ flora_storage_insertfacts([P|T]) :-
 	  flora_display_error(P),
 	  flora_stderr_string(' is not allowed!'),
 	  flora_stderr_nl,
-          abort
+          throw(FLORA_ABORT)
 	).
 
 
@@ -201,7 +196,7 @@ FLLIBDELETE([P],true) :-
 	var(P),
 	!,
 	flora_error_line('uninstantiated argument of delete operation'),
-	abort.
+	throw(FLORA_ABORT).
 
 FLLIBDELETE([FLSYSDBUPDATE(P,StorageName)],true) :-
 	!,
@@ -268,7 +263,7 @@ FLLIBDELETEALL([P],true) :-
 	var(P),
 	!,
 	flora_error_line('uninstantiated argument of delete operation'),
-	abort.
+	throw(FLORA_ABORT).
 
 FLLIBDELETEALL([FLSYSDBUPDATE(P,StorageName)],true) :-
 	!,

@@ -34,11 +34,6 @@
 	stat_set_flag/2
    from machine.
 
-:- import 
-	FLORA_DB_INSERT_KEYPAIR_PREDICATE/4,
-	FLORA_DB_FIND_KEYPAIR_PREDICATE/3
-   from storage.
-
 :- import ','/2 from standard.
 
 :- import

@@ -29,15 +29,15 @@
 FLORADIR = ..
 
 ALLOBJS = flrcommon.flh \
-          flrtrailer.flh \
-	  flreqltrailer.flh \
-          flrscalareql.flh
+	flrtrailer.flh \
+	flreqltrailer.flh \
+	flrscalareql.flh
 
 PROLOG = none
 
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
-FLORA_PRED_DEF = includes/flrpred.fli
+FLORA_PRED_DEF = ../flrincludes/flora_wspredicates.flh
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(FLORADIR)/.flora_closure_warn.tmp'

@@ -64,6 +64,10 @@
 	flora_dynz_hilog_system_module_predicate_symbol/2,
 	flora_dynz_hilog_module_predicate_symbol/2,
 
+	flora_tdyn_hilog_user_module_predicate_symbol/2,
+	flora_tdyn_hilog_system_module_predicate_symbol/2,
+	flora_tdyn_hilog_module_predicate_symbol/2,
+
 	flora_module_name/3,
 	flora_check_module_name/1,
 	flora_module_name_error/1,
@@ -84,4 +88,6 @@
 	flora_decode_module_prefix/3,
 	flora_is_flogic_wrapper/3,
 
-	flora_is_dynamic_flogic_base/2.
+	flora_is_dynamic_flogic_base/2,
+
+	flora_funct_arity/2.

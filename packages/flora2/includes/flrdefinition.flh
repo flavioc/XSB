@@ -22,6 +22,7 @@
 :- import flora_storage_registry/1,
      	  flora_debug_module_registry/1,
 	  flora_module_registry/1,
+	  flora_trailer_registry/1,
 	  flora_in_debug_mode/1
    from flrregistry.
 
@@ -47,6 +48,8 @@
       ;  true
       )
    ).
+
+?- retract(flora_trailer_registry(FLORA_THIS_MODULE_NAME)).
 
 
 /***********************************************************************/

@@ -49,6 +49,7 @@ ALLOBJS = flrarguments$(OBJEXT) \
 	  flrundefined$(OBJEXT) \
 	  flrundefhook$(OBJEXT) \
 	  flrutils$(OBJEXT) \
+	  flrversion${OBJEXT} \
 	  flrwraparound$(OBJEXT) \
 	  flrwrapper$(OBJEXT)
 

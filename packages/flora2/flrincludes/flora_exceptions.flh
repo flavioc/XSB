@@ -39,3 +39,5 @@
 %% Thrown by flora shell when it is finished with the command line argument
 %% passed from the OS shell
 #define FLORA_CMD_LINE_ARGUMENT_DONE  flora_cmd_line_argument_done
+
+#define FLORA_ABORT                   flora_abort

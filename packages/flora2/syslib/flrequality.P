@@ -27,9 +27,11 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_exceptions.flh"
 
 
 :- import flloadtrailer/1, flloadtrailer/2 from flrutils.
+:- import flora_trailer_registry/1 from flrregistry.
 
 
 
@@ -37,5 +39,16 @@
 /*****************************************************************************
   fllibequality
 *****************************************************************************/
-fllibequality(A) :- (flloadtrailer(A) -> true; abort).
-fllibequality(A,M) :- (flloadtrailer(A,M) -> true; abort).
+fllibequality(A) :-
+	( flloadtrailer(A) ->
+		(flora_trailer_registry(FLORA_DEFAULT_WORKSPACE),!;
+		assert(flora_trailer_registry(FLORA_DEFAULT_WORKSPACE)))
+	;
+		throw(FLORA_ABORT)
+	).
+fllibequality(A,M) :-
+	( flloadtrailer(A,M) ->
+		(flora_trailer_registry(M),!;assert(flora_trailer_registry(M)))
+	;
+		throw(FLORA_ABORT)
+	).

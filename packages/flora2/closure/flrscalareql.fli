@@ -11,7 +11,7 @@
 ***************************************************************************/
 
 
-#include "includes/flrpred.fli"
+#include "flora_wspredicates.flh"
 
 
 diffobjeql(X,Y) :- inferred_fd(O,M,X), inferred_fd(O,M,Y), X \= Y.

@@ -65,61 +65,76 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 
 
 
-3. Encapsulation.
+3. Module-level Encapsulation.
 
    GENERAL IDEA: 
-       When referring to Flora predicates in another module, e.g., 
-	   p(X)@foo
-       translate as:
-           ...,p'foo'exported(X)
-       In module foo, p/1 must be declared as
-           :- export p/1.
+       When referring to HiLog predicates in another module:
+          .., p(a,Y)(X)@foo, ...
+       we should translate as:
+          ...,flapply'foo'exported(flapply(p,a,Y),X)
 
-       Which would insert the rule
+       and in module foo we should have:
 
-           p'foo'exported(X) :- p'foo(X).
+          :- export p(_,_)(_)
 
-       Same for methods.
-       Should have something like:
-           :- export method123/5 ->. (for all kinds of arrows)
-	   :- export :.  (for membership)
-	   :- export ::. (for subclass)
+       This should add the following fact to the export registry for module foo:
+          foo'export'registry(flapply'foo'exported(flapply(p,_,_),_)).
+			      ^^^^^^^^^^ - hilog translation of p(_,_)(_).
 
-       For hilog predicates:
-          p(a,Y)(X)@foo
-       means:
-          ...,flapply'foo'export(flapply(p,a,Y),X)
-       and in foo we should have:
+       There also will be a rule (for each HiLog arity) to connect exported
+       wrappers back to the rest:
 
-          :- export p(_,_)/1.
+        flapply'foo'exported(HiLogPred,Arg1,...,Argn) :-
+	   foo'export'registry(flapply'foo'exported(HiLogPred,Arg1,...,Argn)),
+	   !,
+	   flapply'foo(HiLogPred,Arg1,...,Argn).
+	flapply'foo'exported(HiLogPred,Arg1,...,Argn) :-
+	   issue error: pred not exported.
 
-       which adds the fact
-          foo'exported'hilog'registry(flapply(p,_,_)).
-			              ^^^^^^^^^^ - hilog translation of p(_,_).
-       There also will be a rule:
-          flapply'foo'exported(HiLogPred,Arg) :-
-			foo'exported'hilog'registry(HiLogPred),
-			flapply'foo(HiLogPred,Arg).
-    ISSUES:
-       - What about meta programming?
-         ..., X(...)@foo, ...
-	 Here X shouldn't range over hilog predicates that aren't exported.
-	 Likewise,
-	 ..., a[ X(...) -> ...]@foo, ...
-	 should not bind X to non-exported methods.
-	 Probably the same HiLog's trick with registry will work.
 
-      - What about asserting?
-        ..., insert{p(a)@foo}, ...
+       Same for methods. They should be exported like:
+           :- export _[method123(_,_,_) -> _]. (for all kinds of arrows)
+	   :- export _:_.  (for membership)
+	   :- export _::_. (for subclass)
 
-	What if p/1 is not exported in foo?
-	One solution: in debug mode insert should check the registry of
-	exported things in the module foo.
+       and the registry will contain:
 
-    More fine-grained encapsulation based on the ideas from annotated logic.
+           foo'export'registry(fd'foo'exported(_,method123(_,_,_),_)).
+           foo'export'registry(sub'foo'exported(_,_)).
+	   etc.
+
+       We also need a patch rule for each F-logic wrapper:
+
+           fd'foo'exported(O,Meth,Val) :-
+	      foo'export'registry(fd'foo'exported(O,Meth,Val)),
+	      !,
+	      fd'foo(O,Meth,Val).
+	   fd'foo'exported(O,Meth,Val) :-
+	      issue error: method not exported
+
+
+    Issue: For completely dynamic modules: need a mechanism to specify exports.
+           Probably such modules should have everything exported, because
+           they are created by another program.
+
+    ASSERTING FACTS/RULES:
+        Need to change the translation of insert/delete/...
+	into calls to fllibinsert/fllibdelete/...
+	so that the workspace is preserved. For instance, insert{a[b->c]@foo}
+	should be translated into a call to fllibinsert('foo''fd'(a,b,c), foo).
+	The definition of fllibinsert should then check the export registry
+        to see if insert{} has been exported from module foo.
+
+
+	Note: To insert{_[meth(_)->_]@foo}, both insert{} and _[meth(_)->_]
+        should be exported by foo.
+
+	Issue: make sure undefinedness checking and tabling of hilog works
+	right after all these changes.
+
        
 
-4. Asserting Flora rules.
+DONE 4. Asserting Flora rules.
 
    Proposal:
       - Add new update predicates like:
@@ -321,21 +336,8 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
 15. Figure out some workaround for the tabled stuff that depends on
     dynamically asserted and deleted facts.
 
-16. Implement the :- database directive, which will direct the compiler to
-    not include the patch rules and to disallow real rules (as opposed to
-    just facts in the file).
-    In conjunction with this, do the following in the parser:
-       1. Ensure that directives are allowed only at the top of the file.
-          Have a flag, clause, which is conset to 0. When the first
-	  non-directive is encountered, conset it to 1.
-	  If a directive is encountered after that---issue an error.
-       2. Ensure that :- database occurs before any :- firstorder or :-
-	  hilog directive. If one of these directives is encountered,
-	  set the nodatabase flag. If :- directive is encountered after
-	  that, issue an error.
-       3. If :- database is encountered, set the database flag.
-	  The compiler should check this flag to decide whether to dump the
-	  patch rules and for deciding on the error checking.
+16. Implement the :- [+file>>module] feature, which will add rules/facts tot he
+    module rather than replace it.
 
 NOT RELEVANT 17. Provide primitives
     :- firstorder foo/1 in modname.
@@ -512,3 +514,18 @@ DONE 26. Implement @prologall() and @prologall(module).
     (nonvar(X),! ; flP2H(_newvar1234,X)),
     (nonvar(Y),! ; flP2H(_newvar1235,Y)),
     (nonvar(Z),! ; flP2H(_newvar1236,Z))
+
+27. Implement the database interface for Flora. The issue is how to save
+    object molecules transparently, i.e., an atom like
+    a[b->c,e->>d] in a database and allow it to be queries.
+
+    The database should probably be somehow associated with a module, so to
+    save stuff we would use
+
+    insert{a[b->c,e->>d]}@dbmodule
+
+    To query: X[b->Y, Z->>d]@dbmodule.
+
+    Probably need a command like
+
+    ?- connect(database-url, flora-module)

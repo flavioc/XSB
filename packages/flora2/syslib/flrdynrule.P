@@ -1,0 +1,325 @@
+/* File:      flrdynrule.P
+**
+** Author(s): Chang Zhao
+**
+** Contact:   flora-users@lists.sourceforge.net
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2002
+**
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+#include "flora_exceptions.flh"
+
+:- import conset/2,conget/2 from gensym.
+:- import append/3,length/2 from basics.
+:- import
+	flora_module_registry/1,
+	flora_trailer_registry/1
+   from flrregistry.
+:- import
+	flora_error_line/1,
+	flora_error_line/2
+   from flrprint.
+:- import 
+	flora_patch_full_filename/1,
+	flora_set_xpp_options_for_compile/1,
+	flora_clear_xpp_options/0,
+	flloadtrailer/2
+   from flrutils.
+
+:- import
+	flora_module_registry/1
+   from flrregistry.
+
+:- import
+	flora_dyna_hilog_user_module_predicate_symbol/2,
+	flora_dynz_hilog_user_module_predicate_symbol/2,
+	flora_tdyn_hilog_user_module_predicate_symbol/2,
+	flora_module_predicate/4,
+	flora_decode_predicate/6
+   from flrwrapper.
+:- import
+	flora_define_predicate/1
+   from flrundefined.
+:- import is_control/3 from flrdependency.
+:- import
+	flora_check_tabled_registry/3,
+	flora_enter_not_tabled_registry/3
+   from flrhilogtable.
+:- import
+	flora_storage_check_module_name/1
+   from flrstorage.
+
+/***********************************************************************
+ FLLIBNEWMODULE(+Module,[+TrailerType])
+ for each module in the list, makes sure that it is bound and no module
+ with the same module name exists, then load patch rules for the module
+************************************************************************/ 
+FLLIBNEWMODULE([Module]) :- FLLIBNEWMODULE([Module,NONE]).
+
+FLLIBNEWMODULE([Module,_Trailer]) :-
+	var(Module),
+	!,
+	flora_error_line('uninstantiated module name'),
+	throw(FLORA_ABORT).
+
+FLLIBNEWMODULE([Module,_Trailer]) :-
+	flora_module_registry(Module),
+	!,
+	flora_error_line("module `~w' already exists",[Module]),
+	throw(FLORA_ABORT).
+
+FLLIBNEWMODULE([Module,Trailer]) :-
+	( Trailer \== NONE, Trailer \== BASIC, Trailer \== FLOGIC ->
+            flora_error_line('Equality directive must be ~w, ~w, or ~w!',
+                             [NONE,BASIC,FLOGIC]),
+	    throw(FLORA_ABORT)
+	;
+	    flora_patch_full_filename(PatchFullName),
+	    flora_set_xpp_options_for_compile(Module),
+	    compile(PatchFullName,[optimize,ti_all]),
+	    consult(PatchFullName),
+	    flloadtrailer(NONE,Module),
+	    flora_clear_xpp_options
+	).
+	
+/***********************************************************************
+ FLLIBINSERTRULE_A(+RuleList)
+ FLLIBINSERTRULE_Z(+RuleList)
+************************************************************************/ 
+FLLIBINSERTRULE_A(RuleList) :- flora_insert_rules(FLLIBINSERTRULE_A,RuleList).
+FLLIBINSERTRULE_Z(RuleList) :- flora_insert_rules(FLLIBINSERTRULE_Z,RuleList).
+
+/***********************************************************************
+ flora_insert_rules(+InsOp,+RuleList)
+ InsOp is FLLIBINSERTRULE_A or FLLIBINSERTRULE_Z
+ process each element ([HeadList] :- Body) in the rule list
+************************************************************************/ 
+flora_insert_rules(_InsOp,[]) :- !.
+flora_insert_rules(InsOp,[FLSYSRULEUPDATE(HeadList,Body)|L]) :-
+	inst_body(Body,InstBody),
+	flora_expand_and_ins_rules(InsOp,HeadList,InstBody),
+	flora_insert_rules(InsOp,L).
+
+/***********************************************************************
+ flora_expand_and_ins_rules(+InsOp,+HeadList,+Body)
+ If there are more than one elements in the HeadList, create a new 
+ predicate with all vars in the body as the arguments, and assert
+ a rule with the new predicate as the head and Body as the body
+************************************************************************/ 
+flora_expand_and_ins_rules(_InsOp,[],_Body) :- !.
+flora_expand_and_ins_rules(InsOp,[Head],Body) :-
+	!,
+	flora_insert_rule(InsOp,Head,Body).
+flora_expand_and_ins_rules(InsOp,HeadList,Body) :-
+	HeadList=[H|_L],
+	( H=FLLIBMODLIT(_F,_Args1,MName) ->
+	    true
+	;
+	    flora_decode_predicate(H,_Type,MName,_Prefix,_Pred,_Args)
+	),
+	flora_storage_check_module_name(MName),
+	( flora_module_registry(MName) ->
+	    true
+	;
+	    flora_error_line("Module `~w' does not exist",[MName]),
+	    throw(FLORA_ABORT)
+	),
+	new_dynpredicate(NewF),
+	collect_vars(Body,BodyVars),
+	sort(BodyVars,SortedBodyVars),
+	flora_module_predicate(NewF,SortedBodyVars,MName,NewPred),
+	Bridge =.. [FL_IMPLYOP,NewPred,Body],
+	assert(Bridge),
+	flora_insert_rulelist(InsOp,HeadList,NewPred).
+
+/***********************************************************************
+ flora_insert_rulelist(+Op,+HeadList,+Body)
+ For each element E in the HeadList, call flora_insert_rule(Op,E,Body)
+************************************************************************/ 
+flora_insert_rulelist(_InsOp,[],_Body) :- !.
+flora_insert_rulelist(InsOp,[H|L],Body) :-
+	flora_insert_rule(InsOp,H,Body),
+	flora_insert_rulelist(InsOp,L,Body).
+
+/***********************************************************************
+ flora_insert_rules(+InsOp,+Head,+Body)
+ Assert a rule with the given Head and Body and define the head for
+ undefinedness checking.  If the head is a hilog predicate, wrap it
+ appropriately with WRAP_DYNA_HILOG, WRAP_DYNZ_HILOG, WRAP_TDYNA_HILOG,
+ or WRAP_TDYNZ_HILOG, and update flora_not_tabled_registry if the head
+ is not tabled
+************************************************************************/ 
+flora_insert_rule(InsOp,Head,Body) :-
+	( Head=FLLIBMODLIT(F,Args1,MName) ->
+	    flora_storage_check_module_name(MName),
+	    ( flora_module_registry(MName) ->
+	        true
+	    ;
+	        flora_error_line("Module `~w' does not exist",[MName]),
+		throw(FLORA_ABORT)
+	    ),
+	    flora_module_predicate(F,Args1,MName,InstHead)
+	;
+	    InstHead=Head
+	),
+	flora_decode_predicate(InstHead,Type,Module,_Prefix,Pred,Args),
+	( (Type == hilog) ->	
+	    ( InsOp == FLLIBINSERTRULE_A ->
+	        flora_dyna_hilog_user_module_predicate_symbol(Module,Wrapper)
+	    ;
+	        flora_dynz_hilog_user_module_predicate_symbol(Module,Wrapper)
+	    ),
+	    NewHead =.. [Wrapper,Pred|Args],
+
+	    runtime_get_fingerprint(Pred,Args,Funct,Arity),
+	    ( flora_check_tabled_registry(Module,Funct,Arity) ->
+		conget(flora_global_tabled_dynrule_num,RN),
+		NewRN is RN+1,
+		conset(flora_global_tabled_dynrule_num,NewRN),
+		flora_tdyn_hilog_user_module_predicate_symbol(Module,TWrapper),
+		TabledHead =.. [TWrapper,RN,Pred|Args],
+		TabledRule =.. [FL_IMPLYOP,NewHead,TabledHead],
+		assert(TabledRule),
+		NewRule =.. [FL_IMPLYOP,TabledHead,Body]
+	    ;
+		flora_enter_not_tabled_registry(Module,Funct,Arity),
+		NewRule =.. [FL_IMPLYOP,NewHead,Body]
+	    )
+	;
+	    NewRule =.. [FL_IMPLYOP,InstHead,Body]
+	),
+	assert(NewRule),
+	(Pred==WRAP_OBJEQL ->
+		(flora_trailer_registry(Module),!;
+		assert(flora_trailer_registry(Module)))
+	;
+		true
+	),
+	flora_define_predicate(InstHead).
+
+/***********************************************************************
+ inst_body(+Body,-InstBody)
+ get rid of fllibmodlit with module name already bound
+************************************************************************/ 
+inst_body(','(B1,B2),','(NB1,NB2)) :-
+	%%Body=','(B1,B2),
+	!,
+	inst_body(B1,NB1),
+	inst_body(B2,NB2).
+
+inst_body(Body,';'(NB1,NB2)) :-
+	Body=';'(B1,B2),
+	!,
+	inst_body(B1,NB1),
+	inst_body(B2,NB2).
+
+inst_body(Body,not(NB)) :-
+	Body=not(B),
+	!,
+	inst_body(B,NB).
+
+inst_body(Body,tnot(NB)) :-
+	Body=tnot(B),
+	!,
+	inst_body(B,NB).
+
+inst_body(Body,NB) :-
+	is_control(Body,Ctl,Branches),
+	!,
+	inst_list(Branches,InstBranches),
+	NB =.. [Ctl|InstBranches].
+
+inst_body(FLLIBMODLIT(F,Args,MName),Inst) :-
+	not var(MName),
+	!,
+	flora_module_predicate(F,Args,MName,Inst).
+
+inst_body(Body,Body).
+	
+inst_list([],[]) :- !.
+inst_list([H|L],[NH|NL]) :-
+	inst_body(H,NH),
+	inst_list(L,NL).
+
+/***********************************************************************
+ new_predicate(-NewPred)
+************************************************************************/ 
+new_dynpredicate(NewPred) :-
+	conget(flora_global_dynnewpredicate, N),
+	M is N+1,
+	conset(flora_global_dynnewpredicate, M),
+	fmt_write_string(NewPred,'%S%S',arg(dyn_newpredicate,N)).
+
+/***********************************************************************
+ collect_vars(+Term,-Vars)
+************************************************************************/ 
+collect_vars(Atom,[]) :- 
+	atomic(Atom),
+	!.
+
+collect_vars(Var,[Var]) :- 
+	var(Var),
+	!.
+
+collect_vars(Body,BodyVars) :-
+	Body =.. [_F|Args],
+	collect_var_list(Args,BodyVars).
+
+collect_var_list([],[]) :- !.
+collect_var_list([H|L], Vars) :-
+	collect_var_list(L,LV),
+	( atomic(H) ->
+	    Vars = LV
+	;
+	    ( var(H) ->
+		Vars = [H|LV]
+	    ;
+		H =.. [_F|Args],
+		collect_var_list(Args,HV),
+		append(HV,LV,Vars)
+	    )
+	).
+
+/***********************************************************************
+ runtime_get_fingerprint(+Pred,+Args,-NewPred,-Arity)
+************************************************************************/ 
+runtime_get_fingerprint(Pred,Args,Pred,Arity) :-
+	(atomic(Pred);var(Pred)),
+	!,
+	length(Args,Arity).
+
+runtime_get_fingerprint(Pred,Args,NewPred,Arity) :-
+	Pred =.. [WRAP_HILOG,Pred1|Args1],
+	length(Args,N),
+	runtime_get_fingerprint(Pred1,Args1,N,NewPred,Arity).
+
+runtime_get_fingerprint(Pred,Args,N,Pred,FL_SLASH(M,N)) :-
+	(atomic(Pred);var(Pred)),
+	!,
+	length(Args,M).
+
+runtime_get_fingerprint(Pred,Args,N,NewPred,Arity) :-
+	Pred =.. [WRAP_HILOG,Pred1|Args1],
+	length(Args,M),
+	runtime_get_fingerprint(Pred1,Args1,FL_SLASH(M,N),NewPred,Arity).
+

@@ -417,6 +417,114 @@ var_list(N, [_|Rest]) :-
 	M is N-1,
 	var_list(M, Rest).
 
+/*****************************************
+ * flora_define_predicate(+Predicate)
+ * compute the skeleton of Predcate
+ * and insert it to the corresponding trie
+ * (for dynamically inserted rule heads)
+ *****************************************/
+flora_define_predicate(Predicate) :-
+        flora_decode_predicate(Predicate,PType,MName,_WPrefix,PSymbol,AList),
+        flora_module_type_and_name(MName,ModuleType,ModuleName),
+	( (PType==hilog) ->
+	    QCode = [WRAP_HILOG,PSymbol|AList]
+	;
+	    QCode = [PSymbol|AList]
+	),
+        candidate_list([QCode],ModuleType,ModuleName,[Skeleton]),
+        flora_module_storage(ModuleType,ModuleName,fld,FldStorage),
+	FLORA_DB_INSERT(FldStorage,Skeleton,_Insert).
+
+/************************************************************
+ * flora_module_type_and_name(+MName,-ModuleType,-ModuleName)
+ ************************************************************/
+flora_module_type_and_name(MName,ModuleType,ModuleName) :-
+	( (MName = flora(ModuleName)) ->
+	    ModuleType=system
+	;
+	    ModuleName=MName,
+	    ModuleType=user
+	).
+
+/*********************************************************************
+ * flora_module_storage(+ModuleType,+ModuleName,+StorageType,-Storage)
+ *********************************************************************/
+flora_module_storage(ModuleType,ModuleName,StorageType,Storage) :-
+	( ModuleType==user ->
+            (StorageType==fdb ->
+	        flora_concat_atoms([FLORA_USER_FDB_TRIE_PREFIX, ''''], S)
+            ;
+	        flora_concat_atoms([FLORA_USER_FLD_TRIE_PREFIX, ''''], S)
+            )
+	;
+            (StorageType==fdb ->
+	        flora_concat_atoms([FLORA_SYSTEM_FDB_TRIE_PREFIX, ''''], S)
+            ;
+	        flora_concat_atoms([FLORA_SYSTEM_FLD_TRIE_PREFIX, ''''], S)
+            )
+	),
+	flora_concat_atoms([S, ModuleName],Storage).
+
+defined_by([WRAP_ISA,X,Y],[WRAP_ISA,X,Y]).
+defined_by([WRAP_ISA,X,Y],[WRAP_SUB,X,Y]).
+defined_by([WRAP_SUB,X,Y],[WRAP_SUB,X,Y]).
+defined_by([WRAP_METH,X,Y],[WRAP_METH,X,Y]).
+defined_by([WRAP_METH,X,Y],[WRAP_IMETH,X,Y]).
+defined_by([WRAP_IMETH,X,Y],[WRAP_IMETH,X,Y]).
+defined_by([WRAP_FD,X,Y,Z],[WRAP_FD,X,Y,Z]).
+defined_by([WRAP_FD,X,Y,Z],[WRAP_IFD,X,Y,Z]).
+defined_by([WRAP_IFD,X,Y,Z],[WRAP_IFD,X,Y,Z]).
+defined_by([WRAP_FDDEF,X,Y],[WRAP_FD,X,Y,_Z]).
+defined_by([WRAP_FDDEF,X,Y],[WRAP_IFD,X,Y,_Z]).
+defined_by([WRAP_IFDDEF,X,Y],[WRAP_IFD,X,Y,_Z]).
+defined_by([WRAP_FDSIG,X,Y,Z],[WRAP_FDSIG,X,Y,Z]).
+defined_by([WRAP_FDSIG,X,Y,Z],[WRAP_IFDSIG,X,Y,Z]).
+defined_by([WRAP_FDSIGDEF,X,Y],[WRAP_FDSIGDEF,X,Y]).
+defined_by([WRAP_FDSIGDEF,X,Y],[WRAP_IFDSIGDEF,X,Y]).
+defined_by([WRAP_IFDSIG,X,Y,Z],[WRAP_IFDSIG,X,Y,Z]).
+defined_by([WRAP_IFDSIGDEF,X,Y],[WRAP_IFDSIGDEF,X,Y]).
+defined_by([WRAP_MVD,X,Y,Z],[WRAP_MVD,X,Y,Z]).
+defined_by([WRAP_MVD,X,Y,Z],[WRAP_IMVD,X,Y,Z]).
+defined_by([WRAP_MVD,X,Y,_Z],[WRAP_MVDDEF,X,Y]).
+defined_by([WRAP_MVD,X,Y,_Z],[WRAP_IMVDDEF,X,Y]).
+defined_by([WRAP_IMVD,X,Y,Z],[WRAP_IMVD,X,Y,Z]).
+defined_by([WRAP_IMVD,X,Y,_Z],[WRAP_IMVDDEF,X,Y]).
+defined_by([WRAP_MVDDEF,X,Y],[WRAP_MVD,X,Y,_Z]).
+defined_by([WRAP_MVDDEF,X,Y],[WRAP_IMVD,X,Y,_Z]).
+defined_by([WRAP_MVDDEF,X,Y],[WRAP_MVDDEF,X,Y]).
+defined_by([WRAP_MVDDEF,X,Y],[WRAP_IMVDDEF,X,Y]).
+defined_by([WRAP_IMVDDEF,X,Y],[WRAP_IMVD,X,Y,_Z]).
+defined_by([WRAP_IMVDDEF,X,Y],[WRAP_IMVDDEF,X,Y]).
+defined_by([WRAP_MVDSIG,X,Y,Z],[WRAP_MVDSIG,X,Y,Z]).
+defined_by([WRAP_MVDSIG,X,Y,Z],[WRAP_IMVDSIG,X,Y,Z]).
+defined_by([WRAP_IMVDSIG,X,Y,Z],[WRAP_IMVDSIG,X,Y,Z]).
+defined_by([WRAP_MVDSIGDEF,X,Y],[WRAP_MVDSIGDEF,X,Y]).
+defined_by([WRAP_MVDSIGDEF,X,Y],[WRAP_IMVDSIGDEF,X,Y]).
+defined_by([WRAP_IMVDSIGDEF,X,Y],[WRAP_IMVDSIGDEF,X,Y]).
+defined_by([WRAP_MVDINC,X,Y,Z],[WRAP_MVD,X,Y,Z]).
+defined_by([WRAP_MVDINC,X,Y,Z],[WRAP_IMVD,X,Y,Z]).
+defined_by([WRAP_IMVDINC,X,Y,Z],[WRAP_IMVD,X,Y,Z]).
+defined_by([WRAP_MVDTOLIST,X,Y,Z],[WRAP_MVD,X,Y,Z]).
+defined_by([WRAP_MVDTOLIST,X,Y,Z],[WRAP_IMVD,X,Y,Z]).
+defined_by([WRAP_IMVDTOLIST,X,Y,Z],[WRAP_IMVD,X,Y,Z]).
+defined_by([WRAP_TRAN,X,Y],[WRAP_TRAN,X,Y]).
+
+candidate_list([],_ModuleType,_ModuleName,[]) :- !.
+candidate_list([QCode|Rest],ModuleType,ModuleName,[QSk|CanRest]) :-
+   	flora_build_skeleton(QCode,QSkeleton),
+	QSkeleton = [QFunct|QArgs],
+	( ModuleType==user ->
+	    flora_concat_atoms([FLORA_USER_MODULE_PREFIX, ''''], F)
+	;
+	    flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX, ''''], F)
+	),
+	flora_concat_atoms([F,ModuleName,'''',QFunct],QNewFunct),
+	QSk =.. [QNewFunct|QArgs],
+        candidate_list(Rest,ModuleType,ModuleName,CanRest).
+
+check_candidate_list([QSk|L],FdbStorage,Q) :-
+	FLORA_DB_FIND(FdbStorage,QSk),!,Q=QSk;
+        check_candidate_list(L,FdbStorage,Q).
 
 /*****************************************
  * flora_error_undefined(+Predicate)
@@ -428,52 +536,29 @@ var_list(N, [_|Rest]) :-
 flora_error_undefined(Predicate) :-
 	flora_decode_predicate(Predicate, PType, MName,
 			       _WPrefix, PSymbol, AList),
-	( (MName = flora(ModuleName)) ->
-	    ModuleType=system
+        flora_module_type_and_name(MName,ModuleType,ModuleName),
+        flora_module_storage(ModuleType,ModuleName,fld,FldStorage),
+        flora_module_storage(ModuleType,ModuleName,fdb,FdbStorage),
+	( (PType==hilog) ->
+	    QCode = [WRAP_HILOG,PSymbol|AList],
+            candidate_list([QCode],ModuleType,ModuleName,CanList)
 	;
-	    ModuleName=MName,
-	    ModuleType=user
+            findall(QCode,defined_by([PSymbol|AList],QCode),QCodeList),
+            candidate_list(QCodeList,ModuleType,ModuleName,CanList)
 	),
-	( (ModuleType=user) ->
-	    flora_concat_atoms([FLORA_USER_FDB_TRIE_PREFIX, ''''], S1)
-	;
-	    flora_concat_atoms([FLORA_SYSTEM_FDB_TRIE_PREFIX, ''''], S1)
-	),
-	flora_concat_atoms([S1, ModuleName],FdbStorage),
 
-	( (PType=hilog) ->
-	    QCode = [WRAP_HILOG,PSymbol|AList]
-	;
-	    QCode = [PSymbol|AList]
-	),
-   	flora_build_skeleton(QCode,QSkeleton),
-	QSkeleton = [QFunct|QArgs],
-	( (ModuleType=user) ->
-	    flora_concat_atoms([FLORA_USER_MODULE_PREFIX, ''''], F1)
-	;
-	    flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX, ''''], F1)
-	),
-	flora_concat_atoms([F1,ModuleName,'''',QFunct],QNewFunct),
-	QSk =.. [QNewFunct|QArgs],
-
-	(FLORA_DB_FIND(FdbStorage,QSk) ->
-	    flora_decode_predicate(QSk, _PT, _MName,
+	(check_candidate_list(CanList,FdbStorage,QSk) ->
+	    flora_decode_predicate(QSk, _PT, _MN,
 		       _WPrefix, _PS, FAList),
-	    ( (PType=hilog) ->
+	    ( (PType==hilog) ->
 	        FCode = [WRAP_HILOG,PSymbol|FAList]
 	    ;
 	        FCode = [PSymbol|FAList]
 	    ),
    	    flora_build_skeleton(FCode,FSkeleton),
 	    FSkeleton = [_FFunct|FArgs],
+	    QSk =.. [QNewFunct|_QArgs],
 	    FSk =.. [QNewFunct|FArgs],
-
-	    ( (ModuleType=user) ->
-	        flora_concat_atoms([FLORA_USER_FLD_TRIE_PREFIX, ''''], S2)
-	    ;
-	        flora_concat_atoms([FLORA_SYSTEM_FLD_TRIE_PREFIX, ''''], S2)
-	    ),
-	    flora_concat_atoms([S2, ModuleName],FldStorage),
 	    FLORA_DB_INSERT(FldStorage,FSk,_Insert),
 	    !,
 	    fail

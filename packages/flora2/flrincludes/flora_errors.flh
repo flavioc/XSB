@@ -113,6 +113,9 @@
 #define ERROR_SETNOTE	'invalid use of set notation'
 #define ERROR_GPP	'error while parsing the output from the gpp preprocessor'
 #define ERROR_CMPOPT	'invalid compiler option'
+#define ERROR_NEWMODULE	'newmodule can only have 1 or 2 arguments'
+#define ERROR_TABLE	'invalid arguments for table command'
+
 #define EXP_POSINTEGER	'positive integer (including 0) expected'
 #define EXP_VARIABLE	'variable expected'
 #define EXP_ATOMICFUNCT	'atomic functor expected'
@@ -120,6 +123,7 @@
 #define EXP_AGGREGVAR	'aggregate variable expected'
 #define EXP_AGGRGRPVAR	'aggregate and grouping variables expected'
 #define EXP_ARGS	'arguments expected'
+#define EXP_RULES	'rules expected'
 #define EXP_OPTLIST	'a list of xsb compiler options expected'
 #define NO_LISTTAIL	'list tail specification is not allowed in this context'
 #define NO_DISJUNCTION	'disjunction is not allowed in rule heads and facts'

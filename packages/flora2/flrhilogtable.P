@@ -60,9 +60,16 @@ flora_define_hilogtable(Functor,Arity) :-
   flora_shdefine_hilogtable(+Module,+Functor,+Arity)
 ****************************************************************************/
 flora_shdefine_hilogtable(Module,Functor,Arity) :-
+	flora_storage_check_module_name(Module),
+	( flora_module_registry(Module) ->
+	    true
+	;
+	    flora_error_line("Module `~w' does not exist", [Module]),
+	    throw(FLORA_ABORT)
+	),
 	( flora_check_not_tabled_registry(Module,Functor,Arity) ->
-	    flora_error_line('Unable to table predicates which already appear in rule heads'),
-        abort
+	    flora_error_line('Unable to table predicates that already appear in rule heads'),
+	    throw(FLORA_ABORT)
 	;
 	    flora_enter_tabled_registry(Module,Functor,Arity)
 	).
@@ -82,14 +89,28 @@ flora_define_not_tabled_head(Functor,Arity) :-
   flora_check_tabled_registry(+ModuleName,+Functor,+Arity)
 ****************************************************************************/
 flora_check_tabled_registry(Module,Pred,N) :-
-	var(Pred), flora_tabled_registry(Module,P,N),var(P),!;
-    atom(Pred), flora_tabled_registry(Module,P,N).
+    var(Pred), flora_tabled_registry(Module,P,N),var(P),!.
+flora_check_tabled_registry(Module,Pred,N) :-
+    atom(Pred), flora_tabled_registry(Module,Pred,N),!.
+flora_check_tabled_registry(Module,_Pred,FL_SLASH(_M,N)) :-
+    flora_check_tabled_registry(Module,_,N).
 
 /****************************************************************************
   flora_check_not_tabled_registry(+ModuleName,+Functor,+Arity)
 ****************************************************************************/
 flora_check_not_tabled_registry(Module,Pred,N) :-
-	flora_not_tabled_registry(Module,Pred,N).
+    atom(Pred), flora_not_tabled_registry(Module,P,N), P==Pred, !.
+
+flora_check_not_tabled_registry(Module,Pred,N) :-
+    var(Pred), flora_not_tabled_registry(Module,Pred,N), !.
+
+flora_check_not_tabled_registry(Module,Pred,N) :-
+    var(Pred),
+    flora_not_tabled_registry(Module,_P,FL_SLASH(_M,N1)),
+    match(N,N1).
+
+match(N,N) :- !.
+match(N,FL_SLASH(_M,N1)) :- match(N,N1).
 
 /****************************************************************************
   flora_enter_tabled_registry(+ModuleName,+Functor,+Arity)
@@ -106,11 +127,15 @@ flora_enter_tabled_registry(Module,Pred,N) :-
   flora_enter_not_tabled_registry(+ModuleName,+Functor,+Arity)
 ****************************************************************************/
 flora_enter_not_tabled_registry(Module,Pred,N) :-
-	( var(Pred) ->
-	    assert(flora_not_tabled_registry(Module,Pred,N))
+	( atom(Pred),flora_not_tabled_registry(Module,P,N),P==Pred ->
+	    true
 	;
-	    ( flora_not_tabled_registry(Module,Pred,N), !;
-	      assert(flora_not_tabled_registry(Module,Pred,N)))
+	    ( var(Pred), flora_not_tabled_registry(Module,Pred,N) ->
+		true
+	    ;
+
+		assert(flora_not_tabled_registry(Module,Pred,N))
+	    )
 	).
 
 
@@ -174,19 +199,24 @@ flora_write_rulehead(Term) :-
 	is_prtermlit(Term,FObj,M,_ObjList),
 	!,
 	get_fingerprint(FObj,M,WF,F,N,_VL),
-	( atom(F),(flora_hilogtable(F,N);flora_not_tabled_head(F,N)) ->
-        true
-    ;
-        ( (flora_hilogtable(F1,N),var(F1);flora_not_tabled_head(F1,N),var(F1)) ->
-            true
-        ;
+	( check_tabled(F,N) ->
+	    true
+	;
+	    ( atom(F),flora_not_tabled_head(F1,N),F1==F ->
+		true
+	    ;
+		( var(F),flora_not_tabled_head(F,N) ->
+		    true
+		;
+
 		    flora_define_not_tabled_head(F,N),
-            flora_write_atom('?- flora_enter_not_tabled_registry(FLORA_THIS_MODULE_NAME,'),
-            flora_write_struct(WF,FLBODYPREFIX),
-            put(0',),
-            write(N),
-            flora_write_atom(').'),
-            nl
+            	    flora_write_atom('?- flora_enter_not_tabled_registry(FLORA_THIS_MODULE_NAME,'),
+            	    flora_write_struct(WF,FLBODYPREFIX),
+            	    put(0',),
+            	    write(N),
+            	    flora_write_atom(').'),
+            	    nl
+	        )
 	    )
 	).
 

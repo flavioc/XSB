@@ -60,8 +60,89 @@ ALGORITHM
       to compute the skeleton(s) of the inserted fact(s) and insert the
       skeleton(s) into the fld storage.
 
-4. debug option is local to module. This is done by keeping track of the
-   loaded modules that require debugging in flora_debug_module_registry
+   4) debug option is local to module. This is done by keeping track of the
+      loaded modules that require debugging in flora_debug_module_registry
+
+ALGORITHM REVISED
+   1) When compiling a flora program, we take the intermediate representation
+      of the program from the compiler, compute skeletons for rule heads and
+      facts (see below), and remove duplications. These skeletons will be
+      dumped into a file with extension .fld. When this program is loaded, the
+      skeletons will be loaded into the fld storage trie of the corresponding
+      module.
+      
+   2) The basic idea is to add patch rules to trap undefined predicates.
+      For hilog predicates, we have patch rules such as:
+      		flapply(X) :-
+			this_module_is_in_debugging_mode,
+			storage_find_fact(fldstorage, flapply(X)),
+			!,
+			fail.
+		flapply(X) :-
+			this_module_is_in_debugging_mode,
+			flora_error_undefined(flapply(X)).
+
+      where
+	* this_module_is_in_debugging_mode succeeds only when the debug option
+          of the module is turned on. See section 3) for more detail.
+	* flora_error_undefined handles the case where the skeleton of the
+	  predicate never appears in any rule head or fact. It's not necessarily
+	  undefined because of database operations. See section 4).
+
+      With thses two rules, all undefined HiLog predicates whose arities are 0
+      will be trapped when the debug option is turned on.
+      Such patch rules can be found in genincludes/flrpreddef.fli.
+
+      Unfortunately, this doesn't work for F-logic predicates because of
+      the inheritance rules.
+      For example, in closure/flrtrailer.fli, we have
+      		isa(O,C) :-
+			silent_sub(S,C),
+			inferred_isa(O,S).
+      It is possible that sub(_,C) is not defined, we will get an error
+      message saying "_::C" is undefined when the query is "_:C".
+
+      We can handle this problem in the following way:
+      F-logic wrappers in the bodies of user program rules and queries
+      (except in database operations) are prefixed by 'd_'.
+      This has the effect that the wrappers in the rule bodies in the program 
+      (e.g., d_isa/2) are different from the wrappers in the rule bodies in
+      the trailers (e.g., isa/2). The undefinedness checking rules (below)
+      are then attached to the d_* versions of the wrappers, but not to the
+      wrappers used in the trailer. As a result, Flora won't complain that
+      trailer predicates are undefined (because they are allowed to).
+
+      Patch rules for trapping undefined isa are:
+		d_isa(X,Y) :-
+			this_module_is_in_debugging_mode,
+			not storage_find_fact(fldstorage, isa(X,Y)),
+			not storage_find_fact(fldstorage, sub(X,Y)),
+			flora_error_undefined(isa(X,Y)).
+		d_isa(X,Y) :-
+			isa(X,Y).
+
+      Such rules are also in genincludes/flrpreddef.fli.
+      flWrapAround('flrpreddef.fli') generates flrpreddef.flh, which is included
+      in the end of .P files 
+
+   3) Debug option is local to module and can be dynamically turned on/off.
+      This is done by keeping track of the loaded modules that require debugging
+      in flora_debug_module_registry. In the system module flora(sys), we have
+		debug[#check_undefined(Flag)]
+		debug[#check_undefined(Flag,Module)] 
+      to query, turn on, or turn off the debug option of a certain module or
+      all modules.
+
+   4) Insert operations(insert, insertall, btinsert, btinsertall) may produce
+      some new skeletons which are not in any fact or rule head. If we check
+      and insert skeletons for every insert operation, insert operations will
+      be slowed down a lot. We can do it in a lazy way as follows.
+
+      When flora_error_undefined(P) is called, we compute the skeleton of P,
+      check whether there is a fact in the fdb storage that have the same
+      skeleton.  If so, build the skeleton of the fact, insert it into fld
+      storage, then fail; otherwise, print error message and throw 
+      FLORA_UNDEFINED_EXCEPTION(P).
 
 
 SKELETONS

@@ -3,10 +3,9 @@
 #define FLIFILE_EXT         fli
 #define FLHFILE_EXT         flh
 
-#define WRAP_FLOGICSTATIC   flogic
-#define WRAP_DUMP           dump
-#define WRAP_INDEX2         index2
-#define WRAP_INDICES        indices
-#define WRAP_STORAGE        storage
-#define WRAP_MODULE         module
+#define WRAP_WITH_WORKSPACE   flora_use_workspace
+#define WRAP_DUMP             flora_wrap_dump
+#define WRAP_INDICES          flora_wrap_indices
+#define WRAP_STORAGE          flora_wrap_storage
+#define WRAP_MODULE           flora_wrap_module
 

@@ -28,7 +28,7 @@
 
 FLORADIR = ..
 
-ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh
+ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh flrdyna.flh flrdynz.flh
 
 PROLOG = none
 

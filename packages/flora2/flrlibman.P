@@ -29,6 +29,7 @@
 
 
 #include "flora_terms.flh"
+#include "flora_exceptions.flh"
 
 ?- bootstrap_flora.
 
@@ -172,6 +173,11 @@ flora_library_file(FLLIBMODLIT,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBMODOBJ,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBEQUALITY,flrequality,syslib) :- !.
 
+flora_library_file(FLLIBDYNRULE,flrdynrule,syslib) :- !.
+flora_library_file(FLLIBNEWMODULE,flrdynrule,syslib) :- !.
+flora_library_file(FLLIBINSERTRULE_A,flrdynrule,syslib) :- !.
+flora_library_file(FLLIBINSERTRULE_Z,flrdynrule,syslib) :- !.
+
 flora_library_file(FLLIBCONTROL,flrcontrol,syslib) :- !.
 flora_library_file(FLLIBIFTHENELSE,flrcontrol,syslib) :- !.
 flora_library_file(FLLIBIFTHEN,flrcontrol,syslib) :- !.
@@ -201,6 +207,10 @@ flora_library_file(FLSCALAREQL,flrscalareql,header) :- !.
 flora_library_file(FLPREDDEF,flrpreddef,header) :- !.
 flora_library_file(FLINDEX_P,flrindex_P,header) :- !.
 
+%% for dynamically inserted rules
+flora_library_file(FLDYNA,flrdyna,header) :- !.
+flora_library_file(FLDYNZ,flrdynz,header) :- !.
+
 /**************************************************************************
   Flora system modules use the system libraries mechanism to include
   their header files, but use different mechanism to load.
@@ -215,7 +225,7 @@ flora_library_file(SysModID,BaseFile,SubDir) :-
 ***************************************************************************/
 flora_library_file(S,F,_) :-
 	flora_error_line("Unknown library ID `%S' or file `%S'", args(S,F)),
-	abort.
+	throw(FLORA_ABORT).
 
 
 /*****************************************************************************

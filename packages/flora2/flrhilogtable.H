@@ -42,6 +42,7 @@
 	is_pratomlit/3,
 	is_prtermlit/4,
 	get_fingerprint/6,
+	check_tabled/2,
     flora_write_struct/2
    from flrcoder.
 
@@ -51,8 +52,17 @@
    from flrporting.
 
 :- import
-	flora_error_line/1
+	flora_error_line/1,
+	flora_error_line/2
    from flrprint.
+
+:- import
+	flora_storage_check_module_name/1
+   from flrstorage.
+
+:- import
+	flora_module_registry/1
+   from flrregistry.
 
 :- export
 	flora_hilogtable/2,

@@ -49,6 +49,7 @@ flora_display_error(InTerm) :-
 	!,
 	flora_write_string(InTerm,OutStr),
 	write(Stream,OutStr).
+
 flora_display_feedback(InTerm) :-
 	flora_fdbk_stream(Stream),
 	!,
@@ -56,9 +57,7 @@ flora_display_feedback(InTerm) :-
 	write(Stream,OutStr).
 
 
-
 /********************************************************************/
-
 %% Write Flora term to string
 %% This shouldn't be re-satisfiable, so we put cut at the end
 flora_write_string(InTerm,Str) :-
@@ -66,6 +65,8 @@ flora_write_string(InTerm,Str) :-
 	flora_concat_atoms(AtomList,Str),
 	!.
 
+
+/********************************************************************/
 %% Tail/NewTail is a difference list that represents
 %% the processed parts of InTerm
 flora_write_string1(InTerm, Tail, NewTail) :-
@@ -88,6 +89,14 @@ flora_write_string1(X, Tail, NewTail) :-
 
 flora_write_string1([], Tail, NewTail) :- 
 	Tail = ['[]' | NewTail].
+
+flora_write_string1([H|T], Tail, NewTail) :-
+	Str = [H|T],
+	is_charlist(Str),
+	!,
+	atom_codes(Atm1,Str),
+	flora_concat_atoms(['"', Atm1, '"'], Atm),
+	Tail = [Atm | NewTail].
 
 flora_write_string1([H|T], Tail, NewTail) :-
 	!,
@@ -123,10 +132,11 @@ flora_write_string1(X,Tail,NewTail) :-
 	NewTail2 = [')' | NewTail].
 
 
+/********************************************************************/
+%% The first argument is a list of terms.
 flora_write_args([],_Tail,_NewTail) :- !.
 
 %% This catches lists [X|Y] where Y is a var.
-%% Otherwise it might unify with [X] in the next clause.
 flora_write_args([X|Y],Tail,NewTail) :-
 	var(Y),
 	!,
@@ -139,7 +149,13 @@ flora_write_args([X],Tail,NewTail) :-
         flora_write_string1(X,Tail,NewTail).
 
 flora_write_args([X1,X2|Xs],Tail,NewTail) :-
+	!,
         flora_write_string1(X1,Tail,NewTail1),
 	NewTail1 = [',' | NewTail2],
         flora_write_args([X2|Xs],NewTail2,NewTail).
 
+%% This catches lists [X|Y] where Y is not in a list form.
+flora_write_args([X|Y],Tail,NewTail) :-
+	flora_write_string1(X,Tail,NewTail1),
+	NewTail1 = ['|' | NewTail2],
+	flora_write_string1(Y,NewTail2,NewTail).

@@ -9,57 +9,59 @@
 ***************************************************************************/
 
 
-#include "includes/flrpred.fli"
+#include "flora_wspredicates.flh"
 
 
 /***************************************************************************
   tabling directives
+
+  Note: Tabling inferred_* predicates appears to be not necessary
 ***************************************************************************/
 :- table
-	inferred_sub/2,
-	super_sub/2,
-	immediate_sub/2,
-	sub/2,
-	inferred_isa/2,
-	super_isa/2,
-	immediate_isa/2,
-	isa/2,
-	inferred_ifd/3,
-	defined_inferred_ifd/2,
-	conflict_ifd/2,
-	ifd/3,
-	inferred_imvd/3,
-	defined_inferred_imvd/2,
-	conflict_imvd/2,
-	imvd/3,
-	inferred_imvddef/2,
-	imvddef/2,
-	inferred_fd/3,
-	defined_inferred_fd/2,
-	conflict_obj_ifd/2,
-	fd/3,
+	sub/2,		%% inferred_sub/2,
+	isa/2,		%% inferred_isa/2,
+	fd/3,		%% inferred_fd/3,
+	ifd/3,		%% inferred_ifd/3,
+	mvd/3,		%% inferred_mvd/3,
+	imvd/3,		%% inferred_imvd/3,
+	mvddef/2,	%% inferred_mvddef/2,
+	imvddef/2,	%% inferred_imvddef/2,
+	fdsig/3,	%% inferred_fdsig/3,
+	fdsigdef/2,	%% inferred_fdsigdef/2,
+	ifdsig/3,	%% inferred_ifdsig/3,
+	ifdsigdef/2,	%% inferred_ifdsigdef/2,
+	mvdsig/3,	%% inferred_mvdsig/3,
+	mvdsigdef/2,	%% inferred_mvdsigdef/2,
+	imvdsig/3,	%% inferred_imvdsig/3,
+	imvdsigdef/2,	%% inferred_imvdsigdef/2,
+	meth/2,		%% inferred_meth/2,
+	imeth/2,	%% inferred_imeth/2,
+	exists/1,	%% inferred_exists/1,
+	diffobjeql/2,	%% inferred_objeql/2,
 	fddef/2,
-	ifddef/2,
-	inferred_mvd/3,
-	defined_inferred_mvd/2,
-	conflict_obj_imvd/2,
-	mvd/3,
-	inferred_mvddef/2,
-	mvddef/2,
-	inferred_meth/2,
-	meth/2,
-	inferred_imeth/2,
-	imeth/2,
-	fdsig/3,
-	ifdsig/3,
-	mvdsig/3,
-	imvdsig/3,
-	inferred_exists/1,
-	exists/1,
-	inferred_objeql/2,
-	diffobjeql/2.
+	ifddef/2.
 
 
+:- table
+	local_ifd/2,
+	local_fd/2,
+	local_imvd/2,
+	local_mvd/2,
+	%%override_class_ifd/3,
+	%%multiple_class_ifd/3,
+	candidate_class_ifd/3,
+	%%override_object_ifd/3,
+	%%multiple_object_ifd/3,
+	candidate_object_ifd/3,
+	%%override_class_imvd/3,
+	%%multiple_class_imvd/3,
+	candidate_class_imvd/3,
+	%%override_object_imvd/3,
+	%%multiple_object_imvd/3,
+	candidate_object_imvd/3.
+
+
+/*
 :- table
 	inferred_sub_eql/2,
 	inferred_isa_eql/2,
@@ -69,35 +71,177 @@
 	inferred_fd_eql/3,
 	inferred_mvd_eql/3,
 	inferred_mvddef_eql/2.
+*/
 
 
 /***************************************************************************
   inferred predicates
+
+  These wrapper predicates with the 'inferred_' prefix are needed to make
+  the trailer dynamically loadable. Note that the program rules use wrapper
+  predicates with the 'derived_' prefix.
 ***************************************************************************/
 inferred_sub(X,Y) :- derived_sub(X,Y).
 inferred_isa(O,C) :- derived_isa(O,C).
-inferred_ifd(C,A,V) :- derived_ifd(C,A,V).
-inferred_imvd(C,A,V) :- derived_imvd(C,A,V).
-inferred_imvddef(C,A) :- derived_imvddef(C,A).
 inferred_fd(O,A,V) :- derived_fd(O,A,V).
+inferred_ifd(C,A,V) :- derived_ifd(C,A,V).
 inferred_mvd(O,A,V) :- derived_mvd(O,A,V).
+inferred_imvd(C,A,V) :- derived_imvd(C,A,V).
 inferred_mvddef(O,A) :- derived_mvddef(O,A).
+inferred_imvddef(C,A) :- derived_imvddef(C,A).
+inferred_fdsig(O,MethodArgs,R) :- derived_fdsig(O,MethodArgs,R).
+inferred_fdsigdef(O,MethodArgs) :- derived_fdsigdef(O,MethodArgs).
+inferred_ifdsig(O,MethodArgs,R) :- derived_ifdsig(O,MethodArgs,R).
+inferred_ifdsigdef(O,MethodArgs) :- derived_ifdsigdef(O,MethodArgs).
+inferred_mvdsig(O,MethodArgs,R) :- derived_mvdsig(O,MethodArgs,R).
+inferred_mvdsigdef(O,MethodArgs) :- derived_mvdsigdef(O,MethodArgs).
+inferred_imvdsig(O,MethodArgs,R) :- derived_imvdsig(O,MethodArgs,R).
+inferred_imvdsigdef(O,MethodArgs) :- derived_imvdsigdef(O,MethodArgs).
 inferred_meth(O,M) :- derived_meth(O,M).
 inferred_imeth(C,M) :- derived_imeth(C,M).
 inferred_tran(O,T) :- derived_tran(O,T).
-inferred_fdsig(O,MethodArgs,R) :- derived_fdsig(O,MethodArgs,R).
-inferred_ifdsig(O,MethodArgs,R) :- derived_ifdsig(O,MethodArgs,R).
-inferred_mvdsig(O,MethodArgs,R) :- derived_mvdsig(O,MethodArgs,R).
-inferred_imvdsig(O,MethodArgs,R) :- derived_imvdsig(O,MethodArgs,R).
 inferred_exists(X) :- derived_exists(X).
 inferred_objeql(X,Y) :- derived_objeql(X,Y).
 
 
+/*****************************************************************************
+  inheritance book-keeping information for scalar methods
+
+  Note that the argument "Class" here is considered as a class.
+  It is about inheritance from superclasses to subclasses.
+*****************************************************************************/
+override_class_ifd(C,MethSign,Class) :-
+	sub(X,C),
+	sub(Class,X),
+	X \= C,
+	X \= Class,
+	local_ifd(X,MethSign).
+
+
+candidate_class_ifd(C,MethSign,Class) :-
+	var(MethSign),
+	!,
+	sub(Class,C),
+	local_ifd(C,MethSign),
+	C \= Class,
+	sk_not(override_class_ifd(C,MethSign,Class)).
+
+candidate_class_ifd(C,MethSign,Class) :-
+	local_ifd(C,MethSign),
+	sub(Class,C),
+	C \= Class,
+	sk_not(override_class_ifd(C,MethSign,Class)).
+
+
+multiple_class_ifd(C,MethSign,Class) :-
+	candidate_class_ifd(X,MethSign,Class),
+	X \= C.
+
+
+/*****************************************************************************
+  inheritance book-keeping information for scalar methods
+
+  Note that the argument "Object" here is considered as an object.
+  It is about inheritance from superclasses to instances/members.
+*****************************************************************************/
+override_object_ifd(C,MethSign,Object) :-
+	sub(X,C),
+	isa(Object,X),
+	X \= C,
+	X \= Object,
+	local_ifd(X,MethSign).
+
+
+candidate_object_ifd(C,MethSign,Object) :-
+	var(MethSign),
+	!,
+	isa(Object,C),
+	local_ifd(C,MethSign),
+	C \= Object,
+	sk_not(override_object_ifd(C,MethSign,Object)).
+
+candidate_object_ifd(C,MethSign,Object) :-
+	local_ifd(C,MethSign),
+	isa(Object,C),
+	C \= Object,
+	sk_not(override_object_ifd(C,MethSign,Object)).
+
+
+multiple_object_ifd(C,MethSign,Object) :-
+	candidate_object_ifd(X,MethSign,Object),
+	X \= C.
+
+
+/*****************************************************************************
+  inheritance book-keeping information for multivalued methods
+
+  Note that the argument "Class" here is considered as a class.
+  It is about inheritance from superclasses to subclasses.
+*****************************************************************************/
+override_class_imvd(C,MethSign,Class) :-
+	sub(X,C),
+	sub(Class,X),
+	X \= C,
+	X \= Class,
+	local_imvd(X,MethSign).
+
+
+candidate_class_imvd(C,MethSign,Class) :-
+	var(MethSign),
+	!,
+	sub(Class,C),
+	local_imvd(C,MethSign),
+	C \= Class,
+	sk_not(override_class_imvd(C,MethSign,Class)).
+
+candidate_class_imvd(C,MethSign,Class) :-
+	local_imvd(C,MethSign),
+	sub(Class,C),
+	C \= Class,
+	sk_not(override_class_imvd(C,MethSign,Class)).
+
+
+multiple_class_imvd(C,MethSign,Class) :-
+	candidate_class_imvd(X,MethSign,Class),
+	X \= C.
+
+
+/*****************************************************************************
+  inheritance book-keeping information for multivalued methods
+
+  Note that the argument "Object" here is considered as an object.
+  It is about inheritance from superclasses to instances/members.
+*****************************************************************************/
+override_object_imvd(C,MethSign,Object) :-
+	sub(X,C),
+	isa(Object,X),
+	X \= C,
+	X \= Object,
+	local_imvd(X,MethSign).
+
+
+candidate_object_imvd(C,MethSign,Object) :-
+	var(MethSign),
+	!,
+	isa(Object,C),
+	local_imvd(C,MethSign),
+	C \= Object,
+	sk_not(override_object_imvd(C,MethSign,Object)).
+
+candidate_object_imvd(C,MethSign,Object) :-
+	local_imvd(C,MethSign),
+	isa(Object,C),
+	C \= Object,
+	sk_not(override_object_imvd(C,MethSign,Object)).
+
+
+multiple_object_imvd(C,MethSign,Object) :-
+	candidate_object_imvd(X,MethSign,Object),
+	X \= C.
+
+
 /***************************************************************************
   defined scalar attributes
-
-  Notes: There is no base_fddef, or base_ifddef,
-         or derived_fddef, or derived_ifddef.
 ***************************************************************************/
 fddef(O,A) :- fd(O,A,_V).
 
@@ -161,11 +305,8 @@ exists(X) :- imeth(X,_).
 /****************************************************************************
   objeql/2
 ****************************************************************************/
-
-
 objeql(X,Y) :- (nonvar(X); nonvar(Y)), X=Y.
 objeql(X,Y) :- diffobjeql(X,Y).
-
 
 
 /****************************************************************************
@@ -173,5 +314,16 @@ objeql(X,Y) :- diffobjeql(X,Y).
 ****************************************************************************/
 %% like sub, but the debugger won't trace it
 silent_sub(C,S) :- sub(C,S).
-%% like sub, but the debugger will print it specially
+
+%% like sub, but the debugger will print it specially and won't trace inside
 inheritance_sub(C,S) :- sub(C,S).
+
+%% Like inferred_* but the debugger will print it in a special way
+inheritance_ifd(C,M,V) :- inferred_ifd(C,M,V).
+inheritance_imvd(C,M,V) :- inferred_imvd(C,M,V).
+inheritance_imvddef(C,M) :- inferred_imvddef(C,M).
+
+%% Like inferred_* but the debugger will print it in a special way
+inheritance_ifd_eql(C,M,V) :- inferred_ifd_eql(C,M,V).
+inheritance_imvd_eql(C,M,V) :- inferred_imvd_eql(C,M,V).
+inheritance_imvddef_eql(C,M) :- inferred_imvddef_eql(C,M).

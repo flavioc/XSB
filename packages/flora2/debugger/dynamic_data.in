@@ -23,204 +23,206 @@
 ** 
 */
 
-%% The data in this file is workspace-dependent
+%% Data in this file is workspace-dependent
+
+#include "flora_wrap.flh"
 
 %% This will dump the corresponding include instructions in the output file
-:- dump '#mode standard Prolog'.
-:- dump '#include "flrheader.flh"'.
-:- dump '#include "flora_terms.flh"'.
-:- dump '#include "flora_wrap.flh"'.
-%% This might not work on windows, but on windows we provide 
-%% a prebuilt .flh file
-#include "flora_terms.flh"
-#include "../closure/includes/flrpred.fli"
+:- WRAP_DUMP '#mode standard Prolog'.
+:- WRAP_DUMP '#include "flrheader.flh"'.
+:- WRAP_DUMP '#include "flora_terms.flh"'.
+:- WRAP_DUMP '#include "flora_wrap.flh"'.
+
+#include "flora_wspredicates.flh"
 
 
-:- WRAP_FLOGICSTATIC
+:- WRAP_WITH_WORKSPACE
 	newpredicate/_,
-	tabled_flapply/_,
-	defined_flapply/_,
-	debugging/0,
+	WRAP_TABLED_HILOG/_,
+	WRAP_DYNA_HILOG/_,
+	WRAP_DYNZ_HILOG/_,
+	WRAP_TDYN_HILOG/_,
+	FLDEFINEDPREFIX(WRAP_HILOG)/_,
 	debugger_data_loaded/0.
 
-:- WRAP_FLOGICSTATIC
-	check_isa/2,
-	check_sub/2,
-	check_tran/2,
-	check_meth/2,
-	check_imeth/2,
-	check_fd/3,
-	check_ifd/3,
-	check_mvd/3,
-	check_imvd/3,
-	check_fdsig/3,
-	check_ifdsig/3,
-	check_mvdsig/3,
-	check_imvdsig/3,
-	check_fddef/2,
-	check_ifddef/2,
-	check_mvddef/2,
-	check_imvddef/2.
-
-
-
-/***************************************************************************
-  F-logic facts
-***************************************************************************/
-flora_hide_this_hide(base_sub/2).
-flora_hide_this_hide(base_isa/2).
-flora_hide_this_hide(base_fd/3).
-flora_hide_this_hide(base_ifd/3).
-flora_hide_this_hide(base_mvd/3).
-flora_hide_this_hide(base_imvd/3).
-flora_hide_this_hide(base_mvddef/2).
-flora_hide_this_hide(base_imvddef/2).
-flora_hide_this_hide(base_fdsig/3).
-flora_hide_this_hide(base_ifdsig/3).
-flora_hide_this_hide(base_mvdsig/3).
-flora_hide_this_hide(base_imvdsig/3).
-flora_hide_this_hide(base_meth/2).
-flora_hide_this_hide(base_imeth/2).
-flora_hide_this_hide(base_tran/2).
-flora_hide_this_hide(base_exists/1).
-flora_hide_this_hide(base_objeql/2).
 
 
 /***************************************************************************
   F-logic predicates that appear in a rule head
 ***************************************************************************/
 
-flora_hide_this_show(derived_sub/2).
-flora_hide_this_show(derived_isa/2).
-flora_hide_this_show(derived_fd/3).
-flora_hide_this_show(derived_ifd/3).
-flora_hide_this_show(derived_mvd/3).
-flora_hide_this_show(derived_imvd/3).
-flora_hide_this_show(derived_fdsig/3).
-flora_hide_this_show(derived_ifdsig/3).
-flora_hide_this_show(derived_mvdsig/3).
-flora_hide_this_show(derived_imvdsig/3).
-flora_hide_this_show(derived_meth/2).
-flora_hide_this_show(derived_imeth/2).
-flora_hide_this_show(derived_tran/2).
+flora_hide_this_show(FLHEADPREFIX(WRAP_ISA)/2).
+flora_hide_this_show(FLHEADPREFIX(WRAP_SUB)/2).
+flora_hide_this_show(FLHEADPREFIX(WRAP_METH)/2).
+flora_hide_this_show(FLHEADPREFIX(WRAP_IMETH)/2).
+flora_hide_this_show(FLHEADPREFIX(WRAP_FD)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_IFD)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_FDSIG)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_IFDSIG)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_MVD)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_IMVD)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_MVDSIG)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_IMVDSIG)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_TRAN)/2).
+flora_hide_this_show(FLHEADPREFIX(WRAP_MVDINC)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_IMVDINC)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_MVDTOLIST)/3).
+flora_hide_this_show(FLHEADPREFIX(WRAP_IMVDTOLIST)/3).
 
+flora_hide_this_show(FLDYNAPREFIX(WRAP_ISA)/2).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_SUB)/2).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_METH)/2).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMETH)/2).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_FD)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IFD)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_FDSIG)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IFDSIG)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVD)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVD)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDSIG)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDSIG)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_TRAN)/2).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDINC)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDINC)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDTOLIST)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDTOLIST)/3).
 
-flora_hide_this_hide(derived_mvddef/2).
-flora_hide_this_hide(derived_imvddef/2).
-flora_hide_this_hide(derived_exists/1).
-flora_hide_this_hide(derived_objeql/2).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_ISA)/2).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_SUB)/2).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_METH)/2).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMETH)/2).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_FD)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IFD)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_FDSIG)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IFDSIG)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVD)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVD)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDSIG)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDSIG)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_TRAN)/2).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDINC)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDINC)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDTOLIST)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDTOLIST)/3).
+
+%% Hide
+flora_hide_this_hide(FLHEADPREFIX(WRAP_FDDEF)/2).
+flora_hide_this_hide(FLHEADPREFIX(WRAP_IFDDEF)/2).
+flora_hide_this_hide(FLHEADPREFIX(WRAP_MVDDEF)/2).
+flora_hide_this_hide(FLHEADPREFIX(WRAP_IMVDDEF)/2).
+
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_FDDEF)/2).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_IFDDEF)/2).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_MVDDEF)/2).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_IMVDDEF)/2).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_OBJEQL)/2).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_EXISTS)/1).
+
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_FDDEF)/2).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_IFDDEF)/2).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_MVDDEF)/2).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_IMVDDEF)/2).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_OBJEQL)/2).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_EXISTS)/1).
 
 
 /***************************************************************************
   F-logic predicates that appear in the trailer
 ***************************************************************************/
-flora_hide_this_show(inferred_sub/2).
-flora_hide_this_show(inferred_isa/2).
-flora_hide_this_show(inferred_fd/3).
-flora_hide_this_show(inferred_ifd/3).
-flora_hide_this_show(inferred_mvd/3).
-flora_hide_this_show(inferred_imvd/3).
-flora_hide_this_show(inferred_meth/2).
-flora_hide_this_show(inferred_imeth/2).
-flora_hide_this_show(inferred_tran/2).
-flora_hide_this_show(inferred_fdsig/3).
-flora_hide_this_show(inferred_ifdsig/3).
-flora_hide_this_show(inferred_mvdsig/3).
-flora_hide_this_show(inferred_imvdsig/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_SUB)/2).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_ISA)/2).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_FD)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IFD)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_MVD)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMVD)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_METH)/2).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMETH)/2).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_TRAN)/2).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_FDSIG)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IFDSIG)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_MVDSIG)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMVDSIG)/3).
 
-flora_hide_this_hide(inferred_mvddef/2).
-flora_hide_this_hide(inferred_imvddef/2).
-flora_hide_this_hide(inferred_exists/1).
-flora_hide_this_hide(inferred_objeql/2).
-
-flora_hide_this_hide(defined_inferred_ifd/2).
-flora_hide_this_hide(defined_inferred_imvd/2).
-flora_hide_this_hide(defined_inferred_fd/2).
-flora_hide_this_hide(defined_inferred_mvd/2).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_FDDEF)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_IFDDEF)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_MVDDEF)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_IMVDDEF)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_EXISTS)/1).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_OBJEQL)/2).
 
 
-/***************************************************************************
-  F-logic predicates that appear in a rule body
-***************************************************************************/
+flora_hide_this_show(match(WRAP_SUB/2)).
+flora_hide_this_show(match(WRAP_ISA/2)).
+flora_hide_this_show(match(WRAP_FD/3)).
+flora_hide_this_show(match(WRAP_IFD/3)).
+flora_hide_this_show(match(WRAP_MVD/3)).
+flora_hide_this_show(match(WRAP_IMVD/3)).
+flora_hide_this_show(match(WRAP_METH/2)).
+flora_hide_this_show(match(WRAP_IMETH/2)).
+flora_hide_this_show(match(WRAP_TRAN/2)).
+flora_hide_this_show(match(WRAP_FDSIG/3)).
+flora_hide_this_show(match(WRAP_IFDSIG/3)).
+flora_hide_this_show(match(WRAP_MVDSIG/3)).
+flora_hide_this_show(match(WRAP_IMVDSIG/3)).
 
-/*
-flora_hide_this_show(sub/2).
-flora_hide_this_show(isa/2).
-flora_hide_this_show(fd/3).
-flora_hide_this_show(ifd/3).
-flora_hide_this_show(mvd/3).
-flora_hide_this_show(imvd/3).
-flora_hide_this_show(fdsig/3).
-flora_hide_this_show(ifdsig/3).
-flora_hide_this_show(mvdsig/3).
-flora_hide_this_show(imvdsig/3).
-flora_hide_this_show(meth/2).
-flora_hide_this_show(imeth/2).
-flora_hide_this_show(tran/2).
+flora_hide_this_hide(WRAP_FDDEF/2).
+flora_hide_this_hide(WRAP_IFDDEF/2).
+flora_hide_this_hide(WRAP_MVDDEF/2).
+flora_hide_this_hide(WRAP_IMVDDEF/2).
+flora_hide_this_hide(WRAP_EXISTS/1).
+flora_hide_this_hide(WRAP_OBJEQL/2).
 
-flora_hide_this_show(mvdinc/3).
-flora_hide_this_show(imvdinc/3).
-flora_hide_this_show(mvdtolist/3).
-flora_hide_this_show(imvdtolist/3).
-*/
-
-flora_hide_this_hide(mvddef/2).
-flora_hide_this_hide(imvddef/2).
-flora_hide_this_hide(exists/1).
-flora_hide_this_hide(objeql/2).
-flora_hide_this_hide(fddef/2).
-flora_hide_this_hide(ifddef/2).
+flora_hide_this_hide(match(candidate_object/_)).
 
 /***************************************************************************
   intermediate F-logic predicates that appear in the trailer
 ***************************************************************************/
-flora_hide_this_hide(super_sub/2).
-flora_hide_this_hide(super_isa/2).
-flora_hide_this_hide(conflict_ifd/2).
-flora_hide_this_hide(conflict_imvd/2).
-flora_hide_this_hide(conflict_obj_ifd/2).
-flora_hide_this_hide(conflict_obj_imvd/2).
 
 flora_hide_this_hide(silent_sub/2).
-
-flora_show_this_hide(immediate_isa/2).
-flora_show_this_hide(immediate_sub/2).
 flora_show_this_hide(inheritance_sub/2).
+
+/*
+    %% These are no longer used
+    flora_hide_this_hide(super_sub/2).
+    flora_hide_this_hide(super_isa/2).
+    flora_show_this_hide(immediate_isa/2).
+    flora_show_this_hide(immediate_sub/2).
+*/
 
 
 /***************************************************************************
   F-logic predicates that appear only in the trailer with equality maintenance
 ***************************************************************************/
 flora_hide_this_hide(diffobjeql/2).
-flora_hide_this_hide(inferred_sub_eql/2).
-flora_hide_this_hide(inferred_isa_eql/2).
-flora_hide_this_hide(inferred_ifd_eql/3).
-flora_hide_this_hide(inferred_imvd_eql/3).
-flora_hide_this_hide(inferred_imvddef_eql/2).
-flora_hide_this_hide(inferred_fd_eql/3).
-flora_hide_this_hide(inferred_mvd_eql/3).
-flora_hide_this_hide(inferred_mvddef_eql/2).
+flora_hide_this_hide(FLTRAILERPREFIX(sub_eql)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(isa_eql)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(ifd_eql)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(imvd_eql)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(imvddef_eql)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(fd_eql)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(mvd_eql)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(mvddef_eql)/2).
 
 /***************************************************************************
   Flora debugging predicates
 ***************************************************************************/
-flora_hide_this_hide(check_isa/2).
-flora_hide_this_hide(check_sub/2).
-flora_hide_this_hide(check_tran/2).
-flora_hide_this_hide(check_meth/2).
-flora_hide_this_hide(check_imeth/2).
-flora_hide_this_hide(check_fd/3).
-flora_hide_this_hide(check_ifd/3).
-flora_hide_this_hide(check_mvd/3).
-flora_hide_this_hide(check_imvd/3).
-flora_hide_this_hide(check_fdsig/3).
-flora_hide_this_hide(check_ifdsig/3).
-flora_hide_this_hide(check_mvdsig/3).
-flora_hide_this_hide(check_imvdsig/3).
-flora_hide_this_hide(check_fddef/2).
-flora_hide_this_hide(check_ifddef/2).
-flora_hide_this_hide(check_mvddef/2).
-flora_hide_this_hide(check_imvddef/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_ISA)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_SUB)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_TRAN)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_METH)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_IMETH)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_FD)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_IFD)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_MVD)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_IMVD)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_FDSIG)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_IFDSIG)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_MVDSIG)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_IMVDSIG)/3).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_FDDEF)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_IFDDEF)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_MVDDEF)/2).
+flora_hide_this_hide(FLCHECKPREFIX(WRAP_IMVDDEF)/2).
 
 
 /*****************************************************************************
@@ -238,8 +240,11 @@ flora_hide_this_show(pref(newpredicate/_)).
 %% We put match around because for some reason XSB prepends another _$ to
 %% tabled_flapply, so the goal that the debugger get is diffferent from what
 %% is inside flora_hide_this_show/1.
-flora_hide_this_show(match(tabled_flapply/_)).
-flora_hide_this_hide(match(defined_flapply/_)).
+flora_hide_this_show(match(WRAP_TABLED_HILOG/_)).
+flora_hide_this_show(match(WRAP_DYNA_HILOG/_)).
+flora_hide_this_show(match(WRAP_DYNZ_HILOG/_)).
+flora_hide_this_show(match(WRAP_TDYN_HILOG/_)).
+flora_hide_this_hide(match(FLDEFINEDPREFIX(WRAP_HILOG)/_)).
 
 
 

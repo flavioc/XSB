@@ -24,6 +24,7 @@
 */
 
 #include "standard.h"
+#include "flora_exceptions.flh"
 
 libpath[#add(Path)] :-
 	flora_file_op(expand,Path,ExpandedPath)@prolog(flrporting),
@@ -56,7 +57,7 @@ abort(X) :-
 	flora_stderr_string('[Runtime] ')@prolog(flrprint),
 	message(PX,STDERR)@prolog(standard),
 	flora_stderr_nl@prolog(flrprint),
-	abort@prolog().
+	throw(FLORA_ABORT).
 
 warning(X) :-
 	flP2H(PX,X)@prolog(),

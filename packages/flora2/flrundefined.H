@@ -65,4 +65,5 @@
 
 :- export
 	flora_debug_code/2,
+	flora_define_predicate/1,
 	flora_error_undefined/1.

@@ -47,8 +47,6 @@
 :- import
 	flora_user_module_predicate/4,
 	flora_system_module_predicate/4,
-	flora_dyna_hilog_user_module_predicate_symbol/2,
-	flora_dynz_hilog_user_module_predicate_symbol/2,
 	flora_user_fdb_storage_name/2,
 	%% Storage for skeletons of defined predicates
 	flora_user_fld_storage_name/2
@@ -91,5 +89,6 @@
 	is_flogic/4,
 	is_fllibdb/1,
 	get_fingerprint/6,
+	check_tabled/2,
 	flora_write_struct/2,
 	flora_build_struct/6.

@@ -28,9 +28,8 @@
 
 #include "flora_terms.flh"
 #include "flora_porting.flh"
+#include "flora_exceptions.flh"
 
-
-:- import storage_find_fact/2 from storage.
 
 :- import
 	flora_error_line/1,
@@ -74,12 +73,12 @@ flora_storage_check_module_name(ModuleName) :-
 	!,
 	( Type == invalid ->
 	    flora_module_name_error(ModuleName),
-	    abort
+	    throw(FLORA_ABORT)
 
 	; Type == systemmodule ->
 	    flora_error_line("Updates to system modules (~w) are not allowed",
 	                     [WS]),
-	    abort
+	    throw(FLORA_ABORT)
 	;
 	  true
 	).
@@ -102,7 +101,7 @@ flora_storage_check_deletepredicate(P,_UpdateStruct) :-
 	var(P),
 	!,
 	flora_error_line('uninstantiated argument of delete operation'),
-	abort.
+	throw(FLORA_ABORT).
 
 flora_storage_check_deletepredicate(','(C1,C2),[P1,P2]) :-
 	!,
@@ -117,15 +116,15 @@ flora_storage_check_deletepredicate(P,FLSYSDBUPDATE(P,StorageName)) :-
 	( flora_decode_module_name(F,ModuleName) ->
 	    flora_storage_check_module_name(ModuleName),
 	    flora_fdb_storage_name(ModuleName,StorageName),
-	    storage_find_fact(StorageName,P)
+	    FLORA_DB_FIND(StorageName,P)
 
 	; N == 2, F == ';' ->
 	    flora_error_line('Deletion of disjunction is not allowed!'),
-	    abort
+	    throw(FLORA_ABORT)
 
 	; N == 1, flora_storage_is_negation_symbol(F) ->
 	    flora_error_line('Deletion of negated facts is not allowed!'),
-	    abort
+	    throw(FLORA_ABORT)
 	;
 	  flora_error_heading,
 	  flora_stderr_string('Deletion of '),
@@ -137,7 +136,7 @@ flora_storage_check_deletepredicate(P,FLSYSDBUPDATE(P,StorageName)) :-
 	  flora_display_error(P),
 	  flora_stderr_string(' is not allowed!'),
 	  flora_stderr_nl,
-          abort
+          throw(FLORA_ABORT)
 	).
 
 
@@ -155,7 +154,7 @@ flora_storage_convertlist([P|Fs],
 	flora_storage_convertlist(Fs,CL,FL).
 
 flora_storage_convertlist([FLSYSDBUPDATE(P,StorageName)|Fs],
-                          [storage_find_fact(StorageName,P)|CL],
+                          [FLORA_DB_FIND(StorageName,P)|CL],
 			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
@@ -164,7 +163,7 @@ flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName)|Fs],
                           [flora_storage_check_module_name(ModuleName),
 			   flora_module_predicate(F,Args,ModuleName,P),
 			   flora_fdb_storage_name(ModuleName,StorageName),
-                           storage_find_fact(StorageName,P)|CL
+                           FLORA_DB_FIND(StorageName,P)|CL
 			  ],
 			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
 	!,
@@ -174,7 +173,7 @@ flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,O)|Fs],
                           [( flora_check_module_name(ModuleName) ->
 			       flora_module_predicate(F,Args,ModuleName,O)
 			   ;
-			     abort
+			     throw(FLORA_ABORT)
 			   )|CL],
 			  FL) :-
 	!,

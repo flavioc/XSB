@@ -21,8 +21,10 @@
 
 #mode standard Prolog
 
+#define FLORA_NO_EXECUTABLE_INCLUDES
 #include "flora_porting.flh"
 #include "flora_prefix.flh"
+#undef FLORA_NO_EXECUTABLE_INCLUDES
 
 #ifndef FLORA_DUMP
 

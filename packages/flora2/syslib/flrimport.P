@@ -30,18 +30,29 @@
 
 check_args(P,A,Module) :-
 	(atom(Module),!
-	; abort('flImport: Module must be an atom')
+	; flora_error_line('flImport: Module must be an atom'),
+	  abort
 	),
 	%% check that P is given as foo/arity
 	(functor(P,'/',_) -> true
-	; abort(['flImport: ', P, ', Arg 1 must have the form Pred/Arity'])
+	; flora_error_line('flImport: ~w Arg 1 must have the form Pred/Arity',
+			   [P]),
+	    %% don't use throw(FLORA_ABORT) because this predicate can be
+	    %% called from pure prolog where this exception is not caught.
+	    %% It is also more correct to report this as a Prolog abort than
+	    %% Flora abort.
+	    abort
 	),
 	%% check that A is given as bar(_,_,_) and not as bar/Arity
 	(functor(A,'/',_)
-	-> abort(['flImport: ', A, ', Arg 2 must have the form Pred(_,_,...)'])
+	-> flora_error_line('flImport: ~w Arg 2 must have the form Pred(_,_,...)',
+			    [A]),
+	    abort
 	%% check if A and P have the same arity
 	; functor(A,_,Arity), P=_/Arity -> true
-	; abort(['flImport: ', P, ' and ', A, ' must have the same arity'])
+	; flora_error_line('flImport: ~w and ~w must have the same arity',
+			   [P,A]),
+	    abort
 	).
 
 %% Clone A in the same module. Return a cloned A and the list of its arguments
@@ -56,7 +67,7 @@ funish_up(NewA,NewP,File,Module) :-
 	assert((NewA :- NewP)), % assert(A :- P).
 	(var(File),!
 	; flora_load_module_internal(File,Module),!	% load the module
-	; abort                                         % load failed
+	; abort
 	).
 
 %% The following two predicate do the following:

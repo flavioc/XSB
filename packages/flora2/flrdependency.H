@@ -31,4 +31,5 @@
 :- dynamic warning_seen(_,_,_,_,_).
 
 :- export
+	is_control/3,
 	check_for_dependencies/2.

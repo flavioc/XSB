@@ -91,20 +91,24 @@
 #deffast FLORA_SYSTEM_FLD_TRIE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_FLD_TRIE)
 
 
-
 /****************************************************************************
   F-logic atom prefixes for predicates that are used to distinguish F-logic
   wrappers in the trailers, the user program, base facts, etc.
 ****************************************************************************/
-#define FLFACTPREFIX		'base_'
 #define FLHEADPREFIX		'derived_'
-#define FLBODYPREFIX		''
 #define FLTRAILERPREFIX		'inferred_'
+#define FLBODYPREFIX		''
+
+#mode save
+#mode nostring "\!#'"
+#define FLHEADPREFIX(X)		'derived_#1'
+#define FLTRAILERPREFIX(X)	'inferred_#1'
+#mode restore
+
 
 /******************************************************************************
   Lengths of prefixes of F-logic wrappers
 ******************************************************************************/
-#deffast FLFACTPREFIX_LEN		#eval length(FLFACTPREFIX)-2
 #deffast FLHEADPREFIX_LEN		#eval length(FLHEADPREFIX)-2
 #deffast FLBODYPREFIX_LEN		#eval length(FLBODYPREFIX)-2
 #deffast FLTRAILERPREFIX_LEN		#eval length(FLTRAILERPREFIX)-2
@@ -115,10 +119,21 @@
   implement the debugging feature that catches undefined methods.
 ****************************************************************************/
 #define FLDEBUGPREFIX		'd_'
-%% This is a 1-argument macro
+#define FLDYNAPREFIX		'dyna_'
+#define FLDYNZPREFIX		'dynz_'
+%% Prefixes used for checking undefinedness
+#define FLDEFINEDPREFIX		'defined_'
+#define FLCHECKPREFIX		'check_'
+
+%% Corresponding macros
 #mode save
 #mode nostring "\!#'"
 #define FLDEBUGPREFIX(X)        'd_#1'
+#define FLDYNAPREFIX(X)		'dyna_#1'
+#define FLDYNZPREFIX(X)		'dynz_#1'
+
+#define FLDEFINEDPREFIX(X)	'defined_#1'
+#define FLCHECKPREFIX(X)	'check_#1'
 #mode restore
 
 

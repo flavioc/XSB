@@ -212,4 +212,6 @@
 	flora_compile_system_module_by_ID/1,
 	flora_load_system_module_internal/1,
 	flora_measure_time/2,
-	flCompileInclude/1.
+	flCompileInclude/1,
+
+	flora_patch_full_filename/1.

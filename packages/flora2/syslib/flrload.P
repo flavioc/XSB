@@ -29,6 +29,7 @@
 
 #include "flora_terms.flh"
 #include "flora_extensions.flh"
+#include "flora_exceptions.flh"
 
 
 :- import
@@ -147,6 +148,6 @@ flora_check__module_overriding(LoadFile,Workspace,HostFile,HostMod,[Line,Char]) 
 	flora_file_op(basename,HostFile,HostFileBasename),
 	flora_error_line('~w.flr: Literal [~w >> ~w] near line(~w)/char(~w) overrides the program in which it occurs',
 			 [HostFileBasename,LoadFile,HostMod,Line,Char]),
-	abort.
+	throw(FLORA_ABORT).
 
 flora_check__module_overriding(_LoadFile,_Workspace,_HostFile,_HostMod,_Location).
