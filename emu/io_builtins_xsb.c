@@ -990,28 +990,39 @@ int read_canonical(void)
       /* print_token(token->type,token->value); */
       prevchar = token->nextch;
       if (token->type != TK_EOC) return read_can_error(filep,instr,prevchar);
-      term = opstk[0].op;
 
-      /* p = findall_solutions + findall_chunk_index;*/
-	  check_glstack_overflow(3, pcreg, size*sizeof(Cell)) ;
-	  /*printf("checked overflow: size: %d\n",size*sizeof(Cell));*/
-	  arg2 = (Cell)Areg(2);
-	  deref(arg2);
-	  gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
-	  findall_copy_to_heap(term,(CPtr)arg2,&hreg) ; /* this can't fail */
-	  findall_free(findall_chunk_index) ;
-
-       if (varfound || 
-			(isconstr(term) && !strcmp(":-",get_name(get_str_psc(term)))) ||
-			isstring(term)) {
-		ctop_int(3,0);
-		prevpsc = 0;
-      }
-      else if (get_str_psc(term) == prevpsc) {
-		ctop_int(3, (Integer)prevpsc);
+      if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
+	term = opstk[0].op;
+	/* p = findall_solutions + findall_chunk_index;*/
+	check_glstack_overflow(3, pcreg, size*sizeof(Cell)) ;
+	/*printf("checked overflow: size: %d\n",size*sizeof(Cell));*/
+	arg2 = (Cell)Areg(2);
+	deref(arg2);
+	if (isnonvar(arg2)) 
+	  xsb_abort("read_canonical argument must be a variable\n");
+	bind_ref((CPtr)arg2,hreg);  /* build a new var to trail binding */
+	new_heap_free(hreg);
+	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
+	findall_copy_to_heap(term,(CPtr)arg2,&hreg) ; /* this can't fail */
+	findall_free(findall_chunk_index) ; 
+	
+	if (isinteger(term) || 
+	    isfloat(term) || 
+	    isstring(term) ||
+	    varfound || 
+	    (isconstr(term) && !strcmp(":-",get_name(get_str_psc(term))))) {
+	  ctop_int(3,0);
+	  prevpsc = 0;
+	}
+	else if (get_str_psc(term) == prevpsc) {
+	  ctop_int(3, (Integer)prevpsc);
+	} else {
+	  prevpsc = get_str_psc(term);
+	  ctop_int(3,0);
+	}
       } else {
-		prevpsc = get_str_psc(term);
-		ctop_int(3,0);
+	ctop_int(3,0);
+	prevpsc = 0;
       }
 contcase:
       return TRUE;
