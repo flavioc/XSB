@@ -528,7 +528,7 @@ void realloc_strbuff(char **pstrbuff, char **ps, int *pn)
 { 
   char *newbuff;
 
-  newbuff = realloc(*pstrbuff, strbuff_len * 2);
+  newbuff = (char *)realloc(*pstrbuff, strbuff_len * 2);
   exit_if_null(newbuff);
   if (token_too_long_warning)
     {
@@ -558,7 +558,7 @@ struct token *GetToken(FILE *card, STRFILE *instr, int prevch)
 	if (strbuff == NULL)
 	  {
 	    /* First call for GetToken, so allocate a buffer */
-	    strbuff = malloc(strbuff_len);
+	    strbuff = (char *)malloc(strbuff_len);
 	    exit_if_null(strbuff);
 	  }
 	s = strbuff;

@@ -858,7 +858,7 @@ static void write_quotedname(FILE *file, char *string)
 {
   char* new_string;
 
-  new_string  = malloc(2*(strlen(string))+1);
+  new_string  = (char *)malloc(2*(strlen(string))+1);
 
   if (*string == '\0') 
     fprintf(file,"''");
@@ -895,47 +895,47 @@ int builtin_call(byte number)
     break;
   }
   case PSC_ARITY: {	/* R1: +PSC; R2: -int */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_arity(psc));
     break;
   }
   case PSC_TYPE: {	/* R1: +PSC; R2: -int */
 			/* type: see psc_xsb.h, `entry_type' field defs */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_type(psc));
     break;
   }
   case PSC_SET_TYPE: {	/* R1: +PSC; R2: +type (int): see psc_xsb.h */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     set_type(psc, ptoc_int(2));
     break;
   }
   case PSC_PROP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_data(psc));
     break;
   }
   case PSC_SET_PROP: {	       /* R1: +PSC; R2: +int */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     set_data(psc, (Psc)ptoc_int(2));
     break;
   }
   case PSC_EP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_ep(psc));
     break;
   }
   case PSC_SET_EP: {	       /* R1: +PSC; R2: +int */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     pb ep = (pb)ptoc_int(2);
     set_ep(psc, (ep==NULL?((byte *)(&(psc->load_inst))):ep));
     break;
   }
 
   case PSC_SET_SPY: { 	       /* R1: +PSC; R2: +int */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     set_spy(psc, ptoc_int(2));
     break;
   }
@@ -1399,18 +1399,18 @@ int builtin_call(byte number)
 
   case PSC_ENV:	{       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_env(psc));
     break;
   }
   case PSC_SPY:	{	/* reg 1: +PSC; reg 2: -int */
 				/* env: 0 = non-spied else spied */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_spy(psc));
     break;
   }
  case PSC_TABLED: {	/* reg 1: +PSC; reg 2: -int */
-    Psc psc = ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_tip(psc));
     break;
   }
@@ -1589,7 +1589,7 @@ int builtin_call(byte number)
 
     goalTerm = ptoc_tag(regGoalHandle);
     if ( is_encoded_addr(goalTerm) ) {
-      goalSF = decode_addr(goalTerm);
+      goalSF = (VariantSF)decode_addr(goalTerm);
       if ( IsNULL(goalSF) ) {
 	err_handle(TYPE, regGoalHandle, "table_status", 4,
 		   "Valid subgoal frame pointer", goalTerm);
@@ -1911,7 +1911,7 @@ int builtin_call(byte number)
 #endif
 
   case FORCE_TRUTH_VALUE: { /* +R1: AnsLeafPtr; +R2: TruthValue */
-    BTNptr as_leaf = ptoc_addr(1);
+    BTNptr as_leaf = (BTNptr)ptoc_addr(1);
     char *tmpstr = ptoc_string(2);
     if (!strcmp(tmpstr, "true"))
       force_answer_true(as_leaf);

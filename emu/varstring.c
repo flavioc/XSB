@@ -350,7 +350,7 @@ static void vs_adjust_size(VarString *vstr, int minsize)
 
   newsize = (minsize/vstr->increment +1) * (vstr->increment);
 
-  if (NULL == (vstr->string = realloc(vstr->string, newsize))) {
+  if (NULL == (vstr->string = (char *)realloc(vstr->string, newsize))) {
 #ifdef DEBUG_VARSTRING
     fprintf(stderr, "No room expand a variable-length string\n");
     return;

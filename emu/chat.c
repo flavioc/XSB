@@ -573,7 +573,7 @@ static void chat_save_cons_arguments(chat_init_pheader pheader,
     CPtr *p;
 
     i = needed_size(nrarguments);
-    p = malloc(i*sizeof(CPtr));
+    p = (CPtr*)malloc(i*sizeof(CPtr));
     if (p == NULL)
       xsb_exit("chat_save_cons_arguments - malloc failed\n");
     chat_get_malloc_start(pheader) = p;
@@ -664,7 +664,7 @@ static chat_incr_pheader chat_save_trail(chat_init_pheader pheader,
       chat_set_ifather(incr_phead, NULL);
 
       i = needed_size(size_tr);
-      mem_area = malloc(i*sizeof(CPtr));
+      mem_area = (CPtr *)malloc(i*sizeof(CPtr));
       if (mem_area == NULL)
 	xsb_exit("CHAT trail allocation failure");
       chat_set_imalloc_start(incr_phead, mem_area);

@@ -713,8 +713,8 @@ void init_machine(void)
   realtime_count = real_time();
   inst_begin = 0;
 
-  symbol_table.table = calloc(symbol_table.size, sizeof(Pair));
-  string_table.table = calloc(string_table.size, sizeof(char *));
+  symbol_table.table = (void **)calloc(symbol_table.size, sizeof(Pair));
+  string_table.table = (void **)calloc(string_table.size, sizeof(char *));
 }
 
 /*==========================================================================*/

@@ -107,7 +107,7 @@ char *stringNodeType(byte fieldNodeType) {
     {
       char t[20], *s;
       sprintf(t, "unknown (%c)", fieldNodeType);
-      if ( IsNULL(s = malloc(strlen(t)+1)) )
+      if ( IsNULL(s = (char *)malloc(strlen(t)+1)) )
 	return("unknown");
       else {
 	strcpy(s,t);
@@ -137,7 +137,7 @@ char *stringTrieType(byte fieldTrieType) {
     {
       char t[20], *s;
       sprintf(t, "unknown (%c)", fieldTrieType);
-      if ( IsNULL(s = malloc(strlen(t)+1)) )
+      if ( IsNULL(s = (char *)malloc(strlen(t)+1)) )
 	return("unknown");
       else {
 	strcpy(s,t);

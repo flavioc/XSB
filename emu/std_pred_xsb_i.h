@@ -302,7 +302,7 @@ inline static xsbBool atom_to_list(int call_type)
   list = ptoc_tag(2);
   if (!isnonvar(term)) {	/* use is: CODES/CHARS --> ATOM */
     if (atomnameaddr == NULL) {
-      atomnameaddr = malloc(INITIAL_NAMELEN);
+      atomnameaddr = (char *)malloc(INITIAL_NAMELEN);
       atomnamelen = INITIAL_NAMELEN;
       /* printf("Allocated namebuf: %p, %d\n",atomnameaddr,atomnamelen);*/
     }
