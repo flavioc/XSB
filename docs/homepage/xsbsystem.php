@@ -23,7 +23,7 @@ available.
 <li><a href="http://sourceforge.net/bugs/?group_id=1176">Bug Tracking</li>
 <li><a href="http://sourceforge.net/mail/?group_id=1176">Mailing Lists</li>
 <li><a href="http://sourceforge.net/cvs/?group_id=1176">CVS Code Repository</li>
-<li><a href="http://sourceforge.net/project/filelist.php?group_id=1176">Source Code Download</li>
+<li><a href="http://sourceforge.net/project/showfiles.php?group_id=1176">Source Code Download</li>
 <li><a href="http://sourceforge.net/project/?group_id=1176">And More...</a></li>
 </UL>
 <br>
