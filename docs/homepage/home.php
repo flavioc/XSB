@@ -46,7 +46,7 @@ The XSB Programmers' Manual:
 	</ul>
 </li>
 
-<li><a href="flora/">FLORA</a>: An F-logic compiler that provides an object-oriented layer on top of XSB.
+<li><a href="flora/index.php">FLORA</a>: An F-logic compiler that provides an object-oriented layer on top of XSB.
 <br>
 The FLORA manual:
         <ul>
