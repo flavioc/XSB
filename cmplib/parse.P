@@ -76,7 +76,7 @@ parse1(Modname, File, Module) :-
 	;   true
 	),
 	(
-	    XPP_process = none, ! 
+	    XPP_process == none, ! 
 	;   %% Wait, if cpp was spawned so as to not leave zombies
 	    process_control(XPP_process, wait),
 	    %% Also, release the file descriptor used to read from cpp
