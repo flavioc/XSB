@@ -29,12 +29,13 @@ of an ontology.
 logic programming with ontology management @footnote{Historically,
 Cold Dead Fish was called the Ontology Management System (OMS).}.
 Development of CDF is actively underway, and the initial versions of
-many important parts of CDF are not yet available.  Nonetheless, CDF
-has already been used heavily in commercial and research products to
-represent and manipulate knowledge in a way that is useful to XSB, to
-allow the knowledge to persist in a database of file system, and to
-visualize that knowledge through Interprolog @cite{Cale01} and other
-tools.
+many important parts of CDF are not yet available@footnote{ALC-style
+class expressions are in the process of being developed for CDF: see
+@cite{Swif03}.}.  Nonetheless, CDF has already been used heavily in
+commercial and research products to represent and manipulate knowledge
+in a way that is useful to XSB, to allow the knowledge to persist in a
+database of file system, and to visualize that knowledge through
+Interprolog @cite{Cale01} and other tools.
 
 @section{A (somewhat) Formal Introduction to CDF}
 
@@ -46,7 +47,9 @@ instance@footnote{The development of this section generally follows
 @cite{SwiW03a}.}.  For clarity of presentation of semantic issues, we
 use simplified form of identifiers in this section and omit many
 operational features.  Identifiers and operational features are
-discussed in @ref{Operational Aspects of CDF}.
+discussed in @ref{Operational Aspects of CDF}.  We also omit higher
+order relations that can be defined in CDF, which are discussed in
+@ref{Extending the Semantics to Higher-Order Relations}.
 
 From a semantic point of view, a @em{CDF instance} can be thought of
 as a set of ground Prolog facts for the following predicates:
@@ -162,11 +165,12 @@ constant in @em{L}, the language underlying the ontology theory to
 which we translate.  We thus freely use constants and function symbols
 for CDF instances and ontology theories.
 
-Informally @em{isCls/1} indicates that an identifier @em{I} is a
-class name or @em{class identifier}; @em{isObj/1} that @em{I} is an
-object name or @em{object identifier}; @em{isRel/1} that @em{I} is a
-name for a relation between objects; and @em{isCRel/1} that @em{I} is
-a name for a relation between classes and objects.  @em{memof(O,C)}
+Informally @em{isCls/1} indicates that an identifier @em{I} is a class
+name or @em{class identifier}; @em{isObj/1} that @em{I} is an object
+name or @em{object identifier}; @em{isRel/1} that @em{I} is a name for
+a relation between objects or @em{object-object relation identifier};
+and @em{isCRel/1} that @em{I} is a name for a relation between classes
+and objects or @em{class-object relation identifier}.  @em{memof(O,C)}
 indicates that object identifier @em{O} is an ""element"" of class
 identifier @em{C}; @em{rel(O1,R,O2)} indicates that object identifier
 @em{O1} has an @em{R} relation to an object identifier @em{O2}; and
@@ -436,7 +440,7 @@ allAttr(cid(dlaPart),rid(suturesRusMatch(cid(matchScale))),cid(suturesRusPart))
 match with some @tt{cid(matchScale)} weight to a
 @tt{cid(suturesRusPart)} part.
 
-@bf{Example 4} 
+@bf{Example 5} 
 Anoter aspect of product classes is illustrated by the fragment:
 @begin{verbatim}
 isa(cid(sign,id(cdfRoot))
@@ -457,11 +461,10 @@ isa(cid((unit),id(cdfRoot))
 The class @tt{cid(measure(cid(sign),cid(integer),cid(unit)))} can be
 thought of as the set of terms with outer functor @tt{measure/3} whose
 first argument is a member of the class @tt{cid(sign)}, whose second
-argument is an integer @tt{cid(integer)} indicates the class of all
-integers @footnote{As a practical matter, integers are defined as a
-primitive type, see @cite{SwiW03}.}, and whose third element is a
-member of @tt{cid(unit)}.  By this reasoning, the identifiers
-@tt{cid(measure(cid('+'),cid(integer),cid(length))} and
+argument is an integer @tt{cid(allIntegers)} indicates the class of
+all integers, (see @ref{Primitive Classes and Objects}) and whose
+third element is a member of @tt{cid(unit)}.  By this reasoning, the
+identifiers @tt{cid(measure(cid('+'),cid(integer),cid(length))} and
 @tt{measure(cid('-'),cid(2),cid(days)} are both subclasses of
 @tt{cid(measure(cid(sign),cid(integer),cid(unit))}, but neither is a
 subclass of each other.
@@ -505,8 +508,8 @@ Implicit Isa Axiom implies that if
 Downward Closure Axiom so do @em{isObj(yi)} and @em{isCls(xi)} for
 @em{1 =< i =< n}.
 
-@cite{SwiW03} gives conditions that are necessary and sufficient for a
-CDF instance to be consistent.
+@cite{SwiW03a} gives conditions that are necessary and sufficient for
+a CDF instance to be consistent.
 
 @subsection{Inheritance}
 
@@ -515,21 +518,16 @@ class of @tt{cid(sutures)} indicates that each object in this class is
 related to an object in @tt{cid(endTypeDomain)}.  Thus, if no stronger
 information were provided for, say, part @tt{oid(suturesU245H)}, then
 
-@begin{itemize} 
-@item @em{Int(@tt{hasAttr(oid(suturesU245H),rid(endType),cid(endTypeDomain))})}
-@end{itemize} 
+@em{Int(@tt{hasAttr(oid(suturesU245H),rid(endType),cid(endTypeDomain))})}
 
 @noindent would be true in any model of the CDF instance.  This
 consequence can be seen as a primitive form of ``default'', or more
 precisely indefinite, reasoning that is provided by CDF.  Indeed,
 
-@begin{itemize} 
-@item
 @em{Int(@tt{hasAttr(suture547466,endType,endTypeDomain)})}
-@end{itemize} 
 
 @noindent is also true in any model, but is of less interest, since
-Example 3 indicates there is specific information that
+Example 2 indicates there is specific information that
 @tt{oid(suture547466)} is related to a subclass of
 @tt{cid(endTypeDomain)}, namely @tt{cid(singleArmed)}.
 
@@ -569,31 +567,28 @@ definition, it also holds that @tt{rid(endType)} relates any element
 of @tt{cid(sutures)} to a member or subclass of any @em{superclass} of
 @tt{cid(endTypeDomain)} so that 
 
-@begin{itemize} 
-@item 
-	@em{Int(hasAttr(cid(sutures),rid(endType),id('CDF Root')))}
-@end{itemize}
+	@em{Int(@tt{hasAttr(cid(sutures),rid(endType),id('CDF Root'))})}
+
 @noindent
 should also hold in any model of the CDF instance.  Similiarly, 
-@begin{itemize}
-@item 
-@em{Int(allAttr(cid('dlaPart'),rid(suturesRusMatch),cid('CDF Root')))}
-@end{itemize} 
+
+@em{Int(@tt{allAttr(cid(dlaPart),rid(suturesRusMatch),id('CDF Root'))})}
 
 @noindent should also hold.  In English, for every member of
 @tt{cid(suture)} that has a @tt{rid(suturesRusMatch)} relation, the
-target of that relation is a member of @tt{cid('CDF Root')}.
+target of that relation is a member of @tt{id('CDF Root')}.
 
 @bf{Proposition 1.2} @em{[Third-Argument Inheritance Propagation]}
 @begin{itemize}
-@item If @em{M |= Int(hasAttr(Id1,Id2,Id3)) @bf{and}
-	Int(isa(Id3,Id4))} then @em{M |= Int(hasAttr(Id0,Id2,Id4))}
+@item If @em{M |= Int(@tt{hasAttr}(Id1,Id2,Id3)) and
+	Int(@tt{isa}(Id3,Id4))} then @em{M |= Int(@tt{hasAttr}(Id0,Id2,Id4))}
 
-@item If @em{M |= Int(allAttr(Id1,Id2,Id3)) @bf{and}
-	Int(isa(Id3,Id4))} then @em{M |= Int(allAttr(Id0,Id2,Id4))}
+@item If @em{M |= Int(@tt{allAttr}(Id1,Id2,Id3)) and
+	Int(@tt{isa}(Id3,Id4))} then @em{M |= Int(@tt{allAttr}(Id0,Id2,Id4))}
 
-@item If @em{M |= Int(classHasAttr(Id1,Id2,Id3)) @bf{and}
-	Int(isa(Id3,Id4))} then @em{M |= Int(classHasAttr(Id0,Id2,Id4))}
+@item If @em{M |= Int(@tt{classHasAttr}(Id1,Id2,Id3)) and
+	Int(@tt{isa}(Id3,Id4))} then 
+		@em{M |= Int(@tt{classHasAttr}(Id0,Id2,Id4))}
 @end{itemize}
 
 A final aspect of inheritance arises from generalization or
@@ -613,15 +608,77 @@ propositions.
 @bf{Proposition} @em{[Second-Argument Inheritance Propagation]}
 
 @begin{itemize}
-@item If @em{M |= hasAttr(Id1,Id2,Id3)) @bf{and}
-	isa(Id2,Id4))} then @em{M |= hasAttr(Id0,Id4,Id3)}
+@item If @em{M |= @tt{hasAttr}(Id1,Id2,Id3)) and
+	@tt{isa}(Id2,Id4))} then @em{M |= @tt{hasAttr}(Id0,Id4,Id3)}
 
-@item If @em{M |= allAttr(Id1,Id2,Id3)) @bf{and}
-	isa(Id4,Id2))} then @em{M |= allAttr(Id0,Id4,Id3)}
+@item If @em{M |= @tt{allAttr}(Id1,Id2,Id3)) and
+	@tt{isa}(Id4,Id2))} then @em{M |= @tt{allAttr}(Id0,Id4,Id3)}
 
-@item If @em{M |= classHasAttr(Id1,Id2,Id3)) @bf{and}
-	isa(Id2,Id4))} then @em{M |= classHasAttr(Id0,Id4,Id3)}
+@item If @em{M |= @tt{classHasAttr}(Id1,Id2,Id3)) and
+	@tt{isa}(Id2,Id4))} then @em{M |= @tt{classHasAttr}(Id0,Id4,Id3)}
 @end{itemize}
+
+@section{Extending the Semantics to Higher-Order Relations}
+
+So far we have introduced two types of relations: @em{rel/3} which
+relates an object identifier to an object identifier and @em{crel/3}
+which relates a class identifier to an object identifier.  We have
+also introduced various CDF predicates to make statements about these
+relations: a @tt{hasAttr/3} fact makes an existential statement about
+the @em{rel/3} predicate for an object or all objects in a class,
+while a @tt{allAttr/3} makes a universal statement about the
+@em{rel/3} predicate for an object or all objects in a class.  
+
+Alternatively, a @em{classHasAttr/3} predicate makes an existential
+statement about the @em{crel/3} predicate for a class identifier.  One
+can also imagine a @em{classAllAttr/3} to make a universal statement
+about the @em{crel/3} predicate for a class identifier.  This
+predicate has not yet been implemented in CDF, although it may be
+implemented if a need for it arises in applications.
+
+@em{rel/3} and @em{crel/3} can be seen as part of a hierarchy of
+relations.  One may have a relation whose domain consists of a
+@em{rel/3}, a @em{crel/3} tuple, an object-object relation identifier
+or a object-class relation identifier.  Similarly one can define
+further relations on these higher-order relations.
+
+Two such relations have been seen to be important in applications so
+far.
+
+@begin{itemize}
+
+@item Relations from an object-object relation identifier @em{RI} to
+an object.  Since the domain of this relation is the class of tuples
+denoted by @em{RI}, and since @em{RI} is of the form @em{rid/2},
+identifiers for this new type of relation use the functor @em{crrid/2}.
+
+@item Relations from a class-object relation identifier @em{CRI} to an
+object.  Since the domain of this relation is the class of tuples
+denoted by @em{CRI}, and since @em{RI} is of the form @em{crid/2},
+identifiers for this new type of relation use the functor
+@em{crcrid/2}.
+
+@end{itemize}
+
+@bf{Example 6} Suppose we wish to display the name for the relation
+@tt{rid(endType,dla)} in Example 2 as @tt{'Suture End Type'} in a CDF
+editor.  This display name can be represented by the fact
+
+@begin{verbatim}
+hasAttr(rid(endType,dla),crrid(displayName,dla),
+                                cid('Suture End Type',dla))
+@end{verbatim}
+
+Similarly the display name for @tt{crid(endTypeWeight,dla)} can be
+represented as 
+
+@begin{verbatim}
+hasAttr(crid(endTypeWeight,dla),crcrid(displayName,dla),
+                                cid('Suture End Type Weight',dla))
+@end{verbatim}
+
+The CDF semantics presented above can be extended to these new
+identifier types in a straightforward manner.
 
 @section{Operational Aspects of CDF}
 
@@ -636,11 +693,11 @@ The previous section presented identifiers as a unique way of
 indicating a class, object, or relation.  In our implementation of CDF
 identifiers are defined using a @em{Component Format}.
 
-@bf{Definition 4} [@em{Identifiers, Component Form}]
-A term @em{T} is an identifier in component format if @em{T} has the
-functor @tt{id/2}, @tt{cid/2}, @tt{oid/2}, @tt{orid/2}, or
-@tt{crid/2}, whose first argument is @em{A1} and whose second argument
-is an atom; and
+@bf{Definition 4} [@em{Identifiers, Component Form}] A term @em{T} is
+an identifier in component format if @em{T} has the functor @tt{id/2},
+@tt{cid/2}, @tt{oid/2}, @tt{orid/2}, @tt{crid/2}, @tt{crrid/2} or
+@tt{crcrid/2} whose first argument is @em{A1} and whose second
+argument is an atom; and
 
 @begin{enumerate} 
 
@@ -656,7 +713,7 @@ the second it is called a @em{product identifier}.  For either type of
 identifier, the first argument is termed the @em{native id} and the
 atomic second argument is called the @em{source}.
 
-@bf{Example 5} While the above convention makes identifiers somewhat
+@bf{Example 7} While the above convention makes identifiers somewhat
 harder to read, it can be extremely useful for combining information
 from different ontologies, since identifiers from each ontology can be
 tagged, avoiding ambiguity and allowing their direct use.  The
@@ -664,7 +721,7 @@ fragment of Example 1 represented by identifiers in component form
 might look like:
 
 @begin{verbatim}
-isa(cid(medicalEquipment,unspsc),id('CDF Root','CDF'))  
+isa(cid(medicalEquipment,unspsc),id('CDF Root',cdf))  
   isa(cid(woundCareProducts,unspsc),cid(medicalEquipment,unspsc)) 
   isa(cid(suturesAndRelatedProducts,unspsc)),
                                        cid(woundCareProducts,unspsc))
@@ -696,13 +753,13 @@ following predicates, whose names have @tt{_ext} appended to them to
 indicate that they represent extensional information: @tt{isa_ext/2},
 @tt{hasAttr_ext/3}, @tt{allAttr_ext/3}, and @tt{classHasAttr_ext/3}.
 
-@bf{Example 6} The actual implementation of CDF requires extensional
+@bf{Example 8} The actual implementation of CDF requires extensional
 facts to be written using the above @tt{_ext} predicates.
 Accordingly, the fragment from Example 5 would be rewritten as
 follows:
 
 @begin{verbatim}
-isa_ext(cid(medicalEquipment,unspsc),id('CDF Root','CDF'))  
+isa_ext(cid(medicalEquipment,unspsc),id('CDF Root',cdf))  
   isa_ext(cid(woundCareProducts,unspsc),cid(medicalEquipment,unspsc)) 
   isa_ext(cid(suturesAndRelatedProducts,unspsc)),
                                          cid(woundCareProducts,unspsc))
@@ -738,7 +795,7 @@ from file @tt{F} will retract rules previously loaded from @tt{F} and
 assert new ones.  Users, however do not need to worry about
 @tt{multifile/1} declarations for intensional rules.
 
-@bf{Example 7} Suppose that we wish to include Prolog-defined facts
+@bf{Example 9} Suppose that we wish to include Prolog-defined facts
 about approved item names in the dla ontology into CDF.  These
 approved item name facts consist of an Item Name Code, the Federal
 Item Identification Guidline number (FIIG) to which the Item Name Code
@@ -780,9 +837,62 @@ Given a CDF instance, one uses the following predicates to query
 whether a given fact is implied by a CDF instance: @tt{isa/2},
 @tt{hasAttr/3}, @tt{classHasAttr/3}, and @tt{classHasAttr/3}.
 
-@subsection{Primitive Classes}
+@subsection{Primitive Classes and Objects}
 
-Needs to be written if we want to use primitive classes.
+The mechanisms introduced so far allow the creation of @em{primitive
+types}, classes of objects constructed by routines that lie outside of
+CDF definitions.  
+
+@bf{Example ???}  In order to define Prolog integers as a primitive
+type, one might write an intensional rule as follows.
+
+@begin{verbatim}
+isa_int(oid(Integer,cdfpt),cid(allIntegers,cdfpt):- 
+    (integer(X) -> 
+        true
+      ; (var(X) -> oms_warning(instantiation,['Isa for primitive types
+             must have first argument instantiated']) ) ).
+
+isa_int(cid(Integer,cdfpt),cid(allIntegers,cdfpt):- 
+    (integer(X) -> 
+        true
+      ; (var(X) -> oms_warning(instantiation,['Isa for primitive types
+             must have first argument instantiated']) ) ).
+@end{verbatim}
+
+While simple, this example illustrates several points.  First,
+intensional rules may be constructed so that they do not succeed for
+all modes, a situation that is often useful when trying to model large
+domains.  Second, the sources of component identifiers are used in CDF
+to help index intensional rules.  In this case, the source @tt{cdfpt}
+ensures that calls to @tt{isa/2} that have a ground source in a
+component identifier will not execute the rule.  In addition, integers
+are defined both as objects and as classes (taken as singleton
+classes) so that they can be used both in product classes and product
+objects.  Finally, the example illustrates how easy it is for users to
+make their own primitive types, for e.g. spatial or temporal
+relations.
+
+The @tt{cdfpt} component is loaded upon initialization of CDF.  It
+currently contains the following primitive types.
+
+@begin{itemize}
+
+@item @tt{cid(allIntegers,cdfpt)} defined so that @tt{cid(Id1,cdfpt)}
+is a subclass and @tt{oid(Id1,cdfpt)} a member of
+@tt{cid(allIntegers,cdfpt)} if @tt{?- integer(Id1)} is true.
+
+@item @tt{cid(allAtoms,cdfpt)} defined so that @tt{cid(Id1,cdfpt)} is
+a subclass and @tt{oid(Id1,cdfpt)} a member of
+@tt{cid(allAtoms,cdfpt)} if @tt{?- atom(Id1)} is true.
+
+@item @tt{cid(allFloats,cdfpt)} defined so that @tt{cid(Id1,cdfpt)} is
+a subclass and @tt{oid(Id1,cdfpt)} a member of
+@tt{cid(allFloats,cdfpt)} if @tt{?- float(Id1)} is true.
+
+@end{itemize}
+
+@bf{TLS: others as needed.  Still need to figure out clause}
 
 @subsection{Using CDF}
 
@@ -797,7 +907,7 @@ Axiom for @tt{isa/2}, the Domain Containment Axiom and the Implicit
 Isa Axiom.  From an operational perspective however, a query @tt{?-
 isa(X,Y)} can easily be intractable if product classes are used.
 
-@bf{Example 8} Let @tt{cid(Boolean,s)} be a class containing two
+@bf{Example 10} Let @tt{cid(Boolean,s)} be a class containing two
 subclasses: @tt{cid(true,s)} and @tt{cid(false,s)}.  Then the product
 class @tt{cid(f(cid(Boolean,s),...,cid(Boolean,s),s)} will contain a
 number of subclasses exponential in the arity of @em{f}.
@@ -847,7 +957,7 @@ The second assumption helps to reinforce the assumption of case 3
 above.  Without it, users might expect that the implicit isa axiom
 could be used in each step of a derivation of an @tt{isa/2} fact.
 
-@bf{Example 9}  Suppose we have the following CDF instance.
+@bf{Example 11}  Suppose we have the following CDF instance.
 
 @begin{verbatim}
 isa_ext(cid(bot,s),cid(mid,s)).
@@ -868,7 +978,7 @@ would succeed.
 would successively unify @tt{X} with
 @tt{cid(prod(cid(bot,s),cid(mid,s)),s)},
 @tt{cid(prod(cid(mid,s),cid(top,s)),s)}, @tt{cid(atomicClass,s)} and
-@tt{id('CDF Root','CDF')}.  
+@tt{id('CDF Root',cdf)}.  
 
 @item The query @tt{?-
 isa(X,cid(prod(cid(mid,s),cid(mid,s)),s))} would unify @tt{X} only
@@ -883,7 +993,7 @@ for the query @tt{?-
 hasAttr(oid(suture547466,dla),rid(endType,dla),X)}.  The first unifies
 @tt{X} with @tt{cid(singleArmed),dla)}, the second with
 @tt{cid(endTypeDomain),dla)}, and the third with @tt{id('CDF
-Root'),'CDF')}.  The first provides more specific information than the
+Root'),cdf)}.  The first provides more specific information than the
 second, and the second more than the third.  Care is taken in CDF to
 return only the most specific answers, without losing completeness.
 In this example CDF would only succeed with the first binding.
@@ -899,10 +1009,70 @@ Furthermore for any @em{F2} in @em{Gamma2}, if there is some @em{F1}
 in @em{Gamma1} such that @em{Int(F1)} implies @em{Int(F2)} in the ontology
 theory for @em{I}, then @em{F1 = F2}.
 
-@subsubsection{Updates and Consistency Checking}
+@subsubsection{Updating Information in CDF}
+
+A user should never simply assert or retract extensional facts or
+intensional rules to CDF.  Information from files or databases can be
+loaded using te component system (see @ref{cdf_components.P
+(library)}), or by the file loading routines upon which the component
+system depends (see @ref{cdf_io.P (library)}).  Individual facts can
+be asserted or retracted by the predicates @tt{newCDF/1}, and
+@tt{retractallCDF/1}.
+
+All of these predicates do various types of consistency checking,
+update the CDF log (if turned on), update XJ caches (if XJ is being
+used), modify information used by the component system and abolish
+tables that may be affected by the assert or retract.  In addition,
+certain transformations of CDF facts or rules may be made to ensure
+efficient indexing.
+
+@subsubsection{Consistency and Redundancy Checking}
+
+Consistency checking helps ensure that a given set of facts is a
+semantically meaningful CDF instance.  Redundancy checking helps
+ensure that a given CDF instance is not larger than it has to be to
+represent a given set of knowledge.  We discuss three types of checks
+currently done by CDF.
+
+@begin{itemize}
+
+@item @em{Type checking} ensures that identifiers in CDF facts have
+the right type (i.e. ensures that the Predicate Sorts Axiom holds for
+a given CDF fact or state) and that the Downward Closure Axiom holds
+for product identifiers.  In addition, using the assumptions for the
+operational semantics of @tt{isa/2} type checking also ensures that
+part 2 of the Implicit Isa Axiom holds.
+
+@item @em{Redundancy Checking} ensures that new extensional facts
+added to a CDF state are not identical to or implied by the CDF
+instance.
+
+@item @em{Conformability Checking} ensures that new facts added to a
+CDF instance do not lead to inconsistencies or undesirable properties
+of the database.  For instance adding the fact
+
+@tt{isa(cid(f(cid(a),s),s),cid(a,s))}
+
+leads to a CDF instance without a finite model.  Conformability is
+discussed in greater detail in @em{SwiW03a}.
+@end{itemize}
+
+Currently, these checks may be executed upon each execution of
+@pred{newCDF/1}, which is called by the CDF file io and component
+loading routines.  Batch checking based upon the CDF logs may be
+implemented in the future.  Type checking is always done, but by
+default redundancy checking checks only whether a fact explicitly
+exists in a CDF instance, and not whether it is implied.
+Conformability checking is turned off by default.
+
+Further information on setting the checks is in @ref{cdf_checks.P
+(library)}.
+
+@section{Other Stuff}
+
+Discuss indexing, tabling...
 
 ").
-
 
 main.
 

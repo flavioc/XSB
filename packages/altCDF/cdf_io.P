@@ -27,8 +27,8 @@
 :- comment(module, "These routines load CDF files from a disk file
 system into memory, save them from memory to disk, and merge
 information into a CDF state.  Both intensional an extensional
-information may be dumped.  They are used as building blocks of the
-components system.").
+information may be dumped.  They are also used as building blocks of
+the components system.").
 
 %-----------------------------------------------------------------
 	
