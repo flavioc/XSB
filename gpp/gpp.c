@@ -1,7 +1,7 @@
 /* File:      gpp.c  -- generic preprocessor
 ** Author:    Denis Auroux
 ** Contact:   auroux@math.polytechnique.fr
-** Version:   1.2
+** Version:   1.4
 ** 
 ** Copyright (C) Denis Auroux 1996, 1999
 ** 
@@ -25,10 +25,16 @@
 
 /* To compile under MS VC++, one must define WIN_NT */
 
-#ifdef WIN_NT
+#ifdef WIN_NT              /* WIN NT settings */
 #define popen   _popen
 #define pclose  _pclose
 #define strdup  _strdup
+#define strcasecmp _stricmp
+#define SLASH '\\'
+#define DEFAULT_CRLF 1
+#else                      /* UNIX settings */
+#define SLASH '/'
+#define DEFAULT_CRLF 0
 #endif
 
 #include <stdio.h>
@@ -38,7 +44,7 @@
 
 #define STACKDEPTH 50
 #define MAXARGS 100
-#define MAXSPECS 10   /* max # of include dirs and of comment delimiters */
+#define MAXINCL 10   /* max # of include dirs */
 
 typedef struct MODE {
   char *mStart;		/* before macro name */
@@ -52,22 +58,97 @@ typedef struct MODE {
   char *unstackchar ;   /* characters to unstack */
 } MODE;
 
-struct MODE User,Meta;	/* User = user-def, Meta = #define, #ifdef, #include */
+/* translation for delimiters :
+   \001 = \b = ' ' = one or more spaces    \201 = \!b = non-space
+   \002 = \w = zero or more spaces 
+   \003 = \B = one or more spaces or \n    \203 = \!B = non-space nor \n
+   \004 = \W = zero or more spaces or \n 
+   \005 = \a = alphabetic (a-z, A-Z)       \205 = \!a = non-alphabetic
+   \006 = \A = alphabetic or space/\n      \206 = \!A
+   \007 = \# = numeric (0-9)               \207 = \!#
+   \010 = \i = identifier (a-zA-Z0-9_)     \210 = \!i
+   \011 = \t, \012 = \n                    \211 = \!t, \212 = \!n
+   \013 = \o = operator (+-/*\^<>=`~:.?@#&!%|) \213 = \!o
+   \014 = \O = operator or ()[]{}              \214 = \!O
+*/
+                 /*  st        end   args   sep    arge ref  quot  stk  unstk */
+struct MODE CUser = {"",       "",   "(",   ",",   ")", "#", '\\', "(", ")" };
+struct MODE CMeta = {"#",      "\n", "\001","\001","\n","#", '\\', "(", ")" };
+struct MODE KUser = {"",       "",   "(",   ",",   ")", "#",  0,   "(", ")" };
+struct MODE KMeta = {"\n#\002","\n", "\001","\001","\n","#",  0,   "",  ""  }; 
+struct MODE Tex   = {"\\",     "",   "{",   "}{",  "}", "#", '@',  "{", "}" };
+struct MODE Html  = {"<#",     ">",  "\003","|",   ">", "#", '\\', "<", ">" };
 
-                   /*  st   end    args  sep   arge  ref   quot  stk  unstk */
-struct MODE CUser   = {"",  "",    "(",  ",",  ")",  "#",  '\001', "(", ")" };
-struct MODE CMeta   = {"#", "\n",  "",   "",   "\n", "#",  '\001', "(", ")" };
-struct MODE Tex     = {"\\", "",   "{",  "}{", "}",  "#",  '@',  "{", "}" };
-struct MODE Html    = {"<#",">",   "",   "|",  ">",  "#",  '\\', "<", ">" };
+typedef struct COMMENT {
+  char *start;          /* how the comment/string starts */
+  char *end;            /* how it ends */
+  char quote;           /* how to prevent it from ending */
+  int flags[3];         /* meta, user, text */
+  struct COMMENT *next;
+} COMMENT;
 
-char **username,**macrotext,***argnames;
-int *macrolen,*nnamedargs;
+#define OUTPUT_TEXT     0x1   /* what's inside will be output */
+#define OUTPUT_DELIM    0x2   /* the delimiters will be output */
+#define PARSE_MACROS    0x4   /* macros inside will be parsed */
+#define FLAG_IGNORE     0x40 
+
+#define FLAG_STRING    (OUTPUT_TEXT|OUTPUT_DELIM)
+#define FLAG_COMMENT   0
+
+#define FLAG_META 0
+#define FLAG_USER 1
+#define FLAG_TEXT 2
+
+/* Some stuff I removed because it made for some impossible situations :
+
+ #define PARSE_COMMENTS  0x8   
+   comments inside comments will not be parsed because nesting comments is 
+   too complicated (syntax conflicts, esp. to find a comment's end)
+   -- of course, unless the comment is ignored.
+   
+ #define MACRO_FRIENDLY  0x20  
+   a comment-end is to be processed even if an unfinished macro call has 
+   started inside the comment, otherwise it's too hard do decide in advance 
+   where a comment ends. In particular foo('bar((((') is valid.
+
+ #define PREVENT_DELIM   0x10 
+   all comments will prevent macro delimitation, i.e. foo('bar) is invalid.
+   -- of course, unless the comment is ignored.
+   Too bad, #define foo '/*    terminates only at following "'".
+   Unless one adds quotechars like in #define foo \'\/* ...
+   
+ ALSO NOTE : comments are not allowed before the end of the first argument
+ to a meta-macro. E.g. this is legal :   #define foo <* blah *> 3
+ This is not legal :                     #define <* blah *> foo 3
+ If a comment occurs here, the behavior depends on the actual meta-macro :
+ most will yield an error and stop gpp (#define, #undef, #ifdef/ifndef, 
+ #defeval, #include, #mode) ; #exec, #if and #eval should be ok ; 
+ #ifeq will always fail while #ifneq will always succeed ;
+*/ 
+
+typedef struct SPECS {
+  struct MODE User,Meta;
+  struct COMMENT *comments;
+  struct SPECS *stack_next;
+  int preservelf;
+} SPECS;
+
+struct SPECS *S;
+
+typedef struct MACRO {
+  char *username,*macrotext,**argnames;
+  int macrolen,nnamedargs;
+  struct SPECS *define_specs;
+  int defined_in_comment;
+} MACRO;
+
+struct MACRO *macros;
 int nmacros,nalloced;
-char *includedir[MAXSPECS];
-char *comment_start[MAXSPECS],*comment_end[MAXSPECS];
-int stayahead;                    /* to detect comment starts in time */
-int nincludedirs,ncommentspecs;
-int execallowed,canalias;
+char *includedir[MAXINCL];
+int nincludedirs;
+int execallowed;
+int dosmode;
+int autoswitch;
 
 typedef struct OUTPUTCONTEXT {
   char *buf;
@@ -85,9 +166,10 @@ typedef struct INPUTCONTEXT {
   int argc;
   char **argv;
   char **namedargs;
-  struct INPUTCONTEXT *next;
   struct OUTPUTCONTEXT *out;
   int eof;
+  int in_comment;
+  int ambience; /* FLAG_TEXT, FLAG_USER or FLAG_META */
 } INPUTCONTEXT;
 
 struct INPUTCONTEXT *C;
@@ -95,21 +177,6 @@ struct INPUTCONTEXT *C;
 int commented[STACKDEPTH],iflevel;
 
 void ProcessContext(); /* the main loop */
-
-void usage() {
-  fprintf(stderr,"GPP Version 1.2 - Generic Preprocessor - (c) Denis Auroux 1996-99\n");
-  fprintf(stderr,"Usage : gpp [ -o outfile ] [ -I/include/path ] [ -Dname=val ... ] [-x] [-a]\n");
-  fprintf(stderr,"            [ -C | -T | -H | -U ... [ -M ... ] ] [ -c str1 str2 ] [ infile ]\n\n");
-  fprintf(stderr," -C : cpp-like    #define x y           macro(arg,...)       (default)\n");
-  fprintf(stderr," -T : tex-like    \\define{x}{y}         \\macro{arg}{...}\n");
-  fprintf(stderr," -H : html-like   <#define x|y>         <#macro arg|...>\n");
-  fprintf(stderr," -U : user-defined syntax (specified in 9 following args, see manual)\n");
-  fprintf(stderr," -M : user-defined syntax for meta-macros (specified in 7 following args)\n\n");
-  fprintf(stderr," -x : enable #exec built-in macro\n");
-  fprintf(stderr," -a : macros with no arguments are macro aliases\n");
-  fprintf(stderr," -c : use next 2 args as comment start and comment end sequences\n\n");
-  exit(1);
-}
 
 void bug(char *s)
 {
@@ -120,6 +187,81 @@ void bug(char *s)
 void warning(char *s)
 {
   fprintf(stderr,"%s:%d: warning: %s.\n",C->filename,C->lineno,s);
+}
+
+struct SPECS *CloneSpecs(struct SPECS *Q)
+{
+  struct SPECS *P;
+  struct COMMENT *x,*y;
+  
+  P=(struct SPECS *)malloc(sizeof(struct SPECS));
+  if (P==NULL) bug("Out of memory.");
+  memcpy((char *)P,(char *)Q,sizeof(struct SPECS));
+  P->stack_next=NULL;
+  if (Q->comments!=NULL) 
+    P->comments=(struct COMMENT *)malloc(sizeof(struct COMMENT));
+  for (x=Q->comments,y=P->comments;x!=NULL;x=x->next,y=y->next) {
+    memcpy((char *)y,(char *)x,sizeof(struct COMMENT));
+    y->start=strdup(x->start);
+    y->end=strdup(x->end);
+    if (x->next!=NULL)
+      y->next=(struct COMMENT *)malloc(sizeof(struct COMMENT));
+  }
+  return P;
+}
+
+void FreeComments(struct SPECS *Q)
+{
+  struct COMMENT *p;
+  
+  while (Q->comments!=NULL) {
+    p=Q->comments;
+    Q->comments=p->next;
+    free(p->start);
+    free(p->end);
+    free(p);
+  }
+}
+
+void PushSpecs(struct SPECS *X)
+{
+  struct SPECS *P;
+  
+  P=CloneSpecs(X);
+  P->stack_next=S;
+  S=P;
+}
+
+void PopSpecs()
+{
+  struct SPECS *P;
+  
+  P=S;
+  S=P->stack_next;
+  FreeComments(P);
+  free(P);
+  if (S==NULL) bug("#mode restore without #mode save");
+}
+
+void usage() {
+  fprintf(stderr,"GPP Version 1.4 - Generic Preprocessor - (c) Denis Auroux 1996-99\n");
+  fprintf(stderr,"Usage : gpp [-o outfile] [-I/include/path] [-Dname=val ...] [-z] [-x] [-m]\n");
+  fprintf(stderr,"            [-n] [-C | -T | -H | -P | -U ... [-M ...]] [+c<n> str1 str2]\n");
+  fprintf(stderr,"            [+s<n> str1 str2 c] [infile]\n\n");
+  fprintf(stderr,"      default:    #define x y           macro(arg,...)\n");
+  fprintf(stderr," -C : maximum cpp compatibility (includes -n, +c, +s, ...)\n");
+  fprintf(stderr," -T : tex-like    \\define{x}{y}         \\macro{arg}{...}\n");
+  fprintf(stderr," -H : html-like   <#define x|y>         <#macro arg|...>\n");
+  fprintf(stderr," -P : prolog compatible cpp-like mode\n");
+  fprintf(stderr," -U : user-defined syntax (specified in 9 following args, see manual)\n");
+  fprintf(stderr," -M : user-defined syntax for meta-macros (specified in 7 following args)\n\n");
+  fprintf(stderr," -z : line terminator is CR-LF (MS-DOS style)\n");
+  fprintf(stderr," -x : enable #exec built-in macro\n");
+  fprintf(stderr," -m : enable automatic mode switching upon including .h/.c files\n");
+  fprintf(stderr," -n : send LF characters serving as macro terminators to output\n");
+  fprintf(stderr," +c : use next 2 args as comment start and comment end sequences\n");
+  fprintf(stderr," +s : use next 3 args as string start, end and quote character\n\n");
+  exit(1);
 }
 
 int isdelim(unsigned char c)
@@ -136,26 +278,26 @@ int iswhite(char c)
 {
   if (c==' ') return 1;
   if (c=='\t') return 1;
+  if (c=='\n') return 1;
   return 0;
 }
 
-void newmacro(char *s,int len)
+void newmacro(char *s,int len,int hasspecs)
 {
   if (nmacros==nalloced) {
     nalloced=2*nalloced+1;
-    username=(char **)realloc((char *)username,nalloced*sizeof(char *));
-    macrotext=(char **)realloc((char *)macrotext,nalloced*sizeof(char *));
-    macrolen=(int *)realloc((char *)macrolen,nalloced*sizeof(int));
-    argnames=(char ***)realloc((char *)argnames,nalloced*sizeof(char **));
-    nnamedargs=(int *)realloc((char *)nnamedargs,nalloced*sizeof(int));
-    if ((username==NULL)||(macrotext==NULL)||(macrolen==NULL)||
-        (argnames==NULL)||(nnamedargs==NULL)) bug("Out of memory");
+    macros=(struct MACRO *)realloc((char *)macros,nalloced*sizeof(struct MACRO));
+    if (macros==NULL)
+      bug("Out of memory");
   }
-  username[nmacros]=malloc(len+1);
-  strncpy(username[nmacros],s,len);
-  username[nmacros][len]=0;
-  argnames[nmacros]=NULL;
-  nnamedargs[nmacros]=0;
+  macros[nmacros].username=malloc(len+1);
+  strncpy(macros[nmacros].username,s,len);
+  macros[nmacros].username[len]=0;
+  macros[nmacros].argnames=NULL;
+  macros[nmacros].nnamedargs=0;
+  macros[nmacros].defined_in_comment=0;
+  if (hasspecs)
+    macros[nmacros].define_specs=CloneSpecs(S);
 }
 
 void lookupArgRefs(int n)
@@ -163,18 +305,18 @@ void lookupArgRefs(int n)
   int i,l;
   char *p;
   
-  if (nnamedargs[n]>0) return; /* don't mess with those */
-  nnamedargs[n]=-1;
-  l=strlen(User.mArgRef);
-  for (i=0,p=macrotext[n];i<macrolen[n];i++,p++) {
-    if (*p==User.quotechar) { i++; p++; }
-    else if (!strncmp(p,User.mArgRef,l))
+  if (macros[n].argnames!=NULL) return; /* don't mess with those */
+  macros[n].nnamedargs=-1;
+  l=strlen(S->User.mArgRef);
+  for (i=0,p=macros[n].macrotext;i<macros[n].macrolen;i++,p++) {
+    if ((*p!=0)&&(*p==S->User.quotechar)) { i++; p++; }
+    else if (!strncmp(p,S->User.mArgRef,l))
       if ((p[l]>='1')&&(p[l]<='9')) 
-        { nnamedargs[n]=0; return; }
+        { macros[n].nnamedargs=0; return; }
   }
 }
 
-char *strnl(char *s) /* replace "\\n" by "\n" in a cmd-line arg */
+char *strnl0(char *s) /* replace "\\n" by "\n" in a cmd-line arg */
 {
   char *t,*u;
   t=(char *)malloc(strlen(s)+1);
@@ -188,15 +330,117 @@ char *strnl(char *s) /* replace "\\n" by "\n" in a cmd-line arg */
   return t;
 }
 
+char *strnl(char *s) /* the same but with whitespace specifier handling */
+{
+  char *t,*u;
+  int neg;
+  t=(char *)malloc(strlen(s)+1);
+  u=t;
+  if (!isdelim(*s)) bug("character not allowed to start a syntax specifier");
+  while (*s!=0) {
+    if (((*s&0x60)==0)&&(*s!='\n')&&(*s!='\t')) 
+      bug("character not allowed in syntax specifier");
+    if (*s=='\\') {
+      neg=(s[1]=='!');
+      switch(s[neg+1]) {
+        case 'n': case 'r': *u='\n'; break;
+        case 't': *u='\t'; break;
+        case 'b': *u='\001'; break;  /* one or more spaces */
+        case 'w': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\002'; break;  /* zero or more spaces */
+        case 'B': *u='\003'; break;  /* one or more spaces or \n */
+        case 'W': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\004'; break;  /* zero or more spaces or \n */
+        case 'a': *u='\005'; break;  /* alphabetic */
+        case 'A': *u='\006'; break;  /* alphabetic + space */
+        case '#': *u='\007'; break;  /* numeric */
+        case 'i': *u='\010'; break;  /* identifier */
+        case 'o': *u='\013'; break;  /* operator */
+        case 'O': *u='\014'; break;  /* operator/parenthese */
+        default: *u='\\'; neg=-1;
+      }
+      if (neg>0) *u += (char) 128;
+      s+=neg+1;
+    }
+    else if (*s==' ') *u='\001';
+    else *u=*s;
+    s++; u++;
+  }
+  *u=0;
+  return t;
+}
+
+char *strnl2(char *s) /* the same but for C strings & in-place */
+{
+  char *u;
+  int neg;
+  u=s;
+  if (!isdelim(*s)) bug("character not allowed to start a syntax specifier");
+  while (*s!='"') {
+    if (((*s&0x60)==0)&&(*s!='\n')&&(*s!='\t')) 
+      bug("character not allowed in syntax specifier");
+    if (*s=='\\') {
+      neg=(s[1]=='!');
+      switch(s[neg+1]) {
+        case 'n': case 'r': *u='\n'; break;
+        case 't': *u='\t'; break;
+        case 'b': *u='\001'; break;  /* one or more spaces */
+        case 'w': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\002'; break;  /* zero or more spaces */
+        case 'B': *u='\003'; break;  /* one or more spaces or \n */
+        case 'W': if (neg) bug("\\w and \\W cannot be negated");
+                  *u='\004'; break;  /* zero or more spaces or \n */
+        case 'a': *u='\005'; break;  /* alphabetic */
+        case 'A': *u='\006'; break;  /* alphabetic + space */
+        case '#': *u='\007'; break;  /* numeric */
+        case 'i': *u='\010'; break;  /* identifier */
+        case 'o': *u='\013'; break;  /* operator */
+        case 'O': *u='\014'; break;  /* operator/parenthese */
+        case '"': case '\\': if (!neg) { *u=s[1]; break; }
+        default: bug("unknown escape sequence in syntax specifier");
+      }
+      if (neg>0) *u += (char)128;
+      s+=neg+1;
+    }
+    else if (*s==' ') *u='\001';
+    else *u=*s;
+    if (*s==0) bug("unterminated string in #mode command");
+    s++; u++;
+  }
+  *u=0;
+  return (s+1);
+}
+
+int iswhitesep(char *s)
+{
+  while (iswhite(*s)||(*s=='\001')||(*s=='\002')||(*s=='\003')||(*s=='\004')) 
+    s++;
+  return (*s==0);
+}
+
+int nowhite_strcmp(char *s,char *t)
+{
+  char *p;
+  
+  while (iswhite(*s)) s++;
+  while (iswhite(*t)) t++;
+  if ((*s==0)||(*t==0)) return strcmp(s,t);
+  p=s+strlen(s)-1;
+  while (iswhite(*p)) *(p--)=0;
+  p=t+strlen(t)-1;
+  while (iswhite(*p)) *(p--)=0;
+  return strcmp(s,t);
+}
+
 void parseCmdlineDefine(char *s)
 {
   int l;
   
   for (l=0;s[l]&&(s[l]!='=');l++);
-  newmacro(s,l);
+  newmacro(s,l,0);
   if (s[l]=='=') l++;
-  macrolen[nmacros]=strlen(s+l);
-  macrotext[nmacros++]=strdup(s+l);
+  macros[nmacros].macrolen=strlen(s+l);
+  macros[nmacros++].macrotext=strdup(s+l);
 }
 
 int readModeDescription(char **args,struct MODE *mode,int ismeta)
@@ -220,110 +464,70 @@ int readModeDescription(char **args,struct MODE *mode,int ismeta)
   mode->mArgRef=strnl(*args); 
   if (!(*(++args))) return 0;
   mode->quotechar=**args;
-  if (mode->quotechar==0) return 0;
   return 1;
 }
 
-void initthings(int argc,char **argv)
+int parse_comment_specif(char c)
 {
-  char **arg,*s;
-  int i,isinput,isoutput,ishelp,ismode,hasmeta,usrmode;
+  switch (c) {
+    case 'I': case 'i': return FLAG_IGNORE;
+    case 'c': return FLAG_COMMENT;
+    case 's': return FLAG_STRING;
+    case 'q': return OUTPUT_TEXT;
+    case 'S': return FLAG_STRING|PARSE_MACROS;
+    case 'Q': return OUTPUT_TEXT|PARSE_MACROS;
+    case 'C': return FLAG_COMMENT|PARSE_MACROS;
+    default: bug("Invalid comment/string modifier");
+      return 0; /* to pacify the compiler */
+  }
+}
 
-  nmacros=0;
-  nalloced=31;
-  username=(char **)malloc(nalloced*sizeof(char *));
-  macrotext=(char **)malloc(nalloced*sizeof(char *));
-  macrolen=(int *)malloc(nalloced*sizeof(int));
-  argnames=(char ***)malloc(nalloced*sizeof(char **));
-  nnamedargs=(int *)malloc(nalloced*sizeof(int));
+void add_comment(struct SPECS *S,char *specif,char *start,char *end,char quote)
+{
+  struct COMMENT *p;
   
-  User=CUser;
-  Meta=CMeta;
-  C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
-  C->in=stdin;
-  C->argc=0;
-  C->argv=NULL;
-  C->filename=strdup("stdin");
-  C->out=(struct OUTPUTCONTEXT *)malloc(sizeof(struct OUTPUTCONTEXT));
-  C->out->f=stdout;
-  C->out->bufsize=0;
-  C->lineno=0;
-  isinput=isoutput=ismode=ishelp=hasmeta=usrmode=0;
-  nincludedirs=0;
-  C->bufsize=80;
-  C->len=0;
-  C->buf=C->malloced_buf=malloc(C->bufsize);
-  C->next=NULL;
-  C->eof=0;
-  C->namedargs=NULL;
-  commented[0]=0;
-  iflevel=0;
-  execallowed=0;
-  canalias=0;
-  ncommentspecs=0;
-  stayahead=0;
-  
-  for (arg=argv+1;*arg;arg++) {
-    if (**arg!='-') {
-      ishelp|=isinput; isinput=1;
-      C->in=fopen(*arg,"r");
-      free(C->filename); C->filename=strdup(*arg);
-      if (C->in==NULL) bug("Cannot open input file");
+  if (*start==0) bug("Comment/string start delimiter must be non-empty");
+  for (p=S->comments;p!=NULL;p=p->next)
+    if (!strcmp(p->start,start)) {
+      if (strcmp(p->end,end)) /* already exists with a different end */
+        bug("Conflicting comment/string delimiter specifications");
+      free(p->start);
+      free(p->end);
+      break;
     }
-    else switch((*arg)[1]) {
-      case 'I': if (nincludedirs==MAXSPECS) 
-                   bug("too many include directories");
-                includedir[nincludedirs++]=strdup((*arg)+2); break;
-      case 'C': ishelp|=ismode|hasmeta|usrmode; ismode=1;
-                User=CUser; Meta=CMeta;
-                break;
-      case 'T': ishelp|=ismode|hasmeta|usrmode; ismode=1;
-                User=Meta=Tex;
-                break;
-      case 'H': ishelp|=ismode|hasmeta|usrmode; ismode=1;
-                User=Meta=Html;
-                break;
-      case 'U': ishelp|=ismode|usrmode; usrmode=1;
-                if (!readModeDescription(arg,&User,0)) usage();
-                arg+=9;
-                if (!hasmeta) Meta=User;
-                break;
-      case 'M': ishelp|=ismode|hasmeta; hasmeta=1;
-                if (!readModeDescription(arg,&Meta,1)) usage();
-                arg+=7;
-                break;
-      case 'o': if (!(*(++arg))) usage();
-                ishelp|=isoutput; isoutput=1;
-                C->out->f=fopen(*arg,"w");
-                if (C->out->f==NULL) bug("Cannot create output file");
-                break;
-      case 'D': s=strnl((*arg)+2); parseCmdlineDefine(s); free(s); break;
-      case 'x': execallowed=1; break;
-      case 'a': canalias=1; break;
-      case 'c': if (ncommentspecs==MAXSPECS)
-                  bug("Too many comment delimiter specifications");
-                if (!(*(++arg))) usage();
-                comment_start[ncommentspecs]=strnl(*arg);
-                if (!(*(++arg))) usage();
-                comment_end[ncommentspecs]=strnl(*arg);
-                if ((comment_start[ncommentspecs][0]==0)||
-                    (comment_end[ncommentspecs][0]==0))
-                   bug("Comment delimiters must be non-empty");
-                i=strlen(comment_start[ncommentspecs])-1;
-                if (i>stayahead) stayahead=i;
-                ncommentspecs++;
-                break;
-      default:  ishelp=1;
-    }
-    if (hasmeta&&!usrmode) usage();
-    if (ishelp) usage();
+
+  if (p==NULL) {
+    p=(struct COMMENT *)malloc(sizeof(struct COMMENT));
+    p->next=S->comments;
+    S->comments=p;
   }
+  p->start=start;
+  p->end=end;
+  p->quote=quote;
+  if (strlen(specif)!=3) bug("Invalid comment/string modifier");
+  p->flags[FLAG_META]=parse_comment_specif(specif[0]);
+  p->flags[FLAG_USER]=parse_comment_specif(specif[1]);
+  p->flags[FLAG_TEXT]=parse_comment_specif(specif[2]);
+}
+
+void delete_comment(struct SPECS *S,char *start)
+{
+  struct COMMENT *p,*q;
   
-  if (nincludedirs==0) {
-    includedir[0]=strdup("/usr/include");
-    nincludedirs=1;
+  q=NULL;
+  for (p=S->comments;p!=NULL;p=p->next) {
+    if (!strcmp(p->start,start)) {
+      if (q==NULL) S->comments=p->next;
+      else q->next=p->next;
+      free(p->start);
+      free(p->end);
+      free(p);
+      free(start);
+      return;
+    }
+    else q=p;
   }
-  for (i=0;i<nmacros;i++) lookupArgRefs(i); /* in case of canalias */
+  free(start);
 }
 
 void outchar(char c)
@@ -336,7 +540,10 @@ void outchar(char c)
     }
     C->out->buf[C->out->len++]=c;
   }
-  else fputc(c,C->out->f);
+  else {
+    if (dosmode&&(c==10)) fputc(13,C->out->f);
+    if (c!=13) fputc(c,C->out->f);
+  }
 }
 
 void sendout(char *s,int l,int proc) /* only process the quotechar, that's all */
@@ -345,7 +552,8 @@ void sendout(char *s,int l,int proc) /* only process the quotechar, that's all *
   
   if (!commented[iflevel])
     for (i=0;i<l;i++) {
-      if (proc&&(s[i]==User.quotechar)) { i++; if (i==l) return; }
+      if (proc&&(s[i]!=0)&&(s[i]==S->User.quotechar)) 
+        { i++; if (i==l) return; }
       if (s[i]!=0) outchar(s[i]);
     }
 }
@@ -365,40 +573,18 @@ void extendBuf(int pos)
 
 char getChar(int pos)
 {
-  int c,i,l,n;
+  int c;
 
   if (C->in==NULL) {
     if (pos>=C->len) return 0;
     else return C->buf[pos];
   }
-  extendBuf(pos+stayahead);
-  while (pos+stayahead>=C->len) {
-    c=fgetc(C->in);
+  extendBuf(pos);
+  while (pos>=C->len) {
+    do { c=fgetc(C->in); } while (c==13);
     if (c=='\n') C->lineno++;
     if (c==EOF) c=0;
     C->buf[C->len++]=(char)c;
-    
-    /* handle comments */
-    for (i=0;i<ncommentspecs;i++) {
-      l=strlen(comment_start[i]);
-      if ((C->len>=l)&&!strncmp(C->buf+C->len-l,comment_start[i],l)) {
-        /* if it was quoted, don't take it as a comment */
-        if ((C->len>l)&&(C->buf[C->len-l-1]==User.quotechar)) continue;
-        C->len-=l;
-        n=C->len;
-        l=strlen(comment_end[i]);
-        while ((n<l)||(C->buf[n-l]!=comment_end[i][0])||strncmp(C->buf+n-l,comment_end[i],l)) {
-          extendBuf(n);
-          c=fgetc(C->in);
-          if (c=='\n') C->lineno++;
-          if (c==EOF) bug("Input ended in a comment");
-          C->buf[n++]=(char)c;
-        }
-        /* special magic when \n is comment end */
-        if ((n>C->len+l)&&(l==1)&&(comment_end[i][0]=='\n'))
-          C->buf[C->len++]='\n';
-      }
-    }
   }
   return C->buf[pos];
 }
@@ -413,14 +599,129 @@ int whiteout(int *pos1,int *pos2) /* remove whitespace on both sides */
 int identifierEnd(int start)
 {
   char c;
-  int i;
-  
-  i=start-1;
-  do {
-    c=getChar(++i);
-    while (c==User.quotechar) { i+=2; c=getChar(i); }
-  } while (!isdelim(c));
-  return i;
+
+  c=getChar(start);
+  if (c==0) return start;
+  if (c==S->User.quotechar) {
+    c=getChar(start+1);
+    if (c==0) return (start+1);
+    if (isdelim(c)) return (start+2);
+    start+=2;
+    c=getChar(start);
+  }
+  while (!isdelim(c)) c=getChar(++start);
+  return start;
+}
+
+int matchSequence(char *s,int *pos)
+{
+  int i=*pos;
+  int match;
+  char c;
+
+  while (*s!=0) {
+    if (!((*s)&0x60)) { /* special sequences */
+      match=1;
+      switch((*s)&0x1f) {
+        case '\001':
+          c=getChar(i++);
+          if ((c!=' ')&&(c!='\t')) { match=0; break; }
+        case '\002':
+          i--;
+          do { c=getChar(++i); } while ((c==' ')||(c=='\t'));
+          break;
+        case '\003':
+          c=getChar(i++);
+          if ((c!=' ')&&(c!='\t')&&(c!='\n')) { match=0; break; }
+        case '\004':
+          i--;
+          do { c=getChar(++i); } while ((c==' ')||(c=='\t')||(c=='\n'));
+          break;
+        case '\006':
+          c=getChar(i++);
+          match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')) 
+                  ||(c==' ')||(c=='\t')||(c=='\n');
+          break;
+        case '\005':
+          c=getChar(i++);
+          match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')); break;
+        case '\007':
+          c=getChar(i++);
+          match = ((c>='0')&&(c<='9')); break;
+        case '\010':
+          c=getChar(i++);
+          match = !isdelim(c); break;
+        case '\011':
+          c=getChar(i++);
+          match = (c=='\t'); break;
+        case '\012':
+          c=getChar(i++);
+          match = (c=='\n'); break;
+        case '\013':
+          c=getChar(i++);
+          match = (strchr("+-*/\\^<>=`~:.?@#&!%|",c)!=NULL); break;
+        case '\014':
+          c=getChar(i++);
+          match = (strchr("+-*/\\^<>=`~:.?@#&!%|()[]{}",c)!=NULL); break;
+      }
+      if ((*s)&0x80) match=!match;
+      if (!match) return 0;
+    }
+    else if (getChar(i++)!=*s) return 0;
+    s++;
+  }
+  *pos=i;
+  return 1;
+}
+
+int matchEndSequence(char *s,int *pos)
+{
+  if (*s==0) return 1;
+  if (!matchSequence(s,pos)) return 0;
+  if (S->preservelf&&iswhite(getChar(*pos-1))) (*pos)--;
+  return 1;
+}
+
+int matchStartSequence(char *s,int *pos)
+{
+  char c;
+  int match;
+
+  if (!((*s)&0x60)) { /* special sequences from prev. context */
+    c=getChar(*pos-1);
+    match=1;
+    if (*s==0) return 1;
+    switch((*s)&0x1f) {
+      case '\001':
+        if ((c!=' ')&&(c!='\t')) { match=0; break; }
+      case '\002':
+        break;
+      case '\003':
+        if ((c!=' ')&&(c!='\t')&&(c!='\n')) { match=0; break; }
+      case '\004':
+        break;
+      case '\006':
+        if ((c==' ')||(c=='\t')||(c=='\n')) break;
+      case '\005':
+        match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')); break;
+      case '\007':
+        match = ((c>='0')&&(c<='9')); break;
+      case '\010':
+        match = !isdelim(c); break;
+      case '\011':
+        match = (c=='\t'); break;
+      case '\012':
+        match = (c=='\n'); break;
+      case '\013':
+        match = (strchr("+-*/\\^<>=`~:.?@#&!%|",c)!=NULL); break;
+      case '\014':
+        match = (strchr("+-*/\\^<>=`~:.?@#&!%|()[]{}",c)!=NULL); break;
+    }
+    if ((*s)&0x80) match=!match;
+    if (!match) return 0;
+    s++;
+  }    
+  return matchSequence(s,pos);
 }
 
 int idequal(char *b,int l,char *s)
@@ -437,7 +738,7 @@ int findIdent(char *b,int l)
   int i;
   
   for (i=0;i<nmacros;i++)
-    if (idequal(b,l,username[i])) return i;
+    if (idequal(b,l,macros[i].username)) return i;
   return -1;
 }
 
@@ -453,9 +754,218 @@ int findNamedArg(char *b,int l)
   } 
 }
 
+void shiftIn(int l)
+{
+  int i;
+  
+  if (l<=1) return;
+  l--;
+  if (l>=C->len) C->len=0;
+  else {
+    if (C->len-l>100) { /* we want to shrink that buffer */
+      C->buf+=l; C->bufsize-=l;
+    } else
+      for (i=l;i<C->len;i++) C->buf[i-l]=C->buf[i];
+    C->len-=l;
+    C->eof=(C->buf[0]==0);
+  }
+  if (C->len<=1) {
+    if (C->in==NULL) C->eof=1;
+    else C->eof=feof(C->in);
+  }
+}
+
+void initthings(int argc,char **argv)
+{
+  char **arg,*s;
+  int i,isinput,isoutput,ishelp,ismode,hasmeta,usrmode;
+
+  nmacros=0;
+  nalloced=31;
+  macros=(struct MACRO *)malloc(nalloced*sizeof(struct MACRO));
+
+  S=(struct SPECS *)malloc(sizeof(struct SPECS));
+  S->User=CUser;
+  S->Meta=CMeta;
+  S->comments=NULL;
+  S->stack_next=NULL;
+  S->preservelf=0;
+  
+  C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
+  C->in=stdin;
+  C->argc=0;
+  C->argv=NULL;
+  C->filename=strdup("stdin");
+  C->out=(struct OUTPUTCONTEXT *)malloc(sizeof(struct OUTPUTCONTEXT));
+  C->out->f=stdout;
+  C->out->bufsize=0;
+  C->lineno=0;
+  isinput=isoutput=ismode=ishelp=hasmeta=usrmode=0;
+  nincludedirs=0;
+  C->bufsize=80;
+  C->len=0;
+  C->buf=C->malloced_buf=malloc(C->bufsize);
+  C->eof=0;
+  C->namedargs=NULL;
+  C->in_comment=0;
+  C->ambience=FLAG_TEXT;
+  commented[0]=0;
+  iflevel=0;
+  execallowed=0;
+  autoswitch=0;
+  dosmode=DEFAULT_CRLF;
+  
+  for (arg=argv+1;*arg;arg++) {
+    if (**arg=='+') {
+      switch((*arg)[1]) {
+        case 'c':
+            s=(*arg)+2;
+            if (*s==0) s="ccc";
+            if (!(*(++arg))) usage();
+            if (!(*(++arg))) usage();
+            add_comment(S,s,strnl(*(arg-1)),strnl(*arg),0);
+            break;
+        case 's':
+            s=(*arg)+2;
+            if (*s==0) s="sss";
+            if (!(*(++arg))) usage();
+            if (!(*(++arg))) usage();
+            if (!(*(++arg))) usage();
+            add_comment(S,s,strnl(*(arg-2)),strnl(*(arg-1)),**arg);
+            break;
+        case 'z': 
+            dosmode=0;
+            break;
+        default: ishelp=1;
+      }
+    }
+    else if (**arg!='-') {
+      ishelp|=isinput; isinput=1;
+      C->in=fopen(*arg,"r");
+      free(C->filename); C->filename=strdup(*arg);
+      if (C->in==NULL) bug("Cannot open input file");
+    }
+    else switch((*arg)[1]) {
+      case 'I': if (nincludedirs==MAXINCL) 
+                   bug("too many include directories");
+                if ((*arg)[2]==0) {
+                  if (!(*(++arg))) usage();
+                  includedir[nincludedirs++]=strdup(*arg);
+                }
+                else includedir[nincludedirs++]=strdup((*arg)+2);
+                break;
+      case 'C': ishelp|=ismode|hasmeta|usrmode; ismode=1;
+                S->User=KUser; S->Meta=KMeta;
+                S->preservelf=1;
+                add_comment(S,"ccc",strdup("/*"),strdup("*/"),0);
+                add_comment(S,"ccc",strdup("//"),strdup("\n"),0);
+                add_comment(S,"ccc",strdup("\\\n"),strdup(""),0);
+                add_comment(S,"sss",strdup("\""),strdup("\""),'\\');
+                add_comment(S,"sss",strdup("'"),strdup("'"),'\\');
+                break;
+      case 'P': ishelp|=ismode|hasmeta|usrmode; ismode=1;
+                S->User=KUser; S->Meta=KMeta;
+                S->preservelf=1;
+                add_comment(S,"css",strdup("\213/*"),strdup("*/"),0); /* \!o */
+                add_comment(S,"cii",strdup("\\\n"),strdup(""),0);
+                add_comment(S,"css",strdup("%"),strdup("\n"),0);
+                add_comment(S,"sss",strdup("\""),strdup("\""),0);
+                add_comment(S,"sss",strdup("\207'"),strdup("'"),0); /* \!# */
+                break;
+      case 'T': ishelp|=ismode|hasmeta|usrmode; ismode=1;
+                S->User=S->Meta=Tex;
+                break;
+      case 'H': ishelp|=ismode|hasmeta|usrmode; ismode=1;
+                S->User=S->Meta=Html;
+                break;
+      case 'U': ishelp|=ismode|usrmode; usrmode=1;
+                if (!readModeDescription(arg,&(S->User),0)) usage();
+                arg+=9;
+                if (!hasmeta) S->Meta=S->User;
+                break;
+      case 'M': ishelp|=ismode|hasmeta; hasmeta=1;
+                if (!readModeDescription(arg,&(S->Meta),1)) usage();
+                arg+=7;
+                break;
+      case 'o': if (!(*(++arg))) usage();
+                ishelp|=isoutput; isoutput=1;
+                C->out->f=fopen(*arg,"w");
+                if (C->out->f==NULL) bug("Cannot create output file");
+                break;
+      case 'D': if ((*arg)[2]==0) {
+                  if (!(*(++arg))) usage();
+                  s=strnl0(*arg);
+                }
+                else s=strnl0((*arg)+2);
+                parseCmdlineDefine(s); free(s); break;
+      case 'x': execallowed=1; break;
+      case 'n': S->preservelf=1; break;
+      case 'z': dosmode=1; break;
+      case 'c': case 's':
+                if (!(*(++arg))) usage();
+                delete_comment(S,strnl(*arg));
+                break;
+      case 'm': autoswitch=1; break;
+      default:  ishelp=1;
+    }
+    if (hasmeta&&!usrmode) usage();
+    if (ishelp) usage();
+  }
+
+#ifndef WIN_NT
+  if (nincludedirs==0) {
+    includedir[0]=strdup("/usr/include");
+    nincludedirs=1;
+  }
+#endif
+
+  for (i=0;i<nmacros;i++) {
+    macros[i].define_specs=CloneSpecs(S);
+    lookupArgRefs(i); /* for macro aliasing */
+  }
+}
+
+int findCommentEnd(char *endseq,char quote,int pos,int flags)
+{
+  int i;
+  char c;
+
+  while (1) {
+    c=getChar(pos);
+    i=pos;
+    if (c==0) bug("Input ended in comment");
+    if (matchSequence(endseq,&i)) return pos;
+    if (c==quote) pos+=2;
+    else if ((flags&PARSE_MACROS)&&(c==S->User.quotechar)) pos+=2;
+    else pos++;
+  }
+}
+
+void SkipPossibleComments(int *pos,int cmtmode,int silentonly)
+{
+  int found;
+  struct COMMENT *c;
+  
+  if (C->in_comment) return;
+  do {
+    found=0;
+    if (getChar(*pos)==0) return; /* EOF */
+    for (c=S->comments;c!=NULL;c=c->next)
+      if (!(c->flags[cmtmode]&FLAG_IGNORE))
+        if (!silentonly||(c->flags[cmtmode]==FLAG_COMMENT))
+          if (matchStartSequence(c->start,pos)) {
+            *pos=findCommentEnd(c->end,c->quote,*pos,c->flags[cmtmode]);
+            matchEndSequence(c->end,pos);
+            found=1;
+            break;
+          }
+  } while (found);
+}
+
 /* look for a possible user macro.
    Input :  idstart = scan start
             idcheck = check id for long macro forms before splicing args ?
+            cmtmode = comment mode (FLAG_META or FLAG_USER)
    Output : idstart/idend = macro name location
             sh_end/lg_end = macro form end (-1 if no match)
             argb/arge     = argument locations for long form
@@ -464,76 +974,51 @@ int findNamedArg(char *b,int l)
 */
 
 int SplicePossibleUser(int *idstart,int *idend,int *sh_end,int *lg_end,
-                       int *argb,int *arge,int *argc,int idcheck,int *id)
+         int *argb,int *arge,int *argc,int idcheck,int *id,int cmtmode)
 {
-  int match,match2,i,k,pos;
+  int match,k,pos;
 
-  for (i=0;User.mStart[i]!=0;i++)
-    if (getChar(i+(*idstart))!=User.mStart[i]) return 0;
-  *idstart+=i;
+  if (!matchStartSequence(S->User.mStart,idstart)) return 0;
   *idend=identifierEnd(*idstart);
   if ((*idend)&&!getChar(*idend-1)) return 0;
-
-  /* look for args */
-  match=1;
-  for (i=0;User.mEnd[i]!=0;i++)
-    if (getChar(*idend+i)!=User.mEnd[i]) match=0;
-  if (match) *sh_end=*idend+strlen(User.mEnd);
-  else *sh_end=-1;
-  match=1;
-  for (i=0;User.mArgS[i]!=0;i++)
-    if (getChar(*idend+i)!=User.mArgS[i]) match=0;
-  *lg_end=-1;
   
+  /* look for args or no args */
+  *sh_end=*idend;
+  if (!matchEndSequence(S->User.mEnd,sh_end)) *sh_end=-1;
+  pos=*idend;
+  match=matchSequence(S->User.mArgS,&pos);
+    
   if (idcheck) {
     *id=findIdent(C->buf+*idstart,*idend-*idstart);
     if (*id<0) match=0;
   }
-    
+  *lg_end=-1;
+  
   if (match) {
     *argc=0;
-    pos=*idend+strlen(User.mArgS);
-    if (!User.mArgS[0]) /* if separator was whitespace */
-      while (iswhite(getChar(pos))) {
-        if (getChar(pos)==0) return (*sh_end>=0); /* EOF */
-        pos++;
-      }
-    while (1)
-    {
+    while (1) {
       if (*argc>=MAXARGS) bug("too many macro parameters");
       argb[*argc]=pos;
-      k=0; pos--;
-      do { /* look for mArgE or mArgSep */
+      k=0;
+      while(1) { /* look for mArgE, mArgSep, or comment-start */
+        pos=identifierEnd(pos);
+        SkipPossibleComments(&pos,cmtmode,0);
         if (getChar(pos)==0) return (*sh_end>=0); /* EOF */
-        pos=identifierEnd(pos+1);
-        match=match2=0;
-        if (strchr(User.stackchar,getChar(pos))) k++;
-        if (k) { if (strchr(User.unstackchar,getChar(pos))) k--; }
+        if (strchr(S->User.stackchar,getChar(pos))) k++;
+        if (k) { if (strchr(S->User.unstackchar,getChar(pos))) k--; }
         else {
-          match=match2=1;
-          for (i=0;User.mArgE[i]!=0;i++)
-            if (getChar(pos+i)!=User.mArgE[i]) match2=0;
-          for (i=0;User.mArgSep[i]!=0;i++)
-            if (getChar(pos+i)!=User.mArgSep[i]) match=0;
+          arge[*argc]=pos;
+          if (matchSequence(S->User.mArgSep,&pos)) { match=0; break; }
+          if (matchEndSequence(S->User.mArgE,&pos)) 
+            { match=1; break; }
         }
+        pos++; /* nothing matched, go forward */
       }
-      while ((!match)&&(!match2));
-      arge[*argc]=pos;
       (*argc)++;
-      if (match&&match2) { /* both end of macro and arg sep match */
-        if (strlen(User.mArgE)>strlen(User.mArgSep)) match=0;
-        else match2=0;
-      }
-      if (match2) { /* no more args */
-        *lg_end=pos+strlen(User.mArgE);
+      if (match) { /* no more args */
+        *lg_end=pos;
         break;
       }
-      pos=pos+strlen(User.mArgSep);
-      if (!User.mArgSep[0]) /* if separator was whitespace, eat it */
-        while (iswhite(getChar(pos))) {
-          if (getChar(pos)==0) return (*sh_end>=0); /* EOF */
-          pos++;
-        }
     }
   }
   return ((*lg_end>=0)||(*sh_end>=0));
@@ -541,151 +1026,99 @@ int SplicePossibleUser(int *idstart,int *idend,int *sh_end,int *lg_end,
 
 int findMetaArgs(int start,int *p1b,int *p1e,int *p2b,int *p2e,int *endm,int *argc,int *argb,int *arge)
 {
-  int pos,i,k,matchm,matcharg;
+  int pos,k;
   int hyp_end1,hyp_end2;
   
   /* look for mEnd or mArgS */
-  matchm=matcharg=1;
-  for (i=0;Meta.mEnd[i]!=0;i++)
-    if (getChar(start+i)!=Meta.mEnd[i]) matchm=0;
-  for (i=0;Meta.mArgS[i]!=0;i++)
-    if (getChar(start+i)!=Meta.mArgS[i]) matcharg=0;
-  if ((!matchm)&&(!matcharg)) return -1;
-  if (matchm&&matcharg) { /* both end of macro and arg start match */
-    if (strlen(Meta.mEnd)>strlen(Meta.mArgS))
-      matcharg=0;
-    else matchm=0;
-  }
-  if (matchm) { /* no args */
-    *endm=start+strlen(Meta.mEnd);
+  pos=start;
+  if (!matchSequence(S->Meta.mArgS,&pos)) {
+    if (!matchEndSequence(S->Meta.mEnd,&pos)) return -1;
+    *endm=pos;
     return 0;
   }
-  pos=start+strlen(Meta.mArgS);
-  if (!Meta.mArgS[0]) /* if separator was whitespace, eat it */
-    while (iswhite(getChar(pos))) {
-      if (getChar(pos)==0) bug("unfinished macro");
-      pos++;
-    }
   *p1b=pos;
 
   /* special syntax for #define : 1st arg is a macro call */
-  if ((*argc)&&
-      SplicePossibleUser(&pos,p1e,&hyp_end1,&hyp_end2,argb,arge,argc,0,NULL))
+  if ((*argc)&&SplicePossibleUser(&pos,p1e,&hyp_end1,&hyp_end2,
+                                  argb,arge,argc,0,NULL,FLAG_META))
   {
     *p1b=pos;
-    if (hyp_end2>=0) pos=hyp_end2;
-    else { pos=hyp_end1; *argc=0; }
-    matchm=matcharg=1;
-    for (i=0;Meta.mArgE[i]!=0;i++)
-      if (getChar(pos+i)!=Meta.mArgE[i]) matchm=0;
-    for (i=0;Meta.mArgSep[i]!=0;i++)
-      if (getChar(pos+i)!=Meta.mArgSep[i]) matcharg=0;
-    if (!matchm&&!matcharg) 
-      bug("#define/#defeval requires an identifier or a single macro call");
+    if (hyp_end2>=0) pos=hyp_end2; else { pos=hyp_end1; *argc=0; }
+    if (!matchSequence(S->Meta.mArgSep,&pos)) {
+      if (!matchEndSequence(S->Meta.mArgE,&pos))
+        bug("#define/#defeval requires an identifier or a single macro call");
+      *endm=pos;
+      return 1;
+    }
   }
   else {
     *argc=0;
-    k=0; pos--;
-    do { /* look for mArgE or mArgSep */
+    k=0;
+    while(1) { /* look for mArgE, mArgSep, or comment-start */
+      pos=identifierEnd(pos);
+      SkipPossibleComments(&pos,FLAG_META,0);
       if (getChar(pos)==0) bug("unfinished macro argument");
-      pos=identifierEnd(pos+1);
-      matchm=matcharg=0;
-      if (strchr(Meta.stackchar,getChar(pos))) k++;
-      if (k) { if (strchr(Meta.unstackchar,getChar(pos))) k--; }
+      if (strchr(S->Meta.stackchar,getChar(pos))) k++;
+      if (k) { if (strchr(S->Meta.unstackchar,getChar(pos))) k--; }
       else {
-        matchm=matcharg=1;
-        for (i=0;Meta.mArgE[i]!=0;i++)
-          if (getChar(pos+i)!=Meta.mArgE[i]) matchm=0;
-        for (i=0;Meta.mArgSep[i]!=0;i++)
-          if (getChar(pos+i)!=Meta.mArgSep[i]) matcharg=0;
+        *p1e=pos;
+        if (matchSequence(S->Meta.mArgSep,&pos)) break;
+        if (matchEndSequence(S->Meta.mArgE,&pos)) {
+          *endm=pos;
+          return 1;
+        }
       }
+      pos++; /* nothing matched, go forward */
     }
-    while ((!matchm)&&(!matcharg));
-    *p1e=pos;
   }
   
-  if (matchm&&matcharg) { /* both end of macro and arg sep match */
-    if (strlen(Meta.mArgE)>strlen(Meta.mArgSep))
-      matcharg=0;
-    else matchm=0;
-  }
-  if (matchm) { /* no more args */
-    *endm=pos+strlen(Meta.mArgE);
-    return 1;
-  }
-  pos=pos+strlen(Meta.mArgSep);
-  if (!Meta.mArgSep[0]) /* if separator was whitespace, eat it */
-    while (iswhite(getChar(pos))) {
-      if (getChar(pos)==0) bug("unfinished macro");
-      pos++;
-    }
   *p2b=pos;
-  
-  k=0; pos--;
-  do {  
+  k=0;
+  while(1) { /* look for mArgE or comment-start */
+    pos=identifierEnd(pos);
+    SkipPossibleComments(&pos,FLAG_META,0);
     if (getChar(pos)==0) bug("unfinished macro");
-    pos=identifierEnd(pos+1);
-    if (strchr(Meta.stackchar,getChar(pos))) k++;
-    matchm=0;
-    if (k) { if (strchr(Meta.unstackchar,getChar(pos))) k--; }
+    if (strchr(S->Meta.stackchar,getChar(pos))) k++;
+    if (k) { if (strchr(S->Meta.unstackchar,getChar(pos))) k--; }
     else {
-      matchm=1;
-      for (i=0;Meta.mArgE[i]!=0;i++)
-        if (getChar(pos+i)!=Meta.mArgE[i]) matchm=0;
+      *p2e=pos;
+      if (matchEndSequence(S->Meta.mArgE,&pos)) break;
     }
-  } while (!matchm);
-  *p2e=pos;
-  *endm=pos+strlen(Meta.mArgE);
+    pos++; /* nothing matched, go forward */
+  }
+  *endm=pos;
   return 2;
 }
 
-void shiftIn(int l)
-{
-  int i;
-  
-  if (l==0) return;
-  if (l<C->len) {
-    if (C->len-l>100) { /* we want to shrink that buffer */
-      C->buf+=l; C->bufsize-=l;
-    } else
-      for (i=l;i<C->len;i++) C->buf[i-l]=C->buf[i];
-    C->len-=l;
-    C->eof=(*(C->buf)==0);
-  }
-  else {
-    C->len=0;
-    if (C->in==NULL) C->eof=1;
-      else C->eof=feof(C->in);
-  }
-}
-
-char *ProcessText(char *buf,int l,struct INPUTCONTEXT *parent)
+char *ProcessText(char *buf,int l,int ambience)
 {
   char *s;
   struct INPUTCONTEXT *T;
   
-  s=malloc(l+1);
-  memcpy(s,buf,l);
-  s[l]=0;
-  if (l==0) return s; /* return "" if nothing to do */
+  if (l==0) { s=malloc(1); s[0]=0; return s;  }
+  s=malloc(l+2);
+  s[0]='\n';
+  memcpy(s+1,buf,l);
+  s[l+1]=0;
   T=C;
   C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
   C->out=(struct OUTPUTCONTEXT *)malloc(sizeof(struct OUTPUTCONTEXT));
   C->in=NULL;
-  C->argc=parent->argc;
-  C->argv=parent->argv;
+  C->argc=T->argc;
+  C->argv=T->argv;
   C->filename=T->filename;
   C->out->buf=malloc(80);
   C->out->len=0;
   C->out->bufsize=80;
   C->out->f=NULL;
   C->lineno=T->lineno;
-  C->bufsize=l+1;
-  C->len=l;
+  C->bufsize=l+2;
+  C->len=l+1;
   C->buf=C->malloced_buf=s;
-  C->next=NULL;
   C->eof=0;
-  C->namedargs=parent->namedargs;
+  C->namedargs=T->namedargs;
+  C->in_comment=T->in_comment;
+  C->ambience=ambience;
   
   ProcessContext();
   outchar(0); /* note that outchar works with the half-destroyed context ! */
@@ -879,6 +1312,22 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
   return (p==buf+pos2);
 }
 
+void delete_macro(int i)
+{
+  int j;
+  nmacros--;
+  free(macros[i].username);
+  free(macros[i].macrotext); 
+  if (macros[i].argnames!=NULL) {
+    for (j=0;j<macros[i].nnamedargs;j++) free(macros[i].argnames[j]);
+    free(macros[i].argnames);
+    macros[i].argnames=NULL;
+  }
+  FreeComments(macros[i].define_specs);
+  free(macros[i].define_specs);
+  memcpy((char *)(macros+i),(char *)(macros+nmacros),sizeof(struct MACRO));
+}
+
 char *ArithmEval(int pos1,int pos2)
 {
   char *s,*t;
@@ -888,30 +1337,21 @@ char *ArithmEval(int pos1,int pos2)
   i=findIdent("defined",strlen("defined"));
   if (i>=0) warning("the defined(...) macro is already defined");
   else {
-    newmacro("defined",strlen("defined"));
-    macrolen[nmacros]=0;
-    macrotext[nmacros]=malloc(1);
-    macrotext[nmacros][0]=0;
-    nnamedargs[nmacros]=-2; /* trademark of the defined(...) macro */
+    newmacro("defined",strlen("defined"),1);
+    macros[nmacros].macrolen=0;
+    macros[nmacros].macrotext=malloc(1);
+    macros[nmacros].macrotext[0]=0;
+    macros[nmacros].nnamedargs=-2; /* trademark of the defined(...) macro */
     nmacros++;
   }
   /* process the text in a usual way */
-  s=ProcessText(C->buf+pos1,pos2-pos1,C);
+  s=ProcessText(C->buf+pos1,pos2-pos1,FLAG_META);
   /* undefine the defined(...) operator */
   if (i<0) {
     i=findIdent("defined",strlen("defined"));
-    if ((i<0)||(nnamedargs[i]!=-2))
+    if ((i<0)||(macros[i].nnamedargs!=-2))
       warning("the defined(...) macro was redefined in expression");
-    else {
-      nmacros--;
-      free(username[i]);
-      free(macrotext[i]); 
-      username[i]=username[nmacros];
-      macrotext[i]=macrotext[nmacros];
-      macrolen[i]=macrolen[nmacros];
-      nnamedargs[i]=nnamedargs[nmacros];
-      argnames[i]=argnames[nmacros];
-    }
+    else delete_macro(i);
   }
 
   if (!DoArithmEval(s,0,strlen(s),&i)) return s; /* couldn't compute */
@@ -921,15 +1361,199 @@ char *ArithmEval(int pos1,int pos2)
   return t;
 }
 
+int comment_or_white(int start,int end,int cmtmode)
+{
+  char c;
+  
+  while (start<end) {
+    SkipPossibleComments(&start,cmtmode,1);
+    if (start<end) {
+      c=getChar(start++);
+      if ((c!=' ')&&(c!='\n')&&(c!='\t')) return 0;
+    }
+  }
+  return 1;
+}
+
+char *remove_comments(int start,int end,int cmtmode)
+{
+  char *s,*t;
+  
+  t=s=malloc(end-start+1);
+  while (start<end) {
+    SkipPossibleComments(&start,cmtmode,1);
+    if (start<end) {
+      *t=getChar(start++);
+      if ((*t==S->User.quotechar)&&(start<end)) { *(++t)=getChar(start++); }
+      t++;
+    }
+  }
+  *t=0;
+  return s;
+}
+
+void SetStandardMode(struct SPECS *P,char *opt) 
+{
+  if (!strcmp(opt,"C")||!strcmp(opt,"cpp")) {
+    P->User=KUser; P->Meta=KMeta;
+    P->preservelf=1;
+    FreeComments(P);
+    add_comment(P,"ccc",strdup("/*"),strdup("*/"),0);
+    add_comment(P,"ccc",strdup("//"),strdup("\n"),0);
+    add_comment(P,"ccc",strdup("\\\n"),strdup(""),0);
+    add_comment(P,"sss",strdup("\""),strdup("\""),'\\');
+    add_comment(P,"sss",strdup("'"),strdup("'"),'\\');
+  }
+  else if (!strcmp(opt,"TeX")||!strcmp(opt,"tex")) {
+    P->User=Tex; P->Meta=Tex;
+    P->preservelf=0;
+    FreeComments(P);
+  }
+  else if (!strcmp(opt,"HTML")||!strcmp(opt,"html")) {
+    P->User=Html; P->Meta=Html;
+    P->preservelf=0;
+    FreeComments(P);
+  }
+  else if (!strcmp(opt,"default")) {
+    P->User=CUser; P->Meta=CMeta;
+    P->preservelf=0;
+    FreeComments(P);
+  }
+  else if (!strcmp(opt,"Prolog")||!strcmp(opt,"prolog")) {
+    P->User=KUser; P->Meta=KMeta;
+    P->preservelf=1;
+    FreeComments(P);
+    add_comment(P,"css",strdup("\213/*"),strdup("*/"),0); /* \!o */ 
+    add_comment(P,"cii",strdup("\\\n"),strdup(""),0);
+    add_comment(P,"css",strdup("%"),strdup("\n"),0);
+    add_comment(P,"sss",strdup("\""),strdup("\""),0);
+    add_comment(P,"sss",strdup("\207'"),strdup("'"),0);   /* \!# */
+  }
+  else bug("unknown standard mode");
+}
+
+void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
+{
+  struct SPECS *P;
+  char *s,*p,*opt;
+  int nargs;
+  char *args[10]; /* can't have more than 10 arguments */
+  
+  whiteout(&p1start,&p1end);
+  if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
+    bug("invalid #mode syntax");
+  if (p2start<0) s=strdup("");
+    else s=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
+
+  /* argument parsing */
+  p=s; opt=NULL;
+  while (iswhite(*p)) p++;
+  if ((*p!='"')&&(*p!=0)) {
+    opt=p;
+    while ((*p!=0)&&!iswhite(*p)) p++;
+    if (*p!=0) {
+      *(p++)=0;
+      while (iswhite(*p)) p++;
+    }
+  }
+  nargs=0;
+  while (*p!=0) {
+    if (nargs==10) bug("too many arguments in #mode command");
+    if (*(p++)!='"') bug("syntax error in #mode command (missing \" or trailing data)");
+    args[nargs++]=p;
+    p=strnl2(p);
+    while (iswhite(*p)) p++;
+  }    
+
+  if (idequal(C->buf+p1start,p1end-p1start,"quote")) {
+    if (opt||(nargs>1)) bug("syntax error in #mode quote command");
+    if (nargs==0) args[0]="";
+    S->stack_next->User.quotechar=args[0][0];
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"comment")) {
+    if ((nargs<2)||(nargs>3)) bug("syntax error in #mode comment command");
+    if (!opt) opt="ccc";
+    if (nargs==2) args[2]="";
+    add_comment(S->stack_next,opt,strdup(args[0]),strdup(args[1]),args[2][0]);
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"string")) {
+    if ((nargs<2)||(nargs>3)) bug("syntax error in #mode string command");
+    if (!opt) opt="sss";
+    if (nargs==2) args[2]="";
+    add_comment(S->stack_next,opt,strdup(args[0]),strdup(args[1]),args[2][0]);
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"save")
+         ||idequal(C->buf+p1start,p1end-p1start,"push")) {
+    if ((opt!=NULL)||nargs) bug("too many arguments to #mode save");
+    P=CloneSpecs(S->stack_next);
+    P->stack_next=S->stack_next;
+    S->stack_next=P;
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"restore")
+         ||idequal(C->buf+p1start,p1end-p1start,"pop")) {
+    if ((opt!=NULL)||nargs) bug("too many arguments to #mode restore");
+    P=S->stack_next->stack_next;
+    if (P==NULL) bug("#mode restore without #mode save");
+    FreeComments(S->stack_next);
+    free(S->stack_next);
+    S->stack_next=P;
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"standard")) {
+    if ((opt==NULL)||nargs) bug("syntax error in #mode standard");
+    SetStandardMode(S->stack_next,opt);
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"user")) {
+    if ((opt!=NULL)||(nargs!=9)) bug("#mode user requires 9 arguments");
+    S->stack_next->User.mStart=strdup(args[0]);
+    S->stack_next->User.mEnd=strdup(args[1]);
+    S->stack_next->User.mArgS=strdup(args[2]);
+    S->stack_next->User.mArgSep=strdup(args[3]);
+    S->stack_next->User.mArgE=strdup(args[4]);
+    S->stack_next->User.stackchar=strdup(args[5]);
+    S->stack_next->User.unstackchar=strdup(args[6]);
+    S->stack_next->User.mArgRef=strdup(args[7]);
+    S->stack_next->User.quotechar=args[8][0];
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"meta")) {
+    if ((opt!=NULL)&&!nargs&&!strcmp(opt,"user")) 
+      S->stack_next->Meta=S->stack_next->User;
+    else {
+      if ((opt!=NULL)||(nargs!=7)) bug("#mode meta requires 7 arguments");
+      S->stack_next->Meta.mStart=strdup(args[0]);
+      S->stack_next->Meta.mEnd=strdup(args[1]);
+      S->stack_next->Meta.mArgS=strdup(args[2]);
+      S->stack_next->Meta.mArgSep=strdup(args[3]);
+      S->stack_next->Meta.mArgE=strdup(args[4]);
+      S->stack_next->Meta.stackchar=strdup(args[5]);
+      S->stack_next->Meta.unstackchar=strdup(args[6]);
+    }
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"preservelf")) {
+    if ((opt==NULL)||nargs) bug("syntax error in #mode preservelf");
+    if (!strcmp(opt,"1")||!strcasecmp(opt,"on")) S->stack_next->preservelf=1;
+    else if (!strcmp(opt,"0")||!strcasecmp(opt,"off")) S->stack_next->preservelf=0;
+    else bug("#mode preservelf requires on/off argument");
+  }
+  else if (idequal(C->buf+p1start,p1end-p1start,"nocomment")
+         ||idequal(C->buf+p1start,p1end-p1start,"nostring")) {
+    if ((opt!=NULL)||(nargs>1)) bug("syntax error in #mode nocomment/nostring");
+    if (nargs==0) FreeComments(S->stack_next);
+    else delete_comment(S->stack_next,strdup(args[0]));
+  }
+  else bug("unrecognized #mode command");
+       
+  free(s);
+}
+
 int ParsePossibleMeta()
 {
   int cklen,nameend;
   int id,expparams,nparam,i,j;
   int p1start,p1end,p2start,p2end,macend;
   int argc,argb[MAXARGS],arge[MAXARGS];
-  
-  for (cklen=0;Meta.mStart[cklen]!=0;cklen++)
-    if (getChar(cklen)!=Meta.mStart[cklen]) return -1; /* check mStart */
+
+  cklen=1;
+  if (!matchStartSequence(S->Meta.mStart,&cklen)) return -1;  
   nameend=identifierEnd(cklen);
   if (nameend&&!getChar(nameend-1)) return -1;
   id=0;
@@ -947,9 +1571,9 @@ int ParsePossibleMeta()
   else if (idequal(C->buf+cklen,nameend-cklen,"endif"))
    { id=6; expparams=0; }
   else if (idequal(C->buf+cklen,nameend-cklen,"include"))
-   { id=7; expparams=2; } /* because filename is not always an identifier */
+   { id=7; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"exec"))
-   { id=8; expparams=2; }
+   { id=8; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"defeval"))
    { id=9; expparams=2; argc=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"ifeq"))
@@ -957,79 +1581,71 @@ int ParsePossibleMeta()
   else if (idequal(C->buf+cklen,nameend-cklen,"ifneq"))
    { id=11; expparams=2; }
   else if (idequal(C->buf+cklen,nameend-cklen,"eval"))
-   { id=12; expparams=2; }
+   { id=12; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"if"))
-   { id=13; expparams=2; }
+   { id=13; expparams=1; }
+  else if (idequal(C->buf+cklen,nameend-cklen,"mode"))
+   { id=14; expparams=2; }
   else return -1;
+
+  /* #MODE magic : define "..." to be C-style strings */
+  if (id==14) {
+    PushSpecs(S);
+    S->preservelf=1;
+    delete_comment(S,strdup("\""));
+    add_comment(S,"sss",strdup("\""),strdup("\""),'\\');
+  }
+
   nparam=findMetaArgs(nameend,&p1start,&p1end,&p2start,&p2end,&macend,&argc,argb,arge);
   if (nparam==-1) return -1; 
+
+  if ((nparam==2)&&iswhitesep(S->Meta.mArgSep))
+    if (comment_or_white(p2start,p2end,FLAG_META)) nparam=1;
+  if ((nparam==1)&&iswhitesep(S->Meta.mArgS))
+    if (comment_or_white(p1start,p1end,FLAG_META)) nparam=0;
   if (expparams&&!nparam) bug("Missing argument in meta-macro");
-  if ((nparam==2)&&(expparams!=2)) warning("Too many arguments in meta-macro");
 
   switch(id) {
     case 1: /* DEFINE */
      if (!commented[iflevel]) {
-      whiteout(&p1start,&p1end);
+      whiteout(&p1start,&p1end); /* recall comments are not allowed here */
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end)) 
         bug("#define requires an identifier (A-Z,a-z,0-9,_ only)");
       i=findIdent(C->buf+p1start,p1end-p1start);
-      if (i<0) {
-        newmacro(C->buf+p1start,p1end-p1start);
-        i=nmacros;
-        nmacros++;
-      }
-      else { 
-        free(macrotext[i]); 
-        if (argnames[i]!=NULL) {
-          for (j=0;j<nnamedargs[i];j++) free(argnames[i][j]);
-          free(argnames[i]);
-          argnames[i]=NULL;
-        }
-      }
+      if (i>=0) delete_macro(i);
+      newmacro(C->buf+p1start,p1end-p1start,1);
       if (nparam==1) { p2end=p2start=p1end; }
-      macrolen[i]=p2end-p2start;
-      macrotext[i]=malloc(p2end-p2start+1);
-      if (p2end>p2start) 
-        memcpy(macrotext[i],C->buf+p2start,p2end-p2start);
-      macrotext[i][p2end-p2start]=0;
-      nnamedargs[i]=argc;
+      macros[nmacros].macrotext=remove_comments(p2start,p2end,FLAG_META);
+      macros[nmacros].macrolen=strlen(macros[nmacros].macrotext);
+      macros[nmacros].defined_in_comment=C->in_comment;
+
       if (argc) {
-        argnames[i]=(char **)malloc((argc+1)*sizeof(char *));
-        argnames[i][argc]=NULL;
+        for (j=0;j<argc;j++) whiteout(argb+j,arge+j);
+        /* define with one empty argument */
+        if ((argc==1)&&(arge[0]==argb[0])) argc=0;
+        macros[nmacros].argnames=(char **)malloc((argc+1)*sizeof(char *));
+        macros[nmacros].argnames[argc]=NULL;
       }
+      macros[nmacros].nnamedargs=argc;
       for (j=0;j<argc;j++) {
-        whiteout(argb+j,arge+j);
         if ((argb[j]==arge[j])||(identifierEnd(argb[j])!=arge[j]))
           bug("#define with named args needs identifiers as arg names");
-        argnames[i][j]=malloc(arge[j]-argb[j]+1);
-        memcpy(argnames[i][j],C->buf+argb[j],arge[j]-argb[j]);
-        argnames[i][j][arge[j]-argb[j]]=0;
+        macros[nmacros].argnames[j]=malloc(arge[j]-argb[j]+1);
+        memcpy(macros[nmacros].argnames[j],C->buf+argb[j],arge[j]-argb[j]);
+        macros[nmacros].argnames[j][arge[j]-argb[j]]=0;
       }
-      lookupArgRefs(i);
+      lookupArgRefs(nmacros++);
      }
      break;
      
     case 2: /* UNDEF */
      if (!commented[iflevel]) {
+      if (nparam==2) warning("Extra argument to #undef ignored");
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
         bug("#undef requires an identifier (A-Z,a-z,0-9,_ only)");
       i=findIdent(C->buf+p1start,p1end-p1start);
-      if (i!=-1) {
-        nmacros--;
-        free(username[i]);
-        free(macrotext[i]); 
-        if (argnames[i]!=NULL) {
-          for (j=0;j<nnamedargs[i];j++) free(argnames[i][j]);
-          free(argnames[i]);
-          argnames[i]=NULL;
-        }
-        username[i]=username[nmacros];
-        macrotext[i]=macrotext[nmacros];
-        macrolen[i]=macrolen[nmacros];
-        nnamedargs[i]=nnamedargs[nmacros];
-        argnames[i]=argnames[nmacros];
-      }
+      if (i>=0) delete_macro(i);
      }
      break;
 
@@ -1038,6 +1654,7 @@ int ParsePossibleMeta()
      if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
      commented[iflevel]=commented[iflevel-1];
      if (!commented[iflevel]) {
+      if (nparam==2) warning("Extra argument to #ifdef ignored");
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
         bug("#ifdef requires an identifier (A-Z,a-z,0-9,_ only)");
@@ -1051,6 +1668,7 @@ int ParsePossibleMeta()
      if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
      commented[iflevel]=commented[iflevel-1];
      if (!commented[iflevel]) {
+      if (nparam==2) warning("Extra argument to #ifndef ignored");
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
         bug("#ifndef requires an identifier (A-Z,a-z,0-9,_ only)");
@@ -1060,11 +1678,15 @@ int ParsePossibleMeta()
      break;
     
     case 5: /* ELSE */
+     if (!commented[iflevel]&&(nparam>0))
+          warning("Extra argument to #else ignored");
      if (iflevel==0) bug("#else without #if");
      if (!commented[iflevel-1]) commented[iflevel]=!commented[iflevel];
      break;
 
     case 6: /* ENDIF */
+     if (!commented[iflevel]&&(nparam>0))
+          warning("Extra argument to #endif ignored");
      if (iflevel==0) bug("#endif without #if");
      iflevel--;
      break;
@@ -1075,17 +1697,12 @@ int ParsePossibleMeta()
        FILE *f;
        char *s;
 
-       if (nparam==2) {
-         if (Meta.mArgSep[0]) warning("Too many arguments in meta-macro");
-         else /* no arg separator -> the filename may be butchered */
-           p1end=p2end;
-       }
+       if (nparam==2) warning("Extra argument to #include ignored");
        if (!whiteout(&p1start,&p1end)) bug("Missing file name in #include");
-       if (Meta.mArgS[0]==0)
-         /* no argstart separator -> user may put "" or <> */
-         if (((getChar(p1start)=='\"')&&(getChar(p1end-1)=='\"'))||
-             ((getChar(p1start)=='<')&&(getChar(p1end-1)=='>')))
-           { p1start++; p1end--; }
+       /* user may put "" or <> */
+       if (((getChar(p1start)=='\"')&&(getChar(p1end-1)=='\"'))||
+           ((getChar(p1start)=='<')&&(getChar(p1end-1)=='>')))
+         { p1start++; p1end--; }
        if (p1start>=p1end) bug("Missing file name in #include");
        s=malloc(p1end-p1start+1);
        for (i=0;i<p1end-p1start;i++) s[i]=getChar(p1start+i);
@@ -1094,28 +1711,36 @@ int ParsePossibleMeta()
        for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
          s=realloc(s,p1end-p1start+strlen(includedir[j])+2);
          strcpy(s,includedir[j]);
-         s[strlen(includedir[j])]='/';
+         s[strlen(includedir[j])]=SLASH;
          for (i=0;i<p1end-p1start;i++) 
            s[strlen(includedir[j])+1+i]=getChar(p1start+i);
          s[p1end-p1start+strlen(includedir[j])+1]=0;
          f=fopen(s,"r");
        }
        if (f==NULL) bug("Requested include file not found");
-       N=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
-       N->in=f;
-       N->argc=0;
-       N->argv=NULL;
-       N->filename=s;
-       N->out=C->out;
-       N->lineno=0;
-       N->bufsize=80;
-       N->len=0;
-       N->buf=N->malloced_buf=malloc(N->bufsize);
-       N->next=C;
-       N->eof=0;
-       N->namedargs=NULL;
-       shiftIn(macend);
-       macend=0;
+       N=C;
+       C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
+       C->in=f;
+       C->argc=0;
+       C->argv=NULL;
+       C->filename=s;
+       C->out=N->out;
+       C->lineno=0;
+       C->bufsize=80;
+       C->len=0;
+       C->buf=C->malloced_buf=malloc(C->bufsize);
+       C->eof=0;
+       C->namedargs=NULL;
+       C->in_comment=0;
+       C->ambience=FLAG_TEXT;
+       PushSpecs(S);
+       if (autoswitch) {
+         if (!strcmp(s+strlen(s)-2,".h")||!strcmp(s+strlen(s)-2,".c"))
+           SetStandardMode(S,"C");
+       }
+       ProcessContext();
+       free(C);
+       PopSpecs();
        C=N;
      }
      break;
@@ -1128,9 +1753,9 @@ int ParsePossibleMeta()
          char *s,*t;
          int c;
          FILE *f;
-         s=ProcessText(C->buf+p1start,p1end-p1start,C);
+         s=ProcessText(C->buf+p1start,p1end-p1start,FLAG_META);
          if (nparam==2) {
-           t=ProcessText(C->buf+p2start,p2end-p2start,C);
+           t=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
            i=strlen(s);
            s=realloc(s,i+strlen(t)+2);
            s[i]=' ';
@@ -1153,35 +1778,29 @@ int ParsePossibleMeta()
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end)) 
         bug("#defeval requires an identifier (A-Z,a-z,0-9,_ only)");
       i=findIdent(C->buf+p1start,p1end-p1start);
-      if (i<0) {
-        newmacro(C->buf+p1start,p1end-p1start);
-        i=nmacros;
-        nmacros++;
-      }
-      else {
-        free(macrotext[i]); 
-        if (argnames[i]!=NULL) {
-          for (j=0;j<nnamedargs[i];j++) free(argnames[i][j]);
-          free(argnames[i]);
-          argnames[i]=NULL;
-        }
-      }
+      if (i>=0) delete_macro(i);
+      newmacro(C->buf+p1start,p1end-p1start,1);
       if (nparam==1) { p2end=p2start=p1end; }
-      macrotext[i]=ProcessText(C->buf+p2start,p2end-p2start,C);
-      macrolen[i]=strlen(macrotext[i]);
-      nnamedargs[i]=argc;
+      macros[nmacros].macrotext=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
+      macros[nmacros].macrolen=strlen(macros[nmacros].macrotext);
+      macros[nmacros].defined_in_comment=C->in_comment;
+
       if (argc) {
-        argnames[i]=(char **)malloc((argc+1)*sizeof(char *));
-        argnames[i][argc]=NULL;
+        for (j=0;j<argc;j++) whiteout(argb+j,arge+j);
+        /* define with one empty argument */
+        if ((argc==1)&&(arge[0]==argb[0])) argc=0;
+        macros[nmacros].argnames=(char **)malloc((argc+1)*sizeof(char *));
+        macros[nmacros].argnames[argc]=NULL;
       }
+      macros[nmacros].nnamedargs=argc;
       for (j=0;j<argc;j++) {
         if ((argb[j]==arge[j])||(identifierEnd(argb[j])!=arge[j]))
           bug("#defeval with named args needs identifiers as arg names");
-        argnames[i][j]=malloc(arge[j]-argb[j]+1);
-        memcpy(argnames[i][j],C->buf+argb[j],arge[j]-argb[j]);
-        argnames[i][j][arge[j]-argb[j]]=0;
+        macros[nmacros].argnames[j]=malloc(arge[j]-argb[j]+1);
+        memcpy(macros[nmacros].argnames[j],C->buf+argb[j],arge[j]-argb[j]);
+        macros[nmacros].argnames[j][arge[j]-argb[j]]=0;
       }
-      lookupArgRefs(i);
+      lookupArgRefs(nmacros++);
      }
      break;
      
@@ -1192,9 +1811,9 @@ int ParsePossibleMeta()
      if (!commented[iflevel]) {
       char *s,*t;
       if (nparam!=2) bug("#ifeq requires two arguments");
-      s=ProcessText(C->buf+p1start,p1end-p1start,C);
-      t=ProcessText(C->buf+p2start,p2end-p2start,C);
-      commented[iflevel]=(strcmp(s,t)!=0);
+      s=ProcessText(C->buf+p1start,p1end-p1start,FLAG_META);
+      t=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
+      commented[iflevel]=(nowhite_strcmp(s,t)!=0);
       free(s); free(t);
      }
      break;
@@ -1206,9 +1825,9 @@ int ParsePossibleMeta()
      if (!commented[iflevel]) {
       char *s,*t;
       if (nparam!=2) bug("#ifneq requires two arguments");
-      s=ProcessText(C->buf+p1start,p1end-p1start,C);
-      t=ProcessText(C->buf+p2start,p2end-p2start,C);
-      commented[iflevel]=(strcmp(s,t)==0);
+      s=ProcessText(C->buf+p1start,p1end-p1start,FLAG_META);
+      t=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
+      commented[iflevel]=(nowhite_strcmp(s,t)==0);
       free(s); free(t);
      }
      break;
@@ -1236,6 +1855,13 @@ int ParsePossibleMeta()
      }
      break;
 
+    case 14: /* MODE */
+     if (nparam==1) p2start=-1;
+     if (!commented[iflevel])
+       ProcessModeCommand(p1start,p1end,p2start,p2end);
+     PopSpecs();
+     break;
+     
     default: bug("Internal meta-macro identification error");
   }
   shiftIn(macend);
@@ -1250,10 +1876,10 @@ int ParsePossibleUser()
   int argb[MAXARGS],arge[MAXARGS];
   struct INPUTCONTEXT *T;
 
-  idstart=0;
+  idstart=1;
   id=0;
-  if (!SplicePossibleUser(&idstart,&idend,&sh_end,&lg_end,argb,arge,&argc,1,&id))
-    return -1;
+  if (!SplicePossibleUser(&idstart,&idend,&sh_end,&lg_end,
+                          argb,arge,&argc,1,&id,FLAG_USER)) return -1;
   if ((sh_end>=0)&&(C->namedargs!=NULL)) {
     i=findNamedArg(C->buf+idstart,idend-idstart);
     if (i>=0) {
@@ -1265,21 +1891,26 @@ int ParsePossibleUser()
   if (id<0) return -1;
   if (lg_end>=0) macend=lg_end; else { macend=sh_end; argc=0; }
 
-  if (nnamedargs[id]==-2) { /* special defined(...) macro for arithmetics */
+  if (macros[id].nnamedargs==-2) { /* defined(...) macro for arithmetic */
+    char *s,*t;
     if (argc!=1) return -1;
-    whiteout(argb,arge);
-    if (findIdent(C->buf+argb[0],arge[0]-argb[0])>=0) outchar('1');
+    s=remove_comments(argb[0],arge[0],FLAG_USER);
+    t=s+strlen(s)-1;
+    if (*s!=0) while ((t!=s)&&iswhite(*t)) *(t--)=0;
+    t=s; while (iswhite(*t)) t++;
+    if (findIdent(t,strlen(t))>=0) outchar('1');
     else outchar('0');
+    free(s);
     shiftIn(macend);
     return 0;
   }
-  if (!macrotext[id][0]) { /* the empty macro */
+  if (!macros[id].macrotext[0]) { /* the empty macro */
     shiftIn(macend);
     return 0;
   }
   
   for (i=0;i<argc;i++)
-    argv[i]=ProcessText(C->buf+argb[i],arge[i]-argb[i],C);
+    argv[i]=ProcessText(C->buf+argb[i],arge[i]-argb[i],FLAG_USER);
   /* process macro text */
   T=C;
   C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
@@ -1289,29 +1920,40 @@ int ParsePossibleUser()
   C->argv=argv;
   C->filename=T->filename;
   C->lineno=T->lineno;
-  if (canalias&&(nnamedargs[id]==-1)&&(lg_end>=0)&&(User.mEnd[0]==0)) {
+  if ((macros[id].nnamedargs==-1)&&(lg_end>=0)&&
+      (macros[id].define_specs->User.mEnd[0]==0)) {
     /* build an aliased macro call */
-    l=strlen(macrotext[id])+1+strlen(User.mArgS)+strlen(User.mArgE)
-      +(argc-1)*strlen(User.mArgSep);
+    l=strlen(macros[id].macrotext)+2
+      +strlen(macros[id].define_specs->User.mArgS)
+      +strlen(macros[id].define_specs->User.mArgE)
+      +(argc-1)*strlen(macros[id].define_specs->User.mArgSep);
     for (i=0;i<argc;i++) l+=strlen(argv[i]);
     C->buf=C->malloced_buf=malloc(l);
-    l=strlen(macrotext[id]);
-    strcpy(C->buf,macrotext[id]);
-    while ((l>0)&&iswhite(C->buf[l-1])) l--;
-    strcpy(C->buf+l,User.mArgS);
+    l=strlen(macros[id].macrotext)+1;
+    C->buf[0]='\n';
+    strcpy(C->buf+1,macros[id].macrotext);
+    while ((l>1)&&iswhite(C->buf[l-1])) l--;
+    strcpy(C->buf+l,macros[id].define_specs->User.mArgS);
     for (i=0;i<argc;i++) {
-      if (i>0) strcat(C->buf,User.mArgSep);
+      if (i>0) strcat(C->buf,macros[id].define_specs->User.mArgSep);
       strcat(C->buf,argv[i]);
     }
-    strcat(C->buf,User.mArgE);
+    strcat(C->buf,macros[id].define_specs->User.mArgE);
   } 
-  else C->buf=C->malloced_buf=strdup(macrotext[id]);
+  else {
+    C->buf=C->malloced_buf=malloc(strlen(macros[id].macrotext)+2);
+    C->buf[0]='\n';
+    strcpy(C->buf+1,macros[id].macrotext);
+  }
   C->len=strlen(C->buf);
   C->bufsize=C->len+1;
-  C->next=NULL;
   C->eof=0;
-  C->namedargs=argnames[id];
+  C->namedargs=macros[id].argnames;
+  C->in_comment=macros[id].defined_in_comment;
+  C->ambience=FLAG_META; 
+  PushSpecs(macros[id].define_specs);
   ProcessContext();
+  PopSpecs();
   free(C);
   C=T;
   
@@ -1322,17 +1964,41 @@ int ParsePossibleUser()
 
 void ParseText()
 {
-  int l,isref;
-  char c;
+  int l,cs,ce;
+  char c,*s;
+  struct COMMENT *p;
+
+  /* look for comments first */
+  if (!C->in_comment) {
+    cs=1;
+    for (p=S->comments;p!=NULL;p=p->next)
+      if (!(p->flags[C->ambience]&FLAG_IGNORE))
+        if (matchStartSequence(p->start,&cs)) {
+          l=ce=findCommentEnd(p->end,p->quote,cs,p->flags[C->ambience]);
+          matchEndSequence(p->end,&l);
+          if (p->flags[C->ambience]&OUTPUT_DELIM)
+            sendout(C->buf+1,cs-1,0);
+          if (p->flags[C->ambience]&PARSE_MACROS) {
+            C->in_comment=1;
+            s=ProcessText(C->buf+cs,ce-cs,C->ambience);
+            if (p->flags[C->ambience]&OUTPUT_TEXT) sendout(s,strlen(s),0);
+            C->in_comment=0;
+            free(s);
+          } 
+          else if (p->flags[C->ambience]&OUTPUT_TEXT)
+            sendout(C->buf+cs,ce-cs,0);
+          if (p->flags[C->ambience]&OUTPUT_DELIM)
+            sendout(C->buf+ce,l-ce,0);
+          shiftIn(l);
+          return;
+        }
+  }
 
   if (ParsePossibleMeta()>=0) return;
   if (ParsePossibleUser()>=0) return;
   
-  isref=1;
-  for (l=0;User.mArgRef[l]!=0;l++) 
-    if (getChar(l)!=User.mArgRef[l]) isref=0;
-  if (isref) {
-    l=strlen(User.mArgRef);
+  l=1;
+  if (matchSequence(S->User.mArgRef,&l)) {
     c=getChar(l);
     if ((c>='1')&&(c<='9')) {
       c=c-'1';
@@ -1343,27 +2009,18 @@ void ParseText()
     }
   }
   
-  l=identifierEnd(0);
-  if (l==0) l=1;
-  sendout(C->buf,l,1);
+  l=identifierEnd(1);
+  if (l==1) l=2;
+  sendout(C->buf+1,l-1,1);
   shiftIn(l);
 }
 
 void ProcessContext()
 {
-  struct INPUTCONTEXT *c;
-
-  while (1) {
-    while (!C->eof)
-      ParseText();
-    if (C->in!=NULL)
-      fclose(C->in);
-    free(C->malloced_buf);
-    if (C->next==NULL) return;
-    c=C->next;
-    free(C);
-    C=c;
-  }
+  if (C->len==0) { C->buf[0]='\n'; C->len++; }
+  while (!C->eof) ParseText();
+  if (C->in!=NULL) fclose(C->in);
+  free(C->malloced_buf);
 }
 
 main(int argc,char **argv)
@@ -1373,4 +2030,3 @@ main(int argc,char **argv)
   fclose(C->out->f);
   return 0;
 }
-

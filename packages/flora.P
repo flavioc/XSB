@@ -22,10 +22,11 @@
 */
 
 :- compiler_options([xpp_on]).
-/* for CPP
-    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
-*/
+
+#mode save
+#mode nostring "\!#'"
 #define STD_FPREFIX(X)    '_$_$_flora_''X'
+#mode restore
 
 %% bootstrap(package-dirname-as-string, package-name-as-symbol).
 %% This also asserts 

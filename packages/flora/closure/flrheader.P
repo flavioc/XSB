@@ -4,12 +4,11 @@
 #include "standard.h"
 #include "char_defs.h"
 
-/* For CPP
-    #define STD_FPREFIX(X)    '_$_$_flora_' ## X
-    #define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
-*/
+#mode save
+#mode nostring "\!#'"
 #define STD_FPREFIX(X)    '_$_$_flora_''X'
 #define DYN_FPREFIX(X)    'dyn_$_$_flora_''X'
+#mode restore
 
 
 :- table STD_FPREFIX(fd)/3.

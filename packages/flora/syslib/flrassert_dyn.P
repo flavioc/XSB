@@ -25,13 +25,12 @@
 */
 
 :- compiler_options([xpp_on]).
-/* For CPP
-    #define STD_FPREFIX(X)    'dyn_$_$_flora_' ## X
-    #define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
-*/
 
+#mode save
+#mode nostring "\!#'"
 #define STD_FPREFIX(X)    'dyn_$_$_flora_''X'
 #define DYN_FPREFIX(X)    'dyn_$_$_flora_''X'
+#mode restore
 
 
 :- import var/1, call/1 from standard.

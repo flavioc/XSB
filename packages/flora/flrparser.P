@@ -28,10 +28,11 @@
 
 :- compiler_options([xpp_on]).
 #include "char_defs.h"
-/* for CPP
-#define STD_FPREFIX(X)    '_$_$_flora_' ## X
-*/
+
+#mode save
+#mode nostring "\!#'"
 #define STD_FPREFIX(X)    '_$_$_flora_''X'
+#mode restore
 
 rule(_) -->
 	{ trie_assert(error(none)),
