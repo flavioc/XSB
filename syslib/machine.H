@@ -123,7 +123,7 @@
 	assert_buff_to_clref/7,
 	fmt_write/3,
 	fmt_write_string/3,
-	fmt_read/5,
+	fmt_read/4,
         file_read_line/3,
         file_read_line/2,
 	file_read_canonical/3,

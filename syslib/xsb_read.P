@@ -68,12 +68,12 @@ file_read(File, Answer, Variables) :-
 	/*****************************************/
 	/*  fmt_read, read_line                  */
 	/*****************************************/
-fmt_read(Fmt,Types,Result,Status) :-
+fmt_read(Fmt,Result,Status) :-
         stat_flag(10, File),
-	( atom(Fmt), callable(Types), compound(Result), var(Status)
-		     -> fmt_read(File,Fmt,Types,Result,Status)
+	( compound(Result), var(Status)
+		     -> fmt_read(File,Fmt,Result,Status)
 	    ;
-	    abort('Usage: fmt_read(+FmtString, types(+T1,+T2,...), result(-R1,-R2,...), -RetCode)')
+	    abort('Usage: fmt_read(+FmtString, result(-R1,-R2,...), -RetCode)')
     	).
 
 read_line(Str, IsFullLine) :-
