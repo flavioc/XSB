@@ -202,7 +202,8 @@ typedef struct {
     counter inserts;     /* - number of inserted substitutions */
   } AnsCI;
   counter consumption;   /* Answer Consumptions for all consumer subgoals */
-  counter retrieval;     /* Answer Collections for all subsumed subgoals */
+  counter identify;      /* Relevant Answer Collections for all subsumed
+			    subgoals */
 } NumSubOps;
 
 #define INIT_NUMSUBOPS   { {0,0,{0,0},{0,0}}, {0,0}, 0, 0 }
@@ -217,7 +218,7 @@ extern NumSubOps numSubOps;
 #define NumSubOps_AnswerCheckInsert	   numSubOps.AnsCI.total
 #define NumSubOps_AnswerInsert		   numSubOps.AnsCI.inserts
 #define NumSubOps_AnswerConsumption	   numSubOps.consumption
-#define NumSubOps_AnswerRetrieval	   numSubOps.retrieval
+#define NumSubOps_IdentifyRelevantAnswers  numSubOps.identify
 
 
 void reset_subsumption_stats(void);

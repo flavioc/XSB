@@ -253,8 +253,8 @@ void table_consume_answer(BTNptr answer, int size, int attv_num,
  *  answers found, or NULL if no answers were found.
  */
 
-ALNptr table_retrieve_answers(SubProdSF prodSF, SubConsSF consSF,
-			      CPtr templ) {
+ALNptr table_identify_relevant_answers(SubProdSF prodSF, SubConsSF consSF,
+				       CPtr templ) {
 
   int size;
   TimeStamp ts;         /* for selecting answers from subsumer's AnsTbl */
@@ -265,14 +265,15 @@ ALNptr table_retrieve_answers(SubProdSF prodSF, SubConsSF consSF,
 #ifdef DEBUG
   if ( ((SubProdSF)consSF == prodSF) || (! IsSubsumptiveProducer(prodSF))
        || (! IsProperlySubsumed(consSF)) )
-    xsb_abort("Answer Retrieval apparently triggered for a variant!\n"
-	      "Perhaps SF type is corrupt?");
+    xsb_abort("Relevant Answer Identification apparently triggered for a "
+	      "variant!\nPerhaps SF type is corrupt?");
 #endif
   size = int_val(*templ);
   templ = templ + size;
   ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
-  answers = retrieve_unifying_answers(tstRoot,ts,size,templ);
+  NumSubOps_IdentifyRelevantAnswers++;
+  answers = tst_collect_relevant_answers(tstRoot,ts,size,templ);
   conssf_timestamp(consSF) = TSTN_TimeStamp(tstRoot);
   if ( IsNonNULL(answers) )
     SF_AppendNewAnswerList(consSF,answers);

@@ -69,8 +69,9 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 	  if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
 	    switch_envs(consumer_cpf);
 	    answer_set =
-	      table_retrieve_answers((SubProdSF)producer_sf, consumer_sf,
-				     consumer_cpf + NLCPSIZE);
+	      table_identify_relevant_answers((SubProdSF)producer_sf,
+					      consumer_sf,
+					      consumer_cpf + NLCPSIZE);
 	  }
 	if ( IsNonNULL(answer_set) )
 	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);

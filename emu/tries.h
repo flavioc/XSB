@@ -307,7 +307,7 @@ extern void	load_delay_trie(int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(void);
 
 extern void    consume_subsumptive_answer(BTNptr, int, CPtr);
-extern ALNptr  retrieve_unifying_answers(TSTNptr, TimeStamp, int, CPtr);
+extern ALNptr  tst_collect_relevant_answers(TSTNptr, TimeStamp, int, CPtr);
 extern void    delete_subsumptive_table(struct Table_Info_Frame *);
 
 extern void    tstShrinkDynStacks(void);

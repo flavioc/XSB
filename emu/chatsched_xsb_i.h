@@ -62,8 +62,8 @@ static CPtr schedule_subgoal(VariantSF producer_sf, CPtr compl_fr)
 
 	    templ = restore_answer_template(chat_ptr, &baseTR);
 	    answer_set =
-	      table_retrieve_answers((SubProdSF)producer_sf, consumer_sf,
-				     templ);
+	      table_identify_relevant_answers((SubProdSF)producer_sf,
+					      consumer_sf, templ);
 	    undo_template_restoration(baseTR);
 	  }
 	if ( IsNonNULL(answer_set) )

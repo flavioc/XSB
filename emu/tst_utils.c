@@ -69,7 +69,7 @@ DynamicStack  tstTrail;
 
 void tstInitDataStructs() {
 
-  extern void initTSTRetrieve(void);
+  extern void initCollectRelevantAnswers(void);
   extern void initSubsumptiveLookup(void);
 
   DynStk_Init(&tstTermStack, TST_TERMSTACK_INITSIZE, Cell, "TST Term Stack");
@@ -79,7 +79,7 @@ void tstInitDataStructs() {
 	      "Trie-Symbol Stack");
   DynStk_Init(&tstTrail, TST_TRAIL_INITSIZE, CPtr, "TST Trail");
   initSubsumptiveLookup();
-  initTSTRetrieve();
+  initCollectRelevantAnswers();
 }
 
 

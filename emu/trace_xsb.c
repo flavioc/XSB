@@ -233,11 +233,11 @@ void total_stat(double elapstime) {
   printf("Tabling Operations\n");
   printf("  %u subsumptive call check/insert ops: %u producers, %u variants,\n"
 	 "  %u properly subsumed (%u table entries), %u used completed table.\n"
-	 "  %u answer retrieval ops.  %u consumptions via answer list.\n",
-	 NumSubOps_CallCheckInsert,	NumSubOps_ProducerCall,
-	 NumSubOps_VariantCall,		NumSubOps_SubsumedCall,
-	 NumSubOps_SubsumedCallEntry,	NumSubOps_CallToCompletedTable,
-	 NumSubOps_AnswerRetrieval,	NumSubOps_AnswerConsumption);
+	 "  %u relevant answer ident ops.  %u consumptions via answer list.\n",
+	 NumSubOps_CallCheckInsert,		NumSubOps_ProducerCall,
+	 NumSubOps_VariantCall,			NumSubOps_SubsumedCall,
+	 NumSubOps_SubsumedCallEntry,		NumSubOps_CallToCompletedTable,
+	 NumSubOps_IdentifyRelevantAnswers,	NumSubOps_AnswerConsumption);
   {
     long ttl_ops = ans_chk_ins + NumSubOps_AnswerCheckInsert,
 	 ttl_ins = ans_inserts + NumSubOps_AnswerInsert;

@@ -485,9 +485,9 @@ void print_detailed_subsumption_stats() {
 	 ( (NumSubOps_AnswerCheckInsert != 0)
 	   ? (float)NumSubOps_AnswerInsert / (float)NumSubOps_AnswerCheckInsert
 	   : 0 ));
-  printf("  Answer retrieval operations:       %8u\n"
+  printf("  Relevant-answer identify ops:      %8u\n"
 	 "  Answer-list consumption ops:       %8u\n",
-	 NumSubOps_AnswerRetrieval, NumSubOps_AnswerConsumption);
+	 NumSubOps_IdentifyRelevantAnswers, NumSubOps_AnswerConsumption);
 }
 
 /*==========================================================================*/

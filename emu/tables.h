@@ -39,7 +39,7 @@
 void	table_call_search(TabledCallInfo *, CallLookupResults *);
 BTNptr	table_answer_search(VariantSF, int, int, CPtr, xsbBool *);
 void	table_consume_answer(BTNptr, int, int, CPtr, TIFptr);
-ALNptr	table_retrieve_answers(SubProdSF, SubConsSF, CPtr);
+ALNptr	table_identify_relevant_answers(SubProdSF, SubConsSF, CPtr);
 void	table_complete_entry(VariantSF);
 
 void	release_all_tabling_resources(void);
