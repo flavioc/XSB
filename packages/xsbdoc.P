@@ -33,5 +33,6 @@ init_xsb_doc:-
 	bootstrap_package('xsbdoc',xsbdoc),
 	[full_ciao_ops].
 
-
 :- init_xsb_doc.
+
+?- import xsbdoc/2 from xsbdoc1.
