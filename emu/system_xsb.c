@@ -103,37 +103,37 @@ int sys_syscall(int callno)
   }
 #if (!defined(WIN_NT))
   case SYS_getpid : result = getpid(); break; 
-  case SYS_link  : result = link(ptoc_string(3), ptoc_string(4)); break;
+  case SYS_link  : result = link(ptoc_longstring(3), ptoc_longstring(4)); break;
 #endif
   case SYS_mkdir: {
 #ifndef WIN_NT
     /* create using mode 700 */
-    result = mkdir(ptoc_string(3), 0700); 
+    result = mkdir(ptoc_longstring(3), 0700); 
 #else
-    result = _mkdir(ptoc_string(3)); 
+    result = _mkdir(ptoc_longstring(3)); 
 #endif
     break;
   }
   case SYS_rmdir: {
 #ifndef WIN_NT
-    result = rmdir(ptoc_string(3)); 
+    result = rmdir(ptoc_longstring(3)); 
 #else
-    result = _rmdir(ptoc_string(3)); 
+    result = _rmdir(ptoc_longstring(3)); 
 #endif
     break;
   }
-  case SYS_unlink: result = unlink(ptoc_string(3)); break;
-  case SYS_chdir : result = chdir(ptoc_string(3)); break;
+  case SYS_unlink: result = unlink(ptoc_longstring(3)); break;
+  case SYS_chdir : result = chdir(ptoc_longstring(3)); break;
   case SYS_access: {
     switch(*ptoc_string(4)) {
     case 'r': /* read permission */
-      result = access(ptoc_string(3), R_OK_XSB);
+      result = access(ptoc_longstring(3), R_OK_XSB);
       break;
     case 'w': /* write permission */
-      result = access(ptoc_string(3), W_OK_XSB);
+      result = access(ptoc_longstring(3), W_OK_XSB);
       break;
     case 'x': /* execute permission */
-      result = access(ptoc_string(3), X_OK_XSB);
+      result = access(ptoc_longstring(3), X_OK_XSB);
       break;
     default:
       result = -1;
@@ -144,10 +144,10 @@ int sys_syscall(int callno)
     /* Who put this in??? What did s/he expect to get out of this call?
        stat_buff is never returned (and what do you do with it in Prolog?)!!!
     */
-    result = stat(ptoc_string(3), &stat_buff);
+    result = stat(ptoc_longstring(3), &stat_buff);
     break;
   }
-  case SYS_rename: result = rename(ptoc_string(3), ptoc_string(4)); break;
+  case SYS_rename: result = rename(ptoc_longstring(3), ptoc_longstring(4)); break;
   case SYS_cwd: {
     char current_dir[MAX_CMD_LEN];
     /* returns 0, if != NULL, 1 otherwise */
