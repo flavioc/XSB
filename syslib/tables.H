@@ -27,6 +27,7 @@
       abolish_all_tables/0,
       abolish_table_call/1,
       abolish_table_pred/1,
+      abolish_module_tables/1,
       delete_return/2,
       force_truth_value/2,
       get_call/3,

@@ -164,6 +164,7 @@
 #define TRIE_GET_CALL		153	/* get_call/3 */
 #define BREG_RETSKEL		154
 #define TRIE_RETRACT_SAFE	155
+#define ABOLISH_MODULE_TABLES   156
 
 #define TRIMCORE		158
 #define NEWTRIE                 159

@@ -731,6 +731,7 @@ void init_builtin_table(void)
   set_builtin_table(SLASH_BUILTIN, "slash");
 
   set_builtin_table(ABOLISH_TABLE_INFO, "abolish_table_info");
+  set_builtin_table(ABOLISH_MODULE_TABLES, "abolish_module_tables");
   set_builtin_table(ZERO_OUT_PROFILE, "zero_out_profile");
   set_builtin_table(WRITE_OUT_PROFILE, "write_out_profile");
   set_builtin_table(ASSERT_CODE_TO_BUFF, "assert_code_to_buff");
@@ -893,6 +894,79 @@ inline static void abolish_table_info(void)
   abolish_wfs_space(); 
 }
 
+void abolish_if_tabled(Psc psc)
+{
+  CPtr ep;
+
+  ep = (CPtr) get_ep(psc);
+  switch (*(pb)ep) {
+  case tabletry:
+  case tabletrysingle:
+    abolish_table_predicate(psc);
+    break;
+  case test_heap:
+    if (*(pb)(ep+2) == tabletry || *(pb)(ep+2) == tabletrysingle)
+      abolish_table_predicate(psc);
+    break;
+  case switchon3bound:
+  case switchonbound:
+  case switchonterm:
+    if (*(pb)(ep+3) == tabletry || *(pb)(ep+3) == tabletrysingle)
+      abolish_table_predicate(psc);
+    break;
+  }
+}
+
+int abolish_usermod_tables(void)
+{
+  int i;
+  Pair pair;
+  Psc psc;
+  for (i=0; i<symbol_table.size; i++) {
+    if ((pair = (Pair) *(symbol_table.table + i))) {
+      byte type;
+      
+      psc = pair_psc(pair);
+      type = get_type(psc);
+      if (type == T_DYNA || type == T_PRED) 
+	if (!strcmp(get_name(get_data(psc)),"usermod") ||
+	    !strcmp(get_name(get_data(psc)),"global")) 
+	  abolish_if_tabled(psc);
+    }
+  }
+  return TRUE;
+}
+
+int abolish_module_tables(const char *module_name)
+{
+  Pair modpair, pair;
+  byte type;
+  Psc psc, module;
+  
+  modpair = (Pair) flags[MOD_LIST];
+  
+  while (modpair && 
+	 strcmp(module_name,get_name(pair_psc(modpair))))
+    modpair = pair_next(modpair);
+
+  if (!modpair) {
+    xsb_warn("[abolish_module_tables] Module %s not found.\n",
+		module_name);
+    return FALSE;
+  }
+
+  module = pair_psc(modpair);
+  pair = (Pair) get_data(module);
+
+  while (pair) {
+    psc = pair_psc(pair);
+    type = get_type(psc);
+    if (type == T_DYNA || type == T_PRED) 
+      abolish_if_tabled(psc);
+    pair = pair_next(pair);
+  }
+  return TRUE;
+}
 /* --------------------------------------------------------------------	*/
 
 #ifdef PROFILE
@@ -1887,6 +1961,16 @@ int builtin_call(byte number)
     return TRUE;
   }
 
+  case ABOLISH_MODULE_TABLES: {
+    char *module_name;
+
+    module_name = ptoc_string(1);
+    if (!strcmp(module_name,"usermod") || !strcmp(module_name,"global")) 
+      return abolish_usermod_tables();
+    else 
+      return abolish_module_tables(module_name);
+    break;
+  }
   case TRIE_ASSERT:
     if (trie_assert())
       return TRUE;
