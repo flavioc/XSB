@@ -195,6 +195,11 @@ if test -z "${config_tag}" ; then
        config_tag="${config_tag}-dbg"
     fi
 fi
+dnl Config tag is more of a hassle when configuring for Windows or DOS
+dnl because things must be done manually on those systems
+if test -n "$with_os" ; then
+	config_tag=
+fi
 
 config_tag_sans_dash=`echo ${config_tag} | sed 's/^-//'`
 
