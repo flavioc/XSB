@@ -23,7 +23,7 @@
 */
 
 
-:- dynamic attribute/4.
+:- dynamic (attribute)/4.
 :- dynamic '$inact_cursor_table$'/1.
 %:- retractall('$inact_cursor_table$'(_)).
 :- dynamic '$act_cursor_table$'/1.
