@@ -113,7 +113,7 @@ directory(Argument,Dir):-
 
 short_directory(Arg,Out):-
 	(   xsb_configuration(host_os,windows)
-	->  ca(['dir /B ',Arg], command)
+	->  ca(['dir /B ',Arg], Command)
 	;   ca(['\ls',Arg],Command)
 	),
 	sysin(Command,List1),
