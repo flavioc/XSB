@@ -35,74 +35,90 @@
 #include "flag_defs.h"
 #include "msyscall.h"
 
-
 /*======================================================================*/
 /* This file contains definitions for predicates implemented by the	*/
-/* underlying machine (hard builtins).					*/
+/* underlying machine (hard builtins).	For those builtins that are     */
+/* inlined by the compiler, a dummy definition of the form:             */
+/*       pred(X1,...,Xn) :- pred(X1,...,Xn).                            */
+/* appears below.  This way, the dependency between this file and       */
+/* the emulator is minimized; also this gives a way of making sure that */
+/* file cmplib/builtin.P stays up-to-date.  A side-effect of this is    */
+/* that cmplib/builtin.P needs to be updated and compiled *BEFORE* this */
+/* file.  Other builtins that are not inlined have a definition:        */
+/*      pred(_X1,...,_Xn) :- '_$builtin'(BUILTIN_NAME).                 */
+/* where BUILTIN_NAME is supposed to exist in emu/builtin.h.            */
+/* We should make sure that we have as little as possible in the later  */
+/* category by updating cmplib/builtin.P appropriately.  Currently, we  */
+/* have more such defintions than needed, probably because builtin.P    */
+/* needs an update.                                        - Kostis.    */
 /*======================================================================*/
 
-psc_name(_PSC, _String) :- '_$builtin'(PSC_NAME).
-psc_arity(_PSC, _Arity) :- '_$builtin'(PSC_ARITY).
-psc_type(_PSC, _Type) :- '_$builtin'(PSC_TYPE).
-psc_prop(_PSC, _Term) :- '_$builtin'(PSC_PROP).
-psc_set_type(_PSC, _Type) :- '_$builtin'(PSC_SET_TYPE).
-psc_set_prop(_PSC, _Term) :- '_$builtin'(PSC_SET_PROP).
+psc_name(PSC, String) :- psc_name(PSC, String).
+psc_arity(PSC, Arity) :- psc_arity(PSC, Arity).
+psc_type(PSC, Type) :- psc_type(PSC, Type).
+psc_prop(PSC, Term) :- psc_prop(PSC, Term).
+psc_set_type(PSC, Type) :- psc_set_type(PSC, Type).
+psc_set_prop(PSC, Term) :- psc_set_prop(PSC, Term).
 
-term_psc(_Term, _PSC) :- '_$builtin'(TERM_PSC).
-term_type(_Term, _Type) :- '_$builtin'(TERM_TYPE).
-term_compare(_Term1, _Term2, _Res) :- '_$builtin'(TERM_COMPARE).
-term_new(_PSC, _Term) :- '_$builtin'(TERM_NEW).
-term_arg(_Term, _Index, _Arg) :- '_$builtin'(TERM_ARG).
-term_set_arg(_Term, _Index, _Arg, _Perm) :- '_$builtin'(TERM_SET_ARG).
-stat_flag(_Flag, _Value) :- '_$builtin'(STAT_FLAG).
-stat_set_flag(_Flag, _Value) :- '_$builtin'(STAT_SET_FLAG).
-buff_alloc(_Size, _Buffer) :- '_$builtin'(BUFF_ALLOC).
-buff_word(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_WORD).
-buff_set_word(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_SET_WORD).
-buff_byte(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_BYTE).
-buff_set_byte(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_SET_BYTE).
-code_call(_CodeAddr, _Term, _Type) :- '_$builtin'(CODE_CALL).
-str_len(_String, _Length) :- '_$builtin'(STR_LEN).
+term_psc(Term, PSC) :- term_psc(Term, PSC).
+term_type(Term, Type) :- term_type(Term, Type).
+term_compare(Term1, Term2, Res) :- term_compare(Term1, Term2, Res).
+term_new(PSC, Term) :- term_new(PSC, Term).
+term_arg(Term, Index, Arg) :- term_arg(Term, Index, Arg).
+term_set_arg(Term, Index, Arg, Perm) :- term_set_arg(Term, Index, Arg, Perm).
+stat_flag(Flag, Value) :- stat_flag(Flag, Value).
+stat_set_flag(Flag, Value) :- stat_set_flag(Flag, Value).
+buff_alloc(Size, Buffer) :- buff_alloc(Size, Buffer).
+buff_word(Buffer, Disp, Value) :- buff_word(Buffer, Disp, Value).
+buff_set_word(Buffer, Disp, Value) :- buff_set_word(Buffer, Disp, Value).
+buff_byte(Buffer, Disp, Value) :- buff_byte(Buffer, Disp, Value).
+buff_set_byte(Buffer, Disp, Value) :- buff_set_byte(Buffer, Disp, Value).
+code_call(CodeAddr, Term, Type) :- code_call(CodeAddr, Term, Type).
+str_len(String, Length) :- str_len(String, Length).
 
-str_cat(_String1, _String2, _String3) :- '_$builtin'(STR_CAT).
-str_cmp(_String1, _String2, _Res) :- '_$builtin'(STR_CMP).
-str_hsh(_String, _Arity, _Size, _Res) :- '_$builtin'(STR_HSH).
+str_cat(Str1, Str2, Str3) :- str_cat(Str1, Str2, Str3).
+str_cmp(Str1, Str2, Res) :- str_cmp(Str1, Str2, Res).
 
-call0(_Term) :- '_$builtin'(CALL0).
-stat_sta(_X) :- '_$builtin'(STAT_STA).
-stat_cputime(_X) :- '_$builtin'(STAT_CPUTIME).
-code_load(_ByteCodeFileName, _InitAddr, _Exp) :- '_$builtin'(CODE_LOAD).
-buff_set_var(_Buff, _Disp, _BufSize, _Var) :- '_$builtin'(BUFF_SET_VAR).
-buff_dealloc(_Buff, _OldSize, _NewSize) :- '_$builtin'(BUFF_DEALLOC).
-buff_cell(_Buff, _Disp, _Cell) :- '_$builtin'(BUFF_CELL).
-buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(BUFF_SET_CELL).
-copy_term0(_Term, _Result) :- '_$builtin'(COPY_TERM0).
+call0(Term) :- call0(Term).
+stat_sta(X) :- stat_sta(X).
+stat_cputime(X) :- stat_cputime(X).
+code_load(ByteCodeFileName, InitAddr, Exp) :-
+	code_load(ByteCodeFileName, InitAddr, Exp).
+buff_set_var(Buff, Disp, BuffSize, Var) :-
+	buff_set_var(Buff, Disp, BuffSize, Var).
+buff_dealloc(Buff, OldSize, NewSize) :- buff_dealloc(Buff, OldSize, NewSize).
+buff_cell(Buff, Disp, Cell) :- buff_cell(Buff, Disp, Cell).
+buff_set_cell(Buff, Disp, Tag, Value) :- buff_set_cell(Buff, Disp, Tag, Value).
+copy_term0(Term, Result) :- copy_term0(Term, Result).
 /* check if Sub is a substring in Str */
-str_sub(_Sub, _Str, _Pos) :- '_$builtin'(STR_SUB).
-%% If file is a directory, add slash, if needed, or strip extra slashes
-dirname_canonic(_File, _Canonic) :- '_$builtin'(DIRNAME_CANONIC).
+str_sub(Sub, Str, Pos) :- str_sub(Sub, Str, Pos).
+/* If file is a directory, add slash, if needed, or strip extra slashes */
+dirname_canonic(File, Canonic) :- dirname_canonic(File, Canonic).
 /* for efficiency reasons, the following predicates are also implemented */
-psc_insert(_Name, _Arity, _PSC, _MName) :- '_$builtin'(PSC_INSERT).
-psc_import(_Pname, _Arity, _MName) :- '_$builtin'(PSC_IMPORT).
+psc_insert(Name, Arity, PSC, MName) :- psc_insert(Name, Arity, PSC, MName).
+psc_import(Pname, Arity, MName) :- psc_import(Pname, Arity, MName).
 
-psc_insertmod(_ModName, _Def, _PSC) :- '_$builtin'(PSC_INSERTMOD).
-load_seg(_SegNo, _TextBytes, _IndexBytes, _File, _InitAddr) :- '_$builtin'(LOAD_SEG).
-file_gettoken(_File, _PrevCh, _Type, _Value, _NextCh) :- '_$builtin'(FILE_GETTOKEN).
-file_puttoken(_File, _Type, _Value) :- '_$builtin'(FILE_PUTTOKEN).
-term_hash(_Term, _Size, _Value) :- '_$builtin'(TERM_HASH).
-unload_seg(_CodeSeg) :- '_$builtin'(UNLOAD_SEG).
-load_obj(_FileName, _Mod, _LdOption, _InitAddr) :- '_$builtin'(LOAD_OBJ).
+psc_insertmod(ModName, Def, PSC) :- psc_insertmod(ModName, Def, PSC).
 
-getenv(_EnvVar, _Value) :- '_$builtin'(GETENV).
+file_gettoken(File, PrevCh, Type, Value, NextCh) :-
+	file_gettoken(File, PrevCh, Type, Value, NextCh).
+file_puttoken(File, Type, Value) :- file_puttoken(File, Type, Value).
+term_hash(Term, Size, Value) :- term_hash(Term, Size, Value).
+unload_seg(CodeSeg) :- unload_seg(CodeSeg).
+load_obj(FileName, Mod, LdOption, InitAddr) :-
+	load_obj(FileName, Mod, LdOption, InitAddr).
+
+getenv(EnvVar, Value) :- getenv(EnvVar, Value).
 
 sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(SYS_SYSCALL).
-sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :- '_$builtin'(SYS_SYSTEM).
-sys_gethost(_Name, _Buffer) :- '_$builtin'(SYS_GETHOST).
-sys_errno(_Errno) :- '_$builtin'(SYS_ERRNO).
+sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :-
+    sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5).
+sys_gethost(_Name, _Buffer) :- sys_gethost(_Name, _Buffer).
+sys_errno(_Errno) :- sys_errno(_Errno).
 
-file_stat(_File, _Which, _RetVal) :- '_$builtin'(FILE_STAT).
-file_writequoted(_File, _Term) :- '_$builtin'(FILE_WRITEQUOTED).
-fast_ground(_Term) :- '_$builtin'(FAST_GROUND).
+file_stat(_File, _Which, _RetVal) :- file_stat(_File, _Which, _RetVal).
+file_writequoted(_File, _Term) :- file_writequoted(_File, _Term).
+fast_ground(_Term) :- fast_ground(_Term).
 
 intern_string(_Str,_InternedStr) :- '_$builtin'(INTERN_STRING).
 expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(EXPAND_FILENAME).
@@ -110,29 +126,32 @@ tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(TILDE_EXPAND_F
 is_absolute_filename(_FileName) :- '_$builtin'(IS_ABSOLUTE_FILENAME).
 parse_filename(_FileName, _Dir, _Basename, _Extension) :- '_$builtin'(PARSE_FILENAME).
 
-psc_env(_PSC, _Env) :- '_$builtin'(PSC_ENV).
-psc_spy(_PSC, _Spy) :- '_$builtin'(PSC_SPY).
-psc_tabled(_PSC, _Tabled) :- '_$builtin'(PSC_TABLED).
+psc_env(PSC, Env) :- psc_env(PSC, Env).
+psc_spy(PSC, Spy) :- psc_spy(PSC, Spy).
+psc_tabled(PSC, Tabled) :- psc_tabled(PSC, Tabled).
 
-is_incomplete(_Tab,_SubgoalPtr,_PTCP,_SubgoalFrame):- '_$builtin'(IS_INCOMPLETE).
+is_incomplete(_Tab, _SubgoalPtr, _PTCP, _SubgoalFrame) :-
+	'_$builtin'(IS_INCOMPLETE).
 get_osp_breg(_Osp,_Breg):- '_$builtin'(GET_OSP_BREG).
 cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(CUT_IF_LEADER).
 get_ptcp(_PTCP) :- '_$builtin'(GET_PTCP).
-get_subgoal_ptr(_Term, _SubgoalPtr) :- '_$builtin'(GET_SUBGOAL_PTR).
-dereference_the_bucket(_Pair_Pointer, _Pair) :- '_$builtin'(DEREFERENCE_THE_BUCKET).
-pair_psc(_Pair, _PSC) :- '_$builtin'(PAIR_PSC).
-pair_next(_Pair, _Next_Pair) :- '_$builtin'(PAIR_NEXT).
-next_bucket(_Bucket, _Next_Bucket) :- '_$builtin'(NEXT_BUCKET).
+get_subgoal_ptr(Term, SubgoalPtr) :- get_subgoal_ptr(Term, SubgoalPtr).
+dereference_the_bucket(Pair_Pointer, Pair) :-
+	dereference_the_bucket(Pair_Pointer, Pair).
+pair_psc(Pair, PSC) :- pair_psc(Pair, PSC).
+pair_next(Pair, Next_Pair) :- pair_next(Pair, Next_Pair).
+next_bucket(Bucket, Next_Bucket) :- next_bucket(Bucket, Next_Bucket).
 
-slg_not(_SubgoalPtr) :- '_$builtin'(SLG_NOT).
+slg_not(SubgoalPtr) :- slg_not(SubgoalPtr).
 
-is_xwammode(_Flag) :- '_$builtin'(IS_XWAMMODE).
-close_open_tables :- '_$builtin'(CLOSE_OPEN_TABLES).
+is_xwammode(Flag) :- is_xwammode(Flag).
+close_open_tables :- close_open_tables.
 
-file_function(_Function, _A, _B, _C, _D, _E, _F) :- '_$builtin'(FILE_FUNCTION).
-slash(_Slash) :- '_$builtin'(SLASH_BUILTIN).
+file_function(Function, A, B, C, D, E, F) :-
+	file_function(Function, A, B, C, D, E, F).
+slash(Slash) :- slash(Slash).
 
-abolish_table_info :- '_$builtin'(ABOLISH_TABLE_INFO).
+abolish_table_info :- abolish_table_info.
 zero_out_profile :- '_$builtin'(ZERO_OUT_PROFILE).
 write_out_profile :- '_$builtin'(WRITE_OUT_PROFILE).
 assert_code_to_buff(_Clause,_Size) :- '_$builtin'(ASSERT_CODE_TO_BUFF).
@@ -162,28 +181,31 @@ private_builtin(_OpCode,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10) :-
 	'_$builtin'(PRIVATE_BUILTIN).
 
 is_charlist(_List, _Size) :- '_$builtin'(IS_CHARLIST).
-is_charlist(List) :- is_charlist(List, _).
 
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(ORACLE_QUERY).
 odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(ODBC_EXEC_QUERY).
 
-print_chat :- '_$builtin'(PRINT_CHAT).
-print_ls :- '_$builtin'(PRINT_LS).
-print_tr :- '_$builtin'(PRINT_TR).
-print_heap(_X,_Y) :-'_$builtin'(PRINT_HEAP).
-print_cp :- '_$builtin'(PRINT_CP).
-print_regs :- '_$builtin'(PRINT_REGS).
-print_all_stacks :- '_$builtin'(PRINT_ALL_STACKS).
-expand_heap :- '_$builtin'(EXP_HEAP).
-mark_heap(_) :- '_$builtin'(MARK_HEAP).
-gc_heap :- '_$builtin'(GC_HEAP).
-'$$findall_init'(_I,_C) :- '_$builtin'(FINDALL_INIT).
-'$$findall_add'(_T,_I,_C) :- '_$builtin'(FINDALL_ADD).
-'$$findall_get_solutions'(_L,_T,_I,_C) :- '_$builtin'(FINDALL_GET_SOLS).
+print_chat :- print_chat.
+print_ls :- print_ls.
+print_tr :- print_tr.
+print_heap(X,Y) :- print_heap(X,Y).
+print_cp :- print_cp.
+print_regs :- print_regs.
+print_all_stacks :- print_all_stacks.
+expand_heap :- expand_heap.
+mark_heap(X) :- mark_heap(X).
+gc_heap :- gc_heap.
+'$$findall_init'(_I,_C) :- '$$findall_init'(_I,_C).
+'$$findall_add'(_T,_I,_C) :- '$$findall_add'(_T,_I,_C).
+'$$findall_get_solutions'(_L,_T,_I,_C) :-
+        '$$findall_get_solutions'(_L,_T,_I,_C).
+
 socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr,_Error) :-
 	'_$builtin'(SOCKET_REQUEST).
 
 /*======================================================================*/
+
+is_charlist(List) :- is_charlist(List, _).
 
 conname(Con, Name) :-
 	term_type(Con, Type),
@@ -210,22 +232,4 @@ set_pil_off :- stat_set_flag(PIL_TRACE,0).
 set_prof_off :- stat_set_flag(PROFFLAG,0).
 set_prof_on(Level) :- stat_set_flag(PROFFLAG,Level).
 
-/*********************************************************************/
-/* The following predicates are not builtins.  	       	       	     */
-/* Perhaps, we should find a better place for them -mk	      	     */
-/*********************************************************************/
-
-
-/* The following is extremely DIRTY and should be used very very	*/
-/* cautiously!.  For the moment it is only used in symtab.P when the	*/
-/* symbol that was inserted into the symbol table may be retracted and	*/
-/* the count of the symbols has to remain the same.			*/
-
-backtrackable_buff_set_word(Buff, Bytes, NewValue, _) :- 
-	buff_set_word(Buff, Bytes, NewValue). 
-backtrackable_buff_set_word(Buff, Bytes, _, OldValue) :- 
-	buff_set_word(Buff, Bytes, OldValue), fail.
-
-
 /* --------------------- end of file machine.P ------------------------ */
-
