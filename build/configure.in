@@ -195,11 +195,6 @@ if test -z "${config_tag}" ; then
        config_tag="${config_tag}-dbg"
     fi
 fi
-dnl Config tag is more of a hassle when configuring for Windows or DOS
-dnl because things must be done manually on those systems
-if test -n "$with_os" ; then
-	config_tag=
-fi
 
 config_tag_sans_dash=`echo ${config_tag} | sed 's/^-//'`
 
@@ -219,7 +214,7 @@ case "$with_os" in
 	host_cpu=x86
 	configuration_templ=xsb_configuration_wind.in
 	config_dot_h_templ=def_config_wind.in
-	echo 'Configuring for host system type... Windows NT/95/98'
+	echo 'Configuring for host system type... Windows NT/95/98/2000'
 	;;
   pcdo*) dnl PC DOS
 	canonical=x86-pc-pcdos
@@ -986,6 +981,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    makexsb:makexsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
+	    MS_VC_Mfile.mak:MS_VC_Mfile.in
 	    ])
 
 chmod 644 ${arch_config_file}

@@ -1,5 +1,5 @@
 #   MS_VC_Mfile.mak:  Makefile to compile XSB on Windows using VC++ NMAKE
-#   Generated automatically from MS_VC_Mfile.in by configure.
+#   @configure_input@
 #
 # Usage:
 #   NMAKE /f "MS_VC_Mfile.mak" CFG="option" [DLL="yes"] [ORACLE="yes"] [SITE_LIBS="addl libs"]
@@ -84,9 +84,9 @@ CPP=cl.exe
 # Assume we are running NMAKE in the emu directory
 !IF  "$(DLL)" == "yes"
 # Put DLL in the saved.o directory
-OUTDIR=..\config\x86-pc-windows\saved.o
+OUTDIR=..\config\@canonical@@config_tag@\saved.o
 !ELSE
-OUTDIR=..\config\x86-pc-windows\bin
+OUTDIR=..\config\@canonical@@config_tag@\bin
 !ENDIF
 
 INTDIR=.
