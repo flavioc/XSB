@@ -23,9 +23,10 @@
 ##
 
 
-ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O sModels.O
+ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
+	sModels.O libwww.O
 
-SUBDIR = flora slx perlmatch gap regmatch wildmatch
+SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww
 
 Option = [optimize]
 
@@ -38,23 +39,29 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 #
 #-----------------------------------------------------------------------#
 
+# Make sure warnings are saved in a file.
+SVFILE = '../build/.apkgs.tmp'
+OWRITE = 1
+STDWARN = 3
+STDERR = 2
+HDRMSG = "While compiling XSB/packages:"
+
+
 # continue to the next when one error occurs
 .IGNORE:
 
 # suffix rules
 .SUFFIXES: .P .O .H
 
-.H.P:
-	echo 'mc($*, $(Option)).' >> cmd...
-
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 
-all: $(ALL) $(SUBDIR)
+all:  init $(ALL) finish $(SUBDIR)
 	@touch cmd...
 	$(Prolog) < cmd...
-	/bin/rm cmd...
+	@rm cmd...
+	@cat $(SVFILE)
 
 slx::
 	@echo ""
@@ -63,6 +70,10 @@ slx::
 flora::
 	@echo ""
 	cd flora; make
+
+libwww::
+	@echo ""
+	cd libwww; make
 
 perlmatch::
 	@echo ""
@@ -81,8 +92,17 @@ wildmatch::
 	cd wildmatch; make
 
 
-# Unfortunately, this needs to be commented on the NeXT.
-# %.O:	%.H
+init:
+	/bin/rm -f $(SVFILE)
+	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
+	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
+	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
+	@echo "file_flush($(STDWARN), _)." >> cmd...
+
+finish:
+	@echo 'fmt_write($(STDWARN),"---------------------------------------------------\n",_).' >> cmd...
+
 
 .DONE:
 	@echo Done

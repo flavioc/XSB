@@ -499,11 +499,18 @@ fi
 
 dnl --with-libwww=DIR
 libwww_support="no"
-libwww_config_prog="$with_libwww/bin/libwww-config"
-if test -n "$with_libwww" && test -x "$libwww_config_prog"; then
-   libwww_support="yes"
-   libwww_ccflags="`$libwww_config_prog --cflags`"
-   libwww_ldflags="-L$with_libwww/lib `$libwww_config_prog --libs`"
+if test -n "$with_libwww" ; then
+   if test -x "$with_libwww/bin/libwww-config"; then
+      libwww_config_prog="$with_libwww/bin/libwww-config"
+      libwww_support="yes"
+   elif test -r "$with_libwww/libwww-config" ; then
+      libwww_config_prog="$with_libwww/libwww-config"
+      libwww_support="yes"
+   fi
+fi
+if test "$libwww_support" = "yes" ; then
+   libwww_ccflags="`sh $libwww_config_prog --cflags`"
+   libwww_ldflags="`sh $libwww_config_prog --libs`"
 fi
 
 dnl check for Make feature
@@ -1180,6 +1187,10 @@ echo ""
 echo ""
 ) | tee Installation_summary
      
+# hack to sidestep XSB limitation of the size of compiled atoms
+if test -n "$libwww_ldflags"; then
+   echo $libwww_ldflags > ${arch_config_prefix}/libwww_ldflags
+fi
 
 
 # Test if directories exist

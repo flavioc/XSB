@@ -42,15 +42,14 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
     write('%% XSB CC:                '), writeln(CC),
     write('%% Libwww compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
-    writeln(':- export ????.'),
+    writeln(':- export do_fetch_url___/3, do_form_request___/3.'),
     fmt_write(':- ldoption(''%s'').', arg(LoaderFlags)),
     told.
     
 
 :-  package_configuration(dir(libwww), LibwwwDir),
     slash(Slash),
-    fmt_write_string(Module,
-		     '%s%scc%sxsb_libwww', f(LibwwwDir, Slash, Slash)),
+    fmt_write_string(Module, '%s%scc%sxsb_libwww', f(LibwwwDir, Slash, Slash)),
     (  %% avoid recompilation: check if xsb_libwww.O exists and 
        %% is newer than xsb_libwww.c.
        search_module('xsb_libwww',Dir,_Mod,_Ext,_Base,ModuleO),
@@ -60,17 +59,17 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
        file_time(ModuleO, time(CT1,CT2)),
        file_time(ModuleSourceFile, time(ST1,ST2)),
        time(ST1,ST2) @< time(CT1,CT2)
-	       %% module compiled and is current, so just load
-	       -> [xsb_libwww]
+       %% module compiled and is current, so just load
+     -> [xsb_libwww]
 
       %% If Module isn't compiled or is old --- recompile
-      ; xsb_configuration(compiler, CC),
+     ;  xsb_configuration(compiler, CC),
 	xsb_configuration(libwww_ldflags, LoaderFlags),
 	xsb_configuration(libwww_ccflags, CCflags),
 	xsb_configuration(emudir, EmuDir),
 	fmt_write_string(CC_opts,
-			 ' %s %s -I%s',
-			 f(CCflags,LoaderFlags,EmuDir)),
+			 ' -I%s %s %s',
+			 f(EmuDir,CCflags,LoaderFlags)),
 	make_xsb_libwwwH(CC, CC_opts, LoaderFlags),
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
