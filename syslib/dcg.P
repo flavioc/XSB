@@ -53,6 +53,29 @@ set_dcg_style(xsb) :-      stat_set_flag(18, 0), !.
 set_dcg_style(standard) :- stat_set_flag(18, 1), !. % Quintus,C-Prolog,SICStus
 set_dcg_style(X) :- write(X), writeln(': invalid DCG style'), fail.
 
+:- dynamic word(_,_,_).
+:- dynamic num_words(_).
+reset_dcg_mode :- 
+	(word([_|_],_,_)
+         ->     true
+         ;	retractall(word(_,_,_)),
+	        retractall(num_words(_)),
+	        assert(word([Token|Tokens],Token,Tokens))
+	).
+
+set_tphrase_input(List) :-
+	retractall(word(_,_,_)),
+	retractall(num_words(_)),
+	assert_word_list(List,0,N),
+	assert(num_words(N)).
+
+assert_word_list([],N,N).
+assert_word_list([Word|Words],N0,N) :-
+	N1 is N0 + 1,
+	assert(word(N0,Word,N1)),
+	assert_word_list(Words,N1,N).
+
+
 dcg((LHS --> RHS), (OutHead :- OutBody)) :-
 	( functor(LHS, ',', 2) -> 
 		arg(1, LHS, Non_Terminal),
@@ -121,7 +144,9 @@ dcg_list_of_terminals([H|L], In, Out, ','('C'(In,H,Mid), Goal)) :-
 /*  'C'(S1, T, S2)	: S1 is connected to S2 by the terminal T.	*/
 /*----------------------------------------------------------------------*/
 
-'C'([Token|Tokens], Token, Tokens).
+:- reset_dcg_mode.
+
+'C'(All,One,Rest) :- word(All,One,Rest).
 
 /*----------------------------------------------------------------------*/
 /*  phrase(P, L)	: list L can be parsed as a phrase of type P.	*/
@@ -137,10 +162,33 @@ phrase(Phrase_Type, List) :-
 phrase(Phrase_Type, List, Rest) :-
 	( nonvar(Phrase_Type) ->
 		dcg_body_nonvar(Phrase_Type, List, Rest, Goal),
+		reset_dcg_mode,
 		call(Goal)
 	; abort('Uninstantiated argument 1 of phrase/3')
 	).
 
+
+tphrase(Phrase_Type) :-
+	(nonvar(Phrase_Type)
+	 ->     (num_words(End)
+                 ->     true
+	         ;      abort('No input for tphrase/1')
+	        ),
+	        dcg_body_nonvar(Phrase_Type, 0, End, Goal),
+		abolish_all_tables,
+	        call(Goal)
+	; abort('Uninstantiated argument 1 of tphrase/1')
+	).
+
+tphrase(Phrase_Type, List) :-
+	(nonvar(Phrase_Type)
+         ->     set_tphrase_input(List),
+	        num_words(End),
+	        dcg_body_nonvar(Phrase_Type, 0, End, Goal),
+		abolish_all_tables,
+	        call(Goal)
+	; abort('Uninstantiated argument 1 of tphrase/2')
+	).
 
 %%%%%%% Select the right style DCG: XSB or Standard,
 %%%%%%% based of xsb_flag(dcg_style, X).
