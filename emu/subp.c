@@ -255,6 +255,11 @@ void print_statistics(int amount) {
   case 6:
     dis(1); 
     break;		/* output memory image; for debugging */
+#ifdef CP_DEBUG
+  case 7:
+    print_cp_backtrace();
+    break;
+#endif
   }
 }
 

@@ -425,7 +425,7 @@ typedef struct compl_susp_frame {
     csf_neg_loop(t_breg) = FALSE; \
     csf_prevcsf(t_breg) = subg_compl_susp_ptr(subg); \
     csf_ptcp(t_breg) = t_ptcp; \
-    SAVE_CSFPSC(WHERE); \
+    SAVE_CSFPSC(t_breg); \
     csf_pdreg(t_breg) = delayreg; \
     csf_subgoal_ptr(t_breg) = subg; \
     csf_ereg(t_breg) = t_ereg; \
