@@ -910,12 +910,14 @@ get_std_pred_defs :-
 default_import(P, A) :-
 	(option(sysmod) -> inline_predicate(P,A) ; true).
 
-
+:- dynamic '_$exp_return'/1.
+:- dynamic '_$flat_rule'/2.
+:- dynamic '_$init_call'/1.
 
 declare_all_dynamic_preds :-
 	trie_dynamic('_$local_calls'/1),
  	trie_dynamic('_$exp_return'/1),
-	trie_dynamic('_$predprop'/2),
+%%	trie_dynamic('_$predprop'/2),
 	trie_dynamic('_$init_call'/1).
 
 cleanup_after_analysis :-
@@ -928,7 +930,7 @@ remove_tabled_stuff :-
 
 remove_asserted_stuff :-
 	trie_retract_all('_$exp_return'(_)),
-	trie_retract_all('_$predprop'(_,_)),
+%%	trie_retract_all('_$predprop'(_,_)),
 	trie_retract_all('_$init_call'(_)),
 	retractall(':-'('_$call_user'(_), _)),
 	retractall('_$call_user'(_)).
