@@ -1037,7 +1037,7 @@ int clenpterm(prolog_term term)
   }
 }
 
-char tempstring[100];
+char tempstring[MAXBUFSIZE];
 
 /* print a prolog_term into a buffer.
 (Atoms are quoted if !toplevel and it's necessary for Prolog reading) */
