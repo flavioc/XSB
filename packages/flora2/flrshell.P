@@ -120,11 +120,21 @@ help :-
 	flora_stdmsg_line('    load a list of .flr (into the module `Module''), .P, or .O files'),
 	flora_stdmsg_line('o abolish_all_tables'),
 	flora_stdmsg_line('    flush all tabled data'),
+	flora_stdmsg_line('o prolog Functor/Arity'),
+	flora_stdmsg_line('    define Functor/Arity as Prolog in shell mode'),
+	flora_stdmsg_line('o nohilog Functor/Arity'),
+	flora_stdmsg_line('    define Functor/Arity as non-Hilog in shell mode'),
+	flora_stdmsg_line('o sign Functor({oid|form}[,{oid|form}]*)'),
+	flora_stdmsg_line('    define predicate signature in shell mode'),
+	flora_stdmsg_line('o op(Precedence,Associativity,Operator)'),
+	flora_stdmsg_line('    define an operator in shell mode'),
+	flora_stdmsg_line('o reset(prolog|nohilog|sign|op)'),
+	flora_stdmsg_line('    clear all dynamic prolog/nohilog/sign/op definitions in shell mode'),
 	flora_stdmsg_line('o all'),
 	flora_stdmsg_line('    show all solutions (default)'),
 	flora_stdmsg_line('o one'),
 	flora_stdmsg_line('    show solutions one by one'),
-	flora_stdmsg_line('o maxerr(all/N)'),
+	flora_stdmsg_line('o maxerr(all|N)'),
 	flora_stdmsg_line('    set/show the error reporting threshold'),
 	flora_stdmsg_line('o fltrace/flrnotrace'),
 	flora_stdmsg_line('    turn on/off FLORA trace'),
@@ -134,6 +144,24 @@ help :-
 	flora_stdmsg_line('    Ciao to FLORA'),
 	flora_stdmsg_line('o halt'),
 	flora_stdmsg_line('    Ciao both to FLORA and XSB').
+
+
+/*********************************************************************/
+reset(X) :-
+	var(X),
+	!,
+	flora_error_line("invalid argument to reset"),
+	fail.
+
+reset(FL_PROLOG) :- !, flora_shreset_prolog.
+reset(FL_NOHILOG) :- !, flora_shreset_nohilog.
+reset(FL_SIGNATURE) :- !, flora_shreset_signature.
+reset(FL_OP) :- !, flora_shreset_operator.
+
+reset(_) :-
+	flora_error_line("invalid argument to reset"),
+	!,
+	fail.
 
 
 /*********************************************************************/

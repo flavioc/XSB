@@ -92,6 +92,7 @@ is_flatom(FLATOM(Atom),Atom).
 is_flnumber(FLNUMBER(Number),Number).
 is_flstring(FLSTRING(String),String).
 is_fllist(FLLIST(L,T),L,T).
+is_fltoken(FLTOKEN(Token),Token).
 
 is_isaspecop(FL_ISA).
 is_subspecop(FL_SUB).
@@ -519,7 +520,8 @@ collect_vars(ParserTerm,[ParserTerm|Vars],Vars) :-
 collect_vars(ParserTerm,Vars,Vars) :-
 	( is_flatom(ParserTerm,_Atom);
 	  is_flnumber(ParserTerm,_Number);
-	  is_flstring(ParserTerm,_String)
+	  is_flstring(ParserTerm,_String);
+	  is_fltoken(ParserTerm,_Token)
         ),
 	!.
 
@@ -1546,13 +1548,16 @@ compile_head_pathexplist([T|L],[TObj|LObj],CodeList,Status) :-
 ****************************************************************************/
 compile_head_pathexp(ParserTerm,Object,[],[]) :-
 	( is_flatom(ParserTerm,Atom) ->
-	    compile_head_flatom(Atom,Object)
+	    atomobj_struct(Atom,Object)
 
 	; is_flnumber(ParserTerm,Number) ->
 	    numobj_struct(Number,Object)
 
 	; is_flvar(ParserTerm,Name,_Index) ->
 	    compile_flvar(Name,Object)
+
+	; is_fltoken(ParserTerm,Token) ->
+	    compile_head_fltoken(Token,Object)
 	;
 	  is_flstring(ParserTerm,String),
 	  strobj_struct(String,Object)
@@ -1581,13 +1586,13 @@ compile_head_pathexp(ParserTerm,Object,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_flatom(+Atom,-Object)
+  compile_head_fltoken(+Token,-Object)
 ****************************************************************************/
-compile_head_flatom(Atom,Object) :-
-	( Atom == FL_NEWOID ->
+compile_head_fltoken(Token,Object) :-
+	( Token == FL_NEWOID ->
 	    new_oidobj(Object)
 	;
-	  atomobj_struct(Atom,Object)
+	  atomobj_struct(Token,Object)
         ).
 
 

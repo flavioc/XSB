@@ -392,9 +392,9 @@ flora_not_end_of_input(Status) :- member(FLORA_NOT_EOF,Status).
 
 
 /*************************************************************************
-  flora_reset_modules/0
+  flora_reset_modules_for_file/0
 *************************************************************************/
-flora_reset_modules :-
+flora_reset_modules_for_file :-
 	flora_reset_lexer,
 	flora_reset_operator,
 	flora_reset_signature,
@@ -402,6 +402,15 @@ flora_reset_modules :-
 	flora_reset_nohilog,
 	flora_reset_compiler,
 	conset(flora_shell_mode,0).
+
+
+/*************************************************************************
+  flora_reset_modules_for_shell/0
+*************************************************************************/
+flora_reset_modules_for_shell :-
+	flora_reset_lexer,
+	flora_reset_compiler,
+	conset(flora_shell_mode,1).
 
 
 /*************************************************************************
@@ -415,7 +424,7 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	flora_message_line("compiling %s",args(InputFile)),
 	cputime(T0),
 	seeing(PreInFile),
-	flora_reset_modules,
+	flora_reset_modules_for_file,
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,FileOptionList,CompileStatus),
@@ -538,7 +547,7 @@ flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	flora_message_line("compiling template include file %s",args(InputFile)),
 	cputime(T0),
 	seeing(PreInFile),
-	flora_reset_modules,
+	flora_reset_modules_for_file,
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
@@ -726,7 +735,7 @@ flora_noop_command(Status) :- member(FLORA_NOOP,Status).
   flora_shell_command_line(-Code,-Options,-Status)
 *************************************************************************/
 flora_shell_command_line(Code,Options,Status) :-
-	conset(flora_shell_mode,1),
+	flora_reset_modules_for_shell,
 	flora_read_parse_compile(FLORA_COMMANDLINE,Tokens,Rules,RuleOptions,RuleStatus),
 	member(error(ErrNum),RuleStatus),
 	( ErrNum > 0 ->
@@ -803,7 +812,7 @@ flora_lexer_error(Tokens,LexerStatus,ErrNum) :-
 	( member(error(Msg),LexerStatus) ->
 	    flora_last_element(Tokens,Tk),
 	    flora_token_text(Tk,TextStr,_BLN,_BCN,ELN,ECN),
-	    flora_error_line("from Lexer, near line(%d)/char(%d) `%s'",
+	    flora_error_line("[Lexer] near line(%d)/char(%d) `%s'",
 	                     args(ELN,ECN,TextStr)),
 	    flora_error_indentline,
 	    flora_stderr_string("%s\n",args(Msg)),
@@ -822,7 +831,7 @@ flora_composer_errorwarn(Tokens,[error(Indx,Msg)|L],ErrNum,WarnNum) :-
 	!,
 	flora_nth_element(Tokens,Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
-	flora_error_line("from Composer, near line(%d)/char(%d) `%s'",
+	flora_error_line("[Composer] near line(%d)/char(%d) `%s'",
                          args(BLN,BCN,TextStr)),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
@@ -835,7 +844,7 @@ flora_composer_errorwarn(Tokens,[error(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	flora_nth_element(Tokens,I2,Tk2),
 	flora_token_text(Tk1,TextStr1,BLN1,BCN1,_ELN1,_ECN1),
 	flora_token_text(Tk2,TextStr2,BLN2,BCN2,_ELN2,_ECN2),
-	flora_error_line("from Composer, near line(%d)/char(%d) `%s' and near line(%d)/char(%d) `%s'",
+	flora_error_line("[Composer] near line(%d)/char(%d) `%s' and near line(%d)/char(%d) `%s'",
 	                 args(BLN1,BCN1,TextStr1,BLN2,BCN2,TextStr2)),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
@@ -848,7 +857,7 @@ flora_composer_errorwarn(Tokens,[warning(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	flora_nth_element(Tokens,I2,Tk2),
 	flora_token_text(Tk1,TextStr1,BLN1,BCN1,_ELN1,_ECN1),
 	flora_token_text(Tk2,TextStr2,BLN2,BCN2,_ELN2,_ECN2),
-	flora_warning_line("from Composer, near line(%d)/char(%d) `%s' and near line(%d)/char(%d) `%s'",
+	flora_warning_line("[Composer] near line(%d)/char(%d) `%s' and near line(%d)/char(%d) `%s'",
 	                   args(BLN1,BCN1,TextStr1,BLN2,BCN2,TextStr2)),
 	flora_warning_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
@@ -857,7 +866,7 @@ flora_composer_errorwarn(Tokens,[warning(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 
 flora_composer_errorwarn(Tokens,[error(Msg)|L],ErrNum,WarnNum) :-
 	!,
-	flora_error_line("from Composer, %s",args(Msg)),
+	flora_error_line("[Composer] %s",args(Msg)),
 	flora_composer_errorwarn(Tokens,L,EN,WarnNum),
 	ErrNum is EN+1.
 
@@ -871,7 +880,7 @@ flora_parser_error(Tokens,[error(Indx,Msg)|L],ErrNum) :-
 	!,
 	flora_nth_element(Tokens,Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
-	flora_error_line("from Parser, near line(%d)/char(%d) `%s'",
+	flora_error_line("[Parser] near line(%d)/char(%d) `%s'",
                          args(BLN,BCN,TextStr)),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
@@ -880,7 +889,7 @@ flora_parser_error(Tokens,[error(Indx,Msg)|L],ErrNum) :-
 
 flora_parser_error(Tokens,[error(Msg)|L],ErrNum) :-
 	!,
-	flora_error_line("from Parser, %s",args(Msg)),
+	flora_error_line("[Parser] %s",args(Msg)),
 	flora_parser_error(Tokens,L,EN),
 	ErrNum is EN+1.
 
@@ -894,7 +903,7 @@ flora_compiler_errorwarn(Tokens,[error(Indx,Msg)|L],ErrNum,WarnNum) :-
 	!,
 	flora_nth_element(Tokens,Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
-	flora_error_line("from Compiler, near line(%d)/char(%d) `%s'",
+	flora_error_line("[Compiler] near line(%d)/char(%d) `%s'",
                          args(BLN,BCN,TextStr)),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
@@ -905,7 +914,7 @@ flora_compiler_errorwarn(Tokens,[warning(Indx,Msg)|L],ErrNum,WarnNum) :-
 	!,
 	flora_nth_element(Tokens,Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
-	flora_warning_line("from Compiler, near line(%d)/char(%d) `%s'",
+	flora_warning_line("[Compiler] near line(%d)/char(%d) `%s'",
                            args(BLN,BCN,TextStr)),
 	flora_warning_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
@@ -914,7 +923,7 @@ flora_compiler_errorwarn(Tokens,[warning(Indx,Msg)|L],ErrNum,WarnNum) :-
 
 flora_compiler_errorwarn(Tokens,[error(Msg)|L],ErrNum,WarnNum) :-
 	!,
-	flora_error_line("from Compiler, %s",args(Msg)),
+	flora_error_line("[Compiler] %s",args(Msg)),
 	flora_compiler_errorwarn(Tokens,L,EN,WarnNum),
 	ErrNum is EN+1.
 
@@ -926,7 +935,7 @@ flora_coder_error([]) :- !.
 
 flora_coder_error([error(Msg)|L]) :-
 	!,
-	flora_error_line("from Coder, %s",args(Msg)),
+	flora_error_line("[Coder] %s",args(Msg)),
 	flora_coder_error(L).
 
 

@@ -29,15 +29,16 @@
 
 /**************************************************************************
   The following are the types of tokens returned by the FLORA Lexer:
-  (1)IDENTIFIER(I,TextInfo)
-  (2)VARIABLE(V,TextInfo)
-  (3)NUMBER(N,TextInfo)
-  (4)QUOTED_ATOM(QA,TextInfo)
-  (5)ASCII_STRING(AS,TextInfo)
-  (6)SYMBOL_TOKEN(ST,TextInfo)
-  (7)WHITESPACE(TextInfo)
-  (8)COMMENT(TextInfo)
-  (9)RULE_DELIMETER(TextInfo)
+  (1)  IDENTIFIER(I,TextInfo)
+  (2)  VARIABLE(V,TextInfo)
+  (3)  NUMBER(N,TextInfo)
+  (4)  QUOTED_ATOM(QA,TextInfo)
+  (5)  ASCII_STRING(AS,TextInfo)
+  (6)  SYMBOL_TOKEN(ST,TextInfo)
+  (7)  SPECIAL_TOKEN(SpT,TextInfo)
+  (8)  WHITESPACE(TextInfo)
+  (9)  COMMENT(TextInfo)
+  (10) RULE_DELIMETER(TextInfo)
 
   TextInfo=TEXT(BeginX,BeginY,EndX,EndY,ListOfCodes)
 **************************************************************************/
@@ -48,6 +49,7 @@
 #define QUOTED_ATOM	quoted_atom
 #define ASCII_STRING	ascii_string
 #define SYMBOL_TOKEN	symbol_token
+#define SPECIAL_TOKEN	special_token
 #define WHITESPACE	whitespace
 #define COMMENT		comment
 #define RULE_DELIMETER	rule_delimeter
@@ -104,7 +106,7 @@
 #define FL_AT		'@'
 #define FL_DOLLAR	'$'
 #define FL_CUT		'!'
-#define FL_NEWOID	'?'
+#define FL_NEWOID	'_#'
 
 #define FL_TNOT		(tnot)
 #define FL_NOT		(not)
@@ -207,6 +209,7 @@
   FLATOM(Atom)
   FLNUMBER(Number)
   FLSTRING(String)
+  FLTOKEN(Token)
   FLTERM(FLPATHEXP,Arity,[FLPATHEXPs])
   FLAGGREGATE(Operator,FLVAR,[FLVARs],FLLITERAL|FLCONJUNCT|FLDISJUNCT)
   FLLIST([FLPATHEXPs],FLPATHEXP)
@@ -252,6 +255,7 @@
 #define FLNUMBER	flnumber
 #define FLSTRING	flstring
 #define FLVAR		flvar
+#define FLTOKEN		fltoken
 #define FLTERM		flterm
 #define FLAGGREGATE	flaggregate
 #define FLLIST		fllist

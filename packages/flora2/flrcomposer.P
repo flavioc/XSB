@@ -91,10 +91,13 @@ is_next_token(Index,Token) :-
 
 /**************************************************************************
   Symbol tokens are allowed to be operands. They are equal to quoted atoms.
+
+  Special tokens are treated as if they were just operands.
 **************************************************************************/
 is_sole_operand(VARIABLE(_)) :- !.
 is_sole_operand(NUMBER(_)) :- !.
 is_sole_operand(ASCII_STRING(_)) :- !.
+is_sole_operand(SPECIAL_TOKEN(_)) :- !.
 is_sole_operand(IDENTIFIER(I)) :- \+ flora_opdef(_,_,I), !.
 is_sole_operand(QUOTED_ATOM(QA)) :- \+ flora_opdef(_,_,QA), !.
 is_sole_operand(SYMBOL_TOKEN(ST)) :- \+ flora_opdef(_,_,ST), !.

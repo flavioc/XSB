@@ -75,6 +75,7 @@
     QUOTED_ATOM
     ASCII_STRING
     SYMBOL_TOKEN
+    SPECIAL_TOKEN
 
 
   comma_separated_list(+ComposerTerm,-ListOfCommaSeparatedArguemnts,-Arity)
@@ -266,6 +267,8 @@ get_index(CANOLIST(_L,_T,_N,Index,_Ib),Index) :- !.
 get_index(CANOBRACE(_L,_N,Index),Index)      :- !.
 get_index(OBJECT(_PrimitiveType,Index),Index) :- !.
 
+get_spectoken(OBJECT(SPECIAL_TOKEN(Atom),_I),Atom) :- !.
+
 is_rule(CANOTERM(Funct,2,FL_PARENTHESIS,[Head,Body],_If,_Ip),Head,Body) :-
 	get_name(Funct,FL_IMPLYOP).
 
@@ -332,12 +335,13 @@ flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
 
 flatom_struct(Atom,FLATOM(Atom)).
 
-flobject_struct(OBJECT(IDENTIFIER(Atom),_I),FLATOM(Atom))   :- !.
-flobject_struct(OBJECT(QUOTED_ATOM(Atom),_I),FLATOM(Atom))  :- !.
-flobject_struct(OBJECT(SYMBOL_TOKEN(Atom),_I),FLATOM(Atom)) :- !.
-flobject_struct(OBJECT(VARIABLE(Name),I),FLVAR(Name,I))     :- !.
-flobject_struct(OBJECT(NUMBER(Num),_I),FLNUMBER(Num))       :- !.
-flobject_struct(OBJECT(ASCII_STRING(Str),_I),FLSTRING(Str)) :- !.
+flobject_struct(OBJECT(IDENTIFIER(Atom),_I),FLATOM(Atom))     :- !.
+flobject_struct(OBJECT(QUOTED_ATOM(Atom),_I),FLATOM(Atom))    :- !.
+flobject_struct(OBJECT(SYMBOL_TOKEN(Atom),_I),FLATOM(Atom))   :- !.
+flobject_struct(OBJECT(VARIABLE(Name),I),FLVAR(Name,I))       :- !.
+flobject_struct(OBJECT(NUMBER(Num),_I),FLNUMBER(Num))         :- !.
+flobject_struct(OBJECT(ASCII_STRING(Str),_I),FLSTRING(Str))   :- !.
+flobject_struct(OBJECT(SPECIAL_TOKEN(Atom),_I),FLTOKEN(Atom)) :- !.
 
 is_flnumber_struct(FLNUMBER(_Num)).
 is_flstring_struct(FLSTRING(_Str)).
@@ -1379,6 +1383,12 @@ flora_pathexp(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),Code,Status) :-
 	!,
 	flora_aggregt(Funct,N,Args,If,Ip,Code,Status).
 
+flora_pathexp(ObjectTerm,_Code,Status) :-
+	%% New oid directive is only allowed in rule head.
+	get_spectoken(ObjectTerm,FL_NEWOID),
+	!,
+	parsing_error(ObjectTerm,ERROR_NEWOID,Status).
+
 flora_pathexp(ObjectTerm,Code,[]) :-
 	flobject_struct(ObjectTerm,Code),
 	!.
@@ -2090,6 +2100,12 @@ flora_db_pathexp(Mode,CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),Code,Status) :-
 flora_db_pathexp(Mode,CANOLIST(L,T,_N,_I,_Ib),Code,Status) :-
 	!,
 	flora_db_list(Mode,L,T,Code,Status).
+
+flora_db_pathexp(_Mode,ObjectTerm,_Code,Status) :-
+	%% New oid directive is not allowed in assert/delete, since it is error prone.
+	get_spectoken(ObjectTerm,FL_NEWOID),
+	!,
+	parsing_error(ObjectTerm,ERROR_NEWOID,Status).
 
 flora_db_pathexp(_Mode,ObjectTerm,Code,[]) :-
 	flobject_struct(ObjectTerm,Code),

@@ -98,6 +98,7 @@
 #define ERROR_EXPASSERT 'invalid path expression in assert'
 #define ERROR_EXPDELETE 'invalid path expression in delete'
 #define ERROR_INDXDIREC	'invalid trie indexing directive'
+#define ERROR_NEWOID	'invalid use of new oid directive'
 #define EXP_POSINTEGER	'positive integer expected'
 #define EXP_VARIABLE	'variable expected'
 #define EXP_ATOMICFUNCT	'atomic functor expected'
