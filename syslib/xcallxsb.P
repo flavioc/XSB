@@ -23,8 +23,11 @@
 */
 
 
-:- c_callloop.
+:- compiler_options([sysmod,xpp_on]).
+#include "standard.h"
 
+
+:- c_callloop.
 
 
 c_callloop :-
@@ -33,9 +36,9 @@ c_callloop :-
 	conset('_$abort_cutpoint', Cp),
 	get_from_caller(Par,VarTerm,Command),
 	(\+integer(Command)
-	 ->	file_write(2,'C command error; must be an integer; is '),
-		file_write(2,Command),
-		file_nl(2),
+	 ->	file_write(STDERR,'C command error; must be an integer; is '),
+		file_write(STDERR,Command),
+		file_nl(STDERR),
 		!,
 		fail
 	 ; Command =:= 0		/* call */
@@ -71,6 +74,6 @@ do_pcall(Call,VarTerm) :-
 	call_expose(X).
 
 string_to_term(Atom,Goal) :-
-	file_close(Atom),
+	file_open(Atom,OSTRING,Fp),
 	file_read_foe(Fp,Goal,_),
 	file_close(Fp).
