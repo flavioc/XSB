@@ -45,6 +45,7 @@
 #include "heap_xsb.h"
 #include "register.h"
 #include "flags_xsb.h"
+#include "deref.h"
 #include "inst_xsb.h"
 #include "token_xsb.h"
 #include "loader_xsb.h"
@@ -127,6 +128,10 @@ void dbgen_printinst(Opcode, Arg1, Arg2)
     printf("putlist - - %d\n", Arg1); break;
   case getlist:	/* PPR */
     printf("getlist - - %d\n", Arg1); break;
+  case getattv: /* PPR */
+    printf("getattv - - %d\n", Arg1); break;
+  case putattv: /* PPR */
+    printf("putattv - - %d\n", Arg1); break;
   case putcon:
     printf("putcon - - %d 0x%x\n", Arg1, Arg2); break;
   case putnumcon:
@@ -647,6 +652,13 @@ static void db_gentopinst(prolog_term T0, int Argno, RegStat Reg)
   } else {
     inst_queue_init(inst_queue);
     inst_queue_push(inst_queue, Argno, T0, 0);
+    if (is_attv(T0)) {
+      T0 = p2p_arg(T0, 0);		/* the VAR part of the attv */
+      c2p_functor("$assertVAR", 1, T0);
+      T0 = p2p_arg(T0, 1);
+      c2p_int(Argno, T0);
+      RegArrayInit[Argno] = 1;		/* Reg is initted */
+    }      
     db_genterms(inst_queue, Reg);
   }
 }
@@ -683,12 +695,20 @@ static void db_genterms(struct instruction *inst_queue,
 	db_geninst(p2p_car(T0), Reg, inst_queue);
 	db_geninst(p2p_cdr(T0), Reg, inst_queue);
       }
-    } else {
+    } else if (is_functor(T0)) {
       dbgen_instB_ppvw(getstr, Argno, get_str_psc(T0));   /* getstr */
       reg_release(Argno);
       for (Argno=1; Argno <= (int)get_arity(get_str_psc(T0)); Argno++) {
 	db_geninst(p2p_arg(T0,Argno), Reg, inst_queue);
       }
+    }
+    else { /* is_attv(T0) */
+      T1 = cell(clref_val(T0) + 1);	/* the ATTR part of the attv */
+      deref(T1);
+      dbgen_instB_ppv(getattv, Argno);	/* getattv */
+      /* The register for a new attv CANNOT be released ! */
+      /* reg_release(Argno); */
+      db_geninst(T1, Reg, inst_queue);
     }
   }
 }
@@ -715,6 +735,20 @@ static void db_geninst(prolog_term Sub, RegStat Reg,
     RegArrayInit[Rt] = 1;  /* reg is inited */
   } else if ((Rt = is_frozen_var(Sub))) {
     dbgen_instB_ppv(unitval, Rt);
+  } else if (is_attv(Sub)) {
+    /*
+     * An ATTV is treated as a real variable, so that the register will
+     * never be released.
+     */
+    Rt = reg_get(Reg, RVAR);
+    dbgen_instB_ppv(unitvar, Rt);
+    RegArrayInit[Rt] = 1;  /* reg is inited */
+    inst_queue_push(inst_queue, Rt, Sub, 0);
+
+    Sub = p2p_arg(Sub, 0);		/* the VAR part of the attv */
+    c2p_functor("$assertVAR", 1, Sub);
+    Sub = p2p_arg(Sub, 1);
+    c2p_int(Rt, Sub);
   } else {
     Rt = reg_get(Reg, TVAR);
     dbgen_instB_ppv(unitvar, Rt);
@@ -747,6 +781,20 @@ static void db_genaput(prolog_term T0, int Argno,
     inst_queue_push(inst_queue, putnil, 0, Argno);
   } else if (is_string(T0)) {
     inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
+  } else if (is_attv(T0)) {
+    prolog_term T1;
+    
+    Rt = reg_get(Reg, RVAR);
+    inst_queue_push(inst_queue, movreg, Rt, Argno);
+    flatten_stack_init(flatten_stack);
+
+    T1 = p2p_arg(T0, 0);		/* the VAR part of the attv */
+    c2p_functor("$assertVAR", 1, T1);
+    T1 = p2p_arg(T1, 1);
+    c2p_int(Rt, T1);
+    RegArrayInit[Rt] = 1;		/* Reg is initted */
+
+    db_putterm(Rt,T0,Reg);    
   } else {  /* structure */
     Rt = reg_get(Reg, TVAR);
     inst_queue_push(inst_queue, movreg, Rt, Argno);
@@ -764,16 +812,19 @@ static void db_putterm(int Rt, prolog_term T0,
   int stack_size;
   
   stack_size = flatten_stack_size(flatten_stack);
-  if (is_list(T0)) {
+  if (is_list(T0)) {		/* is_list */
     db_bldsubs(p2p_cdr(T0),Reg,flatten_stack);
     db_bldsubs(p2p_car(T0),Reg,flatten_stack);
     dbgen_instB_ppv(putlist, Rt);			/* putlist */
-  } else { /* structure */
+  } else if (is_functor(T0)) {	/* is_functor */
     for (Argno=get_arity(get_str_psc(T0)); Argno>=1; Argno--)
       db_bldsubs(p2p_arg(T0,Argno),Reg,flatten_stack);
     dbgen_instB_ppvw(putstr, Rt, get_str_psc(T0));	/* putstr */
+  } else {			/* is attv */
+    db_bldsubs(cell(clref_val(T0)+1), Reg, flatten_stack);
+    dbgen_instB_ppv(putattv, Rt);
   }
-  RegArrayInit[Rt] = 1;	/* in either case, reg is inited */
+  RegArrayInit[Rt] = 1;	/* in any case, reg is inited */
   while (flatten_stack_size(flatten_stack)>stack_size) {
     flatten_stack_pop(flatten_stack, &BldOpcode, &Arg1);	
     /* be careful about order!!*/
@@ -828,6 +879,20 @@ static void db_bldsubs(prolog_term Sub, RegStat Reg,
     flatten_stack_push(flatten_stack, bldnil, 0);      /* bldnil */
   } else if ((Rt = is_frozen_var(Sub))) {
     flatten_stack_push(flatten_stack, bldtvar, Rt);
+  } else if (is_attv(Sub)) {
+    prolog_term T1;
+
+    Rt = reg_get(Reg, RVAR);
+    flatten_stack_push(flatten_stack, bldtvar, Rt);
+
+    T1 = p2p_arg(Sub, 0);	/* the VAR part of the attv */
+    c2p_functor("$assertVAR", 1, T1);
+    T1 = p2p_arg(T1, 1);
+    c2p_int(Rt, T1);
+
+    /* RegArrayInit[Rt] will be set to 1 in db_putterm() */
+
+    db_putterm(Rt, Sub, Reg);
   } else {
     Rt = reg_get(Reg, TVAR);
     flatten_stack_push(flatten_stack, bldtvar, Rt);
@@ -1251,13 +1316,19 @@ static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
 
 static int can_hash(int Ind, prolog_term Head )
 {
-  int i, j ;
+  int i, j;
+  prolog_term arg;
+
   if (Ind < 256) {  /* handle usual case specially */
-    return !is_var(p2p_arg(Head,Ind)) ;
+    arg = p2p_arg(Head, Ind);
+    return (!is_var(arg) && !is_attv(arg));
   } else {
     for (i = 2; i >= 0; i--) {
       j = (Ind >> (i*8)) & 0xff;
-      if (j > 0 && is_var(p2p_arg(Head,j)) ) return 0 ;
+      if (j > 0) {
+	arg = p2p_arg(Head,j);
+	if (is_var(arg) || is_attv(arg)) return 0;
+      }
     }
   }
   return TRUE;

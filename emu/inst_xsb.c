@@ -118,6 +118,8 @@ static void init_inst_table_2(void)
   set_inst(bldnil, "bldnil",             PPP,X, X,X);
   set_inst(uninumcon, "uninumcon",       PPP,N, X,X);
   set_inst(bldnumcon, "bldnumcon",       PPP,N, X,X);
+  set_inst(getattv, "getattv",           PP, R, X,X);
+  set_inst(getattv, "putattv",           PP, R, X,X);
   set_inst(getlist_tvar_tvar, "getlist_tvar_tvar", R, R, R,X);
 
   /* the following are generated dynamically */

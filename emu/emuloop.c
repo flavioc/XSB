@@ -296,6 +296,12 @@ contcase:     /* the main loop */
     nunify_with_list_sym(op1);
     goto contcase;
 
+  case getattv: /* PPR */
+    ppad; op1 = opreg;
+    pad64;
+    nunify_with_attv(op1);
+    goto contcase;
+
 /* tls 12/8/92 */
   case unipvar: /* PPV */
     ppad; op1 = (Cell)(opvaraddr);
@@ -449,6 +455,13 @@ contcase:     /* the main loop */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_list((CPtr)op1, hreg);
+    goto contcase;
+
+  case putattv: /* PPR */
+    ppad; op1 = (Cell)(opregaddr);
+    pad64;
+    bld_attv((CPtr)op1, hreg);
+    new_heap_free(hreg);
     goto contcase;
 
   case bldpvar: /* PPV */

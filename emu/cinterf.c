@@ -104,6 +104,12 @@ DllExport bool call_conv is_functor(prolog_term term)
     return isconstr(t);
 }
 
+DllExport bool call_conv is_attv(prolog_term term)
+{
+    Cell t = (Cell)term;
+    return isattv(t);
+}
+
 DllExport prolog_term call_conv reg_term(reg_num regnum)
 {
     register Cell addr;

@@ -211,6 +211,25 @@ int *asynint_ptr = &asynint_val;
 
 /*======================================================================*/
 
+/*
+ * In getattv, the flag will always be WRITE.  The unification will be
+ * done by the attv unification handlers.
+ */
+#define nunify_with_attv(OP1) {					\
+  deref(OP1);							\
+  if (isref(OP1)) {						\
+    bind_attv((CPtr)(OP1), hreg);				\
+  }								\
+  else {							\
+    attv_dbgmsg(">>>> nunify_with_attv, interrupt needed\n");	\
+    add_interrupt(makeattv(hreg), OP1);				\
+  }								\
+  new_heap_free(hreg);		/* the VAR part of the attv */	\
+  flag = WRITE;							\
+}
+
+/*======================================================================*/
+
 #define obtain_ep(PSC) dyn_pred = (PFI)get_ep(PSC);
 
 #define call_sub(PSC) {							\

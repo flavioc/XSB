@@ -203,6 +203,9 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define uninumcon	0x1e
 #define bldnumcon	0x1f
 
+#define getattv		0x30
+#define putattv		0x31
+
 #define getlist_tvar_tvar	0x48
 
 /*----- Instructions for tries as code (Do NOT change the numbers) -----*/
