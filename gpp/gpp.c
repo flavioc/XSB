@@ -1039,29 +1039,39 @@ void initthings(int argc,char **argv)
       continue;
     }
     if (strcmp(*arg, "-includemarker") == 0) {
-      /* assume that the include marker string is correct, i.e., has 3 %'s */
+      /* assume that the include marker string is correct, i.e., has 3 ?'s */
+      /* We use a temporary hack: @@ is replaced with space. 
+	 This is needed because of brain damage in Windows,
+	 which can break a single argument at spaces */
       int len = strlen(*(++arg));
-      char *index1 = *arg, *index2;
+      char *index1 = *arg, *index2, *spacer;
       include_directive_marker = malloc(len+7);
       include_directive_marker[0] = '\0';
-      /* replace the first % with %d */
-      index2 = strchr(index1,'%');
+      /* replace the first ? with %d */
+      index2 = strchr(index1,'?');
       strncat(include_directive_marker,index1, index2-index1);
       strcat(include_directive_marker,"%d");
-      /* replace the second % with "%s" */
+      /* replace the second ? with "%s" */
       index1 = index2+1;
-      index2 = strchr(index1,'%');
+      index2 = strchr(index1,'?');
       strncat(include_directive_marker,index1, index2-index1);
       strcat(include_directive_marker,"%s");
-      /* replace the third % with %s */
+      /* replace the third ? with %s */
       index1 = index2+1;
-      index2 = strchr(index1,'%');
+      index2 = strchr(index1,'?');
       strncat(include_directive_marker,index1, index2-index1);
       strcat(include_directive_marker,"%s");
       /* append the rest of *arg and terminate with the newline */
       index1 = index2+1;
       strcat(include_directive_marker,index1);
       strcat(include_directive_marker,"\n");
+
+      /* replace @@ with space -- temporary hack */
+      spacer = strstr(include_directive_marker,"@@");
+      if (spacer != NULL) {
+	*spacer=' ';
+	*(++spacer)=' ';
+      }
       continue;
     }
 

@@ -769,13 +769,13 @@ static void split_string(char *string, char *params[], char *callname)
 
   buf_ptr = buffer;
 
-  /*
+  /* Debugging
   fprintf(stderr,"%s\n", string);
   */
   do {
     arg_ptr = get_next_command_argument(&buf_ptr,&string);
     params[idx] = arg_ptr;
-    /*
+    /* Debugging
     fprintf(stderr,"%s\n", arg_ptr);
     */
     idx++;
