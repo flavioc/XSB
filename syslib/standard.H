@@ -91,7 +91,7 @@
 	  psc_name/2, psc_set_prop/2, psc_prop/2, psc_type/2,
 	  stat_set_flag/2, stat_flag/2, psc_set_type/2, term_compare/3,
 	  stat_sta/1, stat_cputime/1, 
-          term_psc/2, term_new/2, term_type/2, close_open_tables/0
+          term_psc/2, term_new/2, term_type/2  %%, close_open_tables/0
 	  from machine.
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
           '$$clean_up_block'/0 

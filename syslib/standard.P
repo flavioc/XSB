@@ -1082,6 +1082,7 @@ set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- dynamic '$$exception_ball'/1.
+:- index '$$exception_ball'/1-0.
 
 catch(Goal,_Catcher,_Handler) :-
         '$$set_scope_marker',  % should not be called in any other place
@@ -1089,11 +1090,11 @@ catch(Goal,_Catcher,_Handler) :-
 	call(Goal),
         '$$clean_up_block'.    % if no choicepoints in call(Goal) cleans up one
 catch(_Goal,Catcher,Handler) :-
-        '$$exception_ball'(Ball),
+        '$$exception_ball'(Ball),  %% only ever one fact here so no CP
         (
             Ball = Catcher ->
             retractall('$$exception_ball'(_)),
-	    close_open_tables,
+%%	    close_open_tables,  %% leave to catcher... 
             call(Handler)
         ;
             '$$unwind_stack'  % unwind_stack xsb_exits if no catcher was found
@@ -1103,6 +1104,5 @@ catch(_Goal,Catcher,Handler) :-
 throw(Ball) :-
         asserta('$$exception_ball'(Ball)),
         '$$unwind_stack'. % unwind_stack xsb_exits if no catcher was found
-
 
 /* --------------------- end of file standard.P ----------------------- */
