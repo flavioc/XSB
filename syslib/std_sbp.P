@@ -104,7 +104,6 @@ standard_symbol(halt, 0, standard).
 standard_symbol((hilog), 1, standard).
 standard_symbol(hilog_arg, 3, standard).
 standard_symbol(hilog_functor, 3, standard).
-standard_symbol(hilog_op, 3, standard).
 standard_symbol(hilog_symbol, 1, curr_sym).
 standard_symbol((import), 1, standard).
 standard_symbol(instance, 2, record).

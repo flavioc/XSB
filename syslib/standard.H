@@ -1,5 +1,5 @@
 /* File:      standard.H
-** Author(s): Kostis F. Sagonas, Jiyang Xu 
+** Author(s): Kostis Sagonas, Jiyang Xu 
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -37,7 +37,7 @@
 	expand_term/2,	file_exists/1,	fail/0,		fail_if/1,
 	fileerrors/0,	float/1,	functor/3,
 	get/1,		get0/1,		halt/0,		
-	(hilog)/1,	hilog_arg/3,	hilog_functor/3,hilog_op/3,
+	(hilog)/1,	hilog_arg/3,	hilog_functor/3,
 	(index)/3,	(index)/2,      (table)/1,
 	integer/1,	is/2,		is_list/1,	proper_hilog/1,
         is_string/1,
@@ -78,9 +78,8 @@
 /* The following predicates are directly imported from other modules */
 
 :- import '_$load_undef'/1 from loader.
-:- import psc_set_prop/2, psc_name/2,
-	  term_psc/2, term_new/2, psc_arity/2, term_type/2, psc_prop/2,
-	  psc_type/2, stat_set_flag/3, 
+:- import psc_set_prop/2, psc_name/2, psc_arity/2, psc_prop/2, psc_type/2,
+	  term_psc/2, term_new/2, term_type/2, stat_set_flag/2, 
 	  stat_flag/2, psc_set_type/2, term_compare/3,
 	  stat_sta/1, conname/2, conpsc/2, stat_cputime/1, 
 	  expand_filename/2, machine_file_exists/1, psc_insert/3,
@@ -96,9 +95,8 @@
 :- import char_blank/1 from xsb_tok.
 :- import file_read/2 from xsb_read.
 :- import eval/2 from eval.
-:- import '_$op'/3, add_ops/3, op_priority/1, op_specifier/1, add_index/3,
-           add_trie_index/1,
-	  add_table/1
+:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
+          add_trie_index/1, add_table/1
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import dcg/2 from dcg.

@@ -29,18 +29,13 @@
 
 
 :- import '_$op'/3 from file_op.
-:- import str_tolist/2 from string.
+:- import file_put/2 from file_io.
 :- import file_write0/2, file_nl/1 from xsb_writ.
-:- import atom/1,
-	  repeat/0
-    	  from standard.
+:- import atom/1, repeat/0 from standard.
 :- import '_$hilog_symbol'/1 from hilogsym.
-:- import term_new/2, term_set_arg/4, term_type/2, 
-	  file_gettoken/5, psc_insert/4, stat_set_flag/3, conname/2, 
+:- import term_new/2, term_set_arg/4, term_type/2, atom_chars/2,
+	  file_gettoken/5, psc_insert/4, stat_set_flag/2, conname/2, 
 	  conpsc/2, str_insert/2, term_psc/2, psc_set_prop/2, psc_prop/2
      from machine.
-:- import file_put/2
-     from file_io.
-
 
 /* -------------------- end of file file_read.H ----------------------- */

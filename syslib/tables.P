@@ -76,16 +76,16 @@ etnot(X) :-
 /*----------------------------------------------------------------------*/
 
 set_prof_on(Level) :-
-	stat_set_flag(52,Level,1).
+	stat_set_flag(52,Level).
 
 set_prof_off :-
-	stat_set_flag(52,0,1).
+	stat_set_flag(52,0).
 
 set_pil_on :-
-	stat_set_flag(0,1,1).
+	stat_set_flag(0,1).
 
 set_pil_off :-
-	stat_set_flag(0,0,1).
+	stat_set_flag(0,0).
 
 /*----------------------------------------------------------------------*/
 

@@ -68,8 +68,8 @@ interpreter :-
 	push_abort_cutpoint, % reset abort cutpoint
 	x_interp_repeat,
 	    trimcore,
-	    stat_set_flag(5, 1, 1), % hide call interceptions.
-	    stat_set_flag(7, 0, 1), % reset trace number
+	    stat_set_flag(5, 1), % hide call interceptions.
+	    stat_set_flag(7, 0), % reset trace number
 	    conset('_$break_level', 0),
 	    print_debug_state,
 	    prompt(Prompt,Prompt),
@@ -108,12 +108,12 @@ no_more :- no_more, fail.
 call_query(X) :- 
 %%%	'_$savecp'(C),			% moved into call/1, affect trace?
 	func_trans(X, Y),
-	( stat_set_flag(5, 0, 1) 		% expose tracing
-	; stat_set_flag(5, 1, 1), fail		% hide again when backtrack
+	( stat_set_flag(5, 0) 		% expose tracing
+	; stat_set_flag(5, 1), fail		% hide again when backtrack
 	),
 	'_$call'(Y), 
-	( stat_set_flag(5, 1, 1)		% hide tracing when succeed
-	; stat_set_flag(5, 0, 1), fail		% expose when backtrack to user
+	( stat_set_flag(5, 1)		% hide tracing when succeed
+	; stat_set_flag(5, 0), fail		% expose when backtrack to user
 	).
 call_query(_) :- 
 	file_nl(1), file_write(1, no), file_nl(1), fail.

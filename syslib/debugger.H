@@ -32,14 +32,13 @@
 :- export '_$deb_trace'/1, '_$deb_spy'/1, '_b_SPY_condition'/1,
 	show/1, leash/1.
 
-:- import set_inthandler/2, '_$load_undef'/1, load_pred/1
-     from loader.
+:- import set_inthandler/2, '_$load_undef'/1, load_pred/1 from loader.
 :- import file_write/2 from xsb_writ.
 :- import =.. /2, functor/3, atom/1, warning/1, abort/0, abort/1, (import)/1
      from standard.
 :- import (dynamic)/1, assert0/1, retract/1, retractall/1 from assert.
 :- import break/0, prompt/3 from x_interp.
-:- import term_psc/2, psc_insert/4, stat_flag/2, stat_set_flag/3, 
+:- import term_psc/2, psc_insert/4, stat_flag/2, stat_set_flag/2, 
 	  psc_type/2, psc_prop/2,
 	  buff_byte/3, buff_set_byte/3, conname/2, code_call/3,
 	  psc_arity/2, psc_name/2, term_arg/3, term_type/2, term_new/2

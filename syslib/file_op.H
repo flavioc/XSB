@@ -1,5 +1,5 @@
 /* File:      file_op.H 
-** Author(s): Kostis F. Sagonas, David S. Warren
+** Author(s): Kostis Sagonas, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998

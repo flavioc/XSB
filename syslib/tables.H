@@ -44,7 +44,7 @@
 :- import abolish_table_info/0, buff_set_word/3, buff_word/3, conpsc/2,
 	  cut_if_leader/3, slg_not/1, buff_byte/3, buff_set_byte/3, 
 	  is_incomplete/4, get_osp_breg/2, get_ptcp/1, get_subgoal_ptr/2,
-          psc_tabled/2, stat_set_flag/3, tip_prop/4, get_emu_dependent_const/2,
+          psc_tabled/2, stat_set_flag/2, tip_prop/4, get_emu_dependent_const/2,
 	  zero_out_profile/0, write_out_profile/0
 	from machine.
 

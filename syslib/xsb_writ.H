@@ -1,5 +1,5 @@
 /* File:      xsb_writ.H
-** Author(s): Kostis F. Sagonas
+** Author(s): Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -28,14 +28,11 @@
 	  file_nl/1.
 
 :- import '_$op'/3 from file_op.
-:- import atom/1, integer/1, hilog_op/3, proper_hilog/1 
-     from standard.
+:- import file_put/2 from file_io.
+:- import integer/1 from standard.
 :- import term_psc/2, psc_arity/2, psc_name/2, term_arg/3, 
 	  term_type/2, file_puttoken/3, file_writequoted/2,
  	  is_backslashing_os/0
      from machine.
-:- import file_put/2
-     from file_io.
-
 
 /* ------------------- end of file file_write.H ----------------------- */

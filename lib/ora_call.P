@@ -37,24 +37,24 @@
 :- retractall('$show_query$'(_)).
 
 db_open(oracle(Name,Passwd)) :- 
-			conset(count,1),init_gensym(table1),init_gensym(null),
-			assert('$ora_err$'(off)),
-			assert('$show_query$'(on)),
-			assert('$act_cursor_table$'([])),
-			assert('$inact_cursor_table$'([])),
-			assert('$select_stack$'([])),
-			oracle_connect(Name,Passwd,Status),
-                        (Status =:= 0,!;
-                        writeln('ERR - DB: Connection failed.'),fail).
+	conset(count,1),init_gensym(table1),init_gensym(null),
+	assert('$ora_err$'(off)),
+	assert('$show_query$'(on)),
+	assert('$act_cursor_table$'([])),
+	assert('$inact_cursor_table$'([])),
+	assert('$select_stack$'([])),
+	oracle_connect(Name,Passwd,Status),
+	(   Status =:= 0,!;
+	    writeln('ERR - DB: Connection failed.'),fail).
 
 db_close :- 
-	    retractall('$ora_err$'(_)), retractall('$show_query$'(_)), 
-	    ('$act_cursor_table$'(_) ->
-			retractall('$act_cursor_table$'(_)); true),
-	    ('$inact_cursor_table$'(_) ->
-			retractall('$inact_cursor_table$'(_)); true),
-	    ('$select_stack$'(_) ->retractall('$select_stack$'(_)); true),
-	    oracle_disconnect(_).
+	retractall('$ora_err$'(_)), retractall('$show_query$'(_)), 
+	( '$act_cursor_table$'(_) ->
+	    retractall('$act_cursor_table$'(_)); true),
+	( '$inact_cursor_table$'(_) ->
+	    retractall('$inact_cursor_table$'(_)); true),
+	( '$select_stack$'(_) ->retractall('$select_stack$'(_)); true),
+	oracle_disconnect(_).
 
 db_flag(fail_on_error,on,off) :-
 	retract('$ora_err$'(on)), assert('$ora_err$'(off)).
@@ -67,21 +67,6 @@ db_flag(show_query, off, on) :-
 
 db_flag(show_query, on, off) :- 
 	retract('$show_query$'(on)), assert('$show_query$'(off)).
-
-input_array_length(Length) :-
-	var(Length), stat_flag(58,Length).
-input_array_length(Length) :-
-	integer(Length), stat_set_flag(58,Length,_).
-
-input_array_width(Width) :-
-	var(Width), stat_flag(59,Width).
-input_array_width(Width) :-
-	integer(Width), stat_set_flag(59,Width,_).
-
-output_array_length(Length) :-
-	var(Length), stat_flag(60,Length).
-output_array_length(Length) :-
-	integer(Length), stat_set_flag(60,Length,_).
 
 db_link(ProjectionTerm, DatabaseGoal) :- 
 	translate(ProjectionTerm, DatabaseGoal,_, SQLAtom),!,
@@ -308,12 +293,14 @@ search_cursors([StmtNo '/' Index|_], StmtNo, Index).
 search_cursors([_|Rest], StmtNo, Index) :-
 	search_cursors(Rest, StmtNo, Index).
 
+/*
 free :-
 	flush,
 	retract('$act_cursor_table$'(List)),
 	deallocate_list(List),
 	assert('$act_cursor_table$'([])).
-
+ */
+ 
 flush :- 
 	'$act_cursor_table$'(List),
 	flush_list(List).
@@ -335,11 +322,13 @@ flush_list([_ '/' Index|Rest]):-
 	flush_cursor(Index,_),
 	flush_list(Rest).
 
+/*
 deallocate_list([]).
 deallocate_list([_ '/' Index|Rest]):-
 	flush_cursor(Index,_),
 	deallocate_cursor(Index,_),
 	deallocate_list(Rest).
+ */
 
 db_all(Call, SQLAtom, ProjectionTerm, StmtNo) :-
 	
@@ -2383,7 +2372,7 @@ deallocate_cursor(CursorHandle,Status) :-
 close_cursor(CursorHandle,Status) :-
 	oracle_query(5,CursorHandle,Status).
 
-reclaim_cursors(Status) :- oracle_query(6,Status).
+% reclaim_cursors(Status) :- oracle_query(6,Status).
 
 set_input_value(CursHndl,BindVarName,BindVarVal,BindVarValType,Status) :-
 	oracle_query(7,CursHndl,BindVarName,BindVarVal,BindVarValType,Status).
@@ -2424,9 +2413,9 @@ db_sqlwarn4(Res) :- oracle_query(31,Res).
 db_sqlwarn5(Res) :- oracle_query(32,Res).
 db_sqlext(Res) :- oracle_query(33,Res).
 
-oracle_query(A) :- oracle_query(A,_,_,_,_,_,_).
+% oracle_query(A) :- oracle_query(A,_,_,_,_,_,_).
 oracle_query(A,B) :- oracle_query(A,B,_,_,_,_,_).
 oracle_query(A,B,C) :- oracle_query(A,B,C,_,_,_,_).
 oracle_query(A,B,C,D) :- oracle_query(A,B,C,D,_,_,_).
-oracle_query(A,B,C,D,E) :- oracle_query(A,B,C,D,E,_,_).
+% oracle_query(A,B,C,D,E) :- oracle_query(A,B,C,D,E,_,_).
 oracle_query(A,B,C,D,E,F) :- oracle_query(A,B,C,D,E,F,_).

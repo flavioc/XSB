@@ -1,5 +1,5 @@
 /* File:      xsb_read.P
-** Author(s): Saumya K. Debray, Jiyang Xu, Kostis F. Sagonas
+** Author(s): Saumya K. Debray, Jiyang Xu, Kostis Sagonas
 **     	      (adapted from D.H.D.Warren, Richard O'Keefe)
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -40,7 +40,7 @@ file_read(File, Answer) :-
 %   error (and doesn't try again to read another term.)
 
 file_read_foe(File, Answer, Variables) :-
-	stat_set_flag(51, File, 1),
+	stat_set_flag(51, File),
 	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
 	read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
 	read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
@@ -52,7 +52,7 @@ file_read_foe(File, Answer, Variables) :-
 %   Answer.  Variables is bound to a list of [Atom=Variable] pairs.
 
 file_read(File, Answer, Variables) :-
-	stat_set_flag(51, File, 1),
+	stat_set_flag(51, File),
 	repeat,	% reading terms until you find one with no syntax errors
 	    term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
 	    read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
@@ -114,12 +114,6 @@ read_infixop(Op, Prec, Prec, Less) :-
 read_ambigop(F, L1, O1, R1, L2, O2) :-
         read_postfixop(F, L2, O2),
         read_infixop(F, L1, O1, R1), !.
-
-read_hilog_prefixop(Op, Prec, Prec) :-
-        '_$op'(Prec, hy, Op), !.
-read_hilog_prefixop(Op, Prec, Less) :-
-        '_$op'(Prec, hx, Op), !,
-        Less is Prec-1.
 
 
 %   read4(+TokenList, +Precedence, -Term, -LeftOver)
@@ -190,12 +184,6 @@ read5(atom(Functor), S0, Precedence, Answer, S) :-
         read_prefixop(Functor, Prec, Right),
 	!,
         read_aft_pref_op(Functor, Prec, Right, S0, Precedence, Answer, S).
-
-% Term ::= HiLogPreOp Term
-read5(atom(HiLogOP), S0, Precedence, Answer, S) :-
-        read_hilog_prefixop(HiLogOP, Prec, Right),
-	!,
-	read_aft_hilog_pref_op(HiLogOP, Prec, Right, S0, Precedence, Answer, S).
 
 % Term ::= Atom
 read5(atom(Atom), S0, Precedence, Answer, S) :- 
@@ -272,7 +260,7 @@ read5(punc(123), S1, Precedence, Answer, S) :-
 % Term ::= String
 read5(string(String), S0, Precedence, Answer, S) :- 
         !,
-	( string_as(list) -> str_tolist(String, Term)  %This is the case for 
+	( string_as(list) -> atom_chars(String, Term)  %This is the case for 
                                                        %the moment.
 	; string_as(string) -> Term = String
 	; string_as(constant) -> read_getcon(String, Term)
@@ -380,85 +368,9 @@ read_list1(punc(93),[],S,S).			% ']'
 
 
 /*===========================================================================*/
-/* read_aft_hilog_pref_op( +Op, +Prec, +ArgPrec, +Rest, 		     */
-/*			   +Precedence, -Ans, -LeftOver)		     */
+/*  read_aft_pref_op(+Op, +Prec, +ArgPrec, +Rest, 			     */
+/*		     +Precedence, -Ans, -LeftOver)			     */
 /*===========================================================================*/
-
-read_aft_hilog_pref_op(_, Oprec, _, S0, Precedence, _, _) :-
-        Precedence < Oprec, 
-        !,
-        read_record_error(S0).   /* The HiLog prefix operator Op is in */
-                                 /* context with precedence Precedence */
-read_aft_hilog_pref_op(HiLogOP, _Oprec, ArgPrec, S1, Precedence, Answer, S) :-
-	find_applied_term4(S1, ArgPrec, AppliedTerm, S2),
-	( '_$hilog_symbol'(HiLogOP) ->
-	    'read=..'(Term, [apply,HiLogOP,AppliedTerm])
-        ; 'read=..'(Term, [HiLogOP,AppliedTerm])
-        ),
-	!,
-	hilog_read_exprtl0(S2, Term, Precedence, Answer, S).
-%---------------------------------ADDED---------------------------------------%
-read_aft_hilog_pref_op(HiLogOP, _Oprec, _ArgPrec, S, _Precedence, HiLogOP, S).
-%-----------------I am not sure if it has any side-effects--------------------%
-
-
-%   find_applied_term4( +TokenList, +Precedence, -AppliedTerm, -LeftOver)
-%   parses the TokenList in the context of the given Precedence, returning the 
-%   term AppliedTerm to which the HiLog operator is applied, and the unread
-%   LeftOver token list.
- 
-find_applied_term4([Token|RestTokens], Precedence, AppliedTerm, LeftOver) :-
-        find_applied_term5(Token, RestTokens, Precedence, AppliedTerm, LeftOver).
-find_applied_term4([], _, _, _) :-  
-	read_record_error([]).   /* a token was expected, i.e. after an "[" */
-
-/*============================================================================*/
-/*   find_applied_term5( +Token, +RestTokens, +Precedence, 		      */
-/*			 -AppliedTerm, -LeftOver)			      */
-/*============================================================================*/
-
-%   In some of the first five clauses (1, 2, 4, 5) I did a dirty job. Namely, I 
-%   forced a "h_punc(41)" token to be added in the token list yet to be parced. 
-%   This allowed me to use the already defined "hilog_read_exprtl0/4" predicate 
-%   instead of declaring a new one. This predicate is used to read the rest  of 
-%   a HiLog term when a subterm of it is already read. I must confess that I do 
-%   not like what I did, but what do you expect to happen  when you are anxious 
-%   to see your progarm running as soon as possible? I am sure that this has no
-%   effect on the correctness of my program, but I still do not like it!
-
-find_applied_term5(varfunc(Variable,_), S1, _, Variable, [h_punc(41)|S1]) :- 
-	!.
-find_applied_term5(func(Functor), S1, _, Functor, [h_punc(41)|S1]) :- 
-	'_$hilog_symbol'(Functor), 
-	!.
-find_applied_term5(func(Functor), [punc(40)|S1], _, AppliedTerm, [h_punc(41)|S]) :-
-	read4(S1, 999, Arg1, S2),
-	hilog_read_args(S2, RestArgs, [h_punc(41)|S]),
-	!,
-	'read=..'(AppliedTerm, [Functor,Arg1|RestArgs]).
-find_applied_term5(integer(Integer), S1, _, Integer, [h_punc(41)|S1]) :-
-	!.
-find_applied_term5(real(Real), S1, _, Real, [h_punc(41)|S1]) :-
-	!.
-find_applied_term5(punc(40), S1, _, AppliedTerm, S2) :-
-	read4(S1, 999, AppliedTerm, S2),
-	( atom(AppliedTerm) -> 
-               '_$hilog_symbol'(AppliedTerm)  % The only atoms that can be parenthesized
-               ; true),                   % are the ones declared as HiLog symbols.
-	( read_expect(punc(41), S2, _) 
-	; read_expect(h_punc(41), S2, _)).
-find_applied_term5(atom(HiLogOP), S1, Precedence, AppliedTerm, S) :-
-	read_hilog_prefixop(HiLogOP, Prec, Right),
-	!,
-	read_aft_hilog_pref_op(HiLogOP, Prec, Right, S1, Precedence, AppliedTerm, S).
-find_applied_term5(_Token, S1, _, _, _) :-
-	read_record_error(S1).
-
-
-/*============================================================================*/
-/*  read_aft_pref_op(+Op, +Prec, +ArgPrec, +Rest, 			      */
-/*		     +Precedence, -Ans, -LeftOver)			      */
-/*============================================================================*/
 
 read_aft_pref_op(_, Oprec, _, S0, Precedence, _, _) :-
         Precedence < Oprec, 
@@ -472,7 +384,7 @@ read_aft_pref_op(Op, Oprec, _Aprec, S0, Precedence, Answer, S) :-
 read_aft_pref_op(Op, Oprec, Aprec, S1, Precedence, Answer, S) :-
         read4(S1, Aprec, Arg, S2),
         'read=..'(Term, [Op,Arg]),   %<--- This MAY NEED A CHANGE FOR HiLog!!!
-	!,		      % If Op is a HiLog symbol but not a HiLog Operator
+	!,		      % If Op is a HiLog symbol
         read_exprtl(S2, Oprec, Term, Precedence, Answer, S).
 
 

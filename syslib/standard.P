@@ -62,7 +62,7 @@ see0(F) :-
 	; abort([F,'not a file or file not readable, cannot see!'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(10, File0, 1),
+	stat_set_flag(10, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC).
 
@@ -82,7 +82,7 @@ seen :- conpsc(current_input, CurinPsc),
 		psc_set_type(FilePSC, 0)
 	; true
 	),
-	stat_set_flag(10, 0, 1),
+	stat_set_flag(10, 0),
 	conpsc(userin, UserPsc),
 	psc_set_prop(CurinPsc, UserPsc).
 
@@ -109,7 +109,7 @@ tell0(F) :-
 	; abort([F,': Not a file or file not writable, cannot tell!'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(11, File0, 1),
+	stat_set_flag(11, File0),
 	conpsc(current_output, CuroutPsc),
 	psc_set_prop(CuroutPsc, PSC).
 
@@ -129,7 +129,7 @@ told :- conpsc(current_output, CuroutPsc),
 		psc_set_type(FilePSC, 0)
 	; true
 	),
-	stat_set_flag(11, 1, 1),
+	stat_set_flag(11, 1),
 	conpsc(userout, UserPsc),
 	psc_set_prop(CuroutPsc, UserPsc).
 
@@ -162,7 +162,7 @@ open(F,read,F):-!,
 	; abort([F,'not a file or not readable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(10, File0, 1),
+	stat_set_flag(10, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	see0(userin).
@@ -177,7 +177,7 @@ open(F,write,F):-!,
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(11, File0, 1),
+	stat_set_flag(11, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
@@ -192,7 +192,7 @@ open(F,append,F):-!,
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(11, File0, 1),
+	stat_set_flag(11, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
@@ -438,12 +438,6 @@ hilog_arg(I, T, A) :- hilog_arg(I, T, A).
 hilog_arglist(_, [], 0, _) :- !.
 hilog_arglist(X, [Y|Z], I, N) :- K is I - 1, J is N - K,
 	hilog_arg(J, X, Y), hilog_arglist(X, Z, K, N).
-
-
-hilog_op(Prec, Type, Name) :- 
-	'_$op'(Prec, Type, Name), 
-	( Type == hx 
-	; Type == hy).
 
 
 %----------------------------%
@@ -828,9 +822,9 @@ statistics(X) :- stat_sta(X).
 			/*   BAROQUE   */
 			/***************/
 
-fileerrors :- stat_set_flag(fileerrors, 1, 1).
+fileerrors :- stat_set_flag(fileerrors, 1).
 
-nofileerrors :- stat_set_flag(fileerrors, 0, 1).
+nofileerrors :- stat_set_flag(fileerrors, 0).
 
 % rename(F, G) :- OS INTERFACE
 
@@ -951,14 +945,14 @@ call_expose(Goal) :-
 	(N =:= 0
 	 ->     call_c(Goal)
 	 ;      N1 is N-1,
-		(stat_set_flag(5,N1,1)
+		(stat_set_flag(5,N1)
 		 ;
-		 stat_set_flag(5,N,1),fail
+		 stat_set_flag(5,N),fail
 		),
 		call_c(Goal),
-		(stat_set_flag(5,N,1)
+		(stat_set_flag(5,N)
 		 ;
-		 stat_set_flag(5,N1,1),fail
+		 stat_set_flag(5,N1),fail
 		)
 	).
 

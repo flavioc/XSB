@@ -1,5 +1,5 @@
 /* File:      machine.H
-** Author(s): Kostis F. Sagonas, Jiyang Xu David S. Warren, Terrance Swift
+** Author(s): Kostis Sagonas, Jiyang Xu David S. Warren, Terrance Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -45,7 +45,7 @@
 	term_set_arg/4, 
 	term_hash/3,
 	stat_flag/2, 
-	stat_set_flag/3, 
+	stat_set_flag/2, 
 	stat_sta/1,
 	buff_alloc/2, 
 	buff_word/3, 

@@ -72,7 +72,7 @@ inline_builtin(term_new, 2, 14).
 inline_builtin(term_arg, 3, 15).
 inline_builtin(term_set_arg, 4, 16).
 inline_builtin(stat_flag, 2,  17).
-inline_builtin(stat_set_flag, 3, 18).
+inline_builtin(stat_set_flag, 2, 18).
 inline_builtin(buff_alloc, 2, 19).
 inline_builtin(buff_word, 3, 20).
 inline_builtin(buff_set_word, 3, 21).

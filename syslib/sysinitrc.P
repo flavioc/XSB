@@ -26,7 +26,7 @@
 %% This file is consulted from loader.P
 
 
-:- import stat_flag/2, str_cat/3, stat_set_flag/3, 
+:- import stat_flag/2, str_cat/3, stat_set_flag/2, 
 	is_backslashing_os/0, slash/1
    from machine.
 :- import xsb_configuration/2 from configuration.
@@ -65,9 +65,9 @@
 %% Flag 50 tells the loader to start looking at the user-supplied libraries 
 %% in site/lib and .xsbinitrc.
 
-:- stat_set_flag(50, 1, 1). % Setting flags[50] tell the loader to start
-			    % searching library_directory for non-system
-			    % libraries
+:- stat_set_flag(50, 1). % Setting flags[50] tells the loader to start
+			 % searching library_directory for non-system
+			 % libraries
 
 %% load package maintenance definitions
 :- [packaging].

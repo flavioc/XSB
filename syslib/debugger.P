@@ -28,26 +28,26 @@
 
 /* -- tracing flags setting  -------------------------------------- */
 
-nodebug :- stat_set_flag(4,0,1).		% debug_on = 0
-piltrace :- stat_set_flag(0,1,1), hitrace.	% pil level tracing 
-hitrace :- stat_set_flag(1,1,1),debug.		% call level sim tracing
-nosimtrace :- stat_set_flag(1,0,1), 
-	stat_set_flag(0,0,1).			% undo the above two
-trace_stack_max :- stat_set_flag(3,1,1), debug.	% record max usage of space
-notrace_stack_max :- stat_set_flag(3,0,1).		% undo above
+nodebug :- stat_set_flag(4,0).		        % debug_on = 0
+piltrace :- stat_set_flag(0,1), hitrace.	% pil level tracing 
+hitrace :- stat_set_flag(1,1),debug.		% call level sim tracing
+nosimtrace :- stat_set_flag(1,0), 
+	stat_set_flag(0,0).			% undo the above two
+trace_stack_max :- stat_set_flag(3,1), debug.	% record max usage of space
+notrace_stack_max :- stat_set_flag(3,0).		% undo above
 dump :- ll_write('dump not implemented yet').
-trace :- debug, stat_set_flag(6,1,1).		% trace = 1
-notrace :- stat_set_flag(6,0,1),		% trace = 0
+trace :- debug, stat_set_flag(6,1).		% trace = 1
+notrace :- stat_set_flag(6,0),	                % trace = 0
 	nodebug.				% ??dsw added, (no load msgs)
 
 /* -- set debug on ------------------------------------------------ */
 
 debug :- stat_flag(4, D),
 	(D =:= 0
-	 ->	stat_set_flag(7, 0,1),		% invoke_num = 1
-		stat_set_flag(8, 0,1),		% skipping = 0
-		stat_set_flag(9, 0,1),		% quasi_skipping = 0
-		stat_set_flag(4, 1,1)		% debug_on = 1
+	 ->	stat_set_flag(7, 0),		% invoke_num = 1
+		stat_set_flag(8, 0),		% skipping = 0
+		stat_set_flag(9, 0),		% quasi_skipping = 0
+		stat_set_flag(4, 1)		% debug_on = 1
 	 ;	true
 	).
 
@@ -56,7 +56,7 @@ debug :- stat_flag(4, D),
 /* -- check debugging status -------------------------------------------*/
 
 debugging :- 
-    stat_flag(5, H0), H1 is H0+1, stat_set_flag(5, H1, 1),
+    stat_flag(5, H0), H1 is H0+1, stat_set_flag(5, H1),
     ll_write('  Debugging:   '), stat_flag(4,X1), ll_write(X1), ll_nl,
     ll_write('  Tracing:     '), stat_flag(6,X2), ll_write(X2), ll_nl,
     ll_write('  Hi Tracing:  '), stat_flag(1,X3), ll_write(X3), ll_nl,
@@ -65,7 +65,7 @@ debugging :-
     ll_write('  Skipping:    '), stat_flag(8,X6), ll_write(X6), ll_nl,
     ll_write('  Q-Skipping:  '), stat_flag(9,X7), ll_write(X7), ll_nl,
     ll_write('  Hide level:  '), ll_write(H0), ll_nl,
-    stat_set_flag(5, H0, 1).
+    stat_set_flag(5, H0).
 
 /* -- trace interrupt handler ------------------------------------------ */
 
@@ -90,12 +90,12 @@ debugging :-
 	 ; hide_this_hide(P,A)
 	 ->	basic_call(1,PSC,Call)	% and leave tracing off
 	 ; show_this_hide(P,A)
-	 ->	stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1,1),	% invoke_num++
+	 ->	stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1),	% invoke_num++
 		( S=\=0
 		 ->	basic_call(1,PSC,Call)	% skipping or quasi_skipping 
 		 ;	deb_enterpred(N, PSC, Call, intrace, L, 1)
 		)
-	 ;	stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1,1),	% invoke_num++
+	 ;	stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1),	% invoke_num++
 		( S=\=0
 		 ->	basic_call(0,PSC,Call)	% skipping or quasi_skipping 
 		 ;	deb_enterpred(N, PSC, Call, intrace, L, 0)
@@ -151,12 +151,12 @@ must_load(PSC) :-
 	(must_load(PSC)
 	 ->	'_$deb_spy'(Call)
 	 ;	stat_flag(5, L),			% L = hide_state
-		stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1,1),	% invoke_num++
+		stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1),	% invoke_num++
 		stat_flag(8, S),			% S = skipping
 		psc_spy(PSC, K),
 		(S =:= 0, (K=:=128 ; K=:=192, indeed_spy(Call))
 		 ->
-		  stat_set_flag(6, 1,1),		% trace = 1
+		  stat_set_flag(6, 1),		% trace = 1
 		  deb_enterpred(N,PSC,Call,inspy, L, 0)
 		; basic_call(0,PSC,Call) 		% skipping
 		)
@@ -171,35 +171,35 @@ deb_enterpred(N,PSC,Call,Spy,L,Tr) :- 		% L = 1
 %	ll_write('in debugger'),ll_nl,
 	deb_traceget(N,Spy,'Call',Call,_),
 	( basic_call(Tr,PSC,Call),
-	    (stat_flag(5,OV),NV is OV+1, stat_set_flag(5,NV,1),	% hide_state ++
-	     stat_set_flag(9, 0,1),		% quasi_skipping = 0
-	     stat_set_flag(8, 0,1),		% skipping = 0
+	    (stat_flag(5,OV),NV is OV+1, stat_set_flag(5,NV),	% hide_state ++
+	     stat_set_flag(9, 0),		% quasi_skipping = 0
+	     stat_set_flag(8, 0),		% skipping = 0
 	     (still_displaying(Spy)
 	      ->	deb_traceget(N,Spy,'Exit',Call,_)
 	      ;	true
 	     ),
-	     stat_set_flag(5,OV,1) % hide_state --
+	     stat_set_flag(5,OV) % hide_state --
 	    ;
-	     stat_flag(5,OV),NV is OV+1, stat_set_flag(5,NV,1),	% hide_state ++
+	     stat_flag(5,OV),NV is OV+1, stat_set_flag(5,NV),	% hide_state ++
 	     (still_displaying(Spy)
 	      ->	deb_traceget(N,Spy,'Redo',Call,_)
 	      ;		true
 	     ),
-	     stat_set_flag(5,OV,1),		% hide_state --
+	     stat_set_flag(5,OV),		% hide_state --
 	     fail
 	    )
 	 ;
-	     stat_flag(5,OV),NV is OV+1, stat_set_flag(5,NV,1),	% hide_state ++
-	     stat_set_flag(9, 0,1),		% skipping = 0
-	     stat_set_flag(8, 0,1),		% quasi_skipping=0
+	     stat_flag(5,OV),NV is OV+1, stat_set_flag(5,NV),	% hide_state ++
+	     stat_set_flag(9, 0),		% skipping = 0
+	     stat_set_flag(8, 0),		% quasi_skipping=0
 	     (still_displaying(Spy)		% if still tracing or debugging
 		->   deb_traceget(N,Spy,'Fail',Call,C2),
 		     (C2=:=114		% r: retry, otherwise just fail 
-		      ->	stat_set_flag(7, N,1), 	% reset call number  
+		      ->	stat_set_flag(7, N), 	% reset call number  
 				deb_retry(Call,Spy)
-		      ;		L1 is L - 1, stat_set_flag(5, L1,1), fail
+		      ;		L1 is L - 1, stat_set_flag(5, L1), fail
 		     )
-		;	L1 is L - 1, stat_set_flag(5, L1,1), fail
+		;	L1 is L - 1, stat_set_flag(5, L1), fail
 	     )
 	).
 
@@ -276,27 +276,27 @@ deb_prompt(Type, Spy, C) :-
 leg_r(10).  leg_r(97).  leg_r(98).  leg_r(99).  leg_r(101).  leg_r(102).
 leg_r(108).  leg_r(110).  leg_r(113).  leg_r(114).  leg_r(115).
 
-deb_ug(10) :- !,stat_set_flag(6, 1,1).		%  <cr>: creep (trace = 1)
-deb_ug(97) :- !,stat_set_flag(8, 0,1),		%  a: abort 
-	stat_set_flag(9, 0,1),
-	stat_set_flag(6, 0,1), 
-	stat_set_flag(4, 0,1), 
+deb_ug(10) :- !,stat_set_flag(6, 1).		%  <cr>: creep (trace = 1)
+deb_ug(97) :- !,stat_set_flag(8, 0),		%  a: abort 
+	stat_set_flag(9, 0),
+	stat_set_flag(6, 0), 
+	stat_set_flag(4, 0), 
 	abort.
-deb_ug(98) :- !, stat_set_flag(8, 0,1),		%  b: break, 
-	stat_set_flag(9, 0,1),			%      and creep when return
-	stat_set_flag(6,0,1),
-	break,stat_set_flag(6,1,1).
-deb_ug(99) :- !,stat_set_flag(6,1,1).		%  c: creep 	(trace = 1)
+deb_ug(98) :- !, stat_set_flag(8, 0),		%  b: break, 
+	stat_set_flag(9, 0),			%      and creep when return
+	stat_set_flag(6, 0),
+	break,stat_set_flag(6,1).
+deb_ug(99) :- !,stat_set_flag(6,1).		%  c: creep 	(trace = 1)
 deb_ug(101) :- !,halt.				%  e: exit Prolog %
 deb_ug(102) :- !,stat_flag(5,L),L1 is L-1,
-		stat_set_flag(5,L1,1),fail.	%  f: fail
-deb_ug(108) :- !,stat_set_flag(6, 0,1).		%  l: leap 	(trace = 0)
+		stat_set_flag(5,L1),fail.	%  f: fail
+deb_ug(108) :- !,stat_set_flag(6, 0).		%  l: leap 	(trace = 0)
 deb_ug(110) :- !,notrace.			%  n: notrace
-deb_ug(113) :- !,stat_set_flag(9, 1,1).		%  q: quasi-skip 
+deb_ug(113) :- !,stat_set_flag(9, 1).		%  q: quasi-skip 
 						%           (quasi-skipping=1)
 deb_ug(114) :- !.				%  r: retry (handled later)
-deb_ug(115) :- !,stat_set_flag(9, 1,1),		%  s: skip. 
-	stat_set_flag(8, 1,1). 			%  (skipping=quasi_skipping=1)
+deb_ug(115) :- !,stat_set_flag(9, 1),		%  s: skip. 
+	stat_set_flag(8, 1). 			%  (skipping=quasi_skipping=1)
 
 deb_printhelp :- 
 	ll_write('   <cr>   creep          a      abort'),ll_nl,
@@ -405,15 +405,15 @@ basic_call(I,PSC,Call) :-
 	psc_type(PSC, Nt),
 	stat_flag(5,V), V1 is V-1,	% calc hide_state-1
 	(I =:= 0	% turn tracing back on
-	 ->	stat_set_flag(5,V1,1), % hide_state--
+	 ->	stat_set_flag(5,V1), % hide_state--
 		code_call(Code,Call,Nt)
 	 ;	(code_call_h(Code,Call,Nt), % leave tracing off
-		  (stat_set_flag(5,V1,1) % hide_state--
+		  (stat_set_flag(5,V1) % hide_state--
 		   ;
-		   stat_set_flag(5,V,1),fail % restore hide state when failing in
+		   stat_set_flag(5,V),fail % restore hide state when failing in
 		  )
 		;
-		 stat_set_flag(5,V1,1),fail	% reset when failing out
+		 stat_set_flag(5,V1),fail	% reset when failing out
 		)
 	).
 

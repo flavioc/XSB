@@ -712,30 +712,30 @@ int builtin_call(byte number)
 #endif /* HAVE_SOCKET */
   
   switch (number) {
-  case PSC_NAME:		/* reg 1: +PSC; reg 2: -String */
+  case PSC_NAME:		/* R1: +PSC; R2: -String */
     psc = (Psc)ptoc_addr(1);
     ctop_string(2, get_name(psc));
     break;
-  case PSC_ARITY:		/* reg 1: +PSC; reg 2: -int */
+  case PSC_ARITY:		/* R1: +PSC; R2: -int */
     psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_arity(psc));
     break;
-  case PSC_TYPE:		/* reg 1: +PSC; reg 2: -int */
+  case PSC_TYPE:		/* R1: +PSC; R2: -int */
 				/* type: see psc.h, `entry_type' field defs */
     psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_type(psc));
     break;
-  case PSC_SET_TYPE:	/* reg 1: +PSC; reg 2: +type (int): see psc.h */
+  case PSC_SET_TYPE:	/* R1: +PSC; R2: +type (int): see psc.h */
     psc = (Psc)ptoc_addr(1);
     set_type(psc, ptoc_int(2));
     break;
-  case PSC_PROP:		/* reg 1: +PSC reg 2: -term */
+  case PSC_PROP:		/* R1: +PSC; R2: -term */
 				/* prop: as a buffer pointer */
     psc = (Psc)ptoc_addr(1);
     if (get_type(psc)==T_ALIA) ctop_tag(2, (Cell)get_ep(psc));
     else ctop_int(2, (Integer)get_ep(psc));
     break;
-  case PSC_SET_PROP:	        /* reg 1: +PSC; reg 2: int */
+  case PSC_SET_PROP:	        /* R1: +PSC; R2: +int */
     psc = (Psc)ptoc_addr(1);
     if (get_type(psc)==T_ALIA) set_ep(psc, (pb)ptoc_tag(2));
     else set_ep(psc, (pb)ptoc_int(2));
@@ -743,20 +743,20 @@ int builtin_call(byte number)
   case FILE_FUNCTION:  /* file_open/close/put/get/truncate/seek/pos */
     return file_function();
 
-  case TERM_PSC:		/* r1: +term; r2: -PSC */
+  case TERM_PSC:		/* R1: +term; R2: -PSC */
     /* Assumes that `term' is a CS-tagged Cell. */
     ctop_addr(2, get_str_psc(ptoc_tag(1)));
     break;
-  case TERM_TYPE:		/* r1: +term; r2: tag (-int)		*/
+  case TERM_TYPE:		/* R1: +term; R2: tag (-int)		*/
 				/* <0 - var, 1 - cs, 2 - int, 3 - list>	*/
     term = ptoc_tag(1);
     if (!isnonvar(term)) ctop_int(2, 0);
     else ctop_int(2, cell_tag(term));
     break;
-  case TERM_COMPARE:	/* r1, r2: +term; rs: res (-int) */
+  case TERM_COMPARE:	/* R1, R2: +term; R3: res (-int) */
     ctop_int(3, compare(ptoc_tag(1), ptoc_tag(2)));
     break;
-  case TERM_NEW:		/* r1: +PSC, r2: -term */
+  case TERM_NEW:		/* R1: +PSC, R2: -term */
     psc = (Psc)ptoc_addr(1);
     sreg = hreg;
     hreg += get_arity(psc) + 1;
@@ -766,30 +766,28 @@ int builtin_call(byte number)
       bld_free(sreg);
     }
     break;
-  case TERM_ARG:		/* r1: +term; r2: index (+int); */
-				/* r3: arg (-term) */
+  case TERM_ARG:	/* R1: +term; R2: index (+int); R3: arg (-term) */
     disp = ptoc_int(2);
     term = ptoc_tag(1);
     ctop_tag(3, cell(clref_val(term)+disp));
     break;
-  case TERM_SET_ARG:	/* r1: +term; r2: index (+int) */
-				/* r3: newarg (+term); r4: +perm(not used) */
+  case TERM_SET_ARG:	/* R1: +term; R2: index (+int) */
+			/* R3: newarg (+term); R4: +perm(not used) */
     /* used in file_read.P, array.P, array1.P */
     disp = ptoc_int(2);
     term = ptoc_tag(1);
     if (!ptoc_int(4)) { pushtrail(clref_val(term)+disp,cell(reg+3));}
     bld_copy(clref_val(term)+disp, cell(reg+3));
     break;
-  case STAT_FLAG:		/* R1: flagname(+int); R2: value(-int) */
+  case STAT_FLAG:	/* R1: flagname(+int); R2: value(-int) */
     ctop_int(2, flags[ptoc_int(1)]);
     break;
   case STAT_SET_FLAG:	/* R1: flagname(+int); R2: value(+int); */
-				/* R3: +Perm (ignored) */
     flags[ptoc_int(1)] = ptoc_int(2);
     call_intercept = flags[DEBUG_ON]|flags[TRACE_STA]|flags[HITRACE]
       |flags[CLAUSE_INT];
     break;
-  case BUFF_ALLOC:	/* r1: size (+integer); r2: -buffer; */
+  case BUFF_ALLOC:	/* R1: size (+integer); R2: -buffer; */
 	           /* the length of the buffer is also stored at position 0 */
     value = ((ptoc_int(1)+7)>>3)<<3;
     value *= ZOOM_FACTOR ;
@@ -798,7 +796,7 @@ int builtin_call(byte number)
     *(Integer *)addr = value;	/* store buffer size at buf[0] */
     ctop_int(2, (Integer)addr);	/* use "integer" type now! */
     break;
-  case BUFF_DEALLOC:	/* r1: +buffer; r2: +oldsize; r3: +newsize; */
+  case BUFF_DEALLOC:	/* R1: +buffer; R2: +oldsize; R3: +newsize; */
     addr = ptoc_string(1);
     disp = ((ptoc_int(2)+7)>>3)<<3;
     disp *= ZOOM_FACTOR ;
@@ -811,41 +809,41 @@ int builtin_call(byte number)
     }
     mem_dealloc((byte *)(addr+value), disp-value);
     break;
-  case BUFF_WORD:		/* R1: +buffer; r2: displacement(+integer); */
-				/* R3: value (-integer) */
+  case BUFF_WORD:       /* R1: +buffer; r2: displacement(+integer); */
+			/* R3: value (-integer) */
     addr = ptoc_string(1);
     disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     ctop_int(3, *(Integer *)(addr+disp));
     break;
   case BUFF_SET_WORD:	/* R1: +buffer; r2: displacement(+integer); */
-				/* R3: value (+integer) */
+			/* R3: value (+integer) */
     addr = ptoc_string(1);
     disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     *(CPtr)(addr+disp) = ptoc_int(3);
     break;
-  case BUFF_BYTE:		/* R1: +buffer; r2: displacement(+integer);*/
-				/* R3: value (-integer) */
+  case BUFF_BYTE:	/* R1: +buffer; r2: displacement(+integer); */
+			/* R3: value (-integer) */
     addr = ptoc_string(1);
     disp = ptoc_int(2);
     ctop_int(3, (Integer)(*(byte *)(addr+disp)));
     break;
-  case BUFF_SET_BYTE:	/* R1: +buffer; r2: displacement(+integer);*/
-				/* r3: value (+integer) */
+  case BUFF_SET_BYTE:	/* R1: +buffer; R2: displacement(+integer); */
+			/* R3: value (+integer) */
     addr = ptoc_string(1);
     disp = ptoc_int(2);
     *(pb)(addr+disp) = ptoc_int(3);
     break;
-  case BUFF_CELL:	/* R1: +buffer; r2: displacement(+integer);*/
-    /* r3: -Cell at that location */
+  case BUFF_CELL:	/* R1: +buffer; R2: displacement(+integer); */
+                        /* R3: -Cell at that location */
     addr = ptoc_string(1);
     disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     ctop_tag(3, (Cell)(addr+disp));
     break;
-  case BUFF_SET_CELL:	/* R1: +buffer; r2: displacement(+integer);*/
-				/* r3: type (+integer); r4: +term */
+  case BUFF_SET_CELL:	/* R1: +buffer; R2: displacement(+integer);*/
+			/* R3: type (+integer); R4: +term */
     /* When disp<0, set the type of the buff itself */
     /* The last function is not implemented */
     addr = ptoc_string(1);
@@ -871,19 +869,18 @@ int builtin_call(byte number)
     }
     break;
   case BUFF_SET_VAR:
-    /* This procedure is used in copyterm and make an external 
-       variable pointing to the buffer. The linkage inside the
-       buffer will not be trailed so remains after backtracking. */
+    /* This procedure is used to make an external variable pointing to the
+       buffer. The linkage inside the buffer will not be trailed so remains
+       after backtracking. */
     /* R1: +buffer; R2: +disp; */
     /* R3: +buffer length; R4: External var */
     addr = ptoc_string(1);
     disp = ptoc_int(2);
-    disp *= ZOOM_FACTOR ;
+    disp *= ZOOM_FACTOR;
     term = ptoc_tag(4);
     bld_free(vptr(addr+disp));
     if ((Cell)term < (Cell)addr || 
-	(Cell)term > (Cell)addr+ptoc_int(3)) {
-				/* var not in buffer, trail */
+	(Cell)term > (Cell)addr+ptoc_int(3)) { /* var not in buffer, trail */
       bind_ref(vptr(term), (CPtr)(addr+disp));
     } else {		/* already in buffer */
       bld_ref(vptr(term), (CPtr)(addr+disp));	
@@ -891,7 +888,7 @@ int builtin_call(byte number)
     break;
     
   case COPY_TERM: /* R1: +term to copy; R2: -variant */
-    copy_term() ;
+    copy_term();
     break;
     
   case CALL0:			/* R1: +Term, the call to be made */
@@ -1034,9 +1031,9 @@ int builtin_call(byte number)
     ctop_addr(3, pair_psc(sym));
     break;
 
-  case PSC_IMPORT:      /* R1: +String, Predicate name to be imported
+  case PSC_IMPORT:      /* R1: +String, functor name to be imported
 			   R2: +Arity
-			   R3: +String, Module name where pred lives  */
+			   R3: +String, Module name where functor lives  */
     /*
      * Creates a PSC record for a predicate and its module (if they
      * don't already exist) and links the predicate into usermod.
@@ -1063,7 +1060,7 @@ int builtin_call(byte number)
     else {
       ctop_int(3, token->type);
       ctop_int(5, token->nextch);
-      switch (token->type)     /* Modified for HiLog. (KFS) */
+      switch (token->type)
 	{
 	case TK_PUNC	   : ctop_int(4, *(token->value)); break;
 	case TK_VARFUNC    : ctop_string(4, token->value); break;
@@ -1117,8 +1114,8 @@ int builtin_call(byte number)
     }
     break;
   case PSC_INSERTMOD:   /* R1: +String, Module name */
-    /* R2: +Def (4 - is a definition; 0 -not) */
-    /* R3: -PSC of the Module entry */
+                        /* R2: +Def (4 - is a definition; 0 -not) */
+                        /* R3: -PSC of the Module entry */
     sym = insert_module(ptoc_int(2), ptoc_string(1));
     ctop_addr(3, pair_psc(sym));
     break;

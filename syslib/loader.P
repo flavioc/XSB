@@ -82,7 +82,7 @@ fmt_write_string(S,Fmt,A) :- formatted_io(2,S,Fmt,A,_).
 set_inthandler(Handler, Number) :-
 	Flag is Number + 32,
 	term_psc(Handler, PSC),
-	stat_set_flag(Flag, PSC, 1).
+	stat_set_flag(Flag, PSC).
 
 
 /*
@@ -98,7 +98,7 @@ set_current_module :-
 	conpsc(current_module, CURMOD_PSC),
 	conpsc(usermod, USERMOD_PSC),
 	psc_set_prop(CURMOD_PSC, USERMOD_PSC),
-	stat_set_flag(12, 0, 1).
+	stat_set_flag(12, 0).
 
 
 /*
@@ -112,7 +112,7 @@ set_current_input :-
 	psc_set_type(UserInPSC, 5),        % `ep' field contains file desc
 	psc_set_prop(UserInPSC, 0),        % `ep' field set to stdin
 	conset(current_input, UserInPSC),
-	stat_set_flag(10, 0, 1).
+	stat_set_flag(10, 0).
 
 
 /*
@@ -126,7 +126,7 @@ set_current_output :-
 	psc_set_type(UserOutPSC, 5),       % `ep' field contains file desc
 	psc_set_prop(UserOutPSC, 1),       % `ep' field set to stdout
 	conset(current_output, UserOutPSC),
-	stat_set_flag(11, 1, 1).
+	stat_set_flag(11, 1).
 
 
 /*
@@ -285,9 +285,9 @@ load_pred(PSC) :- \+ (\+ (load_pred0(PSC))).
 
 load_pred0(PSC) :- 
 	stat_flag(1, Hitrace), 	
-	stat_set_flag(1, 0, 1),			% turn off hitrace
+	stat_set_flag(1, 0),			% turn off hitrace
 	load_pred1(PSC),
-	stat_set_flag(1, Hitrace, 1).		% resume hitrace status if 
+	stat_set_flag(1, Hitrace).		% resume hitrace status if 
 						% successful
 load_pred1(PSC) :-
 	'_$savecp'(B),

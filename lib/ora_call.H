@@ -43,4 +43,3 @@
 :- import findall/3, bagof/3 from setof.
 :- import copy_term/2 from basics.
 :- import (not)/1 from standard.
-:- import stat_flag/2, stat_set_flag/3 from machine.

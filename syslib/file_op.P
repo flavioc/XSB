@@ -186,8 +186,6 @@ op_type(xfy,inf).
 op_type(yfx,inf).
 op_type(fx,pre).
 op_type(fy,pre).
-op_type(hx,pre).
-op_type(hy,pre).
 op_type(xf,pos).
 op_type(yf,pos).
 

@@ -74,11 +74,6 @@ l_write(File, T, Prec) :- 	% functor(T, OP, N),
 			l_writepostop(File, Name, T, Prec, Opprec, Nprec)
 		; '_$op'(Opprec, yf, OP) ->
 			l_writepostop(File, Name, T, Prec, Opprec, Opprec)
-		; '_$op'(Opprec, hx, OP) ->
-			Nprec is Opprec-1,
-			l_hilog_writepreop(File, Name, T, Prec, Opprec, Nprec)
-		; '_$op'(Opprec, hy, OP) -> 
-			l_hilog_writepreop(File, Name, T, Prec, Opprec, Opprec)
 		; Name == {} ->
 			l_write_curly(File, T)
 		; l_writestr(File, Name, N, T)
@@ -143,18 +138,10 @@ l_hilog_writestr(File, N, Term) :-
 	term_arg(Term, 1, HiLogFunctor),
         l_write(File, HiLogFunctor, 999),
 	term_arg(Term, 2, FirstArg),
-	( nonvar(HiLogFunctor), hilog_op(_, _, HiLogFunctor) -> 
-		( no_paren_needed(FirstArg) ->
-			l_write(File, FirstArg, 999)	% Term has only one arg
-		; file_put(File, 40),		% '('
-		  l_write(File, FirstArg, 999),
-		  file_put(File, 41)		% ')'
-		)
-	; file_put(File, 40),		% '('
-	  l_write(File, FirstArg, 999),	% write the first of the HiLog args
-	  l_writearg(File, Term, N, 2),	% write the rest  of the HiLog args
-          file_put(File, 41)		% ')'
-	).
+	file_put(File, 40),	% '('
+	l_write(File, FirstArg, 999), % write the first of the HiLog args
+	l_writearg(File, Term, N, 2), % write the rest  of the HiLog args
+	file_put(File, 41).	% ')'
 
 l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp) :- 
 	term_arg(Term, 1, Arg1),
@@ -198,30 +185,6 @@ l_writepostop(File, Op, Term, Oldp, Curp, Newp) :-
 		file_puttoken(File, 20, Op)
 	).
 
-l_hilog_writepreop(File, Op, Term, Oldp, Curp, Newp) :-
-	term_arg(Term, 1, Arg),
-	(Curp > Oldp ->
-		file_put(File, 40),		% 0'(
-		file_puttoken(File, 18, Op),
-		( no_paren_needed(Arg) ->
-			l_write(File, Arg, Newp)
-		; file_put(File, 40),		% 0'(
-		  l_write(File, Arg, Newp),
-		  file_put(File, 41)		% 0')
-		),
-		file_put(File, 41) 		% 0')
-	;
-		file_puttoken(File, 18, Op),
-		( no_paren_needed(Arg) ->
-			l_write(File, Arg, Newp)
-		; file_put(File, 40),		% 0'(
-		  l_write(File, Arg, Newp),
-		  file_put(File, 41)		% 0')
-		)
-	).
-
-no_paren_needed(Arg) :- atom(Arg).
-no_paren_needed(Arg) :- \+ proper_hilog(Arg).
 
 l_writearg(_File, _T, N, N) :- !.
 l_writearg(File, T, N, M) :- 
@@ -286,11 +249,6 @@ l_write_prolog(File, T, Prec) :- 	% functor(T, OP, N),
 			Nprec is Opprec-1, 
 			l_writepreop_prolog(File, Name, T, Prec, Opprec, Nprec)
 		; '_$op'(Opprec, fy, OP) ->
-			l_writepreop_prolog(File, Name, T, Prec, Opprec, Opprec)
-		; '_$op'(Opprec, hx, OP) ->
-			Nprec is Opprec-1,
-			l_writepreop_prolog(File, Name, T, Prec, Opprec, Nprec)
-		; '_$op'(Opprec, hy, OP) ->
 			l_writepreop_prolog(File, Name, T, Prec, Opprec, Opprec)
 		; '_$op'(Opprec, xf, OP) ->
 			Nprec is Opprec-1, 
@@ -451,11 +409,6 @@ l_write_quoted(File, T, Prec) :- 	% functor(T, OP, N),
 			l_writeqpostop(File, Name, T, Prec, Opprec, Nprec)
 		; '_$op'(Opprec, yf, OP) ->
 			l_writeqpostop(File, Name, T, Prec, Opprec, Opprec)
-		; '_$op'(Opprec, hx, OP) ->
-			Nprec is Opprec-1,
-			l_hilog_writeqpreop(File, Name, T, Prec, Opprec, Nprec)
-		; '_$op'(Opprec, hy, OP) ->
-			l_hilog_writeqpreop(File, Name, T, Prec, Opprec, Opprec)
 		; Name == {} ->
 			l_write_curly_quoted(File, T)
 		; l_writestr_quoted(File, Name, N, T)
@@ -501,18 +454,10 @@ l_hilog_writestr_quoted(File, N, Term) :-
 	term_arg(Term, 1, HiLogFunctor),
         l_write_quoted(File, HiLogFunctor, 999),
 	term_arg(Term, 2, FirstArg),
-	( nonvar(HiLogFunctor), hilog_op(_, _, HiLogFunctor) -> 
-		( no_paren_needed(FirstArg) ->
-			l_write_quoted(File, FirstArg, 999)	% Term has only one arg
-		; file_put(File, 40),		% '('
-		  l_write_quoted(File, FirstArg, 999),
-		  file_put(File, 41)		% ')'
-		)
-	; file_put(File, 40),		% '('
-	  l_write_quoted(File, FirstArg, 999),	% write the first of the HiLog args
-	  l_writearg_quoted(File, Term, N, 2),	% write the rest  of the HiLog args
-          file_put(File, 41)		% ')'
-	).
+	file_put(File, 40),	% '('
+	l_write_quoted(File, FirstArg,999), % write the first of the HiLog args
+	l_writearg_quoted(File, Term, N,2), % write the rest  of the HiLog args
+	file_put(File, 41).	% ')'
 
 l_writeqbinop(File, Op, Term, Oldp, Curp, Newlp, Newrp) :- 
 	term_arg(Term, 1, Arg1),
@@ -556,27 +501,6 @@ l_writeqpostop(File, Op, Term, Oldp, Curp, Newp) :-
 		file_puttoken(File, 20, Op)
 	).
 
-l_hilog_writeqpreop(File, Op, Term, Oldp, Curp, Newp) :-
-	term_arg(Term, 1, Arg),
-	(Curp > Oldp ->
-		file_put(File, 40),		% 0'(
-		file_puttoken(File, 18, Op),
-		( no_paren_needed(Arg) ->
-			l_write_quoted(File, Arg, Newp)
-		; file_put(File, 40),		% 0'(
-		  l_write_quoted(File, Arg, Newp),
-		  file_put(File, 41)		% 0')
-		),
-		file_put(File, 41) 		% 0')
-	;
-		file_puttoken(File, 18, Op),
-		( no_paren_needed(Arg) ->
-			l_write_quoted(File, Arg, Newp)
-		; file_put(File, 40),		% 0'(
-		  l_write_quoted(File, Arg, Newp),
-		  file_put(File, 41)		% 0')
-		)
-	).
 
 l_writearg_quoted(_File, _T, N, N) :- !.
 l_writearg_quoted(File, T, N, M) :- 
