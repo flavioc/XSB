@@ -136,11 +136,14 @@ char *xsb_executable_full_path(char *myname)
 {
   struct stat fileinfo;
   char *path = getenv("PATH");
-  int link_len, len, found = 0;
+  int len, found = 0;
   char *pathcounter, save;
   static char myname_augmented[MAXPATHLEN];
+#ifndef WIN_NT
+  int link_len;
+#endif
 
-  
+
 #ifndef WIN_NT
   /* Unix */
   /* if we can read symlink, then it is a symlink */
@@ -248,9 +251,11 @@ void set_config_file() {
   int retcode;
   struct stat fileinfo;
 
-  /* The config file is always 1 directory below the executable. */
+  /* The config file is in the lib directory at the same 
+     level as the xsb executable. */
   xsb_config_file = strip_names_from_path(executable, 2);
-  sprintf(xsb_config_file+strlen(xsb_config_file), "%cconfiguration.P", SLASH);
+  sprintf(xsb_config_file+strlen(xsb_config_file),
+	  "%clib%cxsb_configuration.P", SLASH, SLASH);
 
   /* Perform sanity checks: xsb_config_file must be in install_dir/config
      This is probably redundant */

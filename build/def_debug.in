@@ -8,8 +8,5 @@
 /* Heap debug		*/
 #undef DEBUG_HEAP
 
-/* Delay debug		*/
-#undef DEBUG_DELAY
-
 /* Profiling	  	*/
 #undef PROFILE

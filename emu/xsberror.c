@@ -37,6 +37,7 @@
 #include "register.h"
 #include "xsberror.h"
 
+extern void exit(int status);
 extern void print_pterm(Cell, int, char *, int *);
 
 /*----------------------------------------------------------------------*/

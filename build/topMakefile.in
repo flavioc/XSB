@@ -217,10 +217,10 @@ copy_files::
 		  ${prefix}/build; \
 	    chmod 755 ${prefix}/build/* ; \
 	    echo "Copying config..." ; \
-	    cp -f ${src_config_prefix}/configuration.* \
-	          ${install_config_prefix} ; \
-	    chmod 644 ${install_config_prefix}/configuration.* ; \
-	    touch ${install_config_prefix}/configuration.O ; \
+	    cp -f ${src_config_libdir}/xsb_configuration.* \
+	          ${install_config_libdir} ; \
+	    chmod 644 ${install_config_libdir}/xsb_configuration.* ; \
+	    touch ${install_config_libdir}/xsb_configuration.O ; \
 	    cp -f ${src_config_prefix}/banner.msg \
 	          ${install_config_prefix} ; \
 	    chmod 644 ${install_config_prefix}/banner.msg ; \
@@ -255,11 +255,11 @@ copy_files::
 configure_packages_src:
 	./pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
 	    	    	    	    	    tee -a Installation_summary ; \
-	  chmod 644  $(src_config_prefix)/configuration.O
+	  chmod 644  $(src_config_libdir)/xsb_configuration.O
 
 configure_packages_install:
 	@./pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
-	  chmod 644  $(install_config_prefix)/configuration.O
+	  chmod 644  $(install_config_libdir)/xsb_configuration.O
 
 remake_dot_O_files:
 	cd $(srcdir); make XSB=$(src_scriptdir)/xsb$(config_tag)

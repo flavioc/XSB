@@ -54,6 +54,12 @@ AC_ARG_WITH(cc,
 [  --with-cc               use CC to compile XSB])
 AC_ARG_WITH(acc,
 [  --with-acc              use ACC to compile XSB])
+AC_ARG_WITH(os,
+[  --with-os=wind          build XSB for Windows NT/95/98])
+AC_ARG_WITH(wind,
+[  --with-wind             build XSB for Windows NT/95/98])
+AC_ARG_WITH(cpp,
+[  --with-cpp=CPP          use CPP as the C preprocessor for .P programs])
 
 AC_ARG_WITH(oracle,
 [  --with-oracle           compile with support of Oracle])
@@ -75,6 +81,10 @@ if test "${with_debug}" = "yes" ; then
 fi
 if test "${with_debugging}" = "yes" ; then
    enable_debug=yes
+fi
+
+if test "${with_wind+set}" = "set" ; then
+   with_os=wind
 fi
 
 
@@ -278,11 +288,11 @@ scriptdir=${topdir}/bin   # where the xsb invocationscripts go
 pkgdir=${topdir}/packages
 etcdir=${topdir}/etc
 
+prolog_includes=${topdir}/prolog_includes
+
 # config-specific stuff
 full_config_name=${canonical}${config_tag}
 arch_config_prefix=${config_prefix}/${full_config_name}
-
-arch_config_file=${arch_config_prefix}/configuration.P
 
 cache_file="${arch_config_prefix}/config.cache"
 
@@ -309,6 +319,8 @@ arch_config_objlibdir=${arch_config_prefix}/saved.o
 
 # where arch-specific XSB .{P,H,O} files go
 arch_config_libdir=${arch_config_prefix}/lib
+
+arch_config_file=${arch_config_libdir}/xsb_configuration.P
 
 # site-specific directories
 # where the site is
@@ -375,6 +387,30 @@ AC_PROG_INSTALL
 dnl If on AIX, define _ALL_SOURCE, which allows the use of some BSD functions
 dnl This must be AFTER AC_PROG_CC
 AC_AIX
+
+AC_CHECK_PROG(has_gcc, gcc, "yes", "no")
+
+AC_MSG_CHECKING(for a suitable CPP for XSB)
+
+# Set up cpp
+# Make sure we pass the flags that: preserve comments, undefine all
+# symbols, remove line numbers
+if test "$with_cpp" != ""; then
+   xsbCPP="$with_cpp"
+elif test -x "/lib/cpp"; then
+   xsbCPP="/lib/cpp -P -C -undef"
+elif test -x "/usr/lib/cpp"; then
+   xsbCPP="/usr/lib/cpp -P -C -undef"
+elif test "$has_gcc" = "yes"; then
+   xsbCPP="gcc -E -P -C -undef -x c "
+else
+   # no luck use $CC -E and hope for the better
+   xsbCPP="$CC -E -P -C -undef"
+fi
+
+AC_MSG_RESULT($xsbCPP)
+
+AC_SUBST(xsbCPP)
 
 AC_MSG_CHECKING(whether we are using SunPro C)
 AC_TRY_COMPILE([],[#ifndef __SUNPRO_C
@@ -952,6 +988,7 @@ fi
 ### Specify what we'll be editing into Makefile and config.h.
 AC_SUBST(xsb_version)
 AC_SUBST(canonical)
+AC_SUBST(full_config_name)
 AC_SUBST(topdir)
 AC_SUBST(prefix)
 
@@ -1006,11 +1043,13 @@ AC_SUBST(engine_mode)
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
 	    ${arch_config_prefix}/modMakefile:modMakefile.in
+dnl prolog_includes/config.h makes .O files system-dependent -- don't want this
+dnl	    ${prolog_includes}/config.h:def_prolog_config.in
 	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
-	    MS_VC_Mfile.mak:MS_VC_Mfile.in
+	    ${arch_config_prefix}/MS_VC_Mfile.mak:MS_VC_Mfile.in
 	    ])
 
 chmod 644 ${arch_config_file}
@@ -1205,24 +1244,15 @@ fi
 
 # Now set modes, copy some files
 chmod 555 ${scriptdir}/xsb${config_tag}  makexsb
-chmod 444 ${arch_config_file} \
+
+# These files should really be read-only, but this causes problems when
+# configuring for Windows over Samba, NFS, etc.
+chmod 644 ${arch_config_file} \
 	  ${arch_config_prefix}/config.h \
 	  ${arch_config_prefix}/debug.h \
-	  ${arch_config_prefix}/*Makefile
+	  ${arch_config_prefix}/*Makefile \
+	  ${arch_config_prefix}/MS_VC_Mfile.mak
 
-# Move the config file in case of DOS and Windoze to the right place
-if test -n "$with_os" ; then
-   echo ""
-   echo "Copying config.h, debug.h to <emudir>/configs and <emudir>/debugs"
-   cp -f ${arch_config_prefix}/config.h  ${emudir}/configs
-   cp -f ${arch_config_prefix}/debug.h  ${emudir}/debugs
-fi
-
-#move the make file for MS Visual C++
-if test "$canonical" = "x86-pc-windows" ; then
-   echo "Copying Windows Makefiles to <emudir>"
-   cp -f MS_VC_Mfile.mak ${emudir}
-fi
 
 # phantom private_builtin.c file
 test -f ${emudir}/private_builtin.c || \

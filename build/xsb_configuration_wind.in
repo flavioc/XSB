@@ -34,16 +34,21 @@
 %% extensive information on how XSB was built.
 %%
 
-:- export xsb_configuration/2.
+:- export xsb_configuration/2, windows_os/0, dos_os/0.
 
 :- import stat_flag/2, intern_string/2, slash/1
    from machine.
 :- import fmt_write_string/3
    from file_io.
 
+windows_os.
+dos_os :- fail.
 
-%%% Set these appropriately for NT or W95/98
-xsb_configuration(compiler, 'cc').
+%%% Set these appropriately for NT/W95/98/00
+xsb_configuration(compiler, 'cl.exe').
+%% The options below cause VC++ preprocessor to omit #line numbers,
+%% undefine all symbols, preserve comments
+xsb_configuration(cpp, 'cl.exe /EP /u /C ').
 xsb_configuration(compiler_flags, '').
 xsb_configuration(loader_flags, '').
 

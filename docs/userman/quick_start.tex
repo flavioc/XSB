@@ -163,6 +163,45 @@ for in-depth discussion of the engine memory management.
 
 \subsection{Possible Installation Problems}
 
+\paragraph*{Failure to Detect a Suitable C Preprocessor}
+XSB filters many of its system files (even its Prolog programs) through the
+C preprocessor. (User programs can be also filtered this way using a
+compilation option.) The configuration script tries to detect a suitable C
+preprocessor. In a small number of cases, however, the preprocessor it
+finds might not coexist with the XSB compiler. In such a case, you must
+find a preprocessor that can be told the following:
+%%
+\begin{itemize}
+  \item  Not to insert any lines that start with the hash sign \# (usually
+    {\tt -P}). 
+  \item To preserve the comments (usually {\tt -C}).
+  \item To undefine any non-tandard symbols (usually {\tt -undef}).
+  \item To take files that do not necessarily end with .c or .h.
+    For gcc, this can be done using the \mbox{\tt -x c} flag. Most other
+    preprocessors will take any file without any flags.  
+\end{itemize}
+%%
+The configure script can be told with preprocessor to use using the {\tt
+  --with-cpp} option.  For example,
+%%
+\begin{verbatim}
+    configure --with-cpp="gcc -E -P -C -undef -x c"
+    configure --with-cpp="/lib/cpp -P -C -undef"  
+\end{verbatim}
+%%
+(Of course, if you have gcc or /lib/cpp, the configure script will find
+them automatically.) If you system does not have a suitable preprocessor,
+we suggest that you download gcc or lpp.\footnote{
+  %%
+  The SUNPro {\tt cc} compiler is an example of a preprocessor that is
+  incompatible with XSB, because even if one invokes it with all the
+  right options, like {\tt cc -E -P -C -undef}, it will still insert lines
+  that begin with \#, and the XSB compiler will choke on them. Fortunately,
+  Sun systems usually have a well-behaving preprocessor, such as
+  {\tt /usr/ccs/lib/cpp} or {\tt gcc}.
+  %%
+  }
+
 \paragraph*{Lack of Space for Optimized Compilation of C Code}
 When making the optimized version of the emulator, the temporary space
 available to the C compiler for intermediate files is sometimes not
@@ -253,18 +292,17 @@ these steps:
 \begin{enumerate}
 
 \item
-   cd emu
+   cd build
 
 \item
-  Type (in one line):\\
-  {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="option" \\
-    \hspace*{2cm}[DLL="yes"] [ORACLE="yes"] [SITE\_LIBS="libraries"]}
+  Type:\\
+  {\tt makexsb\_wind "CFG=option" ["DLL=yes"] ["ORACLE=yes"] ["SITE\_LIBS=libraries"]}
   %%
   \begin{itemize}
   \item The items in square brackets are optional.
   \item The options for {\tt CFG} are: \emph{release} or \emph{debug}.  The
     latter is used when you want to compile XSB with debugging enabled.
-  \item The other parameters to {\tt NMAKE} are optional. The {\tt DLL}
+  \item The other parameters to {\tt makexsb\_wind} are optional. The {\tt DLL}
     parameter tells Visual C++ to compile XSB as a DLL. The {\tt ORACLE}
     parameter compiles XSB with support for Oracle DBMS. If {\tt ORACLE} is
     specified, you {\bf must} also specify the necessary Oracle libraries
@@ -286,7 +324,7 @@ these steps:
 \[
  \tt
  \$XSB\_DIR\backslash config\backslash \mbox{\tt x86-pc-windows}\backslash
- saved.o \backslash xsb.dll
+ bin \backslash xsb.dll
 \]
 %%
 \end{enumerate}
@@ -296,7 +334,7 @@ tree structure. However, if you first compiled  XSB as an executable and
 then want to compile it as a DLL (or vice versa), then you must run 
 %%
 \begin{verbatim}
- NMAKE /f "MS_VC_Mfile.mak" clean  
+ makexsb_wind  clean  
 \end{verbatim}
 %%
 in between.

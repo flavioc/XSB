@@ -51,7 +51,7 @@
 	--with-odbc                 to set XSB_ODBC
 ****/
 
-#define DOS_GCC 1
+#define DJGPP 1
 #define CC "gcc"
 #define RELEASE_DATE @xsb_release_date@
 #define XSB_VERSION "@xsb_full_version_name@"

@@ -39,7 +39,6 @@
 #define SOCKET_SET_OPTION  13
 
 #ifdef WIN_NT
-#define IPPROTO_TCP                0  /* defined in Unix, but not Windows */
 #define BAD_SOCKET(sockfd)         sockfd==INVALID_SOCKET
 #define SOCKET_OP_FAILED(sockfd)   sockfd==SOCKET_ERROR
 #define IS_IP_ADDR(string)    	   inet_addr(string) != INADDR_NONE

@@ -2,6 +2,9 @@
     This file provides basic information about Autoconf 
     and the new XSB setup. Mostly the developer stuff.
 
+    For *NIX only. See ../INSTALL_WINDOWS for the info
+    on that other OS.
+
 
 The good news is that you don't really need to know much about
 Autoconf---the hard work has already been done! The following is primarily
@@ -132,6 +135,11 @@ The new directory structure:
 
     packages/	  - XSB packages
 
+    prolog_includes/ - .h files that can be included by the C preprocessor
+		       into Prolog programs (files that are included into C
+		       programs and both C and Prolog programs are kept in
+		       the emu/ directory).
+
 The structure of the config directory:
 
     config/ has a subdirectory for each architecture. For instance:
@@ -147,6 +155,7 @@ The structure of the config directory:
 	 bin/
 	 saved.o/
 	 lib/
+
     The bin/ directory contains the XSB executable for the configuration
     at hand. The saved.o/ directory contains copies of the object code for
     the files from the emu/ directory. This is used by `make' to avoid
@@ -248,8 +257,36 @@ How to build:
     for details.  The outcome of running configure and makexsb is stored in
     Installation_summary. This file is sent to xsb-contact by the
     registration script and it is also saved in config/<configuration>/
-    directory, where <configuration is the canonical name for the current
+    directory, where <configuration> is the canonical name for the current
     configuration.
+
+    NOTE ABOUT THE C PREPROCESSOR: Many .P programs that live in lib/,
+    cmplib/, and syslib/ directories use the C language preprocessor that
+    is automatically detected by the configuration script. There is a
+    slight chance that this script might fail to detect the right kind of
+    preprocessor, in which case you must tell the script where your C
+    preprocessor lives and supply the right kind of parameters to it. For
+    instance, 
+
+	configure --with-cpp="gcc -E -P -C -undef -x c"
+
+    or
+
+        configure --with-cpp="/lib/cpp -P -C -undef"
+
+    The above lines are, of course, just an example. If you have /lib/cpp
+    or gcc installed then, of course, configure will find them. If you have
+    to specify a different C preprocessor, then the following options must
+    be supplied:
+       a. Do not leave line numbers in post-processed files (usually -P)
+       b. Preserve comments (usually -C)
+       c. Undefine any non-standard symbols (usually -undef)
+       d. Some preprocessors, like gcc, insist that the files to be
+	  preprocessed must have a suitable ending, like .c or .h.
+	  Since XSB uses this preprocessor for .P files, we must somehow
+	  pacify gcc. The flags `-x c' tells gcc that is should believe
+	  that everything is ok. Other preprocessors might use other flags
+	  for that.
 
     A note about caching the configure tests: caching is disabled (the
     opposite of the standard Autoconf default). To enable it, type

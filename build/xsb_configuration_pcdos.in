@@ -34,13 +34,15 @@
 %% extensive information on how XSB was built.
 %%
 
-:- export xsb_configuration/2.
+:- export xsb_configuration/2, windows_os/0, dos_os/0.
 
 :- import stat_flag/2, intern_string/2, slash/1
    from machine.
 :- import fmt_write_string/3
    from file_io.
 
+windows_os :- fail.
+dos_os.
 
 %%% Set these appropriately for DOS
 xsb_configuration(compiler, 'gcc').
