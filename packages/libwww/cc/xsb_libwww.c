@@ -74,6 +74,8 @@ prolog_term get_request_member(prolog_term V)
 
 	auth_info = malloc(sizeof(HTBasic));
 	
+	printf("started with get_member\n");
+
 	if (str == "timeout") 
 		timeout_integer = ptoc_int(p2p_arg(V, 1));
 	if (str == "if_modified_since")
@@ -87,6 +89,7 @@ prolog_term get_request_member(prolog_term V)
 	if (str == "form_list")	Form_list = p2p_arg(V, 1);		
 	if (str == "form_method") 
 		method = ptoc_string(p2p_arg(V, 1));
+	printf("finished with get_member\n");
 	return TRUE;
 }
 
@@ -134,6 +137,7 @@ bool do_libwww_fetch_url___(void)
 
 	if (!is_list(Request_term)) xsb_abort("Request_term not a list!");
 	  
+	printf("start...\n");
 	/* get the request members from the Request_term list */
 	while (!is_nil(Request_term)) 
 	{		
@@ -153,6 +157,7 @@ bool do_libwww_fetch_url___(void)
 	/* make Response_term a list */
 	c2p_list(Response_term);
 
+	printf("before url...\n");
 	if (url) {
 		request = HTRequest_new();
 		cwd = HTGetCurrentDirectoryURL();
