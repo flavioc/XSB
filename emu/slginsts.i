@@ -217,6 +217,7 @@ case old_new_answer_dealloc:
     CallNumVar = *(GENERATOR_CP + TCP_SIZE + (Cell) ARITY);
     CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
     VarsInCall = GENERATOR_CP + TCP_SIZE + (Cell) ARITY + CallNumVar;
+    SUBGOAL = tcp_subgoal_ptr(GENERATOR_CP);
 #endif
 
     xflag = 0;
