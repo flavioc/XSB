@@ -310,4 +310,16 @@ find_parent(_IDC,HookCid,RootID,Source,PCid) :-	% has no parent, return root
 lappend([X|L1],L2,[X|L3]) :- lappend(L1,L2,L3).
 lappend([],L,L).
 
+:- import odbc_sql/4 from odbc_call.
+:- import conset/2, conget/2, coninc/1 from gensym.
+:- resetdbctr.
+resetdbctr :- conset('_dbctr',0),conset('_duplctr',0).
+
+odbc_sql_local(Connection,Input,Statement,Output):- 
+	conget('_dbctr',DbCtr),DbCtr1 is DbCtr + 1,conset('_dbctr',DbCtr1),
+	(DbCtr1 mod 100 =:= 0 -> write(',') ; true),
+%%	writeq(sQL(Statement,Input)),nl,
+	findall(Output,odbc_sql(Connection,Input,Statement,Output),Outputs1),
+	sort(Outputs1,Outputs),
+	member(Output,Outputs).
 
