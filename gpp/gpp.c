@@ -214,7 +214,7 @@ int commented[STACKDEPTH],iflevel;
    2: not output because we're in a #elif and we've already gone through
       the right case (so #else/#elif can't toggle back to output) */
 
-void ProcessContext(); /* the main loop */
+void ProcessContext(void); /* the main loop */
 
 int findIdent(char *b,int l,int *h);
 void delete_macro(int h,int i);
@@ -274,7 +274,7 @@ void FreeComments(struct SPECS *Q)
 {
   struct COMMENT *p;
   
-  while (Q->comments!=NULL) {
+  while (Q && Q->comments!=NULL) {
     p=Q->comments;
     Q->comments=p->next;
     free(p->start);
@@ -293,7 +293,7 @@ void PushSpecs(struct SPECS *X)
   S=P;
 }
 
-void PopSpecs()
+void PopSpecs(void)
 {
   struct SPECS *P;
   
@@ -307,17 +307,17 @@ void PopSpecs()
   if (S==NULL) bug("#mode restore without #mode save");
 }
 
-void usage() {
+void usage(void) {
   fprintf(stderr,"GPP Version 2.1.2 - Generic Preprocessor - (c) Denis Auroux 1996-2002\n");
   fprintf(stderr,"Usage : gpp [-{o|O} outfile] [-I/include/path] [-Dname=val ...] [-z] [-x] [-m]\n");
   fprintf(stderr,"            [-n] [-C | -T | -H | -P | -U ... [-M ...]] [+c<n> str1 str2]\n");
   fprintf(stderr,"            [+s<n> str1 str2 c] [infile]\n\n");
   fprintf(stderr,"      default:    #define x y           macro(arg,...)\n");
   fprintf(stderr," -C : maximum cpp compatibility (includes -n, +c, +s, ...)\n");
-  fprintf(stderr," -T : tex-like    \\define{x}{y}         \\macro{arg}{...}\n");
-  fprintf(stderr," -H : html-like   <#define x|y>         <#macro arg|...>\n");
+  fprintf(stderr," -T : TeX-like    \\define{x}{y}         \\macro{arg}{...}\n");
+  fprintf(stderr," -H : HTML-like   <#define x|y>         <#macro arg|...>\n");
   fprintf(stderr," -P : prolog compatible cpp-like mode\n");
-  fprintf(stderr," -U : user-defined syntax (specified in 9 following args, see manual)\n");
+  fprintf(stderr," -U : user-defined syntax (specified in 9 following args; see manual)\n");
   fprintf(stderr," -M : user-defined syntax for meta-macros (specified in 7 following args)\n\n");
   fprintf(stderr," -o : output to outfile\n");
   fprintf(stderr," -O : output to outfile and stdout\n");
@@ -374,7 +374,9 @@ struct MACRO *newmacro(char *s,int len,int hasspecs,int h)
   if (hasspecs) {
     m->define_specs=CloneSpecs(S);
     m->define_specs->readonly=1;
-  }
+  } else
+    m->define_specs = NULL; /* otherwise might crash when PushSpecs is
+			       called in ParsePossibleUser */
   return m;
 }
 
@@ -984,7 +986,7 @@ void shiftIn(int l)
   }
 }
 
-void initthings(int argc,char **argv)
+void initthings(int argc, char **argv)
 {
   char **arg,*s;
   int h,i,isinput,isoutput,ishelp,ismode,hasmeta,usrmode;
@@ -2404,7 +2406,7 @@ int ParsePossibleMeta()
   return 0;
 }
 
-int ParsePossibleUser()
+int ParsePossibleUser(void)
 {
   int idstart,idend,sh_end,lg_end,macend;
   int argc,id,i,l,h;
@@ -2508,7 +2510,8 @@ int ParsePossibleUser()
   C->namedargs=m->argnames;
   C->in_comment=m->defined_in_comment;
   C->ambience=FLAG_META; 
-  PushSpecs(m->define_specs);
+  if (m != NULL) 
+    PushSpecs(m->define_specs);
   ProcessContext();
   PopSpecs();
   free(C);
@@ -2519,7 +2522,7 @@ int ParsePossibleUser()
   return 0;
 }
 
-void ParseText()
+void ParseText(void)
 {
   int l,cs,ce;
   char c,*s;
@@ -2576,7 +2579,7 @@ void ParseText()
   shiftIn(l);
 }
 
-void ProcessContext()
+void ProcessContext(void)
 {
   if (C->len==0) { C->buf[0]='\n'; C->len++; }
   while (!C->eof) ParseText();
