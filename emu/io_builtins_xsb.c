@@ -1005,6 +1005,8 @@ int read_canonical(void)
 	findall_copy_to_heap(term,(CPtr)arg2,&hreg) ; /* this can't fail */
 	findall_free(findall_chunk_index) ; 
 	
+	deref(arg2);
+	term = (prolog_term) arg2;
 	if (isinteger(term) || 
 	    isfloat(term) || 
 	    isstring(term) ||
