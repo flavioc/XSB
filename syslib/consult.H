@@ -25,6 +25,7 @@
 
 :- export consult/1, consult/2, '.'/2, reconsult/1, reconsult/2,
 	  compile/1, compile/2, search_module/6,
+	  add_lib_dir/1,
 	  load_dyn/1, load_dyn/2, 
 	  load_dync/1, load_dync/2, read_canonical/1,
 	  current_loaded_file/1,
@@ -71,3 +72,4 @@
 :- import str_cat/3, str_sub/2 from string.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import file_write0/2, file_nl/1 from xsb_writ.
+:- import library_directory/1 from usermod.
