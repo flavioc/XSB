@@ -563,6 +563,7 @@
 #define FLSCALAREQL		flscalareql
 #define	FLSKOLEM		flskolem
 #define	FLOBJEQLDEF		flobjeqldef
+#define FLEQLNONE		fleqlnone
 #define FLEQLBASIC		fleqlbasic
 #define FLEQLFLOGIC		fleqlflogic
 

@@ -961,6 +961,11 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	          flora_message_line('Including basic equality maintenance'),
 		  flora_include_file([FLEQLTRAILER],FileStatus)
 
+	      ; member(FLEQLNONE,FileOptionList) ->
+		  %% Explicit directive takes precedence over any default.
+	          flora_message_line('Excluding equality maintenance'),
+		  flora_include_file([FLTRAILER],FileStatus)
+
 	      ; member(FLOBJEQLDEF,FileOptionList) ->
 		  flora_message_line('Including basic equality maintenance'),
 		  flora_include_file([FLEQLTRAILER],FileStatus)
