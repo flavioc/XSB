@@ -195,7 +195,7 @@ inform_executable:
 inform_module:
 	@echo "" ; \
 	    echo "The C-callable XSB module is in:"; \
-	    echo "       $(arch_config_objlibdir)/xsbmodule.o" ; \
+	    echo "       $(arch_config_objlibdir)/xsb.o" ; \
 	    echo ""
 
 register:

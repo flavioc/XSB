@@ -106,6 +106,8 @@ ALL : "$(OUTDIR)\xsb.dll"
 ALL : "$(OUTDIR)\xsb.exe"
 !ENDIF
 
+SOCKET_LIBRARY=wsock32.lib
+
 CLEAN : 
 	-@erase "$(INTDIR)\auxlry.obj"
 	-@erase "$(INTDIR)\biassert.obj"
@@ -202,7 +204,7 @@ CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib wsock32.lib "$(SITE_LIBS)" /nologo /subsystem:console /incremental:no\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:console /incremental:no\
  /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 \
  /out:"$(OUTDIR)/xsb.exe" 
 
@@ -215,7 +217,7 @@ CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
   /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib wsock32.lib "$(SITE_LIBS)" /nologo /subsystem:console /incremental:yes\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:console /incremental:yes\
  /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
  /out:"$(OUTDIR)\xsb.exe" 
 
@@ -227,7 +229,7 @@ CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
   /D "XSB_DLL" $ORACLE_FLAG /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib wsock32.lib "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:no\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:no\
  /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 /out:"$(OUTDIR)/xsb.dll"\
  /implib:"$(OUTDIR)/xsb.lib" 
 
@@ -240,7 +242,7 @@ CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib wsock32.lib "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:yes\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:yes\
  /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
  /out:"$(OUTDIR)\xsb.dll"\
  /implib:"$(OUTDIR)/xsb.lib"	 
