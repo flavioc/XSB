@@ -169,6 +169,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\findall.obj"
 	-@erase "$(OBJDIR)\function.obj"
 	-@erase "$(OBJDIR)\hash_xsb.obj"
+	-@erase "$(OBJDIR)\hashtable_xsb.obj"
 	-@erase "$(OBJDIR)\heap_xsb.obj"
 	-@erase "$(OBJDIR)\inst_xsb.obj"
 	-@erase "$(OBJDIR)\init_xsb.obj"
@@ -231,6 +232,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/findall.obj" \
 	"$(OBJDIR)/function.obj" \
 	"$(OBJDIR)/hash_xsb.obj" \
+	"$(OBJDIR)/hashtable_xsb.obj" \
 	"$(OBJDIR)/heap_xsb.obj" \
 	"$(OBJDIR)/init_xsb.obj" \
 	"$(OBJDIR)/inst_xsb.obj" \

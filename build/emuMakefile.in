@@ -110,7 +110,8 @@ DEPEND = makedepend
 SRCS =	auxlry.c biassert.c builtin.c cinterf.c \
 	debug_xsb.c dis.c dynload.c dynamic_stack.c \
 	emuloop.c error_xsb.c findall.c function.c \
-	hash_xsb.c heap_xsb.c init_xsb.c inst_xsb.c io_builtins_xsb.c \
+	hash_xsb.c hashtable_xsb.c \
+	heap_xsb.c init_xsb.c inst_xsb.c io_builtins_xsb.c \
 	loader_xsb.c main_xsb.c memory_xsb.c orient_xsb.c \
 	pathname_xsb.c psc_xsb.c random_xsb.c \
         remove_unf.c residual.c \
@@ -127,7 +128,8 @@ ORASRCS = $(SRCS) orastuff.c
 OBJS =	auxlry.o biassert.o builtin.o cinterf.o \
 	debug_xsb.o dis.o dynload.o dynamic_stack.o \
 	emuloop.o error_xsb.o findall.o function.o \
-	hash_xsb.o heap_xsb.o init_xsb.o inst_xsb.o io_builtins_xsb.o \
+	hash_xsb.o  hashtable_xsb.o \
+	heap_xsb.o init_xsb.o inst_xsb.o io_builtins_xsb.o \
 	loader_xsb.o memory_xsb.o orient_xsb.o \
 	pathname_xsb.o private_builtin.o psc_xsb.o random_xsb.o \
         remove_unf.o residual.o \
