@@ -83,6 +83,7 @@ struct MODE Html  = {"<#",     ">",  "\003","|",   ">", "#", '\\', "<", ">" };
 
 #define DEFAULT_OP_STRING (unsigned char *)"+-*/\\^<>=`~:.?@#&!%|"
 #define PROLOG_OP_STRING  (unsigned char *)"+-*/\\^<>=`~:.?@#&"
+#define FLORA_OP_STRING   (unsigned char *)"+-*/\\^<>=`~:.?@#&%"
 #define DEFAULT_OP_PLUS   (unsigned char *)"()[]{}"
 #define DEFAULT_ID_STRING (unsigned char *)"\005\007_" /* or equiv. "A-Za-z0-9_" */
 
@@ -91,7 +92,7 @@ struct MODE Html  = {"<#",     ">",  "\003","|",   ">", "#", '\\', "<", ">" };
 #define CHARSET_SUBSET_LEN (256>>LOG_LONG_BITS)
 typedef unsigned long *CHARSET_SUBSET;
 
-CHARSET_SUBSET DefaultOp,DefaultExtOp,PrologOp,DefaultId;
+CHARSET_SUBSET DefaultOp,DefaultExtOp,PrologOp,FloraOp,DefaultId;
 
 typedef struct COMMENT {
   char *start;          /* how the comment/string starts */
@@ -316,7 +317,8 @@ void usage(void) {
   fprintf(stderr," -C : maximum cpp compatibility (includes -n, +c, +s, ...)\n");
   fprintf(stderr," -T : TeX-like    \\define{x}{y}         \\macro{arg}{...}\n");
   fprintf(stderr," -H : HTML-like   <#define x|y>         <#macro arg|...>\n");
-  fprintf(stderr," -P : prolog compatible cpp-like mode\n");
+  fprintf(stderr," -P : Prolog compatible cpp-like mode\n");
+  fprintf(stderr," -F : Flora compatible cpp-like mode\n");
   fprintf(stderr," -U : user-defined syntax (specified in 9 following args; see manual)\n");
   fprintf(stderr," -M : user-defined syntax for meta-macros (specified in 7 following args)\n\n");
   fprintf(stderr," -o : output to outfile\n");
@@ -993,6 +995,7 @@ void initthings(int argc, char **argv)
 
   DefaultOp=MakeCharsetSubset(DEFAULT_OP_STRING);
   PrologOp=MakeCharsetSubset(PROLOG_OP_STRING);
+  FloraOp=MakeCharsetSubset(FLORA_OP_STRING);
   DefaultExtOp=MakeCharsetSubset(DEFAULT_OP_PLUS);
   DefaultId=MakeCharsetSubset(DEFAULT_ID_STRING);
 
@@ -1123,6 +1126,17 @@ void initthings(int argc, char **argv)
       add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
       add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
       add_comment(S,"css",strdup("%"),strdup("\n"),0,0);
+      add_comment(S,"sss",strdup("\""),strdup("\""),0,'\n');
+      add_comment(S,"sss",strdup("\207'"),strdup("'"),0,'\n'); /* \!# */
+      break;
+    case 'F':
+      ishelp|=ismode|hasmeta|usrmode; ismode=1;
+      S->User=KUser; S->Meta=KMeta;
+      S->preservelf=1;
+      S->op_set=FloraOp;
+      add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
+      add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
+      add_comment(S,"css",strdup("//"),strdup("\n"),0,0);
       add_comment(S,"sss",strdup("\""),strdup("\""),0,'\n');
       add_comment(S,"sss",strdup("\207'"),strdup("'"),0,'\n'); /* \!# */
       break;
@@ -1802,6 +1816,16 @@ void SetStandardMode(struct SPECS *P,char *opt)
     add_comment(P,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */ 
     add_comment(P,"cii",strdup("\\\n"),strdup(""),0,0);
     add_comment(P,"css",strdup("%"),strdup("\n"),0,0);
+    add_comment(P,"sss",strdup("\""),strdup("\""),0,'\n');
+    add_comment(P,"sss",strdup("\207'"),strdup("'"),0,'\n');   /* \!# */
+  }
+  else if (!strcmp(opt,"Flora")||!strcmp(opt,"flora")) {
+    P->User=KUser; P->Meta=KMeta;
+    P->preservelf=1;
+    P->op_set=FloraOp;
+    add_comment(P,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */ 
+    add_comment(P,"cii",strdup("\\\n"),strdup(""),0,0);
+    add_comment(P,"css",strdup("//"),strdup("\n"),0,0);
     add_comment(P,"sss",strdup("\""),strdup("\""),0,'\n');
     add_comment(P,"sss",strdup("\207'"),strdup("'"),0,'\n');   /* \!# */
   }
