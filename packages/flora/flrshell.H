@@ -72,6 +72,8 @@
 	flora_display_msg/1, flora_display_msg/2
    from flrutils.
 
+:- import pop_stdin/1 from push_io.
+
 :- import glob_directory/4 from wildmatch.
 
 :- import STD_FPREFIX(debugger_data_loaded)/0 from usermod.

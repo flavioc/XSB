@@ -80,16 +80,26 @@ STD_FPREFIX(shell_loop) :-
 	),
 	STD_FPREFIX(loop_guard)(S).
 
+:- import stat_flag/2 from machine.
 STD_FPREFIX(write_shell_prompt) :-
 	pop_abort_cutpoint,
 	push_abort_cutpoint,
-	seen,
-	see(userin),
-	told,
-	tell(userout),
+	%%seen,
+	%%see(userin),
+	%%told,
+	%%tell(userout),
 	file_nl(STDFDBK), file_write(STDFDBK, 'flora ?- ').
 
-STD_FPREFIX(loop_guard)(S) :- (member(eof,S) -> end ; fail).
+STD_FPREFIX(loop_guard)(S) :-
+	(member(eof,S)
+	%% Don't exit Flora, if pop_stdin(cmd_line_argument) 
+	%% has an I/O stream on stack.
+	-> (pop_stdin(cmd_line_argument)
+	   -> fail
+	   ;  end
+	   )
+	; fail
+	).
 
 
 /*********************************************************************/
