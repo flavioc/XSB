@@ -96,15 +96,16 @@ conv(X,X).
 
 
 run(File) :- 
-	conv(File,FileN),
+	conv(File, FileN),
 	gen_code_verbose(FileN, noforce),
 	nl, writeln('Executing ...'),
-	consult(FileN,[optimize,auto_table,spec_repr]).
+	consult(FileN, [optimize,auto_table,spec_repr]).
 
 load(File) :- 
 	conv(File,FileN),
 	flip_search_module(FileN, Module, 'flp'),
 	consult(Module,[optimize,auto_table,spec_repr]).
+
 
 
 %%% gen_code(+InFile, +Force): generate code for InFile
