@@ -23,13 +23,20 @@
 ## 
 ##
 
-ALL =	assert.O atts.O basics.O consult.O curr_sym.O dbclause.O \
-	dcg.O debugger.O domain.O eval.O file_io.O \
-	file_op.O gensym.O hilogsym.O loader.O machine.O num_vars.O \
-	push_io.O \
-	setof.O shell.O standard.O std_xsb.O \
-	string.O subsumes.O sysinitrc.O tables.O term_exp.O \
-	unix.O x_interp.O xsb_hook.O xsb_read.O xsb_writ.O xcallxsb.O
+OBJEXT=.O
+
+ALL =	assert${OBJEXT} atts${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
+	curr_sym${OBJEXT} dbclause${OBJEXT} \
+	dcg${OBJEXT} debugger${OBJEXT} domain${OBJEXT} eval${OBJEXT}  \
+	file_io${OBJEXT} \
+	file_op${OBJEXT} gensym${OBJEXT} hilogsym${OBJEXT} loader${OBJEXT}  \
+	machine${OBJEXT} num_vars${OBJEXT} \
+	push_io${OBJEXT} \
+	setof${OBJEXT} shell${OBJEXT} standard${OBJEXT} std_xsb${OBJEXT} \
+	string${OBJEXT} subsumes${OBJEXT} sysinitrc${OBJEXT} tables${OBJEXT}  \
+	term_exp${OBJEXT} \
+	unix${OBJEXT} x_interp${OBJEXT} xsb_hook${OBJEXT} xsb_read${OBJEXT}  \
+	xsb_writ${OBJEXT} xcallxsb${OBJEXT}
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
@@ -55,14 +62,14 @@ OBJFILESAVED = objfiles.saved
 
 
 # suffix rules
-.SUFFIXES: .P .H .O
+.SUFFIXES: .P .H ${OBJEXT}
 
 all: init $(ALL) finish
 	./CompileChangedFiles.sh $(Prolog)
 	@cat $(SVFILE)
 
-%.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
-	@cp -f $*.O $(OBJFILESAVED) || echo ""
+%${OBJEXT}:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
+	@cp -f $*${OBJEXT} $(OBJFILESAVED) || echo ""
 	echo 'mc($*, $(Option)).' >> cmd...
 
 # The following is done because of brain damage in some make utilities
@@ -74,8 +81,8 @@ all: init $(ALL) finish
 # obscure make utility doesn't understand patterns
 .H.P:
 	../build/touch.sh $@
-.P.O:
-	@cp -f $*.O $(OBJFILESAVED) || echo ""
+.P${OBJEXT}:
+	@cp -f $*${OBJEXT} $(OBJFILESAVED) || echo ""
 	echo 'mc($*, $(Option)).' >> cmd...
 
 # Redirect warnings into a file so we would be able to display it later.
@@ -100,7 +107,7 @@ finish:
 	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN)), file_nl($(STDWARN))." >> cmd...
 
 restore:
-	mv -f $(OBJFILESAVED)/*.O .
+	mv -f $(OBJFILESAVED)/*${OBJEXT} .
 
 
 .DONE:

@@ -22,9 +22,12 @@
 ## 
 ##
 
+OBJEXT=.O
 
-ALL = 	flora2.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
-	sModels.O libwww.O clpr.O xsbdoc.O xmc.O
+ALL = 	flora2${OBJEXT} slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
+	regmatch${OBJEXT} wildmatch${OBJEXT} \
+	sModels${OBJEXT} libwww${OBJEXT} clpr${OBJEXT} xsbdoc${OBJEXT} \
+	xmc${OBJEXT}
 
 SUBDIR = flora2 slx perlmatch gap regmatch wildmatch libwww sModels \
 	clpqr xsbdoc xmc
@@ -51,9 +54,9 @@ HDRMSG = "While compiling XSB/packages:"
 .IGNORE:
 
 # suffix rules
-.SUFFIXES: .P .O .H
+.SUFFIXES: .P ${OBJEXT} .H
 
-.P.O:
+.P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 
@@ -116,7 +119,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *.O *~ .*~ *.bak .#*
+	/bin/rm -f *${OBJEXT} *~ .*~ *.bak .#*
 
 .DONE:
 	@echo Done

@@ -23,6 +23,10 @@
 */
 
 
+:- compiler_options([xpp_on]).
+#include "loader_defs.h"
+
+
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
@@ -36,7 +40,8 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
     xsb_configuration(configuration, XSBconfiguration),
     package_configuration(dir(libwww), LibwwwDir),
     fmt_write_string(LD_directives_file,
-		     '%s%scc%slibwww_request.H', f(LibwwwDir, Slash, Slash)),
+		     '%s%scc%slibwww_request%s',
+		     f(LibwwwDir, Slash, Slash,XSB_HDR_EXTENSION_ATOM)),
     telling(OldTell),
     tell(LD_directives_file),
     writeln('%% This file is generated on-the-fly by libwwwconfig.P'),
@@ -64,11 +69,11 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 		     '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename_rdf)),
     fmt_write_string(Module_html,
 		     '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename_html)),
-    (  %% avoid recompilation: check if xsb_libwww.O exists and 
+    (  %% avoid recompilation: check if xsb_libwww object file exists and 
        %% is newer than xsb_libwww.c.
        search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
        str_cat(Module, '.c', ModuleSourceFile),
-       str_cat(Module, '.H', ModuleH),
+       str_cat(Module, XSB_HDR_EXTENSION_ATOM, ModuleH),
        machine_file_exists(ModuleH),
        file_time(ModuleO, time(CT1,CT2)),
        file_time(ModuleSourceFile, time(ST1,ST2)),
@@ -108,10 +113,11 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 	fmt_write_string(LoaderFlags2, '%s %s %s %s',
 			 a(LoaderFlags1,LibMod_xml,LibMod_rdf,LibMod_html)),
 	make_libwwwH(CC, CC_opts, LoaderFlags2),
-	str_cat(Module, '.O', Objfile),
+	str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibObjFile,
-			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
+			 '%s%s%s%s',
+			 args(ConfigLibdir,Slash,Basename,XSB_OBJ_EXTENSION_ATOM)),
 	force_rename(Objfile, LibObjFile),
 	str_cat(Module, '.so', SharedLib),
 	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),

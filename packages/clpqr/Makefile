@@ -23,11 +23,15 @@
 ## 
 ##
 
+OBJEXT=.O
+
 XSBDIR=../..
 
-ALL = 	arith.O arith_r.O bv.O class.O clpr.O ineq.O itf3.O \
-	fourmotz.O nf.O ordering.O project.O redund.O store.O \
-	dump.O
+ALL = 	arith${OBJEXT} arith_r${OBJEXT} bv${OBJEXT} class${OBJEXT} \
+	clpr${OBJEXT} ineq${OBJEXT} itf3${OBJEXT} \
+	fourmotz${OBJEXT} nf${OBJEXT} ordering${OBJEXT} \
+	project${OBJEXT} redund${OBJEXT} store${OBJEXT} \
+	dump${OBJEXT}
 
 # Option = [optimize, spec_off]
 
@@ -54,7 +58,7 @@ HDRMSG = "While compiling XSB/packages/clpqr:"
 .IGNORE:
 
 # suffix rules
-.SUFFIXES: .P .O .H
+.SUFFIXES: .P ${OBJEXT} .H
 
 all: init $(ALL) finish
 	@touch cmd...
@@ -62,7 +66,7 @@ all: init $(ALL) finish
 	@rm cmd...
 	@cat $(SVFILE)
 
-.P.O:
+.P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 init:
@@ -79,7 +83,7 @@ finish:
 .PHONY: clean
 
 clean:
-	/bin/rm -f *.O *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
 
 .DONE:
 	echo Done

@@ -23,7 +23,9 @@
 ##
 
 
-ALL = 	slxshell.O
+OBJEXT=.O
+
+ALL = 	slxshell${OBJEXT}
 
 Option = [optimize]
 
@@ -40,8 +42,8 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 .IGNORE:
 
 # suffix rules
-.SUFFIXES: .P .O .H
-.P.O:
+.SUFFIXES: .P ${OBJEXT} .H
+.P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 all: $(ALL)
@@ -53,7 +55,7 @@ all: $(ALL)
 .PHONY: clean
 
 clean:
-	/bin/rm -f *.O *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
 
 
 .DONE:

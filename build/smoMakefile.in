@@ -22,7 +22,9 @@
 ## 
 ##
 
-ALL = smodels.O smodelsops.O smodelsint.O
+OBJEXT=.O
+
+ALL = smodels${OBJEXT} smodelsops${OBJEXT} smodelsint${OBJEXT}
 
 SMODELS = @with_smodels@
 
@@ -48,12 +50,12 @@ Prolog = "@CROSS_SIMULATOR@ $(XSB) "
 
 .IGNORE:
 
-.SUFFIXES: .P .O .H .so
+.SUFFIXES: .P ${OBJEXT} .H .so
 
-.H.O:
+.H${OBJEXT}:
 	echo 'compile($*, $(Option)).' >> cmd...
 
-.P.O:
+.P${OBJEXT}:
 	echo 'mc($*,$(Option)).' >> cmd...
 
 all: $(ALL)
@@ -62,7 +64,7 @@ all: $(ALL)
 	@rm -f cmd...
 
 clean: 
-	/bin/rm -f *.o *.so *.O *.h
+	/bin/rm -f *.o *.so *${OBJEXT} *.h
 
 xsb_wrap_smodels.o: xsb_wrap_smodels.c
 	$(GCC) $(CFLAGS) -c xsb_wrap_smodels.c

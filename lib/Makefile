@@ -23,13 +23,17 @@
 ## 
 ##
 
+OBJEXT=.O
 
-ALL = 	aggregs.O array.O array1.O assoc_xsb.O \
-	basic_props.O \
-	directry.O foreign.O format.O \
-	intern.O obsolete.O odbc_call.O ordsets.O ora_call.O \
-	packaging.O random.O scrptutl.O socket.O storage.O \
-	ugraphs.O wrapping.O write_term.O xsb_ciao.O xnmr.O justifyLP.O
+ALL = 	aggregs${OBJEXT} array${OBJEXT} array1${OBJEXT} assoc_xsb${OBJEXT} \
+	basic_props${OBJEXT} \
+	directry${OBJEXT} foreign${OBJEXT} format${OBJEXT} \
+	intern${OBJEXT} obsolete${OBJEXT} odbc_call${OBJEXT} \
+	ordsets${OBJEXT} ora_call${OBJEXT} \
+	packaging${OBJEXT} random${OBJEXT} scrptutl${OBJEXT} \
+	socket${OBJEXT} storage${OBJEXT} \
+	ugraphs${OBJEXT} wrapping${OBJEXT} write_term${OBJEXT} \
+	xsb_ciao${OBJEXT} xnmr${OBJEXT} justifyLP${OBJEXT}
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
@@ -52,7 +56,7 @@ HDRMSG = "While compiling XSB/lib:"
 
 
 # suffix rules
-.SUFFIXES: .P .O .H
+.SUFFIXES: .P ${OBJEXT} .H
 
 all: init $(ALL) finish
 	@../build/touch.sh cmd...
@@ -60,7 +64,7 @@ all: init $(ALL) finish
 	/bin/rm -f cmd...
 	@cat $(SVFILE)
 
-%.O:   %.P $(PROLOG_INCLUDES) $(EMU_INCLUDES) ../cmplib/builtin.P
+%${OBJEXT}:   %.P $(PROLOG_INCLUDES) $(EMU_INCLUDES) ../cmplib/builtin.P
 	echo "mc('$*', $(Option))." >> cmd...
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
@@ -72,7 +76,7 @@ all: init $(ALL) finish
 # obscure make utility doesn't understand patterns
 .H.P:
 	../build/touch.sh $@
-.P.O:
+.P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 init:
@@ -88,7 +92,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *.O
+	/bin/rm -f *${OBJEXT}
 
 
 .DONE:

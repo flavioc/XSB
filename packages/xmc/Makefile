@@ -5,10 +5,13 @@
 ## $Id$
 
 
-# Note: xlparse.O must NOT be on the list below
-ALL = comp.O count.O formula.O mucalculus.O quad.O  \
-	typecheck.O util.O xmc.O \
-	justify.O navigate.O gui.O
+OBJEXT=.O
+
+# Note: xlparse must NOT be on the list below
+ALL = comp${OBJEXT} count${OBJEXT} formula${OBJEXT} \
+	mucalculus${OBJEXT} quad${OBJEXT}  \
+	typecheck${OBJEXT} util${OBJEXT} xmc${OBJEXT} \
+	justify${OBJEXT} navigate${OBJEXT} gui${OBJEXT}
 
 Option = [optimize]
 

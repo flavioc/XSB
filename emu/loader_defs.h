@@ -22,7 +22,7 @@
 ** 
 */
 
-/* Info on the file extension used for XSB object files */
+/* Info on the file extension used for XSB files */
 
 #define XSB_OBJ_EXTENSION_STRING  ".O"
 #define XSB_OBJ_EXTENSION_LENGTH  4

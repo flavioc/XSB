@@ -22,6 +22,10 @@
 ** 
 */
 
+:- compiler_options([xpp_on]).
+#include "loader_defs.h"
+
+
 
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.
 :- import fmt_write_string/3, file_time/2 from file_io.
@@ -64,11 +68,11 @@ make_xsbpatternH(CC, CC_opts) :-
     Basename = xsbpattern,
     fmt_write_string(Module,
 		     '%s%scc%s%s', f(PerlmatchDir, Slash, Slash,Basename)),
-    (  %% avoid recompilation: check if xsbpattern.O exists and 
+    (  %% avoid recompilation: check if xsbpattern object file exists and 
        %% is newer than xsbpattern.c.
        search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
        str_cat(Module, '.c', ModuleSourceFile),
-       str_cat(Module, '.H', ModuleH),
+       str_cat(Module, XSB_HDR_EXTENSION_ATOM, ModuleH),
        machine_file_exists(ModuleH),
        file_time(ModuleO, time(CT1,CT2)),
        file_time(ModuleSourceFile, time(ST1,ST2)),
@@ -85,10 +89,11 @@ make_xsbpatternH(CC, CC_opts) :-
 			 f(CCflags,PerlArchlib,Slash)),
 	make_xsbpatternH(CC, CC_opts),
 	xsb_configuration(config_libdir, ConfigLibdir),
-	str_cat(Module, '.O', Objfile),
+	str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibObjFile,
-			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
+			 '%s%s%s%s',
+			 args(ConfigLibdir,Slash,Basename,XSB_OBJ_EXTENSION_ATOM)),
 	rename(Objfile, LibObjFile),
 	%% Note: the .so ending is heavily Unix-centered. I dunno what this
 	%% corresponds to in windows. - mk

@@ -22,9 +22,11 @@
 ## 
 ##
 
+OBJEXT=.O
+
 XSBDIR = ../..
 
-ALL = 	regmtchconfig.O
+ALL = 	regmtchconfig${OBJEXT}
 
 Option = [optimize]
 
@@ -49,7 +51,7 @@ HDRMSG = "While compiling XSB/packages/regmatch:"
 .IGNORE:
 
 # suffix rules
-.SUFFIXES: .P .O .H
+.SUFFIXES: .P ${OBJEXT} .H
 
 all: init $(ALL) finish
 	@touch cmd...
@@ -57,7 +59,7 @@ all: init $(ALL) finish
 	@rm cmd...
 	@cat $(SVFILE)
 
-.P.O:
+.P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 init:
@@ -74,7 +76,7 @@ finish:
 .PHONY: clean
 
 clean:
-	/bin/rm -f *.O *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
 	/bin/rm -f cc/*.[Oo]  cc/*.so cc/*~ cc/.*~ cc/*.bak
 
 .DONE:

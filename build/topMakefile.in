@@ -152,20 +152,31 @@ emumake_goal=@emumake_goal@
 # Normal user
 all: prepare emu xsbmod xsbdll gpp remake_dot_O_files register emu_clean 
 
-# Packages
-packages: configure_packages_src
-	cd $(srcdir); make XSB=$(src_scriptdir)/xsb$(config_tag) packages
-
 # Developer who just checked out or updated CVS copy
-devel: prepare emu xsbmod xsbdll gpp remake_dot_O_files configure_packages_src emu_clean
+devel: prepare emu xsbmod xsbdll gpp remake_dot_O_files emu_clean
 
-superdevel: prepare emu xsbmod xsbdll gpp remake_dot_O_files_force configure_packages_src emu_clean
+superdevel: prepare emu xsbmod xsbdll gpp remake_dot_O_files_force packages emu_clean
 
 # Developer who needs a quick re-make of the executable
 fast: prepare emu gpp emu_clean
 # very fast: like fast, but without gpp
 vfast: prepare emu emu_clean
 
+
+# Packages
+packages: start_packages finish_packages
+
+start_packages: smodels
+	@rm -f $(srcdir)/build/.*.tmp
+	cd $(srcdir); make packages XSB=$(src_scriptdir)/xsb$(config_tag)
+	@echo "" | tee -a Installation_summary
+	@./pkg_config.sh $(src_scriptdir)/xsb$(config_tag ) | \
+	    	    	    	    	    tee -a Installation_summary
+
+finish_packages:
+	@echo "" | tee -a Installation_summary
+	@cat $(srcdir)/build/.*.tmp 2> /dev/null | \
+			tee -a Installation_summary
 prepare:
 	@cd $(src_emudir); \
 	  rm -f *.o Makefile  2> /dev/null || echo "" ; \
@@ -213,6 +224,7 @@ xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	cd ${src_emudir}; make dll
 
 emu_clean: do_cleaning inform_executable
+	chmod 644  $(src_config_libdir)/xsb_configuration$(xsb_obj_extension)
 
 do_cleaning:
 	@cd $(src_emudir); \
@@ -221,8 +233,6 @@ do_cleaning:
 	@cd $(srcdir)/gpp ; \
 	  rm -f Makefile Makefile.bak  2> /dev/null || echo ""
 	@echo "" >> ./Installation_summary
-	@echo "" >> ./Installation_summary
-	@echo "    ----------------- End of Build ------------------------" >> ./Installation_summary
 	@echo "" >> ./Installation_summary
 	@cp ./Installation_summary $(src_config_prefix)
 	@echo ""
@@ -390,10 +400,6 @@ copy_files::
 	    echo ""; echo "Installed!" \
 	  )
 
-configure_packages_src: smodels
-	./pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
-	    	    	    	    	    tee -a Installation_summary ; \
-	  chmod 644  $(src_config_libdir)/xsb_configuration$(xsb_obj_extension)
 
 configure_packages_install:
 	@./pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \

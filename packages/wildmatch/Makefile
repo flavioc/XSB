@@ -22,10 +22,11 @@
 ## 
 ##
 
+OBJEXT=.O
 
 XSBDIR=../..
 
-ALL = 	wldmtchconfig.O
+ALL = 	wldmtchconfig${OBJEXT}
 
 Option = [optimize]
 
@@ -50,7 +51,7 @@ HDRMSG = "While compiling XSB/packages/wildmatch:"
 .IGNORE:
 
 # suffix rules
-.SUFFIXES: .P .O .H
+.SUFFIXES: .P ${OBJEXT} .H
 
 all: init $(ALL) finish
 	@touch cmd...
@@ -58,7 +59,7 @@ all: init $(ALL) finish
 	@rm cmd...
 	@cat $(SVFILE)
 
-.P.O:
+.P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 init:
@@ -73,7 +74,7 @@ finish:
 	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> cmd...
 
 clean:
-	/bin/rm -f *.O *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
 	/bin/rm -f cc/*.[Oo] cc/*.so cc/*~ cc/.*~  cc/*.bak
 
 

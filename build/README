@@ -286,9 +286,9 @@ How to build:
 
         makexsb devel
 
-    to rebuild the missing .O files in the XSB installation. (XSB CVS
-    repository stores only the very necessary .O files, leaving the rest to 
-    be rebuilt by the user.
+    to rebuild the missing object files in the XSB installation. (XSB CVS
+    repository stores only the very necessary object files, leaving the
+    rest to be rebuilt by the user.
 
     Sometimes even this is not enough. When people make changes to the
     compiler (however small they might be), it is necessary to recompile
@@ -317,7 +317,7 @@ How to build:
 		       meaning that you want to install it somewhere else
 		       (a copy of the executable will always be available
 		       in the source tree as well), then this target will
-		       copy the new executable and the .O files from the
+		       copy the new executable and the object files from the
 		       XSB libraries into the corresponding directories in
 		       DIR/<xsb-version>.
 		       XSB version is appended so as to not wipe out the

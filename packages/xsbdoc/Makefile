@@ -1,7 +1,9 @@
 
+OBJEXT=.O
+
 all:
 
 .PHONY: clean
 
 clean:
-	/bin/rm -f *.O *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
