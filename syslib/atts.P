@@ -1,0 +1,237 @@
+/* File:      atts.P
+** Author(s): Baoqiu Cui
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+:- export put_atts/2, get_atts/2,
+	  attribute/1.
+
+:- import put_attributes/2, get_attributes/3,
+	  delete_attributes/1 from machine.
+:- import memberchk/2, copy_term/2 from basics.
+:- import arg/3, functor/3, abort/1 from standard.
+:- import assert/1, retractall/1, (dynamic)/1 from assert.
+:- import file_write/2, file_nl/1 from xsb_writ.
+:- import findall/3 from setof.
+
+:- dynamic '$v2l'(_,_), '$t2v'(_,_,_).
+
+%-----------------------------------------------------------------------
+% Preprocess the directive
+%-----------------------------------------------------------------------
+attribute(Decls) :-
+	conj_to_list_functor(Decls, Attrs, 1, Size),
+	functor(Vector, v, Size),
+	compute_att_mask(Attrs, Vector).
+
+conj_to_list_functor((N/A,B), [H|Rest], I, K) :- !,
+	functor(H, N, A),
+	J is I+A,
+	conj_to_list_functor(B, Rest, J, K).
+conj_to_list_functor(N/A, [H], I, K) :- 
+	functor(H, N, A),
+	K is I+A.
+
+compute_att_mask(Attrs, Vector) :-
+	arg(1, Vector, Mask),
+	retractall('$t2v'(_, _, _)),
+	assert('$t2v'('$bitv'(Mask), Vector, 0)),
+	compute_att_mask(Attrs, Vector, 1, 1),
+	retractall('$v2l'(_, _)),
+	assert('$v2l'(Vector, Attrs)).
+
+compute_att_mask([], _, _, _).
+compute_att_mask([Att|Atts], Vector, I, M) :-
+	functor(Att, _, A),
+	J is I+A,
+	equate_args(A, Att, J, Vector),
+	assert('$t2v'(Att, Vector, M)),
+	N is M << 1,
+	compute_att_mask(Atts, Vector, J, N).
+
+equate_args(0, _, _, _) :- !.
+equate_args(A, T1, C, T2) :-
+	arg(A, T1, X),
+	arg(C, T2, X),
+	B is A-1, D is C-1,
+	equate_args(B, T1, D, T2).
+
+
+%-----------------------------------------------------------------------
+% top-level predicates
+%-----------------------------------------------------------------------
+put_atts(Var, Spec) :-
+	nonvar(Spec), !,
+	partition_spec(Spec, SpecP, [], SpecN, []),
+	all_atts(All),
+	put_exp(All, SpecP, SpecN, VOld, VNew, 0, PM, 0, NM),
+	all_mask(SpecAll),
+	put_atts1(PM, NM, SpecAll, Var, VOld, VNew).
+
+put_atts1(P, N, _, _, _, _) :-
+	P /\ N =\= 0, !,
+	file_write(2, 'Something is wrong in the put_atts/2!'),
+	file_nl(2),
+	fail.
+put_atts1(0, All, All, Var, _, _) :- !,		% Remove all the atts
+	delete_attributes(Var).
+put_atts1(0, N, _, Var, VOld, VNew) :- !,	% Only remove some atts
+	arg(1, VNew, NewMask),
+	NN is \(N),
+	get_attributes(Var, V, OldMask),
+	NewMask is OldMask /\ NN,
+	(NewMask =\= OldMask
+	 ->	V = VOld,	% unify V with VOld (and so with VNew)
+				% Old values of the untouched atts are kept
+				% in VNew
+		put_attributes(Var, VNew)
+	 ;	true
+        ).
+put_atts1(P, N, All, Var, _, VNew) :-		% Add some, remove some
+	P\/N =:= All, !,			% only save added ones
+	arg(1, VNew, P),
+	put_attributes(Var, VNew).
+put_atts1(P, 0, _, Var, VOld, VNew) :- !,	% Only add some atts
+	arg(1, VNew, NewMask),
+	get_attributes(Var, V, OldMask),
+	V = VOld,
+	NewMask is OldMask\/P,
+	put_attributes(Var, VNew).
+put_atts1(P, N, _, Var, VOld, VNew) :-		% Add some, remove some
+	arg(1, VNew, NewMask),
+	get_attributes(Var, V, OldMask),
+	NN is \(N),
+	NewMask is (OldMask \/ P) /\ NN,
+	V = VOld,
+	put_attributes(Var, VNew).
+
+partition_spec(X, _, _, _, _) :- var(X), !, fail. 
+partition_spec(+(X), [X|P], P, N, N) :- !.
+partition_spec(-(X), P, P, [Y|N], N) :- !,
+	functor(X, F, A),
+	functor(Y, F, A).
+partition_spec([], P0, P0, N0, N0) :- !.
+partition_spec([S|Ss], P2, P0, N2, N0) :- !,
+	partition_spec(S, P1, P0, N1, N0),
+	partition_spec(Ss, P2, P1, N2, N1).
+partition_spec(X, [X|P], P, N, N).
+
+
+get_atts(Var, _) :-
+	nonvar(Var), !,
+	abort(('First argument of get_atts/2 is not a variable: ', Var)).
+get_atts(Var, Spec) :-
+	nonvar(Spec), !,
+	partition_spec(Spec, SpecP, [], SpecN, []),
+	l2v(SpecP, Vector, 0, SpecPM),
+	l2v(SpecN, Vector, 0, SpecNM),
+	all_mask(SpecAll),
+	get_atts1(SpecPM, SpecNM, SpecAll, Var, Vector).
+get_atts(Var, Spec) :-
+	get_attributes(Var,Vector,Mask),
+	(var(Vector)
+	 ->	Spec=[]
+	 ;	'$v2l'(Vector,Atts),
+	        atts_subset(Atts,Mask,Spec)
+	).
+
+get_atts1(P, N, _, _, _) :-
+	P /\ N =\= 0, !,
+	file_write(2, 'Something is wrong is get_atts/2!'),
+	file_nl(2),
+	fail.
+get_atts1(0, All, All, Var, _) :- !,		% No atts should be in Var
+	get_attributes(Var, _, 0).
+get_atts1(0, N, _, Var, _) :- !,		% Some atts should not be in Var
+	get_attributes(Var, _, Mask),
+	Mask /\ N =:= 0.
+get_atts1(P, N, All, Var, Vector) :-
+	P\/N =:= All, !,
+	get_attributes(Var, Vector0, Mask),
+	Mask = P,
+	Vector0 = Vector.
+get_atts1(P, N, _, Var, Vector) :-
+	PN is P\/N,
+	get_attributes(Var, Vector0, Mask),
+	Mask /\ PN =:= P,
+	Vector0 = Vector.
+
+%-----------------------------------------------------------------------
+% Compute all the masks, can be moved into the compiler part
+%-----------------------------------------------------------------------
+all_mask(Mask) :-
+	findall(Bits, '$t2v'(_,_,Bits), All),
+	all_mask(All, 0, Mask).
+
+all_mask([], Mask, Mask).
+all_mask([Bits|L], Mask0, Mask) :-
+	Mask1 is Mask0\/Bits,
+	all_mask(L, Mask1, Mask).
+
+all_atts(All) :-
+	findall(T2V, is_t2v(T2V), All).
+
+is_t2v('$t2v'(T, Vect, Mask)) :-
+	'$t2v'(T, Vect, Mask), Mask =\= 0.
+
+% In the answer of put_exp/9, VOld and VNew share some varibles that are
+% corresponding to the attributes. These atts are not affected and their
+% old values should be kept.
+
+put_exp([], _, _, _, _, PM, PM, NM, NM).
+put_exp(['$t2v'(T,Vec,Mask)|Ts], SpecP, SpecN, VOld, VNew, PM0, PM, NM0, NM) :-
+	(memberchk(T, SpecP)
+	 ->	PM1 is PM0 \/ Mask
+	 ;	PM1 = PM0
+	),
+	(memberchk(T,SpecN)
+	 ->	NM1 is NM0 \/ Mask
+	 ;	NM1 = NM0
+	),
+	(SUM is PM1 \/ NM1,
+	 SUM /\ Mask =:= Mask
+	 ->	true
+	 ;	copy_term(T-Vec, T-VOld)
+	),
+	Vec = VNew,
+	put_exp(Ts, SpecP, SpecN, VOld, VNew, PM1, PM, NM1, NM).
+
+
+
+%-----------------------------------------------------------------------
+% Convert a list of atts to a vector
+%-----------------------------------------------------------------------
+l2v([], _, M, M).
+l2v([H|T], Vector, M0, M2) :-
+	'$t2v'(H, Vector, Mask), !,
+	M1 is M0 \/ Mask,
+	l2v(T, Vector, M1, M2).
+
+
+atts_subset([], _, []).
+atts_subset([Att|Atts1], Mask, Present) :-
+	(Mask/\1 =:= 1
+	 ->	Present = [Att|Present1]
+	 ;	Present = Present1
+	),
+	Mask1 is Mask>>1,
+	atts_subset(Atts1, Mask1, Present1).
