@@ -115,6 +115,8 @@ Todo:
 #include "flags_xsb.h"     /* for checking whether functionality is enabled */
 #include "heap_xsb.h"
 #include "io_builtins_xsb.h"
+#include "subp.h"          /* for attr_interrupts[][] */
+#include "binding.h"       /* for PRE_IMAGE_TRAIL */
 
 /*=========================================================================*/
 
@@ -207,6 +209,8 @@ static CPtr heap_bot,heap_top,
 #define points_into_cp(p)    ((cp_top <= p) && (p <= cp_bot))
 #define points_into_tr(p)    ((tr_bot <= p) && (p <= tr_top))
 #define points_into_compl(p) ((compl_top <= p) && (p <= compl_bot))
+#define points_into_attv_array(p) \
+  (((CPtr)attv_interrupts <= p) && (p <= (CPtr)(attv_interrupts + (20480*2*sizeof(Cell)))))
 
 /*----------------------------------------------------------------------*/
 /* marker bits in different areas: the mark bit for the CHAT areas is   */
@@ -272,6 +276,7 @@ inline static CPtr hp_pointer_from_cell(Cell cell, int *tag)
       }
     if (t == ATTV)
       {
+	*tag = ATTV;
 	xsb_abort("case ATTV in hp_pointer_from_cell() is not implemented yet");
       }
 
@@ -283,37 +288,36 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 { int t ;
   CPtr retp ;
 
-      *tag = t = cell_tag(cell) ;
-      switch (t)
-	{ case REF: case REF1:
-	    retp = (CPtr)cell ;
-	    break ;
-	  case ATTV:
-	    retp = (CPtr)cell;
-	    xsb_abort("case ATTV in pointer_from_cell is not implemented yet");
-	    break;
-	  case LIST:
-	    retp = clref_val(cell) ;
-	    break ;
-	  case CS:
-	    retp = ((CPtr)(cs_val(cell))) ;
-	    break ;
-	  default:
-	    *whereto = TO_NOWHERE ;
-	    return((CPtr)cell) ;
-	}
+  *tag = t = cell_tag(cell) ;
+  switch (t)
+    {
+    case REF: case REF1: case ATTV:
+      retp = (CPtr)cell ;
+      break ;
+    case LIST:
+      retp = clref_val(cell) ;
+      break ;
+    case CS:
+      retp = ((CPtr)(cs_val(cell))) ;
+      break ;
+    default:
+      *whereto = TO_NOWHERE ;
+      return((CPtr)cell) ;
+    }
 
-      if (points_into_heap(retp)) *whereto = TO_HEAP ;
-	else
-      if (points_into_tr(retp)) *whereto = TO_TR ;
-        else
+  if (points_into_heap(retp)) *whereto = TO_HEAP ;
+  else
+    if (points_into_tr(retp)) *whereto = TO_TR ;
+    else
       if (points_into_ls(retp)) *whereto = TO_LS ;
+      else
+	if (points_into_cp(retp)) *whereto = TO_CP ;
         else
-      if (points_into_cp(retp)) *whereto = TO_CP ;
-        else
-      if (points_into_compl(retp)) *whereto = TO_COMPL ;
-        else *whereto = TO_NOWHERE ;
-      return(retp) ;
+	  if (points_into_compl(retp)) *whereto = TO_COMPL ;
+  /*	  else
+	  if (points_into_attv_array(retp)) *whereto = TO_ATTV_ARRAY ;*/
+	    else *whereto = TO_NOWHERE ;
+  return(retp) ;
 
 } /* pointer_from_cell */
 
@@ -376,60 +380,60 @@ static int mark_cell(CPtr cell_ptr)
   int  mark_top = 0 ;
   CPtr mark_stack[MAXS+MAX_ARITY+1] ;
 
-    m = 0 ;
+  m = 0 ;
 mark_more:
-    if (!points_into_heap(cell_ptr)) /* defensive marking */
-		goto pop_more ;
+  if (!points_into_heap(cell_ptr)) /* defensive marking */
+    goto pop_more ;
 safe_mark_more:
-    i = cell_ptr - heap_bot ;
-    if (h_marked(i)) goto pop_more ;
-    h_mark(i) ;
-    m++ ;
+  i = cell_ptr - heap_bot ;
+  if (h_marked(i)) goto pop_more ;
+  h_mark(i) ;
+  m++ ;
 
-    cell_val = *cell_ptr;
-    tag = cell_tag(cell_val);
+  cell_val = *cell_ptr;
+  tag = cell_tag(cell_val);
 
-    if (tag == LIST)
-      { cell_ptr = clref_val(cell_val) ;
-        if (mark_overflow)
-	  { m += mark_cell(cell_ptr+1) ; }
-        else push_to_mark(cell_ptr+1) ;
-        goto safe_mark_more ;
-      }
+  if (tag == LIST)
+    { cell_ptr = clref_val(cell_val) ;
+      if (mark_overflow)
+	{ m += mark_cell(cell_ptr+1) ; }
+      else push_to_mark(cell_ptr+1) ;
+      goto safe_mark_more ;
+    }
 
-    if (tag == CS)
-      { p = (CPtr)cell_val ;
-        cell_ptr = ((CPtr)(cs_val(cell_val))) ;
-        i = cell_ptr - heap_bot ;
-        if (h_marked(i)) goto pop_more ;
-        h_mark(i) ; m++ ;
-        cell_val = *cell_ptr;
-        arity = get_arity((Psc)(cell_val)) ;
-        p = ++cell_ptr ;
-        if (mark_overflow)
-	  { while (--arity)
-	    { m += mark_cell(++p) ; }
-	  }
-        else while (--arity) push_to_mark(++p) ;
-        goto mark_more ;
-      }
+  if (tag == CS)
+    { p = (CPtr)cell_val ;
+      cell_ptr = ((CPtr)(cs_val(cell_val))) ;
+      i = cell_ptr - heap_bot ;
+      if (h_marked(i)) goto pop_more ;
+      h_mark(i) ; m++ ;
+      cell_val = *cell_ptr;
+      arity = get_arity((Psc)(cell_val)) ;
+      p = ++cell_ptr ;
+      if (mark_overflow)
+	{ while (--arity)
+	  { m += mark_cell(++p) ; }
+	}
+      else while (--arity) push_to_mark(++p) ;
+      goto mark_more ;
+    }
 
-    if ((tag == REF) || (tag == REF1))
-      { p = (CPtr)cell_val ;
-        if (p == cell_ptr) goto pop_more ;
-	cell_ptr = p ;
-	goto mark_more ;
-      }
+  if ((tag == REF) || (tag == REF1))
+    { p = (CPtr)cell_val ;
+      if (p == cell_ptr) goto pop_more ;
+      cell_ptr = p ;
+      goto mark_more ;
+    }
 
-    /*    if (tag == STRUCT)
-      { xsb_dbgmsg("Unknown tag on heap during marking %ld", cell_val) ;
-        return(0) ;
-      } */
+  /* if (tag == STRUCT)
+     { xsb_dbgmsg("Unknown tag on heap during marking %ld", cell_val) ;
+       return(0) ;
+     } */
 
 pop_more:
-    if (mark_top--)
-    	{ cell_ptr = mark_stack[mark_top] ; goto mark_more ; }
-    return(m) ;
+  if (mark_top--)
+    { cell_ptr = mark_stack[mark_top] ; goto mark_more ; }
+  return(m) ;
 
 } /* mark_cell */
 
@@ -448,63 +452,64 @@ static int mark_root(Cell cell_val)
 /* dangerous thing is to mark the cell with the Psc on the heap without      */
 /* marking all its arguments */
 
-    if (cell_val == 0) return(0) ;
-    switch (cell_tag(cell_val))
-    { case REF : case REF1 :
-    	v = *(CPtr)cell_val ;
-    	pointer_from_cell(v,&tag,&whereto) ;
-    	switch (tag)
+  if (cell_val == 0) return(0) ;
+  switch (cell_tag(cell_val))
+    {
+    case REF : case REF1 :
+      v = *(CPtr)cell_val ;
+      pointer_from_cell(v,&tag,&whereto) ;
+      switch (tag)
     	{ case REF : case REF1 :
-    		if (whereto != TO_HEAP) return(0) ;
-    		break ;
+	  if (whereto != TO_HEAP) return(0) ;
+	  break ;
     	}
-    	return(mark_cell((CPtr)cell_val)) ;
+      return(mark_cell((CPtr)cell_val)) ;
 
-      case CS : 
-        cell_ptr = ((CPtr)(cs_val(cell_val))) ;
-        if (!points_into_heap(cell_ptr)) return(0) ;
-        i = cell_ptr - heap_bot ; 
-        if (h_marked(i)) return(0) ; 
-	/* now check that at i, there is a Psc */
-	v = *cell_ptr ;
-	pointer_from_cell(v,&tag,&whereto) ;
-	/* v must be a PSC - the following tries to test this */
-	switch (tag)
+    case CS : 
+      cell_ptr = ((CPtr)(cs_val(cell_val))) ;
+      if (!points_into_heap(cell_ptr)) return(0) ;
+      i = cell_ptr - heap_bot ; 
+      if (h_marked(i)) return(0) ; 
+      /* now check that at i, there is a Psc */
+      v = *cell_ptr ;
+      pointer_from_cell(v,&tag,&whereto) ;
+      /* v must be a PSC - the following tries to test this */
+      switch (tag)
 	{ case REF: case REF1 :
-		if (whereto != TO_NOWHERE) return(0) ;
-		break ;
-		/* default: return(0); */
+	    if (whereto != TO_NOWHERE) return(0) ;
+	    break ;
+	    /* default: return(0); */
 	}
-        h_mark(i) ; m = 1 ; 
-        cell_val = *cell_ptr;
-        arity = get_arity((Psc)(cell_val)) ;
-        while (arity--) m += mark_cell(++cell_ptr) ;
-        return(m) ;
+      h_mark(i) ; m = 1 ; 
+      cell_val = *cell_ptr;
+      arity = get_arity((Psc)(cell_val)) ;
+      while (arity--) m += mark_cell(++cell_ptr) ;
+      return(m) ;
 
-      case LIST :
-	/* the 2 cells will be marked iff neither of them is a Psc */
-        cell_ptr = clref_val(cell_val) ;
-        if (!points_into_heap(cell_ptr)) return(0) ;
-	v = *cell_ptr ;
-	pointer_from_cell(v,&tag,&whereto) ;
-	switch (tag)
+    case LIST :
+      /* the 2 cells will be marked iff neither of them is a Psc */
+      cell_ptr = clref_val(cell_val) ;
+      if (!points_into_heap(cell_ptr)) return(0) ;
+      v = *cell_ptr ;
+      pointer_from_cell(v,&tag,&whereto) ;
+      switch (tag)
 	{ case REF: case REF1 :
-		if (whereto != TO_HEAP) return(0) ;
-		break ;
+	    if (whereto != TO_HEAP) return(0) ;
+	    break ;
 	}
-	v = *(++cell_ptr) ;
-	pointer_from_cell(v,&tag,&whereto) ;
-	switch (tag)
+      v = *(++cell_ptr) ;
+      pointer_from_cell(v,&tag,&whereto) ;
+      switch (tag)
 	{ case REF: case REF1 :
-		if (whereto != TO_HEAP) return(0) ;
-		break ;
+	    if (whereto != TO_HEAP) return(0) ;
+	    break ;
 	}
-        m = mark_cell(cell_ptr) ;
-        cell_ptr-- ; 
-        m += mark_cell(cell_ptr) ;
-        return(m) ;
+      m = mark_cell(cell_ptr) ;
+      cell_ptr-- ; 
+      m += mark_cell(cell_ptr) ;
+      return(m) ;
 
-      default : return(0) ;
+    default : return(0) ;
     }
 
 } /* mark_root */
@@ -512,7 +517,8 @@ static int mark_root(Cell cell_val)
 /*----------------------------------------------------------------------*/
 
 inline static int mark_region(CPtr beginp, CPtr endp)
-{ int marked = 0 ;
+{
+  int marked = 0 ;
 
   while (beginp <= endp)
     marked += mark_root(*(beginp++)) ;
@@ -715,7 +721,7 @@ static int chat_mark_trail(CPtr *tr, int trlen)
       tr++; /* skip chain bits */
     }
 
-  return(m);
+  return m;
 } /* chat_mark_trail */
 
 static int chat_mark_region(CPtr b, int len)
@@ -735,7 +741,7 @@ static int chat_mark_region(CPtr b, int len)
       b++; /* skip chain bits */
     }
 
-  return(m); 
+  return m; 
 } /* chat_mark_region */
 
 /*-------------------------------------------------------------------------
@@ -828,7 +834,7 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
       }
     while (initial_pheader != chat_link_headers);
 
-  return(m) ;
+  return m;
 
 } /* chat_mark_frozen_parts */
 
@@ -863,7 +869,7 @@ static int chat_mark_substitution_factor(void)
       }
       compl_fr = prev_compl_frame(compl_fr);
     }
-  return(m) ;
+  return m;
 
 } /* chat_mark_substitution_factor */
 
@@ -898,7 +904,7 @@ static int mark_hreg_from_choicepoints(void)
       bprev = b; b = cp_prevbreg(b);
     }
 
-  return(m);
+  return m;
 } /* mark_hreg_from_choicepoints */
 
 /*-------------------------------------------------------------------------*/
@@ -906,10 +912,10 @@ static int mark_hreg_from_choicepoints(void)
 #ifdef GC
 
 inline static void adapt_hreg_from_choicepoints(CPtr h)
-{ CPtr b, bprev;
+{
+  CPtr b, bprev;
 
   /* only after copying collection */
-
   b = breg;
   bprev = 0;
   while (b != bprev)
@@ -1021,14 +1027,16 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
       case TO_CP : index = cp_bot - p ; s = "ref_cp" ; break ;
       case TO_TR : index = p - tr_bot ; s = "ref_tr" ; break ;
       case TO_COMPL : index = p - compl_bot ; s = "ref_compl" ; break ;
+	/*case TO_ATTV_ARRAY : index = p ; s = "ref_attv_array" ; break ;*/
     }
   switch (tag)
-    { case REF : case REF1 :
-	if (p == NULL) fprintf(where,"null,0).\n") ;
-	else
+    {
+    case REF : case REF1 :
+      if (p == NULL) fprintf(where,"null,0).\n") ;
+      else
         if (p == cell_ptr) fprintf(where,"undef,_).\n") ;
         else
-	{ switch (whereto)
+	  { switch (whereto)
 	    {
 	    case TO_HEAP :
 	    case TO_LS :
@@ -1072,35 +1080,39 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
 		    else fprintf(where,"strange_ref,%ld).\n",cell_val) ;
 	      break ;
 	    }
-	}
-	break ;
+	  }
+      break ;
+      
+    case CS :
+      if (whereto == TO_NOWHERE)
+	fprintf(where,"cs-%s,%lx).\n",s,(long)index) ;
+      else
+	fprintf(where,"cs-%s,%ld).\n",s,(long)index) ;
+      break ;
+      
+    case LIST :
+      fprintf(where,"list-%s,%ld).\n",s,(long)index) ;
+      break ;
+      
+    case INT :
+      fprintf(where,"int  ,%ld).\n",(long)int_val(cell_val)) ;
+      break ;
+      
+    case FLOAT :
+      fprintf(where,"float,%.5g).\n",float_val((Integer)cell_val)) ;
+      break ;
+      
+    case STRING :
+      fprintf(where,"atom ,'%s').\n",string_val(cell_val)) ;
+      break ;
+      
+    case ATTV :
+      fprintf(where,"attrv_%s,%ld).\n",s,(long)index) ;
+      break ;
 
-      case CS :
-        if (whereto == TO_NOWHERE)
-	  fprintf(where,"cs-%s,%lx).\n",s,(long)index) ;
-	else
-	  fprintf(where,"cs-%s,%ld).\n",s,(long)index) ;
-        break ;
-
-      case LIST :
-        fprintf(where,"list-%s,%ld).\n",s,(long)index) ;
-        break ;
-
-      case INT :
-        fprintf(where,"int  ,%ld).\n",(long)int_val(cell_val)) ;
-        break ;
-
-      case FLOAT :
-        fprintf(where,"float,%.5g).\n",float_val((Integer)cell_val)) ;
-        break ;
-
-      case STRING :
-	fprintf(where,"atom ,'%s').\n",string_val(cell_val)) ;
-        break ;
-
-      default :
-        fprintf(where,"strange,%ld).\n",cell_val) ;
-        break ;
+    default :
+      fprintf(where,"strange,%ld).\n",cell_val) ;
+      break ;
     }
 } /* print_cell */
 
@@ -1210,18 +1222,41 @@ void print_tr(int add)
 
   startp = tr_bot ;
   endp = tr_top ;
+#ifdef PRE_IMAGE_TRAIL
+  start = tr_top - tr_bot ;
+#else
   start = 0 ;
+#endif
 
   while ( startp <= endp )
-  { fprintf(where,"trail(%6d,%s,",start,pr_tr_marked(startp)) ;
+  {
+#ifdef PRE_IMAGE_TRAIL
+    if ((*endp) & PRE_IMAGE_MARK) {
+      Cell tagged_tr_cell = *endp ;
+      cell(endp) = tagged_tr_cell - PRE_IMAGE_MARK ; /* untag tr cell */
+      fprintf(where,"trail(%6d,%s,  tagged,",start,pr_tr_marked(endp)) ;
+      print_cell(where,endp,FROM_TR) ;
+      cell(endp) = tagged_tr_cell ; /* restore trail cell */
+      endp-- ; start-- ;
+      fprintf(where,"trail(%6d,%s,pre_imag,",start,pr_tr_marked(endp)) ;
+      print_cell(where,endp,FROM_TR) ;
+      endp-- ; start-- ;
+    } else {
+      fprintf(where,"trail(%6d,%s,untagged,",start,pr_tr_marked(endp)) ;
+      print_cell(where,endp,FROM_TR) ;
+      endp-- ; start-- ;
+    }
+#else
+    fprintf(where,"trail(%6d,%s,",start,pr_tr_marked(startp)) ;
     print_cell(where,startp,FROM_TR) ;
     startp++ ; start++ ;
+#endif
   }
 
   fclose(where) ;
 } /* print_tr */
 
-void print_regs(int a,int add)
+void print_regs(int a, int add)
 {
   CPtr startp, endp ;                                                     
   int  start ;                                                             
@@ -1297,73 +1332,77 @@ void print_chat(int add)
   stack_boundaries ;      
 
   initial_pheader = chat_link_headers;
-  if (initial_pheader == NULL)
-    { fprintf(where,"no CHAT areas\n");
-      return;
-    }
-
-  do
+  if (initial_pheader != NULL)
     {
-      CPtr b = (CPtr)(&chat_get_cons_start(initial_pheader));
-
-      if (is_consumer_choicepoint(b)) fprintf(where,"CHAT area of a consumer");
-      else if (is_compl_susp_frame(b))
-	     fprintf(where,"CHAT area of a completion suspension");
-           else fprintf(where,"CHAT area of UNKNOWN TYPE");
+      do
+	{
+	  CPtr b = (CPtr)(&chat_get_cons_start(initial_pheader));
+	  
+	  if (is_consumer_choicepoint(b))
+	    fprintf(where,"CHAT area of a consumer");
+	  else if (is_compl_susp_frame(b))
+	    fprintf(where,"CHAT area of a completion suspension");
+	  else fprintf(where,"CHAT area of UNKNOWN TYPE");
 #ifdef DEBUG
-      fprintf(where," (subgoal = ");
-      print_subgoal(where, (SGFrame)nlcp_subgoal_ptr(b));
-      fprintf(where,")");
+	  fprintf(where," (subgoal = ");
+	  print_subgoal(where, (SGFrame)nlcp_subgoal_ptr(b));
+	  fprintf(where,")");
 #endif
-      fprintf(where," @ %p:\n",initial_pheader);
-      fprintf(where,"----------------------\n");
-      fprintf(where,"Arguments\n");
-      fprintf(where,"----------------------\n");
+	  fprintf(where," @ %p:\n",initial_pheader);
+	  fprintf(where,"----------------------\n");
+	  fprintf(where,"Arguments\n");
+	  fprintf(where,"----------------------\n");
 
-      startp = (CPtr)chat_get_args_start(initial_pheader);
-      len = chat_get_nrargs(initial_pheader);
-      i = 0;
-      while (len)
-	{ if (len > sizeof(CPtr))
-	    { j = sizeof(CPtr); len -= sizeof(CPtr); }
-	  else { j = len; len = 0; }
-	  while (j--)
-	    { fprintf(where,"chatargs('%p',%3d,%1d,",
-		      startp,i,chat_is_chained(startp));
-	      print_cell(where,startp,FROM_CP);
-	      startp++ ; i++;
-	    }
-	  startp++;
-	}
-
-      fprintf(where,"Trail\n");
-      pheader = chat_get_father(initial_pheader);
-      while (pheader != NULL)
-	{ fprintf(where,"increment %p marked = %d\n",
-		  pheader,chat_area_imarked(pheader));
-	  startp = (CPtr)chat_get_tr_start(pheader);
-	  len = chat_get_tr_length(pheader);
-
+	  startp = (CPtr)chat_get_args_start(initial_pheader);
+	  len = chat_get_nrargs(initial_pheader);
 	  i = 0;
 	  while (len)
 	    { if (len > sizeof(CPtr))
 	      { j = sizeof(CPtr); len -= sizeof(CPtr); }
 	    else { j = len; len = 0; }
 	    while (j--)
-	      { fprintf(where,"chattrail('%p',%3d,%1d,",
+	      {
+		fprintf(where,"chatargs('%p',%3d,%1d,",
 			startp,i,chat_is_chained(startp));
-	        print_cell(where,startp,FROM_CP);
+		print_cell(where,startp,FROM_CP);
 		startp++ ; i++;
 	      }
 	    startp++;
 	    }
 
-	  pheader = chat_get_ifather(pheader);
+	  fprintf(where,"Trail\n");
+	  pheader = chat_get_father(initial_pheader);
+	  while (pheader != NULL)
+	    {
+	      fprintf(where,"increment %p marked = %d\n",
+		      pheader,chat_area_imarked(pheader));
+	      startp = (CPtr)chat_get_tr_start(pheader);
+	      len = chat_get_tr_length(pheader);
+
+	      i = 0;
+	      while (len)
+		{
+		  if (len > sizeof(CPtr))
+		    { j = sizeof(CPtr); len -= sizeof(CPtr); }
+		  else { j = len; len = 0; }
+		  while (j--)
+		    {
+		      fprintf(where,"chattrail('%p',%3d,%1d,",
+			      startp,i,chat_is_chained(startp));
+		      print_cell(where,startp,FROM_CP);
+		      startp++ ; i++;
+		    }
+		  startp++;
+		}
+
+	      pheader = chat_get_ifather(pheader);
+	    }
+	  fprintf(where,"End CHAT area - %p\n\n\n",initial_pheader);
+	  initial_pheader = initial_pheader->next_header;
 	}
-      fprintf(where,"End CHAT area - %p\n\n\n",initial_pheader);
-      initial_pheader = initial_pheader->next_header;
+      while (initial_pheader != chat_link_headers);
     }
-  while (initial_pheader != chat_link_headers);
+  else fprintf(where,"no CHAT areas\n");
 
   fclose(where) ;
 #endif
@@ -1433,32 +1472,35 @@ inline static void chat_relocate_region(CPtr *startp, int len,
 
 inline static void chat_clear_marks(void)
 {
-  register chat_incr_pheader pheader;
   register chat_init_pheader initial_pheader;
+  register chat_incr_pheader pheader;
 
   initial_pheader = chat_link_headers;
-  do
-    {
-      pheader = chat_get_father(initial_pheader);
-      while ((pheader != NULL) && (chat_area_imarked(pheader)))
-        {
-          chat_iunmark_area(pheader);
-          pheader = chat_get_ifather(pheader);
-        }
-      initial_pheader = initial_pheader->next_header;
-    }
-  while (initial_pheader != chat_link_headers);
+  if (initial_pheader != NULL) {
+    do
+      {
+	pheader = chat_get_father(initial_pheader);
+	while ((pheader != NULL) && (chat_area_imarked(pheader)))
+	  {
+	    chat_iunmark_area(pheader);
+	    pheader = chat_get_ifather(pheader);
+	  }
+	initial_pheader = initial_pheader->next_header;
+      }
+    while (initial_pheader != chat_link_headers);
+  }
 }
 
 /*----------------------------------------------------------------------*/
 
 static void chat_relocate_all(CPtr heap_bot, int heap_offset,
 			      CPtr ls_bot, int local_offset)
-{ chat_init_pheader initial_pheader;
-  chat_incr_pheader pheader;
+{
   CPtr *b, *tr;
   int  i, trlen;
   Cell cell_val;
+  register chat_incr_pheader pheader;
+  register chat_init_pheader initial_pheader;
 
   initial_pheader = chat_link_headers;
   if (initial_pheader != NULL)
@@ -1501,8 +1543,8 @@ static void chat_relocate_all(CPtr heap_bot, int heap_offset,
 
   /* now relocate pointers to the heap from the completion
    * stack: the SF and Dreg fields for generators */
-  { CPtr compl_fr;
-    CPtr *p;
+  { register CPtr compl_fr;
+    register CPtr *p;
 
     compl_fr = openreg;
     while (compl_fr != COMPLSTACKBOTTOM)
