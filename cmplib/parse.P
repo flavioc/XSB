@@ -513,15 +513,22 @@ parse_table_directive(Skel, QrList, SymTab) :-
 
 parse_directive(export(X), SymTab) :- 	
 	parse_list(X, SymTab, [ex], (export)).
+parse_directive(document_export(X), SymTab) :- 	
+	parse_list(X, SymTab, [docex], (document_export)).
 parse_directive(import(from(P/A, _Mod)), _SymTab) :-
 	inline_predicate(P, A), !,
 	error((P,'/',A,' is an inline predicate, cannot be imported !')).
+parse_directive(document_import(from(P/A, _Mod)), _SymTab) :-
+	inline_predicate(P, A), !,
+	error((P,'/',A,' is an inline predicate, cannot be doc-imported !')).
 parse_directive(import(from(X, Mod)), SymTab) :-
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Importing: ',X))
 	 ;	parse_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
+parse_directive(document_import(from(X, Mod)), SymTab) :-
+	parse_list(X, SymTab, [docim(Mod)], (document_import)).
 parse_directive(local(X), SymTab) :-
 	parse_list(X, SymTab, [(local)], (local)).
 parse_directive(index(X), SymTab) :-	% for compiled-code indexing
@@ -572,6 +579,7 @@ parse_directive(compiler_options(Options),_SymTab) :-
 	%% request if xpp_on is subsequently set.
 	(conget(xpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
 	setoptions1(Options).
+parse_directive(comment(_,_),_SymTab).
 parse_directive(Directive,_SymTab) :-
 	option(ciao_directives),
 	included_ciao_directive(Directive).

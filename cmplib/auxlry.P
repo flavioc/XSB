@@ -59,6 +59,7 @@ set_global_compiler_options(Options) :-
 	retractall('_$global_compiler_options'(_)),
 	assert('_$global_compiler_options'(Options)).
 
+
 /*======================================================================*/
 /*  setoptions(+Options)						*/
 /*	Compiler option setting.					*/
@@ -154,9 +155,9 @@ current_option(ciao_directives).
 set_ciao_opts:- 
 	op(500,yfx,#),
 	op(975, xfx,(=>)),
-	op(978, xfx,(::)),
-	op(1100,fx,(document_export)),
-	op(1100,fx,(document_import)).
+	op(978, xfx,(::)).
+%	op(1100,fx,(document_export)),
+%	op(1100,fx,(document_import)).
 
 
 /* options kept only for backwards compatibility;

@@ -23,7 +23,6 @@
 ** 
 */
 
-
 /************************************************************************/
 /* NOTE: This file was seriously changed by Kostis and David during the	*/
 /*	 summer of 1992 to speed up the XSB compiler.  These changes	*/
@@ -57,6 +56,31 @@ useinfer(Module, IsModule, ExportList) :-
 	( ExSymList == [] -> 
 		IsModule = 0,		% No export list, is a global module
 		sym_propin(global, SymMain), 
+		infer_export_fill(SymTab, SymTab, ClList, global),
+       		extract_symlist(docex, DocExSymList, SymTab),
+%		message(DocExSymList),
+	        (DocExSymList == [] -> 
+			true 
+		;	infer_usage([SymMain|DocExSymList], Module,pseudo),
+			infer_fillunused(SymTab))
+	; IsModule = 1,
+	  ( sym_prop(im(_Mod),SymMain) -> true ; sym_propin((local),SymMain) ),
+	  infer_usage([SymMain|ExSymList], Module,real),
+	  infer_export_fill(SymTab, SymTab, ClList, (local)),
+	  infer_fillunused(SymTab)
+	),
+	retractall('_$multifile'(_)),
+	retractall('_$multifile2'(_,_,_)),
+	get_sym_names(ExSymList, ExportList).
+
+/*
+useinfer(Module, IsModule, ExportList) :-
+	Module = module(SymTab,_DcList,ClList,_QrList),
+	extract_symlist(ex, ExSymList, SymTab),
+	sym_insert('_$main', 0, [], SymTab, SymMain),
+	( ExSymList == [] -> 
+		IsModule = 0,		% No export list, is a global module
+		sym_propin(global, SymMain), 
 		infer_export_fill(SymTab, SymTab, ClList, global)
 	; IsModule = 1,
 	  ( sym_prop(im(_Mod),SymMain) -> true ; sym_propin((local),SymMain) ),
@@ -67,7 +91,7 @@ useinfer(Module, IsModule, ExportList) :-
 	retractall('_$multifile'(_)),
 	retractall('_$multifile2'(_,_,_)),
 	get_sym_names(ExSymList, ExportList).
-
+*/
 
 /*======================================================================*/
 /* infer_export_fill(#SymTab, #SymTab, ClList, ex/local/global)		*/
@@ -104,10 +128,11 @@ infer_export_fill(_RestTab, _SymTab, _ClList, _Domain).
 /*	predicate is encountered.					*/
 /*======================================================================*/
 
-infer_usage([], _Module).
-infer_usage([Sym|Rest], Module) :-
-	infer_usage_of_symbol(Sym, Rest, NList, Module),
-	infer_usage(NList, Module).
+infer_usage([], _Module,_).
+infer_usage([Sym|Rest], Module,Ps_or_real) :-
+%	message(iu(Sym)),
+	infer_usage_of_symbol(Sym, Rest, NList, Module,Ps_or_real),
+	infer_usage(NList, Module,Ps_or_real).
 
 /*----------------------------------------------------------------------*/
 /* infer_usage_of_symbol(+Sym, +Rest, -NewRest, #Module)		*/
@@ -118,7 +143,8 @@ infer_usage([Sym|Rest], Module) :-
 /*	"NewRest".							*/
 /*----------------------------------------------------------------------*/
 
-infer_usage_of_symbol(Sym, InList, OutList, Module) :-
+infer_usage_of_symbol(Sym, InList, OutList, Module,Ps_or_real) :-
+%	message(symcheck(Sym)),
 	Module = module(SymTab,_DcList,ClList,QrList),
 	( sym_prop(used, Sym) -> OutList = InList	% already checked
 	; sym_name(Sym, '_$main', 0) -> 
@@ -133,9 +159,13 @@ infer_usage_of_symbol(Sym, InList, OutList, Module) :-
 			check_pred(Cls, SymTab, InList, OutList)
 		; ( sym_prop(im(Mod), Sym) ->
 			sym_insert(Mod, 0, [used], SymTab, _ModSym)
+		  ; sym_prop(docim(Mod), Sym) ->
+			sym_insert(Mod, 0, [used], SymTab, _ModSym)
 		  ; pred_implicitly_imported_from(Sym, Mod) ->
 			sym_insert(Mod, 0, [module,used], SymTab, _ModSym),
-			sym_propin(im(Mod), Sym)
+			(Ps_or_real == real -> 
+				sym_propin(im(Mod), Sym)
+			 ; 	true)
 		  ; sym_name(Sym, P, A),
 		    sym_propin(undef, Sym),
 		    warning(('Undefined predicate ', P, '/', A))
@@ -174,9 +204,22 @@ check_body(not(L1), SymTab, InList, OutList) :-
 check_body(inlinegoal(_,_,Args), SymTab, InList, OutList) :-
 	check_args(Args, SymTab, InList, OutList).
 check_body(goal(Sym,Args), SymTab, InList, OutList) :-
+%	message(goal(Sym,Args)),
 	sym_propin(pred, Sym),
+%	message(goal1(Sym,Args)),
+	check_metapredicates(Sym,Args),
 	add_if_necessary(Sym, InList, MedList),
 	check_args(Args, SymTab, MedList, OutList).
+
+check_metapredicates(Sym,Args):- 
+	Sym = sym(F,A,_,_),
+	standard_metapredicate(F,A,MetaArg),
+	ith(MetaArg,Args,Meta),
+	Meta = structure(NewSym,_),
+%	message(meta(Meta)),
+	sym_propin(pred,NewSym),
+	!.
+check_metapredicates(_,_).
 
 check_args([], _SymTab, InList, InList).
 check_args([Arg|Args], SymTab, InList, OutList) :-
@@ -188,6 +231,7 @@ check_arg(integer(_), _SymTab, InList, InList).
 check_arg(real(_), _SymTab, InList, InList).
 check_arg(varocc(_), _SymTab, InList, InList).
 check_arg(structure(Sym,Args), SymTab, InList, OutList) :-
+%	message(add_if_necessary(Sym, InList, MedList)),
 	add_if_necessary(Sym, InList, MedList),
 	check_args(Args, SymTab, MedList, OutList).
 
