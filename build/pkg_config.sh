@@ -8,5 +8,5 @@ xsb_executable=$1
 
 echo ""
 echo "Configuring XSB packages. Wait..."
-echo "[perlmatch]. [slx]. [flip]. parse_all_demos, end. halt." \
+echo "[perlmatch]. [slx]. [flip]. parse_all_demos. halt." \
 		    | $xsb_executable 
