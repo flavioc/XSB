@@ -186,11 +186,7 @@ copy_again : /* for tail recursion optimisation */
 			if (on_glstack((CPtr)(from))) *to = from ;
 				else { *(CPtr)from = (Cell)to ; *to = (Cell)to ; }
 			return ;
-	case ATTV:
-	  xsb_abort("case ATTV in findall_copy_to_heap is not implemented yet");
-	  return;
-
-      case LIST :
+        case LIST :
               {	CPtr pfirstel ;
 
 		*to = makelist(*h) ;
@@ -203,7 +199,7 @@ copy_again : /* for tail recursion optimisation */
 		goto copy_again ;
              }
 
-      case CS :
+        case CS :
               {	CPtr pfirstel ;
 		int ar ;
 
@@ -222,6 +218,38 @@ copy_again : /* for tail recursion optimisation */
 		from = *(++pfirstel) ; /* deref(from) ; */ to++ ;
 		goto copy_again ;
              }
+
+	case ATTV: {
+	  CPtr var;
+	  
+	  /*
+	   * The following deref() is necessary, because, in copying
+	   * f(X,X), after the first occurrence of X is copied, the VAR
+	   * part of X has been pointed to the new copy on the heap.  When
+	   * we see this X again, we should dereference it to find that X
+	   * is already copied, but this deref is not done (see the code
+	   * in `case CS:' -- deref's are commented out).
+	   */
+	  deref(from);
+	  var = clref_val(from);  /* the VAR part of the attv  */
+	  if (on_glstack(var))    /* is a new attv in the `to area' */
+	    bld_attv(to, var);
+	  else {		  /* has not been copied before */
+	    from = cell(var + 1); /* from -> the ATTR part of the attv */
+	    deref(from);
+	    *to = makeattv(*h);
+	    to = (*h);
+	    (*h) += 2;		  /* skip two cells */
+	    /*
+	     * Trail and bind the VAR part of the attv to the new attv
+	     * just created in the `to area', so that attributed variables
+	     * are shared in the `to area'.
+	     */
+	    bld_attv(var, to);
+	    cell(to) = (Cell) to++;
+	    goto copy_again;
+	  }
+	} /* case ATTV */
    }
 
 } /*findall_copy_to_heap*/
@@ -309,10 +337,6 @@ copy_again : /* for tail recursion optimisation */
 				}
 			else *to = from ;
 			return(size) ;
-	case ATTV:
-	  xsb_abort("case ATTV in findall_copy_template_to_chunk is not implemented yet");
-	  return 0;
-
 	case LIST :
               {	CPtr pfirstel ;
 
@@ -359,6 +383,38 @@ copy_again : /* for tail recursion optimisation */
 		from = *(++pfirstel) ; deref(from) ; to++ ;
 		goto copy_again ;
              }
+
+	case ATTV: {
+	  CPtr var;
+
+	  var = clref_val(from);  /* the VAR part of the attv  */
+	  if (on_glstack(var)) {  /* has not been copied before */
+	    from = cell(var + 1); /* from -> the ATTR part of the attv */
+	    deref(from);
+	    if (*h > (current_findall->current_chunk
+		      + FINDALL_CHUNCK_SIZE - 3)) {
+	      if (! get_more_chunk()) return(-1) ;
+	      *h = current_findall->top_of_chunk ;
+	    }
+	    *to = makeattv(*h);
+	    to = (*h);
+	    (*h) += 2;		  /* skip two cells */
+	    size += 2;
+	    /*
+	     * Trail and bind the VAR part of the attv to the new attv
+	     * just created in the `to area', so that attributed variables
+	     * are shared in the `to area'.
+	     */
+	    findall_trail(var);
+	    bld_attv(var, to);
+	    cell(to) = (Cell) to++;
+	    goto copy_again;
+	  }
+	  else {		  /* is a new attv in the `to area' */
+	    bld_attv(to, var);
+	    return(size);
+	  }
+	} /* case ATTV */
    }
 
 return(-1) ; /* to keep compiler happy */
@@ -561,12 +617,13 @@ copy_again : /* for tail recursion optimisation */
 	case ATTV: {
 	  CPtr var;
 
-	  var = clref_val(from); /* the VAR part of the attv  */
-	  from = cell(var + 1);	 /* from -> the ATTR part of the attv */
-	  if (var < hreg) {	 /* has not been copied before */
+	  var = clref_val(from);  /* the VAR part of the attv  */
+	  if (var < hreg) {	  /* has not been copied before */
+	    from = cell(var + 1); /* from -> the ATTR part of the attv */
+	    deref(from);
 	    *to = makeattv(*h);
 	    to = (*h);
-	    (*h) += 2;		 /* skip two cells */
+	    (*h) += 2;		  /* skip two cells */
 	    /*
 	     * Trail and bind the VAR part of the attv to the new attv
 	     * just created in the `to area', so that attributed variables
@@ -577,7 +634,7 @@ copy_again : /* for tail recursion optimisation */
 	    cell(to) = (Cell) to++;
 	    goto copy_again;
 	  }
-	  else			 /* is a new attv in the `to area' */
+	  else			  /* is a new attv in the `to area' */
 	    bld_attv(to, var);
 	} /* case ATTV */
    }
