@@ -662,6 +662,20 @@ add clear findall stack at toploop
 ***/
 static int findall_chunk_index;
 
+CPtr init_term_buffer() {
+  findall_chunk_index = findall_init_c();
+  current_findall = findall_solutions + findall_chunk_index;
+  return current_findall->top_of_chunk ;
+}
+
+#define ensure_term_space(ptr,size) \
+  if ((ptr+size) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {\
+	if (!get_more_chunk()) xsb_abort("no space for term buffer") ;\
+	ptr = current_findall->top_of_chunk ;\
+  }
+
+#define free_term_buffer() findall_free(findall_chunk_index)
+
 static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
 {
   char *ptr;
@@ -692,7 +706,7 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
     fprintf(stderr,".\n");
   else
     fprintf(stderr,"\n");
-  findall_free(findall_chunk_index) ;
+  free_term_buffer();
   ctop_string(2,(char *)string_find("read_canonical_error",1));
   ctop_int(3,0);
   return TRUE;
@@ -703,37 +717,55 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
    r2; r3 set to 0 if ground fact (non zero-ary), to 1 if variable or :-.
    Fail on EOF */
 
-int read_canonical(void)
-{
-  FILE *filep;
-  STRFILE *instr;
-  int prevchar, arity, i, size;
-  CPtr h;
-  Cell op1, j, arg2;
-#define OPSTK_SIZE 1000
+#define INIT_STK_SIZE 32
+#define MAX_INIT_STK_SIZE 1000
+int opstk_size = 0;
+int funstk_size = 0;
+
+#define expand_opstk {\
+    opstk_size = opstk_size+opstk_size;\
+    opstk = (struct opstktype *)realloc(opstk,opstk_size*sizeof(struct opstktype));\
+    if (!opstk) xsb_exit("Out of space for read_canonical stacks");\
+    /*printf("RC opstk expanded to %d\n",opstk_size);*/ \
+  }
+#define expand_funstk {\
+    funstk_size = funstk_size+funstk_size;\
+    funstk = (struct funstktype *)realloc(funstk,funstk_size*sizeof(struct funstktype));\
+    if (!funstk) xsb_exit("Out of space for read_canonical stacks");\
+    /*printf("RC funstk expanded to %d\n",funstk_size);*/ \
+  }
+
 #define FUNFUN 0
 #define FUNLIST 1
 #define FUNDTLIST 2
   struct funstktype {
     char *fun;		/* functor name */
-    Integer funop;	/* index into opstk of first operand */
-	int funtyp;		/* 0 if functor, 1 if list, 2 if dotted-tail list */
-  } funstk[OPSTK_SIZE];
-  Cell funtop = 0;
+    int funop;	        /* index into opstk of first operand */
+    int funtyp; 	/* 0 if functor, 1 if list, 2 if dotted-tail list */
+  } *funstk;
 
   struct opstktype {
     int typ;
     prolog_term op;
-  } opstk[OPSTK_SIZE];
-  Cell optop = 0;
+  } *opstk;
 
 #define MAXVAR 1000
   struct vartype {
     Cell varid;
     prolog_term varval;
   } vars[MAXVAR];
-  int cvarbot = MAXVAR-1;
 
+int read_canonical(void)
+{
+  FILE *filep;
+  STRFILE *instr;
+  int funtop = 0;
+  int optop = 0;
+  int cvarbot = MAXVAR-1;
+  int prevchar, arity, i, size;
+  CPtr h;
+  Cell arg2;
+  int j, op1;
   Pair sym;
   Float float_temp;
   char *cvar;
@@ -741,6 +773,15 @@ int read_canonical(void)
   long tempfp;
   prolog_term term;
   
+  if (opstk_size == 0) {
+    opstk = 
+      (struct opstktype *)malloc(INIT_STK_SIZE*sizeof(struct opstktype));
+    opstk_size = INIT_STK_SIZE;
+    funstk = 
+      (struct funstktype *)malloc(INIT_STK_SIZE*sizeof(struct funstktype));
+    funstk_size = INIT_STK_SIZE;
+  }
+
   tempfp = ptoc_int(1);
   if (tempfp == -1000) {
     prevpsc = 0;
@@ -755,17 +796,13 @@ int read_canonical(void)
     SET_FILEPTR(filep, tempfp);
   }
   /* get findall buffer to read term into */
-  findall_chunk_index = findall_init_c();
-  current_findall = findall_solutions + findall_chunk_index;
-  if (current_findall->tail == 0)
-	xsb_exit("internal error 1 in read_canonical(findall)") ;
-  h = current_findall->top_of_chunk ;
+  h = init_term_buffer();
   size = 0;
 
   prevchar = 10;
   while (1) {
 	token = GetToken(filep,instr,prevchar);
-/*	print_token((int)(token->type),(char *)(token->value)); */
+/*	print_token((int)(token-f>type),(char *)(token->value)); */
 	prevchar = token->nextch;
 	if (postopreq) {  /* must be an operand follower: , or ) or | or ] */
 	    if (token->type == TK_PUNC) {
@@ -775,10 +812,7 @@ int read_canonical(void)
 		  if (funstk[funtop].funtyp != FUNFUN)	/* ending a list, oops */
 		    return read_can_error(filep,instr,prevchar);
 		  arity = optop - funstk[funtop].funop;
-		  if ((h+arity+1) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
-			if (!get_more_chunk()) return(0) ;
-			h = current_findall->top_of_chunk ;
-		  }
+		  ensure_term_space(h,arity+1);
 		  this_term = h;
 		  op1 = funstk[funtop].funop;
 		  if ((arity == 2) && !(strcmp(funstk[funtop].fun,"."))) {
@@ -803,17 +837,13 @@ int read_canonical(void)
 			opstk[op1].op = makecs(this_term);
 			opstk[op1].typ = TK_FUNC;
 		  }
-		  optop = op1;
-		  optop++;
+		  optop = op1+1;
 		} else if (*token->value == ']') {	/* end of list */
 		  CPtr this_term, prev_tail;
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN)
 			return read_can_error(filep,instr,prevchar);
-		  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
-			if (!get_more_chunk()) return(0) ;
-			h = current_findall->top_of_chunk ;
-		  }
+		  ensure_term_space(h,2);
 		  this_term = h;
 		  op1 = funstk[funtop].funop;
 
@@ -828,10 +858,7 @@ int read_canonical(void)
 			prev_tail = h;
 			h++;
 			for (j=op1+1; j<optop-1; j++) {
-			  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
-				if (!get_more_chunk()) return(0) ;
-				h = current_findall->top_of_chunk ;
-			  }
+			  ensure_term_space(h,2);
 			  cell(prev_tail) = makelist(h);
 			  if (opstk[j].typ == TK_VAR) { setvar(h,j) }
 			  else cell(h) = opstk[j].op;
@@ -842,10 +869,7 @@ int read_canonical(void)
 			}
 			j = optop-1;
 			if (funstk[funtop].funtyp == FUNLIST) {
-			  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
-				if (!get_more_chunk()) return(0) ;
-				h = current_findall->top_of_chunk ;
-			  }
+			  ensure_term_space(h,2);
 			  cell(prev_tail) = makelist(h);
 			  if (opstk[j].typ == TK_VAR) { setvar(h,j) }
 			  else cell(h) = opstk[j].op;
@@ -861,8 +885,7 @@ int read_canonical(void)
 		  }
 		  opstk[op1].op = makelist(this_term);
 		  opstk[op1].typ = TK_FUNC;
-		  optop = op1;
-		  optop++;
+		  optop = op1+1;
 		} else if (*token->value == ',') {
 		  postopreq = FALSE;
 		} else if (*token->value == '|') {
@@ -889,8 +912,7 @@ int read_canonical(void)
       case TK_PUNC:
 		if (*token->value == '[') {
 		  if(token->nextch == ']') {
-			if (optop >= OPSTK_SIZE)
-			  xsb_abort("READ_CANONICAL: op stack overflow");
+		        if (optop >= opstk_size) expand_opstk;
 			token = GetToken(filep,instr,prevchar);
 			/* print_token(token->type,token->value); */
 			prevchar = token->nextch;
@@ -899,18 +921,16 @@ int read_canonical(void)
 			optop++;
 			postopreq = TRUE;
 		  } else {	/* beginning of a list */
-			if (funtop >= OPSTK_SIZE)
-			  xsb_abort("READ_CANONICAL: fun stack overflow");
+		        if (funtop >= funstk_size) expand_funstk;
 			funstk[funtop].funop = optop;
-			funstk[funtop].funtyp = FUNLIST;	/* assume regular list */
+			funstk[funtop].funtyp = FUNLIST; /* assume regular list */
 			funtop++;
 		  }
 		  break;
 		}
 	  /* let a punctuation mark be a functor symbol */
       case TK_FUNC:
-	        if (funtop >= OPSTK_SIZE)
-		  xsb_abort("READ_CANONICAL: op stack overflow");
+	        if (funtop >= funstk_size) expand_funstk;
 		funstk[funtop].fun = (char *)string_find(token->value,1);
 		funstk[funtop].funop = optop;
 		funstk[funtop].funtyp = FUNFUN;	/* functor */
@@ -930,8 +950,7 @@ int read_canonical(void)
 		  vars[cvarbot].varid = (Cell) "_";
 		  vars[cvarbot].varval = 0;
 		  cvarbot--;
-		  if (optop >= OPSTK_SIZE)
-		    xsb_abort("READ_CANONICAL: op stack overflow");
+		  if (optop >= opstk_size) expand_opstk;
 		  opstk[optop].typ = TK_VAR;
 		  opstk[optop].op = (prolog_term) i;
 		  optop++;
@@ -953,16 +972,14 @@ int read_canonical(void)
 		  vars[cvarbot].varval = 0;
 		  cvarbot--;
 		}
-		if (optop >= OPSTK_SIZE)
-		  xsb_abort("READ_CANONICAL: op stack overflow");
+		if (optop >= opstk_size) expand_opstk;
 		opstk[optop].typ = TK_VAR;
 		opstk[optop].op = (prolog_term) i;
 		optop++;
 		postopreq = TRUE;
 		break;
       case TK_REAL:
-	        if (optop >= OPSTK_SIZE)
-		  xsb_abort("READ_CANONICAL: op stack overflow");
+	        if (optop >= opstk_size) expand_opstk;
 		opstk[optop].typ = TK_REAL;
 		float_temp = (float) *(double *)(token->value);
 		opstk[optop].op = makefloat(float_temp);
@@ -970,24 +987,21 @@ int read_canonical(void)
 		postopreq = TRUE;
 		break;
       case TK_INT:
-	        if (optop >= OPSTK_SIZE)
-		  xsb_abort("READ_CANONICAL: op stack overflow");
+	        if (optop >= opstk_size) expand_opstk;
 		opstk[optop].typ = TK_INT;
 		opstk[optop].op = makeint(*(long *)token->value);
 		optop++;
 		postopreq = TRUE;
 		break;
       case TK_ATOM:
-	        if (optop >= OPSTK_SIZE)
-		  xsb_abort("READ_CANONICAL: op stack overflow");
+	        if (optop >= opstk_size) expand_opstk;
 		opstk[optop].typ = TK_ATOM;
 		opstk[optop].op = makestring((char *)string_find(token->value,1));
 		optop++;
 		postopreq = TRUE;
 		break;
       case TK_LIST:  /* "-list */
-	if (optop >= OPSTK_SIZE)
-	    xsb_abort("READ_CANONICAL: op stack overflow");
+	if (optop >= opstk_size) expand_opstk;
 	if ((token->value)[0] == 0) {
 	  opstk[optop].typ = TK_ATOM;
 	  opstk[optop].op = makenil;
@@ -997,10 +1011,7 @@ int read_canonical(void)
 	} else {
 	  CPtr this_term, prev_tail;
 	  char *charptr = token->value;
-	  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
-	    if (!get_more_chunk()) return(0) ;
-	    h = current_findall->top_of_chunk ;
-	  }
+	  ensure_term_space(h,2);
 	  this_term = h;
 	  cell(h) = makeint((int)*charptr); charptr++;
 	  h++;
@@ -1008,10 +1019,7 @@ int read_canonical(void)
 	  h++;
 	  size += 2;
 	  while (*charptr != 0) {
-	    if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
-	      if (!get_more_chunk()) return(0) ;
-	      h = current_findall->top_of_chunk ;
-	    }
+	    ensure_term_space(h,2);
 	    cell(prev_tail) = makelist(h);
 	    cell(h) = makeint((int)*charptr); charptr++;
 	    h++;
@@ -1027,9 +1035,10 @@ int read_canonical(void)
 	  break;
 	}
       case TK_EOF:
-		ctop_string(2,string_find("end_of_file",1));
-		ctop_int(3,0);
-		return TRUE;
+	free_term_buffer();
+	ctop_string(2,string_find("end_of_file",1));
+	ctop_int(3,0);
+	return TRUE;
       default: return read_can_error(filep,instr,prevchar);
       }
     }
@@ -1041,9 +1050,7 @@ int read_canonical(void)
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	term = opstk[0].op;
-	/* p = findall_solutions + findall_chunk_index;*/
-	check_glstack_overflow(3, pcreg, size*sizeof(Cell)) ;
-	/*printf("checked overflow: size: %d\n",size*sizeof(Cell));*/
+	check_glstack_overflow(3, pcreg, (size+1)*sizeof(Cell)) ;
 	arg2 = ptoc_tag(2);
 	if (isnonvar(arg2)) 
 	  xsb_abort("READ_CANONICAL: argument must be a variable");
@@ -1051,8 +1058,8 @@ int read_canonical(void)
 	new_heap_free(hreg);
 	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
 	findall_copy_to_heap(term,(CPtr)arg2,&hreg) ; /* this can't fail */
-	findall_free(findall_chunk_index) ; 
-	
+	free_term_buffer();
+
 	deref(arg2);
 	term = (prolog_term) arg2;
 	if (isinteger(term) || 
@@ -1073,7 +1080,12 @@ int read_canonical(void)
 	ctop_int(3,0);
 	prevpsc = 0;
       }
-contcase:
+  contcase:
+      if (opstk_size > MAX_INIT_STK_SIZE) {
+	free(opstk); opstk = NULL;
+	free(funstk); funstk = NULL;
+	opstk_size = 0; funstk_size = 0;
+      }
       return TRUE;
     }
   }
