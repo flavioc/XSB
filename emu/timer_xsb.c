@@ -30,8 +30,9 @@
 #include <winuser.h>
 #endif
 
-#include "cell_xsb.h"
-#include "timer_xsb.h"
+#include <signal.h>
+#include <setjmp.h>
+
 
 
 /* To set a timeout, do this:
@@ -54,6 +55,13 @@
      .... actions when timeout is not set ....
    }
 */
+
+
+#ifdef WIN_NT
+jmp_buf xsb_timer_env;
+#else
+sigjmp_buf xsb_timer_env;
+#endif
 
 
 

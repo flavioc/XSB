@@ -35,9 +35,9 @@
 #include "timer_defs_xsb.h"
 
 #ifdef WIN_NT
-jmp_buf xsb_timer_env;
+extern jmp_buf xsb_timer_env;
 #else
-sigjmp_buf xsb_timer_env;
+extern sigjmp_buf xsb_timer_env;
 #endif
 
 
