@@ -101,7 +101,7 @@ void do_libwww_request___()
   request_list_tail = request_term_list;
   total_number_of_requests=0;
   event_loop_runnung = FALSE;
-  timeout_value = 0;
+  timeout_value = DEFAULT_TIMEOUT;
   while (is_list(request_list_tail) && !is_nil(request_list_tail)) {
     request_id++;
     total_number_of_requests++;
@@ -111,13 +111,22 @@ void do_libwww_request___()
 
   /* start the event loop and begin to parse all requests in parallel */
   if (total_number_of_requests > 0) {
+    /* periodic timer that kills the event loop, if it stays on due to a bug */
+    HTTimer* timer = HTTimer_new(NULL, timer_cbf, NULL, 2*timeout_value, 1, 1);
+
 #ifdef LIBWWW_DEBUG
     xsb_dbgmsg("In libwww_request: starting event loop. Total requests=%d, timeout=%d",
 	       total_number_of_requests, timeout_value);
 #endif
 
+    HTTimer_dispatch(timer);
+
     event_loop_runnung = TRUE;
     HTEventList_newLoop();
+    /* expiring remaining timers is VERY important in order to avoid them
+       kicking in at the wrong moment and killing subsequent requests */
+    HTTimer_expireAll();
+    HTTimer_delete(timer);
 
 #ifdef LIBWWW_DEBUG
     xsb_dbgmsg("In libwww_request: event loop ended: total outstanding requests=%d", total_number_of_requests);
@@ -896,9 +905,6 @@ PRIVATE int request_termination_handler (HTRequest   *request,
     total_number_of_requests--;
   /* when the last request is done, stop the event loop */
   if ((total_number_of_requests == 0) && event_loop_runnung) {
-    /* expiring remaining timers is VERY important in order to avoid them
-       kicking in at the wrong moment for subsequent requests */
-    HTTimer_expireAll();
     HTNet_killAll();
     HTEventList_stopLoop();
     event_loop_runnung = FALSE;
@@ -1062,3 +1068,8 @@ PRIVATE void extract_request_headers(HTRequest *request)
   }
 }
 
+
+PRIVATE int timer_cbf(HTTimer *timer, void *param, HTEventType type)
+{
+  return TRUE;
+}

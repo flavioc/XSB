@@ -11,6 +11,7 @@
 :- libwww_request([html('http://swww.etrade.com/', [timeout(1)],P,Y,Z),
 		   html('http://www.etrade.com/', [timeout(1)],PP,YY,ZZ)]).
 %% Should timeout, but hangs instead (in select call).
+%% The extra timer trick solves this problem.
 :- libwww_request([html('http://swww.etrade.com/', [timeout(6)],P,Y,Z)]).
 :- libwww_request([html('http://www.etrade.com/', _,P,Y,Z)]).
 :- libwww_request([xml('files/REC-xml-19980210.xml',X,P,Y,Z)]).
@@ -35,9 +36,11 @@
 :- libwww_request([head('http://localhost/',Z,P,Y,XXX)]).
 :- libwww_request([fetch("http://localhost/",Z,P,Y,XXX)]).
 %% Libwww loops on this one
+%% The extra timer trick alleviates this problem by timing out everything.
 :- libwww_request([html('http://localhost/',
-			[if_modified('Tue, 21 Sep 2000 14:46:36 GMT')],P,Y,X),
-		   fetch('http://localhost/sub/001.ent',Z,PPP,YYY,XXX),
+			[if_modified('Tue, 21 Sep 2000 14:46:36 GMT')],
+			P,Y,X),
+		   fetch('http://localhost/sub/test.html',Z,PPP,YYY,XXX),
 	 	   fetch('http://localhost/',
 			[if_modified('Tue, 21 Mar 1998 14:46:36 GMT')],
 			 PP,YY,XX),
