@@ -1074,7 +1074,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
 	    isfloat(term) || 
 	    isstring(term) ||
 	    varfound || 
-	    (isconstr(term) && !strcmp(":-",get_name(get_str_psc(term))))) {
+	    (isconstr(term) && get_str_psc(term) != if_psc)) {
 	  retpscptr = 0;
 	  prevpsc = 0;
 	}

@@ -757,6 +757,13 @@ void init_symbols(void)
   list_psc = pair_psc(temp);
   list_dot = get_name(list_psc);
 
+  temp = insert("true", 0, global_mod, &new_indicator);
+  true_psc = pair_psc(temp);
+  true_sym = get_name(true_psc);
+
+  temp = insert(":-", 2, global_mod, &new_indicator);
+  if_psc = pair_psc(temp);
+
   /* insert symbol ","/2 */
   temp = insert(",", 2, global_mod, &new_indicator);
   comma_psc = pair_psc(temp);

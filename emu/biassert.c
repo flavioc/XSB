@@ -604,16 +604,20 @@ int assert_code_to_buff_p(prolog_term Clause)
     assertcmp_printerror(Argno);
     return FALSE;
   }
-  if (isconstr(Clause) && strcmp(p2c_functor(Clause),":-")==0 &&
-      get_arity(get_str_psc(Clause))==2) {
+  /**  if (isconstr(Clause) && strcmp(p2c_functor(Clause),":-")==0 &&
+       get_arity(get_str_psc(Clause))==2) { **/
+  if (isconstr(Clause) && get_str_psc(Clause)==if_psc) { 
     Head = p2p_arg(Clause, 1);
     Body = p2p_arg(Clause, 2);
-    if (isstring(Body)) {
-      sym = insert(string_val(Body),0,(Psc)flags[CURRENT_MODULE],&v);
-      Body = makecs(hreg);
-      new_heap_functor(hreg,sym->psc_ptr);
-    }
     has_body = 1;
+    if (isstring(Body)) {
+      if (string_val(Body) == true_sym) has_body = 0; 
+      else {
+	sym = insert(string_val(Body),0,(Psc)flags[CURRENT_MODULE],&v);
+	Body = makecs(hreg);
+	new_heap_functor(hreg,sym->psc_ptr);
+      }
+    }
   } else {
     Head = Clause;
     Body = (prolog_term) NULL;
