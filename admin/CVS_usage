@@ -510,6 +510,12 @@ Gotchas and experience
    how many files were changed by others since you last synch'ed your local 
    copy with the repository.
 
+3.1 There's a -z option that enables gzip compression before the transmission
+	of files. I find -z 3 an ok setting - you can turn it on by default
+	setting a line in the file ~/.cvsrc (which specifies default command
+	options):
+	cvs -z 3
+
 4. The test suite is real big---bigger than the rest of XSB!
    If you modify it, please check it in.
    However, some .O files get recompiled (~10) when you are testing, so CVS
