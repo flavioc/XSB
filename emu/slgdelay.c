@@ -657,6 +657,7 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
   
   unmark_conditional_answer(as_leaf);
   pde = asi_pdes(asi);
+  asi_pdes(asi) = NULL;		/* forget this PDE list */
   while (pde) {
     de = pnde_de(pde);
     dl = pnde_dl(pde);
@@ -666,7 +667,6 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
     if (!remove_de_from_dl(de, dl))
       handle_empty_dl_creation(dl);
   }
-  asi_pdes(asi) = NULL;		/* forget this PDE list */
   /*
    * Now this DelayInfo `asi' does not contain any useful info, so we can
    * free it, and really mark `as_leaf' as an unconditional answer.
@@ -716,7 +716,7 @@ void simplify_neg_fails(SGFrame subgoal)
 
 static void simplify_neg_succeeds(SGFrame subgoal)
 {
-  PNDE nde;
+  PNDE nde = subg_nde_list(subgoal), tmp;
   DL dl;
   DE de, tmp_de;
   ASI used_asi, de_asi;
@@ -726,9 +726,12 @@ static void simplify_neg_succeeds(SGFrame subgoal)
   fprintf(stddbg, ">>>> start simplify_neg_succeeds()\n");
 #endif
 
-  while (subg_nde_list(subgoal) != NULL) {
-    nde = subg_nde_list(subgoal);
+  subg_nde_list(subgoal) = NULL; /* forget this NDE list */
+  while (nde) {
     dl = pnde_dl(nde); /* dl: to be removed */
+    tmp = pnde_next(nde);
+    release_entry(nde, released_pndes, pnde_next);
+    nde = tmp;	/* the next NDE */
     used_as_leaf = dl_asl(dl);
     if (IsValidNode(used_as_leaf) &&
 	(used_asi = Delay(used_as_leaf)) != NULL) {
@@ -743,7 +746,7 @@ static void simplify_neg_succeeds(SGFrame subgoal)
 	  remove_pnde(asi_pdes(de_asi), de_pnde(de));
 	}
 #ifdef DEBUG_DELAYVAR
-	fprintf(stddbg, ">>>> release DE (in simplify_neg_succeeds)");
+	fprintf(stddbg, ">>>> release DE (in simplify_neg_succeeds)\n");
 #endif
 	release_entry(de, released_des, de_next);
 	de = tmp_de; /* next DE */
@@ -766,7 +769,7 @@ static void simplify_neg_succeeds(SGFrame subgoal)
 static void simplify_pos_unsupported(NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
-  PNDE pde;
+  PNDE pde, tmp;
   DL dl;
   DE de, tmp_de;
   ASI used_asi, de_asi;
@@ -776,9 +779,13 @@ static void simplify_pos_unsupported(NODEptr as_leaf)
   fprintf(stddbg, ">>>> start simplify_pos_unsupported()\n");
 #endif
 
-  while (asi_pdes(asi)) {
-    pde = asi_pdes(asi);
+  pde = asi_pdes(asi);
+  asi_pdes(asi) = NULL;		/* forget this PDE list */
+  while (pde) {
     dl = pnde_dl(pde); /* dl: to be removed */
+    tmp = pnde_next(pde);
+    release_entry(pde, released_pndes, pnde_next);
+    pde = tmp;	/* the next PDE */
     used_as_leaf = dl_asl(dl);
     if (IsValidNode(used_as_leaf) &&
 	(used_asi = Delay(used_as_leaf)) != NULL) {
