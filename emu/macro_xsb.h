@@ -33,7 +33,7 @@
  *  allowing access to its calls and their associated answers.
  */
 
-#include "flags_xsb.h"
+#include "table_status_defs.h"
 
 typedef enum Tabled_Evaluation_Method {
   VARIANT_TEM      = VARIANT_EVAL_METHOD,
@@ -293,11 +293,13 @@ struct subgoal_frame {
 #define subg_structs_are_reclaimed(b)	((SGFrame)(b))->reclaimed_structs
 
 /* beginning of REAL answers in the answer list */
-#define subg_answers(subg) aln_next_aln(subg_ans_list_ptr(subg))
+#define subg_answers(subg)	aln_next_aln(subg_ans_list_ptr(subg))
 
-#define ConsumerIsProducerVariant(pSF)	( subg_producer(pSF) == pSF )
-#define SubgoalHasOwnAnswerSet(pSF)	( subg_producer(pSF) == pSF )
-#define ConsumerIsProperlySubsumed(pSF)	( subg_producer(pSF) != pSF )
+#define IsProducerSF(pSF)		( subg_producer(pSF) == pSF )
+#define IsConsumerSF(pSF)		( subg_producer(pSF) != pSF )
+
+#define ConsumerIsProducerVariant(pSF)	  IsProducerSF(pSF)
+#define ConsumerIsProperlySubsumed(pSF)	  IsConsumerSF(pSF)
 
 #define ProducerHasConsumers(pSF)	IsNonNULL(subg_consumers(pSF))
 

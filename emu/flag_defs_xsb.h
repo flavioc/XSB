@@ -107,13 +107,3 @@ As best as I can tell, only the following exist/are used:
 #define QUIETLOAD    	  3   /* don't display "module loaded" msgs */
 #define NOPROMPT    	  5   /* display no prompt--useful in spawned
 				 subprocesses */
-
-/*
- * Defines tag values for indicating the type of tabled evaluation to
- * use on a given predicate.  These values are shared with Prolog
- * builtins which allow users to select and change the evaluation
- * method.
- */
-
-#define VARIANT_EVAL_METHOD	  0
-#define SUBSUMPTIVE_EVAL_METHOD	  1

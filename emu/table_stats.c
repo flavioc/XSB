@@ -35,6 +35,7 @@
 #include "trie_internals.h"
 #include "macro_xsb.h"
 #include "error_xsb.h"
+#include "flags_xsb.h"
 
 
 
@@ -335,7 +336,7 @@ void print_detailed_tablespace_stats() {
 	 "    Subgoal Frames (%u blocks):\n"
 	 "      Allocated:     %10u  (%8u bytes)\n"
 	 "      Used:          %10u  (%8u bytes)\n"
-	 "        Generators:  %8u    (%6u bytes)\n"
+	 "        Producers:   %8u    (%6u bytes)\n"
 	 "        Consumers:   %8u    (%6u bytes)\n"
 	 "      Free:          %10u  (%8u bytes)\n",
 	 SubgStats_NumBlocks(sf),
