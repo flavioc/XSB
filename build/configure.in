@@ -1745,6 +1745,9 @@ fi
 if test "$with_os" = wind ; then
   MSVC.sh
   mv MSVC.dep ${arch_config_prefix}
+
+  # copy the windows-specific odbc files to the wondows specific directory
+  cp odbc/* ${arch_config_prefix}
 fi
 
 
