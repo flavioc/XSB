@@ -378,6 +378,9 @@ flora_compile_system_module(File) :-
 	( flora_locate_file(BaseName,FLORA_FILE_EXT,FlrFile) ->
 	    %% Pass an extra argument to gpp.
 	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+	    %% Note: SysModID is an atom, so flora_set_xpp_options called
+	    %% from within flora_flcompile won't add
+	    %% -D FLORA_COMPILE_SYSTEM_MODULE automatically
 	    flora_flcompile(FlrFile,SysModID)
 	;
 	  flora_stderr_nl,
@@ -408,6 +411,9 @@ flora_load_system_module_internal(SysModID) :-
 	    ; path_sysop(exists,FlrFile) ->
 	        %% Pass an extra argument to gpp.
 		flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+		%% Note: SysModID is an atom, so flora_set_xpp_options called
+		%% from within flora_flcompile won't add
+		%% -D FLORA_COMPILE_SYSTEM_MODULE automatically
 		flora_flcompile(FlrFile,SysModID)
 	    ;
 	      flora_stderr_nl,
@@ -417,8 +423,12 @@ flora_load_system_module_internal(SysModID) :-
 	      fail
 	    ),
 	    !,
-	    flora_message_line('loading FLORA system module %s',args(SysModID)),
+	    flora_message_line('loading FLORA system module %s',
+			       args(SysModID)),
 	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+	    %% Note: SysModID is an atom, so flora_set_xpp_options called
+	    %% from within flora_flcompile won't add
+	    %% -D FLORA_COMPILE_SYSTEM_MODULE automatically
 	    flora_set_xpp_options(SysModID),
 	    consult(WSOFile),
 	    flora_clear_xpp_options
@@ -447,6 +457,9 @@ flora_compile_system_module_by_ID(SysModID) :-
 	( path_sysop(exists,FlrFile) ->
 	    %% Pass an extra argument to gpp.
 	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+	    %% Note: SysModID is an atom, so flora_set_xpp_options called
+	    %% from within flora_flcompile won't add
+	    %% -D FLORA_COMPILE_SYSTEM_MODULE automatically
 	    flora_flcompile(FlrFile,SysModID)
 	;
 	  flora_stderr_nl,
@@ -678,13 +691,23 @@ flora_set_xpp_options :-
 	assert(xpp_options('-P -m -nostdinc -curdirinclast')).
 
 %% Looks in flora_xpp_extra_options/1 to see if needs to add more options.
-%% It is always called before invoking gpp.
+%% It is always called before invoking GPP.
+%% If WS looks like a system module name (flora(_)) then adds
+%% xpp_extra_options to GPP options
 flora_set_xpp_options(WS) :-
 	retractall(xpp_options(_)),
+	flora_module_name(WS,Type,RealWS),
+	(  Type == systemmodule
+	-> flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE ')
+	;  Type == invalid
+	-> flora_module_name_error(RealWS),
+	   abort
+	;  true
+	),
 	(flora_xpp_extra_options(ExtraOptions) -> true; ExtraOptions = ''),
 	fmt_write_string(Opt,
                          '-P -m -nostdinc -curdirinclast %s -D FLORA_VAR_WORKSPACE=%s',
-                         args(ExtraOptions,WS)),
+                         args(ExtraOptions,RealWS)),
 	assert(xpp_options(Opt)).
 
 %% Extra options for GPP. It is always before flora_set_xpp_options.
@@ -909,39 +932,27 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 flora_load_dyn(InDBFile,ModuleName) :-
 	flora_check_filename(InDBFile),
 	( flora_locate_file(InDBFile,DBFile) ->
-	    flora_message_line('dynamically loading %s into storage trie',args(DBFile)),
+	    flora_message_line('dynamically loading %s into storage trie',
+			       args(DBFile)),
 	    cputime(T0),
 	    seeing(PreInFile),
-	    %% Check the name of the module.
-	    flora_module_name(ModuleName,Type,WS),
-	    !,
-	    ( Type == invalid ->
-		flora_module_name_error(ModuleName),
-		abort
-	    ;
-	      ( Type == systemmodule ->
-		  flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE ')
-	      ;
-	        true
-	      ),
-	      flora_set_xpp_options(WS),
-	      xpp_process_file(DBFile,XPP_process,IOportFromProc),
-	      stat_set_flag(CURRENT_INPUT,IOportFromProc),
-	      flora_storage_name(ModuleName,StorageName),
-	      flora_read_canonical_and_insert(StorageName),
-	      %% Wait, not to leave zombies.
-	      process_control(XPP_process,wait),
-	      %% Release the file descriptor used to read from cpp.
-	      file_close(IOportFromProc),
-	      flora_clear_xpp_options,
-	      see(PreInFile),
-	      cputime(T1),
-	      T is T1-T0,
-	      flora_message_line('Done! CPU time used: %S seconds',args(T))
-	    )
+	    flora_set_xpp_options(ModuleName),
+	    xpp_process_file(DBFile,XPP_process,IOportFromProc),
+	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	    flora_storage_name(ModuleName,StorageName),
+	    flora_read_canonical_and_insert(StorageName),
+	    %% Wait, not to leave zombies.
+	    process_control(XPP_process,wait),
+	    %% Release the file descriptor used to read from cpp.
+	    file_close(IOportFromProc),
+	    flora_clear_xpp_options,
+	    see(PreInFile),
+	    cputime(T1),
+	    T is T1-T0,
+	    flora_message_line('Done! CPU time used: %S seconds',args(T))
 	;
-	  flora_error_line('File %s does not exist!',args(InDBFile)),
-          fail
+	    flora_error_line('File %s does not exist!', args(InDBFile)),
+	    fail
 	),
 	!.
 
