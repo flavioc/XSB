@@ -37,42 +37,46 @@ When the tracer prompts for input, the user may enter a return, or a single
 character followed by a return, with the following meanings:
 \index{trace!options}
 \begin{description}
-\item[{\tt c, <CR>}: Creep]
-    Causes the system to single-step to the next port
-    (i.e.\ either the entry to a traced predicate called by the executed clause,
-    or the success or failure exit from that clause).
-\item[{\tt a}: Abort]\index{abort!trace facility}
-    Causes execution to abort and control to return to the top level
-    interpreter.
-\item[{\tt b}: Break]
-    Calls the evaluable predicate {\em break}, thus invoking recursively
-    a new incarnation of the system interpreter.
-    The command prompt at break level $n$ is
-    \begin{center}
+\item[{\tt c, <CR>}: Creep] Causes the system to single-step to the next
+  port (i.e.\ either the entry to a traced predicate called by the executed
+  clause, or the success or failure exit from that clause).
+\item[{\tt a}: Abort]\index{abort!trace facility} Causes execution to abort
+  and control to return to the top level interpreter.
+\item[{\tt b}: Break] Calls the evaluable predicate {\em break}, thus
+  invoking recursively a new incarnation of the system interpreter.  The
+  command prompt at break level $n$ is
+  \begin{center}
     {\tt $n$: \tt ?-}
-    \end{center}
-    The user may return to the previous break level by entering the system
-    end-of-file character (e.g.\ {\tt ctrl-D}), or typing in the atom 
-    {\tt end\_of\_file}; or to the top level interpreter by typing in
-    {\tt abort}.
+  \end{center}
+  The user may return to the previous break level by entering the system
+  end-of-file character (e.g.\ {\tt ctrl-D}), or typing in the atom 
+  {\tt end\_of\_file}; or to the top level interpreter by typing in
+  {\tt abort}.
 \item[{\tt f}: Fail] Causes execution to fail, thus transferring control to
-    the Fail port of the current execution.
+  the Fail port of the current execution.
 \item[{\tt h}: Help] Displays the table of debugging options.
-\item[{\tt l}: Leap] Causes the system to resume running the program,
-    only stopping when a spy-point is reached or the program terminates.
-    This allows the user to follow the execution at a higher level than
-    exhaustive tracing.
+\item[{\tt l}: Leap] Causes the system to resume running the program, only
+  stopping when a spy-point is reached or the program terminates.  This
+  allows the user to follow the execution at a higher level than exhaustive
+  tracing.
 \item[{\tt n}: Nodebug] Turns off debug mode.
 \item[{\tt q}: Quasi-skip] This is like Skip except that it does not mask
-    out spy points.
-\item[{\tt r}: Retry (fail)] Transfers to the Call port of the current goal.
-    Note, however, that side effects, such as database modifications etc.,
-    are not undone.
-\item[{\tt s}: Skip] Causes tracing to be turned off for the entire execution
-    of the procedure.  Thus, nothing is seen until control comes back to that
-    procedure, either at the Success or the Failure port.
+  out spy points.
+\item[{\tt r}: Retry (fail)] Transfers to the Call port of the current
+  goal.  Note, however, that side effects, such as database modifications
+  etc., are not undone.
+\item[{\tt p}: Autopilot] Continues tracing as if the user typed carriage
+  return at each prompt. The result is that the trace is printed until the
+  call returns without the user intervention. This is useful in order to
+  get full trace to the point where an error occurred or for code
+  profiling.  This comand sets tracing on autopilot temporarily, until XSB
+  returns to the top-level prompt. The predicate \verb|trace_autopilot/1|,
+  described below, sets trace on autopilot permanently, until changed.
+\item[{\tt s}: Skip] Causes tracing to be turned off for the entire
+  execution of the procedure.  Thus, nothing is seen until control comes
+  back to that procedure, either at the Success or the Failure port.
 \item[{\tt e}: Exit] Causes immediate exit from \ourprolog\ back to the
-    operating system.
+  operating system.
 \end{description}
 
 Other standard predicates that are useful in debugging are:
@@ -144,6 +148,11 @@ Other standard predicates that are useful in debugging are:
     ports that are {\tt show}-n can be {\tt leash}-ed.  {\tt leash/1} is
     not a standard predicate but must be imported from the module {\tt
     debugger} before it can be called.
+
+\ouritem{trace\_autopilot(Mode)} \index{{\tt trace\_autopilot/1}}
+    Valid modes are {\tt on} and {\tt off}. Sets autopilot mode on and off
+    for all subsequent traces permanently ({\it i.e.}, until the mode is
+    changed).
 \end{description}
 
 
@@ -163,5 +172,5 @@ recommended in general.
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual"
+%%% TeX-master: "manual1"
 %%% End: 

@@ -76,6 +76,9 @@ interpreter1 :-
 	trimcore,
 	stat_set_flag(HIDE_STATE, 1), %% hide call interceptions.
 	stat_set_flag(INVOKE_NUM, 0),
+	(conget('_$_deb_autopilot',2),!  % unless trace autopilot is permanent,
+	;   conset('_$_deb_autopilot',0) % reset debugger autopilot mode 
+	),
 	conset('_$break_level', 0),
 	print_debug_state,
 	prompt(Prompt,Prompt),
@@ -162,7 +165,7 @@ print_answer([vv(Name,Val)|Tail]) :-
 
 /* === break =========================================================== */
 
-break :- conval('_$break_level', Blevel),
+break :- conget('_$break_level', Blevel),
 	Nblevel is Blevel+1, conset('_$break_level', Nblevel),
 	file_write(STDMSG, '[ Break (level '), file_write(STDMSG, Nblevel),
 	file_write(STDMSG, ') ]'), file_nl(STDMSG),
@@ -173,7 +176,7 @@ break :- conval('_$break_level', Blevel),
 
 readl_brklp1 :- 
 	x_interp_repeat, 
-		conval('_$break_level', Blevel),
+		conget('_$break_level', Blevel),
 		file_write(STDMSG, Blevel), file_write(STDMSG, ': ?- '),
 		file_flush(STDMSG, _),
 		file_read(STDIN, X, Vars),
@@ -204,7 +207,7 @@ version_message :-
 /* === utilities ======================================================= */
 
 conset(Con, Val) :- conpsc(Con, PSC), psc_set_prop(PSC, Val).
-conval(Con, Val) :- conpsc(Con, PSC), psc_prop(PSC, Val).
+conget(Con, Val) :- conpsc(Con, Psc), psc_prop(Psc, Val0), Val = Val0.
 
 %% The interpreter NEEDS this repeat: do not use the one in standard.
 x_interp_repeat :- true ; x_interp_repeat.

@@ -56,3 +56,4 @@
 :- import windows_os_loader/0 from loader.
 
 :- import findall/3 from setof.
+:- import current_input_fd/1 from curr_sym.

@@ -73,6 +73,8 @@ trace_standard_predicate(findall,3).
 %% but control the prompts that are actualy printed
 trace_this_noprint(findall, 4). %% this is an auxiliary pred for findall
 
+trace_standard_predicate(once,1).
+
 trace_this_enable_print_on_redo(call, 1).
 
 % call_c is eliminated, so what is called is traced.

@@ -28,7 +28,7 @@
 #define CH_BACKSPACE         8	      /*  \b	 */
 #define CH_TAB               9	      /*  \t     */
 #define CH_NEWLINE           10       /*  \n     */
-
+#define CH_VERTAB            11	      /*  \v     */
 #define CH_FORMFEED          12       /*  \f     */
 #define CH_RETURN            13       /*  \r     */
 
@@ -136,5 +136,5 @@
 #define CH_RBRACE    	     125      /*  }     */
 #define CH_TILDE     	     126      /*  ~     */
 
-#define DELETE       	     127      /*  ^?	*/
+#define CH_DELETE      	     127      /*  ^?	*/
 

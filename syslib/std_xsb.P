@@ -199,6 +199,7 @@ standard_symbol(tnot, 1, tables).
 standard_symbol(told, 0, standard).
 standard_symbol(true, 0, standard).
 standard_symbol(trace, 0, debugger).
+standard_symbol(trace_autopilot, 1, debugger).
 standard_symbol(tsetof, 3, setof).
 standard_symbol(ttywrite, 1, standard).
 standard_symbol(ttywritenl, 1, standard).
