@@ -70,9 +70,12 @@ do { \
 #define ls_clear_mark(i)   ls_marks[i] = 0
 
 #ifndef CHAT
-#define tr_marked(i)       (tr_marks[i])
-#define tr_mark(i)         tr_marks[i] |= MARKED
-#define tr_clear_mark(i)   tr_marks[i] &= ~MARKED
+#define tr_marked(i)         (tr_marks[i])
+#define tr_mark(i)           tr_marks[i] |= MARKED
+#define tr_clear_mark(i)     tr_marks[i] &= ~MARKED
+#define tr_mark_pre(i)       tr_marks[i] |= TRAIL_PRE
+#define tr_clear_pre_mark(i) tr_marks[i] &= ~TRAIL_PRE
+#define tr_pre_marked(i)     (tr_marks[i] & TRAIL_PRE)
 
 #define cp_marked(i)       (cp_marks[i])
 #define cp_mark(i)         cp_marks[i] |= MARKED
@@ -203,6 +206,8 @@ inline static char * pr_tr_marked(CPtr cell_ptr)
  if (tr_marked(i) == MARKED) return("marked") ;
  if (tr_marked(i) == CHAIN_BIT) return("chained") ;
  if (tr_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
+ if (tr_marked(i) == (CHAIN_BIT | MARKED | TRAIL_PRE)) 
+   return("chained+marked+pre");
 #endif
  return("not_m") ; 
 } /* pr_tr_marked */ 
@@ -460,6 +465,8 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
       if ((long) trailed_cell & PRE_IMAGE_MARK) {
 	trailed_cell = (CPtr) ((Cell) trailed_cell & ~PRE_IMAGE_MARK);
 	pre_value = (CPtr) *(a-3);
+	tr_mark_pre((a-tr_bot)-2); /* mark somewhere else */
+	*(a-2) = ((Cell)trailed_cell & ~PRE_IMAGE_MARK); /* and delete mark */
       /* lfcastro -- needed for copying */
 	tr_mark((a-tr_bot)-3);
       }

@@ -374,7 +374,7 @@ static CPtr slide_heap(int num_marked)
 
     { CPtr endtr ;
       endtr = tr_top ;
-      for (p = tr_bot; p <= endtr ; p++ )
+      for (p = tr_bot; p <= endtr ; p++ ) 
 	{ contents = cell(p) ;
 	  q = hp_pointer_from_cell(contents,&tag) ;
 	  if (!q) continue ;
@@ -640,6 +640,20 @@ static CPtr slide_heap(int num_marked)
     }  
 #endif
   }
+
+#ifndef CHAT
+#ifdef PRE_IMAGE_TRAIL
+
+    /* re-tag pre image cells in trail */
+    for (p = tr_bot; p <= tr_top ; p++ ) {
+      if (tr_pre_marked(p-tr_bot)) {
+	*p = *p | PRE_IMAGE_MARK;
+	tr_clear_pre_mark(p-tr_bot);
+      }
+    }
+#endif
+#endif
+
     return(heap_bot + num_marked) ;
 
 } /* slide_heap */

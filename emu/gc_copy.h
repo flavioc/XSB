@@ -245,19 +245,26 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
       for (p = tr_bot; p <= endtr; p++) {
 	contents = cell(p);
 
-	/* lfcastro -- experimental for copying */
 #ifdef SLG_GC
 	if (!tr_marked(p-tr_bot))
 	  continue;
 	tr_clear_mark(p-tr_bot);
 #endif
-
 	q = hp_pointer_from_cell(contents,&tag) ;
 	if (!q) continue ;
 	if (h_marked(q-heap_bot)) 
 	  find_and_copy_block(q); 
 	adapt_external_heap_pointer(p,q,tag);
 	}
+#ifndef CHAT
+#ifdef PRE_IMAGE_TRAIL
+      /* re-tag pre image cells in trail */
+      if (tr_pre_marked(p-tr_bot)) {
+	*p = *p | PRE_IMAGE_MARK;
+	tr_clear_pre_mark(p-tr_bot);
+      }
+#endif
+#endif
     }
 
   /* choicepoints */

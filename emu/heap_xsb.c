@@ -268,6 +268,7 @@ static unsigned long slide_buf_size = 0;
 #endif
 
 #define MARKED    1
+#define TRAIL_PRE 2
 #define CHAIN_BIT 4                            
 
 /* in the absence of serious bugs, the test is an invariant of the WAM */
