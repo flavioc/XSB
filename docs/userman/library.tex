@@ -1537,7 +1537,8 @@ following shell command:
     \emph{Note}: under Windows, the programmer's manual warns of dire
     consequences if one kills a process that has DLLs attached to it.
 \ouritem{get\_process\_table(-ProcessList)}\index{{\tt get\_process\_table/1}} 
-    Binds {\tt ProcessList} to the list of terms, each describing one of
+    This predicate is imported from module {\tt shell}.
+    It binds {\tt ProcessList} to the list of terms, each describing one of
     the active XSB subprocesses (created via \verb|spawn_process/5|).
     Each term has the form:
     %%
