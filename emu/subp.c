@@ -27,6 +27,7 @@
 /* configs/config.h must be the first #include.  Please don't move it. */
 #include "configs/config.h"
 #include "debugs/debug.h"
+#include "debugs/debug_attv.h"
 
 #include <stdio.h>
 #include <signal.h>
@@ -61,6 +62,13 @@
 
 /*======================================================================*/
 /*======================================================================*/
+
+/* attv_dbgmsg() is used in unify_xsb_i.h */
+#ifdef DEBUG_ATTV
+#define attv_dbgmsg(String) xsb_dbgmsg(String)
+#else
+#define attv_dbgmsg(String)
+#endif
 
 #define IFTHEN_FAILED	return 0
 #define IFTHEN_SUCCEED	return 1

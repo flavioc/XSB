@@ -653,12 +653,10 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
       }									\
       break;								\
     case ATTV:								\
-      /* fprintf(stderr, ".... in recvariant_trie_ans_subsf\n"); */	\
       /* Now xtemp1 can only be the first occurrence of an attv */	\
       *(hreg++) = (Cell) xtemp1;					\
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
       StandardizeAndTrailVariable(xtemp1, ctr);				\
-      /* printf(".... ctr = %d\n", ctr) */;				\
       one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), TrieType);		\
       attv_ctr++; ctr++;						\
       pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */		\

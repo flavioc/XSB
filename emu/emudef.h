@@ -24,6 +24,7 @@
 */
 
 
+#include "debugs/debug_attv.h"
 
 /* Argument Registers
    ------------------ */
@@ -87,119 +88,126 @@ char *list_dot;
 int asynint_val = 0;
 int *asynint_ptr = &asynint_val;
 
+#ifdef DEBUG_ATTV
+#define attv_dbgmsg(String) xsb_dbgmsg(String)
+#else
+#define attv_dbgmsg(String)
+#endif
+
 /* Replacements for labelled code in emusubs.i */
 
-#define nunify_with_nil(op) \
-    deref(op); \
-    if (isref(op)) {  \
-	/* op is FREE */ \
-	bind_nil((CPtr)(op)); \
-    } \
-    else if (isnil(op)) goto contcase; /* op == [] */ \
-    else if (isattv(op)) {\
-      /* fprintf(stderr, ".... ATTV nunify_with_nil, interrupt needed\n"); */\
-      add_interrupt(op, makenil);\
-    }\
-    else Fail1;	/* op is LIST, INT, or FLOAT */ 
+#define nunify_with_nil(op)						\
+  deref(op);								\
+  if (isref(op)) {							\
+    /* op is FREE */							\
+    bind_nil((CPtr)(op));						\
+  }									\
+  else if (isnil(op)) goto contcase; /* op == [] */			\
+  else if (isattv(op)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_nil, interrupt needed\n");	\
+    add_interrupt(op, makenil);						\
+  }									\
+  else Fail1;	/* op is LIST, INT, or FLOAT */
 
 /*======================================================================*/
 
-#define nunify_with_con(OP1,OP2) \
-    deref(OP1); \
-    if (isref(OP1)) {  \
-	/* op1 is FREE */ \
-	bind_string((CPtr)(OP1), (char *)OP2); \
-    } \
-    else if (isstring(OP1)) { \
-        if (string_val(OP1) == (char *)OP2) goto contcase; else Fail1; \
-    } \
-    else if (isattv(OP1)) {\
-      /* fprintf(stderr, ".... ATTV nunify_with_con, interrupt needed\n"); */\
-      add_interrupt(OP1, makestring((char *)OP2));\
-    }\
-    else Fail1;
+#define nunify_with_con(OP1,OP2)					\
+  deref(OP1);								\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_string((CPtr)(OP1), (char *)OP2);				\
+  }									\
+  else if (isstring(OP1)) {						\
+    if (string_val(OP1) == (char *)OP2) goto contcase; else Fail1;	\
+  }									\
+  else if (isattv(OP1)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_con, interrupt needed\n");	\
+    add_interrupt(OP1, makestring((char *)OP2));			\
+  }									\
+  else Fail1;
+
 
 /*======================================================================*/
 
-#define nunify_with_num(OP1,OP2) \
-    /* op1 is general, op2 has number (untagged) */ \
-    deref(OP1); \
-    if (isref(OP1)) {  \
-	/* op1 is FREE */\
-	bind_int((CPtr)(OP1), (Integer)OP2);\
-    } \
-    else if (isinteger(OP1)) {\
-       if (int_val(OP1) == (Integer)OP2) goto contcase; else Fail1;\
-    }\
-    else if (isattv(OP1)) {\
-      /* fprintf(stderr, ".... ATTV nunify_with_num, interrupt needed\n"); */\
-      add_interrupt(OP1, makeint(OP2));\
-    }\
-    else Fail1;	/* op1 is STRING, FLOAT, CS, or LIST */
+#define nunify_with_num(OP1,OP2)					\
+  /* op1 is general, op2 has number (untagged) */			\
+  deref(OP1);								\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_int((CPtr)(OP1), (Integer)OP2);				\
+  }									\
+  else if (isinteger(OP1)) {						\
+    if (int_val(OP1) == (Integer)OP2) goto contcase; else Fail1;	\
+  }									\
+  else if (isattv(OP1)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_num, interrupt needed\n");	\
+    add_interrupt(OP1, makeint(OP2));					\
+  }									\
+  else Fail1;	/* op1 is STRING, FLOAT, CS, or LIST */
 
 /*======================================================================*/
 
-#define nunify_with_float(OP1,OP2) \
-    deref(OP1); \
-    if (isref(OP1)) {  \
-        /* op1 is FREE */ \
-	bind_float(vptr(op1), asfloat(op2)); \
-    } \
-    else if (isfloat(op1)) { \
-       if (float_val(op1) == asfloat(op2)) goto contcase; else Fail1; \
-    } \
-    else if (isattv(OP1)) {\
-      /* fprintf(stderr, ".... ATTV nunify_with_float, interrupt needed\n"); */\
-      add_interrupt(OP1, makefloat(asfloat(OP2)));\
-    }\
-    else Fail1;	/* op1 is INT, STRING, CS, or LIST */ 
+#define nunify_with_float(OP1,OP2)					\
+  deref(OP1);								\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_float(vptr(op1), asfloat(op2));				\
+  }									\
+  else if (isfloat(op1)) {						\
+    if (float_val(op1) == asfloat(op2)) goto contcase; else Fail1;	\
+  }									\
+  else if (isattv(OP1)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_float, interrupt needed\n");	\
+    add_interrupt(OP1, makefloat(asfloat(OP2)));			\
+  }									\
+  else Fail1;	/* op1 is INT, STRING, CS, or LIST */ 
 
 /*======================================================================*/
 
-#define nunify_with_str(OP1,OP2) \
-    /* struct psc_rec *str_ptr; using op2 */ \
-    deref(OP1); \
-    if (isref(OP1)) {  \
-	/* op1 is FREE */ \
-	bind_cs((CPtr)(OP1), (Pair)hreg); \
-	new_heap_functor(hreg, (Psc)OP2); \
-	flag = WRITE; \
-    } \
-    else if (isconstr(OP1)) {	 \
-	OP1 = (Cell)(cs_val(OP1)); \
-	if (*((Psc *)OP1) == (Psc)OP2) { \
-	    flag = READFLAG; \
-	    sreg = (CPtr)OP1 + 1; \
-	} \
-	else Fail1; \
-    } \
-    else if (isattv(OP1)) { \
-        /* fprintf(stderr, ".... ATTV nunify_with_str, interrupt needed\n"); */ \
-        add_interrupt(OP1, makecs(hreg)); \
-        new_heap_functor(hreg, (Psc)OP2); \
-	flag = WRITE; \
-    } \
-    else Fail1;
+#define nunify_with_str(OP1,OP2)					\
+  /* struct psc_rec *str_ptr; using op2 */				\
+  deref(OP1);								\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_cs((CPtr)(OP1), (Pair)hreg);					\
+    new_heap_functor(hreg, (Psc)OP2);					\
+    flag = WRITE;							\
+  }									\
+  else if (isconstr(OP1)) {						\
+    OP1 = (Cell)(cs_val(OP1));						\
+    if (*((Psc *)OP1) == (Psc)OP2) {					\
+      flag = READFLAG;							\
+      sreg = (CPtr)OP1 + 1;						\
+    }									\
+    else Fail1;								\
+  }									\
+  else if (isattv(OP1)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_str, interrupt needed\n");	\
+    add_interrupt(OP1, makecs(hreg));					\
+    new_heap_functor(hreg, (Psc)OP2);					\
+    flag = WRITE;							\
+  }									\
+  else Fail1;
 
 /*======================================================================*/
 
-#define nunify_with_list_sym(OP1) \
-    deref(OP1); \
-    if (isref(OP1)) {  \
-	/* op1 is FREE */\
-	bind_list((CPtr)(OP1), hreg);\
-	flag = WRITE;\
-    }\
-    else if (islist(OP1)) {	\
-	sreg = clref_val(OP1);\
-	flag = READFLAG;\
-    }\
-    else if (isattv(OP1)) { \
-        /* fprintf(stderr, ".... ATTV nunify_with_list_sym, interrupt needed\n"); */\
-        add_interrupt(OP1, makelist(hreg)); \
-	flag = WRITE; \
-    } \
-    else Fail1;
+#define nunify_with_list_sym(OP1)					\
+  deref(OP1);								\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_list((CPtr)(OP1), hreg);					\
+    flag = WRITE;							\
+  }									\
+  else if (islist(OP1)) {						\
+    sreg = clref_val(OP1);						\
+    flag = READFLAG;							\
+  }									\
+  else if (isattv(OP1)) {						\
+    attv_dbgmsg(">>>> ATTV nunify_with_list_sym, interrupt needed\n");	\
+    add_interrupt(OP1, makelist(hreg));					\
+    flag = WRITE;							\
+  }									\
+  else Fail1;
 
 /*======================================================================*/
 

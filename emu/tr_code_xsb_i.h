@@ -298,7 +298,7 @@ int     delay_it;
       bind_copy((CPtr)dec_addr(*reg_arrayptr), cell2deref);	\
     }								\
     else {							\
-      /* printf(".... keeping the old attribute\n"); */		\
+      attv_dbgmsg(">>>> keeping the old attribute\n");		\
     }								\
   }								\
   else {							\
