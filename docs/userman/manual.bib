@@ -125,10 +125,11 @@ INSTITUTION = "Universidade Nova de Lisboa",
 YEAR = 1997 }
 
 @techreport{RaSm97,
-Title = {Fully local and efficient evaluation of alternating fixed points}, 
 Author = {C.R. Ramakrishnan and S. Smolka},
+ Title = {Fully local and efficient evaluation of alternating fixed points}, 
 Institution = {SUNY Stony Brook}, 
-Year = 1997}
+Year = 1997
+}
 
 @inproceedings{ABW88,
 AUTHOR = "K. Apt and H. Blair and A. Walker",
@@ -749,6 +750,32 @@ YEAR = 1988 }
       NUMBER = {927},
 }
 
+@INPROCEEDINGS{CAT@PLILP-98,
+     AUTHOR = {Bart Demoen and Konstantinos Sagonas},
+      TITLE = {{CAT: the Copying Approach to Tabling}},
+      PAGES = {21--35},
+   CROSSREF = {PLILP98}
+}
+
+@INPROCEEDINGS{CATmem@ISMM-98,
+     AUTHOR = {Bart Demoen and Konstantinos Sagonas},
+      TITLE = {{Memory Management for Prolog with Tabling}},
+      PAGES = {97--106},
+  BOOKTITLE = {Proceedings of ISMM'98: ACM SIGPLAN International
+		Symposium on Memory Management},
+      MONTH = oct,
+       YEAR = {1998},
+    ADDRESS = {Vancouver, B.C., Canada},
+  PUBLISHER = {ACM Press}
+}
+
+@INPROCEEDINGS{CHAT@PADL-99,
+     AUTHOR = {Bart Demoen and Konstantinos Sagonas},
+      TITLE = {{CHAT: the Copy-Hybrid Approach to Tabling}},
+      PAGES = {106--121},
+   CROSSREF = {PADL99}
+}
+
 @inproceedings{ DMP93,
 AUTHOR = "M. Derr and S. Morishita and G. Phipps",
 TITLE = "Design and Implementation of the {Glue-Nail} Database System",
@@ -1292,12 +1319,11 @@ YEAR = 1987 }
 
 @book{semantica,
 	Title={Semantica},
-	Author={R. Larson and D. S. Warren and J. Freire and
-                  K. Sagonas and P. Gomez}, 
+	Author={Richard Larson and David S. Warren and Juliana Freire and
+                  Konstantinos Sagonas and Patricia Gomez}, 
 	Publisher={MIT Press},
-	Year={1995},
-	Note={In preparation}
-	}
+	Year={1996},
+}
 
 @inproceedings{LMM88,
 AUTHOR = "J.-L. Lassez and M. Maher and K. Mariott",
@@ -1831,15 +1857,20 @@ TITLE = "Efficient Table Access Mechanisms for Logic Programs",
 BOOKTITLE = "International Conference on Logic Programming",
 EDITOR = "L. Sterling",
 PAGES = "697-711",
-YEAR = "1995"}
+YEAR = "1995"
+}
 
 @article{ RRSSW98, 
-AUTHOR = "P. Rao and I.V. Ramakrishnan and K. Sagonas and T. Swift and
+ AUTHOR = "P. Rao and I.V. Ramakrishnan and K. Sagonas and T. Swift and
 		  D.S. Warren", 
-TITLE = "Efficient Table Access Mechanisms for Logic Programs",
-Journal = "Journal of Logic Programming",
-Note = "To Appear",
-YEAR = "1998"}
+  TITLE = "Efficient Table Access Mechanisms for Logic Programs",
+JOURNAL = "Journal of Logic Programming",
+  MONTH = jan,
+   YEAR = "1999",
+ VOLUME = {38},
+ NUMBER = {1},
+  PAGES = {31--54}
+}
 
 @techreport{ FSW98,
 Author = "J. Freire and T. Swift and D. Warren",
@@ -2656,3 +2687,33 @@ year = 1994,
 pages = {572--586}
 }
 
+
+@PROCEEDINGS{PLILP98,
+       TITLE = {Principles of Declarative Programming, 10th International
+                Symposium, PLILP'98, Held Jointly with the 6th International
+                Conference, ALP'98},
+   BOOKTITLE = {Principles of Declarative Programming, 10th International
+                Symposium, PLILP'98, Held Jointly with the 6th International
+                Conference, ALP'98},
+        YEAR = {1998},
+       MONTH = Sep,
+      EDITOR = {Catuscia Palamidessi and Hugh Glaser and Karl Meinke},
+      SERIES = {LNCS},
+      NUMBER = {1490},
+   PUBLISHER = {Springer},
+     ADDRESS = {Pisa, Italy}
+}
+
+@PROCEEDINGS{PADL99,
+      TITLE = {Practical Aspects of Declarative Languages:
+               First International Workshop},
+  BOOKTITLE = {Practical Aspects of Declarative Languages:
+               First International Workshop},
+       YEAR = {1999},
+      MONTH = jan,
+     EDITOR = {Gopal Gupta},
+     SERIES = {LNCS},
+     NUMBER = {1551},
+  PUBLISHER = {Springer},
+    ADDRESS = {San Antonio, Texas}
+}
