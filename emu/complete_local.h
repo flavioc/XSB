@@ -96,7 +96,8 @@ static inline int  ScheduleNonLeaderGenerator(VariantSF subgoal)
   } 
   return 0;
 }
-#endif
+#endif /* CHAT */
+#endif /* LOCAL */
 
 #ifdef PROFILE
 #define ProfileLeader \
@@ -152,6 +153,7 @@ static inline int  ScheduleNonLeaderGenerator(VariantSF subgoal)
 #define ProfileLeader
 #endif
 
+#ifdef LOCAL_EVAL
 #ifdef CHAT
 #define DisposeOfComplSusp(subgoal) \
         chat_free_compl_susp_chat_areas(subgoal)
