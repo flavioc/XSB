@@ -24,10 +24,10 @@
 
 
 ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
-	sModels.O libwww.O clpr.O
+	sModels.O libwww.O clpr.O xsbdoc.O
 
 SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww sModels \
-	clpqr
+	clpqr xsbdoc
 
 Option = [optimize]
 
