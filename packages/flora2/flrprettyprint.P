@@ -142,6 +142,20 @@ postfix_term(Term) :-
         functor(Term,Op,_), 
 	postfix_op(_,_,Op).
 
+/***********************************************************************
+ arith_exp(+Term)
+ Checks if Term is an arithmetic expression (so we will consider 
+ striping '()' if the arithmetic expression is a top level predicate).
+***********************************************************************/
+arith_exp(is(_,_)) :- !.
+arith_exp(eval(_)) :- !.
+arith_exp('<'(_,_)) :- !.
+arith_exp('=<'(_,_)) :- !.
+arith_exp('>'(_,_)) :- !.
+arith_exp('>='(_,_)) :- !.
+arith_exp('=:='(_,_)) :- !.
+arith_exp('=\='(_,_)) :- !.
+
 %% We need to do extra indentation for long query '?- a,b.' , to make
 %% the output be like  ?- a,  instead of  ?- a,
 %%                        b.              b.
@@ -369,6 +383,7 @@ prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :-
                              b.              b.
   
 ****************************************************************************/ 
+
 prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :-
    	infix_term(Term), 
    	Term =.. [Op, Lhs, Rhs], !, 
@@ -387,18 +402,18 @@ prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :-
    	%% if the operator is the '->' of '..->...;..', check  if  
 	%% new line and indentation are needed, then print '->'
   	( Op == '->', conget(if_then_else_struct, 1)
- 	  -> ( conget(if_then_else_long, 1)  
-  	     -> nl,indent(Flag_indent, Indent), 
-	         conset(if_then_else_long,0) % reset flag
-             ;  true
-             ),
+	-> ( conget(if_then_else_long, 1)  
+	   -> nl,indent(Flag_indent, Indent), 
+	       conset(if_then_else_long,0) % reset flag
+	   ;  true
+	   ),
 	    %% check if we need to do indentation for '?-'
 	    ( conget(query_flag, 1)
 	    -> indentation('?-', Ind), IndentForQuery is Indent + Ind,
 		indent(Flag_indent, IndentForQuery) 
 	    ;  true
 	    ) 
-	; true 
+	; true
         ),
 
         %% if the operator is the ';' inside '...->...;...', check if 
@@ -407,12 +422,12 @@ prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :-
         ( Op == ';', OpLhs == '->' 
         -> (Flag_nl ==true -> nl, indent(Flag_indent, Indent); true),
            (conget(query_flag, 1)
-            -> indentation('?-', Ind), IndentForQuery is Indent + Ind,
+	   -> indentation('?-', Ind), IndentForQuery is Indent + Ind,
                indent(Flag_indent, IndentForQuery)
-            ;  true 
+	   ;  true 
            ),  
            conset(if_then_else_struct,0)
-         ; true
+	; true
         ),
 
    	%% Print the infix-operator.
@@ -447,7 +462,7 @@ prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :-
    	-> ( Op == ';', conget(query_flag, 1)
    	   -> indentation('?-', Ind), IndentForQuery is Indent + Ind,
        	      NewIndent is IndentForQuery,
-	      conset(query_flag,0)
+              conset(query_flag, 0)
            ;  NewIndent is Indent
            )   
         ;  NewIndent is INFIX_INDENT+Indent
@@ -455,6 +470,99 @@ prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :-
 
         %% print the right hand side of the operator.
 	prettyprint_rhs(NewIndent, Op, Rhs, Flag_nl, Flag_indent, Vars).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%i%%%%%%%%
+%%  Handle terms whose principal functor is postfix operator 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
+	postfix_term(Term),
+	Term =.. [Op, Arg],
+	var(Arg), !,  % case: X Op
+	prettyprint_with_indent(Indent, Arg, Flag_indent, Vars),
+	tab(1),
+	write(Op).
+
+prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
+	postfix_term(Term),
+        Term =.. [Op, Arg],
+	functor(Arg, OpArg, _), % case: (...OpArg...) Op
+        (  '_$op'(_,_,OpArg) 
+	-> ( can_strip_parens_post(Op, OpArg)
+	     ->  prettyprint_with_indent(Indent,Arg,Flag_indent,Vars), 
+	     	 tab(1), write(Op)
+	     ;   write('('),
+	         prettyprint_with_indent(Indent,Arg,Flag_indent,Vars),
+	         write(')'),
+	         write(Op)
+           )
+	;  prettyprint_with_indent(Indent,Arg,Flag_indent,Vars),
+	   tab(1),
+	   write(Op)
+	).   
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Handle terms whose principal functor is a prefix operator
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
+	prefix_term(Term),
+	Term =.. ['+', Arg], !,
+        prettyprint_with_indent(Indent,Arg,Flag_indent,Vars).
+
+prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
+	prefix_term(Term),
+	Term =.. [Op, Arg],
+	var(Arg), !,  	      % case:  Op X
+        write(Op),tab(1),
+	prettyprint_with_indent(Indent,Arg,Flag_indent,Vars).
+	
+prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :- 
+        prefix_term(Term),
+	Term =.. [Op, Arg],
+	functor(Arg, OpArg, _),  % case:  Op (...OpArg...)
+	write(Op), tab(1),
+	
+	%% Set query_flag to 1 if the term is a query, for later use.
+	( Op == ('?-') -> conset(query_flag, 1); true), 
+	
+	( (Op == (':-'); Op == ('?-'))
+	-> NewIndent is 0
+	;  newline(Flag_nl),
+	    (  Flag_nl == true 
+	    -> NewIndent is Indent + PREFIX_INDENT
+	    ;  NewIndent is 0
+	    )
+	),
+	
+        (  '_$op'(_,_,OpArg) 
+	-> ( can_strip_parens_prefix(Op, OpArg)
+	   -> prettyprint_with_indent(NewIndent,Arg,Flag_indent,Vars) 
+	   ;  write('('),
+	      prettyprint_with_indent(NewIndent,Arg,Flag_indent,Vars),
+	      write(')')
+           )
+	;  prettyprint_with_indent(NewIndent,Arg,Flag_indent,Vars) 
+	),
+        conset(query_flag, 0).   
+
+/****************************************************************************
+  Handle terms whose principal functor is NOT an operator.
+****************************************************************************/
+prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :- 
+	Term =.. [Op|ArgsList],
+	indent(Flag_indent,Indent), 
+	write_canonical(Op), 
+	write('('), 
+	newline(Flag_nl),
+
+	( Flag_nl == true 
+	-> NewIndent is Indent + PREFIX_INDENT 
+	;  NewIndent is 0
+	),
+	
+	%% print the arguments list 
+	print_argslist(NewIndent,ArgsList,Flag_nl,Flag_indent,Vars),
+	write(')').
 
 
 /*****************************************************************************
@@ -495,23 +603,11 @@ prettyprint_lhs(Indent, Op, Lhs, Flag_nl, Flag_indent, Vars) :-
             ( can_strip_parens_binary_left(Op,OpLhs); % syntactic consideration
               Op = ',' , OpLhs = ',';                 % semantic considerations
               Op = ';' , OpLhs = ';' )  
-            ->  prettyprint_with_indent(Indent, Lhs, Flag_indent, Vars)
-            ;   %% Other cases, output the '()'
-                indent(Flag_indent, Indent),
-                write('('),
-                newline(Flag_nl),
-                ( Flag_nl == true 
-	        -> prettyprint_with_indent(Indent, Lhs, Flag_indent, Vars)
-                ;  prettyprint_with_indent(0, Lhs, Flag_indent, Vars) 
-                ),
-                newline(Flag_nl),
-                ( Flag_nl == true 
-	        -> indent(Flag_indent, Indent)
-                ;  true
-                ),
-                write(')')
+	   ->  prettyprint_with_indent(Indent, Lhs, Flag_indent, Vars)
+	   ; %% Other cases, output the '()'
+	       prettyprint_with_parens(Indent,Lhs,Flag_nl,Flag_indent,Vars) 
            )
-	;  %% For non-operator functors, don't need to consider striping '()'.
+	; % For non-operator functors, don't need to consider striping '()'
 	   prettyprint_with_indent(Indent, Lhs, Flag_indent, Vars) 
 	).
 
@@ -532,7 +628,6 @@ prettyprint_lhs(Indent, Op, Lhs, Flag_nl, Flag_indent, Vars) :-
      This is determined by the predicate can_strip_parens_binary_right/2.
 
   2. Semantic consideration: 
-         a. arithmetc expressions
 	    Op = +, OpRhs = +,
 	    Op = +, OpRhs = -,
 	    Op = *, OpRhs = *,
@@ -545,9 +640,8 @@ prettyprint_rhs(Indent, _, Rhs, _, Flag_indent, Vars) :-
 	var(Rhs), !, 
      	prettyprint_with_indent(Indent, Rhs, Flag_indent, Vars).
 
-%% BIN: I don't understand this. What does it mean "rhs is an operator"?
-%%      That rhs is a 0-ary functor? What does it have to do with Op being ";"?
-%% Rhs is an operator (the case of Op == ';' ).
+%% Rhs is a 0-ary term which is an operator by itself.
+%% We need to put parens around so XSB won't issue a syntax error
 prettyprint_rhs(Indent, _, Rhs, _, Flag_indent, Vars) :-
      	functor(Rhs,OpRhs,0),  
      	'_$op'(_,_,OpRhs), !,
@@ -566,120 +660,26 @@ prettyprint_rhs(Indent, Op, Rhs, Flag_nl, Flag_indent, Vars) :-
                Op = ('*') , OpRhs = ('/') )
             -> prettyprint_with_indent(Indent, Rhs, Flag_indent, Vars)
             ;  %% Otherwise, keep the '()'
-               indent(Flag_indent, Indent),
-               write('('),newline(Flag_nl),  
-               ( Flag_nl == true 
-               -> prettyprint_with_indent(Indent, Rhs, Flag_indent, Vars)
-               ; prettyprint_with_indent(0, Rhs, Flag_indent, Vars)
-	       ),
-               newline(Flag_nl),
-               ( Flag_nl == true
-               -> indent(Flag_indent, Indent)
-               ; true 
-               ),
-               write(')')
+	       prettyprint_with_parens(Indent,Rhs,Flag_nl,Flag_indent,Vars)
           )
 	; prettyprint_with_indent(Indent,Rhs,Flag_indent,Vars)
   	).
 
-%% BIN: I told you earlier that all clauses related to the same procedure
-%%      MUST be together. You don't write parts of the same procedure
-%%      in different parts of a file in other languages.
-%%      Why do you think it is acceptable in Prolog?
-%%
-%%  Handle terms whose principal functor is postfix
-prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
-	postfix_term(Term),
-	Term =.. [Op, Arg],
-	var(Arg), !,  % case: X Op
-	prettyprint_with_indent(Indent, Arg, Flag_indent, Vars),
-	tab(1),
-	write(Op).
 
-prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
-	postfix_term(Term),
-        Term =.. [Op, Arg],
-	functor(Arg, OpArg, _), % case: (...OpArg...) Op
-        (  '_$op'(_,_,OpArg) 
-	-> ( can_strip_parens_post(Op, OpArg)
-	     ->  prettyprint_with_indent(Indent,Arg,Flag_indent,Vars), 
-	     	 tab(1), write(Op)
-	     ;   write('('),
-	         prettyprint_with_indent(Indent,Arg,Flag_indent,Vars),
-	         write(')'),
-	         write(Op)
-           )
-	;  prettyprint_with_indent(Indent,Arg,Flag_indent,Vars),
-	   tab(1),
-	   write(Op)
-	).   
+prettyprint_with_parens(Indent,Term,Flag_nl,Flag_indent,Vars) :-
+        indent(Flag_indent, Indent),
+        write('('),newline(Flag_nl),
+        ( Flag_nl == true
+        -> prettyprint_with_indent(Indent,Term,Flag_indent,Vars)
+        ;  prettyprint_with_indent(0,Term,Flag_indent,Vars)
+        ),
+        newline(Flag_nl),
+        ( Flag_nl == true
+        -> indent(Flag_indent,Indent)
+         ; true
+        ),
+        write(')').
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Handle terms whose principal functor is a prefix operator
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Semantic consideration for '+'.
-%% BIN: I don't think that stripping + is correct except in an
-%%      arithmetic expression. For instance, ?- ..., p(+X), ...
-%%      p(Y) :- functor(Y,+,_) -> do-one-thing; do-another-thing
-prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
-	prefix_term(Term),
-	Term =.. ['+', Arg], !,
-        prettyprint_with_indent(Indent,Arg,Flag_indent,Vars).
-
-prettyprint_with_indent_newline(Indent, Term, _Flag_nl, Flag_indent, Vars) :- 
-	prefix_term(Term),
-	Term =.. [Op, Arg],
-	var(Arg), !,  	      % case:  Op X
-        write(Op),tab(1),
-	prettyprint_with_indent(Indent,Arg,Flag_indent,Vars).
-	
-prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :- 
-        prefix_term(Term),
-	Term =.. [Op, Arg],
-	functor(Arg, OpArg, _),  % case:  Op (...OpArg...)
-	write(Op), tab(1),
-	
-	%% Set query_flag to 1 if the term is a query, for later use.
-	( Op == ('?-') -> conset(query_flag, 1); true), 
-	
-	( (Op == (':-'); Op == ('?-'))
-	-> NewIndent is 0
-	;  newline(Flag_nl),
-	    (  Flag_nl == true 
-	    -> NewIndent is Indent + PREFIX_INDENT
-	    ;  NewIndent is 0
-	    )
-	),
-	
-        (  '_$op'(_,_,OpArg) 
-	-> ( can_strip_parens_prefix(Op, OpArg)
-	   -> prettyprint_with_indent(NewIndent,Arg,Flag_indent,Vars) 
-	   ;  write('('),
-	      prettyprint_with_indent(NewIndent,Arg,Flag_indent,Vars),
-	      write(')')
-           )
-	;  prettyprint_with_indent(NewIndent,Arg,Flag_indent,Vars) 
-	).   
-
-/****************************************************************************
-  Handle terms whose principal functor is NOT an operator.
-****************************************************************************/
-prettyprint_with_indent_newline(Indent, Term, Flag_nl, Flag_indent, Vars) :- 
-	Term =.. [Op|ArgsList],
-	indent(Flag_indent,Indent), 
-	write_canonical(Op), 
-	write('('), 
-	newline(Flag_nl),
-
-	( Flag_nl == true 
-	-> NewIndent is Indent + PREFIX_INDENT 
-	;  NewIndent is 0
-	),
-	
-	%% print the arguments list 
-	print_argslist(NewIndent,ArgsList,Flag_nl,Flag_indent,Vars),
-	write(')').
 
 /*****************************************************************************
   print_argslist(+Indent,+ArgsList,+Flag_nl,+Flag_indent,+Vars)
@@ -698,7 +698,7 @@ print_argslist(Indent,[],Flag_nl,Flag_indent,_Vars) :-
 	 !.
 
 print_argslist(Indent,[Head|Tail],Flag_nl,Flag_indent,Vars) :- 
-   	( var(Head) 
+   	( var(Head)
    	-> true
    	;  ( functor(Head, ',', _); functor(Head, ';', _)),
    	   Head \== ',', Head \== ';'
