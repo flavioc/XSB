@@ -233,7 +233,8 @@ static char *compl_marks = NULL ;
 #define testreturnit(retp)   return(retp)
 #endif
 
-static CPtr hp_pointer_from_cell(Cell cell, int *tag)
+#ifdef GC
+static inline CPtr hp_pointer_from_cell(Cell cell, int *tag)
 {
     int t;
     CPtr retp;
@@ -263,7 +264,7 @@ static CPtr hp_pointer_from_cell(Cell cell, int *tag)
 
     return NULL;
 } /* hp_pointer_from_cell */
-
+#endif
 
 static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 { int t ;
@@ -396,7 +397,6 @@ safe_mark_more:
         goto mark_more ;
       }
 
-
     if ((tag == REF) || (tag == REF1))
       { p = (CPtr)cell_val ;
         if (p == cell_ptr) goto pop_more ;
@@ -494,7 +494,7 @@ static int mark_root(Cell cell_val)
 
 /*----------------------------------------------------------------------*/
 
-static int mark_region(CPtr beginp, CPtr endp)
+static inline int mark_region(CPtr beginp, CPtr endp)
 { int marked = 0 ;
 
   while (beginp <= endp)
@@ -1085,7 +1085,6 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
         fprintf(where,"strange,%ld).\n",cell_val) ;
         break ;
     }
-
 } /* print_cell */
 
 void print_heap(int start, int end, int add)
@@ -1144,7 +1143,7 @@ void print_ls(int add)
   }
 
   fclose(where) ;
-} /*print_ls */
+} /* print_ls */
 
 void print_cp(int add)
 {
@@ -1174,7 +1173,7 @@ void print_cp(int add)
   }
 
   fclose(where) ;
-} /*print_cp */
+} /* print_cp */
 
 void print_tr(int add)
 {
@@ -1203,7 +1202,7 @@ void print_tr(int add)
   }
 
   fclose(where) ;
-} /*print_tr */
+} /* print_tr */
 
 void print_regs(int a,int add)
 {
@@ -1259,13 +1258,11 @@ void print_regs(int a,int add)
   else fprintf(where,"delayreg = %ld\n",(Cell)delayreg);
 
   fclose(where) ;
-
 } /* print_regs */
-
-#ifdef CHAT
 
 void print_chat(int add)
 {
+#ifdef CHAT
   CPtr startp;                                                     
   FILE *where;
   chat_init_pheader initial_pheader;
@@ -1327,7 +1324,7 @@ void print_chat(int add)
       while (pheader != NULL)
 	{ fprintf(where,"increment %p marked = %d\n",
 		  pheader,chat_area_imarked(pheader));
-	   startp = (CPtr)chat_get_tr_start(pheader);
+	  startp = (CPtr)chat_get_tr_start(pheader);
 	  len = chat_get_tr_length(pheader);
 
 	  i = 0;
@@ -1352,10 +1349,8 @@ void print_chat(int add)
   while (initial_pheader != chat_link_headers);
 
   fclose(where) ;
-
-} /* print_chat */
-
 #endif
+} /* print_chat */
 
 void print_all_stacks(void)
 {
