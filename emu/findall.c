@@ -136,7 +136,7 @@ int findall_init()
 void findall_free(int i)
 { CPtr to_free,p ;
 
-  p = (findall_solutions + i)->current_chunk ;
+  p = (findall_solutions + i)->first_chunk ;
   while (p != NULL)
 	{ to_free = p ; p = (CPtr)(*p) ; free(to_free) ; }
   (findall_solutions + i)->tail = 0 ;
