@@ -22,9 +22,11 @@
 ## 
 ##
 
+OBJEXT=.O
+
 XSBDIR=../..
 
-ALL = 	gapmeta.O
+ALL = 	gapmeta${OBJEXT}
 
 Option = [optimize]
 
@@ -49,8 +51,8 @@ HDRMSG = "While compiling XSB/packages/gap:"
 .IGNORE:
 
 # suffix rules
-.SUFFIXES: .P .O .H
-.P.O:
+.SUFFIXES: .P ${OBJEXT} .H
+.P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
 all: init $(ALL) finish
@@ -73,7 +75,7 @@ finish:
 .PHONY: clean
 
 clean:
-	/bin/rm -f *.O *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
 
 
 .DONE:
