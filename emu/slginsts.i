@@ -466,6 +466,7 @@ return_table_code:
     for (i = 1; i <= CallNumVar; i++) {
        pushreg(cell(VarPosReg+i));
     }
+    delay_it = 1;
     lpcreg = (byte *) subg_ans_root_ptr(xcurcall);
     goto contcase;
 
