@@ -1072,12 +1072,44 @@ internal use.
 
 Although this simple rule is sufficient, in most cases, to keep you out of
 trouble, you should be aware of the fact that symbols such as ``{\tt ,}'',
-``{\tt ;}'', ``{\tt +}'', ``{\tt .}'', ``{\tt ->}'', ``{\tt ::}'', and many
+``{\tt ;}'', ``{\tt +}'', ``{\tt .}'', ``{\tt ->}'', ``{\tt ::}'', ``{\tt
+  :-}'', ``{\tt ?-}'' and many
 other parts of \FLORA syntax are operators. Therefore, there is a chance
 that precedence levels chosen for the user-defined operators conflict with
 those of \FLORA and, as a result, your program might not parse. If in
 doubt, check the declarations in the file {\tt flroperator.P} in the \FLORA
 source code.
+
+The fact that some symbols are operators can sometimes lead to
+surprises. For instance,
+%%
+\begin{verbatim}
+ ?- (a,b,c).
+ :- (a,b).
+\end{verbatim}
+%%
+will be interpreted as terms {\tt '?-'(a,b,c)} and {\tt ':-'(a,b)} rather
+than a query and a directive, respectively. The reason for this is that,
+first, such terms are allowed in Prolog and there is no good reason to ban
+them in \FLORA; and, second, the above syntax is ambiguous and the parser
+makes the choice that is consistent with the choice made in
+Prolog. Typically users do not put parentheses around subgoals in such
+cases, and would instead write
+%%
+\begin{verbatim}
+ ?- a,b,c.
+ :- a,b.  
+\end{verbatim}
+%%
+Note that things like
+%%
+\begin{verbatim}
+?- (a,b),c.  
+?- ((a,b,c)).
+\end{verbatim}
+%%
+will be interpreted as queries, so there are plenty of ways to satisfy
+one's fondness for redundant parentheses.
 
 
 \subsection{Logical Expressions}
@@ -3854,23 +3886,34 @@ whether {\tt Action} succeeds or fails.
 \index{do-until}
 %%
 These loops are similar to those in C, Java, and the like.
-In {\tt while Cond do Action}, {\tt Cond} is evaluated before each
+In {\tt while Condition do Action}, {\tt Condition} is evaluated before each
 iteration. If it is true, {\tt Action} is executed. This statement succeeds
-even if {\tt Cond} fails at the very beginning. The only case when this
-loop fails is when {\tt Cond} succeeds, but {\tt Action} fails (for all
+even if {\tt Condition} fails at the very beginning. The only case when this
+loop fails is when {\tt Condition} succeeds, but {\tt Action} fails (for all
 possible instantiations).
 
-The loop {\tt do Action until Cond} is similar, except that {\tt Cond} is
-evaluated after each iteration. Thus, {\tt Action} is guaranteed to execute
-at least once.
+The loop {\tt do Action until Condition} is similar, except that {\tt
+  Condition} is evaluated after each iteration. Thus, {\tt Action} is
+guaranteed to execute at least once.
 
-These loop statements have special semantics for backtrackable updates.
+These loops work by backtracking through {\tt Condition} and terminate when
+all ways to satisfy it have been exhausted (or when {\tt Action} fails).
+The loop condition should \emph{not} be modified inside the loop body.  If
+it is modified ({\it e.g.}, new facts are inserted in a predicate that {\tt
+  Condition} uses), XSB does not guarantee that the changes will be seen
+during backtracking and thus the result of such a loop is indeterminate.
+If you need to modify {\tt Condition}, use the statements {\tt while-loop}
+and {\tt loop-until} described below.
+
+The above loop statements have special semantics for backtrackable updates.
 Namely, changes done by these types of updates are \emph{committed} at the
-end of each iteration. Thus, if {\tt Cond} fails, the changes done by
+end of each iteration. Thus, if {\tt Condition} fails, the changes done by
 backtrackable updates that occur in {\tt Cond} are undone. Likewise, if
 {\tt Action} fails, backtracking occurs and the corresponding updates are
-undone. However, updates made by backtrackable update statements during the
-previous iteration remain committed.
+undone. However, changes made by backtrackable update statements during the
+previous iteration remain committed. If the current iteration finishes then
+its changes will also remain committed regardless of what happens during
+the next iteration.
 
 
 \index{while-loop}
@@ -3881,28 +3924,64 @@ previous iteration remain committed.
 This pair of loop statements is similar to {\tt while-do} and {\tt
   do-until}, except that backtrackable updates are \emph{not} committed
 after each iteration. Thus, failure of a statement following such a loop
-can cause the changes to be undone.
+can cause all changes made by the execution of the loop to be undone.  In
+addition, {\tt while-loop} and {\tt loop-until} do not work through
+backtracking. Instead, they execute as long as {\tt Condition} stays true.
+Therefore, the intended use of these loop statements is that {\tt Action}
+in the loop body must modify {\tt Condition} and, eventually, make it false
+(for instance, by deleting objects or tuples from some predicates mentioned
+in {\tt Condition}).
+  
+As in the case of the previous two loops, {\tt while-loop} and
+{\tt loop-until} succeed even if {\tt Condition} fails right from the
+outset. The only case when these loops fail is when {\tt Action} fails ---
+see Section~\ref{sec-updates-pitfalls} for ways to avoid this ({\it i.e.},
+to continue executing the loop even when {\tt Action} fails) and the
+possible pitfalls.
 
-The constructs {\tt while-loop} and {\tt loop-until} can be much more
+
+The statements {\tt while-loop} and {\tt loop-until} are more
 expensive (both time- and space-wise) than {\tt while-do} and {\tt
   do-until}. Therefore, they should be used only when full backtrackability
-of updates is required. In particular, there is no justification for {\tt
-  while-loop} and {\tt loop-until} if all updates in the query are
-non-backtrackable.
+of updates is required. In particular, such loops are rarely used with
+non-backtrackable updates.
 
-\paragraph{Note:}
-At present, XSB has serious problems with its implementation of
-{\tt assert/retract} predicates, which affects {\tt while-do} and {\tt
-  do-until}. Therefore, it is recommended to avoid these control
-constructs.
 
-\subsection{Pitfalls in Using Loops}
+\subsection{Some Subtleties of the Semantics of the Loop Statements}
+\label{sec-updates-pitfalls}
 
-Observe that typically the {\tt while/until} loops are used in situation
-when the condition in the loop is being updated inside the loop body.
-Therefore, the condition must \emph{not} contain tables predicates.
-If such predicates are involved in the loop condition, the loop is likely
-to execute infinitely many times, and can even be infinite.
+Observe that {\tt while-loop} and {\tt loop-until} assume that the
+condition in the loop is being updated inside the loop body.  Therefore,
+the condition must \emph{not} contain tabled predicates.  If such
+predicates are involved in the loop condition, the loop is likely to
+execute infinitely many times.
+
+Also, keep in mind that in any of the four loop statements, if {\tt Action}
+fails before {\tt Condition} does, the loops terminate and fail. Therefore,
+if the intention is that the loop should continue even if {\tt Action}
+fails, use the
+%%
+\begin{verbatim}
+    (Action ; true)  
+\end{verbatim}
+%%
+idiom in the loop body. In case of {\tt while-do} and {\tt do-until},
+continuing execution of the loop is not a problem, because these loops work
+by backtracking through {\tt Condition} and the loop will terminate when
+there is no more ways to backtrack. However, in case of {\tt while-loop}
+and {\tt loop-until}, there is a potential pitfall. The problem is that
+these loops will continue as long as there is a way to satisfy {\tt
+  Condition}.  If condition stays true, the loop continues forever.
+Therefore, the way to use these loops is to make sure that {\tt Condition}
+is modified by {\tt Action}. If {\tt Action} has non-backtrackable updates,
+the user must ensure that if {\tt Action} fails then {\tt Condition} is
+modified appropriately anyway (for otherwise the loop will never end).
+If {\tt Action} is fully backtrackable and it fails, then using the
+{\tt (Action ; true)} idiom in the loop body will definitely make the loop
+infinite, so the use of this idiom in the body of {\tt while-loop} and {\tt
+  loop-until} is dangerous if there is a possibility that {\tt Action} will
+fail, and it is useless if the action is expected to always succeed.
+
 
 
 \section{Negation} \label{sec:negation}
