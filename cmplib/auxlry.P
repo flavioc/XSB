@@ -45,21 +45,42 @@ error(Message) :-
 	),
 	message(('++Error: ', Message)).
 
+
+:- dynamic('_$global_compiler_options'(_)).
+
+set_global_compiler_options(Options) :-
+	retractall('_$global_compiler_options'(_)),
+	assert('_$global_compiler_options'(Options)).
+
 /*======================================================================*/
 /*  setoptions(+Options)						*/
 /*	Compiler option setting.					*/
 /*======================================================================*/
 
+
 setoptions(_) :- current_option(Option), conset(Option, 0), fail.
-setoptions(Options) :- setoptions1(Options).
+setoptions(_) :- 
+	'_$global_compiler_options'(Options), 
+	setoptions1(Options), 
+	fail.
+setoptions(Options) :- setoptions1(Options), fail.
+setoptions(_Options).
 
 setoptions1([]).
 setoptions1([Opt|Rest]) :- 
-	( current_option(Opt) -> conset(Opt, 1)
-	; current_option(Opt, NewOpt) -> conset(NewOpt, 1)
-	; warning(('Unknown compiler option: ', Opt))
+	(Opt = +(Opt1)
+	 ->	setopt(Opt1,1)
+	 ; Opt = -(Opt1)
+	 ->	setopt(Opt1,0)
+	 ;	setopt(Opt,1)
 	),
 	setoptions1(Rest).
+
+setopt(Opt,Setting) :-
+	( current_option(Opt) -> conset(Opt, Setting)
+	; current_option(Opt, NewOpt) -> conset(NewOpt, Setting)
+	; warning(('Unknown compiler option: ', Opt))
+	).
 
 current_option(sysmod).
 current_option(optimize).
