@@ -3893,6 +3893,7 @@ only certain portions of the object structure.)
 
 \section{Optimizations}
 
+\paragraph{Left-to-right processing.}
 The first rule in improving the performance of \FLORA programs is to
 remember that query evaluation proceeds from left to right. Therefore it is
 generally advisable to place subgoals with smaller answer sets as close to
@@ -3942,6 +3943,35 @@ variable binding analysis, which the compiler does not perform) can be used
 to optimize such queries. If the order chosen by the compiler is not right,
 the programmer can always unnest the literals and place them in the right
 order in the rule body.
+
+\paragraph{Open calls vs. bound calls.}
+In XSB (as in other Prolog engines), it is much more efficient (space- and
+time-wise) to make one unbound call than multiple bound ones. For instance,
+suppose we have a class, {\tt cl}, that has hundreds of members, and
+consider the following query:
+%%
+\begin{verbatim}
+    ?- X:cl[attr->Y].  
+\end{verbatim}
+%%
+Here, XSB would first evaluate the open call $X:cl$ and then for each
+answer {\tt x} for {\tt X} it will evaluate {\tt x[attr->Y]}.
+If the cost of computing {\tt x[attr->Y]} is higher than the cost of $x:cl$
+and the number of answers to {\tt X[attr->Y]} is not significantly
+higher than the number of answers to {\tt X:cl}, then the following query
+might be evaluated much faster:
+%%
+\begin{verbatim}
+   ?- X[attr->Y], X:cl.  
+\end{verbatim}
+%%
+In this query, a single call {\tt X[attr->Y]} is evaluated first and then
+{\tt x:cl} is computed for each answer for {\tt X}.  Since, as we remarked,
+the cost of this call can be much smaller than the combined cost of
+multiple calls to {\tt x[attr->Y]} for different {\tt x}.  If the number of
+bindings for {\tt X} in {\tt X[attr->Y]} that are not members of class {\tt
+  cl} is small, the second query might take significantly less space and
+time.
 
 
 \section{Summary of Compiler Directives} \label{sec-comp-directives}

@@ -346,6 +346,9 @@ flora_flcompile(FlrFile,ModuleName) :-
 	  flora_mainO_filename(FlrFile,MOFile),
 	  flora_message_line('calling XSB compiler'),
 	  (
+	    %% Issue only important preprocessor warnings
+	    %% to avoid warnings when atoms or strings have \n in them
+	    flora_add_xpp_options('-warninglevel 0 '),
 	    %%compile(MPFile,[optimize,spec_repr,ti_all])
 	    compile(MPFile,[optimize,ti_all]) ->
 	      true
@@ -418,7 +421,9 @@ flora_load_system_module_internal(SysModID) :-
 	    !,
 	    flora_message_line('loading FLORA system module %s',
 			       args(SysModID)),
-	    flora_set_xpp_options(ModuleName),
+	    %% Issue only important preprocessor warnings
+	    %% to avoid warnings when atoms or strings have \n in them
+	    flora_set_xpp_options(ModuleName, '-warninglevel 0 '),
 	    consult(WSOFile),
 	    flora_clear_xpp_options
 	;
@@ -487,6 +492,7 @@ flora_flload(FlrFile,Workspace) :-
 	    true
 	;
 	  (
+	    flora_add_xpp_options('-warninglevel 0 '),
 	    %%compile(MPFile,[optimize,spec_repr,ti_all])
 	    compile(MPFile,[optimize,ti_all])
 	  ->
@@ -714,6 +720,12 @@ flora_set_xpp_options(ModuleName,ExtraOpt) :-
 	fmt_write_string(Opt,'%s %s',args(XOpt,ExtraOpt)),
 	assert(xpp_options(Opt)).
 
+%% Adds NewOpt to the existing XPP options
+flora_add_xpp_options(NewOpt) :-
+	xpp_options(XOpt),
+	retractall(xpp_options(_)),
+	fmt_write_string(Opt,'%s %s',args(XOpt,NewOpt)),
+	assert(xpp_options(Opt)).
 
 flora_clear_xpp_options :-
 	retractall(xpp_options(_)).
