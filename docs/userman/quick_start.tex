@@ -149,11 +149,12 @@ stacks for tabled evaluations can be quite complex, due to
 interdependencies of tabled subgoals.  Indeed, memory management
 algorithms can be based on common elements are shared among
 computation states or are copied.  The default configuration of XSB
-shares these elements while the option {\tt --enable-chat} uses copies
+shares these elements while the option {\tt --enable-chat} copies
 these elements.  While sharing and copying have minor performance
 differences, the main reason to try the {\tt --enable-chat}
 configuration is to use a heap garbage collector that has been written
-for it \cite{SaSw98,CAT@PLILP-98,CATmem@ISMM-98,CHAT@PADL-99}.
+for it.  See \cite{SaSw98,CAT@PLILP-98,CATmem@ISMM-98,CHAT@PADL-99}
+for in-depth discussion of the engine memory management.
 \end{description}
 
 \subsection{Possible Installation Problems}
