@@ -48,6 +48,12 @@
 
 extern void printterm(Cell, byte, int);
 
+#ifdef BITS64
+#define IntegerFormatString	"%ld"
+#else
+#define IntegerFormatString	"%d"
+#endif
+
 /* ====================================================================== */
 
 /*
@@ -146,7 +152,7 @@ void printTrieSymbol(Cell symbol) {
   else {
     switch(TrieSymbolType(symbol)) {
     case INT:
-      printf("%d", int_val(symbol));
+      printf(IntegerFormatString, int_val(symbol));
       break;
     case FLOAT:
       printf("%f", float_val(symbol));
@@ -155,7 +161,7 @@ void printTrieSymbol(Cell symbol) {
       printf("%s", string_val(symbol));
       break;
     case TrieVar:
-      printf("V%d", DecodeTrieVar(symbol));
+      printf("V" IntegerFormatString, DecodeTrieVar(symbol));
       break;
     case CS:
       {
@@ -314,7 +320,7 @@ static void symstkPrintNextTerm() {
 
   switch(TrieSymbolType(symbol)) {
   case INT:
-    printf("%d", int_val(symbol));
+    printf(IntegerFormatString, int_val(symbol));
     break;
   case FLOAT:
     printf("%f", float_val(symbol));
@@ -323,7 +329,7 @@ static void symstkPrintNextTerm() {
     printf("%s", string_val(symbol));
     break;
   case TrieVar:
-    printf("V%d", DecodeTrieVar(symbol));
+    printf("V" IntegerFormatString, DecodeTrieVar(symbol));
     break;
   case CS:
     {

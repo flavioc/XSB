@@ -1693,7 +1693,7 @@ int builtin_call(byte number)
     tif = get_tip(psc);
     if ( IsNonNULL(tif) ) {
       if ( IsNULL(TIF_CallTrie(tif)) ) {
-	TIF_EvalMethod(tif) = ptoc_int(2);
+	TIF_EvalMethod(tif) = (TabledEvalMethod)ptoc_int(2);
 	return TRUE;
       }
       else {

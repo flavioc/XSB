@@ -60,14 +60,14 @@ typedef struct Table_Info_Frame {
    ( TIF_EvalMethod(pTIF) == SUBSUMPTIVE_TEM )
 
 
-#define New_TIF(pTIF,pPSC) {					     \
-   pTIF = malloc(sizeof(TableInfoFrame));			     \
-   if ( IsNULL(pTIF) )						     \
-     xsb_abort("Ran out of memory in allocation of TableInfoFrame"); \
-   TIF_NextTIF(pTIF) = NULL;					     \
-   TIF_CallTrie(pTIF) = NULL;					     \
-   TIF_PSC(pTIF) = pPSC;					     \
-   TIF_EvalMethod(pTIF) = flags[TABLING_METHOD];		     \
+#define New_TIF(pTIF,pPSC) {						\
+   pTIF = malloc(sizeof(TableInfoFrame));				\
+   if ( IsNULL(pTIF) )							\
+     xsb_abort("Ran out of memory in allocation of TableInfoFrame");	\
+   TIF_NextTIF(pTIF) = NULL;						\
+   TIF_CallTrie(pTIF) = NULL;						\
+   TIF_PSC(pTIF) = pPSC;						\
+   TIF_EvalMethod(pTIF) = (TabledEvalMethod)flags[TABLING_METHOD];	\
  }
 
 /*===========================================================================*/

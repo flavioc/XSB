@@ -1233,7 +1233,7 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
   CPtr call_arg;
   int  arity, i, j, flag = 1;
   Cell tag = FREE, item;
-  CPtr cptr, VarPosReg, tVarPosReg, ls_top, ls_bot;
+  CPtr cptr, VarPosReg, tVarPosReg;
   TIFptr pTIF;
 
 
@@ -1247,8 +1247,6 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
   cptr = CallInfo_Arguments(*call_info);
   tVarPosReg = VarPosReg = CallInfo_VarVectorLoc(*call_info);
   ctr = attv_ctr = 0;
-  ls_top = top_of_localstk;
-  ls_bot = (CPtr) glstack.high - 1;
 
   for (i = 0; i < arity; i++) {
     call_arg = (CPtr) (cptr + i);            /* Note! */

@@ -276,26 +276,22 @@ static struct VariantContinuation {
 
 static void save_state_for_insertion(BTNptr last_node_match) {
 
-  int counter;
+  int i;
   CPtr termptr, *binding;
 
   variant.last_node_matched = last_node_match;
 
-  counter = 0;
-  termptr = tstTermStack.base;
   /*
    * Include the subterm that couldn't be matched.
    */
-  while (termptr <= tstTermStack.top) {
-    variant.term_stack[counter] = *termptr;
-    termptr++;
-    counter++;
-  }
-  variant.num_subterms = counter;
+  for ( termptr = tstTermStack.base, i = 0;
+	termptr <= tstTermStack.top;
+	termptr++, i++ )
+    variant.term_stack[i] = *termptr;
+  variant.num_subterms = i;
 
-  counter = 0;
-  binding = tstTrail.base;
-  while (binding < tstTrail.top) {
+  i = 0;
+  for ( binding = tstTrail.base; binding < tstTrail.top; binding++ ) {
     termptr = *binding;
     /*
      * Take only those bindings made to the call variables.
@@ -305,13 +301,12 @@ static void save_state_for_insertion(BTNptr last_node_match) {
      *  place in the code.)
      */
     if ( ! IsUnboundTrieVar(termptr) ) {
-      variant.trail[counter].pCallVar = termptr;
-      variant.trail[counter].value = *termptr;
-      counter++;
+      variant.trail[i].pCallVar = termptr;
+      variant.trail[i].value = *termptr;
+      i++;
     }
-    binding++;
   }
-  variant.num_bindings = counter;
+  variant.num_bindings = i;
 }
 
 
