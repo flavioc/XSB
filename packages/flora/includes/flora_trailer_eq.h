@@ -275,7 +275,7 @@ VAR_FPREFIX(eql)(X,Y) :-
 	X \= Y.
 
 VAR_FPREFIX(eql)(X,Y) :-
-	X @< Y,
+	%%X @< Y,
 	VAR_FPREFIX(eql)(Y,X),
 	X \= Y.
 
