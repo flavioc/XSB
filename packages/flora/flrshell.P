@@ -63,7 +63,7 @@
 :- dynamic '_$_$_flora_switch'/1.
 
 /*********************************************************************/
-flora_shell :-
+'_$_$_flora_shell' :-
 	( package_configuration(dir(flora),FloraDir) ->
 	    true
 
@@ -71,11 +71,11 @@ flora_shell :-
 	    bootstrap_package(flora,flora),
 	    package_configuration(dir(flora),FloraDir)
 	),
-	'_$_$_flora_welcome_msg',
-	all,
 	slash(S),
 	fmt_write_string(Lib,'%s%slib%sflrdisplay',f(FloraDir,S,S)),
 	[tables, Lib, flrutils],
+	'_$_$_flora_welcome_msg',
+	all,
 	push_abort_cutpoint,
 	'_$_$_flora_shell_loop'.
 
@@ -86,12 +86,14 @@ flora_shell :-
 	write('FLORA Version '),
 	package_configuration(version(flora),V),
 	write(V), writeln(' loaded.'), nl,
-	writeln('help.'), writeln('       Displays help message'),
-	writeln('rundemo(''demoName'').'),
-	write('       Runs demos in '),
+	writeln('Type `help.'' to display the help message'),
+	nl,
+	writeln('Type `rundemo(''demoName'').'''),
+	write('     to run the demos in '),
 	slash(S),
 	package_configuration(dir(flora),FloraDir),
 	fmt_write("%s%sdemos\n\n",f(FloraDir,S)),
+	nl,
 	!.
 
 

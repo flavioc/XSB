@@ -27,7 +27,15 @@
 %% some packages use it.
 
 :- import bootstrap_package/2, package_configuration/2 from packaging.
+:- import '_$_$_flora_shell'/0 from usermod.
 
-:- bootstrap_package('flora',flora),
-   assert(package_configuration(version(flora),'2.5 of 05/06/1999')),
-   [flrshell].
+:- export bootstrap_flora/0, flora_shell/0.
+
+
+%% bootstrap_package will fail, if Flora is already loaded,
+%% so package_configuration won't be asserted twice.
+bootstrap_flora :-
+	bootstrap_package('flora',flora),
+	assert(package_configuration(version(flora),'2.5 of 05/06/1999')).
+
+flora_shell :- bootstrap_flora, [flrshell], '_$_$_flora_shell'.
