@@ -37,7 +37,7 @@ B. Native build.
 
 1. Check the file 
 
-       emu\configs\config.h
+       config\x86-pc-windows\xsb_config.h
 
    You may have to change some variables there. The variables are commented
    so hopefully it should be clear how things might need to be changed.
@@ -52,8 +52,9 @@ B. Native build.
    clearly marked.
 
 3. IF YOU ARE DEBUGGING:
-   Check the files in emu\debugs\ and #define the appropriate debugging
-   flags. In particular, the DEBUG flag in emu/debugs/debug.h must be set.
+   Check the file and #define the appropriate debugging flags.
+   In particular, the DEBUG flag in config\x86-pc-windows\xsb_debug.h must
+   be set.
 
 4. If you change the XSB scheduling strategy (batched to local or vice
    versa)  in 1 and 2 or if you are changing the compilation mode from
