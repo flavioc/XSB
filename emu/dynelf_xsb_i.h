@@ -63,7 +63,10 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   void	*handle;
   void	*funcep;
   bool	dummy();
-/*   char  *ldp1,*ldp2; */
+  char  *ldp1,*ldp2;
+  char  *ldstring,*libpath;
+  char  ldtemp;
+  int   slibpath;
   
   /* (1) create filename.so */
   
@@ -74,18 +77,47 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   /* (1.5) include necessary paths into LD_LIBRARY_PATH */
   
+/*   libpath = getenv("LD_LIBRARY_PATH"); */
+/*   slibpath = strlen(libpath); */
+/*   ldstring = (char *) malloc(sizeof(char)*(strlen(ld_option)+slibpath+17)); */
+
+/*   if (ldstring == NULL) */
+/*     xsb_abort("Could not allocate memory for ld_options manipulation"); */
+
+/*   *ldstring = '\0'; */
+/*   ldstring = strcpy(ldstring,"LD_LIBRARY_PATH="); */
+/*   ldstring = strcat(ldstring,libpath); */
+  
 /*   for (ldp1=ld_option; (*ldp1); ldp1++) { */
 /*     if (*ldp1 == '-' && *(ldp1+1) == 'L') { */
-/*       if (*(ldp1-1) == ' ') { */
-/* 	ldp2 = ++ldp1; */
-/* 	while(*ldp1 != ' ' && *ldp1 != '\0') */
-/* 	  ldp1++; */
-/* 	*ldp1 = '\0'; */
-/* 	setenv("LD_LIBRARY_PATH",ldp2,1); */
-/* 	*ldp1 = ' '; */
-/*       } */
+/*       ldp1 += 2; */
+/*       ldp2 = ldp1; */
+/*       while (*ldp1 != ' ' && *ldp1 != '\0') */
+/* 	ldp1++; */
+/*       *ldp1 = '\0'; */
+/*       ldtemp = *(ldp2-1); */
+/*       *(ldp2-1) = ':'; */
+/*       ldstring = strcat(ldstring,ldp2-1); */
+/*       *ldp1 = ' '; */
+/*       *(ldp2-1) = ldtemp; */
+/*     } else if (*ldp1 == '\'') { */
+/*       ldp1++; */
+/*       while (*ldp1 != '\'') */
+/* 	ldp1++; */
+/*     } else if (*ldp1 == '\"') { */
+/*       ldp1++; */
+/*       while (*ldp1 != '\"') */
+/* 	ldp1++; */
 /*     } */
 /*   } */
+
+/*   if (putenv(ldstring) != 0) */
+/*     xsb_warn("+++Error changing environment variable LD_LIBRARY_PATH"); */
+
+  /*   free(ldstring); */
+  /* the call above segfaults on linux when calling getenv afterwards */
+  /* luis, 10.21.99 */
+
   
   /* (2) open the needed object */
   
