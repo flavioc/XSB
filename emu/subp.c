@@ -605,7 +605,7 @@ static Cell abort_cp_offset(void)
     return 0;
   }
   else
-    return (Cell) get_ep(pair_psc(abort_pair));
+    return (Cell) get_data(pair_psc(abort_pair));
 }
 
 byte *exception_handler(char *string)
