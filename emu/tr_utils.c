@@ -252,25 +252,20 @@ void construct_ret_for_call(void)
 {
     Pair sym;
     Cell var;
-    Cell term; /* the function assumes that term is free on call ! */
-    CPtr sreg;
+    Cell term;
     int  arity, i, new;
 
     arity = cell(Temp_VarPosReg);
     if (arity == 0) {
       ctop_string(3, (char *) ret_psc[0]);
     } else {
-      term = ptoc_tag(1);
-      sreg = hreg;
-      bind_cs((CPtr)term, sreg);
+      bind_cs((CPtr)ptoc_tag(1), hreg);
       sym = insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
-      new_heap_functor(sreg, sym->psc_ptr);
+      new_heap_functor(hreg, sym->psc_ptr);
       for (i = arity; 0 < i; i--) {
 	var = cell(Temp_VarPosReg+i);
-	bind_copy(sreg, var);
-	sreg++;
+	nbldval(var);
       }
-      hreg = sreg;
     }
 }
 
