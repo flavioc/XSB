@@ -26,12 +26,11 @@
 ##
 
 
-PROLOGDIR = ../../..
 FLORADIR = ..
 
 ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh
 
-PROLOG = $(PROLOGDIR)/bin/xsb
+PROLOG = ../../../bin/xsb
 
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
@@ -68,6 +67,7 @@ flrindex_P.flh: flrindex_P.fli $(FLORA_TERMS)
 
 init:
 	/bin/rm -f $(SVFILE)
+	@echo "['../flora2devel']." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
 	@echo "[flrutils]." >> cmd...

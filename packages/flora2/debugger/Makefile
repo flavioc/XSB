@@ -27,13 +27,9 @@
 
 OBJEXT=.xwam
 
-PROLOGDIR = ../../..
 FLORADIR = ..
 
 ALLOBJS = flrdebugger${OBJEXT} dynamic_data.dat static_data.dat
-
-XSB_STANDARD = $(PROLOGDIR)/prolog_includes/standard.h
-XSB_EMU_FLAG_DEFS = $(PROLOGDIR)/emu/flag_defs_xsb.h
 
 FLORA_INCLUDES_DIR = ../flrincludes
 DYN_INCLUDES_DIR = ../includes
@@ -47,7 +43,7 @@ FLRHEADER = $(DYN_INCLUDES_DIR)/flrheader.flh
 
 OPTION = [optimize]
 
-PROLOG = $(PROLOGDIR)/bin/xsb
+PROLOG = ../../../bin/xsb
 
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
@@ -59,7 +55,7 @@ HDRMSG = "While compiling .../flora2/debugger:"
 
 
 all: init $(ALLOBJS) finish
-	@$(PROLOGDIR)/build/touch.sh cmd...
+	@../touch.sh cmd...
 	$(PROLOG_COMMAND) < cmd...
 	/bin/rm -f cmd...
 	@cat $(SVFILE)
@@ -71,12 +67,13 @@ static_data.dat: static_data.in $(FLORA_TERMS)
 	@echo 'flWrapAround($*).' >> cmd...
 
 
-flrdebugger${OBJEXT}: flrdebugger.P $(FLORA_TERMS) $(XSB_STANDARD)
+flrdebugger${OBJEXT}: flrdebugger.P $(FLORA_TERMS)
 	@echo 'mc(flrdebugger,$(OPTION)).' >> cmd...
 
 
 init:
 	/bin/rm -f $(SVFILE)
+	@echo "['../flora2devel']." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
 	@echo "[flrwraparound]." >> cmd...

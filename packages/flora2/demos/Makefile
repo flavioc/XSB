@@ -25,21 +25,12 @@
 
 OBJEXT=.xwam
 
-PROLOGDIR=../../..
 FLORADIR = ..
 
 ALL = 	aggregate.P benchmark.P default.P family_obj.P \
 	family_rel.P flogic_basics.P metavar.P mix.P module1.P mod1.P \
 	mono_inherit.P rel_ops.P tree_traversal.P \
 	btupdates.P pretty.P
-
-EMU_INCLUDES = $(PROLOGDIR)/emu/builtin.h \
-	$(PROLOGDIR)/emu/flag_defs_xsb.h \
-	$(PROLOGDIR)/emu/io_defs_xsb.h \
-	$(PROLOGDIR)/emu/system_defs_xsb.h $(PROLOGDIR)/emu/socket_defs_xsb.h 
-PROLOG_INCLUDES = $(PROLOGDIR)/prolog_includes/char_defs.h \
-	$(PROLOGDIR)/prolog_includes/standard.h
-
 
 Option = [optimize]
 
@@ -48,7 +39,7 @@ Option = [optimize]
 #
 # Self-make: Version 1.4.1
 #
-PROLOG=$(PROLOGDIR)/bin/xsb
+PROLOG = ../../../bin/xsb
 PROLOG_COMMAND = $(PROLOG) -i -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
@@ -78,6 +69,7 @@ init:
 	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN), _)." >> cmd...
+	@echo "['../flora2devel']." >> cmd...hdr
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...hdr
 	@echo "bootstrap_flora." >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr

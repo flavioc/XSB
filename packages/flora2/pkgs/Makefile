@@ -26,18 +26,9 @@
 
 OBJEXT=.xwam
 
-PROLOGDIR=../../..
 FLORADIR=..
 
 ALL = 	
-
-EMU_INCLUDES = $(PROLOGDIR)/emu/builtin.h \
-	$(PROLOGDIR)/emu/flag_defs_xsb.h \
-	$(PROLOGDIR)/emu/io_defs_xsb.h $(PROLOGDIR)/emu/syscall_xsb.h \
-	$(PROLOGDIR)/emu/system_defs_xsb.h $(PROLOGDIR)/emu/socket_xsb.h 
-PROLOG_INCLUDES = $(PROLOGDIR)/prolog_includes/char_defs.h \
-	$(PROLOGDIR)/prolog_includes/standard.h
-
 
 Option = [optimize]
 
@@ -45,7 +36,7 @@ Option = [optimize]
 #
 # Self-make: Version 1.4.1
 #
-PROLOG=$(PROLOGDIR)/bin/xsb
+PROLOG = ../../../bin/xsb
 PROLOG_COMMAND = $(PROLOG) -i -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
@@ -74,6 +65,7 @@ recompile: $(ALL) finish
 
 init:
 	/bin/rm -f $(SVFILE)
+	@echo "['../flora2devel']." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
 	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...

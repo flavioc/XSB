@@ -27,7 +27,6 @@
 
 OBJEXT=.xwam
 
-PROLOGDIR = ../..
 FLORADIR = .
 
 ALLOBJS = flroperator${OBJEXT} \
@@ -51,18 +50,12 @@ ALLOBJS = flroperator${OBJEXT} \
 	  flrprettyprint${OBJEXT} \
 	  flrundefhook${OBJEXT} \
 	  flrporting${OBJEXT} \
-	  flrshell${OBJEXT}
+	  flrregistry${OBJEXT} \
+	  flrshell${OBJEXT} \
+	  flora2devel${OBJEXT}
 
-EMU_INCLUDES = $(PROLOGDIR)/emu/builtin.h \
-	       $(PROLOGDIR)/emu/flag_defs_xsb.h \
-	       $(PROLOGDIR)/emu/io_defs_xsb.h \
-               $(PROLOGDIR)/emu/syscall_xsb.h \
-	       $(PROLOGDIR)/emu/system_defs_xsb.h \
-               $(PROLOGDIR)/emu/socket_xsb.h 
 
-XSB_CHAR_DEFS = $(PROLOGDIR)/prolog_includes/char_defs.h
-XSB_STANDARD = $(PROLOGDIR)/prolog_includes/standard.h
-XSB_EMU_FLAG_DEFS = $(PROLOGDIR)/emu/flag_defs_xsb.h
+FLORA_CHAR_DEFS = $(FLORADIR)/flrincludes/flora_characters.flh
 
 FLORA_INCLUDES_DIR = flrincludes
 
@@ -71,8 +64,8 @@ FLORA_ERRORS = $(FLORA_INCLUDES_DIR)/flora_errors.flh
 
 OPTION = [optimize]
 
-PROLOG = $(PROLOGDIR)/bin/xsb
-
+# PROLOG is passed as an argument to make. Default is none, to trigger an error
+PROLOG=none
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
 # Make sure warnings are saved in a file.
@@ -82,36 +75,39 @@ STDERR = 2
 HDRMSG = "While compiling  .../flora2:"
 
 
-all: init system libs misc finish showerrors
+# acceptable targets are all (default), system, base, top
+all: core libs pkgs misc showerrors
 
-core: init system finish showerrors
+system: core libs showerrors
 
-extra: init system libs pkgs finish showerrors
+base: core showerrors
 
 showerrors:
 	@cat $(FLORADIR)/.flora*.tmp
 
-system: $(ALLOBJS)
+top: init $(ALLOBJS) finish
 	./CompileChangedFiles.sh $(PROLOG_COMMAND)
 	@cat $(SVFILE)
-	cd closure; $(MAKE)
-	cd genincludes; $(MAKE)
-	cd syslib; $(MAKE)
-	cd trailer; $(MAKE)
-	cd debugger; $(MAKE)
 
-top: init $(ALLOBJS)
-	./CompileChangedFiles.sh $(PROLOG_COMMAND)
-	@cat $(SVFILE)
+core: top
+	cd closure; $(MAKE) PROLOG=$(PROLOG)
+	cd genincludes; $(MAKE) PROLOG=$(PROLOG)
+	cd syslib; $(MAKE) PROLOG=$(PROLOG)
+	cd trailer; $(MAKE) PROLOG=$(PROLOG)
+	cd debugger; $(MAKE) PROLOG=$(PROLOG)
 
 libs:
-	cd lib; $(MAKE)
+	cd lib; $(MAKE) PROLOG=$(PROLOG)
 
 misc:
-	cd pkgs; $(MAKE)
-	cd demos; $(MAKE)
-	cd docs; $(MAKE)
+	cd pkgs; $(MAKE) PROLOG=$(PROLOG)
+	cd demos; $(MAKE) PROLOG=$(PROLOG)
+	cd docs; $(MAKE) PROLOG=$(PROLOG)
 
+
+# always compile flora2devel to make sure that .xwam has the latest .flora_path
+flora2devel${OBJEXT} : flora2devel.P
+	@echo 'mc(flora2devel,$(OPTION)).' >> cmd...
 
 flroperator${OBJEXT} : flroperator.P flroperator.H $(FLORA_TERMS)
 	@echo 'mc(flroperator,$(OPTION)).' >> cmd...
@@ -137,7 +133,7 @@ flrfirstorder${OBJEXT} : flrfirstorder.P flrfirstorder.H $(FLORA_TERMS)
 	@echo 'mc(flrfirstorder,$(OPTION)).' >> cmd...
 
 
-flrprint${OBJEXT} : flrprint.P flrprint.H $(XSB_STANDARD)
+flrprint${OBJEXT} : flrprint.P flrprint.H
 	@echo 'mc(flrprint,$(OPTION)).' >> cmd...
 
 
@@ -145,11 +141,11 @@ flrlibman${OBJEXT} : flrlibman.P flrlibman.H $(FLORA_TERMS)
 	@echo 'mc(flrlibman,$(OPTION)).' >> cmd...
 
 
-flrlexer${OBJEXT} : flrlexer.P flrlexer.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrlexer${OBJEXT} : flrlexer.P flrlexer.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrlexer,$(OPTION)).' >> cmd...
 
 
-flrcomposer${OBJEXT} : flrcomposer.P flrcomposer.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcomposer${OBJEXT} : flrcomposer.P flrcomposer.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrcomposer,$(OPTION)).' >> cmd...
 
 
@@ -165,7 +161,7 @@ flrdependency${OBJEXT} : flrdependency.P flrdependency.H $(FLORA_TERMS)
 	@echo 'mc(flrdependency,$(OPTION)).' >> cmd...
 
 
-flrcoder${OBJEXT} : flrcoder.P flrcoder.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcoder${OBJEXT} : flrcoder.P flrcoder.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrcoder,$(OPTION)).' >> cmd...
 
 
@@ -173,11 +169,11 @@ flrundefined${OBJEXT} : flrundefined.P flrundefined.H $(FLORA_TERMS)
 	@echo 'mc(flrundefined,$(OPTION)).' >> cmd...
 
 
-flrutils${OBJEXT} : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+flrutils${OBJEXT} : flrutils.P flrutils.H $(FLORA_CHAR_DEFS) $(FLORA_TERMS) 
 	@echo 'mc(flrutils,$(OPTION)).' >> cmd...
 
 
-flrwrapper${OBJEXT} : flrwrapper.P flrwrapper.H $(XSB_STANDARD) $(FLORA_TERMS)
+flrwrapper${OBJEXT} : flrwrapper.P flrwrapper.H $(FLORA_TERMS)
 	@echo 'mc(flrwrapper,$(OPTION)).' >> cmd...
 
 
@@ -188,7 +184,7 @@ flrundefhook${OBJEXT} : flrundefhook.P flrundefhook.H $(FLORA_TERMS)
 flrshell${OBJEXT} : flrshell.P flrshell.H $(FLORA_TERMS)
 	@echo 'mc(flrshell,$(OPTION)).' >> cmd...
 
-flrwraparound${OBJEXT} : flrwraparound.P flrwraparound.H $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+flrwraparound${OBJEXT} : flrwraparound.P flrwraparound.H $(FLORA_TERMS)
 	@echo 'mc(flrwraparound,$(OPTION)).' >> cmd...
 
 flrprettyprint${OBJEXT} : flrprettyprint.P $(FLORA_TERMS)
@@ -197,10 +193,13 @@ flrprettyprint${OBJEXT} : flrprettyprint.P $(FLORA_TERMS)
 flrporting${OBJEXT} : flrporting.P $(FLORA_TERMS)
 	@echo 'mc(flrporting,$(OPTION)).' >> cmd...
 
+flrregistry${OBJEXT} : flrregistry.P $(FLORA_TERMS)
+	@echo 'mc(flrregistry,$(OPTION)).' >> cmd...
+
 
 init:
 	/bin/rm -f $(FLORADIR)/.*flora*.tmp
-	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." >> cmd...
+	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." > cmd...
 	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN),_)." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...hdr
@@ -215,6 +214,7 @@ finish:
 
 clean:
 	/bin/rm -f core *~ .*~ *${OBJEXT} *.O *.bak ../flora2${OBJEXT} .#*
+	/bin/rm -f .*.tmp .flora_path .prolog_path
 	cd closure; $(MAKE) clean
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean

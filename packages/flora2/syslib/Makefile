@@ -28,7 +28,7 @@
 
 OBJEXT=.xwam
 
-PROLOGDIR = ../../..
+PROLOG = ../../../bin/xsb
 FLORADIR = ..
 
 ALLOBJS = flranswer${OBJEXT} \
@@ -51,17 +51,6 @@ ALLOBJS = flranswer${OBJEXT} \
 	  flrimport${OBJEXT} \
 	  flrexpunge${OBJEXT}
 
-EMU_INCLUDES = $(PROLOGDIR)/emu/builtin.h \
-	       $(PROLOGDIR)/emu/flag_defs_xsb.h \
-	       $(PROLOGDIR)/emu/io_defs_xsb.h \
-               $(PROLOGDIR)/emu/syscall_xsb.h \
-	       $(PROLOGDIR)/emu/system_defs_xsb.h \
-               $(PROLOGDIR)/emu/socket_xsb.h 
-
-XSB_CHAR_DEFS = $(PROLOGDIR)/prolog_includes/char_defs.h
-XSB_STANDARD = $(PROLOGDIR)/prolog_includes/standard.h
-XSB_EMU_FLAG_DEFS = $(PROLOGDIR)/emu/flag_defs_xsb.h
-
 FLORA_INCLUDES_DIR = ../flrincludes
 DYN_INCLUDES_DIR = ../includes
 
@@ -71,8 +60,6 @@ FLRHEADER = $(DYN_INCLUDES_DIR)/flrheader.flh
 
 
 OPTION = [optimize]
-
-PROLOG = $(PROLOGDIR)/bin/xsb
 
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
@@ -88,7 +75,7 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flranswer${OBJEXT} : flranswer.P $(XSB_CHAR_DEFS) $(XSB_EMU_FLAG_DEFS) $(XSB_STANDARD) $(FLORA_TERMS)
+flranswer${OBJEXT} : flranswer.P $(FLORA_TERMS)
 	@echo 'mc(flranswer,$(OPTION)).' >> cmd...
 
 
@@ -167,6 +154,7 @@ init:
 	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN),_)." >> cmd...
+	@echo "['../flora2devel']." >> cmd...hdr
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...hdr
 	@echo "bootstrap_flora." >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr

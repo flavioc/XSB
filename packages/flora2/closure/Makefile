@@ -26,7 +26,6 @@
 ##
 
 
-PROLOGDIR = ../../..
 FLORADIR = ..
 
 ALLOBJS = flrcommon.flh \
@@ -34,7 +33,7 @@ ALLOBJS = flrcommon.flh \
 	  flreqltrailer.flh \
           flrscalareql.flh
 
-PROLOG = $(PROLOGDIR)/bin/xsb
+PROLOG = ../../../bin/xsb
 
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
@@ -50,7 +49,7 @@ HDRMSG = "While compiling .../flora2/closure:"
 .SUFFIXES: .flh .fli
 
 all: clean init $(ALLOBJS) finish
-	@$(PROLOGDIR)/build/touch.sh cmd...
+	@../touch.sh cmd...
 	$(PROLOG_COMMAND) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
@@ -62,9 +61,9 @@ all: clean init $(ALLOBJS) finish
 
 init:
 	/bin/rm -f $(SVFILE)
+	@echo "['../flora2devel']." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
-	@echo "[flrutils]." >> cmd...
 	@echo "import flCompileInclude/1 from flrutils." >> cmd...
 	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...
 	@echo "file_clone($(STDWARN),$(STDERR),_)." >> cmd...

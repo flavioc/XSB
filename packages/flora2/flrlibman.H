@@ -24,7 +24,7 @@
 */
 
 
-:- import package_configuration/2 from packaging.
+:- import flora_configuration/2 from flrregistry.
 
 :- import flora_syslib_loaded/1 from usermod.
 :- dynamic flora_syslib_loaded(_).

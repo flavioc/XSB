@@ -1,0 +1,28 @@
+
+These instructions are for installing development versions of FLORA, which
+are intended to be installed in a directory outside of the XSB distribution
+tree.
+
+If you installed a full version of XSB and intend to use FLORA-2 from
+there, you don't need to do anything -- just skip the instructions below.
+
+
+If you have downloaded an interim release of FLORA-2 from
+http://flora.sourceforge.net or a development version from
+the CVS repository there then you can configure XSB as follows.
+(These instructions are presently for Unix only.)
+
+1. Untar/download FLORA-2 into a directory *outside* of the XSB
+   distribution tree.
+2. Change to the top directory of your new FLORA-2 installation.
+   Type
+	makeflora all path-to-call-xsb
+   
+   The path to the XSB executable is typically something like .../XSB/bin/xsb
+   If you have XSB executable or its invocation script somewhere on your
+   PATH, then you can configure FLORA-2 by simply typing
+
+   	makeflora
+
+3. After the installation, the Unix shell script `runflora' will be created.
+   Use it to run this version of FLORA-2.

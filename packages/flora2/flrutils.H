@@ -49,8 +49,6 @@
 
 :- import xpp_options/1, xpp_process_file/3 from parse.
 
-:- import package_configuration/2 from packaging.
-
 :- import
 	parse_filename/4,
 	stat_flag/2,
@@ -116,6 +114,11 @@
 
 :- import plg2hlg/3 from prolog2hilog.
 
+:- import flora_configuration/2,
+	flora_storage_registry/1,
+	flora_module_registry/1
+   from flrregistry.
+
 :- import
 	flora_stderr_nl/0,
 	flora_stderr_string/1,
@@ -154,20 +157,10 @@
 
 :- import check_for_dependencies/2 from flrdependency.
 
-:- dynamic flora_maxerr(_).
 :- dynamic flora_xpp_extra_options/1.
-:- dynamic flora_module_registry/1.
 
-:- dynamic flora_debug_module_registry/1.
-:- dynamic flora_in_debug_mode/1.
-
-:- dynamic flora_storage_registry/1.
-
+:- dynamic flora_maxerr(_).
 :- index(flora_maxerr/1,trie).
-:- index(flora_debug_module_registry/1,trie).
-:- index(flora_storage_registry/1,trie).
-:- index(flora_module_registry/1,trie).
-:- index(flora_in_debug_mode/1,trie).
 
 :- export
 	flMaxerr/1,
@@ -201,16 +194,11 @@
 	flora_clear_xpp_options/0,
 	flora_list2conjunct/2,
 	flora_check_workspace/1,
-	flora_module_registry/1,
-	%% support for undefinedness
-	flora_debug_module_registry/1,
-	flora_in_debug_mode/1,
 
-	flora_storage_registry/1,
 	flora_reclaim_storage_space/0,
 	flora_commit_storage/0,
 	flora_load_dyn_fdb/2,
-	%% support for undefinedness
+
 	flora_load_dyn_fld/2,
 
 	flora_read_canonical_and_insert/2,

@@ -24,18 +24,9 @@
 
 OBJEXT=.xwam
 
-PROLOGDIR=../../..
 FLORADIR=..
 
 ALL = 	flrprettyprint.P flrio.P flrstorage.P flrsystem.P
-
-EMU_INCLUDES = $(PROLOGDIR)/emu/builtin.h \
-	$(PROLOGDIR)/emu/flag_defs_xsb.h \
-	$(PROLOGDIR)/emu/io_defs_xsb.h \
-	$(PROLOGDIR)/emu/system_defs_xsb.h $(PROLOGDIR)/emu/socket_defs_xsb.h 
-PROLOG_INCLUDES = $(PROLOGDIR)/prolog_includes/char_defs.h \
-	$(PROLOGDIR)/prolog_includes/standard.h
-
 
 Option = [optimize]
 
@@ -44,7 +35,7 @@ Option = [optimize]
 #
 # Self-make: Version 1.4.1
 #
-PROLOG=$(PROLOGDIR)/bin/xsb
+PROLOG = ../../../bin/xsb
 PROLOG_COMMAND = $(PROLOG) -i -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
@@ -62,7 +53,7 @@ HDRMSG = "While compiling .../flora2/lib:"
 all: clean init recompile
 
 recompile: $(ALL) finish
-	@touch cmd...
+	@../touch.sh cmd...
 	$(PROLOG_COMMAND) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
@@ -72,6 +63,7 @@ recompile: $(ALL) finish
 
 init:
 	rm -f $(SVFILE)
+	@echo "['../flora2devel']." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
 	@echo "import flora_compile_system_module/1 from flrutils." >> cmd...

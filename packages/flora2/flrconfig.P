@@ -1,0 +1,23 @@
+
+%% Records Prolog and Flora installation directories
+
+:- import path_sysop/3 from file_io.
+:- import xsb_configuration/2 from xsb_configuration.
+
+?- path_sysop(expand,'.',FloraDir),
+   xsb_configuration(config_bindir,InstallDir),
+   telling(F),
+   tell('.prolog_path'),
+   writeln(InstallDir),
+   told,
+   tell('.flora_path'),
+   write('#define FLORA_INSTALL_DIR  '),
+   writeq(FloraDir), nl,
+   told,
+   tell('runflora'),
+   writeln('#! /bin/sh'),
+   write('FLORADIR="'), writeq(FloraDir), write('"'), nl,
+   write('PROLOG='), write(InstallDir), writeln('/xsb'),
+   writeln('$PROLOG -e "asserta(library_directory($FLORADIR)). [flora2devel]. flora_shell."'),
+   told,
+   tell(F).

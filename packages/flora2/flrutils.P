@@ -148,7 +148,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	;
 	  %% Get the trailer file name in Flora package.
 	  flora_check_workspace(Workspace),
-	  package_configuration(dir(flora),FloraDir),
+	  flora_configuration(installdir,FloraDir),
 	  flora_slash(S),
 	  flora_trailer_filename(TrailerName,TrailerFileName),
 	  flora_concat_atoms([FloraDir,S,trailer,S,TrailerFileName],
@@ -189,7 +189,7 @@ flloadtrailer(TrailerName,Workspace) :-
   This predicate is called in the Makefile.
 **********************************************************************/
 flsetuptrailer(TrailerName) :-
-	package_configuration(dir(flora),FloraDir),
+	flora_configuration(installdir,FloraDir),
 	flora_slash(S),
 	flora_trailer_filename(TrailerName,TrailerFileName),
 	flora_concat_atoms([FloraDir,S,trailer,S,TrailerFileName],TrailerFullName),
@@ -223,7 +223,7 @@ flora_trailer_include(FLOGIC,[FLEQLTRAILER,FLSCALAREQL]).
   flloadpatch(+Workspace)
 **********************************************************************/
 flloadpatch(Workspace) :-
-	package_configuration(dir(flora),FloraDir),
+	flora_configuration(installdir,FloraDir),
 	flora_slash(S),
 	flora_patch_filename(PatchName),
 	flora_concat_atoms([FloraDir,S,trailer,S,PatchName],PatchFullName),
@@ -254,7 +254,7 @@ flloadpatch(Workspace) :-
   flsetuppatch
 **********************************************************************/
 flsetuppatch :-
-	package_configuration(dir(flora),FloraDir),
+	flora_configuration(installdir,FloraDir),
 	flora_slash(S),
 	flora_patch_filename(PatchName),
 	flora_concat_atoms([FloraDir,S,trailer,S,PatchName],PatchFullName),
@@ -282,7 +282,7 @@ flora_patch_filename('patch.P').
   flora_user_flora_dir(-Dir)
 *************************************************************************/
 flora_user_flora_dir(Dir) :-
-	( package_configuration(user_dir(flora),Dir) ->
+	( flora_configuration(userdir,Dir) ->
 	    true
 	;
 	    flora_user_home(UserHome),
@@ -297,7 +297,7 @@ flora_user_flora_dir(Dir) :-
 		    abort
 		)
 	    ),
-	    assert(package_configuration(user_dir(flora),Dir))
+	    assert(flora_configuration(userdir,Dir))
 	),
 	!.
 
@@ -403,7 +403,7 @@ flora_load_system_module_internal(SysModID) :-
 	( atom(SysModID), flora_sysmod_file(SysModID,BaseName,SubDir) ->
 	    flora_module_name(ModuleName,systemmodule,SysModID),
 	    %% Compute the Flora file name.
-	    package_configuration(dir(flora),FloraDir),
+	    flora_configuration(installdir,FloraDir),
 	    flora_slash(S),
 	    flora_concat_atoms([FloraDir,S,SubDir,S,BaseName,'.flr'],FlrFile),
 	    flora_WSO_filename(FlrFile,SysModID,WSOFile),
@@ -447,7 +447,7 @@ flora_compile_system_module_by_ID(SysModID) :-
 	%% Retrieve the file name and its subdir.
 	flora_sysmod_file(SysModID,BaseName,SubDir),
 	%% Compute the Flora file name.
-	package_configuration(dir(flora),FloraDir),
+	flora_configuration(installdir,FloraDir),
 	flora_slash(S),
 	flora_concat_atoms([FloraDir,S,SubDir,S,BaseName,'.flr'],FlrFile),
 	( flora_file_op(exists,FlrFile) ->
@@ -794,7 +794,7 @@ flora_include_file([],FLORA_SUCCESS) :- !.
 flora_include_file([Opt|OptList],Status) :-
 	flora_include(Opt,File),
 	!,
-	package_configuration(dir(flora),FloraDir),
+	flora_configuration(installdir,FloraDir),
 	flora_slash(S),
 	flora_concat_atoms([FloraDir,S,File],FullName),
 	( flora_file_op(exists,FullName) ->

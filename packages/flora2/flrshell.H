@@ -38,7 +38,7 @@
 
 :- import cwd/1, cd/1 from shell.
 
-:- import package_configuration/2 from packaging.
+:- import flora_configuration/2 from flrregistry.
 
 :- import
 	flora_slash/1,

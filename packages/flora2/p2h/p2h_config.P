@@ -35,10 +35,11 @@
 :- import search_module/6 from consult.
 :- import xsb_configuration/2, windows_os/0 from xsb_configuration.
 :- import str_cat/3, str_sub/2 from string.
+:- import flora_configuration/2 from flrregistry.
 
 is_cygwin :- xsb_configuration(architecture,A), str_sub(cygwin,A).
 
-?-  package_configuration(dir(flora), FloraDir),
+?-  flora_configuration(installdir, FloraDir),
     slash(Slash),
     Basename = prolog2hilog,
     fmt_write_string(Module,

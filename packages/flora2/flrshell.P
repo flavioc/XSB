@@ -75,7 +75,7 @@ flora_init_shell :-
 
 /*********************************************************************/
 flora_welcome_msg :-
-	package_configuration(version(flora),V),
+	flora_configuration(version,V),
 	flora_stdmsg_string('~nFLORA-2 Version ~w~n~n',[V]),
 	flora_stdmsg_line('Type `flHelp.'' to show the help message.'),
 	flora_stdmsg_line('Type `flDemo(demoName).'' to run demos.'),
@@ -241,7 +241,7 @@ flNoChatter :- retractall(flora_switch(chatter)).
 /*********************************************************************/
 flDemo(File) :-
 	flora_check_filename(File),
-	package_configuration(dir(flora),FloraDir),
+	flora_configuration(installdir,FloraDir),
 	flora_slash(Slash),
 	%% Add the demo directory to the module search path
 	flora_concat_atoms([FloraDir,Slash,'demos'],DemoDir),

@@ -75,7 +75,7 @@ message(X) :-
 debug[#check_undefined(Flag)] :-
 	var(Flag)@prolog(),
 	!,
-	( flora_in_debug_mode(_)@prolog(),
+	( flora_in_debug_mode(_)@prolog(flrregistry),
 	    Flag=on,
 	    !
 	;
@@ -84,18 +84,18 @@ debug[#check_undefined(Flag)] :-
 	 
 debug[#check_undefined(on)] :-
 	!,
-	(flora_in_debug_mode(_)@prolog(),!;
-	assert(flora_in_debug_mode(1)@prolog())@prolog(),
+	(flora_in_debug_mode(_)@prolog(flrregistry),!;
+	assert(flora_in_debug_mode(1)@prolog(flrregistry))@prolog(),
 	findall(M,
-	        (flora_module_registry(M)@prolog(),
-		(not(flora_debug_module_registry(M)@prolog())))@prolog(),
+	        (flora_module_registry(M),
+		 \+ flora_debug_module_registry(M))@prolog(flrregistry),
 		ML)@prolog(),
 	turn_on_debug_all(ML)).
 	
 debug[#check_undefined(off)] :-
 	!,
-	retractall(flora_in_debug_mode(_)@prolog())@prolog(),
-	findall(M,flora_debug_module_registry(M)@prolog(),ML)@prolog(),
+	retractall(flora_in_debug_mode(_)@prolog(flrregistry))@prolog(),
+	findall(M,flora_debug_module_registry(M)@prolog(flrregistry),ML)@prolog(),
 	turn_off_debug_all(ML).
 
 debug[#check_undefined(InvalidOpt)] :-
@@ -109,7 +109,7 @@ debug[#check_undefined(_Flag,Module)] :-
 	    %% Note: this abort defined in this module
 	    abort(('Invalid module name in #check_undefined: ', Module))
 	; Module\=flora(_),
-	    (not(flora_module_registry(Module)@prolog()))@prolog(),
+	    \+ flora_module_registry(Module)@prolog(flrregistry),
 	    %% Note: this abort defined in this module
 	    abort(('Unloaded module name in #check_undefined: ', Module))
 	).
@@ -117,14 +117,13 @@ debug[#check_undefined(_Flag,Module)] :-
 debug[#check_undefined(Flag,Module)] :-
 	var(Flag)@prolog(),
 	!,
-	( Module=flora(SysModId), 
-	    Mname=..[flora,SysModId],
-	    (flora_module_registry(Mname)@prolog(), !;
-	    flora_load_system_module_internal(SysModId)@prolog(flrutils))
-	; Module\=flora(_),
-	    Mname=Module
+	( Module=flora(SysModId), Mname=..[flora,SysModId],
+	    (flora_module_registry(Mname)@prolog(flrregistry), !
+	    ; flora_load_system_module_internal(SysModId)@prolog(flrutils)
+	    )
+	; Module\=flora(_), Mname=Module
 	),
-	( flora_debug_module_registry(Mname)@prolog(), 
+	( flora_debug_module_registry(Mname)@prolog(flrregistry), 
 	    Flag=on,
 	    !
 	;
@@ -133,27 +132,29 @@ debug[#check_undefined(Flag,Module)] :-
 	 
 debug[#check_undefined(on,Module)] :-
 	!,
-	( Module=flora(SysModId), 
-	    Mname=..[flora,SysModId],
-	    (flora_module_registry(Mname)@prolog(), !;
-	    flora_load_system_module_internal(SysModId)@prolog(flrutils))
-	; Module\=flora(_),
-	    Mname=Module
+	( Module=flora(SysModId), Mname=..[flora,SysModId],
+	    (flora_module_registry(Mname)@prolog(flrregistry), !
+	    ; flora_load_system_module_internal(SysModId)@prolog(flrutils)
+	    )
+	; Module\=flora(_), Mname=Module
 	),
-	(flora_debug_module_registry(Mname)@prolog(),!;
-	turn_on_debug(Mname)).
+	(flora_debug_module_registry(Mname)@prolog(flrregistry),!
+        ; turn_on_debug(Mname)
+        ).
 	
 debug[#check_undefined(off,Module)] :-
 	!,
-	( Module=flora(SysModId), 
-	    Mname=..[flora,SysModId],
-	    (flora_module_registry(Mname)@prolog(), !;
-	    flora_load_system_module_internal(SysModId)@prolog(flrutils))
-	; Module\=flora(_),
-	    Mname=Module
+	( Module=flora(SysModId), Mname=..[flora,SysModId],
+	  (flora_module_registry(Mname)@prolog(flrregistry), !
+	  ;
+	    flora_load_system_module_internal(SysModId)@prolog(flrutils)
+	  )
+	; Module\=flora(_), Mname=Module
 	),
-	((not(flora_debug_module_registry(Mname)@prolog()))@prolog(),!;
-	turn_off_debug(Mname)).
+	(\+ flora_debug_module_registry(Mname)@prolog(flrregistry), !
+	;
+	    turn_off_debug(Mname)
+	).
 
 debug[#check_undefined(InvalidOpt,_Module)] :-
 	%% Note: this abort is defined in this module
@@ -165,7 +166,7 @@ turn_on_debug_all([H|L]) :-
 	turn_on_debug_all(L).
 
 turn_on_debug(Module) :-
-	assert(flora_debug_module_registry(Module)@prolog())@prolog().
+	assert(flora_debug_module_registry(Module)@prolog(flrregistry))@prolog().
 
 turn_off_debug_all([]) :- !.
 turn_off_debug_all([H|L]) :-
@@ -173,4 +174,4 @@ turn_off_debug_all([H|L]) :-
 	turn_off_debug_all(L).
 
 turn_off_debug(Module) :-
-	retractall(flora_debug_module_registry(Module)@prolog())@prolog().
+	retractall(flora_debug_module_registry(Module)@prolog(flrregistry))@prolog().

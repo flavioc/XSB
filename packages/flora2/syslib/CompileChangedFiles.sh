@@ -2,7 +2,7 @@
 
 XSB=$1
 
-../../../build/touch.sh cmd...
+../touch.sh cmd...
 
 split -l 7 cmd... cmd..._
 

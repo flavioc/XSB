@@ -34,7 +34,7 @@
 :- import file_close/1, ioport2iostream/2 from file_io.
 :- import format/3 from format.
 :- import debug_display_call_hook/1, flora_switch/1 from usermod.
-:- import package_configuration/2 from packaging.
+:- import flora_configuration/2 from flrregistry.
 :- import process_control/2 from shell.
 :- import xpp_process_file/3 from parse.
 :- import member/2, append/3, length/2 from basics.
@@ -718,12 +718,12 @@ flora_notrace :-
 /*********************************************************************/
 
 flora_debug_dyndata_file(Filename) :-
-	package_configuration(dir(flora), FlrSysLib),
+	flora_configuration(installdir,FlrSysLib),
 	flora_slash(S),
 	flora_concat_atoms([FlrSysLib,S,debugger,S,'dynamic_data.dat'],
 			   Filename).
 flora_debug_statdata_file(Filename) :-
-	package_configuration(dir(flora), FlrSysLib),
+	flora_configuration(installdir,FlrSysLib),
 	flora_slash(S),
 	flora_concat_atoms([FlrSysLib,S,debugger,S,'static_data.dat'],
 			   Filename).

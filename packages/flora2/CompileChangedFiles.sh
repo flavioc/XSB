@@ -2,6 +2,21 @@
 
 PROLOG_COMMAND=$1
 
+if test "$PROLOG_COMMAND" = "" ; then
+    echo "Prolog command not specified. Bug in a Makefile?"
+    exit 1
+fi
+
+# If PROLOG variable is not specified to make,
+# then $PROLOG_COMMAND will start with `none'.
+# Catch it here and tell what to do.
+if test "`echo "$PROLOG_COMMAND" | sed -e s/^none//`" != "$PROLOG_COMMAND" ; then
+    echo ""
+    echo "*** PLEASE USE ./makeflora TO BUILD FLORA-2"
+    echo ""
+    exit 1
+fi
+
 ./touch.sh cmd...
 
 split -l 7 cmd... cmd..._

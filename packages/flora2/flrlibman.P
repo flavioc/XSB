@@ -61,7 +61,7 @@ flora_load_library(LibID) :-
 	( flora_library_file(LibID,BaseFileName,SubDir) ->
 	    ( flora_syslib_loaded(BaseFileName) -> true
 	    ;
-	      package_configuration(dir(flora),FloraDir),
+	      flora_configuration(installdir,FloraDir),
 	      flora_slash(S),
 	      flora_concat_atoms([FloraDir,S,SubDir,S,BaseFileName,'.P'],
 				 FullLibPath),

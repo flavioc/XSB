@@ -29,7 +29,6 @@
 
 OBJEXT=.xwam
 
-PROLOGDIR = ../../..
 FLORADIR = ..
 
 CLOSURE = ../closure
@@ -43,7 +42,7 @@ ALLOBJS = standard.P \
           eqlflogic.P \
           patch.P
 
-PROLOG = $(PROLOGDIR)/bin/xsb
+PROLOG = ../../../bin/xsb
 
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
@@ -59,7 +58,7 @@ HDRMSG = "While compiling .../flora2/trailer:"
 
 
 all: init $(ALLOBJS) finish
-	@$(PROLOGDIR)/build/touch.sh cmd...
+	@../touch.sh cmd...
 	$(PROLOG_COMMAND) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
@@ -117,6 +116,7 @@ $(GENINCLUDES)/flrpreddef.flh : $(GENINCLUDES)/flrpreddef.fli $(FLORA_TERMS)
 
 init:
 	/bin/rm -f $(SVFILE)
+	@echo "['../flora2devel']." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...
 	@echo "bootstrap_flora." >> cmd...
 	@echo "[flrutils]." >> cmd...
