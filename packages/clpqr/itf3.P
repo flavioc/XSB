@@ -45,14 +45,14 @@ verify_attributes(X, _Y) :-
 verify_attributes(X, Y) :-
 	get_atts(X, forward(F)),
 	!,
-	writeln('.... in verify_attributes/2 (2)'),
+%	writeln('.... in verify_attributes/2 (2)'),
 	fwd_deref(F, Y).
 verify_attributes(X, Y) :-
 	get_atts(X, class_atts(La,Lat,ABasis,PrioA)),
 	!,
 %	get_atts(X, ALL),
 %	write('.... ALL = '), writeln(ALL),
-	writeln('.... in verify_attributes/2 (3)'),
+%	writeln('.... in verify_attributes/2 (3)'),
 	var( Y),					% required
 	get_atts( Y, class_atts(Lb,Lbt,BBasis,PrioB)),
 	Lat = Lb,					% append
@@ -62,14 +62,14 @@ verify_attributes(X, Y) :-
 	attv_unify(X, Y).
 
 verify_attributes(X, Y) :-
-	writeln('.... in verify_attributes/2 (4)'),
-	write('.... Y_value = '), writeln(Y),
+%	writeln('.... in verify_attributes/2 (4)'),
+%	write('.... Y_value = '), writeln(Y),
 	numbers_only(Y, X),
 	put_atts(X, forward(Y)),
 	verify_nonzero(X, Y),
 	verify_type(X, Y, Later, []),
 %	verify_type(X, Y, [], []),
-	write('.... Later = '), writeln(Later),
+%	write('.... Later = '), writeln(Later),
 	verify_lin(X, Y),
 	attv_unify(X, Y).	% This is necessary
 
