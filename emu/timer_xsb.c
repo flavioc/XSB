@@ -100,12 +100,21 @@
 	       For instance, 
    
 	       xsbTimeout *pptr = NEW_TIMEOUT_OBJECT; // defined in timer_xsb.h
+	       int timeout_flag;
+
 	       // timeout is set in Prolog using set_timer/1 call
 	       if (CHECK_TIMER_SET) {
-		  make_timed_call((void*)pptr, new_foo);
-	       } else
+		  timeout=make_timed_call(pptr, new_foo);
+		  if (timeout_flag == TIMER_SETUP_ERR) {
+		     // problem setting up timer (Windows only)
+	          } else if (timeout_flag) {
+	            // timeout happened
+		    .....
+		  }
+	       } else {
 	         // timer is not set
-		 new_foo((void*)pptr); 
+		 new_foo(pptr); 
+	       }
 
        step 3: Free the xsbTimeout object when appropriate.
 */

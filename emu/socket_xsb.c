@@ -397,7 +397,7 @@ xsbBool xsb_socket_request(void)
 
     /* control time out */
     if (CHECK_TIMER_SET) {
-      timeout_flag=make_timed_call((void *)pSock, socket_connect);
+      timeout_flag=make_timed_call(pSock, socket_connect);
 
       if (timeout_flag == TIMER_SETUP_ERR) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR,6,"SOCKET_CONNECT");
@@ -405,7 +405,7 @@ xsbBool xsb_socket_request(void)
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 6,"SOCKET_CONNECT");
       }
     } else { /* timer not set */
-      socket_connect((void *)pSock);
+      socket_connect(pSock);
     }
 
     /* error handling */
@@ -442,14 +442,14 @@ xsbBool xsb_socket_request(void)
     
     /* control time out */
     if (CHECK_TIMER_SET) {
-      timeout_flag=make_timed_call((void *)pSock,socket_recv);
+      timeout_flag=make_timed_call(pSock,socket_recv);
       if(timeout_flag == TIMER_SETUP_ERR) {
 	FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR,4,"SOCKET_RECV");
       } else if(timeout_flag) {  /* timed out */
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR,4,"SOCKET_RECV");
       }
     } else  /* timer not set */ 
-      socket_recv((void*)pSock);
+      socket_recv(pSock);
     
     /* error handling */
     switch (pSock->return_code) {
@@ -484,14 +484,14 @@ xsbBool xsb_socket_request(void)
     
     /* control time out */
     if (CHECK_TIMER_SET) {
-      timeout_flag=make_timed_call((void*)pSock,socket_send);
+      timeout_flag=make_timed_call(pSock,socket_send);
       if(timeout_flag == TIMER_SETUP_ERR ) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_SEND");
       } else if(timeout_flag) {  /* timed out */
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4, "SOCKET_SEND"); 
       }
     } else  /* timer not set */
-      socket_send((void*)pSock);
+      socket_send(pSock);
     
     if (SOCKET_OP_FAILED(pSock->return_code)) {
       ecode = XSB_SOCKET_ERRORCODE;
@@ -510,14 +510,14 @@ xsbBool xsb_socket_request(void)
 
     /* control time out */
     if (CHECK_TIMER_SET) {
-      timeout_flag=make_timed_call((void*)pSock,socket_get0);
+      timeout_flag=make_timed_call(pSock,socket_get0);
       if (timeout_flag == TIMER_SETUP_ERR) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_GET0"); 
       } else if(timeout_flag) /* timed out */ {
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4, "SOCKET_GET0"); 
       }
     } else  /* timer not set */
-      socket_get0((void*)pSock);
+      socket_get0(pSock);
     
     /*error handling */ 
     switch (pSock->return_code) {
@@ -545,7 +545,7 @@ xsbBool xsb_socket_request(void)
 
     /* control time out */
     if (CHECK_TIMER_SET) {
-      timeout_flag=make_timed_call((void*)pSock,socket_put);
+      timeout_flag=make_timed_call(pSock,socket_put);
 
       if(timeout_flag == TIMER_SETUP_ERR)  {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_PUT"); 
@@ -553,7 +553,7 @@ xsbBool xsb_socket_request(void)
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4, "SOCKET_PUT"); 
       }
     } else  /* timer not set */ {
-      socket_put((void*)pSock);
+      socket_put(pSock);
     }
 
     /* error handling */
