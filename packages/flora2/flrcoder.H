@@ -29,6 +29,8 @@
 
 :- import append/3 from basics.
 
+:- import eval/2 from eval.
+
 :- import str_cat/3 from string.
 
 :- import fmt_write_string/3 from file_io.

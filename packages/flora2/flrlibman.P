@@ -76,15 +76,25 @@ flora_include(FLLIBAVG,'syslibinc/flraggavg_inc.flh') :- !.
 flora_include(FLLIBCOUNT,'syslibinc/flraggcount_inc.flh') :- !.
 flora_include(FLLIBCOLLECTSET,'syslibinc/flrcolset_inc.flh') :- !.
 flora_include(FLLIBCOLLECTBAG,'syslibinc/flrcolbag_inc.flh') :- !.
+
 flora_include(FLLIBLOAD,'syslibinc/flrload_inc.flh') :- !.
+
 flora_include(FLLIBANSWER,'syslibinc/flranswer_inc.flh') :- !.
 flora_include(FLLIBSHELLANS,'syslibinc/flranswer_inc.flh') :- !.
 flora_include(FLLIBPROGRAMANS,'syslibinc/flranswer_inc.flh') :- !.
+
 flora_include(FLLIBINSERT,'syslibinc/flrdbop_inc.flh') :- !.
 flora_include(FLLIBDELETE,'syslibinc/flrdbop_inc.flh') :- !.
 flora_include(FLLIBDELETEALL,'syslibinc/flrdbop_inc.flh') :- !.
 flora_include(FLLIBERASE,'syslibinc/flrdbop_inc.flh') :- !.
 flora_include(FLLIBERASEALL,'syslibinc/flrdbop_inc.flh') :- !.
+
+flora_include(FLLIBBTINSERT,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBBTDELETE,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBBTDELETEALL,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBBTERASE,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBBTERASEALL,'syslibinc/flrdbop_inc.flh') :- !.
+
 flora_include(FLLIBSHDIRECT,'syslibinc/flrshdirect_inc.flh') :- !.
 
 flora_include(FLHEADER,'closureinc/flrheader_inc.flh') :- !.
@@ -107,15 +117,27 @@ flora_library(FLLIBAVG,'syslib/flraggavg.P') :- !.
 flora_library(FLLIBCOUNT,'syslib/flraggcount.P') :- !.
 flora_library(FLLIBCOLLECTSET,'syslib/flraggcolset.P') :- !.
 flora_library(FLLIBCOLLECTBAG,'syslib/flraggcolbag.P') :- !.
+
 flora_library(FLLIBLOAD,'syslib/flrload.P') :- !.
+
 flora_library(FLLIBANSWER,'syslib/flranswer.P') :- !.
 flora_library(FLLIBSHELLANS,'syslib/flranswer.P') :- !.
 flora_library(FLLIBPROGRAMANS,'syslib/flranswer.P') :- !.
+
 flora_library(FLLIBDISPLAY,'syslib/flrdisplay.P') :- !.
+
 flora_library(FLLIBDBOP,'syslib/flrdbop.P') :- !.
+
 flora_library(FLLIBINSERT,'syslib/flrdbop.P') :- !.
 flora_library(FLLIBDELETE,'syslib/flrdbop.P') :- !.
 flora_library(FLLIBDELETEALL,'syslib/flrdbop.P') :- !.
 flora_library(FLLIBERASE,'syslib/flrdbop.P') :- !.
 flora_library(FLLIBERASEALL,'syslib/flrdbop.P') :- !.
+
+flora_library(FLLIBBTINSERT,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBBTDELETE,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBBTDELETEALL,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBBTERASE,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBBTERASEALL,'syslib/flrdbop.P') :- !.
+
 flora_library(FLLIBSHDIRECT,'syslib/flrshdirect.P') :- !.

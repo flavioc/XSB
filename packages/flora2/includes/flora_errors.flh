@@ -99,7 +99,7 @@
 #define ERROR_EXPDELETE 'invalid path expression in delete'
 #define ERROR_INDXDIREC	'invalid trie indexing directive'
 #define ERROR_NEWOID	'invalid use of new oid directive'
-#define EXP_POSINTEGER	'positive integer expected'
+#define EXP_POSINTEGER	'positive integer (including 0) expected'
 #define EXP_VARIABLE	'variable expected'
 #define EXP_ATOMICFUNCT	'atomic functor expected'
 #define EXP_AGGREGVAR	'aggregate variable expected'

@@ -335,6 +335,7 @@ flprlgdirect_struct(F,A,FLPROLOG(F,A)).
 flnohilogdirect_struct(F,A,FLNOHILOG(F,A)).
 flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
 flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
+flhilogtbldirect_struct(A,FLHILOGTABLE(A)).
 
 flatom_struct(Atom,FLATOM(Atom)).
 
@@ -481,6 +482,7 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	; flora_index_directive(CanoniTerm,CodeList,Status)
 	; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_command_directive(CanoniTerm,CodeList,Status)
+	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; parsing_error(CanoniTerm,UNKNOWN_DIRECT,Status)
         ),
 	!.
@@ -507,6 +509,7 @@ flora_exec_directive(CanoniTerm,Code,Status) :-
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
 	; flora_dynamic_directive(CanoniTerm,CodeList,Status)
+	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
         ),
 	!.
 
@@ -840,6 +843,27 @@ flora_index_directive(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),[Code],Stat
 	;
 	  Status=S
         ).
+
+
+/****************************************************************************
+  flora_hilogtable_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_hilogtable_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_HILOGTABLE),
+	flora_comma_separated_list(T,ArityList),
+	flora_hilogtable_directlist(ArityList,CodeList,Status).
+
+
+flora_hilogtable_directlist([],[],[]) :- !.
+
+flora_hilogtable_directlist([Arity|L],[Code|CL],Status) :-
+	!,
+	( get_integer(Arity,A), A >= 0 ->
+	    flhilogtbldirect_struct(A,Code),
+	    flora_hilogtable_directlist(L,CL,Status)
+	;
+	  parsing_error(Arity,EXP_POSINTEGER,Status)
+	).
 
 
 /****************************************************************************
@@ -2003,6 +2027,10 @@ flora_dblit(_Mode,CanoniTerm,Code,Status) :-
 	  flatom_struct(A,Code),
 	  Status=[]
         ).
+
+flora_dblit(_Mode,CanoniTerm,Code,[]) :-
+	get_flvar_struct(CanoniTerm,Code),
+	!.
 
 flora_dblit(Mode,CanoniTerm,_Code,Status) :-
 	!,

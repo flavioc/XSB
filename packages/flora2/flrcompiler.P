@@ -61,6 +61,7 @@ is_flsignature(FLSIGNATURE(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
 is_flnohilog(FLNOHILOG(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
+is_flhilogtable(FLHILOGTABLE(A),A).
 
 is_flconjunct(FLCONJUNCT(L,R),L,R).
 is_fldisjunct(FLDISJUNCT(L,R),L,R).
@@ -130,6 +131,7 @@ dynamic_struct(F,N,PRDYNAMIC(F,N)).
 export_struct(F,N,PREXPORT(F,N)).
 import_struct(F,N,M,PRIMPORT(F,N,M)).
 index_struct(F,A,N,PRINDEX(F,A,N)).
+hilogtable_struct(A,PRHILOGTABLE(A)).
 
 
 /****************************************************************************
@@ -798,6 +800,9 @@ compile_direct(DirectTerm,[Code],[]) :-
 
 	; is_flindex(DirectTerm,P,A,N) ->
 	    index_struct(P,A,N,Direct)
+
+	; is_flhilogtable(DirectTerm,A) ->
+	    hilogtable_struct(A,Direct)
         ),
 	!,
 	directive_struct(Direct,Code).
@@ -2667,13 +2672,34 @@ compile_head_wsflobjeql(Obj1,Obj2,WS,CodeList,Status) :-
   compile_flinsert(+Op,+List,-Code,Status)
 ****************************************************************************/
 compile_flinsert(Op,List,Code,Status) :-
-	compile_head(List,CodeList,Status),
+	compile_flinsert_list(List,CodeList,Status),
 	( Status == [] ->
 	    list_struct(CodeList,[],ListCode),
 	    insert_struct(Op,ListCode,Code)
 	;
 	  true
         ).
+
+
+/****************************************************************************
+  compile_flinsert_list(+List,-CodeList,-Status)
+****************************************************************************/
+compile_flinsert_list([],[],[]) :- !.
+
+compile_flinsert_list([H|T],[VarCode|TCodeList],Status) :-
+	is_flvar(H,VarName,_Index),
+	!,
+	compile_flvar(VarName,VarCode),
+	compile_flinsert_list(T,TCodeList,Status).
+
+compile_flinsert_list([H|T],CodeList,Status) :-
+	compile_head_literal(H,HCodeList,S),
+	( S == [] ->
+	    compile_flinsert_list(T,TCodeList,Status),
+	    (Status == [] -> append(HCodeList,TCodeList,CodeList); true)
+	;
+	  Status=S
+	).
 
 
 /****************************************************************************
@@ -2711,6 +2737,12 @@ compile_fldelete(Op,List,Code,Status) :-
   compile_fldelete_list(+List,-CodeList,-Status)
 ****************************************************************************/
 compile_fldelete_list([],[],[]) :- !.
+
+compile_fldelete_list([H|T],[VarCode|TCodeList],Status) :-
+	is_flvar(H,VarName,_Index),
+	!,
+	compile_flvar(VarName,VarCode),
+	compile_fldelete_list(T,TCodeList,Status).
 
 compile_fldelete_list([H|T],CodeList,Status) :-
 	compile_body_literal(H,HCode,S),
@@ -2778,6 +2810,9 @@ compile_execdirect(DirectTerm,Code) :-
 
 	; is_flindex(DirectTerm,P,A,N) ->
 	    index_struct(P,A,N,Code)
+
+	; is_flhilogtable(DirectTerm,A) ->
+	    hilogtable_struct(A,Code)
         ),
 	!.
 

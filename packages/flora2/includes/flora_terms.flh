@@ -169,9 +169,10 @@
 #define FL_FORMULAR		(form)
 #define FL_PROLOG		(prolog)
 #define FL_PROLOGALL		(prologall)
-#define FL_PLIB			(plib)
+#define FL_PLIB			(prologlib)
 #define FL_NOHILOG		(florapred)
 #define FL_NOHILOGALL		(florapredall)
+#define FL_HILOGTABLE		(hilogtable)
 
 #define FL_MIN			min
 #define FL_MAX			max
@@ -212,6 +213,7 @@
   FLNOHILOG(Functor,Arity)
   FLOPDEF(Predecence,Associativity,Op)
   FLINDEX(Functor,Arity,Name)
+  FLHILOGTABLE(Arity)
 
   FLVAR(Name,Index)
   FLATOM(Atom)
@@ -260,6 +262,7 @@
 #define FLOPDEF			flopdef
 #define FLNOHILOG		flnohilog
 #define FLINDEX			flindex
+#define FLHILOGTABLE		flhilogtable
 
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
@@ -307,6 +310,7 @@
 #define PREXPORT		prexport
 #define PRIMPORT		primport
 #define PRINDEX			prindex
+#define PRHILOGTABLE		prhilogtable
 
 #define PRATOM			pratom
 #define PRNUMBER		prnumber

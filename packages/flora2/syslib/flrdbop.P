@@ -41,6 +41,8 @@
 
 :- import flora_register_syslib/1 from flrlibman.
 
+:- import flora_error_line/1 from flrprint.
+
 :- import
 	flora_setup_flogic_bswrapper/1,
 	flora_flogic_bswrapper/2,
@@ -66,6 +68,12 @@
 *****************************************************************************/
 fllibinsert([]) :- !.
 
+fllibinsert([H|_T]) :-
+	var(H),
+	!,
+	flora_error_line('uninstantiated argument of `insert'''),
+	abort.
+
 fllibinsert([H|T]) :-
 	assert(H),
 	fllibinsert(T).
@@ -90,8 +98,14 @@ fllibdelete(List) :- fllibdelete(List,true).
   to be deleted.
 *****************************************************************************/
 fllibdelete([P],true) :-
+	var(P),
 	!,
-	retract((P :- true)).
+	flora_error_line('uninstantiated argument of `delete'''),
+	abort.
+
+fllibdelete([P],true) :-
+	!,
+	retract(P).
 
 fllibdelete(List,Condition) :-
 	flora_prove_goals(List),
@@ -138,7 +152,7 @@ flora_delete_facts([]) :- !.
 
 flora_delete_facts([F|Fs]) :-
 	!,
-	retract((F :- true)),
+	retract(F),
 	flora_delete_facts(Fs).
 
 
@@ -160,6 +174,12 @@ fllibdeleteall(List) :- fllibdeleteall(List,true).
   The semantics is such that all the literals in "List" must be base facts
   to be deleted. This call always succeeds.
 *****************************************************************************/
+fllibdeleteall([P],true) :-
+	var(P),
+	!,
+	flora_error_line('uninstantiated argument of `deleteall'''),
+	abort.
+
 fllibdeleteall([P],true) :-
 	!,
 	retractall(P).
@@ -218,7 +238,7 @@ flora_erase_facts([]) :- !.
 
 flora_erase_facts([F|Fs]) :-
 	!,
-	retract((F :- true)),
+	retract(F),
 	flora_erase_one_fact(F),
 	flora_erase_facts(Fs).
 

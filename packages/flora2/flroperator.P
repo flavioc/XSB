@@ -44,6 +44,7 @@ flora_op(1500,fx,FL_IMPORT).
 flora_op(1500,fx,FL_SIGNATURE).
 flora_op(1500,fx,FL_PROLOG).
 flora_op(1500,fx,FL_NOHILOG).
+flora_op(1500,fx,FL_HILOGTABLE).
 
 flora_op(1400,xfx,FL_FROM).
 flora_op(1400,xfy,FL_SEMICOLON).

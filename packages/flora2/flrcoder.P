@@ -46,6 +46,7 @@ is_prdynamic(PRDYNAMIC(P,A),P,A).
 is_prexport(PREXPORT(P,A),P,A).
 is_primport(PRIMPORT(P,A,M),P,A,M).
 is_prindex(PRINDEX(P,A,N),P,A,N).
+is_prhilogtable(PRHILOGTABLE(A),A).
 
 is_pratom(PRATOM(Atom),Atom).
 is_prnumber(PRNUMBER(Number),Number).
@@ -372,6 +373,16 @@ flora_write_struct(Term,_Prefix) :-
 	;
 	  write_canonical(table(P/A))
 	).
+
+flora_write_struct(Term,_Prefix) :-
+	is_prhilogtable(Term,A),
+	!,
+	eval(A+1,N),
+	write('table(/('),
+	flora_write_workspace(WRAP_HILOG),
+	write(','),
+	write(N),
+	writeln('))').
 
 flora_write_struct(Term,_Prefix) :-
 	is_prdynamic(Term,P,A),
@@ -834,6 +845,13 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	;
 	  Code=table(P/A)
 	).
+
+flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
+	is_prhilogtable(Term,A),
+	!,
+	eval(A+1,N),
+	flora_build_workspace(WRAP_HILOG,DWS,NewP),
+	Code=table(NewP/N).
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	is_prdynamic(Term,P,A),
