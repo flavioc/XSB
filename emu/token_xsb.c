@@ -245,10 +245,7 @@ int intype(int c)
 
 static void SyntaxError(char *description)
 {
-	char message[100];
-
-	sprintf(message, "++Error: %s (syntax error)\n", description);
-	pcreg = exception_handler(message);
+	xsb_abort("[TOKENIZER] Syntax error: %s", description);
 }
  
 
