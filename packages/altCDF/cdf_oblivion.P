@@ -7,7 +7,7 @@
 	obliterate_extensional_component/1,
 	retractall_itsobjects/1,
 	retractall_subclasses/1,
-	delete_all_things_to_delete,
+	delete_all_things_to_delete/0,
 	rename_things/1.
 
 :- import
