@@ -10,7 +10,7 @@ We shall greatly appreciate, if you would agree to send us this log.
 Installation logs help the XSB group to keep track of the usage of the
 system on different architectures and to isolate problems more easily.
 
-The log will be sent automatically to  \`xsb-contact@cs.sunysb.edu'
+The log will be sent automatically to  \`xsb-installation@lists.sourceforge.net'
 Would you like to send us the installation log? (y/n): y
 EOF
 
@@ -18,7 +18,7 @@ read sendlog
 
 if test "$sendlog" != "n" -a "$sendlog" != "no" -a "$sendlog" != "N" ; then
     (cat sendlog.msg Installation_summary \
-	| mail xsb-contact@cs.sunysb.edu) \
+	| mail xsb-installation@lists.sourceforge.net) \
     && echo "" ; echo "Thank you!"; echo ""
 fi
 

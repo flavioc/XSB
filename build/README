@@ -254,10 +254,13 @@ How to build:
     Configure has several options (type `configure --help' to see them all)
     that let you configure for debugging, with Oracle, etc. See ../INSTALL
     for details.  The outcome of running configure and makexsb is stored in
-    Installation_summary. This file is sent to xsb-contact by the
-    registration script and it is also saved in config/<configuration>/
-    directory, where <configuration> is the canonical name for the current
-    configuration.
+    Installation_summary. This file is sent to
+
+	    xsb-installation@lists.sourceforge.net
+    
+    by the registration script and it is also saved in
+    config/<configuration>/ directory, where <configuration> is the
+    canonical name for the current configuration.
 
     NOTE ABOUT THE C PREPROCESSOR: Many .P programs that live in lib/,
     cmplib/, and syslib/ directories use the C language preprocessor that

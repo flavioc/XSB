@@ -224,7 +224,7 @@ char *xsb_executable_full_path(char *myname)
   fprintf(stderr, 
 	  "PANIC!!! Can't determine the full name of the XSB executable!\n");
   fprintf(stderr, 
-	  "         Please report this bug to xsb-contact@cs.sunysb.edu\n");
+	  "Please report this bug to xsb-development@lists.sourceforge.net\n");
   fprintf(stderr,
 	  "*************************************************************\n");
   exit(1);
