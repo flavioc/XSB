@@ -1,0 +1,34 @@
+Ways to Stay out of Trouble with CVS
+====================================
+
+1. Don't configure RCS or CVS to use local time---always use
+   Greenwich time. Since people work with XSB repository from different
+   parts of the world, using local time could create havoc.
+
+2. NEVER copy XSB files from somebody else's directory into your directory.
+   This is dangerous, since changes made by somebody else can be lost if 
+   you commit your local copy.
+   If you need to integrate somebody's uncommitted changes, use Ediff to
+   merge these changes into your files.
+
+3. Always recompile your .O files before you commit changes into the
+   repository.
+
+4. It can happen that when you update your local copy of XSB with the files
+   in the repository, you might not get the latest .O files.
+   This is due to a deficiency with CVS binary file management.
+   Solutions:
+      a. Try to recompile your .O files by doing
+
+	 cd <top xsb directory>
+	 make force
+
+      b. If this doesn't work, it means that .O files have changed in
+	 incompatible ways. One solution to this is to delete all your 
+	 .O files and then update your copy using "cvs update".
+	 This should replace your .O files with what is in the repository.
+
+5. If you are going to make incompatible changes to .O files (like changing
+   the format or adding builtins that are used in the loader), always
+   notify the rest of the XSB group. Such changes must be synchronized,
+   i.e., different people should not be doing such changes in parallel.
