@@ -48,6 +48,9 @@ streams).
     represent different input streams (even if these different file names 
     correspond to the same file).
 
+    The implementation of the ISO preducate {\tt set\_input/1}, is
+    essentially that of {\tt see/1}.
+
     Exceptions:
     \begin{description}
     \item[{\tt permission\_error}]
@@ -87,6 +90,9 @@ streams).
     represent different output streams (even if these different file names 
     correspond to the same file).
 
+    The implementation of the ISO preducate {\tt set\_output/1}, is
+    essentially that of {\tt tell/1}.
+
     Exceptions:
     \begin {description}
     \item[{\tt permission\_error}]
@@ -107,7 +113,7 @@ streams).
     Closes the current output stream. 
     Current output stream reverts to ``userout'' (the standard output stream).
 
-\ouritem{open(+File,+Mode,-Stream)}\index{{\tt close/1}}
+\ournewitem{open(+File,+Mode,-Stream)}{ISO}\index{{\tt open/3}}
     {\tt open/1} creates a stream for the file designated in {\em
     File}, and binds {\em Stream} to a structure representing that
     stream.  {\em Mode} can be one of either {\tt read} to create an
@@ -135,8 +141,23 @@ streams).
 	{\tt F} is uninstantiated.
     \end{description}
 
-\ouritem{close(+Stream)}\index{{\tt close/1}}
+\ournewitem{open(+File,+Mode,-Stream.+Options)}{ISO}\index{{\tt open/4}}
+
+	This predicate is implemented in XSB for partial ISO
+	compatability.  In the case where {\tt Options} is equal to {\tt
+	[]}, {\tt open/4} is defined as {\tt open/3}, otherwise it
+	aborts.
+
+
+\ournewitem{close(+Stream)}{ISO}\index{{\tt close/1}}
 	{\tt close/1} closes the stream {\em Stream}.
+
+\ournewitem{close(+Stream.+Options)}{ISO}\index{{\tt close/2}}
+
+	This predicate is implemented in XSB for partial ISO
+	compatability.  In the case where {\tt Options} is equal to
+	{\tt []}, {\tt close/2} is defined as {\tt close/1}, otherwise
+	it aborts.
 
 \ouritem{file\_exists(+F)}\index{{\tt file\_exists/1}}
     Succeeds if file {\tt F} exists. {\tt F} must be instantiated to
