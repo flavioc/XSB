@@ -56,11 +56,11 @@ set_dcg_style(X) :- write(X), writeln(': invalid DCG style'), fail.
 :- dynamic word(_,_,_).
 :- dynamic num_words(_).
 reset_dcg_mode :- 
-	(num_words(_)
-         ->     retractall(word(_,_,_)),
+	(word([_|_],_,_)
+	 ->     true
+         ;      retractall(word(_,_,_)),
 	        retractall(num_words(_)),
 	        assert(word([Token|Tokens],Token,Tokens))
-	 ;      true
 	).
 
 tphrase_set_string(List) :-
