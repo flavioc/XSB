@@ -250,6 +250,7 @@ case "$with_os" in
 	configuration_templ=xsb_configuration_wind.in
 	config_dot_h_templ=def_config_wind.in
 	echo 'Configuring for host system type... Windows NT/95/98/2000'
+	with_os=wind;
 	;;
   *)    dnl check for unknown OS
 	if test -n "$with_os" ; then
