@@ -239,4 +239,17 @@ select(Element, [Element|Rest_Elements], Rest_Elements).
 select(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
 	select(Element, Rest_L1, Rest_L2).
 
+%%% for(?I,+B1,+B2) nondeterministically binds I to all integer values
+%%% from B1 to B2.  B1 and B2 must be integers, but either may be larger.
+for(I,B1,B2) :-
+	(B1 =< B2
+	 ->	forup(I,B1,B2)
+	 ;	fordown(I,B2,B1)
+	).
+
+forup(L,L,H) :- L =< H.
+forup(I,L,H) :- L < H, L1 is L+1, forup(I,L1,H).
+
+fordown(H,H,L) :- H >= L.
+fordown(I,H,L) :- H > L, H1 is H-1, fordown(I,H1,L).
 /* --------------------- end of file basics.P ------------------------- */
