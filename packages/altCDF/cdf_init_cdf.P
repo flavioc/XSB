@@ -82,6 +82,12 @@
 
 :- import call_assert/1,clause_assert/2 from cdf_utilities.
 
+%%%%%%%%%%
+
+:- ensure_loaded(cdf_checks).	% since cdf_checks is not a module, and
+				% cdf_init_cdf uses predicates defined
+				% there, it must be explicitly loaded.
+
 %%%%%%%%%% Non-CDF Libraries
 
 %%%%%%%%%%
