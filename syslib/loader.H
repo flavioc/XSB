@@ -29,7 +29,7 @@
 	reset_undef_pred_handlers/0,
 	windows_os_loader/0.
 
-:- import abort/1, catch/3 from standard.
+:- import abort/1, catch/3,throw/1 from standard.
 :- import default_error_handler/1 from error_handler.
 :- import conset/2 from gensym.
 :- import reconsult/1 from consult.

@@ -35,7 +35,7 @@
  *  got thrown at that early.
  */
 
-:- compiler_options([sysmod,xpp_on]).
+:- compiler_options([sysmod,xpp_on,optimize]).
 
 #include "../prolog_includes/standard.h"
 #include "char_defs.h"
@@ -361,8 +361,9 @@ load(ModName) :-
 	    ->	reconsult(FileName_P)
 	    )
 	;   tilde_expand_filename(ModName,ExpandedModName),
-	    abort(['Module ', ExpandedModName,
-		   ' is not found in XSB library directories'])
+	    throw(error(existence_error(file,ExpandedModName),['Module ', 
+			     ExpandedModName,
+	                     ' is not found in XSB library directories']))
 	).
 
 /*
