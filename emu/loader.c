@@ -1,5 +1,5 @@
 /* File:      loader.c
-** Author(s): David S. Warren, Jiyang Xu 
+** Author(s): David S. Warren, Jiyang Xu, Terrance Swift, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -24,12 +24,10 @@
 */
 
 
-
 /************************************************************************/
 /*
 	The file loader.c contains routines for loading a byte code
 	file into the emulator's permanent work space (pspace).
-	It uses routines in file load_seg.c to access pspace.
 */
 /************************************************************************/
 
@@ -46,31 +44,437 @@
 #include "cell.h"
 #include "heap.h"
 #include "flags.h"
-#include "load_seg.h"
 #include "tries.h"
 #include "xmacro.h"
 #include "xsberror.h"
 #include "io_builtins.h"
+#include "inst.h"
+#include "xsb_memory.h"
+#include "register.h"
 
 #ifdef FOREIGN
 #include "dynload.h"
 #endif
  
-/*--------------------------------------------------------------------*/
+/* === stuff used from elsewhere ======================================	*/
 
 extern TIFptr get_tip(Psc);
 
-/*--------------------------------------------------------------------*/
+/* === macros =========================================================	*/
+
+#define st_ptrpsc(i_addr)  (cell(i_addr) = *reloc_table[cell(i_addr)])
+
+#define st_pscname(i_addr) (cell(i_addr) = \
+	(Cell) get_name((Psc)(*reloc_table[cell(i_addr)])))
+
+#define gentry(opcode, arg1, arg2, ep) {	\
+        (cell_opcode(ep)) = (opcode);      	\
+        (cell_operand1(ep)) = 0;              	\
+        (cell_operand2(ep)) = 0;              	\
+        (cell_operand3(ep)) = (arg1);         	\
+	(ep)++;				 	\
+        cell(ep) = (Cell) (arg2);        	\
+        (ep)++; }
+
+#define gentabletry(opcode, arg1, arg2, arg3, ep)     { \
+        gentry(opcode, arg1, arg2, ep);  		\
+        cell(ep) = (Cell) (arg3);          		\
+        (ep)++; }
+
+#define reloc_addr(offset, base) ((CPtr)((offset)<0 ? \
+       		(pb)&fail_inst : ((pb)(base))+(long)(offset)*ZOOM_FACTOR))
+
+/* === local declarations =============================================	*/
+
+struct hrec {
+  long l;
+  CPtr link;
+} ;
+
+/*----------------------------------------------------------------------*/
+
+/* Number of entries in one "segment" of the index relocation table.
+   The table isn't actually segmented, but it is allocated in
+   chunks of this size. */
+#define NUM_INDEX_BLKS 256
+
+/* === variables also used in other parts of the system =============== */
 
 Psc global_mod;	/* points to "global", whose ep is globallist */
 
-pw *reloc_table = 0;
+TIFptr first_tip = NULL, last_tip = NULL;
+
+/* === working variables ==============================================	*/
+
+static pw   *reloc_table = NULL;
+static pseg last_text = NULL;	/* permanent var, chain of text seg */
+static pseg current_seg;	/* starting address -- used for relocation */
+static CPtr *index_reloc;         	/* index relocation table */
+static int  num_index_reloc;     	/* number of chunks in index_reloc */
+static struct hrec *indextab;
+static TIFptr tab_info_ptr;
+static CPtr hptr;
+static pindex *index_block_chain;	/* index block chain */
 
 #ifndef CHAT
 static int warned_old_obj = 0;	/* warned the user about old .O files ? */
 #endif
 
-static FILE *fd;
+/* === return an appropriate hash table size ==========================	*/
+
+static inline int hsize(int numentry)
+{
+  int i, j, temp;
+
+  if (numentry > 16) temp = numentry; 
+  else temp = 2 * numentry + 1;
+  j = temp / 2 + 1;
+  for (i = 2; i <= j; i++) {
+    if ((i != temp) && ((temp % i) == 0)) {temp++; j = temp/2+1;}
+  }
+  return temp;
+}
+
+/* == unload a segment ================================================	*/
+
+void unload_seg(pseg s)
+{
+  pindex i1, i2 ;
+  pseg prev, next ;
+
+  /* free the index blocks */
+  i1 = seg_index(s) ;
+  while (i1) {
+    i2 = i_next(i1) ;
+    mem_dealloc((pb)i1, i_size(i1));
+    i1 = i2;
+  }
+  /* delete segment from segment dllist and dealloc it */
+  next = seg_next(s) ;
+  prev = seg_prev(s) ;
+  if (next) seg_prev(next) = prev ;
+  if (prev) seg_next(prev) = next ;
+  if (last_text==s) last_text = prev ;
+  mem_dealloc((pb)seg_hdr(s), seg_size(s));
+}
+
+/*----------------------------------------------------------------------*/
+
+/* use heap top as temp place of hash link and entries; */
+/* heap top pointer is not alterred so nothing affects later heap use */
+
+static inline void inserth(CPtr label, struct hrec *bucket) 
+{ 
+  CPtr temp;
+
+  bucket->l++;
+  temp = (CPtr)&(bucket->link);
+  if (bucket->l > 1) {
+    temp = (CPtr)*temp;
+    while ((CPtr)*temp != temp) 
+      temp = (CPtr)*(++temp);
+  }
+  *temp = (Cell)hptr;
+  cell(hptr) = (Cell) label; hptr++;
+  cell(hptr) = (Cell) hptr; hptr++;
+}
+
+/*----------------------------------------------------------------------*/
+
+static int get_index_tab(FILE *fd, int clause_no)
+{
+  long hashval, size, j;
+  long count = 0;
+  byte  type ;
+  CPtr label;
+  Integer ival;
+  Cell val;
+
+  size = hsize(clause_no);
+
+  indextab = (struct hrec *)malloc(size*sizeof(struct hrec)); 
+
+  for (j = 0; j < size; j++) {
+    indextab[j].l = 0;
+    indextab[j].link = (CPtr)&(indextab[j].link);
+  }
+  for (j = 0; j < clause_no; j++) {
+    get_obj_byte(&type);
+    switch (type) {
+    case 'i': get_obj_word_bb(&ival);
+      val = (Cell) ival ;
+      count += 9;
+      break;
+    case 'l': val = (Cell)(list_str); 
+      count += 5;
+      break;
+    case 'n': val = 0;
+      count += 5;
+      break;
+    case 'c': get_obj_word_bb(&ival);
+      count += 9;
+      val = (Cell)ival ;
+      st_pscname(&val);
+      break;
+    case 's': get_obj_word_bb(&ival);
+      count += 9;
+      val = (Cell)ival ;
+      st_ptrpsc(&val);
+      break; 
+    }
+    get_obj_word_bbsig(&label);
+    label = reloc_addr((Integer)label, seg_text(current_seg));
+    hashval = ihash(val, size);
+    inserth(label, &indextab[hashval]);
+  }
+  return count;
+}
+
+/*----------------------------------------------------------------------*/
+
+static inline pindex new_index_seg(int no_cells)
+{
+  pindex new_i = (pindex)mem_alloc(SIZE_IDX_HDR + sizeof(Cell) * no_cells ) ;
+ 
+  /* initialize fields of new index segment header */
+  i_next(new_i) = 0 ;
+  i_size(new_i) = SIZE_IDX_HDR + sizeof(Cell) * no_cells ;
+  
+  /* append at tail of block chain */
+  *index_block_chain = new_i ;
+  index_block_chain = &i_next(new_i) ;
+
+  return new_i ;
+}
+
+/*----------------------------------------------------------------------*/
+
+static void gen_index(bool tabled, int clause_no, CPtr sob_arg_p, char arity)
+{
+  pindex new_i;
+  CPtr   ep1, ep2, temp;
+  int    j, size; 
+ 
+  size = hsize(clause_no);
+  new_i = new_index_seg(size);
+
+  ep1 = i_block(new_i) ;
+  cell(sob_arg_p) = (Cell)ep1 ;
+  for (j = 0; j < size; j++) {
+    if (indextab[j].l == 0) cell(ep1) = (Cell) &fail_inst;
+    else if (indextab[j].l == 1) {
+      if (!tabled) {
+	cell(ep1) = *(indextab[j].link);
+      } else {  /* create tabletrysingle */
+	cell(ep1) = cell(indextab[j].link);
+	new_i = new_index_seg(3);
+	ep2 = i_block(new_i);
+	cell(ep1) = (Cell) ep2;
+	temp = indextab[j].link;
+	gentabletry(tabletrysingle, arity, *temp++, tab_info_ptr, ep2);
+      }
+    } else {
+      /* otherwise create try/retry/trust instruction */
+      new_i = new_index_seg(2*indextab[j].l+tabled);
+      ep2 = i_block(new_i) ;
+      cell(ep1) = (Cell) ep2 ;
+      temp = (indextab[j].link) ;
+      if (!tabled) {	/* generate "try" */
+	gentry(try, arity, *temp, ep2);
+      } else {
+	gentabletry(tabletry, arity, *temp, tab_info_ptr, ep2);
+      }
+
+      for (temp++; *temp != (Cell)temp; temp++) {
+	temp = (CPtr) cell(temp);		/* generate "retry" */
+	gentry((tabled?tableretry:retry), arity, *temp, ep2);
+      }
+      /* change last "retry" to "trust" */
+      cell_opcode(ep2-2) = tabled ? tabletrust : trust;
+    }
+    ep1++;
+  }
+}
+
+/************************************************************************
+*                                                                       *
+*  load_text() loads the byte code intruction from a byte code file to	*
+*  the byte code program space.  References to indexes to the pcs table	*
+*  are resolved with the use of the macro st_index.  New index relies   *
+*  on the symbol table array which is assigned values by load_sms.	*
+*  The routine assumes the current length 8/18/84 of byte code		*
+*  intructions when reading from the byte code file.			*
+*                                                                       *
+************************************************************************/
+
+static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
+{
+  CPtr inst_addr, end_addr;
+  int  current_opcode, oprand;
+  Cell tab_config_hold;	/* working pointer */
+  
+  *current_tab = -1;
+  inst_addr = seg_text(current_seg);
+  end_addr  = (CPtr)((pb)inst_addr + text_bytes * ZOOM_FACTOR);
+  while (inst_addr<end_addr && get_obj_word(inst_addr) ) {
+    current_opcode = cell_opcode(inst_addr);
+    inst_addr ++;
+    for (oprand=1; oprand<=4; oprand++) {
+      switch (inst_table[current_opcode][oprand]) {
+      case A:
+      case V:
+      case R:
+      case P:
+      case PP:
+      case PPP:
+      case PPR:
+      case RRR:
+	break;
+      case S:
+	get_obj_word_bb(inst_addr);
+	st_ptrpsc(inst_addr);
+	inst_addr ++;
+	break;
+      case C:
+	get_obj_word_bb(inst_addr);
+	st_pscname(inst_addr);
+	inst_addr ++;
+	break;
+      case L:
+	get_obj_word_bbsig(inst_addr);
+	*(CPtr *)inst_addr = reloc_addr((Integer)cell(inst_addr),
+					seg_text(current_seg));
+	inst_addr ++;
+	break;
+      case G:
+	get_obj_word_bb(inst_addr);
+	st_pscname(inst_addr);
+	inst_addr ++;
+	break;
+      case N:
+	get_obj_word_bbsig(inst_addr);
+	inst_addr ++;
+	break;
+      case F:
+	get_obj_word_bbflt(inst_addr);
+	inst_addr ++;
+	break;
+      case I:
+	get_obj_word_bb(inst_addr);
+	if (oprand==2) {	/* second operand of switchonbound */
+	  if (cell(inst_addr) >= NUM_INDEX_BLKS*num_index_reloc) {
+	    num_index_reloc = (cell(inst_addr)/NUM_INDEX_BLKS)+1;
+	    index_reloc = (CPtr *)realloc(index_reloc,NUM_INDEX_BLKS*
+					  num_index_reloc*sizeof(CPtr));
+	    if (!index_reloc) {
+	      xsb_error("Couldn't allocate index relocation space");
+	      return 0;
+	    }
+	  }
+	  index_reloc[cell(inst_addr)] = (CPtr)inst_addr;
+	}
+	else 		/* third operand of switchonbound */
+	  cell(inst_addr) = hsize(cell(inst_addr));
+	inst_addr ++;
+	break;
+      case X:
+	break;
+      case T:	  
+	*current_tab = 1;	/* flag for load index */
+	if (current_opcode == tabletry || current_opcode == tabletrysingle) {
+	  New_TIF(tab_info_ptr,NULL);
+	  if (first_tip == 0) first_tip = tab_info_ptr;
+	  else TIF_NextTIF(last_tip) = tab_info_ptr;
+	  last_tip = tab_info_ptr;
+	}
+	get_obj_word(&tab_config_hold);          /* space holder */
+	cell(inst_addr) = (Cell) tab_info_ptr;
+	inst_addr ++;
+	if (current_opcode == tabletry || 
+	    current_opcode == tabletrysingle) {  /* tabconfig */
+	  /* Consume the next 12 bytes (used to hold the CHS and RHS) */
+	  get_obj_word(&tab_config_hold);
+	  get_obj_word(&tab_config_hold);
+	  get_obj_word(&tab_config_hold);
+	}
+	break;
+      default:
+	break;
+      }  /* switch */
+    } /* for */
+  }
+  if (inst_addr != end_addr) {
+    fprintf(stderr, "inst_addr %p, end_addr %p\n", inst_addr, end_addr);
+    return 0;
+  }
+  else return 1;
+}  /* end of load_text */
+
+/*----------------------------------------------------------------------*/
+
+static void load_index(FILE *fd, int index_bytes, int table_num)
+{
+  Integer index_bno, clause_no, t_len;
+  char    index_inst, arity;
+  int     temp_space, count = 0;
+  CPtr    sob_arg_p, temp_ptr;
+
+  while (count < index_bytes) {
+    get_obj_byte(&index_inst);
+    get_obj_byte(&arity);
+    get_obj_word_bb(&index_bno);
+    sob_arg_p = index_reloc[index_bno];
+    get_obj_word_bb(&clause_no);
+    
+    temp_space = clause_no * 2;
+    if (top_of_localstk - hreg >= temp_space + 512)
+      temp_ptr = hptr = hreg;
+    else temp_ptr = hptr = (CPtr)malloc(temp_space*sizeof(CPtr));
+    t_len = get_index_tab(fd, clause_no);
+    
+    gen_index(table_num > 0, clause_no, sob_arg_p, arity);
+    free(indextab);
+    if (temp_ptr != hreg) free(temp_ptr);
+    count += 10 + t_len;
+  }
+}
+
+/*== the load_seg function =============================================*/
+
+static pseg load_seg(FILE *fd, int seg_num, int text_bytes, int index_bytes)
+{
+   int current_tab;
+
+   current_seg = (pseg) mem_alloc(ZOOM_FACTOR*text_bytes+SIZE_SEG_HDR);
+
+   /* Allocate first chunk of index_reloc */
+   index_reloc = (CPtr *)malloc(NUM_INDEX_BLKS*sizeof(CPtr));
+   if (!index_reloc) {
+     xsb_error("Couldn't allocate index relocation space");
+     return NULL;
+   }
+   num_index_reloc = 1;
+
+   /* alloc space, include 16 bytes header */
+   current_seg++;
+   seg_next(current_seg)  = 0;
+   seg_prev(current_seg)  = last_text;
+   seg_index(current_seg) = 0;
+   seg_size(current_seg)  = text_bytes*ZOOM_FACTOR + SIZE_SEG_HDR;
+   /* fd = file; */
+   if (!load_text(fd, seg_num, text_bytes, &current_tab)) {
+     mem_dealloc((pb)seg_hdr(current_seg), text_bytes+SIZE_SEG_HDR);
+     return NULL;
+   }
+   index_block_chain = &seg_index(current_seg);
+   load_index(fd, index_bytes, current_tab);
+   free(index_reloc);
+   
+   /* set text-index segment chain */
+   if (last_text) seg_next(last_text) = current_seg;
+   last_text = current_seg;
+   return current_seg;
+}
 
 /************************************************************************/
 /*  Routines to check environment consistency.				*/
@@ -130,7 +534,7 @@ void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
 
 /************************************************************************/
 
-static inline Cell read_magic(void)
+static inline Cell read_magic(FILE *fd)
 {
   Cell num;
 
@@ -150,10 +554,9 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   Psc  mod;
 
   get_obj_byte(&t_env);
-#ifdef DEBUG
   /* this simple check can avoid worse situations in case of compiler bugs */
-  if (t_env > T_GLOBAL) xsb_exit("Object file corrupted");
-#endif
+  if (t_env > T_GLOBAL) xsb_exit("Fatal: Object file loaded is corrupted");
+
   get_obj_byte(&t_type);
   get_obj_byte(&t_arity);
   get_obj_byte(&t_len);
@@ -247,7 +650,7 @@ static byte *loader1(FILE *fd, int exp)
   /*	xsb_dbgmsg("symbol table of module %s loaded", name);	*/
   do {
     /*		xsb_dbgmsg("Seg count: %d",seg_count); */
-    if (read_magic() != 0x11121306) break;
+    if (read_magic(fd) != 0x11121306) break;
     seg_count++;
     /*		xsb_dbgmsg("Seg count: %d",seg_count); */
     /* get the header of the segment */
@@ -261,7 +664,7 @@ static byte *loader1(FILE *fd, int exp)
     /*		xsb_dbgmsg("Text Bytes %x %d",text_bytes,text_bytes);*/
     get_obj_word_bb(&index_bytes);
     /* load the text-index segment */
-    seg_first_inst = load_seg(seg_count,text_bytes,index_bytes,fd);
+    seg_first_inst = load_seg(fd,seg_count,text_bytes,index_bytes);
     if (!seg_first_inst) return 0;
     if (seg_count == 1) first_inst = seg_first_inst;
     /* 1st inst of file */
@@ -342,6 +745,7 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 
 byte *loader(char *file, int exp)
 {
+  FILE *fd;	      /* file descriptor */
   Cell magic_num;
   byte *first_inst = NULL;
   char message[240];  /* Allow multiple lines of error reporting.    */
@@ -349,7 +753,7 @@ byte *loader(char *file, int exp)
   fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
   if (!fd) return 0;
   if (flags[HITRACE]) xsb_mesg("\n     ...... loading file %s", file);
-  magic_num = read_magic();
+  magic_num = read_magic(fd);
 
   if (magic_num == 0x11121304) {
 #ifdef CHAT			/* CHAT does not work with old .O files */

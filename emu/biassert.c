@@ -48,7 +48,6 @@
 #include "inst.h"
 #include "token.h"
 #include "loader.h"
-#include "load_seg.h"
 #include "trie_internals.h"
 #include "choice.h"
 #include "xmacro.h"

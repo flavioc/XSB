@@ -56,7 +56,6 @@
 #include "choice.h"
 #include "flags.h"
 #include "loader.h"
-#include "load_seg.h"
 #include "xmacro.h"
 #include "tr_utils.h"
 #include "export.h"
