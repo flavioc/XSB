@@ -36,8 +36,12 @@ flora_prlg(FL_IMPLYOP,2) :- !.
 flora_prlg(FL_IMPLYOP,1) :- !.
 flora_prlg(FL_QUERYOP,1) :- !.
 
+%% Keep these even though they are Flora builtins, because they can occur
+%% under (..)@prolog(), in which case they would be translated as Prolog terms
 flora_prlg(FL_UNIVEQ,2) :- !.
 flora_prlg(FL_UNIVNOTEQ,2) :- !.
+flora_prlg(FL_METAUNIV,2) :- !.
+
 flora_prlg(FL_EQ,2) :- !.
 flora_prlg(FL_NOTEQ,2) :- !.
 flora_prlg(FL_ORDERLT,2) :- !.
@@ -143,7 +147,7 @@ flora_prlgdef(X,Y) :-
 	%%;
 	  %% NOTE: flora_dynprlg exists only because of the way import
 	  %% is handled in foo@prolog(mod). In this case, FLORA inserts
-	  %% a dynamic declaration that foo is a prolog predicate.
+	  %% a dynamic declaration which tells that foo is a Prolog predicate.
 	  flora_dynprlg(X,Y)
 	).
 

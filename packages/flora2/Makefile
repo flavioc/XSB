@@ -80,7 +80,16 @@ STDERR = 2
 HDRMSG = "While compiling XSB/packages/flora2:"
 
 
-all: init $(ALLOBJS) finish
+all: init system misc showerrors finish
+
+core: init system showerrors finish
+
+extra: init misc showerrors finish
+
+showerrors:
+	@cat $(XSBDIR)/build/.flora*.tmp
+
+system: $(ALLOBJS)
 	./CompileChangedFiles.sh $(PROLOG)
 	@cat $(SVFILE)
 	cd closure; $(MAKE)
@@ -89,10 +98,11 @@ all: init $(ALLOBJS) finish
 	cd trailer; $(MAKE)
 	cd lib; $(MAKE)
 	cd debugger; $(MAKE)
+
+misc:
 	cd pkgs; $(MAKE)
 	cd demos; $(MAKE)
 	cd docs; $(MAKE)
-	@cat $(XSBDIR)/build/.flora*.tmp
 
 
 flroperator${OBJEXT} : flroperator.P flroperator.H $(FLORA_TERMS)

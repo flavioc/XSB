@@ -370,9 +370,7 @@ flobject_struct(OBJECT(NUMBER(Num),I),FLNUMBER(Num,I))         :- !.
 flobject_struct(OBJECT(ASCII_STRING(Str),I),FLSTRING(Str,I))   :- !.
 flobject_struct(OBJECT(SPECIAL_TOKEN(Atom),I),FLTOKEN(Atom,I)) :- !.
 
-/*************************************************************
-        support for numbered anon oids
-*************************************************************/
+%%  support for numbered anon oids
 flobject_struct(OBJECT(SPECIAL_TOKEN(Atom,Num),I),FLTOKEN(Atom,Num,I)) :- !.
 
 is_flatom_struct(FLATOM(Atom,_I),Atom).
@@ -394,7 +392,8 @@ flbirelate_struct(Subject,R,Object,FLBIRELATE(Subject,R,Object)).
 
 flobjref_struct(Object,M,Attribute,FLOBJREF(Object,M,Attribute)).
 
-%% Composes Funct with PARSED args to compose a parsed term
+%% Composes PARSED Funct with PARSED args to compose a parsed term
+%% Use flobject_struct/2 to parse Funct
 flterm_struct(Funct,Arity,Args,FLTERM(Funct,Arity,Args)).
 
 flaggregt_struct(Op,Var,GroupVars,Conds,FLAGGREGATE(Op,Var,GroupVars,Conds)).
@@ -1109,6 +1108,7 @@ flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
 
 /****************************************************************************
   flora_flogicstatic_directive(+CanoniTerm,-CodeList,-Status)
+  The FL_FLOGICSTATIC directive is used only in some .fli files
 ****************************************************************************/
 flora_flogicstatic_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
 	get_name(Funct,FL_FLOGICSTATIC),
@@ -1126,6 +1126,7 @@ flora_flogicstatic_directlist([F/A|L],[Code|CL]) :-
 
 /****************************************************************************
   flora_florapatch_directive(+CanoniTerm,-CodeList,-Status)
+  The FL_FLORAPATCH directive is used only in some .fli files
 ****************************************************************************/
 flora_florapatch_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
 	get_name(Funct,FL_FLORAPATCH),
@@ -1606,17 +1607,26 @@ flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Stat
 	parsing_error(If,NO_WORKSPACE,Status).
 
 %% If (_ =.. _)@prolog() then use Prolog =..
-flora_body_metauniv(CanoniTerm,PROLOGMODULE,Code,Status) :-
+flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),PROLOGMODULE,Code,Status) :-
 	!,
-	flora_prlgterm(CanoniTerm,TCode,Status),
-	(Status == [] -> flplib_struct(TCode,Code); true).
+	Args = [LCode,RCode],
+	flora_prlgterm(LCode,LCodeParsed,S1),
+	(S1 == [] -> flora_pathexp(RCode,RCodeParsed,Status)
+	%% failed to parse the first term
+	; Status=S1
+	),
+	%% put together parsed terms using =.. (=Funct)
+	(Status == [] ->
+	    flobject_struct(Funct,FCode),
+	    flterm_struct(FCode,2,[LCodeParsed,RCodeParsed],Code)
+	%% failed to parse the second term
+	; true
+	).
 
 flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Status) :-
 	Args = [LCode,RCode],
 	flora_body(LCode,_LhsWS,LCodeParsed,S1),
-	(S1 == []
-	%%-> flora_body(RCode,NULL,RCodeParsed,Status)
-	-> flora_pathexp(RCode,RCodeParsed,Status)
+	(S1 == [] -> flora_pathexp(RCode,RCodeParsed,Status)
 	%% failed to parse the first term
 	; Status=S1
 	),
@@ -1856,7 +1866,8 @@ flora_name_or_normvar(CanoniTerm,Code) :-
 /****************************************************************************
   flora_prlgterm(+CanoniTerm,-Code,-Status)
 
-  This predicate is called to parse a Prolog predicate. Its arguments are
+  This predicate is called to parse a Prolog predicate or terms.
+  Its arguments can be F-logic molecules and path expressions, so they are
   not parsed as Prolog terms.
 ****************************************************************************/
 flora_prlgterm(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
