@@ -10,7 +10,7 @@ particularily useful for providing application-specific constraints.
 It has been used in many kinds of applications, like scheduling,
 model checking, abduction, type checking and many others.
 
-CHR has previously been implemented in other Prolog systems (Sicstus,
+CHR has previously been implemented in other Prolog systems (SICStus,
 Eclipse, Yap, hProlog), Haskell and Java. The XSB CHR system is based on
 the hProlog CHR system.
 
@@ -89,24 +89,39 @@ Additional syntax-related terminology:
 %--------------------
 
 In this subsection the operational semantics of CHR in XSB are presented
-informally. They do not essentially differ from other CHR systems.
+informally. They do not differ essentially from other CHR systems.
 
-When a constraint is called in an XSB program, the CHR system will go through
-the rules from top to bottom in the order they are written, to see which
-rules apply to that constraint and to execute them. Once the constraint is
-removed, no more rules are tried. If all the rules have been tried and the
-constraint has not been removed, the constraint becomes suspended.
+When a constraint is called, it is considered an active constraint and
+the system will try to apply the rules to it. Rules are tried and executed
+sequentially in the order they are written. 
 
-A rule is applicable to a certain constraint, the active constraint, if
-other suspended constraints can be found (passive constraints) such that:
-\begin{itemize}
-\item the active and passive constraints together match the head of the rule
-\item the guard of the rule (if any) succeeds without binding any variables in the head
-\end{itemize}
+A rule is conceptually tried for an active constraint in the following
+way. The active constraint is matched with a constraint in the head of the
+rule. If more constraints appear in the head they are looked for among the
+suspended constraints who are called passive constraints in this context. If
+the necessary passive constraints can be found and all match with the head of
+the rule and the gaurd of the rule succeeds, then the rule is committed and
+the body of the rule executed.  If not all the necessary passive constraint
+can be found, the matching fails or the guard fails, then the body is not
+executed and the process of trying and executing simply continues. If for
+a rule, there are multiple constraints in the head, the active constraint
+will try the rule sequentially as many times, each time trying to match with
+another constraint.
+
+This process either ends when the active constraint disappears, i.e. it is
+removed by some rule, or after the last rule has been processed. In the latter
+case the active constraint becomes suspended.
+
+A suspended constraint is eligible as a passive constraint for an active
+constraint. The other way it may interact again with the rules, is when
+a variable appearing in the constraint becomes bound to either a nonvariable
+or another variable involved in one or more constraints. In that case the
+constraint is triggered, i.e. just like an active constraint all the rules
+are tried.
 
 \paragraph{Rule Types}
 %- - - - - - - - - - 
-The semantics of the three types of rules are:
+There are three different kinds of rules, each with their specific semantics:
 \begin{itemize}
 \item \texttt{simplification:}
 
@@ -150,29 +165,64 @@ CHR rules are written in a .chr file. They should be preceded by a declaration o
 \begin{verbatim}
 :- constraints ConstraintSpec1, ConstraintSpec2, ...
 \end{verbatim}
-where each \texttt{ConstraintSpec} is a functor$\slash$arity pair. Ordinary code
+where each \texttt{ConstraintSpec} is a functor description of the form name$\slash$arity pair. Ordinary code
 may be freely written between the CHR rules.
 
 The CHR constraints defined in a particulary .chr file are associated
-with a module. The module can have any atom value. The default module is
+with a CHR module. The CHR module name can be any atom. The default module is
 \texttt{user}. A different module name can be declared as follows:
 \begin{verbatim}
 :- chr_module(modulename).
 \end{verbatim}
-A program should never consist of different .chr files that have the same
-CHR module associated to them.
+One should never load different files with the same CHR module name.
 
 \subsection{Compilation}
 
-A .chr file containing CHR rules should be run through the CHR pre-processor
-to generate a .P file contraining pure XSB code. This .P file can then be
+A \texttt{.chr} file containing CHR rules should be run through the CHR pre-processor
+to generate a \texttt{.P} file contraining pure XSB code. This \texttt{.P} file can then be
 loaded in the XSB emulator and used normally.
+
+For this purpose the \texttt{bin} directory of the XSB installation contains
+the \texttt{chr\_pp} script. The example below shows how to run it on a
+\texttt{.chr} file to create the corresponding \texttt{.P} file.
+
+\begin{verbatim}
+$ chr_pp leq.chr
+[xsb_configuration loaded]
+[sysinitrc loaded]
+[packaging loaded]
+
+XSB Version 2.6-b1 (Verboden Vrucht) of October 2, 2003
+[i686-pc-linux-gnu; mode: optimal; engine: slg-wam; gc: indirection; scheduling: local]
+
+| ?- [chr_pp loaded]
+
+yes
+| ?- start of CHR compilation
+ * loading file leq.chr...
+   finished loading file leq.chr
+ * CHR compiling leq.chr...
+   finished CHR compiling leq.chr
+ * writing file leq.P...
+   finished writing file leq.P
+end of CHR compilation
+
+yes
+| ?-
+End XSB (cputime 0.03 secs, elapsetime 0.05 secs)
+\end{verbatim}
+
+\paragraph{Note}
+
+When loading a \texttt{.P} file generated by the preprocessor, many singleton
+warnings may be issued.
+
 
 \section{Useful Predicates} \label{predicates}
 %=========================
 
-The \texttt{chr} module contains several useful predicates that allow you to
-inspect and print the content of the constraint store.
+The \texttt{chr} module contains several useful predicates that allow
+inspecting and printing the content of the constraint store.
 
 \begin{description}
 \ournewitem{show\_store(+Mod)}{chr}\index{\texttt{show\_store/1}}
@@ -245,15 +295,15 @@ this XSB release.
 
 The advantage of CHR in XSB over other Prolog systems, is that CHR can be
 combined with tabling. Hence part of the constraint solving can be performed
-once and reused many times. This has already shown to be useful for application
+once and reused many times. This has already shown to be useful for applications
 of model checking with constraints.
 
 However the use of CHR constraints is slightly more complicated for tabled
 predicates.  In this section it is covered how exactly to write a tabled
-predicate that has one or more arguments with constraints on them. In the
-current release the CHR-related parts of the tabled predicates have to be
-written by hand. In a future release this may be substituted by an automatic
-transformation.
+predicate that has one or more arguments that also appear as arguments in
+suspended constraints. In the current release the CHR-related parts of the
+tabled predicates have to be written by hand. In a future release this may
+be substituted by an automatic transformation.
 
 \subsection{General Issues and Principles}
 %----------------------------------------
@@ -418,7 +468,7 @@ stores.
 Another case where this is useful is when optimization is desired. If the
 answer to a predicate represents a valid solution, but an optimal solution
 is desired, the answer should be represented as constraints on arguments.
-By combining the answer constraits, only the most constrained, or optimal,
+By combining the answer constraints, only the most constrained, or optimal,
 answer is kept.
 
 \paragraph{Example} 
@@ -494,9 +544,9 @@ orig_path(X,Y,C) :- path(X,Z,C2), edge(Z,Y,C1), plus(C1,C2,C0), geq(C,C0).
 
 edge(a,b,1).
 edge(b,a,1).
-%edge(b,c,1).
-%edge(a,c,3).
-%edge(c,a,1).
+edge(b,c,1).
+edge(a,c,3).
+edge(c,a,1).
 \end{verbatim}
 \end{small}
 
