@@ -38,7 +38,7 @@
 :- import hide_this_show/2 from usermod.
 :- import slash/1 from machine.
 :- import trie_assert/1 from tables.
-:- import conget/2 from prof_sbp.
+:- import conget/2 from gensym.
 :- dynamic hide_this_show(_,_).
 
 :- export bootstrap_flora/0, flora_shell/0.

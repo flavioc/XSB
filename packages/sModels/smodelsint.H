@@ -10,7 +10,7 @@
 :- export pstable_model/3.
 :- export set_query_true/1.
 
-:- import conset/2,coninc/1,conget/2 from prof_sbp.
+:- import conset/2,coninc/1,conget/2 from gensym.
 :- import new_trie/1, delete_trie/1, trie_intern/5 from intern.
 :- import trie_interned/4 from intern.
 :- import file_write/2 from xsb_writ.
