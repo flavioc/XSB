@@ -12,80 +12,6 @@
 /****************************************************************************
   utilities
  ****************************************************************************/
-is_prrule(PRRULE(Head,Body),Head,Body).
-
-is_prdirective(PRDIRECTIVE(Direct),Direct).
-is_prtable(PRTABLE(P,A),P,A).
-is_prhilogtable(PRHILOGTABLE(A),A).
-
-is_prthismodule(PRTHISMODULE(PRTHISMODULE)).
-is_prthisstorage(PRTHISSTORAGE(PRTHISSTORAGE)).
-
-%% with textual information
-is_pratom(PRATOM(Atom,I),Atom,I).
-is_prnumber(PRNUMBER(Number,I),Number,I).
-is_prvariable(PRVARIABLE(Name,I),Name,I).
-is_prstring(PRSTRING(String,I),String,I).
-is_prlist(PRLIST(L,T,I),L,T,I).
-is_prstorage(PRSTORAGE(PRATOM(WS,I)),WS,I).
-
-%% with textual information
-is_skolem(PRFDSKOLEM(Obj,Att,I),WRAP_FDSKOLEM,2,[Obj,Att],I) :- !.
-is_skolem(PRIFDSKOLEM(Obj,Att,I),WRAP_IFDSKOLEM,2,[Obj,Att],I) :- !.
-
-is_prterm(PRTERM(FObj,N,ObjList),FObj,N,ObjList).
-
-is_goallogic(PRAND(Goal1,Goal2),',',2,[Goal1,Goal2]) :- !.
-is_goallogic(PROR(Goal1,Goal2),';',2,[Goal1,Goal2]) :- !.
-is_goallogic(PRNOT(Goal),'not',1,[Goal]) :- !.
-is_goallogic(PRTNOT(Goal),'sk_not',1,[Goal]) :- !.
-
-%% with textual information
-is_goallogic(PRCUT(I),'!',0,[],I) :- !.
-
-is_prcall(PRCALL(Var),Var) :- !.
-
-%% with textual information
-is_pratomlit(PRATOMLIT(A,I),A,I).
-
-is_prtermlit(PRTERMLIT(FObj,N,ObjList),FObj,N,ObjList).
-is_prworkspace(PRWORKSPACE(P,WS),P,WS).
-
-%% with textual information
-is_florasyslib(FLORASYSLIB(I,F,N,Args),F,N,Args,I).
-
-is_prologterm(PROLOGTERM(F,N,Args),F,N,Args).
-is_prologliblit(PROLOGLIBLIT(PROLOGTERM(F,N,Args)),F,N,Args).
-
-is_prnewpred(PRNEWPRED(Name,N,Vars),Name,N,Vars).
-
-%% with textual information
-is_prnewoid(PRNEWOID(Oid,I),Oid,I).
-
-is_flogic(PRISA(Obj1,Obj2),WRAP_ISA,2,[Obj1,Obj2]) :- !.
-is_flogic(PRSUB(Obj1,Obj2),WRAP_SUB,2,[Obj1,Obj2]) :- !.
-is_flogic(PRMETH(Obj,Meth),WRAP_METH,2,[Obj,Meth]) :- !.
-is_flogic(PRIMETH(Obj,IMeth),WRAP_IMETH,2,[Obj,IMeth]) :- !.
-is_flogic(PRFD(Obj,Att,Val),WRAP_FD,3,[Obj,Att,Val]) :- !.
-is_flogic(PRIFD(Obj,Att,Val),WRAP_IFD,3,[Obj,Att,Val]) :- !.
-is_flogic(PRFDSIG(Obj,Att,Val),WRAP_FDSIG,3,[Obj,Att,Val]) :- !.
-is_flogic(PRMVDSIG(Obj,Att,Val),WRAP_MVDSIG,3,[Obj,Att,Val]) :- !.
-is_flogic(PRIFDSIG(Obj,Att,Val),WRAP_IFDSIG,3,[Obj,Att,Val]) :- !.
-is_flogic(PRIMVDSIG(Obj,Att,Val),WRAP_IMVDSIG,3,[Obj,Att,Val]) :- !.
-is_flogic(PRMVD(Obj,Att,Val),WRAP_MVD,3,[Obj,Att,Val]) :- !.
-is_flogic(PRIMVD(Obj,Att,Val),WRAP_IMVD,3,[Obj,Att,Val]) :- !.
-is_flogic(PRMVDINC(Obj,Att,Val),WRAP_MVDINC,3,[Obj,Att,Val]) :- !.
-is_flogic(PRIMVDINC(Obj,Att,Val),WRAP_IMVDINC,3,[Obj,Att,Val]) :- !.
-is_flogic(PRMVDTOLIST(Obj,Att,Val),WRAP_MVDTOLIST,3,[Obj,Att,Val]) :- !.
-is_flogic(PRIMVDTOLIST(Obj,Att,Val),WRAP_IMVDTOLIST,3,[Obj,Att,Val]) :- !.
-is_flogic(PREXISTS(Obj),WRAP_EXISTS,1,[Obj]) :- !.
-is_flogic(PRFDDEF(Obj,Att),WRAP_FDDEF,2,[Obj,Att]) :- !.
-is_flogic(PRIFDDEF(Obj,Att),WRAP_IFDDEF,2,[Obj,Att]) :- !.
-is_flogic(PRMVDDEF(Obj,Att),WRAP_MVDDEF,2,[Obj,Att]) :- !.
-is_flogic(PRIMVDDEF(Obj,Att),WRAP_IMVDDEF,2,[Obj,Att]) :- !.
-is_flogic(PRTRAN(Obj,Tran),WRAP_TRAN,2,[Obj,Tran]) :- !.
-is_flogic(PROBJEQL(O1,O2),WRAP_OBJEQL,2,[O1,O2]) :- !.
-
 default_tabled(WRAP_ISA,2).
 default_tabled(WRAP_SUB,2).
 default_tabled(WRAP_FD,3).
@@ -133,20 +59,6 @@ dboperation(FLLIBERASEALL,2).
 dboperation(FLLIBBTERASE,2).
 dboperation(FLLIBBTERASEALL,2).
 
-is_fllibdb(FLLIBINSERT) :- !.
-is_fllibdb(FLLIBINSERTALL) :- !.
-is_fllibdb(FLLIBDELETE) :- !.
-is_fllibdb(FLLIBDELETEALL) :- !.
-is_fllibdb(FLLIBERASE) :- !.
-is_fllibdb(FLLIBERASEALL) :- !.
-
-is_fllibdb(FLLIBBTINSERT) :- !.
-is_fllibdb(FLLIBBTINSERTALL) :- !.
-is_fllibdb(FLLIBBTDELETE) :- !.
-is_fllibdb(FLLIBBTDELETEALL) :- !.
-is_fllibdb(FLLIBBTERASE) :- !.
-is_fllibdb(FLLIBBTERASEALL) :- !.
-
 is_upd(FLLIBINSERT(List,Condition),insert,List,Condition) :- !.
 is_upd(FLLIBBTINSERT(List,Condition),btinsert,List,Condition) :- !.
 is_upd(FLLIBDELETE(List,Condition),delete,List,Condition) :- !.
@@ -184,6 +96,9 @@ is_agg(FLLIBCOLLECTSET(Var,Group,Cond,Result),collectset,Var,Group,Cond,Result)
 	:- !.
 is_agg(FLLIBCOLLECTBAG(Var,Group,Cond,Result),collectbag,Var,Group,Cond,Result)
 	:- !.
+
+is_if_then(FLLIBIFTHEN(If,Then),If,Then).
+is_if_then_else(FLLIBIFTHENELSE(If,Then,Else),If,Then,Else).
 
 /****************************************************************************
   cut_off(+Term_before_cutoff,-Term_after_cutoff)
@@ -257,7 +172,6 @@ param_depth([H|T],N) :-
   instantiations of Sk1 and Sk2, respectively
  ****************************************************************************/
 depend(Sk1,Sk2,T1,T2,Opt) :-
-	check_for_rule_generating,
 	retractall(dependency(_,_,_,_)),
 	depend(Sk1,Sk2),
 	dependency((T1,_IT1),(T2,_IT2),anu(A,N,U),_),
@@ -274,20 +188,6 @@ depend(Sk1,Sk2,T1,T2,Opt) :-
   instantiations
  ****************************************************************************/
 depend(Sk1,Sk2,Opt) :- depend(Sk1,Sk2,_IT1,_IT2,Opt).
-
-
-/****************************************************************************
-  check_for_rule_generating
-  check whether generate_rules has been called
- ****************************************************************************/
-check_for_rule_generating :-
-	conget(generated,N),
-        ( N=1 ->
-            true
-        ;
-            writeln('Please call generate_rules(+CodeList) first'),
-            fail
-        ).
 
 /****************************************************************************
   depend(+Sk1,+Sk2)
@@ -407,7 +307,6 @@ same_rule(IT,(H,IH),B,anu(A,N,U)) :-
  ****************************************************************************/
 generate_rules([]) :- !.
 generate_rules(CodeList) :-
-	conset(generated,1),
 	retractall(rule(_,_,_)),
 	parse_codelist(CodeList).
 
@@ -486,6 +385,21 @@ assert_rule(HeadCode,BodyCode,(BCI,Index),anu(_,N,U)) :-
 	assert(rule(HeadCode,(BodyCode,(BCI,Index)),anu(a,N,U))),
 	assert_rule(HeadCode,Condition,ConditionI,anu(a,N,U)).
 
+assert_rule(HeadCode,BodyCode,(BCI,_I),anu(_,N,U)) :-
+	is_if_then(BodyCode,If,Then),
+	!,
+	BCI =.. [_Control,IfI,ThenI],
+	assert_rule(HeadCode,If,IfI,anu(a,N,U)),
+	assert_rule(HeadCode,Then,ThenI,anu(a,N,U)).
+
+assert_rule(HeadCode,BodyCode,(BCI,_I),anu(_,N,U)) :-
+	is_if_then_else(BodyCode,If,Then,Else),
+	!,
+	BCI =.. [_Control,IfI,ThenI,ElseI],
+	assert_rule(HeadCode,If,IfI,anu(a,N,U)),
+	assert_rule(HeadCode,Then,ThenI,anu(a,N,U)),
+	assert_rule(HeadCode,Else,ElseI,anu(a,N,U)).
+
 assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,N,U)) :-
 	BodyCode = flsysdbupdate(NewBody,_),
 	!,
@@ -562,18 +476,6 @@ build_struct(Term,VarList,Code,(CodeInd,Index)) :-
 
 build_struct(Term,VarList,Code,(CodeInd,NO_INDEX)) :-
 	is_goallogic(Term,F,N,Args),
-	!,
-	( N == 0 ->
-	    Code=F,
-	    CodeInd=F
-	;
-	  build_structlist(Args,VarList,ACode,ACodeInd),
-	  Code =.. [F|ACode],
-	  CodeInd =.. [F|ACodeInd]
-        ).
-
-build_struct(Term,VarList,Code,(CodeInd,Index)) :-
-	is_goallogic(Term,F,N,Args,Index),
 	!,
 	( N == 0 ->
 	    Code=F,
@@ -1264,11 +1166,11 @@ rebuild_text_list([H|L],[IndH|IndL],Text) :-
  generate_warnings(-WarnList)
  ****************************************************************************/
 generate_warnings(WarnList) :-
-	findall((HInd1,WarnMsg),warning_seen(HInd1,_,_,WarnMsg),WL),
+	findall((HInd1,BInd,WarnMsg),warning_seen(HInd1,_,BInd,WarnMsg),WL),
 	sort(WL, SortedWL),
 	append_warnings(SortedWL,WarnList).
 
 append_warnings([],[]) :- !.
-append_warnings([(_HInd,WarnMsg)|T],WarnList) :-
+append_warnings([(_HInd,_BInd,WarnMsg)|T],WarnList) :-
 	append_warnings(T,InterWarnList),
 	append([warning(WarnMsg)],InterWarnList,WarnList).

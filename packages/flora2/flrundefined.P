@@ -29,18 +29,6 @@
 
 #include "flora_terms.flh"
 
-/****************************************************************************
-  utilities
-****************************************************************************/
-is_prrule(PRRULE(Head,Body),Head,Body).
-is_prfact(PRFACT(Head),Head).
-is_pratom(PRATOM(Atom,_I),Atom).
-is_prvariable(PRVARIABLE(Name,_I),Name).
-is_prterm(PRTERM(FObj,N,ObjList),FObj,N,ObjList).
-is_pratomlit(PRATOMLIT(A,_I),A).
-is_prtermlit(PRTERMLIT(FObj,N,ObjList),FObj,N,ObjList).
-
-
 /***********************************************************************
  * flora_debug_code(+CompileList)
  * Generate facts that will be loaded into fld storage
@@ -120,18 +108,18 @@ flora_build_debug_inter_code(Term) :-
  * and rule heads
  ***********************************************************/
 flora_build_debug_skeleton(Term,Term) :-
-	is_pratom(Term,_Atom),
+	is_pratom(Term,_Atom,_Index),
 	!.
 
 flora_build_debug_skeleton(Term,NewVar) :-
-	is_prvariable(Term, _Name),
+	is_prvariable(Term, _Name, _Index),
 	!,
 	flora_build_variable(NewVar).
 
 flora_build_debug_skeleton(Term,PRTERM(FCode,N,ObjListCode)) :-
 	is_prterm(Term, FObj, N, _ObjList),
 	!,
-	( is_pratom(FObj, FAtom), flora_prlgdef(FAtom,N) ->
+	( is_pratom(FObj, FAtom, _Index), flora_prlgdef(FAtom,N) ->
 	    fail
 	;
 	    flora_build_debug_skeleton(FObj, FCode),
@@ -139,7 +127,7 @@ flora_build_debug_skeleton(Term,PRTERM(FCode,N,ObjListCode)) :-
 	).
 
 flora_build_debug_skeleton(Term,Term) :-
-        is_pratomlit(Term, A),
+        is_pratomlit(Term, A, _Index),
 	!,
 	( flora_prlgdef(A,0) ->
 	   fail
@@ -150,7 +138,7 @@ flora_build_debug_skeleton(Term,Term) :-
 flora_build_debug_skeleton(Term, PRTERMLIT(FCode,N,ObjListCode)) :-
 	is_prtermlit(Term, FObj, N, _ObjList),
 	!,
-	( is_pratom(FObj,FAtom),
+	( is_pratom(FObj,FAtom,_Index),
 	  flora_prlgdef(FAtom, N) ->
 	    fail
 	;

@@ -35,7 +35,16 @@
 
 :- import flora_prlgdef/2 from flrprolog.
 
-:- import flora_extern_code/2 from flrcoder.
+:- import
+	flora_extern_code/2,
+	is_prrule/3,
+	is_prfact/2,
+	is_pratom/3,
+	is_prvariable/3,
+	is_prterm/4,
+	is_pratomlit/3,
+	is_prtermlit/4
+   from flrcoder.
 
 :- import flora_decode_predicate/6 from flrwrapper.
 

@@ -1,4 +1,4 @@
-/* File:      flrstorage.flr
+/* File:      flrsystem.flr
 **
 ** Author(s): Michael Kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -109,18 +109,22 @@ debug[#check_undefined(_Flag,Module)] :-
 	( var(Module)@prolog(),
 	    %% Note: this abort defined in this module
 	    abort(('Invalid module name in #check_undefined: ', Module))
-	; (Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
-	  (not(flora_module_registry(Mname)@prolog()))@prolog(),
-	  %% Note: this abort defined in this module
-	  abort(('Unloaded module name in #check_undefined: ', Module))
-	),
-	!,
-	fail.
+	; Module\=flora(_),
+	    (not(flora_module_registry(Module)@prolog()))@prolog(),
+	    %% Note: this abort defined in this module
+	    abort(('Unloaded module name in #check_undefined: ', Module))
+	).
 
 debug[#check_undefined(Flag,Module)] :-
 	var(Flag)@prolog(),
-	(Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
 	!,
+	( Module=flora(SysModId), 
+	    Mname=..[flora,SysModId],
+	    (flora_module_registry(Mname)@prolog(), !;
+	    flora_load_system_module_internal(SysModId)@prolog(flrutils))
+	; Module\=flora(_),
+	    Mname=Module
+	),
 	( flora_debug_module_registry(Mname)@prolog(), 
 	    Flag=on,
 	    !
@@ -129,14 +133,26 @@ debug[#check_undefined(Flag,Module)] :-
 	).
 	 
 debug[#check_undefined(on,Module)] :-
-	(Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
 	!,
+	( Module=flora(SysModId), 
+	    Mname=..[flora,SysModId],
+	    (flora_module_registry(Mname)@prolog(), !;
+	    flora_load_system_module_internal(SysModId)@prolog(flrutils))
+	; Module\=flora(_),
+	    Mname=Module
+	),
 	(flora_debug_module_registry(Mname)@prolog(),!;
 	turn_on_debug(Mname)).
 	
 debug[#check_undefined(off,Module)] :-
-	(Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
 	!,
+	( Module=flora(SysModId), 
+	    Mname=..[flora,SysModId],
+	    (flora_module_registry(Mname)@prolog(), !;
+	    flora_load_system_module_internal(SysModId)@prolog(flrutils))
+	; Module\=flora(_),
+	    Mname=Module
+	),
 	((not(flora_debug_module_registry(Mname)@prolog()))@prolog(),!;
 	turn_off_debug(Mname)).
 

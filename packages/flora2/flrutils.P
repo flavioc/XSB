@@ -60,7 +60,7 @@ flora_compile_internal(File) :-
 
 /******************************************************************************
   flora_compile_internal(+File,+Workspace)
-  The .O file is renamed using the module name
+  The OBJ file is renamed using the module name
 ******************************************************************************/
 flora_compile_internal(File,Workspace) :-
 	flora_check_filename(File),
@@ -95,7 +95,7 @@ flora_load_module_internal(InFile,Workspace) :-
 
 /**********************************************************************
   flora_load_module_internal(+File)
-  File may be a FLORA file, .P file, or .O file.
+  File may be a FLORA file, Prolog file, or OBJ file.
 **********************************************************************/
 flora_load_module_internal(InFile) :-
 	flora_check_filename(InFile),

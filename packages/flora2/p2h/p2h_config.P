@@ -26,6 +26,10 @@
 %% Loading p2h_config.P ensures that the module prolog2hilog is compiled 
 %% and loaded.
 
+:- compiler_options([xpp_on]).
+#include "loader_defs.h"
+
+
 :- import slash/1 from machine.
 :- import fmt_write_string/3, path_sysop/3 from file_io.
 :- import search_module/6 from consult.
@@ -39,7 +43,7 @@ is_cygwin :- xsb_configuration(architecture,A), str_sub(cygwin,A).
     Basename = prolog2hilog,
     fmt_write_string(Module,
 		     '%s%sp2h%s%s', f(FloraDir, Slash, Slash,Basename)),
-    (   %% avoid recompilation: check if prolog2hilog.O exists and 
+    (   %% avoid recompilation: check if prolog2hilog.OBJ exists and 
 	%% is newer than prolog2hilog.c.
 	search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
 	str_cat(Module, '.c', ModuleSourceFile),
@@ -50,10 +54,12 @@ is_cygwin :- xsb_configuration(architecture,A), str_sub(cygwin,A).
     %% If Module isn't compiled or is old --- recompile
     ;   xsb_configuration(compiler, CC),
 	xsb_configuration(config_libdir, ConfigLibdir),
-	str_cat(Module, '.O', Objfile),
+	str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
 	consult(Module, [cc(CC), cc_opts(' ')]),
 	fmt_write_string(LibObjFile,
-			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
+			 '%s%s%s%s',
+			 args(ConfigLibdir,Slash,Basename,
+			      XSB_OBJ_EXTENSION_ATOM)),
 	path_sysop(rename,Objfile, LibObjFile),
 	((windows_os; is_cygwin), !
 	;

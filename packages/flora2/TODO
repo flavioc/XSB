@@ -229,24 +229,26 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
     by the operators if/then/else, it would rearrange it to fix the
     associativity.
 
-9. Add the contraints syntax {...}.
+9. Add while-do, unless-do and do-until to the parser.
+
+10. Add the contraints syntax {...}.
 
 
-DONE 10. Implement convenient versions of I/O predicates and others, such as
+DONE 11. Implement convenient versions of I/O predicates and others, such as
     new_oid(X). This module should be automatically loaded into the module
     "flora(sys)".
 
-11. Add the symbol _@, which will be handled by the tokenizer and passed
+12. Add the symbol _@, which will be handled by the tokenizer and passed
     along to the compiler so it would insert code to replace _@ with the
     preprocessor constant FLORA_MODULE.
     When compiling, the macro definition
     #define FLORA_MODULE  .....
     would be dumped into the .P file
 
-DONE 12. Do dependency checking in the compiler to determine if a tabled
+DONE 13. Do dependency checking in the compiler to determine if a tabled
     predicate or an F-molecule depends on an update predicate.
 
-13. Do smart reordering of arithmetic operations in rule bodies to minimize
+14. Do smart reordering of arithmetic operations in rule bodies to minimize
     the possibility of errors due to unbound variables.
     Do variable analysis in delete{...}/insert{...}
     to avoid errors like in demo/aggregate.flr
@@ -259,10 +261,10 @@ DONE 12. Do dependency checking in the compiler to determine if a tabled
         Input: term (which includes , and ;)
 	       A set of declarations like binding(op,Arity,[+,-])
 
-14. Figure out some workaround for the tabled stuff that depends on
+15. Figure out some workaround for the tabled stuff that depends on
     dynamically asserted and deleted facts.
 
-15. Implement the :- database directive, which will direct the compiler to
+16. Implement the :- database directive, which will direct the compiler to
     not include the patch rules and to disallow real rules (as opposed to
     just facts in the file).
     In conjunction with this, do the following in the parser:
@@ -278,35 +280,88 @@ DONE 12. Do dependency checking in the compiler to determine if a tabled
 	  The compiler should check this flag to decide whether to dump the
 	  patch rules and for deciding on the error checking.
 
-16. Provide primitives
+17. Provide primitives
     :- firstorder foo/1 in modname.
     :- hilog moo/2 in modname.
-    (For symmetry, let us also have :- hilog moo/2. without the module.
-    All this is supposed to do is to check if there is a conflicting
-    declaration.)
+    For symmetry, let us also have :- hilog moo/2. without the module.
+
+    This is supposed to solve two problems: 
+      a. to check for declaration mismatch at the module loading time as
+	  opposed to run time. 
+      b. to elimitate the limitation that if a symbol p is declared as
+      	 firstorder in module foo and module bar calls p(...)@foo, then p
+      	 must also be declared as firstorder in bar.
 
     This will direct the compiler to make the right translation for things like
 
     ..., foo(X)@modname,...
     ..., moo(X,Y)@modname,...
 
-    Also, the coder must dump apropriate code to preserve these
+    Also, the coder must dump apropriate registry records for these
     declarations in the .P file. The result would be that these
     declarations will be global to the Flora runtime environment.
     Each declaration will specify whether a particular predicate symbol is
     supposed to be first order or hilog in some particular module.
-    When the shell runs, it would know how to translate predicate literals
-    that are entered on command line.
 
-    The global declarations should be something like:
+    Declarations can come from explicit statements like
+    :- firstorder foo/1 in modname.
+    :- hilog moo/2 in modname.
+    :- firstorder foo/1.
+    :- hilog moo/2.
 
-    FLORA_PREFIX'decl(symbol,firstorder/hilog,ownermodule,consumercount)
+    or implicitly. A registry record is inserted whenever there is one of
+    the above explicit declarations or when a module has a call p(...)@foo.
+    (We won't be trying to catch anything like X(...)@foo, because it is
+    not clear what to catch there).
 
-    When a new module is loaded, we should check if there are conflicts.
-    (A conflict can be complex and involve default definitions, etc.)
-    We should decide if we will allow a module to redefine the
-    declarations it owns when the module is reloaded. But if we do allow
-    this, this can be done only if there are no consumers for the symbol.
+    The global registry contains declarations like these:
+
+    FLORA_PREFIX'symbol_declaration(
+         symbol,for-which-module,who-declared,firstorder/hilog)
+
+    When a new module is loaded, we should check if there are conflicts,
+    i.e., if the registry records it has conflict with the records that are
+    already in the registry. A conflict can be explicit or implicit.
+    Explicit conflict is of the form
+
+      FLORA_PREFIX'symbol_declaration(p,foo,_,hilog)
+      FLORA_PREFIX'symbol_declaration(p,foo,_,firstorder)
+
+    Implicit conflict arises when we load module foo, which has no
+    declarations for p (so it is hilog), and the registry already has
+
+      FLORA_PREFIX'symbol_declaration(p,foo,_,firstorder)
+
+    Implicit conflict also arises when a module, foo, is loaded, doesn't
+    have declarations for a symbol, p (so it is hilog), and another module,
+    bar, is loaded later and has a declaration :- firstorder p in foo.
+
+    Also, when a module, foo, is reloaded (i.e., another program is loaded into
+    that module), we should first wipe out the declarations inserted by the
+    previous version of that module, i.e., we should wipe out
+
+       FLORA_PREFIX'symbol_declaration(_,_,foo,_)
+
+    We should also use the registry in order to decide how to translate
+    symbols in the FLORA shell. If the registry has no record of the form
+
+       FLORA_PREFIX'symbol_declaration(p,main,_,_)
+
+    then p is hilog. If there is a record
+
+       FLORA_PREFIX'symbol_declaration(p,main,_,firstorder)
+
+    then it is firstorder. Such a record can be introduced by either main
+    itself or by some other module.
+
+    Another issue is what to do with subgals like
+
+     ?- ..., literal@X, ...
+
+    Do we need to do anything special? An undefinedness error will be
+    issued at run time. Checking the registry isn't going to improve error
+    checking, because we can do the checking only at run time, not at the
+    module loading time.
     
 17. Add a call(X) meta predicate.
     The main point right now is that
@@ -329,14 +384,14 @@ DONE 12. Do dependency checking in the compiler to determine if a tabled
     Also, call(p) should convert to call(apply(p)), because Flora treats
     propositional constants like p as p().
 
-18. Implement support for the full directive :- index/2
+19. Implement support for the full directive :- index/2
     (right now it only allows trie indexing)
 
-19. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
+20. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
 
-20. Allow inheritance of procedural methods: a[*#p(...)].
+21. Allow inheritance of procedural methods: a[*#p(...)].
 
-21.  Right now Flora compiler collects XSB compiler options
+22.  Right now Flora compiler collects XSB compiler options
      listed in flora_is_command_directive/1 in flrparser.P
      and then dumps them in the program as :- option.
      First, this is incorrect syntax. Should be dumping as
@@ -349,10 +404,10 @@ DONE 12. Do dependency checking in the compiler to determine if a tabled
      specified ones (plus xpp_on). Then the coder would dump
      :- compiler_options([option,option,...]) into the .P file.
 
-22.  Make the compiler dump the original source in comments right
+23.  Make the compiler dump the original source in comments right
      in front of the translated code block.
 
-DONE 23.  Implement a richer anonymous oid syntax.
+DONE 24.  Implement a richer anonymous oid syntax.
      In addition to _#, allow _#1, _#2, etc. Tokenizer needs to be updated
      to allow that.
      
@@ -380,5 +435,5 @@ DONE 23.  Implement a richer anonymous oid syntax.
      the form ruleoid(_,1) and issue an error if there are.  The ruleoid/2
      relation is reset by the compiler at the beginning of each new rule.
 
-!24. Make @prolog() have scope like any other @module, including overriding
+25. Make @prolog() have scope like any other @module, including overriding
     by declarations in the subscope, etc.
