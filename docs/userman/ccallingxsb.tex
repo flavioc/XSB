@@ -233,83 +233,19 @@ calling {\tt xsb\_close\_query} to close it.
 \ouritem{int xsb\_close()} \index{{\tt xsb\_close}}
 This routine closes the entire connection to \ourprolog .  After this,
 no more calls can be made (including calls to {\tt xsb\_init}.)
-
 \end{description}
 
-\section{Creating the Executable C Program}
+\section{Passing Data into an XSB Module}
 
-To create an executable that includes calls to the above C functions,
-these routines, and the \ourprolog\ routines that they call, must be
-included in the link ({\tt ld}) step.
+The previous chapter described the low-level XSB/C interface that supports
+passing the data of arbitrary complexity between XSB and C. However, in
+cases when data needs to be passed into an executable XSB module by the
+main C program, the following higher-level interface should suffice.  (This
+interface is actually implemented using macros that call the lower level
+functions.)  These routines can be used to construct commands and queries
+into \ourprolog 's register 1, which is necessary before calling {\tt
+  xsb\_query()} or {\tt xsb\_command()}.
 
-\paragraph{Unix instructions:}
-First, you must create a relocatable file, named {\tt xsb.o}, that
-contains all the \ourprolog\ routines.  To do this, get into the
-{\tt XSB/build} subdirectory, and execute:
-%%
-\begin{verbatim}
-    % makexsb module
-\end{verbatim}
-%%
-This will place the relocatable file in:
-%%
-\begin{verbatim}
- $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o  
-\end{verbatim}
-%%$
-
-Second, you must compile your C program, which includes a main
-procedure.  You should include the file {\tt cinterf.h} located in the
-{\tt XSB/emu} subdirectory, which defines the routines described here
-that you will need to use.
-
-Third, to create your executable, after you have created the object
-file, say {\tt ruleproc.o}, for your C routine, you could execute:
-\begin{verbatim}
-    % gcc -o ruleproc ruleproc.o $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o
-\end{verbatim}
-
-The file {\tt \$XSB\_DIR/config/your-system-architecture/modMakefile} is a
-makefile you can use to build your programs and link them with XSB.  It is
-generated automatically and contains all the right settings for your
-architecture, but you will have to fill in the name of your program, etc.
-
-There are simple examples of C programs calling \ourprolog\ in the
-{\tt \$XSB\_DIR/examples/c\_calling\_XSB} directory, in files {\tt cmain.c},
-{\tt ctest.P}, {\tt cmain2.c}.
-
-\paragraph{Windows instructions:}
-To call XSB from C, you must build it as a DLL. To do this, you specify
-DLL=''yes'' on command line. {\it E.g.}, 
-%%
-\begin{quote}
- {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="release" DLL="yes"  }
-\end{quote}
-%%
-The DLL, which you can call dynamically from your program is then found in 
-%%
-\[
- \tt
- \$XSB\_DIR\backslash config\backslash \mbox{\tt x86-pc-windows}\backslash
- saved.o \backslash xsb.dll
-\]
-%%
-
-\section{Passing Data Between C and \ourprolog} \label{c2p_p2p_p2c}
-
-For a C program and \ourprolog\ to communicate, they must be able to
-pass data back and forth. \ourprolog\ uses a particular data
-representation and C programs must use that representation to
-interface with it.  The only data type that \ourprolog\ uses is {\tt
-prolog\_term}.  Functions are provided, and described below, which convert
-C data types to and from {\tt prolog\_term}.
-
-Before explaining the low-level routines that construct terms, we will
-describe some simpler higher-level routines that can be used for
-passing atomic values to and from \ourprolog.  Only if you must
-communicate structured data will you need to resort to the lower-level
-routines described later.  (These following routines are actually
-defined as macros which call the lower level functions.)
 
 \begin{description}
 \ouritem{void xsb\_make\_vars((int) N)} \index{{\tt xsb\_make\_vars}}
@@ -368,157 +304,67 @@ This variable must have an floating point value.
 \end{description}
 
 
-The first set of functions support conversion of data elements of the
-basic C types to the type {\tt prolog\_term}.  These {\tt c2p\_*}
-functions all return a boolean value TRUE if successful and FALSE if
-unsuccessful.  The \ourprolog\ term argument must always contain an
-\ourprolog\ variable, which will be bound to the indicated value as a
-side effect of the function call.  These routines can be used to
-construct commands and queries into \ourprolog 's register 1, which is
-necessary before calling {\tt xsb\_query()} or {\tt xsb\_command()}.
+\section{Creating an XSB Module that Can be Called from C}
 
-\begin{description}
-\ouritem{bool c2p\_int((int) N, (prolog\_term) V)} \index{{\tt c2p\_int}}
-    {\tt c2p\_int} binds the prolog\_term V (which must be a variable)
-    to the integer value N.
+To create an executable that includes calls to the above C functions,
+these routines, and the \ourprolog\ routines that they call, must be
+included in the link ({\tt ld}) step.
 
-\ouritem{bool c2p\_float((double) F, (prolog\_term) V)} \index{{\tt c2p\_float}}
-    {\tt c2p\_float} binds the prolog\_term V (which must be a variable)
-    to the (double) float value F.
-
-\ouritem{bool c2p\_string((char *) S, (prolog\_term) V)} \index{{\tt c2p\_string}}
-    {\tt c2p\_string} binds the prolog\_term V (which must be a
-    variable) to the atom whose name is the value of S, which must be
-    of type char *.
-
-\ouritem{bool c2p\_functor((char *) S, (int) N, (prolog\_term) V)} \index{{\tt c2p\_functor}}
-    {\tt c2p\_functor} binds the prolog\_term V (which must be a
-    variable) to an open term whose main functor symbol is given by S
-    (of type char *) and whose arity is N.  An open term is one with
-    all arguments as new distinct variables.
-
-\ouritem{bool c2p\_list((prolog\_term) V)} \index{{\tt c2p\_list}}
-    {\tt c2p\_list} binds the prolog\_term V (which must be a variable)
-    to an open list term, i.e., a list term with both car and cdr as
-    new distinct variables.
-
-\ouritem{bool c2p\_nil((prolog\_term) V)} \index{{\tt c2p\_nil}}
-    {\tt c2p\_nil} binds the prolog\_term V (which must be a
-    variable) to the atom \verb|[]| (nil).
-\end{description}
-
-To use the above functions, one must be able to get access to \ourprolog\
-data elements of type {\tt prolog\_term}.  These elements are obtained
-from an \ourprolog\ register, or from {\tt prolog\_term} values
-obtained from others.  \ourprolog\ provides several {\tt p2p\_*}
-functions for accessing these values.  In addition, there are functions
-which allow you to test for the type of a {\tt prolog\_term} value.
-
-\begin{description}
-\ouritem{prolog\_term reg\_term((int) R)} \index{{\tt reg\_term}}
-    Argument R is a register number (range 1 to 255) and {\tt
-    reg\_term} returns the prolog\_term in that \ourprolog\ register.
-
-\ouritem{prolog\_term p2p\_arg((prolog\_term) T, (int) A)} \index{{\tt p2p\_arg}}
-    Argument T must be a prolog\_term that is a structured term (but
-    not a list).  A is a positive integer no larger than the arity of
-    the term.  {\tt p2p\_arg} returns the A$^{th}$ subfield of the term
-    T.
-
-\ouritem{prolog\_term p2p\_car((prolog\_term) T)} \index{{\tt p2p\_car}}
-    Argument T must be a prolog\_term that is a list (not nil).  {\tt
-    p2p\_car} returns the car (i.e., first subfield or head) of the
-    term T.
-
-\ouritem{prolog\_term p2p\_cdr((prolog\_term) T)} \index{{\tt p2p\_cdr}}
-    Argument T must be a prolog\_term that is a list (not nil).  {\tt
-    p2p\_car} returns the cdr (i.e., second subfield or tail) of the
-    term T.
-
-\ouritem{bool is\_var((prolog\_term) T)} \index{{\tt is\_var}}
-    {\tt is\_var(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    variable, and FALSE otherwise.
-
-\ouritem{bool is\_int((prolog\_term) T)} \index{{\tt is\_int}}
-    {\tt is\_int(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    integer value, and FALSE otherwise.
-
-\ouritem{bool is\_float((prolog\_term) T)} \index{{\tt is\_float}}
-    {\tt is\_float(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    float value, and FALSE otherwise.
-
-\ouritem{bool is\_string((prolog\_term) T)} \index{{\tt is\_string}}
-    {\tt is\_string(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    atom value, and FALSE otherwise.
-
-\ouritem{bool is\_functor((prolog\_term) T)} \index{{\tt is\_functor}}
-    {\tt is\_functor(T)} returns TRUE if {\tt T} represents an
-    \ourprolog\ structure value (not a list), and FALSE otherwise.
-
-\ouritem{bool is\_list((prolog\_term) T)} \index{{\tt is\_list}}
-    {\tt is\_list(T)} returns TRUE if {\tt T} represents an
-    \ourprolog\ list value (not nil), and FALSE otherwise.
-
-\ouritem{bool is\_nil((prolog\_term) T)} \index{{\tt is\_nil}}
-    {\tt is\_nil(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    \verb|[]| (nil) value, and FALSE otherwise.
-
-\end{description}
-
-For example, to request that \ourprolog\ consult a file, one could use
-the above functions to construct a term {\tt consult(ctest)} into
-register 1 with the following two C statements:
+\paragraph{Unix instructions:}
+First, you must create a relocatable file, named {\tt xsb.o}, that
+contains all the \ourprolog\ routines.  To do this, get into the
+{\tt XSB/build} subdirectory, and execute:
+%%
 \begin{verbatim}
-        c2p_functor("consult",1,reg_term(1));
-        c2p_string("ctest",p2p_arg(reg_term(1),1));
+    % makexsb module
+\end{verbatim}
+%%
+This will place the relocatable file in:
+%%
+\begin{verbatim}
+ $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o  
+\end{verbatim}
+%%$
+
+Second, you must compile your C program, which includes a main
+procedure.  You should include the file {\tt cinterf.h} located in the
+{\tt XSB/emu} subdirectory, which defines the routines described here
+that you will need to use.
+
+Third, to create your executable, after you have created the object
+file, say {\tt ruleproc.o}, for your C routine, you could execute:
+\begin{verbatim}
+    % gcc -o ruleproc ruleproc.o $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o
 \end{verbatim}
 
-\ourprolog\ provides a final set of functions to convert values from
-\ourprolog\ data types back into C data types.  These {\tt c2p\_*}
-functions can be used to retrieve the answers computed by a call to
-{\tt xsb\_query}.
+The file {\tt \$XSB\_DIR/config/your-system-architecture/modMakefile} is a
+makefile you can use to build your programs and link them with XSB.  It is
+generated automatically and contains all the right settings for your
+architecture, but you will have to fill in the name of your program, etc.
 
-\begin{description}
-\ouritem{int p2c\_int((prolog\_term) V)} \index{{\tt p2c\_int}}
-    The prolog\_term argument must represent an integer, and {\tt
-    p2c\_int} returns the value of that integer.
+There are simple examples of C programs calling \ourprolog\ in the
+{\tt \$XSB\_DIR/examples/c\_calling\_XSB} directory, in files {\tt cmain.c},
+{\tt ctest.P}, {\tt cmain2.c}.
 
-\ouritem{double p2c\_float((prolog\_term) V)} \index{{\tt p2c\_float}}
-    The prolog\_term argument must represent a floating point number,
-    and {\tt p2c\_float} returns the value of that floating point
-    number.
+\paragraph{Windows instructions:}
+To call XSB from C, you must build it as a DLL. To do this, you specify
+DLL=''yes'' on command line. {\it E.g.}, 
+%%
+\begin{quote}
+ {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="release" DLL="yes"  }
+\end{quote}
+%%
+The DLL, which you can call dynamically from your program is then found in 
+%%
+\[
+ \tt
+ \$XSB\_DIR\backslash config\backslash \mbox{\tt x86-pc-windows}\backslash
+ saved.o \backslash xsb.dll
+\]
+%%
 
-\ouritem{char *p2c\_string((prolog\_term) V)} \index{{\tt p2c\_string}}
-    The prolog\_term argument must represent an atom, and {\tt
-    p2c\_string} returns the name of that atom as a string. The
-    pointer returned points to the actual atom name in \ourprolog 's
-    space, and thus it must NOT be modified by the calling program.
-
-\ouritem{char *p2c\_functor((prolog\_term) V)} \index{{\tt p2c\_functor}}
-    The prolog\_term argument must represent a structured term (not a
-    list).  {\tt p2c\_functor} returns the name of the main functor
-    symbol of that term as a string. The pointer returned points to
-    the actual functor name in \ourprolog 's space, and thus it must
-    NOT be modified by the calling program.
-
-\ouritem{int p2c\_arity((prolog\_term) V)} \index{{\tt p2c\_arity}}
-    The prolog\_term argument must represent a structured term (not a
-    list).  {\tt p2c\_arity} returns the arity of the main functor
-    symbol of that term as an integer.
-
-\end{description}
-
-As a simple example of the use of these functions, after calling {\tt
-xsb\_query}, one could retrieve the value of the first variable in an
-answer (assuming it must be an atom) into a local char * variable,
-ans, with the following C statement:
-\begin{verbatim}
-        if (is_string(p2p_arg(reg_term(2),1))
-          ans = p2c_string(p2p_arg(reg_term(2),1));
-        else printf("Error in answer type\n");
-\end{verbatim}
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual1"
+%%% TeX-master: "manual2"
 %%% End: 
