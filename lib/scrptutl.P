@@ -34,7 +34,7 @@
 	seeing/1
 	from standard.
 :- import unix/1 from unix.
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 
 % Crude but effective.  Returns stdout of a unix command as a list of
 % tokens.
