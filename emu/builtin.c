@@ -108,7 +108,6 @@
 
 extern TIFptr get_tip(Psc);
 extern TIFptr first_tip;
-extern TIFptr last_tip;
 
 extern int  sys_syscall(int);
 extern bool sys_system(int);
@@ -162,7 +161,7 @@ Cell flags[64];			  /* System flags + user flags */
  *  Returns the still-tagged value (a Cell) at the end of the deref chain
  *  leading from `regnum'.
  */
-Cell ptoc_tag(int regnum)
+inline Cell ptoc_tag(int regnum)
 {
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
@@ -287,18 +286,7 @@ DllExport void call_conv ctop_string(int regnum, char *value)
   else xsb_abort("CTOP_STRING: Wrong type of argument: %lux", addr);
 }
 
-void ctop_ref(int regnum, CPtr value)  /* from address form a reference node */
-{
-  register Cell addr = cell(reg+regnum);
-
-  deref(addr);
-  if (isref(addr)) {
-    bind_ref(vptr(addr), value);
-  }
-  else xsb_abort("CTOP_REF: Wrong type of argument: %lux", addr);
-}
-
-void ctop_constr(int regnum, Pair psc_pair)
+inline static void ctop_constr(int regnum, Pair psc_pair)
 {				/* from psc_pair ptr form an constr node */
   register Cell addr = cell(reg+regnum);
 
@@ -313,7 +301,7 @@ void ctop_constr(int regnum, Pair psc_pair)
  *  Bind the variable pointed to by the "regnum"th argument register to the
  *  term at address "term".  Make an entry in the trail for this binding.
  */
-void ctop_tag(int regnum, Cell term)
+inline static void ctop_tag(int regnum, Cell term)
 {
   register Cell addr = cell(reg+regnum);
 
@@ -869,50 +857,48 @@ static void write_quotedname(FILE *file, char *string)
 
 int builtin_call(byte number)
 {
-  CPtr var;
-  char *addr, *tmpstr;
-  int  value, i, disp, arity, tmpval;
-  Cell term;
-  TIFptr tip;
-  Psc  psc;
-  CPtr subgoal_ptr, t_ptcp;
-  register CPtr xtemp1, xtemp2;
-  Cell attv, atts;
 #ifdef FOREIGN
   static int (*proc_ptr)(void);		/* working variable */
 #endif
   
   switch (number) {
-  case PSC_NAME:	/* R1: +PSC; R2: -String */
-    psc = (Psc)ptoc_addr(1);
+  case PSC_NAME: {	/* R1: +PSC; R2: -String */
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_string(2, get_name(psc));
     break;
-  case PSC_ARITY:	/* R1: +PSC; R2: -int */
-    psc = (Psc)ptoc_addr(1);
+  }
+  case PSC_ARITY: {	/* R1: +PSC; R2: -int */
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_arity(psc));
     break;
-  case PSC_TYPE:	/* R1: +PSC; R2: -int */
+  }
+  case PSC_TYPE: {	/* R1: +PSC; R2: -int */
 			/* type: see psc_xsb.h, `entry_type' field defs */
-    psc = (Psc)ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_type(psc));
     break;
-  case PSC_SET_TYPE:	/* R1: +PSC; R2: +type (int): see psc_xsb.h */
-    psc = (Psc)ptoc_addr(1);
+  }
+  case PSC_SET_TYPE: {	/* R1: +PSC; R2: +type (int): see psc_xsb.h */
+    Psc psc = (Psc)ptoc_addr(1);
     set_type(psc, ptoc_int(2));
     break;
-  case PSC_PROP:	/* R1: +PSC; R2: -term */
+  }
+  case PSC_PROP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */
-    psc = (Psc)ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_ep(psc));
     break;
-  case PSC_SET_PROP:	       /* R1: +PSC; R2: +int */
-    psc = (Psc)ptoc_addr(1);
+  }
+  case PSC_SET_PROP: {	       /* R1: +PSC; R2: +int */
+    Psc psc = (Psc)ptoc_addr(1);
     set_ep(psc, (pb)ptoc_int(2));
     break;
-  case PSC_SET_SPY: 	       /* R1: +PSC; R2: +int */
-    psc = (Psc)ptoc_addr(1);
+  }
+  case PSC_SET_SPY: { 	       /* R1: +PSC; R2: +int */
+    Psc psc = (Psc)ptoc_addr(1);
     set_spy(psc, ptoc_int(2));
     break;
+  }
 
   case FILE_FUNCTION:  /* file_open/close/put/get/truncate/seek/pos */
     return file_function();
@@ -921,17 +907,19 @@ int builtin_call(byte number)
     /* Assumes that `term' is a CS-tagged Cell. */
     ctop_addr(2, get_str_psc(ptoc_tag(1)));
     break;
-  case TERM_TYPE:	/* R1: +term; R2: tag (-int)			  */
+  case TERM_TYPE: {	/* R1: +term; R2: tag (-int)			  */
 			/* <0 - var, 1 - cs, 2 - int, 3 - list, 7 - ATTV> */
-    term = ptoc_tag(1);
+    Cell term = ptoc_tag(1);
     if (isref(term)) ctop_int(2, 0);
     else ctop_int(2, cell_tag(term));
     break;
+  }
   case TERM_COMPARE:	/* R1, R2: +term; R3: res (-int) */
     ctop_int(3, compare(ptoc_tag(1), ptoc_tag(2)));
     break;
-  case TERM_NEW:		/* R1: +PSC, R2: -term */
-    psc = (Psc)ptoc_addr(1);
+  case TERM_NEW: {		/* R1: +PSC, R2: -term */
+    int disp;
+    Psc psc = (Psc)ptoc_addr(1);
     sreg = hreg;
     hreg += get_arity(psc) + 1;
     ctop_constr(2, (Pair)sreg);
@@ -940,19 +928,22 @@ int builtin_call(byte number)
       bld_free(sreg);
     }
     break;
-  case TERM_ARG:	/* R1: +term; R2: index (+int); R3: arg (-term) */
-    disp = ptoc_int(2);
-    term = ptoc_tag(1);
+  }
+  case TERM_ARG: {	/* R1: +term; R2: index (+int); R3: arg (-term) */
+    int  disp = ptoc_int(2);
+    Cell term = ptoc_tag(1);
     ctop_tag(3, cell(clref_val(term)+disp));
     break;
-  case TERM_SET_ARG:	/* R1: +term; R2: index (+int) */
+  }
+  case TERM_SET_ARG: {	/* R1: +term; R2: index (+int) */
 			/* R3: newarg (+term); R4: +perm(not used) */
     /* used in file_read.P, array.P, array1.P */
-    disp = ptoc_int(2);
-    term = ptoc_tag(1);
+    int  disp = ptoc_int(2);
+    Cell term = ptoc_tag(1);
     if (!ptoc_int(4)) { pushtrail(clref_val(term)+disp,cell(reg+3));}
     bld_copy(clref_val(term)+disp, cell(reg+3));
     break;
+  }
   case STAT_FLAG:	/* R1: flagname(+int); R2: value(-int) */
     ctop_int(2, flags[ptoc_int(1)]);
     break;
@@ -961,18 +952,21 @@ int builtin_call(byte number)
     call_intercept = flags[DEBUG_ON]|flags[TRACE_STA]|flags[HITRACE]
       |flags[CLAUSE_INT];
     break;
-  case BUFF_ALLOC:	/* R1: size (+integer); R2: -buffer; */
+  case BUFF_ALLOC: {	/* R1: size (+integer); R2: -buffer; */
 	           /* the length of the buffer is also stored at position 0 */
-    value = ((ptoc_int(1)+7)>>3)<<3;
+    char *addr;
+    int  value = ((ptoc_int(1)+7)>>3)<<3;
     value *= ZOOM_FACTOR ;
     addr = (char *)mem_alloc(value);
     value /= ZOOM_FACTOR ;
     *(Integer *)addr = value;	/* store buffer size at buf[0] */
     ctop_int(2, (Integer)addr);	/* use "integer" type now! */
     break;
-  case BUFF_DEALLOC:	/* R1: +buffer; R2: +oldsize; R3: +newsize; */
-    addr = ptoc_string(1);
-    disp = ((ptoc_int(2)+7)>>3)<<3;
+  }
+  case BUFF_DEALLOC: {	/* R1: +buffer; R2: +oldsize; R3: +newsize; */
+    int  value;
+    char *addr = ptoc_string(1);
+    int  disp = ((ptoc_int(2)+7)>>3)<<3;
     disp *= ZOOM_FACTOR ;
     value = ((ptoc_int(3)+7)>>3)<<3;	/* alignment */
     value *= ZOOM_FACTOR ;
@@ -983,53 +977,61 @@ int builtin_call(byte number)
     }
     mem_dealloc((byte *)(addr+value), disp-value);
     break;
-  case BUFF_WORD:       /* R1: +buffer; r2: displacement(+integer); */
+  }
+  case BUFF_WORD: {     /* R1: +buffer; r2: displacement(+integer); */
 			/* R3: value (-integer) */
-    addr = ptoc_string(1);
-    disp = ptoc_int(2);
+    char *addr = ptoc_string(1);
+    int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     ctop_int(3, *(Integer *)(addr+disp));
     break;
-  case BUFF_SET_WORD:	/* R1: +buffer; r2: displacement(+integer); */
+  }
+  case BUFF_SET_WORD: {	/* R1: +buffer; r2: displacement(+integer); */
 			/* R3: value (+integer) */
-    addr = ptoc_string(1);
-    disp = ptoc_int(2);
+    char *addr = ptoc_string(1);
+    int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     *(CPtr)(addr+disp) = ptoc_int(3);
     break;
-  case BUFF_BYTE:	/* R1: +buffer; r2: displacement(+integer); */
+  }
+  case BUFF_BYTE: {	/* R1: +buffer; r2: displacement(+integer); */
 			/* R3: value (-integer) */
-    addr = ptoc_string(1);
-    disp = ptoc_int(2);
+    char *addr = ptoc_string(1);
+    int  disp = ptoc_int(2);
     ctop_int(3, (Integer)(*(byte *)(addr+disp)));
     break;
-  case BUFF_SET_BYTE:	/* R1: +buffer; R2: displacement(+integer); */
+  }
+  case BUFF_SET_BYTE: {	/* R1: +buffer; R2: displacement(+integer); */
 			/* R3: value (+integer) */
-    addr = ptoc_string(1);
-    disp = ptoc_int(2);
+    char *addr = ptoc_string(1);
+    int  disp = ptoc_int(2);
     *(pb)(addr+disp) = ptoc_int(3);
     break;
-  case BUFF_CELL:	/* R1: +buffer; R2: displacement(+integer); */
+  }
+  case BUFF_CELL: {	/* R1: +buffer; R2: displacement(+integer); */
                         /* R3: -Cell at that location */
-    addr = ptoc_string(1);
-    disp = ptoc_int(2);
+    char *addr = ptoc_string(1);
+    int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     ctop_tag(3, (Cell)(addr+disp));
     break;
-  case BUFF_SET_CELL:	/* R1: +buffer; R2: displacement(+integer);*/
+  }
+  case BUFF_SET_CELL: {	/* R1: +buffer; R2: displacement(+integer);*/
 			/* R3: type (+integer); R4: +term */
     /* When disp<0, set the type of the buff itself */
     /* The last function is not implemented */
-    addr = ptoc_string(1);
-    disp = ptoc_int(2);
+    int  value;
+    char *addr = ptoc_string(1);
+    int  disp = ptoc_int(2);
     disp *= ZOOM_FACTOR ;
     value = ptoc_int(3);
     switch (value) {
     case REF: case REF1:
       bld_ref(vptr(addr+disp), (CPtr)ptoc_int(4)); break;
-    case INT:
-      tmpval = ptoc_int(4);
+    case INT: {
+      int tmpval = ptoc_int(4);
       bld_int(vptr(addr+disp), tmpval); break;
+    }
     case FLOAT:
       bld_float(vptr(addr+disp), ptoc_float(4)); break;
     case CS: 
@@ -1042,7 +1044,11 @@ int builtin_call(byte number)
       xsb_warn("BUFF_SET_CELL: Type %d is not implemented", value);
     }
     break;
-  case BUFF_SET_VAR:
+  }
+  case BUFF_SET_VAR: {
+    int  disp;
+    Cell term;
+    char *addr;
     /* This procedure is used to make an external variable pointing to the
        buffer. The linkage inside the buffer will not be trailed so remains
        after backtracking. */
@@ -1060,7 +1066,7 @@ int builtin_call(byte number)
       bld_ref(vptr(term), (CPtr)(addr+disp));	
     }
     break;
-    
+  }
   case COPY_TERM0: /* R1: +term to copy; R2: -variant */
     copy_term();
     break;
@@ -1068,14 +1074,19 @@ int builtin_call(byte number)
   case CALL0: {			/* R1: +Term, the call to be made */
     /* Note: this procedure does not save cpreg, hence is more like */
     /* an "execute" instruction, and must be used as the last goal!!!*/
-    term = ptoc_tag(1);
+    Psc  psc;
+    Cell term = ptoc_tag(1);
+
     if (isconstr(term)) {
+      int  disp;
+      char *addr;
       psc = get_str_psc(term);
       addr = (char *)(clref_val(term));
       for (disp = 1; disp <= (int)get_arity(psc); ++disp) {
 	bld_copy(reg+disp, cell((CPtr)(addr)+disp));
       }
     } else if (isstring(term)) {
+      int  value;
       Pair sym = insert(string_val(term),0,(Psc)flags[CURRENT_MODULE],&value);
       psc = pair_psc(sym);
     } else {
@@ -1113,16 +1124,20 @@ int builtin_call(byte number)
     break;
   }
     
-  case CODE_CALL:		/* R1: +Code (addr), the code address */
+  case CODE_CALL: {		/* R1: +Code (addr), the code address */
 				/* R2: +Term, the call to be made */
 				/* R3: +Type, code type (same as psc->type)  */
 				/* may need to resume interrupt testing here */
     /* Note: this procedure does not save cpreg, hence is more like */
     /* an "execute" instruction, and must be used as the last goal!!!*/
-    term = ptoc_tag(2);
-    value = ptoc_int(3);  /* Cannot be delayed! R3 may be reused */
+    Psc  psc;
+    Cell term = ptoc_tag(2);
+    int  value = ptoc_int(3);  /* Cannot be delayed! R3 may be reused */
+
     pcreg = (byte *)ptoc_int(1);
     if (isconstr(term)) {
+      int  disp;
+      char *addr;
       psc = get_str_psc(term);
       addr = (char *)(clref_val(term));
       for (disp = 1; disp <= (int)get_arity(psc); ++disp) {
@@ -1140,17 +1155,19 @@ int builtin_call(byte number)
 #endif
     }
     break;
+  }
   case SUBSTRING: /* R1: +String; R2,R3: +begin/end offset; R4: -OutSubstr */
     return substring(); 
   case STRING_SUBSTITUTE: /* R1: +Str, R2: [s(a1,b1),s(a2,b2),...], 
 			     R3: [str1,str2,...], R4: -OutStr */
     return string_substitute();
-  case STR_LEN:		/* R1: +String; R2: -Length */
-    term = ptoc_tag(1);
+  case STR_LEN:	{	/* R1: +String; R2: -Length */
+    Cell term = ptoc_tag(1);
     if (isstring(term)) {
-      addr = string_val(term);
+      char *addr = string_val(term);
       return int_unify(makeint(strlen(addr)), ptoc_tag(2));
     } else return FALSE;
+  }
   case STR_CAT:		/* R1: +Str1; R2: +Str2: R3: -Str3 */
     return str_cat();
   case STR_CMP:		/* R1: +Str1; R2: +Str2: R3: -Res */
@@ -1161,14 +1178,16 @@ int builtin_call(byte number)
   case INTERN_STRING: /* R1: +String1; R2: -String2 ; Intern string */
     ctop_string(2, string_find(ptoc_string(1), 1));
     break;
-  case STAT_STA:		/* R1: +Amount */
-    value = ptoc_int(1);
+  case STAT_STA: {		/* R1: +Amount */
+    int value = ptoc_int(1);
     print_statistics(value);
     break;
-  case STAT_CPUTIME:	/* R1: -cputime, in miliseconds */	
-    value = (int)(cpu_time() * 1000);
+  }
+  case STAT_CPUTIME: {	/* R1: -cputime, in miliseconds */	
+    int value = (int)(cpu_time() * 1000);
     ctop_int(1, value);
     break;
+  }
   case CODE_LOAD:		/* R1: +FileName, bytecode file to be loaded */
 				/* R2: -int, addr of 1st instruction;	     */
 				/*	0 indicates an error                 */
@@ -1182,8 +1201,10 @@ int builtin_call(byte number)
 			   R4: +String, module to be inserted */
     /* inserts or finds a symbol in a given module.	*/
     /* When the given module is 0 (null string), current module is used. */
+    Psc  psc;
     Pair sym;
-    addr = ptoc_string(4);
+    int  value;
+    char *addr = ptoc_string(4);
     if (addr)
       psc = pair_psc(insert_module(0, addr));
     else
@@ -1200,6 +1221,7 @@ int builtin_call(byte number)
      * Creates a PSC record for a predicate and its module (if they
      * don't already exist) and links the predicate into usermod.
      */
+    int  value;
     Psc  psc = pair_psc(insert_module(0, ptoc_string(3)));
     Pair sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
@@ -1209,9 +1231,9 @@ int builtin_call(byte number)
     break;
   }
 
-  case FILE_GETTOKEN:     /* R1: +File, R2: +PrevCh, R3: -Type; */
+  case FILE_GETTOKEN: {    /* R1: +File, R2: +PrevCh, R3: -Type; */
                                 /* R4: -Value, R5: -NextCh */
-    tmpval = ptoc_int(1);
+    int tmpval = ptoc_int(1);
     if ((tmpval < 0) && (tmpval >= -MAXIOSTRS))
       token = GetToken(NULL,strfileptr(tmpval), ptoc_int(2));
     else {
@@ -1245,18 +1267,22 @@ int builtin_call(byte number)
       }
     }
     break;
+  }
   case FILE_PUTTOKEN: {	/* R1: +File, R2: +Type, R3: +Value; */
     FILE* fptr;
-    tmpval = ptoc_int(1);
+    int tmpval = ptoc_int(1);
     SET_FILEPTR(fptr,tmpval);
     switch (ptoc_int(2)) {
-    case FREE   : var = (CPtr)ptoc_tag(3);
+    case FREE   : {
+      CPtr var = (CPtr)ptoc_tag(3);
       xsb_fprint_variable(fptr, var);
       break;
-    case ATTV:
-      var = (CPtr)dec_addr(ptoc_tag(3));
+    }
+    case ATTV   : {
+      CPtr var = (CPtr)dec_addr(ptoc_tag(3));
       xsb_fprint_variable(fptr, var);
       break;
+    }
     case INT    : fprintf(fptr, "%ld", (long)ptoc_int(3)); break;
     case STRING : fprintf(fptr, "%s", ptoc_string(3)); break;
     case FLOAT  : fprintf(fptr, "%2.4f", ptoc_float(3)); break;
@@ -1371,7 +1397,7 @@ int builtin_call(byte number)
     return file_stat();
   case FILE_WRITEQUOTED: {
     FILE* fptr;
-    tmpval = ptoc_int(1);
+    int   tmpval = ptoc_int(1);
     SET_FILEPTR(fptr, tmpval);
     write_quotedname(fptr ,ptoc_string(2));
     break;
@@ -1379,28 +1405,34 @@ int builtin_call(byte number)
   case GROUND:
     return ground((CPtr)ptoc_tag(1));
 
-  case PSC_ENV:	       /* reg 1: +PSC; reg 2: -int */
+  case PSC_ENV:	{       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */
-    psc = (Psc)ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_env(psc));
     break;
-  case PSC_SPY:		/* reg 1: +PSC; reg 2: -int */
+  }
+  case PSC_SPY:	{	/* reg 1: +PSC; reg 2: -int */
 				/* env: 0 = non-spied else spied */
-    psc = (Psc)ptoc_addr(1);
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_spy(psc));
     break;
-  case PSC_TABLED:	/* reg 1: +PSC; reg 2: -int */
-    psc = (Psc)ptoc_addr(1);
+  }
+ case PSC_TABLED: {	/* reg 1: +PSC; reg 2: -int */
+    Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_tip(psc));
-    break; 
+    break;
+  }
 /*----------------------------------------------------------------------*/
 
 #include "bineg_xsb_i.h"
 
 /*----------------------------------------------------------------------*/
   case GET_SUBGOAL_PTR: {	/* reg1: +term; reg2: -subgoal_ptr */
+    Psc  psc;
     TIFptr tip;
-    term = ptoc_tag(1);
+    CPtr subgoal_ptr;
+    Cell term = ptoc_tag(1);
+
     if ((psc = term_psc(term)) == NULL) {
       err_handle(TYPE, 1, "get_subgoal_ptr", 2, "callable term", term);
       return FALSE;	/* fail */
@@ -1427,14 +1459,15 @@ int builtin_call(byte number)
   case PAIR_NEXT:
     ctop_addr(2, pair_next((Pair)ptoc_addr(1)));
     break;
-  case NEXT_BUCKET:      /* R1: +Index of Symbol Table Bucket. */
+  case NEXT_BUCKET: {     /* R1: +Index of Symbol Table Bucket. */
     /* R2: -Next Index (0 if end of Hash Table) */
-    value = ptoc_int(1);
+    int value = ptoc_int(1);
     if ( (value >= (symbol_table.size - 1)) || (value < 0) )
       ctop_int(2, 0);
     else 
       ctop_int(2, (value + 1));
     break;
+  }
 
   case IS_XWAMMODE:     /* R1: -int flag for xwammode */  
     if (xwammode) ctop_int(1,1);
@@ -1516,8 +1549,11 @@ int builtin_call(byte number)
 /*----------------------------------------------------------------------*/
     
   case TABLE_STATUS: { /* reg1: +term or +subgoal_ptr; reg2: -status (int) */
+    Psc    psc;
     TIFptr tip;
-    term = ptoc_tag(1);
+    int    value;
+    CPtr   subgoal_ptr;
+    Cell   term = ptoc_tag(1);
     if (!isinteger(term)) {
       if ((psc = term_psc(term)) == NULL) {
 	err_handle(TYPE, 1, "table_status", 2, "callable term", term);
@@ -1541,8 +1577,9 @@ int builtin_call(byte number)
     break;
   }
   case ABOLISH_TABLE_PREDICATE: {
+    Psc    psc;
     TIFptr tip;
-    term = ptoc_tag(1);
+    Cell   term = ptoc_tag(1);
     if ((psc = term_psc(term)) == NULL) {
       err_handle(TYPE, 1, "abolish_table_pred", 1,
 		 "predicate (specification)", term);
@@ -1640,7 +1677,7 @@ int builtin_call(byte number)
     break;
   case DELETE_TRIE:
     if (strcmp(ptoc_string(2),"intern") == 0){
-      tmpval = ptoc_int(1);
+      int tmpval = ptoc_int(1);
       delete_interned_trie(tmpval);
     }
     else {
@@ -1681,7 +1718,11 @@ int builtin_call(byte number)
   case PRINT_REGS: print_regs(10,1) ; return TRUE ;
   case PRINT_ALL_STACKS: print_all_stacks() ; return TRUE ;
   case EXP_HEAP: glstack_realloc(glstack.size + 1,0) ; return TRUE ;
-  case MARK_HEAP: mark_heap(ptoc_int(1),&tmpval) ; return TRUE ;
+  case MARK_HEAP: {
+    int tmpval;
+    mark_heap(ptoc_int(1),&tmpval);
+    return TRUE;
+  }
   case GC_HEAP: return(gc_heap(0)) ;
     
     /* This is the builtin where people should put their private, experimental
@@ -1745,7 +1786,7 @@ int builtin_call(byte number)
 
   case FORCE_TRUTH_VALUE: { /* +R1: AnsLeafPtr; +R2: TruthValue */
     BTNptr as_leaf = (BTNptr) ptoc_addr(1);
-    tmpstr = ptoc_string(2);
+    char *tmpstr = ptoc_string(2);
     if (!strcmp(tmpstr, "true"))
       force_answer_true(as_leaf);
     else if (!strcmp(tmpstr, "false"))
@@ -1754,9 +1795,9 @@ int builtin_call(byte number)
     break;
   }
 
-  case PUT_ATTRIBUTES: /* R1: -Var; R2: +Atts */
-    attv = ptoc_tag(1);
-    atts = ptoc_tag(2);
+  case PUT_ATTRIBUTES: { /* R1: -Var; R2: +Atts */
+    Cell attv = ptoc_tag(1);
+    Cell atts = ptoc_tag(2);
     if (isref(attv)) {		/* attv is a free var */
       if (!isnil(atts)) {
 	bind_attv((CPtr)attv, hreg);
@@ -1777,9 +1818,10 @@ int builtin_call(byte number)
     }
     else xsb_abort("PUT_ATTRIBUTES: Argument 1 is nonvar");
     break;
+  }
 
-  case GET_ATTRIBUTES: /* R1: +Var; R2: -Vector; R3: -OldMask */
-    attv = ptoc_tag(1);
+  case GET_ATTRIBUTES: { /* R1: +Var; R2: -Vector; R3: -OldMask */
+    Cell attv = ptoc_tag(1);
     if (isref(attv)) {		/* a free var */
       /* ctop_tag(2, makenil); */ /* keep it as a free var */
       ctop_tag(3, makeint(0));
@@ -1791,14 +1833,16 @@ int builtin_call(byte number)
       ctop_tag(3, cell(clref_val(cell(vector)) + 1));
     }
     break;
+  }
 
-  case DELETE_ATTRIBUTES: /* R1: -Var */
-    attv = ptoc_tag(1);
+  case DELETE_ATTRIBUTES: { /* R1: -Var */
+    Cell attv = ptoc_tag(1);
     if (isattv(attv)) {
       bind_ref((CPtr)dec_addr(attv), hreg);
       bld_free(hreg); hreg++;
     }
     break;
+  }
 
   /*
    * attv_unify/1 is a internal builtin for binding an attv to a value
@@ -1806,10 +1850,11 @@ int builtin_call(byte number)
    * this builtin in verify_attributes/2 to bind an attributed var
    * without trigger the attv interrupt.
    */
-  case ATTV_UNIFY: /* R1: +Var; R2: +Value */
-    attv = ptoc_tag(1);
+  case ATTV_UNIFY: { /* R1: +Var; R2: +Value */
+    Cell attv = ptoc_tag(1);
     bind_copy((CPtr)dec_addr(attv), ptoc_tag(2));
     break;
+  }
 
   default:
     xsb_exit("Builtin #%d is not implemented", number);

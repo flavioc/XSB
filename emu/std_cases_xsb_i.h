@@ -42,19 +42,22 @@
   case NUMBER:	/* r1: ?term */
     return isnumber(ptoc_tag(1));
     
-  case ATOMIC:	/* r1: ?term */
-    term = ptoc_tag(1);
+  case ATOMIC: {	/* r1: ?term */
+    Cell term = ptoc_tag(1);
     return isatomic(term);
-    
-  case COMPOUND:	/* r1: ?term */
-    term = ptoc_tag(1);
+  }
+
+  case COMPOUND: {	/* r1: ?term */
+    Cell term = ptoc_tag(1);
     return ((isconstr(term) && get_arity(get_str_psc(term))) ||
 	    (islist(term)));
-    
-  case CALLABLE:	/* r1: ?term */
-    term = ptoc_tag(1);
+  }
+
+  case CALLABLE: {	/* r1: ?term */
+    Cell term = ptoc_tag(1);
     return (isconstr(term) || isstring(term) || islist(term));
-    
+  }
+
   case IS_LIST:	/* r1: ?term */
     return is_proper_list(ptoc_tag(1));
     
@@ -92,8 +95,8 @@
     return number_to_list(NUMBER_DIGITS);
     
     
-  case PUT:	/* r1: +integer	*/
-    term = ptoc_tag(1);
+  case PUT: {	/* r1: +integer	*/
+    Cell term = ptoc_tag(1);
     if (isinteger(term)) {
       putc(int_val(term), fileptr(flags[CURRENT_OUTPUT]));
     } else {
@@ -101,10 +104,11 @@
       else err(INSTANTIATION, 1, "put", 1);
     }
     break;
-    
-  case TAB:	/* r1: +integer	*/
-    term = ptoc_tag(1);
+  }
+  case TAB: {	/* r1: +integer	*/
+    Cell term = ptoc_tag(1);
     if (isinteger(term)) {
+      int  i;
       for (i=1; i<=int_val(term); i++)
 	putc(32, fileptr(flags[CURRENT_OUTPUT]));	/* 32=' ' */
     } else {
@@ -112,7 +116,8 @@
       else err(INSTANTIATION, 1, "tab", 1);
     }
     break;
-    
+  }
+
   case SORT:		/* r1: +list of terms; r2: ?sorted list of terms */
   return sort();
     
