@@ -47,7 +47,7 @@
 	flora_flogic_bswrapper/2,
 	flora_flogic_predicate/4,
 	flora_hilog_predicate/2,
-	flora_nohilog_predicate/3,
+	flora_firstorder_predicate/3,
 	flora_classify_call/5,
 	flora_wspredicate/4,
 	flora_wssymbol/3,

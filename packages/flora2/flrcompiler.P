@@ -54,19 +54,19 @@ is_fldirective(FLDIRECTIVE(DirectList),DirectList).
 is_flcommand(FLCOMMAND(C),C).
 is_fltable(FLTABLE(P,A),P,A).
 is_fldynamic(FLDYNAMIC(P,A),P,A).
-is_flexport(FLEXPORT(P,A),P,A).
-is_flimport(FLIMPORT(P,A,M),P,A,M).
+%%is_flexport(FLEXPORT(P,A),P,A).
+%%is_flimport(FLIMPORT(P,A,M),P,A,M).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
-is_flsignature(FLSIGNATURE(F,N,Args),F,N,Args).
+is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
-is_flnonhilogpredicate(FLNONHILOGPREDICATE(F,N),F,N).
-is_flpredicate(FLPREDICATE(F,N),F,N).
+is_flfirstordernostorage(FLFIRSTORDERNOSTORAGE(F,N),F,N).
+is_flfirstorder(FLFIRSTORDER(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
 is_flhilogtable(FLHILOGTABLE(A),A).
 is_flequality(FLEQUALITY(A),A).
 is_flequality(FLEQUALITY(A,M),A,M).
-is_flabolish(FLABOLISH(FAList),FAList).
-is_flabolish(FLABOLISH(FAList,M),FAList,M).
+is_flexpunge(FLEXPUNGE(FAList),FAList).
+is_flexpunge(FLEXPUNGE(FAList,M),FAList,M).
 
 is_flconjunct(FLCONJUNCT(L,R),L,R).
 is_fldisjunct(FLDISJUNCT(L,R),L,R).
@@ -134,7 +134,8 @@ directive_struct(Direct,PRDIRECTIVE(Direct)).
 command_struct(C,PRCOMMAND(C)).
 table_struct(F,N,PRTABLE(F,N)).
 dynamic_struct(F,N,PRDYNAMIC(F,N)).
-export_struct(F,N,PREXPORT(F,N)).
+%%export_struct(F,N,PREXPORT(F,N)).
+%% We keep the import directive's support mechanism for @prolog(module)
 import_struct(F,N,M,PRIMPORT(F,N,M)).
 index_struct(F,A,N,PRINDEX(F,A,N)).
 hilogtable_struct(A,PRHILOGTABLE(A)).
@@ -775,9 +776,8 @@ flora_compile(ParserTerm,CodeList,OptionList,Status) :-
 
 	; is_flquery(ParserTerm,Body) ->
 	    compile_query(Body,CodeList,Status)
-	;
-	  is_fldirective(ParserTerm,DirectList),
-	  compile_directive(DirectList,CodeList,Status)
+	; is_fldirective(ParserTerm,DirectList),
+	    compile_directive(DirectList,CodeList,Status)
         ),
 	!,
 	get_option(OptionList).
@@ -812,11 +812,11 @@ compile_direct(DirectTerm,[Code],[]) :-
 	; is_fldynamic(DirectTerm,P,A) ->
 	    dynamic_struct(P,A,Direct)
 
-	; is_flexport(DirectTerm,P,A) ->
-	    export_struct(P,A,Direct)
+	%%; is_flexport(DirectTerm,P,A) ->
+	%%    export_struct(P,A,Direct)
 
-	; is_flimport(DirectTerm,P,A,M) ->
-	    import_struct(P,A,M,Direct)
+	%%; is_flimport(DirectTerm,P,A,M) ->
+	%%    import_struct(P,A,M,Direct)
 
 	; is_flindex(DirectTerm,P,A,N) ->
 	    index_struct(P,A,N,Direct)
@@ -833,8 +833,8 @@ compile_direct(DirectTerm,[],[]) :-
 	!.
 
 compile_direct(DirectTerm,[],[]) :-
-	is_flsignature(DirectTerm,P,N,A),
-	flora_define_signature(P,N,A),
+	is_flarguments(DirectTerm,P,N,A),
+	flora_define_arguments(P,N,A),
 	!.
 
 compile_direct(DirectTerm,[],[]) :-
@@ -843,9 +843,9 @@ compile_direct(DirectTerm,[],[]) :-
 	!.
 
 compile_direct(DirectTerm,[Code],[]) :-
-	is_flpredicate(DirectTerm,P,N),
-	flora_define_nohilog(P,N),
-	%% Check if it is a flPredicateAll.
+	is_flfirstorder(DirectTerm,P,N),
+	flora_define_firstorder(P,N),
+	%% Check if it is a firstorderall.
 	( (var(P); var(N)) ->
 	    true
 	;
@@ -861,8 +861,8 @@ compile_direct(DirectTerm,[Code],[]) :-
 	!.
 
 compile_direct(DirectTerm,[],[]) :-
-	is_flnonhilogpredicate(DirectTerm,P,N),
-	flora_define_nohilog(P,N),
+	is_flfirstordernostorage(DirectTerm,P,N),
+	flora_define_firstorder(P,N),
 	!.
 
 compile_direct(DirectTerm,CodeList,[]) :-
@@ -885,14 +885,14 @@ compile_direct(DirectTerm,CodeList,[]) :-
 	!.
 
 compile_direct(DirectTerm,[Code],[]) :-
-	( is_flabolish(DirectTerm,FAList) ->
+	( is_flexpunge(DirectTerm,FAList) ->
 	    thismodule_struct(M)
 	;
-	  is_flabolish(DirectTerm,FAList,M)
+	  is_flexpunge(DirectTerm,FAList,M)
 	),
 	compile_falist(FAList,FACodeList),
 	list_struct(FACodeList,[],FAListCode),
-	florasyslib_struct(FLLIBABOLISH,2,[FAListCode,M],CCode),
+	florasyslib_struct(FLLIBEXPUNGE,2,[FAListCode,M],CCode),
 	query_struct(CCode,Code),
 	!.
 
@@ -1177,25 +1177,25 @@ compile_pathexplist([T|L],[TObj|LObj],Code,Status) :-
 
 
 /****************************************************************************
-  compile_signpathexplist(+ParserTermList,+SignatureList,-ObjectList,-Code,-Status)
+  compile_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-Code,-Status)
 ****************************************************************************/
-compile_signpathexplist([],[],[],NULL,[]).
+compile_argpathexplist([],[],[],NULL,[]).
 
-compile_signpathexplist([T|L],[FL_OID|SignList],[TObj|LObj],Code,Status) :-
+compile_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],Code,Status) :-
 	!,
 	compile_pathexp(T,TObj,TCode,S),
 	( S == [] ->
-	    compile_signpathexplist(L,SignList,LObj,LCode,Status),
+	    compile_argpathexplist(L,ArgTypeList,LObj,LCode,Status),
 	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
 	;
 	  Status=S
         ).
 
-compile_signpathexplist([T|L],[FL_BODYFORMULA|SignList],[TCode|LObj],Code,Status) :-
+compile_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],Code,Status) :-
 	!,
 	compile_body(T,TCode,S),
 	( S == [] ->
-	    compile_signpathexplist(L,SignList,LObj,Code,Status)
+	    compile_argpathexplist(L,ArgTypeList,LObj,Code,Status)
 	;
 	  Status=S
         ).
@@ -1231,10 +1231,10 @@ compile_flvar(Name,VarObject) :-
 ****************************************************************************/
 compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
-	flora_signdef(FAtom,N,Signs),
+	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(FAtom,FObj),
-	compile_signpathexplist(Args,Signs,AObj,Code,Status),
+	compile_argpathexplist(Args,ArgTypes,AObj,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
 compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
@@ -1247,10 +1247,10 @@ compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
 ****************************************************************************/
 compile_fltermlit(Funct,N,Args,Code,Status) :-
 	is_flatom(Funct,FAtom),
-	flora_signdef(FAtom,N,Signs),
+	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(FAtom,FObj),
-	compile_signpathexplist(Args,Signs,AObj,ObjCode,Status),
+	compile_argpathexplist(Args,ArgTypes,AObj,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
 	    conjunct_code(ObjCode,TCode,Code)
@@ -1950,26 +1950,26 @@ compile_wsflpathexplist([T|L],WS,[TObj|LObj],Code,Status) :-
 
 
 /****************************************************************************
-  compile_wsflsignpathexplist(+ParserTermList,+SignatureList,+WS,-ObjectList,-Code,-Status)
+  compile_wsflargpathexplist(+ParserTermList,+ArgTypeList,+WS,-ObjectList,-Code,-Status)
 ****************************************************************************/
-compile_wsflsignpathexplist([],[],_WS,[],NULL,[]) :- !.
+compile_wsflargpathexplist([],[],_WS,[],NULL,[]) :- !.
 
-compile_wsflsignpathexplist([T|L],[FL_OID|SignList],WS,[TObj|LObj],Code,Status) :-
+compile_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,[TObj|LObj],Code,Status) :-
 	!,
 	compile_wsflpathexp(T,WS,TObj,TCode,S),
 	( S == [] ->
-	    compile_wsflsignpathexplist(L,SignList,WS,LObj,LCode,Status),
+	    compile_wsflargpathexplist(L,ArgTypeList,WS,LObj,LCode,Status),
 	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
 	;
 	  Status=S
         ).
 
-compile_wsflsignpathexplist([T|L],[FL_BODYFORMULA|SignList],WS,[TCode|LObj],Code,Status) :-
+compile_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,[TCode|LObj],Code,Status) :-
 	!,
 	%% workspace not distributive over nested "form"
 	compile_body(T,TCode,S),
 	( S == [] ->
-	    compile_wsflsignpathexplist(L,SignList,WS,LObj,Code,Status)
+	    compile_wsflargpathexplist(L,ArgTypeList,WS,LObj,Code,Status)
 	;
 	  Status=S
         ).
@@ -2011,10 +2011,10 @@ compile_wsflpathexp(ParserTerm,WS,Object,Code,Status) :-
 ****************************************************************************/
 compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
-	flora_signdef(FAtom,N,Signs),
+	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(FAtom,FObj),
-	compile_wsflsignpathexplist(Args,Signs,WS,AObj,TCode,Status),
+	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,TCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
@@ -2043,10 +2043,10 @@ compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 ****************************************************************************/
 compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
-	flora_signdef(FAtom,N,Signs),
+	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(FAtom,FObj),
-	compile_wsflsignpathexplist(Args,Signs,WS,AObj,Code,Status),
+	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
 compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
@@ -2059,10 +2059,10 @@ compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
 ****************************************************************************/
 compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	is_flatom(Funct,FAtom),
-	flora_signdef(FAtom,N,Signs),
+	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(FAtom,FObj),
-	compile_wsflsignpathexplist(Args,Signs,WS,AObj,ObjCode,Status),
+	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
@@ -2376,6 +2376,7 @@ compile_prlgtermlit(ParserTerm,Module,Code,Status) :-
 	    prologterm_struct(FL_METAUNIV,2,[Call,LCode],CCode),
 	    conjunct_code(ACode,CCode,XCode),
 	    conjunct_code(XCode,Call,Code),
+	    %% dump the import statement for the corresponding XSB predicate
 	    import_struct(FAtom,N,Module,ICode),
 	    directive_struct(ICode,DCode),
 	    report_directive(DCode)
@@ -2422,6 +2423,7 @@ compile_prlgtermobj(ParserTerm,Module,Object,Code,Status) :-
 	    list_struct([FAtom|ArgsCode],[],LCode),
 	    prologterm_struct(FL_METAUNIV,2,[Object,LCode],CCode),
 	    conjunct_code(ACode,CCode,Code),
+	    %% dump the import statement for the corresponding XSB predicate
 	    import_struct(FAtom,N,Module,ICode),
 	    directive_struct(ICode,DCode),
 	    report_directive(DCode)
@@ -2436,9 +2438,9 @@ compile_prlgtermobj(ParserTerm,Module,Object,Code,Status) :-
   compile_prlgterm(+FunctorAtom,+Arity,+ArgList,-Object,-Code,-Status)
 ****************************************************************************/
 compile_prlgterm(FAtom,N,Args,Object,Code,Status) :-
-	flora_signdef(FAtom,N,Signs),
+	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	compile_signpathexplist(Args,Signs,AObj,Code,Status),
+	compile_argpathexplist(Args,ArgTypes,AObj,Code,Status),
 	( Status == [] ->
 	    prologterm_struct(FAtom,N,AObj,Object)
 	;
@@ -2966,11 +2968,11 @@ compile_execdirect(DirectTerm,Code) :-
 	( is_fltable(DirectTerm,P,A) ->
 	    table_struct(P,A,Code)
 
-	; is_fldynamic(DirectTerm,P,A) ->
-	    dynamic_struct(P,A,Code)
+	%%; is_fldynamic(DirectTerm,P,A) ->
+	%%    dynamic_struct(P,A,Code)
 
-	; is_flimport(DirectTerm,P,A,M) ->
-	    import_struct(P,A,M,Code)
+	%%; is_flimport(DirectTerm,P,A,M) ->
+	%%    import_struct(P,A,M,Code)
 
 	; is_flindex(DirectTerm,P,A,N) ->
 	    index_struct(P,A,N,Code)
@@ -2981,36 +2983,40 @@ compile_execdirect(DirectTerm,Code) :-
 	!.
 
 compile_execdirect(DirectTerm,Code) :-
-	( is_flprolog(DirectTerm,Funct,Arity) ->
-	    (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
-	    (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
-	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_PROLOG,FunctCode,ArityCode],Code)
+	(
+	%%  is_flprolog(DirectTerm,Funct,Arity) ->
+	%%  (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
+	%%  (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
+	%%  florasyslib_struct(FLLIBSHDIRECT,3,[FL_PROLOG,FunctCode,ArityCode],Code)
+	%%;
+	
+	  is_flfirstorder(DirectTerm,Funct,Arity) ->
+	  (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
+	  (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
+	  florasyslib_struct(FLLIBSHDIRECT,3,[FL_FIRSTORDER,FunctCode,ArityCode],Code)
 
-	; is_flpredicate(DirectTerm,Funct,Arity) ->
-	    (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
-	    (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
-	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_PREDICATE,FunctCode,ArityCode],Code)
+	;
+	  is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
+	  florasyslib_struct(FLLIBSHDIRECT,4,[FL_OP,Precedence,Associativity,Op],Code)
 
-	; is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
-	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_OP,Precedence,Associativity,Op],Code)
-
-	; is_flsignature(DirectTerm,Funct,Arity,Args) ->
-	    list_struct(Args,[],ArgsCode),
-	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_SIGNATURE,Funct,Arity,ArgsCode],Code)
+	;
+	  is_flarguments(DirectTerm,Funct,Arity,Args) ->
+	  list_struct(Args,[],ArgsCode),
+	  florasyslib_struct(FLLIBSHDIRECT,4,[FL_ARGUMENTS,Funct,Arity,ArgsCode],Code)
 	),
 	!.
 
 compile_execdirect(DirectTerm,Code) :-
-	( is_flabolish(DirectTerm,FAList) ->
+	( is_flexpunge(DirectTerm,FAList) ->
 	    compile_falist(FAList,FACodeList),
 	    list_struct(FACodeList,[],FAListCode),
-	    florasyslib_struct(FLLIBABOLISH,1,[FAListCode],Code)
+	    florasyslib_struct(FLLIBEXPUNGE,1,[FAListCode],Code)
 
-	; is_flabolish(DirectTerm,FAList,M) ->
+	; is_flexpunge(DirectTerm,FAList,M) ->
 	    compile_falist(FAList,FACodeList),
 	    list_struct(FACodeList,[],FAListCode),
 	    compile_flatomvar(M,MObj),
-	    florasyslib_struct(FLLIBABOLISH,2,[FAListCode,MObj],Code)
+	    florasyslib_struct(FLLIBEXPUNGE,2,[FAListCode,MObj],Code)
 	),
 	!.
 

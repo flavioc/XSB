@@ -17,5 +17,9 @@
 #define FLORA_WSSTORAGE(X)	FLORA_STORAGE_PREFIX'X'
 #mode restore
 
+
+:- import storage_find_fact/2 from storage.
+
+
 /***********************************************************************/
 

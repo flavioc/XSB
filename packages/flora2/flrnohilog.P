@@ -30,63 +30,63 @@
 #include "flora_terms.flh"
 
 
-flora_nohilog(FLORA_THIS_MODULE,1) :- !.
+flora_firstorder(FLORA_THIS_MODULE,1) :- !.
 
 
 /****************************************************************************
-  flora_nohilogdef(+Functor,+Arity)
+  flora_firstorderdef(+Functor,+Arity)
 ****************************************************************************/
-flora_nohilogdef(X,Y) :-
-	flora_nohilog(X,Y),
+flora_firstorderdef(X,Y) :-
+	flora_firstorder(X,Y),
 	!.
 
-flora_nohilogdef(X,Y) :-
+flora_firstorderdef(X,Y) :-
 	( conget(flora_shell_mode,1) ->
-	    flora_shnohilog(X,Y)
+	    flora_shfirstorder(X,Y)
 	;
-	  flora_dynnohilog(X,Y)
+	  flora_dynfirstorder(X,Y)
 	).
 
 
 /****************************************************************************
-  flora_reset_nohilog/0
+  flora_reset_firstorder/0
 ****************************************************************************/
-flora_reset_nohilog :- retractall(flora_dynnohilog(_,_)).
+flora_reset_firstorder :- retractall(flora_dynfirstorder(_,_)).
 
 
 /****************************************************************************
-  flora_define_nohilog(+Functor,+Arity)
+  flora_define_firstorder(+Functor,+Arity)
 ****************************************************************************/
-flora_define_nohilog(Functor,Arity) :-
+flora_define_firstorder(Functor,Arity) :-
 	(var(Functor); var(Arity)),
 	!,
-	assert(flora_dynnohilog(Functor,Arity)).
+	assert(flora_dynfirstorder(Functor,Arity)).
 
-flora_define_nohilog(Functor,Arity) :-
-	( flora_nohilog(Functor,Arity) ->
+flora_define_firstorder(Functor,Arity) :-
+	( flora_firstorder(Functor,Arity) ->
 	    true
 	;
-	  assert(flora_dynnohilog(Functor,Arity))
+	  assert(flora_dynfirstorder(Functor,Arity))
 	).
 
 
 /****************************************************************************
-  flora_shreset_nohilog/0
+  flora_shreset_firstorder/0
 ****************************************************************************/
-flora_shreset_nohilog :- retractall(flora_shnohilog(_,_)).
+flora_shreset_firstorder :- retractall(flora_shfirstorder(_,_)).
 
 
 /****************************************************************************
-  flora_shdefine_nohilog(+Functor,+Arity)
+  flora_shdefine_firstorder(+Functor,+Arity)
 ****************************************************************************/
-flora_shdefine_nohilog(Functor,Arity) :-
+flora_shdefine_firstorder(Functor,Arity) :-
 	(var(Functor); var(Arity)),
 	!,
-	assert(flora_shnohilog(Functor,Arity)).
+	assert(flora_shfirstorder(Functor,Arity)).
 
-flora_shdefine_nohilog(Functor,Arity) :-
-	( flora_nohilog(Functor,Arity) ->
+flora_shdefine_firstorder(Functor,Arity) :-
+	( flora_firstorder(Functor,Arity) ->
 	    true
 	;
-	  assert(flora_shnohilog(Functor,Arity))
+	  assert(flora_shfirstorder(Functor,Arity))
 	).

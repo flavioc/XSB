@@ -326,19 +326,19 @@ fldirective_struct(Direct,FLDIRECTIVE(Direct)).
 flcmddirect_struct(C,FLCOMMAND(C)).
 fltbldirect_struct(F,A,FLTABLE(F,A)).
 fldyndirect_struct(F,A,FLDYNAMIC(F,A)).
-flexptdirect_struct(F,A,FLEXPORT(F,A)).
-flimptdirect_struct(F,A,M,FLIMPORT(F,A,M)).
-flsigndirect_struct(F,N,Args,FLSIGNATURE(F,N,Args)).
-flprlgdirect_struct(F,A,FLPROLOG(F,A)).
-flnonhilogpredicatedirect_struct(F,A,FLNONHILOGPREDICATE(F,A)).
-flpredicatedirect_struct(F,A,FLPREDICATE(F,A)).
+%%flexptdirect_struct(F,A,FLEXPORT(F,A)).
+%%flimptdirect_struct(F,A,M,FLIMPORT(F,A,M)).
+flargumentsdirect_struct(F,N,Args,FLARGUMENTS(F,N,Args)).
+%%flprlgdirect_struct(F,A,FLPROLOG(F,A)).
+flfirstordernostoragedirect_struct(F,A,FLFIRSTORDERNOSTORAGE(F,A)).
+flfirstorderdirect_struct(F,A,FLFIRSTORDER(F,A)).
 flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
 flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
 flhilogtbldirect_struct(A,FLHILOGTABLE(A)).
 fleqldirect_struct(A,FLEQUALITY(A)).
 fleqldirect_struct(A,M,FLEQUALITY(A,M)).
-flabolishdirect_struct(FAList,FLABOLISH(FAList)).
-flabolishdirect_struct(FAList,M,FLABOLISH(FAList,M)).
+flexpungedirect_struct(FAList,FLEXPUNGE(FAList)).
+flexpungedirect_struct(FAList,M,FLEXPUNGE(FAList,M)).
 
 flatom_struct(Atom,FLATOM(Atom)).
 
@@ -477,23 +477,25 @@ flora_parse(_ComposerTerm,_Code,[error(UNKNOWN_ERROR)]).
 ****************************************************************************/
 flora_parse_directive(CanoniTerm,Code,Status) :-
 	fldirective_struct(CodeList,Code),
-	( flora_prologall_directive(CanoniTerm,CodeList,Status)
-	; flora_predicateall_directive(CanoniTerm,CodeList,Status)
-	; flora_import_directive(CanoniTerm,CodeList,Status)
-	; flora_prolog_directive(CanoniTerm,CodeList,Status)
-	; flora_nonhilogpredicate_directive(CanoniTerm,CodeList,Status)
-	; flora_nonhilogpredicateall_directive(CanoniTerm,CodeList,Status)
-	; flora_predicate_directive(CanoniTerm,CodeList,Status)
-	; flora_signature_directive(CanoniTerm,CodeList,Status)
+	( 
+	%%  flora_prologall_directive(CanoniTerm,CodeList,Status)
+	%%;
+	  flora_firstorderall_directive(CanoniTerm,CodeList,Status)
+	%%; flora_import_directive(CanoniTerm,CodeList,Status)
+	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
+	; flora_firstordernostorage_directive(CanoniTerm,CodeList,Status)
+	; flora_firstordernostorageall_directive(CanoniTerm,CodeList,Status)
+	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
+	; flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_table_directive(CanoniTerm,CodeList,Status)
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
-	; flora_export_directive(CanoniTerm,CodeList,Status)
+	%%; flora_export_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
 	; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_command_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_equality_directive(CanoniTerm,CodeList,Status)
-	; flora_abolish_directive(CanoniTerm,CodeList,Status)
+	; flora_expunge_directive(CanoniTerm,CodeList,Status)
 	; parsing_error(CanoniTerm,UNKNOWN_DIRECT,Status)
         ),
 	!.
@@ -510,19 +512,21 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 ****************************************************************************/
 flora_exec_directive(CanoniTerm,Code,Status) :-
 	fldirective_struct(CodeList,Code),
-	( flora_prologall_directive(CanoniTerm,CodeList,Status)
-	; flora_predicateall_directive(CanoniTerm,CodeList,Status)
-	; flora_import_directive(CanoniTerm,CodeList,Status)
-	; flora_prolog_directive(CanoniTerm,CodeList,Status)
-	; flora_predicate_directive(CanoniTerm,CodeList,Status)
-	; flora_signature_directive(CanoniTerm,CodeList,Status)
+	( 
+	%%  flora_prologall_directive(CanoniTerm,CodeList,Status)
+	%%;
+	  flora_firstorderall_directive(CanoniTerm,CodeList,Status)
+	%%; flora_import_directive(CanoniTerm,CodeList,Status)
+	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
+	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
+	; flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_table_directive(CanoniTerm,CodeList,Status)
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
-	; flora_dynamic_directive(CanoniTerm,CodeList,Status)
+	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_exec_equality_directive(CanoniTerm,CodeList,Status)
-	; flora_exec_abolish_directive(CanoniTerm,CodeList,Status)
+	; flora_exec_expunge_directive(CanoniTerm,CodeList,Status)
         ),
 	!.
 
@@ -663,7 +667,6 @@ flora_dynamic_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,St
 	flora_commasep_falist(T,FAList,Status),
 	(Status == [] -> flora_dynamic_directlist(FAList,CodeList); true).
 
-
 flora_dynamic_directlist([],[]) :- !.
 
 flora_dynamic_directlist([F/A|L],[Code|CL]) :-
@@ -675,145 +678,144 @@ flora_dynamic_directlist([F/A|L],[Code|CL]) :-
 /****************************************************************************
   flora_export_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_export_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_name(Funct,FL_EXPORT),
-	flora_commasep_falist(T,FAList,Status),
-	(Status == [] -> flora_export_directlist(FAList,CodeList); true).
-
-
-flora_export_directlist([],[]) :- !.
-
-flora_export_directlist([F/A|L],[C1,C2|CL]) :-
-	!,
-	flprlgdirect_struct(F,A,C1),
-	flexptdirect_struct(F,A,C2),
-	flora_export_directlist(L,CL).
+%%flora_export_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+%%	get_name(Funct,FL_EXPORT),
+%%	flora_commasep_falist(T,FAList,Status),
+%%	(Status == [] -> flora_export_directlist(FAList,CodeList); true).
+%%
+%%flora_export_directlist([],[]) :- !.
+%%
+%%flora_export_directlist([F/A|L],[C1,C2|CL]) :-
+%%	!,
+%%	flprlgdirect_struct(F,A,C1),
+%%	flexptdirect_struct(F,A,C2),
+%%	flora_export_directlist(L,CL).
 
 
 /****************************************************************************
   flora_import_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_import_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_name(Funct,FL_IMPORT),
-	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
-	get_name(F,FL_FROM),
-	( get_name(R,M) ->
-	    flora_commasep_falist(L,FAList,Status),
-	    (Status == [] -> flora_import_directlist(M,FAList,CodeList); true)
-	;
-	  parsing_error(R,ERROR_XSBMODULE,Status)
-        ).
-
-
-flora_import_directlist(_M,[],[]) :- !.
-
-flora_import_directlist(M,[F/A|L],[C1,C2|CL]) :-
-	!,
-	flprlgdirect_struct(F,A,C1),
-	flimptdirect_struct(F,A,M,C2),
-	flora_import_directlist(M,L,CL).
+%%flora_import_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+%%	get_name(Funct,FL_IMPORT),
+%%	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
+%%	get_name(F,FL_FROM),
+%%	( get_name(R,M) ->
+%%	    flora_commasep_falist(L,FAList,Status),
+%%	    (Status == [] -> flora_import_directlist(M,FAList,CodeList); true)
+%%	;
+%%	  parsing_error(R,ERROR_XSBMODULE,Status)
+%%        ).
+%%
+%%
+%%flora_import_directlist(_M,[],[]) :- !.
+%%
+%%flora_import_directlist(M,[F/A|L],[C1,C2|CL]) :-
+%%	!,
+%%	flprlgdirect_struct(F,A,C1),
+%%	flimptdirect_struct(F,A,M,C2),
+%%	flora_import_directlist(M,L,CL).
 
 
 /****************************************************************************
   flora_prologall_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_prologall_directive(CanoniTerm,[Code],[]) :-
-	get_name(CanoniTerm,FL_PROLOGALL),
-	flprlgdirect_struct(_Funct,_Arity,Code).
+%%flora_prologall_directive(CanoniTerm,[Code],[]) :-
+%%	get_name(CanoniTerm,FL_PROLOGALL),
+%%	flprlgdirect_struct(_Funct,_Arity,Code).
 
 
 /****************************************************************************
   flora_prolog_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_prolog_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_name(Funct,FL_PROLOG),
+%%flora_prolog_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+%%	get_name(Funct,FL_PROLOG),
+%%	flora_commasep_falist(T,FAList,Status),
+%%	(Status == [] -> flora_prolog_directlist(FAList,CodeList); true).
+
+
+%%flora_prolog_directlist([],[]) :- !.
+
+%%flora_prolog_directlist([F/A|L],[Code|CL]) :-
+%%	!,
+%%	flprlgdirect_struct(F,A,Code),
+%%	flora_prolog_directlist(L,CL).
+
+
+/****************************************************************************
+  flora_firstorderall_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_firstorderall_directive(CanoniTerm,[Code],[]) :-
+	get_name(CanoniTerm,FL_FIRSTORDERALL),
+	flfirstorderdirect_struct(_Funct,_Arity,Code).
+
+
+
+/****************************************************************************
+  flora_firstorder_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_firstorder_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_FIRSTORDER),
 	flora_commasep_falist(T,FAList,Status),
-	(Status == [] -> flora_prolog_directlist(FAList,CodeList); true).
+	(Status == [] -> flora_firstorder_directlist(FAList,CodeList); true).
 
 
-flora_prolog_directlist([],[]) :- !.
+flora_firstorder_directlist([],[]) :- !.
 
-flora_prolog_directlist([F/A|L],[Code|CL]) :-
+flora_firstorder_directlist([F/A|L],[Code|CL]) :-
 	!,
-	flprlgdirect_struct(F,A,Code),
-	flora_prolog_directlist(L,CL).
+	flfirstorderdirect_struct(F,A,Code),
+	flora_firstorder_directlist(L,CL).
 
 
 /****************************************************************************
-  flora_predicateall_directive(+CanoniTerm,-CodeList,-Status)
+  flora_firstordernostorageall_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_predicateall_directive(CanoniTerm,[Code],[]) :-
-	get_name(CanoniTerm,FL_PREDICATEALL),
-	flpredicatedirect_struct(_Funct,_Arity,Code).
+flora_firstordernostorageall_directive(CanoniTerm,[Code],[]) :-
+	get_name(CanoniTerm,FL_FIRSTORDERNOSTORAGEALL),
+	flfirstorderdirect_struct(_Funct,_Arity,Code).
 
 
 
 /****************************************************************************
-  flora_predicate_directive(+CanoniTerm,-CodeList,-Status)
+  flora_firstordernostorage_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_predicate_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_name(Funct,FL_PREDICATE),
+flora_firstordernostorage_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_FIRSTORDERNOSTORAGE),
 	flora_commasep_falist(T,FAList,Status),
-	(Status == [] -> flora_predicate_directlist(FAList,CodeList); true).
+	(Status == [] -> flora_firstordernostorage_directlist(FAList,CodeList); true).
 
 
-flora_predicate_directlist([],[]) :- !.
+flora_firstordernostorage_directlist([],[]) :- !.
 
-flora_predicate_directlist([F/A|L],[Code|CL]) :-
+flora_firstordernostorage_directlist([F/A|L],[Code|CL]) :-
 	!,
-	flpredicatedirect_struct(F,A,Code),
-	flora_predicate_directlist(L,CL).
+	flfirstordernostoragedirect_struct(F,A,Code),
+	flora_firstordernostorage_directlist(L,CL).
 
 
 /****************************************************************************
-  flora_nonhilogpredicateall_directive(+CanoniTerm,-CodeList,-Status)
+  flora_arguments_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_nonhilogpredicateall_directive(CanoniTerm,[Code],[]) :-
-	get_name(CanoniTerm,FL_NONHILOGPREDICATEALL),
-	flpredicatedirect_struct(_Funct,_Arity,Code).
-
-
-
-/****************************************************************************
-  flora_nonhilogpredicate_directive(+CanoniTerm,-CodeList,-Status)
-****************************************************************************/
-flora_nonhilogpredicate_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_name(Funct,FL_NONHILOGPREDICATE),
-	flora_commasep_falist(T,FAList,Status),
-	(Status == [] -> flora_nonhilogpredicate_directlist(FAList,CodeList); true).
-
-
-flora_nonhilogpredicate_directlist([],[]) :- !.
-
-flora_nonhilogpredicate_directlist([F/A|L],[Code|CL]) :-
-	!,
-	flnonhilogpredicatedirect_struct(F,A,Code),
-	flora_nonhilogpredicate_directlist(L,CL).
-
-
-/****************************************************************************
-  flora_signature_directive(+CanoniTerm,-CodeList,-Status)
-****************************************************************************/
-flora_signature_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-	get_atom(Funct,FL_SIGNATURE),
+flora_arguments_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_atom(Funct,FL_ARGUMENTS),
 	flora_comma_separated_list(T,TList),
-	flora_signlist(TList,CodeList,Status).
+	flora_arglist(TList,CodeList,Status).
 
 
 /****************************************************************************
-  flora_signlist(+CanoniTermList,-CodeList,-Status)
+  flora_arglist(+CanoniTermList,-CodeList,-Status)
 ****************************************************************************/
-flora_signlist([],[],[]) :- !.
+flora_arglist([],[],[]) :- !.
 
-flora_signlist([T|TList],[C|CList],Status) :-
+flora_arglist([T|TList],[C|CList],Status) :-
 	!,
-	flora_functsign(T,Funct,Arity,Args,S),
+	flora_functarg(T,Funct,Arity,Args,S),
 	( S == [] ->
-	    ( flora_conflict_signature(Funct,Arity,Args) ->
-		parsing_error(T,NO_REDEFSIGN,Status)
+	    ( flora_conflict_arguments(Funct,Arity,Args) ->
+		parsing_error(T,NO_REDEFARG,Status)
 	    ;
-	      flsigndirect_struct(Funct,Arity,Args,C),
-	      flora_signlist(TList,CList,Status)
+	      flargumentsdirect_struct(Funct,Arity,Args,C),
+	      flora_arglist(TList,CList,Status)
 	    )
 	;
 	  Status=S
@@ -821,13 +823,13 @@ flora_signlist([T|TList],[C|CList],Status) :-
 
 
 /****************************************************************************
-  flora_functsign(+CanoniTerm,-Funct,-Arity,-Args,-Status)
+  flora_functarg(+CanoniTerm,-Funct,-Arity,-Args,-Status)
   flora_argspec(+CanoniTermList,-SpecList,-Status)
 ****************************************************************************/
-flora_functsign(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),F,N,A,Status) :-
+flora_functarg(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),F,N,A,Status) :-
 	!,
 	( N == 0 ->
-	    parsing_error(Ip,ERROR_SIGNATURE,Status)
+	    parsing_error(Ip,ERROR_ARGUMENTS,Status)
 
 	; get_atom(Funct,F) ->
 	    flora_argspec(Args,A,Status)
@@ -835,8 +837,8 @@ flora_functsign(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),F,N,A,Status) :-
 	  parsing_error(If,EXP_ATOMICFUNCT,Status)
         ).
 
-flora_functsign(CanoniTerm,_F,_N,_A,Status) :-
-	parsing_error(CanoniTerm,ERROR_SIGNATURE,Status).
+flora_functarg(CanoniTerm,_F,_N,_A,Status) :-
+	parsing_error(CanoniTerm,ERROR_ARGUMENTS,Status).
 
 
 flora_argspec([],[],[]) :- !.
@@ -846,7 +848,7 @@ flora_argspec([CanoniTerm|CanoniTermList],[A|AL],Status) :-
 	( (A == FL_OID; A == FL_BODYFORMULA) ->
 	    flora_argspec(CanoniTermList,AL,Status)
 	;
-	  parsing_error(CanoniTerm,ERROR_ARGSIGN,Status)
+	  parsing_error(CanoniTerm,ERROR_ARGTYPE,Status)
         ).
 
 
@@ -1011,45 +1013,45 @@ flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code
 
 
 /****************************************************************************
-  flora_abolish_directive(+CanoniTerm,-CodeList,-Status)
+  flora_expunge_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
-	get_name(Funct,FL_ABOLISH),
+flora_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_EXPUNGE),
 	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
 	get_name(F,FL_IN),
 	!,
 	( get_name(R,M) ->
 	    flora_commasep_falist(L,FAList,Status),
-	    (Status == [] -> flabolishdirect_struct(FAList,M,Code); true)
+	    (Status == [] -> flexpungedirect_struct(FAList,M,Code); true)
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
 
-flora_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
-	get_name(Funct,FL_ABOLISH),
+flora_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_EXPUNGE),
 	flora_commasep_falist(T,FAList,Status),
-	(Status == [] -> flabolishdirect_struct(FAList,Code); true).
+	(Status == [] -> flexpungedirect_struct(FAList,Code); true).
 
 
 /****************************************************************************
-  flora_exec_abolish_directive(+CanoniTerm,-CodeList,-Status)
+  flora_exec_expunge_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_exec_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
-	get_name(Funct,FL_ABOLISH),
+flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_EXPUNGE),
 	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
 	get_name(F,FL_IN),
 	!,
 	( flora_name_or_normvar(R,M) ->
 	    flora_commasep_var_falist(L,FAList,Status),
-	    (Status == [] -> flabolishdirect_struct(FAList,M,Code); true)
+	    (Status == [] -> flexpungedirect_struct(FAList,M,Code); true)
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
 
-flora_exec_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
-	get_name(Funct,FL_ABOLISH),
+flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_EXPUNGE),
 	flora_commasep_var_falist(T,FAList,Status),
-	(Status == [] -> flabolishdirect_struct(FAList,Code); true).
+	(Status == [] -> flexpungedirect_struct(FAList,Code); true).
 
 
 /****************************************************************************
@@ -1472,10 +1474,10 @@ flora_prlgterm(CanoniTerm,_Code,Status) :-
 ****************************************************************************/
 flora_term(Funct,N,Args,Code,Status) :-
 	get_atom(Funct,FAtom),
-	flora_signdef(FAtom,N,Signs),
+	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	flatom_struct(FAtom,F),
-	flora_signpathexplist(Args,Signs,AList,Status),
+	flora_argpathexplist(Args,ArgTypes,AList,Status),
 	(Status == [] -> flterm_struct(F,N,AList,Code); true).
 
 flora_term(Funct,N,Args,Code,Status) :-
@@ -1525,22 +1527,22 @@ flora_pathexplist([T|L],[TCode|LCode],Status) :-
 
 
 /****************************************************************************
-  flora_signpathexplist(+Terms,+Signatuers,-PathExpressions,-Status)
+  flora_argpathexplist(+Terms,+ArgumentTypes,-PathExpressions,-Status)
 ****************************************************************************/
-flora_signpathexplist([],[],[],[]) :- !.
+flora_argpathexplist([],[],[],[]) :- !.
 
-flora_signpathexplist([T|L],[FL_OID|Signs],[TCode|LCode],Status) :-
+flora_argpathexplist([T|L],[FL_OID|Arguments],[TCode|LCode],Status) :-
 	flora_pathexp(T,TCode,S),
 	( S == [] ->
-	    flora_signpathexplist(L,Signs,LCode,Status)
+	    flora_argpathexplist(L,Arguments,LCode,Status)
 	;
 	  Status=S
         ).
 
-flora_signpathexplist([T|L],[FL_BODYFORMULA|Signs],[TCode|LCode],Status) :-
+flora_argpathexplist([T|L],[FL_BODYFORMULA|Arguments],[TCode|LCode],Status) :-
 	flora_body(T,TCode,S),
 	( S == [] ->
-	    flora_signpathexplist(L,Signs,LCode,Status)
+	    flora_argpathexplist(L,Arguments,LCode,Status)
 	;
 	  Status=S
         ).

@@ -170,9 +170,13 @@ flora_include(FLLIBEQUALITY,IncFile) :- !,
 	slash(S),
 	fmt_write_string(IncFile,'syslibinc%sflrequality_inc.flh',arg(S)).
 
-flora_include(FLLIBABOLISH,IncFile) :- !,
+flora_include(FLLIBEXPUNGE,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'syslibinc%sflrabolish_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'syslibinc%sflrexpunge_inc.flh',arg(S)).
+
+flora_include(FLLIBCONTROL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrcontrol_inc.flh',arg(S)).
 
 flora_include(FLHEADER,IncFile) :- !,
 	slash(S),
@@ -293,9 +297,13 @@ flora_library(FLLIBEQUALITY,IncFile) :- !,
 	slash(S),
 	fmt_write_string(IncFile,'syslib%sflrequality.P',arg(S)).
 
-flora_library(FLLIBABOLISH,IncFile) :- !,
+flora_library(FLLIBEXPUNGE,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'syslib%sflrabolish.P',arg(S)).
+	fmt_write_string(IncFile,'syslib%sflrexpunge.P',arg(S)).
+
+flora_library(FLLIBCONTROL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrcontrol.P',arg(S)).
 
 flora_library(FLLIBDYNMOD,IncFile) :- !,
 	slash(S),

@@ -1,6 +1,7 @@
-0. Remove the export/dynamic directives.
-   Make flTable imply flPredicate. Issue an error if both flPredicate and
-   flProlog are issued.
+0. Remove the dynamic directive.
+   Make table imply firstorder.
+   Do variable analysis in delete{...}/insert{...}
+   to avoid errors like in demo/aggregate.flr
 
 
 1. Implement [flUser] analogous to [user] of XSB.
@@ -156,11 +157,12 @@
 	trailer, we are safe from clashes with static predicates.
 
 	To enable the current parser parse the rules inside
-	insert{...} correctly, we have to give the following signature to ':-'
+	insert{...} correctly, we have to give the following argument
+	definition for ':-'
 
-	:- sign ':-'(hform,bform).
+	:- arguments ':-'(hform,bform).
 
-	where "bform" is the existing signature type and "hform" needs to be
+	where "bform" is the existing argument type and "hform" needs to be
 	added. The effect of "hform" is to force the compiler to compile
 	the head of the rule as a list of formulas rather than an oid term.
 
@@ -252,3 +254,9 @@
     "flora". Maybe we should prevent users from loading lodules into
     the "flora" module.
 
+13. Add the symbol _@, which will be handled by the tokenizer and passed
+    along to the compiler so it would insert code to replace _@ with the
+    preprocessor constant FLORA_MODULE.
+    When compiling, the macro definition
+    #define FLORA_MODULE  .....
+    would be dumped into the .P file

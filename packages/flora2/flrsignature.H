@@ -24,24 +24,24 @@
 */
 
 
-:- dynamic flora_dynsign(_,_,_).
+:- dynamic flora_dynarg(_,_,_).
 
-:- dynamic flora_shsign(_,_,_).
+:- dynamic flora_sharg(_,_,_).
 
-:- index(flora_dynsign/3,trie).
+:- index(flora_dynarg/3,trie).
 
-:- index(flora_shsign/3,trie).
+:- index(flora_sharg/3,trie).
 
-:- index flora_sign/3-1.
+:- index flora_arguments_spec/3-1.
 
 :- import assert/1, retractall/1 from assert.
 
 :- import conget/2 from gensym.
 
 :- export
-	flora_signdef/3,
-	flora_conflict_signature/3,
-	flora_reset_signature/0,
-	flora_define_signature/3,
-	flora_shreset_signature/0,
-	flora_shdefine_signature/3.
+	flora_argdef/3,
+	flora_conflict_arguments/3,
+	flora_reset_arguments/0,
+	flora_define_arguments/3,
+	flora_shreset_arguments/0,
+	flora_shdefine_arguments/3.

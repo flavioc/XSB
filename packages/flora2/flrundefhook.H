@@ -29,7 +29,7 @@
 :- import
 	flora_flogic_predicate/4,
 	flora_hilog_predicate/2,
-	flora_nohilog_predicate/3
+	flora_firstorder_predicate/3
    from flrwrapper.
 
 :- import flModule/1 from flora2.

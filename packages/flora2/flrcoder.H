@@ -33,7 +33,7 @@
 
 :- import str_cat/3 from string.
 
-:- import flora_nohilogdef/2 from flrnohilog.
+:- import flora_firstorderdef/2 from flrnohilog.
 
 :- import flora_prlgdef/2 from flrprolog.
 

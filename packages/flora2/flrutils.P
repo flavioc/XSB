@@ -135,7 +135,7 @@ flora_load_module_internal(File) :-
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("File %s[.%s|.%s|.%s] does not exist!",
+	  flora_error_line("File %s[.{%s|%s|%s}] does not exist!",
 			   args(File,
 				FLORA_FILE_EXT,XSB_PFILE_EXT,XSB_OFILE_EXT)),
           fail
@@ -567,9 +567,9 @@ flora_not_end_of_input(Status) :- member(FLORA_NOT_EOF,Status).
 flora_reset_modules_for_file :-
 	flora_reset_lexer,
 	flora_reset_operator,
-	flora_reset_signature,
+	flora_reset_arguments,
 	flora_reset_prolog,
-	flora_reset_nohilog,
+	flora_reset_firstorder,
 	flora_reset_compiler,
 	conset(flora_shell_mode,0).
 
@@ -656,7 +656,9 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 	telling(PreOutFile),
 	tell(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
-	flora_include_file([FLHEADER,FLDBDYN,FLDEFINITION,FLPATCH|LibOptionList],HeaderStatus),
+	%% FLLIBCONTROL (sylibinc/flrcontrol_inc.flh) should probably 
+	%% be included by the compiler
+	flora_include_file([FLHEADER,FLDBDYN,FLDEFINITION,FLPATCH,FLLIBCONTROL|LibOptionList],HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;

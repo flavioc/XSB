@@ -35,19 +35,19 @@ flora_op(1700,fx,FL_IMPLYOP).
 flora_op(1700,fx,FL_QUERYOP).
 
 flora_op(1600,fx,FL_HILOG).
-flora_op(1600,fx,FL_DYNAMIC).
 flora_op(1600,xfx,FL_BAR).
 flora_op(1600,fx,FL_TABLE).
 flora_op(1600,fx,FL_INDEX).
-flora_op(1600,fx,FL_EXPORT).
-flora_op(1600,fx,FL_IMPORT).
-flora_op(1600,fx,FL_SIGNATURE).
-flora_op(1600,fx,FL_PROLOG).
-flora_op(1600,fx,FL_NONHILOGPREDICATE).
-flora_op(1600,fx,FL_PREDICATE).
+flora_op(1600,fx,FL_DYNAMIC).
+%%flora_op(1600,fx,FL_EXPORT).
+%%flora_op(1600,fx,FL_IMPORT).
+flora_op(1600,fx,FL_ARGUMENTS).
+%%flora_op(1600,fx,FL_PROLOG).
+flora_op(1600,fx,FL_FIRSTORDERNOSTORAGE).
+flora_op(1600,fx,FL_FIRSTORDER).
 flora_op(1600,fx,FL_HILOGTABLE).
 flora_op(1600,fx,FL_EQUALITY).
-flora_op(1600,fx,FL_ABOLISH).
+flora_op(1600,fx,FL_EXPUNGE).
 
 flora_op(1600,fx,FL_COMPILE).
 flora_op(1600,fx,FL_LOAD).

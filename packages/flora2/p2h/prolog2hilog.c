@@ -106,6 +106,7 @@ xsbBool plg2hlg () {
 	  c2p_string(apply_h, apply_t); /* arg 3 gets the value of apply_h */
 	return p2p_unify(pterm, temp_pterm);
       } else if (is_string(apply_t)) {
+	printf("apply_h=%s apply_t=%s\n",apply_h,string_val(apply_t));
 	return (p2p_unify(pterm, temp_pterm)
 		&& (apply_h==NULL
 		    || strcmp(apply_h,string_val(apply_t))==0));

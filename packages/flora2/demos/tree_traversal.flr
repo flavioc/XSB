@@ -2,7 +2,6 @@
 ** the values in each node.
 */
 
-:- flProlog cputime/1, write/1, writeln/1.
 
 n1[val->50,
    left->n2,
@@ -36,14 +35,14 @@ leaf[dfs->0].
 
 %% This one measures cpu time for method M.
 X[cpu(M)->T] :-
-	cputime(T0), X[M->V], cputime(T1),
+	cputime(T0)@prolog(), X[M->V], cputime(T1)@prolog(),
 	T is T1-T0,
-	write('Value of '),
-	write(X),
-	write('.'),
-	writeln(M),
-	write('is: '),
-	writeln(V).
+	write('Value of ')@prolog(),
+	write(X)@prolog(),
+	write('.')@prolog(),
+	writeln(M)@prolog(),
+	write('is: ')@prolog(),
+	writeln(V)@prolog().
 
 ?- n1[dfs->V].
 ?- n1[cpu(dfs)->Cpu].

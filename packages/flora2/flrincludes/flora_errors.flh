@@ -69,9 +69,9 @@
 
 
 /**************************************
-  errors reported by Flora Signature
+  errors reported by Flora Arguments directive
 **************************************/
-#define NO_REDEFSIGN	'redefinition of standard signatures not allowed'
+#define NO_REDEFARG	'redefinition of standard argument types not allowed'
 
 
 /**************************************
@@ -83,10 +83,10 @@
 
 #mode save
 #mode nostring "\!#'"
-#define ERROR_ARGSIGN	'invalid argument type specification: FL_OID/FL_BODYFORMULA expected'
+#define ERROR_ARGTYPE	'invalid argument type specification: FL_OID/FL_BODYFORMULA expected'
 #mode restore
 
-#define ERROR_SIGNATURE	'invalid signature directive'
+#define ERROR_ARGUMENTS	'invalid arguments directive'
 #define ERROR_XSBMODULE	'invalid module name'
 #define ERROR_AGGREGT	'syntax error in aggregate body'
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'

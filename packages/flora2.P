@@ -143,10 +143,10 @@ flora_shell :-
   Flora import stuff
 
   Syntax:
-      :- flImport {flHilog|flPredicate} Pred/Arity as Pred1(_,_,...)
+      :- flImport {hilog|firstorder} Pred/Arity as Pred1(_,_,...)
                                 from File[.flr]>>FloraModule
   or
-      :- flImport {flHilog|flPredicate} Pred/Arity as Pred1(_,_,...)
+      :- flImport {hilog|firstorder} Pred/Arity as Pred1(_,_,...)
                                 from FloraModule
 
   Also (to load into the default module)
@@ -160,8 +160,8 @@ flora_shell :-
       :- flCompile file>>module.
 ************************************************************************/
 
-:- op(1150,fx,(flPredicate)).
-:- op(1150,fx,(flHilog)).
+:- op(1150,fx,(firstorder)).
+%%:- op(1150,fx,(hilog)).  %% this is already defined in XSB
 
 :- op(500,yfx,(as)).
 :- op(1170,fx,(flImport)).
@@ -171,14 +171,14 @@ flora_shell :-
 :- op(1050,fx,(flCompile)).
 %% The other operators, '>>' and 'from', are already defined in XSB
 
-flImport(flHilog(from(as(What,AsWhat),FileMod))) :- !,
+flImport(hilog(from(as(What,AsWhat),FileMod))) :- !,
 	(atom(FileMod) 
 	-> flImportHiLog(What,AsWhat,_,FileMod)
 	; FileMod = File>>Module 
 	-> flImportHiLog(What,AsWhat,File,Module)
 	).
 
-flImport(flPredicate(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
+flImport(firstorder(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
 	(atom(FileMod)
 	-> flImportFloraPred(What,AsWhat,_,FileMod)
 	; FileMod = File>>Module 

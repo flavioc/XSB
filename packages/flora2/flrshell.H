@@ -68,11 +68,11 @@
 
 :- import flora_shreset_operator/0 from flroperator.
 
-:- import flora_shreset_signature/0 from flrsignature.
+:- import flora_shreset_arguments/0 from flrsignature.
 
-:- import flora_shreset_prolog/0 from flrprolog.
+%%:- import flora_shreset_prolog/0 from flrprolog.
 
-:- import flora_shreset_nohilog/0 from flrnohilog.
+:- import flora_shreset_firstorder/0 from flrnohilog.
 
 :- import flora_load_library/1 from flrlibman.
 

@@ -114,13 +114,13 @@
     ;; for objects
     '("\\([A-Za-z0-9_][A-Za-z0-9_!.]*\\) *\\["
       1 'font-lock-variable-name-face)
-    '("\\b\\(\\\+\\|not\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|deleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\\)\\b"
+    '("\\b\\(\\\+\\|tnot\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|deleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\||fl[A-Z][a-zA-Z]*\\)\\b"
       1 'font-lock-keyword-face)
     '("\\(:\\||\\)" 
       1 'font-lock-type-face)
     '("\\(\\[\\|\\]\\|{\\|}\\)"
       1 'bold)
-    '("\\b\\(index\\|from\\|fl[A-Z][a-zA-Z]*\\|import\\|^#[a-z]\\)\\b"
+    '("\\b\\(index\\|from\\|hilogtable\||hilogtableall\\|import\\|table\||firstorder\||firstorderall\||arguments\||^#[a-z]\\)\\b"
       1 'flora-font-lock-system-face)
     '("\\(\\b[A-Za-z0-9_]+\\b *\\((\\b[^)]+\\b)\\)?\\)[ \t\n]*\\((.*)[ \t\C-m]*\\)?\\*?[---=]>"
       1 'font-lock-function-name-face)

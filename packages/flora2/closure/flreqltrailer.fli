@@ -19,9 +19,6 @@
 #include "includes/flrpred.fli"
 
 
-:- import flora_warning_line/1 from flrprint.
-
-
 /***************************************************************************
   closure rules for X::Y
 ***************************************************************************/
@@ -62,11 +59,13 @@ immediate_sub(X,Y) :-
 %% sub/2
 sub(X,Y) :-
 	inferred_sub_eql(X,Y),
-	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
+	(X=Y,flora_warning_line('cycle in class hierarchy')@prolog(flrprint)
+	; true).
 
 sub(X,Y) :-
 	super_sub(X,Y),
-	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
+	(X=Y,flora_warning_line('cycle in class hierarchy')@prolog(flrprint)
+	; true).
 
 
 /***************************************************************************

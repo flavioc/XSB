@@ -15,7 +15,7 @@
 /***************************************************************************
   tabling directives
 ***************************************************************************/
-:- flTable
+:- table
 	inferred_sub/2,
 	super_sub/2,
 	immediate_sub/2,
@@ -60,7 +60,7 @@
 	diffobjeql/2.
 
 
-:- flTable
+:- table
 	inferred_sub_eql/2,
 	inferred_isa_eql/2,
 	inferred_ifd_eql/3,
@@ -151,12 +151,10 @@ imvdinc(O,M,[H|T]) :- imvd(O,M,H), imvdinc(O,M,T).
 /****************************************************************************
   multivalued attributes aggregation
 ****************************************************************************/
-:- import findall/3 from setof.
 
+mvdtolist(O,M,L) :- findall(V,mvd(O,M,V),L)@prolog(setof).
 
-mvdtolist(O,M,L) :- findall(V,mvd(O,M,V),L).
-
-imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L). 
+imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L)@prolog(setof). 
 
 
 /****************************************************************************
@@ -183,8 +181,7 @@ exists(X) :- imeth(X,_).
 /****************************************************************************
   objeql/2
 ****************************************************************************/
-:- flProlog nonvar/1.
 
 
-objeql(X,Y) :- (nonvar(X); nonvar(Y)), X=Y.
+objeql(X,Y) :- (nonvar(X)@prolog(); nonvar(Y)@prolog()), X=Y.
 objeql(X,Y) :- diffobjeql(X,Y).

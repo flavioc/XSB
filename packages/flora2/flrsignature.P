@@ -1,4 +1,4 @@
-/* File:      flrsignature.P -- Flora signature definitions
+/* File:      flrsignature.P -- Flora argument type definitions
 **
 ** Author(s): Guizhen Yang
 **
@@ -29,72 +29,72 @@
 #include "flora_terms.flh"
 
 
-flora_sign((findall),3,[FL_OID,FL_BODYFORMULA,FL_OID]) :- !.
-flora_sign((if),1,[FL_BODYFORMULA]) :- !.
-flora_sign((else),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
-flora_sign((then),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
+flora_arguments_spec((findall),3,[FL_OID,FL_BODYFORMULA,FL_OID]) :- !.
+flora_arguments_spec((if),1,[FL_BODYFORMULA]) :- !.
+flora_arguments_spec((else),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
+flora_arguments_spec((then),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
 
 
 /****************************************************************************
-  flora_signdef(+Functor,+Arity,+ArgsList)
+  flora_argdef(+Functor,+Arity,+ArgsList)
 ****************************************************************************/
-flora_signdef(X,Y,Z) :-
-	flora_sign(X,Y,Z),
+flora_argdef(X,Y,Z) :-
+	flora_arguments_spec(X,Y,Z),
 	!.
 
-flora_signdef(X,Y,Z) :-
+flora_argdef(X,Y,Z) :-
 	( conget(flora_shell_mode,1) ->
-	    flora_shsign(X,Y,Z)
+	    flora_sharg(X,Y,Z)
 	;
-	  flora_dynsign(X,Y,Z)
+	  flora_dynarg(X,Y,Z)
 	).
 
 
 /****************************************************************************
-  flora_conflict_signature(+Op,+Arity,+Args)
+  flora_conflict_arguments(+Op,+Arity,+Args)
 ****************************************************************************/
-flora_conflict_signature(O,A,Args) :-
-	flora_sign(O,_A,_Args),
+flora_conflict_arguments(O,A,Args) :-
+	flora_arguments_spec(O,_A,_Args),
 	(A \= _A; Args \= _Args).
 
 
 /****************************************************************************
-  flora_reset_signature/0
+  flora_reset_arguments/0
 ****************************************************************************/
-flora_reset_signature :- retractall(flora_dynsign(_,_,_)).
+flora_reset_arguments :- retractall(flora_dynarg(_,_,_)).
 
 
 /****************************************************************************
-  flora_define_signature(+Op,+Arity,+Args)
+  flora_define_arguments(+Op,+Arity,+Args)
 ****************************************************************************/
-flora_define_signature(Op,Arity,Args) :-
-	( flora_sign(Op,Arity,Args) ->
+flora_define_arguments(Op,Arity,Args) :-
+	( flora_arguments_spec(Op,Arity,Args) ->
 	    true
 
-	; flora_dynsign(Op,Arity,_) ->
-	    retractall(flora_dynsign(Op,Arity,_)),
-	    assert(flora_dynsign(Op,Arity,Args))
+	; flora_dynarg(Op,Arity,_) ->
+	    retractall(flora_dynarg(Op,Arity,_)),
+	    assert(flora_dynarg(Op,Arity,Args))
 	;
-	  assert(flora_dynsign(Op,Arity,Args))
+	  assert(flora_dynarg(Op,Arity,Args))
 	).
 
 
 /****************************************************************************
-  flora_shreset_signature/0
+  flora_shreset_arguments/0
 ****************************************************************************/
-flora_shreset_signature :- retractall(flora_shsign(_,_,_)).
+flora_shreset_arguments :- retractall(flora_sharg(_,_,_)).
 
 
 /****************************************************************************
-  flora_shdefine_signature(+Op,+Arity,+Args)
+  flora_shdefine_arguments(+Op,+Arity,+Args)
 ****************************************************************************/
-flora_shdefine_signature(Op,Arity,Args) :-
-	( flora_sign(Op,Arity,Args) ->
+flora_shdefine_arguments(Op,Arity,Args) :-
+	( flora_arguments_spec(Op,Arity,Args) ->
 	    true
 
-	; flora_shsign(Op,Arity,_) ->
-	    retractall(flora_shsign(Op,Arity,_)),
-	    assert(flora_shsign(Op,Arity,Args))
+	; flora_sharg(Op,Arity,_) ->
+	    retractall(flora_sharg(Op,Arity,_)),
+	    assert(flora_sharg(Op,Arity,Args))
 	;
-	  assert(flora_shsign(Op,Arity,Args))
+	  assert(flora_sharg(Op,Arity,Args))
 	).

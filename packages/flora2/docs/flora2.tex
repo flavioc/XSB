@@ -123,6 +123,7 @@
 \newcommand{\FLORAone}{{\mbox{${\cal F}${\sc lora}}}\xspace}
 \newcommand{\FLORID}{{\mbox{\sc Florid}}\xspace}
 \newcommand{\fl}{\mbox{F-logic}\xspace}
+\newcommand{\NAF}{{$\tt\backslash +$}\xspace}
 
 
 \newcommand{\consts}{\ensuremath{\mathcal{C}}}
@@ -223,6 +224,20 @@ other XSB modules, and regular XSB modules can query the objects defined in
 because it heavily relies on tabling and the well-founded semantics for
 negation, both of which are available only in XSB.
 
+Due to certain problems with XSB, \FLORA runs best when XSB is configured
+with SLG-WAM and local scheduling. This problem will be fixed in a future
+release of XSB. Under the default XSB configuration, certain \fl programs might
+run 30 times slower than under the suggested configuration. Some \FLORA
+programs might also give errors when run under the default configuration.
+To configure XSB for optimal \FLORA performance, build XSB as follows:
+%%
+{\tt
+\begin{quote}
+ configure --with-local-scheduling --enable-slg-wam --config-tag=\\
+ makexsb
+\end{quote}
+}
+%%
 In the current release of \FLORA, it does not come pre-built, so you must
 build it after installing and compiling XSB:
 %%
@@ -394,7 +409,7 @@ error is reported.
     Load the files in the specified list into the module `{\tt Module}'.
 \item {\tt rundemo(FILE)}:
     Consult a demo from \FLORA demos directory.
-\item {\tt flEquality \{none$|$basic$|$flogic\}}:
+\item {\tt equality \{none$|$basic$|$flogic\}}:
     Set the level of support for the equality predicate {\tt :=:} in the
     shell module `main'.
     {\tt none}  means that {\tt :=:} is treated as a regular
@@ -404,16 +419,14 @@ error is reported.
     the axiom for scalar methods).
 \item {\tt abolish\_all\_tables}:
     Flush all tabled data.
-\item {\tt flProlog Functor/Arity}:
-    Define Functor/Arity as Prolog in shell mode.
-\item {\tt flPredicate Functor/Arity}:
+\item {\tt firstorder Functor/Arity}:
     Define Functor/Arity as non-HiLog in shell mode.
-\item {\tt flSign Functor(\{oid$|$form\}, ...)}:
+\item {\tt arguments Functor(\{oid$|$form\}, ...)}:
     Define the predicate meta signature in shell mode.
-\item {\tt flOp(Precedence,Associativity,Operator)}:
+\item {\tt op(Precedence,Associativity,Operator)}:
     Define an operator in shell mode.
-\item {\tt flReset(flProlog$|$flPredicate$|$flSign$|$op)}:
-    Clear all dynamic flProlog/flPredicate/flSign/op definitions in the
+\item {\tt flReset(\{firstorder|arguments|op\})}:
+    Clear all dynamic {\tt firstorder/arguments/op}  definitions in the
     \FLORA shell.
 \item {\tt flAll}:
     Show all solutions (default).
@@ -663,8 +676,8 @@ that are needed to build practical applications.
   
 \item \emph{Rules} are, as usual, the constructs of the form $head :-
   body$, where $head$ is an F-molecule and \emph{body} is a conjunction of
-  F-molecules or negated F-molecules. (Negation is specified using {\tt
-    not} or {\tt tnot} --- the difference will be explained later.)
+  F-molecules or negated F-molecules. (Negation is specified using {\NAF}
+    or {\tt tnot} --- the difference will be explained later.)
   Each rule must be terminated with a ``.''.
   
   Conjunction is specified as in Prolog, using the ``,'' symbol. Like in
@@ -972,21 +985,21 @@ a parsing error.
 %
 Any symbol can be defined as an operator. The general syntax is
 \begin{qrules}
-{\tt :- flOp(\emph{Precedence},\emph{Type},\emph{Name}).}
+{\tt :- op(\emph{Precedence},\emph{Type},\emph{Name}).}
 \end{qrules}
 %%
 For instance, 
 %%
 \begin{quote}
  {\tt
-   :- flOp(800, xfx, foo)
+   :- op(800, xfx, foo)
    }
 \end{quote}
 %%
 As a notational convenience, the argument {\tt Name} can also be a list of
 operator names of the same type and precedence level, for instance,
 \begin{qrules}
-{\tt :- flOp(800,yfx,[+,-]).}
+{\tt :- op(800,yfx,[+,-]).}
 \end{qrules}
 %%
 It is possible to have more than one operator with the same name provided
@@ -1018,7 +1031,7 @@ e.g., in a rule body.
 
 Conjunction is represented through the infix operator ``{\tt ,}'' and
 disjunction is made using the infix operator ``{\tt ;}''.  Negation is made
-through the prefix operators ``{\verb|\+|}'', ``{\tt not}'', and ``{\tt
+through the prefix operators ``\NAF'' and ``{\tt
   tnot}''.\footnote{
   %%
   In brief, ``{\tt $\backslash$+}'' represents negation as
@@ -1330,7 +1343,7 @@ The following rules apply when calling a literal defined in another module:
   
 \item Module specification is distributive over logical connectives,
   including the conjunction operator, ``\verb|,|'', the disjunction,
-  ``\verb|;|'', and the negation operators, ``\verb|\+| and
+  ``\verb|;|'', and the negation operators, ``\NAF'' and
   ``\verb|tnot|''. For example, the formula below:
   %%
   \begin{quote}
@@ -1489,11 +1502,11 @@ XSB predicates can be called from \FLORA through the \FLORA module system
 from \FLORA's point of view, XSB modules are always available
 and do not need to be loaded. The syntax to call XSB predicates is
 %%
-\index{module!{\tt prologlib}}
+\index{module!{\tt @prolog(module)}}
 %%
 \begin{quote}
   \tt
-  ?- {\it predicate}@prologlib({\it module})  
+  ?- {\it predicate}@prolog({\it module})  
 \end{quote}
 %%
 For instance, since the predicate {\tt member/2} is defined in the XSB
@@ -1501,7 +1514,7 @@ module {\tt basics}, we can call it as follows:
 %%
 \begin{quote}
  \tt
- ?- member(abc,[cde,abc,pqr])@prologlib(basics).
+ ?- member(abc,[cde,abc,pqr])@prolog(basics).
 \end{quote}
 %%
 To use this mechanism, you must know which module the particular predicate
@@ -1512,15 +1525,15 @@ predicates become available in the special module called {\tt usermod} and
 %%
 \begin{quote}
  \tt
- ?- foo(X)@prologlib(usermod).
+ ?- foo(X)@prolog(usermod).
 \end{quote}
 %%
-Note that variables are not allowed in the module specifications of Prolog
+Note that variables are not allowed in the module specifications of XSB
 predicates, {\it i.e.},
 %%
 \begin{quote}
  \tt
- ?- M=usermod, foo(X)@prologlib(M).
+ ?- M=usermod, foo(X)@prolog(M).
 \end{quote}
 %%
 will cause a compilation error.
@@ -1533,7 +1546,7 @@ particular ease:
 %%
 \begin{quote}
  \tt
- ?- writeln('Hello')@prologlib()
+ ?- writeln('Hello')@prolog()
 \end{quote}
 %%
 {\it i.e.}, we can simply omit the XSB module name (but parentheses must be
@@ -1544,9 +1557,9 @@ preserved).
 
 \subsection{Calling \FLORA from XSB}
 
-Since XSB does not understand object-oriented syntax, it can call only the
+Since XSB does not understand object-oriented syntax, it can call only use
 predicates defined in \FLORA programs. These predicates can be HiLog or
-\FLORA predicates (See Section~\ref{sec:hilog}). To call predicates
+first-order predicates (See Section~\ref{sec:hilog}). To call predicates
 defined in \FLORA programs, they must be imported by the XSB program.
 To do this, the XSB program must execute the query
 %%
@@ -1559,11 +1572,11 @@ somewhere near the top of the file and then include the appropriate
 %%
 \begin{quote}
   \tt
-   ?- flImport \{flHilog|flPredicate\} {\it flora-predicate/arity} as {\it
+   ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it
      xsb-name}(\_,\_,...,\_)\\
    \hspace*{5cm}from {\it filename} >> {\it flora-module-name}
    \\
-   ?- flImport \{flHilog|flPredicate\} {\it flora-predicate/arity} as {\it 
+   ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it 
      xsb-name}(\_,\_,...,\_)\\
    \hspace*{5cm}from {\it flora-module-name}
 \end{quote}
@@ -1573,14 +1586,14 @@ program file defining it into a given module. The second syntax is used
 when the flora program is already loaded and we only need to import the
 corresponding predicate.
 
-In both cases, the option {\tt flHilog} is used to import a HiLog predicate
-and {\tt flPredicate} is used to import \FLORA predicates. The imported
+In both cases, the option {\tt hilog} is used to import a HiLog predicate
+and {\tt firstorder} is used to import first-order predicates. The imported
 predicate must be given a name by which the imported predicate will be
 known in XSB.  (This name can be the same as the name used in \FLORA.)  It
 is important, however, that the XSB name be specified as shown, {\it i.e.},
-as a predicate skeleton with the same number of arguments as in the \FLORA
-predicate. For instance, {\tt foo(\_,\_,\_)} will do, but {\tt foo/3} will
-not.
+as a predicate skeleton with the same number of arguments as in the
+first-order predicate. For instance, {\tt foo(\_,\_,\_)} will do, but {\tt
+  foo/3} will not.
 
 Once the predicate is imported, it can be used under its XSB name as a
 regular predicate.
@@ -1921,12 +1934,12 @@ compiler.\footnote{
 %%
 Under this translation, findall/3 will find all instances of {\tt
   P} that make {\tt F(P)} true and return a list of such instances in the
-list {\tt L}. This feat is accomplished using the {\tt flSign} compiler
+list {\tt L}. This feat is accomplished using the {\tt arguments} compiler
 instruction.
 
 \index{predicate meta signature}
 \index{meta signature of a predicate}
-\index{compiler directive!{\tt flSign}}
+\index{compiler directive!{\tt arguments}}
 %
 By default, when a truth-valued expression, $E$, such as an \fl molecule or
 a path expression, appears as an argument to a predicate or function
@@ -1934,11 +1947,11 @@ symbol, {\it p}, the \FLORA compiler will pass the object value of the
 expression to {\it p}. In order to tell the compiler that the entire
 formula obtained by translating $E$ into Prolog is to be passed to $p$, we
 need to define the \emph{meta signature} of $p$ using the compiler
-directive {\tt flSign}.  For instance, the following directive will make
+directive {\tt arguments}.  For instance, the following directive will make
 {\tt findall/3} function as intended:
 %%
 \begin{qrules}
-:- flSign findall(oid,bform,oid).
+:- arguments findall(oid,bform,oid).
 \end{qrules}
 %%
 This signature declaration tells \FLORA that the first and the third
@@ -1975,37 +1988,6 @@ extra translation will be needed for unification to work correctly at
 runtime. For instance, {\tt foo(a)} will unify with {\tt F(a)} and
 bind the variable {\tt F} to {\tt foo}.
 
-\index{compiler directive!{\tt flProlog}}
-%
-However, if the default HiLog translation is not intended, the following
-compiler directive can be used to define a traditional Prolog term:
-\begin{quote}
-\verb|:- flProlog functor/arity.|
-\end{quote}
-where {\tt functor} stands for the functor of a Prolog term and
-{\tt arity} stands for its arity.
-
-Note that the above {\tt flProlog} compiler directive does not affect
-the translation of its arguments. For instance, if nothing more than
-the following directive is defined in a \FLORA program:
-\begin{quote}
-\verb|:- flProlog member/2.|
-\end{quote}
-then a term like {\tt member(foo(a),X)} in this program will be translated
-into {\tt member(flapply(foo,a),X)}.
-
-\index{compiler directive!{\tt flPrologAll}}
-%
-In the case where all Prolog terms should stay as they are, the following
-compiler directive can be used:
-\begin{quote}
-\verb|:- flPrologAll.|
-\end{quote}
-However, for those non-Prolog terms, they will still be represented using
-the HiLog translation.
-
-For a list of built-in Prolog term definitions in \FLORA, refer to the
-file {\tt flrprolog.P}.
 
 \index{HiLog!unification}
 %
@@ -2099,15 +2081,18 @@ and F-molecules will be provided through future enhancement.
 
 
 
-\subsection{\FLORA Predicates and Prolog Predicates}
+\subsection{First-Order Predicates and HiLog Predicates}
 \label{sec:flora-modules-predicates}
 
+\index{predicate!first-order}
+\index{predicate!HiLog}
+%%
 \FLORA is an object-relational language in the sense that it supports both
 the object-oriented syntax of \fl and the predicate-based ({\it i.e.},
 relational) syntax of Prolog. Incorporation of predicates is conceptually
 simple, but is somewhat burdened by pragmatic considerations, namely,
-integration with the host language (XSB) and HiLog. As a result, \FLORA has
-not one type of predicates but three!
+integration with HiLog. As a result, \FLORA has two types of predicates,
+first-order {\tt predicates} and \emph{HiLog predicates}. 
 
 The native syntax for predicates in \FLORA is that of HiLog, as explained
 in Section~\ref{sec:hilog}, due to HiLog's support for meta-programming.
@@ -2126,128 +2111,62 @@ query return the binding {\tt X=write}? If so, if {\tt a} happens to be the
 name of a file and {\tt b} a string, should this string be written out to
 that file as a side effect of the evaluation of this query?
 
-To avoid these semantic problems, \FLORA supports the {\tt flPredicate}
-declaration, which defines certain symbols as \FLORA predicates. For
+To avoid these semantic problems, \FLORA supports the {\tt firstorder}
+declaration, which defines certain symbols as first-order predicates. For
 instance,
 %%
-\index{compiler directive!{\tt flPredicate}}
+\index{compiler directive!{\tt firstorder}}
 %%
 \begin{quote}
  \tt
- :- flPredicate foo/1, moo/3.
+ :- firstorder foo/1, moo/3.
 \end{quote}
 %%
 Predicates defined in this way are outside of the range of HiLog variables.
 If you want all predicates to be shielded from meta programming, you can use
 the following compiler directive:
 %%
-\index{compiler directive!{\tt flPredicateAll}}
+\index{compiler directive!{\tt firstorderall}}
 %%
 \begin{quote}
   \tt
-  :- flPredicateAll.
+  :- firstorderall.
 \end{quote}
 
-\FLORA predicates are module-aware. This means that the predicates defined
+First-order predicates are module-aware. This means that the predicates defined
 in different modules are treated as unrelated entities.
 
-There is one other reason for using \FLORA predicates over HiLog
-predicates, which has to do with tabling. This issue is discussed in
-Section~\ref{sec-tabling-flora}.
-
-
-The third type of predicates, called \emph{Prolog predicates}, is the
-vehicle that allows \FLORA to call XSB predicates with ease. 
+There is one other reason why we might sometimes use first-order predicates
+over HiLog predicates, which has to do with tabling. This issue is
+discussed in Section~\ref{sec-tabling-flora}.
 
 
 
 \subsection{Abolishing \FLORA Predicates}
 
 
-\index{module!{\tt flAbolish}}
+\index{module!{\tt expunge}}
 %
-To abolish a predicate of the form {\tt functor/arity} from the module that
+To expunge a predicate of the form {\tt functor/arity} from the module that
 a program is loaded into, the following compiler directive can be used:
 \begin{quote}
-\verb!:- flAbolish functor/arity!
+\verb!:- expunge functor/arity!
 \end{quote}
 
-{\tt flAbolish} can also be called like a normal predicate,
-either from the shell or from within a rule body, to abolish
+{\tt expunge} can also be called like a normal predicate,
+either from the shell or from within a rule body, to expunge
 predicates in one specific module. The syntax is shown below:
 \begin{quote}
-\verb!flAbolish functor/arity, ..., functor/arity in module!
+\verb!expunge functor/arity, ..., functor/arity in module!
 \end{quote}
 where {\tt in} is a special keyword, and {\tt module} stands for the
-name of the module from which to abolish the list of predicates.
+name of the module from which to expunge the list of predicates.
 
-Note that when {\tt flAbolish functor/arity} is used as a normal predicate
-(not as a compiler directive), it will abolish the predicate for the
+Note that when {\tt expunge functor/arity} is used as a normal predicate
+(not as a compiler directive), it will expunge the predicate for the
 default module.
 
 
-
-\section{Control Constructs}
-
-For user convenience, \FLORA provides a number of control structures
-borrowed from other languages. One often used such construct is
-{\tt if-then-else}. For instance, 
-%%
-\begin{quote}
- \tt
- ?- if (foo(a),foo2(b)) then (abc(X),cde(Y)) else (qpr(X),rts(Y)).
-\end{quote}
-%%
-Here the system first evaluates {\tt foo(a),foo2(b)} and, if true,
-evaluates {\tt abc(X),cde(Y)}. Otherwise, it evaluates {\tt qpr(X),rts(Y)}.
-The entire clause succeeds or fails depending on whether the {\tt
-  then}-part or the {\tt else}-part succeeds or fails (whichever applies).
-The {\tt if-then} version (without the {\tt else}-part) is also provided.
-In this case, when the {\tt if}-condition succeeds, the {\tt then}-part is
-evaluated. The entire clause is then succeeds or fails depending on the
-{\tt then}-part. When the {\tt if}-condition is false, the entire clause fails.
-
-Note that {\tt if}, {\tt then}, and {\tt else} are implemented as
-operators, and they bind stronger than the conjunction ``,'', the
-disjunction ``;'', etc. This is why the parentheses are needed in the above
-example.
-
-In the current version, the \FLORA parser does not yet handle all the
-syntax errors associated with the use of {\tt if-then-else} and nested
-clauses are not always parsed the way one would expect (say, as in C).
-Therefore, explicit parentheses are recommended around the entire clause. 
-
-
-
-\section{Type Checking}
-
-
-\index{type checking}
-%%
-Although \FLORA allows specification of object types through signatures,
-type correctness is not being checked automatically. So, what are the
-signatures good for then? One answer is that future versions of \FLORA
-might support some forms of type checking. However, because \fl can
-naturally support powerful meta-programming, even the current level
-of support for signatures is useful. For instance, users can write
-simple queries to check the types of methods that might look suspicious.
-Here is one way to construct such a type-checking query:
-%%
-\begin{verbatim}
-scalar_type_incorrect(O,M,R) :- O[X->R], O:C, C[X=>D], tnot R:D.
-?- scalar_type_incorrect(obj,meth,Result).
-\end{verbatim}
-%%
-Here, we define what it means to violate type checking using the usual
-\fl semantics. The corresponding predicate can then be queried. A
-``no'' answer means that the corresponding attribute \emph{does not}
-violate the typing rules.
-
-In this way, one can easily consruct special purpose type checkers.  This
-feature is particularly important when dealing with \emph{semistructured}
-data. (Semistructured data has object-like structure but normally does not
-need to conform to any type; or if it does, the type would normally cover
-only certain portions of the object structure.)
 
 
 \section{Equality Maintenance}\label{sec-eqmaintain}
@@ -2286,30 +2205,30 @@ rules are already implemented by \FLORA and the level of support for
 equalitycan maintenance can be specified by using one of the following
 three compiler directives:
 %%
-\index{flEquality}
-\index{compiler directive!flEquality}
+\index{equality}
+\index{compiler directive!equality}
 %%
 {\tt
 \begin{quote}
-:- flEquality none.\\
-:- flEquality basic.\\
-:- flEquality flogic.
+:- equality none.\\
+:- equality basic.\\
+:- equality flogic.
 \end{quote}
 }
 
-To be more specific, \mbox{\tt flEquality none} does not use any feature of
-equality maintenance while \mbox{\tt flEquality basic} guarantees the
+To be more specific, \mbox{\tt equality none} does not use any feature of
+equality maintenance while \mbox{\tt equality basic} guarantees the
 congruence relation among object equalities, i.e., transivity, reflexity,
 and symmetry. Besides the properties of equality stipulated by
-\mbox{\tt flEquality basic}, \mbox{\tt flEquality floigc} will enforce the full
+\mbox{\tt equality basic}, \mbox{\tt equality floigc} will enforce the full
 equality implied by \fl, including the scalar axiom.
 
-Note that {\tt flEquality} can also be used as a normal predicate. When it
+Note that {\tt equality} can also be used as a normal predicate. When it
 is called from the shell or from within a rule body, it will set equality
 support for the default module. Moreover, it can also set equality level
 for one specific module. The syntax is as follows:
 \begin{quote}
-\verb!flEquality {none|basic|flogic} in module!
+\verb!equality {none|basic|flogic} in module!
 \end{quote}
 where {\tt in} is a special keyword, and {\tt module} stands for the name of
 the module.
@@ -2450,7 +2369,7 @@ inherit from the classes they belong to:
 \begin{quote}
 \begin{verbatim}
 // inheritance rules for scalar attributes
-:- flTable defined/2, overwritten/3, conflict/3.
+:- table defined/2, overwritten/3, conflict/3.
 
 Obj[A->V] <- Obj:Class, Class[A*->V], tnot defined(Obj,A),
              tnot overwritten(Obj,Class,A), tnot conflict(Obj,Class,A).
@@ -2464,7 +2383,7 @@ conflict(Obj,Class,A) <- Obj:Super, Super[A*->V],
                          tnot Super::Class, tnot Class::Super.
 
 // inheritance rules for multi-valued attributes
-:- flTable definedSet/2, overwrittenSet/3, conflictSet/3.
+:- table definedSet/2, overwrittenSet/3, conflictSet/3.
 
 Obj[A->>V] <- Obj:Class, Class[A*->>V], tnot definedSet(Obj,A),
               tnot overwrittenSet(Obj,Class,A),
@@ -2767,32 +2686,30 @@ predicates must be tabled. (Normally, these are predicates defined by the
 user.)  \FLORA accepts the same tabling directives as XSB does
 (Section~\ref{sec-comp-directives} lists all the compiler directives).
 
-\index{flTable}
-\index{compiler directive!{\tt flTable}}
+\index{table}
+\index{compiler directive!{\tt table}}
 %
-Due to the current implementation of HiLog and module system in \FLORA,
-a HiLog predicate cannot be tabled directly (without hacking into the
-\FLORA implementation). To table a predicate, it must be
-declared 
-as a \FLORA predicate using the
-\mbox{\tt flPredicate functor/arity} compiler directive (refer to
-Section~\ref{sec:hilog} and Section~\ref{sec:flora-modules-predicates}
-for more information on these compiler directives). For instance,
-the following \FLORA program:
+Due to the current implementation of HiLog and module system in \FLORA, a
+HiLog predicate cannot be tabled directly (without hacking into the \FLORA
+implementation). To table a predicate, it must be declared as a first-order
+predicate using the \mbox{\tt firstorder functor/arity} compiler directive
+(refer to Section~\ref{sec:hilog} and
+Section~\ref{sec:flora-modules-predicates} for more information on these
+compiler directives). For instance, the following \FLORA program:
 \begin{quote}
 \begin{verbatim}
-:- flPredicate tc/2.
-:- flTable tc/2.
+:- firstorder tc/2.
+:- table tc/2.
 
 tc(X,Y) :- edge(X,Y).
 tc(X,Y) :- edge(X,Y), tc(Y,Z).
 \end{verbatim}
 \end{quote}
 %%
-renders {\tt tc/2}  as a tables \FLORA predicate.
+renders {\tt tc/2}  as a tabled first-order predicate.
 
-\index{flHilogTable}
-\index{compiler directive!{\tt flHilogTable}}
+\index{hilogtable}
+\index{compiler directive!{\tt hilogtable}}
 %%
 It is also possible to table HiLog predicates, but the granularity of 
 tabling is coarse: \FLORA tables \emph{all} HiLog predicates of the given
@@ -2800,7 +2717,7 @@ arity at once. For instance,
 %%
 \begin{quote}
  \tt
- :- flHilogTable 3.
+ :- hilogtable 3.
 \end{quote}
 %%
 tables all HiLog predicates of arity 3.
@@ -3212,9 +3129,8 @@ a feature will be supported in a future release.
 and negation based on well-founded semantics, which relies on the
 underlying XSB tabling system.
 
-For negation based on SLD resolution, it is specified using any of the
-following operators: \verb|~|, \verb|\+|, and {\tt not}. Usually, these
-operators are applied to procedural methods and database updates.
+For negation based on SLD resolution, it is specified using the operators
+\NAF and {\tt not}.
 
 For negation based on well-founded semantics, it is specified using the
 operator {\tt tnot}. Usually, {\tt tnot} is applied to predicates that
@@ -3237,37 +3153,99 @@ negation, well-founded semantics, and the XSB operators {\tt tnot} and
 \verb|sk_not|.
 
 
+
+\section{Control Constructs}
+
+For user convenience, \FLORA provides a number of control structures
+borrowed from other languages. One often used such construct is
+{\tt if-then-else}. For instance, 
+%%
+\begin{quote}
+ \tt
+ ?- if (foo(a),foo2(b)) then (abc(X),cde(Y)) else (qpr(X),rts(Y)).
+\end{quote}
+%%
+Here the system first evaluates {\tt foo(a),foo2(b)} and, if true,
+evaluates {\tt abc(X),cde(Y)}. Otherwise, it evaluates {\tt qpr(X),rts(Y)}.
+The entire clause succeeds or fails depending on whether the {\tt
+  then}-part or the {\tt else}-part succeeds or fails (whichever applies).
+The {\tt if-then} version (without the {\tt else}-part) is also provided.
+In this case, when the {\tt if}-condition succeeds, the {\tt then}-part is
+evaluated. The entire clause is then succeeds or fails depending on the
+{\tt then}-part. When the {\tt if}-condition is false, the entire clause fails.
+
+Note that {\tt if}, {\tt then}, and {\tt else} are implemented as
+operators, and they bind stronger than the conjunction ``,'', the
+disjunction ``;'', etc. This is why the parentheses are needed in the above
+example.
+
+In the current version, the \FLORA parser does not yet handle all the
+syntax errors associated with the use of {\tt if-then-else} and nested
+clauses are not always parsed the way one would expect (say, as in C).
+Therefore, explicit parentheses are recommended around the entire clause. 
+
+
+
+\section{Type Checking}
+
+
+\index{type checking}
+%%
+Although \FLORA allows specification of object types through signatures,
+type correctness is not being checked automatically. So, what are the
+signatures good for then? One answer is that future versions of \FLORA
+might support some forms of type checking. However, because \fl can
+naturally support powerful meta-programming, even the current level
+of support for signatures is useful. For instance, users can write
+simple queries to check the types of methods that might look suspicious.
+Here is one way to construct such a type-checking query:
+%%
+\begin{verbatim}
+scalar_type_incorrect(O,M,R) :- O[X->R], O:C, C[X=>D], tnot R:D.
+?- scalar_type_incorrect(obj,meth,Result).
+\end{verbatim}
+%%
+Here, we define what it means to violate type checking using the usual
+\fl semantics. The corresponding predicate can then be queried. A
+``no'' answer means that the corresponding attribute \emph{does not}
+violate the typing rules.
+
+In this way, one can easily consruct special purpose type checkers.  This
+feature is particularly important when dealing with \emph{semistructured}
+data. (Semistructured data has object-like structure but normally does not
+need to conform to any type; or if it does, the type would normally cover
+only certain portions of the object structure.)
+
+
 \section{Summary of \FLORA Compiler Directives} \label{sec-comp-directives}
 
 \index{compiler directive}
 %
 \index{compiler directive!{\tt index}}
-\index{compiler directive!{\tt flProlog}}
-\index{compiler directive!{\tt flPrologAll}}
-\index{compiler directive!{\tt flPredicate}}
-\index{compiler directive!{\tt flPredicateAll}}
-\index{compiler directive!{\tt flAbolish}}
-\index{compiler directive!{\tt flEquality}}
-\index{compiler directive!{\tt flSign}}
-\index{compiler directive!{\tt flOp}}
+\index{compiler directive!{\tt firstorder}}
+\index{compiler directive!{\tt firstorderall}}
+\index{compiler directive!{\tt expunge}}
+\index{compiler directive!{\tt equality}}
+\index{compiler directive!{\tt arguments}}
+\index{compiler directive!{\tt op}}
 %
 Like XSB compiler, \FLORA compiler can take compiler directives. All
 such directives must begin with {\tt :-} (while all queries must begin with
 {\tt ?-}). The following is a list of all the compiler directives supported
 by \FLORA:
 \begin{itemize}
-\item {\tt flAbolish} {\em functor/arity}, ..., {\em functor/arity}
+\item {\tt expunge} {\em functor/arity}, ..., {\em functor/arity}
   \\
-  Abolishes the listed \FLORA predicates in the current program's module,
+  Abolishes the listed first-order predicates in the current program's module,
   {\it i.e.}, deletes the contents as well as the definition of the
   corresponding predicate. By program's module we mean the module into
-  which the program that contains this particular {\tt flAbolish} directive
+  which the program that contains this particular {\tt expunge} directive
   is loaded.
-\item {\tt flAbolish} {\em functor/arity}, ..., {\em functor/arity} {\tt
+\item {\tt expunge} {\em functor/arity}, ..., {\em functor/arity} {\tt
     in} \emph{module}\\
-  Same as above, except the predicates are abolished in the specified
+  Same as above, except the predicates are expunged in the specified
     module rather than in the current program's module.
-  \item {\tt flEquality none|basic|flogic}
+  \item {\tt equality none|basic|flogic}
     \\
     Sets the equality maintenance level in the current program's module.
     With {\tt none}, equality is not maintained, and the symbol {\tt :=:}
@@ -3276,25 +3254,18 @@ by \FLORA:
     for equality are enforced. With {\tt flogic}, the usual congruence
     axioms are maintained \emph{plus} the additional equality axiom for
     single-valued methods in \fl.
-\item {\tt flEquality none|basic|flogic} {\tt in}  \emph{module}
+\item {\tt equality none|basic|flogic} {\tt in}  \emph{module}
   \\
   Same as above, except that equality maintenance is set for the specified
   module.
-\item {\tt flPredicate} {\em functor/arity}, ..., {\em functor/arity}
+\item {\tt firstorder} {\em functor/arity}, ..., {\em functor/arity}
   \\
-  Declare the listed predicates as \FLORA predicates (as opposed to HiLog
+  Declare the listed predicates as first-order predicates (as opposed to HiLog
   predicates).
-\item {\tt flPredicateAll}
-  Makes all predicates into \FLORA predicates. (The default for predicates
+\item {\tt firstorderall}
+  Makes all predicates into first-order predicates. (The default for predicates
   is HiLog.)
-\item {\tt flProlog} {\em functor/arity}, ..., {\em functor/arity}
-  \\
-  Declares the listed predicates to be Prolog predicates (rather than HiLog
-  predicates).
-\item {\tt flPrologAll}
-  \\
-  Makes all predicates into Prolog predicates.
-\item {\tt flSign} \emph{functor}(\emph{type}, ..., \emph{type}), where
+\item {\tt arguments} \emph{functor}(\emph{type}, ..., \emph{type}), where
   \emph{type} is either {\tt oid} {\tt bform}
   \\
   Specifies the meta signature to the given predicate, which tells how the
@@ -3307,17 +3278,17 @@ by \FLORA:
 \item {\tt import {\it functor/arity}, ..., {\it functor/arity} from
     {\it module}}
   \\
-  Imports the given Prolog predicate from the specified XSB module.
+  Imports the given predicate from the specified XSB module.
 \item {\tt index {\it functor/arity-argNumber}}
   \\
   Specifies that the given predicate must be indexed on the specified
   argument.
-\item {\tt flOp({\it precedence},{\it type},{\it operator})}
+\item {\tt op({\it precedence},{\it type},{\it operator})}
   \\
   Defines \emph{operator} as a \FLORA operator with the given precedence
   and type. The \emph{type} is the same as in Prolog operators, {\it i.e.},
   {\tt fx}, {\tt xf}, {\tt xfy}, etc.
-\item {\tt flOp({\it precedence},{\it type},[{\it operator}, ..., {\it operator}])}
+\item {\tt op({\it precedence},{\it type},[{\it operator}, ..., {\it operator}])}
   \\
   Same as above, except that this directive defines a list of operators
   with the same precedence and type.
@@ -3540,19 +3511,24 @@ indented automatically.
 \section{Inside \FLORA}
 
 
+\subsection{The File Structure}
+
 \FLORA consists of the following modules:
 \begin{itemize}
-\item \texttt{flrshell.P}: the top level module that provides the \FLORA shell
-  commands for compiling and consulting \FLORA programs, for setting the output mode,
-  and -- last but not the least -- for directly issuing queries against the loaded
-  database/program (see Section~\ref{sec-shell-commands} for a full
-  description of shell commands).
-\item \texttt{flrlexer.P}: the \FLORA lexer.
-\item \texttt{flrcomposer.P}: the \FLORA composer that parses tokens according to operator grammar.
-\item \texttt{flrparser.P}: the \FLORA parser.
-\item \texttt{flrcompiler.P}: the \FLORA compiler that translates \fl to XSB.
-\item \texttt{flrcoder.P}: the \FLORA coder that generates XSB code.
-\item \texttt{flrutils.P}: miscellaneous utility predicates.
+\item \texttt{flrshell.P}: The top level module that provides the \FLORA shell
+  commands for compiling and consulting \FLORA programs, for setting the
+  output mode, and -- last but not the least -- for directly issuing
+  queries against the loaded database/program (see
+  Section~\ref{sec-shell-commands} for a full description of shell
+  commands).
+\item \texttt{flrlexer.P}: The \FLORA lexer.
+\item \texttt{flrcomposer.P}: The \FLORA composer that parses tokens 
+  according to the operator grammar (converts operator syntax into Prolog
+  terms) and also does other magic.
+\item \texttt{flrparser.P}: The \FLORA parser.
+\item \texttt{flrcompiler.P}: The \FLORA compiler that translates \fl to XSB.
+\item \texttt{flrcoder.P}: The \FLORA coder that generates XSB code.
+\item \texttt{flrutils.P}: Miscellaneous utility predicates.
 \end{itemize}
 %%
 Additional system libraries are located in the {\tt syslib/} subdirectory.
@@ -3562,11 +3538,13 @@ files in the {\tt closure/} subdirectory that serve as headers and trailers
 that are automatically included into the {\tt .P} files by the \FLORA
 compiler (explained later).
 
+There are several subdirectories that hold the various files that contain
+definitions included at compile time. These will be described in a
+technical document.
+
 
 \subsection{How It Works}
 
-
-\paragraph{Overview.}
 
 As an \fl-to-XSB compiler, \FLORA first parses its source file,
 compiles it into XSB syntax and then outputs XSB code. For instance the command

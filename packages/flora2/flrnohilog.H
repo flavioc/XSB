@@ -24,22 +24,22 @@
 */
 
 
-:- index flora_nohilog/2-1.
+:- index flora_firstorder/2-1.
 
-:- dynamic flora_dynnohilog(_,_).
+:- dynamic flora_dynfirstorder(_,_).
 
-:- dynamic flora_shnohilog(_,_).
+:- dynamic flora_shfirstorder(_,_).
 
-:- index(flora_dynnohilog/2,trie).
+:- index(flora_dynfirstorder/2,trie).
 
-:- index(flora_shnohilog/2,trie).
+:- index(flora_shfirstorder/2,trie).
 
 :- import assert/1, retractall/1 from assert.
 
 :- import conget/2 from gensym.
 
-:- export flora_nohilogdef/2,
-          flora_reset_nohilog/0,
-	  flora_define_nohilog/2,
-          flora_shreset_nohilog/0,
-	  flora_shdefine_nohilog/2.
+:- export flora_firstorderdef/2,
+          flora_reset_firstorder/0,
+	  flora_define_firstorder/2,
+          flora_shreset_firstorder/0,
+	  flora_shdefine_firstorder/2.

@@ -36,6 +36,6 @@
 
 :- import flora_prlgdef/2 from flrprolog.
 
-:- import flora_signdef/3, flora_conflict_signature/3 from flrsignature.
+:- import flora_argdef/3, flora_conflict_arguments/3 from flrsignature.
 
 :- export flora_parse/3.

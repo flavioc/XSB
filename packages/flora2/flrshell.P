@@ -31,8 +31,6 @@
 
 #include "flora_terms.flh"
 
-:- [flrcontrol].
-
 
 /*********************************************************************/
 flora_shell_loop :-
@@ -66,6 +64,8 @@ flora_init_shell :-
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
 	flora_load_library(FLLIBDISPLAY),
+	%% This should probably be loaded by the compiler (in the future)
+	flora_load_library(FLLIBCONTROL),
 	flloadtrailer(NONE),
 	flora_welcome_msg,
 	flAll,
@@ -125,20 +125,18 @@ flHelp :-
 	flora_stdmsg_line('o FL_EQUALITY {none|basic|flogic}'),
 	flora_stdmsg_line('    set support for the equality predicate in the shell module `main'' to'),
 	flora_stdmsg_line('    none, standard first-order, or F-logic style'),
-	flora_stdmsg_line('o FL_ABOLISH Functor/Arity [, Functor/Arity]* [in Module]'),
-	flora_stdmsg_line('    abolish predicate Functor/Arity in Module (`main'' is the default)'),
+	flora_stdmsg_line('o FL_EXPUNGE Functor/Arity [, Functor/Arity]* [in Module]'),
+	flora_stdmsg_line('    expunge predicate Functor/Arity in Module (`main'' is the default)'),
 	flora_stdmsg_line('o abolish_all_tables'),
 	flora_stdmsg_line('    flush all tabled data'),
-	flora_stdmsg_line('o FL_PROLOG Functor/Arity'),
-	flora_stdmsg_line('    define Functor/Arity as Prolog predicate in shell mode'),
-	flora_stdmsg_line('o FL_PREDICATE Functor/Arity'),
-	flora_stdmsg_line('    define Functor/Arity as non-HiLog FLORA predicate in shell mode'),
-	flora_stdmsg_line('o FL_SIGNATURE Functor({FL_OID|FL_BODYFORMULA},...)'),
-	flora_stdmsg_line('    define the predicate meta signature in shell mode'),
-	flora_stdmsg_line('o flOp(Precedence,Associativity,Operator)'),
+	flora_stdmsg_line('o FL_FIRSTORDER Functor/Arity'),
+	flora_stdmsg_line('    define Functor/Arity as first-order predicate in shell mode'),
+	flora_stdmsg_line('o FL_ARGUMENTS Functor({FL_OID|FL_BODYFORMULA},...)'),
+	flora_stdmsg_line('    define the predicate argument type in shell mode'),
+	flora_stdmsg_line('o FL_OP(Precedence,Associativity,Operator)'),
 	flora_stdmsg_line('    define an operator in shell mode'),
-	flora_stdmsg_line('o flReset(flProlog|flPredicate|flSign|op)'),
-	flora_stdmsg_line('    clear all dynamic flProlog/flPredicate/flSign/op declarations'),
+	flora_stdmsg_line('o flReset(FL_FIRSTORDER|FL_ARGUMENTS|FL_OP)'),
+	flora_stdmsg_line('    clear all dynamic FL_FIRSTORDER/FL_ARGUMENTS/FL_OP declarations'),
 	flora_stdmsg_line('    in the FLORA shell'),
 	flora_stdmsg_line('o flAll'),
 	flora_stdmsg_line('    show all solutions (default)'),
@@ -162,9 +160,9 @@ flReset(X) :-
 	flora_error_line("invalid argument to flReset"),
 	fail.
 
-flReset(FL_PROLOG) :- !, flora_shreset_prolog.
-flReset(FL_PREDICATE) :- !, flora_shreset_nohilog.
-flReset(FL_SIGNATURE) :- !, flora_shreset_signature.
+%%flReset(FL_PROLOG) :- !, flora_shreset_prolog.
+flReset(FL_FIRSTORDER) :- !, flora_shreset_firstorder.
+flReset(FL_ARGUMENTS) :- !, flora_shreset_arguments.
 flReset(FL_OP) :- !, flora_shreset_operator.
 
 flReset(_) :-

@@ -28,19 +28,19 @@
 
 :- dynamic flora_shprlg(_,_).
 
-:- index(flora_dynprlg/2,trie).
-
-:- index(flora_shprlg/2,trie).
-
-:- index flora_prlg/2-1.
+:- index 
+	flora_dynprlg/2-1,
+	flora_shprlg/2-1,
+	flora_prlg/2-1.
 
 :- import assert/1, retractall/1 from assert.
 
 :- import conget/2 from gensym.
 
-:- export flora_prlgdef/2,
+:- export
           flora_reset_prolog/0,
-	  flora_define_prolog/2,
           flora_shreset_prolog/0,
-	  flora_shdefine_prolog/2.
+	  flora_shdefine_prolog/2,
+	  flora_define_prolog/2,
+	  flora_prlgdef/2.
 

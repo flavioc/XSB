@@ -29,8 +29,8 @@
 times_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
 fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
 
-:- flPredicate e/2, tc/2.
-:- flTable tc/2.
+:- firstorder e/2, tc/2.
+:- table tc/2.
 
 e(a,b). e(b,a). e(b,c).			% a binary PREDICATE (graph)
 e(b,d).
@@ -90,4 +90,4 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
             {H:dangerous_hobby}	% ... which are dangerous?
 ]. 
 
-?- writeln('Thanks for using FLORA!') @ prologlib ().
+?- writeln('Thanks for using FLORA!') @ prolog ().

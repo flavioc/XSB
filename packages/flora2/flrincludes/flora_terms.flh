@@ -154,27 +154,27 @@
 #define FL_RIGHTTO		'>>'
 #define FL_LEFTTO		'<<'
 
-#define FL_OP			(flOp)
+#define FL_OP			op
 #define FL_HILOG		(hilog)
 #define FL_DYNAMIC		(dynamic)
-#define FL_TABLE		flTable
+#define FL_TABLE		(table)
 #define FL_INDEX		(index)
-#define FL_EXPORT		(export)
+%%#define FL_EXPORT		(export)
 #define FL_IMPORT		(import)
 #define FL_FROM			(from)
-#define FL_SIGNATURE		flSign
+#define FL_ARGUMENTS		arguments
 #define FL_OID			oid
 #define FL_BODYFORMULA		bform
-#define FL_PROLOG		flProlog
-#define FL_PROLOGALL		flPrologAll
-#define FL_PLIB			prologlib
-#define FL_NONHILOGPREDICATE	flNonHilogPredicate
-#define FL_NONHILOGPREDICATEALL	flNonHilogPredicateAll
-#define FL_PREDICATE		flPredicate
-#define FL_PREDICATEALL		flPredicateAll
-#define FL_HILOGTABLE		flHilogTable
-#define FL_EQUALITY		flEquality
-#define FL_ABOLISH		flAbolish
+%%#define FL_PROLOG		(prolog)
+%%#define FL_PROLOGALL		prologall
+#define FL_PLIB			prolog
+#define FL_FIRSTORDERNOSTORAGE	fl_firstorder_nostorage
+#define FL_FIRSTORDERNOSTORAGEALL fl_firstorder_nostorage_all
+#define FL_FIRSTORDER		firstorder
+#define FL_FIRSTORDERALL	firstorderall
+#define FL_HILOGTABLE		hilogtable
+#define FL_EQUALITY		equality
+#define FL_EXPUNGE		expunge
 #define FL_IN			(in)
 
 #define FL_MIN			min
@@ -211,17 +211,17 @@
   FLCOMMAND(Direct)
   FLTABLE(Functor,Arity)
   FLDYNAMIC(Functor,Arity)
-  FLEXPORT(Functor,Arity)
+  %%FLEXPORT(Functor,Arity)
   FLIMPORT(Functor,Arity)
-  FLSIGN(Functor,Arity,Args)
+  FLARGUMENTS(Functor,Arity,Args)
   FLPROLOG(Functor,Arity)
-  FLPREDICATE(Functor,Arity)
+  FLFIRSTORDER(Functor,Arity)
   FLOPDEF(Predecence,Associativity,Op)
   FLINDEX(Functor,Arity,Name)
   FLHILOGTABLE(Arity)
   FLEQUALITY(Type)
-  FLABOLISH(FunctArityList)
-  FLABOLISH(FunctArityList,Module)
+  FLEXPUNGE(FunctArityList)
+  FLEXPUNGE(FunctArityList,Module)
 
   FLVAR(Name,Index)
   FLATOM(Atom)
@@ -263,17 +263,17 @@
 #define FLCOMMAND		flcommand
 #define FLTABLE			fltable
 #define FLDYNAMIC		fldynamic
-#define FLEXPORT		flexport
+%%#define FLEXPORT		flexport
 #define FLIMPORT		flimport
-#define FLSIGNATURE		flsignature
+#define FLARGUMENTS		flarguments
 #define FLPROLOG		flprolog
 #define FLOPDEF			flopdef
-#define FLNONHILOGPREDICATE	flnonhilogpredicate
-#define FLPREDICATE		flpredicate
+#define FLFIRSTORDERNOSTORAGE	flfirstordernostorage
+#define FLFIRSTORDER		flfirstorder
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
 #define FLEQUALITY		flequality
-#define FLABOLISH		flabolish
+#define FLEXPUNGE		flexpunge
 
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
@@ -318,7 +318,7 @@
 #define PRCOMMAND		prcommand
 #define PRTABLE			prtable
 #define PRDYNAMIC		prdynamic
-#define PREXPORT		prexport
+%%#define PREXPORT		prexport
 #define PRIMPORT		primport
 #define PRINDEX			prindex
 #define PRHILOGTABLE		prhilogtable
@@ -414,7 +414,9 @@
 #define FLLIBMODOBJ		fllibmodobj
 
 #define FLLIBEQUALITY		fllibequality
-#define FLLIBABOLISH		fllibabolish
+#define FLLIBEXPUNGE		fllibexpunge
+
+#define FLLIBCONTROL		fllibcontrol
 
 
 /****************************************************************************
@@ -481,6 +483,11 @@
   Notes: (1) FLORA_PREFIX_LEN is the length of FLORA_PREFIX PLUS 1. This
              macro is used in syslib/flrdbop.P.
 ****************************************************************************/
+#mode push
+#mode standard HTML
+<#define FLORA_EVAL_MACRO|<#eval #1>>
+<#mode pop>
+
 #define	FLORA_EOF		eof
 #define FLORA_NOT_EOF		not_eof
 
@@ -488,7 +495,8 @@
 #define FLSYSDBUPDATE		flsysdbupdate
 
 #define FLORA_PREFIX		'_$_$_flora'
-#define FLORA_PREFIX_LEN_PLUS1	11
+%% Length of FLORA_PREFIX: We take out 2 to account for the quotes
+#define FLORA_PREFIX_LEN_PLUS1	FLORA_EVAL_MACRO(length(FLORA_PREFIX)+1-2)
 
 #define FLORA_THIS_MODULE	flThisModule
 
@@ -504,14 +512,15 @@
 #define FLTRAILERPREFIX		'inferred_'
 
 
+%% In these macros, we deduct 2 to take the quotes out of the consideration
 %% Length of FLFACTPREFIX
-#define FLFACTPREFIX_LEN	5
+#define FLFACTPREFIX_LEN	FLORA_EVAL_MACRO(length(FLFACTPREFIX)-2)
 %% Length of FLHEADPREFIX
-#define FLHEADPREFIX_LEN	8
+#define FLHEADPREFIX_LEN	FLORA_EVAL_MACRO(length(FLHEADPREFIX)-2)
 %% Length of FLBODYPREFIX
-#define FLBODYPREFIX_LEN	0
+#define FLBODYPREFIX_LEN	FLORA_EVAL_MACRO(length(FLBODYPREFIX)-2)
 %% Length of FLTRAILERPREFIX
-#define FLTRAILERPREFIX_LEN	9
+#define FLTRAILERPREFIX_LEN	FLORA_EVAL_MACRO(length(FLTRAILERPREFIX)-2)
 
 
 /****************************************************************************

@@ -79,12 +79,16 @@ flora_setup_flogic_bswrapper(WS) :-
 
 
 /*****************************************************************************
-  flora_flogic_predicate(+Funct,-Workspace,-Position,-Base)
+  flora_flogic_predicate(+Funct,-Workspace,-WrapPrefix,-Base)
 
-  Note: An F-logic wrapper predicate name is encoded as follows:
+  Note: An F-logic wrapper predicate name (such as fd, mvd, isa, etc.)
+  is encoded as follows:
         'FLORA_PREFIX''workspace''wrapper', where wrapper is prefix+base.
+
+  WrapPrefix is the prefix of the wrapper (e.g., base_, derived_, etc.)
+  Base specifies the type of the wrapped, e.g., fd, mvd, imvd, etc.
 *****************************************************************************/
-flora_flogic_predicate(Funct,Workspace,Position,Base) :-
+flora_flogic_predicate(Funct,Workspace,WrapPrefix,Base) :-
 	%% Check if the functor begins with FLORA_PREFIX followed by an '.
 	str_sub(FLORA_PREFIX,Funct,1),
 	str_sub('''',Funct,FLORA_PREFIX_LEN_PLUS1),
@@ -104,19 +108,19 @@ flora_flogic_predicate(Funct,Workspace,Position,Base) :-
 	%% Separate the prefix from the base wrapper.
 	str_length(Wrapper,WLen),
 	( str_sub(FLFACTPREFIX,Wrapper,1) ->
-	    Position=FLFACTPREFIX,
+	    WrapPrefix=FLFACTPREFIX,
 	    substring(Wrapper,FLFACTPREFIX_LEN,WLen,Base)
 
 	; str_sub(FLHEADPREFIX,Wrapper,1) ->
-	    Position=FLHEADPREFIX,
+	    WrapPrefix=FLHEADPREFIX,
 	    substring(Wrapper,FLHEADPREFIX_LEN,WLen,Base)
 
 	; str_sub(FLBODYPREFIX,Wrapper,1) ->
-	    Position=FLBODYPREFIX,
+	    WrapPrefix=FLBODYPREFIX,
 	    substring(Wrapper,FLBODYPREFIX_LEN,WLen,Base)
 
 	; str_sub(FLTRAILERPREFIX,Wrapper,1) ->
-	    Position=FLTRAILERPREFIX,
+	    WrapPrefix=FLTRAILERPREFIX,
 	    substring(Wrapper,FLTRAILERPREFIX_LEN,WLen,Base)
 	),
 	!,
@@ -180,15 +184,15 @@ flora_hilog_predicate(Funct,Workspace) :-
 
 
 /*****************************************************************************
-  flora_nohilog_predicate(+Funct,-Predicate,-Workspace)
+  flora_firstorder_predicate(+Funct,-Predicate,-Workspace)
 
-  Note: (1) A non-HiLog predicate name is encoded as follows:
+  Note: (1) A first order-HiLog predicate name is encoded as follows:
             'FLORA_PREFIX''workspace''predicate'.
 
         (2) This procedure will not function correctly if workspace
             contains the symbol '.
 *****************************************************************************/
-flora_nohilog_predicate(Funct,Predicate,Workspace) :-
+flora_firstorder_predicate(Funct,Predicate,Workspace) :-
 	%% Check if the functor begins with FLORA_PREFIX followed by an '.
 	str_sub(FLORA_PREFIX,Funct,1),
 	str_sub('''',Funct,FLORA_PREFIX_LEN_PLUS1),
@@ -240,7 +244,7 @@ flora_wshilog(WS,HiLogPredSym) :-
 flora_is_general_predicate(Funct,WS) :-
 	( flora_flogic_predicate(Funct,WS,_Pos,_Base)
 	; flora_hilog_predicate(Funct,WS)
-	; flora_nohilog_predicate(Funct,_P,WS)
+	; flora_firstorder_predicate(Funct,_P,WS)
 	),
 	!.
 
@@ -263,7 +267,7 @@ flora_classify_call(Call,Type,Basename,ArgList,Workspace) :-
 	-> Type = flogic, ArgList = PrelimArgList
 	; flora_hilog_predicate(Funct,Workspace)
 	-> Type = hilog, PrelimArgList = [Basename | ArgList]
-	; flora_nohilog_predicate(Funct,Basename,Workspace)
+	; flora_firstorder_predicate(Funct,Basename,Workspace)
 	-> Type = florapred, ArgList = PrelimArgList
 	; Type = prolog, Basename = Funct, ArgList = PrelimArgList
 	  %% Workspace stays uninstantiated

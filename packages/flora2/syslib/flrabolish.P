@@ -47,36 +47,36 @@
 /*********************************************************************
   system library registration
 *********************************************************************/
-?- flora_register_syslib(FLLIBABOLISH).
+?- flora_register_syslib(FLLIBEXPUNGE).
 
 
 /*****************************************************************************
-  fllibabolish
+  fllibexpunge
 *****************************************************************************/
-fllibabolish(FAList) :- fllibabolish(FAList,FLORA_DEFAULT_WORKSPACE).
+fllibexpunge(FAList) :- fllibexpunge(FAList,FLORA_DEFAULT_WORKSPACE).
 
-fllibabolish(FAList,WS) :-
+fllibexpunge(FAList,WS) :-
 	( flora_check_workspace(WS) ->
-	    flora_abolish(FAList,WS)
+	    flora_expunge(FAList,WS)
 	;
 	  abort
 	).
 
 
 /*****************************************************************************
-  flora_abolish(+FAList,+WS)
+  flora_expunge(+FAList,+WS)
 *****************************************************************************/
-flora_abolish([],_WS) :- !.
+flora_expunge([],_WS) :- !.
 
 #mode save
 #mode nostring "\!#'"
-flora_abolish([F/A],WS) :-
+flora_expunge([F/A],WS) :-
 	( not atom(F) ->
-	    flora_error_line('FL_ABOLISH: invalid functor'),
+	    flora_error_line('FL_EXPUNGE: invalid functor'),
 	    abort
 	
 	; not integer(A) ->
-	    flora_error_line('FL_ABOLISH: invalid predicate arity'),
+	    flora_error_line('FL_EXPUNGE: invalid predicate arity'),
 	    abort
 	;
 	  flora_wspredicate(F,[],WS,P),
@@ -84,17 +84,17 @@ flora_abolish([F/A],WS) :-
 	  abolish(P/A),
 	  functor(Fact,P,A),
 	  findall(Fact,storage_find_fact(StorageName,Fact),FactList),
-	  flora_storage_abolishlist(FactList,StorageName)
+	  flora_storage_expungelist(FactList,StorageName)
 	).
 #mode restore
 
 
 /*****************************************************************************
-  flora_storage_abolishlist(+FactList,+StorageName)
+  flora_storage_expungelist(+FactList,+StorageName)
 *****************************************************************************/
-flora_storage_abolishlist([],_StorageName) :- !.
+flora_storage_expungelist([],_StorageName) :- !.
 
-flora_storage_abolishlist([F|L],StorageName) :-
+flora_storage_expungelist([F|L],StorageName) :-
 	!,
 	storage_delete_fact(StorageName,F,_Deleted),
-	flora_storage_abolishlist(L).
+	flora_storage_expungelist(L).

@@ -35,11 +35,11 @@
 %% Case for a call to a molecule
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
-	flora_flogic_predicate(PredName,WS,_Position,_Base),
+	flora_flogic_predicate(PredName,WS,_WrapPrefix,_Base),
 	!,
 	(flModule(WS)
 	-> %% This case is not possible (I think)
-	    flora_error_line('undefined F-logic predicate %s in module %s',
+	    flora_error_line('undefined F-logic molecule %s in module %s',
 			     args(PredName,WS))
 	; flora_error_line('calling a FLORA molecule in module %s, which is not loaded', args(WS))
 	),
@@ -57,15 +57,15 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	),
 	abort.
 
-%% Call to a FLORA predicate (flProlog)
+%% Call to a first order predicate
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
-	flora_nohilog_predicate(PredName,Predicate,Workspace),
+	flora_firstorder_predicate(PredName,Predicate,Workspace),
 	!,
 	psc_arity(PscRecord,N),
 	(flModule(Workspace)
-	-> flora_error_line('undefined predicate %s/%d in module %s',
+	-> flora_error_line('undefined first order predicate %s/%d in module %s',
 			    args(Predicate,N,Workspace))
-	; flora_error_line('calling FLORA predicate %s/%d in module %s, which not loaded', args(predicate,Workspace))
+	; flora_error_line('calling first order predicate %s/%d in module %s, which not loaded', args(Predicate,N,Workspace))
 	),
 	abort.

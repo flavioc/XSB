@@ -15,15 +15,11 @@
 #include "flora_terms.flh"
 
 
-:- import storage_find_fact/2 from storage.
-
-:- import FL_IF/1, FL_ELSE/2 from flrcontrol.
-
 
 /**************************************************************************
   F-logic
 ***************************************************************************/
-:- flPredicate
+:- FL_FIRSTORDER
 	derived_sub/2,
 	derived_isa/2,
 	derived_ifd/3,
@@ -46,7 +42,7 @@
 /**************************************************************************
   HiLog
 ***************************************************************************/
-:- flPredicate
+:- FL_FIRSTORDER
 	WRAP_HILOG/1,
 	WRAP_HILOG/2,
 	WRAP_HILOG/3,
