@@ -2145,10 +2145,10 @@ static void chat_chain_region(CPtr b, int len)
 /* counting sort used for each iteration of 
    radix sort; assumes all pointers are
    aligned, so end in '00'   --lfcastro    */
-void counting_sort(ulong *from, ulong *to, ulong size, int step) 
+void counting_sort(unsigned long *from, unsigned long *to, unsigned long size, int step) 
 {
-  ulong count[1024];
-  ulong i,j;
+  unsigned long count[1024];
+  unsigned long i,j;
 
   if (!count)
     xsb_exit("Error allocating memory for counting_sort.\n");
@@ -2172,9 +2172,9 @@ void counting_sort(ulong *from, ulong *to, ulong size, int step)
   }
 }
 
-static ulong *radix_sort(ulong *data, ulong size)
+static unsigned long *radix_sort(unsigned long *data, unsigned long size)
 {
-  ulong *newdata;
+  unsigned long *newdata;
   
   newdata = calloc(slide_buf_size+1, sizeof(CPtr));  
   if (!newdata)
@@ -2186,17 +2186,17 @@ static ulong *radix_sort(ulong *data, ulong size)
   return(newdata);
 }
 
-static void radix_sort_slide_buf(ulong size)
+static void radix_sort_slide_buf(unsigned long size)
 {
-  ulong *tmp;
+  unsigned long *tmp;
 #ifdef GC_PROFILE
-  ulong begin_sorting, end_sorting;
+  unsigned long begin_sorting, end_sorting;
 
   if (verbose_gc)
     begin_sorting = cpu_time();
 #endif
 
-  tmp = radix_sort((ulong *) slide_buf, size);
+  tmp = radix_sort((unsigned long *) slide_buf, size);
   free(slide_buf);
   slide_buf = (CPtr *) tmp;
 
@@ -2239,7 +2239,7 @@ static void sort_buffer(unsigned long *indata, unsigned long insize)
   unsigned long size_stack[4000];
   int stack_index=0;
   int leftsize;
-  ulong begin_sorting, end_sorting;
+  unsigned long begin_sorting, end_sorting;
   
   randomize_data(indata,insize);
 
@@ -2980,7 +2980,7 @@ int gc_heap(int arity)
 
 #ifdef GC
   CPtr p;
-  ulong  begin_marktime, end_marktime,
+  unsigned long  begin_marktime, end_marktime,
 #ifdef GC_PROFILE
        begin_slidetime, begin_copy_time,
 #endif
