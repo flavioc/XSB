@@ -36,7 +36,7 @@
 %% so package_configuration won't be asserted twice.
 bootstrap_flora :-
 	bootstrap_package('flora',flora),
-	assert(package_configuration(version(flora),'0.9 of 05/24/1999')).
+	assert(package_configuration(version(flora),'0.92 of 05/30/1999')).
 
 flora_shell :- bootstrap_flora, [flrshell], '_$_$_flora_shell'.
 flora_shell :- '_$_$_flora_shell'.
