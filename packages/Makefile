@@ -27,10 +27,10 @@ OBJEXT=.xwam
 ALL = 	slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
 	sModels${OBJEXT} libwww${OBJEXT} clpr${OBJEXT} xsbdoc${OBJEXT} \
-	xmc${OBJEXT}
+	xmc${OBJEXT} iprolog${OBJEXT}
 
 SUBDIR = flora2 slx perlmatch gap regmatch wildmatch libwww sModels \
-	clpqr xsbdoc xmc
+	clpqr xsbdoc xmc iprolog
 
 Option = [optimize]
 
@@ -79,6 +79,11 @@ flora2::
 	@rm -f flora2.P flora2$(OBJEXT)
 	@ln -s flora2/flora2.P .
 	cd flora2; makeflora all $(XSB)
+
+#Add interprolog
+iprolog::
+	@echo ""
+	cd iprolog; make
 
 libwww::
 	@echo ""
