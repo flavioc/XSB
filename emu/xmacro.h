@@ -143,7 +143,7 @@ struct subgoal_frame {
   CPtr cp_ptr;          /* Pointer to the Generator CP */
   ALPtr ans_list_tail;  /* pointer to the tail of the answer list */
   CPtr compl_flag;      /* jf: indicate whether subg is completed */
-  IDE  nide;		/* pointer to a negative IDE */
+  PNDE nde_list;	/* pointer to a list of negative DEs */
 } ;
 
 #define CALLSTRUCTSIZE	(sizeof(struct subgoal_frame)/sizeof(CPtr))
@@ -162,17 +162,19 @@ struct subgoal_frame {
 #define subg_ans_list_tail(b)	((SGFrame)(b))->ans_list_tail
 /* jf: 072295 */
 #define subg_compl_flag(b)	((SGFrame)(b))->compl_flag
-#define subg_nide(b)		((SGFrame)(b))->nide
+#define subg_nde_list(b)	((SGFrame)(b))->nde_list
 extern SGFrame subg_structure_list;
 extern ALPtr empty_return();
 #define subg_answers(subg) aln_next_aln(subg_ans_list_ptr(subg))
 
 /*
- *  Creates a new subgoal frame, setting the first arg to point to it, and
- *  inserts it into the global subgoal list.  The TIP and leaf ptr fields are
- *  given useful values, while the completion stack frame pointer is set to
- *  the next available (frame) location on the stack, but the space is not yet
- *  allocated to one.
+ * Creates a new subgoal frame, setting the first arg to point to it, and
+ * inserts it into the global subgoal list.  The TIP and leaf ptr fields are
+ * given useful values, while the completion stack frame pointer is set to
+ * the next available (frame) location on the stack, but the space is not yet
+ * allocated to one.
+ *
+ * LeafPtr is the pointer to the corresponding leaf node of the call trie.
  */
 
 #define create_subgoal_frame(storeptr,LeafPtr){\
@@ -198,7 +200,7 @@ extern ALPtr empty_return();
 	subg_prev_subgoal(NewFrame) = NULL;\
         subg_ans_list_tail(NewFrame) = NULL; /* REV_ANSWER_LIST */\
 	subg_compl_flag(NewFrame) = (CPtr) 0; /* jf: 072295 */\
-	subg_nide(NewFrame) = NULL;\
+	subg_nde_list(NewFrame) = NULL;\
   }\
 }
 
@@ -256,7 +258,7 @@ extern ALPtr empty_return();
 	(subg_ans_root_ptr(SUBG_PTR) = NULL)
 
 #define neg_simplif_possible(SUBG_PTR)	\
-	((subgoal_fails(SUBG_PTR)) && (subg_nide(SUBG_PTR) != NULL))
+	((subgoal_fails(SUBG_PTR)) && (subg_nde_list(SUBG_PTR) != NULL))
 
 /*----------------------------------------------------------------------*/
 
