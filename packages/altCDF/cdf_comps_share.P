@@ -599,6 +599,7 @@ newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
 	      cdf_error(component,['Creating a component path ',Path,
 			' for ',Src,' which has path ',Path1]) 
 	    ; 
+	      newExtTerm(isa_ext(crid(hasPath,Src),crid('CDF Class-Object Relations',cdf))),
 	      newExtTerm(component_create,
 			 classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),
 					  Path)) ),
@@ -632,6 +633,7 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
         retractallExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),_)),
         retractallExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),_),Src),
 			 	crid(hasVersion,Src),_Int)),
+	newExtTerm(isa_ext(crid(hasPath,Src),crid('CDF Class-Object Relations',cdf))),
         newExtTerm(component_create,classHasAttr_ext(cid(Src,Src),
 				    crid(hasPath,Src),cid(Pathin,cdfpt))),
         slash(Slash),
@@ -664,6 +666,7 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,cid(V,cdfpt)):-
 	     newExtTerm(isa_ext(cid(compName(cid(Src,Src),cid(allAtoms,cdf)),Src),
 			   cid(compNames,cdf))),
              retractallExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),_)),
+	     newExtTerm(isa_ext(crid(hasPath,Src),crid('CDF Class-Object Relations',cdf))),
 	     newExtTerm(component_create,
 		        classHasAttr_ext(cid(Src,Src),
 					 crid(hasPath,Src),Pathin)),
