@@ -12,6 +12,7 @@
  \> {\tt abolish\_table\_call(Term)} \>					\\
  \> {\tt abolish\_table\_pred(Pred)} \>					\\
  \> {\tt abort}			\>					\\
+ \> {\tt abort(Message)}	\>					\\
  \> {\tt analyze\_table(Pred)}	\>					\\
  \> {\tt arg(Index, Term, Arg)}	\>					\\
  \> {\tt arg0(Index, Term, Arg)}\>					\\
@@ -31,9 +32,9 @@
 %\> {\tt clause(Head, Body, Ref)} \> This predicate is not yet implemented.\\
  \> {\tt close(FileName)}	\>					\\
  \> {\tt compare(Res, Term1, Term2)} \>					\\
- \> {\tt compound(Term)}	\>					\\
  \> {\tt compile(Module)}	\>					\\
  \> {\tt compile(Module, Options)} \>					\\
+ \> {\tt compound(Term)}	\>					\\
  \> {\tt consult(Module)}	\>					\\
  \> {\tt consult(Module, Options)} \>					\\
  \> {\tt copy\_term(Term, Copy)} \>					\\
@@ -62,7 +63,11 @@
  \> {\tt functor(Term, Functor, Arity)} \>				\\
  \> {\tt get(Char)}		\>					\\
  \> {\tt get0(Char)}		\>					\\
- \> {\tt get\_calls\_for\_table(Pred, Call, Empty)} \>			\\
+ \> {\tt get\_call(Skeleton,Subgoal\_Structure\_Pointer,Return\_Skeleton)} \> \\
+ \> {\tt get\_calls(Skeleton,Subgoal\_Structure\_Pointer,Return\_Skeleton)} \> \\
+ \> {\tt get\_calls\_for\_table(Skeleton,Call,Empty)} \>		\\
+ \> {\tt get\_resudual(Call, Return)} 		\>			\\
+ \> {\tt get\_returns(Skeleton,Delay\_list)} 	\>			\\
  \> {\tt get\_returns\_for\_call(Call, Return)} \>			\\
  \> {\tt halt}			\>					\\
  \> {\tt hilog(Symbol)}		\>					\\
@@ -75,36 +80,41 @@
  \> {\tt instance(Ref, Instance)} \>					\\
  \> {\tt integer(Term)}		\>					\\
  \> {\tt is(Result, Expression)} \>					\\
+ \> {\tt is\_absolute\_filename(Path)} \>				\\
  \> {\tt is\_list(Term)}	\>					\\
  \> {\tt is\_string(Term)}	\>					\\
  \> {\tt keysort(Input, Output)} \>					\\
- \> {\tt load\_dyn(Module)}	\>					\\
  \> {\tt listing}		\>					\\
  \> {\tt listing(Predicate)}	\>					\\
+ \> {\tt load\_dyn(Module)}	\>					\\
+ \> {\tt load\_dync(Module)}	\>					\\
  \> {\tt ls}			\>					\\
- \> {\tt mc(Module, Options)}	\> This predicate is used in the 	\\
- \>				\> {\tt Makefile}s when self-compiling 
-				   \ourprolog.	\\
  \> {\tt module\_property(Module, Property)} \>				\\
  \> {\tt name(Term, CharList)}	\>					\\
  \> {\tt nl}			\>					\\
+ \> {\tt nl(Stream)}		\>					\\
  \> {\tt nodebug}		\>					\\
  \> {\tt nonvar(Term)}		\>					\\
  \> {\tt nospy(Predicate\_List)} \>					\\
  \> {\tt not(Goal)}		\>					\\
  \> {\tt notrace}		\>					\\
  \> {\tt number(Term)}		\>					\\
+ \> {\tt number\_chars(Number,Character\_list)}		\>		\\
  \> {\tt once(Goal)}		\>					\\
  \> {\tt op(Precedence, Format, Operator)} \>				\\
+ \> {\tt open(Stream)}		\>					\\
  \> {\tt otherwise}		\>					\\
  \> {\tt phrase(Phrase, List)}	\>					\\
  \> {\tt phrase(Phrase, List, Remains)}	\>				\\
  \> {\tt predicate\_property(Predicate, Property)} \>			\\
  \> {\tt print(Term)}		\> Currently the same as {\tt write/1}.	\\
- \> {\tt prompt(New, Old)}	\>					\\
+% \> {\tt prompt(New, Old)}	\>					\\
  \> {\tt proper\_hilog(Term)}	\>					\\
  \> {\tt put(Char)}		\>					\\
  \> {\tt read(Term)}		\>					\\
+ \> {\tt read(Stream,Term)}		\>				\\
+ \> {\tt read\_canonical(Term)}		\>				\\
+% \> {\tt read\_line(Stream,Term)}	\>				\\
  \> {\tt real(Term)}		\>					\\
  \> {\tt reconsult(Module)}	\>					\\
  \> {\tt reconsult(Module, Options)} \>					\\
@@ -120,7 +130,7 @@
  \> {\tt see(File)}		\>					\\
  \> {\tt seeing(File)}		\>					\\
  \> {\tt seen}			\>					\\
- \> {\tt set\_global\_compiler\_options(OptionsList)} \>			\\
+ \> {\tt set\_global\_compiler\_options(OptionsList)} \>		\\
  \> {\tt setof(Elem, Goal, Set)} \>					\\
  \> {\tt skip(Char)}		\>					\\
  \> {\tt sort(Input, Output)}	\>					\\
@@ -129,19 +139,20 @@
  \> {\tt statistics(Number)}	\>					\\
  \> {\tt structure(Term)}	\>					\\
  \> {\tt tab(Count)}		\>					\\
- \> {\tt table\_copy(Old, New)}	\>					\\
+% \> {\tt table\_copy(Old, New)}\>					\\
  \> {\tt table\_prop(Pred, Type, Value)} \>				\\
  \> {\tt table\_prop(Pred, Type, OldValue, NewValue)} \>		\\
  \> {\tt table\_state(Call, State)} \>					\\
+ \> {\tt tbagof(Elem, Goal, List)} \>					\\
  \> {\tt tell(File)}		\>					\\
  \> {\tt telling(File)}		\>					\\
- \> {\tt tbagof(Elem, Goal, List)} \>					\\
  \> {\tt tfindall(Elem, Goal, List)} \>					\\
- \> {\tt tsetof(Elem, Goal, List)} \>					\\
+ \> {\tt tilde\_expand\_filename(File\_name,Expanded\_Filename)} \>	\\
  \> {\tt tnot(Goal)}		\>					\\
  \> {\tt told}			\>					\\
- \> {\tt true}			\>					\\
  \> {\tt trace}			\>					\\
+ \> {\tt true}			\>					\\
+ \> {\tt tsetof(Elem, Goal, List)} \>					\\
  \> {\tt ttywrite(Term)}	\> Same as {\tt write} but always writes to \\
  \>				\> the standard output.			\\
  \> {\tt ttywritenl(Terms)}	\>
@@ -152,11 +163,13 @@
  \> {\tt unix(Command, Result)}	\>					\\
  \> {\tt var(Term)}		\>					\\
  \> {\tt write(Term)}		\>					\\
+ \> {\tt write(Stream,Term)}	\>					\\
  \> {\tt writeln(Term)}		\>					\\
  \> {\tt write\_prolog(Term)}	\>					\\
+ \> {\tt write\_prolog(Stream,Term)}	\>				\\
  \> {\tt writeq(Term)}		\>					\\
  \> {\tt write\_canonical(Term)} \>					\\
- \> {\tt xsb\_configuration(Feature, Value)} \>				\\
+% \> {\tt xsb\_configuration(Feature, Value)} \>			\\
  \> {\tt xsb\_flag(Flag, Value)} \>					\\
  \> {\tt $\backslash$+ Query}	\>					\\
  \> {\tt !}			\>					\\

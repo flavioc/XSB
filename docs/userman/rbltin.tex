@@ -564,17 +564,14 @@ predicate to be tabled.
 
 \section{Tabling}\label{tabling_predicates}
 
-In \ourprolog, tables are designed so that they can be used
-transparently by computations.  However, it is often useful to be able
-to explicitly inspect a table, or alter its state, especially during
-program development.  The following predicates are supplied for these
-purposes.
-
-In the following predicates, {\tt Skeleton} refers to information
-about the function and arity of a predicate.  If p/2 is a predicate,
-its skeleton can be represented as {$p(\langle arg1 \rangle,\langle
-arg2 \rangle)$} where {\em arg1} and {\em arg2} can be any
-instantiation pattern.  Thus the information derived from the
+In XSB, tables are designed so that they can be used transparently by
+computations.  However, it is often useful to be able to explicitly
+inspect a table, or to alter its state.  In the following predicates,
+which are provided for this purpose, {\tt Skeleton} refers to
+information about the function and arity of a predicate.  If {\tt p/2}
+is a predicate, its skeleton can be represented as {$p(\langle arg1
+\rangle,\langle arg2 \rangle)$} where {\em arg1} and {\em arg2} can be
+any instantiation pattern.  Thus the information derived from the
 skeletons {\em p(1,2)} and {\em p(A,B)} would be the same.
 
 The user should be aware that skeletons which are dynamically created
@@ -586,13 +583,12 @@ tabled predicates themselves have not been imported into usermod.
 
 \ournewitem{get\_calls(+Skeleton,-Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}
 \index{{\tt get\_calls/3}}
-Backtracks through the subgoal trie, instantiates the {\tt Skeleton}
-to a call term in the {\tt call trie} by binding the variable in the skeleton,
-binds {\tt Subgoal\_Structure\_Pointer} with the pointer to the 
-{\tt subgoal structure} and binds {\tt Return\_Skeleton} to 
-a term of the form ret/n where each of its arguments corresponds to
-a free variable in the call.
-Example:
+Backtracks through the subgoal trie, unifying {\tt Skeleton} with
+entries in the {\tt call trie}.  As it does so, {\tt get\_calls/3}
+binds {\tt Subgoal\_Structure\_Pointer} with the pointer to the {\tt
+subgoal structure} and binds {\tt Return\_Skeleton} to a term of the
+form ret/n where each of its arguments corresponds to a free variable
+in the call.  Example:
 
 For the following program and table
      \begin{center}
@@ -668,11 +664,47 @@ calls to {\tt get\_calls/3} will act as follows
 	\end{verbatim}
 	}
 
+\ournewitem{get\_call(+Skeleton,-Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}
+\index{{\tt get\_call/3}}
+This predicate binds {\tt Subgoal\_Structure\_Pointer} and {\tt
+Return\_Skeleton} only if {\tt Skeleton} is a variant of some entry in
+the subgoal table.  It may be compared to the previous predicate {\tt
+get\_call/3} which {\em unifies} {\tt Skeleton} with entries in the
+subgoal trie.  Repeating the example from {\tt get\_calls/3}, calls to
+{\tt get\_call/3} will act as follows
+
+%
+{\footnotesize 
+\begin{verbatim}
+                   | ?- get_call(p(X,Y),Cs,Ret).
+
+                   no
+                   | ?- get_call(p(1,Y),Cs,Ret).
+
+                   Y = _864620
+                   Cs = 2927104
+                   Ret = ret(_864620);
+
+                   no
+                   | ?- get_call(p(Y,3),Cs,Ret).
+
+                   Y = _864792
+                   Cs = 2927152
+                   Ret = ret(_864792);
+
+                   no
+                   | ?- get_call(p(1,3),Cs,Ret).
+
+                   no
+
+	\end{verbatim}
+	}
+
 \ournewitem{get\_calls\_for\_table(+Skeleton,-Call,-Empty)}{Tabling}\index{{\tt get\_table\_pred/3}}
-Succeeds whenever {\tt Skeleton} corresponds to a predicate that has been 
-declared tabled.  For these predicates {\tt get\_calls\_for\_table/3} 
-upon backtracking returns the calls of all current table entries.
-Also returned with each call is an atom which is a member of the set
+Succeeds whenever {\tt Skeleton} unfies with an entry in the subgoal
+table.  When this predicate suceeds, it returns a variant of the call
+entry with which {\tt Skeleton} unifies, along with an atom which is a
+member of the set
 \begin{center}
 \{ {\tt empty, notempty} \}.
 \end{center}
@@ -682,14 +714,16 @@ This predicate does not provide any information about whether a table is
 complete.  Use {\tt table\_state} to inquire about a table's state.
 
 \noindent
-Calls to {\tt get\_calls\_for\_table/3} for the 
-program in {\tt get\_calls/3} would act as follows
-    {\footnotesize
-     \begin{verbatim}
-                   | ?- get_calls_for_table(p(X,Y), Call, Empty).
-                   X = _646608
+Calls to {\tt get\_calls\_for\_table/3} for the example in {\tt
+get\_calls/3} would act as follows 
+%
+{\footnotesize
+\begin{verbatim} 
+
+                   |?- get_calls_for_table(p(X,Y), Call, Empty).  
+                   X = _646608 
                    Y = _646436
-                   Call = p(1,_646724)
+                   Call = p(1,_646724) 
                    Empty = notempty;
 
                    X = _646608
@@ -723,11 +757,11 @@ Backtracks through the answer trie for the subgoal whose {\tt subgoal structure}
 is pointed to by {\tt Subgoal\_Structure\_Pointer}, and instantiates the 
 {Return\_Skeleton} with the bindings corresponding to the return.
 
-
-A way of accessing some subgoals and answers of the table in
-in {\tt get\_calls/3}  would act as follows
-    {\footnotesize
-     \begin{verbatim}
+One way of accessing subgoals and answers of the example in in {\tt
+get\_calls/3} is as follows 
+%
+{\footnotesize 
+\begin{verbatim} 
                    | ?- get_calls(p(Y,3),Cs,Ret), get_returns(Cs,Ret).
 
                    Y = 2
@@ -752,18 +786,17 @@ in {\tt get\_calls/3}  would act as follows
      }
 
 
-\ournewitem{get\_returns(+Subgoal\_Structure\_Pointer,-Return\_Skeleton,-LeafNode)}{Tabling}\index{{\tt get\_returns/3}}
+\ournewitem{get\_returns(+Subgoal\_Structure\_Pointer,-Return\_Skeleton,-LeafNode)}{Tabling}
+\index{{\tt get\_returns/3}}
 Same as above, except for the fact that the third argument is bound
 to the leaf node corresponding to the return in the return trie.
 
-
-
 \ournewitem{get\_returns\_for\_call(+Call,-Return)}{Tabling}\index{{\tt get\_returns\_for\_call/2}}
 Succeeds whenever there is a table entry for a variant of {\tt Call}.
-If this is the case, {\tt Return} is instantiated with an
-entry for the table corresponding to call, and successive entries are returned
-by backtracking.  If there are no answers in the table, or no table entry
-for {\tt Call}, the goal fails.
+If this is the case, {\tt Return} is instantiated with an entry for
+the table corresponding to call, and successive entries are returned
+by backtracking.  If there are no answers in the table, or no table
+entry for {\tt Call}, the goal fails.
 
 This predicate creates fresh variables for the return, rather than
 unifying them with variables in the first argument.  An explicit
@@ -804,6 +837,70 @@ Exception:
 %{\bf Release Note:} In future versions, this predicate may be changed to 
 %allow partial instantiation of the second argument. 
 
+
+\ournewitem{get\_residual(?Skeleton,?Delay\_list)}{Tabling}
+\index{{\tt get\_residual/2}}
+
+{\tt get\_residual/2} is used to backtrack through answers that unify
+with a skeleton.  These answers may in fact come from any call that
+unifies with {\tt Skeleton}.  Since the {\tt Delay\_list} of an answer
+consists of those literals whose truth value is unknown in the
+well-founded model of the program (see Section \ref{tabling_overview})
+{\tt get\_residual/2} can be useful when extensions of the
+well-founded model are desired.  Consider the program
+
+For the following program and table
+     \begin{center}
+     \begin{tabular}{cc}
+     \begin{minipage}{2.1in}
+     {\tt
+          :- table p/2.	\\
+	  p(1,2). \\
+	  p(1,3):- tnot(p(2,3)). \\
+	  p(2,3):- tnot(p(1,3)). 
+     }
+     \end{minipage}
+     &
+     \begin{tabular}{||l|l||}   \hline
+     {\em Call}			& {\em Returns} \\ \hline \hline
+     p(1,X)			& p(1,2) \\ 
+ 	       			& p(1,3):- tnot(p(2,3)) \\
+ 	       			& p(2,3):- tnot(p(1,3)) \\ \hline
+     p(1,3)			& p(1,3):- tnot(p(2,3)) \\ \hline
+     p(2,3)			& p(2,3):- tnot(p(1,3)) \\ \hline
+     \end{tabular}
+     \end{tabular}
+     \end{center}
+calls to {\tt get\_residual/3} will act as follows
+%
+{\footnotesize 
+\begin{verbatim} 
+                   | ?- get_residual(p(X,Y),List).
+
+                   X = 1
+                   Y = 2;
+                   Z = [];
+
+                   X = 1
+                   Y = 3;
+                   Z = [tnot(p(2,3))];
+
+                   X = 2
+                   Y = 3;
+                   Z = [tnot(p(1,3))];
+
+                   X = 1
+                   Y = 3;
+                   Z = [tnot(p(2,3))];
+
+                   X = 2
+                   Y = 3;
+                   Z = [tnot(p(1,3))];
+
+                   no
+
+     \end{verbatim}
+     }
 
 \ournewitem{delete\_return(+Subgoal\_Structure\_Pointer,+LeafNode)}{Tabling}
 \index{{\tt delete\_returns/2}}

@@ -306,6 +306,15 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
     as \verb|'.'(foo,'.'(bar,[]))|).
 %% $
 
+\ournewitem{read\_canonical(-Term)}{basics} \index{{\tt
+read\_canonical/1}} 
+Reads a term that is in canonical format from the
+current input stream and returns it in {\tt Term}. On end-of-file, it
+returns the atom {\tt end\_of\_file}.  If it encounters an error, it
+prints an error message on stderr and returns the atom {\tt
+read\_canonical\_error}. This is significantly faster than {\tt
+read/1}, but requires the input to be in canonical form.
+
 \ouritem{write\_canonical(+Stream, ?Term)}\index{{\tt write\_canonical/2}}
 	{\tt write\_canonical/2} has the same behavior as {\tt
 	write\_canonical/1} but the output stream is explicitly

@@ -155,7 +155,7 @@ handled by the XSB compiler.
 \index{{\tt load\_dyn/1}}\label{load_dyn/1}
 %\predindex{load\_dyn/1~(L)}
     Asserts the contents of file {\tt FileName} into the database.
-    All existing clauses of the predicates in the file that already
+    All existing clauses of the predicates in the file that alreay
     appear in the database, are retracted unless there is a {\tt
     multifile/1} declaration for them.  Clauses in the file must be
     in a format that {\tt read/1} will process.  So, for example,
@@ -374,15 +374,6 @@ predicates are described here.
     format string and substitutes the values from the arguments of {\tt
       Term} for the formatting instructions \%s, \%d, etc. The result is
     available in {\tt String}.
-
-
-\ournewitem{read\_canonical(-Term)}{basics}\index{{\tt read\_canonical/1}}
-    Reads a term that is in canonical format from the current input
-    stream and returns it in {\tt Term}. On end-of-file, it returns the
-    atom {\tt end\_of\_file}.  If it encounters an error, it prints an
-    error message on stderr and returns the atom {\tt
-    read\_canonical\_error}. This is significantly faster than {\tt
-    read/1}, but requires the input to be in canonical form.
 
 \ournewitem{file\_read\_canonical(+FileDes,-Term,-Psc)}{machine}
 \index{{\tt file\_read\_canonical/3}}
