@@ -60,7 +60,6 @@
 
 FILE *open_files[MAX_OPEN_FILES]; /* open file table */
 
-extern void print_pterm(prolog_term term,int toplevel,VarString* saddr);
 
 static FILE *fptr;			/* working variable */
     

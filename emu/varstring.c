@@ -96,14 +96,14 @@ static void  vs_prependblk(VarString *vstr,char*,int);
 static void  vs_adjust_size(VarString *vstr, int add_size);
 static inline void vs_null_terminate(VarString *vstr);
 
-struct varstr_ops VarStrOps = {vs_set,vs_setv,
-			       vs_append,vs_prepend, 
-			       vs_appendv,vs_prependv,
-			       vs_compare,vs_strcmp,
-			       vs_appendblk,vs_prependblk,
-			       vs_null_terminate,
-			       vs_ensure_size,
-			       vs_shrink,vs_destroy};
+DllExport struct varstr_ops VarStrOps = {vs_set,vs_setv,
+					 vs_append,vs_prepend, 
+					 vs_appendv,vs_prependv,
+					 vs_compare,vs_strcmp,
+					 vs_appendblk,vs_prependblk,
+					 vs_null_terminate,
+					 vs_ensure_size,
+					 vs_shrink,vs_destroy};
 
 
 

@@ -1056,7 +1056,7 @@ char tempstring[MAXBUFSIZE];
    Buffer is a VarString. If the VarString is non-empty, the term is appended
    to the current contents of the VarString.
 */
-void print_pterm(prolog_term term, int toplevel, VarString *straddr)
+DllExport void call_conv print_pterm(prolog_term term, int toplevel, VarString *straddr)
 {
   int i;
 

@@ -246,7 +246,7 @@ DllExport extern int call_conv xsb_get_last_answer_string(char*,int,int*);
 DllExport extern int call_conv xsb_close_query();
 DllExport extern int call_conv xsb_close();
 
-extern void print_pterm(Cell, int, VarString*);
+DllExport extern void call_conv print_pterm(Cell, int, VarString*);
 extern char *p_charlist_to_c_string(prolog_term term, VarString *buf,
 				    char *in_func, char *where);
 

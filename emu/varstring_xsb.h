@@ -24,6 +24,7 @@
 
 
 #ifndef VARSTRING_INCLUDED
+#include "export.h"
 
 struct varstr;
 typedef struct varstr VarString;
@@ -69,7 +70,7 @@ struct varstr {
 };
 
 
-extern struct varstr_ops VarStrOps;
+DllExport extern struct varstr_ops VarStrOps;
 
 /* calling sequence shortcuts; all expect a VarString pointer */
 #define XSB_StrSet(vstr,str)           (vstr)->op->set(vstr,str)
