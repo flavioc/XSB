@@ -106,7 +106,7 @@ component.
 @begin{itemize}
 	@item Checking Argument: component
 	@item Default Setting: 
-       cdf_flags(component_update,check(A,B,[classify_if_necessary(A,B)])).
+       cdf_flags(componentUpdate,check(A,B,[classify_if_necessary(A,B)])).
   	  cdf_flag(checks(componentLoad,1),classify_if_necessary(Comp))
   	  cdf_flag(checks(componentLoad,1),check_implication(Comp))
 @end{itemize}
@@ -431,7 +431,7 @@ get_component_fact(Name,Fact):-
 	get_component_extensional(Fact,Name).
 
 classify_if_necessary_term(Term,Upd1,Upd):-
-	\+ (Term = isa_ext(_)),!,
+	\+ (Term = isa_ext(_,_)),!,
 	Term =.. [_|L],
 	classify_if_necessary_list(L,Upd1,Upd).
 classify_if_necessary_term(isa_ext(First,Second),Upd1,Upd):-
