@@ -679,6 +679,23 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
 \ouritem{is\_charlist(+X,-Size)}\index{{\tt is\_charlist/2}}
     Like above, but also returns the length of that string in the second
     argument, which must be a variable.
+\ouritem{is\_most\_general\_term(?X)}\index{{\tt
+is\_most\_general\_term/1}}
+    Succeeds if {\tt X} is compound term with all distinct variables
+as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
+    {\footnotesize
+     \begin{verbatim}
+                | ?- is_most_general_term(f(_,_,_,_)).
+                yes
+                | ?- is_most_general_term(abc).
+                yes
+                | ?- is_most_general_term(f(X,Y,Z,X)).
+                no
+                | ?- is_most_general_term(f(X,Y,Z,a)).
+                no
+                | ?- is_most_general_term([_|_]).
+                no
+     \end{verbatim}}
 
 \ouritem{callable(?X)}\index{{\tt callable/1}}
     Succeeds if {\tt X} is currently instantiated to a term that standard
