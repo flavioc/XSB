@@ -38,9 +38,14 @@ numbers added.
 <p>
 Flora-2 is still considered an alpha release, although there have been
 considerable improvements in stability and speed.
-This release fixes many bugs and eliminates some restritions, but no new
-features were added. However, work is being done on many of the items on the
-TODO list, which is found in the <tt>flora2</tt> directory in the distribution.
+This release fixes many bugs, eliminates some restritions, and adds a few
+new features.
+<ul>
+<li> Numbered anonymous oids added (e.g., _#123). They behave like regular
+anonymous oids (_#) in the sense that they are substituted by a new oid.
+However, numbered oids can be referenced within the same clause (e.g.,
+_#12[self-&gt;_#12]).
+</ul>
 
 <hr>
 <center>
