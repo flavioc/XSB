@@ -77,10 +77,15 @@ int main(int argc, char *argv[])
   /* Create command to consult a file: ctest.P, and send it. */
   c2p_functor("consult",1,reg_term(1));
   c2p_string("ctest",p2p_arg(reg_term(1),1));
-  if (xsb_command()) printf("Error consulting ctest.P.\n");
+  if (xsb_command()) {
+    printf("Error consulting ctest.P.\n");
+    fflush(stdout);
+  }
 
-  if (xsb_command_string("consult(basics).")) 
+  if (xsb_command_string("consult(basics).")) {
     printf("Error (string) consulting basics.\n");
+    fflush(stdout);
+  }
 
   /* Create the query p(300,X,Y) and send it. */
   c2p_functor("p",3,reg_term(1));
@@ -101,6 +106,7 @@ int main(int argc, char *argv[])
 	     p2c_string(p2p_arg(reg_term(1),3)),
 	     xsb_var_string(2)
 	     );
+    flush(stdout);
     rcode = xsb_next();
   }
 
@@ -122,6 +128,7 @@ int main(int argc, char *argv[])
 	     xsb_var_string(2),
 	     xsb_var_string(3)
 	     );
+    flush(stdout);
     rcode = xsb_next();
   }
 
