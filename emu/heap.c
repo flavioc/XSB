@@ -924,7 +924,7 @@ int mark_heap(int arity, int *marked_dregs)
     /* here allocate EXACT amount for completion stack: not upper bound */
     compl_marks = calloc(compl_bot - top_of_complstk,1);
     if (! compl_marks)
-      xsb_exit("Not enough core to allocate chain bis for completion stack");
+      xsb_exit("Not enough core to allocate chain bits for completion stack");
 #endif
     /* these areas are not used in a copying collector */
     cp_marks = calloc(cp_bot - cp_top + 1,1);
@@ -1566,8 +1566,7 @@ bool glstack_realloc(int new_size, int arity)
        cell_ptr > (CPtr *)tcpstack.low;
        cell_ptr = cell_ptr - 2)
   { /* first the value */
-    cell_val = (Cell)*cell_ptr ;
-    realloc_ref(cell_ptr,(CPtr)cell_val) ;
+    reallocate_heap_or_ls_pointer(cell_ptr);
     /* now the address */
     cell_ptr-- ;
     cell_val = (Cell)*cell_ptr ;
