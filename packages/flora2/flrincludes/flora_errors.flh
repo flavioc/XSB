@@ -120,7 +120,7 @@
 #define NO_LISTTAIL	'list tail specification not allowed in this context'
 #define NO_DISJUNCTION	'disjunction not allowed in rule heads and facts'
 #define NO_NEGATION	'negation not allowed in rule head'
-#define NO_WORKSPACE	'invalid use of module specification'
+#define NO_WORKSPACE	'invalid association with module specification'
 #define NO_WSINRULEHEAD	'module specification not allowed in rule head'
 #define NO_WSNESTING	'invalid nesting of module specifications'
 #define NO_REDEFINITION 'redefinition of standard predicates not allowed'
@@ -145,6 +145,9 @@
 #define MISSING_THEN	'missing then-statement in if-then-else-statement'
 #define UNEXPECTED_THEN	'unexpected then-statement'
 #define UNEXPECTED_ELSE	'unexpected else-statement'
+#define NO_UPDATEIF	'updating if-statement not allowed'
+#define NO_UPDATETHEN	'updating then-statement not allowed'
+#define NO_UPDATEELSE	'updating else-statement not allowed'
 
 
 /**************************************

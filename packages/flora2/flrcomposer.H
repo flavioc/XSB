@@ -24,11 +24,11 @@
 */
 
 
-:- dynamic indexed_token(_,_).
+:- dynamic indexed_token(_,_,_).
 :- dynamic composing_error(_,_).
 :- dynamic composing_error(_,_,_).
 
-:- index(indexed_token/2,trie).
+:- index(indexed_token/3,trie).
 :- index(composing_error/2,trie).
 :- index(composing_error/3,trie).
 
@@ -45,4 +45,5 @@
 :- export
 	flora_reset_composer/0,
 	flora_compose/3,
-	flora_nth_token/2.
+	flora_nth_token/2,
+	flora_token_rulenum/2.

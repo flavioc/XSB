@@ -34,6 +34,7 @@
 #define BRACE		brace	/* BRACE(Symbol,Index) */
 
 #define TKCNT		tkcnt	/* index counter for tokens */
+#define RLCNT		rlcnt	/* sequence number counter for rules */
 
 #include "char_defs.h"
 #include "flora_errors.flh"
@@ -44,21 +45,31 @@
   flora_nth_token(+IndexNumber,-Token)
 ***************************************************************************/
 flora_nth_token(N,T) :-
-	indexed_token(N,T).
+	indexed_token(N,_,T).
 
 
 /***************************************************************************
-  index_tokens(+TokensList,+IndexNumber)
+  flora_token_rulenum(+IndexNumber,-RuleNum)
 ***************************************************************************/
-index_tokens([],N) :-
+flora_token_rulenum(N,RuleNum) :-
+	indexed_token(N,RuleNum,_).
+
+
+/***************************************************************************
+  index_tokens(+TokensList,+IndexNumber,+RuleNumber)
+***************************************************************************/
+index_tokens([],N,RuleNum) :-
 	!,
+	%% Store the sequence number for the next rule.
+	eval(RuleNum+1,X),
+	conset(RLCNT,X),
 	%% Store the index sequence number after indexing all tokens.
 	conset(TKCNT,N).
 
-index_tokens([T|Ts],N) :-
-	assert(indexed_token(N,T)),
+index_tokens([T|Ts],N,RuleNum) :-
+	assert(indexed_token(N,RuleNum,T)),
 	eval(N+1,M),
-	index_tokens(Ts,M),
+	index_tokens(Ts,M,RuleNum),
 	!.
 
 
@@ -68,16 +79,16 @@ index_tokens([T|Ts],N) :-
 token_by_index(Index,Token) :-
 	var(Index),
 	!,
-	indexed_token(Index,Token).
+	indexed_token(Index,_,Token).
 
 token_by_index(Index,Token) :-
 	number(Index),
 	!,
-	indexed_token(Index,Token).
+	indexed_token(Index,_,Token).
 
 token_by_index(Index,Token) :-
 	eval(Index,N),
-	indexed_token(N,Token).
+	indexed_token(N,_,Token).
 
 
 /***************************************************************************
@@ -284,7 +295,8 @@ max_error2(composing_error(N11,N12,M1),[composing_error(N21,N22,M2)|T],X) :-
   flora_reset_composer/0
 ***************************************************************************/
 flora_reset_composer :-
-	retractall(indexed_token(_,_)),
+	retractall(indexed_token(_,_,_)),
+	conset(RLCNT,LOW_INDEX),
 	conset(TKCNT,LOW_INDEX).
 
 
@@ -308,9 +320,11 @@ flora_compose(_,_,_) :-
 	fail.
 
 flora_compose(Tokens,Term,Status) :-
+	%% Get the rule sequence number.
+	conget(RLCNT,RuleNum),
 	%% Get the index sequence number.
 	conget(TKCNT,N),
-	index_tokens(Tokens,N),
+	index_tokens(Tokens,N,RuleNum),
 	flora_compose(NULL,[],[],N,Term,Status),
 	!.
 
