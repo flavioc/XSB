@@ -2099,7 +2099,7 @@ int builtin_call(byte number)
   case PRINT_HEAP: print_heap(0,2000,1) ; return TRUE ;
   case PRINT_CP: print_cp(1) ; return TRUE ;
   case PRINT_REGS: print_regs(10,1) ; return TRUE ;
-  case PRINT_ALL_STACKS: print_all_stacks() ; return TRUE ;
+  case PRINT_ALL_STACKS: print_all_stacks(10) ; return TRUE ;
   case EXP_HEAP: glstack_realloc(glstack.size + 1,0) ; return TRUE ;
   case MARK_HEAP: {
     int tmpval;

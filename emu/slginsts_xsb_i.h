@@ -730,7 +730,8 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
 }
 #else
 {
-  if (csf_pcreg(breg) == &resume_compl_suspension_inst) {
+  if ((unsigned long) csf_pcreg(breg) == 
+      (unsigned long) &resume_compl_suspension_inst) {
     CPtr csf = breg;
     
     /* Switches the environment to a frame of a subgoal that was	*/

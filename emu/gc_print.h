@@ -417,10 +417,10 @@ void print_chat(int add)
 #endif
 } /* print_chat */
 
-void print_all_stacks(void)
+void print_all_stacks(int arity)
 {
     printnum++ ;
-    print_regs(10,0) ;
+    print_regs(arity,0) ;
     print_heap(0,200000,0) ;
     print_ls(0) ;
     print_tr(0) ;

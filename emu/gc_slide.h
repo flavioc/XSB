@@ -291,7 +291,9 @@ static void sort_buffer(unsigned long *indata, unsigned long insize)
   unsigned long size_stack[4000];
   int stack_index=0;
   int leftsize;
+#ifdef GC_PROFILE
   unsigned long begin_sorting, end_sorting;
+#endif
   
   randomize_data(indata,insize);
 

@@ -342,7 +342,37 @@ XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val)
   xsb_dbgmsg("trie_no_cp_val");
 #endif
   NodePtr = (BTNptr) lpcreg;
-  unify_with_trie_val;
+{
+  Cell cell2deref;							
+  XSB_Deref(*reg_arrayptr);    						
+  if (isref(*reg_arrayptr)) {						
+    cell2deref = (Cell)var_regs[(int)int_val(opatom)];			
+    XSB_Deref(cell2deref);	       					
+    if (cell2deref != *reg_arrayptr)					
+      bind_ref((CPtr) *reg_arrayptr, cell2deref);			
+  }									
+  else if (isattv(*reg_arrayptr)) {					
+    cell2deref = (Cell) var_regs[(int)int_val(opatom)];			
+    XSB_Deref(cell2deref);     						
+    if (*reg_arrayptr != cell2deref) {					
+      /* Do not trigger attv interrupt! */				
+      bind_ref(clref_val(*reg_arrayptr), cell2deref);			
+    }									
+    else {								
+      attv_dbgmsg(">>>> keep old attr in unify_with_trie_val\n");	
+    }									
+  }									
+  else {								
+    op1 = (Cell)*reg_arrayptr;						
+    op2 = (Cell) var_regs[(int)int_val(opatom)];			
+    if (unify(op1,op2) == FALSE) {					
+      Fail1;								
+      XSB_Next_Instr();							
+    }									
+  }									
+  reg_arrayptr--;							
+}
+/*   unify_with_trie_val; */
   next_lpcreg;
 XSB_End_Instr()
 

@@ -536,7 +536,7 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 #endif
 
       /* stop if we're not going anywhere */
-      if (a == *a)
+      if ((unsigned long) a == (unsigned long) *a)
 	break;
 
       /* jump to previous cell */
@@ -1042,7 +1042,7 @@ int mark_heap(int arity, int *marked_dregs)
   
   stack_boundaries ;
   
-  if (print_on_gc) print_all_stacks();
+  if (print_on_gc) print_all_stacks(arity);
   
   if (slide) {
 #ifdef CHAT
@@ -1149,7 +1149,7 @@ int mark_heap(int arity, int *marked_dregs)
   if (slide)
     marked += mark_hreg_from_choicepoints();
 
-  if (print_on_gc) print_all_stacks();
+  if (print_on_gc) print_all_stacks(arity);
 
   return marked ;
 } /* mark_heap */

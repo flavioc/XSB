@@ -192,7 +192,7 @@ static int num_gc = 0 ;
 #ifdef DEBUG
 static int print_at = 0 ; /* at the print_at-th gc, the stacks are printed */
 static int print_after = 0 ; /* if non zero, print all after this numgc */
-static int print_anyway = 0 ;
+static int print_anyway = 1 ;
 
 #define print_on_gc \
         ((print_at == num_gc) \
@@ -616,8 +616,10 @@ int gc_heap(int arity)
 	arity++;
 	reg[arity] = (Cell)delayreg;
       }
-      for (i = 1; i <= arity; i++)
-	*hreg++ = reg[i] ;
+      for (i = 1; i <= arity; i++) {
+	*hreg = reg[i];
+	hreg++;
+      }
     }
     
 
@@ -674,7 +676,7 @@ int gc_heap(int arity)
 #ifdef SLG_GC
     /* in SLGWAM, copy hfreg to the heap */
     if (slide) {
-      *hreg = hfreg;
+      *hreg = (unsigned long) hfreg;
       hreg++;
     }
 #endif
@@ -753,7 +755,7 @@ int gc_heap(int arity)
 #ifdef SLG_GC
 	/* copy hfreg back from the heap */
 	hreg--;
-	hfreg = *hreg;
+	hfreg = (unsigned long*) *hreg;
 #endif
 
 	/* copy the aregs from the top of the heap back */
@@ -833,7 +835,7 @@ int gc_heap(int arity)
     }
 #endif
 
-    if (print_on_gc) print_all_stacks();
+    if (print_on_gc) print_all_stacks(arity);
     
     /* get rid of the marking areas - if they exist */
     if (heap_marks)  { 
