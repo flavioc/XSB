@@ -47,8 +47,9 @@
 #define BUFFEXTRA 1024
 
 #if (defined(SOLARIS) && defined(__GNUC__))
-/* just to supress stupid gcc warning */
-extern int putenv(const char *);
+/* Under which Solaris is this needed? Doesn't seem to be needed under
+   2.6,2.7,2.8 */
+/*extern int putenv(const char *);*/
 #endif
 
 /*----------------------------------------------------------------------*/
