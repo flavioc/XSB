@@ -110,7 +110,7 @@ type_error(Valid_type,Culprit,Predicate,Arg):-
 % Misc Errors
 
 misc_error(Message):- 
-	throw(error(misc_error,Message).
+	throw(error(misc_error,Message)).
 
 %--------------------------------
 % These checks can be reused for various types of ISO compatability.

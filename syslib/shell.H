@@ -36,7 +36,7 @@
 	sys_unlink/2, sys_exit/1, sys_rename/3, sys_filecopy/3.
 
 :- import ground/1, append/3 from basics.
-:- import check_nonvar/3, check_atom/3 from error_handler.
+:- import check_nonvar/3 from error_handler.
 :- import sys_system/7, expand_filename/2, sys_syscall/4
    from machine.
 :- import atom/1, abort/1, is_list/1 from standard.
