@@ -2,9 +2,9 @@
 #include <string.h>
 #include <alloca.h>
 
-#include "../emu/cinterf.h"
+#include "cinterf.h"
 
-int minus_one(void)
+DllExport int call_conv minus_one(void)
 {
    int	i;
 
@@ -18,7 +18,7 @@ int minus_one(void)
    first character in ReplacementString. Both String and ReplacementString must
    be atoms.
 */
-int change_char(void)
+DllExport int call_conv change_char(void)
 {
    char	*str_in; 
    int	pos;

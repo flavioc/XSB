@@ -2,6 +2,7 @@
 #include <string.h>
 #include <alloca.h>
 #include <pwd.h>
+#include "cinterf.h"
 
 #define TRUE 1
 /* 
@@ -9,7 +10,7 @@
  * file name.  Otherwise it returns the file name unchanged.
  */
 
-int expand_file()
+DllExport int call_conv expand_file()
 {
    unsigned char *file_name;
    unsigned char *expanded_file_name;
