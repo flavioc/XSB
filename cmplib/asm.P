@@ -161,6 +161,7 @@ nearest_prime(Number, Prime) :-
 	prime(High, Prime), 
 	Number =< High,
 	!.
+nearest_prime(_, 251). % Bart - 4-3-1999 see last fact of prime/2
 
 
 /*----------------------------------------------------------------------*/
@@ -174,6 +175,7 @@ nearest_prime(Number, Prime) :-
 
 asm_text_size([], N, N, _, _).
 asm_text_size([label(T,X)|Rest], Lc, NewLc, HashSize, HashLabelTab) :-
+	!,
 	hash_insert((X,Lc), HashSize, HashLabelTab),
 	( T == pred -> X = (Sym,_), sym_propin(ep(Lc), Sym) ; true ),
 	asm_text_size(Rest, Lc, NewLc, HashSize, HashLabelTab).
@@ -271,5 +273,5 @@ prime(217, 211).
 prime(215, 223).	% prime(228, 227).
 prime(231, 229).	% prime(236, 233).
 prime(240, 239).	% prime(246, 241).
-prime(100000000, 251).
+% prime(100000000, 251).
 
