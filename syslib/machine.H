@@ -131,7 +131,7 @@
 	'$$findall_init'/2,
 	'$$findall_add'/3,
 	'$$findall_get_solutions'/4,
-	socket_request/6.
+	socket_request/7.
 
 :- export 
 	file_function/7, conname/2, conpsc/2, 

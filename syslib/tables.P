@@ -27,7 +27,9 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.         */
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod]).
+:- compiler_options([sysmod,cpp_on]).
+
+#include "builtin.h"
 
 
 /*----------------------------------------------------------------------*/
@@ -171,14 +173,15 @@ trie_retract_all(X) :- retractall(X).
 /* builtins to get (and change) trie nodes - they belong somewhere else */
 /*======================================================================*/
 
-set_subsumptive_eval(_Term) :- '_$builtin'(170).
-table_status(_Call,_Status) :- '_$builtin'(143).
-abolish_table_predicate(_Term) :- '_$builtin'(146).
-trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :- '_$builtin'(149).
-get_returns(_CallStr,_RetSkel) :- '_$builtin'(150).
-get_calls(_CallSkel)  :- '_$builtin'(151).
-construct_ret_for_call(_RetSkel) :- '_$builtin'(153).
-force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(254).
+set_subsumptive_eval(_Term) :- '_$builtin'(SET_SUBSUMPTIVE_EVAL).
+table_status(_Call,_Status) :- '_$builtin'(TABLE_STATUS).
+abolish_table_predicate(_Term) :- '_$builtin'(ABOLISH_TABLE_PREDICATE).
+trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :-
+	'_$builtin'(TRIE_DELETE_TERM).
+get_returns(_CallStr,_RetSkel) :- '_$builtin'(TRIE_GET_RETURN).
+get_calls(_CallSkel)  :- '_$builtin'(TRIE_GET_CALL).
+construct_ret_for_call(_RetSkel) :- '_$builtin'(CONSTRUCT_RET_FOR_CALL).
+force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(FORCE_TRUTH_VALUE).
 
 /* ------------------- end of file trie_tables.P ---------------------- */
 

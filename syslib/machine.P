@@ -28,7 +28,12 @@
 /* NOTE: This file BETTER be always compiled with the "sysmod" option.	*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod]).
+:- compiler_options([sysmod,cpp_on]).
+
+#include "builtin.h"
+#include "celltags.h"
+#include "flag_defs.h"
+#include "msyscall.h"
 
 
 /*======================================================================*/
@@ -36,174 +41,174 @@
 /* underlying machine (hard builtins).					*/
 /*======================================================================*/
 
-psc_name(_PSC, _String) :- '_$builtin'(1).
-psc_arity(_PSC, _Arity) :- '_$builtin'(2).
-psc_type(_PSC, _Type) :- '_$builtin'(3).
-psc_prop(_PSC, _Term) :- '_$builtin'(4).
-psc_set_type(_PSC, _Type) :- '_$builtin'(5).
-psc_set_prop(_PSC, _Term) :- '_$builtin'(6).
+psc_name(_PSC, _String) :- '_$builtin'(PSC_NAME).
+psc_arity(_PSC, _Arity) :- '_$builtin'(PSC_ARITY).
+psc_type(_PSC, _Type) :- '_$builtin'(PSC_TYPE).
+psc_prop(_PSC, _Term) :- '_$builtin'(PSC_PROP).
+psc_set_type(_PSC, _Type) :- '_$builtin'(PSC_SET_TYPE).
+psc_set_prop(_PSC, _Term) :- '_$builtin'(PSC_SET_PROP).
 
-term_psc(_Term, _PSC) :- '_$builtin'(11).
-term_type(_Term, _Type) :- '_$builtin'(12).
-term_compare(_Term1, _Term2, _Res) :- '_$builtin'(13).
-term_new(_PSC, _Term) :- '_$builtin'(14).
-term_arg(_Term, _Index, _Arg) :- '_$builtin'(15).
-term_set_arg(_Term, _Index, _Arg, _Perm) :- '_$builtin'(16).
-stat_flag(_Flag, _Value) :- '_$builtin'(17).
-stat_set_flag(_Flag, _Value) :- '_$builtin'(18).
-buff_alloc(_Size, _Buffer) :- '_$builtin'(19).
-buff_word(_Buffer, _Disp, _Value) :- '_$builtin'(20).
-buff_set_word(_Buffer, _Disp, _Value) :- '_$builtin'(21).
-buff_byte(_Buffer, _Disp, _Value) :- '_$builtin'(22).
-buff_set_byte(_Buffer, _Disp, _Value) :- '_$builtin'(23).
-code_call(_CodeAddr, _Term, _Type) :- '_$builtin'(24).
-str_len(_String, _Length) :- '_$builtin'(25).
+term_psc(_Term, _PSC) :- '_$builtin'(TERM_PSC).
+term_type(_Term, _Type) :- '_$builtin'(TERM_TYPE).
+term_compare(_Term1, _Term2, _Res) :- '_$builtin'(TERM_COMPARE).
+term_new(_PSC, _Term) :- '_$builtin'(TERM_NEW).
+term_arg(_Term, _Index, _Arg) :- '_$builtin'(TERM_ARG).
+term_set_arg(_Term, _Index, _Arg, _Perm) :- '_$builtin'(TERM_SET_ARG).
+stat_flag(_Flag, _Value) :- '_$builtin'(STAT_FLAG).
+stat_set_flag(_Flag, _Value) :- '_$builtin'(STAT_SET_FLAG).
+buff_alloc(_Size, _Buffer) :- '_$builtin'(BUFF_ALLOC).
+buff_word(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_WORD).
+buff_set_word(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_SET_WORD).
+buff_byte(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_BYTE).
+buff_set_byte(_Buffer, _Disp, _Value) :- '_$builtin'(BUFF_SET_BYTE).
+code_call(_CodeAddr, _Term, _Type) :- '_$builtin'(CODE_CALL).
+str_len(_String, _Length) :- '_$builtin'(STR_LEN).
 
-str_cat(_String1, _String2, _String3) :- '_$builtin'(27).
-str_cmp(_String1, _String2, _Res) :- '_$builtin'(28).
-str_hsh(_String, _Arity, _Size, _Res) :- '_$builtin'(29).
+str_cat(_String1, _String2, _String3) :- '_$builtin'(STR_CAT).
+str_cmp(_String1, _String2, _Res) :- '_$builtin'(STR_CMP).
+str_hsh(_String, _Arity, _Size, _Res) :- '_$builtin'(STR_HSH).
 
-call0(_Term) :- '_$builtin'(31).
-stat_sta(_X) :- '_$builtin'(32).
-stat_cputime(_X) :- '_$builtin'(33).
-code_load(_ByteCodeFileName, _InitAddr, _Exp) :- '_$builtin'(34).
-buff_set_var(_Buff, _Disp, _BufSize, _Var) :- '_$builtin'(35).
-buff_dealloc(_Buff, _OldSize, _NewSize) :- '_$builtin'(36).
-buff_cell(_Buff, _Disp, _Cell) :- '_$builtin'(37).
-buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(38).
-copy_term0(_Term, _Result) :- '_$builtin'(39).
+call0(_Term) :- '_$builtin'(CALL0).
+stat_sta(_X) :- '_$builtin'(STAT_STA).
+stat_cputime(_X) :- '_$builtin'(STAT_CPUTIME).
+code_load(_ByteCodeFileName, _InitAddr, _Exp) :- '_$builtin'(CODE_LOAD).
+buff_set_var(_Buff, _Disp, _BufSize, _Var) :- '_$builtin'(BUFF_SET_VAR).
+buff_dealloc(_Buff, _OldSize, _NewSize) :- '_$builtin'(BUFF_DEALLOC).
+buff_cell(_Buff, _Disp, _Cell) :- '_$builtin'(BUFF_CELL).
+buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(BUFF_SET_CELL).
+copy_term0(_Term, _Result) :- '_$builtin'(COPY_TERM).
 /* check if Sub is a substring in Str */
-str_sub(_Sub, _Str, _Pos) :- '_$builtin'(40).
+str_sub(_Sub, _Str, _Pos) :- '_$builtin'(STR_SUB).
 %% If file is a directory, add slash, if needed, or strip extra slashes
-dirname_canonic(_File, _Canonic) :- '_$builtin'(41).
+dirname_canonic(_File, _Canonic) :- '_$builtin'(DIRNAME_CANONIC).
 /* for efficiency reasons, the following predicates are also implemented */
-psc_insert(_Name, _Arity, _PSC, _MName) :- '_$builtin'(42).
-psc_import(_Pname, _Arity, _MName) :- '_$builtin'(43).
+psc_insert(_Name, _Arity, _PSC, _MName) :- '_$builtin'(PSC_INSERT).
+psc_import(_Pname, _Arity, _MName) :- '_$builtin'(PSC_IMPORT).
 
-psc_insertmod(_ModName, _Def, _PSC) :- '_$builtin'(46).
-load_seg(_SegNo, _TextBytes, _IndexBytes, _File, _InitAddr) :- '_$builtin'(47).
-file_gettoken(_File, _PrevCh, _Type, _Value, _NextCh) :- '_$builtin'(48).
-file_puttoken(_File, _Type, _Value) :- '_$builtin'(49).
-term_hash(_Term, _Size, _Value) :- '_$builtin'(50).
-unload_seg(_CodeSeg) :- '_$builtin'(51).
-load_obj(_FileName, _Mod, _LdOption, _InitAddr) :- '_$builtin'(52).
+psc_insertmod(_ModName, _Def, _PSC) :- '_$builtin'(PSC_INSERTMOD).
+load_seg(_SegNo, _TextBytes, _IndexBytes, _File, _InitAddr) :- '_$builtin'(LOAD_SEG).
+file_gettoken(_File, _PrevCh, _Type, _Value, _NextCh) :- '_$builtin'(FILE_GETTOKEN).
+file_puttoken(_File, _Type, _Value) :- '_$builtin'(FILE_PUTTOKEN).
+term_hash(_Term, _Size, _Value) :- '_$builtin'(TERM_HASH).
+unload_seg(_CodeSeg) :- '_$builtin'(UNLOAD_SEG).
+load_obj(_FileName, _Mod, _LdOption, _InitAddr) :- '_$builtin'(LOAD_OBJ).
 
-getenv(_EnvVar, _Value) :- '_$builtin'(54).
+getenv(_EnvVar, _Value) :- '_$builtin'(GETENV).
 
-sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(55).
-sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :- '_$builtin'(56).
-sys_gethost(_Name, _Buffer) :- '_$builtin'(57).
-sys_errno(_Errno) :- '_$builtin'(58).
+sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(SYS_SYSCALL).
+sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :- '_$builtin'(SYS_SYSTEM).
+sys_gethost(_Name, _Buffer) :- '_$builtin'(SYS_GETHOST).
+sys_errno(_Errno) :- '_$builtin'(SYS_ERRNO).
 
-file_stat(_File, _Which, _RetVal) :- '_$builtin'(60).
-file_writequoted(_File, _Term) :- '_$builtin'(61).
-fast_ground(_Term) :- '_$builtin'(62).
+file_stat(_File, _Which, _RetVal) :- '_$builtin'(FILE_STAT).
+file_writequoted(_File, _Term) :- '_$builtin'(FILE_WRITEQUOTED).
+fast_ground(_Term) :- '_$builtin'(FAST_GROUND).
 
-intern_string(_Str,_InternedStr) :- '_$builtin'(65).
-expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(66).
-tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(67).
-is_absolute_filename(_FileName) :- '_$builtin'(68).
-parse_filename(_FileName, _Dir, _Basename, _Extension) :- '_$builtin'(69).
+intern_string(_Str,_InternedStr) :- '_$builtin'(INTERN_STRING).
+expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(EXPAND_FILENAME).
+tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(TILDE_EXPAND_FILENAME).
+is_absolute_filename(_FileName) :- '_$builtin'(IS_ABSOLUTE_FILENAME).
+parse_filename(_FileName, _Dir, _Basename, _Extension) :- '_$builtin'(PARSE_FILENAME).
 
-psc_env(_PSC, _Env) :- '_$builtin'(100).
-psc_spy(_PSC, _Spy) :- '_$builtin'(101).
-psc_tabled(_PSC, _Tabled) :- '_$builtin'(102).
+psc_env(_PSC, _Env) :- '_$builtin'(PSC_ENV).
+psc_spy(_PSC, _Spy) :- '_$builtin'(PSC_SPY).
+psc_tabled(_PSC, _Tabled) :- '_$builtin'(PSC_TABLED).
 
-is_incomplete(_Tab,_SubgoalPtr,_PTCP,_SubgoalFrame):- '_$builtin'(104).
-get_osp_breg(_Osp,_Breg):- '_$builtin'(105).
-cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(106).
-get_ptcp(_PTCP) :- '_$builtin'(107).
-get_subgoal_ptr(_Term, _SubgoalPtr) :- '_$builtin'(108).
-dereference_the_bucket(_Pair_Pointer, _Pair) :- '_$builtin'(109).
-pair_psc(_Pair, _PSC) :- '_$builtin'(110).
-pair_next(_Pair, _Next_Pair) :- '_$builtin'(111).
-next_bucket(_Bucket, _Next_Bucket) :- '_$builtin'(112).
+is_incomplete(_Tab,_SubgoalPtr,_PTCP,_SubgoalFrame):- '_$builtin'(IS_INCOMPLETE).
+get_osp_breg(_Osp,_Breg):- '_$builtin'(GET_OSP_BREG).
+cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(CUT_IF_LEADER).
+get_ptcp(_PTCP) :- '_$builtin'(GET_PTCP).
+get_subgoal_ptr(_Term, _SubgoalPtr) :- '_$builtin'(GET_SUBGOAL_PTR).
+dereference_the_bucket(_Pair_Pointer, _Pair) :- '_$builtin'(DEREFERENCE_THE_BUCKET).
+pair_psc(_Pair, _PSC) :- '_$builtin'(PAIR_PSC).
+pair_next(_Pair, _Next_Pair) :- '_$builtin'(PAIR_NEXT).
+next_bucket(_Bucket, _Next_Bucket) :- '_$builtin'(NEXT_BUCKET).
 
-slg_not(_SubgoalPtr) :- '_$builtin'(114).
+slg_not(_SubgoalPtr) :- '_$builtin'(SLG_NOT).
 
-is_xwammode(_Flag) :- '_$builtin'(117).
-close_open_tables :- '_$builtin'(118).
+is_xwammode(_Flag) :- '_$builtin'(IS_XWAMMODE).
+close_open_tables :- '_$builtin'(CLOSE_OPEN_TABLES).
 
-file_function(_Function, _A, _B, _C, _D, _E, _F) :- '_$builtin'(123).
-slash(_Slash) :- '_$builtin'(124).
+file_function(_Function, _A, _B, _C, _D, _E, _F) :- '_$builtin'(FILE_FUNCTION).
+slash(_Slash) :- '_$builtin'(SLASH_BUILTIN).
 
-abolish_table_info :- '_$builtin'(126).
-zero_out_profile :- '_$builtin'(127).
-write_out_profile :- '_$builtin'(128).
-assert_code_to_buff(_Clause,_Size) :- '_$builtin'(129).
+abolish_table_info :- '_$builtin'(ABOLISH_TABLE_INFO).
+zero_out_profile :- '_$builtin'(ZERO_OUT_PROFILE).
+write_out_profile :- '_$builtin'(WRITE_OUT_PROFILE).
+assert_code_to_buff(_Clause,_Size) :- '_$builtin'(ASSERT_CODE_TO_BUFF).
 assert_buff_to_clref(_Head,_NAri,_Prref,_AZ,_RInd,_HashTabSize,_Clref) :-
-	'_$builtin'(130).
+	'_$builtin'(ASSERT_BUFF_TO_CLREF).
 
-file_read_canonical(_File,_Var,_Ret) :- '_$builtin'(133).
-gen_retract_all(_Buff) :- '_$builtin'(134).
-compiled_to_dynamic(_PSC,_NewPred) :- '_$builtin'(135).
-db_retract0(_Clause,_DontReclaim) :- '_$builtin'(136).
+file_read_canonical(_File,_Var,_Ret) :- '_$builtin'(FILE_READ_CANONICAL).
+gen_retract_all(_Buff) :- '_$builtin'(GEN_RETRACT_ALL).
+compiled_to_dynamic(_PSC,_NewPred) :- '_$builtin'(COMPILED_TO_DYNAMIC).
+db_retract0(_Clause,_DontReclaim) :- '_$builtin'(DB_RETRACT0).
 db_get_clause(_CC0,_CI,_CIL,_PrRef,_Head,_Failed,_Clause,_Type,_Entry) :- 
-	'_$builtin'(137).
-db_build_prref(_PSC,_Tabled,_PrRef) :- '_$builtin'(138).
-db_remove_prref(_Prref) :- '_$builtin'(139).
-db_reclaim0(_Clause,_Type) :- '_$builtin'(140).
+	'_$builtin'(DB_GET_CLAUSE).
+db_build_prref(_PSC,_Tabled,_PrRef) :- '_$builtin'(DB_BUILD_PRREF).
+db_remove_prref(_Prref) :- '_$builtin'(DB_REMOVE_PRREF).
+db_reclaim0(_Clause,_Type) :- '_$builtin'(DB_RECLAIM0).
 
 formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
-	'_$builtin'(142).
+	'_$builtin'(FORMATTED_IO).
 
-trimcore :- '_$builtin'(158).
+trimcore :- '_$builtin'(TRIMCORE).
 
 /* This is the builtin where people should put their private, experimental
    builtin code. SEE THE EXAMPLE IN emu/private_builtin.c to UNDERSTAND HOW 
    TO DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE 
    ANY NUMBER OF BUILTINS WITH IT. */
 private_builtin(_OpCode,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10) :-
-	'_$builtin'(180).
+	'_$builtin'(PRIVATE_BUILTIN).
 
-is_charlist(_List, _Size) :- '_$builtin'(213).
+is_charlist(_List, _Size) :- '_$builtin'(IS_CHARLIST).
 is_charlist(List) :- is_charlist(List, _).
 
-oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).
-odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(231).
+oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(ORACLE_QUERY).
+odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(ODBC_EXEC_QUERY).
 
-print_chat :- '_$builtin'(239).
-print_ls :- '_$builtin'(240).
-print_tr :- '_$builtin'(241).
-print_heap(_X,_Y) :-'_$builtin'(242).
-print_cp :- '_$builtin'(243).
-print_regs :- '_$builtin'(244).
-print_all_stacks :- '_$builtin'(245).
-expand_heap :- '_$builtin'(246).
-mark_heap(_) :- '_$builtin'(247).
-gc_heap :- '_$builtin'(248).
-'$$findall_init'(_I,_C) :- '_$builtin'(249).
-'$$findall_add'(_T,_I,_C) :- '_$builtin'(250).
-'$$findall_get_solutions'(_L,_T,_I,_C) :- '_$builtin'(251).
-socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr) :-
-	'_$builtin'(252).
+print_chat :- '_$builtin'(PRINT_CHAT).
+print_ls :- '_$builtin'(PRINT_LS).
+print_tr :- '_$builtin'(PRINT_TR).
+print_heap(_X,_Y) :-'_$builtin'(PRINT_HEAP).
+print_cp :- '_$builtin'(PRINT_CP).
+print_regs :- '_$builtin'(PRINT_REGS).
+print_all_stacks :- '_$builtin'(PRINT_ALL_STACKS).
+expand_heap :- '_$builtin'(EXP_HEAP).
+mark_heap(_) :- '_$builtin'(MARK_HEAP).
+gc_heap :- '_$builtin'(GC_HEAP).
+'$$findall_init'(_I,_C) :- '_$builtin'(FINDALL_INIT).
+'$$findall_add'(_T,_I,_C) :- '_$builtin'(FINDALL_ADD).
+'$$findall_get_solutions'(_L,_T,_I,_C) :- '_$builtin'(FINDALL_GET_SOLS).
+socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr,_Error) :-
+	'_$builtin'(SOCKET_REQUEST).
 
 /*======================================================================*/
 
 conname(Con, Name) :-
 	term_type(Con, Type),
-	( Type =:= 1 -> term_psc(Con, Psc), psc_name(Psc, Name)
-	; Type =:= 5 -> Name = Con
+	( Type =:= CS -> term_psc(Con, Psc), psc_name(Psc, Name)
+	; Type =:= STRING -> Name = Con
 	).
 
 conpsc(Con, Psc) :-
 	term_type(Con, Type),
-	( Type =:= 1 -> term_psc(Con, Psc)
-	; Type =:= 5 -> psc_insert(Con, 0, Psc, 0)
+	( Type =:= CS -> term_psc(Con, Psc)
+	; Type =:= STRING -> psc_insert(Con, 0, Psc, 0)
 	).
 
 machine_file_exists(File) :- 
-	sys_syscall(33, Res, File, 0), Res =:= 0.
+	sys_syscall(SYS_access, Res, File, 0), Res =:= 0.
 
 /*======================================================================*/
 /* Some other stuff for convenience here; in my opinion they should be  */
 /* deleted from the system - kostis.                                    */
 /*======================================================================*/
 
-set_pil_on :- stat_set_flag(0,1).
-set_pil_off :- stat_set_flag(0,0).
-set_prof_off :- stat_set_flag(52,0).
-set_prof_on(Level) :- stat_set_flag(52,Level).
+set_pil_on :- stat_set_flag(PIL_TRACE,1).
+set_pil_off :- stat_set_flag(PIL_TRACE,0).
+set_prof_off :- stat_set_flag(PROFFLAG,0).
+set_prof_on(Level) :- stat_set_flag(PROFFLAG,Level).
 
 /*********************************************************************/
 /* The following predicates are not builtins.  	       	       	     */

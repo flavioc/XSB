@@ -23,6 +23,10 @@
 */
 
 
+:- compiler_options([cpp_on]).
+#include "builtin.h"
+
+
 
 /*======================================================================*/
 /* Predicates to add dynamic clauses in Prolog's database:		*/
@@ -542,5 +546,5 @@ t_assert_1(Clause, Flag) :-
 
 
 trie_assert_builtin(_Clause,_PSC,_Arity,_Prref,_Flag) :-
-	'_$builtin'(147).
+	'_$builtin'(TRIE_ASSERT).
 

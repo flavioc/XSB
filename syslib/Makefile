@@ -30,47 +30,40 @@ ALL =	assert.O basics.O consult.O curr_sym.O dbclause.O dbcmpl.O \
 	string.O subsumes.O sysinitrc.O tables.O term_exp.O \
 	unix.O x_interp.O xsb_read.O xsb_writ.O xcallxsb.O
 
+EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
+	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
+	../emu/system.h ../emu/xsbsocket.h 
+PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
 
-# The following file(s) are not used any more do not make them!
-# dcg_qsc.O
 
 Option = [sysmod,optimize]
 
 #-------------------------------------------------------------------#
-### Please select ONE Prolog below to run this makefile.
-### At developement stage, an older version of XSB is suggested.
-###
-### Note: if you select self-make, be careful to save all the
-###	  current *.O files, so that when the new files have
-###	  errors, the old *.O can be re-installed.
-#
-# Self-make: Version 1.9
 #
 XSB=../bin/xsb
 Prolog = $(XSB)
 #
 #-------------------------------------------------------------------#
 
-# continue to the next file when an error occurs
-.IGNORE:
-
 # suffix rules
 .SUFFIXES: .P .H .O
-
-.H.P:
-	echo 'mc($*, $(Option)).' >> cmd...
-
-.P.O:
-	echo 'mc($*, $(Option)).' >> cmd...
 
 all: $(ALL)
 	@touch cmd...
 	$(Prolog) < cmd...
 	/bin/rm cmd...
 
+%.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
+	echo 'mc($*, $(Option)).' >> cmd...
+%.O:   %.H
+	echo 'mc($*, $(Option)).' >> cmd...
 
-# Unfortunately, this needs to be commented on the NeXT
-# %.O:	%.H
+# These targets are obsolete
+.H.O:
+	echo 'mc($*, $(Option)).' >> cmd...
+.P.O:
+	echo 'mc($*, $(Option)).' >> cmd...
+
 
 .DONE:
 	echo Done
