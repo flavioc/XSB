@@ -93,7 +93,7 @@ double cpu_time(void)
 
 /*----------------------------------------------------------------------*/
 
-int get_date(int *year, int *month, int *day,
+void get_date(int *year, int *month, int *day,
 	     int *hour, int *minute)
 {
 #ifdef WIN_NT
@@ -124,7 +124,6 @@ int get_date(int *year, int *month, int *day,
     *minute = tm->tm_min;
 #endif
 #endif
-    return;
 }
 
 /*----------------------------------------------------------------------*/
