@@ -465,8 +465,7 @@ write_list([X1,X2|Xs]) :-
 generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
 	displayln, flora_msgheader,
 	display('compiling '), display(FlrFile),
-	(LoadMode == static_mode -> Str="static" ; Str="dynamic"),
-	atom_codes(A,Str),
+	(LoadMode == static_mode -> A = static ; A = (dynamic)),
 	display(' to '), display(A), display(' code with options: '),
 	telling(F), tell(userout), write_list(Directives), tell(F),
 	displayln(']'),

@@ -186,21 +186,16 @@ compile_export_signatures([signature(C,L)|Sigs],PAs,Rules) :-
 flatten_export_signature(_,[],[],[]) :- !.
 
 flatten_export_signature(Class,[methsig(Method,Args,A,R)|L],PAs,Rules) :-
-	atom_codes(Class,CStr),
-	atom_codes(Method,MStr),
-	append(CStr,[0'_|MStr],Str),
+	fmt_write_string(Str, '%s_%s', args(Class, Method)),
 	( flora_word(fs,A) ->
-	    append(Str,"_fs",Str1),
-	    append(Str,"_fd",Str2),
+	    str_cat(Str, '_fs', S1),
+	    str_cat(Str, '_fd', S2),
 	    flora_word(fd_rhs,RDA)
-
 	  ;
-	    append(Str,"_mvs",Str1),
-	    append(Str,"_mvd",Str2),
+	    str_cat(Str, '_mvs', S1),
+	    str_cat(Str, '_mvd', S2),
 	    flora_word(mvd_rhs,RDA)
 	),
-	atom_codes(S1,Str1),
-	atom_codes(S2,Str2),
 	flora_word(S1,LSA),
 	flora_word(S2,LDA),
 	flora_word('@',F),
@@ -244,23 +239,18 @@ compile_import_signatures([signature(C,L)|Sigs],PAs,Rules) :-
 flatten_import_signature(_,[],[],[]) :- !.
 
 flatten_import_signature(Class,[methsig(Method,Args,A,R)|L],PAs,Rules) :-
-	atom_codes(Class,CStr),
-	atom_codes(Method,MStr),
-	append(CStr,[0'_|MStr],Str),
+	fmt_write_string(Str, '%s_%s', args(Class,Method)),
 	( flora_word(fs,A) ->
-	    append(Str,"_fs",Str1),
-	    append(Str,"_fd",Str2),
+	    str_cat(Str, '_fs', S1),
+	    str_cat(Str, '_fd', S2),
 	    flora_word(fd,TempLDA),
 	    fword(TempLDA,LDA)
-
 	  ;
-	    append(Str,"_mvs",Str1),
-	    append(Str,"_mvd",Str2),
+	    str_cat(Str, '_mvs', S1),
+	    str_cat(Str, '_mvd', S2),
 	    flora_word(mvd,TempLDA),
 	    fword(TempLDA,LDA)
 	),
-	atom_codes(S1,Str1),
-	atom_codes(S2,Str2),
 	flora_word(S1,RSA),
 	flora_word(S2,RDA),
 	flora_word('@',F),
@@ -540,7 +530,9 @@ flatten_retract_term(objspec(O,Spec),W,Ps) :-
 
 flatten_retract_term(spterm(Op,E1,E2),_,Ps) :-
 	displayln,
-	fmt_write_string(Msg,'%s is compiled as a condition for retract operator',f(Op)),
+	fmt_write_string(Msg,
+			 '%s is compiled as a condition for retract operator',
+			 f(Op)),
 	displayln_warning(Msg),
 	rhs_flatten(spterm(Op,E1,E2),_,Ps).
 
@@ -850,9 +842,7 @@ lhs_flatten_setarrow(O,M,A,[P|Ps],[C|Code]) :-
   optimize(+Functor,+Obj,+Method,+Result,-Code)
 ****************************************************************************/
 flora_optimize(Functor,Object,Method,Result,Code) :-
-	atom_codes(Functor,L1),
-	append(L1,"_rhs",L2),
-	atom_codes(TempRHS,L2),
+	str_cat(Functor, '_rhs', TempRHS),
 	fword(TempRHS,RHS),
 	P =.. [RHS,Object,Method,Result],
 	Code=[P].
@@ -881,9 +871,7 @@ flora_optimize(Functor,Object,Method,Result,Code) :-
 
 
 flora_optimize(Functor,Obj1,Obj2,Code) :-
-	atom_codes(Functor,L1),
-	append(L1,"_rhs",L2),
-	atom_codes(TempRHS,L2),
+	str_cat(Functor, '_rhs', TempRHS),
 	fword(TempRHS,RHS),
 	P =.. [RHS,Obj1,Obj2],
 	Code=[P].
@@ -1001,10 +989,8 @@ gensym(Root,Symbol):-
 	conget(Root,Counter),
 	NewCounter is Counter + 1,
 	conset(Root,NewCounter),
-	atom_codes(Root,L1),
-	number_codes(NewCounter,L2),
-	append(L1,L2,L3),
-	atom_codes(Symbol,L3).
+	fmt_write_string(Symbol, '%s%d', args(Root,NewCounter)).
+
 
 
 /**************************************************************************/
@@ -1036,9 +1022,7 @@ fword(A1,A2) :-
 	(load_mode(static_mode) -> A1=A2 ; dynword(A1,A2)).
 
 dynword(A1,A2) :-
-	atom_codes(A1,Str1),
-	append(Str1,"_dyn",Str2),
-	atom_codes(A2,Str2).
+	str_cat(A1, '_dyn', A2).
 
 
 /***************************************************************************

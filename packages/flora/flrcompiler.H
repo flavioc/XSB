@@ -28,9 +28,6 @@
 	member/2, append/3, length/2
    from basics.
 
-:- import
-	atom_codes/2, number_codes/2
-   from standard.
 
 :- import fmt_write_string/3 from file_io.
 
