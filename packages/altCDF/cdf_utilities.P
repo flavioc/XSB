@@ -146,9 +146,9 @@ file_latest_version(Dir,Name,Version):-
 		
 file_latest_version_1([],_NameL,V,V1):- V1 is V + 1.
 file_latest_version_1([File|Rest],NameL,V,V1):- 
-	atom_chars(File,FileL),
+	atom_codes(File,FileL),
 	(get_v_from_filelist(NameL,FileL,NumL) -> 
-	    number_chars(N,NumL),
+	    number_codes(N,NumL),
 	    (N > V -> 
 	        file_latest_version_1(Rest,NameL,N,V1)
 	      ; 
@@ -156,7 +156,15 @@ file_latest_version_1([File|Rest],NameL,V,V1):-
 	  ;
 	    file_latest_version_1(Rest,NameL,V,V1)).
 
-get_v_from_filelist([],['_'|Rest],Rest).
+get_v_from_filelist([],['_'|Rest],Rest):- 
+	all_numbers(Rest).
 get_v_from_filelist([H|T],[H|T1],Rest):- 
 	get_v_from_filelist(T,T1,Rest).
+
+all_numbers([]).
+all_numbers([H|T]):- 
+	48 =< H,
+	H =< 57,
+	all_numbers(T).
+
 
