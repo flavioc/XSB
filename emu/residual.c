@@ -118,7 +118,7 @@ void build_delay_list(CPtr delay_list, DE de)
     build_delay_list(tail, de_next(de)); /* recursive call */
     head = hreg;
     subg = de_subgoal(de);
-    psc = TIF_PSC(subg_tip_ptr(subg));
+    psc = TIF_PSC(subg_tif_ptr(subg));
     arity = get_arity(psc);
     if ((ans_subst = de_ans_subst(de)) == NULL) { /* Negative DE */
       follow(oldhreg) = makecs(hreg);
