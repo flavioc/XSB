@@ -2000,9 +2000,15 @@ programmer use cuts.  However, the current implementation of XSB has a
 limitation that Prolog cuts cannot ``cut across tabled predicates.''
 Without trying to pretend to be experts, we refer the reader to the XSB
 manual for details on this obscure problem. The XSB team is considering
-correcting this problem in a future release.  For now, enjoy your cut.  If
-you get an error message telling something about cutting across the tables
---- you know that you may have cut too much :-).
+correcting this problem in a future release.
+
+For now, enjoy your cut.  If you get an error message telling something
+about cutting across the tables --- you know that you may have cut too much
+:-). The basic rule that can keep you out of trouble is: do not put a cut
+in the body of a rule \emph{after} any F-molecule. However, it is (usually)
+OK to to put a cut before any F-molecule. It is even OK to have a cut in
+the body of a rule that \emph{defines} an F-molecule (again, provided that
+the body has no F-molecule to the left of that cut).
 
 
 \section{\FLORA Compiler} \label{sec-comp-directives}
