@@ -5,6 +5,8 @@
 	cdf_id_fields/4,
 	cdf_root/1,
 	concrete_component/1,
+	initialize_state/0, system_component/1, initialize_cdf/0,
+	initialize_state_nl/0, 
 	necessCond/2, immed_necessCond/2,
 	explosive_isa/2,
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
@@ -16,54 +18,64 @@
 	coversAttr/3, immed_coversAttr/3,
 	in_hierarchy/1,
 	newExtTerm/1, newExtTerm/2, retractallExtTerm/1,
-	initialize_state/0, system_component/1, initialize_cdf/0,
-	initialize_state_nl/0, 
-	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
+	updateExtTerm/3,
 	make_cdf_clean/0, make_cdf_clean/1,
-	updateExtTerm/3.
+	cf_use_cache/0, cdf_dont_use_cache/0,
+	set_chk_index/0.
 
 #include "./cdf_definitions.h"
 
-:- import apply_checks/2 from cdf_checks.
+%%%%%%%%%%%% Import dynamic predicates.
 
 :- import  isa_ext/2, allAttr_ext/3, hasAttr_ext/3,
 	classHasAttr_ext/3, 
 	minAttr_ext/4,   maxAttr_ext/4, 
-  	  necessCond_ext/2, coversAttr_ext/3		from usermod.
+	necessCond_ext/2, coversAttr_ext/3		from usermod.
 
 :- import  isa_int/2, hasAttr_int/3, minAttr_int/4,
 	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4,
 	  necessCond_int/2, coversAttr_int/3                   from usermod.
 
+:- import assert_cdf_int/1, retractall_cdf_int/1 from usermod.
+
+%% From cdf_config.
+
+:- import cdf_flags/2, user_cdf_flag/2, 
+	 cdf_flag/1, initial_cdf_flag/2, cdf_configuration/2 from usermod.
+
 :- import cdf_index/3,cdf_index/4 from usermod.
 
-:- import call0/1 from machine.
+:- ensure_loaded(cdf_config).
 
+%%%%%%%%%% 
+:- import apply_checks/2 from cdf_checks.
+
+%%%%%%%%%% 
 :- import cdf_set_log_off/0, cdf_log/1, cdf_reset_log/0
 	from cdf_concurrency.	
 
-:- import assert_cdf_int/1, retractall_cdf_int/1 from usermod.
-
-% From cdf_config.
-:- import cdf_flags/2, user_cdf_flag/2, caching_cdf/1,
-	  cdf_flag/1, initial_cdf_flag/2, cdf_configuration/2 from usermod.
-
+%%%%%%%%%% 
 :- import get_component_extensional/2,
 	  get_intensional_mfile_expansion/2,
 	  load_component/3 from cdf_comps_share.
 
+%%%%%%%%%% 
 :- import cdf_message/1 from cdf_exceptions.
 
+%%%%%%%%%%
+
+:- import call_assert/1 from cdf_utilities.
+
+%%%%%%%%%% Non-CDF Libraries
+
 :- import check_var/3 from error_handler.
+:- import call0/1 from machine.
 
 :- import '_$index'/3 from file_op.
 %%:- import conset/2, conget/2, coninc/1 from gensym.
 :- import ground/1 from basics.
 :- import abolish_table_pred/1 from tables.
-:- import search_module/6 from consult.
-
-:- ensure_loaded(cdf_config).
 
 #if TABLEDISA
 ?- cdf_message('Using tabled isa').
@@ -72,19 +84,6 @@
 ?- cdf_message('Using non-tabled isa').
 :- assert(cdf_configuration(tabled_isa,off)).
 #endif
-
-:- import cdf_update_term/2 from usermod.
-:- import call_assert/1 from cdf_utilities.
-
-:- (search_module(cdf_xj,_,_,_,_,_)
-    ->	   consult(cdf_xj),
-	   cdf_message('Using proprietary cdf_xj'),
-	   assert(cdf_configuration(proprietary_features,on))
-    ;	   consult(cdf_cdf),
-	   cdf_message('Using non-proprietary cdf_cdf'),
-	   assert(cdf_configuration(proprietary_features,off))
-   ).
-
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -127,38 +126,6 @@ cdf_dynamic(cdf_extint_updatable/1).
 
 cdf_dynamic(assert_cdf_int/1).
 cdf_dynamic(retractall_cdf_int/1).
-
-%%%%%%%%%%%%% Declarations for constraint checking
-
-:- initialize_cdf.
-
-initialize_cdf:- 
-	init_dynamic_code,
-	init_index_std,
-	cdf_set_log_off,
-	initialize_cdf_flags,
-	load_component(cdf,'',[]),
-	load_component(cdfpt,'',[]),
-	make_cdf_clean.
-	
-init_dynamic_code:- 
-	cdf_dynamic(F/A),
-	dynamic(F/A),
-	fail.
-init_dynamic_code.
-
-% we assume that for all A in cdf_flag(A), there exists a
-% corresponding initial_cdf_flag(A,_)
-initialize_cdf_flags:- 
-	retractall(cdf_flags(_,_)),
-	cdf_flag(A),
-	(   user_cdf_flag(A,B)
-	->  true
-	;   initial_cdf_flag(A,B)
-	),
-	assert(cdf_flags(A,B)),
-	fail.
-initialize_cdf_flags.
 
 %--------------------------------------------------------------------
 
@@ -219,7 +186,38 @@ higher-order relations are implemented.}
 
 "). 
 
-%%% (Re-)Initialization %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% Initialization  
+% Init statement is at end of file -- TLS.
+
+initialize_cdf:- 
+	init_dynamic_code,
+	init_index_std,
+	cdf_set_log_off,
+	initialize_cdf_flags,
+	load_component(cdf,'',[]),
+	load_component(cdfpt,'',[]),
+	make_cdf_clean.
+	
+init_dynamic_code:- 
+	cdf_dynamic(F/A),
+	dynamic(F/A),
+	fail.
+init_dynamic_code.
+
+% we assume that for all A in cdf_flag(A), there exists a
+% corresponding initial_cdf_flag(A,_)
+initialize_cdf_flags:- 
+	retractall(cdf_flags(_,_)),
+	cdf_flag(A),
+	(   user_cdf_flag(A,B)
+	->  true
+	;   initial_cdf_flag(A,B)
+	),
+	assert(cdf_flags(A,B)),
+	fail.
+initialize_cdf_flags.
+
+%%% (Re-)Initialization %%%%%%%%%%%%%%%%%%%%%%%%%
 
 % TLS: initialize_state/0 may not get used heavily, but I think its useful
 % to have all the re-initialization stuff here in one place, to record
@@ -267,7 +265,7 @@ init_index_std :-
 	fail.
 init_index_std.
 
-%%%%%%%%%%%%%%%%%%% Ids and roots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%% Ids and roots %%%%%%%%%%%%
 
 system_component(cdf).
 system_component(cdfpt).
@@ -313,7 +311,7 @@ product_identifier(Id):-
 	\+ concrete_component(Comp),
 	structure(I).
 
-%%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%
 
 in_hierarchy(Term):- 
 	(  immed_isa(Term,_) 
@@ -1154,7 +1152,7 @@ not_max_implicative_allAttr_23fix(Term,BindPat) :-
 	once(explosive_isa(SCid,SCidO)),	
 	once(explosive_isa(TCidO,TCid)).	
 
-%%% maxAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% maxAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(immed_maxAttr/4, "@tt{immed_maxAttr(SCid,Rid,TCid,N)}
 accesses facts stored directly in @pred{maxAttr_ext/4} and information
@@ -1526,6 +1524,45 @@ cdf_do_update_list([Term|Terms],CFlg) :-
 	cdf_update_term(Term,CFlg),
 	cdf_do_update_list(Terms,CFlg).
 
+#if USING_XJ
+:- import cache_invalidate_for/1 from prologCache.
+
+:- 	   cdf_message('Using XJ').
+:- 	   assert(cdf_configuration(proprietary_features,on)).
+
+cdf_update_term(asserta(Term),CFlg) :-
+	assert_cdf(Term),
+	(CFlg =:= 1
+	 ->	cache_invalidate_for(Term)
+	 ;	true
+	).
+
+cdf_update_term(retractall(Term),CFlg) :-
+	retractall_cdf(Term),
+	(CFlg =:= 1
+	 ->	cache_invalidate_for(Term)
+	 ;	true
+	).
+
+#else
+:- 	   cdf_message('Not using XJ').
+:- 	   assert(cdf_configuration(proprietary_features,off)).
+
+cdf_update_term(asserta(Term),CFlg) :-
+	assert_cdf(Term).
+
+cdf_update_term(retractall(Term),CFlg) :-
+	retractall_cdf(Term).
+
+#endif
+
+:- cdf_dont_use_cache.
+
+:- import caching_cdf/1 from usermod.
+
+cdf_use_cache :- retractall(caching_cdf(_)),asserta(caching_cdf(1)).
+cdf_dont_use_cache :- retractall(caching_cdf(_)), asserta(caching_cdf(0)).
+
 %-----------------------------------------------------------
 %%%%%%%%%%  Retract tables as appropriate upon update; adjust dirty bits.
 
@@ -1566,6 +1603,8 @@ retractall_cdf_term(Term) :-
 	),
 	fail.
 retractall_cdf_term(_).
+
+%%%%%%%%%%%%%%%%%
 
 abolish_cdf_tables:-
 	abolish_isas,
@@ -1774,4 +1813,11 @@ updateExtTermMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
 	).
 updateExtTermMerge([],[],_ArgsVars,Updates,Updates).
 
+
+%%%%%% TLS: please keep this here -- we want to do the initialization 
+%%%%%% LAST upon load.
+
+:- initialize_cdf.
+
 end_of_file.
+
