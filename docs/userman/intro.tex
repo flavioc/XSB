@@ -8,14 +8,17 @@ found in Logic Programming systems, including
 \begin{itemize}
 \item Evaluation according to the Well-Founded Semantics \cite{VGRS91}
   through full SLG resolution;
+\item Constraint handling for tabled programs based on an engine-level
+  implementation of annotated variables and a package, {\tt clpqr} for
+  handling real constraints;
 \item A compiled HiLog implementation;
 \item A variety of indexing techniques for asserted code, along with a
   novel transformation technique called {\em unification factoring} that
   can improve program speed and indexing for compiled code;
 \item A number of interfaces to other software systems, such a C, Java,
   Perl and Oracle.
-\item Extensive pattern matching libraries, which are especially useful for
-  Web applications.
+\item Extensive pattern matching libraries, and interfaces to libwwww
+  routines, all of which are especially useful for Web applications.
 \item Preprocessors and Interpreters so that XSB can be used to evaluate
   programs that are based on advanced formalisms, such as extended logic
   programs (according to the Well-Founded Semantics \cite{ADP94});
@@ -144,6 +147,10 @@ a/2} were a binary relation to which the {\tt closure} predicate would
 be applied, then the declaration {\tt :- hilog a.} would also need to
 be included.
 
+We also note that tabled programs can be used with attributed
+variables, leading to constraint tabled programs (see Volume 2 of this
+manual for a discussion of the interfaces to attributed variables).
+
 A further goal of XSB is to provide in implementation engine for both
 logic programming and for data-oriented applications such as in-memory
 deductive database queries and data mining \cite{SaSw94}.  One
@@ -159,23 +166,22 @@ assert specified in \cite{LiOk87}.
 
 Data oriented applications may also require indices other than
 Prolog's first argument indexing.  XSB offers a variety of indexing
-techniques for asserted code.  Clauses can be indexed on a groups of
+techniques for asserted code.  Clauses can be indexed on a group of
 arguments or on alternative arguments.  For instance, the executable
 directive {\tt index(p/4,[3,2+1])} specifies indexes on the (outer
-functor symbol of) the third argument {\em or} on a combination of (the
-outer function symbol of) the second and first
-arguments.  If data is expected to be structured within function
-symbols and is in unit clauses, the directive {\tt index(p/4,trie)}
-constructs an indexing trie of the {\tt p/4} clauses using a
-left-to-right traversal through each clause.  Representing data in
-this way allows discrimination of information nested arbitrarily deep
-within clauses.  These modes of indexing can be combined: {\tt
-index(p/4,[3,2+1],trie)} creates alternative trie indices beginning
-with the third argument and with the second and first argument.  Using
-such indexing XSB can efficiently perform intensive analyses of
-in-memory knowledge bases with 1 million or so facts.  Indexing
-techniques for asserted code are covered in Section
-\ref{sec:assert}.
+functor symbol of) the third argument {\em or} on a combination of
+(the outer function symbol of) the second and first arguments.  If
+data is expected to be structured within function symbols and is in
+unit clauses, the directive {\tt index(p/4,trie)} constructs an
+indexing trie of the {\tt p/4} clauses using a left-to-right traversal
+through each clause.  Representing data in this way allows
+discrimination of information nested arbitrarily deep within clauses.
+These modes of indexing can be combined: {\tt index(p/4,[3,2+1],trie)}
+creates alternative trie indices beginning with the third argument and
+with the second and first argument.  Using such indexing XSB can
+efficiently perform intensive analyses of in-memory knowledge bases
+with 1 million or so facts.  Indexing techniques for asserted code are
+covered in Section \ref{sec:assert}.
 
 For compiled code, XSB offers {\em unification factoring}, which
 extends clause indexing methods found in functional programming into
@@ -186,22 +192,31 @@ The general technique is described in \cite{DRRSSSW95}, and the XSB
 directives needed to use it are covered in Section
 \ref{the_compiler}.
 
-A number of interfaces are available to link XSB to other systems.
-In UNIX systems XSB can be directly linked into C programs; in
+\index{InterProlog}
+A number of interfaces are available to link XSB to other systems.  In
+UNIX systems XSB can be directly linked into C programs; in
 Windows-based system XSB can be linked into C programs through a DLL
 interface.  On either class of operating system, C functions can be
 made callable from XSB either directly within a process, or using a
-socket library.  XSB can access external data in a variety of ways:
-through an Oracle interface, through an ODBC interface, or through a
-variety of mechanisms to read data from flat files.  These interfaces
-are all described in Volume 2 of this manual. 
+socket library.  XSB can also inter-communicate with Java through the
+InterProlog interface, \footnote{InterProlog is available at {\tt
+www.declarativa.com/InterProlog/default.htm}.}.  XSB can access
+external data in a variety of ways: through an Oracle interface,
+through an ODBC interface, or through a variety of mechanisms to read
+data from flat files.  These interfaces are all described in Volume 2
+of this manual.
+
+\index{Flora} 
 
 Another feature of XSB is its support for extensions of normal logic
-programs through preprocessing libraries.  Currently supported are
+programs through preprocessing libraries.  In particular, XSB supports
+a sophisticated object-oriented interface called {\em Flora}.  {\em
+Flora} is available as an XSB package and is described in its own
+manual, available from the same site from which XSB was downloaded.
+In addition, other preprocessing libararies currently supported are
 Extended logic programs (under the well-founded semantics), F-Logic,
-and Annotated Logic Programs.  These libraries are
-described in  Volume 2 of this
-manual. 
+and Annotated Logic Programs.  These latter libraries are described in
+Volume 2 of this manual.
 
 Source code is provided for the whole of XSB, including the
 engine, interfaces and supporting functions written in C, along with
