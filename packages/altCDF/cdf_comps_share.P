@@ -380,22 +380,29 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist):-
 	  ; 
 	    fail ).
 
-load_component_dependencies_pass1(Name,Abs,Arglist):- 
-	findall((V,New,Relnew,Vnew),
-		classHasAttr_ext(cid(component(cid(Name,Name),cid(Abs,cdfpt),
-					       cid(V,cdfpt)),Name),
-				 crid(componentDepends,Name),
-				 cid(component(cid(New,New),cid(Relnew,cdfpt),
-					       cid(Vnew,cdfpt)),New)),
-	       List),
-	member((V,New,Relnew,Vnew),List),
-%        writeln(checking(dep(Name,New))),	
+load_component_dependencies_pass1(Name,Abs,Arglist):-
+ 	findall((V,New,Relnew,Vnew,DepType),
+		( (   DepType = componentDepends
+		   ;  DepType = staticComponentDepends
+		  ),
+		    classHasAttr_ext(cid(component(cid(Name,Name),
+						   cid(Abs,cdfpt),
+						   cid(V,cdfpt)),Name),
+				     crid(DepType,Name),
+				     cid(component(cid(New,New),
+						   cid(Relnew,cdfpt),
+						   cid(Vnew,cdfpt)),New))
+		),
+ 		List),
+	member((V,New,Relnew,Vnew,DepType),List),
+        writeln(checking(dep(Name,New))),	
 	load_component_pass1(New,Relnew,AbsNew,version(Vnew),Arglist),
+        assert_dependencies_for_path2(Name,New,AbsNew,Vnew),
 %% make sure dependencies store absolute filenames
 	retractallExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
 							 cid(Abs,cdfpt),
 							 cid(V,cdfpt)),Name),
-					   crid(componentDepends,Name),
+					   crid(DepType,Name),
 					   cid(component(cid(New,New),
 							 cid(Relnew,cdfpt),
 							 cid(Vnew,cdfpt)),
@@ -410,14 +417,13 @@ load_component_dependencies_pass1(Name,Abs,Arglist):-
 		   classHasAttr_ext(cid(component(cid(Name,Name),
 						  cid(Abs,cdfpt),
 						  cid(V,cdfpt)),Name),
-				    crid(componentDepends,Name),
+				    crid(DepType,Name),
 				    cid(component(cid(New,New),
 						  cid(AbsNew,cdfpt),
 						  cid(Vnew,cdfpt)),
 					New))),
 	%% save absolute path in dependencies for path2 so that we don't
 	%% have to simulate the stack of cwd's again
-        assert_dependencies_for_path2(Name,New,AbsNew,Vnew),
 	fail.
 load_component_dependencies_pass1(_,_,_).
 
