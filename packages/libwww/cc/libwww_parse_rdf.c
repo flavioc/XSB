@@ -58,6 +58,10 @@ void set_rdf_conversions()
   HTConversion_add(RDF_converter,"text/x-http", "*/*",
 		   HTTPStatus_new, 1.0, 0.0, 0.0);
   /* www/rdf is invented for servers that don't recognize RDF */
+  HTConversion_add(RDF_converter,"text/html", "www/rdf",
+		   HTRDFToTriples, 1.0, 0.0, 0.0);
+  HTConversion_add(RDF_converter,"text/xml", "www/rdf",
+		   HTRDFToTriples, 1.0, 0.0, 0.0);
   HTConversion_add(RDF_converter,"text/plain", "www/rdf",
 		   HTRDFToTriples, 1.0, 0.0, 0.0);
   HTConversion_add(RDF_converter,"www/present", "www/rdf",
@@ -95,7 +99,7 @@ PRIVATE void rdf_new_triple_handler (HTRDF *rdfp, HTTriple *t, void *context)
   USERDATA *userdata = (USERDATA *)context;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In rdf_new_triple_handler(%s)", RequestID(userdata->request));
+  xsb_dbgmsg("***In rdf_new_triple_handler(%s)", RequestID(userdata->request));
 #endif
   /* create a new triple */
   if (rdfp && t) {
@@ -131,7 +135,7 @@ PRIVATE USERDATA *rdf_create_userData(HTRDF     *parser,
 {
   USERDATA *me = NULL;
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Start rdf_create_userData: Request %s", RequestID(request));
+  xsb_dbgmsg("***Start rdf_create_userData: Request %s", RequestID(request));
 #endif
   if (parser) {
     /* make sure that MIME type is appropriate for RDF */
@@ -157,7 +161,7 @@ PRIVATE USERDATA *rdf_create_userData(HTRDF     *parser,
   }
   
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("End rdf_create_userData: Request %s", RequestID(request));
+  xsb_dbgmsg("***End rdf_create_userData: Request %s", RequestID(request));
 #endif
 
   /* Hook up userdata to the request context */
@@ -183,7 +187,7 @@ PRIVATE void rdf_delete_userData(void *userdata)
   else return;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In rdf_delete_userData(%s)", RequestID(request));
+  xsb_dbgmsg("***In rdf_delete_userData(%s)", RequestID(request));
 #endif
 
 #ifdef LIBWWW_DEBUG_VERBOSE
@@ -203,7 +207,7 @@ PRIVATE void rdf_delete_userData(void *userdata)
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Request %s: freed the USERDATA object", RequestID(request));
+  xsb_dbgmsg("***Request %s: freed the USERDATA object", RequestID(request));
 #endif
 
   return;

@@ -54,7 +54,7 @@
 
 int total_number_of_requests;
 int event_loop_runnung;
-HTList *XML_converter=NULL, *RDF_converter=NULL;
+HTList *XML_converter=NULL, *RDF_converter=NULL, *HTML_converter=NULL;
 
 /*
 #define LIBWWW_DEBUG_VERBOSE
@@ -182,6 +182,7 @@ REQUEST_CONTEXT *set_subrequest_context(HTRequest *request,
 void setup_termination_filter(HTRequest *request, HTNetAfter *filter);
 void set_xml_conversions(void);
 void set_rdf_conversions(void);
+void set_html_conversions(void);
 
 #define AUTH_OR_REDIRECTION(status) \
     ((status == HT_NO_ACCESS) || (status == HT_NO_PROXY_ACCESS) \

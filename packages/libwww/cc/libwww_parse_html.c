@@ -41,7 +41,7 @@ PRIVATE void html_beginElement(USERDATA	*htext, /* where we build everything */
 {
 #ifdef LIBWWW_DEBUG
   HTTag *tag = SGML_findTag(htext->dtd, element_number);
-  xsb_dbgmsg("In html_beginElement(%s): stackptr=%d tag=%s suppress=%d choose=%d",
+  xsb_dbgmsg("***In html_beginElement(%s): stackptr=%d tag=%s suppress=%d choose=%d",
 	     RequestID(htext->request),
 	     htext->stackptr, HTTag_name(tag),
 	     IS_SUPPRESSED_TAG((HKEY)element_number, htext->request),
@@ -73,7 +73,7 @@ PRIVATE void html_endElement (USERDATA *htext, int element_number)
   int i, match;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In html_endElement(%s): stackptr=%d",
+  xsb_dbgmsg("***In html_endElement(%s): stackptr=%d",
 	     RequestID(htext->request), htext->stackptr);
 #endif
 
@@ -84,7 +84,7 @@ PRIVATE void html_endElement (USERDATA *htext, int element_number)
   if (match < 0) return;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("match=%d", match);
+  xsb_dbgmsg("***match=%d", match);
 #endif
 
   for (i=htext->stackptr; i>=match; i--)
@@ -114,7 +114,7 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
     (REQUEST_CONTEXT *)HTRequest_context(htext->request);
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_addText: Request %s", RequestID(htext->request));
+  xsb_dbgmsg("***In html_addText: Request %s", RequestID(htext->request));
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)PCDATA_SPECIAL, htext->request)) return;
@@ -165,7 +165,7 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
   c2p_list(prop_list_tail);
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In collect_html_attributes: tag_attributes_number=%d",
+  xsb_dbgmsg("***In collect_html_attributes: tag_attributes_number=%d",
 	     tag_attributes_number);
 #endif
 
@@ -175,7 +175,7 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
       strcpy_lower(attrname.string, HTTag_attributeName(tag, cnt));
       
 #ifdef LIBWWW_DEBUG_VERBOSE
-      xsb_dbgmsg("attr=%s, val=%s ",
+      xsb_dbgmsg("***attr=%s, val=%s ",
 		 attrname.string, (char *)value[cnt]);
 #endif
       prop_list_head = p2p_car(prop_list_tail);
@@ -218,7 +218,7 @@ PRIVATE void html_push_element (USERDATA       *htext,
   htext->stackptr++;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_push_element(%s): stackptr=%d",
+  xsb_dbgmsg("***In html_push_element(%s): stackptr=%d",
 	     RequestID(htext->request), htext->stackptr);
 #endif
 
@@ -241,7 +241,7 @@ PRIVATE void html_push_element (USERDATA       *htext,
   c2p_string(tagname.string, p2p_arg(STACK_TOP(htext).elt_term, 1));
   collect_html_attributes(STACK_TOP(htext).elt_term, tag, present, value);
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("elt_name=%s", HTTag_name(tag));
+  xsb_dbgmsg("***elt_name=%s", HTTag_name(tag));
   print_prolog_term(STACK_TOP(htext).elt_term, "elt_term");
 #endif
 
@@ -264,7 +264,7 @@ PRIVATE void html_push_element (USERDATA       *htext,
 PRIVATE void html_pop_element(USERDATA *htext)
 {
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_pop_element(%s): stackptr=%d, elt_name=%s",
+  xsb_dbgmsg("***In html_pop_element(%s): stackptr=%d, elt_name=%s",
 	     RequestID(htext->request),
 	     htext->stackptr,
 	     HTTag_name(special_find_tag(htext, STACK_TOP(htext).element_number)));
@@ -337,7 +337,7 @@ PRIVATE void html_pop_suppressed_element(USERDATA *htext)
   htext->stackptr--;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("In html_pop_suppressed_element(%s): stackptr=%d",
+  xsb_dbgmsg("***In html_pop_suppressed_element(%s): stackptr=%d",
 	     RequestID(htext->request), htext->stackptr);
   if (htext->stackptr >= 0)
     print_prolog_term(STACK_TOP(htext).content_list_tail, "content_list_tail");
@@ -354,8 +354,8 @@ PRIVATE int find_matching_elt(USERDATA *htext, int elt_number)
   int i;
   for (i=htext->stackptr; i>=0; i--) {
 #ifdef LIBWWW_DEBUG_VERBOSE
-    xsb_dbgmsg("In find_matching_elt");
-    xsb_dbgmsg("i=%d htext->stack[i].element_number=%d(%s) elt_number=%d(%s)",
+    xsb_dbgmsg("***In find_matching_elt");
+    xsb_dbgmsg("***i=%d htext->stack[i].element_number=%d(%s) elt_number=%d(%s)",
 	       i,
 	       htext->stack[i].element_number, 
 	       SGML_findTagName(htext->dtd, htext->stack[i].element_number),
@@ -386,7 +386,7 @@ USERDATA *html_create_userData( HTRequest *             request,
   USERDATA *me = NULL;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Start html_create_userData(%s):", RequestID(request));
+  xsb_dbgmsg("***Start html_create_userData(%s):", RequestID(request));
 #endif
   if (request) {
     /* make sure that MIME type is appropriate for HTML */
@@ -415,7 +415,7 @@ USERDATA *html_create_userData( HTRequest *             request,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In html_create_userData(%s):", RequestID(request));
+  xsb_dbgmsg("***In html_create_userData(%s):", RequestID(request));
 #endif
 
   /* Hook up userdata to the request context */
@@ -439,7 +439,7 @@ PRIVATE void html_delete_userData(void *userdata)
   } else return;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In html_delete_userData(%s): stackptr=%d",
+  xsb_dbgmsg("***In html_delete_userData(%s): stackptr=%d",
 	     RequestID(request), me->stackptr);
 #endif
 
@@ -466,7 +466,7 @@ PRIVATE void html_delete_userData(void *userdata)
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Request %s: freed the USERDATA obj", RequestID(request));
+  xsb_dbgmsg("***Request %s: freed the USERDATA obj", RequestID(request));
 #endif
 
   return;
@@ -485,3 +485,47 @@ void html_register_callbacks()
 			   (HText_delete *)html_delete_userData);
   return;
 }
+
+
+void set_html_conversions()
+{
+  /* Must delete old converter and create new. Apparently something in libwww
+     releases the atoms used in thes converters, which causes it to crash 
+     in HTStreamStack() on the second call to rdfparse. */
+  HTPresentation_deleteAll(HTML_converter);
+  HTML_converter = HTList_new();
+
+  HTConversion_add(HTML_converter,"*/*", "www/debug",
+		   HTBlackHoleConverter, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"message/rfc822", "*/*",
+		   HTMIMEConvert, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"message/x-rfc822-foot", "*/*",
+		   HTMIMEFooter, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"message/x-rfc822-head", "*/*",
+		   HTMIMEHeader, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"message/x-rfc822-cont", "*/*",
+		   HTMIMEContinue, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"message/x-rfc822-upgrade","*/*",
+		   HTMIMEUpgrade, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"message/x-rfc822-partial", "*/*",
+		   HTMIMEPartial, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"multipart/*", "*/*",
+		   HTBoundary, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"text/x-http", "*/*",
+		   HTTPStatus_new, 1.0, 0.0, 0.0);
+  /* www/html is invented by us to force html conversion */
+  HTConversion_add(HTML_converter,"text/html", "www/html",
+		   HTMLPresent, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"text/plain", "www/html",
+		   HTMLPresent, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"www/present", "www/html",
+		   HTMLPresent, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"text/xml", "www/html",
+		   HTMLPresent, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter,"text/rdf", "www/html",
+		   HTMLPresent, 1.0, 0.0, 0.0);
+  HTConversion_add(HTML_converter, "application/html", "*/*",
+		   HTMLPresent, 1.0, 0.0, 0.0);
+}
+
+

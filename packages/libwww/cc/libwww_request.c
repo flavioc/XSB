@@ -108,7 +108,7 @@ void do_libwww_request___()
     HTTimer* timer = HTTimer_new(NULL, timer_cbf, NULL, 2*timeout_value, 1, 1);
 
 #ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("In libwww_request: Starting event loop. Total requests=%d, timeout=%d",
+    xsb_dbgmsg("***In libwww_request: Starting event loop. Total requests=%d, timeout=%d",
 	       total_number_of_requests, timeout_value);
 #endif
 
@@ -124,13 +124,13 @@ void do_libwww_request___()
     /* expiring remaining timers is VERY important in order to avoid them
        kicking in at the wrong moment and killing subsequent requests */
 #ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("Expiring timers");
+    xsb_dbgmsg("***Expiring timers");
 #endif
     HTTimer_expireAll();
     HTTimer_delete(timer);
 
 #ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("In libwww_request: event loop ended: total outstanding requests=%d", total_number_of_requests);
+    xsb_dbgmsg("***In libwww_request: event loop ended: total outstanding requests=%d", total_number_of_requests);
 #endif
   }
   
@@ -200,7 +200,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     if (context->user_modtime > context->last_modtime) {
       /* cleanup the request and don't start it */
 #ifdef LIBWWW_DEBUG
-      xsb_dbgmsg("Request %s: Page older(%d) than if-modified-since time(%d)",
+      xsb_dbgmsg("***Request %s: Page older(%d) than if-modified-since time(%d)",
 		 RequestID(request),
 		 context->last_modtime, context->user_modtime);
 #endif
@@ -258,12 +258,19 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     HTRequest_setOutputFormat(request, HTAtom_for("www/xml"));
     goto LBLREQUEST;
   case RDFPARSE:
-    /* these don't do anything: callbacks havent been implemented yet */
+    /* The conversion type www/rdf is invented in order to force RDF parsing on
+       streams that have other MIME types. */
     set_rdf_conversions();
     HTRequest_setConversion(request, RDF_converter, YES);
     HTRequest_setOutputFormat(request, HTAtom_for("www/rdf"));
     goto LBLREQUEST;
   case HTMLPARSE:
+    /* We invent conversion type www/html, which forces HTML parsing even if
+       MIME type is different, say, text/xml. */
+    set_html_conversions();
+    HTRequest_setConversion(request, HTML_converter, YES);
+    HTRequest_setOutputFormat(request, HTAtom_for("www/html"));
+    goto LBLREQUEST;
   LBLREQUEST:
     if (formdata) {
       if (context->method == METHOD_GET)
@@ -283,30 +290,30 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
 #ifdef LIBWWW_DEBUG_TERSE
   switch (context->type) {
   case HTMLPARSE:
-    xsb_dbgmsg("Request %d: request type: htmlparse", request_id);
+    xsb_dbgmsg("***Request %d: request type: htmlparse", request_id);
     break;
   case XMLPARSE:
-    xsb_dbgmsg("Request %d: request type: xmlparse", request_id);
+    xsb_dbgmsg("***Request %d: request type: xmlparse", request_id);
     break;
   case RDFPARSE:
-    xsb_dbgmsg("Request %d: request type: rdfparse", request_id);
+    xsb_dbgmsg("***Request %d: request type: rdfparse", request_id);
     break;
   case HEADER:
-    xsb_dbgmsg("Request %d: request type: header", request_id);
+    xsb_dbgmsg("***Request %d: request type: header", request_id);
     break;
   case FETCH:
-    xsb_dbgmsg("Request %d: request type: fetch", request_id);
+    xsb_dbgmsg("***Request %d: request type: fetch", request_id);
     break;
   default:
-    xsb_dbgmsg("Request %d: request type: invalid", request_id);
+    xsb_dbgmsg("***Request %d: request type: invalid", request_id);
   }
   if (formdata)
-    xsb_dbgmsg("Request %d: HTTP Method: %s, preemptive: %d",
+    xsb_dbgmsg("***Request %d: HTTP Method: %s, preemptive: %d",
 	       request_id,
 	       (context->method==METHOD_GET ? "FORM,GET" : "FORM,POST"),
 	       HTRequest_preemptive(request));
   else
-    xsb_dbgmsg("Request %d: HTTP Method: NON-FORM REQ, preemptive: %d",
+    xsb_dbgmsg("***Request %d: HTTP Method: NON-FORM REQ, preemptive: %d",
 	       request_id, HTRequest_preemptive(request));
 #endif
 
@@ -315,7 +322,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   /* bad uri syntax */
   if (!status) {
 #ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("In setup_request_structure: Request %d failed: bad uri",
+    xsb_dbgmsg("***In setup_request_structure: Request %d failed: bad uri",
 	       request_id);
 #endif
     total_number_of_requests--;
@@ -344,7 +351,7 @@ PRIVATE int handle_dependent_termination(HTRequest   *request,
 {
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In handle_dependent_termination(%s): user_modtime=%d status=%d",
+  xsb_dbgmsg("***In handle_dependent_termination(%s): user_modtime=%d status=%d",
 	     RequestID(request), context->user_modtime, status);
 #endif
 
@@ -457,7 +464,7 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
   HTRequest_setContext(request, (void *) context);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Request %d: context set", request_id);
+  xsb_dbgmsg("***Request %d: context set", request_id);
 #endif
 
   return context;
@@ -503,10 +510,10 @@ void strcpy_lower(char *to, const char *from)
 void print_prolog_term(prolog_term term, char *message)
 { 
   static XSB_StrDefine(StrArgBuf);
+  prolog_term term2 = p2p_deref(term);
   XSB_StrSet(&StrArgBuf,"");
-  p2p_deref(term);
-  print_pterm(term, 1, &StrArgBuf); 
-  xsb_dbgmsg("%s = %s", message, StrArgBuf.string);
+  print_pterm(term2, 1, &StrArgBuf); 
+  xsb_dbgmsg("***%s = %s", message, StrArgBuf.string);
 } 
 
 
@@ -534,7 +541,7 @@ BOOL libwww_send_credentials(HTRequest * request, HTAlertOpcode op,
   AUTHENTICATION *credentials;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In libwww_send_credentials: Request=%s, realm: '%s' msgnum=%d",
+  xsb_dbgmsg("***In libwww_send_credentials: Request=%s, realm: '%s' msgnum=%d",
 	     RequestID(request), realm, msgnum);
 #endif
 
@@ -884,7 +891,7 @@ PRIVATE int request_termination_handler (HTRequest   *request,
   USERDATA *userdata = (USERDATA *)(context->userdata);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Request %s: In request_termination_handler, status %d",
+  xsb_dbgmsg("***Request %s: In request_termination_handler, status %d",
 	     RequestID(request), status);
 #endif
 
@@ -913,7 +920,7 @@ PRIVATE int request_termination_handler (HTRequest   *request,
     HTEventList_stopLoop();
     event_loop_runnung = FALSE;
 #ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("In request_termination_handler: event loop halted, status=%d, HTNetCount=%d",
+    xsb_dbgmsg("***In request_termination_handler: event loop halted, status=%d, HTNetCount=%d",
 	       status, HTNet_count());
 #endif
   }
@@ -950,7 +957,7 @@ PRIVATE int request_termination_handler (HTRequest   *request,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In request_termination_handler: Cleanup: request %s, status=%d remaining requests: %d",
+  xsb_dbgmsg("***In request_termination_handler: Cleanup: request %s, status=%d remaining requests: %d",
 	     RequestID(request), status, total_number_of_requests);
 #endif
 
@@ -1019,10 +1026,10 @@ void add_result_param(prolog_term *result_param,
   va_list ap;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("Starting add_result_param");
+  xsb_dbgmsg("***Starting add_result_param");
 #endif
 
-  p2p_deref(*result_param);
+  XSB_Deref(*result_param);
   if (is_list(*result_param))
     listHead = p2p_car(*result_param);
   else {
@@ -1049,7 +1056,7 @@ PRIVATE prolog_term get_result_param_stub(prolog_term *result_param)
 {
   prolog_term listHead;
 
-  p2p_deref(*result_param);
+  XSB_Deref(*result_param);
   if (is_list(*result_param))
     listHead = p2p_car(*result_param);
   else {
@@ -1184,7 +1191,7 @@ REQUEST_CONTEXT *set_subrequest_context(HTRequest *request,
      the standard Libwww filters. */
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("Subrequest %s: context set", RequestID(subrequest));
+  xsb_dbgmsg("***Subrequest %s: context set", RequestID(subrequest));
 #endif
 
   return context;
