@@ -31,7 +31,7 @@ AR = ar
 
 # Make sure warnings are saved in a file.
 SVFILE = './.xmc.tmp'
-OWRITE = 1
+OWRITE = w
 STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling XSB/packages/xmc:"

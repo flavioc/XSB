@@ -50,12 +50,14 @@
 %% Make uniform interface to the package
 bulk_match(String, Pattern, Result) :-
 	atom(String), atom(Pattern),
+	!,
 	bulk_match__(String, Pattern, Result).
-bulk_match(String, Pattern, Result) :-
+bulk_match(String, Pattern, _Result) :-
 	throw(error(perlmatch(invalid_argument,bulk_match,[String,Pattern]), 'String argument expected')).
 
 try_match(String, Pattern) :-
 	atom(String), atom(Pattern),
+	!,
 	try_match__(String, Pattern).
 try_match(String, Pattern) :-
 	throw(error(perlmatch(invalid_argument,try_match,[String,Pattern]), 'String argument expected')).
@@ -65,8 +67,9 @@ get_match_result(TypeOfMatch, Value) :- get_match_result__(TypeOfMatch, Value).
 
 perl_substitute(String, SubstExpr, Result) :-
 	atom(String), atom(SubstExpr),
+	!,
 	perl_substitute__(String, SubstExpr, Result).
-perl_substitute(String, SubstExpr, Result) :-
+perl_substitute(String, SubstExpr, _Result) :-
 	throw(error(perlmatch(invalid_argument,perl_substitute,[String,SubstExpr]), 'String argument expected')).
 
 load_perl :- load_perl__.

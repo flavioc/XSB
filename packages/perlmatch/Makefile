@@ -42,7 +42,7 @@ Prolog = $(XSB)
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(XSBDIR)/build/.perlmatch_warn.tmp'
-OWRITE = 1
+OWRITE = w
 STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling XSB/packages/perlmatch:"
