@@ -180,6 +180,10 @@ do_cleaning:
 	@cd $(src_emudir); \
 	  rm -f *.o 2> /dev/null || echo "" ; \
 	  rm -f Makefile Makefile.bak  2> /dev/null || echo ""
+	@echo "" >> ./Installation_summary
+	@echo "" >> ./Installation_summary
+	@echo "    ----------------- End of Build ------------------------" >> ./Installation_summary
+	@echo "" >> ./Installation_summary
 	@cp ./Installation_summary $(src_config_prefix)
 
 inform_executable:
