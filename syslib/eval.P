@@ -62,15 +62,18 @@ eval(Expr, Res) :-
 	eval(Expr,Res,Expr).
 
 eval(Arg, Res,Expr) :- 
-	term_type(Arg, T), 
-	((T =:= XSB_FREE; T =:= XSB_ATTV) ->
-	    eval_instantiation_abort(Expr)
-	; T =:= XSB_INT -> Res=Arg
-	; T =:= XSB_FLOAT -> Res=Arg
-	; (T =:= XSB_STRING; T =:= XSB_LIST) ->
-		throw(error(type_error(arithmetic_expression,Expr),
-		      ('Non evaluable arithmetic expression:',Expr)))
-	; eval0(Arg, Res,Expr) -> true	/* system defined function */
+	(number(Arg)
+	 ->	Res=Arg
+	 ; var(Arg)
+	 ->	eval_instantiation_abort(Expr)
+	 ; atom(Arg)
+	 ->	throw(error(type_error(arithmetic_expression,Expr),
+			    ('Non evaluable arithmetic expression:',Expr)))
+	 ; term_type(Arg,T),T =:= XSB_LIST
+	 ->	throw(error(type_error(arithmetic_expression,Expr),
+			    ('Non evaluable arithmetic expression:',Expr)))
+	 ; eval0(Arg, Res,Expr)
+	 ->	true	/* system defined function */
 %	; T =:= XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
 	).
 
