@@ -16,7 +16,7 @@ mkdir %XSBCONFIGdir%\lib
 
 @cd ..\emu
 
-REM Concatenate config\MSVC_Makefile.mak and MSVC.dep into emu\MSVC_Makefile.mak
+REM Concatenate config\MSVC_Makefile.mak & MSVC.dep into emu\MSVC_Makefile.mak
 copy %XSBCONFIGdir%\MSVC_Makefile.mak+%XSBCONFIGdir%\MSVC.dep MSVC_Makefile.mak
 
 nmake /f "MSVC_Makefile.mak" %1 %2 %3 %4 %5 %6 %7
