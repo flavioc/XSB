@@ -1872,6 +1872,23 @@ that function symbols can also be applied to path expressions, since path
 expressions, like Id-terms, represent objects. Thus, $\tt f(a.b)$
 is a valid expression.
 
+{\bf Note}: A path expression can appear wherever an oid can, but not in
+place of a truth-valued expression ({\it e.g.}, a subquery) even though
+path expressions can be viewed as formulas. Thus,
+%%
+\begin{qrules}
+\tt ?- P..authors.
+\end{qrules}
+%%
+is illegal and will cause a compiler error. To use a path expression as a
+query, square brackets must be attached. For instance, the following are
+legal queries:
+%%
+\begin{qrules}
+   \tt ?- P..authors[]. \\
+   \tt ?- P..authors[name->N].
+\end{qrules}
+
 As path expressions and F-molecules can be arbitrarily nested, this leads
 to a concise and flexible specification language for object properties, as
 illustrated in the following example.
@@ -1882,7 +1899,7 @@ illustrated in the following example.
   that returns all editors of conferences in which $n$ had a paper:
   %%
   \begin{qrules}
-    ?- P\isa conf\_p[authors\mvd\{\anon [name\fd $n$]\}].at\_conf..editors
+    ?- P\isa conf\_p[authors\mvd\{\anon [name\fd $n$]\}].at\_conf..editors[].
   \end{qrules}
   %%
   Likewise, the answer to the query
@@ -3604,10 +3621,7 @@ Keep in mind that some things that Prolog programmers routinely do with
 {\tt assert} and {\tt retract} goes against the grain of the use of
 backtrackable updates. In particular, {\tt fail}-loops are not going to
 work (will leave the database unchanged) for obvious reasons. The {\tt
-  while} primitive should be used in such situations.
-
-{\bf Unimplemented}:  This release does not support the {\tt while}-loops.
-
+  while} and {\tt until} loops should should be used in such situations.
 
 {\bf Unimplemented}: In the current release, arithmetic expressions in the
 query part of an update must have their variables be bound by the subgoals
@@ -3713,6 +3727,99 @@ Other modules can then issue queries like
 \end{verbatim}
 %%
 
+\section{Control Flow Statements}\label{sec:control}
+
+\FLORA supports a number of control statements that are commonly used in
+procedural languages. These include {\tt if - then - else} and 
+a number of looping constructs.
+
+\paragraph{if-then-else.} This is the usual conditional control flow
+construct supported by most programming languages.  For instance,
+%%
+\begin{quote}
+ \tt
+ ?- if (foo(a),foo2(b)) then (abc(X),cde(Y)) else (qpr(X),rts(Y)).
+\end{quote}
+%%
+Here the system first evaluates {\tt foo(a),foo2(b)} and, if true,
+evaluates {\tt abc(X),cde(Y)}. Otherwise, it evaluates {\tt qpr(X),rts(Y)}.
+Note that {\tt if}, {\tt then}, and {\tt else} are implemented as
+operators, and they bind stronger than the conjunction ``,'', the
+disjunction ``;'', etc. This is why the parentheses are needed in the above
+example.
+
+
+The abbreviated {\tt if-then} construct is also supported.  However, it
+should be mentioned that \FLORA gives a different semantics to {\tt
+  if-then} than Prolog does. In Prolog,
+%%
+\begin{verbatim}
+    ..., (Cond -> Action), Statement, ...  
+\end{verbatim}
+%%
+fails if {\tt Cond} fails and {\tt Statement} is not executed. If the
+programmer wants such a conditional succeed even if {\tt Cond} fails, then
+{\tt (Cond->Action; true)} must be used. Our experience shows, however,
+that it is the latter form that is used in most cases in Prolog
+programming, so in \FLORA the conditional
+%%
+\begin{verbatim}
+    ..., if Cond then Action, Statement, ...  
+\end{verbatim}
+%%
+succeeds even if {\tt Cond} fails and {\tt Statement} is executed next. To
+fail when {\tt Cond} fails, one should explicitly use {\tt else}:
+{\tt if Cond then Action else fail}. More precisely:
+%%
+\begin{itemize}
+  \item  {\tt if Cond then Action} fails if and only if {\tt Cond} succeeds
+    but {\tt Action} fails.
+  \item {\tt if Cond then Action else Alternative} succeeds if and only if 
+    {\tt Cond} and {\tt Action} both succeed or {\tt Cond} fails while
+    {\tt Alternative} succeeds.
+\end{itemize}
+%%
+
+Note that the {\tt if}-statement is friendly to backtrackable updates in
+the sense that backtrackable updates executed as part of an {\tt
+  if}-statement would be undone on backtracking, unless the changes done by
+such updates are explicitly committed using the {\tt commit} method of the
+system module {\tt flora(db)} (see Section~\ref{sec:storage-ctl}).
+
+\paragraph{while-do and do-until.}
+These loops are similar to those in C, Java, and the like.
+In {\tt while Cond do Action}, {\tt Cond} is evaluated before each
+iteration. If it is true, {\tt Action} is executed. This statement succeeds
+even if {\tt Cond} fails at the very beginning. The only case when this
+loop fails is when {\tt Cond} succeeds, but {\tt Action} fails (for all
+possible instantiations).
+
+The loop {\tt do Action until Cond} is similar, except that {\tt Cond} is
+evaluated after each iteration. Thus, {\tt Action} is guaranteed to execute
+at least once.
+
+These loop statements have special semantics for backtrackable updates.
+Namely, changes done by these types of updates are \emph{committed} at the
+end of each iteration. Thus, if {\tt Cond} fails, the changes done by
+backtrackable updates that occur in {\tt Cond} are undone. Likewise, if
+{\tt Action} fails, backtracking occurs and the corresponding updates are
+undone. However, updates made by backtrackable update statements during the
+previous iteration remain committed.
+
+
+\paragraph{while-loop and loop-until.}
+This pair of loop statements is similar to {\tt while-do} and {\tt
+  do-until}, except that backtrackable updates are \emph{not} committed
+after each iteration. Thus, failure of a statement following such a loop
+can cause the changes to be undone.
+
+The constructs {\tt while-loop} and {\tt loop-until} can be much more
+expensive (both time- and space-wise) than {\tt while-do} and {\tt
+  do-until}. Therefore, they should be used only when full backtrackability
+of updates is required. In particular, there is no justification for {\tt
+  while-loop} and {\tt loop-until} if all updates in the query are
+non-backtrackable.
+
 
 \section{Negation} \label{sec:negation}
 
@@ -3741,38 +3848,6 @@ primitive (see Section~\ref{sec-updates} for a discussion of this issue).
 For more information on the implementation of the negation operators in XSB
 we refer the reader to the XSB manual.
 
-
-
-\section{Control Constructs}
-
-For user convenience, \FLORA provides a number of control structures
-borrowed from other languages. One often used such construct is
-{\tt if-then-else}. For instance, 
-%%
-\begin{quote}
- \tt
- ?- if (foo(a),foo2(b)) then (abc(X),cde(Y)) else (qpr(X),rts(Y)).
-\end{quote}
-%%
-Here the system first evaluates {\tt foo(a),foo2(b)} and, if true,
-evaluates {\tt abc(X),cde(Y)}. Otherwise, it evaluates {\tt qpr(X),rts(Y)}.
-The entire clause succeeds or fails depending on whether the {\tt
-  then}-part or the {\tt else}-part succeeds or fails (whichever applies).
-The {\tt if-then} version (without the {\tt else}-part) is also provided.
-In this case, when the {\tt if}-condition succeeds, the {\tt then}-part is
-evaluated. The entire clause then succeeds or fails depending on the
-{\tt then}-part. When the {\tt if}-condition is false, the entire clause fails.
-
-Note that {\tt if}, {\tt then}, and {\tt else} are implemented as
-operators, and they bind stronger than the conjunction ``,'', the
-disjunction ``;'', etc. This is why the parentheses are needed in the above
-example.
-
-{\bf Unimplemented}: In the current version, the \FLORA parser does not yet
-handle all the syntax errors associated with the use of {\tt if-then-else}
-and nested clauses are not always parsed the way one would expect (say, as
-in C).  Therefore, explicit parentheses are recommended around the entire
-clause.
 
 
 
@@ -3806,6 +3881,59 @@ feature is particularly important when dealing with \emph{semistructured}
 data. (Semistructured data has object-like structure but normally does not
 need to conform to any type; or if it does, the type would normally cover
 only certain portions of the object structure.)
+
+
+\section{Optimizations}
+
+The first rule in improving the performance of \FLORA programs is to
+remember that query evaluation proceeds from left to right. Therefore it is
+generally advisable to place subgoals with smaller answer sets as close to
+the left of the rule body as possible. And, like in databases, Cartesian
+products should be avoided at all costs.
+
+The next thing to remember is that \FLORA compiler makes decisions about
+where to place the various parts of complex F-logic molecules, and the
+programmer can affect this placement by writing molecules in various ways.
+For instance,
+%%
+\begin{verbatim}
+    ?- ..., X[attr1 ->> Y, attr2->>Y], ...
+\end{verbatim}
+%%
+is translated as
+%%
+\begin{verbatim}
+    ?- ..., X[attr1 ->> Y], X[attr2->>Y], ...  
+\end{verbatim}
+%%
+so the first attribute will be computed first. If the second attribute has
+a smaller answer set, the attributes in the molecule should be written in
+the opposite order. The other consideration has to do with literals that
+have nested molecules in them. For instance, the following query
+%%
+\begin{verbatim}
+     ?- ..., X[attr1->Y[attr2->Z]], f(P[attr3->Q]), ...
+\end{verbatim}
+%%
+is translated as
+%%
+\begin{verbatim}
+     ?- ..., Y[attr2->Z], X[attr1->Y], P[attr3->Q], f(P), ...
+\end{verbatim}
+%%
+{\it i.e.}, the nested literals precede their hosts in the translation.  If
+{\tt X[attr1->Y]} has a smaller answer set than {\tt Y[attr2->Z]} then the
+optimal order is just the opposite than what the compiler has
+chosen. Likewise, if {\tt f(P)} has a small answer set than {\tt
+  P[attr3->Q]} then the two literals are better evaluated in the opposite
+order.
+
+Unfortunately, unlike in databases, statistical information is not
+available to the \FLORA compiler and only a few heuristics (such as
+variable binding analysis, which the compiler does not perform) can be used
+to optimize such queries. If the order chosen by the compiler is not right,
+the programmer can always unnest the literals and place them in the right
+order in the rule body.
 
 
 \section{Summary of Compiler Directives} \label{sec-comp-directives}
@@ -4066,7 +4194,7 @@ of keeping the syntax object-oriented.
 \end{itemize}
 %%
 
-\subsection{Storage Control}
+\subsection{Storage Control}\label{sec:storage-ctl}
 
 \FLORA keeps the facts that are part of the program or those that are
 inserted by the program in special data structures called \emph{storage
