@@ -120,7 +120,7 @@ ca_1(H,[H]):- atom(H).
 % Crude but effective.  Returns stdout of a unix command as a list of
 % tokens. Obsolete!
 sysin(Command,List):-
-	obsolete('sysin/1', 'shell/5'),
+%	obsolete('sysin/1', 'shell/5'),
 	ca([Command,'> /tmp/XSBdir'],Com1),
 	unix(Com1),
 	open('/tmp/XSBdir',read,Str),

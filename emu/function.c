@@ -53,6 +53,10 @@
 #define FUN_asin  19
 #define FUN_acos  20
 #define FUN_atan  21
+#define FUN_abs  22
+#define FUN_truncate  23
+#define FUN_round  24
+#define FUN_ceiling  25
 
 /* --- returns 1 when succeeds, and returns 0 when there is an error --	*/
 
@@ -60,29 +64,30 @@ int  unifunc_call(int funcnum, CPtr regaddr)
 {
   Cell value;
   float fvalue; 
+  prolog_int ivalue;
 
   value = cell(regaddr);
   XSB_Deref(value);
   switch (funcnum) {
-      case FUN_float:
-	  if (isinteger(value)) fvalue = (float) int_val(value);
-	  else if (isfloat(value)) fvalue = float_val(value);
-	  else return 0;
-	  bld_float(regaddr, fvalue);
-	  break;
-      case FUN_floor:
-	  if (isinteger(value)) fvalue =  (float) int_val(value);
-	  else if (isfloat(value)) fvalue = float_val(value);
-	  else return 0;
-	  bld_int(regaddr, floor(fvalue));
-	  break;
-      case FUN_PLUS:
-      case FUN_MINUS:
-      case FUN_TIMES:
-      case FUN_DIVIDE:
-      case FUN_AND:
-      case FUN_OR:
-	  return 0;		/* should not come here */
+  case FUN_float:
+    if (isinteger(value)) fvalue = (float) int_val(value);
+    else if (isfloat(value)) fvalue = float_val(value);
+    else return 0;
+    bld_float(regaddr, fvalue);
+    break;
+  case FUN_floor:
+    if (isinteger(value)) fvalue =  (float) int_val(value);
+    else if (isfloat(value)) fvalue = float_val(value);
+    else return 0;
+    bld_int(regaddr, floor(fvalue));
+    break;
+  case FUN_PLUS:
+  case FUN_MINUS:
+  case FUN_TIMES:
+  case FUN_DIVIDE:
+  case FUN_AND:
+  case FUN_OR:
+    return 0;		/* should not come here */
       case FUN_sin:
 	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
@@ -101,12 +106,12 @@ int  unifunc_call(int funcnum, CPtr regaddr)
 	  else return 0;
 	  bld_float(regaddr, tan(fvalue));
 	  break;
-      case FUN_exp:
-	  if (isinteger(value)) fvalue =  (float) int_val(value);
-	  else if (isfloat(value)) fvalue = float_val(value);
-	  else return 0;
-	  bld_float(regaddr, exp(fvalue));
-	  break;
+  case FUN_exp:
+    if (isinteger(value)) fvalue =  (float) int_val(value);
+    else if (isfloat(value)) fvalue = float_val(value);
+    else return 0;
+    bld_float(regaddr, exp(fvalue));
+    break;
       case FUN_log:
 	  if (isinteger(value)) fvalue =  (float) int_val(value);
 	  else if (isfloat(value)) fvalue = float_val(value);
@@ -131,19 +136,65 @@ int  unifunc_call(int funcnum, CPtr regaddr)
 	  else return 0;
 	  bld_float(regaddr, asin(fvalue));
 	  break;
-      case FUN_acos:
-	  if (isinteger(value)) fvalue =  (float) int_val(value);
-	  else if (isfloat(value)) fvalue = float_val(value);
-	  else return 0;
-	  bld_float(regaddr, asin(fvalue));
-	  break;
-      case FUN_atan:
-	  if (isinteger(value)) fvalue =  (float) int_val(value);
-	  else if (isfloat(value)) fvalue = float_val(value);
-	  else return 0;
-	  bld_float(regaddr, atan(fvalue));
-	  break;
-      default:  return 0;
+  case FUN_acos:
+    if (isinteger(value)) fvalue =  (float) int_val(value);
+    else if (isfloat(value)) fvalue = float_val(value);
+    else return 0;
+    bld_float(regaddr, asin(fvalue));
+    break;
+  case FUN_atan:
+    if (isinteger(value)) fvalue =  (float) int_val(value);
+    else if (isfloat(value)) fvalue = float_val(value);
+    else return 0;
+    bld_float(regaddr, atan(fvalue));
+    break;
+  case FUN_abs:
+    if (isinteger(value)) { 
+      ivalue = int_val(value);
+      if (ivalue > 0) 
+	bld_int(regaddr,ivalue);
+      else bld_int(regaddr,-ivalue);
+    } 
+    else if (isfloat(value)) {
+      fvalue = float_val(value);
+      if (fvalue > 0) 
+	bld_float(regaddr,fvalue);
+      else bld_float(regaddr,-fvalue);
+    } else return 0;
+    break;
+  case FUN_truncate:
+    if (isinteger(value)) { 
+      ivalue = int_val(value);
+      bld_int(regaddr,ivalue);
+    }
+    else if (isfloat(value)) {
+      fvalue = float_val(value);
+      if (fvalue > 0) 
+	bld_float(regaddr,floor(fvalue));
+      else bld_float(regaddr,-floor(-fvalue));
+    } else return 0;
+    break;
+  case FUN_round:
+    if (isinteger(value)) { 
+      ivalue = int_val(value);
+      bld_int(regaddr,ivalue);
+    }
+    else if (isfloat(value)) {
+      fvalue = float_val(value);
+      bld_float(regaddr,floor(fvalue+0.5));
+    } else return 0;
+    break;
+  case FUN_ceiling:
+    if (isinteger(value)) { 
+      ivalue = int_val(value);
+      bld_int(regaddr,ivalue);
+    }
+    else if (isfloat(value)) {
+      fvalue = float_val(value);
+      bld_float(regaddr,-floor(-fvalue));
+    } else return 0;
+    break;
+  default:  return 0;
   }
   return 1;
 }

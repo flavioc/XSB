@@ -247,3 +247,7 @@ builtin_function(sqrt, 1, 18).
 builtin_function(asin, 1, 19).
 builtin_function(acos, 1, 20).
 builtin_function(atan, 1, 21).
+builtin_function(abs, 1, 22).
+builtin_function(truncate, 1, 23).
+builtin_function(round, 1, 24).
+builtin_function(ceiling, 1, 25).

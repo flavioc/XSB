@@ -22,7 +22,7 @@
 ** 
 */
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,optimize,sysmod]).
 
 #include "celltags_xsb.h"
 
@@ -50,20 +50,27 @@ eval(Arg, Res) :-
 	; T =:= XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
 	).
 
-eval0('+'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 + Res2.
-eval0('-'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 - Res2.
-eval0('*'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 * Res2.
-eval0('/'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 / Res2.
-eval0('//'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 // Res2.
-eval0(mod(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 mod Res2.
+/* TLS: we are now more ISO-compatable for fp-to-integer rouinding
+functions, 9.1.5.1.  To be completely compatable, we'd have to check for
+overflow.  */
+eval0('+'(X,Y), Res) :- eval(X, Res1), eval(Y,Res2), Res is Res1 + Res2.  
+eval0('-'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 - Res2.  
+eval0('*'(X,Y), Res) :- eval(X,Res1), eval(Y, Res2), Res is Res1 * Res2.  
+eval0('/'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 / Res2.  
+eval0('//'(X,Y),Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 // Res2.
+eval0(mod(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 mod Res2.  
 eval0('-'(X), Res) :- eval(X, Res1), Res is -(Res1).
-eval0('/\'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 /\ Res2.
-eval0('\/'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 \/ Res2.
-eval0('<<'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 << Res2.
-eval0('>>'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 >> Res2.
-eval0('\'(X), Res) :- eval(X, Res1), Res is '\'(Res1).
-eval0(float(X), Res) :- eval(X, Res1), Res is float(Res1).
-eval0(floor(X), Res) :- eval(X, Res1), Res is floor(Res1).
+eval0('/\'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 /\ Res2.  
+eval0('\/'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 \/ Res2.  
+eval0('<<'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 << Res2.  
+eval0('>>'(X,Y), Res) :- eval(X, Res1), eval(Y,Res2), Res is Res1 >> Res2.  
+eval0('\'(X), Res) :- eval(X, Res1), Res is '\'(Res1).  
+eval0(float(X), Res) :- eval(X, Res1), Res is float(Res1).  
+eval0(floor(X), Res) :- eval(X, Res1), Res is floor(Res1).  
+eval0(abs(X),Res) :- eval(X, Res1), Res is abs(Res1).  
+eval0(truncate(X),Res) :- eval(X, Res1), Res is truncate(Res1).  
+eval0(round(X),Res) :- eval(X, Res1), Res is round(Res1).  
+eval0(ceiling(X),Res) :- eval(X, Res1), Res is ceiling(Res1).  
 eval0(sin(X), Res) :- eval(X, Res1), Res is sin(Res1).
 eval0(cos(X), Res) :- eval(X, Res1), Res is cos(Res1).
 eval0(tan(X), Res) :- eval(X, Res1), Res is tan(Res1).
