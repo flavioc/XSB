@@ -1,0 +1,20 @@
+%% This compiles the examples below on Unix
+
+:- xsb_configuration(compiler_flags,CFLAGS),
+	xsb_configuration(loader_flags,LDFLAGS),
+	xsb_configuration(config_dir,CONFDIR),
+	xsb_configuration(compiler,Compiler),
+	str_cat(CONFDIR, '/saved.o/', ObjDir),
+	str_cat(CONFDIR, '/bin/', BinDir),
+	write('Compiling cmain.c ... '),
+	shell([Compiler, ' -c ', CFLAGS, ' cmain.c ']),
+	shell([Compiler, ' -o ', BinDir, 'xsbtest1 ',
+	       ObjDir, 'xsb.o ', ' cmain.o ', LDFLAGS]),
+	writeln(done),
+	fmt_write("You can find the executable in\n\t%sxsbtest1\n", BinDir),
+	write('Compiling cmain2.c ... '),
+	shell([Compiler, ' -c ', CFLAGS, ' cmain2.c ']),
+	shell([Compiler, ' -o ', BinDir, 'xsbtest2 ',
+	       ObjDir, 'xsb.o ', ' cmain2.o ', LDFLAGS]),
+	writeln(done),
+	fmt_write("You can find the executable in\n\t%sxsbtest2\n", BinDir).

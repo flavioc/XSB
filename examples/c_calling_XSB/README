@@ -4,10 +4,18 @@ This directory contains examples that show how to call XSB from C.
 All these programs assume that they are compiled and placed in the XSB
 directory for executables, $XSB_HOME/config/<your system architecture>/bin
 
-A sample Makefile for Linux to build these examples is provided.
+***You must first execute "makexsb module" in the XSB/build directory***
+
+The simplest way to compile these examples is to start XSB and then execute:
+
+| ?- [make].
+
+A sample Makefile for Linux is also provided but this may require some
+tweaking. 
+
 The Makefile specific to your architecture is placed in
     $XSB_HOME/config/<your system architecture>/modMakefile
 after you build XSB.
-
-It contains all the right settings, but you will have to fill in the actual
-name for the program that calls XSB.
+You can use it to link your own programs with XSB. This make file
+contains all the right settings, but you will have to fill in the actual
+name of your program that calls the XSB module.

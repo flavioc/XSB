@@ -58,7 +58,7 @@ int getline(s, lim)
 char s[];
 int lim;
 {
-  int c, i;
+  int c=0, i;
   for (i=0; i<lim-1 && (c=getc(stdin))>=0 && c!='\n'; ++i)
     s[i] = c;
   if (c == '\n') {
@@ -73,7 +73,7 @@ void printpterm(prolog_term term)
 {
   int i;
 
-  if (is_var(term)) fprintf(stdout,"_%p",term);
+  if (is_var(term)) fprintf(stdout,"_%p", (void *)term);
   else if (is_int(term)) fprintf(stdout,"%d",p2c_int(term));
   else if (is_float(term)) fprintf(stdout,"%f",p2c_float(term));
   else if (is_nil(term)) fprintf(stdout,"[]");
