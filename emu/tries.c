@@ -1609,7 +1609,7 @@ static void construct_ret(void)
 
     arity = global_num_vars + 1;
     if (arity == 0) {
-      ctop_string(3, string_find("ret",1));
+      ctop_string(3, (char *) ret_psc[0]);
     } else {
       term = ptoc_tag(3);
       sreg = hreg;

@@ -46,7 +46,6 @@
 #ifdef DEBUG_DELAY
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
-    char *ret_str;							\
     if (is_conditional_answer(NodePtr)) {				\
       fprintf(stderr, "Trie-Code returning a conditional answer for ");	\
       SUBGOAL = (CPtr) asi_subgoal((ASI) Delay(NodePtr));		\
@@ -55,8 +54,8 @@
       fprintf(stderr, ">>>> (in handle_conditional_answers)\
 num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
       if (num_vars_in_var_regs == -1) {					\
-	ret_str = string_find("ret", 1);				\
-	delay_positively(SUBGOAL, NodePtr, makestring(ret_str));	\
+	delay_positively(SUBGOAL, NodePtr,				\
+			 makestring((char *) ret_psc[0]));		\
       }									\
       else {								\
         /* create the answer subsf ret/n */				\
@@ -78,12 +77,11 @@ num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
 #else
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
-    char *ret_str;							\
     if (is_conditional_answer(NodePtr)) {				\
       SUBGOAL = (CPtr) asi_subgoal((ASI) Delay(NodePtr));		\
       if (num_vars_in_var_regs == -1) {					\
-	ret_str = string_find("ret", 1);				\
-	delay_positively(SUBGOAL, NodePtr, makestring(ret_str));	\
+	delay_positively(SUBGOAL, NodePtr,				\
+			 makestring((char *) ret_psc[0]));		\
       }									\
       else {								\
 	temp_hreg = hreg;						\

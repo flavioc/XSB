@@ -69,8 +69,10 @@ Psc list_psc, comma_psc;
 Psc tnot_psc, delay_psc;
 
 /*
- * Ret PSC's are used to store substitution factors for subgoal calls or
- * answers.  A psc with a new arity will be created when needed.
+ * Ret PSC's are used to store substitution factors for subgoal calls
+ * or answers.  A psc with a new arity will be created when needed,
+ * except that ret_psc[0] stores the pointer to STRING "ret" and is
+ * initialized when the system is started.
  */
 Psc ret_psc[MAX_ARITY];
 

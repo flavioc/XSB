@@ -96,12 +96,10 @@ case check_complete: {
 	  {
 	    int i;
 	    CPtr temp_hreg;
-	    char *ret_str;
 	    
 	    if (num_heap_term_vars == 0) {
-	      ret_str = string_find("ret", 1);
 	      delay_positively(SUBGOAL, aln_answer_ptr(tcp_trie_return(breg)),
-			       makestring(ret_str));
+			       makestring((char *) ret_psc[0]));
 	    }
 	    else {
 	      temp_hreg = hreg;

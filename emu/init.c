@@ -674,8 +674,12 @@ void init_symbols(void)
   temp = insert("DL", 3, global_mod, &new_indicator);
   delay_psc = pair_psc(temp);
 
-  /* Initialize ret PSCs */
-  for (i = 0; i < MAX_ARITY; i++) ret_psc[i] = NULL;
+  /*
+   * Initialize ret PSCs.  Notice that ret_psc[0] is set to a pointer
+   * to STRING "ret".
+   */
+  ret_psc[0] = (Psc) string_find("ret", 1);
+  for (i = 1; i < MAX_ARITY; i++) ret_psc[i] = NULL;
 
   /* make another reference to global module -- "usermod" */
   tp = insert_module(T_MODU, "usermod");	/* loaded */

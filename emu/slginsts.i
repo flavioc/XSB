@@ -136,7 +136,6 @@ case answer_return:
       if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
 	int i;
 	CPtr temp_hreg;
-	char *ret_str;
 	/*
 	 * After load_solution_trie(), the substitution factor of the
 	 * answer is left in array var_addr[], and its arity is in
@@ -144,9 +143,8 @@ case answer_return:
 	 * the heap) and pass it to delay_positively().
 	 */
 	if (num_heap_term_vars == 0) {
-	  ret_str = string_find("ret", 1);
 	  delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
-			   makestring(ret_str));
+			   makestring((char *) ret_psc[0]));
 	}
 	else {
 	  temp_hreg = hreg;
@@ -296,9 +294,8 @@ case new_answer_dealloc:
 	 * answer was saved as a term ret/n (in variant_trie_search()).
 	 */
 	if (isinteger(cell(ans_var_pos_reg))) {
-	  char *ret_str;
-	  ret_str = string_find("ret", 1);
-	  delay_positively(SUBGOAL, TrieRetPtr, makestring(ret_str));
+	  delay_positively(SUBGOAL, TrieRetPtr,
+			   makestring((char *) ret_psc[0]));
 	}
 	else 
 	  delay_positively(SUBGOAL, TrieRetPtr, makecs(ans_var_pos_reg));
@@ -528,7 +525,6 @@ lay_down_consumer:
 	{
 	  int i;
 	  CPtr temp_hreg;
-	  char *ret_str;
 	  /*
 	   * Similar to delay_positively() in retry_active, we also
 	   * need to put the substitution factor of the answer,
@@ -536,9 +532,8 @@ lay_down_consumer:
 	   * delay_positively().
 	   */
 	  if (num_heap_term_vars == 0) {
-	    ret_str = string_find("ret", 1);
 	    delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
-			     makestring(ret_str));
+			     makestring((char *) ret_psc[0]));
 	  }
 	  else {
 	    temp_hreg = hreg;

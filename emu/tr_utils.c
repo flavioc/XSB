@@ -267,7 +267,7 @@ void construct_ret_for_call(void)
 
     arity = cell(Temp_VarPosReg);
     if (arity == 0) {
-      ctop_string(3, string_find("ret",1));
+      ctop_string(3, (char *) ret_psc[0]);
     } else {
       term = ptoc_tag(1);
       sreg = hreg;
@@ -707,7 +707,7 @@ void breg_retskel(void)
     cptr = where + Nvars;
 #endif
     if (Nvars == 0) {
-      ctop_string(3, string_find("ret",1));
+      ctop_string(3, (char *) ret_psc[0]);
     } else {
       term = ptoc_tag(3);
       sreg = hreg;
