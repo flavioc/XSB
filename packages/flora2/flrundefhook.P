@@ -38,10 +38,10 @@ flora_undefined_predicate_hook([PscRecord,true]) :-
 	!,
 	flora_stdmsg_nl,
 	( Base == WRAP_OBJEQL ->
-	    flora_message_line('automatically loading the equality traielr into module `%s''',args(WS)),
+	    flora_message_line('loading the equality trailer into module `%s''',args(WS)),
 	    flloadtrailer(EQLTRAILER,WS)
 	;
-          flora_message_line('automatically loading the standard traielr into module `%s''',args(WS)),
+          flora_message_line('loading the standard trailer into module `%s''',args(WS)),
           flloadtrailer(STDTRAILER,WS)
 	),
 	!.
