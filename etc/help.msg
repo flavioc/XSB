@@ -5,9 +5,10 @@ Usage:	xsb [flags] [-l] [-i]
 	xsb [flags] -B module_to_disassemble -d
 	xsb -[h | v]
 
-      	flags:
-	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -s | -T
-	    These are compiler flags.
+      	memory management flags:
+	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r
+	miscellaneous flags:
+	     -s | -T
 	module:
 	    Module to execute after XSB starts up.
 	    Module should have no suffixes, no directory part, and
