@@ -423,6 +423,7 @@ if test "${enable_no_cygwin+set}" = "set"; then
 	host_cpu=x86
 	configuration_templ=xsb_configuration.in
 	config_dot_h_templ=def_config_mnoc.in
+	GPPWNTFLAG="-D WIN_NT"
 fi
 
 # arch-independent XSB directories
@@ -1508,6 +1509,7 @@ AC_SUBST(builtinsCFLAGS)
 AC_SUBST(emuloopCFLAGS)
 AC_SUBST(trutilsCFLAGS)
 AC_SUBST(GPPCFLAGS)
+AC_SUBST(GPPWNTFLAG)
 AC_SUBST(CC)
 dnl AC_SUBST(CXX)
 AC_SUBST(LDFLAGS)
