@@ -42,8 +42,8 @@ DllExport int call_conv initialise(void)
 
 DllExport int call_conv openConnection(void)
 {
-	DllExport int call_conv (*connectDriver)(struct xsb_connectionHandle*);
-	DllExport char* call_conv (*errorMesgDriver)();
+	int (*connectDriver)(struct xsb_connectionHandle*);
+	char* (*errorMesgDriver)();
 	struct xsb_connectionHandle* cHandle;
 	char *handle, *driver, *server, *database, *user, *password, *dsn;
 	int val;
@@ -118,9 +118,9 @@ DllExport int call_conv openConnection(void)
 
 DllExport int call_conv closeConnection(void)
 {
-	DllExport int call_conv (*disconnectDriver)(struct xsb_connectionHandle *);
-	DllExport int call_conv (*closeStmtDriver)(struct xsb_queryHandle *);
-	DllExport char* call_conv (*errorMesgDriver)();
+	int (*disconnectDriver)(struct xsb_connectionHandle *);
+	int (*closeStmtDriver)(struct xsb_queryHandle *);
+	char* (*errorMesgDriver)();
 	char* handle;
 	int val, i, j;
 
@@ -185,8 +185,8 @@ DllExport int call_conv closeConnection(void)
 
 DllExport int call_conv queryConnection(void)
 {
-	DllExport struct xsb_data** call_conv (*queryDriver)(struct xsb_queryHandle*);
-	DllExport char* call_conv (*errorMesgDriver)();
+	struct xsb_data** (*queryDriver)(struct xsb_queryHandle*);
+	char* (*errorMesgDriver)();
 	prolog_term returnList, sqlQueryList, element;
 	struct xsb_connectionHandle* cHandle;
 	struct xsb_queryHandle* qHandle;
@@ -279,8 +279,8 @@ DllExport int call_conv queryConnection(void)
 
 DllExport int call_conv prepareStatement(void)
 {
-	DllExport int call_conv (*prepareStmtDriver)(struct xsb_queryHandle*);
-	DllExport char* call_conv (*errorMesgDriver)();
+	int (*prepareStmtDriver)(struct xsb_queryHandle*);
+	char* (*errorMesgDriver)();
 	prolog_term sqlQueryList;
 	char *chandle, *qhandle, *sqlQuery;
 	struct xsb_queryHandle* qHandle;
@@ -334,8 +334,8 @@ DllExport int call_conv prepareStatement(void)
 
 DllExport int call_conv executePreparedStatement(void)
 {
-	DllExport struct xsb_data** call_conv (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
-	DllExport char* call_conv (*errorMesgDriver)();
+	struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
+	char* (*errorMesgDriver)();
 	struct xsb_queryHandle* qHandle;
 	struct xsb_data** bindValues;
 	struct xsb_data** result;
@@ -435,8 +435,8 @@ DllExport int call_conv executePreparedStatement(void)
 
 DllExport int call_conv closeStatement(void)
 {
-	DllExport int call_conv (*closeStmtDriver)(struct xsb_queryHandle*);
-	DllExport char* call_conv (*errorMesgDriver)();
+	int (*closeStmtDriver)(struct xsb_queryHandle*);
+	char* (*errorMesgDriver)();
 	char* queryHandle;
 	char* driverName;
 	int result;

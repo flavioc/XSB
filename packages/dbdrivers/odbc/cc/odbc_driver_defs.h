@@ -52,13 +52,13 @@ struct driverODBC_connectionInfo
 /********* function declarations *********/
 
 DllExport int call_conv driverODBC_initialise();
-DllExport int call_conv driverODBC_connect(struct xsb_connectionHandle* handle);
-DllExport int call_conv driverODBC_disconnect(struct xsb_connectionHandle* handle);
-DllExport struct xsb_data** call_conv driverODBC_query(struct xsb_queryHandle* handle);
-DllExport int call_conv driverODBC_prepareStatement(struct xsb_queryHandle* qHandle);
-DllExport struct xsb_data** call_conv driverODBC_execPrepareStatement(struct xsb_data** param, struct xsb_queryHandle* handle);
-DllExport int call_conv driverODBC_closeStatement(struct xsb_queryHandle* handle);
-DllExport char* call_conv driverODBC_errorMesg();
+int driverODBC_connect(struct xsb_connectionHandle* handle);
+int driverODBC_disconnect(struct xsb_connectionHandle* handle);
+struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle);
+int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle);
+struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struct xsb_queryHandle* handle);
+int driverODBC_closeStatement(struct xsb_queryHandle* handle);
+char* driverODBC_errorMesg();
 DllExport int call_conv driverODBC_register();
 
 extern DllExport int call_conv registerXSBDriver(char* dr, int num);

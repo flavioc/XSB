@@ -37,7 +37,7 @@ DllExport int call_conv driverODBC_initialise()
 }
 
 
-DllExport int call_conv driverODBC_connect(struct xsb_connectionHandle* handle)
+int driverODBC_connect(struct xsb_connectionHandle* handle)
 {
 	struct driverODBC_connectionInfo* odbcHandle;
 	SQLRETURN val;
@@ -77,7 +77,7 @@ DllExport int call_conv driverODBC_connect(struct xsb_connectionHandle* handle)
 }
 
 
-DllExport int call_conv driverODBC_disconnect(struct xsb_connectionHandle* handle)
+int driverODBC_disconnect(struct xsb_connectionHandle* handle)
 {
 	SQLRETURN val;
 	int i, j;
@@ -121,7 +121,7 @@ DllExport int call_conv driverODBC_disconnect(struct xsb_connectionHandle* handl
 }
 
 
-DllExport struct xsb_data** call_conv driverODBC_query(struct xsb_queryHandle* handle)
+struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLHDBC hdbc;
@@ -296,7 +296,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 }
 
 
-DllExport int call_conv driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
+int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLRETURN val;
@@ -360,7 +360,7 @@ DllExport int call_conv driverODBC_prepareStatement(struct xsb_queryHandle* qHan
 }
 
 
-DllExport struct xsb_data** call_conv driverODBC_execPrepareStatement(struct xsb_data** param, struct xsb_queryHandle* handle)
+struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struct xsb_queryHandle* handle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLRETURN val;
@@ -435,7 +435,7 @@ DllExport struct xsb_data** call_conv driverODBC_execPrepareStatement(struct xsb
 }
 
 
-DllExport int call_conv driverODBC_closeStatement(struct xsb_queryHandle* handle)
+int driverODBC_closeStatement(struct xsb_queryHandle* handle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLRETURN val;
@@ -469,7 +469,7 @@ DllExport int call_conv driverODBC_closeStatement(struct xsb_queryHandle* handle
 }
 
 
-DllExport char* call_conv driverODBC_errorMesg()
+char* driverODBC_errorMesg()
 {
 	char* temp;
 	if (errorMesg != NULL)
