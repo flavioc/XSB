@@ -61,7 +61,8 @@
 :- export
 	flora_storage_check_module_name/1,
 	flora_storage_check_deletepredicate/2,
-	flora_storage_convertlist/3.
+	flora_storage_convertlist/3,
+	flora_storage_is_negation_symbol/1.
 
 
 /*****************************************************************************
@@ -87,34 +88,56 @@ flora_storage_check_module_name(ModuleName) :-
 
 
 /*****************************************************************************
-  flora_storage_check_deletepredicate(+P,-StorageName)
+  flora_storage_check_deletepredicate(+P,-UpdateStruct)
 
   It is used to call a predicate in the list of literals to be deleted.
   It supports the meta-programming feature of delete where a variable is
-  used to pass the name of the module.
+  used to pass the predicate.
+
+  Note: If the variable is bound to a conjunction, then it will be broken up
+        accordingly into a nested list structure. This feature is defferent
+        from Prolog which does not treat conjunction any diferently from
+        other builtin predicates. However, deletion of disjunction or negation
+        is not allowed.
 *****************************************************************************/
-flora_storage_check_deletepredicate(P,_StorageName) :-
+flora_storage_check_deletepredicate(P,_UpdateStruct) :-
 	var(P),
 	!,
 	flora_error_line('uninstantiated argument of delete operation'),
 	abort.
 
-flora_storage_check_deletepredicate(P,StorageName) :-
+flora_storage_check_deletepredicate(','(C1,C2),[P1,P2]) :-
+	!,
+	%% Break up conjunction, although deletion of conjunction is not
+	%% allowed in XSB.
+	flora_storage_check_deletepredicate(C1,P1),
+	flora_storage_check_deletepredicate(C2,P2).
+
+flora_storage_check_deletepredicate(P,FLSYSDBUPDATE(P,StorageName)) :-
 	%% This is a meta programming feature.
-	functor(P,F,_N),
+	functor(P,F,N),
 	( flora_decode_module_name(F,ModuleName) ->
 	    flora_storage_check_module_name(ModuleName),
 	    flora_storage_name(ModuleName,StorageName),
 	    storage_find_fact(StorageName,P)
+
+	; N == 2, F == ';' ->
+	    flora_error_line('Deletion of disjunction is not allowed!'),
+	    abort
+
+	; N == 1, flora_storage_is_negation_symbol(F) ->
+	    flora_error_line('Deletion of negation is not allowed!'),
+	    abort
 	;
 	  flora_error_heading,
+	  flora_stderr_string('Deletion of '),
 	  ( F == WRAP_HILOG ->
-	      flora_stderr_string('It is not allowed to delete HiLog term ')
+	      flora_stderr_string('HiLog term ')
 	  ;
-	    flora_stderr_string('It is not allowed to delete Prolog term ')
+	    flora_stderr_string('Prolog term ')
 	  ),
 	  flora_stderr_write(P),
-	  flora_stderr_string(' !'),
+	  flora_stderr_string(' is not allowed!'),
 	  flora_stderr_nl,
           abort
 	).
@@ -126,10 +149,11 @@ flora_storage_check_deletepredicate(P,StorageName) :-
 flora_storage_convertlist([],[],[]) :- !.
 
 flora_storage_convertlist([P|Fs],
-	                  [flora_storage_check_deletepredicate(P,StorageName)|CL],
-			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
+	                  [flora_storage_check_deletepredicate(P,UpdateStruct)|CL],
+			  [UpdateStruct|FL]) :-
 	var(P),
 	!,
+	%% This is a meta-programming feature.
 	flora_storage_convertlist(Fs,CL,FL).
 
 flora_storage_convertlist([FLSYSDBUPDATE(P,StorageName)|Fs],
@@ -179,6 +203,16 @@ flora_storage_convertlist([FLLIBMODOBJ(FL_FIRSTORDER,F,Args,ModuleName,O)|Fs],
 	flora_storage_convertlist(Fs,CL,FL).
 
 flora_storage_convertlist([P|Fs],
-	                  [flora_storage_check_deletepredicate(P,StorageName)|CL],
-			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
+	                  [flora_storage_check_deletepredicate(P,UpdateStruct)|CL],
+			  [UpdateStruct|FL]) :-
+	%% This is a meta-programming feature.
 	flora_storage_convertlist(Fs,CL,FL).
+
+
+/*****************************************************************************
+  flora_storage_is_negation_symbol(+Functor)
+*****************************************************************************/
+flora_storage_is_negation_symbol('\+').
+flora_storage_is_negation_symbol('not').
+flora_storage_is_negation_symbol('tnot').
+flora_storage_is_negation_symbol('sk_not').

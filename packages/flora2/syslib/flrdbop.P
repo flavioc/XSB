@@ -63,8 +63,9 @@
 
 :- import
 	flora_storage_check_module_name/1,
-	flora_check_deletepredicate/2,
-	flora_storage_convertlist/3
+	flora_storage_check_deletepredicate/2,
+	flora_storage_convertlist/3,
+	flora_storage_is_negation_symbol/1
    from flrstorage.
 
 
@@ -140,24 +141,39 @@ flora_storage_insertfacts([FLLIBMODOBJ(FL_FIRSTORDER,F,Args,ModuleName,O)|T]) :-
 	  abort
 	).
 
+flora_storage_insertfacts([','(C1,C2)|T]) :-
+	!,
+	%% Break up conjunction, although insertion of conjunction is not
+	%% allowed in XSB.
+	flora_storage_insertfacts([C1,C2|T]).
+
 flora_storage_insertfacts([P|T]) :-
 	%% This is a meta programming feature, since a variable can appear
 	%% in the list of literals to be updated.
-	functor(P,F,_N),
+	functor(P,F,N),
 	( flora_decode_module_name(F,ModuleName) ->
 	    flora_storage_check_module_name(ModuleName),
 	    flora_storage_name(ModuleName,StorageName),
 	    storage_insert_fact(StorageName,P,_Inserted),
 	    flora_storage_insertfacts(T)
+
+	; N == 2, F == ';' ->
+	    flora_error_line('Insertion of disjunction is not allowed!'),
+	    abort
+
+	; N == 1, flora_storage_is_negation_symbol(F) ->
+	    flora_error_line('Insertion of negation is not allowed!'),
+	    abort
 	;
 	  flora_error_heading,
-	  flora_stderr_write(P),
+	  flora_stderr_string('Insertion of '),
 	  ( F == WRAP_HILOG ->
-	      flora_stderr_string('is a HiLog term. ')
+	      flora_stderr_string('HiLog term ')
 	  ;
-	    flora_stderr_string('is a Prolog term. ')
+	    flora_stderr_string('Prolog term ')
 	  ),
-	  flora_stderr_string('Insertion of terms into the database is not allowed'),
+	  flora_stderr_write(P),
+	  flora_stderr_string(' is not allowed!'),
 	  flora_stderr_nl,
           abort
 	).
@@ -247,6 +263,11 @@ flora_storage_deletelist([]) :- !.
 flora_storage_deletelist([FLSYSDBUPDATE(P,StorageName)|L]) :-
 	!,
 	storage_delete_fact(StorageName,P,_Deleted),
+	flora_storage_deletelist(L).
+
+flora_storage_deletelist([H|L]) :-
+	!,
+	flora_storage_deletelist(H),
 	flora_storage_deletelist(L).
 
 
@@ -344,6 +365,11 @@ flora_erase_facts([]) :- !.
 flora_erase_facts([FLSYSDBUPDATE(P,StorageName)|Fs]) :-
 	!,
 	flora_erase_one_fact(P,StorageName),
+	flora_erase_facts(Fs).
+
+flora_erase_facts([H|Fs]) :-
+	!,
+	flora_erase_facts(H),
 	flora_erase_facts(Fs).
 
 
