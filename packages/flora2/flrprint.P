@@ -54,11 +54,11 @@ flora_stdfdbk_string(Fmt,Args) :- fmt_write(STDFDBK,Fmt,Args).
 flora_stdfdbk_line(M) :- fmt_write(STDFDBK,"%s\n",args(M)).
 
 
-flora_error_heading :- flora_stderr_string("++FLORA Error: ").
+flora_error_heading :- flora_stderr_string("++Error[FLORA]: ").
 flora_error_indentline :- flora_stderr_string("               ").
 
 
-flora_warning_heading :- flora_stdwarn_string("++FLORA Warning: ").
+flora_warning_heading :- flora_stdwarn_string("++Warning[FLORA]: ").
 flora_warning_indentline :- flora_stdwarn_string("                 ").
 
 

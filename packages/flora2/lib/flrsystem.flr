@@ -46,9 +46,13 @@ libpath[#query(Path)] :-
 	!,
 	library_directory(Path)@prolog().
 libpath[#query(_Path)] :-
-	abort('libpath[#query(Path)]@flora(sys): Argument must be an atom or a variable')@prolog().
+	abort('libpath[#query(Path)]@flora(sys): Argument must be an atom or a variable')@flora(sys).
 
 
 tables[#abolish] :- abolish_all_tables@prolog().
 
-abort(X) :- flP2H(PX,X)@prolog(), abort(PX)@prolog().
+abort(X) :-
+	flP2H(PX,X)@prolog(),
+	str_cat('[Runtime] ', PX, Str)@prolog(string),
+	flora_error_line(Str)@prolog(flrprint),
+	abort@prolog().
