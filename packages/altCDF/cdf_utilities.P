@@ -16,9 +16,10 @@
 	from cdf_init_cdf.
 :- import append/3, member/2 from basics.
 :- import short_directory/2 from directry.
+:- import call0/1 from machine.
 
 %------
-call_assert(Term):- (call(Term) -> true ; asserta(Term)).
+call_assert(Term):- (call0(Term) -> true ; asserta(Term)).
 
 cdf_fix_dir(Dir,DirS) :-
 	(Dir == ''
