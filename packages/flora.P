@@ -28,7 +28,10 @@
 
 :- import bootstrap_package/2, package_configuration/2 from packaging.
 :- import '_$_$_flora_shell'/0 from usermod.
+:- import hide_this_show/2 from usermod.
 :- import slash/1 from machine.
+:- import trie_assert/1 from tables.
+:- dynamic hide_this_show(_,_).
 
 :- export bootstrap_flora/0, flora_shell/0.
 
@@ -36,7 +39,7 @@
 %% bootstrap_package will fail, if Flora is already loaded,
 %% so package_configuration won't be asserted twice.
 bootstrap_flora :-
-	bootstrap_package([flora,lib,pkgs],flora),
+	bootstrap_package([flora,lib,syslib,pkgs],flora),
 	assert(package_configuration(version(flora),'0.93 of 06/25/1999')),
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
@@ -44,9 +47,13 @@ bootstrap_flora :-
 			 f(FloraDir,S,S)),
 	[tables, LibFlrDisplay, flrutils].
 
-flora_shell :- (package_configuration(loaded(flora), yes) -> true
-	         ;   
-		   bootstrap_flora
-	       ),
-	       [flrshell],
-	       '_$_$_flora_shell'.
+%% don't show flora_shell in trace
+:- trie_assert(hide_this_show(flora_shell,0)). 
+
+flora_shell :- notrace,  %% stop any tracing
+	( package_configuration(loaded(flora), yes) -> true
+	;   
+	    bootstrap_flora
+	),
+	[flrshell],
+	'_$_$_flora_shell'.

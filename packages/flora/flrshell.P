@@ -57,13 +57,7 @@
 /*********************************************************************/
 '_$_$_flora_shell_loop' :-
 	repeat,
-	pop_abort_cutpoint,
-	push_abort_cutpoint,
-	seen,
-	see(userin),
-	told,
-	tell(userout),
-	nl, write('flora ?- '),
+	'_$_$_flora_write_shell_prompt',
 	'_$_$_flora_read_parse_compile'(static_mode,
 					[atom('$?'),atom('$-')],
 					Tokens,
@@ -86,7 +80,18 @@
 	    Rules=[query(Gs,NVs)],
 	    '_$_$_flora_print_answers'(Gs,NVs)
 	),
-	(member(eof,S) -> end ; fail).
+	'_$_$_flora_loop_guard'(S).
+
+'_$_$_flora_write_shell_prompt' :-
+	pop_abort_cutpoint,
+	push_abort_cutpoint,
+	seen,
+	see(userin),
+	told,
+	tell(userout),
+	nl, write('flora ?- ').
+
+'_$_$_flora_loop_guard'(S) :- (member(eof,S) -> end ; fail).
 
 
 /*********************************************************************/
@@ -203,6 +208,12 @@ one :-
 %% time/host dependent output. 
 chatterbox(off) :- trie_assert('_$_$_flora_switch'(no_chatter)).
 chatterbox(on) :- trie_retract_all('_$_$_flora_switch'(no_chatter)).
+
+
+/*********************************************************************/
+
+flora_trace :- [flrdebugger], '_$_$_flora_trace'.
+flora_notrace :- '_$_$_flora_notrace'.
 
 /*********************************************************************/
 end :-
