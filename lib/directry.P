@@ -46,8 +46,11 @@
 
 :- import slash/1 from machine.
 
+:- import writeln/1 from standard.
+
 :- import 'C'/3 from dcg.
 :- import findall/3 from setof.
+:- import list_directory/2 from shell.
 
 % I always want this in UNIX.
 whats_new(Directory,Date,List):-
@@ -106,6 +109,7 @@ is_directory(File):-
 	atom_codes(Permissions,[100|_]).
 
 directory(Argument,Dir):-
+	writeln(directory_called),
 	ca(['ls -l',Argument],Command),
 	sysin(Command,List),
 	date(date(Year,Month,Day,_,_,_)),
