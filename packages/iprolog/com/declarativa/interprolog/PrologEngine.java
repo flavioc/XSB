@@ -172,8 +172,6 @@ public abstract class PrologEngine{
 	
 	public void consultFromPackage(String filename,Object requester){
 		if (filename.indexOf('.')==-1) filename=filename+".P";
-		System.out.println("filename: "+filename);
-		System.out.println("requester: "+requester);
 		String path = copyToTemp(filename,requester).getPath();
 		progressMessage("consultFromPackage:"+path);
 		
