@@ -2539,8 +2539,12 @@ int gc_heap(int arity)
 
    /* An attempt to add some gc/expansion policy;
        ideally this should be user-controlled */
+
+    /* The following test is temporarily put to FALSE
+       until chat imark bits have been turned off
+    */
 #if (! defined(GC_TEST))
-     if (marked > ((hreg+1-(CPtr)glstack.low)*mark_threshold))
+     if (0 && (marked > ((hreg+1-(CPtr)glstack.low)*mark_threshold)))
       {
 #ifdef VERBOSE_GC
         xsb_dbgmsg("Heap gc - marked too much - quitting gc") ;
