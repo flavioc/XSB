@@ -58,9 +58,6 @@ extern byte call_intercept;	/* hitrace or trace_sta for efficiency */
 #define unify_float_unification_exception \
   exception_handler("! Float Unification Exception\n")
 
-#define bitop_exception(t_pcreg) \
- t_pcreg = exception_handler("! Bitop Exception\n")
-
 #define complstack_exception(t_pcreg) \
  t_pcreg = exception_handler("! Completion Stack Overflow Exception\n")
 

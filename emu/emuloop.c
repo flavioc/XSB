@@ -1161,7 +1161,9 @@ contcase:     /* the main loop */
     op2 = *(op3);
     deref(op1); 
     deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) { bitop_exception(lpcreg); }
+    if (!isinteger(op1) || !isinteger(op2)) {
+      arithmetic_abort(op2, "'>>'", op1);
+    }
     else { bld_int(op3, int_val(op2) >> int_val(op1)); }
     goto contcase; 
 
@@ -1173,7 +1175,9 @@ contcase:     /* the main loop */
     op2 = *(op3);
     deref(op1); 
     deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) { bitop_exception(lpcreg); }
+    if (!isinteger(op1) || !isinteger(op2)) {
+      arithmetic_abort(op2, "'<<'", op1);
+    }
     else { bld_int(op3, int_val(op2) << int_val(op1)); }
     goto contcase; 
 
@@ -1185,7 +1189,9 @@ contcase:     /* the main loop */
     op2 = *(op3);
     deref(op1); 
     deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) { bitop_exception(lpcreg); }
+    if (!isinteger(op1) || !isinteger(op2)) {
+      arithmetic_abort(op2, "'\\/'", op1);
+    }
     else { bld_int(op3, int_val(op2) | int_val(op1)); }
     goto contcase; 
 
@@ -1197,7 +1203,9 @@ contcase:     /* the main loop */
     op2 = *(op3);
     deref(op1); 
     deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) { bitop_exception(lpcreg); }
+    if (!isinteger(op1) || !isinteger(op2)) {
+      arithmetic_abort(op2, "'/\\'", op1);
+    }
     else { bld_int(op3, int_val(op2) & int_val(op1)); }
     goto contcase; 
 
@@ -1207,7 +1215,7 @@ contcase:     /* the main loop */
     pad64;
     op2 = *(op3);
     deref(op2);
-    if (!isinteger(op2)) { bitop_exception(lpcreg); }
+    if (!isinteger(op2)) { arithmetic_abort1("'\\'", op2); }
     else { bld_int(op3, ~(int_val(op2))); }
     goto contcase; 
 

@@ -60,7 +60,7 @@ void xsb_abort(char *description, ...)
 
   va_start(args, description);
 
-  strcpy(message, "\n++Error: ");
+  strcpy(message, "++Error: ");
   vsprintf(message+strlen(message), description, args);
   if (message[strlen(message)-1] != '\n')
     strcat(message, "\n");
@@ -94,12 +94,23 @@ void arithmetic_abort(Cell op1, char *OP, Cell op2)
   }
 }
 
+void arithmetic_abort1(char *OP, Cell op)
+{
+  int  index = 0;
+  char str_op[30];
+  
+  print_pterm(op, 1, str_op, &index);
+  xsb_abort("%s evaluable function %s/2\n%s %s(%s) %s",
+	    (isref(op) ? "Uninstantiated argument of" : "Wrong domain in"),
+	    OP, "   Goal:", OP, str_op, ", probably as 2nd arg of is/2");  
+}
+
 void arithmetic_comp_abort(Cell op1, char *OP, int op2)
 {
-  int  index;
+  int  index = 0;
   char str_op1[30];
 
-  index = 0; print_pterm(op1, 1, str_op1, &index);
+  print_pterm(op1, 1, str_op1, &index);
   xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
 	    (isref(op1) ? "Uninstantiated argument of" : "Wrong type in"),
 	    OP, "   Goal:", str_op1, OP, op2);
