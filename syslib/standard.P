@@ -991,7 +991,6 @@ abort :-
         close_open_tables, 
 	'_$cutto'(Cp), 
 	reset_undef_pred_handlers,
-	seen, told,
 	fail.
 
 
