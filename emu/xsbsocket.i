@@ -32,18 +32,16 @@
 #endif
 
 #ifndef WIN_NT
-#if defined(HAVE_SOCKET) || defined(HAVE_GETHOSTBYNAME)
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif /* HAVE_SOCKET */
 #endif /* WIN_NT */
 
 #include "xsbsocket.h"
 
-#if defined(HAVE_SOCKET) && defined(WIN_NT)
+#ifdef WIN_NT
 int readmsg(SOCKET sockfd, char *buff, int maxbuff)
 {
   int n, rc;
