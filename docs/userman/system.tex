@@ -893,17 +893,17 @@ The following options are currently recognized by the compiler:
   asserting into the predicate \verb|xpp_include_dir/1|, {\bf which should
     be imported from module} {\tt parse}.
   
-  Note that when compiling XSB programs, GPP {\bf does not} search the
-  current directory or the directory of the parent file that contains the
-  include-directive. If you want the current directory to be searched, then
-  the following statements must be executed:
+  Note that when compiling XSB programs, GPP searches the current directory
+  and the directory of the parent file that contains the include-directive
+  \emph{last}. If you want additional directories to be searched, then the
+  following statements must be executed:
 %%
 \begin{verbatim}
     :- import xpp_include_dir/1 from parse.
-    :- assert(xpp_include_dir('.')).
+    :- assert(xpp_include_dir('some-other-dir')).
 \end{verbatim}
 %%
-  If you want Gpp to search the directory of the parent file, then
+  If you want Gpp to search directories in a different order,
   {\tt xpp\_options/1} can be used (see below).
 
    Note: if you assert something into this predicate then you must also {\tt
