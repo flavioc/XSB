@@ -1,5 +1,5 @@
 \section{Modification of the Database} \label{sec:assert}
-
+%========================================================
 XSB provides an array of features for modifying the dynamic database.
 Using {\tt assert/1}, clauses can be asserted using first-argument
 indexing in a manner that is now standard to Prolog implementations.
@@ -467,26 +467,21 @@ predicate to be tabled.
 
     For example, the call:
 
-% JF
-%    \demo{\verb+| ?- unix('echo \$HOME').+}
     \demo{{\tt $|$ ?- unix('echo \$HOME').}}
 
     \noindent
     will output in the current output stream of \ourprolog\ the name of
     the user's home directory; while the call:
 
-% JF
-%   \demo{\verb+| ?- File = 'test.c', unix(['cc -c ', File]).+}
     \demo{{\tt $|$ ?- File = 'test.c', unix(['cc -c ', File]).}}
 
     \noindent
     will call the C compiler to compile the file {\tt test.c}.
 
-    Note that in UNIX systems, since {\tt unix/1} is executed by forking 
-    off a shell process,
-    it cannot be used, for example, to change the working directory of the 
-    interpreter.  For that reason the standard predicate {\tt cd/1} described 
-    below should be used.
+    Note that in UNIX systems, since {\tt unix/1} is executed by
+    forking off a shell process, it cannot be used, for example, to
+    change the working directory of the interpreter.  For that reason
+    the standard predicate {\tt cd/1} described below should be used.
 
 %    {\em Note to DOS users.} \index{DOS}  The {\tt unix/1} command works
 %    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
@@ -562,8 +557,8 @@ predicate to be tabled.
 %need op (just so we dont forget ???
 
 
-\section{Tabling}\label{tabling_predicates}
-
+\section{Tabling} \label{tabling_predicates}
+%===========================================
 In XSB, tables are designed so that they can be used transparently by
 computations.  However, it is often useful to be able to explicitly
 inspect a table, or to alter its state.  In the following predicates,
@@ -575,9 +570,10 @@ any instantiation pattern.  Thus the information derived from the
 skeletons {\em p(1,2)} and {\em p(A,B)} would be the same.
 
 The user should be aware that skeletons which are dynamically created
-(e.g. by {\tt functor/3}) are located in usermod.  In such a case, the
-tabling predicates below may not behave in the desired manner if the
-tabled predicates themselves have not been imported into usermod.
+(e.g. by {\tt functor/3}) are located in {\tt usermod}
+(cf. Section~\ref{Modules}).  In such a case, the tabling predicates
+below may not behave in the desired manner if the tabled predicates
+themselves have not been imported into {\tt usermod}.
 
 \begin{description}
 
@@ -666,12 +662,14 @@ calls to {\tt get\_calls/3} will act as follows
 
 \ournewitem{get\_call(+Skeleton,-Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}
 \index{{\tt get\_call/3}}
+%
 This predicate binds {\tt Subgoal\_Structure\_Pointer} and {\tt
-Return\_Skeleton} only if {\tt Skeleton} is a variant of some entry in
-the subgoal table.  It may be compared to the previous predicate {\tt
-get\_call/3} which {\em unifies} {\tt Skeleton} with entries in the
-subgoal trie.  Repeating the example from {\tt get\_calls/3}, calls to
-{\tt get\_call/3} will act as follows
+Return\_Skeleton} only if {\tt Skeleton} is a variant (i.e., identical
+up to variable renaming) of some entry in the subgoal table.  It may
+be compared to the previous predicate {\tt get\_call/3} which {\em
+unifies} {\tt Skeleton} with entries in the subgoal trie.  Repeating
+the example from {\tt get\_calls/3}, calls to {\tt get\_call/3} will
+act as follows
 
 %
 {\footnotesize 
@@ -700,43 +698,37 @@ subgoal trie.  Repeating the example from {\tt get\_calls/3}, calls to
 	\end{verbatim}
 	}
 
-\ournewitem{get\_calls\_for\_table(+Skeleton,-Call,-Empty)}{Tabling}\index{{\tt get\_table\_pred/3}}
+\ournewitem{get\_calls\_for\_table(+Skeleton,-Call)}{Tabling}\index{{\tt get\_calls\_for\_table/2}}
 Succeeds whenever {\tt Skeleton} unfies with an entry in the subgoal
 table.  When this predicate suceeds, it returns a variant of the call
-entry with which {\tt Skeleton} unifies, along with an atom which is a
-member of the set
-\begin{center}
-\{ {\tt empty, notempty} \}.
-\end{center}
-indicating whether the table is empty or non-empty.  
+entry with which {\tt Skeleton} unifies.  
 
 This predicate does not provide any information about whether a table is
 complete.  Use {\tt table\_state} to inquire about a table's state.
 
 \noindent
-Calls to {\tt get\_calls\_for\_table/3} for the example in {\tt
+Calls to {\tt get\_calls\_for\_table/2} for the example in {\tt
 get\_calls/3} would act as follows 
 %
 {\footnotesize
 \begin{verbatim} 
 
-                   |?- get_calls_for_table(p(X,Y), Call, Empty).  
+                   |?- get_calls_for_table(p(X,Y), Call).  
                    X = _646608 
                    Y = _646436
-                   Call = p(1,_646724) 
-                   Empty = notempty;
+                   Call = p(1,_646724) ;
 
                    X = _646608
                    Y = _646436
-                   Call = p(_646720,3)
-                   Empty = notempty
+                   Call = p(_646720,3) ;
 
-                   | ?- get_calls_for_table(p(1,2), Call, Empty).
+                   no
+                   | ?- get_calls_for_table(p(1,2), Call).
                    Call = p(1,_646676)
-                   Empty = notempty
 
-                   Call = p(_646672,3)
-                   Empty = notempty
+                   Call = p(_646672,3) ;
+
+                   no
      \end{verbatim}
      }
 The second example backtracks through all entries in the table, since
@@ -744,13 +736,12 @@ only skeletal information is used from the first argument.
 
 Exception:
     \begin{description}
+    \item[{\tt instantiation\_error}]
+	First argument is not instantiated.
     \item[{\tt table\_error}]
-	First argument is not callable.
+	First argument is not a tabled predicate.
     \end{description}
 
-% qtls this had been fixed, and will be again soon.
-%{\bf Release Note:} In future versions, this predicate may be changed to 
-%allow partial instantiation of the second argument. 
 
 \ournewitem{get\_returns(+Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}\index{{\tt get\_returns/2}}
 Backtracks through the answer trie for the subgoal whose {\tt subgoal structure}
@@ -791,6 +782,7 @@ get\_calls/3} is as follows
 Same as above, except for the fact that the third argument is bound
 to the leaf node corresponding to the return in the return trie.
 
+
 \ournewitem{get\_returns\_for\_call(+Call,-Return)}{Tabling}\index{{\tt get\_returns\_for\_call/2}}
 Succeeds whenever there is a table entry for a variant of {\tt Call}.
 If this is the case, {\tt Return} is instantiated with an entry for
@@ -829,18 +821,16 @@ Let us continue from the example in {\tt get\_calls\_for\_table/3}.
 
 Exception:
     \begin{description}
+    \item[{\tt instantiation\_error}]
+	First argument is not instantiated.
     \item[{\tt table\_error}]
-	Argument 1 is not a callable predicate.
+	First argument is not a tabled predicate.
     \end{description}
-
-% qtls this had been fixed, and will be again soon.
-%{\bf Release Note:} In future versions, this predicate may be changed to 
-%allow partial instantiation of the second argument. 
 
 
 \ournewitem{get\_residual(?Skeleton,?Delay\_list)}{Tabling}
 \index{{\tt get\_residual/2}}
-
+%
 {\tt get\_residual/2} is used to backtrack through answers that unify
 with a skeleton.  These answers may in fact come from any call that
 unifies with {\tt Skeleton}.  Since the {\tt Delay\_list} of an answer
@@ -920,32 +910,42 @@ exceptions and when the interpreter level is resumed.  In these cases,
 the user does not need to abolish tables to maintain correctness.
 
 
-\ournewitem{abolish\_table\_pred(?Skeleton)}{Tabling}\index{{\tt abolish\_table\_pred/1}}
-{\tt abolish\_table\_pred/1} abolishes tables for all calls to the
-predicate denoted by {\em Skeleton}.  The predicate remains
-tabled, but information about its calls and their returns is removed
-from the system.  In \version, {\tt abolish\_table\_pred/1}
-reclaims used space.  Note that incomplete tables are abolished automatically
-by the system on exceptions and when the interpreter level is resumed.
+\ournewitem{abolish\_table\_pred(+PredSpecification \emph{or}
++Skeleton)}{Tabling}\index{{\tt abolish\_table\_pred/1}}
+%
+Predicate {\tt abolish\_table\_pred/1} abolishes tables for all calls
+to the predicate denoted by {\em PredSpecification} (as in {\tt
+path/2}) or by {\em Skeleton} (as in {\tt path(X,Y)}).  The predicate
+remains tabled, but information about its calls and their returns is
+removed from the system.  In \version, {\tt abolish\_table\_pred/1}
+reclaims the space used by the calls to this predicate (and their
+answers).  Note that incomplete tables are abolished automatically by
+the system on exceptions and when the interpreter level is resumed.
 In these cases, the user does not need to abolish tables to maintain
 correctness.
 
 Exception:
     \begin{description}
+    \item[{\tt instantiation\_error}]
+	Argument is a variable.
+    \item[{\tt type\_error}]
+	Argument is not a predicate specification of a callable term.
     \item[{\tt table\_error}]
-        Not a tabled predicate.
+        Argument is not a (specification of a) tabled predicate.
     \end{description}
 
 
 \ournewitem{abolish\_table\_call(?Call)}{Tabling}
 \index{{\tt abolish\_table\_call/1}}
-{\tt abolish\_table\_call/1} abolishes tables for a particular call to
-a predicate denoted by {\em Call}.  The predicate remains tabled, and
-information about all other tables remains intact.  In \version, {\tt
-abolish\_table\_call/1} does not reclaim used space.  Note that incomplete
-tables are abolished automatically by the system on exceptions and
-when the interpreter level is resumed.  In these cases, the user does
-not need to abolish tables to maintain correctness.
+%
+Predicate {\tt abolish\_table\_call/1} abolishes tables for a
+particular call to a predicate denoted by {\em Call}.  The predicate
+remains tabled, and information about all other tables remains intact.
+In \version, {\tt abolish\_table\_call/1} does not reclaim used space.
+Note that incomplete tables are abolished automatically by the system
+on exceptions and when the interpreter level is resumed.  In these
+cases, the user does not need to abolish tables to maintain
+correctness.
 
 Example:
 
