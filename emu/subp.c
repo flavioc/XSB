@@ -44,6 +44,10 @@
 #include <string.h>
 #endif
 
+#define _REENTRANT
+#include <pthread.h>
+#include <sched.h>
+#include <errno.h>
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
@@ -743,19 +747,28 @@ xsbBool startInterruptThread(SOCKET intSocket)
 #endif
   return 1;
 }
+#endif
+
 
 extern long if_profiling;
 extern long prof_flag;
 extern long prof_unk_count;
 extern long prof_total;
 
-void setProfileBit() {
+void setProfileBit(void *ptr) {
+  printf("Entered sleeper\n");
   while (TRUE) {
     if (if_profiling) asynint_val |= PROFINT_MARK;
+#ifdef WIN_NT
     Sleep(10);
+#else
+    sleep(0.01);
+#endif
   }
 }
 
+
+#ifdef WIN_NT
 xsbBool startProfileThread()
 {
   HANDLE Thread;
@@ -768,5 +781,22 @@ xsbBool startProfileThread()
   prof_total = 0;
   return TRUE;
 }
+#else
+xsbBool startProfileThread()
+{
+  pthread_t Thread;
+  struct sched_param schedparam;
+  int err;
 
+  if (!if_profiling) {
+    err = pthread_create(&Thread,NULL,(void *)&setProfileBit,(void *)NULL);
+    printf("err=%s\n",strerror(errno));
+    //  schedparam.sched_priority = 100; //sched_get_priority_max(SCHED_OTHER);
+    //    pthread_setschedparam(Thread,SCHED_OTHER,&schedparam);
+    if_profiling = 1;
+  }
+  prof_unk_count = 0;
+  prof_total = 0;
+  return TRUE;
+}
 #endif
