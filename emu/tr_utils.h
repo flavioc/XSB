@@ -28,7 +28,6 @@ extern void construct_ret_for_call(void);
 extern void delete_predicate_table(BTNptr);
 extern void reclaim_del_ret_list(SGFrame);
 extern void delete_return(BTNptr, SGFrame);
-extern void reclaim_ans_list_nodes(SGFrame);
 extern CPtr get_subgoal_ptr(Cell, TIFptr);
 extern void init_newtrie(void);
 extern void delete_branch(BTNptr, BTNptr *);
