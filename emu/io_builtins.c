@@ -47,12 +47,16 @@
 #include "flags.h"
 #include "inst.h"
 #include "token.h"
+#include "loader.h" /* for ZOOM_FACTOR */
+#include "subp.h"
 #include "tries.h"
 #include "choice.h"
 #include "xmacro.h"
 #include "io_builtins.h"
 #include "configs/special.h"
 #include "binding.h"
+#include "deref.h"
+#include "findall.h"
 
 FILE *open_files[MAX_OPEN_FILES]; /* open file table */
 
@@ -61,12 +65,12 @@ extern void print_pterm(prolog_term term,
 
 static FILE *fptr;			/* working variable */
     
-#define setvar(op1) \
+#define setvar(loc,op1) \
     if (vars[opstk[op1].op].varval) \
-       cell(sreg) = vars[opstk[op1].op].varval; \
+       cell(loc) = vars[opstk[op1].op].varval; \
     else { \
-	     cell(sreg) = (Cell) sreg; \
-	     vars[opstk[op1].op].varval = (Cell) sreg; \
+	     cell(loc) = (Cell) loc; \
+	     vars[opstk[op1].op].varval = (Cell) loc; \
 	 }
 
 struct fmt_spec {
@@ -640,6 +644,11 @@ static Psc prevpsc = 0;
 
 
 /* ----- handle read_cannonical errors: print msg and scan to end -----	*/
+/***
+reallocate op stack.
+add clear findall stack at toploop
+***/
+static int findall_chunk_index;
 
 static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
 {
@@ -671,6 +680,7 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
     fprintf(stderr,".\n");
   else
     fprintf(stderr,"\n");
+  findall_free(findall_chunk_index) ;
   ctop_string(2,(char *)string_find("read_canonical_error",1));
   ctop_int(3,0);
   return TRUE;
@@ -685,8 +695,11 @@ int read_canonical(void)
 {
   FILE *filep;
   STRFILE *instr;
-  int prevchar, arity, i;
-  Cell op1, j;
+  int prevchar, arity, i, size;
+  /* findall_solution_list *p; */
+  CPtr h, this_term, prev_tail;
+  Cell op1, j, arg2;
+#define OPSTK_SIZE 1000
 #define FUNFUN 0
 #define FUNLIST 1
 #define FUNDTLIST 2
@@ -694,16 +707,16 @@ int read_canonical(void)
     char *fun;		/* functor name */
     Integer funop;	/* index into opstk of first operand */
 	int funtyp;		/* 0 if functor, 1 if list, 2 if dotted-tail list */
-  } funstk[400];
+  } funstk[OPSTK_SIZE];
   Cell funtop = 0;
 
   struct opstktype {
     int typ;
     prolog_term op;
-  } opstk[400];
+  } opstk[OPSTK_SIZE];
   Cell optop = 0;
 
-#define MAXVAR 400
+#define MAXVAR 1000
   struct vartype {
     Cell varid;
     prolog_term varval;
@@ -731,86 +744,113 @@ int read_canonical(void)
     instr = NULL;
     SET_FILEPTR(filep, tempfp);
   }
+  /* get findall buffer to read term into */
+  findall_chunk_index = findall_init_c();
+  current_findall = findall_solutions + findall_chunk_index;
+  if (current_findall->tail == 0)
+	xsb_exit("internal error 1 in read_canonical(findall)") ;
+  h = current_findall->top_of_chunk ;
+  size = 0;
 
   prevchar = 10;
-
   while (1) {
 	token = GetToken(filep,instr,prevchar);
 /*	print_token((int)(token->type),(char *)(token->value)); */
 	prevchar = token->nextch;
 	if (postopreq) {  /* must be an operand follower: , or ) or | or ] */
-      if (token->type == TK_PUNC) {
+	    if (token->type == TK_PUNC) {
 		if (*token->value == ')') {
 		  funtop--;
 		  if (funstk[funtop].funtyp != FUNFUN)	/* ending a list, oops */
 		    return read_can_error(filep,instr,prevchar);
 		  arity = optop - funstk[funtop].funop;
-		  sreg = hreg;
+		  if ((h+arity+1) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
+			if (!get_more_chunk()) return(0) ;
+			h = current_findall->top_of_chunk ;
+		  }
+		  this_term = h;
 		  op1 = funstk[funtop].funop;
 		  if ((arity == 2) && !(strcmp(funstk[funtop].fun,"."))) {
-			if (opstk[op1].typ == TK_VAR) { setvar(op1) }
-			else cell(sreg) = opstk[op1].op;
-			sreg++;
-			if (opstk[op1+1].typ == TK_VAR) { setvar(op1+1) }
-			else cell(sreg) = opstk[op1+1].op;
-			sreg++;
-			opstk[op1].op = makelist(hreg);
+			if (opstk[op1].typ == TK_VAR) { setvar(h,op1) }
+			else cell(h) = opstk[op1].op;
+			h++;
+			if (opstk[op1+1].typ == TK_VAR) { setvar(h,op1+1) }
+			else cell(h) = opstk[op1+1].op;
+			h++;
+			opstk[op1].op = makelist(this_term);
 			opstk[op1].typ = TK_FUNC;
+			size += 2;
 		  } else {
+		        size += arity+1;
 			sym = (Pair)insert(funstk[funtop].fun,(char)arity,
 				       (Psc)flags[CURRENT_MODULE],&i);
-			new_heap_functor(sreg, sym->psc_ptr);
-			for (j=op1; j<optop; sreg++,j++) {
-			  if (opstk[j].typ == TK_VAR) { setvar(j) }
-			  else cell(sreg) = opstk[j].op;
+			new_heap_functor(h, sym->psc_ptr);
+			for (j=op1; j<optop; h++,j++) {
+			  if (opstk[j].typ == TK_VAR) { setvar(h,j) }
+			  else cell(h) = opstk[j].op;
 			}
-			opstk[op1].op = makecs(hreg);
+			opstk[op1].op = makecs(this_term);
 			opstk[op1].typ = TK_FUNC;
 		  }
 		  optop = op1;
 		  optop++;
-		  hreg += arity + 1;
 		} else if (*token->value == ']') {	/* end of list */
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN)
 			return read_can_error(filep,instr,prevchar);
-		  sreg = hreg;
+		  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
+			if (!get_more_chunk()) return(0) ;
+			h = current_findall->top_of_chunk ;
+		  }
+		  this_term = h;
 		  op1 = funstk[funtop].funop;
 
-		  if (opstk[op1].typ == TK_VAR) { setvar(op1) }
-		  else cell(sreg) = opstk[op1].op;
-		  sreg++;
+		  if (opstk[op1].typ == TK_VAR) { setvar(h,op1) }
+		  else cell(h) = opstk[op1].op;
+		  h++;
+		  size += 2;
 		  if ((op1+1) == optop) {
-			cell(sreg) = makenil;
-			sreg++;
+			cell(h) = makenil;
+			h++;
 		  } else {
+			prev_tail = h;
+			h++;
 			for (j=op1+1; j<optop-1; j++) {
-			  cell(sreg) = makelist(sreg+1);
-			  sreg++;
-			  if (opstk[j].typ == TK_VAR) { setvar(j) }
-			  else cell(sreg) = opstk[j].op;
-			  sreg++;
+			  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
+				if (!get_more_chunk()) return(0) ;
+				h = current_findall->top_of_chunk ;
+			  }
+			  cell(prev_tail) = makelist(h);
+			  if (opstk[j].typ == TK_VAR) { setvar(h,j) }
+			  else cell(h) = opstk[j].op;
+			  h++;
+			  prev_tail = h;
+			  h++;
+			  size += 2;
 			}
 			j = optop-1;
 			if (funstk[funtop].funtyp == FUNLIST) {
-			  cell(sreg) = makelist(sreg+1);
-			  sreg++;
-			  if (opstk[j].typ == TK_VAR) { setvar(j) }
-			  else cell(sreg) = opstk[j].op;
-			  sreg++;
-			  cell(sreg) = makenil;
-			  sreg++;
+			  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
+				if (!get_more_chunk()) return(0) ;
+				h = current_findall->top_of_chunk ;
+			  }
+			  cell(prev_tail) = makelist(h);
+			  if (opstk[j].typ == TK_VAR) { setvar(h,j) }
+			  else cell(h) = opstk[j].op;
+			  h++;
+			  prev_tail = h;
+			  h++;
+			  cell(prev_tail) = makenil;
+			  size += 2;
 			} else {
-			  if (opstk[j].typ == TK_VAR) { setvar(j) }
-			  else cell(sreg) = opstk[j].op;
-			  sreg++;
+			  if (opstk[j].typ == TK_VAR) { setvar(prev_tail,j) }
+			  else cell(prev_tail) = opstk[j].op;
 			}
 		  }
-		  opstk[op1].op = makelist(hreg);
+		  opstk[op1].op = makelist(this_term);
 		  opstk[op1].typ = TK_FUNC;
 		  optop = op1;
 		  optop++;
-		  hreg = sreg;
 		} else if (*token->value == ',') {
 		  postopreq = FALSE;
 		} else if (*token->value == '|') {
@@ -841,7 +881,8 @@ int read_canonical(void)
 			/* print_token(token->type,token->value); */
 			prevchar = token->nextch;
 			opstk[optop].typ = TK_ATOM;
-			opstk[optop++].op = makenil;
+			opstk[optop].op = makenil;
+			optop++;
 			postopreq = TRUE;
 		  } else {	/* beginning of a list */
 			funstk[funtop].funop = optop;
@@ -920,8 +961,17 @@ int read_canonical(void)
       prevchar = token->nextch;
       if (token->type != TK_EOC) return read_can_error(filep,instr,prevchar);
       term = opstk[0].op;
-      ctop_tag(2,term);
-      if (varfound || 
+
+      /* p = findall_solutions + findall_chunk_index;*/
+	  check_glstack_overflow(3, pcreg, size*sizeof(Cell)) ;
+	  /*printf("checked overflow: size: %d\n",size*sizeof(Cell));*/
+	  arg2 = (Cell)Areg(2);
+	  deref(arg2);
+	  gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
+	  findall_copy_to_heap(term,(CPtr)arg2,&hreg) ; /* this can't fail */
+	  findall_free(findall_chunk_index) ;
+
+       if (varfound || 
 			(isconstr(term) && !strcmp(":-",get_name(get_str_psc(term)))) ||
 			isstring(term)) {
 		ctop_int(3,0);
@@ -933,6 +983,7 @@ int read_canonical(void)
 		prevpsc = get_str_psc(term);
 		ctop_int(3,0);
       }
+contcase:
       return TRUE;
     }
   }

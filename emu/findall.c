@@ -48,6 +48,10 @@
 findall_solution_list *findall_solutions = NULL;
 findall_solution_list *current_findall;
 
+static int MAX_FINDALLS = 250 ;	/* make it larger if you want */
+
+static int nextfree ; /* nextfree index in findall array */
+
 CPtr gl_bot, gl_top ;
 #define on_glstack(p) ((gl_bot <= p) && (p < gl_top))
 

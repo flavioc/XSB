@@ -53,9 +53,6 @@ findall_clean should be called at the start of every toplevel.
 */
 
 #define FINDALL_CHUNCK_SIZE 4000 /* anything > MAX_ARITY+2 is good */
-static int MAX_FINDALLS = 250 ;	/* make it larger if you want */
-
-static int nextfree ; /* nextfree index in findall array */
 
 /*
 one invocation of findall is associated with one entry in the findall_solutions
