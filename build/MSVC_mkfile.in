@@ -165,6 +165,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\psc_xsb.obj"
 	-@erase "$(OBJDIR)\private_builtin.obj"
 	-@erase "$(OBJDIR)\random_xsb.obj"
+	-@erase "$(OBJDIR)\remove_unf.obj"
 	-@erase "$(OBJDIR)\residual.obj"
 	-@erase "$(OBJDIR)\scc_xsb.obj"
 	-@erase "$(OBJDIR)\slgdelay.obj"
@@ -226,6 +227,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/psc_xsb.obj" \
 	"$(OBJDIR)/private_builtin.obj" \
 	"$(OBJDIR)/random_xsb.obj" \
+	"$(OBJDIR)/remove_unf.obj" \
 	"$(OBJDIR)/residual.obj" \
 	"$(OBJDIR)/scc_xsb.obj" \
 	"$(OBJDIR)/slgdelay.obj" \
