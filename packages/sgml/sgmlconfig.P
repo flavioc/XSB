@@ -35,7 +35,7 @@
 make_sgmlH(CC, CC_opts) :-
 	slash(Slash),
 	xsb_configuration(configuration, XSBconfiguration),
-	(running_under(unix) ->
+	((running_under(unix) ; running_under(darwin)) ->
 	    xsb_configuration(loader_flags, LoaderFlags),
 	    LD_flags = LoaderFlags
 	; %% Cygwin. Under Windows this option is ignored

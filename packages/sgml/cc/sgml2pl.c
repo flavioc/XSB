@@ -95,7 +95,7 @@ typedef struct _parser_data
 } parser_data;
 
 
-dtd_parser * parser_error;
+dtd_parser * parser_error = NULL;
 
 #include "error.c"
 
