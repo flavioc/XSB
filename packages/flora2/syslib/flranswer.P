@@ -79,12 +79,17 @@ fllibshellans(Gs,NVs) :-
 
 /********************************************************************/
 fllibprogramans(Gs,NVs) :-
+	flora_print_all(Gs,NVs).
+/* The business of getting just one answer from a program query 
+ * needs to be rethought. */
+/*
 	flora_switch(all),
 	!,
 	flora_print_all(Gs,NVs).
 
 fllibprogramans(Gs,NVs) :-
 	flora_print_one(Gs,NVs).
+*/
 
 
 /********************************************************************
