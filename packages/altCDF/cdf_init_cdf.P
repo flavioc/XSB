@@ -334,8 +334,15 @@ skeleton(cid(Nid,Src),cid(Nid1,Src)):-
 skeleton(oid(Nid,Src),oid(Nid1,Src)):- 
 	functor(Nid,T,A),
 	functor(Nid1,T,A).
+skeleton(rid(Nid,Src),rid(Nid1,Src)):- 
+	functor(Nid,T,A),
+	functor(Nid1,T,A).
 
 term_isa(cid(Term1,Src),cid(Term2,Src)):- 
+	Term1 =.. [F|R1],
+	Term2 =.. [F|R2],
+	term_isa_list(R1,R2).
+term_isa(rid(Term1,Src),rid(Term2,Src)):- 
 	Term1 =.. [F|R1],
 	Term2 =.. [F|R2],
 	term_isa_list(R1,R2).
