@@ -655,8 +655,8 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
  * The returned value of this function is the leaf of the answer trie.  
  *----------------------------------------------------------------------*/
 
-BTNptr variant_answer_search(int arity, CPtr cptr, SGFrame subgoal_ptr,
-			     bool *flagptr) {
+BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
+			     SGFrame subgoal_ptr, bool *flagptr) {
 
     Psc   psc;
     CPtr  xtemp1;

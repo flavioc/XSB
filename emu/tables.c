@@ -147,7 +147,7 @@ BTNptr table_answer_search(SGFrame producer, int size, int attv_num,
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 #endif /* IGNORE_DELAYVAR */
 
-    answer = variant_answer_search(size,template,attv_num,producer,&wasFound);
+    answer = variant_answer_search(size,attv_num,template,producer,&wasFound);
 
 #ifdef DEBUG_DELAYVAR
 #ifndef IGNORE_DELAYVAR

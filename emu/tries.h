@@ -305,7 +305,7 @@ extern void     variant_call_search(TabledCallInfo *, CallLookupResults *);
 extern BTNptr   one_term_chk_ins(CPtr, BTNptr, int *);
 extern BTNptr   whole_term_chk_ins(Cell, BTNptr *, int *);
 extern BTNptr	get_next_trie_solution(ALNptr *);
-extern BTNptr	variant_answer_search(int, CPtr, struct subgoal_frame *,
+extern BTNptr	variant_answer_search(int, int, CPtr, struct subgoal_frame *,
 				      bool *);
 extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
 extern void     undo_answer_bindings(void);
