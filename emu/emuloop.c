@@ -296,6 +296,7 @@ int  xctr;
 #ifndef LOCAL_EVAL 
 #include "wfs_xsb_i.h" 
 #endif 
+#include "complete_local.h"
 
 /*----------------------------------------------------------------------*/
 

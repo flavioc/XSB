@@ -22,7 +22,8 @@
 ** $Id$
 ** 
 */
-
+#ifndef __CHOICE_H__
+#define __CHOICE_H__
 
 /* --- Types of Choice Points ----------------------------------------- */
 
@@ -490,4 +491,6 @@ typedef struct compl_susp_choice_point {
     if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg; \
     cpreg = cp_cpreg(t_breg); \
     t_ereg = cp_ereg(t_breg)
+#endif
+
 #endif
