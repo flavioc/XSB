@@ -392,7 +392,13 @@ abolish_table_predicate(Predicate) :- abolish_table_predicate(Predicate).
 
 abolish_table_call(Call) :-
 	get_calls(Call,Handle,_Template),
-	abolish_table_call_bi(Handle).
+	table_state(Handle,PredType,_CallType,_AnsSetStatus),
+	(   PredType = subsumptive
+	->  throw(error(table_error(abolishing_subsumptive_call)))
+	;   abolish_table_call_bi(Handle)
+	),
+	fail.
+abolish_table_call(_Call).
 
 abolish_table_call_bi(_Handle) :-
 	'_$builtin'(ABOLISH_TABLE_CALL).
