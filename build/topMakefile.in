@@ -165,10 +165,10 @@ emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	    make depend; \
 	    rm -f $(srcdir)/build/.xsb_build_failed; \
 	    (make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) || \
-	                ./touch.sh $(srcdir)/build/.xsb_build_failed) \
+	        $(srcdir)/build/touch.sh $(srcdir)/build/.xsb_build_failed) \
 		2>&1 | tee -a ../build/Installation_summary; \
 	    (test ! -f $(srcdir)/build/.xsb_build_failed || \
-	                    (rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
+	                (rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
 
 gpp:
 	cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
