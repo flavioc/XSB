@@ -82,12 +82,8 @@
 :- dynamic attribute_object_int/6.
 
 :- ensure_loaded(oms_db_updatable).
-:- dynamic oms_extint_updatable/1.
-:- dynamic retractall_object_int/4.
-:- dynamic newObject_int/5.
-:- dynamic retractall_memberof_int/2.
-:- dynamic retractall_attribute_int/3.
-:- dynamic newAttribute_int/3.
+:- dynamic assert_oms_int/1.
+:- dynamic retractall_oms_int/1.
 
 :- dynamic cn_id_map/4.
 :- index(cn_id_map/4,[1,3+4],5001).
@@ -1611,11 +1607,6 @@ matching the parameters from oms_obj/4 facts.  It does not affect
 @pred{object_int/3} facts.  ").
 
 retractall_object(Oid,Name,Native_Id,Source) :-
-	ob_id_map(Oid,Name,Native_Id,Source),
-	oms_extint_updatable(Source),
-	!,
-	retractall_object_int(Oid,Name,Native_Id,Source).
-retractall_object(Oid,Name,Native_Id,Source) :-
 	retractallObject(Oid,Name,Native_Id,Source).
 
 retractallObject(Oid,Name,Native_Id,Source) :-
@@ -1630,11 +1621,6 @@ its newly created object ID.
 If the new object @tt{NatOid} is non-atomic, a check is made to ensure
 that it is conformable with @tt{Cid}.").
 
-newObject(Name,Cid,NatOid,Source,Oid) :-
-	nonvar(Source),
-	oms_extint_updatable(Source),
-	!,
-	newObject_int(Name,Cid,NatOid,Source,Oid).
 newObject(Name,Cid,NatOid,Source,Oid) :-
 	newObject(Name,Cid,NatOid,Source,Oid,Updates,[]),
 	oms_update_list(Updates).
@@ -1819,12 +1805,6 @@ retractall_memberof(Oid,Cid) :-
 	retractallMemberof(Oid,Cid).
 
 retractallMemberof(Oid,Cid) :-
-	nonvar(Oid),
-	object(Oid,_,_NOid,Source),
-	oms_extint_updatable(Source),
-	!,
-	retractall_memberof_int(Oid,Cid).
-retractallMemberof(Oid,Cid) :-
 	oms_update_list([retractall(oms_mo(Oid,Cid))]).
 
 :- comment(newMemberof/2, "@tt{newMemberof(CCid,PCid)} adds object
@@ -1974,12 +1954,6 @@ retractall_attribute(Oid,RCid,TCid) :-
 	retractallAttribute(Oid,RCid,TCid).
 
 retractallAttribute(Oid,RCid,TCid) :-
-	nonvar(Oid),
-	ob_id_map(Oid,_Name,_NatId,Source), % object must exist
-	oms_extint_updatable(Source),
-	!,
-	retractall_attribute_int(Oid,RCid,TCid).
-retractallAttribute(Oid,RCid,TCid) :-
 	oms_update_list([retractall(oms_at(Oid,RCid,TCid))]).
 
 :- comment(updateAttribute/5,
@@ -2035,11 +2009,6 @@ tuple as an @pred{oms_at/3} attribute tuple, if it is not already
 implied by the ontology.  Checks attribute facts against schema
 information to make sure the schema constraints are not violated.").
 
-newAttribute(SOid,RCid,TCid) :-
-	object(SOid,_,_,Source),
-	oms_extint_updatable(Source),
-	!,
-	newAttribute_int(SOid,RCid,TCid).
 newAttribute(SOid,RCid,TCid) :-
 	(var(SOid)
 	 ->	oms_error(newAttribute,'Calling newAttribute with variable object')
@@ -2147,6 +2116,9 @@ retractallAttribute_object(Oid,RCid,TOid) :-
 Internal Format @pred{oms_ao/3} tuple, if it is not already implied by
 the ontology.  The potential fact is checked to make sure that schema
 constraints are not violated..").
+
+newAttribute_object(SOid,RCid,TOid) :-
+	newAttributeObject(SOid,RCid,TOid).
 
 newAttributeObject(SOid,RCid,TOid) :-
 	newAttributeObject(SOid,RCid,TOid,Updates,[]),
@@ -2300,28 +2272,45 @@ check_new_source(Source,Term):-
 	).
 
 
-%% Needed for updates
-assert_oms(oms_rln(A,B,C)) :- !,
-	asserta(oms_rln(A,B,C)),
-	abolish_relationship_inherits.
-assert_oms(oms_schrel(A,B,C)) :- !,
-	asserta(oms_schrel(A,B,C)),
-	abolish_schrel_inherits.
-assert_oms(oms_sc(A,B)) :- !,
-	asserta(oms_sc(A,B)),
-	abolish_relationship_inherits,
-	abolish_schrel_inherits.
-assert_oms(Term) :- asserta(Term).
+assert_oms(Term) :-
+	assert_oms_term(Term),
+	abolish_nec_tables(Term).
 
-%% For updates to external DB's, where the update has already been done
-ext_update_oms(oms_rln(_,_,_)) :- !,
+assert_oms_term(Term) :-
+	assert_oms_int(Term),
+	!.
+assert_oms_term(Term) :-
+	asserta(Term),
+	oms_dirty(DFlg),
+	(DFlg =:= 1
+	 ->	true
+	 ;	make_oms_dirty
+	).
+
+retractall_oms(Term) :-
+	retractall_oms_term(Term),
+	abolish_nec_tables(Term).
+
+retractall_oms_term(Term) :-
+	retractall_oms_int(Term),
+	!.
+retractall_oms_term(Term) :-
+	retractall(Term),
+	oms_dirty(DFlg),
+	(DFlg =:= 1
+	 ->	true
+	 ;	make_oms_dirty
+	).
+
+abolish_nec_tables(oms_rln(_,_,_)) :- !,
 	abolish_relationship_inherits.
-ext_update_oms(oms_schrel(_,_,_)) :- !,
+abolish_nec_tables(oms_schrel(_,_,_)) :- !,
 	abolish_schrel_inherits.
-ext_update_oms(oms_sc(_,_)) :- !,
+abolish_nec_tables(oms_sc(_,_)) :- !,
 	abolish_relationship_inherits,
 	abolish_schrel_inherits.
-ext_update_oms(_).
+abolish_nec_tables(_).
+
 
 abolish_relationship_inherits :-
 	abolish_table_pred(relationship_inh_gen(_,_,_)),
