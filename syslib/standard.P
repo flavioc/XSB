@@ -242,7 +242,7 @@ writeln(Ostr,Term):- tell(Ostr),writeln(Term),tell(userout).
 
 writeln(T) :- stat_flag(11, File), file_write(File, T), file_nl(File).
 
-display(T) :- telling(F), tell(userin), write(T), told, tell(F).	
+display(T) :- telling(F), tell(userout), write(T), told, tell(F).	
 
 
 write_prolog(Ostr,Term):- tell(Ostr),write_prolog(Term),tell(userout).
