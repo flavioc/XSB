@@ -1,0 +1,4 @@
+
+:- import isa/2 from cdf_init_cdf.
+
+tp_subclass(X,Y):- isa(X,Y).
