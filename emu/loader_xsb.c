@@ -413,7 +413,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
     } /* for */
   }
   if (inst_addr != end_addr) {
-    fprintf(stderr, "inst_addr %p, end_addr %p\n", inst_addr, end_addr);
+    xsb_dbgmsg("inst_addr %p, end_addr %p", inst_addr, end_addr);
     return FALSE;
   }
   else return TRUE;

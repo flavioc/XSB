@@ -22,6 +22,7 @@
 ** 
 */
 
+:- compiler_options([sysmod]).
 
 :- dynamic input_streams/2.
 
@@ -50,7 +51,7 @@ push_stdin(Stack,Stream) :-
 %% Closes the current stream
 pop_stdin(Stack) :-
 	\+atom(Stack),
-	abort('POP_STDIO: First argument (stack name) must be an atom').
+	abort('[POP_STDIO] First argument (stack name) must be an atom').
 pop_stdin(Stack) :-
 	(input_streams(Stack,[H|T])
 	-> retractall(input_streams(Stack,_))

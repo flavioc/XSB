@@ -41,6 +41,7 @@
 #include "../prolog_includes/standard.h"
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
+#include "sig_xsb.h"
 #include "io_defs_xsb.h"
 #include "celltags_xsb.h"
 #include "psc_defs.h"
@@ -68,7 +69,7 @@ fmt_write(File,Fmt,A) :- formatted_io(FMT_WRITE, File,Fmt,A,_).
 
 
 :-	'_$savecp'(CP),
-	set_inthandler('_$load_undef'(_), 0),		% MYSIG_UNDEF
+	set_inthandler('_$load_undef'(_), MYSIG_UNDEF),		% MYSIG_UNDEF
         conset('_$abort_cutpoint', CP),
 	set_current_module,
 	set_current_input,
@@ -118,8 +119,8 @@ set_current_module :-
 
 set_current_input :-
 	conpsc(userin, UserInPSC),
-	psc_set_type(UserInPSC, 5),        % ``ep'' field contains file desc
-	psc_set_prop(UserInPSC, 0),        % ``data'' field set to stdin
+	psc_set_type(UserInPSC, T_FILE),   % ``ep'' field contains file desc
+	psc_set_prop(UserInPSC, STDIN),    % ``data'' field set to stdin
 	conset(current_input, UserInPSC),
 	stat_set_flag(CURRENT_INPUT, STDIN).
 

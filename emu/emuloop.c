@@ -1231,7 +1231,7 @@ contcase:     /* the main loop */
       bld_cs(reg + 2, hreg);	/* see subp.c: build_call() */
       new_heap_functor(hreg, pair_psc(true_pair));
       bld_copy(reg + 1, build_interrupt_chain());
-      lpcreg = get_ep((Psc) flags[MYSIG_ATTV + 32]);
+      lpcreg = get_ep((Psc) flags[MYSIG_ATTV + INT_HANDLERS_FLAGS_START]);
     }
   XSB_End_Instr()
 
@@ -1268,10 +1268,11 @@ contcase:     /* the main loop */
     case T_DYNA:
       xsb_abort("[EMULOOP] Trying to load an already loaded pred");
     default:
-      /* printf("loading module %s for %s/%d\n",
+      /* xsb_dbgmsg("loading module %s for %s/%d\n",
 	 get_name(get_data(psc)),get_name(psc),get_arity(psc)); */
       bld_cs(reg+1, build_call(psc));   /* put call-term in r1 */
-      psc = (Psc)flags[MYSIG_UNDEF+32]; /* get psc of undef handler */
+      /* get psc of undef handler */
+      psc = (Psc)flags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START];
       bld_int(reg+2, MYSIG_UNDEF);      /* undef-pred code */
       lpcreg = get_ep(psc);             /* ep of undef handler */
       break;

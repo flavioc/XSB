@@ -112,7 +112,7 @@
     if (isinteger(term)) {
       int  i;
       for (i=1; i<=int_val(term); i++)
-	putc(32, fileptr(flags[CURRENT_OUTPUT]));	/* 32=' ' */
+	putc(' ', fileptr(flags[CURRENT_OUTPUT]));
     } else {
       if (isnonvar(term)) err_handle(TYPE, 1, "tab", 1, "integer", term);
       else err(INSTANTIATION, 1, "tab", 1);

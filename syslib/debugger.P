@@ -27,10 +27,11 @@
 #include "flag_defs_xsb.h"
 #include "celltags_xsb.h"
 #include "char_defs.h"
+#include "sig_xsb.h"
 #include "standard.h"
 
-:- set_inthandler('_$deb_spy'(_), 3),
-   set_inthandler('_$deb_trace'(_), 4).
+:- set_inthandler('_$deb_spy'(_), MYSIG_SPY),
+   set_inthandler('_$deb_trace'(_), MYSIG_TRACE).
 
 
 :- read_debugger_data.
