@@ -28,7 +28,8 @@
 
 XSBDIR = ../../..
 
-ALLOBJS = flrtrailer.flh \
+ALLOBJS = flrcommon.flh \
+          flrtrailer.flh \
 	  flreqltrailer.flh \
           flrscalareql.flh \
           flrdbdyn.flh \
@@ -54,23 +55,27 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flrtrailer.flh : flrtrailer.fli
+flrcommon.flh : flrcommon.fli flrpred.fli
+	@echo 'flcompinc(flrcommon).' >> cmd...
+
+
+flrtrailer.flh : flrtrailer.fli flrpred.fli
 	@echo 'flcompinc(flrtrailer).' >> cmd...
 
 
-flreqltrailer.flh : flreqltrailer.fli
+flreqltrailer.flh : flreqltrailer.fli flrpred.fli
 	@echo 'flcompinc(flreqltrailer).' >> cmd...
 
 
-flrscalareql.flh : flrscalareql.fli
+flrscalareql.flh : flrscalareql.fli flrpred.fli
 	@echo 'flcompinc(flrscalareql).' >> cmd...
 
 
-flrdbdyn.flh : flrdbdyn.fli
+flrdbdyn.flh : flrdbdyn.fli flrpred.fli
 	@echo 'flcompinc(flrdbdyn).' >> cmd...
 
 
-flrpatch.flh : flrpatch.fli $(FLORA_TERMS)
+flrpatch.flh : flrpatch.fli flrpred.fli $(FLORA_TERMS)
 	@echo 'flcompinc(flrpatch).' >> cmd...
 
 

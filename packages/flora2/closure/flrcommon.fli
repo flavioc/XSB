@@ -1,0 +1,190 @@
+/***************************************************************************
+  file: closure/flrcommon.fli
+
+  Author(s): Guizhen Yang
+
+  Contact:   xsb-contact@cs.sunysb.edu
+
+  Copyright (C) The Research Foundation of SUNY, 1999-2001
+***************************************************************************/
+
+
+#include "flrpred.fli"
+
+
+/***************************************************************************
+  tabling directives
+***************************************************************************/
+:- table
+	inferred_sub/2,
+	super_sub/2,
+	immediate_sub/2,
+	sub/2,
+	inferred_isa/2,
+	super_isa/2,
+	ultimate_isa/2,
+	isa/2,
+	inferred_ifd/3,
+	defined_inferred_ifd/2,
+	conflict_ifd/2,
+	ifd/3,
+	inferred_imvd/3,
+	defined_inferred_imvd/2,
+	conflict_imvd/2,
+	imvd/3,
+	inferred_imvddef/2,
+	imvddef/2,
+	inferred_fd/3,
+	defined_inferred_fd/2,
+	conflict_obj_ifd/2,
+	fd/3,
+	fddef/2,
+	ifddef/2,
+	inferred_mvd/3,
+	defined_inferred_mvd/2,
+	conflict_obj_imvd/2,
+	mvd/3,
+	inferred_mvddef/2,
+	mvddef/2,
+	inferred_meth/2,
+	meth/2,
+	inferred_imeth/2,
+	imeth/2,
+	fdsig/3,
+	ifdsig/3,
+	mvdsig/3,
+	imvdsig/3,
+	inferred_exists/1,
+	exists/1,
+	inferred_objeql/2,
+	diffobjeql/2.
+
+
+:- table
+	inferred_sub_eql/2,
+	inferred_isa_eql/2,
+	inferred_ifd_eql/3,
+	inferred_imvd_eql/3,
+	inferred_imvddef_eql/2,
+	inferred_fd_eql/3,
+	inferred_mvd_eql/3,
+	inferred_mvddef_eql/2.
+
+
+/***************************************************************************
+  inferred predicates
+***************************************************************************/
+inferred_sub(X,Y) :- base_sub(X,Y).
+inferred_sub(X,Y) :- derived_sub(X,Y).
+
+inferred_isa(O,C) :- base_isa(O,C).
+inferred_isa(O,C) :- derived_isa(O,C).
+
+inferred_ifd(C,A,V) :- base_ifd(C,A,V).
+inferred_ifd(C,A,V) :- derived_ifd(C,A,V).
+
+inferred_imvd(C,A,V) :- base_imvd(C,A,V).
+inferred_imvd(C,A,V) :- derived_imvd(C,A,V).
+
+inferred_imvddef(C,A) :- base_imvddef(C,A).
+inferred_imvddef(C,A) :- derived_imvddef(C,A).
+
+inferred_fd(O,A,V) :- base_fd(O,A,V).
+inferred_fd(O,A,V) :- derived_fd(O,A,V).
+
+inferred_mvd(O,A,V) :- base_mvd(O,A,V).
+inferred_mvd(O,A,V) :- derived_mvd(O,A,V).
+
+inferred_mvddef(O,A) :- base_mvddef(O,A).
+inferred_mvddef(O,A) :- derived_mvddef(O,A).
+
+inferred_meth(O,M) :- base_meth(O,M).
+inferred_meth(O,M) :- derived_meth(O,M).
+
+inferred_imeth(C,M) :- base_imeth(C,M).
+inferred_imeth(C,M) :- derived_imeth(C,M).
+
+inferred_tran(O,T) :- base_tran(O,T).
+inferred_tran(O,T) :- derived_tran(O,T).
+
+inferred_fdsig(O,MethodArgs,R) :- base_fdsig(O,MethodArgs,R).
+inferred_fdsig(O,MethodArgs,R) :- derived_fdsig(O,MethodArgs,R).
+
+inferred_ifdsig(O,MethodArgs,R) :- base_ifdsig(O,MethodArgs,R).
+inferred_ifdsig(O,MethodArgs,R) :- derived_ifdsig(O,MethodArgs,R).
+
+inferred_mvdsig(O,MethodArgs,R) :- base_mvdsig(O,MethodArgs,R).
+inferred_mvdsig(O,MethodArgs,R) :- derived_mvdsig(O,MethodArgs,R).
+
+inferred_imvdsig(O,MethodArgs,R) :- base_imvdsig(O,MethodArgs,R).
+inferred_imvdsig(O,MethodArgs,R) :- derived_imvdsig(O,MethodArgs,R).
+
+inferred_exists(X) :- base_exists(X).
+inferred_exists(X) :- derived_exists(X).
+
+inferred_objeql(X,Y) :- base_objeql(X,Y).
+inferred_objeql(X,Y) :- derived_objeql(X,Y).
+
+
+/***************************************************************************
+  defined scalar attributes
+
+  Notes: There is no base_fddef, or base_ifddef,
+         or derived_fddef, or derived_ifddef.
+***************************************************************************/
+fddef(O,A) :- fd(O,A,_V).
+
+ifddef(C,A) :- ifd(C,A,_V).
+
+
+/***************************************************************************
+  multivalued attributes inclusion
+***************************************************************************/
+mvdinc(_O,_M,[]) :- !.
+mvdinc(O,M,[H|T]) :- mvd(O,M,H), mvdinc(O,M,T).
+
+
+imvdinc(_O,_M,[]) :- !.
+imvdinc(O,M,[H|T]) :- imvd(O,M,H), imvdinc(O,M,T).
+
+
+/****************************************************************************
+  multivalued attributes aggregation
+****************************************************************************/
+:- import findall/3 from setof.
+
+
+mvdtolist(O,M,L) :- findall(V,mvd(O,M,V),L).
+
+imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L). 
+
+
+/****************************************************************************
+  exists/1
+****************************************************************************/
+exists(X) :- fd(X,_,_).
+exists(X) :- fd(_,_,X).
+exists(X) :- mvd(X,_,_).
+exists(X) :- mvd(_,_,X).
+exists(X) :- mvddef(X,_).
+exists(X) :- ifd(X,_,_).
+exists(X) :- ifd(_,_,X).
+exists(X) :- imvd(X,_,_).
+exists(X) :- imvd(_,_,X).
+exists(X) :- imvddef(X,_,_).
+exists(X) :- isa(X,_).
+exists(X) :- isa(_,X).
+exists(X) :- sub(X,_).
+exists(X) :- sub(_,X).
+exists(X) :- meth(X,_).
+exists(X) :- imeth(X,_).
+
+
+/****************************************************************************
+  objeql/2
+****************************************************************************/
+:- prolog nonvar/1.
+
+
+objeql(X,Y) :- (nonvar(X); nonvar(Y)), X=Y.
+objeql(X,Y) :- diffobjeql(X,Y).

@@ -1,4 +1,4 @@
-## File:      packages/flora2/closure/Makefile
+## File:      packages/flora2/trailer/Makefile
 ##
 ## Author(s): Michael Kifer
 ##            Guizhen Yang
@@ -34,11 +34,14 @@ CLOSUREINC = ../closureinc
 
 ALLOBJS = standard.P \
 	  eqlbasic.P \
-          eqlflogic.P
+          eqlflogic.P \
+          patch.P
 
 XSB = $(XSBDIR)/bin/xsb
 
 PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
+
+FLORA_TERMS = ../includes/flora_terms.flh
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
@@ -54,44 +57,51 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-standard.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrtrailer.flh $(CLOSURE)/flrpatch.flh \
-             $(CLOSUREINC)/flrheader_inc.flh $(CLOSUREINC)/flrdbdyn_inc.flh \
-             $(CLOSUREINC)/flrtrailer_inc.flh $(CLOSUREINC)/flrdefinition_inc.flh
+standard.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
+             $(CLOSURE)/flrtrailer.flh $(CLOSUREINC)/flrheader_inc.flh \
+             $(CLOSUREINC)/flrdbdyn_inc.flh $(CLOSUREINC)/flrtrailer_inc.flh
 	@echo 'flsetuptrailer(none).' >> cmd...
 
 
-eqlbasic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flreqltrailer.flh \
-             $(CLOSURE)/flrpatch.flh $(CLOSUREINC)/flrheader_inc.flh \
-             $(CLOSUREINC)/flrdbdyn_inc.flh $(CLOSUREINC)/flreqltrailer_inc.flh \
-             $(CLOSUREINC)/flrdefinition_inc.flh
+eqlbasic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
+             $(CLOSURE)/flreqltrailer.flh $(CLOSUREINC)/flrheader_inc.flh \
+             $(CLOSUREINC)/flrdbdyn_inc.flh $(CLOSUREINC)/flreqltrailer_inc.flh
 	@echo 'flsetuptrailer(basic).' >> cmd...
 
 
-eqlflogic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flreqltrailer.flh \
-              $(CLOSURE)/flrscalareql.flh $(CLOSURE)/flrpatch.flh \
+eqlflogic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
+              $(CLOSURE)/flreqltrailer.flh $(CLOSURE)/flrscalareql.flh \
               $(CLOSUREINC)/flrheader_inc.flh $(CLOSUREINC)/flrdbdyn_inc.flh \
-              $(CLOSUREINC)/flreqltrailer_inc.flh $(CLOSUREINC)/flrscalareql_inc.flh \
-              $(CLOSUREINC)/flrdefinition_inc.flh
+              $(CLOSUREINC)/flreqltrailer_inc.flh $(CLOSUREINC)/flrscalareql_inc.flh
 	@echo 'flsetuptrailer(flogic).' >> cmd...
 
 
-$(CLOSURE)/flrdbdyn.flh : $(CLOSURE)/flrdbdyn.fli
+patch.P : $(CLOSURE)/flrpatch.flh $(CLOSUREINC)/flrheader_inc.flh \
+          $(CLOSUREINC)/flrdefinition_inc.flh
+	@echo 'flsetuppatch.' >> cmd...
+
+
+$(CLOSURE)/flrdbdyn.flh : $(CLOSURE)/flrdbdyn.fli $(CLOSURE)/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrtrailer.flh : $(CLOSURE)/flrtrailer.fli
+$(CLOSURE)/flrcommon.flh : $(CLOSURE)/flrcommon.fli $(CLOSURE)/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flreqltrailer.flh : $(CLOSURE)/flreqltrailer.fli
+$(CLOSURE)/flrtrailer.flh : $(CLOSURE)/flrtrailer.fli $(CLOSURE)/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrscalareql.flh : $(CLOSURE)/flrscalareql.fli
+$(CLOSURE)/flreqltrailer.flh : $(CLOSURE)/flreqltrailer.fli $(CLOSURE)/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrpatch.flh : $(CLOSURE)/flrpatch.fli
+$(CLOSURE)/flrscalareql.flh : $(CLOSURE)/flrscalareql.fli $(CLOSURE)/flrpred.fli
+	@cd $(CLOSURE); make
+
+
+$(CLOSURE)/flrpatch.flh : $(CLOSURE)/flrpatch.fli $(CLOSURE)/flrpred.fli $(FLORA_TERMS)
 	@cd $(CLOSURE); make
 
 
@@ -101,6 +111,7 @@ init:
 	@echo "bootstrap_flora." >> cmd...
 	@echo "[flrutils]." >> cmd...
 	@echo "import flsetuptrailer/1 from flrutils." >> cmd...
+	@echo "import flsetuppatch/0 from flrutils." >> cmd...
 	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...
 	@echo "file_clone($(STDWARN),$(STDERR),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...

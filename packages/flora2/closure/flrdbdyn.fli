@@ -10,24 +10,9 @@
   This is a template file to generate the FLORA include file for DB file.
 ***************************************************************************/
 
-:- florapred
- 	base_sub/2,
-	base_isa/2,
-	base_fd/3,
-	base_ifd/3,
-	base_mvd/3,
-	base_imvd/3,
-	base_mvddef/2,
-	base_imvddef/2,
-	base_fdsig/3,
-	base_ifdsig/3,
-	base_mvdsig/3,
-	base_imvdsig/3,
-	base_meth/2,
-	base_imeth/2,
-	base_tran/2,
-	base_exists/1,
-	base_objeql/2.
+
+#include "flrpred.fli"
+
 
 :- dynamic
 	base_sub/2,

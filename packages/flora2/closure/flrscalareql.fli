@@ -11,21 +11,21 @@
 ***************************************************************************/
 
 
-:- florapred diffobjeql/2.
+#include "flrpred.fli"
 
 
-diffobjeql(X,Y) :- derived_fd(O,M,X), derived_fd(O,M,Y), X \= Y.
+diffobjeql(X,Y) :- inferred_fd(O,M,X), inferred_fd(O,M,Y), X \= Y.
 
-diffobjeql(X,Y) :- derived_ifd(O,M,X), derived_ifd(O,M,Y), X \= Y.
+diffobjeql(X,Y) :- inferred_ifd(O,M,X), inferred_ifd(O,M,Y), X \= Y.
 
 diffobjeql(X,Y) :-
 	diffobjeql(O1,O2),
-	derived_fd(O1,M,X),
-	derived_fd(O2,M,Y),
+	inferred_fd(O1,M,X),
+	inferred_fd(O2,M,Y),
 	X \= Y.
 
 diffobjeql(X,Y) :-
 	diffobjeql(O1,O2),
-	derived_ifd(O1,M,X),
-	derived_ifd(O2,M,Y),
+	inferred_ifd(O1,M,X),
+	inferred_ifd(O2,M,Y),
 	X \= Y.

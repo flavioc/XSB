@@ -1,0 +1,142 @@
+/***************************************************************************
+  file: closure/flrpred.fli
+
+  Author(s): Guizhen Yang
+
+  Contact:   xsb-contact@cs.sunysb.edu
+
+  Copyright (C) The Research Foundation of SUNY, 1999-2001
+
+  This file lists F-logic predicates used by FLORA closure files.
+***************************************************************************/
+
+
+/***************************************************************************
+  F-logic facts
+***************************************************************************/
+:- florapred
+ 	base_sub/2,
+	base_isa/2,
+	base_fd/3,
+	base_ifd/3,
+	base_mvd/3,
+	base_imvd/3,
+	base_mvddef/2,
+	base_imvddef/2,
+	base_fdsig/3,
+	base_ifdsig/3,
+	base_mvdsig/3,
+	base_imvdsig/3,
+	base_meth/2,
+	base_imeth/2,
+	base_tran/2,
+	base_exists/1,
+	base_objeql/2.
+
+
+/***************************************************************************
+  F-logic predicates that appear in a rule head
+***************************************************************************/
+:- florapred
+	derived_sub/2,
+	derived_isa/2,
+	derived_fd/3,
+	derived_ifd/3,
+	derived_mvd/3,
+	derived_imvd/3,
+	derived_mvddef/2,
+	derived_imvddef/2,
+	derived_fdsig/3,
+	derived_ifdsig/3,
+	derived_mvdsig/3,
+	derived_imvdsig/3,
+	derived_meth/2,
+	derived_imeth/2,
+	derived_tran/2,
+	derived_exists/1,
+	derived_objeql/2.
+
+
+/***************************************************************************
+  F-logic predicates that appear in the trailer
+***************************************************************************/
+:- florapred
+	inferred_sub/2,
+	inferred_isa/2,
+	inferred_ifd/3,
+	defined_inferred_ifd/2,
+	inferred_imvd/3,
+	inferred_imvddef/2,
+	defined_inferred_imvd/2,
+	inferred_fd/3,
+	defined_inferred_fd/2,
+	inferred_mvd/3,
+	inferred_mvddef/2,
+	defined_inferred_mvd/2,
+	inferred_meth/2,
+	inferred_imeth/2,
+	inferred_tran/2,
+	inferred_fdsig/3,
+	inferred_ifdsig/3,
+	inferred_mvdsig/3,
+	inferred_imvdsig/3,
+	inferred_exists/1,
+	inferred_objeql/2.
+
+
+/***************************************************************************
+  F-logic predicates that appear in a rule body
+***************************************************************************/
+:- florapred
+	sub/2,
+	isa/2,
+	fd/3,
+	ifd/3,
+	mvd/3,
+	imvd/3,
+	mvddef/2,
+	imvddef/2,
+	fdsig/3,
+	ifdsig/3,
+	mvdsig/3,
+	imvdsig/3,
+	meth/2,
+	imeth/2,
+	tran/2,
+	exists/1,
+	objeql/2,
+	fddef/2,
+	ifddef/2,
+	mvdinc/3,
+	imvdinc/3,
+	mvdtolist/3,
+	imvdtolist/3.
+
+
+/***************************************************************************
+  intermediate F-logic predicates that appear in the trailer
+***************************************************************************/
+:- florapred
+	super_sub/2,
+	immediate_sub/2,
+	super_isa/2,
+	ultimate_isa/2,
+	conflict_ifd/2,
+	conflict_imvd/2,
+	conflict_obj_ifd/2,
+	conflict_obj_imvd/2,
+	diffobjeql/2.
+
+
+/***************************************************************************
+  F-logic predicates that appear only in the trailer with equality maintenance
+***************************************************************************/
+:- florapred
+	inferred_sub_eql/2,
+	inferred_isa_eql/2,
+	inferred_ifd_eql/3,
+	inferred_imvd_eql/3,
+	inferred_imvddef_eql/2,
+	inferred_fd_eql/3,
+	inferred_mvd_eql/3,
+	inferred_mvddef_eql/2.

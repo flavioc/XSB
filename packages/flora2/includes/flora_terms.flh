@@ -423,6 +423,7 @@
   FLORA include files
 ****************************************************************************/
 #define FLDEFINITION		fldefinition
+#define FLPATCH			flpatch
 
 
 /****************************************************************************
@@ -476,7 +477,7 @@
 #define FLORA_PREFIX		'_$_$_flora'
 #define FLORA_PREFIX_LEN_PLUS1	11
 
-#define FLORA_THIS_MODULE	flthismod
+#define FLORA_THIS_MODULE	flThisModule
 
 #define FLORA_STORAGE_NAME	FLORA_PREFIX'flstorage'
 
@@ -487,10 +488,13 @@
 #define FLFACTPREFIX		'base_'
 #define FLHEADPREFIX		'derived_'
 #define FLBODYPREFIX		''
+#define FLTRAILERPREFIX		'inferred_'
+
 
 #define FLFACTPREFIX_LEN	5
 #define FLHEADPREFIX_LEN	8
 #define FLBODYPREFIX_LEN	0
+#define FLTRAILERPREFIX_LEN	9
 
 
 /****************************************************************************

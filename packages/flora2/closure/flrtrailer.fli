@@ -12,44 +12,31 @@
 ***************************************************************************/
 
 
+#include "flrpred.fli"
+
+
 :- import flora_warning_line/1, flora_error_line/2 from flrprint.
 
 
 /***************************************************************************
   closure rules for X::Y
 ***************************************************************************/
-:- florapred base_sub/2.
-:- florapred derived_sub/2.
-:- florapred super_sub/2.
-:- florapred immediate_sub/2.
-
-
-:- table derived_sub/2.
-:- table super_sub/2.
-:- table immediate_sub/2.
-:- table sub/2.
-
-
-derived_sub(X,Y) :-
-	base_sub(X,Y).
-
-
 super_sub(X,Y) :-
-	derived_sub(X,Z),
-	derived_sub(Z,Y).
+	inferred_sub(X,Z),
+	inferred_sub(Z,Y).
 
 super_sub(X,Y) :-
 	super_sub(X,Z),
-	derived_sub(Z,Y).
+	inferred_sub(Z,Y).
 
 
 immediate_sub(X,Y) :-
-	derived_sub(X,Y),
+	inferred_sub(X,Y),
 	tnot(super_sub(X,Y)).
 
 
 sub(X,Y) :-
-	derived_sub(X,Y),
+	inferred_sub(X,Y),
 	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
 
 sub(X,Y) :-
@@ -60,71 +47,29 @@ sub(X,Y) :-
 /***************************************************************************
   closure rules for O:C
 ***************************************************************************/
-:- florapred base_isa/2.
-:- florapred derived_isa/2.
-:- florapred super_isa/2.
-:- florapred ultimate_isa/2.
-
-
-:- table derived_isa/2.
-:- table isa/2.
-:- table super_isa/2.
-:- table ultimate_isa/2.
-
-
-derived_isa(O,C) :-
-	base_isa(O,C).
-
-
-isa(O,C) :-
-	derived_isa(O,C).
-
-isa(O,C) :-
-	sub(S,C),
-	derived_isa(O,S).
-
-
 super_isa(O,C) :-
-	derived_isa(O,S),
+	inferred_isa(O,S),
 	sub(S,C).
 
 
 ultimate_isa(O,C) :-
-	derived_isa(O,C),
+	inferred_isa(O,C),
 	tnot(super_isa(O,C)).
+
+
+isa(O,C) :-
+	inferred_isa(O,C).
+
+isa(O,C) :-
+	sub(S,C),
+	inferred_isa(O,S).
 
 
 /*****************************************************************************
   nonmonotonic inheritance of scalar attributes among classes
 *****************************************************************************/
-:- florapred base_ifd/3.
-:- florapred derived_ifd/3.
-:- florapred defined_derived_ifd/2.
-:- florapred conflict_ifd/2.
-
-
-:- table derived_ifd/3.
-:- table defined_derived_ifd/2.
-:- table ifd/3.
-:- table conflict_ifd/2.
-
-
-derived_ifd(C,A,V) :-
-	base_ifd(C,A,V).
-
-
-defined_derived_ifd(C,A) :-
-	derived_ifd(C,A,_V).
-
-
-ifd(C,A,V) :-
-	derived_ifd(C,A,V).
-
-ifd(C,A,V) :-
-	immediate_sub(C,S),
-	ifd(S,A,V),
-	tnot(defined_derived_ifd(C,A)),
-	tnot(conflict_ifd(C,A)).
+defined_inferred_ifd(C,A) :-
+	inferred_ifd(C,A,_V).
 
 
 conflict_ifd(C,A) :-
@@ -135,61 +80,24 @@ conflict_ifd(C,A) :-
 	ifddef(S2,A).
 
 
+ifd(C,A,V) :-
+	inferred_ifd(C,A,V).
+
+ifd(C,A,V) :-
+	immediate_sub(C,S),
+	ifd(S,A,V),
+	tnot(defined_inferred_ifd(C,A)),
+	tnot(conflict_ifd(C,A)).
+
+
 /*****************************************************************************
   nonmonotonic inheritance of (defined) multivalued attributes among classes
 *****************************************************************************/
-:- florapred base_imvd/3.
-:- florapred derived_imvd/3.
-:- florapred base_imvddef/2.
-:- florapred derived_imvddef/2.
-:- florapred defined_derived_imvd/2.
-:- florapred conflict_imvd/2.
+defined_inferred_imvd(C,A) :-
+	inferred_imvd(C,A,_V).
 
-
-:- table derived_imvd/3.
-:- table imvd/3.
-:- table derived_imvddef/2.
-:- table imvddef/2.
-:- table defined_derived_imvd/2.
-:- table conflict_imvd/2.
-
-
-derived_imvd(C,A,V) :-
-	base_imvd(C,A,V).
-
-
-imvd(C,A,V) :-
-	derived_imvd(C,A,V).
-
-imvd(C,A,V) :-
-	immediate_sub(C,S),
-	imvd(S,A,V),
-	tnot(defined_derived_imvd(C,A)),
-	tnot(conflict_imvd(C,A)).
-
-
-derived_imvddef(C,A) :-
-	base_imvddef(C,A).
-
-
-imvddef(C,A) :-
-	derived_imvddef(C,A).
-
-imvddef(C,A) :-
-	immediate_sub(C,S),
-	imvddef(S,A),
-	tnot(defined_derived_imvd(C,A)),
-	tnot(conflict_imvd(C,A)).
-
-imvddef(C,A) :-
-	imvd(C,A,_V).
-
-
-defined_derived_imvd(C,A) :-
-	derived_imvd(C,A,_V).
-
-defined_derived_imvd(C,A) :-
-	derived_imvddef(C,A).
+defined_inferred_imvd(C,A) :-
+	inferred_imvddef(C,A).
 
 
 conflict_imvd(C,A) :-
@@ -200,37 +108,34 @@ conflict_imvd(C,A) :-
 	imvddef(S2,A).
 
 
+imvd(C,A,V) :-
+	inferred_imvd(C,A,V).
+
+imvd(C,A,V) :-
+	immediate_sub(C,S),
+	imvd(S,A,V),
+	tnot(defined_inferred_imvd(C,A)),
+	tnot(conflict_imvd(C,A)).
+
+
+imvddef(C,A) :-
+	inferred_imvddef(C,A).
+
+imvddef(C,A) :-
+	immediate_sub(C,S),
+	imvddef(S,A),
+	tnot(defined_inferred_imvd(C,A)),
+	tnot(conflict_imvd(C,A)).
+
+imvddef(C,A) :-
+	imvd(C,A,_V).
+
+
 /*****************************************************************************
   nonmonotonic inheritance of scalar attributes among objects
 *****************************************************************************/
-:- florapred base_fd/3.
-:- florapred derived_fd/3.
-:- florapred defined_derived_fd/2.
-:- florapred conflict_obj_ifd/2.
-
-
-:- table derived_fd/3.
-:- table defined_derived_fd/2.
-:- table fd/3.
-:- table conflict_obj_ifd/2.
-
-
-derived_fd(O,A,V) :-
-	base_fd(O,A,V).
-
-
-defined_derived_fd(O,A) :-
-	derived_fd(O,A,_V).
-
-
-fd(O,A,V) :-
-	derived_fd(O,A,V).
-
-fd(O,A,V) :-
-	ultimate_isa(O,C),
-	ifd(C,A,V),
-	tnot(defined_derived_fd(O,A)),
-	tnot(conflict_obj_ifd(O,A)).
+defined_inferred_fd(O,A) :-
+	inferred_fd(O,A,_V).
 
 
 conflict_obj_ifd(O,A) :-
@@ -241,78 +146,24 @@ conflict_obj_ifd(O,A) :-
 	ifddef(C2,A).
 
 
-/*****************************************************************************
-  defined scalar attributes
+fd(O,A,V) :-
+	inferred_fd(O,A,V).
 
-  Notes: There is no base_fddef or base_ifddef.
-*****************************************************************************/
-:- table fddef/2.
-:- table ifddef/2.
-
-
-fddef(O,A) :-
-	fd(O,A,_V).
-
-
-ifddef(C,A) :-
-	ifd(C,A,_V).
+fd(O,A,V) :-
+	ultimate_isa(O,C),
+	ifd(C,A,V),
+	tnot(defined_inferred_fd(O,A)),
+	tnot(conflict_obj_ifd(O,A)).
 
 
 /*****************************************************************************
   nonmonotonic inheritance of (defined) multivalued attributes among objects
 *****************************************************************************/
-:- florapred base_mvd/3.
-:- florapred derived_mvd/3.
-:- florapred base_mvddef/2.
-:- florapred derived_mvddef/2.
-:- florapred defined_derived_mvd/2.
-:- florapred conflict_obj_imvd/2.
+defined_inferred_mvd(O,A) :-
+	inferred_mvd(O,A,_V).
 
-
-:- table derived_mvd/3.
-:- table mvd/3.
-:- table derived_mvddef/2.
-:- table mvddef/2.
-:- table defined_derived_mvd/2.
-:- table conflict_obj_imvd/2.
-
-
-derived_mvd(O,A,V) :-
-	base_mvd(O,A,V).
-
-
-mvd(O,A,V) :-
-	derived_mvd(O,A,V).
-
-mvd(O,A,V) :-
-	ultimate_isa(O,C),
-	imvd(C,A,V),
-	tnot(defined_derived_mvd(O,A)),
-	tnot(conflict_obj_imvd(O,A)).
-
-
-derived_mvddef(O,A) :-
-	base_mvddef(O,A).
-
-
-mvddef(O,A) :-
-	derived_mvddef(O,A).
-
-mvddef(O,A) :-
-	ultimate_isa(O,C),
-	imvddef(C,A),
-	tnot(defined_derived_mvd(O,A)),
-	tnot(conflict_obj_imvd(O,A)).
-
-mvddef(O,A) :-
-	mvd(O,A,_V).
-
-
-defined_derived_mvd(O,A) :-
-	derived_mvd(O,A,_V).
-
-defined_derived_mvd(O,A) :-
-	derived_mvddef(O,A).
+defined_inferred_mvd(O,A) :-
+	inferred_mvddef(O,A).
 
 
 conflict_obj_imvd(O,A) :-
@@ -323,68 +174,42 @@ conflict_obj_imvd(O,A) :-
 	imvddef(C2,A).
 
 
-/*****************************************************************************
-  multivalued attributes inclusion
-*****************************************************************************/
-mvdinc(_O,_M,[]).
+mvd(O,A,V) :-
+	inferred_mvd(O,A,V).
 
-mvdinc(O,M,[H|T]) :-
-	mvd(O,M,H),
-	mvdinc(O,M,T).
-
-
-imvdinc(_O,_M,[]).
-
-imvdinc(O,M,[H|T]) :-
-	imvd(O,M,H),
-	imvdinc(O,M,T).
+mvd(O,A,V) :-
+	ultimate_isa(O,C),
+	imvd(C,A,V),
+	tnot(defined_inferred_mvd(O,A)),
+	tnot(conflict_obj_imvd(O,A)).
 
 
-/*****************************************************************************
-  multivalued attributes aggregation
-*****************************************************************************/
-:- import findall/3 from setof.
+mvddef(O,A) :-
+	inferred_mvddef(O,A).
 
+mvddef(O,A) :-
+	ultimate_isa(O,C),
+	imvddef(C,A),
+	tnot(defined_inferred_mvd(O,A)),
+	tnot(conflict_obj_imvd(O,A)).
 
-mvdtolist(O,M,L) :- findall(V,mvd(O,M,V),L).
-
-
-imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L). 
+mvddef(O,A) :-
+	mvd(O,A,_V).
 
 
 /*****************************************************************************
   monotonic inheritance of binary attributes (tabled methods)
 *****************************************************************************/
-:- florapred base_meth/2.
-:- florapred derived_meth/2.
-:- florapred base_imeth/2.
-:- florapred derived_imeth/2.
-
-
-:- table derived_meth/2.
-:- table meth/2.
-:- table derived_imeth/2.
-:- table imeth/2.
-
-
-derived_meth(O,M) :-
-	base_meth(O,M).
-
-
 meth(O,M) :-
-	derived_meth(O,M).
+	inferred_meth(O,M).
 
 meth(O,M) :-
 	isa(O,C),
 	imeth(C,M).
 
 
-derived_imeth(C,M) :-
-	base_imeth(C,M).
-
-
 imeth(C,M) :-
-	derived_imeth(C,M).
+	inferred_imeth(C,M).
 
 imeth(C,M) :-
 	sub(C,S),
@@ -394,74 +219,39 @@ imeth(C,M) :-
 /*****************************************************************************
   nontabled methods (transactions)
 *****************************************************************************/
-:- florapred base_tran/2.
-:- florapred derived_tran/2.
-
-
-derived_tran(O,T) :-
-	base_tran(O,T).
-
 tran(O,T) :-
-	derived_tran(O,T).
+	inferred_tran(O,T).
 
 
 /*****************************************************************************
   monotonic inheritance of signatures
 *****************************************************************************/
-:- florapred base_fdsig/3.
-:- florapred derived_fdsig/3.
-:- florapred base_ifdsig/3.
-:- florapred derived_ifdsig/3.
-:- florapred base_mvdsig/3.
-:- florapred derived_mvdsig/3.
-:- florapred base_imvdsig/3.
-:- florapred derived_imvdsig/3.
-
-
-:- table fdsig/3.
-:- table ifdsig/3.
-:- table mvdsig/3.
-:- table imvdsig/3.
-
-
-derived_fdsig(O,MethodArgs,R) :-
-	base_fdsig(O,MethodArgs,R).
-
 fdsig(O,MethodArgs,R) :-
-	derived_fdsig(O,MethodArgs,R).
+	inferred_fdsig(O,MethodArgs,R).
 
 fdsig(O,MethodArgs,R) :-
 	isa(O,C),
 	ifdsig(C,MethodArgs,R).
 
 
-derived_ifdsig(O,MethodArgs,R) :-
-	base_ifdsig(O,MethodArgs,R).
-
 ifdsig(O,MethodArgs,R) :-
-	derived_ifdsig(O,MethodArgs,R).
+	inferred_ifdsig(O,MethodArgs,R).
 
 ifdsig(S,MethodArgs,R) :-
 	sub(S,C),
 	ifdsig(C,MethodArgs,R).
 
 
-derived_mvdsig(O,MethodArgs,R) :-
-	base_mvdsig(O,MethodArgs,R).
-
 mvdsig(O,MethodArgs,R) :-
-	derived_mvdsig(O,MethodArgs,R).
+	inferred_mvdsig(O,MethodArgs,R).
 
 mvdsig(O,MethodArgs,R) :-
 	isa(O,C),
 	imvdsig(C,MethodArgs,R).
 
 
-derived_imvdsig(O,MethodArgs,R) :-
-	base_imvdsig(O,MethodArgs,R).
-
 imvdsig(O,MethodArgs,R) :-
-	derived_imvdsig(O,MethodArgs,R).
+	inferred_imvdsig(O,MethodArgs,R).
 
 imvdsig(S,MethodArgs,R) :-
 	sub(S,C),
@@ -471,62 +261,13 @@ imvdsig(S,MethodArgs,R) :-
 /*****************************************************************************
   object existence
 *****************************************************************************/
-:- florapred base_exists/1.
-:- florapred derived_exists/1.
-
-
-:- table derived_exists/1.
-:- table exists/1.
-
-
-derived_exists(X) :-
-	base_exists(X).
-
-
 exists(X) :-
-	derived_exists(X).
-
-exists(X) :- fd(X,_,_).
-exists(X) :- fd(_,_,X).
-exists(X) :- mvd(X,_,_).
-exists(X) :- mvd(_,_,X).
-exists(X) :- ifd(X,_,_).
-exists(X) :- ifd(_,_,X).
-exists(X) :- imvd(X,_,_).
-exists(X) :- imvd(_,_,X).
-exists(X) :- isa(X,_).
-exists(X) :- isa(_,X).
-exists(X) :- sub(X,_).
-exists(X) :- sub(_,X).
-exists(X) :- meth(X,_).
-exists(X) :- imeth(X,_).
+	inferred_exists(X).
 
 
 /*****************************************************************************
   equality maintenance
 *****************************************************************************/
-:- florapred base_objeql/2.
-:- florapred derived_objeql/2.
-:- florapred diffobjeql/2.
-
-
-:- table diffobjeql/2.
-
-
-:- prolog nonvar/1.
-
-
-derived_objeql(X,Y) :-
-	base_objeql(X,Y).
-
-
 diffobjeql(X,Y) :-
-	derived_objeql(X,Y),
+	inferred_objeql(X,Y),
 	X \= Y.
-
-
-objeql(X,Y) :-
-	(nonvar(X); nonvar(Y)),
-	X=Y.
-
-objeql(X,Y) :- diffobjeql(X,Y).

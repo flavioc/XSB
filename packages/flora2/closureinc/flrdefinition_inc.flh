@@ -6,9 +6,7 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
-WORKSPACE(VAR_WORKSPACE,flthismod)(VAR_WORKSPACE).
-
-#include "flrpatch.flh"
+WORKSPACE(VAR_WORKSPACE,flThisModule)(VAR_WORKSPACE).
 
 /***********************************************************************/
 
