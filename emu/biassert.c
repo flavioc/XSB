@@ -579,9 +579,16 @@ static void db_genaput(prolog_term, int, struct instruction *, RegStat);
 /*  literal on the right-hand-side as a call to the predicate ,/2.	*/
 /*======================================================================*/
 
+
+int assert_code_to_buff_p(prolog_term);
+
 int assert_code_to_buff(/* Clause */)
 {
-  prolog_term Clause;
+  return assert_code_to_buff_p(reg_term(1));
+}
+
+int assert_code_to_buff_p(prolog_term Clause)
+{
   prolog_term Head, Body;
   int Location;
   int Loc_size;
@@ -592,7 +599,6 @@ int assert_code_to_buff(/* Clause */)
   int v;
   Pair sym;
 
-  Clause = reg_term(1);
   /* set catcher */
   if ((Argno = setjmp(assertcmp_env))) {
     assertcmp_printerror(Argno);
@@ -1183,21 +1189,38 @@ static void get_indexes( prolog_term prolog_ind )
   }
 }
 
+/* Add the global buffer, which must have been filled, into the index
+    for the Prref */
+
+xsbBool assert_buff_to_clref_p(prolog_term,byte,PrRef,int,
+			       prolog_term,int,ClRef *);
+
 xsbBool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
 {
-  byte Arity;
-  int AZ, HashTabSize;
-  ClRef Clause;
-  PrRef Pred ;
-  int Location, *Loc, Inum;
-  prolog_term Head ;
+  ClRef Clref;
+  assert_buff_to_clref_p(reg_term(1),
+			 ptoc_int(2),
+			 (PrRef)ptoc_int(3),
+			 ptoc_int(4),
+			 reg_term(5),
+			 ptoc_int(6),
+			 &Clref);
+  /* ctop_int(7, (Integer Clref)); */
+  return TRUE;
+}
 
-  Head = reg_term(1);
-  Arity = ptoc_int(2);
-  Pred = (PrRef)ptoc_int(3);
-  AZ = ptoc_int(4);
-  get_indexes( reg_term(5) ) ;
-  HashTabSize = ptoc_int(6);
+xsbBool assert_buff_to_clref_p(prolog_term Head,
+			       byte Arity,
+			       PrRef Pred,
+			       int AZ,
+			       prolog_term Indexes,
+			       int HashTabSize,
+			       ClRef *Clref)
+{
+  ClRef Clause;
+  int Location, *Loc, Inum;
+
+  get_indexes( Indexes ) ;
 
   xsb_dbgmsg((LOG_ASSERT,"Now add clref to chain:"));
 
@@ -1221,6 +1244,7 @@ xsbBool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
 
   memmove(((pb)Clause)+Location,Buff,Size); /* fill in clause with code from Buff */
   /* ctop_int(7, (Integer)Clause);  DO NOT RETURN ANYTHING */
+  /* *Clref = Clause; */
   
   if (NI <= 0) db_addbuff(Arity,Clause,Pred,AZ,1);
   else db_addbuff_i(Arity,Clause,Pred,AZ,Index,NI,Head,HashTabSize);
