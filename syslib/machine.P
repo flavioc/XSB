@@ -132,6 +132,7 @@ is_xwammode(_Flag) :- '_$builtin'(117).
 close_open_tables :- '_$builtin'(118).
 print_predicate_table(_Psc):- '_$builtin'(120).
 
+file_function(_Function, _A, _B, _C, _D) :- '_$builtin'(122).
 file_read_line(_File, _String, _IsFullLine) :- '_$builtin'(123).
 slash(_Slash) :- '_$builtin'(124).
 fmt_write_string(_String,_Format,_ValsList) :- '_$builtin'(125).
@@ -178,6 +179,11 @@ socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr) :-
 
 file_time(File, Time) :- file_stat(File,0,Time).
 file_size(File, Size) :- file_stat(File,1,Size).
+
+file_flush(File, Ret) :- file_function(0, File, Ret, _D, _E).
+file_seek(File, Offset, Place, Ret) :-
+	 file_function(1, File, Offset, Place, Ret).
+file_truncate(File, Length, Ret) :- file_function(2, File, Length, Ret, _E).
 
 
 fmt_read(Format, TypeList, ValsListVar, Ret) :-

@@ -145,7 +145,7 @@
 	socket_request/6.
 
 :- export 
-	fmt_read/4, fmt_write/2,
+	fmt_read/4, fmt_write/2, file_flush/2, file_seek/4, file_truncate/3,
 	psc_insert/3, psc_set_env/2, conname/2, conpsc/2, 
 	machine_file_exists/1, backtrackable_buff_set_word/4,
   	is_backslashing_os/0, is_pcdos/0, slash/1.
