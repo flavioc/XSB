@@ -558,6 +558,10 @@ l_writetail_quoted(File, X) :-
 		/*	file_write_canonical/2       */
 		/*************************************/
 
+file_write_canonical(File,Term) :-
+	file_puttoken(File,TK_TERM,Term).
+
+/******************** Leave in Prolog for awhile, till secure
 file_write_canonical(File, Term) :- l_write_canonical(File, Term), fail.
 file_write_canonical(_, _).
 
@@ -570,14 +574,14 @@ l_write_canonical(File, []) :-
 	!,
 	file_put(File, CH_LBRACKET),	% [
 	file_put(File, CH_RBRACKET).	% ]
-/**l_write_canonical(File, [X|Y]) :-
+**l_write_canonical(File, [X|Y]) :-
 	!,
 	file_puttoken(File, TK_ATOM, '''.''('),
 	l_write_canonical(File, X),
 	file_put(File, CH_COMMA),	% ','
 	l_write_canonical(File, Y),
 	file_put(File, CH_RPAREN).	% )
-**/
+**
 l_write_canonical(File, [X|Y]) :- !,
 	file_put(File, CH_LBRACKET),
 	l_write_canonical(File, X),
@@ -631,17 +635,22 @@ l_writelisttail_canonical(File, [X|Y]) :-
 l_writelisttail_canonical(File, X) :-
 	file_put(File, CH_BAR),
 	l_write_canonical(File, X).
-
+********************/
 
 %----------------------------------------------------------------------
 % Added tls: 2/01
 % Does what write_canonical does, but outputs numbervarred variables as
 % A, B, C rather than '$VAR'(1)...
+% dsw moved it to C, 1/03
 
 write_canonical_lettervar(T) :- 
 	stat_flag(CURRENT_OUTPUT,File), 
 	file_write_canonical_lettervar(File,T).
 
+file_write_canonical_lettervar(File,Term) :-
+	file_puttoken(File,TK_TERML,Term).
+
+/****************** Leave in Prolog for awhile, till secure
 file_write_canonical_lettervar(File,Term) :- l_write_canonical_lettervar(File, Term), fail.
 file_write_canonical_lettervar(_, _).
 
@@ -708,7 +717,7 @@ l_writevar_lettervar(File, N) :-
 		)
 	; fail
 	).
-
+********/
 
 end_of_file.
 
