@@ -267,7 +267,8 @@ close_things_to_delete :-
 	 fail
 	 ;
 	 abolish_table_pred(disconnected(_))
-	).
+	),
+	writeln(userout,done).
 	%%conget(myctr,CNT),
 	%%writeln(done(CNT)).
 
