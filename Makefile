@@ -23,9 +23,14 @@
 ##
 
 
-SUBDIR = syslib lib cmplib packages
+SUBDIR = cmplib syslib lib packages
 
 all: $(SUBDIR)
+
+force: touch all
+
+touch::
+	touch cmplib/*.P lib/*.P syslib/*.P
 
 syslib::
 	@echo ""
