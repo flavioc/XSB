@@ -1697,18 +1697,6 @@ int builtin_call(byte number)
     ctop_int(2, (Integer)get_tip(psc));
     break;
   }
-  case PRINTOFILES: { /* no args */
-    int i; 
-    for (i= 0 ; i < MAX_OPEN_FILES ; i++) {
-      if ((int) open_files[i].file_name == 0) {
-	printf("i: %d File Ptr %p \n",i,open_files[i].file_ptr);
-      } else {
-	printf("i; %d File Ptr %p Name %s Mode %c \n",i,
-	       open_files[i].file_ptr, open_files[i].file_name,open_files[i].io_mode);
-      }
-    }
-    break;
-  }
 /*----------------------------------------------------------------------*/
 
 #include "bineg_xsb_i.h"

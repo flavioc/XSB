@@ -50,7 +50,7 @@ typedef struct  {
 
 extern stream_record open_files[];      /* Table of file pointers for open files */
 
-extern int old_xsb_intern_file(FILE *file,char *c);
+extern int xsb_intern_fileptr(FILE *file,char *c,char *c2,char *c3);
 extern int xsb_intern_file(char *c1,char *c2,int *i,char *strmode);
 
 extern void write_quotedname(FILE *file, char *string);

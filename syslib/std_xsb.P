@@ -30,7 +30,7 @@
 % TLS: just did first pass at metapredicates.  In addition, need to do
 % bagofs, setofs and phrases.
 
-standard_symbol(abolish, 1, assert).
+standard_symbol(abolish, 1, assert).                               % ISO
 standard_metapredicate(abolish,1,1).
 
 standard_symbol(abolish, 2, assert).			% Not ISO (Dec-10)
@@ -42,7 +42,7 @@ standard_symbol(abolish_table_pred, 1, tables).		% Not ISO
 standard_symbol(abort, 0, standard).
 standard_symbol(abort, 1, standard).
 standard_symbol(analyze_table, 1, tables).		% Not ISO
-standard_symbol(arg, 3, standard).
+standard_symbol(arg, 3, standard).                                  % ISO
 standard_symbol(arg0, 3, standard).
 standard_symbol(assert, 1, assert).
 standard_metapredicate(assert,1,1).
@@ -52,6 +52,9 @@ standard_metapredicate(asserta,1,1).
 
 standard_symbol(assertz, 1, assert).
 standard_metapredicate(assertz,1,1).
+
+standard_symbol(at_end_of_stream,0,file_io).                        % ISO
+standard_symbol(at_end_of_stream,1,file_io).                        % ISO 
 
 standard_symbol(atom, 1, standard).                               % ISO
 standard_symbol(atom_concat, 3, standard).                   % ISO
@@ -219,13 +222,19 @@ standard_symbol(open, 4, standard).
 standard_symbol(otherwise, 0, standard).
 
 standard_symbol(parse_filename, 4, machine).
+
+standard_symbol(peek_char,1,file_io).		%ISO
+standard_symbol(peek_char,2,file_io).		%ISO
+standard_symbol(peek_code,1,file_io).		%ISO
+standard_symbol(peek_code,2,file_io).		%ISO
+
 standard_symbol(phrase, 2, dcg).
 standard_symbol(phrase, 3, dcg).
 standard_symbol(predicate_property, 2, curr_sym).
 standard_symbol(print, 1, standard).
 standard_symbol(proper_hilog, 1, standard).
 standard_symbol(put, 1, standard).		% not ISO
-standard_symbol(put_char, 1, standard).		%ISO
+standard_symbol(put_char, 1, standard).		%ISO
 standard_symbol(put_char, 2, standard).		%ISO
 standard_symbol(put_code, 1, standard).		%ISO
 standard_symbol(put_code, 2, standard).		%ISO

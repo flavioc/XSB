@@ -204,25 +204,36 @@ nl :- (windows_os_loader
       ;	  put(CH_NEWLINE) ).
 
 
-/* TLS: see manual for documentation of what exactly the differences
-are. Note that most error-checking is assumed ot take place in
-atom_codes/2 or in get/1. */
+/* TLS: I'm using atom_codes for now, which is slow, but we should
+probably have a character-conversion table.  I want to think this
+through when I get to the tokenizer.  */
 
 %ISO 
 get_char(S_or_A,Char):- 
-	check_open_stream_or_alias(S_or_A,get_char/2,1,input,Str),
-	get_code(Str,Code),atom_codes(Char,[Code]).
+	get_code(S_or_A,Code),
+	atom_codes(Char,[Code]).
 
 %ISO
-get_char(Char):- get_code(Code),atom_codes(Char,[Code]).
+get_char(Char):- 
+	get_code(Code),
+	atom_codes(Char,[Code]).
 
 %ISO
 get_code(S_or_A,C) :- 
 	check_open_stream_or_alias(S_or_A,get_code/2,1,input,Str),
-	file_get(Str,C).
+	(var(C) -> 
+	    file_get(Str,C)
+	 ; (integer(C) -> 
+	        file_get(Str,C)
+	     ;  domain_error(integer_or_variable,C,get_code/2,2) ) ).
 
 %ISO
-get_code(C) :- get0(C).
+get_code(C) :- 
+	(var(C) -> 
+	    get0(C)
+	 ; (integer(C) -> 
+	        get0(C)
+	     ;  domain_error(integer_or_variable,C,get_code/1,1) ) ).
 
 get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 
@@ -237,30 +248,43 @@ skip(C) :- get0(C0), (C0=C ; skip(C)).
 
 %ISO
 put_char(S_or_A,C):- 
-	check_open_stream_or_alias(S_or_A,get_char/2,1,output,Str),
+	check_open_stream_or_alias(S_or_A,put_char/2,1,output,Str),
 	atom_codes(C,L),
-	(L = [L1] -> true ; 
-		abort('Type error in argument 1 of put_char/1')),
+	(L = [L1] -> 
+	    true 
+	  ; domain_error(character_or_variable,C,put_char/2,2) ),
 	file_put(Str,L1).
 
 %ISO
 put_char(C):- 			
 	atom_codes(C,L),
-	(L = [L1] -> true ; 
-		abort('Type error in argument 1 of put_char/1')),
+	(L = [L1] -> 
+	    true 
+	  ; domain_error(character_or_variable,C,put_char/1,1) ),
 	put(L1).
 
 %ISO
 put_code(S_or_A,C):- 
 	check_open_stream_or_alias(S_or_A,get_char/2,1,output,Str),
-	file_put(Str,C).
+	(var(C) -> 
+	    file_put(Str,C)
+	 ; (integer(C) -> 
+	        file_put(Str,C)
+	     ;  domain_error(integer_or_variable,C,get_code/2,2) ) ).
 
 %ISO
-put_code(C):- put(C).		
+put_code(C):- 
+	(var(C) -> 
+	    put(C)
+	 ; (integer(C) -> 
+	        put(C)
+	     ;  domain_error(integer_or_variable,C,get_code/2,2) ) ).
 
 put(C) :- put(C).
 
 tab(N) :- tab(N).
+
+% TLS: peek_code, peek_char in file_io.
 
 % TLS: this can probably go...
 file_exists(F) :- 
@@ -287,11 +311,11 @@ read_term(T,List):-
 
 read_term(S_or_A,T,List):- 
 	check_open_stream_or_alias(S_or_A,read_term/3,1,input,Istr),
-	read_term_check(Istr,List,read_term/3),
+	read_term_check(IList,read_term/3),
 	file_read(Istr, T,Vlist),
 	process_variable_list(List,T,Vlist),!.
 
-read_term_check(_Istr,List,Predvers):- 
+read_term_check(,List,Predvers):- 
 	check_nonvar_list(List,Predvers,3),
 	check_read_options(List,Predvers,3).
 

@@ -31,7 +31,7 @@
 
 static struct stat stat_buff;
 extern char   *expand_filename(char *filename);
-extern int old_xsb_intern_fileptr(FILE *, char *);
+extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
 
 
 static FILE *stropen(char *str)
@@ -500,12 +500,10 @@ inline static xsbBool file_function(void)
 #endif
 	dest_fptr = fdopen(dest_fd, mode);
 	if (dest_fptr) {
-	  dest_xsb_fileno = old_xsb_intern_fileptr(dest_fptr, "FILE_CLONE");
-	  open_files[dest_xsb_fileno].file_name =  
-	    open_files[src_xsb_fileno].file_name;
-	  open_files[dest_xsb_fileno].io_mode =  
-	    open_files[src_xsb_fileno].io_mode;
-
+	  dest_xsb_fileno = 
+	    xsb_intern_fileptr(dest_fptr,"FILE_CLONE",
+			       open_files[src_xsb_fileno].file_name,
+			       &open_files[src_xsb_fileno].io_mode);
 	  c2p_int(dest_xsb_fileno, dest_fptr_term);
 	} else {
 	  /* error */
@@ -560,7 +558,7 @@ inline static xsbBool file_function(void)
     fptr = fdopen(pipe_fd, mode);
 
     /* xsb_intern_file will return -1, if fdopen fails */
-    ctop_int(3, old_xsb_intern_fileptr(fptr, "FD2IOPORT"));
+    ctop_int(3, xsb_intern_fileptr(fptr, "FD2IOPORT","created from fd",mode));
     break;
   }
     
@@ -579,7 +577,8 @@ inline static xsbBool file_function(void)
     /* file_function(17, -IOport)
        Opens a temp file in r/w mode and returns its IO port */
     if ((fptr = tmpfile()))
-      ctop_int(2, old_xsb_intern_fileptr(fptr, "TMPFILE_OPEN"));
+      ctop_int(2, xsb_intern_fileptr(fptr, "TMPFILE_OPEN",
+					 "TMPFILE","wb+"));
     else
       ctop_int(2, -1);
     break;
@@ -640,6 +639,42 @@ inline static xsbBool file_function(void)
 	} else ctop_int(3,WRITE_MODE);
 	return TRUE;
       }  
+  }
+
+  case PRINT_OPENFILES: { /* no args */
+    int i; 
+    for (i= 0 ; i < MAX_OPEN_FILES ; i++) {
+      if ((int) open_files[i].file_name == 0) {
+ 	printf("i: %d File Ptr %p Mode %c\n",
+ 	        i,open_files[i].file_ptr,open_files[i].io_mode);
+      } else {
+	printf("i; %d File Ptr %p Name %s Mode %c \n",i,
+	       open_files[i].file_ptr, open_files[i].file_name,open_files[i].io_mode);
+      }
+    }
+    break;
+  }
+
+  case FILE_END_OF_FILE: {
+    ctop_int(3,feof(open_files[ptoc_int(2)].file_ptr));
+    return TRUE;
+  }
+
+  case FILE_PEEK: {
+    int bufchar;
+
+    io_port = ptoc_int(2);
+    if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
+      sfptr = strfileptr(io_port);
+      ctop_int(3, strgetc(sfptr));
+    } else {
+      SET_FILEPTR(fptr, io_port);
+      bufchar = getc(fptr);
+      ctop_int(3, bufchar);
+      if (bufchar >= 0) 
+	ungetc(bufchar, fptr);
+    }
+    break;
   }
 
   default:

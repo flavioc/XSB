@@ -47,6 +47,9 @@
 #define IS_VALID_STREAM    18
 #define FILE_READ_LINE_LIST 19
 #define STREAM_PROPERTY 20
+#define PRINT_OPENFILES 21
+#define FILE_END_OF_FILE 22
+#define FILE_PEEK 23
 
 /* This sequence is for stream properties */
 #define STREAM_FILE_NAME              0
@@ -71,6 +74,8 @@
 #define READ_MODE 0
 #define WRITE_MODE 1
 #define APPEND_MODE 2
+#define STRING_READ_MODE 3
+#define STRING_WRITE_MODE 4
 
 #define FORCE_FILE_CLOSE     0 
 #define NOFORCE_FILE_CLOSE     1

@@ -1379,18 +1379,38 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
    whether a file pointer is present or not, rather than a file and
    I/O mode, as below. */
 
-int old_xsb_intern_fileptr(FILE *fptr, char *context)
+int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode)
 {
   int i;
+  char mode = '\0';
+
+  printf("xsb_intern_fileptr %x %s %s %s\n",fptr,context,name,strmode);
+
   if (!fptr) return -1;
+
+  if (!strcmp(strmode,"rb") || !strcmp(strmode,"r"))
+    mode = 'r';
+  else if (!strcmp(strmode,"wb")  || !strcmp(strmode,"w"))
+    mode = 'w';
+  else if (!strcmp(strmode,"ab")  || !strcmp(strmode,"a"))
+    mode = 'a';
+  else if (!strcmp(strmode,"rb+") || !strcmp(strmode,"r+") || !strcmp(strmode,"r+b"))
+    mode = 's';  /* (i.e. r+) */
+  else if (!strcmp(strmode,"wb+") || !strcmp(strmode,"w+") || !strcmp(strmode,"w+b"))
+    mode = 'x'; /* (i.e. r+) */
+  else if (!strcmp(strmode,"ab+") || !strcmp(strmode,"a+") || !strcmp(strmode,"a+b"))
+    mode = 'b'; /* (i.e. a+) */
 
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES && open_files[i].file_ptr != NULL; i++);
   if (i == MAX_OPEN_FILES) {
     xsb_warn("[%s] Too many open files", context);
     return -1;
-  } else 
+  } else {
     open_files[i].file_ptr = fptr;
+    open_files[i].file_name = name;
+    open_files[i].io_mode = mode;
   return i;
+  }
 }
 
 /* static int open_files_high_water = MIN_USR_OPEN_FILE+1;*/
@@ -1415,9 +1435,9 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode)
     mode = 'a';
   else if (!strcmp(strmode,"rb+") || !strcmp(strmode,"r+") || !strcmp(strmode,"r+b"))
     mode = 's';  /* (i.e. r+) */
-  else if (!strcmp(strmode,"rb+") || !strcmp(strmode,"w+") || !strcmp(strmode,"w+b"))
+  else if (!strcmp(strmode,"wb+") || !strcmp(strmode,"w+") || !strcmp(strmode,"w+b"))
     mode = 'x'; /* (i.e. r+) */
-  else if (!strcmp(strmode,"rb+") || !strcmp(strmode,"a+") || !strcmp(strmode,"a+b"))
+  else if (!strcmp(strmode,"ab+") || !strcmp(strmode,"a+") || !strcmp(strmode,"a+b"))
     mode = 'b'; /* (i.e. a+) */
 
   for (i=MIN_USR_OPEN_FILE, stream_found = -1, first_null = -1; 
