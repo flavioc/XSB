@@ -206,8 +206,7 @@ load_exec(File, ModName) :-
 		file_nl(STDERR), fail
 	),
 	!,
-	stat_flag(BANNER_CTL,BannerCtl),
-	(   KeepQuiet is BannerCtl mod QUIETLOAD, KeepQuiet =:= 0
+	(   banner_control(quietload)
 	->  true
 	;   file_write0(STDMSG, '['), file_write0(STDMSG, ModName),
 	    file_write0(STDMSG, ' loaded]'), file_nl(STDMSG)

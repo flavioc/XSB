@@ -41,8 +41,7 @@
 interpreter :-
         set_inthandler('_$keyboard_int'(_,_), MYSIG_KEYB),
 	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV),
-        stat_flag(BANNER_CTL, BannerCtl), % no-banner flag on cmd line
-	(   HideBanner is BannerCtl mod NOBANNER, HideBanner =:= 0
+	( banner_control(nobanner)
 	->  true		% don't print banner
 	;   version_message
 	),
@@ -57,9 +56,8 @@ interpreter :-
         xsb_flag(goal, CmdGoal),
         (CmdGoal == '' ->
             true
-        ;   stat_flag(BANNER_CTL,BannerCtl),
-	    KeepQuiet is BannerCtl mod QUIETLOAD,
-	    (  KeepQuiet =:= 0
+        ;
+	    ( banner_control(quietload)
 	    -> true
 	    ;  file_nl(STDMSG),
 	       file_write(STDMSG, 'Evaluating command line goal:  '),
@@ -68,11 +66,11 @@ interpreter :-
 	    %% Don't print prompt, if --noprompt specified on cmd line
 	    %% Useful when spawning xsb subprocesses, 
 	    %% so they won't send junk back to the parent.
-	    (	HidePrompt is BannerCtl mod NOPROMPT, HidePrompt =:= 0
+	    (	banner_control(noprompt)
 	    ->	true
 	    ;	file_write(STDFDBK, '| ?- ')
 	    ),
-	    (  KeepQuiet =:= 0
+	    (  banner_control(quietload)
 	    -> true
 	    ;  file_write(STDMSG, CmdGoal), file_nl(STDMSG)
 	    ),
@@ -105,9 +103,8 @@ interpreter1 :-
 	conset('_$break_level', 0),
 	print_debug_state,
 	prompt(Prompt,Prompt),
-	%% Hide prompt, is --noprompt
-	stat_flag(BANNER_CTL, BannerCtl),
-	(   HidePrompt is BannerCtl mod NOPROMPT, HidePrompt =:= 0
+	%% Hide prompt, if --noprompt
+	(   banner_control(noprompt)
 	->  true
 	;   file_write(STDFDBK, Prompt), file_flush(STDFDBK, _)
 	),

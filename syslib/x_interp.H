@@ -55,4 +55,5 @@
 :- import verify_attributes/2 from usermod.
 :- import conset/2, conget/2 from gensym.
 
+:- import banner_control/1 from banner.
 

@@ -51,7 +51,6 @@
 	  told/0, telling/1, functor/3, cputime/1
      from standard.
 :- import code_load/3, code_call/3, file_read_canonical/3,
-	  stat_flag/2,
 	  expand_filename/2, unload_seg/1,
 	  buff_word/3, assert_code_to_buff/1, assert_buff_to_clref/6,
 	  conpsc/2, psc_ep/2, psc_tabled/2, psc_type/2, psc_name/2,
@@ -70,3 +69,5 @@
      from parse.
 :- import conset/2, conget/2, gensym/2  from gensym.
 :- import xsb_configuration/2 from xsb_configuration.
+
+:- import banner_control/1 from banner.
