@@ -646,8 +646,7 @@ parse_list(Spec, SymTab, SymbolProp, _Directive) :-
 	sym_insert(P, A, SymbolProp, SymTab, _).
 parse_list(X, _, _, Directive) :-
 	warning(('Non predicate specification "', X, 
-		 '" found in ', Directive, ' directive')),
-	fail.
+		 '" found in ', Directive, ' directive. Ignored!')).
 
 /*======================================================================*/
 /* module_close(+ModuleIn, -ModuleOut)					*/
