@@ -1,5 +1,5 @@
 /* File:      dbclause.P
-** Author(s): Kostis Sagonas, David S. Warren
+** Author(s): David S. Warren, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -27,6 +27,7 @@
 #include "builtin.h"
 #include "sig.h"
 
+/*======================================================================*/
 
 :- set_inthandler('_$clause_int'(_), MYSIG_CLAUSE).
 
@@ -88,35 +89,18 @@ goal_cut_trans_a((A->B),(A->Nb),Cutpoint) :- !,
 	goal_cut_trans_a(B,Nb,Cutpoint).
 goal_cut_trans_a(X,X,_).
 
-hack_consult([-X],reconsult(X)) :- !.
 hack_consult([X],consult(X)) :- !.
-hack_consult([-X|Y],(reconsult(X),Z)) :- !,hack_consult(Y,Z).
 hack_consult([X|Y],(consult(X),Z)) :- !,hack_consult(Y,Z).
 
 
 % db_retractall(+Call,+Prref) deletes all clauses matching a pattern
 
 db_retractall(Call,Prref) :-
-	(\+ most_gen(Call)
-	 ->	db_retract(Call,_,Prref)
-	 ;	db_retract_abol(Prref)
+	( is_most_general_term(Call) ->	db_retract_abol(Prref)
+	;   db_retract(Call,_,Prref)
 	),
 	fail.
 db_retractall(_,_).
-
-most_gen(Call) :-
-	conpsc(Call,Psc),
-	psc_arity(Psc,Arity),
-	most_gen(Call,Arity).
-most_gen(Call,I) :-
-	(I > 0
-	 ->	term_arg(Call,I,Arg),
-		var(Arg),
-		Arg = a,
-		I1 is I-1,
-		most_gen(Call,I1)
-	 ;	true
-	).
 
 db_retract_abol(Prref1) :-
 	buff_byte(Prref1,0,Op1),
@@ -265,18 +249,17 @@ db_reclaim_space(_,_).
 %==================================================
 
 root_is_not_null(NodeAddr) :-
-	buff_word(NodeAddr,8,RootOfCall),
-	\+(RootOfCall = 0).
+	buff_word(NodeAddr,8,RootOfCall), RootOfCall =\= 0.
 
 
 chk_if_trie_assert(Y,trie,TrieNodeAddr) :- 
-			buff_word(Y, -8, Lenflg),
-			Flag is Lenflg /\ 3,
-			Flag = 2,
-			buff_word(Y,12,TrieNodeAddr),
-			buff_byte(TrieNodeAddr,0,Inst),
-			Inst = 124,!.
-
+	buff_word(Y, -8, Lenflg),
+	Flag is Lenflg /\ 3,
+	Flag = 2,
+	buff_word(Y,12,TrieNodeAddr),
+	buff_byte(TrieNodeAddr,0,Inst),
+	Inst = 124,
+	!.
 chk_if_trie_assert(_,nottrie,_).
 
 
