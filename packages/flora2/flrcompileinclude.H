@@ -29,11 +29,14 @@
 	parse_filename/4,
 	stat_set_flag/2
    from machine.
+
 :- import 
 	storage_find_fact/2,
 	storage_insert_fact/3
    from storage.
+
 :- import ','/2 from standard.
+
 :- import
 	flora_set_xpp_options/0,
 	flora_clear_xpp_options/0,
@@ -41,17 +44,24 @@
 	flora_locate_file/3,
 	flora_FLH_filename/2
    from flrutils.
+
 :- import
 	flora_stderr_nl/0,
 	flora_error_line/2
    from flrprint.
+
 :- import member/2 from basics.
+
 :- import process_control/2 from shell.
+
 :- import xpp_process_file/3 from parse.
+
 :- import
 	fmt_write_string/3,
 	path_sysop/2
    from file_io.
+
+:- import bootstrap_flora/0 from flora2.
 
 :- export flCompileInclude/1.
 
