@@ -59,7 +59,6 @@ extern xsbBool glstack_realloc(int,int);
 extern void print_cp(int);
 extern void print_tr(int);
 extern void print_ls(int);
-extern void print_chat(int);
 extern void print_all_stacks(int);
 extern void print_regs(int,int);
 extern void print_heap(int,int,int);

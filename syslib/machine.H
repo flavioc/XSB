@@ -129,7 +129,6 @@
         '$$set_scope_marker'/0,
         '$$unwind_stack'/0,
         '$$clean_up_block'/0,
-	print_chat/0,
 	print_ls/0, print_tr/0, print_heap/2, print_cp/0, print_regs/0,
 	print_all_stacks/0, expand_heap/0, mark_heap/1, gc_heap/0,
 	'$$findall_init'/2,
