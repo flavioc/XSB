@@ -272,6 +272,144 @@ NodeStats tsi_statistics() {
 /*-------------------------------------------------------------------------*/
 
 /*
+ *                      Displaying Current Usage
+ *                      ------------------------
+ */
+
+void print_detailed_tablespace_stats() {
+
+  NodeStats
+    btn,		/* Basic Trie Nodes */
+    tstn,		/* Time Stamp Trie Nodes */
+    aln,		/* Answer List Nodes */
+    tsi;		/* Time Stamp Indices (Index Entries/Nodes) */
+
+  SubgStats  sf;	/* Subgoal Frames */
+
+  HashStats
+    btht,		/* Basic Trie Hash Tables */
+    tstht;		/* Time Stamp Trie Hash Tables */
+  
+
+  btn = btn_statistics();
+  btht = btht_statistics();
+  sf = subgoal_statistics();
+  tstn = tstn_statistics();
+  tstht = tstht_statistics();
+  tsi = tsi_statistics();
+  aln = aln_statistics();
+
+  printf("\n"
+	 "  Table Space\n"
+	 "  -----------\n");  
+  printf("  Current Total Allocation:   %12u bytes\n"
+	 "  Current Total Usage:        %12u bytes\n",
+	 CurrentTotalTableSpaceAlloc(btn,btht,sf,aln,tstn,tstht,tsi),
+	 CurrentTotalTableSpaceUsed(btn,btht,sf,aln,tstn,tstht,tsi));
+  printf("\n"
+	 "    Basic Tries:\n");
+  printf("      Basic Trie Nodes (%u blocks):\n"
+	 "        Allocated:   %10u  (%8u bytes)\n"
+	 "        Used:        %10u  (%8u bytes)\n"
+	 "        Free:        %10u  (%8u bytes)\n",
+	 NodeStats_NumBlocks(btn),
+	 NodeStats_NumAllocNodes(btn),  NodeStats_SizeAllocNodes(btn),
+	 NodeStats_NumUsedNodes(btn),  NodeStats_SizeUsedNodes(btn),
+	 NodeStats_NumFreeNodes(btn),  NodeStats_SizeFreeNodes(btn));
+  printf("      Basic Trie Hash Tables (%u blocks):\n"
+	 "        Headers:     %10u  (%8u bytes)\n"
+	 "          Used:      %10u  (%8u bytes)\n"
+	 "          Free:      %10u  (%8u bytes)\n"
+	 "        Buckets:     %10u  (%8u bytes)\n"
+	 "          Used:      %10u\n"
+	 "          Empty:     %10u\n"
+	 "        Occupancy:   %10u BTNs\n",
+	 HashStats_NumBlocks(btht),
+	 HashStats_NumAllocHeaders(btht),  HashStats_SizeAllocHeaders(btht),
+	 HashStats_NumUsedHeaders(btht),  HashStats_SizeUsedHeaders(btht),
+	 HashStats_NumFreeHeaders(btht),  HashStats_SizeFreeHeaders(btht),
+	 HashStats_NumBuckets(btht),  HashStats_SizeAllocBuckets(btht),
+	 HashStats_NonEmptyBuckets(btht),  HashStats_EmptyBuckets(btht),
+	 HashStats_TotalOccupancy(btht));
+  printf("\n"
+	 "    Subgoal Frames (%u blocks):\n"
+	 "      Allocated:     %10u  (%8u bytes)\n"
+	 "      Used:          %10u  (%8u bytes)\n"
+	 "        Generators:  %8u    (%6u bytes)\n"
+	 "        Consumers:   %8u    (%6u bytes)\n"
+	 "      Free:          %10u  (%8u bytes)\n",
+	 SubgStats_NumBlocks(sf),
+	 SubgStats_NumAllocFrames(sf),  SubgStats_SizeAllocFrames(sf),
+	 SubgStats_NumUsedFrames(sf),  SubgStats_SizeUsedFrames(sf),
+	 SubgStats_NumProducers(sf),
+	 SubgStats_NumProducers(sf) * SubgStats_FrameSize(sf),
+	 SubgStats_NumConsumers(sf),
+	 SubgStats_NumConsumers(sf) * SubgStats_FrameSize(sf),
+	 SubgStats_NumFreeFrames(sf),  SubgStats_SizeFreeFrames(sf));
+  printf("\n"
+	 "    Answer List Nodes (%u blocks):\n"
+	 "      Allocated:     %10u  (%8u bytes)\n"
+	 "      Used:          %10u  (%8u bytes)\n"
+	 "      Free:          %10u  (%8u bytes)\n",
+	 NodeStats_NumBlocks(aln),
+	 NodeStats_NumAllocNodes(aln),  NodeStats_SizeAllocNodes(aln),
+	 NodeStats_NumUsedNodes(aln),  NodeStats_SizeUsedNodes(aln),
+	 NodeStats_NumFreeNodes(aln),  NodeStats_SizeFreeNodes(aln));
+  printf("\n"
+	 "    Time Stamp Tries:\n"
+	 "      Time Stamp Trie Nodes (%u blocks):\n"
+	 "        Allocated:   %10u  (%8u bytes)\n"
+	 "        Used:        %10u  (%8u bytes)\n"
+	 "        Free:        %10u  (%8u bytes)\n",
+	 NodeStats_NumBlocks(tstn),
+	 NodeStats_NumAllocNodes(tstn),  NodeStats_SizeAllocNodes(tstn),
+	 NodeStats_NumUsedNodes(tstn),  NodeStats_SizeUsedNodes(tstn),
+	 NodeStats_NumFreeNodes(tstn) ,  NodeStats_SizeFreeNodes(tstn));
+  printf("      Time Stamp Trie Hash Tables (%u blocks):\n"
+	 "        Headers:     %10u  (%8u bytes)\n"
+	 "          Used:      %10u  (%8u bytes)\n"
+	 "          Free:      %10u  (%8u bytes)\n"
+	 "        Buckets:     %10u  (%8u bytes)\n"
+	 "          Used:      %10u\n"
+	 "          Empty:     %10u\n"
+	 "        Occupancy:   %10u TSTNs\n",
+	 HashStats_NumBlocks(tstht),
+	 HashStats_NumAllocHeaders(tstht),  HashStats_SizeAllocHeaders(tstht),
+	 HashStats_NumUsedHeaders(tstht),  HashStats_SizeUsedHeaders(tstht),
+	 HashStats_NumFreeHeaders(tstht),  HashStats_SizeFreeHeaders(tstht),
+	 HashStats_NumBuckets(tstht),  HashStats_SizeAllocBuckets(tstht),
+	 HashStats_NonEmptyBuckets(tstht),  HashStats_EmptyBuckets(tstht),
+	 HashStats_TotalOccupancy(tstht));
+  printf("      Time Stamp Trie Index Nodes (%u blocks):\n"
+	 "        Allocated:   %10u  (%8u bytes)\n"
+	 "        Used:        %10u  (%8u bytes)\n"
+	 "        Free:        %10u  (%8u bytes)\n",
+	 NodeStats_NumBlocks(tsi),
+	 NodeStats_NumAllocNodes(tsi),  NodeStats_SizeAllocNodes(tsi),
+	 NodeStats_NumUsedNodes(tsi),  NodeStats_SizeUsedNodes(tsi),
+	 NodeStats_NumFreeNodes(tsi),  NodeStats_SizeFreeNodes(tsi));
+
+  if (flags[TRACE_STA]) {
+    /* Report Maximum Usages
+       --------------------- */
+    update_maximum_tablespace_stats(&btn,&btht,&sf,&aln,&tstn,&tstht,&tsi);
+    printf("\n"
+	   "  Maximum Total Usage:        %12ld bytes\n",
+	   maximum_total_tablespace_usage());
+    printf("  Maximum Structure Usage:\n"
+	   "    ALNs:            %10u  (%8u bytes)\n"
+	   "    TSINs:           %10u  (%8u bytes)\n",
+	   maximum_answer_list_nodes(),
+	   maximum_answer_list_nodes() * NodeStats_NodeSize(aln),
+	   maximum_timestamp_index_nodes(),
+	   maximum_timestamp_index_nodes() * NodeStats_NodeSize(tsi));
+  }
+  printf("\n");
+}
+
+/*-------------------------------------------------------------------------*/
+
+/*
  *                       Recording Maximum Usage
  *                       -----------------------
  */
@@ -345,9 +483,9 @@ void compute_maximum_tablespace_stats() {
  */
 
 void update_maximum_tablespace_stats(NodeStats *btn, HashStats *btht,
-				      SubgStats *sf, NodeStats *aln,
-				      NodeStats *tstn, HashStats *tstht,
-				      NodeStats *tsi) {
+				     SubgStats *sf, NodeStats *aln,
+				     NodeStats *tstn, HashStats *tstht,
+				     NodeStats *tsi) {
    unsigned long  byte_size;
 
    byte_size =
@@ -399,28 +537,28 @@ void reset_subsumption_stats() {
 }
 
 
-void print_subsumption_stats() {
+void print_detailed_subsumption_stats() {
 
   printf("Subsumptive Operations:\n"
-	 "  Subsumptive call check/insert ops: %8d\n"
+	 "  Subsumptive call check/insert ops: %8u\n"
 	 "  * Calls to nonexistent or incomplete tables\n"
-	 "    - Producers:                   %6d\n"
-	 "    - Variants of producers:       %6d\n"
-	 "    - Properly subsumed:           %6d\n"
-	 "        Resulted in call table entry: %d\n"
-	 "  * Calls to completed tables:     %6d\n",
+	 "    - Producers:                   %6u\n"
+	 "    - Variants of producers:       %6u\n"
+	 "    - Properly subsumed:           %6u\n"
+	 "        Resulted in call table entry: %u\n"
+	 "  * Calls to completed tables:     %6u\n",
 	 NumSubOps_CallCheckInsert, NumSubOps_ProducerCall,
 	 NumSubOps_VariantCall, NumSubOps_SubsumedCall,
 	 NumSubOps_SubsumedCallEntry, NumSubOps_CallToCompletedTable);
-  printf("  Answer check/insert operations:    %8d\n"
-	 "  * Actual answer inserts:         %6d\n"
+  printf("  Answer check/insert operations:    %8u\n"
+	 "  * Actual answer inserts:         %6u\n"
 	 "  * Derivation ratio (New/Total):    %4.2f\n",
 	 NumSubOps_AnswerCheckInsert, NumSubOps_AnswerInsert,
 	 ( (NumSubOps_AnswerCheckInsert != 0)
 	   ? (float)NumSubOps_AnswerInsert / (float)NumSubOps_AnswerCheckInsert
 	   : 0 ));
-  printf("  Answer retrieval operations:       %8d\n"
-	 "  Answer-list consumption ops:       %8d\n",
+  printf("  Answer retrieval operations:       %8u\n"
+	 "  Answer-list consumption ops:       %8u\n",
 	 NumSubOps_AnswerRetrieval, NumSubOps_AnswerConsumption);
 }
 

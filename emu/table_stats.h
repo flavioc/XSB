@@ -157,6 +157,12 @@ NodeStats tsi_statistics();
      NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  + \
      NodeStats_SizeUsedNodes(TSI)  +  NodeStats_SizeUsedNodes(ALN) )
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/* Printing Routines
+   ----------------- */
+void print_detailed_tablespace_stats();
+
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -236,7 +242,7 @@ extern NumSubOps numSubOps;
 
 
 void reset_subsumption_stats();
-void print_subsumption_stats();
+void print_detailed_subsumption_stats();
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
