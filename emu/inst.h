@@ -553,3 +553,4 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define SOCKET_REQUEST          252
 
 #define JAVA_INTERRUPT          253
+#define FORCE_TRUTH_VALUE	254

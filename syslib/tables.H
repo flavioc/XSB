@@ -30,7 +30,8 @@
 	  get_call/3, get_calls/3, get_returns/2, get_returns/3,
 	  get_residual/2,
 	  get_lastnode_cs_retskel/3, /* because it is used in intern.P */
-	  breg_retskel/4.
+	  breg_retskel/4,
+	  force_truth_value/2.
 
 :- export is_trie_asserted/1, (trie_dynamic)/1, trie_assert/1, trie_assert/2,
 	  trie_retract/1, trie_retract_nr/1, trie_retract_all/1,

@@ -515,26 +515,15 @@ static void handle_unsupported_answer_subst(NODEptr as_leaf)
 }
 
 /*
- * When the answers substitution gets an unconditional answer, remove
- * the positive delay literals of this answer substitution from the
- * delay lists that contain them.
+ * To release all the DLs (and their DEs) in the DelayInfo node `asi'.
  */
 
-static void simplify_pos_unconditional(NODEptr as_leaf)
+static void release_all_dls(ASI asi)
 {
-  ASI asi = Delay(as_leaf);
   ASI de_asi;
-  PNDE pde, tmp;
   DE de, tmp_de;
   DL dl, tmp_dl;
 
-#ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start simplify_pos_unconditional()\n");
-#endif
-
-  /*
-   * To release all the DLs (and their DEs).
-   */
   dl = asi_dl_list(asi);
   while (dl) {
     tmp_dl = dl_next(dl);
@@ -553,8 +542,28 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
     } /* while (de) */
     release_entry(dl, released_dls, dl_next);
     dl = tmp_dl; /* next DL */
-  } /* while (dl) */
+  }
+}
 
+/*
+ * When the answers substitution gets an unconditional answer, remove
+ * the positive delay literals of this answer substitution from the
+ * delay lists that contain them.
+ */
+
+static void simplify_pos_unconditional(NODEptr as_leaf)
+{
+  ASI asi = Delay(as_leaf);
+  PNDE pde, tmp;
+  DE de;
+  DL dl;
+
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> start simplify_pos_unconditional()\n");
+#endif
+
+  release_all_dls(asi);
+  
   unmark_conditional_answer(as_leaf);
   pde = asi_pdes(asi);
   while (pde) {
@@ -755,5 +764,36 @@ void abolish_wfs_space(void)
     abolish_edge_space();
 #endif
 }
+
+/*
+ * Two functions added for builtin force_truth_value/2.
+ */
+
+void force_answer_true(NODEptr as_leaf)
+{
+  SGFrame subgoal;
+  
+  if (is_conditional_answer(as_leaf)) {
+    subgoal = asi_subgoal(Delay(as_leaf));
+    simplify_pos_unconditional(as_leaf);
+    simplify_neg_succeeds(subgoal);
+  }
+}
+
+void force_answer_false(NODEptr as_leaf)
+{
+  ASI asi = Delay(as_leaf);
+  SGFrame subgoal;
+
+  if (is_conditional_answer(as_leaf)) {
+    subgoal = asi_subgoal(asi);
+    release_all_dls(asi);
+    delete_branch(as_leaf, &subg_ans_root_ptr(subgoal));
+    simplify_pos_unsupported(as_leaf);
+    mark_subgoal_failed(subgoal);
+    simplify_neg_fails(subgoal);
+  }
+}
+
 
 /*---------------------- end of file slgdelay.c ------------------------*/

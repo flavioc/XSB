@@ -162,6 +162,9 @@ extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
 extern int  findall_init(void), findall_add(void), findall_get_solutions(void);
 extern int  copy_term(void);
 
+extern void force_answer_true(NODEptr);
+extern void force_answer_false(NODEptr);
+
 #if (defined(DEBUG) && defined(DEBUG_DELAY))
 extern void print_delay_list(FILE *, CPtr);
 extern void print_subgoal(FILE *, SGFrame);
@@ -1910,6 +1913,16 @@ int builtin_call(byte number)
   case JAVA_INTERRUPT: 
     return( startInterruptThread( (SOCKET)ptoc_int(1) ) );
 #endif
+
+  case FORCE_TRUTH_VALUE: /* +R1: AnsLeafPtr; +R2: TruthValue */
+    as_leaf = (NODEptr) ptoc_addr(1);
+    tmpstr = ptoc_string(2);
+    if (!strcmp(tmpstr, "true"))
+      force_answer_true(as_leaf);
+    else if (!strcmp(tmpstr, "false"))
+      force_answer_false(as_leaf);
+    else xsb_abort("Unknown truth value (arg 2) in force_truth_value/2");
+  break;
 
   default:
     sprintf(message, "Builtin #%d is not implemented.\n", number);

@@ -282,6 +282,7 @@ trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :- '_$builtin'(149).
 get_returns(_CallStr,_RetSkel) :- '_$builtin'(150).
 get_calls(_CallSkel)  :- '_$builtin'(151).
 construct_ret_for_call(_RetSkel) :- '_$builtin'(153).
+force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(254).
 
 /*======================================================================*/
 /*  Emulator-dependent constants (make sure they are kept up-to-date).	*/

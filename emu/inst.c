@@ -427,6 +427,7 @@ void init_builtin_table(void)
 #endif
 
   set_builtin_table(JAVA_INTERRUPT, "setupJavaInterrupt");
+  set_builtin_table(FORCE_TRUTH_VALUE, "force_truth_value");
 }
 
 /*----------------------------------------------------------------------*/
