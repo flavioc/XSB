@@ -80,7 +80,7 @@ write_pred_props(Sym, Name, Arity) :-
 	( sym_prop(mode(Mode), Sym) ->
 		write(':- mode  '), write(Mode), put(0'.), nl
 	; true ),
-	( sym_prop(tabled(_,_,_,_), Sym) ->
+	( sym_prop(tabled(_,_), Sym) ->
 		write(':- table '), writeq(Name), put(0'/),
 		write(Arity), put(0'.), nl
 	; true ).

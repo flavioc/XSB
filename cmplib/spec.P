@@ -287,7 +287,7 @@ specialise([pi_calls(Sym,Calls,Representable)|PICs], SymTab, CLin, CLout) :-
 
 specialise_pred(Sym, Calls, Representable, SymTab, CLin, CLout) :-
 	sym_name(Sym, N, A),
-	( sym_type(Sym,tabled(_,_Chs,_Rhs,_)) -> Tabled = 1 ; Tabled = 0 ),
+	( sym_type(Sym,tabled(_,_)) -> Tabled = 1 ; Tabled = 0 ),
 	( ( \+ option(spec_repr), Representable = 0
 	  ; non_overlapping_selection(Calls), Representable = 1
 	  ) ->
@@ -392,7 +392,7 @@ represent(Msg, Name, Arity, Tabled, SymTab, NewSym, Representative) :-
 	msg_copy(Msg, MsgCopy, NewArgs, [], 0, NewArity),
 	Properties = [pred,defined,used|Prop],
 	( Tabled =:= 0 -> Prop = []
-	; Prop = [tabled(_,_)],
+	; Prop = [tabled],
 	  warning(('The specialisation of ', Name, '/', Arity,
 		   ' will cause double tabling !')),
 	  message('           (possible source of inefficiency)')
@@ -748,7 +748,7 @@ generate_table_decl([goal(Sym,Args)|Goals], PICs) :-
 		   ' could not be ')),
 	  message(('           processed as intended... ',
 		   '(tabling the whole predicate instead)')),
-	  sym_propin(tabled(_,_), Sym)
+	  sym_propin(tabled, Sym)
 	).
 
 :- mode 'search for call'(+,+).
@@ -759,7 +759,7 @@ generate_table_decl([goal(Sym,Args)|Goals], PICs) :-
 	( member1(Args,Cs) ->
 	    ( nonvar(Rep) ->
 		NCs = [goal(NewSym,_)|_],
-		sym_propin(tabled(_,_), NewSym)
+		sym_propin(tabled, NewSym)
 	    ; error(('Singleton optimisations clash with table declaration')),
 	      message('         (please use compiler option "unfold_off")')
 	    )

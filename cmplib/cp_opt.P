@@ -29,7 +29,7 @@ cp_opt(module(Symtab,DcList,ClList,QrList),
 
 cp_opt0([], [],_Symtab).
 cp_opt0([pred(Sym,Pscs,Oth)|CList0],Outlist,Symtab):-
-	sym_type(Sym, tabled(_Tabind,_Chs,_Rhs,_Ar)),!,
+	sym_type(Sym, tabled(_Tabind,_Ar)),!,
 	cp_opt_block(pred(Sym,Pscs,Oth), pred(Sym1,Pscs1,Oth1), 
 					 Symtab,Switch),
 	(Switch =:= 0 -> Outlist = [pred(Sym,Pscs,Oth)|CList1]

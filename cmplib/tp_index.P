@@ -24,10 +24,8 @@
 */
 
 
-
 /*======================================================================*/
-/*  makeindex(+Sym, +Clauses, -Pil, -PilR,				*/
-/*	      +PredPrag, +Tabled, +Tabind)				*/
+/*  makeindex(+Sym, +Clauses, -Pil, -PilR, +PredPreg, +Tabled)  	*/
 /* 	Generates try/retry/trust and index instructions for clauses	*/
 /*	of the predicate/function.					*/
 /*======================================================================*/
@@ -36,45 +34,28 @@
 /* single clause predicate cases: no try/index instruction is needed.	*/
 /*----------------------------------------------------------------------*/
 
-makeindex(Sym,[clause(_,_,crec(_,Label))],Pil,Pilr,_,Tabled,Tabind) :- !,
-	( Tabled =:= 0 -> Pil = Pilr
-	; Tabind = tabled(Ind,Chs,Rhs,_), sym_name(Sym, _, Arity),
-	  Pil = [tabletryfail(Arity,Label,Ind),tabconfig(Chs,Rhs)|Pilr]
+makeindex(Sym, [clause(_,_,crec(_,Label))], Pil, Pilr, _, Tabled) :- !,
+	( Tabled == 0 -> Pil = Pilr
+	; Tabled = tabled(Ind,_), sym_name(Sym, _, Arity),
+	  Pil = [tabletrysingle(Arity,Label,Ind),tabconfig(0,0)|Pilr]
 	).
 
 /*----------------------------------------------------------------------*/
 /* 0-ary predicates generate try's only and are NOT indexed.		*/
 /*----------------------------------------------------------------------*/
 
-makeindex(Sym, Clauses, Pil, Pilr, _Prag, Tabled, Tabind) :-
+makeindex(Sym, Clauses, Pil, Pilr, _Prag, Tabled) :-
 	sym_name(Sym, _, Arity),
 	Arity =:= 0,
 	!,
-	gennum(_N),
-	index_label_list(Clauses,LabelList),
-	index_gentrys(Arity,LabelList,Pil,Pilr,Tabled,Tabind).
-
-/*----------------------------------------------------------------------*/
-/* a parallel predicate generates try instructions only.		*/
-/*----------------------------------------------------------------------*/
-
-/* not needed right now -- tls 
-makeindex(Sym, Clauses, Pil, Pilr, Prag, Tabled, Tabind) :-
-	sym_name(Sym, _, Arity),
-	member((parallel), Prag), 
-	!,
-	gennum(N),
 	index_label_list(Clauses, LabelList),
-	length(LabelList, Size),
-	Pil = [partry(Arity,Size)|Pil1],
-	index_gentrys(Arity, LabelList, Pil1, Pilr, Tabled, Tabind).
-*/
+	index_gentrys(Arity, LabelList, Pil, Pilr, Tabled).
 
 /*----------------------------------------------------------------------*
  * all other cases                                                      *
  *----------------------------------------------------------------------*/
 
-makeindex(Sym, Clauses, Pil, Pilr, Prag, Tabled, Tabind) :-
+makeindex(Sym, Clauses, Pil, Pilr, Prag, Tabled) :-
 	sym_name(Sym, _, Arity),
 	( member(index(Narg), Prag), nonvar(Narg), !
 	; Narg = 1 ),				% Default index on arg 1
@@ -82,76 +63,72 @@ makeindex(Sym, Clauses, Pil, Pilr, Prag, Tabled, Tabind) :-
 	index_split(ArgList, ArgListGroup),
 	( ArgListGroup = [_One] -> NeedLabel = 0, Pil2 = Pil
 	; index_extract_label_list(ArgListGroup, LabelList),
-	  index_gentrys(Arity, LabelList, Pil, Pil2, Tabled, Tabind),
+	  index_gentrys(Arity, LabelList, Pil, Pil2, Tabled),
 	  NeedLabel = 1
 	),
 	index_groups(ArgListGroup, Narg, Pil2, Pilr,
-		     NeedLabel, 0, Arity, Tabled, Tabind).
+		     NeedLabel, Arity, Tabled).
 
 /*======================================================================*/
 /* index_groups(+ArgListGroup, +ArgNum, -Pil, -PilRest, +NeedLabel,	*/
-/*		+Parallel, +Arity, +Tabled, +Tabind)			*/
+/*		+Arity, +Tabled)			                */
 /*======================================================================*/
 
-index_groups([], _, Pil, Pil, _, _, _, _, _).
-index_groups([arglabel(T,Group,L)|Rest], Narg,Pil,Pilr,
-		NeedLabel,Parallel,Arity,Tabled,Tabind) :-
+index_groups([], _, Pil, Pil, _, _, _).
+index_groups([arglabel(T,Group,L)|Rest], Narg, Pil, Pilr,
+	     NeedLabel, Arity, Tabled) :-
 	( T = g ->
 	   ( NeedLabel =:= 0 -> Pil = Pil1
 	   ; gennum(N), L = (inde,N), Pil = [label(inde,L)|Pil1]
            ),
-	   index_group(Group, Narg, Pil1, Pil2, Parallel, Arity, Tabled, Tabind)
+	   index_group(Group, Narg, Pil1, Pil2, Arity, Tabled)
 	; Pil = Pil2
 	),
-	index_groups(Rest, Narg, Pil2, Pilr, NeedLabel, Parallel, Arity,
-							Tabled, Tabind).
+	index_groups(Rest, Narg, Pil2, Pilr, NeedLabel, Arity, Tabled).
 
 /*======================================================================*/
-/* index_group(+Group, +Narg, -Pil, -PilRest, +Parallel, +Arity,	*/
-/*	       +Tabled, +Tabind)					*/
+/* index_group(+Group, +Narg, -Pil, -PilRest, +Arity, +Tabled)  	*/
 /*	Generates index and try/retry/trust instructions for a group.	*/
 /*======================================================================*/
 
 index_group([arglabel(T1,_,L1),arglabel(T2,_,L2)],
-		Narg, Pil, Pilr, Parallel, Arity, Tabled, Tabind) :-
+		Narg, Pil, Pilr, Arity, Tabled) :-
         ( index_sot_inst(T1,T2,Narg,L1,L2,Inst) -> Pil = [Inst|Pil1]
 	; T1 = l, T2 = l -> Pil = Pil1
 	),
-	( Parallel =:= 0 -> Pil1 = Pil2 ; Pil1 = [partry(Arity,2)|Pil2] ),
-	index_gentrys(Arity, [L1,L2], Pil2, Pilr, Tabled, Tabind).
-index_group(Group, Narg, Pil, Pilr, Parallel, Arity, Tabled, Tabind) :-
+	index_gentrys(Arity, [L1,L2], Pil1, Pilr, Tabled).
+index_group(Group, Narg, Pil, Pilr, Arity, Tabled) :-
 	length(Group, Size),
 	gennum(N), L = (inde,N),
 	Pil = [cases(L, Arity, Size, _)|Pil1],
 	index_genarglabel(Group, Pil1, Pil2),
 	Pil2 = [switchonbound(Narg, L, Size)|Pil3],
-	( Parallel =:= 0 -> Pil3 = Pil4 ; Pil3 = [partry(Arity,Size)|Pil4] ),
 	index_extract_label_list(Group, LabelList),
-	index_gentrys(Arity, LabelList, Pil4, Pilr,Tabled,Tabind).
+	index_gentrys(Arity, LabelList, Pil3, Pilr, Tabled).
 
 index_genarglabel([], Pil, Pil).
 index_genarglabel([ArgLabel|Rest], [ArgLabel|Pil], Pilr) :-
 	index_genarglabel(Rest, Pil, Pilr).
 
 /*======================================================================*/
-/* index_gentrys(+Arity, +LabelList, -Pil, -PilR, +Tabled, +Tabind)	*/
+/* index_gentrys(+Arity, +LabelList, -Pil, -PilR, +Tabled)      	*/
 /*======================================================================*/
 
-index_gentrys(Arity, [Label|Rest], Pil, Pilr, Tabled, tabled(Ind,Chs,Rhs,_)) :-
-	( Tabled =\= 0  -> Pil = [tabletry(Arity,Label,Ind),
-				  tabconfig(Chs,Rhs)|Pilm]
-	;                  Pil = [try(Arity,Label)|Pilm]
+index_gentrys(Arity, [Label|Rest], Pil, Pilr, Tabled) :-
+	( Tabled == 0 -> Pil = [try(Arity,Label)|Pilm]
+	; Tabled = tabled(Ind,_),
+	  Pil = [tabletry(Arity,Label,Ind),tabconfig(0,0)|Pilm]
 	),
 	index_genretrys(Arity, Rest, Pilm, Pilr, Tabled).
 
 index_genretrys(Arity, [L1], Pil, Pilr, Tabled) :-
-	( Tabled =\= 0  -> Pil = [tabletrust(Arity,L1)|Pilr]
-	;                  Pil = [trust(Arity,L1)|Pilr]
+	( Tabled \== 0 -> Pil = [tabletrust(Arity,L1)|Pilr]
+	;                 Pil = [trust(Arity,L1)|Pilr]
 	).
 index_genretrys(Arity, [L1|Rest], Pil, Pilr, Tabled) :-
 	Rest = [_|_],
-	( Tabled =\= 0  -> Pil = [tableretry(Arity,L1)|Pilm]
-	;                  Pil = [retry(Arity,L1)|Pilm]
+	( Tabled \== 0 -> Pil = [tableretry(Arity,L1)|Pilm]
+	;                 Pil = [retry(Arity,L1)|Pilm]
 	),
 	index_genretrys(Arity, Rest, Pilm, Pilr, Tabled).
 

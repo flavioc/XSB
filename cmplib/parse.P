@@ -325,7 +325,7 @@ all_anonymous([vv(VarName,_)|Vars]) :-
 parse_table_directive(P/A, QrList, SymTab) :-
 	nonvar(P), integer(A),
 	!,
-	sym_insert(P, A, [tabled(_,_)], SymTab, _),
+	sym_insert(P, A, [tabled], SymTab, _),
 	add_table(P/A),
 	parse_query(table(P/A), QrList, SymTab).
 
@@ -370,10 +370,6 @@ parse_directive(mode(X), SymTab) :-
 	parse_mode(X, SymTab).
 parse_directive(parallel(X), SymTab) :-
 	parse_list(X, SymTab, [(parallel)], (parallel)).
-% parse_directive(table(X), SymTab) :-
-%	parse_list(X, SymTab, [tabled(_,_)], (table)).
-parse_directive(table_all, _SymTab) :-
-	warning('Compiler directive "table_all" has been renamed to "auto_table" (Tabling will not be performed)').
 parse_directive(auto_table, _SymTab) :-	% This is quite dirty!
 	conset(auto_table, 1).
 parse_directive(suppl_table, _SymTab) :-	% This is quite dirty!

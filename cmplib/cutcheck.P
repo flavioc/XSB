@@ -34,7 +34,7 @@ build_call_graph([Pred|Tail]) :-
 /*  Is predicate table dependent or not?  */
 
 pred_build(Tail,Tail,pred(Sym,_,_),t):-
-          sym_prop(tabled(_,_,_,_),Sym),!.
+          sym_prop(tabled(_,_),Sym),!.
 pred_build(Tail,Tail,pred(Sym,_,_),Ans):-
           sym_prop(td(Ans),Sym),!.
 pred_build(Tail,Outtail,pred(Sym,Clist,_),Ans):-
@@ -58,7 +58,7 @@ check_goal(Tail,Outtail,Goal,Ans):-
 check_goal(Tail,Tail,goal(sym(Name,Arity,_),_),r):-
            standard_symbol(Name,Arity,_),!.
 check_goal(Tail,Tail,goal(Sym,_),t):-
-           sym_prop(tabled(_,_,_,_),Sym),!.
+           sym_prop(tabled(_,_),Sym),!.
 check_goal(Tail,Tail,goal(Sym,_),Ans):-
            sym_prop(td(Ans),Sym),!.
 check_goal(Tail,Outtail,goal(Sym,_),Ans):-
@@ -143,11 +143,11 @@ goal_cut(not(Goal),T,Cl):-
 goal_cut(not(goal(sym(Name,Arity,_,_))),_,_):-
           standard_symbol(Name,Arity,_),!.
 goal_cut(not(goal(Sym,_)),T,Cl):-!,
-         ( ( sym_prop(td(t),Sym) ; sym_prop(tabled(_,_,_,_),Sym)) ->  /*IF*/
-             (   Sym=sym(P,A,_,_),                                    /*THEN*/
+         ( ( sym_prop(td(t),Sym) ; sym_prop(tabled(_,_),Sym)) ->  /*IF*/
+             (   Sym=sym(P,A,_,_),                                /*THEN*/
                  error1(P,A,Cl),
               (var(T) -> T=t(P,A) ; true)  ) ;
-             true ).                                                  /*ELSE*/
+             true ).                                              /*ELSE*/
 goal_cut(not(and(Goal1,Goal2)),T,Cl):-!,
           goal_cut(not(Goal1),T,Cl),!,
           goal_cut(not(Goal2),T,Cl).
@@ -176,10 +176,10 @@ goal_cut(Goal,T,Cl):-
 goal_cut(goal(sym(Name,Arity,_,_),_),_,_):-
          standard_symbol(Name,Arity,_),!.
 goal_cut(goal(Sym,_),T,_):-
-       (  (sym_prop(td(t),Sym) ; sym_prop(tabled(_,_,_,_),Sym)) ->  /* IF */
-          (Sym=sym(P,A,_,_),(var(T) -> T=t(P,A) ; true)             /*THEN*/
+       (  (sym_prop(td(t),Sym) ; sym_prop(tabled(_,_),Sym)) ->  /*  IF  */
+          (Sym=sym(P,A,_,_),(var(T) -> T=t(P,A) ; true)         /* THEN */
            ) ;             
-           true ), !.                                               /* ELSE */
+           true ), !.                                           /* ELSE */
          
 goal_cut(and(Goal1,Goal2),T,Cl):-
          goal_cut(Goal1,T,Cl),

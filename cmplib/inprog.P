@@ -51,7 +51,7 @@ inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag)) :-
 		% The id of the first chunk is 1, same as the head.
     ),
     varproc(VarList, VarTab, PvarCount),
-    ( (need_alloc(Body) ; sym_type(Sym,tabled(_,_,_,_))) -> 
+    ( (need_alloc(Body) ; sym_type(Sym,tabled(_,_))) -> 
 	ARSize is PvarCount + 2		/* tls changed for XWAM */
     ; ARSize = 0
     ).

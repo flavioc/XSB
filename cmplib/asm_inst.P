@@ -64,9 +64,6 @@ asm_inst(getfloat(R,Float),	8,	128,	[pp, r(R), n(Float)]	).
 asm_inst(putfloat(R,Float),	8,	129,	[pp, r(R), n(Float)]	).
 asm_inst(unifloat(Float),	8,	130,	[ppp, n(Float)]	).
 asm_inst(bldfloat(Float),	8,	131,	[ppp, n(Float)]	).
-asm_inst(trys(A,L),		8,	154,	[pp, a(A), l(L)]).
-asm_inst(retrys(A,L),		8,	155,	[pp, a(A), l(L)]).
-asm_inst(trusts(A,L),		8,	156,	[pp, a(A), l(L)]).
 
 asm_inst(trymeelse(A,L),	8,	160,	[pp, a(A), l(L)]).
 asm_inst(retrymeelse(A,L),	8,	161,	[pp, a(A), l(L)]).
@@ -84,9 +81,7 @@ asm_inst(getVn(V),              4,      171,    [pp, v(V)]      ).
 asm_inst(test_heap(A,N),        8,      172,    [pp, a(A), n(N)]).
 
 asm_inst(switchonterm(R,L,L1),	12,	176,	[pp, r(R), l(L), l(L1)]	).
-/* the following two instructions have not been implemented by Jiyang or TLS */
-asm_inst(switchoncon(L),	8,	177,	[ppp, l(L)]	).
-asm_inst(switchonstr(L),	8,	178,	[ppp, l(L)]	).
+
 asm_inst(switchonbound(R, L, N), 12,	179,	[pp, r(R), i(L), i(N)]	).
 asm_inst(switchon3bound(R1, R2, R3, L, N),
 			12,	180,	[r(R1), r(R2), r(R3), i(L), i(N)] ).
@@ -101,7 +96,7 @@ asm_inst(tableretry(A,L),	8,	189,	[pp, a(A), l(L)]).
 asm_inst(tabletry(A,L,Tbind),   12,     190,    [pp, a(A),l(L),i(Tbind)]  ).
 asm_inst(tabletrust(A,L), 	8,     	193,    [pp, a(A),l(L)]  ).
 asm_inst(tabconfig(Chs,Rhs), 	0,    	194,    [ppp, i(Chs),i(Rhs)]  ).
-asm_inst(tabletryfail(A,L,Tbi),	12,	197,	[pp, a(A),l(L),i(Tbi)]  ).
+asm_inst(tabletrysingle(A,L,Tbi),12,	197,	[pp, a(A),l(L),i(Tbi)]  ).
 asm_inst(new_answer_dealloc(A,R), 4,   	207,    [p,a(A),r(R)]  ).
 
 asm_inst(term_comp(R1,R2,R),	4,	208,	[r(R1),r(R2),r(R)]).

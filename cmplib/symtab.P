@@ -222,14 +222,9 @@ sym_propin1(Use, prop(_,_,_,OUse,_,_), N, A) :-
 sym_propin1(ep(EP), prop(_,_,_,_,ep(OEP),_), N, A) :- 
 	!,
 	( EP = OEP -> true ; error((N/A, ' has already an entry point!')) ).
-sym_propin1(tabled(Chs,Rhs), prop(_,_,_,_,_,List), _N, A) :- !,
-	member1(tabled(Tabind,Chs,Rhs,A), List),
-	(integer(Chs) -> true 
-	 ;		 Chs = 0),
-	(integer(Rhs) -> true 
-	 ;		 Rhs = 0),
-	(integer(Tabind) -> true 
-	 ;		 get_and_inc_tabnum(Tabind)).
+sym_propin1(tabled, prop(_,_,_,_,_,List), _N, A) :- !,
+	member1(tabled(Tabind,A), List),
+	( integer(Tabind) -> true ; get_and_inc_tabnum(Tabind) ).
 sym_propin1(Other, prop(_,_,_,_,_,OtherList), _N, _A) :- 
 	member(Other, OtherList), !.
 
@@ -406,8 +401,8 @@ sym_category(sym(_,_,prop(Cat,_,_,_,_,_),_), Cat).
 /*	Return the type Type of the symbol Sym.				*/
 /*======================================================================*/
 
-sym_type(sym(_,_,prop(_,_,_,_,_,Other),_), tabled(Ind,Chs,Rhs,Arity)) :-
-	member2(tabled(Ind,Chs,Rhs,Arity), Other).
+sym_type(sym(_,_,prop(_,_,_,_,_,Other),_), tabled(Ind,Arity)) :-
+	member2(tabled(Ind,Arity), Other).
 
 
 /*======================================================================*/

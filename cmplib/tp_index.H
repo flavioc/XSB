@@ -24,7 +24,7 @@
 */
 
 
-:- export force_tp_index_loaded/0, makeindex/7, index_split/2.
+:- export force_tp_index_loaded/0, makeindex/6, index_split/2.
 
 :- import sym_name/3 from symtab.
 :- import gennum/1, member/2 from prof_sbp.

@@ -44,8 +44,8 @@ compile_clause(Sym, Clause, PilCode, PilCodeR, NC) :-
 
 tclause(Sym, clause(Args,Body,crec(ARSize,Label)),
 	[label(clau,Label)|Pil0], Pilr, NC) :- 
-	( sym_type(Sym, tabled(_,_,_,Tabar)) -> Tabled = 1,
-						ARSize1 is ARSize + 1
+	( sym_type(Sym, tabled(_,Tabar)) -> Tabled = 1,
+					    ARSize1 is ARSize + 1
 	; Tabar = Tabar, Tabled = 0,ARSize1 = ARSize
 	),
 	gennum(N), Label = (Sym,N),
