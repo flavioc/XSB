@@ -38,19 +38,28 @@ constr_command([H|T], String) :-
 	
 unix(Command, Result) :-
 	term_type(Command, T),
-	( T =:= 5 -> sys_system(1, Command, R, _), Result = R
+	( T =:= 5 -> sys_system(1, Command, R, _, _, _, _), Result = R
 	; T =:= 1 -> term_psc(Command, PSC), psc_name(PSC, RCommand), 
-		     sys_system(1, RCommand, R, _), Result = R
+		     sys_system(1, RCommand, R, _, _, _, _), Result = R
 	).
 
 /* Create subprocess. Redirect its standard input to StreamToProc
    and standard output to StreamFromProc. Prolog program can then read 
    from StreamFromProc and write to StreamToProc.
-   +CmdNameAndArgList, -StreamToProc, -StreamFromProc 
-   Fails, if we can't create subprocess
+   +CmdAndArglist, -StreamToProc,-StreamFromProc,-StreamFromStderr,-ProcessId
+   Fails, if can't create subprocess
 */
-spawn_process(CmdNameAndArgList, StreamToProc, StreamFromProc) :-
-	sys_system(2, CmdNameAndArgList, StreamToProc, StreamFromProc).
+spawn_process(Cmd, StreamToProc, StreamFromProc, StreamFromStderr, Pid) :-
+	sys_system(2, Cmd,StreamToProc,StreamFromProc,StreamFromStderr,Pid,_).
+/* Process table is a list [process(Pid,To,From,Stderr,Cmdline), ...]
+   that represents all active subprocesses */
+get_process_table(ProcessList) :- sys_system(3, ProcessList, _,_,_,_,_).
+
+%% obtain process status
+process_status(Pid, Status) :- sys_system(4, Pid, Status, _,_,_,_).
+%% Send signal to process. Currently wait, kill
+process_control(Pid, Signal) :- 
+	sys_system(5, Pid, Signal, _,_,_,_).
 
 
 cd(Path) :- 

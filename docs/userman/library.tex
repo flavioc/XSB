@@ -714,19 +714,19 @@ Example:
 \end{description}
 
 
-\section{Communication with Other Processes}
+\section{Communication with Subprocesses}
 
 In the previous section, we have seen several predicates that allow XSB to
 create other processes. However, these predicates offer only a very
 limited way to communicate with these processes. The predicate
-\verb|spawn_process/3| comes to the rescue. It allows to spawn any
+\verb|spawn_process/5| comes to the rescue. It allows to spawn any
 process (including multiple copies of XSB) and redirect its standard
 input and output to XSB streams. XSB can then write to the process and read
 from it. The section of socket I/O describes yet another mode of
 interprocess communication.
 
 \begin{description}
-\ouritem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc)}\index{{\tt spawn\_process/3}} 
+\ouritem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc,-ProcStderrStream,-ProcId)}\index{{\tt spawn\_process/5}} 
 Spawn a new process specified by {\tt CmdSpec}. {\tt CmdSpec} must be a
 \emph{list} of atoms or Prolog strings (character lists). The first
 argument must be the name of the program to run and the other elements are
@@ -734,8 +734,10 @@ arguments to the program. Program name must be specified in such a way as
 to make sure the OS can find it using the contents of the environment
 variable {\tt PATH}.
 
-The remaining parameters to \verb|spawn_process| are XSb I/O streams
-to and from the process.
+The next three parameters of \verb|spawn_process| are XSB I/O streams
+to the process (pipe to the subprocess standard input), from the process
+(pipe from the subprocess standard output), and a stream capturing the
+subprocess standard error output. The last parameter is the system process id.
 \end{description}
 %%
 
@@ -747,12 +749,14 @@ Here is a simple example of how it works.
 | ?- import file_flush/2, file_read_line_atom/3 from file_io.
 | ?- import file_nl/1 , file_write/2 from xsb_writ.  
 
-| ?- spawn_process([cat, "-"], To, From),
+| ?- spawn_process([cat, "-"], To, From, Stderr, Pid),
      file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_),
      file_read_line_atom(From,Y,_).
 
 To = 3
 From = 4
+Stderr = 5
+Pid = 14328
 Y = Hello cat!
 
 yes
@@ -775,13 +779,13 @@ the above clause might hang. {\tt file\_flush/2} makes sure that the input
 is immediately available to the subprocess.
 
 In addition to the above general schema, the user can tell
-\verb|spawn_process| to not open one of the communication streams.
+\verb|spawn_process/5| to not open one of the communication streams.
 This is useful when you do not expect to write or read to/from the
 subprocess. To tell that a certain stream is not needed, it suffices to
-pass a non-variable term to \verb|spawn_process|. For instance, 
+pass a non-variable term to \verb|spawn_process/5|. For instance, 
 %%
 \begin{verbatim}
-| ?- spawn_process([cat, "-"], To, none),
+| ?- spawn_process([cat, "-"], To, none, none, _),
      file_nl(To), file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_).
 
 
@@ -792,7 +796,7 @@ Hello cat!
 reads from XSB and copies the result to standard output. Likewise,
 %%
 \begin{verbatim}
-| ?- spawn_process([cat, "test"], none, From),
+| ?- spawn_process([cat, "test"], none, From, none, _),
      file_read_line_atom(From, S, _).
 
 From = 4
@@ -809,6 +813,71 @@ suppressed, then \verb|spawn_process| reduces to the already familiar
 /usr/local/foo/bar
 \end{verbatim}
 %%
+
+One of the uses of XSB subprocesses is to create XSB servers that spawn
+subprocesses and control them. A spawned subprocess can be another XSB
+process. The following example shows one XSB process spawning another,
+sending it a goal to evaluate and obtaining the result:
+%%
+\begin{verbatim}
+| ?- spawn_process([xsb], To, From,Err,_),
+     file_write(To,'assert(p(1)).'), file_nl(To), file_flush(To,_),
+     file_write(To,'p(X), writeln(X).'), file_nl(To), file_flush(To,_), 
+     file_read_line_atom(From,XX,_).  
+
+XX = 1
+
+yes
+| ?-
+\end{verbatim}
+%%
+Here the parent XSB process sends ``\verb|assert(p(1)).|'' and then
+``\verb|p(X), writeln(X).|'' to the spawned XSB subprocess. The latter
+evaluates the goal and prints (via ``\verb|writeln(X)|'')
+to its standard output. The main process reads it through the {\tt From}
+stream and binds the variable {\tt XX} to that output.
+
+\begin{description}
+\ouritem{get\_process\_table(-ProcessList)}\index{{\tt get\_process\_table/1}} 
+    Binds {\tt ProcessList} to the list of terms, each describing one of
+    the active XSB subprocesses (created via \verb|spawn_process/5|).
+    Each term in the pist is of the form:
+    \verb|process(Pid,ToStream,FromStream,StderrStream,CommandLine)|. 
+    The first argument in the term is the process id of the corresponding
+    process, the next three arguments describe the three standard streams
+    of the process, and the lat is an atom that shows the command line used
+    to invoke the process.
+    This predicate always succeeds.
+\ouritem{process\_status(+Pid,-Status)}\index{{\tt process\_status/2}} 
+    This predicate always succeeds. Given a process id, it binds the second
+    argument (which must be an unbound variable) to one of the following
+    atoms: {\tt running}, {\tt stopped}, {\tt exited} (normally), {\tt
+      aborted} (abnormally), {\tt invalid}, and {\tt unknown}.
+    The {\tt invalid} status is given to proceses that never existed or
+    that are not children of the parent XSb process. The {\tt unknown}
+    status is assigned when none of the other statuses can be assigned.
+\ouritem{process\_control(+Pid,+Operation)}\index{{\tt process\_control/2}} 
+    Perform a process control {\tt operation} on the process with the given
+    {\tt Pid}. 
+    Currently, the only supported operations are {\tt kill} and {\tt wait}
+    (both must be atoms).
+    The former causes the process to exit unconditionally, and the latter
+    waits for process completion.
+
+    This predicate suceeds, if the operation was performed successfully.
+    Otherwise, it fails. The {\tt wait} operation fails if the process
+    specified in {\tt Pid} does not exist or is not a child of the parent
+    XSB process. 
+    
+    The {\tt kill} operation might fail, if the process to be killed does
+    not exist or if the parent XSB process does not have the permission to
+    terminate that process. Unix and Windows have different ideas as to
+    what these permissions are. See \emph{kill(2)} for unix and
+    \emph{TerminateProcess} for Windows.
+    
+    \emph{Note}: under Windows, the programmer's manual warns of dire
+    consequences if one kills a process that has DLLs attached to it.
+\end{description}
 
 
 \section{Socket I/O}

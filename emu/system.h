@@ -1,9 +1,8 @@
-/* File:      unix.H
-** Author(s): Kostis F. Sagonas, Jiyang Xu
+/* File:      system.h
+** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
-** Copyright (C) ECRC, Germany, 1990
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,19 +22,8 @@
 ** 
 */
 
-
-:- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1,
-	spawn_process/5, get_process_table/1, process_status/2, 
-	process_control/2.
-:- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3.
-
-:- import str_cat/3 from string.
-:- import atom/1, abort/1 from standard.
-:- import psc_name/2, sys_system/7, term_psc/2, term_type/2, expand_filename/2
-   from machine.
-/*
-:- import conpsc/2, psc_set_type/2, psc_set_prop/2,
-	psc_type/2, psc_prop/2,
-   from machine.
-*/
-
+#define PLAIN_SYSTEM_CALL    	 1
+#define SPAWN_PROCESS	         2
+#define GET_PROCESS_TABLE    	 3
+#define PROCESS_STATUS    	 4
+#define PROCESS_CONTROL    	 5

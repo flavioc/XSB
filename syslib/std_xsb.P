@@ -201,7 +201,7 @@ standard_symbol(ttywrite, 1, standard).
 standard_symbol(ttywritenl, 1, standard).
 standard_symbol(unix, 1, unix).
 standard_symbol(unix, 2, unix).
-standard_symbol(spawn_process, 3, unix).
+standard_symbol(spawn_process, 5, unix).
 standard_symbol(var, 1, standard).
 standard_symbol(write, 1, standard).
 standard_symbol(write, 2, standard).
