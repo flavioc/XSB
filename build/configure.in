@@ -755,9 +755,11 @@ if test -n "$site_includes"; then
 fi
 
 dnl --with-libwww=DIR
-cd $topdir/packages/libwww
-./configure --with-config="$canonical" --with-libwww="$with_libwww" > /dev/null
-cd $build_dir
+if test -n "$with_libwww" && test -f $topdir/packages/libwww; then
+	cd $topdir/packages/libwww
+	./configure --with-config="$canonical" --with-libwww="$with_libwww" > /dev/null
+	cd $build_dir
+fi
 
 cd $topdir/packages/dbdrivers
 ./run_configure_scripts --with-odbc-libdir="$with_odbc_libdir" \
@@ -1243,7 +1245,7 @@ case "$canonical" in
 		;;
      *linux*) AC_DEFINE(LINUX)
 	      AC_DEFINE(_GNU_SOURCE)
-	      if test "`uname -r | cut -d "." -f "1 2"`" = "2.6"; then
+	      if test "`uname -r | cut -d "." -f "1 2"`" -ge "2.6"; then
 		echo "Guessing the tagging for this version of Linux"
 		AC_DEFINE(GUESS_TAGGING)
 	      fi
@@ -1739,7 +1741,10 @@ if test "$perl_support" = "yes"; then
 EOT
 fi
 
-cat $topdir/packages/libwww/Installation_summary
+if test -f $topdir/packages/libwww/Installation_summary; then
+	cat $topdir/packages/libwww/Installation_summary
+fi
+
 cat $topdir/packages/dbdrivers/Installation_summary
 
 if test -n "$javac"; then
