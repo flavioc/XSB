@@ -1366,7 +1366,7 @@ odbc_import(DbPredicate,SymName) :-
 	odbc_import(_Connection,DbPredicate,SymName).
 
 odbc_import(Connection,DbPredicate,PredName) :-
-	odbc_connection_check(Connection,ConnHandle)
+	odbc_connection_check(Connection,ConnHandle),
 	\+attribute(_,PredName,_,_,_),
 	!,
 	DbPredicate =.. [TableName|Attributes],
