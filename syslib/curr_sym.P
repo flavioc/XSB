@@ -150,46 +150,71 @@ current_functor(Name, Term_Indicator) :-
 	).
 
 
-/* ===== current_input/1 ============================================== */
+/* ===== current_input/1 ======================================= */
+% TLS: changed on 8/04 for new streams.
 
-%   current_input(?Stream)
-%   Succeeds iff stream Stream is the current input stream.
+current_input(Stream) :- 
+	((var(Stream) ; integer(Stream)) -> 
+	    true
+	 ;  domain_error(variable_or_stream,Stream,current_input/1,1) ),
+	stat_flag(CURRENT_INPUT, S),
+	S = Stream.
 
-current_input(Stream) :-
-	conpsc(current_input, CurinPsc),
-	psc_prop(CurinPsc, Curin), 
-	psc_name(Curin, Name),
-	Name = Stream.
-
+% Obsolescent...
 current_input_port(FileDes) :- stat_flag(CURRENT_INPUT, FileDes).
 
 
-/* ===== current_op/3 ================================================= */
-
+/* ===== current_op/3 ========================================= */
 %   current_op(?Operator_Precedence, ?Operator_Specifier, ?Operator_Name)
 %   Succeeds iff Operator_Name is an operator with type defined by
 %   Operator_Specifier and precedence Operator_Precedence.
-%   NOTE: According to the Prolog standard this predicate has no errors.
+%   TLS: added errors acc. to Prolog standard. 8/04
 
 current_op(Prec, Type, Name) :- 
+	check_precedence(Prec),
+	check_operator_type(Type),
+	check_operator_name(Name),
 	'_$op'(Prec, Type, Name).
 
+check_precedence(Prec):-
+	((var(Prec) ; (integer(Prec),Prec >= 1,Prec =< 1200)) -> 
+	    true 
+	  ; domain_error(operator_priority,Prec,current_op/3,1) ).
 
-/* ===== current_output/1 ============================================= */
+check_operator_type(Type):-
+	((var(Type) ; is_operator_type(Type)) -> 
+	    true 
+	  ; domain_error(operator_specifier,Type,current_op/3,2) ).
 
-%   current_output(?Stream)
-%   Succeeds iff stream Stream is the current output stream.
+is_operator_type(fx).
+is_operator_type(fy).
+is_operator_type(xf).
+is_operator_type(yf).
+is_operator_type(xfx).
+is_operator_type(xfy).
+is_operator_type(yfx).
+
+check_operator_name(Name):-
+	((var(Name) ; atom(Name)) -> 
+	    true 
+	  ; type_error(atom_or_variable,Name,current_op/3,3) ).
+
+
+/* ===== current_output/1 ===================================== */
+% TLS: changed on 8/04 for new streams.
 
 current_output(Stream) :- 
-	conpsc(current_output, CuroutPsc),
-	psc_prop(CuroutPsc, Curout), 
-	psc_name(Curout, Name), 
-	Name = Stream.
+	((var(Stream) ; integer(Stream)) -> 
+	    true
+	 ;  domain_error(variable_or_stream,Stream,current_output/1,1) ),
+	stat_flag(CURRENT_OUTPUT, S),
+	S = Stream.
 
+% Obsolescent...
 current_output_port(FileDes) :- stat_flag(CURRENT_OUTPUT, FileDes).
 
 
-/* ===== current_predicate/1 ========================================== */
+/* ===== current_predicate/1 ==================================== */
 
 %   current_predicate(?Predicate_Indicator)
 %   Succeeds iff Predicate_Indicator is a predicate indicator for one
@@ -199,8 +224,16 @@ current_output_port(FileDes) :- stat_flag(CURRENT_OUTPUT, FileDes).
 %	(ii) Functor/Arity (for global modules)
 %   A variable in place of Predicate_Indicator succeeds only for global
 %   modules.
+%  TLS: added ISO-style error handling 8/04.
 
-current_predicate(Functor/N) :-		% This takes care of global modules.
+current_predicate(Specifier) :-		% This takes care of global modules.
+	(Specifier = Functor/N -> 
+	    current_predicate_global(Functor,N)
+	  ; (Specifier = Module:Functor/N -> 
+	        current_predicate_module(Module,Functor,N)
+	      ; type_error(term_indicator,Specifier,current_predicate/1,1) ) ).
+
+current_predicate_global(Functor,N):- 
 	!,				% i.e. "usermod" and "global".
 	psc_scan_in_hash_table(0, PSC),
 	psc_type(PSC, Type), 
@@ -212,7 +245,7 @@ current_predicate(Functor/N) :-		% This takes care of global modules.
 	psc_name(PSC, Name),
 	Functor = Name,
 	Arity = N.
-current_predicate(Module:Functor/N) :-
+current_predicate_module(Module,Functor,N) :-
 	get_first_psc_pair(PSC_Pair),
 	module_scan(PSC_Pair, ModuleName, ModulePSC),
 	ModuleName = Module,
@@ -254,7 +287,7 @@ psc_scan_in_module(PSC_Pair, Next_PSC) :-
 	psc_scan_in_module(Next_PSC_Pair, Next_PSC).
 
 
-/* ===== current_predicate/2 ========================================== */
+/* ===== current_predicate/2 =================================== */
 
 %   current_predicate(?Name, ?Term_Indicator)
 %   Succeeds iff Term_Indicator is the most general term corresponding to
@@ -449,7 +482,28 @@ module_properties(PSC, Property) :-
 	; Type =:=  T_MODU -> Property = loaded ).
 
 
-/* ===== xsb_flag/2 =================================================== */
+/* ===== current_prolog_flag/2 ================================== */
+
+current_prolog_flag(Flag,Value):- 
+	((var(Flag) ; atom(Flag)) -> 
+	    true
+	  ; type_error(variable_or_atom,Flag,current_prolog_flag/2,1) ),
+	  (iso_flag(Flag,Value) ; xsb_flag(Flag,Value)).
+
+iso_flag(bounded,false).
+iso_flag(debug, Debug) :- xsb_flag(debugging, Debug).
+
+% TLS: need to figure this out.
+%iso_flag(integer_rounding_function,{down,towards_zero}).   
+% TLS: need to understand ISO char conversion
+%iso_flag(char_conversion,{on,off})
+% TLS: we only do codes...
+%iso_flag(double_quotes,{chars,codes,atom}).
+% TLS: shd. add
+%iso_flag(unknown,{error,warning,fail})
+
+
+/* ===== xsb_flag/2 ========================================== */
 
 %%   xsb_flag(?FlagName, ?Value)
 %%   Succeeds if the XSB flag FlagName has the value Value.

@@ -187,6 +187,7 @@ static void init_flags(void)
   flags[SYS_TIMER]  = TIMEOUT_ERR; /* start with expired timer */
   flags[BANNER_CTL] = 1;           /* a product of prime numbers; each prime
 				      determines which banner isn't shown */
+  flags[BACKTRACE] = 1;           /* Backtrace on error by default */
 }
 
 /*==========================================================================*/
