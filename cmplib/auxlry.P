@@ -107,7 +107,9 @@ current_option(table_dump).
 current_option(suppl_fold_off).
 current_option(index_off).
 current_option(compile_off).
-current_option(init_var_off).
+
+% TLS: taken out 11/03: does not seem to be used.
+% current_option(init_var_off).
 
 current_option(spec_repr).
 current_option(spec_dump).
