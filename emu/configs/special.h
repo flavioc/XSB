@@ -29,15 +29,16 @@
 #endif
 
 #ifdef WIN_NT
-#define snprintf _snprintf
-#define fdopen   _fdopen
-#define popen    _popen
-#define pclose   _pclose
-#define dup      _dup
-#define putenv   _putenv
-#define dup2     _dup2
-#define fileno   _fileno
-#define unlink   _unlink
+#define snprintf   _snprintf
+#define fdopen     _fdopen
+#define popen      _popen
+#define pclose     _pclose
+#define dup        _dup
+#define putenv     _putenv
+#define dup2       _dup2
+#define fileno     _fileno
+#define unlink     _unlink
+#define strcasecmp _stricmp
 #endif
 
 /* The separator used between pathnames in PATH environment */
