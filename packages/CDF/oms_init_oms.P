@@ -2558,11 +2558,11 @@ call_retractall_oms_int(oms_schrel(Cid,Rid,Tid)) :-
 	retractall_oms_int(schrel_ext(CNid,CCmp,RNid,RCmp,TNid,TCmp)).
 call_retractall_oms_int(oms_obj(Oid,N,Nid,Cmp)) :-
 	(nonvar(Oid),var(Nid)
-	 ->	object(Cid,N,Nid,Cmp)
+	 ->	object(Oid,N,Nid,Cmp)
 	 ;	true
 	),
 	retractall_oms_int(object_ext(N,Nid,Cmp)),
-	retractall(ob_id_map(Cid,N,Nid,Cmp)).
+	retractall(ob_id_map(Oid,N,Nid,Cmp)).
 call_retractall_oms_int(oms_mo(Oid,Cid)) :-
 	object_bound_var(Oid,ONid,OCmp),
 	class_cidbound_var(Cid,CNid,CCmp),
