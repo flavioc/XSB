@@ -489,7 +489,7 @@ sometimes needed in order to pass complex structures from C into Prolog.
     Argument R is an argument number of the Prolog predicate implemented by
     this C function (range 1 to 255). The function {\tt
     reg\_term} returns the prolog\_term in that predicate argument.
-\ouritem{prolog\_term p2p\_unify(prolog\_term T1, prolog\_term T2)}
+\ouritem{bool p2p\_unify(prolog\_term T1, prolog\_term T2)}
     \index{{\tt p2p\_unify}}
     Unify the two Prolog terms. This is useful when an argument of the
     Prolog predicate (implemented in C) is a structured term or a list,
@@ -514,7 +514,8 @@ which is implemented by a C function with the following fragment:
     newvar = p2p_arg(newterm, 1);
     newvar = p2p_new();
     ....
-    p2p_unify(z_var, newterm);
+    /* return TRUE (success), if unify; FALSE (failure) otherwise */
+    return p2p_unify(z_var, newterm);
 \end{verbatim}
 %%
 On exit, the variable $X$ will be bound to the term {\tt func(str)}.
