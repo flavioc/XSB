@@ -43,6 +43,7 @@
 %-----------------------------------------------------------------------
 
 parse(Modname, PFile, HFile, Module) :-
+	conset(needs_restart, 0),  % reset, if an error prevented this
 	(Modname == user
 	 ->	see(user), parse_clauses(user, Module0)
 	 ; file_exists(PFile)
@@ -53,6 +54,7 @@ parse(Modname, PFile, HFile, Module) :-
 		parse1(Modname,PFile,Module0)
 	 ;	error(('Cannot find the file ', PFile)), fail, Module0=Module0
 	),
+	conset(needs_restart, 0),  % clean up this var
 	retractall('_$multifile_retract'(_, Modname, _)),
 	module_close(Module0,Module), !.
 
@@ -62,7 +64,7 @@ parse1(Modname, File, Module) :-
 	(parse_clauses(Modname, Module) 
 				% check if must restart
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
-	;  true
+	;   true
 	),
 	multifile_query(Modname, Module),
 	('_$apply_arity'(_)
@@ -83,8 +85,8 @@ parse1(Modname, File, Module) :-
 %% and parse1 is restarted. Since cpp_on is now 1, the restart 
 %% process doesn't repeat itself. -mk
 parse1(Modname, File, Module) :- 
-	conget(needs_restart,1),
-	conset(needs_restart, 0),
+	%% If we are restarting due to cpp, then reset needs_restart.
+	conget(needs_restart,1), conset(needs_restart, 0),
 	parse1(Modname, File, Module).
 
 
@@ -95,9 +97,18 @@ open_or_cpp_file(File) :-
 	; 
 	    %% cpp_on is set: use preprocessor
 	    xsb_configuration(cpp, CPP),
+	    xsb_configuration(install_dir, InstalDir),
+	    %% Construct the -Include directories
+	    (windows_os_loader -> IncludeFlag = '/I' ; IncludeFlag = '-I'),
+	    fmt_write_string(IncludeDirs,
+			     '%s%s/emu %s%s/prolog_includes %s%s/packages/flora/includes',
+			     args(IncludeFlag,InstalDir,
+				  IncludeFlag,InstalDir,
+				  IncludeFlag,InstalDir)),
+	    %% Constract the cpp command
 	    fmt_write_string(CPP_command,
-			     "%s -DXSB_PROLOG %s",
-			     args(CPP, File)),
+			     '%s %s -DXSB_PROLOG %s',
+			     args(CPP, IncludeDirs, File)),
 	    spawn_process(CPP_command, block, From, block, _),
 	    stat_set_flag(10, From)
 	).
@@ -121,7 +132,12 @@ parse_clauses(ModName, Module) :-
 	    parse_clause(Expanded_Clause, VariableList, Module),
 	    %% stop parsing clauses, if needs_restart parsing
 	    (conget(needs_restart, 1) 
-	    ->	true
+	    -> (ModName = user
+	       ->  warning('Module user cannot be C preprocessed')
+	       ;   ModName = xsb_configuration
+	       ->  warning('Module xsb_configuration cannot be C preprocessed')
+	       ;   true
+	       )
 	    ; parse_clauses(ModName, Module)
 	    )
 	).

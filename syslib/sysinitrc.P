@@ -27,7 +27,8 @@
 
 :- compiler_options([cpp_on]).
 
-#include "../emu/flag_defs.h"
+#include "flag_defs.h"
+
 
 :- import stat_set_flag/2 from machine.
 :- import xsb_configuration/2 from xsb_configuration.

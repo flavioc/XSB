@@ -26,10 +26,10 @@
 
 :- compiler_options([cpp_on]).
 
-#include "../emu/celltags.h"
-#include "../emu/system.h"
-#include "../emu/builtin.h"
-#include "../emu/msyscall.h"
+#include "celltags.h"
+#include "system.h"
+#include "builtin.h"
+#include "msyscall.h"
 
 
 /* Create subprocess. Redirect its standard input to StreamToProc

@@ -335,10 +335,19 @@ tran_ext(0'D,'.D').
 load_dyn1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
-	see(Rfname),
-	(read_and_assert ; true),
+	open_or_cpp_file(Rfname),
+	(read_and_assert
+	%% If needs restart, close old file and skip to the second load_dyn1
+	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
+	;   conset(needs_restart, 0), conset(cpp_on,0), true
+	),
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
+load_dyn1(Rfname) :- 
+	%% If we are restarting due to cpp, then reset needs_restart.
+	conget(needs_restart,1), conset(needs_restart, 0),
+	load_dyn1(Rfname).
+
 	
 get_fname(Filename,SExt,Base) :-
 	search_module(Filename,_Dir,_Mod,SExt,_HasObj,Base,_Obj), !.
@@ -354,6 +363,7 @@ get_fname(Filename,_SExt,_Base) :-
 :- dynamic load_dyn_module(_).
 
 init_for_load(Filename) :-
+	conset(needs_restart, 0), conset(cpp_on, 0), % Cleanup before CPP
 	file_time(Filename,time(Time1,Time2)),
 	retractall(load_dyn_file_loaded(Filename,_)),
 	assert(load_dyn_file_loaded(Filename,time(Time1,Time2))),
@@ -365,6 +375,7 @@ init_for_load(Filename) :-
 	assert(load_dyn_module(Mod)).
 
 cleanup_for_load :-
+	conset(needs_restart, 0), conset(cpp_on, 0), % Cleanup after CPP
 	retractall(load_dyn_trie_retracted(_)),
 	retractall(load_dyn_retracted(_,_,_,_,_)),
 	retractall(load_dyn_file(_)),
@@ -412,6 +423,7 @@ multifile_query(ModName) :-
 	;	true).
  
  
+%% This version is used for load_dyn1 only!
 read_and_assert :-
 	read(Term1),
 	expand_term(Term1,Term2),
@@ -421,6 +433,8 @@ read_and_assert :-
 	 ->	!,seen,fail
 	 ;	do_assert_and_fail(Term)
 	).
+%% Don't loop, if restart is requested
+read_and_assert :- conget(needs_restart,1), !.
 read_and_assert :- read_and_assert.
 
 
@@ -456,14 +470,22 @@ load_dync0(SExt,Base) :-
 load_dync1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
-	see(Rfname),
+	open_or_cpp_file(Rfname),
 	stat_flag(10,Fd),
 	file_read_canonical(-1000,0,0),	% initialize previous psc
-	(read_and_assert(Fd) ; true),
+	(read_and_assert(Fd)
+	%% If needs restart, close old file and skip to the second load_dyn1
+	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
+	;   conset(needs_restart, 0), conset(cpp_on,0), true),
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
+load_dync1(Rfname) :- 
+	%% If we are restarting due to cpp, then reset needs_restart.
+	conget(needs_restart,1), conset(needs_restart, 0),
+	load_dync1(Rfname).
 
 
+%% This version is used for load_dync1 only!
 read_and_assert(Fd) :-
 	file_read_canonical(Fd,Term0,Opsc),	% Opsc: Old(Previous) psc
 %	expand_term(Term0,Term1),	% should we do this?
@@ -480,6 +502,7 @@ read_and_assert(Fd) :-
 	 ->	!,seen,fail
 	 ;	do_assert_and_fail(Term)
 	).
+read_and_assert(_Fd) :- conget(needs_restart,1), !.
 read_and_assert(Fd) :- read_and_assert(Fd).
 
 
@@ -612,6 +635,13 @@ proc_directive(hilog(X)) :- !, add_hilog_symbol(X).
 %	conpsc(Term,Psc),
 %	psc_arity(Psc,Arity),
 %	set_retracted(Term,Arity,Psc,_,_,_).
+
+proc_directive(compiler_options(L)) :-
+	!,
+	(memberchk(cpp_on,L), conget(cpp_on, 0) 
+	->  conset(needs_restart,1), conset(cpp_on, 1)
+	;   true
+	).
 
 proc_directive(Cmd) :-
 	call(Cmd)

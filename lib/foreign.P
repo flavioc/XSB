@@ -25,7 +25,7 @@
 
 :- compiler_options([cpp_on]).
 
-#include "../prolog_includes/char_defs.h"
+#include "char_defs.h"
 
 
 compile_cH(Modname, Base, Options, ExList, Dir) :-

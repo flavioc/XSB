@@ -38,11 +38,11 @@
 
 :- compiler_options([sysmod,cpp_on]).
 
-#include "../prolog_includes/standard.h"
-#include "../prolog_includes/char_defs.h"
-#include "../emu/flag_defs.h"
-#include "../emu/io_defs.h"
-#include "../emu/celltags.h"
+#include "standard.h"
+#include "char_defs.h"
+#include "flag_defs.h"
+#include "io_defs.h"
+#include "celltags.h"
 
 
 %% These provide tests for the respective OS.

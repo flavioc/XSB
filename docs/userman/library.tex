@@ -163,8 +163,18 @@ handled by the XSB compiler.
     retracted if they are compiled instead of dynamically asserted.
     All predicates are loaded into {\tt usermod}.  Module declarations
     such as {\tt :- export} are ignored and a warning is issued.
-    Starting with Version 1.5.0, this predicate is a standard predicate
-    of XSB.
+
+    Dynamically loaded files can be filtered through the C preprocessor.
+    To do this, put the folowing in the source file: 
+    %%
+    \begin{verbatim}
+    :- compiler_options([cpp_on]).      
+    \end{verbatim}
+    %%
+    Of course, the name \verb|compiler_options| might seem like a misnomer
+    here (since the file is not being compiled), but it is convenient to
+    use the same directive both for compiling and loading, in case the same
+    source file is used both ways.
 
 \ournewitem{ensure\_dyn\_loaded(+FileName)}{consult}
 \index{{\tt ensure\_dyn\_loaded/1}}
@@ -196,6 +206,16 @@ handled by the XSB compiler.
     not often modified by hand should be loaded with this predicate.  Use
     predicate {\tt cvt\_canonical/2} (see below) to convert a usual file
     to a format readable by this predicate.
+
+    As with \verb|load_dyn/1|, the source file can be filtered through the C
+    preprocessor. However, since all clauses in such a file must be in
+    canonical form, the \verb|compiler_options/1| directive should look as
+    follows:
+    %%
+    \begin{verbatim}
+     :-(compiler_options('.'(cpp_on,[]))).      
+    \end{verbatim}
+    %%
 
 \ournewitem{ensure\_dync\_loaded(+FileName)}{consult}
 \index{{\tt ensure\_dync\_loaded/1}}
