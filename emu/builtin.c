@@ -775,6 +775,8 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_DISPOSE_NR, "trie_dispose_nr");
   set_builtin_table(TRIE_UNDISPOSE, "trie_undispose");
   set_builtin_table(RECLAIM_UNINTERNED_NR, "reclaim_uninterned_nr");
+  set_builtin_table(GLOBALVAR, "globalvar");
+
 
   set_builtin_table(SET_TABLED_EVAL, "set_tabled_eval_method");
   set_builtin_table(PUT_ATTRIBUTES, "put_attributes");
@@ -2129,6 +2131,9 @@ int builtin_call(byte number)
     break;
   case RECLAIM_UNINTERNED_NR:
     reclaim_uninterned_nr(ptoc_int(1));
+    break;
+  case GLOBALVAR:
+    ctop_tag(1, ((CPtr)glstack.low));
     break;
 
   case STORAGE_BUILTIN: {

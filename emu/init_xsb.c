@@ -699,6 +699,11 @@ void init_machine(void)
   bld_int(interrupt_reg, 0);
 
   hbreg = hreg = (CPtr)(glstack.low);
+  
+  /* Use first word in the heap as the global variable, exported to
+     Prolog via the 'globalvar/1' builtin */
+  bld_free(hreg);
+  hreg++;
 
   ebreg = ereg = (CPtr)(glstack.high) - 1;
 

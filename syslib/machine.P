@@ -260,4 +260,7 @@ set_pil_off :- stat_set_flag(PIL_TRACE,0).
 set_prof_off :- stat_set_flag(PROFFLAG,0).
 set_prof_on(Level) :- stat_set_flag(PROFFLAG,Level).
 
+globalvar(_Var) :-
+	'_$builtin'(GLOBALVAR).
+
 /* --------------------- end of file machine.P ------------------------ */

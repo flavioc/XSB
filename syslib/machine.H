@@ -141,6 +141,7 @@
 	get_attributes/3,
 	delete_attributes/1,
         attv_unify/2,
+	globalvar/1,
         interprolog_callback/3.
 
 :- export 
