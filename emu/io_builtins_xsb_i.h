@@ -121,7 +121,7 @@ inline static xsbBool file_function(void)
 	ctop_int(3, offset);
     }
     break;
-  case FILE_OPEN:
+  case XSB_FILE_OPEN:
     /* file_function(4, +FileName, +Mode, -IOport)
        When read, mode = 0; when write, mode = 1, 
        when append, mode = 2, when opening a 
@@ -184,19 +184,27 @@ inline static xsbBool file_function(void)
     /* TLS: handling the case in which we are closing a flag that
        we're currently seeing or telling.  Probably bad programming
        style to mix streams w. open/close, though. */
-  case FILE_CLOSE: /* file_function(5, +IOport) */
-    io_port = ptoc_int(2);
-    if (io_port < 0) strclose(io_port);
-    else {
-      SET_FILEPTR(fptr, io_port);
-      fclose(fptr);
-      open_files[io_port].file_ptr = NULL;
-      open_files[io_port].file_name = NULL;
-      open_files[io_port].io_mode = '\0';
-      if (flags[CURRENT_INPUT] == io_port) { flags[CURRENT_INPUT] = STDIN;}
-      if (flags[CURRENT_OUTPUT] == io_port) { flags[CURRENT_OUTPUT] = STDOUT;}
-    }
+  case FILE_CLOSE: /* file_function(5, +Stream,FORCE/NOFORCE) */
+    {
+      int rtrn; 
+      io_port = ptoc_int(2);
+      if (io_port < 0) strclose(io_port);
+      else {
+	SET_FILEPTR(fptr, io_port);
+	if ((rtrn = fclose(fptr))) {
+	  if (ptoc_int(3) == NOFORCE_FILE_CLOSE)
+	    {xsb_permission_error("fclose","file",rtrn,"file_close",1); }
+	}
+	open_files[io_port].file_ptr = NULL;
+	open_files[io_port].file_name = NULL;
+	open_files[io_port].io_mode = '\0';
+	if (flags[CURRENT_INPUT] == io_port) 
+	  { flags[CURRENT_INPUT] = STDIN;}
+	if (flags[CURRENT_OUTPUT] == io_port) 
+	  { flags[CURRENT_OUTPUT] = STDOUT;}
+      }
     break;
+    }
   case FILE_GET:	/* file_function(6, +IOport, -IntVal) */
     io_port = ptoc_int(2);
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {

@@ -45,7 +45,6 @@ push_stdin(Stack,Stream) :-
 	),
 	assert(input_streams(Stack,[Input|L])).
 
-
 %% fails if the IO stack is empty
 %% Pops up the previously saved stream from the stack and "see's" it.
 %% Closes the current stream

@@ -145,6 +145,42 @@ void call_conv xsb_type_error(char *valid_type,Cell culprit, char *predicate,int
 }
 
 /*****************/
+void call_conv xsb_permission_error(char *operation,char *object,int rtrn,
+				    char *predicate,int arity) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[255];
+
+  sprintf(message,"(return %d) in predicate %s/%d)",rtrn,predicate,arity);
+
+  if (!space_for_iso_ball) {
+    space_for_iso_ball = (Cell *) malloc(8*sizeof(Cell)); /* cells needed for term */
+    if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
+  }
+  tptr = space_for_iso_ball;
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace());
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("permission_error",2,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find(operation,1));
+  tptr++;
+  bld_string(tptr,string_find(object,1));
+
+  xsb_throw(ball_to_throw);
+
+}
+
+/*****************/
 void call_conv xsb_instantiation_error(char *predicate,int arity,int arg,char *state) 
 {
   prolog_term ball_to_throw;

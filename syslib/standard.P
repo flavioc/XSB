@@ -35,6 +35,7 @@
 #include "char_defs.h"
 #include "psc_defs.h"
 #include "builtin.h"
+#include "io_defs_xsb.h"
 
 :- import (:-)/2 from usermod.
 
@@ -50,6 +51,12 @@ set_input(Stream):-
 	check_open_stream_or_alias(Stream,set_input/1,1,input,Stream1),
 	stat_set_flag(CURRENT_INPUT, Stream1).
 
+/*
+display_current_stream(Pred):-
+	stat_flag(CURRENT_INPUT,Curr),
+	display(current_input(Curr,Pred)).
+*/
+
 see(userin):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
 see(user):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
 see(Integer):- 
@@ -62,7 +69,7 @@ see(File) :-
 
 seeing(Str) :- stat_flag(CURRENT_INPUT, Str).
 
-seen :- stat_flag(CURRENT_INPUT, Str),
+seen :-  stat_flag(CURRENT_INPUT, Str),
 	(Str > 6 -> close(Str) ; true),
 	stat_set_flag(CURRENT_INPUT, STDIN).
 
@@ -122,25 +129,25 @@ translate(Mode,_):-
 %-------------------------------------------------
 
 open(F,Mode,Stream,Options):-
-	examine_options(Options,Aliases,_Eof),
+	examine_open_options(Options,Aliases,_Eof),
 	open(F,Mode,Stream),
 	writeln(open(F,Mode,Stream)),
 	add_aliases(Aliases,Stream).
 
-examine_options([],[],[]).
-examine_options([reposition(_Bool)|T],Aliases,Eof):- !,
+examine_open_options([],[],[]).
+examine_open_options([reposition(_Bool)|T],Aliases,Eof):- !,
 	warning('Reposition option ignored -- see manual.'),
-	examine_options(T,Aliases,Eof).
-examine_options([type(_Type)|T],Aliases,Eof):- !,
+	examine_open_options(T,Aliases,Eof).
+examine_open_options([type(_Type)|T],Aliases,Eof):- !,
 	warning('Type option ignored -- see manual.'),
-	examine_options(T,Aliases,Eof).
-examine_options([eof_action(Action)|T],Aliases,[eof_action(Action)|Eof]):- !,
+	examine_open_options(T,Aliases,Eof).
+examine_open_options([eof_action(Action)|T],Aliases,[eof_action(Action)|Eof]):- !,
 	warning('Eof actions are currently ignored in XSB.'),
-	examine_options(T,Aliases,Eof).
-examine_options([alias(A)|T],[A|Aliases],Eof):- !,
-	examine_options(T,Aliases,Eof).
-examine_options([Option|_],_,_):- 
-	domain_error(open_options,Option,open/4,3).
+	examine_open_options(T,Aliases,Eof).
+examine_open_options([alias(A)|T],[A|Aliases],Eof):- !,
+	examine_open_options(T,Aliases,Eof).
+examine_open_options([Option|_],_,_):- 
+	domain_error(open_options,Option,open/4,4).
 
 add_aliases([],_Stream).
 add_aliases([H|T],Stream):- 
@@ -155,7 +162,34 @@ close(user_in) :- !.
 close(user_out) :- !.
 close(S_or_A) :- 
 	check_stream_or_alias(S_or_A,close/1,1,Str),
-	file_close(Str).
+	file_close(Str,NOFORCE_FILE_CLOSE).
+
+%----
+
+close(user,_) :- !.
+close(userin,_) :- !.
+close(userout,_) :- !.
+close(user_in,_) :- !.
+close(user_out,_) :- !.
+close(S_or_A,Options) :- 
+	check_stream_or_alias(S_or_A,close/1,1,Str),
+	examine_close_options(Options,Action),
+	(Action = false ->      % TLS: want unification.
+	    file_close(Str,NOFORCE_FILE_CLOSE)
+	  ; file_close(Str,FORCE_FILE_CLOSE) ).
+
+examine_close_options(List,Action):-
+	(examine_close_options_1(List,Action) -> 
+	    true
+	  ; domain_error(close_option,List,close/2,2) ).
+
+/* Traverse list in all cases to determine contradictions */	
+examine_close_options_1([],_).
+examine_close_options_1([force(Bool)|T],Res):- !,
+	Res = Bool,
+	examine_close_options_1(T,Res).
+examine_close_options_1([Option|_],_):- 
+	domain_error(close_option,Option,open/4,4).
 
 %--------------------------%
 % Character I/O Predicates %

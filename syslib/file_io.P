@@ -60,29 +60,6 @@ fmt_read(IOport, Fmt, Result, Status) :-
 /*       file_flush, file_seek, file_truncate, file_pos, etc.  */
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
-%port2fd(_Port,_Fd):- '_$builtin'(PORT2FD).
-%
-%file_write_port(Port,Term):- 
-%	port2fd(Port,Fd),
-%	file_write(Fd,Term).
-
-%print_openfiles:- '_$builtin'(PRINTOFILES).
-print_openfiles:- '_$builtin'(103).
-
-
-flush_output(S_or_A):-
-	check_open_stream_or_alias(S_or_A,flush_output/1,1,output,Str),
-	file_flush(Str,Ret),
-	(Ret == 0 ->
-	    permission_error(flush,stream,Str,flush_output/1)
-	  ; true).
-
-flush_output:-
-	stat_flag(CURRENT_OUTPUT,Stream),
-	file_flush(Stream,Ret),
-	(Ret == 0 ->
-	    permission_error(flush,stream,Stream,flush_output/1)
-	  ; true).
 
 file_flush(IOport, Ret) :-
 	file_function(FILE_FLUSH, IOport, Ret, _D, _E, _,_).
@@ -93,9 +70,12 @@ file_truncate(IOport, Length, Ret) :-
 file_pos(IOport, Pos) :-
 	file_function(FILE_POS, IOport, Pos, _Ret, _E, _,_).
 file_open(FileName, Mode, IOport) :-
-	file_function(FILE_OPEN, FileName, Mode, IOport, _E, _,_).
+	file_function(XSB_FILE_OPEN, FileName, Mode, IOport, _E, _,_).
+/* TLS: this one is obsolescent */
 file_close(IOport) :-
-	file_function(FILE_CLOSE,IOport,_X,_Y,_Z, _,_).
+	file_function(FILE_CLOSE,IOport,NOFORCE_FILE_CLOSE,_Y,_Z, _,_).
+file_close(IOport,Force) :-
+	file_function(FILE_CLOSE,IOport,Force,_Y,_Z, _,_).
 file_get(IOport,Char) :-
 	file_function(FILE_GET, IOport, Char, _X, _Y, _,_).
 file_put(IOport,Char) :-
@@ -104,166 +84,6 @@ file_clearerr(IOport) :-
 	file_function(FILE_CLEARERR, IOport, _, _, _, _, _).
 tmpfile_open(IOport) :-
 	file_function(TMPFILE_OPEN, IOport, _, _, _, _, _).
-
-%----------------------------------------------------------------------------------------------------
-% Stream and Alias Checking.
-%----------------------------------------------------------------------------------------------------
-/* 
-is_valid_stream/2: assumes integer, checks that the stream is valid
-with mode input or output.
-
-check_stream_or_alias/4 checks if stream term or alias is valid and
-raises exception otherwise.
-
-check_valid_open_stream_or_alias/5 checks if stream or alias is valid
-for mode, and raises exception otherwise.
-
-check_enumerate_stream_or_alias/4: if bound,
-check_valid_open_stream_or_alias.  If variable, backtracks through the
-valid streams.
-
-current_stream/1: if integer, checks that the S_or_A is valid, and
-fails otherwise. If variable, backtracks through the valid streams.
-
-*/
-
-%-----
-is_valid_stream(Stream) :- 
-	is_valid_stream(Stream,_).
-
-is_valid_stream(Stream,Mode) :-
-	file_function(IS_VALID_STREAM, Stream, M, _, _, _, _),
-	(M =:= 0 -> Mode = input ; Mode = output).
-
-%-----
-check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :- 
-	(integer(S_or_A) -> 
-	    Stream = S_or_A
-	;
-	    (atom(S_or_A) -> 
-	        '_$alias'(S_or_A,Stream)
-	    ;  domain_error(stream_or_alias,S_or_A,Predicate,Arg) ) ).
-
-:- dynamic '_$alias_dynamic'/2.
-
-'_$alias'(userin,0).
-'_$alias'(user_in,0).
-'_$alias'(userout,1).
-'_$alias'(user_out,1).
-'_$alias'(In,Out):-  '_$alias_dynamic'(In,Out).
-
-add_alias(Alias,Stream):- 
-	asserta('_$alias_dynamic'(Alias,Stream)).
-
-%-----
-check_open_stream_or_alias(S_or_A,Predicate,Arg,Mode,Stream) :- 
-	check_stream_or_alias(S_or_A,Predicate,Arg,Stream),
-            (is_valid_stream(Stream,Mode) -> 
-	        true
-	      ; existence_error(Mode-stream,Stream,Predicate,Arg) ).
-
-%-----
-check_enumerate_stream_or_alias(S_or_A,Predicate,Arg,Stream):- 
-	(integer(S_or_A) -> 
-	    (is_valid_stream(S_or_A) -> 
-		true
-	      ;     existence_error(stream,S_or_A,Predicate,Arg))
-	    ; (atom(S_or_A) -> 
-	          '_$alias'(S_or_A,Stream),
-	          (is_valid_stream(Stream) -> 
-		 true
-	           ; existence_error(stream,S_or_A,Predicate,Arg) )
-  	        ; (var(Stream) -> 
-	             for(Stream,0,MAX_OPEN_FILES),
-	             is_valid_stream(Stream)
-	          ; domain_error(stream_or_alias_or_variable,Stream,
-		                    check_enumerate_stream_or_alias/1,1) ) ) ).
-
-%-----
-/* Checks a stream or enumerates. Failure */
-current_stream_or_alias(S_or_A,Stream):- 
-	(integer(S_or_A) -> 
-	   is_valid_stream(S_or_A),S_or_A = Stream
-             ; (atom(S_or_A) -> 
-	      '_$alias'(S_or_A,Stream),
- 	      is_valid_stream(S_or_A)
- 	    ; (var(S_or_A) -> 
-	         for(Stream,0,MAX_OPEN_FILES),
-	         is_valid_stream(Stream)
-	       ; domain_error(stream_or_alias_or_variable,Stream,
-	                             current_stream_or_alias/1,1) ) ) ).
-
-% TLS: ISO specifies some error conditions for this, but failure seems better.
-stream_property(S_or_A,Prop):- 
-	current_stream_or_alias(S_or_A,Stream),
-	stream_property_1(Stream,Prop).
-
-stream_property_1(_Stream,type(text)).
-stream_property_1(Stream,alias(A)):- 
-	'_$alias'(A,Stream).
-stream_property_1(Stream,Property) :-
-	(Stream >= MIN_USR_OPEN_FILE -> 
-	    user_stream_property(Stream,Property)
-	 ;  system_stream_property(Stream,Property) ).
-
-user_stream_property(Stream,Property):- 
-	user_stream_property_1(Property,Prop_type,Return),
-	file_function(STREAM_PROPERTY,Stream, Prop_type,Ret,_, _, _),
-	transform_property_returned(Prop_type,Ret,Return).
-
-user_stream_property_1(file_name(F),STREAM_FILE_NAME,F).
-user_stream_property_1(mode(M),STREAM_MODE,M).
-user_stream_property_1(input,STREAM_INPUT,_).
-user_stream_property_1(output,STREAM_OUTPUT,_).
-user_stream_property_1(position(P),STREAM_POSITION,P).
-user_stream_property_1(end_of_stream(E),STREAM_END_OF_STREAM,E).
-user_stream_property_1(reposition(Bool),STREAM_REPOSITIONABLE,Bool).
-
-system_stream_property(STDIN,mode(read)).
-system_stream_property(STDIN,input).
-system_stream_property(STDIN,eof_action(reset)).
-system_stream_property(STDIN,reposition(false)).
-
-system_stream_property(STDOUT,mode(append)).
-system_stream_property(STDOUT,output).
-system_stream_property(STDOUT,eof_action(reset)).
-system_stream_property(STDOUT,reposition(false)).
-
-system_stream_property(STDERR,mode(append)).
-system_stream_property(STDERR,output).
-system_stream_property(STDERR,eof_action(reset)).
-system_stream_property(STDERR,reposition(false)).
-
-system_stream_property(STDWARN,mode(append)).
-system_stream_property(STDWARN,output).
-system_stream_property(STDWARN,eof_action(reset)).
-system_stream_property(STDWARN,reposition(false)).
-
-system_stream_property(STDMSG,mode(append)).
-system_stream_property(STDMSG,output).
-system_stream_property(STDMSG,eof_action(reset)).
-system_stream_property(STDMSG,reposition(false)).
-
-system_stream_property(STDDBG,mode(append)).
-system_stream_property(STDDBG,output).
-system_stream_property(STDDBG,eof_action(reset)).
-system_stream_property(STDDBG,reposition(false)).
-
-system_stream_property(STDFDBK,mode(append)).
-system_stream_property(STDFDBK,output).
-system_stream_property(STDFDBK,eof_action(reset)).
-system_stream_property(STDFDBK,reposition(false)).
-
-transform_property_returned(STREAM_FILE_NAME,Ret,Ret).
-transform_property_returned(STREAM_MODE,Ret_in,Ret_out):- 
-	(Ret_in == READ_MODE -> 
-	    Ret_out = read
-	  ; (Ret_in == WRITE_MODE -> 
-	       Ret_out = write
-	     ; Ret_out = append)).
-transform_property_returned(STREAM_INPUT,READ_MODE,input).
-transform_property_returned(STREAM_OUTPUT,Ret,output):- 
-	(Ret = WRITE_MODE ; Ret = APPEND_MODE),!.
 
 %----------------------------------------------------------------------------------------------------
 
@@ -471,4 +291,192 @@ path_sysop(expand,Filename,ExpandedName) :- !,
 	expand_filename(Filename,ExpandedName).
 path_sysop(X,_,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/3, ', X)).
 path_sysop(X,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/2, ', X)).
+
+
+%----------------------------------------------------------------------------------------------------
+% Stream and Alias Checking.
+%----------------------------------------------------------------------------------------------------
+/* 
+is_valid_stream/2: assumes integer, checks that the stream is valid
+with mode input or output.
+
+check_stream_or_alias/4 checks if stream term or alias is valid and
+raises exception otherwise.
+
+check_open_stream_or_alias/5 checks if stream or alias is valid for
+mode, and raises exception otherwise.
+
+check_enumerate_stream_or_alias/4: if bound,
+check_valid_open_stream_or_alias.  If variable, backtracks through the
+valid streams.
+
+current_stream_or_alias/1: if integer, checks that the S_or_A is valid, and
+fails otherwise. If variable, backtracks through the valid streams.
+
+*/
+
+%-----
+is_valid_stream(Stream) :- 
+	is_valid_stream(Stream,_).
+
+is_valid_stream(Stream,Mode) :-
+	file_function(IS_VALID_STREAM, Stream, M, _, _, _, _),
+	(M =:= 0 -> Mode = input ; Mode = output).
+
+%-----
+check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :- 
+	(integer(S_or_A) -> 
+	    Stream = S_or_A
+	;
+	    (atom(S_or_A) -> 
+	        '_$alias'(S_or_A,Stream)
+	    ;  domain_error(stream_or_alias,S_or_A,Predicate,Arg) ) ).
+
+:- dynamic '_$alias_dynamic'/2.
+
+'_$alias'(userin,0).
+'_$alias'(user_in,0).
+'_$alias'(userout,1).
+'_$alias'(user_out,1).
+'_$alias'(In,Out):-  '_$alias_dynamic'(In,Out).
+
+add_alias(Alias,Stream):- 
+	asserta('_$alias_dynamic'(Alias,Stream)).
+
+%-----
+check_open_stream_or_alias(S_or_A,Predicate,Arg,Mode,Stream) :- 
+	check_stream_or_alias(S_or_A,Predicate,Arg,Stream),
+            (is_valid_stream(Stream,Mode) -> 
+	        true
+	      ; existence_error(Mode-stream,Stream,Predicate,Arg) ).
+
+%-----
+check_enumerate_stream_or_alias(S_or_A,Predicate,Arg,Stream):- 
+	(integer(S_or_A) -> 
+	    (is_valid_stream(S_or_A) -> 
+		true
+	      ;     existence_error(stream,S_or_A,Predicate,Arg))
+	    ; (atom(S_or_A) -> 
+	          '_$alias'(S_or_A,Stream),
+	          (is_valid_stream(Stream) -> 
+		 true
+	           ; existence_error(stream,S_or_A,Predicate,Arg) )
+  	        ; (var(Stream) -> 
+	             for(Stream,0,MAX_OPEN_FILES),
+	             is_valid_stream(Stream)
+	          ; domain_error(stream_or_alias_or_variable,Stream,
+		                    check_enumerate_stream_or_alias/1,1) ) ) ).
+
+%-----
+/* Checks a stream or enumerates. Failure */
+current_stream_or_alias(S_or_A,Stream):- 
+	(integer(S_or_A) -> 
+	   is_valid_stream(S_or_A),S_or_A = Stream
+             ; (atom(S_or_A) -> 
+	      '_$alias'(S_or_A,Stream),
+ 	      is_valid_stream(S_or_A)
+ 	    ; (var(S_or_A) -> 
+	         for(Stream,0,MAX_OPEN_FILES),
+	         is_valid_stream(Stream)
+	       ; domain_error(stream_or_alias_or_variable,Stream,
+	                             current_stream_or_alias/1,1) ) ) ).
+
+%---------------------------------------------------------------------------------------------------
+% ISO Predicates.
+%---------------------------------------------------------------------------------------------------
+
+% TLS: Debugging predicate that will soon be obsolete.
+%print_openfiles:- '_$builtin'(PRINTOFILES).
+print_openfiles:- '_$builtin'(103).
+
+%-----------
+% TLS: ISO interface to file_flush/2
+flush_output(S_or_A):-
+	check_open_stream_or_alias(S_or_A,flush_output/1,1,output,Str),
+	file_flush(Str,Ret),
+	(Ret == 0 ->
+	    permission_error(flush,stream,Str,flush_output/1)
+	  ; true).
+
+%-----------
+% TLS: ISO interface to file_flush/2
+flush_output:-
+	stat_flag(CURRENT_OUTPUT,Stream),
+	file_flush(Stream,Ret),
+	(Ret == 0 ->
+	    permission_error(flush,stream,Stream,flush_output/1)
+	  ; true).
+
+%-----------
+% TLS: ISO specifies some error conditions for this, but failure seems better.
+stream_property(S_or_A,Prop):- 
+	current_stream_or_alias(S_or_A,Stream),
+	stream_property_1(Stream,Prop).
+
+stream_property_1(_Stream,type(text)).
+stream_property_1(Stream,alias(A)):- 
+	'_$alias'(A,Stream).
+stream_property_1(Stream,Property) :-
+	(Stream >= MIN_USR_OPEN_FILE -> 
+	    user_stream_property(Stream,Property)
+	 ;  system_stream_property(Stream,Property) ).
+
+user_stream_property(Stream,Property):- 
+	user_stream_property_1(Property,Prop_type,Return),
+	file_function(STREAM_PROPERTY,Stream, Prop_type,Ret,_, _, _),
+	transform_property_returned(Prop_type,Ret,Return).
+
+user_stream_property_1(file_name(F),STREAM_FILE_NAME,F).
+user_stream_property_1(mode(M),STREAM_MODE,M).
+user_stream_property_1(input,STREAM_INPUT,_).
+user_stream_property_1(output,STREAM_OUTPUT,_).
+user_stream_property_1(position(P),STREAM_POSITION,P).
+user_stream_property_1(end_of_stream(E),STREAM_END_OF_STREAM,E).
+user_stream_property_1(reposition(Bool),STREAM_REPOSITIONABLE,Bool).
+
+system_stream_property(STDIN,mode(read)).
+system_stream_property(STDIN,input).
+system_stream_property(STDIN,eof_action(reset)).
+system_stream_property(STDIN,reposition(false)).
+
+system_stream_property(STDOUT,mode(append)).
+system_stream_property(STDOUT,output).
+system_stream_property(STDOUT,eof_action(reset)).
+system_stream_property(STDOUT,reposition(false)).
+
+system_stream_property(STDERR,mode(append)).
+system_stream_property(STDERR,output).
+system_stream_property(STDERR,eof_action(reset)).
+system_stream_property(STDERR,reposition(false)).
+
+system_stream_property(STDWARN,mode(append)).
+system_stream_property(STDWARN,output).
+system_stream_property(STDWARN,eof_action(reset)).
+system_stream_property(STDWARN,reposition(false)).
+
+system_stream_property(STDMSG,mode(append)).
+system_stream_property(STDMSG,output).
+system_stream_property(STDMSG,eof_action(reset)).
+system_stream_property(STDMSG,reposition(false)).
+
+system_stream_property(STDDBG,mode(append)).
+system_stream_property(STDDBG,output).
+system_stream_property(STDDBG,eof_action(reset)).
+system_stream_property(STDDBG,reposition(false)).
+
+system_stream_property(STDFDBK,mode(append)).
+system_stream_property(STDFDBK,output).
+system_stream_property(STDFDBK,eof_action(reset)).
+system_stream_property(STDFDBK,reposition(false)).
+
+transform_property_returned(STREAM_FILE_NAME,Ret,Ret).
+transform_property_returned(STREAM_MODE,Ret_in,Ret_out):- 
+	(Ret_in == READ_MODE -> 
+	    Ret_out = read
+	  ; (Ret_in == WRITE_MODE -> 
+	       Ret_out = write
+	     ; Ret_out = append)).
+transform_property_returned(STREAM_INPUT,READ_MODE,input).
+transform_property_returned(STREAM_OUTPUT,Ret,output):- 
+	(Ret = WRITE_MODE ; Ret = APPEND_MODE),!.
 
