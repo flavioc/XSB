@@ -73,6 +73,9 @@ write_asm_inst(label(T,L)) :-
 write_asm_inst(call(Sym,A)) :- 
 	!,
 	tab, write(call), sp, write_sym(Sym), sp, writeln(A).
+write_asm_inst(check_interrupt(Sym,A)) :- 
+	!,
+	tab, write(check_interrupt), sp, write_sym(Sym), sp, writeln(A).
 write_asm_inst(switchonbound(Narg,Lab,NCls)) :- 
 	!,
 	tab, write(switchonbound), sp,
