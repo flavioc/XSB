@@ -63,7 +63,6 @@
 	file_time/2,
 	fmt_write_string/3,
 	fmt_write/3,
-	file_open/3,
 	file_close/1,
 	print_file_contents/1,
 	path_sysop/2

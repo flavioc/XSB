@@ -147,11 +147,8 @@ flLoad(File) :-
 flCompileInclude(File) :-
 	flora_check_filename(File),
 	( flora_locate_file(File,FLORA_INCLUDE_EXT,FLIFile) ->
-	    flora_set_xpp_options,
 	    flora_FLH_filename(FLIFile,FLHFile),
-	    %% This adds the WORKSPACE macros etc.
 	    flora_compile_incfile(FLIFile,FLHFile,Status),
-	    flora_clear_xpp_options,
 	    (Status == FLORA_FAILURE -> fail; true)
 
 	; parse_filename(File,_,_,Ext), Ext \= '' ->
@@ -190,14 +187,12 @@ flloadtrailer(TrailerName,Workspace) :-
 	  fmt_write_string(UserTrailerName,"%s%s%s",args(UserFloraDir,S,TrailerFileName)),
 	  flora_WSP_filename(UserTrailerName,Workspace,UserTrailerWSPFile),
 	  flora_WSO_filename(UserTrailerName,Workspace,UserTrailerWSOFile),
-	  flora_FLH_filename(UserTrailerName,UserTrailerFLHFile),
 	  %% Load the trailer.
 	  ( flora_file_newerthan(UserTrailerWSOFile,TrailerFullName) ->
 	      true
 	  ;
 	    flora_copy_file(TrailerFullName,UserTrailerWSPFile),
-	    flora_setup_workspace(UserTrailerFLHFile,Workspace),
-	    flora_set_xpp_options,
+	    flora_set_xpp_options(Workspace),
 	    compile(UserTrailerWSPFile,[optimize,spec_repr]),
 	    flora_clear_xpp_options
 	  ),
@@ -220,11 +215,8 @@ flsetuptrailer(TrailerName) :-
 	slash(S),
 	flora_trailer_filename(TrailerName,TrailerFileName),
 	fmt_write_string(TrailerFullName,"%s%strailer%s%s",args(FloraDir,S,S,TrailerFileName)),
-	flora_FLH_filename(TrailerFullName,FLHFile),
-	flora_setup_workspace(FLHFile,FLORA_DEFAULT_WORKSPACE),
 	telling(PreOutFile),
 	tell(TrailerFullName),
-	flora_include_FLH_filename(TrailerFullName),
 	flora_trailer_include(TrailerName,TrailerInclude),
 	flora_include_file([FLHEADER,FLDBDYN|TrailerInclude],HeaderStatus),
 	told,
@@ -233,7 +225,7 @@ flsetuptrailer(TrailerName) :-
 	( HeaderStatus == FLORA_FAILURE ->
 	    fail
 	;
-	  flora_set_xpp_options,
+	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
 	  compile(TrailerFullName,[optimize,spec_repr]),
 	  flora_clear_xpp_options
 	),
@@ -261,14 +253,12 @@ flloadpatch(Workspace) :-
 	fmt_write_string(UserPatchName,"%s%s%s",args(UserFloraDir,S,PatchName)),
 	flora_WSP_filename(UserPatchName,Workspace,UserPatchWSPFile),
 	flora_WSO_filename(UserPatchName,Workspace,UserPatchWSOFile),
-	flora_FLH_filename(UserPatchName,UserPatchFLHFile),
 	%% Load the patch.
 	( flora_file_newerthan(UserPatchWSOFile,PatchFullName) ->
 	    true
 	;
 	  flora_copy_file(PatchFullName,UserPatchWSPFile),
-	  flora_setup_workspace(UserPatchFLHFile,Workspace),
-	  flora_set_xpp_options,
+	  flora_set_xpp_options(Workspace),
 	  compile(UserPatchWSPFile,[optimize,spec_repr]),
 	  flora_clear_xpp_options
         ),
@@ -284,11 +274,8 @@ flsetuppatch :-
 	slash(S),
 	flora_patch_filename(PatchName),
 	fmt_write_string(PatchFullName,"%s%strailer%s%s",args(FloraDir,S,S,PatchName)),
-	flora_FLH_filename(PatchFullName,FLHFile),
-	flora_setup_workspace(FLHFile,FLORA_DEFAULT_WORKSPACE),
 	telling(PreOutFile),
 	tell(PatchFullName),
-	flora_include_FLH_filename(PatchFullName),
 	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH],HeaderStatus),
 	told,
 	tell(PreOutFile),
@@ -296,7 +283,7 @@ flsetuppatch :-
 	( HeaderStatus == FLORA_FAILURE ->
 	    fail
 	;
-	  flora_set_xpp_options,
+	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
 	  compile(PatchFullName,[optimize,spec_repr]),
 	  flora_clear_xpp_options
 	),
@@ -335,22 +322,19 @@ flora_user_flora_dir(Dir) :-
   flora_flcompile(+FlrFile,+Workspace)
 *************************************************************************/
 flora_flcompile(FlrFile,Workspace) :-
-	flora_set_xpp_options,
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
 	flora_compile_file(FlrFile,MPFile,FDBFile,Status),
 	( Status == FLORA_FAILURE ->
-	    flora_clear_xpp_options,
 	    fail
 	;
-	  flora_FLH_filename(FlrFile,FLHFile),
 	  flora_WSP_filename(FlrFile,Workspace,WSPFile),
-	  flora_setup_workspace(FLHFile,Workspace),
 	  flora_copy_file(MPFile,WSPFile),
 	  flora_message_line("calling XSB compiler"),
-	  compile(WSPFile,[optimize,spec_repr])
+	  flora_set_xpp_options(Workspace),
+	  compile(WSPFile,[optimize,spec_repr]),
+	  flora_clear_xpp_options
         ),
-	flora_clear_xpp_options,
 	!.
 
 
@@ -358,13 +342,10 @@ flora_flcompile(FlrFile,Workspace) :-
   flora_flload(+FlrFile,+Workspace)
 *************************************************************************/
 flora_flload(FlrFile,Workspace) :-
-	flora_set_xpp_options,
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
-	flora_FLH_filename(FlrFile,FLHFile),
 	flora_WSP_filename(FlrFile,Workspace,WSPFile),
 	flora_WSO_filename(FlrFile,Workspace,WSOFile),
-	flora_setup_workspace(FLHFile,Workspace),
 	!,
         ( flora_file_newerthan(WSPFile,FlrFile) ->
 	    flora_stdmsg_nl,
@@ -375,21 +356,18 @@ flora_flload(FlrFile,Workspace) :-
 	      true
 	  ;
 	    flora_compile_file(FlrFile,MPFile,FDBFile,Status),
-	    ( Status == FLORA_FAILURE ->
-		flora_clear_xpp_options,
-		fail
-	    ;
-	      true
-	    )
+	    (Status == FLORA_FAILURE -> fail; true)
 	  ),
 	  flora_copy_file(MPFile,WSPFile)
         ),
+	!,
 	( flora_file_newerthan(WSOFile,WSPFile) ->
 	    ConsultFile=WSOFile
 	;
 	  ConsultFile=WSPFile
         ),
 	flora_message_line("loading %s into module %s",args(FlrFile,Workspace)),
+	flora_set_xpp_options(Workspace),
         consult(ConsultFile),
 	flora_clear_xpp_options,
 	!.
@@ -448,15 +426,6 @@ flora_library_directory(LibDir) :- library_directory(LibDir).
 flora_library_directory(LibDir) :- xsb_configuration(libdir,LibDir).
 flora_library_directory(LibDir) :- xsb_configuration(syslibdir,LibDir).
 flora_library_directory(LibDir) :- xsb_configuration(cmplibdir,LibDir).
-
-
-/*************************************************************************
-  flora_setup_workspace(+FileName,+Workspace)
-*************************************************************************/
-flora_setup_workspace(FileName,Workspace) :-
-	file_open(FileName,w,IOport),
-	fmt_write(IOport,"#define FLORA_VAR_WORKSPACE %s\n",args(Workspace)),
-	file_close(IOport).
 
 
 /*************************************************************************
@@ -519,19 +488,21 @@ flora_copy_file(Source,Dest) :-
 	path_sysop(copy,Source,Dest).
 
 
-flora_set_xpp_options :- assert(xpp_options('-P -m -nostdinc')).
-flora_clear_xpp_options :- retractall(xpp_options(_)).
-
-
 /*************************************************************************
-  flora_include_FLH_filename(+FileName)
+  gpp control utilities
 *************************************************************************/
-flora_include_FLH_filename(FileName) :-
-	parse_filename(FileName,_,Base,_),
-	fmt_write_string(FLHFileName,"%s.%s",args(Base,FLORA_HEADER_EXT)),
-	current_output_port(OutPort),
-	fmt_write(OutPort,":- compiler_options([xpp_on]).\n",_),
-	fmt_write(OutPort,"#include ""%s""\n\n",args(FLHFileName)).
+flora_set_xpp_options :-
+	retractall(xpp_options(_)),
+	assert(xpp_options('-P -m -nostdinc')).
+
+
+flora_set_xpp_options(WS) :-
+	fmt_write_string(Opt,'-P -m -nostdinc -D FLORA_VAR_WORKSPACE=%s',args(WS)),
+	retractall(xpp_options(_)),
+	assert(xpp_options(Opt)).
+
+
+flora_clear_xpp_options :- retractall(xpp_options(_)).
 
 
 /*************************************************************************
@@ -610,6 +581,7 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	cputime(T0),
 	seeing(PreInFile),
 	flora_reset_modules_for_file,
+	flora_set_xpp_options,
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,FileOptionList,CompileStatus),
@@ -617,6 +589,7 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	process_control(XPP_process,wait),
 	%% Release the file descriptor used to read from cpp.
 	file_close(IOportFromProc),
+	flora_clear_xpp_options,
 	see(PreInFile),
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
@@ -668,7 +641,6 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
 flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus) :-
 	telling(PreOutFile),
 	tell(PFileName),
-	flora_include_FLH_filename(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
 	flora_include_file([FLHEADER,FLDBDYN,FLDEFINITION,FLPATCH|LibOptionList],HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
@@ -708,7 +680,6 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 flora_generate_DBfile(DBFileName,FlogicFactList,FileStatus) :-
 	telling(PreOutFile),
 	tell(DBFileName),
-	flora_include_FLH_filename(DBFileName),
 	flora_include_file([FLHEADER,FLDBDYN],HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
@@ -740,6 +711,7 @@ flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	cputime(T0),
 	seeing(PreInFile),
 	flora_reset_modules_for_file,
+	flora_set_xpp_options,
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
@@ -747,6 +719,7 @@ flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	process_control(XPP_process,wait),
 	%% Release the file descriptor used to read from cpp.
 	file_close(IOportFromProc),
+	flora_clear_xpp_options,
 	see(PreInFile),
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE

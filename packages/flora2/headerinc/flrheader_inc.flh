@@ -6,6 +6,8 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
+:- compiler_options([xpp_on]).
+
 #include "flrheader.flh"
 
 /***********************************************************************/
