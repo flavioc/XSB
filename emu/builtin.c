@@ -1695,9 +1695,9 @@ int builtin_call(byte number)
     int i; 
     for (i= 0 ; i < MAX_OPEN_FILES ; i++) {
       if ((int) open_files[i].file_name == 0) {
-	printf("i: %d File Ptr %x \n",i,open_files[i].file_ptr);
+	printf("i: %d File Ptr %p \n",i,open_files[i].file_ptr);
       } else {
-	printf("i; %d File Ptr %x Name %s Mode %c \n",i,
+	printf("i; %d File Ptr %p Name %s Mode %c \n",i,
 	       open_files[i].file_ptr, open_files[i].file_name,open_files[i].io_mode);
       }
     }
@@ -2656,6 +2656,7 @@ Psc psc_from_code_addr(byte *code_addr) {
 int print_xsb_backtrace() {
   Psc tmp_psc, called_psc;
   byte *tmp_cpreg;
+  byte instruction;
   CPtr tmp_ereg, tmp_breg;
   if (xsb_profiling_enabled) {
     // print forward continuation
@@ -2665,16 +2666,20 @@ int print_xsb_backtrace() {
     else printf("...unknown/?,  pc=%p\n",pcreg);
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
-    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call) {
-      called_psc = *((Psc *)tmp_cpreg - 1);
-      if (called_psc != tmp_psc) {
-	printf("..* %s/%d,  pc=%p\n",get_name(called_psc),get_arity(called_psc),get_ep(called_psc));
+    instruction = *(tmp_cpreg-2*sizeof(Cell));
+    while (tmp_cpreg && (instruction == call || instruction == trymeorelse)) {
+      if (instruction == call) {
+	called_psc = *((Psc *)tmp_cpreg - 1);
+	if (called_psc != tmp_psc) {
+	  printf("..* %s/%d,  pc=%p\n",get_name(called_psc),get_arity(called_psc),get_ep(called_psc));
+	}
       }
       tmp_psc = psc_from_code_addr(tmp_cpreg);
       if (tmp_psc) printf("... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),tmp_cpreg);
       else printf("... unknown/?,  pc=%p\n",tmp_cpreg);
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
+      instruction = *(tmp_cpreg-2*sizeof(Cell));
     }
 
     // print backward continuation
@@ -2691,11 +2696,15 @@ int print_xsb_backtrace() {
     printf("Partial Forward Continuation...\n");
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
-    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call) {
-      called_psc = *((Psc *)tmp_cpreg - 1);
-      printf("... %s/%d\n",get_name(called_psc),get_arity(called_psc));
+    instruction = *(tmp_cpreg-2*sizeof(Cell));
+    while (tmp_cpreg && (instruction == call || instruction == trymeorelse)) {
+      if (instruction == call) {
+	called_psc = *((Psc *)tmp_cpreg - 1);
+	printf("... %s/%d\n",get_name(called_psc),get_arity(called_psc));
+      }
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
+      instruction = *(tmp_cpreg-2*sizeof(Cell));
     }
   }
   return TRUE;
@@ -2704,6 +2713,7 @@ int print_xsb_backtrace() {
 prolog_term build_xsb_backtrace() {
   Psc tmp_psc, called_psc;
   byte *tmp_cpreg;
+  byte instruction;
   CPtr tmp_ereg, tmp_breg, forward, backward;
   prolog_term backtrace;
 
@@ -2715,13 +2725,16 @@ prolog_term build_xsb_backtrace() {
     follow(hreg++) = makeint(tmp_psc);
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
-    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call &&
-	   (pb)top_of_localstk > (pb)top_of_heap + 96) {
-      called_psc = *((Psc *)tmp_cpreg - 1);
-      if (called_psc != tmp_psc) {
-	follow(forward) = makelist(hreg);
-	follow(hreg++) = makeint(called_psc);
-	forward = hreg++;
+    instruction = *(tmp_cpreg-2*sizeof(Cell));
+    while (tmp_cpreg && (instruction == call || instruction == trymeorelse)
+	   && (pb)top_of_localstk > (pb)top_of_heap + 96) {
+      if (instruction == call) {
+	called_psc = *((Psc *)tmp_cpreg - 1);
+	if (called_psc != tmp_psc) {
+	  follow(forward) = makelist(hreg);
+	  follow(hreg++) = makeint(called_psc);
+	  forward = hreg++;
+	}
       }
       tmp_psc = psc_from_code_addr(tmp_cpreg);
       follow(forward) = makelist(hreg);
@@ -2729,12 +2742,13 @@ prolog_term build_xsb_backtrace() {
       forward = hreg++;
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
+      instruction = *(tmp_cpreg-2*sizeof(Cell));
     }
     follow(forward) = makenil;
 
     tmp_breg = breg;
-    while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg) &&
-	   (pb)top_of_localstk > (pb)top_of_heap + 48) {
+    while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg)
+	   && (pb)top_of_localstk > (pb)top_of_heap + 48) {
       tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
       follow(backward) = makelist(hreg);
       follow(hreg++) = makeint(tmp_psc);
@@ -2746,14 +2760,18 @@ prolog_term build_xsb_backtrace() {
   } else {
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
-    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call &&
-	   (pb)top_of_localstk > (pb)top_of_heap + 48) {
-      called_psc = *((Psc *)tmp_cpreg - 1);
-      follow(forward) = makelist(hreg);
-      follow(hreg++) = makeint(called_psc);
-      forward = hreg++;
+    instruction = *(tmp_cpreg-2*sizeof(Cell));
+    while (tmp_cpreg && (instruction == call || instruction == trymeorelse)
+	   && (pb)top_of_localstk > (pb)top_of_heap + 48) {
+      if (instruction == call) {
+	called_psc = *((Psc *)tmp_cpreg - 1);
+	follow(forward) = makelist(hreg);
+	follow(hreg++) = makeint(called_psc);
+	forward = hreg++;
+      }
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
+      instruction = *(tmp_cpreg-2*sizeof(Cell));
     }
     follow(forward) = makenil;
     follow(backward) = makenil;

@@ -857,7 +857,7 @@ byte *loader(char *file, int exp)
   }
   else {
     xsb_abort("File: %s does not have proper byte code format...\n%s",
-	      file, "\t Please recompile it");
+	      file, "\t Please remove it and then recompile");
     first_inst = NULL;
   }
 

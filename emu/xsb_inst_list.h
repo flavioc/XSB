@@ -17,6 +17,7 @@ XSB_INST(0x0d, uninil, _uninil, PPP,X, X,X);
 XSB_INST(0x0e, getnumcon, _getnumcon, PP, R, B,X);
 XSB_INST(0x0f, putnumcon, _putnumcon, PP, R, B,X);
 
+
 XSB_INST(0x10, putpvar, _putpvar, P, V, R,X);
 XSB_INST(0x11, putpval, _putpval, P, V, R,X);
 XSB_INST(0x12, puttvar, _puttvar, P, R, R,X);
@@ -37,8 +38,10 @@ XSB_INST(0x1e, uninumcon, _uninumcon, PPP,B, X,X);
 XSB_INST(0x1f, bldnumcon, _bldnumcon, PPP,B, X,X);
 
 XSB_INST(0x20, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x21, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x22, no_inst, _no_inst, PPP,X,X,X);
+
+XSB_INST(0x21, uniavar, _uniavar, PPP, X,X,X);
+XSB_INST(0x22, bldavar, _bldavar, PPP, X,X,X);
+
 XSB_INST(0x23, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x24, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x25, no_inst, _no_inst, PPP,X,X,X);

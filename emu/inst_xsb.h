@@ -210,6 +210,9 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define no_inst         0x20 
 /* the above number is used for invalid opcodes in the threading engine */
 
+#define uniavar		0x21  /* for single occurrence variables */
+#define bldavar		0x22
+
 #define getattv		0x30
 #define putattv		0x31
 

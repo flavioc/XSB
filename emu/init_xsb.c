@@ -751,6 +751,7 @@ Psc make_code_psc_rec(char *name, int arity, Psc mod_psc) {
   set_data(new_psc, mod_psc);
   set_env(new_psc, T_UNLOADED);
   set_type(new_psc, T_ORDI);
+  if (mod_psc != global_mod) link_sym(new_psc, global_mod); /* Add to global module as well */
   return new_psc;
 }
 

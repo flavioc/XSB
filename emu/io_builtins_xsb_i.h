@@ -31,6 +31,7 @@
 
 static struct stat stat_buff;
 extern char   *expand_filename(char *filename);
+extern int old_xsb_intern_fileptr(FILE *, char *);
 
 
 static FILE *stropen(char *str)

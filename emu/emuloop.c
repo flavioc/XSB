@@ -503,6 +503,16 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
+  XSB_Start_Instr(uniavar,_uniavar) /* PPP */
+    ADVANCE_PC(size_xxx);
+    if (!flag) {	/* if (flag == READ) */
+      sreg++;
+    }
+    else {
+      new_heap_free(hreg);
+    }
+  XSB_End_Instr()
+
   XSB_Start_Instr(unitval,_unitval) /* PPR */
     Def2ops
     Op1(Register(get_xxr));
@@ -677,6 +687,11 @@ contcase:     /* the main loop */
     Op1(get_xxr);
     ADVANCE_PC(size_xxx);
     bld_ref((CPtr)op1, hreg);
+    new_heap_free(hreg);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldavar,_bldavar) /* PPR */
+    ADVANCE_PC(size_xxx);
     new_heap_free(hreg);
   XSB_End_Instr()
 
@@ -1085,7 +1100,7 @@ contcase:     /* the main loop */
     }
 #endif
     ADVANCE_PC(size_xxxX);
-    cpreg = lpcreg;
+    cpreg = lpcreg; /* Another use of cpreg for inline try's for disjunctions */
     SUBTRYME
   XSB_End_Instr()
 
@@ -1094,7 +1109,6 @@ contcase:     /* the main loop */
     Op1(0);
     cp_pcreg(breg) = *(byte **)(lpcreg+sizeof(Cell));
     ADVANCE_PC(size_xxxX);
-    cpreg = lpcreg;
     restore_type = 0;
     RESTORE_SUB
   XSB_End_Instr()
@@ -1104,7 +1118,6 @@ contcase:     /* the main loop */
     Op1(0);
     handle_xsb_profile_interrupt;
     ADVANCE_PC(size_xxx);
-    cpreg = lpcreg+sizeof(Cell);
     restore_type = 1;
     RESTORE_SUB
   XSB_End_Instr()
