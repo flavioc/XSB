@@ -1,9 +1,9 @@
 :- import length/2 from basics.
 
 o1[m1@(a1) -> r1].
-o1[m2@(a1,a2) -> r2].
+o1[m2@(b1,b2) -> r2].
 o1[m3 -> r3].
-o1[m4@(a1,a2,a3) -> r4].
+o1[m4@(c1,c2,c3) -> r4].
 
 o2[@M->R] :-
 	o1[@M->R],
