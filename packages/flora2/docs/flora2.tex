@@ -2129,7 +2129,7 @@ leaves it to the user to tell the compiler whether equality maintenance is
 needed.  Equality maintenance is discussed in Section~\ref{sec-eqmaintain}.
 
 
-\section{Truth Values, Object Values, and Predicate Meta Signatures}
+\section{Truth Values, Object Values, and Meta Signatures}
 \label{sec-references}
 
 
@@ -2290,13 +2290,16 @@ instruction.
 \index{meta signature of a predicate}
 \index{compiler directive!{\tt arguments}}
 \index{meta}
+\index{reification}
 %
 By default, when a truth-valued expression, $E$, such as an \fl molecule or
 a path expression, appears as an argument to a predicate or function
 symbol, {\it p}, the \FLORA compiler will pass the object value of the
 expression to {\it p}. In order to tell the compiler that the entire
 formula obtained by translating $E$ into Prolog is to be passed to $p$, we
-need to define the \emph{meta signature} of $p$ using the compiler
+need to \emph{reify} $E$, {\it i.e.}, turn this formula as a whole into an
+object into an object. This is done by defining
+the \emph{meta signature} of $p$ using the compiler
 directive {\tt arguments}.  For instance, the following directive will make
 {\tt findall/3} work as intended:
 %%
@@ -2312,6 +2315,8 @@ argument of {\tt findall/3} should be treated as a {\em syntactic object\/}
 that represents formulas of the kind that might occur in the body of a
 rule.
 
+Another way to reify a formula is to use the \emph{reification operator},
+``$\sim$'', introduced in Section~\ref{sec-meta-reification}.
 
 
 \section{HiLog and Related Issues} \label{sec:hilog}
@@ -2439,7 +2444,8 @@ program, all queries fail:
 %%
 
 
-\subsection{Meta-programming}
+\subsection{Meta-programming, Meta-unification, and Reification}
+\label{sec-meta-reification}
 
 
 \index{meta-programming}
@@ -2492,8 +2498,10 @@ Yes.
 Note that these primitives are used for Prolog terms only and
 are described in the XSB manual.
 
+\paragraph{Meta-unification.}
 \index{meta-unification}
-\index{$\sim$}
+\index{meta-unification!$\sim$ operator}
+\index{$\sim$!meta-unification operator}
 %%
 In \FLORA, variables can be bound to both formulas and terms. For instance,
 in {\tt X = p(a)}, {\tt p(a)} is viewed as a term and {\tt X} is bound to
@@ -2505,6 +2513,81 @@ instance, {\tt X $\sim$ a[m->v,k->V]} binds {\tt X} to the F-molecule {\tt
   a[m->v,k->V]} and {\tt a[m->v,k->V] ~ X[M->v,k->p]} unifies the two
 molecules by binding {\tt X} to {\tt a}, {\tt M} to {\tt m}, and {\tt V} to
 {\tt p}.
+
+\paragraph{Reification.}
+\index{reification}
+\index{reification!$\sim$ operator}
+\index{$\sim$!reification operator}
+%%
+It is sometimes useful to be able to treat \FLORA molecules and predicates
+as objects. For instance, consider the following statement:
+%%
+\begin{verbatim}
+ tom[believes->> alice[thinks->>floraProgramming:coolThing]].
+\end{verbatim}
+%%
+The intended meaning here is that one of Tom's beliefs is that Alice
+thinks that programming in \FLORA is a cool thing. Unfortunately, this is
+incorrect, because, as stated, the above formula has a different meaning:
+%%
+\begin{verbatim}
+ tom[believes->> alice].
+ alice[thinks->>floraProgramming:coolThing].  
+\end{verbatim}
+%%
+That is, Tom believes in Alice and Alice thinks that FLORA programming is
+cool. This is different from what we originally intended. For instance, we
+did not want to say that Alice likes FLORA (she probably does, but she did
+not tell us). All we said was what Tom believes about what Alice thinks. In
+other words, to achieve the desired effect we must turn the formula {\tt
+  alice[thinks->>floraProgramming:coolThing]} into an object, {\it i.e.},
+\emph{reify} it.
+
+Reification is done using the unary operator ``$\sim$''. For instance, to
+say that Tom believes that Alice thinks that programming in \FLORA is a
+cool thing one should write:
+%%
+\begin{verbatim}
+ tom[believes->> ~alice[thinks->>floraProgramming:coolThing]].
+\end{verbatim}
+%%
+
+\paragraph{Reification and meta-unification.}
+Reification should not be confused with meta-unification, although they are
+close concepts. A reified formula reflects the exact structure that is used
+to encode it, so structurally similar, but syntactically different formulas
+might meta-unify, but their internal representations could be very different.
+For instance, 
+%%
+\begin{verbatim}
+ ?- M=foo, a[b->X]@M ~ Y[b->d]@foo.
+\end{verbatim}
+%%
+will return \emph{true}, because the two molecules are structurally similar
+and thus meta-unify. On the other hand,
+%%
+\begin{verbatim}
+ ?- M=foo, ~a[b->X]@M = ~Y[b->d]@foo.
+\end{verbatim}
+%%
+will be false, because {\tt a[b->Y]@X} and {\tt Z[b->d]@foo} have different
+internal representations (even though their conceptual structures are
+similar), so they do not unify (using ``='', {\it i.e.}, in the usual
+first-order sense). Note, however, that
+%%
+\begin{verbatim}
+ ?- ~a[b->Y]@foo = ~Z[b->d]@foo.
+ ?- M=foo, ~a[b->Y]@M = ~Z[b->d]@M.
+ ?- a[b->Y]@foo ~ Z[b->d]@foo.
+ ?- M=foo, a[b->Y]@M ~ Z[b->d]@M.
+\end{verbatim}
+%%
+will all return \emph{true}, because {\tt a[b->Y]@foo} and {\tt
+  Z[b->d]@foo} are structurally similar both conceptually and as far as
+  their
+internal encoding is concerned (and likewise are {\tt a[b->Y]@foo} and {\tt
+  Z[b->d]@foo}).
+
 
 {\bf Unimplemented}: Meta-programming support for HiLog terms and
 F-molecules is incomplete. For instance, there is no operator similar to

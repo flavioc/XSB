@@ -1764,6 +1764,12 @@ compile_flvar(Name,Index,VarObject) :-
 
   Compile term in the OID position.
 ****************************************************************************/
+compile_fltermobj(Funct,1,Args,Object,OidCode,Code,Status) :-
+	%% If it is ~(...) treat as reificated term
+	is_flatom(Funct,FL_UNIVEQFORM),
+	compile_argpathexplist(Args,[FL_BODYFORMULA],AObj,OidCode,Code,Status),
+	(Status == [] -> AObj = [Object] ; true).
+
 compile_fltermobj(Funct,N,Args,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),

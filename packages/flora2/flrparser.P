@@ -549,6 +549,7 @@ flplib_struct(Goal,FLPLIB(Goal)) :- !.
 flpliball_struct(Goal,FLPLIBALL(Goal)) :- !.
 
 %% Given module spec, get back module type and module name
+get_module_from_spec(FLORAUSERMOD(FL_THISMODULE),FLORAUSERMOD,FL_THISMODULE) :- !.
 get_module_from_spec(FLORAUSERMOD(Mod),FLORAUSERMOD,Mod) :- !.
 get_module_from_spec(FLORASYSMOD(Mod),FLORASYSMOD,Mod) :- !.
 get_module_from_spec(PROLOGMODULE(Mod),PROLOGMODULE,Mod) :- !.
@@ -1534,13 +1535,23 @@ flora_body(CanoniTerm,FloraModSpec,Code,Status) :-
 
   Note: Textual information is reserved for module names.
 ****************************************************************************/
+%% Handle Flora user module specification. (@ M)
 flora_workspace(CanoniTerm,FLORAUSERMOD(NVCode),[]) :-
-	%% Check if it is a Flora user module specification. (@ M)
 	flora_name_or_normvar(CanoniTerm,NVCode),
 	!.
 
+%% Handle THIS MODULE specification, e.g., a[b->c]@ _@.
+flora_workspace(CanoniTerm,FLORAUSERMOD(FL_THISMODULE),[]) :-
+	%% When _@ is specified as a module, we treat it
+	%% syntactically as FLORAUSERMOD because it is an atom
+	%% and not flora(...). However, this gets substituted with
+	%% FLORA_THIS_MODULE_NAME, so at compile time we get the right
+	%% module even if the current module was a system module
+	get_spectoken(CanoniTerm,FL_THISMODULE),
+	!.
+
+%% Handle a Prolog module. (@ prolog())
 flora_workspace(CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa),PROLOGMODULE,[]) :-
-	%% Check if it is a Prolog module. (@ prolog())
 	get_name(Mod,FL_PLIB),
 	!.
 
@@ -1579,6 +1590,7 @@ flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),FLORASYSMOD(MCode),
 	;
 	  parsing_error(M,ERROR_WSNAME,Status)
 	).
+
 
 flora_workspace(CanoniTerm,_WSCode,Status) :-
 	parsing_error(CanoniTerm,ERROR_WSNAME,Status).
@@ -1831,6 +1843,7 @@ flora_body_literal(CanoniTerm,Code,Status) :-
 	flora_exec_directive(CanoniTerm,Code,Status),
 	!.
 
+%% :(_,_), ::(_,_)
 flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	get_atom(Funct,F),
 	is_birelop(F),
@@ -1838,12 +1851,14 @@ flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	flora_pathexplist(Args,[LCode,RCode],Status),
 	(Status == [] -> flbirelate_struct(LCode,F,RCode,Code); true).
 
+%% .(_,_), !(_,_), ..(_,_), !!(_,_)
 flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
 	get_atom(Funct,F),
 	is_objrefop(F),
 	!,
 	parsing_error(If,ERROR_BDLITERAL,Status).
 
+%% insert{...}
 flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	get_name(Funct,Atom),
 	is_dbinsertop(Atom),
@@ -1855,6 +1870,7 @@ flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	  flora_dbinsert(FCode,N,Args,Code,Status)
         ).
 
+%% delete{...}
 flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	get_name(Funct,Atom),
 	is_dbdeleteop(Atom),
@@ -1866,6 +1882,7 @@ flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	  flora_dbdelete(FCode,N,Args,Code,Status)
         ).
 
+%% :=:
 flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_OBJEQL),
 	!,
@@ -1876,6 +1893,7 @@ flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	!,
 	flora_term(Funct,N,Args,Code,Status).
 
+%% ...[...]
 flora_body_literal(CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),Code,Status) :-
 	!,
 	flora_objspec(Funct,N,Args,Code,Status).

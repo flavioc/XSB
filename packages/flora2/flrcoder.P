@@ -724,7 +724,9 @@ flora_write_workspace(THISMODULE,_WS,Funct) :-
 flora_write_workspace(USERMODULE,WS,Funct) :-
 	!,
 	flora_write_atom('FLORA_USER_WORKSPACE('),
-	flora_write_functor(WS),
+	(WS == FL_THISMODULE -> write('FLORA_THIS_MODULE_NAME')
+	; flora_write_functor(WS)
+	),
 	put(0',),
 	flora_write_functor(Funct),
 	put(0')).
@@ -1294,7 +1296,12 @@ flora_build_sysmod(Term,WS,DWS,Prefix,VarList,Code) :-
 flora_build_wsliteral(Mode,F,_N,Args,WS,DWS,Prefix,VarList,Code) :-
 	flora_build_structlist(Args,DWS,Prefix,VarList,ACodeList),
 	( Mode == USERMODULE ->
-	    flora_user_module_predicate(F,ACodeList,WS,Code)
+	    (WS == FL_THISMODULE
+	    %% In the shell, THIS module can be only FLORA_DEFAULT_WORKSPACE
+	    -> NewWS = FLORA_DEFAULT_WORKSPACE
+	    ;  NewWS = WS
+	    ),
+	    flora_user_module_predicate(F,ACodeList,NewWS,Code)
 
 	; Mode == SYSTEMMODULE ->
 	    flora_system_module_predicate(F,ACodeList,WS,Code)
