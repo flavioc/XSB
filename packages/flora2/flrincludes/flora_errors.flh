@@ -114,7 +114,7 @@
 #define EXP_AGGRGRPVAR	'aggregate and grouping variables expected'
 #define EXP_ARGS	'arguments expected'
 #define NO_LISTTAIL	'list tail specification not allowed'
-#define NO_DISJUNCTION	'disjunction not allowed in rule head'
+#define NO_DISJUNCTION	'disjunction not allowed in rule heads and facts'
 #define NO_NEGATION	'negation not allowed in rule head'
 #define NO_WORKSPACE	'invalid use of module specification'
 #define NO_WSINRULEHEAD	'module specification not allowed in rule head'
