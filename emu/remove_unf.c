@@ -11,7 +11,7 @@
 #include "debug_xsb.h"
 #include "register.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
 void my_print_completion_stack(CPtr leader_ptr)
 {
   int i = 0;
