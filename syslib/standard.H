@@ -89,11 +89,9 @@
 :- import file_open/3, file_close/1, file_get/2, file_put/2
      from file_io.
 
-:- import str_fromlist/2 from string.
 :- import file_write0/2, file_write/2, file_write_prolog/2, 
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
-:- import char_blank/1 from xsb_tok.
 :- import file_read/2 from xsb_read.
 :- import eval/2 from eval.
 :- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,

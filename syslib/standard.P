@@ -243,6 +243,10 @@ nl :- (windows_os
 
 get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 
+%% charcters ignored (treat as blanks)
+char_blank(Ch) :- Ch >= 0, Ch =< 9.
+char_blank(Ch) :- Ch >= 11, Ch =< 32.
+
 %% NEW
 %%get0(C) :- stat_flag(10, File),	file_get(File, C0), C = C0.
 get0(C) :- stat_flag(CURRENT_INPUT, File), file_get(File, C0), C = C0.
@@ -490,7 +494,7 @@ name(T, L) :-
 	( Type =:= 0 -> 
 		( var(L) -> abort('Uninstantiated argument 2 of name/2')
 		; ( ascii_list(L) -> 
-			( int_fromlist(L, T) -> true ; str_fromlist(T, L) )
+			( int_fromlist(L, T) -> true ; atom_codes(T, L) )
 		  ; abort('Wrong type in argument 2 of name/2')
 		  )
 		)
