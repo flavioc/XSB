@@ -53,29 +53,35 @@ case check_complete: {
     leader = 1;
   }
   
+/*==========================================================================*/
 #if (!defined(CHAT))
+/*--------------------------------------------------------------------------*/
 #ifdef LOCAL_EVAL
+/*--------------------------------------------------------------------------*/
   /* return answers to caller of generator subgoals that are not leaders */
   if (tcp_tag(breg) == RETRY_GEN_ACTIVE_TAG) {
     if (tcp_trie_return(breg) == NULL) { 
       /* this can only happen if answers are deleted */ 
       tcp_tag(breg) = CHECK_COMPLETE_TAG; 
-    } else { /* This code mimics the answer_return code */
-      Cell    CallNumVar;
-      ALNptr  OldRetPtr;
-      NODEptr TrieRetPtr;
+    }
+    else { /* This code mimics the answer_return code */
+      CPtr answer_template;
+      Cell template_size;
+      ALNptr answer_set;
+      BTNptr answer_leaf;
 
       restore_some_wamregs(breg,ereg); 
-      ARITY = tcp_arity(breg); 
-      CallNumVar = *(breg + TCP_SIZE + (Cell)ARITY);
-      CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
-      op3 = breg + TCP_SIZE + (Cell) ARITY + CallNumVar; 
-      OldRetPtr = aln_next_aln(tcp_trie_return(breg)); /* get next answer */ 
-      if (OldRetPtr) {
-	tcp_trie_return(breg) = OldRetPtr; 
-	/* last answer consumed */ 
-	TrieRetPtr = get_next_trie_solution(&OldRetPtr); 
-	load_solution_trie(CallNumVar,op3,TrieRetPtr); 
+      answer_set = ALN_Next(tcp_trie_return(breg));   /* get next answer */ 
+      if ( IsNonNULL(answer_set) ) {
+	tcp_trie_return(breg) = answer_set;   /* update answer continuation */
+	ARITY = tcp_arity(breg); 
+	answer_template = breg + TCP_SIZE + (Cell)ARITY;
+	template_size = int_val(cell(answer_template));
+	answer_template += template_size;
+	answer_leaf = ALN_Answer(answer_set);
+	table_consume_answer(answer_leaf,template_size,answer_template,
+			     subg_tif_ptr(subgoal));
+
 	/*
 	 * This piece of code is new (different from version 1.8.1) for
 	 * delay variable stuff.  In LOCAL_EVAL, in order to save the
@@ -84,7 +90,7 @@ case check_complete: {
 	 * of load_solution_trie()) instead of from the pointer
 	 * `ans_var_pos_reg'.  `ans_var_pos_reg' points to the
 	 * substitution factor of the answer that we saved on the heap in
-	 * variant_trie_search().  Because the space of heap may be
+	 * variant_answer_search().  Because the space of heap may be
 	 * reclaimed (see restore_some_wamregs() in check_complete), the
 	 * substitution factor information we saved in heap may be
 	 * overwritten.
@@ -92,13 +98,13 @@ case check_complete: {
 	 * This is similar to the situation in answer_return and
 	 * lay_down_consumer.
 	 */
-	if (is_conditional_answer(aln_answer_ptr(tcp_trie_return(breg)))) { 
+	if (is_conditional_answer(ALN_Answer(tcp_trie_return(breg)))) { 
 #ifdef DEBUG_DELAYVAR
 	  fprintf(stderr, ">>>> delay_positively in check_complete\n");
 #endif
 	  {
 	    if (num_heap_term_vars == 0) {
-	      delay_positively(subgoal, aln_answer_ptr(tcp_trie_return(breg)),
+	      delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
 			       makestring((char *) ret_psc[0]));
 	    }
 	    else {
@@ -108,10 +114,10 @@ case check_complete: {
 	      new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
 	      for (i = 0; i < num_heap_term_vars; i++)
 		cell(hreg++) = (Cell) var_addr[i];
-	      delay_positively(subgoal, aln_answer_ptr(tcp_trie_return(breg)),
+	      delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
 			       makecs(temp_hreg));
 #else
-	      delay_positively(subgoal, aln_answer_ptr(tcp_trie_return(breg)),
+	      delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
 			       makestring((char *) ret_psc[0]));
 #endif /* IGNORE_DELAYVAR */
 	    }
@@ -125,7 +131,9 @@ case check_complete: {
       }   
     } 
   } /* retry_gen_active */
+/*--------------------------------------------------------------------------*/
 #endif /* LOCAL_EVAL */
+/*--------------------------------------------------------------------------*/
 
   { /* schedule answers */
     CPtr tmp_breg;
@@ -135,24 +143,28 @@ case check_complete: {
       goto contcase;
     }
   }
+/*--------------------------------------------------------------------------*/
 #endif /* not CHAT */
-
+/*==========================================================================*/
 
   if (leader) {
     CPtr tmp_breg;
     /* check if fixpoint has been reached, otherwise schedule any
      * unresolved answers */
 #ifdef CHAT
-    if ((tmp_breg = chat_fixpoint(subgoal, (TChoice)breg))) {
+    if ((tmp_breg = chat_fixpoint(subgoal, (TChoice)breg)))
 #else
-    if ((tmp_breg = find_fixpoint(subgoal, breg))) {
+    if ((tmp_breg = find_fixpoint(subgoal, breg)))
 #endif
+    {
       breg = tmp_breg;
       Fail1;
       goto contcase;
     }
 
+/*==========================================================================*/
 #ifdef LOCAL_EVAL
+/*--------------------------------------------------------------------------*/
   {
     SGFrame compl_subg; /* subgoal to be completed */
     CPtr cc_tbreg = orig_breg;
@@ -166,7 +178,7 @@ case check_complete: {
       compl_subg = compl_subgoal_ptr(ComplStkFrame);
       if (is_completed(compl_subg)) { /* this was early completed */
 #ifdef CHAT
-	chat_free_compl_susp_chat_areas((SGFrame)compl_subg);
+	chat_free_compl_susp_chat_areas(compl_subg);
 #else
 	subg_compl_susp_ptr(compl_subg) = NULL;
 #endif
@@ -213,7 +225,8 @@ case check_complete: {
 	    H = cp_hreg(breg);
 	    EB = cp_ebreg(breg);
 
-	    breg = cc_tbreg = chat_restore_compl_susp((chat_init_pheader)nsf, H, EB);
+	    breg = cc_tbreg =
+	      chat_restore_compl_susp((chat_init_pheader)nsf, H, EB);
 	    subg_compl_susp_ptr(compl_subg) = NULL;
 #else
 	    CPtr Bmin;
@@ -247,7 +260,7 @@ case check_complete: {
       ComplStkFrame = next_compl_frame(cs_ptr); 
       while (ComplStkFrame >= openreg) {
 	compl_subg = compl_subgoal_ptr(ComplStkFrame);
-	reclaim_subg_space(compl_subg);
+	reclaim_incomplete_table_structs(compl_subg);
 	ComplStkFrame = next_compl_frame(ComplStkFrame);
       } /* while */
 
@@ -255,7 +268,11 @@ case check_complete: {
        * (when answers are returned, the answer list is reclaimed
        * and set to 0, 1 or 2) */
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
-	reclaim_subg_space(subgoal);
+
+	CPtr answer_template;
+	Cell template_size;
+
+	reclaim_incomplete_table_structs(subgoal);
 	/* so that answers will be returned right after the neg susps
 	 * are returned and engine fails over TCP
 	 */
@@ -276,8 +293,8 @@ case check_complete: {
 	delayreg = tcp_pdreg(orig_breg);
 	restore_some_wamregs(orig_breg, ereg);
 	/* restore_trail_condition_registers - because success path
-	 * will be followed
-	 */
+	   * will be followed
+	   */
 	ebreg = cp_ebreg(tcp_prevbreg(orig_breg));
 	hbreg = cp_hreg(tcp_prevbreg(orig_breg));
 #ifdef CHAT
@@ -289,24 +306,23 @@ case check_complete: {
 	/* reclaim stacks, including leader */
 	openreg = prev_compl_frame(cs_ptr);
 	reclaim_stacks(orig_breg);
+#ifdef CHAT
+	template_size = int_val(cell(compl_hreg(cs_ptr)));
+	answer_template = compl_hreg(cs_ptr) - template_size;
+#else
+	ARITY = tcp_arity(orig_breg);
+	answer_template = orig_breg + TCP_SIZE + (Cell)ARITY;
+	template_size = int_val(cell(answer_template));
+	answer_template++;
+#endif
+	/* `answer_template' points to the mth term */
 	{
 	  int  ii;
-	  Cell CallNumVar;
-	  CPtr VarsInCall;
-#ifdef CHAT
-	  CallNumVar = int_val(cell(compl_hreg(cs_ptr)));
-	  VarsInCall = compl_hreg(cs_ptr)-CallNumVar;	/* first variable */
-#else
-	  ARITY = tcp_arity(orig_breg);
-	  CallNumVar = *(orig_breg + TCP_SIZE + (Cell)ARITY);
-	  CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
-	  VarsInCall = orig_breg+TCP_SIZE+(Cell)ARITY + 1; /* first variable */
-#endif
-	  for (ii=0; ii<CallNumVar; ii++) {
-	    CPtr cptr = VarsInCall;
+	  for (ii=0; ii<template_size; ii++) {
+	    CPtr cptr = answer_template;
 	    pushreg(*cptr);
-	    VarsInCall++;
-	  } /* for (i=0... */
+	    answer_template++;
+	  }
 	}
 	num_vars_in_var_regs = -1;
 	lpcreg = (byte *)subg_ans_root_ptr(subgoal);
@@ -315,8 +331,9 @@ case check_complete: {
 	delay_it = 1;
 	goto contcase;
       } /* if there are answers */   
-      else { /* no answers to return */
-	reclaim_subg_space(subgoal);
+      else {  /* There are no answers to return
+		 ------------------------------ */
+	reclaim_incomplete_table_structs(subgoal);
 
 	/* there is nothing else to be done for this SCC */
 	cc_tbreg = tcp_prevbreg(orig_breg); /* go to prev SCC */
@@ -327,7 +344,10 @@ case check_complete: {
     } /* if(cc_tbreg==orig_breg) */
     breg = cc_tbreg; /* either orig, prev_cp or compl_susp */
   }
-#else /* not LOCAL_EVAL */
+/*==========================================================================*/
+#else /* NOT LOCAL:  FOR BATCHED SCHEDULING */
+/*==========================================================================*/
+
     batched_compute_wfs(cs_ptr, orig_breg, subgoal);
 
     /* do all possible stack reclamation */
@@ -340,10 +360,11 @@ case check_complete: {
 #endif
       }
     }
-#endif /* LOCAL_EVAL */
+/*--------------------------------------------------------------------------*/
+#endif /* ifdef LOCAL_EVAL */
+/*==========================================================================*/
   }
-  /* if not leader */
-  else {
+  else {    /* if not leader */
 #ifdef CHAT
     chat_incremental_copy(subgoal);
     /* let's cause some segmentation faults and fix exact completion in CHAT */
@@ -365,5 +386,3 @@ case check_complete: {
   Fail1;
   goto contcase;
 } /* end of check_complete */
-
-
