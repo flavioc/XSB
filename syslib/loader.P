@@ -295,15 +295,15 @@ load_pred1(PSC) :-
 call_undef_pred_handlers(PSC,AbortMsg) :-
 	%% the _$_$_undefhook trick guards against Undefined preds in 
 	%% the hook themselves; prevents going into an infinite loop
-	( conget('_$_$_undefhook',0)
+	( not_handling_undef_pred
 	; abort(['[In undefined predicate handler] ' | AbortMsg])
 	),
-	conset('_$_$_undefhook',1),
+	set_undef_pred_handling,
 	!,
-	(   call_xsb_hook(xsb_undefined_predicate_hook(_),
-			  [PSC,RetCode],
-			  until_true),
-	    conset('_$_$_undefhook',0)
+	( call_xsb_hook(xsb_undefined_predicate_hook(_),
+			[PSC,RetCode],
+			until_true),
+	    reset_undef_pred_handlers
 	%% found a handler that agrees to handle this predicate
 	->  (   RetCode==true
 	    ->  psc_type(PSC, Type1), 
@@ -321,10 +321,13 @@ call_undef_pred_handlers(PSC,AbortMsg) :-
 	    ;   fail
 	    )
 	%% if all else fails -- abort
-	;   conset('_$_$_undefhook',0),
+	;   reset_undef_pred_handlers,
 	    abort(AbortMsg)
 	).
 
+reset_undef_pred_handlers :- conset('_$_$_undefhook',0).
+set_undef_pred_handling :- conset('_$_$_undefhook',1).
+not_handling_undef_pred :- conget('_$_$_undefhook',0).
 
 /*
  *  Loads and executes the directives of a module.  The file containing

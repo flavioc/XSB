@@ -84,7 +84,9 @@
 
 /* The following predicates are directly imported from other modules */
 
-:- import '_$load_undef'/1 from loader.
+:- import '_$load_undef'/1,
+	reset_undef_pred_handlers/0
+   from loader.
 :- import psc_set_prop/2, psc_name/2, psc_arity/2, psc_prop/2, psc_type/2,
 	  term_psc/2, term_new/2, term_type/2, stat_set_flag/2, 
 	  stat_flag/2, psc_set_type/2, term_compare/3,

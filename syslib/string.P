@@ -69,6 +69,8 @@ atom_to_charlist([Atom|Rest],Slist,[List,Slist|Lrest]):-
 	atom_codes(Atom,List),
 	atom_to_charlist(Rest,Slist,Lrest).
 
+%% Get substring of String beginning at from and ending at To.
+%% Negating To counts from the end.
 substring(String,From,To,Subst) :- substring(String,From,To,Subst).
 string_substitute(String,SubstSpec,SubstList,ResultStr) :-
 	string_substitute(String,SubstSpec,SubstList,ResultStr).

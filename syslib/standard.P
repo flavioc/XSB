@@ -952,6 +952,7 @@ abort :-
 	psc_prop(Psc, Cp),
         close_open_tables, 
 	'_$cutto'(Cp), 
+	reset_undef_pred_handlers,
 	fail.
 
 

@@ -24,8 +24,10 @@
 */
 
 
-:- export load_pred/1, load/1, libpath/1, set_inthandler/2, '_$load_undef'/1,
-	  windows_os_loader/0.
+:- export load_pred/1, load/1, libpath/1, set_inthandler/2,
+	'_$load_undef'/1,
+	reset_undef_pred_handlers/0,
+	windows_os_loader/0.
 
 :- import abort/1 from standard.
 :- import conset/2 from gensym.
