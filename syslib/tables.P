@@ -203,12 +203,18 @@ get_subg_ptr(Call,Tip,SubgPtr) :-
 
 get_residual(CallSkel, DelayList) :-
 	get_calls(CallSkel, S, R),
-	get_returns(S, R, Leaf), 
-	get_delay_lists(Leaf, DLs),
+	get_returns_and_dls(S, R, DLs),
 	( DLs == [] -> DelayList = []
 	; DLs = [DL] -> DelayList = DL
 	; member(DelayList, DLs)
 	).
+
+get_returns_and_dls(CallStr, RetSkel, DLs) :-
+	get_returns(CallStr, RetSkel, Leaf),
+	get_delay_lists(Leaf, DLs).
+
+/* inline builtin #144 */
+get_delay_lists(Leaf, DLs) :- get_delay_lists(Leaf, DLs).
 
 get_call(Call,SubgoalPtr,RetSkel) :-
 	get_subgoal_ptr(Call,SubgoalPtr), SubgoalPtr =\= 0,
@@ -216,8 +222,11 @@ get_call(Call,SubgoalPtr,RetSkel) :-
 
 get_calls(CallSkel,CallStrPtr,RetSkel) :-
 	get_calls(CallSkel),
-	get_lastnode_and_retskel(LastNode,1,R), RetSkel = R,
-	trie_node_element(LastNode,CallStrPtr).
+	get_lastnode_cs_retskel(_, CallStrPtr, RetSkel).
+
+/* inline builtin #152 */
+get_lastnode_cs_retskel(LastNode, CallStrPtr, RetSkel) :-
+	get_lastnode_cs_retskel(LastNode, CallStrPtr, RetSkel).
 
 /* Given the address of the call structure for a return trie (CallStr)
  * and a return skeleton (RetSkel), both as returned by get_calls/3, it
@@ -229,11 +238,9 @@ get_calls(CallSkel,CallStrPtr,RetSkel) :-
  * delete the return.
  */
 
-get_returns(CallStr,RetSkel) :- get_returns(CallStr,RetSkel).
-
 get_returns(CallStr,RetSkel,Rleaf) :-
-	gr_c(CallStr,RetSkel),
-	get_lastnode_and_retskel(Rleaf,0,_).
+	get_returns(CallStr,RetSkel),
+	get_lastnode_cs_retskel(Rleaf, _, _).
 
 /* delete_return(Cs,N) takes a call structure pointer in Cs (returned
  * by get_calls) and the address of a node that is a leaf of the return
@@ -296,12 +303,10 @@ breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr) :- '_$builtin'(154).
 trie_node_element(_N,_Child) :- '_$builtin'(140).
 new_node(_N) :- '_$builtin'(141).
 table_status(_Call,_Status) :- '_$builtin'(143).
-get_delay_lists(_LeafNode,_DL) :- '_$builtin'(144).
 delete_predicate_table(_N) :- '_$builtin'(145).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :- '_$builtin'(149).
-gr_c(_CallStr,_RetSkel) :- '_$builtin'(150).
+get_returns(_CallStr,_RetSkel) :- '_$builtin'(150).
 get_calls(_CallSkel)  :- '_$builtin'(151).
-get_lastnode_and_retskel(_LastNode,_Mode,_RetSkel) :- '_$builtin'(152).
 construct_ret_for_call(_RetSkel) :- '_$builtin'(153).
 
 /*======================================================================*/
