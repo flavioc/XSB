@@ -23,7 +23,7 @@
 ##
 
 
-ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O
+ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O sModels.O
 
 SUBDIR = flora slx perlmatch gap regmatch wildmatch
 
