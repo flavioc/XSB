@@ -28,6 +28,7 @@
 	odbc_shutdown/0,
 	odbc_sql/3, odbc_sql/4,
 	odbc_query/2, odbc_query/3,
+	odbc_deallocate_query/1, odbc_deallocate_query/2,
 	odbc_import/2, odbc_import/3,
 	odbc_transaction/1, odbc_transaction/2,
 	odbc_connect_option/5,
@@ -42,7 +43,8 @@
 	odbc_create_index/3, odbc_create_index/4,
 	odbc_delete_table/1, odbc_delete_table/2,
 	odbc_delete_view/1, odbc_delete_view/2,
-	odbc_delete_index/2, odbc_delete_index/3.
+	odbc_delete_index/2, odbc_delete_index/3,
+	odbc_current_cursor/1, odbc_deactivate_cursor/1.
 
 % import some necessary predicates from library.
 

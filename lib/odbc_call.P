@@ -165,18 +165,13 @@ set_difference([X|S1],S2,S3) :-
 % --- printqueries(Code) ---------------------------------------------------------------
 
 printqueries([Query]) :-
-	nl,
 	print_query(Query),
 	write(';'),
-	nl,
 	nl.
 printqueries([Query|Queries]) :-
 	not (Queries = []),
-	nl,
 	print_query(Query),
-	nl,
 	write('UNION'),
-	nl,
 	printqueries(Queries).
 
 %% --- print_query(QueryCode) -----------------------------------------------------------
@@ -186,42 +181,28 @@ print_query(query([agg_query(Function,Select,From,Where,Group)],_,_)) :-
 	!, print_query(agg_query(Function,Select,From,Where,Group)).
 print_query(query(Select,From,Where)) :-
 	print_clause('SELECT',Select,','),
-	nl,
 	print_clause('FROM',From,','),
-	nl,
-	print_clause('WHERE',Where,'AND'),
-	nl.
+	print_clause('WHERE',Where,'AND').
 print_query(del_query(From,Where)) :-
 	print_clause('DELETE FROM',From,','),
-	nl,
-	print_clause('WHERE',Where,'AND'),
-	nl.
+	print_clause('WHERE',Where,'AND').
 print_query(ins_query(From,Columns,Where)):-
 	print_ins_clause('INSERT INTO',From,','),
 	print_ins_clause('(',Columns,','),
 	write(')'),
-	nl,
 	print_ins_clause('VALUES (',Where,','),
-	nl,
 	write(')').
 print_query(agg_query(Function,Select,From,Where,Group)) :-
 	print_clause('SELECT',Function,Select,','),
-	nl,
 	print_clause('FROM',From,','),
-	nl,
 	print_clause('WHERE',Where,'AND'),
-	nl,
 	print_clause('GROUP BY',Group,',').
 print_query(negated_existential_subquery(Select,From,Where)) :-
 	write('NOT EXISTS'),
-	nl,
 	write('('),
 	print_clause('SELECT',Select,','),
-	nl,
 	print_clause('FROM',From,','),
-	nl,
 	print_clause('WHERE',Where,'AND'),
-	nl,
 	write(')').
 
 %% --- print_clause(Keyword,ClauseCode,Separator) --
@@ -236,10 +217,12 @@ print_query(negated_existential_subquery(Select,From,Where)) :-
 
 print_clause(_Keyword,[],_).
 print_clause(Keyword,[Column|RestColumns],Separator) :-
+	write(' '),
 	write(Keyword),
 	write(' '),
 	print_clause([Column|RestColumns],Separator).
 print_clause(Keyword,Function,[Column],Separator) :-
+	write(' '),
 	write(Keyword),
 	write(' '),
 	write(Function),
@@ -322,7 +305,6 @@ print_column(LeftExpr - RightExpr) :-
 	write('-'),
 	print_column(RightExpr).
 print_column(agg_query(Function,Select,From,Where,Group)) :-
-	nl,
 	write('('),
 	print_query(agg_query(Function,Select,From,Where,Group)),
 	write(')').
@@ -1246,6 +1228,7 @@ filterColName([rel(_,N)|Xs],[rel(N,_)|Ys]) :-
 :- dynamic odbc_error_flg(_).
 :- dynamic odbc_show_query(_).
 :- dynamic odbc_connection(_Name,_Handle).  %% stack of connections made
+:- dynamic odbc_active_cursors(_Cursor). %% estimate of stack of active cursors
 
 odbc_open(Server,Name,Passwd) :-
 	odbc_open(Server,Name,Passwd,_Connection).
@@ -1340,17 +1323,24 @@ odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result) :-
 		(RetVal =:= 0
 		 ->	fetch(Cursor,Result)
 		 ; RetVal =:= 2
-		 ->	Result = []
-		 ;	odbc_error('DescribeSelect error.')
+		 ->	odbc_deactivate_cursor(Cursor),
+			Result = []
+		 ;	odbc_deactivate_cursor(Cursor),
+			odbc_error('DescribeSelect error.')
 		)
-	 ;      odbc_error('Parse error.')
+	 ;      odbc_deactivate_cursor(Cursor),
+		odbc_error('Parse error.')
 	).
 
 odbc_import(DbPredicate,SymName) :-
 	odbc_import(_Connection,DbPredicate,SymName).
 
 odbc_import(Connection,DbPredicate,PredName) :-
-	odbc_connection(Connection,ConnHandle),
+	(odbc_connection(Connection,ConnHandle)
+	 ->	true
+	 ;	abort(['No ODBC Connection: ',Connection]),
+		fail
+	),
 	\+attribute(_,PredName,_,_,_),
 	!,
 	DbPredicate =.. [TableName|Attributes],
@@ -1435,8 +1425,12 @@ fetch(Cursor,Row) :-
 		 ;
 		 fetch(Cursor,Row)
 		)
+	 ; RetVal =:= 1
+	 ->	odbc_deactivate_cursor(Cursor),
+		fail
 	 ; RetVal =:= 2
-	 ->	odbc_error('Fetch Failed'),
+	 ->	odbc_deactivate_cursor(Cursor),
+		odbc_error('Fetch Failed'),
 		fail
 	).
 
@@ -1493,6 +1487,15 @@ odbc_query(ConnHandle,Head,Body) :-
 	assert((Head1 :- 
 		odbc_link(reg,ConnHandle,Head,Head1,Body), !,
 		Head1)).
+
+odbc_deallocate_query(Head) :-
+	odbc_connection(_,ConnHandle),
+	!,
+	odbc_deallocate_query(ConnHandle,Head).
+
+odbc_deallocate_query(ConnHandle,Head) :-
+	retractall(odbc_asserted_query(ConnHandle,Head)),
+	retractall(Head).
 
 %%% intercepts new-moded DB call, generates and asserts new clause to
 %%% (re)makes the DB call and makes the call.
@@ -1776,14 +1779,18 @@ odbc_get_attr(ConnHandle,Tab,Col,Type) :-
 		(RetVal =:= 0
 		 ->	(fetch([3,5],Cursor,[Col,Type])
 			 ;	
+			 odbc_deactivate_cursor(Cursor),
 			 odbc_set_cursor_close(Cursor),
 			 fail
 			)
 		 ; RetVal =:= 2
-		 ->	odbc_error('Error getting attribute names.')
-		 ;	odbc_error('Parse error.')
+		 ->	odbc_deactivate_cursor(Cursor),
+			odbc_error('Error getting attribute names.')
+		 ;	odbc_deactivate_cursor(Cursor),
+			odbc_error('Parse error.')
 		)
-	 ;      odbc_error('Parse error.')
+	 ;      odbc_deactivate_cursor(Cursor),
+		odbc_error('Parse error.')
 	).
 
 
@@ -1798,10 +1805,13 @@ odbc_accessible_tables(ConnHandle,Tab) :-
 		 ->	fetch([1,2,3],Cursor,[dbo,Tab,TabType]),
 			(TabType = 'TABLE' ; TabType = 'SYSTEM TABLE')
 		 ; RetVal =:= 2
-		 ->	odbc_error('Getting All Tables.')
-		 ;	odbc_error('Parse error.')
+		 ->	odbc_deactivate_cursor(Cursor),
+			odbc_error('Getting All Tables.')
+		 ;	odbc_deactivate_cursor(Cursor),
+			odbc_error('Parse error.')
 		)
-	 ;      odbc_error('Parse error.')
+	 ;      odbc_deactivate_cursor(Cursor),
+		odbc_error('Parse error.')
 	).
 
 odbc_user_tables(Tab) :-
@@ -1818,12 +1828,45 @@ odbc_user_tables(ConnHandle,Tab) :-
 		(RetVal =:= 0
 		 ->	fetch([1,2],Cursor,[dbo,Tab])
 		 ; RetVal =:= 2
-		 ->	odbc_error('Getting User Tables.')
-		 ;	odbc_error('Parse error.')
+		 ->	odbc_deactivate_cursor(Cursor),
+			odbc_error('Getting User Tables.')
+		 ;	odbc_deactivate_cursor(Cursor),
+			odbc_error('Parse error.')
 		)
-	 ;	odbc_error('Parse error.')
+	 ;      odbc_deactivate_cursor(Cursor),
+		odbc_error('Parse error.')
 	).
     
+
+odbc_current_cursor(Cursor) :-
+	(odbc_active_cursors(ACursor)
+	 ->	Cursor = ACursor
+	 ;	Cursor = 0
+	).
+
+odbc_deactivate_cursor(Cursor) :-
+	(odbc_active_cursors(Cursor)
+	 ->	(retract(odbc_active_cursors(ACursor)),
+		 (Cursor =\= ACursor
+		  ->	 writeln('Closing trapped cursor '(ACursor)),
+			 odbc_set_cursor_close(ACursor)
+		  ;	 true
+		 ),
+		 Cursor =:= ACursor,
+		 !
+		 ;
+		 true
+		)
+	 ; Cursor =:= 0
+	 ->	(retract(odbc_active_cursors(ACursor)),
+		 writeln('Closing trapped cursor '(ACursor)),
+		 odbc_set_cursor_close(ACursor),
+		 fail
+		 ;
+		 true
+		)		 
+	 ;	true
+	).
 
 odbc_error(ErrMsg) :-
 	write('ERR - ODBC: '),writeln(ErrMsg),
@@ -1849,10 +1892,11 @@ set_bind(Cursor,BindId,H1) :-
 
 find_free_cursor(ConnHandle,SQLStmt,Cursor) :-
 	odbc_exec_query(7,ConnHandle,SQLStmt,Cursor),
+%%	writeln(active(Cursor)),
 	(Cursor =:= 0
 	 ->	odbc_error('No more cursors left.'),
 		fail
-	 ;	true
+	 ;	asserta(odbc_active_cursors(Cursor))
 	).	
 
 odbc_disconnect(ConnHandle) :- odbc_exec_query(8,ConnHandle).
