@@ -9,12 +9,13 @@ programs to use powerful Perl pattern matching capabilities. this interface
 is provided by the {\tt Perlmatch} package. You need Perl
 5.004 or later to be able to take advantage of this service.
 
-Although the POSIX {\tt Regmatch} package described in the previous section
-is more efficient, the Perl interface also provides powerful string
-substitution facilities that are not available in the {\tt Regmatch}
-package.  The programming interface to the {\tt Perlmatch} package is also
-different from that of {\tt Regmatch} --- it closely mimics the interface
-provided by Perl itself.
+This package is mostly superseded by the the more efficient POSIX {\tt
+  Regmatch} package described in the previous section. However, Perl
+regular expressions provide certain features not available in the {\tt
+  Regmatch} package, such as the ability to perform global replacements of
+matched susbstrings. Also, the {\tt Perlmatch} package has a different
+programming interface, which is modeled after the interface provided by
+Perl itself. So, if you are a big fan of Perl, this package is for you.
 
 The following discussion assumes that you are familiar with the syntax of
 Perl regular expressions and have a reasonably good idea about the

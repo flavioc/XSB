@@ -12,7 +12,7 @@ The recent versions of GCC and SunPro compiler will do, as probably will
 many other compilers. This also works under Windows, provided you install
 Cygnus' CygWin and use GCC to compile.
 
-\section{Regular Expression Matching}
+\section{Regular Expression Matching and Substitution}
 
 The following discussion assumes that you are familiar with the syntax of
 regular expressions and have a reasonably good idea about their
@@ -22,26 +22,29 @@ expressions is found in the on-line Emacs manual.
 The regular expression matching functionality is provided by the package
 called {\tt Regmatch}. To use it, type:
 %%
-\begin{quote}
- {\tt  :- [regmatch]. }
-\end{quote}
+\begin{verbatim}
+   :- [regmatch].
+\end{verbatim}
 %%
 
 If you are planning to use pattern matching from within an XSB program,
 then you also need to add the following directive:
 %%
-\begin{quote}
- \tt
- :- import regmatch/7 from regmatch.
-\end{quote}
+\begin{verbatim}
+    :- import re_match/7, re_subst/6 from regmatch.
+\end{verbatim}
 %%
 
-The regmatch predicate has the following calling sequence:
+The \verb|re_match/7| predicate performs regular expression matching.
+The predicate \verb|re_subst/6| matches parts of a regular expression
+against a string, substitutes the matched part with another string, and
+then returns that new string.
+
+The \verb|re_match/7| predicate has the following calling sequence:
 %%
-\begin{quote}
- \tt
- regmatch(+Regexp, +Str, ?IgnoreCase, -Match, -Prematch, -Postmatch, -ParenMatches)
-\end{quote}
+\begin{verbatim}
+ re_match(+Regexp, +InputStr, ?IgnoreCase, -Match, -Prematch, -Postmatch, -ParenMatches)
+\end{verbatim}
 %%
 {\tt Regexp} is a regular expression, {\it e.g.},
 ``\verb|abc([^;,]*); (dd|ee)*;|''. It can be a Prolog atom or string ({\it i.e.}, a list of
@@ -51,19 +54,19 @@ followed by a ``; '', followed by a sequence that consists of zero or more
 of ``dd'' or ``ee'' segments, followed by a ``;''. An example of a
 where such a match can be found is ``\verb|123abc&*^; ddeedd;poi|''.
 
-{\tt Str} is the string to be matched. It can be a Prolog atom or a string
+{\tt InputStr} is the string to be matched. It can be a Prolog atom or a string
 (list of characters). {\tt IgnoreCase} indicates whether
 the case of the letters is to be ignored. If this argument is an
 uninstantiated variable, then the case is \emph{not} ignored. If this
 argument is bound to a non-variable, then the case \emph{is} ignored.
 
 The rest of the arguments are used to return the results. {\tt Match} 
-is bound to the maximal substring of {\tt Str} that matches the regular
+is bound to the maximal substring of {\tt InputStr} that matches the regular
 expression. In our case, it will be ``\verb|abc&*^; ddeedd|''.
-{\tt Prematch} is bound to the part of {\tt Str} that
+{\tt Prematch} is bound to the part of {\tt InputStr} that
 \emph{precedes} the string in {\tt Match}. In our case, it is ``{\tt 123}''.
 {\tt Postmatch} is
-instantiated with the suffix of {\tt Str} that follows the matching
+instantiated with the suffix of {\tt InputStr} that follows the matching
 substring (``{\tt poi}'' in our case).
 
 The most powerful feature of POSIX pattern matching is the ability to
@@ -74,10 +77,14 @@ When the predicate succeeds, the list of such matches is bound to {\tt
 match ``\verb|&*^|'' and ``{\tt dd}, respectively. So, {\tt ParenMatch} will
 be bound to ``\verb|[&*^, dd]|''.
 
+The maximal number of parenthetical expressions supported by the Regmatch
+package is 30. Partial matches to parenthetical expressions 31 and over are
+discarded.
+
 Here is one more example of the power of POSIX regular expression matching:
 %%
 \begin{verbatim}
- regmatch("a(b*|e*)cd\\1",'qabbbcdbbbbbo',_,M,P,K,L).  
+   ?- re_match("a(b*|e*)cd\\1",'qabbbcdbbbbbo',_,M,P,K,L).  
 \end{verbatim}
 %%
 Here the result is:
@@ -113,13 +120,13 @@ $\backslash\backslash 2$, etc., if the regular expression contains more
 than one parenthetical expression.
 
 {\bf Additional features.} So far, we did not discuss the type of the
-result returned in the 7th argument of {\tt regmatch} (apart from saying
+result returned in the 7th argument of \verb|re_match/7| (apart from saying
 that this is a list). The precise type depends on the type of the second
-argument, {\tt Str}: if {\tt Str} is an atom, them {\tt ParenMatch} is a
-list of atoms. If {\tt Str} is a Prolog string, then {\tt ParenMatch} is a
+argument, {\tt InputStr}: if {\tt InputStr} is an atom, them {\tt ParenMatch} is a
+list of atoms. If {\tt InputStr} is a Prolog string, then {\tt ParenMatch} is a
 list of Prolog strings.
 
-The {\tt regmatch} predicate fails if {\tt Regexp} does not match {\tt Str}.
+The \verb|re_match/7| predicate fails if {\tt Regexp} does not match {\tt InputStr}.
 Otherwise, it succeeds.
 
 We should also note that parenthetical expressions can also be represented
@@ -127,7 +134,7 @@ using the \verb|\(...\)| notation. What if you want to match a ``('' then?
 You must escape it with a ``\verb|\\|'' then:
 %%
 \begin{verbatim}
-| ?- regmatch("a(b*)cd\\(",'abbbcd(bbo',_,M,P,K,L).
+| ?- re_match("a(b*)cd\\(",'abbbcd(bbo',_,M,P,K,L).
 
 M = abbbcd(
 P = 123
@@ -139,12 +146,71 @@ Now, what about matching the backslash itself? Try harder: you need four
 backslashes: 
 %%
 \begin{verbatim}
-| ?- regmatch("a(b*)cd\\\\",'abbbcd\bbo',_,M,P,K,L).
+| ?- re_match("a(b*)cd\\\\",'abbbcd\bbo',_,M,P,K,L).
 
 M = abbbcd\
 P = 123
 K = bbo
 L = [bbb]  
+\end{verbatim}
+%%
+
+The predicate \verb|re_subst/6| has the following invocation:
+%%
+\begin{verbatim}
+    re_subst(+Regexp, +InputStr, ?IgnoreCase, +WhichMatch, +SubstString, -OutStr)  
+\end{verbatim}
+%%
+The parameters {\tt Regexp}, {\tt InputStr}, and {\tt IgnoreCase} have the
+same meaning as in the case of \verb|re_match/7|. {\tt SubstString} must be
+an atom or a character list. {\tt OutStr} must be a variable.
+It is instantiated to an atom or a character list depending on whether
+{\tt InputStr} is an atom or a character list.
+
+This predicate works as follows: the regular expression {\tt Regexp} is
+matched againts {\tt InputStr}. If {\tt IgnoreCase} is bound to a
+non-variable, then case of the letters is ignored during the match.
+Then a new string is constructed out of {\tt InputStr} and {\tt
+SubstString} and bound to {\tt OutStr} as follows: 
+%%
+\begin{itemize}
+\item if {\tt WhichMatch} is a `+', then the suffix of {\tt InputStr}
+  adjacent to the end of the matched substring of {\tt InputStr} is
+  replaced with {\tt SubstString}.
+\item if {\tt WhichMatch} is a `--', then the prefix preceeding the matched
+  substring of {\tt InputStr} is replaced with {\tt SubstString}.
+\item if {\tt WhichMatch} is 0, then the matched substring itself is
+  replaced with {\tt SubstString}.
+\item if {\tt WhichMatch} is 1, 2, 3, etc., then the match corresponding
+  to the parenthesized expression \#1, \#2, \#3, etc., is replaced with
+  {\tt SubstString}. It is an error to specify a number that is higher than
+  the number of parenthesized subexpressions in {\tt Regexp}.
+\end{itemize}
+%%
+Here are some examples:
+%%
+\begin{verbatim}
+| ?- re_subst('a(d)d','qaddf',_,-,'123',L).
+
+L = 123addf
+
+| ?- re_subst('a(d)d','qaddf',_,+,'123',L).
+
+L = qadd123
+
+| ?- re_subst('a(d)d','qaddf',_,0,'123',L).
+
+L = q123f
+
+| ?- re_subst('a(d)d','qaddf',_,1,'123',L).
+
+L = qa123df
+
+| ?- re_subst('a(d)d','qaddf',_,2,'123',L).
+
+++Warning: RE_SUBST: Arg 4 (=2): invalid parenthetical subexpressions number
+
+no
 \end{verbatim}
 %%
 
