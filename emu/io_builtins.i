@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      io_builtins.i
 ** Author(s): davulcu, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -108,7 +109,7 @@ bool file_stat(void)
   return TRUE;
 }
 
-/* file_flish, file_pos, file_truncate, file_seek */
+/* file_flush, file_pos, file_truncate, file_seek */
 inline static bool file_function(void)
 {
   static int file_des, value, size, offset, length;

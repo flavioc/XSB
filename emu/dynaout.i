@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      dynaout.i
 ** Author(s): Jiyang Xu, Kostis Sagonas, Steve Dawson
 ** Contact:   xsb-contact@cs.sunysb.edu

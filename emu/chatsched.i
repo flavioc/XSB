@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      chatsched.i
 ** Author(s): Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu

@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      tc_insts.i
 ** Author(s): Prasad Rao, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu

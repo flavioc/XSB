@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      xsb_odbc.i
 ** Author(s): Lily Dong
 ** Contact:   xsb-contact@cs.sunysb.edu

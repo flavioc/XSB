@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      oracle.i
 ** Author(s): Hasan Davulcu, Ernie Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu

@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      schedrev.i
 ** Author(s): Juliana Freire
 ** Contact:   xsb-contact@cs.sunysb.edu

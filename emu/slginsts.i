@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      slginsts.i
 ** Author(s): Swift, Rao, Sagonas, Juliana Freire, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu

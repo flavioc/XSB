@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      dynload.c
 ** Author(s): Harald Schroepfer, Steve Dawson
 ** Contact:   xsb-contact@cs.sunysb.edu

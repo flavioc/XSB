@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      close.i
 ** Author(s): Ernie Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu

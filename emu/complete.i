@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      complete.i
 ** Author(s): Juliana Freire, Kostis Sagonas, Terry Swift
 ** Contact:   xsb-contact@cs.sunysb.edu

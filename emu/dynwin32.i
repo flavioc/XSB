@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      dynwin32.i
 ** Author(s): Luis Castro
 ** Contact:   xsb-contact@cs.sunysb.edu

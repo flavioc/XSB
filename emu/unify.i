@@ -1,3 +1,4 @@
+/*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      unify.i
 ** Author(s): David S. Warren, Terrance Swift, Jiyang Xu
 ** Contact:   xsb-contact@cs.sunysb.edu
