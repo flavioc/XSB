@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #ifdef WIN_NT
 #define XSB_DLL
 #endif
@@ -19,12 +18,18 @@
 #include "cinterf.h"
 #include "driver_manager_defs.h"
 
+static struct xsb_connectionHandle* isConnectionHandle(char* handle);
+static struct xsb_queryHandle* isQueryHandle(char* handle);
+static char* buildSQLQuery(prolog_term sqlQueryList);
+static union functionPtrs* getDriverFunction(char* driver, int type);
+
 struct xsb_connectionHandle* CHandles[MAX_CONNECTIONS];
 struct xsb_queryHandle* QHandles[MAX_QUERIES];
 struct driver* DBdrivers[MAX_DRIVERS];
 int numDrivers, numCHandles, numQHandles;
 char* errorMesg;
 char* errorNumber;
+
 
 DllExport int call_conv initialise(void)
 {
@@ -484,7 +489,7 @@ DllExport int call_conv exception(void)
 }
 
 
-char* buildSQLQuery(prolog_term sqlQueryList)
+static char* buildSQLQuery(prolog_term sqlQueryList)
 {
 	prolog_term element;
 	char* temp;
@@ -523,7 +528,8 @@ char* buildSQLQuery(prolog_term sqlQueryList)
 	return sqlQuery;
 }
 
-struct xsb_connectionHandle* isConnectionHandle(char* handle)
+
+static struct xsb_connectionHandle* isConnectionHandle(char* handle)
 {
 	int i;
 	for (i = 0 ; i < numCHandles ; i++)
@@ -532,7 +538,7 @@ struct xsb_connectionHandle* isConnectionHandle(char* handle)
 	return NULL;
 }
 
-struct xsb_queryHandle* isQueryHandle(char* handle)
+static struct xsb_queryHandle* isQueryHandle(char* handle)
 {
 	int i;
 	for (i = 0 ; i < numQHandles ; i++)
@@ -593,7 +599,7 @@ DllExport int call_conv registerXSBFunction(char* drivername, int type, union fu
 }
 
 
-union functionPtrs* getDriverFunction(char* drivername, int type)
+static union functionPtrs* getDriverFunction(char* drivername, int type)
 {
 	int i, j;
 
