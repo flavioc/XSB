@@ -245,9 +245,6 @@ version_message :-
 
 /* === utilities ======================================================= */
 
-conset(Con, Val) :- conpsc(Con, PSC), psc_set_prop(PSC, Val).
-conget(Con, Val) :- conpsc(Con, Psc), psc_prop(Psc, Val0), Val = Val0.
-
 %% The interpreter NEEDS this repeat: do not use the one in standard.
 x_interp_repeat :- true ; x_interp_repeat.
 
