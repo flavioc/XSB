@@ -1388,7 +1388,7 @@ attr(A,B,C) :-
 	odbc_all(attr(B,C), A, attr('$var$'(var1),'$var$'(var2)),[],0).
 
 odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo) :-
-	writeln(odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo)),
+%%	writeln(odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo)),
 	Call =.. [SymbolicName|CallArgs],
 	find_free_cursor(StmtNo, Index),
 	(Index =\= -1
@@ -1904,11 +1904,13 @@ odbc_delete_index(TableName,Index) :-
         
 count_tuples(Call,Count) :-
 	conset('$xsb_count',0),
-	call0(Call),
+	call1(Call),
 	coninc('$xsb_count'),
 	fail
 	;      
 	conget('$xsb_count',Count).
+
+call1(X) :- call0(X).
 
 odbc_flag(fail_on_error,on,off) :-
 	retract('$ora_err$'(on)), assert('$ora_err$'(off)).
