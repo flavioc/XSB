@@ -187,7 +187,8 @@ bagPO1(Templ,Call,Res,PO) :-
 		arg(1,POCB,OTempl), arg(2,POCB,Ores)
 	),
 	call(OCall),
-	((get_returns(Cs,Oskel,Leaf),(OTempl==Ores -> true;call_c(POCA)))
+	((get_returns(Cs,Oskel,Leaf),
+	  (OTempl==Ores -> true;(call_c(POCA),fail;call_c(POCA))))
 	 ->	fail
 	 ;	(findall(p(Cs,Leaf),
 			 (get_returns(Cs,Oskel,Leaf), call_c(POCB)),
