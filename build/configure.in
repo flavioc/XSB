@@ -1604,6 +1604,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    makexsb:makexsb.in
 	    ${emudir}/extensions_xsb.h:extensions_xsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
+	    ${scriptdir}/chr_pp${config_tag}:chr_pp.in
 	    ${scriptdir}/wxsb.bat:wxsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
 	    ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
@@ -1761,7 +1762,7 @@ fi
 
 
 # Now set modes, copy some files
-chmod 555 ${scriptdir}/xsb${config_tag}  makexsb
+chmod 555 ${scriptdir}/xsb${config_tag}  ${scriptdir}/chr_pp${config_tag}  makexsb
 
 # These files should really be read-only, but this causes problems when
 # configuring for Windows over Samba, NFS, etc.
