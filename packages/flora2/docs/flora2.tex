@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
-\usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb,alltt}
+\usepackage{epsf,epsfig,subfigure,latexsym,latexsym,amssymb,alltt}
+\usepackage{xspace,graphicx,makeidx}
 \usepackage{hyperref}
 
 \pagestyle{headings}
@@ -4281,6 +4282,16 @@ asserted into the system.
 
 
 \subsection{System Architecture}
+
+%%
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=5.5in]{architecture}
+  \end{center}
+  \caption{The architecture of the \FLORA system.}
+  \label{fig-arch}
+\end{figure}
+%%
 
 \FLORA consists of the following modules:
 \begin{itemize}
