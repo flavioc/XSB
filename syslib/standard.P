@@ -756,7 +756,7 @@ listing.
 
 listing(X) :- var(X), !, listing.
 listing([]) :- !.
-listing([Spec|Specs]) :- !, listing(Spec), listing(Specs).
+listing([Spec|Specs]) :- !, listing(Spec), nl, listing(Specs).
 listing(Head) :- 
 	(Head = (P/A)
 	 ->	functor(Head0,P,A)
