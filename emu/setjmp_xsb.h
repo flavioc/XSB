@@ -38,7 +38,9 @@
 
 /* need _POSIX_C_SOURCE for setjmp.h to define the right stuff with gcc */
 #ifndef WIN_NT
+#ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE
+#endif
 #endif
 #include <setjmp.h> 
 
