@@ -102,7 +102,7 @@ asm_inst(tabletry(A,L,Tbind),   12,     190,    [pp, a(A),l(L),i(Tbind)]  ).
 asm_inst(tabletrust(A,L), 	8,     	193,    [pp, a(A),l(L)]  ).
 asm_inst(tabconfig(Chs,Rhs), 	0,    	194,    [ppp, i(Chs),i(Rhs)]  ).
 asm_inst(tabletryfail(A,L,Tbi),	12,	197,	[pp, a(A),l(L),i(Tbi)]  ).
-asm_inst(new_answer_dealloc(A,R), 4,   	206,    [p,a(A),r(R)]  ).
+asm_inst(new_answer_dealloc(A,R), 4,   	207,    [p,a(A),r(R)]  ).
 
 asm_inst(term_comp(R1,R2,R),	4,	208,	[r(R1),r(R2),r(R)]).
 asm_inst(movreg(R,R1),		4,	209,	[p, r(R), r(R1)]).
