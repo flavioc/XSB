@@ -34,7 +34,7 @@
 	write/1, writeln/1, warning/1, (index)/3
    from standard.
 :- import xsb_flag/2 from curr_sym.
-:- import stat_set_flag/2 from machine.
+:- import stat_set_flag/2, term_new_mod/3 from machine.
 :- import assert/1, retractall/1, (dynamic)/1, clause/2 from assert.
 :- import abolish_all_tables/0, invalidate_tables_for/2, table_state/4
 	from tables.

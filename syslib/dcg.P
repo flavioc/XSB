@@ -136,13 +136,21 @@ dcg_with_pushback_list(','(Non_Terminal, PushBack_List),
 	dcg_list_of_terminals(PushBack_List, Out, Middle, PushBack_Body).
 
 expand_dcg_non_ternimal(Non_Terminal, In, Out, NewTerm) :-
-	functor(Non_Terminal, P, Arity),
+	(Non_Terminal = Module : OldTerm
+	 ->	true
+	 ;	Module = usermod, OldTerm = Non_Terminal
+	),
+	functor(OldTerm, P, Arity),
 	NewArity is Arity + 2,
-	functor(NewTerm, P, NewArity),
+	functor(NewTerm0, P, NewArity),
+	(Module == usermod
+	 ->	NewTerm = NewTerm0
+	 ;	term_new_mod(Module,NewTerm0,NewTerm)
+	),
 	N1 is Arity + 1,
 	arg(N1, NewTerm, In),
 	arg(NewArity, NewTerm, Out),
-	dcg_fillin_arguments(Arity, Non_Terminal, NewTerm).
+	dcg_fillin_arguments(Arity, OldTerm, NewTerm).
 
 dcg_fillin_arguments(N, DCG_Term, Prolog_Term) :-
 	( N =:= 0 -> true 
