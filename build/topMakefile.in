@@ -146,6 +146,8 @@ all: prepare emu configure_packages_src register emu_clean
 # Developer who just checked out or updated CVS copy
 devel: prepare emu remake_dot_O_files configure_packages_src emu_clean
 
+superdevel: prepare emu remake_dot_O_files_force configure_packages_src emu_clean
+
 # Developer who needs a quick re-make of the executable
 fast: prepare emu emu_clean
 
@@ -265,6 +267,9 @@ configure_packages_install:
 
 remake_dot_O_files:
 	cd $(srcdir); make XSB=$(src_scriptdir)/xsb$(config_tag)
+
+remake_dot_O_files_force:
+	cd $(srcdir); make force XSB=$(src_scriptdir)/xsb$(config_tag)
 
 # clean for this architecture only
 configclean::

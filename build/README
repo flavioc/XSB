@@ -282,6 +282,15 @@ How to build:
     repository stores only the very necessary .O files, leaving the rest to 
     be rebuilt by the user.
 
+    Sometimes even this is not enough. When people make changes to the
+    compiler (however small they might be), it is necessary to recompile
+    all .P files with the new compiler. The way to do this is to type
+
+	makexsb superdevel
+
+    Use this when all else fails. On a slow machine, this can obviously
+    take time.
+
     Here are some other makexsb targets:
 
 	     clean  - clean out the .o files in emu/ and in
