@@ -1078,6 +1078,30 @@ a query {\tt ?- L} will succeed if {\tt L} is true in the WFSX model,
 \end{description}
 
 
+\section{Generalized Annotated Programs}  \label{library_utilities:gap}
+\index{Generalized Annotated Programs}
+
+Generalized Annotated Programs (GAPs) \cite{KiSu92} offer a powerful
+computational framework for handling paraconsistentcy and quantitative
+informatin within logic programs.  The tabling of XSB is well-suited
+to implementing GAPs, and the gap library provides a meta-intrpreter
+that has proven robust and efficient enough for a commercial
+application in data mining.  The current meta-interpreter is limited
+to range-restricted programs.
+
+A description of GAPs along with full documentation for this
+meta-interpreter is provided in \cite{Swif99a} (currently also
+available at {\tt http://www.cs.sunysb.edu/~tswift}).  Currently, the
+interface to the GAP library is through the following call.
+
+\begin{description}
+\ournewitem{meta(?Annotated\_atom)}{gap} 
+%
+If {\tt Annotated\_atom} is of the form {\tt
+Atom:[Lattice\_type,Annotation]} the meta-intepreter computes bindings
+for {\tt Atom} and {\tt Annotation} by evaluating the program
+according to the definitions provided for {\tt Lattice\_type}.
+\end{description}
 
 %%% Local Variables: 
 %%% mode: latex
