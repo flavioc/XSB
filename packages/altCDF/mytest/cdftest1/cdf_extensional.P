@@ -48,4 +48,6 @@ allAttr_ext(oid(o2,test),rid(r4,test),cid(c12,test)).
 allAttr_ext(oid(o2,test),rid(r2,test),oid(o12,test)).
 allAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test)).
 
+isa_ext(rid(prod(rid(r2,test),rid(r2,test)),test),rid('CDF Object-Object Relations',cdf)).
 
+hasAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test)).

@@ -1,6 +1,5 @@
-:- compiler_options([ciao_directives]).
-
 :- export
+	explosive_isa/2,
 	cdf_id_fields/4,
 	cdf_root/1,
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
@@ -19,6 +18,8 @@
     ->	   consult(cdf_xj)
     ;	   consult(cdf_cdf)
    ).
+
+%:- import (:-)/2 from usermod.
 
 :- import check_types_checkflag/2,
 	  apply_checks/2 
@@ -41,7 +42,7 @@
 :- import get_component_extensional/2,
 	  load_component/3 from cdf_comps_share.
 
-%%:- import cdf_error/2 from cdf_exceptions.
+:- import cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
 	from cdf_xj.
 
@@ -223,7 +224,7 @@ init_index_std :-
 	fail.
 init_index_std.
 
-%-------
+%%%%%%%%%%%%%%%%%%% Ids and roots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 system_component(cdf).
 system_component(cdfpt).
@@ -260,6 +261,15 @@ cdf_id_fields2(crid(N,S),crid,N,S).
 cdf_id_fields2(crrid(N,S),crrid,N,S).
 cdf_id_fields2(crcrid(N,S),crcrid,N,S).
 
+product_identifier(Id):- 
+	cdf_id_fields(Id,_F,I,_S),
+	structure(I).
+
+abstract_product_identifier(Id,IdAb):- 
+	cdf_id_fields(Id,F,I,S),
+	functor(I,N,A),functor(I1,N,A),
+	cdf_id_fields(IdAb,F,I1,S).
+
 %%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 in_hierarchy(Term):- 
@@ -280,7 +290,7 @@ partially traverse the implicit isa relation in a manner that is
 semantically meaningful while also remaining tractable.
 
 The semantics of @tt{implicit_isa/2} is mode-dependent.  Let fully
-ground inputs be treated as @tt{+} and partially ground inputs treated
+ground inputs be treated as @tt{+} and non-fully ground inputs treated
 as @tt{-}.  Suppose we have a call @tt{implicit_isa(C1,C2)}:
 
 @begin{itemize} @item @tt{implicit_isa(+,+)}: succeeds if @tt{C1} is
@@ -413,6 +423,7 @@ immed_isa(CCid,PCid) :-
 	check_types_checkflag(query,isa(CCid,PCid)),
 	isa_int(CCid,PCid).
 
+%------------------------------------
 :- comment(isa/2, "The operational semantics of @tt{isa/2} is defined
 in @ref{Using CDF}").
 
@@ -459,6 +470,40 @@ proper_isa(SubCid,SupCid) :-
 	isa(SubCid,SupCid),
 	SubCid \== SupCid.
 
+:- comment(explosive_isa/2, "@tt{explosive_isa(Id1,Id2) follows the
+isa axioms for product identifiers rather than the algorithm of
+@tt{implicit_isa/2}. Thus if neither @tt{Id1} nor @tt{Id2} are product
+identifiers, or if @tt{Id1} and @tt{Id2} are fully ground product
+identifiers, @tt{explosive_isa/2} behaves as @tt{isa/2}.  Otherwise,
+suppose @tt{Id1} is a (perhaps partially ground) product identifier
+whose Nid has the outer functor @tt{F/A}.  If the Nid of @tt{Id2} is a
+variable, it is instantiated to a skeleton of @tt{F/N}; otherwise its
+outer functor must be @tt{F/A}.  In either case, both Nids are broken
+into their constituent identifiers and @tt{explosive_isa/2} is
+recursively called on each of these.  ").
+
+explosive_isa(Id1,Id2):- 
+	((cdf_id_fields(Id1,F,N1,S),cdf_id_fields(Id2,F,N2,S),
+	  (structure(N1) ; structure(N2))) -> 
+	    make_terms_if_necess(N1,N2),
+	    N1 =.. [_|Args1],
+	    N2 =.. [_|Args2],
+	    explosive_isa_list(Args1,Args2)
+        ;   isa(Id1,Id2) ).
+
+make_terms_if_necess(N1,N2):- 
+	(structure(N1) -> 
+	    functor(N1,F,A),
+	    functor(N2,F,A)
+	  ; functor(N2,F,A),
+	    functor(N1,F,A)).
+
+explosive_isa_list([],[]).
+explosive_isa_list([Arg1|R1],[Arg2|R2]):- 
+    explosive_isa(Arg1,Arg2),
+    explosive_isa_list(R1,R2).
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% hasAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(is_a_rel/1, "@tt{is_a_rel(RCid)} checks that @tt{RCid} is
@@ -499,21 +544,32 @@ hasAttr(S,R,T) :-
 	sub_query_terms(R,R1),
 	sub_query_terms(T,T1),
 	immed_hasAttr(S1,R1,T1).
+
 **********/
 
 /**********/
-hasAttr(SCid,RCid,TCid) :-
-	var(SCid),var(RCid),var(TCid), !,
-	immed_hasAttr(SCid,RCid,TCid).
-hasAttr(SCid,RCid,TCid) :- 
-	\+ ground(RCid), !, 
-	is_a_rel(RCid),
-	check_types_checkflag(query,hasAttr(SCid,RCid,TCid)),
-	hasAttr_2fix(SCid,RCid,TCid).
-hasAttr(SCid,RCid,TCid) :-
-	% relation is ground.
-	check_types_checkflag(query,hasAttr(SCid,RCid,TCid)),
-	hasAttr_2inh(SCid,RCid,TCid).
+hasAttr(SCid,Rid,TCid) :-
+	var(SCid),var(Rid),var(TCid), !,
+	immed_hasAttr(SCid,Rid,TCid).
+hasAttr(SCid,Rid,TCid) :-
+	product_identifier(Rid),!,
+	(ground(Rid) -> 
+		check_types_checkflag(query,hasAttr(SCid,Rid,TCid)),
+		abstract_product_identifier(Rid,RidAb),
+		hasAttr_gen13(SCid,RidAb,TCid),
+		isa(RidAb,Rid)
+	   ;   	cdf_error(cdf,['partially ground relation identifiers not',
+			       'handled in ',hasAttr(SCid,Rid,TCid)]) ).
+
+hasAttr(SCid,Rid,TCid) :- 
+	\+ ground(Rid), !, 
+	is_a_rel(Rid),
+	check_types_checkflag(query,hasAttr(SCid,Rid,TCid)),
+	hasAttr_2fix(SCid,Rid,TCid).
+hasAttr(SCid,Rid,TCid) :-
+	% relation is ground product id
+	check_types_checkflag(query,hasAttr(SCid,Rid,TCid)),
+	hasAttr_2inh(SCid,Rid,TCid).
 /**********/
 
 :- table hasAttr_2fix/3.
@@ -597,6 +653,15 @@ the target class ID. ").
 classHasAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
 	immed_classHasAttr(SCid,RCid,TCid).
+classHasAttr(SCid,Rid,TCid) :-
+	product_identifier(Rid),!,
+	(ground(Rid) -> 
+		check_types_checkflag(query,hasAttr(SCid,Rid,TCid)),
+		abstract_product_identifier(Rid,RidAb),
+		classHasAttr_gen13(SCid,RidAb,TCid),
+		isa(RidAb,Rid)
+	   ;   	cdf_error(cdf,['partially ground relation identifiers not',
+			       'handled in ',classHasAttr(SCid,Rid,TCid)]) ).
 classHasAttr(SCid,RCid,TCid) :-
 	\+ ground(RCid), !, 
 	is_a_classHasAttr(RCid),
@@ -698,7 +763,7 @@ allAttr_2inh(SCid,RCid,TCid) :-
 
 :- table allAttr_gen2/3.
 allAttr_gen2(SCid,RCid,TCid) :-
-	isa(RCidP,RCid),
+	isa(RCid,RCidP),
 	allAttr_gen13(SCid,RCidP,TCid).
 
 :- table allAttr_gen13/3.
