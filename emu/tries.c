@@ -1739,7 +1739,7 @@ Cell get_lastnode_cs_retskel(Cell callTerm) {
   vector = (Cell *)var_regs;
   if ( IsInCallTrie(Last_Nod_Sav) ) {
     SGFrame sf = CallTrieLeaf_GetSF(Last_Nod_Sav);
-    if ( ! SubgoalHasOwnAnswerSet(sf) ) {
+    if ( IsConsumerSF(sf) ) {
       construct_answer_template(callTerm, subg_producer(sf), (Cell *)var_regs);
       arity = (int)var_regs[0];
       vector = (Cell *)&var_regs[1];
