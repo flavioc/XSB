@@ -66,8 +66,8 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 
 ?- times_flies_like_an_arrow.	% ==> `yes'
 
-?- fruit_flies_like_a_banana.	% ==> `no' (and a warning)
-?- writeln('>>> Answer NO and WARNING intended! <<<').
+%%?- fruit_flies_like_a_banana.	% ==> `no' (and a warning)
+%%?- writeln('>>> Answer NO and WARNING intended! <<<').
 
 ?- fruit_flies_like_a_banana[].	% ==> `yes'
 
