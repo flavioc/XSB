@@ -167,12 +167,14 @@ to and loading them from a component.
 	  cdf_id_fields/4 from cdf_init_cdf.
 :- import get_component_extensional/2 from cdf_comps_share.
 
-:- import cdf_flags/2,component_table_ext/3 from usermod.
+:- import cdf_flags/2
+%	 component_table_ext/3 
+	 from usermod.
 :- import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
 	   maxAttr_ext/4, minAttr_ext/4 from usermod.
 
-:- import member/2, memberchk/2,length/2  from basics.
-:- import check_ground/3, domain_error/4 from error_handler.
+:- import member/2, memberchk/2,length/2,ground/1  from basics.
+:- import instantiation_error/3, domain_error/4 from error_handler.
 :- import conset/2, conget/2 from gensym.
 
 :- import call0/1 from machine.
@@ -197,6 +199,7 @@ check_ground_checkflag(Context,Term):-
 	    cdf_check_ground(Term)
 	  ; true).
 
+/*  Old: TLS
 cdf_check_ground(Term):- 
 	component_table_ext(Term,Main,Dep),
 	member(Arg,[Main|Dep]),
@@ -206,6 +209,28 @@ cdf_check_ground(Term):-
 	   ; true),
 	  fail.
 cdf_check_ground(_Term).
+*/
+
+cdf_check_ground(Term):- 
+	cdf_check_ground(Term,Term).
+
+cdf_check_ground(Term,OrigTerm):- 
+	Term =.. [_|Args],
+	cdf_check_id_list(Args,1,OrigTerm).
+
+cdf_check_id_list([],_,_).
+cdf_check_id_list([Id|Rest],N,OrigTerm):- 
+	cdf_id_fields(Id,_,Nid,Cmpt),
+	(Cmpt == cdfpt -> 
+	    true
+	  ; cdf_check_ground_1(Nid,N,OrigTerm)),
+	N1 is N + 1,
+	cdf_check_id_list(Rest,N1,OrigTerm).
+
+cdf_check_ground_1(Nid,Arg,OrigTerm):- 
+	(ground(Nid) -> 
+	  true
+            ; instantiation_error(OrigTerm,Arg,ground)).
 
 %-----------------
 
