@@ -176,7 +176,6 @@
 	flora_check_filename/1,
 	flora_set_xpp_options/0,
 	flora_set_xpp_options/1,
-	flora_set_xpp_extra_options/1,
 	flora_clear_xpp_options/0,
 	flora_list2conjunct/2,
 	flora_check_workspace/1,
