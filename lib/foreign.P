@@ -170,9 +170,7 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 		       ' -Wl,--out-implib=',Base,'.a ',
 		       LD_Options,' -shared -s -o ',
 		       Base,'.dll ',Base,'.def ',
-		       Obj,' ',TempObj,' -lxsb']),
-		message(shell(['cp ',Base,'.dll ',ConfigDir,'/bin'])),
-		shell(['cp ',Base,'.dll ',ConfigDir,'/bin'])
+		       Obj,' ',TempObj,' -lxsb'])
 	    ;	str_sub('windows', Configuration)
 	    ->	warning(('You must create the ', Modname,'.dll'))
 	    ;	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
