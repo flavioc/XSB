@@ -233,7 +233,7 @@ once(Term):- call(Term),!.
 What solutions are derived for the goal {\tt ?- cut\_p(X)}?  Suppose that
 {\tt cut\_p/1} were rewritten as 
 \begin{verbatim}
-cut\_p1(X):- cut\_q1(X),once(cut\_r1).
+cut_p(X):- cut_q(X),once(cut_r).
 \end{verbatim}
 
 How should this cut over a table affect the answers generated for {\tt

@@ -906,31 +906,31 @@ For the following program and table
      \end{tabular}
      \end{tabular}
      \end{center}
-calls to {\tt get\_residual/3} will act as follows
+calls to {\tt get\_residual/2} will act as follows
 %
 {\footnotesize 
 \begin{verbatim} 
                    | ?- get_residual(p(X,Y),List).
 
                    X = 1
-                   Y = 2;
-                   Z = [];
+                   Y = 2
+                   List = [];
 
                    X = 1
-                   Y = 3;
-                   Z = [tnot(p(2,3))];
+                   Y = 3
+                   List = [tnot(p(2,3))];
 
                    X = 2
-                   Y = 3;
-                   Z = [tnot(p(1,3))];
+                   Y = 3
+                   List = [tnot(p(1,3))];
 
                    X = 1
-                   Y = 3;
-                   Z = [tnot(p(2,3))];
+                   Y = 3
+                   List = [tnot(p(2,3))];
 
                    X = 2
-                   Y = 3;
-                   Z = [tnot(p(1,3))];
+                   Y = 3
+                   List = [tnot(p(1,3))];
 
                    no
 
@@ -1120,3 +1120,8 @@ Warning:This builtin works for tabling predicates only.
 \end{description}
 
 
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 
