@@ -59,7 +59,7 @@
 	flora_stdfdbk_line/1
    from flrprint.
 
-:- import flora_commit_storage/0, flora_reclaim_storage_space/0 from flrutils.
+:- import flora_commit_storage/0 from flrutils.
 
 :- import windows_os/0 from xsb_configuration.
 
@@ -124,8 +124,7 @@ flora_print_all(Gs,NVs) :-
 	      ),
 	      flora_write_Yes
 	  )
-	),
-	flora_reclaim_storage_space.
+	).
 
 
 /********************************************************************/
@@ -139,8 +138,7 @@ flora_print_one(Gs,NVs) :-
 	  ;
 	    flora_write_No
 	  )
-	),
-	flora_reclaim_storage_space.
+	).
 
 
 /********************************************************************/

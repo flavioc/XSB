@@ -395,17 +395,18 @@ flora_compile_system_module(File) :-
 *************************************************************************/
 flora_load_system_module_internal(SysModID) :-
 	( atom(SysModID), flora_sysmod_file(SysModID,BaseName,SubDir) ->
+	    flora_module_name(ModuleName,systemmodule,SysModID),
 	    %% Compute the Flora file name.
 	    package_configuration(dir(flora),FloraDir),
 	    slash(S),
-	    fmt_write_string(FlrFile,"%s%s%s%s%s.flr",args(FloraDir,S,SubDir,S,BaseName)),
+	    fmt_write_string(FlrFile,"%s%s%s%s%s.flr",
+			     args(FloraDir,S,SubDir,S,BaseName)),
 	    flora_WSO_filename(FlrFile,SysModID,WSOFile),
 	    !,
 	    ( flora_file_newerthan(WSOFile,FlrFile) ->
 		true
 
 	    ; path_sysop(exists,FlrFile) ->
-	        flora_module_name(ModuleName,systemmodule,SysModID),
 		flora_flcompile(FlrFile,ModuleName)
 	    ;
 	      flora_stderr_nl,
@@ -987,11 +988,13 @@ flora_read_canonical_and_insert(StorageName) :-
 
 /*************************************************************************
  Commit all backtrackable updates to Flora storage
+ Reclaims storage of deleted nodes.
 **************************************************************************/
 
 flora_commit_storage :-
 	(flora_storage_registry(StorageName),
 	    storage_commit(StorageName),
+	    storage_reclaim_space(StorageName),
 	    fail
 	; true).
 

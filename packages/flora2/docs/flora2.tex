@@ -2489,6 +2489,10 @@ is discussed in Section~\ref{sec-tabling-flora}.
 
 \subsection{Expunging of First-Order Predicates}
 
+\emph{Expunging} a predicate means deleting all of its tuples as well as
+the rules that have this predicate in the head. This operation corresponds
+to abolishing a predicate in XSB. Only first-order predicates can be
+expunged in \FLORA.
 
 \index{{\tt expunge}}
 \index{module!{\tt expunge}}
@@ -4061,6 +4065,50 @@ of keeping the syntax object-oriented.
   input.
 \end{itemize}
 %%
+
+\subsection{Storage Control}
+
+\FLORA keeps the facts that are part of the program or those that are
+inserted by the program in special data structures called \emph{storage
+  tries}.  The system module {\tt db} accessible through the module
+reference {\tt @flora(db)}, provides primitives for controlling this
+storage.
+%%
+\begin{itemize}
+  \item  {\tt commit} --- commits all changes made by backtrackable updates.
+    If this statement is executed in the middle of an update transaction,
+    changes made by backtrackable updates prior to this will be committed
+    and will not be undone even if a subsequent subgoal fails.
+  \item {\tt commit(Module)} --- commits all changes made by backtrackable
+    updates to facts in the user module {\tt Module}. Backtrackable updates
+    to other modules are unaffected.
+  \item {\tt purgedb(Module)} --- deletes all facts previously inserted
+    into the storage associated with module {\tt Module}.
+\end{itemize}
+%%
+
+\subsection{System Control}
+
+The system module {\tt sys} provides primitives that affect the global
+behavior of the system. It is accessible though the system module reference
+{\tt @flora(sys)}.
+%%
+\begin{itemize}
+  \item  {\tt libpath[\#add(Path)]} --- adds {\tt Path} to the library
+    search path. This works similarly to the {\tt PATH} environment
+    variable in that when the compiler or the loader are trying to locate a
+    file specified by its name only (without directory, etc.) then they
+    examine the files stored in the directories on the library search path.
+  \item {\tt libpath[\#remove(Path)]} --- removes {\tt Path} from the
+    library search path.
+  \item {\tt libpath[\#query(Path)]} --- queries the library search path. If
+    {\tt Path} is bound, checks if the specified directory is on the
+    library search path. Otherwise, binds (through backtracking) {\tt Path}
+    to each directory on the library search path.
+  \item {\tt tables[\#abolish]} --- abolishes all tabled data in XSB.
+\end{itemize}
+%%
+
 
 \section{A Note on Programming Style}
 

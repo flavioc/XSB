@@ -24,7 +24,7 @@
 
 XSBDIR=../../..
 
-ALL = 	flrprettyprint.P flrio.P
+ALL = 	flrprettyprint.P flrio.P flrstorage.P flrsystem.P
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	$(XSBDIR)/emu/flag_defs_xsb.h \

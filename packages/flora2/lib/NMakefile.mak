@@ -1,6 +1,6 @@
 # Make file for Microsoft NMAKE
 
-ALLOBJS = flrprettyprint.P flrio.P
+ALLOBJS = flrprettyprint.P flrio.P flrstorage.P flrsystem.P
 
 XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
 

@@ -469,6 +469,8 @@
 
 #define FLSYSMODPP		pp
 #define FLSYSMODIO		io
+#define FLSYSMODSTORAGE		db
+#define FLSYSMODSYSTEM		sys
 
 
 /****************************************************************************
