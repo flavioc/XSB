@@ -117,7 +117,7 @@ initialize_cdf:-
 	init_index_std,
 	cdf_set_log_off,
 	initialize_cdf_flags,
-%	load_component(cdf,'',[]),
+	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
 	make_cdf_clean.
 	
@@ -214,23 +214,21 @@ and relations, and resets internal state variables to values in the
 CDF configuration file. ").
 
 initialize_state:- 
-	cdf_set_log_off,
-	retractall(cdf_flags(_,_)),
 	initialize_cdf_flags,
 	initialize_state_nl.
 
 initialize_state_nl :-
-	reset_dynamics,
+	cdf_clear_dynamics,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
 	make_cdf_clean.
 
-reset_dynamics:- 
+cdf_clear_dynamics:- 
 	cdf_dynamic(F/A),
 	functor(T,F,A),
 	retractall(T),
 	fail.
-reset_dynamics.
+cdf_clear_dynamics.
 
 %-------
 
