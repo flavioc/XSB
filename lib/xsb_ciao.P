@@ -1,15 +1,24 @@
-:- compiler_options([sysmod,optimize]).
+:- compiler_options([sysmod,optimize,xpp_on]).
+
+#include "standard.h"
 
 :- export current_infixop/4, current_postfixop/3, current_prefixop/3,
-	basename/2, no_path_file_name/2.
+	base_name/2, no_path_file_name/2,
+	message/1,
+	ttyflush/0,
+	asserta_fact/1, assertz_fact/1, 
+	retract_fact/1, retractall_fact/1.
 
+:- import file_flush/2 from file_io.
 :- import concat_atom/2 from string.
-:- import abort/1, atom/1, current_op/3, parse_filename/4 from usermod.
+:- import abort/1, atom/1, current_op/3, parse_filename/4 
+			from usermod.
+:- import message/2 from standard.
 
 % Ciao idioms and support -- adapted from operators.pl
-current_prefixop(Op,_,Prec):- 
+current_prefixop(Op,Less,Prec):- 
 	current_op(Prec, Type, Op),
-	op_ass(Type,_,_,_,pre).
+	op_ass(Type,_,Less,Prec,pre).
 
 current_postfixop(Op,Prec,_):- 
 	current_op(Prec, Type, Op),
@@ -33,10 +42,21 @@ no_path_file_name(Path,Name):-
 	parse_filename(Path,_,Name1,Ext),
 	concat_atom([Name1,Ext],Name).
 
-basename(Path,Name):- 
+base_name(Path,Name):- 
 	(atom(Path) -> true 
 	   ; abort(no_path_file_name(Path))),
 	parse_filename(Path,_,Name,_Ext).
 
+ttyflush:- file_flush(STDMSG,_).
 
-	 
+/* XSB message and Ciao messages are different */
+message(Atom):- message(Atom, STDERR).
+
+asserta_fact(Fact):- asserta(Fact).
+
+assertz_fact(Fact):- assertz(Fact).
+
+retractall_fact(Fact):- retractall(Fact).
+
+retract_fact(Fact):- retract(Fact).
+
