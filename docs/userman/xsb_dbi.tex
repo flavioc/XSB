@@ -1,3 +1,4 @@
+
 \chapter{The New XSB-Database Interface} \label{db_interface}
 %====================================================
 
@@ -29,27 +30,23 @@ Generally, each driver has to be configured separately, but if the database
 packages such as ODBC, MySql, etc., are installed in standard places then
 the XSB configuration mechanism will do the job automatically.
 
-\paragraph{Windows:}
-Under Windows, type:
+Under Windows, typing
 %%
 \begin{verbatim}
     makexsb_wind  
 \end{verbatim}
 %%
-in the XSB's {\tt build} directory. This should configure the ODBC driver
+in the XSB's {\tt build} directory will normally configure the ODBC driver
 without problems. For the MySQL driver one has to edit the file
 %%
 \begin{verbatim}
     packages\dbdrivers\mysql\cc\NMakefile.mak  
 \end{verbatim}
 %%
-to indicate where MySQL is installed: Search for the variables
-{\tt MySQLLib} and {\tt MySQLIncludeDir} at the top of the file and replace  
-the text of the form {\tt <...>}  with the appropriate directories.
+to indicate where MySQL is installed.
 
-\paragraph{Unix:}
-Under Unix, the {\tt configure} script should also build the drivers
-automatically.
+
+Under Unix, the {\tt configure} script should also build the drivers automatically.
 If, however, ODBC and MySQL are not installed in their standard places, you
 will have to provide the following parameters to the configure script:
 %%
@@ -65,19 +62,23 @@ will have to provide the following parameters to the configure script:
 \end{itemize}
 %%
 
-\paragraph{Cygwin:}
-Under Cygwin, XSB must be configured as follows:
-%%
+Under Cygwin, the interface needs to be linked with the Visual Studio ODBC libraries.
+By default, the odbc interface assumes the location of the odbc32.lib and 
+odbccp32.lib as 
 \begin{verbatim}
- ./configure --enable-no-cygwin  
- ./makexsb
+C:\Program Files\Microsoft Visual Studio\VC98\lib\. 
 \end{verbatim}
-%%
-Other than that, no special configuration steps are required --- the
-appropriate files will be compiled automatically the first time you use
-the various drivers.
+In the event of these libraries being installed in a different directory,
+ypu have to manually change the line in the function make\_odbc\_driverH 
+which is defined in the file 
+\begin{verbatim}
+packages/dbdrivers/odbc/odbc_driver_config.P
+\end{verbatim}
+where the paths are
+specified. Otherwise, the configuration of the interface under cygwin is
+same as in unix.
 
-\paragraph{Configuring database interface at a later time:}
+
 If at the time of configuring XSB some database packages ({\it e.g.},
 MySQL) are not installed on your system, you can install them later and
 configure the XSB interface to them then. For instance, to configure the
@@ -286,6 +287,10 @@ the handle, a call is made to the predicate:
 
 \noindent
 where QueryHandle is the query handle for the statement to be closed.
+
+The interface is also able to transparently handle Prolog terms. 
+Users can both save and retrive terms without any special processing.
+
 
 \section{Error Handling}
 %============================
