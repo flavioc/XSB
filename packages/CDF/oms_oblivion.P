@@ -64,7 +64,7 @@ retractall_itsobjects(Cid):-
 	(
 	 member(Oid,Oids),
 	 retractall_memberof(Oid,Cid),
-	 \+ immediate_memberof(Oid,_), 
+	 \+ (immediate_memberof(Oid,Set), Set\==object(Oid)),
 	 obliterate_object(Oid),
 	 fail
 	 ;
@@ -166,7 +166,7 @@ gc_class_fail(Cid) :-
 	(findall(Oid,immediate_memberof(Oid,Cid),Oids),
 	 member(Oid,Oids),
 	 retractall_memberof(Oid,Cid),
-	 \+ immediate_memberof(Oid,_),
+	 \+ (immediate_memberof(Oid,Set), Set\==object(Oid)),
 	 retractall_object(Oid,_,_,_),
 	 fail
 	 ;
@@ -174,8 +174,7 @@ gc_class_fail(Cid) :-
 	 member(CCid,CCids),
 	 retractall_subclass(CCid,Cid),
 	 \+ immediate_subclass(CCid,_),
-	 gc_class_fail(CCid),
-	 fail
+	 gc_class_fail(CCid)
 	).
 
 
