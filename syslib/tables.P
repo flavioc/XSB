@@ -32,6 +32,14 @@
 
 /*----------------------------------------------------------------------*/
 
+subsumptive( [] ) :- !.
+subsumptive([ P/N | Preds ]) :-
+	functor(Term,P,N),
+	(set_subsumptive_eval(Term); true),
+	subsumptive(Preds).
+
+/*----------------------------------------------------------------------*/
+
 table_state(Call, State) :-
 	table_status(Call, Status),
 	status_to_state(Status, State).
@@ -163,6 +171,7 @@ trie_retract_all(X) :- retractall(X).
 /* builtins to get (and change) trie nodes - they belong somewhere else */
 /*======================================================================*/
 
+set_subsumptive_eval(_Term) :- '_$builtin'(170).
 table_status(_Call,_Status) :- '_$builtin'(143).
 abolish_table_predicate(_Term) :- '_$builtin'(146).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :- '_$builtin'(149).

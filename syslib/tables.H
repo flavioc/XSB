@@ -24,6 +24,7 @@
 
 
 :- export abolish_all_tables/0, abolish_table_call/1, abolish_table_pred/1,
+	  subsumptive/1,
 	  get_calls_for_table/2, get_returns_for_call/2, table_state/2, 
 	  tfindall/3, tnot/1, 't not'/1, etnot/1,
 	  delete_return/2,
