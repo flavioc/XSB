@@ -6,15 +6,16 @@
 :- export current_stable_model/1.
 :- export print_current_stable_model/0.
 :- export answer_set/1.
+:- export full_answer_set/2.
 :- export pstable_model/3.
-:- export close_smodels/0.
 
 :- import conset/2,coninc/1,conget/2 from prof_sbp.
 :- import new_trie/1, delete_trie/1, trie_intern/5 from intern.
 :- import trie_interned/4 from intern.
 :- import file_write/2 from xsb_writ.
 :- import findall/3, excess_vars/4 from setof.
-:- import (table)/1, warning/1, abort/1, integer/1, repeat/0, call/1 from standard.
+:- import (table)/1, warning/1, abort/1, integer/1, repeat/0, call/1
+        from standard.
 :- import get_calls/3, get_returns/3, table_state/2 from tables.
 :- import (dynamic)/1, assert/1, retractall/1, retract/1 from assert.
 :- import is_most_general_term/1, (index)/3 from standard.
@@ -36,10 +37,9 @@
 :- import smodelsBeginBasicRule/0, smodelsAddHead/1 from smodels.
 :- import smodelsAddPosBody/1, smodelsAddNegBody/1 from smodels.
 :- import smodelsEndRule/0, smodelsCommitRules/0 from smodels.
-:- import smodelsExistsModel/1,  smodelsClose/0 from smodels.
+:- import smodelsExistsModel/1 from smodels.
 :- import smodelsCheckAtom/2 from smodels.
 :- import smodelsSetPosCompute/1, smodelsSetNegCompute/1 from smodels.
 
 
-%%:- import writeln/1 from standard.
 

@@ -4,9 +4,6 @@ init_smodels(+Query): initializes smodels with the residual program
 for Query.  Query must be a call to a tabled predicate that is
 currently completely evaluated (and should have a delay list).
 
-close_smodels: closes smodels.  Only necessary when cutting over
-retrieval of models.
-
 atom_handle(?Atom,?AtomHandle): is set by init_smodels to be true of
 the set of atoms in the residual program (and thus the herbrand base
 of the stable models.)  AtomHandle is an integer uniquely identifying
@@ -24,16 +21,27 @@ set by the previous invocation of init_smodels.)  If there are no
 through backtracking.  Atoms true in a stable model can be obtained by
 in_current_stable_model/1.
 
-in_current_stable_model(?AtomHandle): true of handles of atoms true in
+;n_current_stable_model(?AtomHandle): true of handles of atoms true in
 the current stable model (set by an invocation of a_stable_model/0.)
 
 current_stable_model(-AtomList) returns the list of atoms true in the
 current stable model.
 
 answer_set(+Query) true if Query is true in all partial stable models
-total on the subgoals relevant to Query.
+total on the subgoals relevant to Query.  And false otherwise. 
+
+full_answer_set(+Query,-Res) where Res is true if Query is true in all
+partial stable models total on subgoals relevant to Query; Res is
+false if the query -Query (the explicit negation of Query, where the
+dash (-) is the explicit negation operator) is true in all such
+partial stable models; it fails otherwise.
 
 print_current_stable_model: prints the current stable model on STDFDBK.
+
+pstable_model(+Query,-Model,+Flag) returns nondeterministically a list
+of atoms true in the partial stable model total on the atoms relevant
+to instances of Query, if Flag is 0.  If Flag is 1, it only returns
+models in which the instance of Query is true.  
 
 */
 
@@ -131,8 +139,7 @@ close_smodels :-
          ->     delete_trie(OldTrie),
                 retractall(atomhandle(_Handle,_Leaf)),
 		conset('_$smctr',0),
-		conset('_$smissm',0),
-		smodelsClose
+		conset('_$smissm',0)
          ;      true
         ).
 	
@@ -211,6 +218,11 @@ answer_set(Query0) :-
 	 ;      init_smodels(Query),
 	        in_all_stable_models1(1,Neg)
 	).
+
+full_answer_set(Query,true) :-
+	answer_set(Query).
+full_answer_set(Query,false) :-
+	answer_set(-Query).
 
 make_call(Query0,Query,QueryVars,Neg) :-
 	excess_vars(Query0,[],[],QueryVars),

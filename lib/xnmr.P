@@ -53,7 +53,7 @@ nmr :-
 nmr1 :-
 	repeat,
 	trimcore,
-	stat_set_flag(HIDE_STATE, 1), %% hide call interceptions.
+	stat_set_flag(HIDE_STATE, 0), %% hide call interceptions.
 	stat_set_flag(INVOKE_NUM, 0),
 	conset('_$break_level', 0),
 	print_debug_state,
@@ -62,16 +62,18 @@ nmr1 :-
 	file_flush(STDFDBK, _),
 
 	file_read(STDIN, X, Vars),
-	(nonvar(X), read_in_stop(X), !	% end of top loop; halt
-	; 
-	abolish_all_tables,
-	compute_query(X,Q1),
-	process_nmr_query(Q1, Vars)
+	(nonvar(X), read_in_stop(X)	% end of top loop; halt
+         ->     !
+         ;      process_query(X,Vars)
 	).
 
 read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
 read_in_stop(end_of_file).	% pop a break level, out if at top
 
+process_query(X,Vars) :-
+	 abolish_all_tables,
+	 compute_query(X,Q1),
+	 process_nmr_query(Q1, Vars).
 
 process_nmr_query(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
@@ -162,7 +164,7 @@ compute_query(Q,Q1) :-
 	'_$savecp'(C), 
 	goal_cut_trans(Q,X,C),
 	( stat_set_flag(HIDE_STATE, 0)         %% expose tracing
-	; stat_set_flag(HIDE_STATE, 1), fail   %% hide again when backtrack
+%	; stat_set_flag(HIDE_STATE, 1), fail   %% hide again when backtrack
 	),
 	call_expose(X).
 
@@ -170,7 +172,7 @@ untable_call(Q) :-
 	'_$savecp'(C), 
 	goal_cut_trans(Q,X,C),
 	( stat_set_flag(HIDE_STATE, 0)         %% expose tracing
-	; stat_set_flag(HIDE_STATE, 1), fail   %% hide again when backtrack
+%	; stat_set_flag(HIDE_STATE, 1), fail   %% hide again when backtrack
 	),
 	call_expose(X).
 
@@ -224,7 +226,10 @@ process_stable_models(Query) :-
 	 ; true
         ),
 	fail.
-process_stable_models(_).
+process_stable_models(_) :-
+        file_write(STDFDBK, '  no'), 
+	file_nl(STDFDBK).
+
 
 process_answerset_semantics(Query) :-
 	(Query = {tnot(Q)}
