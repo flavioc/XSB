@@ -23,10 +23,11 @@
 */
 
 
-#define MAX_XML_NESTING  170
 typedef struct XML_userData USERDATA;
 struct XML_userData {
   DELETE_USERDATA *   	  delete_method;
+  int 	      	      	  status;    	   /* this is used to carry status into
+					      delete_userData */
   XML_Parser 	          parser; 
   HTRequest *		  request;
   HTStream *		  target;
@@ -36,13 +37,14 @@ struct XML_userData {
   prolog_term	     	  parsed_term;      /* actual result of the parse */
   prolog_term	     	  parsed_term_tail; /* auxil variable */
   int   		  stackptr;
+  int	        	  stacksize;  /* current size of stack */
   struct stack_node {
     XML_Char	   *tag;              /* which element this is  */
     int	       	   suppress;   	      /* whether this element is in the
 					 suppressed region */
     prolog_term	   elt_term;	      /* here we build elements */
     prolog_term    content_list_tail; /* auxil var to help build elements */
-  } 	    	    	  stack[MAX_XML_NESTING]; /* keeps nested elements */
+  } 	    	    	  *stack;     /* keeps nested elements */
 };
 
 
@@ -52,9 +54,9 @@ PRIVATE USERDATA *create_userData(XML_Parser parser,
 				  HTRequest  *request,
 				  HTStream   *target_stream);
 
-PRIVATE void xml_push_element (USERDATA    *userdata,
-			       const XML_Char  *tag,
-			       const XML_Char  **attrs);
+PRIVATE int xml_push_element (USERDATA    *userdata,
+			      const XML_Char  *tag,
+			      const XML_Char  **attrs);
 PRIVATE void xml_pop_element(USERDATA *userdata);
 PRIVATE void xml_push_suppressed_element(USERDATA   *userdata,
 					 const XML_Char *tag);

@@ -33,7 +33,7 @@
 %% some packages use it.
 
 :- export libwww_request/1.
-:- import do_libwww_request___/1 from xsb_libwww.
+:- import do_libwww_request___/1 from libwww_request.
 
 :- bootstrap_package('libwww', libwww),
 	(   xsb_configuration(libwww_support, 'yes')

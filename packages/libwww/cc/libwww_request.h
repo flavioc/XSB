@@ -26,6 +26,17 @@
 
 
 
+PRIVATE int total_number_of_requests;
+PRIVATE int event_loop_runnung;
+PRIVATE int timeout_value;
+
+#define SELECTED_TAGS_TBL_SIZE	    29
+#define SUPPRESSED_TAGS_TBL_SIZE    41
+#define STRIPPED_TAGS_TBL_SIZE	    37
+
+#define DEFAULT_TIMEOUT	    	  5000  /* 5 sec */
+
+
 PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
 					     prolog_term req_term,
 					     int req_id);
@@ -38,13 +49,10 @@ PRIVATE BOOL libwww_send_credentials(HTRequest * request, HTAlertOpcode op,
 				     void * input, HTAlertPar * reply);
 PRIVATE AUTHENTICATION *find_credentials(AUTHENTICATION *auth_info,char *realm);
 PRIVATE void release_libwww_request(HTRequest *request);
-PRIVATE char *extract_uri(prolog_term req_term, HTRequest *req);
+PRIVATE char *extract_uri(prolog_term req_term, HTRequest *req, int req_id);
 PRIVATE void get_request_params(prolog_term req_term, HTRequest *req);
-PRIVATE HTAssocList *get_form_params(prolog_term form_params);
-PRIVATE REQUEST_TYPE get_request_type(prolog_term req_term);
-
-PRIVATE int total_number_of_requests;
-PRIVATE int event_loop_runnung;
+PRIVATE HTAssocList *get_form_params(prolog_term form_params, int request_id);
+PRIVATE REQUEST_TYPE get_request_type(prolog_term req_term, int request_id);
 
 PRIVATE void free_htable(HASH_TABLE *htable);
 PRIVATE void init_htable(HASH_TABLE *htable, int size, REQUEST_TYPE type);
@@ -58,12 +66,14 @@ PRIVATE int request_termination_handler(HTRequest    *request,
 					int          status);
 
 PRIVATE void handle_subrequest_termination(HTRequest *req, int status);
+PRIVATE void libwww_abort_all(char *msg, ...);
 PRIVATE void setup_callbacks(REQUEST_TYPE type);
-PRIVATE void add_result_param(prolog_term *result_param, 
-                              char *functor, prolog_term body);
 PRIVATE void extract_request_headers(HTRequest *request);
+PRIVATE void set_last_modtime(HTRequest *request);
 
 typedef struct userdata USERDATA;
 struct userdata {
   DELETE_USERDATA *    	  delete_method;
+  int 	      	      	  status;    	   /* this is used to carry status into
+					      delete_userData */
 };

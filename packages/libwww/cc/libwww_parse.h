@@ -25,6 +25,7 @@
 /* included macros for XML and HTML parsing only */
 
 
+#define PARSE_STACK_INCREMENT  50
 PRIVATE void delete_userData(void *me);
 
 
@@ -46,3 +47,18 @@ PRIVATE void delete_userData(void *me);
 #define IS_STRIPPED_TAG(element, request) \
     is_in_htable(element, \
     	    	 &(((REQUEST_CONTEXT *)HTRequest_context(request))->stripped_tags_tbl))
+
+#define CHECK_STACK_OVERFLOW(userdata) \
+    if (userdata->stackptr >= userdata->stacksize) { \
+       userdata->stack =  \
+         realloc(userdata->stack, \
+	         (userdata->stacksize + PARSE_STACK_INCREMENT) \
+	         * sizeof(struct stack_node)); \
+       userdata->stacksize += PARSE_STACK_INCREMENT; \
+    }
+
+#define SETUP_STACK(userdata) \
+    userdata->stackptr = -1; \
+    userdata->stack = \
+     	 malloc(PARSE_STACK_INCREMENT * sizeof(struct stack_node)); \
+    userdata->stacksize = PARSE_STACK_INCREMENT;

@@ -28,7 +28,6 @@
 #include "libwww_parse_xml.h"
 
 
-
 /* BOOL, PRIVATE, PUBLIC, etc., are defined in a Libwww header */
 
 /* ------------------------------------------------------------------------- */
@@ -115,12 +114,7 @@ PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
 
   if (IS_STRIPPED_TAG((HKEY)(char *)tag, userdata_obj->request)) return;
 
-  if (strcasecmp(STACK_TOP(userdata_obj).tag, tag) != 0)
-    libwww_abort_request(userdata_obj->request,
-			 WWW_DOC_SYNTAX,
-			 "LIBWWW_PARSE_XML: End tag %s/start tag %s mismatch",
-			 tag, STACK_TOP(userdata_obj).tag);
-
+  /* Expat does checking for tag mismatches, so we don't have to */
   if (parsing(userdata_obj))
     xml_pop_element(userdata_obj);
   else
@@ -143,8 +137,10 @@ PRIVATE void xml_addText (void	         *userdata,
   USERDATA *userdata_obj = (USERDATA *) userdata;
   static vstrDEFINE(pcdata_buf);
   int shift = 0;
+  REQUEST_CONTEXT *context =
+    (REQUEST_CONTEXT *)HTRequest_context(userdata_obj->request);
 
-#ifdef LIBWWW_DEBUG_VERBOSE
+#ifdef LIBWWW_DEBUG
   xsb_dbgmsg("In xml_addText (%d):", REQUEST_ID(userdata_obj->request));
 #endif
 
@@ -154,7 +150,8 @@ PRIVATE void xml_addText (void	         *userdata,
   /* strip useless newlines */
   if (strncmp(textbuf,"\n", len) == 0) return;
 
-  xml_push_element(userdata_obj, "pcdata", NULL);
+  if (!xml_push_element(userdata_obj, "pcdata", NULL))
+    return;
 
   /* copy textbuf (which isn't null-terminated) into a variable length str */
   vstrENSURE_SIZE(&pcdata_buf, len+1);
@@ -171,8 +168,13 @@ PRIVATE void xml_addText (void	         *userdata,
 #endif
 
   /* put the text string into the elt term and then pop it */
-  c2p_string(pcdata_buf.string+shift,
-	     p2p_arg(STACK_TOP(userdata_obj).elt_term,3));
+  if (context->convert2list)
+    c2p_chars(pcdata_buf.string+shift,
+	      p2p_arg(STACK_TOP(userdata_obj).elt_term,3));
+  else
+    c2p_string(pcdata_buf.string+shift,
+	       p2p_arg(STACK_TOP(userdata_obj).elt_term,3));
+
   xml_pop_element(userdata_obj);
   return;
 }
@@ -219,7 +221,7 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 
 
 /* push element onto HTEXT->stack */
-PRIVATE void xml_push_element (USERDATA    *userdata,
+PRIVATE int xml_push_element (USERDATA    *userdata,
 			       const XML_Char  *tag,
 			       const XML_Char  **attrs)
 {
@@ -227,7 +229,7 @@ PRIVATE void xml_push_element (USERDATA    *userdata,
   prolog_term location;
 
   /*   If tag is not valid */
-  if (tag == NULL) return;
+  if (tag == NULL) return TRUE;
 
   if (userdata->stackptr < 0)
     location = userdata->parsed_term_tail;
@@ -236,16 +238,12 @@ PRIVATE void xml_push_element (USERDATA    *userdata,
 
   userdata->stackptr++;
 
-#ifdef LIBWWW_DEBUG_VERBOSE
-    xsb_dbgmsg("In xml_push_element(%d): stackptr=%d tag=%s",
-	       REQUEST_ID(userdata->request), userdata->stackptr, tag);
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("In xml_push_element(%d): stackptr=%d tag=%s",
+	     REQUEST_ID(userdata->request), userdata->stackptr, tag);
 #endif
 
-  if (userdata->stackptr > MAX_XML_NESTING)
-    libwww_abort_request(userdata->request,
-			 WWW_DOC_SYNTAX,
-			 "LIBWWW_PARSE_XML: Element nesting exceeds MAX(%d)",
-			 MAX_XML_NESTING);
+  CHECK_STACK_OVERFLOW(userdata);
 
   /* wire the new elt into where it should be in the content list */
   STACK_TOP(userdata).elt_term = p2p_car(location);
@@ -279,6 +277,7 @@ PRIVATE void xml_push_element (USERDATA    *userdata,
       p2p_arg(STACK_TOP(userdata).elt_term,3);
     c2p_list(STACK_TOP(userdata).content_list_tail);
   }
+  return TRUE;
 }
 
 
@@ -385,7 +384,7 @@ USERDATA *create_userData(XML_Parser parser,
     me->parsed_term = p2p_new();
     c2p_list(me->parsed_term);
     me->parsed_term_tail = me->parsed_term;
-    me->stackptr = -1;
+    SETUP_STACK(me);
   }
 
 #ifdef LIBWWW_DEBUG
@@ -421,9 +420,8 @@ PRIVATE void delete_userData(void *userdata)
 
   /* if the status code says the doc was loaded fine, but stackptr is != -1,
      it means the doc is ill-formed */
-  if (me->stackptr >= 0 && (int_val(status_term) == HT_LOADED)) {
+  if (me->stackptr >= 0 && (me->status == HT_LOADED)) {
     c2p_int(WWW_DOC_SYNTAX,status_term);
-    xsb_warn("LIBWWW_PARSE_XML: Ill-formed document (a syntax error or tags left open)");
   }
 
   /* terminate the parsed prolog terms list */
@@ -433,10 +431,11 @@ PRIVATE void delete_userData(void *userdata)
   if (is_var(me->parsed_term))
     p2p_unify(parsed_result, me->parsed_term);
   else
-    xsb_warn("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be a variable",
+    xsb_abort("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be unbound variable",
 	      REQUEST_ID(me->request));
 
   if (me->target) FREE_TARGET(me);
+  if (me->stack) HT_FREE(me->stack);
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG
@@ -559,9 +558,8 @@ PRIVATE int xml_externalEntityRef (XML_Parser     parser,
       HT_FREE(ext_entity_expansion);
     }
   } else {
-    /* here we should put the WWW_EXTERNAL_ENTITY error code in the response */
-    xsb_warn("LIBWWW_REQUEST: Failed to retrieve external entity %s",
-	     (char *)uri);
+    /* return WWW_EXTERNAL_ENTITY error code in the response */
+    add_subrequest_error(request, WWW_EXTERNAL_ENTITY);
   }
 
   HT_FREE(uri);

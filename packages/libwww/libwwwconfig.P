@@ -31,12 +31,12 @@
 :- import rename/2 from shell.
 
 %% Construct the file cc/xsb_libwww.H on the fly
-make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
+make_libwwwH(CC, CC_opts, LoaderFlags) :-
     slash(Slash),
     xsb_configuration(configuration, XSBconfiguration),
     package_configuration(dir(libwww), LibwwwDir),
     fmt_write_string(LD_directives_file,
-		     '%s%scc%sxsb_libwww.H', f(LibwwwDir, Slash, Slash)),
+		     '%s%scc%slibwww_request.H', f(LibwwwDir, Slash, Slash)),
     telling(OldTell),
     tell(LD_directives_file),
     writeln('%% This file is generated on-the-fly by libwwwconfig.P'),
@@ -53,11 +53,14 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
 
 :-  package_configuration(dir(libwww), LibwwwDir),
     slash(Slash),
-    Basename = xsb_libwww,
-    Basename_util = xsb_libwww_util,
+    Basename = libwww_request,
+    Basename_xml = libwww_parse_xml,
+    Basename_html = libwww_parse_html,
     fmt_write_string(Module, '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename)),
-    fmt_write_string(Module_util,
-		     '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename_util)),
+    fmt_write_string(Module_xml,
+		     '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename_xml)),
+    fmt_write_string(Module_html,
+		     '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename_html)),
     (  %% avoid recompilation: check if xsb_libwww.O exists and 
        %% is newer than xsb_libwww.c.
        search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
@@ -82,15 +85,21 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
 			 '%s%s %s',
 			 arg(RunpathFlag,LibwwwLibdir,LoaderFlags0)),
 	%% Compile the _util.c file into a shared object
-	compile_so(Module_util, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
+	compile_so(Module_xml, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
+	compile_so(Module_html, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
 	%% Move Module_util to the arch-dependent library
-	fmt_write_string(LibMod_util,
-			 '%s%s%s.so', a(ConfigLibdir,Slash,Basename_util)),
-	str_cat(Module_util, '.so', SharedLib_util),
-	rename(SharedLib_util,LibMod_util),
-	%% Make options for the main foreign module (xsb_libwww.c)
-	fmt_write_string(LoaderFlags2, '%s %s', a(LoaderFlags1,LibMod_util)),
-	make_xsb_libwwwH(CC, CC_opts, LoaderFlags2),
+	fmt_write_string(LibMod_xml,
+			 '%s%s%s.so', a(ConfigLibdir,Slash,Basename_xml)),
+	fmt_write_string(LibMod_html,
+			 '%s%s%s.so', a(ConfigLibdir,Slash,Basename_html)),
+	str_cat(Module_xml, '.so', SharedLib_xml),
+	str_cat(Module_html, '.so', SharedLib_html),
+	rename(SharedLib_xml,LibMod_xml),
+	rename(SharedLib_html,LibMod_html),
+	%% Make options for the main foreign module (libwww_request.c)
+	fmt_write_string(LoaderFlags2, '%s %s %s',
+			 a(LoaderFlags1,LibMod_xml,LibMod_html)),
+	make_libwwwH(CC, CC_opts, LoaderFlags2),
 	str_cat(Module, '.O', Objfile),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibObjFile,

@@ -35,38 +35,38 @@ http_err_code(HT_RELOAD,      	      'Must reload document',  'reload').
 
 /* Errors */
 http_err_code(HT_ERROR,     	      'General error',         'internal').
-http_err_code(HT_BAD_REQUEST, 	      'Bad Request',           'client_error').
-http_err_code(HT_NO_ACCESS,    	      'Unauthorized',          'client_error').
-http_err_code(HT_FORBIDDEN,           'Forbidden',             'client_error').
-http_err_code(HT_NOT_FOUND,           'Not Found',             'client_error').
-http_err_code(HT_NOT_ALLOWED,         'Method Not Allowed',    'client_error').
-http_err_code(HT_NOT_ACCEPTABLE,      'Not Acceptable',        'client_error').
+http_err_code(HT_BAD_REQUEST, 	      'Bad Request',           'client error').
+http_err_code(HT_NO_ACCESS,    	      'Unauthorized',          'client error').
+http_err_code(HT_FORBIDDEN,           'Forbidden',             'client error').
+http_err_code(HT_NOT_FOUND,           'Not Found',             'client error').
+http_err_code(HT_NOT_ALLOWED,         'Method Not Allowed',    'client error').
+http_err_code(HT_NOT_ACCEPTABLE,      'Not Acceptable',        'client error').
 http_err_code(HT_NO_PROXY_ACCESS,     'Proxy Authentication Required',
-	      	      	      	      	      	      	       'client_error').
-http_err_code(HT_CONFLICT,     	      'Conflict',              'client_error').
-http_err_code(HT_LENGTH_REQUIRED,     'Length Required',       'client_error').
-http_err_code(HT_PRECONDITION_FAILED, 'Precondition Failed',   'client_error').
+	      	      	      	      	      	      	       'client error').
+http_err_code(HT_CONFLICT,     	      'Conflict',              'client error').
+http_err_code(HT_LENGTH_REQUIRED,     'Length Required',       'client error').
+http_err_code(HT_PRECONDITION_FAILED, 'Precondition Failed',   'client error').
 http_err_code(HT_TOO_BIG,    	      'Request Entity Too Large',
-	      	      	      	      	      	      	       'client_error').
-http_err_code(HT_URI_TOO_BIG, 	      'Request-URI Too Large', 'client_error').
-http_err_code(HT_UNSUPPORTED, 	      'Unsupported Media Type','client_error').
-http_err_code(HT_BAD_RANGE, 	      'Range Not Satisfiable', 'client_error').
-http_err_code(HT_EXPECTATION_FAILED,  'Expectation Failed',    'client_error').
+	      	      	      	      	      	      	       'client error').
+http_err_code(HT_URI_TOO_BIG, 	      'Request-URI Too Large', 'client error').
+http_err_code(HT_UNSUPPORTED, 	      'Unsupported Media Type','client error').
+http_err_code(HT_BAD_RANGE, 	      'Range Not Satisfiable', 'client error').
+http_err_code(HT_EXPECTATION_FAILED,  'Expectation Failed',    'client error').
 http_err_code(HT_REAUTH,     	      'Reauthentication Required',
-	      	      	      	      	      	      	       'client_error').
+	      	      	      	      	      	      	       'client error').
 http_err_code(HT_PROXY_REAUTH,	      'Proxy Reauthentication Reuired',
-	      	      	      	      	      	      	       'client_error').
+	      	      	      	      	      	      	       'client error').
 
-http_err_code(HT_SERVER_ERROR,	      'Internal Server Error', 'server_error').
-http_err_code(HT_NOT_IMPLEMENTED,     'Not Implemented',       'server_error').
-http_err_code(HT_BAD_GATEWAY, 	      'Bad Gateway',           'server_error').
-http_err_code(HT_RETRY,     	      'Service Unavailable',   'server_error').
-http_err_code(HT_GATEWAY_TIMEOUT,     'Gateway Timeout',       'server_error').
+http_err_code(HT_SERVER_ERROR,	      'Internal Server Error', 'server error').
+http_err_code(HT_NOT_IMPLEMENTED,     'Not Implemented',       'server error').
+http_err_code(HT_BAD_GATEWAY, 	      'Bad Gateway',           'server error').
+http_err_code(HT_RETRY,     	      'Service Unavailable',   'server error').
+http_err_code(HT_GATEWAY_TIMEOUT,     'Gateway Timeout',       'server error').
 http_err_code(HT_BAD_VERSION,         'HTTP Version not supported',
-	       	       	       	       	       	       	       'server_error').
+	       	       	       	       	       	       	       'server error').
 http_err_code(HT_PARTIAL_NOT_IMPLEMENTED,
 	      	      	      	      'Partial update Not Implemented',
-	      	      	      	      	      	      	       'server_error').
+	      	      	      	      	      	      	       'server error').
 http_err_code(HT_INTERNAL,            'Weird, should never happen',
 	      	      	      	      	      	      	       'internal').
 http_err_code(HT_WOULD_BLOCK, 	      'We are in a select',    'internal').
@@ -78,8 +78,9 @@ http_err_code(HT_TIMEOUT,             'Connection timeout',    'internal').
 http_err_code(HT_NO_HOST,             'Cannot find remote host','internal').
 
 %% Errors used only in the XSB libwww package */
-http_err_code(WWW_DOC_SYNTAX,	      'Document syntax',       'server_error').
+http_err_code(WWW_DOC_SYNTAX,	      'Document syntax',       'server error').
 http_err_code(WWW_EXTERNAL_ENTITY,    'External entity not found',
-	      	      	      	      	      	      	       'server_error').
+	      	      	      	      	      	      	       'server error').
 http_err_code(WWW_EXPIRED_DOC,        'Document older than specified time',
-	      	      	      	      	      	      	       'server_error').
+	      	      	      	      	      	      	       'server error').
+http_err_code(WWW_URI_SYNTAX, 	      'Invalid URI syntax',    'client error').

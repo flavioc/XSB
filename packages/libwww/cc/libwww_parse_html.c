@@ -108,6 +108,8 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
 {
   static vstrDEFINE(pcdata_buf);
   int shift = 0;
+  REQUEST_CONTEXT *context =
+    (REQUEST_CONTEXT *)HTRequest_context(htext->request);
 
   if (IS_STRIPPED_TAG((HKEY)PCDATA_SPECIAL, htext->request)) return;
   if (suppressing(htext)) return;
@@ -128,7 +130,11 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
     shift = strlen("\n");
 
   /* put the text string into the elt term and then pop it */
-  c2p_string(pcdata_buf.string+shift, p2p_arg(STACK_TOP(htext).elt_term,3));
+  if (context->convert2list)
+    c2p_chars(pcdata_buf.string+shift, p2p_arg(STACK_TOP(htext).elt_term,3));
+  else 
+    c2p_string(pcdata_buf.string+shift, p2p_arg(STACK_TOP(htext).elt_term,3));
+
   html_pop_element(htext);
   return;
 }
@@ -205,15 +211,11 @@ PRIVATE void html_push_element (USERDATA       *htext,
   htext->stackptr++;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-    xsb_dbgmsg("In html_push_element(%d): stackptr=%d",
-	       REQUEST_ID(htext->request), htext->stackptr);
+  xsb_dbgmsg("In html_push_element(%d): stackptr=%d",
+	     REQUEST_ID(htext->request), htext->stackptr);
 #endif
 
-  if (htext->stackptr > MAX_HTML_NESTING)
-    libwww_abort_request(htext->request,
-			 WWW_DOC_SYNTAX,
-			 "LIBWWW_REQUEST: Element nesting exceeds MAX(%d)",
-			 MAX_HTML_NESTING);
+  CHECK_STACK_OVERFLOW(htext);
 
   /* wire the new elt into where it should be in the content list */
   STACK_TOP(htext).elt_term = p2p_car(location);
@@ -389,7 +391,7 @@ USERDATA *create_userData( HTRequest *             request,
     me->parsed_term = p2p_new();
     c2p_list(me->parsed_term);
     me->parsed_term_tail = me->parsed_term;
-    me->stackptr = -1;
+    SETUP_STACK(me);
   }
 
 #ifdef LIBWWW_DEBUG
@@ -405,16 +407,18 @@ USERDATA *create_userData( HTRequest *             request,
 PRIVATE void delete_userData(void *userdata)
 {
   int i;
-  prolog_term parsed_result;
+  prolog_term parsed_result, status_term;
   USERDATA *me = (USERDATA *)userdata;
 #ifdef LIBWWW_DEBUG
   int request_id;
 #endif
 
-  if (me->request)
+  if (me->request) {
     parsed_result =
       ((REQUEST_CONTEXT *)HTRequest_context(me->request))->request_result;
-  else return;
+    status_term =
+      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->status_term;
+  } else return;
 
 #ifdef LIBWWW_DEBUG
   request_id = REQUEST_ID(me->request);
@@ -435,10 +439,12 @@ PRIVATE void delete_userData(void *userdata)
   if (is_var(me->parsed_term))
     p2p_unify(parsed_result, me->parsed_term);
   else
-    xsb_warn("LIBWWW_REQUEST: Request %d: Arg 3 (Result) must be a variable",
+    xsb_abort("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be unbound variable",
 	      REQUEST_ID(me->request));
 
+
   if (me->target) FREE_TARGET(me);
+  if (me->stack) HT_FREE(me->stack);
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG

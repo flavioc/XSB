@@ -44,14 +44,16 @@
 #include "error_xsb.h"
 #include "cinterf.h"
 #include "varstring_xsb.h"
-#include "../prolog_includes/xsb_libwww_errors.h"
+
+#define XSB_LIBWWW_PACKAGE
+#include "../prolog_includes/http_errors.h"
 
 
 /* definitions and macros included in all files */
 
 
-#define LIBWWW_DEBUG
 /*
+#define LIBWWW_DEBUG
 #define LIBWWW_DEBUG_VERBOSE
 #define LIBWWW_DEBUG_TERSE
 */
@@ -61,13 +63,6 @@
 #ifdef LIBWWW_DEBUG
 #define LIBWWW_DEBUG_TERSE
 #endif
-
-
-#define SELECTED_TAGS_TBL_SIZE	    29
-#define SUPPRESSED_TAGS_TBL_SIZE    41
-#define STRIPPED_TAGS_TBL_SIZE	    37
-
-#define DEFAULT_TIMEOUT	      	  4000 /* 4 sec */
 
 /* special tag type that we use to wrap around text */
 #define PCDATA_SPECIAL 	  -77
@@ -151,16 +146,11 @@ typedef void DELETE_USERDATA(void *userdata);
 void strcpy_lower(char *to, const char *from);
 
 
-void libwww_abort_request(HTRequest *request,
-				  int       status,
-				  char      *description, ...);
 int add_to_htable(HKEY item, HASH_TABLE *htable);
 int is_in_htable(const HKEY item, HASH_TABLE *htable);
 
 
-#ifdef LIBWWW_DEBUG
 void print_prolog_term(prolog_term term, char *message);
-#endif
 
 void html_register_callbacks();
 void HTXML_newInstance (HTStream *		me,
@@ -169,3 +159,6 @@ void HTXML_newInstance (HTStream *		me,
 			HTStream *		target_stream,
 			XML_Parser              xmlparser,
 			void * 			context);
+void add_result_param(prolog_term *result_param, 
+		      char *functor, int cnt, ...);
+void add_subrequest_error(HTRequest *request, int status);

@@ -1,0 +1,243 @@
+\chapter{Libwww: The XSB Internet Access Package}
+\label{chap-libwww}
+
+\begin{center}
+{\Large {\bf By Michael Kifer}}
+\end{center}
+
+
+\section{Features and Configuration}
+This package was inspired by the PiLLoW project.
+The XSB Libwww package offers much better performance and a superset of the
+PiLLoW functionality as related to the HTTP protocol, but this package does
+not implement the part of PiLLoW that deals with construction of Web pages.
+
+The XSB Libwww is implemented in C and relies on the basic HTTP functions
+provided by the Libwww library developed by the WWW Consortium
+(\verb|http://www.w3c.org/Library|). Therefore, this library must be
+installed in order for the XSB Libwww package to work. In addition, XSB
+must be configured to work with the Libwww library as follows:
+%%
+\begin{verbatim}
+    configure --with-libwww=directory-where-Libwww-is-installed  
+\end{verbatim}
+%%
+
+One of the most important aspects of the Libwww package is that it allows
+XSB to dispatch multiple HTTP requests, which interleave their Web access
+phases. This can be a significant performance boost. Furthermore, the HTNL
+and the XML parsers begin their work as the fragments of pages arrive, so
+by the time the page is fully accepted, it is also parsed. Here is a list
+of features provided by the XSB Libwww package:
+%%
+\begin{itemize}
+  \item  HTML parser.
+  \item  XML parser.
+  \item  Page fetching (without parsing).
+  \item  Form handling.
+  \item  HTTP header information.
+  \item  Multiple, interleaved HTTP requests.
+  \item  Basic and digest authentication.
+  \item  Redirection and proxies.
+\end{itemize}
+
+\section{Accessing Internet with Libwww}
+
+%%
+To start using the package, you must load it first:
+%%
+\begin{verbatim}
+    :- [libwww].  
+\end{verbatim}
+%%
+
+The general form of a Web call is as follows:
+
+%%
+\begin{verbatim}
+    :- libwww_request([request1, request2, ..., request_n]).  
+\end{verbatim}
+%%
+Each request has the following syntax:
+%%
+\begin{verbatim}
+    request_type(+URL, +RequestParams, -ResponseParams, -Result, -Status)
+\end{verbatim}
+%%
+The request type functor must be either {\tt htmlparse}, {\tt xmlparse},
+{\tt fetch}, or {\tt header}. The first two are requests to parse HTML/XML
+pages, respectively. {\tt Fetch} is a request to bring in a page without
+parsing, nd {\tt header} is a request to retrieve only the header
+information (which is returned in the {\tt ResponseParams} argument---see
+below).
+%%
+The URL must be an atom or a string (list of characters).\footnote{
+  %%
+  The string feature will be deprecated when XSB will have working atom
+  garbage collection. When URL is a list of characters, then Result is also
+  a list of characters, which eases the burden on the atom table and allows
+  XSB to work longer before memory is exhausted.
+  %%
+  }
+%%
+Request parameters must be either a variable (in which case the request is
+considered to not have special parameters) or a list. The following terms
+are allowed in that list:
+%%
+\begin{itemize}
+  \item {\tt timeout(+Secs)} -- request timeout. If it is not specified, a
+    default value (5 seconds) is used. Only the first request in a list
+    should have the timeout value set. Timeouts that appear in subsequent
+    requests are ignored.
+  \item {\tt authentication([c(+Realm,+Username,+Pasword),...])} -- If the
+    site requires authentication, you should specify it in a list as an
+    argument to the {\tt authentication/1} functor. {\tt Realm} is a string
+    that the servers return to let applications know which
+    username/password pair to send (in case the application works with
+    several pages that require different authentication). They are used as
+    page identifiers for the authentication purposes. If {\tt Realm} is an
+    atom ({\it e.g.}, {\tt authentication('FooSite', boo, moo)}), then when
+    a Web server requests authentication for the {\tt FooSite} realm, the
+    Libwww package will send the foo/moo user-password pair.
+
+    If {\tt Realm} is a variable, then it is considered to match every
+    realm. The Libwww package searches for matching authentication triples
+    in the order they appear in the authentication list. Thus, the triple
+    where {\tt Realm} is a variable should appear last.
+  \item {\tt formdata([attval\_pair1, attval\_pair2, ...])} --- list of
+    attribute/value pairs to fill out a form (in case {\tt URL} is a CGI
+    script). Each attribute/value pair must be an atom of the form
+    {\tt attr=val}.
+  \item {\tt selection(Taglist1,Taglist2,Taglist3)} --- if the request is
+    {\tt htmlparse} or {\tt xmlparse}, then this term provides control over
+    which tags to parse. {\tt Taglist1} is a list of tags that specifies
+    inside which tags to parse. For instance, if it is {\tt [ul,form]}
+    than parsing will be done only inside these elements. Other
+    elements will be ignored. {\tt Taglist2} tells the system to stop
+    parsing inside the corresponding elements. For instance, {\tt
+      [table]} means that parsing should be done only inside {\tt ul} and
+    {\tt form} elements. However, if we hit a table during parsing,
+    then parsing should stop unless we hit {\tt ul} or {\tt form} inside
+    the {\tt table} element. This switching of parsing on and off can
+    continue to arbitrary depth. {\tt Taglist3} is a list of tags that are
+    to be ignored completely. That is, the parsing process will simply
+    strip these tags (but not the text inside them). For instance, if
+    {\tt Taglist3} is {\tt [p,i]} and the page contains ``{\tt <p>foo
+    <i>moo</i>}'' then parsing will be done as if the page contained just
+  ``{\tt foo moo}''.
+\end{itemize}
+%%
+The {\tt ResponseParams} argument is a list of terms returned by the {\tt
+  libwww\_request} call. It contains two kinds of information: header
+information and sub-request information. The header information consists of
+terms like: {\tt header('Content-Type', 'text/html')}, {\tt
+  header('Server', 'Netscape-Enterprise/3.6 SP2')}, etc., as defined by the
+HTTP protocol ({\tt header/2} is a functor and its arguments are atoms).
+The sub-request information consists of terms of the form: {\tt
+  subrequest('http://www.foo.org/test/file.html',-401)}. It indicates that
+during processing of the current request, it was necessary to access
+another page, {\tt http://www.foo.org/test/file.html}, but the server
+responded with the error code -401 (authentication error).
+Such sub-requests might be spawned during XML parsing.
+
+The {\tt Result} of a {\tt libwww\_request} call depends on the request type.
+In case of {\tt fetch} it is an atom or a list of characters (depending on
+whether {\tt URL} was specified as an atom or a list of characters), or it
+might be an unbound variable in case of an error. For {\tt header}
+requests, {\tt Result} is always an unbound variable.
+
+For {\tt htmlparse} and {\tt xmlparse}, Result is a variable in case of an
+error and a complex term otherwise. In the latter case, it is a list of the
+form {\tt [elt1,...,elt\_n]}, where each {\tt elt\_i} is of the form:
+%%
+\begin{verbatim}
+    elt(tag, [attval(attrname,value),...], [elt1',...,elt'_m])
+\end{verbatim}
+%%
+The second argument here represents the list of attribute-value pairs.  In
+HTML, some attributes, like {\tt checked}, can be binary, in which case the
+corresponding value will be unbound. The third argument represents
+HTML or XML elements that are within the scope of {\tt tag}. These elements
+have the same syntax as the parent element:
+\verb|elt(tag',attrs,sub-elements)|. If a tag has no attributes or if
+it does not have sub-elements, the corresponding lists will be empty.
+One special tag, {\tt pcdata}, is introduced to represent pieces of text
+that appear in the document. This tag is our own creation---neither HTML
+nor XML use tags to represent text. One important difference between {\tt
+  pcdata} and other tags is that the third argument in {\tt
+  elt(pcdata,...,...)} is an atom or a list of characters, not a list
+(unlike other tags). If URL was specified as an atom, then the third
+argument of the {\tt pcdata}-element is an atom as well. If URL is a
+character list, then so is the corresponding argument in the
+{\tt pcdata}-element.
+
+Finally, {\tt Status} is bound to an integer that represents the return
+code from the HTTP request. A complete list of return codes is given in
+{\tt XSB/prolog\_includes/http\_errors.h}. If you need to refer to error
+codes in your Prolog application, it is advisable to use symbolic
+notation. To make this happen, put the following lines at the top of your
+program: 
+%%
+\begin{verbatim}
+    :- compiler_options([xpp_on]).
+    #include "http_errors.h"
+\end{verbatim}
+%%
+The Libwww package also includes a predicate that is convenient for
+providing English language explanations to the errors:
+%%
+\begin{verbatim}
+    :- import http_liberr/3 from usermod.  
+\end{verbatim}
+%%
+The first argument of this predicate is the error code, the second is an
+explanation in English, and the last is the class of the error ({\it e.g.},
+internal, server error, client error, etc.). For full details see
+{\tt XSB/packages/libwww/http\_liberr.P}. Note that the code for a successful 
+call is HT\_LOADED (=200), not zero or one!
+
+\section{Example}
+
+Here is a complete example:
+%%
+\begin{verbatim}
+    | ?- libwww_request([xmlparse('http://public.org/test/simple1.xml',[timeout(4)],
+                                  P,Y,Z)]),
+          http_liberr(Z,Explanation,Class).
+
+    P = [header(Content-Type,text/html),
+         subrequest('http://public.org/secret/001.ent',-401)]
+    Y = [elt(doc,[],[elt(pcdata,[],' '),
+                     elt(foo,[attval(att1,123),attval(att2,ppp)],
+                             [elt(pcdata,[],'Test1 '),elt(pcdata,[],' Test2 '),
+                              elt(pcdata,[],adsdd),elt(pcdata,[], )]),
+                     elt(pcdata,[],  ),
+                     elt(a,[],[elt(pcdata,[], aaaaaaaaaaa),
+                     elt(pcdata,[],' '),
+                     elt(b,[attval(att,1)],[]),
+                     elt(pcdata,[],' '),
+                     elt(c,[attval(att,2)],[]),
+                     elt(pcdata,[],' '),
+                     elt(d,[],[elt(pcdata,[],dddddddd),
+                     elt(f,[],[elt(pcdata,[],kkkkkkk)]),
+                     elt(pcdata,[],abc)]),elt(pcdata,[],'  ')])])]
+    Z = 200
+    Explanation = 'OK'
+    Class = 'success'
+\end{verbatim}
+%%
+The above is a successful (because of the return code 200) request to parse
+an XML page. This page apparently had a reference to an external entity
+that was located in a protected domain. Since we did not supply
+authentication information, the call returned authentication failure for
+that subrequest (as indicated by the term 
+{\tt subrequest('http://public.org/secret/001.ent',-401)} in the fourth
+argument).
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual2"
+%%% End: 

@@ -1,4 +1,0 @@
-
-#define XSB_LIBWWW_SEPARATE_UTIL
-
-#define XSB_LIBWWW_DEBUG

@@ -1,10 +1,12 @@
 
-#include "xsb_libwww_errors.h"
-
 /*
   Return Codes for Libwww Protocol Modules and Streams.
   Success codes are (>=0) and failure are (<0)
 */
+
+/* we disable the constant definitions for standard HTTP errors inside the XSB
+   libwww code, because these defs are included from Libwww itself */
+#ifndef XSB_LIBWWW_PACKAGE
 
 #define HT_OK			0	/* Generic success */
 #define HT_ALL			1	/* Used by Net Manager */
@@ -71,4 +73,15 @@
 #define HT_RECOVER_PIPE         -904    /* Recover pipe line */
 #define HT_TIMEOUT              -905    /* Connection timeout */
 #define HT_NO_HOST              -906    /* Can't locate host */
+
+#endif /* XSB_LIBWWW_PACKAGE */
+
+
+/* ERROR CODES SPECIFIC TO THE XSB LIBWWW PACKAGE  -- NOT http errors */
+#define WWW_DOC_SYNTAX	     	-2001	/* Bad document syntax or nesting
+					   limit exceeded. */
+#define WWW_EXTERNAL_ENTITY     -2002   /* XML external entity not found */
+#define WWW_EXPIRED_DOC	        -2003   /* when document's last modified time
+					   is older than user-specified time */
+#define WWW_URI_SYNTAX	        -2004   /* when uri has bad syntax */
 
