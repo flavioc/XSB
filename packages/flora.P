@@ -37,7 +37,7 @@
 %% so package_configuration won't be asserted twice.
 bootstrap_flora :-
 	bootstrap_package([flora,lib,pkgs],flora),
-	assert(package_configuration(version(flora),'0.93 of 06/15/1999')),
+	assert(package_configuration(version(flora),'0.93 of 06/25/1999')),
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	fmt_write_string(LibFlrDisplay,'%s%ssyslib%sflrdisplay',
