@@ -286,7 +286,6 @@ comma_separated_list(ComposerTerm,[CanoniTerm],1) :-
 	canonical_form(ComposerTerm,CanoniTerm,_Index).
 
 
-%% This pro 
 functor_and_arguments(FUNCTION(Funct,Arg),F,AList) :-
 	!,
 	functor_and_arguments(Funct,F,L),

@@ -245,12 +245,15 @@ tnot_struct(Goal,PRTNOT(Goal)) :-
   If all are NULLs, returns NULL.
 ****************************************************************************/
 conjunct_code([Goal],Goal).
+
 conjunct_code([NULL|GList],ConjGoal) :- !, conjunct_code(GList,ConjGoal).
+
 conjunct_code([Goal|GList],ConjGoal) :-
 	conjunct_code(GList,ConjGoalTail),
-	(ConjGoalTail==NULL -> ConjGoal=Goal
+	( ConjGoalTail == NULL ->
+	    ConjGoal=Goal
 	;
-	    conjunct_struct(Goal,ConjGoalTail,ConjGoal)
+	  conjunct_struct(Goal,ConjGoalTail,ConjGoal)
 	).
 
 
@@ -1236,7 +1239,8 @@ compile_falist([F/A|L],[Code|CL]) :-
   compile_fact(+Head,-CodeList,-Status)
 ****************************************************************************/
 compile_fact(Head,CodeList,Status) :-
-	compile_head(Head,HeadCodeList,S),
+	compile_head(Head,HeadCode,S),
+	compile_conjunct2list(HeadCode,HeadCodeList),
 	( S == [] ->
 	    factlist(HeadCodeList,CodeList),
 	    check_vars(Head,[],Status)
@@ -1266,7 +1270,8 @@ compile_query(Body,CodeList,Status) :-
   compile_rule(+Head,+Body,-CodeList,-Status)
 ****************************************************************************/
 compile_rule(Head,Body,CodeList,Status) :-
-	compile_head(Head,HeadCodeList,HS),
+	compile_head(Head,HeadCode,HS),
+	compile_conjunct2list(HeadCode,HeadCodeList),
 	( HS == [] ->
 	    compile_body(Body,BodyCode,BS),
 	    ( BS == [] ->
@@ -1283,41 +1288,63 @@ compile_rule(Head,Body,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head(+ParserTermList,-CodeList,-Status)
-****************************************************************************/
-compile_head([],[],[]) :- !.
+  compile_conjunct2list(+ConjunctCode,-CodeList)
+  compile_conjunct2list(+ConjunctCode,-CodeList,-ListTail)
 
-compile_head([ParserTerm|ParserTermList],CodeList,Status) :-
-	compile_head_literal(ParserTerm,PCodeList,S),
+  ConjunctCode may contain NULL.
+****************************************************************************/
+compile_conjunct2list(ConjunctCode,CodeList) :-
+	compile_conjunct2list(ConjunctCode,CodeList,[]).
+
+
+compile_conjunct2list(NULL,CodeList,CodeList) :- !.
+
+compile_conjunct2list(ConjunctCode,CodeList,ListTail) :-
+	conjunct_struct(C1,C2,ConjunctCode),
+	!,
+	compile_conjunct2list(C1,CodeList,T1),
+	compile_conjunct2list(C2,T1,ListTail).
+
+compile_conjunct2list(Code,[Code|ListTail],ListTail) :- !.
+
+
+/****************************************************************************
+  compile_head(+ParserTermList,-Code,-Status)
+****************************************************************************/
+compile_head([],NULL,[]) :- !.
+
+compile_head([ParserTerm|ParserTermList],Code,Status) :-
+	compile_head_literal(ParserTerm,PCode,S),
 	( S == [] ->
-	    compile_head(ParserTermList,PLCodeList,Status),
-	    (Status == [] -> append(PCodeList,PLCodeList,CodeList); true)
+	    compile_head(ParserTermList,PLCode,Status),
+	    (Status == [] -> conjunct_struct(PCode,PLCode,Code); true)
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_head_literal(+ParserTerm,-CodeList,-Status)
+  compile_head_literal(+ParserTerm,-Code,-Status)
+
+  Code is conjucntions of atoms, which should be split into a list form later.
 ****************************************************************************/
-compile_head_literal(ParserTerm,CodeList,Status) :-
+compile_head_literal(ParserTerm,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_head_fltermlit(Funct,N,Args,CodeList,Status)
+	    compile_head_fltermlit(Funct,N,Args,Code,Status)
 
 	; is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
-	    compile_head_flbirelate(OT1,RelType,OT2,_Obj,CodeList,Status)
+	    compile_head_flbirelate(OT1,RelType,OT2,_Obj,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_head_flobjspec(ObjTerm,Spec,_Obj,CodeList,Status)
+	    compile_head_flobjspec(ObjTerm,Spec,_Obj,Code,Status)
 
 	; is_flobjeql(ParserTerm,Obj1,Obj2) ->
-	    compile_head_flobjeql(Obj1,Obj2,CodeList,Status)
+	    compile_head_flobjeql(Obj1,Obj2,Code,Status)
 
 	; is_flworkspace(ParserTerm,P,WS) ->
-	    compile_head_wsliteral(P,WS,CodeList,Status)
+	    compile_head_wsliteral(P,WS,Code,Status)
 	;
 	  atomlit_struct(ParserTerm,Code),
-	  CodeList=[Code],
 	  Status=[]
 	).
 
@@ -2173,67 +2200,67 @@ compile_flobjeql(Obj1,Obj2,OidCode,Code,Status) :-
 
 
 /****************************************************************************
-  compile_head_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-CodeList,-Status)
+  compile_head_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
+compile_head_fltermobj(Funct,N,Args,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_head_argpathexplist(Args,ArgTypes,AObj,CodeList,Status),
+	compile_head_argpathexplist(Args,ArgTypes,AObj,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
-compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
-	compile_head_pathexplist([Funct|Args],[FObj|AObj],CodeList,Status),
+compile_head_fltermobj(Funct,N,Args,Object,Code,Status) :-
+	compile_head_pathexplist([Funct|Args],[FObj|AObj],Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
 
 /****************************************************************************
-  compile_head_fltermlit(+FunctorTerm,+Arity,+ArgList,-CodeList,-Status)
+  compile_head_fltermlit(+FunctorTerm,+Arity,+ArgList,-Code,-Status)
 
   Compile a term in a rule head in a predicate position.
 ****************************************************************************/
-compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
+compile_head_fltermlit(Funct,N,Args,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_head_argpathexplist(Args,ArgTypes,AObj,ObjCodeList,Status),
+	compile_head_argpathexplist(Args,ArgTypes,AObj,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TObj),
-	    append(ObjCodeList,[TObj],CodeList)
+	    conjunct_struct(ObjCode,TObj,Code)
 	;
 	  true
         ).
 
-compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
-	compile_head_pathexplist([Funct|Args],[FObj|AObj],ObjCodeList,Status),
+compile_head_fltermlit(Funct,N,Args,Code,Status) :-
+	compile_head_pathexplist([Funct|Args],[FObj|AObj],ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TObj),
-	    append(ObjCodeList,[TObj],CodeList)
+	    conjunct_struct(ObjCode,TObj,Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_head_fllist(+ObjTermList,+ObjTerm,+Index,-Object,-CodeList,-Status)
+  compile_head_fllist(+ObjTermList,+ObjTerm,+Index,-Object,-Code,-Status)
 
   Index refers to '['.
 ****************************************************************************/
-compile_head_fllist(ObjTermList,ObjTerm,Index,Object,CodeList,Status) :-
-	compile_head_pathexplist(ObjTermList,ObjList,ObjListCodeList,S),
+compile_head_fllist(ObjTermList,ObjTerm,Index,Object,Code,Status) :-
+	compile_head_pathexplist(ObjTermList,ObjList,ObjListCode,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
 		Obj=[],
-		ObjCodeList=[],
+		ObjCode=NULL,
 		Status=[]
 	    ;
-	      compile_head_pathexp(ObjTerm,Obj,ObjCodeList,Status)
+	      compile_head_pathexp(ObjTerm,Obj,ObjCode,Status)
 	    ),
 	    ( Status == [] ->
 		list_struct(ObjList,Obj,Index,Object),
-		append(ObjListCodeList,ObjCodeList,CodeList)
+		conjunct_struct(ObjListCode,ObjCode,Code)
 	    ;
 	      true
 	    )
@@ -2244,51 +2271,51 @@ compile_head_fllist(ObjTermList,ObjTerm,Index,Object,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-CodeList,-Status)
+  compile_head_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-Code,-Status)
 ****************************************************************************/
-compile_head_argpathexplist([],[],[],[],[]).
+compile_head_argpathexplist([],[],[],NULL,[]).
 
-compile_head_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],CodeList,Status) :-
+compile_head_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],Code,Status) :-
 	!,
-	compile_head_pathexp(T,TObj,TCodeList,S),
+	compile_head_pathexp(T,TObj,TCode,S),
 	( S == [] ->
-	    compile_head_argpathexplist(L,ArgTypeList,LObj,LCodeList,Status),
-	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	    compile_head_argpathexplist(L,ArgTypeList,LObj,LCode,Status),
+	    (Status == [] -> conjunct_struct(TCode,LCode,Code); true)
 	;
 	  Status=S
         ).
 
-compile_head_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],CodeList,Status) :-
+compile_head_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],Code,Status) :-
 	!,
 	compile_body(T,TCode,S),
 	( S == [] ->
-	    compile_head_argpathexplist(L,ArgTypeList,LObj,CodeList,Status)
+	    compile_head_argpathexplist(L,ArgTypeList,LObj,Code,Status)
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_head_pathexplist(+ParserTermList,-ObjectList,-CodeList,-Status)
+  compile_head_pathexplist(+ParserTermList,-ObjectList,-Code,-Status)
 ****************************************************************************/
-compile_head_pathexplist([],[],[],[]) :- !.
+compile_head_pathexplist([],[],NULL,[]) :- !.
 
-compile_head_pathexplist([T|L],[TObj|LObj],CodeList,Status) :-
-	compile_head_pathexp(T,TObj,TCodeList,S),
+compile_head_pathexplist([T|L],[TObj|LObj],Code,Status) :-
+	compile_head_pathexp(T,TObj,TCode,S),
 	( S == [] ->
-	    compile_head_pathexplist(L,LObj,LCodeList,Status),
-	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	    compile_head_pathexplist(L,LObj,LCode,Status),
+	    (Status == [] -> conjunct_struct(TCode,LCode,Code); true)
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_head_pathexp(+ParserTerm,-Object,-CodeList,-Status)
+  compile_head_pathexp(+ParserTerm,-Object,-Code,-Status)
 
   Note: It is for skolemization.
 ****************************************************************************/
-compile_head_pathexp(ParserTerm,Object,[],[]) :-
+compile_head_pathexp(ParserTerm,Object,NULL,[]) :-
 	( is_flatom(ParserTerm,_A) ->
 	    atomobj_struct(ParserTerm,Object)
 
@@ -2304,33 +2331,29 @@ compile_head_pathexp(ParserTerm,Object,[],[]) :-
 	; is_fltoken(ParserTerm,Token,Index) ->
 	    compile_head_fltoken(Token,Index,Object)
 
-	/************************************************************
-		support for numbered anon oids
-	*************************************************************/
-	
 	; is_fltoken(ParserTerm,Token,Num,Index) ->      
 	    compile_head_fltoken(Token,Num,Index,Object) 
 	),
 	!.
 
-compile_head_pathexp(ParserTerm,Object,CodeList,Status) :-
+compile_head_pathexp(ParserTerm,Object,Code,Status) :-
 	( is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
-	    compile_head_flbirelate(OT1,RelType,OT2,Object,CodeList,Status)
+	    compile_head_flbirelate(OT1,RelType,OT2,Object,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_head_flobjspec(ObjTerm,Spec,Object,CodeList,Status)
+	    compile_head_flobjspec(ObjTerm,Spec,Object,Code,Status)
 
 	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
-	    compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,CodeList,Status)
+	    compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status)
 
 	; is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status)
+	    compile_head_fltermobj(Funct,N,Args,Object,Code,Status)
 
 	; is_fllist(ParserTerm,L,T,I) ->
-	    compile_head_fllist(L,T,I,Object,CodeList,Status)
+	    compile_head_fllist(L,T,I,Object,Code,Status)
 	;
 	  is_flworkspace(ParserTerm,P,WS),
-	  compile_head_wspathexp(P,WS,Object,CodeList,Status)
+	  compile_head_wspathexp(P,WS,Object,Code,Status)
         ).
 
 
@@ -2362,54 +2385,54 @@ compile_head_fltoken(Token,Num,Index,Object) :-
 
 
 /****************************************************************************
-  compile_head_flobjref(+ObjT,+RefType,+AttT,-Object,-CodeList,-Status)
+  compile_head_flobjref(+ObjT,+RefType,+AttT,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,CodeList,Status) :-
-	compile_head_pathexplist([ObjTerm,AttTerm],[Obj,Att],OACodeList,Status),
+compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status) :-
+	compile_head_pathexplist([ObjTerm,AttTerm],[Obj,Att],OACode,Status),
 	( Status == [] ->
 	    %% Approximate the textual information for the new variable.
 	    approximate_index(AttTerm,Index),
 	    head_objref_struct(Obj,RefType,Att,Index,Object,TCode),
-	    append(OACodeList,[TCode],CodeList)
+	    conjunct_struct(OACode,TCode,Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_head_flbirelate(+OT1,+RelType,+OT2,-Object,-CodeList,-Status)
+  compile_head_flbirelate(+OT1,+RelType,+OT2,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,CodeList,Status) :-
-	compile_head_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCodeList,Status),
+compile_head_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,Code,Status) :-
+	compile_head_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCode,Status),
 	( Status == [] ->
 	    birelate_struct(Obj1,RelType,Obj2,TCode),
-	    append(OCodeList,[TCode],CodeList)
+	    conjunct_struct(OCode,TCode,Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_head_flobjspec(+ObjTerm,+SpecBody,-Object,-CodeList,-Status)
+  compile_head_flobjspec(+ObjTerm,+SpecBody,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_flobjspec(ObjTerm,SpecBody,Object,CodeList,Status) :-
+compile_head_flobjspec(ObjTerm,SpecBody,Object,Code,Status) :-
 	( SpecBody == [] ->
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
-		compile_head_flobjref(OTerm,RefType,ATerm,Object,CodeList,Status)
+		compile_head_flobjref(OTerm,RefType,ATerm,Object,Code,Status)
 	    ;
-	      compile_head_pathexp(ObjTerm,Object,ObjCodeList,Status),
+	      compile_head_pathexp(ObjTerm,Object,ObjCode,Status),
 	      ( Status == [] ->
 		  objexists_struct(Object,ECode),
-		  append(ObjCodeList,[ECode],CodeList)
+		  conjunct_struct(ObjCode,ECode,Code)
 	      ;
 	        true
 	      )
 	    )
 	;
-	  compile_head_pathexp(ObjTerm,Object,ObjCodeList,S),
+	  compile_head_pathexp(ObjTerm,Object,ObjCode,S),
 	  ( S == [] ->
-	      compile_head_flspecbody(Object,SpecBody,SCodeList,Status),
-	      (Status == [] -> append(ObjCodeList,SCodeList,CodeList); true)
+	      compile_head_flspecbody(Object,SpecBody,SCode,Status),
+	      (Status == [] -> conjunct_struct(ObjCode,SCode,Code); true)
 	  ;
 	    Status=S
 	  )
@@ -2417,93 +2440,93 @@ compile_head_flobjspec(ObjTerm,SpecBody,Object,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_flspecbody(+Object,+SpecTerm,-CodeList,-Status)
-  compile_head_mvdattspec(+Object,+AttObj,+RefType,+VL,-CodeList,-Status)
+  compile_head_flspecbody(+Object,+SpecTerm,-Code,-Status)
+  compile_head_mvdattspec(+Object,+AttObj,+RefType,+VL,-Code,-Status)
 ****************************************************************************/
-compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flconjunct(SpecTerm,L,R),
 	!,
-	compile_head_flspecbody(Object,L,LCodeList,S),
+	compile_head_flspecbody(Object,L,LCode,S),
 	( S == [] ->
-	    compile_head_flspecbody(Object,R,RCodeList,Status),
-	    (Status == [] -> append(LCodeList,RCodeList,CodeList); true)
+	    compile_head_flspecbody(Object,R,RCode,Status),
+	    (Status == [] -> conjunct_struct(LCode,RCode,Code); true)
 	;
 	  Status=S
         ).
 
-compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_head_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],VACodeList,Status),
+	compile_head_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],VACode,Status),
 	( Status == [] ->
 	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
-	    append(VACodeList,[SCode],CodeList)
+	    conjunct_struct(VACode,SCode,Code)
 	;
 	  true
         ).
 
-compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flmvdattspec(SpecTerm,AttTerm,RefType,VL),
 	!,
-	compile_head_pathexp(AttTerm,AObj,ACodeList,S),
+	compile_head_pathexp(AttTerm,AObj,ACode,S),
 	( S == [] ->
 	    ( VL == [] ->
 		mvdattdef_struct(Object,AObj,RefType,SCode),
-		append(ACodeList,[SCode],CodeList),
+		conjunct_struct(ACode,SCode,Code),
 		Status=[]
 	    ;
-	      compile_head_mvdattspec(Object,AObj,RefType,VL,VCodeList,Status),
-	      (Status == [] -> append(ACodeList,VCodeList,CodeList); true)
+	      compile_head_mvdattspec(Object,AObj,RefType,VL,VCode,Status),
+	      (Status == [] -> conjunct_struct(ACode,VCode,Code); true)
 	    )
         ;
 	  Status=S
         ).
 
-compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flmethspec(SpecTerm,MethTerm),
 	!,
-	compile_head_pathexp(MethTerm,MethObj,MCodeList,Status),
+	compile_head_pathexp(MethTerm,MethObj,MCode,Status),
 	( Status == [] ->
 	    methspec_struct(Object,MethObj,SCode),
-	    append(MCodeList,[SCode],CodeList)
+	    conjunct_struct(MCode,SCode,Code)
 	;
 	  true
         ).
 
-compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flimethspec(SpecTerm,IMethTerm),
 	!,
-	compile_head_pathexp(IMethTerm,IMethObj,IMCodeList,Status),
+	compile_head_pathexp(IMethTerm,IMethObj,IMCode,Status),
 	( Status == [] ->
 	    imethspec_struct(Object,IMethObj,SCode),
-	    append(IMCodeList,[SCode],CodeList)
+	    conjunct_struct(IMCode,SCode,Code)
 	;
 	  true
         ).
 
-compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
+compile_head_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_fltranspec(SpecTerm,TranTerm),
 	!,
-	compile_head_pathexp(TranTerm,TranObj,TCodeList,Status),
+	compile_head_pathexp(TranTerm,TranObj,TCode,Status),
 	( Status == [] ->
 	    transpec_struct(Object,TranObj,SCode),
-	    append(TCodeList,[SCode],CodeList)
+	    conjunct_struct(TCode,SCode,Code)
 	;
 	  true
         ).
 
 
-compile_head_mvdattspec(_Object,_AttObj,_RefType,[],[],[]) :- !.
+compile_head_mvdattspec(_Object,_AttObj,_RefType,[],NULL,[]) :- !.
 
-compile_head_mvdattspec(Object,AttObj,RefType,[T|L],CodeList,Status) :-
+compile_head_mvdattspec(Object,AttObj,RefType,[T|L],Code,Status) :-
 	!,
-	compile_head_pathexp(T,TObj,TCodeList,S),
+	compile_head_pathexp(T,TObj,TCode,S),
 	( S == [] ->
-	    compile_head_mvdattspec(Object,AttObj,RefType,L,LCodeList,Status),
+	    compile_head_mvdattspec(Object,AttObj,RefType,L,LCode,Status),
 	    ( Status == [] ->
 		mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
-		append(LCodeList,[SCode],LSCodeList),
-		append(TCodeList,LSCodeList,CodeList)
+		conjunct_struct(LCode,SCode,LSCode),
+		conjunct_struct(TCode,LSCode,Code)
 	    ;
 	      true
 	    )
@@ -2513,13 +2536,13 @@ compile_head_mvdattspec(Object,AttObj,RefType,[T|L],CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_flobjeql(+Obj1,+Obj2,-CodeList,-Status)
+  compile_head_flobjeql(+Obj1,+Obj2,-Code,-Status)
 ****************************************************************************/
-compile_head_flobjeql(Obj1,Obj2,CodeList,Status) :-
-	compile_head_pathexplist([Obj1,Obj2],[O1,O2],OCList,Status),
+compile_head_flobjeql(Obj1,Obj2,Code,Status) :-
+	compile_head_pathexplist([Obj1,Obj2],[O1,O2],OCode,Status),
 	( Status == [] ->
 	    objeql_struct(O1,O2,OECode),
-	    append(OCList,[OECode],CodeList),
+	    conjunct_struct(OCode,OECode,Code),
 	    report_option(FLOBJEQLDEF)
 	;
 	  true
@@ -3197,132 +3220,130 @@ compile_prlgterm(Funct,N,Args,Object,OidCode,Code,Status) :-
 
 
 /****************************************************************************
-  compile_head_wspathexp(+ParserTerm,+Workspace,-Object,-CodeList,-Status)
+  compile_head_wspathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
 
   This procedure is called from compile_head_pathexp/4 and compile_head_wsflpathexp/5
   when a workspace is explicitly specified.
 ****************************************************************************/
-compile_head_wspathexp(ParserTerm,WS,Object,CodeList,Status) :-
+compile_head_wspathexp(ParserTerm,WS,Object,Code,Status) :-
 	( atomlit_struct(ParserTerm,A) ->
 	    workspaceobj_struct(A,WS,Object,Code),
-	    (Code == NULL -> CodeList=[]; CodeList=[Code]),
 	    Status=[]
 
 	; is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status)
+	    compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
-	    compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,CodeList,Status)
+	    compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_head_wsflobjspec(ObjTerm,Spec,WS,Object,CodeList,Status)
+	    compile_head_wsflobjspec(ObjTerm,Spec,WS,Object,Code,Status)
 	;
 	  is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm),
-	  compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status)
+	  compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status)
 	).
 
 
 /****************************************************************************
-  compile_head_wsliteral(+ParserTerm,+Workspace,-CodeList,-Status)
+  compile_head_wsliteral(+ParserTerm,+Workspace,-Code,-Status)
 ****************************************************************************/
-compile_head_wsliteral(ParserTerm,WS,CodeList,Status) :-
+compile_head_wsliteral(ParserTerm,WS,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status)
+	    compile_head_wstermlit(Funct,N,Args,WS,Code,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
-	    compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,_Obj,CodeList,Status)
+	    compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,_Obj,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_head_wsflobjspec(ObjTerm,Spec,WS,_Obj,CodeList,Status)
+	    compile_head_wsflobjspec(ObjTerm,Spec,WS,_Obj,Code,Status)
 
 	; is_flobjeql(ParserTerm,O1,O2) ->
-	    compile_head_wsflobjeql(O1,O2,WS,CodeList,Status)
+	    compile_head_wsflobjeql(O1,O2,WS,Code,Status)
 	;
-	  atomlit_struct(ParserTerm,Code),
-	  workspacelit_struct(Code,WS,WSCode),
-	  CodeList=[WSCode],
+	  atomlit_struct(ParserTerm,ACode),
+	  workspacelit_struct(ACode,WS,Code),
 	  Status=[]
 	).
 
 
 /****************************************************************************
   compile_head_wsflpathexplist(+ParserTermList,+ArgTypeList,+WS,
-                               -ObjectList,-CodeList,-Status)
+                               -ObjectList,-Code,-Status)
 ****************************************************************************/
-compile_head_wsflargpathexplist([],[],_WS,[],[],[]) :- !.
+compile_head_wsflargpathexplist([],[],_WS,[],NULL,[]) :- !.
 
 compile_head_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,
-                                [TObj|LObj],CodeList,Status) :-
+                                [TObj|LObj],Code,Status) :-
 	!,
-	compile_head_wsflpathexp(T,WS,TObj,TCodeList,S),
+	compile_head_wsflpathexp(T,WS,TObj,TCode,S),
 	( S == [] ->
-	    compile_head_wsflargpathexplist(L,ArgTypeList,WS,LObj,LCodeList,Status),
-	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	    compile_head_wsflargpathexplist(L,ArgTypeList,WS,LObj,LCode,Status),
+	    (Status == [] -> conjunct_struct(TCode,LCode,Code); true)
 	;
 	  Status=S
         ).
 
 compile_head_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,
-                                [TCode|LObj],CodeList,Status) :-
+                                [TCode|LObj],Code,Status) :-
 	!,
 	%% workspace not distributive over nested "form"
 	compile_body(T,TCode,S),
 	( S == [] ->
-	    compile_head_wsflargpathexplist(L,ArgTypeList,WS,LObj,CodeList,Status)
+	    compile_head_wsflargpathexplist(L,ArgTypeList,WS,LObj,Code,Status)
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_head_wsflpathexplist(+ParserTermList,+WS,-ObjectList,-CodeList,-Status)
+  compile_head_wsflpathexplist(+ParserTermList,+WS,-ObjectList,-Code,-Status)
 ****************************************************************************/
 compile_head_wsflpathexplist([],_WS,[],[],[]) :- !.
 
-compile_head_wsflpathexplist([T|L],WS,[TObj|LObj],CodeList,Status) :-
-	compile_head_wsflpathexp(T,WS,TObj,TCodeList,S),
+compile_head_wsflpathexplist([T|L],WS,[TObj|LObj],Code,Status) :-
+	compile_head_wsflpathexp(T,WS,TObj,TCode,S),
 	( S == [] ->
-	    compile_head_wsflpathexplist(L,WS,LObj,LCodeList,Status),
-	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	    compile_head_wsflpathexplist(L,WS,LObj,LCode,Status),
+	    (Status == [] -> conjunct_struct(TCode,LCode,Code); true)
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_head_wsflpathexp(+ParserTerm,+WS,-Object,-CodeList,-Status)
+  compile_head_wsflpathexp(+ParserTerm,+WS,-Object,-Code,-Status)
 
   Note: The difference between compile_head_wsflpathexp and compile_head_wspathexp
         is that compile_head_wsflpathexp applies workspace only to F-Logic
         constructs.
 ****************************************************************************/
-compile_head_wsflpathexp(ParserTerm,WS,Object,CodeList,Status) :-
+compile_head_wsflpathexp(ParserTerm,WS,Object,Code,Status) :-
 	( is_flbirelate(ParserTerm,OT1,RelType,OT2) ->
-	    compile_head_wsflbirelate(OT1,RelType,OT2,WS,Object,CodeList,Status)
+	    compile_head_wsflbirelate(OT1,RelType,OT2,WS,Object,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_head_wsflobjspec(ObjTerm,Spec,WS,Object,CodeList,Status)
+	    compile_head_wsflobjspec(ObjTerm,Spec,WS,Object,Code,Status)
 
 	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
-	    compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status)
+	    compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status)
 
 	; is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status)
+	    compile_head_wsfltermobj(Funct,N,Args,WS,Object,Code,Status)
 
 	; is_fllist(ParserTerm,L,T,I) ->
-	    compile_head_wsfllist(L,T,I,WS,Object,CodeList,Status)
+	    compile_head_wsfllist(L,T,I,WS,Object,Code,Status)
 
 	; is_flworkspace(ParserTerm,P,NestedWS) ->
-	    compile_head_wspathexp(P,NestedWS,Object,CodeList,Status)
+	    compile_head_wspathexp(P,NestedWS,Object,Code,Status)
 	;
-	  compile_head_pathexp(ParserTerm,Object,CodeList,Status)
+	  compile_head_pathexp(ParserTerm,Object,Code,Status)
         ).
 
 
 /****************************************************************************
-  compile_head_wstermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-CodeList,-Status)
+  compile_head_wstermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_wstermobj(_Funct,_N,_Args,WS,_Object,_CodeList,Status) :-
+compile_head_wstermobj(_Funct,_N,_Args,WS,_Object,_Code,Status) :-
 	is_flvar(WS,_Name,VarIndex),
 	!,
 	%% Workspace in the rule head is not bound at compile time. Currently
@@ -3330,12 +3351,12 @@ compile_head_wstermobj(_Funct,_N,_Args,WS,_Object,_CodeList,Status) :-
 	%% the code that generates the workspace predicate to the body of the rule.
 	compiling_error(VarIndex,VARWSINHEAD,Status).
 
-compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
+compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,CodeList,Status),
+	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,Code,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
 	    %% WCode should be NULL here since it is already checked by the rule
@@ -3345,8 +3366,8 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 	  true
 	).
 
-compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
-	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],CodeList,Status),
+compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
+	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],Code,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
 	    %% WCode should be NULL here since it is already checked by the rule
@@ -3358,69 +3379,69 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_wsfltermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-CodeList,-Status)
+  compile_head_wsfltermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-Code,-Status)
 
   Note: The difference between compile_head_wsflpathexp and compile_head_wspathexp
         is that compile_head_wsflpathexp applies workspace only to F-Logic
         constructs.
 ****************************************************************************/
-compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
+compile_head_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,CodeList,Status),
+	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
-compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
-	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],CodeList,Status),
+compile_head_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
+	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
 
 /****************************************************************************
-  compile_head_wstermlit(+FunctorTerm,+Arity,+ArgList,+WS,-CodeList,-Status)
+  compile_head_wstermlit(+FunctorTerm,+Arity,+ArgList,+WS,-Code,-Status)
 ****************************************************************************/
-compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
+compile_head_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCodeList,Status),
+	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
-	    append(ObjCodeList,[WSCode],CodeList)
+	    conjunct_struct(ObjCode,WSCode,Code)
 	;
 	  true
         ).
 
-compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
-	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCodeList,Status),
+compile_head_wstermlit(Funct,N,Args,WS,Code,Status) :-
+	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TObj),
 	    workspacelit_struct(TObj,WS,WSTObj),
-	    append(ObjCodeList,[WSTObj],CodeList)
+	    conjunct_struct(ObjCode,WSTObj,Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_head_wsfllist(+ObjTermList,+ObjTerm,+Index,+WS,-Object,-CodeList,-Status)
+  compile_head_wsfllist(+ObjTermList,+ObjTerm,+Index,+WS,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,CodeList,Status) :-
-	compile_head_wsflpathexplist(ObjTermList,WS,ObjList,ObjListCodeList,S),
+compile_head_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,Code,Status) :-
+	compile_head_wsflpathexplist(ObjTermList,WS,ObjList,ObjListCode,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
 		Obj=[],
-		ObjCodeList=[],
+		ObjCode=NULL,
 		Status=[]
 	    ;
-	      compile_head_wsflpathexp(ObjTerm,WS,Obj,ObjCodeList,Status)
+	      compile_head_wsflpathexp(ObjTerm,WS,Obj,ObjCode,Status)
 	    ),
 	    ( Status == [] ->
 		list_struct(ObjList,Obj,Index,Object),
-		append(ObjListCodeList,ObjCodeList,CodeList)
+		conjunct_struct(ObjListCode,ObjCode,Code)
 	    ;
 	      true
 	    )
@@ -3430,57 +3451,57 @@ compile_head_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_wsflobjref(+ObjT,+RefType,+AttT,+WS,-Object,-CodeList,-Status)
+  compile_head_wsflobjref(+ObjT,+RefType,+AttT,+WS,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status) :-
-	compile_head_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACodeList,Status),
+compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status) :-
+	compile_head_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACode,Status),
 	( Status == [] ->
 	    %% Approximate the textual information for the new variable.
 	    approximate_index(AttTerm,Index),
 	    head_objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
-	    append(OACodeList,[WTCode],CodeList)
+	    conjunct_struct(OACode,WTCode,Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_head_wsflbirelate(+OT1,+RelType,+OT2,+WS,-Object,-CodeList,-Status)
+  compile_head_wsflbirelate(+OT1,+RelType,+OT2,+WS,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,CodeList,Status) :-
-	compile_head_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OCodeList,Status),
+compile_head_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,Code,Status) :-
+	compile_head_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OCode,Status),
 	( Status == [] ->
 	    birelate_struct(Obj1,RelType,Obj2,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
-	    append(OCodeList,[WTCode],CodeList)
+	    conjunct_struct(OCode,WTCode,Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_head_wsflobjspec(+ObjTerm,+SpecBody,+WS,-Object,-CodeList,-Status)
+  compile_head_wsflobjspec(+ObjTerm,+SpecBody,+WS,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_wsflobjspec(ObjTerm,SpecBody,WS,Object,CodeList,Status) :-
+compile_head_wsflobjspec(ObjTerm,SpecBody,WS,Object,Code,Status) :-
 	( SpecBody == [] ->
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
-		compile_head_wsflobjref(OTerm,RefType,ATerm,WS,Object,CodeList,Status)
+		compile_head_wsflobjref(OTerm,RefType,ATerm,WS,Object,Code,Status)
 	    ;
-	      compile_head_wsflpathexp(ObjTerm,WS,Object,ObjCodeList,Status),
+	      compile_head_wsflpathexp(ObjTerm,WS,Object,ObjCode,Status),
 	      ( Status == [] ->
 		  objexists_struct(Object,ECode),
 		  workspacelit_struct(ECode,WS,WSECode),
-		  append(ObjCodeList,[WSECode],CodeList)
+		  conjunct_struct(ObjCode,WSECode,Code)
 	      ;
 	        true
 	      )
 	    )
 	;
-	  compile_head_wsflpathexp(ObjTerm,WS,Object,ObjCodeList,S),
+	  compile_head_wsflpathexp(ObjTerm,WS,Object,ObjCode,S),
 	  ( S == [] ->
-	      compile_head_wsflspecbody(Object,SpecBody,WS,SCodeList,Status),
-	      (Status == [] -> append(ObjCodeList,SCodeList,CodeList); true)
+	      compile_head_wsflspecbody(Object,SpecBody,WS,SCode,Status),
+	      (Status == [] -> conjunct_struct(ObjCode,SCode,Code); true)
 	  ;
 	    Status=S
 	  )
@@ -3488,112 +3509,112 @@ compile_head_wsflobjspec(ObjTerm,SpecBody,WS,Object,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_wsflspecbody(+Object,+SpecTerm,+WS,-CodeList,-Status)
-  compile_head_wsmvdattspec(+Object,+AttObj,+RefType,+VL,+WS,-CodeList,-Status)
+  compile_head_wsflspecbody(+Object,+SpecTerm,+WS,-Code,-Status)
+  compile_head_wsmvdattspec(+Object,+AttObj,+RefType,+VL,+WS,-Code,-Status)
 ****************************************************************************/
-compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	is_flconjunct(SpecTerm,L,R),
 	!,
-	compile_head_wsflspecbody(Object,L,WS,LCodeList,S),
+	compile_head_wsflspecbody(Object,L,WS,LCode,S),
 	( S == [] ->
-	    compile_head_wsflspecbody(Object,R,WS,RCodeList,Status),
-	    (Status == [] -> append(LCodeList,RCodeList,CodeList); true)
+	    compile_head_wsflspecbody(Object,R,WS,RCode,Status),
+	    (Status == [] -> conjunct_struct(LCode,RCode,Code); true)
 	;
 	  Status=S
         ).
 
-compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_head_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],VACodeList,Status),
+	compile_head_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],VACode,Status),
 	( Status == [] ->
 	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
-	    append(VACodeList,[WSSCode],CodeList)
+	    conjunct_struct(VACode,WSSCode,Code)
 	;
 	  true
         ).
 
-compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	is_flmvdattspec(SpecTerm,AttTerm,RefType,VL),
 	!,
-	compile_head_wsflpathexp(AttTerm,WS,AObj,ACodeList,S),
+	compile_head_wsflpathexp(AttTerm,WS,AObj,ACode,S),
 	( S == [] ->
 	    ( VL == [] ->
 		mvdattdef_struct(Object,AObj,RefType,SCode),
 		workspacelit_struct(SCode,WS,WSSCode),
-		append(ACodeList,[WSSCode],CodeList),
+		conjunct_struct(ACode,WSSCode,Code),
 		Status=[]
 	    ;
-	      compile_head_wsmvdattspec(Object,AObj,RefType,VL,WS,VCodeList,Status),
-	      (Status == [] -> append(ACodeList,VCodeList,CodeList); true)
+	      compile_head_wsmvdattspec(Object,AObj,RefType,VL,WS,VCode,Status),
+	      (Status == [] -> conjunct_struct(ACode,VCode,Code); true)
 	    )
         ;
 	  Status=S
         ).
 
-compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	is_flmethspec(SpecTerm,MethTerm),
 	!,
-	compile_head_wsflpathexp(MethTerm,WS,MethObj,MCodeList,Status),
+	compile_head_wsflpathexp(MethTerm,WS,MethObj,MCode,Status),
 	( Status == [] ->
 	    methspec_struct(Object,MethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
-	    append(MCodeList,[WSSCode],CodeList)
+	    conjunct_struct(MCode,WSSCode,Code)
 	;
 	  true
         ).
 
-compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	is_flimethspec(SpecTerm,IMethTerm),
 	!,
-	compile_head_wsflpathexp(IMethTerm,WS,IMethObj,IMCodeList,Status),
+	compile_head_wsflpathexp(IMethTerm,WS,IMethObj,IMCode,Status),
 	( Status == [] ->
 	    imethspec_struct(Object,IMethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
-	    append(IMCodeList,[WSSCode],CodeList)
+	    conjunct_struct(IMCode,WSSCode,Code)
 	;
 	  true
         ).
 
-compile_head_wsflspecbody(Object,SpecTerm,WS,CodeList,Status) :-
+compile_head_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	is_fltranspec(SpecTerm,TranTerm),
 	!,
-	compile_head_wsflpathexp(TranTerm,WS,TranObj,TCodeList,Status),
+	compile_head_wsflpathexp(TranTerm,WS,TranObj,TCode,Status),
 	( Status == [] ->
 	    transpec_struct(Object,TranObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
-	    append(TCodeList,[WSSCode],CodeList)
+	    conjunct_struct(TCode,WSSCode,Code)
 	;
 	  true
         ).
 
 
-compile_head_wsmvdattspec(_Object,_AttObj,_RefType,[],_WS,[],[]) :- !.
+compile_head_wsmvdattspec(_Object,_AttObj,_RefType,[],_WS,NULL,[]) :- !.
 
-compile_head_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,CodeList,Status) :-
+compile_head_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,Code,Status) :-
 	!,
-	compile_head_wsflpathexp(T,WS,TObj,TCodeList,S),
+	compile_head_wsflpathexp(T,WS,TObj,TCode,S),
 	( S == [] ->
 	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
 	    workspacelit_struct(SCode,WS,WSSCode),
-	    append(TCodeList,[WSSCode],TSCodeList),
-	    compile_head_wsmvdattspec(Object,AttObj,RefType,L,WS,LCodeList,Status),
-	    (Status == [] -> append(TSCodeList,LCodeList,CodeList); true)
+	    conjunct_struct(TCode,WSSCode,TSCode),
+	    compile_head_wsmvdattspec(Object,AttObj,RefType,L,WS,LCode,Status),
+	    (Status == [] -> conjunct_struct(TSCode,LCode,Code); true)
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_head_wsflobjeql(+Obj1,+Obj2,+Workspace,-CodeList,-Status)
+  compile_head_wsflobjeql(+Obj1,+Obj2,+Workspace,-Code,-Status)
 ****************************************************************************/
-compile_head_wsflobjeql(Obj1,Obj2,WS,CodeList,Status) :-
-	compile_head_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OCodeList,Status),
+compile_head_wsflobjeql(Obj1,Obj2,WS,Code,Status) :-
+	compile_head_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OCode,Status),
 	( Status == [] ->
 	    objeql_struct(O1,O2,OECode),
 	    workspacelit_struct(OECode,WS,WSCode),
-	    append(OCodeList,[WSCode],CodeList)
+	    conjunct_struct(OCode,WSCode,Code)
 	;
 	  true
 	).
@@ -3634,26 +3655,32 @@ compile_flinsert(Op,List,Code,Status) :-
   compile_flinsert_literals(+List,-DBCodeList,-Status)
 ****************************************************************************/
 compile_flinsert_literals(List,DBCodeList,Status) :-
-	compile_flinsert_list(List,CodeList,Status),
+	compile_flinsert_list(List,Code,Status),
+	compile_conjunct2list(Code,CodeList),
 	(Status == [] -> compile_dbupdate_list(CodeList,DBCodeList); true).
 
 
 /****************************************************************************
-  compile_flinsert_list(+List,-CodeList,-Status)
-****************************************************************************/
-compile_flinsert_list([],[],[]) :- !.
+  compile_flinsert_list(+List,-Code,-Status)
 
-compile_flinsert_list([H|T],[VarCode|TCodeList],Status) :-
+  Code is the conjunctions of atoms to be inserted.
+****************************************************************************/
+compile_flinsert_list([],NULL,[]) :- !.
+
+compile_flinsert_list([H|T],Code,Status) :-
 	is_flvar(H,VarName,Index),
 	!,
 	compile_flvar(VarName,Index,VarCode),
-	compile_flinsert_list(T,TCodeList,Status).
+	compile_flinsert_list(T,TCode,Status),
+	conjunct_struct(VarCode,TCode,Code).
 
-compile_flinsert_list([H|T],CodeList,Status) :-
-	compile_head_literal(H,HCodeList,S),
+compile_flinsert_list([H|T],Code,Status) :-
+	%% Call compile_head_literal because path expressions should
+	%% be skolemized.
+	compile_head_literal(H,HCode,S),
 	( S == [] ->
-	    compile_flinsert_list(T,TCodeList,Status),
-	    (Status == [] -> append(HCodeList,TCodeList,CodeList); true)
+	    compile_flinsert_list(T,TCode,Status),
+	    (Status == [] -> conjunct_struct(HCode,TCode,Code); true)
 	;
 	  Status=S
 	).
@@ -3661,6 +3688,8 @@ compile_flinsert_list([H|T],CodeList,Status) :-
 
 /****************************************************************************
   compile_fldelete(+Op,+List,+Cond,-Code,-Status)
+
+  for delete operations with a condition.
 ****************************************************************************/
 compile_fldelete(Op,List,Cond,Code,Status) :-
 	compile_fldelete_literals(List,CodeList,S),
@@ -3679,6 +3708,8 @@ compile_fldelete(Op,List,Cond,Code,Status) :-
 
 /****************************************************************************
   compile_fldelete(+Op,+List,-Code,-Status)
+
+  for delete operations without a condition.
 ****************************************************************************/
 compile_fldelete(Op,List,Code,Status) :-
 	compile_fldelete_literals(List,CodeList,Status),
@@ -3710,6 +3741,8 @@ compile_fldelete_list([H|T],[VarCode|TCodeList],Status) :-
 	compile_fldelete_list(T,TCodeList,Status).
 
 compile_fldelete_list([H|T],CodeList,Status) :-
+	%% Call compile_body_literal because path expressions should be
+	%% compiled into queries.
 	compile_body_literal(H,HCode,S),
 	( S == [] ->
 	    compile_conjunct2list(HCode,HCodeList),
@@ -3751,36 +3784,12 @@ compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
 
 
 /****************************************************************************
-  compile_conjunct2list(+ConjunctCode,-CodeList)
-****************************************************************************/
-compile_conjunct2list(ConjunctCode,CodeList) :-
-	conjunct_struct(C1,C2,ConjunctCode),
-	!,
-	compile_conjunct2list(C1,C1List),
-	compile_conjunct2list(C2,C2List),
-	append(C1List,C2List,CodeList).
-
-compile_conjunct2list(Code,[Code]) :- !.
-
-
-/****************************************************************************
-  compile_list2conjunct(+CodeList,-Code)
-****************************************************************************/
-compile_list2conjunct([Code],Code) :- !.
-
-compile_list2conjunct([C|CList],Code) :-
-	!,
-	compile_list2conjunct(CList,CListCode),
-	conjunct_struct(C,CListCode,Code).
-
-
-/****************************************************************************
   compile_exec_directive(+DirectList,-Code,-Status)
   compile_execdirect_list(+DirectList,-DirectCodeList)
 ****************************************************************************/
 compile_exec_directive(DirectList,Code,[]) :-
 	compile_execdirect_list(DirectList,DirectCodeList),
-	compile_list2conjunct(DirectCodeList,Code).
+	conjunct_code(DirectCodeList,Code).
 
 
 compile_execdirect_list([],[]) :- !.
