@@ -1,5 +1,9 @@
+%--------------------------------------------------------------------
+
+:- import numbervars/1 from num_vars.
 
 %--------------------------------------------------------------------
+
 :- table path/2.
 path(X,Y) :- path(X,Z), edge(Z,Y).
 path(X,Y) :- edge(X,Y).
@@ -130,8 +134,8 @@ ppgte_v:- undefined.
 :- table undefined/0.
 undefined:- tnot(undefined).
 
-
 %--------------------------------------------------------------------
+
 :- table path/3.
 path(X,Y,C) :- path(X,Z,C1), edge(Z,Y,C2),C is C1 + C2.
 path(X,Y,C) :- edge(X,Y,C).
@@ -231,4 +235,3 @@ p1(X):- q1(X),tnot(r1).
 r1:- tnot(s1).
 s1:- q1(_).
 q1(1).  q1(2).
-

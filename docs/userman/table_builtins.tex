@@ -1,0 +1,1025 @@
+%=====================================================================
+
+\newcommand{\retn}{\code{ret/n}}
+
+%--------------------------------------------------------------------------
+
+\section{Tabled Predicate Manipulations} \label{sec:TablingPredicates}
+
+In XSB, tables are designed so that they can be used transparently by
+computations.  However, it is necessary to first inform the system of
+which, or whether, predicates should be evaluated using tabled
+resolution (\refsec{sec:CompilerOptions}), and according to which
+strategy (\refsec{sec:TablingStrategies}).  Further,
+it is often useful to be able to explicitly inspect a table, or to
+alter its state.  The predicates described in this section are
+provided for these purposes.  In order to ground the discussion of
+these predicates, we continue our overview of tables and table
+creation from \refchap{chap:TablingOverview}.  For a detailed
+description of the implementation of tables in XSB, the reader is
+referred to~\cite{RRSSW98,TST99,CuSW99b}.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsubsection*{Tables and Table Entries}
+
+For our purposes, a table can be seen as a set of entry triples $\langle
+S,\cA,Status \rangle$ where $S$ is a subgoal, $\cA$ is its associated
+answer set, and $Status$ its status~---~whether it is complete or
+incomplete.  In terms of implementation, ``the table'' is actually a
+set of minitables, each one containing entries for a particular
+predicate.  Hence, we may refer to the table containing entries for
+some predicate \code{p/n} as ``the table for \code{p/n}.''  Further
+recall that a particular predicate may be evaluated according to
+either a variant or subsumptive strategy as chosen by the user.
+Invocation of a call during an evaluation leads to the classification
+of the call, as well as its possible insertion into the table.  A call
+is classified as either a \emph{generator}, or \emph{producer}, of an
+answer set or a \emph{consumer} of an answer set of some subgoal in
+the table.  Creation of a table entry relies not only on the call and
+the subgoals already present in the table, but upon the tabling
+strategy as well.  We note that a table constructed using a
+subsumption-based strategy may hence contain a producing subgoal which
+is subsumed by another.  Under certain circumstances, it is also
+convenient to store certain subsumed (consumer) subgoals in the
+table~\cite{TST99}.  We bring these issues to the user's attention as
+inspection of a table may reveal such entries.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsubsection*{Answers, Returns, and Templates}
+
+Given a table entry $(S,\cA,Status)$, each answer in $\cA$ is
+maintained in XSB as an {\em answer substitution}, that is a
+substitution to the variables of $S$\@.  The table inspection predicates
+allow access to answer substitutions through a term whose principle
+functor is \retn, where \code{n} is the number of distinct variables
+in the producer subgoal.  The order of arguments in \retn{}
+corresponds to the order of distinct variables in a left-to-right
+traversal of $S$.
+
+\begin{example}
+Let $S =$ \code{p(X,f(Y))} be a producer subgoal and $\alpha =$
+\code{\{X=a,Y=b\}} be an answer substitution.  The representation of
+$\alpha$ as a return is \code{ret(a,b)} and the application of that
+return to $S$ yields the answer \code{p(a,f(b))}.\fillBox
+\end{example}
+
+In a similar manner, XSB maintains substitutions between producer
+subgoals and consuming subgoals when subsumption-based tabling is
+used.  The \emph{return template} for a consuming call is a
+substitution mapping variables of its producer to subterms of the
+call.  This template can then be used to select returns from the
+producer which satisfy the consuming call.  Note, then, that a return
+template of a \emph{subsumed} subgoal may show partial instantiations.
+Return templates are also represented as terms of \retn in the manner
+described above.
+
+\begin{example}
+Let \code{p/2} of the previous example be evaluated using subsumption
+and let $S$ be present in its table.  Further, let $S_1$:
+\code{p(A,f(B))} and $S_2$: \code{p(g(Z),f(b))} be two consuming
+subgoals of $S$\@.  Then the \emph{return template} of $S_1$ is
+\code{ret(A,B)} and that of $S_2$ is \code{ret(g(Z),b)}.  $S_1$, being
+a variant of $S$, selects all returns of $S$ such that
+\code{\{X=A,Y=B\}}\@.  $S_2$, on the other hand, selects only
+\emph{relevant} answers of $S$, those where the returns satisfy
+\code{\{X=g(Z),Y=b\}}.\fillBox
+\end{example}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsubsection*{Skeletons and Predicate Specifications}
+
+\emph{Skeletal information} refers to the name and arity of the
+primary functor of a term.  A \emph{skeleton} for a functor \code{f/n}
+is any structure of the form \code{f($Arg_1$,\ldots,$Arg_n$)} where
+$Arg_i$ can be any term.  Thus the skeletal information derived from
+the skeletons \code{f(1,2)} and \code{f(A,B)} would be the same.  A
+\emph{return skeleton} is a specific application of this notion to
+answer returns.  From it, one may discern the size of the template for
+a given subgoal.  Finally, we assume that a predicate specification
+for a predicate \code{p} and arity \code{n}, represented as
+\code{PredSpec} below, can be given either using the notation
+\code{p/n} or as a skeleton, \code{p($t_1$,\ldots,$t_n$)} for any term
+$t_i$.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsubsection*{Exceptions}
+
+Exceptions caught by the following predicates include:
+\begin{description}
+\item[Instantiation Error] Argument is a variable.
+\item[Type Error] Argument is not a predicate specification or callable term.
+\item[Table Error] Argument does not contain a tabled predicate, or a valid
+	reference to a table component.
+\end{description}
+
+
+%--------------------------------------------------------------------------
+
+\subsection{Operators for Declaring and Modifying Tabled Predicates}
+\label{sec:TablePred:Decl&Mod}
+\index{tabling!directives}\index{tabling!strategy selection}
+
+\begin{description}
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{table\ \ +P$_1$/N$_1$, \ldots, +P$_k$/N$_k$.}{Tabling}
+\index{{\tt table/1}}
+%
+Declares each predicate denoted by \code{P$_i$/N$_i$} to be tabled.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{use\_subsumptive\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{Tabling}
+\index{{\tt use\_subsumptive\_tabling/1}}
+%
+Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
+to use subsumption-based tabling, thus overriding the current system
+default.  The tabling strategy can be changed at will through the
+invocation of this and the following predicate.  Note, however, that
+the table for the predicate must be empty at the time of the change.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{use\_variant\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{Tabling}
+\index{{\tt use\_variant\_tabling/1}}
+%
+Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
+to use variant-based tabling, thus overriding the current system
+default.  The same comments apply as above.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\end{description}
+
+%--------------------------------------------------------------------------
+
+\subsection{Predicates for Table Inspection}
+\label{sec:TablePred:Inspection}
+\index{tabling!table inspection}
+
+The user should be aware that skeletons that are dynamically created
+(e.g., by \code{functor/3}) are located in {\tt usermod} (refer to
+\refsec{Modules}).  In such a case, the tabling predicates below may
+not behave in the desired manner if the tabled predicates themselves
+have not been imported into {\tt usermod}.
+
+We maintain two running examples in this section for explanatory
+purposes.  One uses variant-based tabling:
+%
+\begin{center}
+\begin{tabular}{cc}\hline \hline
+\multicolumn{2}{c}{\rule{0ex}{2.5ex}\textbf{Variant Example}} \\ \hline \hline
+\rule[-2ex]{0ex}{5ex} \textbf{Program} & \textbf{Table} \\
+\begin{minipage}{14.5em}
+\begin{verbatim}
+:- table p/2.
+:- use_variant_tabling p/2.
+p(1,2).
+p(1,3).
+p(1,_).
+p(2,3).
+\end{verbatim}
+\end{minipage}
+&
+\begin{tabular}{|c|c|c|} \hline
+  Subgoal & Answer Set & Status\\ \hline \hline
+  p(1,Y) & p(1,2) & complete \\ 
+	 & p(1,3) & \\
+	 & p(1,Y) & \\ \hline
+  p(X,3) & p(1,3) & complete \\ 
+	 & p(2,3) & \\ \hline
+\end{tabular} \\
+\vspace*{-2ex} \\ \hline \hline
+\end{tabular}
+\end{center}
+
+\noindent
+and the other uses subsumption-based tabling:
+
+\begin{center}
+\begin{tabular}{cc}\hline \hline
+\multicolumn{2}{c}{\rule{0ex}{2.5ex}\textbf{Subsumptive Example}} \\ \hline \hline
+\rule[-2ex]{0ex}{5ex} \textbf{Program} & \textbf{Table} \\
+\begin{minipage}{17em}
+\begin{verbatim}
+:- table q/2.
+:- use_subsumptive_tabling q/2.
+q(a,b).
+q(b,c).
+q(a,c).
+\end{verbatim}
+\end{minipage}
+&
+\begin{tabular}{|c|c|c|} \hline
+  Subgoal & Answer Set & Status \\ \hline \hline
+  q(X,Y) & q(a,b) & complete \\
+	 & q(b,c) & \\
+	 & q(a,c) & \\ \hline
+  q(a,Y) & \textit{q(a,b)} & complete \\
+	 & \textit{q(a,c)} & \\ \hline
+  q(X,c) & \textit{q(b,c)} & complete \\
+	 & \textit{q(a,c)} & \\ \hline
+\end{tabular} \\
+\vspace*{-2ex} \\ \hline \hline
+\end{tabular}
+\end{center}
+
+\noindent
+Note that in the subsumptive example, the subgoals \code{q(a,Y)} and
+\code{q(X,c)} are subsumed by, and hence obtain their answers from,
+the subgoal \code{q(X,Y)}\@.
+
+\vspace{2ex}
+
+\begin{description}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{get\_call(+CallTerm,-TableEntryHandle,-ReturnTemplate)}{Tabling}
+\index{{\tt get\_call/3}}
+%
+Searches the table for an entry whose subgoal is a \emph{variant} of
+\code{CallTerm}.  Should the subgoal exist, then the handle to this
+entry is assigned to the second argument, while in the third, its
+return template is constructed.  These latter two arguments should be
+given as variables.
+
+\comment{Currently, this builtin fails if CallSkeleton is not a
+compound term, but yields an error if either CallSkeleton is not a
+tabled predicate or either of TableEntryHandle or ReturnSkeleton are
+non-variables.}
+
+\begin{minipage}{6in}
+\begin{example}\ \\
+\\
+\begin{tabular}{l@{\hspace{4em}}r}
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Variant Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{14.5em}
+\begin{small}
+\begin{verbatim}
+| ?- get_call(p(X,Y),Ent,Ret).
+
+no
+| ?- get_call(p(1,Y),Ent,Ret).
+
+Y = _h92
+Ent = 136039108
+Ret = ret(_h92);
+
+no
+| ?- get_call(p(X,3),Ent,Ret).
+
+X = _h84
+Ent = 136039156
+Ret = ret(_h84);
+
+no
+| ?- get_call(p(1,3),Ent,Ret).
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+ &
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Subsumptive Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{14.5em}
+\begin{small}
+\begin{verbatim}
+| ?- get_call(q(X,Y),Ent,Ret).
+
+X = _h80
+Y = _h94
+Ent = 136043988
+Ret = ret(_h80,_h94);
+
+no
+| ?- get_call(q(a,Y),Ent,Ret).
+
+Y = _h88
+Ent = 136069412
+Ret = ret(a,_h88);
+
+no
+| ?- get_call(q(X,c),Ent,Ret).
+
+X = _h80
+Ent = 136069444
+Ret = ret(_h80,c);
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+\end{tabular}
+\end{example}
+\end{minipage} \\
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{get\_calls(\#CallTerm,-TableEntryHandle,-ReturnSkeleton)}{Tabling}
+\index{{\tt get\_calls/3}}
+%
+Identifies through backtracking each subgoal in the table which
+unifies with \code{CallTerm}.  For those that do, the handle to the
+table entry is assigned to the second argument, and its return
+skeleton is constructed in the third.  These latter two arguments
+should be given as variables.
+
+\comment{Currently, this builtin fails if CallTerm is not a
+compound term, but yields an error if either CallTerm is not a
+tabled predicate or either of TableEntryHandle or ReturnSkeleton are
+non-variables.}
+
+\begin{minipage}{6in}
+\begin{example}\ \\
+\\
+\begin{tabular}{l@{\hspace{4em}}r}
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Variant Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{15em}
+\begin{small}
+\begin{verbatim}
+| ?- get_calls(p(X,Y),Ent,Ret).
+
+X = _h80
+Y = 3
+Ent = 136039156
+Ret = ret(_h80);
+
+X = 1
+Y = _h94
+Ent = 136039108
+Ret = ret(_h94);
+
+no
+| ?- get_calls(p(X,3),Ent,Ret).
+
+X = _h80
+Ent = 136039156
+Ret = ret(_h80);
+
+X = 1
+Ent = 136039108
+Ret = ret(3);
+
+no
+| ?- get_calls(p(1,3),Ent,Ret).
+
+Ent = 136039156
+Ret = ret(1);
+
+Ent = 136039108
+Ret = ret(3);
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+ &
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Subsumptive Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{15em}
+\begin{small}
+\begin{verbatim}
+| ?- get_calls(q(X,Y),Ent,Ret).
+
+X = a
+Y = _h94
+Ent = 136069412
+Ret = ret(a,_h94);
+
+X = _h80
+Y = c
+Ent = 136069444
+Ret = ret(_h80,c);
+
+X = _h80
+Y = _h94
+Ent = 136043988
+Ret = ret(_h80,_h94);
+
+no
+| ?- get_calls(q(a,Y),Ent,Ret).
+
+Y = _h88
+Ent = 136069412
+Ret = ret(a,_h88);
+
+Y = c
+Ent = 136069444
+Ret = ret(a,c);
+
+Y = _h88
+Ent = 136043988
+Ret = ret(a,_h88);
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+\end{tabular}
+\end{example}
+\end{minipage} \\
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{get\_calls\_for\_table(+PredSpec,?Call)}{Tabling}
+\index{{\tt get\_calls\_for\_table/2}}
+%
+Identifies through backtracking all the subgoals whose predicate is
+that of \code{PredSpec} and which unify with \code{Call}.
+\code{PredSpec} is left unchanged while \code{Call} contains the
+unified resultant.
+
+\comment{Error if either \code{PredSpec} is a nontabled pred (STRUCTs
+and STRINGs are caught here) or a variable.  Fails if \code{PredSpec}
+is any other type or if \code{Call} does not unify with any call in
+the table.}
+
+\begin{minipage}{6.1in}
+\begin{example}\ \\
+\\
+\hspace*{-0.5em}\begin{tabular}{l@{\hspace{1.5em}}r}
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Variant Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{17.35em}
+\begin{small}
+\begin{verbatim}
+|?- get_calls_for_table(p(1,3),Call).  
+
+Call = p(_h142,3);
+
+Call = p(1,_h143);
+
+no
+| ?- get_calls_for_table(p/2,Call).
+
+Call = p(_h137,3);
+
+Call = p(1,_h138);
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+ &
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Subsumptive Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{17.85em}
+\begin{small}
+\begin{verbatim}
+| ?- get_calls_for_table(q(X,Y),Call). 
+
+X = _h80
+Y = _h94
+Call = q(a,_h167);
+
+X = _h80
+Y = _h94
+Call = q(_h166,c);
+
+X = _h80
+Y = _h94
+Call = q(_h166,_h167);
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+\end{tabular}
+\end{example}
+\end{minipage} \\
+
+\comment{
+The second example backtracks through all entries in the table, since
+only skeletal information is used from the first argument.
+}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{get\_returns(+TableEntryHandle,\#ReturnSkeleton)}{Tabling}
+\index{{\tt get\_returns/2}}
+%
+Backtracks through the answers for the subgoal whose table entry is
+referenced through the first argument, \code{TableEntryHandle}, and
+instantiates \code{ReturnSkeleton} with the variable bindings
+corresponding to the return.
+
+The supplied values for the entry handle and return skeleton should be
+obtained from some previous invocation of a table-inspection
+predicate.
+
+\comment{See \code{get\_returns/3} for error conditions.}
+
+\begin{minipage}{6in}
+\begin{example}\ \\
+\\
+\begin{tabular}{l@{\hspace{4em}}r}
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Variant Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{15em}
+\begin{small}
+\begin{verbatim}
+| ?- get_calls(p(X,3),Ent,Ret),
+     get_returns(Ent,Ret).
+
+X = 2
+Ent = 136039156    % p(X,3)
+Ret = ret(2);
+
+X = 1
+Ent = 136039156    
+Ret = ret(1);
+
+X = 1
+Ent = 136039108    % p(1,Y)
+Ret = ret(3);
+
+X = 1
+Ent = 136039108
+Ret = ret(3);
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+ &
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Subsumptive Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{15em}
+\begin{small}
+\begin{verbatim}
+| ?- get_calls(q(a,c),Ent,Ret),
+     get_returns(Ent,Ret).
+
+Ent = 136069412    % q(a,Y)
+Ret = ret(a,c);
+
+Ent = 136069444    % q(X,c)
+Ret = ret(a,c);
+
+Ent = 136043988    % q(X,Y)
+Ret = ret(a,c);
+
+no
+| ?- get_calls(q(c,a),Ent,Ret),
+     get_returns(Ent,Ret).
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+\end{tabular}
+\end{example}
+\end{minipage} \\
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{get\_returns(+TableEntryHandle,\#ReturnSkeleton,-ReturnHandle)}{Tabling}
+\index{{\tt get\_returns/3}}
+%
+Functions identically to \code{get\_returns/2}, but also obtains a
+handle to the return given in the second argument.
+
+\comment{Currently, this builtin fails if \code{ReturnSkeleton} is not
+of the form ret(t1,...,tk) or if either k is too small or
+\code{ReturnSkeleton} does not unify with any answer.  However, an error
+results if (1) \code{TableEntryHandle} is not a valid pointer (memory
+violation); (2) \code{ReturnSkeleton} contains too many terms (if k is
+too big, then the extra terms are ignored, but this gives the illusion
+of a larger than actual substitution); or (3) \code{ReturnHandle} is
+already instantiated.}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{get\_returns\_for\_call(+CallTerm,?AnswerTerm)}{Tabling}
+\index{{\tt get\_returns\_for\_call/2}}
+%
+Succeeds through backtracking for each answer of the subgoal
+\code{CallTerm} which unifies with \code{AnswerTerm}.  Fails if
+\code{CallTerm} is not a subgoal in the table or \code{AnswerTerm}
+does not unify with any of its answers or the answer set is empty.
+
+The answer is created in its entirety, including fresh variables; the
+call is \emph{not} further instantiated.  However, an explicit
+unification of the call with its answer may be performed if so
+desired.
+
+\comment{Fails or gives error whenever \code{get_call/3} does.}
+
+\begin{minipage}{6.1in}
+\begin{example}\ \\
+\\
+\hspace*{-0.5em}\begin{tabular}{l@{\hspace{2.5em}}r}
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Variant Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{16.5em}
+\begin{small}
+\begin{verbatim}
+| ?- get_returns_for_call(p(1,Y),
+                          AnsTerm).
+
+Y = _h88
+AnsTerm = p(1,_h161);
+
+Y = _h88
+AnsTerm = p(1,3);
+
+Y = _h88
+AnsTerm = p(1,2);
+
+no
+| ?- get_returns_for_call(p(X,Y),
+                          AnsTerm).
+
+no
+| ?- get_returns_for_call(p(1,2),
+                          AnsTerm).
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+ &
+\begin{tabular}{c} \hline \hline
+\rule{0ex}{2.5ex}\textbf{Subsumptive Predicate} \\ \hline \hline
+\vspace*{-1ex} \\
+\begin{minipage}{16.5em}
+\begin{small}
+\begin{verbatim}
+| ?- get_returns_for_call(q(a,Y),
+                          AnsTerm).
+
+Y = _h88
+AnsTerm = q(a,c);
+
+Y = _h88
+AnsTerm = q(a,b);
+
+no
+| ?- get_returns_for_call(q(X,c),
+                          AnsTerm).
+
+X = _h80
+AnsTerm = q(b,c);
+
+X = _h80
+AnsTerm = q(a,c);
+
+no
+\end{verbatim}
+\end{small}
+\end{minipage} \\
+\vspace*{-1ex} \\ \hline \hline
+\end{tabular}
+\end{tabular}
+\end{example}
+\end{minipage} \\
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{get\_residual(\#CallTerm,?DelayList)}{Tabling}
+\index{{\tt get\_residual/2}}
+%
+Backtracks through the answer set of each \emph{completed} subgoal in
+the table which unifies with \code{CallTerm}.  With each successful
+unification, this argument is further instantiated as well as that of
+the \code{DelayList}.
+
+\begin{example}
+For the following program and table
+     \begin{center}
+     \begin{tabular}{cc}
+     \begin{minipage}{2.1in}
+     {\tt
+          :- table p/2.	\\
+	  p(1,2). \\
+	  p(1,3):- tnot(p(2,3)). \\
+	  p(2,3):- tnot(p(1,3)). 
+     }
+     \end{minipage}
+     &
+     \begin{tabular}{||l|l||}   \hline
+     {\em Call}			& {\em Returns} \\ \hline \hline
+     p(1,X)			& p(1,2) \\ 
+ 	       			& p(1,3):- tnot(p(2,3)) \\ \hline
+     p(1,3)			& p(1,3):- tnot(p(2,3)) \\ \hline
+     p(2,3)			& p(2,3):- tnot(p(1,3)) \\ \hline
+     \end{tabular}
+     \end{tabular}
+     \end{center}
+the completed subgoals are {\tt p(1,X)}, {\tt p(1,3)}, and {\tt
+p(2,3)}.  Calls to {\tt get\_residual/2} will act as follows
+%
+\begin{center}
+\begin{small}
+\begin{minipage}{2.5in}
+\begin{verbatim} 
+| ?- get_residual(p(X,Y),List).
+
+X = 1       % from subgoal p(1,X)
+Y = 2
+List = [];
+
+X = 1       % from subgoal p(1,X)
+Y = 3
+List = [tnot(p(2,3))];
+
+X = 1       % from subgoal p(1,3)
+Y = 3
+List = [tnot(p(2,3))];
+
+X = 2       % from subgoal p(2,3)
+Y = 3
+List = [tnot(p(1,3))];
+
+no
+\end{verbatim}
+\end{minipage}
+\end{small}
+\end{center}
+\end{example}
+
+Since the delay list of an answer consists of those literals whose
+truth value is unknown in the well-founded model of the program (see
+Chapter~\ref{chap:TablingOverview}) \code{get\_residual/2} can be
+useful when extensions of the well-founded model are desired.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ouritem{table\_state(+CallTerm,?PredType,?CallType,?AnsSetStatus)}
+
+\vspace{-5ex}
+
+\ournewitem{table\_state(+TableEntryHandle,?PredType,?CallType,?AnsSetStatus)}{Tabling}
+\index{{\tt table\_state/4}}
+%
+Succeeds whenever \code{CallTerm} is a subgoal in the table, or
+\code{TableEntryHandle} is a valid reference to a table entry, and its
+predicate type, the type of the call, and the status of its answer
+set, unify with arguments 2 through 4, respectively.
+
+XSB defines three sets of atomic constants, one for each parameter.
+Taken together, they provide a detailed description of the given call.
+The valid combinations and their specific meaning is given in the
+following table.  Notice that not only can these combinations describe
+the characteristics of a subgoal in the table, but they are also
+equipped to predict how a new goal would have been treated had it been
+called at that moment.
+
+\begin{center}
+\begin{small}
+\begin{tabular}{|c|c|l|l|} \hline
+\code{PredType}	& \code{CallType}	& \code{AnsSetStatus}
+		& \multicolumn{1}{c|}{Description} \\ \hline \hline
+	&	& \code{complete}	& Self explanatory. \\ \cline{3-4}
+\code{variant}  & \raisebox{1.5ex}[0ex]{\code{producer}} & \code{incomplete}
+		& Self explanatory. \\ \cline{2-4}
+	& \code{no\_entry}	& \code{undefined}
+		& The call does not appear in the table. \\ \hline
+	&	& \code{complete} & Self explanatory. \\ \cline{3-4}
+	& \raisebox{1.5ex}[0ex]{\code{producer}}	& \code{incomplete}
+		& Self explanatory. \\ \cline{2-4}
+	&	&	& The call is in the table and is properly \\
+	&	& \raisebox{1.5ex}[0ex]{\code{complete}}
+		& subsumed by a completed producer. \\ \cline{3-4}
+	&  \raisebox{1.5ex}[0ex]{\code{subsumed}}
+		&	& The call is in the table and is properly \\
+	&	& \raisebox{1.5ex}[0ex]{\code{incomplete}}
+		& subsumed by an incomplete producer. \\ \cline{2-4}
+	&	&	& The call is not in the table, but if it were \\
+\code{subsumptive}	&	& \code{complete}
+		& to be called, it would consume from a \\
+	&	&	& completed producer. \\ \cline{3-4}
+	&	&	& The call is not in the table, but if it had \\
+	& \code{no\_entry}	& \code{incomplete}
+		& been called at this moment, it would \\
+	&	&	& consume from an incomplete producer. \\ \cline{3-4}
+	&	&	& The call is not in the table, but if it had \\
+	&   & \code{undefined}   & been called at this moment, it would be \\
+	&	&	& a producer. \\ \hline
+\code{undefined}	& \code{undefined}	& \code{undefined}
+		& The given predicate is not tabled. \\ \hline
+\end{tabular}
+\end{small}
+\end{center}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\comment{
+\ournewitem{table\_state(+CallTerm,?State)}{Tabling}
+\index{{\tt table\_state/2}}
+%
+Functions similarly to, and is superseded by, \code{table\_state/4}.
+The value of \code{State} may be one of the following atoms with the
+given meaning.
+%
+\begin{description}
+\item[{\tt not\_yet\_called}] iff the predicate corresponding to
+Call has been declared tabled, but there is no table entry for call.
+\item[{\tt complete}] iff the table entry for {\tt Call} contains
+all solutions.
+\item[{\tt incomplete}] iff the table entry for {\tt Call} may not contain
+all solutions.
+\item[{\tt undef}] iff the predicate corresponding to {\tt Call} 
+has not been declared tabled.
+\end{description}
+
+Exceptions:
+    \begin{description}
+    \item[{\tt type\_error}]
+	Argument 1 is not a callable predicate.
+    \end{description}
+}
+
+%--------------------------------------------------------------------------
+
+\subsection{Deleting Tables and Table Components}
+\label{sec:TablePred:Deleting}
+\index{tabling!table deletion}
+
+
+The following predicates succeed whenever the table(s) in question are
+\emph{complete}.  In order to ensure correct evaluations, incomplete
+tables may not be removed by the user.  Note that incomplete tables
+are abolished \emph{automatically} by the system on exceptions and
+when the interpreter level is resumed.
+
+\vspace{2ex}
+
+\begin{description}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{abolish\_all\_tables}{Tabling}\index{{\tt abolish\_all\_tables/0}}
+%
+Removes the tables presently in the system and frees all the memory
+held by XSB for these structures.  Predicates which have been declared
+tabled remain so, but their table entries, if any, are deleted.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\comment{
+\ournewitem{abolish\_table\_call(+CallTerm)}{Tabling}
+\index{{\tt abolish\_table\_call/1}}
+%
+Removes the table entry for the subgoal \code{CallTerm} should it
+exists.  The predicate remains tabled and all of its other table
+entries remains intact.
+}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{abolish\_table\_pred(+PredSpec)}{Tabling}
+\index{{\tt abolish\_table\_pred/1}}
+%
+Removes all entries from the table for the predicate denoted by
+\code{PredSpec}.  The predicate remains tabled but the memory held by
+its former table entries is returned to XSB for future entry creation.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{delete\_return(+TableEntryHandle,+ReturnHandle)}{Tabling}
+\index{{\tt delete\_returns/2}}
+%
+Removes the answer indicated by \code{ReturnHandle} from the table
+entry referenced by \code{TableEntryHandle}.  The value of each
+argument should be obtained from some previous invocation of a
+table-inspection predicate.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\end{description}
+
+
+%==========================================================================
+
+%%%
+%%% OLD JUNK
+%%%
+
+\comment{
+
+
+\ournewitem{table\_prop(?Pred\_indicator,+Type,?Old\_val,+New\_val)}{Tabling}
+\index{{\tt table\_prop/4}}
+This predicate is described together with the following one.
+
+
+\ournewitem{table\_prop(?Pred\_indicator,+Type,-Value)}{Tabling}\index{{\tt table\_prop/3}}
+This predicate is used either to provide information about a table
+property, or to reset one of properties to a particular value.  These
+values can also be set by the table declarations in the source code.
+{\tt table\_prop} provides a method for doing so without having to
+recompile code.
+
+In previous versions {\tt table\_prop} was used to reset hash sizes for
+calls and returns.  It is not used in \version, but is maintained since
+in future versions {\tt table\_prop} may be used for other table
+properties such as subgoal subsumption.
+
+}
+
+%In \version\ the properties visible to the user are the call and return
+%hash sizes.  Each tabled predicate contains two types of hash tables.
+%A {\em call hash table} is used to find whether the variant of a call
+%to a tabled predicate has occurred before in the course of a
+%computation.  Each tabled call has a {\em return hash table} which is
+%used during a computation to determine whether a given return needs to
+%be added to the table.  Appropriate indexing for call and return
+%lookup, including proper hash table sizes, is crucial to good
+%performance.  
+
+%Hash table sizes are non-negative integers denoting the number of
+%buckets in the hash table.  When {\tt Pred\_indicator} denotes a
+%tabled predicate, the predicate can take one of two modes depending on
+%its arity.  In {\tt table\_prop/4}, the {\tt New\_value} is provided by
+%the user and {\tt Old\_value} is unified with the precious value of
+%the table property.  In {\tt table\_prop/3} the present value of the 
+%property is returned.
+
+%Presently, the hash table sizes can only be reset when there are no tabled
+%calls to {\tt Pred\_indicator}.  This can be ensured by a call to 
+%{\tt abolish\_table\_pred/1}
+%
+%Future versions of \ourprolog\ may include additional indexing
+%strategies as configurable table properties.
+
+\comment{
+
+    Exceptions:
+    \begin{description}
+%    \item[{\tt table\_error}]
+%	Attempt to reset hash table size for predicate with tabled calls.
+    \item[{\tt table\_error}]
+	Argument 1 is not a tabled predicate.
+    \end{description}
+
+}
+%\ounewitem{table\_copy(+From,-To)} \index{{\tt table\_copy/2}}
+%Table copy provides an explicit mechanism for the user to reduce the
+%amount of copying into and out of a table.  {\tt table\_copy/2}
+%succeeds when {\tt From} is ground, and returns a copy of that
+%structure (or list) in the table space.  No copying of that structure
+%will be required when calls or returns containing it are tabled, and
+%no copying will be necessary when returns using it are resolved with
+%goals. 
+%
+%For an example of the use of table copy, see Section~\ref{dcg_tabling}
+
+\comment{
+
+\ournewitem{breg\_retskel(+Breg,+Arity,-ReturnSkeleton,-SubgoalStructurePtr)}
+\index{{\tt breg\_retskel/4}}
+If Breg is bound to a pointer to the tabling choice point and 
+Arity is bound to the arity of the predicate corresponding to 
+the choice point, {\tt breg\_retskel} succeeds after binding 
+{\tt ReturnSkeleton} to ret/n as in {\tt get\_calls/3} and 
+{\tt SubgoalStructurePtr} to the pointer to the subgoal structure.
+
+Warning:This builtin works for tabling predicates only.
+
+}
+
+%==========================================================================
+
+\end{description}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 

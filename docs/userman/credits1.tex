@@ -10,30 +10,37 @@
 \begin{quote}
 Day-to-day care and feeding of XSB including bug fixes, ports, and
 configuration management has been done by Kostis Sagonas, David
-Warren, Terrance Swift, Prasad Rao, Steve Dawson, Juliana Freire, 
-Baoqiu Cui and Michael Kifer.
+Warren, Terrance Swift, Prasad Rao, Steve Dawson, Juliana Freire,
+Ernie Johnson, Baoqiu Cui, Michael Kifer, and Bart Demoen.
 
 In \version, the core engine development of the SLG-WAM has been
-mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao and
+mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao, and
 Juliana Freire.  The breakdown, roughly, was that Terrance Swift wrote
-the initial tabling engine and builtins.  Prasad Rao wrote the
-trie-based table access routines, and Kostis Sagonas implemented most
-of tabled negation.  Juliana Freire revised the table scheduling
-mechanism starting from Version 1.5.0 to create a more efficient
-engine, and implemented the engine for local evaluation.  Starting
-from XSB Version 2.0, XSB includes another tabling engine, CHAT, which
-was designed and developed by Kostis Sagonas and Bart Demoen.  CHAT
-supports heap garbage collection (both based on a mark\&slide and on a
-mark\&copy algorithm) which was developed and implemented by Bart
-Demoen and Kostis Sagonas.  Memory expansion code for WAM stacks was
-written by Ernie Johnson and Bart Demoen, while memory management code
-for CHAT areas was written by Bart Demoen and Kostis Sagonas.  Rui
-Marques improved the trailing of the SLG-WAM and rewrote much of the
-engine to make it compliant with 64-bit architectures.  Assert and
-retract code was based on code written by Jiyang Xu and significantly
-revised by David S. Warren and Rui Marques.  Trie assert and retract
-code was written by Prasad Rao.  The current version of {\tt
-findall/3} was re-written from scratch by Bart Demoen.
+the initial tabling engine and builtins.  Prasad Rao reimplemented the
+engine's tabling subsystem to use tries for variant-based table access
+while Kostis Sagonas implemented most of tabled negation.  Juliana
+Freire revised the table scheduling mechanism starting from
+Version~1.5.0 to create a more efficient engine, and implemented the
+engine for local evaluation.
+
+Starting from XSB Version~2.0, XSB includes another tabling engine,
+CHAT, which was designed and developed by Kostis Sagonas and Bart
+Demoen.  CHAT supports heap garbage collection (both based on a
+mark\&slide and on a mark\&copy algorithm) which was developed and
+implemented by Bart Demoen and Kostis Sagonas.
+
+Memory expansion code for WAM stacks was written by Ernie Johnson and
+Bart Demoen, while memory management code for CHAT areas was written
+by Bart Demoen and Kostis Sagonas.  Rui Marques improved the trailing
+of the SLG-WAM and rewrote much of the engine to make it compliant
+with 64-bit architectures.  Assert and retract code was based on code
+written by Jiyang Xu and significantly revised by David S. Warren and
+Rui Marques.  Trie assert and retract code was written by Prasad Rao.
+The current version of {\tt findall/3} was re-written from scratch by
+Bart Demoen.  In Version~2.3, the tabling subsystem and its interface
+to the engine have been extended for the support of subsumption-based
+tabling.  This extension was developed and implemented by
+Ernie~Johnson.
 
 In the XSB complier, Kostis Sagonas was responsible for HiLog
 compilation and associated builtins.  Steve Dawson implemented

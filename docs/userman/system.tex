@@ -66,7 +66,7 @@ the XSB emulator, which is written in C.
 The directories {\tt syslib}, {\tt cmplib} and {\tt lib} contain source
 and object code for the basic Prolog libraries, the compiler, and the
 extended Prolog libraries, respectively.  All the source programs
-are written in \ourprolog, and all object (byte code) files contain SLG-WAM
+are written in XSB, and all object (byte code) files contain SLG-WAM
 instructions that can be executed by the emulator.  These byte-coded 
 instructions are machine-independent, so usually no installation 
 procedure is needed for the byte code files.
@@ -80,10 +80,10 @@ scripts.  The directory {\tt etc} contains miscellaneous files used by XSB.
 
 The directory {\tt docs} contains this manual in \LaTeX, dvi and Postscipt
 format, and the directory {\tt examples} contains sample programs to 
-demonstrate various features of \ourprolog.
+demonstrate various features of XSB\@.
 
 
-\section{The Module system of \ourprolog} \label{Modules}
+\section{The Module System of XSB} \label{Modules}
 %========================================================
 XSB has been designed as a module-oriented Prolog system.  Modules
 provide a small step towards {\em logic programming ``in the large''}
@@ -92,7 +92,7 @@ components which can be developed, compiled and tested separately.
 Also module systems enforce the {\em principle of information hiding}
 and can provide a basis for {\em data abstraction}.
 
-The module system of \ourprolog, unlike the module systems of most
+The module system of XSB, unlike the module systems of most
 other Prolog systems is {\em atom-based}.  Briefly, the main
 difference between atom-based module systems and predicate-based ones
 is that in an atom-based module system {\em any symbol in a module can
@@ -144,7 +144,7 @@ where $sym_i$ has the form $functor/arity$.
 
 If the user does not want to use modules, he can simply
 bypass the module system by not supplying any export declarations.
-Such exportless files (non-modules) will be loaded into the module 
+Such export-less files (non-modules) will be loaded into the module 
 {\tt usermod}, which is the working module of the XSB interpreter.
 
 Currently the module name is stored in its byte code file, which means
@@ -222,9 +222,9 @@ immediately obvious:
 \section{The Dynamic Loader and its Search Path} \label{LibPath}
 \index{load search path}
 %===============================================================
-The dynamic (or automatic) loader comprises one of \ourprolog's 
+The dynamic (or automatic) loader comprises one of XSB's 
 differences from other Prolog systems.
-In \ourprolog, the loading of user modules Prolog libraries (including
+In XSB, the loading of user modules Prolog libraries (including
 the XSB compiler itself) is delayed until predicates in them
 are actually needed, saving program space for large Prolog
 applications.  The delay in the loading is done automatically, unlike
@@ -268,7 +268,7 @@ The {\verb|.xsb/xsbrc.P|} file, which is automatically consulted by the
 \end{verbatim}
 After loading the module of the above example, the current working
 directory is searched first (as opposed to the default action of
-searching it last).  Also, \ourprolog's system library directories
+searching it last).  Also, XSB's system library directories
 ({\tt lib, syslib}, and {\tt cmplib}), will now be searched {\em
 after} searching the user's, {\tt my\_friend}'s and the {\tt
 "/usr/lib/sbprolog/"} directory.
@@ -291,14 +291,13 @@ after} searching the user's, {\tt my\_friend}'s and the {\tt
 Note that the file {\verb|.xsb/xsbrc.P|} is not limited to setting the
 library search path.  In fact, arbitrary Prolog code can go there.
 
-We emphasize that in the presense of a {\verb|.xsb/xsbrc.P|} file
-{\em it is the user's responsibility to avoid module name clashes 
-with modules in \ourprolog's system library directories}.
-Such name clashes can cause the system to behave strangely since these
-modules will probably have different semantics from that expected
-by the XSB system code.  The list of module names in
-\ourprolog's system library directories can be found in
-appendix~\ref{module_names}.
+We emphasize that in the presence of a {\verb|.xsb/xsbrc.P|} file {\em
+it is the user's responsibility to avoid module name clashes with
+modules in XSB's system library directories}.  Such name clashes can
+cause the system to behave strangely since these modules will probably
+have different semantics from that expected by the XSB system code.
+The list of module names in XSB's system library directories
+can be found in appendix~\ref{module_names}.
 
 Apart from the user libraries, XSB now has a simple packaging system.
 A {\em package\/} is an application consisting of one or more files that
@@ -406,7 +405,7 @@ where it can find the definition of the predicate when (and if) the
 predicate is called.
 
 
-\section{Command Line Arguments} \label{emulator_options}
+\section{Command Line Arguments} \label{sec:EmuOptions}
 %========================================================
 \index{emulator!command line options}
 \index{options!command line arguments}
@@ -417,58 +416,59 @@ predicate is called.
 There are several command line options for the emulator. The general 
 synopsis is:
 \begin{verbatim}
-      	xsb [flags] [-l] [-i]
-	xsb [flags] -n
-	xsb [flags] module
-	xsb [flags] -B boot_module [-D cmd_loop_driver] [-t] [-e goal]
-	xsb [flags] -B module_to_disassemble -d
-	xsb -[h | v]
-	xsb --help | --version | --nobanner | --quietload | --noprompt
+xsb [flags] [-l] [-i]
+xsb [flags] -n
+xsb [flags] module
+xsb [flags] -B boot_module [-D cmd_loop_driver] [-t] [-e goal]
+xsb [flags] -B module_to_disassemble -d
+xsb -[h | v]
+xsb --help | --version | --nobanner | --quietload | --noprompt
 
-	memory management flags:
-	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -g gc_type
-	miscellaneous flags:
-	    -s | -T
+memory management flags:
+    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -g gc_type
+miscellaneous flags:
+    -s | -S | -T
 
-	module:
-	    Module to execute after XSB starts up.
-	    Module should have no suffixes, no directory part, and
-	    the file module.O must be on the library search path.
-      	boot_module:
-	    This is a developer's option.
-	    The -B flags tells XSB which bootstraping module to use instead
-	    of the standard loader. The loader must be specified using its
-	    full pathname, and boot_module.O must exist.
-    	module_to_disassemble:
-	    This is a developer's option.
-	    The -d flag tells XSB to act as a disassembler.
-	    The -B flag specifies the module to disassemble.
-	cmd_loop_driver:
-	    The top-level command loop driver to be used instead of the
-	    standard one. Usually needed when XSB is run as a server.
+module:
+    Module to execute after XSB starts up.
+    Module should have no suffixes, no directory part, and
+    the file module.O must be on the library search path.
+boot_module:
+    This is a developer's option.
+    The -B flags tells XSB which bootstrapping module to use instead
+    of the standard loader.  The loader must be specified using its
+    full pathname, and boot_module.O must exist.
+module_to_disassemble:
+    This is a developer's option.
+    The -d flag tells XSB to act as a disassembler.
+    The -B flag specifies the module to disassemble.
+cmd_loop_driver:
+    The top-level command loop driver to be used instead of the
+    standard one.  Usually needed when XSB is run as a server.
 
-      	    -i : bring up the XSB interpreter
-       -e goal : evaluate goal when XSB starts up
-      	    -l : the interpreter prints unbound variables using letters
-      	    -n : used when calling XSB from C
-	    -B : specify the boot module to use in lieu of the standard loader
-	    -D : Sets top-level command loop driver to replace the default.
-      	    -t : trace execution at the SLG-WAM instruction level
-		 (for this to work, build XSB with the --debug option)
-	    -d : disassemble the loader and exit
-      	  -c N : allocate N KB for the trail/choice-point stack
-      	  -m N : allocate N KB for the local/global stack
-      	  -o N : allocate N KB for the SLG completion stackof
-      	  -u N : allocate N KB for the SLG unification (table copy) stack
-      	    -r : turn off automatic stack expansion
-    -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
-      	    -s : maintains more detailed statistical information
-      	    -T : print a trace of each called predicate
- -v, --version : print the version and configuration information about XSB.
-    -h, --help : print this help message
-    --nobanner : don't show the XSB banner on startup
-   --quietload : don't show the `module loaded' messages
-    --noprompt : don't show prompt (for non-interactive use)
+           -i : bring up the XSB interpreter
+      -e goal : evaluate goal when XSB starts up
+           -l : the interpreter prints unbound variables using letters
+           -n : used when calling XSB from C
+           -B : specify the boot module to use in lieu of the standard loader
+           -D : Sets top-level command loop driver to replace the default
+           -t : trace execution at the SLG-WAM instruction level
+                  (for this to work, build XSB with the --debug option)
+           -d : disassemble the loader and exit
+         -c N : allocate N KB for the trail/choice-point stack
+         -m N : allocate N KB for the local/global stack
+         -o N : allocate N KB for the SLG completion stack
+         -u N : allocate N KB for the SLG unification stack
+           -r : turn off automatic stack expansion
+   -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
+           -s : maintain detailed statistical information
+           -S : set default tabling method to subsumption-based
+           -T : print a trace of each called predicate
+-v, --version : print the version and configuration information about XSB
+   -h, --help : print this help message
+   --nobanner : don't show the XSB banner on startup
+  --quietload : don't show the `module loaded' messages
+   --noprompt : don't show prompt (for non-interactive use)
 
 \end{verbatim}
 The order in which these options appear makes no difference.
@@ -505,7 +505,7 @@ The order in which these options appear makes no difference.
     the chapter {\it Calling XSB from C} in Volume 2  for details.
 \item[{\tt -d}] Produces a disassembled dump of {\tt byte\_code\_file} to 
     {\tt stdout} and exits.
-\item[{\tt -c} {\em size}] Allocates {\em initial  size\/} Kbytes of space
+\item[{\tt -c} {\em size}] Allocates {\em initial  size\/} KB of space
     to the trail/choice-point stack area.  The trail stack grows
     upward from the bottom of the region, and the choice point stack
     grows downward from the top of the region.  Because this region is
@@ -516,7 +516,7 @@ The order in which these options appear makes no difference.
     upward from the bottom of the region, and the local stack grows 
     downward from the top of the region.  Default: 768 Kbytes.
 \item[{\tt -o} {\em size}] Allocates {\em size\/} Kbytes of space
-    to thecompletion stack area.  Because this region is expanded
+    to the completion stack area.  Because this region is expanded
     automatically from Version 1.6.0 onward, this option should rarely
     need to be used. Default initial size 64 Kbytes.
 \item[{\tt -u} {\em size}] Allocates {\em size} Kbytes of space
@@ -536,9 +536,16 @@ The order in which these options appear makes no difference.
 \item[{\tt -s}] Maintains information on the size of program stacks 
     for the predicate {\tt statistics/0}.  This option may be expected
     to slow execution by around 10\%.  Default: off.
+\item[{\tt -S}] Indicates that tabled predicates are to be evaluated
+    using subsumption-based tabling as a default for tabled predicates
+    whose tabling method is not specified by using {\tt
+    use\_variant\_tabling/1} or {\tt use\_subsumptive\_tabling/1} (see
+    Section \ref{sec:TablePred:Decl&Mod}).  If this option is not
+    specified, variant-based tabling will be used as the default tabling
+    method by XSB\@.
 \item[{\tt -T}] Generates a trace at entry to each called predicate
     (both system and user-defined).  This option is available mainly
-    for people who want to modify and/or extend \ourprolog, and it is
+    for people who want to modify and/or extend XSB, and it is
     {\em not\/} the normal way to trace XSB programs.  For the
     latter, the builtin predicates {\tt trace/0} or {\tt debug/0}
     should be used (see Chapter~\ref{debugging}).
@@ -549,16 +556,16 @@ The order in which these options appear makes no difference.
     option is for internal debugging and is not fully supported.
     It is also not available when the system is being used at the non-debug
     mode (see Section~\ref{debugging}).
-\item[{\tt -e goal}] Pass {\tt goal}  to XSB at starup. This goal is evaluated
+\item[{\tt -e goal}] Pass {\tt goal}  to XSB at startup. This goal is evaluated
     right before the first prompt is issued. For instance, 
     \verb'xsb -e "write('Hello!'), nl."'
     will print a heart-warming message when XSB starts up.
-  \item[{\tt --nobanner}] Start XSb without showing the startup banner.
+  \item[{\tt --nobanner}] Start XSB without showing the startup banner.
     Useful in batch scripts and for interprocess communication (when XSB is
     launched as a subprocess).
   \item[{\tt --quietload}] Do not tell when a new module gets loaded. Again, is
     useful in non-interactive activities and for interprocess communication.
-  \item[{\tt --noprompt}] Do not show te XSB prompt. This is useful only in batch
+  \item[{\tt --noprompt}] Do not show the XSB prompt. This is useful only in batch
     mode and in interprocess communication when you do not want the prompt
     to clutter the picture.
 \end{description}
@@ -574,11 +581,11 @@ default configuration of XSB might be run by invoking XSB with the command.
 \index{memory management}
 \index{garbage collection}
 %===================================================
-All execution stacks are automatically expenaded in \version{}
-including the local stack/heap region, the trail/choice point region
+All execution stacks are automatically expanded in \version{}
+including the local stack/heap region, the trail/choice point region,
 and the completion stack region.  Each of these regions begin with an
 initial value set by the user (or the default stated in
-Section~\ref{emulator_options}), and double their size until it is not
+Section~\ref{sec:EmuOptions}), and double their size until it is not
 possible to do so with available system memory.  At that point XSB
 tries to find the maximal amount of space that will still fit in
 system memory.  Garbage collection is automatically performed for
@@ -597,7 +604,7 @@ improves memory management for retracted dynamic code.
 tables is dynamically allocated as needed and reclaimed through use of
 the predicate {\tt abolish\_all\_tables/0}
 %, {\tt, abolish\_table\_pred/1} and {\tt abolish\_table\_call/1}.  
-(see Section~\ref{tabling_predicates}).
+(see Section~\ref{sec:TablingPredicates}).
 
 
 \section{Compiling and Consulting} \label{Consulting}
@@ -674,7 +681,7 @@ is larger than the default compile size, the file will be loaded using
 {\tt load\_dyn/1}, and otherwise it will be compiled ({\tt
 load\_dyn/1} can also be called separately, see the section {\it
 Asserting Dynamic Code} for details.
-While {\tt load\_dyn} gives reasonibly good execution times,
+While {\tt load\_dyn} gives reasonably good execution times,
 compilation can always be done by using {\tt compile/[1,2]}
 explicitly.  Currently (\version), a foreign language module is
 compiled when at least one of files {\tt *.c} or {\tt *.H} has been
@@ -750,7 +757,7 @@ The second form allows the user to supply a proper list of file names as
 the parameter for {\tt compile/[1,2]}.  In this case the compiler will
 compile all the files in {\tt FileList} with the compiler
 options specified in {\tt OptionList} (but see
-Section~\ref{compiler_options} below for the precise details.)
+Section~\ref{sec:CompilerOptions} below for the precise details.)
 
 \demo{$|$ ?- compile(Files).} 
 
@@ -770,7 +777,7 @@ should be a proper Prolog list, i.e.\ a term of the form:
 	{\tt [ $option_1$, $option_2$, $\ldots$, $option_n$ ].}
 \end{center}
 where $option_i$ is one of the options described in
-Section~\ref{compiler_options}.
+Section~\ref{sec:CompilerOptions}.
 
 The source file name corresponding to a given module is obtained by 
 concatenating a directory prefix and the extension {\tt .P} (or {\tt .c}) 
@@ -821,7 +828,7 @@ for a foreign language module (see the chapter {\it Foreign Language
 Interface} in Volume 2.
 
 
-\subsection{Compiler Options}\label{compiler_options}
+\subsection{Compiler Options}\label{sec:CompilerOptions}
 \index{Compiler!options}\index{options!Compiler}
 %=================================================
 
@@ -1001,10 +1008,10 @@ The following options are currently recognized by the compiler:
   {\tt suppl\_table} occurs after {\tt auto\_table}, and uses table
   declarations generated by it, if any.
 %--------------------------------------
-\index{specialisation!compiler options}
+\index{specialization!compiler options}
 %--------------------------------------
 \item[{\tt spec\_repr}]\index{{\tt spec\_repr}}
-	When specified, the compiler performs specialisation of partially
+	When specified, the compiler performs specialization of partially
 	instantiated calls by replacing their selected clauses with the
 	representative of these clauses, i.e. it performs {\em folding\/}
 	whenever possible.  We note in general, the code replacement
@@ -1012,20 +1019,20 @@ The following options are currently recognized by the compiler:
 	are cases when the original and the residual program are not
 	computationally equivalent.  The compiler checks for sufficient (but
 	not necessary) conditions that guarantee computational equivalence.
-	If these conditions are not met, specialisation is not performed
+	If these conditions are not met, specialization is not performed
 	for the violating calls.
 \item[{\tt spec\_off}]\index{{\tt spec\_off}}
-	When specified, the compiler does not perform specialisation of
+	When specified, the compiler does not perform specialization of
 	partially instantiated calls.
 \item[{\tt unfold\_off}]\index{{\tt unfold\_off}}
-	When specified, singleton sets optimisations are not performed
-	during specialisation.  This option is necessary in \version\
-	for the specialisation of {\tt table} declarations that select
+	When specified, singleton sets optimizations are not performed
+	during specialization.  This option is necessary in \version\
+	for the specialization of {\tt table} declarations that select
 	only a single chain rule of the predicate.
 %qtls ??
 \item[{\tt spec\_dump}]\index{{\tt spec\_dump}}
 	Generates a {\tt module.spec} file, containing the result of
-	specialising partially instantiated calls to predicates defined
+	specializing partially instantiated calls to predicates defined
 	in the {\tt module} under compilation.  The result is in Prolog
 	source code form.
 
@@ -1120,28 +1127,28 @@ The following options are currently recognized by the compiler:
 		the user can see the SLG-WAM instructions that are
 		generated for a module by compiling the module as usual and
 		then using the {\tt -d module.O} command-line option of the
-		XSB emulator (see Section~\ref{emulator_options}).
+		XSB emulator (see Section~\ref{sec:EmuOptions}).
 \item[{\tt index\_off}] When specified, the compiler does not generate indices
 	for the predicates compiled.  
 \end{description}
 
 
-\subsection{Specialisation}\label{specialisation}
-\index{Compiler!specialisation}\index{specialisation!Compiler}
+\subsection{Specialization}\label{specialization}
+\index{Compiler!specialization}\index{specialization!Compiler}
 %=============================================================
 
 From Version 1.4.0 on, the XSB compiler automatically performs
-specialisation of partially instantiated calls.  Specialisation can be
+specialization of partially instantiated calls.  Specialization can be
 thought as a source-level program transformation of a program to a
 residual program in which partially instantiated calls to predicates
-in the original program are replaced with calls to specialised versions
+in the original program are replaced with calls to specialized versions
 of these predicates.  The expectation from this process is that the
 calls in the residual program can be executed more efficiently that
-their non-specialised counterparts.  This expectation is justified
+their non-specialized counterparts.  This expectation is justified
 mainly because of the following two basic properties of the
-specialisation algorithm:
+specialization algorithm:
 \begin{description}
-\item[Compile-time Clause Selection] The specialised calls of the
+\item[Compile-time Clause Selection] The specialized calls of the
 	residual program  directly select (at compile time) a subset
 	containing only the clauses that the corresponding calls of the
 	original program would otherwise have to examine during their
@@ -1151,17 +1158,17 @@ specialisation algorithm:
 \item[Factoring of Common Subterms] Non-variable subterms of partially
 	instantiated calls that are common with subterms in the heads
 	of the selected clauses are factored out from these terms
-	during the specialisation process.  As a result, some head
+	during the specialization process.  As a result, some head
 	unification ({\tt get\_*} or {\tt unify\_*}) and some argument
 	register ({\tt put\_*}) WAM instructions of the original
 	program become unnecessary.  These instructions are eliminated
-	from both the specialised calls as well as from the specialised
+	from both the specialized calls as well as from the specialized
 	versions of the predicates.
 \end{description}
 Though these properties are sufficient to get the idea behind
-specialisation, the actual specialisation performed by the XSB
+specialization, the actual specialization performed by the XSB
 compiler can be better understood by the following example.  The
-example shows the specialisation of a predicate that checks if a list
+example shows the specialization of a predicate that checks if a list
 of HiLog terms is ordered:
 \begin{center}
 \tt
@@ -1191,15 +1198,15 @@ The transformation (driven by the partially instantiated call
 to be completely deterministic (when used with a proper list as its
 argument), and to not use any unnecessary heap-space for its
 execution.  We note that appropriate {\tt :- index} directives are
-automatically generated by the XSB compiler for all specialised
+automatically generated by the XSB compiler for all specialized
 versions of predicates.
 
-The default specialisation of partially instantiated calls is without
+The default specialization of partially instantiated calls is without
 any folding of the clauses that the calls select.  Using the {\tt
-spec\_repr} compiler option (see Section~\ref{compiler_options})
-specialisation with replacement of the selected clauses with the
+spec\_repr} compiler option (see Section~\ref{sec:CompilerOptions})
+specialization with replacement of the selected clauses with the
 representative of these clauses is performed.  Using this compiler
-option, predicate {\tt ordered/2} above would be specialised as follows:
+option, predicate {\tt ordered/2} above would be specialized as follows:
 %%
 \begin{center}
 \begin{minipage}{4.1in}
@@ -1221,7 +1228,7 @@ the original and the residual program are not computationally equivalent
 (with respect to the answer substitution semantics).  The compiler
 checks for sufficient (but not necessary) conditions that guarantee
 computational equivalence, and if these conditions are not met,
-specialisation is not performed for the violating calls.
+specialization is not performed for the violating calls.
 
 The XSB compiler prints out messages whenever it specialises
 calls to some predicate.  For example, while compiling a file
@@ -1230,12 +1237,12 @@ out the following message:
 \begin{center}
 {\tt	\% Specialising partially instantiated calls to ordered/1}
 \end{center}
-The user may examine the result of the specialisation transformation
+The user may examine the result of the specialization transformation
 by using the {\tt spec\_dump} compiler option
-(see Section~\ref{compiler_options}).
+(see Section~\ref{sec:CompilerOptions}).
 
 Finally, we have to mention that for technical reasons beyond the scope of
-this document, specialisation cannot be transparent to the user; predicates
+this document, specialization cannot be transparent to the user; predicates
 created by the transformation do appear during tracing.
 
 
@@ -1271,7 +1278,7 @@ Mode annotations have the following meaning:
 \item[{\tt +}]
 	This argument is an input to the predicate.  In every invocation
 	of the predicate, the argument position must contain a non-variable
-	term.  This term may not necessisarily be ground, but the 
+	term.  This term may not necessarily be ground, but the 
 	predicate is guaranteed not to alter this argument).
 
 	\demo{:- mode see(+), assert(+).}
@@ -1324,9 +1331,9 @@ We try to follow these mode annotation conventions throughout this manual.
 
 Finally, we warn the user that {\tt mode} declarations can be error-prone,
 and since errors in mode declarations do not show up while running the
-predicates interactively, unexpected behaviour may be witnessed in compiled
-code, optimised to take modes into account (currently not performed by
-\ourprolog).  However, despite this danger, {\tt mode} annotations can be
+predicates interactively, unexpected behavior may be witnessed in compiled
+code, optimized to take modes into account (currently not performed by
+XSB)\@.  However, despite this danger, {\tt mode} annotations can be
 a good source of documentation, since they express the programmer's
 intention of data flow in the program.
 
@@ -1407,7 +1414,7 @@ not for any of the other predicates.
 {\tt auto\_table} gives an approximation of tabled programs which we
 hope will be useful for most programs.  The minimal set of tabled
 predicates needed to insure termination for a given program is
-undecidible.  
+undecidable.  
 \comment{
 Practically, refining the set of tabled predicates
 deduced by {\tt auto\_table} is still an open research problem.
@@ -1560,7 +1567,7 @@ p(b,c,X) :- r(X).
 \end{center}
 even though the two clauses have $c/0$ in common.  The user may
 examine the results of the transformation by using the {\tt ti\_dump}
-compiler option (see Section~\ref{compiler_options}).
+compiler option (see Section~\ref{sec:CompilerOptions}).
 
 \subsubsection{Other Directives} \label{other-directives}
 %==============================================
@@ -1580,7 +1587,7 @@ Interface} in Volume 2 for its explanation.
 \desc{:- compiler\_options($OptionsList$).}
 	Indicates that the compiler options in the list $OptionsList$
 	should be used to compile this file.  This must appear at the
-	beginning of the file.  Thes options will override any others,
+	beginning of the file.  These options will override any others,
 	including those given in the compilation command.  The options
 	may be optionally prefixed with \verb|+| or \verb|-| to
 	indicate that they should be set on or off.  (No prefix
@@ -1616,12 +1623,12 @@ compilation.
 true/0		&var/1		&nonvar/1	&halt/0	       &'!'/0   \\
 '\_\$cutto'/1	&'\_\$savecp'/1	&'\_\$builtin'/1
 \end{tabular}}
-\caption{The Inline Predicates of \ourprolog}\label{inlinepredicatetable}
+\caption{The Inline Predicates of XSB}\label{inlinepredicatetable}
 \end{table}
 
 We warn the user to be very cautious when defining predicates whose functor
 starts with {\tt \_\$}  since the names of these predicates may interfere with
-some of \ourprolog's internal predicates.  The situation may be particularly
+some of XSB's internal predicates.  The situation may be particularly
 severe for predicates like {\tt '\_\$builtin'/1} that are treated specially
 by the XSB compiler.
 

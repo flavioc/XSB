@@ -7,7 +7,7 @@ If at some point in your interaction with the system you suspect that
 you have run across a bug not mentioned below, please report it to
 {\tt (xsb-contact@cs.sunysb.edu)}.  Please try to find the {\em
 smallest} program that illustrates the bug and mail it to this address
-together with a script that shows the problem. We will do our best to
+together with a script that shows the problem.  We will do our best to
 fix it or to assist you to bypass it.
 
 \section{Current Restrictions}
@@ -55,6 +55,10 @@ implemented in XSB, the semantics
       use of mutually exclusive names for modules and 0-ary predicates,
       though we will try to amend this restriction in future versions of
       XSB.
+%
+\item Subsumption-based tabled predicates may not take part in
+      negative computations.  This restriction will be lifted in a
+      future release.
 \end{itemize}
 
 \section{Known Bugs}

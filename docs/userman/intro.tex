@@ -16,9 +16,9 @@ found in Logic Programming systems, including
   Perl and Oracle.
 \item Extensive pattern matching libraries, which are especially useful for
   Web applications.
-\item Preprosessors and Interpreters so that XSB can be used to evaluate
+\item Preprocessors and Interpreters so that XSB can be used to evaluate
   programs that are based on advanced formalisms, such as extended logic
-  progams (according to the Well-Founded Semantics \cite{ADP94});
+  programs (according to the Well-Founded Semantics \cite{ADP94});
 Generalized Annotated Programs \cite{KiSu92}; and F-Logic \cite{KLW95}.
 \item Source code availability for portability and extensibility.
 \end{itemize}
@@ -60,13 +60,13 @@ invoke a simple static analysis to decide what predicates to table
 queries has proven very useful in a number of areas, including
 deductive databases, language processing \cite{syntactica, semantica},
 program analysis \cite{DRW96, CoDS96, Boul97}, model checking
-\cite{RRRSSW97} and diagnosis \cite{diagnostica}.  For efficiency, we
+\cite{RRRSSW97} and diagnosis \cite{GSTPD00}.  For efficiency, we
 have implemented SLG at the abstract machine level so that tabled
 predicates will be executed with the speed of compiled Prolog.  We
 finally note that for definite programs SLG resolution is similar to
 other tabling methods such as OLDT resolution~\cite{TaSa86} (see
 Chapter
-\ref{tabling_overview} for details).
+\ref{chap:TablingOverview} for details).
 
 \begin{example} \label{ex:Russell}
 The use of tabling also makes possible the evaluation of programs with
@@ -85,17 +85,17 @@ person(barber).
 person(mayor).
 \end{verbatim} 
 \end{center}
-Logically speaking, the meaning of this progam should be that the
+Logically speaking, the meaning of this program should be that the
 barber shaves 
 the mayor, but the case of the barber is trickier.  If we conclude
 that the barber does not have himself our meaning does not reflect the 
 first rule in the program.  If we conclude that the barber does shave
 himself, we have reached that conclusion using information beyond what 
-is provided in the progra.  The well-founded semantics, does not
+is provided in the program.  The well-founded semantics, does not
 treat{\tt shaves(barber,barber)} as either true or false, but as {\em
 undefined}. 
 Prolog, of course, would enter an infinite loop.  XSB's treatment of
-negation is discussed further in Chapter \ref{tabling_overview}.
+negation is discussed further in Chapter \ref{chap:TablingOverview}.
 \end{example}
 
 The second important extension in XSB is support of HiLog
@@ -252,7 +252,7 @@ file), {\em atom based} (where all non-predicate symbols are normally
 assumed to be global to all modules), and {\em flat} (modules cannot
 be nested).  Though the user is not obliged to use the module system,
 the dynamic loader and the foreign language interface are both based
-upon it.  Additionally, the module system premits operation of a use
+upon it.  Additionally, the module system permits operation of a use
 inferencer which indicates at compile-time whether symbols in a module
 are unused (not called by an exported predicate) or undefined.
 
@@ -262,7 +262,7 @@ start-up time.  (Files can also be loaded explicitly by the use of
 standard predicates {\tt consult/[1,2]}).  
 
 While these features are explained in detail below, this document does
-not intend to be a tutorial for using the Prolog langage;
+not intend to be a tutorial for using the Prolog language;
 rather it focuses on the extensions of XSB to Prolog
 systems.  For users new to Prolog, a textbook such as
 \cite{Brat86,ClMe84,MaWa88,StSh86} should be used along with this manual.
@@ -294,7 +294,7 @@ obtained.
 While some of \version\ is subject to change in future releases, we
 will try to be as upward-compatible as possible. We would also like to
 hear from experienced users of our system about features they would
-like us to include.  We do try to accomodate serious users of XSB
+like us to include.  We do try to accommodate serious users of XSB
 whenever we can.  Finally, we must mention that the use of
 undocumented features is not supported, and at the user's own risk.
 

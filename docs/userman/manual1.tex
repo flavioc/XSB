@@ -6,18 +6,9 @@
 
 \pagestyle{headings}
 
-% LaTeX Size Stuff
-%-----------------
-\newcommand{\newsched}{Batched Scheduling}
-\newcommand{\Newsched}{Batched Scheduling}
-\newcommand{\NewSched}{Batched Scheduling}
-\newcommand{\Oldsched}{Single Stack Scheduling}
-\newcommand{\OldSched}{Single Stack Scheduling}
-\newcommand{\oldsched}{Single Stack Scheduling}
-\newcommand{\localsched}{Local Scheduling}
-\newcommand{\Localsched}{Local Scheduling}
-\newcommand{\LocalSched}{Local Scheduling}
 
+% LaTeX Size Stuff
+% ----------------
 \setlength{\topmargin}{-0.25in}
 \setlength{\headheight}{10pt}
 \setlength{\headsep}{30pt}
@@ -28,18 +19,14 @@
 \setlength{\footskip}{50pt}
 \setlength{\parskip}{2mm}               % space between paragraphs
 
-\def\cut{\mbox{\tt '!'/0}}
-\def\not{\mbox{${\tt '\backslash+'/1}$}}
 
+% New Environments
+% ----------------
 \newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\newcommand{\fillBox}{\hfill$\Box$}
 
 \newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
-
-\newcommand{\comment}[1]{}
-\newcommand{\ourprolog}{XSB}
-\newcommand{\smallourprolog}{xsb}
-\newcommand{\version}{Version 2.2}
-\newcommand{\LRD}{LRD-stratified}
 
 \newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
 \newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
@@ -59,9 +46,44 @@
         \end{minipage}
 }
 
+
+% Macro Abbrev
+% ------------
+\def\cut{\mbox{\tt '!'/0}}
+\def\not{\mbox{${\tt '\backslash+'\!/1}$}}
+
+\newcommand{\comment}[1]{}
+\newcommand{\ourprolog}{XSB}
+\newcommand{\smallourprolog}{xsb}
+\newcommand{\version}{Version 2.2}
+\newcommand{\LRD}{LRD-stratified}
+
 \newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
 
+\newcommand{\newsched}{Batched Scheduling}
+\newcommand{\Newsched}{Batched Scheduling}
+\newcommand{\NewSched}{Batched Scheduling}
+\newcommand{\Oldsched}{Single Stack Scheduling}
+\newcommand{\OldSched}{Single Stack Scheduling}
+\newcommand{\oldsched}{Single Stack Scheduling}
+\newcommand{\localsched}{Local Scheduling}
+\newcommand{\Localsched}{Local Scheduling}
+\newcommand{\LocalSched}{Local Scheduling}
+
+\newcommand{\refchap}[1]{Chapter~\ref{#1}}
+\newcommand{\refsec}[1]{Section~\ref{#1}}
+\newcommand{\refexam}[1]{Example~\ref{#1}}
+\newcommand{\refexer}[1]{Exercise~\ref{#1}}
+
+
+% Special Type Faces
+% ------------------
+\newcommand{\code}[1]{\textup{\texttt{#1}}}	% program code fragment
+\newcommand{\cA}{{\cal A}}
+
+
 % conditional pdf output stuff
+% ----------------------------
 \newif\ifpdf
 \ifx\pdfoutput\undefined
    \pdffalse
@@ -94,6 +116,8 @@
         {\em David S. Warren} \\ 
         {\em Juliana Freire} \\
         {\em Prasad Rao} \\
+        {\em Baoqiu Cui} \\
+        {\em Ernie Johnson} \\
         \ \\ \\ \\
         {\normalsize with contributions from} \\
         {\em Steve Dawson} \\
@@ -107,11 +131,9 @@
 
 \thispagestyle{empty}
 \input{credits1}
+
 \newpage
 \thispagestyle{empty}
-%\input{Acknowl}
-%\newpage
-
 \pagenumbering{roman}
 \tableofcontents
 \newpage        % Just to avoid a silly LaTeX bug with \pagenumbering
@@ -126,28 +148,20 @@
 \input{builtin}
 \input{state}
 \input{rbltin}
+\input{table_builtins}
 \input{debugging}
 \input{dcg}
-%\input{library}
-%\input{perlmatch}
-%\input{foreign}
-%\input{ccallingxsb}
-%\input{oracle_inter}
 \input{restrict}
-%\input{contact}
 
 \appendix
 
 \input{gpp}
 \input{standard_pred}
-%\input{primitive_pred}
 \input{module_list}
-%\input{non_supported}
 
 \bibliographystyle{abbrv}
 \bibliography{manual}
 
-%%\input{manual1.ind}
 \printindex
 
 \end{document}

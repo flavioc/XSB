@@ -9,8 +9,8 @@
  \> {\tt abolish(Name/Arity)}	\>					\\
  \> {\tt abolish(Name, Arity)}	\>					\\
  \> {\tt abolish\_all\_tables}	\>					\\
- \> {\tt abolish\_table\_call(Term)} \>					\\
- \> {\tt abolish\_table\_pred(Pred)} \>					\\
+% \> {\tt abolish\_table\_call(Term)} \> This predicate is not yet implemented.\\
+ \> {\tt abolish\_table\_pred(PredSpec)} \>				\\
  \> {\tt abort}			\>					\\
  \> {\tt abort(Message)}	\>					\\
  \> {\tt analyze\_table(Pred)}	\>					\\
@@ -51,6 +51,7 @@
  \> {\tt current\_predicate(Predicate, Term)} \>			\\
  \> {\tt debug}			\>					\\
  \> {\tt debugging}		\>					\\
+ \> {\tt delete\_return(TableEntryHandle, ReturnHandle)}	\>	\\
 %\> {\tt display(Term)}		\> This predicate is not yet implemented.\\
  \> {\tt edit(File)}		\>					\\
  \> {\tt erase(Reference)}	\>					\\
@@ -64,12 +65,13 @@
  \> {\tt garbage\_collection(Option)}	\>				\\
  \> {\tt get(Char)}		\>					\\
  \> {\tt get0(Char)}		\>					\\
- \> {\tt get\_call(Skeleton,Subgoal\_Structure\_Pointer,Return\_Skeleton)} \> \\
- \> {\tt get\_calls(Skeleton,Subgoal\_Structure\_Pointer,Return\_Skeleton)} \> \\
- \> {\tt get\_calls\_for\_table(Skeleton,Call,Empty)} \>		\\
- \> {\tt get\_resudual(Call, Return)} 		\>			\\
- \> {\tt get\_returns(Skeleton,Delay\_list)} 	\>			\\
- \> {\tt get\_returns\_for\_call(Call, Return)} \>			\\
+ \> {\tt get\_call(CallTerm, TableEntryHandle, ReturnTemplate)}	\>	\\
+ \> {\tt get\_calls(CallTerm, TableEntryHandle, ReturnSkeleton)} \>	\\
+ \> {\tt get\_calls\_for\_table(PredSpec, Call)} \>			\\
+ \> {\tt get\_resudual(CallTerm, DelayList)}	 \>			\\
+ \> {\tt get\_returns(TableEntryHandle, ReturnSkeleton)} \>		\\
+ \> {\tt get\_returns(TableEntryHandle, ReturnSkeleton, ReturnHandle)} \> \\
+ \> {\tt get\_returns\_for\_call(CallTerm, AnswerTerm)} \>		\\
  \> {\tt halt}			\>					\\
  \> {\tt hilog(Symbol)}		\>					\\
  \> {\tt hilog\_arg(Index, Term, Arg)}	\>				\\
@@ -144,7 +146,9 @@
 % \> {\tt table\_copy(Old, New)}\>					\\
  \> {\tt table\_prop(Pred, Type, Value)} \>				\\
  \> {\tt table\_prop(Pred, Type, OldValue, NewValue)} \>		\\
- \> {\tt table\_state(Call, State)} \>					\\
+% \> {\tt table\_state(CallTerm,State)}	\>				\\
+ \> {\tt table\_state(CallTerm,PredType,CallType,AnsSetStatus)}	\>	\\
+ \> {\tt table\_state(TableEntryHandle,PredType,CallType,AnsSetStatus)}	\> \\
  \> {\tt tbagof(Elem, Goal, List)} \>					\\
  \> {\tt tell(File)}		\>					\\
  \> {\tt telling(File)}		\>					\\
@@ -239,10 +243,11 @@ The following operators are provided with the \ourprolog\ system:
  \> {\tt op(1200,} \> \verb|xfx, [ | \> {\tt :-, --> ])}\>		\\
  \> {\tt op(1200,} \> \verb| fx, [ | \> {\tt :-, ?- ])}	\>		\\
  \> {\tt op(1198,} \> \verb|xfx, [ | \> {\tt ::- ])}	\>		\\
- \> {\tt op(1150,} \> \verb|xfx, [ | \> {\tt hilog, dynamic, multifile ])} \> \\
+ \> {\tt op(1150,} \> \verb|xfx, [ | \> {\tt dynamic, hilog, multifile ])} \> \\
  \> {\tt op(1100,} \> \verb| fy, [ | \> {\tt index, ti, ti\_off ])}	\> \\
- \> {\tt op(1100,} \> \verb| fx, [ | \> {\tt ;, table, edb, mode, export,
-						local, parallel ])} \> \\
+ \> {\tt op(1100,} \> \verb| fx, [ | \> {\tt ;, edb, export, local, mode,
+					 parallel,} \> \\
+ \>	\>	\> {\tt table, use\_subsumptive\_tabling, use\_variant\_tabling ])} \> \\
  \> {\tt op(1100,} \> \verb|xfx, [ | \> {\tt using ])}	\>		\\
  \> {\tt op(1050,} \> \verb| fy, [ | \> {\tt import ])}	\>		\\
  \> {\tt op(1050,} \> \verb|xfx, [ | \> {\tt from ])}	\>		\\

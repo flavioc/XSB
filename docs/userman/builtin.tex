@@ -461,7 +461,7 @@ described only briefly.
 %
     For a detailed description of the actions of tabled negation for
     in XSB \version\ see~\cite{SaSw98, SaSW96}.
-    Chapter~\ref{tabling_overview} contains further discussion of the
+    Chapter~\ref{chap:TablingOverview} contains further discussion of the
     functionality of {\tt tnot/1}.
 
     Exceptions:
@@ -1482,7 +1482,7 @@ the use of two new builtins.
     {\tt tfindall/3} allows the user to build programs that use
     stratified aggregation.  If the table to {\tt Goal} is incomplete,
     {\tt tfindall/3} suspends until the table has been completed, and
-    only then computes {\tt List}.  See Chapter~\ref{tabling_overview}
+    only then computes {\tt List}.  See Chapter~\ref{chap:TablingOverview}
     for further discussion of {\tt tfindall/3}.  Like {\tt findall/3},
     if {\tt Goal} is unsatisfiable, {\tt tfindall/3} succeeds binding
     {\tt List} to the empty list.
@@ -1627,7 +1627,7 @@ First, it does not depend on HiLog, so that {\tt filterReduce/4} will
 be more robust especially when XSB's module system is used.  In
 addition, {\tt filterReduce/4} aggregates solutions to {\tt Pred}
 using a variance rather than unification.  An example of the use of
-{\tt filterReduce/4} is given in Chapter \ref{tabling_overview}.
+{\tt filterReduce/4} is given in Chapter \ref{chap:TablingOverview}.
 
 \ournewitem{bagPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
 \ournewitem{filterPO(?SetPred,?Arg,+Order)}{Tabling}

@@ -1,5 +1,7 @@
+%=====================================================================
+
 \section{Modification of the Database} \label{sec:assert}
-%========================================================
+
 XSB provides an array of features for modifying the dynamic database.
 Using {\tt assert/1}, clauses can be asserted using first-argument
 indexing in a manner that is now standard to Prolog implementations.
@@ -406,6 +408,8 @@ typically called just before returning to the top level.
 \end{description}
 
 
+%=====================================================================
+
 \section{Execution State}\label{environmental}
 
 \begin{description}
@@ -485,7 +489,7 @@ typically called just before returning to the top level.
     Prints on the current output stream:
     \begin{itemize}
     \item Information about allocation of memory 
-	  (see Section~\ref{emulator_options}) containing the 
+	  (see Section~\ref{sec:EmuOptions}) containing the 
           \begin{itemize}
           \item global stack (heap) and local (environment) stack
           \item trail and choice point stack
@@ -501,7 +505,7 @@ typically called just before returning to the top level.
     \end{itemize}
 
     Additionally, if the emulator is invoked with the {\tt '-s'} option
-    (see Section~\ref{emulator_options}), information is printed out about
+    (see Section~\ref{sec:EmuOptions}), information is printed out about
     \begin{itemize}
     \item Maximum use of the memory areas.
     \end{itemize}
@@ -537,7 +541,7 @@ typically called just before returning to the top level.
     {\tt '-s'} option (without it the Maximum use line is not shown).
     Information about the allocation size is provided since the sizes
     can be changed through emulator options
-    (see Section~\ref{emulator_options}).
+    (see Section~\ref{sec:EmuOptions}).
 
 
 %\ouritem{analyze\_table(+Pred\_indicator)}\index{{\tt analyze\_table/1}}
@@ -564,7 +568,7 @@ typically called just before returning to the top level.
 %    In \version, {\tt analyze\_table/1} is most readily used to 
 %    determine proper call and return hash sizes.  The hash table sizes can
 %    be reset using {\tt set\_table\_prop/3} from the interpreter level
-%    (see Section~\ref{tabling_predicates}) or by recompiling the source code
+%    (see Section~\ref{sec:TablingPredicates}) or by recompiling the source code
 %    with new declarations (see Section~\ref{compiler_directives}).
 
 %    Example:
@@ -684,6 +688,8 @@ typically called just before returning to the top level.
 %need op (just so we dont forget ???
 
 
+%=====================================================================
+
 \section{Exception Handling}\label{exception}
 \index{exceptions}
 
@@ -789,524 +795,6 @@ Prolog cut in that they remove choice points that lie between a call
 to {\tt throw/1} and the matching {\tt catch/3} that serves as its
 ancestor.  However, if this process encounters a choice point for an
 incomplete table, execution is aborted to the top user level.
-
-\end{description}
-
-\section{Tabling} \label{tabling_predicates}
-%===========================================
-\index{tabling!table inspection predicates}
-
-In XSB, tables are designed so that they can be used transparently by
-computations.  However, it is often useful to be able to explicitly
-inspect a table, or to alter its state.  In the following predicates,
-which are provided for this purpose, {\tt Skeleton} refers to
-information about the function and arity of a predicate.  If {\tt p/2}
-is a predicate, its skeleton can be represented as {$p(\langle arg1
-\rangle,\langle arg2 \rangle)$} where {\em arg1} and {\em arg2} can be
-any instantiation pattern.  Thus the information derived from the
-skeletons {\em p(1,2)} and {\em p(A,B)} would be the same.  For other
-terminology connected with tabling, see Section
-\ref{tabling_overview}.
-
-The user should be aware that skeletons that are dynamically created
-(e.g. by {\tt functor/3}) are located in {\tt usermod}
-(cf. Section~\ref{Modules}).  In such a case, the tabling predicates
-below may not behave in the desired manner if the tabled predicates
-themselves have not been imported into {\tt usermod}.
-
-\begin{description}
-
-\ournewitem{get\_calls(+Skeleton,-Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}
-\index{{\tt get\_calls/3}}
-Backtracks through the subgoal trie, unifying {\tt Skeleton} with
-entries in the {\tt call trie}.  As it does so, {\tt get\_calls/3}
-binds {\tt Subgoal\_Structure\_Pointer} with the pointer to the {\tt
-subgoal structure} and binds {\tt Return\_Skeleton} to a term of the
-form ret/n where each of its arguments corresponds to a free variable
-in the call.  Example:
-
-For the following program and table
-     \begin{center}
-     \begin{tabular}{cc}
-     \begin{minipage}{1.1in}
-     {\tt
-          :- table p/2.	\\
-          p(1,2).       \\
-          p(1,3).       \\
-          p(1,X).       \\
-          p(2,3). 
-     }
-     \end{minipage}
-     &
-     \begin{tabular}{||l|l||}   \hline
-     {\em Call}			& {\em Returns} \\ \hline \hline
-     p(1,X)			& p(1,2) \\ 
- 	       			& p(1,3) \\
-                                & p(1,X) \\ \hline
-     p(X,3)			& p(1,3) \\ 
- 	       			& p(2,3) \\ \hline
-     \end{tabular}
-     \end{tabular}
-     \end{center}
-calls to {\tt get\_calls/3} will act as follows
-	{\footnotesize
-	\begin{verbatim}
-                   | ?- get_calls(p(X,Y),Cs,Ret).
-
-                   X = _864816
-                   Y = 3
-                   Cs = 2927152
-                   Ret = ret(_864816);
-
-                   X = 1
-                   Y = _864644
-                   Cs = 2927104
-                   Ret = ret(_864644);
-
-                   no
-                   | ?- get_calls(p(1,Y),Cs,Ret).
-
-                   Y = 3
-                   Cs = 2927152
-                   Ret = ret(1);
-
-                   Y = _864620
-                   Cs = 2927104
-                   Ret = ret(_864620);
-
-                   no
-                   | ?- get_calls(p(Y,3),Cs,Ret).
-
-                   Y = _864792
-                   Cs = 2927152
-                   Ret = ret(_864792);
-
-                   Y = 1
-                   Cs = 2927104
-                   Ret = ret(3);
-
-                   no
-                   | ?- get_calls(p(1,3),Cs,Ret).
-
-                   Cs = 2927152
-                   Ret = ret(1);
-
-                   Cs = 2927104
-                   Ret = ret(3);
-
-                   no
-
-	\end{verbatim}
-	}
-
-\ournewitem{get\_call(+Skeleton,-Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}
-\index{{\tt get\_call/3}}
-%
-This predicate binds {\tt Subgoal\_Structure\_Pointer} and {\tt
-Return\_Skeleton} only if {\tt Skeleton} is a variant (i.e., identical
-up to variable renaming) of some entry in the subgoal table.  It may
-be compared to the previous predicate {\tt get\_call/3} which {\em
-unifies} {\tt Skeleton} with entries in the subgoal trie.  Repeating
-the example from {\tt get\_calls/3}, calls to {\tt get\_call/3} will
-act as follows
-
-%
-{\footnotesize 
-\begin{verbatim}
-                   | ?- get_call(p(X,Y),Cs,Ret).
-
-                   no
-                   | ?- get_call(p(1,Y),Cs,Ret).
-
-                   Y = _864620
-                   Cs = 2927104
-                   Ret = ret(_864620);
-
-                   no
-                   | ?- get_call(p(Y,3),Cs,Ret).
-
-                   Y = _864792
-                   Cs = 2927152
-                   Ret = ret(_864792);
-
-                   no
-                   | ?- get_call(p(1,3),Cs,Ret).
-
-                   no
-
-	\end{verbatim}
-	}
-
-\ournewitem{get\_calls\_for\_table(+Skeleton,-Call)}{Tabling}\index{{\tt get\_calls\_for\_table/2}}
-Succeeds whenever {\tt Skeleton} unfies with an entry in the subgoal
-table.  When this predicate suceeds, it returns a variant of the call
-entry with which {\tt Skeleton} unifies.  
-
-This predicate does not provide any information about whether a table is
-complete.  Use {\tt table\_state} to inquire about a table's state.
-
-\noindent
-Calls to {\tt get\_calls\_for\_table/2} for the example in {\tt
-get\_calls/3} would act as follows 
-%
-{\footnotesize
-\begin{verbatim} 
-
-                   |?- get_calls_for_table(p(X,Y), Call).  
-                   X = _646608 
-                   Y = _646436
-                   Call = p(1,_646724) ;
-
-                   X = _646608
-                   Y = _646436
-                   Call = p(_646720,3) ;
-
-                   no
-                   | ?- get_calls_for_table(p(1,2), Call).
-                   Call = p(1,_646676)
-
-                   Call = p(_646672,3) ;
-
-                   no
-     \end{verbatim}
-     }
-The second example backtracks through all entries in the table, since
-only skeletal information is used from the first argument.
-
-Exception:
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	First argument is not instantiated.
-    \item[{\tt table\_error}]
-	First argument is not a tabled predicate.
-    \end{description}
-
-
-\ournewitem{get\_returns(+Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}\index{{\tt get\_returns/2}}
-Backtracks through the answer trie for the subgoal whose {\tt subgoal structure}
-is pointed to by {\tt Subgoal\_Structure\_Pointer}, and instantiates the 
-{Return\_Skeleton} with the bindings corresponding to the return.
-
-One way of accessing subgoals and answers of the example in in {\tt
-get\_calls/3} is as follows 
-%
-{\footnotesize 
-\begin{verbatim} 
-                   | ?- get_calls(p(Y,3),Cs,Ret), get_returns(Cs,Ret).
-
-                   Y = 2
-                   Cs = 2561656
-                   Ret = ret(2);
-
-                   Y = 1
-                   Cs = 2561656
-                   Ret = ret(1);
-
-                   Y = 1
-                   Cs = 2559032
-                   Ret = ret(3);
-
-                   Y = 1
-                   Cs = 2559032
-                   Ret = ret(3);
-
-                   no
-
-     \end{verbatim}
-     }
-
-
-\ournewitem{get\_returns(+Subgoal\_Structure\_Pointer,-Return\_Skeleton,-LeafNode)}{Tabling}
-\index{{\tt get\_returns/3}}
-Same as above, except for the fact that the third argument is bound
-to the leaf node corresponding to the return in the return trie.
-
-
-\ournewitem{get\_returns\_for\_call(+Call,-Return)}{Tabling}\index{{\tt get\_returns\_for\_call/2}}
-Succeeds whenever there is a table entry for a variant of {\tt Call}.
-If this is the case, {\tt Return} is instantiated with an entry for
-the table corresponding to call, and successive entries are returned
-by backtracking.  If there are no answers in the table, or no table
-entry for {\tt Call}, the goal fails.
-
-This predicate creates fresh variables for the return, rather than
-unifying them with variables in the first argument.  An explicit
-unification of a call with its return can be done if so desired.
-
-Example:
-Let us continue from the example in {\tt get\_calls\_for\_table/3}.
-
-    {\footnotesize
-     \begin{verbatim}
-                   | ?- get_returns_for_call(p(1,X), Return).
-
-                   X = _646412
-                   Return = p(1,_646628);
-
-                   X = _646412
-                   Return = p(1,2);
-
-                   X = _646412
-                   Return = p(1,3);
-
-                   no
-                   | ?- get_returns_for_call(p(X,Y), Return).
-                   no
-
-                   | ?- get_returns_for_call(p(1,2), Return).
-                   no
-      \end{verbatim}
-      }
-
-Exception:
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	First argument is not instantiated.
-    \item[{\tt table\_error}]
-	First argument is not a tabled predicate.
-    \end{description}
-
-
-\ournewitem{get\_residual(?Atom,?Delay\_list)}{Tabling}
-\index{{\tt get\_residual/2}}
-%
-Given completed tables subgoals that unify with {\tt Atom}, {\tt
-get\_residual/2} is used to backtrack through answers in these tables.
-These answers may in fact come from $any$ completed subgoal that
-unifies with {\tt Atom} as can be seen from the following example.
-
-For the following program and table
-     \begin{center}
-     \begin{tabular}{cc}
-     \begin{minipage}{2.1in}
-     {\tt
-          :- table p/2.	\\
-	  p(1,2). \\
-	  p(1,3):- tnot(p(2,3)). \\
-	  p(2,3):- tnot(p(1,3)). 
-     }
-     \end{minipage}
-     &
-     \begin{tabular}{||l|l||}   \hline
-     {\em Call}			& {\em Returns} \\ \hline \hline
-     p(1,X)			& p(1,2) \\ 
- 	       			& p(1,3):- tnot(p(2,3)) \\ \hline
-     p(1,3)			& p(1,3):- tnot(p(2,3)) \\ \hline
-     p(2,3)			& p(2,3):- tnot(p(1,3)) \\ \hline
-     \end{tabular}
-     \end{tabular}
-     \end{center}
-The completed subgoals are {\tt p(1,X)}, {\tt p(1,3)}, and {\tt
-p(2,3)}.  Calls to {\tt get\_residual/2} will act as follows
-%
-{\footnotesize 
-\begin{verbatim} 
-                   | ?- get_residual(p(X,Y),List).
-
-                   X = 1                          % from subgoal p(1,X)
-                   Y = 2
-                   List = [];
-
-                   X = 1                          % from subgoal p(1,X)
-                   Y = 3
-                   List = [tnot(p(2,3))];
-
-                   X = 1                          % from subgoal p(1,3)
-                   Y = 3
-                   List = [tnot(p(2,3))];
-
-                   X = 2                          % from subgoal p(2,3)
-                   Y = 3
-                   List = [tnot(p(1,3))];
-
-                   no
-
-     \end{verbatim}
-     }
-Since the {\tt Delay\_list} of an answer consists of those literals
-whose truth value is unknown in the well-founded model of the program
-(see Section \ref{tabling_overview}) {\tt get\_residual/2} can be
-useful when extensions of the well-founded model are desired.
-
-\ournewitem{delete\_return(+Subgoal\_Structure\_Pointer,+LeafNode)}{Tabling}
-\index{{\tt delete\_returns/2}}
-Deletes a return from the return trie. The LeafNode parameter should
-be obtained from a call to get\_returns/3.
-
-
-\ournewitem{abolish\_all\_tables}{Tabling}\index{{\tt abolish\_all\_tables/0}}
-{\tt abolish\_all\_tables/0} abolishes all tables presently in the
-system.  Predicates which have been declared tabled remain tabled, but
-information about calls and returns is deleted.  In \version, {\tt
-abolish\_all\_tablesl/0} reclaims used space.  The predicate always 
-succeeds.
-
-Note that incomplete tables are abolished automatically by the system on
-exceptions and when the interpreter level is resumed.  In these cases,
-the user does not need to abolish tables to maintain correctness.
-
-
-\ournewitem{abolish\_table\_pred(+PredSpecification \emph{or}
-+Skeleton)}{Tabling}\index{{\tt abolish\_table\_pred/1}}
-%
-Predicate {\tt abolish\_table\_pred/1} abolishes tables for all calls
-to the predicate denoted by {\em PredSpecification} (as in {\tt
-path/2}) or by {\em Skeleton} (as in {\tt path(X,Y)}).  The predicate
-remains tabled, but information about its calls and their returns is
-removed from the system.  In \version, {\tt abolish\_table\_pred/1}
-reclaims the space used by the calls to this predicate (and their
-answers).  Note that incomplete tables are abolished automatically by
-the system on exceptions and when the interpreter level is resumed.
-In these cases, the user does not need to abolish tables to maintain
-correctness.
-
-Exception:
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	Argument is a variable.
-    \item[{\tt type\_error}]
-	Argument is not a predicate specification of a callable term.
-    \item[{\tt table\_error}]
-        Argument is not a (specification of a) tabled predicate.
-    \end{description}
-
-
-\ournewitem{abolish\_table\_call(?Call)}{Tabling}
-\index{{\tt abolish\_table\_call/1}}
-%
-Predicate {\tt abolish\_table\_call/1} abolishes tables for a
-particular call to a predicate denoted by {\em Call}.  The predicate
-remains tabled, and information about all other tables remains intact.
-In \version, {\tt abolish\_table\_call/1} does not reclaim used space.
-Note that incomplete tables are abolished automatically by the system
-on exceptions and when the interpreter level is resumed.  In these
-cases, the user does not need to abolish tables to maintain
-correctness.
-
-Example:
-
-    Continuing the example started in the description of predicate
-    {\tt get\_calls\_for\_table/3} the call
-    {\tt abolish\_table\_call(p(1,X))} would produce the table
-    \begin{center}
-    \begin{tabular}{||l|l||}               \hline
-    {\em Call}			& {\em Returns} \\ \hline \hline
-    p(X,3)			& p(1,3) \\ 
-	       			& p(2,3) \\ \hline
-    \end{tabular}
-    \end{center}
-
-Exception:
-    \begin{description}
-    \item[{\tt table\_error}]
-	Argument 1 is not a callable predicate.
-    \end{description}
-
-
-\ournewitem{table\_state(?Call,-State)}{Tabling}
-\index{{\tt table\_state/2}}
-If the first argument is a valid Term indicator, {\tt table\_state/1}
-unifies state with one of the set 
-	\{{\tt not\_yet\_called, complete, incomplete, undef}\}.
-The meaning of these atoms is defined as:
-\begin{description}
-\item[{\tt not\_yet\_called}] iff the predicate corresponding to
-Call has been declared tabled, but there is no table entry for call.
-\item[{\tt complete}] iff the table entry for {\tt Call} contains
-all solutions.
-\item[{\tt incomplete}] iff the table entry for {\tt Call} may not contain
-all solutions.
-\item[{\tt undef}] iff the predicate corresponding to {\tt Call} 
-has not been declared tabled.
-\end{description}
-
-Exceptions:
-    \begin{description}
-    \item[{\tt type\_error}]
-	Argument 1 is not a callable predicate.
-    \end{description}
-
-
-\comment{
-
-\ournewitem{table\_prop(?Pred\_indicator,+Type,?Old\_val,+New\_val)}{Tabling}
-\index{{\tt table\_prop/4}}
-This predicate is described together with the following one.
-
-\ournewitem{table\_prop(?Pred\_indicator,+Type,-Value)}{Tabling}\index{{\tt table\_prop/3}}
-This predicate is used either to provide information about a table
-property, or to reset one of properties to a particular value.  These
-values can also be set by the table declarations in the source code.
-{\tt table\_prop} provides a method for doing so without having to
-recompile code.
-
-In previous versions {\tt table\_prop} was used to reset hash sizes for
-calls and returns.  It is not used in \version, but is maintained since
-in future versions {\tt table\_prop} may be used for other table
-properties such as subgoal subsumption.
-
-}
-
-%In \version\ the properties visible to the user are the call and return
-%hash sizes.  Each tabled predicate contains two types of hash tables.
-%A {\em call hash table} is used to find whether the variant of a call
-%to a tabled predicate has occurred before in the course of a
-%computation.  Each tabled call has a {\em return hash table} which is
-%used during a computation to determine whether a given return needs to
-%be added to the table.  Appropriate indexing for call and return
-%lookup, including proper hash table sizes, is crucial to good
-%performance.  
-
-%Hash table sizes are non-negative integers denoting the number of
-%buckets in the hash table.  When {\tt Pred\_indicator} denotes a
-%tabled predicate, the predicate can take one of two modes depending on
-%its arity.  In {\tt table\_prop/4}, the {\tt New\_value} is provided by
-%the user and {\tt Old\_value} is unified with the precious value of
-%the table property.  In {\tt table\_prop/3} the present value of the 
-%property is returned.
-
-%Presently, the hash table sizes can only be reset when there are no tabled
-%calls to {\tt Pred\_indicator}.  This can be ensured by a call to 
-%{\tt abolish\_table\_pred/1}
-%
-%Future versions of \ourprolog\ may include additional indexing
-%strategies as configurable table properties.
-
-\comment{
-
-    Exceptions:
-    \begin{description}
-%    \item[{\tt table\_error}]
-%	Attempt to reset hash table size for predicate with tabled calls.
-    \item[{\tt table\_error}]
-	Argument 1 is not a tabled predicate.
-    \end{description}
-
-}
-%\ounewitem{table\_copy(+From,-To)} \index{{\tt table\_copy/2}}
-%Table copy provides an explicit mechanism for the user to reduce the
-%amount of copying into and out of a table.  {\tt table\_copy/2}
-%succeeds when {\tt From} is ground, and returns a copy of that
-%structure (or list) in the table space.  No copying of that structure
-%will be required when calls or returns containing it are tabled, and
-%no copying will be necessary when returns using it are resolved with
-%goals. 
-%
-%For an example of the use of table copy, see Section~\ref{dcg_tabling}
-
-\comment{
-
-\ournewitem{breg\_retskel(+Breg,+Arity,-Return\_Skeleton,-SubgoalStructurePtr)}
-\index{{\tt breg\_retskel/4}}
-If Breg is bound to a pointer to the tabling choice point and 
-Arity is bound to the arity of the predicate corresponding to 
-the choice point, {\tt breg\_retskel} succeeds after binding 
-{\tt Return\_Skeleton} to ret/n as in {\tt get\_calls/3} and 
-{\tt SubgoalStructurePtr} to the pointer to the subgoal structure.
-
-Warning:This builtin works for tabling predicates only.
-
-}
 
 \end{description}
 
