@@ -126,8 +126,8 @@ public class SubprocessEngine extends PrologEngine{
                 
                 progressMessage("Loading initial files...");
                 command("assert(library_directory('"+tempDirectory.getAbsolutePath()+"'))");
-		System.out.println("tempDirectory: "+tempDirectory);
-                consultFromPackage("interprolog.O",SubprocessEngine.class);
+		//consultFromPackage("interprolog.O",SubprocessEngine.class);
+		consultFromPackage("interprolog.xwam",SubprocessEngine.class);
                 
                 String myHost="127.0.0.1"; // to avoid annoying Windows dialup attempt
                 progressMessage ("Allocating the ServerSocket...");
@@ -160,11 +160,7 @@ public class SubprocessEngine extends PrologEngine{
 		  waitUntilAvailable();
 		  prepareInterrupt(myHost);
 	          
-		System.out.println("ended ................");
-		
-	
-	
-            } catch (IOException e){
+	    } catch (IOException e){
                     throw new IPException("Could not launch XSB:"+e);
             }
 	    
@@ -313,7 +309,6 @@ public class SubprocessEngine extends PrologEngine{
 		} else {
 			//available=true; // sort of a hack... but when will the state of 'available' become valid ?
 			waitUntilAvailable();
-			System.out.println("-----> prepareInterrupt: I am gonna call deterministicGoal() ");
 			Object bindings[] = deterministicGoal("getPrologPID(N), ipObjectSpec('java.lang.Integer',Integer,[N],_)",
 				"[Integer]");		
 			if (bindings!=null) interruptCommand = "/bin/kill -s INT "+bindings[0];
@@ -378,11 +373,9 @@ public class SubprocessEngine extends PrologEngine{
  			goalToDo.prologWasCalled();
             //setupErrorHandling();
             sendObject(GO);
- 			realCommand("deterministicGoal"); // assynchronous
-			System.out.println("------> I am in fristGoal() in SubprocessEngine");
-           	ResultFromProlog result = goalToDo.waitForResult();
-		System.out.println(" After waitForResult **** ");
-            // goalToDo is forgotten by handleCallback
+	    realCommand("deterministicGoal"); // assynchronous
+	    ResultFromProlog result = goalToDo.waitForResult();
+	    // goalToDo is forgotten by handleCallback
             progressMessage("got dG result for timestamp "+mytimestamp);         
             if (result==null) throw new IPException("Problems in goal result");
             if (goalToDo.wasAborted()) throw new IPAbortedException(G+" was aborted");
