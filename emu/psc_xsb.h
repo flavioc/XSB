@@ -113,6 +113,7 @@ extern Psc list_psc;
 extern Psc comma_psc;
 extern Psc box_psc;
 extern Psc tnot_psc;
+extern Psc colon_psc;
 extern Psc delay_psc;
 extern char *nil_sym;
 extern char *true_sym;

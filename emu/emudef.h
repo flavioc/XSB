@@ -81,7 +81,7 @@ char *nil_sym, *true_sym;
 
 Pair list_str;
 
-Psc list_psc, comma_psc, true_psc, if_psc;
+Psc list_psc, comma_psc, true_psc, if_psc, colon_psc;
 Psc tnot_psc, delay_psc;
 Psc box_psc;
 

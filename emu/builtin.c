@@ -142,6 +142,8 @@ static long total_prog_segments = 0;
 static long prof_table_length = 0;
 static long prof_table_count = 0;
 
+/*static Psc colon_psc = NULL;*/
+
 extern xsbBool startProfileThread();
 extern void dump_prof_table();
 extern void retrieve_prof_table();
@@ -1164,7 +1166,14 @@ int builtin_call(byte number)
     Cell arg, term = ptoc_tag(2);
     Psc termpsc = term_psc(term);
     Psc modpsc = pair_psc(insert_module(0,ptoc_string(1)));
-    Psc newtermpsc = pair_psc(insert(get_name(termpsc),get_arity(termpsc),modpsc,&new));
+    Psc newtermpsc;
+    /*    if (!colon_psc) colon_psc = pair_psc(insert(":",2,global_mod,&new));*/
+    while (termpsc == colon_psc) {
+      term = cell(clref_val(term)+2);
+      XSB_Deref(term);
+      termpsc = term_psc(term);
+    }
+    newtermpsc = pair_psc(insert(get_name(termpsc),get_arity(termpsc),modpsc,&new));
     if (new) set_data(newtermpsc, modpsc);
     env_type_set(newtermpsc, T_IMPORTED, T_ORDI, (xsbBool)new);
     ctop_constr(3, (Pair)hreg);

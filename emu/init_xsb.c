@@ -742,23 +742,33 @@ void init_machine(void)
   string_table.table = (void **)calloc(string_table.size, sizeof(char *));
 }
 
+Psc make_code_psc_rec(char *name, int arity, Psc mod_psc) {
+  Pair temp;
+  int new;
+  Psc new_psc;
+  temp = insert(name, arity, mod_psc, &new);
+  new_psc = pair_psc(temp);
+  set_data(new_psc, mod_psc);
+  set_env(new_psc, T_UNLOADED);
+  set_type(new_psc, T_ORDI);
+  return new_psc;
+}
+
 /*==========================================================================*/
 
 /* Initialize Standard PSC Records
    ------------------------------- */
 void init_symbols(void)
 {
-  Psc  tables_psc;
+  Psc  tables_psc, standard_psc;
   Pair temp, tp;
   int  i, new_indicator;
 
   /* insert mod name global */
-  tp = insert_module(T_MODU, "global");	/* loaded */
+  /*tp = insert_module(T_MODU, "global");	/ loaded */
+  tp = insert_module(T_MODU, "usermod");	/* loaded */
   set_data(pair_psc(tp), (Psc)USERMOD_PSC);	/* initialize global mod PSC */
   global_mod = pair_psc(tp);
-
-  /* insert "[]"/0 into String Table */
-  nil_sym = string_find("[]", 1);
 
   /* insert "."/2 into global list */
   temp = insert(".", 2, global_mod, &new_indicator);
@@ -766,47 +776,29 @@ void init_symbols(void)
   list_psc = pair_psc(temp);
   list_dot = get_name(list_psc);
 
-  temp = insert("true", 0, global_mod, &new_indicator);
-  true_psc = pair_psc(temp);
-  true_sym = get_name(true_psc);
-  /* initialize data field of 'true's Psc to point to usermod */
-  set_data(true_psc, global_mod);
-  /* create code for true/0 */
-  {
-    CPtr p;
-    set_env(true_psc, T_VISIBLE);
-    set_type(true_psc, T_PRED);
-    p = (CPtr) mem_alloc(sizeof(PrRefData));
-    *(pb)((pb)p) = (byte)proceed;
-    *(pb)((pb)p+1) = (byte)0;
-    *(pb)((pb)p+2) = (byte)0;
-    *(pb)((pb)p+3) = (byte)0;
-    p[2] = (Cell) p;
-    set_ep(true_psc,(pb)p);
-  }
-  
-
-  temp = insert(":-", 2, global_mod, &new_indicator);
-  if_psc = pair_psc(temp);
-
-  /* insert symbol ","/2 */
-  temp = insert(",", 2, global_mod, &new_indicator);
-  comma_psc = pair_psc(temp);
+  if_psc = pair_psc(insert(":-", 2, global_mod, &new_indicator));
 
   /* insert symbol "$BOX$"/3 */
-  temp = insert("$BOX$", 3, global_mod, &new_indicator);
-  box_psc = pair_psc(temp);
+  box_psc = pair_psc(insert("$BOX$", 3, global_mod, &new_indicator));
+
+  delay_psc = pair_psc(insert("DL", 3, global_mod, &new_indicator));
+
+  standard_psc = pair_psc(insert_module(0, "standard"));	/* unloaded */
+
+  true_psc = make_code_psc_rec("true", 0, standard_psc);
+  true_sym = get_name(true_psc);
+  
+  comma_psc = make_code_psc_rec(",", 2, standard_psc);
+
+  colon_psc = make_code_psc_rec(":", 2, standard_psc);
 
   /* insert symbol tnot/1 into module tables */
-  tp = insert_module(0, "tables");		/* unloaded */
-  tables_psc = pair_psc(tp);
-  temp = insert("tnot", 1, tables_psc, &new_indicator);
-  tnot_psc = pair_psc(temp);
-  set_data(tnot_psc, tables_psc);
-  set_env(tnot_psc, T_UNLOADED);
-  set_type(tnot_psc, T_ORDI);
-  temp = insert("DL", 3, global_mod, &new_indicator);
-  delay_psc = pair_psc(temp);
+  tables_psc = pair_psc(insert_module(0, "tables"));		/* unloaded */
+
+  tnot_psc = make_code_psc_rec("tnot", 1, tables_psc);
+
+  /* insert "[]"/0 into String Table */
+  nil_sym = string_find("[]", 1);
 
   /*
    * Initialize ret PSCs.  Notice that ret_psc[0] is set to a pointer
@@ -815,9 +807,6 @@ void init_symbols(void)
   ret_psc[0] = (Psc) string_find("ret", 1);
   for (i = 1; i < MAX_ARITY; i++) ret_psc[i] = NULL;
 
-  /* make another reference to global module -- "usermod" */
-  tp = insert_module(T_MODU, "usermod");	/* loaded */
-  set_data(pair_psc(tp), get_data(global_mod));
 }
 
 /*==========================================================================*/
