@@ -93,7 +93,7 @@
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
 #define ERROR_PRLGLIT	'invalid PROLOG literal'
 #define ERROR_WSNAME	'invalid module name'
-#define ERROR_CHANGE_SYSMOD 'insert/delete ops not allowed on system modules'
+#define ERROR_SYSMOD	'insert/delete ops not allowed on system modules'
 #define ERROR_PATHEXP	'invalid path expression'
 #define ERROR_HDLITERAL 'invalid literal/molecule in rule head'
 #define ERROR_EXPINHEAD 'invalid path expression in rule head'
@@ -137,6 +137,14 @@
 #define UNKNOWN_AGGREGT 'unknown aggregate operator'
 #define UNKNOWN_DIRECT	'unknown compiler directive'
 #define UNREG_SYSMOD	'unregistered system module'
+#define ERROR_IFHEAD	'invalid if-statement in rule head'
+#define ERROR_THENHEAD	'invalid then-statement in rule head'
+#define ERROR_ELSEHEAD	'invalid else-statement in rule head'
+#define ERROR_THENBODY	'invalid then-statement'
+#define ERROR_ELSEBODY	'invalid else-statement'
+#define MISSING_THEN	'missing then-statement in if-then-else-statement'
+#define UNEXPECTED_THEN	'unexpected then-statement'
+#define UNEXPECTED_ELSE	'unexpected else-statement'
 
 
 /**************************************

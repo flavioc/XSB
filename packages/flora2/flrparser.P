@@ -466,6 +466,9 @@ flinsert_struct(Op,List,FLINSERT(Op,List)).
 fldelete_struct(Op,List,Cond,FLDELETE(Op,List,Cond)).
 fldelete_struct(Op,List,FLDELETE(Op,List)).
 
+flifthenelse_struct(Cond,Then,Else,FLIFTHENELSE(Cond,Then,Else)).
+flifthen_struct(Cond,Then,FLIFTHEN(Cond,Then)).
+
 
 /****************************************************************************
   parsing_error(+IndexOrTerm,+ErrorMessage,-Status)
@@ -1274,6 +1277,21 @@ flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :
 	!,
 	parsing_error(If,ERROR_HDLITERAL,Status).
 
+flora_head_literal(CANOTERM(Funct,1,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
+        get_name(Funct,FL_IF),
+        !,
+        parsing_error(If,ERROR_IFHEAD,Status).
+
+flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
+        get_name(Funct,FL_THEN),
+        !,
+        parsing_error(If,ERROR_THENHEAD,Status).
+
+flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
+        get_name(Funct,FL_ELSE),
+        !,
+        parsing_error(If,ERROR_ELSEHEAD,Status).
+
 flora_head_literal(CANOTERM(Funct,N,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
 	get_atom(Funct,F),
 	flora_nodefp(F,N),
@@ -1507,6 +1525,21 @@ flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	flora_pathexplist(Args,[LCode,RCode],Status),
 	(Status == [] -> flobjeql_struct(LCode,RCode,Code); true).
 
+flora_body_literal(CANOTERM(Funct,1,FL_PARENTHESIS,Args,If,Ip),Code,Status) :-
+	get_name(Funct,FL_IF),
+	!,
+        flora_ifthenelse(CANOTERM(Funct,1,FL_PARENTHESIS,Args,If,Ip),Code,Status).
+
+flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
+	get_name(Funct,FL_THEN),
+	!,
+        parsing_error(If,ERROR_THENBODY,Status).
+
+flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
+	get_name(Funct,FL_ELSE),
+	!,
+        parsing_error(If,ERROR_ELSEBODY,Status).
+
 flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	!,
 	flora_term(Funct,N,Args,Code,Status).
@@ -1540,6 +1573,87 @@ flora_body_literal(CanoniTerm,Code,[]) :-
 
 flora_body_literal(CanoniTerm,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_BDLITERAL,Status).
+
+
+/****************************************************************************
+  flora_ifthenelse(+CanoniTerm,-Code,-Status)
+****************************************************************************/
+flora_ifthenelse(CanoniTerm,Code,Status) :-
+	flora_ifthenelse(CanoniTerm,NK,_NT,Code,S),
+        ( S \== [] ->
+	    Status=S
+
+	; NK == [] ->
+	    Status=[]
+
+	; NK = then(Index) ->
+	    parsing_error(Index,UNEXPECTED_THEN,Status)
+
+        ; NK = else(Index) ->
+	    parsing_error(Index,UNEXPECTED_ELSE,Status)
+	).
+
+
+/****************************************************************************
+  flora_ifthenelse(+CanoniTerm,-NextKeyword,-NextTerm,-Code,-Status).
+
+  It takes a canonical term (which represents a stream of tokens) and parses
+  a normal statement at the beginning  of it. Moreover, it returns the next
+  immediate keyword and the  residual canonical term (which represents the
+  rest of the token stream).
+
+  If NextKeyword is [], then NextTerm is []. Otherwise, NextKeyword is
+  either then(Index) or else(Index) (here Index is the index number of the
+  keyword that can be used to generate an error message).
+
+  Status denotes success/failure when the beginning of the token stream
+  is parsed.
+****************************************************************************/
+flora_ifthenelse(CANOTERM(Funct,1,FL_PARENTHESIS,[CTerm],If,_Ip),
+		 NextKeyword,NextTerm,Code,Status) :-
+	get_name(Funct,FL_IF),
+	!,
+	flora_ifthenelse(CTerm,NK1,NT1,CondStruct,S1),
+	( S1 == [] ->
+	    ( NK1 = then(_IThen) ->
+		flora_ifthenelse(NT1,NK2,NT2,ThenStruct,S2), 
+		( S2 == [] ->
+		    ( NK2 = else(_IElse) ->
+			flifthenelse_struct(CondStruct,ThenStruct,ElseStruct,Code),
+			flora_ifthenelse(NT2,NextKeyword,NextTerm,ElseStruct,Status)
+		    ;
+		      flifthen_struct(CondStruct,ThenStruct,Code),
+		      NextKeyword=NK2,
+		      NextTerm=NT2,
+		      Status=[]
+		    )
+		;
+	          Status=S2
+	        )
+
+	    ; NK1 == [] ->
+	        parsing_error(If,MISSING_THEN,Status)
+
+	    ; NK1 = else(IElse) ->
+	        parsing_error(IElse,MISSING_THEN,Status)
+	    )
+        ;
+	  Status=S1
+	).
+
+flora_ifthenelse(CANOTERM(Funct,2,FL_PARENTHESIS,[STerm,NextTerm],If,_Ip),
+		 NextKeyword,NextTerm,Code,Status) :-
+	( get_name(Funct,FL_THEN) ->
+	    NextKeyword=then(If)
+
+	; get_name(Funct,FL_ELSE) ->
+	    NextKeyword=else(If)
+	),
+	!,
+	flora_body(STerm,Code,Status).
+
+flora_ifthenelse(CanoniTerm,[],[],Code,Status) :-
+	flora_body(CanoniTerm,Code,Status).
 
 
 /****************************************************************************
@@ -2113,6 +2227,7 @@ flora_head_term(Funct,N,Args,Code,Status) :-
 	flora_head_argpathexplist(Args,ArgTypes,AList,Status),
 	(Status == [] -> flterm_struct(F,N,AList,Code); true).
 
+
 flora_head_term(Funct,N,Args,Code,Status) :-
 	flora_head_pathexp(Funct,F,S),
 	( S == [] ->
@@ -2404,7 +2519,7 @@ flora_dbliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Sta
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
 	; flora_workspace(R,_,S) -> 
 	    %% updating system module or illegal workspace
-	    (S==[] -> parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
+	    (S==[] -> parsing_error(R,ERROR_SYSMOD,Status)
 	    ; Status = S
 	    )
 	;
@@ -2443,7 +2558,7 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
 	; flora_workspace(R,_,S) ->
 	    %% updating system module or illegal workspace
-	    (S==[] -> parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
+	    (S==[] -> parsing_error(R,ERROR_SYSMOD,Status)
 	    ; Status = S
 	    )
 	;

@@ -1,7 +1,8 @@
 /************************************************************************
   file: syslibinc/flrcontrol_inc.flh
 
-  Author(s): kifer
+  Author(s): Michael Kifer
+	     Guizhen Yang
 
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
@@ -15,8 +16,6 @@
 #include "flora_terms.flh"
 :- import flora_load_library/1 from flrlibman.
 #endif
-
-:- import FL_IF/1, FL_WHILE/1, FL_DO/1, FL_LOOP/1 from flrcontrol.
 
 ?- flora_load_library(FLLIBCONTROL).
 

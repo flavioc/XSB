@@ -192,7 +192,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~.*~ *.O .#* *.bak ../flora2.O
+	/bin/rm -f *~ .*~ *.O .#* *.bak ../flora2.O
 	cd closure; $(MAKE) clean
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean

@@ -87,12 +87,17 @@ is_flworkspace(FLWORKSPACE(P,WS),P,WS).
 is_flplib(FLPLIB(P,M),P,M).
 is_flplib(FLPLIB(P),P).
 is_flfloralib(FLFLORALIB(P,M),P,M).
+
+is_flifthenelse(FLIFTHENELSE(Cond,Then,Else),Cond,Then,Else).
+is_flifthen(FLIFTHEN(Cond,Then),Cond,Then).
+
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
 is_flinsert(FLINSERT(Op,List,Cond),Op,List,Cond).
 is_flinsert(FLINSERT(Op,List),Op,List).
 is_fldelete(FLDELETE(Op,List,Cond),Op,List,Cond).
 is_fldelete(FLDELETE(Op,List),Op,List).
 is_flaggregate(FLAGGREGATE(Op,V,GV,Goal),Op,V,GV,Goal).
+
 %% Binary relationship, like : or ::
 is_flbirelate(FLBIRELATE(Obj1,RelType,Obj2),Obj1,RelType,Obj2).
 is_flobjspec(FLOBJSPEC(Obj,Spec),Obj,Spec).
@@ -520,6 +525,13 @@ imethspec_struct(Obj,IMeth,PRIMETH(Obj,IMeth)).
 transpec_struct(Obj,Tran,PRTRAN(Obj,Tran)).
 
 objeql_struct(O1,O2,PROBJEQL(O1,O2)).
+
+
+ifthenelse_struct(Cond,Then,Else,Code) :-
+	florasyslib_struct(FLLIBIFTHENELSE,3,[Cond,Then,Else],Code).
+
+ifthen_struct(Cond,Then,Code) :-
+	florasyslib_struct(FLLIBIFTHEN,2,[Cond,Then],Code).
 
 
 /****************************************************************************
@@ -1159,7 +1171,7 @@ compile_fact(Head,CodeList,Status) :-
 	    check_vars(Head,[],Status)
         ;
 	  Status=S
-        ).
+	).
 
 
 /****************************************************************************
@@ -1176,14 +1188,14 @@ compile_query(Body,CodeList,Status) :-
 	    append(DirectCodeList,[QueryCode],CodeList)
 	;
 	  true
-        ).
+	).
 
 
 /****************************************************************************
   compile_rule(+Head,+Body,-CodeList,-Status)
 ****************************************************************************/
 compile_rule(Head,Body,CodeList,Status) :-
-        compile_head(Head,HeadCodeList,HS),
+	compile_head(Head,HeadCodeList,HS),
 	( HS == [] ->
 	    compile_body(Body,BodyCode,BS),
 	    ( BS == [] ->
@@ -1320,7 +1332,13 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	; is_fldelete(ParserTerm,Op,List) ->
 	    compile_fldelete(Op,List,Code,Status)
 
-        ; is_flcut(ParserTerm,I) ->
+	; is_flifthenelse(ParserTerm,Cond,Then,Else) ->
+	    compile_flifthenelse(Cond,Then,Else,Code,Status)
+
+	; is_flifthen(ParserTerm,Cond,Then) ->
+	    compile_flifthen(Cond,Then,Code,Status)
+	
+	; is_flcut(ParserTerm,I) ->
 	    cut_struct(I,Code),
 	    Status=[]
 
@@ -1337,6 +1355,37 @@ compile_body_literal(ParserTerm,Code,Status) :-
 
 	; is_fldirective(ParserTerm,DirectList) ->
 	    compile_exec_directive(DirectList,Code,Status)
+	).
+
+
+/****************************************************************************
+  compile_flifthenelse(+Cond,+Then,+Else,-Code,-Status)
+****************************************************************************/
+compile_flifthenelse(Cond,Then,Else,Code,Status) :-
+	compile_body(Cond,CondCode,S1),
+	( S1 == [] ->
+	    compile_body(Then,ThenCode,S2),
+	    ( S2 == [] ->
+		compile_body(Else,ElseCode,Status),
+		(Status == [] -> ifthenelse_struct(CondCode,ThenCode,ElseCode,Code); true)
+	    ;
+	      Status=S2
+	    )
+	;
+	  Status=S1
+	).
+
+
+/****************************************************************************
+  compile_flifthen(+Cond,+Then,-Code,-Status)
+****************************************************************************/
+compile_flifthen(Cond,Then,Code,Status) :-
+	compile_body(Cond,CondCode,S1),
+	( S1 == [] ->
+	    compile_body(Then,ThenCode,Status),
+	    (Status == [] -> ifthen_struct(CondCode,ThenCode,Code); true)
+	;
+	  Status=S1
 	).
 
 
