@@ -12,7 +12,12 @@
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
 	cdf_set_log_on/0, cdf_set_log_off/0, cdf_reset_log/0, show_log/0,
-	updateAttribute/5.
+	updateExtTerm/3.
+
+:- (search_module(cdf_xj,_,_,_,_,_)
+    ->	   consult(cdf_xj)
+    ;	   consult(cdf_cdf)
+   ).
 
 :- import check_implication/2, check_types/2,
 	classify_if_necessary/3
@@ -29,8 +34,9 @@
 :- import load_component/3 from cdf_components.
 
 :- import cdf_error/2 from cdf_exceptions.
-:- import make_cdf_dirty/1, make_cdf_clean/0, 
-	  cdf_update_list/1 from cdf_cdf.
+:- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
+%%	from cdf_xj.
+	from cdf_cdf.
 :- import get_component_extensional/2 	from cdf_components.
 
 :- import '_$index'/3 from file_op.
@@ -70,11 +76,6 @@ cdf_index(_,_,_,_):- fail.
 /* TLS
 :- ensure_loaded(cdf_oblivion).
 */
-
-:- (search_module(cdf_xj,_,_,_,_,_) -> 
-	    consult(cdf_xj)
-     ;	    consult(cdf_cdf)
-   ).
 
 %%%%%%%%%%%%% Declarations for updatable DB
 %%:- ensure_loaded(cdf_db_updatable).
@@ -853,52 +854,51 @@ semantics is: (retractallAttribute(Oid,RCid,TCid),
 (member(VarTerm,ValList), assert_attribute(Oid,RCid,TCid)), fail ;
 true).").
 
-updateAttribute(_Oid,_Rid,_Cid,_Vars,_NValList) :-
+/**updateAttribute(_Oid,_Rid,_Cid,_Vars,_NValList) :-
 	cdf_error(cdf,['updateAttribute/5 has not yet been ported to CDF']),
-	fail.
+	fail. **/
 
-/* OMS form...
-updateAttribute(Oid,Rid,Cid,Vars,NValList) :-
-	findall(Vars,attribute(Oid,Rid,Cid),OValList),
+updateExtTerm(ExtTerm,Vars,NValList) :-
+	findall(Vars,ExtTerm,OValList),
 	sort(NValList,SNValList),
 	sort(OValList,SOValList),
-	updateAttributeMerge(SOValList,SNValList,p(Oid,Rid,Cid,Vars),Updates,[]),
+	updateExtTermMerge(SOValList,SNValList,p(ExtTerm,Vars),Updates,[]),
 	cdf_update_list(Updates).
 
-updateAttributeMerge(SOValList,SNValList,ArgsVars,Updates0,Updates) :-
+updateExtTermMerge(SOValList,SNValList,ArgsVars,Updates0,Updates) :-
 	SOValList = [OVal|SOVals],
 	SNValList = [NVal|SNVals],
 	!,
 	(OVal == NVal
-	 ->	updateAttributeMerge(SOVals,SNVals,ArgsVars,Updates0,Updates)
+	 ->	updateExtTermMerge(SOVals,SNVals,ArgsVars,Updates0,Updates)
 	 ; OVal @< NVal
-	 ->	copy_term(ArgsVars,p(NOid,NRid,NCid,OVal)),
-		(attribute_ext(NOid,NRid,NCid)   % don't delete if inherited
+	 ->	copy_term(ArgsVars,p(NExtTerm,OVal)),
+		(call(NExtTerm) % don't delete if inherited
 		 ->	Updates0 = 
-			   [retractall(attribute_ext(NOid,NRid,NCid))|Updates1],
-			updateAttributeMerge(SOVals,SNValList,ArgsVars,
+			   [retractall(NExtTerm)|Updates1],
+			updateExtTermMerge(SOVals,SNValList,ArgsVars,
 					       Updates1,Updates)
-		 ;	updateAttributeMerge(SOVals,SNValList,ArgsVars,
+		 ;	updateExtTermMerge(SOVals,SNValList,ArgsVars,
 					       Updates0,Updates)
 		)
-	 ;	copy_term(ArgsVars,p(NOid,NRid,NCid,NVal)),
-		newAttribute(NOid,NRid,NCid,Updates0,Updates1),
-		updateAttributeMerge(SOValList,SNVals,ArgsVars,Updates1,Updates)
+	 ;	copy_term(ArgsVars,p(NExtTerm,NVal)),
+		newExtTerm(NExtTerm,Updates0,Updates1),
+		updateExtTermMerge(SOValList,SNVals,ArgsVars,Updates1,Updates)
 	).
-updateAttributeMerge([],[NVal|SNVals],ArgsVars,Updates0,Updates) :- !,
-	copy_term(ArgsVars,p(NOid,NRid,NCid,NVal)),
-	newAttribute(NOid,NRid,NCid,Updates0,Updates1),
-	updateAttributeMerge([],SNVals,ArgsVars,Updates1,Updates).
-updateAttributeMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
-	copy_term(ArgsVars,p(NOid,NRid,NCid,OVal)),
-	(attribute_ext(NOid,NRid,NCid)   % don't delete if inherited
+updateExtTermMerge([],[NVal|SNVals],ArgsVars,Updates0,Updates) :- !,
+	copy_term(ArgsVars,p(NExtTerm,NVal)),
+	newExtTerm(NExtTerm,Updates0,Updates1),
+	updateExtTermMerge([],SNVals,ArgsVars,Updates1,Updates).
+updateExtTermMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
+	copy_term(ArgsVars,p(NExtTerm,OVal)),
+	(call(NExtTerm) % don't delete if inherited
 	 ->	Updates0 = 
-		 	[retractall(attribute_ext(NOid,NRid,NCid))|Updates1],
-		updateAttributeMerge(SOVals,[],ArgsVars,Updates1,Updates)
-	 ;	updateAttributeMerge(SOVals,[],ArgsVars,Updates0,Updates)
+		 	[retractall(NExtTerm)|Updates1],
+		updateExtTermMerge(SOVals,[],ArgsVars,Updates1,Updates)
+	 ;	updateExtTermMerge(SOVals,[],ArgsVars,Updates0,Updates)
 	).
-updateAttributeMerge([],[],_ArgsVars,Updates,Updates).
-*/
+updateExtTermMerge([],[],_ArgsVars,Updates,Updates).
+
 
 end_of_file.
 
