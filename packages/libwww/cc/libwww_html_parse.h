@@ -25,9 +25,13 @@
 
 /*
 #define LIBWWW_DEBUG
+#define LIBWWW_DEBUG_TERSE
 */
 #ifdef LIBWWW_DEBUG_VERBOSE
 #define LIBWWW_DEBUG
+#endif
+#ifdef LIBWWW_DEBUG
+#define LIBWWW_DEBUG_TERSE
 #endif
 
 
@@ -41,8 +45,9 @@ struct hash_table {
 };
 typedef struct hash_table HASH_TABLE;
 
-#define SELECTED_TAGS_TBL_SIZE	    29     /* must be > MAX_SELECTED_TAGS */
-#define IGNORED_TAGS_TBL_SIZE	    41      /* must be > MAX_EXCLUDED_TAGS */
+#define SELECTED_TAGS_TBL_SIZE	    29
+#define SUPPRESSED_TAGS_TBL_SIZE    41
+#define STRIPPED_TAGS_TBL_SIZE	    37
 
 /* from HTTP.c */
 #define FREE_TARGET(t)	(*(t->target->isa->_free))(t->target)
@@ -58,9 +63,10 @@ struct _HTStream {
 struct request_context {
   int request_id;
   /* input */
-  int ignore_is_default;
+  int suppress_is_default;
   HASH_TABLE selected_tags_tbl;
-  HASH_TABLE ignored_tags_tbl;
+  HASH_TABLE suppressed_tags_tbl;
+  HASH_TABLE stripped_tags_tbl;
   /* output */
   prolog_term parsed_result;
   prolog_term status_term;
@@ -78,16 +84,16 @@ struct _HText {
   HTStream *		  target; 	   /* not used */
   SGML_dtd *		  dtd;
   int 	      	      	  status;    	    /* status of the HTTP request */
-  int	 	     	  ignore_is_default; /* whether we begin parsing by
-						ignoring tags */
+  int	 	     	  suppress_is_default; /* whether we begin parsing by
+						  suppressing tags */
   prolog_term	     	  parsed_term;      /* actual result of the parse */
   prolog_term	     	  parsed_term_tail; /* auxil variable */
   int   		  stackptr;
   struct stack_node {
     int	       	   element_number;    /* which element this is  */
     SGMLContent    element_type;      /* SGML_EMPTY, PCDATA_SPECIAL, normal */
-    int	       	   ignore;    	      /* whether this element is in the ignored
-					 region */
+    int	       	   suppress;   	      /* whether this element is in the
+					 suppressed region */
     prolog_term	   elt_term;	      /* here we build elements */
     prolog_term    content_list_tail; /* auxil var to help build elements */
   } 	    	    	  stack[MAX_HTML_NESTING]; /* keeps nested elements */
@@ -96,9 +102,10 @@ struct _HText {
 #define STACK_TOP(htext)        htext->stack[htext->stackptr]
 #define STACK_PREV(htext)       htext->stack[htext->stackptr-1]
 
-#define ignoring(htext)  (  (htext->stackptr < 0 && htext->ignore_is_default) \
-      	      	      	  ||(htext->stackptr >= 0 && STACK_TOP(htext).ignore))
-#define parsing(htext)  (! ignoring(htext))
+#define suppressing(htext) \
+     	     	     ( (htext->stackptr < 0 && htext->suppress_is_default) \
+      	      	       ||(htext->stackptr >= 0 && STACK_TOP(htext).suppress))
+#define parsing(htext)  (!suppressing(htext))
 
 /* special tag type that we use to wrap around text */
 #define PCDATA_SPECIAL 	        -77
@@ -112,7 +119,14 @@ PRIVATE void init_htable(HASH_TABLE *htable, int size);
 PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl);
 PRIVATE void free_htable(HASH_TABLE *htable);
 
-PRIVATE void get_form_params(prolog_term form_params);
+/*-------------------*/
+enum http_method {FORM_GET, FORM_POST};
+typedef enum http_method HTTP_METHOD;
+
+PRIVATE HTAssocList *get_form_params(prolog_term form_params, char *caller);
+PRIVATE HTTP_METHOD get_request_method(prolog_term method, char *caller);
+/*-------------------*/
+
 PRIVATE void set_request_context(HTRequest *request,
 				 prolog_term prolog_req, int req_id);
 PRIVATE void free_request_context (REQUEST_CONTEXT *context);
@@ -134,8 +148,8 @@ PRIVATE void push_element (HText        *htext,
 			   const BOOL   *present,
 			   const char  **value);
 PRIVATE void pop_element(HText *htext);
-PRIVATE void push_ignore_element(HText *htext, int element_number);
-PRIVATE void pop_ignore_element(HText *htext);
+PRIVATE void push_suppressed_element(HText *htext, int element_number);
+PRIVATE void pop_suppressed_element(HText *htext);
 PRIVATE void collect_attributes ( prolog_term  elt_term,
 				  HTTag        *tag,
 				  const BOOL   *present,
@@ -161,9 +175,12 @@ PRIVATE int parse_termination_handler(HTRequest  *request,
 #define IS_SELECTED_TAG(element_number, htext) \
     is_in_htable(element_number, \
     	    	 &(((REQUEST_CONTEXT *)HTRequest_context(htext->request))->selected_tags_tbl))
-#define IS_IGNORED_TAG(element_number, htext) \
+#define IS_SUPPRESSED_TAG(element_number, htext) \
     is_in_htable(element_number, \
-    	    	 &(((REQUEST_CONTEXT *)HTRequest_context(htext->request))->ignored_tags_tbl))
+    	    	 &(((REQUEST_CONTEXT *)HTRequest_context(htext->request))->suppressed_tags_tbl))
+#define IS_STRIPPED_TAG(element_number, htext) \
+    is_in_htable(element_number, \
+    	    	 &(((REQUEST_CONTEXT *)HTRequest_context(htext->request))->stripped_tags_tbl))
 
 
 #ifdef LIBWWW_DEBUG

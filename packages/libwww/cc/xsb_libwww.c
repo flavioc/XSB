@@ -11,6 +11,7 @@
 
 #include "cinterf.h"
 #include "basictypes.h"
+#include "error_xsb.h"
 #include "xsb_libwww_util.h"
 
 #ifndef XSB_LIBWWW_SEPARATE_UTIL

@@ -1,0 +1,52 @@
+:- export http_err_code/3.
+
+http_err_code( 100, 'Continue',                             'information' ). 
+http_err_code( 101, 'Switching Protocols',                  'information' ).
+http_err_code( 200, 'OK',                                   'success' ). 
+http_err_code( 201, 'Created',                              'success' ). 
+http_err_code( 202, 'Accepted',                             'success' ). 
+http_err_code( 203, 'Non-authoritative Information',        'success' ). 
+http_err_code( 204, 'Document Updated',                     'success' ). 
+http_err_code( 205, 'Reset Content',                        'success' ). 
+http_err_code( 206, 'Partial Content',                      'success' ). 
+http_err_code( 207, 'Partial Update OK',                    'success' ). 
+http_err_code( 300, 'Multiple Choices',                     'redirection' ). 
+http_err_code( 301, 'Moved Permanently',                    'redirection' ). 
+http_err_code( 302, 'Found',                                'redirection' ). 
+http_err_code( 303, 'See Other',                            'redirection' ). 
+http_err_code( 304, 'Not Modified',                         'redirection' ). 
+http_err_code( 305, 'Use Proxy',                            'redirection' ). 
+http_err_code( 306, 'Proxy Redirect',                       'redirection' ). 
+http_err_code( 307, 'Temporary Redirect',                   'redirection' ).
+http_err_code(-400, 'Bad Request',                          'client_error' ).
+http_err_code(-401, 'Unauthorized',                         'client_error' ).
+http_err_code(-403, 'Forbidden',                            'client_error' ).
+http_err_code(-404, 'Not Found',                            'client_error' ).
+http_err_code(-405, 'Method Not Allowed',                   'client_error' ).
+http_err_code(-406, 'Not Acceptable',                       'client_error' ).
+http_err_code(-407, 'Proxy Authentication Required',        'client_error' ).
+http_err_code(-409, 'Conflict',                             'client_error' ).
+http_err_code(-411, 'Length Required',                      'client_error' ).
+http_err_code(-412, 'Precondition Failed',                  'client_error' ).
+http_err_code(-413, 'Request Entity Too Large',             'client_error' ).
+http_err_code(-414, 'Request-URI Too Large',                'client_error' ).
+http_err_code(-415, 'Unsupported Media Type',               'client_error' ).
+http_err_code(-416, 'Range Not Satisfiable',                'client_error' ).
+http_err_code(-417, 'Expectation Failed',                   'client_error' ).
+http_err_code(-418, 'Reauthentication Required',            'client_error' ).
+http_err_code(-419, 'Proxy Reauthentication Reuired',       'client_error' ).
+http_err_code(-500, 'Internal Server Error',                'server_error' ).
+http_err_code(-501, 'Not Implemented',                      'server_error' ).
+http_err_code(-502, 'Bad Gateway',                          'server_error' ).
+http_err_code(-503, 'Service Unavailable',                  'server_error' ).
+http_err_code(-504, 'Gateway Timeout',                      'server_error' ).
+http_err_code(-505, 'HTTP Version not supported',           'server_error' ).
+http_err_code(-506, 'Partial update Not Implemented',       'server_error' ).
+http_err_code(-900, 'Weird, should never happen',           'internal' ).
+http_err_code(-901, 'We are in a select',                   'internal' ).
+http_err_code(-902, 'Negative value',                       'internal' ).
+http_err_code(-903, 'If we want to pause a stream',         'internal' ).
+http_err_code(-904, 'Recover pipe line',                    'internal' ).
+http_err_code(-905, 'Connection timeout',                   'internal' ).
+http_err_code(-906, 'Can not locate remote host',           'internal' ).
+http_err_code(   0, 'illegal URL',                          'client_error' ).

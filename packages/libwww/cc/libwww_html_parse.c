@@ -57,12 +57,15 @@ int total_number_of_requests;
    Each req: f(URL, FORM-Params, SELECTED-Tags, PARSED-Result, ERROR-Code)
    SELECTED-Tags:
        	     _ (all tags),
-	     f(chosen-tag-list,ignore-tag-list) means: parse only inside the
-	     	    tags on the chosen tag list. Stop parsing if an ignored tag
-		    is found. Resume if a chosen tag is found, etc.
-	     f(_,ignore-tag-list) means: parse all tags except those in the
-		    ignore list.
-	     f(chosen-tag-list,_) means: parse only inside the chosen tags.
+	     f(chosen-tag-list,suppressed-tag-list,stripped-tag-list) means:
+	     	    parse only inside
+		    the tags on the chosen tag list. Stop parsing if a
+		    suppressed tag is found. Resume if a chosen tag is found,
+		    etc. 
+		    Stripped tags are those that just get discarded.
+	     f(_,suppressed-tag-list,...) means: parse all tags except those in
+		    the suppressed tags list.
+	     f(chosen-tag-list,_,...) means: parse only inside the chosen tags.
  */
 BOOL  libwww_html_parse(void)
 {
@@ -100,17 +103,21 @@ BOOL  libwww_html_parse(void)
    return parameters. */
 PRIVATE void setup_request_structure(prolog_term prolog_req, int request_id)
 {
-  BOOL	      status;
+  int	      status;
   HTAnchor    *anchor = NULL;
   HTRequest   *request;
+  HTAssocList *formdata;
   char *uri = NULL;
   prolog_term form_params;
+  int is_form_request;
+  HTTP_METHOD form_method;
 
-  /* I think these are essentially local callbacks, because they are
-     immediately associated with a request when parsing begins.
-     Subsequent registrations affect only subsequent calls. CHECK!!! */
+  /* register callback for begin/end element events */
   HText_registerElementCallback(beginElement, endElement);
+  /* register callback for text chunks */
   HText_registerTextCallback(addText);
+  /* register callbacks to create and delete the HText objects. These are
+     objects where we build parsed terms */
   HText_registerCDCallback(create_HText_obj, delete_HText_obj);
 
   /* get URL */
@@ -120,9 +127,17 @@ PRIVATE void setup_request_structure(prolog_term prolog_req, int request_id)
 
   /* This is for forms -- not implemented */
   form_params = p2p_arg(prolog_req,2);
-  get_form_params(form_params);
-    
-  /* Create a new request */
+  if (is_var(form_params))
+    is_form_request = FALSE;
+  else {
+    is_form_request = TRUE;
+    form_method = get_request_method(p2p_car(form_params),
+				     "LIBWWW_HTML_PARSE");
+    formdata = get_form_params(p2p_car(p2p_cdr(form_params)),
+				      "LIBWWW_HTML_PARSE");
+  }
+
+  /* Create a new request and attach the context structure to it */
   request = HTRequest_new();
   set_request_context(request, prolog_req, request_id);
 
@@ -130,7 +145,27 @@ PRIVATE void setup_request_structure(prolog_term prolog_req, int request_id)
   /* Create a new Anchor */
   anchor = HTAnchor_findAddress(uri);
   /* Hook up anchor to our request */
-  status = HTLoadAnchor(anchor, request);
+  if (is_form_request)
+    if (form_method == FORM_GET)
+      status = (YES == HTGetFormAnchor(formdata,anchor,request));
+    else /* FORM_POST */
+      status = (NULL != HTPostFormAnchor(formdata,anchor,request));
+  else /* not a form request */
+    status = (YES==HTLoadAnchor(anchor, request));
+
+#ifdef LIBWWW_DEBUG_TERSE
+  if (is_form_request)
+    printf("Request %d: HTTP Method: %s\n",
+	   REQUEST_ID(request),
+	   (form_method==FORM_GET ? "FORM,GET" : "FORM,POST"));
+  else printf("Request %d: HTTP Method: NOT FORM\n",
+	      REQUEST_ID(request));
+#endif
+
+  if (formdata) HTAssocList_delete(formdata);
+
+  if (!status)
+    xsb_abort("LIBWWW_HTML_PARSE: Request for URI %d has invalid data!", uri);
 }
 
 
@@ -145,23 +180,25 @@ PRIVATE void beginElement(HText  	*htext, /* where we build everything */
 {
 #ifdef LIBWWW_DEBUG
   HTTag *tag = SGML_findTag(htext->dtd, element_number);
-  printf("In beginElement(%d): stackptr=%d tagname=%s ignore=%d choose=%d\n",
+  printf("In beginElement(%d): stackptr=%d tagname=%s suppress=%d choose=%d\n",
 	 REQUEST_ID(htext->request),
 	 htext->stackptr, HTTag_name(tag),
-	 IS_IGNORED_TAG(element_number, htext),
+	 IS_SUPPRESSED_TAG(element_number, htext),
 	 IS_SELECTED_TAG(element_number, htext)
 	 );
 #endif
 
-  if ((ignoring(htext) && !IS_SELECTED_TAG(element_number, htext))
-      || (parsing(htext) && IS_IGNORED_TAG(element_number, htext))) {
-    push_ignore_element(htext, element_number);
+  if (IS_STRIPPED_TAG(element_number, htext)) return;
+
+  if ((suppressing(htext) && !IS_SELECTED_TAG(element_number, htext))
+      || (parsing(htext) && IS_SUPPRESSED_TAG(element_number, htext))) {
+    push_suppressed_element(htext, element_number);
     return;
   }
 
-  /* parsing or ignoring & found a selected tag */
-  if ((parsing(htext) && !IS_IGNORED_TAG(element_number, htext))
-      || (ignoring(htext) 
+  /* parsing or suppressing & found a selected tag */
+  if ((parsing(htext) && !IS_SUPPRESSED_TAG(element_number, htext))
+      || (suppressing(htext) 
 	  && IS_SELECTED_TAG(element_number, htext))) {
     push_element(htext,element_number,present,value);
     return;
@@ -172,13 +209,17 @@ PRIVATE void beginElement(HText  	*htext, /* where we build everything */
 /* The callback for the end-tag event */
 PRIVATE void endElement (HText *htext, int element_number)
 {
-  int i, match = find_matching_elt(htext, element_number);
+  int i, match;
 
 #ifdef LIBWWW_DEBUG
   printf("In endElement(%d): stackptr=%d\n",
 	 REQUEST_ID(htext->request), htext->stackptr);
 #endif
-  /* doesn't close an open element */
+
+  if (IS_STRIPPED_TAG(element_number, htext)) return;
+
+  match = find_matching_elt(htext, element_number);
+  /* the closing tag is probably out of place */
   if (match < 0) return;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
@@ -189,10 +230,10 @@ PRIVATE void endElement (HText *htext, int element_number)
     if (parsing(htext))
       pop_element(htext);
     else
-      pop_ignore_element(htext);
+      pop_suppressed_element(htext);
 
 #ifdef LIBWWW_DEBUG
-  if (!STACK_TOP(htext).ignore)
+  if (!STACK_TOP(htext).suppress)
     print_prolog_term(STACK_TOP(htext).elt_term, "elt_term");
 #endif
 
@@ -207,9 +248,10 @@ PRIVATE void addText (HText *htext, const char *textbuf, int len)
   static vstrDEFINE(pcdata_buf);
   int shift = 0;
 
-  if (ignoring(htext)) return;
-  
-  /* ignore useless newlines */
+  if (IS_STRIPPED_TAG(PCDATA_SPECIAL, htext)) return;
+  if (suppressing(htext)) return;
+
+  /* strip useless newlines */
   if (strncmp(textbuf,"\n", len) == 0) return;
 
   push_element(htext, PCDATA_SPECIAL, NULL, NULL);
@@ -279,6 +321,7 @@ PRIVATE void collect_attributes ( prolog_term  elt_term,
 }
 
 
+/* push element onto HTEXT->stack */
 PRIVATE void push_element (HText       *htext,
 			   int         element_number,
 			   const BOOL  *present,
@@ -311,7 +354,7 @@ PRIVATE void push_element (HText       *htext,
   STACK_TOP(htext).elt_term = p2p_car(location);
 
   STACK_TOP(htext).element_number = element_number;
-  STACK_TOP(htext).ignore = FALSE;
+  STACK_TOP(htext).suppress = FALSE;
 
   /* normal tags look like elt(tagname, attrlist, contentlist);
      pcdata tags are: elt(pcdata,[],text);
@@ -395,7 +438,7 @@ PRIVATE void pop_element(HText *htext)
 
 
 /* pushes tag, but keeps only the tag info; doesn't convert to prolog term */
-PRIVATE void push_ignore_element(HText *htext, int element_number)
+PRIVATE void push_suppressed_element(HText *htext, int element_number)
 {
   /* if empty tag, then just return */
   if (SGML_findTagContents(htext->dtd, element_number) == SGML_EMPTY)
@@ -404,9 +447,9 @@ PRIVATE void push_ignore_element(HText *htext, int element_number)
   htext->stackptr++; /* advance ptr, but don't push tag */
 
   STACK_TOP(htext).element_number = element_number;
-  STACK_TOP(htext).ignore = TRUE;
+  STACK_TOP(htext).suppress = TRUE;
 
-  /* passing content list tail through ignored elements */
+  /* passing content list tail through suppressed elements */
   if (htext->stackptr == 0)
     STACK_TOP(htext).content_list_tail = htext->parsed_term_tail;
   else 
@@ -416,9 +459,9 @@ PRIVATE void push_ignore_element(HText *htext, int element_number)
 }
 
 
-PRIVATE void pop_ignore_element(HText *htext)
+PRIVATE void pop_suppressed_element(HText *htext)
 {
-  /* chain the list tails back through the sequence of ignored tags */
+  /* chain the list tails back through the sequence of suppressed tags */
   if (htext->stackptr > 0) {
     STACK_PREV(htext).content_list_tail = STACK_TOP(htext).content_list_tail;
   } else {
@@ -428,7 +471,7 @@ PRIVATE void pop_ignore_element(HText *htext)
   htext->stackptr--;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  printf("In pop_ignore_element(%d): %d\n",
+  printf("In pop_suppressed_element(%d): %d\n",
 	 REQUEST_ID(htext->request), htext->stackptr);
   if (htext->stackptr >= 0)
     print_prolog_term(STACK_TOP(htext).content_list_tail, "content_list_tail");
@@ -516,8 +559,8 @@ PRIVATE HText *create_HText_obj( HTRequest *             request,
     me->node_anchor =  anchor;
     me->target = output_stream;
     me->dtd = HTML_dtd();
-    me->ignore_is_default = 
-      ((REQUEST_CONTEXT *)HTRequest_context(request))->ignore_is_default;
+    me->suppress_is_default = 
+      ((REQUEST_CONTEXT *)HTRequest_context(request))->suppress_is_default;
     me->parsed_term = p2p_new();
     c2p_list(me->parsed_term);
     me->parsed_term_tail = me->parsed_term;
@@ -630,13 +673,16 @@ PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl)
 {
   prolog_term tail, head;
   int i=0, tag_number;
+  char *tagname;
   SGML_dtd *dtd = HTML_dtd();
   /* Save tag numbers in the table */
   tail=tag_list;
   while (is_list(tail) && !is_nil(tail) && i < tag_tbl->size) {
     head= p2p_car(tail);
     tail=p2p_cdr(tail);
-    tag_number = SGML_findElementNumber(dtd, string_val(head));
+    tagname = string_val(head);
+    tag_number = (strcasecmp(tagname,"pcdata")==0?
+		  PCDATA_SPECIAL : SGML_findElementNumber(dtd, tagname));
     add_to_htable(tag_number, tag_tbl);
     i++;
   }
@@ -656,7 +702,8 @@ PRIVATE void set_request_context(HTRequest *request,
   context->request_id = request_id;
 
   init_htable(&(context->selected_tags_tbl),SELECTED_TAGS_TBL_SIZE);
-  init_htable(&(context->ignored_tags_tbl),IGNORED_TAGS_TBL_SIZE);
+  init_htable(&(context->suppressed_tags_tbl),SUPPRESSED_TAGS_TBL_SIZE);
+  init_htable(&(context->stripped_tags_tbl),STRIPPED_TAGS_TBL_SIZE);
 
   context->parsed_result = p2p_arg(prolog_req,4);
   if(!is_var(context->parsed_result))
@@ -667,27 +714,33 @@ PRIVATE void set_request_context(HTRequest *request,
     xsb_abort("LIBWWW_HTML_PARSE: Arg 5 (Request status) must be unbound variable!");
 
 
-  /* get tag selection: f(chosen-list,ignored-list) */
+  /* get tag selection: f(chosen-list,suppressed-list,strip-list) */
   selection = p2p_arg(prolog_req,3);
   if (is_var(selection)) {
-    context->ignore_is_default=FALSE;
-  } else if (is_functor(selection) && (p2c_arity(selection)==2)) {
+    context->suppress_is_default=FALSE;
+  } else if (is_functor(selection) && (p2c_arity(selection)==3)) {
     prolog_term
-      select_term=p2p_arg(selection,1), ignore_term=p2p_arg(selection,2);
+      select_term=p2p_arg(selection,1),
+      suppressed_term=p2p_arg(selection,2),
+      strip_term=p2p_arg(selection,3);
 
     if (is_var(select_term))
-      context->ignore_is_default=FALSE;
+      context->suppress_is_default=FALSE;
     else if (is_list(select_term)) {
-      context->ignore_is_default=TRUE;
+      context->suppress_is_default=TRUE;
       init_tag_table(select_term, &(context->selected_tags_tbl));
     } else
-      xsb_abort("LIBWWW_HTML_PARSE: Arg 3 (selection) in f(SELECT,_): SELECT must be a var or a list!");
-    if (is_list(ignore_term)) {
-      init_tag_table(ignore_term, &(context->ignored_tags_tbl));
-    } else if (!is_var(ignore_term))
-      xsb_abort("LIBWWW_HTML_PARSE: Arg 3 (selection) in f(_,IGNORE): IGNORE must be a var or a list!");
+      xsb_abort("LIBWWW_HTML_PARSE: Arg 3 (selection) in f(CHOOSE,_,_): CHOOSE must be a var or a list");
+    if (is_list(suppressed_term)) {
+      init_tag_table(suppressed_term, &(context->suppressed_tags_tbl));
+    } else if (!is_var(suppressed_term))
+      xsb_abort("LIBWWW_HTML_PARSE: Arg 3 (selection) in f(_,SUPPRESS,_): SUPPRESS must be a var or a list");
+    if (is_list(strip_term)) {
+      init_tag_table(strip_term, &(context->stripped_tags_tbl));
+    } else if (!is_var(strip_term))
+      xsb_abort("LIBWWW_HTML_PARSE: Arg 3 (selection) in f(_,_,STRIP): STRIP must be a var or a list");
   } else
-    xsb_abort("LIBWWW_HTML_PARSE: Arg 3 (selection) must be a var or f(ARG1,ARG2)!");
+    xsb_abort("LIBWWW_HTML_PARSE: Arg 3 (selection) must be a var or f(CHOOSE,SUPPRESS,STRIP)");
   
   /* attach context to the request */
   HTRequest_setContext(request, (void *) context);
@@ -699,15 +752,56 @@ PRIVATE void set_request_context(HTRequest *request,
 PRIVATE void free_request_context (REQUEST_CONTEXT *context)
 {
   free_htable(&(context->selected_tags_tbl));
-  free_htable(&(context->ignored_tags_tbl));
+  free_htable(&(context->suppressed_tags_tbl));
   free(context);
 }
 
 
 /* not implemented */
-PRIVATE void get_form_params(prolog_term form_params)
+PRIVATE HTAssocList *get_form_params(prolog_term form_params, char *caller)
 {
-  return;
+  HTAssocList *formfields=NULL;
+
+  if (!is_list(form_params))
+    xsb_abort("%s: Arg 2 (Form params) must be a list or an unbound variable",
+	      caller);
+  
+  while (!is_nil(form_params)) {
+    prolog_term head;
+    char *string;
+
+    head = p2p_car(form_params);
+    if (is_string(head))
+      string = p2c_string(head);
+    else
+      xsb_abort("%s: Non-string member in form parameter list!", caller);
+
+    form_params = p2p_cdr(form_params);
+		
+    /* create a list to hold the form arguments */
+    if (!formfields) formfields = HTAssocList_new();
+
+    /* parse the content and add it to the association list */
+    HTParseFormInput(formfields, string);
+  }
+
+  return formfields;
+}
+
+
+/* FORM_POST or FORM_GET */
+PRIVATE HTTP_METHOD get_request_method(prolog_term method, char *caller)
+{
+  if (is_string(method)) {
+    if (strcasecmp(string_val(method), "POST")==0)
+      return FORM_POST;
+    if (strcasecmp(string_val(method), "GET")==0)
+      return FORM_GET;
+  }
+  else
+    xsb_abort("%s: Invalid HTTP request method!", caller);
+  /* this is just to pacify the compiler */
+  return FORM_GET;
 }
 
     
