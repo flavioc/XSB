@@ -1,3 +1,11 @@
+:- compiler_options([xpp_on]).
+
+#include "standard.h"
+
+:- import message/1, messageln/2 from standard.
+
+messageln(Message) :- messageln(Message, STDMSG).
+
 :- export load_extensional_facts/1, 
 	dump_extensional_facts/1, 
 	load_intensional_rules/1,
@@ -107,7 +115,8 @@ load_extensional_facts([Dir|DirList]) :-
 	load_extensional_facts(DirList).
 load_extensional_facts(Dir) :-
 	cdf_fix_dir(Dir,DirS),
-	write('Loading '),writeln(Dir),
+% TLS: use message here for testscript.
+	message('Loading '),messageln(Dir,STDMSG),
 	reload_extensional(DirS).
 
 reload_extensional(Dir):- 

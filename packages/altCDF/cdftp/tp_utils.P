@@ -30,38 +30,38 @@ tp_prettyPrintCE(N,CE):-
 	debugging(X),
 	(X >= N -> prettyPrintCE(CE) ; true).
 
-prettyPrintCE(CE):- prettyPrintCE(CE,0).
+prettyPrintCE(CE):- prettyPrintCE(CE,3,_).
 
-prettyPrintCE(','(A,B),N):- !,
-	N1 is N + 3,
-	prettyPrintCE(A,N1),
+prettyPrintCE(','(A,B),N,Last):- !,
+	(Last = and -> N1 = N ; N1 is N + 3),
+	prettyPrintCE(A,N1,and),
 	tab(N),writeln('and'),
-	prettyPrintCE(B,N1).
-prettyPrintCE(';'(A,B),N):- !,
-	N1 is N + 3,
-	prettyPrintCE(A,N1),
+	prettyPrintCE(B,N1,and).
+prettyPrintCE(';'(A,B),N,Last):- !,
+	(Last = or -> N1 = N ; N1 is N + 3),
+	prettyPrintCE(A,N1,or),
 	tab(N),writeln('or'),
-	prettyPrintCE(B,N1).
-prettyPrintCE(exists(R,CE),N):-!,
+	prettyPrintCE(B,N1,or).
+prettyPrintCE(exists(R,CE),N,_Last):-!,
 	tab(N),write('exists('),write(R),write(','),
 	writeEmbeddedCE(CE,N).
-prettyPrintCE(all(R,CE),N):- !,
+prettyPrintCE(all(R,CE),N,_Last):- !,
 	tab(N),write('all('),write(R),write(','),
 	writeEmbeddedCE(CE,N).
-prettyPrintCE(atLeast(N,R,CE),N):-!,
+prettyPrintCE(atLeast(N,R,CE),N,_):-!,
 	tab(N),write('atLeast('),write(N),write(','),write(R),write(','),
 	writeEmbeddedCE(CE,N).
-prettyPrintCE(atMost(N,R,CE),N):-!,
+prettyPrintCE(atMost(N,R,CE),N,_):-!,
 	tab(N),write('atMost('),write(N),write(','),write(R),write(','),
 	writeEmbeddedCE(CE,N).
-prettyPrintCE(CE,N):- tab(N),writeln(CE).
+prettyPrintCE(CE,N,_):- tab(N),writeln(CE).
 	    
 writeEmbeddedCE(CE,N):- 
 	(largeCE(CE) -> 
 	    nl,
-	    N1 is N + 3,
-	    prettyPrintCE(CE,N1),
-	    tab(N),writeln(')')
+	    N1 is N + 12,
+	    prettyPrintCE(CE,N1,_),
+	    tab(N1),writeln(')')
 	;
 	    write(CE),writeln(')') ).
 

@@ -5,10 +5,11 @@
 :- [cdftp_cdfsc].
 :- [cdftp_preproc].
 
-:- document_export descend_all/0, 
-	localClassExpression/3,	localClassExpression/2, check_lce/1,
-	checkIdConsistency/1,
-	oidEntails/2.
+:- document_export descend_all/0, ceDepth/2,
+	localClassExpression/2,  % hide
+	checkIdConsistency/1, consistentWith/2,
+	allModelsEntails/2,
+	localClassExpression/3,	check_lce/2.
 
 :- document_import isa_ext/2 from usermod.
 :- document_import compdlrule/3 from usermod.
@@ -19,6 +20,8 @@
             sat/3
 %	subsumes/2
     from cdftp_meta.
+
+:- import length/2 from basics.
 
 :- import tp_writeln/2 from tp_utils.
 :- import   isa/2, allAttr/3, hasAttr/3, necessCond/2,
@@ -37,14 +40,16 @@
 
 %---------------------------------------------------- :-
 :- comment(module,"The module @tt{cdftp_chkCon} contains the top-level
-routines used for").
+routines used to invoke the CDF theorem prover.  ").
 
 %----------------------------------------------------
 
-
 :- dynamic failed/1, succeeded/1, queried/1.
 
-:- comment(checkIdConsistency/1,"@tt{checkIdConsistency(Id)}...").
+:- comment(checkIdConsistency/1,"In @tt{checkIdConsistency(IdList)}
+@tt{IdList} is a list of object or class identifiers which is taken as
+a conjunction.  The predicate checks whether @tt{IdList} is consistent
+in the current CDF instance.").
 
 /* Top level call that skips the loop check and goes immediately to 
     tableConsChk.
@@ -53,17 +58,20 @@ routines used for").
     AncList is a list of Contexts  */
 
 checkIdConsistency(Id):- 
+	checkIdConsistency(single,Id).
+
+checkIdConsistency(Mode,Id):- 
 	retractmytabling,
-	tableConsChk([Id],[[Id]]).
+	tableConsChk(Mode,[Id],[[Id]]).
 
 %-----------------------------------------------------------------------------
 /* The algorithm is described in detail in the CDF system paper.  What
 we do here is to prove consistency of an identifier by an iterative
-process.  Given an identifier Id, a local class expression is
+process.  Given an identifier @tt{Id}, a local class expression is
 constructed for Id, and a consistency check made for that class
 expression.  In other words, we prove the consitency of Id by trying
 to construct a model in which Id is a non-empty set if it is a cid, or
-a non-empty unique set if Id is an oid.  
+a non-empty unique set if Id is an oid.
 
 Local class expressions dont contain all information for an
 identifier.  Accordingly, in the model constructed for Id we need to
@@ -105,70 +113,169 @@ checkIdConsistency_1 handles case 2).
 Cases 1) and 3) are handled by checkIdConsistency_1
 */
 
-checkIdConsistency_1(Context,AncList):- 
+checkIdConsistency_1(Mode,Context,AncList):- 
 	(memberchk(Context,AncList) -> 
 	     tp_writeln(1,inLoopSuccess(Context))
-	   ; checkIdConsistency_2(Context,[Context|AncList])).
+	   ; checkIdConsistency_2(Mode,Context,[Context|AncList])).
 
-checkIdConsistency_2([],_).
-checkIdConsistency_2(Context,AncList):- 
+checkIdConsistency_2(_Mode,[],_).
+checkIdConsistency_2(Mode,Context,AncList):- 
 	(queried(Context) -> 
 	    (succeeded(Context) -> tp_writeln(1,succeedingOnTable(Context))
 	      ; (failed(Context) -> tp_writeln(1,failingOnTable(Context)),fail
 	          ; tp_writeln(0,tableNotRight(Context,AncList))))
               ;   tp_writeln(1,recursivelyChecking(Context)),
-	      tableConsChk(Context,AncList)).
+	      tableConsChk(Mode,Context,AncList)).
 
-tableConsChk(Context,AncList):- 
+tableConsChk(Mode,Context,AncList):- 
 	call_assert(queried(Context)),
-	(tableConsChk_1(Context,AncList) -> 
+	(tableConsChk_1(Mode,Context,AncList) -> 
 	    call_assert(succeeded(Context)),
 	    tp_writeln(1,succeededConsistCheck(Context))
 	  ; call_assert(failed(Context)),
            	    tp_writeln(1,failedConsistCheck(Context)),
                 fail).
 
-tableConsChk_1(Context,AncList):- 
+tableConsChk_1(Mode,Context,AncList):- 
 	localClassExpression(Context,Expr),
 	tp_prettyPrintCE(2,Expr),
             sat(Expr,abd(Struct,Worlds),Constraints),
 	checkContexts(Constraints,AncList,Struct,Worlds,Contexts,L),
-	check_all_worlds(0,L,Contexts,AncList).
+	check_worlds(Mode,0,L,Contexts,AncList).
 
-/* Assumes a context structure of arity L */
-check_all_worlds(L,L,_Contexts,_):- !.
-check_all_worlds(L,Arity,Contexts,AncList):- 
+/* Assumes a context structure of arity L.
+   This routine checks all contexts within a given model.
+   Mode is single or multiple. */
+check_worlds(_Mode,L,L,_Contexts,_):- !.
+check_worlds(Mode,L,Arity,Contexts,AncList):- 
 	L1 is L + 1,
 	arg(L1,Contexts,Context),
-	sort(Context,Csort),
-	checkIdConsistency_1(Csort,AncList),
-	check_all_worlds(L1,Arity,Contexts,AncList).
+	length(Context,Clen),
+	(Mode == multiple -> 
+	    (Clen > 1 -> 
+	       sort(Context,Csort),
+	       checkIdConsistency_1(Mode,Csort,AncList)
+	    ;  
+	       true)
+	 ;  sort(Context,Csort),
+	    checkIdConsistency_1(Mode,Csort,AncList) ),	   
+            check_worlds(Mode,L1,Arity,Contexts,AncList).
 
 call_assert(Term):- (call(Term) -> true ; asserta(Term)).
 
-%-------------------------
+%--------------------------------------------------
 
-check_lce(Id):- 
-	localClassExpression(Id,Expr),
-	tp_prettyPrintCE(0,Expr).
+:- comment(consistentWith/2,"In @tt{consistentWith(Id,CE)}, @tt{Id}
+can either be a class or an object identifier.  @tt{consistentWith/2}
+checks whether a given class expression is logically consistent with
+all that is known about @tt{Id} in the current CDF instance.  In other
+words, if @tt{Id} is a class identifier, @tt{consistentWith/2}
+determines whether there is a model of the CDF instance in which all
+elements in @tt{Id} are also in @tt{CE}. If @tt{Id} is an object
+identifier, @tt{consistentWith/2} determines whether there is a model
+in which @tt{Id} @tt{Id} is in @tt{CE}.").
 
-localClassExpression([H],N,Expr):- !,
+consistentWith(cid(Id,Cmpt),CE):- 
+	retractmytabling,
+	ceDepth(CE,N),
+	N1 is N + 1,
+	localClassExpression([cid(Id,Cmpt)],N1,LCE),
+	tp_prettyPrintCE(2,LCE),
+            sat((LCE,CE),abd(Struct,Worlds),Constraints),
+	checkContexts(Constraints,[],Struct,Worlds,Contexts,L),
+	check_worlds(multiple,0,L,Contexts,[]).
+consistentWith(oid(Id,Cmpt),CE):- 
+	retractmytabling,
+	ceDepth(CE,N),
+	N1 is N + 1,
+	localClassExpression([unique(cid(Id,Cmpt))],N1,LCE),
+	tp_prettyPrintCE(2,LCE),
+            sat((LCE,CE),abd(Struct,Worlds),Constraints),
+	checkContexts(Constraints,[],Struct,Worlds,Contexts,L),
+	check_worlds(multiple,0,L,Contexts,[]).
+
+%--------------------------------------------------
+
+:- comment(allModelsEntails/2,"In @tt{allModelsEntails(Id,CE)},
+@tt{Id} can either be a class or an object identifier.
+@tt{allModelsEntails/2} checks whether a given class expression is
+entailed by what is known about @tt{Id} in the current CDF instance.
+In other words, if @tt{Id} is a class identifier,
+@tt{allModelsEntails/2} determines whether in any model of the CDF
+instance, if an element is in @tt{Id} then it is also in @tt{CE}. If
+@tt{Id} is an object identifier, @tt{allModelsEntails/2} determines
+whether @tt{Id} must be in @tt{CE}.
+
+This predicate assumes that all class and object identifiers in a
+given CDF instance are correct.").
+
+allModelsEntails(cid(Id,Cmpt),CE):- 
+	retractmytabling,
+	ceDepth(CE,N),
+	N1 is N + 1,
+	localClassExpression([cid(Id,Cmpt)],N1,LCE),
+	tp_prettyPrintCE(2,LCE),
+	\+ allModelsEntails_1((LCE,not(CE)),[unique(cid(Id,Cmpt))]).
+allModelsEntails(oid(Id,Cmpt),CE):- 
+	retractmytabling,
+	ceDepth(CE,N),
+	N1 is N + 1,
+	localClassExpression([unique(cid(Id,Cmpt))],N1,LCE),
+	tp_prettyPrintCE(2,LCE),
+	\+ allModelsEntails_1((LCE,not(CE)),[]).
+
+allModelsEntails_1(Expr,AncList):- 
+            sat(Expr,abd(Struct,Worlds),_Constr),
+	tp_writeln(2,abd(Struct,Worlds)),
+	checkContexts(_Constr,_Anclist,Struct,Worlds,Contexts,L),
+	check_worlds(multiple,0,L,Contexts,AncList).
+
+%--------------------------------------------------
+
+:- comment(check_lce/2,"In the goal
+@tt{check_lce+IdList,+N)} @tt{IdList} is a list of class identifiers,
+and @tt{N} is a positive integer.  In its semantics, @tt{IdList} is
+interpreted as a conjunction of identifiers, and
+@tt{check_lce+IdList,+N)} pretty-prints a class expression, unfolded
+to depth @tt{N}, that describes @tt{IdList} according to the current
+CDF instance.
+
+This predicate assumes that all class and object identifiers in a
+given CDF instance are correct.").
+
+check_lce(Id,N):- 
+	localClassExpression(Id,N,Expr),
+	tp_prettyPrintCE(0,Expr),
+	writeln(Expr).
+
+:- comment(localClassExpression/3,"In the goal
+@tt{localClassExpression(+IdList,+N,-Expr)} @tt{IdList} is a list of
+class identifiers, and @tt{N} is a positive integer.  In its
+semantics, @tt{IdList} is interpreted as a conjunction of identifiers,
+and upon success, @tt{Expr} is a class expression, unfolded to depth
+@tt{N}, that describes @tt{IdList} according to the current CDF
+instance.").
+
+localClassExpression([H],N,(H,Expr)):- !,
 	localClassExpr_1(H,N,Expr).
-localClassExpression([H|T],N,(Expr1,Expr2)):- 
+localClassExpression([H|T],N,((H,Expr1),Expr2)):- 
 	localClassExpr_1(H,N,Expr1),
 	localClassExpression(T,N,Expr2).
 
-localClassExpression([H],Expr):- !,
+:- comment(hide,localClassExpression/2).
+localClassExpression([H],(H,Expr)):- !,
 	localClassExpr_1(H,1,Expr).
-localClassExpression([H|T],(Expr1,Expr2)):- 
+localClassExpression([H|T],((H,Expr1),Expr2)):- 
 	localClassExpr_1(H,1,Expr1),
 	localClassExpression(T,1,Expr2).
 
-% This actually returns oids, rather than all unique Cids
-localClassExpr_1(Id,N,(Id,Expr)):- 
+% This actually returns oids, rather than all unique cids
+localClassExpr_1(Id,N,Expr):- 
 	getRelevantFacts(Id,CDFList),
+%	writeln(CDFList),
 	N1 is N - 1,
 	localClassExpr_2(CDFList,N1,Expr).
+	
 	
 %-------------------------
 getRelevantFacts(Id,Facts):-
@@ -200,7 +307,7 @@ getRelevantFacts_1(Id,(H <= B)):-
 relevantInRule(Id,H,B):- 
 	relevantInRule_1(','(H,B),Id,Flag),
 	nonvar(Flag),!.
-
+ 
 relevantInRule_1(','(One,Two),Id,Flag):- !,
 	relevantInRule_1(One,Id,Flag),
 	relevantInRule_1(Two,Id,Flag).
@@ -239,25 +346,43 @@ retraverseLevel(N,Cid,OutExpr):-
 	  ; localClassExpr_1(Cid,N,Expr),
 	    (Expr \== Cid -> OutExpr = (Cid,Expr) ; OutExpr = Cid)).
 
-%--------------------------------------------------
-oidEntails(oid(Id,Cmpt),CE):- 
-	retractmytabling,
-	localClassExpression([unique(cid(Id,Cmpt))],LCE),
-	tp_prettyPrintCE(2,LCE),
-	\+ oidConsist_1((LCE,not(CE)),[unique(cid(Id,Cmpt))]).
-
-oidConsist_1(Expr,AncList):- 
-            sat(Expr,abd(Struct,Worlds),_Constr),
-	writeln(abd(Struct,Worlds)),
-	checkContexts(_Constr,_Anclist,Struct,Worlds,Contexts,L),
-	check_all_worlds(0,L,Contexts,AncList).
-
 retractmytabling:- 
 	retractall(failed(_)),retractall(succeeded(_)),retractall(queried(_)).
 
 %--------------------------------------------------
+:- comment(hide,ceDepth/2).
+:- comment(ceDepth/2,hide).
+
+ceDepth(CE,Out):- 
+	ceDepth(CE,1,Out).
+
+ceDepth(','(One,Two),In,Out):- 
+	ceDepth(One,In,O),
+	ceDepth(Two,In,T),
+	(T > O -> Out = T ; Out = O).
+ceDepth(';'(One,Two),In,Out):- 
+	ceDepth(One,In,O),
+	ceDepth(Two,In,T),
+	(T > O -> Out = T ; Out = O).
+ceDepth(exists(_Rel,Class),In,Out):- 
+	In1 is In + 1,
+	ceDepth(Class,In1,Out).
+ceDepth(all(_Rel,Class),In,Out):- 
+	In1 is In + 1,
+	ceDepth(Class,In1,Out).
+ceDepth(atLeast(_N,_Rel,Class),In,Out):- 
+	In1 is In + 1,
+	ceDepth(Class,In1,Out).
+ceDepth(atMost(_N,_Rel,Class),In,Out):- 
+	In1 is In + 1,
+	ceDepth(Class,In1,Out).
+ceDepth(_,In,In).
+	
+%--------------------------------------------------
 % descend_all is used to check consistency of an entire CDF instance,
 % starting from CDF root.
+
+:- comment(hide,descend_all/0).
 
 descend_all:- 
 	cputime(Start),
@@ -281,7 +406,6 @@ descend(Class):-
 	isa_ext(cid(NewClass,S),Class),
 	descend(cid(NewClass,S)),
 	fail.
-
 
 end_of_file.
 

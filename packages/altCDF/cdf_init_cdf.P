@@ -1642,9 +1642,9 @@ abolish_minAttr_inherits :-
 	abolish_table_pred(minAttr_23fix_sub(_,_,_,_)).
 
 abolish_necessCond_inherits :-
-	abolish_table_pred(coversAttr_1fix(_,_)).
+	abolish_coversAttr_inherits.
 
-%%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% performance testing predicate
 :- comment(hide,set_chk_index/0).
@@ -1657,7 +1657,6 @@ set_chk_index :-
 	set_chk_index(minAttr_ext(_,_,_,_)),
 	set_chk_index(maxAttr_ext(_,_,_,_)),
 	set_chk_index(necessCond_ext(_,_)).
-
 
 set_chk_index(Goal) :-
 	asserta((Goal :- chk_index(Goal))).

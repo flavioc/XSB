@@ -40,7 +40,7 @@ necessCond_ext(cid(incon,o1),vid(not(cid(incon,o1)))).
 
 necessCond_ext(cid(con,o1),vid(';'(not(cid(con,o1)),cid(atomicClass,o1))) ).
 
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------
 
 hasAttr_ext(oid('Jocasta',oed),rid(hasChild,oed),oid('Oedipus',oed)).
 hasAttr_ext(oid('Oedipus',oed),rid(hasChild,oed),oid('Polyneikes',oed)).
@@ -49,7 +49,53 @@ hasAttr_ext(oid('Polyneikes',oed),rid(hasChild,oed),oid('Thersandros',oed)).
 
 isa_ext(oid('Oedipus',oed),cid(patricide,oed)).
 
-necessCond_ext(cid('Thersandros',oed),vid(not(cid(patricide,oed)))).
+necessCond_ext(oid('Thersandros',oed),vid(not(cid(patricide,oed)))).
+
+%--------------------------------------------------------------------------------------------------
+% Family Example.  DL handbook, .52 (extended)
+
+isa_ext(cid(gender,fam),cid('CDF Classes',cdf)).
+  isa_ext(cid(female,fam),cid(gender,fam)).
+  isa_ext(cid(male,fam),cid(gender,fam)).
+
+isa_ext(cid(person,fam),cid('CDF Classes',cdf)).
+allAttr_ext(cid(person,fam),rid(hasBrother_oops,fam),cid(male,fam)).
+allAttr_ext(cid(person,fam),rid(hasSister_oops,fam),cid(famale,fam)).
+allAttr_ext(cid(person,fam),rid(hasBrother,fam),cid(man,fam)).
+allAttr_ext(cid(person,fam),rid(hasSister,fam),cid(woman,fam)).
+
+  isa_ext(cid(woman,fam),cid(female,fam)).
+  isa_ext(cid(woman,fam),cid(person,fam)).
+
+  isa_ext(cid(man,fam),cid(person,fam)).
+  necessCond_ext(cid(man,fam),vid(not(cid(woman,fam)))).
+
+isa_ext(cid(mother,fam),cid(woman,fam)).
+hasAttr_ext(cid(father,fam),rid(hasChild,fam),cid(person,fam)).
+
+isa_ext(cid(father,fam),cid(man,fam)).
+hasAttr_ext(cid(mother,fam),rid(hasChild,fam),cid(person,fam)).
+
+necessCond_ext(cid(parent,fam),vid(';'(cid(father,fam),cid(mother,fam)))).
+
+isa_ext(cid(grandmother,fam),cid(mother,fam)).
+hasAttr_ext(cid(grandmother,fam),rid(hasChild,fam),cid(parent,fam)).
+
+isa_ext(cid(grandfather,fam),cid(father,fam)).
+hasAttr_ext(cid(grandfather,fam),rid(hasChild,fam),cid(parent,fam)).
+
+isa_ext(cid(motherwithmanychildren,fam),cid(mother,fam)).
+minAttr_ext(cid(motherwithmanychildren,fam),rel(hasChild,fam),cid(person,fam),3).
+
+isa_ext(cid(motherwithoutdaughter,fam),cid(mother,fam)).
+allAttr_ext(cid(motherwithoutdaughter,fam),rid(hasChild,fam),cid(notWoman,fam)).
+
+% This cid has to be created as a special cid.
+necessCond_ext(cid(notWoman,fam),vid(not(cid(woman,fam)))).
+
+isa_ext(cid(wife,fam),rid(hasHusband,fam),cid(man,fam)).
+
+%--------------------------------------------------------------------------------------------------
 
 end_of_file.
 

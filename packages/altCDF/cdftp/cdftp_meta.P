@@ -2,7 +2,7 @@
 
 :- document_export 
             checkContexts/6,
-            sat_test/1,sat/3,
+            sat_test/1,sat/3,sat/1,
 	subsumes/2.
 
 :- document_import tp_subclass/2,topIdentifier/1,bottomIdentifier/1
@@ -20,11 +20,11 @@ nonDetType(acyclic).
 %nonDetType(all).
 
 sat_test(Expr):- 
-	(sat(Expr,_AbdIn,_ConstIn,_N) -> 
+	(sat(Expr,_AbdIn,_ConstIn) -> 
 	    true
 	  ; writeln(cannot_satisfy(Expr)),fail).
 	
-sat(Expr):- sat(Expr,_,_,_).
+sat(Expr):- sat(Expr,_,_).
 
 %------------------------------------------------------------------------------------------
 /* Divides work into abduction (building a structure) and
@@ -469,7 +469,11 @@ cauterizeList([H],[H]):-!.
 cauterizeList([H|T],[H|T1]):-
 	cauterizeList(T,T1).
 
+%----------------------------------------
+
 end_of_file.
+
+
 choose1(N,Eset,Set,New):- 
 	length(Eset,M),
 	(M =< N -> 
