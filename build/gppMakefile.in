@@ -31,6 +31,7 @@ BINDIR=@arch_bindir@
 OBJDIR=@arch_config_prefix@/saved.o
 mno_cyg_inclib=@mno_cyg_inclib@
 LDFLAGS=@LDFLAGS@
+CFLAGS=@GPPCFLAGS@
 
 all: prepare gpp install
 
@@ -38,7 +39,7 @@ gpp: gpp.o
 	$(CC) $(LDFLAGS) -o gpp $(OBJDIR)/gpp.o
 
 gpp.o: gpp.c
-	$(CC) -c $(mno_cyg_inclib) gpp.c
+	$(CC) $(CFLAGS) -c $(mno_cyg_inclib) gpp.c
 	@mv -f gpp.o $(OBJDIR) || echo ""
 
 prepare:
