@@ -33,6 +33,15 @@
 ## 
 ##
 
+if test -f buildxsb.lock ; then
+   echo "***Build lock exists: another configure/makexsb is probably running.
+***Wait until the previous build is complete.
+***If this is a stale lock, remove ./buildxsb.lock and run configure again."
+   exit 1
+fi
+
+touch buildxsb.lock
+trap 'rm buildxsb.lock; exit 1' 1 2 15
 
 makeargs=
 force_devel=
@@ -73,3 +82,5 @@ else
    echo "Have you configured XSB for this architecture?"
    echo ""
 fi
+
+rm -f  buildxsb.lock
