@@ -86,7 +86,7 @@ reconsult(Path, Options, Ensure_loaded) :-
 	).
 
 reconsult0(Path, Options, Ensure_loaded) :-
-	( Path == user -> compile_load_user(Options)
+/**	( Path == user -> compile_load_user(Options)
 	; ( search_module(Path, Dir, Mod, SExt, Base, Obj) ->
 	      (	 ( SExt \== 'O', i_want_compile(SExt, Base, Obj) )
 	      ->  compile_f(SExt, Base, Options, _ExList, Mod, Dir),
@@ -106,7 +106,31 @@ reconsult0(Path, Options, Ensure_loaded) :-
 	      )
 	  ; file_write0(STDERR, 'Cannot find the file/module '),
 	    file_write0(STDERR, Path), file_nl(STDERR), fail
-	  )
+	  ) ****/
+	(Path == user
+	 ->	compile_load_user(Options)
+	 ;	(search_module(Path, Dir, Mod, SExt, Base, Obj)
+		 ->	expand_filename(Obj,ExpObj),
+			((SExt \== 'O', i_want_compile(SExt, Base, Obj))
+			 ->	compile_f(SExt,Base,Options,_ExList,Mod,Dir),
+				load_exec(Obj, Mod),
+				(consult_file_loaded(ExpObj)
+				 ->	true
+				 ;	assert(consult_file_loaded(ExpObj))
+				)
+			 ;      ((Ensure_loaded==true,
+				 consult_file_loaded(ExpObj))
+				 ->     true
+			         ;	load_exec(Obj, Mod),
+				        (consult_file_loaded(ExpObj)
+					 ->	true
+					 ;	assert(consult_file_loaded(ExpObj))
+					)
+				)
+			)
+		)
+	 ;	file_write0(STDERR, 'Cannot find the file/module '),
+		file_write0(STDERR, Path), file_nl(STDERR), fail
 	).
 
 i_want_compile(SExt, Base, Obj) :-
@@ -272,12 +296,13 @@ get_fname(Filename,SExt,Base,Mod) :-
 
 load_dyn0(SExt,Base,Mod,Dir) :-
 	get_HRname(SExt,Base,Hfname,Rfname),
-	init_for_load(Rfname, Mod),
+	expand_filename(Rfname,ARfname),
+	init_for_load(ARfname, Mod),
 	(Hfname == []
          ->     true
          ;      load_dyn1(Hfname,Dir)
         ),
-	load_dyn1(Rfname,Dir),
+	load_dyn1(ARfname,Dir),
 	cleanup_for_load.
 
 get_HRname(SExt,Base,Hfname,Rfname) :-
@@ -416,12 +441,13 @@ load_dync(File,Dir) :-
 
 load_dync0(SExt,Base,Mod,Dir) :-
 	get_HRname(SExt,Base,Hfname,Rfname),
-	init_for_load(Rfname, Mod),
+	expand_filename(Rfname,ARfname),
+	init_for_load(ARfname, Mod),
 	(Hfname == []
          ->     true
          ;      load_dync1(Hfname,Dir)
         ),
-	load_dync1(Rfname,Dir),
+	load_dync1(ARfname,Dir),
 	cleanup_for_load.
 
 
@@ -661,10 +687,12 @@ ensure_dync_loaded(File) :-
 if_should_not_reload(File) :-
 	get_fname(File,SExt,Base,_Mod),
 	get_HRname(SExt,Base,_Hfname,Filename),
-	file_time(Filename,time(Ctime1,Ctime2)),
-	load_dyn_file_loaded(Filename,time(Ltime1,Ltime2)),
+	expand_filename(Filename,AFilename),
+	writeln(AFilename),
+	file_time(AFilename,time(Ctime1,Ctime2)),
+	load_dyn_file_loaded(AFilename,time(Ltime1,Ltime2)),
 	time(Ltime1,Ltime2) @>= time(Ctime1,Ctime2),
-	\+ need_more_index(Filename).
+	\+ need_more_index(AFilename).
 
 need_more_index(Filename) :-
 	load_dyn_pred_loaded(Filename,Head,OIndex,OHashsize),
