@@ -2,9 +2,9 @@
 
 ALLOBJS = flrprettyprint.P flrio.P
 
-XSB=..\..\..\config\x86-pc-windows\bin\xsb.exe
+XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
 
-OPTIONS=[optimize]
+OPTIONS = [optimize]
 
 .SUFFIXES: .P .flr
 

@@ -1,26 +1,26 @@
 # Make file for Microsoft NMAKE
 
-ALLOBJS=  flroperator.O \
-	  flrnodefp.O \
-	  flrnowsp.O \
-	  flrarguments.O \
-	  flrprolog.O \
-	  flrfirstorder.O \
-	  flrprint.O \
-	  flrlibman.O \
-	  flrlexer.O \
-	  flrcomposer.O \
-          flrparser.O \
-	  flrcompiler.O \
-	  flrcoder.O \
-	  flrutils.O \
-	  flrwrapper.O \
-	  flrwraparound.O \
-	  flrundefhook.O \
-	  flrshell.O
+ALLOBJS =  flroperator.O \
+	   flrnodefp.O \
+	   flrnowsp.O \
+	   flrarguments.O \
+	   flrprolog.O \
+	   flrfirstorder.O \
+	   flrprint.O \
+	   flrlibman.O \
+	   flrlexer.O \
+	   flrcomposer.O \
+	   flrparser.O \
+	   flrcompiler.O \
+	   flrcoder.O \
+	   flrutils.O \
+	   flrwrapper.O \
+	   flrwraparound.O \
+	   flrundefhook.O \
+	   flrshell.O
 
-OPTIONS=[optimize]
-XSB=..\..\config\x86-pc-windows\bin\xsb.exe
+OPTIONS = [optimize]
+XSB = ..\..\config\x86-pc-windows\bin\xsb.exe
 
 .SUFFIXES: .P .O
 

@@ -1,8 +1,8 @@
 # Make file for Microsoft NMAKE
 
 
-OPTIONS=[optimize]
-XSB=..\..\..\config\x86-pc-windows\bin\xsb.exe
+OPTIONS = [optimize]
+XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
 
 .SUFFIXES: .P .O
 

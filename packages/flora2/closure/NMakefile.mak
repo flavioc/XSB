@@ -5,7 +5,7 @@ ALLOBJS = flrcommon.flh \
 	  flreqltrailer.flh \
           flrscalareql.flh
 
-XSB=..\..\..\config\x86-pc-windows\bin\xsb.exe
+XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
 
 .SUFFIXES: .flh .fli
 
