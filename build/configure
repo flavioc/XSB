@@ -3503,7 +3503,7 @@ EOF
 EOF
 
 		 builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-		 loader_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+		 loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
 		;;
 esac
 
