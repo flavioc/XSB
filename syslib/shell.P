@@ -27,7 +27,7 @@
 :- compiler_options([cpp_on]).
 
 #include "celltags.h"
-#include "system.h"
+#include "system_defs.h"
 #include "builtin.h"
 #include "msyscall.h"
 
