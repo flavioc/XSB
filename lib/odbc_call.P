@@ -551,7 +551,7 @@ tokenize_term('NULL'(HR),'$const$'('NULL')) :- !,
 tokenize_term('$const$'('NULL'),'$const$'('NULL')) :- !.
 tokenize_term(A,'$bind$'(A)) :- 
 	atom(A),
-	atom_codes(A,[66,73,78,68|_]),
+	atom_codes(A,[66,73,78,68|_]),   %% BIND_
 	!.
 tokenize_term(Constant,'$const$'(Constant)) :-
 	atomic(Constant),
@@ -613,15 +613,13 @@ linearize((A,B),(LinA,LinB)) :- !,
 	%% make sure A is not a conjunction 
 	linearize(A,LinA),
 	linearize(B,LinB).
-/***  ??? dsw changed, but maybe wrongly??
-linearize((A;_B),LinA) :-
-	linearize(A,LinA).
-linearize((_A;B),LinB) :-
-	linearize(B,LinB).
-***/
-linearize((A;B),(LinA;LinB)) :- !,
+linearize((A;B),LinAB) :- !,
 	linearize(A,LinA),
-	linearize(B,LinB).
+	linearize(B,LinB),
+	(LinAB = LinA
+	 ;
+	 LinAB = LinB
+	).
 linearize(not A, not LinA) :- !,
 	linearize(A,LinA).
 linearize(Var^A, Var^LinA) :- !,
@@ -1097,16 +1095,16 @@ retrieve_argument('$const$'(Constant),'$const$'(Constant),_).
 % of ASCII codes is ceated as a difference list, and it is then 
 % transformed to an atom by name/2.  It also create a list of bind variables
 % occurring in the QueryAtom so that we can bind them to the place holders '?'
-% at a leter time.
+% at a later time.
 %% -------------------------------------------------------------------
 
 queries_atom(Queries,QueryAtom,Blist) :-
 	queries_atom(Queries,QueryList,[],Blist,[]),
 	atom_codes(QueryAtom,QueryList).
-queries_atom([Query],QueryList,Diff,Blist,Olist) :-
+
+queries_atom([Query],QueryList,Diff,Blist,Olist) :- !,
 	query_atom(Query,QueryList,Diff,Blist,Olist).
 queries_atom([Query|Queries],QueryList,Diff,Blist,Olist) :-
-	Queries \= [],
 	query_atom(Query,QueryList,X1,Blist,Tlist),
 	column_atom(' UNION ',X1,X2,_,_),
 	queries_atom(Queries,X2,Diff,Tlist,Olist).
@@ -1240,7 +1238,7 @@ column_atom(negated_existential_subquery(Select,From,Where),QueryList,Diff,Blist
 	query_atom(negated_existential_subquery(Select,From,Where),QueryList,Diff,Blist,Olist).
 column_atom(Atom,List,Diff,Blist,Blist) :-
 	atomic(Atom),
-	atom_codes(Atom,X1),
+	name(Atom,X1),  %% can be of any type...
 	append(X1,Diff,List).
 
 column_ins_atom(rel(Relation,_RangeVar),QueryList,Diff,Blist,Olist) :-
@@ -1291,6 +1289,7 @@ query_generation_ins([Conjunction|Conjunctions],ProjectionTerm,[Query|Queries]) 
 	projection_term_variables(ProjectionTerm,InitDict),
 	translate_conjunction(Conjunction,SQLFrom,SQLWhere,InitDict,Dict),
 	translate_projection(ProjectionTerm,Dict,_SQLSelect),
+	%% need to generate column names for right order.....
 	Query = ins_query(SQLFrom,SQLWhere),
 	query_generation(Conjunctions,ProjectionTerm,Queries).
 
@@ -1370,6 +1369,7 @@ attr(A,B,C) :-
 	odbc_all(attr(B,C), A, attr('$var$'(var1),'$var$'(var2)),[],0).
 
 odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo) :-
+	writeln(odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo)),
 	Call =.. [SymbolicName|CallArgs],
 	find_free_cursor(StmtNo, Index),
 	(Index =\= -1
@@ -1391,6 +1391,27 @@ odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo) :-
 		fail
 	).
                                   
+odbc_all_gen(StmtNo,SQLAtom,InPars,InProj,InBinds,_OutPars,RetList) :-
+	find_free_cursor(StmtNo,Index),
+	(Index =\= 0
+	 ->	length(InPars,NumInParVals),
+		length(InBinds,NumBinds),
+		odbc_exec_query(3,Index,NumInParVals,NumBinds),
+		set_var_table(InProj,Index,InPars),
+		set_bind_table(InBinds,Index),
+		parse(Index,SQLAtom,RetVal),
+		(RetVal =:= 0
+		 ->	next(RetList,Index)
+		 ; RetVal =:= 2
+		 ->	true
+		 ;	writeln('ERR - DB: Parse error.'), 
+			('$ora_err$'(on) -> fail;true)
+		)
+	 ;      writeln('ERR - DB: No more cursors left.'),
+		fail
+	).
+
+
 find_free_cursor(StmtNo, Index) :-
 	odbc_exec_query(7,StmtNo, Index).
 
@@ -1398,48 +1419,46 @@ set_global_bind_table(Index,Alist,Calllist,Blist) :-
 	bind_num(Alist,0,Num),
 	length(Blist,Blen),
 	set_bind_var_num(Index,Num,Blen),
-	set_var_table(Index,Alist,Calllist),
-	set_bind_table(Index,Blist).
+	set_var_table(Alist,Index,Calllist),
+	set_bind_table(Blist,Index).
     
 bind_num([],Num,Num).
 bind_num([H|T],ONum,Num) :-
 	H = '$bind$'(_),!,
-	bind_num(T,ONum,TNum), Num is TNum+1.
+	ONum1 is ONum + 1,
+	bind_num(T,ONum1,Num).
 bind_num([_H|T],ONum,Num) :-
 	bind_num(T,ONum,Num).
 
 set_bind_var_num(Index,Num,Blen) :-
 	(Num =\= 0
 	 ->	odbc_exec_query(3,Index,Num,Blen)
-	)
-	;
-	true.
+	 ;	true
+	).
     
-set_var_table(_Index,[],[]) :- !.
-set_var_table(Index, [H|T], [H1|T1]) :-
-    H = '$bind$'(BindId),!,
-    (integer(H1)
-     ->	    set_var(Index,BindId,H1,0)
-     ; number(H1)
-     ->	    set_var(Index,BindId,H1,1)
-     ; atom(H1)
-     ->	    set_var(Index, BindId, H1,2)
-     ; H1 = 'NULL'(_)
-     ->	    set_var(Index, BindId, 'NULL',2)
-    ),
-    set_var_table(Index,T,T1).
-        
-set_var_table(Index, [_H|T], [_H1|T1]) :-
-	set_var_table(Index,T,T1).
+set_var_table([],_Index,[]) :- !.
+set_var_table([H|T], Index, [H1|T1]) :-
+	H = '$bind$'(BindId),!,
+	(integer(H1)
+	 ->	set_var(Index,BindId,H1,0)
+	 ;	number(H1)
+	 ->	set_var(Index,BindId,H1,1)
+	 ;	atom(H1)
+	 ->	set_var(Index, BindId, H1,2)
+	 ;	H1 = 'NULL'(_)
+	 ->	set_var(Index, BindId, 'NULL',2)
+	),
+	set_var_table(T,Index,T1).
+set_var_table([_H|T], Index, [_H1|T1]) :-
+	set_var_table(T,Index,T1).
 
 set_var(Index, BindId, H1,C) :-
 	odbc_exec_query(6,Index, BindId, H1,C).        
 
-set_bind_table(_Index, []) :- !.
-
-set_bind_table(Index, [BindId|BList]) :-
+set_bind_table([], _Index).
+set_bind_table([BindId|BList], Index) :-
 	odbc_exec_query(9,Index,BindId),
-	set_bind_table(Index,BList).
+	set_bind_table(BList,Index).
    
 parse(Index,SQLAtom, RetVal) :-
 	odbc_exec_query(2,Index,SQLAtom, RetVal).
@@ -1656,11 +1675,16 @@ odbc_get_schema(tuples(Table),Row) :-
 	atom_codes(Sql, L),
 	odbc_sql_select(Sql, Row).
 
-odbc_show_schema(tuples(Table)) :-
+/***odbc_show_schema(tuples(Table)) :-
 	atom_codes(Table, Tlist),
 	append("select * from ", Tlist, L),
 	atom_codes(Sql, L),
 	odbc_sql_select(Sql, Row),
+	writelist(Row), fail.
+odbc_show_schema(tuples(_Table)).
+*****/
+odbc_show_schema(tuples(Table)) :-
+	odbc_sql_select(['select * from ',Table],Row),
 	writelist(Row), fail.
 odbc_show_schema(tuples(_Table)).
 
