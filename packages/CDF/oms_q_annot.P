@@ -118,6 +118,11 @@ relaxing_query(Q,Cutoff,Penalty_out):- !,
 relaxing_query(','(A,B),Cutoff,Penalty_in,Penalty_out):- !,
 	relaxing_query(A,Cutoff,Penalty_in,Penalty_mid),
 	relaxing_query(B,Cutoff,Penalty_mid,Penalty_out).
+relaxing_query((A->B;C),Cutoff,Penalty_in,Penalty_out):- !,
+	(relaxing_query(A,Cutoff,Penalty_in,Penalty_mid)
+	 ->	relaxing_query(B,Cutoff,Penalty_mid,Penalty_out)
+	 ;	relaxing_query(C,Cutoff,Penalty_in,Penalty_out)
+	).
 relaxing_query(';'(A,B),Cutoff,Penalty_in,Penalty_out):- !,
 	(relaxing_query(A,Cutoff,Penalty_in,Penalty_out)
 	 ;	
