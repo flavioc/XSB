@@ -59,7 +59,6 @@
 #include <unistd.h> 
 #include <netdb.h>
 #include <netinet/in.h>
-/* JF: NEW */
 #include <arpa/inet.h>
 #endif /* HAVE_SOCKET */
 #endif /* WIN_NT */
@@ -79,7 +78,6 @@
 #define SOCKET_SEND_ASCI   10
 #define SOCKET_GET0        11
 #define SOCKET_PUT         12
-
 #endif /* HAVE_SOCKET */
 
 #include "auxlry.h"
@@ -100,6 +98,7 @@
 #include "xmacro.h"
 #include "token.h"
 #include "inst.h"
+#include "builtin.h"
 #include "subinst.h"
 #include "sig.h"
 #include "subp.h"
@@ -110,7 +109,6 @@
 #ifdef CHAT
 #include "chat.h"
 #endif
-
 #include "residual.h"
 
 #ifdef ORACLE
@@ -179,7 +177,6 @@ static void get_subgoal_ptr(Cell, int, CPtr);
 static void write_quotedname(FILE *, char *);
 
 #ifdef DEBUG
-static void print_predicate_table(char *, int, tab_inf_ptr);
 extern void printterm(Cell, byte, int);
 #endif
 
@@ -506,6 +503,190 @@ static void strclose(int i)
   i = iostrdecode(i);
   mem_dealloc((byte *)iostrs[i],sizeof(STRFILE));
   iostrs[i] = NULL;
+}
+
+/* --------------------------------------------------------------------	*/
+
+Cell builtin_table[BUILTIN_TBL_SZ][2];
+
+#define set_builtin_table(inst, instr) builtin_table[inst][0] = (Cell)(instr);
+
+void init_builtin_table(void)
+{
+  int i;
+
+  for (i = 0; i < BUILTIN_TBL_SZ; i++) builtin_table[i][1] = 0;
+  
+  set_builtin_table(PSC_NAME, "psc_name");
+  set_builtin_table(PSC_ARITY, "psc_arity");
+  set_builtin_table(PSC_TYPE, "psc_type");
+  set_builtin_table(PSC_PROP, "psc_prop");
+  set_builtin_table(PSC_SET_TYPE, "psc_set_type");
+  set_builtin_table(PSC_SET_PROP, "psc_set_prop");
+  set_builtin_table(FILE_OPEN, "file_open");
+  set_builtin_table(FILE_CLOSE, "file_close");
+  set_builtin_table(FILE_GET, "file_get");
+  set_builtin_table(FILE_PUT, "file_put");
+  set_builtin_table(TERM_PSC, "term_psc");
+  set_builtin_table(TERM_TYPE, "term_type");
+  set_builtin_table(TERM_COMPARE, "term_compare");
+  set_builtin_table(TERM_NEW, "term_new");
+  set_builtin_table(TERM_ARG, "term_arg");
+  set_builtin_table(TERM_SET_ARG, "term_set_arg");
+  set_builtin_table(STAT_FLAG, "stat_flag");
+  set_builtin_table(STAT_SET_FLAG, "stat_set_flag");
+  set_builtin_table(BUFF_ALLOC, "buff_alloc");
+  set_builtin_table(BUFF_WORD, "buff_word");
+  set_builtin_table(BUFF_SET_WORD, "buff_set_word");
+  set_builtin_table(BUFF_BYTE, "buff_byte");
+  set_builtin_table(BUFF_SET_BYTE, "buff_set_byte");
+  set_builtin_table(CODE_CALL, "code_call");
+  set_builtin_table(STR_LEN, "str_len");
+  set_builtin_table(STR_CAT, "str_cat");
+  set_builtin_table(STR_CMP, "str_cmp");
+  set_builtin_table(STR_HSH, "str_hsh");
+  set_builtin_table(STR_INSERT, "str_insert");
+  set_builtin_table(STR_SUB, "str_sub");
+  set_builtin_table(DIRNAME_CANONIC, "dirname_canonic");
+  set_builtin_table(CALL0, "call0");
+  set_builtin_table(STAT_STA, "stat_sta");
+  set_builtin_table(STAT_CPUTIME, "stat_cputime");
+  set_builtin_table(CODE_LOAD, "code_load");
+  set_builtin_table(BUFF_SET_VAR, "buff_set_var");
+  set_builtin_table(BUFF_DEALLOC, "buff_dealloc");
+  set_builtin_table(BUFF_CELL, "buff_cell");
+  set_builtin_table(BUFF_SET_CELL, "buff_set_cell");
+  set_builtin_table(COPY_TERM,"copy_term");
+  set_builtin_table(PSC_INSERT, "psc_insert");
+  set_builtin_table(PSC_IMPORT, "psc_import");
+  set_builtin_table(FILE_GETBUF, "file_getbuf");
+  set_builtin_table(FILE_PUTBUF, "file_putbuf");
+  set_builtin_table(PSC_INSERTMOD, "psc_insertmod");
+  set_builtin_table(LOAD_SEG, "load_seg");
+  set_builtin_table(FILE_GETTOKEN, "file_gettoken");
+  set_builtin_table(FILE_PUTTOKEN, "file_puttoken");
+  set_builtin_table(TERM_HASH, "term_hash");
+  set_builtin_table(UNLOAD_SEG, "unload_seg");
+  set_builtin_table(LOAD_OBJ, "load_obj");
+  set_builtin_table(GETENV, "getenv");
+  set_builtin_table(SYS_SYSCALL, "sys_syscall");
+  set_builtin_table(SYS_SYSTEM, "sys_system");
+  set_builtin_table(SYS_GETHOST, "sys_gethost");
+  set_builtin_table(SYS_ERRNO, "sys_errno");
+  set_builtin_table(FILE_STAT, "file_stat");
+  set_builtin_table(FILE_WRITEQUOTED, "file_writequoted");
+  set_builtin_table(FAST_GROUND, "fast_ground");
+  set_builtin_table(FILE_POS, "file_pos");
+
+  set_builtin_table(INTERN_STRING, "intern_string");
+  set_builtin_table(EXPAND_FILENAME, "expand_filename");
+  set_builtin_table(TILDE_EXPAND_FILENAME, "tilde_expand_filename");
+  set_builtin_table(IS_ABSOLUTE_FILENAME, "is_absolute_filename");
+  set_builtin_table(PARSE_FILENAME, "parse_filename");
+
+  set_builtin_table(PSC_ENV, "psc_env");
+  set_builtin_table(PSC_SPY, "psc_spy");
+  set_builtin_table(PSC_TABLED, "psc_tabled");
+  set_builtin_table(TIP_PROP, "tip_prop");
+  set_builtin_table(IS_INCOMPLETE, "is_incomplete");
+  set_builtin_table(GET_OSP_BREG, "get_osp_breg");
+  set_builtin_table(CUT_IF_LEADER, "cut_if_leader");
+  set_builtin_table(GET_PTCP, "get_ptcp");
+  set_builtin_table(GET_SUBGOAL_PTR, "get_subgoal_ptr");
+  set_builtin_table(DEREFERENCE_THE_BUCKET, "dereference_the_bucket");
+  set_builtin_table(PAIR_PSC, "pair_psc");
+  set_builtin_table(PAIR_NEXT, "pair_next");
+  set_builtin_table(NEXT_BUCKET, "next_bucket");
+  set_builtin_table(SLG_NOT, "slg_not");
+  set_builtin_table(IS_XWAMMODE, "is_xwammode");
+  set_builtin_table(CLOSE_OPEN_TABLES, "close_open_tables");
+
+  set_builtin_table(ABOLISH_TABLE_INFO, "abolish_table_info");
+  set_builtin_table(ZERO_OUT_PROFILE, "zero_out_profile");
+  set_builtin_table(WRITE_OUT_PROFILE, "write_out_profile");
+  set_builtin_table(ASSERT_CODE_TO_BUFF, "assert_code_to_buff");
+  set_builtin_table(ASSERT_BUFF_TO_CLREF, "assert_buff_to_clref");
+  set_builtin_table(FMT_WRITE, "fmt_write");
+  set_builtin_table(SLASH_BUILTIN, "slash");
+  set_builtin_table(FMT_WRITE_STRING, "fmt_write_string");
+  set_builtin_table(FILE_READ_LINE, "file_read_line");
+  set_builtin_table(FMT_READ, "fmt_read");
+  set_builtin_table(FILE_READ_CANONICAL, "file_read_canonical");
+  set_builtin_table(GEN_RETRACT_ALL, "gen_retract_all");
+  set_builtin_table(COMPILED_TO_DYNAMIC, "compiled_to_dynamic");
+  set_builtin_table(DB_RETRACT0, "db_retract0");
+  set_builtin_table(DB_GET_CLAUSE, "db_get_clause");
+  set_builtin_table(DB_BUILD_PRREF, "db_build_prref");
+  set_builtin_table(DB_REMOVE_PRREF, "db_remove_prref");
+
+  set_builtin_table(TRIE_NODE_ELEMENT, "trie_node_element");
+  set_builtin_table(PROLOG_NEWNODE, "prolog_newnode");
+
+  set_builtin_table(TABLE_STATUS, "table_status");
+  set_builtin_table(GET_DELAY_LISTS, "get_delay_lists");
+  set_builtin_table(DELETE_PREDICATE_TABLE, "delete_predicate_table");
+
+  set_builtin_table(TRIE_ASSERT, "trie_assert");
+  set_builtin_table(TRIE_RETRACT, "trie_retract");
+  set_builtin_table(TRIE_RETRACT_SAFE, "trie_retract_safe");
+  set_builtin_table(TRIE_DELETE_TERM, "trie_delete_term");
+  set_builtin_table(TRIE_GET_RETURN, "trie_get_return");
+  set_builtin_table(TRIE_GET_CALL, "trie_get_call");
+  set_builtin_table(GET_LASTNODE_CS_RETSKEL, "get_lastnode_cs_retskel");
+  set_builtin_table(CONSTRUCT_RET_FOR_CALL, "construct_ret_for_call");
+  set_builtin_table(BREG_RETSKEL,"breg_retskel");
+
+  set_builtin_table(GET_EMU_DEPENDENT_CONST, "get_emu_dependent_const");
+  set_builtin_table(TRIMCORE, "trimcore");
+
+  set_builtin_table(VAR, "var");
+  set_builtin_table(NONVAR, "nonvar");
+  set_builtin_table(ATOM, "atom");
+  set_builtin_table(INTEGER, "integer");
+  set_builtin_table(REAL, "real");
+  set_builtin_table(NUMBER, "number");
+  set_builtin_table(ATOMIC, "atomic");
+  set_builtin_table(COMPOUND, "compound");
+  set_builtin_table(CALLABLE, "callable");
+  set_builtin_table(IS_LIST, "is_list");
+
+  set_builtin_table(FUNCTOR, "functor");
+  set_builtin_table(ARG, "arg");
+  set_builtin_table(UNIV, "univ");
+  set_builtin_table(MY_HiLog_FUNCTOR, "hilog_functor");
+  set_builtin_table(HiLog_ARG, "hilog_arg");
+  set_builtin_table(HiLog_UNIV, "hilog_univ");
+  set_builtin_table(MY_COPY_TERM, "my_copy_term");
+  set_builtin_table(MY_NAME, "my_name");
+  set_builtin_table(ATOM_CHARS, "atom_chars");
+  set_builtin_table(NUMBER_CHARS, "number_chars");
+
+  set_builtin_table(PUT, "put");
+  set_builtin_table(TAB, "tab");
+  set_builtin_table(SORT, "sort");
+  set_builtin_table(KEYSORT, "keysort");
+
+  set_builtin_table(ORACLE_QUERY, "oracle_query");
+  set_builtin_table(ODBC_QUERY, "odbc_query");
+
+  set_builtin_table(PRINT_LS, "print_ls");
+  set_builtin_table(PRINT_TR, "print_tr");
+  set_builtin_table(PRINT_HEAP, "print_heap");
+  set_builtin_table(PRINT_CP, "print_cp");
+  set_builtin_table(PRINT_REGS, "print_regs");
+  set_builtin_table(PRINT_ALL_STACKS, "print_all_stacks");
+  set_builtin_table(MARK_HEAP, "mark_heap");
+  set_builtin_table(GC_HEAP, "gc_heap");
+  set_builtin_table(FINDALL_INIT, "$$findall_init");
+  set_builtin_table(FINDALL_ADD, "$$findall_add");
+  set_builtin_table(FINDALL_GET_SOLS, "$$findall_get_solutions");
+
+#ifdef HAVE_SOCKET
+  set_builtin_table(SOCKET_REQUEST, "socket_request");
+#endif
+
+  set_builtin_table(JAVA_INTERRUPT, "setupJavaInterrupt");
+  set_builtin_table(FORCE_TRUTH_VALUE, "force_truth_value");
 }
 
 /* --- built in predicates --------------------------------------------	*/
@@ -1225,11 +1406,11 @@ int builtin_call(byte number)
       break;
     }
     break; 
-    /*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
 
 #include "bineg.i"
 
-    /*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
     /*
      * Used together with CUT_IF_LEADER in tables.P for negation.
      * Revised to pass offsets into the respective stacks to Prolog
@@ -1320,18 +1501,6 @@ int builtin_call(byte number)
     break;
   case CLOSE_OPEN_TABLES:	/* No registers needed */
     remove_open_tables_reset_freezes();
-    break;
-  case PRINT_PREDICATE_TABLE:		/* reg 1: +PSC;*/
-#ifdef DEBUG
-    psc = (Psc)ptoc_addr(1);
-    if ((Integer) get_tip(psc) == 0) 
-      printf("%s/%d is not tabled\n", get_name(psc), get_arity(psc));
-    else {
-      print_predicate_table(get_name(psc), get_arity(psc), get_tip(psc));
-    }
-#else
-    xsb_abort("print_predicate_table is only available in debug mode");
-#endif
     break;
 
   case ABOLISH_TABLE_INFO:
@@ -1555,8 +1724,8 @@ int builtin_call(byte number)
 	first_free_set = tmpval;
       }
     }
-    else{
-      xsb_abort("Unknown usage in intern:delete_trie/2\n");
+    else {
+      xsb_abort("Unknown usage in intern:delete_trie/2");
     }
     break;
 	    
@@ -1932,19 +2101,7 @@ int builtin_call(byte number)
   return 1;
 }
 
-
-
-
 /*------------------------- Auxiliary functions -----------------------------*/
-
-#ifdef DEBUG
-static void print_predicate_table(char *name, int arity, tab_inf_ptr tip)
-{
-  fprintf(stderr,"Printing predicate tables has not yet been implemented\n");
-}
-#endif /* DEBUG */
-
-/* --------------------------------------------------------------------	*/
 
 static void abolish_table_info(void)
 {

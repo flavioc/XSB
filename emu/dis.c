@@ -36,6 +36,7 @@
 #include "loader.h"
 #include "cell.h"
 #include "inst.h"
+#include "builtin.h"
 #include "memory.h"
 #include "flags.h"
 #include "tries.h"
