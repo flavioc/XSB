@@ -39,7 +39,9 @@ fix it or to assist you to bypass it.
       cause unexpected results when numbers are computed.  The amount
       of space allowed for floating point numbers is similar for each
       machine.  For 64-bit platforms, addresses, integers, and
-	floating point numbersare all stored in 60 bits.
+      floating point numbers are all stored in 60 bits. However, as the
+      \emph{object} code file format is the same as for the 32-bit versions,
+      compiled constants are subject to 32-bit limitations.
 %
 \item	Indexing on floating-point numbers does not work, since, as
 implemented in XSB, the semantics
