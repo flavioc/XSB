@@ -295,8 +295,8 @@ extern Float getfloatval(Cell);
       cell(addr) = binttemp;}
 
 #define bld_oint(addr, value)					\
-    if (int_overflow(value)) {					\
-      bld_boxedint(addr, value);				\
-    } else {bld_int(addr,value);}
+    if (int_overflow(((Integer)value))) {					\
+      bld_boxedint(addr, ((Integer)value));				\
+    } else {bld_int(addr,((Integer)value));}
 
 #endif /* __CELL_XSB_H__ */
