@@ -228,13 +228,20 @@ read_intensional_rules_1(Name):-
 	repeat,
 	read(T),
 	(T = end_of_file -> 
-	   true 
-	 ; 
-	   T = (:-(Head,Body)),
-	   transform_intensional_rules(Head,NewHead,Name),
-	   asserta((:-(Head,NewHead))),
-	   asserta((:-(NewHead,Body))),
-	   fail),
+	   true
+	 ; T = (:-(Query))
+	 ->	call(Query),
+		fail
+	 ; T = (:-(Head,Body))
+	 ->	transform_intensional_rules(Head,NewHead,Name),
+		asserta((:-(Head,NewHead))),
+		asserta((:-(NewHead,Body))),
+		fail
+	 ;	transform_intensional_rules(T,NewHead,Name),
+		asserta((:-(T,NewHead))),
+		asserta(NewHead),
+		fail
+	),
 	!.
 
 transform_intensional_rules(Head,NewHead,Name):- 
