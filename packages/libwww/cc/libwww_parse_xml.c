@@ -528,8 +528,6 @@ PRIVATE int xml_externalEntityRef (XML_Parser     parser,
   HTChunk   *chunk = NULL;
   char      *cwd = HTGetCurrentDirectoryURL();
 
-  /* make it a blocking request, so that we get the result right away */
-  HTRequest_setPreemptive(request, YES);
   /* put the same context on this request */
   HTRequest_setContext(request, (void *)context);
 
@@ -541,6 +539,8 @@ PRIVATE int xml_externalEntityRef (XML_Parser     parser,
 #endif
 
   HTRequest_setOutputFormat(request, WWW_SOURCE);
+  /* make it a blocking request, so that we get the result right away */
+  HTRequest_setPreemptive(request, YES);
   /*
     HTRequest_addConnection(request, "close", "");
   */
