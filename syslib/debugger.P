@@ -184,36 +184,39 @@ debugging :-
 
 '_$deb_trace'(Call) :-
 	%%ll_write(trace(Call)),ll_nl,
-	stat_flag(QUASI_SKIPPING, S),		 	% S = quasi_skipping
-	get_psc_info(Call, PSC, P, A),  % P-pred name, A- arity
-	%% set_print_control is needed here too, if is_xpar_call 
-	%% predicates are used to control printing
-	set_print_control(P,A,_),
-	(   is_xpar_call(P,A)
-	->  term_arg(Call,1,Ncall), '_$deb_trace'(Ncall)
-	;   Call = '_$load_undef'(Ncall)
-	->  '_$deb_trace'(Ncall)
-	;   must_load(PSC)
-	->  '_$deb_trace'(Call)
-	;   hide_this_show(P,A)
-	->  basic_call(0,PSC,Call) % and turn tracing back on
-	;   hide_this_hide(P,A)
-	->  basic_call(1,PSC,Call) % and leave tracing off
-	;   show_this_hide_call(P,A)
-	->  stat_flag(INVOKE_NUM,N),
-	    N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
-	    (	S=\=0
-	    ->	basic_call(1,PSC,Call) % skipping/quasi_skipping, notrace
-	    ;	deb_enterpred(N, PSC, Call, intrace, 1)
+        (   callable(Call)
+	->  stat_flag(QUASI_SKIPPING, S),	% S = quasi_skipping
+	    get_psc_info(Call, PSC, P, A), % P-pred name, A- arity
+	    %% set_print_control is needed here too, if is_xpar_call 
+	    %% predicates are used to control printing
+	    set_print_control(P,A,_),
+	    (	is_xpar_call(P,A)
+	    ->	term_arg(Call,1,Ncall), '_$deb_trace'(Ncall)
+	    ;	Call = '_$load_undef'(Ncall)
+	    ->	'_$deb_trace'(Ncall)
+	    ;	must_load(PSC)
+	    ->	'_$deb_trace'(Call)
+	    ;	hide_this_show(P,A)
+	    ->	basic_call(0,PSC,Call) % and turn tracing back on
+	    ;	hide_this_hide(P,A)
+	    ->	basic_call(1,PSC,Call) % and leave tracing off
+	    ;	show_this_hide_call(P,A)
+	    ->	stat_flag(INVOKE_NUM,N),
+		N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
+		(   S=\=0
+		->  basic_call(1,PSC,Call) % skipping/quasi_skipping, notrace
+		;   deb_enterpred(N, PSC, Call, intrace, 1)
+		)
+	    ;	stat_flag(INVOKE_NUM,N),
+		N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
+		(   S=\=0
+		->  basic_call(0,PSC,Call) % skipping or quasi_skipping 
+		;   deb_enterpred(N, PSC, Call, intrace, 0)
+		)
 	    )
-	;   stat_flag(INVOKE_NUM,N),
-	    N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
-	    (	S=\=0
-	    ->	basic_call(0,PSC,Call) % skipping or quasi_skipping 
-	    ;	deb_enterpred(N, PSC, Call, intrace, 0)
-	    )
+	;   fail
 	).
-
+	
 
 %% trace this call, but hide all embedded calls
 %% Standard preds, except those in trace_standard_predicate
