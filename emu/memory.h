@@ -69,11 +69,11 @@ extern System_Stack pdl,            /* PDL                        */
  */
 #define top_of_heap      (hreg - 1)
 #ifdef CHAT
-#define top_of_localstk	( (ereg < ebreg) \
+#define top_of_localstk	 ( (ereg < ebreg) \
 			      ? ereg - *(cpreg - 2*sizeof(Cell)+3) + 1 \
 			      : ebreg )
-#define top_of_trail	trreg
-#define top_of_cpstack	breg
+#define top_of_trail	 trreg
+#define top_of_cpstack	 breg
 #else
 #define top_of_localstk  ( ((efreg < ebreg) && (efreg < ereg)) \
                            ? efreg  \
@@ -86,7 +86,7 @@ extern System_Stack pdl,            /* PDL                        */
 
 #define top_of_complstk  openreg
 
-#define COMPLSTACKBOTTOM	((CPtr) complstack.high)
+#define COMPLSTACKBOTTOM ((CPtr) complstack.high)
 
 
 /*
@@ -98,8 +98,7 @@ extern System_Stack pdl,            /* PDL                        */
 /* Calculate New Stack Size
    ------------------------ */
 #define resize_stack(stack_size,min_exp) /*"stack_size" is in K-byte blocks*/\
-   ( (stack_size) < (min_exp)/K ? (stack_size) + (min_exp)/K :\
-     (stack_size) < 10*K ?   2 * (stack_size) : (long)(1.5 * (stack_size)) )
+   ((stack_size) < (min_exp)/K ? (stack_size) + (min_exp)/K : 2 * (stack_size))
 
 
 /* Program and Symbol Tables Space (in Bytes)
@@ -109,14 +108,10 @@ extern long pspacesize;
 
 /* Memory Function Prototypes
    -------------------------- */
-byte *mem_alloc(unsigned long);
-void mem_dealloc(byte *, unsigned long);
-void tcpstack_realloc(long);
-void complstack_realloc(long);
-
-/* From heap.c
-   -----====== */
-extern void glstack_realloc( int size_in_k, int arity ) ;
+extern byte *mem_alloc(unsigned long);
+extern void mem_dealloc(byte *, unsigned long);
+extern void tcpstack_realloc(long);
+extern void complstack_realloc(long);
 
 /* Instruction Externs
    ------------------- */
@@ -241,16 +236,14 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 
 #define check_glstack_overflow(arity,PCREG,EXTRA)                    \
     if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {   \
-        if ((pb)top_of_localstk < (pb)top_of_heap) {                         \
-            PCREG = exception_handler("\nFatal ERROR:  -- Local Stack clobbered Heap --\n");  \
+      if ((pb)top_of_localstk < (pb)top_of_heap) {                         \
+        PCREG = exception_handler("\nFatal ERROR:  -- Local Stack clobbered Heap --\n");  \
         goto contcase;                                                       \
       }                                                                      \
       else {                                                                 \
-        if (flags[STACK_REALLOC]) {                                          \
-          glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN),  \
-                          arity);                                \
-        }                                                                    \
-        else {                                                               \
+        if ((flags[STACK_REALLOC] == FALSE) ||                               \
+          (glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN), \
+                          arity) != 0)) {                                    \
           local_global_exception(PCREG);                                     \
           goto contcase;                                                     \
         }                                                                    \

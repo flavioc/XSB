@@ -29,7 +29,7 @@
  * This module provides
 
 	reallocation of the heap/environment area
-		void glstack_realloc(new_size,arity)
+		bool glstack_realloc(new_size,arity)
 		originally written by E. Johnson in file
 		memory.c, but completely redone by Bart Demoen
 
@@ -193,22 +193,30 @@ static CPtr heap_bot,heap_top,
   compl_top = (CPtr)complstack.high ; \
   compl_bot = (CPtr)complstack.low ;
 
+#ifdef COMMENT
+  compl_top = (CPtr)complstack.low ; /* NOT top_of_complstk !!! */\
+  compl_bot = (CPtr)complstack.high ;
+#endif
 
-#define points_into_heap(p) ((heap_bot <= p) && (p < heap_top))
-#define points_into_ls(p)   ((ls_top <= p) && (p <= ls_bot))
-#define points_into_cp(p)   ((cp_top <= p) && (p <= cp_bot))
-#define points_into_tr(p)   ((tr_bot <= p) && (p <= tr_top))
-#define points_into_comp(p) ((compl_bot <= p) && (p <= compl_top))
+#define points_into_heap(p)  ((heap_bot <= p) && (p < heap_top))
+#define points_into_ls(p)    ((ls_top <= p) && (p <= ls_bot))
+#define points_into_cp(p)    ((cp_top <= p) && (p <= cp_bot))
+#define points_into_tr(p)    ((tr_bot <= p) && (p <= tr_top))
+#define points_into_compl(p) ((compl_bot <= p) && (p <= compl_top))
+/*#define points_into_compl(p) ((compl_top <= p) && (p <= compl_bot))*/
 
 /*----------------------------------------------------------------------*/
 /* marker bits in different areas: the mark bit for the CHAT areas is   */
 /* in the CHAT areas themselves - same for the completion stack.        */
 /*----------------------------------------------------------------------*/
 
-static char *heap_marks = NULL ;
-static char *ls_marks   = NULL ;
-static char *cp_marks   = NULL ;
-static char *tr_marks   = NULL ;
+static char *heap_marks  = NULL ;
+static char *ls_marks    = NULL ;
+static char *cp_marks    = NULL ;
+static char *tr_marks    = NULL ;
+#ifdef CHAT
+static char *compl_marks = NULL ;
+#endif
 
 #define MARKED    1
 #define CHAIN_BIT 4                            
@@ -249,7 +257,7 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
         else
       if (points_into_cp(retp)) *whereto = TO_CP ;
         else
-      if (points_into_comp(retp)) *whereto = TO_COMPL ;
+      if (points_into_compl(retp)) *whereto = TO_COMPL ;
         else *whereto = TO_NOWHERE ;
       return(retp) ;
 
@@ -571,7 +579,7 @@ static int mark_query(void)
       /* mark the delay list field of choice points in CP stack too */
       if ((d = cp_pdreg(b)) != NULL) {
 #ifdef NEG_DEBUG /* PLEASE TAKE ME OUT OF HERE */
-	fprintf(stderr, "Marking of Dreg field is needed !\n");
+	fprintf(stderr,"Marking of Dreg field @%p is needed !\n",&cp_pdreg(b));
 #endif
 	total_marked += mark_root((Cell)d);
       }
@@ -783,20 +791,32 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
 static int chat_mark_substitution_factor(void)
 {
   CPtr compl_fr;
-  SGFrame subgptr;
-  CPtr region_to_mark;
+  SGFrame subg_ptr;
+  CPtr region_to_mark, d;
   int  CallNumVar, m = 0;
 
   /* mark the substitution factor starting from the completion stack */
   compl_fr = openreg;
   while (compl_fr != COMPLSTACKBOTTOM)
     {
-      subgptr = compl_subgoal_ptr(compl_fr);
       /* substitution factor is now in the heap for generators */
       region_to_mark = compl_hreg(compl_fr);
       CallNumVar = int_val(cell(region_to_mark))+1; /* mark the Num too */
       while (CallNumVar--)
 	m += mark_cell(region_to_mark--);
+
+      /* we also need to mark the Dreg fields of those generator
+         choice points that have been reclaimed from the CP stack */
+if (! slide) { /* VERY VERY TEMPORARY TEST --- SHOULD BE REVISED */
+      subg_ptr = compl_subgoal_ptr(compl_fr);
+      if ((subg_cp_ptr(subg_ptr) == NULL) /* not in the CP stack anymore */ &&
+	  (! is_completed(subg_ptr))) {
+	if ((d = compl_pdreg(compl_fr)) != NULL) {
+	  xsb_mesg("Marking of Dreg field in compl stack is needed !");
+	  m += mark_root((Cell)d);
+	}
+      }
+}
       compl_fr = prev_compl_frame(compl_fr);
     }
   return(m) ;
@@ -873,6 +893,16 @@ int mark_heap(int arity, int *marked_dregs)
 
 #ifdef CHAT
   if (slide) avail_dreg_marks = MAX_DREG_MARKS ;
+#ifdef COMMENT
+  /* here allocate EXACT amount for completion stack: not upper bound */
+  compl_marks = calloc((2*((compl_bot-top_of_complstk)/COMPLFRAMESIZE)) + 1,1);
+  if (! compl_marks)
+    xsb_exit("Not enough core to allocate marks for completion stack");
+#ifdef DEBUG
+  fprintf(stderr,"Allocated %d mark bits for completion stack (%p,%p)\n",
+	 (compl_bot-top_of_complstk)/COMPLFRAMESIZE,compl_bot,top_of_complstk);
+#endif
+#endif
 #endif
 
   heap_marks = calloc(heap_top - heap_bot + 2 + avail_dreg_marks,1) ;
@@ -881,13 +911,17 @@ int mark_heap(int arity, int *marked_dregs)
   tr_marks   = calloc(tr_top - tr_bot + 1,1) ;
 
   if ((! heap_marks) || (! ls_marks) || (! cp_marks) || (! tr_marks))
-    xsb_exit("Not enough core to mark heap") ;
+    xsb_exit("Not enough core to perform garbage collection marking phase") ;
  
   heap_marks += 1 ; /* see its free */
 
   marked = mark_region(reg+1,reg+arity) ;
-  if (delayreg != NULL)
+  if (delayreg != NULL) {
+#ifdef NEG_DEBUG
+    fprintf(stderr,"Dreg pointing to %p\n", delayreg);
+#endif
     marked += mark_root((Cell)delayreg);
+  }
 
   if (slide)
     { int put_on_heap;
@@ -915,7 +949,7 @@ int mark_heap(int arity, int *marked_dregs)
 
   if (print_on_gc) print_all_stacks();
 
-  return(marked) ;
+  return marked ;
 } /* mark_heap */
 
 /*-------------------------------------------------------------------------*/
@@ -1113,7 +1147,7 @@ void print_cp(int add)
   endp = cp_top ;
 
   while ( startp >= endp )
-  { fprintf(where,"cp(%6d,%s,",start,pr_cp_marked(startp)) ;
+  { fprintf(where,"cp('%p',%6d,%s,",startp,start,pr_cp_marked(startp)) ;
     print_cell(where,startp,FROM_CP) ;
     fflush(where);
     startp-- ; start++ ;
@@ -1301,7 +1335,7 @@ void print_all_stacks(void)
 #endif
 } /* print_all_stacks */
 
-/*
+/*==========================================================================
         new_size = new size of heap + environmentstack
         arity = number of argument registers in use at moment of call
 
@@ -1430,8 +1464,9 @@ static void chat_relocate_all(CPtr heap_bot, int heap_offset,
 
 /*----------------------------------------------------------------------*/
 
-void glstack_realloc(int new_size, int arity)
-{ CPtr   new_heap_bot ;       /* bottom of new Global Stack area */
+bool glstack_realloc(int new_size, int arity)
+{
+  CPtr   new_heap_bot ;       /* bottom of new Global Stack area */
   CPtr   new_ls_bot ;         /* bottom of new Local Stack area */
 
   long   heap_offset ;        /* offsets between the old and new */
@@ -1443,7 +1478,7 @@ void glstack_realloc(int new_size, int arity)
   size_t new_size_in_bytes, new_size_in_cells ; /* what a mess ! */
   long   expandtime ;
 
-  if (new_size <= glstack.size) return ;
+  if (new_size <= glstack.size) return 0;
 #ifdef STACKS_DEBUG
   fprintf(stderr,"Heap/Local Stack expansion - new size = %d  arity = %d\n",new_size,arity) ;
 #endif
@@ -1459,8 +1494,10 @@ void glstack_realloc(int new_size, int arity)
   /* Expand the data area and push the Local Stack to the high end. */
 
   new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
-  if (new_heap_bot == NULL)
-    xsb_exit("Not enough core to resize the Heap and Local Stack!");
+  if (new_heap_bot == NULL) {
+    xsb_mesg("Not enough core to resize the Heap and Local Stack!");
+    return 1; /* return an error output -- will be picked up later */
+  }
   heap_offset = new_heap_bot - heap_bot ;
   new_ls_bot = new_heap_bot + new_size_in_cells - 1 ;
   local_offset = new_ls_bot - ls_bot ;
@@ -1483,7 +1520,7 @@ void glstack_realloc(int new_size, int arity)
   /* Update the trailed variable pointers */
 #ifdef WAM_TRAIL
   for (cell_ptr = (CPtr *)top_of_trail - 1;
-       cell_ptr > (CPtr *)tcpstack.low;
+       cell_ptr >= (CPtr *)tcpstack.low;  /* CHAT needs: >= */
        cell_ptr--)
   { /* the address is the only thing */
     cell_val = (Cell)*cell_ptr ;
@@ -1546,6 +1583,7 @@ void glstack_realloc(int new_size, int arity)
 	expandtime) ;
 #endif
 
+  return 0;
 } /* glstack_realloc */
 
 /*=======================================================================*/
@@ -1751,7 +1789,7 @@ static void chat_chain_region(CPtr b, int len)
 	{ contents = cell(b);
 	  q = pointer_from_cell(contents,&tag,&whereto) ;
 	  if (whereto != TO_HEAP) { b++; continue ; }
-	  if (! h_marked(q-heap_bot)) { fprintf(stderr,"panic 17\n"); b++; continue ; }
+	  if (! h_marked(q-heap_bot)) { xsb_mesg("panic 17"); b++; continue ; }
 	  if (h_is_chained(q)) chat_set_chained(b) ;
 	  h_set_chained(q) ;
 	  swap_with_tag(b,q,tag) ;
@@ -2211,14 +2249,14 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     }
 
 #ifdef CHAT
-  /* substitution factors reachable - they are in completion stack */
-  /* the substitution factors of the consumers are in the cps, */
-  /* they have just been treated                          */
+  /* copy & adapt substitution factors reachable - they are in
+     completion stack; the substitution factors of the consumers are
+     in the choice point stack and they have just been treated */
 
     { CPtr compl_fr;
       compl_fr = openreg;
       while (compl_fr != COMPLSTACKBOTTOM)
-	{ /* substitution factor is now in the heap for generators */
+	{ /* CHAT stores the substitution factor of generators in the heap */
 	  p = (CPtr)(&compl_hreg(compl_fr));
 	  contents = cell(p) ;
 	  q = pointer_from_cell(contents,&tag,&whereto) ;
@@ -2226,13 +2264,28 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	    fprintf(stderr,"bad heap pointer during copying SF\n");
 	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
 	  adapt_external_heap_pointer(p,q,tag);
+
+	  /* we also need to adapt the Dreg fields */
+	  if (compl_pdreg(compl_fr) != NULL) {
+	    xsb_mesg("Adapting the Dreg field in compl stack...");
+	    p = (CPtr)(&(compl_pdreg(compl_fr)));
+	    contents = cell(p) ;
+	    q = pointer_from_cell(contents,&tag,&whereto) ;
+	    if (whereto != TO_HEAP)
+	      xsb_mesg("non null Dreg field in ComplStack points not in heap");
+	    else
+	      {
+		if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
+		adapt_external_heap_pointer(p,q,tag);
+	      }	    
+	  }
 	  compl_fr = prev_compl_frame(compl_fr);
 	}
     }
 #endif
 
   /* local stack */
-  /* more precise traversal of local stack possible */
+  /* a more precise traversal of local stack is possible */
 
     { CPtr endls;
       endls = ls_top ;
@@ -2254,7 +2307,7 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     { chat_init_pheader initial_pheader;
       chat_incr_pheader pheader;
       int  trlen;
-      CPtr b, d, *tr;
+      CPtr b, *tr;
 
       initial_pheader = chat_link_headers;
       do
@@ -2270,14 +2323,14 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  /* revision might be needed                                 */
 
 	  /*----------------------------------------------------------*/
-	  /* mark the delay list field of choice points too */
+	  /* adapt the delay list field of choice points too */
 	  b = (CPtr)(&chat_get_cons_start(initial_pheader));
-	  if ((d = cp_pdreg(b)) != NULL) {
+	  if (cp_pdreg(b) != NULL) {
 	    p = (CPtr)(&(cp_pdreg(b)));
 	    contents = cell(p) ;
 	    q = pointer_from_cell(contents,&tag,&whereto) ;
 	    if (whereto != TO_HEAP)
-	      fprintf(stderr,"non null Dreg field points not in heap\n");
+	      xsb_mesg("non null Dreg field in CP stack points not in heap");
 	    else
 	      {
 		if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
@@ -2336,8 +2389,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 
     if (next != end_new_h)
       fprintf(stderr,
-	      "heap copy gc - inconsistent hreg (next=%p, end=%p) %d cells not copied...\n",
-	      next, end_new_h, (end_new_h-next));
+	      "heap copy gc - inconsistent hreg: %d cells not copied...\n",
+	      (end_new_h-next));
 
     memcpy((void *)heap_bot, (void *)begin_new_h, marked*sizeof(Cell));
 
@@ -2421,10 +2474,13 @@ int gc_heap(int arity)
 		heap_early_reset,ls_early_reset);
 
 	/* get rid of the marking areas - if they exist */
-	if (heap_marks) { free((heap_marks-1)); heap_marks = NULL; }
-	if (tr_marks)   { free(tr_marks); tr_marks = NULL; }
-	if (ls_marks)   { free(ls_marks); ls_marks = NULL; }
-	if (cp_marks)   { free(cp_marks); cp_marks = NULL; }
+	if (heap_marks)  { free((heap_marks-1)); heap_marks = NULL; }
+	if (tr_marks)    { free(tr_marks); tr_marks = NULL; }
+	if (ls_marks)    { free(ls_marks); ls_marks = NULL; }
+	if (cp_marks)    { free(cp_marks); cp_marks = NULL; }
+#ifdef CHAT
+	if (compl_marks) { free(compl_marks); compl_marks = NULL; }
+#endif
 	return(TRUE);
       }
 
@@ -2508,23 +2564,28 @@ int gc_heap(int arity)
     if (print_on_gc) print_all_stacks();
 
     /* get rid of the marking areas - if they exist */
-    if (heap_marks) { check_zero(heap_marks,(heap_top-heap_bot),"heap") ;
-                      free((heap_marks-1)) ; /* see its calloc */
-		      heap_marks = NULL ;
-                    }
-    if (tr_marks)   { check_zero(tr_marks,(tr_top-tr_bot + 1),"tr") ;
-                      free(tr_marks) ;
-		      tr_marks = NULL ;
-                    }
-    if (ls_marks)   { check_zero(ls_marks,(ls_bot - ls_top + 1),"ls") ;
-                      free(ls_marks) ;
-		      ls_marks = NULL ;
-                    }
-    if (cp_marks)   { check_zero(cp_marks,(cp_bot - cp_top + 1),"cp") ;
-                      free(cp_marks) ;
-		      cp_marks = NULL ;
-                    }
+    if (heap_marks)  { check_zero(heap_marks,(heap_top-heap_bot),"heap") ;
+                       free((heap_marks-1)) ; /* see its calloc */
+		       heap_marks = NULL ;
+                     }
+    if (tr_marks)    { check_zero(tr_marks,(tr_top-tr_bot + 1),"tr") ;
+                       free(tr_marks) ;
+		       tr_marks = NULL ;
+                     }
+    if (ls_marks)    { check_zero(ls_marks,(ls_bot - ls_top + 1),"ls") ;
+                       free(ls_marks) ;
+		       ls_marks = NULL ;
+                     }
+    if (cp_marks)    { check_zero(cp_marks,(cp_bot - cp_top + 1),"cp") ;
+                       free(cp_marks) ;
+		       cp_marks = NULL ;
+                     }
 #ifdef CHAT
+    if (compl_marks) { i = (2*((compl_bot-top_of_complstk)/COMPLFRAMESIZE))+1;
+                       check_zero(compl_marks,i,"compl") ;
+                       free(compl_marks) ;
+		       compl_marks = NULL ;
+                     }
     chat_check_zero();
 #endif
 
