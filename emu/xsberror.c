@@ -47,7 +47,7 @@ static char *err_msg[] = {
 
 void xsb_abort(char *description)
 {
-    char message[80];
+    char message[240];
 
     sprintf(message, "++Error: %s\n", description);
     pcreg = exception_handler(message);
