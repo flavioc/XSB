@@ -158,6 +158,18 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 	added. The effect of "hform" is to force the compiler to compile
 	the head of the rule as a list of formulas rather than an oid term.
 
+	Or, maybe, the compiler should just undertand that :- is a special
+	predicate and its first argument is the rule head. So, things must
+	be translated differently there.
+	Right now if we have
+	:- arguments p(bform).
+	p(a[b->c]) :- ...
+	then a[b->c] is translated as defived_fd, so the compiler treats
+	bform in the rule head differently. We should extend this treatment
+	to the predicate ':-'.
+
+	Another idea: use `meta' instead of `bform'.
+
 5. Metaprogramming
 
     - Need to implement the Flora analog of =.. (~..), which should work with

@@ -28,42 +28,69 @@
 
 :- compiler_options([xpp_on]).
 
-:- import flora_module_predicate/4 from flrwrapper.
+:- import
+	flora_module_predicate/4,
+	flora_decode_predicate/6
+	from flrwrapper.
 
 #include "flora_terms.flh"
 
 
+FL_UNIVEQFORM(X,Y) :-
+	(var(X) ; var(Y)),
+	!,
+	X=Y.
 
 %% This takes care of F-logic molecules with dynamic module specification
-FL_UNIVEQFORM(FLLIBMODLIT(Fun1,Args1,ModuleName1),
-	      FLLIBMODLIT(Fun2,Args2,ModuleName2)) :-
+FL_UNIVEQFORM(X, Y) :-
+	X=FLLIBMODLIT(Fun1,Args1,ModuleName1),
+	Y=FLLIBMODLIT(Fun2,Args2,ModuleName2),
 	!,
 	Fun1 = Fun2,
 	Args1 = Args2,
 	ModuleName1 = ModuleName2.
-FL_UNIVEQFORM(FLLIBMODLIT(Fun,Args,ModuleName), Y) :-
+
+FL_UNIVEQFORM(X, Y) :-
+	X=FLLIBMODLIT(Fun,Args,ModuleName),
 	!,
+	%% this ensures that ModuleName is bound whenever possible
+	(nonvar(ModuleName), !
+	; flora_decode_predicate(Y,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
 	flora_module_predicate(Fun,Args,ModuleName,Literal),
 	Literal = Y.
-FL_UNIVEQFORM(X, FLLIBMODLIT(Fun,Args,ModuleName)) :-
+
+FL_UNIVEQFORM(X, Y) :-
+	Y=FLLIBMODLIT(Fun,Args,ModuleName),
 	!,
+	%% this ensures that ModuleName is bound whenever possible
+	(nonvar(ModuleName), !
+	; flora_decode_predicate(X,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
 	flora_module_predicate(Fun,Args,ModuleName,Literal),
 	X = Literal.
 
 %% This takes care of first-order Flora predicates with dynamic 
 %% module specification 
-FL_UNIVEQFORM(FLLIBMODLIT(FL_FIRSTORDER,Fun1,Args1,ModuleName1),
-	      FLLIBMODLIT(FL_FIRSTORDER,Fun2,Args2,ModuleName2)) :-
+FL_UNIVEQFORM(X, Y) :-
+	X=FLLIBMODLIT(FL_FIRSTORDER,Fun1,Args1,ModuleName1),
+	Y=FLLIBMODLIT(FL_FIRSTORDER,Fun2,Args2,ModuleName2),
 	!,
 	Fun1 = Fun2,
 	Args1 = Args2,
 	ModuleName1 = ModuleName2.
-FL_UNIVEQFORM(FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName), Y) :-
+FL_UNIVEQFORM(X, Y) :-
+	X=FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName),
 	!,
+	%% this ensures that ModuleName is bound whenever possible
+	(nonvar(ModuleName), !
+	; flora_decode_predicate(Y,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
 	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
 	Literal = Y.
-FL_UNIVEQFORM(X, FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName)) :-
+FL_UNIVEQFORM(X, Y) :-
+	Y=FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName),
 	!,
+	%% this ensures that ModuleName is bound whenever possible
+	(nonvar(ModuleName), !
+	; flora_decode_predicate(X,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
 	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
 	X = Literal.
 
