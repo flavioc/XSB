@@ -45,9 +45,6 @@ compile_clause(Sym, Clause, PilCode, PilCodeR, Neck, NC) :-
 	inprog(Sym, FlatClause, InClause, NC),
 	tclause(Sym, InClause, PilCode, PilCodeR, Neck, NC).
 
-% In tclause/2 Arsize1 is wordsize of local env (if needed),
-%              Arsize2 is # of Pvars (incl ptr to CP/Subgoal frame.
-
 tclause(Sym, clause(Args,Body,crec(ARSize,Label)),
 	[label(clau,Label)|Pil0], Pilr, Neck, NC) :- 
 	( sym_type(Sym, tabled(_,_,_,Tabar)) -> Tabled = 1, ARSize1 is ARSize+1
@@ -57,12 +54,8 @@ tclause(Sym, clause(Args,Body,crec(ARSize,Label)),
 	sym_name(Sym, _, Arity),
 	reserve(Arity, [], Tin),
 	( Tabled =:= 0 -> 
-	    ( ARSize1 > 0 ->
-	/*Pvarsize is ARSize1-1, Pil0 = [allocate_gc(2,Pvarsize)|Pil1] */
-                  Pil0 = [allocate_gc(2,ARSize1)|Pil1]
-	    ; Pil1 = Pil0
-	    )
-        ; Pil0 = [allocate_gc(2,ARSize),getVn(ARSize)|Pil1]   % was getpbreg
+		( ARSize1 > 0 -> Pil0 = [allocate|Pil1] ; Pil1 = Pil0 )
+	; Pil0 = [allocate,getpbreg(ARSize)|Pil1]
 	),
 	( Neck=:=0, theadpars(Args,1,Pil1,Pil3,Tin,TRegs)
 	; Neck=\=0, theadpars_hold(Args,1,Pil1,Pil2,Tin,TRegs),
