@@ -96,7 +96,7 @@ flLoad(File,Workspace) :-
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("%File s does not exist!",args(File)),
+	  flora_error_line("File %s does not exist!",args(File)),
           fail
         ),
 	!.
@@ -351,22 +351,23 @@ flora_flload(FlrFile,Workspace) :-
 	    flora_stdmsg_nl,
 	    true
 	;
-	  ( flora_file_newerthan(MPFile,FlrFile) ->
-	      flora_stdmsg_nl,
-	      true
-	  ;
-	    flora_compile_file(FlrFile,MPFile,FDBFile,Status),
-	    (Status == FLORA_FAILURE -> fail; true)
-	  ),
-	  flora_copy_file(MPFile,WSPFile)
+	    ( flora_file_newerthan(MPFile,FlrFile) ->
+		flora_stdmsg_nl,
+		true
+	    ;
+		flora_compile_file(FlrFile,MPFile,FDBFile,Status),
+		(Status == FLORA_FAILURE -> fail; true)
+	    ),
+	    flora_copy_file(MPFile,WSPFile)
         ),
 	!,
 	( flora_file_newerthan(WSOFile,WSPFile) ->
 	    ConsultFile=WSOFile
 	;
-	  ConsultFile=WSPFile
+	    ConsultFile=WSPFile
         ),
-	flora_message_line("loading %s into module %s",args(FlrFile,Workspace)),
+	flora_message_line("loading %s into module %s",
+			   args(FlrFile,Workspace)),
 	flora_set_xpp_options(Workspace),
         consult(ConsultFile),
 	flora_clear_xpp_options,
