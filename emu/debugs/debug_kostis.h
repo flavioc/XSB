@@ -1,3 +1,0 @@
-
-
-#undef KOSTIS_DEBUG
