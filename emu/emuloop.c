@@ -72,11 +72,6 @@ CPtr	ans_var_pos_reg;
 
 extern tab_inf_ptr UglyHackForTip;
 
-#ifdef DEBUG
-extern void printterm(Cell, byte, int);
-extern void print_completion_stack(void);
-#endif
-
 /*----------------------------------------------------------------------*/
 
 #include "tr_delay.h"
@@ -142,12 +137,9 @@ extern int  builtin_call(int), unifunc_call(int, CPtr);
 
 #ifdef DEBUG
 extern void debug_inst(byte *, CPtr);
+extern void print_completion_stack(void);
 extern void print_subgoal(FILE *, SGFrame);
 extern void print_delay_list(FILE *, CPtr);
-#endif
-
-#ifdef WAM_TRAIL
-CPtr    temp_trreg;
 #endif
 
 int  (*dyn_pred)();
@@ -171,93 +163,6 @@ int     xctr;
 #include "wfs.i" 
 #endif 
 
-/*----------------------------------------------------------------------*/
-
-static int emuloop(byte *);
-
-/*======================================================================*/
-/*======================================================================*/
-
-int xsb(int flag, int argc, char *argv[])
-{ 
-   char *startup_file;
-   FILE *fd;
-   Cell magic;
-   char message[256];
-   static double realtime;	/* To retain its value across invocations */
-
-   extern void dis(int);
-   extern char *init_para(int, char **);
-   extern void init_flags(), init_machine(), init_symbols();
-#ifdef FOREIGN
-#ifndef FOREIGN_ELF
-   extern char tfile[];
-#endif
-#endif
-
-   if (flag == 0) {  /* initialize xsb */
-     realtime = real_time();
-     setbuf(stdout, NULL);
-     init_flags();
-     startup_file = init_para(argc, argv);	/* init parameters */
-     init_machine();		/* init space, regs, stacks */
-     init_inst_table();		/* init table of instruction types */
-     init_symbols();		/* preset a few symbols in PSC table */
-     init_interrupt();		/* catch ^C interrupt signal */
-
-     fd = fopen(startup_file, "rb");   /* "b" needed for DOS. -smd */
-     if (!fd) {
-       sprintf(message, "The startup file, %s, could not be found!",
-	       startup_file);
-       xsb_exit(message);
-     }
-     get_obj_word_bb(&magic);
-     fclose(fd);
-#ifdef V2_OBJECT_FORMAT
-     if (magic == 0x11121305)
-#else
-     if (magic == 0x11121304 || magic == 0x11121305)
-#endif
-       inst_begin = loader(startup_file,0);
-     else
-       xsb_exit("Incorrect startup file format");
-
-     if (!inst_begin)
-       xsb_exit("Error in loading startup file");
-
-     if ( xsb_mode == DISASSEMBLE ) {
-       dis(1);
-       exit(0);
-     }
-
-     return(0);
-
-   } else if (flag == 1) {  /* continue execution */
-
-     return(emuloop(inst_begin));
-
-   } else if (flag == 2) {  /* shutdown xsb */
-
-#ifdef FOREIGN
-#ifndef FOREIGN_ELF
-     if (fopen(tfile, "r")) unlink(tfile);
-#endif
-#endif
-
-     if ( xsb_mode != C_CALLING_XSB ) {
-       realtime = real_time() - realtime;
-       fprintf(stderr, "\nEnd XSB (cputime %.2f secs, elapsetime ",
-	       cpu_time());
-       if (realtime < 600.0)
-	 fprintf(stderr, "%.2f secs)\n", realtime);
-       else
-	 fprintf(stderr, "%.2f mins)\n", realtime/60.0);
-     }
-     return(0);
-   }
-   return(1);
-}  /* end of xsb() */
-
 /*======================================================================*/
 /* the main emulator loop.						*/
 /*======================================================================*/
@@ -266,40 +171,29 @@ static int emuloop(byte *startaddr)
 {
   Psc psc;
   register byte *lpcreg;
-  register CPtr rreg;	/* for SUN */
+  register CPtr rreg;
   register Cell op1, op2;	/* (*Cptr) */
   CPtr op3;
   byte flag = READFLAG;  	/* read/write mode flag */
-  Cell opa[3];
-  
-  int i, j, arity;	/* to unify subfields of op1 and op2 */  
-  
-  int restore_type;	/* 0 for retry restore; 1 for trust restore */
-  
+  Cell opa[3]; 
+  int i, j, arity;	/* to unify subfields of op1 and op2 */
+  int restore_type;	/* 0 for retry restore; 1 for trust restore */ 
 #ifdef GC
   static int infcounter = 0;
   static int just_print = 0;
 #endif
-
   int  xflag;
   CPtr xtemp1, xtemp2, xtemp3, xtemp5, xcurcall;
-#ifdef LOCAL_EVAL
-  CPtr xtemp6=0;  /* Temporary variable for next breg (used in complete.i) */
-  SGFrame xtemp15;
-#endif
   Cell  CallNumVar;
   ALPtr OldRetPtr;
   NODEptr TrieRetPtr;
   char message[80];
-#ifdef Chat_DEBUG
-  chat_pheader chat_header_ptr;
-#endif
   
   rreg = reg; /* for SUN */
   op1 = op2 = (Cell) NULL;
   lpcreg = startaddr;
 
- contcase:	/* the main loop */
+contcase:	/* the main loop */
 
 #ifdef DEBUG
   if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
@@ -390,28 +284,27 @@ static int emuloop(byte *startaddr)
     ppad; op1 = opvar;
     pad64;
     if (flag) { /* if (flag == WRITE) */
-       nbldval(op1); 
-      } 
+      nbldval(op1); 
+    } 
     else {
       op2 = *(sreg++);
       goto nunify;
     } 
     goto contcase;
 
- case unitvar: /* PPR */
+  case unitvar: /* PPR */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     if (flag) {	/* if (flag == WRITE) */
-	bld_ref((CPtr)op1, hreg);
-	new_heap_free(hreg);
+      bld_ref((CPtr)op1, hreg);
+      new_heap_free(hreg);
     }
     else {
-	bld_copy0((CPtr)op1, *(sreg++));
-        /* * (CPtr) op1 = *(sreg++) */
+      bld_copy0((CPtr)op1, *(sreg++));
     }
     goto contcase;
 
- case unitval: /* PPR */
+  case unitval: /* PPR */
     ppad; op1 = opreg;
     pad64;
     if (flag) { /* if (flag == WRITE) */
@@ -419,59 +312,58 @@ static int emuloop(byte *startaddr)
       goto contcase;
     }
     else {
-	op2 = *(sreg++);
-	goto nunify;
+      op2 = *(sreg++);
+      goto nunify;
     } 
 
-
- case unicon: /* PPP-C */
+  case unicon: /* PPP-C */
     pppad; pad64; op2word;
     if (flag) {	/* if (flag == WRITE) */
-	new_heap_string(hreg, (char *)op2);
+      new_heap_string(hreg, (char *)op2);
     }
     else {  /* op2 already set */
-	op1 = *(sreg++);
-	nunify_with_con(op1,op2);
+      op1 = *(sreg++);
+      nunify_with_con(op1,op2);
     }
     goto contcase;
 
- case uninil: /* PPP */
+  case uninil: /* PPP */
     pppad;
     pad64;
     if (flag) {	/* if (flag == WRITE) */
-	new_heap_nil(hreg);
+      new_heap_nil(hreg);
     }
     else {
-	op1 = *(sreg++);
-	nunify_with_nil(op1);
+      op1 = *(sreg++);
+      nunify_with_nil(op1);
     }
     goto contcase;
 
- case getnumcon: /* PPR-N */
+  case getnumcon: /* PPR-N */
     ppad; op1 = opreg; pad64; op2word;
     nunify_with_num(op1,op2);
     goto contcase;
 
- case getfloat: /* PPR-N */
+  case getfloat: /* PPR-N */
     ppad; op1 = opreg; pad64; op2word;
     nunify_with_float(op1,op2);
     goto contcase;
 
- case putnumcon: /* PPR-N */
+  case putnumcon: /* PPR-N */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     op2 = *(pw)lpcreg; ADVANCE_PC;
     bld_int((CPtr)op1, op2);
     goto contcase;
 
- case putfloat: /* PPR-N */
+  case putfloat: /* PPR-N */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_float((CPtr)op1, asfloat(*(pw)lpcreg));
     ADVANCE_PC;
     goto contcase;
 
- case putpvar: /* PVR */
+  case putpvar: /* PVR */
     pad;
     op1 = (Cell)(opvaraddr);
     bld_free((CPtr)op1);
@@ -480,13 +372,13 @@ static int emuloop(byte *startaddr)
     bld_ref((CPtr)op2, (CPtr)op1);
     goto contcase;
 
- case putpval: /* PVR */
+  case putpval: /* PVR */
     pad; op1 = (Cell)(opvaraddr);
     bld_copy0(opregaddr, *((CPtr)op1));
     pad64;
     goto contcase;
 
- case puttvar: /* PRR */
+  case puttvar: /* PRR */
     pad; op1 = (Cell)(opregaddr); op2 = (Cell)(opregaddr);
     pad64;
     bld_ref((CPtr)op1, hreg);
@@ -495,40 +387,40 @@ static int emuloop(byte *startaddr)
     goto contcase;
 
 /* tls 12/8/92 */
- case putstrv: /*  PPV-S */
+  case putstrv: /*  PPV-S */
     ppad; op1 = (Cell)(opvaraddr);
     pad64;
     bind_cs((CPtr)op1, (Pair)hreg);
     new_heap_functor(hreg, *(Psc *)lpcreg); ADVANCE_PC;
     goto contcase;
 
- case putcon: /* PPR-C */
+  case putcon: /* PPR-C */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_string((CPtr)op1, *(char **)lpcreg); ADVANCE_PC;
     goto contcase;
     
- case putnil: /* PPR */
+  case putnil: /* PPR */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_nil((CPtr)op1);
     goto contcase;
     
 /* doc tls -- differs from putstrv since it pulls from a register */
- case putstr: /* PPR-S */
+  case putstr: /* PPR-S */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_cs((CPtr)op1, (Pair)hreg);
     new_heap_functor(hreg, *(Psc *)lpcreg); ADVANCE_PC;
     goto contcase;
 
- case putlist: /* PPR */
+  case putlist: /* PPR */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_list((CPtr)op1, hreg);
     goto contcase;
 
- case bldpvar: /* PPV */
+  case bldpvar: /* PPV */
     ppad; op1 = (Cell)(opvaraddr);
     pad64;
     /* tls 12/8/92 */
@@ -536,39 +428,39 @@ static int emuloop(byte *startaddr)
     new_heap_free(hreg);
     goto contcase;
     
- case bldpval: /* PPV */
+  case bldpval: /* PPV */
     ppad; op1 = opvar;
     pad64;
     nbldval(op1);
     goto contcase;
     
- case bldtvar: /* PPR */
+  case bldtvar: /* PPR */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_ref((CPtr)op1, hreg);
     new_heap_free(hreg);
     goto contcase;
     
- case bldtval: /* PPR */
+  case bldtval: /* PPR */
     ppad; op1 = opreg;
     pad64;
     nbldval(op1);
     goto contcase;
     
- case bldcon: /* PPP-C */
+  case bldcon: /* PPP-C */
     pppad;
     pad64;
     new_heap_string(hreg, *(char **)lpcreg);
     ADVANCE_PC;
     goto contcase;
     
- case bldnil: /* PPP */
+  case bldnil: /* PPP */
     pppad;
     pad64;
     new_heap_nil(hreg);
     goto contcase;
     
- case getlist_tvar_tvar: /* RRR */
+  case getlist_tvar_tvar: /* RRR */
     /* op1 is FREE: change tls for value trail */
     op1 = opreg;
     deref(op1);
@@ -592,43 +484,43 @@ static int emuloop(byte *startaddr)
     else Fail1;
     goto contcase;	/* end getlist_tvar_tvar */
 
- case uninumcon: /* PPP-N */
+  case uninumcon: /* PPP-N */
     pppad; pad64; op2word; /* num in op2 */
     if (flag) {	/* if (flag == WRITE) */
-	new_heap_num(hreg, (Integer)op2);
+      new_heap_num(hreg, (Integer)op2);
     }
     else {  /* op2 set */
-	op1 = *(sreg++);
-	nunify_with_num(op1,op2);
+      op1 = *(sreg++);
+      nunify_with_num(op1,op2);
     }
     goto contcase;
 
- case unifloat: /* PPPF */
+  case unifloat: /* PPPF */
     pppad; pad64; op2word; /* num in op2 */
     if (flag) {	/* if (flag == WRITE) */
-	new_heap_float(hreg, asfloat(op2));
+      new_heap_float(hreg, asfloat(op2));
     }
     else {  /* op2 set */
-	op1 = cell(sreg++);
-        nunify_with_float(op1,op2);
+      op1 = cell(sreg++);
+      nunify_with_float(op1,op2);
     }
     goto contcase;
     
- case bldnumcon: /* PPP-N */
+  case bldnumcon: /* PPP-N */
     pppad; pad64; op2word; /* num to op2 */
     new_heap_num(hreg, (Integer)op2);
     goto contcase;
 
- case bldfloat: /* PPP-F */
+  case bldfloat: /* PPP-F */
     pppad; pad64; op2word; /* num to op2 */
     new_heap_float(hreg, asfloat(op2));
     goto contcase;
 
- case trymeelse: /* PPA-L */
+  case trymeelse: /* PPA-L */
     ppad; op1byte; pad64; op2word;
     goto subtryme;
 
- case retrymeelse: /* PPA-L */
+  case retrymeelse: /* PPA-L */
     ppad; op1byte;
     pad64;
     cp_pcreg(breg) = *(byte **)lpcreg;
@@ -636,20 +528,20 @@ static int emuloop(byte *startaddr)
     restore_type = 0;
     goto restore_sub;
 
- case trustmeelsefail: /* PPA */
+  case trustmeelsefail: /* PPA */
     ppad; op1byte;
     pad64;
     restore_type = 1;
     goto restore_sub;
 
- case try: /* PPA-L */
+  case try: /* PPA-L */
     ppad; op1byte;
     pad64;
     op2 = (Cell)((Cell)lpcreg + sizeof(Cell));
     lpcreg = *(pb *)lpcreg; /* = *(pointer to byte pointer ) */
     goto subtryme;
 
- case retry: /* PPA-L */
+  case retry: /* PPA-L */
     ppad; op1byte;
     pad64;
     cp_pcreg(breg) = lpcreg+sizeof(Cell);
@@ -680,26 +572,24 @@ static int emuloop(byte *startaddr)
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
     goto contcase;
 
- case gettbreg: /* PPR */
+  case gettbreg: /* PPR */
 /* doc tls op1 = rreg+*lpcreg++ */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
     goto contcase;
 
- case putpbreg: /* PPV */
+  case putpbreg: /* PPV */
     ppad; op1 = opvar;
     pad64;
     cut_code(op1);
 
- case puttbreg: /* PPR */
+  case puttbreg: /* PPR */
     ppad; op1 = opreg;
     pad64;
     cut_code(op1);
 
-/* also see arith_exception in subp.c -- tls */
-
- case jumptbreg: /* PPR-L */	/* ??? */
+  case jumptbreg: /* PPR-L */	/* ??? */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
@@ -711,23 +601,23 @@ static int emuloop(byte *startaddr)
     op1 = op1byte ;
     op2 = *(pw)lpcreg; lpcreg+=4;
 #ifdef GC
-    /* if ((infcounter++ > 1000) || (ereg - hreg) < op2) */
-    if ((ereg - hreg) < op2)
-      { infcounter = 0;
+    if (/* (infcounter++ > 1000) || */ (ereg - hreg) < op2)
+      {
+	infcounter = 0;
         fprintf(stderr,".");
         if (just_print)
 	  goto contcase;
-        if (gc_heap(op1))
-	{ if ((ereg - hreg) < op2)
-	       /* an expansion strategy for testing - later better */
-               glstack_realloc(glstack.size+20,op1) ; /* op1 = the arity of the procedure */
+        if (gc_heap(op1)) {
+	  if ((ereg - hreg) < op2)
+	    /* an expansion strategy for testing - later better */
+	    glstack_realloc(glstack.size+20,op1) ; /* op1 = the arity of the procedure */
 	}
-      /* are there any localy cached quantities that must be reinstalled ? */
+	/* are there any localy cached quantities that must be reinstalled ? */
       }
 #endif
     goto contcase;
 
- case switchonterm: /* PPR-L-L */
+  case switchonterm: /* PPR-L-L */
     ppad; 
     op1 = opreg;
     pad64;
@@ -737,7 +627,6 @@ static int emuloop(byte *startaddr)
     case REF1: 
       lpcreg += 2 * sizeof(Cell);
       break;
-      /* case DELAY: */
     case INT:
     case STRING:
     case FLOAT:
@@ -754,85 +643,84 @@ static int emuloop(byte *startaddr)
     }
     goto contcase;
 
-    case switchonbound: /* PPR-L-L */
-      /* op1 is register, op2 is hash table offset, op3 is modulus */
-      ppad; 
-      op1 = opreg;
-      pad64;
-      deref(op1);
-      switch (cell_tag(op1)) {
-      case FREE:
-      case REF1: 
-	lpcreg += 2 * sizeof(Cell);
-	goto sotd2;
-	/* case DELAY: */
-      case INT: 
-      case FLOAT:	/* Yes, use int_val to avoid conversion problem */
-	op1 = (Cell)int_val(op1);
-	break;
-      case LIST:
-	op1 = (Cell)(list_str); 
-	break;
-      case CS:
-	op1 = (Cell)get_str_psc(op1);
-	break;
-      case STRING:	/* We should change the compiler to avoid this test */
-	op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
-	break;
-      }
-      op2 = (Cell)(*(byte **)(lpcreg));
-      lpcreg += sizeof(Cell);
-      op3 = *(CPtr *)lpcreg;
-      /* doc tls -- op2 + (op1%size)*4 */
-      lpcreg =
-	*(byte **)((byte *)op2 + ihash((Cell)op1, (Cell)op3) * sizeof(Cell));
-    sotd2: goto contcase;
+  case switchonbound: /* PPR-L-L */
+    /* op1 is register, op2 is hash table offset, op3 is modulus */
+    ppad; 
+    op1 = opreg;
+    pad64;
+    deref(op1);
+    switch (cell_tag(op1)) {
+    case FREE:
+    case REF1: 
+      lpcreg += 2 * sizeof(Cell);
+      goto sotd2;
+    case INT: 
+    case FLOAT:	/* Yes, use int_val to avoid conversion problem */
+      op1 = (Cell)int_val(op1);
+      break;
+    case LIST:
+      op1 = (Cell)(list_str); 
+      break;
+    case CS:
+      op1 = (Cell)get_str_psc(op1);
+      break;
+    case STRING:	/* We should change the compiler to avoid this test */
+      op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
+      break;
+    }
+    op2 = (Cell)(*(byte **)(lpcreg));
+    lpcreg += sizeof(Cell);
+    op3 = *(CPtr *)lpcreg;
+    /* doc tls -- op2 + (op1%size)*4 */
+    lpcreg =
+      *(byte **)((byte *)op2 + ihash((Cell)op1, (Cell)op3) * sizeof(Cell));
+  sotd2: goto contcase;
       
-    case switchon3bound: /* RRR-L-L */
-      /* op1 is register, op2 is hash table offset, op3 is modulus */
-      if (*lpcreg == 0) { lpcreg++; opa[0] = 0; }
-      else opa[0] = (Cell)opreg;
-      opa[1] = (Cell)opreg;
-      opa[2] = (Cell)opreg;
-      pad64;
-      op2 = (Cell)(*(byte **)(lpcreg)); lpcreg += sizeof(Cell);
-      op3 = *(CPtr *)lpcreg; 
-      /* This is not a good way to do this, but until we put retract into C,
-	 or add new builtins, it will have to do. */
-      j = 0;
-      for (i = 0; i <= 2; i++) {
-	if (opa[i] != 0) {
-	  op1 = opa[i];
-	  deref(op1);
-	  switch (cell_tag(op1)) {
-	  case FREE:
-	  case REF1: 
-	    lpcreg += sizeof(Cell);
-	    goto sob3d2;
-	  case INT: 
-	  case FLOAT:	/* Yes, use int_val to avoid conversion problem */
-	    op1 = (Cell)int_val(op1);
-	    break;
-	  case LIST:
-	    op1 = (Cell)(list_str); 
-	    break;
-	  case CS:
-	    op1 = (Cell)get_str_psc(op1);
-	    break;
-	  case STRING:
-	    op1 = (Cell)string_val(op1);
-	    break;
-	  default:
-	    fprintf(stderr,"Illegal operand in switchon3bound\n");
-	    break;
-	  }
-	  j = (j<<1) + ihash((Cell)op1, (Cell)op3);
+  case switchon3bound: /* RRR-L-L */
+    /* op1 is register, op2 is hash table offset, op3 is modulus */
+    if (*lpcreg == 0) { lpcreg++; opa[0] = 0; }
+    else opa[0] = (Cell)opreg;
+    opa[1] = (Cell)opreg;
+    opa[2] = (Cell)opreg;
+    pad64;
+    op2 = (Cell)(*(byte **)(lpcreg)); lpcreg += sizeof(Cell);
+    op3 = *(CPtr *)lpcreg; 
+    /* This is not a good way to do this, but until we put retract into C,
+       or add new builtins, it will have to do. */
+    j = 0;
+    for (i = 0; i <= 2; i++) {
+      if (opa[i] != 0) {
+	op1 = opa[i];
+	deref(op1);
+	switch (cell_tag(op1)) {
+	case FREE:
+	case REF1: 
+	  lpcreg += sizeof(Cell);
+	  goto sob3d2;
+	case INT: 
+	case FLOAT:	/* Yes, use int_val to avoid conversion problem */
+	  op1 = (Cell)int_val(op1);
+	  break;
+	case LIST:
+	  op1 = (Cell)(list_str); 
+	  break;
+	case CS:
+	  op1 = (Cell)get_str_psc(op1);
+	  break;
+	case STRING:
+	  op1 = (Cell)string_val(op1);
+	  break;
+	default:
+	  fprintf(stderr,"Illegal operand in switchon3bound\n");
+	  break;
 	}
+	j = (j<<1) + ihash((Cell)op1, (Cell)op3);
       }
-      lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
-    sob3d2: goto contcase;
+    }
+    lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
+  sob3d2: goto contcase;
 
- case trymeorelse: /* PPA-L */
+  case trymeorelse: /* PPA-L */
     pppad;
     pad64;
     op1 = 0;
@@ -840,7 +728,7 @@ static int emuloop(byte *startaddr)
     cpreg = lpcreg;
     goto subtryme;
 
- case retrymeorelse: /* PPA-L */
+  case retrymeorelse: /* PPA-L */
     pppad;
     pad64;
     op1 = 0;
@@ -850,7 +738,7 @@ static int emuloop(byte *startaddr)
     restore_type = 0;
     goto restore_sub;
 
- case trustmeorelsefail: /* PPA */
+  case trustmeorelsefail: /* PPA */
     pppad;
     pad64;
     op1 = 0;
@@ -858,7 +746,7 @@ static int emuloop(byte *startaddr)
     restore_type = 1;
     goto restore_sub;
 
- case dyntrustmeelsefail: /* PPA-L, second word ignored */
+  case dyntrustmeelsefail: /* PPA-L, second word ignored */
     ppad; op1byte; 
     pad64;
     ADVANCE_PC;
@@ -872,14 +760,14 @@ static int emuloop(byte *startaddr)
 
 /*----------------------------------------------------------------------*/
 
- case term_comp: /* RRR */
+  case term_comp: /* RRR */
     op1 = (Cell)*(opregaddr);
     op2 = (Cell)*(opregaddr);
     bld_int(opregaddr, compare(op1, op2));
     pad64;
     goto contcase;
 
- case movreg: /* PRR */
+  case movreg: /* PRR */
     pad;
     op1 = (Cell)(opregaddr);
     bld_copy0(opregaddr, *((CPtr)op1));
@@ -908,13 +796,13 @@ static int emuloop(byte *startaddr)
 	else {arithmetic_exception(lpcreg);}			\
     } else {arithmetic_exception(lpcreg);}
 
- case addreg: /* PRR */
+  case addreg: /* PRR */
     ARITHPROC(+);
     goto contcase; 
 
- case subreg: /* PRR */
+  case subreg: /* PRR */
 /*    ARITHPROC(-); */
-    pad;							
+    pad;
     op1 = opreg;
     op3 = opregaddr;							
     pad64;
@@ -922,26 +810,26 @@ static int emuloop(byte *startaddr)
     deref(op1);
     deref(op2);
     if (isinteger(op1)) {						
-	if (isinteger(op2)) {
-	    bld_int(op3, int_val(op2) - int_val(op1)); }
-	else if (isfloat(op2)) {
-	    bld_float(op3, float_val(op2) - (Float)int_val(op1)); }
-	else {arithmetic_exception(lpcreg);}
+      if (isinteger(op2)) {
+	bld_int(op3, int_val(op2) - int_val(op1)); }
+      else if (isfloat(op2)) {
+	bld_float(op3, float_val(op2) - (Float)int_val(op1)); }
+      else {arithmetic_exception(lpcreg);}
     } else if (isfloat(op1)) {
-	if (isfloat(op2)) {
-	    bld_float(op3, float_val(op2) - float_val(op1)); }
-	else if (isinteger(op2)) {
-	    bld_float(op3, (Float)int_val(op2) - float_val(op1)); }
-	else arithmetic_exception(lpcreg);
-    } 
+      if (isfloat(op2)) {
+	bld_float(op3, float_val(op2) - float_val(op1)); }
+      else if (isinteger(op2)) {
+	bld_float(op3, (Float)int_val(op2) - float_val(op1)); }
+      else arithmetic_exception(lpcreg);
+    }
     else arithmetic_exception(lpcreg);
     goto contcase; 
 
- case mulreg: /* PRR */
+  case mulreg: /* PRR */
     ARITHPROC(*);
     goto contcase; 
 
- case divreg: /* PRR */
+  case divreg: /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
@@ -950,21 +838,21 @@ static int emuloop(byte *startaddr)
     deref(op1);
     deref(op2);
     if (isinteger(op1)) {
-	if (isinteger(op2)) {
-	    bld_float(op3, (Float)int_val(op2)/(Float)int_val(op1)); }
-	else if (isfloat(op2)) {
-	    bld_float(op3, float_val(op2)/(Float)int_val(op1)); }
-	else {arithmetic_exception(lpcreg);}
+      if (isinteger(op2)) {
+	bld_float(op3, (Float)int_val(op2)/(Float)int_val(op1)); }
+      else if (isfloat(op2)) {
+	bld_float(op3, float_val(op2)/(Float)int_val(op1)); }
+      else {arithmetic_exception(lpcreg);}
     } else if (isfloat(op1)) {
-	if (isfloat(op2)) {
-	    bld_float(op3, float_val(op2)/float_val(op1)); }
-	else if (isinteger(op2)) {
-	    bld_float(op3, (Float)int_val(op2)/float_val(op1)); }
-	else {arithmetic_exception(lpcreg);}
+      if (isfloat(op2)) {
+	bld_float(op3, float_val(op2)/float_val(op1)); }
+      else if (isinteger(op2)) {
+	bld_float(op3, (Float)int_val(op2)/float_val(op1)); }
+      else {arithmetic_exception(lpcreg);}
     } else {arithmetic_exception(lpcreg);}
     goto contcase; 
 
- case idivreg: /* PRR */
+  case idivreg: /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
@@ -984,37 +872,37 @@ static int emuloop(byte *startaddr)
     else {arithmetic_exception(lpcreg);}
     goto contcase; 
 
- case int_test_z:   /* PPR-N-L */
+  case int_test_z:   /* PPR-N-L */
     ppad;
     op1 = opreg; pad64;
     deref(op1); op2word;
     if (isnumber(op1)) {
-	if ((int_val(op1) - (Integer)op2) == 0)
-	    lpcreg = *(byte **)lpcreg;
-        else ADVANCE_PC;
+      if ((int_val(op1) - (Integer)op2) == 0)
+	lpcreg = *(byte **)lpcreg;
+      else ADVANCE_PC;
     }
     else {
-	ADVANCE_PC;
-	arithmetic_exception(lpcreg);
+      ADVANCE_PC;
+      arithmetic_exception(lpcreg);
     }
     goto contcase;
 
- case int_test_nz:   /* PPR-N-L */
-   ppad;
-   op1 = opreg; pad64;
-   deref(op1); op2word;
+  case int_test_nz:   /* PPR-N-L */
+    ppad;
+    op1 = opreg; pad64;
+    deref(op1); op2word;
     if (isnumber(op1)) {
-	if ((int_val(op1) - (Integer)op2) != 0)
-	    lpcreg = *(byte **)lpcreg;
-        else ADVANCE_PC;
+      if ((int_val(op1) - (Integer)op2) != 0)
+	lpcreg = *(byte **)lpcreg;
+      else ADVANCE_PC;
     }
     else {
-	ADVANCE_PC;
-	arithmetic_exception(lpcreg);
+      ADVANCE_PC;
+      arithmetic_exception(lpcreg);
     }
     goto contcase;
 
- case putdval: /* PVR */
+  case putdval: /* PVR */
     pad; 
     op1 = opvar;
     deref(op1);
@@ -1023,29 +911,29 @@ static int emuloop(byte *startaddr)
     bld_copy0((CPtr)op2, op1);
     goto contcase;
 
- case putuval: /* PVR */
+  case putuval: /* PVR */
     pad;
     op1 = opvar;
     op2 = (Cell)(opregaddr);
     pad64;
     deref(op1);
     if (isnonvar(op1) || ((CPtr)(op1) < hreg) || ((CPtr)(op1) >= ereg)) {
-	bld_copy0((CPtr)op2, op1);
+      bld_copy0((CPtr)op2, op1);
     } else {
-	bld_ref((CPtr)op2, hreg);
-	bind_ref((CPtr)(op1), hreg);
-	new_heap_free(hreg);
+      bld_ref((CPtr)op2, hreg);
+      bind_ref((CPtr)(op1), hreg);
+      new_heap_free(hreg);
     } 
     goto contcase;
 
- case call: /* PPA-S */
+  case call: /* PPA-S */
     pppad; pad64; op2word;	/* the first arg is used later by alloc */
     cpreg = lpcreg;
     psc = (Psc)op2;
     call_sub(psc);
     goto contcase;
 
- case allocate_gc: /* PAA */
+  case allocate_gc: /* PAA */
     pad; op2byte; op3byte;
     pad64;
 #if (!defined(CHAT))
@@ -1072,7 +960,7 @@ static int emuloop(byte *startaddr)
     goto contcase;
 
 /* This is obsolete and is only kept for backwards compatibility for < 2.0 */
- case allocate: /* PPP */
+  case allocate: /* PPP */
     pppad; 
     pad64;
 #if (!defined(CHAT))
@@ -1098,31 +986,31 @@ static int emuloop(byte *startaddr)
     }
     goto contcase;
 
- case deallocate: /* PPP */
+  case deallocate: /* PPP */
     pppad; 
     pad64;
     cpreg = *((byte **)ereg-1);
     ereg = *(CPtr *)ereg;
     goto contcase;
 
- case proceed:  /* PPP */
+  case proceed:  /* PPP */
     lpcreg = cpreg;
     goto contcase;
 
- case execute:  /* PPP-S */
+  case execute:  /* PPP-S */
     pppad; pad64; op2word;
     psc = (Psc)op2;
     call_sub(psc);
     goto contcase;
 
- case jump:   /* PPP-L */
+  case jump:   /* PPP-L */
     pppad;
     pad64;
     check_glstack_overflow( MAX_ARITY, lpcreg, OVERFLOW_MARGIN ) ;
     lpcreg = *(byte **)lpcreg;
     goto contcase;
 
- case jumpz:   /* PPR-L */
+  case jumpz:   /* PPR-L */
     ppad; op1 = opreg;
     pad64;
     if (int_val(op1) == 0)
@@ -1130,7 +1018,7 @@ static int emuloop(byte *startaddr)
     else ADVANCE_PC;
     goto contcase;
 
- case jumpnz:    /* PPR-L */
+  case jumpnz:    /* PPR-L */
     ppad; op1 = opreg;
     pad64;
     if (int_val(op1) != 0)
@@ -1138,7 +1026,7 @@ static int emuloop(byte *startaddr)
     else ADVANCE_PC;
     goto contcase;
 
- case jumplt:    /* PPR-L */
+  case jumplt:    /* PPR-L */
     ppad; op1 = opreg;
     pad64;
     if ((isinteger(op1) && int_val(op1) < 0) ||
@@ -1147,7 +1035,7 @@ static int emuloop(byte *startaddr)
     else ADVANCE_PC;
     goto contcase; 
 
- case jumple:    /* PPR-L */
+  case jumple:    /* PPR-L */
     ppad; op1 = opreg;
     pad64;
     if ((isinteger(op1) && int_val(op1) <= 0) ||
@@ -1156,7 +1044,7 @@ static int emuloop(byte *startaddr)
     else ADVANCE_PC;
     goto contcase; 
 
- case jumpgt:    /* PPR-L */
+  case jumpgt:    /* PPR-L */
     ppad; op1 = opreg;
     pad64;
     if ((isinteger(op1) && int_val(op1) > 0) ||
@@ -1165,7 +1053,7 @@ static int emuloop(byte *startaddr)
     else ADVANCE_PC;
     goto contcase;
 
- case jumpge:    /* PPR-L */
+  case jumpge:    /* PPR-L */
     ppad; op1 = opreg;
     pad64;
     if ((isinteger(op1) && int_val(op1) >= 0) ||
@@ -1174,48 +1062,48 @@ static int emuloop(byte *startaddr)
     else ADVANCE_PC;
     goto contcase; 
 
- case fail:    /* PPP */
+  case fail:    /* PPP */
     Fail1; 
     goto contcase;
 
- case noop:  /* PPA */
+  case noop:  /* PPA */
     ppad; op1byte;
     pad64;
     lpcreg += (int)op1;
     lpcreg += (int)op1;
     goto contcase;
 
- case halt:  /* PPP */
+  case halt:  /* PPP */
     pppad;
     pad64;
     pcreg = lpcreg; 
     inst_begin = lpcreg;  /* hack for the moment to make this a ``creturn'' */
     return(0);	/* not "goto contcase"! */
 
- case builtin:   
+  case builtin:
     ppad; op1byte; pad64; pcreg=lpcreg; 
     if (builtin_call((int)(op1))) {lpcreg=pcreg;}
     else Fail1;
     goto contcase;
 
- case unifunc:   /* PAR */
+  case unifunc:   /* PAR */
     pad;
     op1byte;
     if (unifunc_call((int)(op1), opregaddr) == 0) {
-	printf("Error in unary function call\n");
-	Fail1;
+      printf("Error in unary function call\n");
+      Fail1;
     }
     pad64;
     goto contcase;
 
- case userfunc:	/* PPA-S */	/* The same as "call" now */
+  case userfunc:   /* PPA-S */	/* The same as "call" now */
     pppad; pad64; op2word;	/* the first arg is used later by alloc */
     cpreg = lpcreg;
     psc = (Psc)op2;
     call_sub(psc);
     goto contcase;
 
- case calld:   /* PPA-L */
+  case calld:   /* PPA-L */
     pppad;
     pad64;
     cpreg = lpcreg+sizeof(Cell); 
@@ -1223,7 +1111,7 @@ static int emuloop(byte *startaddr)
     lpcreg = *(pb *)lpcreg;
     goto contcase;
 
- case lshiftr:  /* PRR */
+  case lshiftr:  /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
@@ -1235,7 +1123,7 @@ static int emuloop(byte *startaddr)
     else { bld_int(op3, int_val(op2) >> int_val(op1)); }
     goto contcase; 
 
- case lshiftl:   /* PRR */
+  case lshiftl:   /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
@@ -1247,7 +1135,7 @@ static int emuloop(byte *startaddr)
     else { bld_int(op3, int_val(op2) << int_val(op1)); }
     goto contcase; 
 
- case or:   /* PRR */
+  case or:   /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
@@ -1259,7 +1147,7 @@ static int emuloop(byte *startaddr)
     else { bld_int(op3, int_val(op2) | int_val(op1)); }
     goto contcase; 
 
- case and:   /* PRR */
+  case and:   /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
@@ -1271,7 +1159,7 @@ static int emuloop(byte *startaddr)
     else { bld_int(op3, int_val(op2) & int_val(op1)); }
     goto contcase; 
 
- case negate:   /* PPR */
+  case negate:   /* PPR */
     ppad;
     op3 = opregaddr;
     pad64;
@@ -1281,9 +1169,7 @@ static int emuloop(byte *startaddr)
     else { bld_int(op3, ~(int_val(op2))); }
     goto contcase; 
 
- case endfile:	/*  */
-
- default: 
+  default: 
     sprintf(message, "Illegal opcode hex %x at %p", *--lpcreg, lpcreg); 
     xsb_exit(message);
 } /* end of switch */
@@ -1293,9 +1179,7 @@ static int emuloop(byte *startaddr)
 /* unification routines							*/
 /*======================================================================*/
 
-#define SUCCEED		break
 #define IFTHEN_SUCCEED
-#define FAILED		Fail1; break
 #define IFTHEN_FAILED	Fail1
 
 nunify: /* ( op1, op2 ) */
@@ -1346,11 +1230,8 @@ table_restore_sub:
 
   tbreg = breg;
   switch_envs(tbreg);
-#ifdef PTCP_IN_CP
-  ptcpreg = tbreg;	/* This CP should be used for the dependency graph */
-#else
+  /* This CP should be used for the dependency graph */
   ptcpreg = tcp_subgoal_ptr(tbreg);
-#endif
   delayreg = NULL;
   restore_some_wamregs(tbreg, ereg);
   table_restore_registers(tbreg, (int)op1, i, rreg);
@@ -1365,3 +1246,87 @@ table_restore_sub:
 
 } /* end emuloop */
 
+/*======================================================================*/
+/*======================================================================*/
+
+int xsb(int flag, int argc, char *argv[])
+{ 
+   char *startup_file;
+   FILE *fd;
+   Cell magic;
+   char message[256];
+   static double realtime;	/* To retain its value across invocations */
+
+   extern void dis(int);
+   extern char *init_para(int, char **);
+   extern void init_flags(), init_machine(), init_symbols();
+#ifdef FOREIGN
+#ifndef FOREIGN_ELF
+   extern char tfile[];
+#endif
+#endif
+
+   if (flag == 0) {  /* initialize xsb */
+     realtime = real_time();
+     setbuf(stdout, NULL);
+     init_flags();
+     startup_file = init_para(argc, argv);	/* init parameters */
+     init_machine();		/* init space, regs, stacks */
+     init_inst_table();		/* init table of instruction types */
+     init_symbols();		/* preset a few symbols in PSC table */
+     init_interrupt();		/* catch ^C interrupt signal */
+
+     fd = fopen(startup_file, "rb");   /* "b" needed for DOS. -smd */
+     if (!fd) {
+       sprintf(message, "The startup file, %s, could not be found!",
+	       startup_file);
+       xsb_exit(message);
+     }
+     get_obj_word_bb(&magic);
+     fclose(fd);
+#ifdef V2_OBJECT_FORMAT
+     if (magic == 0x11121305)
+#else
+     if (magic == 0x11121304 || magic == 0x11121305)
+#endif
+       inst_begin = loader(startup_file,0);
+     else
+       xsb_exit("Incorrect startup file format");
+
+     if (!inst_begin)
+       xsb_exit("Error in loading startup file");
+
+     if ( xsb_mode == DISASSEMBLE ) {
+       dis(1);
+       exit(0);
+     }
+
+     return(0);
+
+   } else if (flag == 1) {  /* continue execution */
+
+     return(emuloop(inst_begin));
+
+   } else if (flag == 2) {  /* shutdown xsb */
+
+#ifdef FOREIGN
+#ifndef FOREIGN_ELF
+     if (fopen(tfile, "r")) unlink(tfile);
+#endif
+#endif
+
+     if ( xsb_mode != C_CALLING_XSB ) {
+       realtime = real_time() - realtime;
+       fprintf(stderr, "\nEnd XSB (cputime %.2f secs, elapsetime ",
+	       cpu_time());
+       if (realtime < 600.0)
+	 fprintf(stderr, "%.2f secs)\n", realtime);
+       else
+	 fprintf(stderr, "%.2f mins)\n", realtime/60.0);
+     }
+     return(0);
+   }
+   return(1);
+}  /* end of xsb() */
+
+/*======================================================================*/
