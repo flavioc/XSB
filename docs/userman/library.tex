@@ -2307,6 +2307,41 @@ for {\tt Atom} and {\tt Annotation} by evaluating the program
 according to the definitions provided for {\tt Lattice\_type}.
 \end{description}
 
+
+\section{Random Number Generator}
+%================================
+
+The following predicates are provided in module \texttt{random} to
+generate random numbers (both integers and floating numbers):
+
+\begin{description}
+
+\ournewitem{random(-Number)}{random} \index{{\tt random/1}}
+%
+Binds \texttt{Number} to a random float in the interval [0.0, 1.0).
+Note that 1.0 will never be generated.
+
+\ournewitem{random(+Lower,+Upper,-Number)}{random} \index{{\tt random/3}}
+    Binds \texttt{Number} to a random integer in the interval
+    [\texttt{Lower},\texttt{Upper}) if \texttt{Lower} and \texttt{Upper}
+    are integers.  Otherwise \texttt{Number} is bound to a random float
+    between \texttt{Lower} and \texttt{Upper}.  \texttt{Upper} will
+    never be generated.
+
+\ournewitem{genrand(?State)}{random} \index{genrand/1}
+    Tries to unify \texttt{State} with the term \texttt{rand(X,Y,Z)}
+    where \texttt{X},\texttt{Y},and \texttt{Z} are integers describing
+    the state of the random generator.
+
+\ournewitem{setrand(rand(+X,+Y,+Z))}{random} \index{setrand/1}
+    Sets the state of the random generator.  \texttt{X},\texttt{Y}, and
+    \texttt{Z} must be integers in the ranges [1,30269), [1,30307),
+    [1,30323), respectively.
+
+\end{description}
+
+
+
 %%% Local Variables: 
 %%% mode: latex
 %%% TeX-master: "manual2"
