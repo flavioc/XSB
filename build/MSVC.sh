@@ -19,7 +19,7 @@ cp -f $configdir/debug.h  debugs
 # Grep is here so that the warnings about system include files 
 # won't be displayed. 
 makedepend -w1000 -f ../build/.makedepend.tmp -o.obj -p@@@ -Y -- -- *c 2>&1 \
-	| grep -v "cannot find include" 
+	| grep -v "cannot find include" | grep -v "not in"
 
 cat ../build/.makedepend.tmp \
         | sed  -f ../build/MSVC.sed > ../build/MSVC.dep
