@@ -78,7 +78,10 @@ AC_ARG_WITH(odbc,
 [  --with-odbc		   compile with support of Oracle])
 
 AC_ARG_WITH(interprolog,
-[  --with-interprolog	   compile with support for InterProlog. It is possible you would need to use --site-includes option to specify locations of jni.h and jni_md.h files])
+[  --with-interprolog	   compile with support for InterProlog. 
+			   It is possible you would need to use --site-includes
+			   option to specify locations of jni.h and jni_md.h 
+			   files])
 
 AC_ARG_ENABLE(no-cygwin,
 [  --enable-no-cygwin	    compiled with option -mno-cygwin (default: disabled)])
