@@ -36,7 +36,9 @@
 
 :-  import throw/1 from standard.
 
-:- import check_nonvar/3, check_stream/3 from error_handler.
+:- import check_nonvar/3 from error_handler.
+
+:- import check_stream_or_alias/4 from file_io.
 
 :- import (\=)/2 from standard.
 
@@ -425,7 +427,7 @@ format(Control, Arguments) :-
       @var{Format}.").
 
 format(Stream, Control_in, Args_in) :-
-        check_stream(Stream,'format/2',1),
+        check_stream_or_alias(Stream,'format/2',1,Stream),
         check_nonvar(Control_in,'format/2',2),
         check_nonvar(Args_in,'format/2',3),
         preproc_newlines(Control_in,Control),
