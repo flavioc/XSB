@@ -507,7 +507,6 @@ static void handle_unsupported_answer_subst(NODEptr as_leaf)
   simplify_pos_unsupported(as_leaf);
   if (is_completed(unsup_subgoal)) {
     if (subgoal_fails(unsup_subgoal)) {
-      mark_subgoal_failed(unsup_subgoal);
       simplify_neg_fails(unsup_subgoal);
     }
   }
