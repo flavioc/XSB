@@ -545,7 +545,7 @@ Gotchas and experience
 
    Another useful option is:
 
-       update -P
+       update -Pd
 
    This makes sure that if a new directory is added to the repository, then
    this directory is also added to your copy. The default is not to add,

@@ -209,11 +209,13 @@ inline static bool file_function(void)
     break;
   case FILE_PUT:   /* file_function(7, +FileDes, +IntVal) */
     /* ptoc_int(2) is file descriptor */
-    SET_FILEPTR(fptr, ptoc_int(2));
+    file_des = ptoc_int(2);
+    SET_FILEPTR(fptr, file_des);
     /* ptoc_int(3) is char to write */
-    putc(ptoc_int(3), fptr);
+    value = ptoc_int(3);
+    putc(value, fptr);
 #ifdef WIN_NT
-    if (file_des==2 && ch=='\n') fflush(fptr); /* hack for Java interface */
+    if (file_des==2 && value=='\n') fflush(fptr); /* hack for Java interface */
 #endif
     break;
   case FILE_GETBUF:
