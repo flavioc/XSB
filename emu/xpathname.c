@@ -359,6 +359,10 @@ static char *rectify_pathname(char *inpath, char *outpath) {
 	  /* These are leading ..'s -- leave them */
 	  nameidx++;
 	  break;
+	} else if (strcmp(names[nameidx], "..") == 0) {
+	  /* the previous name was also ".." -- leave the ..'s intact: we must
+	     be looking at the leading sequence of ../../../something */
+	  nameidx++;
 	} else {
 	  /* Discard .. and the previous file name */
 	  inptr1 = inptr2;
