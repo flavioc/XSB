@@ -505,7 +505,9 @@ STRFILE *iostrs[MAXIOSTRS] = {NULL,NULL,NULL,NULL,NULL};
 
 Cell builtin_table[BUILTIN_TBL_SZ][2];
 
-#define set_builtin_table(inst, instr) builtin_table[inst][0] = (Cell)(instr);
+#define BuiltinName(Code)	( (char *)builtin_table[Code][0] )
+#define set_builtin_table(Code,String)		\
+   builtin_table[Code][0] = (Cell)(String);
 
 void init_builtin_table(void)
 {
@@ -627,7 +629,7 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_ASSERT, "trie_assert");
   set_builtin_table(TRIE_RETRACT, "trie_retract");
   set_builtin_table(TRIE_RETRACT_SAFE, "trie_retract_safe");
-  set_builtin_table(TRIE_DELETE_TERM, "trie_delete_term");
+  set_builtin_table(TRIE_DELETE_RETURN, "trie_delete_return");
   set_builtin_table(TRIE_GET_RETURN, "trie_get_return");
 
   /* Note: TRIE_GET_CALL previously used for get_calls/1, before get_call/3
@@ -786,7 +788,7 @@ static void write_out_profile(void)
     for (i = 0; i < BUILTIN_TBL_SZ; i++)
       if (builtin_table[i][1] > 0 && builtin_table[i][0] != 0)
 	fprintf(stdout,"%s %d %d \n",
-		(char *) builtin_table[i][0],i,builtin_table[i][1]);
+		BuiltinName(i), i, builtin_table[i][1]);
   }
   else 
     fprintf(stdout,"Instruction profiling not turned On\n");
@@ -1579,6 +1581,7 @@ int builtin_call(byte number)
      * equipped to predict how a new goal would have been treated had it
      * really been called.
      */
+    const int Arity = 4;
     const int regGoalHandle   = 1;   /* in:  either a term or a SF ptr */
     const int regPredType     = 2;   /* out: status (as INT) */
     const int regGoalType     = 3;   /* out: status (as INT) */
@@ -1590,21 +1593,18 @@ int builtin_call(byte number)
 
     goalTerm = ptoc_tag(regGoalHandle);
     if ( isref(goalTerm) ) {
-      err_handle(INSTANTIATION, regGoalHandle,
-		 (char *)builtin_table[TABLE_STATUS][0],
-		 4, "", goalTerm);
-      return FALSE;
+      err_handle(INSTANTIATION, regGoalHandle, BuiltinName(TABLE_STATUS),
+		 Arity, "", goalTerm);
+      break;
     }
     if ( is_encoded_addr(goalTerm) ) {
       goalSF = (VariantSF)decode_addr(goalTerm);
       if ( ! smIsValidStructRef(&smVarSF,goalSF) &&
 	   ! smIsValidStructRef(&smProdSF,goalSF) &&
-	   ! smIsValidStructRef(&smConsSF,goalSF) ) {
-	err_handle(TYPE, regGoalHandle,
-		   (char *)builtin_table[TABLE_STATUS][0],
-		   4, "Valid Table Entry Handle", goalTerm);
-	return FALSE;	/* fail */
-      }
+	   ! smIsValidStructRef(&smConsSF,goalSF) )
+	xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
+		  regGoalHandle, BuiltinName(TABLE_STATUS), Arity);
+
       if ( IsProperlySubsumed(goalSF) )
 	subsumerSF = (VariantSF)conssf_producer(goalSF);
       else
@@ -1617,10 +1617,9 @@ int builtin_call(byte number)
 
       psc = term_psc(goalTerm);
       if ( IsNULL(psc) ) {
-	err_handle(TYPE, regGoalHandle,
-		   (char *)builtin_table[TABLE_STATUS][0],
+	err_handle(TYPE, regGoalHandle, BuiltinName(TABLE_STATUS),
 		   4, "Callable term", goalTerm);
-	return FALSE;	/* fail */
+	break;
       }
       tif = get_tip(psc);
       if ( IsNULL(tif) ) {
@@ -1700,21 +1699,19 @@ int builtin_call(byte number)
     term = ptoc_tag(regTerm);
     if ( isref(term) ) {
       err_handle(INSTANTIATION, regTerm,
-		 (char *)builtin_table[ABOLISH_TABLE_PREDICATE][0],
-		 Arity, "", term);
-      return FALSE;
+		 BuiltinName(ABOLISH_TABLE_PREDICATE), Arity, "", term);
+      break;
     }
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
-      err_handle(TYPE, regTerm,
-		 (char *)builtin_table[ABOLISH_TABLE_PREDICATE][0],
+      err_handle(TYPE, regTerm, BuiltinName(ABOLISH_TABLE_PREDICATE),
 		 Arity, "Predicate specification", term);
-      return FALSE;	/* fail */
+      break;
     }
     tif = get_tip(psc);
     if ( IsNULL(tif) )
       xsb_abort("Illegal table operation: Untabled predicate in argument 1"
-		" of %s/1", (char *)builtin_table[ABOLISH_TABLE_PREDICATE][0]);
+		" of %s/1", BuiltinName(ABOLISH_TABLE_PREDICATE));
     if ( ! is_completed_table(tif) )
       xsb_abort("Illegal table operation: Cannot abolish incomplete table"
 		" of predicate %s/%d", get_name(psc), get_arity(psc));
@@ -1732,20 +1729,63 @@ int builtin_call(byte number)
       return TRUE;
     else
       xsb_exit("Failure of trie_retract/1");
+
   case TRIE_RETRACT_SAFE:
     return trie_retract_safe();
-  case TRIE_DELETE_TERM:
-    if (ptoc_int(3) == 0)
-      delete_branch((BTNptr)ptoc_int(1),(BTNptr *)ptoc_int(2)); 
-    else
-      delete_return((BTNptr)ptoc_int(1),(VariantSF)ptoc_int(2)); 
+
+  case TRIE_DELETE_RETURN: {
+    const int Arity = 2;
+    const int regTableEntry = 1;   /* in: subgoal frame ref */
+    const int regReturnNode = 2;   /* in: answer trie node */
+    VariantSF sf;
+    BTNptr leaf;
+
+    sf = ptoc_addr(regTableEntry);
+    if ( ! smIsValidStructRef(&smVarSF,sf) &&
+	 ! smIsValidStructRef(&smProdSF,sf) &&
+	 ! smIsValidStructRef(&smConsSF,sf) )
+      xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
+		regTableEntry, BuiltinName(TRIE_DELETE_RETURN), Arity);
+
+    leaf = ptoc_addr(regReturnNode);
+    if ( ! smIsValidStructRef(&smTableBTN,leaf) &&
+	 ! smIsValidStructRef(&smTSTN,leaf) )
+      xsb_abort("Invalid Return Handle\n\t Argument %d of %s/%d",
+		regReturnNode, BuiltinName(TRIE_DELETE_RETURN), Arity);
+
+    delete_return(leaf,sf);
     break;
-  case TRIE_GET_RETURN:
-    pcreg = trie_get_returns_for_call();
+  }
+
+  case TRIE_GET_RETURN: {
+    const int Arity = 2;
+    const int regTableEntry = 1;   /* in: subgoal frame ref */
+    const int regRetTerm    = 2;   /* in/out: ret/n term to unify against
+				              answer substitutions */
+    VariantSF sf;
+    Cell retTerm;
+
+    sf = ptoc_addr(regTableEntry);
+    if ( ! smIsValidStructRef(&smVarSF,sf) &&
+	 ! smIsValidStructRef(&smProdSF,sf) &&
+	 ! smIsValidStructRef(&smConsSF,sf) )
+      xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
+		regTableEntry, BuiltinName(TRIE_GET_RETURN), Arity);
+
+    retTerm = ptoc_tag(regRetTerm);
+    if ( isref(retTerm) ) {
+      err_handle(INSTANTIATION, regRetTerm, BuiltinName(TRIE_GET_RETURN),
+		 Arity, "", retTerm);
+      break;
+    }
+    pcreg = trie_get_returns(sf, retTerm);
     break;
+  }
+
   case TRIE_UNIFY_CALL: /* r1: +call_term */
     pcreg = trie_get_calls();
     break;
+
   case GET_LASTNODE_CS_RETSKEL: {
     const int regCallTerm  = 1;   /* in: call of a subsumptive predicate */
     const int regTrieLeaf  = 2;   /* out: a unifying trie term handle */
@@ -1758,6 +1798,7 @@ int builtin_call(byte number)
     ctop_tag(regRetTerm, get_lastnode_cs_retskel(ptoc_tag(regCallTerm)));
     return TRUE;
   }
+
   case TRIE_GET_CALL: {
     const int regCallTerm = 1;   /* in:  tabled call to look for */
     const int regSF       = 2;   /* out: corresponding subgoal frame */
@@ -1775,6 +1816,7 @@ int builtin_call(byte number)
     else
       return FALSE;
   }
+
   case BREG_RETSKEL:
     breg_retskel();
     break;
@@ -1846,16 +1888,15 @@ int builtin_call(byte number)
 
     term = ptoc_tag(regTerm);
     if ( isref(term) ) {
-      err_handle(INSTANTIATION, regTerm,
-		 (char *)builtin_table[SET_TABLED_EVAL][0],
+      err_handle(INSTANTIATION, regTerm, BuiltinName(SET_TABLED_EVAL),
 		 Arity, "", term);
-      return FALSE;
+      break;
     }
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
-      err_handle(TYPE, regTerm, (char *)builtin_table[SET_TABLED_EVAL][0],
+      err_handle(TYPE, regTerm, BuiltinName(SET_TABLED_EVAL),
 		 Arity, "Predicate specification", term);
-      return FALSE;	/* fail */
+      break;
     }      
     tif = get_tip(psc);
     if ( IsNULL(tif) ) {

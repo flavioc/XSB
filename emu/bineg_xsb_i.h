@@ -115,7 +115,7 @@
        * When GET_DELAY_LISTS is called, we can assume that the
        * corresponding tabled subgoal call has been completed and so trie
        * code will be used to return the answer (see
-       * trie_get_returns_for_call()).  After the execution of trie code,
+       * trie_get_returns()).  After the execution of trie code,
        * var_regs[] contains the substitution factor of the _answer_ to
        * the call.
        */
@@ -148,7 +148,7 @@
 	bind_list((CPtr)delay_lists, hreg);
 	{ /*
 	   * Make copy of var_regs & global_num_vars (after get_returns,
-	   * which calls trie_get_returns_for_call).  (global_num_vars +
+	   * which calls trie_get_returns).  (global_num_vars +
 	   * 1) is the number of variables left in the answer
 	   * (substitution factor of the answer)
 	   *

@@ -2210,7 +2210,7 @@ int trie_assert(void)
     *(Trie_Asserted_Clref-2) = 6*sizeof(Cell)+2; /* store size, encode type */
     *(byte *)(Trie_Asserted_Clref +2) = jump;
 
-    inst_node_ptr = newBasicTrie(psc,ASSERT_TRIE_TT);
+    inst_node_ptr = newBasicTrie(EncodeTriePSC(psc),ASSERT_TRIE_TT);
     Instr(inst_node_ptr) = trie_assert_inst;
 
     *(Trie_Asserted_Clref +3) = (Cell)inst_node_ptr;

@@ -59,7 +59,7 @@
                       num_vars_in_var_regs);			        \
       if (num_vars_in_var_regs == -1) {					\
 	delay_positively(subgoal, NodePtr,				\
-			 makestring((char *) ret_psc[0]));		\
+			 makestring(get_ret_string()));			\
       }									\
       else {								\
         /* create the answer subsf ret/n */				\
@@ -81,13 +81,13 @@
 #else
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
-    VariantSF subgoal;                                                    \
+    VariantSF subgoal;                                                  \
                                                                         \
     if (is_conditional_answer(NodePtr)) {				\
       subgoal = asi_subgoal(Delay(NodePtr));			        \
       if (num_vars_in_var_regs == -1) {					\
 	delay_positively(subgoal, NodePtr,				\
-			 makestring((char *) ret_psc[0]));		\
+			 makestring(get_ret_string()));			\
       }									\
       else {								\
 	temp_hreg = hreg;						\
@@ -108,7 +108,7 @@
   if (is_conditional_answer(NodePtr)) {			\
     VariantSF subgoal = asi_subgoal(Delay(NodePtr));	\
     delay_positively(subgoal, NodePtr,			\
-		     makestring((char *) ret_psc[0]));	\
+		     makestring(get_ret_string()));	\
   }							\
 }
 #endif /* IGNORE_DELAYVAR */

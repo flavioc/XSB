@@ -301,25 +301,23 @@ enum Types_of_Trie_Nodes {
 
 #define TrieSymbolType(Symbol)	     cell_tag(Symbol)
 
-#define IsTrieList(Symbol)	     ( TrieSymbolType(Symbol) == XSB_LIST )
-#define IsTrieFunctor(Symbol)	     ( TrieSymbolType(Symbol) == XSB_STRUCT )
 #define IsTrieVar(Symbol)	     ( TrieSymbolType(Symbol) == XSB_TrieVar )
-#define IsTrieConstant(Symbol)			\
-   ( (TrieSymbolType(Symbol) == XSB_STRING) ||	\
-     (TrieSymbolType(Symbol) == XSB_INT) ||	\
-     (TrieSymbolType(Symbol) == XSB_FLOAT) )
+#define IsTrieFunctor(Symbol)	     ( TrieSymbolType(Symbol) == XSB_STRUCT )
+#define IsTrieList(Symbol)	     ( TrieSymbolType(Symbol) == XSB_LIST )
+#define IsTrieString(Symbol)	     ( TrieSymbolType(Symbol) == XSB_STRING )
+#define IsTrieInteger(Symbol)	     ( TrieSymbolType(Symbol) == XSB_INT )
+#define IsTrieFloat(Symbol)	     ( TrieSymbolType(Symbol) == XSB_FLOAT )
 
+#define EncodeTriePSC(pPSC)		makecs(pPSC)
 #define EncodeTrieFunctor(Cell_STRUCT)	makecs(follow(clref_val(Cell_STRUCT)))
 #define EncodeTrieList(Cell_LIST)	( (Cell)XSB_LIST )
 #define EncodeTrieConstant(Cell_Const)	( (Cell)Cell_Const )
 
 #define DecodeTrieFunctor(Symbol)	(Psc)cs_val(Symbol)
 #define DecodeTrieList(Symbol)		( Symbol )
-#define DecodeTrieConstant(Symbol)	( Symbol )
-
-/* For initializing the Symbol field in root nodes with a predicate */
-#define EncodeTriePSC(pPSC)		makecs(pPSC)
-#define DecodeTriePSC(Symbol)		DecodeTrieFunctor(Symbol)
+#define DecodeTrieString(Symbol)	string_val(Symbol)
+#define DecodeTrieInteger(Symbol)	int_val(Symbol)
+#define DecodeTrieFloat(Symbol)		float_val(Symbol)
 
 /*
  *  Symbols in Escape Nodes are never looked at, so we arbitrarily
@@ -919,8 +917,9 @@ extern TSTNptr tst_insert(TSTNptr root, TSTNptr start, Cell firstSym,
 
 #define TrieError_AbsentEscapeNode(Root) {		\
   Cell symbol = TN_Symbol(Root);			\
-  if ( IsTrieFunctor(symbol) &&				\
-       (get_arity(DecodeTrieFunctor(symbol)) == 0) )	\
+  if ( IsTrieString(symbol) ||				\
+       (IsTrieFunctor(symbol) &&			\
+	(get_arity(DecodeTrieFunctor(symbol)) == 0)) )	\
     xsb_abort("Trie Structure Anomaly\n"		\
 	      "Non-Escape-Node present in 0-ary trie");	\
   else							\

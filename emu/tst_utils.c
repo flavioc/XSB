@@ -323,9 +323,12 @@ void printTriePath(FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
   else {
     SymbolStack_ResetTOS;
     SymbolStack_PushPathRoot(pLeaf,pRoot);
-    pscPred = DecodeTrieFunctor(TN_Symbol(pRoot));
-    if ( IsNonNULL(pscPred) )
+    if ( IsTrieFunctor(TN_Symbol(pRoot)) ) {
+      pscPred = DecodeTrieFunctor(TN_Symbol(pRoot));
       fprintf(fp, "%s", get_name(pscPred));
+    }
+    else if ( IsTrieString(TN_Symbol(pRoot)) )
+      fprintf(fp, "%s", DecodeTrieString(TN_Symbol(pRoot)));
     fprintf(fp, "(");
     symstkPrintNextTerm(fp);
     while (! SymbolStack_IsEmpty) {

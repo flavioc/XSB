@@ -109,7 +109,7 @@ XSB_Start_Instr(check_complete,_check_complete); {
 	  {
 	    if (num_heap_term_vars == 0) {
 	      delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
-			       makestring((char *) ret_psc[0]));
+			       makestring(get_ret_string()));
 	    }
 	    else {
 #ifndef IGNORE_DELAYVAR
@@ -121,7 +121,7 @@ XSB_Start_Instr(check_complete,_check_complete); {
 			       makecs(temp_hreg));
 #else
 	      delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
-			       makestring((char *) ret_psc[0]));
+			       makestring(get_ret_string()));
 #endif /* IGNORE_DELAYVAR */
 	    }
 	  }

@@ -30,7 +30,6 @@
 	  tfindall/3, tnot/1, 't not'/1, sk_not/1,
 	  delete_return/2,
 	  get_call/3, get_calls/3,
-%	  get_delay_lists/2,
 	  get_returns_and_dls/3, 
           get_returns/2, get_returns/3,
 	  get_residual/2,

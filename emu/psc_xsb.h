@@ -115,6 +115,7 @@ extern char *list_dot;
 
 extern Psc ret_psc[];
 extern Psc get_ret_psc(int);
+inline static char *get_ret_string()	{ return (char *)ret_psc[0]; }
 
 extern Psc get_intern_psc();
 

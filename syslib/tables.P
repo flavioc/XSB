@@ -56,7 +56,8 @@ set_tabled_eval_for_pred(PredSpec,Method) :-
 	( PredSpec = P/N -> functor(Term,P,N); Term = PredSpec ),
 	( set_tabled_eval(Term,Method), fail; true ).
 
-set_tabled_eval(_Term,_Method) :- '_$builtin'(SET_TABLED_EVAL).
+set_tabled_eval(Predicate,EvalMethod) :-
+	set_tabled_eval(Predicate,EvalMethod).
 
 /*----------------------------------------------------------------------*/
 
@@ -176,49 +177,47 @@ tunnumcall(GGoal) :-
 
 
 /*----------------------------------------------------------------------*/
-
-abolish_all_tables :- 
-	abolish_table_info.
-
-abolish_table_pred(Spec) :-
-	( Spec = F/A -> functor(Term,F,A) ; Term = Spec ),
-	abolish_table_predicate(Term).
-
-abolish_table_call(_Call) :- 	
-	abort('Predicate abolish_table_call/1 is not yet implemented...').
-
-/*----------------------------------------------------------------------*/
 /* Predicates to retrieve information out of tables.                    */
 /*----------------------------------------------------------------------*/
 
 /*
- * get_call(+Call, -SubgoalPtr, -RetSkel)
- *   Interpretive traversal of a Call Trie looking for call Call.
- *   If Call is present, then SubgoalPtr is returned as a handle to this
- *   table entry, and RetSkel is the Answer Template for retrieving the
- *   answers of Call.
+ * get_call(+CallTerm, -TableEntryHandle, -ReturnTemplate)
+ *   Performs an interpretive traversal of a Call Trie in searching
+ *   for a VARIANT of CallTerm.  If the call is present, then a
+ *   reference to the subgoal frame is returned as a handle to the
+ *   call's table entry, and the Answer Template is constructed as a
+ *   ret/n term in ReturnTemplate.
  */
 
-get_call(Call, SubgoalPtr, RetSkel) :-
-	get_call(Call, SubgoalPtr, RetSkel).
+get_call(CallTerm, TableEntryHandle, ReturnTemplate) :-
+	get_call(CallTerm, TableEntryHandle, ReturnTemplate).
 
 
 /*
- * get_calls(+CallSkel, -SubgoalPtr, -RetSkel)
- *   Trie-code traversal of a Call Trie; selects paths that unify with
- *   CallSkel through backtracking.  Each successful unification returns
- *   a handle to this table entry in SubgoalPtr and the Answer Template,
- *   needed for retrieving the answers of this entry, in RetSkel.
+ * get_calls(#CallTerm, -TableEntryHandle, -ReturnTemplate)
+ *   Backtrackable predicate for selecting calls which UNIFY with
+ *   CallTerm.  Selections are made via a trie-code-directed traversal
+ *   of the Call Trie.  Each successful unification returns a subgoal
+ *   frame reference which serves as a handle to the call's table
+ *   entry.  Additionally, a return template for the resulting
+ *   (unified) call is constructed in the third argument as a ret/n
+ *   term.
+ *   There is some complication with the inlining of builtins which
+ *   perform trie-code-directed traversals.  Hence get_calls/1 is not
+ *   inlined and we explicitly invoke the builtin call.
  */
 
-get_calls(CallSkel, SubgoalPtr, RetSkel) :-
-	findall((CallSkel,SubgoalPtr,RetSkel),
+get_calls(CallTerm, Handle, Template) :-
+	findall('_$get_calls'(CallTerm,Handle,Template),
 		(
-		  get_calls(CallSkel),
-		  get_lastnode_cs_retskel(CallSkel, _Leaf, SubgoalPtr, RetSkel)
+		  get_calls(CallTerm),
+		  get_lastnode_cs_retskel(CallTerm, _Leaf, Handle, Template)
 		),
 		List),
-	member((CallSkel,SubgoalPtr,RetSkel),List).
+	member('_$get_calls'(CallTerm,Handle,Template),List).
+
+
+get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
 
 
 /*
@@ -236,7 +235,40 @@ get_calls_for_table(PredSpec,Call) :-
 	get_calls(Call, _CallStr, _RetSkel).
 
 
-/* inline builtin #152 */
+/*
+ * get_returns(+TableEntryHandle,#ReturnTemplate)
+ * get_returns(+TableEntryHandle,#ReturnTemplate,-ReturnHandle)
+ *   Backtrackable predicate for selecting returns which UNIFY with
+ *   ReturnTemplate.  Selections are made via a trie-code-directed
+ *   traversal of the Answer Trie (representation of the answer set)
+ *   of the given table entry (subgoal frame reference).  For each
+ *   successful unification, a handle to the return (as an answer trie
+ *   node reference) is copied into the third argument.
+ *   There is some complication with the inlining of builtins which
+ *   perform trie-code-directed traversals.  Hence trie_get_return/2
+ *   is not inlined and we explicitly invoke the builtin call.
+ */
+
+get_returns(TableEntry, ReturnTemplate) :-
+	findall('_$get_returns'(TableEntry,ReturnTemplate),
+		trie_get_return(TableEntry,ReturnTemplate),
+		ReturnsList),
+	member('_$get_returns'(TableEntry,ReturnTemplate),ReturnsList).
+
+get_returns(TableEntry, RetTmplt, RetLeaf) :-
+	findall('_$get_returns'(TableEntry,RetTmplt,RetLeaf),
+	        (
+		    trie_get_return(TableEntry,RetTmplt),
+		    get_lastnode_cs_retskel(_,RetLeaf,_,_)
+		),
+		ReturnsList),
+	member('_$get_returns'(TableEntry,RetTmplt,RetLeaf),ReturnsList).
+
+
+trie_get_return(_TableEntryHandle,_ReturnTemplate) :-
+	'_$builtin'(TRIE_GET_RETURN).
+
+
 get_lastnode_cs_retskel(CallTerm, LastNode, SubgoalPtr, RetSkel) :-
 	get_lastnode_cs_retskel(CallTerm, LastNode, SubgoalPtr, RetSkel).
 
@@ -255,6 +287,10 @@ get_returns_for_call(CallTerm,AnswerTerm) :-
 	AnswerTerm = Call.		%   hence of 'Call' as well
 
 
+/*
+ * get_residual(#CallTerm,?DelayList)
+ */
+
 get_residual(CallSkel, DelayList) :-
 	get_calls(CallSkel, S, R),
 	get_returns_and_dls(S, R, DLs),
@@ -264,50 +300,48 @@ get_residual(CallSkel, DelayList) :-
 	).
 
 get_returns_and_dls(CallStr, RetSkel, DLs) :-
-	findall((CallStr,RetSkel,DLs),
+	findall('_$get_returns_and_dls'(CallStr,RetSkel,DLs),
 		(
-		    get_returns(CallStr,RetSkel),
+		    trie_get_return(CallStr,RetSkel),
 		    get_lastnode_cs_retskel(_,Leaf,_,_),
 		    get_delay_lists(Leaf,DLs)
 		),
 		List),
-	member((CallStr,RetSkel,DLs),List).
+	member('_$get_returns_and_dls'(CallStr,RetSkel,DLs),List).
 
-/* inline builtin #144 */
 get_delay_lists(Leaf, DLs) :- get_delay_lists(Leaf, DLs).
 
 
+/*----------------------------------------------------------------------*/
+/* Predicates to remove information from tables.			*/
+/*----------------------------------------------------------------------*/
+
+abolish_all_tables :- abolish_table_info.
+
+
+abolish_table_pred(Spec) :-
+	( Spec = F/A -> functor(Term,F,A) ; Term = Spec ),
+	abolish_table_predicate(Term).
+
+abolish_table_predicate(Predicate) :- abolish_table_predicate(Predicate).
+
+
+abolish_table_call(_Call) :- 	
+	abort('Predicate abolish_table_call/1 is not yet implemented...').
+
+
 /*
- * get_returns(+SubgoalFrame,#ReturnSkeleton,-AnswerLeaf)
- *   Given the address of the call structure for a return trie (CallStr)
- *   and a return skeleton (RetSkel), both as returned by get_calls/3,
- *   it instantiates through backtracking the return skeleton for all
- *   the returns in the specified trie.  If RetSkel is partially
- *   instantiated, it returns only those answers that unify with it.
- *   get_returns/3 returns in addition the leaf node of the return.  It
- *   can be passed to delete_return/2 (along with the CallStr) to delete
- *   the return.
+ * delete_return(+TableEntryHandle,+ReturnHandle)
+ *   Deletes the return, referenced as a leaf of an answer trie, from
+ *   the answer set in the table entry, referenced as a subgoal frame
+ *   pointer.
  */
 
-get_returns(CallStr, RetSkel, Rleaf) :-
-	findall((CallStr,RetSkel,Rleaf),
-	        (
-		    get_returns(CallStr,RetSkel),
-		    get_lastnode_cs_retskel(_,Rleaf,_,_)
-		),
-		List),
-	member((CallStr,RetSkel,Rleaf),List).
+delete_return(TableEntryHandle,ReturnHandle) :-
+	trie_delete_return(TableEntryHandle,ReturnHandle).
 
-/*----------------------------------------------------------------------*/
-/* delete_return(Cs,N) takes a call structure pointer in Cs (returned
- * by get_calls) and the address of a node that is a leaf of the return
- * trie pointed to by the call structure. (Such a node address is
- * returned by get_returns/3.)  It deletes the node and reclaims the
- * space.  There is a potential inefficiency problem in that it deletes
- * it from the chain of returns by running the chain, which may be long.
- *----------------------------------------------------------------------*/
-
-delete_return(CallStr,AnsNode) :- trie_delete_branch_ret(AnsNode,CallStr,1).
+trie_delete_return(SubgoalFrame,AnswerTrieLeaf) :-
+	trie_delete_return(SubgoalFrame,AnswerTrieLeaf).
 
 
 /*----------------------------------------------------------------------*/
@@ -327,11 +361,7 @@ trie_retract_all(X) :- retractall(X).
 /* builtins to get (and change) trie nodes - they belong somewhere else */
 /*======================================================================*/
 
-abolish_table_predicate(_Term) :- '_$builtin'(ABOLISH_TABLE_PREDICATE).
-trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :-
-	'_$builtin'(TRIE_DELETE_TERM).
-get_returns(_CallStr,_RetSkel) :- '_$builtin'(TRIE_GET_RETURN).
-get_calls(_CallSkel)  :- '_$builtin'(TRIE_UNIFY_CALL).
-force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(FORCE_TRUTH_VALUE).
+force_truth_value(AnsLeafNode,TruthValue) :-
+	force_truth_value(AnsLeafNode,TruthValue).
 
 /* ---------------------- end of file tables.P ------------------------ */

@@ -231,12 +231,11 @@ TSTNptr new_tstn(int trie_t, int node_t, Cell symbol, TSTNptr parent,
  * Creates a root node for a given type of trie.
  */
 
-BTNptr newBasicTrie(Psc predicate, int trie_type) {
+BTNptr newBasicTrie(Cell symbol, int trie_type) {
 
   BTNptr pRoot;
 
-  New_BTN( pRoot, trie_type, TRIE_ROOT_NT, EncodeTriePSC(predicate),
-	   NULL, NULL );
+  New_BTN( pRoot, trie_type, TRIE_ROOT_NT, symbol, NULL, NULL );
   return pRoot;
 }
 
@@ -470,7 +469,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
     case XSB_STRING:							\
     case XSB_INT:	       						\
     case XSB_FLOAT:	       						\
-      *Macro_addr = DecodeTrieConstant(xtemp2);				\
+      *Macro_addr = xtemp2;						\
       break;								\
     case XSB_LIST:	       						\
       *Macro_addr = (Cell) makelist(hreg);				\
@@ -523,7 +522,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
   case XSB_STRING:     							\
   case XSB_INT:	       							\
   case XSB_FLOAT:      							\
-    ret_val = DecodeTrieConstant(xtemp2);				\
+    ret_val = xtemp2;							\
     break;								\
   case XSB_LIST:			       				\
     ret_val = (Cell) makelist(hreg) ;					\
@@ -709,9 +708,15 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
   mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
   AnsVarCtr = 0;
   ctr = 0;
-  if ( IsNULL(subg_ans_root_ptr(subgoal_ptr)) )
+  if ( IsNULL(subg_ans_root_ptr(subgoal_ptr)) ) {
+    Cell retSymbol;
+    if ( arity > 0 )
+      retSymbol = EncodeTriePSC(get_ret_psc(arity));
+    else
+      retSymbol = EncodeTrieConstant(makestring(get_ret_string()));
     subg_ans_root_ptr(subgoal_ptr) =
-      newBasicTrie(get_ret_psc(arity),BASIC_ANSWER_TRIE_TT);
+      newBasicTrie(retSymbol, BASIC_ANSWER_TRIE_TT);
+  }
   Paren = subg_ans_root_ptr(subgoal_ptr);
   GNodePtrPtr = &BTN_Child(Paren);
 
@@ -843,15 +848,15 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
 
 #ifndef IGNORE_DELAYVAR
   /*
-     * Put the substitution factor of the answer into a term ret/n (if 
-     * the arity of the substitution factor is 0, then put integer 0
-     * into cell ans_var_pos_reg).
-     *
-     * Notice that simple_table_undo_bindings in the old version of XSB
-     * has been removed here, because all the variable bindings of this
-     * answer will be used later on (in do_delay_stuff()) when we build
-     * the delay list for this answer.
-     */
+   * Put the substitution factor of the answer into a term ret/n (if 
+   * the arity of the substitution factor is 0, then put integer 0
+   * into cell ans_var_pos_reg).
+   *
+   * Notice that simple_table_undo_bindings in the old version of XSB
+   * has been removed here, because all the variable bindings of this
+   * answer will be used later on (in do_delay_stuff()) when we build
+   * the delay list for this answer.
+   */
   if (ctr == 0)
     bld_int(ans_var_pos_reg, 0);
   else	
@@ -1438,7 +1443,7 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
 
 
     if ( IsNULL(*hook) )
-      *hook = newBasicTrie(get_intern_psc(),INTERN_TRIE_TT);
+      *hook = newBasicTrie(EncodeTriePSC(get_intern_psc()),INTERN_TRIE_TT);
     Paren = *hook;
     GNodePtrPtr = &BTN_Child(Paren);
 
@@ -1647,59 +1652,54 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
  * This is builtin #150: TRIE_GET_RETURN
  */
 
-byte * trie_get_returns_for_call(void)
-{
-  VariantSF call_str_ptr;
-  CPtr retskel, term1;
-  int i;
-  Psc psc_ptr;
+byte *trie_get_returns(VariantSF sf, Cell retTerm) {
+
   BTNptr ans_root_ptr;
-  CPtr cptr;
+  Cell retSymbol;
+
 
 #ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg(">>>> (at the beginning of trie_get_returns_for_call");
+  xsb_dbgmsg(">>>> (at the beginning of trie_get_returns");
   xsb_dbgmsg(">>>> num_vars_in_var_regs = %d)", num_vars_in_var_regs);
 #endif
 
-  call_str_ptr = (VariantSF) ptoc_int(1);
-  if ( IsProperlySubsumed(call_str_ptr) )
-    ans_root_ptr = subg_ans_root_ptr(conssf_producer(call_str_ptr));
+  if ( IsProperlySubsumed(sf) )
+    ans_root_ptr = subg_ans_root_ptr(conssf_producer(sf));
   else
-    ans_root_ptr = subg_ans_root_ptr(call_str_ptr);
+    ans_root_ptr = subg_ans_root_ptr(sf);
   if ( IsNULL(ans_root_ptr) )
     return (byte *)&fail_inst;
-  else {
-    retskel = (CPtr)ptoc_tag(2);
-    term1 = retskel;
-    XSB_CptrDeref(term1);
-    num_vars_in_var_regs = -1;
 
-    if (isconstr(term1)) {
-      int arity;
-      psc_ptr = get_str_psc(retskel);
-      arity = get_arity(psc_ptr);
-      reg_arrayptr = reg_array -1;
-      cptr = (CPtr)cs_val(retskel);
+  if ( isconstr(retTerm) )
+    retSymbol = EncodeTrieFunctor(retTerm);  /* ret/n rep as XSB_STRUCT */
+  else
+    retSymbol = retTerm;   /* ret/0 would be represented as a XSB_STRING */
+  if ( retSymbol != BTN_Symbol(ans_root_ptr) )
+    return (byte *)&fail_inst;
 
-      /* Initialize var_regs[] as the attvs in the call. */
-      cptr++;
-      for (i = 1; i <= arity; cptr++, i++) {
-	if (isattv(cell(cptr)))
-	  var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
-      }
-      /* now num_vars_in_var_regs should be attv_num - 1 */
+  num_vars_in_var_regs = -1;
+  if ( isconstr(retTerm) ) {
+    int i, arity;
+    CPtr cptr;
 
-      cptr = (CPtr)cs_val(retskel);
-      for (i = get_arity(psc_ptr); i>=1; i--) {
-	pushreg(cell(cptr+i));
-      }
+    arity = get_arity(get_str_psc(retTerm));
+    /* Initialize var_regs[] as the attvs in the call. */
+    for (i = 0, cptr = clref_val(retTerm) + 1;  i < arity;  i++, cptr++) {
+      if (isattv(cell(cptr)))
+	var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
     }
-#ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(">>>> The end of trie_get_returns_for_call ==> go to answer trie");
-#endif
-    delay_it = 0;  /* Don't delay the answer. */
-    return (byte *)ans_root_ptr;
+    /* now num_vars_in_var_regs should be attv_num - 1 */
+
+    reg_arrayptr = reg_array -1;
+    for (i = arity, cptr = clref_val(retTerm);  i >= 1;  i--) {
+      pushreg(cell(cptr+i));
+    }
   }
+#ifdef DEBUG_DELAYVAR
+  xsb_dbgmsg(">>>> The end of trie_get_returns ==> go to answer trie");
+#endif
+  delay_it = 0;  /* Don't delay the answer. */
+  return (byte *)ans_root_ptr;
 }
 
 /*----------------------------------------------------------------------*/

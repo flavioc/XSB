@@ -128,7 +128,7 @@ Cell build_ret_term(int arity, Cell termVector[]) {
   int  i, is_new;
 
   if ( arity == 0 )
-    return makestring(ret_psc[0]);  /* return as a term */
+    return makestring(get_ret_string());  /* return as a term */
   else {
     ret_term = hreg;  /* pointer to where ret(..) will be built */
     sym = insert("ret", (byte)arity, (Psc)flags[CURRENT_MODULE], &is_new);
@@ -675,10 +675,15 @@ void delete_trie(BTNptr iroot) {
 
 /*----------------------------------------------------------------------*/
 
-/* This does not reclaim space for deleted nodes, only marks
+/*
+ * This does not reclaim space for deleted nodes, only marks
  * the node as deleted and changes the try instruction to fail.
  * The deleted node is then linked into the del_nodes_list
  * in the completion stack.
+ *
+ * Problems: there is no check whether the node is actually in the given
+ *   subgoal frame, nor whether the node has been previously deleted.
+ *   Some notion of success or failure would help this latter problem.
  */
 void delete_return(BTNptr l, VariantSF sg_frame) 
 {
@@ -820,7 +825,7 @@ void breg_retskel(void)
     cptr = where + Nvars;
 #endif
     if (Nvars == 0) {
-      ctop_string(3, (char *) ret_psc[0]);
+      ctop_string(3, get_ret_string());
     } else {
 /*
       sreg = hreg;

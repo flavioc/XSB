@@ -333,9 +333,13 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
 inline static  void *newAnswerSet(int n) {
 
   TSTNptr root;
+  Cell symbol;
 
-  New_TSTN( root, TS_ANSWER_TRIE_TT, TRIE_ROOT_NT,
-	    EncodeTriePSC(get_ret_psc(n)), NULL, NULL );
+  if ( n > 0 )
+    symbol = EncodeTriePSC(get_ret_psc(n));
+  else
+    symbol = EncodeTrieConstant(makestring(get_ret_string()));
+  New_TSTN( root, TS_ANSWER_TRIE_TT, TRIE_ROOT_NT, symbol, NULL, NULL );
   TSTN_TimeStamp(root) = EMPTY_TST_TIMESTAMP;
   return root;
 }

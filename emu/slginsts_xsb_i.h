@@ -308,7 +308,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
 	   */
 	  if (num_heap_term_vars == 0) {
 	    delay_positively(producer_sf, first_answer,
-			     makestring((char *) ret_psc[0]));
+			     makestring(get_ret_string()));
 	  }
 	  else {
 #ifndef IGNORE_DELAYVAR
@@ -321,7 +321,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
 	    delay_positively(producer_sf, first_answer, makecs(temp_hreg));
 #else
 	    delay_positively(producer_sf, first_answer,
-			     makestring((char *) ret_psc[0]));
+			     makestring(get_ret_string()));
 #endif /* IGNORE_DELAYVAR */
 	  }
 	}
@@ -409,7 +409,7 @@ XSB_Start_Instr(answer_return,_answer_return); {
        */
       if (num_heap_term_vars == 0) {
 	delay_positively(consumer_sf, answer_leaf,
-			 makestring((char *) ret_psc[0]));
+			 makestring(get_ret_string()));
       }
       else {
 #ifndef IGNORE_DELAYVAR
@@ -422,7 +422,7 @@ XSB_Start_Instr(answer_return,_answer_return); {
 	delay_positively(consumer_sf, answer_leaf, makecs(temp_hreg));
 #else
 	delay_positively(consumer_sf, answer_leaf,
-			 makestring((char *) ret_psc[0]));
+			 makestring(get_ret_string()));
 #endif /* IGNORE_DELAYVAR */
       }
     }
@@ -572,13 +572,13 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc); {
 #ifndef IGNORE_DELAYVAR
       if (isinteger(cell(ans_var_pos_reg))) {
 	delay_positively(producer_sf, answer_leaf,
-			 makestring((char *) ret_psc[0]));
+			 makestring(get_ret_string()));
       }
       else 
 	delay_positively(producer_sf, answer_leaf, makecs(ans_var_pos_reg));
 #else
 	delay_positively(producer_sf, answer_leaf,
-			 makestring((char *) ret_psc[0]));
+			 makestring(get_ret_string()));
 #endif /* IGNORE_DELAYVAR */
 #endif /* LOCAL_EVAL */
     }

@@ -80,6 +80,7 @@
 /*-------------------------------------------------------------------------*/
 
 BTNptr bt_escape_search(BTNptr btRoot, xsbBool *isNew) {
+
   BTNptr btn;
 
   btn = BTN_Child(btRoot);
