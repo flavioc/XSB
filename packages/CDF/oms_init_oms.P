@@ -90,7 +90,7 @@
 :- ensure_loaded(oms_exceptions).
 
 %%%%%%%%%%%%% Declarations for updatable DB
-:- ensure_loaded(oms_db_updatable).
+%%:- ensure_loaded(oms_db_updatable).
 
 :- dynamic oms_extint_updatable/1.
 :- dynamic retractall_object_int/4.
@@ -2239,15 +2239,14 @@ check_new_source(Source,Term):-
 %%%%%%%%%%  Retract tables as appropriate upon update.
 
 assert_oms(Term) :-
+	oms_log(assert(Term)),
 	assert_oms_term(Term),
 	abolish_nec_tables(Term).
 
 assert_oms_term(Term) :-
-	oms_log(assert(Term)),
 	assert_oms_int(Term),
 	!.
 assert_oms_term(Term) :-
-	oms_log(assert(Term)),
 	asserta(Term),
 	oms_dirty(DFlg),
 	(DFlg =:= 1
@@ -2279,40 +2278,6 @@ abolish_nec_tables(oms_sc(_,_)) :- !,
 	abolish_relationship_inherits,
 	abolish_schrel_inherits.
 abolish_nec_tables(_).
-
-%% Needed for updates in oms_xj/oms_cdf.
-retractall_oms(oms_rln(A,B,C)) :- !,
-	abolish_relationship_inherits,
-	retractall_oms_1(oms_rln(A,B,C)).
-retractall_oms(oms_schrel(A,B,C)) :- !,
-	abolish_schrel_inherits,
-	retractall_oms_1(oms_schrel(A,B,C)).
-retractall_oms(oms_sc(A,B)) :- !,
-	abolish_relationship_inherits,
-	abolish_schrel_inherits,
-	retractall_oms_1(oms_sc(A,B)).
-retractall_oms(Term) :- !,
-	retractall_oms_1(Term).
-
-%% Actual retraction done in oms_xj/oms_cdf because retraction may
-%% Require cache invalidation.
-retractall_oms_1(Term):- 
-	oms_log(Term),
-	oms_dirty(DFlg),
-	(DFlg =:= 1
-	 ->	true
-	 ;	make_oms_dirty
-	).
-
-%% For updates to external DB's, where the update has already been done
-ext_update_oms(oms_rln(_,_,_)) :- !,
-	abolish_relationship_inherits.
-ext_update_oms(oms_schrel(_,_,_)) :- !,
-	abolish_schrel_inherits.
-ext_update_oms(oms_sc(_,_)) :- !,
-	abolish_relationship_inherits,
-	abolish_schrel_inherits.
-ext_update_oms(_).
 
 abolish_relationship_inherits :-
 	abolish_table_pred(relationship_inh_gen(_,_,_)),
