@@ -42,6 +42,7 @@
 
 :- import
 	flora_write_atom/1,
+	flora_write_quoted_atom/1,
 	flora_concat_atoms/2,
 	flora_concat_items/2
    from flrporting.

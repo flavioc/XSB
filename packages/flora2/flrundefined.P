@@ -245,7 +245,7 @@ generate_patches :-
 	;
 	    flora_write_atom('FLORA_THIS_WORKSPACE(')
 	),
-	write(F),
+	flora_write_quoted_atom(F),
 	put(0')),
 	put(0'(),
 	write_args(Args),
@@ -259,9 +259,9 @@ generate_patches :- !.
 write_args([]) :- !.
 write_args([A]) :-
 	!,
-	write(A).
+	write_canonical(A).
 write_args([H|L]) :-
-	write(H),
+	write_canonical(H),
 	put(0',),
 	write_args(L).
  
