@@ -33,7 +33,7 @@ ALLOBJS = flrarguments$(OBJEXT) \
 	  flrcoder$(OBJEXT) \
 	  flrdependency$(OBJEXT) \
 	  flora2devel$(OBJEXT) \
-	  flrfirstorder$(OBJEXT) \
+	  flrhilogtable$(OBJEXT) \
 	  flrlexer$(OBJEXT) \
 	  flrlibman$(OBJEXT) \
 	  flrnodefp$(OBJEXT) \

@@ -1,4 +1,4 @@
-1. Make :- table imply :- firstorder.
+NOT RELEVANT 1. Make :- table imply :- firstorder.
 
 
 DONE 2. Implement undefined predicate/method handling infrastructure.
@@ -234,7 +234,8 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 		    var?).
 	    Functor: the name of the predicate, functor, or method.
 
-6. Implement asserting the storage-linking rules (the patch rules) in the
+NOT RELEVANT 6. Implement asserting the storage-linking rules
+   (the patch rules) in the
    Flora shell, so that we'll be able to use insert/delete for firstorder
    predicates in the shell.
 
@@ -253,7 +254,7 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
       functor/arity in register_firstorder/1, do
       retractall(functor(X,Y,...)).
 
-7. Implement  patch rules for firstorderall.
+NOT RELEVANT 7. Implement  patch rules for firstorderall.
    Firstorderall is already implemented. We only need to add the patch
    rules.
 
@@ -336,7 +337,7 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
 	  The compiler should check this flag to decide whether to dump the
 	  patch rules and for deciding on the error checking.
 
-17. Provide primitives
+NOT RELEVANT 17. Provide primitives
     :- firstorder foo/1 in modname.
 
     This is supposed to solve two problems: 
@@ -419,7 +420,7 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
      name, to decide how to translate "literal": using hilog or first order
      translation.
     
-18. Add a call(X) meta predicate.
+DONE IN A BETTER WAY 18. Add a call(X) meta predicate.
     The main point right now is that
 
     :- p(X), X.     (*)
@@ -440,14 +441,14 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
     Also, call(p) should convert to call(apply(p)), because Flora treats
     propositional constants like p as p().
 
-19. Implement support for the full directive :- index/2
+DONE 19. Implement support for the full directive :- index/2
     (right now it only allows trie indexing)
 
 DONE 20. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
 
 21. Allow inheritance of procedural methods: a[*#p(...)].
 
-22.  Right now Flora compiler collects XSB compiler options
+DONE 22.  Right now Flora compiler collects XSB compiler options
      listed in flora_is_command_directive/1 in flrparser.P
      and then dumps them in the program as :- option.
      First, this is incorrect syntax. Should be dumping as

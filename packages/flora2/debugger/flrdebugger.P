@@ -41,7 +41,7 @@
 
 :- import flora_decode_predicate/6,
 	flora_module_name/3,
-	flora_firstorder_module_predicate_symbol/3
+	flora_module_predicate_symbol/3
     from flrwrapper.
 :- import flora_prlgdef/2 from flrprolog.
 :- import flora_opdef/3 from flroperator.
@@ -124,9 +124,8 @@ flora_write_goal(Call) :- var(Call), !, flora_write_dbg_item(Call).
 
 flora_write_goal(Call) :-
 	classify_call(Call, Type,Basename,ArgList,Workspace),
-	( Type == (firstorder)
-	-> flora_write_firstorder(Basename,ArgList,Workspace)
-	; Type == (hilog)
+
+	( Type == (hilog)
 	-> flora_write_hilog(Basename,ArgList,Workspace)
 	; Type == (flogic)
 	-> flora_write_flogic(Basename,ArgList,Workspace)
@@ -280,11 +279,6 @@ flora_write_goal(FLLIBMODLIT(FL_LIBMOD,Args,Module)) :-
 flora_write_goal(FLLIBMODLIT(Basename,Args,Module)) :-
 	!,
 	flora_write_flogic(Basename,Args,Module).
-
-%% This occurs when you have firstorder-lit@Module, where Module is a var
-flora_write_goal(FLLIBMODLIT(FL_FIRSTORDER,Basename,Args,Module)) :-
-	!,
-	flora_write_firstorder(Basename,Args,Module).
 
 flora_write_goal(Call) :-
 	is_prolog(Call),
@@ -458,15 +452,6 @@ flora_write_builtin(F,_,Args) :-
 	write_hilog_args(Args),
 	flora_write_dbg_item(')').
 
-%%%%%%%%%%%%%%%%%%%%%% Firstorder %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-flora_write_firstorder(Basename,ArgList,Workspace) :-
-	print_items((Basename,'(')),
-	write_hilog_args(ArgList),
-	flora_write_dbg_item(')'),
-	write_workspace(Workspace).
-
-
 %%%%%%%%%%%%%%%%%%%%%% IF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 flora_print_if_statement(Cond,Then) :-
@@ -577,8 +562,11 @@ classify_call(Call, Type,Basename,ArgList,Workspace) :-
 	flora_decode_predicate(Call,Type1,Workspace,Prefix,Basename1,ArgList1),
 	%% The following is a debugging statement, 
 	%% to help weed out calls that should be suppressed
-	%%format('~n~w~n~w~n~w~n~w~n~w~n~w~n',
-	%%	  [Call,Type1,Workspace,Prefix,Basename1,ArgList]),
+	/*
+	flora_dbg_stream(Stream),
+	format(Stream,'~n~w~n~w~n~w~n~w~n~w~n~w~n',
+		      [Call,Type1,Workspace,Prefix,Basename1,ArgList]),
+	*/
 	(Type1 == (flora)
 	-> ((Prefix=immediate_ ; Prefix=inheritance_)
 	   -> Basename = Basename1, Type = (inheritance), ArgList = ArgList1
@@ -787,7 +775,7 @@ flora_read_debugger_data(WS,_Datafile) :-
 	%% Check if already loaded
 	(var(WS) 
 	-> current_predicate(FLORA_SYMBOL('debugger_static_data_loaded')/0)
-	; flora_firstorder_module_predicate_symbol(debugger_data_loaded,
+	; flora_module_predicate_symbol(debugger_data_loaded,
 						   WS,
 						   WSSym),
 	    current_predicate(WSSym/0)
@@ -855,28 +843,33 @@ flora_build_bridge_to_xsb_debugger :-
 	%% to be handled by the debugger
 	assert((hide_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_hide_this_hide(pref(X1/Y)),
-		str_sub(X1,X,0)
+		(flora_hide_this_hide(pref(X1/Y)), str_sub(X1,X,0), !
+		 ; flora_hide_this_hide(match(X1/Y)), str_sub(X1,X), !
+		)
 	       )),
 	assert((hide_this_show(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_hide_this_show(pref(X1/Y)),
-		str_sub(X1,X,0)
+		(flora_hide_this_show(pref(X1/Y)), str_sub(X1,X,0), !
+		 ; flora_hide_this_show(match(X1/Y)), str_sub(X1,X), !
+		)
 	       )),
 	assert((show_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_show_this_hide(pref(X1/Y)),
-		str_sub(X1,X,0)
+		(flora_show_this_hide(pref(X1/Y)), str_sub(X1,X,0), !
+		 ; flora_show_this_hide(match(X1/Y)), str_sub(X1,X), !
+                )
 	       )),
 	assert((trace_this_noprint(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_trace_this_noprint(pref(X1/Y)),
-		str_sub(X1,X,0)
+		(flora_trace_this_noprint(pref(X1/Y)), str_sub(X1,X,0), !
+		 ; flora_trace_this_noprint(match(X1/Y)), str_sub(X1,X), !
+		)
 	       )),
 	assert((trace_this_print(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_trace_this_print(pref(X1/Y)),
-		str_sub(X1,X,0)
+		(flora_trace_this_print(pref(X1/Y)), str_sub(X1,X,0), !
+		 ; flora_trace_this_print(match(X1/Y)), str_sub(X1,X), !
+		)
 	       )).
 
 ?- findall(X,flLoadedModule(X),L),

@@ -39,17 +39,13 @@
 %% for F-logic and HiLog predicates
 #define FLORA_PREFIX			'_$_$_flora'
 
-%% for first order predicates
-#define FLORA_FO_PREFIX			'_$_$_flora_fo'
-
 
 /******************************************************************************
-  Attaching FLORA_PREFIX or FLORA_FO_PREFIX
+  Attaching FLORA_PREFIX
 
   The argument to this Macro should be quoted.
 ******************************************************************************/
 #deffast FLORA_SYMBOL(X)	FLORA_PREFIX#1
-#deffast FLORA_FO_SYMBOL(X)	FLORA_FO_PREFIX#1
 
 
 /******************************************************************************
@@ -81,12 +77,6 @@
 
 %% prefix to construct Flora system module predicates.
 #deffast FLORA_SYSTEM_MODULE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_MODULE)
-
-%% prefix to construct Flora first order user module predicates.
-#deffast FLORA_FO_USER_MODULE_PREFIX	FLORA_FO_SYMBOL(FLORA_USER_MODULE)
-
-%% prefix to construct Flora first order system module predicates.
-#deffast FLORA_FO_SYSTEM_MODULE_PREFIX	FLORA_FO_SYMBOL(FLORA_SYSTEM_MODULE)
 
 %% prefix to name Flora storage trie for a user module.
 #deffast FLORA_USER_FDB_TRIE_PREFIX	FLORA_SYMBOL(FLORA_USER_FDB_TRIE)
@@ -140,16 +130,9 @@
 ******************************************************************************/
 
 #deffast FLORA_PREFIX_LEN_PLUS1	     #eval length(FLORA_PREFIX)-1
-#deffast FLORA_FO_PREFIX_LEN_PLUS1   #eval length(FLORA_FO_PREFIX)-1
 
 %% length of FLORA_PREFIX'FLORA_USER_MODULE
 #deffast FLORA_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_USER_MODULE_PREFIX)-2
 
 %% length of FLORA_PREFIX'FLORA_SYSTEM_MODULE
 #deffast FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_SYSTEM_MODULE_PREFIX)-2
-
-%% length of FLORA_FO_PREFIX'FLORA_USER_MODULE
-#deffast FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_USER_MODULE_PREFIX)-2
-
-%% length of FLORA_FO_PREFIX'FLORA_SYSTEM_MODULE
-#deffast FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_SYSTEM_MODULE_PREFIX)-2

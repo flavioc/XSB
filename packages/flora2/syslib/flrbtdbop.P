@@ -49,7 +49,6 @@
 
 :- import
 	flora_module_predicate/4,
-	flora_firstorder_module_predicate/4,
 	flora_fdb_storage_name/2,
 	flora_check_module_name/1,
 	flora_decode_module_name/2,
@@ -111,24 +110,7 @@ flora_storage_insertfacts_bt([FLLIBMODLIT(F,Args,ModuleName)|T]) :-
 	FLORA_DB_INSERT_BT(StorageName,P,_Inserted),
 	flora_storage_insertfacts_bt(T).
 
-flora_storage_insertfacts_bt([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)|T]) :-
-	!,
-	flora_storage_check_module_name(ModuleName),
-	flora_firstorder_module_predicate(F,Args,ModuleName,P),
-	flora_fdb_storage_name(ModuleName,StorageName),
-	FLORA_DB_INSERT_BT(StorageName,P,_Inserted),
-	flora_storage_insertfacts_bt(T).
-
 flora_storage_insertfacts_bt([FLLIBMODOBJ(F,Args,ModuleName,O)|T]) :-
-	!,
-	( flora_check_module_name(ModuleName) ->
-	    flora_module_predicate(F,Args,ModuleName,O),
-	    flora_storage_insertfacts_bt(T)
-	;
-	  abort
-	).
-
-flora_storage_insertfacts_bt([FLLIBMODOBJ(FL_FIRSTORDER,F,Args,ModuleName,O)|T]) :-
 	!,
 	( flora_check_module_name(ModuleName) ->
 	    flora_module_predicate(F,Args,ModuleName,O),
@@ -233,15 +215,6 @@ FLLIBBTDELETE([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	FLORA_DB_FIND(StorageName,P),
 	FLORA_DB_DELETE_BT(StorageName,P,_Deleted).
 
-FLLIBBTDELETE([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
-	!,
-	flora_storage_check_module_name(ModuleName),
-	flora_firstorder_module_predicate(F,Args,ModuleName,P),
-	flora_fdb_storage_name(ModuleName,StorageName),
-	!,
-	FLORA_DB_FIND(StorageName,P),
-	FLORA_DB_DELETE_BT(StorageName,P,_Deleted).
-
 FLLIBBTDELETE(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
 	flora_list2conjunct([Condition|CallList],Goal),
@@ -303,14 +276,6 @@ FLLIBBTDELETEALL([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_module_predicate(F,Args,ModuleName,P),
-	flora_fdb_storage_name(ModuleName,StorageName),
-	!,
-	flora_storage_deleteall_bt(P,StorageName).
-
-FLLIBBTDELETEALL([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
-	!,
-	flora_storage_check_module_name(ModuleName),
-	flora_firstorder_module_predicate(F,Args,ModuleName,P),
 	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
 	flora_storage_deleteall_bt(P,StorageName).

@@ -175,3 +175,20 @@ turn_off_debug_all([H|L]) :-
 
 turn_off_debug(Module) :-
 	retractall(flora_debug_module_registry(Module)@prolog(flrregistry))@prolog().
+
+%% Takes a call, P. If P is false then fails. If P is true or undefined, succeeds.
+%% If P is true, then List is []. If P is undefined, then List is the residual of P.
+table_state(Pred,List) :-
+    flora_decode_predicate(Pred,hilog,Module,_Prefix,PName,AList)@prolog(flrwrapper),
+    flora_tabled_hilog_module_predicate_symbol(Module,Wrapper)@prolog(flrwrapper),
+    P =.. [Wrapper,0,PName|AList],
+    complete_table(P),
+    !,
+    NewP =.. [Wrapper,_RN,PName|AList],
+    get_residual(NewP,List)@prolog(tables).
+
+complete_table(P) :-
+    P,
+    fail.
+
+complete_table(_) :- !.

@@ -1,0 +1,130 @@
+TABLING HILOG PREDICATES
+========================
+Chang Zhao
+
+
+1. Changes in the language
+    1) Directives 'firstorder', 'firstorderall', and 'hilogtable' are no longer
+       needed.
+    2) The syntax of the directive 'table' is as follows:
+	:- table P/N
+       or
+	:- table P/N/M
+       where P is an atom or a variable, N and M are integers. The number of 
+       slashs allowed is determined by FLSK_DEPTH in flrparser.P, which is
+       currently 2.
+    3) A new directive flora_compiler_options is added. See section 3 for
+       details.
+    4) get_residual@prolog(tables) is substituted by table_state@flora(sys).
+       see section 4 for details.
+    5) The syntax of index directive is now
+	:- index N-M
+       where both N and M are integers, 0<M<=N. See section 5.
+      
+2. How hilog table works (Coding Schema)
+   The coding schema described below preserves the rule ordering and no
+   run-time overhead is incurred.
+   The basic idea is as follows. A rule number counter is maintained. In the
+   rest of thie file, RULE# is used to denote the current value of this counter.
+   The initial value for RULE# is 1.
+   For a rule Head :- Body, 
+   (1) The fingerprint of the head is computed.
+       For example, the fingerprint for p(a) is p/1, and the fingerprint for
+       F(X)(a,b) is F/1/2.
+   (2) Check to see if some table directive subsumes the head fingerprint.
+       If so, the rule will be translated as
+		Head :- tabled_flapply(RULE#,...).
+		table_flapply(RULE#,...) :- Body.
+       and the rule counter is incremented.
+       Otherwise, it is coded just as before: (Head :- Body).
+       For example, if the user has X/1 and path/1/2 is tabled,
+		p(a) :- body.
+       will be translated into two rules:
+		p(a) :- tabled_flapply(RULE#,p,a).
+		tabled_flapply(RULE#,p,a) :- body.
+       Whereas the following rule will stay as is.
+		F(X)(a,b) :- body.
+
+   tabled_flapply/2, tabled_flapply/3, ..., tabled_flapply/22 are tabled. 
+   Compared with flapply/1 to flapply/21, the arities are 2 to 22 because of
+   the rule number added as the first argument.
+
+-----------------------------------------------
+Example:
+
+    :- table p/1.
+    p(X) :- q(X).
+    q(X) :- r(X).
+    
+    will be translated as
+    
+    flapply(p,X) :- tabled_flapply(1,p,X).
+    tabled_flapply(1,p,X) :- flapply(q,X).
+    flapply(q,X) :- flapply(r,X).
+-----------------------------------------------
+
+3. flora_compiler_options
+   The coding schema interferes with XSB specialisation. Double-tabling 
+   warnings are always given when something is tabled. Experiments show
+   that specialisation doesn't speed up FLORA programs to any discernable
+   degree. For these reasons, XSB
+   specialisation is turned off by default. Users can use the directive
+   flora_compiler_optoins to turn it on.
+   The argument of the directive flora_compiler_options is a list
+   of XSB compiler options. Basically these options will be dumped as is
+   using XSB directive 'compiler_options'. The only exception is that
+   if spec_repr doesn't appear in any list of flora_compiler_options, then
+   compiler_options([spec_off]) will be dumped as well, which turns
+   specialization off for FLORA programs.
+
+4. table_state
+   The coding schema, which wraps hilog stuff in the body using 'flapply',
+   doesn't work for get_residual, which is exported by the XSB module tables. 
+   get_residual(p(a),[])@prolog(tables) will be translated into
+   get_residual(flapply(p,a),[]). Since flapply/2 is not tabled, a runtime
+   error will be issued. table_state/2, which functions similarly, is 
+   implemented in flora(sys). Basically for a user call
+		table_state(Pred,List)@flora(sys)
+   a new predicate is constructed from Pred:
+	1) the outermost wrapper is tabled_flapply instead of flapply
+	   (prefixed properly with flora prefix, module name, etc)
+	2) a variable is inserted as the first argument, which matches all
+	   rule number
+   Then get_residual(NewPred,List)@prolog(tables) is invoked.
+   For example, table_state(flapply(p,X)),[])@flora(sys) invokes
+   get_residual(tabled_flapply(_RN,p,X),[])@prolog(tables).
+
+   One problem with this implementation is that the result set may be
+   incomplete. The reason is that the patch rules such as
+	flapply(X) :- storage_find_fact(fdbtrie,flapply(X)).
+   are not bridged by tabled_flapply.
+   Our current solution is to add storage patch rules for table_flapply/2,
+   tabled_flapply/3, ..., tabled_flapply/22.
+	tabled_flapply(0,X) :- storage_find_fact(fdbtrie,flapply(X)).	
+	tabled_flapply(0,X,Y) :- storage_find_fact(fdbtrie,flapply(X,Y)).	
+	...
+   Before get_residual is called, for example for p(X), tabled_flapply(0,p,X) 
+   is completed. In this way, table_state can return the whole result set.
+
+   Just as get_residual/2, the first argument of table_state should be defined
+   as 'meta'. And it depends on the user to complete the call to the tabled
+   hilog predicate in question.
+
+5. index
+   Now that 'index P/N' doesn't make any sense, index directive is changed to
+	:- index N-M
+   where N and M are both integers and 0<M<=N. Suppose N1=N+1, M1=M+1, 
+   1) a compiler directive 'index N-M' is translated into 
+		:- index FLORA_THIS_WORKSPACE(flapply)/N1-M1.
+		?- index(FLORA_THIS_WORKSPACE(dyna_flapply)/N1,M1).
+		?- index(FLORA_THIS_WORKSPACE(dynz_flapply)/N1,M1).
+   2) an executable 'index(N-M)' is translated into
+	(fllibprogramans((index(FLORA_THIS_WORKSPACE(dyna_flapply)/N1,M1),
+			  index(FLORA_THIS_WORKSPACE(dynz_flapply)/N1,M1)),[])).
+
+   dyna_flapply and dynz_flapply are wrappers for hilog rule heads of
+   dynamically inserted rules. If a rule is inserted by insertrule_a, which
+   means to insert the rule before all static rules, dyna_flapply is used. If
+   a rule is inserted by insertrule_z, which means to insert the rule after
+   all static rules, dynz_flapply is used. 
+

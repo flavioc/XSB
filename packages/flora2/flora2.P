@@ -37,8 +37,7 @@
    from packaging.
 
 :- import
-	flImportHiLog/4,
-	flImportFirstorder/4
+	flImportPredicate/4
    from flrimport.
 
 :- import
@@ -149,11 +148,9 @@ flora_shell :-
   Flora import stuff
 
   Syntax:
-      :- flImport {hilog|firstorder} Pred/Arity as Pred1(_,_,...)
-                                from File[.flr]>>FloraModule
+      :- flImport Pred/Arity as Pred1(_,_,...) from File[.flr]>>FloraModule
   or
-      :- flImport {hilog|firstorder} Pred/Arity as Pred1(_,_,...)
-                                from FloraModule
+      :- flImport Pred/Arity as Pred1(_,_,...) from FloraModule
 
   Also (to load into the default module)
       :- flLoad file.
@@ -166,9 +163,6 @@ flora_shell :-
       :- flCompile file>>module.
 ************************************************************************/
 
-:- op(1150,fx,(firstorder)).
-:- op(1150,fx,(hilog)).
-
 :- op(500,yfx,(as)).
 :- op(1170,fx,(flImport)).
 
@@ -177,27 +171,17 @@ flora_shell :-
 :- op(1050,fx,(flCompile)).
 %% The other operators, '>>' and 'from', are already defined in Prolog
 
-flImport(hilog(from(as(What,AsWhat),FileMod))) :- !,
+flImport(from(as(What,AsWhat),FileMod)) :- !,
 	(atom(FileMod)  % in this case FileMod is a module name
 	-> (flLoadedModule(FileMod)
-	   -> flImportHiLog(What,AsWhat,_,FileMod)
+	   -> flImportPredicate(What,AsWhat,_,FileMod)
 	   ;  abort(['Trying to import hilog predicate ', What,
 		     ' from unloaded FLORA module ', FileMod])
 	   )
 	; FileMod = File>>Module 
-	-> flImportHiLog(What,AsWhat,File,Module)
+	-> flImportPredicate(What,AsWhat,File,Module)
 	).
 
-flImport(firstorder(from(as(What,AsWhat),FileMod))) :- !,
-	(atom(FileMod) % in this case FileMod is a module name
-	-> (flLoadedModule(FileMod)
-	   -> flImportFirstorder(What,AsWhat,_,FileMod)
-	   ;  abort(['Trying to import first order predicate ', What,
-		     ' from unloaded FLORA module ', FileMod])
-	   )
-	; FileMod = File>>Module 
-	-> flImportFirstorder(What,AsWhat,File,Module)
-	).
 flImport(X) :- abort(['Invalid flImport syntax: ', X]).
 
 flLoad(File>>Module) :- flora_load_module_internal(File,Module).

@@ -744,24 +744,36 @@ flora_clear_xpp_options :-
 
 
 /*************************************************************************
-  flora_loaddyn_data_filename(+FileName)
+  flora_insert_code_for_loaddyn_data(+FileName)
 *************************************************************************/
-flora_loaddyn_data_filename(FileName) :-
+flora_insert_code_for_loaddyn_data(FileName) :-
 	%% Output the base file name only. The full path will be taken
-	%% care of by flora_load_dyn_data and consult.
+	%% care of by flora_loaddyn_data and consult.
 	parse_filename(FileName,_Dir,Base,Ext),
 	( Ext == FLORA_FDB_EXT, DataCat='FDB'
 	; Ext == FLORA_FLD_EXT, DataCat='FLD'
 	),
+	%% The if-then-else play of FLORA_FDB_FILENAME and FLORA_FLD_FILENAME,
+	%% controls whether flora_loaddyn_data/3 is used to load dynamic data
+	%% or directly flora_read_canonical_and_insert/2
+	%% Normally FLORA_FDB_FILENAME/FLORA_FLD_FILENAME are not defined,
+	%% so data is loaded using flora_loaddyn_data/3.
+	%% However, when we are trying to produce a dump of the program (where all
+	%% the preprocessor stuff is stripped), then we don't need 
+	%% flora_loaddyn_data/3 (whose primary purpose is to invoke the preprocessor
+	%% before invoking flora_read_canonical_and_insert/2).
+	%% In this case, we put the .P file through the preprocessor with
+	%% FLORA_FDB_FILENAME set to ''. The result is that in the dumped
+	%% program only the call to flora_read_canonical_and_insert/2 will stay.
 	format("#if !defined(FLORA_~w_FILENAME)",[DataCat]),
 	nl,
-	writeln('#if !defined(FLORA_LOAD_DYN_DATA)'),
-	writeln('#define FLORA_LOAD_DYN_DATA'),
-	writeln(':- import flora_load_dyn_data/3 from flrutils.'),
+	writeln('#if !defined(FLORA_LOADDYN_DATA)'),
+	writeln('#define FLORA_LOADDYN_DATA'),
+	writeln(':- import flora_loaddyn_data/3 from flrutils.'),
 	writeln('#endif'),
 	format("#define FLORA_~w_FILENAME  '~w.~w'", [DataCat,Base,Ext]),
 	nl,
-	format("?- flora_load_dyn_data(FLORA_~w_FILENAME,FLORA_THIS_MODULE_NAME,'~w').",[DataCat,Ext]),
+	format("?- flora_loaddyn_data(FLORA_~w_FILENAME,FLORA_THIS_MODULE_NAME,'~w').",[DataCat,Ext]),
 	nl,
 	writeln('#else'),
 	writeln('#if !defined(FLORA_READ_CANONICAL_AND_INSERT)'),
@@ -815,9 +827,13 @@ flora_reset_modules_for_file(FullFileName) :-
 	flora_reset_operator,
 	flora_reset_arguments,
 	flora_reset_prolog,
-	flora_reset_firstorder,
+	flora_reset_hilogtable,
 	flora_reset_compiler,
 	flora_set_counter(flora_shell_mode,0),
+
+    %% for hilog table
+    flora_set_counter(flora_rule_number,1),
+
 	retractall(flora_compiler_environment(_,_)),
 	assert(flora_compiler_environment(file,FullFileName)),
 	!.
@@ -836,7 +852,7 @@ flora_reset_modules_for_shell :-
 
 
 /*************************************************************************
-  flora_compile_file(+InputFile,+OutputPFile,+OutputDBFile,-FileStatus)
+  flora_compile_file(+InputFile,+OutputPFile,+OutputDBFile,+OutputFLDFile,-FileStatus)
 
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 
@@ -854,8 +870,11 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_measure_time(
-	flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,FileOptionList,CompileStatus),
-	'Compile time '),
+			   flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,
+					  FileOptionList,CompileStatus)
+			  ,
+			   'Compile time '
+			   ),
 	%% Wait, to not leave zombies.
 	process_control(XPP_process,wait(ExitStatus)),
 	(ExitStatus==0, !
@@ -874,7 +893,8 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	    ( DepErrNum>0 ->
 		FileStatus=FLORA_FAILURE
 	    ;
-	        flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
+	        flora_generate_file(CompiledRuleList,FileOptionList,
+				    PFile,DBFile,FLDFile,FileStatus)
 	    )
         ),
 	flora_cputime(T1),
@@ -891,7 +911,7 @@ flora_compile_file(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
 
 
 /*************************************************************************
-  flora_generate_file(+CompiledRuleList,+FileOptionList,+PFile,+DBFile,-FileStatus)
+  flora_generate_file(+CompiledRuleList,+FileOptionList,+PFile,+DBFile,+FLDFile,-FileStatus)
 
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
@@ -901,8 +921,11 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
 	flora_divide_program(CompiledRuleList,RuleList,FactList),
 	sort(FileOptionList,FileOptions),
 	flora_measure_time(
-	flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,DBFile,FLDFile,PFileStatus),
-        '[Coder] Generating P file'),
+			   flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,
+						DBFile,FLDFile,PFileStatus)
+			  ,
+			   '[Coder] Generating P file'
+			   ),
 	( PFileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
@@ -910,9 +933,10 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
 	      FileStatus=FLORA_SUCCESS
 	  ;
 	      flora_measure_time(
-	      flora_generate_DBfile(DBFile,FactList,FileStatus)
-	      ,
-	      '[Coder] Generating DB file ')
+				 flora_generate_DBfile(DBFile,FactList,FileStatus)
+				,
+				 '[Coder] Generating DB file '
+				 )
 	  )
         ),
 	!.
@@ -920,7 +944,7 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
 
 /*************************************************************************
   flora_generate_Pfile(+PFileName,+FileOptionList,+RuleList,+FactList,
-                       +DBFile,-FileStatus)
+                       +DBFile,+FLDFile,-FileStatus)
 
   Things to do:
   (1) include .flh file directive.
@@ -936,14 +960,25 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
 	findall(ModOption,member(FLSYSMOD(ModOption),FileOptionList),SysModOptionList),
 	append(SysLibOptionList,SysModOptionList,OptList),
-	flora_include_file([FLHEADER,FLDEFINITION,FLINDEX_P,FLPATCH|OptList],
-                           HeaderStatus),
-	( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
+	( member(XSB_SPECREPR,FileOptionList) -> true
+	; writeln(':- compiler_options([spec_off]).')),
+	flora_include_file([FLHEADER],FLHeaderStatus),
+	( FLHeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	;
-	  (FactList == [] -> true; flora_loaddyn_data_filename(DBFile)),
-	  flora_loaddyn_data_filename(FLDFile),
-	  flora_extern_code(RuleList,CoderStatus),
-	  ( CoderStatus == [] ->
+	  findall((Arity,Pos),member(FLINDEX(Arity,Pos),FileOptionList),IndexList),
+	  write_index_directives(IndexList),
+	  flora_include_file([FLDEFINITION,FLINDEX_P,FLPATCH|OptList],
+                           HeaderStatus),
+	  ( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
+	  ;
+	    (FactList == [] -> true; flora_insert_code_for_loaddyn_data(DBFile)),
+	    flora_insert_code_for_loaddyn_data(FLDFile),
+
+            %% Generate entries for tabled or non-tabled predicate registries
+            flora_table_info(RuleList),
+
+	    flora_extern_code(RuleList,CoderStatus),
+	    ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
 		  %% A directive in the program specifies the full equality trailer.
 		  %% This option adds FLSCALAREQL, which handles the equality
@@ -970,15 +1005,36 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	        flora_include_file([FLTRAILER],FileStatus)
 	      ),
 	      flora_include_file([FLPREDDEF],FileStatus)
-	  ;
-	    flora_coder_error(CoderStatus),
-	    FileStatus=FLORA_FAILURE
-	  )
+	   ;
+	     flora_coder_error(CoderStatus),
+	     FileStatus=FLORA_FAILURE
+	   )
+	 )
         ),
 	told,
 	tell(PreOutFile),
 	!.
 
+/*************************************************************************
+  write_index_directives(+IndexList)
+  For every pair (A,P) in the list, generate code (assuming A+1=A1,P+1=P1)
+  :- index flapply/A1-P1.
+  ?- index(dyna_flapply/A1,P1).
+  ?- index(dynz_flapply/A1,P1).
+*************************************************************************/
+write_index_directives([]) :- !.
+write_index_directives([(A,P)|L]) :-
+	A1 is A+1, P1 is P+1,
+	flora_write_atom(':- index FLORA_THIS_WORKSPACE('),
+	flora_write_atom(WRAP_HILOG), flora_write_atom(')/'),
+	write(A1), put(0'-), write(P1), put(0'.), nl,
+	flora_write_atom('?- index(FLORA_THIS_WORKSPACE('),
+	flora_write_atom(WRAP_DYNA_HILOG), flora_write_atom(')/'),
+	write(A1), put(0',), write(P1), put(0')),put(0'.), nl,
+	flora_write_atom('?- index(FLORA_THIS_WORKSPACE('),
+	flora_write_atom(WRAP_DYNZ_HILOG), flora_write_atom(')/'),
+	write(A1), put(0',), write(P1), put(0')),put(0'.), nl,
+	write_index_directives(L).
 
 /*************************************************************************
   flora_generate_DBfile(+DBFileName,+FactList,-FileStatus)
@@ -1046,14 +1102,14 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 
 
 /*************************************************************************
-  flora_load_dyn_data(+InFile,+ModuleName,+Ext)
+  flora_loaddyn_data(+InFile,+ModuleName,+Ext)
 
   This procedure reads a Flora DB/FLD file that contains facts in canonical
   form and inserts them into the storage trie for the module. The module
   could be either a Flora user module, or a Flora system module. In the
   latter case, it is structured term.
 *************************************************************************/
-flora_load_dyn_data(InFile,ModuleName,Ext) :-
+flora_loaddyn_data(InFile,ModuleName,Ext) :-
 	flora_check_filename(InFile),
 	( flora_file_op(isabsolute,InFile) ->
 	    InFileAbs=InFile
@@ -1086,7 +1142,7 @@ flora_load_dyn_data(InFile,ModuleName,Ext) :-
 	    (ExitStatus==0, !
 	    ; flora_error_line('Error while preprocessing ~w', [File])
 	    ),
-	    %% Release the file descriptor used to read from cpp.
+	    %% Release the file descriptor used to read from xpp.
 	    file_close(IOportFromProc),
 	    flora_clear_xpp_options,
 	    see(PreInFile),

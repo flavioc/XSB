@@ -1,31 +1,36 @@
 # Make file for Microsoft NMAKE
 
+!include ..\.prolog_path
+
 OBJEXT = .xwam
+PROLOGEXT = .P
 
-ALLOBJS = aggregate.P benchmark.P default.P family_obj.P \
-	  family_rel.P flogic_basics.P metavar.P mix.P module1.P mod1.P \
-	  mono_inherit.P rel_ops.P tree_traversal.P
-
-PROLOG = ..\..\..\config\x86-pc-windows\bin\xsb.exe
+ALLOBJS = aggregate$(PROLOGEXT) benchmark$(PROLOGEXT) \
+	  default$(PROLOGEXT) family_obj$(PROLOGEXT) \
+	  family_rel$(PROLOGEXT) flogic_basics$(PROLOGEXT) \
+	  metavar$(PROLOGEXT) mix$(PROLOGEXT) module1$(PROLOGEXT) \
+	  mod1$(PROLOGEXT) \
+	  mono_inherit$(PROLOGEXT) rel_ops$(PROLOGEXT) \
+	  tree_traversal$(PROLOGEXT)
 
 OPTIONS = [optimize]
 
-.SUFFIXES: .P .flr
+.SUFFIXES: $(PROLOGEXT) .flr
 
 ALL: $(ALLOBJS)
 
 
-.flr.P:
-	$(PROLOG) -e "bootstrap_flora. import (flCompile)/1 from flora2. flCompile(%|fF). halt."
+.flr$(PROLOGEXT):
+	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. import (flCompile)/1 from flora2. flCompile(%|fF). halt."
 
 
 CLEAN:
-	-@del *~
-	-@del *$(OBJEXT)
-	-@del *.P
-	-@del *.P_gpp
-	-@del *.fdb
-	-@del *.fld
-	-@del *.bak
-	-@del .#*
+	-@erase *~
+	-@erase *$(OBJEXT)
+	-@erase *$(PROLOGEXT)
+	-@erase *$(PROLOGEXT)_gpp
+	-@erase *.fdb
+	-@erase *.fld
+	-@erase *.bak
+	-@erase .#*
 

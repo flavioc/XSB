@@ -38,7 +38,8 @@
 	flora_cputime/1,
 	flora_set_counter/2,
 	flora_concat_atoms/2,
-	flora_copy_input/0
+	flora_copy_input/0,
+	flora_write_atom/1
    from flrporting.
 
 :- import format/2 from format.
@@ -92,7 +93,10 @@
 
 :- import flora_reset_prolog/0 from flrprolog.
 
-:- import flora_reset_firstorder/0 from flrfirstorder.
+:- import
+    flora_reset_hilogtable/0,
+    flora_table_info/1
+   from flrhilogtable.
 
 :- import flora_parse/3 from flrparser.
 
@@ -200,7 +204,7 @@
 
 	flora_reclaim_storage_space/0,
 	flora_commit_storage/0,
-	flora_load_dyn_data/3,
+	flora_loaddyn_data/3,
 
 	flora_compiler_environment/2,
 

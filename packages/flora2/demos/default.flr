@@ -27,11 +27,7 @@
 %%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
 %%% ===========================================================================
 
-:- firstorder tc/2.
 :- table tc/2.
-%% Could also leave tc/2 as HiLog predicate and add the directive
-%% :- hilogtable 2.
-
 
 times_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
 fruit_flies_like_an_apple[].		% an OBJECT with empty specification []

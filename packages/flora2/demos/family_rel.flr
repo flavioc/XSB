@@ -36,7 +36,9 @@
 
 
 %% to table ancestor/2
-:- hilogtable 2.
+%% :- table ancestor/2.
+%% or
+:- table X/2.
 
 %%% Ladies first:
 female(rita). 

@@ -136,34 +136,6 @@ get_canonical_form(Term, Canon) :-
 
 
 
-
-%% This takes care of first-order Flora predicates with dynamic 
-%% module specification 
-FLLIBUNIVEQFORM(X, Y) :-
-	X=FLLIBMODLIT(FL_FIRSTORDER,Fun1,Args1,ModuleName1),
-	Y=FLLIBMODLIT(FL_FIRSTORDER,Fun2,Args2,ModuleName2),
-	!,
-	Fun1 = Fun2,
-	Args1 = Args2,
-	ModuleName1 = ModuleName2.
-FLLIBUNIVEQFORM(X, Y) :-
-	X=FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName),
-	!,
-	%% this ensures that ModuleName is bound whenever possible
-	(nonvar(ModuleName), !
-	; flora_decode_predicate(Y,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
-	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
-	Literal = Y.
-FLLIBUNIVEQFORM(X, Y) :-
-	Y=FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName),
-	!,
-	%% this ensures that ModuleName is bound whenever possible
-	(nonvar(ModuleName), !
-	; flora_decode_predicate(X,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
-	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
-	X = Literal.
-
-
 /******************************************************************************
   FLLIBMETAUNIV(?X,?Y)
   The meta predicate =..

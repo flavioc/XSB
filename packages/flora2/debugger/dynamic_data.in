@@ -29,17 +29,38 @@
 :- dump '#mode standard Prolog'.
 :- dump '#include "flrheader.flh"'.
 :- dump '#include "flora_terms.flh"'.
-
+:- dump '#include "flora_wrap.flh"'.
 %% This might not work on windows, but on windows we provide 
 %% a prebuilt .flh file
 #include "flora_terms.flh"
 #include "../closure/includes/flrpred.fli"
 
 
-:- FL_FLOGICSTATIC
+:- WRAP_FLOGICSTATIC
 	newpredicate/_,
+	tabled_flapply/_,
+	defined_flapply/_,
 	debugging/0,
 	debugger_data_loaded/0.
+
+:- WRAP_FLOGICSTATIC
+	check_isa/2,
+	check_sub/2,
+	check_tran/2,
+	check_meth/2,
+	check_imeth/2,
+	check_fd/3,
+	check_ifd/3,
+	check_mvd/3,
+	check_imvd/3,
+	check_fdsig/3,
+	check_ifdsig/3,
+	check_mvdsig/3,
+	check_imvdsig/3,
+	check_fddef/2,
+	check_ifddef/2,
+	check_mvddef/2,
+	check_imvddef/2.
 
 
 
@@ -180,6 +201,28 @@ flora_hide_this_hide(inferred_fd_eql/3).
 flora_hide_this_hide(inferred_mvd_eql/3).
 flora_hide_this_hide(inferred_mvddef_eql/2).
 
+/***************************************************************************
+  Flora debugging predicates
+***************************************************************************/
+flora_hide_this_hide(check_isa/2).
+flora_hide_this_hide(check_sub/2).
+flora_hide_this_hide(check_tran/2).
+flora_hide_this_hide(check_meth/2).
+flora_hide_this_hide(check_imeth/2).
+flora_hide_this_hide(check_fd/3).
+flora_hide_this_hide(check_ifd/3).
+flora_hide_this_hide(check_mvd/3).
+flora_hide_this_hide(check_imvd/3).
+flora_hide_this_hide(check_fdsig/3).
+flora_hide_this_hide(check_ifdsig/3).
+flora_hide_this_hide(check_mvdsig/3).
+flora_hide_this_hide(check_imvdsig/3).
+flora_hide_this_hide(check_fddef/2).
+flora_hide_this_hide(check_ifddef/2).
+flora_hide_this_hide(check_mvddef/2).
+flora_hide_this_hide(check_imvddef/2).
+
+
 /*****************************************************************************
     Flora Internal Predicates
 *****************************************************************************/
@@ -191,6 +234,12 @@ flora_hide_this_hide(debugging/0).
 *****************************************************************************/
 
 flora_hide_this_show(pref(newpredicate/_)).
+
+%% We put match around because for some reason XSB prepends another _$ to
+%% tabled_flapply, so the goal that the debugger get is diffferent from what
+%% is inside flora_hide_this_show/1.
+flora_hide_this_show(match(tabled_flapply/_)).
+flora_hide_this_hide(match(defined_flapply/_)).
 
 
 

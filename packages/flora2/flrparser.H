@@ -27,7 +27,6 @@
 :- import append/3 from basics.
 
 :- import
-	flora_get_counter/2,
 	flora_concat_atoms/2
    from flrporting.
 

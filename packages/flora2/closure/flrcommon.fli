@@ -126,7 +126,7 @@ mvdtolist(O,M,L) :-
 	findall(V,mvd(O,M,V),L).
 
 mvdtolist(O,M,[]) :-
-	tnot(mvddef(O,M)).
+	sk_not(mvddef(O,M)).
 
 
 imvdtolist(O,M,L) :-
@@ -134,7 +134,7 @@ imvdtolist(O,M,L) :-
 	findall(V,imvd(O,M,V),L).
  
 imvdtolist(O,M,[]) :-
-	tnot(imvddef(O,M)).
+	sk_not(imvddef(O,M)).
 
 
 /****************************************************************************
@@ -163,7 +163,7 @@ exists(X) :- imeth(X,_).
 ****************************************************************************/
 
 
-objeql(X,Y) :- (nonvar(X)@prolog(); nonvar(Y)@prolog()), X=Y.
+objeql(X,Y) :- (nonvar(X); nonvar(Y)), X=Y.
 objeql(X,Y) :- diffobjeql(X,Y).
 
 

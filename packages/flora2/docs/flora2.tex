@@ -535,14 +535,12 @@ these tries are successful, an error is reported.
     Flush all tabled data. This is sometimes needed when Prolog's tabling 
     gets in the way. We describe tabling (as it pertains to \FLORA) in
     Section~\ref{sec-tabling-flora}.
-\item {\tt firstorder Functor/Arity}:
-    Define Functor/Arity as non-HiLog in shell mode.
 \item {\tt arguments Functor(\{oid$|$meta\}, ...)}:
     Define the predicate meta signature in shell mode.
 \item {\tt op(Precedence,Associativity,Operator)}:
     Define an operator in shell mode.
-\item {\tt flReset(\{firstorder|arguments|op\})}:
-    Clear all dynamic {\tt firstorder/arguments/op}  definitions in the
+\item {\tt flReset(\{arguments|op\})}:
+    Clear all dynamic {\tt arguments/op}  definitions in the
     \FLORA shell.
 \item {\tt flAll}:
     Show all solutions (default).
@@ -1849,8 +1847,7 @@ Section~\ref{sec-passing-args}.
 \subsection{Calling \FLORA from Prolog}
 
 Since Prolog does not understand \FLORA syntax, it can call only
-predicates defined in \FLORA programs. These predicates can be HiLog or
-first-order predicates (See Section~\ref{sec:hilog}). To call predicates
+predicates defined in \FLORA programs. To call predicates
 defined in \FLORA programs, they must be imported by the Prolog program.
 
 \paragraph{Importing \FLORA predicates into Prolog shell.}
@@ -1869,11 +1866,11 @@ must be executed first.
   One of the following {\tt flImport} queries must be executed in the shell:
   \begin{quote}
     \tt
-    ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it
+    ?- flImport {\it flora-predicate/arity} as {\it
       xsb-name}(\_,\_,...,\_)\\
     \hspace*{5cm}from {\it filename} >> {\it flora-module-name}
     \\
-    ?- flImport \{hilog|firstorder\} {\it flora-predicate/arity} as {\it 
+    ?- flImport {\it flora-predicate/arity} as {\it 
       xsb-name}(\_,\_,...,\_)\\
     \hspace*{5cm}from {\it flora-module-name}
   \end{quote}
@@ -1925,15 +1922,13 @@ To call \FLORA from within a Prolog program, say {\tt test.P}, the
   user module. The second syntax is used when the flora program is already
   loaded into a module and we only need to import the corresponding
   predicate.
-
-In both cases, the option {\tt hilog} is used to import a HiLog predicate
-and {\tt firstorder} is used to import first-order predicates. The imported
-predicate must be given a name by which the imported predicate will be
-known in Prolog.  (This name can be the same as the name used in \FLORA.)
-It is important, however, that the Prolog name be specified as shown, {\it
-  i.e.}, as a predicate skeleton with the same number of arguments as in
-the first-order predicate. For instance, {\tt foo(\_,\_,\_)} will do, but
-{\tt foo/3} will not.
+  
+  The imported predicate must be given a name by which the imported
+  predicate will be known in Prolog.  (This name can be the same as the
+  name used in \FLORA.)  It is important, however, that the Prolog name be
+  specified as shown, {\it i.e.}, as a predicate skeleton with the same
+  number of arguments as in the \FLORA predicate. For instance, {\tt
+    foo(\_,\_,\_)} will do, but {\tt foo/3} will not.
 
 Once the predicate is imported, it can be used under its Prolog name as a
 regular predicate.
@@ -2737,7 +2732,7 @@ cool thing one should write:
 \begin{verbatim}
  tom[believes->> ${alice[thinks->>floraProgramming:coolThing]}].
 \end{verbatim}
-%%
+%%$
 
 \paragraph{Reification and meta-unification.}
 Reification should not be confused with meta-unification, although they are
@@ -2861,104 +2856,6 @@ automatic conversion of arguments to and from Prolog
 representation. However, as mentioned above, such conversion is sometimes
 not necessary and the use of {\tt @prologall()} might incur unnecessary
 overhead.
-
-
-\subsection{First-Order Predicates and HiLog Predicates}
-\label{sec:flora-modules-predicates}
-
-\index{predicate!first-order}
-\index{predicate!HiLog}
-%%
-\FLORA is an object-relational language in the sense that it supports both
-the object-oriented syntax of \fl and the predicate-based ({\it i.e.},
-relational) syntax of Prolog. Incorporation of predicates is conceptually
-simple, but is somewhat burdened by pragmatic considerations, namely,
-integration with HiLog. As a result, \FLORA has two types of predicates,
-{\em first-order predicates\/} and \emph{HiLog predicates}. 
-
-Recall that the main reason for using HiLog as the native syntax and
-semantics in \FLORA is meta-programming. However, this is also one of the
-reasons for adding the first-order predicates. To explain, consider the
-following query:
-%%
-\begin{quote}
- \tt
- ?- X(a,b).
-\end{quote}
-%%
-which returns all names of binary predicates that contain
-the tuple {\tt a,b}. However, it is sometimes useful to exclude certain
-predicates from the domain of the meta-variables, such as {\tt X} above.
-For instance, if {\tt write/2}  is an I/O predicates, should the above
-query return the binding {\tt X=write}? If so, if {\tt a} happens to be the
-name of a file and {\tt b} a string, should this string be written out to
-that file as a side effect of the evaluation of this query?
-
-To avoid these semantic problems, \FLORA supports the {\tt firstorder}
-declaration, which defines certain symbols as first-order predicates. For
-instance,
-%%
-\index{compiler directive!{\tt firstorder}}
-%%
-\begin{quote}
- \tt
- :- firstorder foo/1, moo/3.
-\end{quote}
-%%
-Predicates defined in this way are outside of the range of HiLog variables.
-If you want all predicates to be shielded from meta programming, you can use
-the following compiler directive:
-%%
-\index{compiler directive!{\tt firstorderall}}
-%%
-\begin{quote}
-  \tt
-  :- firstorderall.
-\end{quote}
-
-First-order predicates are module-aware. This means that the predicates
-defined in different user, system, or Prolog modules are treated as
-unrelated entities.
-
-There is one other reason why we might sometimes choose first-order
-predicates over HiLog predicates --- predicate tabling. This issue
-is discussed in Section~\ref{sec-tabling-flora}.
-
-
-
-\subsection{Expunging of First-Order Predicates}
-
-\emph{Expunging} a predicate means deleting all of its tuples as well as
-the rules that have this predicate in the head. This operation corresponds
-to abolishing a predicate in Prolog. Only first-order predicates can be
-expunged in \FLORA.
-
-\index{{\tt expunge}}
-\index{module!{\tt expunge}}
-%
-To expunge a predicate of the form {\tt functor/arity} from the user module
-that a program is loaded into, the following compiler directive can be
-used:
-\begin{quote}
-\verb!:- expunge functor/arity.!
-\end{quote}
-
-\noindent
-{\tt expunge} can also be called like a normal predicate,
-either from the shell or from within a rule body, to expunge
-predicates in one specific user module. The syntax is shown below:
-%%
-\begin{quote}
-\verb!:- expunge functor/arity, ..., functor/arity in modulename.!
-\end{quote}
-where {\tt in} is a special keyword, and {\tt modulename} stands for the
-name of the user module from which to expunge the given list of predicates.
-
-Note that when {\tt expunge functor/arity} is used as a normal predicate
-(not as a compiler directive), it will expunge the predicate for the
-current program module.
-
-
 
 
 \section{Equality Maintenance}\label{sec-eqmaintain}
@@ -3621,20 +3518,16 @@ compilation techniques developed for Prolog. The result is a very efficient
 deductive engine.
 
 XSB lets the user specify which predicates must be tabled.  The \FLORA
-compiler automatically tables the predicates used to represent F-molecules.
-However, the user is responsible for telling the system which other
-predicates --- first-order and HiLog --- must be tabled.  \FLORA
-understands one tabling directive for first-order predicates and another
-for HiLog.  (Section~\ref{sec-comp-directives} lists all the compiler
-directives.)
+compiler automatically tables F-molecules.
+However, if the user wants to table a predicate, she must tell this to
+\FLORA using a tabling directive.
 
 \index{table}
 \index{compiler directive!{\tt table}}
 %
-To table a first-order predicate, the following can be used:
+To table a predicate, the following can be used:
 \begin{quote}
 \begin{verbatim}
-:- firstorder tc/2.
 :- table tc/2.
 
 tc(X,Y) :- edge(X,Y).
@@ -3642,20 +3535,45 @@ tc(X,Y) :- edge(X,Y), tc(Y,Z).
 \end{verbatim}
 \end{quote}
 %%
-which renders {\tt tc/2}  as a tabled first-order predicate.
+which renders {\tt tc/2}  as a tabled predicate.
 
-\index{hilogtable}
-\index{compiler directive!{\tt hilogtable}}
+Note that \FLORA supports HiLog predicates, which can have the form {\tt
+  p(a,b)(c)(X)}. Therefore, tabling in \FLORA is more elaborate than in XSB.
+In particular, it allows tabling structured predicates, such as {\tt p(\_,\_)(\_)}.
+This can be specified as
 %%
-To table HiLog predicates, \FLORA requires you to table \emph{all}
-predicates of a given arity: For instance,
+\begin{verbatim}
+ :- table p/2/1.
+\end{verbatim}
 %%
-\begin{quote}
- \tt
- :- hilogtable 3.
-\end{quote}
+meaning that the structured predicates of the form {\tt p(a,b)/1} (for all
+{\tt a} and {\tt b}) are tabled. Note that the above directive does \emph{not}
+table predicates of the form {\tt p/1} or {\tt p(a)/1}. In other words, the
+two-level tabling schema supported in \FLORA provides for a more selective
+tabling of HiLog predicates.
+
+\FLORA \emph{does not} support 3-level (or higher) tabling.  That is,
 %%
-tables all HiLog predicates of arity 3.
+\begin{verbatim}
+ :- table p/2/1/3.  
+\end{verbatim}
+%%
+will cause a parsing error.  However, note that {\tt :- table p/1/3.} will
+table all predicates of the form {\tt p(a,b)(d)/1} as well. The difference
+is that it will also table {\tt p(a,b,c)(d)/1}, {\tt p(w)(f)/1}, etc.  In
+contrast, if {\tt :- table p/2/1/3.} were allowed, then the last two
+forms would not have been tabled.\footnote{
+  %%
+  The reason for not supporting this more elaborate tabling schema is
+  because it is believed to be an overkill.
+  %%
+}
+%%
+The allowed depth of HiLog tabling can be changed by changing the constant
+{\tt FLSK\_DEPTH} in {\tt flrparser.P} and recompiling \FLORA. However,
+this might negatively affect the performance and we  believe that it is
+generally not necessary.
+
 
 %% Unimplemented -- Flora and subsumptive tabling
 It is important to keep in mind that Prolog does not do reordering of \fl
@@ -3673,18 +3591,36 @@ XSB. It is known that subsumptive tabling can speed up certain queries by
 an order of magnitude. A future version of \FLORA might take advantage of
 this technique.
 
-
-\subsection{Procedural Methods}\label{sec-proc-methods}
+\subsection{Abolishing Tables}
 
 \index{abolish\_all\_tables}
 %%
 When Prolog (and \FLORA) evaluate a program, all tabled predicates are
 partially materialized and all the computed tuples are stored in Prolog
-tables. Thus, if you change the set of facts, the existing tables must be
-discarded in order to allow Prolog to recompute the results. This is
-accomplished by issuing the predicate {\tt abolish\_all\_tables/0}
-described in the XSB manual. We discuss updates in
-Section~\ref{sec-updates}.
+tables. Thus, if you change the underlying set of facts (via insert and
+delete operations), the existing tables must be discarded in order to allow
+Prolog to recompute the results. This is accomplished by issuing the
+predicate {\tt abolish\_all\_tables/0} described in the XSB manual. We
+discuss updates in Section~\ref{sec-updates}.
+
+Note: {\tt abolish\_all\_tables/0} \emph{cannot} be used in
+%%
+\begin{enumerate}
+  \item  the body of a rule that defines an object attribute or method
+  \item  in the body of a rule that defines a tabled HiLog predicate
+\end{enumerate}
+%%
+This is because internally the above entities are represented using tables
+predicates. Execution of {\tt abolish\_all\_tables/0} in the body of such a
+rule would destroy the table for the predicate being computed by the rule.
+
+More generally, no tabled predicate or object molecule of the above sort
+can depend via rules --- directly or indirectly --- on {\tt abolish\_all\_tables/0}.
+However, it is safe to use this predicate in the body of a rule that
+defines a procedural method (defined next).
+
+
+\subsection{Procedural Methods}\label{sec-proc-methods}
 
 \index{method!procedural}
 %
@@ -3735,7 +3671,7 @@ message telling something about cutting across the tables --- you know that
 you have cut too much!
 
 The basic rule that can keep you out of trouble is: do not put a cut in the
-body of a rule \emph{after} any F-molecule or tabled first-order or HiLog
+body of a rule \emph{after} any F-molecule or tabled 
 predicate. However, it is OK to to put a cut before any F-molecule. It is
 even OK to have a cut in the body of a rule that \emph{defines} an
 F-molecule (again, provided that the body has no F-molecule to the left of
@@ -3762,7 +3698,7 @@ achieve.
 %
 \FLORA provides primitives to update the runtime database. Unlike Prolog,
 \FLORA does not require the user to define a predicate as dynamic in order
-to update it. Instead, every predicate (HiLog or first-order) and object
+to update it. Instead, every predicate and object
 has a \emph{base part} and a \emph{derived part}.  Updates directly change
 only the base parts and only indirectly the derived parts.
 
@@ -3790,12 +3726,6 @@ some facts to be updatable, use the following syntax:
 \end{quote}
 }
 %%
-
-{\bf Unimplemented}: In the current release, the base part of first-order
-predicates cannot be queried in the \FLORA shell (but it can be queried in
-the program file).  Likewise, if the {\tt firstorderall} directive is in
-effect, the base part of the first-order predicates is inaccessible to
-querying.  These limitations will be removed in the future.
 
 
 \FLORA updates can be \emph{non-backtrackable,} as in Prolog,
@@ -4487,6 +4417,7 @@ semantics \cite{gelder-alternating-89,gelder-ross-schlipf-91}. Both types
 of negation are compiled into clauses that invoke the corresponding
 operators in Prolog.
 
+\subsection{Two Operators for Negation}
 \index{tnot}
 \index{\NAF}
 %%
@@ -4542,6 +4473,32 @@ which are undefined. The correct syntax is:
 %%
 {\it i.e.}, an additional pair of parentheses is needed to indicate that
 the sequence of literals form a single argument.
+
+\subsection{True vs. Undefined Literals}
+
+The fact that the well-founded semantics for negation is three-valued
+brings up the question of what exactly does the success or failure of a
+call means. Is undefinedness covered by a success? failure?  none?  The way
+this is implemented in XSB is such that a call to a literal, $P$, succeeds
+if and only if $P$ is true \emph{or} undefined.  Therefore, it is sometimes
+necessary to be able to separate true and undefined facts. In XSB, this
+separation is accomplished by a call to the {\tt get\_residual/2}
+predicate, which is not easy to use directly in \FLORA.  To simplify this
+use, \FLORA provides a wrapper called {\tt table\_state/2}, which is a
+predicate provided by the \FLORA system module {\tt sys}.  A call to
+%%
+\index{table\_state/2}
+%%
+\begin{verbatim}
+   table_state(Call,List)@flora(sys)  
+\end{verbatim}
+%%
+succeeds if and only if {\tt Call} is either true or undefined according to
+the well-founded semantics. Moreover, {\tt Call} is true iff {\tt List} is
+nil ({\it i.e.}, {\tt []}). Thus, {\tt table\_state(Call,[])@flora(sys)}
+succeeds if and only if {\tt Call} is true.
+
+
 
 \section{Constraint Solving}\label{sec-clp}
 \index{Constraint solving}
@@ -4673,6 +4630,32 @@ whether the checks are turned on or off globally. The second query reports
 on the state of the undefinedness checks in \FLORA module {\tt foo}, while
 the third query tells in which modules these checks are turned on.
 
+\index{catch/3}
+%%
+The undefinedness exception in \FLORA can be caught using the {\tt
+  catch/3} builtin provided by the underlying Prolog engine. For instance, suppose
+$FOO$ is a predicate or an F-molecule whose execution might trigger the
+undefinedness exception. Then we can catch this exception as follows:
+%%
+\begin{verbatim}
+  ..., catch(FOO, flora_undefined_exception(Call), handler(Call)), ...
+\end{verbatim}
+%%
+(There is no need to indicate {\tt @prolog()} for {\tt catch/3} because
+{\tt catch/3} is also considered a \FLORA builtin.)
+Here {\tt handler/1} is a user-defined predicate (can be a molecule as well,
+which will be called when an undefinedness exception occurs. The variable
+{\tt Call}will be bound to an internal representation of the method or
+predicate call that caused the exception. For instance, if we define
+%%
+\begin{verbatim}
+  handler(_) :- !.  
+\end{verbatim}
+%%
+then the undefinedness exception that occurs while executing $FOO$ will be
+ignored and the call to $FOO$ will succeed (but the error message would be
+printed nonetheless).
+
 
 We should note one subtle interaction between these checks and
 meta-programming. Suppose your program does not have any class membership
@@ -4717,6 +4700,13 @@ problem by posing the following query instead:
  ?- debug[#check_undefined(off,foo)]@flora(sys),
     X:a,
     debug[#check_undefined(on,foo)]@flora(sys).
+\end{verbatim}
+%%
+
+The third way is to ignore the exception using the {\tt catch/3} builtin:
+%%
+\begin{verbatim}
+ ?- catch(X:a, flora_undefined_exception(_), true).
 \end{verbatim}
 %%
 
@@ -4855,9 +4845,6 @@ time.
 \index{compiler directive}
 %
 \index{compiler directive!{\tt index}}
-\index{compiler directive!{\tt firstorder}}
-\index{compiler directive!{\tt firstorderall}}
-\index{compiler directive!{\tt expunge}}
 \index{compiler directive!{\tt equality}}
 \index{compiler directive!{\tt arguments}}
 \index{compiler directive!{\tt op}}
@@ -4869,17 +4856,6 @@ appearance of a rule or a fact.  The following is a list of all the supported
 compiler directives:
 %%
 \begin{itemize}
-\item {\tt expunge} {\em functor/arity}, ..., {\em functor/arity}
-  \\
-  Expunges the listed first-order predicates in the current user
-  module, {\it i.e.}, deletes the contents as well as the definition of the
-  corresponding predicate. By the current module we mean the user module into
-  which the program that contains this particular {\tt expunge} directive
-  is loaded.
-\item {\tt expunge} {\em functor/arity}, ..., {\em functor/arity} {\tt
-    in} \emph{module}\\
-  Same as above, except the predicates are expunged in the specified
-    module rather than in the current user module.
   \item {\tt equality none|basic|flogic}
     \\
     Sets the equality maintenance level in the current user module.
@@ -4893,13 +4869,6 @@ compiler directives:
   \\
   Same as above, except that equality maintenance is set for the specified
   user module.
-\item {\tt firstorder} {\em functor/arity}, ..., {\em functor/arity}
-  \\
-  Declare the listed predicates as first-order predicates (as opposed to HiLog
-  predicates).
-\item {\tt firstorderall}
-  Makes all predicates into first-order predicates. (The default for predicates
-  is HiLog.)
 \item {\tt arguments} \emph{functor}(\emph{type}, ..., \emph{type}), where
   \emph{type} is either {\tt oid} or {\tt meta}
   \\
@@ -4917,23 +4886,22 @@ compiler directives:
   is useful in meta-predicates, such as {\tt findall/3}, which need to
   consider the truth value of some of their arguments rather than their
   oid.
-\item {\tt index({\it PredicateSpec,IndexSpec})}
-  \\
-  Specifies how the given first-order predicate must be indexed.
-  {\em PredicateSpec} is of the form functor/arity. \emph{IndexSpec} is
-  either {\tt trie} --- meaning that trie indexing should be used --- or a
-  number. In the last case, indexing is hash-based on the specified
-  argument (which should not exceed the arity, of course).
-  Trie indexing is best if several arguments are instantiated, beginning
-  with the first. Hash indexing is better if the fist argument is
-  uninstantiated, because then you can specify another argument to index
-  on.
   
+\item {\tt index Arity-Argument}
+  \\
+  Says that all HiLog predicates of arity {\tt Arity}should be indexed on
+  argument number {\tt Argument} (the count starts at 1). This directive
+  should appear at the beginning of a module to have any effect.
+  Normally predicates in \FLORA are indexed on predicate name only.
+  The  above directive changes this so that indexing is done on the given
+  argument number instead.
+
   Note that the {\tt index} directive is not very useful for predicates
   that mostly contain facts, because these are trie-indexed anyway
   (regardless of what you say). Thus, this instruction is useful only for
   predicates with partially instantiated arguments that appear in the rule
   heads.
+
 \item {\tt op({\it precedence},{\it type},{\it operator})}
   \\
   Defines \emph{operator} as a \FLORA operator with the given precedence
@@ -4946,9 +4914,6 @@ compiler directives:
 \item {\tt table {\it functor/arity}, ..., {\it functor/arity}}
   Requests that the specified first order predicates must be tabled.
   
-  {\bf Unimplemented}: Currently, the {\tt table} directive also requires
-  an explicit {\tt firstorder} directive, but this restriction will be
-  eliminated in the future.
 \end{itemize}
 
 
@@ -5206,6 +5171,68 @@ rules:
 \end{verbatim}
 %%
 
+\section{Miscellaneous Features}
+
+\subsection{Suppression of Banners}
+When \FLORA initializes itself, it produces a lot of chatter: the XSB
+banner, a great number of messages about the various XSB and \FLORA modules
+that are loaded, and the \FLORA welcome message. However, the user might
+not want to see all these, and when the program runs in a batch mode
+or interacts with other programs then all these messages are either not
+needed or they can complicate this interaction. To suppress these messages,
+use the following switches when invoking the system:
+%%
+\index{{\tt --nobanner}}
+\index{{\tt --quietload}}
+%%
+\begin{quote}
+{\tt --nobanner}: suppress the XSB banner and the \FLORA welcome message\\
+{\tt --quietload}: when loading a module, do not print feedback to the terminal
+\end{quote}
+%%
+Thus,
+%%
+\begin{verbatim}
+ runflora --nobanner --quietload  
+\end{verbatim}
+%%
+will get you directly to the \FLORA prompt without cluttering the terminal
+with chatter.
+
+\index{{\tt --noprompt}}
+%%
+Sometimes even the prompt stands in the way. For instance, when \FLORA
+interacts with other programs ({\it e.g.}, with a GUI) then sending the
+prompt to the other program just complicates things, as the receiving
+program needs to remember to ignore the prompt. To avoid this complication,
+the invocation flag {\tt --noprompt} is provided. Thus,
+%%
+\begin{verbatim}
+ runflora --nobanner --quietload --noprompt
+\end{verbatim}
+%%
+will print nothing on startup and will be just waiting for user input. When
+the input occurs, \FLORA will evaluate the query and return the result.
+After this, it will return to wait for the input without issuing any
+prompts.
+
+\subsection{Passing Compiler Options to XSB}
+
+\index{flora\_compiler\_options directive}
+%%
+Sometimes it is desirable to pass compiler options to the underlying prolog
+compiler. To do this, \FLORA provides the directive
+{\tt flora\_compiler\_options/1}. It takes one argument --- a list of
+options that is understood by the underlying Prolog compiler. For instance,
+the directive
+%%
+\begin{verbatim}
+  :- flora_compiler_options([spec_repr]).  
+\end{verbatim}
+%%
+will cause the module that contains this directive to be compiled with the
+XSB specialization optimization.
+
 
 \section{Bugs in Prolog and \FLORA: How to Report}
 
@@ -5355,9 +5382,12 @@ ideas, such as the use of trailer files to implement the F-logic semantics,
 trace back to the \FLIP compiler developed by Bertram Lud\"aescher.
 
 Michael Kifer helped design \FLORA, implemented the debugger, and some
-other features. Chang Zhao added a number of important enhancements, such
-as run-time undefinedness checks and the checker for dependency among
-tabled predicates and updates.
+other features.
+
+Chang Zhao made a great many of crucial enhancements to the
+system, such as run-time undefinedness checks, the checker for
+dependency among tabled predicates and updates, tabling of HiLog
+predicates, and assertion and retraction of general \FLORA program clauses.
 
 
 \appendix
@@ -5801,26 +5831,90 @@ fd(mary,salary(1998),100000).  % mary[salary(1998)->a_lot].
 \end{quote}
 %%
 
+\index{wrapper predicates}
+%%
 The {\tt fd} predicate is used to encode scalar attributes and methods and
 {\tt mvd} is used for set methods. The predicates {\tt isa} ans {\tt sub}
 encode the IS-A and subclass relationships, respectively.
+We call these predicates \emph{wrapper predicates}. 
 Of course, \FLORA has much more: signatures, inheritable and
 non-inheritable methods, directives, and all kinds of auxiliary predicates
-needed to improve efficiency. The following diagram shows the main
-predicates involved and their dependency:
+needed to improve efficiency.
+
+\FLORA facts, such as above, are then stored in a special data structure,
+called {\rm trie}, and are retrieved using  ``patch rules'' such as
 %%
 \begin{verbatim}
- fd <-                             inferred_fd
- fd <- tnot defined_inferred_fd <- inferred_fd <- base_fd
-                                   inferred_fd <- derived_fd <- fd
- fd <- tnot conflict_obj_ifd <- ifddef <- fd
-                                ifddef <- ifd
- fd <- immediate_isa
- fd <- ifd
-ifd <- inferred_ifd
-ifd <- immediate_sub
-ifd <- tnot defined_inferred_ifd
-ifd <- tnot conflict_ifd
+ fd(Obj,Meth,Val) :- storage_find_fact(TrieName, fd(Obj,Meth,Val)).  
+\end{verbatim}
+%%
+where {\tt storage\_find\_fact/2}is an XSB predicate that retrieves facts
+from tries. {\tt TrieName} is the \emph{storage trie} that is specifically
+dedicated to storing facts. There is one such trie per module. Since
+programs are loaded into modules dynamically, the name of the storage trie
+is determined at program load time. Also, as we shall discuss later, {\tt
+  fd}, {\tt mvd}, etc., are not the actual names of the predicates used in
+the encoding. The actual names have the module name prepended to them and
+thus are different for different modules. Moreover, since module names are
+determined at program load time, the names of the wrapper predicates are
+also generated at that time from predefined templates.
+
+The way \FLORA rules are encoded is more complex. Consider, the following rule:
+%%
+\begin{verbatim}
+ mary[parent->X] :- mary[father->X].  
+\end{verbatim}
+%%
+This is translated as follows:
+%%
+\begin{verbatim}
+ derived_fd(mary,parent,X) :- d_fd(mary,father,X).  
+\end{verbatim}
+%%
+This is done for a number of reasons. The prefix {\tt derived\_} is used to
+separate the head predicates from the body. It is necessary in order to
+be able to implement inheritance rules correctly, using the XSB
+well-founded semantics for negation ({\tt tnot}, see
+Section~\ref{sec:negation}). The prefix used in the body of a rule, {\tt
+  d\_}, is introduced in order to be able to capture undefined methods,
+{\it i.e.}, methods those definition was not supplied by the user (see
+Section~\ref{sec-undef}). All these predicates are connected through an
+elaborate set of rules, which appear in {\tt closure/*.flh} files and also
+in {\tt genincludes/flrpreddef.flh} (these {\tt flh}-files are generated
+from the corresponding {\tt fli}-files at \FLORA configuration time).
+The following diagram shows the main
+predicates involved in the plumbing system that connects
+the {\tt derived\_} and {\tt d\_}; the arrow {\tt ->}indicates the
+immediate dependency relationship, {\it i.e.}, that the predicate on the
+right appears in the body of a rule that defines the predicate on the left.
+
+\noindent
+In program rules:
+%%
+\begin{verbatim}
+derived_fd <- d_fd  
+\end{verbatim}
+%%
+\noindent
+In auxiliary runtime libraries:
+%%
+\begin{verbatim}
+d_fd  <-  fd
+d_ifd <- ifd
+          fd <-      inferred_fd
+          fd <- tnot inferred_fd      <- derived_fd <- base_fd
+          fd <- tnot conflict_obj_ifd                            <- ifddef <- fd
+          fd <-      ifd
+          fd <-      immediate_isa
+
+         ifd <-      immediate_sub
+         ifd <-      inferred_ifd     <- derived_ifd
+         ifd <- tnot inferred_ifd
+         ifd <- tnot conflict_ifd                                <- ifddef
+
+      ifddef <-      ifd
+
+     base_fd <- storage_find_fact(...trie_name..., fd(...))
 \end{verbatim}
 %%
 Here we listed only the predicates that are used to model scalar
@@ -5839,8 +5933,24 @@ semantics of \fl. In particular, they take care of the following features:
   hierarchy.
 \item Computing the closure of ``\isa'' with respect to ``\subcl'', i.e.,
   if $X\isa C, C\subcl D$ then $X\isa D$.
-\item Performing monotonic and non-monotonic inheritance.
+\item Performing monotonic and non-monotonic inheritance. The predicates
+  {\tt conflict\_obj\_ifd}, {\tt conflict\_ifd}, {\tt immediate\_sub}, {\tt
+    immediate\_isa}, are used for this purpose.
 \item Making sure that scalar methods are, indeed, scalar.
+\item Making sure that when the equality maintenance mode changes as a
+  result of the executable instruction {\tt :- equality
+  \{basic|flogic|none\}}, program clauses are not overwiritten by the
+  rules specified in \FLORA runtime libraries. This is the reason for
+  having the wrappers {\tt derived\_fd} and {\tt inferred\_fd}. The former
+  appear only in the rule heads of the clauses generated by the compiler
+  from the clauses in the user's program, while the latter appear only in
+  the rule heads in runtime libraries.
+\item Providing the infrastructure for capturing undefined methods.
+  The purpose of the {\tt d\_fd}/{\tt fd} dichotomy is to provide a gap
+  into which we inject rules
+  (which are enabled only if runtime debugging is turned on using
+  {\tt debug[\#check\_undefined(on)]}) that can capture calls to undefined
+  methods at run time.
 \end{itemize}
 %%
 Templates for the files that implement these axioms reside in the
@@ -5869,10 +5979,14 @@ part of their code. Precompiled, loadable trailers for the default module
 {\tt main} are stored in the {\tt trailer/} subdirectory. This is done at
 the system build time.  When an equality maintenance instruction is
 executed for a particular module, the trailer for that module must be
-compiled dynamically.  (The need for this compilation will become clear
-after reading about the implementation of the module system.)  These
-trailers are stored in the user home directory in the subdirectory {\tt
-  .xsb/flora/}.
+compiled and loaded dynamically.  (The need for this compilation will
+become clear after we explain the implementation of the module system.)
+These trailers are stored in the user home directory in the subdirectory
+{\tt .xsb/flora/}.  As mentioned earlier, \FLORA uses different names for
+the wrapper predicates that appear in the rule heads in user programs and
+those that appear in the rule heads in trailers. This makes it possible to
+load the trailers (by executing the {\tt equality} instruction) at any time
+without overriding the user program.
 
 The above is a much simplified picture of the inner-workings of \FLORA. The
 actual translation into Prolog and the form of the closure rules is very
@@ -6031,20 +6145,14 @@ Of course, the name of the triehandle and the predicate names must be
 generated using the macros, as described above, so that they could be used
 for any module. In \FLORA such rules are called \emph{patch rules}. 
 
-Since \fl uses only about a dozen of predicates to represent
-F-molecules, we can create such rules statically and let {\tt gpp} wrap
-them with the appropriate prefixes on the fly.
-The problem arises with first-order predicates, because they need
-to be collected by the compiler and a separate rule needs to be created for
-each first-order predicate. The static patch rules are located in
-{\tt genincludes/flrpatch.fli} (from which {\tt flrpatch.flh} is generated
-during the installation).  The patch rules for the first-order
-predicates are dumped directly into the {\tt .P} file of the main program
-generated by the \FLORA compiler.
-
-A similar problem arises when the user enters a {\tt firstorder} directive
-to the shell. In this case, a patch rule must be generated dynamically and
-asserted into the system.
+Since \fl uses only about the predicates that represent F-molecules, we can
+create such rules statically and let {\tt gpp} wrap them with the
+appropriate prefixes on the fly.  The problem arises with predicates, since
+although they are represented using HiLog encoding using a single
+predicate, this predicate can have any arity.  At present we statically
+create patch rules for such predicates up to a certain large arity.  The
+static patch rules are located in {\tt genincludes/flrpatch.fli} (from
+which {\tt flrpatch.flh} is generated during the installation).
 
 One complication is that the file {\tt flrpatch.flh} must be compiled for
 the right module, so the preprocessor macro {\tt FLORA\_USER\_WORKSPACE} can

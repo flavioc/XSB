@@ -36,7 +36,7 @@ ALLOBJS = flrarguments${OBJEXT} \
 	  flrcoder${OBJEXT} \
 	  flrdependency${OBJEXT} \
 	  flora2devel${OBJEXT} \
-	  flrfirstorder${OBJEXT} \
+	  flrhilogtable${OBJEXT} \
 	  flrlexer${OBJEXT} \
 	  flrlibman${OBJEXT} \
 	  flrnodefp${OBJEXT} \
@@ -131,8 +131,8 @@ flrprolog${OBJEXT} : flrprolog${PROLOGEXT} flrprolog.H $(FLORA_TERMS)
 	@echo 'mc(flrprolog,$(OPTION)).' >> cmd...
 
 
-flrfirstorder${OBJEXT} : flrfirstorder${PROLOGEXT} flrfirstorder.H $(FLORA_TERMS)
-	@echo 'mc(flrfirstorder,$(OPTION)).' >> cmd...
+flrhilogtable${OBJEXT} : flrhilogtable${PROLOGEXT} flrhilogtable.H $(FLORA_TERMS)
+	@echo 'mc(flrhilogtable,$(OPTION)).' >> cmd...
 
 
 flrprint${OBJEXT} : flrprint${PROLOGEXT} flrprint.H

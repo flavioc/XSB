@@ -22,8 +22,7 @@ ALLOBJS =  flranswer$(OBJEXT) \
 	   flrshdirect$(OBJEXT) \
 	   flrdynmod$(OBJEXT) \
 	   flrequality$(OBJEXT) \
-	   flrimport$(OBJEXT) \
-	   flrexpunge$(OBJEXT)
+	   flrimport$(OBJEXT)
 
 OPTIONS = [optimize]
 

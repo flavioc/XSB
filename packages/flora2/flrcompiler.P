@@ -64,17 +64,11 @@ is_fltable(FLTABLE(P,A),P,A).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
-is_flstaticfo(FLSTATICFO(F,N),F,N).
-is_flfirstorder(FLFIRSTORDER(F,N),F,N).
-is_flindex(FLINDEX(F,A,Name),F,A,Name).
-is_flhilogtable(FLHILOGTABLE(A),A).
+is_flindex(FLINDEX(A,P),A,P).
 is_flequality(FLEQUALITY(A),A).
 is_flequality(FLEQUALITY(A,M),A,M).
-is_flexpunge(FLEXPUNGE(FAList),FAList).
-is_flexpunge(FLEXPUNGE(FAList,M),FAList,M).
+is_flcmpopt(FLCMPOPT(OptList),OptList).
 %% These two are used for the build process only--want to get rid of them
-is_flflogicstatic(FLFLOGICSTATIC(F,N),F,N).
-is_flflorapatch(FLFLORAPATCH(F,N),F,N).
 
 is_flconjunct(FLCONJUNCT(L,R),L,R).
 is_fldisjunct(FLDISJUNCT(L,R),L,R).
@@ -218,8 +212,6 @@ approximate_index(FLDELETE(Op,_List),I)           :- !, approximate_index(Op,I).
 ****************************************************************************/
 rule_struct(Head,Body,PRRULE(Head,Body)).
 
-patchrule_struct(Head,Body,PRPATCHRULE(Head,Body)).
-
 fact_struct(Head,PRFACT(Head)).
 query_struct(Goal,PRQUERY(Goal)).
 directive_struct(Direct,PRDIRECTIVE(Direct)).
@@ -230,8 +222,8 @@ command_struct(C,PRCOMMAND(C)).
 table_struct(F,N,PRTABLE(F,N)).
 %% We keep the import directive's support mechanism for @prolog(module)
 import_struct(F,N,M,PRIMPORT(F,N,M)).
-index_struct(F,A,N,PRINDEX(F,A,N)).
-hilogtable_struct(A,PRHILOGTABLE(A)).
+index_struct(A,P,PRINDEX(A,P)).
+cmpopt_struct(OptList,PRCMPOPT(OptList)).
 
 
 /****************************************************************************
@@ -308,12 +300,6 @@ thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
 thisstorage_struct(fdb,PRTHISFDBSTORAGE(PRTHISFDBSTORAGE)).
 %% support for checking undefinedness
 thisstorage_struct(fld,PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
-
-%% Generates things like FLORA_DB_FIND(Storage,Fact)
-storage_find_call_struct(StorageType,Fact,GetFromStorageCode) :-
-	thisstorage_struct(StorageType,StorageNameCode),
-	atomobj_struct(FLORA_DB_FIND_PREDICATE,FCode),
-	prologterm_struct(FCode,2,[StorageNameCode,Fact],GetFromStorageCode).
 
 floralib_struct(WS,PRFLORALIB(WS)).
 storage_struct(WS,PRFDBSTORAGE(WS)).
@@ -508,6 +494,8 @@ objattdef_struct(Obj,RefType,Att,Code) :-
 	  imvddef_struct(Obj,Att,Code)
         ).
 
+%% This is for ->>, *->>, =>, *=>, =>>, *=>> when the attribute is defined,
+%% but its value is empty set
 mvdattdef_struct(Object,AttObj,RefType,Code) :-
 	( is_mvdspecop(RefType) ->
 	    mvddef_struct(Object,AttObj,Code)
@@ -532,7 +520,7 @@ mvdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	; is_imvdsigspecop(RefType),
 	    imvdsigspec_struct(Object,AttObj,ValObj,Code)
 	%% Note: => and *=> are permitted to have multiple values
-	%%       (semantic is intersection)
+	%%       (semantics is intersection)
 	; is_fdsigspecop(RefType) ->
 	    fdsigspec_struct(Object,AttObj,ValObj,Code)
 	; is_ifdsigspecop(RefType) ->
@@ -955,57 +943,6 @@ report_option(Option) :- assert(TMPOPTION(Option)).
 
 
 /****************************************************************************
-   generate_patchrule(+HeadP,+BodyP,+Arity,+StorageType,-Code)
-
-   Generate patch rule of the form:
-   HeadP(X1,...,XN) :- FLORA_DB_FIND_PREDICATE(<StorageName>,BodyP(X1,...,XN))
-****************************************************************************/
-generate_patchrule(HeadP,BodyP,Arity,StorageType,Code) :-
-	atomobj_struct(HeadP,HPCode),
-	atomobj_struct(BodyP,BPCode),
-	new_varobjlist(Arity,ArgsCode),
-	termlit_struct(HPCode,Arity,ArgsCode,HeadCode),
-	termlit_struct(BPCode,Arity,ArgsCode,BodyFactCode),
-	storage_find_call_struct(StorageType,BodyFactCode,BodyCode),
-	patchrule_struct(HeadCode,BodyCode,Code).
-
-
-/****************************************************************************
-    generate_undefinedness_traprule(+Pred,+Arity,-Code)
-
-    Generate a rule for checking undefinedness of firstorder predicates.
-    Note: the rules for F-logic wrapper predicates look differently
-    and they are explicitly defined in
-                       genincludes/flrpreddef.fli
-    The rules for firstorder predicates look as follows:
-      P(X1,...,XN) :-
-	  flora_debug_module_registry(ThisModule),
-	  not FLORA_DB_FIND_PREDICATE(ThisModuleFLDStorageName,P(X1,...,XN)),
-	  flora_error_undefined(P(X1,...,XN)),
-	  abort.
-****************************************************************************/
-generate_undefinedness_traprule(Pred,Arity,Code) :-
-	atomobj_struct(Pred,PCode),
-	new_varobjlist(Arity,ArgsCode),
-	termlit_struct(PCode,Arity,ArgsCode,HeadCode),
-	atomobj_struct(flora_debug_module_registry, DMCode),
-	thismodule_struct(ModCode),
-	%% generate flora_debug_module_registry(ThisModule)
-	prologterm_struct(DMCode,1,[ModCode],DebugCode),
-	storage_find_call_struct(fld,HeadCode,FldBCode),
-	%% generate  not FLORA_DB_FIND(ThisModuleFLDStorageName,Pred(...))
-	not_struct(FldBCode,NotCode),
-	atomobj_struct(flora_error_undefined, ECode),
-	prologterm_struct(ECode,1,[HeadCode],MsgCode),
-	%% generate flora_error_undefined(Pred(...))
-	conjunct_code([DebugCode,NotCode,MsgCode], NMCode),
-	atomobj_struct(abort,ACode),
-	prologterm_struct(ACode,0,[],AbortCode),
-	conjunct_struct(NMCode,AbortCode,BodyCode),
-	patchrule_struct(HeadCode,BodyCode,Code).
-
-
-/****************************************************************************
   initialize_work
 ****************************************************************************/
 initialize_work :-
@@ -1096,35 +1033,32 @@ compile_directive([D|L],CodeList-ListTail,Status) :-
         ).
 
 
-%% Some directives imply additional code. E.g., table implies firstorder
+%% Some directives imply additional code.
 compile_direct(DirectTerm,[Code|ImpliedCode],[]) :-
 	( is_flcommand(DirectTerm,C) ->
 	    command_struct(C,Direct),
 	    ImpliedCode = []
 
 	; is_fltable(DirectTerm,P,A) ->
-	    table_struct(P,A,Direct),
-	    ImpliedCode = []
-	/*
-	    %% :- table P/N implies :- firstorder P/N.
-	    (flora_firstorderdef(P,A) -> ImpliedCode = []
-	    ; flora_define_firstorder(P,A),
-		generate_patchrule(P,P,A,fdb,FdbLinkingCode),
-		generate_undefinedness_traprule(P,A,NotFoundCode),
-		ImpliedCode = [NotFoundCode,FdbLinkingCode]
-	    )
-	*/
-
-	; is_flindex(DirectTerm,P,A,N) ->
-	    index_struct(P,A,N,Direct),
+        get_slash_sep_numbers(A,ATerm),
+        ( is_flvar(P,PName,_PI) ->
+            flora_define_hilogtable(_,ATerm),
+            table_struct(_,ATerm,Direct)
+        ;
+            is_flatom(P,PName,_PI),
+            flora_define_hilogtable(PName,ATerm),
+            table_struct(PName,ATerm,Direct)
+        ),
 	    ImpliedCode = []
 
-	; is_flhilogtable(DirectTerm,A) ->
-	    hilogtable_struct(A,Direct),
-	    ImpliedCode = []
         ),
 	!,
 	directive_struct(Direct,Code).
+
+compile_direct(DirectTerm,[],[]) :-
+	is_flindex(DirectTerm,A,P),
+	report_option(FLINDEX(A,P)),
+	!.
 
 compile_direct(DirectTerm,[],[]) :-
 	is_flopdef(DirectTerm,P,A,O),
@@ -1139,31 +1073,6 @@ compile_direct(DirectTerm,[],[]) :-
 compile_direct(DirectTerm,[],[]) :-
 	is_flprolog(DirectTerm,P,N),
 	flora_define_prolog(P,N),
-	!.
-
-compile_direct(DirectTerm,CodeList,[]) :-
-	is_flfirstorder(DirectTerm,P,N),
-	%% Check if it is a firstorderall
-	( (var(P); var(N)) ->
-	    flora_define_firstorder(P,N),
-	    CodeList=[]
-	; %% or has already been defined firstorder
-	    flora_firstorderdef(P,N) ->
-	    CodeList=[]
-	; %% new definition of a first-order predicate P/N
-	  flora_define_firstorder(P,N),
-	  %% Generate the patch rule to link predicate to FDB storage
-	  generate_patchrule(P,P,N,fdb,FdbLinkingCode),
-	  %% Generate rule for checking undefinedness
-	  generate_undefinedness_traprule(P,N,NotFoundCode),
-
-	  CodeList=[NotFoundCode,FdbLinkingCode]
-	),
-	!.
-
-compile_direct(DirectTerm,[],[]) :-
-	is_flstaticfo(DirectTerm,P,N),
-	flora_define_firstorder(P,N),
 	!.
 
 compile_direct(DirectTerm,CodeList,[]) :-
@@ -1187,43 +1096,16 @@ compile_direct(DirectTerm,CodeList,[]) :-
 	!.
 
 compile_direct(DirectTerm,[Code],[]) :-
-	( is_flexpunge(DirectTerm,FAList) ->
-	    thismodule_struct(M)
+	is_flcmpopt(DirectTerm,OptList),
+	( member(XSB_SPECREPR,OptList) ->
+	    report_option(XSB_SPECREPR)
 	;
-	  is_flexpunge(DirectTerm,FAList,M)
+	    true
 	),
-	compile_falist(FAList,FACodeList),
-	list_struct(FACodeList,[],FAListCode),
-	florasyslib_struct(FLLIBEXPUNGE,2,[FAListCode,M],CCode),
-	query_struct(CCode,Code),
+	cmpopt_struct(OptList,OCode),
+	directive_struct(OCode,Code),	
 	!.
-
-compile_direct(DirectTerm,[],[]) :-
-	is_flflogicstatic(DirectTerm,P,N),
-	flora_define_flogicstatic(P,N),
-	!.
-
-compile_direct(DirectTerm,[Code],[]) :-
-	is_flflorapatch(DirectTerm,P,N),
-	%% Generate the patch rule for F-logic and others. The F-logic
-	%% head should be prepended with FLHEADPREFIX while the storage
-	%% fact should be prepended with FLBODYPREFIX.
-	( flora_is_dynamic_flogic_base(P,N) ->
-	    flora_concat_atoms([FLFACTPREFIX,P],HP),
-	    flora_concat_atoms([FLBODYPREFIX,P],BP),
-	    %% flogicstatic will ensure that module name will
-	    %% be wrapped around the predicate names
-	    flora_define_flogicstatic(HP,N),
-	    flora_define_flogicstatic(BP,N),
-	    %% Link P to FDB storage
-	    generate_patchrule(HP,BP,N,fdb,Code)
-	;
-	  %% A HiLog predicate
-	  flora_define_flogicstatic(P,N),
-	  %% Link HiLog wrapper to FDB storage
-	  generate_patchrule(P,P,N,fdb,Code)
-	),
-	!.
+	
 
 /****************************************************************************
   compile_flatomvar(+T,-Code)
@@ -1237,20 +1119,16 @@ compile_flatomvar(T,Code) :-
 	      atomobj_struct(T,Code)
 	    ).
 
-
 /****************************************************************************
-  compile_falist(+FAList,-FACodeList)
+  get_slash_sep_numbers(+Old,-New)
 ****************************************************************************/
-compile_falist([],[]) :- !.
+get_slash_sep_numbers(N,M) :-
+    is_flnumber(N,M),
+    !.
 
-compile_falist([F/A|L],[Code|CL]) :-
-	!,
-	%% F/A is generated by the parser routines for compiler directives.
-	compile_flatomvar(F,FCode),
-	compile_flatomvar(A,ACode),
-	atomobj_struct('/',Funct),
-	prologterm_struct(Funct,2,[FCode,ACode],Code),
-	compile_falist(L,CL).
+get_slash_sep_numbers(FLTERM(FLATOM(FL_SLASH,_I),2,[N1,N2]),FL_SLASH(M1,M2)) :-
+    get_slash_sep_numbers(N1,M1),
+    is_flnumber(N2,M2).
 
 
 /****************************************************************************
@@ -4107,53 +3985,28 @@ compile_execdirect_list([D|L],[DCode|LCode]) :-
 ****************************************************************************/
 compile_execdirect(DirectTerm,Code) :-
 	( is_fltable(DirectTerm,P,A) ->
-	    table_struct(P,A,Code)
+        compile_flatomvar(P,PCode),
+        ( is_flterm(A,Funct,N,Args) ->
+          compile_fltermobj(Funct,N,Args,NCode,_OidCode,_RCode,_Status)
+        ;
+          numobj_struct(A,NCode)
+        ),
+        thismodule_struct(MCode),
+        florasyslib_struct(FLLIBSHDIRECT,4,[FL_TABLE,MCode,PCode,NCode],Code)
 
-	; is_flindex(DirectTerm,P,A,N) ->
-	    index_struct(P,A,N,Code)
-
-	; is_flhilogtable(DirectTerm,A) ->
-	    hilogtable_struct(A,Code)
+	; is_flindex(DirectTerm,A,P) ->
+	    index_struct(A,P,Code)
         ),
 	!.
 
 compile_execdirect(DirectTerm,Code) :-
 	(
-	  is_flfirstorder(DirectTerm,Funct,Arity) ->
-	    %% Both Funct and Arity could be a variable because of the parsing
-	    %% of the directive firstorderall.
-	    ( var(Funct) ->
-		new_varobj(NO_INDEX,FunctCode)
-	    ;
-	      compile_flatomvar(Funct,FunctCode)
-	    ),
-	    ( var(Arity) ->
-		new_varobj(NO_INDEX,ArityCode)
-	    ;
-	      compile_flatomvar(Arity,ArityCode)
-	    ),
-	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_FIRSTORDER,FunctCode,ArityCode],Code)
-
-	; is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
+	  is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
 	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_OP,Precedence,Associativity,Op],Code)
 
 	; is_flarguments(DirectTerm,Funct,Arity,Args) ->
 	    list_struct(Args,[],ArgsCode),
 	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_ARGUMENTS,Funct,Arity,ArgsCode],Code)
-	),
-	!.
-
-compile_execdirect(DirectTerm,Code) :-
-	( is_flexpunge(DirectTerm,FAList) ->
-	    compile_falist(FAList,FACodeList),
-	    list_struct(FACodeList,[],FAListCode),
-	    florasyslib_struct(FLLIBEXPUNGE,1,[FAListCode],Code)
-
-	; is_flexpunge(DirectTerm,FAList,M) ->
-	    compile_falist(FAList,FACodeList),
-	    list_struct(FACodeList,[],FAListCode),
-	    compile_flatomvar(M,MObj),
-	    florasyslib_struct(FLLIBEXPUNGE,2,[FAListCode,MObj],Code)
 	),
 	!.
 

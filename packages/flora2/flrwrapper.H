@@ -44,10 +44,6 @@
 	flora_system_module_predicate/4,
 	flora_module_predicate/4,
 
-	flora_firstorder_user_module_predicate/4,
-	flora_firstorder_system_module_predicate/4,
-	flora_firstorder_module_predicate/4,
-
 	flora_user_module_predicate_symbol/3,
 	flora_system_module_predicate_symbol/3,
 	flora_module_predicate_symbol/3,
@@ -56,9 +52,17 @@
 	flora_hilog_system_module_predicate_symbol/2,
 	flora_hilog_module_predicate_symbol/2,
 
-	flora_firstorder_user_module_predicate_symbol/3,
-	flora_firstorder_system_module_predicate_symbol/3,
-	flora_firstorder_module_predicate_symbol/3,
+	flora_tabled_hilog_user_module_predicate_symbol/2,
+	flora_tabled_hilog_system_module_predicate_symbol/2,
+	flora_tabled_hilog_module_predicate_symbol/2,
+
+	flora_dyna_hilog_user_module_predicate_symbol/2,
+	flora_dyna_hilog_system_module_predicate_symbol/2,
+	flora_dyna_hilog_module_predicate_symbol/2,
+
+	flora_dynz_hilog_user_module_predicate_symbol/2,
+	flora_dynz_hilog_system_module_predicate_symbol/2,
+	flora_dynz_hilog_module_predicate_symbol/2,
 
 	flora_module_name/3,
 	flora_check_module_name/1,

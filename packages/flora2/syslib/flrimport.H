@@ -27,13 +27,12 @@
 
 :- import copy_term/2 from basics.
 :- import flora_load_module_internal/2 from flrutils.
-:- import flora_firstorder_module_predicate_symbol/3,
+:- import
 	flora_hilog_module_predicate_symbol/2
     from flrwrapper.
 
 :- export
-	flImportFirstorder/4,
-	flImportHiLog/4.
+	flImportPredicate/4.
 
 
 

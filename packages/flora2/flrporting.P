@@ -45,6 +45,8 @@
 :- import xsb_configuration/2 from xsb_configuration.
 :- import path_sysop/2, path_sysop/3, copyIOport/2 from file_io.
 
+:- import banner_control/1 from banner.
+
 
 :- export
 	flora_write_quoted_atom/1,
@@ -68,7 +70,8 @@
 	flora_cputime/1,
 	flora_module_path_get/1,
 	flora_module_path_add/1,
-	flora_module_path_remove/1.
+	flora_module_path_remove/1,
+	flora_banner_control/1.
 
 
 flora_term_to_atom(Term,Atom) :- fmt_write_string(Atom,'%S',arg(Term)).
@@ -188,3 +191,6 @@ flora_running_under(darwin) :-
 	str_sub(rhapsody,A),
 	!.
 flora_running_under(unix).
+
+
+flora_banner_control(X) :- banner_control(X).

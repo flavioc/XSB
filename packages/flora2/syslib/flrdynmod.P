@@ -32,8 +32,7 @@
 :- import
 	flora_check_module_name/1,
 	flora_module_predicate/4,
-	flora_decode_module_prefix/3,
-	flora_firstorder_module_predicate/4
+	flora_decode_module_prefix/3
    from flrwrapper.
 
 :- import flora_error_line/2 from flrprint.
@@ -112,27 +111,3 @@ fllibmodobj(F,Arg,ModuleName,P) :-
 	),
 	!.
 
-
-/*********************************************************************
-  fllibmodlit(FL_FIRSTORDER,+Functor,+Args,+ModuleName)
-*********************************************************************/
-fllibmodlit(FL_FIRSTORDER,F,Args,ModuleName) :-
-	( flora_check_module_name(ModuleName) ->
-	    flora_firstorder_module_predicate(F,Args,ModuleName,P),
-	    !,
-	    call(P)
-	;
-	  abort
-	).
-
-
-/*********************************************************************
-  fllibmodobj(FL_FIRSTORDER,+Functor,+Args,+ModuleName,-Predicate)
-*********************************************************************/
-fllibmodobj(FL_FIRSTORDER,F,Args,ModuleName,P) :-
-	( flora_check_module_name(ModuleName) ->
-	    flora_firstorder_module_predicate(F,Args,ModuleName,P)
-	;
-	  abort
-	),
-	!.

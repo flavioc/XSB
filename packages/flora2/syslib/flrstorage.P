@@ -47,16 +47,13 @@
 	flora_module_name_error/1,
 	flora_fdb_storage_name/2,
 	flora_decode_module_name/2,
-	flora_module_predicate/4,
-	flora_firstorder_module_predicate/4
+	flora_module_predicate/4
    from flrwrapper.
 
 :- import
 	FLSYSDBUPDATE/2,
 	FLLIBMODLIT/3,
-	FLLIBMODLIT/4,
-	FLLIBMODOBJ/4,
-	FLLIBMODOBJ/5
+	FLLIBMODOBJ/4
    from usermod.
 
 :- export
@@ -173,29 +170,9 @@ flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName)|Fs],
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
 
-flora_storage_convertlist([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)|Fs],
-                          [flora_storage_check_module_name(ModuleName),
-			   flora_firstorder_module_predicate(F,Args,ModuleName,P),
-			   flora_fdb_storage_name(ModuleName,StorageName),
-                           storage_find_fact(StorageName,P)|CL
-			  ],
-			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
-	!,
-	flora_storage_convertlist(Fs,CL,FL).
-
 flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,O)|Fs],
                           [( flora_check_module_name(ModuleName) ->
 			       flora_module_predicate(F,Args,ModuleName,O)
-			   ;
-			     abort
-			   )|CL],
-			  FL) :-
-	!,
-	flora_storage_convertlist(Fs,CL,FL).
-
-flora_storage_convertlist([FLLIBMODOBJ(FL_FIRSTORDER,F,Args,ModuleName,O)|Fs],
-                          [( flora_check_module_name(ModuleName) ->
-			       flora_firstorder_module_predicate(F,Args,ModuleName,O)
 			   ;
 			     abort
 			   )|CL],

@@ -28,6 +28,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_exceptions.flh"
 #include "flora_porting.flh"
 
 #define MOST_GENERAL	most_general
@@ -117,11 +118,7 @@ flora_build_debug_skeleton(Term,Sk,_GFlag) :-
 	( flora_prlgdef(A,0) ->
 	    fail
         ;
-	    ( (flora_firstorderdef(A,0); flora_flogicstaticdef(A,0)) ->
-	        Sk=A
-	    ;
 		Sk=WRAP_HILOG(A)
-	    )  
         ).
 
 flora_build_debug_skeleton(Term,Sk,GFlag) :-
@@ -131,12 +128,8 @@ flora_build_debug_skeleton(Term,Sk,GFlag) :-
 	    ( flora_prlgdef(FAtom, N) ->
 	        fail
 	    ;
-	        ( (flora_firstorderdef(FAtom,N); flora_flogicstaticdef(FAtom,N)) ->
-		    functor(Sk,FAtom,N)
-		;
 		    var_list(N,ObjListCode),
 		    Sk=..[WRAP_HILOG,FAtom|ObjListCode]
-		)
 	    )
 	;
 	    var_list(N,ObjListCode),
@@ -239,12 +232,7 @@ flora_build_debug_skeleton(_, _, _) :-
 generate_patches :-
  	term_seen(Term),
 	Term =.. [F|Args],
-	length(Args,N),
-	( flora_firstorderdef(F,N) ->
-	    flora_write_atom('FLORA_FO_THIS_WORKSPACE(')
-	;
-	    flora_write_atom('FLORA_THIS_WORKSPACE(')
-	),
+	flora_write_atom('FLORA_THIS_WORKSPACE('),
 	flora_write_quoted_atom(F),
 	put(0')),
 	put(0'(),
@@ -460,18 +448,10 @@ flora_error_undefined(Predicate) :-
 	),
    	flora_build_skeleton(QCode,QSkeleton),
 	QSkeleton = [QFunct|QArgs],
-	( (PType=firstorder) ->
-	    ( (ModuleType=user) ->
-	        flora_concat_atoms([FLORA_FO_USER_MODULE_PREFIX, ''''], F1)
-	    ;
-	        flora_concat_atoms([FLORA_FO_SYSTEM_MODULE_PREFIX, ''''], F1)
-	    )
+	( (ModuleType=user) ->
+	    flora_concat_atoms([FLORA_USER_MODULE_PREFIX, ''''], F1)
 	;
-	    ( (ModuleType=user) ->
-	        flora_concat_atoms([FLORA_USER_MODULE_PREFIX, ''''], F1)
-	    ;
-	        flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX, ''''], F1)
-	    )
+	    flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX, ''''], F1)
 	),
 	flora_concat_atoms([F1,ModuleName,'''',QFunct],QNewFunct),
 	QSk =.. [QNewFunct|QArgs],
@@ -499,23 +479,20 @@ flora_error_undefined(Predicate) :-
 	    fail
 	;
 	    predicate_msg(PSymbol, AList, PMsg),
-	    ( (PType==firstorder) ->
-	        TypeMsg = 'Undefined firstorder predicate'
-	    ;
-	        ( PType==flogic, (PSymbol==WRAP_ISA ; PSymbol==WRAP_SUB) ->
-		    TypeMsg = 'Undefined class'
-	        ; PType==flogic ->
-	 	    TypeMsg = 'Undefined method'
+	    ( PType==flogic, (PSymbol==WRAP_ISA ; PSymbol==WRAP_SUB) ->
+		TypeMsg = 'Undefined class'
+	    ; PType==flogic ->
+	 	TypeMsg = 'Undefined method'
 		;
-		    TypeMsg = 'Undefined predicate'
-	        )
+		TypeMsg = 'Undefined predicate'
 	    ),
 	    ( MName=flora(Name) ->
 		flora_error_line('~w ~w in system module ~w', [TypeMsg,PMsg,Name])
 	    ;
 		flora_error_line('~w ~w in user module ~w', [TypeMsg,PMsg,MName])
 	    )
-	).
+	),
+	throw(FLORA_UNDEFINED_EXCEPTION(Predicate)).
 
 /**************************************************
  * predicate_msg(+PredicateSymbol, +ArgList, -PMsg)

@@ -80,38 +80,6 @@ flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
 
 
 /*****************************************************************************
-  flora_firstorder_user_module_predicate(+Functor,+Args,+Workspace,-Predicate)
-*****************************************************************************/
-flora_firstorder_user_module_predicate(Functor,Args,WS,Predicate) :-
-	flora_concat_atoms([FLORA_FO_USER_MODULE_PREFIX,'''',WS,'''',Functor],PF),
-	Predicate =.. [PF|Args].
-
-
-/*****************************************************************************
-  flora_firstorder_system_module_predicate(+Functor,+Args,+SysModID,-Predicate)
-*****************************************************************************/
-flora_firstorder_system_module_predicate(Functor,Args,SysModID,Predicate) :-
-	flora_concat_atoms([FLORA_FO_SYSTEM_MODULE_PREFIX,'''',SysModID,'''',Functor],PF),
-	Predicate =.. [PF|Args].
-
-
-/*****************************************************************************
-  flora_firstorder_module_predicate(+Functor,+Args,+ModuleName,-Predicate)
-*****************************************************************************/
-flora_firstorder_module_predicate(Functor,Args,ModuleName,Predicate) :-
-	flora_module_name(ModuleName,Type,WS),
-	!,
-	( Type == usermodule ->
-	    flora_firstorder_user_module_predicate(Functor,Args,WS,Predicate)
-
-	; Type == systemmodule ->
-	    flora_firstorder_system_module_predicate(Functor,Args,WS,Predicate)
-	;
-	  fail
-	).
-
-
-/*****************************************************************************
   These procedures construct a predicate symbol for a Flora user/system module.
 
   flora_user_module_predicate_symbol(+Functor,+Workspace,-Predicate)
@@ -146,21 +114,57 @@ flora_hilog_module_predicate_symbol(ModuleName,Predicate) :-
 
 
 /*****************************************************************************
-  These procedures construct a first order predicate symbol for a Flora
-  user/system module.
+  These procedures return the Tabled HiLog wrapper for a Flora user/system
+  module.
 
-  flora_firstorder_user_module_predicate_symbol(+Functor,+Workspace,-Predicate)
-  flora_firstorder_system_module_predicate_symbol(+Functor,+Workspace,-Predicate)
-  flora_firstorder_module_predicate_symbol(+Functor,+ModuleName,-Predicate)
+  flora_tabled_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tabled_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
+  flora_tabled_hilog_module_predicate_symbol(+ModuleName,-Predicate)
 *****************************************************************************/
-flora_firstorder_user_module_predicate_symbol(Functor,WS,Predicate) :-
-	flora_firstorder_user_module_predicate(Functor,[],WS,Predicate).
+flora_tabled_hilog_user_module_predicate_symbol(WS,Predicate) :-
+	flora_user_module_predicate(WRAP_TABLED_HILOG,[],WS,Predicate).
 
-flora_firstorder_system_module_predicate_symbol(Functor,WS,Predicate) :-
-	flora_firstorder_system_module_predicate(Functor,[],WS,Predicate).
+flora_tabled_hilog_system_module_predicate_symbol(WS,Predicate) :-
+	flora_system_module_predicate(WRAP_TABLED_HILOG,[],WS,Predicate).
 
-flora_firstorder_module_predicate_symbol(Functor,ModuleName,Predicate) :-
-	flora_firstorder_module_predicate(Functor,[],ModuleName,Predicate).
+flora_tabled_hilog_module_predicate_symbol(ModuleName,Predicate) :-
+	flora_module_predicate(WRAP_TABLED_HILOG,[],ModuleName,Predicate).
+
+
+/*****************************************************************************
+  These procedures return the Dyna HiLog wrapper for a Flora user/system
+  module.
+
+  flora_dyna_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
+  flora_dyna_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
+  flora_dyna_hilog_module_predicate_symbol(+ModuleName,-Predicate)
+*****************************************************************************/
+flora_dyna_hilog_user_module_predicate_symbol(WS,Predicate) :-
+	flora_user_module_predicate(WRAP_DYNA_HILOG,[],WS,Predicate).
+
+flora_dyna_hilog_system_module_predicate_symbol(WS,Predicate) :-
+	flora_system_module_predicate(WRAP_DYNA_HILOG,[],WS,Predicate).
+
+flora_dyna_hilog_module_predicate_symbol(ModuleName,Predicate) :-
+	flora_module_predicate(WRAP_DYNA_HILOG,[],ModuleName,Predicate).
+
+
+/*****************************************************************************
+  These procedures return the Dynz HiLog wrapper for a Flora user/system
+  module.
+
+  flora_dynz_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
+  flora_dynz_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
+  flora_dynz_hilog_module_predicate_symbol(+ModuleName,-Predicate)
+*****************************************************************************/
+flora_dynz_hilog_user_module_predicate_symbol(WS,Predicate) :-
+	flora_user_module_predicate(WRAP_DYNZ_HILOG,[],WS,Predicate).
+
+flora_dynz_hilog_system_module_predicate_symbol(WS,Predicate) :-
+	flora_system_module_predicate(WRAP_DYNZ_HILOG,[],WS,Predicate).
+
+flora_dynz_hilog_module_predicate_symbol(ModuleName,Predicate) :-
+	flora_module_predicate(WRAP_DYNZ_HILOG,[],ModuleName,Predicate).
 
 
 /*****************************************************************************
@@ -344,31 +348,6 @@ flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 
 
 /*****************************************************************************
-  flora_decode_firstorder_module_prefix(+Funct,-ModuleType,
-                                        -Flora_module_prefix_len_plus1)
-
-  It decodes a predicate symbol and checks if it begines with
-  FLORA_FO_PREFIX'FLORA_(USER/SYSTEM)_MODULE', which indicates it is a Flora
-  first order module predicate.
-
-  "ModuleType" is either "usermodule" or "systemmodule".
-*****************************************************************************/
-flora_decode_firstorder_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
-	%% Check if the functor begins with FLORA_FO_PREFIX followed by an '.
-	flora_match_substring(FLORA_FO_PREFIX'',Funct,0),
-	%% Check if it is followed by the type code of Flora module plus an '.
-	( flora_match_substring(FLORA_USER_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1) ->
-	    ModuleType=usermodule,
-	    Flora_module_prefix_len_plus1=FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1
-	;
-	  flora_match_substring(FLORA_SYSTEM_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1),
-	  ModuleType=systemmodule,
-	  Flora_module_prefix_len_plus1=FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1
-	),
-	!.
-
-
-/*****************************************************************************
   flora_is_flogic_wrapper(+WrapPrefix,+Base)
 *****************************************************************************/
 flora_is_flogic_wrapper(WrapPrefix,Base) :-
@@ -437,10 +416,6 @@ flora_is_flogic_base(WRAP_OBJEQL)     :- !.
       ModuleName is the Flora user/system module name. WrapPrefix is undefined.
       PredicateSymbol is the functor of the HiLog predicate.
 
-  (4) PredicateType=firstorder, if the predicate is encoded as:
-	'FLORA_FO_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''predicate'.
-      In this case, PredicateSymbol=predicate. WrapPrefix is undefined.
-
   (4) PredicateType=prolog, if the predicate is encoded other than all of the
       above. ModuleName and WrapPrefix will be undefined.
 
@@ -503,32 +478,9 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	  )
 	).
 
-flora_decode_predicate(Predicate,firstorder,ModuleName,
+flora_decode_predicate(Predicate,PredicateType,_ModuleName,
 		       _WrapPrefix,PredicateSymbol,ArgsList) :-
-	%% This branch is to decode a first order predicate.
-	Predicate =.. [Funct|ArgsList],
-	%% Check if it begins with a module predicate prefix.
-	flora_decode_firstorder_module_prefix(Funct,ModuleType,
-	                                      Flora_module_prefix_len_plus1),
-	( ModuleType == usermodule ->
-	    ModuleName=Workspace
-
-	; ModuleType == systemmodule ->
-	    ModuleName=FL_FLORALIB(Workspace)
-	),
-	%% Locate the end of workspace name, assuming the next quote after
-	%% the prefix marks the end of the workspace. This will not work
-	%% correctly if the workspace contains the quote symbol.
-	flora_get_substring(Funct,Flora_module_prefix_len_plus1,-1,RestFunct),
-	flora_match_substring('''',RestFunct,forward,N,M),
-	%% Extract the workspace name.
-	flora_get_substring(RestFunct,0,N,Workspace),
-	%% Extract the predicate name.
-	flora_get_substring(RestFunct,M,-1,PredicateSymbol),
-	!.
-
-flora_decode_predicate(Predicate,prolog,_ModuleName,
-		       _WrapPrefix,PredicateSymbol,ArgsList) :-
+	PredicateType = prolog,
 	%% prolog catches all other cases.
 	Predicate =.. [PredicateSymbol|ArgsList],
 	!.
@@ -537,7 +489,7 @@ flora_decode_predicate(Predicate,prolog,_ModuleName,
 /*****************************************************************************
   flora_decode_module_name(+Predicate,-ModuleName)
 
-  It checks if the predicate symbol is a (first order) Flora user/system
+  It checks if the predicate symbol is a Flora user/system
   module predicate. If yes, it returns the name of the module; otherwise,
   it fails.
 *****************************************************************************/
@@ -546,7 +498,6 @@ flora_decode_module_name(Predicate,ModuleName) :-
 			       _WrapPrefix,_PredicateSymbol,_ArgsList),
 	( PredicateType == (flogic)
 	; PredicateType == (hilog)
-	; PredicateType == (firstorder)
 	),
 	!.
 

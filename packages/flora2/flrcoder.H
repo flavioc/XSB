@@ -32,9 +32,8 @@
 :- import eval/2 from eval.
 
 :- import
-	flora_firstorderdef/2,
-	flora_flogicstaticdef/2
-   from flrfirstorder.
+	flora_hilogtable/2
+   from flrhilogtable.
 
 :- import flora_prlgdef/2 from flrprolog.
 
@@ -47,11 +46,9 @@
 
 :- import
 	flora_user_module_predicate/4,
-	flora_user_module_predicate_symbol/3,
 	flora_system_module_predicate/4,
-	flora_firstorder_user_module_predicate_symbol/3,
-	flora_firstorder_user_module_predicate/4,
-	flora_firstorder_system_module_predicate/4,
+	flora_dyna_hilog_user_module_predicate_symbol/2,
+	flora_dynz_hilog_user_module_predicate_symbol/2,
 	flora_user_fdb_storage_name/2,
 	%% Storage for skeletons of defined predicates
 	flora_user_fld_storage_name/2
@@ -70,7 +67,6 @@
 	is_prfact/2,
 	is_prdirective/2,
 	is_prtable/3,
-	is_prhilogtable/2,
 	is_prthismodule/1,
 	is_prthisfdbstorage/1,
 	is_pratom/3,
@@ -93,4 +89,7 @@
 	is_prnewoid/3,
 	is_prreify/2,
 	is_flogic/4,
-	is_fllibdb/1.
+	is_fllibdb/1,
+	get_fingerprint/6,
+	flora_write_struct/2,
+	flora_build_struct/6.

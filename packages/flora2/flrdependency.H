@@ -1,5 +1,5 @@
 
-:- import append/3, member/2 from basics.
+:- import append/3, member/2, length/2 from basics.
 
 :- import variant/2 from subsumes.
 
@@ -7,13 +7,6 @@
 	flora_set_counter/2,
 	flora_get_counter/2
    from flrporting.
-
-:- import
-	flora_firstorderdef/2,
-	flora_flogicstaticdef/2
-   from flrfirstorder.
-
-:- import flora_prlgdef/2 from flrprolog.
 
 :- import
 	flora_nth_token/2,
@@ -26,30 +19,7 @@
 	is_prrule/3,
 	is_prdirective/2,
 	is_prtable/3,
-	is_prhilogtable/2,
-	is_prthismodule/1,
-	is_prthisfdbstorage/1,
-	is_pratom/3,
-	is_prnumber/3,
-	is_prvariable/3,
-	is_prstring/3,
-	is_prlist/4,
-	is_prfdbstorage/3,
-	is_skolem/5,
-	is_prterm/4,
-	is_goallogic/4,
-	is_prcall/2,
-	is_pratomlit/3,
-	is_prtermlit/4,
-	is_prworkspace/3,
-	is_florasyslib/5,
-	is_prologterm/4,
-	is_prologliblit/4,
-	is_prnewpred/4,
-	is_prnewoid/3,
-	is_prreify/2,
-	is_flogic/4,
-	is_fllibdb/1
+	flora_build_struct/6
    from flrcoder.
 
 :- dynamic rule(_,_,_).

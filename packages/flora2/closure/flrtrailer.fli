@@ -18,7 +18,7 @@
 
 #include "includes/flrpred.fli"
 
-
+:- import flora_warning_line/1 from flrprint.
 
 /***************************************************************************
   closure rules for X::Y
@@ -34,19 +34,19 @@ super_sub(X,Y) :-
 
 immediate_sub(X,Y) :-
 	inferred_sub(X,Y),
-	tnot(super_sub(X,Y)).
+	sk_not(super_sub(X,Y)).
 
 
 sub(X,Y) :-
 	inferred_sub(X,Y),
-	( X=Y, flora_warning_line('cycle in class hierarchy')@prolog(flrutils)
+	( X=Y, flora_warning_line('cycle in class hierarchy')
 	;
 	  true
 	).
 
 sub(X,Y) :-
 	super_sub(X,Y),
-	( X=Y, flora_warning_line('cycle in class hierarchy')@prolog(flrutils)
+	( X=Y, flora_warning_line('cycle in class hierarchy')
 	;
 	  true
 	).
@@ -62,7 +62,7 @@ super_isa(O,C) :-
 
 immediate_isa(O,C) :-
 	inferred_isa(O,C),
-	tnot(super_isa(O,C)).
+	sk_not(super_isa(O,C)).
 
 
 isa(O,C) :-
@@ -94,8 +94,8 @@ ifd(C,A,V) :-
 ifd(C,A,V) :-
 	ifd(S,A,V),
 	immediate_sub(C,S),
-	tnot(defined_inferred_ifd(C,A)),
-	tnot(conflict_ifd(C,A)).
+	sk_not(defined_inferred_ifd(C,A)),
+	sk_not(conflict_ifd(C,A)).
 
 
 /*****************************************************************************
@@ -122,8 +122,8 @@ imvd(C,A,V) :-
 imvd(C,A,V) :-
 	imvd(S,A,V),
 	immediate_sub(C,S),
-	tnot(defined_inferred_imvd(C,A)),
-	tnot(conflict_imvd(C,A)).
+	sk_not(defined_inferred_imvd(C,A)),
+	sk_not(conflict_imvd(C,A)).
 
 
 imvddef(C,A) :-
@@ -132,8 +132,8 @@ imvddef(C,A) :-
 imvddef(C,A) :-
 	imvddef(S,A),
 	immediate_sub(C,S),
-	tnot(defined_inferred_imvd(C,A)),
-	tnot(conflict_imvd(C,A)).
+	sk_not(defined_inferred_imvd(C,A)),
+	sk_not(conflict_imvd(C,A)).
 
 imvddef(C,A) :-
 	imvd(C,A,_V).
@@ -160,8 +160,8 @@ fd(O,A,V) :-
 fd(O,A,V) :-
 	ifd(C,A,V),
 	immediate_isa(O,C),
-	tnot(defined_inferred_fd(O,A)),
-	tnot(conflict_obj_ifd(O,A)).
+	sk_not(defined_inferred_fd(O,A)),
+	sk_not(conflict_obj_ifd(O,A)).
 
 
 /*****************************************************************************
@@ -188,8 +188,8 @@ mvd(O,A,V) :-
 mvd(O,A,V) :-
 	imvd(C,A,V),
 	immediate_isa(O,C),
-	tnot(defined_inferred_mvd(O,A)),
-	tnot(conflict_obj_imvd(O,A)).
+	sk_not(defined_inferred_mvd(O,A)),
+	sk_not(conflict_obj_imvd(O,A)).
 
 
 mvddef(O,A) :-
@@ -198,8 +198,8 @@ mvddef(O,A) :-
 mvddef(O,A) :-
 	imvddef(C,A),
 	immediate_isa(O,C),
-	tnot(defined_inferred_mvd(O,A)),
-	tnot(conflict_obj_imvd(O,A)).
+	sk_not(defined_inferred_mvd(O,A)),
+	sk_not(conflict_obj_imvd(O,A)).
 
 mvddef(O,A) :-
 	mvd(O,A,_V).

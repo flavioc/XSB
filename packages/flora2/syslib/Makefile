@@ -49,8 +49,7 @@ ALLOBJS = flranswer${OBJEXT} \
 	  flrshdirect${OBJEXT} \
 	  flrdynmod${OBJEXT} \
 	  flrequality${OBJEXT} \
-	  flrimport${OBJEXT} \
-	  flrexpunge${OBJEXT}
+	  flrimport${OBJEXT}
 
 FLORA_INCLUDES_DIR = ../flrincludes
 DYN_INCLUDES_DIR = ../includes
@@ -144,10 +143,6 @@ flrequality${OBJEXT} : flrequality$(PROLOGEXT) $(FLORA_TERMS)
 
 flrimport${OBJEXT}: flrimport$(PROLOGEXT) $(FLORA_TERMS) $(FLRHEADER)
 	@echo 'mc(flrimport,$(OPTION)).' >> cmd...
-
-
-flrexpunge${OBJEXT} : flrexpunge$(PROLOGEXT) $(FLORA_TERMS)
-	@echo 'mc(flrexpunge,$(OPTION)).' >> cmd...
 
 
 init:

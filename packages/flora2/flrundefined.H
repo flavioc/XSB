@@ -49,11 +49,6 @@
 
 :- import flora_prlgdef/2 from flrprolog.
 
-:- import 
-	flora_firstorderdef/2,
-	flora_flogicstaticdef/2
-   from flrfirstorder.
-
 :- import
 	is_prrule/3,
 	is_prfact/2,

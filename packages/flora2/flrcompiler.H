@@ -49,10 +49,8 @@
 :- import flora_define_prolog/2 from flrprolog.
 
 :- import
-	flora_firstorderdef/2,
-	flora_define_firstorder/2,
-	flora_define_flogicstatic/2
-   from flrfirstorder.
+	flora_define_hilogtable/2
+   from flrhilogtable.
 
 :- import
 	flora_token_text/6
@@ -61,10 +59,6 @@
 :- import
 	flora_nth_token/2
    from flrcomposer.
-
-:- import 
-	flora_is_dynamic_flogic_base/2
-   from flrwrapper.
 
 :- import
 	flora_compiler_environment/2

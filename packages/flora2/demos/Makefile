@@ -24,13 +24,18 @@
 ##
 
 OBJEXT=.xwam
+PROLOGEXT=.P
 
 FLORADIR = ..
 
-ALL = 	aggregate.P benchmark.P default.P family_obj.P \
-	family_rel.P flogic_basics.P metavar.P mix.P module1.P mod1.P \
-	mono_inherit.P rel_ops.P tree_traversal.P \
-	btupdates.P pretty.P
+ALL = 	aggregate${PROLOGEXT} benchmark${PROLOGEXT} \
+	clpdemo${PROLOGEXT} default${PROLOGEXT} family_obj${PROLOGEXT} \
+	family_rel${PROLOGEXT} flogic_basics${PROLOGEXT}\
+	metavar${PROLOGEXT} mix${PROLOGEXT} module1${PROLOGEXT}\
+	mod1${PROLOGEXT} clpdemo${PROLOGEXT} \
+	mono_inherit${PROLOGEXT} rel_ops${PROLOGEXT}\
+	tree_traversal${PROLOGEXT} \
+	btupdates${PROLOGEXT} pretty${PROLOGEXT}
 
 Option = [optimize]
 
@@ -52,7 +57,7 @@ HDRMSG = "While compiling .../flora2/demos:"
 
 
 # suffix rules
-.SUFFIXES: .P .flr
+.SUFFIXES: ${PROLOGEXT} .flr
 
 all: init recompile
 
@@ -60,7 +65,7 @@ recompile: $(ALL) finish
 	./CompileChangedFiles.sh $(PROLOG_COMMAND)
 	@cat $(SVFILE)
 
-.flr.P:
+.flr${PROLOGEXT}:
 	echo 'import (flCompile)/1 from flora2. flCompile($*).' >> cmd...
 
 init:
@@ -83,4 +88,4 @@ finish:
 	echo Done
 
 clean:
-	/bin/rm -f *.P *.P_gpp *${OBJEXT} *.O *.bak *.fdb *.fld *~ .*~ .#*
+	/bin/rm -f *${PROLOGEXT} *${PROLOGEXT}_gpp *${OBJEXT} *.O *.bak *.fdb *.fld *~ .*~ .#*

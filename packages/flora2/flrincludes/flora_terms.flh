@@ -180,14 +180,9 @@
 #define FL_BODYFORMULA		meta
 #define FL_PLIB			prolog
 #define FL_PLIBALL		prologall
-#define FL_FIRSTORDER		firstorder
-#define FL_FIRSTORDERALL	firstorderall
-#define FL_FLOGICSTATIC		flogic
-#define FL_FLORAPATCH		patch
+#define FL_CMPOPT		flora_compiler_options
 
-#define FL_HILOGTABLE		hilogtable
 #define FL_EQUALITY		equality
-#define FL_EXPUNGE		expunge
 #define FL_IN			(in)
 
 #define FL_LIBMOD               libmod_wrapper
@@ -233,14 +228,11 @@
   FLIMPORT(Functor,Arity)
   FLARGUMENTS(Functor,Arity,Args)
   FLPROLOG(Functor,Arity)
-  FLFIRSTORDER(Functor,Arity)
   FLOPDEF(Predecence,Associativity,Op)
-  FLINDEX(Functor,Arity,Name)
-  FLHILOGTABLE(Arity)
+  FLINDEX(Arity,ArgPos)
+  FLCMPOPT(OptionList)
   FLEQUALITY(Type)
-  FLEXPUNGE(FunctArityList)
-  FLEXPUNGE(FunctArityList,Module)
-
+ 
   FLVAR(Name,Index)
   FLATOM(Atom,Index)
   FLNUMBER(Number,Index)
@@ -304,15 +296,10 @@
 #define FLARGUMENTS		flarguments
 #define FLPROLOG		flprolog
 #define FLOPDEF			flopdef
-#define FLSTATICFO		flstaticfo
-#define FLFIRSTORDER		flfirstorder
 #define FLINDEX			flindex
-#define FLHILOGTABLE		flhilogtable
+#define FLCMPOPT		flcmpopt
 %%#define FLTHISMODULE		flthismodule
 #define FLEQUALITY		flequality
-#define FLEXPUNGE		flexpunge
-#define FLFLOGICSTATIC		flflogicstatic
-#define FLFLORAPATCH		flflorapatch
 
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
@@ -379,7 +366,6 @@
   Prolog encoding of a compiled FLORA program
 ****************************************************************************/
 #define PRRULE			prrule
-#define PRPATCHRULE		prpatchrule
 #define PRFACT			prfact
 #define PRQUERY			prquery
 #define PRDIRECTIVE		prdirective
@@ -392,7 +378,7 @@
 #define PRTABLE			prtable
 #define PRIMPORT		primport
 #define PRINDEX			prindex
-#define PRHILOGTABLE		prhilogtable
+#define PRCMPOPT		prcmpopt
 
 #define PRTHISMODULE		prthismodule
 %% For the trie that keeps database facts
@@ -456,6 +442,9 @@
   wrappers
 ****************************************************************************/
 #define	WRAP_HILOG		flapply
+#define	WRAP_TABLED_HILOG	tabled_flapply
+#define WRAP_DYNA_HILOG		dyna_flapply
+#define WRAP_DYNZ_HILOG		dynz_flapply
 #define	WRAP_ISA		isa
 #define	WRAP_SUB		sub
 #define	WRAP_METH		meth
@@ -549,7 +538,6 @@
 #define FLLIBMODOBJ		fllibmodobj
 
 #define FLLIBEQUALITY		fllibequality
-#define FLLIBEXPUNGE		fllibexpunge
 
 #define FLLIBCONTROL		fllibcontrol
 #define FLLIBIFTHENELSE		fllibifthenelse
@@ -659,3 +647,8 @@
   markups for include files
 ****************************************************************************/
 #define FLORA_GPP_MARKUP	'_$_$_flora_gpp_markup'
+
+/****************************************************************************
+  xsb compiler options
+****************************************************************************/
+#define XSB_SPECREPR		spec_repr

@@ -153,8 +153,8 @@ flora_fail_unless_return :- flora_fail_unless_return, fail.
 
 
 /********************************************************************/
-flora_write_Yes :- flora_stdfdbk_line('~nYes.~n').
-flora_write_No  :- flora_stdfdbk_line('~nNo.~n').
+flora_write_Yes :- flora_stdfdbk_line('~nYes~n').
+flora_write_No  :- flora_stdfdbk_line('~nNo~n').
 
 
 /********************************************************************/

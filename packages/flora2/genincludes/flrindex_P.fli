@@ -12,8 +12,9 @@
 ***************************************************************************/
 
 #include "flora_terms.flh"
+#include "flora_wrap.flh"
 
-:- FL_FLOGICSTATIC
+:- WRAP_FLOGICSTATIC
 	derived_isa/2,
 	derived_sub/2,
 	derived_mvd/3,

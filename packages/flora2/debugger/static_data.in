@@ -63,6 +63,8 @@ hide_this_hide(flora_handle_trace,0).
 hide_this_hide(flora_handle_notrace,0).
 hide_this_hide(flora_handle_end_of_call,0).
 
+hide_this_hide(flora_error_undefined,1).
+
 hide_this_hide(FLORA_DB_FIND_PREDICATE,2).
 hide_this_hide(FLORA_DB_RECLAIM_SPACE_PREDICATE,0).
 hide_this_hide(flora_commit_storage,0).

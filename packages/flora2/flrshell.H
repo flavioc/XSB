@@ -46,7 +46,8 @@
 	flora_set_counter/2,
 	flora_module_path_get/1,
 	flora_module_path_add/1,
-	flora_module_path_remove/1
+	flora_module_path_remove/1,
+	flora_banner_control/1
    from flrporting.
 
 :- import flora_plg2hlg/4 from prolog2hilog.
@@ -71,8 +72,6 @@
 :- import flora_shreset_arguments/0 from flrarguments.
 
 %%:- import flora_shreset_prolog/0 from flrprolog.
-
-:- import flora_shreset_firstorder/0 from flrfirstorder.
 
 :- import
 	flora_load_library/1,
@@ -106,4 +105,3 @@
    from flrdebugger.
 
 :- dynamic flora_switch(_).
-:- index(flora_switch/1,trie).

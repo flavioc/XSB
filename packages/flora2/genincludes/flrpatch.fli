@@ -13,35 +13,54 @@
 
 
 #include "flora_terms.flh"
+#include "flora_wrap.flh"
 
 
 /**************************************************************************
   F-logic
 ***************************************************************************/
-:- FL_FLORAPATCH
-	sub/2,
-	isa/2,
-	ifd/3,
-	imvd/3,
-	imvddef/2,
-	fd/3,
-	mvd/3,
-	mvddef/2,
-	meth/2,
-	imeth/2,
-	tran/2,
-	fdsig/3,
-	ifdsig/3,
-	mvdsig/3,
-	imvdsig/3,
-	exists/1,
-	objeql/2.
+:- WRAP_FLOGICSTATIC
+	sub/2,base_sub/2,
+	isa/2,base_isa/2,
+	ifd/3,base_ifd/3,
+	imvd/3,base_imvd/3,
+	imvddef/2,base_imvddef/2,
+	fd/3,base_fd/3,
+	mvd/3,base_mvd/3,
+	mvddef/2,base_mvddef/2,
+	meth/2,base_meth/2,
+	imeth/2,base_imeth/2,
+	tran/2,base_tran/2,
+	fdsig/3,base_fdsig/3,
+	ifdsig/3,base_ifdsig/3,
+	mvdsig/3,base_mvdsig/3,
+	imvdsig/3,base_imvdsig/3,
+	exists/1,base_exists/1,
+	objeql/2,base_objeql/2.
+
+:- WRAP_STORAGE(rule(base_sub/2,sub)).
+:- WRAP_STORAGE(rule(base_isa/2,isa)).
+:- WRAP_STORAGE(rule(base_ifd/3,ifd)).
+:- WRAP_STORAGE(rule(base_imvd/3,imvd)).
+:- WRAP_STORAGE(rule(base_imvddef/2,imvddef)).
+:- WRAP_STORAGE(rule(base_fd/3,fd)).
+:- WRAP_STORAGE(rule(base_mvd/3,mvd)).
+:- WRAP_STORAGE(rule(base_mvddef/2,mvddef)).
+:- WRAP_STORAGE(rule(base_meth/2,meth)).
+:- WRAP_STORAGE(rule(base_imeth/2,imeth)).
+:- WRAP_STORAGE(rule(base_tran/2,tran)).
+:- WRAP_STORAGE(rule(base_fdsig/3,fdsig)).
+:- WRAP_STORAGE(rule(base_ifdsig/3,ifdsig)).
+:- WRAP_STORAGE(rule(base_mvdsig/3,mvdsig)).
+:- WRAP_STORAGE(rule(base_imvdsig/3,imvdsig)).
+:- WRAP_STORAGE(rule(base_exists/1,exists)).
+:- WRAP_STORAGE(rule(base_objeql/2,objeql)).
 
 
 /**************************************************************************
   HiLog
 ***************************************************************************/
-:- FL_FLORAPATCH
+:- WRAP_FLOGICSTATIC
 	WRAP_HILOG/1,
 	WRAP_HILOG/2,
 	WRAP_HILOG/3,
@@ -64,11 +83,100 @@
 	WRAP_HILOG/20,
 	WRAP_HILOG/21.
 
+:- WRAP_FLOGICSTATIC
+	WRAP_TABLED_HILOG/2,
+	WRAP_TABLED_HILOG/3,
+	WRAP_TABLED_HILOG/4,
+	WRAP_TABLED_HILOG/5,
+	WRAP_TABLED_HILOG/6,
+	WRAP_TABLED_HILOG/7,
+	WRAP_TABLED_HILOG/8,
+	WRAP_TABLED_HILOG/9,
+	WRAP_TABLED_HILOG/10,
+	WRAP_TABLED_HILOG/11,
+	WRAP_TABLED_HILOG/12,
+	WRAP_TABLED_HILOG/13,
+	WRAP_TABLED_HILOG/14,
+	WRAP_TABLED_HILOG/15,
+	WRAP_TABLED_HILOG/16,
+	WRAP_TABLED_HILOG/17,
+	WRAP_TABLED_HILOG/18,
+	WRAP_TABLED_HILOG/19,
+	WRAP_TABLED_HILOG/20,
+	WRAP_TABLED_HILOG/21,
+	WRAP_TABLED_HILOG/22.
+
+:- table
+	WRAP_TABLED_HILOG/2,
+	WRAP_TABLED_HILOG/3,
+	WRAP_TABLED_HILOG/4,
+	WRAP_TABLED_HILOG/5,
+	WRAP_TABLED_HILOG/6,
+	WRAP_TABLED_HILOG/7,
+	WRAP_TABLED_HILOG/8,
+	WRAP_TABLED_HILOG/9,
+	WRAP_TABLED_HILOG/10,
+	WRAP_TABLED_HILOG/11,
+	WRAP_TABLED_HILOG/12,
+	WRAP_TABLED_HILOG/13,
+	WRAP_TABLED_HILOG/14,
+	WRAP_TABLED_HILOG/15,
+	WRAP_TABLED_HILOG/16,
+	WRAP_TABLED_HILOG/17,
+	WRAP_TABLED_HILOG/18,
+	WRAP_TABLED_HILOG/19,
+	WRAP_TABLED_HILOG/20,
+	WRAP_TABLED_HILOG/21,
+	WRAP_TABLED_HILOG/22.
+
+:- WRAP_STORAGE(rule(WRAP_HILOG/1,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/2,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/3,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/4,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/5,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/6,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/7,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/8,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/9,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/10,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/11,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/12,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/13,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/14,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/15,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/16,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/17,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/18,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/19,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/20,WRAP_HILOG)).
+:- WRAP_STORAGE(rule(WRAP_HILOG/21,WRAP_HILOG)).
+
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/1,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/2,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/3,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/4,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/5,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/6,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/7,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/8,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/9,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/1,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/11,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/12,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/13,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/14,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/15,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/16,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/17,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/18,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/19,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/20,WRAP_HILOG,normal,leading([0]))).
+:- WRAP_STORAGE(rule(WRAP_TABLED_HILOG/21,WRAP_HILOG,normal,leading([0]))).
 
 /**************************************************************************
   bridge to storage trie
 ***************************************************************************/
-:- FL_FLOGICSTATIC
+:- WRAP_FLOGICSTATIC
 	derived_sub/2,
 	derived_isa/2,
 	derived_ifd/3,

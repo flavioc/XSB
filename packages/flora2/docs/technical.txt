@@ -23,19 +23,25 @@ ALGORITHM
 			silent_sub(S,C),
 			inferred_isa(O,S).
       It is possible that sub(_,C) is not defined, we will get an error
-      message saying "::C" is undefined when the query is ":C".
+      message saying "_::C" is undefined when the query is "_:C".
 
       We can handle this problem in the following way:
-      F-logic wrappers in rule bodies and queries (except in database 
-      operations) are prefixed by 'd_'. using_debug_prefix/1 in flrcoder
-      is used for this purpose.
+      F-logic wrappers in the bodies of user program rules and queries
+      (except in database operations) are prefixed by 'd_'.
+      This has the effect that the wrappers in the rule bodies in the program 
+      (e.g., d_isa/2) are different from the wrappers in the rule bodies in
+      the trailers (e.g., isa/2). The undefinedness checking rules (below)
+      are then attached to the d_* versions of the wrappers, but not to the
+      wrappers used in the trailer. As a result, Flora won't complain that
+      trailer predicates are undefined (because they are allowed to).
+
       a) When debug option is turned on, we need patch rules such as:
-		test_undefined(O,C) :-
+		check_undefined(O,C) :-
 		  storage_find_fact(fldstorage,isa(O,C)), !, fail.
-		test_undefined(O,C) :-
+		check_undefined(O,C) :-
 		  storage_find_fact(fldstorage,sub(O,C)), !, fail.
-		test_undefined(_,_).
-      		d_isa(O,C) :- test_undefined(O,C),
+		check_undefined(_,_).
+      		d_isa(O,C) :- check_undefined(O,C),
 		              !,
 			      flora_error_undefined(isa(O,C)),
 		              abort.
@@ -50,16 +56,7 @@ ALGORITHM
       include flrpreddef.flh in the end; otherwise, its .P file will include
       flrnopreddef.flh in the end.
 
-   3) For firstorder predicates, if debug option is turned on, an 
-      additional patch rule will be added besides the original one.
-      For example, for p/1, we have
-	p(X) :- not(storage_find_fact(fldstorage, p(X))),
-	        flora_error_undefined(p(X)),
-		abort.
-	p(X) :- storage_find_fact(storage, p(X)).   
-      The latter rule is the original one without debug.
-
-   4) When insert, insertall, btinsert, btinsertall is executed, we need
+   3) When insert, insertall, btinsert, btinsertall is executed, we need
       to compute the skeleton(s) of the inserted fact(s) and insert the
       skeleton(s) into the fld storage.
 

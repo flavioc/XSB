@@ -31,7 +31,7 @@
 
 %%:- import flora_shdefine_prolog/2 from flrprolog.
 
-:- import flora_shdefine_firstorder/2 from flrfirstorder.
+:- import flora_shdefine_hilogtable/3 from flrhilogtable.
 
 :- import flora_shdefine_operator/3 from flroperator.
 
@@ -42,13 +42,13 @@
 /*****************************************************************************
   fllibshdirect
 
-  Processes directives in the flora shell (like firstorder, op, etc.)
+  Processes directives in the flora shell (like table, op, etc.)
 *****************************************************************************/
 %%fllibshdirect(FL_PROLOG,Funct,Arity) :-
 %%	flora_shdefine_prolog(Funct,Arity).
 
-fllibshdirect(FL_FIRSTORDER,Funct,Arity) :-
-	flora_shdefine_firstorder(Funct,Arity).
+fllibshdirect(FL_TABLE,Module,Funct,Arity) :-
+	flora_shdefine_hilogtable(Module,Funct,Arity).
 
 fllibshdirect(FL_OP,Preced,Assoc,Op) :-
 	flora_shdefine_operator(Preced,Assoc,Op).

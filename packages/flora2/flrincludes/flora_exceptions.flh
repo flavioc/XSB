@@ -1,49 +1,41 @@
-/* File:      flrfirstorder.H
+/* File:      flora_exceptions.flh -- Flora throwable exceptions
 **
-** Author(s): Guizhen Yang
+** Author(s): Michael Kifer
 **
 ** Contact:   flora-users@lists.sourceforge.net
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2001
-**
+** Copyright (C) The Research Foundation of SUNY, 2002
+** 
 ** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-**
+** 
 ** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-**
+** 
 ** You should have received a copy of the GNU Library General Public License
 ** along with FLORA-2; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id$
 **
 */
 
 
-:- dynamic flora_dynfirstorder(_,_).
+#mode standard Prolog
 
-:- dynamic flora_shfirstorder(_,_).
 
-:- dynamic flora_dynflogicstatic(_,_).
+%% Thrown when an undefined method is found and check_undefined is on
+#define FLORA_UNDEFINED_EXCEPTION     flora_undefined_exception
 
-:- index(flora_dynfirstorder/2,trie).
+%% Thrown to return to top level
+#define FLORA_TOP_LEVEL	       	      flora_top_level
 
-:- index(flora_shfirstorder/2,trie).
+%% Thrown to exit from FLORA shell
+#define END_OF_FLORA_SHELL    	      end_of_flora_shell
 
-:- index(flora_dynflogicstatic/2,trie).
-
-:- import flora_get_counter/2 from flrporting.
-
-:- export
-	flora_firstorderdef/2,
-	flora_reset_firstorder/0,
-	flora_define_firstorder/2,
-	flora_shreset_firstorder/0,
-	flora_shdefine_firstorder/2,
-	flora_flogicstaticdef/2,
-	flora_define_flogicstatic/2.
+%% Thrown by flora shell when it is finished with the command line argument
+%% passed from the OS shell
+#define FLORA_CMD_LINE_ARGUMENT_DONE  flora_cmd_line_argument_done

@@ -28,11 +28,10 @@
 
 /*
   This simple wrapper understands the directives
-  :- FL_DUMP 'string'                (dump)
-  :- FL_FLOGICSTATIC predicate-list. (flogic)
-  :- FL_FIRSTORDER predicate-list.   (firstorder)
-  :- FL_STORAGE predicate-list.      (storage)
-  :- FL_DEBUGMODULE predicate.       (debugmodule)
+  :- WRAP_DUMP 'string'                (dump)
+  :- WRAP_FLOGICSTATIC predicate-list. (flogic)
+  :- WRAP_STORAGE predicate-list.      (storage)
+  :- WRAP_DEBUGMODULE predicate.       (debugmodule)
 
   Predicates mentioned in these directives are 
   recorded and whenever they occur in other directives or rules
@@ -58,31 +57,19 @@
 #include "flag_defs_xsb.h"
 #include "flora_terms.flh"
 #include "flora_porting.flh"
-
-#define INFILE_EXT       	in
-#define DATFILE_EXT     	dat
-#define FLIFILE_EXT       	fli
-#define FLHFILE_EXT     	flh
-
-#define FL_DUMP	       	        dump
-#define FL_INDEX2	       	index2
-#define FL_INDICES	       	indices
-#define FL_STORAGE	       	storage
-#define FL_DEBUGMODULE	       	debugmodule
+#include "flora_wrap.flh"
 
 :- dynamic wrap_arguments_directive/1.
 
-:- op(1100,fy,FL_FLOGICSTATIC).
-:- op(1100,fy,FL_DUMP).
-:- op(1100,fy,FL_STORAGE).
-:- op(1100,fy,FL_DEBUGMODULE).
+:- op(1100,fy,WRAP_FLOGICSTATIC).
+:- op(1100,fy,WRAP_DUMP).
+:- op(1100,fy,WRAP_STORAGE).
+:- op(1100,fy,WRAP_MODULE).
 
-:- op(1100,fx,FL_FIRSTORDER).
+:- op(1100,fx,WRAP_INDICES).
+
 :- op(1100,fx,FL_ARGUMENTS).
-:- op(1100,fx,FL_HILOGTABLE).
 :- op(1100,fx,FL_EQUALITY).
-:- op(1100,fx,FL_EXPUNGE).
-:- op(1100,fx,FL_INDICES).
 
 :- bootstrap_flora.
 
@@ -144,20 +131,18 @@ process_fli_file :-
 process_fli_file.
 
 process_clause(X) :-
-	(is_directive(X,FL_FLOGICSTATIC,PredList)
-	-> intern_predicate_specs(PredList,FL_FLOGICSTATIC)
-	; is_directive(X,FL_INDEX2,[PredSpec,Type])
+	(is_directive(X,WRAP_FLOGICSTATIC,PredList)
+	-> intern_predicate_specs(PredList,WRAP_FLOGICSTATIC)
+	; is_directive(X,WRAP_INDEX2,[PredSpec,Type])
 	-> dump_index2_directive(PredSpec,Type)
-	; is_directive(X,FL_INDICES,IndexSpecList)
+	; is_directive(X,WRAP_INDICES,IndexSpecList)
 	-> dump_indices_directive(IndexSpecList)
-	; is_directive(X,FL_DUMP,DumpString)
+	; is_directive(X,WRAP_DUMP,DumpString)
 	-> writeln(DumpString)
-	; is_directive(X,FL_FIRSTORDER,PredList)
-	-> intern_predicate_specs(PredList,FL_FIRSTORDER)
-	; is_directive(X,FL_STORAGE,RuleList)
+	; is_directive(X,WRAP_STORAGE,RuleList)
 	-> dump_storage_rules(RuleList)
-	; is_directive(X,FL_DEBUGMODULE,Pred)
-	-> dump_debugmodule_rule(Pred)
+	; is_directive(X,WRAP_MODULE,Pred)
+	-> dump_module_rule(Pred)
 	; is_directive(X,Directive,PredList)
 	-> dump_other_directive(Directive,PredList)
 	; %% assume it is a rule -- no queries
@@ -168,8 +153,7 @@ process_clause(X) :-
 
 
 %% Which macro to use for which type of encoding
-wrapper_macro(FL_FIRSTORDER,'FLORA_FO_THIS_WORKSPACE').
-wrapper_macro(FL_FLOGICSTATIC,'FLORA_THIS_WORKSPACE').
+wrapper_macro(WRAP_FLOGICSTATIC,'FLORA_THIS_WORKSPACE').
 
 %% tells how to wrap a predicate spec
 wrapper(P/A, WrappedSpec, Changed) :- !,
@@ -195,11 +179,11 @@ spec2skeleton(P/A,Skeleton) :- !, functor(Skeleton,P,A).
 spec2skeleton(Skeleton,Skeleton).
 
 
-is_directive((:- FL_FLOGICSTATIC PredList),FL_FLOGICSTATIC,PredList) :- !.
-is_directive(':-'(index(PredSpec,Type)),FL_INDEX2,[PredSpec,Type]) :- !.
-is_directive((:- FL_INDICES IndexSpecList), FL_INDICES, IndexSpecList) :- !.
-is_directive((:- FL_DUMP Atom),FL_DUMP,Atom) :- !.
-is_directive((:- FL_STORAGE RuleList),FL_STORAGE,RuleList) :- !.
+is_directive((:- WRAP_FLOGICSTATIC PredList),WRAP_FLOGICSTATIC,PredList) :- !.
+is_directive(':-'(index(PredSpec,Type)),WRAP_INDEX2,[PredSpec,Type]) :- !.
+is_directive((:- WRAP_INDICES IndexSpecList), WRAP_INDICES, IndexSpecList) :- !.
+is_directive((:- WRAP_DUMP Atom),WRAP_DUMP,Atom) :- !.
+is_directive((:- WRAP_STORAGE RuleList),WRAP_STORAGE,RuleList) :- !.
 %% for now, only handle simple directives of the form :- Directive PredList.
 is_directive(':-'(DirectiveBody),Directive,PredList) :-
         DirectiveBody =.. [Directive,PredList], !.
@@ -267,8 +251,11 @@ dump_storage_rule(rule(HeadSpec,TailPred)) :-
 	dump_storage_rule(rule(HeadSpec,TailPred,normal)).
 
 dump_storage_rule(rule(HeadSpec,TailPred,Storage)) :-
+    dump_storage_rule(rule(HeadSpec,TailPred,Storage,no_leading)).
+
+dump_storage_rule(rule(HeadSpec,TailPred,Storage,Leading)) :-
 	spec2skeleton(HeadSpec,HeadSkeleton),
-	dump_simple_goal(HeadSkeleton,0), writeln(' :-'),
+	dump_simple_goal(HeadSkeleton,0,Leading), writeln(' :-'),
 	indent(1),
 	( Storage=fld,
 	    write('FLORA_DB_FIND(FLORA_THIS_FLD_STORAGE,')
@@ -280,10 +267,20 @@ dump_storage_rule(rule(HeadSpec,TailPred,Storage)) :-
 	HeadSkeleton =.. [_|HeadVars], BodySkeleton =.. [TailPred|HeadVars],
 	dump_simple_goal(BodySkeleton,0), writeln(').').
 	
-dump_debugmodule_rule(Pred) :-
-	dump_simple_goal(Pred,0), writeln(' :-'),
+dump_module_rule(rule(HeadSpec,TailPred)) :-
+	spec2skeleton(HeadSpec,HeadSkeleton),
+	dump_simple_goal(HeadSkeleton,0), writeln(' :-'),
 	indent(1),
-	writeln('flora_debug_module_registry(FLORA_THIS_MODULE_NAME).').
+	HeadSkeleton =.. [_|HeadVars],
+	dump_simple_goal(TailPred,0),
+	write('(FLORA_THIS_MODULE_NAME'),
+	( HeadVars == [] ->
+	    true
+	;
+	    write(','),
+	    write_args(HeadVars)
+	),
+	writeln(').').
 
 dump_rule((Head :- Body)) :- !,
 	dump_simple_goal(Head,0),
@@ -355,12 +352,21 @@ dump_literal(Spec,Indent) :-
 %% Simple write/1 won't work either because strings that are arguments
 %% to predicates wil then be written without the quotes
 dump_simple_goal(Spec, Indent) :- 
+    dump_simple_goal(Spec, Indent, no_leading).
+
+dump_simple_goal(Spec, Indent, Leading) :-
 	wrapper(Spec,WSpec,Changed),
 	indent(Indent),
 	(Changed=notwrapped
 	->  (WSpec = '/'(P,A) -> write_canonical(P), write('/'), write(A)
 	    ; WSpec =.. [P|Args], Args \== [] ->
 		write_canonical(P), write('('),
+        ( Leading = leading(L) ->
+            write_args(L),
+            write(',')
+        ;
+            true
+        ),
 		write_args(Args),
 		write(')')
 	    ; write_canonical(WSpec)
@@ -369,6 +375,12 @@ dump_simple_goal(Spec, Indent) :-
 	    (WSpec = '/'(P,A) -> write(P), write('/'), write(A)
 	    ; WSpec =.. [P|Args], Args \== [] ->
 		write(P), write('('),
+        ( Leading = leading(L) ->
+            write_args(L),
+            write(',')
+        ;
+            true
+        ),
 		write_args(Args),
 		write(')')
 	    ; write(WSpec)

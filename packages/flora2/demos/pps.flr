@@ -1,4 +1,5 @@
 %% pps.flr -- a parts production system
+
 /*
   Following are the steps to get the results:
   1. start flora2 shell.
@@ -25,15 +26,6 @@ cc[gg->dd3].
 */
 
 a:=:a.
-
-:- firstorder
-	pps_insert/4,
-	pps_delete/4,
-	start/2,
-	stop/2,
-	change/3,
-	removeFrom/3,
-	addTo/3.
 
 :- table
 	pps_insert/4,
@@ -127,9 +119,8 @@ addTo(golfCL,wheel155,1).
 
 // Queries
 
-:- firstorder p1/2.
 :- table p1/2.
-:- arguments get_residual(meta,oid).
+:- arguments table_state(meta,oid).
 
 p1(S,ctrl_produces(P)) :- pps[produces(S)->>P].
 p1(P,ctrl_stop_in(S)) :- stop (P,S).
@@ -144,7 +135,7 @@ query :-
 	write_answers
         ).
 write_answers :- 
-	get_residual(p1(X,Y),[])@prolog(tables),
+	table_state(p1(X,Y),[])@flora(sys),
 	writeln(p1(X,Y))@flora(io),
 	flora_increment_counter(ans_count,1,_,_)@prolog(flrporting),
 	fail.

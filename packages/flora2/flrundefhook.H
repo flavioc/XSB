@@ -24,7 +24,7 @@
 */
 
 
-:- import psc_name/2, psc_arity/2 from machine.
+:- import psc_name/2 from machine.
 
 :- import flora_decode_predicate/6 from flrwrapper.
 
