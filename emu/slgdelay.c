@@ -141,6 +141,9 @@ static DE intern_delay_element(Cell delay_elem)
   CPtr ret_n;
   int arity;
   Cell tmp_cell;
+#if !defined(DEBUG_DELAYVAR)
+  CPtr hook = NULL;
+#endif
 
   tmp_cell = cell(cptr + 1);
   subgoal = (SGFrame) string_val(tmp_cell);
@@ -172,11 +175,18 @@ static DE intern_delay_element(Cell delay_elem)
 	      "No enough memory to expand DE space");
     de_subgoal(de) = subgoal;
     de_ans_subst(de) = ans_subst; /* Leaf of the answer (substitution) trie */
+#ifdef DEBUG_DELAYVAR
     de_subs_fact(de) = NULL;
     if (arity != 0) {
-      de_subs_fact_leaf(de) = (NODEptr) delay_chk_insert(arity, ret_n + 1,
-							 &de_subs_fact(de));
+      de_subs_fact_leaf(de) = delay_chk_insert(arity, ret_n + 1,
+					       (CPtr *) &de_subs_fact(de));
     }
+#else
+    if (arity != 0) {
+      de_subs_fact_leaf(de) = delay_chk_insert(arity, ret_n + 1,
+					       &hook);
+    }
+#endif
     return de;
   }
   else return NULL;

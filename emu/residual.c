@@ -79,7 +79,9 @@ void build_delay_list(CPtr delay_list, DE de)
   CPtr head, tail;
   SGFrame subg;
   NODEptr ans_subst;
-  NODEptr subs_factp;		/* new vars */
+#ifdef DEBUG_DELAYVAR
+  NODEptr subs_factp;
+#endif
   CPtr *tmp_var_addr;
   CPtr oldhreg = hreg;
  
@@ -119,11 +121,14 @@ void build_delay_list(CPtr delay_list, DE de)
         if (arity == 0) {
           new_heap_string(oldhreg, get_name(psc));
         } else {
+#ifdef DEBUG_DELAYVAR
 	  /*
-	   * de_subs_fact(de) is the saved substitution factor for the
-	   * call of this delayed element.
+	   * de_subs_fact(de) is the root of de's delay trie -- the saved
+	   * substitution factor of the answer to the subgoal call of
+	   * this delayed element.
 	   */
-          subs_factp = (NODEptr)de_subs_fact(de);
+          subs_factp = de_subs_fact(de);
+#endif
           sreg = head;
           follow(oldhreg) = makecs(head);
           hreg += arity+1;
@@ -223,7 +228,7 @@ void build_delay_list(CPtr delay_list, DE de)
 	  fprintf(stderr, ">>>> num_heap_term_vars is %d before calling load_delay_trie\n", num_heap_term_vars);
 #endif /* DEBUG_DELAYVAR */
 	  
-          load_delay_trie(i, &cell_array[i-1],(NODEptr)de_subs_fact_leaf(de));
+          load_delay_trie(i, &cell_array[i-1], de_subs_fact_leaf(de));
 
 #ifdef DEBUG_DELAYVAR
 	  fprintf(stderr, ">>>> num_heap_term_vars becomes %d\n",
