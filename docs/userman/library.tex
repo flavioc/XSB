@@ -63,8 +63,8 @@ looking at the sources.
     of {\tt Tree} is nonvariable and equal to Element.  This predicate
     can be used in both directions, and is most useful with Index
     unbound, since it will then bind {\tt Index} and {\tt Element} for
-    each nonvariable element in {\tt Tree} (in time proportional to
-    $N*logN$, for $N$ the number of nonvariable entries in {\tt
+    each non-variable element in {\tt Tree} (in time proportional to
+    $N*logN$, for $N$ the number of non-variable entries in {\tt
     Tree}.)
 
 \ournewitem{length(?List, ?Length)}{basics}\index{{\tt length/2}}
@@ -2530,6 +2530,96 @@ Note that 1.0 will never be generated.
 
 \end{description}
 
+\section{Scanning in Prolog}
+
+Scanners, (sometimes called tokenizers) take an input string, usually
+in ASCII or similar format, and produce a scanned sequence of tokens.
+The requirements that various applications have for scanning differ in
+small but important ways -- a character that is special to one
+application may be part of the token of another; or some applications
+may want lower case text converted to upper-case test.  The {\tt
+stdscan.P} library provides a simple scanner written in XSB that can
+be configured in several ways.  While useful, this scanner is not
+intended to be as powerful as general-purpose scanners such as {\em
+lex} or {\em flex}.
+
+\begin{description}
+
+\ournewitem{scan(+List,-Tokens)}{stdscan} \index{{\tt scan/2}}  
+
+Given as input a {\tt List} character codes, {\tt scan/2} scans this
+list producing a list of atoms constituting the lexical tokens.  Its
+parameters are set via {\tt set\_scan\_pars/1}.
+
+Tokens produced are either a sequence of {\em letters} and/or {\em
+numbers} or consist of a single {\em special character} (e.g. {\tt }
+or {\tt )}).  Whitespaces may occur between tokens.
+
+\ournewitem{scan(+List,+FieldSeparator,-Tokens)}{stdscan} 
+\index{{\tt scan/3}}  
+
+Given as input a {\tt List} character codes, along with a character
+code for a field separator, {\tt scan/3} scans this list producing a
+list of list of atoms constituting the lexical tokens in each field.
+{\em scan/3} thus be used to scan tabular information.  Its
+parameters are set via {\tt set\_scan\_pars/1}.
+
+\ournewitem{set\_scan\_pars(+List)}{stdscan} 
+\index{{\tt set\_scan\_pars/1}}  
+
+{\tt set\_scan\_pars(+List)} is used to configure the tokenizer to a
+particular need.  {\tt List} is a list of parameters including the
+following:
+
+\begin{itemize}
+
+\item{{\tt whitespace}}.  The default action of the scanner is to return a
+list of tokens, with any whitespace removed.  If {\tt whitespace} is a
+parameter, then the scanner returns the token {\tt ''} when it finds
+whitespace separating two tokens (unless the two tokens are letter
+sequences; since two letter sequences can be two tokens ONLY if they
+are separated by whitespace, such an indication of whitespace would be
+redundant.)  Including the parameter {\tt no\_whitespace} undoes the
+effect of previously including {\tt whitespace}.
+
+\item{{\tt upper\_case}} The default action of the parser is to treat
+lowercase letter differently from uppercase letters.  This parameter
+should be set if conversion to uppercase should be done when producing
+a token that does {\em not} consist entirely of letters (e.g. one with
+mixed letters and digits).  Including the parameter {\tt no\_case}
+undoes the effect of previously including {\tt upper\_case}.
+
+\item{{\tt upper\_case\_in\_lit}} The default action of the parser is
+to treat lowercase letter differently from uppercase letters.  This
+parameter should be set if conversion to uppercase should be done when
+producing a token that consists entirely of letters.  Including the
+parameter {\tt no\_case\_in\_lit} undoes the effect of previously
+including {\tt upper\_case}.
+
+\item{{\tt whitespace(Code)}} adds {\tt Code} as a whitespace code.
+By default, all ASCII codes less than or equal to {\tt 32} are
+regarded as whitespace.
+
+\item{{\tt letter(Code)}} adds {\tt Code} as a letter constituting a
+token. By default, ASCII codes for characters {\tt a--z} and {\tt
+A--Z} are regarded as letters.
+
+\item{{\tt letter(Code)}} adds {\tt Code} as a special character.  By
+default, ASCII codes for the following characters are regarded as
+special characters: 
+
+\begin{verbatim}
+| { } [ ] " $ % & ' ( ) * + , - . / : ; < = > ? @ \ ^ _ ~ `
+\end{verbatim}
+\end{itemize}
+
+\ournewitem{get\_scan\_pars(-List)}{stdscan} 
+\index{{\tt get\_scan\_pars/1}}  
+{\tt get\_scan\_pars/1} returns a list of the currently active
+parameters.
+
+\end{description} 
+
 \section{Other Libraries}
 %================================
 
@@ -2558,7 +2648,7 @@ allows a user to trace the evaluation of a goal by interrupting the
 evaluation at call, success, retry, or failure of various subgoals.
 While this has proved an excellent mechanism for evaluating SLD(NF)
 executions, it is difficult at best to use such a mechanism during a
-tabled evalation.  This is because, unlike with SLD(NF), SLG requires
+tabled evaluation.  This is because, unlike with SLD(NF), SLG requires
 answers to be returned to tabled subgoals at various times (depending
 on whether batched or local evaluation is used), negative subgoals to
 be sometimes be delayed and/or simplified, etc.
@@ -2567,12 +2657,21 @@ One approach to understanding tabled evaluation better is to abstract
 away the procedural aspects of debugging and to use the tables
 produced by an evaluation to construct a {\em justification} after the
 evaluation has finished.  The justification library does just this
-using algorithms described in \cite{haifeng}.
+using algorithms described in \cite{GuRR01}.
 
-%\section{ordsets}
+\subsection{Ordered Sets}
+
+{\tt ordset.P} provides an XSB port of the widely used ordset library,
+written by Richard O'Keefe, whose summary we paraphrase here.  In the
+ordset library, sets are represented by ordered lists with no
+duplicates.  Thus {\em \{c,r,a,f,t\}} is represented as {\tt
+[a,c,f,r,t]}.  The ordering is defined by the \verb|@<| family of term
+comparison predicates, which is the ordering used by {\tt sort/2} and
+{\tt setof/3}.  The benefit of the ordered representation is that the
+elementary set operations can be done in time proportional to the sum
+of the argument sizes rather than their product.  Some of the
+unordered set routines, such as {\tt member/2}, {\tt length/2}, or
+{\tt select/3} can be used unchanged.
 
 
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "manual2"
-%%% End: 
+%%% Local Variables: %%% mode: latex %%% TeX-master: "manual2" %%% End:
