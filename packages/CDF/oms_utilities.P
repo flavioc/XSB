@@ -181,7 +181,7 @@ oms_clean_schrel.
 
 oms_clean_object :-
 	oms_obj(A,B,C,D),
-	\+ (oms_mo(A,X),class_cidbound(X,_,_,_)),
+	\+ (oms_mo(A,X),\+X=object(_),class_cidbound(X,_,_,_)),
 	assert(was_changed(yes)),
 	retractall(oms_obj(A,B,C,D)),
 	(clean_flag(1)
@@ -193,7 +193,7 @@ oms_clean_object :-
 oms_clean_object.
 
 oms_clean_memberof :-
-	oms_mo(A,B),
+	oms_mo(A,B), \+ B=object(_),
 	\+ (oms_obj(A,_,_,_),class_cidbound(B,_,_,_)),
 	assert(was_changed(yes)),
 	retractall(oms_mo(A,B)),
