@@ -508,6 +508,14 @@ void SetBindVarNum()
     xsb_exit("Not enough memory for cur->BindTypes!");
 }
 
+void write_canonical_term(Cell prologterm);
+extern char *wcan_string;
+extern int wcan_disp;
+extern int letter_flag;
+
+#define MAX_BIND_VALS 30
+char *term_string[MAX_BIND_VALS] = {0};
+
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
 /*     SetBindVal()   */
@@ -574,7 +582,15 @@ void SetBindVal()
       }
       cur->BindList[j] = string_val(BindVal);
     } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
-      xsb_abort("Structured bind variable type; will handle term");
+      letter_flag = 1;
+      wcan_disp = 0;
+      write_canonical_term(p2p_arg(BindVal,1));
+      if (term_string[j]) free(term_string[j]);
+      term_string[j] = malloc(wcan_disp+1);
+      strncpy(term_string[j],wcan_string,wcan_disp);
+      term_string[j][wcan_disp] = '\0';
+      cur->BindTypes[j] = 2;
+      cur->BindList[j] = term_string[j];
     } else {
       xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
     }
@@ -599,7 +615,15 @@ void SetBindVal()
     cur->BindTypes[j] = 2;
     cur->BindList[j] = string_val(BindVal);
   } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
-    xsb_abort("Structured bind variable type; will handle term");
+      letter_flag = 1;
+      wcan_disp = 0;
+      write_canonical_term(p2p_arg(BindVal,1));
+      if (term_string[j]) free(term_string[j]);
+      term_string[j] = malloc(wcan_disp+1);
+      strncpy(term_string[j],wcan_string,wcan_disp);
+      term_string[j][wcan_disp] = '\0';
+      cur->BindTypes[j] = 2;
+      cur->BindList[j] = term_string[j];
   } else {
     xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
   }
@@ -1079,7 +1103,7 @@ int GetColumn()
       
       strfile.strcnt = strlen(cur->Data[ColCurNum]);
       strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
-      read_canonical_term(NULL,&strfile,op1);
+      read_canonical_term(NULL,&strfile,op1); /* terminating '.'? */
       return TRUE;
     }
     if (!isstring(op)) return FALSE;

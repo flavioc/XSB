@@ -1411,12 +1411,13 @@ void write_quotedname(FILE *file, char *string)
 }
 
 
-static char *wcan_string = NULL;
+char *wcan_string = NULL;
+int wcan_disp = 0;
+int letter_flag = 1;
+
 static int wcan_string_len = 0;
-static int wcan_disp = 0;
 static char wcan_buff[32];
 static Psc dollar_var_psc = NULL;
-static int letter_flag = 1;
 
 void expand_wcan_string(int need)
 {
