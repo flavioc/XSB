@@ -1,0 +1,910 @@
+
+\chapter{sgml and xpath: SGML/XML/HTML Parsers and XPath}
+
+  \begin{center}
+    {\Large {\bf By Rohan Shirwaikar}}
+  \end{center}
+
+
+
+\section{Introduction}
+This suite of packages consists of the {\tt sgml} package, which can parse
+HTML, XML, and even SGML documents and the {\tt xpath} package, which
+supports XPath queries on XML documents.  The {\tt sgml} package is an
+adaptation of a similar package in SWI Prolog and a port of SWI's codebase with
+some minor changes. The {\tt xpath} package provides an interface to the
+popular {\tt libxml2} library, which supports XPath and XML parsing, and is
+used in Mozilla based browsers. At present, the XML parsing capabilities of
+{\tt libxml2} are not utilized explicitly in XSB, but such support might be
+provided in the future. The {\tt sgml} package does not rely on {\tt
+  libxml2}.   
+
+\section{Overview of the SGML Parser}
+
+The {\tt sgml} package accepts
+input in the form of files, URLs and Prolog atoms.
+To load the {\tt sgml} parser, the user should type
+%%
+\begin{verbatim}
+ ?- [sgml].  
+\end{verbatim}
+%%
+at the prompt.
+If {\tt test.html} is a file with the following contents 
+%%
+\begin{verbatim}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+<html>
+<head>
+<title>Demo</title>
+</head>
+<body>
+
+<h1 align=center>This is a demo</title>
+
+<p>Paragraphs in HTML need not be closed.
+
+<p>This is called `omitted-tag' handling.
+</body>
+</html>
+\end{verbatim}
+%%
+then the following call
+%%
+\begin{verbatim}
+?- load_html_structure(file('test.html'), Term, Warn),
+   pretty_print(Term).
+\end{verbatim}
+%%
+will parse it and bind {\tt Term} to the following Prolog term: 
+%%
+\begin{verbatim}
+[ element(html,
+          [],
+          [ element(head,
+                    [],
+                    [ element(title,
+                              [],
+                              [ 'Demo'
+                              ])
+                    ]),
+            element(body,
+                    [],
+                    [ '\n',
+                      element(h1,
+                              [ align = center
+                              ],
+                              [ 'This is a demo'
+                              ]),
+                      '\n\n',
+                      element(p,
+                              [],
+                              [ 'Paragraphs in HTML need not be closed.\n'
+                              ]),
+                      element(p,
+                              [],
+                              [ 'This is called `omitted-tag\' handling.'
+                              ])
+                    ])
+          ])
+].
+\end{verbatim}
+
+
+
+\index{{\tt CDATA}}
+The XML document is converted to a list of Prolog terms of the form {\tt
+  element(\emph{Name},\emph{Attributes},\emph{Content})}.  Each term
+corresponds to an XML element. \emph{Name} represents the name of the element.
+\emph{Attributes} is a list of attribute-value pairs of the element.  
+\emph{Content} is a list of child-elements and CDATA.
+For instance, 
+%%
+\begin{verbatim}
+    <aaa>fooo<bbb>foo1</bbb></aaa>  
+\end{verbatim}
+%%
+will be parsed as
+%%
+\begin{verbatim}
+    element(aaa,[],[fooo, element(bbb,[],[foo1])])  
+\end{verbatim}
+%%
+
+Entities (e.g. \verb$&lt;$) are returned as part of {\tt CDATA},
+unless they cannot be represented. See {\bf load\_sgml\_structure/3}
+for details.
+
+\section{Predicate Reference}
+\subsection{Loading Structured Documents}
+
+SGML, HTML, and XML documents are parsed by the predicate
+{\bf load\_structure/4}, which has many options. For 
+convenience, a number of commonly used shorthands are provided
+to parse SGML, XML and HTML documents
+respectively.
+%%
+\begin{description}
+  \index{load\_sgml\_structure/3}
+\item[{\bf load\_sgml\_structure}{\bf (}{\it +Source, -ListOfContent,
+    -Warn}{\bf )}]\mbox{}
+  \index{load\_xml\_structure/3}
+\item[{\bf load\_xml\_structure}{\bf (}{\it +Source, -ListOfContent,
+    -Warn}{\bf )}]\mbox{}
+  \index{load\_html\_structure/3}
+\item[{\bf load\_html\_structure}{\bf (}{\it +Source, -Content, -Warn}{\bf )}]\mbox{}
+\end{description}
+%%
+The parameters of these predicates have the same meaning as those in {\bf
+  load\_structure/4}, and are described below.
+
+The above predicates (in fact, just {\tt load\_xml\_structure/3} and
+{\tt load\_html\_structure/3}) are the most commonly used predicates of the
+{\tt sgml} package. The other predicates described in this section are
+needed only for advanced uses of the package. 
+
+
+\begin{description}
+  \index{load\_structure/4}
+\item[{\bf load\_structure}{\bf (}{\it +Source, -ListOfContent, +Options, -Warn}{\bf )}]\mbox{}
+  \\
+  {\it Source} can have one of the following forms:
+   {\tt url({\it {url}})}, {\tt file({\it file name})},
+  {\tt string({\it 'document as a Prolog atom'})}.
+  The parsed document is returned in {\it ListOfContent}.
+  {\it Warn} is bound to a (possibly empty) list of warnings generated
+  during the parsing process.
+  {\it Options} is a list of parameters that control parsing, which are
+  described later.
+
+  The list {\it ListOfContent}  can have the following members:
+%%
+  \begin{description}
+    \index{{\tt CDATA}}
+  \item[A Prolog atom]\mbox{}\\
+    Atoms are used to represent character strings, i.e., {\tt CDATA}. 
+
+    \index{{\tt NAMES}}
+    \index{{\tt NUMBER}}
+  \item[{\bf element}{\bf (}{\it Name, ListOfAttributes, ListOfContent}{\bf
+    )}]\mbox{}\\{\it Name} is the name of the element tag. Since SGML is 
+    case-insensitive, all element names are returned as lowercase atoms.
+    
+    {\it ListOfAttributes} is a list of pairs the form {\it Name}={\it
+      Value}, where \emph{Name} is the name of an attribute and
+    \emph{Value} is its value.  Values of type {\tt CDATA} are represented
+    as atoms. The values of multi-valued attributes ({\tt NAMES},
+    \emph{etc.}) are represented as a lists of atoms.  Handling of the
+    attributes of types {\tt NUMBER} and {\tt NUMBERS} depends on the
+    setting of the {\tt number(+NumberMode)} option of {\bf
+      set\_sgml\_parser/2} or {\bf load\_structure/3} (see later).  By
+    default the values of such attributes
+    are represented as atoms, but the {\tt number(...)} option can also 
+    specify that these values must be converted to
+    Prolog integers.
+    
+    {\it ListOfContent} is a list that represents
+    the content for the element.
+
+  \item[{\bf entity}{\bf (}{\it Code}{\bf )}]\mbox{}\\
+    If a character entity (e.g., \verb$&#913;$) is encountered that 
+    cannot be represented in the Prolog character set, this term is 
+    returned. It represents the code of the encountered character (e.g.,
+    {\tt entity(913)}).
+
+  \item[{\bf entity}{\bf (}{\it Name}{\bf )}]\mbox{}\\
+    This is a special case of {\tt entity(Code)}, intended to handle 
+    special symbols by their name rather than character code.
+    If an entity refers to a character entity holding a single character, 
+    but this character cannot be represented in the Prolog character set, 
+    this term is returned. For example, if the contents of an element is
+    \verb$&Alpha; &lt; &Beta;$ then it will be represented as follows:
+    %%
+\begin{verbatim}
+    [ entity('Alpha'), ' < ', entity('Beta') ]
+\end{verbatim}
+    %%
+    Note that entity names are case sensitive in both SGML and XML.
+
+    \index{{\tt SDATA}}
+  \item[{\bf sdata}{\bf (}{\it Text}{\bf )}]\mbox{}\\
+    If an entity with declared content-type {\tt SDATA} is encountered, this 
+    term is used. The data of the entity instantiates {\it Text}.
+
+    \index{{\tt NDATA}}
+  \item[{\bf ndata}{\bf (}{\it Text}{\bf )}]\mbox{}\\
+    If an entity with declared content-type {\tt NDATA} is encountered, this 
+    term is used. The data instantiates {\it Text}.
+    
+  \item[{\bf pi}{\bf (}{\it Text}{\bf )}]\mbox{}\\
+    If a processing instruction is encountered (\verb$<?...?>$), {\it Text} holds the text of the processing instruction. Please note that the
+    \verb$<?xml ...?>$ instruction is ignored and is not treated as a
+    processing instruction.
+  \end{description}
+
+  The {\it Options} parameter is a list that controls parsing. Members of
+  that list can be of the following form:
+%%
+  \begin{description}
+
+  \item[{\bf dtd}{\bf (}{\it ?DTD}{\bf )}]\mbox{}\\
+    Reference to a DTD object. If specified, the \verb$<!DOCTYPE ...>$
+    declaration supplied with the document
+    is ignored and the document is parsed and validated against 
+    the provided DTD. If the DTD argument is a variable, then
+    a the variable \emph{DTD} gets bound to
+    the DTD object created out of the DTD supplied with the document.
+
+    \index{{\tt xml}}
+    \index{{\tt sgml}}
+    \index{{\tt xmlns}}
+  \item[{\bf dialect}{\bf (}{\it +Dialect}{\bf )}]\mbox{}\\
+    Specify the parsing dialect. The supported dialects are
+    {\tt sgml} (default),
+    {\tt xml} 
+    and {\tt xmlns}.
+    
+  \item[{\bf space}{\bf (}{\it +SpaceMode}{\bf )}]\mbox{}\\
+    Sets the space handling mode for the initial environment. This mode is
+    inherited by the other environments, which can override the inherited
+    value using the XML reserved attribute {\bf xml:space}. See
+    Section~\ref{sec:space} for details.
+
+    \index{{\tt token}}
+    \index{{\tt integer}}
+  \item[{\bf number}{\bf (}{\it +NumberMode}{\bf )}]\mbox{}\\
+    Determines how attributes of type {\tt NUMBER} and {\tt NUMBERS} are
+    handled.  If {\tt token} is specified (the default) they are passed as
+    an atom.  If {\tt integer} is specified the parser attempts to convert
+    the value to an integer.  If conversion is successful, the attribute is
+    represented as a Prolog integer.  Otherwise the value is represented as
+    an atom.  Note that SGML defines a numeric attribute to be a sequence
+    of digits.  The {\tt -} (minus) sign is not allowed and {\tt 1} is
+    different from {\tt 01}.  For this reason the default is to handle
+    numeric attributes as tokens.  If conversion to integer is enabled,
+    negative values are silently accepted and the minus sign is ignored.
+
+
+    \index{{\tt false}}
+  \item[{\bf defaults}{\bf (}{\it +Bool}{\bf )}]\mbox{}\\
+    Determines how default and fixed attributes from the DTD are used.  By
+    default, defaults are included in the output if they do not appear in
+    the source.  If {\tt false}, only the attributes occurring in the source
+    are emitted.
+    
+    
+  \item[{\bf file}{\bf (}{\it +Name}{\bf )}]\mbox{}\\
+    Sets the name of the input file for error reporting.
+    This is useful if the input is a stream that is not coming from 
+    a file. In this case, errors and warnings will not have the file name
+    in them, and this option allows one to force inclusion of a file name
+    in such messages.
+
+  \item[{\bf line}{\bf (}{\it +Line}{\bf )}]\mbox{}\\
+    Sets the starting line-number for reporting errors. For instance, if
+    {\tt line(10)} is specified and an error is found at line X then the
+    error message will say that the error occurred at line X+10.
+    This option is used when the input stream does not start with the first
+    line of a file.
+    
+  \item[{\bf max\_errors}{\bf (}{\it +Max}{\bf )}]\mbox{}\\
+Sets the maximum number of errors.  The default is 50. If this number
+    is reached, the following exception is raised:
+%%
+    \begin{quote}
+      {\tt error(limit\_exceeded(max\_errors, Max), \_)} 
+    \end{quote}
+
+  \end{description}
+
+\end{description}
+
+\subsection{Handling of  White Spaces}\label{sec:space}
+
+Four modes for handling white-spaces are provided. The initial mode can be
+switched using the {\tt space(SpaceMode)} option to
+{\bf load\_structure/3} or {\bf set\_sgml\_parser/2}. In XML
+mode, the mode is further controlled by the {\bf xml:space} attribute,
+which may be specified both in the DTD and in the document. The defined
+modes are:
+
+
+\begin{description}
+\item[{\bf space}{\bf (sgml)}]\mbox{}\\
+  Newlines at the start and end of an element are removed.
+    This is the default mode for the SGML dialect. 
+
+\item[{\bf space}{\bf (preserve)}]\mbox{}\\
+  White space is passed literally to the application. This mode leaves all
+  white space handling to the application. This is the default mode for
+  the XML dialect. 
+
+  \index{{\tt sgml} space mode}
+\item[{\bf space}{\bf (default)}]\mbox{}\\
+  In addition to {\tt sgml} space-mode, all consecutive whitespace is 
+  reduced to a single space-character.
+
+  \index{{\tt default} space mode}
+  \index{{\tt preserve} space mode}
+\item[{\bf space}{\bf (remove)}]\mbox{}\\
+  In addition to {\tt default}, all leading and trailing white-space is 
+  removed from {\tt CDATA} objects. If, as a result, the {\tt CDATA} 
+  becomes empty, nothing is passed to the application. This mode is 
+  especially handy for processing data-oriented documents, such as RDF. 
+  It is not suitable for normal text documents. Consider the HTML 
+  fragment below. When processed in this mode, the spaces surrounding the 
+  three elements in the example below are lost.  This mode is not part of
+  any standard: XML 1.0 allows only {\tt default} and {\tt preserve}.
+%%
+\begin{verbatim}
+Consider adjacent <b>bold</b> <ul>and</ul> <it>italic</it> words.
+\end{verbatim}
+  %%
+  The parsed term will be
+  {\tt ['Consider adjacent',element(b,[],[bold]),element(ul,[],[and]),element(it,[],[italics]),words]}.
+
+
+\end{description}
+
+\subsection{XML documents}\label{sec:xml}
+
+\index{{\tt sgml}}
+\index{{\tt xml}}
+The parser can operate in two modes:
+the {\tt sgml} mode and
+the {\tt xml} mode, as 
+defined by the {\tt dialect(Dialect)} option. HTML is a special case of
+the SGML mode with a particular DTD. Regardless of this 
+option, if the first line of the document reads as below, the parser is 
+switched automatically to the XML mode.
+
+
+\begin{verbatim}
+	<?xml ... ?>
+\end{verbatim}
+
+
+Switching to XML mode implies:
+
+
+\begin{itemize}
+\item \emph{XML empty elements}\mbox{}\\
+  The construct \verb$<element attribute ... attribute/>$ is recognized as 
+  an empty element. 
+  
+\item \emph{Predefined entities}\mbox{}\\
+  The following entities are predefined: {\tt \&lt;} (\verb$<$), {\tt \&gt;}
+  (\verb$>$), {\tt \&amp;} (\verb$&$), {\tt \&apos;} (\verb$'$) 
+  and {\tt \&quot;} (\verb$"$). 
+  
+\item \emph{Case sensitivity}\mbox{}\\
+  In XML mode, names of tags and attributes
+  are case-sensitive, except for the DTD 
+  reserved names (i.e. {\tt ELEMENT}, \emph{etc.}). 
+  
+\item \emph{Character classes}\mbox{}\\
+  In XML mode, underscore (\verb$_$) and colon (\verb$:$) are
+  allowed in names. 
+
+  \index{{\tt preserve} space mode}
+  \index{{\tt remove} space mode}
+\item \emph{White-space handling}\mbox{}\\
+  White space mode is set to {\tt preserve}. In addition,
+  the XML reserved attribute
+  {\bf xml:space} is honored; it may appear both in the document and the
+  DTD. The {\tt remove} extension (see {\tt space(remove)} earlier)  is allowed
+  as a value of the {\bf xml:space} attribute. For
+  example, the DTD statement below ensures that the {\bf pre} element
+  preserves space, regardless of the default processing mode.
+
+
+
+\begin{verbatim}
+		<!ATTLIST pre xml:space nmtoken #fixed preserve>
+\end{verbatim}
+
+
+\end{itemize}
+
+\subsubsection{XML Namespaces}\label{sec:xmlns}
+
+\index{{\tt xmlns} dialect}
+Using the dialect {\tt xmlns}, the parser will recognize XML 
+namespace prefixes. In this case, the names of elements are returned as a term 
+of the format
+
+\begin{quote}
+  {\it URL}{\tt :}{\it LocalName} 
+\end{quote}
+
+If an identifier has no namespace prefix and there is no default namespace, it 
+is returned as a simple atom. If an identifier has a namespace prefix but this 
+prefix is undeclared, the namespace prefix rather than the related URL 
+is returned.
+
+Attributes declaring namespaces ({\tt xmlns:{\it ns}={\it url}})
+are represented in the translation as regular attributes.
+
+
+\subsection{DTD-Handling}
+
+The DTD ({\bf D}ocument {\bf T}ype {\bf D}efinition) are internally
+represented as objects
+that can be created, freed, defined, and inspected. 
+Like the parser itself, it is filled by opening it as a Prolog output
+stream and sending data to it. This section summarizes the predicates 
+for handling the DTD.
+
+
+\begin{description}
+  \index{new\_dtd/2}
+\item[{\bf new\_dtd}{\bf (}{\it +DocType, -DTD, -Warn}{\bf )}]\mbox{}\\Creates an empty DTD for the named {\it DocType}. The returned 
+  DTD-reference is an opaque term that can be used in the other predicates
+  of this package. {\it Warn} is the list of warnings generated.
+
+  \index{free\_dtd/1}
+\item[{\bf free\_dtd}{\bf (}{\it +DTD, -Warn}{\bf )}]\mbox{}\\
+  Deallocate all resources associated to the DTD. Further use of {\it DTD}
+  is invalid. {\it Warn} is the list of warnings generated.
+
+  \index{open\_dtd/3}
+\item[{\bf open\_dtd}{\bf (}{\it +DTD, +Options, -Warn}{\bf )}]\mbox{}\\
+   This opens and loads a DTD from a specified location (given in the
+   \emph{Options} parameter (see next).
+   {\it DTD} represents the created DTD object after the source is loaded.
+   {\it Options} is a list options. Currently the only option supported is
+   {\it source(location)}, where {\it location} can be of one of these
+   forms:
+   %%
+   \begin{quote}
+     {\tt url({\it {url}})}\\
+     {\tt file({\it fileName})}\\
+     {\tt string({\it 'document as a Prolog atom'})}.
+   \end{quote}
+   %%
+ 
+
+  \index{dtd/3}
+  \index{doctype}
+\item[{\bf dtd}{\bf (}{\it +DocType, -DTD, -Warn}{\bf )}]\mbox{}\\
+  Certain DTDs are part of the system and have known
+  doctypes. Currently, 'HTML' is the only recognized built-in
+  doctype in the SGML mode. 
+  Such a DTD can be used for parsing simply by
+  specifying the doctype.  Thus, the {\tt dtd/3} predicate takes the
+  doctype name, finds the DTD associated with the given doctype, and
+  creates a dtd object for it.  {\it Warn} is the list of warnings
+  generated.
+
+  \index{dtd/3}
+\item[{\bf dtd}{\bf (}{\it +DocType, -DTD, +DtdFile -Warn}{\bf )}]\mbox{}\\
+  
+  The predicate parses the DTD present at the location \emph{DtdFile} and
+  creates the corresponding DTD object.  {\it DtdFile} can have one of the
+  following forms: {\tt url({\it url})}, {\tt file({\it fileName})}, {\tt
+    string({\it 'document as a Prolog atom'})}.
+
+\end{description}
+
+
+\subsection{Low-level Parsing Primitives}
+
+The following primitives are used only for more complex types of parsing,
+which might not be covered by the {\tt load\_structure/4} predicate. 
+
+\begin{description}
+  \index{new\_sgml\_parser/2}
+\item[{\bf new\_sgml\_parser}{\bf (}{\it -Parser, +Options, -Warn}{\bf
+    )}]\mbox{}\\Creates a new parser. {\it Warn} is the list of warnings
+  generated. A parser can be used one or multiple times for parsing
+  documents or parts thereof. It may be bound to a DTD or the DTD may be
+  left implicit. In this case the DTD is created from the document prologue
+  or (if it is not in the prologue) parsing is performed without a DTD.
+  The \emph{Options} list can contain the following parameters: 
+
+  \begin{description}
+  \item[{\bf dtd}{\bf (}{\it ?DTD}{\bf )}]\mbox{}\\
+    If \emph{DTD} is bound to a DTD object, this DTD is used for parsing
+    the document and the document's prologue is ignored. If \emph{DTD} is a
+    variable, the variable gets bound to a created DTD. This DTD may
+    be created from the document prologue or build implicitly from the
+    document's content.
+  \end{description}
+
+
+
+  \index{free\_sgml\_parser/1}
+\item[{\bf free\_sgml\_parser}{\bf (}{\it +Parser, -Warn}{\bf
+    )}]\mbox{}\\Destroy all resources related to the parser. This does not
+  destroy the DTD if the parser was created using the {\tt dtd(\emph{DTD})}
+  option. {\it Warn} is the list of warnings generated during parsing (can
+    be empty).
+
+  \index{set\_sgml\_parser/2}
+\item[{\bf set\_sgml\_parser}{\bf (}{\it +Parser, +Option, -Warn}{\bf
+    )}]\mbox{}\\Sets attributes to the parser. {\it Warn} is the list of
+  warnings generated. \emph{Options} is a list that can contain the
+    following members:
+
+  \begin{description}
+  \item[{\bf file}{\bf (}{\it File}{\bf )}]\mbox{}\\
+    Sets the file for reporting errors and warnings. Sets the linenumber to 1. 
+  \item[{\bf line}{\bf (}{\it Line}{\bf )}]\mbox{}\\
+    Sets the starting line for error reporting. Useful if the stream is not
+    at the start of the (file) object for generating proper line-numbers.
+    This option has the same meaning as in the {\tt load\_structure/4}
+    predicate. 
+
+  \item[{\bf charpos}{\bf (}{\it Offset}{\bf )}]\mbox{}\\
+    Sets the starting character location.  See also the {\tt file(File)}
+    option. Used when the stream does not start from the beginning of a
+    document. 
+
+  \item[{\bf dialect}{\bf (}{\it Dialect}{\bf )}]\mbox{}\\
+    Set the markup dialect. Known dialects: 
+
+
+    \begin{description}
+      \index{{\tt sgml}}
+    \item[{\tt sgml}]\mbox{}\\
+      The default dialect. This implies markup is case-insensitive and
+      standard SGML abbreviation is allowed (abbreviated attributes and
+      omitted tags). 
+      \index{{\tt xml}}
+    \item[{\tt xml}]\mbox{}\\
+      This dialect is selected automatically if the processing instruction
+      \verb$<?xml ...>$ is encountered.  \index{{\tt xmlns}}
+    \item[{\tt xmlns}]\mbox{}\\
+      Process file as XML file with namespace support. 
+    \end{description}
+
+  \item[{\bf qualify\_attributes}{\bf (}{\it Boolean}{\bf )}]\mbox{}\\
+    Specifies how
+    to handle unqualified attributes (i.e., without an explicit namespace)
+    in XML namespace ({\tt xmlns}) dialect.  By default, such attributes
+    are not qualified with namespace prefixes.
+    If {\tt true}, such attributes are qualified
+    with the namespace of the element they appear in.
+
+  \item[{\bf space}{\bf (}{\it SpaceMode}{\bf )}]\mbox{}\\
+    Define the initial handling of white-space in {\tt PCDATA}.  This attribute is
+    described in Section~\ref{sec:space}.
+  \item[{\bf number}{\bf (}{\it NumberMode}{\bf )}]\mbox{}\\
+    If {\tt token} is specified (the default), attributes of type number are represented as a Prolog atom.
+    If {\tt integer} is specified, such attributes are translated into Prolog integers.  If
+    the conversion fails (e.g., due to an overflow) a warning is issued and the
+    value is represented as an atom.
+  \item[{\bf doctype}{\bf (}{\it Element}{\bf )}]\mbox{}\\
+    Defines the toplevel element of the document. If a \verb$<!DOCTYPE ...>$
+    declaration has been parsed, this declaration is used. If there is no
+    {\tt DOCTYPE} declaration then the 
+    parser can be instructed to use the element given in
+    {\tt doctype(\_)} as the top level element. This feature is
+    useful when parsing part of a document (see the {\tt parse} option to
+    {\bf sgml\_parse/3}).
+  \end{description}
+  
+  \index{sgml\_parse/3}
+\item[{\bf sgml\_parse}{\bf (}{\it +Parser, +Options, -Warn}{\bf
+    )}]\mbox{}\\Parse an XML file.  The parser can operate in two input and
+  two output modes. Output is a structured term as described with {\bf
+    load\_structure/4}.
+  
+  {\it Warn} is the list of warnings generated. A full description of
+  \emph{Options} is given below.
+
+  \begin{description}
+  \item[{\bf document}{\bf (}{\it +Term}{\bf )}]\mbox{}\\
+    A variable that will be unified with a list describing the content of 
+    the document (see {\bf load\_structure/4}). 
+  \item[{\bf source}{\bf (}{\it +Source}{\bf )}]\mbox{}\\
+    {\it Source} can have one of the following forms:
+   {\tt url({\it url})}, {\tt file({\it fileName})},
+  {\tt string({\it 'document as a Prolog atom'})}.
+  This option \emph{must} be given.
+  \item[{\bf content\_length}{\bf (}{\it +Characters}{\bf )}]\mbox{}\\
+    Stop parsing after the given number of
+    {\it Characters}.  This option is useful for parsing
+    input embedded in \emph{envelopes}, such as HTTP envelopes.
+  \item[{\bf parse}{\bf (}{\it Unit}{\bf )}]\mbox{}\\
+    Defines how much of the input is parsed.  This option is used to parse
+    only parts of a file.
+    
+
+    \begin{description}
+      \index{{\tt file}}
+    \item[{\tt file}]\mbox{}\\
+      Default.  Parse everything upto the end of the input.
+      \index{{\tt element}}
+    \item[{\tt element}]\mbox{}\\
+      The parser stops after reading the first element. Using {\tt source(\emph{Stream})}, this implies reading is stopped as soon as the
+      element is complete, and another call may be issued on the same stream
+      to read the next element. 
+
+      \index{{\tt declaration}}
+    \item[{\tt declaration}]\mbox{}\\
+      This may be used to stop the parser after reading the first
+      declaration.  This is useful if we want to parse only the {\tt doctype}
+      declaration.
+      
+    \end{description}
+
+  \item[{\bf max\_errors}{\bf (}{\it +MaxErrors}{\bf )}]\mbox{}\\
+    Sets the maximum number of errors. If this number is exceeded, further 
+    writes to the stream will yield an I/O error exception. Printing of 
+    errors is suppressed after reaching this value. The default is 100. 
+  \item[{\bf syntax\_errors}{\bf (}{\it +ErrorMode}{\bf )}]\mbox{}\\
+    Defines how syntax errors are handled.
+
+    \begin{description}
+    \item[quiet]\mbox{}\\
+      Suppress all messages.
+    \item[print]\mbox{}\\
+      Default.  Print messages.
+      \index{{\tt informational}}
+      
+    \end{description}
+    
+
+  \end{description}
+
+\end{description}
+
+\subsection{External Entities}
+
+\index{{\tt DOCTYPE} declaration}
+While processing an SGML document the document may refer to external 
+data. This occurs in three places: external parameter entities, normal 
+external entities and the {\tt DOCTYPE} declaration. The current version 
+of this tool deals rather primitively with external data. External 
+entities can only be loaded from a file.
+
+Two types of lines are recognized by this package:
+
+\begin{quote}
+  \obeylines \obeyspaces \tt {\tt DOCTYPE} {\it doctype} {\it file}\\
+  {\tt PUBLIC} {\tt "Id "} {\it file} 
+\end{quote}
+
+The parser loads the entity from the file specified as {\it file}.
+The file can be local or a URL.
+
+\subsection{Exceptions}
+
+Exceptions are generated by the parser in two cases. The first case is when
+the user specifies wrong input.  For example when specifying
+\begin{verbatim}
+load_structure( string('<m></m>'), Document, [line(xyz)], Warn)
+\end{verbatim}
+The string {\tt xyz} is not in the domain of {\tt line}. Hence in this
+case a domain error exception will be thrown.
+
+Exceptions are generated when XML being parsed is not well formed. For
+example if the input XML contains
+\begin{verbatim}
+'<m></m1>'
+\end{verbatim}
+exceptions will be thrown.
+
+In both cases the format of the exception is
+\begin{alltt}
+  error( sgml({\it error term}), {\it error message})
+  warning( sgml({\it warning term}), {\it warning message})
+\end{alltt}
+%%
+where {\it error term} or {\it warning term} can be of the form
+
+%%
+\begin{itemize}
+\item {\it pointer to the parser instance}, 
+\item {\it line at which error occurred},
+\item {\it error code}. 
+\item	{\it functor(argument)}, where \emph{functor} and \emph{argument} 
+  depend on the type of exception raised. For example, 
+  %%
+  \begin{itemize}
+  \item[ ] {\tt resource-error(no-memory)}  --- if memory is unavailable
+  \item[ ] {\tt permission-error(file-name)}  --- no permission to read a file
+  \item[ ] A {\tt system-error(description) --- internal system error} 
+
+  \item[ ] {\tt type-error(expected,actual)} --- data type error
+  \item[ ] {\tt domain-error(functor,offending-value)}  --- the offending
+    value is not in the domain of the functor. For instance, 
+    in {\tt load\_structure( string('<m></m>'), Document, [line(xyz)], Warn)},
+    {\tt xyz} is not in the domain of {\tt line}.  
+
+  \item[ ] {\tt existence-error(resource)} --- resource does not exist
+  \item[ ] {\tt limit-exceeded(limit,maxval)} --- value exceeds the limit.
+  \end{itemize}
+  %%
+\end{itemize}
+%%
+
+\subsection{Unsupported features}
+
+The current parser is rather limited. While it is able to deal with many
+serious documents, it omits several less-used features of SGML and XML.
+Known missing SGML features include
+
+
+\begin{itemize}
+\item \emph{NOTATION on entities}\mbox{}\\
+  Though notation is parsed, notation attributes on external entity 
+  declarations are not represented in the output.
+\item \emph{NOTATION attributes}\mbox{}\\
+  SGML notations may have
+  attributes, declared using \verb$<!ATTLIST #NOT name attrib>$. Those data
+  attributes are provided when you declare an external CDATA, NDATA, or
+  SDATA entity. XML does not support external CDATA, NDATA, or SDATA
+  entities, nor any of the other uses to which data attributes are put in
+  SGML. 
+  
+
+\item \emph{SGML declaration}\mbox{}\\
+  The `SGML declaration' is fixed, though most of the parameters are 
+  handled through indirections in the implementation. 
+
+\item \emph{The RANK feature}\mbox{}\\
+  It is regarded as obsolete.
+\item \emph{The LINK feature}\mbox{}\\
+  It is regarded as too complicated.
+\item \emph{The CONCUR feature}\mbox{}\\
+  Concurrent markup allows a document to be tagged according to more than
+  one DTD at the same time.  It is not supported.
+\item \emph{The Catalog files}\mbox{}\\  Catalog files are not supported.
+\end{itemize}
+
+
+
+In the XML mode, the parser recognizes SGML constructs that are not allowed 
+in XML. Also various extensions of XML over SGML are not yet realized.
+In particular, XInclude is not implemented.
+
+\subsection{Summary of Predicates}
+
+\begin{longtable}[l]{ll}
+  {\bf dtd/2}&Find or build a DTD for a document type\\
+  {\bf free\_dtd/1}&Free a DTD object\\
+  {\bf free\_sgml\_parser/1}&Destroy a parser\\
+  {\bf load\_dtd/2}&Read DTD information from a file\\
+  {\bf load\_structure/4}&Parse XML/SGML/HTML data into Prolog term\\
+  {\bf load\_html\_structure/3}&Parse HTML file into Prolog term\\
+  {\bf load\_sgml\_structure/3}&Parse SGML file into Prolog term \\
+  {\bf load\_xml\_structure/3}&Parse XML file into Prolog term\\
+  {\bf new\_dtd/2}&Create a DTD object\\
+  {\bf new\_sgml\_parser/2}&Create a new parser\\
+  {\bf open\_dtd/3}&Open a DTD object as an output stream\\
+  {\bf set\_sgml\_parser/2}&Set parser options (dialect, source, \emph{etc.})\\
+  {\bf sgml\_parse/2}&Parse the input\\
+  {\bf xml\_name/1}&Test atom for valid XML name\\
+  {\bf xml\_quote\_attribute/2}&Quote text for use as an attribute\\
+  {\bf xml\_quote\_cdata/2}&Quote text for use as PCDATA\\
+
+\end{longtable}
+
+
+\section{XPath support}
+
+XPath is a query language designed for addressing parts of an XML document.
+XSB's {\tt xpath} package is designed to provide support for such queries.
+To use this package the {\tt libxml2} XML parsing library must be installed
+on the machine. It comes with most Linux distributions or one can download
+it from \emph{http://xmlsoft.org/}. It is available for Linux, Solaris,
+Windows, and MacOS. Note that both the library itself and the {\tt
+  .h} files of that library must be installed. In some Linux distributions
+(e.g., Mandrake), the {\tt .h} files might reside in a separate package
+from the package that contains the actual library. For instance, the
+library ({\tt libxml2.so})  might be in the package called {\tt libxml2}
+(which is usually installed by default),
+while the {\tt .h} files hight be in the package {\tt libxml2-devel}
+(which is usually \emph{not} in a default installation).
+
+On Unix-based systems (and MacOS), the package can be configured using the
+{\tt configure} script found in the XSB's {\tt packages/xpath} directory.
+The {\tt configure} script has several options such as {\tt --exec-prefix},
+{\tt --prefix}, etc, which may need to be specified if the package {\tt
+  libxml2} is installed in a non-standard place. In this case, {\tt
+  --exec-prefix=}{\em directory-of-libxml2} must specify the directory where the
+{\tt lib/libxml2.so} file is located and {\tt --prefix=}\emph{include-dir} 
+where the {\tt include/libxml2} directory is 
+found. The default {\tt exec-prefix} is {\tt /usr/lib} and {\tt prefix} is
+{\tt /usr}. If the defaults are fine, then one can configure the package using
+%%
+\begin{verbatim}
+  ./configure 
+\end{verbatim}
+%%
+Otherwise, use
+%%
+\begin{verbatim}
+  ./configure --prefix=/usr/share --exec-prefix=/usr/local
+\end{verbatim}
+%%
+if, for example, {\tt libxml2.so} is in {\tt /usr/local/lib/libxml2.so} and
+the include files are in {\tt /usr/share/include/libxml2}. 
+
+On Windows (but not for Cygwin), the libxml2 library is already included.
+To configure the package one should do the following:
+%%
+\begin{enumerate}
+\item  Copy the files from the  directory
+  {\tt XSB$\backslash$packages$\backslash$xpath$\backslash$cc$\backslash$bin}
+  (where {\tt XSB} is the directory where XSB has been installed) into the
+  directory
+  {\tt XSB$\backslash$config$\backslash$x86-pc-windows$\backslash$bin}.
+\item Change to
+  {\tt packages$\backslash$xpath$\backslash$cc} and run the following command:
+  %%
+\begin{verbatim}
+      nmake /f NMakefile.mak  
+\end{verbatim}
+  %%
+\end{enumerate}
+%%
+For the last step, you need the Microsoft's Nmake program, which can be
+downloaded from {\tt
+  http://download.microsoft.com/download/vc15/Patch/1.52/W95/EN-US/Nmake15.exe}.
+
+
+The following section assumes that the reader is familiar with the syntax
+of XPath and its capabilities.  To load the {\tt xpath} package, type
+%%
+\begin{verbatim}
+   :-[xpath]. 
+\end{verbatim}
+%%
+
+
+The program needs to include the following directive:
+
+
+%%
+\begin{verbatim}
+   :- import parse\_xpath/4 from xpath. 
+\end{verbatim}
+%%
+
+
+
+XPath query evaluation is done by using the {\tt parse\_xpath}  predicate.
+
+\begin{description}
+  \index{parse\_xpath/4}
+\item[{\bf parse\_xpath}{\bf (}{\it +Source, +XPathQuery, -Output, +NamespacePrefixList}{\bf )}]\mbox{}\\
+  {\it Source} is a term of the format {\tt url({\it {url}})}, {\tt
+    file({\it {filename}})} or {\tt string({\it
+      'XML-document-as-a-string'})}. It specifies that the input XML
+  document is contained in a file, can be fetched from a URL, or is given
+  directly as a Prolog atom.
+
+  {\it XPathQuery} is a standard XPath query which is to be evaluated on
+  the XML document in {\em Source}.
+  
+  {\it Output} gets bound to the output term. It represents the XML element
+  returned after the XPath query is evaluated on the XML document in
+  \emph{Source}. The output term is of the form {\tt string({\it
+  'XML-document'})}. It can then be parsed using the {\tt sgml} package
+  described earlier. 
+  
+  {\it NamespacePrefixList} is a space separated list of pairs of the form
+  \emph{prefix} = \emph{namespace}. This specifies the namespace
+  prefixes that are used in the XPath query.
+
+
+For example if the xpath expression is {\tt '/x:html/x:head/x:meta'}  where
+{\tt x} 
+is a prefix that stands for
+{\tt 'http://www.w3.org/1999/xhtml'}, then {\tt x}  would have to be
+defined as follows:
+
+\begin{alltt}	
+  ?- parse_xpath(url('http://w3.org'), '/x:html/x:head/x:meta', O4, 
+                     'x=http://www.w3.org/1999/xhtml').
+\end{alltt}
+%%
+In the above, the xpath query is {\tt '/x:html/x:head/x:meta'}  and the
+prefix has been defined as {\tt 'x=http://www.w3.org/1999/xhtml'}. 
+\end{description}
+
+
