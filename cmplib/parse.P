@@ -511,8 +511,11 @@ parse_directive(import(from(P/A, _Mod)), _SymTab) :-
 	inline_predicate(P, A), !,
 	error((P,'/',A,' is an inline predicate, cannot be imported !')).
 parse_directive(import(from(X, Mod)), SymTab) :-
-	parse_list(X, SymTab, [im(Mod)], (import)),
-	sym_insert(Mod, 0, [module], SymTab, _). 
+	(var(Mod)
+	 ->	error(('Module cannot be a variable. Importing: ',X))
+	 ;	parse_list(X, SymTab, [im(Mod)], (import)),
+		sym_insert(Mod, 0, [module], SymTab, _)
+	).
 parse_directive(local(X), SymTab) :-
 	parse_list(X, SymTab, [(local)], (local)).
 parse_directive(index(X), SymTab) :-	% for compiled-code indexing
