@@ -572,26 +572,6 @@ static void db_geninst(prolog_term, RegStat, struct instruction *);
 static void db_bldsubs(prolog_term, RegStat, struct flatten_elt *);
 static void db_genaput(prolog_term, int, struct instruction *, RegStat);
 
-#ifdef DEBUG_ASSERTIONS
-/* Run the choicepoint stack and check whether the predicate is 
-   being run */
-int predicate_is_open(Psc pred)
-{
-  Choice b;
-
-  b = (Choice) (breg < bfreg ? breg : bfreg);
-
-  while (b) {
-    if (b->psc == pred)
-      return 1;
-    b = b->prev_top;
-    if (b >= tcpstack.high - 1 - CP_SIZE)
-      break;
-  }
-  return 0;
-}
-#endif /* DEBUG_ASSERTIONS */
-
 /*======================================================================*/
 /*  The following code compiles a clause into a local buffer.  It	*/
 /*  treats all rules as though they had a single literal on their	*/
@@ -644,10 +624,6 @@ int assert_code_to_buff_p(prolog_term Clause)
     has_body = 0;
   }
   Arity = arity(Head);
-#ifdef DEBUG_ASSERTIONS
-  if (predicate_is_open(get_str_psc(Head)))
-    xsb_abort("Asserting to an open relation.\n");
-#endif
   Location = 0;
   Loc = &Location;
   dbgen_instB_ppvw(test_heap,Arity,0);  /* size will be backpatched */
@@ -1052,14 +1028,16 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*	ClRef0 (for unindexed asserted code):				*/
 /*		-8: length of buffer (+0)				*/
 /*		-4: Addr of previous ClRef (or PrRef)			*/
-/*		0: Try-type instruction, for chain			*/
+/*		0: Trymeelse-type instruction, for chain		*/
 /*		4: (cont) Addr of next ClRef on chain			*/
 /*		8+: BC for asserted clause				*/
 /*	ClRef1 (for group of indexed clauses, aka SOB record):		*/
 /*		-8: length of buffer (+1)				*/
 /*		-4: Addr of previous ClRef (or PrRef)			*/
 /*		0: Try-type instruction, for chain			*/
-/*		4: (cont) Addr of next ClRef on chain			*/
+/*		4: (cont) Addr of next ClRef on chain,			*/
+/*			if trust-type then ptr to prref, if first-level	*/
+/*			SOB, or ptr to previous enclosing SOB+20  	*/
 /*		8: BC switch-on-bound instruction (drop thru if var)	*/
 /*		11: (cont) arg to index on				*/
 /*		12: (cont) address of Hash Table			*/
@@ -1081,7 +1059,8 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*		8: BC noop(14) to skip next NI*8-2 bytes		*/
 /*		12: Addr of previous ClRefI on bucket chain		*/
 /*		16: Try-type instruction, for hash bucket subchain	*/
-/*		20: (cont) Addr of next ClRefI in bucket		*/
+/*		20: (cont) Addr of next ClRefI in bucket,		*/
+/*		    or back to SOB rec if last				*/
 /*		24: BC noop(6) to skip next (NI-1)*8-2 bytes		*/
 /*		28: Addr of previous ClRefI on bucket chain		*/
 /*		32: Try-type instruction, for hash bucket subchain	*/
@@ -1186,6 +1165,79 @@ typedef ClRef SOBRef ;
 static void db_addbuff(byte, ClRef, PrRef, int, int); 
 static void db_addbuff_i(byte, ClRef, PrRef, int, int *, int, prolog_term, int);
 
+/************************************************************/
+/* debugging code to dump asserted code index structure     */
+/* (works only for 32-bit machines			    */
+/************************************************************/
+/********* COMMENTED OUT UNTIL NEEDED ***
+void asrt_tab(FILE *fd, int ind) {
+  int i;
+  for (i=0;i<ind;i++) fprintf(fd," ");
+}
+
+void dump_assert_index_block(FILE *fd, ClRef clrefptr, ClRef lastclrefptr, int indent) {
+  int htsize, i, j, numindexes;
+
+  do {
+    if (ClRefType(clrefptr) == UNINDEXED_CL) {
+      fprintf(fd,"UI %p: Len: %lu, Prev: %p, Try: %lx, Else: %p\n",
+	      clrefptr, ClRefSize(clrefptr), ClRefPrev(clrefptr), ClRefTryInstr(clrefptr), 
+	      ClRefNext(clrefptr));
+    } else if (ClRefType(clrefptr) == SOB_RECORD) {
+      asrt_tab(fd,indent);
+      fprintf(fd,"SB %p: Len: %lu, Prev: %p, Try: %lx, Else: %p\n",
+	      clrefptr, ClRefSize(clrefptr), ClRefPrev(clrefptr), ClRefTryInstr(clrefptr), 
+	      ClRefNext(clrefptr));
+      asrt_tab(fd,indent+12);
+      fprintf(fd,"SOB: %lx, HT: %lx, HTs: %lu, BR: %lx, Else: %lx, Last: %lx, Num: %ld\n",
+	      ClRefSOBInstr(clrefptr), ClRefWord(clrefptr,3), ClRefHashSize(clrefptr), 
+	      ClRefJumpInstr(clrefptr), ClRefFirstIndex(clrefptr),
+	      ClRefLastIndex(clrefptr), ClRefNumClauses(clrefptr));
+      htsize = ClRefHashSize(clrefptr);
+      for (i=0; i<htsize; i++) {
+	if (ClRefHashBucket(clrefptr,i) != &fail_inst) {
+	  asrt_tab(fd,indent+12);
+	  fprintf(fd,"HT %p: %p\n",&ClRefWord(clrefptr,i+9),ClRefHashBucket(clrefptr,i));
+	}
+      }
+      fprintf(fd,"\n");
+      dump_assert_index_block(fd,(ClRef)ClRefFirstIndex(clrefptr),
+			      (ClRef)ClRefLastIndex(clrefptr),indent+2);
+    } else if (ClRefType(clrefptr) == INDEXED_CL) {
+      fprintf(fd,"IC %p: Len: %ld, Prev: %p, Try: %lx, Else: %p\n",
+	      clrefptr, ClRefSize(clrefptr), ClRefPrev(clrefptr), 
+	      ClRefTryInstr(clrefptr), IndRefNext(clrefptr));
+      numindexes = ClRefNumInds(clrefptr);
+      for (j=0; j<numindexes; j++) {
+	fprintf(fd,"   %p: BR: %lx, Prev: %lx, Try: %lx, Nxt: %lx\n",
+		&ClRefWord(clrefptr,4*j+2)+2,
+		ClRefWord(clrefptr,4*j+2),ClRefWord(clrefptr,4*j+3),
+		ClRefWord(clrefptr,4*j+4),ClRefWord(clrefptr,4*j+5));
+      }
+      fprintf(fd,"\n");
+    } else xsb_abort("bad format");
+    if (clrefptr == lastclrefptr) return;
+    clrefptr = ClRefNext(clrefptr);
+  }
+  while (1);
+}
+
+void dump_asserted_pred(PrRef prref, char *dumpfilename) {
+  FILE *fd;
+
+  fd = fopen(dumpfilename,"w");
+
+  fprintf(fd,"PR %p: BR: %lx, Fst: %lx, Lst: %lx\n\n",
+	  prref, *((long unsigned int *)prref), 
+	  *((long unsigned int *)prref+1), *((long unsigned int *)prref+2));
+
+  dump_assert_index_block(fd,*((ClRef *)prref+1),*((ClRef *)prref+2),0);
+  fclose(fd);
+}
+**** COMMENTED OUT UNTIL NEEDED **********/
+/***************************************************************/
+/* end of debugging code to dump asserted code index structure */
+/***************************************************************/
 
 /* Used by assert & retract to get through the SOBs */
 
@@ -1429,7 +1481,7 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind )
 
    /* get NEW SOB block */
    MakeClRef(NewSOB,SOB_RECORD,9+ThisTabSize);
-/*   xsb_dbgmsg((LOG_DEBUG,"New SOB %p, size = %d", NewSOB, ThisTabSize)); */
+   /*   xsb_dbgmsg((LOG_DEBUG,"New SOB %p, size = %d", NewSOB, ThisTabSize)); */
    Loc = 0 ;
    dbgen_inst3_sob( Ind>0xff ? switchon3bound : switchonbound,
  	  Ind,ClRefHashTable(NewSOB),ThisTabSize,&ClRefSOBInstr(NewSOB),&Loc);
@@ -1538,7 +1590,7 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
       db_addbuff(Arity,SOBbuff,Pred,AZ,Inum);
     }
     ClRefNumClauses(SOBbuff)++ ;
-    Pred = ClRefPrRef(SOBbuff) ;
+    Pred = ClRefPrRef(SOBbuff) ; /* fake a prref */
     addto_hashchain(AZ, Hashval, SOBbuff, ClRefIndPtr(Clause,Inum), Arity);
   }
   addto_allchain( AZ, Clause, SOBbuff, Arity ) ;
@@ -1548,16 +1600,36 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
  ** and pick the first (next) clause since a given sob
  **/
 
+static void find_usable_index(prolog_term Head, ClRef *s,
+			      int *ILevel, int *Index ) {
+  int i,Ind = 0;
+
+  *Index = *ILevel = 0 ;
+  for (i = 1; ClRefType(*s) == SOB_RECORD; i++ ) {
+    Ind = ((ClRefSOBArg(*s,1) << 8) | ClRefSOBArg(*s,2) ) << 8 |
+      ClRefSOBArg(*s,3) ;
+    if (hash_val(Ind,Head,1) >= 0) { /* found one */
+      *Index = Ind; *ILevel = i;
+      break ;
+    }
+    *s = (ClRef)ClRefFirstIndex(*s);
+  }
+  /* printf("fui: ILevel=%d, Index=%d\n",*ILevel,*Index); */
+}
+
+/* These following macros are used only in first_clref and next_clref
+   and make some assumptions based on this use. */
+
 /* Check if a clause with head H is in the hash table of a SOB */
 /* The indexing Level is used to adjust the returned clause    */
 /* pointer to the beginning of the clause		       */
 
-#define CheckSOBClause(H, Ind, SOB, Level )			\
+#define CheckSOBClause(H, Ind, sob, Level )			\
 {    int h, t ;							\
      ClRef cl ;				    			\
-     t = ClRefHashSize(SOB); 					\
+     t = ClRefHashSize(sob); 					\
      h = hash_val( (Ind), (H), t ) ;				\
-     cl = (ClRef) ClRefHashTable(SOB)[h] ;			\
+     cl = (ClRef) ClRefHashTable(sob)[h] ;			\
      if ((pb)cl != (pb)&fail_inst)				\
 	return IndPtrClRef(cl,Level) ;				\
 }
@@ -1569,68 +1641,61 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
 /* Compiled clauses may be intermixed with dynamic ones, so 	*/
 /* that possibility must be checked.				*/
 
-#define NextSOB(s,cur_level)					\
-{   while( ClRefTryOpCode(s) == dyntrustmeelsefail		\
-	|| ClRefTryOpCode(s) == noop ) /* end of sob chain */	\
-	if( cur_level-- == 1 ) /* root of sob tree */		\
+#define NextSOB(sob,curLevel,IndLevel,Ind,Head)			\
+{   while( ClRefTryOpCode(sob) == dyntrustmeelsefail		\
+	|| ClRefTryOpCode(sob) == noop ) /* end of sob chain */	\
+	if( curLevel-- == 1 ) /* root of sob tree */		\
 		return 0 ;					\
-	else	s = ClRefUpSOB(s) ; /* go up */			\
-    s = ClRefNext(s) ; /* follow sob chain */			\
-    if( ClRefType(s) != SOB_RECORD ) return s;			\
+	else sob = ClRefUpSOB(sob) ; /* go up */		\
+    sob = ClRefNext(sob) ; /* follow sob chain */		\
+    if (curLevel == 1) { /* may have changed indexes?!? */	\
+	find_usable_index(Head,&sob,IndLevel,Ind);		\
+	curLevel = *IndLevel;					\
+	} 							\
+    if( ClRefType(sob) != SOB_RECORD ) return sob;		\
 }
 
-/* s points to first SOB of the index chain			*/
+/* sob points to first SOB of the index chain			*/
 /* look for Head/Ind in all SOB chains for this index level	*/
 /* if needed go up to look in next sob chain(s)			*/
 
-#define FirstClauseSOB(s,i,l,Head,Ind)				\
+#define FirstClauseSOB(sob,curLevel,IndLevel,Head,Ind)		\
 {   for(;;)							\
-	if( i < l ) /* sob node */				\
-	{   s = ClRefPrRef(s)->FirstClRef; /* go down */	\
-	    i++ ;						\
+	if( curLevel < *IndLevel ) /* sob node */		\
+	{   sob = ClRefPrRef(sob)->FirstClRef; /* go down */	\
+	    curLevel++ ;					\
 	}							\
-	else /* i == l -> sob leaf */				\
-	{   CheckSOBClause(Head,Ind,s,i) ;			\
-	    NextSOB(s,i) ;					\
+	else /* curLevel == *IndLevel -> sob leaf */		\
+	{   CheckSOBClause(Head,*Ind,sob,curLevel) ;		\
+	    NextSOB(sob,curLevel,IndLevel,Ind,Head) ;		\
 	}							\
 }
 
 static ClRef first_clref( PrRef Pred, prolog_term Head,
 			  int *ILevel, int *Index )
-{   SOBRef s ;	/* working SOB */
-    int i, l ;  /* index depth */
-    int Ind = 0;   /* indexing sob instruction argument JF: init */
+{   SOBRef sob ;	/* working SOB */
+    int curLevel ;  /* index depth */
 
     if( PredOpCode(Pred) == fail )
 	return 0 ;
 
     /* first findout what index shall we use */
-    *Index = *ILevel = 0 ;
-    for( s = Pred->FirstClRef, i = 1;
-	 ClRefType(s) == SOB_RECORD;
-	 s = (Pred=ClRefPrRef(s))->FirstClRef, i++ )
-    {
-	Ind = ((ClRefSOBArg(s,1) << 8) | ClRefSOBArg(s,2) ) << 8 |
-		ClRefSOBArg(s,3) ;
-	if( hash_val(Ind,Head,1) >= 0 )
-	{   *Index = Ind ; *ILevel = i ;
-	    /* This is the index we're going to use */
-	    break ;
-	}
-    }
+    sob = Pred->FirstClRef;
+    find_usable_index(Head,&sob,ILevel,Index);
+
     if( *ILevel == 0 )	/* It's not indexable, so s points to first clause */
-	return s ;	/* in all chain of first SOB at lowest level */
+	return sob ;	/* in all chain of first SOB at lowest level */
     else
-    {	i = l = *ILevel ;
-	FirstClauseSOB(s,i,l,Head,Ind) ;
+    {	curLevel = *ILevel ;
+    	FirstClauseSOB(sob,curLevel,ILevel,Head,Index) ;
     }
 }
 
 static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
-			 int IndexLevel, int Ind )
-{   SOBRef s ;	/* working SOB */
-    int ni ;	/* number of indexes */
-    int i ;	/* how deep is s in the indexing trees (0->Prref/ni->leaf) */
+			 int *IndexLevel, int *Ind )
+{   SOBRef sob ;	/* working SOB */
+    int numInds ;	/* number of indexes */
+    int curLevel ;	/* how deep is sob in the indexing trees (0->Prref/numInds->leaf) */
     CPtr PI ;	/* working index pointer */
 
     if( ClRefType(Clause) != INDEXED_CL ) {	/* mixed clause types */
@@ -1640,46 +1705,48 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 	else if( ClRefType(ClRefNext(Clause)) != SOB_RECORD )
 	  return ClRefNext(Clause) ;
 	else /* should do as in cl_ref_first -- to index */
-	{   s = ClRefNext(Clause) ; 
-	    if( IndexLevel == 0 ) /* goto first cl in all chain */
-	    {	while( ClRefType(s) == SOB_RECORD )
-		    s = ClRefPrRef(s)->FirstClRef ;
-	 	return s ;
+	{   sob = ClRefNext(Clause) ; 
+	    if( *IndexLevel == 0 ) /* goto first cl in all chain */
+	    {	while( ClRefType(sob) == SOB_RECORD )
+		    sob = ClRefPrRef(sob)->FirstClRef ;
+	 	return sob ;
 	    }
 	    else
-	    {   for( i = 1 ; i < IndexLevel ; i++ )
-		    s = ClRefPrRef(s)->FirstClRef ; /* all the way down */
-		CheckSOBClause(Head,Ind,s,IndexLevel) ;
-		NextSOB(s,i) ;
-		FirstClauseSOB(s,i,IndexLevel,Head,Ind) ;
+	    {   for( curLevel = 1 ; curLevel < *IndexLevel ; curLevel++ )
+		    sob = ClRefPrRef(sob)->FirstClRef ; /* all the way down */
+		CheckSOBClause(Head,*Ind,sob,*IndexLevel) ;
+		NextSOB(sob,curLevel,IndexLevel,Ind,Head) ;
+		FirstClauseSOB(sob,curLevel,IndexLevel,Head,Ind) ;
 	    }
 	}
     }
-    else if( IndexLevel == 0 ) { /* look in all chain */
+    else if( *IndexLevel == 0 ) { /* look in all chain */
 	if( ClRefTryOpCode(Clause) == trymeelse || /* mid chain */
 	    ClRefTryOpCode(Clause) == retrymeelse ) 
 	    return ClRefNext(Clause) ;
         else /* INDEXED_CL, look on next SOB */
-	{   ni = i = ClRefNumInds(Clause);
+	  {   numInds = curLevel = ClRefNumInds(Clause);
 				      /* all chain is on lowest index chain */
-	    s = ClRefNext(Clause);    /* s = current SOB */
-	    NextSOB(s,i);
+	    sob = ClRefNext(Clause);    /* sob = current SOB */
+	    NextSOB(sob,curLevel,IndexLevel,Ind,Head);
 	    /* all leaf SOBs have non empty all chains */
-	    while( i++ < ni )
-		s = ClRefPrRef(s)->FirstClRef ;
-	    return ClRefPrRef(s)->FirstClRef ;
+	    while( curLevel++ < numInds ) {
+	      sob = ClRefPrRef(sob)->FirstClRef ;
+	    }
+	    return ClRefPrRef(sob)->FirstClRef ;
 	}
     }
     else	/* look in appropriate hash chain */
-    {	PI = ClRefIndPtr(Clause,IndexLevel) ;
+    {	PI = ClRefIndPtr(Clause,*IndexLevel) ;
 	if( cell_opcode(PI) == trymeelse || /* mid chain */
 	    cell_opcode(PI) == retrymeelse ) 
-	    return IndPtrClRef(IndRefNext(PI),IndexLevel) ;
+	    return IndPtrClRef(IndRefNext(PI),*IndexLevel) ;
 	else /* end of chain */
-	{   i = IndexLevel ;
-	    s = (SOBRef)IndRefNext(PI) ; /* s = current SOB */
-	    NextSOB(s,i) ;
-	    FirstClauseSOB(s,i,IndexLevel,Head,Ind) ;
+	  {
+	    sob = (SOBRef)IndRefNext(PI) ; /* sob = current SOB */
+	    curLevel = *IndexLevel ;
+	    NextSOB(sob,curLevel,IndexLevel,Ind,Head) ;
+	    FirstClauseSOB(sob,curLevel,IndexLevel,Head,Ind) ;
 	}
     }
 }
@@ -1929,9 +1996,10 @@ static int retract_clause( ClRef Clause, int retract_nr )
 /* db_get_clause
  * gets next clause from predicate
  * Arg 1 is the previous ClRef, or 0 if this is the first call.
- * Args 2 and 3 must initially be variables; they get set by the first
- *   call and those values should continue to be passed for each 
- *   subsequent call.
+ * Arg 2 is n if the nth index is to be used, 0 initially, and on subsequent
+ *	calls, should pass in value previously returned in Arg 10.
+ * Arg 3 is the integer indicating the field(s) indexed on (from the sob(3) instr,
+ *	initially 0, and subsequently value returned in Arg 11.
  * Arg 4 is the Prref (predicate handle)
  * Arg 5 is a prolog term that matches the head of the clause
  * Arg 6 is 0 for "normal" clauses, 1 for clauses that consist of a fail 
@@ -1939,12 +2007,14 @@ static int retract_clause( ClRef Clause, int retract_nr )
  * Arg 7 returns the clause address
  * Arg 8 returns the clause type
  * Arg 9 returns the jump point into the code
+ * Arg 10 returns the ordinal for indexing (pass back in Arg 2 on subsequent calls)
+ * Arg 11 returns the index fields mask (pass back in Arg 3 on subsequent calls)
  */
 
-xsbBool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type, -EntryPoint*/ )
+xsbBool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type, -EntryPoint, -NewCI, -NewCIL */ )
 {
   PrRef Pred = (PrRef)ptoc_int(4);
-  int IndexLevel, IndexArg, ni ;
+  int IndexLevel, IndexArg, nimInds ;
   ClRef Clause ;
   prolog_term Head = reg_term(5);
   CPtr EntryPoint = 0;
@@ -1968,28 +2038,27 @@ xsbBool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type,
     Clause = (ClRef)ptoc_int(1);
     if (Clause == 0)
     {   Clause = first_clref( Pred, Head, &IndexLevel, &IndexArg ) ;
-	ctop_int(2,IndexLevel);
-	ctop_int(3,IndexArg);
     }
     else
     {	IndexLevel = ptoc_int(2);
 	IndexArg   = ptoc_int(3);
-	do /* loop until a clause is found:
+	do { /* loop until a clause is found:
 		Retracted if looking for failed; 
 		Not Retracted if looking for not failed */
-	    Clause = next_clref( Pred, Clause, Head, IndexLevel, IndexArg );
-	while(Clause && ClRefNotRetracted(Clause)==failed ) ;
+	    Clause = next_clref( Pred, Clause, Head, &IndexLevel, &IndexArg );
+	} while (Clause && ClRefNotRetracted(Clause)==failed ) ;
     }
 
 set_outputs:
     if( Clause != 0 ) {
-	if( ClRefType(Clause) == SOB_RECORD )
+      if( ClRefType(Clause) == SOB_RECORD ) {
 	    xsb_exit("Error in get clause");
+      }
 	else if( ClRefType(Clause) != INDEXED_CL )
 	  { EntryPoint = ClRefEntryPoint(Clause) ;}
 	else /* ClRefType(Clause) == INDEXED_CL */
-	  { ni = ClRefNumInds(Clause) ;
-	    EntryPoint = ClRefIEntryPoint(Clause,ni) ;
+	  { nimInds = ClRefNumInds(Clause) ;
+	    EntryPoint = ClRefIEntryPoint(Clause,nimInds) ;
 	  }
     }
     else
@@ -2001,6 +2070,8 @@ set_outputs:
     ctop_int( 7, (Integer)Clause ) ;
     ctop_int( 8, Clause != 0 ? (Integer)ClRefType(Clause) : 4 ) ;
     ctop_int( 9, (Integer)EntryPoint ) ;
+    ctop_int(10, IndexLevel);
+    ctop_int(11, IndexArg);
     return TRUE ;
 }
 
@@ -2305,4 +2376,3 @@ int trie_retract_safe(void)
 }
 
 /*-----------------------------------------------------------------*/
-
