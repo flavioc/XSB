@@ -1,4 +1,4 @@
-/* File:      obsolete.P -- keep obsolete stuff here
+/* File:      xsb_hook.P -- mechanism for adding hooks to xsb
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -22,11 +22,34 @@
 ** 
 */
 
+%% Hooks
+:- dynamic xsb_exit_hook(_), xsb_before_prompt_hook(_).
 
+%% Hook handling
+add_xsb_hook(Hook) :-
+	call(Hook), !.  % hook is already there
+add_xsb_hook(Hook) :-
+	(   callable(Hook)
+	->  assert(Hook)
+	;   warning(('ADD_XSB_HOOK: ',Hook,' must be a callable literal'))
+	).
 
-%% Insert this in obsolete predicates.
-obsolete(Msg1, Msg2) :-
-	add_xsb_hook(xsb_exit_hook(obsolete_warn(Msg1, Msg2))).
+remove_xsb_hook(Hook) :-
+	(   callable(Hook)
+	->  retract(Hook)
+	;   warning(('REMOVE_XSB_HOOK: ',Hook,' must be a callable literal'))
+	).
 
-obsolete_warn(Msg1, Msg2) :-
-	warning((Msg1, ': Obsolete predicate. Use: ', Msg2, ' instead')).
+%% Hook must be of the form hookName(_)
+call_xsb_hook(Hook) :-
+	call(Hook),
+	Hook =.. [HookName, HookCall],
+	(   atom(HookName)
+	->  (   callable(HookCall)
+	    ->	call(HookCall)
+	    ;	warning(('CALL_XSB_HOOK: ',HookCall,' must be a callable literal'))
+	    )
+	;   warning(('CALL_XSB_HOOK: ',HookName, ' is not a name of a hook'))
+	),
+	fail.
+call_xsb_hook(_).

@@ -1,4 +1,4 @@
-/* File:      obsolete.P -- keep obsolete stuff here
+/* File:      xsb_hook.P -- mechanism for adding hooks to xsb
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -22,11 +22,11 @@
 ** 
 */
 
+:- import '=..'/2, atom/1, call/1, warning/1, callable/1 from standard.
+:- import retract/1, assert/1, (dynamic)/1 from assert.
 
+:- export add_xsb_hook/1, remove_xsb_hook/1, call_xsb_hook/1.
 
-%% Insert this in obsolete predicates.
-obsolete(Msg1, Msg2) :-
-	add_xsb_hook(xsb_exit_hook(obsolete_warn(Msg1, Msg2))).
-
-obsolete_warn(Msg1, Msg2) :-
-	warning((Msg1, ': Obsolete predicate. Use: ', Msg2, ' instead')).
+:- export
+	xsb_exit_hook/1,
+	xsb_before_prompt_hook/1.

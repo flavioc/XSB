@@ -47,4 +47,5 @@
 :- import file_open/3, file_close/1, file_get/2, fmt_write_string/3,
 	  print_file_contents/2, file_flush/2
     from file_io.
+:- import call_xsb_hook/1, xsb_exit_hook/1 from xsb_hook.
 

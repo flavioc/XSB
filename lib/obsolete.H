@@ -24,5 +24,6 @@
 
 
 :- import warning/1 from standard.
+:- import add_xsb_hook/1, xsb_exit_hook/1 from xsb_hook.
 
 :- export obsolete/2.

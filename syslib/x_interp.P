@@ -101,8 +101,11 @@ interpreter1 :-
 	; process_query(X, Vars)
 	).
 
-read_in_stop(halt) :- halt.    %% quit entire system, regardless of break level
-read_in_stop(end_of_file).     %% pop a break level, out if at top
+read_in_stop(halt) :-          %% quit entire system, regardless of break level
+	call_xsb_hook(xsb_exit_hook(_)),
+	halt.
+read_in_stop(end_of_file) :-   %% pop a break level, out if at top
+	call_xsb_hook(xsb_exit_hook(_)).
 
 eval_command_line_goal(FileDes) :-
 	file_read(FileDes, Goal),
