@@ -27,6 +27,8 @@
 	  member/2, memberchk/2, subset/2, reverse/2, select/3, for/3.
 :- export log_ith/3, log_ith_bound/3.
 :- export logk_ith/4.
+:- export comma_memberchk/2, abscomma_memberchk/2, comma_to_list/2,
+	  comma_length/2, comma_member/2, comma_append/3.
 
 :- import term_type/2 from machine.
 :- import integer/1, is_list/1 from standard.
