@@ -140,6 +140,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\self_orientation.obj"
 	-@erase "$(OBJDIR)\slgdelay.obj"
 	-@erase "$(OBJDIR)\subp.obj"
+	-@erase "$(OBJDIR)\struct_manager.obj"
 	-@erase "$(OBJDIR)\system.obj"
 	-@erase "$(OBJDIR)\token.obj"
 	-@erase "$(OBJDIR)\trace.obj"
@@ -182,6 +183,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/self_orientation.obj" \
 	"$(OBJDIR)/slgdelay.obj" \
 	"$(OBJDIR)/subp.obj" \
+	"$(OBJDIR)/struct_manager.obj" \
 	"$(OBJDIR)/scc.obj" \
 	"$(OBJDIR)/system.obj" \
 	"$(OBJDIR)/token.obj" \
@@ -485,6 +487,21 @@ DEP_CPP_SYSTE=\
 ################################################################################
 # Begin Source File
 
+SOURCE=$(INTDIR)\struct_manager.c
+DEP_CPP_STRMAN=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\struct_manager.h"\
+	{$(INTDIR)}"\cell.h"
+
+
+"$(OBJDIR)\struct_manager.obj" : $(SOURCE) $(DEP_CPP_STRMAN) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+# End Source File
+################################################################################
+# Begin Source File
+
 SOURCE=$(INTDIR)\subp.c
 DEP_CPP_SUBP_=\
 	{$(INTDIR)}"\configs\config.h"\
@@ -529,6 +546,7 @@ DEP_CPP_SLGDE=\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\tries.h"\
+	{$(INTDIR)}"\struct_manager.h"\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\tr_utils.h"\
@@ -895,6 +913,7 @@ DEP_CPP_EMULO=\
 	{$(INTDIR)}"\binding.h"\
 	{$(INTDIR)}"\flags.h"\
 	{$(INTDIR)}"\tries.h"\
+	{$(INTDIR)}"\struct_manager.h"\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\subinst.h"\
@@ -1108,6 +1127,7 @@ DEP_CPP_BIASS=\
 	{$(INTDIR)}"\loader.h"\
 	{$(INTDIR)}"\load_seg.h"\
 	{$(INTDIR)}"\tries.h"\
+	{$(INTDIR)}"\struct_manager.h"\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\tr_utils.h"\
