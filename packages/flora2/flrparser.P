@@ -340,7 +340,7 @@ fltbldirect_struct(F,A,FLTABLE(F,A)).
 %%flimptdirect_struct(F,A,M,FLIMPORT(F,A,M)).
 flargumentsdirect_struct(F,N,Args,FLARGUMENTS(F,N,Args)).
 %%flprlgdirect_struct(F,A,FLPROLOG(F,A)).
-%%flfirstordernostoragedirect_struct(F,A,FLFIRSTORDERNOSTORAGE(F,A)).
+%%flfonostoragedirect_struct(F,A,FLFONOSTORAGE(F,A)).
 flfirstorderdirect_struct(F,A,FLFIRSTORDER(F,A)).
 flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
 flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
@@ -500,8 +500,8 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	  flora_firstorderall_directive(CanoniTerm,CodeList,Status)
 	%%; flora_import_directive(CanoniTerm,CodeList,Status)
 	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
-	%%; flora_firstordernostorage_directive(CanoniTerm,CodeList,Status)
-	%%; flora_firstordernostorageall_directive(CanoniTerm,CodeList,Status)
+	%%; flora_fonostorage_directive(CanoniTerm,CodeList,Status)
+	%%; flora_fonostorageall_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
 	; flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_table_directive(CanoniTerm,CodeList,Status)
@@ -785,29 +785,29 @@ flora_firstorder_directlist([F/A|L],[Code|CL]) :-
 
 
 /****************************************************************************
-  flora_firstordernostorageall_directive(+CanoniTerm,-CodeList,-Status)
+  flora_fonostorageall_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-%%flora_firstordernostorageall_directive(CanoniTerm,[Code],[]) :-
-%%	get_name(CanoniTerm,FL_FIRSTORDERNOSTORAGEALL),
+%%flora_fonostorageall_directive(CanoniTerm,[Code],[]) :-
+%%	get_name(CanoniTerm,FL_FONOSTORAGEALL),
 %%	flfirstorderdirect_struct(_Funct,_Arity,Code).
 
 
 
 /****************************************************************************
-  flora_firstordernostorage_directive(+CanoniTerm,-CodeList,-Status)
+  flora_fonostorage_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-%%flora_firstordernostorage_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-%%	get_name(Funct,FL_FIRSTORDERNOSTORAGE),
+%%flora_fonostorage_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+%%	get_name(Funct,FL_FONOSTORAGE),
 %%	flora_commasep_falist(T,FAList,Status),
-%%	(Status == [] -> flora_firstordernostorage_directlist(FAList,CodeList); true).
+%%	(Status == [] -> flora_fonostorage_directlist(FAList,CodeList); true).
 %%
 %%
-%%flora_firstordernostorage_directlist([],[]) :- !.
+%%flora_fonostorage_directlist([],[]) :- !.
 %%
-%%flora_firstordernostorage_directlist([F/A|L],[Code|CL]) :-
+%%flora_fonostorage_directlist([F/A|L],[Code|CL]) :-
 %%	!,
-%%	flfirstordernostoragedirect_struct(F,A,Code),
-%%	flora_firstordernostorage_directlist(L,CL).
+%%	flfonostoragedirect_struct(F,A,Code),
+%%	flora_fonostorage_directlist(L,CL).
 %%
 
 /****************************************************************************
@@ -1324,12 +1324,19 @@ flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),PROLOGMODULE(MCode)
 	!,
 	(get_name(M,MCode) -> Status=[]; parsing_error(M,ERROR_WSNAME,Status)).
 
-flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),FLORASYSMOD(MCode),Status) :-
-	%% Check if it is a Prolog module. (@prolog(xsbmod))
+flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),FLORASYSMOD(MAtom),Status) :-
+	%% Check if it is a Flora system module specification. (@flora(mod))
 	get_name(Mod,FL_FLORALIB),
 	!,
-	%% Ideally, it could be checked whether a Flora system module is registered.
-	(get_name(M,MCode) -> Status=[]; parsing_error(M,ERROR_WSNAME,Status)).
+	( get_name(M,MAtom) ->
+	    ( flora_system_module(MAtom) ->
+		Status=[]
+	    ;
+	      parsing_error(M,UNREG_SYSMOD,Status)
+	    )
+	;
+	  parsing_error(M,ERROR_WSNAME,Status)
+	).
 
 flora_workspace(CanoniTerm,_WSCode,Status) :-
 	parsing_error(CanoniTerm,ERROR_WSNAME,Status).

@@ -30,267 +30,489 @@
 
 
 /*****************************************************************************
-  flora_setup_flogic_bswrapper(+WS)
-  sets up the wrapper predicate names for F-logic facts in the module named WS.
+  flora_user_module_predicate(+Functor,+Args,+Workspace,-Predicate)
 
-  Note: An F-logic wrapper predicate name is encoded as follows:
-        'FLORA_PREFIX''workspace''base_wrapper'.
+  It takes a predicate name (either F-logic or HiLog wrapper predicate), args,
+  and workspace and returns a Florified call (with workspace attached) to a
+  Flora user module.
 *****************************************************************************/
-flora_setup_flogic_bswrapper(WS) :-
-	flora_flogic_workspace(WS),
-	!.
-
-flora_setup_flogic_bswrapper(WS) :-
-	retractall(flora_flogic_workspace(_WS)),
-	assert(flora_flogic_workspace(WS)),
-	fmt_write_string(WSBisa,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_ISA)),
-	fmt_write_string(WSBsub,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_SUB)),
-	fmt_write_string(WSBmeth,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_METH)),
-	fmt_write_string(WSBimeth,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMETH)),
-	fmt_write_string(WSBtran,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_TRAN)),
-	fmt_write_string(WSBfd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_FD)),
-	fmt_write_string(WSBifd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IFD)),
-	fmt_write_string(WSBfdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_FDSIG)),
-	fmt_write_string(WSBifdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IFDSIG)),
-	fmt_write_string(WSBmvd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVD)),
-	fmt_write_string(WSBimvd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVD)),
-	fmt_write_string(WSBmvdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVDSIG)),
-	fmt_write_string(WSBimvdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVDSIG)),
-	fmt_write_string(WSBexists,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_EXISTS)),
-	fmt_write_string(WSBmvddef,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVDDEF)),
-	fmt_write_string(WSBimvddef,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVDDEF)),
-	retractall(flora_flogic_bswrapper(_,_)),
-	assert(flora_flogic_bswrapper(WRAP_ISA,WSBisa)),
-	assert(flora_flogic_bswrapper(WRAP_SUB,WSBsub)),
-	assert(flora_flogic_bswrapper(WRAP_METH,WSBmeth)),
-	assert(flora_flogic_bswrapper(WRAP_IMETH,WSBimeth)),
-	assert(flora_flogic_bswrapper(WRAP_TRAN,WSBtran)),
-	assert(flora_flogic_bswrapper(WRAP_FD,WSBfd)),
-	assert(flora_flogic_bswrapper(WRAP_IFD,WSBifd)),
-	assert(flora_flogic_bswrapper(WRAP_FDSIG,WSBfdsig)),
-	assert(flora_flogic_bswrapper(WRAP_IFDSIG,WSBifdsig)),
-	assert(flora_flogic_bswrapper(WRAP_MVD,WSBmvd)),
-	assert(flora_flogic_bswrapper(WRAP_IMVD,WSBimvd)),
-	assert(flora_flogic_bswrapper(WRAP_MVDSIG,WSBmvdsig)),
-	assert(flora_flogic_bswrapper(WRAP_IMVDSIG,WSBimvdsig)),
-	assert(flora_flogic_bswrapper(WRAP_EXISTS,WSBexists)),
-	assert(flora_flogic_bswrapper(WRAP_MVDDEF,WSBmvddef)),
-	assert(flora_flogic_bswrapper(WRAP_IMVDDEF,WSBimvddef)).
+flora_user_module_predicate(Functor,Args,WS,Predicate) :-
+	fmt_write_string(PF,"%s'%s'%s",args(FLORA_USER_MODULE_PREFIX,WS,Functor)),
+	Predicate =.. [PF|Args].
 
 
 /*****************************************************************************
-  flora_flogic_predicate(+Funct,-Workspace,-WrapPrefix,-Base)
+  flora_system_module_predicate(+Functor,+Args,+SysModID,-Predicate)
 
-  Note: An F-logic wrapper predicate name (such as fd, mvd, isa, etc.)
-  is encoded as follows:
-        'FLORA_PREFIX''workspace''wrapper', where wrapper is prefix+base.
-
-  WrapPrefix is the prefix of the wrapper (e.g., base_, derived_, etc.)
-  Base specifies the type of the wrapped, e.g., fd, mvd, imvd, etc.
+  It takes a predicate name (either F-logic or HiLog wrapper predicate), args,
+  and Flora system module ID and returns a Florified call (with workspace attached)
+  to a Flora system module.
 *****************************************************************************/
-flora_flogic_predicate(Funct,Workspace,WrapPrefix,Base) :-
+flora_system_module_predicate(Functor,Args,SysModID,Predicate) :-
+	fmt_write_string(PF,"%s'%s'%s",
+                         args(FLORA_SYSTEM_MODULE_PREFIX,SysModID,Functor)),
+	Predicate =.. [PF|Args].
+
+
+/*****************************************************************************
+  flora_module_predicate(+Functor,+Args,+ModuleName,-Predicate)
+
+  The parameter "ModuleName" could be either the name of a Flora user module,
+  or a Flora system module. In the latter case, it would be a structured term.
+
+  It fails if the input is not a valid Flora module name. It is used for
+  either F-logic or HiLog wrapper predicates.
+*****************************************************************************/
+flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
+	flora_module_name(ModuleName,Type,WS),
+	!,
+	( Type == usermodule ->
+	    flora_user_module_predicate(Functor,Args,WS,Predicate)
+
+	; Type == systemmodule ->
+	    flora_system_module_predicate(Functor,Args,WS,Predicate)
+	;
+	  fail
+	).
+
+
+/*****************************************************************************
+  flora_firstorder_user_module_predicate(+Functor,+Args,+Workspace,-Predicate)
+*****************************************************************************/
+flora_firstorder_user_module_predicate(Functor,Args,WS,Predicate) :-
+	fmt_write_string(PF,"%s'%s'%s",args(FLORA_FO_USER_MODULE_PREFIX,WS,Functor)),
+	Predicate =.. [PF|Args].
+
+
+/*****************************************************************************
+  flora_firstorder_system_module_predicate(+Functor,+Args,+SysModID,-Predicate)
+*****************************************************************************/
+flora_firstorder_system_module_predicate(Functor,Args,SysModID,Predicate) :-
+	fmt_write_string(PF,"%s'%s'%s",
+                         args(FLORA_FO_SYSTEM_MODULE_PREFIX,SysModID,Functor)),
+	Predicate =.. [PF|Args].
+
+
+/*****************************************************************************
+  flora_firstorder_module_predicate(+Functor,+Args,+ModuleName,-Predicate)
+*****************************************************************************/
+flora_firstorder_module_predicate(Functor,Args,ModuleName,Predicate) :-
+	flora_module_name(ModuleName,Type,WS),
+	!,
+	( Type == usermodule ->
+	    flora_firstorder_user_module_predicate(Functor,Args,WS,Predicate)
+
+	; Type == systemmodule ->
+	    flora_firstorder_system_module_predicate(Functor,Args,WS,Predicate)
+	;
+	  fail
+	).
+
+
+/*****************************************************************************
+  These procedures construct a predicate symbol for a Flora user/system module.
+
+  flora_user_module_predicate_symbol(+Functor,+Workspace,-Predicate)
+  flora_system_module_predicate_symbol(+Functor,+Workspace,-Predicate)
+  flora_module_predicate_symbol(+Functor,+ModuleName,-Predicate)
+*****************************************************************************/
+flora_user_module_predicate_symbol(Functor,WS,Predicate) :-
+	flora_user_module_predicate(Functor,[],WS,Predicate).
+
+flora_system_module_predicate_symbol(Functor,WS,Predicate) :-
+	flora_system_module_predicate(Functor,[],WS,Predicate).
+
+flora_module_predicate_symbol(Functor,ModuleName,Predicate) :-
+	flora_module_predicate(Functor,[],ModuleName,Predicate).
+
+
+/*****************************************************************************
+  These procedures return the HiLog wrapper for a Flora user/system module.
+
+  flora_hilog_user_module_predicate_symbol(+Workspace,-Predicate)
+  flora_hilog_system_module_predicate_symbol(+Workspace,-Predicate)
+  flora_hilog_module_predicate_symbol(+ModuleName,-Predicate)
+*****************************************************************************/
+flora_hilog_user_module_predicate_symbol(WS,Predicate) :-
+	flora_user_module_predicate(WRAP_HILOG,[],WS,Predicate).
+
+flora_hilog_system_module_predicate_symbol(WS,Predicate) :-
+	flora_system_module_predicate(WRAP_HILOG,[],WS,Predicate).
+
+flora_hilog_module_predicate_symbol(ModuleName,Predicate) :-
+	flora_module_predicate(WRAP_HILOG,[],ModuleName,Predicate).
+
+
+/*****************************************************************************
+  These procedures construct a first order predicate symbol for a Flora
+  user/system module.
+
+  flora_firstorder_user_module_predicate_symbol(+Functor,+Workspace,-Predicate)
+  flora_firstorder_system_module_predicate_symbol(+Functor,+Workspace,-Predicate)
+  flora_firstorder_module_predicate_symbol(+Functor,+ModuleName,-Predicate)
+*****************************************************************************/
+flora_firstorder_user_module_predicate_symbol(Functor,WS,Predicate) :-
+	flora_firstorder_user_module_predicate(Functor,[],WS,Predicate).
+
+flora_firstorder_system_module_predicate_symbol(Functor,WS,Predicate) :-
+	flora_firstorder_system_module_predicate(Functor,[],WS,Predicate).
+
+flora_firstorder_module_predicate_symbol(Functor,ModuleName,Predicate) :-
+	flora_firstorder_module_predicate(Functor,[],ModuleName,Predicate).
+
+
+/*****************************************************************************
+  flora_module_name(+ModuleName,-Type,-Workspace)
+
+  The parameter "ModuleName" could be either the name of a Flora user module,
+  or a Flora system module. In the latter case, it would be a structured term.
+
+  "Type" is either "usermodule" or "systemmodule". "Workspace" is its name.
+  If the input is not a valid Flora module name, "Type" is set to "invalid".
+*****************************************************************************/
+flora_module_name(ModuleName,usermodule,ModuleName) :-
+	atom(ModuleName),
+	!.
+
+flora_module_name(FL_FLORALIB(WS),systemmodule,WS) :-
+	atom(WS),
+	!.
+
+flora_module_name(_ModuleName,invalid,_WS).
+
+
+/*****************************************************************************
+  flora_check_module_name(+ModuleName)
+*****************************************************************************/
+flora_check_module_name(ModuleName) :-
+	flora_module_name(ModuleName,Type,_WS),
+	!,
+	(Type == invalid -> flora_module_name_error(ModuleName), fail; true).
+
+
+/*****************************************************************************
+  flora_module_name_error(+ModuleName)
+*****************************************************************************/
+flora_module_name_error(ModuleName) :-
+	flora_error_line("invalid Flora module name `%S'",args(ModuleName)).
+
+
+/***************************************************************************
+  flora_user_storage_name(+Workspace,-StorageName)
+***************************************************************************/
+flora_user_storage_name(WS,StorageName) :-
+	fmt_write_string(StorageName,"%s'%s",args(FLORA_USER_TRIE_PREFIX,WS)).
+
+
+/***************************************************************************
+  flora_system_storage_name(+Workspace,-StorageName)
+***************************************************************************/
+flora_system_storage_name(WS,StorageName) :-
+	fmt_write_string(StorageName,"%s'%s",args(FLORA_SYSTEM_TRIE_PREFIX,WS)).
+
+
+/*****************************************************************************
+  flora_storage_name(+ModuleName,-StorageName)
+
+  It takes a Flora module name as input and returns the name of the storage
+  trie for this module.
+
+  The parameter "ModuleName" could be either the name of a Flora user module,
+  or a Flora system module. In the latter case, it would be a structured term.
+
+  If the input is not a valid Flora module name, it fails.
+*****************************************************************************/
+flora_storage_name(ModuleName,StorageName) :-
+	flora_module_name(ModuleName,Type,WS),
+	!,
+	( Type == usermodule ->
+	    flora_user_storage_name(WS,StorageName)
+
+	; Type == systemmodule ->
+	    flora_system_storage_name(WS,StorageName)
+	;
+	  fail
+	).
+
+
+/*****************************************************************************
+  flora_setup_flogic_fact_wrapper(+ModuleName)
+
+  It sets up the wrapper predicate names for F-logic facts in a module. It
+  can be a Flora user module, or a Flora system module. This procedure is
+  called by the DB erase/eraseall operation.
+
+  Note: An F-logic wrapper predicate name is encoded as follows:
+        'FLORA_(USER/SYSTEM)_MODULE_PREFIX''workspace''wrapper'.
+*****************************************************************************/
+flora_setup_flogic_fact_wrapper(ModuleName) :-
+	flora_current_flogic_module(ModuleName),
+	!.
+
+flora_setup_flogic_fact_wrapper(ModuleName) :-
+	retractall(flora_current_flogic_module(_)),
+	assert(flora_current_flogic_module(ModuleName)),
+	flora_module_name(ModuleName,Type,WS),
+	( Type == systemmodule ->
+	    Prefix=FLORA_SYSTEM_MODULE_PREFIX
+	;
+	  Prefix=FLORA_USER_MODULE_PREFIX
+	),
+	fmt_write_string(WSBisa,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_ISA)),
+	fmt_write_string(WSBsub,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_SUB)),
+	fmt_write_string(WSBmeth,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_METH)),
+	fmt_write_string(WSBimeth,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMETH)),
+	fmt_write_string(WSBtran,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_TRAN)),
+	fmt_write_string(WSBfd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_FD)),
+	fmt_write_string(WSBifd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IFD)),
+	fmt_write_string(WSBfdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_FDSIG)),
+	fmt_write_string(WSBifdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IFDSIG)),
+	fmt_write_string(WSBmvd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_MVD)),
+	fmt_write_string(WSBimvd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMVD)),
+	fmt_write_string(WSBmvdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_MVDSIG)),
+	fmt_write_string(WSBimvdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMVDSIG)),
+	fmt_write_string(WSBexists,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_EXISTS)),
+	fmt_write_string(WSBmvddef,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_MVDDEF)),
+	fmt_write_string(WSBimvddef,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMVDDEF)),
+	retractall(flora_flogic_fact_wrapper(_,_)),
+	assert(flora_flogic_fact_wrapper(WRAP_ISA,WSBisa)),
+	assert(flora_flogic_fact_wrapper(WRAP_SUB,WSBsub)),
+	assert(flora_flogic_fact_wrapper(WRAP_METH,WSBmeth)),
+	assert(flora_flogic_fact_wrapper(WRAP_IMETH,WSBimeth)),
+	assert(flora_flogic_fact_wrapper(WRAP_TRAN,WSBtran)),
+	assert(flora_flogic_fact_wrapper(WRAP_FD,WSBfd)),
+	assert(flora_flogic_fact_wrapper(WRAP_IFD,WSBifd)),
+	assert(flora_flogic_fact_wrapper(WRAP_FDSIG,WSBfdsig)),
+	assert(flora_flogic_fact_wrapper(WRAP_IFDSIG,WSBifdsig)),
+	assert(flora_flogic_fact_wrapper(WRAP_MVD,WSBmvd)),
+	assert(flora_flogic_fact_wrapper(WRAP_IMVD,WSBimvd)),
+	assert(flora_flogic_fact_wrapper(WRAP_MVDSIG,WSBmvdsig)),
+	assert(flora_flogic_fact_wrapper(WRAP_IMVDSIG,WSBimvdsig)),
+	assert(flora_flogic_fact_wrapper(WRAP_EXISTS,WSBexists)),
+	assert(flora_flogic_fact_wrapper(WRAP_MVDDEF,WSBmvddef)),
+	assert(flora_flogic_fact_wrapper(WRAP_IMVDDEF,WSBimvddef)).
+
+
+/*****************************************************************************
+  flora_decode_module_prefix(+Funct,-ModuleType,-Flora_module_prefix_len_plus1)
+
+  It decodes a predicate symbol and checks if it begins with
+  FLORA_PREFIX'FLORA_(USER/SYSTEM)_MODULE', which indicates it is a Flora
+  F-logic or HiLog module predicate.
+
+  "ModuleType" is either "usermodule" or "systemmodule".
+*****************************************************************************/
+flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 	%% Check if the functor begins with FLORA_PREFIX followed by an '.
-	str_sub(FLORA_PREFIX,Funct,1),
-	str_sub('''',Funct,FLORA_PREFIX_LEN_PLUS1),
-	!,
-	%% Locate F-logic wrapper predicate position and extract the wrapper.
-	atom_codes(Funct,FunctList),
-	reverse(FunctList,RevFunctList),
-	atom_codes(RevFunct,RevFunctList),
-	str_sub('''',RevFunct,N),
-	str_length(Funct,FLen),
-	eval(FLen-N+1,S),
-	substring(Funct,S,FLen,Wrapper),
-	!,
-	%% Extract the workspace name.
-	eval(S-1,T),
-	substring(Funct,FLORA_PREFIX_LEN_PLUS1,T,Workspace),
-	%% Separate the prefix from the base wrapper.
-	str_length(Wrapper,WLen),
+	str_sub(FLORA_PREFIX'',Funct,1),
+	%% Check if it is followed by the type code of Flora module plus an '.
+	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS2) ->
+	    ModuleType=usermodule,
+	    Flora_module_prefix_len_plus1=FLORA_USER_MODULE_PREFIX_LEN_PLUS1
+	;
+	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS2),
+	  ModuleType=systemmodule,
+	  Flora_module_prefix_len_plus1=FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1
+	),
+	!.
+
+
+/*****************************************************************************
+  flora_decode_firstorder_module_prefix(+Funct,-ModuleType,
+                                        -Flora_module_prefix_len_plus1)
+
+  It decodes a predicate symbol and checks if it begines with
+  FLORA_FO_PREFIX'FLORA_(USER/SYSTEM)_MODULE', which indicates it is a Flora
+  first order module predicate.
+
+  "ModuleType" is either "usermodule" or "systemmodule".
+*****************************************************************************/
+flora_decode_firstorder_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
+	%% Check if the functor begins with FLORA_FO_PREFIX followed by an '.
+	str_sub(FLORA_FO_PREFIX'',Funct,1),
+	%% Check if it is followed by the type code of Flora module plus an '.
+	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS2) ->
+	    ModuleType=usermodule,
+	    Flora_module_prefix_len_plus1=FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1
+	;
+	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS2),
+	  ModuleType=systemmodule,
+	  Flora_module_prefix_len_plus1=FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1
+	),
+	!.
+
+
+/*****************************************************************************
+  flora_decode_flogic_wrapper(+Wrapper,-WrapPrefix,-BaseSymbol)
+
+  It decodes an F-logic wrapper predicate.
+*****************************************************************************/
+flora_decode_flogic_wrapper(Wrapper,WrapPrefix,BaseSymbol) :-
 	( str_sub(FLFACTPREFIX,Wrapper,1) ->
 	    WrapPrefix=FLFACTPREFIX,
-	    substring(Wrapper,FLFACTPREFIX_LEN,WLen,Base)
+	    substring(Wrapper,FLFACTPREFIX_LEN,_,BaseSymbol)
 
 	; str_sub(FLHEADPREFIX,Wrapper,1) ->
 	    WrapPrefix=FLHEADPREFIX,
-	    substring(Wrapper,FLHEADPREFIX_LEN,WLen,Base)
+	    substring(Wrapper,FLHEADPREFIX_LEN,_,BaseSymbol)
 
 	; str_sub(FLBODYPREFIX,Wrapper,1) ->
 	    WrapPrefix=FLBODYPREFIX,
-	    substring(Wrapper,FLBODYPREFIX_LEN,WLen,Base)
+	    substring(Wrapper,FLBODYPREFIX_LEN,_,BaseSymbol)
 
 	; str_sub(FLTRAILERPREFIX,Wrapper,1) ->
 	    WrapPrefix=FLTRAILERPREFIX,
-	    substring(Wrapper,FLTRAILERPREFIX_LEN,WLen,Base)
+	    substring(Wrapper,FLTRAILERPREFIX_LEN,_,BaseSymbol)
 	),
-	!,
-	is_flogic_base(Base).
-
-
-/*****************************************************************************
-  is_flogic_base(+Base)
-*****************************************************************************/
-is_flogic_base(WRAP_ISA)        :- !.
-is_flogic_base(WRAP_SUB)        :- !.
-is_flogic_base(WRAP_FD)         :- !.
-is_flogic_base(WRAP_MVD)        :- !.
-is_flogic_base(WRAP_IFD)        :- !.
-is_flogic_base(WRAP_IMVD)       :- !.
-is_flogic_base(WRAP_METH)       :- !.
-is_flogic_base(WRAP_IMETH)      :- !.
-is_flogic_base(WRAP_EXISTS)     :- !.
-is_flogic_base(WRAP_MVDDEF)     :- !.
-is_flogic_base(WRAP_IMVDDEF)    :- !.
-is_flogic_base(WRAP_TRAN)       :- !.
-is_flogic_base(WRAP_FDSIG)      :- !.
-is_flogic_base(WRAP_IFDSIG)     :- !.
-is_flogic_base(WRAP_MVDSIG)     :- !.
-is_flogic_base(WRAP_IMVDSIG)    :- !.
-is_flogic_base(WRAP_MVDINC)     :- !.
-is_flogic_base(WRAP_IMVDINC)    :- !.
-is_flogic_base(WRAP_MVDTOLIST)  :- !.
-is_flogic_base(WRAP_IMVDTOLIST) :- !.
-is_flogic_base(WRAP_FDDEF)      :- !.
-is_flogic_base(WRAP_IFDDEF)     :- !.
-is_flogic_base(WRAP_OBJEQL)     :- !.
-
-
-/*****************************************************************************
-  flora_hilog_predicate(+Funct,-Workspace)
-
-  Note: A HiLog wrapper predicate name is encoded as follows:
-        'FLORA_PREFIX''workspace''WRAP_HILOG'.
-*****************************************************************************/
-flora_hilog_predicate(Funct,Workspace) :-
-	%% Check if the functor begins with FLORA_PREFIX followed by an '.
-	str_sub(FLORA_PREFIX,Funct,1),
-	str_sub('''',Funct,FLORA_PREFIX_LEN_PLUS1),
-	!,
-	%% Locate HiLog wrapper predicate position.
-	atom_codes(Funct,FunctList),
-	reverse(FunctList,RevFunctList),
-	atom_codes(RevFunct,RevFunctList),
-	str_sub('''',RevFunct,N),
-	str_length(Funct,Len),
-	eval(Len-N+1,W),
-	!,
-	%% Check if it is the HiLog wrapper.
-	substring(Funct,W,Len,WrapHiLog),
-	WrapHiLog=WRAP_HILOG,
-	%% Extract the workspace name.
-	eval(W-1,S),
-	substring(Funct,FLORA_PREFIX_LEN_PLUS1,S,Workspace),
+	flora_is_flogic_base(BaseSymbol),
 	!.
 
 
 /*****************************************************************************
-  flora_firstorder_predicate(+Funct,-Predicate,-Workspace)
-
-  Note: (1) A first order-HiLog predicate name is encoded as follows:
-            'FLORA_PREFIX''workspace''predicate'.
-
-        (2) This procedure will not function correctly if workspace
-            contains the symbol '.
+  flora_is_flogic_base(+Base)
 *****************************************************************************/
-flora_firstorder_predicate(Funct,Predicate,Workspace) :-
-	%% Check if the functor begins with FLORA_PREFIX followed by an '.
-	str_sub(FLORA_PREFIX,Funct,1),
-	str_sub('''',Funct,FLORA_PREFIX_LEN_PLUS1),
-	!,
-	%% Locate the end of workspace name.
-	str_length(Funct,Len),
-	substring(Funct,FLORA_PREFIX_LEN_PLUS1,Len,RestFunct),
+flora_is_flogic_base(WRAP_ISA)        :- !.
+flora_is_flogic_base(WRAP_SUB)        :- !.
+flora_is_flogic_base(WRAP_FD)         :- !.
+flora_is_flogic_base(WRAP_MVD)        :- !.
+flora_is_flogic_base(WRAP_IFD)        :- !.
+flora_is_flogic_base(WRAP_IMVD)       :- !.
+flora_is_flogic_base(WRAP_METH)       :- !.
+flora_is_flogic_base(WRAP_IMETH)      :- !.
+flora_is_flogic_base(WRAP_EXISTS)     :- !.
+flora_is_flogic_base(WRAP_MVDDEF)     :- !.
+flora_is_flogic_base(WRAP_IMVDDEF)    :- !.
+flora_is_flogic_base(WRAP_TRAN)       :- !.
+flora_is_flogic_base(WRAP_FDSIG)      :- !.
+flora_is_flogic_base(WRAP_IFDSIG)     :- !.
+flora_is_flogic_base(WRAP_MVDSIG)     :- !.
+flora_is_flogic_base(WRAP_IMVDSIG)    :- !.
+flora_is_flogic_base(WRAP_MVDINC)     :- !.
+flora_is_flogic_base(WRAP_IMVDINC)    :- !.
+flora_is_flogic_base(WRAP_MVDTOLIST)  :- !.
+flora_is_flogic_base(WRAP_IMVDTOLIST) :- !.
+flora_is_flogic_base(WRAP_FDDEF)      :- !.
+flora_is_flogic_base(WRAP_IFDDEF)     :- !.
+flora_is_flogic_base(WRAP_OBJEQL)     :- !.
+
+
+/*****************************************************************************
+  flora_decode_predicate(+Predicate,-PredicateType,-ModuleName,
+                         -WrapPrefix,-PredicateSymbol,-ArgsList)
+
+  This procedure decodes a predicate and returns answers as follows:
+
+  (1) PredicateType=flogic, if the predicate is encoded as:
+	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''flogic_wrapper'.
+      ModuleName is the Flora user/system module name. WrapPrefix is the
+      prefix of the wrapper (e.g., base_, derived_). PredicateSymbol specifies
+      the type of the F-logic wrapper, e.g., fd, mvd, imvd, etc.
+
+
+  (2) PredicateType=hilog, if the predicate is encoded as:
+	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''WRAP_HILOG'.
+      ModuleName is the Flora user/system module name. WrapPrefix is undefined.
+      PredicateSymbol is the functor of the HiLog predicate.
+
+  (3) PredicateType=prolog, if the predicate is encoded other than (1) and (2).
+      ModuleName and WrapPrefix will be undefined.
+
+  Note: This procedure can also be used to decode a predicate symbol (without
+        any argument). In (1) and (3), PredicateSymbol is defined and
+        ArgsList=[]. In (2), PredicateSymbol=[] and ArgsList=[].
+
+*****************************************************************************/
+flora_decode_predicate(Predicate,PredicateType,ModuleName,
+	               WrapPrefix,PredicateSymbol,ArgsList) :-
+	%% This branch is to decode either an F-logic or a HiLog predicate.
+	Predicate =.. [Funct|Args],
+	%% Check if it begins with a module predicate prefix.
+	flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1),
+	( ModuleType == usermodule ->
+	    ModuleName=Workspace
+
+	; ModuleType == usermodule ->
+	    ModuleName=FL_FLORALIB(Workspace)
+	),
+	%% Locate the last ' and extract the following wrapper.
+	atom_codes(Funct,FunctList),
+	reverse(FunctList,RevFunctList),
+	atom_codes(RevFunct,RevFunctList),
+	str_sub('''',RevFunct,N),
+	str_length(Funct,FunctLen),
+	eval(FunctLen-N+1,S),
+	substring(Funct,S,_,Wrapper),
+	( Wrapper == WRAP_HILOG ->
+	    PredicateType=hilog,
+	    ( Args=[PredicateSymbol|ArgsList] ->
+		true
+	    ;
+	      PredicateSymbol=[],
+	      ArgsList=[]
+	    )
+
+	; flora_decode_flogic_wrapper(Wrapper,WrapPrefix,PredicateSymbol) ->
+	    PredicateType=flogic,
+	    ArgsList=Args
+	),
+	%% Extract the workspace name.
+	eval(S-1,T),
+	substring(Funct,Flora_module_prefix_len_plus1,T,Workspace),
+	!.
+
+
+flora_decode_predicate(Predicate,firstorder,ModuleName,
+		       _WrapPrefix,PredicateSymbol,ArgsList) :-
+	%% This branch is to decode a first order predicate.
+	Predicate =.. [Funct|ArgsList],
+	%% Check if it begins with a module predicate prefix.
+	flora_decode_firstorder_module_prefix(Funct,ModuleType,
+	                                      Flora_module_prefix_len_plus1),
+	( ModuleType == usermodule ->
+	    ModuleName=Workspace
+
+	; ModuleType == usermodule ->
+	    ModuleName=FL_FLORALIB(Workspace)
+	),
+	%% Locate the end of workspace name, assuming the next quote after
+	%% the prefix marks the end of the workspace. This will not work
+	%% correctly if the workspace contains the quote symbol.
+	substring(Funct,Flora_module_prefix_len_plus1,_,RestFunct),
 	str_sub('''',RestFunct,N),
-	!,
 	%% Extract the workspace name.
 	eval(N-1,M),
 	substring(RestFunct,0,M,Workspace),
 	%% Extract the predicate name.
-	str_length(RestFunct,RestLen),
-	substring(RestFunct,N,RestLen,Predicate),
+	substring(RestFunct,N,_,PredicateSymbol),
+	!.
+
+flora_decode_predicate(Predicate,prolog,_ModuleName,
+		       _WrapPrefix,PredicateSymbol,ArgsList) :-
+	%% prolog catches all other cases.
+	Predicate =.. [PredicateSymbol|ArgsList],
 	!.
 
 
 /*****************************************************************************
-  Take a predicate name, args, and workspace and return a Florified call
-  (with workspace attached) for a Flora service module.
-  flora_service_lib_predicate(+Functor,+Args,+ServiceName,-Predicate)
+  flora_decode_module_name(+Predicate,-ModuleName)
+
+  It checks if the predicate symbol is a (first order) Flora user/system
+  module predicate. If yes, it returns the name of the module; otherwise,
+  it fails.
 *****************************************************************************/
-flora_service_lib_predicate(Functor,Args,Service,Predicate) :-
-	fmt_write_string(PF,"%s'%s%s'%s",
-			 args(FLORA_PREFIX,FLORA_SERVICE_STR_QUOTED,Service,Functor)),
-	Predicate =.. [PF|Args].
-
-/***************************************************************************
-  flora_service_ws(+Workspace,-Service)
-  Succeeds, if Workspace represents a Flora service.
-  Binds Service to that service name
-***************************************************************************/
-flora_service_ws(Workspace,Service) :-
-	str_sub(FLORA_SERVICE_STR_QUOTED,Workspace,1),
-	substring(Workspace,FLORA_SERVICE_STR_LEN,_,Service).
-
-
-
-/*****************************************************************************
-  Take a predicate name, args, and workspace and return a Florified call
-  (with workspace attached)
-  flora_wspredicate(+Functor,+Args,+Workspace,-Predicate)
-*****************************************************************************/
-flora_wspredicate(Functor,Args,WS,Predicate) :-
-	flora_wssymbol(Functor,WS,PF),
-	Predicate =.. [PF|Args].
-
-/* Take a symbol and Florify it:
-      flora_wssymbol(+Symbol,+WS,-FlorifiedSymbol)
-*/
-flora_wssymbol(Symbol,WS,FlorifiedSymbol) :-
-	((flora_service_ws(WS,_Service), !; flora_check_workspace(WS))
-	-> fmt_write_string(FlorifiedSymbol, "%s'%s'%s",
-			    args(FLORA_PREFIX,WS,Symbol))
-	; abort
-	).
-
-/*
-    Returns Florified HiLog Wrapper (with workspace attached)
-    flora_wshilog(+WS, -HiLogPredSym)
-*/
-flora_wshilog(WS,HiLogPredSym) :-
-	flora_wssymbol(WRAP_HILOG,WS,HiLogPredSym).
-
-
-/*****************************************************************************
-  flora_is_general_predicate(+Funct,-Workspace)
-*****************************************************************************/
-flora_is_general_predicate(Funct,WS) :-
-	( flora_flogic_predicate(Funct,WS,_Pos,_Base)
-	; flora_hilog_predicate(Funct,WS)
-	; flora_firstorder_predicate(Funct,_P,WS)
+flora_decode_module_name(Predicate,ModuleName) :-
+	flora_decode_predicate(Predicate,PredicateType,ModuleName,
+			       _WrapPrefix,_PredicateSymbol,_ArgsList),
+	( PredicateType == (flogic)
+	; PredicateType == (hilog)
+	; PredicateType == (firstorder)
 	),
 	!.
 
 
 /*****************************************************************************
-  flora_storage_name(+Workspace,-Name)
+  flora_is_flogic_wrapper(+Predicate,-ModuleName,-Base)
 *****************************************************************************/
-flora_storage_name(WS,Name) :-
-	fmt_write_string(Name,"%s'%s",args(FLORA_STORAGE_PREFIX,WS)).
-
-
-/*****************************************************************************
-  flora_classify_functor(+Functor, -Type, -Workspace, -Basename, -ArgList)
-  Type: hilog, florapred, prolog, flogic
-*****************************************************************************/
-flora_classify_call(Call,Type,Basename,ArgList,Workspace) :-
-	Call =.. [Funct|PrelimArgList],
-	!,
-	(flora_flogic_predicate(Funct,Workspace,_Pos,Basename)
-	-> Type = flogic, ArgList = PrelimArgList
-	; flora_hilog_predicate(Funct,Workspace)
-	-> Type = hilog, PrelimArgList = [Basename | ArgList]
-	; flora_firstorder_predicate(Funct,Basename,Workspace)
-	-> Type = florapred, ArgList = PrelimArgList
-	; Type = prolog, Basename = Funct, ArgList = PrelimArgList
-	  %% Workspace stays uninstantiated
-	),
+flora_is_flogic_wrapper(Predicate,ModuleName,Base) :-
+	flora_decode_predicate(Predicate,flogic,ModuleName,_WrapPrefix,Base,_ArgsList),
 	!.

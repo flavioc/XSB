@@ -59,7 +59,7 @@ is_fltable(FLTABLE(P,A),P,A).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
-%%is_flfirstordernostorage(FLFIRSTORDERNOSTORAGE(F,N),F,N).
+%%is_flfonostorage(FLFONOSTORAGE(F,N),F,N).
 is_flfirstorder(FLFIRSTORDER(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
 is_flhilogtable(FLHILOGTABLE(A),A).
@@ -190,6 +190,7 @@ list_struct(List,Term,PRLIST(List,Term)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
+thisstorage_struct(PRTHISSTORAGE(PRTHISSTORAGE)).
 floralib_struct(WS,PRFLORALIB(WS)).
 storage_struct(WS,PRSTORAGE(WS)).
 
@@ -199,6 +200,7 @@ workspacelit_struct(P,WS,Code) :-
 
 	; is_flvar(WS,WSVarName,_I) ->
 	    varobj_struct(WSVarName,WSVarCode),
+	    %% a call to a Flora user module
 	    florasyslib_struct(FLLIBMODLIT,2,[P,WSVarCode],Code)
 	;
 	  %% a Flora system module
@@ -213,6 +215,7 @@ workspaceobj_struct(P,WS,Object,Code) :-
 	; is_flvar(WS,WSVarName,_I) ->
 	    varobj_struct(WSVarName,WSVarCode),
 	    new_varobj(Object),
+	    %% a call to a Flora user module
 	    florasyslib_struct(FLLIBMODOBJ,3,[P,WSVarCode,Object],Code)
 	;
 	  %% a Flora system module
@@ -864,15 +867,14 @@ compile_direct(DirectTerm,[Code],[]) :-
 	  atomobj_struct(P,PCode),
 	  new_varobjlist(N,ArgsCode),
 	  termlit_struct(PCode,N,ArgsCode,HCode),
-	  thismodule_struct(WS),
-	  storage_struct(WS,SCode),
+	  thisstorage_struct(SCode),
 	  prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
 	  rule_struct(HCode,BCode,Code)
 	),
 	!.
 
 %%compile_direct(DirectTerm,[],[]) :-
-%%	is_flfirstordernostorage(DirectTerm,P,N),
+%%	is_flfonostorage(DirectTerm,P,N),
 %%	flora_define_firstorder(P,N),
 %%	!.
 
@@ -1914,6 +1916,7 @@ compile_head_flobjeql(Obj1,Obj2,CodeList,Status) :-
 compile_floraliblit(ParserTerm,WS,Code,Status) :-
 	%% Flora system modules are like normal users modules except that
 	%% users cannot load into those areas.
+	report_option(FLSYSMOD(WS)),
 	floralib_struct(WS,WSCode),
 	compile_wsliteral(ParserTerm,WSCode,Code,Status).
 
@@ -1945,6 +1948,7 @@ compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
   compile_floralibobj(+ParserTerm,+Workspace,-Object,-Code,-Status)
 ****************************************************************************/
 compile_floralibobj(ParserTerm,WS,Object,Code,Status) :-
+	report_option(FLSYSMOD(WS)),
 	floralib_struct(WS,WSCode),
 	compile_wspathexp(ParserTerm,WSCode,Object,Code,Status).
 
@@ -2956,6 +2960,12 @@ compile_fldelete_list([H|T],CodeList,Status) :-
 
 /****************************************************************************
   compile_dbupdate_list(+CodeList,-DBCodeList)
+
+  This predicate processes the list of literals in a DB update. For each
+  literal, it tries to add the name of the storage trie for the module.
+
+  Note: a DB update can only update a Flora user module or itself. If a
+        Flora system module allows update, it must provide an update interface.
 ****************************************************************************/
 compile_dbupdate_list([],[]) :- !.
 
@@ -2967,8 +2977,11 @@ compile_dbupdate_list([C|CL],[C|DBCodeList]) :-
 	compile_dbupdate_list(CL,DBCodeList).
 
 compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
-	(workspace_struct(_P,WS,C) -> true; thismodule_struct(WS)),
-	storage_struct(WS,SCode),
+	( workspace_struct(_P,WS,C) ->
+	    storage_struct(WS,SCode)
+	;
+	  thisstorage_struct(SCode)
+	),
 	prologterm_struct(FLSYSDBUPDATE,2,[C,SCode],DBCode),
 	compile_dbupdate_list(CL,DBCodeList).
 

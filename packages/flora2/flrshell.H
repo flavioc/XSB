@@ -74,7 +74,10 @@
 
 :- import flora_shreset_firstorder/0 from flrnohilog.
 
-:- import flora_load_library/1 from flrlibman.
+:- import
+	flora_load_library/1,
+	flora_load_system_module/1
+   from flrlibman.
 
 :- import
 	flora_stdmsg_nl/0,

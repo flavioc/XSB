@@ -41,20 +41,55 @@
 :- import flora_stderr_write/1 from flrdisplay.
 
 :- import
-	flora_wspredicate/4,
-	flora_is_general_predicate/2,
-	flora_storage_name/2
+	flora_module_name/3,
+	flora_module_name_error/1,
+	flora_decode_module_name/2,
+	flora_module_predicate/4,
+	flora_firstorder_module_predicate/4
    from flrwrapper.
 
-:- import FLSYSDBUPDATE/2, FLLIBMODLIT/3, FLLIBMODOBJ/4 from usermod.
+:- import
+	FLSYSDBUPDATE/2,
+	FLLIBMODLIT/3,
+	FLLIBMODLIT/4,
+	FLLIBMODOBJ/4,
+	FLLIBMODOBJ/5
+   from usermod.
 
 :- export
+	flora_storage_check_module_name/1,
 	flora_storage_check_deletepredicate/2,
 	flora_storage_convertlist/3.
 
 
 /*****************************************************************************
+  flora_storage_check_module_name(+ModuleName)
+
+  The procedure is called to checks if a module name is valid during an update
+  operation. Note that updating a Flora system module is not allowed.
+*****************************************************************************/
+flora_storage_check_module_name(ModuleName) :-
+	flora_module_name(ModuleName,Type,WS),
+	!,
+	( Type == invalid ->
+	    flora_module_name_error(ModuleName),
+	    abort
+
+	; Type == systemmodule ->
+	    flora_error_line("It is not allowed to update the Flora system module %s !",
+	                     args(WS)),
+	    abort
+	;
+	  true
+	).
+
+
+/*****************************************************************************
   flora_storage_check_deletepredicate(+P,-StorageName)
+
+  It is used to call a predicate in the list of literals to be deleted.
+  It supports the meta-programming feature of delete where a variable is
+  used to pass the name of the module.
 *****************************************************************************/
 flora_storage_check_deletepredicate(P,_StorageName) :-
 	var(P),
@@ -65,8 +100,9 @@ flora_storage_check_deletepredicate(P,_StorageName) :-
 flora_storage_check_deletepredicate(P,StorageName) :-
 	%% This is a meta programming feature.
 	functor(P,F,_N),
-	( flora_is_general_predicate(F,WS) ->
-	    flora_storage_name(WS,StorageName),
+	( flora_decode_module_name(F,ModuleName) ->
+	    flora_storage_check_module_name(ModuleName),
+	    flora_storage_name(ModuleName,StorageName),
 	    storage_find_fact(StorageName,P)
 	;
 	  flora_error_heading,
@@ -100,17 +136,42 @@ flora_storage_convertlist([FLSYSDBUPDATE(P,StorageName)|Fs],
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
 
-flora_storage_convertlist([FLLIBMODLIT(F,Args,WS)|Fs],
-                          [flora_wspredicate(F,Args,WS,P),
-			   flora_storage_name(WS,StorageName),
+flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName)|Fs],
+                          [flora_storage_check_module_name(ModuleName),
+			   flora_module_predicate(F,Args,ModuleName,P),
+			   flora_storage_name(ModuleName,StorageName),
                            storage_find_fact(StorageName,P)|CL
 			  ],
 			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
 
-flora_storage_convertlist([FLLIBMODOBJ(F,Args,WS,Obj)|Fs],
-                          [flora_wspredicate(F,Args,WS,Obj)|CL],
+flora_storage_convertlist([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)|Fs],
+                          [flora_storage_check_module_name(ModuleName),
+			   flora_firstorder_module_predicate(F,Args,ModuleName,P),
+			   flora_storage_name(ModuleName,StorageName),
+                           storage_find_fact(StorageName,P)|CL
+			  ],
+			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
+	!,
+	flora_storage_convertlist(Fs,CL,FL).
+
+flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,Obj)|Fs],
+                          [( flora_check_module_name(ModuleName) ->
+			       flora_module_predicate(F,Args,ModuleName,O)
+			   ;
+			     abort
+			   )|CL],
+			  FL) :-
+	!,
+	flora_storage_convertlist(Fs,CL,FL).
+
+flora_storage_convertlist([FLLIBMODOBJ(FL_FIRSTORDER,F,Args,ModuleName,Obj)|Fs],
+                          [( flora_check_module_name(ModuleName) ->
+			       flora_firstorder_module_predicate(F,Args,ModuleName,O)
+			   ;
+			     abort
+			   )|CL],
 			  FL) :-
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
@@ -119,4 +180,3 @@ flora_storage_convertlist([P|Fs],
 	                  [flora_storage_check_deletepredicate(P,StorageName)|CL],
 			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
 	flora_storage_convertlist(Fs,CL,FL).
-

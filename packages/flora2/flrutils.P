@@ -1,6 +1,7 @@
 /* File:      flrutils.P
 **
 ** Author(s): Guizhen Yang
+              Michael Kifer
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
@@ -63,22 +64,12 @@ flora_compile_internal(File,Workspace) :-
 	flora_check_workspace(Workspace),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flcompile(FlrFile,Workspace)
-
-	; parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_FILE_EXT,
-          path_sysop(exists,File)
-	->
-	    flora_stderr_nl,
-	    flora_error_line('%s: Filename extension must be %s!',
-			     args(File,FLORA_FILE_EXT)),
-	    fail
 	;
-	  flora_stderr_nl,
-	  flora_error_line('File %s[.%s] does not exist!',
-			   args(File,FLORA_FILE_EXT)),
-          fail
-        ),
+	  flora_flrfilename_error(File),
+	  !,
+	  fail
+	),
 	!.
-
 
 
 /**********************************************************************
@@ -91,19 +82,11 @@ flora_load_module_internal(InFile,Workspace) :-
 	flora_get_user_program_maybe(InFile,File),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,Workspace)
-
-	; parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_FILE_EXT,
-	  path_sysop(exists,File)
-	->  flora_stderr_nl,
-	    flora_error_line('%s: Filename extension must be %s!',
-			     args(File,FLORA_FILE_EXT)),
-	    fail
 	;
-	  flora_stderr_nl,
-	  flora_error_line('File %s[.%s] does not exist!',
-			   args(File,FLORA_FILE_EXT)),
-          fail
-        ),
+	  flora_flrfilename_error(InFile),
+	  !,
+	  fail
+	),
 	!.
 
 
@@ -189,7 +172,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	  consult(UserTrailerWSOFile),
 	  !,
 	  %% Check if the patch needs to be loaded.
-	  flora_wspredicate(FLORA_THIS_MODULE,[],Workspace,Predicate),
+	  flora_user_module_predicate_symbol(FLORA_THIS_MODULE,Workspace,Predicate),
 	  (current_predicate(Predicate/1) -> true; flloadpatch(Workspace))
         ),
 	!.
@@ -316,21 +299,13 @@ flora_user_flora_dir(Dir) :-
 flora_user_tmpfile(Filename) :-
 	flora_user_flora_dir(Dir),
 	slash(S),
-	fmt_write_string(Filename, '%s%stmp$user', args(Dir,S)).
+	fmt_write_string(Filename,'%s%stmp$user',args(Dir,S)).
 
 
 /*************************************************************************
   flora_flcompile(+FlrFile,+Workspace)
-  Renames the .O file using the module name
 *************************************************************************/
 flora_flcompile(FlrFile,Workspace) :-
-	flora_flcompile(FlrFile,Workspace,rename).
-
-/*************************************************************************
-  flora_flcompile(+FlrFile,+Workspace,+WhetherToRename)
-  If WhetherToRename=rename, then the .O file is renamed
-*************************************************************************/
-flora_flcompile(FlrFile,Workspace,WhetherToRename) :-
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
 	flora_compile_file(FlrFile,MPFile,FDBFile,Status),
@@ -342,33 +317,105 @@ flora_flcompile(FlrFile,Workspace,WhetherToRename) :-
 	    flora_set_xpp_options(Workspace),
 	    compile(MPFile,[optimize,spec_repr,ti_all]),
 	    flora_clear_xpp_options,
-	    (WhetherToRename==rename
-	    ->  flora_WSO_filename(FlrFile,Workspace,WSOFile),
-		path_sysop(rename,MOFile,WSOFile)
-	    ;   true
-	    )
+	    flora_WSO_filename(FlrFile,Workspace,WSOFile),
+	    path_sysop(rename,MOFile,WSOFile)
         ),
 	!.
 
 
 /******************************************************************************
-   Compile a service in the lib/ directory. Since services are loaded
-   into predefined modules, there is no need to rename the .O file.
-   This is used only in the Makefile, so we don't do error checking
-   for file existence, etc.
-******************************************************************************/
-flora_compile_service(File) :-
-	path_sysop(basename,File,Basename),
-	flora_service_file(Servicename,Basename,_), % get service's name
-	flora_set_xpp_extra_options(' -D FLORA_COMPILING_SERVICE_LIBRARY '),
-	(flora_locate_file(Basename,FLORA_FILE_EXT,FlrFile)
-	-> flora_flcompile(FlrFile,Servicename,dontrename)
-	;  flora_stderr_nl,
-	    flora_error_line('File %s[.%s] does not exist!',
-			     args(Basename,FLORA_FILE_EXT)),
-	    fail
-	).
+  flora_compile_system_module(+File)
 
+  Compile a Flora system module in the lib/ directory. These files are
+  loaded into predefined modules. This procedure is used only in the Makefile.
+  Error checking for file name, existence, etc., is omitted.
+
+  Note: This predicate is used *ONLY* in the make file for simplicity.
+******************************************************************************/
+flora_compile_system_module(File) :-
+	%% Get the system module ID from the base file name.
+	path_sysop(basename,File,BaseName),
+	flora_sysmod_file(SysModID,BaseName,_SubDir),
+	( flora_locate_file(BaseName,FLORA_FILE_EXT,FlrFile) ->
+	    %% Pass an extra argument to gpp.
+	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+	    flora_flcompile(FlrFile,SysModID)
+	;
+	  flora_stderr_nl,
+	  flora_error_line('File %s[.%s] does not exist!',args(BaseName,FLORA_FILE_EXT)),
+	  !,
+          fail
+	),
+	!.
+
+
+/*************************************************************************
+  flora_load_system_module_internal(+SysModID)
+
+  This predicate is called to load a Flora system module. The input is
+  its ID.
+*************************************************************************/
+flora_load_system_module_internal(SysModID) :-
+	( atom(SysModID), flora_sysmod_file(SysModID,BaseName,SubDir) ->
+	    %% Compute the Flora file name.
+	    package_configuration(dir(flora),FloraDir),
+	    slash(S),
+	    fmt_write_string(FlrFile,"%s%s%s%s%s.flr",args(FloraDir,S,SubDir,S,BaseName)),
+	    flora_WSO_filename(FlrFile,SysModID,WSOFile),
+	    !,
+	    ( flora_file_newerthan(WSOFile,FlrFile) ->
+		true
+
+	    ; path_sysop(exists,FlrFile) ->
+	        %% Pass an extra argument to gpp.
+		flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+		flora_flcompile(FlrFile,SysModID)
+	    ;
+	      flora_stderr_nl,
+	      flora_error_line('Flora system module file %s does not exist!',
+			       args(FlrFile)),
+	      !,
+	      fail
+	    ),
+	    !,
+	    flora_message_line('loading FLORA system module %s',args(SysModID)),
+	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+	    flora_set_xpp_options(SysModID),
+	    consult(WSOFile),
+	    flora_clear_xpp_options
+	;
+	  flora_stderr_nl,
+	  flora_error_line('Invalid FLORA system module ID %S ! Loading failed!',
+			   args(SysModID)),
+          !,
+	  fail
+	),
+	!.
+
+
+/******************************************************************************
+  flora_compile_system_module_by_ID(+SysModID)
+
+  Compile a Flora system module in the lib/ directory according to its ID.
+******************************************************************************/
+flora_compile_system_module_by_ID(SysModID) :-
+	%% Retrieve the file name and its subdir.
+	flora_sysmod_file(SysModID,BaseName,SubDir),
+	%% Compute the Flora file name.
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(FlrFile,"%s%s%s%s%s.flr",args(FloraDir,S,SubDir,S,BaseName)),
+	( path_sysop(exists,FlrFile) ->
+	    %% Pass an extra argument to gpp.
+	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE '),
+	    flora_flcompile(FlrFile,SysModID)
+	;
+	  flora_stderr_nl,
+	  flora_error_line('Flora system module file %s does not exist!',args(FlrFile)),
+	  !,
+          fail
+	),
+	!.
 
 
 /*************************************************************************
@@ -422,7 +469,7 @@ flora_get_user_program_maybe(InFile,File) :-
 	( InFile == user ->
 	    %%path_sysop(tmpfilename,File),
 	    flora_user_tmpfile(File),
-	    fmt_write_string(FlrFile,'%s.%s', args(File,FLORA_FILE_EXT)),
+	    fmt_write_string(FlrFile,'%s.%s',args(File,FLORA_FILE_EXT)),
 	    flora_save_user_clauses(FlrFile)
 	;
 	  File=InFile
@@ -467,7 +514,7 @@ flora_locate_file(In,Loc) :-
 
 /*************************************************************************
   flora_file_newerthan(+File1,+File2)
-  returns true iff File1 exists and is newer than File2. File2 already exists.
+  returns true if File1 exists and is newer than File2. File2 already exists.
 *************************************************************************/
 flora_file_newerthan(File1,File2) :-
 	path_sysop(exists,File1),
@@ -492,6 +539,7 @@ flora_library_directory(LibDir) :- xsb_configuration(cmplibdir,LibDir).
   flora_FLH_filename(+File,-FLHFile)
   flora_WSP_filename(+File,+WS,-WSPFile)
   flora_WSO_filename(+File,+WS,-WSOFile)
+  flora_dump_filename(+File,-DFile)
 *************************************************************************/
 flora_mainP_filename(File,MPFile) :-
 	parse_filename(File,Dir,Base,_),
@@ -516,6 +564,10 @@ flora_FLH_filename(File,FLHFile) :-
 flora_WSO_filename(File,WS,WSOFile) :-
 	parse_filename(File,Dir,Base,_),
 	fmt_write_string(WSOFile,'%s%s_%s.%s',args(Dir,Base,WS,XSB_OFILE_EXT)).
+
+flora_dump_filename(File,DFile) :-
+	parse_filename(File,Dir,Base,Ext),
+	fmt_write_string(DFile,'%s%s_dump.%s',args(Dir,Base,Ext)).
 
 
 /*************************************************************************
@@ -547,12 +599,16 @@ flora_check_workspace(Name) :-
 is_alphanumeric(Name) :-
 	atom_codes(Name,NameL),
 	is_alphanumericL(NameL).
+
 is_alphanumericChar(Ch) :-
-	(CH_0 =< Ch, Ch =< CH_9
+	( CH_0 =< Ch, Ch =< CH_9
 	; CH_a =< Ch, Ch =< CH_z
 	; CH_A =< Ch, Ch =< CH_Z
-	; Ch == 0'_).
+	; Ch == CH_UNDERSCORE
+	).
+
 is_alphanumericL([]).
+
 is_alphanumericL([Ch|Rest]) :-
 	is_alphanumericChar(Ch),
 	is_alphanumericL(Rest).
@@ -565,24 +621,24 @@ flora_set_xpp_options :-
 	retractall(xpp_options(_)),
 	assert(xpp_options('-P -m -nostdinc -curdirinclast')).
 
-%% Looks in flora_xpp_extra_options/1 to see if needs to add more options
+%% Looks in flora_xpp_extra_options/1 to see if needs to add more options.
+%% It is always called before invoking gpp.
 flora_set_xpp_options(WS) :-
-	(flora_xpp_extra_options(ExtraOptions) -> true
-	; ExtraOptions = ''
-	),
+	retractall(xpp_options(_)),
+	(flora_xpp_extra_options(ExtraOptions) -> true; ExtraOptions = ''),
 	fmt_write_string(Opt,
                          '-P -m -nostdinc -curdirinclast %s -D FLORA_VAR_WORKSPACE=%s',
                          args(ExtraOptions,WS)),
-	flora_clear_xpp_options,
 	assert(xpp_options(Opt)).
 
-%% Extra options for GPP
+%% Extra options for GPP. It is always before flora_set_xpp_options.
 flora_set_xpp_extra_options(Opt) :-
-	flora_clear_xpp_extra_options,
+	retractall(flora_xpp_extra_options(_)),
 	assert(flora_xpp_extra_options(Opt)).
 
-flora_clear_xpp_options :- retractall(xpp_options(_)).
-flora_clear_xpp_extra_options :- retractall(flora_xpp_extra_options(_)).
+flora_clear_xpp_options :-
+	retractall(flora_xpp_extra_options(_)),
+	retractall(xpp_options(_)).
 
 
 /*************************************************************************
@@ -592,7 +648,7 @@ flora_loaddyn_FDB_filename(DBFileName) :-
 	current_output_port(OutPort),
 	fmt_write(OutPort,":- import flora_load_dyn/2 from flrutils.\n",_),
 	fmt_write(OutPort,"?- flora_load_dyn('%s',%s).\n\n",
-                  args(DBFileName,'FLORA_VAR_WORKSPACE')).
+                  args(DBFileName,'FLORA_THIS_MODULE_NAME')).
 
 
 /*************************************************************************
@@ -714,7 +770,7 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
   Things to do:
   (1) include .flh file directive.
   (2) output header file.
-  (3) syslib loading instrucitons.
+  (3) syslib and sysmod loading instrucitons.
   (4) DB file loading instruction.
   (5) program.
   (6) trailer.
@@ -722,10 +778,11 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
 flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FileStatus) :-
 	telling(PreOutFile),
 	tell(PFileName),
-	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
-	%% FLLIBCONTROL (sylibinc), (libinc) FLSERVPP, FLSERVIO
-	%%  should be included by the compiler
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL,FLSERVPP,FLSERVIO|LibOptionList],
+	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
+	findall(ModOption,member(FLSYSMOD(ModOption),FileOptionList),SysModOptionList),
+	append(SysLibOptionList,SysModOptionList,OptList),
+	%% FLLIBCONTROL (sylibinc) should be included by the compiler.
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL|OptList],
                            HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
@@ -780,31 +837,46 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 
 
 /*************************************************************************
-  flora_load_dyn(+InDBFile,+Module)
+  flora_load_dyn(+InDBFile,+ModuleName)
 
   This procedure reads a Flora DB file that contains facts in canonical
-  form and inserts them into the storage trie for the module.
+  form and inserts them into the storage trie for the module. The module
+  could be either a Flora user module, or a Flora system module. In the
+  latter case, it is structured term.
 *************************************************************************/
-flora_load_dyn(InDBFile,Module) :-
+flora_load_dyn(InDBFile,ModuleName) :-
 	flora_check_filename(InDBFile),
 	( flora_locate_file(InDBFile,DBFile) ->
 	    flora_message_line('dynamically loading %s into storage trie',args(DBFile)),
 	    cputime(T0),
 	    seeing(PreInFile),
-	    flora_set_xpp_options(Module),
-	    xpp_process_file(DBFile,XPP_process,IOportFromProc),
-	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
-	    flora_storage_name(Module,StorageName),
-	    flora_read_canonical_and_insert(StorageName),
-	    %% Wait, not to leave zombies.
-	    process_control(XPP_process,wait),
-	    %% Release the file descriptor used to read from cpp.
-	    file_close(IOportFromProc),
-	    flora_clear_xpp_options,
-	    see(PreInFile),
-	    cputime(T1),
-	    T is T1-T0,
-	    flora_message_line('Done! CPU time used: %S seconds',args(T))
+	    %% Check the name of the module.
+	    flora_module_name(ModuleName,Type,WS),
+	    !,
+	    ( Type == invalid ->
+		flora_module_name_error(ModuleName),
+		abort
+	    ;
+	      ( Type == systemmodule ->
+		  flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE ')
+	      ;
+	        true
+	      ),
+	      flora_set_xpp_options(WS),
+	      xpp_process_file(DBFile,XPP_process,IOportFromProc),
+	      stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	      flora_storage_name(ModuleName,StorageName),
+	      flora_read_canonical_and_insert(StorageName),
+	      %% Wait, not to leave zombies.
+	      process_control(XPP_process,wait),
+	      %% Release the file descriptor used to read from cpp.
+	      file_close(IOportFromProc),
+	      flora_clear_xpp_options,
+	      see(PreInFile),
+	      cputime(T1),
+	      T is T1-T0,
+	      flora_message_line('Done! CPU time used: %S seconds',args(T))
+	    )
 	;
 	  flora_error_line('File %s does not exist!',args(InDBFile)),
           fail
@@ -832,6 +904,7 @@ flora_read_canonical_and_insert(StorageName) :-
 /*************************************************************************
   flora_rpc_file(+MaxErr,+ErrNum,+WarnNum,-CompiledRuleList,-FileOptionList,-FileStatus)
 *************************************************************************/
+%% The first argument keeps track of the tail of a list.
 flora_tailappend(V,[],V) :- !.
 flora_tailappend([H|V],[H|L],T) :- flora_tailappend(V,L,T).
 
@@ -1032,6 +1105,25 @@ flora_shell_command_line(Code,Options,Status) :-
 
 
 /*************************************************************************
+  flora_flrfilename_error(+FileName)
+
+  This procedure is called when search for a Flora file is failed. The
+  failure may be due to incorrect file name extension or non-existence.
+*************************************************************************/
+flora_flrfilename_error(File) :-
+	( parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_FILE_EXT,
+	  path_sysop(exists,File) ->
+	    flora_stderr_nl,
+	    flora_error_line('%s: Filename extension must be %s!',
+			     args(File,FLORA_FILE_EXT))
+	;
+	  flora_stderr_nl,
+	  flora_error_line('File %s[.%s] does not exist!',args(File,FLORA_FILE_EXT))
+        ),
+	!.
+
+
+/*************************************************************************
   utilities
 *************************************************************************/
 flora_errorwarn_count(ErrNum,WarnNum) :-
@@ -1224,54 +1316,95 @@ flMaxerr(X) :-
 	  assert(flora_maxerr(X))
 	).
 
+
+/*************************************************************************
+  flP2H/2
+*************************************************************************/
 flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG).
 
 
+/*************************************************************************
+  flHalt/0
+*************************************************************************/
 flHalt :- halt.
 
+
+/*************************************************************************
+  flDump/1
+*************************************************************************/
 flDump(InFile>>Workspace) :-
 	flora_dump_file(InFile,Workspace,dontsquash).
+
 flDump(InFile) :-
-	atom(InFile),
 	flora_dump_file(InFile,FLORA_DEFAULT_WORKSPACE,squash).
 
-%% If SquashingOption == squash, ignore Workspace in the final round 
-%% of gpp pre-processing.
-flora_dump_file(InFile,Workspace,SquashingOption) :-
-	path_sysop(basename,InFile,Basename),
-	(flora_locate_file(Basename,FLORA_FILE_EXT,File)
-	-> flora_flcompile(File,Workspace,dontrename)
-	;  flora_stderr_nl,
-	    flora_error_line('File %s[.%s] does not exist!',
-			     args(Basename,FLORA_FILE_EXT)),
-	    fail
-	),
-	(SquashingOption == squash ->  NewWorkspace = ''
-	;   %% Add '_' to the workspace: simplifies reading the predicates
-	    str_cat(Workspace,'_',NewWorkspace)
-	),
-	(flora_gpp_dumpfile(Basename,NewWorkspace,XSB_PFILE_EXT)
-	; flora_error_line('Failed to make a dump file for %s',args(Basename)),
-	    fail
-	),
-	(flora_gpp_dumpfile(Basename,NewWorkspace,FLORA_FDB_EXT)
-	;   true
-	).
 
-flora_gpp_dumpfile(Basename,Workspace,Extension) :-
-	(flora_locate_file(Basename,Extension,ExtFile)
-	->
-	    flora_set_xpp_extra_options(' -D FLORA_DUMP '),
-	    flora_set_xpp_options(Workspace),
-	    fmt_write_string(Dumpfile, '%s_dump.%s', args(Basename,Extension)),
-	    file_open(Dumpfile,w,DumpPort),
-	    xpp_process_file(ExtFile,XPP_process,IOportFromGPP),
-	    copyIOport(IOportFromGPP,DumpPort),
-	    process_control(XPP_process, wait),
-	    flora_clear_xpp_options,
-	    file_close(DumpPort),
-	    file_close(IOportFromGPP)
-	).
+/*************************************************************************
+  flora_dump_file(+File,+Workspace,+SquashingOption)
+
+  It expects a Flora file as input and dump its content in a more readable
+  format. If SquashingOption == squash, ignore Workspace in the final round 
+  of gpp pre-processing.
+*************************************************************************/
+flora_dump_file(InFile,Workspace,SquashingOption) :-
+	flora_check_filename(InFile),
+	flora_check_workspace(Workspace),
+	( flora_locate_file(InFile,FLORA_FILE_EXT,FlrFile) ->
+	    flora_flcompile(FlrFile,Workspace)
+	;
+	  flora_flrfilename_error(InFile),
+	  !,
+	  fail
+	),
+	!,
+	%% Compilation succeeds. Need to dump file contents.
+	( SquashingOption == squash ->
+	    NewWorkspace=''
+	;
+	  %% Add '_' to the workspace to simplify reading.
+	  str_cat(Workspace,'_',NewWorkspace)
+	),
+	%% Find the files that need to be dumped.
+	flora_mainP_filename(FlrFile,PFile),
+	flora_FDB_filename(FlrFile,FDBFile),
+	flora_dump_filename(PFile,DumpPFile),
+	flora_dump_filename(FDBFile,DumpFDBFile),
+	!,
+	( path_sysop(exists,PFile) ->
+	    %% Dump the main .P file.
+	    (flora_gpp_dumpfile(PFile,DumpPFile,NewWorkspace) -> true; !, fail)
+
+	; path_sysop(exists,FDBFile) ->
+	    %% Dump the .fdb file if it exists.
+	    (flora_gpp_dumpfile(FDBFile,DumpFDBFile,NewWorkspace) -> true; !, fail)
+	;
+	  true
+	),
+	!.
+
+
+/*************************************************************************
+  flora_gpp_dumpfile(+FileName,+DumpFileName,+Workspace)
+
+  When this procedure is called, the input file is already checked
+  for existence.
+*************************************************************************/
+flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
+	flora_set_xpp_extra_options(' -D FLORA_DUMP '),
+	flora_set_xpp_options(Workspace),
+	file_open(DumpFileName,w,DumpPort),
+	xpp_process_file(FileName,XPP_process,IOportFromGPP),
+	copyIOport(IOportFromGPP,DumpPort),
+	process_control(XPP_process,wait),
+	flora_clear_xpp_options,
+	file_close(IOportFromGPP),
+	file_close(DumpPort),
+	!.
+
+flora_gpp_dumpfile(FileName,_DumpFileName,_Workspace) :-
+	flora_error_line('Failed to make a dump file for %s!',args(FileName)),
+	!,
+	fail.
 
 
 /*************************************************************************
@@ -1350,4 +1483,3 @@ flora_gpp_dumpfile(Basename,Workspace,Extension) :-
 %%	  flora_message_line('Done! CPU time used: %S seconds',args(T))
 %%	),
 %%	!.
-

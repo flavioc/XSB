@@ -31,7 +31,7 @@
 	atom/1
    from standard.
 
-:- import member/2 from basics.
+:- import member/2, append/3 from basics.
 
 :- import assert/1, retractall/1 from assert.
 
@@ -133,11 +133,15 @@
 
 :- import flora_stderr_write/1 from flrdisplay.
 
-:- import flora_include/2,
-	flora_service_file/3
+:- import
+	flora_include/2,
+	flora_sysmod_file/3
    from flrlibman.
 
-:- import flora_wspredicate/4,
+:- import
+	flora_user_module_predicate_symbol/3,
+	flora_module_name/3,
+	flora_module_name_error/1,
 	flora_storage_name/2
    from flrwrapper.
 
@@ -151,7 +155,7 @@
 	flHalt/0,
 	flora_compile_internal/1,
 	flora_compile_internal/2,
-	flora_compile_service/1,
+	flora_compile_system_module/1,
 	flora_load_module_internal/1,
 	flora_load_module_internal/2,
 	flP2H/2,
@@ -174,4 +178,6 @@
 	flora_clear_xpp_options/0,
 	flora_list2conjunct/2,
 	flora_check_workspace/1,
-	flora_load_dyn/2.
+	flora_load_dyn/2,
+	flora_compile_system_module_by_ID/1,
+	flora_load_system_module_internal/1.

@@ -38,4 +38,6 @@
 
 :- import flora_argdef/3, flora_conflict_arguments/3 from flrsignature.
 
+:- import flora_system_module/1 from flrlibman.
+
 :- export flora_parse/3.

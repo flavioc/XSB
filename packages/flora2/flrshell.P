@@ -42,8 +42,11 @@ flora_shell_loop :-
 	flora_shell_prompt,
 	flora_shell_command_line(Code,Options,Status),
 	( flora_good_command(Status) ->
-	    findall(Op,member(FLSYSLIB(Op),Options),OpList),
-	    flora_load_library(OpList),
+	    findall(SysLibOp,member(FLSYSLIB(SysLibOp),Options),SysLibList),
+	    flora_load_library(SysLibList),
+	    findall(SysModOp,member(FLSYSMOD(SysModOp),Options),SysModList),
+	    flora_load_system_module(SysModList),
+	    %writeln(Code),
 	    call(Code)
 	;
 	  true
@@ -195,7 +198,7 @@ flNoTrace :- ensure_debugger_loaded, flora_notrace.
 flLowTrace :- assert(flora_switch(low_level_trace)), trace.
 
 ensure_debugger_loaded :-
-	( FLORA_SYMBOL(debugger_loaded)
+	( FLORA_SYMBOL('debugger_loaded')
 	-> true
 	;  consult(flrdebugger)
 	).

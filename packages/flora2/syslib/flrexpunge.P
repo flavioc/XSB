@@ -35,11 +35,13 @@
 
 :- import storage_find_fact/2, storage_delete_fact/3 from storage.
 
-:- import flora_check_workspace/1 from flrutils.
-
 :- import flora_error_line/4 from flrprint.
 
-:- import flora_wspredicate/4, flora_storage_name/2 from flrwrapper.
+:- import
+	flora_check_module_name/1,
+	flora_module_predicate_symbol/3,
+	flora_storage_name/2
+   from flrwrapper.
 
 
 
@@ -48,32 +50,33 @@
 *****************************************************************************/
 fllibexpunge(FAList) :- fllibexpunge(FAList,FLORA_DEFAULT_WORKSPACE).
 
-fllibexpunge(FAList,WS) :-
-	( flora_check_workspace(WS) ->
-	    flora_expunge(FAList,WS)
+%% "ModuleName" could be the name of either a Flora user module or system module.
+fllibexpunge(FAList,ModuleName) :-
+	( flora_check_module_name(ModuleName) ->
+	    flora_storage_name(ModuleName,StorageName),
+	    flora_expunge(FAList,ModuleName,StorageName)
 	;
 	  abort
 	).
 
 
 /*****************************************************************************
-  flora_expunge(+FAList,+WS)
+  flora_expunge(+FAList,+ModuelName,+StorageName)
 *****************************************************************************/
-flora_expunge([],_WS) :- !.
+flora_expunge([],_ModuleName,_StorageName) :- !.
 
 #mode save
 #mode nostring "\!#'"
-flora_expunge([F/A],WS) :-
+flora_expunge([F/A],ModuleName,StorageName) :-
 	( not atom(F) ->
-	    flora_error_line('FL_EXPUNGE: invalid functor'),
+	    flora_error_line('FL_EXPUNGE: invalid predicate symbol'),
 	    abort
 	
 	; not integer(A) ->
 	    flora_error_line('FL_EXPUNGE: invalid predicate arity'),
 	    abort
 	;
-	  flora_wspredicate(F,[],WS,P),
-	  flora_storage_name(WS,StorageName),
+	  flora_module_predicate_symbol(F,ModuleName,P),
 	  abolish(P/A),
 	  functor(Fact,P,A),
 	  findall(Fact,storage_find_fact(StorageName,Fact),FactList),

@@ -1,6 +1,7 @@
 /* File:      flrundefhook.P
 **
-** Author(s): Guizhen Yang 
+** Author(s): Guizhen Yang
+**            Michael Kifer
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
@@ -34,38 +35,40 @@
 ****************************************************************************/
 %% Case for a call to a molecule
 flora_undefined_predicate_hook([PscRecord,fail]) :-
+	%% Get the predicate symbol.
 	psc_name(PscRecord,PredName),
-	flora_flogic_predicate(PredName,WS,_WrapPrefix,_Base),
-	!,
-	(flModule(WS)
-	-> %% This case is not possible (I think)
-	    flora_error_line('undefined F-logic molecule %s in module %s',
-			     args(PredName,WS))
-	; flora_error_line('calling a FLORA molecule in module %s, which is not loaded', args(WS))
-	),
-	abort.
+	%% Decode the predicate symbol.
+	flora_decode_predicate(PredName,PredicateType,ModuleName,_,PredicateSymbol,_),
+	( PredicateType == (flogic) ->
+	    %% an F-logic predicate
+	    ( flModule(ModuleName) ->
+		%% This is very unlikely to happen unless something goes wrong.
+		flora_error_line('undefined F-logic molecule %s in FLORA module %S',
+			         args(PredicateSymbol,ModuleName))
+	    ;
+	        flora_error_line('invoking F-logic in unloaded FLORA module %S',
+                                 args(ModuleName))
+	    )
 
-%% Case for a call to HiLog
-flora_undefined_predicate_hook([PscRecord,fail]) :-
-	psc_name(PscRecord,PredName),
-	flora_hilog_predicate(PredName,Workspace),
-	!,
-	(flModule(Workspace)
-	-> flora_error_line('undefined HiLog predicate in module %s',
-			    args(Workspace))
-	; flora_error_line('calling a HiLog predicate in module %s, which is not loaded', args(Workspace))
-	),
-	abort.
+	; PredicateType == (hilog) ->
+	    %% a HiLog predicate
+	    ( flModule(ModuleName) ->
+		flora_error_line('undefined HiLog predicate in FLORA module %S',
+				 args(ModuleName))
+	    ;
+	      flora_error_line('invoking HiLog in unloaded FLORA module %S',
+                               args(ModuleName))
+	    )
 
-%% Call to a first order predicate
-flora_undefined_predicate_hook([PscRecord,fail]) :-
-	psc_name(PscRecord,PredName),
-	flora_firstorder_predicate(PredName,Predicate,Workspace),
-	!,
-	psc_arity(PscRecord,N),
-	(flModule(Workspace)
-	-> flora_error_line('undefined first order predicate %s/%d in module %s',
-			    args(Predicate,N,Workspace))
-	; flora_error_line('calling first order predicate %s/%d in module %s, which is not loaded', args(Predicate,N,Workspace))
+	; PredicateType == (firstorder) ->
+	    %% a first order Flora predicate
+	    psc_arity(PscRecord,N),
+	    ( flModule(ModuleName) ->
+		flora_error_line('undefined first order predicate %s/%d in FLORA module %S',
+			         args(PredicateSymbol,N,ModuleName))
+	    ;
+	      flora_error_line('calling first order predicate %s/%d in unloaded FLORA module %S',
+                               args(PredicateSymbol,N,ModuleName))
+	    )
 	),
 	abort.

@@ -34,25 +34,46 @@
 
 :- import reverse/2 from basics.
 
-:- dynamic flora_flogic_bswrapper(_,_).
-:- dynamic flora_flogic_workspace(_).
+:- dynamic flora_flogic_fact_wrapper(_,_).
+:- dynamic flora_current_flogic_module(_).
 
-:- index(flora_flogic_bswrapper/2,trie).
-:- index(flora_flogic_workspace/1,trie).
+:- index(flora_flogic_fact_wrapper/2,trie).
+:- index(flora_current_flogic_module/1,trie).
 
-:- import flora_check_workspace/1 from flrutils.
+:- import flora_error_line/2 from flrprint.
 
 :- export
-	flora_setup_flogic_bswrapper/1,
-	flora_flogic_bswrapper/2,
-	flora_flogic_predicate/4,
-	flora_hilog_predicate/2,
-	flora_firstorder_predicate/3,
-	flora_classify_call/5,
-	flora_wspredicate/4,
-	flora_service_lib_predicate/4,
-	flora_service_ws/2,
-	flora_wssymbol/3,
-	flora_wshilog/2,
-	flora_is_general_predicate/2,
-	flora_storage_name/2.
+	flora_user_module_predicate/4,
+	flora_system_module_predicate/4,
+	flora_module_predicate/4,
+
+	flora_firstorder_user_module_predicate/4,
+	flora_firstorder_system_module_predicate/4,
+	flora_firstorder_module_predicate/4,
+
+	flora_user_module_predicate_symbol/3,
+	flora_system_module_predicate_symbol/3,
+	flora_module_predicate_symbol/3,
+
+	flora_hilog_user_module_predicate_symbol/2,
+	flora_hilog_system_module_predicate_symbol/2,
+	flora_hilog_module_predicate_symbol/2,
+
+	flora_firstorder_user_module_predicate_symbol/3,
+	flora_firstorder_system_module_predicate_symbol/3,
+	flora_firstorder_module_predicate_symbol/3,
+
+	flora_module_name/3,
+	flora_check_module_name/1,
+	flora_module_name_error/1,
+
+	flora_user_storage_name/2,
+	flora_system_storage_name/2,
+	flora_storage_name/2,
+
+	flora_setup_flogic_fact_wrapper/1,
+	flora_flogic_fact_swrapper/2,
+
+	flora_decode_predicate/6,
+	flora_decode_module_name/2,
+	flora_is_flogic_wrapper/3.

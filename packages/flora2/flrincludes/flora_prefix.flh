@@ -1,6 +1,7 @@
 /* File:      flora_prefix.flh -- FLORA prefixes
 **
-** Author(s): kifer
+** Author(s): Michael Kifer
+**	      Guizhen Yang
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
@@ -24,31 +25,61 @@
 */
 
 
-%% If FLORA_DUMP is defined: preprocessing for user-readable dumping
-
-#ifndef FLORA_DUMP
-
-#define FLORA_STORAGE_PREFIX		 '_$_$_flora|storage|'
-#define FLORA_PREFIX		     	 '_$_$_flora'
-
-#else
-
-#define FLORA_PREFIX	
-#define FLORA_STORAGE_PREFIX		 storage_
-
-#endif
-
-%% String added to the service name to form a service workspace
-%% These are used for the service libraries in lib/ and they protect the
-%% service modules from the user who might load something else inthose
-%% modules.
-#define FLORA_SERVICE_STR		 |service|
-#define FLORA_SERVICE_STR_QUOTED	 '|service|'
+/******************************************************************************
+  functor of Flora system module name
+******************************************************************************/
+#define FL_FLORALIB			flora
 
 
 /******************************************************************************
-   Attaching FLORA_PREFIX
+  Flora prefix
+
+  All Flora symbols begin with this prefix.
 ******************************************************************************/
+%% for F-logic and HiLog predicates
+#define FLORA_PREFIX			'_$_$_flora'
 
-#define FLORA_SYMBOL(X)		      FLORA_PREFIX'X'
+%% for first order predicates
+#define FLORA_FO_PREFIX			'_$_$_flora_fo'
 
+
+/******************************************************************************
+  Attaching FLORA_PREFIX or FLORA_FO_PREFIX
+
+  The argument to this Macro should be quoted.
+******************************************************************************/
+#define FLORA_SYMBOL(X)			FLORA_PREFIX#1
+#define FLORA_FO_SYMBOL(X)		FLORA_FO_PREFIX#1
+
+
+/******************************************************************************
+  Strings following FLORA_PREFIX
+
+  These strings should be quoted.
+******************************************************************************/
+#define FLORA_USER_MODULE		'usermod'
+#define FLORA_SYSTEM_MODULE		'sysmod'
+#define FLORA_USER_TRIE			'usertrie'
+#define FLORA_SYSTEM_TRIE		'systrie'
+
+
+/******************************************************************************
+  prefixes
+******************************************************************************/
+%% prefix to construct Flora user module predicates.
+#define FLORA_USER_MODULE_PREFIX	FLORA_SYMBOL(FLORA_USER_MODULE)
+
+%% prefix to construct Flora system module predicates.
+#define FLORA_SYSTEM_MODULE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_MODULE)
+
+%% prefix to construct Flora first order user module predicates.
+#define FLORA_FO_USER_MODULE_PREFIX	FLORA_FO_SYMBOL(FLORA_USER_MODULE)
+
+%% prefix to construct Flora first order system module predicates.
+#define FLORA_FO_SYSTEM_MODULE_PREFIX	FLORA_FO_SYMBOL(FLORA_SYSTEM_MODULE)
+
+%% prefix to name Flora storage trie for a user module.
+#define FLORA_USER_TRIE_PREFIX		FLORA_SYMBOL(FLORA_USER_TRIE)
+
+%% prefix to name Flora storage trie for a system module.
+#define FLORA_SYSTEM_TRIE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_TRIE)

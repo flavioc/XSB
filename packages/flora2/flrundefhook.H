@@ -26,11 +26,7 @@
 
 :- import psc_name/2, psc_arity/2 from machine.
 
-:- import
-	flora_flogic_predicate/4,
-	flora_hilog_predicate/2,
-	flora_firstorder_predicate/3
-   from flrwrapper.
+:- import flora_decode_predicate/6 from flrwrapper.
 
 :- import flModule/1 from flora2.
 

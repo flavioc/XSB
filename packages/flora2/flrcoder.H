@@ -38,9 +38,13 @@
 :- import flora_prlgdef/2 from flrprolog.
 
 :- import
-	flora_wspredicate/4,
-	flora_storage_name/2,
-	flora_service_lib_predicate/4
+	flora_user_module_predicate/4,
+	flora_user_module_predicate_symbol/3,
+	flora_system_module_predicate/4,
+	flora_firstorder_user_module_predicate_symbol/3,
+	flora_firstorder_user_module_predicate/4,
+	flora_firstorder_system_module_predicate/4,
+	flora_user_storage_name/2
    from flrwrapper.
 
 :- export

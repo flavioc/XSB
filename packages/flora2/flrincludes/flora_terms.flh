@@ -42,9 +42,6 @@
 
   TextInfo=TEXT(BeginX,BeginY,EndX,EndY,ListOfCodes)
 **************************************************************************/
-
-#include "flora_prefix.flh"
-
 #define TEXT			text
 #define IDENTIFIER		identifier
 #define VARIABLE		variable
@@ -171,10 +168,9 @@
 %%#define FL_PROLOG		(prolog)
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
-#define FL_FLORALIB		flora
 #define FL_WRAPAROUND	        wraparound
-%%#define FL_FIRSTORDERNOSTORAGE	fl_firstorder_nostorage
-%%#define FL_FIRSTORDERNOSTORAGEALL fl_firstorder_nostorage_all
+%%#define FL_FONOSTORAGE	wraparound
+%%#define FL_FONOSTORAGEALL 	wraparoundall
 #define FL_FIRSTORDER		firstorder
 #define FL_FIRSTORDERALL	firstorderall
 #define FL_HILOGTABLE		hilogtable
@@ -274,7 +270,7 @@
 #define FLARGUMENTS		flarguments
 #define FLPROLOG		flprolog
 #define FLOPDEF			flopdef
-%%#define FLFIRSTORDERNOSTORAGE	flfirstordernostorage
+%%#define FONOSTORAGE		flfonostorage
 #define FLFIRSTORDER		flfirstorder
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
@@ -330,6 +326,7 @@
 #define PRINDEX			prindex
 #define PRHILOGTABLE		prhilogtable
 #define PRTHISMODULE		prthismodule
+#define PRTHISSTORAGE		prthisstorage
 #define PRSTORAGE		prstorage
 
 #define PRATOM			pratom
@@ -382,7 +379,38 @@
 
 
 /****************************************************************************
-  FLORA system libraries
+  wrappers
+****************************************************************************/
+#define	WRAP_HILOG		flapply
+#define	WRAP_ISA		isa
+#define	WRAP_SUB		sub
+#define	WRAP_METH		meth
+#define	WRAP_IMETH		imeth
+#define	WRAP_TRAN		tran
+#define	WRAP_FD			fd
+#define	WRAP_IFD		ifd
+#define	WRAP_FDSIG		fdsig
+#define	WRAP_IFDSIG		ifdsig
+#define	WRAP_MVD		mvd
+#define	WRAP_IMVD		imvd
+#define	WRAP_MVDSIG		mvdsig
+#define	WRAP_IMVDSIG		imvdsig
+#define	WRAP_MVDINC		mvdinc
+#define	WRAP_IMVDINC		imvdinc
+#define WRAP_MVDTOLIST		mvdtolist
+#define WRAP_IMVDTOLIST		imvdtolist
+#define	WRAP_EXISTS		exists
+#define	WRAP_FDDEF		fddef
+#define	WRAP_IFDDEF		ifddef
+#define	WRAP_MVDDEF		mvddef
+#define	WRAP_IMVDDEF		imvddef
+#define	WRAP_FDSKOLEM		fdskolem
+#define	WRAP_IFDSKOLEM		ifdskolem
+#define	WRAP_OBJEQL		objeql
+
+
+/****************************************************************************
+  FLORA builtin libraries
 ****************************************************************************/
 #define	FLLIBMIN		fllibmin
 #define	FLLIBMAX		fllibmax
@@ -429,11 +457,13 @@
 
 
 /*****************************************************************************
-   Flora services
+   Flora system modules IDs
 *****************************************************************************/
+%% This is the functor used by the compiler.
+#define FLSYSMOD		flsysmod
 
-#define FLSERVPP		pp
-#define FLSERVIO		io
+#define FLSYSMODPP		pp
+#define FLSYSMODIO		io
 
 
 /****************************************************************************
@@ -463,59 +493,24 @@
 
 
 /****************************************************************************
-  wrappers
-****************************************************************************/
-#define	WRAP_HILOG		flapply
-#define	WRAP_ISA		isa
-#define	WRAP_SUB		sub
-#define	WRAP_METH		meth
-#define	WRAP_IMETH		imeth
-#define	WRAP_TRAN		tran
-#define	WRAP_FD			fd
-#define	WRAP_IFD		ifd
-#define	WRAP_FDSIG		fdsig
-#define	WRAP_IFDSIG		ifdsig
-#define	WRAP_MVD		mvd
-#define	WRAP_IMVD		imvd
-#define	WRAP_MVDSIG		mvdsig
-#define	WRAP_IMVDSIG		imvdsig
-#define	WRAP_MVDINC		mvdinc
-#define	WRAP_IMVDINC		imvdinc
-#define WRAP_MVDTOLIST		mvdtolist
-#define WRAP_IMVDTOLIST		imvdtolist
-#define	WRAP_EXISTS		exists
-#define	WRAP_FDDEF		fddef
-#define	WRAP_IFDDEF		ifddef
-#define	WRAP_MVDDEF		mvddef
-#define	WRAP_IMVDDEF		imvddef
-#define	WRAP_FDSKOLEM		fdskolem
-#define	WRAP_IFDSKOLEM		ifdskolem
-#define	WRAP_OBJEQL		objeql
-
-
-/****************************************************************************
   commonly used identifiers
 
   Notes: (1) FLORA_PREFIX_LEN is the length of FLORA_PREFIX PLUS 1. This
              macro is used in syslib/flrdbop.P.
 ****************************************************************************/
-#mode push
-#mode standard HTML
-<#define FLORA_EVAL_MACRO|<#eval #1>>
-<#mode pop>
-
 #define	FLORA_EOF		eof
 #define FLORA_NOT_EOF		not_eof
 
 #define FLSYSLIB		flsyslib
 #define FLSYSDBUPDATE		flsysdbupdate
 
-%% Length of FLORA_PREFIX: We take out 2 to account for the quotes
-#define FLORA_PREFIX_LEN_PLUS1	FLORA_EVAL_MACRO(length(FLORA_PREFIX)+1-2)
-
-#define FLORA_SERVICE_STR_LEN	FLORA_EVAL_MACRO(length(FLORA_SERVICE_STR))
-
 #define FLORA_THIS_MODULE	flThisModule
+
+
+/****************************************************************************
+  prefixes for output Macro
+****************************************************************************/
+#include "flora_prefix.flh"
 
 
 /****************************************************************************
@@ -527,15 +522,40 @@
 #define FLTRAILERPREFIX		'inferred_'
 
 
-%% In these macros, we deduct 2 to take the quotes out of the consideration
-%% Length of FLFACTPREFIX
-#define FLFACTPREFIX_LEN	FLORA_EVAL_MACRO(length(FLFACTPREFIX)-2)
-%% Length of FLHEADPREFIX
-#define FLHEADPREFIX_LEN	FLORA_EVAL_MACRO(length(FLHEADPREFIX)-2)
-%% Length of FLBODYPREFIX
-#define FLBODYPREFIX_LEN	FLORA_EVAL_MACRO(length(FLBODYPREFIX)-2)
-%% Length of FLTRAILERPREFIX
-#define FLTRAILERPREFIX_LEN	FLORA_EVAL_MACRO(length(FLTRAILERPREFIX)-2)
+/******************************************************************************
+  lengths of prefixes
+
+  Note: We need to account for the quotes. The length is for the Prolog
+        atom, but not the text string.
+******************************************************************************/
+#mode push
+#mode standard HTML
+<#define FLORA_EVAL_MACRO|<#eval #1>>
+<#mode pop>
+
+#define FLORA_PREFIX_LEN_PLUS2		FLORA_EVAL_MACRO(length(FLORA_PREFIX))
+#define FLORA_FO_PREFIX_LEN_PLUS2	FLORA_EVAL_MACRO(length(FLORA_FO_PREFIX))
+
+%% length of FLORA_PREFIX'FLORA_USER_MODULE
+#define FLORA_USER_MODULE_PREFIX_LEN_PLUS1 \
+	FLORA_EVAL_MACRO(length(FLORA_USER_MODULE_PREFIX)-2)
+
+%% length of FLORA_PREFIX'FLORA_SYSTEM_MODULE
+#define FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1 \
+	FLORA_EVAL_MACRO(length(FLORA_SYSTEM_MODULE_PREFIX)-2)
+
+%% length of FLORA_FO_PREFIX'FLORA_USER_MODULE
+#define FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1 \
+	FLORA_EVAL_MACRO(length(FLORA_FO_USER_MODULE_PREFIX)-2)
+
+%% length of FLORA_FO_PREFIX'FLORA_SYSTEM_MODULE
+#define FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1 \
+	FLORA_EVAL_MACRO(length(FLORA_FO_SYSTEM_MODULE_PREFIX)-2)
+
+#define FLFACTPREFIX_LEN		FLORA_EVAL_MACRO(length(FLFACTPREFIX)-2)
+#define FLHEADPREFIX_LEN		FLORA_EVAL_MACRO(length(FLHEADPREFIX)-2)
+#define FLBODYPREFIX_LEN		FLORA_EVAL_MACRO(length(FLBODYPREFIX)-2)
+#define FLTRAILERPREFIX_LEN		FLORA_EVAL_MACRO(length(FLTRAILERPREFIX)-2)
 
 
 /****************************************************************************
@@ -547,17 +567,16 @@
 
 
 /****************************************************************************
-  compilation
+  shell command operators for compilation and loading
 ****************************************************************************/
-#define FL_COMPILE	    flCompile
-#define FL_LOAD	    	    flLoad
+#define FL_COMPILE		flCompile
+#define FL_LOAD			flLoad
+#define FL_DUMP			flDump
 
 
 /****************************************************************************
-  control
+  control structure
 ****************************************************************************/
-
-#define FL_IF	     	     if
-#define FL_THEN	     	     then
-#define FL_ELSE	     	     else
-
+#define FL_IF			if
+#define FL_THEN			then
+#define FL_ELSE			else

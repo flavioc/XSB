@@ -132,6 +132,7 @@
 #define NO_PROLOGUPDATE 'updating Prolog predicates not allowed'
 #define UNKNOWN_AGGREGT 'unknown aggregate operator'
 #define UNKNOWN_DIRECT	'unknown compiler directive'
+#define UNREG_SYSMOD	'unregistered system module'
 
 
 /**************************************

@@ -1,6 +1,7 @@
 /* File:      flrlibman.P -- Flora includes and libraries definitions
 **
 ** Author(s): Guizhen Yang
+**            Michael Kifer
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
@@ -34,26 +35,19 @@
   flora_register_syslib(+LibBaseFile)
 **********************************************************************/
 flora_register_syslib(LibBaseFile) :-
-	var(LibBaseFile),
-	!,
-	flora_error_line('Uninstantiated FLORA system library name! Registration aborted!'),
-	abort.
-
-flora_register_syslib(LibBaseFile) :-
 	assert(flora_syslib_loaded(LibBaseFile)).
 
 
 /**********************************************************************
   flora_load_library(+List)
-  flora_load_library(+Atom)
+  flora_load_library(+LibID)
 
   Note: This predicate always succeeds.
 **********************************************************************/
-flora_load_library(LibName) :-
-	var(LibName),
+flora_load_library(LibID) :-
+	var(LibID),
 	!,
-	flora_error_line('Unbound FLORA library name - Loading aborted!'),
-	abort.
+	flora_error_line('Uninstantiated FLORA system library name! Loading failed!').
 
 flora_load_library([]) :- !.
 
@@ -63,50 +57,85 @@ flora_load_library([H|T]) :-
 	flora_load_library(T).
 
 flora_load_library(LibID) :-
-	flora_library(LibID,LibFile,BaseFilename),
-	!,
-	( flora_syslib_loaded(BaseFilename) -> true
+	( flora_library_file(LibID,BaseFileName,SubDir) ->
+	    ( flora_syslib_loaded(BaseFileName) ->
+		true
+	    ;
+	      package_configuration(dir(flora),FloraDir),
+	      slash(S),
+	      fmt_write_string(FullLibPath,"%s%s%s%s%s.P",
+	                       args(FloraDir,S,SubDir,S,BaseFileName)),
+	      %% Because LibID implies BaseFilename, we register base filename rather
+	      %% than the library name (several LibID can correspond to one file).
+	      consult(FullLibPath),
+	      flora_register_syslib(BaseFileName)
+	    )
 	;
-	    package_configuration(dir(flora),FloraDir),
-	    slash(S),
-	    fmt_write_string(FullLibPath,"%s%s%s",args(FloraDir,S,LibFile)),
-	    %% Because LibID -> BaseFilename, we register base filename rather
-	    %% than the library ID (several LibId can correspond to one file.
-	    flora_register_syslib(BaseFilename),
-	    consult(FullLibPath)
-        ).
+	  flora_error_line('Invalid FLORA system library name %S ! Loading failed!',
+			   args(LibID))
+	),
+	!.
 
 flora_load_library(_LibID).
 
 
-/********************************************************************
-  flora_include(+Atom,+FilePath)
-  indicates which file to be included in the output file.
-********************************************************************/
-flora_include(LibId,IncFile) :-
-	atom(LibId),
-	slash(S),
-	flora_library_file(LibId,BaseFilename,Dir),
+/**********************************************************************
+  flora_register_sysmod(+SysModID)
+**********************************************************************/
+flora_register_sysmod(SysModID) :-
+	assert(flora_sysmod_loaded(SysModID)).
+
+
+/**********************************************************************
+  flora_load_system_module(+List)
+  flora_load_system_module(+SysModID)
+
+  Note: This predicate always succeeds.
+**********************************************************************/
+flora_load_system_module(SysModID) :-
+	var(SysModID),
 	!,
-	fmt_write_string(IncFile,'%sinc%s%s_inc.flh', arg(Dir,S,BaseFilename)).
+	flora_error_line('Uninstantiated FLORA system module ID! Loading failed!').
+
+flora_load_system_module([]) :- !.
+
+flora_load_system_module([H|T]) :-
+	!,
+	flora_load_system_module(H),
+	flora_load_system_module(T).
+
+flora_load_system_module(SysModID) :-
+	( flora_sysmod_loaded(SysModID) ->
+	    true
+	;
+	  flora_load_system_module_internal(SysModID),
+	  %% Register the Flora system module ID.
+	  flora_register_sysmod(SysModID)
+	),
+	!.
+
+flora_load_system_module(_SysModID).
+
 
 /********************************************************************
-  flora_library(+Atom,-FilePath,-Basefilename)
-  indicates which library to be loaded.
+  flora_include(+ID,+FilePath)
+  indicates which file to be included in the output file. The file
+  path contains the subdir relative to the Flora home dir.
 ********************************************************************/
-flora_library(LibId,LibFile,BaseFilename) :- 
-	atom(LibId),
+flora_include(ID,IncFile) :-
+	atom(ID),
 	slash(S),
-	flora_library_file(LibId,BaseFilename,Dir),
+	flora_library_file(ID,BaseFilename,SubDir),
 	!,
-	fmt_write_string(LibFile,'%s%s%s.P',arg(Dir,S,BaseFilename)).
+	fmt_write_string(IncFile,'%sinc%s%s_inc.flh',arg(SubDir,S,BaseFilename)).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 /****************************************************************************
-  Flora libraries
-*****************************************************************************/
+  flora_library_file(+LibName,+BaseFileName,+SubDir)
 
+  These libraries implement the Flora aggregation syntax, commands, and
+  module specification with variables.
+*****************************************************************************/
 flora_library_file(FLLIBMIN,flraggmin,syslib) :- !.
 flora_library_file(FLLIBMAX,flraggmax,syslib) :- !.
 flora_library_file(FLLIBSUM,flraggsum,syslib) :- !.
@@ -141,8 +170,9 @@ flora_library_file(FLLIBEQUALITY,flrequality,syslib) :- !.
 flora_library_file(FLLIBEXPUNGE,flrexpunge,syslib) :- !.
 flora_library_file(FLLIBCONTROL,flrcontrol,syslib) :- !.
 
+
 /**************************************************************************
-  Flora headers
+  Flora headers and trailers inclusion files
 ***************************************************************************/
 flora_library_file(FLHEADER,flrheader,header) :- !.
 flora_library_file(FLDEFINITION,flrdefinition,header) :- !.
@@ -151,19 +181,30 @@ flora_library_file(FLTRAILER,flrtrailer,header) :- !.
 flora_library_file(FLEQLTRAILER,flreqltrailer,header) :- !.
 flora_library_file(FLSCALAREQL,flrscalareql,header) :- !.
 
-%% Arg1: service code; Arg2: base file name of the service library
-flora_library_file(ServiceId,ServiceBaseFile, Dir) :-
-	flora_service_file(ServiceId,ServiceBaseFile, Dir), !.
 
-%% Catchall
+/**************************************************************************
+  Flora system modules use the system libraries mechanism to include
+  their header files, but use different mechanism to load.
+***************************************************************************/
+flora_library_file(SysModID,BaseFile,SubDir) :-
+	flora_sysmod_file(SysModID,BaseFile,SubDir),
+	!.
+
+
+/**************************************************************************
+  catch error
+***************************************************************************/
 flora_library_file(S,F,_) :-
-	flora_error_line("Unknown library Id `%S' or file `%S'", args(S,F)),
+	flora_error_line("Unknown library ID `%S' or file `%S'", args(S,F)),
 	abort.
 
 
 /*****************************************************************************
-   Flora services
-*****************************************************************************/
+  flora_sysmod_file(+SysModID,+BaseFileName,+SubDir).
 
-flora_service_file(FLSERVPP, flrprettyprint, lib) :- !.
-flora_service_file(FLSERVIO, flrio, lib) :- !.
+  Flora system modules accessible by the @flora(mod) syntax
+*****************************************************************************/
+flora_sysmod_file(FLSYSMODPP,flrprettyprint,lib) :- !.
+flora_sysmod_file(FLSYSMODIO,flrio,lib) :- !.
+
+flora_system_module(SysModID) :- flora_sysmod_file(SysModID,_BaseFileName,_SubDir).

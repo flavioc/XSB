@@ -25,6 +25,12 @@
 
 
 :- import flora_syslib_loaded/1 from usermod.
+:- dynamic flora_syslib_loaded(_).
+:- index flora_syslib_loaded/1-1.
+
+:- import flora_sysmod_loaded/1 from usermod.
+:- dynamic flora_sysmod_loaded(_).
+:- index flora_sysmod_loaded/1-1.
 
 :- import consult/1 from consult.
 
@@ -39,18 +45,18 @@
 :- import bootstrap_flora/0 from flora2.
 :- bootstrap_flora.
 
-:- index flora_service_file/3-1.
+:- index flora_sysmod_file/3-1.
 :- index flora_library_file/3-1.
-
-:- dynamic flora_syslib_loaded(_).
-:- index flora_syslib_loaded/1-1.
 
 :- import flora_error_line/1,
 	flora_error_line/2
    from flrprint.
 
-:- export
-	flora_service_file/3,
-	flora_include/2,
-	flora_load_library/1.
+:- import flora_load_system_module_internal/1 from flrutils.
 
+:- export
+	flora_load_library/1,
+	flora_include/2,
+	flora_sysmod_file/3,
+	flora_system_module/1,
+	flora_load_system_module/1.
