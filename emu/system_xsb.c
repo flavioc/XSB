@@ -610,6 +610,13 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
       return pid;
     } else if (pid == 0) {
       /* child process */
+
+      /* Close the writing side of child's in-pipe. Must do this or else the
+	 child won't see EOF when parent closes its end of this pipe. */
+      if (pipe_to_proc != NULL) close(pipe_to_proc[1]);
+      /* Close the reading part of child's out-pipe and stderr-pipe */
+      if (pipe_from_proc != NULL) close(pipe_from_proc[0]);
+      if (pipe_from_stderr != NULL) close(pipe_from_stderr[0]);
       
 #ifndef WIN_NT  /* Unix: must exec */
       execvp(progname, argv);
