@@ -41,7 +41,7 @@ windows_os :- fail.
 dos_os :- fail.
 
 xsb_configuration(compiler, '@CC@').
-xsb_configuration(cpp, '@xsbCPP@').
+%% xsb_configuration(cpp, '@xsbCPP@').
 xsb_configuration(compiler_flags, '@CFLAGS@').
 xsb_configuration(loader_flags, '@LDFLAGS@').
 

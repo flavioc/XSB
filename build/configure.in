@@ -58,8 +58,10 @@ AC_ARG_WITH(os,
 [  --with-os=wind          build XSB for Windows NT/95/98])
 AC_ARG_WITH(wind,
 [  --with-wind             build XSB for Windows NT/95/98])
-AC_ARG_WITH(cpp,
-[  --with-cpp=CPP          filter .P files through the C preprocessor at CPP])
+
+dnl No more CPP: use gpp.
+dnl AC_ARG_WITH(cpp,
+dnl [  --with-cpp=CPP       filter .P files through the C preprocessor at CPP])
 
 AC_ARG_WITH(libwww,
 [  --with-libwww=DIR       the libwww library used for Web access is at DIR])
@@ -393,27 +395,28 @@ AC_AIX
 
 AC_CHECK_PROG(has_gcc, gcc, "yes", "no")
 
-AC_MSG_CHECKING(for a suitable CPP for XSB)
-
+dnl We no longer use CPP!
+dnl AC_MSG_CHECKING(for a suitable CPP for XSB)
+#
 # Set up cpp
 # Make sure we pass the flags that: preserve comments, undefine all
 # symbols, remove line numbers
-if test "$with_cpp" != ""; then
-   xsbCPP="$with_cpp"
-elif test -x "/lib/cpp"; then
-   xsbCPP="/lib/cpp -P -C -undef"
-elif test -x "/usr/lib/cpp"; then
-   xsbCPP="/usr/lib/cpp -P -C -undef"
-elif test "$has_gcc" = "yes"; then
-   xsbCPP="gcc -E -P -C -undef -x c "
-else
-   # no luck use $CC -E and hope for the better
-   xsbCPP="$CC -E -P -C -undef"
-fi
-
-AC_MSG_RESULT($xsbCPP)
-
-AC_SUBST(xsbCPP)
+#if test "$with_cpp" != ""; then
+#   xsbCPP="$with_cpp"
+#elif test -x "/lib/cpp"; then
+#   xsbCPP="/lib/cpp -P -C -undef"
+#elif test -x "/usr/lib/cpp"; then
+#   xsbCPP="/usr/lib/cpp -P -C -undef"
+#elif test "$has_gcc" = "yes"; then
+#   xsbCPP="gcc -E -P -C -undef -x c "
+#else
+#   # no luck use $CC -E and hope for the better
+#   xsbCPP="$CC -E -P -C -undef"
+#fi
+#
+#AC_MSG_RESULT($xsbCPP)
+#
+#AC_SUBST(xsbCPP)
 
 AC_MSG_CHECKING(whether we are using SunPro C)
 AC_TRY_COMPILE([],[#ifndef __SUNPRO_C
