@@ -225,6 +225,9 @@ rundemo(File) :-
 	;
 	  assert(library_directory(DemoDir))
 	),
+	cwd(CurrWorkingDir),
+	cd(DemoDir),
 	flconsult(File),
+	cd(CurrWorkingDir),
 	retractall(library_directory(DemoDir)).
 

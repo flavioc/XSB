@@ -46,6 +46,8 @@
 
 :- import slash/1 from machine.
 
+:- import cwd/1, cd/1 from shell.
+
 :- import package_configuration/2 from packaging.
 
 :- import conset/2 from gensym.
