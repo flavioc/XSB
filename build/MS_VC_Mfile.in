@@ -99,9 +99,6 @@ ORACLE_MSG=with Oracle support
 !MESSAGE Usage:
 !ERROR NMAKE /f "MS_VC_Mfile.mak" CFG="..." ORACLE=yes SITE_LIBS="oracle libs"
 !ENDIF
-!ELSE
-ORACLE_FLAG=""
-ORACLE_MSG=without Oracle support
 !ENDIF
 
 !IF "$(DLL)" == "yes"
@@ -204,7 +201,7 @@ LINK32_OBJS=$(LINK32_OBJS) $(INTDIR)/orastuff.obj
 !MESSAGE Building XSB executable in Release mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- $ORACLE_FLAG /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+ $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -217,7 +214,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !MESSAGE Building XSB executable in Debug mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
- /D "DEBUG" $ORACLE_FLAG\
+ /D "DEBUG" $(ORACLE_FLAG)\
   /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -230,7 +227,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !MESSAGE Building XSB as a DLL in Release mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
-  /D "XSB_DLL" $ORACLE_FLAG /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+  /D "XSB_DLL" $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:no\
@@ -241,7 +238,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !MESSAGE Building XSB as a DLL in Debug mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
- /D "DEBUG" $ORACLE_FLAG /D "XSB_DLL" /Fp"$(INTDIR)/xsb.pch" /YX\
+ /D "DEBUG" $(ORACLE_FLAG) /D "XSB_DLL" /Fp"$(INTDIR)/xsb.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
@@ -1026,7 +1023,7 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\oracle.h"\
 	{$(INTDIR)}"\xsb_odbc.h"\
 	{$(INTDIR)}"\bineg.i"\
-	{$(INTDIR)}"\io_builtin.i"\
+	{$(INTDIR)}"\io_builtins.i"\
 	{$(INTDIR)}"\std_pred.i"\
 	{$(INTDIR)}"\oracle.i"\
 	{$(INTDIR)}"\xsb_odbc.i"\
@@ -1164,6 +1161,30 @@ DEP_CPP_XMAIN=\
 	
 
 "$(INTDIR)\orastuff.obj" : $(SOURCE) $(DEP_CPP_XMAIN) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=$(INTDIR)\private_builtin.c
+DEP_CPP_PRIVA=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INCLUDE)}"\SYS\STAT.H"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\flags.h"\
+	{$(INCLUDE)}"\SYS\TYPES.H"\
+	{$(INTDIR)}"\basictypes.h"\
+	
+
+"$(INTDIR)\private_builtin.obj" : $(SOURCE) $(DEP_CPP_PRIVA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
