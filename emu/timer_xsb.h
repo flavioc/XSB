@@ -40,36 +40,52 @@
 #include "timer_defs_xsb.h"
 
 #ifdef WIN_NT
-extern jmp_buf xsb_timer_env;
-#else
-extern sigjmp_buf xsb_timer_env;
+#define NORMAL_TERMINATION  -1
+#define TIMED_OUT            1
+#define STILL_WAITING        0
+#else  /* UNIX */
+sigjmp_buf xsb_timer_env;
 #endif
+
+typedef struct xsb_timeout xsbTimeout;
 
 
 #ifdef WIN_NT
 VOID CALLBACK xsb_timer_handler(HWND wind, UINT msg, UINT eventid, DWORD time);
-UINT xsb_timer_id;
-#else
-extern void xsb_timer_handler(int signo);
+unsigned long _beginthread(void(_cdecl *start_address) (void *),
+			   unsigned stack_size,
+			   void *arglist);
+int message_pump();
+UINT xsb_timer_id; 
+#else  /* UNIX */
+void xsb_timer_handler(int signo);
 #endif
 
+/* generic function to control the timeout */
+int make_timed_call(xsbTimeout*, void (*) (xsbTimeout*));
+
+#define NEW_TIMEOUT_OBJECT  (xsbTimeout *)malloc(sizeof(xsbTimeout))
 
 #ifdef WIN_NT
-#define SETALARM            ;
-#define TURNOFFALARM        KillTimer(NULL,xsb_timer_id); flags[SYS_TIMER] = 0
+#define SETALARM            ;  /* no-op */
+#define TURNOFFALARM        KillTimer(NULL, xsb_timer_id); flags[SYS_TIMER] = 0
 #define CHECK_TIMER_SET     ((int)flags[SYS_TIMER] > 0)
-#define SET_TIMER       \
-   xsb_timer_id = SetTimer(NULL,0,(UINT)(1000*(int)flags[SYS_TIMER]), \
-				  (TIMERPROC)xsb_timer_handler)
-#define OP_TIMED_OUT        (setjmp(xsb_timer_env) != 0)
+#define NOTIFY_PARENT_THREAD(timeout)       \
+   if (CHECK_TIMER_SET) {\
+      /* Send msg to the timer thread immediately, \
+	 so it won't wait to time out */ \
+      PostThreadMessage((DWORD)(timeout->parent_thread), \
+                                WM_COMMAND,NORMAL_TERMINATION,0);\
+   }
+#define OP_TIMED_OUT        (message_pump())
 
 #else  /* Unix */
 
-/* set timer */
-#define SETALARM     	    (signal(SIGALRM, xsb_timer_handler))	
-/* turn off the timer */
-#define TURNOFFALARM        alarm(0); flags[SYS_TIMER] = 0
-#define CHECK_TIMER_SET     ((int)flags[SYS_TIMER] > 0)
-#define SET_TIMER           alarm(flags[SYS_TIMER])
-#define OP_TIMED_OUT        (sigsetjmp(xsb_timer_env,1) != 0)
+#define SETALARM     	              (signal(SIGALRM, xsb_timer_handler))
+#define TURNOFFALARM                  alarm(0); flags[SYS_TIMER] = 0
+#define CHECK_TIMER_SET               ((int)flags[SYS_TIMER] > 0)
+#define NOTIFY_PARENT_THREAD(timeout)  ;  /* no-op */
+#define SET_TIMER                     alarm((int)flags[SYS_TIMER])
+#define OP_TIMED_OUT                  (sigsetjmp(xsb_timer_env,1) != 0)
+
 #endif

@@ -394,14 +394,17 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
 
   if ( (pipe_to_proc != NULL) && PIPE(pipe_to_proc) < 0 ) {
     /* can't open pipe to process */
+    xsb_warn("SPAWN_PROCESS: Can't open pipe for subprocess input");
     return PIPE_TO_PROC_FAILED;
   }
   if ( (pipe_from_proc != NULL) && PIPE(pipe_from_proc) < 0 ) {
-    /* can't open pipe to process */
+    /* can't open pipe from process */
+    xsb_warn("SPAWN_PROCESS: Can't open pipe for subprocess output");
     return PIPE_FROM_PROC_FAILED;
   }
   if ( (pipe_from_stderr != NULL) && PIPE(pipe_from_stderr) < 0 ) {
-    /* can't open pipe to process */
+    /* can't open stderr pipe from process */
+    xsb_warn("SPAWN_PROCESS: Can't open pipe for subprocess errors");
     return PIPE_FROM_PROC_FAILED;
   }
 
@@ -420,10 +423,21 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   stdin_saved  = dup(fileno(stdin));
   stdout_saved = dup(fileno(stdout));
   stderr_saved = dup(fileno(stderr));
+  if ((fileno(stdin) < 0) || (stdin_saved < 0))
+    xsb_warn("SPAWN_PROCESS: Bad stdin=%d; stdin closed by mistake?",
+	     fileno(stdin));
+  if ((fileno(stdout) < 0) || (stdout_saved < 0))
+    xsb_warn("SPAWN_PROCESS: Bad stdout=%d; stdout closed by mistake?",
+	     fileno(stdout));
+  if ((fileno(stderr) < 0) || (stderr_saved < 0))
+    xsb_warn("SPAWN_PROCESS: Bad stderr=%d; stderr closed by mistake?",
+	     fileno(stderr));
 
   if (pipe_to_proc != NULL) {
     /* close child stdin, bind it to the reading part of pipe_to_proc */
     if (dup2(pipe_to_proc[0], fileno(stdin)) < 0) {
+      xsb_warn("SPAWN_PROCESS: Can't connect pipe %d to subprocess stdin",
+	       pipe_to_proc[0]);
       return PIPE_TO_PROC_FAILED;
     }
     close(pipe_to_proc[0]); /* close the parent read end of pipe */
@@ -431,12 +445,16 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   /* if stdin must be captured in an existing I/O port -- do it */
   if (toprocess_fptr != NULL)
     if (dup2(fileno(toprocess_fptr), fileno(stdin)) < 0) {
+      xsb_warn("SPAWN_PROCESS: Can't connect stream %d to subprocess stdin",
+	       fileno(toprocess_fptr));
       return PIPE_TO_PROC_FAILED;
     }
   
   if (pipe_from_proc != NULL) {
     /* close child stdout, bind it to the write part of pipe_from_proc */
     if (dup2(pipe_from_proc[1], fileno(stdout)) < 0) {
+      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stdout to pipe %d",
+	       pipe_from_proc[1]);
       return PIPE_TO_PROC_FAILED;
     }
     close(pipe_from_proc[1]); /* close the parent write end of pipe */
@@ -444,12 +462,16 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   /* if stdout must be captured in an existing I/O port -- do it */
   if (fromprocess_fptr != NULL)
     if (dup2(fileno(fromprocess_fptr), fileno(stdout)) < 0) {
+      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stdout to stream %d",
+	       fileno(fromprocess_fptr));
       return PIPE_TO_PROC_FAILED;
     }
 
   if (pipe_from_stderr != NULL) {
-    /* close child stdout, bind it to the write part of pipe_from_proc */
+    /* close child stderr, bind it to the write part of pipe_from_proc */
     if (dup2(pipe_from_stderr[1], fileno(stderr)) < 0) {
+      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stderr to pipe %d",
+	       pipe_from_stderr[1]);
       return PIPE_TO_PROC_FAILED;
     }
     close(pipe_from_stderr[1]); /* close the parent write end of pipe */
@@ -457,6 +479,8 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
   /* if stderr must be captured in an existing I/O port -- do it */
   if (fromproc_stderr_fptr != NULL)
     if (dup2(fileno(fromproc_stderr_fptr), fileno(stderr)) < 0) {
+      xsb_warn("SPAWN_PROCESS: Can't connect subprocess stderr to stream %d",
+	       fileno(fromproc_stderr_fptr));
       return PIPE_TO_PROC_FAILED;
     }
 
@@ -469,6 +493,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
 
     if (pid < 0) {
       /* failed */
+      xsb_warn("SPAWN_PROCESS: Can't fork off subprocess");
       return pid;
     } else if (pid == 0) {
       /* child process */
@@ -490,12 +515,15 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
 
   /* duplicate saved copies of stdio fds back into main process stdio */
   if (dup2(stdin_saved, fileno(stdin)) < 0) {
+    perror("SPAWN_PROCESS");
     return PIPE_TO_PROC_FAILED;
   }
   if (dup2(stdout_saved, fileno(stdout)) < 0) {
+    perror("SPAWN_PROCESS");
     return PIPE_TO_PROC_FAILED;
   }
   if (dup2(stderr_saved, fileno(stderr)) < 0) {
+    perror("SPAWN_PROCESS");
     return PIPE_TO_PROC_FAILED;
   }
 

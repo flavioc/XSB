@@ -24,3 +24,4 @@
 
 
 #define TIMEOUT_ERR -2    	       /* Timeout error code */
+#define TIMER_SETUP_ERR -3             /* Timer setup error code */
