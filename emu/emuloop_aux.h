@@ -48,6 +48,12 @@
 
 /*----------------------------------------------------------------------*/
 #ifdef PROFILE
+#if (!defined(CHAT))
+#define SHARING_PROFILE
+#endif
+#endif
+
+#ifdef SHARING_PROFILE
 #define RESTORE_SUB                                                       \
 {                                                                         \
   CPtr tbreg;                                                             \
