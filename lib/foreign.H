@@ -27,12 +27,13 @@
 :- export compile_cH/5.
 
 :- import shell/1 from shell.
+:- import str_sub/2 from string.
 :- import memberchk/2 from basics.
 :- import write_int/1 from prof_sbp.
 :- import attach/2, length/2 from listutil.
 :- import hdr_ext/1, obj_ext/1 from curr_sym.
 :- import message/1, warning/1, time_message/2 from auxlry.
-:- import str_len/2, str_cat/3, str_sub/2 from machine.
+:- import str_len/2, str_cat/3 from machine.
 :- import read/1, see/1, seen/0, write/1, put/1, tell/1, told/0,
 	  atom/1, file_exists/1, cputime/1, abort/1
      from standard.
