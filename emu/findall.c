@@ -43,67 +43,17 @@
 #include "flags.h"
 #include "loader.h"
 
-/* copy term to heap included in this file, because of the
-   functional similarities with findall - RFM 14/8/98 */
-   
-/* the next defines belong really elsewhere */
+#include "findall.h"
 
-#define Areg(i) (reg + i)
+findall_solution_list *findall_solutions = NULL;
+findall_solution_list *current_findall;
 
-
-/*
-Findall copies its templates to a findall-heap.
-This heap is allocated in chunks of FINDALL_CHUNCK_SIZE (Cell)entries.
-Since more than one findall can be active at the same time, each findall
-gets a number, determined by the global variables nextfree; this happens
-in findall_init. The maximal number of active findalls is MAX_FINDALLS.
-
-A solution list of findall is represented by its size and a pointer to the
-beginning of the solution list and a pointer to the tail of this solution list.
-The size is important for copying back to the heap, to ensure that there is
-enough space, before we start copying.  The tail is a free variable.
-
-One solution list or template can be in more than one chunk. Chuncks are
-linked together by the first field in the chunk; this field is only needed
-for the deallocation of the chunks, not for the copying itself.
-
-Trailing of variables (to ensure proper sharing) is done on a special
-purpose trail, which consists also of chuncks, linked together.
-
-Everything is allocated dynamically, and freed asap.
-
-findall_clean should be called at the start of every toplevel.
-*/
-
-#define FINDALL_CHUNCK_SIZE 4000 /* anything > MAX_ARITY+2 is good */
-static int MAX_FINDALLS = 250 ;	/* make it larger if you want */
-
-static int nextfree ; /* nextfree index in findall array */
-
-/*
-one invocation of findall is associated with one entry in the findall_solutions
-array: we then call this entry active; the type of the entry is findall_solution_list
-*/
-
-typedef struct { CPtr	first_chunk ;	/* chunk in which solution list starts */
-					/* the solution list starts at offset +1 */
-		 CPtr   tail ;		/* tail of solution list - always a free var */
-                 CPtr   current_chunk ;	/* most recent allocated chunk for this solution list */
-                 CPtr   top_of_chunk ;	/* where next template can be copied to */
-					/* points inside current_chunk */
-		 int size ;		/* size is the size of the solution list - init = 1 */
-					/* when entry not active, size = the next free entry */
-					/* the last free entry, has size = -1, for overflow checking */
-               } findall_solution_list ;
-
-static findall_solution_list *findall_solutions, *current_findall ;
-
-static CPtr gl_bot, gl_top ;
+CPtr gl_bot, gl_top ;
 #define on_glstack(p) ((gl_bot <= p) && (p < gl_top))
 
 /* get_more_chunk mallocs a new chunck and links it in in the current findall */
 
-static int get_more_chunk()
+int get_more_chunk()
 { CPtr newchunk ;
 
   if (!(newchunk = (CPtr)malloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
@@ -127,12 +77,12 @@ $$findall_init/2
 	without trailing, so that later add's will not occur
 */
 
-int findall_init()
+int findall_init_c()
 {
   CPtr w ;
   findall_solution_list *p ;
-  Cell arg1 ;
- 
+  int thisfree;
+  
   if (findall_solutions == 0)
 	{ int i ;
 	  p = findall_solutions = (findall_solution_list *)
@@ -148,7 +98,7 @@ int findall_init()
 
   if (nextfree < 0) /* could realloc here - too lazy to do it */
 	xsb_exit("findall: maximum number of active findalls reached");
-  arg1 = (Cell)Areg(1) ; deref(arg1) ; *(CPtr)arg1 = makeint(nextfree) ;
+  thisfree = nextfree;
 	/* no checking - no trailing - just use findall_init correct :-) */
   p = findall_solutions + nextfree ;
   if (!(w = (CPtr)malloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
@@ -160,14 +110,26 @@ int findall_init()
   w++ ; p->top_of_chunk = w ;
   nextfree = p->size ;
   p->size = 1 ;
-  return(1) ;
+  return(thisfree) ;
+} /* findall_init_c */
+
+int findall_init()
+{
+  Cell arg1 ;
+  int ichunk;
+ 
+  arg1 = (Cell)Areg(1) ; 
+  deref(arg1) ;
+  ichunk = findall_init_c(); 
+  *(CPtr)arg1 = makeint(ichunk) ;
+  return(1);
 } /* findall_init */
 
 /* findall_free is called to desactive an entry in the solution_list
    at the end of findall_get_solutions, and from findall_clean
 */
 
-static void findall_free(int i)
+void findall_free(int i)
 { CPtr to_free,p ;
 
   p = (findall_solutions + i)->current_chunk ;
@@ -203,7 +165,7 @@ void findall_clean()
    they are not needed afterwards anymore, so no trailing
 */
 
-static void findall_copy_to_heap(Cell from, CPtr to, CPtr *h)
+void findall_copy_to_heap(Cell from, CPtr to, CPtr *h)
 {
 
 copy_again : /* for tail recursion optimisation */
