@@ -135,30 +135,16 @@ void dbgen_printinst(Opcode, Arg1, Arg2)
     printf("putattv - - %d\n", Arg1); break;
   case putcon:
     printf("putcon - - %d 0x%x\n", Arg1, Arg2); break;
-#ifdef TAG_ON_LOAD
   case putnumcon:
     printf("putnumcon - - %d 0x%x\n", Arg1, int_val(Arg2)); break;
   case putfloat:
     printf("putfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2)); break;
-#else
-  case putnumcon:
-    printf("putnumcon - - %d 0x%x\n", Arg1, Arg2); break;
-  case putfloat:
-    printf("putfloat - - %d %f (0x%x)\n", Arg1, Arg2, Arg2); break;
-#endif
   case getcon:
     printf("getcon - - %d 0x%x\n", Arg1, Arg2); break;
-#ifdef TAG_ON_LOAD
   case getnumcon:
     printf("getnumcon - - %d 0x%x\n", Arg1, int_val(Arg2)); break;
   case getfloat:
     printf("getfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2)); break;
-#else
-  case getnumcon:
-    printf("getnumcon - - %d 0x%x\n", Arg1, Arg2); break;
-  case getfloat:
-    printf("getfloat - - %d %f (0x%x)\n", Arg1, Arg2, Arg2); break;
-#endif
   case putstr:
     printf("putstr - - %d 0x%x\n", Arg1, Arg2); break;
   case getstr:
@@ -169,30 +155,16 @@ void dbgen_printinst(Opcode, Arg1, Arg2)
     printf("getnil - - %d\n", Arg1); break;
   case bldcon:
     printf("bldcon - - - 0x%x\n", Arg1); break;
-#ifdef TAG_ON_LOAD
   case bldnumcon:
     printf("bldnumcon - - - 0x%x\n", int_val(Arg1)); break;
   case bldfloat:
     printf("bldfloat - - - %f\n", float_val(Arg1)); break;
-#else
-  case bldnumcon:
-    printf("bldnumcon - - - 0x%x\n", Arg1); break;
-  case bldfloat:
-    printf("bldfloat - - - 0x%x\n", Arg1); break;
-#endif
   case unicon:
     printf("unicon - - - 0x%x\n", Arg1); break;
-#ifdef TAG_ON_LOAD
   case uninumcon:
     printf("uninumcon - - - 0x%x\n", int_val(Arg1)); break;
   case unifloat:
     printf("unifloat - - - %f\n", float_val(Arg1)); break;
-#else
-  case uninumcon:
-    printf("uninumcon - - - 0x%x\n", Arg1); break;
-  case unifloat:
-    printf("unifloat - - - 0x%x\n", Arg1); break;
-#endif
   case execute:
     printf("execute - - - 0x%x\n", Arg1); break;
   case bldnil:
@@ -655,12 +627,7 @@ int assert_code_to_buff(/* Clause */)
     dbgen_instB_pppw(execute, get_str_psc(Body));
   } else dbgen_instB_ppp(proceed);
   Size = *Loc;
-#ifdef TAG_ON_LOAD
-  /* backpatch max heap needed*/
-  write_word(Buff,&Loc_size,makeint((Size/sizeof(Cell))));  
-#else
   write_word(Buff,&Loc_size,(Size/sizeof(Cell)));  /* backpatch max heap needed*/
-#endif
   return TRUE;
 }
 
@@ -669,19 +636,11 @@ static void db_gentopinst(prolog_term T0, int Argno, RegStat Reg)
   int Rt;
   
   if (is_int(T0)) {
-#ifdef TAG_ON_LOAD
     dbgen_instB_ppvw(getnumcon, Argno, T0); /* getnumcon */
-#else
-    dbgen_instB_ppvw(getnumcon, Argno, int_val(T0)); /* getnumcon */
-#endif
   } else if (is_string(T0)) {
     dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
   } else if (is_float(T0)) {
-#ifdef TAG_ON_LOAD
     dbgen_instB_ppvw(getfloat, Argno, T0); /* getfloat */
-#else
-    dbgen_instB_ppvw(getfloat, Argno, p2c_float_as_int(T0)); /* getfloat */
-#endif
   } else if (is_var(T0)) {
     c2p_functor("$assertVAR", 1, T0);
     T0 = p2p_arg(T0, 1);
@@ -761,21 +720,13 @@ static void db_geninst(prolog_term Sub, RegStat Reg,
   int Rt;
   
   if (is_int(Sub)) {
-#ifdef TAG_ON_LOAD
     dbgen_instB_pppw(uninumcon, Sub);
-#else
-    dbgen_instB_pppw(uninumcon, int_val(Sub));
-#endif
   } else if (is_string(Sub)) {
     dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));
   } else if (is_nil(Sub)) {
     dbgen_instB_ppp(uninil);
   } else if (is_float(Sub)) {
-#ifdef TAG_ON_LOAD
     dbgen_instB_pppw(unifloat, Sub);
-#else
-    dbgen_instB_pppw(unifloat, p2c_float_as_int(Sub));
-#endif
   } else if (is_var(Sub)) {
     c2p_functor("$assertVAR", 1, Sub);
     Sub = p2p_arg(Sub, 1);
@@ -824,18 +775,10 @@ static void db_genaput(prolog_term T0, int Argno,
   } else if ((Rt = is_frozen_var(T0))) {
     inst_queue_push(inst_queue, movreg, Rt, Argno);
   } else if (is_int(T0)) {
-#ifdef TAG_ON_LOAD
     inst_queue_push(inst_queue, putnumcon, T0, Argno);
-#else
-    inst_queue_push(inst_queue, putnumcon, int_val(T0), Argno);
-#endif
   } else if (is_float(T0)) {
-#ifdef TAG_ON_LOAD
     inst_queue_push(inst_queue, putnumcon, makeint(p2c_float_as_int(T0)), 
 		    Argno);
-#else
-    inst_queue_push(inst_queue, putnumcon, p2c_float_as_int(T0), Argno);
-#endif
   } else if (is_nil(T0)) {
     inst_queue_push(inst_queue, putnil, 0, Argno);
   } else if (is_string(T0)) {
@@ -906,17 +849,9 @@ static void db_putterm(int Rt, prolog_term T0,
     case bldcon:
       dbgen_instB_pppw(bldcon, Arg1); break;
     case bldnumcon:
-/*  #ifdef TAG_ON_LOAD */
-/*        dbgen_instB_pppw(bldnumcon, makeint(Arg1)); break; */
-/*  #else */
       dbgen_instB_pppw(bldnumcon, Arg1); break;
-/*  #endif */
     case bldfloat:
-/*  #ifdef TAG_ON_LOAD */
-/*        dbgen_instB_pppw(bldfloat, makeint(Arg1)); break; */
-/*  #else */
       dbgen_instB_pppw(bldfloat, Arg1); break;
-/*  #endif */
     case bldnil:
       dbgen_instB_ppp(bldnil); break;
     default: xsb_dbgmsg("Incorrect bld instruction in assert %d", 
@@ -933,17 +868,9 @@ static void db_bldsubs(prolog_term Sub, RegStat Reg,
   if (is_string(Sub)) {
     flatten_stack_push(flatten_stack,bldcon,(Cell)string_val(Sub)); /* bldcon */
   } else if (is_int(Sub)) {               /* bldnumcon(Sub) */
-#ifdef TAG_ON_LOAD
     flatten_stack_push(flatten_stack, bldnumcon, Sub);
-#else
-    flatten_stack_push(flatten_stack, bldnumcon, int_val(Sub));
-#endif
   } else if (is_float(Sub)) {             /* bldfloat(Sub) */
-#ifdef TAG_ON_LOAD
     flatten_stack_push(flatten_stack, bldfloat, Sub);
-#else
-    flatten_stack_push(flatten_stack, bldfloat, p2c_float_as_int(Sub));
-#endif
   } else if (is_var(Sub)) {
     c2p_functor("$assertVAR", 1, Sub);
     Sub = p2p_arg(Sub, 1);

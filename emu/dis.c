@@ -182,20 +182,15 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	   break;
 	 case I:
 	 case N:
-#ifdef TAG_ON_LOAD	   
+	   fprintf(fd, "\t%ld", cell(loc_pcreg++));
+	   break;
+	 case B:
 	   fprintf(fd, "\t%ld", (long) int_val(cell(loc_pcreg)));
 	   loc_pcreg++;
-#else
-	   fprintf(fd, "\t%ld", cell(loc_pcreg++));
-#endif
 	   break;
 	 case F:
-#ifdef TAG_ON_LOAD
 	   fprintf(fd, "\t%f", float_val(cell(loc_pcreg)));
 	   loc_pcreg++;
-#else
-	   fprintf(fd, "\t0x%lx", cell(loc_pcreg++));
-#endif
 	   break;
 	 case PP:
 	   a += 2;

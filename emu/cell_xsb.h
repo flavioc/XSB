@@ -221,17 +221,10 @@ extern Float getfloatval(Cell);
 
 #define bld_nil(addr) cell(addr) = makenil
 #define bld_string(addr, str) cell(addr) = makestring(str)
-#ifdef TAG_ON_LOAD
 #define bld_int_tagged(addr, val) cell(addr) = val
 #define bld_int(addr, val) cell(addr) = makeint(val)
 #define bld_float_tagged(addr, val) cell(addr) = val
 #define bld_float(addr, val) cell(addr) = makefloat((float)val)
-#else
-#define bld_int(addr, val) cell(addr) = makeint(val)
-#define bld_int_tagged(addr, val) cell(addr) = makeint(val)
-#define bld_float(addr, val) cell(addr) = makefloat((float)val)
-#define bld_float_tagged(addr, val) cell(addr) = makefloat((float)val)
-#endif
 #define bld_ref(addr, val) cell(addr) = (Cell)(val)
 #define bld_cs(addr, str) cell(addr) = makecs(str)
 #define bld_list(addr, list) cell(addr) = makelist(list)

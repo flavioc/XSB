@@ -12,8 +12,10 @@ XSB_INST(0x0a, unitvar, _unitvar, PP, R, X,X);
 XSB_INST(0x0b, unitval, _unitval, PP, R, X,X);
 XSB_INST(0x0c, unicon, _unicon, PPP,C, X,X);
 XSB_INST(0x0d, uninil, _uninil, PPP,X, X,X);
-XSB_INST(0x0e, getnumcon, _getnumcon, PP, R, N,X);
-XSB_INST(0x0f, putnumcon, _putnumcon, PP, R, N,X);
+/*  XSB_INST(0x0e, getnumcon, _getnumcon, PP, R, N,X); */
+/*  XSB_INST(0x0f, putnumcon, _putnumcon, PP, R, N,X); */
+XSB_INST(0x0e, getnumcon, _getnumcon, PP, R, B,X);
+XSB_INST(0x0f, putnumcon, _putnumcon, PP, R, B,X);
 
 XSB_INST(0x10, putpvar, _putpvar, P, V, R,X);
 XSB_INST(0x11, putpval, _putpval, P, V, R,X);
@@ -29,8 +31,10 @@ XSB_INST(0x1a, bldtvar, _bldtvar, PP, R, X,X);
 XSB_INST(0x1b, bldtval, _bldtval, PP, R, X,X);
 XSB_INST(0x1c, bldcon, _bldcon, PPP,C, X,X);
 XSB_INST(0x1d, bldnil, _bldnil, PPP,X, X,X);
-XSB_INST(0x1e, uninumcon, _uninumcon, PPP,N, X,X);
-XSB_INST(0x1f, bldnumcon, _bldnumcon, PPP,N, X,X);
+/*  XSB_INST(0x1e, uninumcon, _uninumcon, PPP,N, X,X); */
+/*  XSB_INST(0x1f, bldnumcon, _bldnumcon, PPP,N, X,X); */
+XSB_INST(0x1e, uninumcon, _uninumcon, PPP,B, X,X);
+XSB_INST(0x1f, bldnumcon, _bldnumcon, PPP,B, X,X);
 
 XSB_INST(0x20, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x21, no_inst, _no_inst, PPP,X,X,X);
@@ -231,8 +235,10 @@ XSB_INST(0xd8, subreg, _subreg, P, R, R,X);
 XSB_INST(0xd9, mulreg, _mulreg, P, R, R,X);
 XSB_INST(0xda, divreg, _divreg, P, R, R,X);
 XSB_INST(0xdb, idivreg, _idivreg, P, R, R,X);
-XSB_INST(0xdc, int_test_z, _int_test_z, PP, R, N, L);
-XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, N, L);
+/*  XSB_INST(0xdc, int_test_z, _int_test_z, PP, R, N, L); */
+/*  XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, N, L); */
+XSB_INST(0xdc, int_test_z, _int_test_z, PP, R, B, L);
+XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, B, L);
 XSB_INST(0xde, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xdf, no_inst, _no_inst, PPP,X,X,X);
 

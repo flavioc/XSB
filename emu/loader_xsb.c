@@ -94,7 +94,6 @@ extern TIFptr get_tip(Psc);
 #define get_obj_word(x)		(get_obj_data((x),OBJ_WORD_SIZE))
 #define get_obj_string(x,len)	(get_obj_data((x),(len)))
 
-#ifdef TAG_ON_LOAD
 #define get_obj_word_bb(x)    {get_obj_word(x) ; fix_bb(x) ; }
 #define get_obj_word_bbsig(x) {get_obj_word(x) ; fix_bb4(x) ; \
 			       *(Cell *)(x) = makeint(*(int *)(x));}
@@ -103,14 +102,6 @@ extern TIFptr get_tip(Psc);
 #define get_obj_word_bbflt(x) {get_obj_word(x) ; fix_bb4(x) ; \
 			       *(Cell *)(x) = makefloat(*(float*)x);}
 
-#else
-
-#define get_obj_word_bb(x)    {get_obj_word(x) ; fix_bb(x) ; }
-#define get_obj_word_bbsig(x) {get_obj_word(x) ; fix_bb4(x) ; \
-			       *(Integer *)(x) = *(int *)(x);}
-#define get_obj_word_bbflt(x) {get_obj_word(x) ; fix_bb4(x) ; \
-			       *(Float *)(x) = *(float *)(x);}
-#endif
 /* === local declarations =============================================	*/
 
 struct hrec {
@@ -224,11 +215,7 @@ static int get_index_tab(FILE *fd, int clause_no)
   for (j = 0; j < clause_no; j++) {
     get_obj_byte(&type);
     switch (type) {
-#ifdef TAG_ON_LOAD
     case 'i': get_obj_word_bbsig_notag(&ival);
-#else
-    case 'i': get_obj_word_bbsig(&ival);
-#endif
       val = (Cell) ival; 
       count += 9;
       break;
@@ -250,11 +237,7 @@ static int get_index_tab(FILE *fd, int clause_no)
       break; 
     }
 
-#ifdef TAG_ON_LOAD
     get_obj_word_bbsig_notag(&label);
-#else
-    get_obj_word_bbsig(&label);
-#endif
     label = reloc_addr((Integer)label, seg_text(current_seg));
     hashval = ihash(val, size);
     inserth(label, &indextab[hashval]);
@@ -374,11 +357,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	inst_addr ++;
 	break;
       case L:
-#ifdef TAG_ON_LOAD
 	get_obj_word_bbsig_notag(inst_addr);
-#else
-	get_obj_word_bbsig(inst_addr);
-#endif
 	*(CPtr *)inst_addr = reloc_addr((Integer)cell(inst_addr),
 					seg_text(current_seg));
 	inst_addr ++;
@@ -389,6 +368,10 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	inst_addr ++;
 	break;
       case N:
+	get_obj_word_bbsig_notag(inst_addr);
+	inst_addr ++;
+	break;
+      case B:
 	get_obj_word_bbsig(inst_addr);
 	inst_addr ++;
 	break;

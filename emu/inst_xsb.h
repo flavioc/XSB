@@ -51,6 +51,7 @@ extern void init_inst_table(void);
 #define T   15  /* tabletry */
 #define RRR 16  /* = R + R + R; for switchon3bound */
 #define F   17  /* floating point number */
+#define B   18  /* tagged (boxed) integer number */
 
 /************************************************************************/
 /*	Macros to fetch the instructions/operands.			*/

@@ -254,5 +254,3 @@
 the local program counter */
 #undef USE_BP_LPCREG
 
-/* Tag constants at load time */
-#undef TAG_ON_LOAD

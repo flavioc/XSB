@@ -541,7 +541,7 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
-  XSB_Start_Instr(getnumcon,_getnumcon) /* PPR-N */
+  XSB_Start_Instr(getnumcon,_getnumcon) /* PPR-B */
     Def2ops
     Op1(Register(get_xxr));
     Op2(get_xxxn);
@@ -549,7 +549,7 @@ contcase:     /* the main loop */
     nunify_with_num(op1,op2);
   XSB_End_Instr()
 
-  XSB_Start_Instr(getfloat,_getfloat) /* PPR-N */
+  XSB_Start_Instr(getfloat,_getfloat) /* PPR-F */
     Def2ops
     Op1(Register(get_xxr));
     Op2(get_xxxn);
@@ -557,7 +557,7 @@ contcase:     /* the main loop */
     nunify_with_float(op1,op2);
   XSB_End_Instr()
 
-  XSB_Start_Instr(putnumcon,_putnumcon) /* PPR-N */
+  XSB_Start_Instr(putnumcon,_putnumcon) /* PPR-B */
     Def2ops
     Op1(get_xxr);
 /*      Op2(get_xxxn); */
@@ -566,16 +566,12 @@ contcase:     /* the main loop */
     bld_int_tagged((CPtr)op1, op2);
   XSB_End_Instr()
 
-  XSB_Start_Instr(putfloat,_putfloat) /* PPR-N */
+  XSB_Start_Instr(putfloat,_putfloat) /* PPR-F */
     Def2ops
     Op1(get_xxr);
     Op2(get_xxxn);
     ADVANCE_PC(size_xxxX);
-#ifdef TAG_ON_LOAD
     bld_float_tagged((CPtr)op1, op2);
-#else
-    bld_float_tagged((CPtr)op1, asfloat(op2));
-#endif
   XSB_End_Instr()
 
   XSB_Start_Instr(putpvar,_putpvar) /* PVR */
@@ -732,7 +728,7 @@ contcase:     /* the main loop */
     else Fail1;
   XSB_End_Instr()	/* end getlist_tvar_tvar */
 
-  XSB_Start_Instr(uninumcon,_uninumcon) /* PPP-N */
+  XSB_Start_Instr(uninumcon,_uninumcon) /* PPP-B */
     Def2ops
     Op2(get_xxxn); /* num in op2 */
     ADVANCE_PC(size_xxxX);
@@ -750,11 +746,7 @@ contcase:     /* the main loop */
     Op2(get_xxxf); /* num in op2 */
     ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
-#ifdef TAG_ON_LOAD
       new_heap_float(hreg, op2);
-#else
-      new_heap_float(hreg, asfloat(op2));
-#endif
     }
     else {  /* op2 set */
       op1 = cell(sreg++);
@@ -762,7 +754,7 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
-  XSB_Start_Instr(bldnumcon,_bldnumcon) /* PPP-N */
+  XSB_Start_Instr(bldnumcon,_bldnumcon) /* PPP-B */
     Def1op
     Op1(get_xxxn);  /* num to op2 */
     ADVANCE_PC(size_xxxX);
@@ -773,11 +765,7 @@ contcase:     /* the main loop */
     Def1op
     Op1(get_xxxf); /* num to op2 */
     ADVANCE_PC(size_xxxX);
-#ifdef TAG_ON_LOAD
     new_heap_float(hreg, op1);
-#else
-    new_heap_float(hreg, asfloat(op1));
-#endif
   XSB_End_Instr()
 
   XSB_Start_Instr(trymeelse,_trymeelse) /* PPA-L */
@@ -877,9 +865,6 @@ contcase:     /* the main loop */
     Op1(get_xxa); /* op1 = the arity of the procedure */
     Op2(get_xxxn);
     ADVANCE_PC(size_xxxX);
-#ifdef TAG_ON_LOAD
-    op2 = int_val(op2);
-#endif
 #ifdef GC_TEST
     if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < (long)op2))
       {
@@ -1172,7 +1157,7 @@ contcase:     /* the main loop */
     else { arithmetic_abort(op2, "//", op1); }
   XSB_End_Instr() 
 
-  XSB_Start_Instr(int_test_z,_int_test_z)   /* PPR-N-L */
+  XSB_Start_Instr(int_test_z,_int_test_z)   /* PPR-B-L */
     Def3ops
     Op1(Register(get_xxr));
     Op2(get_xxxn);
@@ -1180,11 +1165,7 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
     if (isnumber(op1)) {
-#ifdef TAG_ON_LOAD
       if (op1 == op2)
-#else
-      if ((int_val(op1) - (Integer)op2) == 0)
-#endif
 	lpcreg = (byte *)op3;
     }
     else {
@@ -1192,7 +1173,7 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
-  XSB_Start_Instr(int_test_nz,_int_test_nz)   /* PPR-N-L */
+  XSB_Start_Instr(int_test_nz,_int_test_nz)   /* PPR-B-L */
     Def3ops
     Op1(Register(get_xxr));
     Op2(get_xxxn);
@@ -1200,11 +1181,7 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
     if (isnumber(op1)) {
-#ifdef TAG_ON_LOAD
       if (op1 != op2)
-#else
-      if ((int_val(op1) - (Integer)op2) != 0)
-#endif
 	lpcreg = (byte *) op3;
     }
     else {
