@@ -399,7 +399,7 @@ Instead, use
 	 cvs edit <file>
 
 (This is done automatically, if you use x/emacs and type C-x C-q -- the
-normal way of toggling read-only.)
+normal way of toggling the read-only property of buffers.)
 
 The purpose of `cvs edit' is to tell the XSB repository that you have
 started editing <file>, and it would send email to all the users who said
@@ -414,11 +414,15 @@ cvs-edit.
 This is how you add yourself to the list of people who watch files:
 -------------------------------------------------------------------
 
-    cvs watch add -a all  <files-or-dirs-you-are-interested-in>
+    cvs watch add <files-or-dirs-you-are-interested-in>
 
 Note, you must be in the ~/projects/XSB directory or its subdirectory
 for the above to work, or else you must specify the repository with the -d
 option.
+
+Here is how you remove yourself from the watch list of selected files:
+
+    cvs watch remove <files-or-dirs-you-are-interested-in>
 
 You can see who's watching/editing specific files with:
 
