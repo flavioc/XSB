@@ -33,27 +33,24 @@
 
 /******* VARIABLES THAT MIGHT NEED TO BE SET MANUALLY ****************/
 
-/* Use local eval strategy. Default is `batched' */
-#undef LOCAL_EVAL
-
-/* Define, if XSB is built with support for ORACLE DB */
-#undef ORACLE
-#undef ORACLE_DEBUG
-
-/* Define if XSB is built with support for ODBC */
-#undef XSB_ODBC
 
 /* If this is defined, winsock32.lib must also be included! */
 #define HAVE_SOCKET 1
 
-/* Define as __inline if that's what the C compiler calls it.  */
-#define inline __inline__
+/* Define as __inline__ if that's what the C compiler calls it.  */
+#define inline __inline
 
 
 /******* END Variables to be set manually ****************/
 
 
 /**** DO NOT EDIT BELOW THIS LINE!!! *********************/
+/**** Use these configuration options:
+	--enable-local-scheduling   to set LOCAL_EVAL
+	--with-oracle               to set ORACLE
+	--enable-oracle-debug       to set both ORACLE and ORACLE_DEBUG
+	--with-odbc                 to set XSB_ODBC
+****/
 
 
 #define WIN_NT 1
@@ -71,6 +68,16 @@
 /* Use delay strategy */
 #define SLG_WITH_DELAY 1
 
+
+/* Use local eval strategy. Default is `batched' */
+#undef LOCAL_EVAL
+
+/* Define, if XSB is built with support for ORACLE DB */
+#undef ORACLE
+#undef ORACLE_DEBUG
+
+/* Define if XSB is built with support for ODBC */
+#undef XSB_ODBC
 
 #if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF))
 #define FOREIGN

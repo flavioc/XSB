@@ -21,12 +21,27 @@ NOTE: Autoconf must be installed.
 
    Make whatever is needed to include the XSB documentation.
 
-   Add these directories to the tarball:
+   Add these directories to the distribution tarball:
        
        Windows:
 	   config/x86-pc-windows
        DOS:
 	   config/x86-pc-pcdos
+
+   NOTE: If you won't to configure with Oracle, ODBC, debugging support or
+         if you won't local scheduling, you must use these options to the
+	 configure script:
+
+	--enable-local-scheduling   to set LOCAL_EVAL
+	--with-oracle               to set ORACLE
+	--enable-oracle-debug       to set both ORACLE and ORACLE_DEBUG
+	--with-odbc                 to set XSB_ODBC
+
+   Do not specify the above variables in the C++ studio or whatever studio 
+   you are using! For instance: 
+
+       ./configure --with-os=windows --enable-local-scheduling --enable-oracle
+
 
 2. Unix:
 
@@ -59,7 +74,7 @@ NOTE: Autoconf must be installed.
        examples
        build
 
-   Add these top level files to the tarball:
+   Add these top level files to the distribution tarball:
 
        FAQ
        INSTALL*

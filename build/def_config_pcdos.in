@@ -33,24 +33,23 @@
 
 /******* VARIABLES THAT MIGHT NEED TO BE SET MANUALLY ****************/
 
-/* Use local eval strategy. Default is `batched' */
-#undef LOCAL_EVAL
-
-/* Define, if XSB is built with support for ORACLE DB */
-#undef ORACLE
-#undef ORACLE_DEBUG
-
-/* Define if XSB is built with support for ODBC */
-#undef XSB_ODBC
-
 /* Does DOS have sockets? Which libraries must be added for this????? */
 #define HAVE_SOCKET 1
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#define inline __inline__
 
 
 /******* END Variables to be set manually ****************/
 
 
 /**** DO NOT EDIT BELOW THIS LINE!!! *********************/
+/**** Use these configuration options:
+	--enable-local-scheduling   to set LOCAL_EVAL
+	--with-oracle               to set ORACLE
+	--enable-oracle-debug       to set both ORACLE and ORACLE_DEBUG
+	--with-odbc                 to set XSB_ODBC
+****/
 
 #define DOS_GCC 1
 #define CC "gcc"
@@ -66,13 +65,20 @@
 /* Use delay strategy */
 #define SLG_WITH_DELAY 1
 
-/* Define as __inline if that's what the C compiler calls it.  */
-#define inline __inline__
-
-
 #if defined(FOREIGN_COFF))
 #define FOREIGN
 #endif
+
+/* Use local eval strategy. Default is `batched' */
+#undef LOCAL_EVAL
+
+/* Define, if XSB is built with support for ORACLE DB */
+#undef ORACLE
+#undef ORACLE_DEBUG
+
+/* Define if XSB is built with support for ODBC */
+#undef XSB_ODBC
+
 
 /**** CHECK, if needed! */
 #define bcopy(A,B,L) memmove(B,A,L)

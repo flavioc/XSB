@@ -63,8 +63,8 @@ AC_ARG_WITH(odbc,
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug             compile with debugging turned on])
-AC_ARG_ENABLE(debug-oracle,
-[  --enable-debug-oracle      compile with Oracle debugging turned on])
+AC_ARG_ENABLE(oracle-debug,
+[  --enable-oracle-debug      compile with Oracle debugging turned on])
 AC_ARG_ENABLE(profile,
 [  --enable-profile           compile with profiling turned on])
 AC_ARG_ENABLE(optimization,
@@ -377,7 +377,11 @@ dnl if it was done with a cross-compiler.
 AC_DEFINE_UNQUOTED(CC, "${CC}")
 
 dnl Let autoconf take care of the "inline" and "const" keywords.
-AC_C_INLINE
+if test -z "$with_os" ; then
+    dnl do testing for inlining only on Unix
+    dnl we set it in config.h on windows and dos
+    AC_C_INLINE
+fi
 AC_C_CONST
 
 
@@ -481,8 +485,27 @@ dnl Checking for libraries that are NOT in standard places,
 dnl so they require --site-libraries
 LIBS="${ld_site_libraries} ${LIBS}"
 
+
+if test "${enable_oracle_debug+yes}" = "yes" || \
+   test "${enable_oracle_debugging+yes}" = "yes"; then
+	AC_DEFINE(ORACLE_DEBUG)
+	with_oracle=yes
+	do_debugging=yes
+fi
+
 if test "${with_oracle+set}" = "set" ; then
-    cat <<EOT
+    if test -n "$with_os" ; then
+	AC_DEFINE(ORACLE)
+	cat <<EOT
+
+    Building for $with_os with Oracle support.
+    You must ensure that all the necessary Oracle libraries 
+    are installed on the target machine.
+
+EOT
+
+    else
+	cat <<EOT
 
     Checking whether XSB can be compiled with Oracle support.
     If this fails, you will have to use the --site-libraries option
@@ -490,49 +513,61 @@ if test "${with_oracle+set}" = "set" ; then
 
 EOT
 
-    dnl If any library here is missing, set oracle_error
-    dnl `thread' is a standard library. The others come from Oracle.
-    dnl Therefore, must use --site-libraries
-    AC_CHECK_LIB(thread, main, , oracle_error=yes)
+	dnl If any library here is missing, set oracle_error
+	dnl `thread' is a standard library. The others come from Oracle.
+	dnl Therefore, must use --site-libraries
+	AC_CHECK_LIB(thread, main, , oracle_error=yes)
 
-    AC_CHECK_LIB(c3v6, main, , oracle_error=yes)
-    AC_CHECK_LIB(client, main, , oracle_error=yes)
-    AC_CHECK_LIB(clntsh, main, , oracle_error=yes)
-    AC_CHECK_LIB(common, main, , oracle_error=yes)
-    AC_CHECK_LIB(core, main, , oracle_error=yes)
-    AC_CHECK_LIB(core3, main, , oracle_error=yes)
+	AC_CHECK_LIB(c3v6, main, , oracle_error=yes)
+	AC_CHECK_LIB(client, main, , oracle_error=yes)
+	AC_CHECK_LIB(clntsh, main, , oracle_error=yes)
+	AC_CHECK_LIB(common, main, , oracle_error=yes)
+	AC_CHECK_LIB(core, main, , oracle_error=yes)
+	AC_CHECK_LIB(core3, main, , oracle_error=yes)
 
-    AC_CHECK_LIB(epc, main, , oracle_error=yes)
-    AC_CHECK_LIB(generic, main, , oracle_error=yes)
-    AC_CHECK_LIB(nlsrtl, main, , oracle_error=yes)
-    AC_CHECK_LIB(nlsrtl3, main, , oracle_error=yes)
+	AC_CHECK_LIB(epc, main, , oracle_error=yes)
+	AC_CHECK_LIB(generic, main, , oracle_error=yes)
+	AC_CHECK_LIB(nlsrtl, main, , oracle_error=yes)
+	AC_CHECK_LIB(nlsrtl3, main, , oracle_error=yes)
 
-    AC_CHECK_LIB(sql, main, , oracle_error=yes)
-    AC_CHECK_LIB(sqlnet, main, , oracle_error=yes)
-    AC_CHECK_LIB(cv6, main, , oracle_error=yes)
-    AC_CHECK_LIB(ncr, main, , oracle_error=yes)
+	AC_CHECK_LIB(sql, main, , oracle_error=yes)
+	AC_CHECK_LIB(sqlnet, main, , oracle_error=yes)
+	AC_CHECK_LIB(cv6, main, , oracle_error=yes)
+	AC_CHECK_LIB(ncr, main, , oracle_error=yes)
 
-    dnl If oracle_error=yes, give up on oracle
-    if test "$oracle_error" = "yes" ; then
-	echo ""
-	AC_MSG_WARN([ ****Your system is missing a library that Oracle needs
-                     ****XSB will be built WITHOUT the Oracle support])
-	echo ""
-	with_oracle=no
-	have_warnings=yes
-    else
-	AC_DEFINE(ORACLE)
-	cat <<EOT
+	dnl If oracle_error=yes, give up on oracle
+	if test "$oracle_error" = "yes" ; then
+	    echo ""
+	    AC_MSG_WARN([ ****Your system is missing a library that Oracle needs
+		     ****XSB will be built WITHOUT the Oracle support])
+	    echo ""
+	    with_oracle=no
+	    have_warnings=yes
+	else
+	    AC_DEFINE(ORACLE)
+	    cat <<EOT
 
     Building with support for Oracle
 
 EOT
-	with_oracle=yes
+	    with_oracle=yes
+	fi
     fi
 fi
 
 if test "${with_odbc+set}" = "set"; then
-    cat <<EOT
+    if test -n "$with_os" ; then
+	AC_DEFINE(XSB_ODBC)
+	cat <<EOT
+
+    Building for $with_os with support for ODBC.
+    You must ensure that the requisite ODBC libraries
+    are installed on the target machine.
+
+EOT
+
+    else
+	cat <<EOT
 
     Checking whether XSB can be built with ODBC support.
     If this fails, you will have to use the --site-includes option
@@ -541,30 +576,31 @@ if test "${with_odbc+set}" = "set"; then
     where ODBC libraries live.
 
 EOT
-    dnl Here we provide additional directories to check headers in
-    dnl AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
-    dnl Since these aren't standard headers, we must use --site-includes
-    saved_cpp_flags="${CPPFLAGS}"
-    CPPFLAGS="${c_site_includes} ${CPPFLAGS}"
-    AC_CHECK_HEADERS(odbcinst.h SQL.H SQLEXT.H windows.h, \
-		    with_odbc=yes, odbc_error=yes)
-    if test "$odbc_error" = "yes"; then
-	echo ""
-	AC_MSG_WARN([ ****Your system is missing a .h file required for ODBC support
+	dnl Here we provide additional directories to check headers in
+	dnl AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
+	dnl Since these aren't standard headers, we must use --site-includes
+	saved_cpp_flags="${CPPFLAGS}"
+	CPPFLAGS="${c_site_includes} ${CPPFLAGS}"
+	AC_CHECK_HEADERS(odbcinst.h SQL.H SQLEXT.H windows.h, \
+			 with_odbc=yes, odbc_error=yes)
+	if test "$odbc_error" = "yes"; then
+	    echo ""
+	    AC_MSG_WARN([ ****Your system is missing a .h file required for ODBC support
                      ****XSB will be built WITHOUT ODBC support])
-	echo ""
-	have_warnings=yes
-	with_odbc=no
-    else
-	AC_DEFINE(XSB_ODBC)
-	cat <<EOT
+	    echo ""
+	    have_warnings=yes
+	    with_odbc=no
+	else
+	    AC_DEFINE(XSB_ODBC)
+	    cat <<EOT
 
     Building with support for ODBC
 
 EOT
+	fi
+	dnl restore CPPFLAGS
+	CPPFLAGS="${saved_cpp_flags}"
     fi
-    dnl restore CPPFLAGS
-    CPPFLAGS="${saved_cpp_flags}"
 fi
 
 AC_CHECK_PROG(perl_support, perl, "yes", "no")
@@ -596,16 +632,21 @@ if test "${enable_debug+yes}" = "yes"; then
 	AC_DEFINE(DEBUG)
 	do_debugging=yes
 fi
-if test "${enable_debug_oracle+yes}" = "yes"; then
-	AC_DEFINE(DEBUG_ORACLE)
-	do_debugging=yes
-fi
 
+
+dnl Take care of the scheduling strategy
+xsb_scheduling_strategy=batched
 
 AC_ARG_ENABLE(local-scheduling,
 [  --enable-local-scheduling	compile using the local scheduling strategy;
 				default is the batched strategy])
-xsb_scheduling_strategy=batched
+dnl Allow some slack in how local scheduling is specified
+if test "${enable_local_sched}" = "yes" || \
+   test "${enable_local_schedule}" = "yes" || \
+   test "${enable_local_s}" = "yes" ; then
+   enable_local_scheduling=yes
+fi
+
 if test "${enable_local_scheduling}" = "yes"; then
    AC_DEFINE(LOCAL_EVAL)
    xsb_scheduling_strategy=local
@@ -867,15 +908,15 @@ Date: ${install_date}
 
 
 case "$with_oracle" in
-   "yes") echo "  Building with support for ORACLE:                  yes"
+   "yes") echo "  Building with support for ORACLE:               yes"
 	;;
-   "no") echo "  Building with support for ORACLE:                NO"
+   "no") echo "  Building with support for ORACLE:             NO"
 	;;
 esac
 case "$with_odbc" in
-   "yes") echo "  Building with support for ODBC:                    yes"
+   "yes") echo "  Building with support for ODBC:                 yes"
 	;;
-   "no") echo "  Building with support for ODBC:                  NO"
+   "no") echo "  Building with support for ODBC:               NO"
 	;;
 esac
 
