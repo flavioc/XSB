@@ -46,7 +46,6 @@ flora_prlg(FL_ORDEREQLT,2) :- !.
 flora_prlg(FL_ORDERGT,2) :- !.
 flora_prlg(FL_ORDEREQGT,2) :- !.
 flora_prlg(FL_METAUNIV,2) :- !.
-flora_prlg(FL_ASSIGN,2) :- !.
 flora_prlg(FL_IS,2) :- !.
 flora_prlg(FL_MATHEQ,2) :- !.
 flora_prlg(FL_MATHNOTEQ,2) :- !.

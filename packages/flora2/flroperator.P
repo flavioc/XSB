@@ -96,7 +96,6 @@ flora_op(1000,xfx,FL_ORDEREQLT).
 flora_op(1000,xfx,FL_ORDERGT).
 flora_op(1000,xfx,FL_ORDEREQGT).
 flora_op(1000,xfx,FL_METAUNIV).
-flora_op(1000,xfx,FL_ASSIGN).
 flora_op(1000,xfx,FL_OBJEQL).
 flora_op(1000,xfx,FL_IS).
 flora_op(1000,xfx,FL_MATHEQ).

@@ -143,7 +143,6 @@
 #define FL_ORDERGT		'@>'
 #define FL_ORDEREQGT		'@>='
 #define FL_METAUNIV		'=..'
-#define FL_ASSIGN		':='
 #define FL_IS			(is)
 #define FL_MATHEQ		'=:='
 #define FL_OBJEQL		':=:'

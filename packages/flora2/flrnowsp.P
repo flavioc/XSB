@@ -45,7 +45,6 @@ flora_nowsp(FL_ORDEREQLT,2) :- !.
 flora_nowsp(FL_ORDERGT,2) :- !.
 flora_nowsp(FL_ORDEREQGT,2) :- !.
 flora_nowsp(FL_METAUNIV,2) :- !.
-flora_nowsp(FL_ASSIGN,2) :- !.
 flora_nowsp(FL_IS,2) :- !.
 flora_nowsp(FL_MATHEQ,2) :- !.
 flora_nowsp(FL_MATHNOTEQ,2) :- !.
@@ -57,15 +56,3 @@ flora_nowsp(FL_RIGHTTO,2) :- !.
 flora_nowsp(FL_LEFTTO,2) :- !.
 
 flora_nowsp(FL_CUT,0) :- !.
-
-flora_nowsp(FL_INSERT,_) :- !.
-flora_nowsp(FL_DELETE,_) :- !.
-flora_nowsp(FL_DELETEALL,_) :- !.
-flora_nowsp(FL_ERASE,_) :- !.
-flora_nowsp(FL_ERASEALL,_) :- !.
-
-flora_nowsp(FL_BTINSERT,_) :- !.
-flora_nowsp(FL_BTDELETE,_) :- !.
-flora_nowsp(FL_BTDELETEALL,_) :- !.
-flora_nowsp(FL_BTERASE,_) :- !.
-flora_nowsp(FL_BTERASEALL,_) :- !.

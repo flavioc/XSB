@@ -226,7 +226,6 @@ workspaceobj_struct(P,WS,Object,Code) :-
 	  workspace_struct(P,WS,Object)
 	).
 
-prologterm_struct(FL_ASSIGN,2,Args,PROLOGTERM(FL_IS,2,Args)) :- !.
 prologterm_struct(F,N,Args,PROLOGTERM(F,N,Args)).
 
 prologliblit_struct(PrologTerm,PROLOGLIBLIT(PrologTerm)).
