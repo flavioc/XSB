@@ -26,7 +26,7 @@
 
 /*======================================================================*/
 /* This module provides abstractions of memory management functions	*/
-/* for the abstract machine. The following interface routines are	*/
+/* for the abstract machine.  The following interface routines are	*/
 /* exported:								*/
 /*	Program area handling:						*/
 /*	    mem_alloc(size):  alloc size bytes (on 8 byte boundary)	*/
@@ -46,14 +46,14 @@
 #include <string.h>
 
 #include "auxlry.h"
-#include "cell_xsb.h"      /* CPtr */
+#include "cell_xsb.h"
 #include "memory_xsb.h"
-#include "register.h"  /* breg, trreg */
-#include "psc_xsb.h"       /* needed by "tries.h" and "macro_xsb.h" */
+#include "register.h"
+#include "psc_xsb.h"
 #include "tries.h"     /* needed by "choice.h" */
-#include "choice.h"    /* choice point structures and macros */
-#include "error_xsb.h"  /* xsb_exit() */
-#include "macro_xsb.h"    /* Completion Stack and Subgoal Frame def's */
+#include "choice.h"
+#include "error_xsb.h"
+#include "macro_xsb.h"
 
 #include "flags_xsb.h"
 #include "subp.h"
@@ -85,18 +85,19 @@ void mem_dealloc(byte *addr, unsigned long size)
 
 /*
  * Re-allocate the space for the trail and choice point stack data area
- *   to "new_size" K-byte blocks.
+ * to "new_size" K-byte blocks.
  */
 
 void tcpstack_realloc(long new_size) {
 
-/* Variables for Trail and Choice Point Stack Updating
-   --------------------------------------------------- */
+  byte *cps_top,         /* addr of topmost byte in old CP Stack */
+       *trail_top;       /* addr of topmost frame (link field) in old Trail */
+
   byte *new_trail,        /* bottom of new trail area */
        *new_cps;          /* bottom of new choice point stack area */
 
   long trail_offset,      /* byte offsets between the old and new */
-       cps_offset;        /*    stack bottoms */
+       cps_offset;        /*   stack bottoms */
 
 #ifndef CHAT
   CPtr *trail_link;    /* for stepping thru Trail and altering dyn links */
@@ -104,56 +105,57 @@ void tcpstack_realloc(long new_size) {
   CPtr *cell_ptr;      /* for stepping thru CPStack and altering cell values */
   byte *cell_val;      /* consider each cell to contain a ptr value */
 
-  /*
-   * These two are just place holders, pointing into the OLD stack regions.
-   * Primarily needed for determining into what region, trail or cp, cells
-   * were pointing.
-   */
-  byte *cps_top,     /* ptr to topmost byte on the CP Stack */
-       *trail_top;   /* ptr into topmost frame on the Trail (link field) */
-
-
-  /* Variables for Updating Incomplete Subgoal's SGFs
-     ------------------------------------------------- */
   ComplStackFrame csf_ptr;    /* for stepping through the ComplStack */
-  VariantSF subg_ptr;           /* and altering the CP ptrs in the SGFs */
+  VariantSF subg_ptr;         /* and altering the CP ptrs in the SGFs */
 
 
   if (new_size == tcpstack.size)
     return;
 
-  /* Compute stack tops
-     ------------------ */
   cps_top = (byte *)top_of_cpstack;
   trail_top = (byte *)top_of_trail;
 
+#ifdef DEBUG
+  xsb_dbgmsg("Reallocating the Trail and Choice Point Stack data area");
+#endif
+
+  /* Expand the Trail / Choice Point Stack Area
+     ------------------------------------------ */
   if (new_size > tcpstack.size) {
-
-    /* Reallocate the data area
-       ------------------------ */
-    new_trail = (byte *)realloc(tcpstack.low, new_size * K);
-    if (new_trail == NULL)
-      xsb_exit("Not enough core to resize the Trail and Choice Point Stack!");
-    new_cps = new_trail + new_size * K;
-
-    /* Push the CP Stack to the high end
-       --------------------------------- */
+#ifdef DEBUG
+    if (tcpstack.size == tcpstack.init_size) {
+      xsb_dbgmsg("\tBottom:\t\t%p\t\tInitial Size: %ldK",
+		 tcpstack.low, tcpstack.size);
+      xsb_dbgmsg("\tTop:\t\t%p", tcpstack.high);
+    }
+#endif
     /*
+     * Increase the size of the data area and push the Choice Point Stack
+     * to its high-memory end.
+     *
      * 'realloc' copies the data in the reallocated region to the new region.
      * 'memmove' can perform an overlap copy: we take the choice point data
      *   from where it was moved and push it to the high end of the newly
      *   allocated region.
      */
+    new_trail = (byte *)realloc(tcpstack.low, new_size * K);
+    if ( IsNULL(new_trail) )
+      xsb_exit("Not enough core to resize the Trail and Choice Point Stack!");
+    new_cps = new_trail + new_size * K;
+
     trail_offset = (long)(new_trail - tcpstack.low);
     cps_offset = (long)(new_cps - tcpstack.high);
     memmove(cps_top + cps_offset,              /* move to */
 	    cps_top + trail_offset,            /* move from */
 	    (long)(tcpstack.high - cps_top) ); /* number of bytes */
   }
+  /* Compact the Trail / Choice Point Stack Area
+     ------------------------------------------- */
   else {
-
-    /* Float the CP Stack data up and reallocate
-       ----------------------------------------- */
+    /*
+     * Float the Choice Point Stack data up to lower-memory and reduce the
+     * size of the data area.
+     */
     memmove(cps_top - (tcpstack.size - new_size) * K,  /* move to */
 	    cps_top,                                   /* move from */
 	    (long)(tcpstack.high - cps_top) );         /* number of bytes */
@@ -179,8 +181,8 @@ void tcpstack_realloc(long new_size) {
   }
 #endif
 
-  /* Update the CP Stack pointers
-     ---------------------------- */
+  /* Update the pointers in the CP Stack
+     ----------------------------------- */
   /*
    *  Start at the top of the CP Stack and work down, stepping through
    *  each field of every frame on the stack.  Any field containing a
@@ -203,11 +205,14 @@ void tcpstack_realloc(long new_size) {
        */
       else if ( (cell_val >= tcpstack.low) && (cell_val <= trail_top) )
 	*cell_ptr = (CPtr)(cell_val + trail_offset);
-      else if ( (cell_val < cps_top) && (cell_val > trail_top) ) {
-	printf("Trail/Choice Point Stack Reallocation Error!\n");
-	printf("Erroneous pointer:  points between Trail and CP stack tops\n");
-	printf("\taddr:%p, value:%p\n", cell_ptr, cell_val);
-      }
+      /*
+       *  If the cell points into the region between the two stacks, then
+       *  this may signal a bug in the engine.
+       */
+      else if ( (cell_val < cps_top) && (cell_val > trail_top) )
+	xsb_warn("During Trail / Choice Point Stack Reallocation\n\t   "
+		 "Erroneous pointer:  Points between Trail and CP Stack tops"
+		 "\n\t   Addr:%p, Value:%p", cell_ptr, cell_val);
     }
   }
 
@@ -215,19 +220,17 @@ void tcpstack_realloc(long new_size) {
      ----------------------------------------------------- */
   for (csf_ptr = (ComplStackFrame)openreg;
        csf_ptr < (ComplStackFrame)complstack.high;
-	 csf_ptr++) {
-    subg_ptr = (VariantSF)compl_subgoal_ptr(csf_ptr);
-    /* Alter specific fields
-       --------------------- */
+       csf_ptr++) {
+    subg_ptr = compl_subgoal_ptr(csf_ptr);
 #if (!defined(CHAT))
-    if (subg_asf_list_ptr(subg_ptr) != NULL)
+    if ( IsNonNULL(subg_asf_list_ptr(subg_ptr)) )
       subg_asf_list_ptr(subg_ptr) =
 	(CPtr)( (byte *)subg_asf_list_ptr(subg_ptr) + cps_offset );
 #endif
-    if (subg_compl_susp_ptr(subg_ptr) != NULL)
+    if ( IsNonNULL(subg_compl_susp_ptr(subg_ptr)) )
       subg_compl_susp_ptr(subg_ptr) =
 	(CPtr)( (byte *)subg_compl_susp_ptr(subg_ptr) + cps_offset );
-    if (subg_cp_ptr(subg_ptr) != NULL)
+    if ( IsNonNULL(subg_cp_ptr(subg_ptr)) )
       subg_cp_ptr(subg_ptr) =
 	(CPtr)((byte *)subg_cp_ptr(subg_ptr) + cps_offset);
   }
@@ -244,8 +247,14 @@ void tcpstack_realloc(long new_size) {
   trfreg = (CPtr *)((byte *)trfreg + trail_offset);
   bfreg = (CPtr)((byte *)bfreg + cps_offset);
 #endif
-  if (root_address != NULL)
+  if ( IsNonNULL(root_address) )
     root_address = (CPtr)((byte *)root_address + cps_offset);
+
+#ifdef DEBUG
+  xsb_dbgmsg("\tNew Bottom:\t%p\t\tNew Size: %ldK",
+	     tcpstack.low, tcpstack.size);
+  xsb_dbgmsg("\tNew Top:\t%p\n", tcpstack.high);
+#endif
 }
 
 /* ------------------------------------------------------------------------- */
@@ -254,7 +263,7 @@ void handle_tcpstack_overflow(void)
 {
   if (flags[STACK_REALLOC]) {
 #ifdef DEBUG
-    fprintf(stderr, "Expanding trail and choice point stack...\n");
+    xsb_warn("Expanding the Trail and Choice Point Stack...");
 #endif
     tcpstack_realloc(resize_stack(tcpstack.size,0));
   }
@@ -267,7 +276,7 @@ void handle_tcpstack_overflow(void)
 
 /*
  * Re-allocate the space for the completion stack data area to "new_size"
- *   K-byte blocks.
+ * K-byte blocks.
  */
 
 void complstack_realloc (long new_size) {
@@ -289,27 +298,42 @@ void complstack_realloc (long new_size) {
   
   cs_top = (byte *)top_of_complstk;
   
-  if (new_size > complstack.size) {
+#ifdef DEBUG
+  xsb_dbgmsg("Reallocating the Completion Stack");
+#endif
 
-    /* Reallocate the data area
-       ------------------------ */
+  /* Expand the Completion Stack
+     --------------------------- */
+  if (new_size > complstack.size) {
+#ifdef DEBUG
+    if (complstack.size == complstack.init_size) {
+      xsb_dbgmsg("\tBottom:\t\t%p\t\tInitial Size: %ldK",
+		 complstack.low, complstack.size);
+      xsb_dbgmsg("\tTop:\t\t%p", complstack.high);
+    }
+#endif
+    /*
+     * Increase the size of the data area and push the Completion Stack
+     * to its high-memory end.
+     */
     new_top = (byte *)realloc(complstack.low, new_size * K);
-    if (new_top == NULL)
+    if ( IsNULL(new_top) )
       xsb_exit("Not enough core to resize the Completion Stack!");
     new_bottom = new_top + new_size * K;
     
-    /* Push the completion stack to the high end
-       ----------------------------------------- */
     top_offset = (long)(new_top - complstack.low);
     bottom_offset = (long)(new_bottom - complstack.high);
     memmove(cs_top + bottom_offset,     /* move to */
 	    cs_top + top_offset,        /* move from */
 	    (long)(complstack.high - cs_top) );
   }
+  /* Compact the Completion Stack
+     ---------------------------- */
   else {
-
-    /* Float the Completion Stack data up and reallocate
-       ------------------------------------------------- */
+    /*
+     * Float the Completion Stack data up to lower-memory and reduce the
+     * size of the data area.
+     */
     memmove(cs_top - (complstack.size - new_size) * K,  /* move to */
 	    cs_top,                                     /* move from */
 	    (long)(complstack.high - cs_top) );         /* number of bytes */
@@ -337,4 +361,10 @@ void complstack_realloc (long new_size) {
   complstack.size = new_size;
   
   openreg = (CPtr)((byte *)openreg + bottom_offset);
+
+#ifdef DEBUG
+  xsb_dbgmsg("\tNew Bottom:\t%p\t\tNew Size: %ldK",
+	     complstack.low, complstack.size);
+  xsb_dbgmsg("\tNew Top:\t%p\n", complstack.high);
+#endif
 }

@@ -1610,9 +1610,14 @@ xsbBool glstack_realloc(int new_size, int arity)
   long   expandtime ;
 
   if (new_size <= glstack.size) return 0;
-#ifdef STACKS_DEBUG
-  xsb_dbgmsg("Heap/Local Stack expansion - new size = %d  arity = %d",
-	     new_size,arity) ;
+
+#ifdef DEBUG
+  xsb_dbgmsg("Reallocating the Heap and Local Stack data area") ;
+  if (glstack.size == glstack.init_size) {
+    xsb_dbgmsg("\tBottom:\t\t%p\t\tInitial Size: %ldK",
+	       glstack.low, glstack.size) ;
+    xsb_dbgmsg("\tTop:\t\t%p", glstack.high) ;
+  }
 #endif
 
   expandtime = (long)(1000*cpu_time()) ;
@@ -1709,8 +1714,11 @@ xsbBool glstack_realloc(int new_size, int arity)
 
   expandtime = (long)(1000*cpu_time()) - expandtime;
 
-#ifdef STACKS_DEBUG
-  xsb_dbgmsg("Heap/Local Stack expansion - finished in %ld msecs\n",
+#ifdef DEBUG
+  xsb_dbgmsg("\tNew Bottom:\t%p\t\tNew Size: %ldK",
+	     glstack.low, glstack.size) ;
+  xsb_dbgmsg("\tNew Top:\t%p", glstack.high) ;
+  xsb_dbgmsg("Heap/Local Stack data area expansion - finished in %ld msecs\n",
 	     expandtime) ;
 #endif
 
