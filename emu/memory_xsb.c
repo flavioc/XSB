@@ -46,6 +46,7 @@
 #include <string.h>
 
 #include "auxlry.h"
+#include "binding.h"
 #include "cell_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"
@@ -169,10 +170,12 @@ void tcpstack_realloc(long new_size) {
    *  previous-link field of the Trail frames (i.e., the last field).
    */
   if (trail_offset != 0) {
-    for (trail_link = (CPtr *)new_trail;
-	 trail_link <= (CPtr *)(trail_top + trail_offset);
-	 trail_link = trail_link + 3)
+    for (trail_link = (CPtr *)(trail_top + trail_offset);
+	 trail_link > (CPtr *)new_trail;
+	 trail_link = trail_link - 3) {
       *trail_link = (CPtr)((byte *)*trail_link + trail_offset);
+      if ((Cell)*(trail_link-2) & PRE_IMAGE_MARK) trail_link--;
+    }
   }
 
   /* Update the pointers in the CP Stack
