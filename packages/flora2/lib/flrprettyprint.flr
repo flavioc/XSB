@@ -24,17 +24,17 @@
 */
 
 /*   To pretty print an object:
-**	?- obj[#pp_self(module)].
+**	?- obj[#pp_self(module)]@flora(pp).
 **   To save it in a file:
-**	?- obj[#pp_self(module,outfile)].
+**	?- obj[#pp_self(module,outfile)]@flora(pp).
 **   To pretty print a class:
-**      ?- class[#pp_class(module)].
+**      ?- class[#pp_class(module)]@flora(pp).
 **   To save result of a pretty-printed class in a file:
-**      ?- class[#pp_class(module,outfile)].
+**      ?- class[#pp_class(module,outfile)]@flora(pp).
 **   To print the information about class membership:
-**      ?- class[#pp_isa(module)].
+**      ?- class[#pp_isa(module)]@flora(pp).
 **   To save it in a file:
-**      ?- class[#pp_isa(module,outfile)].
+**      ?- class[#pp_isa(module,outfile)]@flora(pp).
 */
 
 
