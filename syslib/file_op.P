@@ -249,16 +249,13 @@ add_index(Pred,Arg,Size) :-
 		functor(Pcall,P,Arity)
 	),
 	(Size =< 0 -> default_assert_size(Hsize) ; Hsize = Size),
-	(integer(Arg)
-	 ->	Narg = Arg, Targ = Arg
-	 ; Arg == []
+	(Arg == []
 	 ->	Narg = 0, Targ = Arg
-	 ; Arg = [_|_]
-	 ->	Narg = 1,
-		fix_arg(Arg,Arity,Targ)
+	 ;	fix_arg(Arg,Arity,Targ),
+		Narg = 1
 	),
 	retract_trie_index(Pcall),
-	(Narg < 0
+	(Narg =< 0
 	 ->	retractall('_$index1'(Pcall,_,_))
 	 ; '_$index'(Pcall,Oarg,Osize)
 	 ->	(Targ==Oarg, Hsize=:=Osize
@@ -277,23 +274,43 @@ retract_index(Pred) :-
 	retractall('_$index1'(Pcall,_,_)).
 
 
-fix_arg([],_,[]).
-fix_arg([Arg|Args],Arity,[Narg|Nargs]) :-
-	(integer(Arg)
-	 ->	((Arg > 256 ; Arg > 0, Arg =< Arity)
-		 ->	Narg = Arg
-		 ;	fail
-		)
-	 ;	conv_joint(Arg,0,Arity,Narg)
+fix_arg([],_,[]) :- !.
+fix_arg([Arg|Args],Arity,[Narg|Nargs]) :- !,
+	(integer(Arg),Arg>256
+	 ->	Narg = Arg
+	 ;	conv_joint(Arg,Arity,Narg)
 	),
 	fix_arg(Args,Arity,Nargs).
+fix_arg(Arg,Arity,Narg) :-
+	(integer(Arg), Arg >= 256
+	 ->	Narg = Arg
+	 ;	conv_joint(Arg,Arity,Narg)
+	).
+
+conv_joint(Arg,Arity,Narg) :-
+	(Arg = *(Arg1)
+	 ->	integer(Arg1), Arg1 > 0, Arg1 =< Arity,
+		Arg1 < 128,
+		Narg is (Arg1+128) << 8
+	 ;	conv_joint(Arg,0,Arity,Narg)
+	).
 
 conv_joint(B+A,Na,Arity,Narg) :- !, 
-	integer(A), A > 0, A =< Arity, 
-	Naa is A + (Na << 8),
+	conv_one_indx(A,Arity,Aint),
+	Naa is Aint + (Na << 8),
 	conv_joint(B,Naa,Arity,Narg).
 conv_joint(A,Na,Arity,Narg) :- 
-	integer(A), A > 0, A =< Arity, Narg is A + (Na << 8).
+	conv_one_indx(A,Arity,Aint),
+	Narg is Aint + (Na << 8).
+
+conv_one_indx(A,Arity,Aout) :-
+	(integer(A)
+	 ->	A > 0, A =< Arity,
+		Aout = A
+	 ; A = *(A1)
+	 ->	integer(A1), A1 > 0, A1 =< Arity, A1 < 128,
+		Aout is A1+128
+	).
 
 /* quick hack to get dynamic tabling in. robustify it!!! */
 
