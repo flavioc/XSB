@@ -1,0 +1,950 @@
+/* File:      flrcompiler.P
+**
+** Author(s): Bertram Ludaescher (V 1.2, 11/05/1998)
+**
+**            Guizhen Yang       (V 2.0, 04/12/1999)
+**              supervised by Michael Kifer
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
+
+/****************************************************************************
+  03/1999, modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
+****************************************************************************/
+
+
+:- import
+	member/2, append/3, length/2
+   from basics.
+
+:- import
+	atom_chars/2, number_chars/2
+   from standard.
+
+:- import trie_dynamic/1, trie_assert/1, trie_retract/1 from tables.
+
+:- import
+	conget/2, conset/2
+   from prof_sbp.
+
+:- import flora_set/1 from flrparser.
+
+:- import
+	flora_word/2, terminate_list/1, displayln/0, displayln_errmsg/1,
+	flora_member/2
+   from flrutils.
+
+:- dynamic compiler_options/1.
+
+:- trie_dynamic(compiler_options/1).
+
+:- export init_flrcompiler/0, compile_flogic/3.
+
+
+/***************************************************************************/
+compile_flogic(_,_,_) :- trie_assert(compiler_options(_)), fail.
+
+compile_flogic(table_directive(X),[table_directive(X)],Opts) :-
+	retract_options(Opts),
+	!.
+
+compile_flogic(export_directive(PAs,Sigs),Rules,Opts) :-
+	compile_export_signatures(Sigs,PA1,R1),
+	append(PAs,PA1,PAlist),
+	Rules=[export_directive(PAlist)|R1],
+	retract_options(Opts).
+
+compile_flogic(import_directive(PAs,Sigs,M),Rules,Opts) :-
+	compile_import_signatures(Sigs,PA1,R1),
+	append(PAs,PA1,PAlist),
+	Rules=[import_directive(PAlist,M)|R1],
+	retract_options(Opts).
+
+compile_flogic(rule(Head,HeadVars,Body,BodyVars),Rules,Opts) :-
+	!,
+	lhs_flatten_list(Head,HeadCode,AuxCode,AVs),
+	rhs_flatten_list(Body,BodyCode),
+	append(BodyCode,AuxCode,AppendedBodyCode),
+	subtract_vars(HeadVars,BodyVars,V1),
+	subtract_vars(V1,AVs,UnboundHeadVars),
+	findall(X,member(var(X,_),UnboundHeadVars),U),
+	( U \= [] ->
+	    W=unbound_warning(rule,U)
+
+	  ;
+	    W=null
+	),
+	( HeadCode=[H] ->
+	    Rules=[W,rule(H,AppendedBodyCode)]
+
+	  ;
+	    new_aux(F),
+	    subtract_vars(HeadVars,UnboundHeadVars,BoundHeadVars),
+	    subtract_vars(AVs,HeadVars,RealAVs),
+	    extract_vars(BoundHeadVars,V2),
+	    extract_vars(RealAVs,V3),
+	    append(V2,V3,NewHeadVars),
+	    NewHead =.. [F|NewHeadVars],
+	    multiplex(HeadCode,[NewHead],Rs),
+	    Rules=[W,rule(NewHead,AppendedBodyCode)|Rs]
+	),
+	retract_options(Opts).
+
+
+compile_flogic(fact(Head,HeadVars),Facts,Opts) :-
+	!,
+	lhs_flatten_list(Head,HeadCode,AuxCode,AVs),
+	subtract_vars(HeadVars,AVs,UnboundVars),
+	findall(X,member(var(X,_),UnboundVars),U),
+	( U \= [] ->
+	    W=unbound_warning(Form,U)
+
+	  ;
+	    W=null
+	),
+	( AVs=[] ->
+	    Form=fact,
+	    multiplex(HeadCode,Fs),
+	    Facts=[W|Fs]
+
+	 ;
+	    Form=rule,
+	    ( HeadCode=[H] ->
+		Facts=[W,rule(H,AuxCode)]
+
+	      ;
+		new_aux(F),
+		extract_vars(AVs,NewHeadVars),
+		NewHead =.. [F|NewHeadVars],
+		multiplex(HeadCode,[NewHead],Rs),
+		Facts=[W,rule(NewHead,AuxCode)|Rs]
+	    )
+	),
+	retract_options(Opts).
+
+
+compile_flogic(query(Body,BodyVars),[query(BodyCode,NVs)],Opts) :-
+	!,
+	rhs_flatten_list(Body,BodyCodeList),
+	list2conjunction(BodyCodeList,BodyCode),
+	remove_anonymous(BodyVars,NVs),
+	retract_options(Opts).
+
+
+compile_flogic(null,[],Opts) :- retract_options(Opts).
+
+
+/***************************************************************************/
+compile_export_signatures([],[],[]).
+
+compile_export_signatures([signature(C,L)|Sigs],PAs,Rules) :-
+	flatten_export_signature(C,L,PA1,R1),
+	compile_export_signatures(Sigs,PA2,R2),
+	append(PA1,PA2,PAs),
+	append(R1,R2,Rules).
+
+flatten_export_signature(_,[],[],[]) :- !.
+
+flatten_export_signature(Class,[methsig(Method,Args,A,R)|L],PAs,Rules) :-
+	atom_chars(Class,CStr),
+	atom_chars(Method,MStr),
+	append(CStr,[0'_|MStr],Str),
+	( flora_word(fs,A) ->
+	    append(Str,"_fs",Str1),
+	    append(Str,"_fd",Str2),
+	    flora_word(fd_rhs,RDA)
+
+	  ;
+	    append(Str,"_mvs",Str1),
+	    append(Str,"_mvd",Str2),
+	    flora_word(mvd_rhs,RDA)
+	),
+	atom_chars(S1,Str1),
+	atom_chars(S2,Str2),
+	flora_word(S1,LSA),
+	flora_word(S2,LDA),
+	flora_word('@',F),
+	length(Args,N),
+	length(UnboundArgs,N),
+	DM =.. [F,Method|UnboundArgs],
+	( N == 0 ->
+	    H1 =.. [LDA,O1,V1],
+	    A1=2
+
+	  ;
+	    H1 =.. [LDA,O1,DM,V1],
+	    A1=3
+	),
+	flora_word(isa_rhs,Isa),
+	G11 =.. [Isa,O1,Class],
+	G12 =.. [RDA,O1,DM,V1],
+	R1=rule(H1,[G11,G12]),
+	PA1=pa(LDA,A1),
+	SM =.. [F,Method|Args],
+	H2 =.. [LSA,Class,SM|R],
+	G21 =.. [A,Class,SM|R],
+	length(R,M),
+	A2 is M+2,
+	R2=rule(H2,[G21]),
+	PA2=pa(LSA,A2),
+	flatten_export_signature(Class,L,PAlist,Rlist),
+	append([PA1,PA2],PAlist,PAs),
+	append([R1,R2],Rlist,Rules).
+
+
+/***************************************************************************/
+compile_import_signatures([],[],[]).
+
+compile_import_signatures([signature(C,L)|Sigs],PAs,Rules) :-
+	flatten_import_signature(C,L,PA1,R1),
+	compile_import_signatures(Sigs,PA2,R2),
+	append(PA1,PA2,PAs),
+	append(R1,R2,Rules).
+
+flatten_import_signature(_,[],[],[]) :- !.
+
+flatten_import_signature(Class,[methsig(Method,Args,A,R)|L],PAs,Rules) :-
+	atom_chars(Class,CStr),
+	atom_chars(Method,MStr),
+	append(CStr,[0'_|MStr],Str),
+	( flora_word(fs,A) ->
+	    append(Str,"_fs",Str1),
+	    append(Str,"_fd",Str2),
+	    flora_word(fd,LDA)
+
+	  ;
+	    append(Str,"_mvs",Str1),
+	    append(Str,"_mvd",Str2),
+	    flora_word(mvd,LDA)
+	),
+	atom_chars(S1,Str1),
+	atom_chars(S2,Str2),
+	flora_word(S1,RSA),
+	flora_word(S2,RDA),
+	flora_word('@',F),
+	length(Args,N),
+	length(UnboundArgs,N),
+	DM =.. [F,Method|UnboundArgs],
+	H1 =.. [LDA,O1,DM,V1],
+	( N == 0 ->
+	    G1 =.. [RDA,O1,V1],
+	    A1=2
+
+	  ;
+	    G1 =.. [RDA,O1,DM,V1],
+	    A1=3
+	),
+	R1=rule(H1,[G1]),
+	PA1=pa(RDA,A1),
+	SM =.. [F,Method|Args],
+	H2 =.. [A,Class,SM|R],
+	G2 =.. [RSA,Class,SM|R],
+	length(R,M),
+	A2 is M+2,
+	R2=rule(H2,[G2]),
+	PA2=pa(RSA,A2),
+	flatten_import_signature(Class,L,PAlist,Rlist),
+	append([PA1,PA2],PAlist,PAs),
+	append([R1,R2],Rlist,Rules).
+
+
+/****************************************************************************
+  rhs_flatten_list(+Terms,-Code,Vars)
+****************************************************************************/
+rhs_flatten_list([],[]).
+
+rhs_flatten_list([T|Ts],Code) :-
+	rhs_flatten(T,_,C1),
+	rhs_flatten_list(Ts,C2),
+	append(C1,C2,Code).
+
+
+/****************************************************************************
+  rhs_flatten(+Term,-Object,-Code)
+****************************************************************************/
+rhs_flatten(not(R),null,[not(Code)]) :-
+	!,
+	rhs_flatten_list(R,List),
+	list2conjunction(List,Code).
+
+rhs_flatten(pterm(assert,Args),null,Code) :-
+	!,
+	lhs_flatten_list(Args,C1,A1,_),
+	flora_word(assert,F),
+	P =.. [F,C1],
+	append(A1,[P],Code),
+	assert_option(flrassert).
+
+rhs_flatten(pterm(retract,Args,Conds),null,Code) :-
+	!,
+	rhs_flatten_retract(retract,Args,Conds,Code).
+
+rhs_flatten(pterm(retractall,Args,Conds),null,Code) :-
+	!,
+	rhs_flatten_retract(retractall,Args,Conds,Code).
+
+rhs_flatten(pterm(erase,Args,Conds),null,Code) :-
+	!,
+	rhs_flatten_retract(erase,Args,Conds,Code).
+
+rhs_flatten(pterm(eraseall,Args,Conds),null,Code) :-
+	!,
+	rhs_flatten_retract(eraseall,Args,Conds,Code).
+
+rhs_flatten(pterm(F,Args),null,Code) :-
+	!,
+	rhs_flatten_pathlist(Args,AObjs,C),
+	P =.. [F|AObjs],
+	append(C,[P],Code).
+
+rhs_flatten(fnctn(F,Args),Obj,Code) :-
+	!,
+	rhs_flatten_pathlist(Args,AObjs,Code),
+	Obj =.. [F|AObjs].
+
+rhs_flatten(spterm(SP,P1,P2),null,Code) :-
+	!,
+	rhs_flatten(P1,Obj1,C1),
+	rhs_flatten(P2,Obj2,C2),
+	P =.. [SP,Obj1,Obj2],
+	append(C1,C2,C3),
+	append(C3,[P],Code).
+
+rhs_flatten(objspec(O,Spec),Obj,Code) :-
+	!,
+	rhs_flatten(O,Obj,C1),
+	( Spec = [] ->
+	    ( O = objmeth(_,_) ->
+		Code=C1
+
+	      ;
+		flora_word(exists,F),
+		P =.. [F,Obj],
+		append(C1,[P],Code)
+	    )
+
+	  ;
+	    rhs_flatten_speclist(Obj,Spec,C2),
+	    append(C1,C2,Code)
+	).
+
+rhs_flatten(objmeth(O,M),Obj,Code) :-
+	!,
+	rhs_flatten(O,V,C1),
+	rhs_flatten_mref(M,A,MObj,C2),
+	flora_optimize(A,V,MObj,Obj,C3),
+	append(C1,C2,C4),
+	append(C4,C3,Code).
+
+rhs_flatten(list(L,T),Obj,Code) :-
+	!,
+	rhs_flatten_pathlist(L,LObj,C1),
+	( T == [] ->
+	    Obj=LObj,
+	    Code=C1
+
+	  ;
+	    rhs_flatten(T,TObj,C2),
+	    append(LObj,TObj,Obj),
+	    append(C1,C2,Code)
+	).
+
+rhs_flatten(aggregt(Op,var(N,V),GVs,Body),Obj,Code) :-
+	!,
+	flora_vars(Body,BVs),
+	terminate_list(BVs),
+	subtract_vars(GVs,BVs,L),
+	( L \=[] ->
+	    displayln,
+	    displayln_errmsg('grouping variables must appear in aggregate body.'),
+	    fail
+
+	  ; var_member(var(N,V),GVs) ->
+	    displayln,
+	    displayln_errmsg('conflict in use of aggregate and grouping variable'),
+	    fail
+
+	  ; not var_member(var(N,V),BVs) ->
+	    displayln,
+	    displayln_errmsg('aggregate variable must appear in the body.'),
+	    fail
+
+	  ;
+	    rhs_flatten_list(Body,BodyCodeList),
+	    list2conjunction(BodyCodeList,Condition),
+	    flora_word(Op,A1),
+	    ( GVs = [] ->
+		P1 =.. [findall,V,(Condition),Matches],
+		P2 =.. [A1,nogrp,Matches,Obj]
+
+	      ;
+		flora_word(grp,A2),
+		flora_word(rslt,A3),
+		extract_vars(GVs,GroupVars),
+		GP =.. [A2|GroupVars],
+		RP =.. [A3,V,GP],
+		P1 =.. [findall,RP,(Condition),Matches],
+		P2 =.. [A1,GP,Matches,Obj]
+	    ),
+	    Code=[P1,P2]
+	),
+	assert_option(flraggregate).
+
+binary_operator('+').
+binary_operator('-').
+binary_operator('*').
+binary_operator('/').
+
+rhs_flatten(E,Obj,Code) :-
+	E =.. [Op,Op1,Op2],
+	binary_operator(Op),
+	!,
+	rhs_flatten(Op1,O1,C1),
+	rhs_flatten(Op2,O2,C2),
+	V =.. [Op,O1,O2],
+	P =.. [is,Obj,V],
+	append(C1,C2,C3),
+	append(C3,[P],Code).
+
+rhs_flatten(var(_,V),V,[]) :- !.
+
+rhs_flatten(identifier(X),X,[]) :- !.
+
+rhs_flatten(string(Chars),Chars,[]) :- !.
+
+rhs_flatten(number(N),N,[]) :- !.
+
+rhs_flatten(cut,null,['!']) :- !.
+
+
+/***************************************************************************/
+rhs_flatten_retract(Op,L,C,[P]) :-
+	flora_word(rtrct,Wrapper),
+	flatten_retract(L,Wrapper,Ps),
+	rhs_flatten_list(C,CCode),
+	flora_word(Op,F),
+	P =.. [F,Ps,CCode],
+	assert_option(flrassert).
+
+
+/***************************************************************************/
+flatten_retract([],_,[]).
+
+flatten_retract([H|T],W,Ps) :-
+	flatten_retract_term(H,W,P1),
+	flatten_retract(T,W,P2),
+	append(P1,P2,Ps).
+
+
+/***************************************************************************/
+flatten_retract_term(pterm(F,Args),W,Ps) :-
+	!,
+	rhs_flatten_pathlist(Args,AObjs,Cs),
+	P1 =.. [F|AObjs],
+	P2 =.. [W,P1],
+	append(Cs,[P2],Ps).
+
+flatten_retract_term(objspec(O,Spec),W,Ps) :-
+	!,
+	rhs_flatten(O,Obj,C1),
+	( Spec = [] ->
+	    flora_word(exists,F),
+	    P1 =.. [F,Obj],
+	    P2 =.. [W,P1],
+	    append(C1,[P2],Ps)
+
+	  ;
+	    flatten_retract_speclist(Obj,Spec,W,C2),
+	    append(C1,C2,Ps)
+	).
+
+flatten_retract_term(X,_,Ps) :-
+	rhs_flatten(X,_,Ps).
+
+
+/***************************************************************************/
+flatten_retract_speclist(_,[],_,[]).
+
+flatten_retract_speclist(Obj,[S|Ss],W,Ps) :-
+	flatten_retract_spec(Obj,S,W,C1),
+	flatten_retract_speclist(Obj,Ss,W,C2),
+	append(C1,C2,Ps).
+
+
+flatten_retract_spec(Obj,relationship(F,Class),W,Ps) :-
+	!,
+	rhs_flatten(Class,CObj,C1),
+	P1 =.. [F,Obj,CObj],
+	P2 =.. [W,P1],
+	append(C1,[P2],Ps).
+
+flatten_retract_spec(Obj,fn(M,A,R),W,Ps) :-
+	!,
+	rhs_flatten_methappl(M,MObj,C1),
+	rhs_flatten(R,RObj,C2),
+	P1 =.. [A,Obj,MObj,RObj],
+	P2 =.. [W,P1],
+	append(C1,C2,C3),
+	append(C3,[P2],Ps).
+
+flatten_retract_spec(Obj,set(M,A,Ps),W,Ps) :-
+	!,
+	rhs_flatten_methappl(M,MObj,C1),
+	rhs_flatten_pathlist(Ps,PObjs,C2),
+	( PObjs = [] ->
+	    P1 =.. [A,Obj,MObj],
+	    P2 =.. [W,P1],
+	    C3=[P2]
+
+	  ;
+	    flatten_retract_setarrow(Obj,MObj,A,PObjs,W,C3)
+	),
+	append(C1,C2,C4),
+	append(C4,C3,Ps).
+
+
+flatten_retract_setarrow(_,_,_,[],_,[]).
+
+flatten_retract_setarrow(O,M,A,[P|Ps],W,[P2|Ps]) :-
+	P1 =.. [A,O,M,P],
+	P2 =.. [W,P1],
+	flatten_retract_setarrow(O,M,A,Ps,W,Ps).
+
+
+/***************************************************************************/
+rhs_flatten_pathlist([],[],[]).
+
+rhs_flatten_pathlist([P|Ps],[PObj|PObjs],Code):-
+	rhs_flatten(P,PObj,C1),
+	rhs_flatten_pathlist(Ps,PObjs,C2),
+	append(C1,C2,Code).
+
+
+/***************************************************************************/
+rhs_flatten_mref(mref(A,M),A,MObj,Code) :-
+	rhs_flatten_methappl(M,MObj,Code).
+
+rhs_flatten_methappl(methargs(F,M,Args),Obj,Code) :-
+	rhs_flatten(M,MObj,C1),
+	rhs_flatten_pathlist(Args,AObjs,C2),
+	Obj =.. [F,MObj|AObjs],
+	append(C1,C2,Code).
+	
+
+/***************************************************************************/
+rhs_flatten_speclist(_,[],[]).
+
+rhs_flatten_speclist(Obj,[S|Ss],Code) :-
+	rhs_flatten_spec(Obj,S,C1),
+	rhs_flatten_speclist(Obj,Ss,C2),
+	append(C1,C2,Code).
+
+
+rhs_flatten_spec(Obj,relationship(F,Class),Code) :-
+	!,
+	rhs_flatten(Class,CObj,C1),
+	flora_optimize(F,Obj,CObj,C2),
+	append(C1,C2,Code).
+
+rhs_flatten_spec(Obj,fn(M,A,R),Code) :-
+	!,
+	rhs_flatten_methappl(M,MObj,C1),
+	rhs_flatten(R,RObj,C2),
+	flora_optimize(A,Obj,MObj,RObj,C3),
+	append(C1,C2,C4),
+	append(C4,C3,Code).
+
+rhs_flatten_spec(Obj,set(M,A,Ps),Code) :-
+	!,
+	rhs_flatten_methappl(M,MObj,C1),
+	rhs_flatten_pathlist(Ps,PObjs,C2),
+	( PObjs = [] ->
+	    flora_optimize(A,Obj,MObj,C3)
+	  ;
+	    rhs_flatten_setarrow(Obj,MObj,A,PObjs,C3)
+	),
+	append(C1,C2,C4),
+	append(C4,C3,Code).
+
+
+rhs_flatten_setarrow(_,_,_,[],[]).
+
+rhs_flatten_setarrow(O,M,A,[P|Ps],Code) :-
+	flora_optimize(A,O,M,P,C1),
+	rhs_flatten_setarrow(O,M,A,Ps,C2),
+	append(C1,C2,Code).
+
+
+/***************************************************************************/
+lhs_flatten_list([],[],[],AVs) :- !, terminate_list(AVs).
+
+lhs_flatten_list([T|Ts],Code,Aux,AVs) :-
+	lhs_flatten(T,_,C1,A1,AVs),
+	lhs_flatten_list(Ts,C2,A2,AVs),
+	append(C1,C2,Code),
+	append(A1,A2,Aux).
+
+
+/***************************************************************************/
+lhs_flatten(pterm(F,Args),null,Code,Aux,AVs) :-
+	!,
+	lhs_flatten_pathlist(Args,AObjs,C,Aux,AVs),
+	P =.. [F|AObjs],
+	append(C,[P],Code).
+
+lhs_flatten(fnctn(F,Args),Obj,Code,Aux,AVs) :-
+	!,
+	lhs_flatten_pathlist(Args,AObjs,Code,Aux,AVs),
+	Obj =.. [F|AObjs].
+
+lhs_flatten(objspec(O,Spec),Obj,Code,Aux,AVs) :-
+	!,
+	lhs_flatten(O,Obj,C1,A1,AVs),
+	( Spec = [] ->
+	    ( O = objmeth(_,_) ->
+		Code=C1
+
+	      ;
+		flora_word(exists,F),
+		P =.. [F,Obj],
+		append(C1,[P],Code)
+	    ),
+	    Aux=A1
+
+	  ;
+	    lhs_flatten_speclist(Obj,Spec,C2,A2,AVs),
+	    append(C1,C2,Code),
+	    append(A1,A2,Aux)
+	).
+
+lhs_flatten(objmeth(O,M),Obj,Code,Aux,AVs) :-
+	!,
+	lhs_flatten(O,V,C1,A1,AVs),
+	lhs_flatten_mref(M,Arrow,MObj,C2,A2,AVs),
+	( flora_set(Arrow) ->
+	    !,
+	    displayln,
+	    displayln_errmsg('incorrect use of set path expression'),
+	    fail
+
+	  ;
+	    true
+	),
+	flora_word(objref,F),
+	Obj =.. [F,V,MObj],
+	P =.. [Arrow,V,MObj,Obj],
+	append(C1,C2,C3),
+	append(C3,[P],Code),
+	append(A1,A2,Aux),
+	assert_option(skolem).
+
+lhs_flatten(E,Obj,[],Aux,AVs) :-
+	E =.. [Op,Op1,Op2],
+	binary_operator(Op),
+	!,
+	flora_vars(E,AVs),
+	rhs_flatten(Op1,O1,C1),
+	rhs_flatten(Op2,O2,C2),
+	V =.. [Op,O1,O2],
+	P =.. [is,Obj,V],
+	append(C1,C2,C3),
+	append(C3,[P],Aux),
+	flora_member(var('_',Obj),AVs).
+
+lhs_flatten(aggregate(Op,V,GVs,B),Obj,[],Aux,AVs) :-
+	!,
+	rhs_flatten(aggregate(Op,V,GVs,B),Obj,Aux),
+	flora_member(V,AVs),
+	append_vars(GVs,AVs),
+	flora_member(var('_',Obj),AVs).
+
+lhs_flatten(list(L,T),Obj,Code,Aux,AVs) :-
+	!,
+	lhs_flatten_pathlist(L,LObj,C1,A1,AVs),
+	( T == [] ->
+	    Obj=LObj,
+	    Code=C1,
+	    Aux=A1
+
+	  ;
+	    lhs_flatten(T,TObj,C2,A2,AVs),
+	    append(LObj,TObj,Obj),
+	    append(C1,C2,Code),
+	    append(A1,A2,Aux)
+	).
+
+lhs_flatten(identifier(X),X,[],[],_) :- !.
+
+lhs_flatten(var(_,V),V,[],[],_) :- !.
+
+lhs_flatten(string(Chars),Chars,[],[],_) :- !.
+
+lhs_flatten(number(N),N,[],[],_) :- !.
+
+
+/***************************************************************************/
+lhs_flatten_pathlist([],[],[],[],_).
+
+lhs_flatten_pathlist([P|Ps],[PObj|PObjs],Code,Aux,AVs):-
+	lhs_flatten(P,PObj,C1,A1,AVs),
+	lhs_flatten_pathlist(Ps,PObjs,C2,A2,AVs),
+	append(C1,C2,Code),
+	append(A1,A2,Aux).
+
+
+/***************************************************************************/
+lhs_flatten_mref(mref(A,M),A,MObj,Code,Aux,AVs) :-
+	lhs_flatten_methappl(M,MObj,Code,Aux,AVs).
+
+lhs_flatten_methappl(methargs(F,M,Args),Obj,Code,Aux,AVs) :-
+	lhs_flatten(M,MObj,C1,A1,AVs),
+	lhs_flatten_pathlist(Args,AObjs,C2,A2,AVs),
+	Obj =.. [F,MObj|AObjs],
+	append(C1,C2,Code),
+	append(A1,A2,Aux).
+
+
+/***************************************************************************/
+lhs_flatten_speclist(_,[],[],[],_).
+
+lhs_flatten_speclist(Obj,[S|Ss],Code,Aux,AVs) :-
+	lhs_flatten_spec(Obj,S,C1,A1,AVs),
+	lhs_flatten_speclist(Obj,Ss,C2,A2,AVs),
+	append(C1,C2,Code),
+	append(A1,A2,Aux).
+
+
+lhs_flatten_spec(Obj,relationship(F,Class),Code,Aux,AVs) :-
+	lhs_flatten(Class,CObj,C,Aux,AVs),
+	P =.. [F,Obj,CObj],
+	append(C,[P],Code).
+
+lhs_flatten_spec(Obj,fn(M,A,R),Code,Aux,AVs) :-
+	lhs_flatten_methappl(M,MObj,C1,A1,AVs),
+	lhs_flatten(R,RObj,C2,A2,AVs),
+	append(C1,C2,C3),
+	P =.. [A,Obj,MObj,RObj],
+	append(C3,[P],Code),
+	append(A1,A2,Aux).
+
+lhs_flatten_spec(Obj,set(M,A,Ps),Code,Aux,AVs) :-
+	lhs_flatten_methappl(M,MObj,C1,A1,AVs),
+	lhs_flatten_pathlist(Ps,PObjs,C2,A2,AVs),
+	( PObjs = [] ->
+	    P =.. [A,Obj,MObj],
+	    C3=[P]
+	  ;
+	    lhs_flatten_setarrow(Obj,MObj,A,PObjs,C3)
+	),
+	append(C1,C2,C4),
+	append(C4,C3,Code),
+	append(A1,A2,Aux).
+
+
+lhs_flatten_setarrow(_,_,_,[],[]).
+
+lhs_flatten_setarrow(O,M,A,[P|Ps],[C|Code]) :-
+	C =.. [A,O,M,P],
+	lhs_flatten_setarrow(O,M,A,Ps,Code).
+
+
+/****************************************************************************
+  optimize(+Functor,+Obj,+Method,+Result,-Code)
+****************************************************************************/
+flora_optimize(Functor,Object,Method,Result,Code) :-
+	atom_chars(Functor,L1),
+	append(L1,"_rhs",L2),
+	atom_chars(RHS,L2),
+	P =.. [RHS,Object,Method,Result],
+	Code=[P].
+
+
+/****************************************************************************
+	flora_word(eql,A),
+	P1 =.. [A,Object,O],
+	P2 =.. [A,Method,M],
+	P3 =.. [A,Result,R],
+	P  =.. [Functor,O,M,R],
+	P4 =.. [A,O,Object],
+	P5 =.. [A,M,Method],
+	P6 =.. [A,R,Result],
+	Code = [(nonvar(Object) -> S1=yes ; S1=no),
+		(nonvar(Method) -> S2=yes ; S2=no),
+		(nonvar(Result) -> S3=yes ; S3=no),
+		(S1=yes -> P1),
+		(S2=yes -> P2),
+		(S3=yes -> P3),
+		P,
+		(S1=no -> P4),
+		(S2=no -> P5),
+		(S3=no -> P6)].
+****************************************************************************/
+
+
+flora_optimize(Functor,Obj1,Obj2,Code) :-
+	atom_chars(Functor,L1),
+	append(L1,"_rhs",L2),
+	atom_chars(RHS,L2),
+	P =.. [RHS,Obj1,Obj2],
+	Code=[P].
+
+
+/****************************************************************************
+	flora_word(eql,A),
+	P1 =.. [A,Obj1,O1],
+	P2 =.. [A,Obj2,O2],
+	P  =.. [Functor,O1,O2],
+	P3 =.. [A,O1,Obj1],
+	P4 =.. [A,O2,Obj2],
+	Code = [(nonvar(Obj1) -> S1=yes ; S1=no),
+		(nonvar(Obj2) -> S2=yes ; S2=no),
+		(S1=yes -> P1),
+		(S2=yes -> P2),
+		P,
+		(S1=no -> P3),
+		(S2=no -> P4)].
+****************************************************************************/
+
+
+/***************************************************************************/
+multiplex([],_,[]).
+
+multiplex([H|Hs],B,[rule(H,B)|Rs]) :-
+	multiplex(Hs,B,Rs).
+
+
+multiplex([],[]).
+
+multiplex([H|Hs],[fact(H)|Fs]) :-
+	multiplex(Hs,Fs).
+
+
+/***************************************************************************/
+list2conjunction([X],X).
+
+list2conjunction([X1,X2|Xs],','(X1,X3)) :-
+	list2conjunction([X2|Xs],X3).
+
+
+/**************************************************************************/
+extract_vars([],[]).
+
+extract_vars([var(_,V)|NVs],[V|Vs]) :-
+	extract_vars(NVs,Vs).
+
+
+/**************************************************************************/
+flora_vars(var(N,V),Vs) :-
+	!,
+	flora_member(var(N,V),Vs).
+
+flora_vars(Term,Vs) :-
+	functor(Term,_,A),
+	flora_vars(A,Term,Vs).
+
+flora_vars(0,_,_).
+
+flora_vars(N,Term,Vs) :-
+	arg(N,Term,Arg),
+	flora_vars(Arg,Vs),
+	M is N-1,
+	flora_vars(M,Term,Vs).
+
+
+/**************************************************************************/
+remove_anonymous([],[]).
+
+remove_anonymous([var('_',_)|T],NVs) :-
+	!,
+	remove_anonymous(T,NVs).
+
+remove_anonymous([E|T],[E|NVs]) :-
+	remove_anonymous(T,NVs).
+
+
+/**************************************************************************/
+append_vars([],_).
+
+append_vars([V|R],Vs) :-
+	flora_member(V,Vs),
+	append_vars(R,Vs).
+
+
+/**************************************************************************/
+subtract_vars([],_,[]).
+
+subtract_vars([H|R],L,V) :-
+	var_member(H,L),
+	!,
+	subtract_vars(R,L,V).
+
+subtract_vars([H|R],L,[H|T]) :-
+	subtract_vars(R,L,T).
+
+var_member(var(N,V1),[var(N,V2)|_]) :-
+	(N='_' -> V1==V2 ; V1=V2),
+	!.
+
+var_member(E,[_|T]) :-
+	var_member(E,T).
+
+
+/**************************************************************************/
+init_gensym(Root):-
+	nonvar(Root),
+	conset(Root,0).
+
+
+gensym(Root,Symbol):-
+	nonvar(Root),
+	var(Symbol),
+	conget(Root,Counter),
+	NewCounter is Counter + 1,
+	conset(Root,NewCounter),
+	atom_chars(Root,L1),
+	number_chars(NewCounter,L2),
+	append(L1,L2,L3),
+	atom_chars(Symbol,L3).
+
+
+/**************************************************************************/
+new_aux(Aux) :-
+	gensym(aux,V),
+	flora_word(V,Aux).
+
+
+init_flrcompiler :-
+	init_gensym(aux).
+
+
+/***************************************************************************
+FLORA compiler options:
+  skolem, flraggregate, flrassert.
+***************************************************************************/
+assert_option(X) :-
+	trie_retract(compiler_options(L)),
+	member(X,L),
+	trie_assert(compiler_options(L)).
+
+retract_options(X) :-
+	trie_retract(compiler_options(X)),
+	terminate_list(X).
+
+
+/**************************************************************************/

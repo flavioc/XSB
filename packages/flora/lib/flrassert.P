@@ -1,0 +1,132 @@
+/*** lib/flrassert.P: appended automatically by the FLORA compiler  ********/
+
+
+:- import var/1, call/1 from standard.
+
+:- import clause/2 from assert.
+
+:- import trie_assert/1, trie_retract_nr/1 from tables.
+
+
+/*****************************************************************************
+  rules for assert/retract
+*****************************************************************************/
+flora_assert([]).
+
+flora_assert([H|T]) :-
+	trie_assert(H),
+	flora_assert(T).
+
+
+/****************************************************************************/
+flora_retract(Gs,Cs) :-
+	flora_prove_goals(Gs,Fs),
+	flora_prove_conditions(Cs),
+	flora_check_facts(Fs),
+	flora_retract_facts(Fs).
+
+
+flora_prove_goals([],[]).
+
+flora_prove_goals([flora_rtrct(G)|Gs],[G|Fs]) :-
+	!,
+	call(G),
+	flora_prove_goals(Gs,Fs).
+
+flora_prove_goals([G|Gs],Fs) :-
+	call(G),
+	flora_prove_goals(Gs,Fs).
+
+
+flora_prove_conditions([]).
+
+flora_prove_conditions([C|Cs]) :-
+	call(C),
+	!,
+	flora_prove_conditions(Cs).
+
+
+flora_check_facts([]).
+
+flora_check_facts([H|Fs]) :-
+	clause(H,true),
+	flora_check_facts(Fs).
+
+
+flora_retract_facts([]).
+
+flora_retract_facts([H|Fs]) :-
+	trie_retract_nr((H :- true)),
+	flora_retract_facts(Fs).
+
+
+/****************************************************************************/
+flora_retractall(Gs,Cs) :-
+	flora_retract(Gs,Cs),
+	fail.
+
+flora_retractall(_,_).
+
+
+/****************************************************************************/
+flora_erase(Gs,Cs) :-
+	flora_prove_goals(Gs,Fs),
+	flora_prove_conditions(Cs),
+	flora_check_facts(Fs),
+	flora_erase_facts(Fs).
+
+
+flora_erase_facts([]).
+
+flora_erase_facts([H|Fs]) :-
+	flora_erase_one_fact(H),
+	flora_erase_facts(Fs).
+
+
+flora_erase_one_fact(G) :-
+	trie_retract_nr(G),
+	( G = flora_exists(O)     -> true
+	  ; G = flora_isa(O,_)    -> true
+	  ; G = flora_fd(_,_,O)   -> true
+	  ; G = flora_mvd(_,_,O)  -> true
+	  ; G = flora_ifd(_,_,O)  -> true
+	  ; G = flora_imvd(_,_,O) -> true
+	  ; G = flora_fs(_,_,O)   -> true
+	  ; G = flora_mvs(_,_,O)  -> true
+	  ; NextAction=no
+	),
+	( NextAction=no ->
+	    true
+
+	  ; var(O) ->
+	    true
+	  ;
+	    flora_erase_object(O)
+	).
+
+
+flora_erase_object(O) :-
+	flora_eraseall([flora_rtrct(flora_exists(O))],[]),
+	flora_eraseall([flora_rtrct(flora_isa(O,_))],[]),
+	flora_eraseall([flora_rtrct(flora_sub(O,_))],[]),
+	flora_eraseall([flora_rtrct(flora_fd(O,_,_))],[]),
+	flora_eraseall([flora_rtrct(flora_mvd(O,_,_))],[]),
+	flora_eraseall([flora_rtrct(flora_mvd(O,_))],[]),
+	flora_eraseall([flora_rtrct(flora_ifd(O,_,_))],[]),
+	flora_eraseall([flora_rtrct(flora_imvd(O,_,_))],[]),
+	flora_eraseall([flora_rtrct(flora_imvd(O,_))],[]),
+	flora_eraseall([flora_rtrct(flora_fs(O,_,_))],[]),
+	flora_eraseall([flora_rtrct(flora_mvs(O,_,_))],[]),
+	flora_eraseall([flora_rtrct(flora_mvs(O,_))],[]).
+
+
+/****************************************************************************/
+flora_eraseall(Gs,Cs) :-
+	flora_erase(Gs,Cs),
+	fail.
+
+flora_eraseall(_,_).
+
+
+/****************************  End of lib/flrassert.P  **********************/
+

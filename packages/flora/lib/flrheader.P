@@ -1,0 +1,46 @@
+/****** lib/flrheader.P: Prepended automatically by the FLORA compiler ******/
+
+
+:- table flora_fd/3.
+:- table flora_mvd/3.
+:- table flora_ifd/3.
+:- table flora_imvd/3.
+:- table flora_isa/2.
+:- table flora_sub/2.
+:- table flora_fs/3.
+:- table flora_mvs/3.
+
+
+:- import consult/1 from consult.
+
+:- import bootstrap_package/2, package_configuration/2 from packaging.
+
+:- import slash/1 from machine.
+
+:- import fmt_write_string/3 from file_io.
+
+:- import current_predicate/1 from curr_sym.
+
+
+flora_tag(noquery).
+
+
+?- flora_tag(query), !,
+   ( current_predicate(flora_print_all/2) ->
+       true
+     ;
+       ( package_configuration(dir(flora),D) ->
+	   true
+	 ;
+	   bootstrap_package(flora,flora),
+	   package_configuration(dir(flora),D)
+       ),
+       slash(S),
+       fmt_write_string(Lib,'%s%slib%sflrlib',f(D,S,S)),
+       consult(Lib)
+   ),
+   !.
+
+
+/************************** End of Header ***********************************/
+

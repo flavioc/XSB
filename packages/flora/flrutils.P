@@ -1,0 +1,467 @@
+/* File:      flrutils.P
+**
+** Author(s): Bertram Ludaescher (V 1.2, 11/13/1998)
+**
+**            Guizhen Yang       (V 2.0, 04/12/1999)
+**              supervised by Michael Kifer
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
+
+:- import
+	put/1, write/1, tab/1, writeln/1, write_canonical/1, display/1,
+	atom_chars/2, see/1, seen/0, tell/1, told/0, seeing/1, telling/1,
+	file_exists/1, cputime/1, var/1
+   from standard.
+
+:- import append/3, member/2 from basics.
+
+:- import sort/2 from setof.
+
+:- import package_configuration/2 from packaging.
+
+:- import slash/1 from machine.
+
+:- import fmt_write_string/3 from file_io.
+
+:- import unix/1 from unix.
+
+:- import read_tokens/2 from flrtokens.
+
+:- import rule/3 from flrparser.
+
+:- import compile_flogic/3 from flrcompiler.
+
+:- export 
+	flora_prefix/1, flora_word/2, terminate_list/1, flora_member/2,
+	displayln_errmsg/1, displayln/0, displayln/1, generate_code/5,
+	read_parse_compile/5.
+
+
+/*********************************************************************
+  03/1999, modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
+*********************************************************************/
+
+
+/********************************************************************/
+flora_prefix("flora_").
+
+flora_word(S,A) :-
+	atom_chars(S,Str),
+	flora_prefix(P),
+	append(P,Str,L),
+	atom_chars(A,L).
+
+
+/********************************************************************/
+terminate_list([]) :- !.
+terminate_list([_|T]) :- terminate_list(T).
+
+
+/********************************************************************/
+flora_member(NV,NVs) :-
+	var(NVs),
+	!,
+	NVs=[NV|_].
+
+flora_member(var(N,V),[var(N,V)|_]) :-
+	N \= '_',
+	!.
+
+flora_member(NV,[_|NVs]) :-
+	flora_member(NV,NVs).
+
+
+/********************************************************************/
+displayln_errmsg(A) :-
+	display('+++ Error: '),
+	displayln(A).
+
+displayln :-
+	telling(F),
+	tell(userout),
+	put(10),
+	tell(F).
+
+displayln(A) :-
+	telling(F),
+	tell(userout),
+	write(A),
+	put(10),
+	tell(F).
+
+
+/********************************************************************/
+write_tokens(S,Ts) :-
+	telling(F),
+	tell(S),
+	write_tokens(Ts),
+	tell(F).
+
+
+write_tokens([]).
+
+write_tokens([X|Xs]) :-
+	write_tokens(X),
+	write_tokens(Xs).
+
+write_tokens(atom(white_space)) :- !, write(' ').
+write_tokens(atom(rule_delimeter)) :- !, write('.').
+
+write_tokens(atom(A)) :-
+	!,
+	atom_chars(A,[_|L]),
+	atom_chars(B,L),
+	write(B).
+
+write_tokens(identifier(X)) :- !, write(X).
+write_tokens(num(N)) :- !, write(N).
+write_tokens(var(V)) :- !, write(V).
+write_tokens(string_atom(X)) :- !, write_canonical(X).
+
+write_tokens(string_list(X)) :-
+	!,
+	atom_chars(A,X),
+	write('"'),
+	write(A),
+	write('"').
+
+
+/********************************************************************/
+write_rules([]).
+
+write_rules([null|Rs]) :- !, write_rules(Rs).
+
+write_rules([R|Rs]) :-
+	write_rules(R),
+	nl,
+	write_rules(Rs).
+
+write_rules(fact(H)) :-
+	!,
+	write_canonical(H),
+	writeln('.').
+
+write_rules(rule(H,Gs)) :-
+	!,
+	write_canonical(H),
+	writeln(' :- '),
+	write_body(Gs).
+
+write_rules(query(Body,NVs)) :-
+	!,
+	write('?- '),
+	flora_word(print_all,A),
+	write(A),
+	write('('),
+	write_canonical(Body),
+	write(','),
+	write_canonical(NVs),
+	writeln(').'),
+	nl,
+	flora_word(tag,T),
+	write(T), writeln('(query).').
+
+write_rules(unbound_warning(F,L)) :-
+	!,
+	write('%%% '),
+	telling(S),
+	unbound_warning(S,F,L).
+
+write_rules(import_directive(PAs,M)) :-
+	!,
+	writeln(':- import'),
+	write_PAs(PAs),
+	nl, write('   from '), write_canonical(M), writeln('.').
+
+write_rules(export_directive(PAs)) :-
+	!,
+	writeln(':- export'),
+	write_PAs(PAs),
+	writeln('.').
+
+write_rules(table_directive(auto_table)) :-
+	!,
+	writeln(':- auto_table.').
+
+write_rules(table_directive(PAs)) :-
+	!,
+	writeln(':- table'),
+	write_PAs(PAs),
+	writeln('.').
+
+
+/********************************************************************/
+write_body([X]) :-
+	!,
+	tab(8),
+	write_canonical(X),
+	writeln('.').
+
+write_body([X1,X2|Xs]) :-
+	!,
+	tab(8),
+	write_canonical(X1),
+	writeln(','),
+	write_body([X2|Xs]).
+
+/********************************************************************/
+write_PAs([pa(P,A)]) :-
+	!,
+	tab(8),
+	write_canonical(P),
+	write('/'),
+	write(A).
+
+write_PAs([pa(P,A)|PAs]) :-
+	tab(8),
+	write_canonical(P),
+	write('/'),
+	write(A),
+	writeln(','),
+	write_PAs(PAs).
+
+
+/********************************************************************/
+unbound_warning(S,Form,L) :-
+	telling(F),
+	tell(S),
+	write('*** Warning: '),
+	write_list(L),
+	write(' unbound in '),
+	writeln(Form),
+	tell(F).
+
+
+/********************************************************************/
+write_list([]).
+
+write_list([X]) :-
+	!,
+	write(X).
+
+write_list([X1,X2|Xs]) :-
+	!,
+	write(X1),
+	write(', '),
+	write_list([X2|Xs]).
+
+
+/********************************************************************/
+generate_code(Directives,FlrFile,PFile,MaxErr,Status) :-
+	displayln, display('*** FLORA: compiling '), display(FlrFile),
+	display(' with option(s) '),
+	telling(F), tell(userout), write_list(Directives), tell(F),
+	displayln(' ...'),
+	cputime(T0),
+	seeing(PreInFile),
+	telling(PreOutFile),
+	tell(PFile),
+	copy_flrfile('flrheader.P',S1),
+	( S1 = failure ->
+	    Status=failure
+	  ;
+	    see(FlrFile),
+	    compile_flrfile(MaxErr,0,S2,[],Options),
+	    seen,
+	    ( S2 = failure ->
+		Status=failure
+	      ;
+	        directives_options(Directives,Options,Status)
+	    )
+	),
+	told,
+	see(PreInFile),
+	tell(PreOutFile),
+	cputime(T1),
+	( Status = failure ->
+	    true
+	  ;
+	    displayln, display('*** Done! CPU time used: '),
+	    T is T1-T0,
+	    display(T), display(' seconds on '), unix(hostname)
+	).
+
+
+/********************************************************************/
+directives_options(Directives,Options,Status) :-
+	( member(flraggregate,Options) ->
+	    copy_flrfile('flraggregate.P',S1)
+	  ;
+	    S1=success
+	),
+	( member(flrassert,Options) ->
+	    copy_flrfile('flrassert.P',S2)
+	  ;
+	    S2=success
+	),
+	(member(eqlevel(N1),Directives) -> true ; N1=0),
+	(member(skolem,Options) -> N2=1 ; N2=0),
+	(N1 < N2 -> Level=N2 ; Level=N1),
+	fmt_write_string(Trailer,'flrtrailer%d.P',f(Level)),
+	copy_flrfile(Trailer,S3),
+	( S1=success, S2=success, S3=success ->
+	    Status=success
+	  ;
+	    Status=failure
+	).
+
+
+/********************************************************************/
+copy_flrfile(File,Status) :-
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(FullName,'%s%slib%s%s',f(FloraDir,S,S,File)),
+	( flora_file_exists(FullName) ->
+	    flora_output_file(FullName),
+	    Status=success
+	  ;
+	    Status=failure
+	).
+
+
+/********************************************************************/
+flora_file_exists(File) :-
+	( file_exists(File) ->
+	    true
+	  ;
+	    display('+++ Error: '), display(File),
+	    displayln(' does NOT exist.'), fail
+	).
+
+
+/********************************************************************/
+flora_output_file(File) :-
+	seeing(In),
+	see(File),
+	repeat,
+	  get0(C),
+	  (C = -1 -> true ; put(C)),
+	  C = -1,
+	!,
+	seen,
+	see(In).
+
+
+/********************************************************************/
+compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
+	read_parse_compile([],Tokens,FlattenedRules,S1,Opts),
+	( member(error(_),S1) ->
+	    NewCount is ErrorCount+1,
+	    (MaxErr=all -> M is NewCount+1 ; M=MaxErr),
+	    ( M =< NewCount ->
+		Status=failure,
+		displayln, display('+++ aborted due to '),
+		display(NewCount),
+		displayln(' error(s) found'), displayln
+
+	      ; member(not_eof,S1),
+		member(atom(rule_delimeter),Tokens) ->
+		  compile_flrfile(MaxErr,NewCount,Status,_,_)
+
+	      ; member(not_eof,S1), discard_tokens(S2),
+		member(not_eof,S2) ->
+		  compile_flrfile(MaxErr,NewCount,Status,_,_)
+	      ;
+		Status=failure,
+		displayln, display('+++ '), display(NewCount),
+		displayln(' error(s) found'),
+		display('+++ aborted due to end of file'), displayln
+	    )
+
+	  ;
+	    ( member(unbound_warning(Form,L),FlattenedRules) ->
+		displayln, unbound_warning(userout,Form,L)
+	      ;
+		true
+	    ),
+	    write('%%% '),
+	    telling(File), write_tokens(File,Tokens), nl,
+	    write_rules(FlattenedRules), nl,
+	    ( ErrorCount > 0 ->
+		true
+	      ;
+		append(OldOpts,Opts,Temp1),
+		sort(Temp1,Temp2)
+	    ),
+	    ( member(eof,S1) ->
+		( ErrorCount = 0 ->
+		    Status=success,
+		    NewOpts=Temp2
+		  ;
+		    Status=failure,
+		    displayln, display('+++ '), display(ErrorCount),
+		    displayln(' error(s) found'),
+		    display('+++ aborted due to end of file'),
+		    displayln 
+		)
+	      ;
+		compile_flrfile(MaxErr,ErrorCount,Status,Temp2,NewOpts)
+	    )
+	),
+	!.
+
+
+/********************************************************************/
+read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
+	read_tokens(Tokens,ReadStatus),
+	( member(error(Msg),ReadStatus) ->
+	    Status=ReadStatus,
+	    FlattenedRules=[null],
+	    displayln, display('>>>   '),
+	    write_tokens(userout,Tokens),
+	    displayln(' <--- here?'),
+	    displayln_errmsg(Msg)
+
+	  ;
+	    append(L,Tokens,Ts),
+	    ( rule(FlogicRule,Ts,[]) ->
+		( compile_flogic(FlogicRule,FlattenedRules,Opts) ->
+		    Status=ReadStatus
+		  ;
+		    FlattenedRules=[null],
+		    displayln, display('>>>   '),
+		    write_tokens(userout,Tokens), displayln,
+		    displayln_errmsg('compiling error'),
+		    Status=[error('compiling error')|ReadStatus]
+		)
+
+	      ;
+		displayln, display('>>>   '),
+		write_tokens(userout,Tokens), displayln,
+		displayln_errmsg('parsing error'),
+		FlogicRule=[null],
+		Status=[error('parsing error')|ReadStatus]
+	    )
+	).
+
+
+/********************************************************************/
+discard_tokens(Status) :-
+	displayln,
+	repeat,
+	displayln('... discarding tokens ...'),
+	read_tokens(Tokens,Status),
+	( member(atom(rule_delimeter),Tokens), !
+	 ;
+	  member(eof,Status), !
+	).
+
+
+/********************************************************************/

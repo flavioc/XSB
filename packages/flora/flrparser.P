@@ -1,0 +1,785 @@
+/* File:      flrparser.P
+**
+** Author(s): Bertram Ludaescher (V 1.2, 11/05/1998)
+**
+**            Guizhen Yang       (V 2.0, 04/12/1999)
+**              supervised by Michael Kifer
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
+
+/*************************************************************************
+  03/1999, modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
+*************************************************************************/
+
+:- import
+	nl/0, write/1, writeln/1, tell/1, telling/1, atom_chars/2,
+	integer/1
+   from standard.
+
+:- import append/3 from basics.
+
+:- import
+	flora_prefix/1, flora_word/2, terminate_list/1,
+	flora_member/2
+   from flrutils.
+
+:- import
+	trie_dynamic/1, trie_retract_all/1, trie_assert/1
+   from tables.
+
+:- dynamic error/1.
+
+:- trie_dynamic(error/1).
+
+:- export rule/3, flora_set/1.
+
+
+/**************************************************************/
+rule(_) -->
+	{ trie_retract_all(error(_)),
+	  fail
+	}.
+
+rule(rule(Head,HeadVars,Body,BodyVars)) -->
+	head(Head,HeadVars),
+	imply_symbol,
+	body(Body,BodyVars),
+	rule_delimeter,
+	!.
+
+rule(query(Body,BodyVars)) -->
+	query_symbol,
+	body(Body,BodyVars),
+	rule_delimeter,
+	!.
+
+rule(fact(Head,HeadVars)) -->
+	head(Head,HeadVars),
+	rule_delimeter,
+	!.
+
+rule(import_directive(PAs,Sigs,Module)) -->
+	imply_symbol,
+	white_space0,
+	atom_name(Import),
+	{atom_chars(Import,"import")},
+	pa_sig_list(PAs,Sigs),
+	white_space0,
+	[identifier(from)],
+	white_space0,
+	atom_name(Module),
+	rule_delimeter,
+	!.
+
+rule(export_directive(PAs,Sigs)) -->
+	imply_symbol,
+	white_space0,
+	atom_name(Export),
+	{atom_chars(Export,"export")},
+	pa_sig_list(PAs,Sigs),
+	rule_delimeter,
+	!.
+
+rule(table_directive(PAs)) -->
+	imply_symbol,
+	white_space0,
+	atom_name(Table),
+	{atom_chars(Table,"table")},
+	predicate_arity_list(PAs),
+	rule_delimeter,
+	!.
+
+rule(table_directive(auto_table)) -->
+	imply_symbol,
+	white_space0,
+	atom_name(auto_table),
+	rule_delimeter,
+	!.
+
+rule(null) --> white_space0, !.
+
+rule(_) -->
+	{ error(reserved_word),
+	  telling(F),
+	  tell(userout),
+	  nl, write('*** Warning: words like '),
+	  flora_prefix(P),
+	  atom_chars(Flora,P),
+	  write(Flora),
+	  writeln('* are reserved for FLORA system.'),
+	  tell(F),
+	  fail
+	}.
+
+
+head(H,V) --> terms(H,V), {terminate_list(V)}.
+body(B,V) --> literals(B,V), {terminate_list(V)}.
+
+
+imply_symbol   --> white_space0, [atom('$:'),atom('$-')].   
+query_symbol   --> white_space0, [atom('$?'),atom('$-')].   
+rule_delimeter --> white_space0, [atom(rule_delimeter)].
+
+
+white_space0 --> [atom(white_space)], !, white_space0.
+white_space0 --> [], !.
+
+
+/**************************************************************/
+pa_sig_list(PAs,Sigs) -->
+	predicate_arity_list(PA1),
+	!,
+	pa_sig_rest_list(PA2,Sigs),
+	{append(PA1,PA2,PAs)}.
+
+pa_sig_list(PAs,[S|Sigs]) -->
+	white_space0,
+	ground_signature(S),
+	!,
+	pa_sig_rest_list(PAs,Sigs).
+
+pa_sig_rest_list(PAs,Sigs) -->
+	white_space0,
+	[atom('$,')],
+	!,
+	pa_sig_list(PAs,Sigs).
+
+pa_sig_rest_list([],[]) --> [].
+
+
+/**************************************************************/
+predicate_arity_list([pa(P,A)|PAs]) -->
+	white_space0,
+	atom_name(P),
+	white_space0,
+	[atom('$/')],
+	white_space0,
+	[num(A)],
+	!,
+	{integer(A)},
+	rest_predicate_arity_list(PAs).
+
+rest_predicate_arity_list(PAs) -->
+	white_space0,
+	[atom('$,')],
+	predicate_arity_list(PAs),
+	!.
+
+rest_predicate_arity_list([]) --> [], !.
+
+
+/**************************************************************/
+ground_signature(signature(Class,L)) -->
+	atom_name(Class),
+	[atom('$[')],
+	!,
+	white_space0,
+	signature_method_list(L),
+	white_space0,
+	[atom('$]')].
+
+signature_method_list([methsig(Method,Args,A,R)|L]) -->
+	atom_name(Method),
+	signature_method_args(Args),
+	white_space0,
+	signature_arrow(A),
+	white_space0,
+	signature_method_result(R),
+	signature_methlist0(L).
+
+signature_methlist0(L) -->
+	white_space0,
+	[atom('$;')],
+	!,
+	white_space0,
+	signature_method_list(L).
+
+signature_methlist0([]) --> [].
+
+
+signature_method_args([C|L]) -->
+	[atom('$@'),atom('$(')],
+	!,
+	white_space0,
+	atom_name(C),
+	signature_method_argslist0(L),
+	white_space0,
+	[atom('$)')].
+
+signature_method_args([]) --> [].
+
+
+signature_method_argslist0([C|L]) -->
+	white_space0,
+	[atom('$,')],
+	!,
+	white_space0,
+	atom_name(C),
+	signature_method_argslist0(L).
+
+signature_method_argslist0([]) --> [].
+
+
+signature_method_result([C]) --> atom_name(C), !.
+
+signature_method_result([]) -->
+	[atom('$(')],
+	white_space0,
+	[atom('$)')].
+
+
+/**************************************************************/
+atom_name(N) --> [identifier(N)], !.
+atom_name(N) --> [string_atom(N)], !.
+
+
+/**************************************************************/
+terms([X|L],V) -->
+	white_space0,
+	term(X,V),
+	term_list(L,V).
+
+term_list(L,V) -->
+	white_space0,
+	[atom('$,')],
+	!,
+	terms(L,V).
+
+term_list([],_) --> [], !.
+
+
+/**************************************************************/
+literals([X|L],V) -->
+	white_space0,
+	literal(X,V),
+	literal_list(L,V).
+
+literal_list(L,V) -->
+	white_space0,
+	[atom('$,')],
+	!,
+	literals(L,V).
+
+literal_list([],_) --> [], !.
+
+
+/**************************************************************/
+term(T,V) --> flogic_molecule(T,V), !.
+term(T,V) --> predicate_term(T,V), !.
+
+
+/**************************************************************/
+literal(not([T]),V) -->
+	atom_name(not),
+	white_space0,
+	literal(T,V),
+	!.
+
+literal(not([T]),V) -->
+	[atom('$~')],
+	white_space0,
+	literal(T,V),
+	!.
+
+literal(not(L),V) -->
+	atom_name(not),
+	white_space0,
+	[atom('$(')],
+	literals(L,V),
+	white_space0,
+	[atom('$)')],
+	!.
+
+literal(not(L),V) -->
+	[atom('$~')],
+	white_space0,
+	[atom('$(')],
+	literals(L,V),
+	white_space0,
+	[atom('$)')],
+	!.
+
+literal(spterm(P,P1,P2),V) -->
+	path_expression(P1,V),
+	white_space0,
+	special_predicate(P),
+	white_space0,
+	path_expression(P2,V),
+	!.
+
+literal(T,V)   --> term(T,V), !.
+
+/***************************************************************
+  Cuts are currently not supported because of the problems with
+  tabling.
+
+literal(cut,_) --> [atom('$!')], !.
+***************************************************************/
+
+
+/**************************************************************/
+special_predicate(P) --> logic_predicate(P), !.
+special_predicate(P) --> arithmetic_predicate(P), !.
+
+logic_predicate('=')   --> [atom('$=')], !.
+logic_predicate('\=')  --> [atom('$\=')], !.
+logic_predicate('==')  --> [atom('$==')], !.
+logic_predicate('\==') --> [atom('$\==')], !.
+
+arithmetic_predicate('>')   --> [atom('$>')], !.
+arithmetic_predicate('<')   --> [atom('$<')], !.
+arithmetic_predicate('>=')  --> [atom('$>=')], !.
+arithmetic_predicate('=<')  --> [atom('$=<')], !.
+arithmetic_predicate('=:=') --> [atom('$=:=')], !.
+arithmetic_predicate('=\=') --> [atom('$=\=')], !.
+arithmetic_predicate(is)    --> [atom('$:=')], !.
+arithmetic_predicate(is)    --> atom_name(is) , !.
+
+
+/**************************************************************/
+predicate_term(pterm(F,L),V) -->
+	assert_functor(F),
+	!,
+	[atom('$(')],
+	literals(L,V),
+	white_space0,
+	[atom('$)')],
+	!.
+
+predicate_term(pterm(F,L,C),V) -->
+	retract_functor(F),
+	!,
+	[atom('$(')],
+	literals(L,V),
+	retract_conditions0(C,V),
+	white_space0,
+	[atom('$)')],
+	!.
+
+predicate_term(pterm(P,L),V) -->
+	atom_name(P),
+	{reserved_word(P) -> !, fail ; true},
+	arguments0(L,V),
+	!.
+
+
+/**************************************************************/
+assert_functor(assert) --> atom_name(assert), !.
+
+retract_functor(retract)    --> atom_name(retract), !.
+retract_functor(retractall) --> atom_name(retractall), !.
+retract_functor(erase)      --> atom_name(erase), !.
+retract_functor(eraseall)   --> atom_name(eraseall), !.
+
+
+retract_conditions0(C,V) -->
+	white_space0,
+	[atom('$|')],
+	!,
+	literals(C,V).
+
+retract_conditions0([],_) --> [].
+
+
+/**************************************************************/
+arguments0(L,V)  --> arguments1(L,V), !.
+arguments0([],_) --> [], !.
+
+arguments1(L,V) -->
+	[atom('$(')],
+	white_space0,
+	paths(L,V),
+	white_space0,
+	[atom('$)')],
+	!.
+
+
+paths([P|L],V) -->
+	path_expression(P,V),
+	path_list(L,V),
+	!.
+
+path_list(L,V) -->
+	white_space0,
+	[atom('$,')],
+	!,
+	white_space0,
+	paths(L,V).
+
+path_list([],_) --> [], !.
+
+
+/**************************************************************/
+flogic_molecule(objspec(O,S),V) -->
+	reference(O,V),
+	specification(S,V).
+
+path_expression(Obj,V) --> arithmetic_expression(Obj,V), !.
+
+
+/**************************************************************/
+reference(Obj,V) -->
+	object(O,V),
+	sm_list(O,Obj,V).
+
+sm_list(O,Obj,V) -->
+	specification(S,V),
+	method_reference(M,V),
+	!,
+	sm_list(objmeth(objspec(O,S),M),Obj,V).
+
+sm_list(O,Obj,V) -->
+	method_reference(M,V),
+	!,
+	sm_list(objmeth(O,M),Obj,V).
+
+sm_list(O,O,_) --> [], !.
+
+
+/**************************************************************/
+object(O,V) --> id_term(O,V), !.
+
+object(O,V) -->
+	[atom('$(')],
+	white_space0,
+	path_expression(O,V),
+	white_space0,
+	[atom('$)')],
+	!.
+
+
+/**************************************************************/
+specification([Is|Ms],V) -->
+	isa_specification(Is,V),
+	!,
+	method_specification0(Ms,V).
+
+specification(Ms,V) --> method_specification1(Ms,V), !.
+
+
+isa_specification(relationship(A,O),V) -->
+	white_space0,
+	isa_symbol(A),
+	white_space0,
+	object(O,V).
+
+isa_symbol(A) --> [atom('$:')], {flora_word(isa,A)}, !.
+isa_symbol(A) --> [atom('$::')], {flora_word(sub,A)}, !.
+
+
+/**************************************************************/
+method_specification0(L,V)  --> method_specification1(L,V), !.
+method_specification0([],_) --> [], !.
+
+method_specification1(L,V) -->
+	[atom('$[')],
+	white_space0,
+	method_list(L,V),
+	white_space0,
+	[atom('$]')],
+	!.
+
+method_specification1([],_) -->
+	[atom('$[')],
+	white_space0,
+	[atom('$]')],
+	!.
+
+method_list([MR|L],V) -->
+	method_application(MA,V),
+	white_space0,
+	method_result(MA,MR,V),
+	rest_method_list(L,V).
+
+rest_method_list(L,V) -->
+	white_space0,
+	[atom('$;')],
+	!,
+	white_space0,
+	method_list(L,V).
+
+rest_method_list([],_) --> [], !.
+
+
+/**************************************************************/
+method_reference(mref(C,MA),V) -->
+	colon(C),
+	method_application(MA,V).
+
+colon(A) --> [atom('$..')], {flora_word(mvd,A)}, !.
+colon(A) --> [atom('$.')], {flora_word(fd,A)}, !.
+colon(A) --> [atom('$!!')], {flora_word(imvd,A)}, !.
+colon(A) --> [atom('$!')], {flora_word(ifd,A)}, !.
+
+
+method_application(methargs(A,O,Args),V) -->
+	object(O,V),
+	method_arguments0(Args,V),
+	{flora_word('@',A)}.
+
+method_arguments0(L,V)  --> [atom('$@')], arguments1(L,V), !.
+method_arguments0([],_) --> [], !.
+
+
+/**************************************************************/
+method_result(M,fn(M,A,P),V) -->
+	function_arrow(A),
+	white_space0,
+	path_expression(P,V),
+	!.
+
+method_result(M,set(M,A,[P]),V) -->
+	set_arrow(A),
+	white_space0,
+	path_expression(P,V),
+	!.
+
+method_result(M,set(M,A,[]),_) -->
+	set_arrow(A),
+	white_space0,
+	[atom('${')],
+	white_space0,
+	[atom('$}')],
+	!.
+
+method_result(M,set(M,A,L),V) -->
+	set_arrow(A),
+	white_space0, 
+	[atom('${')],
+	white_space0,
+	paths(L,V),
+	white_space0,
+	[atom('$}')],
+	!.
+
+method_result(M,set(M,A,[P]),V) -->
+	signature_arrow(A),
+	white_space0,
+	path_expression(P,V),
+	!.
+
+method_result(M,set(M,A,[]),_) -->
+	signature_arrow(A),
+	white_space0,
+	[atom('$(')],
+	white_space0,
+	[atom('$)')],
+	!.
+
+
+function_arrow(A)  --> [atom('$-'),atom('$>')], {flora_word(fd,A)}, !.   
+function_arrow(A)  --> [atom('$*'),atom('$-'),atom('$>')], {flora_word(ifd,A)}, !.   
+set_arrow(A)	   --> [atom('$-'),atom('$>>')], {flora_word(mvd,A)}, !.    
+set_arrow(A)       --> [atom('$*'),atom('$-'),atom('$>>')], {flora_word(imvd,A)}, !.
+signature_arrow(A) --> [atom('$=>')], {flora_word(fs,A)}, !.
+signature_arrow(A) --> [atom('$=>>')], {flora_word(mvs,A)}, !.
+
+
+/**************************************************************/
+id_term(fnctn(F,L),V) -->
+	atom_name(F),
+	{reserved_word(F) -> !, fail ; true},
+	arguments1(L,V),
+	!.
+
+id_term(identifier(Id),_)  -->
+	atom_name(Id),
+	{reserved_word(Id) -> !, fail ; true},
+	!.
+
+id_term(var(Name,Var),V) -->
+	[var(Name)],
+	{flora_member(var(Name,Var),V)},
+	!.
+
+id_term(number(N),_) --> [num(N)], !.
+id_term(string(S),_) --> [string_list(S)], !.
+id_term(L,V)         --> list(L,V), !.
+
+
+/**************************************************************/
+list(list([],[]),_) -->
+	[atom('$[')],
+	[atom('$]')],
+	!.
+
+list(list(L,T),V) -->
+	[atom('$[')],
+	!,
+	white_space0,
+	paths(L,V),
+	list_tail(T,V),
+	white_space0,
+	[atom('$]')].
+
+list_tail(L,V) -->
+	white_space0,
+	[atom('$|')],
+	!,
+	white_space0,
+	tail(L,V).
+
+list_tail([],_) --> [].
+
+tail(P,V) --> path_expression(P,V), !.
+tail(L,V) --> list(L,V), !.
+
+
+/**************************************************************/
+arithmetic_expression(E,V) -->
+	arithmetic_term(E1,V),
+	!,
+	rest_term(E1,E,V).
+
+rest_term(E1,E,V) -->
+	white_space0,
+	[atom('$+')],
+	white_space0,
+	!,
+	arithmetic_term(T1,V),
+	rest_term('+'(E1,T1),E,V).
+
+rest_term(E1,E,V) -->
+	white_space0,
+	[atom('$-')],
+	white_space0,
+	!,
+	arithmetic_term(T1,V),
+	rest_term('-'(E1,T1),E,V).
+
+rest_term(E,E,_) --> [], !.
+
+
+arithmetic_term(T,V) -->
+	arithmetic_atom(T1,V),
+	!,
+	rest_atom(T1,T,V).
+
+rest_atom(T1,T,V) -->
+	white_space0,
+	[atom('$*')],
+	white_space0,
+	!,
+	arithmetic_atom(A1,V),
+	rest_atom('*'(T1,A1),T,V).
+
+rest_atom(T1,T,V) -->
+	white_space0,
+	[atom('$/')],
+	white_space0,
+	!,
+	arithmetic_atom(A1,V),
+	rest_atom('/'(T1,A1),T,V).
+
+rest_atom(T,T,_) --> [].
+
+
+arithmetic_atom(A,V) -->
+	[atom('$-')],
+	!,
+	white_space0,
+	arithmetic_atom(Atom,V),
+	{ ( Atom=number(Num) ->
+	      N is 0 - Num,
+	      A=number(N)
+	    ;
+	      A='-'(0,Atom)
+	  )
+	}.
+
+arithmetic_atom(A,V) -->
+	[atom('$+')],
+	!,
+	white_space0,
+	arithmetic_atom(A,V).
+
+arithmetic_atom(Obj,V) --> flogic_molecule(Obj,V), !.
+arithmetic_atom(Obj,V) --> aggregate(Obj,V), !.
+arithmetic_atom(Obj,V) --> reference(Obj,V), !.
+
+
+/**************************************************************/
+aggregate(aggregt(Op,var(Name,Var),G,B),V) -->
+	aggregate_operator(Op),
+	white_space0,
+	[atom('${')],
+	white_space0,
+	[var(Name)],
+	{flora_member(var(Name,Var),V)},
+	grouping_variables(G,V),
+	{terminate_list(G)},
+	white_space0,
+	[atom('$;')],
+	literals(B,V),
+	white_space0,
+	[atom('$}')],
+	!.
+
+aggregate_operator(min)   --> atom_name(min), !.
+aggregate_operator(max)   --> atom_name(max), !.
+aggregate_operator(sum)   --> atom_name(sum), !.
+aggregate_operator(avg)   --> atom_name(avg), !.
+aggregate_operator(count) --> atom_name(count), !.
+
+grouping_variables(L,V) -->
+	white_space0,
+	[atom('$[')],
+	!,
+	variable_list(L,V),
+	white_space0,
+	[atom('$]')].
+
+grouping_variables(_,_) --> [].
+
+variable_list(L,V) -->
+	white_space0,
+	[var(Name)],
+	{ flora_member(var(Name,Var),L),
+	  flora_member(var(Name,Var),V)
+	},
+	variable_list0(L,V).
+
+variable_list0(L,V) -->
+	white_space0,
+	[atom('$,')],
+	!,
+	variable_list(L,V).
+
+variable_list0(_,_) --> [].
+
+
+/**************************************************************/
+reserved_word(not) :- !.
+reserved_word('~') :- !.
+
+reserved_word(A) :-
+	atom(A),
+	atom_chars(A,S),
+	flora_prefix(P),
+	append(P,_,S),
+	!,
+	trie_assert(error(reserved_word)).
+
+
+/**************************************************************/
+flora_set(A) :- flora_word(mvd,A), !.
+flora_set(A) :- flora_word(imvd,A), !.
+
+

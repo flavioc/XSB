@@ -1,0 +1,432 @@
+/* File:      flrshell.P
+**
+** Author(s): Michael Kifer (V 1.0, 12/04/1998)
+**
+**            Guizhen Yang  (V 2.0, 04/12/1999)
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
+
+/**********************************************************************
+  04/1999, modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
+**********************************************************************/
+
+
+:- import
+	write/1, writeln/1, repeat/0, atom_chars/2, abort/0,
+	cputime/1, push_abort_cutpoint/0, pop_abort_cutpoint/0,
+	file_exists/1
+   from standard.
+
+:- import append/3, member/2 from basics.
+
+:- import trie_assert/1, trie_retract/1, trie_retract_all/1 from tables.
+
+:- import
+	slash/1, is_absolute_filename/1, parse_filename/4
+   from machine.
+
+:- import fmt_write_string/3, file_time/2 from file_io.
+
+:- import current_predicate/1 from curr_sym.
+
+:- import compile/2, consult/2, load_dyn/1 from consult.
+
+:- import library_directory/1 from usermod.
+
+:- import unix/1 from unix.
+
+:- import
+	bootstrap_package/2, package_configuration/2, unload_package/1
+   from packaging.
+
+:- import
+	read_parse_compile/5, generate_code/5
+   from flrutils.
+
+:- dynamic flora_switch/1.
+
+:- dynamic flora_maxerr/1.
+
+/*********************************************************************/
+flora_shell :-
+	( package_configuration(dir(flora),FloraDir) ->
+	    true
+
+	  ;
+	    bootstrap_package(flora,flora),
+	    package_configuration(dir(flora),FloraDir)
+	),
+	flora_welcome_msg,
+	all,
+	maxerr(5),
+	slash(S),
+	fmt_write_string(Lib,'%s%slib%sflrlib',f(FloraDir,S,S)),
+	[Lib, tables],
+	push_abort_cutpoint,
+	flora_shell_loop.
+
+
+/*********************************************************************/
+flora_welcome_msg :-
+	nl,
+	write('FLORA Version '),
+	package_configuration(version(flora),V),
+	write(V), writeln(' loaded.'), nl,
+	writeln('help. displays help message'),
+	write('rundemo(''demoName''). runs demos in '),
+	slash(S),
+	package_configuration(dir(flora),FloraDir),
+	fmt_write_string(DemoDir,'%s%sdemos',f(FloraDir,S)),
+	writeln(DemoDir), nl,
+	!.
+
+
+/*********************************************************************/
+flora_shell_loop :-
+	repeat,
+	pop_abort_cutpoint,
+	push_abort_cutpoint,
+	seen,
+	see(userin),
+	told,
+	tell(userout),
+	nl, write('FLORA> ?- '),
+	read_parse_compile([atom('$?'),atom('$-')],_,Rules,Status,Opts),
+	( member(error(_),Status) ->
+	    true
+	  ;
+	    (Opts=[] -> true; flora_check_library(Opts)),
+	    Rules=[query(Gs,NVs)],
+	    flora_print_answers(Gs,NVs)
+	),
+	(member(eof,Status) -> end ; fail).
+
+
+/*********************************************************************/
+flora_check_library(Opts) :-
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	( member(flrassert,Opts) ->
+	    ( current_predicate(flora_assert/1) ->
+		true
+	      ;
+	        fmt_write_string(Assert,'%s%slib%sflrassert.P',f(FloraDir,S,S)),
+	        consult(Assert)
+	    )
+	  ;
+	    true
+	),
+	( member(flraggregate,Opts) ->
+	    ( current_predicate(flora_min/3) ->
+		true
+	      ;
+	        fmt_write_string(Aggr,'%s%slib%sflraggregate.P',f(FloraDir,S,S)),
+	        consult(Aggr)
+	    )
+	  ;
+	    true
+	),
+	( member(flraggregate,Opts) ->
+	    nl,
+	    writeln('*** Warning: Skolemization requires equality checking.')
+	  ;
+	    true
+	).
+
+
+/*********************************************************************/
+flora_print_answers(Gs,NVs) :-
+	( flora_switch(all) ->
+	    flora_print_all(Gs,NVs)
+	  ;
+	    flora_print_one(Gs,NVs)
+	).
+
+
+/*********************************************************************/
+help :-
+	nl,
+	writeln('FLORA commands:'), nl,
+	writeln('  help                  : show this info'),
+	writeln('  compile(''FILE'')       : compile FILE.P; create FILE.O'),
+	writeln('  parse(''FILE'')         : parse FILE.flr; create FILE.P and FILE.O'),
+	writeln('  parse(''FILE'',[...])   : parse(''FILE'') with options [...]'),
+	writeln('  run(''FILE'')           : compile FILE.flr; execute FILE.P'),
+	writeln('  run(''FILE'',[...])     : run(''FILE'') with options [...]'),
+	writeln('  load(''FILE'')          : load and execute FILE.O'),
+	writeln('  rundemo(''FILE'')       : run a demo from FLORA demos directory'),
+	writeln('  rundemo(''FILE'',[...]) : rundemo(''FILE'') with options [...]'),
+	writeln('  all                   : show all solutions (default)'),
+	writeln('  one                   : show solutions one by one'),
+	writeln('  maxerr(all/N)         : set/show the max number of errors FLORA reports'),
+	writeln('  end                   : say CIAO to FLORA').
+
+
+/*********************************************************************/
+parse(InFile) :-
+	flora_default_directives(Dtvs),
+	flora_parse(Dtvs,InFile,force,Module),
+	nl,
+	writeln('*** FLORA: calling XSB ...'),
+	compile(Module,[optimize,spec_repr]).
+
+parse(InFile,Dtvs) :-
+	flora_parse(Dtvs,InFile,force,Module),
+	nl,
+	writeln('*** FLORA: calling XSB ...'),
+	compile(Module,[optimize,spec_repr]).
+
+
+/*********************************************************************/
+run(File) :- 
+	flora_default_directives(Dtvs),
+	flora_parse(Dtvs,File,noforce,Module),
+	nl, writeln('*** FLORA: executing ...'),
+	consult(Module,[optimize,spec_repr]).
+
+run(File,Dtvs) :- 
+	flora_parse(Dtvs,File,noforce,Module),
+	nl, writeln('*** FLORA: executing ...'),
+	consult(Module,[optimize,spec_repr]).
+
+
+/*********************************************************************/
+load(File) :- 
+	flora_check_filename(File),
+        fmt_write_string(OName,'%s.O',f(File)),
+	flora_locate_file(OName,OFile),
+	( file_exists(OFile) ->
+	    consult(OFile,[optimize,spec_repr])
+
+	  ;
+	    nl, write('+++ Error: '),
+	    write(OFile),
+	    writeln(' does NOT exist.'),
+	    fail
+	).
+
+
+/*********************************************************************/
+rundemo(X) :-
+	flora_check_filename(X),
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(Demo,'%s%sdemos%s%s',f(FloraDir,S,S,X)),
+	run(Demo).
+
+rundemo(X,Dtvs) :-
+	flora_check_filename(X),
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(Demo,'%s%sdemos%s%s',f(FloraDir,S,S,X)),
+	run(Demo,Dtvs).
+
+
+/*********************************************************************/
+all :-
+	(flora_switch(all) -> true ; trie_assert(flora_switch(all))).
+
+
+/*********************************************************************/
+one :-
+	trie_retract(flora_switch(all)).
+
+
+/*********************************************************************/
+maxerr(X) :-
+	( var(X) ->
+	    flora_maxerr(X)
+
+	  ; X \== all, (not integer(X); X < 1) ->
+	    nl,
+	    writeln('+++ Error: invalid argument to maxerr'),
+	    fail
+
+	  ;
+	    trie_retract_all(flora_maxerr(_)),
+	    trie_assert(flora_maxerr(X))
+	).
+
+
+/*********************************************************************/
+end :-
+	unload_package(flora),
+	nl, writeln('CIAO !'), nl,
+	pop_abort_cutpoint,
+	abort.
+
+
+/*********************************************************************/
+parse_all_demos  :-
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(F1,'%s%sdemos%sdefault',f(FloraDir,S,S)),
+	fmt_write_string(F2,'%s%sdemos%sfamily_obj',f(FloraDir,S,S)),
+	fmt_write_string(F3,'%s%sdemos%sfamily_rel',f(FloraDir,S,S)),
+	fmt_write_string(F4,'%s%sdemos%sflogic_basics',f(FloraDir,S,S)),
+	fmt_write_string(F5,'%s%sdemos%srel_ops',f(FloraDir,S,S)),
+	flora_parse(F1,noforce,_),
+	flora_parse(F2,noforce,_),
+	flora_parse(F3,noforce,_),
+	flora_parse(F4,noforce,_),
+	flora_parse(F5,noforce,_).
+
+
+/*********************************************************************/
+flora_parse(Directives,InFile,Force,OutFile) :-
+	flora_maxerr(MaxErr),
+	flora_check_directives(Directives,Dtvs),
+	flora_check_filename(InFile),
+	atom_chars(InFile,L1),
+	append(L1,".flr",L2),
+	atom_chars(FullFileName,L2),
+	flora_locate_file(FullFileName,FlrFile),
+	( not file_exists(FlrFile) ->
+	    nl, write('+++ Error: '),
+	    write(FlrFile),
+	    writeln(' does NOT exist.'),
+	    abort
+
+	  ;
+	    parse_filename(FlrFile,D,B,_),
+	    fmt_write_string(PFile,'%s%s.P',f(D,B)),
+	    ( Force = force ->
+		generate_code(Dtvs,FlrFile,PFile,MaxErr,Status)
+	      ;
+		fmt_write_string(OFile,'%s%s.O',f(D,B)),
+		( file_older_than(OFile,FlrFile) ->
+		    generate_code(Dtvs,FlrFile,PFile,MaxErr,Status)
+		  ;
+		    Status=noneed
+		)
+	    ),
+	    ( Status=failure ->	abort
+
+	      ; Status=noneed -> OutFile=OFile
+
+	      ;
+		OutFile=PFile
+	    )
+	),
+	!.
+
+
+/*********************************************************************/
+flora_check_directives(Original,Final) :-
+	flora_directives(Original,L1),
+	( not member(eqlevel(_),L1) ->
+	    append([eqlevel(0)],L1,Final)
+
+	  ; member(eqlevel(N1),L1), member(eqlevel(N2),L1), N1\=N2 ->
+	    nl, writeln('+++ Error: conflict in compiler directives'),
+	    abort
+
+	  ;
+	    Final=L1
+	).
+
+flora_directives([],[]) :- !.
+
+flora_directives([H|T],Opts) :-
+	( flora_directive(H) ->
+	    Opts=[H|R],
+	    flora_directives(T,R)
+
+	  ;
+	    nl, write('*** Warning: unknown option '), writeln(H),
+	    flora_directives(T,Opts)
+	),
+	!.
+
+flora_directives(_,_) :-
+	nl, writeln('+++ Error: compiler directives must be a list of options'),
+	abort.
+
+flora_directive(eqlevel(N)) :- 0 =< N, N =< 1, !.
+
+flora_default_directives([eqlevel(0)]).
+
+
+/*********************************************************************/
+flora_check_filename(Name) :-
+	( not atom(Name) ->
+	    nl, writeln('+++ Error: invalid file name'),
+	    abort
+
+	  ;
+	    true
+	).
+
+
+/*********************************************************************/
+flora_locate_file(In,In) :-
+	is_absolute_filename(In),
+	!.
+
+flora_locate_file(In,Out) :-
+	flora_library_directory(LibDir),
+	slash(S),
+	fmt_write_string(Out,'%s%s%s',f(LibDir,S,In)),
+	file_exists(Out),
+	!.
+
+flora_locate_file(In,In).
+
+
+/*********************************************************************/
+file_older_than(F1,F2) :-
+	( file_exists(F1) ->
+	    file_time(F1,time(F1Time1,F1Time2)),
+	    file_time(F2,time(F2Time1,F2Time2)),
+	    time(F1Time1,F1Time2) @< time(F2Time1,F2Time2)
+
+	  ;
+	    true
+	).
+
+
+/*********************************************************************/
+flora_library_directory('.').
+flora_library_directory(X) :- library_directory(X).
+
+
+/********************************************************************/
+flora_fd(_,_,_)       :- fail.
+flora_mvd(_,_,_)      :- fail.
+flora_ifd(_,_,_)      :- fail.
+flora_imvd(_,_,_)     :- fail.
+flora_isa(_,_)        :- fail.
+flora_sub(_,_)        :- fail.
+flora_fs(_,_,_)       :- fail.
+flora_mvs(_,_,_)      :- fail.
+flora_eql(_,_)        :- fail.
+flora_exists(_)       :- fail.
+flora_mvd(_,_)        :- fail.
+flora_imvd(_,_)       :- fail.
+flora_fd_rhs(_,_,_)   :- fail.
+flora_mvd_rhs(_,_,_)  :- fail.
+flora_ifd_rhs(_,_,_)  :- fail.
+flora_imvd_rhs(_,_,_) :- fail.
+flora_mvd_rhs(_,_)    :- fail.
+flora_imvd_rhs(_,_)   :- fail.
+flora_isa_rhs(_,_)    :- fail.
+flora_sub_rhs(_,_)    :- fail.
+
+

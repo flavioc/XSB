@@ -1,0 +1,151 @@
+/* File:        flrlib.P
+**
+** Authors:     Guizhen Yang       (V 2.0, 04/12/1999)
+**                supervised by Michael Kifer
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+*/
+
+
+/*********************************************************************
+  03/1999, created by Guizhen Yang (guizyang@CS.SunySB.EDU)
+*********************************************************************/
+
+
+:- import
+	call/1, cputime/1, write/1, writeln/1, nl/0,
+	get0/1, functor/3
+   from standard.
+
+:- import length/2 from basics.
+
+:- import findall/3 from setof.
+
+:- import unix/1 from unix.
+
+:- import current_predicate/1 from curr_sym.
+
+:- consult(setof).
+
+
+/********************************************************************/
+flora_print_all(Gs,NVs) :-
+	( flora_check_predicates(Gs) ->
+	    cputime(T0),
+	    ( NVs = [] ->
+		( call(Gs) ->
+		    nl, writeln('Yes.')
+		  ;
+		    nl, writeln('No.')
+		)
+
+	      ;
+		findall(NVs,Gs,TempL),
+		sort(TempL,L),
+		cputime(T1),
+		T is T1-T0,
+		length(L,N),
+		( N = 0 ->
+		    nl, writeln('No.')
+		  ;
+		    flora_write_matches(L), nl,
+		    write(N), write(' solution(s) in '),
+		    write(T), write(' seconds on '),
+		    unix(hostname),
+		    nl, writeln('Yes.')
+		)
+	    )
+
+	  ;
+	    nl, writeln('No.')
+	).
+
+
+/********************************************************************/
+flora_print_one(Gs,NVs) :-
+	( flora_check_predicates(Gs)	->
+	    ( NVs = [] ->
+		( call(Gs) ->
+		    nl, writeln('Yes.')
+		  ;
+		    nl, writeln('No.')
+		)
+
+	      ;
+		( call(Gs),
+		  flora_write_pairs(NVs),
+		  flora_fail_unless_return, !
+		 ;
+		  nl, writeln('No.')
+		)
+	    )
+
+	  ;
+	    nl, writeln('No.')
+	).
+
+flora_fail_unless_return :- 
+	get0(C),
+	(C == 10 -> true ; get0(_)),
+	C=10, nl, writeln('Yes.').
+
+
+/********************************************************************/
+flora_check_predicates(G) :-
+	functor(G,F,N),
+	( current_predicate(F/N) ->
+	    true
+
+	  ;
+	    nl, write('*** Warning: '),
+	    write(F/N),
+	    writeln(' undefined'),
+	    fail
+	).
+
+flora_check_predicates(','(G,Gs)) :-
+	functor(G,F,N),
+	( current_predicate(F/N) ->
+	    flora_check_predicates(Gs)
+
+	  ;
+	    nl, write('*** Warning: '),
+	    write(F/N),
+	    writeln(' undefined'),
+	    fail
+	).
+
+
+/********************************************************************/
+flora_write_matches([]).
+
+flora_write_matches([M|Ms]) :-
+	flora_write_pairs(M),
+	nl,
+	flora_write_matches(Ms).
+
+flora_write_pairs([]).
+
+flora_write_pairs([var(N,V)|NVs]) :-
+	nl, write(N),
+	write(' = '),
+	write(V),
+	flora_write_pairs(NVs).
+
+
+/*********************** End of flrlib.P ****************************/
+
+

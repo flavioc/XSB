@@ -1,0 +1,606 @@
+/* File:      flrtokens.P
+**
+** Author(s): Bertram Ludaescher (V 1.2, 11/13/1998)
+**
+**            Guizhen Yang       (V 2.0, 04/12/1999)
+**              supervised by Michael Kifer
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
+
+/****************************************************************************
+  03/1999, extensively modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
+****************************************************************************/
+
+
+:- import repeat/0, get0/1 from standard.
+
+:- import append/3 from basics.
+
+:- export read_tokens/2.
+
+
+/****************************************************************************
+  read_tokens(-TokenList,-Status)
+  scans the input characters, constructs the list of tokens for a rule and
+  returns it as the first argument. The second argument denotes the status
+  of tokenizer (eof, not_eof, error(message)).
+****************************************************************************/
+read_tokens(TokenList,Status) :-
+	get0(C),
+	read_tokens(C,TokenList,Status).
+
+
+read_tokens(Char,TokenList,Status) :-
+	( whitespace(Char) ->
+	    TokenList=[atom(white_space)|Tokens],
+	    read_whitespace(Tokens,Status)
+
+	  ; Char >= 0'a, Char =< 0'z ->
+	    read_identifier(Char,TokenList,Status)
+
+	  ; Char >= 0'A, Char =< 0'Z ->
+	    read_variable(Char,TokenList,Status)
+
+	  ; Char == 0'_ ->
+	    read_variable(Char,TokenList,Status)
+
+	  ; Char >= 0'0, Char =< 0'9 ->
+	    read_number(Char,TokenList,Status)
+
+	  ; Char == -1 ->
+	    TokenList=[],
+	    Status=[eof]
+
+	  ; Char < 32 ->
+	    TokenList=[],
+	    Status=[not_eof,error('unexpected unprintable character')]
+
+	  ; Char >= 127 ->
+	    TokenList=[],
+	    Status=[not_eof,error('unexpected DEL or ISO character')]
+
+	  ;
+	    read_special(Char,TokenList,Status)
+	).
+
+
+/****************************************************************************
+  read_whitespace(-Tokens,-Status)
+  scans the input characters  until a non-whitespace char.
+****************************************************************************/
+read_whitespace(Tokens,Status) :-
+	repeat,
+	get0(Char),
+	not whitespace(Char),
+	!,
+	read_tokens(Char,Tokens,Status).
+
+whitespace(9).
+whitespace(10).
+whitespace(13).
+whitespace(32).
+
+
+/****************************************************************************
+  read_identifier(+Char,-TokenList,-Status)
+  reads an atom which begins with a lower case letter Char and continues
+  with letters, digits, and underscores.
+****************************************************************************/
+read_identifier(Char,[identifier(Name)|Tokens],Status) :-
+	read_name(Char,Chars,NextCh),
+	atom_chars(Name,Chars),
+	read_tokens(NextCh,Tokens,Status).
+
+
+/****************************************************************************
+  read_name(+Ch,-Chars,-LastCh)
+  reads a sequence of letters, digits, and underscores, where the previous
+  character read was Ch and it is known that Ch is to be included in the
+  result. The desired characters are returned as the list Chars, and the
+  next character read as LastCh.
+****************************************************************************/
+read_name(Ch,[Ch|Chars],LastCh) :-
+	get0(C),
+	( C >= 0'a, C =< 0'z ->
+	    read_name(C,Chars,LastCh)
+
+	  ; C >=0'A, C =< 0'Z ->
+	    read_name(C,Chars,LastCh)
+
+	  ; C >=0'0, C =< 0'9 ->
+	    read_name(C,Chars,LastCh)
+
+	  ; C == 0'_ ->
+	    read_name(C,Chars,LastCh)
+
+	  ;
+	    Chars=[],
+	    LastCh=C
+	).
+
+
+/****************************************************************************
+  read_variable(+Char,-TokenList,-Status)
+  Char is the first character of a variable name (NOT IS a variable name,
+  as in XSB).
+****************************************************************************/
+read_variable(Char,[var(Name)|Tokens],Status) :-
+	read_name(Char,Chars,NextCh),
+	atom_chars(Name,Chars),
+	read_tokens(NextCh,Tokens,Status).
+
+
+/****************************************************************************
+  Types of comments supported:
+  (1) from % or // until a LF character (10) or EOF;
+  (2) from / * until * /.
+****************************************************************************/
+read_special(0'/,Tokens,Status) :-
+	!,
+	get0(Ch),
+	( Ch == 0'/ ->
+	    read_comment_line(Tokens,Status)
+
+	  ; Ch == 0'* ->
+	    read_comment_block(Tokens,Status)
+
+	  ;
+	    Tokens=[atom('$/')|Ts],
+	    read_tokens(Ch,Ts,Status)
+	).
+
+read_comment_line(Tokens,Status) :-
+	repeat,
+	get0(Ch),
+	( Ch == 10 ->
+	    get0(NextCh)
+
+	  ; Ch == -1 ->
+	    NextCh=Ch
+
+	  ;
+	    fail
+	),
+	!,
+	read_tokens(NextCh,Tokens,Status).
+
+read_comment_block(Tokens,Status) :-
+	repeat,
+	get0(C1),
+	( C1 == 0'* ->
+	    get0(C2),
+	    ( C2 == 0'/ ->
+		get0(C3),
+		read_tokens(C3,Tokens,Status)
+
+	      ;
+		fail
+	    )
+
+	  ; C1 == -1 ->
+	    Tokens=[],
+	    Status=[eof,error('unexpected end of file in comment')]
+
+	  ;
+	    fail
+	),
+	!.
+
+read_special(0'%,Tokens,Status) :-
+	!,
+	read_comment_line(Tokens,Status).
+
+read_special(0'(,[atom('$(')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'),[atom('$)')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'[,[atom('$[')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'],[atom('$]')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'{,[atom('${')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'},[atom('$}')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'+,[atom('$+')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'-,[atom('$-')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0'.,Tokens,Status) :-
+	!,
+	get0(NextCh),
+	read_fullstop(NextCh,Tokens,Status).
+
+read_special(0',,[atom('$,')|Tokens],Status) :-
+	!,
+	get0(NextCh),
+	read_tokens(NextCh,Tokens,Status).
+
+read_special(0';,[atom('$;')|Tokens],Status) :-
+	!,
+	get0(NextCh),				
+	read_tokens(NextCh,Tokens,Status).	
+
+read_special(0'",[string_list(Chars)|Tokens],Status) :-
+	!,
+	get0(Ch),
+	read_string(Ch,0'",Chars,Tokens,Status).
+
+read_special(0'',[string_atom(Name)|Tokens],Status) :-
+	!,
+	get0(Ch),
+	read_string(Ch,0'',Chars,Tokens,Status),
+	atom_chars(Name,Chars).
+
+read_special(Ch,Tokens,Status) :-
+	( symbol_char(Ch) ->
+	    read_symbol(Ch,Chars,NextCh),
+	    append("$",Chars,L),
+	    atom_chars(T,L),
+	    Tokens=[atom(T)|Ts],
+	    read_tokens(NextCh,Ts,Status)
+
+	  ;
+	    Tokens=[],
+	    Status=[not_eof,error('expected character')]
+	).
+
+/****************************************************************************
+  read_symbol(+Ch,-Chars,-NextCh)
+  reads and returns a list of symbol characters. Any continuous sequence of
+  symbol characters will be read as a token. It will be decided later by the
+  parser whether the use of it is appropriate. Ch is known as a symbol char.
+****************************************************************************/
+read_symbol(Ch,[Ch|Chars],NextCh) :-
+	get0(C1),
+	( symbol_char(C1) ->
+	    read_symbol(C1,Chars,NextCh)
+
+	  ;
+	    Chars=[],
+	    NextCh=C1
+	).
+
+symbol_char(0'*).
+symbol_char(0':).
+symbol_char(0'<).
+symbol_char(0'=).
+symbol_char(0'>).
+symbol_char(0'?).
+symbol_char(0'@).
+symbol_char(0'\).
+symbol_char(0'~).
+symbol_char(0'!).
+symbol_char(0'&).
+symbol_char(0'|).
+
+/****************************************************************************
+  read_string(+Ch,+Quote,-Chars,-Tokens,-Status)
+  Formats supported:
+  (1) \ followed by x (X) and 1-2 hex symbols;
+  (2) \ followed by escape character;
+  (3) anything else recognized as it is;
+  (4) double quotes equal to single quote.
+****************************************************************************/
+read_string(0'\,Quote,Chars,Tokens,Status) :-
+	!,
+	get0(C1),
+	( C1 == -1 ->
+	    Chars=[0'\],
+	    Tokens=[],
+	    Status=[eof,error('unexpected end of file in string')]
+
+	  ; C1 \/ 32 =:= 0'x ->
+	    get0(C2),
+	    ( hex_symbol(C2,V2) ->
+		get0(C3),
+		( hex_symbol(C3,V3) ->
+		    V is V2*16+V3,
+		    get0(C4)
+
+		  ;
+		    V=V2,
+		    C4=C3
+	        ),
+		Chars=[V|Chs],
+		read_string(C4,Quote,Chs,Tokens,Status)
+
+	      ;
+		Chars=[0'\,C1],
+		Tokens=[],
+		( C2 == -1 ->
+		    Status=[eof,error('unexpected end of file')]
+
+		  ;
+		    Status=[not_eof,error('hex symbol expected in string')]
+		)
+	    )
+
+	  ; 
+	    (escape_char(C1,V) -> true ; V=C1),
+	    Chars=[V|Chs],
+	    get0(C2),
+	    read_string(C2,Quote,Chs,Tokens,Status)
+	).
+
+read_string(Quote,Quote,Chars,Tokens,Status) :-
+	!,
+	get0(C1),
+	( C1 == Quote ->
+	    Chars=[Quote|Chs],
+	    get0(C2),
+	    read_string(C2,Quote,Chs,Tokens,Status)
+
+	  ;
+	    Chars=[],
+	    read_tokens(C1,Tokens,Status)
+	).
+
+read_string(-1,_,[],[],[eof,error('unexpected end of file')]) :-
+	!.
+
+read_string(Ch,Quote,[Ch|Chars],Tokens,Status) :-
+	get0(C1),
+	read_string(C1,Quote,Chars,Tokens,Status).
+
+hex_symbol(Ch,Value) :-
+	( Ch >= 0'0, Ch =< 0'9 ->
+	    Value is Ch-0'0
+
+	  ; Ch >= 0'a, Ch =< 0'f ->
+	    Value is Ch-0'a+10
+
+	  ; Ch >= 0'A, Ch =< 0'F ->
+	    Value is Ch-0'A+10
+	).
+
+
+/****************************************************************************
+  This table is for ASCII.
+****************************************************************************/
+escape_char(0'n, 10).		% \n = NewLine
+escape_char(0'N, 10).		% \N = NewLine
+escape_char(0't,  9).		% \t = Tab
+escape_char(0'T,  9).		% \T = Tab
+escape_char(0'r, 13).		% \r = Return
+escape_char(0'R, 13).		% \R = Return
+escape_char(0'v, 11).		% \v = Vertical tab
+escape_char(0'V, 11).		% \V = Vertical tab
+escape_char(0'b,  8).		% \b = Backspace
+escape_char(0'B,  8).		% \B = Backspace
+escape_char(0'f, 12).		% \f = FormFeed
+escape_char(0'F, 12).		% \F = FormFeed
+escape_char(0'e, 27).		% \e = Escape
+escape_char(0'E, 27).		% \E = Escape
+escape_char(0'd,127).		% \d = Delete
+escape_char(0'D,127).		% \D = Delete
+escape_char(0's, 32).		% \s = visible Space
+escape_char(0'S, 32).		% \S = visible Space
+
+
+/****************************************************************************
+  read_fullstop(+Ch,-TokenList,-Status)
+  processes the character immediately read after a dot.
+****************************************************************************/
+read_fullstop(Ch,TokenList,Status) :-
+	( whitespace(Ch) ->
+	    TokenList=[atom(rule_delimeter)],
+	    Status=[not_eof]
+
+	  ; Ch == -1 ->
+	    TokenList=[atom(rule_delimeter)],
+	    Status=[eof]
+
+	  ; Ch == 0'. ->
+	    TokenList=[atom('$..')|Tokens],
+	    get0(C1),
+	    read_tokens(C1,Tokens,Status)
+
+	  ;
+	    TokenList=[atom('$.')|Tokens],
+	    read_tokens(Ch,Tokens,Status)
+	).
+
+
+/****************************************************************************
+  read_number(+Char,-Tokens,-Status)
+  Char is already known to be a digit.
+****************************************************************************/
+read_number(Char,TokenList,Status) :-
+	read_digits(Char,IntList,NextCh),
+	number_chars(N,IntList),
+	( NextCh == 0'' ->
+	    ( N >= 2, N =< 36 ->
+		get0(C1),
+		( symbol_value(N,C1,_) ->
+		    read_based(C1,C2,N,0,Number),
+		    TokenList=[num(Number)|Tokens],
+		    read_tokens(C2,Tokens,Status)
+
+		  ;
+		    TokenList=[num(N)],
+		    ( C1 == -1 ->
+			Status=[eof,error('unexpected end of file')]
+
+		      ;
+			Status=[not_of,error('invalid symbol in number')]
+		    )
+		)
+
+	      ; N == 0 ->
+		get0(C1),
+		( C1 == -1 ->
+		    TokenList=[num(0)],
+		    Status=[eof,error('unexpected end of file in integer')]
+
+		  ;
+		    TokenList=[num(C1)|Tokens],
+		    get0(C2),
+		    read_tokens(C2,Tokens,Status)
+		)
+
+	      ;
+		TokenList=[num(N)],
+		Status=[not_eof,error('invalid radix')]
+	    )
+
+	  ; NextCh == 0'. ->
+	    get0(C1),
+	    ( C1 >= 0'0, C1 =< 0'9 ->
+		read_float(C1,IntList,TokenList,Status)
+
+	      ; 
+		TokenList=[num(N)|Tokens],
+		read_fullstop(C1,Tokens,Status)
+	    )
+
+	  ;
+	    TokenList=[num(N)|Tokens],
+	    read_tokens(NextCh,Tokens,Status)
+	).
+
+
+/****************************************************************************
+  read_digits(+Ch,-Chars,-NextCh)
+  returns in Chars a list of digits.
+****************************************************************************/
+read_digits(Ch,Chars,NextCh) :-
+	( Ch >= 0'0, Ch =< 0'9 ->
+	    Chars=[Ch|Rest],
+	    get0(C1),
+	    read_digits(C1,Rest,NextCh)
+
+	  ; Ch == 0'_ ->
+	    get0(C1),
+	    read_digits(C1,Chars,NextCh)
+
+	  ;
+	    NextCh=Ch,
+	    Chars=[]
+	).
+
+
+/****************************************************************************
+  read_based(+Ch,-NextCh,+Base,+N0,-N)
+  reads an integer in base Base. The base has been read as Base.
+****************************************************************************/
+read_based(Ch,NextCh,Base,N0,N) :-
+	( symbol_value(Base,Ch,Digit) ->
+	    N1 is N0*Base+Digit,
+	    get0(C1),
+	    read_based(C1,NextCh,Base,N1,N)
+
+	  ; Ch == 0'_ ->
+	    get0(C1),
+	    read_based(C1,NextCh,Base,N0,N)
+
+	  ; 
+	    N=N0,
+	    NextCh=Ch
+	).
+
+
+/****************************************************************************
+  symbol_value(+Base,+Char,-Digit)
+  checks whether Char denotes a valid symbol in base Base and returns the
+  value in Digit.
+****************************************************************************/
+symbol_value(Base,Char,Digit) :-
+	( Char >= 0'0, Char =< 0'9 ->
+	    Digit is Char-0'0
+
+	  ; Char >= 0'A, Char =< 0'Z ->
+	    Digit is Char-0'A+10
+
+	  ; Char >= 0'a, Char =< 0'z ->
+	    Digit is Char-0'a+10
+
+	  ;
+	    Digit=99
+	),
+	Digit<Base.
+
+
+/****************************************************************************
+  read_float(+Char,+Integer,Tokens,Status)
+  is called when we have parsed <digit>+ '. <digit>. Integer is the list of
+  digits preceding the decimal point, and Char is the first digit after the
+  decimal point.
+****************************************************************************/
+read_float(Char,Integer,[num(Number)|Tokens],Status) :-
+	read_digits(Char,Fraction,C1),
+	append(Integer,[0'.|Fraction],L1),
+	( C1 \/ 32 =:= 0'e ->
+	    get0(C2),
+	    ( C2 =\= 0'-, C2 =\= 0'+ ->
+		Sign=[],
+		C3=C2
+
+	      ;
+		Sign=[C2],
+		get0(C3)
+	    ),
+	    append(L1,[C1|Sign],L2),
+	    ( C3 >= 0'0, C3 =< 0'9 ->
+		read_digits(C3,Exponent,NextCh),
+		append(L2,Exponent,L3),
+		number_chars(Number,L3),
+		read_tokens(NextCh,Tokens,Status)
+
+	      ;
+		atom_chars(Number,L2),
+		( C3 == -1 ->
+		    Status=[eof,error('unexpected end of file')]
+
+		  ;
+		    Status=[not_eof,error('syntax error in exponent')]
+		),
+		Tokens=[]
+	    )
+
+	  ;
+	    number_chars(Number,L1),
+	    read_tokens(C1,Tokens,Status)
+	).
+
