@@ -173,6 +173,9 @@ xsbBool sys_system(int callno)
     sleep(ptoc_int(2));
 #endif
     return TRUE;
+  case GET_TMP_FILENAME:
+    ctop_string(2,string_find(tmpnam(NULL),1));
+    return TRUE;
   case IS_PLAIN_FILE:
   case IS_DIRECTORY:
   case STAT_FILE_TIME:
@@ -840,6 +843,9 @@ xsbBool file_stat(int callno, char *file)
     } else  /* no file */
       return FALSE;
   }
+  default:
+    xsb_abort("Unsupported file_stat code: %d\n", callno);
+    return FALSE;
   } /* switch */
 }
 

@@ -36,3 +36,4 @@
 #define STAT_FILE_TIME           9
 #define STAT_FILE_SIZE           10
 #define EXEC                     11
+#define GET_TMP_FILENAME         12

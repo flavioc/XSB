@@ -277,5 +277,6 @@ path_sysop(newerthan,Path1,Path2) :-
 	file_time(Path2,time(Time21,Time22)),
 	time(Time11,Time12) @>= time(Time21,Time22).
 path_sysop(size,Path,Size) :- sys_system(STAT_FILE_SIZE,Path,Size, _,_,_,_).
-
+path_sysop(tmpfilename,TmpName) :-
+	sys_system(GET_TMP_FILENAME,TmpName,_,_,_,_,_).
 

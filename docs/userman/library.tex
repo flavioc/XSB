@@ -1382,6 +1382,9 @@ corresponding system call succeeds.
   of the form {\tt [high,low]} where {\tt low} is the least significant 24
   bits of the byte-size and {\tt high} is the most significant bits (25th)
   and up. The actual value is thus $\tt high*2^{24} + low$.
+  \ournewitem{path\_sysop(tmpfilename, -Name)}{file\_io}
+  Returns the name of a new temporary file. This is useful when the
+  application needs to open a completely new temporary file.
 \end{description}
 %%
 
