@@ -123,8 +123,6 @@ extern char *install_dir;
 extern char *xsb_config_file; /* configuration.P */
 extern char *user_home; /* the user HOME dir or install dir, if HOME is null */
 
-void process_long_option(char *option);
-
 /*==========================================================================*/
 
 static void display_file(char *infile_name)
@@ -231,6 +229,28 @@ static void init_open_files(void)
   setvbuf(stdfdbk, NULL, _IONBF, 0);
 
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
+}
+
+/*==========================================================================*/
+
+/* if command line option is long --optionname, then the arg here is
+   'optionname'. Process it and return.
+*/
+static void process_long_option(char *option)
+{
+  if (0==strcmp(option, "nobanner")) {
+    flags[BANNER_CTL] *= NOBANNER;
+  } else if (0==strcmp(option, "quietload")) {
+    flags[BANNER_CTL] *= QUIETLOAD;
+  } else if (0==strcmp(option, "noprompt")) {
+    flags[BANNER_CTL] *= NOPROMPT;
+  } else if (0==strcmp(option, "help")) {
+    help_message();
+  } else if (0==strcmp(option, "version")) {
+    version_message();
+  }
+
+  return;
 }
 
 /*==========================================================================*/
@@ -723,27 +743,6 @@ void init_symbols(void)
   /* make another reference to global module -- "usermod" */
   tp = insert_module(T_MODU, "usermod");	/* loaded */
   set_ep(pair_psc(tp), get_ep(global_mod));
-}
-
-
-/* if command line option is long --optionname, then the arg here is
-   'optionname'. Process it and return.
-*/
-void process_long_option(char *option)
-{
-  if (0==strcmp(option, "nobanner")) {
-    flags[BANNER_CTL] *= NOBANNER;
-  } else if (0==strcmp(option, "quietload")) {
-    flags[BANNER_CTL] *= QUIETLOAD;
-  } else if (0==strcmp(option, "noprompt")) {
-    flags[BANNER_CTL] *= NOPROMPT;
-  } else if (0==strcmp(option, "help")) {
-    help_message();
-  } else if (0==strcmp(option, "version")) {
-    version_message();
-  }
-
-  return;
 }
 
 /*==========================================================================*/
