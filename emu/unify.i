@@ -24,149 +24,108 @@
 ** 
 */
 
+tail_recursion:
+     deref2(op1, goto label_op1_free);
+     deref2(op2, goto label_op2_free);
 
-     deref(op1);
      switch (cell_tag(op1)) {
      case FREE:
      case REF1: 
-	deref(op2);
+     label_op2_free: bind_copy0((CPtr)(op2), op1);
+                     IFTHEN_SUCCEED;
+		     break;
+     label_op1_free:
+        deref(op2);
 	if (isref(op2)) {
-	    /* op2 is FREE 			free  ... free */
-		if ( (CPtr)(op1) != (CPtr)(op2) ) {
-		    if ( (CPtr)(op1) < (CPtr)(op2) ) {
+	  /* op2 is FREE 			free  ... free */
+	  if ( (CPtr)(op1) != (CPtr)(op2) ) {
+	    if ( (CPtr)(op1) < (CPtr)(op2) ) {
 #ifdef CHAT
-			if ( (CPtr)(op1) < hreg )  
+	      if ( (CPtr)(op1) < hreg )  
 #else
-			if ( (CPtr)(op1) < hreg ||  (CPtr)(op1) < hfreg )  
+		if ( (CPtr)(op1) < hreg ||  (CPtr)(op1) < hfreg )  
 #endif
-						/* op1 not in loc stack */
-			    {bind_ref((CPtr)(op2), (CPtr)(op1));}
-			else  /* op1 points to op2 */
-			    {bind_ref((CPtr)(op1), (CPtr)(op2));}
-             /* doc tls -- extra garbage because stacks point in diff dirs. */
-		    }
-		    else { /* op1 > op2 */
+		  /* op1 not in local stack */
+		  { bind_ref((CPtr)(op2), (CPtr)(op1)); }
+		else  /* op1 points to op2 */
+		  { bind_ref((CPtr)(op1), (CPtr)(op2)); }
+	      /* doc tls -- extra garbage because stacks point in diff dirs. */
+	    }
+	    else { /* op1 > op2 */
 #ifdef CHAT
-			if  ((CPtr)(op2) < hreg )
+	      if  ((CPtr)(op2) < hreg )
 #else
-			if  ((CPtr)(op2) < hreg || (CPtr)(op2) < hfreg )
+		if  ((CPtr)(op2) < hreg || (CPtr)(op2) < hfreg )
 #endif
-			    {bind_ref((CPtr)(op1), (CPtr)(op2));}
-			else
-			    {bind_ref((CPtr)(op2), (CPtr)(op1));}
-		    }
-		}
-		IFTHEN_SUCCEED;
+		  { bind_ref((CPtr)(op1), (CPtr)(op2)); }
+		else
+		  { bind_ref((CPtr)(op2), (CPtr)(op1)); }
+	    }
+	  }
+	  IFTHEN_SUCCEED;
 	}
-	else {	bind_copy0((CPtr)(op1), op2);
-		IFTHEN_SUCCEED;
+	else { bind_copy0((CPtr)(op1), op2);
+	       IFTHEN_SUCCEED;
 	}
 	break; /* for op1=free */
 
-    case CS: /* op1=c/s */
-	deref(op2);
-	if (isref(op2)) {
-	    /* op2 is FREE		c/s ... free */
-		bind_copy0((CPtr)(op2), op1);
-	        IFTHEN_SUCCEED;
-	}
-	else if (isconstr(op2)) {
-        	if (op1 != op2) {  /* a != b */
-		    op1 = (Cell)(clref_val(op1));
-		    op2 = (Cell)(clref_val(op2));
-		    if (((Pair)(CPtr)op1)->psc_ptr!=((Pair)(CPtr)op2)->psc_ptr){
+     case CS: /* op1=c/s */
+       if (isconstr(op2)) {
+	 if (op1 != op2) {  /* a != b */
+	   op1 = (Cell)(clref_val(op1));
+	   op2 = (Cell)(clref_val(op2));
+	   if (((Pair)(CPtr)op1)->psc_ptr!=((Pair)(CPtr)op2)->psc_ptr){
 						/* 0(a) != 0(b) */
-			IFTHEN_FAILED;
-		    } else {
-	               arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);
-        	       for ( i=1; i <= arity;  i++ ) {
-			 if(!unify(*((CPtr)op1+i), *((CPtr)op2+i))) {
-			     IFTHEN_FAILED; 
-			 }
-		       }
-		    }
-		}
-		IFTHEN_SUCCEED;
-	      }
-	      else { /* op2 is STRING, FLOAT, LIST, or INT.	*/
-		IFTHEN_FAILED;
-	      }
-	break;	/* for op1=c/s */
-
-    case LIST:	/* op1=list */
-        deref(op2);
-        if (isref(op2)) {
-	    /* op2 is FREE			   list ... free */
-		bind_copy0((CPtr)(op2), op1);
-		IFTHEN_SUCCEED;
-	}
-	else if (islist(op2)) {			/* list ... list */
-		if (op1 != op2) {
-		    op1 = (Cell)(clref_val(op1));
-		    op2 = (Cell)(clref_val(op2));
-		    if ( !unify(*((CPtr)op1), *((CPtr)op2))
-		             || !unify(*((CPtr)op1+1), *((CPtr)op2+1)) ) {
-			  IFTHEN_FAILED;
-		    }
-		}
-		IFTHEN_SUCCEED;
+	     IFTHEN_FAILED;
+	   } else {
+	     arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);
+	     for ( i=1; i <= arity;  i++ ) {
+	       if(!unify(*((CPtr)op1+i), *((CPtr)op2+i))) {
+		 IFTHEN_FAILED; 
+	       }
 	     }
-	     else { IFTHEN_FAILED; }
-	break; /* op1=list */
+	   }
+	 }
+	 IFTHEN_SUCCEED;
+       }
+       else { /* op2 is STRING, FLOAT, LIST, or INT.	*/
+	 IFTHEN_FAILED;
+       }
+       break;	/* for op1=c/s */
 
-    case INT:	/* op1=num */
-        deref(op2);
-	if (isref(op2)) {
-	    /* op2 is FREE:			   num ... free */
-		bind_copy0((CPtr)(op2), op1);
-		IFTHEN_SUCCEED;
-	}
-	else if (isinteger(op2)) {
-	    	/* num ... num */
-		if (numequal(op2, op1)) {IFTHEN_SUCCEED;} else {IFTHEN_FAILED;}
-	     }
-	     else	/* op2 is FLOAT, STRING, CS, or	LIST.	*/
-		  { IFTHEN_FAILED; }
-	break; /* op1=int */
-
-    case STRING:	/* op1=string */
-        deref(op2);
-        if (isref(op2)) {
-	    /* op2 is FREE			   string ... free */
-		bind_copy0((CPtr)(op2), op1);
-		IFTHEN_SUCCEED;
-	}
-	else if (isstring(op2)) {
-		if (string_val(op2)==string_val(op1)) {IFTHEN_SUCCEED;}
-		else {IFTHEN_FAILED;}
-	     }
-	     else	/* op2 is INT, FLOAT, CS, or LIST.	*/
-		  { IFTHEN_FAILED; }
-	break; /* op1=string*/
-
-    case FLOAT:
-        deref(op2);
-        if (isref(op2)) {
-	    /* op2 is FREE			   float ... free */
-		bind_copy0((CPtr)(op2), op1);
-		IFTHEN_SUCCEED;
-	}
-	else if (isfloat(op2)) {
-#ifdef FLOAT_UNIFICATION_OUT
-		unify_float_unification_exception;
-		IFTHEN_FAILED;
+     case LIST:	/* op1=list */
+       if (islist(op2)) {			/* list ... list */
+	 if (op1 != op2) {
+	   op1 = (Cell)(clref_val(op1));
+	   op2 = (Cell)(clref_val(op2));
+#ifdef OLD
+	   if ( !unify(*((CPtr)op1), *((CPtr)op2))
+		   || !unify(*((CPtr)op1+1), *((CPtr)op2+1)) )
+	     { IFTHEN_FAILED; }
 #else
-		if (float_val(op1)==float_val(op2)) {IFTHEN_SUCCEED;}
-		else {IFTHEN_FAILED;}	
-#endif
+	   if ( !unify(*((CPtr)op1), *((CPtr)op2)))
+	     { IFTHEN_FAILED; }
+	   else
+	     { op1 = (Cell)((CPtr)op1+1);
+	       op2 = (Cell)((CPtr)op2+1);
+	       goto tail_recursion;
 	     }
-	     else	/* op2 is STRING, INT, CS, or LIST.	*/
-		  { IFTHEN_FAILED; }
-	break; /* op1=float */
+#endif
+	 }
+	 IFTHEN_SUCCEED;
+       }
+       else { IFTHEN_FAILED; }
+       break; /* op1=list */
 
-    default:
-	xsb_abort("Unknown term type in unify()");
-	{ IFTHEN_FAILED; }
-	break;
-
+     case INT:    /* op1=num */
+     case STRING: /* op1=string */
+     case FLOAT:
+       if (op1 == op2) { IFTHEN_SUCCEED; } else { IFTHEN_FAILED; }
+       break;     /* op1=atomic */
+       
+       /*   default:
+	    xsb_abort("Unknown term type in unify()");
+	    { IFTHEN_FAILED; }
+	    break; */
     }
+

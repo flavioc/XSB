@@ -26,10 +26,12 @@
 
 /* deref expects argument of type Cell */
 
-#define deref(op) while (isref(op)) { \
-		    if (op == follow(op)) \
-  			break; \
-		    op = follow(op); }
+#define deref(op) deref2(op,break)
+
+#define deref2(op,stat) while (isref(op)) { \
+                    if (op == follow(op)) \
+                        stat; \
+                    op = follow(op); }
 
 #define cptr_deref(op) while (isref(op)) { \
 			 if (op == (CPtr) cell(op)) \
