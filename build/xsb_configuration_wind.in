@@ -54,15 +54,23 @@ xsb_configuration(compiler, 'cl.exe').
 xsb_configuration(compiler_flags, '').
 xsb_configuration(loader_flags, '').
 
+%% Change these to yes, if these libs are available
 xsb_configuration(regmatch_support, 'no').
 xsb_configuration(wildmatch_support, 'no').
 
+%% Change perl support to yes, if you have perl
 xsb_configuration(perl_support, 'no').
 %% The folowing two must not be set, if perl_support=no
 xsb_configuration(perl_archlib, '').
 xsb_configuration(perl_cc_compiler, '').
 xsb_configuration(perl_ccflags, '').
 xsb_configuration(perl_libs, '').
+
+%% Change libwww_support to yes and set the directories appropriately
+xsb_configuration(libwww_support, 'no').
+xsb_configuration(libwww_ccflags, '').
+xsb_configuration(libwww_ldflags, '').
+
 
 xsb_configuration(site_dir, 'C:\xsb_site').
 xsb_configuration(srcdir, 'C:\xsb').

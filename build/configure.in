@@ -499,8 +499,11 @@ fi
 
 dnl --with-libwww=DIR
 libwww_support="no"
-if test -n "$with_libwww" && test -d "$with_libwww"; then
+libwww_config_prog="$with_libwww/bin/libwww-config"
+if test -n "$with_libwww" && test -x "$libwww_config_prog"; then
    libwww_support="yes"
+   libwww_ccflags="`$libwww_config_prog --cflags`"
+   libwww_ldflags="-L$with_libwww/lib `$libwww_config_prog --libs`"
 fi
 
 dnl check for Make feature
@@ -754,6 +757,10 @@ AC_SUBST(perl_archlib)
 AC_SUBST(perl_cc_compiler)
 AC_SUBST(perl_ccflags)
 AC_SUBST(perl_libs)
+
+AC_SUBST(libwww_support)
+AC_SUBST(libwww_ccflags)
+AC_SUBST(libwww_ldflags)
 
 # Java support
 AC_CHECK_PROG(java_support, javac, "yes", "no")
@@ -1146,16 +1153,26 @@ echo "  POSIX wildcard matching libraries:              $wildmatch_support"
 echo "  Perl support:                                   $perl_support"
 
 if test "$perl_support" = "yes"; then
-   echo "
+   cat <<EOT
   Perl archlib:                                   $perl_archlib/CORE
   Perl C compiler:                                $perl_cc_compiler
   Perl C flags:                                   $perl_ccflags
-  Perl loader flags:                              $perl_libs"
+  Perl loader flags:                              $perl_libs
+EOT
+fi
+
+echo "  Libwww support:                                 $libwww_support"
+if test "$libwww_support" = "yes"; then
+   cat <<EOT
+  Libwww C flags:                                 $libwww_ccflags
+  Libwww loader flags:                            $libwww_ldflags
+EOT
 fi
 
 if test -n "$javac"; then
-   echo "
-  Java compiler:                                  $javac"
+   cat <<EOT
+  Java compiler:                                  $javac
+EOT
 fi
 
 
