@@ -567,7 +567,7 @@ query {\tt ?- win(1)}.  Does the query succeed?  Try {\tt
 tnot(win(1))}.
 
 Now query the table with the standard XSB predicate {\tt
-get\_residual/2}, e.g. {\tt ?- get_residual(win(1),X)}.  Can you guess
+get\_residual/2}, e.g. {\tt ?- get\_residual(win(1),X)}.  Can you guess
 what is happening with this non-stratified program?
 \end{exercise}
 
@@ -724,9 +724,9 @@ when the second {\tt p} in this query is called, all simplification on
 \begin{exercise} \label{ex:true-val}
 Write a predicate {\tt wfs\_call(+Tpred,?Val)} such that if {\tt
 Tpred} is a ground call to a tabled predicate, {\tt
-wfs\_call(#Tpred,?Val)} calls {\tt Tpred} and unifies {\tt Val} with
+wfs\_call(+Tpred,?Val)} calls {\tt Tpred} and unifies {\tt Val} with
 the truth value of {\tt Tpred} under the well-founded semantics.
-{\em Hint: use {\tt get_residual/2}}.
+{\em Hint: use {\tt get\_residual/2}}.
 
 How would you modify {\tt wfs\_call(?Tpred,?Val)} so that it properly
 handled cases in which {\tt Tpred} is non-ground.

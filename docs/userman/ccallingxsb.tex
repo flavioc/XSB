@@ -7,11 +7,11 @@ There are many situations in which it may be desirable to use
 which is written in another language.  To do this, one wants to be
 able to {\em call}\ \ourprolog\ from the host language, often C,
 providing queries for \ourprolog\ to evaluate and retrieving back the
-answers.  An interface for calling \ourprolog\ from C is provided for
-this purpose and is described in this chapter.  Simple examples of
-the use of this interface are given in the {\tt XSB/examples/c\_calling\_XSB}
-subdirectory, in files {\tt cmain.c}, {\tt cmain2.c}, {\tt ctest.P}, and {\tt
-Makefile}.
+answers.  An interface for calling \ourprolog\ from C (or other
+language) is provided for this purpose and is described in this
+chapter.  Simple examples of the use of this interface are given in
+the {\tt XSB/examples/c\_calling\_XSB} subdirectory, in files {\tt
+cmain.c}, {\tt cmain2.c}, {\tt ctest.P}, and {\tt Makefile}.
 
 \section{C Functions for Calling \ourprolog}
 
@@ -33,6 +33,14 @@ xsb\_query\_string\_string(query,buff,sep)} function allows
 you to pass a query to XSB as a string, and have its (first) answer
 returned as a string.  Subsequent answers can be calculated and
 retrieved using {\tt xsb\_next\_string(buff,sep)}.
+
+The next level provides routines that return answers with an interface
+that does not require complex C types.  The routines at this level
+are: {\tt
+xsb\_query\_string\_string\_b(query,buff,bufflen,anslen,sep)}, {\tt
+xsb\_next\_string\_b(buff,bufflen,anslen,sep)}, and {\tt
+xsb\_get\_last\_answer(buff,bufflen,anslen)}.  They are normally
+intended to be used with the routines above.
 
 There are lower-level interfaces that allow you to manipulate directly
 the \ourprolog\ data structures (both to construct queries and to
@@ -156,7 +164,7 @@ is similar to xsb\_query, except the only way to retrieve answers is
 through Register 2.  The ability to create the return structure and
 bind variables in it is particularly useful in this function.
 
-\ouritem{int xsb\_query\_string\_string(char *query, VarString *buff
+\ouritem{int xsb\_query\_string\_string(char *query, VarString *buff,
 char *sep)} \index{{\tt xsb\_query\_string\_string}} This function
 is a variant of {\tt xsb\_query\_string} that returns its answer (if
 there is one) as a string.  An example call is:
@@ -166,7 +174,9 @@ rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,";");
 The first argument is the period-terminated query string.  The second
 argument is a variable string buffer in which the subroutine returns the answer
 (if any.) The variable string data type {\tt VarString}  is explained in
-Section~\ref{sec-varstring}. The last argument is a string
+Section~\ref{sec-varstring}. (Use the following function if you cannot 
+declare a parameter of this type in your programming language.)  
+The last argument is a string
 provided by the caller, which is used to separate fields in the returned
 answer.  For the example query, buff would be set to the string:
 \begin{verbatim}
@@ -176,12 +186,43 @@ which is the first answer to the append query.  There are two fields of
 this answer, corresponding to the two variables in the query, \verb|X|
 and \verb|Y|.  The bindings of those variables make up the answer and
 the individual fields are separated by the \verb|sep| string, here the
-semicolon (\verb|;|).  If the answer would overflow the buffer, the
-subroutine returns 3 as its function value.  Otherwise its returns are
+semicolon (\verb|;|).  Its returns are
 just as for {\tt xsb\_query\_string}.  In the answer string, \ourprolog\
 atoms are printed in their in their standard print form (without
 quotes).  Complex terms are printed in a canonical form, with atoms
 quoted if necessary, and lists produced in the normal list notation.
+
+\ouritem{int xsb\_query\_string\_string\_b(char *query, char *buff,
+int bufflen, int *anslen, char *sep)} \index{{\tt
+xsb\_query\_string\_string\_b}} This function provides a lower-level
+interface to {\tt xsb\_query\_string\_string} (not using the {\tt
+VarString} type), which makes it easier for non-C callers (such as
+Visual Basic or Delphi) to access XSB functionality.  The first and
+last arguments are the same as in {\tt xsb\_query\_string\_string}.
+The \verb|buff|, \verb|bufflen|, and \verb|anslen| parameters are used
+to pass the answer (if any) back to the caller.  \verb|buff| is a
+buffer provided by the caller in which the answer is returned.
+\verb|bufflen| is the length of the buffer (\verb|buff|) and is
+provided by the caller.  \verb|anslen| is returned by this routine and
+is the length of the computed answer.  If that length is less than
+\verb|bufflen|, then the answer is put in \verb|buff| (and
+null-terminated).  If the answer is longer than will fit in the buffer
+(with the null terminator), then the answer is not copied to the
+buffer and 3 is returned.  In this case the caller can retrieve the
+answer by providing a bigger buffer (of size greater than the returned
+\verb|anslen|) in a call to {\tt xsb\_get\_last\_answer\_string}.
+
+\ouritem{int xsb\_get\_last\_answer\_string(char *buff, int bufflen,
+int *anslen)} \index{{\tt xsb\_get\_last\_answer\_string\_b}} This
+function is used only when a call to {\tt
+xsb\_query\_string\_string\_b} or to {\tt xsb\_next\_string\_b}
+returns a 3, indicating that the buffer provided was not big enough to
+contain the computed answer.  In that case the user may allocate a
+larger buffer and then call this routine to retrieve the answer (that
+had been saved.)  Only one answer is saved, so this routine must
+called immediately after the failing call in order to get the right
+answer.  The parameters are the same as the 2nd through 4th parameters
+of {\tt xsb\_query\_string\_string\_b}.
 
 \ouritem{int xsb\_next()} \index{{\tt xsb\_next}}
 This routine is called after {\tt xsb\_query} (which must have
@@ -214,8 +255,18 @@ returns with buff set to
         [a];[b,c]
 \end{verbatim}
 the second answer to the indicated query. {\tt xsb\_next\_string}
-returns codes just as {\tt xsb\_next}, but returns 3 if the answer
-buffer would overflow.
+returns codes just as {\tt xsb\_next}.
+
+\ouritem{int xsb\_next\_string\_b(char *buff, int bufflen, int
+*anslen, char *sep)} \index{{\tt xsb\_next\_string}} This routine is a
+variant of {\tt xsb\_next\_string} that does not use the {\tt
+VarString} type.  Its parameters are the same as the 2nd through 5th
+parameters of {\tt xsb\_query\_string\_string\_b}.  The next answer to
+the current query is returned in \verb|buff|, if there is enough
+space.  If the buffer would overflow, this routine returns 3, and the
+answer can be retrieved by providing a larger buffer in a call to {\tt
+xsb\_get\_last\_answer\_string\_b}.  In any case, the length of the
+answer is returned in \verb|anslen|.
 
 \ouritem{int xsb\_close\_query()} \index{{\tt xsb\_close\_query}}
 This routine closes a query, before all its answers have been
