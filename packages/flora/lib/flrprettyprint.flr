@@ -35,7 +35,7 @@
 
 %%:- export flora_prettyprint/1.
 
-Class :: flora_metaclass.
+Obj : flora_pp_superclass.
 
 
 %% Methods to ignore during pretty printing
@@ -51,6 +51,7 @@ flora_prettyprint_class(Class, OutFile) :-
 flora_prettyprint_class(Class) :-
     	flora_prettyprint(Class),
 	X : Class,
+	X[],  %% to ground X, if non-ground
 	flora_prettyprint(X),
 	fail.
 
@@ -73,7 +74,7 @@ flora_pp_write_header(X) :-
     	fmt_write('''%s''[', f(X)),
     	nl.
 flora_pp_write_header(X) :-
-    	is_string(X),
+    	is_charlist(X),
 	!,
     	fmt_write('"%s"[',arg(X)),
     	nl.
@@ -159,7 +160,7 @@ flora_pp_write_value(Val) :-
 	!,
 	fmt_write('''%s''', arg(Val)).
 flora_pp_write_value(Val) :-
-	is_string(Val),
+	is_charlist(Val),
 	!,
 	fmt_write('"%s"', arg(Val)).
 flora_pp_write_value(Val) :- write(Val).
