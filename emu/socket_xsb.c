@@ -694,7 +694,7 @@ xsbBool xsb_socket_request(void)
     /* specify the time out */
     timeout_term = reg_term(3);
     if (isinteger(timeout_term)|isboxedinteger(timeout_term)) {
-      timeout = int_val(timeout_term);
+      timeout = oint_val(timeout_term);
       /* initialize tv */
       tv = (struct timeval *)malloc(sizeof(struct timeval));
       tv->tv_sec = timeout;

@@ -51,7 +51,7 @@ typedef unsigned long word;
 typedef byte *pb;
 typedef word *pw;
 typedef int (*PFI)(void);
-typedef int *int_ptr;
+// typedef int *int_ptr;
 
 
 #endif /* BASIC_TYPES_INCLUDED */

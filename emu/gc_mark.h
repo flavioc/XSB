@@ -219,7 +219,8 @@ static int mark_cell(CPtr cell_ptr)
 {
   CPtr p ;
   Cell cell_val ;
-  int  i, m, arity, tag ;
+  Integer i;
+  int  m, arity, tag ;
   int  mark_top = 0 ;
   CPtr mark_stack[MAXS+MAX_ARITY+1] ;
 
@@ -282,7 +283,8 @@ static int mark_cell(CPtr cell_ptr)
 
 static int mark_root(Cell cell_val)
 {
-  int m, i, arity ;
+  Integer i;
+  int m, arity ;
   CPtr cell_ptr;
   int tag, whereto ;
   Cell v ;
@@ -486,7 +488,8 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 
 static int mark_query(void)
 {
-  int yvar, i, total_marked = 0 ;
+  Integer i;
+  int yvar, total_marked = 0 ;
   CPtr b,e,*tr,a,d;
   byte *cp;
   int first_time;
@@ -611,7 +614,8 @@ restart:
 static int mark_hreg_from_choicepoints(void)
 {
   CPtr b, bprev, h;
-  int  i, m;
+  Integer i;
+  int  m;
 
   /* this has to happen after all other marking ! */
   /* actually there is no need to do this for a copying collector */

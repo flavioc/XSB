@@ -52,7 +52,7 @@ switch (ptoc_int(1)) {
    ODBCDisconnect();
    break;
  case ODBC_SET_CURSOR_CLOSE: {
-   int i = ptoc_int(2);
+   Integer i = ptoc_int(2);
    SetCursorClose(i);
    break;
  }

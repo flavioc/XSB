@@ -192,7 +192,7 @@ static void sort_buffer(unsigned long *indata, unsigned long insize)
   unsigned long *addr_stack[4000];
   unsigned long size_stack[4000];
   int stack_index=0;
-  int leftsize;
+  Integer leftsize;
 #ifdef GC_PROFILE
   unsigned long begin_sorting, end_sorting;
 #endif
@@ -335,7 +335,7 @@ static CPtr slide_heap(int num_marked)
 
   { CPtr destination, hptr ;
     long garbage = 0 ;
-    int index ;
+    Integer index ;
 
     /* one phase upwards - from top of heap to bottom of heap */
 
@@ -488,10 +488,10 @@ static CPtr slide_heap(int num_marked)
 
 } /* slide_heap */
 
-static void check_zero(char *b, int l, char *s)
+static void check_zero(char *b, Integer l, char *s)
 { 
 #ifdef SAFE_GC
-  int i = 0 ;
+  Integer i = 0 ;
   while (l--)
   {
     if (*b++)

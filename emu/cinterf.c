@@ -320,7 +320,7 @@ DllExport prolog_term call_conv p2p_deref(prolog_term term)
 char *p_charlist_to_c_string(prolog_term term, VarString *buf,
 			     char *in_func, char *where)
 {
-  int head_val;
+  Integer head_val;
   char head_char[1];
   int escape_mode=FALSE;
   prolog_term list = term, list_head;

@@ -286,7 +286,8 @@ static inline void CompleteSimplifyAndReclaim(CPtr cs_ptr)
 static inline void SetupReturnFromLeader(CPtr orig_breg, CPtr cs_ptr, VariantSF subgoal)
 {
   CPtr answer_template;
-  int template_size, attv_num, tmp;
+  int template_size, attv_num;
+  Integer tmp;
 
   switch_envs(orig_breg); 
   /* check where this brings the stacks, that will determine how
