@@ -53,9 +53,10 @@ struct _HText {
 
 PRIVATE inline HTTag *special_find_tag(USERDATA *htext, int element_number);
 
-PRIVATE USERDATA *create_userData( HTRequest         *request,
-				   HTParentAnchor    *anchor,
-				   HTStream          *output_stream);
+PRIVATE USERDATA *html_create_userData( HTRequest         *request,
+					HTParentAnchor    *anchor,
+					HTStream          *output_stream);
+PRIVATE void html_delete_userData(void *me);
 
 PRIVATE int find_matching_elt(USERDATA *htext, int elt_number);
 

@@ -28,14 +28,21 @@
 			P,Y,Z)]).
 :- libwww_request([xml('files/simple1.xml',[],P,Y,Z)]).
 :- libwww_request([xml("files/simple1.xml",[],P,Y,Z)]).
-
+:- libwww_request([xml("http://www.cs.sunysb.edu/~kifer/test/simple.xml",
+		       [],P,Y,Z)]).
+:- libwww_request([xml('http://www.ug.cs.sunysb.edu/~kifer/test/simple.xml',
+		       [authorization([c(_,testuser,hahaha)])],P,Y,Z)]).
 
 :- libwww_request([html('http://www.cs.mit.edu',Z,P,Y,XXX)]).
 :- libwww_request([html('http://localhost/',Z,P,Y,XXX)]).
 :- libwww_request([html("http://localhost/",Z,P,Y,XXX)]).
 :- libwww_request([head('http://localhost/',Z,P,Y,XXX)]).
-:- libwww_request([head('http://www.cs.sunysb.edu/',Z,P,Y,XXX)]).
 :- libwww_request([fetch("http://localhost/",Z,P,Y,XXX)]).
+
+:- libwww_request([head('http://www.cs.sunysb.edu/',Z,P,Y,XXX)]).
+:- libwww_request([html('http://www.sunysb.edu/abcddfs',Z,P,Y,XXX)]).
+:- libwww_request([html('http://www.cs.sunysb.edu',[timeout(1)],P,Y,X)]).
+
 %% Libwww loops on this one
 %% The extra timer trick alleviates this problem by timing out everything.
 :- libwww_request([html('http://localhost/',
@@ -72,10 +79,6 @@
 			 [timeout(1)],P1,Y1,X1)
 		   ]).
 :- libwww_request([fetch('files/simple.html', X,P,Y,Z)]).
-
-:- libwww_request([html('http://www.sunysb.edu/abcddfs',Z,P,Y,XXX)]).
-
-:- libwww_request([html('http://www.cs.sunysb.edu',[timeout(1)],P,Y,X)]).
 
 :- libwww_request([html('files/test2.html',[selection(['FORM','TABLE'],_,_)],
 			P,Y,X)]).

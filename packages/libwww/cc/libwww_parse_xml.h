@@ -50,9 +50,10 @@ struct XML_userData {
 
 /* function declarations */
 
-PRIVATE USERDATA *create_userData(XML_Parser parser,
-				  HTRequest  *request,
-				  HTStream   *target_stream);
+PRIVATE USERDATA *xml_create_userData(XML_Parser parser,
+				      HTRequest  *request,
+				      HTStream   *target_stream);
+PRIVATE void xml_delete_userData(void *me);
 
 PRIVATE int xml_push_element (USERDATA    *userdata,
 			      const XML_Char  *tag,

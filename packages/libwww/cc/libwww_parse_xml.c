@@ -57,7 +57,7 @@ void HTXML_newInstance (HTStream *		me,
 			XML_Parser              xmlparser,
 			void * 			context)
 {
-  USERDATA *userdata = create_userData(xmlparser, request, target_stream);
+  USERDATA *userdata = xml_create_userData(xmlparser, request, target_stream);
   XML_SetUserData(xmlparser, (void *) userdata);
   if (me && xmlparser) HTXML_setHandlers(xmlparser);
 }
@@ -367,15 +367,15 @@ PRIVATE void xml_pop_suppressed_element(USERDATA *userdata)
 }
 
 
-USERDATA *create_userData(XML_Parser parser,
-			  HTRequest *request,
-			  HTStream  *target_stream)
+USERDATA *xml_create_userData(XML_Parser parser,
+			      HTRequest *request,
+			      HTStream  *target_stream)
 {
   USERDATA *me = NULL;
   if (parser) {
     if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_xml");
-    me->delete_method = delete_userData;
+    me->delete_method = xml_delete_userData;
     me->parser = parser;
     me->request = request;
     me->target = target_stream;
@@ -388,7 +388,7 @@ USERDATA *create_userData(XML_Parser parser,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In create_userData(%d):", REQUEST_ID(request));
+  xsb_dbgmsg("In xml_create_userData(%d):", REQUEST_ID(request));
 #endif
 
   /* Hook up userdata to the request context */
@@ -398,7 +398,7 @@ USERDATA *create_userData(XML_Parser parser,
 }
 
 
-PRIVATE void delete_userData(void *userdata)
+PRIVATE void xml_delete_userData(void *userdata)
 {
   prolog_term parsed_result, status_term;
   USERDATA *me = (USERDATA *)userdata;
@@ -415,7 +415,7 @@ PRIVATE void delete_userData(void *userdata)
 
 #ifdef LIBWWW_DEBUG
   request_id = REQUEST_ID(me->request);
-  xsb_dbgmsg("In delete_userData(%d): stackptr=%d", request_id, me->stackptr);
+  xsb_dbgmsg("In xml_delete_userData(%d): stackptr=%d", request_id, me->stackptr);
 #endif
 
   /* if the status code says the doc was loaded fine, but stackptr is != -1,
@@ -548,7 +548,10 @@ PRIVATE int xml_externalEntityRef (XML_Parser     parser,
      execute the request immediately. */
   context->is_subrequest = TRUE;
   chunk = HTLoadAnchorToChunk(anchor,request);
-  /* if subrequest failed to terminate, then kill it to avoid blockage */
+  /* If subrequest failed to terminate, then kill it.  This might happen when
+     a premptive (blocking) request spawns a subrequest, which is also
+     blocking. In this case, the parent request will finish before the child
+     request, leading to all kinds of problems.  */
   if (context->is_subrequest) {
     HTRequest_kill(request);
     context->is_subrequest = FALSE;

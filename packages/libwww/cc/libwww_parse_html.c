@@ -111,8 +111,13 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
   REQUEST_CONTEXT *context =
     (REQUEST_CONTEXT *)HTRequest_context(htext->request);
 
+#ifdef LIBWWW_DEBUG_VERBOSE
+  xsb_dbgmsg("In html_addText: Request %d", REQUEST_ID(htext->request));
+#endif
+
   if (IS_STRIPPED_TAG((HKEY)PCDATA_SPECIAL, htext->request)) return;
   if (suppressing(htext)) return;
+
 
   /* strip useless newlines */
   if (strncmp(textbuf,"\n", len) == 0) return;
@@ -373,15 +378,15 @@ PRIVATE inline HTTag *special_find_tag(USERDATA *htext, int element_number)
 
 
 /* USERDATA creation and deletion callbacks */
-USERDATA *create_userData( HTRequest *             request,
-			   HTParentAnchor *        anchor,
-			   HTStream *              output_stream)
+USERDATA *html_create_userData( HTRequest *             request,
+				HTParentAnchor *        anchor,
+				HTStream *              output_stream)
 {
   USERDATA *me = NULL;
   if (request) {
     if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_html");
-    me->delete_method = delete_userData;
+    me->delete_method = html_delete_userData;
     me->request = request;
     me->node_anchor =  anchor;
     me->target = output_stream;
@@ -395,7 +400,7 @@ USERDATA *create_userData( HTRequest *             request,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In create_userData(%d):", REQUEST_ID(request));
+  xsb_dbgmsg("In html_create_userData(%d):", REQUEST_ID(request));
 #endif
 
   /* Hook up userdata to the request context */
@@ -404,7 +409,7 @@ USERDATA *create_userData( HTRequest *             request,
 }
 
 
-PRIVATE void delete_userData(void *userdata)
+PRIVATE void html_delete_userData(void *userdata)
 {
   int i;
   prolog_term parsed_result, status_term;
@@ -422,7 +427,8 @@ PRIVATE void delete_userData(void *userdata)
 
 #ifdef LIBWWW_DEBUG
   request_id = REQUEST_ID(me->request);
-  xsb_dbgmsg("In delete_userData(%d): stackptr=%d", request_id, me->stackptr);
+  xsb_dbgmsg("In html_delete_userData(%d): stackptr=%d",
+	     request_id, me->stackptr);
 #endif
 
   /* close open tags on stack */
@@ -463,6 +469,7 @@ void html_register_callbacks()
   HText_registerTextCallback(html_addText);
   /* register callbacks to create and delete the HText (USERDATA)
      objects. These are objects where we build parsed terms */
-  HText_registerCDCallback(create_userData, (HText_delete *)delete_userData);
+  HText_registerCDCallback(html_create_userData, 
+			   (HText_delete *)html_delete_userData);
   return;
 }

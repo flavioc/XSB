@@ -26,7 +26,6 @@
 
 
 #define PARSE_STACK_INCREMENT  50
-PRIVATE void delete_userData(void *me);
 
 
 #define STACK_TOP(htext)        htext->stack[htext->stackptr]

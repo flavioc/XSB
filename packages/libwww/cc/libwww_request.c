@@ -27,6 +27,44 @@
 #include "libwww_request.h"
 #include "deref.h"
 
+static HTList *XML_converter=NULL;
+
+void xml_conversions()
+{
+  puts("aaaaaa");
+  if (!XML_converter) {
+    XML_converter = HTList_new();
+    HTConversion_add(XML_converter,"*/*", "www/debug",
+		     HTBlackHoleConverter, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"message/rfc822", "*/*", HTMIMEConvert,
+		     1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"message/x-rfc822-foot", "*/*",
+		     HTMIMEFooter, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"message/x-rfc822-head", "*/*",
+		     HTMIMEHeader, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"message/x-rfc822-cont", "*/*",
+		     HTMIMEContinue, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"message/x-rfc822-upgrade","*/*",
+		     HTMIMEUpgrade, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"message/x-rfc822-partial", "*/*",
+		     HTMIMEPartial, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"multipart/*", "*/*", HTBoundary,
+		     1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"text/x-http", "*/*", HTTPStatus_new,
+		     1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"text/plain", "text/xml",
+		     HTXML_new, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter, "text/xml", "*/*", 
+		     HTXML_new, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter, "application/xml", "*/*",
+		     HTXML_new, 1.0, 0.0, 0.0);
+    HTConversion_add(XML_converter,"*/*", "www/present", HTSaveConverter,
+		     0.3, 0.0, 0.0);
+  }
+  //HTAnchor_setFormat((HTParentAnchor *)anchor, HTAtom_for("text/xml"));
+  //HTRequest_setConversion(request, XML_converter, YES);
+  HTFormat_setConversion(XML_converter);
+}
 
 /* Calling sequence:
        libwww_request([req1,req2,...])
@@ -61,6 +99,7 @@ void do_libwww_request___()
   /* note that some sites block user agents that aren't Netscape or IE.
      So we fool them!!! */
   HTProfile_newHTMLNoCacheClient("Mozilla", "6.0");
+  //xml_conversions();
 
   /* We must enable alerts in order for authentication modules to call our own
      callback defined by HTAlert_add below. However, we delete all alerts other
@@ -80,8 +119,8 @@ void do_libwww_request___()
 
   HTPrint_setCallback(printer);
   HTTrace_setCallback(tracer);
-#if 0
   HTSetTraceMessageMask("sob");
+#if 0
 #endif
 
   /* This catch-all filter is needed in order to catch termination of
@@ -153,6 +192,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   HTAnchor    *anchor = NULL;
   HTRequest   *request=NULL;
   HTAssocList *formdata=NULL;
+  BOOL local = YES;
   char 	      *uri = NULL;
   char 	      *cwd = HTGetCurrentDirectoryURL();
   REQUEST_CONTEXT *context;
@@ -161,6 +201,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   request=HTRequest_new();
   context=set_request_context(request,req_term,request_id);
   setup_callbacks(context->type);
+  HTRequest_MIMEParseSet(request, &local);
   /* get URL */
   uri = extract_uri(req_term,request, request_id);
   /* get other params */
@@ -182,7 +223,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   /* make requests to local files preemptive (synchronous)---a workaround 
      for a bug in Libwww */
   if (strncmp(uri,"file:/",6) == 0)
-      HTRequest_setPreemptive(request,YES);
+    HTRequest_setPreemptive(request,YES);
 
   /* check if the page has expired by first bringing the header */
   if ((context->type != HEADER) && (context->user_modtime > 0)) {
@@ -196,7 +237,11 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     HTRequest_setContext(header_req, (void *)context);
     HTHeadAnchor(anchor,header_req);
     context->last_modtime = HTAnchor_lastModified((HTParentAnchor *)anchor);
-    /* if the subrequest failed to terminate---kill it */
+    /* If the subrequest failed to terminate---kill it.  Here it is just a
+       precaution, but generally this happens when a premptive (blocking)
+       request spawns a subrequest, which is also blocking. In this case, the
+       parent request will finish before the child request, leading to all
+       kinds of problems. */
     if (context->is_subrequest) {
       HTRequest_kill(header_req);
       context->is_subrequest = FALSE;
@@ -250,8 +295,9 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
       HTRequest_setOutputStream(request, target);
       /* then do the same as in the case of parsing */
     }
-  case HTMLPARSE:
   case XMLPARSE:
+    //HTResponse_setFormat(HTRequest_response(request),HTAtom_for("text/xml"));
+  case HTMLPARSE:
     if (formdata) {
       if (context->method == METHOD_GET)
 	status = (YES == HTGetFormAnchor(formdata,anchor,request));
@@ -1016,6 +1062,10 @@ void add_result_param(prolog_term *result_param,
   prolog_term listHead;
   int i;
   va_list ap;
+
+#ifdef LIBWWW_DEBUG_VERBOSE
+  xsb_dbgmsg("In add_result_param");
+#endif
 
   deref(*result_param);
   if (is_list(*result_param))
