@@ -69,7 +69,7 @@
 	'_$_$_write_flora_warnheader'/0,
 	'_$_$_flora_discard_tokens'/1,
 	flcompile/1, flcompile/2, flconsult/1, flconsult/2, dyncompile/1,
-	dyncompile/2, dynconsult/1, dynconsult/2, load/1, dynload/1,
+	dyncompile/2, dynconsult/1, dynconsult/2, flload/1, dynload/1,
 	maxerr/1, flora_prefix/1, flora_word/2, terminate_list/1,
 	flora_member/2, displayln_errmsg/1, displayln_warning/1,
 	displayln/0, displayln/1, flora_msgheader/0.
@@ -196,10 +196,10 @@ flora_consult_internal(File, Dtvs, Mode) :-
 
 
 /*********************************************************************/
-'_$_$_flora_loadlist'([X]) :- load(X).
+'_$_$_flora_loadlist'([X]) :- flload(X).
 
 '_$_$_flora_loadlist'([X1,X2|Xs]) :-
-	load(X1),
+	flload(X1),
 	'_$_$_flora_loadlist'([X2|Xs]).
 
 
@@ -212,7 +212,7 @@ flora_consult_internal(File, Dtvs, Mode) :-
 
 
 /*********************************************************************/
-load(File) :-
+flload(File) :-
 	'_$_$_flora_check_filename'(File),
 	parse_filename(File,D,B,E),
 	( E = 'flr' ->

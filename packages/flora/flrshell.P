@@ -57,7 +57,7 @@
 	'_$_$_write_flora_warnheader'/0,
 	'_$_$_flora_discard_tokens'/1,
 	flcompile/1, flcompile/2, maxerr/1, flconsult/1, flconsult/2,
-	load/1, dynload/1, dyncompile/1, dyncompile/2, dynconsult/1,
+	flload/1, dynload/1, dyncompile/1, dyncompile/2, dynconsult/1,
 	dynconsult/2, displayln_warning/1
    from flrutils.
 
@@ -186,7 +186,7 @@ help :-
 	writeln('  flcompile(FILE.[flr],[...])  : flcompile(FILE) with options [...]'),
 	writeln('  flconsult(FILE.[flr])        : compile FILE.flr; consult FILE.P'),
 	writeln('  flconsult(FILE.[flr],[...])  : flconsult(FILE) with options [...]'),
-	writeln('  load(FILE[.{P|O|flr}])       : consult FILE.flr, FILE.P or FILE.O'),
+	writeln('  flload(FILE[.{P|O|flr}])    : consult FILE.flr, FILE.P or FILE.O'),
 	writeln('  [FILE[.{P|O|flr}],...]       : consult a list of .flr, .P, or .O files'),
 	writeln('  dyncompile(FILE[.flr])       : compile FILE.flr to dynamic code'),
 	writeln('  dyncompile(FILE[.flr],[...]) : dyncompile(FILE) with options [...]'),
