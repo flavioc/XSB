@@ -52,8 +52,8 @@
 /* definitions and macros included in all files */
 
 
-/*
 #define LIBWWW_DEBUG
+/*
 #define LIBWWW_DEBUG_VERBOSE
 #define LIBWWW_DEBUG_TERSE
 */
@@ -91,9 +91,6 @@ struct hash_table {
 };
 typedef struct hash_table HASH_TABLE;
 
-enum http_method {GET, POST, PUT};
-typedef enum http_method HTTP_METHOD;
-
 typedef struct auth AUTHENTICATION;
 struct auth {
   char 	         *realm;
@@ -122,7 +119,7 @@ struct request_context {
   time_t user_modtime;      /* oldest modtime the user can tolerate */
   prolog_term formdata;
   AUTHENTICATION auth_info; /* list of name/pw pairs */
-  HTTP_METHOD  method;
+  HTMethod   method;
   HASH_TABLE selected_tags_tbl;
   HASH_TABLE suppressed_tags_tbl;
   HASH_TABLE stripped_tags_tbl;

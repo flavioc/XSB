@@ -69,7 +69,6 @@ PRIVATE void handle_subrequest_termination(HTRequest *req, int status);
 PRIVATE void libwww_abort_all(char *msg, ...);
 PRIVATE void setup_callbacks(REQUEST_TYPE type);
 PRIVATE void extract_request_headers(HTRequest *request);
-PRIVATE void set_last_modtime(HTRequest *request);
 
 typedef struct userdata USERDATA;
 struct userdata {

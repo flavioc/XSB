@@ -7,16 +7,19 @@
 %% XML
 :- libwww_request([xml('http://www.w3.org/TR/1998/REC-xml-19980210.xml',
 		       [timeout(1)],P,Y,Z)]).
+%% swww.etrade.com times out
 :- libwww_request([html('http://swww.etrade.com/', [timeout(1)],P,Y,Z),
 		   html('http://www.etrade.com/', [timeout(1)],PP,YY,ZZ)]).
+%% Should timeout, but hangs instead (in select call).
 :- libwww_request([html('http://swww.etrade.com/', [timeout(6)],P,Y,Z)]).
 :- libwww_request([html('http://www.etrade.com/', _,P,Y,Z)]).
 :- libwww_request([xml('files/REC-xml-19980210.xml',X,P,Y,Z)]).
 :- libwww_request([xml('files/simple.xml',X,PP,Y,Z),
 		   xml('files/REC-xml-19980210.xml',[],P,Yz,Zz)]).
-:- libwww_request([xml('files/simple.xml',X,PP,Y,Z),
-		   xml('http://www.w3.org/TR/1998/REC-xml-19980210.xml',
-		       XX,P,YY,ZZ)]).
+:- libwww_request([xml('http://www.w3.org/TR/1998/REC-xml-19980210.xml',
+		       XX,P,YY,ZZ),
+		   xml('files/simple.xml',X,PP,Y,Z)
+		  ]).
 :- libwww_request([xml('files/simple.xml',X,P,Y,Z)]).
 :- libwww_request([xml('files/simple_wrong.xml',X,P,Y,Z)]).
 :- libwww_request([xml('files/simple.xml',
@@ -31,6 +34,7 @@
 :- libwww_request([html("http://localhost/",Z,P,Y,XXX)]).
 :- libwww_request([head('http://localhost/',Z,P,Y,XXX)]).
 :- libwww_request([fetch("http://localhost/",Z,P,Y,XXX)]).
+%% Libwww loops on this one
 :- libwww_request([html('http://localhost/',
 			[if_modified('Tue, 21 Sep 2000 14:46:36 GMT')],P,Y,X),
 		   fetch('http://localhost/sub/001.ent',Z,PPP,YYY,XXX),

@@ -176,11 +176,19 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
     HTRequest *header_req = HTRequest_new();
     context->is_subrequest = TRUE;
     HTRequest_setPreemptive(header_req, YES);
-    //HTRequest_addConnection(header_req, "close", "");
+    /* closing connection hangs libwww on concurrent requests
+    HTRequest_addConnection(header_req, "close", "");
+    */
     /* attach parent's context to this request */
     HTRequest_setContext(header_req, (void *)context);
     HTHeadAnchor(anchor,header_req);
-    set_last_modtime(header_req);
+    context->last_modtime = HTAnchor_lastModified((HTParentAnchor *)anchor);
+    /* if the subrequest failed to terminate---kill it */
+    if (context->is_subrequest) {
+      HTRequest_kill(header_req);
+      context->is_subrequest = FALSE;
+    }
+
 #ifdef LIBWWW_DEBUG
     xsb_dbgmsg("Subreq=%d ended: parent=%d",
 	       REQUEST_ID(header_req), REQUEST_ID(request));
@@ -232,9 +240,9 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   case HTMLPARSE:
   case XMLPARSE:
     if (formdata) {
-      if (context->method == GET)
+      if (context->method == METHOD_GET)
 	status = (YES == HTGetFormAnchor(formdata,anchor,request));
-      else if (context->method == POST)
+      else if (context->method == METHOD_POST)
 	status = (NULL != HTPostFormAnchor(formdata,anchor,request));
     } else {
       /* not a form request */
@@ -266,7 +274,7 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   if (formdata)
     xsb_dbgmsg("Request %d: HTTP Method: %s, preemptive: %d",
 	       request_id,
-	       (context->method==GET ? "FORM,GET" : "FORM,POST"),
+	       (context->method==METHOD_GET ? "FORM,GET" : "FORM,POST"),
 	       HTRequest_preemptive(request));
   else
     xsb_dbgmsg("Request %d: HTTP Method: NON-FORM REQ, preemptive: %d",
@@ -277,6 +285,10 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
 
   /* bad uri syntax */
   if (!status) {
+#ifdef LIBWWW_DEBUG
+    xsb_dbgmsg("In setup_request_structure: Request %d failed: bad uri",
+	       request_id);
+#endif
     total_number_of_requests--;
     if (is_var(context->status_term))
       c2p_int(WWW_URI_SYNTAX, context->status_term);
@@ -289,7 +301,6 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
   }
   HT_FREE(uri);
 }
-
 
 
 /* In XML parsing, we sometimes have to issue additional requests to go and
@@ -365,7 +376,7 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
   context->auth_info.realm = "";
   context->auth_info.uid = "foo";
   context->auth_info.pw = "foo";
-  context->method = GET;
+  context->method = METHOD_GET;
   context->selected_tags_tbl.table = NULL;
   context->suppressed_tags_tbl.table = NULL;
   context->stripped_tags_tbl.table = NULL;
@@ -642,13 +653,13 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
       char *method = p2c_string(p2p_arg(param, 1));
       switch (method[1]) {
       case 'O': case 'o':
-	context->method = POST;
+	context->method = METHOD_POST;
 	break;
       case 'E': case 'e':
-	context->method = GET;
+	context->method = METHOD_GET;
 	break;
       case 'P': case 'p':
-	context->method = PUT;
+	context->method = METHOD_PUT;
 	break;
       }
       break;
@@ -1050,30 +1061,4 @@ PRIVATE void extract_request_headers(HTRequest *request)
     }
   }
 }
-
-/* like extract_request_headers, but only sets context->last_modtime */
-PRIVATE void set_last_modtime(HTRequest *request)
-{
-  HTParentAnchor * anchor;
-  HTAssocList * headers;
-  REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
-
-  anchor = HTRequest_anchor(request);
-  headers = HTAnchor_header(anchor);
-  if (headers) {
-    HTAssocList *cur = headers;
-    HTAssoc *pres;
-    char *paramname, *paramvalue;
-
-    while ((pres = (HTAssoc *) HTAssocList_nextObject(cur))) {
-      paramname = HTAssoc_name(pres);
-      paramvalue = HTAssoc_value(pres);
-
-      /* save the page last_modified time */
-      if (HTStrCaseMatch("Last-Modified", paramname))
-	context->last_modtime = (long)HTParseTime(paramvalue,NULL,YES);
-    }
-  }
-}
-
 
