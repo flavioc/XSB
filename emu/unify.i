@@ -78,7 +78,7 @@ tail_recursion:
 						/* 0(a) != 0(b) */
 	     IFTHEN_FAILED;
 	   } else {
-	     arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);
+	     int arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);
 	     while (--arity) {
 	       op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);
 	       if (!unify(cell((CPtr)op1), cell((CPtr)op2))) {

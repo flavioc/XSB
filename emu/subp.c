@@ -71,7 +71,7 @@ extern int *asynint_ptr;	/* 0 - no interrupt (or being processed) */
 
 extern void dis(int), debug_call(Psc);
 extern void total_stat(double);
-extern void perproc_stat(), perproc_reset_stat(), reset_stat_total(); 
+extern void perproc_stat(void), perproc_reset_stat(void), reset_stat_total(void); 
 
 #ifdef LINUX
 struct sigaction act, oact;
@@ -128,7 +128,6 @@ Cell build_interrupt_chain() {
 bool unify(Cell rop1, Cell rop2)
 { /* begin unify */
   register Cell op1, op2;
-  long arity;
 
   op1 = rop1; op2 = rop2;
 
@@ -385,8 +384,7 @@ static inline int sign(Float num)
 
 int compare(Cell val1, Cell val2)
 {
-  int arity1, arity2, comp;
-  struct psc_rec *ptr1, *ptr2;
+  int comp;
   CPtr cptr1, cptr2;
 
   deref(val2);		/* val2 is not in register! */
@@ -437,9 +435,11 @@ int compare(Cell val1, Cell val2)
     else return -1;
   case CS:
     if (cell_tag(val2) != CS && cell_tag(val2) != LIST) return 1;
-    else { 
-      ptr1 = get_str_psc(val1);
-      ptr2 = get_str_psc(val2);
+    else {
+      int arity1, arity2;
+      Psc ptr1 = get_str_psc(val1);
+      Psc ptr2 = get_str_psc(val2);
+
       arity1 = get_arity(ptr1);
       if (islist(val2)) arity2 = 2; 
       else arity2 = get_arity(ptr2);
