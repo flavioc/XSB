@@ -23,6 +23,8 @@
 */
 
 
+:- dynamic storage_handles/1.
+
 %% Inserts facts. On backtracking, the fact is deleted.
 storage_insert_fact_bt(StorageName,Fact,Inserted) :-	
 	triehandle_for_storage(StorageName,H),
@@ -30,7 +32,7 @@ storage_insert_fact_bt(StorageName,Fact,Inserted) :-
 	(New == 0
 	->  Inserted=1,  % new fact inserted
 	    (  true
-	    ;  trie_unintern(H, Leaf), fail 
+	    ;  trie_unintern_nr(H, Leaf), fail 
 	    )
 	; Inserted=0	 % fact was already there: no action
 	).
@@ -98,7 +100,7 @@ storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
 	    trie_intern(pair(Key,Value), H, Leaf_Pair, _New, _ ),
 	    Inserted = 1,	% new fact: insert it
 	    ( true
-	    ;   trie_unintern(H, Leaf_Pair), fail
+	    ;   trie_unintern_nr(H, Leaf_Pair), fail
 	    )
 	).
 
@@ -152,6 +154,9 @@ storage_reclaim_space(StorageName) :-
 	triehandle_for_storage(StorageName,H),
 	trie_reclaim_uninterned_nr(H).
 
+storage_reclaim_space :-
+	(storage_handles(H), trie_reclaim_uninterned_nr(H), fail
+	; true).
 
 
 
@@ -160,6 +165,9 @@ storage_reclaim_space(StorageName) :-
 triehandle_for_storage(IdAtom,Handle) :-
 	conget(IdAtom,H),
 	(  H > 0 -> H = Handle
-	;  H==0 -> new_trie(Handle), conset(IdAtom,Handle)
+	;  H==0
+	-> new_trie(Handle), conset(IdAtom,Handle),
+	    %% remember the trie handle
+	    assert(storage_handles(Handle))
 	;  abort(('Storage: ', IdAtom, ' trie handle is corrupted'))
 	).

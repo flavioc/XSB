@@ -1208,7 +1208,9 @@ static IGRptr getAndRemoveIGRnode(long rootn)
       }
     }  
   }
-  xsb_warn("Root Node not found in Garbage List");
+#ifdef DEBUG_INTERN
+  xsb_dbgmsg("Root node not found in Garbage List");
+#endif
   return NULL;
 }
 
@@ -1264,8 +1266,13 @@ void trie_dispose_nr(void)
 void reclaim_uninterned_nr(long rootidx)
 {
   IGRptr r = getAndRemoveIGRnode(rootidx);
-  IGLptr l = r-> leaves, p;
+  IGLptr l, p;
   BTNptr leaf;
+
+  if (r!=NULL)
+    l = r-> leaves;
+  else
+    return;
 
   free(r);
 
@@ -1293,7 +1300,9 @@ void trie_undispose(long rootIdx, BTNptr leafn)
   IGRptr r = getIGRnode(rootIdx);
   IGLptr p = r -> leaves;
   if(p == NULL){
-    xsb_warn("Possible problem in trie_undispose");
+#ifdef DEBUG_INTERN
+    xsb_dbgmsg("In trie_undispose: The node being undisposed has been previously deleted");
+#endif
   } else{
     if(p -> leaf == leafn){
       r -> leaves = p -> next;
