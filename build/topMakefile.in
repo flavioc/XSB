@@ -159,8 +159,12 @@ prepare:
 emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	cd ${src_emudir}; \
 	    make depend; \
-	    make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) \
-		2>&1 | tee -a ../build/Installation_summary
+	    rm -f /tmp/xsb-build-failed; \
+	    (make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) || \
+	                touch /tmp/xsb-build-failed) \
+		2>&1 | tee -a ../build/Installation_summary; \
+	    (test ! -f /tmp/xsb-build-failed || \
+	                    (rm -f /tmp/xsb-build-failed; exit 1))
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
