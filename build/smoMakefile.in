@@ -40,6 +40,9 @@ SMODELSHEADER= $(SMODELS)/api.h $(SMODELS)/atomrule.h $(SMODELS)/dcl.h \
 
 Option = [sysmod,optimize]
 
+GCC=@CC@
+CFLAGS=@CFLAGS@ -I@arch_config_prefix@
+GMM=g++
 XSB=../../bin/xsb
 Prolog = $(XSB) 
 
@@ -55,13 +58,19 @@ Prolog = $(XSB)
 
 all: $(ALL)
 	@../../build/touch.sh cmd...
-	ln -s $(SMODELSOBJ) .
-	ln -s $(SMODELSHEADER) .
 	$(Prolog) < cmd...
 	@rm cmd...
 
 clean: 
 	rm *.o *.so *.O *.h
+
+xsb_wrap_smodels.o: xsb_wrap_smodels.c
+	$(GCC) $(CFLAGS) -c xsb_wrap_smodels.c
+
+module: xsb_wrap_smodels.o 
+	$(GMM) $(CFLAGS) -s -o smodels.so -shared -I$(SMODELS) \
+	-L$(SMODELS) smodels.c \
+	xsb_wrap_smodels.o $(SMODELS)/.libs/libsmodels.a
 
 nope:
 

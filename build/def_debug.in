@@ -5,6 +5,8 @@
 /* General debug	*/
 #undef DEBUG
 
+#undef CP_DEBUG
+
 /* Heap debug		*/
 #undef DEBUG_HEAP
 

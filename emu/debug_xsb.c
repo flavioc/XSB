@@ -1564,5 +1564,55 @@ static void debug_interact(void)
   return;
 }
 
+#ifdef CP_DEBUG
+void print_cpf_pred(CPtr cpf)
+{
+  char *lcpreg;
+  Psc psc;
+  
+#if 0
+  lcpreg = cp_cpreg(cpf);
+  psc = *(CPtr)(lcpreg-4);
+#else
+  psc = cp_psc(cpf);
+#endif
+  if (psc) {
+    switch(get_type(psc)) {
+    case T_PRED:
+      fprintf(stddbg,"choicepoint(address(%p),pred(%s/%d)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_DYNA:
+      fprintf(stddbg,"choicepoint(address(%p),dyna_pred(%s/%d)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_ORDI:
+      fprintf(stddbg,"choicepoint(address(%p),t_ordi).\n",
+	      cpf);
+      break;
+    case T_UDEF:
+      fprintf(stddbg,"choicepoint(address(%p),unloaded(%s/%p)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    default:
+      fprintf(stddbg,"choicepoint(address(%p),unknown_pred).\n", cpf);
+      break;
+    }
+  } else
+    fprintf(stddbg,"choicepoint(address(%p),unknown_psc).\n", cpf);
+
+}
+void print_cp_backtrace()
+{
+  CPtr mycp;
+  mycp = breg;
+  while (mycp <= tcpstack.high - CP_SIZE -1 && mycp != cp_prevbreg(mycp)) {
+    print_cpf_pred(mycp);
+    mycp = cp_prevbreg(mycp);
+  }
+}
+
+#endif /* CP_DEBUG */
+
 
 #endif	/* DEBUG */

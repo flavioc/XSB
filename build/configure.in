@@ -882,6 +882,7 @@ if test "${enable_profile}" = "yes"; then
 fi
 if test "${enable_debug}" = "yes"; then
     AC_DEFINE(DEBUG)
+dnl    AC_DEFINE(CP_DEBUG)
     do_debugging=yes
 fi
 
@@ -1257,7 +1258,6 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${scriptdir}/wxsb.bat:wxsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
 	    ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
-	    ${prefix}/packages/xmc.P:xmc.in
 	    ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
 	    ])
 

@@ -123,6 +123,7 @@
    We include these dummy definitions only to avoid the autoheader warnings */
 #if 0
 #define DEBUG
+#define CP_DEBUG
 #define PROFILE
 #define DEBUG_ORACLE
 #endif

@@ -109,8 +109,6 @@ extern "C" void printAnswer(void)
 
 extern "C" void close(void)
 {
-  int i;
-  
   delete(api);
   delete(smodels);
   free(atoms);

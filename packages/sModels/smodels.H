@@ -23,11 +23,9 @@
 ** 
 */
 
-:- compiler_options([xpp_on]).
-
-#include "configs/config.h"
-
-:- compile_command 'gcc -c xsb_wrap_smodels.c; g++ -s -o smodels.so -shared smodels.c xsb_wrap_smodels.o  smodels.o stack.o dcl.o atomrule.o read.o queue.o timer.o list.o improve.o program.o api.o stable.o tree.o denant.o'.
+:- compile_command 'make module'.
+	
+%:- compile_command 'gcc -c xsb_wrap_smodels.c; g++ -s -o smodels.so -shared smodels.c xsb_wrap_smodels.o  smodels.o stack.o dcl.o atomrule.o read.o queue.o timer.o list.o improve.o program.o api.o stable.o tree.o denant.o'.
 
 :- foreign_pred smodelsInit from init(void):void.
 :- foreign_pred smodelsNumAtoms(+a) from numberAtoms(a:int):void.
