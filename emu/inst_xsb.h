@@ -369,7 +369,6 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define halt            0xfa
 #define builtin         0xfb
 #define unifunc		0xfc
-#define reset           0xfe
 #define endfile         0xff
    /* virtual instruction, used for disassembler to link different segs */
 

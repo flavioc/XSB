@@ -337,7 +337,6 @@ static int emuloop(byte *startaddr)
 
   xsb_segfault_message = xsb_default_segfault_msg;
   rreg = reg; /* for SUN */
-  lpcreg = (pb)&reset_inst;  /* start by initializing abort handler */
 
 #ifdef JUMPTABLE_EMULOOP
 
@@ -365,6 +364,17 @@ contcase:     /* the main loop */
   }
 #endif
   
+  if ((lpcreg = (byte *) setjmp(xsb_abort_fallback_environment))) {
+    /*
+    * Short circuit untrailing to avoid possible seg faults in
+    * switch_envs.
+    */
+    trreg = cp_trreg(breg);
+    /* Restore the default signal handling */
+    signal(SIGSEGV, xsb_default_segfault_handler);
+   } else 
+    lpcreg = startaddr;  /* first instruction of entire engine */
+
 #ifdef JUMPTABLE_EMULOOP
   XSB_Next_Instr();
 #else
@@ -1786,24 +1796,6 @@ contcase:     /* the main loop */
     else { arithmetic_abort1("'\\'", op1); }
   XSB_End_Instr() 
 
-  XSB_Start_Instr(reset,_reset)  /* PPP */
-    /*
-     * This instruction is added just to provide a fall back point for
-     * xsb_abort() or xsb_segfault_catcher().  It is called only once, and 
-     * then control goes to startaddr.
-     */
-    if ((lpcreg = (byte *) setjmp(xsb_abort_fallback_environment))) {
-      /*
-       * Short circuit untrailing to avoid possible seg faults in
-       * switch_envs.
-       */
-      trreg = cp_trreg(breg);
-      /* Restore the default signal handling */
-      signal(SIGSEGV, xsb_default_segfault_handler);
-    }
-    else lpcreg = startaddr;  /* first instruction of entire engine */
-  XSB_End_Instr()
-     
 #ifndef JUMPTABLE_EMULOOP
   default: {
     char message[80];
