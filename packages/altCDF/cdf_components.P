@@ -430,7 +430,8 @@ load_component(Name,Path,Arglist):-
 	load_component_setup(Name,Path,Arglist),
 	load_component_1(Name,Path,Arglist).
 
-load_component_setup(Name,Path,Arglist):- 
+load_component_setup(Name,Path,Arglist):-
+	init_path_engine,
 	retractall(temp_depends(_,_,_,_)),
 	(atom(Path),atom(Name),ground(Arglist) -> 
 	    true
@@ -665,7 +666,8 @@ update_all_components(In,Options):-
 update_all_components(_Dir,_Options):- 
 	retractall(temp_new_version(_,_)).
 
-update_setup(In,Options,Abs,Action):- 
+update_setup(In,Options,Abs,Action):-
+	init_path_engine,
 	pe_canon_path(In,Abs),
 	retractall(temp_new_version(_,_)),
 	(member(action(create),Options) -> 
