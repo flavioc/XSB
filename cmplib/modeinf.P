@@ -229,7 +229,11 @@ gen_imported_defns(SymTab) :-
 pred2mods([], _Mods).
 pred2mods([sym(P, A, prop(_,im(Mod),_,_,_,_), _)|Rest], ModList) :-
 	memberchk(module(Mod, Preds), ModList),
-	memberchk((P/A), Preds),
+	(P = Mod:P1
+	 ->	true
+	 ;	P1 = P
+	),
+	memberchk((P1/A), Preds),
 	pred2mods(Rest, ModList).
 
 imported_clauses([]) :- !.

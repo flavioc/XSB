@@ -340,7 +340,6 @@ change_multifile_directive(Clause, _, Clause).
 change_PAList((PA,PAs), ModName) :-
 	change_PAList(PA, ModName),
 	change_PAList(PAs, ModName).
-
 change_PAList(P/A, ModName) :-
 	get_p_mod(P, ModName, P_Mod),
 	functor(Pred, P, A),
@@ -461,22 +460,18 @@ transform_directive(table(Args),table(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
 transform_directive(index(Args),index(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
-transform_directive(index(P/A,X),index(Skel,X)) :-
-	atom(P),integer(A),!,
-	functor(Skel,P,A).
-transform_directive(index(P/A,X,Y),index(Skel,X,Y)) :-
-	atom(P),integer(A),!,
-	functor(Skel,P,A).
+transform_directive(index(Spec,X),index(Skel,X)) :-
+	mpa_to_skel(Spec,Skel), !.
+transform_directive(index(Spec,X,Y),index(Skel,X,Y)) :-
+	mpa_to_skel(Spec,Skel), !.
 transform_directive(Directive,Directive).
 
-transform_slash_to_skel(P/A,Skel) :-
-	atom(P), integer(A), !,
-	functor(Skel,P,A).
 transform_slash_to_skel((A1,A2),(T1,T2)) :-
 	nonvar(A1), !,
 	transform_slash_to_skel(A1,T1),
 	transform_slash_to_skel(A2,T2).
-transform_slash_to_skel(A,A).
+transform_slash_to_skel(Spec,Skel) :-
+	mpa_to_skel(Spec,Skel).
 
 /*======================================================================*/
 /* parse_spec_directive(+Directive, +VariableList, #SymTab, #DcList)	*/
