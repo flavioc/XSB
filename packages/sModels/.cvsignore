@@ -1,5 +1,6 @@
-*.o 
-*.h 
 *.O
+*.h 
+*.o 
 *.so
+Makefile
 xsb_wrap_smodels.c
