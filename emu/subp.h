@@ -33,7 +33,8 @@ extern void remove_open_tables_reset_freezes(void);
 
 extern bool unify(Cell, Cell);
 
-/* don't use Cell declarations here, to avoid compiler warnings */
+/* don't use Cell declarations here, to avoid gcc compiler warnings;
+   However, this causes warnings under Windows */
 extern int compare(/* Cell, Cell */);
 extern int key_compare(/* Cell, Cell */);
 

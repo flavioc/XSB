@@ -604,7 +604,7 @@ inline static bool keysort(void)
       cell_tbl[i] = heap_addr;
       term2 = cell(clref_val(term2)+1);
     }
-    qsort(cell_tbl, len, sizeof(Cell),  key_compare);
+    qsort(cell_tbl, len, sizeof(Cell), key_compare);
     new_list = makelist(hreg);
     for (i=0 ; i < len ; i++) {
       follow(hreg++) = cell_tbl[i];
