@@ -164,7 +164,7 @@ emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	cd ${src_emudir}; \
 	    make depend; \
 	    make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) \
-		| tee -a ../build/Installation_summary
+		2>&1 | tee -a ../build/Installation_summary
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
