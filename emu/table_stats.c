@@ -53,25 +53,22 @@
  */
 
 
-NodeStats btn_statistics() {
+NodeStats node_statistics(Structure_Manager *sm) {
 
-  NodeStats btn_stats;
+  NodeStats stats;
 
 
-  SM_CurrentCapacity(smTableBTN, NodeStats_NumBlocks(btn_stats),
-		     NodeStats_NumAllocNodes(btn_stats));
-  SM_CountFreeStructs(smTableBTN, NodeStats_NumFreeNodes(btn_stats));
-  NodeStats_NodeSize(btn_stats) = sizeof(BasicTrieNode);
+  SM_CurrentCapacity(*sm, NodeStats_NumBlocks(stats),
+		     NodeStats_NumAllocNodes(stats));
+  SM_CountFreeStructs(*sm, NodeStats_NumFreeNodes(stats));
+  NodeStats_NodeSize(stats) = SM_StructSize(*sm);
 
-  return btn_stats;
+  return stats;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-/* Currently calculates for tabling resources.  Could parameterize for
-   asserted/user resources */
-
-HashStats btht_statistics() {
+HashStats hash_statistics(Structure_Manager *sm) {
 
   HashStats ht_stats;
   counter num_used_hdrs;
@@ -79,17 +76,14 @@ HashStats btht_statistics() {
   BTNptr *ppBTN;
 
 
-  SM_CurrentCapacity(smTableBTHT, HashStats_NumBlocks(ht_stats),
-		     HashStats_NumAllocHeaders(ht_stats));
-  SM_CountFreeStructs(smTableBTHT, HashStats_NumFreeHeaders(ht_stats));
-  HashStats_HeaderSize(ht_stats) = sizeof(BasicTrieHT);
+  ht_stats.hdr = node_statistics(sm);
 
   num_used_hdrs = 0;
   HashStats_NumBuckets(ht_stats) = 0;
   HashStats_TotalOccupancy(ht_stats) = 0;
   HashStats_NonEmptyBuckets(ht_stats) = 0;
-  HashStats_BucketSize(ht_stats) = sizeof(BTNptr);
-  pBTHT = SM_AllocList(smTableBTHT);
+  HashStats_BucketSize(ht_stats) = sizeof(void *);
+  pBTHT = SM_AllocList(*sm);
   while ( IsNonNULL(pBTHT) ) {
 #ifdef DEBUG
     /* Counter for contents of current hash table
@@ -118,17 +112,17 @@ HashStats btht_statistics() {
     /* Compare counter and header values
        --------------------------------- */
     if ( num_contents != BTHT_NumContents(pBTHT) )
-      xsb_warn("Inconsistent Basic Trie Hash Table Usage Calculations:\n"
-	       "\tHash table occupancy mismatch.");
+      xsb_warn("Inconsistent %s Usage Calculations:\n"
+	       "\tHash table occupancy mismatch.", SM_StructName(*sm));
 #endif
     pBTHT = BTHT_NextBTHT(pBTHT);
   }
   if ( HashStats_NumAllocHeaders(ht_stats) !=
        (num_used_hdrs + HashStats_NumFreeHeaders(ht_stats)) )
-    xsb_warn("Inconsistent Basic Trie Hash Table Usage Calculations:\n"
+    xsb_warn("Inconsistent %s Usage Calculations:\n"
 	     "\tHeader count mismatch:  Alloc: %d  Used: %d  Free: %d",
-	     HashStats_NumAllocHeaders(ht_stats),
-	     num_used_hdrs, HashStats_NumFreeHeaders(ht_stats));
+	     SM_StructName(*sm), HashStats_NumAllocHeaders(ht_stats),
+	     num_used_hdrs,  HashStats_NumFreeHeaders(ht_stats));
 
   return ht_stats;
 }
@@ -141,10 +135,7 @@ SubgStats subgoal_statistics() {
   SGFrame pProdSF, pSubSF;
 
 
-  SM_CurrentCapacity(smSF, SubgStats_NumBlocks(sg_stats),
-		     SubgStats_NumAllocFrames(sg_stats));
-  SM_CountFreeStructs(smSF, SubgStats_NumFreeFrames(sg_stats));
-  SubgStats_FrameSize(sg_stats) = sizeof(struct subgoal_frame);
+  sg_stats.sf = node_statistics(&smSF);
 
   SubgStats_NumProducers(sg_stats) = SubgStats_NumConsumers(sg_stats) = 0;
   for ( pProdSF = SM_AllocList(smSF);  IsNonNULL(pProdSF);
@@ -161,113 +152,6 @@ SubgStats subgoal_statistics() {
 	     "\tSubgoal Frame count mismatch");
 
   return sg_stats;
-}
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-NodeStats tstn_statistics() {
-
-  NodeStats tstn_stats;
-
-
-  SM_CurrentCapacity(smTSTN, NodeStats_NumBlocks(tstn_stats),
-		     NodeStats_NumAllocNodes(tstn_stats));
-  SM_CountFreeStructs(smTSTN,NodeStats_NumFreeNodes(tstn_stats));
-  NodeStats_NodeSize(tstn_stats) = sizeof(TS_TrieNode);
-
-  return tstn_stats;
-}
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-NodeStats aln_statistics() {
-
-  NodeStats aln_stats;
-
-
-  SM_CurrentCapacity(smALN, NodeStats_NumBlocks(aln_stats),
-		     NodeStats_NumAllocNodes(aln_stats));
-  SM_CountFreeStructs(smALN,NodeStats_NumFreeNodes(aln_stats));
-  NodeStats_NodeSize(aln_stats) = sizeof(AnsListNode);
-
-  return aln_stats;
-}
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-HashStats tstht_statistics() {
-
-  HashStats ht_stats;
-  counter num_used_hdrs;
-  TSTHTptr pTSTHT;
-  TSTNptr *ppTSTN;
-
-
-  SM_CurrentCapacity(smTSTHT, HashStats_NumBlocks(ht_stats),
-		     HashStats_NumAllocHeaders(ht_stats));
-  SM_CountFreeStructs(smTSTHT, HashStats_NumFreeHeaders(ht_stats));
-  HashStats_HeaderSize(ht_stats) = sizeof(TST_HashTable);
-
-  num_used_hdrs = 0;
-  HashStats_NumBuckets(ht_stats) = 0;
-  HashStats_TotalOccupancy(ht_stats) = 0;
-  HashStats_NonEmptyBuckets(ht_stats) = 0;
-  HashStats_BucketSize(ht_stats) = sizeof(TSTNptr);
-  pTSTHT = SM_AllocList(smTSTHT);
-  while ( IsNonNULL(pTSTHT) ) {
-#ifdef DEBUG
-    /* Counter for contents of current hash table
-       ------------------------------------------ */
-    counter num_contents = 0;
-#endif
-    num_used_hdrs++;
-    HashStats_NumBuckets(ht_stats) += TSTHT_NumBuckets(pTSTHT);
-    HashStats_TotalOccupancy(ht_stats) += TSTHT_NumContents(pTSTHT);
-    for ( ppTSTN = TSTHT_BucketArray(pTSTHT);
-	  ppTSTN < TSTHT_BucketArray(pTSTHT) + TSTHT_NumBuckets(pTSTHT);
-	  ppTSTN++ )
-      if ( IsNonNULL(*ppTSTN) ) {
-#ifdef DEBUG
-	/* Count the objects in each bucket
-	   -------------------------------- */
-	TSTNptr pTSTN = *ppTSTN;
-	do {
-	  num_contents++;
-	  pTSTN = TSTN_Sibling(pTSTN);
-	} while ( IsNonNULL(pTSTN) );
-#endif
-	HashStats_NonEmptyBuckets(ht_stats)++;
-      }
-#ifdef DEBUG
-    /* Compare counter and header values
-       --------------------------------- */
-    if ( num_contents != TSTHT_NumContents(pTSTHT) )
-      xsb_warn("Inconsistent Time Stamp Trie Hash Table Usage Calculations:\n"
-	       "\tHash table occupancy mismatch.");
-#endif
-    pTSTHT = TSTHT_NextTSTHT(pTSTHT);
-  }
-  if ( HashStats_NumAllocHeaders(ht_stats) !=
-       (num_used_hdrs + HashStats_NumFreeHeaders(ht_stats)) )
-    xsb_warn("Inconsistent Time Stamp Trie Hash Table Usage Calculations:\n"
-	     "\tHeader count mismatch.");
-
-  return ht_stats;
-}
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-NodeStats tsi_statistics() {
-
-  NodeStats tsi_stats;
-
-
-  SM_CurrentCapacity(smEntry, NodeStats_NumBlocks(tsi_stats),
-		     NodeStats_NumAllocNodes(tsi_stats));
-  SM_CountFreeStructs(smEntry,NodeStats_NumFreeNodes(tsi_stats));
-  NodeStats_NodeSize(tsi_stats) = sizeof(TSI_Entry);
-
-  return tsi_stats;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -292,13 +176,13 @@ void print_detailed_tablespace_stats() {
     tstht;		/* Time Stamp Trie Hash Tables */
   
 
-  btn = btn_statistics();
-  btht = btht_statistics();
+  btn = node_statistics(&smTableBTN);
+  btht = hash_statistics(&smTableBTHT);
   sf = subgoal_statistics();
-  tstn = tstn_statistics();
-  tstht = tstht_statistics();
-  tsi = tsi_statistics();
-  aln = aln_statistics();
+  aln = node_statistics(&smALN);
+  tstn = node_statistics(&smTSTN);
+  tstht = hash_statistics(&smTSTHT);
+  tsi = node_statistics(&smEntry);
 
   printf("\n"
 	 "  Table Space\n"
@@ -462,13 +346,13 @@ void compute_maximum_tablespace_stats() {
   SubgStats sf;
   HashStats tstht, btht;
 
-  btn = btn_statistics();
-  btht = btht_statistics();
+  btn = node_statistics(&smTableBTN);
+  btht = hash_statistics(&smTableBTHT);
   sf = subgoal_statistics();
-  tstn = tstn_statistics();
-  tstht = tstht_statistics();
-  tsi = tsi_statistics();
-  aln = aln_statistics();
+  tstn = node_statistics(&smTSTN);
+  tstht = hash_statistics(&smTSTHT);
+  tsi = node_statistics(&smEntry);
+  aln = node_statistics(&smALN);
 
   update_maximum_tablespace_stats(&btn,&btht,&sf,&aln,&tstn,&tstht,&tsi);
 }

@@ -27,6 +27,7 @@
 
 #define TABLE_STATISTICS
 
+#include "struct_manager.h"
 
 /*=========================================================================*/
 
@@ -134,12 +135,8 @@ typedef struct {
 /* Collection Routines
    ------------------- */
 SubgStats subgoal_statistics();
-NodeStats aln_statistics();
-NodeStats btn_statistics();
-HashStats btht_statistics();
-NodeStats tstn_statistics();
-HashStats tstht_statistics();
-NodeStats tsi_statistics();
+NodeStats node_statistics(Structure_Manager *);
+HashStats hash_statistics(Structure_Manager *);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
