@@ -2,7 +2,7 @@
 :- [cdftp_meta].
 :- [cdftp_cdfsc].
 
-:- export check_rule/1, dlrule_to_cdf/2.
+:- export check_rule/1, dlrule_to_cdf/2, body_ce_to_formula/3.
 
 :- import allAttr/3, hasAttr/3, 
 	   isa/2, maxAttr/4, minAttr/4,
