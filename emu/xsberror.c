@@ -36,6 +36,7 @@
 
 /*----------------------------------------------------------------------*/
 
+
 static char *err_msg[] = {
 	"Calculation", "Database", "Evaluation", "Implementation",
 	"Instantiation", "I/O Control", "I/O End-of-file", "I/O Formatting",

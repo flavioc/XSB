@@ -190,6 +190,11 @@ void keyint_proc(int sig)
   *asynint_ptr |= KEYINT_MARK;
 }
 
+void xsb_segfault_handler (int err)
+{
+  longjmp(xsb_fall_back_environment, 1);
+}
+
 void init_interrupt(void)
 {
 #if (defined(LINUX))
@@ -200,7 +205,9 @@ void init_interrupt(void)
 #else
   signal(SIGINT, keyint_proc); 
 #endif
+  signal(SIGSEGV, &xsb_segfault_handler);
 }
+
 
 void intercept(Psc psc)
 {

@@ -1,4 +1,4 @@
-/* File:      biassert.c
+/* File:      io_builtins.c
 ** Author(s): David S. Warren, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -26,6 +26,7 @@
 #include "debugs/debug.h"
 
 #include <stdio.h>
+#include <signal.h>
 #include <errno.h>
 #include <string.h>
 #include <setjmp.h>
@@ -81,7 +82,8 @@ bool fmt_write(void)
   char *Fmt;
   prolog_term ValTerm, Arg;
   int i, Arity;
-  
+  char *tmp_segfault_message = xsb_segfault_message;
+
   i = ptoc_int(1);
   fptr = fileptr(i);
   Fmt = ptoc_string(2);
@@ -109,6 +111,8 @@ bool fmt_write(void)
 	  args[40],args[42],args[44], args[46],args[48],args[50],
 	  args[52],args[54],args[56], args[58]
 	  );
+
+  xsb_segfault_message = tmp_segfault_message;
   
   return TRUE;
 }
@@ -140,6 +144,7 @@ bool fmt_write_string(void)
   int i, Arity;
   char *Fmt, *OutString = NULL;
   int required_buf_size = INIT_BUF_SIZE+1, old_bufsize = INIT_BUF_SIZE;
+  char *tmp_segfault_message = xsb_segfault_message;
   
   Fmt = ptoc_string(2);
   ValTerm = reg_term(3);
@@ -160,6 +165,9 @@ bool fmt_write_string(void)
       return FALSE;
     }
   }
+
+  xsb_segfault_message =
+    "fmt_write_string: Argument type doesn't match format specifier";
 
   /* do snprintf until we get the right size of the output string (needs only
      be done twice at most */
@@ -185,6 +193,8 @@ bool fmt_write_string(void)
   sprintf(OutString, Fmt,
 	  args[2],args[4],args[6],args[8],args[10], args[12], args[14]);
 #endif
+
+  xsb_segfault_message = tmp_segfault_message;
 
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)
@@ -571,5 +581,4 @@ int read_canonical(void)
     }
   }
 }
-
 

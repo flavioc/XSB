@@ -22,6 +22,7 @@
 ** 
 */
 
+#include <setjmp.h>
 
 /*----------------------------------------------------------------------*/
 /* The following is a list of errors as defined by the Prolog ISO	*/
@@ -57,5 +58,9 @@ extern void err_handle(int, int, char *, int, char *, Cell);
 
 #define xsb_mesg(message)       fprintf(stderr, "%s\n", message)
 #define xsb_warn(warning)	fprintf(stderr, "++Warning: %s\n", warning)
+
+extern char *xsb_segfault_message;
+extern jmp_buf xsb_fall_back_environment;
+
 
 /*----------------------------------------------------------------------*/
