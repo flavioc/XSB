@@ -23,6 +23,8 @@
 	    true
 	).
 
+'_$_$_flora_subclass'(X,X) :- '_$_$_flora_exists'(X).
+
 
 /*****************************************************************************
   closure rules for X:Y, X::Z implies X:Z
@@ -113,13 +115,14 @@
 
 '_$_$_flora_overwritten_fd'(Object,Class,Method) :-
 	'_$_$_flora_isa'(Object,SubClass),
-	'_$_$_flora_subclass'(SubClass,Class),
 	SubClass \= Class,
+	'_$_$_flora_subclass'(SubClass,Class),
 	'_$_$_flora_ifd'(SubClass,Method,_).
 
 %% When this is called, Object always belongs to Class
 '_$_$_flora_conflict_fd'(Object,Class,Method) :-
 	'_$_$_flora_defined_ifd'(Class1,Method),
+	Class \= Class1,
 	'_$_$_flora_isa'(Object,Class1),
 	tnot('_$_$_flora_subclass'(Class1,Class)),
 	tnot('_$_$_flora_subclass'(Class,Class1)).
@@ -142,12 +145,13 @@
 
 '_$_$_flora_overwritten_mvd'(Object,Class,Method) :-
 	'_$_$_flora_isa'(Object,SubClass),
-	'_$_$_flora_subclass'(SubClass,Class),
 	SubClass \= Class,
+	'_$_$_flora_subclass'(SubClass,Class),
 	'_$_$_flora_imvd'(SubClass,Method,_).
 
 '_$_$_flora_conflict_mvd'(Object,Class,Method) :-
 	'_$_$_flora_defined_imvd'(Class1,Method),
+	Class \= Class1,
 	'_$_$_flora_isa'(Object,Class1),
 	tnot('_$_$_flora_subclass'(Class1,Class)),
 	tnot('_$_$_flora_subclass'(Class,Class1)).
@@ -170,13 +174,14 @@
 
 '_$_$_flora_overwritten_ifd'(Class,Super,Method) :-
 	'_$_$_flora_subclass'(Class,S),
-	'_$_$_flora_subclass'(S,Super),
 	Super \= S,
+	'_$_$_flora_subclass'(S,Super),
 	'_$_$_flora_ifd'(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_ifd'(Class,Super,Method) :-
 	'_$_$_flora_defined_ifd'(Super1,Method),
+	Super1 \= Super,
 	'_$_$_flora_subclass'(Class,Super1),
 	tnot('_$_$_flora_subclass'(Super1,Super)),
 	tnot('_$_$_flora_subclass'(Super,Super1)).
@@ -199,13 +204,14 @@
 
 '_$_$_flora_overwritten_imvd'(Class,Super,Method) :-
 	'_$_$_flora_subclass'(Class,S),
-	'_$_$_flora_subclass'(S,Super),
 	Super \= S,
+	'_$_$_flora_subclass'(S,Super),
 	'_$_$_flora_imvd'(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_imvd'(Class,Super,Method) :-
 	'_$_$_flora_defined_imvd'(Super1,Method),
+	Super1 \= Super,
 	'_$_$_flora_subclass'(Class,Super1),
 	tnot('_$_$_flora_subclass'(Super1,Super)),
 	tnot('_$_$_flora_subclass'(Super,Super1)).
