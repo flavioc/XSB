@@ -1441,7 +1441,7 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode)
   if (stream_found < 0 && first_null < 0) {
   for (i=MIN_USR_OPEN_FILE; 
        i < MAX_OPEN_FILES ;
-       i++) printf("File Ptr %x Name %s\n",open_files[i].file_ptr, open_files[i].file_name);
+       i++) printf("File Ptr %p Name %s\n",open_files[i].file_ptr, open_files[i].file_name);
 
     xsb_warn("[%s] Too many open files", context);
     *ioport = 0;

@@ -615,7 +615,10 @@ inline static xsbBool file_function(void)
       sfptr = strfileptr(stream);
       if (sfptr == NULL)
 	return FALSE;
-      else return TRUE;
+      else {
+	ctop_int(3,READ_MODE);
+	return TRUE;
+      }
     }
     if (stream < -MAXIOSTRS)
       return FALSE;

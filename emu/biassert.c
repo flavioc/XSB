@@ -126,10 +126,14 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
     xsb_dbgmsg((LOG_ASSERT,"bldpval - - %d\n", Arg1)); break;
   case unitvar:	/* PPR */
     xsb_dbgmsg((LOG_ASSERT,"unitvar - - %d\n", Arg1)); break;
+  case uniavar:	/* PPR */
+    xsb_dbgmsg((LOG_ASSERT,"uniavar - - \n")); break;
   case unitval:	/* PPR */
     xsb_dbgmsg((LOG_ASSERT,"unitval - - %d\n", Arg1)); break;
   case bldtvar:	/* PPR */
     xsb_dbgmsg((LOG_ASSERT,"bldtvar - - %d\n", Arg1)); break;
+  case bldavar:	/* PPR */
+    xsb_dbgmsg((LOG_ASSERT,"bldavar - - \n")); break;
   case bldtval:	/* PPR */
     xsb_dbgmsg((LOG_ASSERT,"bldtval - - %d\n", Arg1)); break;
   case putlist:	/* PPR */
@@ -607,8 +611,6 @@ int assert_code_to_buff_p(prolog_term Clause)
     assertcmp_printerror(Argno);
     return FALSE;
   }
-  /**  if (isconstr(Clause) && strcmp(p2c_functor(Clause),":-")==0 &&
-       get_arity(get_str_psc(Clause))==2) { **/
   if (isconstr(Clause) && get_str_psc(Clause)==if_psc) { 
     Head = p2p_arg(Clause, 1);
     Body = p2p_arg(Clause, 2);
@@ -657,7 +659,8 @@ static void db_gentopinst(prolog_term T0, int Argno, RegStat Reg)
   if (isinteger(T0)) {
     dbgen_instB_ppvw(getnumcon, Argno, T0); /* getnumcon */
   } else if (isstring(T0)) {
-    dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
+    if (strcmp(string_val(T0),"$assertAVAR"))
+	dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
   } else if (isfloat(T0)) {
     dbgen_instB_ppvw(getfloat, Argno, T0); /* getfloat */
   } else if (isref(T0)) {
@@ -741,7 +744,9 @@ static void db_geninst(prolog_term Sub, RegStat Reg,
   if (isinteger(Sub)) {
     dbgen_instB_pppw(uninumcon, Sub);
   } else if (isstring(Sub)) {
-    dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));
+    if (!strcmp(string_val(Sub),"$assertAVAR")) {
+      dbgen_instB_ppp(uniavar);
+    } else dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));
   } else if (isnil(Sub)) {
     dbgen_instB_ppp(uninil);
   } else if (isfloat(Sub)) {
@@ -801,7 +806,12 @@ static void db_genaput(prolog_term T0, int Argno,
   } else if (isnil(T0)) {
     inst_queue_push(inst_queue, putnil, 0, Argno);
   } else if (isstring(T0)) {
-    inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
+    if (!strcmp(string_val(T0),"$assertAVAR")) {
+      Rt = reg_get(Reg, RVAR);
+      dbgen_instB_pvv(puttvar, Rt, Rt);
+      RegArrayInit[Rt] = 1;  /* reg is inited */
+      inst_queue_push(inst_queue, movreg, Rt, Argno);
+    } else inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
   } else if (isattv(T0)) {
     prolog_term T1;
     
@@ -865,6 +875,8 @@ static void db_putterm(int Rt, prolog_term T0,
 	dbgen_instB_ppv(bldtvar, Arg1);
       }
       break;
+    case bldavar:
+      dbgen_instB_ppp(bldavar); break;
     case bldcon:
       dbgen_instB_pppw(bldcon, Arg1); break;
     case bldnumcon:
@@ -886,7 +898,9 @@ static void db_bldsubs(prolog_term Sub, RegStat Reg,
   int Rt;
   
   if (isstring(Sub)) {
-    flatten_stack_push(flatten_stack,bldcon,(Cell)string_val(Sub)); /* bldcon */
+    if (!strcmp(string_val(Sub),"$assertAVAR"))
+      flatten_stack_push(flatten_stack, bldavar, 0);
+    else flatten_stack_push(flatten_stack,bldcon,(Cell)string_val(Sub)); /* bldcon */
   } else if (isinteger(Sub)) {               /* bldnumcon(Sub) */
     flatten_stack_push(flatten_stack, bldnumcon, Sub);
   } else if (isfloat(Sub)) {             /* bldfloat(Sub) */
