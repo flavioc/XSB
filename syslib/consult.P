@@ -663,7 +663,7 @@ if_should_not_reload(File) :-
 	get_HRname(SExt,Base,_Hfname,Filename),
 	file_time(Filename,time(Ctime1,Ctime2)),
 	load_dyn_file_loaded(Filename,time(Ltime1,Ltime2)),
-	time(Ltime1,Ltime2) @=< time(Ctime1,Ctime2),
+	time(Ltime1,Ltime2) @>= time(Ctime1,Ctime2),
 	\+ need_more_index(Filename).
 
 need_more_index(Filename) :-
