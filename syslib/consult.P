@@ -28,7 +28,6 @@
 #include "char_defs.h"
 #include "flag_defs.h"
 
-
 compile(Path) :- compile(Path, []).	% compile with no options
 
 compile(X, _) :-
@@ -236,22 +235,24 @@ write_canonical_list(Term) :-
 
 
 load_dyn(File) :-
+	load_dyn(File,1).
+load_dyn(File,Dir) :-
 	(atom(File)
 	 ->	true
 	 ;	warning('Wrong type in argument 1 of load_dyn/1'),fail
 	),
 	get_fname(File,SExt,Base,Mod),
-	load_dyn0(SExt,Base,Mod).
+	load_dyn0(SExt,Base,Mod,Dir).
 
 get_fname(Filename,SExt,Base,Mod) :-
 	( search_module(Filename,_Dir,Mod,SExt,Base,_Obj) -> true
 	; warning('Cannot find file'(Filename)), fail
 	).
 
-load_dyn0(SExt,Base,Mod) :-
+load_dyn0(SExt,Base,Mod,Dir) :-
 	(SExt == ''	% no suffix
 	 ->	init_for_load(Base,Mod),
-		load_dyn1(Base),
+		load_dyn1(Base,Dir),
 		cleanup_for_load
 	 ;      dotted_ext(SExt, DExt),
 	        str_cat(Base, DExt, Rfname),
@@ -259,23 +260,23 @@ load_dyn0(SExt,Base,Mod) :-
 		(SExt == 'P'
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
-			 ->	load_dyn1(Hfname)
+			 ->	load_dyn1(Hfname,Dir)
 			 ;	true
 			)
 		 ;	true
 		),
-		load_dyn1(Rfname),
+		load_dyn1(Rfname,Dir),
 		cleanup_for_load
 	).
 
 dotted_ext(Ext,DExt) :- str_cat('.',Ext,DExt).
 
-load_dyn1(Rfname) :-
+load_dyn1(Rfname,Dir) :-
 	cputime(T0),
 	seeing(OldFile),
 	open_or_xpp_file(Rfname, XPP_process),
 	current_input_port(XPPport), % port from process, if it was launched
-	(   read_and_assert
+	(   read_and_assert(Dir)
 	%% If needs restart, close old file and skip to the second load_dyn1
 	->  ( conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(xpp_on,0)
@@ -289,10 +290,10 @@ load_dyn1(Rfname) :-
 	seen,
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
-load_dyn1(Rfname) :- 
+load_dyn1(Rfname,Dir) :- 
 	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
-	load_dyn1(Rfname).
+	load_dyn1(Rfname,Dir).
 
 
 :- dynamic load_dyn_trie_retracted(_).
@@ -363,32 +364,32 @@ multifile_query(ModName) :-
  
  
 %% This version is used for load_dyn1 only!
-read_and_assert :-
+read_and_assert(Dir) :-
 	read(Term1),
 	expand_term(Term1,Term2),
 	load_dyn_module(ModName),
 	change_multifile_directive(Term2, ModName, Term),
 	(Term == end_of_file
 	 ->	!, fail
-	 ;	do_assert_and_fail(Term)
+	 ;	do_assert_and_fail(Term,Dir)
 	).
 %% Don''t loop, if restart is requested
-read_and_assert :- conget(needs_restart,1), !.
-read_and_assert :- read_and_assert.
+read_and_assert(_) :- conget(needs_restart,1), !.
+read_and_assert(Dir) :- read_and_assert(Dir).
 
-
-load_dync(File) :-
+load_dync(File) :- load_dync(File,1).  % assertz
+load_dync(File,Dir) :-
 	(atom(File)
 	 ->	true
 	 ;	warning('Wrong type in argument 1 of load_dync/1'),fail
 	),
 	get_fname(File,SExt,Base,Mod),
-	load_dync0(SExt,Base,Mod).
+	load_dync0(SExt,Base,Mod,Dir).
 
-load_dync0(SExt,Base,Mod) :-
+load_dync0(SExt,Base,Mod,Dir) :-
 	(SExt == ''	% no suffix
 	 ->	init_for_load(Base,Mod),
-		load_dync1(Base),
+		load_dync1(Base,Dir),
 		cleanup_for_load
 	 ;      dotted_ext(SExt, DExt),
 	        str_cat(Base, DExt, Rfname),
@@ -396,22 +397,22 @@ load_dync0(SExt,Base,Mod) :-
 		(SExt == 'P'
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
-			 ->	load_dync1(Hfname)
+			 ->	load_dync1(Hfname,Dir)
 			 ;	true
 			)
 		 ;	true
 		),
-		load_dync1(Rfname),
+		load_dync1(Rfname,Dir),
 		cleanup_for_load
 	).
 
-load_dync1(Rfname) :-
+load_dync1(Rfname,Dir) :-
 	cputime(T0),
 	seeing(OldFile),
 	open_or_xpp_file(Rfname, XPP_process),
 	current_input_port(XPPport),
 	file_read_canonical(-1000,0,0),	% initialize previous psc
-	(   read_and_assert(XPPport)
+	(   read_and_assert(XPPport,Dir)
 	%% If needs restart, close old file and skip to the second load_dyn1
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(xpp_on,0)
@@ -425,14 +426,14 @@ load_dync1(Rfname) :-
 	seen,
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
-load_dync1(Rfname) :- 
+load_dync1(Rfname,Dir) :- 
 	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
-	load_dync1(Rfname).
+	load_dync1(Rfname,Dir).
 
 
 %% This version is used for load_dync1 only!
-read_and_assert(IPort) :-
+read_and_assert(IPort,Dir) :-
 	file_read_canonical(IPort,Term0,Opsc),	% Opsc: Old(Previous) psc
 %	expand_term(Term0,Term1),	% should we do this?
 	load_dyn_module(ModName),
@@ -440,26 +441,26 @@ read_and_assert(IPort) :-
 	(Opsc =\= 0,\+'_$trie_asserted'(Term)
 	 ->	load_dyn_retracted(Opsc,Prref,NArity,Index,Hashsize),
 		assert_code_to_buff(Term),
-		assert_buff_to_clref(Term,NArity,Prref,1,Index,Hashsize),
+		assert_buff_to_clref(Term,NArity,Prref,Dir,Index,Hashsize),
 		fail
 	 ;	Prref=_,NArity=_,Index=_,Hashsize=_	 
 	),
 	(Term == end_of_file
 	 ->	!, fail
-	 ;	do_assert_and_fail(Term)
+	 ;	do_assert_and_fail(Term,Dir)
 	).
-read_and_assert(_IPort) :- conget(needs_restart,1), !.
-read_and_assert(IPort) :- read_and_assert(IPort).
+read_and_assert(_IPort,_Dir) :- conget(needs_restart,1), !.
+read_and_assert(IPort,Dir) :- read_and_assert(IPort,Dir).
 
 
 /* In change_multifile_directive(TermIn, ModName, TermOut), TermOut may be 
    bound to [] (when TermIn is a multifile directive like :- multifile p/2, 
-   q/3).  So we have to add the following line for do_assert_and_fail/1.
+   q/3).  So we have to add the following line for do_assert_and_fail/2.
 */
 
-do_assert_and_fail([]) :- !, fail.
+do_assert_and_fail([],_) :- !, fail.
 
-do_assert_and_fail(Term) :-	% Now Term is the output of
+do_assert_and_fail(Term,Dir) :-	% Now Term is the output of
 				% change_multifile_directive(TermIn,_,Term)
 	(Term = (:-Cmd)
 	 ->	proc_directive(Cmd),fail
@@ -511,7 +512,7 @@ do_assert_and_fail(Term) :-	% Now Term is the output of
 			(assert_code_to_buff((Nhead:-Nbody)),fail;true)
 		 ;	(assert_code_to_buff(Term),fail;true)
 		),
-		assert_buff_to_clref(Head,NArity,Prref,1,Index,Hashsize)
+		assert_buff_to_clref(Head,NArity,Prref,Dir,Index,Hashsize)
 		),
 	fail.
 
