@@ -209,7 +209,7 @@ void ODBCConnect()
 {
   UCHAR *server;
   UCHAR *pwd;
-  HDBC hdbc;
+  HDBC hdbc = NULL;
   RETCODE rc;
 
   /* if we don't yet have an environment, allocate one.*/
@@ -335,26 +335,28 @@ void FindFreeCursor()
 
   /* search */
   while (curi != NULL) {
-    if (curi->Status == 0) curj = curi;        /* cursor never been used*/
-    else {
-      if (curi->Status == 1) {    /* a closed cursor*/
-	/* same statement as this one, so grab and return it*/
-	if ((curi->hdbc == hdbc) && !strcmp(curi->Sql,Sql_stmt)) {
-	  if (curi != FCursor) {
-	    (curi->PCursor)->NCursor = curi->NCursor;
-	    if (curi == LCursor) LCursor = curi->PCursor;
-	    else (curi->NCursor)->PCursor = curi->PCursor;
-	    FCursor->PCursor = curi;
-	    curi->PCursor = NULL;
-	    curi->NCursor = FCursor;
-	    FCursor = curi;
+    if (curi->hdbc == hdbc) { /* only look at stmt handles for this connection */
+      if (curi->Status == 0) curj = curi; /* cursor never been used*/
+      else {
+	if (curi->Status == 1) {    /* a closed cursor*/
+	  /* same statement as this one, so grab and return it*/
+	  if (!strcmp(curi->Sql,Sql_stmt)) {
+	    if (curi != FCursor) {
+	      (curi->PCursor)->NCursor = curi->NCursor;
+	      if (curi == LCursor) LCursor = curi->PCursor;
+	      else (curi->NCursor)->PCursor = curi->PCursor;
+	      FCursor->PCursor = curi;
+	      curi->PCursor = NULL;
+	      curi->NCursor = FCursor;
+	      FCursor = curi;
+	    }
+	    curi->Status = 2;
+	    ctop_int(4, (long)curi);
+	    /*printf("reuse cursor: %p\n",curi);*/
+	    return;
+	  } else {
+	    curk = curi;                      /* otherwise just record it*/
 	  }
-	  curi->Status = 2;
-	  ctop_int(4, (long)curi);
-	  /*printf("reuse cursor: %p\n",curi);*/
-	  return;
-	} else {
-	  curk = curi;                      /* otherwise just record it*/
 	}
       }
     }
@@ -367,6 +369,7 @@ void FindFreeCursor()
     /*printf("take unused cursor: %p\n",curi);*/
   }
   else if (numberOfCursors < MAXCURSORNUM) { /* allocate a new cursor if allowed*/
+    /* problem here: should have numberOfCursors for each connection */
     curi = (struct Cursor *)calloc(sizeof(struct Cursor),1);
     curi->PCursor = NULL;
     curi->NCursor = FCursor;
