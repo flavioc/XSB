@@ -4,6 +4,7 @@ Usage:	xsb [flags] [-l] [-i]
 	xsb [flags] -B boot_module [-D cmd_loop_driver] [-t] [-e goal]
 	xsb [flags] -B module_to_disassemble -d
 	xsb -[h | v]
+	xsb --help | --version | --nobanner | --quietload | --noprompt
 
       	memory management flags:
 	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -g gc_type
@@ -43,5 +44,8 @@ Usage:	xsb [flags] [-l] [-i]
     -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
             -s : record maximum usage of stacks (for statistics/0).
             -T : print a trace of each called predicate
-            -v : print the version and configuration information about XSB.
-            -h : print this help message
+ -v, --version : print the version and configuration information about XSB.
+    -h, --help : print this help message
+    --nobanner : don't show the XSB banner on startup
+   --quietload : don't show the `module loaded' messages
+    --noprompt : don't show prompt (for non-interactive use)

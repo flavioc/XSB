@@ -39,7 +39,11 @@
 
 interpreter :-
         set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
-        version_message,
+        stat_flag(BANNER_CTL, BannerCtl), % no-banner flag on cmd line
+	(   HideBanner is BannerCtl mod NOBANNER, HideBanner =:= 0
+	->  true		% don't print banner
+	;   version_message
+	),
         prompt('| ?- ',[]),
         prompt('',[],'_$more_prompt'(_)),
         prompt(' ? ',[],'_$debug_prompt'(_)),
@@ -54,7 +58,14 @@ interpreter :-
         ;   file_nl(STDMSG),
             file_write(STDMSG, 'Evaluating command line goal:  '),
             file_nl(STDMSG),
-            file_write(STDMSG, '| ?- '),
+	    %% Don't print prompt, if --noprompt specified on cmd line
+	    %% Useful when spawning xsb subprocesses, 
+	    %% so they won't send junk back to the parent.
+	    stat_flag(BANNER_CTL, BannerCtl),
+	    (	HidePrompt is BannerCtl mod NOPROMPT, HidePrompt =:= 0
+	    ->	true
+	    ;	file_write(STDFDBK, '| ?- ')
+	    ),
             file_write(STDMSG, CmdGoal), file_nl(STDMSG),
             file_open(CmdGoal, 3, FileDes),
             eval_command_line_goal(FileDes),
@@ -79,8 +90,12 @@ interpreter1 :-
 	conset('_$break_level', 0),
 	print_debug_state,
 	prompt(Prompt,Prompt),
-	file_write(STDFDBK, Prompt),
-	file_flush(STDFDBK, _),
+	%% Hide prompt, is --noprompt
+	stat_flag(BANNER_CTL, BannerCtl),
+	(   HidePrompt is BannerCtl mod NOPROMPT, HidePrompt =:= 0
+	->  true
+	;   file_write(STDFDBK, Prompt), file_flush(STDFDBK, _)
+	),
 	file_read(STDIN, X, Vars),
 	( nonvar(X), read_in_stop(X), halt, ! %% end of top loop; halt
 	; process_query(X, Vars)
@@ -173,14 +188,14 @@ break :- conget('_$break_level', Blevel),
 
 readl_brklp1 :- 
 	x_interp_repeat, 
-		conget('_$break_level', Blevel),
-		file_write(STDMSG, Blevel), file_write(STDMSG, ': ?- '),
-		file_flush(STDMSG, _),
-		file_read(STDIN, X, Vars),
-		( nonvar(X), read_in_stop(X), !
-			%% end read loop; pop a break level, out if X=halt.
-		; process_query(X, Vars)
-		).
+	conget('_$break_level', Blevel),
+	file_write(STDFDBK, Blevel),
+	file_write(STDFDBK, ': ?- '), file_flush(STDFDBK, _),
+	file_read(STDIN, X, Vars),
+	(   nonvar(X), read_in_stop(X), !
+	%% end read loop; pop a break level, out if X=halt.
+	;   process_query(X, Vars)
+	).
 
 /* === interrupt handlers ============================================== */
 

@@ -44,9 +44,12 @@
 #define MOD_LIST	13	/* the list of module (Psc) entries	YR */
 #define RELOC_TABLE	14	/* relocation table			YR */
 
+#define BANNER_CTL      17      /* Controls whether banner, "loaded" msgs
+				   are displayed; passed to Prolog side.
+				   Check BANNER_CTL values at the end   MK */
 #define DCG_MODE        18      /* DGC mode: standard or xsb	        MK */
 
-#define GARBAGE_COLLECT 20      /* type of garbage collecion employed:     */
+#define GARBAGE_COLLECT 20      /* type of garbage collection employed:    */
                                 /* 0 = none; 1 = sliding; 2 = copying.  NW */
 #define CMD_LINE_GOAL  	21	/* The Prolog goal passed on cmd 
 				   line with -e	       	       	           */
@@ -93,6 +96,12 @@ As best as I can tell, only the following exist/are used:
 #define ORA_INPUTARRAY_WIDTH      59   /* max size of each input value    */
 #define ORA_OUTPUTARRAY_LENGTH    60   /* max # simultaneous output tuples */
 
-#define TABLING_METHOD	61   /* Method used to evaluate tabled calls:
-				variant or subsumption */
+#define TABLING_METHOD	  61      /* Method used to evaluate tabled calls:
+				     variant or subsumption */
 
+/* Banner control values recognized on the Prolog side. 
+   MUST BE PRIME NUMBERS */
+#define NOBANNER          2   /* don't display XSB banner */
+#define QUIETLOAD    	  3   /* don't display "module loaded" msgs */
+#define NOPROMPT    	  5   /* display no prompt--useful in spawned
+				 subprocesses */

@@ -185,8 +185,12 @@ load_exec(File, ModName) :-
 		file_nl(STDERR), fail
 	),
 	!,
-	file_write0(STDMSG, '['), file_write0(STDMSG, ModName),
-	file_write0(STDMSG, ' loaded]'), file_nl(STDMSG),
+	stat_flag(BANNER_CTL,BannerCtl),
+	(   KeepQuiet is BannerCtl mod QUIETLOAD, KeepQuiet =:= 0
+	->  true
+	;   file_write0(STDMSG, '['), file_write0(STDMSG, ModName),
+	    file_write0(STDMSG, ' loaded]'), file_nl(STDMSG)
+	),
 	(Init > 4			% Prolog byte code loaded
 	 ->	co_code_call(Init, true, 2),	% call '_$main'
 		unload_seg(Init)		% free space for '_$main'

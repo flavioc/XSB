@@ -125,6 +125,8 @@ extern char *install_dir;
 extern char *xsb_config_file; /* configuration.P */
 extern char *user_home; /* the user HOME dir or install dir, if HOME is null */
 
+void process_long_option(char *option);
+
 /*==========================================================================*/
 
 static void display_file(char *infile_name)
@@ -139,7 +141,7 @@ static void display_file(char *infile_name)
   }
 
   while (fgets(buffer, MAXBUFSIZE-1, infile) != NULL)
-    printf("%s", buffer);
+    fprintf(stdmsg, "%s", buffer);
 
   fclose(infile);
 }
@@ -154,7 +156,7 @@ static void version_message(void)
 	  strip_names_from_path(xsb_config_file, 2), SLASH);
 
   display_file(configmsg);
-  puts("");
+  fprintf(stdmsg, "\n");
   display_file(licensemsg);
 
   exit(0);
@@ -181,6 +183,7 @@ static void init_flags(void)
   int i;
 
   for (i=0; i<64; i++) flags[i] = 0;
+  flags[BANNER_CTL] = 1; /* this one is a product of prime numbers */
   flags[RELOC_TABLE] = (Cell)reloc_table;
 }
 
@@ -460,6 +463,9 @@ char *init_para(int argc, char *argv[])
     case 'v':
       version_message();
       break;
+    case '-': /* this was a long option of the form --optionname */
+      process_long_option(argv[i]+2);
+      break;
     default:
       sprintf(warning, "Unknown command line option %s", argv[i]);
       xsb_warn(warning);
@@ -717,6 +723,27 @@ void init_symbols(void)
   /* make another reference to global module -- "usermod" */
   tp = insert_module(T_MODU, "usermod");	/* loaded */
   set_ep(pair_psc(tp), get_ep(global_mod));
+}
+
+
+/* if command line option is long --optionname, then the arg here is
+   'optionname'. Process it and return.
+*/
+void process_long_option(char *option)
+{
+  if (0==strcmp(option, "nobanner")) {
+    flags[BANNER_CTL] *= NOBANNER;
+  } else if (0==strcmp(option, "quietload")) {
+    flags[BANNER_CTL] *= QUIETLOAD;
+  } else if (0==strcmp(option, "noprompt")) {
+    flags[BANNER_CTL] *= NOPROMPT;
+  } else if (0==strcmp(option, "help")) {
+    help_message();
+  } else if (0==strcmp(option, "version")) {
+    version_message();
+  }
+
+  return;
 }
 
 /*==========================================================================*/

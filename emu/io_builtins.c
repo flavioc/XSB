@@ -312,6 +312,7 @@ bool fmt_write(void)
 /* If no snprintf, we fill only half of OutString, to be on the safe side */
 #ifdef HAVE_SNPRINTF
 #define SAFE_OUT_SIZE MAX_SPRINTF_STRING_SIZE
+int sprintf(char *s, const char *format, /* args */ ...);
 #else
 #define SAFE_OUT_SIZE MAX_SPRINTF_STRING_SIZE/2
 #endif
