@@ -27,13 +27,9 @@
 
 
 /********************************************************************/
-flora_prefix("_$_$_flora_").
 
-flora_word(S,A) :-
-	atom_codes(S,Str),
-	flora_prefix(P),
-	append(P,Str,L),
-	atom_codes(A,L).
+flora_prefix('_$_$_flora_').
+flora_word(S,A) :- flora_prefix(P), str_cat(P,S,A).
 
 
 /********************************************************************/
