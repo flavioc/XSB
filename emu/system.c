@@ -103,8 +103,10 @@ extern char *p_charlist_to_c_string(prolog_term term, char *outstring,
 				    char *in_func, char *where);
 
 static int xsb_spawn (char *prog, char *arg[],
-	       int pipe1[], int pipe2[], int pipe3[],
-	       bool to, bool from, bool fromstderr);
+		      int pipe1[], int pipe2[], int pipe3[],
+		      FILE *toprocess_fptr, FILE *fromprocess_fptr,
+		      FILE *fromproc_stderr_fptr,
+		      bool to_needed,bool from_needed,bool fromstderr_needed);
 static void concat_array(char *array[], char *result_str, int maxsize);
 static int get_free_process_cell(void);
 static void init_process_table(void);
@@ -158,7 +160,8 @@ bool sys_system(int callno)
     static int pipe_to_proc[2], pipe_from_proc[2], pipe_from_stderr[2];
     int toproc_stream=-1, fromproc_stream=-1, fromproc_stderr_stream=-1;
     int pid_or_status;
-    FILE *toprocess_fptr, *fromprocess_fptr, *fromproc_stderr_fptr;
+    FILE *toprocess_fptr=NULL,
+      *fromprocess_fptr=NULL, *fromproc_stderr_fptr=NULL;
     char *params[MAX_SUBPROC_PARAMS+2]; /* one for progname--0th member,
 				       one for NULL termination*/
     char arg_buf[MAXPATHLEN];
@@ -182,6 +185,18 @@ bool sys_system(int callno)
       fromproc_needed = TRUE;
     if (is_var(reg_term(5)))
       fromstderr_needed = TRUE;
+
+    /* if any of the arg streams is already used by XSB, then don't create
+       pipes --- use these streams instead. */
+    if (is_int(reg_term(3))) {
+      SET_FILEPTR(toprocess_fptr, int_val(reg_term(3)));
+    }
+    if (is_int(reg_term(4))) {
+      SET_FILEPTR(fromprocess_fptr, int_val(reg_term(4)));
+    }
+    if (is_int(reg_term(5))) {
+      SET_FILEPTR(fromproc_stderr_fptr, int_val(reg_term(5)));
+    }
 
     if (!is_var(reg_term(6)))
       xsb_abort("SPAWN_PROCESS: Arg 5 (process id) must be a variable");
@@ -220,6 +235,8 @@ bool sys_system(int callno)
     /* params[0] is the progname */
     pid_or_status = xsb_spawn(params[0], params,
 			      pipe_to_proc, pipe_from_proc, pipe_from_stderr,
+			      toprocess_fptr, fromprocess_fptr,
+			      fromproc_stderr_fptr,
 			      toproc_needed,fromproc_needed,fromstderr_needed);
 
     if (pid_or_status < 0) {
@@ -367,8 +384,12 @@ bool sys_system(int callno)
    These are going to be the arrays of fds for the communication pipes 
 */
 static int xsb_spawn (char *progname, char *argv[],
-	       int pipe_to_proc[],int pipe_from_proc[],int pipe_from_stderr[],
-	       bool toproc_needed,bool fromproc_needed,bool fromstderr_needed)
+		      int pipe_to_proc[],
+		      int pipe_from_proc[],int pipe_from_stderr[],
+		      FILE *toprocess_fptr, FILE *fromprocess_fptr,
+		      FILE *fromproc_stderr_fptr,
+		      bool toproc_needed,
+		      bool fromproc_needed,bool fromstderr_needed)
 {
   int pid;
   int stdin_saved, stdout_saved, stderr_saved;
@@ -395,7 +416,7 @@ static int xsb_spawn (char *progname, char *argv[],
   */
 
   /* save I/O */
-  stdin_saved = dup(fileno(stdin));
+  stdin_saved  = dup(fileno(stdin));
   stdout_saved = dup(fileno(stdout));
   stderr_saved = dup(fileno(stderr));
 
@@ -406,7 +427,12 @@ static int xsb_spawn (char *progname, char *argv[],
     }
     close(pipe_to_proc[0]); /* close the original read end of pipe */
   }
-
+  /* if stdin must be captured in an existing I/O port -- do it */
+  if (toprocess_fptr != NULL)
+    if (dup2(fileno(toprocess_fptr), fileno(stdin)) < 0) {
+      return PIPE_TO_PROC_FAILED;
+    }
+  
   if (fromproc_needed) {
     /* close child stdout, bind it to the write part of pipe_from_proc */
     if (dup2(pipe_from_proc[1], fileno(stdout)) < 0) {
@@ -414,6 +440,11 @@ static int xsb_spawn (char *progname, char *argv[],
     }
     close(pipe_from_proc[1]); /* close the original write end of pipe */
   }
+  /* if stdout must be captured in an existing I/O port -- do it */
+  if (fromprocess_fptr != NULL)
+    if (dup2(fileno(fromprocess_fptr), fileno(stdout)) < 0) {
+      return PIPE_TO_PROC_FAILED;
+    }
 
   if (fromstderr_needed) {
     /* close child stdout, bind it to the write part of pipe_from_proc */
@@ -422,6 +453,11 @@ static int xsb_spawn (char *progname, char *argv[],
     }
     close(pipe_from_stderr[1]); /* close the original write end of pipe */
   }
+  /* if stderr must be captured in an existing I/O port -- do it */
+  if (fromproc_stderr_fptr != NULL)
+    if (dup2(fileno(fromproc_stderr_fptr), fileno(stderr)) < 0) {
+      return PIPE_TO_PROC_FAILED;
+    }
 
 #ifdef WIN_NT
   pid = spawnvp(P_NOWAIT, progname, argv);

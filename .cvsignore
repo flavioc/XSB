@@ -1,5 +1,6 @@
-site
-config
+.xsb
 bin
+config
 obj.*
+site
 tests
