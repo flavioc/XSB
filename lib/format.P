@@ -645,10 +645,14 @@ preproc_newlines_list1([H|T],[H1|T1]):-
 	  ; H1 = H),
 	preproc_newlines_list1(T,T1).
 
-preproc_newlines(H,T):- 
+preproc_newlines(H,T):-
 	xsb_configuration(host_os,Type),
-	(Type == windows -> 
-	    preproc_newlines1(H,T)
+	(Type == windows ->
+	    (	atom(H)
+	    ->	atom_codes(H,H1)
+	    ;	H1 = H
+	    ),
+	    preproc_newlines1(H1,T)
 	  ;   
 	    H = T).
 
