@@ -330,19 +330,19 @@ predicates are described here.
     the current input file (which must have been already opened by using
     {\tt see/1}) according to a C format, as used in the C function
     {\tt scanf}. To use it, it must be imported from the module {\tt
-    file\_io}.  {\tt Fmt} must be a string (list of characters) or an atom
+    file\_io}.  {\tt Fmt} must be a string of characters (enclosed in "")
     representing the format that 
     will be passed to the C call to {\tt scanf}.  See the C
     documentation for {\tt scanf} for the meaning of this string.
-    Note that the C escape characters are NOT recognized.  So, for example,
-    to include a 
-    newline, one must put a newline directly in the atom, and not use
-    \verb|\n|.
-    Another difference is that, unlike most C compilers, XSB insists that a
-    single {\tt \%} in the format string signifies format conversion
+    The usual alphabetical C escape characters ({\it e.g.}, $\backslash n$)
+    are recognized, but not the octal or the hexadecimal ones.
+    Another difference with C is that, unlike most C compilers, XSB insists
+    that a single {\tt \%} in the format string signifies format conversion
     specification. (Some C compilers might output {\tt \%} if it is not
     folowed by a valid type conversion spec.) So, to output {\tt \%}
     you must type {\tt \%\%}.
+    Format can also be an atom enclosed in single quotes. However, in that
+    case, escape sequences are not recognized and are printed as is.
     {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)})  whose arguments
     will be unified with 
     the field values read in.  (The functor symbol of {\tt
@@ -357,17 +357,18 @@ predicates are described here.
     {\tt tell/1}) according to a C format, as used in the C function
     {\tt printf}.
     To use it, it must be imported from the module {\tt file\_io}.
-    {\tt Fmt} must be a string or an atom representing the format that will be
-    passed to the C call to {\tt printf}.  See the C documentation
-    for {\tt printf} for the meaning of this string.  Note that
-    the C escape characters are NOT
-    recognized.  So, for example, to include a newline, one must put
-    a newline directly in the atom, and not use \verb|\n|.
-    Another difference is that, unlike most C compilers, XSB insists that a
-    single {\tt \%} in the format string signifies format conversion
+    {\tt Fmt} must be a string of characters (enclosed in "")
+    representing the format that 
+    will be passed to the C call to {\tt scanf}.  See the C
+    documentation for {\tt scanf} for the meaning of this string.
+    The usual alphabetical C escape characters ({\it e.g.}, $\backslash n$)
+    are recognized, but not the octal or the hexadecimal ones.
+    Another difference with C is that, unlike most C compilers, XSB insists
+    that a single {\tt \%} in the format string signifies format conversion
     specification. (Some C compilers might output {\tt \%} if it is not
     folowed by a valid type conversion spec.) So, to output {\tt \%}
-    you must type {\tt \%\%}.
+    you must type {\tt \%\%}. Format can also be an atom, but then escape
+    sequences are not recognized.
     {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments
     will be output. 
     The functor symbol of {\tt Term} is ignored.
@@ -377,7 +378,7 @@ predicates are described here.
     format string and substitutes the values from the arguments of {\tt
       Term} ({\it e.g.}, {\tt args(X,Y,Z)}) for the formatting instructions
     \%s, \%d, etc. The result is available in {\tt String}. {\tt Fmt} is a
-    string or an atom that represents the format.
+    string or an atom that represents the format, as described earlier.
 
 \ournewitem{file\_open(+FileName,+Mode,-FileDes)}{file\_io}
 \index{{\tt file\_open/3}}

@@ -159,9 +159,11 @@ bool fmt_write(void)
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE: Format string must be an atom or a character list");
+    xsb_abort("FMT_WRITE: Format must be an atom or a character string");
 
   ValTerm = reg_term(3);
+  if (!is_functor(ValTerm))
+    xsb_abort("Usage: fmt_write([File,] FormatStr, args(Arg1,...,Arg_n))");
   Arity = get_arity(get_str_psc(ValTerm));
 
   current_fmt_spec = next_format_substr(Fmt,
@@ -273,9 +275,11 @@ bool fmt_write_string(void)
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE_STRING: Format string must be an atom or a character list");
+    xsb_abort("FMT_WRITE_STRING: Format must be an atom or a character string");
 
   ValTerm = reg_term(3);
+  if (!is_functor(ValTerm))
+    xsb_abort("Usage: fmt_write_string(OutBuf, FormatStr, args(Arg1,...,Arg_n))");
   Arity = get_arity(get_str_psc(ValTerm));
 
   current_fmt_spec = next_format_substr(Fmt,
@@ -389,9 +393,8 @@ bool file_read_line(void)
 /* like fscanf,
    R1: +File
    R2: +Format, fscanf format as atom;
-   R3: +Types, Term whose aregs are types to expect;
-   R4: -ValsVar, Term whose args are vars to receive values returned.
-   R5: -Ret: 0 OK, -1 eof */
+   R3: -ValsVar, Term whose args are vars to receive values returned.
+   R4: -Ret: 0 OK, -1 eof */
 /*----------------------------------------------------------------------*/
 
 bool fmt_read(void)
@@ -415,9 +418,11 @@ bool fmt_read(void)
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_READ: Format string must be an atom or a character list");
+    xsb_abort("FMT_READ: Format must be an atom or a character string");
 
   AnsTerm = reg_term(3);
+  if (!is_functor(AnsTerm))
+    xsb_abort("Usage: fmt_read([File,] FormatStr, args(Arg1,...,Arg_n), RetCode");
   Arity = get_arity(get_str_psc(AnsTerm));
 
   current_fmt_spec = next_format_substr(Fmt,
@@ -978,11 +983,14 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
    Arg 2: which function was called from.
    Arg 3: where in the call this happened.
    Args 2 and 3 are used for error reporting.
+   This function converts escape sequences in the Prolog string
+   (except octal/hexadecimal) into the corresponding real characters.
 */
 char *p_charlist_to_c_string (prolog_term term, char *in_func, char *where)
 {
   char str[MAXBUFSIZE+1];
   int i = 0, head_val;
+  int escape_mode=FALSE;
   prolog_term list = term, list_head;
 
   if (!is_list(list)) {
@@ -999,12 +1007,48 @@ char *p_charlist_to_c_string (prolog_term term, char *in_func, char *where)
     if (head_val < 0 || head_val > 255) {
       xsb_abort("%s: Non-ASCII character in %s", in_func, where);
     }
-    str[i] = (char) head_val;
-    list = p2p_cdr(list);
-    i++;
-  }
-  str[i] = '\0';
 
+    head_val = (char) head_val;
+    /* convert ecape sequences */
+    if (escape_mode)
+      switch (head_val) {
+      case 'a':
+	str[i] = '\a';
+	break;
+      case 'b':
+	str[i] = '\b';
+	break;
+      case 'f':
+	str[i] = '\f';
+	break;
+      case 'n':
+	str[i] = '\n';
+	break;
+      case 'r':
+	str[i] = '\r';
+	break;
+      case 't':
+	str[i] = '\t';
+	break;
+      case 'v':
+	str[i] = '\v';
+	break;
+      default:
+	str[i] = head_val;
+      }
+    else
+      str[i] = head_val;
+
+    if (str[i] == '\\' && !escape_mode)
+      escape_mode = TRUE;
+    else {
+      i++;
+      escape_mode = FALSE;
+    }
+    list = p2p_cdr(list);
+  } /* while */
+
+  str[i] = '\0';
   return(string_find(str,1));
 }
 
