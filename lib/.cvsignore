@@ -1,3 +1,4 @@
 *.O
 cmd...
 o.diff
+ChangeLog
