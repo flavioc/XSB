@@ -126,6 +126,7 @@ CLEAN :
 	-@erase "$(INTDIR)\init.obj"
 	-@erase "$(INTDIR)\io_builtins.obj"
 	-@erase "$(INTDIR)\loader.obj"
+	-@erase "$(INTDIR)\chat.obj
 	-@erase "$(INTDIR)\load_seg.obj"
 	-@erase "$(INTDIR)\memory.obj"
 	-@erase "$(INTDIR)\orastuff.obj"
@@ -156,6 +157,7 @@ LINK32_OBJS= \
 	"$(INTDIR)/auxlry.obj" \
 	"$(INTDIR)/builtin.obj" \
 	"$(INTDIR)/biassert.obj" \
+	"$(INTDIR)/chat.obj"\
 	"$(INTDIR)/cinterf.obj" \
 	"$(INTDIR)/debug.obj" \
 	"$(INTDIR)/dis.obj" \
@@ -377,6 +379,7 @@ DEP_CPP_TRACE=\
 	{$(INTDIR)}"\debugs\debug.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\chat.h"\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\tries.h"\
@@ -404,6 +407,7 @@ DEP_CPP_TR_UT=\
 	{$(INTDIR)}"\debugs\debug_tries.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\chat.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\binding.h"\
 	{$(INTDIR)}"\psc.h"\
@@ -489,6 +493,7 @@ DEP_CPP_SLGDE=\
 	{$(INTDIR)}"\debugs\debug_delay.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\chat.h"\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\tries.h"\
@@ -747,6 +752,7 @@ DEP_CPP_HEAP_=\
 	{$(INTDIR)}"\configs\special.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\chat.h"\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\tries.h"\
@@ -838,6 +844,8 @@ DEP_CPP_EMULO=\
 	{$(INTDIR)}"\debugs\debug.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\chat.h"\
+	{$(INTDIR)}"\chatsched.i"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\inst.h"\
@@ -997,6 +1005,7 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\configs\special.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\chat.h"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\hash.h"\
@@ -1189,3 +1198,34 @@ DEP_CPP_PRIVA=\
 
 
 # End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=\Users\Luis\Programs\XSB\emu\chat.c
+DEP_CPP_CHAT_=\
+	".\..\emu\configs\config.h"\
+	".\..\emu\debugs\debug.h"\
+	".\..\emu\auxlry.h"\
+	".\..\emu\cell.h"\
+	".\..\emu\register.h"\
+	".\..\emu\tries.h"\
+	".\..\emu\choice.h"\
+	".\..\emu\psc.h"\
+	".\..\emu\xmacro.h"\
+	".\..\emu\xsberror.h"\
+	".\..\emu\chat.h"\
+	".\..\emu\sw_envs.h"\
+	".\..\emu\binding.h"\
+	".\..\emu\realloc.h"\
+	".\..\emu\inst.h"\
+	".\..\emu\basictypes.h"\
+	".\..\emu\slgdelay.h"\
+	".\..\emu\debugs\debug_delay.h"\
+	
+
+"$(INTDIR)\chat.obj" : $(SOURCE) $(DEP_CPP_CHAT_) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+
