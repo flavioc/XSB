@@ -1,4 +1,4 @@
-/* File:      back_assert.P  -- Primitives for backtrackable updates
+/* File:      storage.P  -- Primitives for backtrackable updates
 ** Author(s): Prasad Rao, Hasan Davulcu, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -23,11 +23,10 @@
 */
 
 
-%% Asserts fact. On backtracking, fact is deleted.
-% that uses tries
+%% Inserts fact. On backtracking, fact is deleted.
 
-assert_bt(Fact,Inserted) :-	
-	triehandle_for_backtrackable_op('_$back_assert_triehandle',H),
+storage_insert_fact_bt(StorageName,Fact,Inserted) :-	
+	triehandle_for_backtrackable_op(StorageName,H),
 	trie_intern(Fact, H, Leaf, New, _),
 	(New == 0
 	->  Inserted=1,  % new fact inserted
@@ -38,12 +37,22 @@ assert_bt(Fact,Inserted) :-
 	).
 
 
-%% Backtrackable retract.
+%% Nonbacktrackable insert
+storage_insert_fact(StorageName,Fact,Inserted) :-	
+	triehandle_for_backtrackable_op(StorageName,H),
+	trie_intern(Fact, H, _Leaf, New, _),
+	(New == 0
+	->  Inserted=1   % new fact inserted
+	; Inserted=0	 % fact was already there: no action
+	).
+
+
+%% Backtrackable delete.
 %% Doesn't remove anything, but instead "marks" for deletion.
 %% On backtracking: unmarks facts that are marked for deletion
 
-retract_bt(Fact,Deleted) :-
-	triehandle_for_backtrackable_op('_$back_assert_triehandle',H),
+storage_delete_fact_bt(StorageName,Fact,Deleted) :-
+	triehandle_for_backtrackable_op(StorageName,H),
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
 	    ( trie_unintern_nr(H, Leaf)
@@ -52,6 +61,21 @@ retract_bt(Fact,Deleted) :-
 	;   Deleted=0    % non-existing fact: no action
 	).
 
+%% Nonbacktrackable delete
+storage_delete_fact(StorageName,Fact,Deleted) :-
+	triehandle_for_backtrackable_op(StorageName,H),
+	(trie_interned(Fact, H, Leaf, _)
+	->  Deleted=1,   % existing fact deleted
+	    trie_unintern_nr(H, Leaf)
+	;   Deleted=0    % non-existing fact: no action
+	).
+
+
+%% Find fact in storage
+storage_find_fact(StorageName,Fact) :-
+	triehandle_for_backtrackable_op(StorageName,H),
+	trie_interned(Fact, H, _, _).
+
 
 
 %% The folowing two functions insert key-value pairs
@@ -59,8 +83,8 @@ retract_bt(Fact,Deleted) :-
 %% If inserting a non-existing keypair with an existing key, then return -1.
 %% In both cases don't insert anything.
 %% If keypair is new, return 1 and insert pair(Key,Val)
-keypair_insert_bt(Key, Value, Inserted):-
-	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
+	triehandle_for_backtrackable_op(StorageName,H),
 	%% If this key already exists, then don't insert and return -1
 	(trie_interned(pair(Key,Val), H, _Leaf, _)
 	-> (Val==Value -> Inserted=0 ; Inserted = -1)
@@ -76,8 +100,8 @@ keypair_insert_bt(Key, Value, Inserted):-
 
 
 %% If key exists, then delete the pair and return 1; otherwise, return 0
-keypair_delete_bt(Key, Deleted):-
-	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+storage_delete_keypair_bt(StorageName,Key, Deleted):-
+	triehandle_for_backtrackable_op(StorageName,H),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
 	    ( trie_unintern_nr(H, Leaf) 
@@ -90,8 +114,8 @@ keypair_delete_bt(Key, Deleted):-
 
 %% Like keypair_insert_bt, keypair_delete_bt, 
 %% but these are not backtrackable.
-keypair_insert(Key, Value, Inserted):-
-	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+storage_insert_keypair(StorageName,Key, Value, Inserted):-
+	triehandle_for_backtrackable_op(StorageName,H),
 	%% If this key already exists, then don't insert and return -1
 	( trie_interned(pair(Key,Val), H, _Leaf, _)
 	-> (Val==Value -> Inserted=0 ; Inserted = -1)
@@ -103,8 +127,8 @@ keypair_insert(Key, Value, Inserted):-
 
 
 %% If key exists, then delete the pair and return 1; otherwise, return 0
-keypair_delete(Key, Deleted):-
-	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+storage_delete_keypair(StorageName,Key, Deleted):-
+	triehandle_for_backtrackable_op(StorageName,H),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
 	    trie_unintern_nr(H, Leaf) 
@@ -112,15 +136,15 @@ keypair_delete(Key, Deleted):-
 	).
 
 
-keypair_find(Key,Value) :-
-	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+storage_find_keypair(StorageName,Key,Value) :-
+	triehandle_for_backtrackable_op(StorageName,H),
 	trie_interned(pair(Key,Value),H,_,_).
 
-%% Reclaims space by removing nodes from the backtrackable assert trie
+%% Reclaims space by removing nodes from the backtrackable insert/keypair trie
 %% which were marked for deletion. This should be done only at the top 
 %% level of a query.
-reclaim_space_bt :-
-	triehandle_for_backtrackable_op('_$back_assert_triehandle',H),
+storage_reclaim_space(StorageName) :-
+	triehandle_for_backtrackable_op(StorageName,H),
 	trie_reclaim_uninterned_nr(H).
 
 
