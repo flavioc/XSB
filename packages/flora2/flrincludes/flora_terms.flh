@@ -164,9 +164,9 @@
 #define FL_EXPORT		(export)
 #define FL_IMPORT		(import)
 #define FL_FROM			(from)
-#define FL_SIGNATURE		(flSign)
-#define FL_OID			(oid)
-#define FL_BODYFORMULAR		(bform)
+#define FL_SIGNATURE		flSign
+#define FL_OID			oid
+#define FL_BODYFORMULA		bform
 #define FL_PROLOG		flProlog
 #define FL_PROLOGALL		flPrologAll
 #define FL_PLIB			prologlib

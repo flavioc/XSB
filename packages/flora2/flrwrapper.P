@@ -186,7 +186,7 @@ flora_hilog_predicate(Funct,Workspace) :-
             'FLORA_PREFIX''workspace''predicate'.
 
         (2) This procedure will not function correctly if workspace
-            contains the letter '.
+            contains the symbol '.
 *****************************************************************************/
 flora_nohilog_predicate(Funct,Predicate,Workspace) :-
 	%% Check if the functor begins with FLORA_PREFIX followed by an '.

@@ -1186,7 +1186,7 @@ compile_signpathexplist([T|L],[FL_OID|SignList],[TObj|LObj],Code,Status) :-
 	  Status=S
         ).
 
-compile_signpathexplist([T|L],[FL_BODYFORMULAR|SignList],[TCode|LObj],Code,Status) :-
+compile_signpathexplist([T|L],[FL_BODYFORMULA|SignList],[TCode|LObj],Code,Status) :-
 	!,
 	compile_body(T,TCode,S),
 	( S == [] ->
@@ -1959,7 +1959,7 @@ compile_wsflsignpathexplist([T|L],[FL_OID|SignList],WS,[TObj|LObj],Code,Status) 
 	  Status=S
         ).
 
-compile_wsflsignpathexplist([T|L],[FL_BODYFORMULAR|SignList],WS,[TCode|LObj],Code,Status) :-
+compile_wsflsignpathexplist([T|L],[FL_BODYFORMULA|SignList],WS,[TCode|LObj],Code,Status) :-
 	!,
 	%% workspace not distributive over nested "form"
 	compile_body(T,TCode,S),

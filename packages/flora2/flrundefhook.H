@@ -32,6 +32,8 @@
 	flora_nohilog_predicate/3
    from flrwrapper.
 
+:- import flModule/1 from flora2.
+
 :- import
 	flora_error_line/2
    from flrprint.

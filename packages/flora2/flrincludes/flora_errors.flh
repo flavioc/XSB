@@ -80,7 +80,12 @@
 #define ERROR_OPDEF	'invalid associativity definition'
 #define ERROR_OPERATOR	'invalid operator'
 #define ERROR_FAPAIR	'invalid functor/arity pair'
-#define ERROR_ARGSIGN	'invalid argument specification (`oid''/`form'' expected)'
+
+#mode save
+#mode nostring "\!#'"
+#define ERROR_ARGSIGN	'invalid argument type specification: FL_OID/FL_BODYFORMULA expected'
+#mode restore
+
 #define ERROR_SIGNATURE	'invalid signature directive'
 #define ERROR_XSBMODULE	'invalid module name'
 #define ERROR_AGGREGT	'syntax error in aggregate body'

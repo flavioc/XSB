@@ -29,10 +29,10 @@
 #include "flora_terms.flh"
 
 
-flora_sign((findall),3,[FL_OID,FL_BODYFORMULAR,FL_OID]) :- !.
-flora_sign((if),1,[FL_BODYFORMULAR]) :- !.
-flora_sign((else),2,[FL_BODYFORMULAR,FL_BODYFORMULAR]) :- !.
-flora_sign((then),2,[FL_BODYFORMULAR,FL_BODYFORMULAR]) :- !.
+flora_sign((findall),3,[FL_OID,FL_BODYFORMULA,FL_OID]) :- !.
+flora_sign((if),1,[FL_BODYFORMULA]) :- !.
+flora_sign((else),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
+flora_sign((then),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
 
 
 /****************************************************************************

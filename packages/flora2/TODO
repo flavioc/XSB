@@ -197,7 +197,7 @@
    a patch rule for foo'mod/5 must be asserted, if it isn't already
    there.
 
-8. Implement asserting the storage-linking ruls (the patch rules) in the
+8. Implement asserting the storage-linking rules (the patch rules) in the
    Flora shell, so that we'll be able to use insert/delete for flPredicates
    in the shell.
 

@@ -104,34 +104,36 @@ flora_loop_guard(Status) :-
 
 
 /*********************************************************************/
+#mode save
+#mode nostring "\!#'"
 help :-
 	flora_stdmsg_line("\nFLORA shell commands:\n"),
 	flora_stdmsg_line('o help'),
 	flora_stdmsg_line('    show this info'),
-	flora_stdmsg_line('o flCompile FILE'),
+	flora_stdmsg_line('o FL_COMPILE FILE'),
 	flora_stdmsg_line('    compile FILE.flr for the shell module `main'''),
-	flora_stdmsg_line('o flCompile FILE>>Module'),
+	flora_stdmsg_line('o FL_COMPILE FILE>>Module'),
 	flora_stdmsg_line('    compile FILE.flr for Module'),
-	flora_stdmsg_line('o flLoad FILE>>Module  OR  [FILE >> Module,...]'),
+	flora_stdmsg_line('o FL_LOAD FILE>>Module  OR  [FILE >> Module,...]'),
 	flora_stdmsg_line('    load FILE.flr into Module'),
 	flora_stdmsg_line('    specifying ''FILE.P'' or ''FILE.O'' loads these files'),
 	flora_stdmsg_line('    the [...] version can load a list of files files'),
-	flora_stdmsg_line('o flLoad FILE  OR  [FILE,...]'),
+	flora_stdmsg_line('o FL_LOAD FILE  OR  [FILE,...]'),
 	flora_stdmsg_line('    load FILE.flr into the shell module `main'''),
 	flora_stdmsg_line('o rundemo(FILE)'),
 	flora_stdmsg_line('    run a demo from FLORA demos directory'),
-	flora_stdmsg_line('o flEquality {none|basic|flogic}'),
+	flora_stdmsg_line('o FL_EQUALITY {none|basic|flogic}'),
 	flora_stdmsg_line('    set support for the equality predicate in the shell module `main'' to'),
 	flora_stdmsg_line('    none, standard first-order, or F-logic style'),
-	flora_stdmsg_line('o flAbolish Functor/Arity [, Functor/Arity]* [in Module]'),
+	flora_stdmsg_line('o FL_ABOLISH Functor/Arity [, Functor/Arity]* [in Module]'),
 	flora_stdmsg_line('    abolish predicate Functor/Arity in Module (`main'' is the default)'),
 	flora_stdmsg_line('o abolish_all_tables'),
 	flora_stdmsg_line('    flush all tabled data'),
-	flora_stdmsg_line('o flProlog Functor/Arity'),
+	flora_stdmsg_line('o FL_PROLOG Functor/Arity'),
 	flora_stdmsg_line('    define Functor/Arity as Prolog predicate in shell mode'),
-	flora_stdmsg_line('o flPredicate Functor/Arity'),
+	flora_stdmsg_line('o FL_PREDICATE Functor/Arity'),
 	flora_stdmsg_line('    define Functor/Arity as non-HiLog FLORA predicate in shell mode'),
-	flora_stdmsg_line('o flSign Functor({oid|form},...)'),
+	flora_stdmsg_line('o FL_SIGNATURE Functor({FL_OID|FL_BODYFORMULA},...)'),
 	flora_stdmsg_line('    define predicate signature in shell mode'),
 	flora_stdmsg_line('o op(Precedence,Associativity,Operator)'),
 	flora_stdmsg_line('    define an operator in shell mode'),
@@ -144,12 +146,13 @@ help :-
 	flora_stdmsg_line('    show solutions one by one'),
 	flora_stdmsg_line('o maxerr(all|N)'),
 	flora_stdmsg_line('    set/show the maximum number of errors FLORA reports'),
-	flora_stdmsg_line('o flTrace/flrNoTrace'),
+	flora_stdmsg_line('o flTrace/flNoTrace'),
 	flora_stdmsg_line('    turn on/off FLORA trace'),
 	flora_stdmsg_line('o end'),
 	flora_stdmsg_line('    say Ciao to FLORA, stay in XSB'),
 	flora_stdmsg_line('o halt'),
 	flora_stdmsg_line('    quit both FLORA and XSB').
+#mode restore
 
 
 /*********************************************************************/

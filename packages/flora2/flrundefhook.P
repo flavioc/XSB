@@ -32,27 +32,40 @@
 /****************************************************************************
   flora_undefined_predicate_hook/1
 ****************************************************************************/
+%% Case for a call to a molecule
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
 	flora_flogic_predicate(PredName,WS,_Position,_Base),
 	!,
-	flora_error_line('undefined F-logic predicate %s in module %s',
-			 args(PredName,WS)),
+	(flModule(WS)
+	-> %% This case is not possible (I think)
+	    flora_error_line('undefined F-logic predicate %s in module %s',
+			     args(PredName,WS))
+	; flora_error_line('calling a FLORA molecule in module %s, which is not loaded', args(WS))
+	),
 	abort.
 
+%% Case for a call to HiLog
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
 	flora_hilog_predicate(PredName,Workspace),
 	!,
-	flora_error_line('undefined HiLog predicate in module %s',
-			 args(Workspace)),
+	(flModule(Workspace)
+	-> flora_error_line('undefined HiLog predicate in module %s',
+			    args(Workspace))
+	; flora_error_line('calling a HiLog predicate in module %s, which is not loaded', args(Workspace))
+	),
 	abort.
 
+%% Call to a FLORA predicate (flProlog)
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
 	flora_nohilog_predicate(PredName,Predicate,Workspace),
 	!,
 	psc_arity(PscRecord,N),
-	flora_error_line('undefined predicate %s/%d in module %s',
-			 args(Predicate,N,Workspace)),
+	(flModule(Workspace)
+	-> flora_error_line('undefined predicate %s/%d in module %s',
+			    args(Predicate,N,Workspace))
+	; flora_error_line('calling FLORA predicate %s/%d in module %s, which not loaded', args(predicate,Workspace))
+	),
 	abort.

@@ -68,13 +68,15 @@ fllibabolish(FAList,WS) :-
 *****************************************************************************/
 flora_abolish([],_WS) :- !.
 
+#mode save
+#mode nostring "\!#'"
 flora_abolish([F/A],WS) :-
 	( not atom(F) ->
-	    flora_error_line('invalid functor to be abolished'),
+	    flora_error_line('FL_ABOLISH: invalid functor'),
 	    abort
-
+	
 	; not integer(A) ->
-	    flora_error_line('invalid predicate arity to be abolished'),
+	    flora_error_line('FL_ABOLISH: invalid predicate arity'),
 	    abort
 	;
 	  flora_wspredicate(F,[],WS,P),
@@ -84,6 +86,7 @@ flora_abolish([F/A],WS) :-
 	  findall(Fact,storage_find_fact(StorageName,Fact),FactList),
 	  flora_storage_abolishlist(FactList,StorageName)
 	).
+#mode restore
 
 
 /*****************************************************************************

@@ -836,7 +836,7 @@ flora_argspec([],[],[]) :- !.
 
 flora_argspec([CanoniTerm|CanoniTermList],[A|AL],Status) :-
 	get_name(CanoniTerm,A),
-	( (A == FL_OID; A == FL_BODYFORMULAR) ->
+	( (A == FL_OID; A == FL_BODYFORMULA) ->
 	    flora_argspec(CanoniTermList,AL,Status)
 	;
 	  parsing_error(CanoniTerm,ERROR_ARGSIGN,Status)
@@ -1530,7 +1530,7 @@ flora_signpathexplist([T|L],[FL_OID|Signs],[TCode|LCode],Status) :-
 	  Status=S
         ).
 
-flora_signpathexplist([T|L],[FL_BODYFORMULAR|Signs],[TCode|LCode],Status) :-
+flora_signpathexplist([T|L],[FL_BODYFORMULA|Signs],[TCode|LCode],Status) :-
 	flora_body(T,TCode,S),
 	( S == [] ->
 	    flora_signpathexplist(L,Signs,LCode,Status)
