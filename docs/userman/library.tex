@@ -1812,7 +1812,12 @@ special socket options.
 
 \ouritem{socket\_connect(+Sockfd,+Port,+Hostname,?ErrorCode)}\index{{\tt socket\_connect/4}}
     The socket Sockfd is connected to the address ({\tt Hostname}  and
-{\tt Port}). 
+{\tt Port}). If {\tt socket\_connect/4} terminates abnormally for any reason
+(connection refused, timeout, etc.), then XSb closes the socket {\tt
+    Sockfd} automatically, because such a socket cannot be used according
+    to the BSD semantics. Therefore, it is always a good idea to check to
+    the return code and reopen the socket, if the error code is not
+    {\tt SOCK\_OK}.
 
 \ouritem{socket\_listen(+Socket, +Length, ?ErrorCode)}\index{{\tt socket\_listen/3}}
     The socket {\tt Sockfd}  is defined to have a maximum backlog queue of
@@ -1977,13 +1982,16 @@ XSB socket interface allows the programer to specify timeouts for certain
 operations. If the operations does not finish within the specified period
 of time, the operation is aborted and the corresponding predicate succeeds
 with the {\tt TIMEOUT\_ERR} error code. The following primitives are
-timeout-enabled: {\tt socket\_connect/4}, {\tt socket\_recv/3},
-{\tt socket\_send/3}, {\tt socket\_get0/3}, and {\tt socket\_put/3}.
-To set a timeout value for any of the above primitives, the user should
-execute {\tt set\_timer/1} right before the subgoal to be timed. 
+timeout-enabled: {\tt socket\_connect/4}, {\tt socket\_accept/3}, {\tt
+  socket\_recv/3}, {\tt socket\_send/3}, {\tt socket\_get0/3}, and {\tt
+  socket\_put/3}.  To set a timeout value for any of the above primitives,
+the user should execute {\tt set\_timer/1} right before the subgoal to be
+timed. Note that timeouts are disabled after the corresponding timeout-enabled
+call completes or times out. Therefore, one must use {\tt set\_timer/1}
+before each call that needs to be controlled by a timeout mechanism.
 
 The most common use of timeouts is to either abort or retry the operation
-that timed out. For the latter, XSB provides the {\tt sleep/1} primitive,
+that times out. For the latter, XSB provides the {\tt sleep/1} primitive,
 which allows the program to wait for a few seconds before retrying.
 
 The {\tt set\_timer/1} and {\tt sleep/1} primitives are described below.
