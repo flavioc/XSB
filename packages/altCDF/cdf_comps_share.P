@@ -397,10 +397,11 @@ load_component_dependencies_pass1(Name,Abs,Arglist):-
 		),
  		List),
 	member((V,New,Relnew,Vnew,DepType),List),
-        writeln(checking(dep(Name,New))),	
-	load_component_pass1(New,Relnew,AbsNew,version(Vnew),Arglist,depends),
-        assert_dependencies_for_path2(Name,New,AbsNew,Vnew),
-%% make sure dependencies store absolute filenames
+            writeln(checking(dep(Name,New))),	
+	load_component_pass1(New,Relnew,AbsNew,
+	                                   version(Vnew),Arglist,depends),
+           assert_dependencies_for_path2(Name,New,AbsNew,Vnew),
+           %% make sure dependencies store absolute filenames
 	retractallExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
 							 cid(Abs,cdfpt),
 							 cid(V,cdfpt)),Name),
@@ -475,10 +476,9 @@ component_exists(Name):-
 
 /* If check_component succeeds, we go ahead and do a pass 1 load. */
 check_component(Name,Path,V,Arglist,Flag):- 
-	(Flag == top
-	 ->	true
-	 ;	\+ system_component(Name)
-	),
+	(Flag == top -> true ; \+ system_component(Name)),
+	check_conflicting_path(Name,Path,Arglist),
+	check_conflicting_version(Name,Path,V),
 	(   already_present(Name,Path,V,Arglist)
 	->  %% cdf_warning(component, [Name, ' is already loaded.']),
 	    fail
