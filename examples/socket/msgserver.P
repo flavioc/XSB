@@ -42,10 +42,14 @@ server :-
 	socket_listen(Sockfd0,Q_LENGTH, ErrListen),
 	writeln(socket_listen(Sockfd0,Q_LENGTH, ErrListen)),
 
+	writeln('Listening for the client to connect...'),
 	tryN(4,
-	     socket_accept(Sockfd0, Sockfd0_out1, ErrorCode),
-	     writeln(socket_accept1(Sockfd0, Sockfd0_out1, ErrorCode)),
-	     writeln('Cannot accept connection1'),
+	     %% Do accept with timeouts
+	     (set_timer(5),
+		 socket_accept(Sockfd0, Sockfd0_out1, ErrorCode)),
+	     (writeln('OK'),
+		 writeln(socket_accept1(Sockfd0, Sockfd0_out1, ErrorCode))),
+	     (writeln('Cannot accept connection or timeout... Exiting'), fail),
 	     ErrorCode
 	    ),
 	tryN(4,

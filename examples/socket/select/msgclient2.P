@@ -27,28 +27,18 @@ xsb_port(6025).
 
 client :-
 	writeln('started client...'),
-	socket(Sockfd0, ErrCode),
-	(ErrCode =\= SOCK_OK
-	-> writeln('Cannot open write socket to the server.'), fail
-	; true),
-	socket_set_option(Sockfd0,linger,SOCK_NOLINGER),
 	machine(IPAddrOrHostname),
 	xsb_port(XSB_port),
 	tryN(4,
-	     socket_connect(Sockfd0 ,XSB_port, IPAddrOrHostname, Ecode2),
+	     try_connect(Sockfd0, XSB_port, IPAddrOrHostname, Ecode2),
 	     (writeln(sock_connect1(Sockfd0,XSB_port,IPAddrOrHostname,Ecode2)),
 		 writeln('connected to server...')),
 	     writeln('Cannot connect to server'),
 	     Ecode2
 	    ),
 	%% Socket for reading replies
-	socket(Sockfd1, Error2),
-	(Error2 =\= SOCK_OK
-	-> writeln('Cannot open read socket to the server'), fail
-	; true),
-	socket_set_option(Sockfd1,linger,SOCK_NOLINGER),
 	tryN(4,
-	     socket_connect(Sockfd1, XSB_port, IPAddrOrHostname, Ecode3),
+	     try_connect(Sockfd1, XSB_port, IPAddrOrHostname, Ecode3),
 	     writeln(socket_connect(Sockfd1,XSB_port,IPAddrOrHostname,Ecode3)),
 	     writeln('Cannot connect to server'),
 	     Ecode3
@@ -102,3 +92,12 @@ client_loop(Sockfd0, Sockfd1) :-
       )
   ).
 
+
+%% Open socket and connect
+try_connect(Sockfd0,XSB_port,IPAddrOrHostname,Ecode) :-
+	 socket(Sockfd0, ErrCode1),
+	 (ErrCode1 =\= SOCK_OK
+	 -> writeln('Cannot connect to the server.'), fail
+	 ; true),
+	 socket_set_option(Sockfd0,linger,SOCK_NOLINGER),
+	 socket_connect(Sockfd0, XSB_port, IPAddrOrHostname, Ecode).

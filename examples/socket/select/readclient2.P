@@ -1,5 +1,8 @@
 %% Readserver uses socket_select with multiple read sockets.
 %% Readclient writes to those sockets.
+%% This particular client/server illustrates socket_select with two read 
+%% sockets where sometimes both sockets are available and sometimes only one.
+
 
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
@@ -13,6 +16,7 @@
      socket/2, socket_connect/4, socket_set_option/3,
      socket_close/2, socket_get0/3, socket_put/3  from socket.
 :- import file_close/1 from file_io.
+:- import conget/2, conset/2 from gensym.
 
 
 %% machine where server is running
@@ -22,7 +26,7 @@ machine(localhost).
 
 %% Port on which the server is listening
 %% Server must bind to this port
-xsb_port(6021).
+xsb_port(6026).
 
 client :-
 	writeln('started client...'),
@@ -60,17 +64,29 @@ client_loop(Sockfd0, Sockfd1) :-
       socket_close(Sockfd1, _),
       writeln('Exiting.'), true
   ;   integer(Char) ->
-      Char1 is Char + 1,
-      socket_put(Sockfd0, Char, Err),
-      writeln(socket_put(Sockfd0, Char, Err)),
-      socket_put(Sockfd1, Char1, Err1),
-      writeln(socket_put(Sockfd1, Char1, Err1)),	
-      fail
+      do_send(Char, Sockfd0, Sockfd1), fail	
   ;   write('Illegal input: '), writeln(Char),
       fail
   ).
 
 client_loop(Sockfd0, Sockfd1) :- client_loop(Sockfd0, Sockfd1).
+
+
+do_send(Char, Sockfd0, Sockfd1) :-
+	conget(count,N),
+	X is N mod 2,
+	N1 is N+1, conset(count,N1),
+	(    X == 1 
+	-> 
+	    socket_put(Sockfd0, Char, Err),
+	    writeln(socket_put(Sockfd0, Char, Err))
+	; 
+	    Char1 is Char + 1,
+	    socket_put(Sockfd0, Char, Err),
+	    writeln(socket_put(Sockfd0, Char, Err)),
+	    socket_put(Sockfd1, Char1, Err1),
+	    writeln(socket_put(Sockfd1, Char1, Err1))
+	).
 
 
 %% Open socket and connect
@@ -81,4 +97,6 @@ try_connect(Sockfd0,XSB_port,IPAddrOrHostname,Ecode) :-
 	 ; true),
 	 socket_set_option(Sockfd0,linger,SOCK_NOLINGER),
 	 socket_connect(Sockfd0, XSB_port, IPAddrOrHostname, Ecode).
+
+
 

@@ -1,5 +1,7 @@
 %% Readserver uses socket_select with multiple read sockets.
 %% Readclient writes to those sockets.
+%% This particular server illustrates socket_select with two read 
+%% sockets where sometimes both sockets are available and sometimes only one.
 
 :- compiler_options([xpp_on]).
 #include "socket_defs_xsb.h"
@@ -22,7 +24,7 @@
 
 
 %% Port on which the server is listening
-xsb_port(6021).
+xsb_port(6026).
 
 server :-
 	socket(Sockfd0, ErrCode),
@@ -42,20 +44,20 @@ server :-
 
 	socket_listen(Sockfd0,Q_LENGTH, ErrListen),
 	writeln(socket_listen(Sockfd0,Q_LENGTH, ErrListen)),
-
+ 
 	socket_set_select(mytest, [Sockfd0],[Sockfd0],[Sockfd0]),
 	writeln(socket_set_select(mytest,[Sockfd0],[Sockfd0],[Sockfd0])),
 
 	socket_select(mytest,_, Availr, Availw, Availe, Err),
- 	writeln(socket_select(mytest,_, Availr, Availw, Availe, Err)),       
+ 	writeln(socket_select(mytest,_, Availr, Availw, Availe,Err)), 
 
 	(Availr == []
 	 -> writeln('no available read sockets ...'), fail
 	; tryN(4,
-             socket_accept(Sockfd0, Sockfd0_out1,ErrorCode1),
-             writeln(socket_accept1(Sockfd0, Sockfd0_out1,ErrorCode1)),
-             writeln('Cannot accept connection1'),
-             ErrorCode1  
+	       socket_accept(Sockfd0, Sockfd0_out1,ErrorCode1),
+	       writeln(socket_accept1(Sockfd0, Sockfd0_out1,ErrorCode1)),
+	       writeln('Cannot accept connection1'),
+	       ErrorCode1  
               )
 	),
 
@@ -64,7 +66,7 @@ server :-
 	
 	(Availr2 == []
 	 -> writeln('no available read sockets ...'), fail
-	; 
+        ; 
 	  tryN(4,
              socket_accept(Sockfd0, Sockfd0_out2,ErrorCode2),
              writeln(socket_accept2(Sockfd0, Sockfd0_out2,ErrorCode2)),
@@ -74,7 +76,7 @@ server :-
 	),
 
 
-    socket_set_select(mytest1,[Sockfd0_out1, Sockfd0_out2],[],[]),
+    socket_set_select(mytest1,[Sockfd0_out1,Sockfd0_out2],[],[Sockfd0_out1]),
     writeln(socket_set_select(mytest1,[Sockfd0_out1,Sockfd0_out2],[],[])),
 
     server_loop,
