@@ -259,14 +259,14 @@ bool do_bulkmatch__(void)
 }
 
 
-/* XSB string substitution entry point
+/* XSB string substitution entry point: replace substrings specified in Arg2
+   with strings in Arg3.
    In: 
        Arg1: string
-       Arg2: beginning offset
-       Arg3: ending offset. < 0 means end of string
-       Arg4: substitution string
+       Arg2: substring specification, a list [s(B1,E1),s(B2,E2),...]
+       Arg3: list of replacement string
    Out:
-       Arg5: new (output) string
+       Arg4: new (output) string
    Always succeeds, unless error.
 */
 bool do_regsubstitute__(void)
@@ -274,7 +274,7 @@ bool do_regsubstitute__(void)
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
   prolog_term input_term, output_term;
-  prolog_term subst_reg_term, subst_reg_list_term, subst_reg_list_term1;
+  prolog_term subst_reg_term, subst_spec_list_term, subst_spec_list_term1;
   prolog_term subst_str_term=(prolog_term)0,
     subst_str_list_term, subst_str_list_term1;
   char *input_string=NULL;    /* string where matches are to be found */
@@ -286,7 +286,7 @@ bool do_regsubstitute__(void)
      substitution string. */
   char subst_buf[MAXBUFSIZE];
   char *output_ptr;
-  int conversion_required=FALSE;
+  int conversion_required=FALSE; /* from C string to Prolog char list */
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
@@ -302,8 +302,8 @@ bool do_regsubstitute__(void)
   input_len = strlen(input_string);
 
   /* arg 2: substring specification */
-  subst_reg_list_term = reg_term(2);
-  if (!is_list(subst_reg_list_term) && !is_nil(subst_reg_list_term))
+  subst_spec_list_term = reg_term(2);
+  if (!is_list(subst_spec_list_term) && !is_nil(subst_spec_list_term))
     xsb_abort("RE_SUBSTITUTE: Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
@@ -315,10 +315,10 @@ bool do_regsubstitute__(void)
   if (! is_var(output_term))
     xsb_abort("RE_SUBSTITUTE: Arg 4 (the output) must be an unbound variable");
 
-  subst_reg_list_term1 = subst_reg_list_term;
+  subst_spec_list_term1 = subst_spec_list_term;
   subst_str_list_term1 = subst_str_list_term;
 
-  if (is_nil(subst_reg_list_term1)) {
+  if (is_nil(subst_spec_list_term1)) {
     strncpy(output_buffer, input_string, sizeof(output_buffer));
     goto EXIT;
   }
@@ -329,8 +329,8 @@ bool do_regsubstitute__(void)
   output_ptr = output_buffer;
 
   do {
-    subst_reg_term = p2p_car(subst_reg_list_term1);
-    subst_reg_list_term1 = p2p_cdr(subst_reg_list_term1);
+    subst_reg_term = p2p_car(subst_spec_list_term1);
+    subst_spec_list_term1 = p2p_cdr(subst_spec_list_term1);
 
     if (!is_nil(subst_str_list_term1)) {
       subst_str_term = p2p_car(subst_str_list_term1);
@@ -375,7 +375,7 @@ bool do_regsubstitute__(void)
     last_pos = end_offset;
     output_ptr = output_ptr + strlen(subst_string);
 
-  } while (!is_nil(subst_reg_list_term1));
+  } while (!is_nil(subst_spec_list_term1));
 
   if (sizeof(output_buffer) > (output_ptr-output_buffer+input_len-end_offset))
     strcat(output_ptr, input_string+end_offset);
