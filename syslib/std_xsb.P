@@ -23,6 +23,9 @@
 ** 
 */
 
+% TLS: in the comments below, ISO means that the predicate is part of
+% the ISO standard.  Unfortunately, it does not mean that the
+% semantics of the predicate exactly *follows* that of the standard. 
 
 standard_symbol(abolish, 1, assert).
 standard_symbol(abolish, 2, assert).
@@ -169,6 +172,8 @@ standard_symbol(predicate_property, 2, curr_sym).
 standard_symbol(print, 1, standard).
 standard_symbol(proper_hilog, 1, standard).
 standard_symbol(put, 1, standard).
+standard_symbol(put_char, 1, standard).
+standard_symbol(put_code, 1, standard).
 standard_symbol(read, 1, standard).
 standard_symbol(read, 2, standard).
 standard_symbol(set_dcg_style, 1, dcg).
@@ -192,6 +197,8 @@ standard_symbol(seeing, 1, standard).
 standard_symbol(seen, 0, standard).
 
 standard_symbol(segfault_handler, 1, machine).
+standard_symbol(set_input, 1, standard).	%ISO
+standard_symbol(set_output, 1, standard).	%ISO
 standard_symbol(set_timer, 1, standard).
 
 standard_symbol(setof, 3, setof).

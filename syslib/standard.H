@@ -45,9 +45,11 @@
 	nofileerrors/0, nonvar/1,	(not)/1,	number/1,
 	number_chars/2, number_codes/2, number_digits/2,
 	once/1,		op/3,		open/3,		otherwise/0,
-	print/1,	proper_hilog/1,	put/1,
+	print/1,	proper_hilog/1,	
+        put/1,          put_char/1,     put_code/1,
 	read/1,		read/2,         real/1,		repeat/0,
 	see/1,		seeing/1,	seen/0,
+        set_input/1,    set_output/1,  
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		telling/1,	told/0,
 	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 
@@ -64,7 +66,7 @@
 
 
 /* --------------------------------------------------------------- */
-/*  exported predicates used in other modules (but not built-ins)  */
+/*  exported predicates used in other modules (but not "standard")  */
 /* --------------------------------------------------------------- */
 
 :- export
@@ -112,7 +114,6 @@
 :- import numbervars/1 from num_vars.
 :- import predicate_property/2 from curr_sym.
 :- import (dynamic)/1, asserta/1, retract/1 from assert.
-
 :- import conset/2 from gensym.
 
 /* --------------------- end of file standard.H ----------------------- */

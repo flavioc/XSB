@@ -1,5 +1,5 @@
 /* File:      standard.P
-** Author(s): Sagonas, Warren
+** Author(s): Sagonas, Warren, Kifer, Cui, Demoen, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -44,6 +44,8 @@
 %--------------------------%
 % File Handling Predicates %
 %--------------------------%
+
+set_input(Stream):- see(Stream).
 
 see(Var) :- 
 	var(Var), !, 
@@ -91,6 +93,8 @@ seen :- conpsc(current_input, CurinPsc),
 	stat_set_flag(CURRENT_INPUT, STDIN),
 	conpsc(userin, UserPsc),
 	psc_set_prop(CurinPsc, UserPsc).
+
+set_output(Stream):- tell(Stream).
 
 tell(Var) :- 
         var(Var), !,
@@ -243,6 +247,16 @@ char_blank(Ch) :- Ch >= 11, Ch =< 32.
 get0(C) :- stat_flag(CURRENT_INPUT, File), file_get(File, C0), C = C0.
 
 skip(C) :- get0(C0), (C0=C ; skip(C)).
+
+% TLS: most error checking assumed to happen in atom_codes or put.
+% Still need put_char/2 and put_code/2
+put_char(C):- 			%ISO
+	atom_codes(C,L),
+	(L = [L1] -> true ; 
+		abort('Type error in argument 1 of put_char/1')),
+	put(L1).
+
+put_code(C):- put(C).		%ISO
 
 put(C) :- put(C).
 
