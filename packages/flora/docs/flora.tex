@@ -123,7 +123,7 @@
 
 \newcommand{\bs}{\ensuremath{\backslash}}
 \newcommand{\FLIP}{{\mbox{\sc Flip}}\xspace}
-\newcommand{\FLORA}{{\mbox{\sc Flora}}\xspace}
+\newcommand{\FLORA}{{\mbox{${\cal F}${\sc lora}}}\xspace}
 \newcommand{\FLORID}{{\mbox{\sc Florid}}\xspace}
 \newcommand{\fl}{{F-logic}\xspace}
 
@@ -151,6 +151,7 @@
   Michael Kifer
   }
   
+\makeindex
 \begin{document}
 
 \maketitle
@@ -165,6 +166,7 @@ extension {\tt .P} ({\it e.g.}, {\tt file.P}), which is a regular XSB
 program. This program is then passed to XSB for compilation (yielding {\tt
   file.O}) and execution.
 
+\index{FLIP}
 The current version of \FLORA was implemented by Guizhen Yang, but its 
 origins trace back to the \FLIP compiler developed by Bertram
 Lud\"aescher, and the basic architectures of the two compilers are similar.
@@ -173,6 +175,7 @@ platform with many features not found in \FLIP. It has a much more
 optimized compiler, and its tokenizer and parser are very different from
 \FLIP's.
 
+\index{FLORID}
 The programming language supported by \FLORA is a dialect of F-logic that
 is mostly compatible with the extensions introduced in \FLORID, a C++-based
 F-logic system developed at Freiburg University.\footnote{
@@ -419,6 +422,7 @@ result of translating the above F-molecule might be:
 
 \paragraph{Closure Axioms.}
 
+\index{closure axioms}
 The flattening process alone is not enough to convert an \fl program
 into Prolog, because of the semantics ``hidden'' behind the notions of
 the subclass relationship, inheritance, and scalar methods. This semantics
@@ -440,6 +444,7 @@ rules also perform the following tasks:
 
 \subsection{\FLORA vs. \FLORID}
 
+\index{FLORID}
 The syntax of \FLORA and some of its design decisions are borrowed from
 \FLORID, an \fl interpreter developed at Freiburg University, Germany.
 For more information on Florid please visit the project home page at:
@@ -483,6 +488,7 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
 
 \begin{itemize}
 \item \emph{Symbols}: The \fl alphabet of \emph{object constructors}
+  \index{object constructor}
   consists of the sets \funcs (function symbols), \preds (predicate symbols
   including $\eq$), and \vars (variables).  Variables are denoted by
   capitalized symbols or an underscore followed by zero or more letters
@@ -504,8 +510,9 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
   \isa, \subcl. Later we shall introduce additional symbols used by the
   inheritance mechanism.
   %%
-\item \emph{Id-Terms/Oids}:%
-\footnote{
+  \index{id-term}
+  \index{oid}
+\item \emph{Id-Terms/Oids}: \footnote{
   %%
     Numbers (including integers and floats) may also be used as id-terms. But
     such use might be confusing and is not recommended.
@@ -514,6 +521,7 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
   %%
 \medskip
   
+  \index{object identifier}
   \begin{minipage}[t]{.80\textwidth}
     First-order terms over \funcs\ and \vars\ are called \emph{id-terms},
     and are used to name objects, methods, and classes.  Ground id-terms
@@ -521,6 +529,7 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
       object identifiers} (\emph{oid}s), also called object \emph{names}.
   \end{minipage}
   \hfill ~
+  \index{atom}
 \item \emph{Atoms}: Let $O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
   addition to the usual first-order atoms, like $p(X_1,\dots,X_n)$, there
   are the following basic types of formulas: \medskip
@@ -530,6 +539,11 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
     \hfill (3)~~C[M\Fd T] \hfill (4)~~C[M\Mvd T]. \hfill
   \end{math} \medskip
   
+  \index{atom!data}
+  \index{method}
+  \index{method!single-valued}
+  \index{method!scalar}
+  \index{method!set-valued}
   (1) and (2) are \emph{data atoms}, which specify that a \emph{method} $M$
   applied to an object $O$ yields the result-object $R_i$. In (1), $M$ is a
   \emph{single-valued} (or \emph{scalar}) method, i.e., there is
@@ -537,17 +551,23 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
   (2), $M$ is \emph{multi-valued}, so there can be several result-objects
   $R_i$. For $n=1$ the curly braces can be omitted.\\ 
   \\
+  \index{atom!signature}
   (3) and (4) denote \emph{signature atoms}. They specify that method $M$,
   applied to objects of \emph{class} $C$, yields results of type $T$.
   In (3), $M$ is declared as single-valued, and in (4) as set-valued.
   
   Objects are classified into classes using
+  \index{atom!isa}
   \emph{isa-atoms}: \medskip
 
   \begin{math}
     \hfill (5)~~O\isa C \hfill (6)~~C\subcl D. \hfill
   \end{math} \medskip
 
+  \index{class}
+  \index{subclass}
+  \index{class!subclass}
+  \index{class!instance}
   (5) defines that $O$ is an \emph{instance} of class $C$, while (6)
   specifies that $C$ is a \emph{subclass} of $D$. 
 \item \emph{Parameters}: Methods can have arguments, {\it i.e.}, 
@@ -562,6 +582,7 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
 \end{itemize}
 
 \noindent
+\index{F-molecule}
 \emph{F-molecules} provide a shortcut for specifying properties of the same
 object. For instance, instead of
 $\textsf{john:person}\land\textsf{john[age\fd
@@ -622,6 +643,8 @@ $\textsf{john:person}\land\textsf{john[age\fd
 
 \subsection{Path Expressions in the Rule Body}
 
+\index{path expression}
+\index{path expression!in rule body}
 In addition to the basic \fl syntax, the \FLORA  system also supports
 \emph{path expressions} to simplify object navigation along
 single-valued and multi-valued method applications, and to avoid
@@ -692,6 +715,7 @@ along the method application dimension using the operators
 takes place can be selected by specifying the properties of such objects
 inside square brackets.
 
+\index{method!self}
 To access intermediate objects that arise implicitly in the middle
 of a path expression, one can define the method \textsf{self} as
 $X[\textsf{self}\fd X]$ and then simply
@@ -725,6 +749,7 @@ Only single-valued path expressions are allowed in a rule head. Set-valued
 path expressions are not allowed because the semantics is not always clear
 in such cases.
 
+\index{path expression!in rule head}
 The following is an example of a path expression in rule head. It demotes
 that the mother of person X. The rule defines the grandsons of $X$'s
 mother.
@@ -767,12 +792,15 @@ truth value, but they also reference objects, i.e., yield an object value.
 For example, $o\isa c[m\fd r]$ is a reference to $o$ and additionally,
 it specifies $o$'s membership in class $c$ and the value of the attribute $m$.
 
+\index{reference}
 Consequently, all F-logic expressions of the form (1~--~8) are called
 \emph{references}. F-logic references have a dual reading. Given an
 \fl\ database \db I (see below), a reference has:
 \begin{itemize}
+  \index{reference!object value of}
 \item An \emph{object value}, which yields the name(s) of the objects
   reachable in \db I by the corresponding expression, and 
+  \index{reference!truth value of}
 \item A \emph{truth value}, like any other literal or molecule of the
   language. In particular, a reference $r$ evaluates to \emph{false} if
   there is no object that is referenced by $r$ in \db I.
@@ -854,6 +882,9 @@ single-valued or multi-valued:
 
 \paragraph{Atoms.}
 
+\index{atom}
+\index{string}
+\index{comment}
 Like XSB atoms, \FLORA atoms begin with a lowercase letter followed by zero or more letters
 ($A \ldots Z, a \ldots z$), digits ($0 \ldots 9$), or underscores (\_), e.g.,
 $\textit{student}, \textit{apple\_pie}$. Atoms can also be \emph{any} sequence
@@ -895,6 +926,7 @@ Escaped String &
 \label{tab:tab-esc-str}
 \end{table}
 
+\index{escaped character}
 \FLORA also recognizes escaped characters inside single quotes
 ($\texttt{'}$).  An escaped character normally begins with a backslash
 ($\texttt{\bksl}$).  Table~\ref{tab:tab-esc-str} lists the special escaped
@@ -911,6 +943,8 @@ single quote, e.g., $\texttt{'isn''t'}$.
 
 \paragraph{Strings (Character Lists).}
 
+\index{string}
+\index{character list}
 Like XSB strings, \FLORA strings are enclosed in a pair of double quotes
 ($\texttt{{\dq}}$).  These strings are represented internally as lists of
 ASCII characters. For instance, \mbox{\texttt{[102,111,111]}} is the same
@@ -924,6 +958,9 @@ $\texttt{{\dq}{\dq}{\dq}foo{\dq}{\dq}{\dq}}$.
 
 \paragraph{Numbers.}
 
+\index{number}
+\index{integer}
+\index{float}
 Normal \FLORA integers are decimals represented by a sequence of digits, e.g., $892, 12$.
 \FLORA also recognizes integers in other bases (2 through 36). The base is specified by
 a decimal integer followed by a single quote ($\texttt{'}$). The digit string immediately
@@ -986,6 +1023,8 @@ looks like this:
 agg\{X[Gs]; body\}
 \end{qrules}
 %%
+\index{aggregation!aggregate operator}
+\index{aggregation!grouping}
 Here, ${\it agg}$ represents the aggregate operator. $X$ is called the
 aggregation variable; $Gs$ is a list of comma-separated \emph{grouping}
 variables. Finally, ${\it body}$ is a list of literals that specify the
@@ -993,7 +1032,8 @@ conditions. The grouping variables, $Gs$, are optional.
 
 All the variables appearing in ${\it body}$ but not in $X$ and $Gs$ are
 considered to be existentially \mbox{quantified}. Furthermore, the syntax of an
-aggregate must satisfy the following conditions:\linebreak (1) Both $X$ and $Gs$ must
+aggregate must satisfy the following conditions:\\
+(1) Both $X$ and $Gs$ must
 appear in ${\it body}$; (2) $Gs$ should not contain $X$.
 
 The following aggregate operators are supported: {\it min}; {\it max}; {\it
@@ -1023,6 +1063,7 @@ and return both {\tt john} and {\tt mary}.
 
 \subsection{Arithmetic Expressions}
 
+\index{arithmetic expression}
 Unlike XSB, in \FLORA arithmetic expressions are always evaluated (in XSB,
 $+$ can also be used as a binary functor). Both single-valued and
 multi-valued path expressions are allowed in arithmetic expressions, and
@@ -1147,16 +1188,21 @@ variables in negated predicates must be bound before {\tt tnot} is called.
 
 \subsection{Inheritance}
 
-\fl identifies two types of inheritance: structural and behavioral.
-Structural inheritance applies to signatures only. For instance, if {\tt
-  student::person} and the program has the signature {\tt person[name \Fd
-string]} then the query {\tt ?- student[name \Fd X]} succeeds with {\tt X =
-string}.
+\index{inheritance!structural}
+\index{inheritance!behavioral}
+\fl identifies two types of inheritance: \emph{structural} and
+\emph{behavioral}.  Structural inheritance applies to signatures only. For
+instance, if {\tt student::person} and the program has the signature {\tt
+  person[name \Fd string]} then the query {\tt ?- student[name \Fd X]}
+succeeds with {\tt X = string}.
 
+\index{inheritance!non-monotonic}
 Behavioral inheritance is much more complex. The problem  is that it is
 \emph{non-monotonic}. That is, addition of new facts might change previously
 established inferences.
 
+\index{attribute!inheritable}
+\index{attribute!non-inheritable}
 F-logic (and \FLORA) distinguishes between attributes and methods that can
 inherit values from superclasses and those that do not. The syntax that we
 used so far applies to \emph{non-inheritable} attributes only.
@@ -1268,7 +1314,9 @@ overwrittenSet(X,Y,A) <- X:Z & Z::Y & Z[A *->> W] & Z \= Y
 definedSet(X,A) <- X[A ->> V]
 \end{verbatim}
 %%
-Negation here is implemented using the well-founded semantics (as indicated
+\index{well-founded semantics}
+Negation here is implemented using the {\em well-founded semantics} for
+negation \cite{gelder-alternating-89,gelder-ross-schlipf-91} (as indicated
 by the {\tt tnot} operator).
 
 One problem with the current implementation of behavioral inheritance is
@@ -1356,8 +1404,9 @@ X = f(a,b)
 Yes.
 \end{verbatim}
 %%
+\index{meta-variable}
 These primitives are described in the XSB manual. However, \FLORA provides
-one primitive of its own: a meta variable that can range over methods of
+one primitive of its own: a {\em meta variable\/} that can range over methods of
 any arity.
 
 
@@ -1369,6 +1418,9 @@ However, there is a distinction between static facts and rules and dynamic
 ones. The former are immutable, while the latter can be added or deleted at
 will.
 
+\index{code!compiled}
+\index{code!static}
+\index{code!dynamic}
 Conceptually, the runtime environment of \FLORA is partitioned into two
 areas: static and dynamic. \emph{Static code} is generated using the
 predicate {\tt flcompile(file)}, and is loaded into the static runtime
@@ -1589,6 +1641,7 @@ is implemented on top of and is integrated with the XSB module system.
 XSB, \FLORA modules communicate using the normal Prolog predicates only
 (because bare XSB does not speak F-logic).
 
+\index{module}
 To illustrate, consider the two \FLORA modules \emph{module1.flr} and
 \emph{module2.flr} in Figure~\ref{fig:fig-module}.
 Let us start XSB in the directory where both \emph{module1.flr} and
@@ -1645,6 +1698,8 @@ information is kept in {\tt module2}. However, {\tt module1} \emph{imports}
 this information from {\tt module2}, and the imported information
 takes part in the query evaluation process.
 
+\index{module!import directive}
+\index{module!export directive}
 The import/export directives can take a list of predicate/arity pairs (as
 XSB does) and/or \emph{ground} \fl signatures (no variables are allowed in
 the signatures that are imported or exported). For example,
@@ -1737,6 +1792,7 @@ be supported in a future release via a special compiler directive.
 
 \section{\FLORA and Tabling}\label{sec-tabling-flora}
 
+\index{tabling}
 Tabling is a technique that enhances top-down evaluation with a mechanism
 that remembers the calls previously made during query evaluation.
 This technique is known to be essentially equivalent to the Magic Sets
@@ -1771,6 +1827,8 @@ such directives must begin with {\tt :-} (while all queries must begin with
 {\tt ?-}). The following is a list of all the compiler directives supported
 by \FLORA:
 
+\index{compiler directive}
+\index{compiler directive!tabling}
 \paragraph{Tabling Directive} Tabling directive can be either ``{\tt
   :- auto\_table.}'', which lets XSB automatically decide which predicates
 should be tabled, or ``{\tt :- table p\_a\_list.}'', where {\tt p\_a\_list}
@@ -1779,17 +1837,20 @@ predicates to be tabled. Note that the tabling directive is needed only for
 the user-defined predicates inside \FLORA modules. The internal \FLORA
 predicates that are used to implement \fl atoms are tabled automatically.
 
+\index{compiler directive!import}
 \paragraph{Import Directive} Import directive is of the form
 ``{\tt :- import sig\_p\_a\_list.}'', where {\tt sig\_p\_a\_list} is a
 list of \emph{ground} \fl signatures \mbox{and/or} \mbox{predicate/arity}
 pairs.
 
+\index{compiler directive!export}
 \paragraph{Export Directive} Export directive is of the form
 ``{\tt :- export sig\_pa\_list.}'', where \emph{sig\_p\_a\_list} is a list of
 \emph{ground} \fl signatures \mbox{and/or} \mbox{predicate/arity} pairs.
 All export directives are ignored if a \FLORA module is compiled as dynamic
 code and/or is loaded dynamically.
 
+\index{compiler directive!equality maintenance}
 \paragraph{Equality Maintenance Directive} Equality maintenance directive has
 the form ``{\tt :- eqlevel(N).}''  where the level number \emph{N}
 specifies the degree to which \FLORA will try to maintain the equalities
@@ -1820,4 +1881,7 @@ highest level will be selected by the compiler.
 
 
 \bibliography{../../../docs/userman/manual}
+
+\printindex
+
 \end{document}
