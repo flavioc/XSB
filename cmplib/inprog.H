@@ -29,7 +29,7 @@
 :- import member1/2 from auxlry.
 :- import gennum/1 from prof_sbp.
 :- import sym_name/3, sym_type/2 from symtab.
-:- import varproc/5, vprag_common/2, vprag_argno/2, vprag_level/2,
+:- import varproc/3, vprag_common/2, vprag_argno/2, vprag_level/2,
 	  vprag_context/2
      from varproc.
 

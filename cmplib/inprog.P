@@ -50,7 +50,7 @@ inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag), NC) :-
       inp_body(Body, NBody, VarTab1, [], 1, _ChunkOut, VarList)
 		% The id of the first chunk is 1, same as the head.
     ),
-    varproc(VarList, VarTab, Sym, NC, PvarCount),
+    varproc(VarList, VarTab, PvarCount),
     ( (need_alloc(Body) ; sym_type(Sym,tabled(_,_,_,_))) -> 
 	ARSize is PvarCount + 2		/* tls changed for XWAM */
     ; ARSize = 0

@@ -26,10 +26,10 @@
 
 % :- import write/1, writeln/1, telling/1, told/0, tell/1 from standard.
 
-varproc(VarList, VarTab, Sym, NC, PvarCount) :-
+varproc(VarList, VarTab, PvarCount) :-
 	get_lastchunk(VarTab, LastChunk),
 	closetail(LastChunk), !,
-	mark_occurrence(VarList, VarTab, Sym, NC), !,
+	mark_occurrence(VarList, VarTab), !,
 	mark_type(VarList, VarTab, LastChunk), !,
 	alloc_vars(VarList, VarTab, 0, PvarCount).
 % ,
@@ -63,48 +63,46 @@ get_lastchunk1(ifthenelse(_,B,C), LastChunk) :-
 
 
 /*======================================================================*/
-/* mark_occurrence(+VarList, #VarTab, +Sym, NC)				*/
+/* mark_occurrence(+VarList, #VarTab)		        		*/
 /*	Fills in occurrence information (f, s, l, or v).		*/
 /*	      +VarList is a list of variable(Vid,VPrag) structures	*/
 /*		       where Vprag is uninstantiated yet.		*/
 /*	      #VarTab  has the occurrence attribute of the		*/
 /*		       varocc(Vid,vrec()) structures marked		*/
 /*		       after the exit from this predicate.		*/
-/*	      +Sym     is the predicate that is being compiled only	*/
-/*		       used for error reporting.			*/
 /*======================================================================*/
 
-mark_occurrence([], _, _, _).
-mark_occurrence([variable(Vid,_VCPrag)|Rest], VarTab, Sym, NC) :-
-	mark_occ1(VarTab, 0, _, pr(0,_), LastOcc, Vid, Sym, NC),
+mark_occurrence([], _).
+mark_occurrence([variable(Vid,_VCPrag)|Rest], VarTab) :-
+	mark_occ1(VarTab, 0, _, pr(0,_), LastOcc, Vid),
 	mark_last(LastOcc),
-	mark_occurrence(Rest, VarTab, Sym, NC).
+	mark_occurrence(Rest, VarTab).
 
 /*======================================================================*/
 /* mark_occ1(#VarTab, +CountIn, -CountOut,				*/
-/*	     +PrevOcc, -LastOcc, -FirstOcc, +Sym, +NC)			*/
+/*	     +PrevOcc, -LastOcc, -FirstOcc)			        */
 /*	Fills in occurrence information (f, s, l, or v).		*/
 /*======================================================================*/
 
-mark_occ1([], N, N, Pre, Pre, _, _, _).
-mark_occ1([One|Rest], N0, N, Pre, Last, Vid, Sym, NC) :-
-	mark_occ2(One, N0, N1, Pre, Med, Vid, Sym, NC),
-	mark_occ1(Rest, N1, N, Med, Last, Vid, Sym, NC).
+mark_occ1([], N, N, Pre, Pre, _).
+mark_occ1([One|Rest], N0, N, Pre, Last, Vid) :-
+	mark_occ2(One, N0, N1, Pre, Med, Vid),
+	mark_occ1(Rest, N1, N, Med, Last, Vid).
 
-mark_occ2(goal(_,_,_,VOList), N0, N, Pre, Last, Vid, Sym, NC) :-
-	mark_occ3(VOList, N0, N, Pre, Last, Vid, Sym, NC).
-mark_occ2(head(VOList), N0, N, Pre, Last, Vid, Sym, NC) :-
-	mark_occ3(VOList, N0, N, Pre, Last, Vid, Sym, NC).
-mark_occ2(inlinegoal(_,F,_,VOList), N0, N, Pre, Last, Vid, Sym, NC) :-
+mark_occ2(goal(_,_,_,VOList), N0, N, Pre, Last, Vid) :-
+	mark_occ3(VOList, N0, N, Pre, Last, Vid).
+mark_occ2(head(VOList), N0, N, Pre, Last, Vid) :-
+	mark_occ3(VOList, N0, N, Pre, Last, Vid).
+mark_occ2(inlinegoal(_,F,_,VOList), N0, N, Pre, Last, Vid) :-
 	( F == is ->			% is/2 needs special treatment due to
 		VOList = [LHS|RHS],	%      its "reversed" directionality
-		mark_occ3(RHS, N0, N1, Pre, L1, Vid, Sym, NC),
-		mark_occ3([LHS], N1, N, L1, Last, Vid, Sym, NC)
-	; mark_occ3(VOList, N0, N, Pre, Last, Vid, Sym, NC)
+		mark_occ3(RHS, N0, N1, Pre, L1, Vid),
+		mark_occ3([LHS], N1, N, L1, Last, Vid)
+	; mark_occ3(VOList, N0, N, Pre, Last, Vid)
 	).
-mark_occ2(branch(A,B), N0, N, Pre, Last, Vid, Sym, NC) :-
-	mark_occ1(A, N0, N1, Pre, Last1, Vid, Sym, NC),
-	mark_occ1(B, N0, N2, Pre, Last2, Vid, Sym, NC),
+mark_occ2(branch(A,B), N0, N, Pre, Last, Vid) :-
+	mark_occ1(A, N0, N1, Pre, Last1, Vid),
+	mark_occ1(B, N0, N2, Pre, Last2, Vid),
 	( N1 > N0, N2 > N0 -> N = N1, Last = br(Last1,Last2)
 	; N1 > N0, N2 =:= N0 -> N = N1, 
 		( N0 >= 1, Last = Last1
@@ -117,40 +115,31 @@ mark_occ2(branch(A,B), N0, N, Pre, Last, Vid, Sym, NC) :-
 	; % N1=N0, N2=N0,
 		N = N0, Last = Pre
 	).
-mark_occ2(ifthenelse(A,B,C), N0, N, Pre, Last, Vid, Sym, NC) :-
-	mark_occ1(A, N0, N1, Pre, Med, Vid, Sym, NC),
+mark_occ2(ifthenelse(A,B,C), N0, N, Pre, Last, Vid) :-
+	mark_occ1(A, N0, N1, Pre, Med, Vid),
 	( C = [inlinegoal(_,fail,0,_)] ->
-		mark_occ1(B, N1, N, Med, Last, Vid, Sym, NC)
+		mark_occ1(B, N1, N, Med, Last, Vid)
 		% fail branch can contain no lamp vars, so this
-	; mark_occ2(branch(B,C), N1, N, Med, Last, Vid, Sym, NC)
+	; mark_occ2(branch(B,C), N1, N, Med, Last, Vid)
 	).
 
-mark_occ3([], N, N, Pre, Pre, _, _, _).
-mark_occ3([varocc(Vid0,Prag)|Rest], N0, N, Pre, Last, Vid, Sym, NC) :-
+mark_occ3([], N, N, Pre, Pre, _).
+mark_occ3([varocc(Vid0,Prag)|Rest], N0, N, Pre, Last, Vid) :-
 	( Vid0 = Vid ->
-		mark_previous(Pre, Sym, NC), N1 is N0 + 1, Med = pr(N1, Prag)
+		mark_previous(Pre), N1 is N0 + 1, Med = pr(N1, Prag)
 	; N1 = N0, Med = Pre
 	),
-	mark_occ3(Rest, N1, N, Med, Last, Vid, Sym, NC).
+	mark_occ3(Rest, N1, N, Med, Last, Vid).
 
-mark_previous(pr(OccNum, Prag), _, _) :-
+mark_previous(pr(OccNum,Prag)) :-
 	( OccNum =:= 0 -> true
 	; OccNum =:= 1 -> vprag_occ(Prag, f)
 	; vprag_occ(Prag, s)
 	).
-mark_previous(br(Pre1, Pre2), Sym, NC) :-
-	mark_previous(Pre1, Sym, NC),
-	mark_previous(Pre2, Sym, NC).
-mark_previous(no(Vid), Sym, NC) :- 
-	sym_name(Sym, P, A),
-	( option(init_var_off) -> 
-		warning(('Uninitialized variable #', Vid,
-			 ' in clause #', NC, ' of ', P, '/', A)), nl,
-		message('           (object code may not be correct)')
-	; error(('Uninitialized variable #', Vid,
-		 ' in clause #', NC, ' of ', P, '/', A)), nl,
-	  message('         (cannot generate object code)')
-	).
+mark_previous(br(Pre1, Pre2)) :-
+	mark_previous(Pre1),
+	mark_previous(Pre2).
+mark_previous(no(_Vid)).
 
 mark_last(pr(OccNum, Prag)) :-
 	( OccNum =:= 0 -> true

@@ -26,13 +26,11 @@
 
 
 :- export force_varproc_loaded/0.
-:- export varproc/5, vprag_common/2, vprag_argno/2, vprag_level/2,
+:- export varproc/3, vprag_common/2, vprag_argno/2, vprag_level/2,
 	  vprag_context/2, vprag_loc/2, vprag_occ/2, vprag_type/2, 
 	  vprag_use/2, vprag_nouse/2, vprag_lastchunk/2, vprag_type1/2.
 
-:- import nl/0 from standard.
-:- import sym_name/3 from symtab.
+:- import member1/2 from auxlry.
 :- import member/2, append/3 from prof_sbp.
 :- import closetail/1, length/2, member2/2 from listutil.
-:- import member1/2, option/1, message/1, warning/1, error/1 from auxlry.
 
