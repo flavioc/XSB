@@ -1384,7 +1384,7 @@ int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode)
   int i;
   char mode = '\0';
 
-  printf("xsb_intern_fileptr %x %s %s %s\n",fptr,context,name,strmode);
+  /*printf("xsb_intern_fileptr %x %s %s %s\n",fptr,context,name,strmode);*/
 
   if (!fptr) return -1;
 
