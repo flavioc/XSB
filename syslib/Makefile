@@ -47,7 +47,6 @@ Prolog = $(XSB) -e "segfault_handler(warn)."
 
 # Make sure warnings are saved in a file.
 SVFILE = '../build/.xsb_syslib_warn.tmp'
-OWRITE = 1
 STDWARN = 3
 HDRMSG = "While compiling XSB/syslib:"
 
@@ -58,9 +57,7 @@ OBJFILESAVED = objfiles.saved
 .SUFFIXES: .P .H .O
 
 all: init $(ALL) finish
-	@../build/touch.sh cmd...
-	$(Prolog) < cmd...
-	@rm cmd...
+	./CompileChangedFiles.sh $(Prolog)
 	@cat $(SVFILE)
 
 %.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
@@ -82,11 +79,12 @@ all: init $(ALL) finish
 init:
 	rm -f $(SVFILE)
 	@test -d $(OBJFILESAVED) || mkdir $(OBJFILESAVED)
-	@echo 'import file_reopen/4, fmt_write/3, file_flush/2 from file_io.' >> cmd...
-	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings --------------------\n",_).' >> cmd...
 	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
 	@echo 'file_flush($(STDWARN),_).' >> cmd...
+	# This header is prepended before each split cmd...xx file
+	@echo 'import file_reopen/4, fmt_write/3, file_flush/2 from file_io.' >> cmd...hdr
+	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr
 
 finish:
 	@echo 'fmt_write($(STDWARN),"%s\n",arg("--------------------------------------------")).' >> cmd...
