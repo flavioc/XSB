@@ -157,8 +157,10 @@ xsbBool unify(Cell rop1, Cell rop2)
 
 /*----------------------------------------*/
 #include "unify_xsb_i.h"
+  /* unify_xsb_i already ends with this statement
+     IFTHEN_SUCCEED;
+  */
 /*----------------------------------------*/
-  IFTHEN_SUCCEED;
 
 }  /* end of unify */
 

@@ -1319,7 +1319,10 @@ nunify: /* ( op1, op2 ) */
 /* word op1, op2 */
 #include "unify_xsb_i.h"
 
-    goto contcase;  /* end of nunify */
+    /* unify_xsb_i already ends with this statement.
+       goto contcase;  
+    */
+    /* end of nunify */
 
 /*======================================================================*/
 
