@@ -83,8 +83,8 @@ void arithmetic_abort(Cell op1, char *OP, Cell op2)
   index = 0; print_pterm(op2, 1, str_op2, &index);
   if (isref(op1) || isref(op2)) {
     xsb_abort("Uninstantiated argument of evaluable function %s/2\n%s %s %s %s%s",
-	      OP,
-	      "   Goal:", str_op1, OP, str_op2,
+	      OP, "   Goal:",
+	      (isref(op1)? "_Var": str_op1), OP, (isref(op2)? "_Var": str_op2),
 	      ", probably as 2nd arg of is/2");
   }
   else {
@@ -97,9 +97,9 @@ void arithmetic_abort(Cell op1, char *OP, Cell op2)
 void arithmetic_abort1(char *OP, Cell op)
 {
   int  index = 0;
-  char str_op[30];
+  char str_op[30] = "_Var";
   
-  print_pterm(op, 1, str_op, &index);
+  if (! isref(op)) print_pterm(op, 1, str_op, &index);
   xsb_abort("%s evaluable function %s/2\n%s %s(%s) %s",
 	    (isref(op) ? "Uninstantiated argument of" : "Wrong domain in"),
 	    OP, "   Goal:", OP, str_op, ", probably as 2nd arg of is/2");  
@@ -108,9 +108,9 @@ void arithmetic_abort1(char *OP, Cell op)
 void arithmetic_comp_abort(Cell op1, char *OP, int op2)
 {
   int  index = 0;
-  char str_op1[30];
+  char str_op1[30] = "_Var";
 
-  print_pterm(op1, 1, str_op1, &index);
+  if (! isref(op1)) print_pterm(op1, 1, str_op1, &index);
   xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
 	    (isref(op1) ? "Uninstantiated argument of" : "Wrong type in"),
 	    OP, "   Goal:", str_op1, OP, op2);
