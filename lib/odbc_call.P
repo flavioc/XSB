@@ -1,5 +1,5 @@
 /* File:      odbc_call.P
-** Author(s): Hasan Davulcu, Lily Dong
+** Author(s): Hasan Davulcu, Lily Dong, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1993-1998
@@ -22,7 +22,9 @@
 ** 
 */
 
-:- dynamic (attribute)/4, odbc_add_record/2, odbc_delete_record/2.
+:- dynamic attribute(_,_,_,_).
+:- dynamic odbc_add_record(_,_).
+:- dynamic odbc_delete_record(_,_).
 
 % --- for projection goal, we are to use bind variables for those constants. 
 
@@ -486,9 +488,9 @@ get_type(Type,TypeOut) :-
 	atom(Type),
 	!,
 	atom_codes(Type,TypeCodes),
-	(append("integer",_,TypeCodes)
+	(append("int",_,TypeCodes)
 	 ->	TypeOut = integer
-	 ; append("number",_,TypeCodes)
+	 ; append("num",_,TypeCodes)
 	 ->	TypeOut = number
 	 ;	TypeOut = string
 	).
@@ -1020,17 +1022,6 @@ free_vars(FunctionVariable,Dict,FreeVarList) :-
 		 not member(dict(Var,_,_,_,_),FunctionVariableList)),
 		FreeVarList).
        
-%% --- ::: can't see why we need this -----------------
-%% --- function_variable_list(FunctionVariable,FunctionVariableList)
-%
-%% extracts the list of variables which occur in the function variable term
-%%
-%% RESTRICTION: FunctionVariable may only contain one single variable.
-%% 
-%% -----------------------------------------------------------------------
-
-function_variable_list('$var$'(VarId),[VarId]).
-
 %% --- translate_free_vars(FreeVars,SQLGroup) -------
 %
 % translates dictionary information on free variables to SQLGroup of aggregate
@@ -1318,28 +1309,45 @@ filterColName([rel(_,N)|Xs],[rel(N,_)|Ys]) :-
 /*									*/
 /************************************************************************/
 
-odbc_open(Server, Name,Passwd) :- 
+:- dynamic '$ora_err$'(_).
+:- dynamic '$show_query$'(_).
+
+odbc_open(Server,Name,Passwd) :- 
 	odbc_connect(Server,Name,Passwd,RetVal),
-	%% --- cursor 0 is reserved for table information retrieval
-	%% --- cursor 1 is reserved for odbc_sql_select 
-	conset(count,2),init_gensym(table1),init_gensym(null),
+	init_gensym(table1),init_gensym(null),
 	assert('$ora_err$'(off)),
 	assert('$show_query$'(on)),
 	(RetVal =:= 0
 	 ->	true
-	 ;	writeln('ERR - ODBC: Connection failed.'),
+	 ;	odbc_error('Connection failed.'),
 		fail
 	).
 
-odbc_connect(Server,Name,Passwd,RetVal) :-
-	odbc_exec_query(1,Server,Name,Passwd,RetVal).
-    
 odbc_close :- 
 	retractall('$ora_err$'(_)), 
 	retractall('$show_query$'(_)), 
 	odbc_disconnect.
 
-odbc_disconnect :- odbc_exec_query(8).
+/* odbc_sql(+BindVals,+SQLStmt,?Result) */
+/* The most general sql call: */
+odbc_sql(BindVals,SQLStmt,Result) :-
+	%%writeln(odbc_sql(BindVals,SQLStmt,Result)),
+	get_stmt_no(SQLStmt,StmtNo),
+	find_free_cursor(StmtNo,Cursor),
+	%%writeln(cursor(Cursor)),
+	(BindVals == []
+	 ->	true
+	 ;	length(BindVals,NumBindVals),
+		set_bind_table_size(Cursor,NumBindVals),
+		set_def_bindvar_table(BindVals,Cursor)
+	),
+	parse(Cursor,SQLStmt,RetVal),
+	(RetVal =:= 0
+	 ->	fetch(Cursor,Result)
+	 ; RetVal =:= 2
+	 ->	true		% No result set for this query
+	 ;	odbc_error('Parse error.')
+	).
 
 odbc_import(DbPredicate, SymName) :-
 	\+attribute(_,SymName,_,_),
@@ -1359,13 +1367,16 @@ odbc_import(_,SymName) :-
     
 assert_import_attributes(_,[],_,_).
 assert_import_attributes(SymName, [HAttr|RAttr], TableName,Num) :-
-	attributeX(TableName,HAttr,Type),
-	assert(attribute(Num,SymName,HAttr,Type)),
-	Num1 is Num + 1,
-	assert_import_attributes(SymName,RAttr,TableName,Num1).
+	(attributeX(TableName,HAttr,Type)
+	 ->	assert(attribute(Num,SymName,HAttr,Type)),
+		Num1 is Num + 1,
+		assert_import_attributes(SymName,RAttr,TableName,Num1)
+	 ;	odbc_error('Table doesn''t have attribute '('Table'=TableName,
+							    'Attribute'=HAttr))
+	).
 
-:- dynamic attributeX/3.
-:- dynamic table_arity/2.
+:- dynamic attributeX(_,_,_).
+:- dynamic table_arity(_,_).
 assert_attributes_info(Table) :-
 	(table_arity(Table,_)
 	 ->	true
@@ -1375,320 +1386,188 @@ assert_attributes_info(Table) :-
 	).
 
 assert_attributes_info1(Table) :-
-	attr(Table,Col,Type),
+	nonvar(Table),
+	odbc_get_attr(Table,Col,Type),
 	get_type(Type,Type1),
 	assert(attributeX(Table,Col,Type1)),
 	fail.
 assert_attributes_info1(_Table).
 
-attr(A,B,C) :-
-	nonvar(A),
-	var(B),
-	var(C),
-	odbc_all(attr(B,C), A, attr('$var$'(var1),'$var$'(var2)),[],0).
+split_in_out(ModeTerm,BindList,InVars,InBinds,OutVars) :-
+	ModeTerm =.. [_|ModeList],
+	length(BindList,BLL), length(InBinds,BLL),
+	split_in_out_l(ModeList,BindList,InVars,InBinds,OutVars).
 
-odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo) :-
-%%	writeln(odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo)),
-	Call =.. [SymbolicName|CallArgs],
-	find_free_cursor(StmtNo, Index),
-	(Index =\= -1
-	 ->	ProjectionTerm =.. [_Head|ProjectionTermArgs],
-		set_global_bind_table(Index,ProjectionTermArgs,CallArgs,Blist), 
-		parse(Index,SQLAtom, RetVal),
-		(RetVal =:= 0
-		 ->	(next(Row, Index), 
-			 skip_bind(Row,ProjectionTermArgs,Row1),
-			 Call =.. [SymbolicName|Row1]
-			)
-		 ;	RetVal =:= 2
-		 ->	true
-		 ;	RetVal =:= 1
-		 ->	writeln('ERR - DB: Parse error.'), 
-			('$ora_err$'(on) -> fail;true)
-		)
-	 ;      writeln('ERR - DB: No more cursors left.'),
-		fail
-	).
-                                  
-/* a slightly more general db_all, allowing input parameters and
-returning a result set:
-  StmtNo: a unique number identifying this call
-  SQLAtom: the sql statement (longstring form allowed)
-  InPars: values for the parameters in the query (rep as ?'s)
-  InProj: list of '$bind$'('BINDi') terms corresponding to InPars
-  InBinds: list of 'BINDi' terms to fill pars (?'s) in SQLAtom
-  _OutPars: for future?
-  RetList: list of values returned in result set, nondeterministically
-*/
-odbc_all_gen(StmtNo,SQLAtom,InPars,InProj,InBinds,_OutPars,RetList) :-
-	find_free_cursor(StmtNo,Index),
-	(Index =\= 0
-	 ->	length(InPars,NumInParVals),
-		length(InBinds,NumBinds),
-		odbc_exec_query(3,Index,NumInParVals,NumBinds),
-		set_var_table(InProj,Index,InPars),
-		set_bind_table(InBinds,Index),
-		parse(Index,SQLAtom,RetVal),
-		(RetVal =:= 0
-		 ->	next(RetList,Index)
-		 ; RetVal =:= 2
-		 ->	true
-		 ;	writeln('ERR - DB: Parse error.'), 
-			('$ora_err$'(on) -> fail;true)
-		)
-	 ;      writeln('ERR - DB: No more cursors left.'),
-		fail
-	).
+split_in_out_l([],_,[],_,[]).
+split_in_out_l(['$bind$'(B)|ModeList],BindList,[X|InVars],
+	       InBinds,[X|OutVars]) :-
+	bind_inbinds(BindList,B,X,InBinds),
+	split_in_out_l(ModeList,BindList,InVars,InBinds,OutVars).
+split_in_out_l(['$var$'(_)|ModeList],BindList,[X|InVars],
+	       InBinds,[X|OutVars]) :-
+	split_in_out_l(ModeList,BindList,InVars,InBinds,OutVars).
 
-
-find_free_cursor(StmtNo, Index) :-
-	odbc_exec_query(7,StmtNo, Index).
-
-set_global_bind_table(Index,Alist,Calllist,Blist) :-
-	bind_num(Alist,0,Num),
-	length(Blist,Blen),
-	set_bind_var_num(Index,Num,Blen),
-	set_var_table(Alist,Index,Calllist),
-	set_bind_table(Blist,Index).
-    
-bind_num([],Num,Num).
-bind_num([H|T],ONum,Num) :-
-	H = '$bind$'(_),!,
-	ONum1 is ONum + 1,
-	bind_num(T,ONum1,Num).
-bind_num([_H|T],ONum,Num) :-
-	bind_num(T,ONum,Num).
-
-set_bind_var_num(Index,Num,Blen) :-
-	(Num =\= 0
-	 ->	odbc_exec_query(3,Index,Num,Blen)
+bind_inbinds([],_B,_X,[]).
+bind_inbinds([B1|Bs],B,X,[X1|Xs]) :-
+	(B1 == B
+	 ->	X = X1
 	 ;	true
-	).
-    
-set_var_table([],_Index,[]) :- !.
-set_var_table([H|T], Index, [H1|T1]) :-
-	H = '$bind$'(BindId),!,
-	(integer(H1)
-	 ->	set_var(Index,BindId,H1,0)
-	 ;	number(H1)
-	 ->	set_var(Index,BindId,H1,1)
-	 ;	atom(H1)
-	 ->	set_var(Index, BindId, H1,2)
-	 ;	H1 = 'NULL'(_)
-	 ->	set_var(Index, BindId, 'NULL',2)
 	),
-	set_var_table(T,Index,T1).
-set_var_table([_H|T], Index, [_H1|T1]) :-
-	set_var_table(T,Index,T1).
+	bind_inbinds(Bs,B,X,Xs).
 
-set_var(Index, BindId, H1,C) :-
-	odbc_exec_query(6,Index, BindId, H1,C).        
+set_def_bindvar_table(BindVals,Cursor) :-
+	set_def_bindvar_table(BindVals,Cursor,0).
+set_def_bindvar_table([],_Cursor,_I).
+set_def_bindvar_table([Val|BindVals],Cursor,I) :-
+	(Val = 'NULL'(_)
+	 ->	set_bind(Cursor,I,'NULL')
+	 ;	set_bind(Cursor,I,Val)
+	),
+        I1 is I + 1,
+	set_def_bindvar_table(BindVals,Cursor,I1).
 
-set_bind_table([], _Index).
-set_bind_table([BindId|BList], Index) :-
-	odbc_exec_query(9,Index,BindId),
-	set_bind_table(BList,Index).
    
-parse(Index,SQLAtom, RetVal) :-
-	odbc_exec_query(2,Index,SQLAtom, RetVal).
-    
-next(Row,Index) :-
-	fetch_next_col(Index,RetVal),
+%%% nondeterministically return all columns of all tuples
+fetch(Cursor,Row) :-
+	fetch_next_col(Cursor,RetVal),
 	(RetVal =:= 0
-	 ->	(get_list(X1,Index), 
-		 Row=X1
+	 ->	(get_all_columns(Cursor,0,Row)
 		 ;
-		 next(Row, Index)
+		 fetch(Cursor,Row)
 		)
 	 ; RetVal =:= 2
-	 ->	writeln('ERR - ODBC: Fetch Failed'),
+	 ->	odbc_error('Fetch Failed'),
 		fail
 	).
-         
-fetch_next_col(Index,RetVal) :-
-	odbc_exec_query(4,Index,RetVal).
-         
-get_list(L,Index) :-
-	get_column(Index,X,RetVal),
-	(RetVal =:= 0
-	 ->	L = [X|L1],
-		get_list(L1,Index)
-	 ;	L = []
+
+%%% retrieve all columns of current tuple
+
+get_all_columns(Cursor,Col,Row) :-
+	(Row = [X|Row1],nonvar(X)
+	 ->	get_column(Cursor,Col,X,RetVal),
+		RetVal =:= 0,
+		NCol is Col + 1,
+		get_all_columns(Cursor,NCol,Row1)
+	 ;	get_column(Cursor,Col,X,RetVal),
+		(RetVal =:= 0
+		 ->	Row = [X|Row1],
+			NCol is Col + 1,
+			get_all_columns(Cursor,NCol,Row1)
+		 ;	Row = []
+		)
 	).
 
-get_column(Index,X,RetVal) :-
-	odbc_exec_query(5,Index,X,RetVal).      
-    
-skip_bind([],[],[]).
-skip_bind([R|R1],[P|P1],[H|H1]) :-
-	skip_head(R,P,H),
-	skip_bind(R1,P1,H1).    
+%%% fetch only indicated columns (numbered from 0)
+fetch(Columns,Cursor,Row) :-
+	fetch_next_col(Cursor,RetVal),
+	(RetVal =:= 0
+	 ->	(get_some_columns(Columns,Cursor,Row)
+		 ;
+		 fetch(Columns,Cursor,Row)
+		)
+	 ; RetVal =:= 2
+	 ->	odbc_error('Fetch Failed'),
+		fail
+	).
+	
+%%% get indicated columns
+get_some_columns([],_Cursor,[]).
+get_some_columns([Col|Columns],Cursor,[X|Row]) :-
+	get_column(Cursor,Col,X,RetVal),
+	(RetVal =:= 0
+	 ->	get_some_columns(Columns,Cursor,Row)
+	 ;	odbc_error('Attempt to fetch a nonexistent column')
+	).
 
-skip_head(_R,'$bind$'(_),_).
-skip_head('NULL','$var$'(_),'NULL'(X)) :- !,
-	gensym(null, X).
-skip_head(R,'$var$'(_),R).
-skip_head(_R,'$const$'('NULL'), 'NULL'(X)) :- !,
-	gensym(null, X).
-skip_head(_R,'$const$'(_),_).
-
+%%% assert rule to intercept any call and redirect to DB
 odbc_query(Head,Body) :-
+	\+ atomic(Head),
 	copy_term(Head,Head1),
-	Head =.. [H|A],
-	not Head1 =.. [_],
 	assert((Head1 :- 
-		Head1 =..[_|Args],
-		get_mode(Args,Mode,A),
-		NewHead =.. [H| Mode],
-		odbc_link(NewHead,Body), !,
+		odbc_link(reg,Head,Head1,Body), !,
 		Head1)).
 
-odbc_link(ProjectionTerm, DatabaseGoal) :-
-	translate(ProjectionTerm, DatabaseGoal,_, SQLAtom,Blist),
+%%% intercepts new-moded DB call, generates and asserts new clause to
+%%% (re)makes the DB call and makes the call.
+odbc_link(Type,Head,Head1,DatabaseGoal) :-
+	Head =.. [H|A],
+	Head1 =..[_|Args],
+	get_mode(Type,Args,Mode,A),
+	ProjectionTerm =.. [H|Mode],
+	translate(Type,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist),
 	!,
-	conget(count, Num),
-	Num1 is Num +1,
-	conset(count, Num1),
-	assert_call_rule_del(ProjectionTerm, SQLAtom,Blist,Num).
+	assert_call_rule(ProjectionTerm,Type,SQLAtom,Blist).
 
-assert_call_rule_del(ProjectionTerm, SQLAtom,Blist,Num) :-
-        init_gensym(var),
-        init_gensym(rel),
-        init_gensym('BIND'),
-        tokenize_term(ProjectionTerm, Tokens),!,
-        functor(ProjectionTerm, Head, Arity),
-        Tokens =.. [Head|Args],
-        functor(RuleHead, Head, Arity),
-        RuleHead =..[_RuleH|NewArgs],
-        converts_del(Args, NewArgs, RuleBody),
-        asserta((RuleHead :- (RuleBody, !, odbc_all(RuleHead, SQLAtom, Tokens,Blist,Num)))).
+get_mode(ins,Args,Mode,A) :- !,get_mode_ins(Args,Mode,A).
+get_mode(_,Args,Mode,A) :- get_mode(Args,Mode,A).
 
-converts_del([H,H2|Rest], [H1|Rest1], (X, RestX)) :-
-	convert_del(H,H1, X),
-	converts_del([H2|Rest], Rest1, RestX).
-converts_del([H],[H1],X) :- 
-	convert_del(H,H1,X).
-                
-convert_del('$var$'(_), A, var(A)).
-convert_del('$bind$'(_),A,(nonvar(A), not((A = 'NULL'(X),var(X))))).
-convert_del('$const$'('NULL'), A, (nonvar(A), A = 'NULL'(X), var(X))):- !.
-convert_del('$const$'(C),A, A == C).
+translate(reg,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist) :-
+	translate(ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist).
+translate(ins,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist) :-
+	translate_ins(ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist).
+translate(del,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist) :-
+	translate_del(ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist).
 
-odbc_sql(SQLAtom) :- 
-	parse(-1,SQLAtom, RetVal), 
-	(RetVal =:=1
-	 ->	writeln('ERR - DB: ODBC Execution Error.'),
-		('$ora_err$'(on)
-		 ->	fail
-		 ;	true
-		)
-	 ;     true
-	).
-     
-odbc_sql_select(Select,Row) :-
-	find_free_cursor(1, Index),
-	(Index =\= -1
-	 ->	(parse(Index,Select,RetVal),
-		 (RetVal =:= 0
-		  ->	 next(Row, Index)
-		  ;	 RetVal =:= 2
-		  ->	 true
-		  ;	 RetVal =:= 1
-		  ->	 writeln('ERR - DB: Parse error.'),
-			 ('$ora_err$'(on) -> fail;true)
-		 )
-		)
-	 ;	writeln('ERR - DB: No more cursors left.'),
-		fail
-	).
+odbc_sql(SQLAtom) :-
+	odbc_sql(SQLAtom,[]).
+
+odbc_sql(SQLSelect,Result) :-
+	odbc_sql([],SQLSelect,Result).
 
 odbc_transaction(commit) :-
-	parse(-2,'No Query',RetVal),
+	odbc_commit(RetVal),
 	(RetVal =:=1
-	 ->	writeln('ERR - DB: ODBC Commit Error.'),
-		('$ora_err$'(on) -> fail;true)
+	 ->	odbc_error('ODBC Commit Error.')
 	 ;	true
 	).
 
 odbc_transaction(rollback) :-
-	parse(-3,'No Query',RetVal),
+	odbc_rollback(RetVal),
 	(RetVal =:=1
-	 ->	writeln('ERR - DB: ODBC Commit Error.'),
-		('$ora_err$'(on) -> fail;true)
-	 ;     true
+	 ->	odbc_error('ODBC Commit Error.')
+	 ;	true
 	).
 
 odbc_delete(Head, Body) :-
 	copy_term(Head,Head1),
-	Head =.. [H|A],
 	assert((Head1 :- 
-		Head1 =..[_|Args],
-		get_mode(Args,Mode,A),
-		NewHead =.. [H| Mode],
-		odbc_link_del(NewHead,Body), !,
+		odbc_link(del,Head,Head1,Body), !,
 		Head1)).
-
-odbc_link_del(ProjectionTerm, DatabaseGoal) :- 
-	translate_del(ProjectionTerm, DatabaseGoal,_, SQLAtom,Blist),
-	!,
-	conget(count, Num),
-	Num1 is Num +1,
-	conset(count, Num1),
-	assert_call_rule_del(ProjectionTerm,SQLAtom,Blist,Num).
 
 odbc_insert(Head, Body) :-
 	copy_term(Head,Head1),
-	Head =.. [H|A],
 	assert((Head1 :- 
-		Head1 =..[_|Args],
-		get_mode_ins(Args,Mode,A),
-		NewHead =.. [H| Mode],
-		odbc_link_ins(NewHead,Body), !,
+		odbc_link(ins,Head,Head1,Body), !,
 		Head1)).
 
-odbc_link_ins(ProjectionTerm, DatabaseGoal) :- 
-	translate_ins(ProjectionTerm, DatabaseGoal,_, SQLAtom,Blist),!,
-	conget(count, Num),
-	Num1 is Num +1,
-	conset(count, Num1),
-	assert_call_rule(ProjectionTerm, SQLAtom,Blist,Num).
-
-assert_call_rule(ProjectionTerm,SQLAtom,Blist,Num) :-
+assert_call_rule(ProjectionTerm,Type,SQLAtom,Blist) :-
 	init_gensym(var),
 	init_gensym(rel),
 	init_gensym('BIND'),
 	tokenize_term(ProjectionTerm, Tokens),!,
-	functor(ProjectionTerm, Head, Arity),
 	Tokens =.. [Head|Args], 
-	functor(RuleHead, Head, Arity),
-	RuleHead =..[_RuleH|NewArgs],
-	converts(Args, NewArgs, RuleBody),
-	asserta((RuleHead :- (RuleBody, !,
-			      odbc_all(RuleHead, SQLAtom, Tokens,Blist,Num)))).
+	split_in_out(Tokens,Blist,InVars,InBinds,OutVars),
+	RuleHead =..[Head|InVars],
+	converts(Args,Type,InVars,RuleBody),
+	asserta((RuleHead :- RuleBody, !,
+		 odbc_sql(InBinds,SQLAtom,OutVars))).
 
-convert('$var$'(_), A, var(A)).
-convert('$bind$'(_),A, (nonvar(A), not(A = 'NULL'(_X)))).
-convert('$const$'('NULL'), A, (nonvar(A),A = 'NULL'(_))) :- !.
-convert('$const$'(C),A, A == C).
+converts([H,H2|Rest],Type,[H1|Rest1],(X, RestX)) :-
+        convert(H,Type,H1,X),
+        converts([H2|Rest],Type,Rest1,RestX).
+converts([H],Type,[H1],X) :- 
+        convert(H,Type,H1,X).
+
+convert('$var$'(_),_,A,var(A)).
+convert('$bind$'(_),reg,A,(nonvar(A),not(A='NULL'(_X)))).
+convert('$bind$'(_),ins,A,(nonvar(A),not(A='NULL'(_X)))).
+convert('$bind$'(_),del,A,(nonvar(A), not((A = 'NULL'(X),var(X))))).
+convert('$const$'('NULL'),reg,A,(nonvar(A),A='NULL'(_))) :- !.
+convert('$const$'('NULL'),ins,A,(nonvar(A),A='NULL'(_))) :- !.
+convert('$const$'('NULL'),del,A,(nonvar(A),A='NULL'(X),var(X))):- !.
+convert('$const$'(C),_,A,A==C).
 
 
-converts([H,H2|Rest], [H1|Rest1], (X, RestX)) :-
-        convert(H,H1, X),
-        converts([H2|Rest], Rest1, RestX).
-converts([H],[H1],X) :- 
-        convert(H,H1,X).
-
-odbc_SQL_DDL(SQL,Name) :-
-	assert((Name :- odbc_SQL(SQL))),listing.
-        
-odbc_SQL(SQL) :-
-	parse(-1,SQL, RetVal),
-	(RetVal =:= 0
-	 ->	true
-	 ;	writeln('ERR - ODBC: Execution Error.'),
-		fail
-	).
-      
 writelist([H]) :- writeln(H),!.
 writelist([H|T]) :-
 	write(H),write(' '), writelist(T).
@@ -1699,35 +1578,24 @@ writelistln([H|T]) :-
 
 % -----------------------------------------------------------------------
 odbc_get_schema(tuples(Table),Row) :-
-	atom_codes(Table, Tlist),
-	append("select * from ", Tlist, L),
-	atom_codes(Sql, L),
-	odbc_sql_select(Sql, Row).
+	odbc_sql(['select * from ',Table], Row).
 
-/***odbc_show_schema(tuples(Table)) :-
-	atom_codes(Table, Tlist),
-	append("select * from ", Tlist, L),
-	atom_codes(Sql, L),
-	odbc_sql_select(Sql, Row),
-	writelist(Row), fail.
-odbc_show_schema(tuples(_Table)).
-*****/
 odbc_show_schema(tuples(Table)) :-
-	odbc_sql_select(['select * from ',Table],Row),
+	odbc_sql(['select * from ',Table],Row),
 	writelist(Row), fail.
 odbc_show_schema(tuples(_Table)).
 
 %--------------------------------
 odbc_get_schema(user, List) :-
-        bagof(A, user_tables(A), List).
+        setof(A, user_tables(A), List).
 odbc_show_schema(user) :-
         odbc_get_schema(user, List),
         writelistln(List).
 
 user_tables(A) :-
 	var(A),
-	odbc_all(user_tables(A), 'No Query', user_tables('$var$'(var1)),[],-1).
-    
+	odbc_user_tables(A).
+
 %---------------------------
 odbc_get_schema(accessible, List) :-
 	bagof(A, accessible_tables(A), List).
@@ -1738,7 +1606,7 @@ odbc_show_schema(accessible) :-
 
 accessible_tables(A) :-
 	var(A),
-	odbc_all(accessible_tables(A), 'No Query', accessible_tables('$var$'(var1)),[],-2).
+	odbc_accessible_tables(A).
 
 %----------------------------
 odbc_get_schema(arity(Table),N1) :-
@@ -1803,103 +1671,76 @@ odbc_record(Table, List) :-
 odbc_create_table(Table,Fields) :-        
 	nonvar(Table),
 	nonvar(Table),
-	atom_codes(Table,Tl),
-	atom_codes(Fields,Fl),
-	%%    append([67,82,69,65,84,69,32,84,65,66,76,69,32],Tl,L1),
-	append("CREATE TABLE ",Tl,L1),
-	append(L1,[32,40],L2),
-	append(L2,Fl,L3),
-	append(L3,[32,41],Res), atom_codes(Query,Res),
-	odbc_sql(Query).       
+	odbc_sql(['CREATE TABLE ',Table,'(',Fields,')']).
     
 %--------------------------------
 odbc_create_index(Tname,Iname,index(_,Fields)) :-
 	nonvar(Tname),
 	nonvar(Iname),
 	nonvar(Fields),
-	atom_codes(Tname,Tlist),
-	atom_codes(Iname,Ilist),
-	atom_codes(Fields,Flist),
-	%%    append([67,82,69,65,84,69,32,73,78,68,69,88,32],Ilist,L1),
-	append("CREATE INDEX ",Ilist,L1),
-	%%    append(L1,[32,79,78,32],L2),
-	append(L1," ON ",L2),
-	append(L2,Tlist,L3),
-	%%    append(L3, [32,40],L4),
-	append(L3, " (",L4),
-	append(L4,Flist,L5),
-	%%    append(L5,[32,41],Res), 
-	append(L5," )",Res), 
-	atom_codes(Query,Res),
-	odbc_sql(Query).
-    
+	odbc_sql(['CREATE INDEX ',Iname,' ON ',Tname,
+		  ' (',Fields,' )']).
+
 %--------------------------------
 odbc_delete_table(Table) :-
 	nonvar(Table),
-	atom_codes(Table, Tlist),
-	append([68,82,79,80,32,84,65,66,76,69,32],Tlist,Res),
-	atom_codes(Query,Res),
-	odbc_sql(Query).
+	odbc_sql(['DROP TABLE ',Table]).
 
 %--------------------------------
 odbc_delete_view(View) :-
 	nonvar(View),
-	atom_codes(View, Vlist),
-	append([68,82,79,80,32,86,73,69,87,32],Vlist,Res),
-	atom_codes(Query,Res),
-	odbc_sql(Query).
+	odbc_sql(['DROP VIEW ',View]).
 
 %--------------------------------
 odbc_delete_index(TableName,Index) :-
 	nonvar(Index),
-	name(Index,Ilist),
-	append([68,82,79,80,32,73,78,68,69,88,32],Ilist,TmpRes1),
-	append(TmpRes1, [32,79,78,32], TmpRes2),
-	atom_codes(TableName, Table),
-	append(TmpRes2, Table, Res),
-	atom_codes(Query,Res),
-	odbc_sql(Query).
+	odbc_sql(['DROP INDEX ',Index,' ON ',TableName]).
 
 %--------------------------------
-:- assert(':-'(odbc_add_record(Table,VList),
-	       (assert_attributes_info(Table),
-		table_arity(Table,N1),
-		atom_codes(Table, Tl), 
-		append([105,110,115,95],Tl, Tl1), 
-		atom_codes(Table1,Tl1),
-		assert(relation(Table,N1,Table)),
-		functor(Head1, Table1, N1),
-		Head1 =..[Table1|Tail],
-		Head =..[Table|Tail],
-		odbc_insert(Head1, (Head)),
-		asserta(':-'(odbc_add_record(Table,Values),
-			     (Query =.. [Table1|Values],
-			      !,
-			      Query))),
-		Query =.. [Table1|VList],
-		!,
-		Query))).
+:- assert((odbc_add_record(Table,VList):-odbc_add_record_body(Table,VList))).
+
+odbc_add_record_body(Table,VList) :-
+	assert_attributes_info(Table),
+	table_arity(Table,N1),
+	atom_codes(Table, Tl), 
+	append([105,110,115,95],Tl, Tl1), 
+	atom_codes(Table1,Tl1),
+	assert(relation(Table,N1,Table)),
+	functor(Head1, Table1, N1),
+	Head1 =..[Table1|Tail],
+	Head =..[Table|Tail],
+	odbc_insert(Head1, (Head)),
+	asserta((odbc_add_record(Table,Values) :-
+		 Query =.. [Table1|Values],
+		 !,
+		 call1(Query))),
+	Query =.. [Table1|VList],
+	!,
+	call1(Query).
 
 %--------------------------------
-:- assert(':-'(odbc_delete_record(Table,VList),
-	       (conset(col,1),
-		assert_attributes_info(Table),
-		table_arity(Table,N1),
-		atom_codes(Table, Tl), 
-		append([100,101,108,95],Tl,Tl1), 
-		atom_codes(Table1,Tl1),
-		assert(relation(Table,N1,Table)),
-		functor(Head1, Table1, N1),
-		Head1 =..[Table1|Tail],
-		Head =..[Table|Tail],
-		odbc_delete(Head1, (Head)),
-		asserta(':-'(odbc_delete_record(Table,Values),
-			     (Query =.. [Table1|Values],
-			      !,
-			      Query))),
-		Query =.. [Table1|VList],
-		!,
-		Query))).
+:- assert((odbc_delete_record(Table,VList) :-
+	   odbc_delete_record_body(Table,VList))).
+
+odbc_delete_record_body(Table,VList) :-
+	conset(col,1),
+	assert_attributes_info(Table),
+	table_arity(Table,N1),
+	atom_codes(Table, Tl), 
+	append([100,101,108,95],Tl,Tl1), 
+	atom_codes(Table1,Tl1),
+	assert(relation(Table,N1,Table)),
+	functor(Head1, Table1, N1),
+	Head1 =..[Table1|Tail],
+	Head =..[Table|Tail],
+	odbc_delete(Head1, (Head)),
+	asserta((odbc_delete_record(Table,Values) :-
+		 Query =.. [Table1|Values],
+		 !,
+		 call1(Query))),
+	Query =.. [Table1|VList],
+	!,
+	call1(Query).
 
         
 count_tuples(Call,Count) :-
@@ -1921,6 +1762,105 @@ odbc_flag(show_query, off, on) :-
 odbc_flag(show_query, on, off) :-
 	retract('$show_query$'(on)), assert('$show_query$'(off)).
       
+:- dynamic sqlStmtNo(_,_).
+:- index(sqlStmtNo/2,trie).
+:- conset(sqlStmtCtr,0).
+get_stmt_no(SQLStmt,StmtNo) :-
+	(sqlStmtNo(SQLStmt,StmtNo)
+	 ->	true
+	 ;	conget(sqlStmtCtr,StmtNo),
+		NStmtNo is StmtNo+1,
+		conset(sqlStmtCtr,NStmtNo),
+		assert(sqlStmtNo(SQLStmt,StmtNo))
+	).
+
+odbc_get_attr(Tab,B,C) :-
+	get_stmt_no('GET ATTRIBUTES',StmtNo),
+	find_free_cursor(StmtNo,Cursor),
+	%%writeln(cursor(Cursor)),
+	odbc_columns(Cursor,Tab,RetVal),
+	(RetVal =:= 0
+	 ->	(fetch([3,5],Cursor,[B,C])
+		 ;
+		 odbc_set_cursor_close(Cursor),
+		 fail
+		)
+	 ; RetVal =:= 2
+	 ->	odbc_error('Error getting attribute names.')
+	 ;	odbc_error('Parse error.')
+	).
+
+
+odbc_accessible_tables(Tab) :-
+	get_stmt_no('GET TABLES',StmtNo),
+	find_free_cursor(StmtNo,Cursor),
+	%%writeln(cursor(Cursor)),
+	odbc_tables(Cursor,RetVal),
+	(RetVal =:= 0
+	 ->	fetch([1,2,3],Cursor,[dbo,Tab,TabType]),
+		(TabType = 'TABLE' ; TabType = 'SYSTEM TABLE')
+	 ; RetVal =:= 2
+	 ->	odbc_error('Getting All Tables.')
+	 ;	odbc_error('Parse error.')
+	).
+
+odbc_user_tables(Tab) :-
+	get_stmt_no('GET USER TABLES',StmtNo),
+	find_free_cursor(StmtNo,Cursor),
+	%%writeln(cursor(Cursor)),
+	odbc_user_tables(Cursor,RetVal),
+	(RetVal =:= 0
+	 ->	fetch([1,2],Cursor,[dbo,Tab])
+	 ; RetVal =:= 2
+	 ->	odbc_error('Getting User Tables.')
+	 ;	odbc_error('Parse error.')
+	).
+    
+
+odbc_error(ErrMsg) :-
+	write('ERR - ODBC: '),writeln(ErrMsg),
+	('$ora_err$'(on) -> fail;true).
+
+odbc_connect(Server,Name,Passwd,RetVal) :-
+	odbc_exec_query(1,Server,Name,Passwd,RetVal).
+    
+parse(Cursor,SQLAtom, RetVal) :-
+	odbc_exec_query(2,Cursor,SQLAtom, RetVal).
+    
+set_bind_table_size(Cursor,Blen) :-
+	odbc_exec_query(3,Cursor,Blen).
+    
+fetch_next_col(Cursor,RetVal) :-
+	odbc_exec_query(4,Cursor,RetVal).
+         
+get_column(Cursor,Col,X,RetVal) :-
+	odbc_exec_query(5,Cursor,Col,X,RetVal).      
+    
+set_bind(Cursor,BindId,H1) :-
+	odbc_exec_query(6,Cursor,BindId,H1).
+
+find_free_cursor(StmtNo, Cursor) :-
+	odbc_exec_query(7,StmtNo,Cursor),
+	(Cursor == 0
+	 ->	odbc_error('No more cursors left.'),
+		fail
+	 ;	true
+	).	
+
+odbc_disconnect :- odbc_exec_query(8).
+
+odbc_set_cursor_close(Cursor) :- odbc_exec_query(9,Cursor).
+
+odbc_commit(Ret) :- odbc_exec_query(10,Ret).
+
+odbc_rollback(Ret) :- odbc_exec_query(11,Ret).
+
+odbc_columns(Cursor,Table,Ret) :- odbc_exec_query(12,Cursor,Table,Ret).
+
+odbc_tables(Cursor,Ret) :- odbc_exec_query(13,Cursor,Ret).
+
+odbc_user_tables(Cursor,Ret) :- odbc_exec_query(14,Cursor,Ret).
+
 odbc_exec_query(A) :- odbc_exec_query(A,_,_,_,_).
 odbc_exec_query(A,B) :- odbc_exec_query(A,B,_,_,_).
 odbc_exec_query(A,B,C) :- odbc_exec_query(A,B,C,_,_).

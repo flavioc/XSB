@@ -1,5 +1,5 @@
 /* File:      odbc_xsb.c
-** Author(s): Lily Dong
+** Author(s): Lily Dong, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -37,60 +37,79 @@
 #include <assert.h>
 
 #include "cinterf.h"
+#include "deref.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "export.h"
+#include "register.h"
+#include "ptoc_tag_xsb_i.h"
 
-#define MAXCURSORNUM                    20
-#define MAXCOLS                         100
-#define MAXNUMPRECISION                 15
-#define MAXNUMSTRINGSIZE                (MAXNUMPRECISION + 5)
-#define MAXCHARLEN                      100
-#define MAXBINDVALLEN                   100
+#define MAXCURSORNUM                    10
 #define MAXI(a,b)                       ((a)>(b)?(a):(b))
 
-static char     *str[4] = {"NULL","string","integer", "number"};
+static Cell     nullStrAtom;
 static int      serverConnected = 0;
+static int      numberOfCursors = 0;
+static int      SQL_NTSval = SQL_NTS;
 
 HENV henv;
 HDBC hdbc;
-HSTMT hstmt;
 UCHAR uid[128];
 
 struct Cursor {
+  struct Cursor *NCursor; // Next Cursor in cursor chain
+  struct Cursor *PCursor; // Prev Cursor in cursor chain
   int Status;           // status of the cursor
   int StmtNum;          // the number of the sql statement
-  UCHAR *Sql;            // pointer to the sql statement
-  HSTMT hstmt;           // the statement handler
-  int VarListNum;       // distinct bind variable number
-  UCHAR **VarList;       // pointer to array of pointers to the actual bind vars
-  int *VarTypes;        // types of the distinct bind vars
-  int VarCurNum;        // Current Bind Var Number in the distinct Bind var list 
-  int BListNum;         // number of total bind vars in the sql statement 
-  UCHAR **BList;        // pointer to array of pointers to the bind vars
-  int *BTypes;          // and pointer to their types
-  int BCurNum;          // Current Bind Var Number in the total Bind var list
-  SWORD ColNum;          // number of columns selected
-  SWORD *ColTypes;       // pointer to array of column types
-  UDWORD *ColLen;        // pointer to array of column lengths
-  UDWORD *OutLen;        // pointer to array of actual column lenghts
-  UCHAR **Data;          // pointer to array of pointers to data
-  SWORD ColCurNum;       // the column number that's already fetched by xsb
+  UCHAR *Sql;           // pointer to the sql statement
+  HSTMT hstmt;          // the statement handle
+  int NumBindVars;      // number of bind values
+  UCHAR **BindList;     // pointer to array of pointers to the bind values
+  int *BindTypes;       // types of the bind values
+  SWORD NumCols;        // number of columns selected
+  SWORD *ColTypes;      // pointer to array of column types
+  UDWORD *ColLen;       // pointer to array of max column lengths
+  UDWORD *OutLen;       // pointer to array of actual column lengths
+  UCHAR **Data;         // pointer to array of pointers to data
 };
 
 // global cursor table
-struct Cursor CursorTable[MAXCURSORNUM];
+struct Cursor *FCursor;  // root of curser chain
+struct Cursor *LCursor;  // tail of curser chain
+
+SWORD ODBCToXSBType(SWORD odbcType)
+{
+  switch (odbcType) {
+  case SQL_TINYINT:
+  case SQL_SMALLINT:
+  case SQL_INTEGER:
+    return SQL_C_SLONG;
+  case SQL_DECIMAL:
+  case SQL_NUMERIC:
+  case SQL_REAL:
+  case SQL_FLOAT:
+  case SQL_DOUBLE:
+    return SQL_C_FLOAT;
+  case SQL_DATE:
+  case SQL_TIME:
+  case SQL_TIMESTAMP: 
+  case SQL_CHAR:
+  case SQL_VARCHAR:
+  default:
+    return SQL_C_CHAR;
+  }
+}
 
 //-----------------------------------------------------------------------------
 //  FUNCTION NAME:
 //      PrintErrorMsg()
 //  PARAMETERS:
-//      int i - index into the global cursor table  
+//      struct Cursor *c - pointer to a cursor
 //  NOTES:
 //      PrintErrorMsg() prints out the error message that associates
-//      with the statement handler of cursor i.  if i is less than 0, 
+//      with the statement handler of cursor i.
 //-----------------------------------------------------------------------------
-int PrintErrorMsg(int i)
+int PrintErrorMsg(struct Cursor *cur)
 {
   UCHAR FAR *szsqlstate;
   SDWORD FAR *pfnativeerror;
@@ -104,16 +123,14 @@ int PrintErrorMsg(int i)
   szerrormsg=(UCHAR FAR *)malloc(sizeof(UCHAR FAR)*SQL_MAX_MESSAGE_LENGTH);
   pcberrormsg=(SWORD FAR *)malloc(sizeof(SWORD FAR));
   cberrormsgmax=SQL_MAX_MESSAGE_LENGTH-1;
-  if (i >= 0)
-    rc = SQLError(SQL_NULL_HENV, hdbc, CursorTable[i].hstmt, szsqlstate,
+  if (cur != NULL)
+    rc = SQLError(SQL_NULL_HENV, hdbc, cur->hstmt, szsqlstate,
 		  pfnativeerror, szerrormsg,cberrormsgmax,pcberrormsg);
   else
-    rc = SQLError(SQL_NULL_HENV, hdbc, hstmt, szsqlstate,
+    rc = SQLError(SQL_NULL_HENV, hdbc, SQL_NULL_HSTMT, szsqlstate,
 		  pfnativeerror, szerrormsg,cberrormsgmax,pcberrormsg);
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) { 
-    printf("ODBC SYSCALL ERROR:\n");
-    printf("    ODBC Error Code: %s\n", szsqlstate);
-    printf("    ODBC Error Message: %s\n", szerrormsg);
+    printf("ODBC SYSCALL ERROR (CODE %s): %s\n", szsqlstate, szerrormsg);
   }
   free(szsqlstate);
   free(pfnativeerror);
@@ -126,41 +143,39 @@ int PrintErrorMsg(int i)
 //  FUNCTION NAME:
 //      SetCursorClose()
 //  PARAMETER:
-//      int i - index into the global cursor table    
+//      struct Cursor *cur - pointer to current cursor
 //  NOTES:
-//      free all the memory resource allocated for cursor i
+//      free all the memory resource allocated for cursor cur
 //-----------------------------------------------------------------------------
-void SetCursorClose(int i)
+void SetCursorClose(struct Cursor *cur)
 {
   int j;
 
-  SQLFreeStmt(CursorTable[i].hstmt, SQL_CLOSE);    // free statement handler
+  SQLFreeStmt(cur->hstmt, SQL_CLOSE);    // free statement handler
 
-  if (CursorTable[i].VarListNum) {                 // free bind variable list
-    for (j = 0; j < CursorTable[i].VarListNum; j++) 
-      free((void *)CursorTable[i].VarList[j]);
-    free(CursorTable[i].BList);
-    free(CursorTable[i].VarList);
-    free(CursorTable[i].BTypes);
-    free(CursorTable[i].VarTypes);
+  if (cur->NumBindVars) {                 // free bind variable list
+    for (j = 0; j < cur->NumBindVars; j++) 
+      if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
+    free(cur->BindList);
+    free(cur->BindTypes);
   }
 
-  if (CursorTable[i].ColNum) {                  // free the resulting row set
-    for (j = 0; j < CursorTable[i].ColNum; j++)
-      free(CursorTable[i].Data[j]);
-    free(CursorTable[i].ColTypes);
-    free(CursorTable[i].ColLen);
-    free(CursorTable[i].OutLen);                
-    free(CursorTable[i].Data);
+  if (cur->NumCols) {                  // free the resulting row set
+    for (j = 0; j < cur->NumCols; j++)
+      free(cur->Data[j]);
+    free(cur->ColTypes);
+    free(cur->ColLen);
+    free(cur->OutLen);                
+    free(cur->Data);
   }
 
   // free memory for the sql statement associated w/ this cursor
-  if (CursorTable[i].Sql) free(CursorTable[i].Sql);  
+  if (cur->Sql) free(cur->Sql);  
   // initialize the variables.  set them to the right value
-  CursorTable[i].Sql = 0;
-  CursorTable[i].ColNum =
-    CursorTable[i].Status =
-    CursorTable[i].VarListNum = 0;
+  cur->Sql = 0;
+  cur->NumCols =
+    cur->Status =
+    cur->NumBindVars = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -178,7 +193,6 @@ void SetCursorClose(int i)
 //-----------------------------------------------------------------------------
 void ODBCConnect()
 {
-  int i;
   UCHAR *server;
   UCHAR *pwd;
   RETCODE rc;
@@ -190,7 +204,7 @@ void ODBCConnect()
     return;
   }
 
-  // allocated environment handler
+  // allocate environment handler
   rc = SQLAllocEnv(&henv);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
     xsb_error("Environment allocation failed");   
@@ -200,7 +214,7 @@ void ODBCConnect()
   SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC2, 
 		SQL_IS_UINTEGER);
 
-  // allocated connection handler
+  // allocate connection handler
   rc = SQLAllocConnect(henv, &hdbc);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
     SQLFreeEnv(henv);
@@ -209,7 +223,7 @@ void ODBCConnect()
     return;
   }
 
-  // get server name, user id and passward
+  // get server name, user id and password
   server = (UCHAR *)ptoc_string(2);
   strcpy(uid, (UCHAR *)ptoc_string(3));
   pwd = (UCHAR *)ptoc_string(4);
@@ -224,31 +238,8 @@ void ODBCConnect()
     return;
   }
 
-  if (!((rc=SQLAllocStmt(hdbc,&hstmt))==SQL_SUCCESS) ||
-      (rc==SQL_SUCCESS_WITH_INFO)) {
-    SQLDisconnect(hdbc);
-    SQLFreeConnect(hdbc);
-    SQLFreeEnv(henv);
-    ctop_int(5, 1);
-    return;
-  }
-    
-  // initialize cursor table. it includes statement handler initialization
-  memset(CursorTable, 0, sizeof(struct Cursor) * MAXCURSORNUM);
-  for (i = 0; i < MAXCURSORNUM; i++) {
-    if (!(((rc=SQLAllocStmt(hdbc,&(CursorTable[i].hstmt)))==SQL_SUCCESS) ||
-	  (rc==SQL_SUCCESS_WITH_INFO))) {
-      int j;
-      for (j = 0; j < i; j++)
-	SQLFreeStmt(CursorTable[j].hstmt,SQL_DROP);
-      SQLDisconnect(hdbc);
-      SQLFreeConnect(hdbc);
-      SQLFreeStmt(hstmt, SQL_DROP);
-      SQLFreeEnv(henv);
-      ctop_int(5, 1);
-      return;
-    }
-  }
+  LCursor = FCursor = NULL;
+  nullStrAtom = makestring(string_find("NULL",1));
 
   serverConnected = 1;
   ctop_int(5, 0);
@@ -265,17 +256,17 @@ void ODBCConnect()
 //-----------------------------------------------------------------------------
 void ODBCDisconnect()
 {
-  int i;
+  struct Cursor *cur = FCursor;
 
   if (!serverConnected) return;
-    
-  for (i = 0; i < MAXCURSORNUM; i++) {
-    if (CursorTable[i].Status) 
-      SetCursorClose(i);
-    SQLFreeStmt(CursorTable[i].hstmt,SQL_DROP);
+
+  while (cur != NULL) {
+    if (cur->Status) 
+      SetCursorClose(cur);
+    SQLFreeStmt(cur->hstmt,SQL_DROP);
+    cur = cur->NCursor;
   }
 
-  SQLFreeStmt(hstmt, SQL_DROP);    
   SQLDisconnect(hdbc);
   SQLFreeConnect(hdbc);
   SQLFreeEnv(henv);
@@ -298,38 +289,85 @@ void ODBCDisconnect()
 //---------------------------------------------------------------------------------------------
 void FindFreeCursor()
 { 
-  int i, j = -1, k = -1;
+  struct Cursor *curi = FCursor, *curj = NULL, *curk = NULL;
   int StmtNum = ptoc_int(2);
+  RETCODE rc;
 
   // search 
-  for (i = 0; i < MAXCURSORNUM; i++) {
-    if (!CursorTable[i].Status) j = i;        // a cursor never being used
+  while (curi != NULL) {
+    if (curi->Status == 0) curj = curi;        // cursor never been used
     else {
-      if (CursorTable[i].Status == 1) {    // a closed cursor
-	// and it had the same statement number as this one. so grab it
-	if (CursorTable[i].StmtNum == StmtNum) {     
-	  if (StmtNum < 2) {
-	    SetCursorClose(i);
-	    CursorTable[i].Status = 3;
-	  } else
-	    CursorTable[i].Status = 2;
-	  ctop_int(3, i);
+      if (curi->Status == 1) {    // a closed cursor
+	// same statement number as this one, so grab and return it
+	if (curi->StmtNum == StmtNum) {     
+	  if (curi != FCursor) {
+	    (curi->PCursor)->NCursor = curi->NCursor;
+	    if (curi == LCursor) LCursor = curi->PCursor;
+	    else (curi->NCursor)->PCursor = curi->PCursor;
+	    FCursor->PCursor = curi;
+	    curi->PCursor = NULL;
+	    curi->NCursor = FCursor;
+	    FCursor = curi;
+	  }
+	  curi->Status = 2;
+	  ctop_int(3, (long)curi);
+	  //	  printf("reuse cursor: %p\n",curi);
 	  return;
-	} else k = i;                      // otherwise just record it
+	} else {
+	  curk = curi;                      // otherwise just record it
+	}
       }
     }
+    curi = curi->NCursor;
   }
 
-  // done w/ the search and we didn't find a reusable one
-  if ((j < 0) && (k < 0))                        // no cursor left
-    i = -1;
-  else {
-    // we give the cursor that has never been used the priority
-    if ((i = j) < 0) SetCursorClose(i = k);                      
-    CursorTable[i].StmtNum = StmtNum;
-    CursorTable[i].Status = 3;
+  // done w/ the search; see what was found
+  if (curj != NULL) {   // give priority to an unused cursor
+    curi = curj;
+    //    printf("take unused cursor: %p\n",curi);
   }
-  ctop_int(3, i);
+  else if (numberOfCursors < MAXCURSORNUM) { // allocate a new cursor if allowed
+    curi = (struct Cursor *)calloc(sizeof(struct Cursor),1);
+    curi->PCursor = NULL;
+    curi->NCursor = FCursor;
+    if (FCursor == NULL) LCursor = curi;
+    else FCursor->PCursor = curi;
+    FCursor = curi;
+    numberOfCursors++;
+    rc = SQLAllocStmt(hdbc,&(curi->hstmt));
+    if (!((rc==SQL_SUCCESS) ||
+	  (rc==SQL_SUCCESS_WITH_INFO))) {
+      free(curi);
+      printf("Error trying to allocate ODBC statement\n");
+      ctop_int(3,0);
+      return;
+    }
+    //    printf("allocate a new cursor: %p\n",curi);
+  }
+  else if (curk == NULL) {  // no cursor left
+    ctop_int(3, 0);
+    return;
+  }
+  else {                    // steal a cursor
+    curi = curk;
+    SetCursorClose(curi);
+    //    printf("steal a cursor: %p\n",curi);
+  } 
+
+  // move to front of list.
+  if (curi != FCursor) {
+    (curi->PCursor)->NCursor = curi->NCursor;
+    if (curi == LCursor) LCursor = curi->PCursor;
+    else (curi->NCursor)->PCursor = curi->PCursor;
+    FCursor->PCursor = curi;
+    curi->PCursor = NULL;
+    curi->NCursor = FCursor;
+    FCursor = curi;
+  }
+
+  curi->StmtNum = StmtNum;
+  curi->Status = 3;
+  ctop_int(3, (long)curi);
   return;    
 }
 
@@ -337,134 +375,123 @@ void FindFreeCursor()
 //  FUNCTION NAME:
 //     SetBindVarNum() 
 //  NOTES:
-//      set the number of different bind variables and their total number of
-//      occurrences in the sql statement to VarListNum and BListMum
-//      respectively and allocate memory for future use, i.e. for holding the
-//      bind variables' types and array of pointers to their value.  Note that
-//      the memory to store their values is not allocated here since we don't
-//      know their type: 
-//  	no information on how much memory is needed.  If we're reusing an old
-//  	statement handler we don't have to worry about these things.  All we
-//  	need to do is to make sure that the statement is indeed the same
-//  	statement w/ the same bind variable number. 
+//      set the number of bind variables.  Note that the memory to
+//      store their values is not allocated here since we don't know
+//      their type: no information on how much memory is needed.  If
+//      we're reusing an old statement handler we don't have to worry
+//      about these things.  All we need to do is to make sure that
+//      the statement is indeed the same statement w/ the same bind
+//      variable number.
 //-----------------------------------------------------------------------------
 void SetBindVarNum()
 {
-  int i = ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  int NumBindVars = ptoc_int(3);
 
-  if (CursorTable[i].Status == 2) {
-    if (CursorTable[i].VarListNum != ptoc_int(3))
-      xsb_exit("In SetBindVarNum: CursorTable[i].VarListNum != ptoc_int(3)");
-    if (CursorTable[i].BListNum != ptoc_int(4))
-      xsb_exit("In SetBindVarNum: CursorTable[i].BListNum != ptoc_int(4)");
+  if (cur->Status == 2) {
+    if (cur->NumBindVars != NumBindVars)
+      xsb_exit("Number of Bind values provided does not agree with query\n");
     return;
   }
     
-  CursorTable[i].VarListNum = ptoc_int(3);
-  CursorTable[i].VarList = malloc(sizeof(UCHAR *) * CursorTable[i].VarListNum);
-  if (!CursorTable[i].VarList)
-    xsb_exit("Not enough memory for CursorTable[i].VarList!");
-  CursorTable[i].VarTypes = malloc(sizeof(int) * CursorTable[i].VarListNum);
-  if (!CursorTable[i].VarTypes)
-    xsb_exit("Not enough memory for CursorTable[i].VarTypes!");
-  CursorTable[i].BListNum = ptoc_int(4);
-  CursorTable[i].BList = malloc(sizeof(UCHAR *) * CursorTable[i].BListNum);
-  if (!CursorTable[i].BList)
-    xsb_exit("Not enough memory for CursorTable[i].BList!");
-  CursorTable[i].BTypes = malloc(sizeof(int) * CursorTable[i].BListNum);
-  if (!CursorTable[i].BTypes)
-    xsb_exit("Not enough memory for CursorTable[i].BTypes!");
-  CursorTable[i].BCurNum = 0;
+  cur->NumBindVars = NumBindVars;
+  cur->BindList = malloc(sizeof(UCHAR *) * NumBindVars);
+  if (!cur->BindList)
+    xsb_exit("Not enough memory for cur->BindList!");
+  cur->BindTypes = malloc(sizeof(int) * NumBindVars);
+  if (!cur->BindTypes)
+    xsb_exit("Not enough memory for cur->BindTypes!");
 }
 
 //-----------------------------------------------------------------------------
 //  FUNCTION NAME:
-//      SetVar()   
+//      SetBindVal()   
 //  NOTES:
 //      set the bind variables' values. 
 //    	  allocate memory if it is needed(status == 3)
 //-----------------------------------------------------------------------------
-void SetVar()
+void SetBindVal()
 {
-  int i = ptoc_int(2);
-  int j = atoi(ptoc_string(3)+4);
-  //  int j = atoi(ptoc_string(3));
-  //  int j = ptoc_int(3);
+  RETCODE rc;
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  int j = ptoc_int(3);
+  Cell BindVal = ptoc_tag(4);
 
-  if (!((j > 0) && (j <= CursorTable[i].VarListNum)))
-    xsb_exit("Abnormal argument in SetVar!");
+  if (!((j >= 0) && (j < cur->NumBindVars)))
+    xsb_exit("Abnormal argument in SetBindVal!");
     
   // if we're reusing an opened cursor w/ the statement number
-  if (CursorTable[i].Status == 2) {
-    if (CursorTable[i].VarTypes[j-1] != ptoc_int(5))
-      xsb_exit("CursorTable VarTypes error!");
-    switch (CursorTable[i].VarTypes[j-1]) {
-    case 0:
-      *((int *)CursorTable[i].VarList[j-1]) = ptoc_int(4);
-      break;
-    case 1:
-      *((float *)CursorTable[i].VarList[j-1]) = (float)ptoc_float(4);
-      break;
-    case 2:
-      strncpy(CursorTable[i].VarList[j-1], ptoc_string(4), MAXBINDVALLEN);
-      (CursorTable[i].VarList[j-1])[MAXBINDVALLEN - 1] = 0;
-      break;
-    default:
-      xsb_exit("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
+  // reallocate BindVar if type has changed (May not be such a good idea?)
+  if (cur->Status == 2) {
+    if (isinteger(BindVal)) {
+      if (cur->BindTypes[j] != 0) {
+	//printf("ODBC: Changing Type: int to %d\n",cur->BindTypes[j]);
+	if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
+	cur->BindList[j] = (UCHAR *)malloc(sizeof(int));
+	cur->BindTypes[j] = 0;
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, 
+			      SQL_C_SLONG, SQL_INTEGER,
+			      0, 0, (int *)(cur->BindList[j]), 0, NULL);
+	if (rc != SQL_SUCCESS) {
+	  ctop_int(4,PrintErrorMsg(cur));
+	  SetCursorClose(cur);
+	  return;
+	}
+      }
+      *((int *)cur->BindList[j]) = int_val(BindVal);
+    } else if (isfloat(BindVal)) {
+      if (cur->BindTypes[j] != 1) { 
+	//printf("ODBC: Changing Type: flt to %d\n",cur->BindTypes[j]);
+	if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
+	cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
+	cur->BindTypes[j] = 1;
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, 
+			      SQL_C_FLOAT, SQL_FLOAT,
+			      0, 0, (float *)(cur->BindList[j]), 0, NULL);
+	if (rc != SQL_SUCCESS) {
+	  ctop_int(4,PrintErrorMsg(cur));
+	  SetCursorClose(cur);
+	  return;
+	}
+      }
+      *((float *)cur->BindList[j]) = (float)float_val(BindVal);
+    } else if (isstring(BindVal)) {
+      if (cur->BindTypes[j] != 2) { 
+	//printf("ODBC: Changing Type: str to %d\n",cur->BindTypes[j]);
+	free((void *)cur->BindList[j]);
+	cur->BindTypes[j] = 2;
+	// SQLBindParameter will be done anyway
+      }
+      cur->BindList[j] = string_val(BindVal);
+    } else {
+      xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
     }
     return;
   }
     
   // otherwise, memory needs to be allocated in this case
-  switch (CursorTable[i].VarTypes[j-1] = ptoc_int(5)) {
-  case 0:
-    CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(int));
-    if (!CursorTable[i].VarList[j-1])
-      xsb_exit("Not enough memory for an int in SetVar!");
-    *((int *)CursorTable[i].VarList[j-1]) = ptoc_int(4);
-    break;
-  case 1:
-    CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(float));
-    if (!CursorTable[i].VarList[j-1])
-      xsb_exit("Not enough memory for a float in SetVar!");
-    *((float *)CursorTable[i].VarList[j-1]) = (float)ptoc_float(4);
-    break;
-  case 2:
-    CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(char) * MAXBINDVALLEN);
-    if (!CursorTable[i].VarList[j-1])
-      xsb_exit("Not enough memory for MAXBINDVALLEN chars in SetVar!");
-    strncpy(CursorTable[i].VarList[j-1], ptoc_longstring(4), MAXBINDVALLEN);
-    CursorTable[i].VarList[j-1][MAXBINDVALLEN - 1] = 0;
-    break;
-  default:
-    xsb_exit("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
+  if (isinteger(BindVal)) {
+    cur->BindTypes[j] = 0;
+    cur->BindList[j] = (UCHAR *)malloc(sizeof(int));
+    if (!cur->BindList[j])
+      xsb_exit("Not enough memory for an int in SetBindVal!");
+    *((int *)cur->BindList[j]) = int_val(BindVal);
+  } else if (isfloat(BindVal)) {
+    cur->BindTypes[j] = 1;
+    cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
+    if (!cur->BindList[j])
+      xsb_exit("Not enough memory for a float in SetBindVal!");
+    *((float *)cur->BindList[j]) = (float)float_val(BindVal);
+  } else if (isstring(BindVal)) {
+    cur->BindTypes[j] = 2;
+    cur->BindList[j] = string_val(BindVal);
+  } else {
+    xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
   }
+  return;
 }
 
-//-----------------------------------------------------------------------------
-//  FUNCTION NAME:
-//      SetBind()
-//  NOTES:
-//      set the bind variables' values for each occurrence of the bind
-//      variables in the sql statement.
-//-----------------------------------------------------------------------------
-void SetBind()
-{
-  int i = ptoc_int(2);
-  int j = atoi(ptoc_string(3)+4);
-  //  int j = atoi(ptoc_string(3));
-  //  int j = ptoc_int(3);
-  
-  if (!((j > 0) && (j <= CursorTable[i].VarListNum)))
-    xsb_exit("Abnormal argument in SetBind!");
-    
-  if (CursorTable[i].Status == 2) return;                 // did this already
-
-  CursorTable[i].BList[CursorTable[i].BCurNum] = CursorTable[i].VarList[--j];
-  CursorTable[i].BTypes[(CursorTable[i].BCurNum)++] = CursorTable[i].VarTypes[j];
-}
-
-int DescribeSelectList(int);
+int DescribeSelectList(struct Cursor *);
 
 //-----------------------------------------------------------------------------
 //  FUNCTION NAME:
@@ -474,156 +501,217 @@ int DescribeSelectList(int);
 //      succeed, then prepare for resulting row fetching.  this includes
 //      determination of column number in the resulting rowset and the length
 //      of each column and memory allocation which is used to store each row.
-//      Note indices -3 and -2 are reserved for transaction control(rollback
-//      and commit) and index -1 is for those sql statements that don't need
-//      cursor, i.e. they can be executed directly. 
 //-----------------------------------------------------------------------------
 void Parse()
 {
-  char tmpstr[255];
-  char *str1, *str2, *str3;
   int j;
-  int i = ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
   RETCODE rc;
-  UWORD TablePrivilegeExists;
 
-  if (!((i >= -3) && ( i < MAXCURSORNUM)))
-    xsb_exit("Abnormal argument in Parse!");
-
-  switch (i) {
-  case (-3):                // index = -3; special case for rollback
-    if (((rc=SQLTransact(henv,hdbc,SQL_ROLLBACK)) == SQL_SUCCESS) ||
-	(rc == SQL_SUCCESS_WITH_INFO)) {
-      for (i = 0; i < MAXCURSORNUM; i++) {
-	if (CursorTable[i].Status) 
-	  SetCursorClose(i);
-      }
-      ctop_int(4,0);
-    } else
-      ctop_int(4, PrintErrorMsg(-1));
-    return;
-  case (-2):               // index = -2; special case for commit
-    if (((rc=SQLTransact(henv,hdbc,SQL_COMMIT)) == SQL_SUCCESS) ||
-	(rc == SQL_SUCCESS_WITH_INFO)) { 
-      for (i = 0; i < MAXCURSORNUM; i++) {
-	if (CursorTable[i].Status) 
-	  SetCursorClose(i);
-      }
-      ctop_int(4,0);
-    } else
-      ctop_int(4,PrintErrorMsg(-1));
-    return;
-  case (-1):          // index = -1; special case for odbc_sql; no return rows
-    if (((rc=SQLExecDirect(hstmt,ptoc_longstring(3),SQL_NTS)) == SQL_SUCCESS) ||
-	(rc == SQL_SUCCESS_WITH_INFO)) 
-      ctop_int(4,0);
-    else
-      ctop_int(4,PrintErrorMsg(-1));
-    return;
-  default: ;
-  }
-  switch (CursorTable[i].StmtNum) {
-  case (0):             // column information retrieval
-    strcpy(tmpstr,ptoc_string(3));
-    str1 = strtok(tmpstr,".");
-    str2 = str3 = NULL;
-    if (str1) str2 = strtok(NULL,".");
-    if (str2) str3 = strtok(NULL,".");
-    if (!str3 && !str2) {str3 = str1; str1 = NULL;}
-    else if (!str3) {str3 = str2; str2 = NULL;}
-    if (((rc=SQLColumns(CursorTable[i].hstmt,
-			str1, SQL_NTS,
-			str2, SQL_NTS,
-			str3, SQL_NTS,
-			NULL,0)) == SQL_SUCCESS) ||
-	(rc == SQL_SUCCESS_WITH_INFO)) {
-      ctop_int(4,DescribeSelectList(i));
-    } else {
-      ctop_int(4,PrintErrorMsg(i));
-      SetCursorClose(i);
-    }
-    return; 
-  case (-1):             // all the table names in this database
-    if (((rc=SQLTables(CursorTable[i].hstmt,
-		       NULL, 0,
-		       NULL, 0,
-		       NULL, 0,
-		       NULL, 0)) == SQL_SUCCESS) ||
-	(rc == SQL_SUCCESS_WITH_INFO)) 
-      ctop_int(4,DescribeSelectList(i));
-    else {
-      ctop_int(4,PrintErrorMsg(i));
-      SetCursorClose(i);
-    }
-    return; 
-  case (-2):             // user accessable table names,
-    // since some ODBC drivers don't implement the function SQLTablePrivileges
-    // we check it first
-    SQLGetFunctions(hdbc, SQL_API_SQLTABLEPRIVILEGES, &TablePrivilegeExists);
-    if (!TablePrivilegeExists) {
-      printf("Privilege concept does not exist in this DVMS: you probably can access any of the existing tables\n");
-      ctop_int(4, 2);
-      return;
-    }
-    if (((rc=SQLTablePrivileges(CursorTable[i].hstmt,
-				NULL, 0,
-				NULL, 0,
-				NULL, 0)) == SQL_SUCCESS) ||
-	(rc == SQL_SUCCESS_WITH_INFO)) 
-      ctop_int(4,DescribeSelectList(i));
-    else {
-      ctop_int(4,PrintErrorMsg(i));
-      SetCursorClose(i);
-    }
-    return; 
-  default: ;
-  }
-  if (CursorTable[i].Status == 2) {
-    rc = SQLCancel(CursorTable[i].hstmt);
+  if (cur->Status == 2) { // reusing opened cursor
+    rc = SQLCancel(cur->hstmt);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
-      ctop_int(4, PrintErrorMsg(i));
-      SetCursorClose(i);
+      ctop_int(4, PrintErrorMsg(cur));
+      SetCursorClose(cur);
       return;
+    }
+    // reset just char select vars, since they store addr of chars
+    for (j = 0; j < cur->NumBindVars; j++) {
+      if (cur->BindTypes[j] == 2)
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, 
+			      SQL_CHAR, 0, 0,(char *) cur->BindList[j], 0, &SQL_NTSval);
     }
   } else {
-    CursorTable[i].Sql = (UCHAR *)strdup(ptoc_longstring(3));
-    if (!CursorTable[i].Sql)
+    cur->Sql = (UCHAR *)strdup(ptoc_longstring(3));
+    if (!cur->Sql)
       xsb_exit("Not enough memory for strdup in Parse!");
 
-    if (SQLPrepare(CursorTable[i].hstmt, CursorTable[i].Sql, SQL_NTS)
-	!= SQL_SUCCESS) {
-      ctop_int(4,PrintErrorMsg(i));
-      SetCursorClose(i);
+    if (SQLPrepare(cur->hstmt, cur->Sql, SQL_NTS) != SQL_SUCCESS) {
+      ctop_int(4,PrintErrorMsg(cur));
+      SetCursorClose(cur);
       return;
     }
     
     // set the bind variables
-    for (j = 0; j < CursorTable[i].BListNum; j++) {
-      if (CursorTable[i].BTypes[j] == 2)
+    for (j = 0; j < cur->NumBindVars; j++) {
+      if (cur->BindTypes[j] == 2)
 	// we're sloppy here.  it's ok for us to use the default values
-	rc = SQLSetParam(CursorTable[i].hstmt, (short)(j+1), SQL_C_CHAR, SQL_CHAR,
-			 MAXCHARLEN, 0,(char *) CursorTable[i].BList[j], NULL);
-      else if (CursorTable[i].BTypes[j] == 1)
-	rc = SQLSetParam(CursorTable[i].hstmt, (short)(j+1), SQL_C_FLOAT, SQL_FLOAT,
-			 0, 0, (float *)(CursorTable[i].BList[j]), NULL);
-      else
-	rc = SQLSetParam(CursorTable[i].hstmt, (short)(j+1), SQL_C_SLONG, SQL_INTEGER,
-			 0, 0, (int *)(CursorTable[i].BList[j]), NULL);
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, 
+			      SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
+      else if (cur->BindTypes[j] == 1) {
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT,
+			 0, 0, (float *)cur->BindList[j], 0, NULL);
+      } else
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER,
+			 0, 0, (int *)(cur->BindList[j]), 0, NULL);
       if (rc != SQL_SUCCESS) {
-	ctop_int(4,PrintErrorMsg(i));
-	SetCursorClose(i);
+	ctop_int(4,PrintErrorMsg(cur));
+	SetCursorClose(cur);
 	return;
       }
     }
   }
   // submit it for execution
-  if (SQLExecute(CursorTable[i].hstmt) != SQL_SUCCESS) {
-    ctop_int(4,PrintErrorMsg(i));
-    SetCursorClose(i);
+  if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
+    ctop_int(4,PrintErrorMsg(cur));
+    SetCursorClose(cur);
     return;
   }
-  ctop_int(4,DescribeSelectList(i));
+  ctop_int(4,DescribeSelectList(cur));
   return;
+}
+
+//-----------------------------------------------------------------------------
+//  FUNCTION NAME:
+//      ODBCCommit()
+//  PARAMETERS:
+//      None
+//  RETURN VALUE:
+//      in R2: 0 if successful
+//-----------------------------------------------------------------------------
+void ODBCCommit()
+{
+  struct Cursor *cur = FCursor;
+  RETCODE rc;
+
+  if (((rc=SQLTransact(henv,hdbc,SQL_COMMIT)) == SQL_SUCCESS) ||
+      (rc == SQL_SUCCESS_WITH_INFO)) { 
+    while (cur != NULL) {
+      if (cur->Status) SetCursorClose(cur);
+      cur = cur->NCursor;
+    }
+    ctop_int(2,0);
+  } else
+    ctop_int(2,PrintErrorMsg(NULL));
+  return;
+}
+
+//-----------------------------------------------------------------------------
+//  FUNCTION NAME:
+//      ODBCRollback()
+//  PARAMETERS:
+//      None
+//  RETURN VALUE:
+//      in R2: 0 if successful
+//-----------------------------------------------------------------------------
+void ODBCRollback()
+{
+  struct Cursor *cur = FCursor;
+  RETCODE rc;
+
+  if (((rc=SQLTransact(henv,hdbc,SQL_ROLLBACK)) == SQL_SUCCESS) ||
+      (rc == SQL_SUCCESS_WITH_INFO)) {
+    while (cur != NULL) {
+      if (cur->Status) SetCursorClose(cur);
+      cur = cur->NCursor;
+    }
+    ctop_int(2,0);
+  } else
+    ctop_int(2, PrintErrorMsg(NULL));
+  return;
+}
+
+//-----------------------------------------------------------------------------
+//  FUNCTION NAME:
+//      ODBCColumns()
+//  PARAMETERS:
+//      R1: 12
+//      R2: Cursor Index
+//      R3: Table name
+//  RETURN VALUE:
+//      in R4: 0 if successful
+//-----------------------------------------------------------------------------
+void ODBCColumns()
+{
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  char tmpstr[255];
+  char *str1, *str2, *str3;
+  RETCODE rc;
+
+  strcpy(tmpstr,ptoc_string(3));
+  str1 = strtok(tmpstr,".");
+  str2 = str3 = NULL;
+  if (str1) str2 = strtok(NULL,".");
+  if (str2) str3 = strtok(NULL,".");
+  if (!str3 && !str2) {str3 = str1; str1 = NULL;}
+  else if (!str3) {str3 = str2; str2 = NULL;}
+  //  printf("str1 %s, str2 %s, str3 %s\n",str1,str2,str3);
+  if (((rc=SQLColumns(cur->hstmt,
+		      str1, SQL_NTS,
+		      str2, SQL_NTS,
+		      str3, SQL_NTS,
+		      NULL,0)) == SQL_SUCCESS) ||
+      (rc == SQL_SUCCESS_WITH_INFO)) {
+    ctop_int(4,DescribeSelectList(cur));
+  } else {
+    ctop_int(4,PrintErrorMsg(cur));
+    SetCursorClose(cur);
+  }
+  return; 
+} 
+
+//-----------------------------------------------------------------------------
+//  FUNCTION NAME:
+//      ODBCTables()
+//  PARAMETERS:
+//      R1: 13
+//      R2: Cursor
+//  RETURN VALUE:
+//      in R3: 0 if successful
+//-----------------------------------------------------------------------------
+void ODBCTables()
+{
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  RETCODE rc;
+
+  if (((rc=SQLTables(cur->hstmt,
+		     NULL, 0,
+		     NULL, 0,
+		     NULL, 0,
+		     NULL, 0)) == SQL_SUCCESS) ||
+      (rc == SQL_SUCCESS_WITH_INFO)) 
+    ctop_int(3,DescribeSelectList(cur));
+  else {
+    ctop_int(3,PrintErrorMsg(cur));
+    SetCursorClose(cur);
+  }
+  return; 
+}
+
+//-----------------------------------------------------------------------------
+//  FUNCTION NAME:
+//      ODBCUserTables()
+//  PARAMETERS:
+//      R1: 14
+//      R2: Cursor
+//  RETURN VALUE:
+//      in R3: 0 if successful
+//-----------------------------------------------------------------------------
+void ODBCUserTables()
+{
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  UWORD TablePrivilegeExists;
+  RETCODE rc;
+
+  // since some ODBC drivers don't implement the function SQLTablePrivileges
+  // we check it first
+  SQLGetFunctions(hdbc, SQL_API_SQLTABLEPRIVILEGES, &TablePrivilegeExists);
+  if (!TablePrivilegeExists) {
+    printf("Privilege concept does not exist in this DVMS: you probably can access any of the existing tables\n");
+    ctop_int(3, 2);
+    return;
+  }
+  if (((rc=SQLTablePrivileges(cur->hstmt,
+			      NULL, 0,
+			      NULL, 0,
+			      NULL, 0)) == SQL_SUCCESS) ||
+      (rc == SQL_SUCCESS_WITH_INFO)) 
+    ctop_int(3,DescribeSelectList(cur));
+  else {
+    ctop_int(3,PrintErrorMsg(cur));
+    SetCursorClose(cur);
+  }
+  return; 
 }
 
 //-----------------------------------------------------------------------------
@@ -640,36 +728,25 @@ void Parse()
 //-----------------------------------------------------------------------------
 UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
 {
-  switch (coltype) {
-  case SQL_CHAR:
-  case SQL_VARCHAR:
-    // extra 1 for space for end-of-string marker
+  switch (ODBCToXSBType(coltype)) {
+  case SQL_C_SLONG: 
+    return sizeof(long *);
+  case SQL_C_CHAR:
     return(MAXI(collen+1, strlen((char *) colname)));
-  case SQL_TINYINT:
-    return(MAXI(4, strlen((char *)colname)));
-  case SQL_SMALLINT:
-    return(MAXI(6, strlen((char *)colname)));
-  case SQL_INTEGER:
-    return(MAXI(11, strlen((char *)colname)));
-  case SQL_DECIMAL:
-  case SQL_NUMERIC:
-  case SQL_REAL:
-  case SQL_FLOAT:
-  case SQL_DOUBLE:
-    return(MAXI(MAXNUMSTRINGSIZE, strlen((char *)colname)));
-  case SQL_DATE:
-  case SQL_TIME:
-  case SQL_TIMESTAMP: return 32;
-  default: printf("Illegal ODBC Type: %d\n",coltype);
+  case SQL_C_FLOAT:
+    return sizeof(float *);
+  default: 
+    printf("Illegal ODBC Type: %d\n",coltype);
+    return 0;
   }
-  return 0;
 }
+
 
 //-----------------------------------------------------------------------------
 //  FUNCTION NAME:
 //      DescribeSelectList()
 //  PARAMETERS:
-//      int i - cursor number, the index into the global cursor table
+//      struct Cursor *cur - ptr to cursor record
 //  RETURN VALUES:
 //      0 - the result row has at least one column and
 //      1 - something goes wrong, we can't retrieve column information, memory
@@ -678,7 +755,7 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
 //  NOTES:
 //      memory is also allocated for future data storage
 //-----------------------------------------------------------------------------
-int DescribeSelectList(int i)
+int DescribeSelectList(struct Cursor *cur)
 {
   int j;
   UCHAR colname[50];
@@ -687,66 +764,64 @@ int DescribeSelectList(int i)
   SWORD nullable;
   UDWORD collen;
 
-  CursorTable[i].ColCurNum = 0;
-  CursorTable[i].ColNum = 0;
-  SQLNumResultCols(CursorTable[i].hstmt, (SQLSMALLINT*)&(CursorTable[i].ColNum));
-  //  if (!(CursorTable[i].ColNum)) return 2;   // no columns are affected, dealloc cursor?
-  if (!(CursorTable[i].ColNum)) {
+  cur->NumCols = 0;
+  SQLNumResultCols(cur->hstmt, (SQLSMALLINT*)&(cur->NumCols));
+  if (!(cur->NumCols)) {
     // no columns are affected, set cursor status to unused 
-    CursorTable[i].Status = 1; 
+    cur->Status = 1; 
     return 2;   
   }
-  // if we aren't reusing a closed statement hand, we need to get
+  // if we aren't reusing a closed statement handle, we need to get
   // resulting rowset info and allocate memory for it
-  if (CursorTable[i].Status != 2) {
-    CursorTable[i].ColTypes =
-      (SWORD *)malloc(sizeof(SWORD) * CursorTable[i].ColNum);
-    if (!CursorTable[i].ColTypes)
+  if (cur->Status != 2) {
+    cur->ColTypes =
+      (SWORD *)malloc(sizeof(SWORD) * cur->NumCols);
+    if (!cur->ColTypes)
       xsb_exit("Not enough memory for ColTypes!");
     
-    CursorTable[i].Data =
-      (UCHAR **)malloc(sizeof(char *) * CursorTable[i].ColNum);
-    if (!CursorTable[i].Data)
+    cur->Data =
+      (UCHAR **)malloc(sizeof(char *) * cur->NumCols);
+    if (!cur->Data)
       xsb_exit("Not enough memory for Data!");
 
-    CursorTable[i].OutLen =
-      (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum);
-    if (!CursorTable[i].OutLen)
+    cur->OutLen =
+      (UDWORD *)malloc(sizeof(UDWORD) * cur->NumCols);
+    if (!cur->OutLen)
       xsb_exit("Not enough memory for OutLen!");
 
-    CursorTable[i].ColLen =
-      (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum);
-    if (!CursorTable[i].ColLen)
+    cur->ColLen =
+      (UDWORD *)malloc(sizeof(UDWORD) * cur->NumCols);
+    if (!cur->ColLen)
       xsb_exit("Not enough memory for ColLen!");
     
-    for (j = 0; j < CursorTable[i].ColNum; j++) {
-      SQLDescribeCol(CursorTable[i].hstmt, (short)(j+1), (UCHAR FAR*)colname,
+    for (j = 0; j < cur->NumCols; j++) {
+      SQLDescribeCol(cur->hstmt, (short)(j+1), (UCHAR FAR*)colname,
 		     sizeof(colname), &colnamelen,
-		     &(CursorTable[i].ColTypes[j]),
+		     &(cur->ColTypes[j]),
 		     &collen, &scale, &nullable);
-      // SQLServer returns these 2 wierd types, treat them as varchars?
-      if (CursorTable[i].ColTypes[j] == -9) CursorTable[i].ColTypes[j] = SQL_VARCHAR;
-      if (CursorTable[i].ColTypes[j] == SQL_TINYINT) CursorTable[i].ColTypes[j] = SQL_VARCHAR;
+      // SQLServer returns this wierd type for a system table, treat it as varchar?
+      if (cur->ColTypes[j] == -9) cur->ColTypes[j] = SQL_VARCHAR;
       colnamelen = (colnamelen > 49) ? 49 : colnamelen; 
       colname[colnamelen] = '\0';
-      if (!((CursorTable[i]).ColLen[j] =
-	    DisplayColSize(CursorTable[i].ColTypes[j],collen,colname))) {
-	CursorTable[i].ColNum = j; 
+      if (!(cur->ColLen[j] =
+	    DisplayColSize(cur->ColTypes[j],collen,colname))) {
 	// let SetCursorClose function correctly free all the memory allocated
-	// for Data storage: CursorTable[i].Data[j]'s
-	SetCursorClose(i);
+	// for Data storage: cur->Data[j]'s
+	cur->NumCols = j; // set so close frees memory allocated thus far
+	SetCursorClose(cur);
 	return(1);
       }
-      CursorTable[i].Data[j] =
-	(UCHAR *) malloc(((unsigned) CursorTable[i].ColLen[j]+1)*sizeof(UCHAR));
-      if (!CursorTable[i].Data[j])
+      cur->Data[j] =
+	(UCHAR *) malloc(((unsigned) cur->ColLen[j]+1)*sizeof(UCHAR));
+      if (!cur->Data[j])
 	xsb_exit("Not enough memory for Data[j]!");
     }
   }
   // bind them
-  for (j = 0; j < CursorTable[i].ColNum; j++) {
-    SQLBindCol(CursorTable[i].hstmt, (short)(j+1), SQL_C_CHAR, CursorTable[i].Data[j],
-	       CursorTable[i].ColLen[j], (SDWORD FAR *)(&(CursorTable[i].OutLen[j])));
+  for (j = 0; j < cur->NumCols; j++) {
+    SQLBindCol(cur->hstmt, (short)(j+1), 
+	       ODBCToXSBType(cur->ColTypes[j]), cur->Data[j],
+	       cur->ColLen[j], (SDWORD FAR *)(&(cur->OutLen[j])));
   }
   return 0;
 }
@@ -755,152 +830,82 @@ int DescribeSelectList(int i)
 //  FUNCTION NAME:
 //      FetchNextCol()
 //  NOTES:
-//      fetch next result rowset.  if we're retrieving user accessable table
-//      names, we fetch until we get next user accessable table name
+//      fetch next result rowset.
 //-----------------------------------------------------------------------------
 void FetchNextCol()
 {
-  int i = ptoc_int(2);
-  RETCODE rc = SQLFetch(CursorTable[i].hstmt);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  RETCODE rc = SQLFetch(cur->hstmt);
 
-  // get user accessable table name
-  if ((CursorTable[i].StmtNum == (-2))) {
-    while (((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO))
-	   && (CursorTable[i].OutLen[1] != SQL_NULL_DATA)
-	   && (strncmp(CursorTable[i].Data[1], uid, strlen(uid))
-	       || (CursorTable[i].OutLen[1] != strlen(uid)))
-	   && (strncmp(CursorTable[i].Data[4], uid, strlen(uid))
-	       || (CursorTable[i].OutLen[4] != strlen(uid))))
-      rc = SQLFetch(CursorTable[i].hstmt);
-  }
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) 
     ctop_int(3,0);
   else if (rc == SQL_NO_DATA_FOUND){
-    CursorTable[i].Status = 1; // done w/fetching. set cursor status to unused 
+    cur->Status = 1; // done w/fetching. set cursor status to unused 
     ctop_int(3,1);
   }
   else {
-    SetCursorClose(i);         // error occured in fetching
+    SetCursorClose(cur);         // error occured in fetching
     ctop_int(3,2);
   }
   return;
 } 
 
+extern xsbBool unify(Cell, Cell);
+
 //-----------------------------------------------------------------------------
 //  FUNCTION NAME:
 //      GetColumn() 
+//  PARAMETERS:
+//      R1: 5
+//      R2: Cursor
+//      R3: Column Index
+//      R4: Column Value returned
+//      R5: Return Code
 //  NOTES:
-//      get the next column.  special care is taken if table information is
-//      needed(statement number -2, -1 and 0) since we actually fetch more than
-//      what we need. unfortunately it's inevitable.  we discard unwanted
-//      columns.  for column info of a table, we need the fourth and fifth
-//      columns(statement no 0). for table names in the database and user
-//      accessable table names, we only need the third column(statement -1 and
-//      -2). 
+//      get the next column.
 //-----------------------------------------------------------------------------
-void GetColumn()
+int GetColumn()
 {
-  int i = ptoc_int(2);
-  int ColCurNum;
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  int ColCurNum = ptoc_int(3);
+  Cell op = ptoc_tag(4);
   UDWORD len;
 
-  // if table information is retrieved, special care has to be paid
-  // we set the ColCurNum to some appropriate value to get the columns we need
-  // and discard unwanted 
-  switch (CursorTable[i].StmtNum) {
-  case (0):
-    if (CursorTable[i].ColCurNum <= 3)
-      CursorTable[i].ColCurNum = 3;
-    else {
-      if (CursorTable[i].ColCurNum > 4)
-	CursorTable[i].ColCurNum = CursorTable[i].ColNum;
-    }
-    break;
-  case (-1):
-  case (-2):
-    if (CursorTable[i].ColCurNum <= 2)
-      CursorTable[i].ColCurNum = 2;
-    else
-      CursorTable[i].ColCurNum = CursorTable[i].ColNum;
-    break;
-  default: ;
+  if (ColCurNum < 0 || ColCurNum >= cur->NumCols) {
+    // no more columns in the result row
+    ctop_int(5,1);   
+    return TRUE;
   }
 
-  if (CursorTable[i].ColCurNum == CursorTable[i].ColNum) {
-    // no more columns in the result row
-    CursorTable[i].ColCurNum = 0;
-    ctop_int(4,1);   
-    return;
-  }
+  ctop_int(5,0);
 
   // get the data
-  ColCurNum = CursorTable[i].ColCurNum;
-  if (CursorTable[i].OutLen[ColCurNum] == SQL_NULL_DATA) {
+  if (cur->OutLen[ColCurNum] == SQL_NULL_DATA) {
     // column value is NULL
-    CursorTable[i].ColCurNum++;
-    ctop_string(3,string_find(str[0],1));
-    ctop_int(4,0);
-    return;
+    return unify(op,nullStrAtom);
   }
 
-  // convert the column string to a C string 
-  len = ((CursorTable[i].ColLen[ColCurNum] < CursorTable[i].OutLen[ColCurNum])?
-	 CursorTable[i].ColLen[ColCurNum]:CursorTable[i].OutLen[ColCurNum]);
-  *(CursorTable[i].Data[ColCurNum]+len) = '\0';
+  // convert the string to either integer, float or string
+  // according to the column type and pass it back to XSB
+  switch (ODBCToXSBType(cur->ColTypes[ColCurNum])) {
+  case SQL_C_CHAR:
+    // convert the column string to a C string 
+    len = ((cur->ColLen[ColCurNum] < cur->OutLen[ColCurNum])?
+	   cur->ColLen[ColCurNum]:cur->OutLen[ColCurNum]);
+    *(cur->Data[ColCurNum]+len) = '\0';
 
-  // pass the result to Prolog if statement is 0, the column type of a table
-  // is actually an integer, convert it to to corresponding string
-  if ((!CursorTable[i].StmtNum) && (ColCurNum == 4)) {
-    switch (atoi(CursorTable[i].Data[ColCurNum])) {
-    case SQL_DATE:
-    case SQL_TIME:
-    case SQL_TIMESTAMP: 
-    case SQL_CHAR:
-    case SQL_VARCHAR:
-      ctop_string(3, string_find(str[1],1));
-      break;
-    case SQL_TINYINT:
-    case SQL_SMALLINT:
-    case SQL_INTEGER:
-      ctop_string(3, string_find(str[2],1));
-      break;
-    case SQL_DECIMAL:
-    case SQL_NUMERIC:
-    case SQL_REAL:
-    case SQL_FLOAT:
-    case SQL_DOUBLE:
-      ctop_string(3,string_find(str[3],1));
-    }
-    CursorTable[i].ColCurNum++;
-    ctop_int(4,0);
-    return;
+    // compare strings here, so don't intern strings unnecessarily
+    XSB_Deref(op);
+    if (isref(op)) 
+      return unify(op, makestring(string_find(cur->Data[ColCurNum],1))); 
+    if (!isstring(op)) return FALSE;
+    if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
+    return TRUE;
+  case SQL_C_SLONG:
+    return unify(op,makeint(*(long *)(cur->Data[ColCurNum])));
+  case SQL_C_FLOAT:
+    return unify(op,makefloat(*(float *)(cur->Data[ColCurNum])));
   }
-  // otherwise convert the string to either integer, float or string
-  // according to the column type and pass it back to Prolog 
-  switch (CursorTable[i].ColTypes[ColCurNum]) {
-  case SQL_DATE:
-  case SQL_TIME:
-  case SQL_TIMESTAMP: 
-  case SQL_CHAR:
-  case SQL_VARCHAR:
-    ctop_string(3, string_find(CursorTable[i].Data[ColCurNum],1)); 
-    break;
-  case SQL_TINYINT:
-  case SQL_SMALLINT:
-  case SQL_INTEGER:
-    ctop_int(3,atoi(CursorTable[i].Data[ColCurNum]));
-    break;
-  case SQL_DECIMAL:
-  case SQL_NUMERIC:
-  case SQL_REAL:
-  case SQL_FLOAT:
-  case SQL_DOUBLE:
-    ctop_float(3,atof(CursorTable[i].Data[ColCurNum]));
-  }
-    
-  CursorTable[i].ColCurNum++;
-  ctop_int(4,0);
-  return;
+
+  return FALSE;
 }
-
-
