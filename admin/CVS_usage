@@ -426,30 +426,10 @@ You can see who's watching/editing specific files with:
 Notes on the testsuite
 ======================
 
-As I mentioned above, to run tests, you check out the CVS module xsbtests.
-There are several things to look out for, though. (I don't know why this
-happens, but it does.)
-
-    1. When you check out or cvs-update the test suite, always touch the .O 
-       files:
-		touch *.O */*.O 
-
-       Otherwise, the testsuite would fail.
-       The reason is that when you check out the test suite, some .O files
-       might get copied before the .P files (in fact, this seems to be
-       happening to most .O files).
-       As a result, the .O files will be older than .P files, and they will 
-       get recompiled when you run the test suite.
-       Trouble is that some of these files must be compiled with special
-       compilation options, and "consult" doesn't know about it.
-       So, the affected .P files will either be compiled incorrectly or
-       won't get compiled at all.
-
-    2. On top of this, there seems to be a bug in some tests or in XSB.
-       When you run sem16 on Linux, the test fails. If you configure XSB
-       with --enable-debug, then the test passes with a warning that the
-       program cuts across tabled predicates.
-       This bug doesn't seem to affect Solaris.
+As mentioned above, to run tests, you check out the CVS module xsbtests.
+The repository doesn't contain the .O files for the testsuite files.
+When you run the suite for the first time, these files are supposed
+to be recreated. 
 
 
 
@@ -514,7 +494,8 @@ Gotchas and experience
    of files. I find -z 3 an ok setting - you can turn it on by default
    setting a line in the file ~/.cvsrc (which specifies default command
    options):
-   cvs -z 3
+
+       cvs -z 3
 
 4. The test suite is real big---bigger than the rest of XSB!
    If you modify it, please check it in.
@@ -563,6 +544,7 @@ Gotchas and experience
 
 7. To touch all .O files when you checkout or update, at the top level
    dir you can use the UNIX command:
+
             find . -name '*.O' -exec touch -c '{}' \;
 
 8. I am sure there are other gotchas. Please add to this list.
