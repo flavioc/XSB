@@ -15,3 +15,5 @@ smith:professor.
 smith[teaches@(fall,1998)->>cse220].
 smith[teaches@(spring,1999)->>cse310].
 smith[teaches@(spring,1999)->>cse530].
+
+?- D:department[coursesOffered ->> C].
