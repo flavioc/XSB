@@ -40,10 +40,14 @@
 	throw/1
 	from standard.
 :- import xsb_configuration/2 from xsb_configuration.
-:- import cwd/1, sys_chdir/2 from shell.
+:- import cwd/1, cd/1, sys_chdir/2 from shell.
 
-:- import scan/2, set_scan_par/1 from stdscan.
+:- import scan/2, set_scan_pars/1 from stdscan.
 :- import flatten/2 from basics.
+
+:- import slash/1 from machine.
+
+:- import 'C'/3 from dcg.
 
 % I always want this in UNIX.
 whats_new(Directory,Date,List):-
@@ -158,9 +162,11 @@ canonical_pathname(Path,CPath) :-
 	(   var(CPath),
 	    nonvar(Path)
 	->  cwd(OldCWD),
-	    sys_chdir(Path,_),
+%	    sys_chdir(Path,_),
+	    cd(Path),
 	    cwd(CPath),
-	    sys_chdir(OldCWD,_)
+%	    sys_chdir(OldCWD,_)
+	    cd(OldCWD)
 	;   throw(instantiation_error(canonical_pathname(Path,CPath)))
 	).
 
@@ -173,9 +179,10 @@ split_dirs(Path,Drive,LDirs) :-
 	->  atom_codes(Path,CPath)
 	;   CPath = Path
 	),
-	set_scan_par(no_case),
+	set_scan_pars([no_case]),
 	scan(CPath,SCPath),
-	once(path(Drive,LDirs,SCPath,[])).
+	path(Drive,LDirs,SCPath,[]),
+	!.
 
 path(Drive,LDirs) -->
 	disk(Drive),
@@ -214,16 +221,19 @@ rel_path(Orig, Dest, RelPath) :-
 
 make_relative([],[],'.') :- !.
 make_relative([],D,CD) :- !,
-	concat_atom(D,'/',CD).
+	slash(Slash),
+	concat_atom(D,Slash,CD).
 make_relative(O,[],R) :- !,
 	down_n(O,Dots),
-	concat_atom(Dots,'/',R).
+	slash(Slash),
+	concat_atom(Dots,Slash,R).
 make_relative([H|O],[H|D],R) :- !,
 	make_relative(O,D,R).
 make_relative(O,D,R) :-
 	down_n(O,Dots),
 	flatten([Dots,D],LPath),
-	concat_atom(LPath,'/',R).
+	slash(Slash),
+	concat_atom(LPath,Slash,R).
 
 down_n([],[]) :- !.
 down_n([_H|T],['..'|TT]) :-
