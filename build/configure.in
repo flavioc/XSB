@@ -557,6 +557,9 @@ if test "$have_readline" = yes ; then
 fi
 
 
+AC_CHECK_HEADERS(stdarg.h, , have_errors=yes)
+test "${have_errors}" = "yes" &&
+    AC_MSG_ERROR([Your C compiler is not ANSI compliant: stdarg.h is missing!])
 
 # Checks for header files
 
