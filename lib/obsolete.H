@@ -24,8 +24,10 @@
 
 
 :- import fmt_read/3
-   from xsb_read.
+   from file_io.
 
 
 :- import fmt_write/2, file_nl/1
-   from xsb_writ.
+   from file_io.
+
+:- export fmt_read/4.

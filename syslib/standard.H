@@ -78,14 +78,17 @@
 /* The following predicates are directly imported from other modules */
 
 :- import '_$load_undef'/1 from loader.
-:- import file_put/2, psc_set_prop/2, psc_name/2,
+:- import psc_set_prop/2, psc_name/2,
 	  term_psc/2, term_new/2, psc_arity/2, term_type/2, psc_prop/2,
-	  file_open/3, psc_type/2, stat_set_flag/3, file_close/1,
-	  file_get/2, stat_flag/2, psc_set_type/2, term_compare/3,
+	  psc_type/2, stat_set_flag/3, 
+	  stat_flag/2, psc_set_type/2, term_compare/3,
 	  stat_sta/1, conname/2, conpsc/2, stat_cputime/1, 
 	  expand_filename/2, machine_file_exists/1, psc_insert/3,
 	  psc_import/3, call0/1, close_open_tables/0, is_backslashing_os/0
      from machine.
+:- import file_open/3, file_close/1, file_get/2, file_put/2
+     from file_io.
+
 :- import str_tolist/2, str_fromlist/2 from string.
 :- import file_write0/2, file_write/2, file_write_prolog/2, 
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1

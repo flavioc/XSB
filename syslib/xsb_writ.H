@@ -24,17 +24,18 @@
 
 
 :- export file_write/2, file_write0/2, file_write_prolog/2, 
-	  file_write_quoted/2, file_write_canonical/2, fmt_write/2,
-	  fmt_write_string/3, file_nl/1.
+	  file_write_quoted/2, file_write_canonical/2,
+	  file_nl/1.
 
 :- import '_$op'/3 from file_op.
-:- import atom/1, integer/1, hilog_op/3, proper_hilog/1, 
-     	  abort/1, callable/1
+:- import atom/1, integer/1, hilog_op/3, proper_hilog/1 
      from standard.
-:- import file_put/2, term_psc/2, psc_arity/2, psc_name/2, term_arg/3, 
+:- import term_psc/2, psc_arity/2, psc_name/2, term_arg/3, 
 	  term_type/2, file_puttoken/3, file_writequoted/2,
- 	  is_backslashing_os/0, fmt_write/3, stat_flag/2
+ 	  is_backslashing_os/0
      from machine.
+:- import file_put/2
+     from file_io.
 
 
 /* ------------------- end of file file_write.H ----------------------- */

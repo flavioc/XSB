@@ -35,16 +35,16 @@ touch::
 
 syslib::
 	@echo ""
-	cd syslib; make XSB=$(XSB)
+	cd syslib; make
 
 lib::
 	@echo ""
-	cd lib; make XSB=$(XSB)
+	cd lib; make
 
 cmplib::
 	@echo ""
-	cd cmplib; make XSB=$(XSB)
+	cd cmplib; make
 
 packages::
 	@echo ""
-	cd packages; make XSB=$(XSB)
+	cd packages; make

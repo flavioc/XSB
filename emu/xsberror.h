@@ -52,12 +52,11 @@
 
 extern void xsb_exit(char *);
 extern void xsb_abort(char *, ...);
+extern void xsb_warn(char *, ...);
+extern void xsb_mesg(char *, ...);
 extern void err_handle(int, int, char *, int, char *, Cell);
 
 #define err(d, a, f, ar)	err_handle(d, a, f, ar, NULL, (Cell)NULL)
-
-#define xsb_mesg(message)       fprintf(stderr, "%s\n", message)
-#define xsb_warn(warning)	fprintf(stderr, "\n++Warning: %s\n", warning)
 
 extern char *xsb_default_segfault_msg;
 extern char *xsb_segfault_message; /* put your segfault message here prior to

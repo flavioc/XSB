@@ -80,10 +80,6 @@
 #define SOCKET_PUT         12
 #endif /* HAVE_SOCKET */
 
-#define FILE_FLUSH         0
-#define FILE_SEEK          1
-#define FILE_TRUNCATE      2
-
 #include "auxlry.h"
 #include "cell.h"
 #include "xsberror.h"
@@ -151,6 +147,9 @@ extern tab_inf_ptr last_tip;
 extern int  sys_syscall(int);
 extern bool fmt_read(void), fmt_write(void), fmt_write_string(void),
   read_canonical(void), file_read_line(void);
+extern bool file_function(void);
+extern bool file_stat(void);
+
 extern bool assert_code_to_buff(void), assert_buff_to_clref(void),
   gen_retract_all(void), compiled_to_dynamic(void), db_retract0(void),
   db_get_clause(void), db_build_prref(void), db_remove_prref(void);
@@ -199,9 +198,6 @@ extern char *user_home;    	  /* from self_orientation.c */
 
 static FILE* fptr;			/* working variable */
 static Float float_temp;		/* working variable */
-static STRFILE *sfptr;
-
-static struct stat stat_buff;
 
 /* ------- utility for sockets ---------------------------------------- */
 
@@ -266,11 +262,11 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   case REF1: 
   case CS:
   case LIST:
-  case FLOAT: fprintf(stderr, "Wrong arg in ptoc_int\n");
+  case FLOAT: xsb_mesg("Wrong arg in ptoc_int");
     return 0;
   case STRING: return (prolog_int)string_val(addr);	/* dsw */
   case INT: return int_val(addr);
-  default: fprintf(stderr, "Argument with unknown tag in ptoc_int\n");
+  default: xsb_mesg("Argument with unknown tag in ptoc_int");
     return 0;
   }
 }
@@ -327,7 +323,8 @@ DllExport char* call_conv ptoc_string(int regnum)
  *  Deref's the variable of register `regnum', trails the binding,
  *  creates an INT Cell containing `value', and binds the variable to it.
  */
-DllExport void call_conv ctop_int(int regnum, prolog_int value)	/* from int value form an int node */
+DllExport void call_conv ctop_int(int regnum, prolog_int value)
+     /* from int value form an int node */
 {
   register Cell addr = cell(reg+regnum);
   
@@ -336,7 +333,7 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)	/* from int valu
     bind_int(vptr(addr), value);
   }
   else
-    fprintf(stderr, "Wrong arg in ctop_int %lx (Reg = %d)\n", addr, regnum);
+    xsb_mesg("Wrong arg in ctop_int %lx (Reg = %d)", addr, regnum);
 }
 
 
@@ -485,30 +482,6 @@ static void fprint_variable(FILE *fptr, CPtr var)
 
 STRFILE *iostrs[MAXIOSTRS] = {NULL,NULL,NULL,NULL,NULL};
 
-static FILE *stropen(char *str)
-{
-  int i;
-  STRFILE *tmp;
-
-  for (i=0; i<MAXIOSTRS; i++) {
-    if (iostrs[i] == NULL) break;
-  }
-  if (i>=MAXIOSTRS) return 0;
-  tmp = (STRFILE *)mem_alloc(sizeof(STRFILE));
-  iostrs[i] = tmp;
-  tmp->strcnt = strlen(str);
-  tmp->strptr = str;
-  tmp->strbase = str;
-  return (FILE *)iostrdecode(i);
-}
-
-static void strclose(int i)
-{
-  i = iostrdecode(i);
-  mem_dealloc((byte *)iostrs[i],sizeof(STRFILE));
-  iostrs[i] = NULL;
-}
-
 /* --------------------------------------------------------------------	*/
 
 Cell builtin_table[BUILTIN_TBL_SZ][2];
@@ -528,10 +501,6 @@ void init_builtin_table(void)
   set_builtin_table(PSC_SET_TYPE, "psc_set_type");
   set_builtin_table(PSC_SET_PROP, "psc_set_prop");
   set_builtin_table(FILE_FUNCTION, "file_function");
-  set_builtin_table(FILE_OPEN, "file_open");
-  set_builtin_table(FILE_CLOSE, "file_close");
-  set_builtin_table(FILE_GET, "file_get");
-  set_builtin_table(FILE_PUT, "file_put");
   set_builtin_table(TERM_PSC, "term_psc");
   set_builtin_table(TERM_TYPE, "term_type");
   set_builtin_table(TERM_COMPARE, "term_compare");
@@ -564,8 +533,6 @@ void init_builtin_table(void)
   set_builtin_table(COPY_TERM,"copy_term");
   set_builtin_table(PSC_INSERT, "psc_insert");
   set_builtin_table(PSC_IMPORT, "psc_import");
-  set_builtin_table(FILE_GETBUF, "file_getbuf");
-  set_builtin_table(FILE_PUTBUF, "file_putbuf");
   set_builtin_table(PSC_INSERTMOD, "psc_insertmod");
   set_builtin_table(LOAD_SEG, "load_seg");
   set_builtin_table(FILE_GETTOKEN, "file_gettoken");
@@ -581,7 +548,6 @@ void init_builtin_table(void)
   set_builtin_table(FILE_STAT, "file_stat");
   set_builtin_table(FILE_WRITEQUOTED, "file_writequoted");
   set_builtin_table(FAST_GROUND, "fast_ground");
-  set_builtin_table(FILE_POS, "file_pos");
 
   set_builtin_table(INTERN_STRING, "intern_string");
   set_builtin_table(EXPAND_FILENAME, "expand_filename");
@@ -773,94 +739,9 @@ int builtin_call(byte number)
     if (get_type(psc)==T_ALIA) set_ep(psc, (pb)ptoc_tag(2));
     else set_ep(psc, (pb)ptoc_int(2));
     break;
-  case FILE_FUNCTION: {
-    switch (ptoc_int(1)) {
-    case FILE_FLUSH: /* file_function(0,+file,-ret,-dontcare, -dontcare) */
-      tmpval = ptoc_int(2);
-      fptr = fileptr(tmpval);   
-      value = fflush(fptr);
-      ctop_int(3, (int) value);
-      break;
-    case FILE_SEEK: /* file_function(1,+file, +offset, +place, -ret) */
-      tmpval = ptoc_int(2);
-      fptr = fileptr(tmpval);
-      value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
-      ctop_int(5, (int) value);
-      break;
-    case FILE_TRUNCATE: /* file_function(2,+file, +length, -ret, -dontcare) */
-      tmpval = ptoc_int(2);
-      fptr = fileptr(tmpval);
-      value = ftruncate((int) fileno(fptr), (off_t) ptoc_int(3));
-      ctop_int(4, (int) value);
-      break;
-    default:
-      fprintf(stderr, "Invalid file function request %d\n",ptoc_int(1));
-      return FALSE;
-    }
-    break;
-  }
-  case FILE_OPEN:		/* r1: file name (+string);   */
-				/* r2: mode (+int); r3: -file */
-				/* When read, mode = 0; when write, mode = 1, 
-				   when append, mode = 2, when opening a 
-				   string for read mode = 3 */
-    tmpstr = ptoc_string(1);
-    tmpval = ptoc_int(2);
-    if (tmpval<3) {
-      addr = expand_filename(tmpstr);
-      switch (tmpval) {
-	/* "b"'s needed for DOS. -smd */
-      case 0: fptr = fopen(addr, "rb"); break; /* READ_MODE */
-      case 1: fptr = fopen(addr, "wb"); break; /* WRITE_MODE */
-      case 2: fptr = fopen(addr, "ab"); break; /* APPEND_MODE */
-      }
-      if (fptr) {
-	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode)) {
-	  /* file exists and isn't a dir */
-	  for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
-	  if (i == MAX_OPEN_FILES) xsb_abort("Too many open files");
-	  else {
-	    open_files[i] = fptr;
-	    ctop_int(3, i);
-	  }
-	} else {
-	  sprintf(message,
-		  "File %s is a directory, cannot open!", tmpstr);
-	  xsb_abort(message);
-	}
-      } else ctop_int(3, -1);
-    } else if (tmpval==3) {  /* open string! */
-      if ((fptr = stropen(tmpstr))) ctop_int(3, (Integer)fptr);
-      else ctop_int(3, -1000);
-    } else {
-      fprintf(stderr,"Unknown open file mode\n");
-      ctop_int(3, -1000);
-    }
-    /* fprintf(stderr,"returning fptr: %d\n",ptoc_int(3)); */
-    break;
-  case FILE_CLOSE:	/* r1: +file */
-    tmpval = ptoc_int(1);
-    if (tmpval < 0) strclose(tmpval);
-    else {
-      fclose(fileptr(tmpval));
-      open_files[tmpval] = NULL;
-    }
-    break;
-  case FILE_GET:		/* r1: +file; r2: char (-int) */
-    tmpval = ptoc_int(1);
-    if ((tmpval < 0) && (tmpval >= -MAXIOSTRS)) {
-      sfptr = strfileptr(tmpval);
-      ctop_int(2, strgetc(sfptr));
-    }
-    else ctop_int(2, getc(fileptr(tmpval)));
-    break;
-  case FILE_PUT:  /* r1: +file; r2: char (+int) */
-    tmpval = ptoc_int(1); i = ptoc_int(2); fptr = fileptr(tmpval);
-    putc(i, fptr);
-#ifdef WIN_NT
-    if (tmpval==2 && i==10) fflush(fptr); /* hack for Java interface */
-#endif
-    break;
+  case FILE_FUNCTION:  /* file_open/close/put/get/truncate/seek/pos */
+    return file_function();
+
   case TERM_PSC:		/* r1: +term; r2: -PSC */
     /* Assumes that `term' is a CS-tagged Cell. */
     ctop_addr(2, get_str_psc(ptoc_tag(1)));
@@ -1167,20 +1048,6 @@ int builtin_call(byte number)
     env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, value);
     link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
     break;
-  case FILE_GETBUF:	/* R1: +file; R2: +byte count (int) */
-				/* R3: +buff (int); R4: +offset */
-    addr = ptoc_string(3);
-    disp = ptoc_int(4);
-    tmpval = ptoc_int(1);
-    fread(addr+disp, 1, ptoc_int(2), fileptr(tmpval));
-    break;
-  case FILE_PUTBUF:	/* r1: +file; r2: +byte count (int) */
-				/* r3: +buff (int); r4: +offset */
-    addr = ptoc_string(3);
-    disp = ptoc_int(4);
-    tmpval = ptoc_int(1);
-    fwrite(addr+disp, 1, ptoc_int(2), fileptr(tmpval));
-    break;
   case FILE_GETTOKEN:     /* R1: +File, R2: +PrevCh, R3: -Type; */
                                 /* R4: -Value, R5: -NextCh */
     tmpval = ptoc_int(1);
@@ -1328,52 +1195,9 @@ int builtin_call(byte number)
   case SYS_ERRNO:			/* R1: -Int (errno) */
     ctop_int(1, errno);
     break;
-  case FILE_STAT: {	    	/* R1: +FileName (it should exist!!), */
-				/* R2: +int 0->ModTime, 1->FileSize*/
-				/* R3: -int (ModTime or FileSize)*/
-    int retcode = stat(ptoc_string(1), &stat_buff);
-    int functor_arg3 = is_functor(reg_term(3));
-
-    switch (ptoc_int(2)) {
-    case 0:
-      /* This is DSW's hack to get 32 bit time values.
-	 The idea is to call this builtin as file_time(File,time(T1,T2))
-	 where T1 represents the most significant 8 bits and T2 represents
-	 the least significant 24.
-	 ***This probably breaks 64 bit systems, so David will look into it!
-      */
-      if (!retcode && functor_arg3) {
-	/* file exists & arg3 is a term, return 2 words*/
-	c2p_int(0xFFFFFF & stat_buff.st_mtime,p2p_arg(reg_term(3),2));
-	c2p_int(stat_buff.st_mtime >> 24,p2p_arg(reg_term(3),1));
-      } else if (!retcode) {
-	/* file exists, arg3 non-functor:  issue an error */
-	xsb_warn("Arg 2 in file_time must be a term: time(X,Y)");
-	xsb_warn("Passing a variable in Arg 2 is unsafe - significant digits might be lost");
-	ctop_int(3, (0x7FFFFFF & stat_buff.st_mtime));
-      } else if (functor_arg3) {
-	/* no file, and arg3 is functor: return two 0's */
-	c2p_int(0, p2p_arg(reg_term(3),2));
-	c2p_int(0, p2p_arg(reg_term(3),1));
-      } else {
-	/* no file, no functor: return 0 */
-	xsb_warn("Arg 2 in file_time must be a term: time(X,Y)");
-	xsb_warn("Passing a variable in Arg 2 is unsafe - significant digits might be lost");
-	ctop_int(3, 0);
-      }
-      break;
-    case 1: /* Take file size in 4-byte words */
-      /*** NOTE: File_size can handle only files up to 128K.
-	   We must use the same trick here as we did with file_time above */
-      if (!retcode)
-	/* file exists */
-	ctop_int(3, (0x7FFFFFF & (stat_buff.st_size >> 2)));
-      else /* no file */
-	ctop_int(3, 0);
-      break;
-    }
-    break;
-  }
+  case FILE_STAT: /* file_stat(+FileName, +StatFunction, -Result) 
+		     Used to obtain file mod time, size, etc., using stat() */
+    return file_stat();
   case FILE_WRITEQUOTED:
     tmpval = ptoc_int(1);
     write_quotedname(fileptr(tmpval),ptoc_string(2));
@@ -1381,22 +1205,6 @@ int builtin_call(byte number)
   case FAST_GROUND:
     return fast_ground((CPtr)ptoc_tag(1));
 
-  case FILE_POS:
-    /* r1: +file */
-    /* r2: -int  */
-    tmpval = ptoc_int(1);  /* expand for reading from strings?? */
-    term = ptoc_tag(2);
-    if (tmpval >= 0) {
-      if (isnonvar(term)) return ptoc_int(2) == ftell(fileptr(tmpval));
-      else ctop_int(2, ftell(fileptr(tmpval)));
-    } else { /* reading from string */
-      sfptr = strfileptr(tmpval);
-      disp = sfptr->strptr - sfptr->strbase;
-      if (isnonvar(term)) return ptoc_int(2) == disp;
-      else ctop_int(2, disp);
-    }
-    break;
-    
   case PSC_ENV:	       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */
     psc = (Psc)ptoc_addr(1);

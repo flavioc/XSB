@@ -25,8 +25,12 @@
 
 
 :- import
-       integer/1, file_open/3, file_close/1, close_open_tables/0
+       integer/1, close_open_tables/0
    from machine.
+
+:- import file_open/3, file_close/1
+     from file_io.
+
 :- import
        call_c/1, call_expose/1, goal_cut_trans/3, repeat/0, (=..)/2
    from standard.

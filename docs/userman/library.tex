@@ -324,71 +324,52 @@ predicates are described here.
 
 \begin{description}
 
-\ournewitem{fmt\_read(+Fmt,+Types,-Term,-Ret)}{machine}\index{{\tt fmt\_read/4}}
+\ournewitem{fmt\_read(+Fmt,-Term,-Ret)}{file\_io}\index{{\tt fmt\_read/3}}
 %\predindex{fmt\_read/4~(L)}
     This predicate provides a low-level routine for reading data from
     the current input file (which must have been already opened by using
     {\tt see/1}) according to a C format, as used in the C function
     {\tt scanf}. To use it, it must be imported from the module {\tt
-    machine}.  {\tt Fmt} must be an atom representing the format that
+    file\_io}.  {\tt Fmt} must be a string (list of characters) or an atom
+    representing the format that 
     will be passed to the C call to {\tt scanf}.  See the C
     documentation for {\tt scanf} for the meaning of this string.
-    Note that this argument is an atom, not a string, and the C escape
-    characters are NOT recognized.  So, for example, to include a
+    Note that the C escape characters are NOT recognized.  So, for example,
+    to include a 
     newline, one must put a newline directly in the atom, and not use
-    \verb|\n|.  {\tt Types} is a term whose subfields describe the
-    types of the fields to be read.  For example, if three fields are
-    to be read, first an integer, then a string, and then a floating
-    point number, the term {\tt type(2,1,3)} could be used. The
-    functor symbol of {\tt Type} is ignored. The arguments indicate
-    the types of the subfields: 1 indicates a string value; 2
-    indicates an integer value; and 3 indicates a floating point
-    value.  {\tt Term} is a term whose arguments will be unified with
-    the field values read in.  (Again, the functor symbol of {\tt
-    Term} is ignored.)  It is an error (and in some cases the results
-    are unpredictable) if the number of arguments and their types are
-    not consistent among {\tt Fmt}, {\tt Types}, and {\tt Term}.  {\tt
-    Ret} must be a variable and it will be assigned a return value by
+    \verb|\n|.
+    {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)})  whose arguments
+    will be unified with 
+    the field values read in.  (The functor symbol of {\tt
+    Term} is ignored.)  
+    {\tt Ret} must be a variable and it will be assigned a return value by
     the predicate: a negative integer if end-of-file is encountered;
     otherwise the number of fields read (as returned by {\tt scanf}.)
 
-\ournewitem{fmt\_write(+Fmt,+Term)}{machine}\index{{\tt fmt\_write/2}}
-%\predindex{fmt\_write/2~(L)}
+\ournewitem{fmt\_write(+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write/2}}
     This predicate provides a low-level routine for writing data to
     the current output file (which must have been already opened by using
     {\tt tell/1}) according to a C format, as used in the C function
     {\tt printf}.
-    To use it, it must be imported from the module {\tt machine}.
-    {\tt Fmt} must be an atom representing the format that will be
+    To use it, it must be imported from the module {\tt file\_io}.
+    {\tt Fmt} must be a string or an atom representing the format that will be
     passed to the C call to {\tt printf}.  See the C documentation
-    for {\tt printf} for the meaning of this string.  Note that this
-    is an atom, not a string, and the C escape characters are NOT
+    for {\tt printf} for the meaning of this string.  Note that
+    the C escape characters are NOT
     recognized.  So, for example, to include a newline, one must put
     a newline directly in the atom, and not use \verb|\n|.
-    {\tt Term} is a term whose arguments will be output. They must
-    agree in number and in type with the field indicators in the
-    format {\tt Fmt}.  (The functor symbol of {\tt Term} is ignored.)
+    {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments
+    will be output. 
+    The functor symbol of {\tt Term} is ignored.
 
-\ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{machine}\index{{\tt fmt\_write\_string/2}}
+\ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write\_string/2}}
     This predicate works like the C function {\tt sprintf}. It takes the
     format string and substitutes the values from the arguments of {\tt
-      Term} for the formatting instructions \%s, \%d, etc. The result is
-    available in {\tt String}.
+      Term} ({\it e.g.}, {\tt args(X,Y,Z)}) for the formatting instructions
+    \%s, \%d, etc. The result is available in {\tt String}. {\tt Fmt} is a
+    string or an atom that represents the format.
 
-\ournewitem{file\_read\_canonical(+FileDes,-Term,-Psc)}{machine}
-\index{{\tt file\_read\_canonical/3}}
-    Reads a term that is in canonical format from the the file
-    indicated by {\tt FileDes} (as returned by {\tt file\_open/3} or
-    by {\tt stat\_flag(10,FileDes))}, and returns it in {\tt Term}.
-    It also returns (in {\tt Psc}) the psc address of the main functor
-    symbol of the term, if it is the same as that of the previously
-    read term, and the current term is a ground (non 0-ary) fact.
-    (This is used for efficiency in the implementation of {\tt
-    load\_dync/1}).  Otherwise {\tt Psc} is set to 0.  To initialize
-    its previous psc value to zero, this predicate can be called with
-    {\tt FileDes} of -1000.
-
-\ournewitem{file\_open(+FileName,+Mode,-FileDes)}{machine}
+\ournewitem{file\_open(+FileName,+Mode,-FileDes)}{file\_io}
 \index{{\tt file\_open/3}}
     Opens a file with name {\tt FileName} to be accessed in mode {\tt
     Mode} and returns a file-descriptor in {\tt FileDes} that can be
@@ -400,14 +381,16 @@ predicates are described here.
     ``file'' access to that string.  This is how one can use
     XSB's term I/O routines to build terms from atoms.
 
-\ournewitem{file\_close(+FileDes)}{machine}\index{{\tt file\_close/1}}
+\ournewitem{file\_close(+FileDes)}{file\_io}\index{{\tt file\_close/1}}
     Closes the file (or string) for descriptor {\tt FileDes}.
 
-\ournewitem{file\_flush(+FileDes, -Return)}{machine}\index{{\tt file\_flush/2}}
+\ournewitem{file\_flush(+FileDes, -Return)}{file\_io}
+\index{{\tt file\_flush/2}}
     Any buffered data gets delivered. If the call is successful, {\tt Return}
     is zero; otherwise {\tt EOF} is returned.
 
-\ournewitem{file\_seek(+FileDes, +Offset, +Place, -Return)}{machine}\index{{\tt file\_seek/4}}
+\ournewitem{file\_seek(+FileDes, +Offset, +Place, -Return)}{file\_io}
+\index{{\tt file\_seek/4}}
     Sets the file position indicator for the next input or output
     operation. The position is {\tt Offset} bytes from {\tt Place}.
     The value of {\tt Place} can be 0, 1, or 2, which correspond to
@@ -415,10 +398,26 @@ predicates are described here.
     the end of the file, respectively. If the call is successful,
     {\tt Return} is set to zero.
 
-\ournewitem{file\_truncate(+FileDes, +Length, -Return)}{machine}\index{{\tt file\_truncate/3}}
+\ournewitem{file\_truncate(+FileDes, +Length, -Return)}{file\_io}
+\index{{\tt file\_truncate/3}}
     The regular file  referenced by file descriptor {\tt FileDes}
     is chopped to have a size of {\tt Length} bytes. Upon successful
     completion {\tt Return} is set to zero.
+
+\ournewitem{file\_getbuf(+FileDes, +ByteCount, -String)}{file\_io}
+\index{{\tt file\_getbuf/3}}
+Read {\tt ByteCount} bytes from file represented by file descriptor {\tt
+  FileDes} (which must already be open for reading) into variable {\tt
+  String}. This is analogous to {\tt fread}.  Note that the string read
+into {\tt String} will be NULL-terminated, but it will not be interned
+automatically. You will have to use {\tt intern\_string/2} (available from
+module {\tt machine}) if you need to unify or compare this string.
+
+\ournewitem{file\_putbuf(+FileDes, +ByteCount, +String, +Offset)}{file\_io}
+\index{{\tt file\_putbuf/4}}
+Write {\tt ByteCount} bytes into file represented by file descriptor {\tt
+  FileDes} (which must already be open for writing) from variable {\tt
+  String} at position {\tt Offset}. This is analogous to {\tt fwrite}.
 
 \ournewitem{file\_write(+FileDes,+Term)}{xsb\_writ}
 \index{{\tt file\_write/2}}
@@ -444,6 +443,20 @@ predicates are described here.
     {\tt xsb\_read} along with this read predicate.  Also note that 
     {\tt Vars} is not a proper list, but has a free variable instead 
     of [] at its end.
+
+\ournewitem{file\_read\_canonical(+FileDes,-Term,-Psc)}{machine}
+\index{{\tt file\_read\_canonical/3}}
+    Reads a term that is in canonical format from the the file
+    indicated by {\tt FileDes} (as returned by {\tt file\_open/3} or
+    by {\tt stat\_flag(10,FileDes))}, and returns it in {\tt Term}.
+    It also returns (in {\tt Psc}) the psc address of the main functor
+    symbol of the term, if it is the same as that of the previously
+    read term, and the current term is a ground (non 0-ary) fact.
+    (This is used for efficiency in the implementation of {\tt
+    load\_dync/1}).  Otherwise {\tt Psc} is set to 0.  To initialize
+    its previous psc value to zero, this predicate can be called with
+    {\tt FileDes} of -1000.
+
 
 \end{description}
 
@@ -481,13 +494,18 @@ Example:
                yes
 \end{verbatim}}
 
-\ournewitem{file\_time(+FileName, -time(Time1,Time2))}{machine}
+\ournewitem{file\_time(+FileName, -time(Time1,Time2))}{file\_io}
 \index{{\tt file\_time/2}}
 
 Returns file's modification time. Because 
 XSB steals 5 bits from each word, time must be returned as two words:
 Time1, representing the most significant digits, and Time2, representing
 the less significant digits.
+
+\ournewitem{file\_size(+FileName, -Size)}{file\_io}
+\index{{\tt file\_size/2}}
+
+Returns file size.
 
 \ournewitem{directory(+Path,?Directory)}{directry}
 \index{{\tt directory/2}}
@@ -504,7 +522,7 @@ unifies {\tt Inlist} to the list of ASCII integers representing the
 characters in the line, and {\tt Next} to the line terminator, either
 a newline ({\tt 10}) or EOF ({\tt-1}).
 
-\ournewitem{file\_read\_line(+FileDes,-String,-IsFullLine)}{machine}
+\ournewitem{file\_read\_line(+FileDes,-String,-IsFullLine)}{file\_io}
 \index{{\tt file\_read\_line/3}}
 \index{{\tt intern\_string/2}}
     This is a low-level predicate that allows XSB to read input files
@@ -974,5 +992,5 @@ a query {\tt ?- L} will succeed if {\tt L} is true in the WFSX model,
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual"
+%%% TeX-master: "manual2"
 %%% End: 

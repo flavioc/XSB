@@ -32,7 +32,7 @@
 :- import term_type/2, term_psc/2, psc_name/2, psc_arity/2, psc_env/2,
 	  psc_type/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
 	  psc_insert/4, psc_import/3, conpsc/2, str_cat/3, 
-	  file_put/2, buff_byte/3, code_call/3, code_load/3,
+	  buff_byte/3, code_call/3, code_load/3,
 	  stat_flag/2, stat_set_flag/3, expand_filename/2,
      	  tilde_expand_filename/2, is_absolute_filename/1,
 	  unload_seg/1, machine_file_exists/1, call0/1, str_insert/2,
@@ -53,6 +53,5 @@
 
 :- import abort/0 from standard.
 
+:- import file_put/2 from file_io.
 
-%% :- import file_read/2 from xsb_read.
-%% :- import file_write/2, file_nl/1 from xsb_writ.

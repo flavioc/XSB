@@ -425,9 +425,8 @@ libraries_loaded :-
 /*
  *  Print a new line
  */
-ll_nl :- 
-	 ( is_backslashing_os -> file_put(1, 13), file_put(1, 10)
-			      ; file_put(1, 10) ).
+ll_nl :- ( is_backslashing_os -> file_put(1, 13), file_put(1, 10)
+			           ; file_put(1, 10) ).
 
 /*
  *  Print a string.

@@ -3,7 +3,7 @@
 **    	      Ernie Johnson 
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1999
 ** Copyright (C) ECRC, Germany, 1990
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
@@ -36,10 +36,6 @@ psc_type(_PSC, _Type) :- '_$builtin'(3).
 psc_prop(_PSC, _Term) :- '_$builtin'(4).
 psc_set_type(_PSC, _Type) :- '_$builtin'(5).
 psc_set_prop(_PSC, _Term) :- '_$builtin'(6).
-file_open(_NameString, _RWMode, _File) :- '_$builtin'(7).
-file_close(_File) :- '_$builtin'(8).
-file_get(_File, _Char) :- '_$builtin'(9).
-file_put(_File, _Char) :- '_$builtin'(10).
 term_psc(_Term, _PSC) :- '_$builtin'(11).
 term_type(_Term, _Type) :- '_$builtin'(12).
 term_compare(_Term1, _Term2, _Res) :- '_$builtin'(13).
@@ -86,8 +82,7 @@ dirname_canonic(_File, _Canonic) :- '_$builtin'(41).
 
 psc_insert(_Name, _Arity, _PSC, _MName) :- '_$builtin'(42).
 psc_import(_Pname, _Arity, _MName) :- '_$builtin'(43).
-file_getbuf(_File, _Bytes, _Buf, _Disp) :- '_$builtin'(44).
-file_putbuf(_File, _Bytes, _Buf, _Disp) :- '_$builtin'(45).
+
 psc_insertmod(_ModName, _Def, _PSC) :- '_$builtin'(46).
 load_seg(_SegNo, _TextBytes, _IndexBytes, _File, _InitAddr) :- '_$builtin'(47).
 file_gettoken(_File, _PrevCh, _Type, _Value, _NextCh) :- '_$builtin'(48).
@@ -105,7 +100,6 @@ sys_errno(_Errno) :- '_$builtin'(58).
 file_stat(_File, _Which, _RetVal) :- '_$builtin'(60).
 file_writequoted(_File, _Term) :- '_$builtin'(61).
 fast_ground(_Term) :- '_$builtin'(62).
-file_pos(_File,_Position) :- '_$builtin'(64).
 intern_string(_Str,_InternedStr) :- '_$builtin'(65).
 expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(66).
 tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(67).
@@ -177,22 +171,6 @@ socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr) :-
 	'_$builtin'(252).
 /*======================================================================*/
 
-file_time(File, Time) :- file_stat(File,0,Time).
-file_size(File, Size) :- file_stat(File,1,Size).
-
-file_flush(File, Ret) :- file_function(0, File, Ret, _D, _E).
-file_seek(File, Offset, Place, Ret) :-
-	 file_function(1, File, Offset, Place, Ret).
-file_truncate(File, Length, Ret) :- file_function(2, File, Length, Ret, _E).
-
-
-fmt_read(Format, ValsListVar, Ret) :-
-	stat_flag(10, FileDescriptor),
-	fmt_read(FileDescriptor, Format, ValsListVar, Ret).
-fmt_write(Format, ValsListVar) :-
-	stat_flag(11, FileDescriptor),
-	fmt_write(FileDescriptor, Format, ValsListVar).
-	
 psc_insert(Name, Arity, PSC) :- psc_insert(Name, Arity, PSC, 0). 
 
 /* The following should be written in C. Now it is only used in the
@@ -219,12 +197,12 @@ conpsc(Con, Psc) :-
 machine_file_exists(File) :- 
 	sys_syscall(33, Res, File, 0), Res =:= 0.
 
-%% Read line from current input stream (previously set by 'see')
-file_read_line(String, IsFullLine) :-
-	 stat_flag(10, File), file_read_line(File, String, IsFullLine).
+/*********************************************************************/
+/* The following predicates are not builtins.  	       	       	     */
+/* Perhaps, we should find a better place for them -mk	      	     */
+/*********************************************************************/
 
-/* some checks for OS type */
-
+/* Checks for OS type */
 is_backslashing_os :-  stat_flag(28, ConfigurationC),
 		    %% convert C string to Prolog
 		    intern_string(ConfigurationC, Configuration),

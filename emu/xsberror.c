@@ -74,6 +74,29 @@ void xsb_abort(char *description, ...)
     longjmp(xsb_abort_fallback_environment, 1);
 }
 
+
+void xsb_warn(char *description, ...)
+{
+  va_list args;
+
+  va_start(args, description);
+  fprintf(stderr, "\n++Warning: ");
+  vfprintf(stderr, description, args);
+  va_end(args);
+  fprintf(stderr, "\n");
+}
+
+void xsb_mesg(char *description, ...)
+{
+  va_list args;
+
+  va_start(args, description);
+  vfprintf(stderr, description, args);
+  va_end(args);
+  fprintf(stderr, "\n");
+}
+
+
 /*----------------------------------------------------------------------*/
 
 void xsb_exit(char *description)

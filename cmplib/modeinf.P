@@ -955,7 +955,7 @@ get_time(Type, Mod, Time) :-
 	get_ext(Type, Ext),
 	str_cat(Mod, Ext, File),
 	(expand_incl_file_name(File, FileName)
-		->  file_time(FileName, time(Time1,Time2)) 
+		->  file_time(FileName, time(_Time1,_Time2)) 
 		;   Time = time(0,0)
 	).
 

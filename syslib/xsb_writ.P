@@ -40,22 +40,6 @@ file_write(_, _).
 file_write0(File, Term) :- l_write(File, Term, 999), fail.
 file_write0(_, _).
 
-	       /********************************/
-	       /*  fmt_write, fmt_write_string */
-	       /********************************/
-fmt_write(Fmt, Args) :-
-       stat_flag(11, File), 
-       ( callable(Args) -> fmt_write(File, Fmt, Args)
-         ;
-	 abort('Usage: fmt_write(+FmtString, args(+A1,+A2,...))')
-       ).
-
-fmt_write_string(Str, Fmt, Args) :-
-   ( var(Str), callable(Args) -> fmt_write_string(Str, Fmt, Args)
-     ;
-     abort('Usage: fmt_write(-OutputString, +FmtString, args(+A1,+A2,...))')
-   ).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 l_write(File, Var, _) :- 

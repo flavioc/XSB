@@ -29,6 +29,6 @@ obsolete(Msg1, Msg2) :-
     	    	  args(Msg1, Msg2)),
     	file_nl(1).
 
-fmt_read(Fmt,Types,Result,Status) :- 
+fmt_read(Fmt,_Types,Result,Status) :- 
 	obsolete('fmt_read/4', 'fmt_read/3'),
 	fmt_read(Fmt, Result, Status).

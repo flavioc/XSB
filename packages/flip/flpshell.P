@@ -27,10 +27,13 @@
 :- import append/3, length/2, member/2
    from basics.
 
-:- import fmt_write_string/3, slash/1,
+:- import slash/1,
 	  parse_filename/4, is_absolute_filename/1,
-	  machine_file_exists/1, file_time/2
+	  machine_file_exists/1
    from machine.
+
+:- import fmt_write_string/3, file_time/2
+   from file_io.
 
 %% Where to search for FLIP libraries
 :- import library_directory/1 from usermod.

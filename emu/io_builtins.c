@@ -31,6 +31,8 @@
 #include <string.h>
 #include <setjmp.h>
 #include <stdlib.h>
+#include <unistd.h> 
+#include <sys/stat.h>
 
 #include "auxlry.h"
 #include "cell.h"
@@ -364,12 +366,12 @@ bool fmt_write_string(void)
 
 bool file_read_line(void)
 {
-  static char buf[MAXBUFSIZE];
+  static char buf[MAXBUFSIZE+1];
   int filedes=ptoc_int(1);
   FILE *file=fileptr(filedes);
 
   /* MAXBUFSIZE-1, because fgets addts '\0' at the end */
-  if (fgets(buf, MAXBUFSIZE-1, file) == NULL)
+  if (fgets(buf, MAXBUFSIZE, file) == NULL)
     return FALSE;
   else {
     ctop_string(2, buf);
@@ -513,7 +515,7 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
 {
   char *ptr;
 
-  fprintf(stderr,"READ_CAN_ERROR: illegal format. Next tokens:\n");
+  xsb_mesg("READ_CAN_ERROR: illegal format. Next tokens:");
   while ((token->type != TK_EOC) && (token->type != TK_EOF)) {
     ptr = token->value;
     switch (token->type) {
@@ -1002,4 +1004,230 @@ char *p_charlist_to_c_string (prolog_term term, char *in_func, char *where)
   str[i] = '\0';
 
   return(string_find(str,1));
+}
+
+
+#define FILE_FLUSH         0
+#define FILE_SEEK          1
+#define FILE_TRUNCATE      2
+#define FILE_POS      	   3
+#define FILE_OPEN      	   4
+#define FILE_CLOSE     	   5
+#define FILE_GET     	   6
+#define FILE_PUT     	   7
+#define FILE_GETBUF    	   8
+#define FILE_PUTBUF    	   9
+
+extern Cell ptoc_tag(int);
+extern char *expand_filename(char *filename);
+
+static FILE *stropen(char *str)
+{
+  int i;
+  STRFILE *tmp;
+
+  for (i=0; i<MAXIOSTRS; i++) {
+    if (iostrs[i] == NULL) break;
+  }
+  if (i>=MAXIOSTRS) return 0;
+  tmp = (STRFILE *)mem_alloc(sizeof(STRFILE));
+  iostrs[i] = tmp;
+  tmp->strcnt = strlen(str);
+  tmp->strptr = str;
+  tmp->strbase = str;
+  return (FILE *)iostrdecode(i);
+}
+
+static void strclose(int i)
+{
+  i = iostrdecode(i);
+  mem_dealloc((byte *)iostrs[i],sizeof(STRFILE));
+  iostrs[i] = NULL;
+}
+
+
+static struct stat stat_buff;
+
+/* file_flish, file_pos, file_truncate, file_seek */
+bool file_function(void)
+{
+  int tmpval, value, disp, i, size;
+  static FILE* fptr;
+  static STRFILE *sfptr;
+  static char buf[MAXBUFSIZE+1];
+  char *addr, *tmpstr;
+  Cell term;
+
+  switch (ptoc_int(1)) {
+  case FILE_FLUSH: /* file_function(0,+filedes,-ret,-dontcare, -dontcare) */
+    tmpval = ptoc_int(2);
+    fptr = fileptr(tmpval);   
+    value = fflush(fptr);
+    ctop_int(3, (int) value);
+    break;
+  case FILE_SEEK: /* file_function(1,+filedes, +offset, +place, -ret) */
+    tmpval = ptoc_int(2);
+    fptr = fileptr(tmpval);
+    value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
+    ctop_int(5, (int) value);
+    break;
+  case FILE_TRUNCATE: /* file_function(2,+filedes,+length,-ret,-dontcare) */
+    tmpval = ptoc_int(2);
+    fptr = fileptr(tmpval);
+    value = ftruncate( fileno(fptr), (off_t) ptoc_int(3));
+    ctop_int(4, (int) value);
+    break;
+  case FILE_POS: /* file_function(3, +filedes, -pos) */
+    tmpval = ptoc_int(2);  /* expand for reading from strings?? */
+    term = ptoc_tag(3);
+    if (tmpval >= 0) {
+      if (isnonvar(term)) return ptoc_int(3) == ftell(fileptr(tmpval));
+      else ctop_int(3, ftell(fileptr(tmpval)));
+    } else { /* reading from string */
+      sfptr = strfileptr(tmpval);
+      disp = sfptr->strptr - sfptr->strbase;
+      if (isnonvar(term))
+	return ptoc_int(3) == disp;
+      else ctop_int(3, disp);
+    }
+    break;
+  case FILE_OPEN:		
+    /* file_function(4, +FileName, +Mode, -FileDes)
+       When read, mode = 0; when write, mode = 1, 
+       when append, mode = 2, when opening a 
+       string for read mode = 3 */
+    tmpstr = ptoc_string(2);
+    tmpval = ptoc_int(3);
+    if (tmpval<3) {
+      addr = expand_filename(tmpstr);
+      switch (tmpval) {
+	/* "b"'s needed for DOS. -smd */
+      case 0: fptr = fopen(addr, "rb"); break; /* READ_MODE */
+      case 1: fptr = fopen(addr, "wb"); break; /* WRITE_MODE */
+      case 2: fptr = fopen(addr, "ab"); break; /* APPEND_MODE */
+      }
+      if (fptr) {
+	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode)) {
+	  /* file exists and isn't a dir */
+	  for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
+	  if (i == MAX_OPEN_FILES) xsb_abort("Too many open files");
+	  else {
+	    open_files[i] = fptr;
+	    ctop_int(4, i);
+	  }
+	} else {
+	  xsb_abort("File %s is a directory, cannot open!", tmpstr);
+	}
+      } else ctop_int(4, -1);
+    } else if (tmpval==3) {  /* open string! */
+      if ((fptr = stropen(tmpstr))) ctop_int(4, (Integer)fptr);
+      else ctop_int(4, -1000);
+    } else {
+      xsb_warn("Unknown open file mode");
+      ctop_int(4, -1000);
+    }
+    break;
+  case FILE_CLOSE: /* file_function(5, +FileName) */
+    tmpval = ptoc_int(2);
+    if (tmpval < 0) strclose(tmpval);
+    else {
+      fclose(fileptr(tmpval));
+      open_files[tmpval] = NULL;
+    }
+    break;
+  case FILE_GET:	/* file_function(6, +FileDes, -IntVal) */
+    tmpval = ptoc_int(2);
+    if ((tmpval < 0) && (tmpval >= -MAXIOSTRS)) {
+      sfptr = strfileptr(tmpval);
+      ctop_int(3, strgetc(sfptr));
+    }
+    else ctop_int(3, getc(fileptr(tmpval)));
+    break;
+  case FILE_PUT:  /* file_function(7, +FileDes, +IntVal) */
+    tmpval = ptoc_int(2); i = ptoc_int(3); fptr = fileptr(tmpval);
+    putc(i, fptr);
+#ifdef WIN_NT
+    if (tmpval==2 && i==10) fflush(fptr); /* hack for Java interface */
+#endif
+    break;
+  case FILE_GETBUF:
+    /* file_function(8, +FileDes, +ByteCount (int), -String) */
+    /* Read ByteCount bytes from FileDes at into String starting 
+       at position Offset	      */
+    tmpval = ptoc_int(2);
+    size = ptoc_int(3);
+    if (size > MAXBUFSIZE) {
+      size = MAXBUFSIZE;
+      xsb_warn("FILE_GETBUF: Byte count(%d) exceeds MAXBUFSIZE(%d)",
+	       size, MAXBUFSIZE);
+    }
+
+    fread(buf, 1, size, fileptr(tmpval));
+    *(buf+size) = '\0';
+    ctop_string(4, buf);
+    break;
+  case FILE_PUTBUF:
+    /* file_function(9, +FileDes, +ByteCount (int), +String, +Offset) */
+    /* Write ByteCount bytes into FileDes from String beginning with Offset in
+       that string	      */
+    addr = ptoc_string(4);
+    disp = ptoc_int(5);
+    tmpval = ptoc_int(2);
+    fwrite(addr+disp, 1, ptoc_int(3), fileptr(tmpval));
+    break;
+  default:
+    xsb_abort("Invalid file function request %d\n", ptoc_int(1));
+  }
+  
+  return TRUE;
+}
+
+
+#define FILE_STAT_TIME	  0
+#define FILE_STAT_SIZE	  1
+
+/* use stat() to get file mod time, size, and other things */
+/* file_stat(+FileName, +FuncNumber, -Result)	     	   */
+bool file_stat(void)
+{
+  int retcode = stat(ptoc_string(1), &stat_buff);
+  int functor_arg3 = is_functor(reg_term(3));
+
+  switch (ptoc_int(2)) {
+  case 0:
+    /* This is DSW's hack to get 32 bit time values.
+       The idea is to call this builtin as file_time(File,time(T1,T2))
+       where T1 represents the most significant 8 bits and T2 represents
+       the least significant 24.
+       ***This probably breaks 64 bit systems, so David will look into it!
+       */
+    if (!retcode && functor_arg3) {
+      /* file exists & arg3 is a term, return 2 words*/
+      c2p_int(0xFFFFFF & stat_buff.st_mtime,p2p_arg(reg_term(3),2));
+      c2p_int(stat_buff.st_mtime >> 24,p2p_arg(reg_term(3),1));
+    } else if (!retcode) {
+      /* file exists, arg3 non-functor:  issue an error */
+      xsb_warn("Arg 2 in file_time must be a term: time(X,Y)");
+      ctop_int(3, (0x7FFFFFF & stat_buff.st_mtime));
+    } else if (functor_arg3) {
+      /* no file, and arg3 is functor: return two 0's */
+      c2p_int(0, p2p_arg(reg_term(3),2));
+      c2p_int(0, p2p_arg(reg_term(3),1));
+    } else {
+      /* no file, no functor: return 0 */
+      xsb_warn("Arg 2 in file_time must be a term: time(X,Y)");
+      ctop_int(3, 0);
+    }
+    break;
+  case 1: /* Take file size in 4-byte words */
+    /*** NOTE: File_size can handle only files up to 128K.
+	 We must use the same trick here as we did with file_time above */
+    if (!retcode)
+      /* file exists */
+      ctop_int(3, (0x7FFFFFF & (stat_buff.st_size >> 2)));
+    else /* no file */
+      ctop_int(3, 0);
+    break;
+  }
+  return TRUE;
 }

@@ -37,10 +37,6 @@
 	psc_prop/2, 
 	psc_set_type/2, 
 	psc_set_prop/2,
-	file_open/3, 
-	file_close/1, 
-	file_get/2, 
-	file_put/2,
 	term_psc/2, 
 	term_type/2, 
 	term_compare/3, 
@@ -93,11 +89,9 @@
 	sys_system/2, 
 	sys_gethost/2, 
 	sys_errno/1, 
-	file_time/2,
-	file_size/2,
+	file_stat/3,
 	file_writequoted/2,
 	fast_ground/1,
-        file_pos/2,
         intern_string/2,
  	psc_env/2, 
 	psc_spy/2, 
@@ -125,7 +119,6 @@
 	fmt_write_string/3,
 	fmt_read/4,
         file_read_line/3,
-        file_read_line/2,
 	file_read_canonical/3,
 	gen_retract_all/1,
 	compiled_to_dynamic/2,
@@ -145,7 +138,7 @@
 	socket_request/6.
 
 :- export 
-	fmt_read/4, fmt_write/2, file_flush/2, file_seek/4, file_truncate/3,
+	file_function/5,
 	psc_insert/3, psc_set_env/2, conname/2, conpsc/2, 
 	machine_file_exists/1, backtrackable_buff_set_word/4,
   	is_backslashing_os/0, is_pcdos/0, slash/1.

@@ -65,24 +65,6 @@ file_read(File, Answer, Variables) :-
 	Answer = Term.
 
 
-	/*****************************************/
-	/*  fmt_read, read_line                  */
-	/*****************************************/
-fmt_read(Fmt,Result,Status) :-
-        stat_flag(10, File),
-	( compound(Result), var(Status)
-		     -> fmt_read(File,Fmt,Result,Status)
-	    ;
-	    abort('Usage: fmt_read(+FmtString, result(-R1,-R2,...), -RetCode)')
-    	).
-
-read_line(Str, IsFullLine) :-
-   stat_flag(10, File),
-   ( var(Str), var(IsFullLine) -> file_read_line(File, Str, IsFullLine)
-     ;
-      abort('Usage: read_line(-InputStr, -IsFullLine)')
-   ).
-
 
 %   read_all(+Tokens)
 %   checks that there are no unparsed tokens left over.

@@ -40,10 +40,12 @@
 :- import (dynamic)/1, assert0/1, retract/1, retractall/1 from assert.
 :- import break/0, prompt/3 from x_interp.
 :- import term_psc/2, psc_insert/4, stat_flag/2, stat_set_flag/3, 
-	  psc_type/2, psc_prop/2, file_get/2, file_put/2, 
+	  psc_type/2, psc_prop/2,
 	  buff_byte/3, buff_set_byte/3, conname/2, code_call/3,
 	  psc_arity/2, psc_name/2, term_arg/3, term_type/2, term_new/2
      from machine.
+:- import file_get/2, file_put/2
+     from file_io.
 :- import standard_symbol/3 from std_sbp.
 :- import predicate_property/2, current_predicate/1 from curr_sym.
 :- import findall/3 from setof.

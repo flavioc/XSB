@@ -88,9 +88,9 @@ standard_symbol(findall, 3, setof).
 standard_symbol(float, 1, standard).
 standard_symbol(functor, 3, standard).
 
-standard_symbol(fmt_read, 3, xsb_read).
-standard_symbol(fmt_write, 2, xsb_writ).
-standard_symbol(fmt_write_string, 3, xsb_writ).
+standard_symbol(fmt_read, 3, file_io).
+standard_symbol(fmt_write, 2, file_io).
+standard_symbol(fmt_write_string, 3, file_io).
 
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
@@ -151,7 +151,7 @@ standard_symbol(put, 1, standard).
 standard_symbol(read, 1, standard).
 standard_symbol(read, 2, standard).
 
-standard_symbol(read_line, 2, xsb_read).
+standard_symbol(file_read_line, 2, file_io).
 
 standard_symbol(real, 1, standard).
 standard_symbol(reconsult, 1, consult).

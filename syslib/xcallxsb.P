@@ -71,6 +71,6 @@ do_pcall(Call,VarTerm) :-
 	call_expose(X).
 
 string_to_term(Atom,Goal) :-
-	file_open(Atom,3,Fp),
+	file_close(Atom),
 	file_read_foe(Fp,Goal,_),
 	file_close(Fp).

@@ -201,7 +201,8 @@ close(userout) :- !.
 close(F) :- 
 	conpsc(F, PSC),
 	psc_type(PSC, Type), Type=5,
-	psc_prop(PSC, File), file_close(File),
+	psc_prop(PSC, File), 
+	file_close(File),
 	psc_set_type(PSC, 0).
 
 
