@@ -164,7 +164,7 @@ program. This program is then passed to XSB for compilation (yielding {\tt
   file.O}) and execution.
 
 The origins of \FLORA trace back to the \FLIP compiler developed by Bertram
-Ludaescher, and the basic architectures of the two compilers are the same.
+Lud\"aescher, and the basic architectures of the two compilers are the same.
 However, \FLORA has many features not found in \FLIP, it has a much more
 optimized compiler and its tokenizer and parser are very different from
 \FLIP's.
@@ -316,7 +316,7 @@ reader is referred to the excellent tutorial written by the members of the
   %%
   }
 %%
-Since \FLORA and \FLORID share much of the syntax, most examples in that
+Since \FLORA and \FLORID share much of the same syntax, most examples in that
 tutorial are also valid \FLORA programs.
 
 
@@ -341,8 +341,8 @@ tutorial are also valid \FLORA programs.
 %%
 Additional libraries are located in the {\tt lib/} subdirectory, and there
 is also a number of files in the {\tt closure/} subdirectory that serve as
-headers and trailers that are attached to the {\tt *.P} files by the
-compiler (explained later).
+headers and trailers that are automatically attached to the {\tt *.P} files by
+\FLORA compiler (explained later).
 
 
 
@@ -424,7 +424,7 @@ appended to every {\tt *.P} file by the \FLORA compiler. These closure
 rules also perform the following tasks:
 
 \begin{itemize}
-\item Transitively close ``\subcl'' (the subclass relationship).  A
+\item Transitive closure of ``\subcl'' (the subclass relationship).  A
   runtime check warns about cycles in the subclass hierarchy.
 \item Closure of ``\isa'' with respect to ``\subcl'', i.e., if $X\isa C,
   C\subcl D$ then $X\isa D$.
@@ -742,12 +742,12 @@ Here, we should be able to identify ${\tt mary}$ and ${\tt john.mother}$,
 since the attribute {\tt mother} is scalar. To deal with single-valued path
 expressions in rule heads, \FLORA \emph{skolemizes} ${\tt john.mother}$ and
 derives the requisite equalities.  All this is done by the
-\FLORA compiler transparently to the user: If a path expression in rule head
+\FLORA compiler transparently to the user: if a path expression in rule head
 is detected, \FLORA replaces this expression with a Skolem constant and
 then appends appropriate rules to the target {\tt .P} file to ensure that
 proper equalities are maintained.
 
-The user must be aware, however, that equality Maintenance is costly.
+The user must be aware, however, that \emph{equality maintenance} is costly.
 Performance can be improved if path expressions in the rule heads are
 avoided.  Our experiments show that without equality checking \FLORA can be
 10 times faster in some cases.
@@ -763,7 +763,7 @@ For example, $o\isa c[m\fd r]$ is a reference to $o$ and additionally,
 it specifies $o$'s membership in class $c$ and the value of the attribute $m$.
 
 Consequently, all F-logic expressions of the form (1~--~8) are called
-\emph{references}. F-logic references have a dual reading: Given an
+\emph{references}. F-logic references have a dual reading. Given an
 \fl\ database \db I (see below), a reference has:
 \begin{itemize}
 \item An \emph{object value}, which yields the name(s) of the objects
@@ -853,7 +853,7 @@ Like XSB atoms, \FLORA atoms begin with a lowercase letter followed by zero or m
 ($A \ldots Z, a \ldots z$), digits ($0 \ldots 9$), or underscores (\_), e.g.,
 $\textit{student}, \textit{apple\_pie}$. Atoms can also be \emph{any} sequence
 of characters enclosed in a pair of single quotes, e.g.,
-$\textit{'JOHN SMITH'},\textit{'default.flr'}$.
+$\texttt{'JOHN SMITH'},\texttt{'default.flr'}$.
 
 \begin{table}[htb]
 \begin{center}
@@ -987,8 +987,8 @@ variables. Finally, ${\it body}$ is a list of literals that specify the
 conditions. The grouping variables, $Gs$, are optional.
 
 All the variables appearing in ${\it body}$ but not in $X$ and $Gs$ are
-considered to be existentially quantified. Furthermore, the syntax of an
-aggregate must satisfy the following conditions: (1) Both $X$ and $Gs$ must
+considered to be existentially \mbox{quantified}. Furthermore, the syntax of an
+aggregate must satisfy the following conditions:\linebreak (1) Both $X$ and $Gs$ must
 appear in ${\it body}$; (2) $Gs$ should not contain $X$.
 
 The following aggregate operators are supported: {\it min}; {\it max}; {\it
@@ -1039,7 +1039,7 @@ runtime error will occur.
 
 \FLORA allows arithmetic expressions to appear in path expressions. Since
 arithmetic expressions are always evaluated, an arithmetic expression
-inside a path expression is treated as the the number to which the
+inside a path expression is treated as the number to which the
 expression evaluates. Furthermore, \FLORA recognizes numbers as oid's, so
 the result of the evaluation is treated as a regular object.
 
@@ -1057,11 +1057,11 @@ processed by \FLORA tokenizer and then passed to \FLORA parser.
 In general, the interpretation of ``.'' as a decimal point takes precedence
 over the interpretation as part of a single-valued path expression.
 
-Another ambiguious situation is the symbol's $-$ and $+$. They can be used
+Another ambiguious situation are the symbols $-$ and $+$. They can be used
 as minus/plus signs, e.g., $-3$ and $+3$, or as binary arithmetic
 operators; e.g., $4-7$ and $4+7$. Actually, the minus and plus signs are
 defined in \FLORA as unary operators; these operators take precedence over
-the binary operators.
+binary operators.
 
 Table~\ref{tab:tab-op-pre} lists various operators in decreasing precedence
 order, their associativity, and arity.
@@ -1097,7 +1097,7 @@ Precedence & Operator & Use & Associativity & Arity \\ \hline
 \end{table}
 
 Wherever ambiguity may arise, parentheses can be used to avoid misleading
-expressions. here are further examples of legal expressions in \FLORA:
+expressions. Here are more examples of legal expressions in \FLORA:
 
 \begin{table}[h]
 %%
@@ -1112,13 +1112,13 @@ $5.(-6)$ &~~~~~& method ``$-6$'' applied to object ``5''
 
 \noindent
 The interpretation of the last expression stems from the fact that both the
-minus sign and the plus signs are defined as unary operators. Therefore,
-$-6$ is an arithmetic expression that represents a method.
+minus sign and plus sign are defined as unary operators. Therefore,
+$-6$ is a \emph{complex} arithmetic expression (with an arithmetic operator $-$) that represents
+a method, but not an atomic negative integer.
 
-To avoid further confusion, \FLORA insists that all arithmetic expressions
-that represent oid's in path expressions must be enclosed in parentheses.
-Thus, although $5.$$-6$ may seem legal according to
-Table~\ref{tab:tab-op-pre}, it has to be entered as $5.(-6)$.
+To avoid further confusion, \FLORA insists that all \emph{complex} arithmetic expressions
+representing oid's in path expressions must be enclosed in parentheses. Thus, although $5.$$-6$
+may seem legal according to Table~\ref{tab:tab-op-pre}, it has to be entered as $5.(-6)$.
 
 \subsection{Negation in \FLORA}
 
@@ -1129,7 +1129,7 @@ restriction that {\tt tnot} can be applied only to Prolog predicates, not
 F-molecules (this restriction will be dropped in a future release). Thus,
 to negate an F-molecule, one has to introduce an auxiliary predicate as
 shown below. Furthermore, this predicate must be tabled (see
-Section~\ref{sec-tabling-flora}:
+Section~\ref{sec-tabling-flora}):
 %%
 \begin{verbatim}
 :- table aux/1.
@@ -1137,8 +1137,8 @@ aux(X,Y) :- a[m ->> X; a -> Y].
 d[f->Z] :- e[w->Z; v->f(X,Y)], tnot(aux(X,Y)).
 \end{verbatim}
 %%
-One other restriction, due to the underlying XSB system, is that all the
-variables in negated predicates must be bound before {\tt tnot} is called.
+Another restriction, due to the underlying XSB system, is that all the
+variables in negated predicates must be bound at the time when {\tt tnot} is called.
 
 \subsection{Inheritance}
 
@@ -1173,7 +1173,7 @@ definedSet(X,A) <- X[A ->> V]
 \end{verbatim}
 %%
 Negation here is implemented using the well-founded semantics (as indicated
-by the {\tt tnot} operator.
+by the {\tt tnot} operator).
 
 One problem with the current implementation of behavioral inheritance is
 that the well-founded semantics for negation in the presence of equality is
@@ -1183,10 +1183,10 @@ maintenance enabled.
 
 \subsection{Meta-programming in \FLORA}
 
-The syntax of \fl lends itself naturally to meta-programming. For instance,
+The syntax of \fl leads itself naturally to meta-programming. For instance,
 it is easy to examine the methods and types defined for the various classes.
 However, a number of meta-programming primitives are still needed
-since they cannot be expressed in \fl directly. Many such features are
+since they cannot be directly expressed in \fl. Many such features are
 provided by the underlying XSB system and \FLORA simply takes advantage of
 them: 
 %%
@@ -1195,17 +1195,19 @@ FLORA> ?- functor(X,f,3).
 
 X = f(_h455,_h456,_h457)
 
-1 solution(s) in 0.0110 seconds on kifer2.cs.sunysb.edu
-
 Yes.
 
 FLORA> ?- compound(f(X)).
 
-X = X (unbound)
+X = _h472
 
-1 solution(s) in 0.0000 seconds on kifer2.cs.sunysb.edu
+Yes.
 
-Yes.  
+FLORA> ?- X =.. [f,a,b].
+
+X = f(a,b)
+
+Yes.
 \end{verbatim}
 %%
 These primitives are described in the XSB manual. However, \FLORA provides
@@ -1217,16 +1219,16 @@ any arity.
 
 A \FLORA program consists of facts and rules all of which take part in the
 derivation of new facts and object properties.
-However, there is a distinction between static rules and facts and dynamic
+However, there is a distinction between static facts and rules and dynamic
 ones. The former are immutable, while the latter can be added or deleted at
 will.
 
 Conceptually, the runtime environment of \FLORA is partitioned into two
 areas: static and dynamic. \emph{Static code} is generated using the
-predicate {\tt flcompile(file)}, and is loaded into the static run-time
+predicate {\tt flcompile(file)}, and is loaded into the static runtime
 environment by {\tt flconsult(file)}, {\tt load(file)}, or {\tt [file]}.
 \emph{Dynamic code} can be compiled by {\tt dyncompile(file)} and loaded
-into the dynamic run-time environment by {\tt dynconsult(file)},
+into the dynamic runtime environment by {\tt dynconsult(file)},
 {\tt dynload(file)}, or \texttt{\{file\}}.  we have shown the syntax of
 these predicates in Section~\ref{sec-shell-commands}.
 
@@ -1240,7 +1242,7 @@ facts in both these areas are considered as a whole and executed together.
 A small example should help illustrate this. Suppose there are two
 programs, {\it static.flr} and {\it dynamic.flr}, as shown in
 Figure~\ref{fig:fig-static-dynamic-code}.
-Let us start XSB in the directory where both \emph{static.flr} and
+Start XSB in the directory where both \emph{static.flr} and
 \emph{dynamic.flr} reside. Then start \FLORA shell and type:
 %%
 \begin{figure}[htb]
@@ -1298,11 +1300,11 @@ C = math230
 Yes.
 \end{verbatim}
 %%
-You can see that the two parts of the code work in unison. The difference
+You can see that the two parts of the code work in union. The difference
 comes when we are trying to modify the code dynamically, {\it e.g.}, by
 deleting or adding facts.
 
-\FLORA provides the user with several predicates to modify the runtime
+\FLORA provides the users with several predicates to modify the runtime
 database.  These predicates can be executed either from the static area or
 the dynamic area. However, only the facts that reside in the dynamic area
 can be asserted or retracted. (In the furture, \FLORA might support 
@@ -1513,7 +1515,7 @@ is allowed, but
 is not.
 
 When a \FLORA module imports from another module, say, module {\tt foo.flr}, 
-the latter must already be compiled, or else a run-time error will be
+the latter must already be compiled, or else a runtime error will be
 issued. Furthermore, a \FLORA module cannot import and export the same
 signature. These restrictions stem from the limitations of the underlying
 XSB module system.
@@ -1608,13 +1610,12 @@ The user should be aware that the current implementation of XSB has a
 limitation that Prolog cuts (!) cannot cut across tabled predicates. See
 the XSB manual for the details on this obscure problem.
 
-it is also important to understand that when XSB (and \FLORA) evaluate a
+It is also important to understand that when XSB (and \FLORA) evaluate a
 program, all tabled predicates are partially materialized and all the
 computed tuples are stored in XSB tables. Thus, if you change the set of
 facts, the existing tables must be discarded in order to alow XSB to
-recompute the results. This is accomplished using the predicate
+recompute the results. This is accomplished by issuing the predicate
 {\tt abolish\_all\_tables/0} described in the XSB manual.
-
 
 
 \section{The \FLORA Compiler} \label{sec-comp-directives}
