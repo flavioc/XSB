@@ -34,7 +34,9 @@ student[first      *=>  string,
 	canteach   *-> [],
 	ta_eligibility *->> {},
 	remarks    *=>  string,    % whatever appropriate
-        remarks    *->  ''
+        remarks    *->  '',
+        #print(_),
+	#enroll(_,_)
 ].
 
 instructor[name        =>  string,

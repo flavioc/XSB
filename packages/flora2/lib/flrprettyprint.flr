@@ -38,10 +38,11 @@
 */
 
 
-
+%% Need to add signature printing
 
 :- table flora_in_between_isa/3, flora_in_between_sub/3.
 :- firstorder flora_in_between_isa/3, flora_in_between_sub/3.
+:- arguments flora_pp_write_comma_conditional(bform).
 
 %% Methods to ignore during pretty printing
 flora_print_ignore('________') :- true.
@@ -65,8 +66,15 @@ X[#pp_self(Module)] :-
 	flora_pp_immediate_classes(X,Module),
 	flora_pp_write_header(X),
 	flora_pp_write_body_scalar(X,Module),
+	flora_pp_write_comma_conditional(X[_->_, _->>_]@Module),
 	flora_pp_write_body_set(X,Module),
-	writeln('].')@prolog(), nl@prolog().
+	flora_pp_write_comma_conditional(X[(_->_; _->>_),_*->_]@Module),
+	flora_pp_write_body_iscalar(X,Module),
+	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_),_*->>_]@Module),
+	flora_pp_write_body_iset(X,Module),
+	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_),#_]@Module),
+	flora_pp_write_body_tran(X,Module),
+	nl@prolog(), writeln('].')@prolog(), nl@prolog().
 %% Print obj in Module to a Outfile
 X[#pp_self(Module,Outfile)] :-
 	tell(Outfile)@prolog(),
@@ -117,6 +125,28 @@ flora_pp_write_body_scalar1(Obj, [MethInv|MethInvs],Module) :-
 	flora_pp_write_comma_maybe(MethInvs),
 	flora_pp_write_body_scalar1(Obj, MethInvs,Module).
 
+%% Print out inheritable scalar *->
+flora_pp_write_body_iscalar(Obj,Module) :-
+    	MethLst1 = collectset{SM | Obj[SM *-> _]@Module},
+	sort(MethLst1, MethLst2)@prolog(),
+	flora_pp_write_body_iscalar1(Obj, MethLst2,Module).
+
+%% Test if method is to be ignored and either skip it or print it.
+flora_pp_write_body_iscalar1(_, [], _Module) :- true.
+flora_pp_write_body_iscalar1(Obj, [MethInv|MethInvs],Module) :-
+        MethInv = [M|_Args],
+	flora_print_ignore(M),
+	!,
+	%% skip this method
+	flora_pp_write_body_iscalar1(Obj, MethInvs,Module).
+flora_pp_write_body_iscalar1(Obj, [MethInv|MethInvs],Module) :-
+	Obj[MethInv *-> Val]@Module,
+	write('    ')@prolog(), flora_pp_write_method_invocation(MethInv),
+	write(' *-> ')@prolog(), flora_pp_write_value(Val),
+	flora_pp_write_comma_maybe(MethInvs),
+	flora_pp_write_body_iscalar1(Obj, MethInvs,Module).
+
+%% Print set-valued
 flora_pp_write_body_set(Obj,Module) :-
     	MethLst1 = collectset{MM | Obj[MM ->> _]@Module},
 	sort(MethLst1, MethLst2)@prolog(),
@@ -136,9 +166,57 @@ flora_pp_write_body_set1(Obj, [MethInv|MethInvs],Module) :-
 	flora_pp_write_comma_maybe(MethInvs),
 	flora_pp_write_body_set1(Obj, MethInvs,Module).
 
+%% Inheritable *->>
+flora_pp_write_body_iset(Obj,Module) :-
+    	MethLst1 = collectset{MM | Obj[MM *->> _]@Module},
+	sort(MethLst1, MethLst2)@prolog(),
+	flora_pp_write_body_iset1(Obj, MethLst2,Module).
+
+flora_pp_write_body_iset1(_Obj, [],_Module) :- true.
+flora_pp_write_body_iset1(Obj, [MethInv|MethInvs],Module) :-
+        MethInv = [M|_Args],
+	flora_print_ignore(M),
+	!,
+	%% skip this method
+	flora_pp_write_body_iset1(Obj, MethInvs,Module).
+flora_pp_write_body_iset1(Obj, [MethInv|MethInvs],Module) :-
+	Vals = collectset{V| Obj[MethInv *->> V]@Module},
+	write('    ')@prolog(), flora_pp_write_method_invocation(MethInv),
+	write(' *->> ')@prolog(), flora_pp_write_iset(Vals),
+	flora_pp_write_comma_maybe(MethInvs),
+	flora_pp_write_body_iset1(Obj, MethInvs,Module).
+
+%% Transactions #p(...)
+flora_pp_write_body_tran(Obj,Module) :-
+    	MethLst1 = collectset{Tran | Obj[#Tran]@Module},
+	sort(MethLst1, MethLst2)@prolog(),
+	flora_pp_write_body_tran1(Obj, MethLst2,Module).
+
+flora_pp_write_body_tran1(_Obj, [],_Module) :- true.
+flora_pp_write_body_tran1(Obj, [MethInv|MethInvs],Module) :-
+        MethInv = [M|_Args],
+	flora_print_ignore(M),
+	!,
+	%% skip this method
+	flora_pp_write_body_tran1(Obj, MethInvs,Module).
+flora_pp_write_body_tran1(Obj, [MethInv|MethInvs],Module) :-
+	write('    #')@prolog(), flora_pp_write_method_invocation(MethInv),
+	flora_pp_write_comma_maybe(MethInvs),
+	flora_pp_write_body_tran1(Obj, MethInvs,Module).
+
+
 %% Write comma, if List is not empty 
-flora_pp_write_comma_maybe([]) :- nl@prolog().
+flora_pp_write_comma_maybe([]) :- !.
 flora_pp_write_comma_maybe([_First| _Rest]) :- writeln(',')@prolog().
+
+%% The cut here is iffy, because it cuts a tables predicate Cond.
+%% However, the table must have been completed here because tables 
+%% predicates don't depend on flora_pp_write_comma_conditional/1.
+%% So it might be OK.
+flora_pp_write_comma_conditional(Cond) :-
+	if Cond then writeln(',')@prolog(),
+        !.
+
 
 
 flora_pp_write_method_invocation(M) :- write(M)@flora(io).
@@ -171,7 +249,8 @@ flora_pp_immediate_isa(Class,Module) :-
 	%% no intermediate class
 	tnot(flora_in_between_isa(X,Class,Module)),
 	flora_pp_write_value(X), write('		:  ')@prolog(),
-	flora_pp_write_value(Class), nl@prolog(),
+	flora_pp_write_value(Class),
+	writeln('.')@prolog(),
 	fail.
 flora_pp_immediate_isa(_,_) :- true.
 
