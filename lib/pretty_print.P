@@ -1,0 +1,185 @@
+/* File:      pretty_print.P
+** Author(s): Bart Demoen
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+% Mon Jun 23 09:52:11 CEST 2003
+%% Bart Demoen K.U.Leuven
+%% 
+%% This file contains a pretty printer - evolving ...
+%% Most recent change: recently.
+%%
+%% Ported to XSB by Tom Schrijvers
+
+:- export pretty_print/1, pretty_print/2.
+
+:- import writeq/1,
+	  write/1,
+          nl/0,
+	  put/1,
+	  tab/1,
+	  (\=)/2,
+	  (=..)/2,
+	  atomic/1
+   from standard.
+
+%:- import from lists.
+
+pretty_print(Clause) :-
+	pretty_print(Clause,[]).
+
+pretty_print(Clause,Dict) :-
+	givenames(Clause,Dict),
+	pretty_print1(Clause),
+	put(0' ), put(0'.), nl,nl.
+
+givenames(T,Dict) :-
+	allvars(T,[],Vars),
+	givenames(Vars,Dict,0).
+
+givenames([],_,_).
+givenames([V/N|R],Dict,I) :-
+	( spec_lookup(Dict,V,Name) ->
+		V = '$VAR'(Name),
+		givenames(R,Dict,I)
+	%; var(N) ->
+	%	V = '$VAR'(-1),
+	%	givenames(R,Dict,I)
+	;
+		V = '$VAR'(I),
+		J is I + 1,
+		givenames(R,Dict,J)
+	).
+
+spec_lookup([K=V|R],Key,Value) :-
+	( Key == K ->
+		Value = V
+	;
+		spec_lookup(R,Key,Value)
+	).
+
+allvars(Var,In,Out) :-
+	var(Var), !,
+	addvar(In,Var,Out).
+allvars(Atomic,In,Out) :-
+	atomic(Atomic), !,
+	Out = In.
+allvars([A|R],In,Out) :-
+	!,
+	allvars(A,In,In1),
+	allvars(R,In1,Out).
+allvars(Term,In,Out) :-
+	Term =.. [_|Args],
+	allvars(Args,In,Out).
+
+addvar([],Var,[Var/_]).
+addvar(In,Var,Out) :-
+	In = [V/N|R],
+	(V == Var ->
+	    N = 1,
+	    Out = In
+	;
+	    Out = [V/N|Rout],
+	    addvar(R,Var,Rout)
+	).
+
+pretty_print1((H :- B)) :-
+        !,
+	pretty_print2(H,B).
+pretty_print1(H):-
+	pretty_print2(H,true).
+
+pretty_print2(H,true) :- !, writeq(H).
+pretty_print2(H,!) :- !, writeq(H), write(' :- !').
+pretty_print2(H,B) :- writeq(H), write(' :-'), nl, pretty_print3(B,8).
+
+pretty_print3((A,B),Space) :- !,
+	pretty_print3(A,Space),
+	put(0',),nl,
+	pretty_print3(B,Space).
+pretty_print3((A->B;C),Space) :- !,
+	tab(Space), put(0'(),
+	pretty_print_ite((A->B;C),Space),nl,
+	tab(Space), put(0')).
+pretty_print3((A->B),Space) :- !,
+	tab(Space), put(0'(), nl,
+	Space1 is Space+2,
+	Space2 is Space+5,
+	pretty_print3(A,Space1),
+	write(' ->'), nl,
+	pretty_print3(B,Space2),nl,
+	tab(Space), put(0')).
+pretty_print3((A;B),Space) :- !,
+	tab(Space), put(0'(), nl,
+	pretty_print_disj((A;B),Space),nl,
+	tab(Space), put(0')).
+pretty_print3(A:G,Space) :- !,
+ 	tab(Space),
+	writeq(A), put(0':), writeq(G).
+pretty_print3(A,Space) :-
+ 	tab(Space),
+	writeq(A).
+
+pretty_print_ite(G,Space) :-
+	Space1 is Space+2,
+	Space2 is Space+5,
+	( G = (A->B;C) ->
+		( simple_goal(A) ->
+			pretty_print3(A,2)
+		;	
+			nl,
+			pretty_print3(A,Space1)
+		),
+		write(' ->'),
+		nl,
+		pretty_print3(B,Space2),nl,
+		tab(Space), put(0';), 
+		pretty_print_ite(C,Space)
+	; G = (A -> B) ->
+		( simple_goal(A) ->
+			pretty_print3(A,2)
+		;
+			nl,
+			pretty_print3(A,Space1)
+		),
+		write(' ->'),
+		nl,
+		pretty_print3(B,Space2)
+	;
+		nl,
+		pretty_print3(G,Space2)
+	).
+
+pretty_print_disj(G,Space) :-
+	Space1 is Space+5,
+	( G = (A;B), A \= (_ -> _) -> 
+		pretty_print_disj(A,Space),nl,
+		tab(Space), put(0';), nl,
+		pretty_print_disj(B,Space)
+	;
+		pretty_print3(G,Space1)
+	).
+
+simple_goal(G) :-
+	G \= (_ , _),
+	G \= (_ ; _),
+	G \= (_ -> _).
