@@ -25,6 +25,12 @@
 %% Hooks
 :- dynamic xsb_exit_hook(_), xsb_before_prompt_hook(_).
 
+%% A hook is of the form hookname(HookPredicate)
+%% hookname(_) just lists the callable hooks of the given kind.
+%% add_xsb_hook adds hooks to hookname(_) and remove_xsb_hook(_) removes them.
+%% call_xsb_hook(hookname(_)) goes over all the hooks stored in hookname(_) 
+%% and calls them.
+
 %% Hook handling
 add_xsb_hook(Hook) :-
 	call(Hook), !.  % hook is already there

@@ -26,6 +26,7 @@
 :- compiler_options([xpp_on]).
 #include "builtin.h"
 #include "sig_xsb.h"
+#include "flag_defs_xsb.h"
 
 /*======================================================================*/
 
@@ -152,25 +153,25 @@ db_clause_match(Head,Body,Entry) :-
 	db_body_save(Buff),
 	buff_set_cell(Buff,0,5,true),	% set default
 	(db_do_call(Entry,Head)
-	 ->	stat_set_flag(24,0),
+	 ->	stat_set_flag(CLAUSE_INT,0),
 	 	db_body_save(Buff),
 		buff_cell(Buff,0,Body0),
 		goal_cut_trans_a(Body0, Body1, _),
 		Body = Body1
-	 ;	stat_set_flag(24,0),
+	 ;	stat_set_flag(CLAUSE_INT,0),
 	 	fail
 	).
 
 
 db_clause_match_trassert(Head) :-
-	stat_set_flag(24,0),
+	stat_set_flag(CLAUSE_INT,0),
 	call(Head).
 
 
 % db_do_call(+CodeEntry, +Head)
 %	Makes the call to Head on the heap after setting the interrupt flag
 %	that will retrieve the code from the heap.  By this time we finally
-%	know that Head is "dynamic" (psc_type = 1) so there is no need to
+%	know that Head is "dynamic" (psc_type = T_DYNA) so there is no need to
 %	retrieve the type.  If at some later version we need the psc type 
 %	the following should appear:
 %			conpsc(Head, PSC), psc_type(PSC, Type),
@@ -179,13 +180,13 @@ db_clause_match_trassert(Head) :-
 %	the body of the call on the heap will not work!!.
 
 db_do_call(Entry, Head) :-
-	stat_set_flag(24, 1),	        % set clause interrupt on (CLAUSE_INT)
+	stat_set_flag(CLAUSE_INT, 1),   % set clause interrupt on (CLAUSE_INT)
 	code_call(Entry, Head, 1).	% Type =:= 1 means dynamic predicate.
 
 :- dynamic(db_body_save(_)).
 
 '_$clause_int'(Call) :-
-	stat_set_flag(24,0),	% turn clause intercept off
+	stat_set_flag(CLAUSE_INT,0),	% turn clause intercept off
  	db_body_save(Buff),
 	buff_set_var(Buff,0,8,X),
 	X=Call.

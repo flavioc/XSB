@@ -28,6 +28,7 @@
 #include "standard.h"
 #include "flag_defs_xsb.h"
 #include "heap_defs_xsb.h"
+#include "psc_defs.h"
 
 /* ===== current_atom/1 =============================================== */
 
@@ -202,9 +203,9 @@ current_predicate(Functor/N) :-		% This takes care of global modules.
 	!,				% i.e. "usermod" and "global".
 	psc_scan_in_hash_table(0, PSC),
 	psc_type(PSC, Type), 
-	( Type =:= 2 -> true		% Regular loaded predicate.
-	; Type =:= 1 -> true		% Dynamic predicate.
-	; Type =:= 13			% Foreign predicate.
+	( Type =:= T_PRED -> true		% Regular loaded predicate.
+	; Type =:= T_DYNA -> true		% Dynamic predicate.
+	; Type =:= T_FORN			% Foreign predicate.
 	),
 	psc_arity(PSC, Arity), 
 	psc_name(PSC, Name),
@@ -220,9 +221,9 @@ current_predicate(Module:Functor/N) :-
 		current_predicate(Functor/N)
         ; psc_scan_in_module(First_PSC_Pair, PSC), 
           psc_type(PSC, Type), 
-	  ( Type =:= 2 -> true		% Regular loaded predicate.
-	  ; Type =:= 1 -> true		% Dynamic predicate.
-	  ; Type =:= 13			% Foreign predicate.
+	  ( Type =:= T_PRED -> true		% Regular loaded predicate.
+	  ; Type =:= T_DYNA -> true		% Dynamic predicate.
+	  ; Type =:= T_FORN			% Foreign predicate.
 	  ),
 	  psc_arity(PSC, Arity), 
 	  psc_name(PSC, Name),
@@ -268,9 +269,9 @@ current_predicate(Name, Term) :-	% This takes care of global modules.
 					% i.e. "usermod" and "global".
 	psc_scan_in_hash_table(0, PSC),
 	psc_type(PSC, Type),
-	( Type =:= 2 -> true		% Regular loaded predicate.
-	; Type =:= 1 -> true		% Dynamic predicate.
-	; Type =:= 13			% Foreign predicate.
+	( Type =:= T_PRED -> true		% Regular loaded predicate.
+	; Type =:= T_DYNA -> true		% Dynamic predicate.
+	; Type =:= T_FORN			% Foreign predicate.
 	),
 	psc_arity(PSC, Arity), 
 	psc_name(PSC, F),
@@ -288,9 +289,9 @@ current_predicate(Name, Term_Indicator) :-
 		current_predicate(Name, Term)
 	; psc_scan_in_module(First_PSC_Pair, PSC), 
 	  psc_type(PSC, Type), 
-	  ( Type =:= 2 -> true		% Regular loaded predicate.
-	  ; Type =:= 1 -> true		% Dynamic predicate.
-	  ; Type =:= 13			% Foreign predicate.
+	  ( Type =:= T_PRED -> true		% Regular loaded predicate.
+	  ; Type =:= T_DYNA -> true		% Dynamic predicate.
+	  ; Type =:= T_FORN			% Foreign predicate.
 	  ),
 	  psc_arity(PSC, Arity), 
 	  psc_name(PSC, F),
@@ -404,17 +405,17 @@ predicate_property(Term, Property) :-	% This takes care of global
 
 psc_properties(PSC, Property) :- 
 	psc_type(PSC, Type),
-	( Type =:=  0 -> Property = unclassified
-	; Type =:=  1 -> Property = (dynamic)
-	; Type =:=  2 -> Property = loaded
-	; Type =:= 12 -> Property = unloaded
-	; Type =:= 13 -> Property = foreign
+	( Type =:= T_ORDI -> Property = unclassified
+	; Type =:= T_DYNA -> Property = (dynamic)
+	; Type =:= T_PRED -> Property = loaded
+	; Type =:= T_UDEF -> Property = unloaded
+	; Type =:= T_FORN -> Property = foreign
 	; Type =:= 14 -> Property = function ).
 psc_properties(PSC, Property) :-
 	psc_env(PSC, Env),
-	( Env =:= 0 -> Property = exported
-	; Env =:= 1 -> Property = (local)
-	; Env =:= 2 -> psc_prop(PSC, ModulePSC), 
+	( Env =:= T_EXPORTED -> Property = exported
+	; Env =:= T_LOCAL -> Property = (local)
+	; Env =:= T_IMPORTED -> psc_prop(PSC, ModulePSC), 
 		       psc_name(ModulePSC, ModuleName), 
 		       Property = imported_from(ModuleName)
 	; Property = global ).
@@ -444,8 +445,8 @@ module_property(Module, Property) :-
 
 module_properties(PSC, Property) :- 
 	psc_type(PSC, Type),
-	( Type =:=  0 -> Property = unloaded
-	; Type =:=  4 -> Property = loaded ).
+	( Type =:=  T_ORDI -> Property = unloaded
+	; Type =:=  T_MODU -> Property = loaded ).
 
 
 /* ===== xsb_flag/2 =================================================== */

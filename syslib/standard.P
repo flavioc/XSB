@@ -34,6 +34,7 @@
 #include "flag_defs_xsb.h"
 #include "standard.h"
 #include "char_defs.h"
+#include "psc_defs.h"
 
 
 			/************************/
@@ -56,14 +57,14 @@ see(F) :-
 see0(F) :- 
 	conpsc(F, PSC),
 	psc_type(PSC, Type), 
-	( Type =:= 5, !				% already opened
-	; Type =:= 0, 
+	( Type =:= T_FILE, !				% already opened
+	; Type =:= T_ORDI, 
 	  psc_name(PSC, Name),
 	  file_open(Name, r, File),		% 0: "r"
 	  File > 0,                             % file F exists and
 	  !,					% is readable.
 	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, 5)
+	  psc_set_type(PSC, T_FILE)
 	; abort([F,'not a file or file not readable, cannot see!'])
 	),
 	psc_prop(PSC, File0),
@@ -80,14 +81,14 @@ seeing(F) :-
 seen :- conpsc(current_input, CurinPsc), 
 	psc_prop(CurinPsc, FilePSC),
 	psc_type(FilePSC, Type), 
-	Type =:= 5,
+	Type =:= T_FILE,
 	psc_prop(FilePSC, File),
 	( File > 1 ->
 		file_close(File),
-		psc_set_type(FilePSC, 0)
+		psc_set_type(FilePSC, T_ORDI)
 	; true
 	),
-	stat_set_flag(CURRENT_INPUT, 0),
+	stat_set_flag(CURRENT_INPUT, STDIN),
 	conpsc(userin, UserPsc),
 	psc_set_prop(CurinPsc, UserPsc).
 
@@ -103,14 +104,14 @@ tell(F) :-
 tell0(F) :- 
 	conpsc(F, PSC),
 	psc_type(PSC, Type), 
-	( Type =:= 5, !				% already opened
-	; Type =:= 0,
+	( Type =:= T_FILE, !				% already opened
+	; Type =:= T_ORDI,
 	  psc_name(PSC, Name),
 	  file_open(Name, w, File), 		% 1: "w"
 	  File > 0,                             % file F exists and
 	  !,					% is writable.
 	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, 5)
+	  psc_set_type(PSC, T_FILE)
 	; abort([F,': Not a file or file not writable, cannot tell!'])
 	),
 	psc_prop(PSC, File0),
@@ -127,14 +128,14 @@ telling(F) :-
 told :- conpsc(current_output, CuroutPsc), 
 	psc_prop(CuroutPsc, FilePSC),
 	psc_type(FilePSC, Type), 
-	Type =:= 5,
+	Type =:= T_FILE,
 	psc_prop(FilePSC, File),
 	( File > 1 ->
 		file_close(File),
 		psc_set_type(FilePSC, 0)
 	; true
 	),
-	stat_set_flag(CURRENT_OUTPUT, 1),
+	stat_set_flag(CURRENT_OUTPUT, STDOUT),
 	conpsc(userout, UserPsc),
 	psc_set_prop(CuroutPsc, UserPsc).
 
@@ -216,10 +217,10 @@ close(userin) :- !.
 close(userout) :- !.
 close(F) :- 
 	conpsc(F, PSC),
-	psc_type(PSC, Type), Type=5,
+	psc_type(PSC, Type), Type=T_FILE,
 	psc_prop(PSC, File), 
 	file_close(File),
-	psc_set_type(PSC, 0).
+	psc_set_type(PSC, T_ORDI).
 
 
 %--------------------------%
@@ -533,8 +534,8 @@ real_name(_R, _L1, _L2) :-
 %----------------%
 
 expand_term(Term, Expanded_Term) :- 
-	term_psc(term_expansion(_,_), PSC), psc_type(PSC, TYPE),
-	TYPE > 0,	% defined as something, so call it
+	term_psc(term_expansion(_,_), PSC), psc_type(PSC, Type),
+	Type > 0,	% defined as something, so call it
 	call_c(term_expansion(Term, Expanded_Term)), % in usermod!
 	!.
 expand_term(Term, Expanded_Term) :-
