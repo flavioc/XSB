@@ -4,13 +4,14 @@
 ** 
 */
 
+:- compiler_options([xpp_on]).
+#include "extensions_xsb.h"
 
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import odbc_info/2 from odbc_init.
-:- import rename/2 from shell.
 :- import compile_so/3, runtime_loader_flag/3 from foreign.
 :- import path_sysop/3, path_sysop/2 from file_io.
 
@@ -25,7 +26,7 @@ make_odbc_driverH(CC, CC_opts) :-
 	),
 	%% Creates something like -Wl,-rpath,<libdir>
 	runtime_loader_flag(XCC, ODBC_libdir, OdbcRunpathFlag),
-	(dbdrivers_running_under(cygwin) ->
+	(running_under(cygwin) ->
 	% cygwin specific stuff
 
 	xsb_configuration(config_bindir, ConfigBindir),
@@ -38,12 +39,11 @@ make_odbc_driverH(CC, CC_opts) :-
 	fmt_write_string(LD_flags,
 		' %s%sdriver_manager.dll "C:\program files\microsoft visual studio\vc98\lib\odbc32.lib" "C:\program files\microsoft visual studio\vc98\lib\odbccp32.lib" ',f(ConfigBindir, Slash))
 	;
-	dbdrivers_running_under(windows) -> true
+	running_under(windows) -> true
 	% windows specific stuff
 	;
 	% unix specific stuff
 	
-	xsb_configuration(config_libdir, ConfigLibdir),
 	fmt_write_string(LD_flags,
 		' %s %s %s%sdriver_manager.so %s%sodbc_driver.so -lodbc -ldl',
 		f(OdbcRunpathFlag, ODBC_libdir_flag, 
@@ -75,26 +75,37 @@ make_odbc_driverH(CC, CC_opts) :-
     Basename = odbc_driver,
     fmt_write_string(Module,
 		     '%s%scc%s%s', f(ODBCDriverDir, Slash, Slash, Basename)),
-    (   %% avoid recompilation: check if odbc_driver.H exists and 
+    xsb_configuration(config_libdir, ConfigLibdir),
+    xsb_configuration(compiler, CC),
+    xsb_configuration(config_dir, ConfigDir),
+    xsb_configuration(config_bindir, ConfigBinDir),
+    xsb_configuration(packagesdir, PackagesDir),
+    fmt_write_string(LibObjFileX,
+		     '%s%s%s%s',
+		     args(ConfigLibdir,Slash, Basename, XSB_OBJ_EXTENSION_ATOM)),
+    str_cat(Module, XSB_OBJ_EXTENSION_ATOM, ObjfileX),
+    odbc_info(ccflags, CCflags),
+    odbc_info(ldflags, LDflags),
+    ((running_under(windows) ; running_under(cygwin))
+    ->
+	fmt_write_string(ConfigSharedMod,
+			 '%s%s%s.dll', f(ConfigBinDir, Slash, Basename))
+    ;
+	fmt_write_string(ConfigSharedMod,
+			 '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))
+    ),
+    (   %% avoid recompilation: check if odbc_driver.xwam exists and 
 	%% is newer than odbc_driver.c.
+	search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO),
 	str_cat(Module, '.c', ModuleSourceFile),
-	str_cat(Module, '.H', ModuleH),
-	machine_file_exists(ModuleH),
-	file_time(ModuleH, time(CT1,CT2)),
-	file_time(ModuleSourceFile, time(ST1,ST2)),
-	time(ST1,ST2) @< time(CT1,CT2)
+	path_sysop(newerthan,ModuleO,ModuleSourceFile),
+	path_sysop(newerthan,ConfigSharedMod,ModuleSourceFile)
     %% module compiled and is current, so just load
     -> [Basename]
     ;  
-	(dbdrivers_running_under(cygwin) ->
+	(running_under(cygwin) ->
 	% cygwin specific stuff
 
-	xsb_configuration(compiler, CC),
-	odbc_info(ccflags, CCflags),
-	odbc_info(ldflags, LDflags),
-	xsb_configuration(config_dir, ConfigDir),
-	xsb_configuration(config_bindir, ConfigBinDir),
-	xsb_configuration(packagesdir, PackagesDir),
 	fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', 
 		f(PackagesDir, Slash, Slash)),
 	fmt_write_string(CC_opts,
@@ -103,39 +114,27 @@ make_odbc_driverH(CC, CC_opts) :-
 	str_cat(Module, '.dll', SharedLib),
 	make_odbc_driverH(CC, CC_opts),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	fmt_write_string(ConfigDll,
-		'%s%s%s.dll', f(ConfigBinDir, Slash, Basename)),
-	rename(SharedLib, ConfigDll),
-	str_cat(Module, '.xwam', ObjfileX),
-	fmt_write_string(LibObjFileX,
-		'%s%s%s.xwam', f(ConfigBinDir, Slash, Basename)),
-	rename(ObjfileX, LibObjFileX),
+	force_rename(SharedLib, ConfigSharedMod),
+	force_rename(ObjfileX, LibObjFileX),
 	str_cat(Module, '.o', ObjfileO),
 	fmt_write_string(LibObjFileO,
 		'%s%s%s.o', f(ConfigBinDir, Slash, Basename)),
-	rename(ObjfileO, LibObjFileO),
+	force_rename(ObjfileO, LibObjFileO),
 	str_cat(Module, '.a', ObjfileA),
 	fmt_write_string(LibObjFileA,
 		'%s%s%s.a', f(ConfigBinDir, Slash, Basename)),
-	rename(ObjfileA, LibObjFileA),
+	force_rename(ObjfileA, LibObjFileA),
 	str_cat(Module, '.def', ObjfileDef),
 	fmt_write_string(LibObjFileDef,
 		'%s%s%s.def', f(ConfigBinDir, Slash, Basename)),
-	rename(ObjfileDef, LibObjFileDef)
+	force_rename(ObjfileDef, LibObjFileDef)
 	;
-	dbdrivers_running_under(windows) ->
+	running_under(windows) ->
 	% windows specific stuff
 	make_odbc_driverH(CC, ''),
 	[Basename]
 	;
 	% else unix specific stuff
-
-	xsb_configuration(compiler, CC),
-	odbc_info(ccflags, CCflags),
-	odbc_info(ldflags, LDflags),
-	xsb_configuration(config_dir, ConfigDir),
-	xsb_configuration(config_libdir, ConfigLibDir),
-	xsb_configuration(packagesdir, PackagesDir),
 	fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', 
 		f(PackagesDir, Slash, Slash)),
 	fmt_write_string(CC_opts,
@@ -143,31 +142,32 @@ make_odbc_driverH(CC, CC_opts) :-
 		f(CCflags, ConfigDir, DBDriversDir)),
 	compile_so(Module, [cc(CC), cc_opts(CC_opts)], LDflags),
 	str_cat(Module, '.so', SharedLib),
-	fmt_write_string(LibMod, '%s%s%s.so', f(ConfigLibDir, Slash, Basename)),
-	rename(SharedLib, LibMod),
+	force_rename(SharedLib, ConfigSharedMod),
 	make_odbc_driverH(CC, CC_opts),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibSharedObjFile,
 		'%s%s%s.so', a(ConfigLibDir, Slash, Basename)),
-	rename(SharedLib, LibSharedObjFile),
-	str_cat(Module, '.xwam', ObjfileX),
-	fmt_write_string(LibObjFileX,
-		'%s%s%s.xwam', a(ConfigLibDir, Slash, Basename)),
-	rename(ObjfileX, LibObjFileX)
+	force_rename(SharedLib, LibSharedObjFile),
+	force_rename(ObjfileX, LibObjFileX)
 	)
      ).
 	
 
-dbdrivers_running_under(cygwin) :-
+running_under(cygwin) :-
 	xsb_configuration(architecture, A),
 	str_sub(cygwin, A),
 	!.
 
-dbdrivers_running_under(windows) :-
+running_under(windows) :-
 	xsb_configuration(architecture, A),
 	str_sub(windows, A),
 	!.
 
-dbdrivers_running_under(unix).
+running_under(unix).
 
+%% Windows semantics for renaming is such that the op fails, 
+%% if the target exists
+force_rename(Orig,Target) :-
+	(path_sysop(unlink,Target), !; true),
+	path_sysop(rename,Orig,Target).
 
