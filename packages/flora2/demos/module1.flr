@@ -4,7 +4,7 @@
 ** ?- [module1 >> module1].
 */
 
-:- prolog nl/0, write/1, writeln/1.
+:- flProlog nl/0, write/1, writeln/1.
 
 john:employee.
 
@@ -20,19 +20,19 @@ john[salary(1998) -> 80].
 
 ?- nl,writeln('Loading module2 ...'), [module2 >> module2].
 
-?- nl,write('Max John''s salary:'), Z = max {X|john[salary(Year)->X]}.
+?- nl,write('Max John''s salary:'), Z = flMax{X|john[salary(Year)->X]}.
 
 ?- nl,write('Max John''s salary before 1996:'), 
-   Z = max{X|john[salary(Year) ->X], Year < 1996}.
+   Z = flMax{X|john[salary(Year) ->X], Year < 1996}.
 
-?- nl,write('Max Mary''s salary:'), Z = max {X|mary[salary(Year)->X] @ module2}.
+?- nl,write('Max Mary''s salary:'), Z = flMax{X|mary[salary(Year)->X] @ module2}.
 
 ?- nl,write('Number of years when John''s salary was less than max of the previous years:'),
-   Z=count{Year|john.salary(Year) < max{X|john[salary(Y2)->X], Y2<Year} }.
+   Z=flCount{Year|john.salary(Year) < flMax{X|john[salary(Y2)->X], Y2<Year} }.
 
 ?- nl,write('Number of years when John earned less than Mary:'),
-   Z=count{Year|john.salary(Year) < mary.salary(Year) @ module2}.
+   Z=flCount{Year|john.salary(Year) < mary.salary(Year) @ module2}.
 
 ?- nl,write('Avg salary per person:'),
-   Z= avg{X[Who]|Who[salary(Year)->X]; Who[salary(Year)->X] @ module2}.
+   Z= flAverage{X[Who]|Who[salary(Year)->X]; Who[salary(Year)->X] @ module2}.
 

@@ -8,10 +8,10 @@ department[faculty=>>professor, coursesOffered=>>string].
 professor[teaches(string,number)=>>string].
 
 X:department[coursesOffered->>C] :-
-	X..faculty[teaches(S,Y)->>C].
+	X..faculty[teaches(_S,_Y)->>C].
 
 X:department[coursesOffered->>C] :-
-	X..faculty[teaches(S,Y)->>C] @ mod2.
+	X..faculty[teaches(_S,_Y)->>C] @ mod2.
 
 cse:department[faculty->>smith].
 smith:professor.

@@ -36,7 +36,7 @@
 
 
 :- auto_table.
-:- prologall.
+:- flPrologAll.
 
 %%% Ladies first:
 female(rita). 

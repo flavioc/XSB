@@ -18,6 +18,9 @@
 
 
 
+:- flEquality flogic.
+
+
 a1:=:b1.
 c1:=:d1.
 a2:=:b2.
@@ -28,7 +31,6 @@ a5:=:b5.
 
 a:=:a.
 
-//X:=:Y :- O[M->X], O[M->Y].
 
 acton_town:station[x->60,y->110,l->>{piccadilly,district}].
 aldgate:station[x->297,y->126,l->>{circle}].

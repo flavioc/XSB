@@ -33,7 +33,7 @@
 ans_sel(X,Y) :- p(X,Y), not X=Y.
 
 %%% PROJECT on the first argument of p(X,Y):
-ans_proj(X) :- p(X,Y).		
+ans_proj(X) :- p(X,_Y).		
 
 %%% JOIN p(A,B), q(C,D) wrt. B and C: 
 ans_join(X,Y,Z) :- p(X,Y), q(Y,Z).

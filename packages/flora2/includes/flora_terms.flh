@@ -180,7 +180,7 @@
 #define FL_MIN			flMin
 #define FL_MAX			flMax
 #define FL_SUM			flSum
-#define FL_AVG			flAvgerage
+#define FL_AVG			flAverage
 #define FL_COUNT		flCount
 #define FL_COLLECTSET		flCollectSet
 #define FL_COLLECTBAG		flCollectBag

@@ -27,7 +27,7 @@
 %%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
 %%% ===========================================================================
 
-:- prolog tc/2.
+:- flProlog tc/2.
 :- table tc/2.
 
 
@@ -75,7 +75,7 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 
 ?- X:person.			% What persons are there? (mary, john)
 
-:- prolog nl/0, write/1, writeln/1, shell/1.
+:- flProlog nl/0, write/1, writeln/1, shell/1.
 
 ?-  writeln('Bombs out in this query!!!!'),
     person[instances ->> {X}].  % ... same Q, but asked differently (see above)
@@ -96,4 +96,4 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 ?- nl, write('mary..kids[] ??'), mary..kids[].
 
 ?- nl, write('On '), shell(date), 
-       writeln('FLORA thanks you for giving it a chance!').
+       writeln('FLORA thanks you for trying it!').

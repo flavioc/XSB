@@ -2,7 +2,7 @@
 ** the values in each node.
 */
 
-:- prolog cputime/1, write/1, writeln/1.
+:- flProlog cputime/1, write/1, writeln/1.
 
 n1[val->50,
    left->n2,
