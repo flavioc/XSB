@@ -49,7 +49,6 @@
 :- import writeln/1 from standard.
 
 :- import 'C'/3 from dcg.
-:- import findall/3 from setof.
 :- import list_directory/2 from shell.
 
 % I always want this in UNIX.
@@ -116,7 +115,7 @@ directory(Argument,Dir):-
 	directory_1(List,date(Year,Month,Day),Dir).
 
 short_directory(Arg,Out) :-
-	findall(X,list_directory(Arg,X),Out).
+	list_directory(Arg,Out).
 
 % short_directory(Arg,Out):-
 % 	(   xsb_configuration(host_os,windows)
