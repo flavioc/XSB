@@ -346,10 +346,18 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
   return psc;
 }
 
+void init_interrupt(void);
 /* change from Jiyangs way of doing things. */
 inline static void keyint_proc(int sig)
 {
-  *asynint_ptr |= KEYINT_MARK;
+#ifndef LINUX
+  init_interrupt();  /* reset interrupt, if using signal */
+#endif
+  if ((*asynint_ptr & KEYINT_MARK) != 0) {
+    xsb_abort("unhandled keyboard interrupt");
+  } else {
+    *asynint_ptr |= KEYINT_MARK;
+  }
 }
 
 void init_interrupt(void)

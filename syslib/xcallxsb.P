@@ -25,7 +25,7 @@
 
 :- compiler_options([sysmod,xpp_on]).
 #include "standard.h"
-
+#include "sig_xsb.h"
 
 :- import conget/2, conset/2 from gensym.
 
@@ -33,6 +33,7 @@
 
 
 c_callloop :-
+        set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
 	repeat,
 	'_$savecp'(Cp),			% to set abort cut point
 	conset('_$abort_cutpoint', Cp),
@@ -97,3 +98,6 @@ eval_cmdline_goal(FileDes) :-
 	(call((Goal,!)) -> true ; true),
 	eval_cmdline_goal(FileDes).
 eval_cmdline_goal(FileDes) :- file_close(FileDes).
+
+'_$keyboard_int'(_Call) :- 
+        abort.
