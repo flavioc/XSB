@@ -359,7 +359,7 @@ static int emuloop(byte *startaddr)
 #ifdef JUMPTABLE_EMULOOP
 
 #define XSB_INST(INum,Instr,Label,d1,d2,d3,d4) \
-        instr_addr[INum] = &&##Label
+        instr_addr[INum] = && Label
 #include "xsb_inst_list.h"
 
 #else
