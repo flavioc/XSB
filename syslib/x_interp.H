@@ -32,7 +32,7 @@
 
 :- import
        abort/0, call_c/1, call_expose/1, goal_cut_trans/3, repeat/0,
-       see/1, seen/0, call/1
+       see/1, seen/0, call/1, push_abort_cutpoint/0, pop_abort_cutpoint/0
    from standard.
 
 :- import

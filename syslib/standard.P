@@ -884,9 +884,26 @@ contains_var([_|T]) :- contains_var(T).
 length([], 0).
 length([_|R], N) :- length(R, N1), N is N1 + 1.
 
+:- dynamic('_$abort_cutpoint'(_)).
+
+% add a new level for abort
+push_abort_cutpoint :-
+	'_$savecp'(Cp),
+	asserta('_$abort_cutpoint'(Cp)).
+
+% pop to previous level for abort.
+pop_abort_cutpoint :-
+	retract('_$abort_cutpoint'(_)),
+	!.
 
 %  abort/0
-abort :- conpsc('_$abort_cutpoint', PSC), psc_prop(PSC, CP), '_$cutto'(CP), 
+abort :- 
+	('_$abort_cutpoint'(CP)
+	 -> 	true
+	 ;	conpsc('_$abort_cutpoint', PSC), 
+		psc_prop(PSC, CP)
+	),
+	'_$cutto'(CP), 
         close_open_tables, fail.
 
 

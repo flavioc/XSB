@@ -44,8 +44,7 @@ interpreter :-
         fail.
 
 interpreter :-
-        '_$savecp'(Cp),                    % to set abort cut point
-        conset('_$abort_cutpoint', Cp),
+	push_abort_cutpoint,		% set abort cutpoint to this cp
         %% Execute command line goal passed to XSB with the -e option
         xsb_flag(goal, CmdGoal),
         (CmdGoal == 'true.' ->
@@ -65,9 +64,9 @@ interpreter :-
 
 interpreter :-
 	repeat,
+	pop_abort_cutpoint,
+	push_abort_cutpoint,
 	trimcore,
-	'_$savecp'(Cp),		% to set abort cut point
-	conset('_$abort_cutpoint', Cp),
 	stat_set_flag(5, 1, 1),	% hide call interceptions.
 	stat_set_flag(7, 0, 1),	% reset trace number
 	conset('_$break_level', 0),
