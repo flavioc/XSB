@@ -513,6 +513,7 @@ int gc_heap(int arity)
       if (tr_marks)    { free(tr_marks); tr_marks = NULL; }
       if (ls_marks)    { free(ls_marks); ls_marks = NULL; }
       if (cp_marks)    { free(cp_marks); cp_marks = NULL; }
+      if (slide_buf)   { free(slide_buf); slide_buf = NULL; }
       goto end;
     }
     
@@ -616,6 +617,10 @@ int gc_heap(int arity)
       check_zero(cp_marks,(cp_bot - cp_top + 1),"cp") ;
       free(cp_marks) ;
       cp_marks = NULL ;
+    }
+    if (slide_buf)    {  
+      free(slide_buf) ;
+      slide_buf = NULL ;
     }
 #ifdef SAFE_GC
     p = hreg;
