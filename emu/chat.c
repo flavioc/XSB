@@ -242,14 +242,12 @@ static void chat_free_chat_area(chat_init_pheader phead, bool mode)
 	       * start searching for the generator CP at this point... */
 	      CRPtr cr, prev;
 	      CPtr  b = breg;
-	      do {
-		b = cp_prevbreg(b);
-	      } while (!(is_generator_choicepoint(b)));
+
+	      while (!(is_generator_choicepoint(b))) b = cp_prevbreg(b);
 	      /* here b points to a leader TCP */
 	      for (prev = NULL, cr = (CRPtr)tcp_chat_roots(b);
 		   cr != NULL; prev = cr, cr = cr_next(cr)) {
 		if (q == cr_root_area(cr)) {
-		  /*	  fprintf(stderr, "!!!!  FOUND !!!!\n"); */
 		  if (!prev)
 		    tcp_chat_roots(b) = (CPtr)cr_next(cr);
 		  else
@@ -302,6 +300,25 @@ void chat_free_compl_susp_chat_areas(SGFrame subg_ptr)
       chat_free_chat_area(ptr, BATCH_MODE);
     }
 }
+
+/*----------------------------------------------------------------------*/
+/* Frees a Chat-area of a single completion suspension given as input.  */
+/* Currently, this routine is available only because of the stupid way  */
+/* that local scheduling is handling tabled negation (delay minimality  */
+/* is not guaranteed; probably due to laziness) and so this is needed.  */
+/* Under normal circumstances should not be used anywhere else.         */
+/*----------------------------------------------------------------------*/
+
+#ifdef LOCAL_EVAL
+CPtr chat_free_compl_susp_chat_area(chat_init_pheader ptr)
+{
+    CPtr prev;
+
+    prev = csf_prevcsf((CPtr)(&chat_get_cons_start(ptr)));
+    chat_free_chat_area(ptr, SELECTIVE_MODE);
+    return prev;
+}
+#endif
 
 /*----------------------------------------------------------------------*/
 /* Routines that restore CHAT areas.                                    */

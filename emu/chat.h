@@ -123,6 +123,7 @@ extern void chat_set_unchained(CPtr);
 extern int  chat_is_chained(CPtr);
 
 #ifdef LOCAL_EVAL
+extern CPtr chat_free_compl_susp_chat_area(chat_init_pheader);
 extern chat_init_pheader save_a_consumer_for_generator(SGFrame);
 #endif
 
