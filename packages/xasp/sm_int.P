@@ -129,11 +129,13 @@ rules, compute statements and so on that this module supports.
 retract_clause_store:- 
 	retractall('$sm_pos_compute'(_)),
 	retractall('$sm_neg_compute'(_)),
-	retractall('$sm_atomnum'(_,_)),
-	retractall('$sm_basicrule'(_,_,_)),
-	retractall('$sm_weightrule'(_,_,_,_)),
-	retractall('$sm_constraintrule'(_,_,_,_)),
-	retractall('$sm_choicerule'(_,_,_)).
+	reset_tries.
+%	retractall('$sm_weightrule'(_,_,_,_))
+%	retractall('$sm_atomnum'(_,_)),
+%	retractall('$sm_basicrule'(_,_,_)),
+%	retractall('$sm_fact'(_)),
+%	retractall('$sm_choicerule'(_,_,_)),
+%	retractall('$sm_constraintrule'(_,_,_,_)).
 
 :- comment(smcInit/0,"Initializes the XSB clause store and the Smodels
 API.  This predicate must be executed before building up a clause
@@ -144,7 +146,7 @@ require at most @tt{Num} atoms.").
 smcInit:- 
 	smodelsInit,
 	retract_clause_store,
-	conset('$sm_atomnum', 0),  	% false is 0, true is 
+	conset('$sm_atomctr', 0),  	
 	conset(sm_gennum_val, 0), 
 	smcAddRule(true,[]),
 	translate_atom(false,_Num),
@@ -179,10 +181,17 @@ translated to unique integers.  The corresponding raw predicates,
 used to add raw predicates immediately into the SModels API. ").
 
 smcAddRule(Head,Body):- 
+%	writeln(smcAddRule(Head,Body)),
 	(member(weightConst(_,_,_),[Head|Body]) -> 
 	    smcAddGeneralRule(Head,Body)
 	  ; smcAddBasicRule(Head,Body) ).
 	
+%----------------
+
+smcAddSemiDefiniteRule(Head,Body):- 
+	translateWCBody(Body,NBdy),
+	smcAddBasicRule(Head,NBdy).
+
 %----------------
 
 smcAddGeneralRule(Head,Body):- 
@@ -211,7 +220,7 @@ translateWCBody([weightConst(Lower,Literals,Upper)|R],Lits):- !,
 translateWCBody([H|R],[H|R1]):- 
 	translateWCBody(R,R1).
 
-translateWC(weightConst(Lower,Literals,Upper),Litsout,LowHead,UpHead):- 	
+translateWC(weightConst(Lower,Literals,Upper),Litsout,LowHead,UpHead):- 
 	extract_literals(Literals,Litsout,Has_weights),
 	(is_undef(Lower) -> 
 	    LowHead = undef
@@ -239,7 +248,7 @@ extract_literals([weight(not(_L),_W)|R],R1,1):- !,
 	extract_literals(R,R1,1).
 extract_literals([weight(L,_W)|R],[L|R1],1):- !,
 	extract_literals(R,R1,1).
-extract_literals([not(_L)|R],R1,Has_weights):- 
+extract_literals([not(_L)|R],R1,Has_weights):- !,
 	extract_literals(R,R1,Has_weights).
 extract_literals([L|R],[L|R1],Has_weights):- 
 	extract_literals(R,R1,Has_weights).
@@ -261,7 +270,7 @@ sm_gennum(N) :-
 smcAddChoiceRule(Head,Body):- 
 	translate_choice_head(Head,A),
 	translate_body(Body,Pos,Neg),
-	assert( '$sm_choicerule'(A,Pos,Neg) ).
+	'assert_$sm_choicerule'(A,Pos,Neg).
 
 translate_choice_head([],[]).
 translate_choice_head([H|T],[Num|NT]):- 
@@ -274,13 +283,13 @@ translate_choice_head([H|T],[Num|NT]):-
 smcAddConstraintRule(Head,Body,Bound):- 
 	translate_atom(Head,A),
 	translate_body(Body,Pos,Neg),
-	assert( '$sm_constraintrule'(A,Pos,Neg,Bound) ).
+	'assert_$sm_constraintrule'(A,Pos,Neg,Bound).
 
 %----------------
 smcAddWeightRule(Head,Body,Bound):- 
 	translate_atom(Head,A),
 	translate_weight_body(Body,Pos,Neg),
-	assert('$sm_weightrule'(A,Pos,Neg,Bound) ).
+	'assert_$sm_weightrule'(A,Pos,Neg,Bound).
 
 translate_weight_body([],[],[]).
 translate_weight_body([weight(not(A),W)|R],PR,[weight(N,W)|NR]):- !,
@@ -301,19 +310,19 @@ translate_weight_body([A|R],[weight(N,1)|PR],NR):- !,
 smcAddBasicRule(Head,Body):- 
 	translate_atom(Head,A),
 	translate_body(Body,Pos,Neg),
-	assert( '$sm_basicrule'(A,Pos,Neg) ).
+	'assert_$sm_basicrule'(A,Pos,Neg).
 
 translate_atom(Atom,Num):- 
 	('$sm_atomnum'(Atom,Num) -> 
 	    true
           ; smNewAtomNum(Num),
-	    assert('$sm_atomnum'(Atom,Num)) ).
+	    assert_atomnum(Atom,Num) ).
 
 translate_body([],[],[]).
 translate_body([not(A)|R],PR,[N|NR]):- !,
 	translate_atom(A,N),
 	translate_body(R,PR,NR).
-translate_body([A|R],[N|PR],NR):- !,
+translate_body([A|R],[N|PR],NR):- 
 	translate_atom(A,N),
 	translate_body(R,PR,NR).
 
@@ -336,6 +345,11 @@ smAddNegatives([]).
 smAddNegatives([Neg|LNeg]) :-
 	smodelsAddNegBody(Neg),
 	smAddNegatives(LNeg).
+
+%----------------
+smcAddFact(Head):- 
+	translate_atom(Head,A),
+	'assert_$sm_fact'(A).
 
 %----------------
 
@@ -403,6 +417,7 @@ this predicate cannot retract rules with weight constraints: @tt{Head}
 must be a @em{Literal} as defined at the beginning of this section,
 and @tt{Body} must be a list of @em{GeneralLiterals}.  ").
 
+/*
 smcRetractRule(Head,Body):- 
 	'$sm_atomnum'(Head,A),
 	retranslate_body(Body,Pos,Neg),
@@ -416,6 +431,7 @@ retranslate_body([A|R],[N|PR],NR):- !,
 	'$sm_atomnum'(A,N),
 	retranslate_body(R,PR,NR).
 
+*/
 %-----------------------------------------------------------
 % Compute statements
 %-----------------------------------------------------------
@@ -451,7 +467,6 @@ smrSetPosCompute(N):-
 smrSetNegCompute(N):- 
 	smodelsSetNegCompute(N).	
 
-
 %-----------------------------------------------------------
 % Computing Models
 %-----------------------------------------------------------
@@ -478,6 +493,10 @@ Data structures:
   '$sm_generaterule'(Headlist,Poslist,Neglist).
 */
 
+translate_rules_to_smodels:- 
+  	'$sm_fact'(Head),
+	smrAddBasicRule(Head,[],[]),
+	fail.
 translate_rules_to_smodels:- 
   	'$sm_basicrule'(Head,Pos,Neg),
 	smrAddBasicRule(Head,Pos,Neg),
@@ -602,6 +621,11 @@ smNewAtomNum(N1) :-
 XSB clause store, and may be useful for debugging.").
 
 print_cache:- 
+	'$sm_fact'(N),
+	'$sm_atomnum'(A,N),
+	writeln(fact(A)),
+	fail.
+print_cache:- 
 	'$sm_basicrule'(N,Pos,Neg),
 	'$sm_atomnum'(A,N),
 	translate_poslitlist(Pos,Posatom),
@@ -647,5 +671,67 @@ translate_poslitlist([N|NR],[A|AR]):-
 	'$sm_atomnum'(A,N),
 	translate_poslitlist(NR,AR).
 
-end_of_file.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- dynamic atomnum_trie/1.
+
+reset_tries:- 
+	(atomnum_trie(F) -> delete_trie(F),
+		            retractall(atomnum_trie(_)) ; true),
+	new_trie(A),
+	assert(atomnum_trie(A)).
+
+assert_atomnum(One,Two):- 
+	atomnum_trie(F),
+	trie_intern(atomnum(One,Two),F,_,_,_).
+
+'$sm_atomnum'(One,Two):- 
+	atomnum_trie(F),
+	trie_interned(atomnum(One,Two),F,_,_).
+
+%-----
+'assert_$sm_fact'(A):- 
+	atomnum_trie(F),
+	trie_intern(sm_fact(A),F,_,_,_).
+
+'$sm_fact'(A):- 
+	atomnum_trie(F),
+	trie_interned(sm_fact(A),F,_,_).
+
+%-----
+'assert_$sm_basicrule'(A,B,C):- 
+	atomnum_trie(F),
+	trie_intern(sm_basicrule(A,B,C),F,_,_,_).
+
+'$sm_basicrule'(A,B,C):- 
+	atomnum_trie(F),
+	trie_interned(sm_basicrule(A,B,C),F,_,_).
+
+%-----
+'assert_$sm_choicerule'(A,B,C):- 
+	atomnum_trie(F),
+	trie_intern(sm_choicerule(A,B,C),F,_,_,_).
+
+'$sm_choicerule'(A,B,C):- 
+	atomnum_trie(F),
+	trie_interned(sm_choicerule(A,B,C),F,_,_).
+
+%-----
+'assert_$sm_constraintrule'(A,B,C,D):- 
+	atomnum_trie(F),
+	trie_intern(sm_constraintrule(A,B,C,D),F,_,_,_).
+
+'$sm_constraintrule'(A,B,C,D):- 
+	atomnum_trie(F),
+	trie_interned(sm_constraintrule(A,B,C,D),F,_,_).
+
+%-----
+'assert_$sm_weightrule'(A,B,C,D):- 
+	atomnum_trie(F),
+	trie_intern(sm_weightrule(A,B,C,D),F,_,_,_).
+
+'$sm_weightrule'(A,B,C,D):- 
+	atomnum_trie(F),
+	trie_interned(sm_weightrule(A,B,C,D),F,_,_).
+
+end_of_file.

@@ -1,4 +1,4 @@
-/* File:      smodelsops.H
+/* File:      sm_int.H
 ** Author(s): Luis Castro, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -24,7 +24,10 @@
 */
 
 :- export smcInit/0,smcReInit/0, smrInit/1,
-  smcAddRule/2, smcRetractRule/2,
+  smcAddRule/2, 
+%  smcRetractRule/2, 
+  smcAddFact/1, smcAddBasicRule/2, smcAddChoiceRule/2,
+  smcAddSemiDefiniteRule/2,
   smrAddBasicRule/3,smrAddChoiceRule/3,
   smrAddWeightRule/4,smrAddConstraintRule/4,
   smcSetCompute/1, smrSetNegCompute/1, smrSetPosCompute/1,
@@ -33,27 +36,40 @@
   smcExamineModel/1, smcExamineModel/2, smrExamineModel/2, smEnd/0,
           print_cache/0.
 
-:- import '$sm_pos_compute'/1, '$sm_neg_compute'/1,
-          '$sm_atomnum'/2,
-           '$sm_basicrule'/3, '$sm_weightrule'/4,
-           '$sm_constraintrule'/4, '$sm_choicerule'/3 from usermod.
+:- import delete_trie/1, new_trie/1, trie_intern/5, trie_interned/4 	
+	from intern.
+%:- import '$sm_atomnum'/2, '$sm_fact'/1 from usermod.
 
-:- import smodelsInit/0, smodelsNumAtoms/1 from xasppkg.
-:- import smodelsCheckAtom/2 from xasppkg.
-:- import smodelsBeginBasicRule/0,smodelsBeginWeightRule/0 from xasppkg.
+:- import t_assert/2 from assert.
+
+:- import '$sm_pos_compute'/1, '$sm_neg_compute'/1 from usermod.
+
+:- import smodelsInit/0, smodelsNumAtoms/1 from smodels.
+:- import smodelsCheckAtom/2 from smodels.
+:- import smodelsBeginBasicRule/0,smodelsBeginWeightRule/0 from smodels.
 :- import smodelsBeginChoiceRule/0, smodelsBeginConstraintRule/0 
-                       from xasppkg.
-:- import smodelsAddHead/1 from xasppkg.
+                       from smodels.
+:- import smodelsAddHead/1 from smodels.
 :- import smodelsAddPosBody/1, smodelsAddWPosBody/2, 
-          smodelsAddNegBody/1, smodelsAddWNegBody/2  from xasppkg.
+          smodelsAddNegBody/1, smodelsAddWNegBody/2  from smodels.
 
-:- import smodelsSetBody/1, smodelsSetWeight/1 from xasppkg.
+:- import smodelsSetBody/1, smodelsSetWeight/1 from smodels.
 
-:- import smodelsEndRule/0 from xasppkg.
-:- import smodelsSetPosCompute/1, smodelsSetNegCompute/1 from xasppkg.
-:- import smodelsCommitRules/0 from xasppkg.
-:- import smodelsExistsModel/1 from xasppkg.
-:- import smodelsClose/0 from xasppkg.
+:- import smodelsEndRule/0 from smodels.
+:- import smodelsSetPosCompute/1, smodelsSetNegCompute/1 from smodels.
+:- import smodelsCommitRules/0 from smodels.
+:- import smodelsExistsModel/1 from smodels.
+:- import smodelsClose/0 from smodels.
 
 :- import conget/2, conset/2 from machine.
 :- import member/2 from basics.
+
+
+
+
+
+
+
+
+
+
