@@ -60,6 +60,7 @@ Class[#pp_class(Module)] :-
 	ground(X)@prolog(basics),  %% to ground X, if non-ground
 	X[#pp_self(Module)],
 	fail.
+_Class[#pp_class(_)] :- true.
 
 %% Print obj from Module
 X[#pp_self(Module)] :-
@@ -72,7 +73,11 @@ X[#pp_self(Module)] :-
 	flora_pp_write_body_iscalar(X,Module),
 	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_),_*->>_]@Module),
 	flora_pp_write_body_iset(X,Module),
-	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_),#_]@Module),
+	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_),_]@Module),
+	flora_pp_write_body_bool(X,Module),
+	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_,_),*_]@Module),
+	flora_pp_write_body_ibool(X,Module),
+	flora_pp_write_comma_conditional(X[(_->_; _->>_;_*->_;_*->>_,_,*_),#_]@Module),
 	flora_pp_write_body_tran(X,Module),
 	nl@prolog(), writeln('].')@prolog(), nl@prolog().
 %% Print obj in Module to a Outfile
@@ -197,12 +202,45 @@ flora_pp_write_body_tran1(Obj, [MethInv|MethInvs],Module) :-
         MethInv = [M|_Args],
 	flora_print_ignore(M),
 	!,
-	%% skip this method
 	flora_pp_write_body_tran1(Obj, MethInvs,Module).
 flora_pp_write_body_tran1(Obj, [MethInv|MethInvs],Module) :-
 	write('    #')@prolog(), flora_pp_write_method_invocation(MethInv),
 	flora_pp_write_comma_maybe(MethInvs),
 	flora_pp_write_body_tran1(Obj, MethInvs,Module).
+
+%% Boolean p(...)
+flora_pp_write_body_bool(Obj,Module) :-
+    	MethLst1 = collectset{Bool | Obj[Bool]@Module},
+	sort(MethLst1, MethLst2)@prolog(),
+	flora_pp_write_body_bool1(Obj, MethLst2,Module).
+
+flora_pp_write_body_bool1(_Obj, [],_Module) :- true.
+flora_pp_write_body_bool1(Obj, [MethInv|MethInvs],Module) :-
+        MethInv = [M|_Args],
+	flora_print_ignore(M),
+	!,
+	flora_pp_write_body_bool1(Obj, MethInvs,Module).
+flora_pp_write_body_bool1(Obj, [MethInv|MethInvs],Module) :-
+	write('    ')@prolog(), flora_pp_write_method_invocation(MethInv),
+	flora_pp_write_comma_maybe(MethInvs),
+	flora_pp_write_body_bool1(Obj,MethInvs,Module).
+
+%% Inheritable Boolean *p(...)
+flora_pp_write_body_ibool(Obj,Module) :-
+    	MethLst1 = collectset{Bool | Obj[*Bool]@Module},
+	sort(MethLst1, MethLst2)@prolog(),
+	flora_pp_write_body_ibool1(Obj, MethLst2,Module).
+
+flora_pp_write_body_ibool1(_Obj, [],_Module) :- true.
+flora_pp_write_body_ibool1(Obj, [MethInv|MethInvs],Module) :-
+        MethInv = [M|_Args],
+	flora_print_ignore(M),
+	!,
+	flora_pp_write_body_ibool1(Obj, MethInvs,Module).
+flora_pp_write_body_ibool1(Obj, [MethInv|MethInvs],Module) :-
+	write('    *')@prolog(), flora_pp_write_method_invocation(MethInv),
+	flora_pp_write_comma_maybe(MethInvs),
+	flora_pp_write_body_ibool1(Obj,MethInvs,Module).
 
 
 %% Write comma, if List is not empty 
