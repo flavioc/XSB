@@ -731,6 +731,7 @@ void init_builtin_table(void)
   set_builtin_table(SLASH_BUILTIN, "slash");
 
   set_builtin_table(ABOLISH_TABLE_INFO, "abolish_table_info");
+  set_builtin_table(PREDICATE_MODULE, "predicate_module");
   set_builtin_table(ZERO_OUT_PROFILE, "zero_out_profile");
   set_builtin_table(WRITE_OUT_PROFILE, "write_out_profile");
   set_builtin_table(ASSERT_CODE_TO_BUFF, "assert_code_to_buff");
@@ -1875,6 +1876,56 @@ int builtin_call(byte number)
     return TRUE;
   }
 
+  case PREDICATE_MODULE: {
+    char *pred_name;
+    int arity;
+    Pair modpair, pair;
+    Psc module, psc;
+    prolog_term listptr, listhead;
+    
+    pred_name = ptoc_string(1);
+    arity = ptoc_int(2);
+    listptr = reg_term(3);
+    /* first check whether it's in usermod */
+    modpair = (Pair)*(symbol_table.table + 
+		       hash(pred_name, arity, symbol_table.size));
+    while (modpair) {
+      psc = pair_psc(modpair);
+      if (get_arity(psc) == arity &&
+	  !strcmp(pred_name, get_name(psc))) {
+	c2p_list(listptr);
+	listhead = p2p_car(listptr);
+	c2p_string("usermod",listhead);
+	listptr = p2p_cdr(listptr);
+      } 
+      modpair = pair_next(modpair);
+    }
+    /* now, scan other modules */
+    modpair = (Pair) flags[MOD_LIST];
+    
+    while (modpair) {
+      module = pair_psc(modpair);
+      if (strcmp(get_name(module),"usermod") &&
+	  strcmp(get_name(module),"global")) {
+	pair = (Pair) get_data(module);
+	while (pair) {
+	  psc = pair_psc(pair);
+	  if (get_arity(psc) == arity &&
+	      !strcmp(pred_name, get_name(psc))) {
+	    c2p_list(listptr);
+	    listhead = p2p_car(listptr);
+	    c2p_string(get_name(module),listhead);
+	    listptr = p2p_cdr(listptr);
+	  }
+	  pair = pair_next(pair);
+	}
+      }
+      modpair = pair_next(modpair);
+    }
+    c2p_nil(listptr);
+    return TRUE;
+    break;
+  }
   case TRIE_ASSERT:
     if (trie_assert())
       return TRUE;
