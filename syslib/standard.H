@@ -31,7 +31,7 @@
 
 :- export 
 	arg/3,		arg0/3,		atom/1,		atomic/1,
-	atom_chars/2,   atom_codes/2,
+	goal_arg/3,	atom_chars/2,   atom_codes/2,
 	call/1,		call_expose/1,	callable/1,
 	close/1,	compare/3,	compound/1,	cputime/1,	
             display/1, now/1, datime/1,

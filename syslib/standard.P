@@ -449,6 +449,13 @@ functor(T, F, N) :- functor(T, F, N).
 
 arg(I, T, A) :- arg(I, T, A).
 
+goal_arg(I,G,A) :-
+	(G @= (_:_)
+	 ->	G = (_:G1),
+		goal_arg(I,G1,A)
+	 ;	arg(I,G,A)
+	).
+
 arg0(I, T, A) :- 
 	term_type(I, I_type),
 	( I_type =:= XSB_INT ->	% integer
