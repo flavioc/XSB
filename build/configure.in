@@ -668,12 +668,14 @@ if test -n "$with_gcc" ; then
         emuloop_opt_level=-${optimization_level-"O1"}
         trutils_opt_level=-${optimization_level-"O1"}
         builtins_opt_level=-${optimization_level-"O1"}
+        loader_opt_level=-${optimization_level-"O2"}
 	CFLAGS=""
 	c_inline_level=""
    else   
 	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+	loader_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	if test -n "$optimization_level"; then
 	   c_inline_level=""
 	else
@@ -686,6 +688,7 @@ else
    gcc) emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	builtins_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+	loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
 	if test -n "$optimization_level"; then
 	   c_inline_level=""
 	else
@@ -697,12 +700,14 @@ else
 	   emuloop_opt_level=-${optimization_level-"O4"}
 	   trutils_opt_level=-${optimization_level-"O4"}
 	   builtins_opt_level=-${optimization_level-"O4"}
+	   loader_opt_level=-${optimization_level-"O4"}
 	else
 	   # emuloop_opt_level is the optimization level for emuloop.c
 	   # Using xO4 would take SunPro more than an hour, hence xO2.
 	   emuloop_opt_level=-${optimization_level-"xO2"}
 	   trutils_opt_level=-${optimization_level-"xO4"}
 	   builtins_opt_level=-${optimization_level-"xO4"}
+	   loader_opt_level=-${optimization_level-"xO4"}
 	fi
 	c_inline_level=""
 	CFLAGS=""
@@ -711,6 +716,7 @@ else
 	emuloop_opt_level=-${optimization_level-"O2"}
 	trutils_opt_level=-${optimization_level-"O4"}
 	builtins_opt_level=-${optimization_level-"O4"}
+	loader_opt_level=-${optimization_level-"O4"}
 	c_inline_level=""
 	CFLAGS="-Xa"
 	;;
@@ -1323,6 +1329,7 @@ case "$canonical" in
 		;;
       *-cygwin*) AC_DEFINE(CYGWIN)
 		 builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+		 loader_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 		;;
 esac
 
@@ -1346,6 +1353,7 @@ if test "${do_debugging}" = "yes"  -o "${disable_optimization}" = "yes" ; then
    emuloop_opt_level=
    trutils_opt_level=
    builtins_opt_level=
+   loader_opt_level=
    c_inline_level=
 fi
 if test "${do_debugging}" = "yes" ; then
@@ -1397,6 +1405,7 @@ if test "${enable_no_cygwin+set}" = "set"; then
    DLLTYPE=cygdll
 fi
 
+loaderCFLAGS="${c_site_includes} ${loader_opt_level} ${c_inline_level} ${CFLAGS}"
 builtinsCFLAGS="${c_site_includes} ${builtins_opt_level} ${c_inline_level} ${CFLAGS}"
 emuloopCFLAGS="${c_site_includes} ${emuloop_opt_level} ${c_inline_level} ${CFLAGS}"
 trutilsCFLAGS="${c_site_includes} ${trutils_opt_level} ${c_inline_level} ${CFLAGS}"
@@ -1440,6 +1449,7 @@ AC_SUBST(config_tag)
 AC_SUBST(arch_bindir)
 
 AC_SUBST(CFLAGS)
+AC_SUBST(loaderCFLAGS)
 AC_SUBST(builtinsCFLAGS)
 AC_SUBST(emuloopCFLAGS)
 AC_SUBST(trutilsCFLAGS)
@@ -1576,6 +1586,7 @@ Installation date: ${install_date}
   Site configuration-specific code goes in:	  ${site_config_prefix}
   XSB will be built with:			  ${CC} ${CFLAGS}
   builtin.c will be built with: 		  ${CC} ${builtinsCFLAGS}
+  loader_xsb.c will be built with: 		  ${CC} ${loaderCFLAGS}
   emuloop.c will be built with: 		  ${CC} ${emuloopCFLAGS}
   tr_utils.c will be built with:		  ${CC} ${trutilsCFLAGS}
   Loader flags: 				  ${LDFLAGS}

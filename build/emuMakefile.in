@@ -34,6 +34,7 @@ CPP=@CPP@
 CFLAGS=@CFLAGS@
 # Compilation flags for files requiring lower optimization level
 # (builtin.c,emuloop.c,tr_utils.c)
+loaderCFLAGS=@loaderCFLAGS@
 builtinsCFLAGS=@builtinsCFLAGS@
 emuloopCFLAGS=@emuloopCFLAGS@
 trutilsCFLAGS=@trutilsCFLAGS@
@@ -239,6 +240,10 @@ tr_utils.o: tr_utils.c
 builtin.o: builtin.c
 	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(builtinsCFLAGS) builtin.c
 	@cp builtin.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
+loader_xsb.o: loader_xsb.c
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(loaderCFLAGS) loader_xsb.c
+	@cp loader_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
 	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) $*.c
