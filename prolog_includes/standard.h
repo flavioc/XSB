@@ -23,8 +23,6 @@
 */
 
 
-#include "file_modes_xsb.h"
-
 
 #define STDIN	     0
 #define STDOUT	     1
