@@ -906,6 +906,25 @@ incomplete table, execution is aborted to the top user level.
 
 \end{description}
 
+All exceptions that occur during the execution of an XSB program can be caught.
+Below is a list of some of the more important exceptions:
+%%
+\begin{description}
+\item[\tt '\_\$abort\_ball':]~ 
+  \index{abort exception}
+  Thrown when {\tt abort/0} is executed.
+\item[\tt '\_\$abort\_ball'(Exception):]~
+  Thrown when {\tt abort/1} is executed.
+\item[\tt error(undefined\_predicate(Name,Arity,ModName),ErrorMessage):]~
+  \index{undefined predicate exception}
+  Thrown when an undefined predicate is called.
+\item[\tt throw(error(existence\_error(module,ExpandedModName),ErrorMessage):]~
+  \index{non-existing module exception}
+  Thrown when the program attempts to load a module, which cannot be
+  found.
+\end{description}
+%%
+
 
 
 %%% Local Variables: 

@@ -25,6 +25,14 @@
 <h3>Backward Incompatibility</h3>
 <ul>
 <li> The object files now have the .xwam extension instead of the .O extension.
+</li>
+<li>
+  The <tt>xsb_undefined_predicate_hook</tt> has been deprecated. Instead, XSB now
+  throws the exception of the
+  form <tt>error(undefined_predicate(Name,Arity,ModName),ErrorMessage)</tt>
+  when an undefined predicate is called. This exception can be caught and
+  appropriate action can be taken.
+</li>
 </ul>
 <a name="flora">
 <h3>FLORA News</h3>
