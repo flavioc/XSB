@@ -157,6 +157,9 @@ trimcore :- '_$builtin'(158).
 private_builtin(_OpCode,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10) :-
 	'_$builtin'(180).
 
+is_charlist(_List, _Size) :- '_$builtin'(213).
+is_charlist(List) :- is_charlist(List, _).
+
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).
 odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(231).
 

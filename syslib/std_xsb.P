@@ -111,10 +111,11 @@ standard_symbol(instance, 2, record).
 standard_symbol(integer, 1, standard).
 standard_symbol(is, 2, standard).
 standard_symbol(is_list, 1, standard).
-standard_symbol(is_string, 1, standard).
+standard_symbol(is_charlist, 2, machine).
+standard_symbol(is_charlist, 1, machine).
 standard_symbol(is_absolute_filename, 1, machine).
 standard_symbol(keysort, 2, setof).
-%% Note: DON'T make library direstory a standard predicate: XSB will deny
+%% Note: DON'T make library directory a standard predicate: XSB will deny
 %% assertions into it!!! - mk
 %% standard_symbol(library_directory, 1, usermod).
 standard_symbol(listing, 0, standard).

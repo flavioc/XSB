@@ -186,6 +186,7 @@ inline_builtin(number_chars, 2, 209).
 inline_builtin(put, 1, 210).
 inline_builtin(tab, 1, 211).
 inline_builtin(number_codes, 2, 212).
+inline_builtin(is_charlist, 2, 213).
 
 inline_builtin(sort, 2, 220).
 inline_builtin(keysort, 2, 221).

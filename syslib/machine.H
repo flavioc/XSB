@@ -124,6 +124,8 @@
 	oracle_query/7,
 	odbc_exec_query/5,
 	private_builtin/11,
+	is_charlist/2,
+	is_charlist/1,
 	trimcore/0,
 	print_chat/0,
 	print_ls/0, print_tr/0, print_heap/2, print_cp/0, print_regs/0,
