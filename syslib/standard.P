@@ -289,20 +289,16 @@ put_char(C):-
 
 %ISO
 put_code(S_or_A,C):- 
-	check_open_stream_or_alias(S_or_A,get_char/2,1,output,Str),
-	(var(C) -> 
-	    file_put(Str,C)
-	 ; (integer(C) -> 
+	check_open_stream_or_alias(S_or_A,put_code/2,1,output,Str),
+	(integer(C) -> 
 	        file_put(Str,C)
-	     ;  domain_error(integer_or_variable,C,get_code/2,2) ) ).
+	 ;  domain_error(integer_or_variable,C,put_code/2,2) ).
 
 %ISO
 put_code(C):- 
-	(var(C) -> 
-	    put(C)
-	 ; (integer(C) -> 
+	(integer(C) -> 
 	        put(C)
-	     ;  domain_error(integer_or_variable,C,get_code/2,2) ) ).
+	 ;  domain_error(integer_or_variable,C,put_code/1,1) ).
 
 put(C) :- put(C).
 
