@@ -1431,6 +1431,27 @@ inline static void chat_relocate_region(CPtr *startp, int len,
 
 /*----------------------------------------------------------------------*/
 
+inline static void chat_clear_marks(void)
+{
+  register chat_incr_pheader pheader;
+  register chat_init_pheader initial_pheader;
+
+  initial_pheader = chat_link_headers;
+  do
+    {
+      pheader = chat_get_father(initial_pheader);
+      while ((pheader != NULL) && (chat_area_imarked(pheader)))
+        {
+          chat_iunmark_area(pheader);
+          pheader = chat_get_ifather(pheader);
+        }
+      initial_pheader = initial_pheader->next_header;
+    }
+  while (initial_pheader != chat_link_headers);
+}
+
+/*----------------------------------------------------------------------*/
+
 static void chat_relocate_all(CPtr heap_bot, int heap_offset,
 			      CPtr ls_bot, int local_offset)
 { chat_init_pheader initial_pheader;
@@ -1442,53 +1463,40 @@ static void chat_relocate_all(CPtr heap_bot, int heap_offset,
   initial_pheader = chat_link_headers;
   if (initial_pheader != NULL)
   {
-  do
-    {
-      /* relocate the saved consumer choice points -- this also */
-      /* taes care of their dreg field.  A more refined traversal */
-      /* of choice points is possible, but is it worth it ? */
+    do
+      {
+	/* relocate the saved consumer choice points -- this also */
+	/* takes care of their Dreg field.  A more refined traversal */
+	/* of choice points is possible, but is it worth it ? */
+	b = (CPtr *)(&chat_get_cons_start(initial_pheader));
+	for (i = NLCPSIZE; i > 0; i--)
+	  { reallocate_heap_or_ls_pointer(b);
+	    b++;
+	  }
 
-      b = (CPtr *)(&chat_get_cons_start(initial_pheader));
-      for (i = NLCPSIZE; i > 0; i--)
-	{ reallocate_heap_or_ls_pointer(b);
-	  b++;
-	}
+	/* relocate the argument registers from consumer */
+	b = (CPtr *)chat_get_args_start(initial_pheader);
+	chat_relocate_region(b,chat_get_nrargs(initial_pheader),heap_offset,local_offset);
 
-      /* relocate the argument registers from consumer */
-      b = (CPtr *)chat_get_args_start(initial_pheader);
-      chat_relocate_region(b,chat_get_nrargs(initial_pheader),heap_offset,local_offset);
+	/* relocate the CHAT trail */
+	/* this is more tricky than expected: the marks must be used:  */
+	/* a relocated pointer might point to the old area !           */
+	/* and the marks have to switched off as well at the end       */
+	pheader = chat_get_father(initial_pheader);
+	while ((pheader != NULL) && (! chat_area_imarked(pheader)))
+	  {
+	    chat_imark_area(pheader);
+	    tr = chat_get_tr_start(pheader);
+	    trlen = chat_get_tr_length(pheader);
+	    chat_relocate_region(tr,trlen,heap_offset,local_offset);
 
-      /* relocate the CHAT trail */
-      /* this is more tricky than expected: the marks must be used:  */
-      /* a relocated pointer might point to the old area !           */
-      /* and the marks have to switched off as well at the end       */
-      pheader = chat_get_father(initial_pheader);
-      while ((pheader != NULL) && (! chat_area_imarked(pheader)))
-	{
-	  chat_imark_area(pheader);
-	  tr = chat_get_tr_start(pheader);
-	  trlen = chat_get_tr_length(pheader);
-	  chat_relocate_region(tr,trlen,heap_offset,local_offset);
+	    pheader = chat_get_ifather(pheader);
+	  }
+	initial_pheader = initial_pheader->next_header;
+      }
+    while (initial_pheader != chat_link_headers);
 
-	  pheader = chat_get_ifather(pheader);
-	}
-      initial_pheader = initial_pheader->next_header;
-    }
-  while (initial_pheader != chat_link_headers);
-
-  initial_pheader = chat_link_headers;
-  do
-    {
-      /* here the marks are switched off */
-      pheader = chat_get_father(initial_pheader);
-      while ((pheader != NULL) && (chat_area_imarked(pheader)))
-        {
-          chat_iunmark_area(pheader);
-          pheader = chat_get_ifather(pheader);
-        }
-      initial_pheader = initial_pheader->next_header;
-    }
-  while (initial_pheader != chat_link_headers);
+    chat_clear_marks();      /* here the marks are switched off */
   }
 
   /* now relocate pointers to the heap from the completion
@@ -2539,12 +2547,8 @@ int gc_heap(int arity)
 
    /* An attempt to add some gc/expansion policy;
        ideally this should be user-controlled */
-
-    /* The following test is temporarily put to FALSE
-       until chat imark bits have been turned off
-    */
 #if (! defined(GC_TEST))
-     if (0 && (marked > ((hreg+1-(CPtr)glstack.low)*mark_threshold)))
+     if (marked > ((hreg+1-(CPtr)glstack.low)*mark_threshold))
       {
 #ifdef VERBOSE_GC
         xsb_dbgmsg("Heap gc - marked too much - quitting gc") ;
@@ -2553,6 +2557,7 @@ int gc_heap(int arity)
           hreg -= arity;
 	total_collected = 0; /* keep statistics honest */
 	total_time_gc += (end_marktime - begin_marktime);
+	chat_clear_marks();
         goto free_marks; /* clean-up temp areas and get out of here... */
       }
 #endif
