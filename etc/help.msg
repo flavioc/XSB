@@ -35,7 +35,7 @@ Usage:	xsb [flags] [-l] [-i]
             -D : Sets top-level command loop driver to replace the default.
             -t : trace execution at the SLG-WAM instruction level
                  (for this to work, build XSB with the --debug option)
-            -d : disassemble the loader and exit
+            -d : disassemble the module and exit
           -c N : allocate N KB for the trail/choice-point stack
           -m N : allocate N KB for the local/global stack
           -o N : allocate N KB for the SLG completion stack
