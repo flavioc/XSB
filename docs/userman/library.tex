@@ -2338,6 +2338,17 @@ Note that 1.0 will never be generated.
     \texttt{Z} must be integers in the ranges [1,30269), [1,30307),
     [1,30323), respectively.
 
+\ournewitem{randseq(+K, +N, -RandomSeq)}{random} \index{randseq/3}
+    Generates a sequence of \texttt{K} unique integers chosen randomly
+    in the range from 1 to \texttt{N}.  \texttt{RandomSeq} is not
+    returned in any particular order.
+
+\ournewitem{randset(+K, +N, -RandomSet)}{random} \index{randset/3}
+    Generates an ordered set of \texttt{K} unique integers chosen
+    randomly in the range from 1 to \texttt{N}.  The set is returned in
+    reversed order, with the largest element first and the smallest
+    last.
+
 \end{description}
 
 
