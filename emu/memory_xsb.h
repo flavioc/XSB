@@ -233,9 +233,8 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      }									      \
      else {								      \
        if ((flags[STACK_REALLOC] == FALSE) ||				      \
-	   (glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN), \
-			    arity) != 0)) {				      \
-	 xsb_basic_abort(local_global_exception);					      \
+	   (glstack_ensure_space(EXTRA,arity) != 0)) {			      \
+	 xsb_basic_abort(local_global_exception);			      \
        }								      \
      }									      \
    }

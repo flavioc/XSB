@@ -1673,7 +1673,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(calld,_calld)   /* PPA-L */
     ADVANCE_PC(size_xxx); /* this is ok */
     cpreg = lpcreg+sizeof(Cell); 
-    check_glstack_overflow(MAX_ARITY, lpcreg,OVERFLOW_MARGIN);
+    /*check_glstack_overflow(MAX_ARITY, lpcreg,OVERFLOW_MARGIN);  try eliminating?? */
     handle_xsb_profile_interrupt;
     lpcreg = *(pb *)lpcreg;
   XSB_End_Instr()

@@ -54,6 +54,7 @@
 
 extern int  gc_heap(int);
 extern int  mark_heap(int,int *);
+extern xsbBool glstack_ensure_space(int,int);
 extern xsbBool glstack_realloc(int,int);
 
 extern void print_cp(int);

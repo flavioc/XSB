@@ -122,6 +122,7 @@ Todo:
 #include "subp.h"          /* for attv_interrupts[][] */
 #include "binding.h"       /* for PRE_IMAGE_TRAIL */
 #include "debug_xsb.h"
+#include "loader_xsb.h" /* for ZOOM_FACTOR, used in stack expansion */
 /*=========================================================================*/
 
 /* this might belong somewhere else (or should be accessible to init.c),
@@ -669,6 +670,18 @@ int gc_heap(int arity)
   return(TRUE);
 
 } /* gc_heap */
+
+/*--------------------------------------------------------------------------*/
+
+xsbBool glstack_ensure_space(int extra, int arity) {
+  if (flags[GARBAGE_COLLECT] != NO_GC && arity < 255) {
+    gc_heap(arity);
+  }
+  if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + extra) {
+    return glstack_realloc(resize_stack(glstack.size,extra+OVERFLOW_MARGIN),arity);
+  }
+  else return FALSE;
+}
 
 /*--------------------------------------------------------------------------*/
 
