@@ -92,10 +92,17 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ;	str_sub('linux', Configuration)
 	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
-	    /*
+	    /*	   
 	    , message((CC_Name, ' -s -o ', Base, '.so', ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
-	    */
+	    */	   
+	    ; str_sub('freebsd', Configuration)
+	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+	    /*	   
+	    , message((CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
+	    */ 
 	    ;	str_sub('alpha', Configuration)
 	    ->	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',

@@ -921,6 +921,19 @@ case "$canonical" in
 		   ;;
 	      esac
 	      ;;
+      *freebsd*)
+	AC_DEFINE(FREEBSD)
+	AC_DEFINE(FOREIGN_ELF)
+	if test "$CC" = "gcc" ; then
+		CFLAGS="-m486 ${CFLAGS}"
+	fi
+	if test "$__export_dynamic" = "yes" ; then
+	   	LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+	fi
+	if test "${have_dl}" = yes ; then
+		LDFLAGS="${LDFLAGS} -ldl"
+	fi
+	;;
       *sgi*) 
 	     AC_DEFINE(FOREIGN_ELF)
 	     if test "${machine64bit}" = yes ; then
@@ -1376,3 +1389,4 @@ fi
 echo ""
 
 rm -f  buildxsb.lock
+    
