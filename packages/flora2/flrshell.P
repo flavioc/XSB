@@ -103,7 +103,7 @@ help :-
 	flora_stdmsg_line('o help'),
 	flora_stdmsg_line('    show this info'),
 	flora_stdmsg_line('o compile(FILE[.P])'),
-	flora_stdmsg_line('    compile FILE.P'),
+	flora_stdmsg_line('    compile FILE.P; create FILE.O'),
 	flora_stdmsg_line('o flcompile(FILE[.flr])'),
 	flora_stdmsg_line('    compile FILE.flr for the default module `main'''),
 	flora_stdmsg_line('o flcompile(FILE[.flr],Module)'),

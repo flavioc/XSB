@@ -67,7 +67,7 @@ flcompile(File,Workspace) :-
 
 	; parse_filename(File,_,_,Ext), Ext \= '' ->
 	    flora_stderr_nl,
-	    flora_error_line("file extension names must be %s!",args(FLORA_FILE_EXT)),
+	    flora_error_line("File extension names must be %s!",args(FLORA_FILE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
@@ -94,7 +94,7 @@ flload(File,Workspace) :-
 
 	; parse_filename(File,_,_,Ext), Ext \= '' ->
 	    flora_stderr_nl,
-	    flora_error_line("file extension names must be %s!",args(FLORA_FILE_EXT)),
+	    flora_error_line("File extension names must be %s!",args(FLORA_FILE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
@@ -124,7 +124,7 @@ flload(File) :-
 
 	; parse_filename(File,_,_,Ext), Ext \= '' ->
 	    flora_stderr_nl,
-	    flora_error_line("file extension names must be %s, %s or %s!",
+	    flora_error_line("File extension names must be %s, %s or %s!",
 	                     args(FLORA_FILE_EXT,XSB_PFILE_EXT,XSB_OFILE_EXT)),
 	    fail
 	;
@@ -148,7 +148,7 @@ flcompinc(File) :-
 
 	; parse_filename(File,_,_,Ext), Ext \= '' ->
 	    flora_stderr_nl,
-	    flora_error_line("include file extension names must be %s!",args(FLORA_INCLUDE_EXT)),
+	    flora_error_line("Include file extension must be %s!",args(FLORA_INCLUDE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
@@ -274,7 +274,7 @@ flora_flload(FlrFile,Workspace) :-
 	  flora_setup_workspace(FLHFile,Workspace),
 	  ConsultFile=WSPFile
         ),
-	flora_message_line("loading %s into workspace %s",args(FlrFile,Workspace)),
+	flora_message_line("loading %s into module %s",args(FlrFile,Workspace)),
         consult(ConsultFile),
 	flora_clear_xpp_options.
 

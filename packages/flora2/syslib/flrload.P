@@ -82,6 +82,7 @@ flora_load_file(T) :-
 	fail.
 
 flora_load_file(FL_RIGHTTO(FileName,Workspace)) :-
+	!,
 	( atom(FileName) ->
 	    ( atom(Workspace) ->
 		flload(FileName,Workspace)
@@ -108,8 +109,7 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace)) :-
 	  flora_stderr_nl,
 	  !,
 	  fail
-        ),
-	!.
+        ).
 
 flora_load_file(X) :-
 	flora_stderr_nl,
