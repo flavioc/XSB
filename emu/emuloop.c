@@ -178,7 +178,8 @@ static int emuloop(byte *startaddr)
   Cell opa[3]; 
   int i, j, arity;	/* to unify subfields of op1 and op2 */
   int restore_type;	/* 0 for retry restore; 1 for trust restore */ 
-#ifdef GC
+#if (defined(GC) && defined(GC_TEST))
+#define GC_INFERENCES 1000
   static int infcounter = 0;
   static int just_print = 0;
 #endif
@@ -223,8 +224,10 @@ contcase:	/* the main loop */
   case getpvar:  /* PVR */
     pad;
     op1 = (Cell)(opvaraddr);
-    /* tls 12/8/92 */
-    bld_copy0((CPtr)op1, opreg);
+    /* trailing is needed here because this instruction can also be
+       generated *after* the occurrence of the first call - kostis */
+    op2 = opreg; 
+    bind_copy((CPtr)op1, op2);      /* In WAM bld_copy() */
     pad64;
     goto contcase;
     
@@ -270,13 +273,13 @@ contcase:	/* the main loop */
     ppad; op1 = (Cell)(opvaraddr);
     pad64;
     if (flag) {	/* if (flag == WRITE) */
-	bind_ref((CPtr)op1, hreg);
-	new_heap_free(hreg);
+      bind_ref((CPtr)op1, hreg);
+      new_heap_free(hreg);
     } else {
       /* also introduce trailing here - bmd & kostis
-         was: bld_copy0((CPtr)op1, *(sreg++)); */
-        bind_copy((CPtr)op1, *(sreg));
-        sreg++;
+         was: bld_copy((CPtr)op1, *(sreg++)); */
+      bind_copy((CPtr)op1, *(sreg));
+      sreg++;
     }
     goto contcase;
 
@@ -300,7 +303,7 @@ contcase:	/* the main loop */
       new_heap_free(hreg);
     }
     else {
-      bld_copy0((CPtr)op1, *(sreg++));
+      bld_copy((CPtr)op1, *(sreg++));
     }
     goto contcase;
 
@@ -374,7 +377,7 @@ contcase:	/* the main loop */
 
   case putpval: /* PVR */
     pad; op1 = (Cell)(opvaraddr);
-    bld_copy0(opregaddr, *((CPtr)op1));
+    bld_copy(opregaddr, *((CPtr)op1));
     pad64;
     goto contcase;
 
@@ -597,22 +600,27 @@ contcase:	/* the main loop */
     goto contcase;
 
   case test_heap: /* PPA-N */
-    ppad ;
-    op1 = op1byte ;
+    ppad;
+    op1byte;  /* op1 = the arity of the procedure */
     pad64;
     op2 = *(pw)lpcreg; lpcreg+=4;
     pad64;
 #ifdef GC
-    if (/* (infcounter++ > 1000) || */ (ereg - hreg) < op2)
+#ifdef GC_TEST
+    if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < op2))
       {
 	infcounter = 0;
         fprintf(stderr,".");
         if (just_print)
 	  goto contcase;
+#else
+    if ((ereg - hreg) < op2)
+      {
+#endif
         if (gc_heap(op1)) {
-	  if ((ereg - hreg) < op2)
+	  if (((ereg - hreg) < op2) && flags[STACK_REALLOC])
 	    /* an expansion strategy for testing - later better */
-	    glstack_realloc(glstack.size+20,op1) ; /* op1 = the arity of the procedure */
+	    glstack_realloc(glstack.size+20,op1); 
 	}
 	/* are there any localy cached quantities that must be reinstalled ? */
       }
@@ -772,7 +780,7 @@ contcase:	/* the main loop */
   case movreg: /* PRR */
     pad;
     op1 = (Cell)(opregaddr);
-    bld_copy0(opregaddr, *((CPtr)op1));
+    bld_copy(opregaddr, *((CPtr)op1));
     pad64;
     goto contcase;
 
@@ -910,7 +918,7 @@ contcase:	/* the main loop */
     deref(op1);
     op2 = (Cell)(opregaddr);
     pad64;
-    bld_copy0((CPtr)op2, op1);
+    bld_copy((CPtr)op2, op1);
     goto contcase;
 
   case putuval: /* PVR */
@@ -920,7 +928,7 @@ contcase:	/* the main loop */
     pad64;
     deref(op1);
     if (isnonvar(op1) || ((CPtr)(op1) < hreg) || ((CPtr)(op1) >= ereg)) {
-      bld_copy0((CPtr)op2, op1);
+      bld_copy((CPtr)op2, op1);
     } else {
       bld_ref((CPtr)op2, hreg);
       bind_ref((CPtr)(op1), hreg);
@@ -940,7 +948,7 @@ contcase:	/* the main loop */
     pad64;
 #if (!defined(CHAT))
     if (efreg_on_top(ereg))
-      op1 = (Cell) (efreg -1);
+      op1 = (Cell)(efreg-1);
     else {
 #endif
       if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
@@ -967,7 +975,7 @@ contcase:	/* the main loop */
     pad64;
 #if (!defined(CHAT))
     if (efreg_on_top(ereg))
-      op1 = (Cell) (efreg -1);
+      op1 = (Cell)(efreg-1);
     else {
 #endif
       if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
@@ -1016,7 +1024,7 @@ contcase:	/* the main loop */
     ppad; op1 = opreg;
     pad64;
     if (int_val(op1) == 0)
-	lpcreg = *(byte **)lpcreg;
+      lpcreg = *(byte **)lpcreg;
     else ADVANCE_PC;
     goto contcase;
 
@@ -1024,7 +1032,7 @@ contcase:	/* the main loop */
     ppad; op1 = opreg;
     pad64;
     if (int_val(op1) != 0)
-	lpcreg = *(byte **)lpcreg;
+      lpcreg = *(byte **)lpcreg;
     else ADVANCE_PC;
     goto contcase;
 
@@ -1033,7 +1041,7 @@ contcase:	/* the main loop */
     pad64;
     if ((isinteger(op1) && int_val(op1) < 0) ||
 	(isfloat(op1) && float_val(op1) < 0.0))
-	lpcreg = *(byte **)lpcreg;
+      lpcreg = *(byte **)lpcreg;
     else ADVANCE_PC;
     goto contcase; 
 
@@ -1042,7 +1050,7 @@ contcase:	/* the main loop */
     pad64;
     if ((isinteger(op1) && int_val(op1) <= 0) ||
 	(isfloat(op1) && float_val(op1) <= 0.0))
-	lpcreg = *(byte **)lpcreg;
+      lpcreg = *(byte **)lpcreg;
     else ADVANCE_PC;
     goto contcase; 
 
@@ -1051,7 +1059,7 @@ contcase:	/* the main loop */
     pad64;
     if ((isinteger(op1) && int_val(op1) > 0) ||
 	(isfloat(op1) && float_val(op1) > 0.0))
-	lpcreg = *(byte **)lpcreg;
+      lpcreg = *(byte **)lpcreg;
     else ADVANCE_PC;
     goto contcase;
 
@@ -1060,7 +1068,7 @@ contcase:	/* the main loop */
     pad64;
     if ((isinteger(op1) && int_val(op1) >= 0) ||
 	(isfloat(op1) && float_val(op1) >= 0.0))
-	lpcreg = *(byte **)lpcreg;
+      lpcreg = *(byte **)lpcreg;
     else ADVANCE_PC;
     goto contcase; 
 
@@ -1172,7 +1180,7 @@ contcase:	/* the main loop */
     goto contcase; 
 
   default: 
-    sprintf(message, "Illegal opcode hex %x at %p", *--lpcreg, lpcreg); 
+    sprintf(message, "Illegal opcode hex %x", *--lpcreg); 
     xsb_exit(message);
 } /* end of switch */
 
