@@ -50,7 +50,7 @@ FL_WHILE(FL_DO(Cond,Action)) :-
 	      quitLoop, % catcher
 	      fail).    % fail, if condition was thrown
 
-%% Fails only is Action becomes false before Cond becomes true
+%% Fails only if Action becomes false before Cond becomes true
 FL_DO(FL_UNTIL(Action,Cond)) :-
 	call(Action),
 	flora_commit_storage,
