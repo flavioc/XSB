@@ -170,7 +170,7 @@
 #define FL_FORMULAR		(form)
 #define FL_PROLOG		(prolog)
 #define FL_PROLOGALL		(prologall)
-#define FL_MODULE		(xlib)
+#define FL_MODULE		(plib)
 #define FL_NOHILOG		(florapred)
 #define FL_NOHILOGALL		(florapredall)
 

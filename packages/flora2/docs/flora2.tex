@@ -2231,7 +2231,7 @@ is an extension to the module name specification, can be exploited to
 make individual XSB calls in a \FLORA program:
 \begin{quote}
 \begin{verbatim}
-xsb_predicate @ xlib xsb_module
+xsb_predicate @ plib xsb_module
 \end{verbatim}
 \end{quote}
 where {\tt xsb} is a fixed keyword, and \verb|xsb_predicate| is a
@@ -2240,7 +2240,7 @@ the translation of other predicates that have the same functor and
 arity as \verb|xsb_predicate| will not be affected by this call. For
 example, the \FLORA query below:
 \begin{quote}
-\verb|?- member(a,[a]) @ xlib basics, member(X,[a]).|
+\verb|?- member(a,[a]) @ plib basics, member(X,[a]).|
 \end{quote}
 will be compiled into the following XSB query:
 \begin{quote}
