@@ -27,9 +27,10 @@
 :- op(1000,xfy,or).
 
 :- export meta/1.
-:- import append/3, copy_term/2, memberchk/2 from basics.
+%:- import append/3, copy_term/2, memberchk/2 from basics.
+:- import copy_term/2 from basics.
 :- import get_returns/3, delete_return/2 from tables.
-:- import bottom/2, '<-'/2, gt1/3, lub/4 from usermod.
+:- import bottom/2, '<-'/2, gt1/3, lub/4,negate/3  from usermod.
 
 breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr):- '_$builtin'(154).
 
