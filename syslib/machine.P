@@ -284,6 +284,16 @@ odbc_exec_query(_A, _B, _C, _D, _E, _F) :- '_$builtin'(ODBC_EXEC_QUERY).
 '$$unwind_stack':- '$$unwind_stack'.
 '$$clean_up_block':- '$$clean_up_block'.
 
+/*========================================================*/
+
+thread_request(_ReqNumber,_Arg1,_Arg2,_Arg3,_Rc) :-
+        '_$builtin'(THREAD_REQUEST).
+
+mt_random_request(_ReqNumber,_Arg1,_Arg2):-  
+	'_$builtin'(MT_RANDOM_REQUEST).
+
+/*=========================================================*/
+
 pow(_X,_Y,_Z):- '_$builtin'(XSB_POW).
 
 print_ls :- print_ls.

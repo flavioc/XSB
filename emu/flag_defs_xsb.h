@@ -112,6 +112,9 @@ interrupt flag
 #define TABLING_METHOD	  61      /* Default method used to evaluate tabled
 				     calls:  variant or subsumptive */
 
+#define NUM_THREADS     62      /* always 1 in the sequential system     NW*/
+#define THREAD_RUN      63      /* PSC for the thread handler predicate  NN*/
+
 #define MAXTOINDEX 5              /* depth in term to go when using deep indexing */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

@@ -23,6 +23,7 @@
 ** 
 */
 
+
 #include "xsb_config.h"
 #include "xsb_debug.h"
 /* Private debugs */
@@ -118,6 +119,8 @@
 #endif
 
 #include "debug_xsb.h"
+
+#include "thread_xsb.h"
 
 /*======================================================================*/
 
@@ -849,6 +852,9 @@ void init_builtin_table(void)
   set_builtin_table(SET_SCOPE_MARKER, "set_scope_marker");
   set_builtin_table(UNWIND_STACK, "unwind_stack");
   set_builtin_table(CLEAN_UP_BLOCK, "clean_up_block");
+
+  set_builtin_table(THREAD_REQUEST, "thread_request");
+  set_builtin_table(MT_RANDOM_REQUEST, "mt_random_request");
 
   set_builtin_table(XSB_POW, "xsb_pow");
 
@@ -2286,10 +2292,13 @@ int builtin_call(byte number)
     return TRUE;
   }
 
-  /* TLS: useful for CLPQR -- see eval.P */
-  case XSB_POW: 
-    ctop_float(3,pow(ptoc_number(1),ptoc_number(2))); 
-    return TRUE ;
+  case THREAD_REQUEST: {
+    return FALSE;
+  }
+
+  case MT_RANDOM_REQUEST: {
+    return mt_random_request(CTXT) ;
+  }
 
   case XSB_PROFILE:
     {
@@ -2320,6 +2329,12 @@ int builtin_call(byte number)
       break;
     }
     break;
+
+  /* TLS: useful for power function -- see eval.P */
+  case XSB_POW: 
+    ctop_float(3,pow(ptoc_number(1),ptoc_number(2))); 
+    return TRUE ;
+
   case PRINT_LS: print_ls(1) ; return TRUE ;
   case PRINT_TR: print_tr(1) ; return TRUE ;
   case PRINT_HEAP: print_heap(0,2000,1) ; return TRUE ;

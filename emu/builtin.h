@@ -236,14 +236,18 @@
 #define UNWIND_STACK            233
 #define CLEAN_UP_BLOCK          234
 
-#define DUMMY                   235
+#define THREAD_REQUEST		235
+#define MT_RANDOM_REQUEST       236
 
-/* added by TLS to support clpqr */
-#define XSB_POW                 236
+/* TLS: took out DUMMY = 235 -- don't know why it was here */
+
 
 /* added by dsw to support profiling, and backtracing */
 #define XSB_PROFILE             237
 #define XSB_BACKTRACE		238
+
+/* added by TLS Power function */
+#define XSB_POW                 239
 
 /* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
 #define PRINT_LS                240
