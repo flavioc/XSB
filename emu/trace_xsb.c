@@ -36,11 +36,12 @@
 #include "register.h"
 #include "psc_xsb.h"
 #include "table_stats.h"
+#include "trie_internals.h"
 #include "tries.h"
+#include "macro_xsb.h"
 #include "choice.h"
 #include "flags_xsb.h"
 #include "heap_xsb.h"
-#include "macro_xsb.h"
 
 #ifdef CHAT
 #include "chat.h"
@@ -100,7 +101,8 @@ void perproc_stat(void)
 void total_stat(double elapstime) {
 
   NodeStats
-    btn,		/* Basic Trie Nodes */
+    tbtn,		/* Table Basic Trie Nodes */
+    abtn,		/* Asserted Basic Trie Nodes */
     tstn,		/* Time Stamp Trie Nodes */
     aln,		/* Answer List Nodes */
     tsi;		/* Time Stamp Indices (Index Entries/Nodes) */
@@ -108,12 +110,14 @@ void total_stat(double elapstime) {
   SubgStats  sf;	/* Subgoal Frames */
 
   HashStats
-    btht,		/* Basic Trie Hash Tables */
+    tbtht,		/* Table Basic Trie Hash Tables */
+    abtht,		/* Asserted Basic Trie Hash Tables */
     tstht;		/* Time Stamp Trie Hash Tables */
   
   unsigned long
     total_alloc, total_used,
     tablespace_alloc, tablespace_used,
+    trieassert_alloc, trieassert_used,
     gl_avail, tc_avail,
     chat_alloc, chat_used,
     de_space_alloc, de_space_used,
@@ -124,18 +128,25 @@ void total_stat(double elapstime) {
     de_count, dl_count;
 
 
-  btn = btn_statistics();
-  btht = btht_statistics();
+  tbtn = node_statistics(&smTableBTN);
+  tbtht = hash_statistics(&smTableBTHT);
   sf = subgoal_statistics();
-  aln = aln_statistics();
-  tstn = tstn_statistics();
-  tstht = tstht_statistics();
-  tsi = tsi_statistics();
+  aln = node_statistics(&smALN);
+  tstn = node_statistics(&smTSTN);
+  tstht = hash_statistics(&smTSTHT);
+  tsi = node_statistics(&smEntry);
 
   tablespace_alloc =
-    CurrentTotalTableSpaceAlloc(btn,btht,sf,aln,tstn,tstht,tsi);
+    CurrentTotalTableSpaceAlloc(tbtn,tbtht,sf,aln,tstn,tstht,tsi);
   tablespace_used =
-    CurrentTotalTableSpaceUsed(btn,btht,sf,aln,tstn,tstht,tsi);
+    CurrentTotalTableSpaceUsed(tbtn,tbtht,sf,aln,tstn,tstht,tsi);
+
+  abtn = node_statistics(&smAssertBTN);
+  abtht = hash_statistics(&smAssertBTHT);
+  trieassert_alloc =
+    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
+  trieassert_used =
+    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
 
   gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
   tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
@@ -158,12 +169,12 @@ void total_stat(double elapstime) {
 #endif
 
   total_alloc =
-    pspacesize  +  tablespace_alloc  +
+    pspacesize  +  trieassert_alloc  +  tablespace_alloc  +
     (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
     chat_alloc + de_space_alloc + dl_space_alloc;
 
   total_used  =
-    pspacesize  +  tablespace_used  +
+    pspacesize  +  trieassert_used  +  tablespace_used  +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
     chat_used + de_space_used + dl_space_used;
 
@@ -171,7 +182,9 @@ void total_stat(double elapstime) {
   printf("\n");
   printf("Memory (total)    %12ld bytes: %12ld in use, %12ld free\n",
 	 total_alloc, total_used, total_alloc - total_used);
-  printf("  permanent space %12ld bytes\n", pspacesize);
+  printf("  permanent space %12ld bytes: %12ld in use, %12ld free\n",
+	 pspacesize + trieassert_alloc, pspacesize + trieassert_used,
+	 trieassert_alloc - trieassert_used);
   printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
 	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
   printf("    global                            %12ld bytes\n",
@@ -207,7 +220,7 @@ void total_stat(double elapstime) {
 	   ttt.maxopenstack_count,
 	   (ttt.maxopenstack_count/sizeof(struct completion_stack_frame)));
 
-    update_maximum_tablespace_stats(&btn,&btht,&sf,&aln,&tstn,&tstht,&tsi);
+    update_maximum_tablespace_stats(&tbtn,&tbtht,&sf,&aln,&tstn,&tstht,&tsi);
     printf("  Maximum table space used:  %ld bytes\n",
 	   maximum_total_tablespace_usage());
     printf("\n");
