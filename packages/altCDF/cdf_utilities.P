@@ -128,11 +128,12 @@ lappend([X|L1],L2,[X|L3]) :- lappend(L1,L2,L3).
 lappend([],L,L).
 
 
+/*
 odbc_sql_local(_DataAccessor,_HookCid,_RootID,_Source) :-
 	cdf_warning(unimplemented,['odbc_sql_local/4 has not ',
 	  ' yet been updated to CDF.']).
+*/
 
-/*
 :- import odbc_sql/4 from odbc_call.
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- resetdbctr.
@@ -146,7 +147,7 @@ odbc_sql_local(Connection,Input,Statement,Output):-
 	sort(Outputs1,Outputs),
 	member(Output,Outputs).
 
-*/
+
 
 %------
 
