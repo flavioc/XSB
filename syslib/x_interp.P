@@ -80,20 +80,23 @@ interpreter1 :-
 	prompt(Prompt,Prompt),
 	file_write(1, Prompt),
 	file_read(0, X, Vars),
-	(nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
+	( nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
 	; process_query(X, Vars)
 	).
 
 read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
 read_in_stop(end_of_file).	% pop a break level, out if at top
 
-process_query(X, []) :-		% no variables appeared in the input
+process_query(X, Vars) :-
+	exclude__(Vars,PrintableVars), process_query1(X,PrintableVars).
+
+process_query1(X, []) :-	% no printable variables appeared in the input
 	!,
 	call_query(X), close_open_tables,
 	!,
 	file_nl(1), file_write(1, yes), file_nl(1),
 	fail.
-process_query(X, Vars) :- 
+process_query1(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
 	call_query(X),
 	stat_flag(55, LetterVars),
@@ -129,10 +132,16 @@ call_query(_) :-
 	goal_cut_trans(Y,X,C),
 	call_expose(X).
 
-
+% first argument is an open ended list
+exclude__([], []) :- !.
+exclude__([V|Vs], PVs) :-
+	V = vv(Name,_),
+	atom_codes(Name, [Code|_]),
+	( Code =:= 0'_ -> PVs = NPVs ; PVs = [V|NPVs] ),
+	exclude__(Vs, NPVs).
 
 print_answer([]) :- !.
-print_answer([vv(Name, Val)|Tail]) :-
+print_answer([vv(Name,Val)|Tail]) :-
 	file_nl(1), file_write(1, Name), 
 	file_write(1, ' = '), file_write(1, Val),
 	print_answer(Tail).
