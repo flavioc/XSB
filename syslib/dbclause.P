@@ -103,6 +103,7 @@ db_retractall(Call,Prref) :-
 	fail.
 db_retractall(_,_).
 
+%%:- import writeln/1 from standard.
 db_retract_abol(Prref1) :-
 	buff_byte(Prref1,0,Op1),
 	((Op1 =:= 197 ; Op1 =:= 192)   % tabletryfail or tabletrysingle
@@ -111,7 +112,16 @@ db_retract_abol(Prref1) :-
 	),
 	buff_byte(Prref,0,Op),
 	(Op =\= 248	% fail	
-	 ->	gen_retract_all(Prref)
+	 ->	(Op =:= 240  % jump to trie code?
+		 ->	buff_word(Prref,4,Buffaddr),
+			buff_word(Buffaddr,12,TrieInst),
+			buff_byte(TrieInst,0,Inst),
+			(Inst =:= 124   %% trie instruction
+			 ->	gen_retract_all(Prref)  %% abolish trie
+			 ;	abort('retractall: inconsistent code structure')
+			)
+		 ;	gen_retract_all(Prref)
+		)
 	 ;	true
 	),
 	buff_set_byte(Prref,0,248).	% fail

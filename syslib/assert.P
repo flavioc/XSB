@@ -146,28 +146,29 @@ assertzi(Clause,Index) :- assert(Clause,1,Index).
 
 
 assert(Clause, AZ, Index1) :-
-	( Clause = (Head:-_) -> conpsc(Head, PSC)
-	; Clause = Head -> conpsc(Head, PSC)
+	(Clause = (Head:-_)
+	 ->	conpsc(Head, PSC)
+	 ;	Clause = Head -> conpsc(Head, PSC)
 	),
 	psc_arity(PSC, Arity),
-	( '_$trie_asserted'(Clause) 
-	->  t_assert_1(Clause, _Flag)
-	;   ( '_$index'(Head,Index,HashTabSize)
-	    ->	true
-	    ;	integer(Index1)
-	    ->	(Index1 > Arity
-		->  Index = 0,default_assert_size(HashTabSize)
-		;   Index1 < 0
-		->  Index = 1,default_assert_size(HashTabSize)
-		;   Index = Index1,default_assert_size(HashTabSize)
-		)
-	    ;	Index = Index1,default_assert_size(HashTabSize)
-	    ),
-	    NArity is Arity+1,	% to hold the cut addr
-	    convert_to_dyna(Head,Prref),
-	    cut_transform(Clause,Nclause),
-	    code_to_buff(Nclause),
-	    assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize)
+	('_$trie_asserted'(Clause) 
+	 ->	t_assert_1(Clause, _Flag)
+	 ;	( '_$index'(Head,Index,HashTabSize)
+		 ->	true
+		 ;	integer(Index1)
+		 ->	(Index1 > Arity
+			 ->	Index = 0,default_assert_size(HashTabSize)
+			 ;	Index1 < 0
+			 ->	Index = 1,default_assert_size(HashTabSize)
+			 ;	Index = Index1,default_assert_size(HashTabSize)
+			)
+		 ;	Index = Index1,default_assert_size(HashTabSize)
+		),
+		NArity is Arity+1, % to hold the cut addr
+		convert_to_dyna(Head,Prref),
+		cut_transform(Clause,Nclause),
+		code_to_buff(Nclause),
+		assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize)
 	).
 
 /* Must fail after code is put into buffer, to reset variables bound in 

@@ -773,7 +773,7 @@ extern Structure_Manager smTSIN;
  * 'prev' and 'next' links are left to the caller to set.
  */
 #define New_TSIN(TSIN, TSTN) {			\
-   void *t = TSIN ;				\
+   void *t ;					\
    SM_AllocateStruct(smTSIN,t);			\
    TSIN = (TSINptr)t ;				\
    TSIN_TSTNode(TSIN) = TSTN;			\

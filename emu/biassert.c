@@ -2048,14 +2048,18 @@ static inline int clref_trie_asserted(CPtr Clref) {
 }
 /*----------------------------------------------------------------------*/
 
-static void abolish_trie_asserted_stuff(CPtr b) {
+static void abolish_trie_asserted_stuff(PrRef prref) {
 
    BTNptr pRoot;
+   CPtr b;
    
+   /*** printf("abolish_trie\n"); ***/
+   b = (CPtr)prref->FirstClRef;
    pRoot = (BTNptr)*(b + 3);
    switch_to_trie_assert;
    delete_trie(pRoot);
    switch_from_trie_assert;
+   /**   mem_dealloc(b);  where is this allocated?? */
    *(b + 3) = (Cell) 0;
    /* shouldn't we change one of the instr fields too? */
 }
@@ -2081,6 +2085,11 @@ int gen_retract_all(/* R1: + Prref */)
   ClRef buffer;
   PrRef prref = (PrRef)ptoc_int(1);
   ClRef frstbuff = prref->FirstClRef;
+
+  if (PredOpCode(prref) == jump) {  /* should be trie-asserted */
+    abolish_trie_asserted_stuff(prref);
+    return TRUE;
+  }
 
   force_retract_buffers();
   buffers_to_free[btop++] = frstbuff;
