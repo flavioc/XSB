@@ -421,7 +421,11 @@ if test -n "$with_gcc" ; then
 	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-	c_inline_level="-finline-functions -Winline" 
+	if test -n "$optimization_level"; then
+	   c_inline_level=""
+	else
+	   c_inline_level="-finline-functions -Winline" 
+	fi
 	CFLAGS="-Wall -ansi -pedantic"
 else
  case $CC in
