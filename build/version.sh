@@ -11,4 +11,4 @@ xsb_codename="Okocim"           # from Poland! ;)
 
 # Format: YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
 # With this, XSB should become Y2K compliant :-)
-xsb_release_date=2002-02-28
+xsb_release_date=2002-03-11
