@@ -198,8 +198,10 @@ char *xsb_executable_full_path(char *myname)
   /* XSB executable isn't found after searching PATH */
   fprintf(stderr,
 	  "*************************************************************\n");
-  printf("PANIC!!! Can't determine the full name of the XSB executable!\n");
-  printf("         Please report this bug to xsb-contact@cs.sunysb.edu\n");
+  fprintf(stderr, 
+	  "PANIC!!! Can't determine the full name of the XSB executable!\n");
+  fprintf(stderr, 
+	  "         Please report this bug to xsb-contact@cs.sunysb.edu\n");
   fprintf(stderr,
 	  "*************************************************************\n");
   exit(1);

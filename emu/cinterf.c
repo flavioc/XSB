@@ -983,10 +983,24 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 /*									*/
 /************************************************************************/
 
-DllExport int call_conv xsb_init_string(char *cmdline) {
+DllExport int call_conv xsb_init_string(char *cmdline_param) {
 	int i = 0, argc = 0;
 	char **argv, delim;
+	char cmdline[2*MAXPATHLEN+1];
+
+	if (strlen(cmdline_param) > 2*MAXPATHLEN) {
+	    fprintf(stderr,
+		    "**************************************************************************\n");
+	    fprintf(stderr,
+		    "%18s...: command used to call XSB server is too long!\n",
+		    cmdline_param);
+	    fprintf(stderr,
+		    "**************************************************************************\n");
+	    exit(1);
+	}
+	strncpy(cmdline, cmdline_param, 2*MAXPATHLEN - 1);
 	argv = (char **) malloc(20*sizeof(char *));
+
 	while (cmdline[i] == ' ') i++;
 	while (cmdline[i] != '\0') {
 		if ((cmdline[i] == '"') || (cmdline[i] == '\'')) {
