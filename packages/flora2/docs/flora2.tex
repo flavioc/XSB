@@ -3945,7 +3945,8 @@ generally advisable to place subgoals with smaller answer sets as close to
 the left of the rule body as possible. And, like in databases, Cartesian
 products should be avoided at all costs.
 
-The next thing to remember is that \FLORA compiler makes decisions about
+\paragraph{Nested molecules and path expressions.}
+\FLORA compiler makes decisions about
 where to place the various parts of complex F-logic molecules, and the
 programmer can affect this placement by writing molecules in various ways.
 For instance,
@@ -3972,15 +3973,23 @@ have nested molecules in them. For instance, the following query
 is translated as
 %%
 \begin{verbatim}
-     ?- ..., Y[attr2->Z], X[attr1->Y], P[attr3->Q], f(P), ...
+     ?- ..., X[attr1->Y], Y[attr2->Z], f(P), P[attr3->Q], ...
 \end{verbatim}
 %%
-{\it i.e.}, the nested literals precede their hosts in the translation.  If
-{\tt X[attr1->Y]} has a smaller answer set than {\tt Y[attr2->Z]} then the
-optimal order is just the opposite than what the compiler has
-chosen. Likewise, if {\tt f(P)} has a small answer set than {\tt
-  P[attr3->Q]} then the two literals are better evaluated in the opposite
-order.
+{\it i.e.}, the nested literals follow their hosts in the translation.
+Thus, writing terms in this way is considered a hint to the compiler, which
+indicates that bindings are propagated from {\tt X[attr1->Y]} to {\tt
+  Y[attr2->Z]}, etc. If, on the other hand, {\tt Y[attr2->Z]} has only one
+solution then, perhaps, writing {\tt Y[attr2->Z], X[attr1->Y]} might
+produce a more efficient code.  The same considerations apply to {\tt
+  f(P[attr3->Q])}.
+
+Similarly to nested molecules, the \FLORA compiler assumes that path
+expressions represent a hint that bindings are propagated left-to-right.
+In other words, in {\tt X.Y.Z}, {\tt X} will be bound first.
+Based on this, the oids, of the objects {\tt X.Y} are computed, and
+then the attribute {\tt Z} is applied. In other words, the translation will
+be {\tt X[Y->Newvar1], Newvar1[Z->Newvar2]}.
 
 Unfortunately, unlike in databases, statistical information is not
 available to the \FLORA compiler and only a few heuristics (such as
