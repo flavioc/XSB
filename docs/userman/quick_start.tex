@@ -248,6 +248,16 @@ these steps:
 \]
 %%
 \end{enumerate}
+%%
+{\bf Note}: the XSB executable and the DLL can coexist in the same source
+tree structure. However, if you first compiled  XSB as an executable and
+then want to compile it as a DLL (or vice versa), then you must run 
+%%
+\begin{verbatim}
+ NMAKE /f "MS_VC_Mfile.mak" clean  
+\end{verbatim}
+%%
+in between.
 
 
 \section{Invoking XSB}
