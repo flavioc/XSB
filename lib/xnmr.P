@@ -103,7 +103,12 @@ process_nmr_query(X, Vars) :-
 	        file_nl(STDFDBK), file_write(STDFDBK, yes), file_nl(STDFDBK)
          ; C =:= 0's   % 'print stable models
          ->     (Res \== []
-	         ->     process_stable_models(X)
+	         ->     process_stable_models(X,_)
+	         ;      true
+	        )
+         ; C =:= 0't   % 'print "strict" stable models
+         ->     (Res \== []
+	         ->     process_stable_models(X,1)
 	         ;      true
 	        )
 	 ; C =:= 0'a   % 'answer set semantics
@@ -202,7 +207,7 @@ all_distinct1([vv(_Name,Var)|Rest]) :-
 	Var=[],
 	all_distinct1(Rest).
 
-process_stable_models(Query) :-
+process_stable_models(Query,Strict) :-
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
 	(Query = {tnot(Q)}
          ->     true
@@ -210,7 +215,10 @@ process_stable_models(Query) :-
         ),
 	init_smodels(Q),
 	file_nl(STDFDBK),
-	file_write(STDFDBK,'Stable Models: '), 
+	file_write(STDFDBK,'Stable Models: '),
+	(var(Strict)
+	-> true
+	; set_query_true),
 	a_stable_model,
 	file_nl(STDFDBK),
 	file_write(STDFDBK,'  '),
@@ -225,7 +233,7 @@ process_stable_models(Query) :-
 	 ; true
         ),
 	fail.
-process_stable_models(_) :-
+process_stable_models(_,_) :-
         file_write(STDFDBK, '  no'), 
 	file_nl(STDFDBK).
 

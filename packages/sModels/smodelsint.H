@@ -8,6 +8,7 @@
 :- export answer_set/1.
 :- export full_answer_set/2.
 :- export pstable_model/3.
+:- export set_query_true/0.
 
 :- import conset/2,coninc/1,conget/2 from prof_sbp.
 :- import new_trie/1, delete_trie/1, trie_intern/5 from intern.
