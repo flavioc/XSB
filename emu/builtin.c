@@ -1233,8 +1233,7 @@ int builtin_call(byte number)
     break;
   }
   case COPY_TERM: /* R1: +term to copy; R2: -variant */
-    copy_term();
-    break;
+    return copy_term();
     
   case CALL0: {			/* R1: +Term, the call to be made */
     /* Note: this procedure does not save cpreg, hence is more like */
