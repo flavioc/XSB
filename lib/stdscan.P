@@ -5,13 +5,20 @@
 % 	digit/1, letter/1
 % 	from stdutils.
 
-?- load_dyn(stdscan_defs).
 
 :- import whitespace/1, special_char/1, digit/1, letter/1 from usermod.
-
+:- import xsb_configuration/2 from xsb_configuration.
+:- import concat_atom/2 from string.
 :- import integer/1 from standard.
 
 %%%%%%%% basic predicates %%%%%%%%%%%%%%%%%%%%%%%
+my_load_dyn(File) :-
+	xsb_configuration(install_dir,InstallDir),
+	concat_atom([InstallDir,'/lib/',File],FullName),
+	load_dyn(FullName).
+
+?- my_load_dyn(stdscan_defs).
+
 % uppercase
 upper_case(Ci,Co) :-
 	(Ci >= 0'a, Ci =< 122
