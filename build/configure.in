@@ -813,6 +813,7 @@ test -n "$have_errors" && AC_MSG_ERROR(Your system is missing library: \`m')
 
 AC_CHECK_LIB(dl, main,, have_dl=no)
 AC_CHECK_LIB(nsl, main, , have_nsl=no)
+AC_CHECK_LIB(pthread, main, , have_pthread=no)
 AC_CHECK_LIB(socket, main,, have_socket=no)
 
 AC_CHECK_LIB(readline, readline, have_readline=yes)
@@ -1258,6 +1259,9 @@ case "$canonical" in
  			       LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
  			    fi
   			 fi
+			 if test "${have_pthread}" != "no" ; then
+			    LDFLAGS="${LDFLAGS} -lpthread"
+			 fi
 		       fi
 		   ;;
 	      esac
@@ -1270,6 +1274,9 @@ case "$canonical" in
 	fi
 	if test "${have_dl}" = yes ; then
 		LDFLAGS="${LDFLAGS} -ldl"
+	fi
+	if test "${have_pthread}" != "no" ; then
+		LDFLAGS="${LDFLAGS} -lpthread"
 	fi
 	;;
       *-rhapsody* | *-darwin* )
@@ -1314,6 +1321,9 @@ case "$canonical" in
 		 fi
 		 if test "${have_nsl}" = "no" ; then
 		    AC_MSG_ERROR(Your system is missing library: \`nsl')
+		 fi
+		 if test "${have_pthread}" != "no" ; then
+		    LDFLAGS="${LDFLAGS} -lpthread"
 		 fi
 		 AC_DEFINE(BIG_MEM)
 		 AC_DEFINE(FOREIGN_ELF)
