@@ -217,6 +217,7 @@ table to use. */
          ;      fail     % index1 doesn't exist yet, so it is empty
         ).
 
+:- dynamic '_$index1'(_,_,_).
 :- assert('_$index1'(dyn_op(_,_,_),3,17)),
    assert('_$index1'('_$index'(_,_,_),1,29)).
 
