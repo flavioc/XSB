@@ -113,14 +113,15 @@ Unix versions can be downloaded from:
 3. Getting down to work
 -----------------------
 
-Step 1 (SSH keys):  Create and send me (kifer@cs.sunysb.edu) your SSH
-	 public key. 
+Step 1 (SSH keys):  Create your SSH public key and put it in
+         ~/.ssh/authorized_keys in your home directory.
 	 Local users don't need this, but it is still useful, if you want
 	 to work from home.
 	 *** Make sure you remember the password you used to create this pair
-	     of keys!
-         Make sure the environment variable CVS_RSH is set to point to ssh
-	 (something like /usr/local/bin/ssh or whereever your ssh lives).
+	     of keys! Also, the directory .ssh and the file authorized_keys 
+	     are not group-writable.
+         Set the environment variable CVS_RSH to point to ssh
+	 (something like /usr/local/bin/ssh or wherever your ssh lives).
 
 	 E.g., (CSH, TCSH):
 	       setenv CVS_RSH /usr/local/bin/ssh
