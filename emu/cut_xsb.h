@@ -125,8 +125,8 @@
 #define good_trail_register(t)	(conditional(((CPtr) *((t)-2))))
 
 #define unwind_trail(tbreg, t1, t2) {	\
-    while (!good_trail_register(trreg) &&				\
-	   trreg > trfreg &&						\
+    while (trreg > trfreg &&						\
+           !good_trail_register(trreg) &&				\
 	   trreg > cp_trreg(tbreg))					\
       trreg = trail_parent(trreg);					\
     (t2) = (CPtr) trail_parent((t1) = (CPtr)trreg);			\
