@@ -1,3 +1,6 @@
+
+:- import flcompile/1 from flrutils.
+
 ?- flcompile(module2).
 
 :- import employee[salary@(number) => number] from module2.
