@@ -2,6 +2,7 @@
 
 :- export
 	cdf_id_fields/4,
+	cdf_root/1,
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
 	hasAttr/3, immed_hasAttr/3, 
 	allAttr/3, immed_allAttr/3, 

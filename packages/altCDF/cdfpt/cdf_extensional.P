@@ -1,15 +1,3 @@
-isa_ext(cid('CDF Classes',cdf),	id('CDF Root',cdf)).
-	
-isa_ext(rid('CDF Object-Object Relations',cdf),id('CDF Root',cdf)).
-
-isa_ext(crid('CDF Class-Object Relations',cdf),id('CDF Root',cdf)).
-
-isa_ext(crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf),
-        id('CDF Root',cdf)).
-
-isa_ext(crcrid('CDF Higher-Order (Class-Object)-Object Relations',cdf),
-        id('CDF Root',cdf)).
-
 isa_ext(cid('CDF Primitive Types',cdf),cid('CDF Classes',cdf)).
 
 isa_ext(cid(allIntegers,cdf),cid('CDF Primitive Types',cdf)).
