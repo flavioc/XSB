@@ -323,10 +323,11 @@ cdf_id_fields2(crcrid(N,S),crcrid,N,S).
 cdf_id_fields2(vid(N,S),vid,N,S).
 
 product_identifier(Id):- 
+	nonvar(Id),
 	cdf_id_fields(Id,_F,I,Comp),
+	structure(I),
 	nonvar(Comp),
-	\+ concrete_component(Comp),
-	structure(I).
+	\+ concrete_component(Comp).
 
 %%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%
 
@@ -504,11 +505,12 @@ isa(Sub,Sup):-
 	isa_nocheck(Sub,Sup).
 
 isa_nocheck(Sub,Sup):- 
+	(Sup @= oid(_,_) -> Sub = Sup ;
 	(ground(Sub) -> 
 	    (ground(Sup) -> 
 	        isa_bb(Sub,Sup),!	% want det for bb.
 	      ; isa_bf(Sub,Sup))
-	      ;   isa_fx(Sub,Sup) ).
+	    ;   isa_fx(Sub,Sup) )).
 
 % Here use implicit bb specialization for first step as alternative
 % to the bf mode.
