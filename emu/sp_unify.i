@@ -1,6 +1,6 @@
 /*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      sp_unify.i
-** Author(s): Kostis F. Sagonas
+** Author(s): Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -24,36 +24,27 @@
 */
 
 
-bool int_unify(Cell op1, Cell op2) /* cell op1 is known to contain an int */
-{	/* No checking for interrupts is needed!	*/
-
+/* to be used when cell op1 is known to contain an int */
+static inline bool int_unify(Cell op1, Cell op2)
+{	/* No checking for interrupts is needed!       */
   deref(op2);
   if (isref(op2)) {
-    /* op2 is FREE:                        num ... free */
+    /* op2 is FREE:                       num ... free */
     bind_copy0((CPtr)(op2), op1);
     return TRUE;
   }
-  else if (isinteger(op2)) {		/* num ... num	*/
-    if (numequal(op2, op1)) {return TRUE;} else {return FALSE;}
-  }
-  else       /* op2 is FLOAT, STRING, CS, or LIST.   */
-    { return FALSE; }
+  return (op1 == op2);
 }
 
 
-bool atom_unify(Cell op1, Cell op2)  /* cell op1 is known to contain an atom */
+/* to be used when cell op1 is known to contain an atom */
+static inline bool atom_unify(Cell op1, Cell op2)
 {	/* No checking for interrupts is needed!	*/
-
   deref(op2);
   if (isref(op2)) {
-    /* op2 is FREE                         string ... free */
+    /* op2 is FREE                      string ... free */
     bind_copy0((CPtr)(op2), op1);
     return TRUE;
   }
-  else if (isstring(op2)) {
-    if (string_val(op2)==string_val(op1)) {return TRUE;}
-    else {return FALSE;}
-  }
-  else       /* op2 is INT, FLOAT, CS, or LIST.      */
-    { return FALSE; }
+  return (op1 == op2);
 }

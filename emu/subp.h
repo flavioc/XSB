@@ -32,8 +32,6 @@ extern void print_op(FILE *, char *, int);
 extern void remove_open_tables_reset_freezes(void);
 
 extern bool unify(Cell, Cell);
-extern bool int_unify(Cell, Cell);
-extern bool atom_unify(Cell, Cell);
 
 /* don't use Cell declarations here, to avoid compiler warnings */
 extern int compare(/* Cell, Cell */);
