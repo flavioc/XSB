@@ -1,4 +1,4 @@
-/* File:        flrdisplay.P
+/* File:        syslib/flrdisplay.P
 **
 ** Author(s): Guizhen Yang 
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -181,6 +181,6 @@
 	'_$_$_flora_write_list'([X2|Xs]).
 
 
-/*********************** End of flrlib.P ****************************/
+/******************** End of syslib/flrdisplay.P *************************/
 
 

@@ -1,4 +1,4 @@
-/*** lib/flrassert.P: appended automatically by the FLORA compiler  ********/
+/** syslib/flrassert_dyn.P: appended automatically by the FLORA compiler **/
 
 
 :- import var/1, call/1 from standard.
@@ -128,5 +128,5 @@
 '_$_$_flora_eraseall_dyn'(_,_).
 
 
-/****************************  End of lib/flrassert.P  **********************/
+/***********************  End of syslib/flrassert_syn.P  *******************/
 

@@ -1,4 +1,4 @@
-/*** lib/flraggregate.P: appended automatically by the FLORA compiler  *****/
+/*** syslib/flraggregate.P: appended automatically by the FLORA compiler ****/
 
 
 :- import
@@ -238,5 +238,5 @@
 	).
 
 
-/***********************  End of lib/flraggregate.P  ************************/
+/***********************  End of syslib/flraggregate.P  *********************/
 

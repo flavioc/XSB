@@ -571,7 +571,7 @@ directives_options(LoadMode,Directives,Options,Status) :-
 	      ;
 	        FlrAgg='flraggregate_dyn.P'
 	    ),
-	    copy_flrfile(lib,FlrAgg,S1)
+	    copy_flrfile(syslib,FlrAgg,S1)
 	  ;
 	    S1=success
 	),
@@ -581,7 +581,7 @@ directives_options(LoadMode,Directives,Options,Status) :-
 	      ;
 	        FlrAss='flrassert_dyn.P'
 	    ),
-	    copy_flrfile(lib,FlrAss,S2)
+	    copy_flrfile(syslib,FlrAss,S2)
 	  ;
 	    S2=success
 	),

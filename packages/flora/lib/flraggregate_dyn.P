@@ -1,4 +1,4 @@
-/*** lib/flraggregate.P: appended automatically by the FLORA compiler  *****/
+/* syslib/flraggregate_dyn.P: appended automatically by the FLORA compiler */
 
 
 :- import
@@ -10,9 +10,9 @@
 :- import findall/3, sort/2 from setof.
 
 
-/*****************************************************************************
+/****************************************************************************
   rules for aggregates
-*****************************************************************************/
+****************************************************************************/
 '_$_$_flora_min_dyn'(G,Matches,Min) :-
 	( G = nogrp ->
 	    Matches=[H|T],
@@ -238,5 +238,5 @@
 	).
 
 
-/***********************  End of lib/flraggregate.P  ************************/
+/*******************  End of syslib/flraggregate_dyn.P  ********************/
 

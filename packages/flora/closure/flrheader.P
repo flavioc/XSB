@@ -81,7 +81,7 @@
 	   package_configuration(dir(flora),D)
        ),
        slash(S),
-       fmt_write_string(Lib,'%s%slib%sflrdisplay',f(D,S,S)),
+       fmt_write_string(Lib,'%s%ssyslib%sflrdisplay',f(D,S,S)),
        consult(Lib)
    ),
    !.

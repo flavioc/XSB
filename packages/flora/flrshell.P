@@ -75,7 +75,7 @@
 	    package_configuration(dir(flora),FloraDir)
 	),
 	slash(S),
-	fmt_write_string(Lib,'%s%slib%sflrdisplay',f(FloraDir,S,S)),
+	fmt_write_string(Lib,'%s%ssyslib%sflrdisplay',f(FloraDir,S,S)),
 	[tables, Lib, flrutils],
 	'_$_$_flora_welcome_msg',
 	all,
@@ -143,7 +143,7 @@
 	    ( current_predicate('_$_$_flora_assert'/1) ->
 	       true
 	      ;
-	       fmt_write_string(Assert,'%s%slib%sflrassert.P',f(FloraDir,S,S)),
+	       fmt_write_string(Assert,'%s%ssyslib%sflrassert.P',f(FloraDir,S,S)),
 	       consult(Assert)
 	    )
 	  ;
@@ -153,7 +153,7 @@
 	    ( current_predicate('_$_$_flora_min'/3) ->
 	      true
 	     ;
-	      fmt_write_string(Aggr,'%s%slib%sflraggregate.P',f(FloraDir,S,S)),
+	      fmt_write_string(Aggr,'%s%ssyslib%sflraggregate.P',f(FloraDir,S,S)),
 	      consult(Aggr)
 	    )
 	  ;
