@@ -504,3 +504,16 @@ DONE 24.  Implement a richer anonymous oid syntax.
     Probably this should be a job for the parser to check that control
     constructs don't appear under the skope of \+ or tnot.
 
+27. Implement @prologall() and @prologall(module).
+    They should behave the same way as @prolog(...), but the coder should
+    dump the code differently.
+    For instance, p(X,Y,Z)@prolog() dumps it as p(X,Y,Z), while
+    p(X,Y,Z)@prologall() should dump it as
+    
+    (var(X),! ; flP2H(_newvar1234,X)),
+    (var(Y),! ; flP2H(_newvar1235,Y)),
+    (var(Z),! ; flP2H(_newvar1236,Z)),
+    p(_newvar1234,_newvar1235,_newvar1236),
+    (nonvar(X),! ; flP2H(_newvar1234,X)),
+    (nonvar(Y),! ; flP2H(_newvar1235,Y)),
+    (nonvar(Z),! ; flP2H(_newvar1236,Z))

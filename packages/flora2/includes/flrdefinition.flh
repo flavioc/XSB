@@ -6,7 +6,7 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
-FLORA_THIS_WORKSPACE(flThisModule)(FLORA_THIS_MODULE_NAME).
+FLORA_FO_THIS_WORKSPACE(flThisModule)(FLORA_THIS_MODULE_NAME).
 
 :- import storage_delete_all/1 from storage.
 :- import storage_find_fact/2 from storage.
