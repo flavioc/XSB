@@ -85,7 +85,6 @@ inline_builtin(str_len, 2, 25).
 inline_builtin(str_cat, 3, 27).
 inline_builtin(str_cmp, 3, 28).
 inline_builtin(str_hsh, 4, 29).
-inline_builtin(str_insert, 2, 30).
 inline_builtin(call0, 1, 31).
 inline_builtin(stat_sta, 1, 32).
 inline_builtin(stat_cputime, 1, 33).

@@ -38,7 +38,7 @@
 :- import '_$hilog_symbol'/1 from hilogsym.
 :- import term_new/2, term_set_arg/4, term_type/2,
 	  file_gettoken/5, psc_insert/4, stat_set_flag/2, conname/2, 
-	  conpsc/2, str_insert/2, term_psc/2, psc_set_prop/2, psc_prop/2
+	  conpsc/2, intern_string/2, term_psc/2, psc_set_prop/2, psc_prop/2
      from machine.
 
 /* -------------------- end of file file_read.H ----------------------- */

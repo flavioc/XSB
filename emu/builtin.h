@@ -58,7 +58,6 @@ extern void init_builtin_table(void);
 #define STR_CAT		27
 #define STR_CMP		28
 #define STR_HSH		29
-#define STR_INSERT	30
 #define CALL0		31
 /* some other builtins that might need hard implementation */
 #define STAT_STA	32

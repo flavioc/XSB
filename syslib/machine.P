@@ -62,7 +62,7 @@ str_len(_String, _Length) :- '_$builtin'(25).
 str_cat(_String1, _String2, _String3) :- '_$builtin'(27).
 str_cmp(_String1, _String2, _Res) :- '_$builtin'(28).
 str_hsh(_String, _Arity, _Size, _Res) :- '_$builtin'(29).
-str_insert(_StringIn, _StringOut) :- '_$builtin'(30).
+
 call0(_Term) :- '_$builtin'(31).
 stat_sta(_X) :- '_$builtin'(32).
 stat_cputime(_X) :- '_$builtin'(33).

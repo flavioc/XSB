@@ -30,7 +30,7 @@
 
 :- import atom/1,atom_codes/2 from standard.
 :- import buff_set_byte/3, buff_alloc/2, buff_byte/3, buff_dealloc/3,
-	  str_insert/2, str_len/2 from machine.
+	  intern_string/2, str_len/2 from machine.
 :- import flatten/2 from basics.
 
 /* ---------------------- end of file string.H ------------------------ */

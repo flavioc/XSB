@@ -735,8 +735,8 @@ read_lookup([_|T], X) :-
 
 read_getcon(String, Con) :-
 	term_type(test, T),
-	( T =:= 2 -> str_insert(String, Con)	% in buffer
-	; T =:= 5 -> str_insert(String, Con)
+	( T =:= 2 -> intern_string(String, Con)	% in buffer
+	; T =:= 5 -> intern_string(String, Con)
 	; T =:= 1 -> psc_insert(String, 0, Psc, 0), term_new(Psc, Con)
 	).
 

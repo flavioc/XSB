@@ -230,7 +230,7 @@ prompt(New,Old,Pstore) :-
 get_prompt(Pstore,Prompt) :-
 	term_psc(Pstore, Psc),
 	psc_prop(Psc, Buff),	
-	str_insert(Buff, String),	% temp solution, since ALIAS not work
+	intern_string(Buff, String),	% temp solution, since ALIAS not work
 	Prompt = String.		% for double word.
 
 set_prompt(Pstore,Prompt) :-

@@ -39,7 +39,7 @@ str_fromlist(String, List) :-
 	str_fl_check(List, Length),
 	buff_alloc(Length, Buff),
 	str_fl_put(Buff, 0, List),
-	str_insert(Buff, String),
+	intern_string(Buff, String),
 	buff_dealloc(Buff,Length,0).
 
 str_fl_check([], 1).
@@ -101,11 +101,14 @@ str_sub(S1,S2) :- str_sub(S1,S2,_Pos).
 
 %% Extract substring of Len at Loc from String. Result -> SubString
 str_substring(String, Loc, Len, SubString) :-
-	BufSize is Len+1,
+	(Len >= 0 -> RealLen = Len
+	;   str_len(String, RealLen)
+	),
+	BufSize is RealLen+1,
 	buff_alloc(BufSize, Buff),
-	str_ncopy(String, Loc, Buff, 0, Len),
-	buff_set_byte(Buff, Len, 0),		% trailing 0
-	str_insert(Buff, SubString),
+	str_ncopy(String, Loc, Buff, 0, RealLen),
+	buff_set_byte(Buff, RealLen, 0),		% trailing 0
+	intern_string(Buff, SubString),
 	buff_dealloc(Buff, BufSize, 0).
 
 sublist([], _).
