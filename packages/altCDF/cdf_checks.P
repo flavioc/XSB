@@ -3,7 +3,8 @@
 :- export check_types/2, 
           check_implication/2,
 	  classify_if_necessary/2,
-	  classify_if_necessary_no_checkflag/2.
+	  classify_if_necessary_no_checkflag/2,
+	  hasAttr_redundancy_check/0.
 
 % fool that module system... 
 :- export check_isa_types/4, check_ind_types/3.
@@ -11,6 +12,7 @@
 :- import cdf_error/2, cdf_warning/2 from cdf_exceptions.
 :- import in_hierarchy/1,
 	  newExtTerm/1,
+	  immed_hasAttr/3, isa/2,
 	  cdf_id_fields/4 from cdf_init_cdf.
 
 :- import cdf_flags/2 from usermod.
@@ -254,5 +256,58 @@ classification_type(crid,crid('CDF Class-Object Relations',cdf)).
 
 %classification_type(crrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
 %classification_type(crcrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
+
+/************************************************************************/
+/*									*/
+/*	hasAttr_redundancy_check checks for redundancies in		*/
+/*	immed_hasAttr.  I.e., it finds tuples that could be deleted	*/
+/*	without changing the semantics of hasAttr.			*/
+/*	It currently just prints out the redundancies; it could be	*/
+/*	modified to save them, for later deletion.			*/
+/*									*/
+/*	It uses marginals to try to determine which index is better	*/
+/*	to use.								*/
+/*									*/
+/************************************************************************/
+
+:- import  marginal_clear/0, marginal_add/1, marginal_get/2 from marginals.
+:- import conset/2, conget/2, coninc/1 from gensym.
+hasAttr_redundancy_check :-
+	cputime(T0),
+	(marginal_clear,
+	 immed_hasAttr(S,R,T),
+	 marginal_add(first(R,S)),
+	 marginal_add(last(R,T)),
+	 fail
+	 ;	
+	 writeln('marginals generated'),
+	 conset(lastind,0), conset(firstind,0),
+	 F = f(S,R,T), F1 = f(S1,R1,T1),
+	 immed_hasAttr(S,R,T),
+	 isa(R1,R),
+	 marginal_get(first(R1,S),CntFirst),
+	 marginal_get(last(R1,T),CntLast),
+	 (CntLast < CntFirst
+	  ->	 coninc(lastind),
+		 isa(T1,T),
+		 immed_hasAttr(S1,R1,T1),
+		 F \== F1,
+		 isa(S,S1)
+	  ;	 coninc(firstind),
+		 isa(S,S1),
+		 immed_hasAttr(S1,R1,T1),
+		 F \== F1,
+		 isa(T1,T)
+	 ),
+	 writeln(hasAttr(S,R,T)),writeln(hasAttr(S1,R1,T1)),nl,
+	 fail
+	 ;
+	 marginal_clear
+	),
+	cputime(T1),
+	T is T1-T0, writeln(cputime=T),
+	conget(lastind,Last), conget(firstind,First),
+	writeln(['Use 1+2 index count'=First, 'Use 2+3 index count'=Last]).
+
 
 end_of_file.
