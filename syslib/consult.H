@@ -53,7 +53,7 @@
 :- import add_hilog_symbol/1 from hilogsym.
 :- import libpath/1 from loader.
 :- import code_load/3, code_call/3, file_read_canonical/3,
-	  expand_filename/2, unload_seg/1,
+  expand_filename/2, unload_seg/1, 
 	  buff_word/3, assert_code_to_buff/1, assert_buff_to_clref/6,
 	  conpsc/2, psc_ep/2, psc_tabled/2, psc_type/2, psc_name/2,
 	  psc_arity/2, existing_file_extension/2, almost_search_module/5
@@ -74,3 +74,4 @@
 :- import xsb_configuration/2 from xsb_configuration.
 :- import file_write0/2, file_nl/1 from xsb_writ.
 :- import library_directory/1 from usermod.
+:- import parse_filename/4 from machine.

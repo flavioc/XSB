@@ -142,8 +142,8 @@ needs_recompile('c', Base, Obj) :-
 	  ; str_sub('cygwin', OS_type) -> str_cat(Base, '.dll', C_Obj)
 	  ; str_cat(Base, '.o', C_Obj)
 	  ),
-	  ( file_exists(C_Obj) -> 
-		file_time(C_Obj, time(COTime1,COTime2)),
+	  ( file_exists_here_or_configbin(C_Obj,CC_Obj) -> 
+		file_time(CC_Obj, time(COTime1,COTime2)),
 		str_cat(Base, '.c', CFileName),
 		file_time(CFileName, time(CTime1,CTime2)),
 		time(COTime1,COTime2) @< time(CTime1,CTime2)
@@ -155,6 +155,18 @@ needs_recompile('c', Base, Obj) :-
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(HFileName, time(HTime1,HTime2)), 
 	  time(OTime1,OTime2) @< time(HTime1,HTime2)
+	).
+
+file_exists_here_or_configbin(C_Obj,CC_Obj) :-
+	(file_exists(C_Obj)
+	 ->	CC_Obj = C_Obj
+	 ;	parse_filename(C_Obj, _, C_File, C_Ext),
+		xsb_configuration(config_dir,ConfigDir),
+		str_cat(ConfigDir,'/bin/',ConfigBinDir),
+		str_cat(ConfigBinDir,C_File,CC_Obj0),
+		str_cat(CC_Obj0,'.',CC_Obj1),
+		str_cat(CC_Obj1,C_Ext,CC_Obj),
+		file_exists(CC_Obj)
 	).
 
 
