@@ -80,17 +80,16 @@ DEPENDFLAGS = -m
 
 SRCS =	auxlry.c biassert.c builtin.c \
 	chat.c cinterf.c debug.c \
-	dis.c  dynload.c emuloop.c \
+	dis.c dynload.c emuloop.c \
 	findall.c function.c hash.c \
-	heap.c  init.c  inst.c \
+	heap.c init.c inst.c \
 	io_builtins.c \
-	load_seg.c  loader.c  memory.c \
-	xpathname.c \
-	psc.c  residual.c  scc.c     \
-	self_orientation.c 	\
-	slgdelay.c  subp.c  system.c \
-	token.c  tr_utils.c  trace.c \
-	tries.c   xmain.c  xsberror.c
+	load_seg.c loader.c memory.c \
+	psc.c residual.c scc.c \
+	self_orientation.c slgdelay.c \
+	struct_manager.c subp.c system.c \
+	token.c tr_utils.c trace.c \
+	tries.c xmain.c xpathname.c xsberror.c
 
 ORASRCS = $(SRCS) orastuff.c
 
@@ -98,16 +97,16 @@ ORASRCS = $(SRCS) orastuff.c
 OBJS = auxlry.o biassert.o builtin.o \
 	chat.o cinterf.o debug.o \
 	dis.o dynload.o emuloop.o \
-	findall.o  function.o  hash.o \
-	heap.o  init.o  inst.o \
+	findall.o function.o hash.o \
+	heap.o init.o inst.o \
 	io_builtins.o \
-	load_seg.o  loader.o  memory.o \
-	private_builtin.o xpathname.o \
-	psc.o  residual.o  scc.o     \
-	self_orientation.o 	\
-	slgdelay.o  subp.o  system.o \
-	token.o  tr_utils.o  trace.o \
-	tries.o  xsberror.o
+	load_seg.o loader.o memory.o \
+	private_builtin.o \
+	psc.o residual.o scc.o \
+	self_orientation.o slgdelay.o \
+	struct_manager.o subp.o system.o \
+	token.o tr_utils.o trace.o \
+	tries.o xpathname.o xsberror.o
 
 allOBJS = xmain.o ${OBJS}
 
