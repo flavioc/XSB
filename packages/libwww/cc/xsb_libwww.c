@@ -51,7 +51,7 @@ void reset(void)
 }
 
 /* after filter for all retcodes other than HT_NO_ACCESS and 
-HT_NO_PROXY_ACCESS */
+   HT_NO_PROXY_ACCESS */
 int InfoFilter(HTRequest *request, HTResponse *response,
 	       void *param, int status) 
 { 
@@ -65,7 +65,8 @@ int InfoFilter(HTRequest *request, HTResponse *response,
       c2p_int(code, p2p_arg(Status_term,1));
     */
   }
-  HTRequest_delete(request);
+  if (request)
+    HTRequest_delete(request);
 }
 
 /* after filter for HT_NO_ACCESS or HT_NO_PROXY_ACCESS retcodes */
@@ -117,7 +118,8 @@ int terminate_handler (HTRequest *request, HTResponse *response,
     }
   } 
   
-  HTRequest_delete(request); 
+  if (request)
+    HTRequest_delete(request); 
   c2p_nil(Response_member);
   HTProfile_delete();
   HTEventList_stopLoop();
@@ -354,9 +356,12 @@ bool do_libwww_form_request___(void)
     else if ((strcmp(method, "GET")==0) || (strcmp(method, "Get")==0))
       result = HTGetFormAnchorToChunk(formfields, anchor, request);
 
-    HTAssocList_delete(formfields);
+    if (formfields) HTAssocList_delete(formfields);
+    if (result) HTChunk_delete(result);
+    /* This should come after the above two. Apparently this cleans up the
+       stream, including the chunk (result) it returned, so subsequent
+       HTChunk_delete(result) might segfault. */
     HTEventList_loop(request);
-    HTChunk_delete(result);
   } else
     xsb_abort("Bad parameters - please try again\n");
 

@@ -123,8 +123,8 @@ HTChunk * HTGetFormAnchorToChunk (HTAssocList *formdata,
                                   HTRequest   *request)
 {
   if (formdata && anchor && request) {
-    HTChunk * chunk = NULL;
-    HTStream * target = HTStreamToChunk(request, &chunk, 0);
+    HTChunk  *chunk = NULL;
+    HTStream *target = HTStreamToChunk(request, &chunk, 0);
     HTRequest_setOutputStream(request, target);
     if (HTGetFormAnchor(formdata, anchor, request))
       return chunk;
