@@ -435,7 +435,9 @@ static int is_most_general_term(Cell term)
   Psc psc;
 
   deref(term);
-  if (isconstr(term)) {
+  if (isstring(term)) {
+    return TRUE;
+  } else if (isconstr(term)) {
     mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
     psc = get_str_psc(term);
     taddr = clref_val(term);
@@ -451,8 +453,24 @@ static int is_most_general_term(Cell term)
     }
     mini_undo_bindings;
     return TRUE;
-  } else return isstring(term);
-}    
+  } else if (islist(term)) {
+    mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
+    while (islist(term)) {
+      addr = cell(clref_val(term));
+      deref(addr);
+	if (isnonvar(addr)) {
+	  mini_undo_bindings;
+	  return FALSE;
+	} else {
+	  mini_bind_variable(addr);
+	  term = cell(clref_val(term)+1);
+	  deref(term);
+	}
+    }
+    mini_undo_bindings;
+    return isnil(term);
+  } else return FALSE;
+}
 
 /* --------------------------------------------------------------------	*/
 
