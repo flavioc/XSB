@@ -45,7 +45,7 @@ For example, here is a list of terms sorted in increasing standard order:
 The basic predicates for comparison of arbitrary terms are:
 \begin{description}
 \ouritem{T1 == T2}
-%\predindex{==/2~(B)}\index{==/2|bold}
+\index{{\tt ==/2}}
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are literally identical (in particular, variables in equivalent positions
     in the two terms must be identical).
@@ -68,24 +68,24 @@ The basic predicates for comparison of arbitrary terms are:
     (see section~\ref{Convenience}).
 
 \ouritem{T1 {$\backslash$==} T2}
-%\predindex{$\backslash==/2$~(B)}\index{$\backslash\,==/2$|bold}
+\index{{\tt $\backslash$==/2}}
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are not literally identical.
 
 \ouritem{T1 @$<$ T2}
-%\predindex{\@$</2$~(B)}\index{\@$</2$|bold}
+\index{{\tt \@$</2$}}
     Succeeds if term {\tt T1} is before term {\tt T2} in the standard order.
 
 \ouritem{T1 @$>$ T2}
-%\predindex{\@$>/2$~(B)}\index{\@$>/2$|bold}
+\index{{\tt \@$>/2$}}
     Succeeds if term {\tt T1} is after term {\tt T2} in the standard order.
 
 \ouritem{T1 @$=<$ T2}
-%\predindex{\@$=</2$~(B)}\index{\@$=</2$|bold}
+\index{{\tt \@$=</2$}}
     Succeeds if term {\tt T1} is not after term {\tt T2} in the standard order.
 
 \ouritem{T1 @$>=$ T2}
-%\predindex{\@$>=/2$~(B)}\index{\@$>=/2$|bold}
+\index{{\tt \@$>=/2$}}
     Succeeds if term {\tt T1} is not before term {\tt T2} in the standard order.
 
 \end{description}
@@ -94,7 +94,7 @@ Some further predicates involving comparison of terms are:
 
 \begin{description}
 \ouritem{compare(?Op, +T1, +T2)}
-%\predindex{compare/3~(B)}\index{compare/3|bold}
+\index{{\tt compare/3}}
     Succeeds if the result of comparing terms {\tt T1} and {\tt T2} 
     is {\tt Op}, where the possible values for {\tt Op} are:
     \begin{description}
@@ -106,7 +106,7 @@ Some further predicates involving comparison of terms are:
     Predicate {\tt compare/3} has no associated error conditions.
 
 \ouritem{sort(+L1, ?L2)} 
-%\predindex{sort/2~(L)}\index{sort/2|bold}
+\index{{\tt sort/2}}
     The elements of the list {\tt L1} are sorted into the standard order,
     and any identical (i.e.\ `==') elements are merged, yielding the 
     list~{\tt L2}.  The time to perform the sorting is $O(n log n)$ where 
@@ -129,7 +129,7 @@ Some further predicates involving comparison of terms are:
 
 
 \ouritem{keysort(+L1, ?L2)}
-%\predindex{keysort/2~(L)}\index{keysort/2|bold}
+\index{{\tt keysort/2}}
     The list {\tt L1} must consist of elements of the form \verb'Key-Value'.
     These elements are sorted into order according to the value of {\tt Key},
     yielding the list~{\tt L2}.  The elements of list {\tt L1} are scanned

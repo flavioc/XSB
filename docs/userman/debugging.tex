@@ -14,9 +14,11 @@ when debugging code involving tabled predicates.  If one only creeps
 intend that future versions will have more complete debugging help for
 tabled evaluation.
 
-To turn on tracing, use {\tt trace/0}.  To turn tracing off, use 
-{\tt notrace/0}.  When tracing is on, the system will print a message each
-time a predicate is:
+To turn on tracing, use {\tt trace/0}.  To turn tracing off, use {\tt
+notrace/0}.  
+\index{{\tt notrace/0}}
+When tracing is on, the system will print a message each time a
+predicate is:
 \begin{enumerate} \index{debugger!ports}
 \item initially entered (Call), 
 \item successfully returned from (Exit), 
@@ -202,7 +204,7 @@ Other standard predicates that are useful in debugging are:
 \ourprolog\ also provides a facility for low-level tracing of execution.
 This can be activated by invoking the emulator with the {\tt -T} option
 (see Section~\ref{sec:EmuOptions}), or through the predicate {\tt trace/0}.
-\index{\$trace/0} %\predindex{\$trace/0~(L)}
+\index{{\tt \$trace/0}} 
 It causes trace information to be printed out at every call (including
 those to system trap handlers).  The volume of such trace information
 can very become large very quickly, so this method of tracing is not

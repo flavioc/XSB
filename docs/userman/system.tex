@@ -179,7 +179,9 @@ prefix of a symbol:
 \item	Symbols that are either defined in non-modules loaded into the
 	system or that are dynamically created (by the use of standard
 	predicates such as {\tt read/1, functor/3, '=..'/2}, etc) are
-	contained in {\tt usermod}.
+	contained in {\tt usermod}%
+\footnote{The standard predicates of XSB are listed in {\tt
+\$XSB\_DIR/syslib/std\_xsb.P}.}.  \index{standard predicates}
 \end{itemize}
 %
 The following facts about the module system of XSB may not be
@@ -231,17 +233,16 @@ applications.  The delay in the loading is done automatically, unlike
 other systems where it must be explicitly specified for non-system
 libraries.
 
-When a predicate imported from another module (see section~\ref{Modules})
-is called during execution, the dynamic loader is invoked automatically
-if the module is not yet loaded into the system, 
-The default action of the dynamic loader is to search for the
-byte code file of the module 
-first in the system library directories (in the order {\tt lib, syslib}, 
-and then {\tt cmplib}), and finally in the current working directory.
-If the module is found in one of these directories, then it will 
-be loaded ({\em on a first-found basis}). Otherwise, an error 
-message will be displayed on the current output stream
-reporting that the module was not found.
+When a predicate imported from another module (see
+section~\ref{Modules}) is called during execution, the dynamic loader
+is invoked automatically if the module is not yet loaded into the
+system, The default action of the dynamic loader is to search for the
+byte code file of the module first in the system library directories
+(in the order {\tt lib, syslib}, and then {\tt cmplib}), and finally
+in the current working directory.  If the module is found in one of
+these directories, then it will be loaded ({\em on a first-found
+basis}). Otherwise, an error message will be displayed on the current
+output stream reporting that the module was not found.
 
 In fact, XSB loads the compiler and most system modules this way.
 Because of dynamic loading, the time it takes to compile a file 
@@ -254,7 +255,8 @@ invoked in a session.
 Users are allowed to supply their own library directories and also to
 override the default search path of the dynamic loader. 
 User-supplied library directories are searched by the dynamic loader 
-{\em before} searching the default library directories.
+{\em before} searching the default library directories. 
+\index{{\tt library\_directory/1}}
 
 The default search path of the dynamic loader can easily be changed
 by having a file named {\verb|.xsb/xsbrc.P|} in the user's home directory.  
@@ -296,8 +298,9 @@ it is the user's responsibility to avoid module name clashes with
 modules in XSB's system library directories}.  Such name clashes can
 cause the system to behave strangely since these modules will probably
 have different semantics from that expected by the XSB system code.
-The list of module names in XSB's system library directories
-can be found in appendix~\ref{module_names}.
+The list of module names in XSB's system library directories can be
+found by looking through the directories {\tt
+\$XSB\_DIR/\{syslib,cmplib,lib\}}.
 
 Apart from the user libraries, XSB now has a simple packaging system.
 A {\em package\/} is an application consisting of one or more files that
@@ -372,7 +375,7 @@ also be imported into the run-time environment through the standard
 predicate {\tt import PredList from Module}\index{{\tt import/1}}.
 Here, {\tt PredList} can either be a Prolog list or a comma list.  (The
 {\tt import/1} can also be used as a directive in a source module 
-(see section~\ref{Modules}).
+(see section~\ref{Modules}). \index{standard predicates}
 
 We provide a sample session for compiling, dynamically loading, and 
 querying a user-defined module named {\tt quick\_sort}.
@@ -872,7 +875,7 @@ The following options are currently recognized by the compiler:
 	recommended once the code has been debugged.
 
 
-\item[{\tt xpp\_on}]\index{{\tt xpp\_on}}\index{gpp}
+\item[{\tt xpp\_on}]\index{{\tt xpp\_on}}\index{GPP}
   Filter the program through a preprocessor  before sending it to the XSB 
   compiler. By default (and for the XSB code itself), XSB uses GPP, a
   preprocessor developed by Denis Auroux (auroux@math.polytechnique.fr)
@@ -1102,15 +1105,15 @@ The following options are currently recognized by the compiler:
 	{\tt syslib}.
 
 
-% tls mention that the following are for hackers ...
-\item[{\tt sysmod}] Mainly used by developers when compiling system
-	modules. If specified, standard predicates (listed in
-	Appendix~\ref{standard_predicates}) are automatically
-	available for use only if they are primitive predicates (see
-	the file {\tt syslib/machine.P} for a current listing of such
-	predicates. When compiling in this
-	mode, non primitive standard predicates must be explicitly
-	imported from the appropriate system module.
+\item[{\tt sysmod}] \index{standard predicates}
+	Mainly used by developers when compiling system modules. If
+	specified, standard predicates (see {\tt
+	/\$XSB\_DIR/syslib/std\_xsb.P}) are automatically available
+	for use only if they are primitive predicates (see the file
+	{\tt \$XSB\_DIR/syslib/machine.P} for a current listing of
+	primitive predicates.  When compiling in this mode,
+	non-primitive standard predicates must be explicitly imported
+	from the appropriate system module.
 \item[{\tt verbo}] Compiles the files (modules) specified in ``verbose'' mode, 
 	printing out information about the progress of the compilation of each 
 	predicate.
@@ -1484,6 +1487,7 @@ One may also use the form:
 
 \demo{:- index(Functor/Arity, IndexArg, HashTableSize).}
 
+\index{{\tt index/2}}
 \noindent
 which allows further specification of the size of the hash table to use for
 indexing this predicate if it is a {\em dynamic} (i.e., asserted) predicate.

@@ -2350,7 +2350,7 @@ a more convenient interface to the XSB trie-based storage mechanism.
 \ournewitem{newtrie(-Root)}{intern} \index{{\tt newtrie/1}}
 	Root is instantiated to a handle for a new trie.
 
-\ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}\index{trie\_intern/5}
+\ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}\index{{\tt trie\_intern/5}}
 %%
 {\tt Term} is the Prolog term to be interned. {\tt Root} is the handle for
 a trie. {\tt Leaf} is the handle for the interned {\tt Term} in the trie.
@@ -2360,12 +2360,12 @@ all the variables in {\tt Term}. It has the form ret(V1,V2,...,VN), exactly
 as in {\tt get\_calls}.
 
 
-\ournewitem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{trie\_intern/3}
+\ournewitem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{{\tt trie\_intern/3}}
 %%
 Interns {\tt Term} into the default trie. Does not return the new/old flag.
 
 
-\ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}\index{trie\_interned/4}
+\ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}\index{{\tt trie\_interned/4}}
 %%
 This builtin will backtrack through the terms interned into the trie
 represented by the handle {\tt Root} if {\tt Leaf} is a free variable.
@@ -2375,31 +2375,31 @@ the term to be retrieved; it can be either (partially) bound or free.  {\tt
   Skel} is the collection of all the variables in {\tt Term}; it has the
 form {\tt ret(V1,...,Vn)}.
 
-\ournewitem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{trie\_interned/3}
+\ournewitem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{{\tt trie\_interned/3}}
 %%
 Similar to {\tt trie\_interned/4}  but uses the default trie.
 
 
-\ournewitem{trie\_unintern(+Root,+Leaf)}{intern} \index{trie\_unintern/2}
+\ournewitem{trie\_unintern(+Root,+Leaf)}{intern} \index{{\tt trie\_unintern/2}}
 %%
 Uninterns (deletes) a term from the trie indicated by root.  This predicate
 has to be called with care. Uninterning can be done only when the trie from
 which the term is being uninterned is not being actively accessed.
 
-\ournewitem{trie\_unintern\_nr(+Root,+Leaf)}{intern}\index{trie\_unintern\_nr/2}
+\ournewitem{trie\_unintern\_nr(+Root,+Leaf)}{intern}\index{{\tt trie\_unintern\_nr/2}}
 %%
 This is a safe version of {\tt trie\_unintern/2}. The term pointed to by
 {\tt Leaf} is marked as deleted, but is not deleted from the trie. This
 permits an efficient implementation of backtrackable updates.
 
-\ournewitem{unmark\_uninterned\_nr(+Root,+Leaf)}{intern}\index{unmark\_uninterned\_nr/2}
+\ournewitem{unmark\_uninterned\_nr(+Root,+Leaf)}{intern}\index{{\tt unmark\_uninterned\_nr/2}}
 The term pointed to by {\tt Leaf} should have been previously marked for
 deletion using
 {\tt trie\_unintern\_nr/2}. This term is then ``unmarked'' (or undeleted)
 and becomes again a notmal interned term.
 
 \ournewitem{reclaim\_uninterned\_nr(+Root)}{intern}
-\index{reclaim\_uninterned\_rn(+Root)}
+\index{{\tt reclaim\_uninterned\_rn/1}}
 %%
 Not yet implemented.\\
 Runs through the chain of leaves of the trie {\tt Root} and
@@ -2407,7 +2407,7 @@ deletes the terms that have been marked for deletion by
 {\tt trie\_unintern\_nr/2}. This is a garbage collection step that should
 be done just before returning to the top level.
 
-\ournewitem{delete\_trie(+Root)}{intern} \index{delete\_trie/1}
+\ournewitem{delete\_trie(+Root)}{intern} \index{{\tt delete\_trie/1}}
 %%
 Deletes all the terms in the trie pointed to by Root.
 
@@ -2415,155 +2415,6 @@ Deletes all the terms in the trie pointed to by Root.
 %%
 \end{description}
 
-
-
-\section{Extended Logic Programs}  \label{library_utilities:wfsx}
-\index{WFSX}
-\index{negation!explicit negation}
-As explained in the section {\it Using Tabling in XSB}, XSB can
-compute normal logic programs according to the well-founded semantics.
-In fact, XSB 
-can also compute {\em Extended Logic Programs}, which contain an
-operator for explicit negation (written using the symbol {\tt -} in
-addition to the negation-by-failure of the well-founded semantics
-(\verb|\+| or {\tt not}).  Extended logic programs can be extremely
-useful when reasoning about actions, for model-based diagnosis, and
-for many other uses \cite{AlPe95}.  The library, {\sf slx} provides a means
-to compile programs so that they can be executed by XSB according to
-the {\em well-founded semantics with explicit negation} \cite{ADP95}.
-Briefly, WFSX is an extension of the well-founded semantics to include
-explicit negation and which is based on the {\em coherence principle}
-in which an atom is taken to be default false if it is proven to be
-explicitly false, intuitively:
-\[
--p \Rightarrow not\ p.
-\]
-
-This section is not intended to be a primer on extended logic
-programming or on WFSX semantics, but we do provide a few sample
-programs to indicate the action of WFSX.  Consider the program
-{\small 
-\begin{verbatim}
-s:- not t.
-
-t:- r.
-t.
-
-r:- not r.
-\end{verbatim}
-}
-If the clause {\tt -t} were not present, the atoms {\tt r, t, s} would
-all be undefined in WFSX just as they would be in the well-founded
-semantics.  However, when the clause {\tt t} is included, {\tt t}
-becomes true in the well-founded model, while {\tt s} becomes false.
-Next, consider the program
-{\small 
-\begin{verbatim}
-s:- not t.
-
-t:- r.
--t.
-
-r:- not r.
-\end{verbatim}
-}
-In this program, the explicitly false truth value for {\tt t} obtained
-by the rule {\tt -t} overrides the undefined truth value for {\tt t}
-obtained by the rule {\tt t:- r}.  The WFSX model for this program
-will assign the truth value of {\tt t} as false, and that of {\tt s}
-as true.  If the above program were contained in the file {\tt
-test.P}, an XSB session using {\tt test.P} might look like the
-following:
-{\small
-\begin{verbatim}
-              > xsb
-              
-              | ?- [slx].
-              [slx loaded]
-            
-              yes
-              | ?- slx_compile('test.P').
-              [Compiling ./tmptest]
-              [tmptest compiled, cpu time used: 0.1280 seconds]
-              [tmptest loaded]
-            
-              | ?- s.
-              
-              yes
-              | ?- t.
-
-              no
-              | ?- naf t.
-              
-              yes
-              | ?- r.
-
-              no
-              | ?- naf r.
-              
-              no
-              | ?- und r.
-              
-              yes
-\end{verbatim}
-}
-In the above program, the query {\tt ?- t.} did not succeed,  because
-{\tt t} is false in WFSX: accordingly the query {\tt naf t} did
-succeed, because it is true that t is false via negation-as-failure,
-in addition to {\tt t} being false via explicit negation.  Note that
-after being processed by the SLX preprocessor, {\tt r} is undefined
-but does not succeed, although {\tt und r} will succeed.
-
-We note in passing that programs under WFSX can be paraconsistent.
-For instance in the program.
-{\small
-\begin{verbatim}
-              p:- q.
-
-              q:- not q.
-              -q.
-\end{verbatim}
-}
-both {\tt p} and {\tt q} will be true {\em and} false in the WFSX
-model.  Accordingly, under SLX preprocessing, both {\tt p} and {\tt
-naf p} will succeed.
-
-\begin{description}
-\ournewitem{slx\_compile(+File)}{slx}
-Preprocesses and loads the extended logic program named {\tt File}.
-Default negation in {\tt File} must be represented using the operator
-{\tt not} rather than using {\tt tnot} or \verb|\+|.  If {\tt L} is an
-objective literal (e.g. of the form $A$ or $-A$ where $A$ is an atom),
-a query {\tt ?- L} will succeed if {\tt L} is true in the WFSX model,
-{\tt naf L} will succeed if {\tt L} is false in the WFSX model, and
-{\tt und L} will succeed if {\tt L} is undefined in the WFSX model.
-\end{description}
-
-
-\section{Generalized Annotated Programs}  \label{library_utilities:gap}
-\index{Generalized Annotated Programs}
-
-Generalized Annotated Programs (GAPs) \cite{KiSu92} offer a powerful
-computational framework for handling paraconsistentcy and quantitative
-information within logic programs.  The tabling of XSB is well-suited
-to implementing GAPs, and the gap library provides a meta-interpreter
-that has proven robust and efficient enough for a commercial
-application in data mining.  The current meta-interpreter is limited
-to range-restricted programs.
-
-A description of GAPs along with full documentation for this
-meta-interpreter is provided in \cite{Swif99a} (currently also
-available at {\tt http://www.cs.sunysb.edu/$\sim$tswift}).  Currently, the
-interface to the GAP library is through the following call.
-
-\begin{description}
-\ournewitem{meta(?Annotated\_atom)}{gap} 
-%
-If {\tt Annotated\_atom} is of the form {\tt
-Atom:[Lattice\_type,Annotation]} the meta-interpreter computes bindings
-for {\tt Atom} and {\tt Annotation} by evaluating the program
-according to the definitions provided for {\tt Lattice\_type}.
-\end{description}
 
 
 \section{Random Number Generator}
@@ -2586,22 +2437,22 @@ Note that 1.0 will never be generated.
     between \texttt{Lower} and \texttt{Upper}.  \texttt{Upper} will
     never be generated.
 
-\ournewitem{genrand(?State)}{random} \index{genrand/1}
+\ournewitem{genrand(?State)}{random} \index{{\tt genrand/1}}
     Tries to unify \texttt{State} with the term \texttt{rand(X,Y,Z)}
     where \texttt{X},\texttt{Y},and \texttt{Z} are integers describing
     the state of the random generator.
 
-\ournewitem{setrand(rand(+X,+Y,+Z))}{random} \index{setrand/1}
+\ournewitem{setrand(rand(+X,+Y,+Z))}{random} \index{{\tt setrand/1}}
     Sets the state of the random generator.  \texttt{X},\texttt{Y}, and
     \texttt{Z} must be integers in the ranges [1,30269), [1,30307),
     [1,30323), respectively.
 
-\ournewitem{randseq(+K, +N, -RandomSeq)}{random} \index{randseq/3}
+\ournewitem{randseq(+K, +N, -RandomSeq)}{random} \index{{\tt randseq/3}}
     Generates a sequence of \texttt{K} unique integers chosen randomly
     in the range from 1 to \texttt{N}.  \texttt{RandomSeq} is not
     returned in any particular order.
 
-\ournewitem{randset(+K, +N, -RandomSet)}{random} \index{randset/3}
+\ournewitem{randset(+K, +N, -RandomSet)}{random} \index{{\tt *shrandset/3}}
     Generates an ordered set of \texttt{K} unique integers chosen
     randomly in the range from 1 to \texttt{N}.  The set is returned in
     reversed order, with the largest element first and the smallest

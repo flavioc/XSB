@@ -151,7 +151,7 @@ be specified using a loader flag in {\tt ldoption}.  The problem here is
 that different systems use a different flag!  To circumvent this, XSB
 provides a predicate that tries to guess the right flag for your system:
 %%
-\index{runtime\_loader\_flag/2}
+\index{{\tt runtime\_loader\_flag/2}}
 %%
 \begin{verbatim}
 runtime_loader_flag(+Hint,-Flag)  
@@ -377,33 +377,37 @@ The first set of functions is typically used to check the type of
 Prolog terms passed into the C program. 
 %%
 \begin{description}
-  \ouritem{xsbBool is\_var((prolog\_term) T)} \index{{\tt is\_var}}
-    {\tt is\_var(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    variable, and FALSE otherwise.
-
-\ouritem{xsbBool is\_int((prolog\_term) T)} \index{{\tt is\_int}}
-    {\tt is\_int(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    integer value, and FALSE otherwise.
+\ouritem{xsbBool is\_attv((prolog\_term) T)} \index{{\tt is\_attv}}
+    {\tt is\_attv(T)} returns TRUE if {\tt T} represents an XSB
+    attributed variable,  and FALSE otherwise.
 
 \ouritem{xsbBool is\_float((prolog\_term) T)} \index{{\tt is\_float}}
-    {\tt is\_float(T)} returns TRUE if {\tt T} represents an \ourprolog\
+    {\tt is\_float(T)} returns TRUE if {\tt T} represents an XSB
     float value, and FALSE otherwise.
-
-\ouritem{xsbBool is\_string((prolog\_term) T)} \index{{\tt is\_string}}
-    {\tt is\_string(T)} returns TRUE if {\tt T} represents an \ourprolog\
-    atom value, and FALSE otherwise.
 
 \ouritem{xsbBool is\_functor((prolog\_term) T)} \index{{\tt is\_functor}}
     {\tt is\_functor(T)} returns TRUE if {\tt T} represents an
-    \ourprolog\ structure value (not a list), and FALSE otherwise.
+    XSB structure value (not a list), and FALSE otherwise.
+
+\ouritem{xsbBool is\_int((prolog\_term) T)} \index{{\tt is\_int}}
+    {\tt is\_int(T)} returns TRUE if {\tt T} represents an XSB
+    integer value, and FALSE otherwise.
 
 \ouritem{xsbBool is\_list((prolog\_term) T)} \index{{\tt is\_list}}
     {\tt is\_list(T)} returns TRUE if {\tt T} represents an
-    \ourprolog\ list value (not nil), and FALSE otherwise.
+    XSB list value (not nil), and FALSE otherwise.
 
 \ouritem{xsbBool is\_nil((prolog\_term) T)} \index{{\tt is\_nil}}
-    {\tt is\_nil(T)} returns TRUE if {\tt T} represents an \ourprolog\
+    {\tt is\_nil(T)} returns TRUE if {\tt T} represents an XSB
     \verb|[]| (nil) value, and FALSE otherwise.
+
+\ouritem{xsbBool is\_string((prolog\_term) T)} \index{{\tt is\_string}}
+    {\tt is\_string(T)} returns TRUE if {\tt T} represents an XSB
+    atom value, and FALSE otherwise.
+
+\ouritem{xsbBool is\_var((prolog\_term) T)} \index{{\tt is\_var}}
+    {\tt is\_var(T)} returns TRUE if {\tt T} represents an XSB
+    variable, and FALSE otherwise.
 
 \end{description}
 
@@ -447,8 +451,8 @@ structured term is explained later.
 The next batch of functions support conversion of data in the opposite
 direction: from basic C types to the type {\tt prolog\_term}.  These {\tt
   c2p\_*} functions all return a boolean value TRUE if successful and FALSE
-if unsuccessful.  The \ourprolog\ term argument must always contain an
-\ourprolog\ variable, which will be bound to the indicated value as a side
+if unsuccessful.  The XSB term argument must always contain an
+XSB variable, which will be bound to the indicated value as a side
 effect of the function call.
 
 \begin{description}
@@ -844,7 +848,7 @@ int do_bulkmatch__(void)
 
 The high-level foreign predicate interface was designed to release the
 programmer from the burden of having to write low-level code to transfer
-data from \ourprolog\ to C and vice-versa.  Instead, all the user needs to
+data from XSB to C and vice-versa.  Instead, all the user needs to
 do is to describe each C function and its corresponding Prolog predicates
 in the .H files. The interface then automatically generates the
 \emph{wrappers} that translate Prolog terms and structures to proper C
@@ -988,7 +992,7 @@ XSB doesn't attempt to compile and build
 DLL's for the Windows foreign modules.
 
 Instead, the user has to create the DLL herself.  The process is, roughly,
-as follows: first, compile the module from within \ourprolog\.
+as follows: first, compile the module from within XSB.
 This will create the \ourprolog-specific object file, and the
 \emph{wrappers}. The \emph{wrappers} are created in a file named
 \texttt{xsb\_wrap\_}\emph{modulename}\texttt{.c}.

@@ -1,23 +1,15 @@
-\documentclass{article}
-\usepackage{moreverb}
 
-\title{XNMR Manual}
-\author{Lu\'\i s Castro \and David S. Warren}
-\date{November, 1999}
+\section{XNMR}
 
-\begin{document}
-\maketitle
-\section{Introduction}
+\subsection{Introduction}
 
-XNMR is a module of the XSB system which attempts to provide an
-unified environment for non-monotonic reasoning. It consists of a new
-top-loop for XSB which benefits from the integration of SMODELS and
-XSB to compute different semantics for non-monotonic programs.
+The XNMR package attempts to provide an unified environment for
+several forms of non-monotonic reasoning. It consists of a new
+top-loop for XSB which benefits from the integration of XSB with the
+stable model generator SMODELS \cite{smodels} and XSB to compute
+stable and answer set semantics for logic programs.
 
-SMODELS is a program which computes the stable model semantics for
-logic programs. 
-
-\section{The XNMR Top-Loop}
+\paragraph*{The XNMR Top-Loop}
 
 The XNMR top-loop is the interface between XNMR and the user. It adds
 extra functionalities to the standard top-loop of XSB to provide means
@@ -26,8 +18,8 @@ to compute different semantics  for Prolog programs.
 There are two distinct modes for the XNMR top-loop. The \texttt{nmr}
 mode allows for the computation of (partial) stable model semantics
 and answerset semantics of normal logic programs. The
-\texttt{answerset} mode is designed to compute the answerset semantics
-of logic programs with explicit negation.
+\texttt{answerset} mode is designed to compute the a non-explosive
+partial answerset semantics of logic programs with explicit negation.
 
 \subsection{The \texttt{nmr} mode}
 
@@ -38,10 +30,10 @@ you change the mode to a different one, you can come back to
 \texttt{nmr} mode using the predicate \texttt{set\_nmr\_mode/0}.
 
 The prompt works much like a standard Prolog top-level. The difference
-arises when the user issues a query which has an answer which depends
-on undefined goals, that is, it returns a delay list. In this case,
-the user can either ignore the delay list and assume the query (with
-the given instantiations for the variables) is undefined under the
+arises when the user issues a query which has an answer that depends
+on undefined goals, i.e. a non-empty delay list. In this case, the
+user can either ignore the delay list and assume the query (with the
+given instantiations for the variables) is undefined under the
 well-founded semantics, or it can ask XNMR to call SMODELS to compute
 different semantics for the residual program.
 
@@ -59,6 +51,8 @@ Three options are available in such cases:
   ie. it says \verb#yes# if the query is true in all stable models of the
   residual program.
 
+{\sc TLS: what symbol are you using for explicit negation?}
+
 \end{enumerate}
 
 Figure~\ref{fig:stable} shows the `s' operator in action. The
@@ -74,7 +68,8 @@ or she can give up by pressing only \verb#<cr>#.
 \label{fig:exwfs}
 \centering
 \scriptsize
-\begin{boxedverbatim}
+%\begin{boxedverbatim} TLS: manual did not have include file.
+\begin{verbatim}
 :- table win/1, p/0, q/0, r/0.
 
 win(X) :- move(X,Y), tnot(win(Y)).
@@ -88,16 +83,19 @@ p :- tnot(q).
 q :- tnot(p).
 r :- p.
 r :- q.
-\end{boxedverbatim}
+\end{verbatim}
+%\end{boxedverbatim}
 \caption{The exwfs.P program.}
 \end{figure}
+
 
 \begin{figure}
 \label{fig:stable}
 \centering
 \scriptsize
-\begin{boxedverbatim}
-lfmobile:~/Programs/Prolog/WFS> xsb xnmr
+%\begin{boxedverbatim} TLS: manual did not have include file.
+\begin{verbatim}
+> xsb xnmr
 [xsb_configuration loaded]
 [sysinitrc loaded]
 [packaging loaded]
@@ -133,7 +131,8 @@ Stable Models:
 
 no
 nmr| ?- 
-\end{boxedverbatim}
+\end{verbatim}
+%\end{boxedverbatim}
 \caption{Using the `s' operator}
 \end{figure}
 
@@ -147,7 +146,8 @@ true.
 \label{fig:tstable}
 \centering
 \scriptsize
-\begin{boxedverbatim}
+%\begin{boxedverbatim} TLS: manual did not have include file.
+\begin{verbatim}
 lfmobile:~/Programs/Prolog/WFS> xsb xnmr
 [xsb_configuration loaded]
 [sysinitrc loaded]
@@ -180,7 +180,8 @@ Stable Models:
 
 no
 nmr| ?- 
-\end{boxedverbatim}
+\end{verbatim}
+%\end{boxedverbatim}
 \caption{Using the `t' operator}
 \end{figure}
 
@@ -195,8 +196,8 @@ semantics of the residual program.
 \label{fig:answerset}
 \centering
 \scriptsize
-\begin{boxedverbatim}
-lfmobile:~/Programs/Prolog/WFS> xsb xnmr
+%\begin{boxedverbatim} TLS: manual did not have include file.
+\begin{verbatim}
 [xsb_configuration loaded]
 [sysinitrc loaded]
 [packaging loaded]
@@ -230,7 +231,8 @@ DELAY LIST = [p] ? a
 
 no
 nmr| ?- 
-\end{boxedverbatim}
+\end{verbatim}
+%\end{boxedverbatim}
 \caption{Using the `a' option}
 \end{figure}
 
@@ -254,23 +256,4 @@ all computed instantiations.
 
 It is assumed that the knowledge about all other instantiations not
 shown is unknown.
-
-
-
-\end{document}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -2,33 +2,36 @@
 \index{definite clause grammars}\index{grammars!definite clause}
 %===============================================================
 
-
 \section{General Description}
 %============================
-Definite clause grammars (DCGs) are an extension of context free grammars
-that have proven useful for describing natural and formal languages, and that
-may be conveniently expressed and executed in Prolog. 
-A Definite Clause Grammar rule in Prolog is executable because it is just 
-a notational variant of a Prolog term that has the following general form:
+
+Definite clause grammars (DCGs) are an extension of context free
+grammars that have proven useful for describing natural and formal
+languages, and that may be conveniently expressed and executed in
+Prolog.  A Definite Clause Grammar rule is executable because it is
+just a notational variant of a logic rule that has the following
+general form:
 \begin{center}
                 {\em Head} {\tt -->} {\em Body.}
 \end{center}
-with the declarative interpretation that ``a possible form for {\em Head} is 
-{\em Body}''. The procedural interpretation of a grammar rule is that it
-takes an input list of symbols or character codes, analyses some initial
-portion of that list, and produces the remaining portion (possibly enlarged)
-as output for further analysis. The arguments required for the input and
-output lists are not written explicitly in the DCG rule, but are added
-when the rule is translated (expanded) into an ordinary Prolog clause during
-parsing.  By defining the hook predicate {\tt term\_expansion/2}, the user
-can specify any desired transformation to be done as clauses are read by the
-reader of \ourprolog's parser.
-Extra conditions, in the form of explicit Prolog literals or control
-constructs such as {\em if-then-elses} ({\tt '->'/2}) or {\em cuts}\index{cut} 
-(\cut)\index{"!/0}, may be included in the {\em Body} of the DCG rule 
-and they work exactly as one would expect.
+with the declarative interpretation that ``a possible form for {\em
+Head} is {\em Body}''. The procedural interpretation of a grammar rule
+is that it takes an input sequence of symbols or character codes,
+analyses some initial portion of that list, and produces the remaining
+portion (possibly enlarged) as output for further analysis.  In XSB,
+the exact form of this sequence is determined by whether XSB's {\em
+DCG mode} is set to use tabling or not, as will be discussed below.
+In either case, the arguments required for the input and output lists
+are not written explicitly in the DCG rule, but are added when the
+rule is translated (expanded) into an ordinary normal rule during
+parsing.  Extra conditions, in the form of explicit Prolog literals or
+control constructs such as {\em if-then-elses} ({\tt '->'/2}) or {\em
+cuts}\index{cut} (\cut)\index{{\tt "!/0}}, may be included in the {\em
+Body} of the DCG rule and they work exactly as one would expect.
 
-An overview of the syntax of DCGs supported by \ourprolog\ is as follows:
+The syntax of DCGs is orthogonal to whether tabling is used for DCGs
+or not.  An overview of DCG syntax
+ supported by XSB is as follows:
 \begin{enumerate}
 \item A non-terminal symbol may be any HiLog term other than a variable
       or a number. A variable which appears in the body of a rule is 
@@ -57,14 +60,14 @@ An overview of the syntax of DCGs supported by \ourprolog\ is as follows:
       \end{center}
 \item The left hand side of a DCG rule must consist of a single non-terminal,
       possibly followed by a sequence of terminals (which must be written as
-      a {\em unique} Prolog list). Thus in \ourprolog, unlike SB-Prolog 
+      a {\em unique} Prolog list). Thus in XSB, unlike SB-Prolog 
       version 3.1, ``push-back lists'' are supported.
 \item The right hand side of a DCG rule may contain alternatives (written 
       using the usual Prolog's disjunction operator {\tt ';'} or 
       using the usual BNF disjunction operator {\tt '|'}. 
 \item The Prolog control primitives {\em if-then-else} ({\tt '->'/2}),
       {\em nots} ({\tt not/1, fail\_if/1}, \not\ or {\tt tnot/1}) and 
-      {\em cut}\index{cut} (\cut)\index{"!/0} may also be included in the 
+      {\em cut}\index{cut} (\cut)\index{{\tt "!/0}} may also be included in the 
       right hand side of a DCG rule. These symbols need not be enclosed in 
       curly brackets. 
       \footnote{Readers familiar with Quintus Prolog may notice the difference
@@ -79,18 +82,15 @@ An overview of the syntax of DCGs supported by \ourprolog\ is as follows:
 
 \section{Translation of Definite Clause Grammar rules}
 %=====================================================
-The procedural interpretation of a DCG rule is that it takes an input
-list of symbols or character codes, analyzes some initial portion of that
-list, and produces the remaining portion (possibly enlarged, if pushback lists 
-are used) as output for further analysis.  As an abbreviation, 
-the arguments required for the input and output lists are not written 
-explicitly in a grammar rule, but are added when the rule is translated into 
-an ordinary Prolog clause.  In this section we informally describe this 
-translation, which resembles the DCG rules of other Prologs in most 
-particulars.
 
-Each grammar rule is translated into a Prolog clause as it is
-consulted or compiled. This DCG term expansion is as follows:
+In this section we informally describe the translation of DCG rules
+into normal rules in XSB.  Each grammar rule is translated into a
+Prolog clause as it is consulted or compiled.  This is accomplished
+through a general mechanism of defining the hook predicate {\tt
+term\_expansion/2}, \index{{\tt term\_expansion/2}} by means of which
+a user can specify any desired transformation to be done as clauses
+are read by the reader of XSB's parser.  This DCG term expansion is as
+follows:
 
 A DCG rule such as:
 
@@ -99,7 +99,7 @@ A DCG rule such as:
 }
 
 \noindent
-will be translated (expanded) into the Prolog rule:
+will be translated (expanded) into:
 
 \stuff{
 \> \> p(X, Li, Lo) :- \\ 
@@ -200,15 +200,126 @@ translates to the Prolog rule:
 \> \> \>   ).
 }
 
+\subsection{Definite Clause Grammars and Tabling}
+%============================================================
+\label{dcg_tabling}
+
+Tabling can be used in conjunction with Definite Clause Grammars to get the
+effect of a more complete parsing strategy.  When Prolog is used to evaluate
+DCG's, the resulting parsing algorithm is {\em ``recursive descent''}.
+Recursive descent parsing, while efficiently implementable, is known to
+suffer from several deficiencies:  1) its time can be exponential in the size
+of the input, and 2) it may not terminate for certain context-free grammars (in
+particular, those that are left or doubly recursive).  By appropriate use of
+tabling, both of these limitations can be overcome.  With appropriate tabling,
+the resulting parsing algorithm is a variant of {\em Earley's algorithm\/} and
+of {\em chart parsing algorithms}.
+
+In the simplest cases, one needs only to add the directive {\tt :-
+auto\_table} (see Section~\ref{tabling_directives}) to the source file
+containing a DCG specification.  This should generate any necessary
+table declarations so that infinite loops are avoided (for
+context-free grammars).  That is, with a {\tt :- auto\_table}
+declaration, left-recursive grammars can be correctly processed.  Of
+course, individual {\tt table} directives may also be used, but note
+that the arity must be specified as two more than that shown in the
+DCG source, to account for the extra arguments added by the expansion.
+However, the efficiency of tabling for DCGs depends on the
+representation of the input and output sequences used, a topic to
+which we now turn.
+
+\index{definite clause grammars!list mode}
+
+Consider the expanded DCG rule from the previous section:
+
+\stuff{ \>
+\> p(X, S0, S) :- \\ 
+\> \> \> 'C'(S0, go, S1), \\ 
+\> \> \> 'C'(S1, to,S2), \\ 
+\> \> \> q(X, S2, S3), \\ 
+\> \> \> 'C'(S3, stop, S).  } 
+
+In a Prolog system, each input and output variable, such as {\tt S0}
+or {\tt S} is bound to a variable or a difference list.  In XSB, this
+is called {\em list mode}.  Thus, to parse {\em go to lunch stop} the
+phrase would be presented to the DCG rule as a list of tokens {\tt
+[go,to,lunch,stop]} via a call to {\tt phrase/3} such as:
+
+\stuff{\> \> phrase(p(X),[go,to,lunch,stop]).}
+
+\noindent
+or an explicit call to {\tt p/3}, such as:
+
+\stuff{\> \> p(X,[go,to,lunch,stop|X],X).}
+
+\noindent
+Terminal elements of the sequence are consumed (or generated) via the
+predicate {\tt 'C'/3} which is defined for Prolog systems as:
+
+\stuff{\> \> 'C'([Token|Rest],Token,Rest).}
+
+While such a definition would also work correctly if a DCG rule were
+tabled, the need to copy sequences into or out of a table can lead to
+behavior quadratic in the length of the input sequence (See Section
+\ref{sec:TablingPitfalls}).  As an alternative, XSB allows a mode of
+DCGs that defines {\tt 'C'/3} as a call to a Datalog predicte {\tt
+word/3} \index{{\tt word/3}}:
+
+\stuff{\> \> 'C'(Pos,Token,Next\_pos):- word(Pos,Token,Next\_pos).}
+
+\noindent
+assuming that each token of the sequence has been asserted as a {\tt
+word/3} fact, e.g:
+
+\stuff{
+\> \> word(0,go,1). \\
+\> \> word(1,to,2). \\
+\> \> word(2,lunch,3). \\
+\> \> word(3,stop,4).
+}
+
+\noindent
+The above mode of executing DCGs is called {\em datalog mode}.  
+\index{definite clause grammars!datalog mode}
+
+{\tt word/3} facts are asserted via a call to the predicate {\tt
+tphrase\_set\_string/1}.  Afterwards, a grammar rule can be called
+either directly, or via a call to {\tt tphrase/1}.  To parse the list
+{\tt [go,to,lunch,stop]} in datalog mode using the predicate {\tt p/3}
+from above, the call
+
+\stuff{\> \> tphrase\_set\_string([go,to,lunch,stop])}
+
+\noindent
+would be made, afterwards the sequence could be parsed via the goal:
+
+\stuff{tphrase(p(X)).}
+
+\noindent
+or
+
+\stuff{p(X,0,F).}
+
+To summarize, DCGs in list mode have the same syntax as they do in
+datalog mode: they just use a different definition of {\tt 'C'/3}.  Of
+course tabled and non-tabled DCGs can use either definition of {\tt
+'C'/3}.  Indeed, this property is necessary for tabled DCG predicates
+to be able to call non-tabled DCG predicates and vice-versa.  At the
+same time,tabled DCG rules may execute faster in datalog mode, while
+non-tabled DCG rules may execute faster in list mode.
+
+Finally, we note that the mode of DCG parsing is part of XSB's state.
+XSB's default mode is to use list mode: the mode is set to datalog
+mode via a call to {\tt tphrase\_set\_string/3} and back to list mode
+by a call to {\tt phrase/2} or by a call to {\tt reset\_dcg\_mode/0}.
 
 \section{Definite Clause Grammar predicates} \label{DCG_builtins}
 %================================================================
-The library predicates of \ourprolog\ that support DCGs are the following:
+The library predicates of XSB that support DCGs are the following:
 
 \begin{description}
 
 \ouritem{phrase(+Phrase, ?List)}\index{{\tt phrase/2}}
-%\predindex{phrase/2~(L)}
     This predicate is true iff the list {\tt List} can be parsed as a phrase 
     (i.e. sequence of terminals) of type {\tt Phrase}.  {\tt Phrase} can be 
     any term which would
@@ -223,8 +334,21 @@ The library predicates of \ourprolog\ that support DCGs are the following:
     {\tt Phrase}; otherwise if {\tt List} is unbound, then the grammar
     is being used for generation.
 
+\ouritem{tphrase(+Phrase)}\index{{\tt tphrase/1}} This predicate is
+    succeeds if the current database of {\tt word/3} facts can be
+    parsed via a call to the term expansion of {\tt +Phrase} whose
+    input argument is set to {\tt 0} and whose output argument is set
+    to the largest {\tt N} such that {\tt word(\_,\_,N)} is currently
+    true.  
+
+    The database of {\tt word/3} facts is assumed to have been
+    previously set up via a call to {\tt tphrase\_set\_string/1}.  If
+    the databse of {\tt word/3} facts is empty, {\tt tphrase/1} will
+    abort.
+
+% TLS: handle error condition better in predicate.
+
 \ouritem{phrase(+Phrase, ?List, ?Rest)}\index{{\tt phrase/3}}
-%\predindex{phrase/3~(L)}
     This predicate is true iff the segment between the start of list 
     {\tt List} and the start of list {\tt Rest} can be parsed as a phrase 
     (i.e. sequence of terminals) of type {\tt Phrase} . In other words, if 
@@ -244,7 +368,6 @@ The library predicates of \ourprolog\ that support DCGs are the following:
     a call to {\tt phrase(X, L, R)} for some lists {\tt L} and {\tt R}.  
 
 \ouritem{expand\_term(+Term1, ?Term2)}\index{{\tt expand\_term/2}}
-%\predindex{expand\_term/2~(L)}
     This predicate is used to transform terms that appear in a Prolog program
     before the program is compiled or consulted.
     The standard transformation performed by {\tt expand\_term/2} is that 
@@ -263,19 +386,18 @@ The library predicates of \ourprolog\ that support DCGs are the following:
     the standard grammar rule expansion is not tried; otherwise, if 
     {\tt Term1} is a grammar rule, then it is expanded using {\tt dcg/2}; 
     otherwise, {\tt Term1} is used as is.  Note that predicate {\tt
-    term\_expansion/2} must be defined in the \ourprolog's default read-in
+    term\_expansion/2} must be defined in the XSB's default read-in
     module ({\tt usermod}) and should be loaded there before the compilation
     begins.
 
 \ouritem{'C'(?L1, ?Terminal, ?L2)}\index{{\tt `C'/3}}
-%\predindex{`C'/3~(L)}
     This predicate generally is of no concern to the user.  Rather it is used 
     in the transformation of terminal symbols in 
     grammar rules and expresses the fact that {\tt L1} is connected 
     to {\tt L2} by the terminal {\tt Terminal}. This predicate is
     needed to avoid problems due to source-level
     transformations in the presence of control primitives such as
-    {\em cuts}\index{cut} (\cut)\index{"!/0}, or {\em if-then-elses} 
+    {\em cuts}\index{cut} (\cut)\index{{\tt "!/0}}, or {\em if-then-elses} 
     ({\tt '->'/2}) and is defined by the single clause:
     \begin{center}
                 {\tt 'C'([Token|Tokens], Token, Tokens).}
@@ -283,9 +405,21 @@ The library predicates of \ourprolog\ that support DCGs are the following:
     The name 'C' was chosen for this predicate so that another useful
     name might not be preempted.
 
+\ouritem{tphrase\_set\_string(+List)}\index{{\tt tphrase\_set\_string/1}} 
+    This predicate 
+
+\begin{enumerate}
+\item abolishes all tables;
+\item retracts all {\tt word/3} facts from XSB's store; and
+\item asserts new {\tt word/3} facts corresponding to {\tt List} as
+described in Section \ref{sec:dcg-modes}.
+\end{enumerate}
+
+\noindent
+implicitly changing the DCG mode from list to datalog.
+
 \ournewitem{dcg(+DCG\_Rule, ?Prolog\_Clause)}{dcg}
 \index{{\tt dcg/2}}
-%\predindex{dcg/2~(L)}
     Succeeds iff the DCG rule {\tt DCG\_Rule} translates to the Prolog
     clause {\tt Prolog\_Clause}.  At the time of call, {\tt DCG\_Rule}
     must be bound to a term whose principal functor is {\tt '-->'/2}
@@ -297,11 +431,11 @@ The library predicates of \ourprolog\ that support DCGs are the following:
 
 \section{Two differences with other Prologs}\label{sec-dcg-differences}
 %===========================================
-The DCG expansion provided by \ourprolog\ is in certain cases different 
+The DCG expansion provided by XSB is in certain cases different 
 from the ones provided by some other Prolog systems (e.g.  Quintus Prolog, 
 SICStus Prolog and C-Prolog). The most important of these differences are:
 \begin{enumerate}
-\item \ourprolog\ expands a DCG clause in such a way that when a \cut\ is 
+\item XSB expands a DCG clause in such a way that when a \cut\ is 
       the last goal of the DCG clause, the expanded DCG clause is always 
       {\em steadfast}.
 
@@ -335,7 +469,7 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
       However, to obtain the standard expansion provided by the other Prolog
       systems, the user can simply execute:
       
-      \index{set\_dcg\_style/1}
+      \index{{\tt set\_dcg\_style/1}}
       \stuff{
         \>\> set\_dcg\_style(standard).
       }
@@ -346,6 +480,7 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
         \>\> set\_dcg\_style(xsb).
       }
 
+\index{definite clause grammars!style}
       This can be done anywhere in the program, or interactively.
       By default, XSB starts with the XSB-style DCG's. To change that,
       start XSB as follows:
@@ -376,7 +511,11 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
       But in our opinion this is just a special case of a \cut\ being
       the last goal in the body of a DCG clause.
 
-\item Most of the control predicates of \ourprolog\ need not be enclosed in
+
+      Finally, we note that the choice of DCG style is orthogonal to
+      whether the DCG mode is list or datalog.
+
+\item Most of the control predicates of XSB need not be enclosed in
       curly brackets.  A difference with, say Quintus, is that predicates
       {\tt not/1}, {\not}, or {\tt fail\_if/1} do not get expanded when
       encountered in a DCG clause.  That is, the DCG clause:
@@ -406,51 +545,6 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
       curly brackets.
 \end{enumerate}
 
-\section{Interaction of Definite Clause Grammars and Tabling}
-%============================================================
-\label{dcg_tabling}
-
-Tabling can be used in conjunction with Definite Clause Grammars to get the
-effect of a more complete parsing strategy.  When Prolog is used to evaluate
-DCG's, the resulting parsing algorithm is {\em ``recursive descent''}.
-Recursive descent parsing, while efficiently implementable, is known to
-suffer from several deficiencies:  1) its time can be exponential in the size
-of the input, and 2) it may not terminate for certain context-free grammars (in
-particular, those that are left or doubly recursive).  By appropriate use of
-tabling, both of these limitations can be overcome.  With appropriate tabling,
-the resulting parsing algorithm is a variant of {\em Earley's algorithm\/} and
-of {\em chart parsing algorithms}.
-
-In the simplest cases, one needs only to add the directive
-{\tt :- auto\_table} (see Section~\ref{tabling_directives}) to the source file
-containing a DCG specification.  This should generate any necessary table
-declarations so that infinite loops are avoided (for context-free grammars).
-That is, with a {\tt :- auto\_table} declaration, left-recursive grammars can
-be correctly processed.  Of course, individual {\tt table} directives may also
-be used, but note that the arity must be specified as two more than that shown
-in the DCG source, to account for the extra arguments added by the expansion.
-
-However, due to our current implementation of structures in tabling, there are
-new inefficiencies that can arise.  In particular, when using the standard
-list representation of the input string in a DCG, there may be a large amount
-of copying and a great deal of space used. What happens is that the input
-string (i.e. list) may be copied into and out of the table many times.  To 
-avoid this problem, the input list can be transformed into a set of datalog
-atoms.  Currently this must be done manually, as explained in \cite{DSW93},
-available in the tech reports directory.
-
-%This can be avoided by using the builtin predicate {\tt
-%table\_copy/2}. By using {\tt table\_copy/2} to copy the initial
-%ground input list into the table, the user can avoid this overhead.
-
-%For example, to read an input string (as a list) from the user and then to
-%see if it parses to a {\em sentence}, using a DCG compiled with tabling,
-%the following query could be used:
-%\begin{verbatim}
-%   :- read(Str), table_copy(Str, TabStr), phrase(sentence(Parse), TabStr).
-%\end{verbatim}
-%See the examples in the {\tt examples} directory of \ourprolog\ to see how
-%this facility can be used.
 
 
 %%% Local Variables: 

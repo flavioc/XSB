@@ -332,8 +332,8 @@ The first argument, {\tt Storage}, must be an atom naming the storage to be
 used. Different names denote different storages.
 In both cases the predicate succeeds.
 
-\ouritem{storage\_delete\_keypair(+StorageName, +Key, ?Deleted)}\index{{\tt
-    storage\_delete\_keypair/3}}
+\ouritem{storage\_delete\_keypair(+StorageName, +Key, ?Deleted)}
+\index{{\tt storage\_delete\_keypair/3}}
 %%
 Delete the key-value pair with the given key from the databases. If
 the pair was in the database then {\tt Deleted} unifies with 1.
@@ -342,8 +342,8 @@ The first argument, {\tt Storage}, must be an atom naming the storage to be
 used. Different names denote different storages.
 In both cases the predicate succeeds.
 
-\ouritem{storage\_find\_keypair(+StorageName, +Key, ?Value)}\index{{\tt
-    storage\_find\_keypair/3}}
+\ouritem{storage\_find\_keypair(+StorageName, +Key, ?Value)}
+\index{{\tt storage\_find\_keypair/3}}
 %%
 If the database has a key pair with the given key, then {\tt Value} unifies
 with the value stored in the database. If no such pair exists in the
@@ -393,8 +393,8 @@ Like {\tt storage\_delete\_keypair/3}, but backtrackable.
 %%
 Like {\tt storage\_insert\_fact/2}, but backtrackable.
 
-\ouritem{storage\_delete\_fact\_bt(+StorageName, +Goal)} \index{{\tt
-    storage\_delete\_fact\_bt/2}}
+\ouritem{storage\_delete\_fact\_bt(+StorageName, +Goal)} 
+\index{{\tt storage\_delete\_fact\_bt/2}}
 %%
 This is a backtrackable version of {\tt storage\_delete\_fact/2}.
 
@@ -717,7 +717,7 @@ typically called just before returning to the top level.
     complete set of answers).  Closed tables are unaffected, even if 
     the tables were created during the aborted computation.
 
-\ouritem{abort(+Message)}\index{{\tt abort/1}} \index{\tt STDERR} 
+\ouritem{abort(+Message)}\index{{\tt abort/1}} \index{{\tt STDERR}}
     Acts as {\tt abort/0} but sents {\tt Message} to {\tt STDERR}
     before aborting.
 

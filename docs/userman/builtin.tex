@@ -431,7 +431,7 @@ described only briefly.
 \index{control}
 
 \begin{description}
-\ouritem{\cut}\index{{\cut}} 
+\ouritem{\cut}\index{{\tt "!/0}}  \index{cut} 
     Cut (discard) all choice points made since the parent goal
     started execution.
     Cuts across tabled predicates are not valid.  The compiler checks for
@@ -460,7 +460,7 @@ described only briefly.
     \end{description}
 
 
-\ouritem{$\backslash$+ +P}\index{{\tt \not}}
+\ouritem{$\backslash$+ +P}\index{{\tt $\backslash$+/1}}
     Exactly the same as {\tt fail\_if/1}.  Its existence is only 
     for compatibility with other Prolog systems.
 
@@ -736,9 +736,14 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 | ?- is_charlist(abc).
                 no
      \end{verbatim}}
+
 \ouritem{is\_charlist(+X,-Size)}\index{{\tt is\_charlist/2}}
-    Like above, but also returns the length of that string in the second
+    Works as above, but also returns the length of that string in the second
     argument, which must be a variable.
+
+\ouritem{is\_attv(+Term)}\index{{\tt is\_attv/1}}
+    Succeeds is {\tt Term} is an attributed variable, and fails otherwise.
+
 \ouritem{is\_most\_general\_term(?X)}\index{{\tt
 is\_most\_general\_term/1}}
     Succeeds if {\tt X} is compound term with all distinct variables
@@ -1850,7 +1855,7 @@ bagAvg(Call,Avg) :-
     would be acceptable as the body of a clause, the goal 
     {\tt call(X)} is executed as if that
     term appeared textually in place of the {\tt call(X)},
-    {\em except that} any cut (`!')\index{"!/0}\index{cut}
+    {\em except that} any cut (`!')\index{{\tt "!/0}}\index{cut}
     occurring in {\tt X} will remove only those choice points in~{\tt X}.
     If~{\tt X} is not instantiated as described above,
     an error message is printed and {\tt call/1} fails.

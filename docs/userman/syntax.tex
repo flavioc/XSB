@@ -440,8 +440,9 @@ first (left-hand) subexpression must be of lower precedence; the right-hand
 subexpression can be of the same precedence as the main operator.
 {\em Left-associative} operators (type {\tt 'yfx'}) are the other way around.
 
-An atom named {\tt Name} can be declared as an operator of type {\tt Type} and
-precedence {\tt Precedence} by the command;
+An atom named {\tt Name} can be declared as an operator of type {\tt
+Type} and precedence {\tt Precedence} by the command;
+\index{{\tt op/3}}
 \begin{verbatim}
                     :- op(Precedence, Type, Name).
 \end{verbatim}
