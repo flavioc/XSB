@@ -116,13 +116,13 @@ interpreter1 :-
 	).
 
 read_in_stop(halt) :-          %% quit XSB, regardless of break level
-	call_xsb_hook(xsb_exit_hook(_)),
+	call_xsb_hook(xsb_exit_hook(_),all),
 	halt.
 read_in_stop(end_of_file) :-   %% pop a break level, out if at top
 	%% if we previously pushed an input stream onto cmd_line_argument stack
 	%% then pop it back and make this stream current
 	(pop_stdin(cmd_line_argument) ->  fail
-	; call_xsb_hook(xsb_exit_hook(_))
+	; call_xsb_hook(xsb_exit_hook(_),all)
 	).
 
 

@@ -42,4 +42,5 @@
 	  unload_seg/1, machine_file_exists/1, call0/1,
 	  formatted_io/5, slash/1, dirname_canonic/2
    from machine.
+:- import call_xsb_hook/3 from xsb_hook.
 

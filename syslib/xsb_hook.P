@@ -22,40 +22,110 @@
 ** 
 */
 
+
+:- compiler_options([xpp_on]).
+#include "psc_defs.h"
+
 %% Hooks
-:- dynamic xsb_exit_hook(_), xsb_before_prompt_hook(_).
+:- dynamic
+	xsb_exit_hook(_),
+	xsb_before_prompt_hook(_),
+	xsb_undefined_predicate_hook(_).
 
 %% A hook is of the form hookname(HookPredicate)
 %% hookname(_) just lists the callable hooks of the given kind.
 %% add_xsb_hook adds hooks to hookname(_) and remove_xsb_hook(_) removes them.
+
 %% call_xsb_hook(hookname(_)) goes over all the hooks stored in hookname(_) 
-%% and calls them.
+%% and calls them. This is supposed to call only propositional hook predicates.
+%%
+%% call_xsb_hook(hookhame(_),ArgList) calls the hooks by subtituting ArgList 
+%% for the first argument of the hook. The hook predicates that populate 
+%% such a hook type must all be 1-ary predicates.
 
 %% Hook handling
 add_xsb_hook(Hook) :-
 	call(Hook), !.  % hook is already there
 add_xsb_hook(Hook) :-
-	(   callable(Hook)
-	->  assert(Hook)
-	;   warning(('ADD_XSB_HOOK: ',Hook,' must be a callable literal'))
+	(   callable(Hook),
+	    Hook =.. [HookName, Call]
+	->  ( conpsc(Call,Psc),
+		psc_type(Psc,Type),
+		Type > T_ORDI
+	    ->    assert(Hook)
+	    ;     abort(['ADD_XSB_HOOK: undefined hook ',Call,' in ',HookName])
+	    )
+	;   abort(['ADD_XSB_HOOK: ',Hook,' must be a callable literal'])
 	).
 
 remove_xsb_hook(Hook) :-
 	(   callable(Hook)
-	->  retract(Hook)
-	;   warning(('REMOVE_XSB_HOOK: ',Hook,' must be a callable literal'))
+	->  retractall(Hook)
+	;   abort(['REMOVE_XSB_HOOK: ',Hook,' must be a callable literal'])
 	).
 
+%% call_xsb_hook(hookname(X)) calls all "hookname" hooks one by one.
 %% Hook must be of the form hookName(_)
-call_xsb_hook(Hook) :-
+call_one_hook(Hook) :-
 	call(Hook),
-	Hook =.. [HookName, HookCall],
+	Hook =.. [HookName, HookPredicate],
 	(   atom(HookName)
-	->  (   callable(HookCall)
-	    ->	call(HookCall)
-	    ;	warning(('CALL_XSB_HOOK: ',HookCall,' must be a callable literal'))
+	->  (   callable(HookPredicate)
+	    ->  (   conpsc(HookPredicate,Psc),
+		    psc_type(Psc,Type),
+		    Type > T_ORDI
+		->	call_c(HookPredicate)
+		;       abort(['CALL_XSB_HOOK: ',
+			       HookPredicate,' undefined hook'])
+		)
+	    ;	abort(['CALL_XSB_HOOK: ',HookPredicate,
+		       ' must be a callable literal'])
 	    )
-	;   warning(('CALL_XSB_HOOK: ',HookName, ' is not a name of a hook'))
-	),
-	fail.
-call_xsb_hook(_).
+	;   abort(['CALL_XSB_HOOK: ',HookName, ' is not the name of a hook'])
+	).
+
+%% executes all hooks of a given type
+call_xsb_hook(Hook,all) :- call_one_hook(Hook), fail.
+call_xsb_hook(_Hook,all).
+
+%% stops after the first hook of the given type that succeeds
+call_xsb_hook(Hook,until_true) :- (call_one_hook(Hook) -> true; fail).
+
+%% Execute hooks with arguments
+%% Assume that any hook accepts exactly one argument 
+%% (pass a list, if more is needed)
+call_one_hook(Hook,ArgList) :- 
+	call(Hook),
+	Hook =.. [HookName, HookPredicate],
+	(   atom(HookName)
+	->  (   callable(HookPredicate)
+	    ->  substituteArgs(HookName,HookPredicate,ArgList,HookedUpCall),
+		call_c(HookedUpCall)
+	    ;	abort(['CALL_XSB_HOOK: ',HookPredicate,
+		       ' must be a callable literal'])
+	    )
+	;   abort(['CALL_XSB_HOOK: ',HookName, ' is not the name of a hook'])
+	).
+
+call_xsb_hook(Hook,ArgList,all) :- call_one_hook(Hook,ArgList), fail.
+call_xsb_hook(_Hook,_ArgList,all).
+call_xsb_hook(Hook,ArgList,until_true) :-
+	(call_one_hook(Hook,ArgList) -> true;fail).
+
+%% Substitute ArgList for the first arg of the hook predicate to be called.
+%% Do all the necessary checks for arity and such
+substituteArgs(HookName,HookPredicate,ArgList,HookedUpCall) :-
+	conpsc(HookPredicate,Psc),
+	(   psc_type(Psc,Type),
+	    Type =< T_ORDI
+	->  abort(['CALL_XSB_HOOK: undefined hook, ',HookPredicate])
+	;   psc_arity(Psc,Arity), Arity =\= 1
+	->  abort(['Hook ', HookedUpCall, ' of ', HookName,
+		   ' must have arity 1'])
+	;   term_new(Psc,HookedUpCall),
+	    arg(1,HookedUpCall,ArgList)
+	).
+
+
+
+

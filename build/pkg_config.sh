@@ -24,7 +24,8 @@ xsb_executable=$1
 
 echo ""
 echo "Configuring XSB packages. Wait..."
-echo "[perlmatch]. [gap]. [wildmatch]. [regmatch]. [slx]. \
+#echo "[perlmatch]. [gap]. [wildmatch]. [regmatch]. [slx]. \
+echo "[gap]. [wildmatch]. [regmatch]. [slx]. \
       $flora_command \
       halt." \
 		    | $xsb_executable 
