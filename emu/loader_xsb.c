@@ -546,7 +546,7 @@ unsigned int read_magic(FILE *fd)
 
 /*----------------------------------------------------------------------*/
 
-inline void get_obj_atom(FILE *fd, VarString *atom)
+inline static void get_obj_atom(FILE *fd, VarString *atom)
 {
   byte x;
   unsigned int len;
