@@ -1,0 +1,1423 @@
+\documentclass[11pt]{report}
+
+\usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb,alltt}
+
+\pagestyle{headings}
+
+\setlength{\topmargin}{-0.25in}
+\setlength{\headheight}{10pt}
+\setlength{\headsep}{30pt}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textheight}{8.5in}
+\setlength{\textwidth}{6.5in}
+\setlength{\footskip}{50pt}
+
+% JF: not allowed in Latex2e
+%\setlength{\footheight}{24pt}
+
+\setlength{\parskip}{2mm}               % space between paragraphs
+
+\def\cut{\mbox{\tt '!'/0}}
+\def\not{\mbox{${\tt '\backslash+'/1}$}}
+
+\newtheorem{example}{Example}[section]
+
+\newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
+
+\newcommand{\comment}[1]{}
+\newcommand{\ourprolog}{XSB}
+\newcommand{\smallourprolog}{xsb}
+\newcommand{\version}{Version 2.0}
+\newcommand{\LRD}{LRD-stratified}
+
+\newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
+\newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
+\newcommand{\desce}[1]{\item[{\tt #1}]}
+\newcommand{\ourrepeatitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.35in}}
+\newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}]\ \\}
+\newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
+
+\newcommand{\stuff}[1]{
+        \begin{minipage}{4in}
+        {\tt \samepage
+        \begin{tabbing}
+        \hspace{8mm} \= \hspace{6mm} \= \hspace{10mm} \= \hspace{55mm} \= \kill
+        #1 \hfill
+        \end{tabbing}
+        }
+        \end{minipage}
+}
+
+\newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
+
+
+\begin{document}
+
+%%--------------------------- cut above before incorporating into document
+
+
+
+\newenvironment{qrules}{\begin{quote}\sf\begin{tabular}[t]{l}}%
+{\end{tabular}\end{quote}}
+
+
+\newcommand{\obj}{\textit{obj}}
+\newcommand{\db}[1]{\ensuremath{\mathcal{#1}}}
+
+\newcommand{\xany}{\textsf{any}}
+
+\newcommand{\xplus}{\ensuremath{^+}}
+\newcommand{\xstar}{\ensuremath{^*}}
+\newcommand{\xinv}{\ensuremath{^{-1}}}
+\newcommand{\xopt}{\ensuremath{^{?}}}
+
+\newcommand{\xto}[1]{\ensuremath{^{#1}}}
+\newcommand{\xcond}[1]{\ensuremath{\textsf{if}(#1)}}
+\newcommand{\xif}[1]{\ensuremath{\textsf{if}(#1)}}
+\newcommand{\xmu}[1]{\ensuremath{\tcmu(#1)}}
+\newcommand{\xmuif}[2]{\ensuremath{\tcmu(#1,#2)}}
+
+
+\newcommand{\xconc}{\ensuremath{{\cdot}}}
+\newcommand{\xor}{\ensuremath{|}}
+
+\newcommand{\nnot}{\mbox{$\neg$}}                           % negation
+\newcommand{\query}{\mbox{$\, ?\! - \, $}}                  % query
+\newcommand{\impl}                                          % implication
+  {\mbox{\Large $\; {\bf \leftarrow} \;$}}  
+\newcommand{\isa}{\,{\bf{:}}\,}
+\newcommand{\subcl}{\,{\bf{::}}\,}
+\newcommand{\eq}{\ensuremath{\doteq}}                           % equation
+
+% f-logic arrows
+
+\newcommand{\fd}{\ensuremath{{\rightarrow}}}                   % scalar
+\newcommand{\bfd}{\ensuremath{{\bullet\!\!\!\fd}}}            % " + inheritable
+\newcommand{\mvd}{\ensuremath{{\rightarrow\!\!\!\!\rightarrow}}}  % multivalued
+\newcommand{\bmvd}{\ensuremath{{\bullet\!\!\!\mvd}}}              % " + inheritable
+\newcommand{\Fd}{\ensuremath{{\Rightarrow}}}                      % scalar signature
+\newcommand{\Mvd}{\ensuremath{{\Rightarrow\!\!\!\!\Rightarrow}}}  % multiv signature
+
+
+
+% curved f-logic arrows
+
+\newcommand{\anyd}{\ensuremath{\leadsto}}                       % non-inheritable
+\newcommand{\bleadsto}{\ensuremath{\bullet\!\!\!\leadsto}}     % inheritable
+\newcommand{\banyd}{\bleadsto}                              % "
+\newcommand{\Leadsto}{\ensuremath{\approx}\!\!{>}}            % signature
+\newcommand{\Anyd}{\Leadsto}                                % "
+
+\newcommand{\FdConstr}{\ensuremath{\stackrel{constr}{\Fd}}}
+\newcommand{\MvdConstr}{\ensuremath{\stackrel{constr}{\Mvd}}}
+
+\newlength{\flogicindent}
+
+
+\newlength{\flength}
+\newlength{\counterlength}
+
+
+\newcommand{\la}{\ensuremath{\,\leftarrow\,}}
+
+\newcommand{\anon}{\_}
+
+\newcommand{\note}[1]{\textit{[[#1]]}}
+\newcommand{\nterm}[1]{\ensuremath{\langle}\textit{#1}\ensuremath{\rangle}}
+
+
+\newcommand{\NI}{\noindent}
+
+\newcommand{\bs}{\ensuremath{\backslash}}
+\newcommand{\FLIP}{{\mbox{\sc Flip}}\xspace}
+\newcommand{\FLORA}{{\mbox{\sc Flora}}\xspace}
+\newcommand{\FLORID}{{\mbox{\sc Florid}}\xspace}
+\newcommand{\fl}{{F-logic}\xspace}
+
+
+\newcommand{\consts}{\ensuremath{\mathcal{C}}}
+\newcommand{\funcs}{\ensuremath{\mathcal{F}}}
+\newcommand{\preds}{\ensuremath{\mathcal{P}}}
+\newcommand{\vars}{\ensuremath{\mathcal{V}}}
+
+\newcommand{\HU}{\ensuremath{U}}
+\newcommand{\HB}{\ensuremath{\mathcal{HB}}}
+\newcommand{\ext}{\ensuremath{^{\star}}}
+
+\newcommand{\bksl}{\symbol{92}}
+\newcommand{\dq}{\symbol{34}}
+
+
+\chapter{\FLORA's Secrets}
+
+\begin{center}
+{\Large {\bf By Michael Kifer, Bertram Lud\"ascher and Guizhen Yang}}
+\end{center}
+
+\section{Introduction}
+
+\FLORA is a sophisticated F-logic to XSB compiler. It translates a program
+written in the F-logic language \cite{KLW95} (which must be in a file with
+extension {\tt .flr}, {\it e.g.}, {\tt file.flr}) and outputs a file with
+extension {\tt .P} ({\it e.g.}, {\tt file.P}), which is a regular XSB
+program. This program is then passed to XSB for compilation (yielding {\tt
+  file.O}) and execution.
+
+The origins of \FLORA trace back to the \FLIP compiler developed by Bertram
+Ludaescher, and the basic architectures of the two compilers are the same.
+However, \FLORA has many features not found in \FLIP, it has a much more
+optimized compiler and its tokenizer and parser are very different from
+\FLIP's.
+
+The programming language supported by \FLORA is mostly the dialect of F-logic
+developed by the \FLORID group.\footnote{
+  %%
+  See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
+  details.
+  %%
+  }
+%%
+In particular, \FLORA fully supports the versatile syntax for \FLORID path
+expressions. However, \FLORA has extensions of itw own, and some features
+differ significantly.
+
+\FLORA is part of the official distribution of XSB beginning with version
+2.0. It is organized as an XSB package and lives in the directory
+%%
+\begin{quote}
+ \verb|<xsb-installation-directory>/packages/flora/|  
+\end{quote}
+%%
+\FLORA is fully integrated into the XSB system, including its module
+system. In particular, \FLORA modules can invoke predicates defined in
+other XSB modules, and regular XSB modules can query the objects defined in
+\FLORA. At present, XSB is the only platform where \FLORA can run, because
+\FLORA heavily relies on tabling and the well-founded semantics for negation
+that are available in XSB.
+
+\FLORA comes with a number of demo programs that live in
+%%
+\begin{quote}
+ \verb|<xsb-installation-directory>/packages/flora/demos/|  
+\end{quote}
+%%
+The demos can be run by issuing the command
+\verb|rundemo('demo-filename').| at the \FLORA prompt, {\it e.g.},
+\verb|rundemo('flogic_basics').|
+There is no need to change to the demo directory.
+
+As mentioned earlier, an XSB programmer can invoke \FLORA objects from
+other XSB programs. However, the easiest way to get the feel of the system
+is to start \FLORA shell and begin to enter queries interactively.  To
+this end, you must first invoke XSB and then load the {\tt flora}
+package:
+%%
+\begin{quote}
+  \tt
+foo>~~xsb  \\
+\tt
+[ XSB loading messages omitted ]\\
+\tt
+| ?- [flora].\\
+\tt
+[flora loaded]\\
+\tt
+[flrshell loaded]\\
+\tt
+| ?-
+\end{quote}
+%%
+At this point, it is possible to use a limited number of \FLORA
+commands, but to run queries you must enter \FLORA command loop:
+%%
+\begin{quote}
+  \tt
+| ?- flora\_shell.  \\
+ \tt
+[ FLORA chat deleted ] \\
+ \tt
+FLORA> ?-
+\end{quote}
+%%
+
+At this point, \FLORA takes over and \fl syntax becomes the
+norm. To get back to the XSB command loop, type {\tt Control-D} or 
+%%
+\begin{quote}
+  \tt
+| ?- end.  
+\end{quote}
+%%
+
+\section{\FLORA Shell Commands} \label{sec-shell-commands}
+
+The following \FLORA shell commands are supported:
+\texttt{
+\begin{tabbing}
+  dynconsult('FILE',[...]) \= : \=  dynconsult('FILE') with options [...] \kill
+  help                      \> : \> show this info \\
+  compile('FILE')           \> : \> compile FILE.P; create FILE.O \\
+  flcompile('FILE')         \> : \> compile FILE.flr; create FILE.P and FILE.O \\
+  flcompile('FILE',[...])\footnotemark  \> : \> flcompile('FILE') with options [...] \\
+  flconsult('FILE')         \> : \> compile FILE.flr; consult FILE.P \\
+  flconsult('FILE',[...])   \> : \> flconsult('FILE') with options [...] \\
+  load('FILE[.EXT]')\footnotemark       \> : \> consult FILE.flr, FILE.P or FILE.O \\
+  \symbol{91}'FILE[.EXT]',...\symbol{93}        \> : \> consult a list of .flr, .P, or .O files \\
+  dyncompile('FILE')        \> : \> compile FILE.flr to dynamic code \\
+  dyncompile('FILE',[...])  \> : \> dyncompile('FILE') with options [...] \\
+  dynconsult('FILE')        \> : \> dyncompile FILE.flr; dynamically load FILE.P \\
+  dynconsult('FILE',[...])  \> : \> dynconsult('FILE') with options [...] \\
+  dynload('FILE[.EXT]')\footnotemark    \> : \> dynamically load FILE.flr or FILE.P \\
+  \symbol{123}'FILE[.EXT]',...\symbol{125}        \> : \> dynload a list of .flr or .P files \\
+  rundemo('FILE')           \> : \> flconsult a demo from FLORA demos directory \\
+  rundemo('FILE',[...])     \> : \> rundemo('FILE') with options [...] \\
+  abolish\_all\_tables\footnotemark        \> : \> flush all tabled data \\
+  all                       \> : \> show all solutions (default) \\
+  one                       \> : \> show solutions one by one \\
+  maxerr(all/N)             \> : \> set/show the max number of errors FLORA reports \\
+  end                       \> : \> say CIAO to FLORA \\
+  halt                      \> : \> quit FLORA and XSB
+\end{tabbing}
+}
+\addtocounter{footnote}{-3}\footnotetext{Currently supported is equality checking option: eqlevel(N), N=0,1.}
+\addtocounter{footnote}{1}\footnotetext{File extension is optional, but must be .flr, .P or .O if supplied.}
+\addtocounter{footnote}{1}\footnotetext{File extension is optional, but must be .flr or .P if supplied.}
+\addtocounter{footnote}{1}\footnotetext{Tables need to be flushed if the database has been
+changed since last evaluation.}
+
+All commands with a FILE argument passed to them use the XSB {\tt library\_directory}
+predicate to search for the module, except that the command {\tt rundemo(FILE)}
+first looks for {\tt FILE} in the \FLORA demo directory. In general, all XSB commands
+can be executed from \FLORA shell, if the corresponding XSB library has already been
+loaded.
+
+
+\section{\fl and \FLORA by Example}
+
+In the future, this section will contain a number of small
+introductory examples illustrating the use of F-logic and \FLORA. Meanwhile, the
+reader is referred to the excellent tutorial written by the members of the
+\FLORID project.\footnote{
+  %%
+  See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
+  details.
+  %%
+  }
+%%
+Since \FLORA and \FLORID share much of their syntax, most examples in that
+tutorial are also valid \FLORA programs.
+
+
+
+\section{Inside \FLORA}
+
+
+\FLORA consists of the following modules:
+\begin{itemize}
+\item \texttt{flrshell.P}: top-level module that provides the \FLORA shell
+  commands, i.e., for compiling and consulting \FLORA programs
+  (\texttt{flcompile/1}, \texttt{flconsult/1}), setting the ouput mode
+  (\texttt{all/0} or \texttt{one/0} solution(s) at a time) and -- last
+  but not the least -- for directly issuing queries against the loaded
+  database/program (see Section~\ref{sec-shell-commands} for a full description
+  of shell commands).
+\item \texttt{flrtokens.P}: \FLORA tokenizer.
+\item \texttt{flrparser.P}: DCG parser for \fl.
+\item \texttt{flrcompiler.P}: \FLORA compiler that translates \fl to XSB.
+\item \texttt{flrutils.P}: miscellaneous utility predicates.
+\end{itemize}
+
+
+
+\subsection{How \FLORA Works}
+
+
+
+\paragraph{Overview.}
+
+As an \fl to XSB compiler, \FLORA first parses its argument file and then
+compiles it to XSB syntax. For instance the command
+\begin{verbatim}
+        FLORA> ?- flconsult(myprog).
+\end{verbatim}
+compiles the program \verb|'myprog.flr'| (using \texttt{flrparser.P}) into
+the XSB file \verb|'myprog.P'| (using \texttt{flrcompiler.P}).  Look at
+this file to see what has become of your F-logic program! The compilation
+consists mainly of a flattening procedure sketched below.  Next,
+\verb|'myprog.P'| is compiled by XSB, yielding \verb|'myprog.O'| which is
+then loaded and executed.  If \verb|'myprog.flr'| contains queries, they are
+immediately executed by XSB (provided there are no errors).
+
+The main purpose of the \FLORA shell, however, is to allow the evaluation
+of ad-hoc F-logic queries. For example, after having requested the
+execution of the \texttt{'default.flr'} file from the demo directory (using
+the command \texttt{FLORA>~?-~rundemo(default).}), you may ask
+\begin{verbatim}
+    FLORA> ?-  X..kids[                 % Whose kids
+                 self -> K;             % ... (list them by name)
+                 hobbies ->>            % ... have hobbies
+                 {H:dangerous_hobby}    % ... that are dangerous?
+    ]. 
+\end{verbatim}
+\FLORA will parse, flatten, and evaluate this query in the same way as
+the queries in a source file.
+
+
+\paragraph{Flattening F-logic.}
+
+Consider, e.g., the following complex F-logic molecule, representing
+facts about the object \texttt{mary} (the syntax of \fl is given in
+Section \ref{sec-basic-flogic}):
+
+\begin{quote}
+{\small\begin{verbatim}
+mary:employee[age->29;kids->>{tim,leo};salary@(1998)->a_lot].
+\end{verbatim}}
+\end{quote}
+
+As described in \cite{KLW95}, any complex F-logic molecule can be
+decomposed into a conjunction of simpler F-logic atoms. These latter atoms
+can be directly represented using Prolog syntax.  For the different kinds
+of F-logic atoms we use different Prolog predicates. For instance, the
+result of translating the above F-molecule might be:
+
+\begin{quote}
+{\small \begin{verbatim}
+isa_(mary,employee).                    % mary:employee.
+fd_(mary,@(age),29).                    % mary[age->29].
+mvd_(mary,@(kids),tim).                 % mary[kids->>{tim}].
+mvd_(mary,@(kids),leo).                 % mary[kids->>{leo}].
+fd_(mary,@(salary,1998),a_lot).         % mary[salary@(1998)->a_lot].
+\end{verbatim}}
+\end{quote}
+
+
+
+\paragraph{Closure Axioms.}
+
+The flattening process alone is not enough to convert an \fl program
+into Prolog, because of the additional semantics hidden behind the notions of
+the subclass relationship, inheritance, and scalar methods. This semantics
+is captured through the facts and rules called \emph{closure axioms}, which
+must be explicitly added to the flattened user program.  Closure axioms are
+static and reside in the subdirectory \texttt{closure/}. In this way, the
+closure axioms rules get appended to every user program. These rules capture:
+
+\begin{itemize}
+\item The closure of ``\subcl'', i.e., the subclass hierarchy.  A
+  runtime check warns about cycles in the subclass hierarchy.
+\item The closure of ``\isa'', i.e., if $X\isa C, C\subcl D$ then
+  $X\isa D$. 
+\item Monotone and non-monotone inheritance.
+\item Closure properties for functional methods.
+\end{itemize}
+
+
+\subsection{\FLORA vs. \FLORID}
+
+The syntax of \FLORA and some of its design decisions are borrowed from
+Florid, an \fl interpreter developed at Freiburg University in Germany.
+For more information on Florid please visit the project home page at:
+\verb|http://www.informatik.uni-freiburg.de/~dbis/florid/|. The following
+is a list of differences between these two systems.
+
+\begin{itemize}
+\item \FLORID
+  \begin{itemize}
+  \item (Semi-)naive bottom-up evaluation.
+  \item ``Hard-wired'' closure axioms.
+  \item Nonmonotonic inheritance (trigger semantics).
+  \item C++ based system.
+  \end{itemize}
+\item \FLORA
+  \begin{itemize}
+  \item Translation of \fl into XSB rules.
+  \item Top-down evaluation of the generated rules. If tabled, the compiled 
+    programs can be much more efficient than the corresponding Florid
+    programs.
+  \item Closure axioms implemented as Prolog rules for easy experimentation.
+  \item Non-monotonic inheritance implemented using closure axioms and the
+    well-founded semantics.
+  \item Module systems.
+  \item Full access to the underlying XSB system.
+  \end{itemize}
+\end{itemize}
+
+
+
+\section{Syntax of \FLORA and Path Expressions }
+
+The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
+
+
+\subsection{Basic F-logic Syntax}\label{sec-basic-flogic}
+
+
+\begin{itemize}
+\item \emph{Symbols}: The \fl\ alphabet of \emph{object constructors}
+  consists of the sets \funcs (function symbols), \preds (predicate symbols
+  including $\eq$), and \vars (variables).  Variables are denoted by
+  capitalized symbols or an underscore followed by zeor or more letters
+  and/or digits (e.g., $X,\textit{Name}, \_, \_v5$)\footnote{$\_$ is the same
+  unanimous variable as in Prolog}, whereas all other symbols,
+  especially constants (which are 0-ary object constructors) are denoted in
+  lowercase (e.g., $a,\textit{john}$).  An expression is called
+  \emph{ground} if it involves no variables.  In addition to the usual
+  first-order connectives and symbols, there are a number of special
+  symbols: ], [, \}, \{, \fd, \mvd, \Fd, \Mvd,
+  \isa, \subcl.\footnote{
+    %%
+    We do not deal with inheritance in this manual, so we
+    omit the symbols for \emph{inheritable} methods
+    \cite{KLW95}.
+    %%
+    }
+  %%
+\item \emph{Id-Terms/Oids}:%
+\footnote{
+    Numbers (including integers and floats) may also be used as id-terms. But
+    such use is not recommended.}%
+\medskip
+  
+  \hfill (1)
+  \begin{minipage}[t]{.80\textwidth}
+    First-order terms over \funcs\ and \vars\ are called
+    \emph{id-terms}, and are used to name objects, methods, and
+    classes.  Ground id-terms correspond to \emph{logical object
+      identifiers} (\emph{oid}s), also called object \emph{names}.
+  \end{minipage}
+  \hfill ~
+\item \emph{Atoms}: Let $O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
+  addition to the usual first-order atoms, like $p(X_1,\dots,X_n)$, there
+  are the following basic types of atoms: \medskip
+
+  \begin{math}
+    \hfill (2)~O[M\fd R_0] \hfill (3)~O[M\mvd \{R_1,\dots,R_n\}]
+    \hfill (4)~C[M\Fd T] \hfill (5)~C[M\Mvd T]. \hfill
+  \end{math} \medskip
+  
+  (2) and (3) are \emph{data atoms}, specifying that a \emph{method} $M$
+  applied to an object $O$ yields the result object $R_i$. In (2), $M$ is a
+  \emph{single-valued} (or \emph{scalar}) method, i.e., there is
+  at most one $R_0$ such that $O[M\fd R_0]$ holds. In contrast, in
+  (3), $M$ is \emph{multi-valued}, so there may be several result
+  objects $R_i$. For $n=1$ the curly braces may be omitted.\\
+  \\
+  (4) and (5) denote \emph{signature atoms}, specifying that the
+  (single-valued and multi-valued, respectively) method $M$ applied to
+  objects of \emph{class} $C$ yields results of type $T$.
+  
+  The organization of objects in classes is specified by
+  \emph{isa-atoms}: \medskip
+
+  \begin{math}
+    \hfill (6)~O\isa C \hfill (7)~C\subcl D. \hfill
+  \end{math} \medskip
+
+  (6) defines that $O$ is an \emph{instance} of class $C$, while (7)
+  specifies that $C$ is a \emph{subclass} of $D$. 
+\item \emph{Parameters}: Methods may be \emph{parameterized}, so
+  \begin{math}
+    M@(P_1,\dots,P_k)
+  \end{math} is allowed in (2)~--~(5), where $P_1,\dots,P_k$ are
+  id-terms, e.g., \textsf{john[salary@(1998)\fd 50000]}.
+  
+\item \emph{Programs}: \fl\ \emph{literals}, \emph{rules}, and
+  \emph{programs} are defined as usual, based on \fl\ atoms.
+\end{itemize}
+
+\NI As a concise notation for several atoms specifying properties of the
+same object, \emph{F-molecules} can be used. For instance, instead of
+$\textsf{john:person}\land\textsf{john[age\fd
+  31]}\land\textsf{john[children\mvd\{bob,mary\}]}$, we can simply write
+\textsf{john\isa person[age\fd 31; children\mvd\{bob,mary\}]}.
+
+
+\begin{example}
+  {\bf (Publications Database)}
+  Figure~\ref{fig-flogic-model} depicts an \fl representation of a fragment
+  of an object-oriented publications database.
+\end{example}
+
+
+\begin{figure}[htbp]
+\begin{tabular}{c}
+  \begin{tabular}{l}
+    {\bf Schema:}\\
+    conf\_p\subcl paper. \\
+    journal\_p\subcl paper.\\
+    paper[authors\Mvd  person; title\Fd string].\\
+    journal\_p[in\_vol\Fd volume]. \\
+    conf\_p[at\_conf\Fd conf\_proc].\\
+    journal\_vol[of \Fd journal; volume\Fd integer; 
+               number\Fd integer; year\Fd integer].\\  
+    journal[name\Fd string; publisher\Fd string;
+            editors@(integer)\Mvd person]. \\
+    conf\_proc[of\_conf\Fd conf\_series; year\Fd integer;
+               editors@(integer)\Mvd person]. \\
+    conf\_series[name\Fd string]. \\
+    publisher[name\Fd string].\\
+    person[name\Fd string; affil@(integer)\Fd institution]. \\
+    institution[name\Fd string; address\Fd string].\smallskip\\
+
+    {\bf Objects:}\\
+    $o_{j1}$\isa journal\_p[%
+      title\fd ``Records, Relations, Sets, Entities, and Things'';
+      authors\mvd$\{o_{mes}\}$; in\_vol\fd $o_{i11}$]. \\
+    $o_{di}$\isa conf\_p[
+      title\fd ``DIAM II and Levels of Abstraction'';
+      authors\mvd$\{o_{mes},o_{eba}\}$; at\_conf\fd $o_{v76}$]. \\
+    $o_{i11}$\isa journal\_vol[of\fd $o_{is}$; number\fd 1; volume\fd 1; year\fd1975]. \\
+    $o_{is}$\isa journal[name\fd``Information Systems''; editors@(...)\mvd $\{o_{mj}\}$]. \\
+    $o_{v76}$\isa conf\_proc[of\fd vldb; year\fd 1976; editors\mvd $\{o_{pcl},o_{ejn}\}$].\\
+    $o_{vldb}$\isa conf\_series[name\fd``Very Large Databases'']. \\
+    $o_{mes}$\isa person[name\fd``Michael E. Senko'']. \\
+    $o_{mj}$\isa person[name\fd``Matthias Jarke''; affil@($\dots$)\fd $o_{rwt}$]. \\
+    $o_{rwt}$\isa institution[name\fd``RWTH\_Aachen''].
+\end{tabular}
+\end{tabular}
+\caption{A Publications Object Base and its Schema Represented 
+  Using \fl}\label{fig-flogic-model}
+\end{figure}
+
+
+
+
+
+\subsection{Path Expressions}
+
+In addition to the basic \fl syntax, the \FLORA  system also supports
+\emph{path expressions} to simplify object navigation along
+single-valued and multi-valued method applications, and to avoid
+explicit join conditions \cite{frohn-lausen-uphoff-VLDB-94}.  The
+basic idea is to allow the following \emph{path expressions} wherever
+id-terms are allowed:
+%%
+
+  \medskip
+
+\begin{math}
+  \hfill (8)~O.M \hfill (9)~O..M \hfill
+\end{math} \medskip
+
+\NI The path expression in (8) is \emph{single-valued}; it refers to
+the unique object $R_0$ for which $O[M\fd R_0]$ holds; (9) is a
+\emph{multi-valued} path expression; it refers to each $R_i$ for which
+$O[M\mvd\{R_i\}]$ holds. $O$ and $M$ may be id-terms or path
+expressions; moreover, $M$ may be parameterized, i.e., of the form
+$M@(P_1,\dots,P_k)$.
+  
+In order to obtain a unique syntax and to specify different orders of
+method applications, parentheses are used: By default, path
+expressions associate to the left, so $a.b.c$ is equivalent to
+$(a.b).c$ and specifies the unique object $o$ such that $a[b\fd x]
+\land x[c\fd o]$ holds (note that $x=a.b$). In contrast, $a.(b.c)$ is
+the object $o'$ such that $b[c\fd x'] \land a[x'\fd o']$ holds (here,
+$x'=b.c$); generally, \ensuremath{o' \neq o}. Note that in $(a.b).c$, $b$ is a
+method name, whereas in $a.(b.c)$ it is used as an object name.
+Observe that function symbols can also be applied to path
+expressions, since path expressions (like id-terms) are used to
+reference objects.
+  
+As path expressions and \fl atoms can be arbitrarily nested, this leads
+to a concise and very flexible specification language for object
+properties, as illustrated in the following example.
+
+\begin{example}[Path Expressions]\label{Ex:PathExpr}
+  Consider again the schema given in Figure~\ref{fig-flogic-model}.
+  Given the name $n$ of a person, the following path expression
+  references all editors of conferences in which $n$ had a
+  paper:\footnote{Each occurrence of ``\_'' denotes a distinct
+    don't-care variable (existentially quantified at the
+    innermost level).}
+\begin{qrules}
+  \anon\isa conf\_p[authors\mvd\{\anon [name\fd $n$]\}].at\_conf..editors
+\end{qrules}
+Therefore, the answer to the \emph{query}
+\begin{qrules}
+  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+  $n$]\}].at\_conf[editors\mvd\{E\}].
+\end{qrules}
+is the set of all pairs (\textsf{P},\textsf{E}) such that \textsf{P}
+is (the logical oid of) a paper written by $n$, and \textsf{E} is the
+corresponding proceedings editor.  If one is also interested in the
+affiliations of the above editors when the papers were published, we only
+need to slightly modify our query:
+\begin{qrules}
+  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+  $n$]\}].at\_conf[year\fd Y]..editors[affil@(Y)\fd A].
+\end{qrules}
+\end{example}
+Thus, \FLORA's path expressions support navigation and specification
+of object properties along two dimensions: the ``depth'' dimension
+corresponds to navigation along method applications (``.''  and
+``..''), while the bracketed specification lists specify
+properties of the intermediate objects (the ``breadth'' dimension). Note
+that constraints \emph{within} the expressions can be stated using
+variables.
+
+To access intermediate objects that arise implicitly in the middle
+of a path expression, one can define the method \textsf{self} a
+$X[\textsf{self}\fd X]$ and then simply
+write $\dots[\textsf{self}\fd O]\dots$ anywhere in a complex
+path expression. This would bind the id of the current object to the
+variable $O$.\footnote{
+  %%
+  A similar feature is used in other
+  languages, e.g., XSQL \cite{xsql-92}.
+  %%
+  }
+%%
+
+\begin{example}[Path Expressions with \textsf{self}]\label{ex-path-self}
+  Recall the second query in Example~\ref{Ex:PathExpr}. If the user is
+  also interested in the respective conferences, the query can be
+  reformulated as
+\begin{qrules}
+   ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+   $n$]\}].at\_conf[self\fd C; year\fd Y]..editors[affil@(Y)\fd A]. 
+\end{qrules}
+\end{example}
+
+\subsection{References: Truth Value vs.\ Object Value}\label{sec-references}
+
+Id-terms, F-logic atoms, and path expressions can all be used to
+reference objects. This is obvious for id-terms (1) and path
+expressions (8~--~9). Similarly, F-logic atoms (2~--~7) have not only a
+truth value, but also reference objects, i.e., yield an object value.
+For example, $o\isa c[m\fd r]$ is a reference to $o$ and additionally,
+it specifies $o$'s membership in class $c$ and the value of the attribute $m$.
+
+Consequently, all F-logic expressions of the form (1~--~9) are called
+\emph{references}. F-logic references have a dual reading: Given an
+\fl\ database \db I (see below), a reference has
+\begin{itemize}
+\item an \emph{object value}, which yields the name(s) of the objects
+  reachable in \db I by the corresponding reference, and 
+\item a \emph{truth value} like any other literal or molecule of the
+  language; in particular, a reference $r$ evaluates to \emph{false} if
+  there exists no object that is referenced by $r$ in \db I.
+\end{itemize}
+Thus, a path expression can be viewed as a logical formula
+(\emph{the deductive perspective}), or as a name for a number of objects
+(\emph{the object-oriented perspective}).
+
+Consider the following path expression and the equivalent (with respect to
+the truth value) flattening:
+
+\begin{displaymath}
+a..b[c\mvd\{d.e\}] \quad\ \Leftrightarrow \quad\  a[b\mvd\{X_{ab}\}]
+\land d[e\fd X_{de}] \land X_{ab}[c\mvd\{X_{de}\}]. \hspace{4em} (*)
+\end{displaymath}
+
+
+Such flattening is used to determine the truth value of
+arbitrarily complex path expressions in the \emph{body} of a rule.
+The object values \obj\ of a path expression are
+the names of the referenced objects: e.g., for $(*)$ we have
+\begin{displaymath}
+\obj(a..b) = \{x_{ab} \mid \db I \models a[b\mvd\{x_{ab}\}]\}
+\qquad\textrm{ and }\qquad \obj(d.e) = \{x_{de} \mid \db I \models d[e\fd 
+x_{de}]\} ~,
+\end{displaymath}
+%
+where $\db I \models \varphi$ means that $\varphi$ holds in \db I.
+Observe that $\obj(d.e)$ contains at most one element because the
+\emph{single-valued} method $e$ is applied to the unique oid $d$.  In
+general, for an \fl\ database \db I, the object values of ground
+expressions are given by the following mapping \obj\ from ground
+references to sets of ground references:
+%
+\begin{displaymath}
+  \begin{array}{cll@{\hspace{4em}}c}
+    \obj(t) & := & \{t' \mid t'=t \textrm{ and } \db I\models t' \}, 
+     \textrm{ for a ground id-term $t$}  & (1) \\   
+                                %
+    \obj(o[\dots]) & :=& \{o'\in\obj(o) \mid \db I \models o'[\dots]
+    \}& (2),...,(5)\\  
+                                %
+    \obj(o\isa c) & := & \{o'\in\obj(o) \mid \db I \models o'\isa c\} &
+    (6) \\ 
+                                %
+    \obj(c\subcl d) & := & \{c'\in\obj(c) \mid \db I \models c'\subcl
+    d\} &  (7)\\ 
+                                %
+    \obj(o.m) & :=  & \{r'\in\obj(r) \mid \db I \models o[m\fd
+    r]\}  &  (8)\\ 
+                                %
+    \obj(o..m) & := &  \{ r'\in\obj(r) \mid \db I \models
+    o[m{\mvd}\{r\}] \} & (9)   
+  \end{array}
+\end{displaymath}
+Observe that if $t$ does not hold (i.e., occur) in \db{I}, then $\obj(t)$ is
+$\emptyset$.  Conversely, a ground reference $r$ is called \emph{active} if
+$\obj(r)\neq\emptyset$. A reference, $r$, can be classified as either
+single-valued or multi-valued:
+\begin{itemize}
+\item $r$ is called \emph{multi-valued} if
+ \begin{itemize}
+  \item it has the form $o..m$, or 
+  \item it has one of the forms $\underline{o}[\dots]$,
+    $\underline{o}\isa c$, $\underline{c}\subcl d$, or
+    $\underline{o}.\underline{m}$, and any of the underlined
+    subexpressions is multi-valued;
+ \end{itemize}
+\item in all other cases, $r$ is \emph{single-valued}.
+\end{itemize}
+
+\section{Various Extensions}
+
+\subsection{FLORA Syntax}
+
+\paragraph{Atoms}
+
+Like XSB atoms, \FLORA atoms begin with a lowercase letter followed by zero or more letters
+($A \ldots Z, a \ldots z$), digits ($0 \ldots 9$), or underscores (\_), e.g.,
+$\textit{student}, \textit{apple\_pie}$. Atoms may also be \emph{any} sequence
+of characters enclosed by a pair of single quotes, e.g.,
+$\textit{'JOHN SMITH'},\textit{'default.flr'}$.
+
+\FLORA also recognizes escaped characters inside a pair of single quotes ($\texttt{'}$).
+An escaped character normally begins with a backslash ($\texttt{\bksl}$).
+Table~\ref{tab:tab-esc-str}
+lists the special escaped character strings and their corresponding special symbols. An
+escaped character may also be any ASCII character. Such a character is entered by
+a backslash together with a lowercase $\texttt{x}$ (or uppercase $\texttt{X}$) followed
+by one or two hexadecimal symbols representing its ASCII value. For example,
+$\texttt{{\bksl}xd}$
+is the ASCII character Carriage Return, whereas $\texttt{{\bksl}x3A}$ represents the
+semicolon. In case that a backslash is unable to escape any following character, it is
+recognized as itself. 
+
+One exception is that inside a quoted atom, a single quote character is escaped by another
+signle quote, e.g., $\texttt{'isn''t'}$.
+
+\begin{table}[htb]
+\begin{center}
+\texttt{ \small
+\begin{tabular}{|c|r@{\hspace{1.5cm}}|@{\hspace{5mm}}l@{\hspace{5mm}}|}
+\hline
+Escaped String &
+  \multicolumn{1}{c|@{\hspace{5mm}}}{ASCII (decimal)} &
+  \multicolumn{1}{c|}{Symbol} \\ \hline
+{\bksl}{\bksl} &  92 & {\bksl} \\ \hline
+{\bksl}n &  10 &		 NewLine \\ \hline
+{\bksl}N &  10 &		 NewLine \\ \hline
+{\bksl}t &   9 &		 Tab \\ \hline
+{\bksl}T &   9 &		 Tab \\ \hline
+{\bksl}r &  13 &		 Return \\ \hline
+{\bksl}R &  13 &		 Return \\ \hline
+{\bksl}v &  11 &		 Vertical Tab \\ \hline
+{\bksl}V &  11 &		 Vertical Tab \\ \hline
+{\bksl}b &   8 &		 Backspace \\ \hline
+{\bksl}B &   8 &		 Backspace \\ \hline
+{\bksl}f &  12 &		 Form Feed \\ \hline
+{\bksl}F &  12 &		 Form Feed \\ \hline
+{\bksl}e &  27 &		 Escape \\ \hline
+{\bksl}E &  27 &		 Escape \\ \hline
+{\bksl}d & 127 &		 Delete \\ \hline
+{\bksl}D & 127 &		 Delete \\ \hline
+{\bksl}s &  32 &		 Whitespace \\ \hline
+{\bksl}S &  32 &		 Whitespace \\
+\hline
+\end{tabular}
+}
+\end{center}
+\caption{Escaped Character Strings and Their Corresponding Symbols}
+\label{tab:tab-esc-str}
+\end{table}
+
+\paragraph{Strings (Character Lists)}
+
+Like XSB strings, \FLORA strings are enclosed by a pair of double quotes ($\texttt{{\dq}}$).
+These strings are represented internally as lists of ASCII characters, e.g.,
+\mbox{\texttt{[102,111,111]}} corresponds to the string \texttt{{\dq}foo{\dq}}.
+
+\FLORA strings recognize the same escaped characters as described above for \FLORA atoms.
+But inside a string, a single quote character does not need to be escaped. A double quote
+character, however, needs to be escaped by another double quote, e.g.,
+$\texttt{{\dq}{\dq}{\dq}foo{\dq}{\dq}{\dq}}$.
+
+\paragraph{Numbers}
+
+Normal \FLORA integers are decimals represented by a sequence of digits, e.g., $892, 12$.
+\FLORA also recognizes integers in other bases (2 through 36). The base is specified by
+a decimal integer followed by a single quote ($\texttt{'}$). The digit string immediately
+follows the single quote. The letters $A \ldots Z$ or $a \ldots z$ are used to represent
+digits greater than 9. Table~\ref{tab:tab-int-rep} lists a few example integers.
+\begin{table}[htb]
+\begin{center}
+\texttt{ \small
+\begin{tabular}{|r@{'}l|r@{\hspace{1.5cm}}|c|}
+\hline
+  \multicolumn{2}{|c|}{Integer} &
+  \multicolumn{1}{c|}{Base (decimal)} &
+  \multicolumn{1}{c|}{Value (decimal)} \\ \hline
+\multicolumn{1}{|r}{} & \multicolumn{1}{@{}l|}{1023} &  10 & 1023 \\ \hline
+2 & 1111111111 & 2 & 1023 \\ \hline
+8 & 1777 & 8 & 1023 \\ \hline
+16 & 3FF &  16 & 1023 \\ \hline
+32 & vv & 32 & 1023 \\
+\hline
+\end{tabular}
+}
+\end{center}
+\caption{Integers Representions}
+\label{tab:tab-int-rep}
+\end{table}
+
+Underscore (\texttt{\_}) can be put inside any sequence of digits as delimeters. It is used
+to partition some long numbers, e.g., $\texttt{2'11\_1111\_1111}$ is recognized the same as
+$\texttt{2'1111111111}$. But it cannot be the first symbol of an integer, since variables may
+start with an underscore. For example, $1\_2\_3$ represents the number $123$ whereas $\_12\_3$
+represents a variable named $\_12\_3$.
+
+Floating numbers normally look like $24.38$. The decimal point must be preceded by an integral
+part, even if it is $0$, i.e., $0.3$ must be entered as $0.3$ but not $.3$. Each float may also
+have an optional exponent. It begins with a lowercase $e$ (or uppercase $E$) followed by an
+optional minus sign ($-$) or plus sign ($+$) and an integer. This exponent is recognized as
+in base 10. For example, \mbox{\tt 2.43E2=243} whereas \mbox{\tt 2.43e-2=0.0243}. 
+
+\paragraph{Comments}
+
+\FLORA supports three kinds of comments: (1) all characters following the {\tt \%} symbol are
+interpreted as a line of comment; (2) all characters following the {\tt //} symbol are also
+interpreted as a line of comment; (3) all characters enclosed by a pairs of {\tt /*} and
+{\tt */} are interpreted as comments. Only (3) may span across multiple lines.
+
+Comments are considered as white spaces. Therefore, tokens are also deliminated by comments.
+
+\subsection{Path Expression in Rule Head}
+
+Only single-valued path expressions are allowed in rule head. Set-valued path expressions
+are not allowed since the semantics is not always clear.
+
+The following shows an example with path expression in rule head (it means that the mother
+of person X has grandson Y, if X has son Y):
+\begin{qrules}
+X.mother[grandson{\mvd}Y] :- X{\isa}person[son{\mvd}Y].
+\end{qrules}
+The complication arises if later on we specify that:
+\begin{qrules}
+john[mother{\fd}mary]. \\
+john[son{\mvd}david].
+\end{qrules}
+and ask the following query:
+\begin{qrules}
+?- mary[grandson{\mvd}S].
+\end{qrules}
+
+In the above case, we should be able to relate ${\tt mary}$ to ${\tt john.mother}$ to
+complete the deductive process. To deal with single-valued path expressions in rule head,
+\FLORA uses a \emph{skolemization} technique and also requires \emph{equality checking}. But a
+user does not need to worry about this. All this will be done automatically by the \FLORA
+compiler. If path expression in rule head is detected, \FLORA compiler will perform
+skolemization upon this rule head and finally append to the compiled .P XSB program a set of
+rules for equality checking.
+
+A user, however, has to be aware that equality checking could cost time. To improve system
+performance, the first thing to do may be to eliminate path expressions in rule heads. In some
+cases, our experiments have shown that without equality checking it runs 10 times faster.
+
+\subsection{Aggregation}
+
+\FLORA adopts basically the same syntax for aggregation from \FLORID. An aggregate
+looks like this:
+\begin{qrules}
+agg\{X[Gs]; body\}
+\end{qrules}
+${\it agg}$ represents the aggregate operator. $X$ is called the aggregate variable; $Gs$ is
+a list of comma seperated variables called grouping variable; ${\it body}$ is list of literals
+specifying the conditions. The grouping variables are optional, i.e., the entire part of
+$[Gs]$ may be omitted.
+
+All the variables appearing in ${\it body}$ but not in $X$ and $Gs$ are considered as
+existentially quantified. Furthermore, the syntax of an aggregate must satisfy the following
+conditions: (1) Both $X$ and $Gs$ must appear in ${\it body}$; (2) $Gs$ should not contain $X$.
+
+The following aggregate operators are supported: (1) {\it min}; (2) {\it max}; (3) {\it count};
+(4) {\it sum}; (5) {\it avg}. {\it min} and {\it max} can be performed on any list of terms,
+and the mininum and maximum in the order as specified by XSB's {\tt @=<} operator (for numbers
+this order will be preserved) will be returned, respectively. {\it sum} and {\it avg}, however,
+can only take numbers. If the aggregate variable is instantiated to some non-number,
+{\it sum} and {\it avg} will both discard it and generate a runtime warning message.
+
+In general, aggregates can appear anywhere a number is allowed. Therefore, aggregates can
+be nested. The following examples illustrate the use of aggregates (some of them are borrowed
+from the \FLORID manual):
+\begin{qrules}
+?- Z = min\{S; john[salary@(Year){\fd}S]\}. \\
+?- Z = count\{Year; john.salary@(Year) $<$ max\{S; john[salary@(Y){\fd}S], Y$<$Year\}\}. \\
+?- avg\{S[Who]; Who{\isa}employee[salary@(Year){\fd}S]\} $>$ 20000.
+\end{qrules}
+
+If an aggregate contains grouping varialbes, and these grouping variables are not bound
+by any preceding subgoal, then this aggregate may backtrack upon the grouping variables. In
+other words, they are existentially quantified. Consider the last query in the above example.
+The aggregate will backtrack upon the variable {\it who}. If both {\it john's} and {\it mary's}
+average salary is greater than 20000, this query will backtrack and print out both answers.
+
+\subsection{Arithmetic Expressions}
+
+Unlike XSB, in \FLORA arithmetic expressions are always evaluated (in XSB, $+$ may be used
+as a binary functor). Both single-valued and multi-valued path expressions are allowed in
+arithmetic expressions. But the semantics is that all objects (variables) are considered as
+existentially quantified. For example, the following query
+\begin{qrules}
+?- john..bonus $+$ mary..bonus $>$ $1000$.
+\end{qrules}
+is actually equivalent to
+\begin{qrules}
+?- john[bonus{\mvd}{\tt V1}], mary[bonus{\mvd}{\tt V2}], ${\tt V1}+{\tt V2} > 1000$.
+\end{qrules}
+The only difference is that the values of {\tt V1} and {\tt V2} may be printed out for the
+latter query, but not for the former one.
+
+Order matters in \FLORA. All variables appearing in an arithmetic expression must be
+instantiated at the time of evaluation. Otherwise, a runtime error will be generated.
+
+\FLORA allows arithmetic expressions to appear in path expressions, since arithmetic
+expressions are always evaluated (they are consideredd as representing a number), and \FLORA
+also recognizes numbers as object names ({\it oid}).
+
+Take $o_1.m_1+o_2.m_2.method$ as an example. Since \FLORA allows path expressions inside
+arithmetic expressions, and {\it vice versa}, it is not very clear whether the previous
+example means the arithmetic expression $(o_1.m_1)+(o_2.m_2.method)$, or the path expression
+$(o_1.m_1+o_2.m_2).method$.
+
+One more confusing example is $2.3.4$. Does it mean $(2).(3).(4)$, or (2.3).4, or 2.(3.4)?
+In \FLORA, $2.3.4$ alone means $(2.3).4$, since all tokens like integers , floats and
+operators, $\ldots$, etc.\ are first processed by \FLORA tokenizer and then passed to \FLORA
+parser for parsing. In general, the interpretation of .\ as a decimal point takes precedence
+over the interpretation of it as part of a single-valued path expression.
+
+Another ambiguious situation is the symbol $-$ ($+$). It may be used as a minus sign (plus
+sign), e.g., $-3$ ($+3$), or as a binary arithmetic subtraction (addition) operator, e.g.,
+$4-7$ ($4+7$). Actually, minus sign (plus sign) is defined as a unary
+operator in \FLORA and always takes precedence over binary operators.
+
+Table~\ref{tab:tab-op-pre} lists various operators in non-increasing precedence order and their
+associativity and arity.
+\begin{table}[htb]
+\begin{center}
+\texttt{ \small
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Precedence & Operator & Use & Associativity & Arity \\ \hline
+1 & () & parentheses & not applied & not applied\\ \hline
+2 & . & decimal point & not applied & not applied \\ \hline
+3 & $-$ & minus sign & right & unary \\ \cline{2-5}
+  & $+$ & plus sign & right & unary \\ \hline
+4 & . & path expression & left & binary \\ \hline
+5 & $*$ & multiplication & left & binary \\ \cline{2-5}
+  & $/$ & division & left & binary \\ \hline
+6 & $-$ & subtraction & left & binary \\ \cline{2-5}
+  & $+$ & addition & left & binary \\ \hline
+  & =< & less than or equal to & not applied & binary \\ \cline{2-5}
+  & >= & greater than or equal to & not applied & binary \\ \cline{2-5}
+7 & =:= & equal to & not applied & binary \\ \cline{2-5}
+  & ={\bksl}= & unequal to & not applied & binary \\ \cline{2-5}
+  & := & assignment & not applied & binary \\ \cline{2-5}
+  &is & \multicolumn{3}{c|}{same as :=} \\
+\hline
+\end{tabular}
+}
+\end{center}
+\caption{Operators in Non-Increasing Precedence Order and Their Associativity and Arity}
+\label{tab:tab-op-pre}
+\end{table}
+
+Wherever ambiguity may arise, parentheses can be used to avoid misleading expressions. The
+following lists more examples of legal expressions accepted by \FLORA:
+\begin{qrules}
+($o_1$.$m_1$+$o_2$.$m_2$).{\tt method} \\
+2.(3.4) \\
+$3+--2$ (equivalent to $3+(-(-2)$) \\
+$5*-6$ (equivalent to $5*(-6)$) \\
+$5.(-6)$
+\end{qrules}
+
+Note that both minus sign ($-$) and plus sign ($+$) are defined as unary operators. Therefore,
+$-6$ is not a token, but an arithmetic expression instead. To further avoid misleading
+expressions, \FLORA requires that all arithmetic expressions be enclosed by parentheses if
+they appear as {\it oid} in any path expression. According to this rule, although $5.$$-6$
+seems legal by Table~\ref{tab:tab-op-pre}, it has to be entered as $5.(-6)$.
+
+\section{Compiled Code vs. Dynamic Code}
+
+A \FLORA program usually consists of facts and rules. All these facts and rules become the
+runtime database of \FLORA when they are loaded. Conceptually, the runtime system of \FLORA
+is partitioned into two areas: static area and dynamic area. Compiled code can be compiled by
+\emph{flcompile}, loaded into the static area by \emph{flconsult}, \emph{load}, or {\tt [~]},
+while dynamic code can be compiled by \emph{dyncompile}, loaded into the dynamic area by
+\emph{dynconsult}, \emph{dynload}, or \texttt{\symbol{123}~\symbol{125}}.
+Section~\ref{sec-shell-commands} lists the syntax and meaning of these commands (predicates).
+These predicates can also be called from within a \FLORA program. But except {\tt [~]} and
+\texttt{\symbol{123}~\symbol{125}}, all of them must first be imported from \emph{flrutils}
+(see Section~\ref{sec-module} for details).
+
+Although compiled code resides in static area while dynamic code resides in dynamic area,
+they are considered as a whole and executed all together. A small example would help
+illustrate this. Suppose there are two programs, {\it static.flr} and {\it dynamic.flr},
+as shown in Figure~\ref{fig:fig-static-dynamic-code}.
+\begin{figure}[htb]
+\begin{center}
+\begin{tabular}{l}
+{\bf static.flr:}\\ \\
+department[faculty{\Mvd}professor; coursesOffered{\Mvd}string]. \\
+professor[teaches@(string,number){\Mvd}string]. \\
+\\
+X{\isa}department[coursesOffered{\mvd}C] :-
+	X..faculty[teaches@(S,Y){\mvd}C]. \\ \\
+
+cse{\isa}department[faculty{\mvd}smith]. \\
+smith{\isa}professor. \\
+smith[teaches@(fall,1998){\mvd}cse220]. \\
+smith[teaches@(spring,1999){\mvd}cse310]. \\
+smith[teaches@(spring,1999){\mvd}cse530]. \\
+\\
+{\bf dynamic.flr:}\\ \\
+math{\isa}department[faculty{\mvd}john]. \\
+john{\isa}professor. \\
+john[teaches@(spring,1999){\mvd}math230]. \\
+john[teaches@(spring,1999){\mvd}math101].
+\end{tabular}
+\end{center}
+\caption{Static Code vs. Dynamic Code} \label{fig:fig-static-dynamic-code}
+\end{figure}
+
+Start XSB and \FLORA shell from the current directory where both \emph{static.flr} and
+\emph{dynamic.flr} reside, then from \FLORA shell enter:
+\begin{verbatim}
+FLORA> ?- flconsult(static).
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?- dynconsult(dynamic).
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?- D:department[coursesOffered->>C].
+
+D = cse
+C = cse220
+
+D = cse
+C = cse310
+
+D = cse
+C = cse530
+
+D = math
+C = math101
+
+D = math
+C = math230
+
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?-
+\end{verbatim}
+
+Furthermore, \FLORA provides users with several predicates to modify the runtime database.
+These predicates can be executed either from the static area or the dynamic area. But
+\emph{only} facts in the dynamic area can be asserted/retracted (in the furture, \FLORA
+may support dynamically asserting/retracting rules to/from the dynamic area). The following
+lists the syntax and meaning of the database modification predicates supported by \FLORA:
+
+\paragraph{$\mathtt{assert(P_1,\ldots,P_n)}$} asserts a list of facts into the dynamic area.
+$\mathtt{P_i~(i=1{\ldots}n)}$ can be any \fl molecule or user defined predicate, e.g.,
+$\mathtt{assert(david{\isa}professsor[teaches@(fall,1999){\mvd}cse505])}$.
+
+\paragraph{$\mathtt{retract(P_1,\ldots,P_n | C_1,\ldots,C_n)}$} retracts the \emph{ground}
+facts corresponding to $\mathtt{P_1,\ldots,P_n}$ if the conjunction of
+$\mathtt{P_1,\ldots,P_n,C_1,\ldots,C_n}$ succeeds. $\mathtt{C_1,\ldots,C_n}$ can be
+considered as the conditions qualifying the facts to be retracted.
+
+Special built-in predicates like arithmetic comparison operators can not be retracted.
+If $\mathtt{P_i}$ happens to be one of those special predicates, \FLORA compiler will
+interprete it as an additional condition $\mathtt{C_i}$ and generate a warning message.
+
+For example,
+\begin{displaymath}
+\mathtt{retract(john[teaches@(S,Y){\mvd}C],Y\leq1999)}
+\end{displaymath}
+is equivalent to
+\begin{displaymath}
+\mathtt{retract(john[teaches@(S,Y){\mvd}C]|Y\leq1999)};
+\end{displaymath}
+$\mathtt{retract(john[teaches@(S,Y){\mvd}C]|smith[teaches@(S,Y){\mvd}C])}$
+ retracts those of {\it john}'s teaching records if he and {\it smith} taught the same course
+for the same semester of the same year, whereas
+$\mathtt{retract(john[teaches@(S,Y){\mvd}C],smith[teaches@(S,Y){\mvd}C])}$
+retracts the teaching records of both.
+
+\paragraph{$\mathtt{retractall(P_1,\ldots,P_n | C_1,\ldots,C_n)}$} retracts \emph{all ground}
+facts corresponding to $\mathtt{P_1,\ldots,P_n}$ if the conjunction of
+$\mathtt{P_1,\ldots,P_n,C_1,\ldots,C_n}$ succeeds. The difference between $\mathtt{retract}$
+and $\mathtt{retractall}$ is that: $\mathtt{retract}$ retracts facts one by one and fails
+if it is unable to retract any facts, whereas $\mathtt{retractall}$ always succeeds no
+matter what facts reside in the database. Actually, $\mathtt{retractall}$ is implemented
+using $\mathtt{retract}$, as follows (with arguments omitted):
+\begin{qrules}
+retractall :- retract, fail. \\
+retractall.
+\end{qrules}
+
+\paragraph{$\mathtt{erase(P_1,\ldots,P_n | C_1,\ldots,C_n)}$} retracts \emph{all ground} facts
+as $\mathtt{retract}$ does. Moreover, it will trace the object reference links and retract
+all ground facts referenced along those paths. To erase $O_1{\isa}O_2$ or $O_1{\subcl}O_2$,
+the object reference links of \emph{only} $O_1$ are traced. For all other \fl facts such as
+$O_1[method{\fd}O_2],O_1[method{\mvd}O_2]$, the object reference links of \emph{only} $O_2$
+are traced. 
+
+To see the effects of $\mathtt{erase}$, continue
+the example of Figure~\ref{fig:fig-static-dynamic-code}:
+\begin{verbatim}
+FLORA> ?- erase(cse[faculty->>smith]).
+
+No.
+
+FLORA> ?- erase(math[faculty->>john]).
+
+Yes.
+
+FLORA> ?- P:professor[teaches@(Semester,Year)->>Course].
+
+P = smith
+Semester = fall
+Year = 1998
+Course = cse220
+
+P = smith
+Semester = spring
+Year = 1999
+Course = cse310
+
+P = smith
+Semester = spring
+Year = 1999
+Course = cse530
+
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?- P:professor.
+
+P = smith
+
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?- 
+\end{verbatim}
+
+\paragraph{$\mathtt{eraseall(P_1,\ldots,P_n | C_1,\ldots,C_n)}$} erases \emph{all ground}
+facts corresponding to $\mathtt{P_1,\ldots,P_n}$ if the conjunction of
+$\mathtt{P_1,\ldots,P_n,C_1,\ldots,C_n}$ succeeds. Like $\mathtt{retractall}$,
+$\mathtt{eraseall}$ always succeeds and is implemented using $\mathtt{erase}$, as follows
+(with arguments omitted):
+\begin{qrules}
+eraseall :- erase, fail. \\
+eraseall.
+\end{qrules}
+
+\section{\FLORA Modules and Interaction with XSB}\label{sec-module}
+
+Besides static area and dynamic area, \FLORA also has its own module system, which is basically
+borrowed from XSB. The import/export compiler directives are created for the module system.
+\FLORA modules communicate with each other by importing/exporting either \emph{ground} \fl
+signatures or normal Prolog predicates, while \FLORA module and XSB module communicate with
+each other \emph{only} by normal Prolog predicates.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{tabular}{l}
+{\bf module1.flr:}\\ \\
+:- import employee[salary@(number){\Fd}number] from module2. \\
+john{\isa}employee. \\
+john[salary@(1994){\fd}70]. \\
+john[salary@(1995){\fd}80]. \\
+john[salary@(1996){\fd}70]. \\
+john[salary@(1997){\fd}50]. \\
+john[salary@(1998){\fd}80]. \\
+\\
+{\bf module2.flr:}\\
+\\
+:- export employee[salary@(number){\Fd}number]. \\
+employee[salary@(number){\Fd}number]. \\
+mary{\isa}employee. \\
+mary[salary@(1994){\fd}60]. \\
+mary[salary@(1995){\fd}60]. \\
+mary[salary@(1996){\fd}70]. \\
+mary[salary@(1997){\fd}80]. \\
+mary[salary@(1998){\fd}90].
+\end{tabular}
+\end{center}
+\caption{Example \FLORA Modules} \label{fig:fig-module}
+\end{figure}
+
+Take as an example the two \FLORA modules \emph{module1.flr} and \emph{module2.flr} in
+Figure~\ref{fig:fig-module}. Start XSB and \FLORA shell in the current directory where
+both \emph{module1.flr} and \emph{module2.flr} reside, from \FLORA shell loop, enter:
+\begin{verbatim}
+FLORA> ?- flcompile(module2).
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?- [module1].
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?- X=count{Year; john.salary@(Year) < mary.salary@(Year)}.
+
+X = 2
+Year = Year (unbound)
+
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?-
+\end{verbatim}
+
+The import/export directives can take a list of predicate/arity pairs (as XSB does) and/or
+\emph{ground} \fl signatures (no variables are allowed in the signatures to be
+imported/exported). For example, :- import tc/2, student[grade@(string){\Fd}number], p/1.
+
+For a \FLORA module that exports, a copy of its \emph{compiled} code must exist, since this is
+the copy to be executed by the module system. And a \FLORA module can not both import and
+export the same \fl signature at the same time, due to the way XSB's module system works and
+the way \FLORA translates import/export directives.
+
+Import directives can appear in both static code and dynamic code. But all export directives
+as well as queries will be ignored when a \FLORA module is compiled as dynamic code and/or
+dynamically loaded into the dynamic area.
+
+Since \FLORA supports import/export directives much the same way as XSB does, \FLORA modules
+have full access to the underlying XSB's functionalities. Although it still remains to be seen
+whether it is a good programming practice, users can freely mix \FLORA code and XSB code
+together, as long as the needed XSB predicates have been imported from the corresponding
+modules and used \emph{correctly}.
+\begin{figure}[htb]
+\begin{center}
+\begin{tabular}{l}
+{\bf mix.flr:}\\ \\
+:- import findall/3 from setof. \\
+\\
+edge(a,b). \\
+edge(b,c). \\
+edge(c,b). \\
+\\
+string[reachableTo{\Mvd}string]. \\
+\\
+X{\isa}activeNode[reachableTo{\mvd}Y] :- edge(X,Y). \\
+X{\isa}activeNode[reachableTo{\mvd}Y] :- edge(X,Z), Z[reachableTo{\mvd}Y]. \\
+\\
+tc(X,Y) :- X[reachableTo{\mvd}Y]. \\
+\\
+show(X) :- \\
+\hspace{1cm} X{\isa}activeNode, \\
+\hspace{1cm} write(X), \\
+\hspace{1cm} write({\tt'}[reachableTo{\mvd}{\tt \{'}), \\
+\hspace{1cm} findall(Y,tc(X,Y),L), \\
+\hspace{1cm} writelist(L), \\
+\hspace{1cm} writeln({\tt '\}}]{\tt '}). \\
+\\
+writelist([X]) :- write(X). \\
+writelist([$X_1,X_2|$Xs]) :- write($X_1$), write(','), writelist([$X_2|$Xs]).
+\end{tabular}
+\end{center}
+\caption{Mix \FLORA code with XSB code} \label{fig:fig-mix}
+\end{figure}
+
+As the example in Figure~\ref{fig:fig-mix} illustrates:
+\begin{verbatim}
+FLORA> ?- [mix].
+[ FLORA chat deleted ]
+
+Yes.
+
+FLORA> ?- show(a).
+a[reachableTo->>{b,c}]
+
+Yes.
+
+FLORA> ?- show(b).
+b[reachableTo->>{b,c}]
+
+Yes.
+
+FLORA> ?-
+\end{verbatim}
+
+However, \FLORA is still not 100\% compatible with XSB, because of the double roles that
+\mbox{\fl} molecules play, i.e., both as \emph{oid} and as truth value. If an \fl molecule
+appears as some predicate's argument, \FLORA \emph{always} assumes that its \emph{oid} is
+intended. Therefore, if not used carefully, some XSB library predicates would give very
+weird results due to the way \FLORA flattens an \fl molecule as an argument. For
+example, for the \FLORA program shown in Figure~\ref{fig:fig-mix},
+$\mathtt{findall(Y,X[reachableTo{\mvd}Y],L)}$ won't work, since it would be flattened
+into \linebreak $\mathtt{X[reachableTo{\mvd}Y],findall(Y,X,L)}$.
+
+\section{Powered by Tabling}
+
+All \fl atoms are flatened to predicates that are tabled by default. For all other user
+defined predicates, they have to be tabled explicitly as necessary. \FLORA programs accepts
+the same tabling directives as XSB does (Section~\ref{sec-comp-directives} lists all the
+compiler directives).
+
+Because of the current implementation of XSB, cuts (!) can not cut across tabled predicates.
+
+\section{\FLORA Compiler} \label{sec-comp-directives}
+
+Like XSB programs, \FLORA programs can take compiler directives. All compiler directives must
+begin with {\tt :-} (while all queries must begin with {\tt ?-}). The following lists all the
+compiler directives supported by \FLORA:
+
+\paragraph{Tabling Directive} Tabling directive may be either \emph{{\tt :-} auto\_table.}\ 
+which lets XSB automatically decide which predicates should be tabled, or
+\emph{{\tt :-} table p\_a\_list.}\ , where \emph{p\_a\_list} is a list of \mbox{predicate/arity}
+pairs specifying those predicates to be tabled. All \fl atoms are flattened to predicates that
+are tabled by default.
+
+\paragraph{Import Directive} Import directive looks like
+\emph{{\tt :-} import sig\_pa\_list.}\ , where \emph{sig\_pa\_list} is a list of \emph{ground} \fl
+signatures \mbox{and/or} \mbox{predicate/arity} pairs.
+
+\paragraph{Export Directive} Export directive looks like
+\emph{{\tt :-} export sig\_pa\_list.}\ , where \emph{sig\_pa\_list} is a list of \emph{ground} \fl
+signatures \mbox{and/or} \mbox{predicate/arity} pairs. All export directives are ignored if a
+\FLORA module is compiled as dynamic code and/or dynamically loaded.
+
+\paragraph{Equality Checking Directive} Equality checking directive looks like
+\emph{{\tt :-} eqlevel(N).}\ , where the level number \emph{N} specifies the level of equality
+checking to be enforced. Currently, only two levels of equality checking are supported: 0
+(no equality checking) and 1 (full equality checking).
+
+Equality checking directive may appear in multiple places in a \FLORA program. But the
+greatest level number overrides and specifies the final intended level of equality checking.
+
+If there is no equality checking directive, the default level number is 0, unless \FLORA has
+detected path expression in rule head and performed skolemization. In the latter case, \FLORA
+compiles the program as if the program had a \emph{{\tt :-} eqlevel(1).} compiler directive,
+since the corretness of skolemization requires full equality checking.
+
+The level of equality checking may also be specified as part of compiler options that\linebreak
+are passed to commands/predicates such as \emph{flcompile} and \emph{flconsult} (see
+Section~\ref{sec-shell-commands}), e.g., \linebreak \mbox{flcompile(benchmark,[eqlevel(1)])}.
+If multiple equality checking options are specified, only the maximum is selected. Furthermore,
+if the program to be compiled also specifies a level of equality checking, then the maximum of
+these two level numbers is passed to the compiler.
+
+%------------------- cut below
+\end{document}

@@ -1,0 +1,3 @@
+latex flora.tex
+dvips flora.dvi -o flora.ps
+
