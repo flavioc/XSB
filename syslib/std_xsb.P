@@ -78,8 +78,6 @@ standard_symbol(debugging, 0, debugger).
 standard_symbol(display, 1, standard).
 standard_symbol((dynamic), 1, assert).
 standard_symbol(edit, 1, shell).
-standard_symbol(erase, 1, record).
-/* standard_symbol(erased, 1, record). */
 standard_symbol(expand_filename, 2, machine).
 standard_symbol(expand_term, 2, standard).
 standard_symbol(fail, 0, standard).
@@ -107,7 +105,6 @@ standard_symbol(hilog_arg, 3, standard).
 standard_symbol(hilog_functor, 3, standard).
 standard_symbol(hilog_symbol, 1, curr_sym).
 standard_symbol((import), 1, standard).
-standard_symbol(instance, 2, record).
 standard_symbol(integer, 1, standard).
 standard_symbol(is, 2, standard).
 standard_symbol(is_list, 1, standard).
@@ -160,10 +157,6 @@ standard_symbol(file_read_line, 2, file_io).
 standard_symbol(real, 1, standard).
 standard_symbol(reconsult, 1, consult).
 standard_symbol(reconsult, 2, consult).
-standard_symbol(record, 3, record).
-standard_symbol(recorda, 3, record).
-standard_symbol(recorded, 3, record).
-standard_symbol(recordz, 3, record).
 standard_symbol(rename, 2, shell).
 standard_symbol(repeat, 0, standard).
 standard_symbol(retract, 1, assert).
