@@ -30,7 +30,7 @@ all: $(SUBDIR)
 force: touch all
 
 touch::
-	touch cmplib/*.P lib/*.P syslib/*.P
+	touch cmplib/*.P lib/*.P syslib/*.P packages/*.P packages/*/*.P packages/*/*/*.P
 
 syslib::
 	@echo ""
