@@ -67,9 +67,6 @@ extern int  xctr;
 
 /*----------------------------------------------------------------------*/
 
-#define CAR		1
-#define CDR		0
-
 #ifdef DEBUG
 #define STRIDESIZE     30
 
@@ -127,52 +124,60 @@ int decode_tag(Cell cell) {
 
 /*----------------------------------------------------------------------*/
 
-void printterm(Cell term, byte car, int level)
-{
-  unsigned short i, arity1;
-  struct psc_rec *psc_ptr1;
-  CPtr cptr1;
+#define CAR		1
+#define CDR		0
 
-  if (level-- < 0) { fprintf(stddbg, "..."); return; }
+static void print_term(FILE *fp, Cell term, byte car, int level)
+{
+  unsigned short i, arity;
+  Psc psc;
+  CPtr cptr;
+
+  level--;
+  if (level < 0) {
+    fprintf(fp, "...");
+    return;
+  }
   printderef(term);
   switch (cell_tag(term)) {
   case XSB_FREE:
   case XSB_REF1:
-    fprintf(stddbg, "_%p", vptr(term));
+    fprintf(fp, "_%p", vptr(term));
     return;
   case XSB_ATTV:
-    fprintf(stddbg, "_%p", (CPtr)dec_addr(term));
+    fprintf(fp, "_%p", (CPtr)dec_addr(term));
     return;
   case XSB_STRUCT:
-    psc_ptr1 = get_str_psc(term);
-    fflush(stddbg); 
-    fprintf(stddbg, "%s", get_name(psc_ptr1));
-    if ( get_arity(psc_ptr1) == 0 ) return;   /* constant */
+    psc = get_str_psc(term);
+    fprintf(fp, "%s", get_name(psc));
+    arity = get_arity(psc);
+    if ( arity == 0 )   /* constant */
+      return;
     /* structure */
-    fprintf(stddbg, "(");
-    arity1 = get_arity(psc_ptr1);
-    cptr1 = (CPtr)cs_val(term);
-    for ( i = 1; i <= arity1; i++ ) {
-      printterm(cell(cptr1+i), CAR, level);
-      if (i<arity1) fprintf(stddbg, ",");
+    fprintf(fp, "(");
+    cptr = clref_val(term);
+    for ( i = 1; i <= arity; i++ ) {
+      print_term(fp, cell(cptr+i), CAR, level);
+      if ( i < arity )
+	fprintf(fp, ",");
     }
-    fprintf(stddbg, ")");
-    /* fflush(stddbg); */
+    fprintf(fp, ")");
     return;
   case XSB_STRING:
-    fprintf(stddbg, "\"%s\"", string_val(term));
+    fprintf(fp, "\"%s\"", string_val(term));
     break;
   case XSB_INT:
-    fprintf(stddbg, "%ld", (long)int_val(term));
+    fprintf(fp, "%ld", (long)int_val(term));
     return;
   case XSB_FLOAT:
-    fprintf(stddbg, "%f", float_val(term));
+    fprintf(fp, "%f", float_val(term));
     return;
   case XSB_LIST:
-    cptr1 = clref_val(term);
-    if ( car ) fprintf(stddbg, "[");
-    printterm(cell(cptr1), CAR, level);
-    term = cell(cptr1+1);
+    cptr = clref_val(term);
+    if ( car )
+      fprintf(fp, "[");
+    print_term(fp, cell(cptr), CAR, level);
+    term = cell(cptr+1);
     XSB_Deref(term);
     switch (cell_tag(term)) {
     case XSB_FREE:
@@ -180,23 +185,33 @@ void printterm(Cell term, byte car, int level)
     case XSB_ATTV:
       goto vertbar;
     case XSB_LIST:
-      fprintf(stddbg, ",");
-      printterm(term, CDR, level);
+      fprintf(fp, ",");
+      print_term(fp, term, CDR, level);
       return;
     case XSB_STRING:
-      if (string_val(term) != nil_sym) goto vertbar;
-      else { fprintf(stddbg, "]"); return; }
+      if (string_val(term) != nil_sym)
+	goto vertbar;
+      else {
+	fprintf(fp, "]");
+	return;
+      }
     case XSB_STRUCT:
     case XSB_INT:
     case XSB_FLOAT:
     vertbar:
-    fprintf(stddbg, "|");
-    printterm(term, CAR, level);
-    fprintf(stddbg, "]");
-    /* fflush(stddbg); */
+    fprintf(fp, "|");
+    print_term(fp, term, CAR, level);
+    fprintf(fp, "]");
     return;
     }
   }
+}
+
+
+void printterm(FILE *fp, Cell term, int depth) {
+
+  print_term(fp, term, CAR, depth);
+  fflush(fp); 
 }
 
 /*----------------------------------------------------------------------*/
@@ -209,7 +224,7 @@ static void print_call(Psc psc)
   fprintf(stddbg, "(w1) call: %s", get_name(psc));
   if (arity != 0) fprintf(stddbg, "(");
   for (i=1; i <= arity; i++) {
-    printterm(cell(reg+i), 1, 3);
+    printterm(stddbg, cell(reg+i), 3);
     if (i < arity) fprintf(stddbg, ",");
   }
   if (arity != 0) fprintf(stddbg, ")\n"); else fprintf(stddbg, "\n");
@@ -532,7 +547,7 @@ static void print_delay_element(FILE *fp, Cell del_elem)
       if (arity > 0) {
 	cptr = (CPtr) cs_val(cell(cptr + 3));
 	for (i = 0; i < arity; i++)
-	  printterm(cell(cptr + 1 + i), 1, 25);
+	  printterm(fp, cell(cptr + 1 + i), 25);
       }
     }
     fprintf(fp, ")");
@@ -1326,7 +1341,7 @@ void pofsprint(CPtr base, int arity)
 
   fprintf(stddbg, "( ");
   for (arg_ptr = base - 1; arg_ptr >= base - arity; arg_ptr--) {
-    printterm((Cell) arg_ptr, (byte) 1, 8);
+    printterm(stddbg, (Cell)arg_ptr, 8);
     if (arg_ptr != base - arity)
       fprintf(stddbg, ",");
   }
@@ -1480,7 +1495,7 @@ static void debug_interact(void)
     scanf("%d", &num);
     skip_to_nl();
     fprintf(stddbg, "Reg[%d] = ", num);
-    printterm(cell(reg+num), 1, 8);
+    printterm(stddbg, cell(reg+num), 8);
     fprintf(stddbg, "\n"); 
     fprintf(stddbg, "%lx\n",*(reg+num));
     goto again;
@@ -1515,7 +1530,7 @@ static void debug_interact(void)
     scanf("%d", &num);
     skip_to_nl();
     fprintf(stddbg, "Var[%d] = ", num);
-    printterm(cell(ereg-num), 1, 8);
+    printterm(stddbg, cell(ereg-num), 8);
     fprintf(stddbg, "\n");
     goto again;
   case 'w':

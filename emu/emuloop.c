@@ -272,7 +272,7 @@ extern void debug_inst(byte *, CPtr);
 extern void print_completion_stack(void);
 extern void print_subgoal(FILE *, VariantSF);
 extern void print_delay_list(FILE *, CPtr);
-extern void printterm(Cell, byte, int);
+extern void printterm(FILE *, Cell, int);
 #endif
 
 /**static int  (*dyn_pred)(); unused-remove soon**/

@@ -31,11 +31,11 @@ extern void printTrieSymbol(FILE *, Cell);
 extern void printTrieNode(FILE *, BTNptr);
 extern void printTriePath(FILE *, BTNptr, xsbBool);
 
-extern void printAnswerTemplate(CPtr, int);
+extern void printAnswerTemplate(FILE *, CPtr, int);
 
 extern void sfPrintGoal(FILE *, VariantSF, xsbBool);
 extern void sfPrintConsGoals(FILE *, VariantSF);
 extern void printAnswerList(FILE *, ALNptr);
 
-extern void printTabledCall(TabledCallInfo *);
+extern void printTabledCall(FILE *, TabledCallInfo);
 extern void printTriePathType(FILE *, TriePathType, BTNptr);

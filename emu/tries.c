@@ -58,7 +58,7 @@
 
 extern TIFptr get_tip(Psc);
 #ifdef DPVR_DEBUG_BD
-extern void printterm(Cell, byte, int);
+extern void printterm(FILE *, Cell, int);
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -181,8 +181,8 @@ Structure_Manager smAssertBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
 
 /* Maintains Current Structure Space
    --------------------------------- */
-Structure_Manager *smBTN = &smTableBTN,
-                  *smBTHT = &smTableBTHT;
+Structure_Manager *smBTN = &smTableBTN;
+Structure_Manager *smBTHT = &smTableBTHT;
 
 /*----------------------------------------------------------------------*/
 
@@ -984,7 +984,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
 #endif
       XSB_CptrDeref(xtemp1);
 #ifdef DPVR_DEBUG_BD
-      printterm(xtemp1,1,25);
+      printterm(stddbg,xtemp1,25);
       fprintf(stddbg, "\n");
 #endif
       tag = cell_tag(xtemp1);

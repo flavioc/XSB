@@ -549,7 +549,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
     int i;
     for (i = 0; i < template_size; i++) {
       fprintf(stddbg, ">>>> answer_template[%d] = ", i);
-      printterm((Cell)(answer_template - i), 1, 25);
+      printterm(stddbg, (Cell)(answer_template - i), 25);
       fprintf(stddbg, "\n");
     }
   }

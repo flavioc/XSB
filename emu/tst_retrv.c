@@ -45,6 +45,7 @@
 #include "trie_internals.h"
 #include "macro_xsb.h"
 #include "tst_aux.h"
+#include "tst_utils.h"
 
 
 
@@ -302,9 +303,9 @@ static void tstCollectionError(char *string, xsbBool cleanup_needed) {
  *  no match is found, then execution exits this block with a NULL
  *  cur_chain.  cur_chain may be NULL at block entry.
  *
- *  TermStack_PushOp is provided so that this macro can be used for
- *  constants as well as functor symbols.  Constants pass in TermStack_NOOP,
- *  while functors use TermStack_PushFunctorArgs().
+ *  TermStack_PushOp is provided so that this macro can be used for all
+ *  nonvariable symbols.  Constants pass in TermStack_NOOP, functors use
+ *  TermStack_PushFunctorArgs(), and lists useTermStack_PushListArgs().
  */
 
 #define SearchChain_ExactMatch(SearchChain,TrieEncodedSubterm,TS,	\
@@ -774,7 +775,7 @@ ALNptr tst_collect_relevant_answers(TSTNptr tstRoot, TimeStamp ts,
 	SetMatchAndUnifyChains(symbol,cur_chain,alt_chain);
 	if ( cur_chain != alt_chain ) {
 	  SearchChain_ExactMatch(cur_chain,symbol,ts,alt_chain,
-				 TermStack_NOOP);
+				 TermStack_PushFunctorArgs(subterm));
 	  cur_chain = alt_chain;
 	}
 	if ( IsNULL(cur_chain) )
@@ -801,7 +802,7 @@ ALNptr tst_collect_relevant_answers(TSTNptr tstRoot, TimeStamp ts,
 	SetMatchAndUnifyChains(symbol,cur_chain,alt_chain);
 	if ( cur_chain != alt_chain ) {
 	  SearchChain_ExactMatch(cur_chain,symbol,ts,alt_chain,
-				 TermStack_NOOP);
+				 TermStack_PushListArgs(subterm));
 	  cur_chain = alt_chain;
 	}
 	if ( IsNULL(cur_chain) )
@@ -888,17 +889,28 @@ ALNptr tst_collect_relevant_answers(TSTNptr tstRoot, TimeStamp ts,
   } /* END while( ! TermStack_IsEmpty ) */
 
   /*
-   *  If the tstTermStack is empty, then we've reached a leaf node
-   *  whose corresponding term unifies with the Heap Term 'term'.
-   *
-   *  To double check this assumption (which SHOULD be true if term
-   *  insertion worked correctly) we could either check that
-   *  cur_chain == NULL, ie. that the parent has no children and so
-   *  is a leaf, OR, we can also check the NodeType tag on the parent:
-   *  IsLeafNode(parentTSTN).
+   *  If the tstTermStack is empty, then we (should have) reached a leaf
+   *  node whose corresponding term unifies with the Heap Term 'term'.  If
+   *  a leaf is not reached, then we generate an error msg, and try to
+   *  continue.
    */
 
-  ALN_InsertAnswer(tstAnswerList, parentTSTN);
+  if ( ! IsLeafNode(parentTSTN) ) {
+    xsb_warn("During collection of relevant answers for subsumed subgoal\n"
+	     "TermStack is empty but a leaf node was not reached");
+#ifdef DEBUG
+    fprintf(stderr, "Root ");
+    printTrieNode(stderr,(BTNptr)tstRoot);
+    fprintf(stderr, "Last ");
+    printTrieNode(stderr,(BTNptr)parentTSTN);
+    printAnswerTemplate(stderr,termsRev,numTerms);
+    fprintf(stderr,
+	    "(* Note: this template may be partially instantiated *)\n");
+#endif
+    fprintf(stdwarn, "Attempting to continue...\n");
+  }
+  else
+    ALN_InsertAnswer(tstAnswerList, parentTSTN);
   if ( CPStack_IsEmpty ) {
     Sys_Trail_Unwind(trail_base);
     Restore_WAM_Registers;

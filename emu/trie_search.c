@@ -195,7 +195,7 @@ TSTNptr subsumptive_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
     xsb_dbgmsg("Entered subsumptive_tst_search() with the following terms:");
     for (i = 0; i < nTerms; i++) {
       fprintf(stddbg,"\t");
-      printterm((Cell)(termVector - i),1,25);
+      printterm(stddbg,(Cell)(termVector - i),25);
       fprintf(stddbg,"\n");
     }
   }

@@ -152,7 +152,7 @@ extern int clean_up_block();
 #if (defined(DEBUG) && defined(DEBUG_DELAY))
 extern void print_delay_list(FILE *, CPtr);
 extern void print_subgoal(FILE *, VariantSF);
-extern void printterm(Cell, byte, int);	/* used in bineg_xsb_i.h */
+extern void printterm(FILE *, Cell, int);	/* used in bineg_xsb_i.h */
 #endif
 
 /* ------- variables also used in other parts of the system -----------	*/

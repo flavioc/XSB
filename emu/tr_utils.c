@@ -67,7 +67,7 @@
 #define MAX_VAR_SIZE	200
 
 #ifdef DEBUG
-extern void printterm(Cell, byte, int);
+extern void printterm(FILE *, Cell, int);
 #endif
 
 #include "ptoc_tag_xsb_i.h"
@@ -1020,7 +1020,7 @@ void trie_intern(void)
 
 #ifdef DEBUG_INTERN
   fprintf(stddbg,"Interning ");
-  printterm(term,1,25);
+  printterm(stddbg,term,25);
   xsb_dbgmsg("In position %d", RootIndex);
 #endif
   switch_to_trie_assert;

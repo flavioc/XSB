@@ -290,7 +290,8 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
 
 #ifdef DEBUG_CALL_CHK_INS
     if ( strcmp(targetGN,goal_name) == 0 )
-      printAnswerTemplate(answer_template + int_val(*answer_template),
+      printAnswerTemplate(stddbg,
+			  answer_template + int_val(*answer_template),
 			  int_val(*answer_template));
 #endif
     CallLUR_Subsumer(*results) = (VariantSF)sf_with_ans_set;

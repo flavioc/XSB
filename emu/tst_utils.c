@@ -45,7 +45,7 @@
 
 /* ======================================================================= */
 
-extern void printterm(Cell, byte, int);   /* prints to stddbg */
+extern void printterm(FILE *, Cell, int);   /* prints to stddbg */
 
 #ifdef BITS64
 #define IntegerFormatString	"%ld"
@@ -106,64 +106,42 @@ void tstShrinkDynStacks() {
  *			  -------------------
  */
 
-char *stringNodeType(byte fieldNodeType) {
+char *stringNodeStatus(byte fieldNodeStatus) {
 
-  switch (fieldNodeType) {
-  case TRIE_ROOT_NT:
-    return("TRIE_ROOT_NT");
-  case HASH_HEADER_NT:
-    return("HASH_HEADER_NT");
-  case LEAF_NT:
-    return("LEAF_NT");
-  case HASHED_LEAF_NT:
-    return("HASHED_LEAF_NT");
-  case INTERRIOR_NT:
-    return("INTERRIOR_NT");
-  case HASHED_INTERRIOR_NT:
-    return("HASHED_INTERRIOR_NT");
-  default:
-    {
-      char t[20], *s;
-      sprintf(t, "unknown (%c)", fieldNodeType);
-      if ( IsNULL(s = (char *)malloc(strlen(t)+1)) )
-	return("unknown");
-      else {
-	strcpy(s,t);
-	return(s);
-      }
-    }
-  }
+  if ( fieldNodeStatus == VALID_NODE_STATUS )
+    return "Valid";
+  else
+    return inst_name(fieldNodeStatus);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+char *TrieTypeStrings[] = {
+  "Call Trie", "Basic Answer Trie", "Time-Stamped Answer Trie",
+  "Delay Trie", "Asserted Trie", "Interned Trie", "--"
+};
+
 char *stringTrieType(byte fieldTrieType) {
 
-  switch (fieldTrieType) {
-  case CALL_TRIE_TT:
-    return("CALL_TRIE_TT");
-  case BASIC_ANSWER_TRIE_TT:
-    return("BASIC_ANSWER_TRIE_TT");
-  case TS_ANSWER_TRIE_TT:
-    return("TS_ANSWER_TRIE_TT");
-  case DELAY_TRIE_TT:
-    return("DELAY_TRIE_TT");
-  case ASSERT_TRIE_TT:
-    return("ASSERT_TRIE_TT");
-  case INTERN_TRIE_TT:
-    return("INTERN_TRIE_TT");
-  default:
-    {
-      char t[20], *s;
-      sprintf(t, "unknown (%c)", fieldTrieType);
-      if ( IsNULL(s = (char *)malloc(strlen(t)+1)) )
-	return("unknown");
-      else {
-	strcpy(s,t);
-	return(s);
-      }
-    }
-  }
+  if ( fieldTrieType > 5 )
+    return TrieTypeStrings[6];
+  else
+    return TrieTypeStrings[fieldTrieType];
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+char *NodeTypeStrings[] = {
+  "Interrior", "Indexed Interrior", "Leaf", "Indexed Leaf",
+  "Index Header", "--", "--", "--", "Root",
+};
+
+char *stringNodeType(byte fieldNodeType) {
+
+  if ( fieldNodeType > 8 )
+    return NodeTypeStrings[5];
+  else
+    return NodeTypeStrings[fieldNodeType];
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -207,10 +185,10 @@ void printTrieSymbol(FILE *fp, Cell symbol) {
 void printTrieNode(FILE *fp, BTNptr pTN) {
 
   fprintf(fp, "Trie Node: Addr(%p)", pTN);
-  if ( IsDeletedNode(pTN) )
-    fprintf(fp, "  (DELETED)");
-  fprintf(fp, "\n\tInstr(%s), NodeType(%s)\n\tTrieType(%s), Symbol(",
+  fprintf(fp, "\n\tInstr(%s), Status(%s), NodeType(%s),\n"
+	  "\tTrieType(%s), Symbol(",
 	  inst_name(TN_Instr(pTN)),
+	  stringNodeStatus(TN_Status(pTN)),
 	  stringNodeType(TN_NodeType(pTN)),
 	  stringTrieType(TN_TrieType(pTN)));
   printTrieSymbol(fp, TN_Symbol(pTN));
@@ -228,71 +206,76 @@ void printTrieNode(FILE *fp, BTNptr pTN) {
  *		----------------------------------------
  */
 
-static void symstkPrintNextTerm(FILE *fp) {
+static void symstkPrintNextTerm(FILE *fp, xsbBool list_recursion) {
 
   Cell symbol;
 
+  if ( SymbolStack_IsEmpty ) {
+    fprintf(fp, "<no subterm>");
+    return;
+  }
   SymbolStack_Pop(symbol);
   switch ( TrieSymbolType(symbol) ) {
   case XSB_INT:
-    fprintf(fp, IntegerFormatString, int_val(symbol));
+    if ( list_recursion )
+      fprintf(fp, "|" IntegerFormatString "]", int_val(symbol));
+    else
+      fprintf(fp, IntegerFormatString, int_val(symbol));
     break;
   case XSB_FLOAT:
-    fprintf(fp, "%f", float_val(symbol));
+    if ( list_recursion )
+      fprintf(fp, "|%f]", float_val(symbol));
+    else
+      fprintf(fp, "%f", float_val(symbol));
     break;
   case XSB_STRING:
-    fprintf(fp, "%s", string_val(symbol));
+    {
+      char *string = string_val(symbol);
+      if ( list_recursion ) {
+	if ( string == nil_sym )
+	  fprintf(fp, "]");
+	else
+	  fprintf(fp, "|%s]", string);
+      }
+      else
+	fprintf(fp, "%s", string);
+    }
     break;
   case XSB_TrieVar:
-    fprintf(fp, "V" IntegerFormatString, DecodeTrieVar(symbol));
+    if ( list_recursion )
+      fprintf(fp, "|V" IntegerFormatString "]", DecodeTrieVar(symbol));
+    else
+      fprintf(fp, "V" IntegerFormatString, DecodeTrieVar(symbol));
     break;
   case XSB_STRUCT:
     {
       Psc psc;
       int i;
 
+      if ( list_recursion )
+	fprintf(fp, "|");
       psc = DecodeTrieFunctor(symbol);
       fprintf(fp, "%s(", get_name(psc));
       for (i = 1; i < (int)get_arity(psc); i++) {
-	symstkPrintNextTerm(fp);
+	symstkPrintNextTerm(fp,FALSE);
 	fprintf(fp, ",");
       }
-      symstkPrintNextTerm(fp);
+      symstkPrintNextTerm(fp,FALSE);
       fprintf(fp, ")");
+      if ( list_recursion )
+	fprintf(fp, "]");
     }
     break;
   case XSB_LIST:
-    {
+    if ( list_recursion )
+      fprintf(fp, ",");
+    else
       fprintf(fp, "[");
-      symstkPrintNextTerm(fp);
-      SymbolStack_Peek(symbol);
-      while (symbol == XSB_LIST) {
-	/*
-	 * Remove the symbol, XSB_LIST, we just peeked at from the
-	 * SymbolStack, placing the next term on top of the stack.
-	 * Recall that this symbol is not a term but merely indicates
-	 * that another recursive component of a list follows.
-	 */
-	SymbolStack_Pop(symbol);
-	symstkPrintNextTerm(fp);
-	fprintf(fp, ",");
-	SymbolStack_Peek(symbol);
-      }
-      /*
-       *  This symbol ends the list and so should either be the nil
-       *  ("[]") string or a variable
-       */
-      if ( symbol == makestring(nil_sym) )
-	SymbolStack_Pop(symbol)
-      else {
-	fprintf(fp, "|");
-	symstkPrintNextTerm(fp);
-      }
-      fprintf(fp, "]");
-    }
+    symstkPrintNextTerm(fp,FALSE);
+    symstkPrintNextTerm(fp,TRUE);
     break;
   default:
-    fprintf(fp, "Unknown symbol");
+    fprintf(fp, "<unknown symbol>");
     break;
   }
 }
@@ -302,40 +285,41 @@ static void symstkPrintNextTerm(FILE *fp) {
 void printTriePath(FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
 
   BTNptr pRoot;
-  Psc pscPred;
 
-  if (IsNULL(pLeaf)) {
+  if ( IsNULL(pLeaf) ) {
     fprintf(fp, "NULL");
     return;
   }
 
-  if ( printLeafAddr )
-    fprintf(fp, "Leaf %p:", pLeaf);
-
   if ( ! IsLeafNode(pLeaf) ) {
-    fprintf(fp, "printTriePath() called with non-Leaf Node!");
+    fprintf(fp, "printTriePath() called with non-Leaf node!\n");
+    printTrieNode(fp, pLeaf);
     return;
   }
 
-  if (IsEscapeNode(pLeaf)) {
+  if ( printLeafAddr )
+    fprintf(fp, "Leaf %p: ", pLeaf);
+
+  if ( IsEscapeNode(pLeaf) ) {
     fprintf(fp, "ESCAPE node");
   }
   else {
     SymbolStack_ResetTOS;
     SymbolStack_PushPathRoot(pLeaf,pRoot);
-    if ( IsTrieFunctor(TN_Symbol(pRoot)) ) {
-      pscPred = DecodeTrieFunctor(TN_Symbol(pRoot));
-      fprintf(fp, "%s", get_name(pscPred));
+    if ( IsTrieFunctor(BTN_Symbol(pRoot)) ) {
+      SymbolStack_Push(BTN_Symbol(pRoot));
+      symstkPrintNextTerm(fp,FALSE);
     }
-    else if ( IsTrieString(TN_Symbol(pRoot)) )
-      fprintf(fp, "%s", DecodeTrieString(TN_Symbol(pRoot)));
-    fprintf(fp, "(");
-    symstkPrintNextTerm(fp);
-    while (! SymbolStack_IsEmpty) {
-      fprintf(fp, ",");
-      symstkPrintNextTerm(fp);
+    else {
+      printTrieSymbol(fp,BTN_Symbol(pRoot));
+      fprintf(fp, "(");
+      symstkPrintNextTerm(fp,FALSE);
+      while ( ! SymbolStack_IsEmpty ) {
+	fprintf(fp, ",");
+	symstkPrintNextTerm(fp,FALSE);
+      }
+      fprintf(fp, ")");
     }
-    fprintf(fp, ")");
   }
 }
 
@@ -350,19 +334,19 @@ void printTriePath(FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
  *  first term Cell (highest memory Cell of the vector).
  */
 
-void printAnswerTemplate(CPtr pAnsTmplt, int size) {
+void printAnswerTemplate(FILE *fp, CPtr pAnsTmplt, int size) {
 
   int i;
 
-  fprintf(stddbg, "Answer Template:  (");
+  fprintf(fp, "Answer Template:\n\tret(");
   if (size > 0) {
     for (i = 1; i < size; i++) {
-      printterm(*pAnsTmplt--,1,10);
-      fprintf(stddbg, ",");
+      printterm(fp, *pAnsTmplt--, 10);
+      fprintf(fp, ",");
     }
-    printterm(*pAnsTmplt,1,10);
+    printterm(fp, *pAnsTmplt, 10);
   }
-  fprintf(stddbg, ")\n");
+  fprintf(fp, ")\n");
 }
 
 /*-------------------------------------------------------------------------*/
@@ -427,20 +411,20 @@ void printAnswerList(FILE *fp, ALNptr pALN) {
  *			    -------------
  */
 
-void printTabledCall(TabledCallInfo callInfo) {
+void printTabledCall(FILE *fp, TabledCallInfo callInfo) {
 
   int arity, i;
   Psc pPSC;
   
   pPSC = TIF_PSC(CallInfo_TableInfo(callInfo));
-  fprintf(stddbg, "%s(", get_name(pPSC));
+  fprintf(fp, "%s(", get_name(pPSC));
   arity = CallInfo_CallArity(callInfo);
   for (i = 0; i < arity; i++) {
-    printterm( (Cell)(CallInfo_Arguments(callInfo)+i), 1, 8 );
+    printterm( fp, (Cell)(CallInfo_Arguments(callInfo)+i), 25 );
     if (i+1 < arity)
-      fprintf(stddbg, ",");
+      fprintf(fp, ",");
   }
-  fprintf(stddbg, ")");
+  fprintf(fp, ")");
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

@@ -2173,7 +2173,7 @@ int trie_assert(void)
   fprintf(stddbg,"Prref bytes\n");
   print_bytes(Prref,-2,2);
   fprintf(stddbg,"Clause :");
-  printterm(Clause,1,24);
+  printterm(stddbg,Clause,24);
   fprintf(stddbg," Arity %d ", Arity);
   fprintf(stddbg," Psc   %d ",(int)psc);
   fprintf(stddbg," Prref %d ",(int)Prref);

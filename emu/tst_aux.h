@@ -108,10 +108,12 @@ extern DynamicStack tstTermStack;
  }
 
 /*
- * The following macros enable the movement of an argument vector to the
- * TermStack.  Two versions are supplied depending on whether the vector
- * is arranged from high-to-low memory or from low-to-high.  The vector
- * pointer is assumed to reference the first element of the vector.
+ * The following macros enable the movement of an argument vector to
+ * the TermStack.  Two versions are supplied depending on whether the
+ * vector is arranged from high-to-low memory, such as an answer
+ * template, or from low-to-high memory, such as the arguments of a
+ * compound heap term.  The vector pointer is assumed to reference the
+ * first element of the vector.
  */
 
 #define TermStack_PushLowToHighVector(pVectorLow,Magnitude) {	\
@@ -121,8 +123,10 @@ extern DynamicStack tstTermStack;
    numElements = Magnitude;					\
    pElement = pVectorLow + numElements;				\
    DynStk_ExpandIfOverflow(tstTermStack,numElements);		\
-   for (i = 0; i < numElements; i++)				\
-     TermStack_BlindPush(*--pElement);				\
+   for (i = 0; i < numElements; i++) {				\
+     pElement--;						\
+     TermStack_BlindPush(*pElement);				\
+   }								\
  }
    
 #define TermStack_PushHighToLowVector(pVectorHigh,Magnitude) {	\
@@ -132,8 +136,10 @@ extern DynamicStack tstTermStack;
    numElements = Magnitude;					\
    pElement = pVectorHigh - numElements;			\
    DynStk_ExpandIfOverflow(tstTermStack,numElements);		\
-   for (i = 0; i < numElements; i++)				\
-     TermStack_BlindPush(*++pElement);				\
+   for (i = 0; i < numElements; i++) {				\
+     pElement++;						\
+     TermStack_BlindPush(*pElement);				\
+   }								\
  }
 
 /*

@@ -245,18 +245,21 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
 void table_consume_answer(BTNptr answer, int size, int attv_num,
 			  CPtr templ, TIFptr predicate) {
 
-  if (size == 0) {
-    if ( ! IsEscapeNode(answer) )
-      xsb_abort("Size of answer template is 0 but producer contains an "
-		"answer\nwith a non-empty substitution!\n");
-  }
-  else {
+  if ( size > 0 ) {
     if ( IsSubsumptivePredicate(predicate) )
       consume_subsumptive_answer(answer,size,templ);
     else
       /* this also tracks variables created during unification */
       load_solution_trie(size,attv_num,templ,answer);
   }
+  else if ( size == 0 ) {
+    if ( ! IsEscapeNode(answer) )
+      xsb_abort("Size of answer template is 0 but producer contains an "
+		"answer\nwith a non-empty substitution!\n");
+  }
+  else
+    xsb_abort("table_consume_answer(): "
+	      "Answer template has negative size: %d\n", size);
 }
 
 /*=========================================================================*/

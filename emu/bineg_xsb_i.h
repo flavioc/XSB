@@ -169,10 +169,10 @@ case IS_INCOMPLETE: {
 	int i;
 	for (i = 0; i <= global_num_vars; i++) {
 	  Cell x;
-	  fprintf(stddbg, ">>>> var_regs[%d] =",i);
+	  fprintf(stddbg, ">>>> var_regs[%d] =", i);
 	  x = (Cell)var_regs[i];
 	  XSB_Deref(x);
-	  printterm(x,1,25);
+	  printterm(stddbg, x, 25);
 	  fprintf(stddbg, "\n");
 	}
       }
