@@ -81,94 +81,228 @@ flora_load_library(_LibID).
   flora_include(+Atom,+FilePath)
   indicates which file to be included in the output file.
 ********************************************************************/
-flora_include(FLLIBMIN,'syslibinc/flraggmin_inc.flh') :- !.
-flora_include(FLLIBMAX,'syslibinc/flraggmax_inc.flh') :- !.
-flora_include(FLLIBSUM,'syslibinc/flraggsum_inc.flh') :- !.
-flora_include(FLLIBAVG,'syslibinc/flraggavg_inc.flh') :- !.
-flora_include(FLLIBCOUNT,'syslibinc/flraggcount_inc.flh') :- !.
-flora_include(FLLIBCOLLECTSET,'syslibinc/flrcolset_inc.flh') :- !.
-flora_include(FLLIBCOLLECTBAG,'syslibinc/flrcolbag_inc.flh') :- !.
+flora_include(FLLIBMIN,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflraggmin_inc.flh',arg(S)).
+flora_include(FLLIBMAX,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflraggmax_inc.flh',arg(S)).
+flora_include(FLLIBSUM,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflraggsum_inc.flh',arg(S)).
+flora_include(FLLIBAVG,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflraggavg_inc.flh',arg(S)).
+flora_include(FLLIBCOUNT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflraggcount_inc.flh',arg(S)).
+flora_include(FLLIBCOLLECTSET,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrcolset_inc.flh',arg(S)).
+flora_include(FLLIBCOLLECTBAG,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrcolbag_inc.flh',arg(S)).
 
-flora_include(FLLIBLOAD,'syslibinc/flrload_inc.flh') :- !.
+flora_include(FLLIBLOAD,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrload_inc.flh',arg(S)).
 
-flora_include(FLLIBANSWER,'syslibinc/flranswer_inc.flh') :- !.
-flora_include(FLLIBSHELLANS,'syslibinc/flranswer_inc.flh') :- !.
-flora_include(FLLIBPROGRAMANS,'syslibinc/flranswer_inc.flh') :- !.
+flora_include(FLLIBANSWER,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflranswer_inc.flh',arg(S)).
+flora_include(FLLIBSHELLANS,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflranswer_inc.flh',arg(S)).
+flora_include(FLLIBPROGRAMANS,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflranswer_inc.flh',arg(S)).
 
-flora_include(FLLIBINSERT,'syslibinc/flrdbop_inc.flh') :- !.
-flora_include(FLLIBINSERTALL,'syslibinc/flrdbop_inc.flh') :- !.
-flora_include(FLLIBDELETE,'syslibinc/flrdbop_inc.flh') :- !.
-flora_include(FLLIBDELETEALL,'syslibinc/flrdbop_inc.flh') :- !.
-flora_include(FLLIBERASE,'syslibinc/flrdbop_inc.flh') :- !.
-flora_include(FLLIBERASEALL,'syslibinc/flrdbop_inc.flh') :- !.
+flora_include(FLLIBINSERT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdbop_inc.flh',arg(S)).
+flora_include(FLLIBINSERTALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdbop_inc.flh',arg(S)).
+flora_include(FLLIBDELETE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdbop_inc.flh',arg(S)).
+flora_include(FLLIBDELETEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdbop_inc.flh',arg(S)).
+flora_include(FLLIBERASE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdbop_inc.flh',arg(S)).
+flora_include(FLLIBERASEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdbop_inc.flh',arg(S)).
 
-flora_include(FLLIBBTINSERT,'syslibinc/flrbtdbop_inc.flh') :- !.
-flora_include(FLLIBBTINSERTALL,'syslibinc/flrbtdbop_inc.flh') :- !.
-flora_include(FLLIBBTDELETE,'syslibinc/flrbtdbop_inc.flh') :- !.
-flora_include(FLLIBBTDELETEALL,'syslibinc/flrbtdbop_inc.flh') :- !.
-flora_include(FLLIBBTERASE,'syslibinc/flrbtdbop_inc.flh') :- !.
-flora_include(FLLIBBTERASEALL,'syslibinc/flrbtdbop_inc.flh') :- !.
+flora_include(FLLIBBTINSERT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrbtdbop_inc.flh',arg(S)).
+flora_include(FLLIBBTINSERTALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrbtdbop_inc.flh',arg(S)).
+flora_include(FLLIBBTDELETE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrbtdbop_inc.flh',arg(S)).
+flora_include(FLLIBBTDELETEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrbtdbop_inc.flh',arg(S)).
+flora_include(FLLIBBTERASE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrbtdbop_inc.flh',arg(S)).
+flora_include(FLLIBBTERASEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrbtdbop_inc.flh',arg(S)).
 
-flora_include(FLLIBSHDIRECT,'syslibinc/flrshdirect_inc.flh') :- !.
+flora_include(FLLIBSHDIRECT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrshdirect_inc.flh',arg(S)).
 
-flora_include(FLLIBMODLIT,'syslibinc/flrdynmod_inc.flh') :- !.
-flora_include(FLLIBMODOBJ,'syslibinc/flrdynmod_inc.flh') :- !.
+flora_include(FLLIBMODLIT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdynmod_inc.flh',arg(S)).
+flora_include(FLLIBMODOBJ,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrdynmod_inc.flh',arg(S)).
 
-flora_include(FLLIBEQUALITY,'syslibinc/flrequality_inc.flh') :- !.
+flora_include(FLLIBEQUALITY,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrequality_inc.flh',arg(S)).
 
-flora_include(FLLIBABOLISH,'syslibinc/flrabolish_inc.flh') :- !.
+flora_include(FLLIBABOLISH,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslibinc%sflrabolish_inc.flh',arg(S)).
 
-flora_include(FLHEADER,'closureinc/flrheader_inc.flh') :- !.
-flora_include(FLDBDYN,'closureinc/flrdbdyn_inc.flh') :- !.
-flora_include(FLDEFINITION,'closureinc/flrdefinition_inc.flh') :- !.
-flora_include(FLPATCH,'closureinc/flrpatch_inc.flh') :- !.
-flora_include(FLTRAILER,'closureinc/flrtrailer_inc.flh') :- !.
-flora_include(FLEQLTRAILER,'closureinc/flreqltrailer_inc.flh') :- !.
-flora_include(FLSCALAREQL,'closureinc/flrscalareql_inc.flh') :- !.
+flora_include(FLHEADER,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'closureinc%sflrheader_inc.flh',arg(S)).
+flora_include(FLDBDYN,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'closureinc%sflrdbdyn_inc.flh',arg(S)).
+flora_include(FLDEFINITION,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'closureinc%sflrdefinition_inc.flh',arg(S)).
+flora_include(FLPATCH,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'closureinc%sflrpatch_inc.flh',arg(S)).
+flora_include(FLTRAILER,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'closureinc%sflrtrailer_inc.flh',arg(S)).
+flora_include(FLEQLTRAILER,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'closureinc%sflreqltrailer_inc.flh',arg(S)).
+flora_include(FLSCALAREQL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'closureinc%sflrscalareql_inc.flh',arg(S)).
 
 
 /********************************************************************
   flora_library(+Atom,+FilePath)
   indicates which library to be loaded.
 ********************************************************************/
-flora_library(FLLIBMIN,'syslib/flraggmin.P') :- !.
-flora_library(FLLIBMAX,'syslib/flraggmax.P') :- !.
-flora_library(FLLIBSUM,'syslib/flraggsum.P') :- !.
-flora_library(FLLIBAVG,'syslib/flraggavg.P') :- !.
-flora_library(FLLIBCOUNT,'syslib/flraggcount.P') :- !.
-flora_library(FLLIBCOLLECTSET,'syslib/flraggcolset.P') :- !.
-flora_library(FLLIBCOLLECTBAG,'syslib/flraggcolbag.P') :- !.
+flora_library(FLLIBMIN,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflraggmin.P',arg(S)).
+flora_library(FLLIBMAX,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflraggmax.P',arg(S)).
+flora_library(FLLIBSUM,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflraggsum.P',arg(S)).
+flora_library(FLLIBAVG,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflraggavg.P',arg(S)).
+flora_library(FLLIBCOUNT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflraggcount.P',arg(S)).
+flora_library(FLLIBCOLLECTSET,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflraggcolset.P',arg(S)).
+flora_library(FLLIBCOLLECTBAG,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflraggcolbag.P',arg(S)).
 
-flora_library(FLLIBLOAD,'syslib/flrload.P') :- !.
+flora_library(FLLIBLOAD,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrload.P',arg(S)).
 
-flora_library(FLLIBANSWER,'syslib/flranswer.P') :- !.
-flora_library(FLLIBSHELLANS,'syslib/flranswer.P') :- !.
-flora_library(FLLIBPROGRAMANS,'syslib/flranswer.P') :- !.
+flora_library(FLLIBANSWER,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflranswer.P',arg(S)).
+flora_library(FLLIBSHELLANS,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflranswer.P',arg(S)).
+flora_library(FLLIBPROGRAMANS,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflranswer.P',arg(S)).
 
-flora_library(FLLIBDISPLAY,'syslib/flrdisplay.P') :- !.
+flora_library(FLLIBDISPLAY,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdisplay.P',arg(S)).
 
-flora_library(FLLIBDBOP,'syslib/flrdbop.P') :- !.
-flora_library(FLLIBINSERT,'syslib/flrdbop.P') :- !.
-flora_library(FLLIBINSERTALL,'syslib/flrdbop.P') :- !.
-flora_library(FLLIBDELETE,'syslib/flrdbop.P') :- !.
-flora_library(FLLIBDELETEALL,'syslib/flrdbop.P') :- !.
-flora_library(FLLIBERASE,'syslib/flrdbop.P') :- !.
-flora_library(FLLIBERASEALL,'syslib/flrdbop.P') :- !.
+flora_library(FLLIBDBOP,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
+flora_library(FLLIBINSERT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
+flora_library(FLLIBINSERTALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
+flora_library(FLLIBDELETE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
+flora_library(FLLIBDELETEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
+flora_library(FLLIBERASE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
+flora_library(FLLIBERASEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
 
-flora_library(FLLIBDBOP,'syslib/flrbtdbop.P') :- !.
-flora_library(FLLIBBTINSERT,'syslib/flrbtdbop.P') :- !.
-flora_library(FLLIBBTINSERTALL,'syslib/flrbtdbop.P') :- !.
-flora_library(FLLIBBTDELETE,'syslib/flrbtdbop.P') :- !.
-flora_library(FLLIBBTDELETEALL,'syslib/flrbtdbop.P') :- !.
-flora_library(FLLIBBTERASE,'syslib/flrbtdbop.P') :- !.
-flora_library(FLLIBBTERASEALL,'syslib/flrbtdbop.P') :- !.
+flora_library(FLLIBDBOP,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
+flora_library(FLLIBBTINSERT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
+flora_library(FLLIBBTINSERTALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
+flora_library(FLLIBBTDELETE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
+flora_library(FLLIBBTDELETEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
+flora_library(FLLIBBTERASE,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
+flora_library(FLLIBBTERASEALL,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
 
-flora_library(FLLIBSHDIRECT,'syslib/flrshdirect.P') :- !.
+flora_library(FLLIBSHDIRECT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrshdirect.P',arg(S)).
 
-flora_library(FLLIBEQUALITY,'syslib/flrequality.P') :- !.
+flora_library(FLLIBEQUALITY,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrequality.P',arg(S)).
 
-flora_library(FLLIBABOLISH,'syslib/flrabolish.P') :- !.
+flora_library(FLLIBABOLISH,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrabolish.P',arg(S)).
 
-flora_library(FLLIBDYNMOD,'syslib/flrdynmod.P') :- !.
-flora_library(FLLIBMODLIT,'syslib/flrdynmod.P') :- !.
-flora_library(FLLIBMODOBJ,'syslib/flrdynmod.P') :- !.
+flora_library(FLLIBDYNMOD,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdynmod.P',arg(S)).
+flora_library(FLLIBMODLIT,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdynmod.P',arg(S)).
+flora_library(FLLIBMODOBJ,IncFile) :- !,
+	slash(S),
+	fmt_write_string(IncFile,'syslib%sflrdynmod.P',arg(S)).

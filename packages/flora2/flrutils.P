@@ -508,9 +508,10 @@ flora_check_workspace(Name) :-
 
 
 flora_copy_file(Source,Dest) :-
-	fmt_write_string(Cmd,"cp -f %s %s",args(Source,Dest)),
-	shell(Cmd,Res),
-	Res =:= 0.
+	path_sysop(copy,Source,Dest).
+	%%fmt_write_string(Cmd,"cp -f %s %s",args(Source,Dest)),
+	%%shell(Cmd,Res), %% shell is not portable
+	%%Res =:= 0.
 
 
 flora_set_xpp_options :- assert(xpp_options('-P -m -nostdinc')).
