@@ -140,12 +140,12 @@ arch_config_objlibdir=$(src_config_prefix)/saved.o
 emumake_goal=@emumake_goal@
 
 # Normal user
-all: prepare emu xsbmod gpp remake_dot_O_files configure_packages_src register emu_clean 
+all: prepare emu xsbmod xsbdll gpp remake_dot_O_files configure_packages_src register emu_clean 
 
 # Developer who just checked out or updated CVS copy
-devel: prepare emu xsbmod gpp remake_dot_O_files configure_packages_src emu_clean
+devel: prepare emu xsbmod xsbdll gpp remake_dot_O_files configure_packages_src emu_clean
 
-superdevel: prepare emu xsbmod gpp remake_dot_O_files_force configure_packages_src emu_clean
+superdevel: prepare emu xsbmod xsbdll gpp remake_dot_O_files_force configure_packages_src emu_clean
 
 # Developer who needs a quick re-make of the executable
 fast: prepare emu gpp emu_clean
@@ -194,6 +194,9 @@ module: prepare xsbmod do_cleaning inform_module
 xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	cd ${src_emudir}; \
 	    make $(emumake_goal)mod
+
+xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+	cd ${src_emudir}; make dll
 
 emu_clean: do_cleaning inform_executable
 

@@ -3089,9 +3089,9 @@ fi
 #fi
 
 # dnl ODBC library 
-#if test "${with_odbc}" = yes ; then
-#   LDFLAGS="-lodbc32 ${LDFLAGS}"
-#fi
+if test "${with_odbc}" = yes ; then
+   LDFLAGS="-lodbc32${LDFLAGS}"
+fi
 
 if test "${enable_no_cygwin+set}" = "set"; then
    CC="${CC} -mno-cygwin"
@@ -3704,9 +3704,9 @@ if test -n "$site_dynamic_libraries" ; then
    done
 fi
 
-echo "  POSIX regexp matching libraries:	          $regmatch_support"
-echo "  POSIX wildcard matching libraries:	          $wildmatch_support"
-echo "  Perl support:				          $perl_support"
+echo "	POSIX regexp matching libraries:		  $regmatch_support"
+echo "	POSIX wildcard matching libraries:		  $wildmatch_support"
+echo "	Perl support:					  $perl_support"
 
 if test "$perl_support" = "yes"; then
    cat <<EOT
@@ -3717,7 +3717,7 @@ if test "$perl_support" = "yes"; then
 EOT
 fi
 
-echo "  libwww support: 			          $libwww_support"
+echo "	libwww support: 				  $libwww_support"
 if test "$libwww_support" = "yes"; then
    cat <<EOT
   Libwww C flags:				  $libwww_ccflags

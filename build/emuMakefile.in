@@ -43,9 +43,27 @@ ODBCSRC=@ODBCSRC@
 ODBCOBJ=@ODBCOBJ@
 
 
-#For mno-cygwin
+# For mno-cygwin 
+# -mdll option is needed so that MSVC files could link to dll
+# however for old cygwin versions -dll option is used  
 mno_cyg_inclib=@mno_cyg_inclib@
 mno_cyg_lib=@mno_cyg_lib@
+ifneq ($(strip $(mno_cyg_inclib)),)
+#cygconf=`(uname -m) 2>/dev/null` || cygconf=unknown
+cygconf=i686
+cygdirname=${cygconf}-cygwin
+endif
+DLLTOOL=dlltool
+DLLNAME=xsb.dll
+DLL_LIBS=$(LDFLAGS) -L /usr/$(cygdirname)/lib -lmingw32 -lmoldname -lcrtdll -lkernel32 -L /usr/lib/gcc-lib/$(cygdirname)/2.9-cygwin-990830 -lgcc
+LIB_OBJECTS=xsb.o dllinit_xsb.o
+BASE_FILE=xsb.base
+EXP_FILE=xsb.exp
+DEF_FILE=xsb.def
+LIB_FILE=libxsb.a
+ENTRY_FUNCTION=_win_xsbent@12
+
+
 
 
 # This one is used for SGI only
@@ -136,11 +154,11 @@ xsbora:: $(allORAOBJS)
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
-xsbmod:: $(OBJS)
+xsbmod:: $(OBJS) ${ODBCOBJ}
 	@echo ""; \
 	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o"; \
 	   echo ""
-	ld -o xsb.o $(LINKFLAGS) -r $(OBJS)
+	ld -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ}
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # same as xsbmod, but with oracle support
@@ -154,6 +172,33 @@ xsboramod:: $(ORAOBJS)
 
 depend::
 	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix) $(mno_cyg_inclib) $(CFLAGS) -- $(SRCS) $(ODBCSRC)
+
+#
+# create a new DLL library in cygwin (compiled with -mno-cygwin) environment
+#
+# LIB_OBJECTS: xsb.o, initdll_xsb.o files
+# DLLNAME: name of the new dll
+# DEFFILE is the name of the definitions file.
+# BASEFILE temporary
+# EXPFILE  temporary
+# ENTRY is the entry point  int WINAPI startup (HINSTANCE, DWORD, LPVOID)
+
+dll: $(HEADERS) $(DEF_FILE) xsb.o
+ifneq ($(strip $(mno_cyg_inclib)),)
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) dllinit_xsb.cc
+	@cp dllinit_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+	$(LD) -s --base-file $(BASE_FILE) --dll -o $(DLLNAME) $(LIB_OBJECTS) $(DLL_LIBS) -e $(ENTRY_FUNCTION)
+	$(DLLTOOL) --as=$(AS) --dllname $(DLLNAME) --def $(DEF_FILE) --base-file $(BASE_FILE) --output-exp $(EXP_FILE)
+	$(LD) -s --base-file $(BASE_FILE) $(EXP_FILE) -dll -o $(DLLNAME) $(LIB_OBJECTS) $(DLL_LIBS) -e $(ENTRY_FUNCTION)
+	$(DLLTOOL) --as=$(AS) --dllname $(DLLNAME) --def $(DEF_FILE) --base-file $(BASE_FILE) --output-exp $(EXP_FILE)
+	$(LD) $(EXP_FILE) --dll -o $(DLLNAME) $(LIB_OBJECTS) $(DLL_LIBS) -e $(ENTRY_FUNCTION)
+	$(DLLTOOL) --as=as --dllname  $(DLLNAME) --def $(DEF_FILE) --output-lib $(LIB_FILE)
+	@mv $(DLLNAME) $(bindir) 2> /dev/null || echo ""
+	@mv $(LIB_FILE) $(bindir) 2> /dev/null || echo ""
+	@rm -f $(BASE_FILE) 2> /dev/null || echo ""
+	@rm -f $(EXP_FILE) 2> /dev/null || echo ""
+endif
+
 
 
 #=======================================================================
