@@ -1514,8 +1514,22 @@ int builtin_call(byte number)
   case TRIE_DISPOSE:
     trie_dispose();
     break;
+  case TRIE_DISPOSE_NR:{
+    NODEptr x = (NODEptr)ptoc_int(1); /* was 2 !*/
+    safe_delete_branch(x);
+  }
+    break;
+  case TRIE_UNDISPOSE:
+    undelete_branch((NODEptr) ptoc_int(2));
+    break;
   case BOTTOM_UP_UNIFY:
-    bottom_up_unify();
+    {
+      NODEptr x = (NODEptr) ptoc_int(3);
+      if(DelFlag(x) !=  0)
+	return FALSE;
+      else
+	bottom_up_unify();
+    }
     break;
   case DELETE_TRIE:
     if (strcmp(ptoc_string(2),"intern") == 0){

@@ -500,6 +500,8 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define TRIE_DISPOSE            162
 #define DELETE_TRIE             164
 #define BOTTOM_UP_UNIFY         163
+#define TRIE_DISPOSE_NR         165
+#define TRIE_UNDISPOSE          166
 
 #define VAR			190
 #define NONVAR			191
