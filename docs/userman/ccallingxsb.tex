@@ -306,12 +306,12 @@ type are declared using a macro that must appear in the declaration section
 of the program:
 %%
 \begin{verbatim}
-vstrDEFINE(buf);  
+XSB_StrDefine(buf);  
 \end{verbatim}
 %%
 There is one important consideration concerning VarString with the
 \emph{automatic} storage class: they must be
-\emph{destroyed} on exit (see {\tt vstrDESTROY}, below) from the procedure
+\emph{destroyed} on exit (see {\tt XSB\_StrDestroy}, below) from the procedure
 that defines them, or else there will be a memory leak. 
 It is not necessary to destroy static {\tt VarString}'s.
 
@@ -323,59 +323,59 @@ not} modify these items directly. Instead, he should use the macros
 provided for that purpose:
 %%
 \begin{itemize}
-  \item {\tt vstrSET(VarString *vstr, char *str)}:~
+  \item {\tt XSB\_StrSet(VarString *vstr, char *str)}:~
     Assign the value of the regular null-terminated C string to the
     {\tt VarString} {\tt vstr}. The size of {\tt vstr} is adjusted
     automatically.
-  \item {\tt vstrSETV(VarString *vstr1, VarString *vstr2)}:~
-    Like {\tt vstrSET}, but the second argument is a variable-length
+  \item {\tt XSB\_StrSetV(VarString *vstr1, VarString *vstr2)}:~
+    Like {\tt XSB\_StrSet}, but the second argument is a variable-length
     string, not a regular C string.
-  \item {\tt vstrAPPEND(VarString *vstr, char *str)}:~
+  \item {\tt XSB\_StrAppend(VarString *vstr, char *str)}:~
     Append the null-terminated string {\tt str} to the {\tt VarString} {\tt
       vstr}. The size of {\tt vstr} is adjusted.
-  \item {\tt vstrPREPEND(VarString *vstr, char *str)}:~
-    Like {\tt vstrAPPEND}, except that {\tt str} is prepended.
-  \item {\tt vstrAPPENDV(VarString *vstr1, VarString *vstr2)}:~
-    Like {\tt vstrAPPEND}, except that the second string is also a
+  \item {\tt XSB\_StrPrepend(VarString *vstr, char *str)}:~
+    Like {\tt XSB\_StrAppend}, except that {\tt str} is prepended.
+  \item {\tt XSB\_StrAppendV(VarString *vstr1, VarString *vstr2)}:~
+    Like {\tt XSB\_StrAppend}, except that the second string is also a
     {\tt VarString}.
-  \item {\tt vstrPREPENDV(VarString *vstr1, VarString *vstr2)}:~
-    Like {\tt vstrAPPENDV}, except that the second string is prepended.
-  \item {\tt vstrCOMPARE(VarString *vstr1, VarString *vstr2)}:~
+  \item {\tt XSB\_StrPrependV(VarString *vstr1, VarString *vstr2)}:~
+    Like {\tt XSB\_StrAppendV}, except that the second string is prepended.
+  \item {\tt XSB\_StrCompare(VarString *vstr1, VarString *vstr2)}:~
     Compares two {\tt VarString}. If the first one is lexicographically
     larger, then the result is positive; if the first string is smaller,
     than the result is negative; if the two strings have the same content
     ({\it i.e.}, {\tt vstr1->string} equals {\tt vstr2->string} then the
     result is zero.
-  \item {\tt vstrSTRCMP(VarString *vstr, char *str)}:~
-    Like {\tt vstrCOMPARE} but the second argument is a regular,
+  \item {\tt XSB\_StrCmp(VarString *vstr, char *str)}:~
+    Like {\tt XSB\_StrCompare} but the second argument is a regular,
     null-terminated string.
-  \item {\tt vstrAPPENDBLK(VarString *vstr, char *blk, int size)}:~
-    This is like {\tt vstrAPPEND}, but the second argument is not assumed
+  \item {\tt XSB\_StrAppendBlk(VarString *vstr, char *blk, int size)}:~
+    This is like {\tt XSB\_StrAppend}, but the second argument is not assumed
     to be null-terminated. Instead, {\tt size} characters pointed to by
     {\tt blk} are appended to {\tt vstr}. The size of {\tt vstr} is
     adjusted, but the content is \emph{not} null terminated.
-  \item {\tt vstrPREPENDBLK(VarString *vstr, char *blk, int size)}:~
-    Like {\tt vstrPREPEND}, but {\tt blk} is not assumed to point to a
+  \item {\tt XSB\_StrPrependBlk(VarString *vstr, char *blk, int size)}:~
+    Like {\tt XSB\_StrPrepend}, but {\tt blk} is not assumed to point to a
     null-terminated string. Instead, {\tt size} characters from the region
     pointed to by {\tt blk} are prepended to {\tt vstr}.
-  \item {\tt vstrNULL\_TERMINATE(VarString *vstr)}:~
+  \item {\tt XSB\_StrNullTerminate(VarString *vstr)}:~
     Null-terminates the {\tt VarString}  string {\tt vstr}. This is used in
-    conjunction with {\tt vstrAPPENDBLK}, because the latter does not
+    conjunction with {\tt XSB\_StrAppendBlk}, because the latter does not
     null-terminate variable-length strings.
-  \item {\tt vstrENSURE\_SIZE(VarString *vstr, int minsize)}:~
+  \item {\tt XSB\_StrEnsureSize(VarString *vstr, int minsize)}:~
     Ensure that the string has room for at least {\tt minsize} bytes.
     This is a low-level routine, which is used to interface to procedures
     that do not use {\tt VarString} internally. If the string is larger
     than {\tt minsize}, the size might actually shrink to the nearest
     increment that is larger {\tt minsize}.
-  \item {\tt vstrSHRINK(VarString *vstr, int increment)}:~
-    Shrink the size of {\tt vstr} to the minimum necessary to hold the
-    data. {\tt increment} becomes the new increment by which {\tt vstr} is
-    adjusted. Since {\tt VarString} is automatically shrunk by {\tt
-      vstrSET}, it is rarely necessary to shrink a {\tt VarString} explicitly.
-    However, one might want to change the adustment increment using this
-    macro (the default increment is 128).
-  \item {\tt vstrDESTROY(VarString *vstr)}:~
+  \item {\tt XSB\_StrShrink(VarString *vstr, int increment)}:~ Shrink the
+    size of {\tt vstr} to the minimum necessary to hold the data. {\tt
+      increment} becomes the new increment by which {\tt vstr} is adjusted.
+    Since {\tt VarString} is automatically shrunk by {\tt XSB\_StrSet}, it
+    is rarely necessary to shrink a {\tt VarString} explicitly.  However,
+    one might want to change the adustment increment using this macro (the
+    default increment is 128).
+  \item {\tt XSB\_StrDestroy(VarString *vstr)}:~
     Destroys a {\tt VarString}.  Explicit destruction is necessary for
     {\tt VarString}'s with the automatic storage class. Otherwise, memory
     leak is possible.

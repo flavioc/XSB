@@ -936,6 +936,12 @@ The following options are currently recognized by the compiler:
   non-standard preprocessor then you must specify that non-standard
   preprocessor each time the program is compiled.
 
+\item[{\tt quit\_on\_error}] \index{{\tt quit\_on\_error}}
+  This causes XSB to exit if compilation of a program end with an error.
+  This option is useful when running XSB from a makefile, when it is
+  necessary to stop the build process after an error has been detected. For
+  instance, XSB uses this option during its own build process.
+
 
 %-------------------------------
 \index{tabling!compiler options}
