@@ -1,0 +1,13 @@
+/* This demo shows various cases of monotonic inheritance */
+
+    a[b => c; bs=>>e].
+    a[b1 => c1; bs1 =>> e1].
+    aa[b=>d; bs1=>>d2].
+
+    aaa::a.
+    aa:aaa.
+
+    ?- aa[@T=>X].
+    ?- aaa[@U=>Y].
+
+    ?- aa[@SM=>>V].

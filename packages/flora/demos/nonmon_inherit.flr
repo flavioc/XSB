@@ -1,0 +1,39 @@
+/* This demo shows various cases of non-monotonic inheritance */
+
+    a[b *-> c].
+    a[b1 *-> c1].
+    aa:a.
+    aa[b->d].
+
+    aaa::a.
+    aaaa:a.
+    bbb::a.
+    bbb[b *->cc].
+
+    ?- aa[b->X].
+    ?- aaa[@U*->Y].
+    ?- aaaa[@U1->Y1].
+
+%%------------------
+
+
+    ab[b *->> {cc,dd}].
+    ab[b2 *->> {cc2,dd2}].
+
+    abb:ab.
+    abb[b ->> tt].
+    abbb::ab.
+
+    aabb:ab.
+    aabb1::ab.
+
+    abbb[b *->> e].
+
+    ?- abb[@M ->> K].
+
+    ?- aabb[@N ->> L].
+    ?- aabb1[@N1 *->> L1].
+
+    ?- abbb[@M *->> Z].
+
+
