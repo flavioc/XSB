@@ -86,27 +86,6 @@ reconsult(Path, Options, Ensure_loaded) :-
 	).
 
 reconsult0(Path, Options, Ensure_loaded) :-
-/**	( Path == user -> compile_load_user(Options)
-	; ( search_module(Path, Dir, Mod, SExt, Base, Obj) ->
-	      (	 ( SExt \== 'O', i_want_compile(SExt, Base, Obj) )
-	      ->  compile_f(SExt, Base, Options, _ExList, Mod, Dir),
-		  load_exec(Obj, Mod),
-		  (consult_file_loaded(Path)
-	           ->     true
-	           ;      assert(consult_file_loaded(Path))
-	          )
-	      ;	  (Ensure_loaded==true,consult_file_loaded(Path)
-	           ->     true
-	           ;      load_exec(Obj, Mod),
-		          (consult_file_loaded(Path)
-			   ->	  true
-			   ;	  assert(consult_file_loaded(Path))
-			  )
-		  )
-	      )
-	  ; file_write0(STDERR, 'Cannot find the file/module '),
-	    file_write0(STDERR, Path), file_nl(STDERR), fail
-	  ) ****/
 	(Path == user
 	 ->	compile_load_user(Options)
 	 ;	(search_module(Path, Dir, Mod, SExt, Base, Obj)
