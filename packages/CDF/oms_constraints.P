@@ -4,6 +4,9 @@
 
 :- import member/2 from basics.
 
+% should ensure that classes and objects are distinct.
+% add consistency checking for components.
+
 :- comment(module,"In order to ensure that the semantic axioms of the
 OMS are satisfied by a particular ontology, it is necessary to perform
 consistency checking.  Since a 'constraint' can be thought of as a

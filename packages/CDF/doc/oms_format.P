@@ -13,13 +13,13 @@ xsbdoc_component('../oms_exceptions.P').
 xsbdoc_component('../oms_oblivion.P').
 xsbdoc_component('../oms_diffs.P').
 xsbdoc_component('../oms_filters.P').
-xsbdoc_component('../oms_rules.P').
+%xsbdoc_component('../oms_rules.P').
 
 %xsbdoc_component('../oms_q_annot.P').
 
 % xsbdoc_bibfile/1 indicates the bibtex files to use  if there are any
 % citations. 
-xsbdoc_bibfile(all).
+xsbdoc_bibfile('../../../docs/userman/manual').
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Miscellaneous Comments

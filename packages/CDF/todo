@@ -1,4 +1,17 @@
 
+Bug in dump_oms.P (save state).
+
+Take indices out of oms_io.P
+
+Change create_component/1 so that it works on internal format also.
+and add other predicates.
+
+locks
+
+
+
+
+
 Do something better with friendly atom codes.
 
 Is external conversion appropriate with objects in dump_omext?

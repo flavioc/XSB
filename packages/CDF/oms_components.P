@@ -1,7 +1,9 @@
 :- compiler_options([ciao_directives]).
 
 :- document_export 
+	  analyze_component/1,
           create_component/1,
+	  create_component_internal/2,
           dump_component/1,
           loadmerge_component/1.
 
@@ -19,31 +21,67 @@ component has_status dirty...
 Incorporate antirelationships in create_component, etc.
 */
 
-:- comment(module,"Typically, an OMS is made up of several separable
-components -- for instance, UNSPSC, NAICS, or DLAFIIG.  There may be a
-need for these components to be managed separately so that they can be
-updated externally and incorporated into various applications, loaded
-by several applications, and perhaps edited and saved.  The OMS
-components system attempts to address this problem.
+:- comment(module,"Typically, an OMS instance can be partitioned into
+several separate cells, or @em{components} -- representing information
+that arises from different sources, for instance, from UNSPSC, NAICS,
+or DLAFIIG.  There may be a need for these components to be managed
+separately so that various applications can update them and
+incorporate their information.  The OMS components system attempts to
+address this need.
 
-A component is defined as a collection of classes and objects of the
-same @em{source}, along with their relationships, attributes,
-subclasses, and memberofs.  Components thus form a collection vaguely
-analagous to a Java package.  One component @em{C1} depends on another
-component @em{C2} if NID2XC2 is the target of a relation or attribute
-of whose first argument is NID1XC1; or if an element of NID1XC1 is a
-subclass or memberof a class NID2XC2.  It is easy to see that
-component dependency need not be hierarchical so that two components
-may depend on one another.  In addition, NID2XC2 is always a subclass
-of itself, each component always depends on itself, and similarly each
-component always depends on the component 'OMS'.
+The facts in an OMS instance may be partitioned in various ways.  A
+@em{class-based component system} partitions an OMS-instance on
 
-From the perspective of formats, a component may contain information
-in external form (e.g. schema_omsext.P and data_omsext.P files), or in
-external intensional form (oms_extint.P).  Information in internal
-format saved to file (e.g. schema_oms.P and data_oms.P) files is not
-supported as ambiguity arises if one attempts to combine internal ids
-from different files.  
+@begin{itemize}
+
+@item the second-argument identifier source of all @em{class/2} and 
+@pred{object/2} facts.
+
+@item the first-argument identifier source of all other facts.
+
+@end{itemize}
+@noindent
+Class-based components thus form a collection
+vaguely analagous to a Java package, and are useful when different
+processes are responsible for creating or modifying different classes
+and objects.
+
+A @em{relation-based component system} partitions an OMS instance on
+
+@begin{itemize} 
+
+@item the second-argument identifier source of all @pred{class/2} and
+@pred{object/2} facts.
+
+@item the first-argument identifier source of all @pred{memberof/2}
+and @pred{subclass/2} facts.
+
+@item the second-argument identifier source of all @pred{irel/3},
+@pred{strel/3}, @pred{schrel/3}, @pred{attribute/3}, and
+@pred{attribute_object/3} facts.
+
+@end{itemize}
+
+Relation-based component systems are useful when different processes
+may be associated with creating or modifying different relations and
+attributes for the same class or object.  By default, the OMS uses a
+relation-based component system.
+
+In either case, one component @em{C1} depends on another component
+@em{C2} if @em{id(NID2,C2)} occurs in a fact in the @em{C1} component.
+By this definition, it is easy to see that component dependency need
+not be hierarchical so that two components may depend on one another;
+furthermore each component must depend on itself.  In addition, each
+component always depends on the component 'OMS' by fiat.
+
+When a user loads a component he or she loads information from files
+in external form (e.g. @tt{schema_omsext.P} and @tt{data_omsext.P}
+files), or in external intensional form @tt{oms_extint.P}.  The OMS
+cannot load as a component information in internal format (i.e. data
+in @tt{schema_oms.P} and @tt{data_oms.P} files) as ambiguity arises if
+one attempts to combine internal identifiers from different files.  It
+does however provide tools to create components from a current loaded
+OMS instance.
 
 A convention is made that the name of a component is identical to the
 directory in which it resides.  Thus, a component @em{unspsc} must
@@ -52,28 +90,37 @@ directories using XSB's library search paths -- or a full pathname can
 also be used.
 
 Information about components resides in the OMS itself.  The OMS knows
-about a component C1 when C1XC1 is a subclass of the class
-componentXOMS.  Component dependency is represented by the
-relationship @em{component_dependsXOMS}.  For components consisting of
-external files, the predicate @pred{create_component/1} can be used to
-add this information.  @tt{create_component(Dir} reads in external
-files, computes their dependencies, and writes out the files, plus
-component information, back to @em{Dir}.  In the case where a putative
-component includes an external intensional view, dependency
-information for the external intensional view must be added by hand.
+about a component @em{C1} when @tt{id(C1,C1)} is a subclass of the
+class @tt{id(component,OMS)}.  Component dependency is represented by
+the relation @em{id(component_depends,OMS)}.  For components
+consisting of external files, the predicate @pred{create_component/1}
+can be used to add this information.  @tt{create_component(Dir)} reads
+in external files, computes their dependencies, and writes out the
+files, plus component information, back to @em{Dir}.  In the case
+where a putative component includes an external intensional view,
+dependency information for the external intensional view must be added
+by hand.  Similarly, @pred{create_component_internal(Name,Dir)}
+examines the facts in the component @tt{Name}, computes their
+dependencies, and writes them as external facts to @tt{Dir}.
 
 Components may be loaded via @pred{load_component/1} which loads a
 component @em{C1} and all components on which @em{C1} transitively
 depends.  If a component is modified, it may be saved to file via
-dump_component/1 which dumps the component but not any subcomponents
+@tt{dump_component/1} which dumps the component but not any subcomponents
 on which it may depend.
 ").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(create_component/1, "Loads an omsext (but does not merge
-it), creates a component if possible, then dumps the new omsext that
-includes the component information.").
+:- comment(analyze_component/1,
+"@tt{analyze_component(-Component,Dependency_list)} examines a loaded
+OMS instance to partition it into components and for each component
+@em{C} to return a list of components upon which @{C} depends").
+
+:- comment(create_component/1,"@tt{create_component(Dir)} loads from
+@tt{Dir} @tt{data_omsext.P}, and @tt{schema_omsext.P} files, creates a
+component if possible, then dumps the new omsext that includes the
+component information.").
 
 create_component(Name):- 
 	retract_omsext,
@@ -190,6 +237,11 @@ check_attribute_object(Name):-
 check_attribute_object(_).
 
 
+:- comment(create_component_internal/2,
+"@tt{create_component_internal(Name,Dir)} dumps facts and intensional
+rules for a component specified by @tt{Name} from a loaded OMS
+instance to @tt{Dir}. ").
+
 %-------------------------------------
 
 /* find_component_dependency/1 returns the set of dependencies for a
@@ -293,6 +345,10 @@ table_call(Call):- call(Call).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- comment(loadmerge_component/1,"@tt{loadmerge_component(Name)} loads
+the component @tt{Name}, and recursively, all other components upon
+which @tt{Name} depends.").
+
 loadmerge_component(Name):- 
 	retract_omsext,
 	load_component(Name),
@@ -324,6 +380,10 @@ is_component('OMS').
 is_component(Name):- class_ext(Name,Name,Name).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(dump_component/1,"@tt{dump_component(Name)} dumps the
+component @tt{Name}.  It does not dump other components upon which
+@tt{Name} depends.").
 
 dump_component(Name):- 
 	find_component_dir(Name,Dir),

@@ -286,7 +286,7 @@ developed to allow it to handle partial information (@ref{Semantic
 Axioms}) distinguishes it both from RDF and Protege.
 
 While many of the ideas of the OMS were inspired by F-logic
-@cite{KLW93} and FLORA, the OMS is simpler than FLORA in several
+@cite{KLW95} and FLORA, the OMS is simpler than FLORA in several
 respects.  First, it does not allow information about taxonomies or
 relations to be defined dynamically by rules.  Second, the OMS does
 not provide for a constraint that a given attribute is unique or

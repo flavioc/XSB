@@ -22,13 +22,13 @@ backend(smodels).
 :- dynamic debug_mode/1.
 %:- index(debug_mode/1,0,0).
 
-:- [sModels].
+:- [xasp].
 
 ?- use_capi.
 
 ?- init_capi_if_needed.
 
-init_capi_if_needed:- interface(capi),[sModels].
+init_capi_if_needed:- interface(capi),[xasp].
 init_capi_if_needed:- \+ interface(capi).
 
 use_capi:- retractall(interface(_)),assert(interface(capi)).
