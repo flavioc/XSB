@@ -80,7 +80,7 @@
 #define push_pre_image_trail0(addr, prev_value, new_value)	\
   if (trfreg > trreg) {						\
     if ((char *)trfreg > ((char *)(top_of_cpstack) -		\
-                          TRAIL_FRAME_SIZE*sizeof(CPtr)))	\
+                          TRAIL_FRAME_SIZE*sizeof(CPtr))) {	\
       handle_tcpstack_overflow();				\
     }								\
     *(trfreg + 4) = (CPtr) trreg;				\
@@ -91,7 +91,7 @@
   }								\
   else {							\
     if ((char *)trreg > ((char *)(top_of_cpstack) -		\
-                          TRAIL_FRAME_SIZE*sizeof(CPtr)))	\
+                          TRAIL_FRAME_SIZE*sizeof(CPtr))) {	\
       handle_tcpstack_overflow();				\
     }								\
     trreg = trreg + 4;						\
