@@ -27,5 +27,3 @@
 extern void unload_seg(pseg);
 extern pseg load_seg(int, int, int, FILE *);
 
-#define MAX_OPEN_FILES  50
-extern FILE *open_files[];      /* Table of file pointers for open files */

@@ -48,3 +48,7 @@
 #define FILE_STAT_TIME	  0
 #define FILE_STAT_SIZE	  1
 
+#define MAX_OPEN_FILES  50
+
+extern FILE *open_files[];      /* Table of file pointers for open files */
+extern int xsb_intern_file(FILE *f, char *c);

@@ -139,24 +139,18 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     
-    /* find empty slot in XSB openfile table */
-    for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++);
-    if (i == MAX_OPEN_FILES) {
-      xsb_warn("SOCKET_ACCEPT: Too many open files");
+    /* find empty slot in XSB openfile table and put sockptr there */
+    i = xsb_intern_file(sockptr, "SOCKET_ACCEPT");
+#ifdef WIN_NT
+    sockptr = NULL;
+#else
+    if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
+      sockptr = NULL;
+      xsb_warn("SOCKET_ACCEPT: fdopen failed");
       return FALSE;
     }
-    else {
-#ifdef WIN_NT
-      sockptr = NULL;
-#else
-      if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
-	xsb_warn("SOCKET_ACCEPT: fdopen failed");
-	return FALSE;
 #endif
-      }
-      open_files[i] = sockptr;
-      ctop_int(3, i);
-    }
+    ctop_int(3, i);
     break;
   }
   
@@ -189,24 +183,18 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     
-    /* find empty slot in XSB openfile table */
-    for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
-    if (i == MAX_OPEN_FILES) {
-      xsb_warn("SOCKET_CONNECT: Too many open files");
+    /* find empty slot in XSB openfile table and put fptr there */
+    i = xsb_intern_file(sockptr,"SOCKET_CONNECT");
+#ifdef WIN_NT
+    sockptr = NULL;
+#else
+    if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
+      xsb_warn("SOCKET_CONNECT: fdopen failed");
+      sockptr = NULL;
       return FALSE;
     }
-    else {
-#ifdef WIN_NT
-      sockptr = NULL;
-#else
-      if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
-	xsb_warn("SOCKET_CONNECT: fdopen failed");
-	return FALSE;
 #endif
-      }
-      open_files[i] = sockptr;
-      ctop_int(6, i);
-    }
+    ctop_int(6, i);
     break;
   case SOCKET_CLOSE:	/* socket_request(6,+sockfd) */
     closesocket((SOCKET) ptoc_int(2));

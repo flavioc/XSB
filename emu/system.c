@@ -23,16 +23,19 @@
 ** 
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "configs/config.h"
 #include "basictypes.h"
+#include "auxlry.h"
 #include "cell.h"
+#include "xsberror.h"
 #include "cinterf.h"
 #include "msyscall.h"
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "io_builtins.h"
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
 
@@ -42,6 +45,9 @@
 #else
 #include <unistd.h>
 #endif
+
+FILE *popen(char *cmd, char *mode);
+int pclose(FILE *stream);
 
 int sys_syscall(int callno)
 {
@@ -62,5 +68,48 @@ int sys_syscall(int callno)
 	     result = -1;
   }
   return result;
+}
+
+
+bool sys_system(int callno)
+{
+  FILE *sysout, *fptr;
+  char *syscmd, *prolog_mode, *c_style_mode=NULL;
+  int i, filedes;
+
+  switch (callno) {
+  case 1: /* dumb system call: output to system out */
+    ctop_int(3, system(ptoc_string(2)));
+    break;
+  case 2: /* smart system call: output to a new stream */
+    syscmd = ptoc_string(2);
+    prolog_mode = ptoc_string(3);
+    if (strcmp(prolog_mode, "read") == 0)
+      c_style_mode = "r";
+    else if (strcmp(prolog_mode, "write") == 0)
+      c_style_mode = "w";
+    else
+      xsb_abort("OPEN_SHELL_STREAM: Invalid read/write mode: %s", prolog_mode);
+
+    sysout = popen(syscmd, c_style_mode);
+
+    /* if can't open pipe or not enough memory, fail */
+    if (syscmd == NULL) return FALSE;
+
+    i = xsb_intern_file(sysout, "SHELL");
+    ctop_int(4, i);
+    break;
+  case 3: /* pclose*/
+    /* take XSB stream that represents a pipe opened to a shell process and do
+       pclose on it */
+    filedes = ptoc_int(2);
+    SET_FILEPTR(fptr, filedes);
+    ctop_int(3, pclose(fptr));
+    open_files[filedes] = NULL;
+    break;
+  default:
+    xsb_abort("SYS_SYSTEM: wrong call number (an XSB bug)");
+  }
+  return TRUE;
 }
 

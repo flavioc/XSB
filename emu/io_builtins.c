@@ -56,6 +56,8 @@
 #include "configs/special.h"
 #include "binding.h"
 
+FILE *open_files[MAX_OPEN_FILES]; /* open file table */
+
 extern void print_pterm(prolog_term term,
 			int toplevel, char *straddr, int *ind);
 
@@ -1044,5 +1046,20 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
   result.fmt = workspace+current_substr_start;
   current_substr_start = pos;
   return(&result);
+}
+
+
+/* Take a FILE pointer and return an XSB stream, an index into the XSB table of
+   open files */
+int xsb_intern_file(FILE *fptr, char *context)
+{
+  int i;
+  for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
+  if (i == MAX_OPEN_FILES) {
+    xsb_warn("%s: Too many open files", context);
+    return FALSE;
+  } else 
+    open_files[i] = fptr;
+  return i;
 }
 

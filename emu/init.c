@@ -48,6 +48,7 @@
 #include "xmacro.h"
 #include "tr_utils.h"
 #include "export.h"
+#include "io_builtins.h"
 
 /*-----------------------------------------------------------------------*/
 

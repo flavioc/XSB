@@ -95,6 +95,8 @@
 #include "xsb_odbc.h"
 #endif
 
+#include "io_builtins.h"
+
 /*======================================================================*/
 
 /* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
@@ -105,6 +107,7 @@ extern tab_inf_ptr first_tip;
 extern tab_inf_ptr last_tip;
 
 extern int  sys_syscall(int);
+extern bool sys_system(int);
 extern bool formatted_io(void), read_canonical(void);
 extern bool file_stat(void);
 extern bool private_builtin(void);
@@ -149,7 +152,6 @@ static void write_out_profile(void);
 /* ------- variables also used in other parts of the system -----------	*/
 
 Cell flags[64];			  /* System flags + user flags */
-FILE *open_files[MAX_OPEN_FILES]; /* open file table */
 extern char *install_dir;    	  /* from self_orientation.c */
 extern char *user_home;    	  /* from self_orientation.c */
 
@@ -1104,9 +1106,11 @@ int builtin_call(byte number)
 	    			/* R3, ...: Arguments */
     ctop_int(2, sys_syscall(ptoc_int(1)));
     break;
-  case SYS_SYSTEM:	/* R1: +String (of command), R2: -Int (res) */
-    ctop_int(2, system(ptoc_string(1)));
-    break;
+  case SYS_SYSTEM:	/* R1: call mubler, R2: +String (of command);
+			   R3: -Int (res), or mode: read/write;
+			   R4: undefined or Stream used for output/input
+			   from/to the shell command. */
+    return sys_system(ptoc_int(1));
   case SYS_GETHOST: {
     /* +R1: a string indicating the host name  */
     /* +R2: a buffer (of length 16) for returned structure */
