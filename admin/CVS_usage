@@ -114,6 +114,13 @@ Step 1:  Create and send me (kifer@cs.sunysb.edu) your SSH public key.
          Make sure the environment variable CVS_RSH is set to point to ssh
 	 (something like /usr/local/bin/ssh or whereever your ssh lives).
 
+	 E.g., (CSH, TCSH):
+	       setenv CVS_RSH /usr/local/bin/ssh
+
+	 or (SH,BASH,KSH):
+	       CVS_RSH=/usr/local/bin/ssh
+	       export CVS_RSH=/usr/local/bin/ssh
+
 Step 2:  Decide where you want XSB to live. Let's assume you want it to
 	 live in ~/projects
 
@@ -201,17 +208,30 @@ NOTE: modules provide a convenient way of grouping files and directories
 Step 4: Working with the checked out version.
 --------------------------------------------
 
-    You can build, modify, etc. your checked out version as you please.
-    Periodically, people will be checking their changes into the main
-    repository. To update your copy, you can cd to ~/projects/XSB
-    and type:
+    First, after checking out a copy, please run something like this:
 
+	   chmod 644 *.O */*.O */*/*.O */*/*/*.O
+
+    to make all .O files writable. Otherwise, you might get an error
+    of the kind "File doesn't exist or isn't writable, can't tell"
+    from XSB. This is because all files are checked out read-only, and XSB
+    would fail to write to such .O files when it needs to.
+
+    The reason why all files are checked out read-only is explained at the
+    end (the section about monitoring who edits which files).
+
+    After you checked out a copy of XSB (or some of its CVS modules) you
+    can configure it, modify, etc., as you please.  Periodically, people
+    will be checking their changes into the main repository. To sunchronize
+    your copy with the repository, you can type:
+    
+	cd ~/projects/XSB
 	cvs update 
-    or
+    or, if you only want to synchronize specific directories, type:
+
+	cd ~/projects/XSB
         cvs update <specific-dirs>
 
-    Both should be run in ~/projects/XSB and will update either
-    everything or the specific directories you indicated.
     You don't need to specify the repository, because (if you do it in
     ~/projects/XSB), CVS will figure out which repository should be used.
 
