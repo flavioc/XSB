@@ -396,6 +396,7 @@ load_oms :- load_oms('').
 /* TLS 03/03 added init_oms_rels, as loading an internal OMS may
    need to incorporate new changes to the OMS in the rels */
 load_oms(odbc(Server,Name,Passwd)) :- !,
+	retractall_oms_facts,
 	load_db_schema(Server,Name,Passwd),
 	load_db_data(Server,Name,Passwd),
 	oms_initialize_ctrs,
@@ -404,10 +405,25 @@ load_oms(Dir) :-
 	%init_ext_dynamic,		
 	% included since OMS may be init'd by load_oms/1 or oms_init_all/0
 	oms_fix_dir(Dir,DirS),
+	retractall_oms_facts,
 	dir_load_dync(DirS,schema_oms),
 	dir_load_dync(DirS,data_oms),
 	oms_initialize_ctrs,
 	init_oms_rels.
+
+% need to retract previous facts
+% otherwise if such facts do not exist
+% in newly loaded OMS they will not be retracted by load_dync
+retractall_oms_facts:-
+	retractall(oms_cn(_,_,_,_)),
+	retractall(oms_sc(_,_)),
+	retractall(oms_rln(_,_,_)),
+	retractall(oms_schrel(_,_,_)),
+	retractall(oms_strel(_,_,_)),
+	retractall(oms_obj(_,_,_,_)),
+	retractall(oms_mo(_,_)),
+	retractall(oms_at(_,_,_)),
+	retractall(oms_ao(_,_,_)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(merge_omsext/0, "@tt{mergeomsext}: translates in-memory
