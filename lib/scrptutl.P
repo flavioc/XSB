@@ -26,13 +26,6 @@
 :- compiler_options([xpp_on, sysmod]).
 #include "char_defs.h"
 
-%% This is very slow because of spawning a process and tokenizing.
-%% Should be done in C using time(3) and localtime(2).
-date(date(Y,Mon,D,H,Min,S)):-
-	shell('date "+%Y %b %d %k %M %S"', none, FromDate, none, _ErrCode),
-	file_to_list(FromDate, [[Y,M_in,D,H,Min,S]]),
-	file_close(FromDate),
-	month(M_in,Mon).
 
 :- dynamic '_$_$_file_to_list'/1.
 %% Convert file into a list of lists of tokens
@@ -57,19 +50,6 @@ file_to_list(File, List) :-
 	    ),
 	    retractall('_$_$_file_to_list'(_))
 	).
-
-month('Jan',1).
-month('Feb',2).
-month('Mar',3).
-month('Apr',4).
-month('May',5).
-month('Jun',6).
-month('Jul',7).
-month('Aug',8).
-month('Sep',9).
-month('Oct',10).
-month('Nov',11).
-month('Dec',12).
 
 % Utilities.
 %aton(Atom,Number):-
@@ -116,6 +96,10 @@ ca_1('',[]):- !.
 ca_1(H,[H]):- atom(H).
 
 %% The stuff below is marked as obsolete!!
+
+date(date(Y,Mon,D,H,Min,S)):-
+	obsolete('date/1','datime/1'),
+	datime(datime(Y,Mon,D,H,Min,S)).
 
 % Crude but effective.  Returns stdout of a unix command as a list of
 % tokens. Obsolete!

@@ -32,8 +32,7 @@
 	   sysin/2.
 
 :- import retractall/1, assert/1, (dynamic)/1 from assert.
-:- import file_read_line_list/2, file_close/1 from file_io.
-:- import shell/5 from shell.
+:- import file_read_line_list/2 from file_io.
 
 :- import concat_atom/3 from string.
 :- import close/1, name/2, see/1, get0/1, open/3, atom/1, arg/3, functor/3,
@@ -44,3 +43,4 @@
 :- import xsb_configuration/2 from xsb_configuration.
 
 :- import obsolete/2 from obsolete.
+:- import datime/1 from standard.
