@@ -1,0 +1,117 @@
+/* File:      smodelops.P
+** Author(s): Luis Castro
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+smInit(NumAtoms,Atoms) :-
+	smodelsInit,
+	smodelsNumAtoms(NumAtoms),
+	smInit0(Atoms).
+
+smInit0([]).
+smInit0([Atom|LAtoms]) :-
+	smodelsAtomName(Atom),
+	smInit0(LAtoms).
+
+smAddRule(Atoms,Head,Pos,Neg) :-
+	smodelsBeginBasicRule,
+	ith(NHead,Atoms,Head),
+	smodelsAddHead(NHead),
+	smAddPositives(Atoms,Pos),
+	smAddNegatives(Atoms,Neg),
+	smodelsEndRule.
+
+smAddPositives(_,[]).
+smAddPositives(Atoms,[Pos|LPos]) :-
+	ith(NPos,Atoms,Pos),
+	smodelsAddPosBody(NPos),
+	smAddPositives(Atoms,LPos).
+
+smAddNegatives(_,[]). 
+smAddNegatives(Atoms,[Neg|LNeg]) :-
+	ith(NNeg,Atoms,Neg),
+	smodelsAddNegBody(NNeg),
+	smAddNegatives(Atoms,LNeg).
+
+smCommitProgram :-
+	smodelsCommitRules.
+
+smCompute :-
+	smodelsExistsModel(Var),
+	Var =\= 0.
+
+smReturnModel(Atoms,Model) :-
+	smRetMod(Atoms,1,Model).
+
+smRetMod([],_,[]) :- !.
+smRetMod([Atom|LAtoms],NAtom,Model) :-
+	smodelsCheckAtom(NAtom,Var),
+	NLAtoms is NAtom + 1,
+	(Var = 0 ->
+	    smRetMod(LAtoms,NLAtoms,Model)
+	;
+	    smRetMod(LAtoms,NLAtoms,MModel),
+	    Model = [Atom|MModel]).
+
+smEnd :-
+	smodelsClose.
+
+%% Interface without naming the terms
+smInit(NumAtoms) :-
+	smodelsInit,
+	smodelsNumAtoms(NumAtoms).
+
+smAddRule(Head,Pos,Neg) :-
+	smodelsBeginBasicRule,
+	smodelsAddHead(Head),
+	smAddPositives(Pos),
+	smAddNegatives(Neg),
+	smodelsEndRule.
+
+smAddPositives([]).
+smAddPositives([Pos|LPos]) :-
+	smodelsAddPosBody(Pos),
+	smAddPositives(LPos).
+
+smAddNegatives([]).
+smAddNegatives([Neg|LNeg]) :-
+	smodelsAddNegBody(Neg),
+	smAddNegatives(LNeg).
+
+smGetModel(0,[]) :- !.
+smGetModel(NumAtom,Model) :-
+	smodelsCheckAtom(NumAtom,Var),
+	NAtom is NumAtom - 1,
+	(Var = 0 ->
+	    smGetModel(NAtom,Model)
+	;
+	    smGetModel(NAtom,MModel),
+	    Model = [NumAtom|MModel]).
+
+
+
+
+
+
+
+
