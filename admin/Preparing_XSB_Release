@@ -21,22 +21,12 @@ NOTE: Autoconf must be installed.
 
    Make whatever is needed to include the XSB documentation.
 
-   Tar up or zip these directories:
+   Add these directories to the tarball:
        
        Windows:
 	   config/x86-pc-windows
        DOS:
 	   config/x86-pc-pcdos
-       ALL:
-	   emu
-	   etc
-	   lib
-	   syslib
-	   cmplib
-	   packages
-	   examples
-	   build
-	   doc?????????
 
 2. Unix:
 
@@ -45,9 +35,20 @@ NOTE: Autoconf must be installed.
 
    NOTE: don't run ./configure! Unix users must run it by themselves!
 
-   Make whatever is needed to include the XSB documentation.
+3. ALL:
 
-   Tar up these directories:
+   Make sure all Prolog files have been compiled:
+
+   cd <top XSB dir>
+   make
+
+
+4. ALL:
+
+   Make whatever is needed to include the XSB documentation:
+       doc?????????
+
+   Tar up these directories (in addition to those indicated above):
 
        emu
        etc
@@ -57,14 +58,11 @@ NOTE: Autoconf must be installed.
        packages
        examples
        build
-       doc?????????
 
-3. ALL:
+   Add these top level files to the tarball:
 
-   These top level files must be included in the Tar file:
-
-   FAQ
-   INSTALL*
-   LICENSE
-   README
+       FAQ
+       INSTALL*
+       LICENSE
+       README
 

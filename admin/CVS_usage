@@ -231,6 +231,10 @@ NOTE: modules provide a convenient way of grouping files and directories
 Step 4: Working with the checked out version.
 --------------------------------------------
 
+    *** The first thing after checking out an XSB version, you must cd to
+	the top XSB directory and run `make'. This will ensure that all
+	files .O have been compiled!
+
     After you checked out a copy of XSB (or some of its CVS modules) you
     can configure it, modify, etc., as you please.  Periodically, people
     will be checking their changes into the main repository. To sunchronize
@@ -360,6 +364,8 @@ Alternatively, you can tag specific directories:
 
 NOTE: using tags can be your life-line, if you mess up your local copy!
       You simply do a checkout with the tag you trust!
+
+THEREFORE: you should tag ONLY the versions that DO run properly!!!
         
 
 Branching out development versions
@@ -427,30 +433,27 @@ As I mentioned above, to run tests, you check out the CVS module xsbtests.
 There are several things to look out for, though. (I don't know why this
 happens, but it does.)
 
-    1. I recommend to run make in the syslib directories before
-	running the testsuite.
-	What I noticed is that sometimes (usually on Linux), some test in
-	the testsuite recompiles syslib/tables.P with a wrong compiler option.
-	Then your testsuite would fail.
-	This seems to be some problem with getting the right file
-	modification time for tables.O. Although David has largely fixed
-	this timing problem, it still shows its ugly face sometimes.
+    1. When you check out or cvs-update the test suite, always touch the .O 
+       files:
+		touch *.O */*.O 
 
-    2. For some reason, the test suite always fails when I run it
-	immediately after the checkout. The second time I do this, the
-	testsuite passes. Again, I don't know what causes this.
-	It might be a timing problem with some file, or it could be that I
-	didn't include certain data files in the cleaned up version of the
-	suite. 
+       Otherwise, the testsuite would fail.
+       The reason is that when you check out the test suite, some .O files
+       might get copied before the .P files (in fact, this seems to be
+       happening to most .O files).
+       As a result, the .O files will be older than .P files, and they will 
+       get recompiled when you run the test suite.
+       Trouble is that some of these files must be compiled with special
+       compilation options, and "consult" doesn't know about it.
+       So, the affected .P files will either be compiled incorrectly or
+       won't get compiled at all.
 
-    3. On top of this, there seems to be a bug in some tests or in XSB.
+    2. On top of this, there seems to be a bug in some tests or in XSB.
        When you run sem16 on Linux, the test fails. If you configure XSB
        with --enable-debug, then the test passes with a warning that the
        program cuts across tabled predicates.
        This bug doesn't seem to affect Solaris.
 
-If somebody figures out the causes of anyone of these problems, please
-fix them.
 
 
 Gotchas and experience
@@ -494,8 +497,9 @@ Gotchas and experience
     remote sites: any site that has your public key will securely log you
     into that site without asking for your password.
 
-3. The checkout/commit process is fairly slow, even when using NFS.
-   This is because our NFS is slow. At home I achieve much faster speeds.
+3. The checkout/commit process is fairly slow, even when the repository and 
+   your checked out copy are on the same NFS.
+   This is primarily because the SBCS NFS is slow.
 
    For remote users, there is what you should expect:
 

@@ -63,7 +63,7 @@ shell :-
 welcome_msg :- nl,
       write('FLIP Version '), package_configuration(version(flip), I),
       write(I), writeln(' loaded.'),
-      writeln('*** `help.'' displays help;  `rundemo(demoName).'' runs demos in'),
+      writeln('`help.'' displays help;  `rundemo(demoName).'' runs demos in'),
       slash(Slash),
       package_configuration(dir(flip), FlipDir),
       fmt_write_string(DemoDir, '       %s%sdemos', f(FlipDir,Slash)),

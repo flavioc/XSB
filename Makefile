@@ -1,5 +1,5 @@
-## File:      packages/Makefile
-## Author(s): kifer (adapted from lib/Makefile)
+## File:      Makefile
+## Author(s): kifer
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
 ## Copyright (C) The Research Foundation of SUNY, 1998
@@ -23,54 +23,22 @@
 ##
 
 
-ALL = 	flip.O slx.O perlmatch.O
+SUBDIR = syslib lib cmplib packages
 
-SUBDIR = flip slx perlmatch
+all: $(SUBDIR)
 
-Option = [optimize]
-
-#-----------------------------------------------------------------------#
-#
-# Self-make: Version 1.4.1
-#
-XSB=../bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000
-#
-#-----------------------------------------------------------------------#
-
-# continue to the next when one error occurs
-.IGNORE:
-
-# suffix rules
-.SUFFIXES: .P .O .H
-
-.H.P:
-	echo 'mc($*, $(Option)).' >> cmd...
-
-.P.O:
-	echo 'mc($*, $(Option)).' >> cmd...
-
-
-all: $(ALL) $(SUBDIR)
-	echo 'statistics.' >> cmd...
-	$(Prolog) < cmd...
-	/bin/rm cmd...
-
-slx::
+syslib::
 	echo ""
-	cd slx; make
+	cd syslib; make
 
-flip::
+lib::
 	echo ""
-	cd flip; make
+	cd lib; make
 
-perlmatch::
+cmplib::
 	echo ""
-	cd perlmatch; make
+	cd cmplib; make
 
-
-# Unfortunately, this needs to be commented on the NeXT.
-# %.O:	%.H
-
-.DONE:
-	echo Done
+packages::
+	echo ""
+	cd packages; make
