@@ -9,6 +9,28 @@
 
 <hr>
 <center>
+<h1> Release Notes for Version 2.2</h1></center>
+
+<h3> General</h3>
+
+<h3>News</h3>
+
+<h3>New Packages</h3>
+
+<h3>Backward Incompatibility</h3>
+
+<ul>
+<li>
+    The C calls <tt>xsb_query_string_string</tt> and <tt>xsb_next_string</tt>
+    that interface C programs to XSB now use the new <tt>VarString</tt> data
+    type instead of <tt>char*</tt>. 
+    It is no longer necessary to pass the size of the buffer to these
+    functions. See XSB Manual, Volume 2, to learn more about the
+    variable-length string data type.
+</ul>
+
+<hr>
+<center>
 <h1> Release Notes for Version 2.1</h1></center>
 
 <h3> General</h3>
