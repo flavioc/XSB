@@ -96,7 +96,6 @@ Cell proceed_inst;
 extern double realtime_count;
 extern pw reloc_table[];
 
-/* jf: to init stat. structs */
 extern void perproc_reset_stat(void), reset_stat_total(void); 
 
 /* these three are from self_orientation.c */
@@ -180,7 +179,7 @@ char *init_para(int argc, char *argv[])
 
 
   flags[STACK_REALLOC] = TRUE;
-  flags[GARBAGE_COLLECT] = SLIDING_GC;  /* sliding made default */
+  flags[GARBAGE_COLLECT] = COPYING_GC;  /* temporarily copying made default */
 
   /* Set default Prolog files.
      ------------------------- */
@@ -532,7 +531,7 @@ void init_machine(void)
      /\
      openreg  |
      complstack.high
-     ---------------------------------------------------------------------	*/
+     --------------------------------------------------------------------- */
 
   /* Initialize Registers
      -------------------- */
@@ -546,21 +545,24 @@ void init_machine(void)
 
   *(ereg-1) = (Cell) cpreg;
 
-  trreg	 = (CPtr *)(tcpstack.low);
+  trreg	= (CPtr *)(tcpstack.low);
   *(trreg) = (CPtr) trreg;
-
-  /* Place a base choice point frame on the CP Stack.
-     ------------------------------------------------ */
-  breg	 = (CPtr)(tcpstack.high) - CP_SIZE;
-  cp_pcreg(breg) = (pb) &halt_inst; 	  /* halt on last failure */
-  cp_ebreg(breg) = ebreg;		  /* need for cut.  */
-  cp_hreg(breg) = hreg;		 	  /* need for cut.  */
-  cp_trreg(breg) = trreg;            	  /* need for cut.  */
-  cp_prevbreg(breg) = breg;      	  /* need for cut.  */
 
   reset_freeze_registers;
   openreg = ((CPtr) complstack.high);
   delayreg = NULL;
+
+  /* Place a base choice point frame on the CP Stack: this choice point
+     is needed for cut -- make sure you initialize all its fields.
+     ------------------------------------------------------------------ */
+  breg = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_pcreg(breg) = (pb) &halt_inst; 	  /* halt on last failure */
+  cp_ebreg(breg) = ebreg;
+  cp_hreg(breg) = hreg;
+  cp_trreg(breg) = trreg;
+  cp_ereg(breg) = ereg;
+  cp_prevbreg(breg) = breg;               /* note ! */
+  cp_pdreg(breg) = delayreg;
 
 
   /* Other basic initializations
