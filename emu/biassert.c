@@ -663,10 +663,6 @@ int assert_code_to_buff(/* Clause, Size */)
     Head = p2p_arg(Clause, 1);
     Body = p2p_arg(Clause, 2);
     if (isstring(Body)) {
-      if (isnil(Body)) {
-	fprintf(stderr,"***Error: [] cannot be body of assert\n");
-	return FALSE;
-      }
       sym = insert(string_val(Body),0,(Psc)flags[CURRENT_MODULE],&v);
       Body = makecs(hreg);
       new_heap_functor(hreg,sym->psc_ptr);
