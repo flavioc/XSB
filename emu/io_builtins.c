@@ -371,10 +371,12 @@ bool file_read_line(void)
   FILE *file=fileptr(filedes);
 
   /* MAXBUFSIZE-1, because fgets addts '\0' at the end */
-  if (fgets(buf, MAXBUFSIZE, file) == NULL)
+  if (fgets(buf, MAXBUFSIZE, file) == NULL) {
     return FALSE;
-  else {
-    ctop_string(2, buf);
+  } else {
+    /* the need to string-find(intern) the string was introduced only recently
+       by somebody */
+    ctop_string(2, string_find(buf,1));
     if (buf[(strlen(buf)-1)] == '\n')
       ctop_int(3, 1); /* full line */
     else ctop_int(3, 0); /* partial line */

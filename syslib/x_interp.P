@@ -172,10 +172,11 @@ readl_brklp1 :-
 version_message :-
 	file_nl(2),
 	slash(Slash),
-	xsb_configuration(config_dir, ConfigDir),
-	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(ConfigDir,Slash)),
+	%% xsb_configuration(etcdir, EtcDir),
+	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(EtcDir,Slash)),
 	%% print_file_contents(CopyingMsg),
 	%% file_nl(2),
+	xsb_configuration(config_dir, ConfigDir),
 	fmt_write_string(ConfMsg, '%s%sbanner.msg', f(ConfigDir,Slash)),
 	print_file_contents(ConfMsg).
 
