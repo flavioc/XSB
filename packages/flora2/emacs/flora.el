@@ -352,7 +352,7 @@ This assumes that the point is inside a comment."
 	  (end-of-flora-clause)
 	  (or (bobp) (forward-char -1))
 	  (cond ((looking-at "[,(;]")
-		 (if (and more (looking-at "[^,]"))
+		 (if (and more (looking-at "[^,;]"))
 		     (+ ind flora-indent-width) ;More indentation
 		   (max tab-width ind))) ;Same indentation
 		((looking-at "-") tab-width) ;TAB

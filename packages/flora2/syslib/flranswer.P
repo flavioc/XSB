@@ -54,6 +54,7 @@
 
 :- import
 	flora_stdfdbk_string/2,
+	flora_stdfdbk_string/1,
 	flora_stdfdbk_nl/0,
 	flora_stdfdbk_line/1
    from flrprint.
@@ -78,7 +79,12 @@ fllibshellans(Gs,NVs) :-
 
 /********************************************************************/
 fllibprogramans(Gs,NVs) :-
+	flora_switch(all),
+	!,
 	flora_print_all(Gs,NVs).
+
+fllibprogramans(Gs,NVs) :-
+	flora_print_one(Gs,NVs).
 
 
 /********************************************************************
@@ -95,21 +101,21 @@ flora_print_all(Gs,NVs) :-
 	  cputime(T1),
 	  T is T1-T0,
 	  length(L,N),
-	  ( N == 0 ->
-	      flora_write_No
+	  ( N == 0 -> flora_write_No
 	  ;
-	    flora_write_matches(L),
-	    ( flora_switch(chatter) ->
-		flora_stdfdbk_string("\n%d solution(s) in %S seconds",args(N,T)),
+	      flora_write_matches(L),
+	      ( flora_switch(chatter) ->
+		flora_stdfdbk_string("\n%d solution(s) in %S seconds",
+				     args(N,T)),
 	        (  windows_os, flora_stdfdbk_nl, !
 		;
 		   flora_stdfdbk_string(' on '),
 		   shell(hostname,block,STDFDBK,block,_)
 		)
-	    ;
-	      true
-	    ),
-	    flora_write_Yes
+	      ;
+		  true
+	      ),
+	      flora_write_Yes
 	  )
 	),
 	storage_reclaim_space.

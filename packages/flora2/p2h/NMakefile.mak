@@ -3,11 +3,6 @@
 XSBDIR=..\..\..
 MYPROGRAM=prolog2hilog
 
-!IF "$(OS)" == "Windows_NT"
-NULL=
-!ELSE 
-NULL=nul
-!ENDIF 
 
 CPP=cl.exe
 OUTDIR=.
@@ -20,8 +15,6 @@ CLEAN :
 	-@erase "$(INTDIR)\$(MYPROGRAM).dll"
 	-@erase "$(INTDIR)\$(MYPROGRAM).exp"
 
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "$(XSBDIR)\config\x86-pc-windows" \
 		 /I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" \
