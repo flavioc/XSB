@@ -123,13 +123,13 @@ int sys_syscall(int callno)
   case SYS_access: {
     switch(*ptoc_string(4)) {
     case 'r': /* read permission */
-      result = access(ptoc_string(3), R_OK);
+      result = access(ptoc_string(3), R_OK_XSB);
       break;
     case 'w': /* write permission */
-      result = access(ptoc_string(3), W_OK);
+      result = access(ptoc_string(3), W_OK_XSB);
       break;
     case 'x': /* execute permission */
-      result = access(ptoc_string(3), X_OK);
+      result = access(ptoc_string(3), X_OK_XSB);
       break;
     default:
       result = -1;

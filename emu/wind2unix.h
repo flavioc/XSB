@@ -32,14 +32,20 @@
 #endif
 
 #ifndef R_OK
-#define R_OK 4
+#define R_OK_XSB 4
+#else
+#define R_OK_XSB R_OK
 #endif
 #ifndef W_OK
-#define W_OK 2
+#define W_OK_XSB 2
+#else
+#define W_OK_XSB W_OK
 #endif
 /* On NT this just tests for existence rather than execution */
 #ifndef X_OK
-#define X_OK 0
+#define X_OK_XSB 0
+#else
+#define X_OK_XSB X_OK
 #endif
 
 #ifdef WIN_NT
