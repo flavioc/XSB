@@ -172,14 +172,14 @@ flload(File) :-
 		consult(File)
 
 	      ;
-	        fmt_write_string(Msg,'%s does NOT exist !',f(File)),
+	        fmt_write_string(Msg,'%s does NOT exist!',f(File)),
 		displayln, displayln_errmsg(Msg),
 		fail
 	    )
 
 	  ; E \= '' ->
 	    displayln,
-	    displayln_errmsg('file extension must be flr, P or O !'),
+	    displayln_errmsg('file extension must be flr, P or O!'),
 	    fail
 
 	  ;
@@ -205,7 +205,7 @@ flload(File) :-
 			consult(OFile,[optimize,spec_repr])
 
 		      ;
-		        fmt_write_string(Msg,'%s does NOT exist !',f(File)),
+		        fmt_write_string(Msg,'%s does NOT exist!',f(File)),
 		        displayln, displayln_errmsg(Msg),
 			fail
 		    )
@@ -229,7 +229,7 @@ dynload(File) :-
 		load_dyn(File)
 
 	      ;
-	        fmt_write_string(Msg,'%s does NOT exist !',f(File)),
+	        fmt_write_string(Msg,'%s does NOT exist!',f(File)),
 		displayln, displayln_errmsg(Msg),
 		fail
 	    )
@@ -254,7 +254,7 @@ dynload(File) :-
 		    load_dyn(PFile)
 
 		  ;
-		    fmt_write_string(Msg,'%s does NOT exist !',f(File)),
+		    fmt_write_string(Msg,'%s does NOT exist!',f(File)),
 		    displayln, displayln_errmsg(Msg),		    
 		    fail
 		)
@@ -281,7 +281,7 @@ dynload(File) :-
 	( not file_exists(FlrFile) ->
 	    displayln, flora_errheader,
 	    display(FlrFile),
-	    displayln(' does NOT exist !'),
+	    displayln(' does NOT exist!'),
 	    fail
 
 	  ;
@@ -772,7 +772,7 @@ flora_directives([H|T],Opts) :-
 
 flora_directives(_,_) :-
 	displayln,
-	displayln_errmsg('compiler directive must be a LIST of options !'),
+	displayln_errmsg('compiler directive must be a LIST of options!'),
 	fail.
 
 flora_directive(eqlevel(N)) :- 0 =< N, N =< 1, !.
