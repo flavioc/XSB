@@ -53,7 +53,7 @@ extern TIFptr get_tip(Psc);
 /* Include these so that the Gnu C Compiler does not complain */
 static void dis_data(void);
 static void dis_text(void);
-static void dis_data_sub(Pair *);
+static void dis_data_sub(Pair *, char *);
 
 void dis(xsbBool distext)
 {  
@@ -76,54 +76,60 @@ static void dis_data(void)
 	   psc_ptr = (*temp_ptr)->psc_ptr;
 	   modname = get_name(psc_ptr);
 	   if (get_type(psc_ptr))	/* 00000100 */
-	        fprintf(filedes, "/* module %s : LOADED. */\n\n", modname);
-	   else fprintf(filedes, "/* module %s : UNLOADED. */\n\n", modname);
+	     fprintf(filedes, "module('%s',loaded).\n",modname);
+	   else 
+	     fprintf(filedes, "module('%s', unloaded).\n", modname);
 	   if (strcmp(modname,"global")==0)
 	   	for(i=0; i < (int)symbol_table.size; i++) {
 		  if ( symbol_table.table[i] ) {
-		    fprintf(filedes, "... ... BUCKET NO. %d\n", i);
-		    dis_data_sub((Pair *)(symbol_table.table + i));
+/* 		    fprintf(filedes, "... ... BUCKET NO. %d\n", i); */
+		    dis_data_sub((Pair *)(symbol_table.table + i),modname);
 		  }
 		}
 	   else if (strcmp(modname,"usermod")==0) 
-		fprintf(filedes, "\t/* Same as module global */\n");
-	   else dis_data_sub((Pair *)&get_data(psc_ptr));
+	     fprintf(filedes, "equiv(usermod,global).\n");
+	   else 
+	     dis_data_sub((Pair *)&get_data(psc_ptr),modname);
 	   fprintf(filedes, "\n");
 	   temp_ptr = &((*temp_ptr)->next);
 	}
 }
 
-static void dis_data_sub(Pair *chain_ptr)
+static void dis_data_sub(Pair *chain_ptr, char* modname)
 {
    Psc temp;
 
    while (*chain_ptr) {
 	temp = (*chain_ptr)->psc_ptr;
-	fprintf(filedes, "%p: ", temp);
+	fprintf(filedes,"entry('%s',",modname);
+	fprintf(filedes, "%p,", temp);
 	fflush(filedes);
-	fprintf(filedes, "%s", get_name(temp));
-	fprintf(filedes, "/%d,\t", get_arity(temp));
+	fprintf(filedes, "'%s'", get_name(temp));
+	fprintf(filedes, "/%d,", get_arity(temp));
 	switch(get_type(temp)) {
-	    case T_PRED: fprintf(filedes, "PRED,\t"); break;
-	    case T_DYNA: fprintf(filedes, "DYNA,\t"); break;
-	    case T_ORDI: fprintf(filedes, "ORDI,\t"); break;
-	    case T_FILE: fprintf(filedes, "FILE,\t"); break;
-	    case T_MODU: fprintf(filedes, "MODU,\t"); break;
-	    case T_FORN: fprintf(filedes, "FORN,\t"); break;
-	    case T_UDEF: fprintf(filedes, "UDEF,\t"); break;
-	    default:	 fprintf(filedes, "????"); break;
+	    case T_PRED: fprintf(filedes, "'PRED',"); break;
+	    case T_DYNA: fprintf(filedes, "'DYNA',"); break;
+	    case T_ORDI: fprintf(filedes, "'ORDI',"); break;
+	    case T_FILE: fprintf(filedes, "'FILE',"); break;
+	    case T_MODU: fprintf(filedes, "'MODU',"); break;
+	    case T_FORN: fprintf(filedes, "'FORN',"); break;
+	    case T_UDEF: fprintf(filedes, "'UDEF',"); break;
+	    default:	 fprintf(filedes, "'????',"); break;
 	}
 	switch(get_env(temp)) {
-	    case T_VISIBLE:  fprintf(filedes, "VISIBLE, "); break;
-	    case T_HIDDEN:   fprintf(filedes, "HIDDEN, "); break;
-	    case T_UNLOADED: fprintf(filedes, "UNLOADED, "); break;
-	    default:	     fprintf(filedes, "(error env), "); break;
+	    case T_VISIBLE:  fprintf(filedes, "'VISIBLE',"); break;
+	    case T_HIDDEN:   fprintf(filedes, "'HIDDEN',"); break;
+	    case T_UNLOADED: fprintf(filedes, "'UNLOADED',"); break;
+	    default:	     fprintf(filedes, "error_env,"); break;
 	}
 	if (get_type(temp) == T_PRED) {
-	  if (get_tip(temp) == NULL) fprintf(filedes, "UNTABLED, "); 
-	  else fprintf(filedes, "TABLED, ");
-	}
-	fprintf(filedes, "%p\n", get_ep(temp));  /* dsw ???? */
+	  if (get_tip(temp) == NULL) 
+	    fprintf(filedes, "'UNTABLED',"); 
+	  else 
+	    fprintf(filedes, "'TABLED',");
+	} else
+	  fprintf(filedes, "'n/a',");
+	fprintf(filedes, "%p).\n", get_ep(temp));  /* dsw ???? */
 	chain_ptr = &((*chain_ptr)->next);
    } /* while */
 }
@@ -136,31 +142,33 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
     Psc psc;
 
     loc_pcreg = (CPtr) inst_ptr;
-    fprintf(fd,"%p\t", loc_pcreg);
+    fprintf(fd,"     inst("),
+    fprintf(fd,"%p, ", loc_pcreg);
     instr = cell(loc_pcreg++) ;
 /* We want the instruction string printed out below.  
  * Someday we should ANSI-fy it. 
  */
-    fprintf(fd, (char *)inst_table[cell_opcode(&instr)][0]);
+    fprintf(fd, "%s",(char *)inst_table[cell_opcode(&instr)][0]);
     a = 1 ; /* current operand */
     for (i=1; i<=4; i++) {
 	switch (inst_table[cell_opcode(&instr)][i]) {
 	 case A:
 	   if (cell_opcode(&instr) == (byte) builtin) {
 	     a++;
-	     fprintf(fd, "\t%d\t(", cell_operand3(&instr));
-	     fprintf(fd, (char *)builtin_table[cell_operand3(&instr)][0]);
-	     fprintf(fd, ")");
-	   } else fprintf(fd, "\t%d", cell_operandn(&instr,a++));
+	     fprintf(fd, ", '%d'", cell_operand3(&instr));
+	     fprintf(fd, ", %s", 
+		     (char *)builtin_table[cell_operand3(&instr)][0]);
+	   } else 
+	     fprintf(fd, ", %d", cell_operandn(&instr,a++));
 	   break;
 	 case V:
-	   fprintf(fd, "\tv%d", cell_operandn(&instr,a++));
+	   fprintf(fd, ", %d", cell_operandn(&instr,a++));
 	   break;
 	 case R:
-	   fprintf(fd, "\tr%d", cell_operandn(&instr,a++));
+	   fprintf(fd, ", r%d", cell_operandn(&instr,a++));
 	   break;
 	 case T:
-	   fprintf(fd, "\t%lx", cell(loc_pcreg++));
+	   fprintf(fd, ", %lx", cell(loc_pcreg++));
 	   break;
 	 case P:
 	   a++;
@@ -168,28 +176,28 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	 case S:
 	   if (cell_opcode(&instr) == (byte) call ||
 	       cell_opcode(&instr) == (byte) execute) {
-	     fprintf(fd, "\t0x%lx", *loc_pcreg);
+	     fprintf(fd, ", 0x%lx", *loc_pcreg);
 	     psc = (Psc) cell(loc_pcreg++);
-	     fprintf(fd,"\t(%s/%d)", get_name(psc), get_arity(psc));
+	     fprintf(fd,", '%s'/%d", get_name(psc), get_arity(psc));
 	   }
 	   else
-	     fprintf(fd, "\t0x%lx", cell(loc_pcreg++));
+	     fprintf(fd, ", 0x%lx", cell(loc_pcreg++));
 	   break;
 	 case C:
 	 case L:
 	 case G:
-	   fprintf(fd, "\t0x%lx", cell(loc_pcreg++));
+	   fprintf(fd, ", 0x%lx", cell(loc_pcreg++));
 	   break;
 	 case I:
 	 case N:
-	   fprintf(fd, "\t%ld", cell(loc_pcreg++));
+	   fprintf(fd, ", %ld", cell(loc_pcreg++));
 	   break;
 	 case B:
-	   fprintf(fd, "\t%ld", (long) int_val(cell(loc_pcreg)));
+	   fprintf(fd, ", %ld", (long) int_val(cell(loc_pcreg)));
 	   loc_pcreg++;
 	   break;
 	 case F:
-	   fprintf(fd, "\t%f", float_val(cell(loc_pcreg)));
+	   fprintf(fd, ", %f", float_val(cell(loc_pcreg)));
 	   loc_pcreg++;
 	   break;
 	 case PP:
@@ -198,12 +206,12 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	 case PPP:
 	   break;
 	 case PPR:
-	   fprintf(fd, "\tr%d", cell_operand3(&instr));
+	   fprintf(fd, ", r%d", cell_operand3(&instr));
 	   break;
 	 case RRR:
-	   fprintf(fd, "\tr%d", cell_operand1(&instr));
-	   fprintf(fd, "\tr%d", cell_operand2(&instr));
-	   fprintf(fd, "\tr%d", cell_operand3(&instr));
+	   fprintf(fd, ", r%d", cell_operand1(&instr));
+	   fprintf(fd, ", r%d", cell_operand2(&instr));
+	   fprintf(fd, ", r%d", cell_operand3(&instr));
 	   break;
 	 case X:
 	   break;
@@ -213,7 +221,7 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	/*if (cell_opcode(&instr) == noop) loc_pcreg += 2 * *(loc_pcreg-1); */
 	if (cell_opcode(&instr) == noop) loc_pcreg += cell_operand3(&instr)/2; /* ?!@% */
     } /* for */
-    fprintf(fd, "\n");
+    fprintf(fd, ").\n");
     fflush(fd);
     return loc_pcreg;
 } /* print_inst */
@@ -224,11 +232,12 @@ static void dis_text(void)
    pseg   this_seg;
    pindex index_seg ;
    CPtr   endaddr, inst_addr2 ;
+   int comma;
 
    fprintf(filedes, "\n/*text below\t\t*/\n\n");
    this_seg = (pseg) inst_begin;
    while (this_seg) {		/* repeat for all text segment */
-      fprintf(filedes, "\nNew segment below \n\n");
+      fprintf(filedes, "segment([\n");
       endaddr = (CPtr) ((pb) seg_hdr(this_seg) + seg_size(this_seg)) ;
       inst_addr2 = seg_text(this_seg);
       while (inst_addr2<endaddr) inst_addr2 = print_inst(filedes, inst_addr2);
@@ -243,15 +252,24 @@ static void dis_text(void)
 	  while (inst_addr2<endaddr) 
 	    inst_addr2 = print_inst(filedes, inst_addr2);
 	} else {					/* is hash table */
-	  fprintf(filedes, "hash table.... \n");
+	  fprintf(filedes, "hash_table([\n");
+	  comma = 0;
 	  while (inst_addr2<endaddr) {
-	    fprintf(filedes, "%p:    %lx\n", inst_addr2, cell(inst_addr2));
+	    if (comma) {
+	      fprintf(filedes, ", \n");
+	    }
+	    comma = 1;
+	    fprintf(filedes, 
+		    "     hash_entry(%p,%lx)", 
+		    inst_addr2, 
+		    cell(inst_addr2));
 	    inst_addr2 ++;
 	  }
-	  fprintf(filedes, "    end.... \n");
+	  fprintf(filedes, "]).\n");
 	}
 	index_seg = i_next(index_seg);
       }
+      fprintf(filedes, "]).\n");
       this_seg = seg_next(this_seg);
    }  
 }
