@@ -32,7 +32,7 @@ CLOSURE = ../closure
 
 HEADERINC = ../headerinc
 
-INCLUDES = ../includes
+GENINCLUDES = ../genincludes
 
 ALLOBJS = standard.P \
 	  eqlbasic.P \
@@ -80,33 +80,33 @@ eqlflogic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
 	@echo 'flsetuptrailer(flogic).' >> cmd...
 
 
-patch.P : $(INCLUDES)/flrpatch.flh $(HEADERINC)/flrheader_inc.flh \
+patch.P : $(GENINCLUDES)/flrpatch.flh $(HEADERINC)/flrheader_inc.flh \
           $(HEADERINC)/flrdefinition_inc.flh
 	@echo 'flsetuppatch.' >> cmd...
 
 
-$(CLOSURE)/flrdbdyn.flh : $(CLOSURE)/flrdbdyn.fli $(CLOSURE)/flrpred.fli
+$(CLOSURE)/flrdbdyn.flh : $(CLOSURE)/flrdbdyn.fli $(CLOSURE)/includes/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrcommon.flh : $(CLOSURE)/flrcommon.fli $(CLOSURE)/flrpred.fli
+$(CLOSURE)/flrcommon.flh : $(CLOSURE)/flrcommon.fli $(CLOSURE)/includes/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrtrailer.flh : $(CLOSURE)/flrtrailer.fli $(CLOSURE)/flrpred.fli
+$(CLOSURE)/flrtrailer.flh : $(CLOSURE)/flrtrailer.fli $(CLOSURE)/includes/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flreqltrailer.flh : $(CLOSURE)/flreqltrailer.fli $(CLOSURE)/flrpred.fli
+$(CLOSURE)/flreqltrailer.flh : $(CLOSURE)/flreqltrailer.fli $(CLOSURE)/includes/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrscalareql.flh : $(CLOSURE)/flrscalareql.fli $(CLOSURE)/flrpred.fli
+$(CLOSURE)/flrscalareql.flh : $(CLOSURE)/flrscalareql.fli $(CLOSURE)/includes/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(INCLUDES)/flrpatch.flh : $(INCLUDES)/flrpatch.fli $(FLORA_TERMS)
-	@cd $(INCLUDES); make
+$(GENINCLUDES)/flrpatch.flh : $(GENINCLUDES)/flrpatch.fli $(FLORA_TERMS)
+	@cd $(GENINCLUDES); make
 
 
 init:
