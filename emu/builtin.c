@@ -343,22 +343,31 @@ Cell  val_to_hash(Cell term)
 
 static int ground(CPtr temp)
 {
-  int j, flag = 1;
-
   cptr_deref(temp);
   switch(cell_tag(temp)) {
-  case FREE: case REF1: case ATTV:
+  case FREE: 
+  case REF1: 
+  case ATTV:
     return FALSE;
-  case STRING: case INT: case FLOAT:
+  case STRING: 
+  case INT: 
+  case FLOAT:
     return TRUE;
   case LIST:
-    flag = flag * ground(clref_val(temp));
-    return flag * ground(clref_val(temp)+1);
-  case CS:
-    for (j=1; j <= (int)get_arity(get_str_psc(temp)) ; j++) {
-      flag = flag * ground(clref_val(temp)+j);
+    {
+      int flag;
+      flag = ground(clref_val(temp));
+      flag = flag & ground(clref_val(temp)+1);
+      return flag;
     }
-    return flag;
+  case CS:
+    {
+      int j, arity, flag=1;
+      arity = (int) get_arity(get_str_psc(temp));
+      for (j=1; j <= arity ; j++) 
+	flag = flag & ground(clref_val(temp)+j);
+      return flag;
+    }
   default:
     xsb_abort("In ground/1: Term with unknown tag (%d)",
 	      (int)cell_tag(temp));
@@ -398,35 +407,43 @@ static CPtr *mini_trail_top;
 
 static int is_most_general_term(Cell term)
 {
-  register Cell addr;
-  CPtr taddr;
-  int i;
-  Psc psc;
-
   deref(term);
-  if (isstring(term)) {
+  switch (cell_tag(term)) {
+  case STRING:
     return TRUE;
-  } else if (isconstr(term)) {
-    mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
-    psc = get_str_psc(term);
-    taddr = clref_val(term);
-    for (i = 1; i <= (int)get_arity(psc); ++i) {
-      addr = cell(taddr+i);
-      deref(addr);
-      if (isnonvar(addr)) {
-	mini_undo_bindings;
-	return FALSE;
-      } else {
-	mini_bind_variable(addr);
+  case CS:
+    {
+      Psc psc;
+      CPtr taddr;
+      int i, arity;
+      register Cell addr;
+
+      mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
+      psc = get_str_psc(term);
+      taddr = clref_val(term);
+      arity = (int) get_arity(psc);
+
+      for (i = 1; i <= arity ; ++i) {
+	addr = cell(taddr+i);
+	deref(addr);
+	if (isnonvar(addr)) {
+	  mini_undo_bindings;
+	  return FALSE;
+	} else {
+	  mini_bind_variable(addr);
+	}
       }
+      mini_undo_bindings;
+      return TRUE;
     }
-    mini_undo_bindings;
-    return TRUE;
-  } else if (islist(term)) {
-    mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
-    while (islist(term)) {
-      addr = cell(clref_val(term));
-      deref(addr);
+  case LIST:
+    {
+      register Cell addr;
+
+      mini_trail_top = (CPtr *) (& mini_trail[0]) -1;
+      while (islist(term)) {
+	addr = cell(clref_val(term));
+	deref(addr);
 	if (isnonvar(addr)) {
 	  mini_undo_bindings;
 	  return FALSE;
@@ -435,10 +452,13 @@ static int is_most_general_term(Cell term)
 	  term = cell(clref_val(term)+1);
 	  deref(term);
 	}
+      }
+      mini_undo_bindings;
+      return isnil(term);
     }
-    mini_undo_bindings;
-    return isnil(term);
-  } else return FALSE;
+  default:
+    return FALSE;
+  }
 }
 
 /* --------------------------------------------------------------------	*/
