@@ -53,7 +53,7 @@ flora_prettyprint_class(Class) :-
 	flora_pp_immediate_superclasses(Class),
     	flora_prettyprint(Class),
 	X : Class,
-	X[],  %% to ground X, if non-ground
+	ground(X),  %% to ground X, if non-ground
 	flora_prettyprint(X),
 	fail.
 
