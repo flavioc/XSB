@@ -30,7 +30,7 @@
 	  delete_return/2,
 	  get_call/3, get_calls/3, get_returns/2, get_returns/3,
 	  get_residual/2,
-	  get_lastnode_cs_retskel/3, /* because it is used in intern.P */
+	  get_lastnode_cs_retskel/4, /* because it is used in intern.P */
 	  force_truth_value/2.
 
 :- export (trie_dynamic)/1, trie_assert/1, trie_assert/2,

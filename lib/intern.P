@@ -28,7 +28,7 @@
 	  trie_unintern_nr/2, unmark_uninterned_nr/2.
 
 :- import integer/1, abort/1 from standard.
-:- import get_lastnode_cs_retskel/3 from tables.
+:- import get_lastnode_cs_retskel/4 from tables.
 
 
 % the i_ predicates are internal!
@@ -53,7 +53,7 @@ trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
 
 trie_intern(Term,Root,Leaf,Flag,Skel) :-
 	i_trie_intern(Term,Root,Leaf,Flag),
-	get_lastnode_cs_retskel(_,_,Skel1), Skel = Skel1.
+	get_lastnode_cs_retskel(_,_,_,Skel1), Skel = Skel1.
 
 /*--------------------------------------------------
  version where flag is ignored 
@@ -86,14 +86,14 @@ Leaf Parameters are incorrect)
 trie_interned(Term,Root,Leaf,Skel) :-
 	var(Leaf),
 	i_trie_interned(Term,Root,Leaf),
-	get_lastnode_cs_retskel(Leaf,_,Skel1),
+	get_lastnode_cs_retskel(_,Leaf,_,Skel1),
 	Skel1 = Skel.
 
 trie_interned(Term,Root,Leaf,Skel) :-
 	integer(Leaf),
 	bottom_up_unify(Term1,Root,Leaf),
 	Term1 = Term,
-	get_lastnode_cs_retskel(_,_,Skel1),
+	get_lastnode_cs_retskel(_,_,_,Skel1),
 	Skel1 = Skel.
 
 /* --------------------------------------------------
