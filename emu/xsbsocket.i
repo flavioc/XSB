@@ -41,6 +41,28 @@
 
 #include "xsbsocket.h"
 
+char *get_host_IP(char *host_name_or_IP) {
+  struct hostent *host_struct;
+  struct in_addr *ptr;
+
+  char **listptr;
+
+  /* if host_name_or_IP is an IP addr, then just return; 
+     else use gethostbyname */
+  if (IS_IP_ADDR(host_name_or_IP))
+    return(host_name_or_IP);
+  host_struct = gethostbyname(host_name_or_IP);
+  
+  listptr = host_struct->h_addr_list;
+
+  if ((ptr = (struct in_addr *) *listptr++) != NULL) {
+	  fprintf(stderr," Int. address: %s \n", inet_ntoa(*ptr));
+	  return(inet_ntoa(*ptr));
+  }
+  return NULL;
+}
+
+
 int readmsg(SOCKET sockfd, char *buff, int maxbuff)
 {
   int n, rc;
@@ -166,7 +188,7 @@ inline static bool xsb_socket_request(void)
     FillWithZeros(socket_addr);
     socket_addr.sin_port = htons(portnum);
     socket_addr.sin_family = AF_INET;
-    socket_addr.sin_addr.s_addr = inet_addr(ptoc_string(5));
+    socket_addr.sin_addr.s_addr = inet_addr(get_host_IP(ptoc_string(5)));
     
 #ifdef WIN_NT
     retcode = connect(sockfd, (PSOCKADDR) &socket_addr, sizeof(socket_addr));

@@ -1050,14 +1050,14 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 
 
 /* Take a FILE pointer and return an XSB stream, an index into the XSB table of
-   open files */
+   open files; return -1, if too many open files. */
 int xsb_intern_file(FILE *fptr, char *context)
 {
   int i;
   for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
   if (i == MAX_OPEN_FILES) {
     xsb_warn("%s: Too many open files", context);
-    return FALSE;
+    return -1;
   } else 
     open_files[i] = fptr;
   return i;
