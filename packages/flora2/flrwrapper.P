@@ -235,3 +235,23 @@ flora_is_general_predicate(Funct,WS) :-
 *****************************************************************************/
 flora_storage_name(WS,Name) :-
 	fmt_write_string(Name,"%s'%s",args(FLORA_STORAGE_PREFIX,WS)).
+
+
+/*****************************************************************************
+  flora_classify_functor(+Functor, -Type, -Workspace, -Basename, -ArgList)
+  Type: hilog, florapred, prolog, flogic
+*****************************************************************************/
+flora_classify_call(Call,Type,Basename,ArgList,Workspace) :-
+	Call =.. [Funct|PrelimArgList],
+	!,
+	(flora_flogic_predicate(Funct,Workspace,_Pos,Basename)
+	-> Type = flogic, ArgList = PrelimArgList
+	; flora_hilog_predicate(Funct,Workspace)
+	-> Type = hilog, PrelimArgList = [Basename | ArgList]
+	; flora_nohilog_predicate(Funct,Basename,Workspace)
+	-> Type = florapred, ArgList = PrelimArgList
+	; Type = prolog, Basename = Funct, ArgList = PrelimArgList
+	  %% Workspace stays uninstantiated
+	),
+	!.
+

@@ -48,6 +48,7 @@
 	flora_flogic_predicate/4,
 	flora_hilog_predicate/2,
 	flora_nohilog_predicate/3,
+	flora_classify_call/5,
 	flora_wspredicate/4,
 	flora_is_general_predicate/2,
 	flora_storage_name/2.
