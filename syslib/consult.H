@@ -25,7 +25,7 @@
 
 
 :- export consult/1, consult/2, '.'/2, reconsult/1, reconsult/2,
-	  compile/1, compile/2,
+	  compile/1, compile/2, real_search_module/4,
 	  load_dyn/1, load_dync/1, read_canonical/1,
 	  ensure_dyn_loaded/1, ensure_dync_loaded/1,
 	  cvt_canonical/2.
