@@ -748,29 +748,29 @@ trans_goals('\+'(A), not(Goal1), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
 trans_goals(fail_if(A), not(Goal1), SymTab, VidIn, VidOut) :- !, 
 	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
-trans_goals(once(A), Goal, SymTab, VidIn, VidOut) :- !, % optimize once/1
-	trans_goals((A->true), Goal, SymTab, VidIn, VidOut).
+trans_goals(once(A), if(Goal1, Goal2), SymTab, VidIn, VidOut) :- !, % optimize once(A) to A->B
+	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
+	trans_goal(true, Goal2, SymTab, VidMed, VidOut).
 trans_goals(T, Goal, SymTab, VidIn, VidOut) :-
 	trans_goal(T, Goal, SymTab, VidIn, VidOut).
 
 trans_goal(Term, Goal, SymTab, VidIn, VidOut) :-
-	(Term = Mod:Term1, atom(Mod)
+	(Term = Mod:Term1, atom(Mod), nonvar(Term1)
 	 ->	functor(Term1, P, A),
 		Goal = goal(Sym, ArgList),
 		(sym_insert(P,A,[],SymTab,Sym),sym_prop(im(Mod),Sym)
 		 ->	true
 		 ;	sym_insert(Mod:P, A, [im(Mod)], SymTab, Sym)
 		),
-		prolog_arglist(Term1, RawArgs, A, A),
-		trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut)
+		Term1 =.. [P|RawArgs]
 	 ;	functor(Term, P, A),
 		(inline_predicate(P, A)
 		 ->	Goal = inlinegoal(P, A, ArgList)
 		 ;	Goal = goal(Sym, ArgList), sym_insert(P, A, _Prop, SymTab, Sym)
 		),
-		prolog_arglist(Term, RawArgs, A, A),
-		trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut)
-	).
+		Term =.. [P|RawArgs]
+	),
+	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
 	 
 trans_head(Term, goal(_Sym, ArgList), SymTab, VidIn, VidOut) :-
 	Term =.. [_|RawArgs],
@@ -798,7 +798,7 @@ trans_arg(RawArg, constant(Sym), SymTab, VidIn, VidIn) :- atom(RawArg), !,
 	sym_insert(RawArg, 0, _Prop, SymTab, Sym).
 trans_arg(RawArg, structure(Sym, ArgList), SymTab, VidIn, VidOut) :-
 	functor(RawArg, N, A),
-	prolog_arglist(RawArg, RawArgs, A, A),
+	RawArg =.. [N|RawArgs],
 	sym_insert(N, A, _Prop, SymTab, Sym),
 	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
 

@@ -46,7 +46,7 @@
 	  add_new_clause/2, clause_listify/2
      from symtab.
 :- import functor/3, seen/0, file_exists/1, '=..'/2, atom/1, integer/1, 
-	  op/3, (index)/3, real/1, see/1, expand_term/2, prolog_arglist/4,
+	  op/3, (index)/3, real/1, see/1, expand_term/2, (=..)/2,
   name/2, seeing/1, is_most_general_term/1, number/1
      from standard.
 :- import retract/1, retractall/1, assert/1, (dynamic)/1 from assert.
