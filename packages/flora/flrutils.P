@@ -646,7 +646,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		Status=failure,
 		displayln, display('++ '), display(NewCount),
 		displayln(' error(s) found'),
-		display('++aborted due to end of file'), displayln
+		display('++compilation aborted'), displayln
 	    )
 
 	  ;
@@ -675,7 +675,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		    Status=failure,
 		    displayln, display('++'), display(ErrorCount),
 		    displayln(' error(s) found'),
-		    display('++aborted due to end of file'),
+		    display('++compilation aborted'),
 		    displayln 
 		)
 	      ;

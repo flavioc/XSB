@@ -599,6 +599,8 @@ set_arrow(A)	   --> [atom('$-'),atom('$>>')], {flora_word(mvd,A)}, !.
 set_arrow(A)       --> [atom('$*'),atom('$-'),atom('$>>')], {flora_word(imvd,A)}, !.
 signature_arrow(A) --> [atom('$=>')], {flora_word(fs,A)}, !.
 signature_arrow(A) --> [atom('$=>>')], {flora_word(mvs,A)}, !.
+signature_arrow(A) --> [atom('$*=>')], {flora_word(ifs,A)}, !.
+signature_arrow(A) --> [atom('$*=>>')], {flora_word(imvs,A)}, !.
 
 
 /**************************************************************/
