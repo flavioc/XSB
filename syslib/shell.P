@@ -73,13 +73,21 @@ is_plain_file(File) :- sys_system(IS_PLAIN_FILE, File,_,_,_,_,_).
 is_directory(File) :- sys_system(IS_DIRECTORY, File,_,_,_,_,_).
 
 
-cd(Path) :- 
-	( atom(Path) -> 
-		expand_filename(Path, Dir), sys_chdir(Dir, Res), Res=:=0
-	; var(Path) ->
-		abort('Uninstantiated argument 1 of cd/1')
-	; abort('Wrong type in argument 1 of cd/1')
+cd(Path) :-
+	(   var(Path)
+	->  abort('Uninstantiated argument 1 of cd/1')
+	;   (   expand_filename(Path,Dir)
+	    ->	sys_chdir(Dir,Res),
+		Res =:= 0
+	    ;	abort('Wrong type in argument 1 of cd/1')
+	    )
 	).
+% 	( (atom(Path); is_list(Path)) -> 
+% 		expand_filename(Path, Dir), sys_chdir(Dir, Res), Res=:=0
+% 	; var(Path) ->
+% 		abort('Uninstantiated argument 1 of cd/1')
+% 	; abort('Wrong type in argument 1 of cd/1')
+% 	).
 
 rename(Old, New) :- sys_rename(Old, New, Res), Res =:= 0.
 
