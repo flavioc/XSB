@@ -32,7 +32,9 @@
 :- import abort/1, put_code/1, nl/0, write/1, writeq/1, print/1,
 	write_canonical/1, write/1, current_output/1, integer/1, 'C'/3,
 	atom/1, atom_codes/2, set_output/1,xsb_configuration/2,
-	is_list/1 from usermod. 
+	is_list/1 from usermod.
+
+:- import (\=)/2 from standard.
 
 % TLS: need to put catch in interpreter.
 throw(X):- abort(X).
@@ -655,7 +657,7 @@ preproc_newlines_list1([H|T],[H1|T1]):-
 preproc_newlines(H,T):- 
 	xsb_configuration(host_os,Type),
 	(Type == windows ->
-	    (	atom(H)
+	    (	atom(H), H \= []
 	    ->	atom_codes(H,H1)
 	    ;	H1 = H
 	    ),
