@@ -413,17 +413,11 @@ case resume_compl_suspension:
     ptcpreg = csf_ptcp(breg);
     delayreg = csf_pdreg(breg);
     neg_delay = csf_neg_loop(breg);
-    /* not really sure whether the following two lines are needed */
- /*   ebreg = csf_ebreg(breg);
-    hbreg = csf_hreg(breg); */
     restore_some_wamregs(breg, ereg); /* this also restores cpreg */
     chat_area = (chat_init_pheader)csf_chat_area(breg);
     chat_restore_compl_susp_trail(chat_area); /* the chat area is freed here */
     if ((chat_area = (chat_init_pheader)csf_prevcsf(breg)) != NULL) {
       chat_update_compl_susp(chat_area);
-#ifdef CHAT_DEBUG
-      fprintf(stderr, "INSTALLED THE NEXT COMPL_SUSP here...\n");
-#endif
     } else {
       breg = csf_prev(breg);  /* forget this CP; simulates Fail1 */
     }
