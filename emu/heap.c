@@ -508,13 +508,12 @@ static inline int mark_region(CPtr beginp, CPtr endp)
 static int mark_query(void)
 {
   int yvar, i, total_marked = 0 ;
-  CPtr b,e,*tr,h,a,d, trailed_cell ;
+  CPtr b,e,*tr,a,d, trailed_cell ;
   byte *cp;
 
   b = breg ;
   e = ereg ;
   tr = trreg ;
-  h = hreg ;
   cp = cpreg ;
 
   while (1)
@@ -2439,9 +2438,11 @@ int gc_heap(int arity)
 
 #ifdef GC
   CPtr p;
-  int  begin_marktime, end_marktime,
-       begin_slidetime, end_slidetime,
-       begin_copy_time, end_copy_time;
+  int  begin_marktime,
+#ifdef VERBOSE_GC
+    end_marktime, begin_slidetime, begin_copy_time,
+#endif
+    end_slidetime, end_copy_time;
   int  marked = 0, marked_dregs = 0, i;
 
   if (flags[GARBAGE_COLLECT] != NO_GC) {
@@ -2485,7 +2486,9 @@ int gc_heap(int arity)
 
     marked = mark_heap(arity, &marked_dregs) ;
 
+#ifdef VERBOSE_GC
     end_marktime = 1000*cpu_time() ;
+#endif
 
     if (fragmentation_only)
       {
@@ -2517,7 +2520,9 @@ int gc_heap(int arity)
     total_collected -= marked;
     if (slide)
       {
+#ifdef VERBOSE_GC
 	begin_slidetime = end_marktime;
+#endif
 	hreg = slide_heap(marked) ;
 	if (hreg != (heap_bot+marked))
 	  fprintf(stderr,"heap sliding gc - inconsistent hreg\n");
@@ -2564,7 +2569,9 @@ int gc_heap(int arity)
       { /* else we call the copying collector a la Cheney */
 	CPtr begin_new_heap, end_new_heap;
 
+#ifdef VERBOSE_GC
 	begin_copy_time = end_marktime;
+#endif
 	begin_new_heap = (CPtr)malloc(marked*sizeof(Cell));
 	if (begin_new_heap == NULL)
 	  xsb_exit("copying garbage collection could not allocate new heap");

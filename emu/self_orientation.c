@@ -223,6 +223,8 @@ char *xsb_executable_full_path(char *myname)
   fprintf(stderr,
 	  "*************************************************************\n");
   exit(1);
+  /* This return is needed just to pacify the compiler */
+  return FALSE;
 }
 
 void set_install_dir() {

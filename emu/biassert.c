@@ -2161,7 +2161,9 @@ int trie_assert(void)
   Cell Clause;
   Psc  psc;
   CPtr Prref;
+#ifdef DEBUG_T
   int  Arity;
+#endif
   CPtr Trie_Asserted_Clref = NULL;
   NODEptr inst_node_ptr;
   int  found = 1;
@@ -2169,10 +2171,10 @@ int trie_assert(void)
 
   Clause = reg_term(1);
   psc    = (Psc)ptoc_int(2);
-  Arity  = ptoc_int(3);
   Prref  = (CPtr)ptoc_int(4);
 
 #ifdef DEBUG_T
+  Arity  = ptoc_int(3);
   printf("Prref bytes\n");
   print_bytes(Prref,-2,2);
   printf("Clause :");

@@ -186,7 +186,7 @@ inline static bool file_function(void)
       ctop_int(4, -1000);
     }
     break;
-  case FILE_CLOSE: /* file_function(5, +FileName) */
+  case FILE_CLOSE: /* file_function(5, +FileDes) */
     file_des = ptoc_int(2);
     if (file_des < 0) strclose(file_des);
     else {
