@@ -521,8 +521,8 @@ classify_arg(Id,Upd1,Upd):-
 	  ; functor(Id,F,_),
 	    classification_type(F,Sup),
 	    Upd1 = [isa_ext(Id,Sup)|Updmid]),
-	  arg(1,Id,Nid),
-	   (structure(Nid) -> 
+	  cdf_id_fields(Id,_,Nid,Comp),
+	   (Comp \== cdfpt,structure(Nid) -> 
 	       Nid =.. [_|L],
 	       classify_if_necessary_list(L,Updmid,Upd)
 	     ; Updmid = Upd).
