@@ -122,43 +122,102 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 4. Asserting Flora rules.
 
    Proposal:
-      - Allow assertion only into modules that are declared as 
-        :- dynamicmodule
-	(in the file loaded into that module).
+      - Add new update predicates like:
+	    insertrule{rule,module,front/back}
+	    deleterule{rule,module}
 
-      - The dynamicmodule directive should tell the compiler that only
-	directives are allowed in that paticular file.
+        Rules will have exactly the same syntax as Flora currently has.
+	Insertion into flora(...) and prolog()/prolog(...) should not be
+	allowed.
+	Should check if the module we are inserting into already exists.
+	By the way, we should make sure that the current predicates
+	insert{...}, insertall{...}, etc., verify if the module they are
+	inserting into already exists.
 
-      - The rules connecting the storage tries (the patch rules)
-        of the form
+	We won't have backtrackable rule updates for now.
 
-	  p(X) :- storage_find_fact(p(X),_).
 
-	for firstorder predicates, hilog and F-logic wrappers must be
-	asserted into the dynamic modules (but the trailer can be compiled
-	and appended).
+      - Add executable
+		newmodule{modulename,trailertype}
+        (Or should it be called flNewModule(...) and look like a regular
+        predicate?)
+        Should check if the module already exists.
+	Trailer type can later be changed by the executable directive
+	?- equality none/basic/flogic.
 
-	For the Flora rules we don't need to change the translation much.
-	We assert
-	   derived_fd'foo(X,Y,Z) :- ....
-	We should also add to the trailer (of the dynamic modules) the 
-	appropriate declarations of the form
-	   :- dynamic derived_fd'foo/3.
-	   .....
-	Since these predicates occur only in the rule bodies in the
-	trailer, we are safe from clashes with static predicates.
+	Do we need
+	        deletemodule{...}?
 
-	To enable the current parser parse the rules inside
-	insert{...} correctly, we have to change the compiler so it would
-	undertand that :- is a special
-	predicate and its first argument is the rule head. So, things must
-	be translated differently there.
-	Right now if we have
-	:- arguments p(meta).
-	p(a[b->c]) :- ...
-	then a[b->c] is translated as defived_fd, so the compiler treats
-	meta in the rule head differently. We should extend this treatment
-	to the predicate ':-'.
+	Could be useful, especially if XSB implements garbage collection
+	for atoms, since this would allow collection of atoms from large
+	datasets that are no longer used.
+
+
+      - Translation:
+	  We will add two new kinds of wrappers: assertedA_* and assertedZ_*.
+	  For F-logic wrappers fd/mvd/... we add additional rules to
+	  flrcommon.fli:
+	        :- dynamic assertedA_fd/3, assertedZ_fd/3.
+
+		inferred_fd(X,Y,Z) :- assertedA_fd(X,Y,Z).
+		... rules connecting inferred_* to derived_* ...
+		inferred_fd(X,Y,Z) :- assertedZ_fd(X,Y,Z).
+
+	  When insertrule{rule,module,front} is used, we implement it with
+	  asserta/1. The call insertrule{rule,module,back} is implemented
+	  with assertz. This way we will be able to insert rules to the
+	  front and the end of the rules set.
+
+	  Insede insertrule/deleterule, the coder should make sure that the
+	  head of a predicate is translated using asserted[AZ]_* wrappers,
+	  while in the body it would use the regular d_* wrappers.
+
+      - For rules with HiLog predicates in the head, we also need another
+        trailer file in the closure/ directory to hold the rules:
+
+	        :- dynamic assertedA_HILOG_WRAP/1, assertedZ_HILOG_WRAP/1,
+		   assertedA_HILOG_WRAP/2, assertedZ_HILOG_WRAP/2,
+		   ....
+
+	To make the front/back insertion work right, I think we have to add
+	another wrapper for HiLog, derived_flapply, and change the
+	translation so that the rule heads would contain derived_flapply.
+	So the trailer might look like:
+
+                HILOG_WRAP(X) :- assertedA_HILOG_WRAP(X).
+                HILOG_WRAP(X) :- derived_HILOG_WRAP(X).
+                HILOG_WRAP(X) :- assertedZ_HILOG_WRAP(X).
+                HILOG_WRAP(X,Y) :- assertedA_HILOG_WRAP(X,Y).
+                HILOG_WRAP(X,Y) :- derived_HILOG_WRAP(X,Y).
+                HILOG_WRAP(X,Y) :- assertedZ_HILOG_WRAP(X,Y).
+
+	Since we won't need to load the HiLog trailer more than once, we
+	probably don't need the inferredHILOG_WRAP.
+
+
+      - For rules with first order predicates in the head, things seem to
+        be much harder. We need something similar to HiLog predicates, but
+        there is a distinction between the case where we insert
+
+		  p(...) :- ...
+
+        and the module already has a static rule p(...) :- ...
+	and the case when it doesn't.
+	a. If the module has a static rule p(...) :- ...
+	   then the compiler can generate the rules
+
+	         p(...) :- assertedA_p(...)
+	         p(...) :- derived_p(...)               (*)
+	         p(...) :- assertedZ_p(...)
+
+	   similarly to the way we generate the patch rules. (Again, we should
+	   change the translation so that firstorder predicates in the head
+	   are translated into derived_p(...) and those in the body into
+	   p(...).
+	b. If the module doesn't have static rules with p(...) in the head,
+	   then rules of the form (*) above will have to be generated
+	   *and* asserted, except that we don't need the middle rule, which
+	   handles static rules that have p(...) in the head.
 
 
 5. Metaprogramming
@@ -308,14 +367,18 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
 
     or from implicit declarations, which come from calls like p(...)@foo.
 
+    HiLOg declarations are always implicit.  HiLog predicate symbols are
+    collected at compile time and their declarations are inserted in the
+    registry.
+
     The "in module" version declares it for the given module, and the
     version without "in module" does it for the module in which this
     declaration occurs.
 
-    A registry record is inserted whenever there is one of
-    the above explicit declarations or when a module has a call p(...)@foo.
-    (We won't be trying to catch anything like X(...)@foo, because it is
-    not clear what to catch there).
+    A registry record is inserted whenever there is one of the above
+    explicit or implicit declarations.  (We won't be trying to catch
+    anything like X(...)@foo, because it is not clear what can be caught
+    there at reasonable price).
 
     The global registry contains declarations like these:
 
@@ -324,20 +387,14 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
 
     When a new module is loaded, we should check if there are conflicts,
     i.e., if the registry records it has conflict with the records that are
-    already in the registry. A conflict can be explicit or implicit.
-    Explicit conflict is of the form
+    already in the registry. For instance, if we have
 
       FLORA_PREFIX'symbol_declaration(p/2,foo,_,hilog)
       FLORA_PREFIX'symbol_declaration(p/2,foo,_,firstorder)
 
-    Implicit conflict arises when we load module foo, which has no
-    declarations for p/2 (so it is hilog), and the registry already has
+    and we are loading a module with the declaration
 
       FLORA_PREFIX'symbol_declaration(p/2,foo,_,firstorder)
-
-    Implicit conflict also arises when a module, foo, is loaded, doesn't
-    have declarations for a symbol, p/2 (so it is hilog), and another module,
-    bar, is loaded later and has a declaration :- firstorder p/2 in foo.
 
     Also, when a module, foo, is reloaded (i.e., another program is loaded into
     that module), we should first wipe out the declarations inserted by the

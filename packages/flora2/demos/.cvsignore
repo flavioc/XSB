@@ -1,4 +1,5 @@
 *.xwam
+*.O
 *.P
 cmd...
 *.fdb
