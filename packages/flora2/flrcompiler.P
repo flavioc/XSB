@@ -845,14 +845,19 @@ compile_direct(DirectTerm,[],[]) :-
 compile_direct(DirectTerm,[Code],[]) :-
 	is_flpredicate(DirectTerm,P,N),
 	flora_define_nohilog(P,N),
-	%% Generate the patch rule.
-	atomobj_struct(P,PCode),
-	new_varobjlist(N,ArgsCode),
-	termlit_struct(PCode,N,ArgsCode,HCode),
-	thismodule_struct(WS),
-	storage_struct(WS,SCode),
-	prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
-	rule_struct(HCode,BCode,Code),
+	%% Check if it is a flPredicateAll.
+	( (var(P); var(N)) ->
+	    true
+	;
+	  %% Generate the patch rule.
+	  atomobj_struct(P,PCode),
+	  new_varobjlist(N,ArgsCode),
+	  termlit_struct(PCode,N,ArgsCode,HCode),
+	  thismodule_struct(WS),
+	  storage_struct(WS,SCode),
+	  prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
+	  rule_struct(HCode,BCode,Code)
+	),
 	!.
 
 compile_direct(DirectTerm,[],[]) :-

@@ -483,6 +483,7 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	; flora_import_directive(CanoniTerm,CodeList,Status)
 	; flora_prolog_directive(CanoniTerm,CodeList,Status)
 	; flora_nonhilogpredicate_directive(CanoniTerm,CodeList,Status)
+	; flora_nonhilogpredicateall_directive(CanoniTerm,CodeList,Status)
 	; flora_predicate_directive(CanoniTerm,CodeList,Status)
 	; flora_signature_directive(CanoniTerm,CodeList,Status)
 	; flora_table_directive(CanoniTerm,CodeList,Status)
@@ -763,6 +764,15 @@ flora_predicate_directlist([F/A|L],[Code|CL]) :-
 	!,
 	flpredicatedirect_struct(F,A,Code),
 	flora_predicate_directlist(L,CL).
+
+
+/****************************************************************************
+  flora_nonhilogpredicateall_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_nonhilogpredicateall_directive(CanoniTerm,[Code],[]) :-
+	get_name(CanoniTerm,FL_NONHILOGPREDICATEALL),
+	flpredicatedirect_struct(_Funct,_Arity,Code).
+
 
 
 /****************************************************************************

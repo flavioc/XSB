@@ -170,6 +170,7 @@
 #define FL_PROLOGALL		flPrologAll
 #define FL_PLIB			prologlib
 #define FL_NONHILOGPREDICATE	flNonHilogPredicate
+#define FL_NONHILOGPREDICATEALL	flNonHilogPredicateAll
 #define FL_PREDICATE		flPredicate
 #define FL_PREDICATEALL		flPredicateAll
 #define FL_HILOGTABLE		flHilogTable
