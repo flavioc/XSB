@@ -134,7 +134,7 @@ static void reclaim_edge_space(ComplStackFrame csf_ptr)
 
 /*----------------------------------------------------------------------*/
 
-static void construct_dep_graph(ComplStackFrame leader_compl_frame)
+static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
 {
     EPtr eptr;
     CPtr asf, nsf;
