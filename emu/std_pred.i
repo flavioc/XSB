@@ -175,6 +175,7 @@
 	} else { /* usage is construction; term is known to be a variable */
 	    if (islist(list)) {
 	        head = clref_val(list);
+		deref(cell(head));
 	        if (isatom(cell(head))) {
 		    if (isnil(cell(head+1))) {	/* atom construction */
 			bind_copy((CPtr)term, cell(head));
