@@ -281,7 +281,7 @@ load_pred1(PSC) :-
 		%% If predicate is undefined,
 		%% load_pred1 is expected either to abort or fail
 		%% after calling the handler
-		call_xsb_hook(xsb_undefined_predicate_hook(_),[Name,PSC],until_true) -> fail
+		call_xsb_hook(xsb_undefined_predicate_hook(_),[Name,ModName,PSC],until_true) -> fail
 		;
 		%% module loaded, but pred/foreign-pred is not there
 		abort(['The predicate: ', Name, '/', Arity,
@@ -291,7 +291,7 @@ load_pred1(PSC) :-
 	    %% If predicate is undefined,
 	    %%  load_pred1 is expected either to abort or fail
 	    %% after calling the handler
-	    call_xsb_hook(xsb_undefined_predicate_hook(_),[Name,PSC],until_true) -> fail
+	    call_xsb_hook(xsb_undefined_predicate_hook(_),[Name,usermod,PSC],until_true) -> fail
 	;   abort(['Undefined predicate: ', Name, '/', Arity])
 	).
 
