@@ -63,17 +63,17 @@ reset_dcg_mode :-
 	        assert(word([Token|Tokens],Token,Tokens))
 	).
 
-:- dynamic invalidate_table_for/1.
+:- dynamic invalidate_table_for/2.
 set_dcg_supported_table(TSkel) :-
 	table_state(TSkel,PType,_CType,_AStat),
 	PType \== undefined,
-	(clause(invalidate_table_for(word(_,_,_)), abolish_table_pred(TSkel))
+	(clause(invalidate_table_for(word(_,_,_),_), abolish_table_pred(TSkel))
 	 ->	true
-	 ;	assert((invalidate_table_for(word(_,_,_)):- abolish_table_pred(TSkel)))
+	 ;	assert((invalidate_table_for(word(_,_,_),_):- abolish_table_pred(TSkel)))
 	).
 
 tphrase_set_string_auto_abolish(List) :-
-	invalidate_tables_for(word(_,_,_)),
+	invalidate_tables_for(word(_,_,_),_),
 	tphrase_set_string_keeping_tables(List).
 
 tphrase_set_string(List) :-

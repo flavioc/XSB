@@ -36,10 +36,10 @@
 :- import xsb_flag/2 from curr_sym.
 :- import stat_set_flag/2 from machine.
 :- import assert/1, retractall/1, (dynamic)/1, clause/2 from assert.
-:- import abolish_all_tables/0, invalidate_tables_for/1, table_state/4
+:- import abolish_all_tables/0, invalidate_tables_for/2, table_state/4
 	from tables.
 :- import (:-)/2 from usermod.
-:- import invalidate_table_for/1 from usermod.
+:- import invalidate_table_for/2 from usermod.
 
 /* ----------------------- end of file dcg.H -------------------------- */
 

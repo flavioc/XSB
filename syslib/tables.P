@@ -411,11 +411,11 @@ abolish_table_pred(Spec) :-
 
 abolish_table_predicate(Predicate) :- abolish_table_predicate(Predicate).
 
-:- dynamic invalidate_table_for/1.
-invalidate_tables_for(DynSkel) :-
-	invalidate_table_for(DynSkel),
+:- dynamic invalidate_table_for/2.
+invalidate_tables_for(DynSkel,Mode) :-
+	invalidate_table_for(DynSkel,Mode),
 	fail.
-invalidate_tables_for(_DynSkel).
+invalidate_tables_for(_DynSkel,_).
 
 abolish_module_tables(_Predicate) :-
 	'_$builtin'(ABOLISH_MODULE_TABLES).

@@ -26,7 +26,7 @@
 :- export
       abolish_all_tables/0,
       abolish_table_call/1,
-      invalidate_tables_for/1,
+      invalidate_tables_for/2,
       abolish_table_pred/1,
       abolish_module_tables/1,
       delete_return/2,
@@ -75,6 +75,6 @@
 :- import numbervars/3, unnumbervars/2
      from num_vars.
 
-:- import invalidate_table_for/1 from usermod.
+:- import invalidate_table_for/2 from usermod.
 
 /* ------------------- end of file tables.H --------------------------- */
