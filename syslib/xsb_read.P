@@ -25,6 +25,7 @@
 */
 
 
+
 string_as(list).
 
 
@@ -681,19 +682,20 @@ read_record_error(List) :-
 
 read_syntax_error(List) :-
 	increase_syntax_errors,
-	file_write0(2, '*** syntax error:'),
+	file_write0(2, '*** syntax error '),
 	file_nl(2),
 	term_psc('_$synerr'(_), Psc), psc_prop(Psc, AfterError),
         l_length(List,Length),
         BeforeError is Length - AfterError,
-	file_write0(2, '                '),
+	file_write0(2, '>>>   '),
         read_display_list(List, BeforeError, Rest),
+        file_write0(2, ' <--- here? '),
 	file_nl(2),
-        file_write0(2, '*** maybe here? ^^^ '),
+        file_write0(2, '>>>   '),
+        read_display_list(Rest, AfterError, _),
 	file_nl(2),
         file_write0(2, '*** Discarding input ...  '),
 	file_nl(2),
-        read_display_list(Rest, AfterError, _),
         file_write0(2, '|| ?- '),
 	!,
 	fail.	% Force the reader not to return until 
