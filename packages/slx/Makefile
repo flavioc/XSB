@@ -1,8 +1,8 @@
-## File:      packages/slxdir/Makefile
+## File:      packages/slx/Makefile
 ## Author(s): kifer (adapted from lib/Makefile)
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
-## Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+## Copyright (C) The Research Foundation of SUNY, 1998
 ## 
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
