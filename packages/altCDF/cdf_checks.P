@@ -719,7 +719,7 @@ removeUserContext(Context):-
 
 checkType(check_types/2,term).
 checkType(cdf_check_ground/2,term).
-checkType(check_idendity/2,term).
+checkType(check_identity/2,term).
 checkType(check_implication/2,term).
 checkType(check_redundancies/2,term).
 checkType(classify_if_necessary/2,component).
