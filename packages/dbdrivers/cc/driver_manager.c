@@ -273,6 +273,7 @@ DllExport int call_conv queryConnection(void)
 	{
 		errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
 		errorMesg = errorMesgDriver();
+		errorNumber = "XSB_DBI_000";
 	}
 	return FALSE;
 }
@@ -519,7 +520,6 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
 		else if (is_var(element))
 		{
 			errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
-			errorNumber = "XSB_DBI_009";
 			return NULL;
 		}
 		sqlQueryList = p2p_cdr(sqlQueryList);
