@@ -59,18 +59,19 @@ arguments:
 ----------------------------------------------------------------------------*/
 int try_match__( void )
 {
-  SV *text=newSV(0);       /*the storage for the string in embeded Perl*/
-  SV *string_buff=newSV(0);/*the storage for the string in embeded Perl*/
-  int was_match;           /*number of the matches*/
+  SV *text;        /* the storage for the string in embedded Perl */
+  SV *string_buff; /* the storage for the string in embedded Perl */
+  int was_match;   /* number of the matches */
   char *string = ptoc_string(1),
     *pattern = ptoc_string(2);
-  
-  sv_setpv(text, string );  /*store the string in the SV */
-  
-  /* load the perl interpreter */
-  if (perlObjectStatus == UNLOADED )
-    load_perl__();
-  
+
+  /* first load the perl interpreter, if unloaded */
+  if (perlObjectStatus == UNLOADED) load_perl__();
+
+  text = newSV(0);
+  string_buff = newSV(0);
+  sv_setpv(text, string);  /* store the string in the SV */
+    
   was_match = match(text, pattern );
   
   global_pattern_mode = is_global_pattern(pattern);
@@ -119,16 +120,18 @@ argument:
 int do_bulk_match__( void )
 {
   AV *match_list;           /* AV storage of matches list*/
-  SV *text=newSV(0);        /* storage for the embeded perl cmd */
-  SV *string_buff=newSV(0); /* storage for the embedded perl cmd */
+  SV *text;                 /* storage for the embedded perl cmd */
+  SV *string_buff;          /* storage for the embedded perl cmd */
   int num_match;            /* the number of the matches */
   int i;
  
-  sv_setpv(text, ptoc_string(1) );  /*put the string into an SV */
- 
-  if (perlObjectStatus == UNLOADED) load_perl__();                   
-        /*load perl interpreter*/
+  /* first load the perl interpreter, if unloaded */
+  if (perlObjectStatus == UNLOADED) load_perl__();
 
+  text = newSV(0);
+  string_buff = newSV(0);
+  sv_setpv(text, ptoc_string(1));  /*put the string into an SV */
+ 
   /*------------------------------------------------------------------------
     free the old match list space and allocate new space for current match list
     -----------------------------------------------------------------------*/
@@ -175,16 +178,17 @@ arguments:
 ----------------------------------------------------------------------------*/
 int perl_substitute__( void )
 {
-  SV *text=newSV(0);    /* Perl representation for the string to be 
-			   modified by substitution */ 
+  SV *text;    /* Perl representation for the string to be 
+		  modified by substitution */ 
   char *subst_cmd = ptoc_string(2);
   int i;                
-
-  sv_setpv(text, ptoc_string(1) );  /*put the string to the SV */
   
-  if ( perlObjectStatus == UNLOADED ) load_perl__(); 
-  /*load perl interpreter*/
-   
+  /* first load the perl interpreter, if unloaded */
+  if (perlObjectStatus == UNLOADED) load_perl__();
+  
+  text = newSV(0);
+  sv_setpv(text, ptoc_string(1));  /* put the string to the SV */
+     
   if( !substitute(&text, subst_cmd) )
     return(FAILURE);
   
