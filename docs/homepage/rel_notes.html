@@ -19,6 +19,9 @@
 undefined predicate is encountered. This and other (previously undocumented)
 hooks are described in the chapter titled <i>Hooks</i>
 in Manual Part 1.
+<li> The <a href="http://www.cs.sunysb.edu/~lmc/">XMC Model
+Checking System</a> is now included as a package in XSB.
+<li> Local scheduling has been made the default scheduler.
 <li> Uniform interface to various file operations (chdir, isdir, readable,
 etc.) through the predicate <tt>path_sysop/2</tt> and
 <tt>path_sysop/3</tt> (in module file_io). See Manual, Part 2 (<i>Script
@@ -28,6 +31,12 @@ Utilities</i>).
 (<tt>string_match/4</tt> doesn't do pattern matching - use the
 <tt>regmatch</tt> package for that). See Manual, Part 2, (<i>String
 Manipulation</i>).
+</ul>
+<h3>Bugfixes</h3>
+<ul>
+<li>    Fixed subsumption bug prompted by certain uses of functors and
+   lists.  The bug appeared as an inability to unify a (falsely
+   identified) answer with an answer template.
 </ul>
 <h3>Backward Incompatibility</h3>
 <ul>

@@ -33,7 +33,7 @@ and <a href="http://www.uu.se/">Uppsala Universitet</a>.
 
 <li>
 <a href="http://sourceforge.net/project/showfiles.php?group_id=1176"> Download the System</a>:
-	&nbsp; Current version: 2.3, released on February 21, 2001.<img SRC="new.gif" IMG align=TOP>
+	&nbsp; Current version: 2.4, released on July 13, 2001.<img SRC="new.gif" IMG align=TOP>
 </li>
 
 <li>
