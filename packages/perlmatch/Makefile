@@ -34,7 +34,7 @@ Option = [optimize]
 # Self-make: Version 1.4.1
 #
 XSB=$(XSBDIR)/bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000
+Prolog = $(XSB)
 #
 #-----------------------------------------------------------------------#
 
