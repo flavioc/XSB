@@ -134,6 +134,7 @@ inline static bool file_function(void)
   case FILE_TRUNCATE: /* file_function(2,+filedes,+length,-ret,-dontcare) */
 #ifndef WIN_NT
     SET_FILEPTR(fptr, ptoc_int(2));
+    fseek(fptr, (long) ptoc_int(3), 0);
     value = ftruncate( fileno(fptr), (off_t) ptoc_int(3));
     ctop_int(4, (int) value);
 #else
