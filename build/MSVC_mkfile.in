@@ -168,7 +168,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\emuloop.obj"
 	-@erase "$(OBJDIR)\findall.obj"
 	-@erase "$(OBJDIR)\function.obj"
-	-@erase "$(OBJDIR)\gpp.obj" \
+	-@erase "$(OBJDIR)\gpp.obj"
 	-@erase "$(OBJDIR)\hash_xsb.obj"
 	-@erase "$(OBJDIR)\hashtable_xsb.obj"
 	-@erase "$(OBJDIR)\heap_xsb.obj"
