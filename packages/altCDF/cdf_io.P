@@ -206,6 +206,7 @@ reload_extensional(Dir):-
 	see(File),
 	abolish_cdf_tables,
 	reload_extensional,
+	seen,
 	see(OldF).
 
 reload_extensional :-
@@ -326,6 +327,7 @@ load_intensional_rules(Path,Name):-
 	(file_exists(File) -> 
    	    see(File),
 	    read_intensional_rules_1(Name),
+	    seen,
 	    see(OldF)
 	  ; existence_error(file,File,'load_intensional_rules/2',2) ).
 

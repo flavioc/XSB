@@ -782,6 +782,7 @@ reload_extensional(Dir,CPath):-
 	seeing(OldF),
 	see(File),
 	reload_extensional(CPath),
+	seen,
 	see(OldF).
 
 reload_extensional(CPath) :-
@@ -842,6 +843,7 @@ get_component_direct_dependencies(Comp,RPath,Ver,Deps) :-
 	seeing(OldF),
 	see(ExtFile),
 	findall(Dep,read_dependencies(Comp,Path,Dep),UDeps),
+	seen,
 	see(OldF),
 	sort(UDeps,Deps).
 
