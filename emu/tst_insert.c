@@ -313,7 +313,7 @@ TSTNptr tstnAddSymbol(TSTNptr parent, Cell symbol, int trieType) {
 
   TSTNptr newTSTN;
 
-  New_TSTN(newTSTN,trieType,INTERRIOR_NT,symbol,parent,NULL);
+  New_TSTN(newTSTN,trieType,INTERIOR_NT,symbol,parent,NULL);
   TSTN_Child(parent) = newTSTN;
   return newTSTN;
 }
@@ -325,7 +325,7 @@ BTNptr btnAddSymbol(BTNptr parent, Cell symbol, int trieType) {
 
   BTNptr newBTN;
 
-  New_BTN(newBTN,trieType,INTERRIOR_NT,symbol,parent,NULL);
+  New_BTN(newBTN,trieType,INTERIOR_NT,symbol,parent,NULL);
   BTN_Child(parent) = newBTN;
   return newBTN;
 }
@@ -348,7 +348,7 @@ TSTNptr tstnInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
 
 
   chain = TSTN_Child(parent);
-  New_TSTN(tstn,trieType,INTERRIOR_NT,symbol,parent,chain);
+  New_TSTN(tstn,trieType,INTERIOR_NT,symbol,parent,chain);
   TSTN_Child(parent) = tstn;
   chain_length = 1;
   while ( IsNonNULL(chain) ) {
@@ -370,7 +370,7 @@ BTNptr btnInsertSymbol(BTNptr parent, Cell symbol, int trieType) {
 
 
   chain = BTN_Child(parent);
-  New_BTN(btn,trieType,INTERRIOR_NT,symbol,parent,chain);
+  New_BTN(btn,trieType,INTERIOR_NT,symbol,parent,chain);
   BTN_Child(parent) = btn;
   chain_length = 1;
   while ( IsNonNULL(chain) ) {
@@ -403,7 +403,7 @@ TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
   ht = TSTN_GetHashHdr(parent);
   bucket = CalculateBucketForSymbol(ht,symbol);
   chain = *bucket;
-  New_TSTN(tstn,trieType,HASHED_INTERRIOR_NT,symbol,parent,chain);
+  New_TSTN(tstn,trieType,HASHED_INTERIOR_NT,symbol,parent,chain);
   *bucket = tstn;
   TSTHT_NumContents(ht)++;
   if ( maintainsTSI )
@@ -438,7 +438,7 @@ inline static  BTNptr bthtInsertSymbol(BTNptr parent, Cell symbol,
   ht = BTN_GetHashHdr(parent);
   bucket = CalculateBucketForSymbol(ht,symbol);
   chain = *bucket;
-  New_BTN(btn,trieType,HASHED_INTERRIOR_NT,symbol,parent,chain);
+  New_BTN(btn,trieType,HASHED_INTERIOR_NT,symbol,parent,chain);
   *bucket = btn;
   BTHT_NumContents(ht)++;
   chain_length = 1;

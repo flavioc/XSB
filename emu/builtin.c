@@ -746,6 +746,7 @@ void init_builtin_table(void)
   set_builtin_table(GET_DELAY_LISTS, "get_delay_lists");
 
   set_builtin_table(ABOLISH_TABLE_PREDICATE, "abolish_table_pred");
+  set_builtin_table(ABOLISH_TABLE_CALL, "abolish_table_call");
   set_builtin_table(TRIE_ASSERT, "trie_assert");
   set_builtin_table(TRIE_RETRACT, "trie_retract");
   set_builtin_table(TRIE_RETRACT_SAFE, "trie_retract_safe");
@@ -1829,6 +1830,20 @@ int builtin_call(byte number)
       xsb_abort("Illegal table operation\n\t Cannot abolish incomplete table"
 		" of predicate %s/%d", get_name(psc), get_arity(psc));
     delete_predicate_table(tif);
+    return TRUE;
+  }
+
+  case ABOLISH_TABLE_CALL: {
+    VariantSF subgoal;
+    ComplStackFrame csf;
+    TIFptr tif;
+
+    subgoal = (VariantSF) ptoc_int(1);
+    csf = (ComplStackFrame) subgoal->compl_stack_ptr;
+    tif = (TIFptr) subgoal->tif_ptr;
+    compl_subgoal_ptr(subg_compl_stack_ptr(subgoal)) = NULL;
+    reclaim_incomplete_table_structs(subgoal);
+    delete_branch(subgoal->leaf_ptr, &tif->call_trie);
     return TRUE;
   }
 

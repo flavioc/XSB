@@ -246,7 +246,7 @@ BTNptr newBasicTrie(Cell symbol, int trie_type) {
   }									\
   if ( IsNULL(LocalNodePtr) ) {						\
     Found = 0;								\
-    New_BTN(LocalNodePtr,TrieType,INTERRIOR_NT,item,Paren,wherefrom);	\
+    New_BTN(LocalNodePtr,TrieType,INTERIOR_NT,item,Paren,wherefrom);	\
     count++;								\
     wherefrom = LocalNodePtr;  /* hook the new node into the trie */	\
   }									\
@@ -295,7 +295,7 @@ BTNptr newBasicTrie(Cell symbol, int trie_type) {
    BTNptr LocalNodePtr;							\
 									\
    if ( IsNULL(*GNodePtrPtr) ) {					\
-     New_BTN(LocalNodePtr,TrieType,INTERRIOR_NT,item,Paren,NULL);	\
+     New_BTN(LocalNodePtr,TrieType,INTERIOR_NT,item,Paren,NULL);	\
      *GNodePtrPtr = Paren = LocalNodePtr;				\
      Found = 0;								\
    }									\

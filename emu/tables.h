@@ -23,10 +23,9 @@
 */
 
 
-#ifndef TABLE_DEFS
+#ifndef __TABLES_H__
 
-
-#define TABLE_DEFS
+#define __TABLES_H__
 
 
 /*===========================================================================*/

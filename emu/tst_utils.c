@@ -132,7 +132,7 @@ char *stringTrieType(byte fieldTrieType) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 char *NodeTypeStrings[] = {
-  "Interrior", "Indexed Interrior", "Leaf", "Indexed Leaf",
+  "Interior", "Indexed Interior", "Leaf", "Indexed Leaf",
   "Index Header", "--", "--", "--", "Root",
 };
 

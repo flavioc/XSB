@@ -150,7 +150,7 @@
 #define FORMATTED_IO            142
 #define TABLE_STATUS            143
 #define GET_DELAY_LISTS		144
-
+#define ABOLISH_TABLE_CALL      145
 #define ABOLISH_TABLE_PREDICATE 146
 #define TRIE_ASSERT		147
 #define TRIE_RETRACT		148

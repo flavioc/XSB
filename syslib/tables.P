@@ -390,9 +390,12 @@ abolish_table_pred(Spec) :-
 abolish_table_predicate(Predicate) :- abolish_table_predicate(Predicate).
 
 
-abolish_table_call(_Call) :- 	
-	abort('Predicate abolish_table_call/1 is not yet implemented...').
+abolish_table_call(Call) :-
+	get_calls(Call,Handle,_Template),
+	abolish_table_call_bi(Handle).
 
+abolish_table_call_bi(_Handle) :-
+	'_$builtin'(ABOLISH_TABLE_CALL).
 
 /*
  * delete_return(+TableEntryHandle,+ReturnHandle)

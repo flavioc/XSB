@@ -242,7 +242,7 @@ enum Types_of_Tries {
  *  subcomponent:
  *    3rd bit:  TrieRoot / Non-TrieRoot
  *    2nd bit:  Hash Header / Trie Node
- *    1st bit:  Leaf / Interrior
+ *    1st bit:  Leaf / Interior
  *    0th bit:  Hashed / Non-Hashed
  *  There are 6 basic types of TSCs that we wish to discriminate.
  */
@@ -252,8 +252,8 @@ enum Types_of_Trie_Nodes {
   HASH_HEADER_NT	= 0x04,   /* binary:  0100 */
   LEAF_NT		= 0x02,   /* binary:  0010 */
   HASHED_LEAF_NT	= 0x03,   /* binary:  0011 */
-  INTERRIOR_NT		= 0x00,   /* binary:  0000 */
-  HASHED_INTERRIOR_NT	= 0x01    /* binary:  0001 */
+  INTERIOR_NT		= 0x00,   /* binary:  0000 */
+  HASHED_INTERIOR_NT	= 0x01    /* binary:  0001 */
 };
 
 #define  HASHED_NODE_MASK	0x01
@@ -273,9 +273,9 @@ enum Types_of_Trie_Nodes {
 */
 
 /*
- *  From an INTERRIOR-typed node, create a LEAF-typed node, keeping
+ *  From an INTERIOR-typed node, create a LEAF-typed node, keeping
  *  the hashing status in-tact.  All nodes are assigned a status of
- *  INTERRIOR at allocation time.  Leaf status isn't known until
+ *  INTERIOR at allocation time.  Leaf status isn't known until
  *  some time afterwards.
  */
 #define MakeLeafNode(pTN)	\
@@ -283,7 +283,7 @@ enum Types_of_Trie_Nodes {
 
 /*
  *  From an unHASHED-typed node, create a HASHED-typed node, keeping the
- *  LEAF/INTERRIOR status in-tact.  Used when converting from a sibling
+ *  LEAF/INTERIOR status in-tact.  Used when converting from a sibling
  *  chain to a hash structure.
  */
 #define MakeHashedNode(pTN)	\

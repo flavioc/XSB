@@ -48,6 +48,9 @@ static inline int prolog_call0(Cell term)
       pcreg = (pb)&fail_inst;
       return FALSE;
     }
+#ifdef CP_DEBUG
+    pscreg = psc;
+#endif
     switch (get_type(psc)) {
     case T_PRED:
     case T_DYNA:
