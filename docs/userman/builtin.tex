@@ -595,12 +595,15 @@ On success, {\tt RetCode} is 0; on error, the return code is negative.
     is chopped to have the size of {\tt Length} bytes. Upon successful
     completion {\tt Return} is set to zero.
 
-\portability This predicate is not defined on Windows unless compiled
-using Cygwin.
+\portability Under Windows (including Cygwin) {\tt file\_truncate/2}
+is implemented using {\tt \_chsize()}, while on Unix {\tt ftruncate()}
+is used.  There are minor semantic differences between these two
+system calls, which are reflected by the behavior of {\tt
+file\_truncate/2} on different platforms.
 
 \ouritem{tmpfile\_open(-Stream)}\index{\texttt{tmpfile\_open/1}}
-    Opens a temporary file with a unique filename. The file is deleted when
-    it is closed or when the program terminates.
+    Opens a temporary file with a unique filename. The file is deleted
+    when it is closed or when the program terminates.
 
 \end{description}
 
