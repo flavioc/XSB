@@ -156,7 +156,7 @@ bagReduce(Template,Call,Res,Op,Id) :-
 
 bagReduce1(Templ,Call,Res,Op,Id) :-
 	'_$savecp'(Breg),
-	breg_retskel(Breg,4,Skel,Cs),
+	breg_retskel(Breg,5,Skel,Cs),
 	excess_vars(Call,Templ,[],VarList),
 	copy_term(p(Call,VarList,Templ,Res,Skel),
 		  p(OCall,VarList,OTempl,ORes,Oskel)),
