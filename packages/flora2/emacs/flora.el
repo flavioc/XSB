@@ -20,7 +20,7 @@
 
 ;;
 ;; Put
-;;   (setq auto-mode-alist (cons '("\\.flr$" . flora-mode) auto-mode-alist))
+;;   (setq auto-mode-alist (cons '("\\.fl[rih]$" . flora-mode) auto-mode-alist))
 ;;   (autoload 'flora-mode "flora" "Major mode for editing Flora programs." t)
 
 ;;; Code:
@@ -70,13 +70,13 @@
   "*Non-nil means automatically align comments when indenting.")
 
 (defconst flora-quoted-atom-regexp
-  "\\(^\\|[^0-9]\\)\\('\\([^\n']\\|\\\\'\\)*'\\)"
+  "\\(^\\|[^0-9]\\)\\('\\([^\n']\\|''\\)*'\\)"
   "Regexp matching a quoted atom.")
 (defconst flora-atom-regexp
-  "\\(%s\\|[A-Za-z0-9_]+\\)"
+  "\\([:.,()*&^$#@]\\|[A-Za-z0-9_]+\\)"
   "Regexp matching an atom.")
 (defconst flora-string-regexp
-  "\\(\"\\([^\n\"]\\|\\\\\"\\)*\"\\|'\\([^\n']\\|''\\)*'\\)"
+  "\\(\"\\([^\n\"]\\|\"\"\\)*\"\\|'\\([^\n']\\|''\\)*'\\)"
   "Regexp matching a string.")
 (defconst flora-bracketed-object "\\[.*\\]"
   "Like list. Used to prevent recursion in flora-list-regexp.")
@@ -120,7 +120,7 @@
       1 'font-lock-type-face)
     '("\\(\\[\\|\\]\\|{\\|}\\)"
       1 'bold)
-    '("\\b\\(index\\|from\\|table\\|import\\|export\\)\\b"
+    '("\\b\\(index\\|from\\|table\\|import\\|export\\|^#[a-z]\\)\\b"
       1 'flora-font-lock-system-face)
     '("\\(\\b[A-Za-z0-9_]+\\b *\\((\\b[^)]+\\b)\\)?\\)[ \t\n]*\\((.*)[ \t\C-m]*\\)?\\*?[---=]>"
       1 'font-lock-function-name-face)

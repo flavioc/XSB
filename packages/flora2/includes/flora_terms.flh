@@ -505,9 +505,13 @@
 #define FLTRAILERPREFIX		'inferred_'
 
 
+%% Length of FLFACTPREFIX
 #define FLFACTPREFIX_LEN	5
+%% Length of FLHEADPREFIX
 #define FLHEADPREFIX_LEN	8
+%% Length of FLBODYPREFIX
 #define FLBODYPREFIX_LEN	0
+%% Length of FLTRAILERPREFIX
 #define FLTRAILERPREFIX_LEN	9
 
 
