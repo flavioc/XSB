@@ -1944,7 +1944,6 @@ bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
       dbgen_inst_ppvww(tabletrysingle,Arity,(tp+3),tip,tp,&Loc) ;
       dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
       dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
-      printf("storing %p at %d\n",p,Loc);
       dbgen_inst_ppvw(calld,3,p,tp,&Loc) ; /* p is *(tp+6), see remove_prref*/
       dbgen_inst_pvv(new_answer_dealloc,Arity,2,tp,&Loc) ;
       set_ep(psc, (pb)tp);
@@ -1966,7 +1965,6 @@ bool db_remove_prref( /* PrRef */ )
   if ( *(pb)p == tabletrysingle )
     {
       /* free prref, from calld instr set in db_build_prref */
-      printf("freeing %p from %p\n",*(p+6),p);
       mem_dealloc((pb)(*(p+6)), 4*sizeof(Cell)); 
       mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ; /*free table hdr*/
     }
