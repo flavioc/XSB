@@ -1,6 +1,9 @@
 \chapter{System Description}
 \label{system}
 
+% TLS: changing object file extensions.
+% TLS: discuss relative paths.
+
 Throughout this chapter, we use \verb'$XSB_DIR' to refer to the
 directory in which XSB was installed.
 
@@ -12,29 +15,35 @@ in the file:
 \begin{verbatim}
                      $XSB_DIR/bin/xsb
 \end{verbatim}
-or, if, after being built, XSB is later installed  at a central location,
-\verb'$SHARED_XSB'.
+If, after being built, XSB is later installed  at a central location,
+\verb'$SHARED_XSB', the emulators executable code appears in
 \begin{verbatim}
                      $SHARED_XSB/bin/xsb
 \end{verbatim}
-and indeed, using this command, invokes XSB's top level interpreter
-which is the usual way of
-using XSB
+Either of these commands invokes XSB's top level interpreter which is
+the most common way of using XSB.
 
 \version{} of XSB can also directly execute object code files from the
 command line interface.  Suppose you have a top-level routine {\tt go}
 in a file {\tt foo.P} that you would like to run from the UNIX or
 Windows command line.  As long as {\tt foo.P} contains a directive
 {\tt :- go.}, and {\tt foo} has been compiled to an object file ({\tt
-foo.O}), then
+foo.xwam}), then
 \begin{verbatim}
-                       $XSB_DIR/bin/xsb -B foo.O
+                       $XSB_DIR/bin/xsb -B foo.xwam
 \end{verbatim}
-will execute {\tt go}, loading the appropriate files as needed.  In
-fact the command \verb'$XSB_DIR/bin/xsb' is equivalent to the
-command:
+will execute {\tt go}, loading the appropriate files as
+needed~\footnote{In XSB, all extensions --- (default '.P', '.H',
+'.xwam', '.D' (output by mode inferencing), and '.A' (assembly dump)
+--- are defined in C and Prolog code using macros in {\tt
+\$XSB\_DIR/emu/extensions\_xsb.h} and can be changed by a user if
+desired.  Of course, such a step should not be taken lightly, as it
+can cause severe compatability problems.}.
+%
+In fact the command
+\verb'$XSB_DIR/bin/xsb' is equivalent to the command:
 \begin{verbatim}
-             $XSB_DIR/bin/xsb -B $XSB_DIR/syslib/loader.O
+             $XSB_DIR/bin/xsb -B $XSB_DIR/syslib/loader.xwam
 \end{verbatim}
 %%$
 
@@ -46,16 +55,18 @@ while it is executing a query, strike \verb'CTRL-c'.
 
 \section{The System and its Directories}
 %=======================================
-The XSB system, when installed, resides in a single directory that
+When installed, The XSB system resides in a single directory that
 contains several subdirectories.  For completeness, we review the
-information in all subdirectories.
+information in all subdirectories.  Normally, only the documentation
+and files in the Prolog subdirectories, particularly {\tt examples},
+{\tt lib}, and {\tt packages} will be of interest to users.
 \begin{enumerate}
-\item {\tt bin} contains scripts which call XSB executables
+\item {\tt bin} contains scripts that call XSB executables
 for various configurations.
 %
-\item {\tt build} contains XSB configuration scripts.  You must
-already be familiar with the {\tt build} directory, which is what you
-must have used to build XSB.
+\item {\tt build} contains XSB configuration scripts.  You may
+already be familiar with the {\tt build} directory, which is used to
+build XSB.
 %
 \item {\tt config} contains executables and other files specific to
 particular configurations.
@@ -68,8 +79,8 @@ I/O and for various interfaces.
 %
 \item {\tt etc} contains miscellaneous files used by XSB.
 %
-\item {\tt examples} contains some basic examples for Prolog, tabling,
-and HiLog.
+\item {\tt examples} contains some examples for Prolog, tabling,
+HiLog and various interfaces.
 %
 \item {\tt cmplib} contains Prolog source and object code for the
 compiler. 
@@ -92,13 +103,11 @@ libraries, which are preprocessed using GPP.
 libraries. 
 \end{enumerate}
 
-Normally, only the documentation and files in the Prolog
-subdirectories, particularly {\tt examples}, {\tt lib}, and {\tt
-packages} will be of interest to users.  All Prolog source programs
-are written in XSB, and all object (byte code) files contain SLG-WAM
-instructions that can be executed by the emulator.  These byte-coded
-instructions are machine-independent, so usually no installation
-procedure is needed for the byte code files.
+\noindent
+All Prolog source programs are written in XSB, and all object (byte
+code) files contain SLG-WAM instructions that can be executed by the
+emulator.  These byte-coded instructions are machine-independent, so
+usually no installation procedure is needed for the byte code files.
 
 \section{The Module System of XSB} \label{Modules}
 %========================================================
@@ -109,46 +118,43 @@ components which can be developed, compiled and tested separately.
 Also module systems enforce the {\em principle of information hiding}
 and can provide a basis for {\em data abstraction}.
 
-The module system of XSB, unlike the module systems of most
-other Prolog systems is {\em atom-based}.  Briefly, the main
-difference between atom-based module systems and predicate-based ones
-is that in an atom-based module system {\em any symbol in a module can
-be imported, exported or be a local symbol} as opposed to the
-predicate-based ones where this can be done only for predicate
-symbols~\footnote{Operator symbols can be exported as any other
-symbols, but their precedence must be redeclared in the importing
-module.}.
+The module system of XSB, bears more similarities to an {\em
+atom-based} module system than that of most other Prologs.  Briefly,
+the main difference between atom-based module systems and
+predicate-based ones is that in an atom-based module system {\em any
+symbol in a module can be imported, exported or be a local symbol} as
+opposed to the predicate-based ones where this can be done only for
+predicate symbols~\footnote{Operator symbols can be exported as any
+other symbols, but their precedence must be redeclared in the
+importing module.}.
 
-Usually the following three files are associated with a particular
-module:
+The following three files may be associated with a particular module:
 \begin{itemize}
 \item A single {\it source} file, whose name is the module name plus 
       the suffix ``{\tt .P}''.  
-\item An optional {\it header} file, whose name is the module name plus 
-      the suffix ``{\tt .H}''.  
 \item An {\it object (byte-code)} file, whose name consists of the module 
-      name plus the suffix ``{\tt .O}''.
+      name plus the suffix ``{\tt .xwam}''.
+\item An optional {\it header} file, whose name is the module name plus 
+      the suffix ``{\tt .H}''.  When used, the header file normally
+      contains file-level declarations and directives while the source
+      file usually contains the actual definitions of the predicates
+      defined in that module.
 \end{itemize}
-The header file is normally used to contain declarations and
-directives while the source file usually contains the actual
-definitions of the predicates defined in that module.  The module
-hierarchy of XSB is therefore {\em flat} --- nested modules are not
+The module hierarchy of XSB is {\em flat} --- nested modules are not
 possible.
 
-In order for a file to be a module, it should contain one or more 
-{\it export declarations}, which specify that a set of symbols appearing
-in that module is visible and therefore can be used by any other module.
-A module can also contain {\it local declarations}, which specify that
-a set of symbols are {\it visible by this module only}, and therefore
-cannot be accessed by any other module.
-Any file (either module or not) may also contain {\it import declarations},
-which allow symbols defined in and exported by other modules to be used
-in the current module.  We note that only exported symbols can be
-imported; for example importing a local symbol will cause an {\tt
-environment conflict error}.
-
-Export, local, and import declarations can appear anywhere in the source
-or header files and have the following forms:
+By default, files are not treated as modules.  In order for a file to
+be treated as a module, it must contain one or more {\it export
+declarations}, which specify that a set of symbols appearing in that
+module is visible and therefore can be used by any other module.  Any
+file (either module or not) may also contain {\it import
+declarations}, which allow symbols defined in and exported by other
+modules to be used in the current module.  In addition, a module can
+also contain {\it local declarations}, which specify that a set of
+symbols are {\it visible by this module only}, and therefore cannot be
+accessed by any other module.  Export, local, and import declarations
+can appear anywhere in the source or header files and have the
+following forms:
 
 \demo{:- export $sym_1$, \ldots, $sym_l$. }
 
@@ -159,18 +165,20 @@ or header files and have the following forms:
 \noindent
 where $sym_i$ has the form $functor/arity$.
 
-If the user does not want to use modules, he can simply
-bypass the module system by not supplying any export declarations.
-Such export-less files (non-modules) will be loaded into the module 
-{\tt usermod}, which is the working module of the XSB interpreter.
+We note that only exported symbols can be imported; for example
+importing a local symbol will cause an {\tt environment conflict
+error} when the file referred to by the import statement is loaded.
+When a non-module file is loaded, its predicates and symbols are
+loaded into the module {\tt usermod}, which is the working module of
+the XSB interpreter.  Dynamically asserted code is also loaded into
+{\tt usermod}.
 
 Currently the module name is stored in its byte code file, which means
 that if the byte code file is renamed, the module name is not altered,
 and hence may cause confusion to the user and/or the system.  So, it
 is advisable that the user not rename byte code files generated for
 modules by the XSB compiler.  However, byte code files generated for
-non-modules can be safely renamed.  We will try to fix the problem
-described above in future releases.
+non-modules can be safely renamed.
 
 In order to understand the semantics of modules, the user should keep in
 mind that in a module oriented system, the name of each symbol is identified
@@ -180,19 +188,18 @@ Currently the following set of rules is used to determine the module
 prefix of a symbol:
 \begin{itemize}
 \item	Every predicate symbol appearing in a module (i.e. that appears as
-	the head of some clause) is assumed to be {\em local} to that
-	module unless it is declared otherwise (via an export or
-	import declaration).  Symbols that are local to a given module
-	are not visible to other modules.
+	the head of some clause) is assumed by default to be {\em
+	local} to that module unless it is declared otherwise (via an
+	export or import declaration).  Symbols that are local to a
+	given module are not visible to other modules.
 \item	Every other symbol (essentially function symbols) in a module is
 	assumed to be {\em global} (its module prefix is {\tt
 	usermod}) unless declared otherwise.
 \item	If a symbol is imported from another module (via an explicit import 
-	declaration), the module prefix of the symbol is the module it is 
-	imported from; any other symbol takes the module where the symbol 
-	occurs as its module prefix.
-\item	The XSB interpreter is entered with {\tt usermod} as its 
-	working module.
+	declaration), the module prefix of the symbol is the module it
+	is imported from; any other symbol takes the module where the
+	symbol occurs as its module prefix.
+\item	The XSB interpreter treats {\tt usermod} as its working module.
 \item	Symbols that are either defined in non-modules loaded into the
 	system or that are dynamically created (by the use of standard
 	predicates such as {\tt read/1, functor/3, '=..'/2}, etc) are
@@ -238,17 +245,54 @@ immediately obvious:
         one.
 \end{itemize}
 
+\paragraph*{Usage inference and the module system}
+The import and export statements of a module $M$ are used by the
+compiler for inferring usage of predicates.  At compilation time, if a
+predicate $P/N$ occurs as callable in the body of a clause defined in
+$M$, but $P$ is neither defined in $M$ nor imported into $M$ from some
+other module, a warning is issued that $P/N$ is undefined.  Here
+``occurs as callable'' means that $P/N$ is found as a literal in the
+body of a clause, or within a system meta-predicate, such as {\tt
+assert/1}, {\tt findall/3}, etc.  Currently, occurrences of a term
+inside user-defined meta-predicates are not considered as callable by
+XSB's usage inference algorithm.  Alternatively, if $P/N$ is defined in
+$M$, it is {\em used} if $P/N$ is exported by $M$, or if $P/N$ occurs
+as callable in a clause for a predicate that is used in $M$.  The
+compiler issues warnings about all unused predicates in a module.  On
+the other hand, since all modules are compiled separately, the usage
+inference algorithm has no way of checking whether a predicate
+imported from a given module is actually exported by that module.
+
+\index{xsbdoc}
+\index{{\tt document\_export/1}}
+\index{{\tt document\_import/1}}
+Usage inference can be highly useful during code development for
+ensuring that all predicates are defined within a set of files, for
+eliminating dead code, etc.  In addition, import and export
+declarations are used by the {\tt xsbdoc} documentation system to
+generate manuals for code~\footnote{Further information on {\tt
+xsbdoc} can be found in {\tt \$XSB\_DIR/packages/xsbdoc}.}.  For these
+reasons, it is sometimes the case that usage inference is desired even
+in situations where a given file is not ready to be made into a
+module, or it is not appropriate for the file to be a module for some
+other reason.  In such a case the directives {\tt document\_export/1}
+and {\tt document\_import/1} can be used, and have the same syntax as 
+{\tt export/1} and {\tt import/1}, respectively.  These directives
+affect only usage inference and {\tt xsbdoc}.  A file is treated as a
+module if and only if it includes an {\tt export/1} statement, and
+only {\tt import/1} statements affect dynamic loading and name
+resolution for predicates.
+
+%===============================================================
 \section{The Dynamic Loader and its Search Path} \label{LibPath}
 \index{load search path}
-%===============================================================
-The dynamic (or automatic) loader comprises one of XSB's 
-differences from other Prolog systems.
-In XSB, the loading of user modules Prolog libraries (including
-the XSB compiler itself) is delayed until predicates in them
-are actually needed, saving program space for large Prolog
-applications.  The delay in the loading is done automatically, unlike
-other systems where it must be explicitly specified for non-system
-libraries.
+
+XSB differs from some other Prolog system in its ability to {\tt
+dynamically} load modules.  In XSB, the loading of user modules Prolog
+libraries (such as the XSB compiler) is delayed until predicates in
+them are actually needed, saving program space for large Prolog
+applications.  Dynamic loading is done by default, unlike other
+systems where it is not the default for non-system libraries.
 
 When a predicate imported from another module (see
 Section~\ref{Modules}) is called during execution, the dynamic loader
@@ -259,53 +303,39 @@ byte code file of the module first in the system library directories
 in the current working directory.  If the module is found in one of
 these directories, then it will be loaded ({\em on a first-found
 basis}). Otherwise, an error message will be displayed on the current
-output stream reporting that the module was not found.
-
-In fact, XSB loads the compiler and most system modules this way.
-Because of dynamic loading, the time it takes to compile a file 
-is slightly longer than usual the first time the compiler is 
-invoked in a session.
+error stream reporting that the module was not found.  Because system
+modules are dynamically loaded, the time it takes to compile a file is
+slightly longer the first time the compiler is invoked in a session
+than for subsequent compilations.
 
 
 \subsection{Changing the Default Search Path and the Packaging System}
-%=====================================================================
-Users are allowed to supply their own library directories and also to
-override the default search path of the dynamic loader. 
-User-supplied library directories are searched by the dynamic loader 
-{\em before} searching the default library directories. 
-\index{{\tt library\_directory/1}}
+%=================================================================
 
-The default search path of the dynamic loader can easily be changed
-by having a file named {\verb|.xsb/xsbrc.P|} in the user's home directory.  
-The {\verb|.xsb/xsbrc.P|} file, which is automatically consulted by the
- XSB interpreter, might look like the following:
+The default search path of the dynamic loader can easily be changed by
+having a file named {\verb|.xsb/xsbrc.P|} in the user's home
+directory.  User-supplied library directories are searched by the
+dynamic loader {\em before} searching the default library directories.
+\index{{\tt library\_directory/1}}  The {\verb|.xsb/xsbrc.P|} file,
+which is automatically consulted by the XSB interpreter, might look
+like the following:
 \begin{verbatim}
              :- assert(library_directory('./')).
              :- assert(library_directory('~/')).
-             :- assert(library_directory('~my_friend')).
              :- assert(library_directory('/usr/lib/sbprolog')).
 \end{verbatim}
 After loading the module of the above example, the current working
-directory is searched first (as opposed to the default action of
-searching it last).  Also, XSB's system library directories
-({\tt lib, syslib}, and {\tt cmplib}), will now be searched {\em
-after} searching the user's, {\tt my\_friend}'s and the {\tt
-"/usr/lib/sbprolog/"} directory.
-
- In fact, XSB also uses {\tt library\_directory/1} for internal purposes.
- For instance, before the user's {\verb|.xsb/xsbrc.P|} is consulted,
- XSB puts the {\tt packages} directory and the directory 
- %%
- \begin{verbatim}
-      .xsb/config/$CONFIGURATION
- \end{verbatim}
- %%$
- on the library search path.
- The directory \verb'.xsb/config/$CONFIGURATION' is used to store user
- libraries that are machine or OS dependent. (\verb'$CONFIGURATION' for a
- machine is something that looks like {\tt sparc-sun-solaris2.6} or
- {\tt pc-linux-gnu}, and is selected by XSB automatically at run time).  
- %%$
+directory is searched first, then the user's home directory,, then
+{\tt "/usr/lib/sbprolog/"}, and finally XSB's system library
+directories ({\tt lib, syslib}, and {\tt cmplib}).  XSB also uses {\tt
+library\_directory/1} for internal purposes.  For instance, before the
+user's {\verb|.xsb/xsbrc.P|} is consulted, XSB puts the {\tt packages}
+directory and the directory \verb|.xsb/config/$CONFIGURATION| on the
+library search path.  The directory
+\verb'.xsb/config/$CONFIGURATION' is used to store user libraries that
+are machine or OS dependent. (\verb'$CONFIGURATION' for a machine is
+something that looks like {\tt sparc-sun-solaris2.6} or {\tt
+pc-linux-gnu}, and is selected by XSB automatically at run time).  
 
 Note that the file {\verb|.xsb/xsbrc.P|} is not limited to setting the
 library search path.  In fact, arbitrary Prolog code can go there.
@@ -313,10 +343,9 @@ library search path.  In fact, arbitrary Prolog code can go there.
 We emphasize that in the presence of a {\verb|.xsb/xsbrc.P|} file {\em
 it is the user's responsibility to avoid module name clashes with
 modules in XSB's system library directories}.  Such name clashes can
-cause the system to behave strangely since these modules will probably
-have different semantics from that expected by the XSB system code.
-The list of module names in XSB's system library directories can be
-found by looking through the directories {\tt
+cause unexpected behavior as system code may try to load a user's
+predicates.  The list of module names in XSB's system library
+directories can be found by looking through the directories {\tt
 \$XSB\_DIR/\{syslib,cmplib,lib\}}.
 
 \index{packages}
@@ -326,10 +355,10 @@ are organized in a subdirectory of one of the XSB system or user libraries.
 The system directory \verb|$XSB_DIR/packages| has several examples
 %%$
 of such packages, many of which are documented in Volume 2 of this
-manual.  Packages are convenient as a means of organizing large XSB
-applications, and for simplifying user interaction with such
-applications.  User-level packaging is implemented through the
-predicate
+manual, or contain their own manuals.  Packages are convenient
+as a means of organizing large XSB applications, and for simplifying
+user interaction with such applications.  User-level packaging is
+implemented through the predicate
 %%
 \begin{verbatim}
      bootstrap_userpackage(+LibraryDir, +PackageDir, +PackageName).
@@ -343,9 +372,9 @@ your own library, {\tt my\_lib}. Here is a sequence of steps you can
 follow:  
 %%
 \begin{enumerate}
-\item Make sure that {\tt my\_lib} is on the library search path by putting
+\item Make sure that {\tt my\_lib}\ is on the library search path by putting
   an appropriate assert statement in your {\tt xsbrc.P}.
-\item Make subdirectory \verb|~/my_lib/foobar| and organize all the
+\item Make a subdirectory \verb|~/my_lib/foobar| and organize all the
   package files there. Designate one file, say, {\tt foo.P}, as the
   entry point, {\it i.e.}, the application file that must be loaded first.
 \item Create the interface program \verb|~/my_lib/foobar.P| with the
@@ -386,7 +415,7 @@ and deletes the associated information from \verb|package_configuration/3|.
 \index{{\tt unload\_package/1}}
 \index{{\tt package\_configuration/2}}
 
-Finally, if you developed and tested  a package that you think is
+Finally, if you have developed and tested a package that you think is
 generally useful and you would like to distribute it with XSB, please
 contact {\tt xsb-development@sourceforge.net}.
 
@@ -401,11 +430,11 @@ Here, {\tt PredList} can either be a Prolog list or a comma list.
 (The {\tt import/1} can also be used as a directive in a source module
 (see Section~\ref{Modules}). \index{standard predicates}
 
-We provide a sample session for compiling, dynamically loading, and 
-querying a user-defined module named {\tt quick\_sort}.
-For this example we assume that {\tt quick\_sort} is a file in the 
-current working directory, and contains the definitions of the
-predicates {\tt concat/3} and {\tt qsort/2}, both of which are exported.
+We provide a sample session for compiling, dynamically loading, and
+querying a user-defined module named {\tt quick\_sort}.  For this
+example we assume that {\tt quick\_sort.P} is a file in the current
+working directory, and contains the definitions of the predicates {\tt
+concat/3} and {\tt qsort/2}, both of which are exported.
 
 {\footnotesize
 \begin{verbatim}
@@ -441,7 +470,7 @@ predicate is called.
 %========================================================
 
 There are several command line options for the emulator. The general 
-synopsis is:
+synopsis obtained by the command {\tt \$XSB\_DIR/bin/xsb --help} is: 
 {\small 
 \begin{verbatim}
 xsb [flags] [-l] [-i]
@@ -460,12 +489,12 @@ miscellaneous flags:
 module:
     Module to execute after XSB starts up.
     Module should have no suffixes, no directory part, and
-    the file module.O must be on the library search path.
+    the file module.xwam must be on the library search path.
 boot_module:
     This is a developer's option.
     The -B flags tells XSB which bootstrapping module to use instead
     of the standard loader.  The loader must be specified using its
-    full pathname, and boot_module.O must exist.
+    full pathname, and boot_module.xwam must exist.
 module_to_disassemble:
     This is a developer's option.
     The -d flag tells XSB to act as a disassembler.
@@ -601,12 +630,13 @@ collectors, and \cite{CaSC01} for a description of the third).
     to clutter the picture.
 \end{description}
 
+\comment{
 As an example, a program which uses more heap and local stack than the
 default configuration of XSB might be run by invoking XSB with the command.
 \begin{verbatim}
          xsb -m 2000
 \end{verbatim}
-
+}
 
 \section{Memory Management}\label{memory_management}
 \index{memory management}
@@ -619,50 +649,54 @@ initial value set by the user (or the default stated in
 Section~\ref{sec:EmuOptions}), and double their size until it is not
 possible to do so with available system memory.  At that point XSB
 tries to find the maximal amount of space that will still fit in
-system memory.  Garbage collection is automatically performed for
-retracted clauses.  In addition, heap garbage collection is
+system memory.  .  In addition, heap garbage collection is
 automatically included in XSB \cite{CaSC01,CATmem@ISMM-98}.  (To
 change the algorithm used for heap garbage collection or to turn it
 off altogether, see the predicate {\tt garbage\_collection/1} or
-Section~\ref{sec:EmuOptions} for command-line options).
+Section~\ref{sec:EmuOptions} for command-line options).  In \version{}
+the default behavior is indirect garbage collection.
 
 The program area (the area into which the code is loaded) is also
-dynamically expanded as needed, and the area occupied by dynamic code
-(created using {\tt assert/1}, or the standard predicate {\tt
-load\_dyn/1}) is reclaimed when that code is retracted.  \version{}
-provides memory management for table space as well.  Space for tables
-is dynamically allocated as needed and reclaimed through use of the
-predicates {\tt abolish\_all\_tables/0} and {\tt abolish\_table\_pred/1}
+dynamically expanded as needed.  For dynamic code (created using {\tt
+assert/1}, or the standard predicates {\tt load\_dyn/1} and {\tt
+load\_dync/1}) index size is also automatically reconfigured.  Space
+used by dynamic code is reclaimed when that code is retracted or
+abolished.  \version{} provides memory management for table space as
+well.  Space for tables is dynamically allocated as needed and
+reclaimed through use of the predicates {\tt abolish\_all\_tables/0}
+and {\tt abolish\_table\_pred/1}
 %,{\tt abolish\_table\_call/1}.  
 (see Section~\ref{sec:TablingPredicates}).
 
 \section{Compiling and Consulting} \label{Consulting}
 %====================================================
-In XSB, both compiled and interpreted code are transformed into
-SLG-WAM instructions.  The main differences are that compiled code may
-be more optimized than interpreted code, and that compilation produces
-an object code file.
+In XSB, both interpreted (i.e. asserted) and compiled code are
+transformed into SLG-WAM instructions.  Compiled code may be more
+optimized than interpreted code, and compilation produces an object
+code file, but certain types of indexing, such as trie and star
+indexing are (currently) available only for intperpreted predicates
+(see {\tt index/2}).
 
 \index{{\tt consult/[1,2]}}
-This section describes the actions of the standard predicate {\tt
-consult/[1,2]} (and of {\tt reconsult/[1,2]} which is defined to have
-the same actions as {\tt consult/[1,2]}).  {\tt consult/[1,2]} is the
-most convenient method for entering rules into XSB's database.  Though
-{\tt consult} comes in many flavors, the most general form is:
+The standard predicate {\tt consult/[1,2]} is the most convenient
+method for entering rules into XSB's database~\footnote{In XSB, {\tt
+reconsult/[1,2]} is defined to have the same actions as {\tt
+consult/[1,2]}.}.  Though {\tt consult} comes in many flavors, the
+most general form is:
 \begin{center}{\tt
 	consult(+FileList, +CompilerOptionList) }
 \end{center} 
-At the time of the call both of its arguments should be instantiated
+At the time of the call both of its arguments must be instantiated
 (ground).  {\tt FileList} is a list of filenames or module names (see
 Section~\ref{Modules}) and {\tt CompilerOptionList} is a list of
 options that are to be passed to the compiler when (and if) it should
 be invoked.  For a detailed description of the format and the options
 that can appear in this list see Section~\ref{the_compiler}.
 
-If the user wants to consult one module (file) only, she can provide an
-atom instead of a list for the first argument of {\tt consult/2}.
-Furthermore, if there isn't any need for special compilation options the
-following two forms:
+If the user wants to consult one module (file) only, she can provide
+an atom instead of a list for the first argument of {\tt consult/2}.
+Furthermore, if there isn't any need for special compilation options
+the following two forms:
 \begin{center}{\tt
 	    [FileName]. \\
 	consult(FileName).
@@ -672,57 +706,65 @@ are just notational shorthands for:
 	consult(FileName, []).
 }\end{center}
 
-Consulting a module (file) generally consists of the following five
-steps which are described in detail in the next paragraphs.
+Consulting a file (module) conceptually consists of the following five
+steps which are described in detail in the following paragraphs.
 \begin{description}
-\item[Name Resolution]: determine the module to be consulted.
-\item[Compilation]:  if necessary (and the source file is not too big),
-      compile the module using predicate {\tt compile/2} with the options
-      specified.
-\item[Loading] load the object code of the module into memory.
-\item[Importing] import all the exported predicates of that module to
-      the current working module ({\tt usermod}).
-\item[Query Execution]: execute any queries that the module may contain.
+\item[Name Resolution:] determine the file to be consulted, including
+	directory and drive location and extension.
+\item[Compilation:]  if the source file has changed later than the
+	object file, compile the module using predicate {\tt
+            compile/2} with the options specified.
+\item[Loading:] load the object code of the file into memory. 
+\item[Importing:] if the file is a module, import any the exported
+	predicates of that module to {\tt usermod}.
+\item[Query Execution:] execute any queries that the file may contain.
 \end{description}
 
-There are two steps to name resolution: determination of the proper
-directory prefix and determination of the proper extension.  When {\tt
-FileName} is absolute (i.e. in UNIX contains a slash {\tt '/'})
-determination of the proper directory prefix is straightforward.
-However, the user may also enter a name without any directory
-prefix. In this case, the directory prefix is a directory in the
-dynamic loader path (see Section~\ref{LibPath}) where the source file
-exists.  Once the directory prefix is determined, the file name is
-checked for an extension.  If there is no extension the loader first
-checks for a file in the directory with the {\tt .P} extension, (or
-{\tt .c} for foreign modules) before searching for a file without the
-extension.  Note that since directories in the dynamic loader path are
-searched in a predetermined order (see Section~\ref{LibPath}), if the
-same file name appears in more than one of these directories, the
-compiler will consult the first one it encounters.
+There are two steps to name resolution: determining the proper
+directory prefix and determining the proper file extension.  When {\tt
+FileName} is absolute (i.e. it contains a path from the file to the
+root of the file system) determining the proper directory prefix is
+straightforward.  If {\tt FileName} is relative, i.e. it conains a
+{\tt '/'} in Unix or {\tt '/'} in Windows, {\tt FileName} is expanded
+to a directory prefix in an OS-dependent way, resolving symbols like
+{\tt '.'}, {\tt '..'} and {\tt '\~{}'} when applicable.  However, the
+user may also enter a name without any directory prefix. In this case,
+the directory prefix is a directory in the dynamic loader path (see
+Section~\ref{LibPath}) where the source file exists.  Once the
+directory prefix is determined, the file name is checked for an
+extension.  If there is no extension the loader first checks for a
+file in the directory with the {\tt .P} extension, (or {\tt .c} for
+foreign modules) before searching for a file without the extension.
+Note that since directories in the dynamic loader path are searched in
+a predetermined order (see Section~\ref{LibPath}), if the same file
+name appears in more than one of these directories, the compiler will
+consult the first one it encounters.
 
-Compilation is performed if the update date of the the source file
-({\tt *.P}) is later than that of the the object file ({\tt *.O}),
+Compilation is performed if the update date of a source file ({\tt
+*.P} or {\tt *.H}) is later than that of the the object file ({\tt
+*.xwam}).
+%%
+\comment{
 {\em and} if the source file is not larger than the default compile
-size.  This default compile is set to be 20,000 bytes (in {\tt
-cmplib/config.P}), but can be reset by the user.  If the source file
-is larger than the default compile size, the file will be loaded using
-{\tt load\_dyn/1}, and otherwise it will be compiled ({\tt
-load\_dyn/1} can also be called separately, see the Section {\it
-Asserting Dynamic Code} for details.
-While {\tt load\_dyn} gives reasonably good execution times,
-compilation can always be done by using {\tt compile/[1,2]}
-explicitly.  Currently (\version), a foreign language module is
-compiled when at least one of files {\tt *.c} or {\tt *.H} has been
-changed from the time the corresponding object files have been
-created.
+size.  This default compile is set to be 5000 words (via a declaration
+in {\tt cmplib/config.P}), but can be reset by the user.  If the
+source file is larger than the default compile size, the file will be
+loaded using {\tt load\_dyn/1}, and otherwise it will be compiled
+({\tt load\_dyn/1} can also be called separately, see the Section {\it
+Asserting Dynamic Code} for details).  While {\tt load\_dyn} gives
+reasonably good execution times, compilation can always be done by
+using {\tt compile/[1,2]} explicitly.  } 
+%%
+Currently (\version), a foreign language module is compiled when at
+least one of files {\tt *.c} or {\tt *.H} has been changed from the
+time the corresponding object files have been created.
 
 \index{{\tt multifile/2}}
-Whether the file is compiled or dynamically loaded, the byte-code for
-the file is loaded into XSB's database.  The default action upon
-loading is to delete any previous byte-code for predicates defined in
-the file.  If this is not the desired behavior, the user may add to
-the file a declaration 
+Once the file is compiled into byte-code, the byte-code for the file
+is loaded into XSB's database.  The default action upon loading is to
+delete any previous byte-code for predicates defined in the file.  If
+this is not the desired behavior, the user may add to the file a
+declaration
 \begin{center}
 {\tt :- multifile <Predicate\_List> .} \\
 \end{center}
@@ -731,15 +773,15 @@ functor/arity\/} form.  The effect of this declaration is to delete {\em
 only\/} those clauses of {\tt predicate/arity} that were defined in the
 file itself.
 
-After loading the module, all exported predicates of that module are
-imported into the current environment (the current working
-module {\tt usermod}).  For non-modules (see Section~\ref{Modules}),
-all predicates are imported into the current working module.
+After loading the file all exported predicates of that module are
+imported into the current environment (the current working module {\tt
+usermod}) if the file is a module.  For non-modules, all predicates
+are imported into the current working module.
 
 Finally any queries --- that is, any terms with principal functor {\tt
-':-'/1} that are not directives like the ones described in
-Section~\ref{the_compiler} --- are executed in the order that they are
-encountered.
+'?-'/1}, or with the principal functor {\tt ':-'/1} and that are not
+directives like the ones described in Section~\ref{the_compiler} 
+are executed in the order that they are encountered.
 
 \section{The Compiler} \label{the_compiler} \index{Compiler}
 %===========================================================
@@ -749,7 +791,7 @@ byte-code object files.  It is written entirely in Prolog.
 Both the sources and the byte code\index{byte code!files!compiler}
 for the compiler can be found in the XSB system directory
 {\tt cmplib}\index{cmplib@{\tt cmplib}}.
-
+%
 \index{GPP}
 Prior to compiling, XSB filters the programs through \emph{GPP}, a 
 preprocessor written by Denis Auroux (auroux@math.polytechnique.fr).
@@ -830,18 +872,21 @@ case, the XSB compiler will first read the header file (if it
 exists), and then the source file.  Currently the compiler makes no
 special treatment of header files.  They are simply included in the
 beginning of the corresponding source files, and code can, in
-principle, be placed in either.  In future versions of XSB the
+principle, be placed in either.  
+\comment{
+In future versions of XSB the
 header files may be used to check interfaces across modules, hence it
 is a good programming practice to restrict header files to
 declarations alone.
+}
  
 The result of the compilation (an SLG-WAM object code file) is stored
-in a ($\langle$filename$\rangle$.O), but {\tt compile/[1,2]} does {\em
+in a ($\langle$filename$\rangle$.xwam), but {\tt compile/[1,2]} does {\em
 not\/} load the object file it creates.  (The standard predicates {\tt
 consult/[1,2]} and {\tt reconsult/[1,2]} both recompile the source
 file, if needed, and load the object file into the system.)  The
 object file created is always written into the directory where the
-source file resides (the user should therefore have write permission
+source file resides (the user must therefore have write permission
 in that directory).
  
 If desired, when compiling a module (file), clauses and directives can be
@@ -855,7 +900,7 @@ language modules.  In this case, the names of the source files should
 have the extension {\tt .c} and a {\tt .P} file must {\em not\/}
 exist.  A header file (with extension {\tt .H}) {\em must} be present
 for a foreign language module (see the chapter {\it Foreign Language
-Interface} in Volume 2.
+Interface} in Volume 2).
 
 
 \subsection{Compiler Options}\label{sec:CompilerOptions}
@@ -863,8 +908,8 @@ Interface} in Volume 2.
 %=================================================
 
 Compiler options can be set in three ways: from a global list of
-options (see {\tt set\_global\_compiler\_options/1}), from the
-compilation command (see {\tt compile/2} and {\tt consult/2}), and
+options ({\tt set\_global\_compiler\_options/1}), from the
+compilation command ({\tt compile/2} and {\tt consult/2}), and
 from a directive in the file to be compiled (see compiler directive
 {\tt compiler\_options/1}).
 
@@ -877,7 +922,8 @@ set\_global\_compiler\_options/1}}
     respectively.  (No prefix turns the option on.)  This evaluable
     predicate sets the global compiler options in the way indicated.
     These options will be used in any subsequent compilation, unless
-    reset by another call to this predicate, or overridden by options
+    they are 
+    reset by another call to this predicate, overridden by options
     provided in the compile invocation, or overridden by options in
     the file to be compiled.
 \end{description}
@@ -890,10 +936,15 @@ The following options are currently recognized by the compiler:
 	features, so execution may be considerably faster for recursive
 	loops.  However,
 	due to the nature of the optimizations, the user may not be able to
-	trace all calls to predicates in the program.  Also the Prolog code
+	trace all calls to predicates in the program.  
+%%
+	\comment{TLS: can no longer assert to static code
+	Also the Prolog code
 	should be {\em static}.  In other words, the user is {\em not} allowed
 	to alter the entry point of these compiled predicates by asserting new
-	clauses.  As expected, the compilation phase will also be slightly
+	clauses.  }
+%%
+	As expected, the compilation phase will also be slightly
 	longer.  For these reasons, the use of the {\tt optimize} option may
 	not be suitable for the development phase, but is
 	recommended once the code has been debugged.
@@ -920,7 +971,7 @@ The following options are currently recognized by the compiler:
   \index{\tt xpp\_include\_dir}
   %%
   However, additional directories can be added to this search path by
-  asserting into the predicate \verb|xpp_include_dir/1|, {\bf which should
+  asserting into the predicate \verb|xpp_include_dir/1|, {\bf which must
     be imported from module} {\tt parse}.
   
   Note that when compiling XSB programs, GPP searches the current directory
@@ -1153,10 +1204,11 @@ The following options are currently recognized by the compiler:
 	{\sc Warning:} This option was created for compiler debugging and is
 		not intended for general use.  There might be cases where
 		compiling a module with these options may cause generation
-		of an incorrect {\tt .A} and {\tt .O} file.  In such cases,
+		of an incorrect {\tt .A} and {\tt .xwam} file.  In such cases,
 		the user can see the SLG-WAM instructions that are
 		generated for a module by compiling the module as usual and
-		then using the {\tt -d module.O} command-line option of the
+		then using the {\tt -d module.xwam} command-line
+		option of the 
 		XSB emulator (see Section~\ref{sec:EmuOptions}).
 \item[{\tt index\_off}] When specified, the compiler does not generate indices
 	for the predicates compiled.  
@@ -1659,11 +1711,11 @@ true/0		&var/1		&nonvar/1	&halt/0	       &'!'/0   \\
 \caption{The Inline Predicates of XSB}\label{inlinepredicatetable}
 \end{table}
 
-We warn the user to be very cautious when defining predicates whose functor
-starts with {\tt \_\$}  since the names of these predicates may interfere with
-some of XSB's internal predicates.  The situation may be particularly
-severe for predicates like {\tt '\_\$builtin'/1} that are treated specially
-by the XSB compiler.
+We warn the user to be cautious when defining predicates whose functor
+starts with {\tt \_\$} since the names of these predicates may
+interfere with some of XSB's internal predicates.  The situation may
+be particularly severe for predicates like {\tt '\_\$builtin'/1} that
+are treated specially by the XSB compiler.
 
 
 

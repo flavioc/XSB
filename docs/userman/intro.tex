@@ -1,27 +1,34 @@
 \chapter{Introduction} \label{introduction}
 %==========================================
 
-XSB is a research-oriented Logic Programming system for Unix and
-Windows-based platforms.  In addition to providing all the
-functionality of Prolog, XSB contains several features not usually
-found in Logic Programming systems, including
+XSB is a research-oriented, commercial-grade Logic Programming system
+for Unix and Windows-based platforms.  In addition to providing 
+the functionality of Prolog, XSB includes the following features: 
 \begin{itemize}
 \item Evaluation according to the Well-Founded Semantics \cite{VGRS91}
   through full SLG resolution;
 \item Constraint handling for tabled programs based on an engine-level
   implementation of annotated variables and a package, {\tt clpqr} for
-  handling real constraints;
-\item A variety of indexing techniques for asserted code and both
-backtrackable and non-backtrackable updates to asserted code.
+  handling real constraints, and the addition of Constraint Handling
+  Rules \cite{};
+\item A variety of indexing techniques for asserted code 
+including variable-depth indexing on several alternate arguments,
+fixed-depth indexing on combined arguments, trie-indexing.  In
+addition, both backtrackable and non-backtrackable updates to asserted
+code are supported.
 %
 \item A set of mature packages, to extend XSB to evaluate
 F-logic~\cite{KLW95} through the {\em FLORA} package, to manage
-ontologogies through the {\em Cold Dead Fish} package, and to support
-literate programming through the {\tt xsbdoc} package, among other
+ontologogies through the {\em Cold Dead Fish} package, to support
+literate programming through the {\tt xsbdoc} package, and to support
+answer set programming through the {\tt XASP} package among other
 features.
 %
 \item A number of interfaces to other software systems, such a C, Java,
   Perl, ODBC, SModels \cite{NiSi97}, and Oracle.
+%
+\item Fast loading of large files by the {\tt load\_dync}
+predicate, and by other means.
 %
 \item A compiled HiLog implementation;
 %
@@ -31,6 +38,9 @@ features.
 \item A novel transformation technique called {\em unification
 factoring} that can improve program speed and indexing for compiled
 code; 
+%
+\item Macro substitution for Prolog files via the {\tt xpp}
+preprocessor (included with the XSB distribution).
 %
 \item Preprocessors and Interpreters so that XSB can be used to evaluate
   programs that are based on advanced formalisms, such as extended logic

@@ -1,11 +1,10 @@
 \chapter{Syntax} \label{Syntax}
 %==============================
 
-The syntax of \ourprolog\ is taken from C-Prolog with extensions.
-This chapter mainly introduces the extensions.
-The syntax of \ourprolog\ is that of the HiLog language.  The syntax
-of HiLog is a proper superset of the Prolog syntax.
-
+The syntax of XSB is taken from C-Prolog with extensions to support
+HiLog~\cite{ChKW93}~\footnote{Sporadic attempts are made to make XSB
+ISO-compliant, contact us if you have a problem with syntax.}, which
+adds certain features of second-order syntax to Prolog.
 
 \section{Terms} \label{TermSyntax}
 %=================================
@@ -28,7 +27,7 @@ string by the base (in decimal) followed by an apostrophe ({\tt '}).  If a
 base greater than $10$ is used, the characters {\tt A-Z} or {\tt a-z} are
 used to stand for digits greater than $9$.
 
-Using these rules, examples of valid integer representations in \ourprolog\ are:
+Using these rules, examples of valid integer representations in XSB are:
 \begin{verbatim}
            1    -3456    95359    9'888    16'1FA4    -12'A0    20'
 \end{verbatim}
@@ -41,7 +40,7 @@ Note that the following:
 \begin{verbatim}
                    +525     12'2CF4     37'12     20'-23
 \end{verbatim}
-are not valid integers of \ourprolog.
+are not valid integers of XSB.
 
 A base of $0$ (zero) will return the ASCII code of the (single) character
 after the apostrophe; for example,
@@ -363,9 +362,9 @@ Assuming that the following declarations of parameter symbols have taken place,
 \end{verbatim}
 \end{minipage}
 \end{center}
-before the compound terms of page~\pageref{some_compound_terms} were read by
-\ourprolog, the encoding of these terms in predicate calculus using the
-described transformation is as follows:
+before the compound terms of page~\pageref{some_compound_terms} were
+read by XSB, the encoding of these terms in predicate calculus using
+the described transformation is as follows:
 \begin{center}
 \begin{minipage}{4.5in}
 \begin{verbatim}
@@ -446,11 +445,11 @@ Type} and precedence {\tt Precedence} by the command;
 \begin{verbatim}
                     :- op(Precedence, Type, Name).
 \end{verbatim}
-The same command can be used to redefine one of the predefined
-\ourprolog\ operators (obtainable via {\tt current\_op/3}).  However,
-it is not allowed to alter the definition of the comma ({\tt ','})
-operator.  An operator declaration can be cancelled by redeclaring the
-{\tt Name} with the same {\tt Type}, but {\tt Precedence} 0.
+The same command can be used to redefine one of the predefined XSB
+operators (obtainable via {\tt current\_op/3}).  However, it is not
+allowed to alter the definition of the comma ({\tt ','}) operator.  An
+operator declaration can be cancelled by redeclaring the {\tt Name}
+with the same {\tt Type}, but {\tt Precedence} 0.
 
 As a notational convenience, the argument {\tt Name} can also be a list of
 names of operators of the same type and precedence.
@@ -480,12 +479,12 @@ or pictorially:
                                 1   2
 \end{verbatim}
 
-In \ourprolog, the list functor {\tt '.'/2} is one of the standard operators, 
+In XSB, the list functor {\tt '.'/2} is one of the standard operators,
 that can be thought as declared by the command:
 \begin{verbatim}
                           :- op(661, xfy, .).
 \end{verbatim}
-So, in \ourprolog,
+So, in XSB,
 \begin{verbatim}
                                   1.2.[]
 \end{verbatim}
@@ -506,7 +505,7 @@ grow at all for {\tt 'xfx'} type operators.  It is simply illegal to combine
 If these precedence and associativity rules seem rather complex, remember
 that you can always use parentheses when in any doubt.
 
-In \ourprolog, at the time when this is written, the possible types for
+In XSB, at the time when this is written, the possible types for
 prefix operators are:
 \begin{verbatim}
                       fx       fy       hx       hy

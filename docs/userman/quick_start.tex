@@ -102,6 +102,9 @@ Here are some ways that are guaranteed to not work in some or all cases:
 \end{enumerate}
 %%
 
+The configuration script allows many different options to be
+specified.  A full listing can be obtained by typing {\tt
+\$XSB\_DIR/build/configure --help}.
 %%
 \begin{description}
 \item[Type of Machine.]  The configureation script automatically detects
@@ -117,19 +120,42 @@ Here are some ways that are guaranteed to not work in some or all cases:
   Moreover, you can keep using the same {\tt ./bin/xsb} script regardless
   of the architecture. It will detect your configuration and will use the
   right files for the right architecture! 
-  
+
+  If XSB is being built on a machine running Windows in which Cygwin
+  is installed, Cygwin and Windows are treated as separate operating
+  systems, as their APIs are completely different.  The configure
+  script will attempt to use {\tt gcc} and other Unix facilities, and
+  therefore will compile the system under Cygwin.  If this behavior is
+  not desired, the option {\tt --with-wind} (equivalently, {\tt
+  --with-os=wind}) uses a Window compiler and API.  If a user wants to
+  ensure the Cygwin compiler is used (say after a previous
+  configuration for Windows), the option {\tt -without-wind} can be
+  used.  See Section~\ref{quick:DOS} for more details.
+
+\index{cc} \index{gcc} \index{acc}  
 \item[Choice of the C Compiler and Other options] \label{cc} The {\tt
 configure} script will attempt to use {\tt gcc}, if it is available.
 Otherwise, it will revert to {\tt cc} or {\tt acc}.  Some versions of
-{\tt gcc} are broken, in which case you would have to give {\tt
-configure} an additional directive {\tt --with-cc}. If you must use
-some special compiler, use {\tt --with-cc=your-own-compiler}.  You can
-also {\tt --disable-optimization} (to change the default), {\tt
---enable-debug}, and there are many other options.  Finally, the {\tt
-force64} option forces compilation to use 64 bit mode on 64-bit
-machines that default to 32 bit compilation.  Type {\tt configure
---help} to see them all. Also see the file \verb'$XSB_DIR/INSTALL' for
-more details.
+{\tt gcc} are broken for particular platforms, in which case you would
+have to give {\tt configure} an additional directive {\tt --with-cc}
+(or {\tt --with-acc}).  If you must use some special compiler, use
+{\tt --with-cc=your-own-compiler}.  You can also use the {\tt
+optimization-level} option to disable the default C compiler
+optimization level.  (or {\tt --disable-optimization} to disable all
+compiler optimizations).  {\tt --enable-debug}, and there are many
+other options.  Finally, the {\tt force64} option forces compilation
+to use 64 bit mode on 64-bit machines that default to 32 bit
+compilation.  Type {\tt configure --help} to see them all. Also see
+the file~\verb'$XSB_DIR/INSTALL' for more details.
+
+\item[XSB and Site-specific Information] Using the option {\tt
+--prefix=PREFIX} installs architecture-independent files in the
+directory {\tt PREFIX}, e.g. {\tt /usr/local}, which can be useful if
+XSB is to be shared at a site.  Using the option {\tt
+--site-prefix=DIR} installs site-specific libraries in {\tt DIR/site}.
+Other options indicate directories in which to search for
+site-specific static and dynamic libraries, and for include files.
+
 
 %%$
 \index{InterProlog Interface}
@@ -137,16 +163,17 @@ more details.
 \index{SModels Interface}
 \index{XASP}
 \index{ODBC Interface}
+\index{Tck/Tk}
 
 \item[Interfaces] Certain interfaces must be designated at
-configuration time, including those to Oracle, ODBC, Smodels, and
-Libwww.  However, the XSB-calling-C interface interface does not need
-to be specified at configuration time.  See Volume 2, and the
-InterProlog site for details of specific interfaces.  If you wish to
-use the InterProlog Java interface that is based on {\tt jni}, you
-must specify this at configuration time; otherwise if you wish to use
-the sockets-based Interprolog interface, it does not need to be
-specified at configuration time.
+configuration time, including those to Oracle, ODBC, Smodels, Tck/Tk,
+and Libwww.  However, the XSB-calling-C interface interface does not
+need to be specified at configuration time.  If you wish to use the
+InterProlog Java interface that is based on {\tt jni}, you must
+specify this at configuration time; otherwise if you wish to use the
+sockets-based Interprolog interface, it does not need to be specified
+at configuration time.  See Volume 2 and the InterProlog site {\tt
+www.declarativa.com} for details of specific interfaces
 
 While the XSB configuration mechanism can detect most include and
 library paths, use of certain interfaces may require information about
@@ -157,17 +184,10 @@ standard C libraries are in odd places. Alternately, dynamic libraries
 on odd places may need to be speficied at configuation time using the
 {\tt --site-dynamic-libraries} option.  and finally, the {\tt
 --site-includes} option might be needed if your standard header files
-(or your {\tt jni.h} file) are in odd places or if XSB is compiled
+(or your {\tt jni.h} file) are in odd places, or if XSB is compiled
 with ODBC support.  Type {\tt configure --help} for more details.
 
 %%$
-\end{description}
-
-Other options are of interest to advanced users who wish to experiment
-with XSB, or to use XSB for large-scale projects.  In general, however
-users need not concern themselves with these options.
-
-\begin{description}
 \index{scheduling strategy}
 \item[Type of Scheduling Strategy.]  The ordering of operations within
 a tabled evaluation can drastically affect its performance.  XSB
@@ -202,6 +222,10 @@ in-depth discussion of the engine memory management.
 }
 \end{description}
 
+Other options are of interest to advanced users who wish to experiment
+with XSB, or to use XSB for large-scale projects.  In general, however
+users need not concern themselves with these options.
+
 \subsection{Possible Installation Problems}
 
 
@@ -230,9 +254,9 @@ the {\tt TMPDIR} environment variable as follows:
 \demo{       setenv TMPDIR dir}
 
 \paragraph*{Missing XSB Object Files}
-When an object (*.O) file is missing from the {\tt lib} directories you can
-normally run the {\tt make} command  in that directory to restore it
-(instructions for doing so are given in Chapter
+When an object (*.xwam) file is missing from the {\tt lib} directories
+you can normally run the {\tt make} command in that directory to
+restore it (instructions for doing so are given in Chapter
 \ref{quick_start}).  However, to restore an object file in the
 directories {\tt syslib} and {\tt cmplib}, one needs to have a
 separate Prolog compiler accessible (such as a separate copy of
