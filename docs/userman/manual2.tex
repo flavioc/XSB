@@ -1,0 +1,111 @@
+\documentclass[11pt]{report}
+
+%\documentstyle[11pt,epsf]{report}
+\usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb}
+
+\pagestyle{headings}
+
+% LaTeX Size Stuff
+%-----------------
+\newcommand{\newsched}{Batched Scheduling}
+\newcommand{\Newsched}{Batched Scheduling}
+\newcommand{\NewSched}{Batched Scheduling}
+\newcommand{\Oldsched}{Single Stack Scheduling}
+\newcommand{\OldSched}{Single Stack Scheduling}
+\newcommand{\oldsched}{Single Stack Scheduling}
+\newcommand{\localsched}{Local Scheduling}
+\newcommand{\Localsched}{Local Scheduling}
+\newcommand{\LocalSched}{Local Scheduling}
+
+\setlength{\topmargin}{-0.25in}
+\setlength{\headheight}{10pt}
+\setlength{\headsep}{30pt}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textheight}{8.5in}
+\setlength{\textwidth}{6.5in}
+\setlength{\footskip}{50pt}
+
+% JF: not allowed in Latex2e
+%\setlength{\footheight}{24pt}
+
+\setlength{\parskip}{2mm}               % space between paragraphs
+
+\def\cut{\mbox{\tt '!'/0}}
+\def\not{\mbox{${\tt '\backslash+'/1}$}}
+
+\newtheorem{example}{Example}[section]
+
+\newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
+
+\newcommand{\comment}[1]{}
+\newcommand{\ourprolog}{XSB}
+\newcommand{\smallourprolog}{xsb}
+\newcommand{\version}{Version 2.0}
+\newcommand{\LRD}{LRD-stratified}
+
+\newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
+\newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
+\newcommand{\desce}[1]{\item[{\tt #1}]}
+\newcommand{\ourrepeatitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.35in}}
+\newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}]\ \\}
+\newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
+
+\newcommand{\stuff}[1]{
+        \begin{minipage}{4in}
+        {\tt \samepage
+        \begin{tabbing}
+        \hspace{8mm} \= \hspace{6mm} \= \hspace{10mm} \= \hspace{55mm} \= \kill
+        #1 \hfill
+        \end{tabbing}
+        }
+        \end{minipage}
+}
+
+\newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
+
+%------------------------------------------------------------
+\input{predindex.sty}
+\makepredindex
+\makeindex
+%------------------------------------------------------------
+
+\begin{document}
+
+\title{\bf The XSB System \\ \version \\ Volume 2: Libraries and Interfaces}
+
+\author{{\epsfxsize=230pt \epsfbox{xsb-logo.eps}}\\
+	\ \\ \ \\
+} 
+
+\date{December 1998}
+
+\maketitle
+
+\bibliographystyle{plain}
+
+\thispagestyle{empty}
+\input{credits2}
+\newpage
+\thispagestyle{empty}
+%\input{Acknowl}
+%\newpage
+
+\pagenumbering{roman}
+\tableofcontents
+\newpage	% Just to avoid a silly LaTeX bug with \pagenumbering
+  
+\pagenumbering{arabic}
+
+\input{library}
+\input{perlmatch}
+\input{foreign}
+\input{ccallingxsb}
+\input{oracle_inter}
+\input{odbc_man/odbc_man}
+
+\input{manual2.ind}
+
+\bibliography{manual,slg}
+
+\end{document}

@@ -1,0 +1,56 @@
+
+\begin{center}
+{\bf {\Large 
+		Credits
+            %=============%
+}}
+\end{center}
+
+% Apologies to anyone I left out...  It wasn't intentional! TLS.
+
+\begin{quote}
+Day-to-day care and feeding of XSB including bug fixes, ports, and
+configuration management has been done by Kostis Sagonas, David
+Warren, Terrance Swift, Prasad Rao, Steve Dawson, Juliana Freire, 
+Baoqiu Cui and Michael Kifer.
+
+In \version, the core engine development of the SLG-WAM has
+been mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao
+and Juliana Freire.  The breakdown, roughly, was that Terrance Swift
+wrote the initial tabling engine and builtins.  Prasad Rao wrote the
+trie-based table access routines, and Kostis Sagonas implemented most
+of tabled negation.  Juliana Freire revised the table scheduling
+mechanism starting from Version 1.5.0 to create a more efficient
+engine, and implemented the engine for local evaluation.  Memory
+management code for execution stacks was written by by Ernie Johnson,
+Bart Demoen and Rui Marques.  Rui Marques improved the trailing of the
+SLG-WAM and rewrote much of the engine to make it compliant with
+64-bit architectures.  Assert and retract code was based on code
+written by Jiyang Xu and significantly revised by David S. Warren and
+Rui Marques.  Trie assert and retract code was written by Prasad Rao.
+The command-line interface was written by Ernie Johnson.  The current
+version of {\tt findall/3} was written by Bart Demoen.
+
+In the XSB complier, Kostis Sagonas was responsible for HiLog
+compilation and associated builtins.  Steve Dawson implemented
+Unification Factoring.  The {\tt auto\_table} and {\tt suppl\_table}
+directives were written by Kostis Sagonas.  The DCG expansion module
+was written by Kostis Sagonas.  The multifile directive was written by
+Baoqiu Cui.  C.R. Ramakrishnan wrote the mode analyzer for XSB.  The
+safety check for tabling within the scope of cuts was written by Kate
+Dvortsova.
+
+Michael Kifer rewrote much of the XSB code to make XSB complient with
+GNU's autoconfig routines.  Harald Schroepfer helped the XSB group
+with the Solaris port, and Yiorgos Adamopoulos suggested the bits to
+use for the HP-700 series port.  Steven Dawson, Larry B. Daniel and
+Franklin Chen were responsible for the MkLinux and Solaris x86 ports.
+
+The starting point of XSB (in 1990) was PSB-Prolog 2.0 by Jiyang Xu.
+PSB-Prolog in its turn was based on SB-Prolog, primarily designed and
+written by Saumya Debray, David S. Warren, and Jiyang Xu.  Thanks are
+also due to Weidong Chen for his work on Prolog clause indexing for
+SB-Prolog and to Richard O'Keefe, who contributed the Prolog code for
+the Prolog reader and the C code for the tokenizer.  
+
+\end{quote}
