@@ -122,7 +122,13 @@ static void delete_tst_answer_set(TSTNptr root) {
   if ( IsNULL(root) )
     return;
 
-  if ( IsHashHeader(TSTN_Child(root)) ) {
+  /* I inserted the check for TSTN_Child(root) below to avoid
+     a segmentation fault. It seems to be working fine with it, 
+     and there doesn't seem to be any memory leak (wrt abolishing
+     subsumptive tables), but as I don't know the code, I'd feel
+     better if somebody who did looked at it.       -- lfcastro */
+
+  if ( TSTN_Child(root) && IsHashHeader(TSTN_Child(root)) ) {
     hash_hdr = TSTN_GetHashHdr(root);
     for ( i = 0;  i < TSTHT_NumBuckets(hash_hdr);  i++ )
       for ( current = TSTHT_BucketArray(hash_hdr)[i];
