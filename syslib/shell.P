@@ -108,12 +108,6 @@ cd(Path) :-
 	    ;	abort('Wrong type in argument 1 of cd/1')
 	    )
 	).
-% 	( (atom(Path); is_list(Path)) -> 
-% 		expand_filename(Path, Dir), sys_chdir(Dir, Res), Res=:=0
-% 	; var(Path) ->
-% 		abort('Uninstantiated argument 1 of cd/1')
-% 	; abort('Wrong type in argument 1 of cd/1')
-% 	).
 
 rename(Old, New) :- sys_rename(Old, New, Res), Res =:= 0.
 
@@ -125,6 +119,28 @@ ls :-
 	Res =:= 0.
 
 rm(Name) :- sys_unlink(Name, Res), Res =:= 0.
+
+rmdir(Name) :- sys_rmdir(Name, Res), Res =:= 0.
+
+rmdir_rec(Dir) :-
+	expand_filename(Dir, Dir1),
+	rmdir_rec1(Dir1).
+
+rmdir_rec1(Dir) :-
+	findall(File, list_directory(Dir, File), DirFiles),
+	member(File, DirFiles),
+	\+ File = '.',
+	\+ File = '..',
+	
+	expand_filename([Dir,'/', File], Path),
+	(path_sysop(isdir, Path)
+	 ->	rmdir_rec1(Path)
+	 ;	rm(Path)
+	),
+	fail.
+rmdir_rec1(Dir) :-
+	rmdir(Dir).
+
 
 %% current working directory
 cwd(Name) :- sys_cwd(Name, Res), Res =:= 0.
