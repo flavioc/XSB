@@ -1,5 +1,5 @@
-/* File:      std_sbp.P
-** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren, Terrance Swift
+/* File:      std_xsb.H
+** Author(s): Jiyang Xu
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -23,11 +23,4 @@
 ** 
 */
 
-
-
 :- export standard_symbol/3.
-
-%% since this file will be read by both cprolog compiler itself and
-%% as a target module, we must put the line in *.H
-
-% :- import true/0, fail/0, '!'/0 from usermod.

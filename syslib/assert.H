@@ -47,6 +47,6 @@
 	  db_build_prref/3
      from machine.
 :- import '_$table'/1 from file_op.
-:- import standard_symbol/3 from std_sbp.
+:- import standard_symbol/3 from std_xsb.
 :- import default_assert_size/1 from config.
 :- import '_$multifile_retract'/3 from parse.

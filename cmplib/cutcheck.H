@@ -2,7 +2,7 @@
 ** Author(s): K. Dvortsova
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1993-1998
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -26,7 +26,7 @@
 :- export build_graph/1. 
 
 :- import error/1 from auxlry.
-:- import standard_symbol/3 from std_sbp.
+:- import standard_symbol/3 from std_xsb.
 :- import sym_prop/2, sym_propin/2 from symtab. 
 
 /* -------------------- end of file cutcheck.H ------------------------ */

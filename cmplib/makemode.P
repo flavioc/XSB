@@ -22,7 +22,7 @@
 ** 
 */
 
-:- import standard_symbol/3 from std_sbp.
+:- import standard_symbol/3 from std_xsb.
 
 :- import trie_assert/1, trie_retract_all/1 from tables.
 :- import str_cat/3 from string.

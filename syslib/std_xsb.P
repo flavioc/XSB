@@ -1,5 +1,5 @@
-/* File:      std_sbp.P
-** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren, Terrance Swift
+/* File:      std_xsb.P
+** Author(s): Kostis Sagonas, Jiyang Xu, David S. Warren, Terrance Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -239,4 +239,4 @@ standard_symbol((','), 2, standard).
 standard_symbol(('->'), 2, standard).
 standard_symbol(('^'), 2, setof).
 
-/* ---------------------- end of file std_sbp.P ----------------------- */
+/* ---------------------- end of file std_xsb.P ----------------------- */

@@ -1,5 +1,5 @@
 /* File:      useinfer.H
-** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren
+** Author(s): Kostis Sagonas, Jiyang Xu, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -28,7 +28,7 @@
 
 :- import member/2 from prof_sbp.
 :- import warning/1, option/1 from auxlry.
-:- import standard_symbol/3 from std_sbp.
+:- import standard_symbol/3 from std_xsb.
 :- import sym_propin/2, sym_prop/2, sym_insert/5, sym_scan/3,
 	  extract_symlist/3, sym_env/2, sym_name/3
     from symtab.

@@ -131,7 +131,7 @@ set_current_output :-
 
 /*
  *  Imports into usermod a bunch of basic-to-operation predicates, those
- *  listed in the file std_sbp.P using the predicate standard_symbol/3.
+ *  listed in the file std_xsb.P using the predicate standard_symbol/3.
  */
 
 import_standard_predicates :-
@@ -201,7 +201,7 @@ automatically as a result of execution up to and including the
 reconsult/1-ing of a pre-existing .xsbrc.O file:
 
 	1) loader	2) prof_sbp	3) machine
-	4) std_sbp	5) consult	6) assert
+	4) std_xsb	5) consult	6) assert
 	7) db		8) dbcmpl	9) asm_inst
 	10) file_op	11) standard	12) basics
 	13) string	14) config	15) curr_sym
@@ -210,7 +210,7 @@ reconsult/1-ing of a pre-existing .xsbrc.O file:
 However, if the .O file is missing, the following modules are loaded:
 
 	1) loader	2) prof_sbp	3) machine
-	4) std_sbp	5) curr_sym	6) consult
+	4) std_xsb	5) curr_sym	6) consult
 	7) assert	8) db		9) dbcmpl
 	10) asm_inst	11) file_op	12) standard
 	13) basics	14) string	15) config

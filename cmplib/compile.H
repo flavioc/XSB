@@ -1,5 +1,6 @@
 /* File:      compile.H
-** Author(s): Saumya Debray, Jiyang Xu, Terrance Swift, David S. Warren
+** Author(s): Saumya Debray, Jiyang Xu, Terrance Swift, David S. Warren,
+**            Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -34,7 +35,7 @@
 :- import db_optimize/4 from db_opt.
 :- import build_graph/1 from cutcheck.
 :- import print_result/1 from printres.
-:- import standard_symbol/3 from std_sbp.
+:- import standard_symbol/3 from std_xsb.
 :- import 'syntax errors'/0 from xsb_read.
 :- import perform_auto_table/1 from tabdef.
 :- import parse/4, get_symtab/2 from parse.

@@ -45,7 +45,7 @@
      from machine.
 :- import file_get/2, file_put/2
      from file_io.
-:- import standard_symbol/3 from std_sbp.
+:- import standard_symbol/3 from std_xsb.
 :- import predicate_property/2, current_predicate/1 from curr_sym.
 :- import findall/3 from setof.
 
