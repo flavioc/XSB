@@ -42,12 +42,12 @@
 #include <winsock.h>
 #include <io.h>
 #include <string.h>
-#endif
-
-#define _REENTRANT
+#else
 #include <pthread.h>
 #include <sched.h>
-#include <errno.h>
+#endif
+
+
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
@@ -790,7 +790,7 @@ xsbBool startProfileThread()
 
   if (!if_profiling) {
     err = pthread_create(&Thread,NULL,(void *)&setProfileBit,(void *)NULL);
-    printf("err=%s\n",strerror(errno));
+    printf("err=%d\n",err);
     //  schedparam.sched_priority = 100; //sched_get_priority_max(SCHED_OTHER);
     //    pthread_setschedparam(Thread,SCHED_OTHER,&schedparam);
     if_profiling = 1;
