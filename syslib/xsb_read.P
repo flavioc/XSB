@@ -688,7 +688,7 @@ read_syntax_error(List) :-
         BeforeError is Length - AfterError,
         read_display_list(List, BeforeError, Rest),
 	file_nl(2),
-        file_write0(2, '*** may be here? *** '),
+        file_write0(2, '*** maybe here? *** '),
 	file_nl(2),
         read_display_list(Rest, AfterError, _),
 	file_nl(2), 
