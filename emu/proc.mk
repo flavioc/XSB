@@ -32,9 +32,7 @@ LDSTRING=
 PRODUCT_LIBHOME=
 MAKEFILE=proc.mk
 PROCPLSFLAGS= sqlcheck=full userid=$(USERID) dbms=v6_char
-PROCPPFLAGS= code=cpp include=/usr/include include=/usr/local/pkg/SUNWspro/SC2.0.1/include/CC
-# H.D. change on 6/28/97
-#include=/opt/SUNWspro/SC3.0.1/include/CC 
+PROCPPFLAGS= code=cpp include=/usr/include
 USERID=scott/tiger
 INCLUDE=$(I_SYM). $(PRECOMPPUBLIC)
 

@@ -94,11 +94,12 @@ important.
   should build XSB with just {\tt makexsb} or pass an additional option. 
 \item Rebuild orastuff.c from orastuff.pc by running
   \\
-  {\tt make -f proc.mk orastuff}
+  {\tt make -f proc.mk orastuff.c}
   \\
-  If this does not work, you might need to use the version of proc.mk
-  included with your copy of Oracle In that case, see the changes we made
-  to our proc.mk and reflect them to the Oracle's version of proc.mk.
+  The file {\tt proc.mk} that you should use is the one
+  included with your copy of Oracle, but with some changes. See the sample
+  file {\tt emu/proc.mk} included with the XSB distribution.
+
 \item Run {\tt makexsb} as directed by the message displayed at the end of
   the run of the configure script.
 \item When {\tt makexsb} is done, it will tell use if you need to run XSB
