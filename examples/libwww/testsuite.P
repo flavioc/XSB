@@ -11,19 +11,19 @@
 		   html('http://www.etrade.com/', [timeout(1)],PP,YY,ZZ)]).
 :- libwww_request([html('http://swww.etrade.com/', [timeout(6)],P,Y,Z)]).
 :- libwww_request([html('http://www.etrade.com/', _,P,Y,Z)]).
-:- libwww_request([xml('REC-xml-19980210.xml',X,P,Y,Z)]).
-:- libwww_request([xml('simple.xml',X,PP,Y,Z),
-		   xml('REC-xml-19980210.xml',[],P,Yz,Zz)]).
-:- libwww_request([xml('simple.xml',X,PP,Y,Z),
+:- libwww_request([xml('files/REC-xml-19980210.xml',X,P,Y,Z)]).
+:- libwww_request([xml('files/simple.xml',X,PP,Y,Z),
+		   xml('files/REC-xml-19980210.xml',[],P,Yz,Zz)]).
+:- libwww_request([xml('files/simple.xml',X,PP,Y,Z),
 		   xml('http://www.w3.org/TR/1998/REC-xml-19980210.xml',
 		       XX,P,YY,ZZ)]).
-:- libwww_request([xml('simple.xml',X,P,Y,Z)]).
-:- libwww_request([xml('simple_wrong.xml',X,P,Y,Z)]).
-:- libwww_request([xml('simple.xml',
+:- libwww_request([xml('files/simple.xml',X,P,Y,Z)]).
+:- libwww_request([xml('files/simple_wrong.xml',X,P,Y,Z)]).
+:- libwww_request([xml('files/simple.xml',
 			[selection([a,f],[d],[c])],
 			P,Y,Z)]).
-:- libwww_request([xml('simple1.xml',[],P,Y,Z)]).
-:- libwww_request([xml("simple1.xml",[],P,Y,Z)]).
+:- libwww_request([xml('files/simple1.xml',[],P,Y,Z)]).
+:- libwww_request([xml("files/simple1.xml",[],P,Y,Z)]).
 
 
 :- libwww_request([html('http://www.cs.mit.edu',Z,P,Y,XXX)]).
@@ -48,31 +48,31 @@
 		   fetch('http://localhost/22',_,_,_,X),
 		   fetch('http://localhost/',[timeout(1)],P1,Y1,X1)
 		   ]).
-:- libwww_request([fetch('simple.html', X,P,Y,Z)]).
+:- libwww_request([fetch('files/simple.html', X,P,Y,Z)]).
 
 :- libwww_request([html('http://www.sunysb.edu/abcddfs',Z,P,Y,XXX)]).
 
 :- libwww_request([html('http://www.cs.sunysb.edu',[timeout(1)],P,Y,X)]).
 
-:- libwww_request([html('test2.html',[selection(['FORM','TABLE'],_,_)],
+:- libwww_request([html('files/test2.html',[selection(['FORM','TABLE'],_,_)],
 			P,Y,X)]).
-:- libwww_request([html('test2.html',
+:- libwww_request([html('files/test2.html',
 			[selection(['FORM','TABLE'],_,_)],PP,Y,X),
-		   html('test1.html',
+		   html('files/test1.html',
 			[selection(['FORM','TABLE'],_,_)],P,YX,XX)]).
 
-:- libwww_request([html('newsday1.html',
+:- libwww_request([html('files/newsday1.html',
 			[selection(['FORM','TABLE'],[p,hr],_)],P,Y,X),
-		   html('newsday1.html',[selection(_,[p,hr],_)],PP,YY,XX)
+		   html('files/newsday1.html',[selection(_,[p,hr],_)],PP,YY,XX)
 		  ]).
 
-:- libwww_request([html('w3c.html',
+:- libwww_request([html('files/w3c.html',
 			[selection(['FORM','TABLE'],_,_)],P,Y,X)]).
-:- libwww_request([html('w3c1.html',
+:- libwww_request([html('files/w3c1.html',
 			[selection(['FORM','TABLE'],_,[font,p])],P,Y,X)]).
-:- libwww_request([html('w3c1.html',
+:- libwww_request([html('files/w3c1.html',
 			[selection(['FORM'],_,_)],P,Y,X)]).
-:- libwww_request([html('w3c1.html', [],P,Y,Z)]).
+:- libwww_request([html('files/w3c1.html', [],P,Y,Z)]).
 
 :- libwww_request([html('http://www.ug.cs.sunysb.edu/~kifer/test/test.html',
 			[authentication([c(unknown,kkk,lll),
@@ -87,14 +87,14 @@
 			X,P,Y,Z)]).
 
 
-:- libwww_request([html('simple.html', X,P,Y,Z)]).
-:- libwww_request([html('simple.html', [selection([a],_,_)],P,Y,Z),
-		   html('simple.html',
+:- libwww_request([html('files/simple.html', X,P,Y,Z)]).
+:- libwww_request([html('files/simple.html', [selection([a],_,_)],P,Y,Z),
+		   html('files/simple.html',
 			[selection([body,a,form],[ul,p],_)],PP,YY,ZZ)
 		  ]).
 
-:- libwww_request([html("simple.html", [selection([a],_,_)],PP,Y,Z),
-		   html('simple.html',
+:- libwww_request([html("files/simple.html", [selection([a],_,_)],PP,Y,Z),
+		   html('files/simple.html',
 			[selection([body,a,form],[ul,p],_)],P,Ya,Za)]).
 
 :- libwww_request([html('http://www.amazon.com',
@@ -105,7 +105,7 @@
 			[selection([form],[ul,p],_)],PP,Y,Z),
 		   html('http://www.w3.org',
 			[selection(['FORM'],[p],_)],P,Y1,Z1)]).
-:- libwww_request([html('test2.html',
+:- libwww_request([html('files/test2.html',
 			[selection(['FORM','TABLE'],_,_)],PPP,Y,X),
 		   html('http://www.w3c.org',
 			[selection(['FORM'],[p],_)],PP,Y1,Z1),
@@ -113,7 +113,7 @@
 			[selection(['FORM'],[p],_)],P,Y2,Z2)
 		    ]).
 
-:- libwww_request([html('simple2.html', [],P,Y,X)]).
+:- libwww_request([html('files/simple2.html', [],P,Y,X)]).
 
 :- libwww_request([html('http://infoseek.go.com/Titles',
 			[method(get), formdata(['qt=computer+science']),
