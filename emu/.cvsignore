@@ -2,5 +2,6 @@ ChangeLog
 MS_VC_Mfile.mak
 Makefile
 ms_vc_mfile.mak
+msvc_makefile.mak
 orastuff.c
 private_builtin.*
