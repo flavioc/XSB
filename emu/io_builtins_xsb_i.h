@@ -118,7 +118,7 @@ inline static xsbBool file_function(void)
        when append, mode = 2, when opening a 
        string for read mode = 3 */
 
-    tmpstr = ptoc_string(2);
+    tmpstr = ptoc_longstring(2);
     pterm = reg_term(3);
     if (is_int(pterm))
       mode = oint_val(pterm);
