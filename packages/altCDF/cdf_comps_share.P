@@ -329,7 +329,7 @@ load_component_setup(Name,Path,Arglist):-
 
 load_component_1(Name,Path,Arglist):- 
 	split_arglist_on_version(Arglist,V,Arglist1),
-	(load_component_pass1(Name,Path,AbsPath,V,Arglist1) -> 
+	(load_component_pass1(Name,Path,AbsPath,V,Arglist1,top) -> 
 	    load_component_pass2(Name,AbsPath,V,[]) 
 	  ; true),
 	clean_up_dirty_bits.
@@ -366,9 +366,9 @@ perform_component_level_checks:-
 % actually is. It is a function of PathIn and the current directory
 % when loading a dependency.
 
-load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist):- 
+load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):- 
 	get_full_path_and_loadname(Name,PathIn,Vin,AbsPath,V,Loadname),
-	(check_component(Name,AbsPath,V,Arglist) -> 
+	(check_component(Name,AbsPath,V,Arglist,Flag) -> 
 	    slash(Slash),
   	    message(['Loading component: ',AbsPath,Slash,Loadname,' v. ', V]),
 				nl,
@@ -398,7 +398,7 @@ load_component_dependencies_pass1(Name,Abs,Arglist):-
  		List),
 	member((V,New,Relnew,Vnew,DepType),List),
         writeln(checking(dep(Name,New))),	
-	load_component_pass1(New,Relnew,AbsNew,version(Vnew),Arglist),
+	load_component_pass1(New,Relnew,AbsNew,version(Vnew),Arglist,depends),
         assert_dependencies_for_path2(Name,New,AbsNew,Vnew),
 %% make sure dependencies store absolute filenames
 	retractallExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
@@ -431,7 +431,6 @@ load_component_dependencies_pass1(Name,Abs,Arglist):-
 load_component_dependencies_pass1(_,_,_).
 
 assert_dependencies_for_path2(Name,New,Pathnew,Vnew):- 
-	\+ system_component(New),
 	New \== Name,
 	call_assert(temp_depends(Name,New,Pathnew,Vnew)).
 
@@ -475,14 +474,17 @@ component_exists(Name):-
 %---------------
 
 /* If check_component succeeds, we go ahead and do a pass 1 load. */
-check_component(Name,Path,V,Arglist):- 
-%	\+ system_component(Name),
-	check_conflicting_path(Name,Path,Arglist),
-	check_conflicting_version(Name,Path,V),
+check_component(Name,Path,V,Arglist,Flag):- 
+	(Flag == top
+	 ->	true
+	 ;	\+ system_component(Name)
+	),
 	(   already_present(Name,Path,V,Arglist)
 	->  %% cdf_warning(component, [Name, ' is already loaded.']),
 	    fail
-	;   assert(loaded_component(Name))
+	 ;	check_conflicting_path(Name,Path,Arglist),
+		check_conflicting_version(Name,Path,V),
+		assert(loaded_component(Name))
 	).
 
 check_conflicting_version(Name,Path,V):- 
