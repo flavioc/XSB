@@ -470,13 +470,12 @@ extern Cell TrieVarBindings[];
 /*
  *  Hashing function for symbols
  */
-#define CELL_TAG_SIZE	4     /* should go into cell_xsb.h for each machine */
 #define TRIEVAR_BUCKET	0
 
 #define TrieHash(Symbol, HashSeed)			\
    ( IsTrieVar(Symbol)					\
       ? TRIEVAR_BUCKET					\
-      : ( ((Symbol) >> CELL_TAG_SIZE) & (HashSeed) )	\
+      : ( ((Symbol) >> CELL_TAG_NBITS) & (HashSeed) )	\
     )
 
 #define CalculateBucketForSymbol(pHT,Symbol)		\

@@ -35,3 +35,7 @@
 #define STRING  5	/* Non-Numeric Constant (Atom) */
 #define FLOAT	6	/* Floating point number */
 #define ATTV	7	/* Attributed variable */
+
+#define CELL_TAG_NBITS	3
+
+#define TrieVar FREE    /* Cell tag of a standardized variable in tries */

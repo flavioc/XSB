@@ -70,8 +70,6 @@
 
 #include "celltags_xsb.h"
 
-#define TrieVar 0x0
-
 /*======================================================================*/
 /* CELL: an element in the local stack or global stack (heap).		*/
 /*======================================================================*/
