@@ -34,15 +34,15 @@
 
 :- import reverse/2 from basics.
 
-:- dynamic flora_flogic_base(_,_).
-:- dynamic flora_flogic_wspredicate(_,_).
+:- dynamic flora_flogic_bswrapper(_,_).
 :- dynamic flora_flogic_workspace(_).
 
-:- index(flora_flogic_base/2,trie).
-:- index(flora_flogic_wspredicate/2,trie).
+:- index(flora_flogic_bswrapper/2,trie).
 :- index(flora_flogic_workspace/1,trie).
 
 :- export
-	flora_setup_flogic_wspredicate/1,
-	flora_flogic_wspredicate/2,
-	flora_flogic_predicate/3.
+	flora_setup_flogic_bswrapper/1,
+	flora_flogic_bswrapper/2,
+	flora_flogic_predicate/4,
+	flora_hilog_predicate/2,
+	flora_nohilog_predicate/3.

@@ -71,7 +71,7 @@ is_flload(FLLOAD(LoadList),LoadList).
 is_flworkspace(FLWORKSPACE(P,WS),P,WS).
 is_flmodule(FLMODULE(P,MD),P,MD).
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
-is_flassert(FLASSERT(Op,List),Op,List).
+is_flinsert(FLINSERT(Op,List),Op,List).
 is_fldelete(FLDELETE(Op,List,Cond),Op,List,Cond).
 is_fldelete(FLDELETE(Op,List),Op,List).
 is_flaggregate(FLAGGREGATE(Op,V,GV,Goal),Op,V,GV,Goal).
@@ -208,8 +208,8 @@ termobj_struct(FObj,N,ObjList,PRTERM(FObj,N,ObjList)).
 %% Prolog declaration overrides workspace specification.
 wstermobj_struct(FObj,N,ObjList,Struct) :- termobj_struct(FObj,N,ObjList,Struct).
 
-assert_struct(Op,List,Code) :-
-	assert_syslib(Op,Lib),
+insert_struct(Op,List,Code) :-
+	insert_syslib(Op,Lib),
 	florasyslib_struct(Lib,1,[List],Code).
 
 delete_struct(Op,List,Cond,Code) :-
@@ -220,17 +220,17 @@ delete_struct(Op,List,Code) :-
 	delete_syslib(Op,Lib),
 	florasyslib_struct(Lib,1,[List],Code).
 
-assert_syslib(FL_ASSERT,FLLIBASSERT) :- !.
+insert_syslib(FL_INSERT,FLLIBINSERT) :- !.
 
-assert_syslib(FL_BTASSERT,FLLIBBTASSERT) :- !.
+insert_syslib(FL_BTINSERT,FLLIBBTINSERT) :- !.
 
-delete_syslib(FL_RETRACT,FLLIBRETRACT) :- !.
-delete_syslib(FL_RETRACTALL,FLLIBRETRACTALL) :- !.
+delete_syslib(FL_DELETE,FLLIBDELETE) :- !.
+delete_syslib(FL_DELETEALL,FLLIBDELETEALL) :- !.
 delete_syslib(FL_ERASE,FLLIBERASE) :- !.
 delete_syslib(FL_ERASEALL,FLLIBERASEALL) :- !.
 
-delete_syslib(FL_BTRETRACT,FLLIBBTRETRACT) :- !.
-delete_syslib(FL_BTRETRACTALL,FLLIBBTRETRACTALL) :- !.
+delete_syslib(FL_BTDELETE,FLLIBBTDELETE) :- !.
+delete_syslib(FL_BTDELETEALL,FLLIBBTDELETEALL) :- !.
 delete_syslib(FL_BTERASE,FLLIBBTERASE) :- !.
 delete_syslib(FL_BTERASEALL,FLLIBBTERASEALL) :- !.
 
@@ -962,8 +962,8 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	; is_flmodule(ParserTerm,P,Module) ->
 	    compile_prlgtermlit(P,Module,Code,Status)
 
-	; is_flassert(ParserTerm,Op,List) ->
-	    compile_flassert(Op,List,Code,Status)
+	; is_flinsert(ParserTerm,Op,List) ->
+	    compile_flinsert(Op,List,Code,Status)
 
 	; is_fldelete(ParserTerm,Op,List,Cond) ->
 	    compile_fldelete(Op,List,Cond,Code,Status)
@@ -2586,13 +2586,13 @@ compile_head_wsflobjeql(Obj1,Obj2,WS,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_flassert(+Op,+List,-Code,Status)
+  compile_flinsert(+Op,+List,-Code,Status)
 ****************************************************************************/
-compile_flassert(Op,List,Code,Status) :-
+compile_flinsert(Op,List,Code,Status) :-
 	compile_head(List,CodeList,Status),
 	( Status == [] ->
 	    list_struct(CodeList,[],ListCode),
-	    assert_struct(Op,ListCode,Code)
+	    insert_struct(Op,ListCode,Code)
 	;
 	  true
         ).

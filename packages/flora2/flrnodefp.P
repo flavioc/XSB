@@ -32,38 +32,45 @@
 :- index flora_nodefp/2-1.
 
 
-flora_nodefp(FL_SEMICOLON,2).
-flora_nodefp(FL_COMMA,2).
+flora_nodefp(FL_SEMICOLON,2) :- !.
+flora_nodefp(FL_COMMA,2) :- !.
 
-flora_nodefp(FL_TNOT,1).
-flora_nodefp(FL_NOT,1).
-flora_nodefp(FL_NEG,1).
-flora_nodefp(FL_TILDE,1).
+flora_nodefp(FL_TNOT,1) :- !.
+flora_nodefp(FL_NOT,1) :- !.
+flora_nodefp(FL_NEG,1) :- !.
+flora_nodefp(FL_TILDE,1) :- !.
 
-flora_nodefp(FL_UNIVEQ,2).
-flora_nodefp(FL_UNIVNOTEQ,2).
-flora_nodefp(FL_EQ,2).
-flora_nodefp(FL_NOTEQ,2).
-flora_nodefp(FL_ORDERLT,2).
-flora_nodefp(FL_ORDEREQLT,2).
-flora_nodefp(FL_ORDERGT,2).
-flora_nodefp(FL_ORDEREQGT,2).
-flora_nodefp(FL_METAUNIV,2).
-flora_nodefp(FL_ASSIGN,2).
-flora_nodefp(FL_IS,2).
-flora_nodefp(FL_MATHEQ,2).
-flora_nodefp(FL_MATHNOTEQ,2).
-flora_nodefp(FL_LT,2).
-flora_nodefp(FL_EQLT,2).
-flora_nodefp(FL_GT,2).
-flora_nodefp(FL_EQGT,2).
-flora_nodefp(FL_RIGHTTO,2).
-flora_nodefp(FL_LEFTTO,2).
+flora_nodefp(FL_UNIVEQ,2) :- !.
+flora_nodefp(FL_UNIVNOTEQ,2) :- !.
+flora_nodefp(FL_EQ,2) :- !.
+flora_nodefp(FL_NOTEQ,2) :- !.
+flora_nodefp(FL_ORDERLT,2) :- !.
+flora_nodefp(FL_ORDEREQLT,2) :- !.
+flora_nodefp(FL_ORDERGT,2) :- !.
+flora_nodefp(FL_ORDEREQGT,2) :- !.
+flora_nodefp(FL_METAUNIV,2) :- !.
+flora_nodefp(FL_ASSIGN,2) :- !.
+flora_nodefp(FL_IS,2) :- !.
+flora_nodefp(FL_MATHEQ,2) :- !.
+flora_nodefp(FL_MATHNOTEQ,2) :- !.
+flora_nodefp(FL_LT,2) :- !.
+flora_nodefp(FL_EQLT,2) :- !.
+flora_nodefp(FL_GT,2) :- !.
+flora_nodefp(FL_EQGT,2) :- !.
+flora_nodefp(FL_RIGHTTO,2) :- !.
+flora_nodefp(FL_LEFTTO,2) :- !.
 
-flora_nodefp(FL_CUT,0).
+flora_nodefp(FL_CUT,0) :- !.
 
-flora_nodefp(FL_ASSERT,_).
-flora_nodefp(FL_RETRACT,_).
-flora_nodefp(FL_RETRACTALL,_).
-flora_nodefp(FL_ERASE,_).
-flora_nodefp(FL_ERASEALL,_).
+flora_nodefp(FL_INSERT,_) :- !.
+flora_nodefp(FL_DELETE,_) :- !.
+flora_nodefp(FL_DELETEALL,_) :- !.
+flora_nodefp(FL_ERASE,_) :- !.
+flora_nodefp(FL_ERASEALL,_) :- !.
+
+flora_nodefp(FL_BTINSERT,_) :- !.
+flora_nodefp(FL_BTDELETE,_) :- !.
+flora_nodefp(FL_BTDELETEALL,_) :- !.
+flora_nodefp(FL_BTERASE,_) :- !.
+flora_nodefp(FL_BTERASEALL,_) :- !.
+

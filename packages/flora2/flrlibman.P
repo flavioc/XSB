@@ -80,9 +80,9 @@ flora_include(FLLIBLOAD,'syslibinc/flrload_inc.flh').
 flora_include(FLLIBANSWER,'syslibinc/flranswer_inc.flh').
 flora_include(FLLIBSHELLANS,'syslibinc/flranswer_inc.flh').
 flora_include(FLLIBPROGRAMANS,'syslibinc/flranswer_inc.flh').
-flora_include(FLLIBASSERT,'syslibinc/flrdbop_inc.flh').
-flora_include(FLLIBRETRACT,'syslibinc/flrdbop_inc.flh').
-flora_include(FLLIBRETRACTALL,'syslibinc/flrdbop_inc.flh').
+flora_include(FLLIBINSERT,'syslibinc/flrdbop_inc.flh').
+flora_include(FLLIBDELETE,'syslibinc/flrdbop_inc.flh').
+flora_include(FLLIBDELETEALL,'syslibinc/flrdbop_inc.flh').
 flora_include(FLLIBERASE,'syslibinc/flrdbop_inc.flh').
 flora_include(FLLIBERASEALL,'syslibinc/flrdbop_inc.flh').
 flora_include(FLLIBSHDIRECT,'syslibinc/flrshdirect_inc.flh').
@@ -111,9 +111,9 @@ flora_library(FLLIBSHELLANS,'syslib/flranswer.P').
 flora_library(FLLIBPROGRAMANS,'syslib/flranswer.P').
 flora_library(FLLIBDISPLAY,'syslib/flrdisplay.P').
 flora_library(FLLIBDBOP,'syslib/flrdbop.P').
-flora_library(FLLIBASSERT,'syslib/flrdbop.P').
-flora_library(FLLIBRETRACT,'syslib/flrdbop.P').
-flora_library(FLLIBRETRACTALL,'syslib/flrdbop.P').
+flora_library(FLLIBINSERT,'syslib/flrdbop.P').
+flora_library(FLLIBDELETE,'syslib/flrdbop.P').
+flora_library(FLLIBDELETEALL,'syslib/flrdbop.P').
 flora_library(FLLIBERASE,'syslib/flrdbop.P').
 flora_library(FLLIBERASEALL,'syslib/flrdbop.P').
 flora_library(FLLIBSHDIRECT,'syslib/flrshdirect.P').

@@ -42,15 +42,15 @@
 :- import flora_register_syslib/1 from flrlibman.
 
 :- import
-	flora_setup_flogic_wspredicate/1,
-	flora_flogic_wspredicate/2,
-	flora_flogic_predicate/3
+	flora_setup_flogic_bswrapper/1,
+	flora_flogic_bswrapper/2,
+	flora_flogic_predicate/4
    from flrwrapper.
 
 
 /*********************************************************************
   This file is for the following FLORA database operations:
-  assert, retract, retractall, erase, eraseall.
+  insert, delete, deleteall, erase, eraseall.
 *********************************************************************/
 ?- flora_register_syslib(FLLIBDBOP).
 
@@ -58,46 +58,46 @@
 /*********************************************************************
   system library registration
 *********************************************************************/
-?- flora_register_syslib(FLLIBASSERT).
+?- flora_register_syslib(FLLIBINSERT).
 
 
 /*****************************************************************************
-  fllibassert(+List)
+  fllibinsert(+List)
 *****************************************************************************/
-fllibassert([]) :- !.
+fllibinsert([]) :- !.
 
-fllibassert([H|T]) :-
+fllibinsert([H|T]) :-
 	assert(H),
-	fllibassert(T).
+	fllibinsert(T).
 
 
 /*********************************************************************
   system library registration
 *********************************************************************/
-?- flora_register_syslib(FLLIBRETRACT).
+?- flora_register_syslib(FLLIBDELETE).
 
 
 /*****************************************************************************
-  fllibretract(+List)
+  fllibdelete(+List)
 *****************************************************************************/
-fllibretract(List) :- fllibretract(List,true).
+fllibdelete(List) :- fllibdelete(List,true).
 
 
 /*****************************************************************************
-  fllibretract(+List,+Condition)
+  fllibdelete(+List,+Condition)
 
   The semantics is such that all the literals in "List" must be base facts
-  to be retracted.
+  to be deleted.
 *****************************************************************************/
-fllibretract([P],true) :-
+fllibdelete([P],true) :-
 	!,
 	retract((P :- true)).
 
-fllibretract(List,Condition) :-
+fllibdelete(List,Condition) :-
 	flora_prove_goals(List),
 	flora_prove_goals([Condition]),
 	flora_check_facts(List),
-	flora_retract_facts(List).
+	flora_delete_facts(List).
 
 
 /*****************************************************************************
@@ -132,61 +132,61 @@ flora_check_facts([F|Fs]) :-
 
 
 /*****************************************************************************
-  flora_retract_facts(+List)
+  flora_delete_facts(+List)
 *****************************************************************************/
-flora_retract_facts([]) :- !.
+flora_delete_facts([]) :- !.
 
-flora_retract_facts([F|Fs]) :-
+flora_delete_facts([F|Fs]) :-
 	!,
 	retract((F :- true)),
-	flora_retract_facts(Fs).
+	flora_delete_facts(Fs).
 
 
 /*********************************************************************
   system library registration
 *********************************************************************/
-?- flora_register_syslib(FLLIBRETRACTALL).
+?- flora_register_syslib(FLLIBDELETEALL).
 
 
 /*****************************************************************************
-  fllibretractall(+List)
+  fllibdeleteall(+List)
 *****************************************************************************/
-fllibretractall(List) :- fllibretractall(List,true).
+fllibdeleteall(List) :- fllibdeleteall(List,true).
 
 
 /*****************************************************************************
-  fllibretractall(+List,+Condition)
+  fllibdeleteall(+List,+Condition)
 
   The semantics is such that all the literals in "List" must be base facts
-  to be retracted. This call always succeeds.
+  to be deleted. This call always succeeds.
 *****************************************************************************/
-fllibretractall([P],true) :-
+fllibdeleteall([P],true) :-
 	!,
 	retractall(P).
 
-fllibretractall(List,Condition) :-
+fllibdeleteall(List,Condition) :-
 	flora_list2conjunct([Condition|List],Goal),
 	findall(List,Goal,FactList),
-	flora_retractall_facts(FactList).
+	flora_deleteall_facts(FactList).
 
 
 /*****************************************************************************
-  flora_retractall_facts(+FactList)
+  flora_deleteall_facts(+FactList)
 
   Note: This predicate always succeeds.
 *****************************************************************************/
-flora_retractall_facts([]) :- !.
+flora_deleteall_facts([]) :- !.
 
-flora_retractall_facts([Fs|FL]) :-
+flora_deleteall_facts([Fs|FL]) :-
 	flora_check_facts(Fs),
 	!,
-	%% "true" is needed in case that a previously retracted fact is
-        %% retracted again.
-	(flora_retract_facts(Fs), !; true),
-	flora_retractall_facts(FL).
+	%% "true" is needed in case that a previously deleted fact is
+        %% deleted again.
+	(flora_delete_facts(Fs), !; true),
+	flora_deleteall_facts(FL).
 
-flora_retractall_facts([_Fs|FL]) :-
-	flora_retractall_facts(FL).
+flora_deleteall_facts([_Fs|FL]) :-
+	flora_deleteall_facts(FL).
 
 
 /*********************************************************************
@@ -227,27 +227,27 @@ flora_erase_facts([F|Fs]) :-
   flora_erase_one_fact(+Fact)
 
   Note: For an F-logic fact this predicate continues to trace links and
-        retract other F-logic facts. It always succeeds.
+        delete other F-logic facts. It always succeeds.
 *****************************************************************************/
 flora_erase_one_fact(Fact) :-
 	Fact =.. [Funct|Args],
-	( flora_flogic_predicate(Funct,Type,Workspace) ->
-	    ( Type == WRAP_ISA     -> Args=[O,_C]
-	    ; Type == WRAP_SUB     -> Args=[O,_C]
-	    ; Type == WRAP_FD      -> Args=[_S,_A,O]
-	    ; Type == WRAP_MVD     -> Args=[_S,_A,O]
-	    ; Type == WRAP_IFD     -> Args=[_S,_IA,O]
-	    ; Type == WRAP_IMVD    -> Args=[_S,_IA,O]
-	    ; Type == WRAP_METH    -> Args=[O,_M]
-	    ; Type == WRAP_IMETH   -> Args=[O,_IM]
-	    ; Type == WRAP_EXISTS  -> Args=[O]
-	    ; Type == WRAP_MVDDEF  -> Args=[O,_A]
-	    ; Type == WRAP_IMVDDEF -> Args=[O,_IA]
-	    ; Type == WRAP_TRAN    -> Args=[O,_T]
-	    ; Type == WRAP_FDSIG   -> Args=[_S,_AS,O]
-	    ; Type == WRAP_IFDSIG  -> Args=[_S,_IAS,O]
-	    ; Type == WRAP_MVDSIG  -> Args=[_S,_AS,O]
-	    ; Type == WRAP_IMVDSIG -> Args=[_S,_IAS,O]
+	( flora_flogic_predicate(Funct,Workspace,_Position,Base) ->
+	    ( Base == WRAP_ISA     -> Args=[O,_C]
+	    ; Base == WRAP_SUB     -> Args=[O,_C]
+	    ; Base == WRAP_FD      -> Args=[_S,_A,O]
+	    ; Base == WRAP_MVD     -> Args=[_S,_A,O]
+	    ; Base == WRAP_IFD     -> Args=[_S,_IA,O]
+	    ; Base == WRAP_IMVD    -> Args=[_S,_IA,O]
+	    ; Base == WRAP_METH    -> Args=[O,_M]
+	    ; Base == WRAP_IMETH   -> Args=[O,_IM]
+	    ; Base == WRAP_EXISTS  -> Args=[O]
+	    ; Base == WRAP_MVDDEF  -> Args=[O,_A]
+	    ; Base == WRAP_IMVDDEF -> Args=[O,_IA]
+	    ; Base == WRAP_TRAN    -> Args=[O,_T]
+	    ; Base == WRAP_FDSIG   -> Args=[_S,_AS,O]
+	    ; Base == WRAP_IFDSIG  -> Args=[_S,_IAS,O]
+	    ; Base == WRAP_MVDSIG  -> Args=[_S,_AS,O]
+	    ; Base == WRAP_IMVDSIG -> Args=[_S,_IAS,O]
 	    )
 	;
 	  true
@@ -256,7 +256,7 @@ flora_erase_one_fact(Fact) :-
 	( var(O) ->
 	    true
 	;
-	  flora_setup_flogic_wspredicate(Workspace),
+	  flora_setup_flogic_bswrapper(Workspace),
 	  flora_erase_objects([O])
 	).
 
@@ -268,22 +268,22 @@ flora_erase_objects([]) :- !.
 
 flora_erase_objects([O|OList]) :-
 	!,
-	flora_flogic_wspredicate(WRAP_ISA,WSBisa),
-	flora_flogic_wspredicate(WRAP_SUB,WSBsub),
-	flora_flogic_wspredicate(WRAP_METH,WSBmeth),
-	flora_flogic_wspredicate(WRAP_IMETH,WSBimeth),
-	flora_flogic_wspredicate(WRAP_TRAN,WSBtran),
-	flora_flogic_wspredicate(WRAP_FD,WSBfd),
-	flora_flogic_wspredicate(WRAP_IFD,WSBifd),
-	flora_flogic_wspredicate(WRAP_FDSIG,WSBfdsig),
-	flora_flogic_wspredicate(WRAP_IFDSIG,WSBifdsig),
-	flora_flogic_wspredicate(WRAP_MVD,WSBmvd),
-	flora_flogic_wspredicate(WRAP_IMVD,WSBimvd),
-	flora_flogic_wspredicate(WRAP_MVDSIG,WSBmvdsig),
-	flora_flogic_wspredicate(WRAP_IMVDSIG,WSBimvdsig),
-	flora_flogic_wspredicate(WRAP_EXISTS,WSBexists),
-	flora_flogic_wspredicate(WRAP_MVDDEF,WSBmvddef),
-	flora_flogic_wspredicate(WRAP_IMVDDEF,WSBimvddef),
+	flora_flogic_bswrapper(WRAP_ISA,WSBisa),
+	flora_flogic_bswrapper(WRAP_SUB,WSBsub),
+	flora_flogic_bswrapper(WRAP_METH,WSBmeth),
+	flora_flogic_bswrapper(WRAP_IMETH,WSBimeth),
+	flora_flogic_bswrapper(WRAP_TRAN,WSBtran),
+	flora_flogic_bswrapper(WRAP_FD,WSBfd),
+	flora_flogic_bswrapper(WRAP_IFD,WSBifd),
+	flora_flogic_bswrapper(WRAP_FDSIG,WSBfdsig),
+	flora_flogic_bswrapper(WRAP_IFDSIG,WSBifdsig),
+	flora_flogic_bswrapper(WRAP_MVD,WSBmvd),
+	flora_flogic_bswrapper(WRAP_IMVD,WSBimvd),
+	flora_flogic_bswrapper(WRAP_MVDSIG,WSBmvdsig),
+	flora_flogic_bswrapper(WRAP_IMVDSIG,WSBimvdsig),
+	flora_flogic_bswrapper(WRAP_EXISTS,WSBexists),
+	flora_flogic_bswrapper(WRAP_MVDDEF,WSBmvddef),
+	flora_flogic_bswrapper(WRAP_IMVDDEF,WSBimvddef),
 	Wfd =.. [WSBfd,O,_,X],
 	Wifd =.. [WSBifd,O,_,X],
 	Wfdsig =.. [WSBfdsig,O,_,X],

@@ -42,9 +42,6 @@
 #define FLORA_FILE		file
 #define FLORA_COMMANDLINE	commandline
 
-#define STDTRAILER		standard
-#define EQLTRAILER		equality
-
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
 #include "flora_terms.flh"

@@ -54,6 +54,14 @@
 
 :- import pop_stdin/1 from push_io.
 
+:- import
+	add_xsb_hook/1,
+	remove_xsb_hook/1,
+	xsb_undefined_predicate_hook/1
+   from xsb_hook.
+
+:- import flora_undefined_predicate_hook/1 from flrundefhook.
+
 :- import unstrap_flora/0 from flora2.
 
 :- import flora_shreset_operator/0 from flroperator.

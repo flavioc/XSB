@@ -43,6 +43,7 @@ ALLOBJS = flroperator.O \
 	  flrcoder.O \
 	  flrutils.O \
 	  flrwrapper.O \
+	  flrundefhook.O \
 	  flrshell.O
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
@@ -142,6 +143,10 @@ flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLA
 
 flrwrapper.O : flrwrapper.P flrwrapper.H $(FLORA_TERMS)
 	@echo 'mc(flrwrapper,$(OPTION)).' >> cmd...
+
+
+flrundefhook.O : flrundefhook.P flrundefhook.H $(FLORA_TERMS)
+	@echo 'mc(flrundefhook,$(OPTION)).' >> cmd...
 
 
 flrshell.O : flrshell.P flrshell.H $(FLORA_TERMS)

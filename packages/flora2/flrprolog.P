@@ -32,83 +32,87 @@
 /****************************************************************************
   Flora built-in operators
 ****************************************************************************/
-flora_prlg(FL_IMPLYOP,2).
-flora_prlg(FL_IMPLYOP,1).
-flora_prlg(FL_QUERYOP,1).
+flora_prlg(FL_IMPLYOP,2) :- !.
+flora_prlg(FL_IMPLYOP,1) :- !.
+flora_prlg(FL_QUERYOP,1) :- !.
 
-flora_prlg(FL_UNIVEQ,2).
-flora_prlg(FL_UNIVNOTEQ,2).
-flora_prlg(FL_EQ,2).
-flora_prlg(FL_NOTEQ,2).
-flora_prlg(FL_ORDERLT,2).
-flora_prlg(FL_ORDEREQLT,2).
-flora_prlg(FL_ORDERGT,2).
-flora_prlg(FL_ORDEREQGT,2).
-flora_prlg(FL_METAUNIV,2).
-flora_prlg(FL_ASSIGN,2).
-flora_prlg(FL_IS,2).
-flora_prlg(FL_MATHEQ,2).
-flora_prlg(FL_MATHNOTEQ,2).
-flora_prlg(FL_LT,2).
-flora_prlg(FL_EQLT,2).
-flora_prlg(FL_GT,2).
-flora_prlg(FL_EQGT,2).
-flora_prlg(FL_RIGHTTO,2).
-flora_prlg(FL_LEFTTO,2).
+flora_prlg(FL_UNIVEQ,2) :- !.
+flora_prlg(FL_UNIVNOTEQ,2) :- !.
+flora_prlg(FL_EQ,2) :- !.
+flora_prlg(FL_NOTEQ,2) :- !.
+flora_prlg(FL_ORDERLT,2) :- !.
+flora_prlg(FL_ORDEREQLT,2) :- !.
+flora_prlg(FL_ORDERGT,2) :- !.
+flora_prlg(FL_ORDEREQGT,2) :- !.
+flora_prlg(FL_METAUNIV,2) :- !.
+flora_prlg(FL_ASSIGN,2) :- !.
+flora_prlg(FL_IS,2) :- !.
+flora_prlg(FL_MATHEQ,2) :- !.
+flora_prlg(FL_MATHNOTEQ,2) :- !.
+flora_prlg(FL_LT,2) :- !.
+flora_prlg(FL_EQLT,2) :- !.
+flora_prlg(FL_GT,2) :- !.
+flora_prlg(FL_EQGT,2) :- !.
+flora_prlg(FL_RIGHTTO,2) :- !.
+flora_prlg(FL_LEFTTO,2) :- !.
 
-flora_prlg(FL_PLUS,2).
-flora_prlg(FL_MINUS,2).
-flora_prlg(FL_SYMOR,2).
+flora_prlg(FL_PLUS,2) :- !.
+flora_prlg(FL_MINUS,2) :- !.
+flora_prlg(FL_SYMOR,2) :- !.
 
-flora_prlg(FL_STAR,2).
-flora_prlg(FL_SLASH,2).
-flora_prlg(FL_MOD,2).
-flora_prlg(FL_SYMAND,2).
+flora_prlg(FL_STAR,2) :- !.
+flora_prlg(FL_SLASH,2) :- !.
+flora_prlg(FL_MOD,2) :- !.
+flora_prlg(FL_SYMAND,2) :- !.
 
-flora_prlg(FL_PLUS,1).
-flora_prlg(FL_MINUS,1).
+flora_prlg(FL_PLUS,1) :- !.
+flora_prlg(FL_MINUS,1) :- !.
 
 
 /****************************************************************************
   XSB predicates
 ****************************************************************************/
-flora_prlg(findall,3).
-flora_prlg(compile,1).
-flora_prlg(fail,0).
-flora_prlg(true,0).
-flora_prlg(abolish_all_tables,0).
+flora_prlg(findall,3) :- !.
+flora_prlg(compile,1) :- !.
+flora_prlg(fail,0) :- !.
+flora_prlg(true,0) :- !.
+flora_prlg(abolish_all_tables,0) :- !.
+flora_prlg(assert,1) :- !.
+flora_prlg(retract,1) :- !.
+flora_prlg(retractall,1) :- !.
 
 
 /****************************************************************************
   FLORA shell predicates
 ****************************************************************************/
-flora_prlg(flcompile,1).
-flora_prlg(flcompile,2).
-flora_prlg(flload,1).
-flora_prlg(flload,2).
-flora_prlg(flconsult,1).
-flora_prlg(flcompinc,1).
-flora_prlg(flloadtrailer,1).
-flora_prlg(flloadtrailer,2).
-flora_prlg(help,0).
-flora_prlg(reset,1).
-flora_prlg(all,0).
-flora_prlg(one,0).
-flora_prlg(end,0).
-flora_prlg(halt,0).
-flora_prlg(maxerr,1).
-flora_prlg(rundemo,1).
-flora_prlg(fltrace,0).
-flora_prlg(flnotrace,0).
-flora_prlg(chatter,0).
-flora_prlg(nochatter,0).
+flora_prlg(flcompile,1) :- !.
+flora_prlg(flcompile,2) :- !.
+flora_prlg(flload,1) :- !.
+flora_prlg(flload,2) :- !.
+flora_prlg(flconsult,1) :- !.
+flora_prlg(flcompinc,1) :- !.
+flora_prlg(flloadtrailer,1) :- !.
+flora_prlg(flloadtrailer,2) :- !.
+flora_prlg(help,0) :- !.
+flora_prlg(reset,1) :- !.
+flora_prlg(all,0) :- !.
+flora_prlg(one,0) :- !.
+flora_prlg(end,0) :- !.
+flora_prlg(halt,0) :- !.
+flora_prlg(maxerr,1) :- !.
+flora_prlg(rundemo,1) :- !.
+flora_prlg(fltrace,0) :- !.
+flora_prlg(flnotrace,0) :- !.
+flora_prlg(chatter,0) :- !.
+flora_prlg(nochatter,0) :- !.
 
 
 /****************************************************************************
   definition
 ****************************************************************************/
 flora_prlgdef(X,Y) :-
-	flora_prlg(X,Y).
+	flora_prlg(X,Y),
+	!.
 
 flora_prlgdef(X,Y) :-
 	( conget(flora_shell_mode,1) ->

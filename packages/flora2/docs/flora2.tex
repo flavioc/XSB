@@ -2117,7 +2117,12 @@ the following compiler directive can be used:
 %
 The syntax to refer to literals defined in other modules is as follows:
 \begin{quote}
-\verb|literal @ module|
+\verb|literal @ module| \footnote{
+%
+If the name of a \FLORA module contains the character ``{\tt '}'', the
+\FLORA undefined predicate handler may not work properly in some cases.
+%
+}
 \end{quote}
 where {\tt literal} can be any predicate or F-molecule. For instance,
 \verb|foo(a) @ foomod| refers to {\tt foo(a)} in the module named

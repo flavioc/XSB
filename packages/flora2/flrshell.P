@@ -58,6 +58,8 @@ flora_shell_loop :-
 
 /*********************************************************************/
 flora_init_shell :-
+	consult(flrundefhook),
+	add_xsb_hook(xsb_undefined_predicate_hook(flora_undefined_predicate_hook(_))),
 	consult(flrutils),
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
@@ -65,7 +67,8 @@ flora_init_shell :-
 	flora_welcome_msg,
 	all,
 	chatter,
-	conset(flora_shell_loaded,1).
+	conset(flora_shell_loaded,1),
+	!.
 
 
 /*********************************************************************/
@@ -184,6 +187,7 @@ one :-
 
 /*********************************************************************/
 end :-
+	remove_xsb_hook(xsb_undefined_predicate_hook(flora_undefined_predicate_hook(_))),
 	unstrap_flora,
 	flora_stdmsg_line("\n\nCiao!"),
 	pop_abort_cutpoint,

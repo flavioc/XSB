@@ -36,6 +36,8 @@ XSB = $(XSBDIR)/bin/xsb
 
 PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
 
+FLORA_TERMS = ../includes/flora_terms.flh
+
 # Make sure warnings are saved in a file.
 SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
 STDWARN = 3
@@ -50,11 +52,11 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flrtrailer.flh : flrtrailer.fli
+flrtrailer.flh : flrtrailer.fli $(FLORA_TERMS)
 	@echo 'flcompinc(flrtrailer).' >> cmd...
 
 
-flreqltrailer.flh : flreqltrailer.fli
+flreqltrailer.flh : flreqltrailer.fli $(FLORA_TERMS)
 	@echo 'flcompinc(flreqltrailer).' >> cmd...
 
 

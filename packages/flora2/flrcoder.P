@@ -93,11 +93,17 @@ is_flogic(PRIMVDDEF(Obj,Att),WRAP_IMVDDEF,2,[Obj,Att]) :- !.
 is_flogic(PRTRAN(Obj,Tran),WRAP_TRAN,2,[Obj,Tran]) :- !.
 is_flogic(PROBJEQL(O1,O2),WRAP_OBJEQL,2,[O1,O2]) :- !.
 
-is_fllibdb(FLLIBASSERT) :- !.
-is_fllibdb(FLLIBRETRACT) :- !.
-is_fllibdb(FLLIBRETRACTALL) :- !.
+is_fllibdb(FLLIBINSERT) :- !.
+is_fllibdb(FLLIBDELETE) :- !.
+is_fllibdb(FLLIBDELETEALL) :- !.
 is_fllibdb(FLLIBERASE) :- !.
 is_fllibdb(FLLIBERASEALL) :- !.
+
+is_fllibdb(FLLIBBTINSERT) :- !.
+is_fllibdb(FLLIBBTDELETE) :- !.
+is_fllibdb(FLLIBBTDELETEALL) :- !.
+is_fllibdb(FLLIBBTERASE) :- !.
+is_fllibdb(FLLIBBTERASEALL) :- !.
 
 
 /****************************************************************************

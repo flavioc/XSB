@@ -398,21 +398,21 @@ is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
 flmodule_struct(Goal,Name,FLMODULE(Goal,Name)).
 
-is_dbassertop(FL_ASSERT) :- !.
+is_dbinsertop(FL_INSERT) :- !.
 
-is_dbassertop(FL_BTASSERT) :- !.
+is_dbinsertop(FL_BTINSERT) :- !.
 
-is_dbdeleteop(FL_RETRACT) :- !.
-is_dbdeleteop(FL_RETRACTALL) :- !.
+is_dbdeleteop(FL_DELETE) :- !.
+is_dbdeleteop(FL_DELETEALL) :- !.
 is_dbdeleteop(FL_ERASE) :- !.
 is_dbdeleteop(FL_ERASEALL) :- !.
 
-is_dbdeleteop(FL_BTRETRACT) :- !.
-is_dbdeleteop(FL_BTRETRACTALL) :- !.
+is_dbdeleteop(FL_BTDELETE) :- !.
+is_dbdeleteop(FL_BTDELETEALL) :- !.
 is_dbdeleteop(FL_BTERASE) :- !.
 is_dbdeleteop(FL_BTERASEALL) :- !.
 
-flassert_struct(Op,List,FLASSERT(Op,List)).
+flinsert_struct(Op,List,FLINSERT(Op,List)).
 fldelete_struct(Op,List,Cond,FLDELETE(Op,List,Cond)).
 fldelete_struct(Op,List,FLDELETE(Op,List)).
 
@@ -1044,12 +1044,12 @@ flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :
 
 flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,Ip),Code,Status) :-
 	get_name(Funct,Atom),
-	is_dbassertop(Atom),
+	is_dbinsertop(Atom),
 	!,
 	( N == 0 ->
 	    parsing_error(Ip,EXP_ARGS,Status)
 	;
-	  flora_dbassert(Atom,Args,Code,Status)
+	  flora_dbinsert(Atom,Args,Code,Status)
         ).
 
 flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,Ip),Code,Status) :-
@@ -1809,11 +1809,11 @@ flora_head_setexp(CanoniTerm,[Code],Status) :-
 
 
 /****************************************************************************
-  flora_dbassert(+OpAtom,+ArgsList,-Code,-Status)
+  flora_dbinsert(+OpAtom,+ArgsList,-Code,-Status)
 ****************************************************************************/
-flora_dbassert(OpAtom,Args,Code,Status) :-
+flora_dbinsert(OpAtom,Args,Code,Status) :-
 	flora_dbliteral_list(FLINS,Args,CodeList,Status),
-	(Status == [] -> flassert_struct(OpAtom,CodeList,Code); true).
+	(Status == [] -> flinsert_struct(OpAtom,CodeList,Code); true).
 
 
 /****************************************************************************
@@ -1846,10 +1846,10 @@ flora_dbdelete_cond(CanoniTerm,Code,Status) :-
 /****************************************************************************
   flora_dbliteral_list(+Mode,+ArgsList,-CodeList,-Status)
 
-  flora_dbliteral_list/4 is for both assert and retract literals. The
-  value of Mode can be either FLINS (assert) or FLDEL (retract). The
-  difference between assert and retract literals is that assert literals
-  cannot contain multivalued reference whereas retract literals can.
+  flora_dbliteral_list/4 is for both insert and delete literals. The
+  value of Mode can be either FLINS (insert) or FLDEL (delete). The
+  difference between insert and delete literals is that insert literals
+  cannot contain multivalued reference whereas delete literals can.
 ****************************************************************************/
 flora_dbliteral_list(_Mode,[],[],[]) :- !.
 
@@ -1867,7 +1867,7 @@ flora_dbliteral_list(Mode,[H|T],CodeList,Status) :-
 /****************************************************************************
   flora_dbliteral(+Mode,+CanoniTerm,-CodeList,-Status)
 
-  Note: Workspaces are allowed in assert/retract literals.
+  Note: Workspaces are allowed in insert/delete literals.
 ****************************************************************************/
 flora_dbliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Status) :-
 	get_atom(Funct,FL_AT),
@@ -1938,7 +1938,7 @@ flora_dblit(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,_Args,If,_Ip),_CodeList,Status)
 	flora_nodefp(F,N),
 	!,
 	( Mode == FLINS ->
-	    parsing_error(If,NO_ASSERT,Status)
+	    parsing_error(If,NO_INSERT,Status)
 	;
 	  Mode == FLDEL,
 	  parsing_error(If,NO_DELETE,Status)
@@ -1956,7 +1956,7 @@ flora_dblit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
 	is_objrefop(F),
 	!,
 	( Mode == FLINS ->
-	    parsing_error(If,ERROR_ASSERT,Status)
+	    parsing_error(If,ERROR_INSERT,Status)
 	;
 	  Mode == FLDEL,
 	  parsing_error(If,ERROR_DELETE,Status)
@@ -1980,7 +1980,7 @@ flora_dblit(_Mode,CanoniTerm,Code,Status) :-
 	get_atom(CanoniTerm,A),
 	!,
 	( flora_nodefp(A,0) ->
-	    parsing_error(CanoniTerm,NO_ASSERT,Status)
+	    parsing_error(CanoniTerm,NO_INSERT,Status)
 	;
 	  flatom_struct(A,Code),
 	  Status=[]
@@ -1989,7 +1989,7 @@ flora_dblit(_Mode,CanoniTerm,Code,Status) :-
 flora_dblit(Mode,CanoniTerm,_Code,Status) :-
 	!,
 	( Mode == FLINS ->
-	    parsing_error(CanoniTerm,ERROR_ASSERT,Status)
+	    parsing_error(CanoniTerm,ERROR_INSERT,Status)
 	;
 	  Mode == FLDEL,
 	  parsing_error(CanoniTerm,ERROR_DELETE,Status)
@@ -2046,7 +2046,7 @@ flora_db_pathexplist(Mode,[T|L],[TCode|LCode],Status) :-
 
 
 /****************************************************************************
-  flora_db_pathexp(+Mode,+CanoniTerm,-AssertPathExpression,-Status)
+  flora_db_pathexp(+Mode,+CanoniTerm,-InsertPathExpression,-Status)
 ****************************************************************************/
 flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	get_atom(Funct,F),
@@ -2067,7 +2067,7 @@ flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,_Ip),Code,Status) 
 	is_mvdobjrefop(F),
 	!,
 	( Mode == FLINS ->
-	    parsing_error(If,NO_ASSRTMULATT,Status)
+	    parsing_error(If,NO_INSERTMULATT,Status)
 	;
 	  Mode == FLDEL,
 	  flora_db_pathexplist(Mode,Args,[LCode,RCode],Status),
@@ -2109,7 +2109,7 @@ flora_db_pathexp(Mode,CANOLIST(L,T,_N,_I,_Ib),Code,Status) :-
 	flora_db_list(Mode,L,T,Code,Status).
 
 flora_db_pathexp(_Mode,ObjectTerm,_Code,Status) :-
-	%% New oid directive is not allowed in assert/delete, since it is error prone.
+	%% New oid directive is not allowed in insert/delete, since it is error prone.
 	get_spectoken(ObjectTerm,FL_NEWOID),
 	!,
 	parsing_error(ObjectTerm,ERROR_NEWOID,Status).
@@ -2120,7 +2120,7 @@ flora_db_pathexp(_Mode,ObjectTerm,Code,[]) :-
 
 flora_db_pathexp(_Mode,CanoniTerm,_Code,Status) :-
 	( Mode == FLINS ->
-	    parsing_error(CanoniTerm,ERROR_EXPASSERT,Status)
+	    parsing_error(CanoniTerm,ERROR_EXPINSERT,Status)
 	;
 	  Mode == FLDEL,
 	  parsing_error(CanoniTerm,ERROR_EXPDELETE,Status)
@@ -2160,7 +2160,7 @@ flora_db_objspec(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status)
 	;
 	  F == FL_SEMICOLON,
 	  ( Mode == FLINS ->
-	      parsing_error(If,NO_ASSERTDISJUN,Status)
+	      parsing_error(If,NO_INSERTDISJUN,Status)
 	  ;
 	    Mode == FLDEL,
 	    parsing_error(If,NO_DELETEDISJUN,Status)
@@ -2172,7 +2172,7 @@ flora_db_objspec(Mode,CANOTERM(Funct,1,FL_PARENTHESIS,[_G],If,_Ip),_Code,Status)
 	(is_notop(F); is_tnotop(F)),
 	!,
 	( Mode == FLINS ->
-	    parsing_error(If,NO_ASSERTNEG,Status)
+	    parsing_error(If,NO_INSERTNEG,Status)
 	;
 	  Mode == FLDEL,
 	  parsing_error(If,NO_DELETENEG,Status)
@@ -2199,7 +2199,7 @@ flora_db_attmethspec(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Sta
 
 	; is_incattspecop(F) ->
 	  ( Mode == FLINS ->
-	      parsing_error(If,ERROR_ASSERT,Status)
+	      parsing_error(If,ERROR_INSERT,Status)
 	  ;
 	    Mode == FLDEL,
 	    parsing_error(If,ERROR_DELETE,Status)

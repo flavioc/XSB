@@ -179,15 +179,15 @@
 #define FL_COLLECTSET		collectset
 #define FL_COLLECTBAG		collectbag
 
-#define FL_ASSERT		assert
-#define FL_RETRACT		retract
-#define FL_RETRACTALL		retractall
+#define FL_INSERT		insert
+#define FL_DELETE		delete
+#define FL_DELETEALL		deleteall
 #define FL_ERASE		erase
 #define FL_ERASEALL		eraseall
 
-#define FL_BTASSERT		btassert
-#define FL_BTRETRACT		btretract
-#define FL_BTRETRACTALL		btretractall
+#define FL_BTINSERT		btinsert
+#define FL_BTDELETE		btdelete
+#define FL_BTDELETEALL		btdeleteall
 #define FL_BTERASE		bterase
 #define FL_BTERASEALL		bteraseall
 
@@ -237,7 +237,7 @@
   FLDISJUNCT(Goal,Goal)
   FLNOT(Goal)
   FLTNOT(Goal)
-  FLASSERT(LiteralList)
+  FLINSERT(LiteralList)
   FLDELETE(Op,LiteralList,Conditon)
   FLDELETE(Op,LiteralList)
 ****************************************************************************/
@@ -284,7 +284,7 @@
 #define FLNOT			flnot
 #define FLTNOT			fltnot
 
-#define FLASSERT		flassert
+#define FLINSERT		flinsert
 #define FLDELETE		fldelete
 
 
@@ -364,14 +364,14 @@
 #define FLLIBPROGRAMANS		fllibprogramans
 #define FLLIBDISPLAY		fllibdisplay
 #define FLLIBDBOP		fllibdbop
-#define FLLIBASSERT		fllibassert
-#define FLLIBRETRACT		fllibretract
-#define FLLIBRETRACTALL		fllibretractall
+#define FLLIBINSERT		fllibinsert
+#define FLLIBDELETE		fllibdelete
+#define FLLIBDELETEALL		fllibdeleteall
 #define FLLIBERASE		flliberase
 #define FLLIBERASEALL		flliberaseall
-#define FLLIBBTASSERT		fllibbtassert
-#define FLLIBBTRETRACT		fllibbtretract
-#define FLLIBBTRETRACTALL	fllibbtretractall
+#define FLLIBBTINSERT		fllibbtinsert
+#define FLLIBBTDELETE		fllibbtdelete
+#define FLLIBBTDELETEALL	fllibbtdeleteall
 #define FLLIBBTERASE		fllibbterase
 #define FLLIBBTERASEALL		fllibbteraseall
 #define FLLIBSHDIRECT		fllibshdirect
@@ -443,3 +443,15 @@
 #define FLFACTPREFIX		'base_'
 #define FLHEADPREFIX		'derived_'
 #define FLBODYPREFIX		''
+
+#define FLFACTPREFIX_LEN	5
+#define FLHEADPREFIX_LEN	8
+#define FLBODYPREFIX_LEN	0
+
+
+/****************************************************************************
+  arguments to flloadtrailer/2
+****************************************************************************/
+#define STDTRAILER		standard
+#define EQLTRAILER		equality
+
