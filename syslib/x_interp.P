@@ -26,10 +26,10 @@
 
 :- compiler_options([cpp_on]).
 
-#include "../emu/sig.h"
-#include "../emu/flag_defs.h"
-#include "../prolog_includes/standard.h"
-#include "../prolog_includes/char_defs.h"
+#include "sig.h"
+#include "flag_defs.h"
+#include "standard.h"
+#include "char_defs.h"
 
 /*======================================================================*/
 /*  This file contains the main program of the interpreter.		*/
