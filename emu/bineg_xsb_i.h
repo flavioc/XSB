@@ -50,7 +50,7 @@
     case IS_INCOMPLETE: { /* reg1: +term; reg2: +SubgoalPtr;	*/
 			  /* reg3: +PTCP; reg4: -SubgPtr        */
       Cell term = ptoc_tag(1);
-      CPtr subgoal_ptr = (CPtr) ptoc_int(2);
+      SGFrame subgoal_ptr = (SGFrame) ptoc_int(2);
       CPtr t_ptcp = (CPtr) ptoc_int(3);
       Psc  psc = term_psc(term);
       int  arity = get_arity(psc);
@@ -65,7 +65,7 @@
       ctop_int(4, (Integer)subgoal_ptr);
 #ifdef DEBUG_DELAY
       fprintf(stddbg, "Is incomplete for ");
-      print_subgoal(stddbg, (SGFrame)subgoal_ptr);
+      print_subgoal(stddbg, subgoal_ptr);
       fprintf(stddbg, ", (%x)\n", (int)&subg_ans_root_ptr(subgoal_ptr));
 #endif
       if (is_completed(subgoal_ptr)) {
@@ -77,7 +77,7 @@
 	CPtr xtemp1, xtemp2;
 #ifdef DEBUG_DELAY
 	fprintf(stddbg, "... Saving a completion suspension (~");
-	print_subgoal(stddbg, (SGFrame)subgoal_ptr);
+	print_subgoal(stddbg, subgoal_ptr);
 	fprintf(stddbg, " in the body of ");
 	if (t_ptcp != NULL) {
 	  print_subgoal(stddbg, (SGFrame)t_ptcp);
@@ -88,14 +88,14 @@
 	save_find_locx(ereg);
 #ifdef CHAT
 	subg_compl_susp_ptr(subgoal_ptr) = (CPtr)
-	  save_a_chat_compl_susp((SGFrame)subgoal_ptr, t_ptcp, cpreg);
+	  save_a_chat_compl_susp(subgoal_ptr, t_ptcp, cpreg);
 #else
 	efreg = ebreg;
 	if (trreg > trfreg) trfreg = trreg;
 	if (hfreg < hreg) hfreg = hreg;
 	if (bfreg > breg) bfreg = breg;
 	/* check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
-	save_compl_susp_frame(bfreg, ereg, subgoal_ptr, t_ptcp, cpreg);
+	save_compl_susp_frame(bfreg, ereg, (CPtr)subgoal_ptr, t_ptcp, cpreg);
 	subg_compl_susp_ptr(subgoal_ptr) = bfreg;
 #endif
 	return FALSE;
