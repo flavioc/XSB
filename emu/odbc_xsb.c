@@ -27,7 +27,6 @@
 
 #ifdef WIN_NT
 #include <windows.h>
-#include <odbcinst.h>
 #include <SQL.H>
 #include <SQLEXT.H>
 #include <string.h>
