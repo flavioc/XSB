@@ -1,0 +1,72 @@
+:- compiler_options([xpp_on]).
+#include "socket_defs_xsb.h"
+#include "timer_defs_xsb.h"
+#include "char_defs.h"
+
+
+:- import 
+     socket/2, socket_connect/4, socket_set_option/3,
+     socket_close/2, socket_get0/3, socket_put/3  from socket.
+:- import file_close/1 from file_io.
+
+
+%% machine where server is running
+machine(localhost).
+%% Try something else:
+%%machine(compserv1).
+
+%% Port on which the server is listening
+%% Server must bind to this port
+xsb_port(6025).
+
+client :-
+  writeln('started client...'),
+  socket(Sockfd0, ErrCode),
+  (ErrCode == SOCK_OK
+  ->  socket_set_option(Sockfd0,linger,-1),
+      machine(IPAddressOrHostname),
+      xsb_port(XSB_port),
+      socket_connect(Sockfd0 ,XSB_port, IPAddressOrHostname, Ecode2),
+      writeln(socket_connect1(Sockfd0,XSB_port,IPAddressOrHostname,Ecode2)),
+      (Ecode2 == SOCK_OK
+      -> writeln('connected to server...')
+      ;  writeln('Cannot connect to server'),
+	 socket_close(Sockfd0,_),
+	 fail
+      ),
+
+      %% Socket for reading replies
+      socket(Sockfd1, Error2),
+      (Error2 == SOCK_OK
+      ->  socket_set_option(Sockfd1,linger,-1),
+	  socket_connect(Sockfd1, XSB_port, IPAddressOrHostname, Ecode3),
+	  writeln(socket_connect(Sockfd1,XSB_port,IPAddressOrHostname,Ecode3)),
+	  client_loop(Sockfd0, Sockfd1)
+      ;   writeln('Can''t read from the server'),
+          socket_close(Sockfd0,_),
+          fail
+      )
+  ;  writeln('Can''t open socket to the server.')
+  ).
+      
+
+
+client_loop(Sockfd0, Sockfd1) :-  
+  nl, write('Please enter a character or an ASCII code. ^D terminates: '),
+  get0(Char),
+  writeln(Char),
+  (Char == CH_EOF_P ->
+      !,
+      socket_put(Sockfd0, CH_EOF_C,_),
+      socket_close(Sockfd0, _),
+      socket_close(Sockfd1, _),
+      writeln('Exiting.'), true
+  ;   integer(Char) ->
+      socket_put(Sockfd0, Char, _),
+      fail
+  ;   write('Illegal input: '), writeln(Char),
+      fail
+  ).
+ 
+
+client_loop(Sockfd0, Sockfd1) :- client_loop(Sockfd0, Sockfd1).
