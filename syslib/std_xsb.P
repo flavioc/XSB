@@ -183,6 +183,8 @@ standard_symbol(file_read_line_list, 1, file_io).
 standard_symbol(file_read_line_list, 2, file_io).
 standard_symbol(file_read_line_atom, 1, file_io).
 standard_symbol(file_read_line_atom, 2, file_io).
+standard_symbol(path_sysop, 2, file_io).
+standard_symbol(path_sysop, 3, file_io).
 
 standard_symbol(real, 1, standard).
 standard_symbol(reconsult, 1, consult).

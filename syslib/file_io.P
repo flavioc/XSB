@@ -227,9 +227,11 @@ print_file_contents(FileName, ToIOport) :-
 	copyIOport(FromIOport, ToIOport),
 	file_close(FromIOport).
 copyIOport(FromIOport, ToIOport) :-
-	(file_read_line(FromIOport, Line) -> file_write(ToIOport, Line)),
-	copyIOport(FromIOport, ToIOport),
-	fail.        	 %% so as to not leave choice points around
+	repeat,
+	(file_read_line(FromIOport, Line) 
+	-> file_write(ToIOport, Line),fail
+	; true
+	).
 copyIOport(_,_).
 
 /***************************************************************/
@@ -250,6 +252,14 @@ file_size(FileName, Size) :-
 path_sysop(isplain, Path) :- is_plain_file(Path).
 path_sysop(isdir, Path) :- is_directory(Path).
 path_sysop(rename, OldPath, NewPath) :- rename(OldPath,NewPath).
+path_sysop(copy, FromPath, ToPath) :-
+	file_open(FromPath, r, FromIOport),
+	FromIOport >= 0,
+	file_open(ToPath, w, ToIOport),
+	ToIOport >= 0,
+	copyIOport(FromIOport, ToIOport),
+	file_close(ToIOport),
+	file_close(FromIOport).
 path_sysop(rm, Path) :- rm(Path).
 path_sysop(unlink, Path) :- rm(Path).
 path_sysop(link, SrsPath, DestPath) :- sys_link(SrsPath,DestPath,Res), Res=:=0.

@@ -28,7 +28,7 @@
       from machine.
 :- import conpsc/2, psc_set_type/2, psc_set_prop/2 from machine.
 
-:- import abort/1, atom_codes/2, '\='/2
+:- import abort/1, atom_codes/2, '\='/2, repeat/0
       from standard.
 
 :- import gensym/2 from gensym.
