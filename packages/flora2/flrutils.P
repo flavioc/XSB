@@ -455,7 +455,7 @@ flora_library_directory(LibDir) :- xsb_configuration(cmplibdir,LibDir).
 *************************************************************************/
 flora_setup_workspace(FileName,Workspace) :-
 	file_open(FileName,w,IOport),
-	fmt_write(IOport,"#define VAR_WORKSPACE %s\n",args(Workspace)),
+	fmt_write(IOport,"#define FLORA_VAR_WORKSPACE %s\n",args(Workspace)),
 	file_close(IOport).
 
 

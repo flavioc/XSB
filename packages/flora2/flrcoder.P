@@ -437,14 +437,14 @@ flora_write_struct(Term,_Prefix) :-
 flora_write_struct(Term,_Prefix) :-
 	is_prthismodule(Term),
 	!,
-	write('VAR_WORKSPACE').
+	write('FLORA_VAR_WORKSPACE').
 
 flora_write_struct(Term,_Prefix) :-
 	is_prstorage(Term,WSTerm),
 	!,
-	write('WSSTORAGE('),
+	write('FLORA_WSSTORAGE('),
 	( is_prthismodule(WSTerm) ->
-	    write('VAR_WORKSPACE')
+	    write('FLORA_VAR_WORKSPACE')
 	;
 	  flora_write_functor(WSTerm)
 	),
@@ -542,12 +542,12 @@ flora_write_variable(Name) :-
   writes out Atom in a workspace macro.
 ****************************************************************************/
 flora_write_workspace(Funct) :-
-	write('WORKSPACE(VAR_WORKSPACE,'),
+	write('FLORA_WORKSPACE(FLORA_VAR_WORKSPACE,'),
 	flora_write_functor(Funct),
 	write(')').
 
 flora_write_workspace(WS,Funct) :-
-	write('WORKSPACE('),
+	write('FLORA_WORKSPACE('),
 	flora_write_functor(WS),
 	write(','),
 	flora_write_functor(Funct),

@@ -254,4 +254,3 @@ flora_classify_call(Call,Type,Basename,ArgList,Workspace) :-
 	  %% Workspace stays uninstantiated
 	),
 	!.
-

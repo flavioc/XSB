@@ -6,11 +6,11 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
-WORKSPACE(VAR_WORKSPACE,flThisModule)(VAR_WORKSPACE).
+FLORA_WORKSPACE(FLORA_VAR_WORKSPACE,flThisModule)(FLORA_VAR_WORKSPACE).
 
 :- import storage_delete_all/1 from storage.
 
-?- storage_delete_all(WSSTORAGE(VAR_WORKSPACE)).
+?- storage_delete_all(FLORA_WSSTORAGE(FLORA_VAR_WORKSPACE)).
 
 /***********************************************************************/
 

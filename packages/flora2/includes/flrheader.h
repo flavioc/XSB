@@ -13,8 +13,8 @@
 
 #mode save
 #mode nostring "\!#'"
-#define WORKSPACE(X,Y)	FLORA_PREFIX'X''Y'
-#define WSSTORAGE(X)	FLORA_STORAGE_PREFIX'X'
+#define FLORA_WORKSPACE(X,Y)	FLORA_PREFIX'X''Y'
+#define FLORA_WSSTORAGE(X)	FLORA_STORAGE_PREFIX'X'
 #mode restore
 
 /***********************************************************************/
