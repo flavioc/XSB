@@ -43,7 +43,7 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
     write('%% Libwww compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
     writeln(':- export do_fetch_url___/3, do_form_request___/3.'),
-    fmt_write(':- ldoption(''%s'').', arg(LoaderFlags)),
+    fmt_write(':- ldoption('' %s'').', arg(LoaderFlags)),
     told.
     
 
@@ -67,9 +67,7 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
 	xsb_configuration(libwww_ldflags, LoaderFlags),
 	xsb_configuration(libwww_ccflags, CCflags),
 	xsb_configuration(emudir, EmuDir),
-	fmt_write_string(CC_opts,
-			 ' -I%s %s %s',
-			 f(EmuDir,CCflags,LoaderFlags)),
+	fmt_write_string(CC_opts, ' -I%s %s', f(EmuDir,CCflags)),
 	make_xsb_libwwwH(CC, CC_opts, LoaderFlags),
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
