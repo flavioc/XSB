@@ -1,0 +1,107 @@
+:- compiler_options([xpp_on]).
+#include "socket_defs_xsb.h"
+#include "timer_defs_xsb.h"
+#include "char_defs.h"
+
+
+:- import 
+     socket/2, socket_bind/3, socket_listen/3, socket_accept/3, 
+     socket_set_option/3, socket_close/2, socket_recv/3,
+     socket_send/3 from socket.
+
+:- import file_close/1, fmt_write/3 from file_io.
+
+
+%% Port on which the server is listening
+xsb_port(6022).
+
+server :-
+  socket(Sockfd0, ErrCode),
+  writeln(socket(Sockfd0, ErrCode)),
+  (ErrCode == SOCK_OK
+  ->  socket_set_option(Sockfd0,linger,SOCK_NOLINGER),
+      xsb_port(XSBPort),
+      socket_bind(Sockfd0, XSBPort, ErrBind),
+      writeln(socket_bind(Sockfd0, XSBPort, ErrBind)),
+      (ErrBind == SOCK_OK
+      -> socket_listen(Sockfd0,10, ErrListen),
+	  writeln(socket_listen(Sockfd0,10, ErrListen))
+      ;  writeln('Cannot bind'),
+	  socket_close(Sockfd0,_),
+	  fail
+      ),
+      socket_accept(Sockfd0, Sockfd0_out1, ErrorCode),
+      writeln(socket_accept1(Sockfd0, Sockfd0_out1, ErrorCode)),
+      (ErrorCode == SOCK_OK
+      ->  true
+      ;   writeln('Cannot accept connection1'),
+	  socket_close(Sockfd0,_),
+	  fail
+      ),
+      socket_accept(Sockfd0, Sockfd0_out2, ErrorCode2), 
+      writeln(socket_accept(Sockfd0, Sockfd0_out2, ErrorCode2)),
+      (ErrorCode2 == SOCK_OK
+      ->  true
+      ;   writeln('Cannot accept connection2'),
+	  socket_close(Sockfd0,_),
+	  fail
+      ),
+      server_loop(Sockfd0, Sockfd0_out1, Sockfd0_out2)
+  ;   writeln('Cannot open socket'), fail
+  ).
+
+
+
+server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
+    writeln(serverloop1),
+    socket_recv(Sockfd0, GoalStr,_),
+    file_open(GoalStr,s,IOport),
+    file_read(IOport,Goal),
+    file_close(IOport),
+    writeln(goal(Goal)),
+    %% This tests the timer
+    set_timer(1),
+    socket_recv(Sockfd0, TMsg, Etimeout),
+    writeln(recv(Sockfd0,TMsg,Etimeout)),
+    (Etimeout < 0 -> fmt_write("Timeout or EOF: %d\n", Etimeout) ; true),
+    Goal =.. [F|_Rest],
+    (F=end_of_file -> 
+	writeln('Client quits...'),
+	socket_close(Sockfd0,_),
+	socket_close(Sockfd1,_),
+	socket_close(Sockfd_orig,_),
+	true
+    ;	((F=h; F=g) ->
+	    call(Goal), writeln(answer(Goal)),
+	    fmt_write_string(OutGoalStr, '%S.', arg(Goal)),
+	    socket_send(Sockfd1, OutGoalStr, _)
+	;   write('Invalid goal: '), writeln(Goal),
+	    fmt_write_string(GoalStr1, '''+++Invalid goal: %S''.', arg(Goal)),
+	    socket_send(Sockfd1, GoalStr1,_)
+	),
+	fail
+    ).
+
+  
+server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
+  writeln(serverloop2),
+  socket_send(Sockfd1, 'end.', _),
+  server_loop(Sockfd_orig, Sockfd0,Sockfd1).
+
+
+
+
+g(1).
+g(2).
+g(3).
+g(4).
+g(5). 
+
+
+
+h(a).
+h(b).
+h(c).
+h(d).
+h(e).
+
