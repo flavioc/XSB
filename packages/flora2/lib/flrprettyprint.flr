@@ -187,13 +187,12 @@ flora_in_between_isa(X,Class,Module) :-
 	(X:C1)@Module, C1 \= Class, (C1::Class)@Module.
 
 
-flora_pp_subclasses_isa(Class,_) :-
+flora_pp_subclasses_isa(Class,Module) :-
 	(Sub :: Class)@Module,
 	Sub \= Class,
 	tnot(flora_in_between_sub(Sub,Class,Module)),
-	%% (Guizhen) The following call is dangling.
-        %% When commented out, the compiling warning goes away.
-        %flora_pp_isa(Sub),
+	flora_pp_immediate_isa(Sub,Module),
+        flora_pp_subclasses_isa(Sub,Module),
 	fail.
 flora_pp_subclasses_isa(_,_).
 
