@@ -98,8 +98,10 @@ void tcpstack_realloc(long new_size) {
   long trail_offset,      /* byte offsets between the old and new */
        cps_offset;        /*    stack bottoms */
 
-  CPtr *trail_link,    /* for stepping thru Trail and altering dyn links */
-       *cell_ptr;      /* for stepping thru CPStack and altering cell values */
+#ifndef CHAT
+  CPtr *trail_link;    /* for stepping thru Trail and altering dyn links */
+#endif
+  CPtr *cell_ptr;      /* for stepping thru CPStack and altering cell values */
   byte *cell_val;      /* consider each cell to contain a ptr value */
 
   /*
