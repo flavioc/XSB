@@ -63,6 +63,9 @@ register.sh	  - the registration shell script
 sendlog.msg
 registration.msg  - data files for register.sh
 
+banner.in    	  - template for the banner message that XSB displays on
+		    startup. This produces config/<archlib>/banner.msg
+
 xsb.in		  - Autoconf uses this to create bin/xsb.
 
 		    This script automatically guesses your computer/OS
@@ -74,16 +77,20 @@ makexsb.in	  - Input for producing the `makexsb' script. You run
 		    is to find the appropriate architecture-specific make
 		    file and then run make on it. 
 
+run_xsb.sh
+copysubdirs.sh    - Scripts used in topMakefile to configure packages and
+		    copy subdirectories when the user types `makexsb install'.
+
 If you change any of the above files, run
 
-   autoheader; autoconf
+   autoconf
 
 in the build directory to update the `configure' script!!!
 Of course, you need Autoconf to be installed to do this, but to distribute
 XSB we don't need to distribute Autoconf. We only need to include the
 configure script and the *.in files.
 
-YOU NEED TO RUN autoheader/autoconf IFF YOU ENHANCE THE SETUP OR FIX A BUG!
+YOU NEED TO RUN autoconf IFF YOU ENHANCE THE SETUP OR FIX A BUG!
 
 
 The new directory structure:
@@ -122,6 +129,8 @@ The new directory structure:
 		    source and keep the object codes around, so building
 		    for a new architecture won't wipe out the object code
 		    of the other ones!
+
+    packages/	  - XSB packages
 
 The structure of the config directory:
 
@@ -167,20 +176,21 @@ The structure of the config directory:
 		      statements for this architecture. It gets copied into
 		      emu/configs/ when you type make in the build/ directory.
 		      This file replaces the old config.h
+    	banner.msg  - Message displayed by XSB on startup.
 
 	xsb_configuration.P - configure takes this and produces a
 		     configuration.P file.
-		   - this is a Prolog file that contains the definition
+		     this is a Prolog file that contains the definition
 		     of the new predicate: xsb_configuration.
 		     It stores a lot of information about how XSB was
 		     built. This file gets loaded early on, and the info is
 		     available to the running XSB programs. No longer you
 		     need to use the stat_flag built in --- AND YOU MUST NOT!
 		     (Many of the old flags don't even exist any more.)
-        xsb_configuration_msdos.P - you get xsb_configuration_msdos.P; used
-		     under DOS only.
-        xsb_configuration_nt.P - you get xsb_configuration_nt.P; used
-		     under DOS only.
+        xsb_configuration_msdos.P - template for creating
+		     configuration_msdos.P; used under DOS only.
+        xsb_configuration_nt.P - template for creating 
+	    	     configuration_nt.P; used under DOS only.
 
 
 	Installation_summary
