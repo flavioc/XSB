@@ -66,6 +66,7 @@
 %% * ported to hProlog and extended by Tom Schrijvers, K.U.Leuven
 %%
 %% * ported to xsb by Tom Schrijvers, K.U.Leuven
+:- compiler_options([allow_redefinition]).
 
 :- export 
          append/3,

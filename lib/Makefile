@@ -26,7 +26,7 @@
 OBJEXT=.xwam
 
 ALL = 	aggregs${OBJEXT} array${OBJEXT} array1${OBJEXT} assoc_xsb${OBJEXT} \
-	basic_props${OBJEXT} \
+	basic_props${OBJEXT} lists${OBJEXT} \
 	directry${OBJEXT} foreign${OBJEXT} format${OBJEXT} \
 	intern${OBJEXT} obsolete${OBJEXT} odbc_call${OBJEXT} \
 	ordsets${OBJEXT} ora_call${OBJEXT} \
