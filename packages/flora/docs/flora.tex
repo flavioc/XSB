@@ -563,6 +563,7 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
   $R_i$. For $n=1$ the curly braces can be omitted.\\ 
   \\
   \index{atom!signature}
+  \index{signature!in \fl}
   (3) and (4) denote \emph{signature atoms}. They specify that method $M$,
   applied to objects of \emph{class} $C$, yields results of type $T$.
   In (3), $M$ is declared as single-valued, and in (4) as set-valued.
@@ -1415,6 +1416,8 @@ obj!!attr             means: some Y, such that obj[attr *->> Y].
 
 \subsection{Type Checking}
 
+\index{type checking}
+%%
 Although \FLORA allows the user to specify object types through signatures,
 type correctness is not being checked automatically. So, what are the
 signatures good for then? One answer is that future versions of \FLORA
@@ -1834,7 +1837,15 @@ However, at present, the only safe way to do this is by executing {\tt
 \section{\FLORA Modules and Interaction with XSB}\label{sec-module}
 
 Besides static area and dynamic area, \FLORA also has a module system that
-is both implemented on top of and integrated with the XSB module system.
+is integrated with the XSB's own module system. In this section we discuss
+how \FLORA programs can talk with each other and how they can
+talk to XSB.
+
+\index{calling \FLORA from \FLORA}
+\index{module! in \FLORA}
+\index{signature!in \fl}
+%%
+\paragraph{Calling \FLORA from \FLORA.}
 \FLORA modules communicate with each other by importing/exporting either
 \emph{ground} \fl signatures or normal Prolog predicates. With the rest of
 XSB, \FLORA modules communicate using the normal Prolog predicates only
@@ -1924,11 +1935,17 @@ when a \FLORA module is compiled as dynamic code and/or is dynamically loaded
 into the dynamic area. This is, again, due to the current limitations of
 the XSB module system.
 
+\index{calling XSB from \FLORA}
+\paragraph{Calling XSB from \FLORA.}
 Since \FLORA supports import/export directives much the same way as XSB
 does, \FLORA modules have full access to the underlying XSB's
-functionality.  Inside \FLORA modules, users can freely mix \FLORA code and
-XSB predicates defined in other XSB modules as long as these XSB predicates
-are properly imported and are used correctly.
+functionality.  In general, a \FLORA program can call any XSB predicate
+that is exported by some XSB module. This is done by importing this
+predicate in the \FLORA program.
+
+\FLORA programs can freely mix F-logic statements and XSB predicates
+defined in other XSB modules as long as these XSB predicates are properly
+imported and are used correctly.
 %%
 \begin{figure}[tb]
 \begin{quote}
@@ -1991,6 +2008,37 @@ manual is highly recommended in order to be productive. Some services, such
 as I/O, are of obvious importance. However, there are many other useful
 packages, which provide pattern matching capabilities, interaction with the
 OS, foreign C interface, etc.
+
+\index{calling \FLORA from XSB}
+\paragraph{Calling \FLORA from XSB.}
+Programs written in \FLORA can be used by XSB program as well.
+Of course, XSB does not understand \FLORA syntax directly, but they share
+the same common denominator: Prolog predicates. Thus, a \FLORA module can
+define a predicate, export it, and XSB programs can then import and call it.
+Full power of F-logic syntax can be used in such a definition. The
+predicate syntax is needed only at the final stage, to create a
+communication channel to XSB.
+
+XSB programs can even compile and consult \FLORA programs.
+To this end, they must have the import statements of the following form:
+
+%%
+\begin{verbatim}
+   :- import bootstrap_flora/0 from flora.
+   :- import flcompile/1 from flrutils.
+   :- import flconsult/1 from flrutils.
+   ?- bootstrap_flora.
+\end{verbatim}
+%%
+
+The statement {\tt bootstrap\_flora} is a non-interactive equivalent of the
+command {\tt flora\_shell}. It makes all the \FLORA facilities available
+without actually starting the shell (which is what one really wants while
+calling \FLORA programs from other programs).
+Once the {\tt bootstrap\_flora} statement has been executed, 
+we can call, say, {\tt flconsult(foobar)} from within XSB programs to
+compile (if necessary) and load the \FLORA program {\tt foobar.flr}.
+
 
 \section{\FLORA and Tabling}\label{sec-tabling-flora}
 
@@ -2152,6 +2200,55 @@ from {\tt flrutils}, that can be used in conjunction with \FLORA:
  \tt dynload(File) \> -- \> load File.\{flr,P,O\} as dynamic code.\\
 \end{tabbing}
 %%
+
+\section{\FLORA Debugger}
+\index{debugging}
+
+\FLORA debugger is essentially a presentation layer on top of the XSB
+debugger, so familiarity with the latter is highly recommended (XSB Manual,
+Part I). Here we sketch only a few basics.
+
+The debugger has two facilities: tracing and spying. Tracing allows the
+user to watch the program being executed step by step, and spying allows
+one to tell \FLORA that it must pose when execution reaches certain 
+predicates or object methods. The user can trace the execution from then
+on. At present, only the tracing facility has been implemented.
+
+\index{tracing}
+To start tracing, you must issue the command {\tt flora\_trace} at the
+\FLORA prompt. It is also possible to put the subgoal {\tt flora\_trace} in
+the middle of the program. In tat case, tracing will start after this
+subgoal gets executed. This is useful when you know where exactly you want
+to start tracing the program. To stop tracing, type {\tt flora\_notrace}.
+
+During tracing, the user is normally prompted at the four ports of subgoal
+execution: {\tt Call} (when a subgoal is first called), {\tt Exit} (when
+the call exits), {\tt Redo} (when the subgoal is tried with a different
+binding on backtracking), and {\tt Fail} (when a subgoal fails).
+At each of the prompts, the user can issue a number of commands. The most
+common ones are listed below. See the XSB manual for more.
+%%
+\begin{itemize}
+  \item {\tt carriage return (creep)}:  to go to the next step  
+  \item {\tt s (skip)}: execute this subgoal non-interactively; prompt
+    again when the call exits (or fails)
+  \item {\tt S (verbose skip)}: like {\tt s}, but also show the trace
+    generated by this execution
+  \item {\tt l (leap)}: stop tracing and execute the remainder of the
+    program
+\end{itemize}
+%%
+The behavior of the debugger is controled by the predicate {\tt
+  debug\_ctl}. For instance, executing {\tt debug\_ctl(profile, on)} at the
+\FLORA prompt tells XSB to measure the CPU time it takes to execute each
+call. This is useful for tuning your program for performance. Other useful
+controls are: {\tt debug\_ctl(prompt, off)}, which causes the trace to be
+generated without user intervention; and {\tt debug\_ctl(redirect,
+  foobar)}, which redirects debugger output to the file named {\tt foobar}.
+The latter feature is usually useful only in conjunction with the
+  aforesaid prompt-off mode. See the XSB manual for additional information
+  on debugger control.
+
 
 \section{Emacs Support}
 
