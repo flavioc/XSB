@@ -414,12 +414,18 @@ AC_MSG_RESULT($__sunpro_c)
 
 
 dnl set some basic flags
-case $CC in
-   gcc)	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+if test "$CC" = "$with_gcc" ; then
+	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	c_inline_level="-finline-functions -Winline" 
 	CFLAGS="-Wall -ansi -pedantic"
-	;;
+else
+ case $CC in
+   gcc) emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+	 trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+	 c_inline_level="-finline-functions -Winline" 
+	 CFLAGS="-Wall -ansi -pedantic"
+	 ;;
    cc)  if test "$__sunpro_c" = "no"; then
 	   emuloop_opt_level=-${optimization_level-"O4"}
 	   trutils_opt_level=-${optimization_level-"O4"}
@@ -438,7 +444,8 @@ case $CC in
 	c_inline_level=""
 	CFLAGS="-Xa"
 	;;
-esac
+ esac
+fi
 
 dnl In XSB, CC is the C compiler to be used with the C interface
 dnl Could be different from C compiler with which XSB was compiled, 
