@@ -912,9 +912,7 @@ a file using {\tt consult} and such.)
     
 \ournewitem{file\_read\_line\_atom(+IOport,-String)}{file\_io}
 \index{{\tt file\_read\_line\_atom/2}}
-    This predicate is like \verb|file_read_line|, but the line read from
-    the input is interned. Therefore, {\tt String} is instantiated
-    to a normal atom. This predicate fails on reaching the end of file.
+    This predicate is synonymous with \verb|file_read_line|.
     
 \ournewitem{file\_read\_line\_atom(-String)}{file\_io}
 \index{{\tt file\_read\_line\_atom/1}}
@@ -969,14 +967,10 @@ succeeds. It does not distinguish between a file error and end of file.
 You can determine if either of these conditions has happened by verifying
 that $\tt BytesRead < BytesRequested$.
 
-Note: The string read is {\bf not} interned. Please see explanations to
-\verb|file_read_line| on this matter. Because of the difficulties in using
-this predicate, the predicates \verb|file_getbuf_atom| and
-\verb|file_getbuf_list| are often better alternatives.
 
 \ournewitem{file\_getbuf\_atom(+IOport, +BytesRequested, -String, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf\_atom/4}}
-Like \verb|file_getbuf|, but {\tt String} is instantiated to an interned atom.
+This is synonymous with \verb|file_getbuf|.
 
 Note: because XSB does not have an atom table garbage collector yet, this
 predicate should not be used to read large files.

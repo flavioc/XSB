@@ -79,27 +79,25 @@ file_clearerr(IOport) :-
 tmpfile_open(IOport) :-
 	file_function(TMPFILE_OPEN, IOport, _, _, _, _, _).
 
-%% These are lower level than file_read_line_atom/list
-%% Therefore, they don''t check their arguments.
-%% file_getbuf doesn''t intern ToString.
-file_getbuf(IOport, ByteCount, ToString, BytesRead) :-
-	file_function(FILE_GETBUF, IOport,ByteCount,ToString,BytesRead,_,_).
 
+file_getbuf(IOport, ByteCount, ToString, BytesRead) :-
+	(var(ToAtom), var(BytesRead) ->
+	    file_function(FILE_GETBUF, IOport,ByteCount,ToString,BytesRead,_,_)
+	; abort('Usage: file_getbuf([+IOport,] +ByteCount, -ToAtom, -BytesRead)')
+        ).
+
+%% same as file_getbuf
 file_getbuf_atom(IOport, ByteCount, ToAtom, BytesRead) :-
 	(var(ToAtom), var(BytesRead) ->
-	    file_function(FILE_GETBUF, IOport,ByteCount,TmpStr,BytesRead,_,_),
-	    intern_string(TmpStr, ToAtom)
-	;
-	 abort('Usage: file_getbuf_atom([+IOport,] +ByteCount, -ToAtom, -BytesRead)')
+	    file_function(FILE_GETBUF, IOport,ByteCount,ToAtom,BytesRead,_,_)
+	; abort('Usage: file_getbuf_atom([+IOport,] +ByteCount, -ToAtom, -BytesRead)')
         ).
 
 file_getbuf_atom(ByteCount, ToAtom, BytesRead) :-
 	stat_flag(CURRENT_INPUT, IOport),
 	(var(ToAtom), var(BytesRead) ->
-	    file_function(FILE_GETBUF, IOport,ByteCount,TmpStr,BytesRead,_,_),
-	    intern_string(TmpStr, ToAtom)
-	;
-	 abort('Usage: file_getbuf_atom([+IOport,] +ByteCount, -ToAtom, -BytesRead)')
+	    file_function(FILE_GETBUF, IOport,ByteCount,ToAtom,BytesRead,_,_)
+	; abort('Usage: file_getbuf_atom([+IOport,] +ByteCount, -ToAtom, -BytesRead)')
         ).
 
 file_getbuf_list(IOport, ByteCount, ToList, BytesRead) :-
@@ -128,27 +126,24 @@ file_putbuf(ByteCount, FromString, Offset, BytesWritten) :-
 	stat_flag(CURRENT_OUTPUT, IOport),
 	(var(BytesWritten) ->
 	    file_function(FILE_PUTBUF, IOport,ByteCount,FromString,Offset,BytesWritten,_)
-	;
-	abort('Usage: file_putbuf([+IOport,] +ByteCount, +FromString, +Offset, -BytesWritten)')
+	; abort('Usage: file_putbuf([+IOport,] +ByteCount, +FromString, +Offset, -BytesWritten)')
 	).
+
 
 file_read_line(IOport, Str) :-
 	( var(Str) ->
 	    file_function(FILE_READ_LINE, IOport, Str, _, _, _,_)
-	    ;
-	    abort('Usage: file_read_line(+IOport, -InputStr)')
+	; abort('Usage: file_read_line(+IOport, -InputStr)')
         ).
 
-%% Like file_read_line, but Str becomes an interned atom
+%% same as file_read_line
 file_read_line_atom(IOport, Str) :-
 	( var(Str) ->
-	    file_function(FILE_READ_LINE, IOport, UnStr, _, _, _,_)
-	    ;
-	    abort('Usage: file_read_line_atom([+IOport,] -InputStr)')
+	    file_function(FILE_READ_LINE, IOport, Str, _, _, _,_)
+	; abort('Usage: file_read_line_atom([+IOport,] -InputStr)')
         ).
 
 %% Read line from current input stream (previously set by 'see')
-%% Intern string
 file_read_line_atom(Str) :-
 	stat_flag(CURRENT_INPUT, IOport),  % Current input
 	file_read_line_atom(IOport, Str).
@@ -158,8 +153,7 @@ file_read_line_list(IOport, CharLst) :-
 	( var(Str) ->
 	    file_function(FILE_READ_LINE, IOport, Str, _, _, _,_),
 	    atom_codes(Str,CharLst)
-	    ;
-	    abort('Usage: file_read_line_list([+IOport,] -InputStr)')
+	; abort('Usage: file_read_line_list([+IOport,] -InputStr)')
         ).
 
 %% Read line from current input stream (previously set by 'see')

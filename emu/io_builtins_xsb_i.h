@@ -158,7 +158,7 @@ inline static xsbBool file_function(void)
     }
     break;
   case FILE_OPEN:
-    /* file_function(4, +FileName, +Mode, -OIport)
+    /* file_function(4, +FileName, +Mode, -IOport)
        When read, mode = 0; when write, mode = 1, 
        when append, mode = 2, when opening a 
        string for read mode = 3 */
@@ -226,7 +226,7 @@ inline static xsbBool file_function(void)
     
     break;
 
-  case FILE_CLOSE: /* file_function(5, +OIport) */
+  case FILE_CLOSE: /* file_function(5, +IOport) */
     io_port = ptoc_int(2);
     if (io_port < 0) strclose(io_port);
     else {
@@ -235,7 +235,7 @@ inline static xsbBool file_function(void)
       open_files[io_port] = NULL;
     }
     break;
-  case FILE_GET:	/* file_function(6, +OIport, -IntVal) */
+  case FILE_GET:	/* file_function(6, +IOport, -IntVal) */
     io_port = ptoc_int(2);
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
       sfptr = strfileptr(io_port);
@@ -245,7 +245,7 @@ inline static xsbBool file_function(void)
       ctop_int(3, getc(fptr));
     }
     break;
-  case FILE_PUT:   /* file_function(7, +OIport, +IntVal) */
+  case FILE_PUT:   /* file_function(7, +IOport, +IntVal) */
     /* ptoc_int(2) is XSB I/O port */
     io_port = ptoc_int(2);
     SET_FILEPTR(fptr, io_port);
@@ -257,9 +257,9 @@ inline static xsbBool file_function(void)
 #endif
     break;
   case FILE_GETBUF:
-    /* file_function(8, +OIport, +ByteCount (int), -String, -BytesRead)
-       Read ByteCount bytes from OIport into String starting 
-       at position Offset. Doesn't intern string.	      */
+    /* file_function(8, +IOport, +ByteCount (int), -String, -BytesRead)
+       Read ByteCount bytes from IOport into String starting 
+       at position Offset. */
     size = ptoc_int(3);
     SET_FILEPTR(fptr, ptoc_int(2));
     XSB_StrSet(&VarBuf,"");
@@ -271,9 +271,9 @@ inline static xsbBool file_function(void)
     ctop_int(5, value);
     break;
   case FILE_PUTBUF:
-    /* file_function(9, +OIport, +ByteCount (int), +String, +Offset,
+    /* file_function(9, +IOport, +ByteCount (int), +String, +Offset,
 			-BytesWritten) */
-    /* Write ByteCount bytes into OIport from String beginning with Offset in
+    /* Write ByteCount bytes into IOport from String beginning with Offset in
        that string	      */
     pterm = reg_term(4);
     if (is_list(pterm))
@@ -323,7 +323,7 @@ inline static xsbBool file_function(void)
       return FALSE;
   }
   /* Like FILE_PUTBUF, but ByteCount=Line length. Also, takes atoms and lists
-     of characters: file_function(11, +OIport, +String, +Offset) */
+     of characters: file_function(11, +IOport, +String, +Offset) */
   case FILE_WRITE_LINE:
     pterm = reg_term(3);
     if (is_list(pterm))
@@ -340,7 +340,7 @@ inline static xsbBool file_function(void)
     break;
 
   case FILE_REOPEN: 
-    /* file_function(FILE_REOPEN, +Filename,+Mode,+OIport,-ErrorCode) */
+    /* file_function(FILE_REOPEN, +Filename,+Mode,+IOport,-ErrorCode) */
     tmpstr = ptoc_string(2);
     pterm = reg_term(3);
     if (is_int(pterm))
@@ -404,7 +404,7 @@ inline static xsbBool file_function(void)
     break;
 
   case FILE_CLONE: {
-    /* file_function(FILE_CLONE,SrcOIport,DestOIport,ErrorCode) */
+    /* file_function(FILE_CLONE,SrcIOport,DestIOport,ErrorCode) */
     /* Note: when cloning (dup) streams, NT doesn't copy the buffering mode of
        the source file. So, if this will turn out to be a problem, a new
        builtin (interface to setvbuf) will have to be introduced. */
@@ -502,7 +502,7 @@ inline static xsbBool file_function(void)
     break;
   }
 
-  case FD2IOPORT: { /* fd2ioport(+Pipe, -OIport) */
+  case FD2IOPORT: { /* fd2ioport(+Pipe, -IOport) */
     /* this can take any C file descriptor and make it into an XSB I/O port */
     int pipe_fd;
     char *mode=NULL;
@@ -533,7 +533,7 @@ inline static xsbBool file_function(void)
     break;
   }
     
-  case FILE_CLEARERR: { /* file_function(16, +OIport) */
+  case FILE_CLEARERR: { /* file_function(16, +IOport) */
     io_port = ptoc_int(2);
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
     }
@@ -545,7 +545,7 @@ inline static xsbBool file_function(void)
   }
 
   case TMPFILE_OPEN: {
-    /* file_function(17, -OIport)
+    /* file_function(17, -IOport)
        Opens a temp file in r/w mode and returns its IO port */
     if ((fptr = tmpfile()))
       ctop_int(2, xsb_intern_file(fptr, "TMPFILE_OPEN"));
