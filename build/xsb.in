@@ -46,10 +46,8 @@ suffix=@config_tag@
 invocation_name=$0
 
 # If symbolic link: is there a more elegant way to extract the value of a link?
-# ls -L seems to be broken on Solaris
 if test -h $invocation_name ; then
-    # This won't work right if symlink has a space in its name.
-    invocation_name=`ls -l $invocation_name | sed 's,.* ,,'`
+    invocation_name=`ls -l $invocation_name | sed 's,.*-> ,,'`
 fi
 
 case $invocation_name in
