@@ -39,3 +39,4 @@
 :- import sys_system/7, expand_filename/2, sys_syscall/4
    from machine.
 
+:- import xsb_configuration/2 from xsb_configuration.
