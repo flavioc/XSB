@@ -62,7 +62,7 @@ CPtr gl_bot, gl_top ;
 int get_more_chunk()
 { CPtr newchunk ;
 
-  if (!(newchunk = (CPtr)malloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
+  if (!(newchunk = (CPtr)mem_alloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
     xsb_exit("get_more_chunk failed");
 
   *newchunk = 0 ;
@@ -91,7 +91,7 @@ int findall_init_c(CTXTdecl)
   if (findall_solutions == 0)
 	{ int i ;
 	  p = findall_solutions = (findall_solution_list *)
-			malloc(MAX_FINDALLS*sizeof(findall_solution_list)) ;
+			mem_alloc(MAX_FINDALLS*sizeof(findall_solution_list)) ;
 	  if (findall_solutions == 0)
 	    xsb_exit("init of findall failed") ;
 	  for (i = 0 ; i++ < MAX_FINDALLS ; p++)
@@ -107,7 +107,7 @@ int findall_init_c(CTXTdecl)
   thisfree = nextfree;
 	/* no checking - no trailing - just use findall_init correct :-) */
   p = findall_solutions + nextfree ;
-  if (!(w = (CPtr)malloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
+  if (!(w = (CPtr)mem_alloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
 	xsb_abort("[FINDALL] Not enough memory");
 
   *w = 0 ;
@@ -139,7 +139,7 @@ void findall_free(int i)
 
   p = (findall_solutions + i)->first_chunk ;
   while (p != NULL)
-	{ to_free = p ; p = (CPtr)(*p) ; free(to_free) ; }
+	{ to_free = p ; p = (CPtr)(*p) ; mem_dealloc(to_free,FINDALL_CHUNCK_SIZE * sizeof(Cell)) ; }
   (findall_solutions + i)->tail = 0 ;
   (findall_solutions + i)->size = nextfree ;
   nextfree = i ;
@@ -356,7 +356,7 @@ static void findall_untrail()
       p--;
     }
   
-  tmp = tr_chunk ; tr_chunk = tr_chunk->previous ; free(tmp) ;
+  tmp = tr_chunk ; tr_chunk = tr_chunk->previous ; mem_dealloc(tmp,sizeof(f_tr_chunk)) ;
   while (tr_chunk != 0)
     {
       begin_trail = tr_chunk->tr ;
@@ -365,7 +365,7 @@ static void findall_untrail()
 	  *((CPtr)(*p)) = (Cell)(*(p-1));
 	  p--;
 	}
-      tmp = tr_chunk ; tr_chunk = tr_chunk->previous ; free(tmp) ;
+      tmp = tr_chunk ; tr_chunk = tr_chunk->previous ; mem_dealloc(tmp,sizeof(f_tr_chunk)) ;
     }
 } /* findall_untrail */
 
@@ -378,7 +378,7 @@ static int findall_trail(CPtr p, Cell val)
   
   if (trail_left == 0)
     {
-      if (!(new_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
+      if (!(new_tr_chunk = (f_tr_chunk *)mem_alloc(sizeof(f_tr_chunk))))
 	xsb_exit("findall_trail failed");
       cur_tr_top = new_tr_chunk->tr ;
       cur_tr_limit = new_tr_chunk->tr+F_TR_NUM ;
@@ -393,7 +393,7 @@ static int findall_trail(CPtr p, Cell val)
 
 static int init_findall_trail()
 {
-  if (!(cur_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
+  if (!(cur_tr_chunk = (f_tr_chunk *)mem_alloc(sizeof(f_tr_chunk))))
     xsb_exit("init_findall_trail failed");
   cur_tr_top = cur_tr_chunk->tr ;
   cur_tr_limit = cur_tr_chunk->tr+F_TR_NUM ;

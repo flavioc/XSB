@@ -153,6 +153,8 @@ void print_cpf_pred(CPtr cpf);
 
 #endif /* GC_PROFILE */
 
+extern void extend_enc_dec_as_nec(void *,void *);
+
 /*=========================================================================*/
 
 /* to choose between copying or sliding collector:
@@ -361,6 +363,12 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
   heap_offset = new_heap_bot - heap_bot ;
   new_ls_bot = new_heap_bot + new_size_in_cells - 1 ;
   local_offset = new_ls_bot - ls_bot ;
+
+#if defined(GENERAL_TAGGING)
+  //  printf("glstack expand %p %p\n",(void *)new_heap_bot,(void *)new_ls_bot+1);
+  extend_enc_dec_as_nec(new_heap_bot,new_ls_bot+1);
+#endif
+
   memmove(ls_top + local_offset,             /* move to */
 	  ls_top + heap_offset,              /* move from */
 	  (ls_bot - ls_top + 1)*sizeof(Cell) );      /* number of bytes */

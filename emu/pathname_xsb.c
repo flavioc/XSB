@@ -55,6 +55,7 @@
 #include "error_xsb.h"
 #include "flags_xsb.h"
 #include "extensions_xsb.h"
+#include "memory_xsb.h"
 
 /*=========================================================================*/
 
@@ -232,7 +233,7 @@ DllExport char * call_conv strip_names_from_path(char* path, int how_many)
 {
   int i, abort_flag=FALSE;
   char *cutoff_ptr;
-  char *buffer = (char *) malloc(MAXPATHLEN);
+  char *buffer = (char *) mem_alloc(MAXPATHLEN);
 
 #ifdef SIMPLESCALAR
   if (!buffer)

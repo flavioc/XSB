@@ -101,6 +101,10 @@ char *list_dot;
 int asynint_code = 0;
 int asynint_val = 0;
 
+int next_free_code = 0;
+Integer enc[16] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+Integer dec[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
+
 /* Replacements for labelled code in emusubs.i */
 
 #define nunify_with_nil(op)						\

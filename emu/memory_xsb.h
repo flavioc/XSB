@@ -123,7 +123,7 @@ extern long pspacesize;
 /* Memory Function Prototypes
    -------------------------- */
 extern byte *mem_alloc(unsigned long);
-extern void mem_dealloc(byte *, unsigned long);
+extern void mem_dealloc(void *, unsigned long);
 #ifndef MULTI_THREAD
 extern void tcpstack_realloc(long);
 extern void complstack_realloc(long);

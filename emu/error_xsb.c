@@ -85,7 +85,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 
   if (!space_for_ball_assert) {
     /* 3 cells needed for term */
-    space_for_ball_assert = (Cell *) malloc(3*sizeof(Cell));
+    space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell));
     if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
   }
 
@@ -122,7 +122,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   sprintf(message," in arg %d of predicate %s/%d)",arg,predicate,arity);
 
   if (!space_for_iso_ball) {
-    space_for_iso_ball = (Cell *) malloc(8*sizeof(Cell)); /* cells needed for term */
+    space_for_iso_ball = (Cell *) mem_alloc(8*sizeof(Cell)); /* cells needed for term */
     if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
   }
   tptr = space_for_iso_ball;
@@ -159,7 +159,7 @@ void call_conv xsb_permission_error(CTXTdeclc
   sprintf(message,"(return %d) in predicate %s/%d)",rtrn,predicate,arity);
 
   if (!space_for_iso_ball) {
-    space_for_iso_ball = (Cell *) malloc(8*sizeof(Cell)); /* cells needed for term */
+    space_for_iso_ball = (Cell *) mem_alloc(8*sizeof(Cell)); /* cells needed for term */
     if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
   }
   tptr = space_for_iso_ball;
@@ -200,7 +200,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
   }    
 
   if (!space_for_iso_ball) {
-    space_for_iso_ball = (Cell *) malloc(4*sizeof(Cell)); /* cells needed for term */
+    space_for_iso_ball = (Cell *) mem_alloc(4*sizeof(Cell)); /* cells needed for term */
     if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
   }
   tptr = space_for_iso_ball;
@@ -231,7 +231,7 @@ void call_conv xsb_basic_abort(char *message)
   Cell *tptr;
 
   if (!space_for_ball) {
-    space_for_ball = (Cell *) malloc(3*sizeof(Cell)); /* 3 cells needed for term */
+    space_for_ball = (Cell *) mem_alloc(3*sizeof(Cell)); /* 3 cells needed for term */
     if (!space_for_ball) xsb_exit("out of memory in xsb_basic_abort!");
   }
   tptr = space_for_ball;

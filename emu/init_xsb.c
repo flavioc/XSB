@@ -87,6 +87,9 @@ extern int    fileno(FILE *f);	        /* this is defined in POSIX */
 /* In WIN_NT, this gets redefined into _fdopen by wind2unix.h */
 extern FILE *fdopen(int fildes, const char *type);
 
+#if defined(GENERAL_TAGGING)
+extern void extend_enc_dec_as_nec(void *,void *);
+#endif
 
 long pspacesize = 0;	/* actual space dynamically allocated by loader.c */
 
@@ -595,25 +598,25 @@ char *init_para(int argc, char *argv[])
   /* Done with command line arguments */
 
   /* This is where we will be looking for the .xsb directory */
-  flags[USER_HOME] = (Cell) malloc(strlen(user_home) + 1);
+  flags[USER_HOME] = (Cell) mem_alloc(strlen(user_home) + 1);
   strcpy( (char *)flags[USER_HOME], user_home );
 
   /* install_dir is computed dynamically at system startup (in orient_xsb.c).
      Therefore, the entire directory tree can be moved --- only the relative
      positions count.
   */ 
-  flags[INSTALL_DIR] = (Cell) malloc(strlen(install_dir) + 1);   
+  flags[INSTALL_DIR] = (Cell) mem_alloc(strlen(install_dir) + 1);   
   strcpy( (char *)flags[INSTALL_DIR], install_dir );
 
   /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
-  flags[CONFIG_NAME] = (Cell) malloc(strlen(CONFIGURATION) + 1);
+  flags[CONFIG_NAME] = (Cell) mem_alloc(strlen(CONFIGURATION) + 1);
   strcpy( (char *)flags[CONFIG_NAME], CONFIGURATION );
 
-  flags[CONFIG_FILE] = (Cell) malloc(strlen(xsb_config_file) + 1);
+  flags[CONFIG_FILE] = (Cell) mem_alloc(strlen(xsb_config_file) + 1);
   strcpy( (char *)flags[CONFIG_FILE], xsb_config_file );
 
   /* the default for cmd_line_goal goal is "" */
-  flags[CMD_LINE_GOAL] = (Cell) malloc(strlen(cmd_line_goal) + 1);
+  flags[CMD_LINE_GOAL] = (Cell) mem_alloc(strlen(cmd_line_goal) + 1);
   strcpy( (char *)flags[CMD_LINE_GOAL], cmd_line_goal );
   
 
@@ -635,8 +638,8 @@ char *init_para(int argc, char *argv[])
      *  an XSB-supplied "server" program is the interpreter file.  Since
      *  it is known where these files exist, the full paths are built.
      */
-    flags[BOOT_MODULE] = (Cell) malloc(strlen_instdir + strlen_initfile + 1);
-    flags[CMD_LOOP_DRIVER] = (Cell)malloc(strlen_instdir + strlen_2ndfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_instdir + strlen_initfile + 1);
+    flags[CMD_LOOP_DRIVER] = (Cell)mem_alloc(strlen_instdir + strlen_2ndfile + 1);
     sprintf( (char *)flags[BOOT_MODULE],
 	     "%s%s%s",
 	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
@@ -653,8 +656,8 @@ char *init_para(int argc, char *argv[])
      *  user must supply an adequate full path name in each case (including
      *  extension).
      */
-    flags[BOOT_MODULE] = (Cell) malloc(strlen_initfile + 1);
-    flags[CMD_LOOP_DRIVER ] = (Cell) malloc(strlen_2ndfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_initfile + 1);
+    flags[CMD_LOOP_DRIVER ] = (Cell) mem_alloc(strlen_2ndfile + 1);
     strcpy( (char *)flags[BOOT_MODULE], boot_module );
     strcpy( (char *)flags[CMD_LOOP_DRIVER], cmd_loop_driver );
     break;
@@ -664,8 +667,8 @@ char *init_para(int argc, char *argv[])
      *  The filename can be absolute; however if not, it will
      *  be looked for in XSB's library path.
      */
-    flags[BOOT_MODULE] = (Cell) malloc(strlen_instdir + strlen_initfile + 1);
-    flags[CMD_LOOP_DRIVER ] = (Cell) malloc(strlen_2ndfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_instdir + strlen_initfile + 1);
+    flags[CMD_LOOP_DRIVER ] = (Cell) mem_alloc(strlen_2ndfile + 1);
     sprintf( (char *)flags[BOOT_MODULE],
 	     "%s%s%s",
 	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
@@ -676,7 +679,7 @@ char *init_para(int argc, char *argv[])
      *  A loader file should have been specified for disassembling.
      *  Should include extension and all.
      */
-    flags[BOOT_MODULE] = (Cell) malloc(strlen_initfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_initfile + 1);
     strcpy( (char *)flags[BOOT_MODULE], boot_module );
     break;
   default:
@@ -728,6 +731,10 @@ void init_machine(CTXTdecl)
     xsb_exit("Not enough core for the Global and Local Stacks!");
   glstack.high = glstack.low + glstack.init_size * K;
   glstack.size = glstack.init_size;
+
+#if defined(GENERAL_TAGGING)
+    extend_enc_dec_as_nec(glstack.low,glstack.high);
+#endif
 
   tcpstack.low = (byte *)real_alloc(tcpstack.init_size * K);
   if (!tcpstack.low)

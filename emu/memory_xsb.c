@@ -60,6 +60,25 @@
 #include "subp.h"
 #include "debug_xsb.h"
 
+#if defined(GENERAL_TAGGING)
+extern long int next_free_code;
+extern Integer enc[], dec[];
+
+void extend_enc_dec_as_nec(void *lptr, void *hptr) {
+    unsigned long nibble;
+    unsigned long lnibble = (unsigned long)lptr >> 28;
+    unsigned long hnibble = (unsigned long)hptr >> 28;
+    for (nibble = lnibble; nibble <= hnibble; nibble++) {
+      if (enc[nibble] == -1) {
+	enc[nibble] = next_free_code << 28;
+	dec[next_free_code] = nibble << 28;
+	printf("recoding %lx to %lx\n",nibble,next_free_code);
+	next_free_code++;
+      }
+    }
+}
+#endif
+
 /* === alloc permanent memory ============================================== */
 
 byte *mem_alloc(unsigned long size)
@@ -69,13 +88,17 @@ byte *mem_alloc(unsigned long size)
     size = (size+7) & ~0x7 ;	      /* round to 8 */
     pspacesize += size;
     ptr = (byte *) malloc(size);
+#if defined(GENERAL_TAGGING)
+    //    printf("mem_alloc %x %x\n",ptr,ptr+size);
+    extend_enc_dec_as_nec(ptr,ptr+size);
+#endif
     return ptr;
 }
 
 
 /* === dealloc permanent memory ============================================ */
 
-void mem_dealloc(byte *addr, unsigned long size)
+void mem_dealloc(void *addr, unsigned long size)
 {
     size = (size+7) & ~0x7 ;	      /* round to 8 */
     pspacesize -= size;
@@ -139,6 +162,12 @@ void tcpstack_realloc(CTXTdeclc long new_size) {
     if ( IsNULL(new_trail) )
       xsb_exit("Not enough core to resize the Trail and Choice Point Stack!");
     new_cps = new_trail + new_size * K;
+
+#if defined(GENERAL_TAGGING)
+    // seems not nec (any tagged pointers into here?)
+    //       printf("tcpstack_realloc %p %p\n",new_trail,new_cps);
+    //       extend_enc_dec_as_nec(new_trail,new_cps);
+#endif
 
     trail_offset = (long)(new_trail - tcpstack.low);
     cps_offset = (long)(new_cps - tcpstack.high);
