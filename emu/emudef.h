@@ -70,10 +70,8 @@ Psc tnot_psc, delay_psc;
 
 /*
  * Ret PSC's are used to store substitution factors for subgoal calls or
- * answers.  A psc with a new arity will be created when needed.  Array
- * ret_psc_exists[] is used to record all existed ret Psc's.
+ * answers.  A psc with a new arity will be created when needed.
  */
-byte ret_psc_exists[255];
 Psc ret_psc[255];
 
 char *list_dot;

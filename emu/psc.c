@@ -306,8 +306,7 @@ Pair link_sym(Psc psc, Psc mod_psc)
 
 /*
  * Get the PSC for ret/n.  If it already exists, just return it.  Or
- * create one and save it in ret_psc[n], and then set the
- * ret_psc_exists[n] to be TRUE.
+ * create one and save it in ret_psc[n].
  */
 
 Psc get_ret_psc(int n)
@@ -315,10 +314,9 @@ Psc get_ret_psc(int n)
   Pair temp;
   int new_indicator;
 
-  if (!ret_psc_exists[n]) {
+  if (!ret_psc[n]) {
     temp = (Pair) insert("ret", n, global_mod, &new_indicator);
     ret_psc[n] = pair_psc(temp);
-    ret_psc_exists[n] = 1;
   }
   return ret_psc[n];
 }

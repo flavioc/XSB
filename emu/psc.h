@@ -119,7 +119,6 @@ extern char *nil_sym;
 extern Pair list_str;
 extern char *list_dot;
 
-extern byte ret_psc_exists[255];	/* PSC's for ret/n */
 extern Psc ret_psc[255];
 extern Psc get_ret_psc(int);
 

@@ -675,7 +675,7 @@ void init_symbols(void)
   delay_psc = pair_psc(temp);
 
   /* Initialize ret PSCs */
-  for (i = 0; i < 255; i++) ret_psc_exists[i] = 0;
+  for (i = 0; i < 255; i++) ret_psc[i] = NULL;
 
   /* make another reference to global module -- "usermod" */
   tp = (Pair)insert_module(T_MODU, "usermod");	/* loaded */
