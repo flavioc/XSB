@@ -158,7 +158,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
 #endif /* IGNORE_DELAYVAR */
 #endif /* DEBUG_DELAYVAR */
 
-    do_delay_stuff(answer, producer, wasFound);
+    do_delay_stuff((NODEptr)answer, producer, wasFound);
 
 #ifndef IGNORE_DELAYVAR
     undo_answer_bindings();
@@ -166,7 +166,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
 
     *is_new = ! wasFound;
   }
-  return ( answer );
+  return (BTNptr)answer;
 }
 
 /*-------------------------------------------------------------------------*/

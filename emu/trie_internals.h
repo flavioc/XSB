@@ -570,7 +570,7 @@ BTNptr new_btn(int TrieType, int NodeType, Cell Symbol,
 	       BTNptr Parent, BTNptr Sibling);
 
 #define New_BTN(BTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
-   BTN = new_btn(TrieType,NodeType,Symbol,Parent,Sibling)
+   BTN = new_btn(TrieType,NodeType,Symbol,(BTNptr)Parent,(BTNptr)Sibling)
 
 #define CreateEscapeBTN(pBTN,TrieType,Parent) {				\
    New_BTN(pBTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,Parent,NULL);	\
@@ -611,24 +611,24 @@ typedef struct Basic_Trie_HashTable {
    ------------------------- */
 #define _New_TrieHT(SM,THT,TrieType) {					\
 									\
-   BTHTptr btht;							\
+   void * btht;								\
 									\
    SM_AllocateStruct(SM,btht);						\
-   BTHT_Instr(btht) = hash_opcode;					\
-   BTHT_Status(btht) = VALID_NODE_STATUS;				\
-   BTHT_TrieType(btht) = TrieType;					\
-   BTHT_NodeType(btht) = HASH_HEADER_NT;				\
-   BTHT_NumContents(btht) = MAX_SIBLING_LEN + 1;			\
-   BTHT_NumBuckets(btht) = TrieHT_INIT_SIZE;				\
-   BTHT_BucketArray(btht) =						\
+   BTHT_Instr(((BTHTptr)btht)) = hash_opcode;				\
+   BTHT_Status(((BTHTptr)btht)) = VALID_NODE_STATUS;			\
+   BTHT_TrieType(((BTHTptr)btht)) = TrieType;				\
+   BTHT_NodeType(((BTHTptr)btht)) = HASH_HEADER_NT;			\
+   BTHT_NumContents(((BTHTptr)btht)) = MAX_SIBLING_LEN + 1;		\
+   BTHT_NumBuckets(((BTHTptr)btht)) = TrieHT_INIT_SIZE;			\
+   BTHT_BucketArray(((BTHTptr)btht)) =					\
      (BTNptr *)calloc(TrieHT_INIT_SIZE, sizeof(void *));		\
-   if ( IsNonNULL(BTHT_BucketArray(btht)) )				\
-     TrieHT_AddNewToAllocList(SM,btht)					\
+   if ( IsNonNULL(BTHT_BucketArray(((BTHTptr)btht))) )			\
+     TrieHT_AddNewToAllocList(SM,((BTHTptr)btht))			\
    else {								\
-     SM_DeallocateStruct(SM,btht);					\
+     SM_DeallocateStruct(SM,((BTHTptr)btht));				\
      xsb_abort("No room to allocate buckets for tabling hash table");	\
    }									\
-   THT = (void *)btht;							\
+   THT = btht;								\
 }
 
 extern void     expand_trie_ht(BTHTptr);
@@ -649,7 +649,7 @@ extern void     expand_trie_ht(BTHTptr);
    BTHTptr pBTHT;					\
 							\
    for ( pBTHT = SM_AllocList(SM);  IsNonNULL(pBTHT);	\
-	 pBTHT = BTHT_NextBTHT(pBTHT) )			\
+	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) )		\
      free(BTHT_BucketArray(pBTHT));			\
  }
 
@@ -821,7 +821,7 @@ extern Structure_Manager smTSTHT;
 
 #define New_TSTHT(TSTHT,TrieType,TST) {				\
    _New_TrieHT(smTSTHT,TSTHT,TrieType);				\
-   TSTHT_InternalLink(TSTHT) = TSTRoot_GetHTList(TST);		\
+   TSTHT_InternalLink(TSTHT) = (TSTHTptr)TSTRoot_GetHTList(TST);\
    TSTRoot_SetHTList(TST,TSTHT);				\
    TSTHT_IndexHead(TSTHT) = TSTHT_IndexTail(TSTHT) = NULL;	\
  }
@@ -839,9 +839,12 @@ extern Structure_Manager smALN;
 /* Allocating New ALNs
    ------------------- */
 #define New_ALN(pALN, pTN, pNext) {		\
-   SM_AllocateStruct(smALN,pALN);		\
-   ALN_Answer(pALN) = pTN;			\
-   ALN_Next(pALN) = pNext;			\
+   void *p ;					\
+						\
+   SM_AllocateStruct(smALN,p);			\
+   pALN = p ;					\
+   ALN_Answer(pALN) = (BTNptr)pTN;		\
+   ALN_Next(pALN) = (ALNptr)pNext;		\
  }
 
 #define free_answer_list(SubgoalFrame) {			\

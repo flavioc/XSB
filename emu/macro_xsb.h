@@ -374,7 +374,7 @@ typedef struct SubsumedConsumerSubgoalFrame {
      NewChain = Chain;							 \
    }									 \
    else									 \
-     NewChain = subg_next_subgoal(pSF);					 \
+     NewChain = (VariantSF)subg_next_subgoal(pSF);			 \
    if ( IsNonNULL(subg_next_subgoal(pSF)) )				 \
      subg_prev_subgoal(subg_next_subgoal(pSF)) = subg_prev_subgoal(pSF); \
    subg_prev_subgoal(pSF) = subg_next_subgoal(pSF) = NULL;		 \
@@ -469,7 +469,7 @@ extern struct Structure_Manager smConsSF;
    CallTrieLeaf_SetSF(Leaf,pNewSF);					    \
    subg_ans_list_ptr(pNewSF) = empty_return();				    \
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    \
-   SF = pNewSF;								    \
+   SF = (VariantSF)pNewSF;						    \
 }
 
 #define FreeProducerSF(SF) {					\
@@ -518,7 +518,7 @@ void tstCreateStructures(TSTNptr);
    conssf_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
    conssf_consumers(pNewSF) = subg_consumers(Producer);		\
    subg_consumers(Producer) = pNewSF;				\
-   SF = pNewSF;							\
+   SF = (VariantSF)pNewSF;					\
 }
 
 /*----------------------------------------------------------------------*/

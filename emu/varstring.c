@@ -118,7 +118,7 @@ static void vs_init(VarString *vstr, int increment)
   if (increment < 1)
     increment = DEFAULT_VARSTR_INCREMENT;
 
-  if (NULL == (vstr->string = calloc(1, increment))) {
+  if (NULL == (vstr->string = (char *)calloc(1, increment))) {
 #ifdef DEBUG_VARSTRING
     fprintf(stderr, "Cannot allocate memory for a variable-length string\n");
     return;

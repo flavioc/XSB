@@ -83,7 +83,7 @@ HashStats hash_statistics(Structure_Manager *sm) {
   HashStats_TotalOccupancy(ht_stats) = 0;
   HashStats_NonEmptyBuckets(ht_stats) = 0;
   HashStats_BucketSize(ht_stats) = sizeof(void *);
-  pBTHT = SM_AllocList(*sm);
+  pBTHT = (BTHTptr)SM_AllocList(*sm);
   while ( IsNonNULL(pBTHT) ) {
 #ifdef DEBUG
     /* Counter for contents of current hash table
@@ -145,21 +145,21 @@ NodeStats subgoal_statistics(Structure_Manager *sm) {
     for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
       if ( IsVariantPredicate(tif) )
 	for ( pProdSF = TIF_Subgoals(tif);  IsNonNULL(pProdSF);
-	      pProdSF = subg_next_subgoal(pProdSF) )
+	      pProdSF = (VariantSF)subg_next_subgoal(pProdSF) )
 	  nSubgoals++;
   }
   else if ( sm == &smProdSF ) {
     for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
       if ( IsSubsumptivePredicate(tif) )
 	for ( pProdSF = TIF_Subgoals(tif);  IsNonNULL(pProdSF);
-	      pProdSF = subg_next_subgoal(pProdSF) )
+	      pProdSF = (VariantSF)subg_next_subgoal(pProdSF) )
 	  nSubgoals++;
   }
   else if ( sm == &smConsSF ) {
     for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
       if ( IsSubsumptivePredicate(tif) )
 	for ( pProdSF = TIF_Subgoals(tif);  IsNonNULL(pProdSF);
-	      pProdSF = subg_next_subgoal(pProdSF) )
+	      pProdSF = (VariantSF)subg_next_subgoal(pProdSF) )
 	  for ( pConsSF = subg_consumers(pProdSF);  IsNonNULL(pConsSF); 
 		pConsSF = conssf_consumers(pConsSF) )
 	    nSubgoals++;

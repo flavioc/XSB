@@ -205,11 +205,11 @@ void init_trie_aux_areas(void)
 BTNptr new_btn(int trie_t, int node_t, Cell symbol, BTNptr parent,
 	       BTNptr sibling) {
 
-  BTNptr btn;
+  void *btn;
 
   SM_AllocateStruct(*smBTN,btn);
-  TN_Init(btn,trie_t,node_t,symbol,parent,sibling);
-  return btn;
+  TN_Init(((BTNptr)btn),trie_t,node_t,symbol,parent,sibling);
+  return (BTNptr)btn;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -217,12 +217,12 @@ BTNptr new_btn(int trie_t, int node_t, Cell symbol, BTNptr parent,
 TSTNptr new_tstn(int trie_t, int node_t, Cell symbol, TSTNptr parent,
 		TSTNptr sibling) {
 
-  TSTNptr tstn;
+  void * tstn;
 
   SM_AllocateStruct(smTSTN,tstn);
-  TN_Init(tstn,trie_t,node_t,symbol,parent,sibling);
-  TSTN_TimeStamp(tstn) = TSTN_DEFAULT_TIMESTAMP;
-  return tstn;
+  TN_Init(((TSTNptr)tstn),trie_t,node_t,symbol,parent,sibling);
+  TSTN_TimeStamp(((TSTNptr)tstn)) = TSTN_DEFAULT_TIMESTAMP;
+  return (TSTNptr)tstn;
 }
 
 /*-------------------------------------------------------------------------*/

@@ -94,7 +94,7 @@ static int count_producer_subgoals(void)
   i = 0;
   for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
     for ( temp_ptr = TIF_Subgoals(tif);  IsNonNULL(temp_ptr);
-	  temp_ptr = subg_next_subgoal(temp_ptr) )
+	  temp_ptr = (VariantSF)subg_next_subgoal(temp_ptr) )
       i ++;
   return(i);
 }
