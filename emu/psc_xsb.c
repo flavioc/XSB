@@ -114,7 +114,6 @@ static Psc make_psc_rec(char *name, char arity) {
   return temp;
 }
 
-
 /*
  *  Create a PSC-PAIR record, set it to point to a PSC record, and place
  *  it at the head of a PSC-PAIR record chain.
@@ -124,6 +123,7 @@ static Pair make_psc_pair(Psc psc_ptr, Pair *link_ptr) {
   Pair new_pair;
   
   new_pair = (Pair)mem_alloc(sizeof(struct psc_pair));
+  //  printf("new_psc_pair %d, prev %d\n",(int)new_pair, (int)*link_ptr);
   pair_psc(new_pair) = psc_ptr;         /* set 1st to point to psc_rec */
   pair_next(new_pair) = *link_ptr;      /* set 2nd to old head */
   *link_ptr = new_pair;                 /* new symbol is in the head! */
@@ -203,15 +203,7 @@ static Pair search(int arity, char *name, Pair *search_ptr)
       psc_ptr = (*search_ptr)->psc_ptr;
       if (strcmp(name, get_name(psc_ptr)) == 0
 	  && arity == get_arity(psc_ptr) )
-	if (search_ptr == init_search_ptr)
-	  return (*search_ptr);
-	else {
-	  found_pair = *search_ptr;
-	  *search_ptr = found_pair->next;
-	  found_pair->next = *init_search_ptr;
-	  *init_search_ptr = found_pair;
-	  return found_pair;
-	}	  
+	return (*search_ptr);
       else 
 	search_ptr  = &((*search_ptr)->next);
     }
