@@ -417,7 +417,9 @@ a file using {\tt consult} and such.)
     | ?- file_reopen('/dev/null', 1, 3, Error).
 \end{verbatim}
 %%
-    redirects all warnings to the Unix black hole.
+    redirects all warnings to the Unix black hole. 
+
+    On success, {\tt RetCode} is 0; on error, the return code is negative.
 
 \ournewitem{file\_clone(+SrcFileDes,?DestFileDes,-RetCode)}{file\_io}\index{{\tt file\__clone/1}}
     This is yet another way to redirect I/O. It is a prolog interface to
@@ -446,6 +448,8 @@ a file using {\tt consult} and such.)
     This means that file descriptor 10 now becomes clone of standard
     output. So, all subsequent I/O will now go to standard output instead
     of {\tt foo.bar}. 
+
+    On success, {\tt RetCode} is 0; on error, the return code is negative.
 
 \ournewitem{file\_close(+FileDes)}{file\_io}\index{{\tt file\_close/1}}
     Closes the file (or string) for descriptor {\tt FileDes}.
