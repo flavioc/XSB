@@ -23,7 +23,7 @@ static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* qu
 struct driverMySQL_connectionInfo* mysqlHandles[MAX_HANDLES];
 struct driverMySQL_queryInfo* mysqlQueries[MAX_QUERIES];
 int numHandles, numQueries;
-char* errorMesg;
+const char* errorMesg;
 
 //struct driverMySQL_preparedresultset* prepQueries[MAX_PREP_QUERIES];
 
@@ -344,7 +344,6 @@ DllExport char* call_conv driverMySQL_errorMesg()
 	{
 		temp = (char *)malloc((strlen(errorMesg) + 1) * sizeof(char));
 		strcpy(temp, errorMesg);
-		free(errorMesg);
 		errorMesg = NULL;
 	}
 	return NULL;
@@ -393,6 +392,7 @@ static int driverMySQL_getXSBType(MYSQL_FIELD* field)
 		case FIELD_TYPE_BLOB:
 		case FIELD_TYPE_VAR_STRING:
 		case FIELD_TYPE_NULL:
+		default:
 				type = STRING_TYPE;
 				break;
 	}
