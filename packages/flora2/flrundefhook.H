@@ -28,9 +28,12 @@
 
 :- import flora_decode_predicate/6 from flrwrapper.
 
-:- import flModule/1 from flora2.
+:- import flLoadedModule/1 from flora2.
 
 :- import
+	flora_stderr_string/1,
+	flora_error_heading/0,
+	flora_stderr_nl/0,
 	flora_error_line/2
    from flrprint.
 

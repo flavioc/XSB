@@ -31,8 +31,10 @@
    from machine.
 
 :- import 
-	storage_find_fact/2,
-	storage_insert_fact/3
+	%%storage_find_fact/2,
+	%%storage_insert_fact/3,
+	storage_insert_keypair/4,
+	storage_find_keypair/3
    from storage.
 
 :- import ','/2 from standard.

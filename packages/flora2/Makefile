@@ -43,6 +43,7 @@ ALLOBJS = flroperator.O \
 	  flrcoder.O \
 	  flrutils.O \
 	  flrwrapper.O \
+	  flrwraparound.O \
 	  flrundefhook.O \
 	  flrshell.O
 
@@ -83,6 +84,7 @@ all: init $(ALLOBJS) finish
 	cd syslib; $(MAKE)
 	cd trailer; $(MAKE)
 	cd lib; $(MAKE)
+	cd debugger; $(MAKE)
 	cd pkgs; $(MAKE)
 	cd demos; $(MAKE)
 	@cat $(XSBDIR)/build/.flora*.tmp
@@ -155,6 +157,9 @@ flrundefhook.O : flrundefhook.P flrundefhook.H $(FLORA_TERMS)
 flrshell.O : flrshell.P flrshell.H $(FLORA_TERMS)
 	@echo 'mc(flrshell,$(OPTION)).' >> cmd...
 
+flrwraparound.O : flrwraparound.P flrwraparound.H $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+	@echo 'mc(flrwraparound,$(OPTION)).' >> cmd...
+
 
 init:
 	/bin/rm -f $(SVFILE)
@@ -177,6 +182,7 @@ clean:
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean
 	cd lib; $(MAKE) clean
+	cd debugger; $(MAKE) clean
 	cd p2h; $(MAKE) clean
 	cd trailer; $(MAKE) clean
 	cd demos; $(MAKE) clean

@@ -2,3 +2,17 @@
     This directory contains the trailers, which are generated at Flora
     build time by combining the templates in headerinc/
     This dir contains only .P files, which are all cleaned up by make clean.
+
+How trailers are used:
+
+1. Trailers in closure/ are included in compiled program.
+2. Trailers in trailer/ are compiled for module main and are dynamically
+   loaded in the shell when it starts.
+3. Trailers in .xsb/flora/ are compiled dynamically for the appropriate
+   module when an executable instruction ?- equality ... [in module]
+   is executed.
+
+Instead of mechanism (1), we could have used (3), but (1) is going to
+give a slightly better time for loading. At the expense of having worse
+compile time because XSB has to compile the trailers for multiple modules
+multiple times.

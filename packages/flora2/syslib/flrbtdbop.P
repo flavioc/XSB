@@ -148,13 +148,13 @@ flora_storage_insertfacts_bt([P|T]) :-
 	    flora_storage_insertfacts_bt(T)
 	;
 	  flora_error_heading,
-	  ( F == WRAP_HILOG ->
-	      flora_stderr_string('It is not allowed to insert HiLog term ')
-	  ;
-	    flora_stderr_string('It is not allowed to insert Prolog term ')
-	  ),
 	  flora_stderr_write(P),
-	  flora_stderr_string(' !'),
+	  ( F == WRAP_HILOG ->
+	      flora_stderr_string('is a HiLog term. ')
+	  ;
+	    flora_stderr_string('is a Prolog term. ')
+	  ),
+	  flora_stderr_string('Insertion of terms into the database is not allowed'),
 	  flora_stderr_nl,
           abort
 	).

@@ -27,7 +27,9 @@
 
 :- import term_new/2, term_psc/2 from machine.
 :- import flora_load_module_internal/2 from flrutils.
-:- import flora_wssymbol/3, flora_wshilog/2 from flrwrapper.
+:- import flora_firstorder_module_predicate_symbol/3,
+	flora_hilog_module_predicate_symbol/2
+    from flrwrapper.
 :- export
 	flImportFloraPred/4,
 	flImportHiLog/4.

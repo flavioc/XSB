@@ -67,9 +67,7 @@
 
 
 
-3. Implement the debugger.
-
-4. Encapsulation.
+3. Encapsulation.
 
    GENERAL IDEA: 
        When referring to Flora predicates in another module, e.g., 
@@ -123,7 +121,7 @@
     More fine-grained encapsulation based on the ideas from annotated logic.
        
 
-5. Asserting Flora rules.
+4. Asserting Flora rules.
 
    Proposal:
       - Allow assertion only into modules that are declared as 
@@ -162,7 +160,7 @@
 	added. The effect of "hform" is to force the compiler to compile
 	the head of the rule as a list of formulas rather than an oid term.
 
-6. Metaprogramming
+5. Metaprogramming
 
      - Need to implement the @foreign module123 wrapper which should tell
        the coder to wrap F-molecule into one call:
@@ -192,7 +190,7 @@
 	 Allow only a conjunction of literals (excluding updates and
 	 predicates) under the scope of @foreign
 
-7. Implement asserting the storage-linking rules (the patch rules) in the
+6. Implement asserting the storage-linking rules (the patch rules) in the
    Flora shell, so that we'll be able to use insert/delete for firstorder
    predicates in the shell.
 
@@ -211,7 +209,7 @@
       functor/arity in register_firstorder/1, do
       retractall(functor(X,Y,...)).
 
-8. Implement  patch rules for firstorderall.
+7. Implement  patch rules for firstorderall.
    Firstorderall is already implemented. We only need to add the patch
    rules.
 
@@ -237,7 +235,7 @@
    a patch rule for foo'mod/5 must be asserted, if it isn't already
    there.
 
-9. If then else
+8. If then else
     Right now if/then/else are defined in flroperator.P and syslib/flrcontrol.P
     However, the defs don't parse correctly some nested if-then-else
     expressions, such as if a then if b then c else f else g.
@@ -245,25 +243,25 @@
     by the operators if/then/else, it would rearrange it to fix the
     associativity.
 
-10. Add the contraints syntax {...}.
+9. Add the contraints syntax {...}.
 
 
-11. Implement convenient versions of I/O predicates and others, such as
+10. Implement convenient versions of I/O predicates and others, such as
     new_oid(X). This module should be automatically loaded into the module
     "flora". Maybe we should prevent users from loading lodules into
     the "flora" module.
 
-12. Add the symbol _@, which will be handled by the tokenizer and passed
+11. Add the symbol _@, which will be handled by the tokenizer and passed
     along to the compiler so it would insert code to replace _@ with the
     preprocessor constant FLORA_MODULE.
     When compiling, the macro definition
     #define FLORA_MODULE  .....
     would be dumped into the .P file
 
-13. Do dependency checking in the compiler to determine if a tabled
+12. Do dependency checking in the compiler to determine if a tabled
     predicate or an F-molecule depends on an update predicate.
 
-14. Do smart reordering of arithmetic operations in rule bodies to minimize
+13. Do smart reordering of arithmetic operations in rule bodies to minimize
     the possibility of errors due to unbound variables.
 
 	Algorithm: Bring query/\literal in update{literal|query}
@@ -274,10 +272,10 @@
         Input: term (which includes , and ;)
 	       A set of declarations like binding(op,Arity,[+,-])
 
-15. Figure out some workaround for the tabled stuff that depends on
+14. Figure out some workaround for the tabled stuff that depends on
     dynamically asserted and deleted facts.
 
-16. Implement the :- database directive, which will direct the compiler to
+15. Implement the :- database directive, which will direct the compiler to
     not include the patch rules and to disallow real rules (as opposed to
     just facts in the file).
     In conjunction with this, do the following in the parser:
@@ -293,7 +291,7 @@
 	  The compiler should check this flag to decide whether to dump the
 	  patch rules and for deciding on the error checking.
 
-17. Provide primitives
+16. Provide primitives
     :- firstorder foo/1 in modname.
     :- hilog moo/2 in modname.
     (For symmetry, let us also have :- hilog moo/2. without the module.
@@ -323,7 +321,7 @@
     declarations it owns when the module is reloaded. But if we do allow
     this, this can be done only if there are no consumers for the symbol.
     
-18. Add a call(X) meta predicate.
+17. Add a call(X) meta predicate.
     The main point right now is that
 
     :- p(X), X.     (*)
@@ -344,8 +342,23 @@
     Also, call(p) should convert to call(apply(p)), because Flora treats
     propositional constants like p as p().
 
-19. Implement support for the full directive :- index/2 directive.
+18. Implement support for the full directive :- index/2
+    (right now it only allows trie indexing)
 
-20. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
+19. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
 
-21. Allow inheritance of procedural methods: a[*#p(...)].
+20. Allow inheritance of procedural methods: a[*#p(...)].
+
+21.  Right now Flora compiler collects XSB compiler options
+     listed in flora_is_command_directive/1 in flrparser.P
+     and then dumps them in the program as :- option.
+     First, this is incorrect syntax. Should be dumping as
+     compiler_options([option,option,...]).
+     Second, this doesn't have any effect because in flrutils.P we invoke
+     XSB compiler using the options spec_repr, ti_all, optimize.
+
+     What is needed is that the compiler collect all these XSB options,
+     and then add the default options that don't contradict the explicitly
+     specified ones (plus xpp_on). Then the coder would dump
+     :- compiler_options([option,option,...]) into the .P file.
+

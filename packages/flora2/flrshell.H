@@ -27,6 +27,7 @@
 */
 
 
+
 :- import
 	abort/0,
 	push_abort_cutpoint/0,
@@ -100,6 +101,10 @@
 	flora_end_of_input/1,
 	flora_check_filename/1
    from flrutils.
+
+:- import flora_trace/0,
+	flora_notrace/0
+   from flrdebugger.
 
 :- dynamic flora_switch(_).
 

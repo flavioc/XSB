@@ -42,8 +42,9 @@
 :- import slash/1 from machine.
 :- import member/2, append/3 from basics.
 
-:- import flora_classify_call/5 from flrwrapper.
-:- import flora_wssymbol/3 from flrwrapper.
+:- import flora_decode_predicate/6,
+	flora_firstorder_module_predicate_symbol/3
+    from flrwrapper.
 :- import flora_set_xpp_options/1,
 	flora_set_xpp_options/0,
 	flora_clear_xpp_options/0 from flrutils.
@@ -89,7 +90,7 @@
 
 :- export flora_read_debugger_data/1,
 	flora_load_dyndata_for_user_modules/1,
-	FLORA_SYMBOL(debugger_loaded),
+	FLORA_SYMBOL('debugger_loaded'),
 	flora_trace/0,
 	flora_notrace/0.
 
@@ -104,15 +105,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% flora_write_goal %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-/*
-%% This is a top-level call in flora_print_all/2 in flranswers.flr
-flora_write_goal(findall(NVs,FLORA_SYMBOL(call)(Gs),_TempL)) :-
-	print_item('Query: { '),
-	flora_write_vars(NVs),
-	print_item(' | '),
-	flora_write_goal(Gs),
-	print_item(' }').
-*/
+flora_write_goal(Call) :- var(Call), print_item(Call).
 
 flora_write_goal(Call) :-
 	classify_call(Call, Type,Basename,ArgList,Workspace),
@@ -176,9 +169,13 @@ flora_write_goal(Call) :-
 
 %% List of goals -- the last one
 flora_write_goal(Call) :-
-	functor(Call,',',2),
+	is_commalist(Call),
 	!,
 	write_goal_commalist(Call).
+flora_write_goal(Call) :-
+	is_disjunction(Call),
+	!,
+	write_disjunction(Call).
 
 flora_write_goal(Call) :-
 	Call =.. [F, Subcall],
@@ -187,6 +184,13 @@ flora_write_goal(Call) :-
 	print_items((F,'(')),
 	flora_write_goal(Subcall),
 	print_item(')').
+
+flora_write_goal(Call) :-
+	Call = FL_UNIVEQFORM(Left,Right),
+	!,
+	flora_write_goal(Left),
+	print_items((' ', FL_UNIVEQFORM, ' ')),
+	flora_write_goal(Right).
 
 %% catch all
 flora_write_goal(Call) :- print_item(Call).
@@ -201,24 +205,33 @@ write_goal_commalist(G) :-
 	!,
 	flora_write_goal(G).
 
+write_disjunction(';'(G1,G2)) :-
+	!,
+	flora_write_goal(G1),
+	print_item(' ; '),
+	flora_write_goal(G2).
+
 
 /*********************************************************************/
 %%%%%%%%%%%%%%%%%%%%% Molecules %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 flora_write_flogic(Basename,Args,Workspace) :-
 	decode_molecule(Basename,Code,Args),
-	write_molecule(Code),
+	write_code(Code),
 	write_workspace(Workspace).
 
-write_molecule(Code) :-
+write_code(Code) :-
 	Code =.. [code|Elements],
-	write_mol_elements(Elements).
-write_mol_elements([]).
-write_mol_elements([H|Tail]) :-
+	write_code_elements(Elements).
+write_code_elements([]).
+write_code_elements([H|Tail]) :-
 	write_value(H),
-	write_mol_elements(Tail).
+	write_code_elements(Tail).
 
 
+is_flogic(Call) :-
+	callable(Call),
+	classify_call(Call, flogic,_Basename,_ArgList,_Workspace).
 is_prolog(Call) :- 
 	callable(Call),
 	classify_call(Call, prolog,_Basename,_ArgList,_Workspace).
@@ -228,6 +241,12 @@ is_hilog(Call) :-
 is_hilog(Call) :-
 	callable(Call),
 	Call =.. [WRAP_HILOG|_].
+is_commalist(Call) :-
+	callable(Call),
+	functor(Call,',',2).
+is_disjunction(Call) :-
+	callable(Call),
+	functor(Call,';',2).
 
 
 decode_molecule(WRAP_FD,code(O,'[',M,'->',V,']'), [O,M,V]).
@@ -291,7 +310,7 @@ flora_write_update(UpdName,UpdLiterals,Query) :-
 	print_items((UpdName,'{')),
 	write_update_literals(UpdLiterals),
 	print_item(' | '),
-	write_goal_commalist(Query),
+	flora_write_goal(Query),
 	print_item('}').
 write_update_literals([]).
 write_update_literals([L|Rest]) :-
@@ -327,31 +346,27 @@ is_aggregate_call(FLLIBCOLLECTBAG,FL_COLLECTBAG).
 
 %%%%%%%%%%%%%%%%%%%%%% Classifier %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classify_call(Call, Type,Basename,ArgList,Workspace) :-
-	flora_classify_call(Call, Type1,Basename1,ArgList,Workspace),
-	(Type1 == (firstorder)
-	-> (Basename1 == ultimate_isa
-	   -> Basename = WRAP_ISA, Type = (inheritance)
-	   ; Basename1 == immediate_sub
-	   -> Basename = WRAP_SUB, Type = (inheritance)
+	flora_decode_predicate(Call,Type1,Workspace,Prefix,Basename1,ArgList),
+	%% The following is a debugging statement, 
+	%% to help weed out calls that should be suppressed
+	%%fmt_write("\n%S\n%S\n%S\n%S\n%S\n%S\n",
+	%%	  arg(Call,Type1,Workspace,Prefix,Basename1,ArgList)),
+	(Type1 == (flora)
+	-> ((Prefix=immediate_ ; Prefix=inheritance_)
+	   -> Basename = Basename1, Type = (inheritance)
 	   
-	   ; Basename1 == super_isa
-	   -> Basename = WRAP_ISA, Type = (flogic)
-	   ; Basename1 == super_sub
-	   -> Basename = WRAP_SUB, Type = (flogic)
+	   ; Prefix=super_
+	   -> Basename = Basename1, Type = (flogic)
 
-	   ; Basename1 == defined_inferred_fd
-	   -> Basename = WRAP_FD, Type = (definedvalue)
-	   ; Basename1 == defined_inferred_ifd
-	   -> Basename = WRAP_IFD, Type = (definedvalue)
-	   ; Basename1 == defined_inferred_mvd
-	   -> Basename = WRAP_MVD, Type = (definedvalue)
-	   ; Basename1 == defined_inferred_imvd
-	   -> Basename = WRAP_IMVD, Type = (definedvalue)
+	   ; Prefix=defined_inferred_
+	   -> Basename = Basename1, Type = (definedvalue)
 
-	   ; Basename1 == conflict_obj_ifd
-	   -> Basename = WRAP_FD, Type = (conflictvalue)
-	   ; Basename1 == conflict_obj_imvd
-	   -> Basename = WRAP_MVD, Type = (conflictvalue)
+	   ; Prefix=conflict_obj_
+	   -> Type = (conflictvalue),
+	       ( Basename1 == ifd -> Basename = WRAP_FD
+	       ; Basename1 == imvd -> Basename = WRAP_MVD
+	       ; true
+	       )
 	   ; true
 	   )
 	; Type = Type1, Basename = Basename1
@@ -374,6 +389,18 @@ write_value(WRAP_FDSKOLEM(X,Y)) :- !,
 write_value(WRAP_IFDSKOLEM(X,Y)) :- !,
 	write_value(X), print_item('!'), write_value(Y).
 write_value(Val) :-
+	is_flogic(Val),
+	!,
+	flora_write_goal(Val).
+write_value(Val) :-
+	is_commalist(Val),
+	!,
+	write_goal_commalist(Val).
+write_value(Val) :-
+	is_disjunction(Val),
+	!,
+	write_disjunction(Val).
+write_value(Val) :-
 	is_hilog(Val),
 	!,
 	write_hilog(Val).
@@ -386,6 +413,18 @@ write_hilog(Val) :-
 	(atomic(Val);var(Val)),
 	!,
 	print_item( Val).
+write_hilog(Val) :-
+	is_commalist(Val),
+	!,
+	write_goal_commalist(Val).
+write_hilog(Val) :-
+	is_disjunction(Val),
+	!,
+	write_disjunction(Val).
+write_hilog(Val) :-
+	is_flogic(Val),
+	!,
+	flora_write_goal(Val).
 write_hilog(Val) :-
 	(\+callable(Val) -> abort(('Ill-formed HiLog term,', Val))
 	;
@@ -463,8 +502,10 @@ flora_debug_statdata_file(Filename) :-
 %% Otherwise, loading dynamic data for the specified module
 flora_read_debugger_data(WS,_Datafile) :-
 	%% Check if already loaded
-	(var(WS) -> current_predicate(FLORA_SYMBOL(debugger_loaded/0))
-	; flora_wssymbol(debugger_data_loaded,WS,WSSym),
+	(var(WS) -> current_predicate(FLORA_SYMBOL('debugger_loaded')/0)
+	; flora_firstorder_module_predicate_symbol(debugger_data_loaded,
+						   WS,
+						   WSSym),
 	    current_predicate(WSSym/0)
 	),
 	!.
@@ -517,19 +558,19 @@ flora_build_bridge_to_xsb_debugger :-
 	%% to be handled by the debugger
 	assert((hide_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_hide_this_hide(pref(X1/Y)),str_sub(X1,X,1))),
+		flora_hide_this_hide(pref(X1/Y)),str_sub(X1,X,0))),
 	assert((hide_this_show(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_hide_this_show(pref(X1/Y)),str_sub(X1,X,1))),
+		flora_hide_this_show(pref(X1/Y)),str_sub(X1,X,0))),
 	assert((show_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_show_this_hide(pref(X1/Y)),str_sub(X1,X,1))),
+		flora_show_this_hide(pref(X1/Y)),str_sub(X1,X,0))),
 	assert((trace_this_noprint(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_trace_this_noprint(pref(X1/Y)),str_sub(X1,X,1))),
+		flora_trace_this_noprint(pref(X1/Y)),str_sub(X1,X,0))),
 	assert((trace_this_print(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_trace_this_print(pref(X1/Y)),str_sub(X1,X,1))).
+		flora_trace_this_print(pref(X1/Y)),str_sub(X1,X,0))).
 
 ?- findall(X,flLoadedModule(X),L),
    flora_load_statdata,
@@ -537,5 +578,5 @@ flora_build_bridge_to_xsb_debugger :-
 
 ?- flora_build_bridge_to_xsb_debugger.
 
-FLORA_SYMBOL(debugger_loaded).
+FLORA_SYMBOL('debugger_loaded').
 

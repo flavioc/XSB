@@ -62,8 +62,9 @@ flora_init_shell :-
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
 	flora_load_library(FLLIBDISPLAY),
-	%% This should probably be loaded by the compiler (in the future)
+	%% These 2 should be loaded by the compiler (in the future)
 	flora_load_library(FLLIBCONTROL),
+	flora_load_library(FLLIBMETAOPS),
 	flloadtrailer(NONE),
 	flora_welcome_msg,
 	flAll,
@@ -192,16 +193,13 @@ flEnd :-
 
 /*********************************************************************/
 %% Enable Flora high-level debugging
-flTrace :- ensure_debugger_loaded, flora_trace.
-flNoTrace :- ensure_debugger_loaded, flora_notrace.
-%% Disables flora debugging and enables low-level XSB debugging
-flLowTrace :- assert(flora_switch(low_level_trace)), trace.
+flTrace :- flora_trace.
+flNoTrace :- flora_notrace.
+%% Enables low-level XSB debugging
+flTraceLow :-
+	flora_trace,
+	assert(flora_switch(low_level_trace)).
 
-ensure_debugger_loaded :-
-	( FLORA_SYMBOL('debugger_loaded')
-	-> true
-	;  consult(flrdebugger)
-	).
 
 
 /*********************************************************************/

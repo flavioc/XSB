@@ -169,6 +169,7 @@ flora_library_file(FLLIBMODOBJ,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBEQUALITY,flrequality,syslib) :- !.
 flora_library_file(FLLIBEXPUNGE,flrexpunge,syslib) :- !.
 flora_library_file(FLLIBCONTROL,flrcontrol,syslib) :- !.
+flora_library_file(FLLIBMETAOPS,flrmetaops,syslib) :- !.
 
 
 /**************************************************************************

@@ -10,7 +10,19 @@ FLORA_THIS_WORKSPACE(flThisModule)(FLORA_THIS_MODULE_NAME).
 
 :- import storage_delete_all/1 from storage.
 :- import storage_find_fact/2 from storage.
+:- import
+	flora_load_dyndata_for_user_modules/1,
+	FLORA_SYMBOL('debugger_loaded')/0
+   from flrdebugger.
 
 ?- storage_delete_all(FLORA_THIS_STORAGE).
+?- (flora_module_registry(FLORA_THIS_MODULE_NAME) -> true
+    ; assert(flora_module_registry(FLORA_THIS_MODULE_NAME)),
+      %% If debugger is loaded, read debugger data for this module
+      (current_predicate(flrdebugger:FLORA_SYMBOL('debugger_loaded')/0)
+      -> flora_load_dyndata_for_user_modules([FLORA_THIS_MODULE_NAME])
+      ;  true
+      )
+   ).
 
 /***********************************************************************/

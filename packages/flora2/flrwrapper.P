@@ -304,13 +304,13 @@ flora_setup_flogic_fact_wrapper(ModuleName) :-
 *****************************************************************************/
 flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 	%% Check if the functor begins with FLORA_PREFIX followed by an '.
-	str_sub(FLORA_PREFIX'',Funct,1),
+	str_sub(FLORA_PREFIX'',Funct,0),
 	%% Check if it is followed by the type code of Flora module plus an '.
-	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS2) ->
+	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS1) ->
 	    ModuleType=usermodule,
 	    Flora_module_prefix_len_plus1=FLORA_USER_MODULE_PREFIX_LEN_PLUS1
 	;
-	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS2),
+	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS1),
 	  ModuleType=systemmodule,
 	  Flora_module_prefix_len_plus1=FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1
 	),
@@ -329,13 +329,13 @@ flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 *****************************************************************************/
 flora_decode_firstorder_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 	%% Check if the functor begins with FLORA_FO_PREFIX followed by an '.
-	str_sub(FLORA_FO_PREFIX'',Funct,1),
+	str_sub(FLORA_FO_PREFIX'',Funct,0),
 	%% Check if it is followed by the type code of Flora module plus an '.
-	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS2) ->
+	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1) ->
 	    ModuleType=usermodule,
 	    Flora_module_prefix_len_plus1=FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1
 	;
-	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS2),
+	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1),
 	  ModuleType=systemmodule,
 	  Flora_module_prefix_len_plus1=FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1
 	),
@@ -436,13 +436,12 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	%% Locate the end of workspace name, assuming the next quote after
 	%% the prefix marks the end of the workspace. This will not work
 	%% correctly if the workspace contains the quote symbol.
-	substring(Funct,Flora_module_prefix_len_plus1,_,RestFunct),
-	str_sub('''',RestFunct,N),
+	substring(Funct,Flora_module_prefix_len_plus1,-1,RestFunct),
+	str_match('''',RestFunct,forward,N,M),
 	%% Extract the workspace name.
-	eval(N-1,M),
-	substring(RestFunct,0,M,Workspace),
+	substring(RestFunct,0,N,Workspace),
 	%% Extract the predicate name.
-	substring(RestFunct,N,_,Wrapper),
+	substring(RestFunct,M,-1,Wrapper),
 	!,
 	( Wrapper == WRAP_HILOG ->
 	    %% a HiLog Predicate
@@ -455,15 +454,18 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	    )
 
 	; flora_is_flogic_base(Wrapper) ->
-	    %% WrapPrefix could be ''=FLBODYPREFIX.
+	    %% This relies on the fact that the main wrappers
+	    %% like fd, mvd, etc. don't have a prefix!
+	    %% (The prefix here is FLBODYPREFIX='').
 	    PredicateType=flogic,
 	    PredicateSymbol=Wrapper,
-	    WrapPrefix=''
+	    WrapPrefix='',
+	    ArgsList=Args
 
-	; str_sub('_',Wrapper,S) ->
+	; str_match('_',Wrapper,reverse,_,S1) ->
 	    %% The predicate consists of a prefix and a base.
-	    substring(Wrapper,0,S,WrapPrefix),
-	    substring(Wrapper,S,_,PredicateSymbol),
+	    substring(Wrapper,0,S1,WrapPrefix),
+	    substring(Wrapper,S1,-1,PredicateSymbol),
 	    ( flora_is_flogic_wrapper(WrapPrefix,PredicateSymbol) ->
 		PredicateType=flogic
 	    ;
@@ -471,7 +473,7 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	    ),
 	    ArgsList=Args
 	;
-	  %% a Flora builtin predicate
+	  %% a Flora builtin predicate, like difobjeeql/2
 	  PredicateType=flora,
 	  WrapPrefix='',
 	  PredicateSymbol=Wrapper,
@@ -495,13 +497,12 @@ flora_decode_predicate(Predicate,firstorder,ModuleName,
 	%% Locate the end of workspace name, assuming the next quote after
 	%% the prefix marks the end of the workspace. This will not work
 	%% correctly if the workspace contains the quote symbol.
-	substring(Funct,Flora_module_prefix_len_plus1,_,RestFunct),
-	str_sub('''',RestFunct,N),
+	substring(Funct,Flora_module_prefix_len_plus1,-1,RestFunct),
+	str_match('''',RestFunct,forward,N,M),
 	%% Extract the workspace name.
-	eval(N-1,M),
-	substring(RestFunct,0,M,Workspace),
+	substring(RestFunct,0,N,Workspace),
 	%% Extract the predicate name.
-	substring(RestFunct,N,_,PredicateSymbol),
+	substring(RestFunct,M,-1,PredicateSymbol),
 	!.
 
 flora_decode_predicate(Predicate,prolog,_ModuleName,

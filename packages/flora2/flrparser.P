@@ -288,6 +288,7 @@ is_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[Directive],_If,_Ip),Directive) :-
 is_query(CANOTERM(Funct,1,FL_PARENTHESIS,[Query],_If,_Ip),Query) :-
 	get_name(Funct,FL_QUERYOP).
 
+%% Binary relationship, like : or ::
 is_birelop(FL_ISA) :- !.
 is_birelop(FL_SUB) :- !.
 

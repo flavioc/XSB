@@ -32,10 +32,11 @@
 
 %% This might not work on windows, but on windows we provide 
 %% a prebuilt .flh file
+#include "flora_terms.flh"
 #include "../closure/includes/flrpred.fli"
 
 
-:- wraparound
+:- FL_FLOGICSTATIC
 	newpredicate/_,
 	debugger_data_loaded/0.
 
@@ -158,8 +159,11 @@ flora_hide_this_hide(conflict_imvd/2).
 flora_hide_this_hide(conflict_obj_ifd/2).
 flora_hide_this_hide(conflict_obj_imvd/2).
 
-flora_show_this_hide(ultimate_isa/2).
+flora_hide_this_hide(silent_sub/2).
+
+flora_show_this_hide(immediate_isa/2).
 flora_show_this_hide(immediate_sub/2).
+flora_show_this_hide(inheritance_sub/2).
 
 
 /***************************************************************************

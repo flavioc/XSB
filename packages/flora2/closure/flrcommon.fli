@@ -22,7 +22,7 @@
 	sub/2,
 	inferred_isa/2,
 	super_isa/2,
-	ultimate_isa/2,
+	immediate_isa/2,
 	isa/2,
 	inferred_ifd/3,
 	defined_inferred_ifd/2,
@@ -152,3 +152,13 @@ exists(X) :- imeth(X,_).
 
 objeql(X,Y) :- (nonvar(X)@prolog(); nonvar(Y)@prolog()), X=Y.
 objeql(X,Y) :- diffobjeql(X,Y).
+
+
+
+/****************************************************************************
+    Introduced in support of the debugger
+****************************************************************************/
+%% like sub, but the debugger won't trace it
+silent_sub(C,S) :- sub(C,S).
+%% like sub, but the debugger will print it specially
+inheritance_sub(C,S) :- sub(C,S).

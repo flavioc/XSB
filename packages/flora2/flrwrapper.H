@@ -30,8 +30,6 @@
 
 :- import str_sub/3, substring/4 from string.
 
-:- import eval/2 from eval.
-
 :- dynamic flora_flogic_fact_wrapper(_,_).
 :- dynamic flora_current_flogic_module(_).
 

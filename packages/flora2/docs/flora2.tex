@@ -288,7 +288,7 @@ norm. To get back to the XSB command loop, type {\tt Control-D} or
 %%
 \begin{quote}
   \tt
-| ?- end.  
+| ?- flEnd.  
 \end{quote}
 %%
 
@@ -359,9 +359,13 @@ Prolog program (one or more files with extensions {\tt .P} and {\tt .fdb})
 and then into an executable byte-code, which has the extension {\tt .O}.
 
 If there is no {\tt program-file.flr} file, the file is assumed to contain
-an XSB program and the system will look for the file named {\tt
+a Prolog program and the system will look for the file named {\tt
   program-file.P}. This file then is compiled into {\tt program-file.O} and
-loaded.
+loaded. Note that in this case the program is loaded into a {\em Prolog
+  module} of \FLORA and, therefore, calls to the predicates defined in that
+program must use the appropriate module attribution --- see
+Section~\ref{sec:flora-modules} for the details about the module system in
+\FLORA.
 
 By default, all \FLORA programs are loaded into the module {\tt main}, but
 you can also load them into other modules using the following syntax:
@@ -1566,21 +1570,21 @@ and is compiled as such. If {\it file}.{\tt flr} is not found, but {\it
 compilation.
 
 
-\index{module!{\tt flModule/1}}
-\index{{\tt flModule/1}}
+\index{module!{\tt flLoadedModule/1}}
+\index{{\tt flLoadedModule/1}}
 %%
 Sometimes it is useful to know which user modules are loaded or if a
 particular user module is loaded (say, because your might want to load it,
 if not).  To find out which modules are loaded at the present time. Use the
-predicate {\tt flModule/1} for that. For instance, the first query, below,
-succeeds if the module {\tt foo} is loaded. The second query succeeds and
-binds {\tt L} to the list of all user modules that are loaded at the
-present time.
+predicate {\tt flLoadedModule/1} for that. For instance, the first query,
+below, succeeds if the module {\tt foo} is loaded. The second query
+succeeds and binds {\tt L} to the list of all user modules that are loaded
+at the present time.
 %%
 {\tt
 \begin{quote}
-  ?- flModule(foo).\\
-  ?- findall(X,flModule(X),L).
+  ?- flLoadedModule(foo).\\
+  ?- findall(X,flLoadedModule(X),L).
 \end{quote}
 }
 %%
@@ -1636,7 +1640,7 @@ will cause a compilation error.
 Some XSB predicates are considered ``well-known'' and, even though they are
 defined in various obscure XSB modules, the user can just use those predicates
 without remembering the corresponding XSB module names. These predicates
-(that are listed in the XSb manual) can be called from \FLORA with
+(that are listed in the XSB manual) can be called from \FLORA with
 particular ease:
 %%
 \begin{quote}
@@ -1652,18 +1656,18 @@ preserved).
 
 \subsection{Calling \FLORA from XSB}
 
-Since XSB does not understand object-oriented syntax, it can call only use
+Since XSB does not understand object-oriented syntax, it can call only
 predicates defined in \FLORA programs. These predicates can be HiLog or
 first-order predicates (See Section~\ref{sec:hilog}). To call predicates
 defined in \FLORA programs, they must be imported by the XSB program.
-To do this, the XSB program must execute the query
+To do this, the XSB query
 %%
 \begin{quote}
  ?- bootstrap\_flora.  
 \end{quote}
 %%
-somewhere near the top of the file and then include the appropriate
-{\tt flImport} statements described below:
+must be executed first. To call \FLORA predicates from the XSB shell,
+the following {\tt flImport} queries must be executed in the shell:
 %%
 \begin{quote}
   \tt
@@ -1676,10 +1680,17 @@ somewhere near the top of the file and then include the appropriate
    \hspace*{5cm}from {\it flora-module-name}
 \end{quote}
 %%
-The first syntax is used to both import the predicate and also load the
-program file defining it into a given \FLORA user module. The second syntax
-is used when the flora program is already loaded into a module and we only
-need to import the corresponding predicate.
+To call \FLORA from within an XSB program, say {\tt test.P}, these {\tt
+  flImport} queries must appear near the top of the program (prior to any
+call to \FLORA predicates). Also, the query {\tt bootstrap\_flora} must be
+executed \emph{before compiling and loading} {\tt test.P} --- otherwise,
+the program will not compile.
+
+The first syntax for {\tt flImport} above is used to both import the
+predicate and also load the program file defining it into a given \FLORA
+user module. The second syntax is used when the flora program is already
+loaded into a module and we only need to import the corresponding
+predicate.
 
 In both cases, the option {\tt hilog} is used to import a HiLog predicate
 and {\tt firstorder} is used to import first-order predicates. The imported
@@ -1694,7 +1705,7 @@ Once the predicate is imported, it can be used under its XSB name as a
 regular predicate.
 
 XSB programs can also load and compile \FLORA programs using the following
-queries: 
+queries (again, bootstrap\_ {\tt flora} must be executed in advance): 
 %%
 \begin{quote}
  \tt
@@ -1716,8 +1727,8 @@ loaded using the following call:
 %%
 \begin{quote}
  \tt
- :- import flModule/1 from flora2.\\
- ?- flModule({\it flora-module-name}).
+ :- import flLoadedModule/1 from flora2.\\
+ ?- flLoadedModule({\it flora-module-name}).
 \end{quote}
 %%
 
@@ -1778,7 +1789,7 @@ programming. Consider the following example:
       Module {\tt foo}  & Module {\tt moo} \\
       \hline
       something :- ... & ......\\
-      ...:- flThisModule(M), & ......\\
+      something\_else :- flThisModule(M), & ......\\
       \hspace*{1.5cm}a[someservice(M,Arg)->Res]@moo ~~& ......\\
       ...... & a[someservice(Module,Arg)-> Res] :- \\
       ...... & \hspace*{2.2cm} something@Module, ...\\
@@ -1787,15 +1798,21 @@ programming. Consider the following example:
     \end{tabular}
     }
   \end{center}
-%%
+  %%
   
   Here the method {\tt someservice} in user module {\tt moo} performs
   different operation depending on who is calling it, because {\tt
-    something} can be defined differently for different callers. This is,
-  for instance, how the pretty printing system module of \FLORA works. A
-  pretty-printing method is called on an object in some user module, and to
-  do its job the pretty-printing method needs to query the object \emph{in
-    the context of the calling module} to find the methods the object has.
+    something} can be defined differently for different callers.  When {\tt
+    something\_else} is called, it invokes the method {\tt someservice} on
+  object {\tt a} in module {\tt moo}. The current module name ({\tt foo})
+  is passes as a parameter. When {\tt someservice} is executed in module
+  {\tt moo} it calls the predicate {\tt something} in module {\tt foo}.
+  
+  This schema is, for instance, how the pretty printing system module of
+  \FLORA works. A pretty-printing method is called on an object in some
+  user module, and to do its job the pretty-printing method needs to query
+  the object \emph{in the context of the calling module} to find the
+  methods the object has.
 
 It is also possible to view adaptive methods as a declarative counterpart
 of the callback functions in C/C++, which allows the callee to behave
@@ -2118,6 +2135,7 @@ instruction.
 \index{predicate meta signature}
 \index{meta signature of a predicate}
 \index{compiler directive!{\tt arguments}}
+\index{bform}
 %
 By default, when a truth-valued expression, $E$, such as an \fl molecule or
 a path expression, appears as an argument to a predicate or function
@@ -2132,10 +2150,13 @@ directive {\tt arguments}.  For instance, the following directive will make
 :- arguments findall(oid,bform,oid).
 \end{qrules}
 %%
+\index{syntactic object}
+%%
 This signature declaration tells \FLORA that the first and the third
 arguments to {\tt findall/3} should be translated as oids, while the second
-argument of {\tt findall/3} should be treated as a formula of the kind that
-might occur in the body of a rule.
+argument of {\tt findall/3} should be treated as a {\em syntactic object\/}
+that represents formulas of the kind that might occur in the body of a
+rule.
 
 
 
@@ -2197,11 +2218,13 @@ In contrast, in \FLORA they are in different domains.\footnote{
   %%
   }
 %%
-For instance, (\ref{eq-hilog-notallowed}) will fail because once {\tt X} is
-bound to a term, it cannot unify with any predicate. In a future release,
-we will provide a predicate {\tt call}/1, which converts HiLog terms in the
-domain of arguments into HiLog terms in the domain of atomic formulas, so
-(\ref{eq-hilog-notallowed}) could be rewritten into {\tt p(X), X(p), call(X).}\footnote{
+For instance, (\ref{eq-hilog-notallowed}) will cause an error because {\tt
+  X} is bound to the \emph{term} {\tt a(b)}, which is different from the
+atomic formula {\tt a(b)}, and thus has no truth value.  In a future
+release, we will provide a predicate {\tt call}/1, which converts HiLog
+terms in the domain of arguments into HiLog terms in the domain of atomic
+formulas, so (\ref{eq-hilog-notallowed}) could be rewritten into {\tt p(X),
+  X(p), call(X).}\footnote{
   %%
   Of course, {\tt call/1} exists in Prolog as well. However, unlike HiLog
   and sorted HiLog, this predicate does not have logical semantics.
@@ -2315,8 +2338,25 @@ Yes.
 Note that these primitives are used for Prolog terms only and
 are described in the XSB manual.
 
+\index{meta-unification}
+\index{$\sim$}
+%%
+In \FLORA, variables can be bound to both formulas and terms. For instance,
+in {\tt X = p(a)}, {\tt p(a)} is viewed as a term and {\tt X} is bound to
+it. Likewise, in {\tt X = a[m->v]}, the F-molecule is evaluated to its
+object value and then unified with {\tt X}. To bind variables to formulas
+instead, \FLORA provides a {\tt meta-unification} operator, $\sim$.  This
+operator treats its arguments as formulas and unifies them as such. For
+instance, {\tt X $\sim$ a[m->v,k->V]} binds {\tt X} to the F-molecule {\tt
+  a[m->v,k->V]} and {\tt a[m->v,k->V] ~ X[M->v,k->p]} unifies the two
+molecules by binding {\tt X} to {\tt a}, {\tt M} to {\tt m}, and {\tt V} to
+{\tt p}.
+
 {\bf Unimplemented}: Meta-programming support for HiLog terms and
-F-molecules will be provided through future enhancement.
+F-molecules is incomplete. For instance, there is no operator similar to
+{\tt =..}, like in Prolog (or, rather, it does not do the right thing in
+\FLORA). Additional meta-programming support will be provided through
+future enhancements.
 
 
 \subsection{Passing Arguments between \FLORA and XSB}\label{sec-passing-args}
@@ -2438,7 +2478,7 @@ is discussed in Section~\ref{sec-tabling-flora}.
 
 
 
-\subsection{Expunging First-Order Predicates}
+\subsection{Expunging of First-Order Predicates}
 
 
 \index{{\tt expunge}}
@@ -2523,7 +2563,7 @@ included.  Thus, equality can be treated differently in different modules.
 This allows to compartmentalize the problem and, if used judiciously, can
 lead to significant gain in performance.
 
-To first directive, \mbox{\tt equality none}, does not maintain equality
+The first directive, \mbox{\tt equality none}, does not maintain equality
 and {\tt :=:} is considered just like any other user-defined predicate
 without any special semantics.  The directive \mbox{\tt equality basic}
 guarantees that {\tt :=:} obeys the usual congruence rules for equality,
@@ -2535,9 +2575,15 @@ this level of equality to work correctly (if there is a possibility that
 the Skolem terms introduced to represent the path expressions might be
 equal to some real objects).
 
-Note that equality can also be maintained when working with the \FLORA
-shell. Furthermore, \FLORA allows one user module to set the level of equality
-maintenance in another user module:
+Note that the level of equality maintenance can also be changed at run time
+by executing a goal such as 
+%%
+\begin{quote}
+ {\tt ?- (equality basic).}
+\end{quote}
+%%
+Furthermore, \FLORA allows one user module to set, at run time, the level
+of equality maintenance in another user module:
 %%
 \begin{quote}
 \verb!equality {none|basic|flogic} in modulename!
@@ -2881,8 +2927,8 @@ Who = john
 
 \index{aggregates!multi-valued methods}
 \index{multi-valued methods!aggregation}
-\index{->->}
-\index{*->->}
+\index{{\tt ->->}}
+\index{{\tt *->->}}
 %%
 Aggregation is often used in conjunction with set-valued methods, and
 \FLORA provides several shortcuts to facilitate this use.
@@ -3311,7 +3357,7 @@ However, @prolog(...) is not allowed: If you want to update a dynamic XSB
 predicate, use {\tt assert/retract}:
 %%
 \begin{quote}
- {\tt flora2 ?- ?- assert(foo(a,b,c))@prolog().  }
+ {\tt flora2 ?- assert(foo(a,b,c))@prolog().  }
 \end{quote}
 %%
 Well, not quite. Recall Section~\ref{sec-passing-args} on the issues
@@ -3324,10 +3370,17 @@ XSB does not understand and will not associate it with the predicate {\tt
  {\tt ?- flP2H(PrologRepr,foo(a,b,c)) assert(PrologRepr)@prolog().  }
 \end{quote}
 %%
-This will insert {\tt foo(a,b,c)} into the catch-all XSB module called
-{\tt usermod}. If {\tt foo/3} is defined in another XSB module and is
-imported by {\tt usermod}, then the above statement will not do anything
-useful due to certain idiosyncrasies in the XSB module system.
+This will insert {\tt foo(a,b,c)} into the catch-all XSB module called {\tt
+  usermod}. If {\tt foo/3} is defined in another XSB module, {\tt bar}, and
+is imported by {\tt usermod}, then the above statement will not do anything
+useful due to certain idiosyncrasies in the XSB module system.  However,
+the following will work if {\tt foo/3} is defined as dynamic in the module
+  {\tt bar}:
+%%
+\begin{quote}
+ {\tt flora2 ?- assert(foo(a,b,c)@prolog(bar))@prolog().  }  
+\end{quote}
+%%
 
 We should also mention one important difference between insertion of facts
 in \FLORA and Prolog. Prolog treats facts as a \emph{bag}, so duplicates
@@ -3575,7 +3628,7 @@ that precede the update primitive, except that the literal part does not
 currently bind. For instance, 
 %%
 \begin{quote}
- ?- delete{X[salary->Y] | Y<20000}.  
+ \verb!?- delete{X[salary->Y] | Y<20000}.!
 \end{quote}
 %%
 is going to cause a run-time error. This limitation will be removed in a
@@ -3647,6 +3700,31 @@ Such a dependency is most likely a mistake, which is caught by the
 compiler.
 
 {\bf Unimplemented}: This compiler check has not been implemented yet.
+
+\subsection{Updates and Meta-programming}
+
+The update operators can take variables in place of literals to be inserted
+and queries. For instance, 
+%%
+\begin{quote}
+ {\tt flora2 ?-  X $\sim$ a[b->c], insert\{X\}.}
+\end{quote}
+%%
+One use for this facility is when one module, $\tt foo$, provides methods that
+allow other modules to perform update operations on objects in {\tt foo}.
+For instance, $\tt foo$ can have a rule
+%%
+\begin{quote}
+ {\tt update(X,Y) :- delete\{X\}, insert\{Y\}.}  
+\end{quote}
+%%
+Other modules can then issue queries like
+%%
+\begin{verbatim}
+ flora2 ?- john[salary->X]@foo, Y is X+1000,
+           update(john[salary->X],john[salary->Y]).  
+\end{verbatim}
+%%
 
 
 \section{Negation} \label{sec:negation}
@@ -3796,14 +3874,20 @@ compiler directives:
 \item {\tt arguments} \emph{functor}(\emph{type}, ..., \emph{type}), where
   \emph{type} is either {\tt oid} or {\tt bform}
   \\
+  \index{bform}
+  \index{syntactic object}
+  %%
   Specifies the meta signature to the given predicate, which tells how the
   arguments of the predicate are to be compiled. The {\tt oid} type means
   that the oid of the corresponding argument is computed and passed to the
-  predicate as an argument; {\tt bform} means that the argument is compiled
-  as a literal in a rule body and is passed to the predicate as such. This
-  type of compilation is useful in meta-predicates, such as {\tt
-    findall/3}, which need to consider the truth value of some of their
-  arguments rather than their oid.
+  predicate as an argument; {\tt bform} means that the argument is treated
+  as a \emph{syntactic object} and its entire structure is preserved. For
+  instance, if the argument is a formula (an \fl molecule, a conjunction or
+  a disjunction of literals), then it is converted to an object that
+  preserves the entire structure of the formula.  This type of compilation
+  is useful in meta-predicates, such as {\tt findall/3}, which need to
+  consider the truth value of some of their arguments rather than their
+  oid.
 \item {\tt index({\it PredicateSpec,IndexSpec})}
   \\
   Specifies how the given first-order predicate must be indexed.
@@ -4182,30 +4266,32 @@ fact that certain features are yet to be implemented:
 \addcontentsline{toc}{section}{Appendices}
 
 
-\section{\FLORA Debugger}
+\section{The \FLORA Debugger}
 \index{debugging}
 
 
-{\bf Unimplemented}: Debugger has not been implemented yet, but this is how
-the initial version will look like.
-
-
-\FLORA debugger is essentially a presentation layer on top of the XSB
+\FLORA debugger is implemented as a presentation layer on top of the XSB
 debugger, so familiarity with the latter is highly recommended (XSB Manual,
 Part I). Here we sketch only a few basics.
 
-The debugger has two facilities: tracing and spying. Tracing allows the
-user to watch the program being executed step by step, and spying allows
-one to tell \FLORA that it must pose when execution reaches certain 
-predicates or object methods. The user can trace the execution from then
-on. At present, only the tracing facility has been implemented.
-
 \index{tracing}
-To start tracing, you must issue the command {\tt flora\_trace} at the
-\FLORA prompt. It is also possible to put the subgoal {\tt flora\_trace} in
+\index{spying}
+%%
+The debugger has two facilities: \emph{tracing} and \emph{spying.} Tracing
+allows the user to watch the program being executed step by step, and
+spying allows one to tell \FLORA that it must pose when execution reaches
+certain predicates or object methods. The user can trace the execution from
+then on. At present, only the tracing facility has been implemented.
+
+\index{flTrace}
+\index{flNoTrace}
+%%
+\paragraph{Tracing.}
+To start tracing, you must issue the command {\tt flTrace} at the
+\FLORA prompt. It is also possible to put the subgoal {\tt flTrace} in
 the middle of the program. In tat case, tracing will start after this
 subgoal gets executed. This is useful when you know where exactly you want
-to start tracing the program. To stop tracing, type {\tt flora\_notrace}.
+to start tracing the program. To stop tracing, type {\tt flNoTrace}.
 
 During tracing, the user is normally prompted at the four ports of subgoal
 execution: {\tt Call} (when a subgoal is first called), {\tt Exit} (when
@@ -4231,10 +4317,25 @@ call. This is useful for tuning your program for performance. Other useful
 controls are: {\tt debug\_ctl(prompt, off)}, which causes the trace to be
 generated without user intervention; and {\tt debug\_ctl(redirect,
   foobar)}, which redirects debugger output to the file named {\tt foobar}.
-The latter feature is usually useful only in conjunction with the
-  aforesaid prompt-off mode. See the XSB manual for additional information
-  on debugger control.
+The latter feature is usually useful only in conjunction with the aforesaid
+prompt-off mode. See the XSB manual for additional information on debugger
+control.
 
+\index{flTraceLow}
+%%
+\paragraph{Low-level tracing.}
+\FLORA debugger also supports low-level tracing via the shell command {\tt
+  flTraceLow}. With normal tracing, the debugger converts low-level
+subgoals to subgoals that are found in the user program and are thus
+meaningful to the programmer. With low-level tracing, the debugger displays
+the actual XSB subgoals (of the compiled .P program) that are being
+executed. This facility is useful for debugging \FLORA runtime libraries.
+
+{\bf Note:} \FLORA turns on various XSB optimizations. Some (like
+specialization and unification factoring) can cause certain subgoals to
+be omitted from the trace or the trace might show subgoals that
+are not in the original program. In the future, it will be possible to turn
+these optimizations off for debugging.
 
 
 \section{Emacs Support}
@@ -4466,7 +4567,7 @@ fd(mary,salary(1998),100000).  % mary[salary(1998)->a_lot].
 \end{quote}
 %%
 
-The {\tt fl} predicate is used to encode scalar attributes and methods and
+The {\tt fd} predicate is used to encode scalar attributes and methods and
 {\tt mvd} is used for set methods. The predicates {\tt isa} ans {\tt sub}
 encode the IS-A and subclass relationships, respectively.
 Of course, \FLORA has much more: signatures, inheritable and
@@ -4480,7 +4581,7 @@ predicates involved and their dependency:
                                    inferred_fd <- derived_fd <- fd
  fd <- tnot conflict_obj_ifd <- ifddef <- fd
                                 ifddef <- ifd
- fd <- ultimate_isa
+ fd <- immediate_isa
  fd <- ifd
 ifd <- inferred_ifd
 ifd <- immediate_sub
@@ -4496,7 +4597,7 @@ IS-A and subclass relationships, and for equality maintenance.
 
 \index{closure axioms}
 The closure axioms tie all these predicates together to implement the
-semantics of \fl. In particular, the take care of the following features:
+semantics of \fl. In particular, they take care of the following features:
 %%
 \begin{itemize}
 \item Computing the transitive closure of ``\subcl'' (the subclass
@@ -4509,19 +4610,35 @@ semantics of \fl. In particular, the take care of the following features:
 \end{itemize}
 %%
 Templates for the files that implement these axioms reside in the
-subdirectory \texttt{closure/} and have the suffix {\tt .fli}. At
-installation time, these templates are compiled into the actual axioms used
-at run time. (The need for this compilation will become clear after reading
-about the implementation of the module system.)
-Collectively, these files constitute the various parts of the
-\emph{trailer} --- the container for most of the aforesaid closure axioms.
-There are three kinds of trailers: the no-equality trailer, which maintains
-no equality, the basic trailer, which maintains only the standard equality
-axioms, and full equality, which, in addition, maintains the \fl axioms for
-scalar methods. The actual trailer files are located in the subdirectory
-{\tt trailer/}. However, these files simply contain preprocessor
-instructions to include the appropriate pieces of the templates from the
-{\tt closure/} directory.
+subdirectory \texttt{closure/} and have the suffix {\tt .fli}.  These files
+are called \emph{trailers} because they are typically included at the end
+of the compiled program.  There are three kinds of trailers: the
+no-equality trailer (the file {\tt closure/flrtrailer.fli}), which
+maintains no equality, the basic trailer ({\tt closure/flreqltrailer.fli}),
+which maintains only the standard equality axioms, and the trailer ({\tt
+  closure/flrscalareql.fli}), which, in addition, maintains the \fl axioms
+for scalar methods.
+
+When a \FLORA program is compiled, the compiler includes the trailers into
+the {\tt .P} file. However, there also is a need to be able to load the
+trailers dynamically. First, this is needed in the system shell, because
+the shell is not represented by any particular user program and so there is
+no place where we can include the trailer. Second, the user might enter the
+executable instruction 
+%%
+\begin{quote}
+   {\tt ?- equality \{basic|flogic|none\} }
+\end{quote}
+%%
+at the shell prompt and user programs can contain these instructions as
+part of their code. Precompiled, loadable trailers for the default module
+{\tt main} are stored in the {\tt trailer/} subdirectory. This is done at
+the system build time.  When an equality maintenance instruction is
+executed for a particular module, the trailer for that module must be
+compiled dynamically.  (The need for this compilation will become clear
+after reading about the implementation of the module system.)  These
+trailers are stored in the user home directory in the subdirectory {\tt
+  .xsb/flora/}.
 
 The above is a much simplified picture of the inner-workings of \FLORA. The
 actual translation into Prolog and the form of the closure rules is very
@@ -4575,7 +4692,7 @@ sets {\tt FLORA\_VAR\_WORKSPACE} to {\tt foo}. When XSB finally compiles
 the program into the object file, the file is renames to {\tt
   myprog\_foo.O}.
 
-It is important to keep in ming that only the predicate names are wrapped
+It is important to keep in mind that only the predicate names are wrapped
 with the {\tt FLORA\_PREFIX} macro and a module name. Predicate arguments
 are not wrapped and thus, the space of object Ids is shared among modules.
 However, this is not a problem and, actually, is very convenient: we can
@@ -4663,7 +4780,7 @@ exist in the trie.
 
 Suppose we insert a fact, {\tt a[m->v]}, represented by the formula
 {\tt fd(a,m,v)}. Since this formula is inserted in the trie and XSB knows
-nothing about it, we need to connect the trie to XSb through a rule like this:
+nothing about it, we need to connect the trie to XSB through a rule like this:
 %%
 {\tt
 \begin{quote}
@@ -4680,7 +4797,7 @@ for any module. In \FLORA such rules are called \emph{patch rules}.
 Since \fl uses only about a dozen of predicates to represent
 F-molecules, we can create such rules statically and let {\tt gpp} wrap
 them with the appropriate prefixes on the fly. Even for HiLog we can create
-such rules statically. After all, XSb limits us to functor arity no larger
+such rules statically. After all, XSB limits us to functor arity no larger
 than 255! The problem arises with first-order predicates, because they need
 to be collected by the compiler and a separate rule needs to be created for
 each first-order predicate. The static patch rules are located in
@@ -4718,16 +4835,16 @@ directives on how to turn the operator expressions into terms. Next, the
 parser checks the syntax of the rules and of the various other primitives
 ({\it e.g.}, the aggregates, updates, module specifications, etc.). The
 output of the parser is a \emph{canonic term} list, which represents the
-entire parsed program. The canonic term is taken up by the compiler, which
-generates abstract code. This code is represented in a form that is
-convenient for manipulation and is not yet Prolog code.  The compiler might
-add additional rules (such as patch rules) and XSB instructions. The
-compiled program is converted into (almost) Prolog syntax by the coder. As
-mentioned previously, the code produced by the compiler is full of
-preprocessor macros, so before passing it to XSB it must be preprocessed by
-GPP. GPP pipes the result to XSB, which finally produces the byte code
-program that can run under the control of the XWAM abstract machine, which
-is part of the XSB system.
+entire parsed program. The canonic term is taken up by the intermediate
+code generator, which generates abstract code. This code is represented in
+a form that is convenient for manipulation and is not yet Prolog code.  The
+compiler might add additional rules (such as patch rules) and XSB
+instructions. The compiled program is converted into (almost) Prolog syntax
+by the coder. As mentioned previously, the code produced by the compiler is
+full of preprocessor macros, so before passing it to XSB it must be
+preprocessed by GPP. GPP pipes the result to XSB, which finally produces
+the byte code program that can run under the control of the XWAM abstract
+machine, which is part of the XSB system.
 
 %%
 \begin{figure}[bt]
@@ -4750,7 +4867,7 @@ The following is a list of the key files of the system.
 \item \texttt{flrcomposer.P}: The \FLORA composer, which parses tokens
   according to the operator grammar and does other magic.
 \item \texttt{flrparser.P}: The \FLORA parser.
-\item \texttt{flrcompiler.P}: The \FLORA compiler.
+\item \texttt{flrcompiler.P}: The generator of the intermediate code.
 \item \texttt{flrcoder.P}: The \FLORA coder, which generates XSB code.
 \item \texttt{flrutils.P}: Miscellaneous utility predicates for loading
   programs, checking if files exist, whether they need to be recompiled,
@@ -4774,13 +4891,14 @@ utility used to load the libraries.
 
 While {\tt syslib/} directory contains the libraries implemented in Prolog,
 the {\tt lib/} directory contains libraries implemented in \FLORA itself.
-While the libraries in {\tt syslib/} implement the functionality of the
-primitives that are part of the syntax of the language, the
-libraries in {\tt lib/} implement functionality that is part of the system, but
-not part of the syntax. An example is the pretty-printing library.
-Methods and predicates defined in these libraries are accessible through
-the {\tt @flora(lib-name)} system module and (unlike user modules)
-they are loaded automatically at startup.
+Apart from that, the two types of libraries differ in functionality.  The
+libraries in {\tt syslib/} implement the primitives that are part of the
+syntax of the \FLORA language itself. In contrast, the libraries in {\tt
+  lib/} are utilities that are part of the system, but not part of the
+syntax. An example is the pretty-printing library.  Methods and predicates
+defined in the libraries in {\tt lib/} are accessible through the {\tt
+  @flora(lib-name)} system module and (unlike user modules) they are loaded
+automatically at startup.
 
 There are several subdirectories that hold the various files that contain
 definitions included at compile time. These will be described in a

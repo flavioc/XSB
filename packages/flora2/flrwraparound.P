@@ -31,7 +31,8 @@
 
   Predicates mentioned in the directives :-wrap predicate-list are 
   recorded and whenever they occur in other directives or rules
-  they are wrapped as FLORA_WORKSPACE(FLORA_VAR_WORKSPACE,predicate)
+  they are wrapped as FLORA_THIS_WORKSPACE(predicate)
+  or FLORA_FO_THIS_WORKSPACE(predicate)
   for further processing by the gpp preprocessor.
   The include(file) directive causes this wrapper to read the file and 
   process it similarly. When the file is finished, it resumes reading
@@ -48,14 +49,13 @@
 #define FLIFILE_EXT       	fli
 #define FLHFILE_EXT     	flh
 
-#define FL_WRAPAROUND	        wraparound
 #define FL_DUMP	       	        dump
 #define FL_INDEX2	       	index2
 #define FL_STORAGE	       	storage
 
 :- dynamic wrap_arguments_directive/1.
 
-:- op(1100,fy,FL_WRAPAROUND).
+:- op(1100,fy,FL_FLOGICSTATIC).
 :- op(1100,fy,FL_DUMP).
 :- op(1100,fy,FL_STORAGE).
 
@@ -76,10 +76,12 @@
 *************************************************************************/
 flWrapAround(File) :-
 	flora_check_filename(File),
-	( flora_locate_file(File,INFILE_EXT,InFile) ->
+	( (flora_locate_file(File,INFILE_EXT,InFile), !
+	  ; flora_locate_file(File,FLIFILE_EXT,InFile)
+	  )
+	->
 	    flora_out_filename(InFile,OutFile),
 	    wrapWorkspace(InFile,OutFile)
-
 	;
 	  flora_stderr_nl,
 	  flora_error_line("File %s[.%s] does not exist!",
@@ -124,14 +126,14 @@ process_fli_file :-
 process_fli_file.
 
 process_clause(X) :-
-	(is_directive(X,FL_WRAPAROUND,PredList)
-	-> intern_predicate_specs(PredList)
+	(is_directive(X,FL_FLOGICSTATIC,PredList)
+	-> intern_predicate_specs(PredList,FL_FLOGICSTATIC)
 	; is_directive(X,FL_INDEX2,[PredSpec,Type])
 	-> dump_index_directive(PredSpec,Type)
 	; is_directive(X,FL_DUMP,DumpString)
 	-> writeln(DumpString)
 	; is_directive(X,FL_FIRSTORDER,PredList)
-	-> intern_predicate_specs(PredList)
+	-> intern_predicate_specs(PredList,FL_FIRSTORDER)
 	; is_directive(X,FL_STORAGE,RuleList)
 	-> dump_storage_rules(RuleList)
 	; is_directive(X,Directive,PredList)
@@ -143,20 +145,28 @@ process_clause(X) :-
 	fail.
 
 
+%% Which macro to use for which type of encoding
+wrapper_macro(FL_FIRSTORDER,'FLORA_FO_THIS_WORKSPACE').
+wrapper_macro(FL_FLOGICSTATIC,'FLORA_THIS_WORKSPACE').
+
+%% tells how to wrap a predicate spec
 wrapper(P/A, WrappedSpec, Changed) :- !,
-	(storage_find_fact(flora_compile_trie,P/A)
+	(storage_find_keypair(flora_compile_trie,P/A,EncodingType),
+	    wrapper_macro(EncodingType,WrapperMacroName)
 	-> fmt_write_string(WrappedP,
-			    'FLORA_WORKSPACE(FLORA_VAR_WORKSPACE,%S)',args(P)),
+			    '%s(%S)',
+			    args(WrapperMacroName,P)),
 	    WrappedSpec = WrappedP/A,
 	    Changed = wrapped
 	;  WrappedSpec = P/A, Changed = notwrapped
 	).
 wrapper(Spec, WrappedSpec, Changed) :-
 	Spec =.. [P|Args],
-	(storage_find_fact(flora_compile_trie,Spec)
+	(storage_find_keypair(flora_compile_trie,Spec,EncodingType),
+	    wrapper_macro(EncodingType,WrapperMacroName)
 	-> fmt_write_string(WP,
-			    'FLORA_WORKSPACE(FLORA_VAR_WORKSPACE,%S)',
-			    arg(P)),
+			    '%s(%S)',
+			    arg(WrapperMacroName,P)),
 	    WrappedSpec =.. [WP|Args], Changed = wrapped
 	;  WrappedSpec = Spec, Changed = notwrapped
 	).
@@ -164,16 +174,8 @@ wrapper(Spec, WrappedSpec, Changed) :-
 spec2skeleton(P/A,Skeleton) :- !, functor(Skeleton,P,A).
 spec2skeleton(Skeleton,Skeleton).
 
-/*
-add_prefix_to_predname(Prefix,P/A,PrefP/A) :- str_cat(Prefix,P,PrefP).
-add_prefix_to_predname(Prefix,Skeleton,NewSkel) :-
-	Skeleton =.. [P|Rest],
-	str_cat(Prefix,P,PrefP),
-	NewSkel =.. [PrefP|Rest].
-*/
 
-
-is_directive((:- FL_WRAPAROUND PredList),FL_WRAPAROUND,PredList) :- !.
+is_directive((:- FL_FLOGICSTATIC PredList),FL_FLOGICSTATIC,PredList) :- !.
 is_directive(':-'(index(PredSpec,Type)),FL_INDEX2,[PredSpec,Type]) :- !.
 is_directive((:- FL_DUMP Atom),FL_DUMP,Atom) :- !.
 is_directive((:- FL_STORAGE RuleList),FL_STORAGE,RuleList) :- !.
@@ -181,30 +183,31 @@ is_directive((:- FL_STORAGE RuleList),FL_STORAGE,RuleList) :- !.
 is_directive(':-'(DirectiveBody),Directive,PredList) :-
         DirectiveBody =.. [Directive,PredList], !.
 
-intern_predicate_specs(','(P,Ps)) :- !,
-	intern_predicate_spec(P),
-	intern_predicate_specs(Ps).
-intern_predicate_specs(P) :- intern_predicate_spec(P).
+intern_predicate_specs(','(P,Ps),EncodingType) :- !,
+	intern_predicate_spec(P,EncodingType),
+	intern_predicate_specs(Ps,EncodingType).
+intern_predicate_specs(P,EncodingType) :-
+	intern_predicate_spec(P,EncodingType).
 
-%% Insert both the p/a form and p(_,...,_)
+%% Insert both the p/a form and p(_,...,_) form
 %% Arity can also be a variable. In this case, it is treated specially and the
 %% predicate spec is dumped without the arity.
-intern_predicate_spec(P) :-
+intern_predicate_spec(P,EncodingType) :-
 	P = '/'(Name,Arity),
 	!,
-	storage_insert_fact(flora_compile_trie,P,_),
+	storage_insert_keypair(flora_compile_trie,P,EncodingType,_),
 	(var(Arity) -> true
 	;   functor(NewP,Name,Arity),
-	    storage_insert_fact(flora_compile_trie,NewP,_)
+	    storage_insert_keypair(flora_compile_trie,NewP,EncodingType,_)
 	).
 %% Spec of the form of the form name(_,...,_)
-intern_predicate_spec(P) :-
+intern_predicate_spec(P,EncodingType) :-
 	functor(P,Name,Arity), Arity >= 0,
 	!,
-	storage_insert_fact(flora_compile_trie,P,_),
-	storage_insert_fact(flora_compile_trie,Name/Arity,_).
-intern_predicate_spec(P) :-
-	flora_error_line('[flWrapAround] Invalid predicate specification in a wraparound directive: %S', arg(P)).
+	storage_insert_keypair(flora_compile_trie,P,EncodingType,_),
+	storage_insert_keypair(flora_compile_trie,Name/Arity,EncodingType,_).
+intern_predicate_spec(P,EncodingType) :-
+	flora_error_line('[flWrapAround] Invalid predicate specification in a %s directive: %S', arg(EncodingType,P)).
 
 
 dump_other_directive(Directive, PredSpecs) :-
@@ -222,12 +225,12 @@ dump_storage_rules(','(Rule,Rest)) :- !,
 	dump_storage_rules(Rest).
 dump_storage_rules(Rule) :- dump_storage_rule(Rule).
 
+%% A storage rule looks like this: rule(head-predicate/arity,body-predicate)
 dump_storage_rule(rule(HeadSpec,TailPred)) :-
 	spec2skeleton(HeadSpec,HeadSkeleton),
 	dump_simple_goal(HeadSkeleton,0), writeln(' :-'),
 	indent(1),
-	%%write('storage_find_fact(FLORA_THIS_STORAGE,'),
-	write('storage_find_fact(FLORA_WSSTORAGE(FLORA_VAR_WORKSPACE),'),
+	write('storage_find_fact(FLORA_THIS_STORAGE,'),
 	%% attach tail's functor to Head's variables
 	HeadSkeleton =.. [_|HeadVars], BodySkeleton =.. [TailPred|HeadVars],
 	dump_simple_goal(BodySkeleton,0), writeln(').').

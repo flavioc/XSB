@@ -136,6 +136,7 @@
 #define FL_UNIVEQ		'='
 #define FL_UNIVNOTEQ		'\='
 #define FL_EQ			'=='
+#define FL_UNIVEQFORM		'~'
 #define FL_NOTEQ		'\=='
 #define FL_ORDERLT		'@<'
 #define FL_ORDEREQLT		'@=<'
@@ -168,7 +169,6 @@
 %%#define FL_PROLOG		(prolog)
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
-#define FL_WRAPAROUND	        wraparound
 #define FL_STATICFIRSTORDER	static
 #define FL_STATICFIRSTORDERALL 	staticall
 #define FL_FIRSTORDER		firstorder
@@ -459,6 +459,7 @@
 #define FLLIBEXPUNGE		fllibexpunge
 
 #define FLLIBCONTROL		fllibcontrol
+#define FLLIBMETAOPS		fllibmetaops
 
 
 /*****************************************************************************
@@ -538,8 +539,8 @@
 <#define FLORA_EVAL_MACRO|<#eval #1>>
 <#mode pop>
 
-#define FLORA_PREFIX_LEN_PLUS2		FLORA_EVAL_MACRO(length(FLORA_PREFIX))
-#define FLORA_FO_PREFIX_LEN_PLUS2	FLORA_EVAL_MACRO(length(FLORA_FO_PREFIX))
+#define FLORA_PREFIX_LEN_PLUS1	    FLORA_EVAL_MACRO(length(FLORA_PREFIX)-1)
+#define FLORA_FO_PREFIX_LEN_PLUS1   FLORA_EVAL_MACRO(length(FLORA_FO_PREFIX)-1)
 
 %% length of FLORA_PREFIX'FLORA_USER_MODULE
 #define FLORA_USER_MODULE_PREFIX_LEN_PLUS1 \

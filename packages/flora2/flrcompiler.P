@@ -86,6 +86,7 @@ is_flinsert(FLINSERT(Op,List),Op,List).
 is_fldelete(FLDELETE(Op,List,Cond),Op,List,Cond).
 is_fldelete(FLDELETE(Op,List),Op,List).
 is_flaggregate(FLAGGREGATE(Op,V,GV,Goal),Op,V,GV,Goal).
+%% Binary relationship, like : or ::
 is_flbirelate(FLBIRELATE(Obj1,RelType,Obj2),Obj1,RelType,Obj2).
 is_flobjspec(FLOBJSPEC(Obj,Spec),Obj,Spec).
 is_flobjref(FLOBJREF(Obj,RefType,Att),Obj,RefType,Att).
@@ -641,7 +642,7 @@ indexvars([],[]) :- !.
 
 indexvars([T|L],Vars) :-
 	is_flvar(T,Name,I),
-	( str_sub(FL_UNDERSCORE,Name,1) ->
+	( str_sub(FL_UNDERSCORE,Name,0) ->
 	    indexvars(L,Vars)
 	;
 	  Vars=[I-Name|Vs],
@@ -702,7 +703,7 @@ singleton_warning([],WarnList,WarnList).
 
 singleton_warning([V|L],WarnList,WarnTail) :-
 	is_flvar(V,Name,I),
-	( str_sub(FL_UNDERSCORE,Name,1) ->
+	( str_sub(FL_UNDERSCORE,Name,0) ->
 	    singleton_warning(L,WarnList,WarnTail)
 	;
 	  compiling_warning(I,SINGLETON_VAR,W),
@@ -719,7 +720,7 @@ unbound_warning([],WarnList,WarnList).
 
 unbound_warning([V|L],WarnList,WarnTail) :-
 	is_flvar(V,Name,I),
-	( str_sub(FL_UNDERSCORE,Name,1) ->
+	( str_sub(FL_UNDERSCORE,Name,0) ->
 	    unbound_warning(L,WarnList,WarnTail)
 	;
 	  compiling_warning(I,UNBOUND_VAR,W),
@@ -1364,6 +1365,7 @@ compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status) :-
 
 /****************************************************************************
   compile_flbirelate(+ObjTerm1,+RelType,+ObjTerm2,-Object,-Code,-Status)
+  Compiles binary relationships, like : or ::.
 ****************************************************************************/
 compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,Code,Status) :-
 	compile_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCode,Status),

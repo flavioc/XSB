@@ -57,7 +57,7 @@
 #define UNEXP_RIGHT      'unexpected right parenthesis/brace/bracket'
 #define UNEXP_END        'unexpected end of rule'
 #define WRONG_PRECEDENCE 'precedence definitions violated'
-#define WRONG_ASSOCIATE  'associativity definitions violated'
+#define WRONG_ASSOCIATE  'associativity definition violated'
 #define UNMATCHED_LEFT   'unmatched left parenthesis/brace/bracket'
 #define UNMATCHED_RIGHT  'unmatched right parenthesis/brace/bracket'
 
@@ -116,7 +116,7 @@
 #define NO_LISTTAIL	'list tail specification not allowed'
 #define NO_DISJUNCTION	'disjunction not allowed in rule head'
 #define NO_NEGATION	'negation not allowed in rule head'
-#define NO_WORKSPACE	'invalid association with module specification'
+#define NO_WORKSPACE	'invalid use of module specification'
 #define NO_WSINRULEHEAD	'module specification not allowed in rule head'
 #define NO_WSNESTING	'invalid nesting of module specifications'
 #define NO_REDEFINITION 'redefinition of standard predicates not allowed'

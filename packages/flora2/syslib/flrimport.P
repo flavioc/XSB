@@ -73,7 +73,7 @@ flImportFloraPred(P,A,File,Module) :-
 	check_args(P,A,Module),
 	P = FuncP/ArityP,
 	%% attach the workspace
-	flora_wssymbol(FuncP,Module,WSFuncP),
+	flora_firstorder_module_predicate_symbol(FuncP,Module,WSFuncP),
 	duplicate(A,NewA,Args),
 	(import WSFuncP/ArityP from usermod), % import whatever P is bound to
 	functor(NewP, WSFuncP, ArityP),
@@ -87,7 +87,7 @@ flImportHiLog(P,A,File,Module) :-
 	check_args(P,A,Module),
 	P = FuncP/ArityP,
 	%% attach the workspace
-	flora_wshilog(Module,FloraHiLogWrap),
+	flora_hilog_module_predicate_symbol(Module,FloraHiLogWrap),
 	ArityP1 is ArityP + 1,
 	functor(NewP,FloraHiLogWrap,ArityP1),
 	arg(1,NewP,FuncP),

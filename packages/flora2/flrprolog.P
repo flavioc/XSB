@@ -38,6 +38,7 @@ flora_prlg(FL_QUERYOP,1) :- !.
 
 flora_prlg(FL_UNIVEQ,2) :- !.
 flora_prlg(FL_UNIVNOTEQ,2) :- !.
+flora_prlg(FL_UNIVEQFORM,2) :- !.
 flora_prlg(FL_EQ,2) :- !.
 flora_prlg(FL_NOTEQ,2) :- !.
 flora_prlg(FL_ORDERLT,2) :- !.
@@ -75,6 +76,7 @@ flora_prlg(FL_MINUS,1) :- !.
 flora_prlg(abolish_all_tables,0) :- !.
 flora_prlg(abort,0) :- !.
 flora_prlg(catch,3) :- !.
+flora_prlg(call,1) :- !.
 flora_prlg(compile,1) :- !.
 flora_prlg(fail,0) :- !.
 flora_prlg(findall,3) :- !.
@@ -85,7 +87,7 @@ flora_prlg(throw,1) :- !.
 /****************************************************************************
   FLORA shell predicates
 ****************************************************************************/
-flora_prlg(flModule,1) :- !.
+flora_prlg(flLoadedModule,1) :- !.
 flora_prlg(flP2H,2) :- !.
 flora_prlg(flCompileInclude,1) :- !.
 flora_prlg(flHelp,0) :- !.
@@ -101,7 +103,7 @@ flora_prlg(FL_LOAD,1) :- !.
 flora_prlg(FL_DUMP,1) :- !.
 flora_prlg(flTrace,0) :- !.
 flora_prlg(flNoTrace,0) :- !.
-flora_prlg(flLowTrace,0) :- !.
+flora_prlg(flTraceLow,0) :- !.
 flora_prlg(flChatter,0) :- !.
 flora_prlg(flNoChatter,0) :- !.
 

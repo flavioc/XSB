@@ -43,14 +43,13 @@
 	flImportFloraPred/4
    from flrimport.
 
-:- import flora_wssymbol/3 from flrwrapper.
-
-:- import current_predicate/1 from curr_sym.
-
 :- import
 	flora_load_module_internal/2, flora_load_module_internal/1,
+	flora_module_registry/1,
 	flora_compile_internal/2, flora_compile_internal/1
    from flrutils.
+
+:- import flora_sysmod_file/3 from flrlibman.
 
 :- import fmt_write_string/3 from file_io.
 
@@ -71,7 +70,6 @@
 :- import xpp_include_dir/1 from parse.
 
 :- dynamic hide_this_show(_,_).
-
 :- index(hide_this_show/2,trie).
 
 :- export
@@ -80,13 +78,13 @@
 	(flImport)/1,
 	(flLoad)/1,
 	(flCompile)/1,
-	flModule/1,
+	flLoadedModule/1,
 	flora_shell/0.
 
 
 /*****************************************************************************/
 bootstrap_flora :-
-	bootstrap_package([flora2,syslib,lib,pkgs,p2h],flora),
+	bootstrap_package([flora2,syslib,lib,debugger,pkgs,p2h],flora),
 	!,
 	assert(package_configuration(version(flora),'0.80 of April, 2001')),
 	package_configuration(dir(flora),FloraDir),
@@ -101,6 +99,7 @@ bootstrap_flora :-
 	fmt_write_string(FloraGenIncludesDir,
 			 '%s%sgenincludes',args(FloraDir,S)),
 	assert(xpp_include_dir(FloraGenIncludesDir)),
+	[flrutils],
 	[p2h_config].
 
 bootstrap_flora.
@@ -161,7 +160,7 @@ flora_shell :-
 ************************************************************************/
 
 :- op(1150,fx,(firstorder)).
-%%:- op(1150,fx,(hilog)).  %% this is already defined in XSB
+%% The hilog operator is already defined in XSB
 
 :- op(500,yfx,(as)).
 :- op(1170,fx,(flImport)).
@@ -193,6 +192,6 @@ flCompile(File>>Module) :- flora_compile_internal(File,Module).
 flCompile(Module) :- flora_compile_internal(Module).
 
 %% tells if ModuleName is loaded
-flModule(ModuleName) :- 
-	flora_wssymbol(flThisModule,ModuleName,MagicName),
-	current_predicate(MagicName/1).
+flLoadedModule(ModuleName) :- 
+	flora_module_registry(ModuleName),
+	\+ flora_sysmod_file(ModuleName,_,_).

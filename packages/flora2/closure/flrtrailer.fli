@@ -60,7 +60,7 @@ super_isa(O,C) :-
 	sub(S,C).
 
 
-ultimate_isa(O,C) :-
+immediate_isa(O,C) :-
 	inferred_isa(O,C),
 	tnot(super_isa(O,C)).
 
@@ -69,7 +69,7 @@ isa(O,C) :-
 	inferred_isa(O,C).
 
 isa(O,C) :-
-	sub(S,C),
+	silent_sub(S,C),
 	inferred_isa(O,S).
 
 
@@ -147,8 +147,8 @@ defined_inferred_fd(O,A) :-
 
 
 conflict_obj_ifd(O,A) :-
-	ultimate_isa(O,C1),
-	ultimate_isa(O,C2),
+	immediate_isa(O,C1),
+	immediate_isa(O,C2),
 	C1 \= C2,
 	ifddef(C1,A),
 	ifddef(C2,A).
@@ -158,7 +158,7 @@ fd(O,A,V) :-
 	inferred_fd(O,A,V).
 
 fd(O,A,V) :-
-	ultimate_isa(O,C),
+	immediate_isa(O,C),
 	ifd(C,A,V),
 	tnot(defined_inferred_fd(O,A)),
 	tnot(conflict_obj_ifd(O,A)).
@@ -175,8 +175,8 @@ defined_inferred_mvd(O,A) :-
 
 
 conflict_obj_imvd(O,A) :-
-	ultimate_isa(O,C1),
-	ultimate_isa(O,C2),
+	immediate_isa(O,C1),
+	immediate_isa(O,C2),
 	C1 \= C2,
 	imvddef(C1,A),
 	imvddef(C2,A).
@@ -186,7 +186,7 @@ mvd(O,A,V) :-
 	inferred_mvd(O,A,V).
 
 mvd(O,A,V) :-
-	ultimate_isa(O,C),
+	immediate_isa(O,C),
 	imvd(C,A,V),
 	tnot(defined_inferred_mvd(O,A)),
 	tnot(conflict_obj_imvd(O,A)).
@@ -196,7 +196,7 @@ mvddef(O,A) :-
 	inferred_mvddef(O,A).
 
 mvddef(O,A) :-
-	ultimate_isa(O,C),
+	immediate_isa(O,C),
 	imvddef(C,A),
 	tnot(defined_inferred_mvd(O,A)),
 	tnot(conflict_obj_imvd(O,A)).
@@ -220,7 +220,7 @@ imeth(C,M) :-
 	inferred_imeth(C,M).
 
 imeth(C,M) :-
-	sub(C,S),
+	inheritance_sub(C,S),
 	imeth(S,M).
 
 
@@ -246,7 +246,7 @@ ifdsig(O,MethodArgs,R) :-
 	inferred_ifdsig(O,MethodArgs,R).
 
 ifdsig(S,MethodArgs,R) :-
-	sub(S,C),
+	inheritance_sub(S,C),
 	ifdsig(C,MethodArgs,R).
 
 
@@ -262,7 +262,7 @@ imvdsig(O,MethodArgs,R) :-
 	inferred_imvdsig(O,MethodArgs,R).
 
 imvdsig(S,MethodArgs,R) :-
-	sub(S,C),
+	inheritance_sub(S,C),
 	imvdsig(C,MethodArgs,R).
 
 
@@ -279,3 +279,5 @@ exists(X) :-
 diffobjeql(X,Y) :-
 	inferred_objeql(X,Y),
 	X \= Y.
+
+

@@ -89,6 +89,7 @@ flora_op(1100,fx,FL_TRAN).
 flora_op(1000,xfx,FL_UNIVEQ).
 flora_op(1000,xfx,FL_UNIVNOTEQ).
 flora_op(1000,xfx,FL_EQ).
+flora_op(1000,xfx,FL_UNIVEQFORM).
 flora_op(1000,xfx,FL_NOTEQ).
 flora_op(1000,xfx,FL_ORDERLT).
 flora_op(1000,xfx,FL_ORDEREQLT).

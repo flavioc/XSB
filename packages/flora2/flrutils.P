@@ -812,8 +812,9 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FileStatu
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
 	findall(ModOption,member(FLSYSMOD(ModOption),FileOptionList),SysModOptionList),
 	append(SysLibOptionList,SysModOptionList,OptList),
-	%% FLLIBCONTROL (sylibinc) should be included by the compiler.
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL|OptList],
+	%% FLLIBCONTROL and FLLIBMETAOPS in (sylibinc) should be
+	%% included by the compiler.
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL,FLLIBMETAOPS|OptList],
                            HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
