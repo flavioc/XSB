@@ -23,15 +23,15 @@
 **
 */
 
-/* To pretty print object:
+/*   To pretty print an object:
 **	?- flora_prettyprint(obj).
-**   To pretty print class:
+**   To pretty print a class:
 **        ?- flora_prettyprint_class(class).
-**   To save result in a file:
-**        ?- flora_prettyprint(obj,outfile).
+**   To save result of a pretty-printed class in a file:
 **        ?- flora_prettyprint_class(class,outfile).
-**    To print class membership:
+**   To print class membership:
 **        ?- flora_prettyprint_isa(class).
+**   To save it in a file:
 **        ?- flora_prettyprint_isa(class,outfile).
 */
 
@@ -56,12 +56,6 @@ flora_prettyprint_class(Class) :-
 	ground(X),  %% to ground X, if non-ground
 	flora_prettyprint(X),
 	fail.
-
-%% flora_prettyprint(+Obj,+File)
-flora_prettyprint(X,OutFile) :-
-        tell(OutFile),
-	flora_prettyprint(X),
-	told.
 
 flora_prettyprint(X) :-
 	flora_pp_immediate_classes(X),
