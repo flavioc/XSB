@@ -278,6 +278,11 @@ static CPtr slide_heap(int num_marked)
       endtr = tr_top ;
       for (p = tr_bot; p <= endtr ; p++ ) 
 	{ contents = cell(p) ;
+#ifdef SLG_GC
+	if (!tr_marked(p-tr_bot))
+	  continue;
+	tr_clear_mark(p-tr_bot);
+#endif
 	  q = hp_pointer_from_cell(contents,&tag) ;
 	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot)) {
