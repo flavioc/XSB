@@ -193,7 +193,7 @@ load_library_directories :-
 		; true
         ).
 
-load_library_directories.
+%%load_library_directories.
 
 
 /*****************************************************************************
