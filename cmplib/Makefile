@@ -36,17 +36,16 @@ Option = [sysmod,optimize,spec_repr]
 
 #-------------------------------------------------------------------#
 ### Please select ONE Prolog below to run this makefile.
-### At developement stage, an older version of XSB or PSB-Prolog is
-### suggested.
+### At developement stage, an older version of XSB is suggested.
 ###
 ### Note: if you select self-make, be careful to save all the
 ###       current *.O files, so that when the new files have
 ###       errors, the old *.O can be re-installed.
 #
-# Self-make: Version 1.6.0
+# Self-make: Version 1.9.0
 #
 XSB=../bin/xsb
-Prolog = $(XSB) -i -s -m 1200 -c 2000
+Prolog = $(XSB)
 #
 #-------------------------------------------------------------------#
 
