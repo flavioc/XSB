@@ -252,6 +252,8 @@ path_sysop(isplain, Path) :- !, is_plain_file(Path).
 path_sysop(isdir, Path) :- !, is_directory(Path).
 path_sysop(rename, OldPath, NewPath) :- !, rename(OldPath,NewPath).
 path_sysop(copy, FromPath, ToPath) :- !,
+	sys_filecopy(FromPath,ToPath,Res), Res=:=0.
+	/*
 	file_open(FromPath, r, FromIOport),
 	FromIOport >= 0,
 	file_open(ToPath, w, ToIOport),
@@ -259,6 +261,7 @@ path_sysop(copy, FromPath, ToPath) :- !,
 	copyIOport(FromIOport, ToIOport),
 	file_close(ToIOport),
 	file_close(FromIOport).
+        */
 path_sysop(rm, Path) :- !, rm(Path).
 path_sysop(unlink, Path) :- !, rm(Path).
 path_sysop(link, SrsPath, DestPath) :- !,
