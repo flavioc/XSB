@@ -30,6 +30,9 @@
 ;; Is it Emacs?
 (defconst flora-emacs-p (not flora-xemacs-p))
 
+(defmacro flora-buffer-live-p (buf)
+  (` (and (, buf) (get-buffer (, buf)) (buffer-name (get-buffer (, buf))))))
+
 (defconst flora-temp-file-prefix
   (cond (flora-emacs-p temporary-file-directory)
 	((fboundp 'temp-directory) (temp-directory))
@@ -102,7 +105,7 @@
 
 (defconst flora-font-lock-keywords
    (list
-    '("\\(\\?-\\|:-\\|\\.[ \t\n]*$\\)"
+    '("\\(\\(flora\\)? +\\?-\\|:-\\|\\.[ \t\n]*$\\)"
       1 'flora-font-lock-query-face)
     '("\\(\\*?->>\\|\\*?->\\|\\*?=>>\\|\\*?=>\\)"
       1 'flora-font-lock-arrow-face)
@@ -236,7 +239,7 @@ if that value is non-nil."
   (setq major-mode 'flora-mode)
   (setq mode-name "Flora")
   (flora-mode-variables)
-  (setq comint-prompt-regexp "^?-")
+  (setq comint-prompt-regexp "flora + \\?- +")
   (run-hooks 'flora-mode-hook))
 
 (defun flora-indent-line (&optional whole-exp)
@@ -463,12 +466,13 @@ Return not at end copies rest of line to end and sends it.
   (comint-mode)
   (setq major-mode 'inferior-flora-mode
 	mode-name "Inferior-Flora"
-	comint-prompt-regexp "flora *[ ?][- ] *")
+	comint-prompt-regexp "flora + \\?- +")
   (flora-mode-variables)
   (if inferior-flora-mode-map nil
     (setq inferior-flora-mode-map (copy-keymap comint-mode-map))
     (flora-mode-commands inferior-flora-mode-map))
-  (use-local-map inferior-flora-mode-map)
+  ;; this seems redundant and also somehow binds "[" in the local map
+  ;;(use-local-map inferior-flora-mode-map)
   (run-hooks 'inferior-flora-mode-hook)
   (setq comint-input-ring-file-name 
 	(expand-file-name "~/.flora-history"))
@@ -606,14 +610,22 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
 (defun show-flora-buffer (&optional switch)
   (let ((wind (selected-window)))
     (with-temp-buffer
-      (set-buffer flora-process-buffer)
-      (display-buffer flora-process-buffer)
-      (switch-to-buffer-other-window flora-process-buffer)
-      ;; time is needed for XSB to return. otherwise, the point will be off
       (sit-for 1))
-      (goto-char (1- (point-max)))
+      (set-buffer flora-process-buffer)
+      (or (flora-get-visible-buffer-window flora-process-buffer)
+	  (progn
+	    (display-buffer flora-process-buffer)
+	    (switch-to-buffer-other-window flora-process-buffer)))
+      ;; time is needed for XSB to return. otherwise, the point will be off
+      (goto-char (point-max))
       (or switch
 	  (select-window wind))))
+
+(defun flora-get-visible-buffer-window (buff)
+  (if (flora-buffer-live-p buff)
+      (if flora-xemacs-p
+	  (get-buffer-window buff t)
+	(get-buffer-window buff 'visible))))
 
 
 (defun flora-make-temp-file (start end)
