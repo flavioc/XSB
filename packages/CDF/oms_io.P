@@ -100,7 +100,7 @@ c2ce :-
 	sort_and_write_terms(ExtClasses).
 
 isa_external_classes(Label,NatCid,Sou) :-
-	class(Cid,Label,NatCid,Sou),
+	oms_cn(Cid,Label,NatCid,Sou),
 	(atomic(Cid)
 	 ->	true
 	 ;	numbervars(NatCid,0,_)
@@ -122,7 +122,7 @@ s2se :-
 	sort_and_write_terms(SubClasses).
 
 isa_external_subclass(NSubCid,SubSrc,NSupCid,SupSrc) :-
-	immediate_subclass(SubCid,SupCid),
+	oms_sc(SubCid,SupCid),
 	cvt_cid_nid(SubCid,NSubCid,SubSrc),
 	cvt_cid_nid(SupCid,NSupCid,SupSrc),
 	numbervars(subclass_ext(NSubCid,SubSrc,NSupCid,SupSrc),0,_).
@@ -135,8 +135,8 @@ r2re :-
 	sort_and_write_terms(Relationships).
 	
 isa_external_relationship(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc) :-
-	immediate_relationship(SCid,RCid,TCid),
-	%% 	 writeln(immediate_relationship(SCid,RCid,TCid)),
+	oms_rln(SCid,RCid,TCid),
+	%% display(immediate_relationship(SCid,RCid,TCid)),
 	cvt_cid_nid(SCid,NSCid,SSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
 	cvt_cid_nid(TCid,NTCid,TSrc),
@@ -150,7 +150,7 @@ strel2strele :-
 	sort_and_write_terms(Strels).
 
 isa_external_strel(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc) :-
-	strel(SCid,RCid,TCid),
+	oms_strel(SCid,RCid,TCid),
 	cvt_cid_nid(SCid,NSCid,SSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
 	cvt_cid_nid(TCid,NTCid,TSrc),
@@ -164,7 +164,7 @@ schrel2schrele :-
 	sort_and_write_terms(Schrels).
 
 isa_external_schrel(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc) :-
-	immediate_schrel(SCid,RCid,TCid),
+	oms_schrel(SCid,RCid,TCid),
 	cvt_cid_nid(SCid,NSCid,SSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
 	cvt_cid_nid(TCid,NTCid,TSrc),
@@ -173,7 +173,7 @@ isa_external_schrel(NSCid,SSrc,NRCid,RSrc,NTCid,TSrc) :-
 o2oe :-
 	write_hdr(object_ext(_,_,_)),
 	findall(object_ext(Name,NatId,Source),
-		object(_,Name,NatId,Source),
+		oms_obj(_,Name,NatId,Source),
 		ExtObjects),
 	sort_and_writeq_terms(ExtObjects).
 
@@ -185,7 +185,7 @@ m2me :-
 	sort_and_writeq_terms(Memberofs).
 
 isa_external_memberof(NativeId,OSrc,NCid,Src) :-
-	immediate_memberof(Oid,Cid),
+	oms_mo(Oid,Cid),
 	object(Oid,_Name,NativeId,OSrc),
 	cvt_cid_nid(Cid,NCid,Src).
 
@@ -197,7 +197,7 @@ a2ae :-
 	sort_and_write_terms(Attributes).
 
 isa_external_attribute(NOId,OSrc,NRCid,RSrc,NTCid,TSrc) :-
-	immediate_attribute(Oid,RCid,TCid),
+	oms_at(Oid,RCid,TCid),
 	object(Oid,_Name,NOId,OSrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
 	cvt_cid_nid(TCid,NTCid,TSrc),
@@ -211,7 +211,7 @@ ao2aoe :-
 	sort_and_writeq_terms(AttributeObjects).
 
 isa_external_attribute_object(NOId,Osrc,NRCid,RSrc,NTOid,Tsrc) :-
-	attribute_object(Oid,RCid,TOid),
+	oms_ao(Oid,RCid,TOid),
 	object(Oid,_Name,NOId,Osrc),
 	cvt_cid_nid(RCid,NRCid,RSrc),
 	object(TOid,_Tname,NTOid,Tsrc).
