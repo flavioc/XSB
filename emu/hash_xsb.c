@@ -44,7 +44,7 @@
  *  Both subtables are maintained as hash tables.
  */
 
-Hash_Table symbol_table = { 8191, 0, NULL};
+Hash_Table symbol_table = {8191, 0, NULL};
 Hash_Table string_table = {16381, 0, NULL};
 
 
