@@ -1,0 +1,18 @@
+
+mailarchive.pl is a Perl script that reads mailbox and extracts
+installation logs. 
+The fields to be extracted are specified in the file datafields.cfg
+
+The logs are converted to Prolog format and are appended to the file archive.P.
+
+Installation messages are then deleted and the remaining messages are
+appended to the user local mailbox.
+
+How to use:
+1. Subscribe some account to xsb-installation@lists.sourceforge.net
+   It is recommended to use a separate account for that, so that
+   mailarchive.pl won't interfere with your regular mail.
+2. Install this program.
+3. Let cron run it every day.
+
+
