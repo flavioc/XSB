@@ -84,8 +84,8 @@ double cpu_time(void)
 
     lkernel = ((ULONGLONG) kernel.dwHighDateTime << 32) + 
       kernel.dwLowDateTime;
-    luser = ((ULONGLONG) kernel.dwHighDateTime << 32) + 
-      kernel.dwLowDateTime;
+    luser = ((ULONGLONG) user.dwHighDateTime << 32) + 
+      user.dwLowDateTime;
 
     stime = lkernel / 1.0e7;
     utime = luser / 1.0e7;
