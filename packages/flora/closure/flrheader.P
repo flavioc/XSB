@@ -21,7 +21,7 @@
 
 :- import current_predicate/1 from curr_sym.
 
-:- import '_$_$_flora_loadlist'/1, '_$_$_flora_dynloadlist'/1 from flrutils.
+:- import flora_loadlist/1, flora_dynloadlist/1 from flrutils.
 
 :- import bootstrap_flora/0 from flora.
 

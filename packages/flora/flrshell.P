@@ -58,7 +58,7 @@
 '_$_$_flora_shell_loop' :-
 	repeat,
 	'_$_$_flora_write_shell_prompt',
-	'_$_$_flora_read_parse_compile'(static_mode,
+	flora_read_parse_compile(static_mode,
 					[atom('$?'),atom('$-')],
 					Tokens,
 					Rules,
@@ -71,7 +71,7 @@
 	    ( (member(eof,Status); member(atom(rule_delimeter),Tokens)) ->
 		S=Status
 	      ;
-	        '_$_$_flora_discard_tokens'(S)
+	        flora_discard_tokens(S)
 	    )
 
 	  ;
@@ -165,7 +165,7 @@ help :-
 
 /*********************************************************************/
 rundemo(X,Dtvs) :-
-	'_$_$_flora_check_filename'(X),
+	flora_check_filename(X),
 	package_configuration(dir(flora),FloraDir),
 	slash(Slash),
 	%% Add the demo directory to library_directory
@@ -178,7 +178,7 @@ rundemo(X,Dtvs) :-
 	retract(library_directory(DemoDir)).
 
 rundemo(X) :-
-	'_$_$_flora_check_filename'(X),
+	flora_check_filename(X),
 	package_configuration(dir(flora),FloraDir),
 	slash(Slash),
 	%% Add the demo directory to library_directory
@@ -248,7 +248,7 @@ flcompile_all_demos  :-
 	retract(library_directory(DemoDir)).
 
 flcompile_demo([D|Rest]) :- 
-	'_$_$_flora_flcompile'(static_mode,[],D,noforce,_),
+	flora_flcompile(static_mode,[],D,noforce,_),
 	flcompile_demo(Rest).
 flcompile_demo([]).
 
@@ -333,7 +333,7 @@ flcompile_demo([]).
 	'_$_$_flora_strict_subclass'(Z,Y),
 	%%(X \= Z -> true ; Z\=Y),
 	( X = Y ->
-	    '_$_$_write_flora_warnheader',
+	    write_flora_warnheader,
 	    write('cyclic subclass hierarchy: '),
 	    write(X), write('::'), write(Z), write('::'), write(Y), nl
 	  ;

@@ -61,13 +61,13 @@
 :- dynamic flora_maxerr(_).
 
 :- export 
-	'_$_$_flora_flcompile'/5,
-	'_$_$_flora_read_parse_compile'/6,
-	'_$_$_flora_loadlist'/1,
-	'_$_$_flora_dynloadlist'/1,
-	'_$_$_flora_check_filename'/1,
-	'_$_$_write_flora_warnheader'/0,
-	'_$_$_flora_discard_tokens'/1,
+	flora_flcompile/5,
+	flora_read_parse_compile/6,
+	flora_loadlist/1,
+	flora_dynloadlist/1,
+	flora_check_filename/1,
+	write_flora_warnheader/0,
+	flora_discard_tokens/1,
 	flcompile/1, flcompile/2, flconsult/1, flconsult/2, dyncompile/1,
 	dyncompile/2, dynconsult/1, dynconsult/2, flload/1, dynload/1,
 	maxerr/1, flora_prefix/1, flora_word/2, terminate_list/1,

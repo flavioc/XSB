@@ -49,13 +49,13 @@
 :- import bootstrap_flora/0 from flora.
 
 :- import
-	'_$_$_flora_read_parse_compile'/6,
-	'_$_$_flora_flcompile'/5,
-	'_$_$_flora_loadlist'/1,
-	'_$_$_flora_dynloadlist'/1,
-	'_$_$_flora_check_filename'/1,
-	'_$_$_write_flora_warnheader'/0,
-	'_$_$_flora_discard_tokens'/1,
+	flora_read_parse_compile/6,
+	flora_flcompile/5,
+	flora_loadlist/1,
+	flora_dynloadlist/1,
+	flora_check_filename/1,
+	write_flora_warnheader/0,
+	flora_discard_tokens/1,
 	flcompile/1, flcompile/2, maxerr/1, flconsult/1, flconsult/2,
 	flload/1, dynload/1, dyncompile/1, dyncompile/2, dynconsult/1,
 	dynconsult/2, displayln_warning/1

@@ -23,7 +23,7 @@
 :- dynamic '_$_$_flora_imvd_dyn'/2.
 :- dynamic '_$_$_flora_mvs_dyn'/2.
 
-:- import '_$_$_flora_loadlist'/1, '_$_$_flora_dynloadlist'/1 from flrutils.
+:- import flora_loadlist/1, flora_dynloadlist/1 from flrutils.
 
 :- import member/2, ground/1 from basics.
 

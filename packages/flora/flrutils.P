@@ -81,7 +81,7 @@ flora_errheader :-
 flora_warnheader :-
 	display('++FLORA Warning: ').
 
-'_$_$_write_flora_warnheader' :-
+write_flora_warnheader :-
 	write('++FLORA Warning: ').
 
 flora_msgheader :-
@@ -104,7 +104,7 @@ dyncompile(InFile) :-
 	dyncompile(InFile,Dtvs).
 
 flora_compile_internal(InFile, Dtvs, Mode) :-
-	'_$_$_flora_flcompile'(Mode,Dtvs,InFile,force,Module),
+	flora_flcompile(Mode,Dtvs,InFile,force,Module),
 	displayln, flora_msgheader, displayln('calling XSB compiler]'),
 	compile(Module,[optimize,spec_repr]).
 
@@ -124,7 +124,7 @@ dynconsult(File) :-
 	dynconsult(File,Dtvs).
 
 flora_consult_internal(File, Dtvs, Mode) :-
-	'_$_$_flora_flcompile'(Mode,Dtvs,File,noforce,Module),
+	flora_flcompile(Mode,Dtvs,File,noforce,Module),
 	displayln, flora_msgheader, 
 	(Mode = static_mode -> display('consulting ')
     	    	;
@@ -138,24 +138,24 @@ flora_consult_internal(File, Dtvs, Mode) :-
 
 
 /*********************************************************************/
-'_$_$_flora_loadlist'([X]) :- flload(X).
+flora_loadlist([X]) :- flload(X).
 
-'_$_$_flora_loadlist'([X1,X2|Xs]) :-
+flora_loadlist([X1,X2|Xs]) :-
 	flload(X1),
-	'_$_$_flora_loadlist'([X2|Xs]).
+	flora_loadlist([X2|Xs]).
 
 
 /*********************************************************************/
-'_$_$_flora_dynloadlist'([X]) :- dynload(X).
+flora_dynloadlist([X]) :- dynload(X).
 
-'_$_$_flora_dynloadlist'([X1,X2|Xs]) :-
+flora_dynloadlist([X1,X2|Xs]) :-
 	dynload(X1),
-	'_$_$_flora_dynloadlist'([X2|Xs]).
+	flora_dynloadlist([X2|Xs]).
 
 
 /*********************************************************************/
 flload(File) :-
-	'_$_$_flora_check_filename'(File),
+	flora_check_filename(File),
 	parse_filename(File,D,B,E),
 	( E = 'flr' ->
 	    flconsult(File)
@@ -212,7 +212,7 @@ flload(File) :-
 
 /*********************************************************************/
 dynload(File) :-
-	'_$_$_flora_check_filename'(File),
+	flora_check_filename(File),
 	parse_filename(File,D,B,E),
 	( E = 'flr' ->
 	    dynconsult(File)
@@ -259,14 +259,14 @@ dynload(File) :-
 
 
 /**********************************************************************
-  '_$_$_flora_flcompile'(+LoadMode,+Directives,+InFile,+Force,-OutFile)
+  flora_flcompile(+LoadMode,+Directives,+InFile,+Force,-OutFile)
   InFile must have '.flr' as extension or no extension (in this case,
   '.flr' is appended).
 **********************************************************************/
-'_$_$_flora_flcompile'(LoadMode,Directives,InFile,Force,OutFile) :-
+flora_flcompile(LoadMode,Directives,InFile,Force,OutFile) :-
 	flora_maxerr(MaxErr),
 	flora_check_directives(Directives,Dtvs),
-	'_$_$_flora_check_filename'(InFile),
+	flora_check_filename(InFile),
 	parse_filename(InFile,_,_,E),
 	( E = 'flr' ->
 	    FullFileName=InFile
@@ -441,7 +441,7 @@ write_PAs([pa(P,A)|PAs]) :-
 
 /********************************************************************/
 unbound_warn(_Form,L) :-
-	'_$_$_write_flora_warnheader',
+	write_flora_warnheader,
 	write('unsafe variable(s) '),
 	write_list(L),
 	writeln(' in a rule head or a fact.').
@@ -631,7 +631,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		member(atom(rule_delimeter),Tokens) ->
 		  compile_flrfile(MaxErr,NewCount,Status,_,_)
 
-	      ; member(not_eof,S1), '_$_$_flora_discard_tokens'(S2),
+	      ; member(not_eof,S1), flora_discard_tokens(S2),
 		member(not_eof,S2) ->
 		  compile_flrfile(MaxErr,NewCount,Status,_,_)
 	      ;
@@ -678,8 +678,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 
 
 /********************************************************************/
-'_$_$_flora_read_parse_compile'(LoadMode,L,Tokens,
-			        FlattenedRules,Status,Opts) :-
+flora_read_parse_compile(LoadMode,L,Tokens, FlattenedRules,Status,Opts) :-
 	set_load_mode(LoadMode),
 	read_parse_compile(L,Tokens,FlattenedRules,Status,Opts).
 
@@ -722,7 +721,7 @@ read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 
 
 /********************************************************************/
-'_$_$_flora_discard_tokens'(Status) :-
+flora_discard_tokens(Status) :-
 	displayln,
 	repeat,
 	flora_msgheader, displayln('discarding tokens]'),
@@ -773,7 +772,7 @@ flora_default_directives([eqlevel(0)]).
 
 
 /*********************************************************************/
-'_$_$_flora_check_filename'(Name) :-
+flora_check_filename(Name) :-
 	( not atom(Name) ->
 	    displayln, flora_errheader, displayln('invalid file name'),
 	    fail
