@@ -1,0 +1,786 @@
+%% ISO and CIAO syntax files
+
+:- compiler_options([ciao_directives]).
+
+:- export xsbdoc/1,test/0.
+
+:- import format/3 from format.
+
+:- import usage_message/1,xsbdoc_option/1, xsbdoc_option/2 from usermod.
+
+:- import autodoc/7, generate_description/3, generate_info_dir_entry/2,
+          generate_man_page/2 from autodoc.
+
+:- import index_comment/2,option_comment/2 from autodocformats.
+
+:- load_dync(usage_message).
+
+:- comment(author, "Facultad de Inform@'{a}tica").
+:- comment(author, "Universidad Polit@'{e}cnica de Madrid").
+
+:- comment(copyright,"
+Copyright @copyright{} 1996-99 Manuel Hermenegildo/The CLIP Group.
+
+@include{Copyright.Manuals}
+").
+
+:- comment(summary,"@include{README.lpdoc}").
+
+:- comment(module,"@include{Intro.lpdoc}
+
+@section{lpdoc usage}
+
+The following provides the different command line options available
+when invoking @apl{lpdoc}. This description is intended only for
+advanced users which might like to use @apl{lpdoc} in custom
+applications. Note that the normal way to use @apl{lpdoc} is by
+setting parameters in a @file{SETTINGS} file (see @ref{Generating a
+manual}), and @apl{lpdoc} will be invoked automatically with the
+correct options by the @file{Makefile} provided with the distribution.
+
+@begin{verbatim}
+@includefact{usage_message/1}
+@end{verbatim}
+
+").
+
+%% ---------------------------------------------------------------------------
+%% Body
+%% ---------------------------------------------------------------------------
+
+xsbdoc_version("0.1").
+
+throw_load_dync(File):- 
+	load_dync(File) -> true ; abort(('file not found ',File)).
+
+clear_the_decks:- 
+	retractall(xsbdoc_option(_)),
+	retractall(xsbdoc_option(_,_)),
+	
+	retractall(refs_stream(_)),
+	retractall(main_name(_)).
+
+
+display_version:- 
+	xsbdoc_version(Version),
+	format(user,"xsbdoc ~s ",[Version]),
+	format(user,"Using code from CLIP Group, T.U. of Madrid (UPM)~n",[]).
+
+test:- xsbdoc(xformat).
+
+xsbdoc(File):- 
+	clear_the_decks,
+	display_version,
+	throw_load_dync(File),
+	parse_args,
+	!.
+xsbdoc(File):- 
+	format(user_error,"~nIllegal arguments in: ~w",[File]),
+	report_usage.
+
+% TLS: took out the libpaths, syslibpaths, and pathalias.  Use instead 
+% library_directory/1.
+parse_args:- 
+	xsbdoc_option('-h'),
+	!, report_usage.
+parse_args:- 
+	xsbdoc_option('-help'),
+	!, report_usage.
+parse_args:- 
+ 	misc_opts(Opts), option('-i',Indices), 
+	option('-p',StartPageL), (StartPageL=[StartPage];StartPage=1),
+	option('-t',PapTypeL), (PapTypeL=[PaperType];PaperType=letterpaper),
+	required('-main',[Main]),
+	get_components(Components),
+  	!,  
+        autodoc(texinfo,Main,Indices,Components,
+	             StartPage,PaperType,['-main'|Opts]) .
+parse_args:- 
+ 	misc_opts(Opts),
+	option('-i',Indices), 
+	get_components([Main]),
+	!,  autodoc(texinfo,Main,Indices,[],
+	             _StartPage,_PaperType,['-component'|Opts]) .
+parse_args:- 
+ 	misc_opts(Opts),
+	xsbdoc_option('-htmlindex',[Main]),
+	!,  generate_description(html,Main,Opts) .
+parse_args:- 
+ 	misc_opts(Opts),
+	xsbdoc_option('-man',[Main]),
+	!,  generate_man_page(Main,Opts) .
+parse_args:- 
+ 	misc_opts(Opts),
+	xsbdoc_option('-infoindex',[Main]),
+	!,  generate_info_dir_entry(Main,Opts) .
+	
+misc_opts(Opts):- 
+	findall(X,(xsbdoc_option(X),
+                   option_comment(X,_)),Opts).
+
+option(Type,Vals):- 
+	findall(Val,(xsbdoc_option(Type,Val),
+		     option_comment(Val,_)),Vals).
+
+get_components(Vals):- 
+	findall(Val,xsbdoc_option('-component',Val),Vals).
+
+required(Type,Vals):- 
+	findall(Val,xsbdoc_option(Type,Val),Vals),Vals \== [].
+
+report_usage :-
+	format(user,"Usage:~n~n",[]),
+	usage_message(Text), 
+	format(user,Text,[]),
+	format(user,"~nAcceptable index names:~n",[]),
+	( index_comment(Index,IText),
+          format(user,"    ~w~n    ~s~n~n",[Index,IText]),
+	  fail
+	; true ),
+	format(user,"~nAdditional options (MiscOpts):~n",[]),
+	( option_comment(Option,OText),
+          write((Option,OText)),nl,nl,
+	  fail
+	; true ).
+
+%% This is in narrow format because that way it looks nicer in a man page.
+
+end_of_file.
+
+%% ---------------------------------------------------------------------------
+%% Version info
+%% ---------------------------------------------------------------------------
+
+:- comment(version_maintenance,dir('../version')).
+
+:- comment(version(1*9+49,2000/04/16,12:47*10+'CEST'), "Accented i's
+   now translate correctly in html.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+46,2000/03/17,17:49*34+'CET'), "Paths alias
+   file now also read correctly for when generating htmlindex.
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*9+45,2000/03/15,23:32*09+'CET'), "Now using
+   @tt{lpdoclib} path alias.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+44,2000/03/01,21:44*27+'CET'), "A new parameter
+   @tt{PAPERTYPE} can be set in the @file{SETTINGS} file which
+   controls the format of printed output.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+43,2000/02/02,14:03*56+'CET'), "Default
+   @concept{pdf viewer} is now @apl{ghostview}, sicne recent versions
+   handle @tt{pdf} well.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+41,1999/12/09,22:34*21+'MET'), "Fixed a funny
+   installation quirk: while we want to install LPdoc in the Ciao
+   group, the manuals produced by LPdoc should be installed in the
+   LPdoc group.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+29,1999/11/24,16:47*01+'MET'), "Changed default
+   style sheet in order to show <PRE> lines with a monospaced font.
+   (Daniel Cabeza Gras)").
+
+:- comment(version(1*9+24,1999/11/23,00:07*42+'MET'), "Mode
+   definitions now documented in a separate section. The way they are
+   documented has been improved.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+23,1999/11/22,21:29*58+'MET'), "References in
+   files now updated only if @tt{.refs} file is not empty.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*9+22,1999/11/22,16:25*34+'MET'), "Fixed bug in
+   documentation text for declarations.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+21,1999/11/22,16:23*52+'MET'), "Declarations
+   now documented properly even if they have the same name and arity
+   as a predicate.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+20,1999/11/22,13:47*54+'MET'), "Fixed minor bug
+   in lib Makefile which prevented full uninstallation.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*9+11,1999/11/17,22:19*44+'MET'), "Minor changes
+   to lib Makefile.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+10,1999/11/15,19:15*52+'MET'), "Fixed bug that
+   eliminated the html index files when generating html manual.
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*9+9,1999/11/11,11:31*26+'MET'), "Default info
+   index head and tail in lib is now generic.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*9+8,1999/11/07,13:45*44+'MET'), "Several
+   improvements to makefiles including avoiding lpdoc being affected
+   by an upper definition of @tt{LIBDIR}.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+7,1999/11/03,11:40*08+'MET'), "@em{Copies} of
+   the html and info index head and tail files are now included in
+   @em{distributions}. This fixed a bug that cropped up during
+   installation of manuals.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+6,1999/11/02,11:02*52+'MET'), "A @em{copy} of
+   the html style sheet is now included in @em{distributions}.  Fixes
+   a bug that cropped up during installation of manuals.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*9+3,1999/07/14,12:51*53+'MEST'), "Made pointers
+   relative in library html templates.  (Manuel Hermenegildo)").
+
+:- comment(version(1*9+0,1999/07/08,18:19*43+'MEST'), "
+
+   In this release the name of the application has changed to
+   @apl{lpdoc} which was found more appropriate, since several formats
+   are generated in addition to texi. The major changes are listed
+   below.
+
+   New commands:
+
+   @begin{itemize}
+
+   @item @@begin@{cartouche@} and @@end@{cartouche@} commands now
+   supported.
+
+   @item @@foonote command now supported.
+
+   @item New @tt{gmake htmlview} command (makes a running
+   @apl{netscape} visit the generated html manual). Suggested by Per
+   Cederberg.
+
+   @item New @tt{gmake distclean} command, intended for software
+   distributions. Leaves the generated documents and eliminates
+   @em{all} intermediate files (including @tt{.texic}/@tt{.texi}
+   files).
+
+   @item Adobe @tt{pdf} format now supported as a valid
+   target. Unfortunately, embedded @tt{.eps} figures are not supported
+   at this time in pdf output.
+
+   @item The second argument of @tt{:- comment(hide,...).} and @tt{:-
+   comment(doinclude,...).} declarations can now be a list of
+   predicate names.
+
+   @item A @tt{-u} @em{File} option is now supported so that a file
+   including, e.g., path alias definitions can be included (this has
+   the same functionality as the @tt{-u} option in @apl{ciaoc}).
+
+   @item Now typing just @tt{gmake} does nothing. In order to do
+   something at least one target should be specified. This was
+   necessary so that recursive invocations with empty arguments did
+   nothing.
+
+   @item Added a new filetype: @tt{part}. This allows splitting large
+   documents into parts, each of which groups a series of chapters.
+
+   @end{itemize}
+
+   Other new functionality:
+
+   @begin{itemize}
+
+   @item A style sheet can now be specified which allows modifying
+   many characteristics of the html output (fonts, colors, background,
+   ...) (thanks to Per Cederberg).
+
+   @item Added limited support for changing page numbering (in
+   @file{SETTINGS} file).
+
+   @item The concept indexing commands (@@index, @@cindex, and
+   @@concept) now work somewhat differently, to make them consistent
+   with other indexing commands.
+
+   @item The old @em{usage} index is now called, more appropriately,
+   @em{global} index. Correspondingly, changed things so that now
+   every definition goes to the global index in addition to its
+   definitional index.
+
+   @item Imported files from module @tt{user} are now documented
+   separately.
+
+   @item Now a warning is issued if characters unsupported by info are
+   used in section names.
+
+   @item Navigation in html docs was improved.
+
+   @item The table of contents in printed manuals now contains entries
+   for the individual descriptions of predicates, props, regtypes,
+   declarations, etc.  This can be shut off with the @tt{-shorttoc}
+   option.
+
+   @item Made more silent in normal conditions: file inclusion is
+   muted now unless @tt{-v} option is selected.
+
+   @item A single @tt{.texi} file is now constructed (by grouping the
+   @tt{.texic} files generated for all components) in which the
+   references and menus are resolved. This has the advantage that the
+   process of resolving references and menus has now been sped up very
+   significantly.  Also, @tt{texi} is now a valid target (perhaps
+   useful for distributions). The generated files now have @tt{texic}
+   (@em{texinfo component}).
+
+   @item Now, declarations are always documented as long as there is a
+   @tt{decl} assertion.  Also, they are now documented in a separate
+   section.
+
+   @end{itemize}
+
+   Bug fixes and other minor improvements:
+
+   @begin{itemize}
+
+   @item The directory containing html manual is now called
+   @em{BASENAME}@tt{_html} instead of just @em{BASENAME}, which was
+   confusing.
+
+   @item Now requesting building a .ps only does not leave a .dvi
+   behind (useful for distributions).
+
+   @item File names can now include the symbol @tt{_} even if they
+   contain figures.
+
+   @item @apl{TeX}-related intermediate files are now cleaned up after
+   each run in order to avoid clutter.
+
+   @item Fixed @tt{-modes}, which was broken since going to the new
+   normalizer (was normalizer problem). Fixed problem with no
+   documentation when only modes given.
+
+   @item Fixed duplication of documentation for internal predicates
+   when also exported.
+
+   @item Minor formatting problem when no documentation nor definition
+   found for a regtype fixed.
+
+   @item Determining exports, imports, etc. now done solely by calls
+   to @lib{c_itf} library (and, thus, synchronized with @apl{ciaoc}
+   compiler).
+
+   @end{itemize}
+
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*8+42,1999/06/30,14:02*12+'MEST'), "Changed texi2html
+   to generate better HTML with attributes for styling (instead of <font>
+   tags). (Per Cederberg)").
+
+:- comment(version(1*8+41,1999/06/22,19:33*51+'MEST'), "Added
+   @tt{gmake htmlview} command (makes a running @apl{netscape} visit
+   the generated html manual). Suggested by Per Cederberg. (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*8+40,1999/06/17,20:06*00+'MEST'), "File names can
+   now include the symbol @tt{_} even if they contain figures (fixes a
+   reported bug).  (Manuel Hermenegildo)").
+
+:- comment(version(1*8+39,1999/06/10,13:16*43+'MEST'), "Added default style
+   sheet for html and introduced conditional copying.  (Per Cederberg)").
+
+:- comment(version(1*8+38,1999/06/09,19:34*10+'MEST'), "Now using style
+   sheets for html output.  (Per Cederberg)").
+
+:- comment(version(1*8+36,1999/05/27,17:05*04+'MEST'), "Directory
+   containing html manual is now called @em{BASENAME}@tt{_html}
+   instead of just @em{BASENAME}, which was confusing.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*8+28,1999/04/21,10:40*55+'CEST'), "Eliminated
+   unnecessary loading of iso_byte_char and dcg_expansion.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*8+23,1999/04/08,14:53*34+'MEST'), "A @tt{-u}
+   @em{File} option is now supported so that a file including path
+   alias definitions can be included (this has the same functionality
+   as the @tt{-u} option in @apl{ciaoc}).  (Manuel Hermenegildo)").
+
+:- comment(version(1*8+22,1999/04/08,01:23*48+'MEST'), "A background
+   can now be specified for the @tt{html} manuals (needs a modified
+   version of @apl{texi2html} included with the @apl{lpdoc}
+   library).  (Manuel Hermenegildo)").
+
+:- comment(version(1*8+21,1999/04/07,23:19*33+'MEST'),
+   "@apl{TeX}-related intermediate files are now cleaned up after each
+   run in order to avoid clutter.  (Manuel Hermenegildo)").
+
+:- comment(version(1*8+20,1999/04/07,21:11*14+'MEST'), "Adobe @tt{pdf}
+   format now supported as a valid target. Unfortunately, embedded
+   @tt{.eps} figures are not supported at this time in pdf
+   output. (Manuel Hermenegildo)").
+
+:- comment(version(1*8+19,1999/04/07,21:06*55+'MEST'), "A single
+   @tt{.texi} file is now constructed (by grouping the @tt{.texic}
+   files generated for all components) in which the references and
+   menus are resolved. This has the advantage that the process of
+   resolving references and menus has now been sped up very
+   significantly.  Also, @tt{texi} is now a valid target (perhaps
+   useful for distributions).  (Manuel Hermenegildo)").
+
+:- comment(version(1*8+17,1999/04/05,23:24*04+'MEST'), "Now requesting
+   building a .ps only does not leave a .dvi behind (useful for
+   distributions).  (Manuel Hermenegildo)").
+
+:- comment(version(1*8+3,1999/03/26,20:00*47+'MET'), "Changed
+   @tt{Makefile.skel} so that now typing just @tt{gmake} does
+   nothing. In order to do something at least one target should be
+   specified. This was necessary so that recursive invocations with
+   empty arguments did nothing.  (Manuel Hermenegildo)").
+
+:- comment(version(1*8+1,1999/03/25,10:12*49+'MET'), "New @tt{gmake
+   distclean}, intended for software distributions. Leaves the
+   generated documents and eliminates @em{all} intermediate files
+   (including @tt{.texi} files). (Manuel Hermenegildo)").
+
+:- comment(version(1*8+0,1999/03/24,21:15*33+'MET'), "
+
+   This version completes the port to using the ciao 0.8 modular
+   assertion processing library. In addition, it includes the
+   following improvements:
+
+   @begin{itemize}
+
+   @item Now, if the name of a file being documented ends in
+   @tt{_doc}, the @tt{_doc} part is left out when referring to the
+   file in the documentation (useful if one would like to place the
+   documentation declarations in different file).
+
+   @item It is now possible to declare (via a @decl{comment/2}
+   declaration) the intended use of a file which is not a module
+   (i.e. a package, user, or include file), which results in correct
+   documentation of operator definitions, new declarations, etc. The
+   declaration is only needed for 'user' files (i.e., files to be
+   loaded with @pred{ensure_loaded/1}).
+
+   @item Separated generation of the manuals from their
+   installation. I.e., @tt{gmake install} now does not force a
+   @tt{gmake all}, which has to be done by hand. This was necessary to
+   ensure correct installation of distributed manuals, even if
+   modification dates are changed during installation. Previously, in
+   some cases generation was triggered unnecessarily.
+
+   @item New @tt{-v} option allows using quieter by default operation when
+   not debugging.
+
+   @item New option @tt{-propmods} makes the name of the module in
+   which a property is defined appear in front of the property in the
+   places where the property is used.
+
+   @item New option @tt{-noisoline} makes the textual explanation of
+   the @prop{iso/1} property not appear in the description of the
+   usage (but the @iso symbol does appear)
+
+   @item Two new options, '-nosysmods' and '-noengmods', selectively
+   avoid listing the system or engine libraries used.
+
+   @item If there is no declaration for a predicate, now a line is
+   output with the name and arity and a simple comment saying that
+   there is no further documentation available (this has the great
+   advantage that then it goes in the index, and, for example in ciao,
+   they get added to completion commands!).
+
+   @item Now, if a property or regtype declaration has no textual
+   comment, the actual definition is given (first level only) in the
+   place where it is documented, and a simple generic message where it
+   is used.
+
+   @item Added @@noindent and @@iso commands.
+
+   @item Nicer spacing now when printing predicate names which are
+   operators, as well as modes, etc.
+
+   @item Reporting of versions in libraries has been improved: now
+   both the global version and the last version in which the library
+   itself was changed are reported.
+
+   @item Exported new declarations also documented now for
+   include-type files.
+
+   @item A module is now documented even if exports nothing at all.
+
+   @item Engine modules used now documented even if no other modules used
+   (was a reported bug).
+
+   @item Fixed indexing of names containing @@ etc. for newer versions
+   of texinfo.
+
+   @item Tabs in verbatim modes now converted to a number of spaces
+   (8). Not perfect, but produces better output than leaving the tabs
+   in.
+
+   @item Tex is now run in 'nonstopmode' which means it will typically
+   not stop if there are minor errors (but some errors may go
+   unnoticed...).
+
+   @item The full path of the version maintenance directory is now
+   computed (correctly) using the directory of the @tt{.pl} file being
+   documented as base.
+
+   @item Notices for missing subtitle, copyright, and summary now only
+   given from main file and not for components.
+
+   @item Added special handling of regtype and generalized it to handle some
+   props specially if there is a certain comp property present.
+
+   @end{itemize}
+
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*7+34,1999/03/22,16:53*03+'CET'), "In
+   @file{Makefile.skel}, separated generation of the manuals from
+   their installation. I.e., @tt{gmake install} now does not force a
+   @tt{gmake all}, which has to be done by hand. This was necessary to
+   ensure correct installation of distributed manuals, even if
+   modification dates are changed during installation. Previously, in
+   some cases generation was triggered unnecessarily.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*7+14,1999/03/01,11:03*24+'MET'), "Minor fix to
+   dependencies in Makefile.  (Manuel Hermenegildo)").
+
+:- comment(version(1*7+0,1998/12/02,17:43*50+'MET'), "Major port to
+   use the ciao 0.8 modular assertion processing library.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*6+9,1998/09/16,12:14*01+'MEST'), "Added
+   @tt{DOTcshrc} files to library.  (Manuel Hermenegildo)").
+
+:- comment(version(1*6+8,1998/09/16,12:13*31+'MEST'), "Updated
+   documentation. Separated intro stuff into chapters: more logical,
+   faster compilation.  (Manuel Hermenegildo)").
+
+:- comment(version(1*6+7,1998/09/15,19:17*53+'MEST'), "Nicely
+   formatted @tt{README} and @tt{INSTALL} files now generated
+   automatically on installation.  (Manuel Hermenegildo)").
+
+:- comment(version(1*6+4,1998/09/11,10:28*34+'MEST'), "Trouble
+   shooting section added to documentation.  (Manuel Hermenegildo)").
+
+:- comment(version(1*6+0,1998/09/08,12:49*26+'MEST'), "
+
+   Added support for @concept{inserting images} (.eps files) in text
+   via @@image command, @concept{email addresses} via @@email command,
+   and @concept{url references} via @@uref command.
+
+   Unix 'man' output much improved. Also, it now includes a
+   @concept{usage section}. The correspoding text must be given in a
+   string contained in the first argument of a fact of the
+   @pred{usage_message/1} predicate which appears in the
+   program. Also, formatting of 'man' pages has been greatly improved.
+
+   A new 'ascii' format is now supported: a simple minded ascii manual
+   (basically, an info file without pointers).
+
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*5+6,1998/08/31,13:52*36+'MET DST'), "@tt{Makefile} can
+   now use printf instead of echo for portability (unfortunately,
+   different versions of echo behave very differently).  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*5+0,1998/08/23,20:30*32+'EST'), "
+
+   Now supporting a @@cite command (YES!). It automatically accesses
+   the bib entries in @tt{.bib} files (using @apl{bibtex}) and
+   produces a 'References' appendix. @@cite can be used in the text
+   strings exactly as \cite in LaTeX. The set of bib files to be used
+   is given in the @tt{SETTINGS} file.
+
+   Defining the type of version maintenance that should be performed
+   by the @apl{emacs} ciao.el mode (i.e., whether version numbers are
+   in a given directory or in the file itself) is controlled now via a
+   standard @decl{commment/2} declaration. You should now write a
+   declaration such as:
+
+     :- comment(version_maintenance,dir('../version')).
+
+    to state that control info is kept in directory
+    @tt{../version}. This has the advantage that it is shorter than
+    the previous solution and that lpdoc can read this info
+    easily. Using this guarantees that the version numbers of the
+    manuals always concide with those of the software.
+
+    Generation of indices of manuals (.htmlbullet files): if several
+    manuals are installed in the same directory, an index to them is
+    now generated at the beginning of the html cover page describing
+    the directory.
+
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*4+5,1998/08/14,09:22*06+'MET DST'), "More
+   improvements to @tt{Makefile}. (Manuel Hermenegildo)").
+
+:- comment(version(1*4+3,1998/08/07,14:27*20+'MET DST'), "Several
+   changes in @tt{Makefile} (Manuel Hermenegildo)").
+
+:- comment(version(1*4+0,1998/08/04,19:10*35+'MET DST'), "
+
+   The set of paths defined in @tt{SETTINGS} for finding the source files
+   are now also used to find 'included' files. As a result, full path
+   is not needed any more in, e.g, @@include command.  
+
+   New @@ref command which can be used to refer to chapeter, sections,
+   subsections, etc..
+
+   Support for recent minor changes in assertion format, including '#'
+   as comment separator.
+
+   Used modules are now separated in documentation (in the interface
+   description) by type (user, system, engine...).  
+
+   Supports new 'hide' option in comments, to prevent an exported
+   predicate from being documented. This is useful for example for
+   avoiding mentioning in the documentation multifile predicates which
+   are not intended to be modified by the user.
+
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*3+2,1998/07/10,20:42*12+'MET DST'), "Added
+   overall handling of -s option -- separating system and user
+   libraries.  (Manuel Hermenegildo)").
+
+:- comment(version(1*3+0,1998/07/10,16:35*02+'MET DST'), "
+
+   Exports are now listed in the chapter header separated by kind
+   (pred, types, properties, ...).
+
+   The list of other modules used by a module is now separated in the
+   chapter header into User and System modules (controlled by two sets
+   of paths in @tt{SETTINGS}).
+
+   New @em{hide} option of comment/2 decl prevents an exported
+   predicate from being included in the documentation: @tt{:-
+   comment(hide,p/3)}.
+
+  (Manuel Hermenegildo)").
+
+:- comment(version(1*2+1,1998/06/10,10:15*28+'MET DST'), "More
+   improvements to documentation.  (Manuel Hermenegildo)").
+
+:- comment(version(1*2+0,1998/06/04,09:12*19+'MET DST'), "Major
+   overall improvements...  (Manuel Hermenegildo)").
+
+:- comment(version(1*1+26,1998/05/23,04:57*00+'EST'), "Links now
+   preserved when making distribution tar files.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*1+24,1998/05/06,09:08*13+'MET DST'), "Improved
+   makefiles (no explicit calls to gmake).  (Manuel Hermenegildo)").
+
+:- comment(version(1*1+8,1998/4/9), "Enhanced documentation.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*1+3,1998/4/7), "Fixed document makefile so that
+   no formatting is repeated (by creating .ltxi files).  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*1+2,1998/4/6), "Replaced atom_chars/2 with
+   atom_codes/2 (to make code more compatible with older Prologs).
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*1+1,1998/4/3), "Added treatment of @tt{comment}
+   command.  (Manuel Hermenegildo)").
+
+:- comment(version(1*1+0,1998/3/31), "Incorporated autodoc and
+   autodoformats library to source in order to make distribution
+   standalone. Improvements to installation and
+   documentation. @tt{Makefile}s now also install documentation in public
+   areas and produce global indices. Several documents can cohexist in
+   the same installation directory. (Manuel Hermenegildo)").
+
+:- comment(version(1*0+6,1998/3/30), "Improved installation.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*0+5,1998/3/19), "Minor changes to
+   Doc@tt{Makefile} to fix some bugs.  (Manuel Hermenegildo)").
+
+:- comment(version(1*0+4,1998/3/11), "Enhaced documentation.  (Manuel
+   Hermenegildo)").
+
+:- comment(version(1*0+3,1998/2/26), "Fixed minor bug in @tt{Makefile}s.
+   (Manuel Hermenegildo)").
+
+:- comment(version(1*0+2,1998/2/25), "Added version reporting at
+   startup.  (Manuel Hermenegildo)").
+
+:- comment(version(1*0+1,1998/2/25), "Made major fixes to makefiles to
+   improve installation and deinstallation.  (Manuel Hermenegildo)").
+
+:- comment(version(1*0+0,1998/2/24), "First CIAO-native distribution,
+   with installation. (Manuel Hermenegildo)").
+
+:- comment(version(0*9+1,1998/2/24), "File version is now global
+   lpdoc version.  (Manuel Hermenegildo)").
+
+:- comment(version(0*9+0,1998/2/24), "Intermediate version, preparing
+   for first major release. Modified @tt{Makefile} and @tt{SETTINGS} to handle
+   installation of manuals. (Manuel Hermenegildo)").
+
+:- comment(version(0*6+1,1998/2/20), "Modified @tt{Makefile} and @tt{SETTINGS}
+   to handle installation of manuals. (Manuel Hermenegildo)").
+
+:- comment(version(0*6+0,1998/2/10), "Added new indices and options,
+   as well as more orthogonal handling of files. (Manuel
+   Hermenegildo)").
+
+:- comment(version(0*4+0,1998/2/24), "Added support for nroff -m
+   formatting (e.g., for man pages). Added support for optional
+   selection of indices to be generated. Added support for reexported
+   predicates. Added (low level) ascii format. Added option handling
+   (-nobugs -noauthors -noversion -nochangelog -nopatches -modes and
+   -headprops ...).  -literalprops. Fixed presentation when there are
+   multiple kinds of assertions. Better error checking for
+   includefact/includedef. (Manuel Hermenegildo) ").
+
+:- comment(version(0*3+0,1998/2/10), "Changed file reader to use CIAO
+   native builtins. As a result, syntax files and full CIAO syntax now
+   supported. Major reorganization of the code to make formatting more
+   orthogonal. Now applications and libraries can be components or
+   main files, standalone or with components
+   interchangeably. @@includefact, new predicate types, used libraries
+   now precisely detected, @tt{docinclude} option. (Manuel
+   Hermenegildo)").
+
+:- comment(version(0*2+1,1998/1/26), "Changed file reader to use CIAO
+   native builtins. As a result, syntax files and full CIAO syntax now
+   supported. (Manuel Hermenegildo)").
+
+:- comment(version(0*2+0,1997/12/16), "Ported to native ciao.  Version
+   handling, selection of indices, @@include. Added generation of an
+   html brief description for a global index. Added unix manual page
+   generation. Added support for specifying library paths. -l option
+   for htmlindex and man. Installation improved: now all files for one
+   application in the same directory. (Manuel Hermenegildo)").
+
+:- comment(version(0*1+9,1997/11/10), "Added handling of -l option for
+   htmlindex and man. (Manuel Hermenegildo)").
+
+:- comment(version(0*1+8,1997/9/19), "Changed argument parsing to use
+   DCGs -- much nicer! (Manuel Hermenegildo)").
+
+:- comment(version(0*1+7,1997/9/19), "Added support for specifying 
+   library paths. (Manuel Hermenegildo)").
+
+:- comment(version(0*1+6,1997/9/16), "Using new version of autodoc
+   library. (Manuel Hermenegildo)").
+
+:- comment(version(0*1+5,1997/9/15), "Modified towards making it run
+   under both SICStus and CIAO native. (Manuel Hermenegildo)").
+
+:- comment(version(0*1+4,1997/8/20), "Version number automatically
+   included in files if available.").
+
+:- comment(version(0*1+3,1997/8/12), "Added index option handling.").
+
+:- comment(version(0*1+2,1997/8/11), "Installation improved: now all
+   files for one application in the same directory.").
+
+:- comment(version(0*1+1,1997/8/07), "Changed installation method to
+   include automatic handling of version numbers.").
+
+:- comment(version(0*1+0,1997/07/30), "First official version (major
+   rewrite from several previous prototypes, autodocumented!). (Manuel
+   Hermenegildo)").
+
+:- comment(version(0*0+0,1996/10/10),"First prototype.").
+
+%% ---------------------------------------------------------------------------
+
+
