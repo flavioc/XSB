@@ -86,6 +86,15 @@ component_table_ext(maxAttr_ext(A,B,C,D),B,[A,C,D]).
 component_table_ext(necessCond_ext(A,_),A,[]).
 component_table_ext(coversAttr_ext(A,B,C),B,[A,C]).
 
+%component_table_ext(isa(A,B),A,[B]).
+%component_table_ext(allAttr(A,B,C),B,[A,C]).
+%component_table_ext(hasAttr(A,B,C),B,[A,C]).
+%component_table_ext(classHasAttr(A,B,C),B,[A,C]).
+%component_table_ext(minAttr(A,B,C,D),B,[A,C,D]).
+%component_table_ext(maxAttr(A,B,C,D),B,[A,C,D]).
+%component_table_ext(necessCond(A,_),A,[]).
+%component_table_ext(coversAttr(A,B,C),B,[A,C]).
+
 component_table_int(isa_int(_,_),1,[arg(2,warn)]).
 component_table_int(hasAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
 component_table_int(allAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).

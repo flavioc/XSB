@@ -1,3 +1,5 @@
+:- compiler_options([xpp_on]).
+
 :- comment(module,
 
 "The CDF checking system allows a user to dynamically specify
@@ -141,21 +143,36 @@ So with this, by default we check each check once in ""normal""
 evaluation -- loading or adding extensional terms and then saving them
 to and loading them from a component.
 
+
 ").
 
 %-----------------------------------------------------------------
 
-:- document_export apply_checks/2, 
-	  addCheckToContext/2, removeCheckFromContext/2,
-	  addUserContext/2,removeUserContext/1,
-	  cdf_check_ground/1, 
-	  check_types/2,
-	  check_identity/2,
-	  check_implication/2,
-	  classify_if_necessary/2,
-	  check_redundancies/2,
-	  check_object_constraints/2,
-	  currentContext/3,isContextType/1.
+:- document_export 
+              cdf_check_ground/1,                % documented
+	  cdf_check_ground_fail/1,          % not documented
+	  cdf_check_sorts/1,                   % documented
+	  cdf_check_sorts/2,                   % documented
+	  check_types/1,                        % not documented.
+	  check_types/2,                        % not documented.
+	  cdf_check_identity/1,                 % documented.
+	  check_identity/2,                       % not documented.
+	  check_identity/1,                       % not documented.
+	  cdf_check_implication/1,            % documented.
+	  check_implication/2,                  % documented.
+	  cdf_check_redundancies/3,        % documented.
+	  check_redundancies/2,              % not documented.
+	  addCheckToContext/2,               % documented.
+	  removeCheckFromContext/2,      % documented.
+	  addUserContext/2,                     % documented.
+	  removeUserContext/1,                % documented.
+	  currentContext/3,                       % documented.
+	  isContextType/1,                        % documented.
+	  apply_checks/2,                         % not documented.
+	  classify_if_necessary/2,              % not documented.
+	  check_object_constraints/2.         % not documented.
+
+
 %              check_isa_types/4, check_ind_types/3.
 %	  check_ground_checkflag/2, 	  check_redundancies_checkflag/2,  
 %	  classify_if_necessary_checkflag/2, check_implication_checkflag/2, 
@@ -174,8 +191,8 @@ to and loading them from a component.
 
 :- import cdf_flags/2 from usermod.
 
-%:- import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
-%	   maxAttr_ext/4, minAttr_ext/4 from usermod.
+:- document_import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
+	   maxAttr_ext/4, minAttr_ext/4 from usermod.
 
 :- import allAttr/3, classHasAttr/3, hasAttr/3,
 	   maxAttr/4, minAttr/4 from cdf_init_cdf.
@@ -183,8 +200,11 @@ to and loading them from a component.
 :- import member/2, memberchk/2,length/2,ground/1,append/3  from basics.
 :- import instantiation_error/3, domain_error/4, misc_error/1,
 	 check_nonvar/3 from error_handler.
-
+:- import numbervars/1 from num_vars.
 :- import call0/1 from machine.
+:- import messageln/2 from standard.
+
+#include "standard.h"
 
 apply_checks(Context,Term):- 
 	CDFFlag = flag(1),
@@ -205,6 +225,11 @@ call_check(Check,CDFFlag):-
            ).
 
 %-----------------
+cdf_check_ground_fail(Term):- 
+	catch(cdf_check_ground(Term),Error,failwrite(Error)).
+
+failwrite(Error):- numbervars(Error),messageln(Error,STDERR),fail.
+
 cdf_check_ground(Term):- 
 	cdf_check_ground(Term,Term).
 
@@ -234,17 +259,23 @@ cdf_check_ground_1(Nid,Arg,OrigTerm):-
 
 %-----------------
 
+cdf_check_sorts(Ctxt,Term):- 
+	check_types(Ctxt,Term).
+
+cdf_check_sorts(Term):- 
+	check_types(usercall,Term).
+
+check_types(Term):- 
+	check_types(usercall,Term).
+
 check_types(Context,Term):- 
-        ((get_component_extensional(Term,Comp),
-	  Comp \== cdfpt)-> 
-  	    (type_table(Term,Typecall) -> 
+ 	    (type_table(Term,Typecall) -> 
 	        arg(1,Typecall,Context),
 	        call0(Typecall)
 	        ; cdf_warning(Context,[Term,
-				' is not an extensional fact and cannot ',
+				' does not have proper sorts and cannot ',
 				'be added.']),
-	           fail)
- 	   ;  true).
+	           fail).
 
 %------
 :- comment(hide,check_isa_types/2).
@@ -404,7 +435,13 @@ type_table(necessCond_int(A,B),check_ind_types(_,necessCond_int(A,B),
 
 %----------------------------------------------------------------------
 
+cdf_check_identity(Term):- 
+	check_identity(Term).
+
 check_identity(_,Term):- 
+	check_identity(Term).
+
+check_identity(Term):- 
 	(call0(Term) -> 
 	    fail 
 	  ; (ext_to_int_call(Term, TermInt), call0(TermInt) -> fail ; true)).
@@ -416,7 +453,10 @@ ext_to_int_call(classHasAttr_ext(A,B,C), classHasAttr_int(A,B,C)).
 	
 %----------------------------------------------------------------------
 
-check_implication(_Context,Term):- 
+cdf_check_implication(Term):- 
+	check_implication(_,Term).
+
+check_implication(_,Term):- 
 	remove_ext(Term,Term1),
 	(call0(Term1) -> fail ; true).
 	
@@ -433,7 +473,7 @@ classify_if_necessary(_Context,Name):-
 	get_component_fact(Name,Term),
 	classify_if_necessary_term(Term,Upd1,[]),
 	member(Term1,Upd1),
-	newExtTerm(Term1),
+	(call0(Term1) -> true ; newExtTerm(Term1)),
 	fail.
 classify_if_necessary(_,_Term).
 
@@ -498,19 +538,26 @@ delete them.
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import message/1 from standard.
 
+cdf_check_redundancies(Context,Component,Mode):- 
+	check_redundancies(Context,f(Component,Mode)).
+
 check_redundancies(Context,f(Component,Mode)):- 
 	cputime(Start),
 	conset(redund,0),
-	allAttr_redundancy_check(Context,Component,Mode),
-	classHasAttr_redundancy_check(Context,Component,Mode),
-	hasAttr_redundancy_check(Context,Component,Mode),
-	maxAttr_redundancy_check(Context,Component,Mode),
-	minAttr_redundancy_check(Context,Component,Mode),
+	check_redundancies_notime(Context,f(Component,Mode)),
 	cputime(End),
 	Tot is End - Start,
 	conget(redund,N),
 	message(['Redundancy Cputime ',Tot,' for ',N,' Fact checks.']).
  
+% The main reason I folded this is for testing.
+check_redundancies_notime(Context,f(Component,Mode)):- 
+	allAttr_redundancy_check(Context,Component,Mode),
+	classHasAttr_redundancy_check(Context,Component,Mode),
+	hasAttr_redundancy_check(Context,Component,Mode),
+	maxAttr_redundancy_check(Context,Component,Mode),
+	minAttr_redundancy_check(Context,Component,Mode).
+
 allAttr_redundancy_check(Context,Component,Mode) :-
 	 allAttr_ext(S,R,T),
              coninc(redund),
@@ -752,13 +799,18 @@ addCheckToContext_2(Ctxt,Term):-
 	  ;  arg(2,Term,Arg),
  	     assert(cdf_flags(Ctxt,check(Ctxt,Arg,[Term])))).
 
+% some obscure problem w.retractall.
 removeCheckFromContext(F/A,Context):- 
+	findall(cdf_flags(A,B),cdf_flags(A,B),Flaglist),
 	currentContext(Context,_,_),
+	checkType(F/A,_),
 	functor(Check,F,A),
-	cdf_flags(Context,List),
+	member(cdf_flags(Context,List),Flaglist),
 	retractall(cdf_flags(Context,_)),
 	remove_from_list(List,Check,NewList),
-	assert(cdf_flags(Context,NewList)).
+	assert(cdf_flags(Context,NewList)),
+	fail.
+removeCheckFromContext(_,_).
     
 remove_from_list([],_,[]).
 remove_from_list([H|T],H,T):- 
