@@ -43,6 +43,7 @@
 #define FLORA_FILE		file
 #define FLORA_COMMANDLINE	commandline
 
+
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
 #include "flora_terms.flh"
@@ -164,7 +165,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	  ( flora_file_newerthan(UserTrailerWSOFile,UserTrailerPFile) ->
 	      true
 	  ;
-	    flora_set_xpp_options(Workspace),
+	    flora_set_xpp_options_for_compile(Workspace),
 	    %%compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
 	    compile(UserTrailerPFile,[optimize,ti_all]),
 	    flora_rename_file(UserTrailerOFile,UserTrailerWSOFile),
@@ -200,7 +201,7 @@ flsetuptrailer(TrailerName) :-
 	( HeaderStatus == FLORA_FAILURE ->
 	    fail
 	;
-	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
+	  flora_set_xpp_options_for_compile(FLORA_DEFAULT_WORKSPACE),
 	  %%compile(TrailerFullName,[optimize,spec_repr,ti_all]),
 	  compile(TrailerFullName,[optimize,ti_all]),
 	  flora_clear_xpp_options
@@ -238,7 +239,7 @@ flloadpatch(Workspace) :-
 	( flora_file_newerthan(UserPatchWSOFile,UserPatchPFile) ->
 	    true
 	;
-	  flora_set_xpp_options(Workspace),
+	  flora_set_xpp_options_for_compile(Workspace),
 	  %%compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
 	  compile(UserPatchPFile,[optimize,ti_all]),
 	  flora_rename_file(UserPatchOFile,UserPatchWSOFile),
@@ -265,7 +266,7 @@ flsetuppatch :-
 	( HeaderStatus == FLORA_FAILURE ->
 	    fail
 	;
-	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
+	  flora_set_xpp_options_for_compile(FLORA_DEFAULT_WORKSPACE),
 	  %%compile(PatchFullName,[optimize,spec_repr,ti_all]),
 	  compile(PatchFullName,[optimize,ti_all]),
 	  flora_clear_xpp_options
@@ -336,7 +337,7 @@ flora_rename_file(F1,F2) :-
 flora_flcompile(FlrFile,ModuleName) :-
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
-	flora_set_xpp_options(ModuleName),
+	flora_set_xpp_options_for_compile(ModuleName),
 	flora_compile_file(FlrFile,MPFile,FDBFile,Status),
 	( Status == FLORA_FAILURE ->
 	    flora_clear_xpp_options,
@@ -423,7 +424,7 @@ flora_load_system_module_internal(SysModID) :-
 			       args(SysModID)),
 	    %% Issue only important preprocessor warnings
 	    %% to avoid warnings when atoms or strings have \n in them
-	    flora_set_xpp_options(ModuleName, '-warninglevel 0 '),
+	    flora_set_xpp_options_for_compile(ModuleName, '-warninglevel 0 '),
 	    consult(WSOFile),
 	    flora_clear_xpp_options
 	;
@@ -472,7 +473,7 @@ flora_flload(FlrFile,Workspace) :-
 	flora_FDB_filename(FlrFile,FDBFile),
 	flora_WSO_filename(FlrFile,Workspace,WSOFile),
 	!,
-	flora_set_xpp_options(Workspace),
+	flora_set_xpp_options_for_compile(Workspace),
         ( flora_file_newerthan(MPFile,FlrFile) ->
 	    flora_stdmsg_nl,
 	    true
@@ -678,13 +679,26 @@ is_alphanumericL([Ch|Rest]) :-
   gpp control utilities
 *************************************************************************/
 %% standard gpp options used by Flora.
-flora_xpp_standard_options('-P -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'. 'FLORA_GPP_MARKUP'(%,''%'',''%'')."').
+flora_xpp_standard_options_for_compile('-P -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'.@@'FLORA_GPP_MARKUP'(?,''?'',''?'')."').
+flora_xpp_standard_options_for_read('-P -m -nostdinc -curdirinclast').
 
 
-flora_set_xpp_options :-
+flora_set_xpp_options_for_compile :- flora_set_xpp_options(compile).
+flora_set_xpp_options_for_compile(Module) :- flora_set_xpp_options(compile,Module).
+flora_set_xpp_options_for_compile(Module,ExtraOpts) :-
+	flora_set_xpp_options(compile,Module,ExtraOpts).
+flora_set_xpp_options_for_read :- flora_set_xpp_options(read).
+flora_set_xpp_options_for_read(Module) :- flora_set_xpp_options(read,Module).
+flora_set_xpp_options_for_read(Module,ExtraOpts) :-
+	flora_set_xpp_options(read,Module,ExtraOpts).
+
+
+flora_set_xpp_options(Purpose) :-
 	retractall(xpp_options(_)),
-	flora_xpp_standard_options(Opt),
-	assert(xpp_options(Opt)).
+	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
+	; flora_xpp_standard_options_for_compile(StandardOpt)
+	),
+	assert(xpp_options(StandardOpt)).
 
 
 %% It is always called before invoking GPP.
@@ -692,7 +706,8 @@ flora_set_xpp_options :-
 %% extra options for compiling system modules.
 %% Note: This predicate should not be called before a previous call of
 %% flora_set_xpp_options finishes.
-flora_set_xpp_options(ModuleName) :-
+%% Purpose is either read or compile.
+flora_set_xpp_options(Purpose,ModuleName) :-
 	retractall(xpp_options(_)),
 	flora_module_name(ModuleName,Type,WS),
 	( Type == usermodule ->
@@ -705,7 +720,9 @@ flora_set_xpp_options(ModuleName) :-
 	    flora_module_name_error(WS),
 	    abort
 	),
-	flora_xpp_standard_options(StandardOpt),
+	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
+	; flora_xpp_standard_options_for_compile(StandardOpt)
+	),
 	fmt_write_string(Opt,
 			 '%s -D FLORA_VAR_WORKSPACE=%s %s',
 		         args(StandardOpt,WS,ExtraOpt)),
@@ -713,12 +730,10 @@ flora_set_xpp_options(ModuleName) :-
 	!.
 
 
-flora_set_xpp_options(ModuleName,ExtraOpt) :-
-	flora_set_xpp_options(ModuleName),
-	xpp_options(XOpt),
-	retractall(xpp_options(_)),
-	fmt_write_string(Opt,'%s %s',args(XOpt,ExtraOpt)),
-	assert(xpp_options(Opt)).
+%% Purpose is either read or compile
+flora_set_xpp_options(Purpose,ModuleName,ExtraOpt) :-
+	flora_set_xpp_options(Purpose,ModuleName),
+	flora_add_xpp_options(ExtraOpt).
 
 %% Adds NewOpt to the existing XPP options
 flora_add_xpp_options(NewOpt) :-
@@ -971,7 +986,7 @@ flora_load_dyn(InDBFile,ModuleName) :-
 			       args(DBFile,ModuleName)),
 	    cputime(T0),
 	    seeing(PreInFile),
-	    flora_set_xpp_options(ModuleName),
+	    flora_set_xpp_options_for_compile(ModuleName),
 	    xpp_process_file(DBFile,XPP_process,IOportFromProc),
 	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	    flora_storage_name(ModuleName,StorageName),
@@ -1616,7 +1631,7 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	fmt_write_string(ExtraOptions,
 			 '-D FLORA_DUMP -D FLORA_FDB_FILENAME=''%s.%s''',
 			 arg(Base,FLORA_FDB_EXT)),
-	flora_set_xpp_options(Workspace,ExtraOptions),
+	flora_set_xpp_options_for_compile(Workspace,ExtraOptions),
 	file_open(DumpFileName,w,DumpPort),
 	xpp_process_file(FileName,XPP_process,IOportFromGPP),
 	copyIOport(IOportFromGPP,DumpPort),
@@ -1685,7 +1700,7 @@ flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	%% Enable the compilation for FLORA template include files.
 	conset(flora_compile_include_file,1),
 	flora_reset_modules_for_file(InputFile),
-	flora_set_xpp_options,
+	flora_set_xpp_options_for_compile,
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
