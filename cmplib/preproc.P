@@ -235,6 +235,7 @@ inline_test('=:=', 2).
 inline_test('=\=', 2).
 
 inline_test('==', 2).
+inline_test('@=', 2).
 inline_test('\==', 2).
 inline_test('@<', 2).
 inline_test('@=<', 2).

@@ -41,6 +41,7 @@ inline_predicate(is, 2).
 
 inline_predicate('=', 2).
 inline_predicate('==', 2).
+inline_predicate('@=', 2).
 inline_predicate('\==', 2).
 inline_predicate('@<', 2).
 inline_predicate('@=<', 2).
