@@ -56,6 +56,8 @@ XSB_Start_Instr(check_complete,_check_complete)
 
   subgoal = (VariantSF) tcp_subgoal_ptr(breg);	/* subgoal that is checked */
 
+/*   print_subgoal(stderr, subgoal);  */
+
   cs_ptr = subg_compl_stack_ptr(subgoal);
 
   if ((prev_compl_frame(cs_ptr) >= COMPLSTACKBOTTOM || is_leader(cs_ptr))) {
@@ -120,8 +122,8 @@ XSB_Start_Instr(check_complete,_check_complete)
 
     /* do all possible stack reclamation */
     if (openreg == prev_compl_frame(cs_ptr)) {
-      reclaim_stacks(orig_breg);
-      if (breg == orig_breg) {
+      if (breg == orig_breg) {	
+	reclaim_stacks(orig_breg); /* lfcastro */
 	breg = tcp_prevbreg(breg);
 #ifdef CHAT
 	restore_trail_condition_registers(breg);
