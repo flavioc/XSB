@@ -23,7 +23,9 @@
 */
 
 
-:- dynamic storage_handles/1.
+:- dynamic storage_handles/3.
+:- index storage_handles/3-1.
+
 
 %% Inserts facts. On backtracking, the fact is deleted.
 storage_insert_fact_bt(StorageName,Fact,Inserted) :-	
@@ -31,8 +33,13 @@ storage_insert_fact_bt(StorageName,Fact,Inserted) :-
 	trie_intern(Fact, H, Leaf, New, _),
 	(New == 0
 	->  Inserted=1,  % new fact inserted
+	    storage_handles(StorageName,H,Snapshot),
 	    (  true
-	    ;  trie_unintern_nr(H, Leaf), fail 
+	    ; %% On backtracking
+		storage_handles(StorageName,H,NewSnapshot),
+		(NewSnapshot =< Snapshot
+		-> trie_unintern_nr(H, Leaf), fail 
+		)
 	    )
 	; Inserted=0	 % fact was already there: no action
 	).
@@ -56,8 +63,13 @@ storage_delete_fact_bt(StorageName,Fact,Deleted) :-
 	triehandle_for_storage(StorageName,H),
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
+	    storage_handles(StorageName,H,Snapshot),
 	    ( trie_unintern_nr(H, Leaf)
-	    ; unmark_uninterned_nr(H, Leaf), fail
+	    ; %% On backtracking
+		storage_handles(StorageName,H,NewSnapshot),
+		(NewSnapshot =< Snapshot
+		-> unmark_uninterned_nr(H, Leaf), fail
+		)
 	    )
 	;   Deleted=0    % non-existing fact: no action
 	).
@@ -74,7 +86,9 @@ storage_delete_fact(StorageName,Fact,Deleted) :-
 %% deletes the whole trie
 storage_delete_all(StorageName) :- 
 	triehandle_for_storage(StorageName,H),
-	conset(StorageName,0), %% record that trie has been deleted
+	conset(StorageName,0),  % record that trie has been deleted
+	%% Important: cleanup storage handles
+	retract(storage_handles(StorageName,H,_)),
 	delete_trie(H).
 
 
@@ -99,8 +113,13 @@ storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
 	    %% Key doesn't exist
 	    trie_intern(pair(Key,Value), H, Leaf_Pair, _New, _ ),
 	    Inserted = 1,	% new fact: insert it
+	    storage_handles(StorageName,H,Snapshot),
 	    ( true
-	    ;   trie_unintern_nr(H, Leaf_Pair), fail
+	    ; %% On backtracking
+		storage_handles(StorageName,H,NewSnapshot),
+		(NewSnapshot =< Snapshot
+		->  trie_unintern_nr(H, Leaf_Pair), fail
+		)
 	    )
 	).
 
@@ -111,8 +130,13 @@ storage_delete_keypair_bt(StorageName,Key, Deleted):-
 	triehandle_for_storage(StorageName,H),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
+	    storage_handles(StorageName,H,Snapshot),
 	    ( trie_unintern_nr(H, Leaf) 
-	    ; unmark_uninterned_nr(H, Leaf), fail 
+	    ; %% On backtracking
+		storage_handles(StorageName,H,NewSnapshot),
+		(NewSnapshot =< Snapshot
+		-> unmark_uninterned_nr(H, Leaf), fail 
+		)
 	    )
 	;   Deleted = 0   % no such fact -- no action
 	).
@@ -147,6 +171,18 @@ storage_find_keypair(StorageName,Key,Value) :-
 	triehandle_for_storage(StorageName,H),
 	trie_interned(pair(Key,Value),H,_,_).
 
+
+%% Commit changes to the storage trie associated with StorageName
+storage_commit(StorageName) :-
+	( storage_handles(StorageName,Handle,Snapshot),
+	    Snapshot1 is Snapshot + 1,
+	    retract(storage_handles(StorageName,_,_)),
+	    assert(storage_handles(StorageName,Handle,Snapshot1)),
+	    !
+	%% don't backtrack over it
+	; fail
+	).
+
 %% Reclaims space by removing nodes from the backtrackable insert/keypair trie
 %% which were marked for deletion. This should be done only at the top 
 %% level of a query.
@@ -154,20 +190,16 @@ storage_reclaim_space(StorageName) :-
 	triehandle_for_storage(StorageName,H),
 	trie_reclaim_uninterned_nr(H).
 
-storage_reclaim_space :-
-	(storage_handles(H), trie_reclaim_uninterned_nr(H), fail
-	; true).
-
-
 
 %% Create a new trie or use an existing one 
-%% that is already saved as a property of IdAtom
-triehandle_for_storage(IdAtom,Handle) :-
-	conget(IdAtom,H),
+%% that is already saved as a property of StorageName
+triehandle_for_storage(StorageName,Handle) :-
+	conget(StorageName,H),
 	(  H > 0 -> H = Handle
 	;  H==0
-	-> new_trie(Handle), conset(IdAtom,Handle),
+	->
+	    new_trie(Handle), conset(StorageName,Handle),
 	    %% remember the trie handle
-	    assert(storage_handles(Handle))
-	;  abort(('Storage: ', IdAtom, ' trie handle is corrupted'))
+	    assert(storage_handles(StorageName,Handle,0))
+	;  abort(('Storage: ', StorageName, ' trie handle is corrupted'))
 	).
