@@ -29,7 +29,7 @@ ALL = 	slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	sModels${OBJEXT} libwww${OBJEXT} clpr${OBJEXT} xsbdoc${OBJEXT} \
 	xmc${OBJEXT} iprolog${OBJEXT}
 
-SUBDIR = flora2 slx perlmatch gap regmatch wildmatch libwww sModels \
+SUBDIR = iprolog flora2 slx perlmatch gap regmatch wildmatch libwww sModels \
 	clpqr xsbdoc xmc iprolog
 
 Option = [optimize]
