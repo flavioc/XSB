@@ -50,7 +50,7 @@
 /* The following include is necessary to get the macros and routine
    headers */
 
-#include "../../emu/cinterf.h"
+#include "cinterf.h"
 extern char *xsb_executable_full_path(char *);
 extern char *strip_names_from_path(char*, int);
 
