@@ -56,7 +56,11 @@ see(user) :-
 	!, 
 	see0(userin).
 see(F) :- 
+	\+ number(F),!,
 	see0(F).	% Note that this captures ``see(userin)''
+see(F):- 
+	number(F),
+	abort([F,' is not a proper stream identifier, cannot see.']).
 
 see0(F) :- 
 	conpsc(F, PSC),
@@ -105,7 +109,11 @@ tell(user) :-
 	!, 
 	tell0(userout).
 tell(F) :- 
+	\+ number(F),
 	tell0(F).	% Note that this captures ``tell(userout)''
+tell(F) :- 
+	number(F),
+	abort([F,' is not a proper stream identifier, cannot tell.']).
 
 tell0(F) :- 
 	conpsc(F, PSC),
@@ -233,14 +241,20 @@ close(F) :-
 % Character I/O Predicates %
 %--------------------------%
 
-nl(Ostr) :- tell(Ostr),nl,tell(userout).
+nl(Ostr) :-  telling(Oldstr),
+	     tell(Ostr),nl,
+	     tell(Oldstr).
 
 nl :- (windows_os 
       ->  put(CH_RETURN), put(CH_NEWLINE)
       ;	  put(CH_NEWLINE) ).
 
 
-%ISO
+/* TLS: see manual for documentation of what exactly the differences
+are. Note that most error-checking is assumed ot take place in
+atom_codes/2 or in get/1. */
+
+%ISO 
 get_char(Str,Char):- get_code(Str,Code),atom_codes(Char,[Code]).
 
 %ISO
@@ -289,27 +303,24 @@ tab(N) :- tab(N).
 % Term I/O Predicates %
 %---------------------%
 
-read(Istr,T) :- see(Istr),read(T),see(userin).
+read(Istr,T) :- seeing(Oldstr),see(Istr),read(T),see(Oldstr).
 
 read(T) :- stat_flag(CURRENT_INPUT, File), file_read(File, T).
-
-% write(Ostr,Term):- tell(Ostr),	write(Term),tell(userout).
 
 write(Ostr,Term):- telling(Str),tell(Ostr),	
 		   write(Term),tell(Str).
 
 write(T) :- stat_flag(CURRENT_OUTPUT, File), file_write(File, T).
 
-
-writeln(Ostr,Term):- tell(Ostr),writeln(Term),tell(userout).
+writeln(Ostr,Term):- telling(Oldstr),tell(Ostr),writeln(Term),tell(Oldstr).
 
 writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 
 % yes, according to the manual this is what it should do.
 display(T) :- telling(F), tell(userout), write(T), told, tell(F).	
 
-
-write_prolog(Ostr,Term):- tell(Ostr),write_prolog(Term),tell(userout).
+write_prolog(Ostr,Term):- telling(Oldstr),
+			  tell(Ostr),write_prolog(Term),tell(Oldstr).
 
 write_prolog(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_prolog(File, T).
 
@@ -319,10 +330,10 @@ writeq(Ostr,Term):- tell(Ostr),	writeq(Term),tell(userout).
 writeq(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_quoted(File, T).
 
 
-write_canonical(Ostr,Term):- tell(Ostr),
+write_canonical(Ostr,Term):- telling(Oldstr),tell(Ostr),
 	stat_flag(CURRENT_OUTPUT, IOport),
 	file_write_canonical(IOport,Term),
-	tell(userout).
+	tell(Oldstr).
 
 write_canonical(T) :-
 	stat_flag(CURRENT_OUTPUT, File),
