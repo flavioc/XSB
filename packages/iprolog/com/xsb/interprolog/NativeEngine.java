@@ -14,7 +14,7 @@ import java.io.*;
 /** A PrologEngine implemented using the Java Native Interface. This class depends on interprolog_callback.c and other files, 
 that are included in the emu directory of XSB Prolog 2.5 and later */
 public class NativeEngine extends PrologEngine{
-    static { System.out.println("\nWill find load xsb library .....\n\n");}
+    static { System.out.println("\nLoading xsb library .....\n\n");}
     static { System.loadLibrary("xsb"); }
     
     private ByteArrayOutputStream bao = new ByteArrayOutputStream();
@@ -44,14 +44,14 @@ public class NativeEngine extends PrologEngine{
         if (numberOfInstances > 1)
             throw new IPException("Can't have more than one instance of NativeEngine");
         
-	System.out.println(" Will do xsn_init_internal");
         int ret = xsb_init_internal(XSB_DIR);
         if (ret != 0)
             throw new IPException("XSB Initialization error");
         try {     	
             progressMessage("Loading initial files...");
             command("assert(library_directory('"+tempDirectory.getAbsolutePath()+"'))");
-            consultFromPackage("interprolog.O", PrologEngine.class);
+	    //  consultFromPackage("interprolog.O", PrologEngine.class);
+	    consultFromPackage("interprolog.xwam", PrologEngine.class);
             progressMessage("Teaching examples to XSB...");
             ByteArrayOutputStream serializedTemp = new ByteArrayOutputStream();
             ObjectOutputStream bootObjects = new ObjectOutputStream(serializedTemp);
