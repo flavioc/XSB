@@ -65,6 +65,7 @@ SOCKADDR_IN socket_addr;
 FILE *sockptr;
 int rc, domain, portnum;
 char ch;
-SOCKET sockfd, sockfd_in;
+SOCKET sock_handle, sock_handle_in;
+int sockfd;
 char *sock_msg, ci, last[1];
 

@@ -29,6 +29,7 @@
 #ifdef WIN_NT
 #include <windows.h>
 #include <tchar.h>
+#include <io.h>
 #endif
 
 #ifndef WIN_NT
@@ -63,13 +64,13 @@ char *get_host_IP(char *host_name_or_IP) {
 }
 
 
-int readmsg(SOCKET sockfd, char *buff, int maxbuff)
+int readmsg(SOCKET sock_handle, char *buff, int maxbuff)
 {
   int n, rc;
   char c;
 
   for (n=1; n < maxbuff; n++) {
-    rc = recv(sockfd, &c, 1, 0);
+    rc = recv(sock_handle, &c, 1, 0);
     if (rc == 1) {
 	        
       if (c == '`') {
@@ -115,17 +116,17 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     
-    sockfd = socket(domain, SOCK_STREAM, IPPROTO_TCP);
-    if (BAD_SOCKET(sockfd)) {
+    sock_handle = socket(domain, SOCK_STREAM, IPPROTO_TCP);
+    if (BAD_SOCKET(sock_handle)) {
       xsb_warn("SOCKET_REQUEST: Cannot open stream socket");
       return FALSE;
     }
-    ctop_int(3, (SOCKET) sockfd);
+    ctop_int(3, (SOCKET) sock_handle);
     break;
-  case SOCKET_BIND: /* socket_request(1,+domain,+sockfd,+port) */
+  case SOCKET_BIND: /* socket_request(1,+domain,+sock_handle,+port) */
     /* jf: for now only support AF_INET, ignore param */
     /* domain = ptoc_int(2); */
-    sockfd = (SOCKET) ptoc_int(3);
+    sock_handle = (SOCKET) ptoc_int(3);
     portnum = ptoc_int(4);
     
     /* Bind server to the agreed upon port number.
@@ -137,38 +138,39 @@ inline static bool xsb_socket_request(void)
     socket_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 #endif
     
-    retcode = bind(sockfd, (PSOCKADDR) &socket_addr, sizeof(socket_addr));
+    retcode = bind(sock_handle, (PSOCKADDR) &socket_addr, sizeof(socket_addr));
     if (SOCKET_OP_FAILED(retcode)) {
       xsb_warn("SOCKET_BIND: Connection failed");
       return FALSE;
     }
     break;
-  case SOCKET_LISTEN:  /* socket_request(2,+sockfd,+length) */
-    sockfd = (SOCKET) ptoc_int(2);
-    retcode = listen(sockfd, ptoc_int(3));
+  case SOCKET_LISTEN:  /* socket_request(2,+sock_handle,+length) */
+    sock_handle = (SOCKET) ptoc_int(2);
+    retcode = listen(sock_handle, ptoc_int(3));
     if (SOCKET_OP_FAILED(retcode)) {
       xsb_warn("SOCKET_LISTEN: Connection failed");
       return FALSE;
     }
     break;
-  case SOCKET_ACCEPT: { /* socket_request(3,+sockfd,-sockfptr) */
+  case SOCKET_ACCEPT: { /* socket_request(3,+sock_handle,-sockfptr) */
     /* returns Prolog stream number: an index into xsb openfile table */
-    sockfd_in = (SOCKET) ptoc_int(2);
+    sock_handle_in = (SOCKET) ptoc_int(2);
     
-    sockfd = accept(sockfd_in, NULL, NULL);
-    if (BAD_SOCKET(sockfd)) {
+    sock_handle = accept(sock_handle_in, NULL, NULL);
+    if (BAD_SOCKET(sock_handle)) {
       xsb_warn("SOCKET_ACCEPT: Connection failed");
       return FALSE;
     }
     
-    /*** NOTE: In Unix, this returns stream for the socket file 
-	 In NT, this returns a file descriptor.
-	 This is ugly and should be changed!
-    */
 #ifdef WIN_NT
-    sockptr = NULL;
-    i = -1;
+    sockfd = _open_osfhandle(sock_handle, 0);
+    if (sockfd == -1) {
+      xsb_warn("SOCKET_ACCEPT: open_osfhandle failed");
+      return FALSE;
+    }
 #else
+    sockfd = sock_handle;
+#endif
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       sockptr = NULL;
       xsb_warn("SOCKET_ACCEPT: fdopen failed");
@@ -176,17 +178,16 @@ inline static bool xsb_socket_request(void)
     }
     /* find empty slot in XSB openfile table and put sockptr there */
     i = xsb_intern_file(sockptr, "SOCKET_ACCEPT");
-#endif
     ctop_int(3, i);
     break;
   }
   
   case SOCKET_CONNECT:
-    /* socket_request(4,+domain,+sockfd,+port,+hostname,-sockfptr) 
+    /* socket_request(4,+domain,+sock_handle,+port,+hostname,-sockfptr) 
      * jf: domain is ignored for now
      */
     /* Returns Prolog stream number: index into XSB openfile table */
-    sockfd = (SOCKET) ptoc_int(3);
+    sock_handle = (SOCKET) ptoc_int(3);
     portnum = ptoc_int(4);
     
     /*** prepare to connect ***/
@@ -196,28 +197,29 @@ inline static bool xsb_socket_request(void)
     socket_addr.sin_addr.s_addr = inet_addr(get_host_IP(ptoc_string(5)));
     
 #ifdef WIN_NT
-    retcode = connect(sockfd, (PSOCKADDR) &socket_addr, sizeof(socket_addr));
+    retcode = connect(sock_handle, (PSOCKADDR) &socket_addr, sizeof(socket_addr));
 #else
     /* Why retry in Unix and not NT?? */
     while(((retcode =
-	    connect(sockfd, (PSOCKADDR)&socket_addr, sizeof(socket_addr)))
+	    connect(sock_handle, (PSOCKADDR)&socket_addr, sizeof(socket_addr)))
 	   == -1)
 	  && (errno == EINTR) );
 #endif
     if (SOCKET_OP_FAILED(retcode)) {
       xsb_warn("SOCKET_CONNECT: connect failed");
-      closesocket(sockfd);
+      closesocket(sock_handle);
       return FALSE;
     }
     
-    /*** NOTE: In Unix, this returns stream for the socket file 
-	 In NT, this returns a file descriptor.
-	 This is ugly and should be changed!
-    */
 #ifdef WIN_NT
-    sockptr = NULL;
-    i = -1;
+    sockfd = _open_osfhandle(sock_handle, 0);
+    if (sockfd == -1) {
+      xsb_warn("SOCKET_ACCEPT: open_osfhandle failed");
+      return FALSE;
+    }
 #else
+    sockfd = sock_handle;
+#endif
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       xsb_warn("SOCKET_CONNECT: fdopen failed");
       sockptr = NULL;
@@ -225,50 +227,49 @@ inline static bool xsb_socket_request(void)
     }
     /* find empty slot in XSB openfile table and put fptr there */
     i = xsb_intern_file(sockptr,"SOCKET_CONNECT");
-#endif
     ctop_int(6, i);
     break;
-  case SOCKET_CLOSE:	/* socket_request(6,+sockfd) */
+  case SOCKET_CLOSE:	/* socket_request(6,+sock_handle) */
     closesocket((SOCKET) ptoc_int(2));
     break;
   case SOCKET_RECV:
-    sockfd = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(2);
     sock_msg = calloc(1024, sizeof(char));
-    rc = readmsg(sockfd, sock_msg,1024);
+    rc = readmsg(sock_handle, sock_msg,1024);
     ctop_string(3, (char*) string_find((char*) sock_msg,1));
     free(sock_msg);
     break;
   case SOCKET_SEND:
-    sockfd = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(2);
     sock_msg = calloc(1024, sizeof(char));
     strcpy((char*) sock_msg, (char*) ptoc_string(3));
-    send(sockfd, sock_msg, strlen(sock_msg), 0);
-    send(sockfd, "`", strlen("`"), 0);
-    /*send(sockfd, "\n", strlen("\n"),0),*/
+    send(sock_handle, sock_msg, strlen(sock_msg), 0);
+    send(sock_handle, "`", strlen("`"), 0);
+    /*send(sock_handle, "\n", strlen("\n"),0),*/
     free(sock_msg);
     break;
   case SOCKET_SEND_ASCI:
-    sockfd = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(2);
     rc = ptoc_int(3);
     sock_msg = calloc(1024, sizeof(char));
     ci = (char) rc;
     sprintf(sock_msg,"%c",ci);
     /*printf("XSB2: str:%s.\n", sock_msg);*/
-    send(sockfd, sock_msg, strlen(sock_msg), 0);
-    send(sockfd, "`", strlen("`"), 0);
-    /*send(sockfd, "\n", strlen("\n"),0);*/
+    send(sock_handle, sock_msg, strlen(sock_msg), 0);
+    send(sock_handle, "`", strlen("`"), 0);
+    /*send(sock_handle, "\n", strlen("\n"),0);*/
     free(sock_msg);
     break;
   case SOCKET_SEND_EOF:
-    sockfd = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(2);
     last[0] = EOF;
-    send(sockfd, last, 1, 0);
-    send(sockfd, "`", strlen("`"),0);
+    send(sock_handle, last, 1, 0);
+    send(sock_handle, "`", strlen("`"),0);
     break;
   case SOCKET_GET0: /* socket_request(11,+Sockfd,-C,-Error,_,_) */
-    sockfd = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(2);
     /*JPS: rc = readmsg(socketfd, &ch, 1);*/
-    rc = recv (sockfd,&ch,1,0);
+    rc = recv (sock_handle,&ch,1,0);
     if (rc == 1)
       ctop_int(3,(unsigned char)ch);
     else {
@@ -279,10 +280,10 @@ inline static bool xsb_socket_request(void)
   case SOCKET_PUT: { /* socket_request(12,+Sockfd,+C,_,_,_) */
     /* We should fail on error...*/
     static char tmpch[4];
-    sockfd = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(2);
     /* JPS: sprintf(tmpch,"%c",ptoc_int(3));*/
     tmpch[0] = (char)ptoc_int(3);
-    send(sockfd, tmpch, 1, 0);
+    send(sock_handle, tmpch, 1, 0);
     break;
   }
   
