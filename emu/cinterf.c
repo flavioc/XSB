@@ -275,13 +275,14 @@ DllExport prolog_term call_conv p2p_deref(prolog_term term)
 /* convert Arg 1 -- prolog list of characters (a.k.a. prolog string) into C
    string and return this string.
    Arg 2: ptr to string buffer where the result is to be returned.
+          Space for this buffer must already be allocated.
    Arg 3: which function was called from.
    Arg 4: where in the call this happened.
    Args 3 and 4 are used for error reporting.
    This function converts escape sequences in the Prolog string
    (except octal/hexadecimal escapes) into the corresponding real characters.
 */
-char *p_charlist_to_c_string(prolog_term term, char *str,
+char *p_charlist_to_c_string(prolog_term term, char *buf, int buf_size,
 			     char *in_func, char *where)
 {
   int i = 0, head_val;
@@ -292,7 +293,7 @@ char *p_charlist_to_c_string(prolog_term term, char *str,
     xsb_abort("%s: %s is not a list of characters", in_func, where);
   }
 
-  while (is_list(list) && i < MAXBUFSIZE) {
+  while (is_list(list) && i < buf_size) {
     if (is_nil(list)) break;
     list_head = p2p_car(list);
     if (!is_int(list_head)) {
@@ -310,33 +311,33 @@ char *p_charlist_to_c_string(prolog_term term, char *str,
     if (escape_mode)
       switch (head_val) {
       case 'a':
-	str[i] = '\a';
+	buf[i] = '\a';
 	break;
       case 'b':
-	str[i] = '\b';
+	buf[i] = '\b';
 	break;
       case 'f':
-	str[i] = '\f';
+	buf[i] = '\f';
 	break;
       case 'n':
-	str[i] = '\n';
+	buf[i] = '\n';
 	break;
       case 'r':
-	str[i] = '\r';
+	buf[i] = '\r';
 	break;
       case 't':
-	str[i] = '\t';
+	buf[i] = '\t';
 	break;
       case 'v':
-	str[i] = '\v';
+	buf[i] = '\v';
 	break;
       default:
-	str[i] = head_val;
+	buf[i] = head_val;
       }
     else
-      str[i] = head_val;
+      buf[i] = head_val;
 
-    if (str[i] == '\\' && !escape_mode)
+    if (buf[i] == '\\' && !escape_mode)
       escape_mode = TRUE;
     else {
       i++;
@@ -345,8 +346,13 @@ char *p_charlist_to_c_string(prolog_term term, char *str,
     list = p2p_cdr(list);
   } /* while */
 
-  str[i] = '\0';
-  return (str);
+  buf[i] = '\0';
+
+  if (!is_nil(list))
+    xsb_warn("%s: %s is larger than the maximum allowed (%d)",
+	     in_func, where,buf_size);
+
+  return (buf);
 }
 
 

@@ -36,7 +36,7 @@ extern int    fileno(FILE *f);	        /* this is defined in POSIX */
 #endif
 extern Cell   ptoc_tag(int i);
 extern char   *expand_filename(char *filename);
-extern char *p_charlist_to_c_string (prolog_term, char *, char *);
+extern char *p_charlist_to_c_string (prolog_term, char *, int, char *, char *);
 
 static FILE *stropen(char *str)
 {
@@ -247,7 +247,8 @@ inline static bool file_function(void)
        that string	      */
     pterm = reg_term(4);
     if (is_list(pterm))
-      addr = p_charlist_to_c_string(pterm, "FILE_WRITE_LINE", "input string");
+      addr = p_charlist_to_c_string(pterm, buf, sizeof(buf),
+				    "FILE_WRITE_LINE", "input string");
     else if (is_string(pterm))
       addr = string_val(pterm);
     else
@@ -281,7 +282,8 @@ inline static bool file_function(void)
   case FILE_WRITE_LINE:
     pterm = reg_term(3);
     if (is_list(pterm))
-      addr = p_charlist_to_c_string(pterm, "FILE_WRITE_LINE", "input string");
+      addr = p_charlist_to_c_string(pterm, buf, sizeof(buf),
+				    "FILE_WRITE_LINE", "input string");
     else if (is_string(pterm))
       addr = string_val(pterm);
     else

@@ -77,7 +77,7 @@ struct fmt_spec {
 };
 
 struct fmt_spec *next_format_substr(char *, int, int);
-char *p_charlist_to_c_string(prolog_term, char *, char *, char *);
+char *p_charlist_to_c_string(prolog_term, char *, int, char *, char *);
 
 /* type is a char: 's', 'i', 'f' */
 #define TYPE_ERROR_CHK(ch_type, Label) \
@@ -184,7 +184,7 @@ bool fmt_write(void)
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf,
+    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf, sizeof(Fmt_buf),
 				 "FMT_WRITE", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
@@ -232,7 +232,8 @@ bool fmt_write(void)
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, str_arg_buf, "FMT_WRITE", aux_msg);
+      str_arg = p_charlist_to_c_string(Arg, str_arg_buf, sizeof(str_arg_buf),
+				       "FMT_WRITE", aux_msg);
       PRINT_ARG(str_arg);
     } else if (is_int(Arg)) {
       TYPE_ERROR_CHK('i', "FMT_WRITE");
@@ -303,7 +304,7 @@ bool fmt_write_string(void)
   OutString[0] = '\0'; 	       	            /* anull the output string 	     */
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf,
+    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf, sizeof(Fmt_buf),
 				 "FMT_WRITE_STRING", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
@@ -353,7 +354,7 @@ bool fmt_write_string(void)
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, str_arg_buf,
+      str_arg = p_charlist_to_c_string(Arg, str_arg_buf, sizeof(str_arg_buf),
 				       "FMT_WRITE_STRING", aux_msg);
       SPRINT_ARG(str_arg);
     } else if (is_int(Arg)) {
@@ -422,7 +423,7 @@ bool fmt_read(void)
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf,
+    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf, sizeof(Fmt_buf),
 				 "FMT_READ", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
