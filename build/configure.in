@@ -653,7 +653,11 @@ fi
 AC_CHECK_PROG(perl_support, perl, "yes", "no")
 
 if test "${perl_support}" = "yes"; then
-   perl_archlib=`perl -MConfig -e 'print $Config{archlib}'`
+   #old versions of perl don't have Config module
+   # so we check for this as well
+   perl_archlib=`perl -MConfig -e 'print $Config{archlib}'` || perl_support=no
+fi
+if test "${perl_support}" = "yes"; then
    perl_cc_compiler=`perl -MConfig -e 'print $Config{cc}'`
    perl_ccflags=`perl -MConfig -e 'print $Config{ccflags}'`
    perl_libs=`perl -MConfig -e 'print $Config{libs}'`
