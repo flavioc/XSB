@@ -1,0 +1,11 @@
+department[faculty=>>professor; coursesOffered=>>string].
+professor[teaches@(string,number)=>>string].
+
+X:department[coursesOffered->>C] :-
+	X..faculty[teaches@(S,Y)->>C].
+
+cse:department[faculty->>smith].
+smith:professor.
+smith[teaches@(fall,1998)->>cse220].
+smith[teaches@(spring,1999)->>cse310].
+smith[teaches@(spring,1999)->>cse530].

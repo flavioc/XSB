@@ -1,0 +1,24 @@
+:- import findall/3 from setof.
+
+edge(a,b).
+edge(b,c).
+edge(c,b).
+
+string[reachableTo=>>string].
+
+X:activeNode[reachableTo->>Y] :- edge(X,Y).
+X:activeNode[reachableTo->>Y] :- edge(X,Z), Z[reachableTo->>Y].
+
+tc(X,Y) :- X[reachableTo->>Y].
+
+show(X) :-
+	X:activeNode,
+	write(X),
+	write('[reachableTo->>{'),
+	findall(Y,tc(X,Y),L),
+	writelist(L),
+	writeln('}]').
+
+writelist([X]) :- write(X).
+writelist([X1,X2|Xs]) :- write(X1), write(','), writelist([X2|Xs]).
+
