@@ -642,7 +642,7 @@ long sort_par_ind[10];
 long sort_num_pars;
 
 int par_key_compare(const void * t1, const void * t2) {
-  long ipar, cmp, ind;
+  long ipar, cmp, ind1, ind2;
   Cell term1 = (Cell) t1 ;
   Cell term2 = (Cell) t2 ;
 
@@ -651,9 +651,11 @@ int par_key_compare(const void * t1, const void * t2) {
   if (sort_num_pars > 0) {
     ipar = 0;
     while (ipar < sort_num_pars) {
-      ind = sort_par_ind[ipar];
-      cmp = compare((void*)cell(clref_val(term1)+ind),
-		    (void*)cell(clref_val(term2)+ind));
+      ind1 = ind2 = sort_par_ind[ipar];
+      if (islist(term1)) ind1--;
+      if (islist(term2)) ind2--;
+      cmp = compare((void*)cell(clref_val(term1)+ind1),
+		    (void*)cell(clref_val(term2)+ind2));
       if (cmp) {
 	if (sort_par_dir[ipar]) return cmp;
 	else return -cmp;
@@ -722,7 +724,8 @@ inline static xsbBool parsort(void)
     if (islist(term2)) {
       heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
       if (sort_num_pars == 0 || 
-	  (isconstr(heap_addr) && get_arity(get_str_psc(heap_addr)) >= max_ind)) {
+	  (isconstr(heap_addr) && get_arity(get_str_psc(heap_addr)) >= max_ind) ||
+	  (islist(heap_addr) && max_ind <=2)) {
 	len++; term2 = cell(clref_val(term2)+1);
       } else {
 	sprintf(ermsg,"Term with arity at least %d", max_ind);
