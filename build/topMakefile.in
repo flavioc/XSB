@@ -168,6 +168,15 @@ emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	    (test ! -f /tmp/xsb-build-failed || \
 	                    (rm -f /tmp/xsb-build-failed; exit 1))
 
+# Compiling the interface with SModels.
+
+smodels:
+	@cd $(src_pkgdir)/sModels; \
+	  echo "Compiling smodels interface"; \
+	  rm -f *.o Makefile *.h *.O *.so 2>/dev/null || echo ""; \
+	  ln ${src_config_prefix}/smoMakefile ./Makefile; \
+	  make @smodels_goal@ 2>&1 | tee -a ../../build/Installation_summary
+
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
 module: prepare xsbmod do_cleaning inform_module
@@ -261,7 +270,7 @@ copy_files::
 	    echo "Installed!" \
 	  )
 
-configure_packages_src:
+configure_packages_src: smodels
 	./pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
 	    	    	    	    	    tee -a Installation_summary ; \
 	  chmod 644  $(src_config_libdir)/xsb_configuration.O
