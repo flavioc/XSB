@@ -166,7 +166,7 @@ vfast: prepare emu do_cleaning
 # Packages
 packages: start_packages finish_packages
 
-start_packages: smodels
+start_packages: xasp
 	@rm -f $(srcdir)/build/.*.tmp
 	cd $(srcdir); make packages XSB=$(src_scriptdir)/xsb$(config_tag)
 	@echo "" | tee -a Installation_summary
@@ -201,10 +201,10 @@ gpp:
 	@echo ""; echo "Making gpp"
 	@cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
 
-# Compiling the interface with sModels.
-smodels:
-	@cd $(src_pkgdir)/sModels; \
-	  echo "Compiling smodels interface"; \
+# Compiling the interface with SMODELS.
+xasp:
+	@cd $(src_pkgdir)/xasp; \
+	  echo "Compiling xasp interface"; \
 	  rm -f *.o Makefile *.h *$(xsb_obj_extension) *.so 2>/dev/null || echo ""; \
 	  ln -s ${src_config_prefix}/smoMakefile ./Makefile; \
 	  make CROSS_SIMULATOR=@CROSS_SIMULATOR@ XSB=$(src_scriptdir)/xsb$(config_tag) @smodels_goal@ 2>&1\

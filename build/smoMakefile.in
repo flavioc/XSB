@@ -1,5 +1,5 @@
 ## File:      packages/sModels/Makefile
-## Author(s): luis (adapted from packages/flora/Makefile)
+## Author(s): Luis Castro (adapted from packages/flora/Makefile)
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
 ## Copyright (C) The Research Foundation of SUNY, 1998
@@ -22,68 +22,60 @@
 ## 
 ##
 
-OBJEXT=.xwam
+# Assume .h files are in the include path (use --site-includes)
+# and smodels.dll is in site-lib path
 
-ALL = smodels${OBJEXT} smodelsops${OBJEXT} smodelsint${OBJEXT}
+CXX = @CXX@
+GCC = @CC@
+CFLAGS=@CFLAGS@
+LDFLAGS=@LDFLAGS@
+PROLOG = ../../bin/xsb
+DEFFILE=@XASPDEFFILE@
 
-SMODELS = @with_smodels@
+LIBNAME=@XASPLIBNAME@
 
-SMODELSOBJ = $(SMODELS)/api.o $(SMODELS)/atomrule.o $(SMODELS)/dcl.o \
-	$(SMODELS)/denant.o $(SMODELS)/improve.o $(SMODELS)/list.o \
-	$(SMODELS)/main.o $(SMODELS)/program.o $(SMODELS)/queue.o \
-	$(SMODELS)/read.o $(SMODELS)/smodels.o $(SMODELS)/stable.o \
-	$(SMODELS)/stack.o $(SMODELS)/timer.o $(SMODELS)/tree.o
-
-SMODELSHEADER= $(SMODELS)/api.h $(SMODELS)/atomrule.h $(SMODELS)/dcl.h \
-	$(SMODELS)/defines.h $(SMODELS)/list.h $(SMODELS)/print.h \
-	$(SMODELS)/program.h $(SMODELS)/queue.h $(SMODELS)/read.h \
-	$(SMODELS)/smodels.h $(SMODELS)/stable.h $(SMODELS)/stack.h \
-	$(SMODELS)/timer.h $(SMODELS)/tree.h
+ALL = xasppkg.xwam sm_clause_store.xwam sm_int.xwam
 
 Option = [sysmod,optimize]
 
-GCC=@CC@
-CFLAGS=@CFLAGS@ -I@arch_config_prefix@
-GMM=g++
-XSB=../../bin/xsb
-Prolog = $(XSB)
+CFLAGS += -I@arch_config_prefix@
+LDFLAGS += -L@arch_config_prefix@/bin
 
 .IGNORE:
 
-.SUFFIXES: .P ${OBJEXT} .H .so
+.SUFFIXES: .P .xwam .H .so
 
-.H${OBJEXT}:
-	echo 'compile($*, $(Option)).' >> cmd...
+xasppkg.xwam: xasppkg.H
+	echo 'mc($*, $(Option)).' >> cmd...
 
-.P${OBJEXT}:
+.P.xwam:
 	echo 'mc($*,$(Option)).' >> cmd...
 
-all: check_config
-
-check_config:
-	@if [ "${SMODELS}nop" = "nop" ] ; then \
-		echo "SMODELS not configured"; \
-		rm -f cmd... ;\
-	else \
-		make rest; \
-	fi
+all: rest
 
 rest: $(ALL)
 	../../build/touch.sh cmd... ; \
-	$(Prolog) < cmd... ; \
+	$(PROLOG) < cmd... ; \
 	rm -f cmd...
 
+xsb_wrap_xasppkg.c: xasppkg.H
+	$(PROLOG) -e \
+	"import wrap/2 from wrapping. wrap('xasppkg.H','xsb_wrap_xasppkg.c'). halt." 
 
 clean: 
-	/bin/rm -f *.o *.so *${OBJEXT} *.h
+	/bin/rm -f *.o *.so *.xwam *.h
 
-xsb_wrap_smodels.o: xsb_wrap_smodels.c
-	$(GCC) $(CFLAGS) -c xsb_wrap_smodels.c
+xsb_wrap_xasppkg.o: xsb_wrap_xasppkg.c
+	$(GCC) $(CFLAGS) -c xsb_wrap_xasppkg.c
 
-module: xsb_wrap_smodels.o 
-	$(GMM) $(CFLAGS) -s -o smodels.so -shared -I$(SMODELS) \
-	-L$(SMODELS) smodels.c \
-	xsb_wrap_smodels.o $(SMODELS)/.libs/libsmodels.a
+xasppkg.o: xasppkg.c
+	$(CXX) $(CFLAGS) -c -o xasppkg.o $(LDFLAGS) -lsmodels xasppkg.c
+
+
+module: xsb_wrap_xasppkg.o xasppkg.o xasppkg.def
+	$(CXX) $(CFLAGS) $(LDFLAGS) -shared -s -o $(LIBNAME) \
+		xasppkg.o xsb_wrap_xasppkg.o $(DEFFILE) -lsmodels -lxsb
+	@cp $(LIBNAME) @arch_config_prefix@/bin
 
 nope:
 

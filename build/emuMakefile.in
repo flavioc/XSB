@@ -44,7 +44,7 @@ ODBCSRC=@ODBCSRC@
 ODBCOBJ=@ODBCOBJ@
 INTERPROLOGSRC=@INTERPROLOGSRC@
 INTERPROLOGOBJ=@INTERPROLOGOBJ@
--LDLLTYPE=@DLLTYPE@
+DLLTYPE=@DLLTYPE@
 JAVA_HEADER_PATH=@JAVA_HEADER_PATH@
 JAVA_PLATFORM_HEADER_PATH=@JAVA_PLATFORM_HEADER_PATH@
 
@@ -192,15 +192,19 @@ dll: $(DLLTYPE)
 
 nodll:
 
-cygdll: $(HEADERS) xsb.o
+cygdll: $(allOBJS) $(HEADERS) xsbmod
 	chmod ugo+x $(arch_config_prefix)/makedef.sh
 	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) dllinit_xsb.cc
 	@cp dllinit_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 	$(arch_config_prefix)/makedef.sh $(allOBJS) dllinit_xsb.o
+	@mv out.def $(DEF_FILE)
 	$(CC) -mno-cygwin -shared -o $(DLLNAME) $(LIB_OBJECTS) $(DEF_FILE) -Wl,--out-implib=xsb.a $(DLL_LIBS) -e $(ENTRY_FUNCTION)
 	@mv $(DLLNAME) $(bindir) 2> /dev/null || echo ""
 	@mv $(LIB_FILE) $(bindir) 2> /dev/null || echo ""
 	@rm -f $(BASE_FILE) 2> /dev/null || echo ""
+	$(CC) -o $(arch_config_prefix)/bin/xsb.exe  $(CFLAGS) \
+		-I$(arch_config_prefix) -L$(arch_config_prefix)/bin \
+		main_xsb.c $(LINKFLAGS) $(DLL_LIBS) -lxsb
 
 
 #=======================================================================
@@ -209,7 +213,7 @@ cygdll: $(HEADERS) xsb.o
 
 interprolog_callback.o: interprolog_callback.c
 	$(CC) -c -I$(arch_config_prefix) -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(CFLAGS) interprolog_callback.c
-	@cp callback.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+	@cp interprolog_callback.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 init_xsb.o: init_xsb.c
 	$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) init_xsb.c

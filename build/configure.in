@@ -642,6 +642,7 @@ echo "Checking installation directories ... Done"
 
 AC_PROG_CC
 AC_PROG_CPP
+AC_PROG_CXX
 AC_PROG_INSTALL
 dnl If on AIX, define _ALL_SOURCE, which allows the use of some BSD functions
 dnl This must be AFTER AC_PROG_CC
@@ -760,7 +761,6 @@ if test -n "$site_includes"; then
     echo "		$arg"
   done
 fi
-
 
 dnl --with-libwww=DIR
 cd $topdir/packages/libwww
@@ -1452,6 +1452,7 @@ AC_SUBST(builtinsCFLAGS)
 AC_SUBST(emuloopCFLAGS)
 AC_SUBST(trutilsCFLAGS)
 AC_SUBST(CC)
+AC_SUBST(CXX)
 AC_SUBST(LDFLAGS)
 dnl used for SGIs only
 AC_SUBST(LINKFLAGS)
@@ -1525,14 +1526,30 @@ AC_SUBST(topdir_wind)
 
 #These are used to compile the interface with sModels
 AC_ARG_WITH(smodels,
-[  --with-smodels		   use SMODELS for the XNMR module])
-if test "${with_smodels}" = "" ; then
-	smodels_goal=nope
+[  --with-smodels		   use SMODELS for the XNMR module
+				   you should use --site-includes and
+				   --site-static-libraries if smodel's 
+				   include files and libraries are not
+				   globally installed])
+
+if test -n "${with_smodels}"; then
+   smodels_goal=nope
 else
-	smodels_goal=all
+   smodels_goal=all
 fi
-AC_SUBST(smodels_goal)
+
 AC_SUBST(with_smodels)
+AC_SUBST(smodels_goal)
+
+if test  "$os_type" = "windows"; then
+   XASPLIBNAME=xasppkg.dll
+   XASPDEFFILE=xasppkg.def
+else
+   XASPLIBNAME=xasppkg.so
+   XASPDEFFILE=
+fi
+AC_SUBST(XASPLIBNAME)
+AC_SUBST(XASPDEFFILE)
 
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
