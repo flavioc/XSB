@@ -86,12 +86,8 @@ reconsult0(Path, Options) :-
 	!,
 	( (obj_ext(OExt), SExt \== OExt,
 	   i_want_compile(SExt, Base, Obj, HasObj))
-	 ->	((HasObj =:= 0, large_source_file(SExt,Base))
-		 ->	message(('[Dynamically loading ',Base,']')),
-			load_dyn0(SExt,Base)
-		 ;	compile_f(SExt, Base, Options, _ExList, Mod, Dir),
-			load_exec(Obj, Mod)
-		)
+	 ->	compile_f(SExt, Base, Options, _ExList, Mod, Dir),
+		load_exec(Obj, Mod)
 	 ; 	load_exec(Obj, Mod)
 	).
 
@@ -101,16 +97,6 @@ reconsult0(Path, _) :-
 
 i_want_compile(SExt, Base, Obj, HasObj) :-
 	( HasObj =:= 0 -> true ; needs_recompile(SExt, Base, Obj) ).
-
-large_source_file(0'P, Base) :-
-	str_cat(Base, '.P', PFileName),
-	file_size(PFileName, Size),
-	default_compile_size(MaxSize), 
-	Size >= MaxSize.
-large_source_file(0'x, Base) :-
-	file_size(Base, Size),
-	default_compile_size(MaxSize), 
-	Size >= MaxSize.
 
 needs_recompile(0'P, Base, Obj) :-
 	( str_cat(Base, '.P', PFileName),
