@@ -150,9 +150,7 @@ sys_access(File, Mode, Res) :- 	sys_syscall(SYS_access, Res, File, Mode).
 sys_stat(Path, Buff, Res)   :-	sys_syscall(SYS_stat, Res, Path, Buff).
 sys_rename(Old, New, Res)   :-	
 	check_nonvar(Old,'sys_rename/3',1),
-	check_atom(Old,'sys_rename/3',1),
 	check_nonvar(New,'sys_rename/3',2),
-	check_atom(New,'sys_rename/3',2),
 	sys_syscall(SYS_rename, Res, Old, New).
 /* current working dir. Res is 0 on success, 1 on failure */
 sys_cwd(Name, Res)   	    :-	sys_syscall(SYS_cwd, Res, Name, _).
