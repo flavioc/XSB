@@ -59,6 +59,7 @@
 #include "wind2unix.h"
 #include "system_xsb.h"
 #include "system_defs_xsb.h"
+#include "register.h"
 
 #define MAX_CMD_LEN 1024
 
@@ -192,18 +193,18 @@ xsbBool sys_system(int callno)
     int index = 0;
     
     cmdspec_term = reg_term(2);
-    if (is_list(cmdspec_term)) {
+    if (islist(cmdspec_term)) {
       prolog_term temp, head;
       char *string_head=NULL;
 
-      if (is_nil(cmdspec_term))
+      if (isnil(cmdspec_term))
 	xsb_abort("[exec] Arg 1 must not be an empty list.");
       
       temp = cmdspec_term;
       do {
 	head = p2p_car(temp);
 	temp = p2p_cdr(temp);
-	if (is_string(head)) 
+	if (isstring(head)) 
 	  string_head = string_val(head);
 	else
 	  xsb_abort("[exec] non-string argument passed in list.");
@@ -211,9 +212,9 @@ xsbBool sys_system(int callno)
 	params[index++] = string_head;
 	if (index > MAX_SUBPROC_PARAMS)
 	  xsb_abort("[exec] Too many arguments.");
-      } while (!is_nil(temp));
+      } while (!isnil(temp));
       params[index] = NULL;
-    } else if (is_string(cmdspec_term)) {
+    } else if (isstring(cmdspec_term)) {
       char *string = string_val(cmdspec_term);
       split_command_arguments(string, params, "exec");
     } else
@@ -256,9 +257,9 @@ xsbBool sys_system(int callno)
       callname = "SHELL";
 
     cmdspec_term = reg_term(2);
-    if (is_list(cmdspec_term))
+    if (islist(cmdspec_term))
       params_are_in_a_list = TRUE;
-    else if (is_string(cmdspec_term))
+    else if (isstring(cmdspec_term))
       shell_cmd = string_val(cmdspec_term);
     else
       xsb_abort("[%s] Arg 1 must be an atom or a list [command, arg, ...]",
@@ -266,38 +267,38 @@ xsbBool sys_system(int callno)
 
     /* the user can indicate that he doesn't want either of the streams created
        by putting an atom in the corresponding argument position */
-    if (is_var(reg_term(3)))
+    if (isref(reg_term(3)))
       toproc_needed = TRUE;
-    if (is_var(reg_term(4)))
+    if (isref(reg_term(4)))
       fromproc_needed = TRUE;
-    if (is_var(reg_term(5)))
+    if (isref(reg_term(5)))
       fromstderr_needed = TRUE;
 
     /* if any of the arg streams is already used by XSB, then don't create
        pipes --- use these streams instead. */
-    if (is_int(reg_term(3))) {
+    if (isinteger(reg_term(3))|isboxedinteger(reg_term(3))) {
       SET_FILEPTR(toprocess_fptr, int_val(reg_term(3)));
     }
-    if (is_int(reg_term(4))) {
+    if (isinteger(reg_term(4))|isboxedinteger(reg_term(4))) {
       SET_FILEPTR(fromprocess_fptr, int_val(reg_term(4)));
     }
-    if (is_int(reg_term(5))) {
+    if (isinteger(reg_term(5))|isboxedinteger(reg_term(5))) {
       SET_FILEPTR(fromproc_stderr_fptr, int_val(reg_term(5)));
     }
 
-    if (!is_var(reg_term(6)))
+    if (!isref(reg_term(6)))
       xsb_abort("[%s] Arg 5 (process id) must be a variable", callname);
 
     if (params_are_in_a_list) {
       /* fill in the params[] array */
-      if (is_nil(cmdspec_term))
+      if (isnil(cmdspec_term))
 	xsb_abort("[%s] Arg 1 must not be an empty list", callname);
       
       cmdlist_temp_term = cmdspec_term;
       do {
 	cmd_or_arg_term = p2p_car(cmdlist_temp_term);
 	cmdlist_temp_term = p2p_cdr(cmdlist_temp_term);
-	if (is_string(cmd_or_arg_term)) {
+	if (isstring(cmd_or_arg_term)) {
 	  cmd_or_arg = string_val(cmd_or_arg_term);
 	}
 	else 
@@ -309,7 +310,7 @@ xsbBool sys_system(int callno)
 	  xsb_abort("[%s] Too many arguments passed to subprocess",
 		    callname);
 	
-      } while (!is_nil(cmdlist_temp_term));
+      } while (!isnil(cmdlist_temp_term));
 
       params[idx] = NULL; /* null termination */
 
@@ -378,7 +379,7 @@ xsbBool sys_system(int callno)
 
     init_process_table();
 
-    if (!is_var(table_term))
+    if (!isref(table_term))
       xsb_abort("[GET_PROCESS_TABLE] Arg 1 must be a variable");
 
     table_term_tail = table_term;
@@ -407,11 +408,11 @@ xsbBool sys_system(int callno)
 
     init_process_table();
 
-    if (!is_int(pid_term))
+    if (!(isinteger(pid_term)|isboxedinteger(pid_term)))
       xsb_abort("[PROCESS_STATUS] Arg 1 (process id) must be an integer");
     pid = int_val(pid_term);
 
-    if (!is_var(status_term))
+    if (!isref(status_term))
       xsb_abort("[PROCESS_STATUS] Arg 2 (process status) must be a variable");
     
     switch (process_status(pid)) {
@@ -446,11 +447,11 @@ xsbBool sys_system(int callno)
 
     init_process_table();
 
-    if (!is_int(pid_term))
+    if (!(isinteger(pid_term)|isboxedinteger(pid_term)))
       xsb_abort("[PROCESS_CONTROL] Arg 1 (process id) must be an integer");
     pid = int_val(pid_term);
 
-    if (is_string(signal_term) && strcmp(string_val(signal_term), "kill")==0) {
+    if (isstring(signal_term) && strcmp(string_val(signal_term), "kill")==0) {
       if (KILL_FAILED(pid))
 	return FALSE;
 #ifdef WIN_NT
@@ -458,7 +459,7 @@ xsbBool sys_system(int callno)
 #endif
       return TRUE;
     }
-    if (is_functor(signal_term)
+    if (isconstr(signal_term)
 	&& strcmp(p2c_functor(signal_term),"wait") == 0
 	&& p2c_arity(signal_term)==1) {
       int exit_status;
@@ -892,7 +893,7 @@ xsbBool file_stat(int callno, char *file)
        the least significant 24.
        ***This probably breaks 64 bit systems, so David will look into it!
        */
-    int functor_arg3 = is_functor(reg_term(3));
+    int functor_arg3 = isconstr(reg_term(3));
     if (!retcode && functor_arg3) {
       /* file exists & arg3 is a term, return 2 words*/
       c2p_int(stat_buff.st_mtime >> 24,p2p_arg(reg_term(3),1));

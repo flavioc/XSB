@@ -383,9 +383,9 @@ static void assertcmp_throw(int num)
 
 static int arity(prolog_term T0)
 {
-  if (is_functor(T0)) return p2c_arity(T0);
-  else if (is_list(T0)) return 2;
-  else if (is_string(T0)) return 0;
+  if (isconstr(T0)) return p2c_arity(T0);
+  else if (islist(T0)) return 2;
+  else if (isstring(T0)) return 0;
   else assertcmp_throw(ERR_FUNCTOR);
   return -1;
 }
@@ -418,7 +418,7 @@ static Integer p2c_float_as_int(prolog_term T0)
 
 static int is_frozen_var(prolog_term T0)
 {
-    if (is_functor(T0) && strcmp(p2c_functor(T0), "$assertVAR")==0 &&
+    if (isconstr(T0) && strcmp(p2c_functor(T0), "$assertVAR")==0 &&
 	p2c_arity(T0) == 1) {
 	T0 = p2p_arg(T0, 1);
 	return int_val(T0);
@@ -640,25 +640,25 @@ static void db_gentopinst(prolog_term T0, int Argno, RegStat Reg)
 {
   int Rt;
   
-  if (is_int(T0)) {
+  if (isinteger(T0) | isboxedinteger(T0)) {
     dbgen_instB_ppvw(getnumcon, Argno, T0); /* getnumcon */
-  } else if (is_string(T0)) {
+  } else if (isstring(T0)) {
     dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
-  } else if (is_float(T0)) {
+  } else if (isfloat(T0)) {
     dbgen_instB_ppvw(getfloat, Argno, T0); /* getfloat */
-  } else if (is_var(T0)) {
+  } else if (isref(T0)) {
     c2p_functor("$assertVAR", 1, T0);
     T0 = p2p_arg(T0, 1);
     c2p_int(Argno, T0);
     RegArrayInit[Argno] = 1;	/* Reg is initted */
-  } else if (is_nil(T0)) {
+  } else if (isnil(T0)) {
     dbgen_instB_ppv(getnil, Argno);	/* getnil */
   } else if ((Rt = is_frozen_var(T0))) {
     dbgen_instB_pvv(gettval, Rt, Argno);	/* gettval */
   } else {
     inst_queue_init(inst_queue);
     inst_queue_push(inst_queue, Argno, T0, 0);
-    if (is_attv(T0)) {
+    if (isattv(T0)) {
       T0 = p2p_arg(T0, 0);		/* the VAR part of the attv */
       c2p_functor("$assertVAR", 1, T0);
       T0 = p2p_arg(T0, 1);
@@ -678,10 +678,10 @@ static void db_genterms(struct instruction *inst_queue,
   while (!inst_queue_empty(inst_queue)) {
     inst_queue_pop(inst_queue, &Argno, &T0, &T1);
     RegArrayInit[Argno] = 1;	/* Reg is initted */
-    if (is_list(T0)) {
+    if (islist(T0)) {
       T1 = p2p_car(T0);
       T2 = p2p_cdr(T0);
-      if (is_var(T1) && is_var(T2) && T1!=T2 /* not same var */) {
+      if (isref(T1) && isref(T2) && T1!=T2 /* not same var */) {
 	int Rt1, Rt2;
 	c2p_functor("$assertVAR", 1, T1);
 	T1 = p2p_arg(T1, 1);
@@ -701,7 +701,7 @@ static void db_genterms(struct instruction *inst_queue,
 	db_geninst(p2p_car(T0), Reg, inst_queue);
 	db_geninst(p2p_cdr(T0), Reg, inst_queue);
       }
-    } else if (is_functor(T0)) {
+    } else if (isconstr(T0)) {
       dbgen_instB_ppvw(getstr, Argno, get_str_psc(T0));   /* getstr */
       reg_release(Argno);
       for (Argno=1; Argno <= (int)get_arity(get_str_psc(T0)); Argno++) {
@@ -724,15 +724,15 @@ static void db_geninst(prolog_term Sub, RegStat Reg,
 {
   int Rt;
   
-  if (is_int(Sub)) {
+  if (isinteger(Sub) | isboxedinteger(Sub)) {
     dbgen_instB_pppw(uninumcon, Sub);
-  } else if (is_string(Sub)) {
+  } else if (isstring(Sub)) {
     dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));
-  } else if (is_nil(Sub)) {
+  } else if (isnil(Sub)) {
     dbgen_instB_ppp(uninil);
-  } else if (is_float(Sub)) {
+  } else if (isfloat(Sub)) {
     dbgen_instB_pppw(unifloat, Sub);
-  } else if (is_var(Sub)) {
+  } else if (isref(Sub)) {
     c2p_functor("$assertVAR", 1, Sub);
     Sub = p2p_arg(Sub, 1);
     Rt = reg_get(Reg, RVAR);
@@ -741,7 +741,7 @@ static void db_geninst(prolog_term Sub, RegStat Reg,
     RegArrayInit[Rt] = 1;  /* reg is inited */
   } else if ((Rt = is_frozen_var(Sub))) {
     dbgen_instB_ppv(unitval, Rt);
-  } else if (is_attv(Sub)) {
+  } else if (isattv(Sub)) {
     /*
      * An ATTV is treated as a real variable, so that the register will
      * never be released.
@@ -769,7 +769,7 @@ static void db_genaput(prolog_term T0, int Argno,
 {
   int Rt;
 
-  if (is_var(T0)) {
+  if (isref(T0)) {
     c2p_functor("$assertVAR", 1, T0);
     T0 = p2p_arg(T0, 1);
     Rt = reg_get(Reg, RVAR);
@@ -779,16 +779,16 @@ static void db_genaput(prolog_term T0, int Argno,
     inst_queue_push(inst_queue, movreg, Rt, Argno);
   } else if ((Rt = is_frozen_var(T0))) {
     inst_queue_push(inst_queue, movreg, Rt, Argno);
-  } else if (is_int(T0)) {
+  } else if (isinteger(T0) | isboxedinteger(T0)) {
     inst_queue_push(inst_queue, putnumcon, T0, Argno);
-  } else if (is_float(T0)) {
+  } else if (isfloat(T0)) {
     inst_queue_push(inst_queue, putnumcon, makeint(p2c_float_as_int(T0)), 
 		    Argno);
-  } else if (is_nil(T0)) {
+  } else if (isnil(T0)) {
     inst_queue_push(inst_queue, putnil, 0, Argno);
-  } else if (is_string(T0)) {
+  } else if (isstring(T0)) {
     inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
-  } else if (is_attv(T0)) {
+  } else if (isattv(T0)) {
     prolog_term T1;
     
     Rt = reg_get(Reg, RVAR);
@@ -819,11 +819,11 @@ static void db_putterm(int Rt, prolog_term T0,
   int stack_size;
   
   stack_size = flatten_stack_size(flatten_stack);
-  if (is_list(T0)) {		/* is_list */
+  if (islist(T0)) {		/* is_list */
     db_bldsubs(p2p_cdr(T0),Reg,flatten_stack);
     db_bldsubs(p2p_car(T0),Reg,flatten_stack);
     dbgen_instB_ppv(putlist, Rt);			/* putlist */
-  } else if (is_functor(T0)) {	/* is_functor */
+  } else if (isconstr(T0)) {	/* is_functor */
     for (Argno=get_arity(get_str_psc(T0)); Argno>=1; Argno--)
       db_bldsubs(p2p_arg(T0,Argno),Reg,flatten_stack);
     dbgen_instB_ppvw(putstr, Rt, get_str_psc(T0));	/* putstr */
@@ -871,23 +871,23 @@ static void db_bldsubs(prolog_term Sub, RegStat Reg,
 {
   int Rt;
   
-  if (is_string(Sub)) {
+  if (isstring(Sub)) {
     flatten_stack_push(flatten_stack,bldcon,(Cell)string_val(Sub)); /* bldcon */
-  } else if (is_int(Sub)) {               /* bldnumcon(Sub) */
+  } else if (isinteger(Sub)|isboxedinteger(Sub)) {               /* bldnumcon(Sub) */
     flatten_stack_push(flatten_stack, bldnumcon, Sub);
-  } else if (is_float(Sub)) {             /* bldfloat(Sub) */
+  } else if (isfloat(Sub)) {             /* bldfloat(Sub) */
     flatten_stack_push(flatten_stack, bldfloat, Sub);
-  } else if (is_var(Sub)) {
+  } else if (isref(Sub)) {
     c2p_functor("$assertVAR", 1, Sub);
     Sub = p2p_arg(Sub, 1);
     Rt = reg_get(Reg, RVAR);
     c2p_int(Rt, Sub);
     flatten_stack_push(flatten_stack, bldtvar, Rt);    /* bldtvar(Ri) */
-  } else if (is_nil(Sub)) {
+  } else if (isnil(Sub)) {
     flatten_stack_push(flatten_stack, bldnil, 0);      /* bldnil */
   } else if ((Rt = is_frozen_var(Sub))) {
     flatten_stack_push(flatten_stack, bldtvar, Rt);
-  } else if (is_attv(Sub)) {
+  } else if (isattv(Sub)) {
     prolog_term T1;
 
     Rt = reg_get(Reg, RVAR);
@@ -1172,11 +1172,11 @@ static int Index[20], NI ;
 
 static void get_indexes( prolog_term prolog_ind )
 {
-  if (is_int(prolog_ind)) {
+  if (isinteger(prolog_ind)|isboxedinteger(prolog_ind)) {
     Index[1] = int_val(prolog_ind);
     if (Index[1] == 0) NI = 0; else NI = 1;
   } else {
-    for (NI = 0; !is_nil(prolog_ind); prolog_ind = p2p_cdr(prolog_ind)) {
+    for (NI = 0; !isnil(prolog_ind); prolog_ind = p2p_cdr(prolog_ind)) {
       NI++;
       Index[NI] = int_val(p2p_car(prolog_ind));
     }
@@ -1319,13 +1319,13 @@ static int can_hash(int Ind, prolog_term Head )
 
   if (Ind < 256) {  /* handle usual case specially */
     arg = p2p_arg(Head, Ind);
-    return (!is_var(arg) && !is_attv(arg));
+    return (!(isref(arg)) && !(isattv(arg)));
   } else {
     for (i = 2; i >= 0; i--) {
       j = (Ind >> (i*8)) & 0xff;
       if (j > 0) {
 	arg = p2p_arg(Head,j);
-	if (is_var(arg) || is_attv(arg)) return 0;
+	if (isref(arg) || isattv(arg)) return 0;
       }
     }
   }
@@ -1343,7 +1343,7 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
     Arg = p2p_arg(Head,Ind) ;
     /* The following line is a hack and should be taken out
      * when the compiler change for indexing []/0 is made. */
-    if (is_nil(Arg)) Hashval = ihash(0, TabSize);
+    if (isnil(Arg)) Hashval = ihash(0, TabSize);
     else Hashval = ihash(val_to_hash(Arg), TabSize);
   } else {   /* handle joint indexes */
     for (i = 2; i >= 0; i--) {

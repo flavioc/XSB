@@ -213,7 +213,7 @@ copy_again : /* for tail recursion optimisation */
 	}
 
       q = *pfirstel;
-      if (is_list(q))
+      if (islist(q))
 	{
 	  CPtr p;
 	  
@@ -450,7 +450,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 	    }
 	  
 	  q = *pfirstel;
-	  if (is_list(q))
+	  if (islist(q))
 	    {
 	      CPtr p;
 	      
@@ -811,7 +811,7 @@ copy_again : /* for tail recursion optimisation */
 	  }
 
 	q = *pfirstel;
-	if (is_list(q))
+	if (islist(q))
 	  {
 	    CPtr p;
 

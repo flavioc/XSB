@@ -22,6 +22,9 @@
 ** 
 */
 
+#ifndef __REGISTER_H__
+#define __REGISTER_H__
+
 #include "psc_xsb.h"
 
 /* Argument Registers
@@ -76,3 +79,4 @@ extern CPtr root_address;
 extern CPtr ebreg;	/* breg into environment stack */
 
 
+#endif /* __REGISTER_H__ */

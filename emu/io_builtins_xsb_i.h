@@ -120,9 +120,9 @@ inline static xsbBool file_function(void)
 
     tmpstr = ptoc_longstring(2);
     pterm = reg_term(3);
-    if (is_int(pterm))
+    if (isinteger(pterm)|isboxedinteger(pterm))
       mode = oint_val(pterm);
-    else if (is_string(pterm)) {
+    else if (isstring(pterm)) {
       switch ((string_val(pterm))[0]) {
       case 'r': mode = OREAD; break;
       case 'w': mode = OWRITE; break;
@@ -231,10 +231,10 @@ inline static xsbBool file_function(void)
     /* Write ByteCount bytes into IOport from String beginning with Offset in
        that string	      */
     pterm = reg_term(4);
-    if (is_list(pterm))
+    if (islist(pterm))
       addr = 
 	p_charlist_to_c_string(pterm,&VarBuf,"FILE_WRITE_LINE","input string");
-    else if (is_string(pterm))
+    else if (isstring(pterm))
       addr = string_val(pterm);
     else
       xsb_abort("[FILE_PUTBUF] Output argument must be an atom or a character list");
@@ -281,10 +281,10 @@ inline static xsbBool file_function(void)
      of characters: file_function(11, +IOport, +String, +Offset) */
   case FILE_WRITE_LINE:
     pterm = reg_term(3);
-    if (is_list(pterm))
+    if (islist(pterm))
       addr =
 	p_charlist_to_c_string(pterm,&VarBuf,"FILE_WRITE_LINE","input string");
-    else if (is_string(pterm))
+    else if (isstring(pterm))
       addr = string_val(pterm);
     else
       xsb_abort("[FILE_WRITE_LINE] Output arg must be an atom or a char list");
@@ -298,9 +298,9 @@ inline static xsbBool file_function(void)
     /* file_function(FILE_REOPEN, +Filename,+Mode,+IOport,-ErrorCode) */
     tmpstr = ptoc_string(2);
     pterm = reg_term(3);
-    if (is_int(pterm))
+    if (isinteger(pterm)|isboxedinteger(pterm))
       mode = oint_val(pterm);
-    else if (is_string(pterm)) {
+    else if (isstring(pterm)) {
       switch ((string_val(pterm))[0]) {
       case 'r': mode = OREAD; break;
       case 'w': mode = OWRITE; break;

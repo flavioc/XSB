@@ -205,17 +205,17 @@ xsbBool fmt_write(void)
 
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
-  if (is_list(Fmt_term))
+  if (islist(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term,&FmtBuf,"FMT_WRITE","format string");
-  else if (is_string(Fmt_term))
+  else if (isstring(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
     xsb_abort("[FMT_WRITE] Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
-  if (is_functor(ValTerm))
+  if (isconstr(ValTerm))
     Arity = get_arity(get_str_psc(ValTerm));
-  else if (is_var(ValTerm))
+  else if (isref(ValTerm))
     /* Var in the argument position means, no arguments */
     Arity = 0;
   else {
@@ -223,11 +223,11 @@ xsbBool fmt_write(void)
     prolog_term TmpValTerm=p2p_new();
 
     c2p_functor("arg", 1, TmpValTerm);
-    if (is_string(ValTerm))
+    if (isstring(ValTerm))
       c2p_string(string_val(ValTerm), p2p_arg(TmpValTerm,1));
-    else if (is_int(ValTerm))
+    else if (isinteger(ValTerm)|isboxedinteger(ValTerm))
       c2p_int(oint_val(ValTerm), p2p_arg(TmpValTerm,1));
-    else if (is_float(ValTerm))
+    else if (isfloat(ValTerm))
       c2p_float(float_val(ValTerm), p2p_arg(TmpValTerm,1));
     else
       xsb_abort("Usage: fmt_write([+IOport,] +FmtStr, +args(A1,A2,...))");
@@ -274,20 +274,20 @@ xsbBool fmt_write(void)
       XSB_StrSet(&StrArgBuf,"");
       print_pterm(Arg, TRUE, &StrArgBuf);
       PRINT_ARG(StrArgBuf.string);
-    } else if (is_string(Arg) && !is_nil(Arg)) {
+    } else if (isstring(Arg) && !isnil(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       str_arg = string_val(Arg);
       PRINT_ARG(str_arg);
-    } else if (is_list(Arg) || is_nil(Arg)) {
+    } else if (islist(Arg) || isnil(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
       str_arg = p_charlist_to_c_string(Arg, &StrArgBuf, "FMT_WRITE", aux_msg);
       PRINT_ARG(str_arg);
-    } else if (is_int(Arg)) {
+    } else if (isinteger(Arg)|isboxedinteger(Arg)) {
       TYPE_ERROR_CHK('i', "FMT_WRITE");
       int_arg = oint_val(Arg);
       PRINT_ARG(int_arg);
-    } else if (is_float(Arg)) {
+    } else if (isfloat(Arg)) {
       TYPE_ERROR_CHK('f', "FMT_WRITE")
       float_arg = float_val(Arg);
       PRINT_ARG(float_arg);
@@ -352,18 +352,18 @@ xsbBool fmt_write_string(void)
     xsb_abort("[FMT_WRITE_STRING] Arg 1 must be an unbound variable");
   
   Fmt_term = reg_term(3);
-  if (is_list(Fmt_term))
+  if (islist(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term, &FmtBuf,
 				 "FMT_WRITE_STRING", "format string");
-  else if (is_string(Fmt_term))
+  else if (isstring(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
     xsb_abort("[FMT_WRITE_STRING] Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
-  if (is_functor(ValTerm))
+  if (isconstr(ValTerm))
     Arity = get_arity(get_str_psc(ValTerm));
-  else if (is_var(ValTerm))
+  else if (isref(ValTerm))
     /* Var in the argument position means, no arguments */
     Arity = 0;
   else {
@@ -371,11 +371,11 @@ xsbBool fmt_write_string(void)
     prolog_term TmpValTerm=p2p_new();
 
     c2p_functor("arg", 1, TmpValTerm);
-    if (is_string(ValTerm))
+    if (isstring(ValTerm))
       c2p_string(string_val(ValTerm), p2p_arg(TmpValTerm,1));
-    else if (is_int(ValTerm))
+    else if (isinteger(ValTerm)|isboxedinteger(ValTerm))
       c2p_int(oint_val(ValTerm), p2p_arg(TmpValTerm,1));
-    else if (is_float(ValTerm))
+    else if (isfloat(ValTerm))
       c2p_float(float_val(ValTerm), p2p_arg(TmpValTerm,1));
     else
       xsb_abort("Usage: fmt_write_string(-OutStr, +FmtStr, +args(A1,A2,...))");
@@ -422,21 +422,21 @@ xsbBool fmt_write_string(void)
       XSB_StrSet(&StrArgBuf,"");
       print_pterm(Arg, TRUE, &StrArgBuf);
       SPRINT_ARG(StrArgBuf.string);
-    } else if (is_string(Arg)) {
+    } else if (isstring(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       str_arg = string_val(Arg);
       SPRINT_ARG(str_arg);
-    } else if (is_list(Arg)) {
+    } else if (islist(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       sprintf(aux_msg, "argument %d", i);
       str_arg = p_charlist_to_c_string(Arg, &StrArgBuf,
 				       "FMT_WRITE_STRING", aux_msg);
       SPRINT_ARG(str_arg);
-    } else if (is_int(Arg)) {
+    } else if (isinteger(Arg)|isboxedinteger(Arg)) {
       TYPE_ERROR_CHK('i', "FMT_WRITE_STRING");
       int_arg = oint_val(Arg);
       SPRINT_ARG(int_arg);
-    } else if (is_float(Arg)) {
+    } else if (isfloat(Arg)) {
       TYPE_ERROR_CHK('f', "FMT_WRITE_STRING");
       float_arg = float_val(Arg);
       SPRINT_ARG(float_arg);
@@ -493,17 +493,17 @@ xsbBool fmt_read(void)
 
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
-  if (is_list(Fmt_term))
+  if (islist(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term,&FmtBuf,"FMT_READ","format string");
-  else if (is_string(Fmt_term))
+  else if (isstring(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
     xsb_abort("[FMT_READ] Format must be an atom or a character string");
 
   AnsTerm = reg_term(4);
-  if (is_functor(AnsTerm))
+  if (isconstr(AnsTerm))
     Arity = get_arity(get_str_psc(AnsTerm));
-  else if (is_var(AnsTerm)) {
+  else if (isref(AnsTerm)) {
     /* assume that only one input val is reuired */
     prolog_term TmpAnsTerm=p2p_new(), TmpArg;
 
@@ -551,7 +551,7 @@ xsbBool fmt_read(void)
       break;
     case '.': /* last format substring (and has no conversion spec) */
       curr_assignment = fscanf(fptr, current_fmt_spec->fmt);
-      if (is_var(Arg))
+      if (isref(Arg))
 	xsb_warn("[FMT_READ] More arguments than format specifiers");
       goto EXIT_READ;
     case 's':
@@ -562,10 +562,10 @@ xsbBool fmt_read(void)
       /* if no match, leave prolog variable uninstantiated;
 	 if it is a prolog constant, then return FALSE (no unification) */
       if (curr_assignment <= 0) {
-	if (is_var(Arg)) break;
+	if (isref(Arg)) break;
 	else return FALSE;
       }
-      if (is_var(Arg))
+      if (isref(Arg))
 	c2p_string(StrArgBuf.string,Arg);
       else if (strcmp(StrArgBuf.string, string_val(Arg)))
 	return FALSE;
@@ -577,7 +577,7 @@ xsbBool fmt_read(void)
       cont = 1; /* don't leave the loop */
       curr_chars_consumed = int_arg;
       int_arg += chars_accumulator;
-      if (is_var(Arg))
+      if (isref(Arg))
 	c2p_int(int_arg,Arg);
       else xsb_abort("[FMT_READ] Argument %i must be a variable", i);
       break;
@@ -587,10 +587,10 @@ xsbBool fmt_read(void)
       /* if no match, leave prolog variable uninstantiated;
 	 if it is a prolog constant, then return FALSE (no unification) */
       if (curr_assignment <= 0) {
-	if (is_var(Arg)) break;
+	if (isref(Arg)) break;
 	else return FALSE;
       }
-      if (is_var(Arg))
+      if (isref(Arg))
 	c2p_int(int_arg,Arg);
       else if (int_arg != oint_val(Arg)) return FALSE;
       break;
@@ -598,7 +598,7 @@ xsbBool fmt_read(void)
       curr_assignment = fscanf(fptr, aux_fmt.string,
 			       &float_arg, &curr_chars_consumed);
       /* floats never unify with anything */
-      if (!is_var(Arg)) return FALSE;
+      if (!isref(Arg)) return FALSE;
       /* if no match, leave prolog variable uninstantiated */
       if (curr_assignment <= 0) break;
       c2p_float(float_arg, Arg);
@@ -1060,7 +1060,7 @@ int read_canonical(void)
 
 	XSB_Deref(arg2);
 	term = (prolog_term) arg2;
-	if (isinteger(term) || 
+	if ((isinteger(term)|isboxedinteger(term)) || 
 	    isfloat(term) || 
 	    isstring(term) ||
 	    varfound || 

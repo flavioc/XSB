@@ -69,6 +69,8 @@
 #include "io_builtins_xsb.h"
 #include "socket_xsb.h"
 #include "timer_xsb.h"
+#include "psc_xsb.h"
+#include "register.h"
 
 /* return error code handling */
 static xsbBool set_error_code(int ErrCode, int ErrCodeArgNumber,char *Where);
@@ -691,7 +693,7 @@ xsbBool xsb_socket_request(void)
 
     /* specify the time out */
     timeout_term = reg_term(3);
-    if (is_int(timeout_term)) {
+    if (isinteger(timeout_term)|isboxedinteger(timeout_term)) {
       timeout = int_val(timeout_term);
       /* initialize tv */
       tv = (struct timeval *)malloc(sizeof(struct timeval));
@@ -790,7 +792,8 @@ static xsbBool set_error_code(int ErrCode, int ErrCodeArgNumber, char *Where)
   prolog_term ecode_value_term, ecode_arg_term = p2p_new();
   
   ecode_value_term = reg_term(ErrCodeArgNumber);
-  if (!is_var(ecode_value_term) && !is_int(ecode_value_term))
+  if (!isref(ecode_value_term) && 
+      !(isinteger(ecode_value_term)|isboxedinteger(ecode_value_term)))
     xsb_abort("[%s] Arg %d (the error code) must be a variable or an integer!",
 	      Where, ErrCodeArgNumber);
 
@@ -881,7 +884,7 @@ static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
   *size = getsize(local);
   *fds = (int*)malloc(sizeof(int)*(*size));
 
-  while (!is_nil(list)) {
+  while (!isnil(list)) {
     head = p2p_car(list);
     (*fds)[i++] = p2c_int(head);
     list = p2p_cdr(list);
@@ -972,9 +975,9 @@ static int getsize (prolog_term list)
   int size = 0;
   prolog_term head;
 
-  while (!is_nil(list)) {
+  while (!isnil(list)) {
     head = p2p_car(list);
-    if(!is_int(head)) 
+    if(!(isinteger(head)|isboxedinteger(head))) 
       xsb_abort("A non-integer socket descriptor encountered in a socket operation");
     list = p2p_cdr(list);
     size++;

@@ -953,7 +953,7 @@ int builtin_call(byte number)
   case CONGET_TERM: {
     Integer res = conget((Cell)ptoc_tag(1));
     prolog_term arg2 = reg_term(2);
-    if (is_var(arg2)) {
+    if (isref(arg2)) {
       c2p_int(res,arg2);
       return TRUE;
     } else {
@@ -2071,7 +2071,7 @@ int builtin_call(byte number)
     int size;
     xsbBool retcode;
     size_var = reg_term(2);
-    if (! is_var(size_var)) {
+    if (! isref(size_var)) {
       xsb_abort("[IS_CHARLIST] Arg 2 must be a variable");
     }
     retcode = is_charlist(reg_term(1), &size);

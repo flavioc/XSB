@@ -136,12 +136,12 @@ xsbBool str_match(void)
   str_len=strlen(stringptr);
   sub_len=strlen(subptr);
 
-  if (is_int(beg_offset_term)) {
+  if (isinteger(beg_offset_term)|isboxedinteger(beg_offset_term)) {
     if (int_val(beg_offset_term) < 0) {
       beg_bos_offset = FALSE;
     }
   }
-  if (is_int(end_offset_term)) {
+  if (isinteger(end_offset_term)|isboxedinteger(end_offset_term)) {
     if (int_val(end_offset_term) < 0) {
       end_bos_offset = FALSE;
     }
@@ -194,7 +194,7 @@ xsbBool substring(void)
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (isatom(input_term)) /* check it */
     input_string = string_val(input_term);
-  else if (is_list(input_term)) {
+  else if (islist(input_term)) {
     input_string = p_charlist_to_c_string(input_term, &input_buffer,
 					  "SUBSTRING", "input string");
     conversion_required = TRUE;
@@ -205,7 +205,7 @@ xsbBool substring(void)
 
   /* arg 2: beginning offset */
   beg_offset_term = reg_term(2);
-  if (! is_int(beg_offset_term))
+  if (! (isinteger(beg_offset_term)|isboxedinteger(beg_offset_term)))
     xsb_abort("[SUBSTRING] Arg 2 (the beginning offset) must be an integer");
   beg_offset = int_val(beg_offset_term);
   if (beg_offset < 0)
@@ -215,9 +215,9 @@ xsbBool substring(void)
 
   /* arg 3: ending offset */
   end_offset_term = reg_term(3);
-  if (is_var(end_offset_term))
+  if (isref(end_offset_term))
     end_offset = input_len;
-  else if (! is_int(end_offset_term))
+  else if (! (isinteger(end_offset_term)|isboxedinteger(end_offset_term)))
     xsb_abort("[SUBSTRING] Arg 3 (the end offset) must be integer or _");
   else end_offset = int_val(end_offset_term);
 
@@ -229,7 +229,7 @@ xsbBool substring(void)
     end_offset = beg_offset;
 
   output_term = reg_term(4);
-  if (! is_var(output_term))
+  if (! isref(output_term))
     xsb_abort("[SUBSTRING] Arg 4 (the output string) must be an unbound variable");
 
   /* do the actual replacement */
@@ -280,7 +280,7 @@ xsbBool string_substitute(void)
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (isatom(input_term)) /* check it */
     input_string = string_val(input_term);
-  else if (is_list(input_term)) {
+  else if (islist(input_term)) {
     input_string = p_charlist_to_c_string(input_term, &input_buffer,
 					  "STRING_SUBSTITUTE", "input string");
     conversion_required = TRUE;
@@ -291,39 +291,39 @@ xsbBool string_substitute(void)
 
   /* arg 2: substring specification */
   subst_spec_list_term = reg_term(2);
-  if (!is_list(subst_spec_list_term) && !is_nil(subst_spec_list_term))
+  if (!islist(subst_spec_list_term) && !isnil(subst_spec_list_term))
     xsb_abort("[STRING_SUBSTITUTE] Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
   subst_str_list_term = reg_term(3);
-  if (! is_list(subst_str_list_term))
+  if (! islist(subst_str_list_term))
     xsb_abort("[STRING_SUBSTITUTE] Arg 3 must be a list of strings");
 
   output_term = reg_term(4);
-  if (! is_var(output_term))
+  if (! isref(output_term))
     xsb_abort("[STRING_SUBSTITUTE] Arg 4 (the output) must be an unbound variable");
 
   subst_spec_list_term1 = subst_spec_list_term;
   subst_str_list_term1 = subst_str_list_term;
 
-  if (is_nil(subst_spec_list_term1)) {
+  if (isnil(subst_spec_list_term1)) {
     XSB_StrSet(&output_buffer, input_string);
     goto EXIT;
   }
-  if (is_nil(subst_str_list_term1))
+  if (isnil(subst_str_list_term1))
     xsb_abort("[STRING_SUBSTITUTE] Arg 3 must not be an empty list");
 
   do {
     subst_reg_term = p2p_car(subst_spec_list_term1);
     subst_spec_list_term1 = p2p_cdr(subst_spec_list_term1);
 
-    if (!is_nil(subst_str_list_term1)) {
+    if (!isnil(subst_str_list_term1)) {
       subst_str_term = p2p_car(subst_str_list_term1);
       subst_str_list_term1 = p2p_cdr(subst_str_list_term1);
 
       if (isatom(subst_str_term)) {
 	subst_string = string_val(subst_str_term);
-      } else if (is_list(subst_str_term)) {
+      } else if (islist(subst_str_term)) {
 	subst_string = p_charlist_to_c_string(subst_str_term, &subst_buf,
 					      "STRING_SUBSTITUTE",
 					      "substitution string");
@@ -334,7 +334,8 @@ xsbBool string_substitute(void)
     beg_term = p2p_arg(subst_reg_term,1);
     end_term = p2p_arg(subst_reg_term,2);
 
-    if (!is_int(beg_term) || !is_int(end_term))
+    if (!(isinteger(beg_term)|isboxedinteger(beg_term)) || 
+	!(isinteger(end_term)|isboxedinteger(end_term)))
       xsb_abort("[STRING_SUBSTITUTE] Non-integer in Arg 2");
     else{
       beg_offset = int_val(beg_term);
@@ -352,7 +353,7 @@ xsbBool string_substitute(void)
     
     last_pos = end_offset;
 
-  } while (!is_nil(subst_spec_list_term1));
+  } while (!isnil(subst_spec_list_term1));
 
   XSB_StrAppend(&output_buffer, input_string+end_offset);
 
