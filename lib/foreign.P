@@ -108,7 +108,7 @@ read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 		LdOptionMid = LdOptionIn
 	    ; Clause = (':-'(ldoption(Opt))) ->
 		form_ld_option(Opt, LdOptionIn, LdOptionMid)
-	    ; Clause = (':-'(commandline(CompComm))) -> true
+	    ; Clause = (':-'(compile_command(CompComm))) -> true
 	    ; Clause = (':-'(foreign_pred(PredDecl))) ->
 	        checkfile(ModName, TempFile),  % creates tempfile if necessary
 	        process_from(PredDecl,Exports),
