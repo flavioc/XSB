@@ -8,11 +8,11 @@
 
 #mode standard Prolog
 
-#define	FLORA_PREFIX	_$_$_flora
+#define	FLORA_PREFIX	'_$_$_flora'
 
 #mode save
 #mode nostring "\!#'"
-#define WORKSPACE(X,Y)    'FLORA_PREFIX''X''Y'
+#define WORKSPACE(X,Y)	FLORA_PREFIX'X''Y'
 #mode restore
 
 /***********************************************************************/
