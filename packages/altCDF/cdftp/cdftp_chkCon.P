@@ -1,0 +1,46 @@
+
+:- [cdftp_chkCon].
+:- [altCDF].
+
+:- import allAttr/3, classHasAttr/3, hasAttr/3, 
+	   isa/2, maxAttr/4, minAttr/4 from cdf_init_cdf.
+:- import cdf_id_fields/4, system_component/1 from cdf_init_cdf.
+
+descend_all:- 
+	isa_ext(X,cid('CDF Classes',cdf)),
+	descend(X).
+
+:- table descend/1.
+descend(Class):- 
+	check_consist(Class),
+	isa_ext(cid(NewClass,S),Class),
+	descend(cid(NewClass,S)),
+	fail.
+	
+check_consist(Class):-
+	cdf_id_fields(Class,_B,_C,Comp),
+	\+ system_component(Comp),
+	findall(Conj,cdf_to_ce(Class,Conj),CEList),
+	writeln(ce(Class,CEList)),
+	sat_test([Class|CEList]).
+
+cdf_to_ce(Class,exists(R,C)):- 
+	(hasAttr(Class,R,C) ; classHasAttr(Class,R,C)),
+	(C = oid(_,_) -> 
+	    cdf_warning(tp,['omitting ',hasAttr(Class,R,C),' in consist check'])
+	  ; true).
+cdf_to_ce(Class,atLeast(N,R,C)):- 
+	minAttr(Class,R,C,N),
+	(C = oid(_,_) -> 
+	    cdf_warning(tp,['omitting ',hasAttr(N,Class,R,C),' in consist check'])
+	  ; true).
+cdf_to_ce(Class,all(R,C)):- 
+	allAttr(Class,R,C),
+	(C = oid(_,_) -> 
+	    cdf_warning(tp,['omitting ',allAttr(Class,R,C),' in consist check'])
+	  ; true).
+cdf_to_ce(Class,atMost(R,C)):- 
+	maxAttr(Class,R,C,N),
+	(C = oid(_,_) -> 
+	    cdf_warning(tp,['omitting ',allAttr(N,Class,R,C),' in consist check'])
+	  ; true).

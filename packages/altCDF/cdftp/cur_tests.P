@@ -1,0 +1,481 @@
+%--------------------------------------------------------------
+% AL
+
+% x:father == x:parent,male
+sat_test((c1,c2),true).
+
+sat_test((c1,not(c1)),false).
+
+%--------------------------------------------------------------
+% ALU
+
+% examples: major party candidates,planar graphs
+
+% x:legalEmployee == x:employableAge,(x:citizen ; x:permanentResident)
+
+sat_test((c1,(c2 ; c3)),true).
+
+% x:legalEmployee == x:employableAge,(x:citizen ; x:permanentResident 
+%                                                ; x:hasH1)
+sat_test((c1 ; c2 ; c3),true).
+
+sat_test(((c1 ; c2) ; (c3 ; c4)),true).
+
+%--------------------------------------------------------------
+% ALC: Negation and conditionals:
+
+% unemployed persons, essential hypertension, 
+
+sat_test((c1,not((c2 , c3))),true).
+
+sat_test((c1,not((c2 ; c3))),true).
+
+sat_test((c1,not((c1 , c2))),true).
+
+sat_test((c1,not(c1)),false).
+
+sat_test((not(c1),c1),false).
+
+sat_test((c1,not((c1 ; c2))),false).
+
+sat_test(not(not(c1)),true).
+
+sat_test((not(not(c1)),not(c1)),false).
+
+sat_test((c1,c2,not((c1 ; c2))),false).
+
+%-----------------------------
+% ALC: boolean + existential
+
+sat_test((exists(r,c3)),true).
+
+sat_test((c1,(c2 ; exists(r,c3))),true).
+
+sat_test((c1,(c2 ; exists(r1,exists(r2,c3)))),true).
+
+sat_test((c1,(c2,exists(r1,not(exists(r2,c3))))),true).
+
+sat_test((c1,(c2,exists(r1,not(all(r2,c3))))),true).
+
+
+%---------------------------------
+% ALC
+
+sat_test((exists(r,c1),all(r,c2)),true).
+
+sat_test((exists(r,c1),exists(r,not(c1))),true).
+
+sat_test((c1,(all(r,c3))),true).
+
+sat_test((exists(r,c1),(all(r,not(c1)))),false).
+
+sat_test((c1,(c2 ; all(r,c3))),true).
+
+sat_test((not(all(r2,c3))),true). 
+
+sat_test((c1,(c2 ; all(r1,all(r2,c3)))),true).
+
+sat_test((all(r1,c3),exists(r1,c2)),true).
+
+sat_test((exists(r,c1),exists(r,c2),all(r,not((c1 ; c2)))),false).
+
+sat_test((exists(r,c1),exists(r,c2),not(all(r,(c1 ; c2)))),true).
+
+sat_test((exists(r1,c1) , 
+	       exists(r1,c12) , 
+               all(r1,(exists(r1,c21),
+                       exists(r2,c22)))),true).
+
+sat_test((exists(r1,c1), 
+                    all(r1,(exists(r2,c22),
+                            all(r2,(exists(r3,c31)))))),true).
+
+sat_test((exists(r1,c1) , 
+	       exists(r1,c12) , 
+               all(r1,(exists(r1,c21),
+                       exists(r2,c22),
+                       all(r2,(exists(r3,c31),
+			       exists(r3,c31)))))),true).
+
+%--------------------------------------------------------------
+% ALCH
+
+sat_test(cdfroot,true).      
+
+sat_test(cdfbottom,false).      
+
+sat_test((c1,not(cdfroot)),false).  	
+
+sat_test((c1,not(cdfbottom)),true).	
+
+sat_test((cdfroot,not(c1)),true).      
+
+sat_test((cc1,not(cc2)),false).		
+
+sat_test((cc2,not(cc1)),true).		
+
+sat_test((cc1,not(cc3)),false).		
+
+sat_test((exists(rr2,cdfroot),not(exists(rr1,cdfroot))),true).
+
+sat_test((exists(rr1,cdfroot),not(exists(rr2,cdfroot))),false). 
+
+sat_test((exists(rr1,cc1),not(exists(rr1,cc2))),false).
+
+sat_test((exists(rr1,cc2),not(exists(rr1,cc1))),true). 
+
+sat_test((exists(rr1,cc1),all(rr1,cc2)),true). 
+
+sat_test((exists(rr1,cc2),all(rr1,cc1)),true). 
+
+sat_test((not(exists(rr1,cc1)),all(rr1,cc2)),true). 
+
+sat_test((not(exists(rr1,cc2)),all(rr1,cc1)),true). 
+
+
+%--------------------------------------------------------------
+% ALCI
+
+sat_test((exists(inv(r),c3)),true).
+
+sat_test(not(exists(inv(r),c3)),true).
+
+sat_test((c1,(c2 ; exists(inv(r),c3))),true).
+
+sat_test((c1,exists(r,c1),not(exists(inv(r),c1))),true).
+
+sat_test((c1,exists(r,not(exists(inv(r),c1)))),false).
+
+sat_test((c1,exists(inv(r),not(exists(r,c1)))),false).
+
+sat_test((c1,
+                    exists(r1,cdfroot),
+	            all(inv(r1),not(c1))),true).
+
+sat_test((c1,
+                    exists(inv(r1),cdfroot),
+	            all(inv(r1),all(r1,not(c1)))),false).
+
+sat_test((cc1,exists(r,not(exists(inv(r),cc2)))),false).
+
+sat_test((cc2,exists(r,not(exists(inv(r),cc1)))),true).
+
+sat_test((c1,exists(r1,all(inv(r1),not(c2)))),true).
+
+sat_test((c1,exists(r1,all(inv(r1),not(c1)))),false).
+
+sat_test((not(c1),exists(r1,all(inv(r1),c1))),false).
+
+sat_test((c1,exists(inv(r1),all(r1,not(c1)))),false).
+
+sat_test((not(c1),exists(inv(r1),all(r1,c1))),false).
+
+sat_test((cc1,exists(inv(r1),all(r1,not(cc2)))),false).
+
+sat_test((cc2,exists(inv(r1),all(r1,not(cc1)))),true).
+
+%--------------------------------------------------------------
+% ALCHI
+
+sat_test((exists(inv(rr2),cdfroot),
+                     not(exists(inv(rr1),cdfroot))),true).
+
+sat_test((exists(inv(rr1),cdfroot),
+                    not(exists(inv(rr2),cdfroot))),false). 
+
+sat_test((exists(rr2,not(exists(inv(rr1),cdfroot)))),true).
+
+sat_test((exists(rr1,not(exists(inv(rr2),cdfroot)))),false).
+
+sat_test((c1,exists(inv(rr2),all(rr1,not(c1)))),true).
+
+sat_test((c1,exists(inv(rr1),all(rr2,not(c1)))),false).
+
+sat_test((c1,exists(rr2,all(inv(rr1),not(c1)))),true).
+
+sat_test((c1,exists(rr1,all(inv(rr2),not(c1)))),false).
+
+%--------------------------------
+% ALCN
+
+sat_test(atLeast(2,p),true).
+
+sat_test(atMost(2,p),true).
+
+sat_test((atLeast(2,p) ; atLeast(2,r)),true).
+
+sat_test((atMost(2,p) ; atMost(2,r)),true).
+
+sat_test((exists(r1,atLeast(2,p))),true).
+
+sat_test((exists(r1,atMost(2,p))),true).
+
+sat_test((all(r1,atLeast(2,p))),true).
+
+sat_test((all(r1,atMost(2,p))),true).
+
+sat_test((c1 ; exists(r1,atLeast(2,p))),true).
+
+sat_test((atLeast(2,p1),atMost(2,p1)),true).
+
+sat_test((atLeast(2,p1),atMost(1,p1)),false).
+
+sat_test((atLeast(2,p1),not(atMost(1,p1))),true).
+
+sat_test((atLeast(2,p1),not(atLeast(1,p1))),false).
+
+%sat_test(atLeast(0,r),true).
+
+sat_test((atLeast(1,r),atMost(0,r)),false).
+
+sat_test(not((not(atLeast(1,r)) ; not(atMost(0,r)))),false).
+
+sat_test((exists(r,c1),exists(r,not(c1)),atMost(1,r)),false).
+
+%--------------------------------------------------------------
+% ALCNI
+
+sat_test((exists(inv(r),c1),exists(inv(r),not(c1)),
+	            atMost(1,inv(r))),false).
+
+sat_test((c1,atLeast(1,r),all(r,all(inv(r),not(c1)))),false).
+
+sat_test((c1,atLeast(1,inv(r)),all(inv(r),all(r,not(c1)))),false).
+
+sat_test((exists(r,(atMost(0,inv(r))))),false).
+
+sat_test((exists(inv(r),(atMost(0,r)))),false).
+
+sat_test((exists(r1,not(c1)),exists(r1,c1),
+		    atMost(1,inv(r1))),true).
+
+sat_test((exists(inv(r1),not(c1)),exists(inv(r1),c1),
+		    atMost(1,r1)),truee).
+
+sat_test((exists(r1,c1),exists(r1,c1),
+		    atMost(1,inv(r1))),true).
+
+%--------------------------------------------------------------
+% ALCNHI
+
+sat_test((exists(rr1,(atMost(0,inv(rr2))))),false).
+
+sat_test((exists(rr2,(atMost(0,inv(rr1))))),true).
+
+%--------------------------------------------------------------
+% ALCQ(I)
+
+sat_test((atLeast(2,r1,c1)),true).
+
+sat_test((atMost(2,r1,c1)),true).
+
+sat_test((atLeast(2,r1,c1),atMost(2,r1)),true).
+
+sat_test((atLeast(2,r1,c1),atMost(1,r1)),false).
+
+sat_test((atMost(2,r1,c1),atLeast(2,r1)),true).
+
+sat_test((atMost(2,r1,c1),atLeast(3,r1)),true).
+
+sat_test((atLeast(2,r1,(c1 ; c2))),true).
+
+%------------------
+% All with atLeast
+
+sat_test((atLeast(2,r1,c1),all(r1,not(c1))),false).
+
+sat_test((atLeast(2,r1,c1),all(r1,c2)),true).
+
+sat_test((all(r1,not(c1)),atLeast(2,r1,c1)),false).
+
+sat_test((all(r1,c2),atLeast(2,r1,c1)),true).
+
+%------------------
+% Exists with atMost
+
+sat_test((exists(r,c1),exists(r,not(c1)),atMost(1,r,c2)),true).
+
+sat_test((exists(inv(r),c1),exists(inv(r),not(c1)),
+                   atMost(1,inv(r),c2)),true).
+
+sat_test((exists(r,c1),exists(r,not(c1)),
+                   atMost(1,r,(c1 ; not(c1)))),false).
+
+sat_test((exists(inv(r),c1),exists(inv(r),not(c1)),
+                   atMost(1,inv(r),(c1 ; not(c1)))),false).
+
+sat_test((c,not(c) ; (exists(r,c1),exists(r,not(c1)),
+                   atMost(1,r,(c1 ; not(c1))))),false).
+
+sat_test((c,not(c) ; (exists(r,c1),exists(r,not(c1)),
+                   atMost(1,r,(c2)))),true).
+
+sat_test((c,not(c) ; (exists(inv(r),c1),exists(inv(r),not(c1)),
+                   atMost(1,inv(r),(c1 ; not(c1))))),false).
+
+sat_test((c,not(c) ; (exists(inv(r),c1),exists(inv(r),not(c1)),
+                   atMost(1,inv(r),(c2)))),true).
+
+%------------------
+% Exists with atLeast and atMost
+
+sat_test((atLeast(2,r1,c1),exists(r1,c1),atMost(2,r1)),true).
+
+sat_test((atLeast(2,r1,c1),exists(r1,c2),atMost(2,r1)),true).
+
+sat_test((atLeast(2,r1,c1),exists(r1,not(c1)),atMost(2,r1)),false).
+
+sat_test((atLeast(2,inv(r1),c1),exists(inv(r1),c1),atMost(2,inv(r1))),true).
+
+sat_test((exists(r1,c1),atLeast(2,r1,c1),atMost(2,r1)),true).
+
+sat_test((exists(r1,c2),atLeast(2,r1,c1),atMost(2,r1)),true).
+
+sat_test((exists(r1,not(c1)),atLeast(2,r1,c1),atMost(2,r1)),false).
+
+sat_test((exists(inv(r1),c1),atLeast(2,inv(r1),c1),atMost(2,inv(r1))),true).
+
+sat_test((c2,not(c2) ; (exists(r1,c1),atLeast(2,r1,c1),atMost(2,r1))),true).
+
+sat_test((c2,not(c2) ; 
+         (exists(inv(r1),c1),atLeast(2,inv(r1),c1),atMost(2,inv(r1)))),true).
+
+%----------------------------
+% Expressions within atLeast.
+
+sat_test((atLeast(2,r1,exists(r2,c2))),true).
+
+sat_test((atLeast(2,r1,(exists(r2,c2) ; exists(r3,c3)))),true).
+
+sat_test((atLeast(2,r1,(all(r2,c2) ; all(r3,c3)))),true).
+
+sat_test((atLeast(2,r1,atLeast(2,r2,c2))),true).
+
+%----------------------------
+% Expressions within atMost -- TBD.
+
+%--------------------------------------------------------------
+% ALCNH
+
+sat_test((atLeast(2,rr1),atMost(1,rr2)),false).
+
+sat_test((atLeast(2,rr2),atMost(1,rr1)),true).
+
+sat_test((atLeast(2,rr1),not(atLeast(2,rr2))),false).
+
+sat_test((atLeast(2,rr2),not(atLeast(2,rr1))),true).
+
+sat_test((exists(r1,c1),exists(r1,c1),atMost(1,r1)),true).
+
+%--------------------------------------------------------------
+% ALCQH
+
+sat_test((atLeast(2,rr1,cc2),atMost(1,rr1,cc1)),true).
+
+sat_test((atLeast(2,rr1,cc1),atMost(1,rr1,cc2)),false).
+
+sat_test((atLeast(2,rr1,cc2),atMost(1,rr1,cc2)),false).
+
+sat_test((atLeast(2,rr1,cc2),not(atLeast(2,rr1,cc1))),true).
+
+sat_test((atLeast(2,rr1,cc1),not(atLeast(2,rr1,cc2))),false).
+
+sat_test((atLeast(2,rr1,cc2),not(atLeast(2,rr1,cc2))),false).
+
+%--------------------------------------------------------------
+% ALCQI
+
+sat_test((exists(r1,(atMost(0,inv(r1),cdfroot)))),false).
+
+sat_test((exists(inv(r1),(atMost(0,r1,cdfroot)))),false).
+
+sat_test((c1,atLeast(1,r,all(inv(r),not(c1)))),false).
+
+sat_test((c1,atLeast(1,inv(r),all(r,not(c1)))),false).
+
+sat_test((exists(r1,all(inv(r1),not(c1))),
+	            atLeast(2,r1,(all(inv(r1),c1)))),false).
+
+sat_test((atLeast(2,r1,c1),exists(r1,c1),atMost(2,r1)),true).  
+
+%--------------------------------------------------------------
+% ALCQHI
+
+sat_test((exists(inv(rr1),(atMost(0,rr2,cdfroot)))),false).
+
+sat_test((exists(inv(rr2),(atMost(0,rr1,cdfroot)))),true).
+
+sat_test((c1,atLeast(1,inv(rr1),all(rr2,not(c1)))),false).
+
+sat_test((c1,atLeast(1,inv(rr2),all(rr1,not(c1)))),true).
+
+sat_test((not(c1),(exists(inv(r),c1),(all(inv(r),exists(inv(r)),c1)))),true).
+
+%--------------------------------------------------------------
+% SameAs
+
+sat_test((exists(r1,c1),exists(r2,c2),sameAs(r1,c1,r2,c2),true).
+
+sat_test((exists(r1,c1),all(r2,c2),sameAs(r1,c1,r2,c2)),false).
+
+sat_test((exists(r1,exists(r1,c1)),exists(r2,c2),
+	  sameAs(r1,exists(r1,c1),r2,c2),true)).
+
+sat_test((exists(r1,c1),exists(r2,not(c1)),sameAs(r1,c1,r2,not(c1))),false).
+
+sat_test((exists(r1,c1),exists(r2,not(c1)),sameAs(r1,cdfroot,r2,cdfroot)),false).
+
+sat_test((exists(r1,c1),exists(r2,not(c1)),sameAs(r1,cdfbottom,r2,cdfbottom)),true).
+
+sat_test((c1,exists(r1,exists(r1,c1)),exists(r2,c2),sameAs(r1,c1,r2,c2)),true).
+
+sat_test((atLeast(1,r1,c1),atLeast(1,r2,c2),sameAs(r1,c1,r2,c2),true).
+
+%--------------------------------------------------------------
+% ics.
+
+sat_test(stereo,exists(amplifier,big),exists(amplifier,small),true).
+
+
+
+end_of_file.
+
+
+Also, test use of atleast within atmost.
+
+hierarchies in am_visited_invrel.
+
+recheck negation of exists and all...
+
+
+
+
+%--------------------------------------------------------------
+% S
+
+sat_test((a,exists(s,(all(p,exists(rt,cdfroot)),
+	       all(p,all(rt,(all(inv(rt),all(inv(p),all(inv(s),not(a))))))),
+	       all(p,exists(p,cdfroot)),
+ 	       exists(rt,cdfroot),
+	       exists(p,cdfroot),
+               all(rt,(all(inv(rt),all(inv(p),all(inv(s),not(a))))))))),false).
+
+
+sat_test((exists(rt,c1),(exists(rt,(exists(rt,c2))))),true).
+
+sat_test((all(rt,not(c1)),(exists(rt,(exists(rt,c1))))),false).
+
+% need to double-check that this is unsatisfiable.
+sat_test((a,exists(s,(all(p,exists(r,cdfroot)),
+		all(p,all(r,(all(inv(r),all(inv(p),all(inv(s),not(a))))))),
+		all(p,exists(p,cdfroot)),
+		exists(r,cdfroot),
+		exists(p,cdfroot),
+                all(r,(all(inv(r),all(inv(p),all(inv(s),not(a))))))))),false).
+
+
+!!! does not work because of transitive and inverse intraction !!!
+sat_test((not(c1),atMost(1,inv(rt)),exists(inv(rt),c1),all(inv(rt),(exists(inv(rt),c1),atMost(1,inv(rt)))),false).
+
+test out atLeast along with transitive.
+

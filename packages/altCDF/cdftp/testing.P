@@ -1,0 +1,26 @@
+
+:- [cur_tests].
+
+testall:- 
+	testall1.
+
+testall1:- 
+	sat_test(Formula,Val),
+	writeln(sat_test(Formula,Val)),
+	testval(Formula,Val),
+	fail.
+testall1.
+
+testval(Formula,true):- 
+	(sat(Formula) -> 
+	    true 
+	  ; writeln('!!!failing'(sat_test(Formula,true)))).
+testval(Formula,false):- 
+	(\+ sat(Formula) -> 
+	    true 
+	  ; writeln('!!!failing'(sat_test(Formula,false)))).
+
+?- [newmeta].
+
+?- testall.
+

@@ -1,0 +1,8 @@
+
+preprocess(In,Out):- 
+	(is_list(In) -> list_to_comma(In,Out) ; Out = In).
+
+list_to_comma([],true).
+list_to_comma([H],H):- !.
+list_to_comma([H|T],','(H,T1)):- 
+	list_to_comma(T,T1).

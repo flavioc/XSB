@@ -1,0 +1,24 @@
+
+
+isa_ext(cid(electronicPart,o1),cid('CDF Classes',cdf)).
+isa_ext(cid(stereo,o1),cid(electronicPart,o1)).
+isa_ext(cid(expensiveStereo,o1),cid(stereo,o1)).
+isa_ext(cid(bookshelfStereo,o1),cid(stereo,o1)).
+
+isa_ext(cid(expBookStereo,o1),cid(expensiveStereo,o1)).
+isa_ext(cid(expBookStereo,o1),cid(bookshelfStereo,o1)).
+
+isa_ext(cid(size,o1),cid(cdfroot,o1)).
+isa_ext(cid(big,o1),cid(size,o1)).
+isa_ext(cid(small,o1),cid(size,o1)).
+
+hasAttr_ext(cid(stereo,o1),rid(amplifier,o1),cid(size,o1)).
+
+maxAttr_ext(cid(expensiveStereo,o1),rid(amplifier,o1),cid(big,o1),1).
+
+maxAttr_ext(cid(bookshelfStereo,o1),rid(amplifier,o1),cid(small,o1),1).
+
+end_of_file.
+
+ic((big,small)).
+
