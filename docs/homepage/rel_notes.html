@@ -13,33 +13,108 @@
 
 <h3>General</h3>
 
+Version 2.6 contains a number of changes, including new packages and
+libraries for generation of manuals from code documentation and for
+answer set programming.  Version 2.6 also allows a user-modifiable
+extension for byte-code files, whose default .xwam extension replaces
+the previous .O extension.  Existing features Version 2.6 have been
+improved  in various ways, from better exception handling, to a more
+robust Windows implementation, to numerous bug-fixes.
 
 <h3>News</h3>
 <ul>
-<li> The Chat engine has been removed.
+<li> Various aspects of XSB have been rewritten to support an
+ISO-compatable error handling mechanism in which exceptional
+conditions can be caught and handled by user programs.
+
+<li> Fixed-depth indexing has been added for dynamic predicates.
+Using fixed-depth indexing a term in a given arguments may be indexed
+on the first five non-variable symbols.  Multiple-argument and
+alternative indices also work with fixed-depth indexing just as they
+do with outer functor indexing.
+
+<li> Full-word integers are now supported in XSB via an implementation
+of boxed integers.
+
+<li> Date and time routines have been added as standard
+predicates.
+
+<li> The Chat engine has been removed so that the default SLG-WAM
+engine is the only tabling engine available.
+
 </ul>
-<h3>Bugfixes</h3>
+
+<h3>Packages and Libraries</h3>
 <ul>
-  <li> 
+<li> A new package, xsbdoc, has been added.  xsbdoc supports a
+"literate programming" style, in which code-level comments can be used
+to generate manuals.  It is based in part on Ciao system's lpdoc.
+
+<li> The XASP package provides an efficient interface to SModels from
+XSB.  It is a significant rewrite of the previous SModels interface.
+
+<li> An ODBC interface to MySQL is now supported under Linux.  In
+addition, Prolog terms can now be written to and read from database
+strings.  
+
+<li> A new library, stdscan.P is provided containing a configurable
+scanner for text parsing.
+
 </ul>
+
+<h3>Platform  stabilization </h3>
+<ul>
+  <li> Stability of XSB on Windows has been improved in many ways,
+  both when XSB is compiled with Cygwin/GCC, and when compiled by
+  native windows compilers.  These changes include a better
+  configuration mechanism for Windows, a robust XSB-calling-C
+  interface, and better support for gpp preprocessing of Prolog files.
+  In addition, many standard and library predicates have been
+  stabilized for Windows, including cputime/1, directry query
+  routines, path and file handling, the format.P library, and others.
+
+  <li> The build process has been fixed for 64-bit MIPS machine.  XSB
+  should be stable on most 64-bit machines.
+
+</ul>
+
+<h3>Bugfixes and other improvements </h3>
+<ul>
+<li> Several bugfixes have been made for the CLP(R) package, including
+expansion of math functions to include min/1, max/1, and pow/2.
+</li>
+
+<li> Hashing function have been changed to provide better indexing of
+longish strings.
+</li>
+
+<li> Various bugs in pathname handling were fixed, and differences in
+pathname handling between Unix and Windows were minimized.
+</li>
+
+
+</ul>
+
 <h3>Backward Incompatibility</h3>
 <ul>
-<li> The object files now have the .xwam extension instead of the .O extension.
+<li> The object files now have the (default) .xwam extension instead
+of the .O extension.
 </li>
-<li>
-  The <tt>xsb_undefined_predicate_hook</tt> has been deprecated. Instead, XSB now
-  throws the exception of the
-  form <tt>error(undefined_predicate(Name,Arity,ModName),ErrorMessage)</tt>
-  when an undefined predicate is called. This exception can be caught and
-  appropriate action can be taken.
+<li>  The <tt>xsb_undefined_predicate_hook</tt> has been
+  deprecated. Instead, XSB now throws the exception of the form
+  <tt>error(undefined_predicate(Name,Arity,ModName),ErrorMessage)</tt>
+  when an undefined predicate is called. This exception can be caught
+  and appropriate action can be taken.
 </li>
+
+
 </ul>
 <a name="flora">
 <h3>Package News</h3>
 <p>
 
 <ul>
-<li> Major updates to the major packages, such as XMC, Flora-2, CDF.
+<li> Major updates to the major packages, including Flora-2 and XMC.
 </ul>
 
 
