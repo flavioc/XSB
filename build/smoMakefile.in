@@ -59,8 +59,9 @@ Prolog = $(XSB)
 	echo 'mc($*,$(Option)).' >> cmd...
 
 all: $(ALL)
-	if [ "${SMODELS}nop" = "nop" ] ; then \
-		echo "SMODELS not configure"; \
+	@if [ "${SMODELS}nop" = "nop" ] ; then \
+		echo "SMODELS not configured"; \
+		rm -f cmd... ;\
 	else \
 		../../build/touch.sh cmd... ; \
 		$(Prolog) < cmd... ; \
