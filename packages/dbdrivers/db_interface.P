@@ -7,6 +7,10 @@
 ** driver manager for furthur processing. 
 */
 
+:- import file_read_canonical/3 from machine.
+:- import file_open/3 from file_io.
+:- import length/2 from basics.
+
 %% opening connection to the database
 
 db_connect(Handle, Driver, Server, Database, User, Password) :- 
@@ -32,7 +36,9 @@ db_disconnect(Handle) :-
 %% direct querying
 
 db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
-		(queryConnection(Connhandle, QueryHandle, SQLQueryList, ReturnList)
+		(length(ReturnList, N), length(List, N), 
+		queryConnection(Connhandle, QueryHandle, SQLQueryList, List),
+		db_term(ReturnList, List)
 		-> true;
 		!, 
 		(exception(Number, Mesg)
@@ -62,6 +68,7 @@ db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 		db_prepare_execute(QueryHandle, BindList, ReturnList).
 
+
 %% closing statements
 
 db_statement_close(QueryHandle) :-
@@ -71,3 +78,17 @@ db_statement_close(QueryHandle) :-
 		).
 
 
+%% misc. predicates
+
+db_term([], []).
+
+db_term([X|ReturnListTail], [term(Y)|ListTail]):-
+		file_open(Y, sr, IO), file_read_canonical(IO, X, _), 
+		db_term(ReturnListTail, ListTail).
+
+db_term([X|ReturnListTail], [X|ListTail]) :-
+		db_term(ReturnListTail, ListTail).
+
+
+
+	

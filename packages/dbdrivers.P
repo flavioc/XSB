@@ -22,12 +22,17 @@
 	%% So, we call [Basename] again in such a case in order to load
 	%% the driver.
 	([Basename], ! ; [Basename]),
-	(xsb_configuration(architecture,A), str_sub(windows,A), !
+	(dbdrivers_running_under(cygwin) -> true
+		% cygwin specific stuff
 	;
+	(dbdrivers_running_under(windows) -> true
+		% windows specific stuff
+	;
+		% else unix specific stuff 
+
 	    slash(Slash),
 		xsb_configuration(packagesdir, PackageDir),
 		fmt_write_string(DriverManagerDir, '%s%sdbdrivers', f(PackageDir, Slash)),
-		writeln(DriverManagerDir),
 	    fmt_write_string(SharedLibDriverManager,
 			     '%s%scc%s%s.so', 
 			     f(DriverManagerDir, Slash, Slash, Basename)),
@@ -43,8 +48,22 @@
 			     '%s%s%s.xwam',
 			     f(ConfigLibDir, Slash, Basename)),
 	    rename(DriverManagerObjX, LibDriverManagerObjX)
+	)
 	),
 	initialise.
+
+
+dbdrivers_running_under(cygwin) :-
+	xsb_configuration(architecture, A),
+	str_sub(cygwin, A),
+	!.
+
+dbdrivers_running_under(windows) :-
+	xsb_configuration(architecture, A),
+	str_sub(windows, A),
+	!.
+
+dbdrivers_running_under(unix).
 
 
 load_driver(Driver) :-

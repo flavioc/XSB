@@ -29,6 +29,7 @@
 #define INT_TYPE 1
 #define FLOAT_TYPE 2
 #define STRING_TYPE 3
+#define TERM_TYPE 4
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -36,7 +37,8 @@
 #define QUERY_BEGIN 0
 #define QUERY_RETRIEVE 1
 
-#define QUERY_SIZE 500
+#define QUERY_SIZE 1000
+#define ELEMENT_SIZE 200
 
 // **** the database value data structures ****
 

@@ -16,11 +16,13 @@
 #endif
 
 #include "cinterf.h"
+#include "io_builtins_xsb.h"
 #include "driver_manager_defs.h"
 
 static struct xsb_connectionHandle* isConnectionHandle(char* handle);
 static struct xsb_queryHandle* isQueryHandle(char* handle);
 static char* buildSQLQuery(prolog_term sqlQueryList);
+static char* parseTerm(prolog_term element);
 static union functionPtrs* getDriverFunction(char* driver, int type);
 
 struct xsb_connectionHandle* CHandles[MAX_CONNECTIONS];
@@ -29,6 +31,10 @@ struct driver* DBdrivers[MAX_DRIVERS];
 int numDrivers, numCHandles, numQHandles;
 char* errorMesg;
 char* errorNumber;
+
+extern void write_canonical_term(prolog_term term);
+extern char* wcan_string;
+extern int wcan_disp;
 
 
 DllExport int call_conv initialise(void)
@@ -65,7 +71,10 @@ DllExport int call_conv openConnection(void)
 		return FALSE;
 	}
 
-	connectDriver = getDriverFunction(driver, CONNECT)->connectDriver;
+	if (getDriverFunction(driver, CONNECT) != NULL)
+		connectDriver = getDriverFunction(driver, CONNECT)->connectDriver;
+	else
+		return FALSE;
 
 	cHandle = (struct xsb_connectionHandle *)malloc(sizeof(struct xsb_connectionHandle));
 	cHandle->handle = (char *)malloc((strlen(handle) + 1) * sizeof(char));
@@ -95,8 +104,13 @@ DllExport int call_conv openConnection(void)
 		CHandles[numCHandles++] = cHandle;
 	else
 	{
-		errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
+		if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
+			errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
+		else
+			return FALSE;
+
 		errorMesg = errorMesgDriver();
+		errorNumber = "XSB_DBI_000";
 		free(cHandle->handle);
 		free(cHandle->driver);
 		if (strlen(server) == 0)
@@ -130,10 +144,14 @@ DllExport int call_conv closeConnection(void)
 	{
 		if (!strcmp(CHandles[i]->handle, handle))
 		{
-			disconnectDriver = getDriverFunction(CHandles[i]->driver, DISCONNECT)->disconnectDriver;
+			if (getDriverFunction(CHandles[i]->driver, DISCONNECT) != NULL)
+				disconnectDriver = getDriverFunction(CHandles[i]->driver, DISCONNECT)->disconnectDriver;
+			else 
+				return FALSE;
+
 			val = disconnectDriver(CHandles[i]);
 
-			if(val == FAILURE)
+			if (val == FAILURE)
 			{
 				printf("disconnect failed\n");
 				errorMesgDriver = getDriverFunction(CHandles[i]->driver, ERROR_MESG)->errorMesgDriver;
@@ -145,7 +163,11 @@ DllExport int call_conv closeConnection(void)
 			{
 				if (!strcmp(QHandles[j]->connHandle->handle, handle))
 				{
-					closeStmtDriver = getDriverFunction(CHandles[i]->driver, ERROR_MESG)->closeStmtDriver;
+					if (getDriverFunction(CHandles[i]->driver, ERROR_MESG) != NULL)
+						closeStmtDriver = getDriverFunction(CHandles[i]->driver, ERROR_MESG)->closeStmtDriver;
+					else
+						return FALSE;
+
 					val = closeStmtDriver(QHandles[j]);
 					if (val == FAILURE)
 					{
@@ -199,8 +221,8 @@ DllExport int call_conv queryConnection(void)
 	struct xsb_connectionHandle* cHandle;
 	struct xsb_queryHandle* qHandle;
 	struct xsb_data** result;
-	char *chandle, *qhandle, *sqlQuery;
-	int i, j;
+	char *chandle, *qhandle, *sqlQuery, *temp;
+	int i, j, flag;
 
 	chandle = ptoc_string(1);
 	qhandle = ptoc_string(2);
@@ -217,7 +239,12 @@ DllExport int call_conv queryConnection(void)
 			errorNumber = "XSB_DBI_007";;
 			return FALSE;
 		}
-		queryDriver = getDriverFunction(qHandle->connHandle->driver, QUERY)->queryDriver;
+
+		if (getDriverFunction(qHandle->connHandle->driver, QUERY) != NULL)
+			queryDriver = getDriverFunction(qHandle->connHandle->driver, QUERY)->queryDriver;
+		else
+			return FALSE;
+
 		result = queryDriver(qHandle);
 		if (result == NULL && qHandle->state == QUERY_RETRIEVE)
 		{
@@ -248,7 +275,12 @@ DllExport int call_conv queryConnection(void)
 		strcpy(qHandle->query, sqlQuery);
 		qHandle->state = QUERY_BEGIN;
 		QHandles[numQHandles++] = qHandle;
-		queryDriver = getDriverFunction(cHandle->driver, QUERY)->queryDriver;
+
+		if (getDriverFunction(qHandle->connHandle->driver, QUERY) != NULL)
+			queryDriver = getDriverFunction(qHandle->connHandle->driver, QUERY)->queryDriver;
+		else
+			return FALSE;
+
 		result = queryDriver(qHandle);
 	}
 	else
@@ -259,7 +291,7 @@ DllExport int call_conv queryConnection(void)
 	}
 
 	if (is_nil(returnList) && result == NULL)
-		return TRUE;
+		flag = 1;
 
 	if (!is_nil(returnList) && result == NULL)
 	{
@@ -269,40 +301,63 @@ DllExport int call_conv queryConnection(void)
 			c2p_nil(element);
 			returnList = p2p_cdr(returnList);
 		}
-		return TRUE;
+		flag = 0;
 	}
 
 	i = 0;
-	while (!is_nil(returnList))
-	{
-		element = p2p_car(returnList);
-		if (result == NULL)
-			c2p_nil(element);
-		else if (is_var(element) && result[i]->type == STRING_TYPE)
-		{
-			if (result[i]->val == NULL)
-				c2p_nil(element);
-			else
-				c2p_string(result[i]->val->str_val, element);
-		}
-		else if (is_var(element) && result[i]->type == INT_TYPE)
-			c2p_int(*(result[i]->val->i_val), element);
-		else if (is_var(element) && result[i]->type == FLOAT_TYPE)
-			c2p_float(*(result[i]->val->f_val), element);
-		returnList = p2p_cdr(returnList);
-		i++;
-	}
-
 	if (result != NULL)
-		return TRUE;
+	{
+		while (!is_nil(returnList))
+		{
+			element = p2p_car(returnList);
+			if (result == NULL)
+				c2p_nil(element);
+			else if (is_var(element) && result[i]->type == STRING_TYPE)
+			{
+				if (result[i]->val == NULL)
+					c2p_nil(element);
+				else
+				{
+					if (result[i]->val->str_val[strlen(result[i]->val->str_val)-1] == '$')
+					{
+						temp = (char *)malloc(strlen(result[i]->val->str_val) * sizeof(char));
+						temp[0] = '\0';
+						strncat(temp, result[i]->val->str_val, strlen(result[i]->val->str_val) - 1);
+						c2p_functor("term", 1, element);
+						c2p_string(temp, p2p_arg(element, 1));
+					}
+					else 
+						c2p_string(result[i]->val->str_val, element);
+				}
+			}
+			else if (is_var(element) && result[i]->type == INT_TYPE)
+				c2p_int(*(result[i]->val->i_val), element);
+			else if (is_var(element) && result[i]->type == FLOAT_TYPE)
+				c2p_float(*(result[i]->val->f_val), element);
+			returnList = p2p_cdr(returnList);
+			i++;
+		}
+		flag = 1;
+	}	
+
+	//if (result != NULL)
+	//	return TRUE;
 
 	if ((cHandle = isConnectionHandle(chandle)) != NULL)
 	{
-		errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
+		if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
+			errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
+		else
+			return FALSE;
+
 		errorMesg = errorMesgDriver();
 		errorNumber = "XSB_DBI_000";
 	}
-	return FALSE;
+
+	if (errorMesg == NULL && flag == 1)
+		return TRUE;
+	else 
+		return FALSE;
 }
 
 DllExport int call_conv prepareStatement(void)
@@ -342,7 +397,10 @@ DllExport int call_conv prepareStatement(void)
 	strcpy(qHandle->handle, qhandle);
 	qHandle->state = QUERY_BEGIN;
 
-	prepareStmtDriver = getDriverFunction(cHandle->driver, PREPARE)->prepareStmtDriver;
+	if (getDriverFunction(cHandle->driver, PREPARE) != NULL)
+		prepareStmtDriver = getDriverFunction(cHandle->driver, PREPARE)->prepareStmtDriver;
+	else
+		return FALSE;
 	if ((val = prepareStmtDriver(qHandle)) != -1)
 	{
 		qHandle->numParams = val;
@@ -350,7 +408,10 @@ DllExport int call_conv prepareStatement(void)
 	}
 	else
 	{
-		errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
+		if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
+			errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
+		else
+			return FALSE;
 		errorMesg = errorMesgDriver();
 		free(qHandle->query);
 		free(qHandle);
@@ -431,7 +492,11 @@ DllExport int call_conv executePreparedStatement(void)
 		}
 	}
 	
-	executeStmtDriver = getDriverFunction(qHandle->connHandle->driver, EXEC_PREPARE)->executeStmtDriver;
+	if (getDriverFunction(qHandle->connHandle->driver, EXEC_PREPARE) != NULL)
+		executeStmtDriver = getDriverFunction(qHandle->connHandle->driver, EXEC_PREPARE)->executeStmtDriver;
+	else
+		return FALSE;
+
 	if ((result = executeStmtDriver(bindValues, qHandle)) == NULL)
 		qHandle->state = QUERY_BEGIN;	
 
@@ -453,7 +518,11 @@ DllExport int call_conv executePreparedStatement(void)
 	
 	if (result == NULL)
 	{
-		errorMesgDriver = getDriverFunction(qHandle->connHandle->driver, ERROR_MESG)->errorMesgDriver;
+		if (getDriverFunction(qHandle->connHandle->driver, ERROR_MESG) != NULL)
+			errorMesgDriver = getDriverFunction(qHandle->connHandle->driver, ERROR_MESG)->errorMesgDriver;
+		else
+			return FALSE;
+
 		errorMesg = errorMesgDriver();
 		return FALSE;
 	}
@@ -476,11 +545,20 @@ DllExport int call_conv closeStatement(void)
 		if (!strcmp(QHandles[i]->handle, queryHandle))
 		{
 			driverName = QHandles[i]->connHandle->driver;
-			closeStmtDriver = getDriverFunction(driverName, CLOSE_STMT)->closeStmtDriver;
+
+			if (getDriverFunction(driverName, CLOSE_STMT) != NULL)
+				closeStmtDriver = getDriverFunction(driverName, CLOSE_STMT)->closeStmtDriver;
+			else
+				return FALSE;
+
 			result = closeStmtDriver(QHandles[i]);
 			if (result == FAILURE)
 			{
-				errorMesgDriver = getDriverFunction(driverName, ERROR_MESG)->errorMesgDriver;
+				if (getDriverFunction(driverName, ERROR_MESG) != NULL)
+					errorMesgDriver = getDriverFunction(driverName, ERROR_MESG)->errorMesgDriver;
+				else
+					return FALSE;
+
 				errorMesg = errorMesgDriver();
 				return FALSE;
 			}
@@ -520,7 +598,6 @@ DllExport int call_conv exception(void)
 static char* buildSQLQuery(prolog_term sqlQueryList)
 {
 	prolog_term element;
-	char* temp;
 	char* sqlQuery;
 
 	sqlQuery = (char *)malloc(QUERY_SIZE * sizeof(char));
@@ -528,32 +605,54 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
 	while (!is_nil(sqlQueryList))
 	{
 		element = p2p_car(sqlQueryList);
-		if (is_string(element))		
-			
-			strcat(sqlQuery, p2c_string(element));
-		else if (is_int(element))
-		{
-			temp = (char *)malloc(200 * sizeof(char));
-			sprintf(temp, "%d", p2c_int(element));
-			strcat(sqlQuery, temp);
-			free(temp);
-		}
-		else if (is_float(element))
-		{
-			temp = (char *)malloc(200 * sizeof(char));
-			sprintf(temp, "%f", p2c_float(element));
-			strcat(sqlQuery, temp);
-			free(temp);
-		}
-		else if (is_var(element))
-		{
-			errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
-			return NULL;
-		}
+		strcat(sqlQuery, parseTerm(element));
+		if (is_functor(element))
+			strcat(sqlQuery, "$");
 		sqlQueryList = p2p_cdr(sqlQueryList);
 	}
 
 	return sqlQuery;
+}
+
+
+static char* parseTerm(prolog_term element)
+{
+	char *temp, *query;
+
+	query = (char *)malloc(QUERY_SIZE * sizeof(char));
+	query[0] = '\0';
+	if (is_string(element))	
+	{
+		strcat(query, p2c_string(element));
+	}
+	else if (is_int(element))
+	{
+		temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
+		sprintf(temp, "%d", p2c_int(element));
+		strcat(query, temp);
+	}
+	else if (is_float(element))
+	{
+		temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
+		sprintf(temp, "%f", p2c_float(element));
+		strcat(query, temp);
+	}
+	else if (is_var(element))
+	{
+		errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
+		query = NULL;
+	}
+	else if (is_functor(element))
+	{
+		wcan_disp = 0;
+		write_canonical_term(element);
+		temp = (char *)malloc((wcan_disp + 1) * sizeof(char));
+		strncpy(temp, wcan_string, wcan_disp);
+		temp[wcan_disp] = '\0';
+		strcat(query, temp);
+	}
+	
+	return query;
 }
 
 

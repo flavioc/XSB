@@ -1,10 +1,10 @@
-% File: driver_manager.H
-% Author: Saikat Mukherjee
-% Contact: saikat@cs.sunysb.edu
+/* File: driver_manager.H
+** Author: Saikat Mukherjee
+** Contact: saikat@cs.sunysb.edu
 
-% This is the header file for linking with the various drivers and exporting 
-% the C implementations of the functions.
-
+** This is the header file for exporting 
+** the C implementations of the functions defined in the driver_manager module
+*/
 
 :- export
  	initialise/0,

@@ -526,6 +526,12 @@ static void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 	SQLCHAR* sqlState;
 	
+	if (errorMesg != NULL)
+	{
+		free(errorMesg);
+		errorMesg = NULL;
+	}
+
 	errorMesg = (SQLCHAR *)malloc(SQL_MAX_MESSAGE_LENGTH * sizeof(SQLCHAR));
 	sqlState = (SQLCHAR *)malloc(6 * sizeof(SQLCHAR));
 	if (handleType == SQL_HANDLE_ENV)		
