@@ -23,17 +23,29 @@
 */
 
 
-:- export odbc_open/3, odbc_close/0, odbc_sql/3, odbc_query/2,
-	odbc_import/2, odbc_sql/2, odbc_transaction/1,
-	odbc_get_schema/2, odbc_show_schema/1, odbc_user_tables/1,
-	odbc_insert/2, odbc_delete/2, odbc_flag/3,
-	odbc_attach/2, odbc_record/2, odbc_create_table/2,
-	odbc_create_index/3, odbc_delete_table/1,
-	odbc_delete_view/1, odbc_delete_index/2,
-	odbc_add_record/2, odbc_delete_record/2.
+:- export odbc_open/3, odbc_open/4,
+	odbc_close/0, odbc_close/1,
+	odbc_shutdown/0,
+	odbc_sql/3, odbc_sql/4,
+	odbc_query/2, odbc_query/3,
+	odbc_import/2, odbc_import/3,
+	odbc_transaction/1, odbc_transaction/2,
+	odbc_connect_option/5,
+	odbc_get_schema/2, odbc_get_schema/3,
+	odbc_show_schema/1, odbc_show_schema/2,
+	odbc_user_tables/1, odbc_user_tables/2,
+	odbc_insert/2, odbc_insert/3,
+	odbc_delete/2, odbc_delete/3,
+	odbc_flag/3,
+	odbc_attach/2, odbc_attach/3,
+	odbc_create_table/2, odbc_create_table/3,
+	odbc_create_index/3, odbc_create_index/4,
+	odbc_delete_table/1, odbc_delete_table/2,
+	odbc_delete_view/1, odbc_delete_view/2,
+	odbc_delete_index/2, odbc_delete_index/3.
 
 % import some necessary predicates from library.
 
-:- import call0/1, odbc_exec_query/5 from machine.
+:- import call0/1, odbc_exec_query/6 from machine.
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import length/2, append/3, member/2 from basics.

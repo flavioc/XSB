@@ -22,9 +22,11 @@
 ** 
 */
 
-:- dynamic attribute(_,_,_,_).
-:- dynamic odbc_add_record(_,_).
-:- dynamic odbc_delete_record(_,_).
+:- dynamic attribute(_FldNo,_Pred,_Attr,_Type,_ConnHdl).
+:- dynamic relation(_Pred,_PredArity,_Tab,_ConnHdl).
+:- dynamic attributeX(_Tab,_Attr,_Type,_ConnHdl).
+:- dynamic table_arity(_Conn,_Tab,_TabArity).
+:- dynamic odbc_asserted_query(_ConnHand,_Head).
 
 % --- for projection goal, we are to use bind variables for those constants. 
 
@@ -117,76 +119,6 @@ get_mode_ins([HA|TA],[bind(HR)|TM],[HR|TR]) :-
 % i.e. + is addition in Prolog and in SQL, etc. If this is not the case, then a mapping
 % function for arithmetic operators is necessary too.
 % ---------------------------------------------------------------------off -----------------
-
-%% --- :::for testing::: -----------------------------------------------
-%% --- relation(PrologFunctor,Arity,SQLTableName)
-/*
-relation(flight,6,'FLIGHT').
-relation(plane,2,'PLANE').
-relation(emp,5,'EMP').
-relation(dept,3,'DEPT').
-*/
-%% -- attribute(PrologArgumentPosition,SQLTableName,SQLAttributeName,Type)
-
-%attribute(1,'FLIGHT','FLIGHT_NO',string).
-
-/*
-attribute(1,'nameid','ID',integer).
-attribute(2,'FLIGHT','DEPARTURE',string).
-attribute(3,'FLIGHT','DESTINATION',string).
-attribute(4,'FLIGHT','PLANE_TYPE',string).
-attribute(5,'FLIGHT','EMPNO',integer).
-attribute(6,'FLIGHT','LOC',string).
-
-attribute(1,flight,'FLIGHT_NO',string).
-attribute(2,flight,'DEPARTURE',string).
-attribute(3,flight,'DESTINATION',string).
-attribute(4,flight,'PLANE_TYPE',string).
-attribute(5,flight,'EMPNO',integer).
-attribute(6,flight,'LOC',string).
-
-attribute(1,'PLANE','TYPE',string).
-attribute(2,'PLANE','SEATS',integer).
-
-attribute(1,plane,'TYPE',string).
-attribute(2,plane,'SEATS',integer).
-
-attribute(1,'USER_TAB_COLUMNS','TABLE_NAME',string).
-attribute(2,'USER_TAB_COLUMNS','COLUMN_NAME', string).
-attribute(3,'USER_TAB_COLUMNS','DATA_TYPE',string).
-attribute(4,'USER_TAB_COLUMNS','DATA_LENGTH',integer).
-attribute(5,'USER_TAB_COLUMNS','DATA_PRECISION',string).
-attribute(6,'USER_TAB_COLUMNS','DATA_SCALE',integer).
-attribute(7,'USER_TAB_COLUMNS','N',string).
-attribute(8,'USER_TAB_COLUMNS','COLUMN_ID',string).
-attribute(9,'USER_TAB_COLUMNS','DEFAULT_LENGTH',integer).
-attribute(10,'USER_TAB_COLUMNS','DATA_DEFAULT',string).
-attribute(11,'USER_TAB_COLUMNS','NUM_DISTINCT',integer).
-attribute(12,'USER_TAB_COLUMNS','LOW_VALUE',string).
-attribute(13,'USER_TAB_COLUMNS','HIGH_VALUE',string).
-attribute(14,'USER_TAB_COLUMNS','DENSITY',string).
-
-attribute(1,'EMP','EMPNO',integer).
-attribute(2,'EMP','ENAME',string).
-attribute(3,'EMP','MGR',integer).
-attribute(4,'EMP','SAL',integer).
-attribute(5,'EMP','DEPTNO',integer).
-
-attribute(1,'DEPT','DEPTNO',integer).
-attribute(2,'DEPT','DNAME',string).
-attribute(3,'DEPT','LOC',string).
-
-attribute(1,emp,'EMPNO',integer).
-attribute(2,emp,'ENAME',string).
-attribute(3,emp,'MGR',integer).
-attribute(4,emp,'SAL',integer).
-attribute(5,emp,'DEPTNO',integer).
-
-attribute(1,dept,'DEPTNO',integer).
-attribute(2,dept,'DNAME',string).
-attribute(3,dept,'LOC',string).
-*/
-
 
 %% -- add_to_dictionary(Key,RangeVar,Attribute,Quantifier,Dict,NewDict) ---
 
@@ -600,7 +532,7 @@ translate(ProjectionTerm,DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
 	disjunction(TokenDatabaseGoal,Disjunction),
 	%% --- code generation ----------------------------------------------
 	query_generation(Disjunction,TokenProjectionTerm,SQLQueryTerm),
-	('$show_query$'(on) -> printqueries(SQLQueryTerm);true),
+	(odbc_show_query(on) -> printqueries(SQLQueryTerm);true),
 	queries_atom(SQLQueryTerm,SQLAtom,Blist).
     
 %% -- linearize(Goal,ConjunctionList) -----------------------------------
@@ -781,7 +713,7 @@ translate_goal(ComparisonGoal,[],SQLCompOp,Dict,Dict) :-
 % ----------------------------------------------------------------------
 
 translate_functor(Functor,Arity,rel(TableName,RangeVariable)) :-
-	relation(Functor,Arity,TableName),
+	relation(Functor,Arity,TableName,_),
 	gensym(rel,RangeVariable).
 
 %% --- translate_arguments(Arguments,RelTable,ArgPos,Conditions,Dict)
@@ -810,35 +742,35 @@ translate_arguments(Functor,[Arg|Args],SQLTable,Position,SQLWhere,Dict,NewDict) 
 % ------------------------------------------------------------------------
 
 translate_argument(Functor,'$bind$'(BindId),rel(_SQLTable,RangeVar),Position,Bind_Cond,Dict,NewDict) :-
-	attribute(Position,Functor,Attribute,Type),
+	attribute(Position,Functor,Attribute,Type,_),
 	add_to_dictionary(BindId,RangeVar,Attribute,Type,all,Dict,NewDict),
 	Bind_Cond = [comp(att(RangeVar,Attribute),=,'$bind$'(BindId))].
 translate_argument(Functor,'$bind$'(BindId),rel(_SQLTable,RangeVar),Position,AttComparison,Dict,Dict) :-
 	%% Variable occurred previously:
 	%%	      retrieve first occurrence data from dictionary 
 	lookup(BindId,Dict,PrevRangeVar,PrevAtt,PrevType),
-	attribute(Position,Functor,Attribute,Type),
+	attribute(Position,Functor,Attribute,Type,_),
 	type_compatible(PrevType,Type),
 	AttComparison = [comp(att(RangeVar,Attribute),=,att(PrevRangeVar,PrevAtt))].
 translate_argument(Functor,'$var$'(VarId),rel(_SQLTable,RangeVar),Position,[],Dict,NewDict) :-
-	attribute(Position,Functor,Attribute,Type),
+	attribute(Position,Functor,Attribute,Type,_),
 	add_to_dictionary(VarId,RangeVar,Attribute,Type,all,Dict,NewDict).
 translate_argument(Functor,'$var$'(VarId),rel(_SQLTable,RangeVar),Position,AttComparison,Dict,Dict) :-
 	%% Variable occurred previously: 
 	%%	      retrieve first occurrence from data dictionary 
 	lookup(VarId,Dict,PrevRangeVar,PrevAtt,PrevType),
-	attribute(Position,Functor,Attribute,Type),
+	attribute(Position,Functor,Attribute,Type,_),
 	type_compatible(PrevType,Type),
 	AttComparison = [comp(att(RangeVar,Attribute),=,att(PrevRangeVar,PrevAtt))].
 translate_argument(Functor,'$const$'('NULL'),rel(_SQLTable,RangeVar),Position,ConstComparison,Dict,Dict) :- 
 	!,
 	%% -- Equality comparison of constant value and attribute in table
-	attribute(Position,Functor,Attribute,_Type),
+	attribute(Position,Functor,Attribute,_Type,_),
 	get_type('$const$'('NULL'),_ConstType),	% do we need it here?
 	ConstComparison = [comp(att(RangeVar,Attribute),'IS','$const$'('NULL'))].
 translate_argument(Functor,'$const$'(Constant),rel(_SQLTable,RangeVar),Position,ConstComparison,Dict,Dict) :-
 	%% -- Equality comparison of constant value and attribute in table
-	attribute(Position,Functor,Attribute,Type),
+	attribute(Position,Functor,Attribute,Type,_),
 	get_type('$const$'(Constant),ConstType),
 	type_compatible(ConstType,Type),
 	ConstComparison = [comp(att(RangeVar,Attribute),=,'$const$'(Constant))].
@@ -1250,7 +1182,7 @@ column_ins_atom(rel(Relation,_RangeVar),QueryList,Diff,Blist,Olist) :-
 column_ins_atom(comp(_LeftArg,_Operator,RightArg),QueryList,Diff,Blist,Olist) :-
 	column_atom(RightArg,QueryList,Diff,Blist,Olist).
     
-translate_del(DeleteTerm, DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
+translate_del(DeleteTerm,DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
 	%% -- initialize variable identifiers and range variables for relations 
 	init_gensym(var),
 	init_gensym(rel),
@@ -1262,7 +1194,7 @@ translate_del(DeleteTerm, DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
 	disjunction(TokenDatabaseGoal,Disjunction),
 	%% -- code generation ----
 	query_generation_del(Disjunction,TokenDeleteTerm,SQLQueryTerm),
-	('$show_query$'(on) -> printqueries(SQLQueryTerm);true),
+	(odbc_show_query(on) -> printqueries(SQLQueryTerm);true),
 	queries_atom(SQLQueryTerm,SQLAtom,Blist).
 
 query_generation_del([],_,[]).
@@ -1273,7 +1205,7 @@ query_generation_del([Conjunction|Conjunctions],ProjectionTerm,[Query|Queries]) 
 	Query = del_query(SQLFrom,SQLWhere),
 	query_generation(Conjunctions,ProjectionTerm,Queries).
    
-translate_ins(InsertTerm, DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
+translate_ins(InsertTerm,DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
 	%% -- initialize variable identifiers and range variables for relations
 	init_gensym(var),
 	init_gensym(rel),
@@ -1285,7 +1217,7 @@ translate_ins(InsertTerm, DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
 	disjunction(TokenDatabaseGoal,Disjunction),
 	%% -- code generation ------------------------------------------------
 	query_generation_ins(Disjunction,TokenInsertTerm,SQLQueryTerm),
-	('$show_query$'(on) -> printqueries(SQLQueryTerm);true),
+	(odbc_show_query(on) -> printqueries(SQLQueryTerm);true),
 	queries_atom(SQLQueryTerm,SQLAtom,Blist).
 
 query_generation_ins([],_,[]).
@@ -1294,7 +1226,9 @@ query_generation_ins([Conjunction|Conjunctions],ProjectionTerm,[Query|Queries]) 
 	translate_conjunction(Conjunction,SQLFrom,SQLWhere,InitDict,Dict),
 	translate_projection(ProjectionTerm,Dict,_SQLSelect),
 	functor(Conjunction,Pred,_Arity),
-	setof(rel(ColNum,ColName),Type^attribute(ColNum,Pred,ColName,Type),Cols),
+	setof(rel(ColNum,ColName),
+	      [Type,Con]^attribute(ColNum,Pred,ColName,Type,Con),
+	      Cols),
 	filterColName(Cols,ColNames),
 	Query = ins_query(SQLFrom,ColNames,SQLWhere),
 	query_generation(Conjunctions,ProjectionTerm,Queries).
@@ -1309,31 +1243,84 @@ filterColName([rel(_,N)|Xs],[rel(N,_)|Ys]) :-
 /*									*/
 /************************************************************************/
 
-:- dynamic '$ora_err$'(_).
-:- dynamic '$show_query$'(_).
+:- dynamic odbc_error_flg(_).
+:- dynamic odbc_show_query(_).
+:- dynamic odbc_connection(_Name,_Handle).  %% stack of connections made
 
-odbc_open(Server,Name,Passwd) :- 
-	odbc_connect(Server,Name,Passwd,RetVal),
-	init_gensym(table1),init_gensym(null),
-	assert('$ora_err$'(off)),
-	assert('$show_query$'(on)),
-	(RetVal =:= 0
-	 ->	true
+odbc_open(Server,Name,Passwd) :-
+	odbc_open(Server,Name,Passwd,_Connection).
+
+odbc_open(Server,Name,Passwd,Connection) :- 
+	odbc_connect(Server,Name,Passwd,ConnHandle),
+	(ConnHandle =\= 0
+	 ->	(odbc_connection(_,_)  %% init if first connection
+		 ->	true
+		 ;	init_gensym(table1),init_gensym(null),
+			assert(odbc_error_flg(off)),
+			assert(odbc_show_query(on))
+		),
+		(var(Connection)
+		 ->	asserta(odbc_connection(ConnHandle,ConnHandle))
+		 ;	asserta(odbc_connection(Connection,ConnHandle))
+		)
 	 ;	odbc_error('Connection failed.'),
 		fail
 	).
 
-odbc_close :- 
-	retractall('$ora_err$'(_)), 
-	retractall('$show_query$'(_)), 
-	odbc_disconnect.
+odbc_shutdown :-
+	findall(Connection,odbc_connection(Connection,_),Connections),
+	(member(Connection,Connections),
+	 odbc_close(Connection),
+	 fail
+	 ;
+	 true
+	),
+	retractall(odbc_error_flg(_)), 
+	retractall(odbc_show_query(_)), 
+	odbc_disconnect(0).
 
-/* odbc_sql(+BindVals,+SQLStmt,?Result) */
-/* The most general sql call: */
+odbc_close :-
+	odbc_close(_Connection).
+
+odbc_close(Connection) :- 
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_disconnect(ConnHandle),
+	retractall(odbc_connection(Connection,ConnHandle)),
+	retract_import_info(ConnHandle).
+
+retract_import_info(ConnHandle) :-
+	(relation(PredName,Arity,_TableName,ConnHandle),
+	 abolish(PredName/Arity),
+	 fail
+	 ;
+	 true
+	),
+	retractall(relation(_,_,_,ConnHandle)),
+	(odbc_asserted_query(ConnHandle,Query),
+	 abolish(Query),
+	 fail
+	 ;
+	 true
+	),
+	retractall(odbc_asserted_query(ConnHandle,_)),
+	retractall(table_arity(ConnHandle,_,_)),
+	retractall(attribute(_,_,_,_,ConnHandle)),
+	retractall(attributeX(_,_,_,ConnHandle)).
+
 odbc_sql(BindVals,SQLStmt,Result) :-
-	%%writeln(odbc_sql(BindVals,SQLStmt,Result)),
-	get_stmt_no(SQLStmt,StmtNo),
-	find_free_cursor(StmtNo,Cursor),
+	odbc_sql(_Connection,BindVals,SQLStmt,Result).
+
+odbc_sql(Connection,BindVals,SQLStmt,Result) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result).
+
+/* odbc_sql_i(+ConnHandle,+BindVals,+SQLStmt,?Result) */
+/* The most general sql call: */
+odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result) :-
+	%%writeln(odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result)),
+	find_free_cursor(ConnHandle,SQLStmt,Cursor),
 	%%writeln(cursor(Cursor)),
 	(BindVals == []
 	 ->	true
@@ -1341,57 +1328,64 @@ odbc_sql(BindVals,SQLStmt,Result) :-
 		set_bind_table_size(Cursor,NumBindVals),
 		set_def_bindvar_table(BindVals,Cursor)
 	),
-	parse(Cursor,SQLStmt,RetVal),
-	(RetVal =:= 0
-	 ->	fetch(Cursor,Result)
-	 ; RetVal =:= 2
-	 ->	true		% No result set for this query
-	 ;	odbc_error('Parse error.')
+	parse(Cursor,RetVal0),
+	(RetVal0 =:=0
+	 ->	odbc_describe_select(Cursor,RetVal),
+		(RetVal =:= 0
+		 ->	fetch(Cursor,Result)
+		 ; RetVal =:= 2
+		 ->	Result = []
+		 ;	odbc_error('DescribeSelect error.')
+		)
+	 ;      odbc_error('Parse error.')
 	).
 
-odbc_import(DbPredicate, SymName) :-
-	\+attribute(_,SymName,_,_),
+odbc_import(DbPredicate,SymName) :-
+	odbc_import(_Connection,DbPredicate,SymName).
+
+odbc_import(Connection,DbPredicate,PredName) :-
+	odbc_connection(Connection,ConnHandle),
+	\+attribute(_,PredName,_,_,_),
 	!,
 	DbPredicate =.. [TableName|Attributes],
 	conset(col,1),
-	%% --- asserts attribute(Position,Functor,Attribute,Type)
-	assert_attributes_info(TableName),
+	%% --- asserts attributeX(Table,Attribute,Type,ConnHandle)
+	assert_attributes_info(ConnHandle,TableName),
 	functor(DbPredicate, TableName, Arity),
-	%% --- asserts relation(Functor,Arity,Functor)
-	assert(relation(SymName,Arity,TableName)), 
-	assert_import_attributes(SymName, Attributes, TableName,1),
-	functor(SymPred, SymName, Arity),
-	odbc_query(SymPred, SymPred).
-odbc_import(_,SymName) :-
-	abort([SymName,' has already been used for odbc_import.']).
+	%% --- asserts relation(Pred,Arity,Table,ConnHandle)
+	assert(relation(PredName,Arity,TableName,ConnHandle)),
+	%% --- asserts attribute(Num,PredName,Attr,Type,ConnH)
+	assert_import_attributes(PredName,Attributes,TableName,ConnHandle,1),
+	functor(SymPred,PredName,Arity),
+	odbc_query(ConnHandle,SymPred,SymPred).
+odbc_import(_,PredName,_) :-
+	abort([PredName,' has already been used for odbc_import.']).
     
-assert_import_attributes(_,[],_,_).
-assert_import_attributes(SymName, [HAttr|RAttr], TableName,Num) :-
-	(attributeX(TableName,HAttr,Type)
-	 ->	assert(attribute(Num,SymName,HAttr,Type)),
+assert_import_attributes(_,[],_,_,_).
+assert_import_attributes(PredName,[HAttr|RAttr],TableName,ConnHandle,Num) :-
+	(attributeX(TableName,HAttr,Type,ConnHandle)
+	 ->	assert(attribute(Num,PredName,HAttr,Type,ConnHandle)),
 		Num1 is Num + 1,
-		assert_import_attributes(SymName,RAttr,TableName,Num1)
+		assert_import_attributes(PredName,RAttr,TableName,ConnHandle,Num1)
 	 ;	odbc_error('Table doesn''t have attribute '('Table'=TableName,
 							    'Attribute'=HAttr))
 	).
 
-:- dynamic attributeX(_,_,_).
-:- dynamic table_arity(_,_).
-assert_attributes_info(Table) :-
-	(table_arity(Table,_)
+assert_attributes_info(ConnHandle,Table) :-
+	(table_arity(ConnHandle,Table,_)
 	 ->	true
-	 ;	assert_attributes_info1(Table),
-		count_tuples(attributeX(Table,_,_),Arity),
-		assert(table_arity(Table,Arity))
+	 ;	assert_attributes_info1(ConnHandle,Table),
+		count_tuples(attributeX(Table,_,_,ConnHandle),Arity),
+		assert(table_arity(ConnHandle,Table,Arity))
 	).
 
-assert_attributes_info1(Table) :-
+assert_attributes_info1(ConnHandle,Table) :-
 	nonvar(Table),
-	odbc_get_attr(Table,Col,Type),
+	odbc_get_attr(ConnHandle,Table,Col,Type),
 	get_type(Type,Type1),
-	assert(attributeX(Table,Col,Type1)),
+	assert(attributeX(Table,Col,Type1,ConnHandle)),
 	fail.
-assert_attributes_info1(_Table).
+assert_attributes_info1(_Conn,_Table).
 
 split_in_out(ModeTerm,BindList,InVars,InBinds,OutVars) :-
 	ModeTerm =.. [_|ModeList],
@@ -1429,7 +1423,7 @@ set_def_bindvar_table([Val|BindVals],Cursor,I) :-
    
 %%% nondeterministically return all columns of all tuples
 fetch(Cursor,Row) :-
-	fetch_next_col(Cursor,RetVal),
+	fetch_next_row(Cursor,RetVal),
 	(RetVal =:= 0
 	 ->	(get_all_columns(Cursor,0,Row)
 		 ;
@@ -1459,7 +1453,7 @@ get_all_columns(Cursor,Col,Row) :-
 
 %%% fetch only indicated columns (numbered from 0)
 fetch(Columns,Cursor,Row) :-
-	fetch_next_col(Cursor,RetVal),
+	fetch_next_row(Cursor,RetVal),
 	(RetVal =:= 0
 	 ->	(get_some_columns(Columns,Cursor,Row)
 		 ;
@@ -1481,22 +1475,29 @@ get_some_columns([Col|Columns],Cursor,[X|Row]) :-
 
 %%% assert rule to intercept any call and redirect to DB
 odbc_query(Head,Body) :-
+	odbc_connection(_,ConnHandle),
+	!,
+	odbc_query(ConnHandle,Head,Body).
+
+
+odbc_query(ConnHandle,Head,Body) :-
 	\+ atomic(Head),
 	copy_term(Head,Head1),
+	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :- 
-		odbc_link(reg,Head,Head1,Body), !,
+		odbc_link(reg,ConnHandle,Head,Head1,Body), !,
 		Head1)).
 
 %%% intercepts new-moded DB call, generates and asserts new clause to
 %%% (re)makes the DB call and makes the call.
-odbc_link(Type,Head,Head1,DatabaseGoal) :-
+odbc_link(Type,ConnHandle,Head,Head1,DatabaseGoal) :-
 	Head =.. [H|A],
 	Head1 =..[_|Args],
 	get_mode(Type,Args,Mode,A),
 	ProjectionTerm =.. [H|Mode],
 	translate(Type,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist),
 	!,
-	assert_call_rule(ProjectionTerm,Type,SQLAtom,Blist).
+	assert_call_rule(ProjectionTerm,Type,ConnHandle,SQLAtom,Blist).
 
 get_mode(ins,Args,Mode,A) :- !,get_mode_ins(Args,Mode,A).
 get_mode(_,Args,Mode,A) :- get_mode(Args,Mode,A).
@@ -1508,49 +1509,72 @@ translate(ins,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist) :-
 translate(del,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist) :-
 	translate_del(ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist).
 
-odbc_sql(SQLAtom) :-
-	odbc_sql(SQLAtom,[]).
+odbc_transaction(Command) :-
+	odbc_transaction(_Connection,Command).
 
-odbc_sql(SQLSelect,Result) :-
-	odbc_sql([],SQLSelect,Result).
-
-odbc_transaction(commit) :-
-	odbc_commit(RetVal),
+odbc_transaction(Connection,commit) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_commit(ConnHandle,RetVal),
 	(RetVal =:=1
 	 ->	odbc_error('ODBC Commit Error.')
 	 ;	true
 	).
-
-odbc_transaction(rollback) :-
-	odbc_rollback(RetVal),
+odbc_transaction(Connection,rollback) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_rollback(ConnHandle,RetVal),
 	(RetVal =:=1
 	 ->	odbc_error('ODBC Commit Error.')
 	 ;	true
 	).
+odbc_transaction(Connection,autocommit(on)) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_connect_option(ConnHandle,1,102,1,RetVal),
+	RetVal =:= 0.
+odbc_transaction(Connection,autocommit(off)) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_connect_option(ConnHandle,1,102,0,RetVal),
+	RetVal =:= 0.
 
-odbc_delete(Head, Body) :-
+
+odbc_delete(Head,Body) :-
+	odbc_delete(_Conn,Head,Body).
+
+odbc_delete(Connection,Head, Body) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
 	copy_term(Head,Head1),
+	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :- 
-		odbc_link(del,Head,Head1,Body), !,
+		odbc_link(del,ConnHandle,Head,Head1,Body), !,
 		Head1)).
 
 odbc_insert(Head, Body) :-
+	odbc_insert(_Connection,Head,Body).
+odbc_insert(Connection,Head,Body) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
 	copy_term(Head,Head1),
+	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :- 
-		odbc_link(ins,Head,Head1,Body), !,
+		odbc_link(ins,ConnHandle,Head,Head1,Body), !,
 		Head1)).
 
-assert_call_rule(ProjectionTerm,Type,SQLAtom,Blist) :-
+assert_call_rule(ProjectionTerm,Type,ConnHandle,SQLAtom,Blist) :-
 	init_gensym(var),
 	init_gensym(rel),
 	init_gensym('BIND'),
 	tokenize_term(ProjectionTerm, Tokens),!,
 	Tokens =.. [Head|Args], 
-	split_in_out(Tokens,Blist,InVars,InBinds,OutVars),
+	split_in_out(Tokens,Blist,InVars,InBinds,OutVars0),
+	(Type == reg -> OutVars = OutVars0 ; OutVars = []),
 	RuleHead =..[Head|InVars],
 	converts(Args,Type,InVars,RuleBody),
 	asserta((RuleHead :- RuleBody, !,
-		 odbc_sql(InBinds,SQLAtom,OutVars))).
+		 odbc_sql_i(ConnHandle,InBinds,SQLAtom,OutVars))).
 
 converts([H,H2|Rest],Type,[H1|Rest1],(X, RestX)) :-
         convert(H,Type,H1,X),
@@ -1577,172 +1601,147 @@ writelistln([H|T]) :-
 	writeln(H), writelistln(T).
 
 % -----------------------------------------------------------------------
-odbc_get_schema(tuples(Table),Row) :-
-	odbc_sql(['select * from ',Table], Row).
+odbc_get_schema(Command,Row) :-
+	odbc_get_schema(_Conn,Command,Row).
+odbc_get_schema(Connection,Command,Row) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_get_schema1(Command,ConnHandle,Row).
 
-odbc_show_schema(tuples(Table)) :-
-	odbc_sql(['select * from ',Table],Row),
+odbc_show_schema(Command) :-
+	odbc_show_schema(_Conn,Command).
+odbc_show_schema(Connection,Command) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	odbc_show_schema1(Command,ConnHandle).
+
+odbc_get_schema1(tuples(Table),ConnHandle,Row) :-
+	odbc_sql_i(ConnHandle,[],['SELECT * FROM ',Table], Row).
+
+odbc_show_schema1(tuples(Table),ConnHandle) :-
+	odbc_get_schema1(tuples(Table),ConnHandle,Row),
 	writelist(Row), fail.
-odbc_show_schema(tuples(_Table)).
+odbc_show_schema1(tuples(_Table),_ConnHandle).
 
 %--------------------------------
-odbc_get_schema(user, List) :-
-        setof(A, user_tables(A), List).
-odbc_show_schema(user) :-
-        odbc_get_schema(user, List),
+odbc_get_schema1(user,ConnHandle,List) :-
+        setof(A, user_tables(ConnHandle,A), List).
+odbc_show_schema1(user,ConnHandle) :-
+        odbc_get_schema1(user,ConnHandle,List),
         writelistln(List).
 
-user_tables(A) :-
+user_tables(ConnHandle,A) :-
 	var(A),
-	odbc_user_tables(A).
+	odbc_user_tables(ConnHandle,A).
 
 %---------------------------
-odbc_get_schema(accessible, List) :-
-	bagof(A, accessible_tables(A), List).
+odbc_get_schema1(accessible,ConnHandle, List) :-
+	bagof(A, accessible_tables(ConnHandle,A), List).
 
-odbc_show_schema(accessible) :-
-	odbc_get_schema(accessible, List),
+odbc_show_schema1(accessible,ConnHandle) :-
+	odbc_get_schema1(accessible,ConnHandle,List),
 	writelistln(List).
 
-accessible_tables(A) :-
+accessible_tables(ConnHandle,A) :-
 	var(A),
-	odbc_accessible_tables(A).
+	odbc_accessible_tables(ConnHandle,A).
 
 %----------------------------
-odbc_get_schema(arity(Table),N1) :-
-	(table_arity(Table,N1)
+odbc_get_schema1(arity(Table),ConnHandle,N1) :-
+	(table_arity(ConnHandle,Table,N1)
 	 ->	true
 	 ;	conset(col,1),
-		assert_attributes_info(Table),
-		table_arity(Table, N1)
+		assert_attributes_info(ConnHandle,Table),
+		table_arity(ConnHandle,Table,N1)
 	).
 
-odbc_show_schema(arity(Table)) :-
-	odbc_get_schema(arity(Table), N1),
+odbc_show_schema1(arity(Table),ConnHandle) :-
+	odbc_get_schema1(arity(Table),ConnHandle,N1),
 	write('Table '), write( Table), write(' has arity '), writeln(N1).
 
 %------------------------------
-odbc_get_schema(columns(Table),List) :-
-	(table_arity(Table,_)
+odbc_get_schema1(columns(Table),ConnHandle,List) :-
+	(table_arity(ConnHandle,Table,_)
 	 ->	true
 	 ;	conset(col,1),
-		assert_attributes_info(Table)
+		assert_attributes_info(ConnHandle,Table)
 	),
-	bagof(Col, Type1^attributeX(Table,Col,Type1), List).
+	bagof(Col, Type1^attributeX(Table,Col,Type1,ConnHandle), List).
 
-odbc_show_schema(columns(Table)) :-
-	odbc_get_schema(columns(Table), List), writelistln(List).    
+odbc_show_schema1(columns(Table),ConnHandle) :-
+	odbc_get_schema1(columns(Table),ConnHandle,List),
+	writelistln(List).    
     
 %--------------------------------
-odbc_attach(Pname, table(Table)) :-
-	(table_arity(Table,_)
+odbc_attach(Pred,Table) :-
+	odbc_attach(_Connection,Pred,Table).
+
+odbc_attach(Connection,Pname,table(Table)) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	(table_arity(ConnHandle,Table,_)
 	 ->	true
 	 ;	conset(col, 1), 
-		assert_attributes_info(Table)
+		assert_attributes_info(ConnHandle,Table)
 	),
-	bagof(Col, Type1^attributeX(Table,Col,Type1), List),
+	bagof(Col, Type1^attributeX(Table,Col,Type1,ConnHandle), List),
 	write('odbc_attach...'), writeln(List),
 	DBPred =.. [Table|List],
-	odbc_import(DBPred, Pname).
+	odbc_import(Connection,DBPred,Pname).
 
-odbc_attach(Pname, table(Table, List)) :-
-	(table_arity(Table,_)
+odbc_attach(Connection,Pname,table(Table, List)) :-
+	odbc_connection(Connection,ConnHandle),
+	!,
+	(table_arity(ConnHandle,Table,_)
 	 ->	true
 	 ;	conset(col, 1), 
-		assert_attributes_info(Table)
+		assert_attributes_info(ConnHandle,Table)
 	),
 	DBPred =.. [Table|List],
-	odbc_import(DBPred, Pname).
+	odbc_import(Connection,DBPred,Pname).
 
 %--------------------------------
-odbc_record(Table, List) :-
-	gensym(table1,Name),
-	odbc_attach(Name,table(Table)),
-	odbc_get_schema(arity(Table),N1),
-	(var(List)
-	 ->	functor(B,Name,N1)
-	 ;	 B =.. [Name|List]
-	),
-	!,
-	call(B),
-	B =.. [Name|List]. 
-    
-%--------------------------------
 odbc_create_table(Table,Fields) :-        
+	odbc_create_table(_Connection,Table,Fields).
+
+odbc_create_table(Connection,Table,Fields) :-        
 	nonvar(Table),
 	nonvar(Table),
-	odbc_sql(['CREATE TABLE ',Table,'(',Fields,')']).
+	odbc_sql(Connection,[],['CREATE TABLE ',Table,'(',Fields,')'],[]).
     
 %--------------------------------
 odbc_create_index(Tname,Iname,index(_,Fields)) :-
+	odbc_create_index(_Connection,Tname,Iname,index(_,Fields)).
+
+odbc_create_index(Connection,Tname,Iname,index(_,Fields)) :-
 	nonvar(Tname),
 	nonvar(Iname),
 	nonvar(Fields),
-	odbc_sql(['CREATE INDEX ',Iname,' ON ',Tname,
-		  ' (',Fields,' )']).
+	odbc_sql(Connection,[],['CREATE INDEX ',Iname,' ON ',Tname,
+		  ' (',Fields,' )'],[]).
 
 %--------------------------------
 odbc_delete_table(Table) :-
+	odbc_delete_table(_Conn,Table).
+odbc_delete_table(Connection,Table) :-
 	nonvar(Table),
-	odbc_sql(['DROP TABLE ',Table]).
+	odbc_sql(Connection,[],['DROP TABLE ',Table],[]).
 
 %--------------------------------
 odbc_delete_view(View) :-
+	odbc_delete_view(_Conn,View).
+
+odbc_delete_view(Connection,View) :-
 	nonvar(View),
-	odbc_sql(['DROP VIEW ',View]).
+	odbc_sql(Connection,[],['DROP VIEW ',View],[]).
 
 %--------------------------------
 odbc_delete_index(TableName,Index) :-
+	odbc_delete_index(_Conn,TableName,Index).
+odbc_delete_index(Connection,TableName,Index) :-
 	nonvar(Index),
-	odbc_sql(['DROP INDEX ',Index,' ON ',TableName]).
+	odbc_sql(Connection,[],['DROP INDEX ',Index,' ON ',TableName],[]).
 
-%--------------------------------
-:- assert((odbc_add_record(Table,VList):-odbc_add_record_body(Table,VList))).
-
-odbc_add_record_body(Table,VList) :-
-	assert_attributes_info(Table),
-	table_arity(Table,N1),
-	atom_codes(Table, Tl), 
-	append([105,110,115,95],Tl, Tl1), 
-	atom_codes(Table1,Tl1),
-	assert(relation(Table,N1,Table)),
-	functor(Head1, Table1, N1),
-	Head1 =..[Table1|Tail],
-	Head =..[Table|Tail],
-	odbc_insert(Head1, (Head)),
-	asserta((odbc_add_record(Table,Values) :-
-		 Query =.. [Table1|Values],
-		 !,
-		 call1(Query))),
-	Query =.. [Table1|VList],
-	!,
-	call1(Query).
-
-%--------------------------------
-:- assert((odbc_delete_record(Table,VList) :-
-	   odbc_delete_record_body(Table,VList))).
-
-odbc_delete_record_body(Table,VList) :-
-	conset(col,1),
-	assert_attributes_info(Table),
-	table_arity(Table,N1),
-	atom_codes(Table, Tl), 
-	append([100,101,108,95],Tl,Tl1), 
-	atom_codes(Table1,Tl1),
-	assert(relation(Table,N1,Table)),
-	functor(Head1, Table1, N1),
-	Head1 =..[Table1|Tail],
-	Head =..[Table|Tail],
-	odbc_delete(Head1, (Head)),
-	asserta((odbc_delete_record(Table,Values) :-
-		 Query =.. [Table1|Values],
-		 !,
-		 call1(Query))),
-	Query =.. [Table1|VList],
-	!,
-	call1(Query).
-
-        
 count_tuples(Call,Count) :-
 	conset('$xsb_count',0),
 	call1(Call),
@@ -1754,115 +1753,126 @@ count_tuples(Call,Count) :-
 call1(X) :- call0(X).
 
 odbc_flag(fail_on_error,on,off) :-
-	retract('$ora_err$'(on)), assert('$ora_err$'(off)).
+	retract(odbc_error_flg(on)), assert(odbc_error_flg(off)).
 odbc_flag(fail_on_error, off, on) :-
-	retract('$ora_err$'(off)), assert('$ora_err$'(on)).
+	retract(odbc_error_flg(off)), assert(odbc_error_flg(on)).
 odbc_flag(show_query, off, on) :-
-	retract('$show_query$'(off)), assert('$show_query$'(on)).
+	retract(odbc_show_query(off)), assert(odbc_show_query(on)).
 odbc_flag(show_query, on, off) :-
-	retract('$show_query$'(on)), assert('$show_query$'(off)).
+	retract(odbc_show_query(on)), assert(odbc_show_query(off)).
       
-:- dynamic sqlStmtNo(_,_).
-:- index(sqlStmtNo/2,trie).
-:- conset(sqlStmtCtr,0).
-get_stmt_no(SQLStmt,StmtNo) :-
-	(sqlStmtNo(SQLStmt,StmtNo)
-	 ->	true
-	 ;	conget(sqlStmtCtr,StmtNo),
-		NStmtNo is StmtNo+1,
-		conset(sqlStmtCtr,NStmtNo),
-		assert(sqlStmtNo(SQLStmt,StmtNo))
-	).
-
-odbc_get_attr(Tab,B,C) :-
-	get_stmt_no('GET ATTRIBUTES',StmtNo),
-	find_free_cursor(StmtNo,Cursor),
+odbc_get_attr(ConnHandle,Tab,Col,Type) :-
+	find_free_cursor(ConnHandle,'GET ATTRIBUTES',Cursor),
 	%%writeln(cursor(Cursor)),
-	odbc_columns(Cursor,Tab,RetVal),
-	(RetVal =:= 0
-	 ->	(fetch([3,5],Cursor,[B,C])
-		 ;
-		 odbc_set_cursor_close(Cursor),
-		 fail
+	odbc_columns(Cursor,Tab,RetVal0),
+	(RetVal0 =:=0
+	 ->	odbc_describe_select(Cursor,RetVal),
+		(RetVal =:= 0
+		 ->	(fetch([3,5],Cursor,[Col,Type])
+			 ;	
+			 odbc_set_cursor_close(Cursor),
+			 fail
+			)
+		 ; RetVal =:= 2
+		 ->	odbc_error('Error getting attribute names.')
+		 ;	odbc_error('Parse error.')
 		)
-	 ; RetVal =:= 2
-	 ->	odbc_error('Error getting attribute names.')
-	 ;	odbc_error('Parse error.')
+	 ;      odbc_error('Parse error.')
 	).
 
 
-odbc_accessible_tables(Tab) :-
-	get_stmt_no('GET TABLES',StmtNo),
-	find_free_cursor(StmtNo,Cursor),
+
+odbc_accessible_tables(ConnHandle,Tab) :-
+	find_free_cursor(ConnHandle,'GET TABLES',Cursor),
 	%%writeln(cursor(Cursor)),
-	odbc_tables(Cursor,RetVal),
-	(RetVal =:= 0
-	 ->	fetch([1,2,3],Cursor,[dbo,Tab,TabType]),
-		(TabType = 'TABLE' ; TabType = 'SYSTEM TABLE')
-	 ; RetVal =:= 2
-	 ->	odbc_error('Getting All Tables.')
-	 ;	odbc_error('Parse error.')
+	odbc_tables(Cursor,RetVal0),
+	(RetVal0 =:=0
+	 ->	odbc_describe_select(Cursor,RetVal),
+		(RetVal =:= 0
+		 ->	fetch([1,2,3],Cursor,[dbo,Tab,TabType]),
+			(TabType = 'TABLE' ; TabType = 'SYSTEM TABLE')
+		 ; RetVal =:= 2
+		 ->	odbc_error('Getting All Tables.')
+		 ;	odbc_error('Parse error.')
+		)
+	 ;      odbc_error('Parse error.')
 	).
 
 odbc_user_tables(Tab) :-
-	get_stmt_no('GET USER TABLES',StmtNo),
-	find_free_cursor(StmtNo,Cursor),
+	odbc_connection(_Conn,ConnHandle),
+	!,
+	odbc_user_tables(ConnHandle,Tab).
+
+odbc_user_tables(ConnHandle,Tab) :-
+	find_free_cursor(ConnHandle,'GET USER TABLES',Cursor),
 	%%writeln(cursor(Cursor)),
-	odbc_user_tables(Cursor,RetVal),
-	(RetVal =:= 0
-	 ->	fetch([1,2],Cursor,[dbo,Tab])
-	 ; RetVal =:= 2
-	 ->	odbc_error('Getting User Tables.')
+	odbc_usertables(Cursor,RetVal0),
+	(RetVal0 =:=0
+	 ->	odbc_describe_select(Cursor,RetVal),
+		(RetVal =:= 0
+		 ->	fetch([1,2],Cursor,[dbo,Tab])
+		 ; RetVal =:= 2
+		 ->	odbc_error('Getting User Tables.')
+		 ;	odbc_error('Parse error.')
+		)
 	 ;	odbc_error('Parse error.')
 	).
     
 
 odbc_error(ErrMsg) :-
 	write('ERR - ODBC: '),writeln(ErrMsg),
-	('$ora_err$'(on) -> fail;true).
+	(odbc_error_flg(on) -> fail;true).
 
-odbc_connect(Server,Name,Passwd,RetVal) :-
-	odbc_exec_query(1,Server,Name,Passwd,RetVal).
+odbc_connect(Server,Name,Passwd,ConnHandle) :-
+	odbc_exec_query(1,Server,Name,Passwd,ConnHandle).
     
-parse(Cursor,SQLAtom, RetVal) :-
-	odbc_exec_query(2,Cursor,SQLAtom, RetVal).
+parse(Cursor, RetVal) :-
+	odbc_exec_query(2,Cursor, RetVal).
     
 set_bind_table_size(Cursor,Blen) :-
 	odbc_exec_query(3,Cursor,Blen).
     
-fetch_next_col(Cursor,RetVal) :-
+fetch_next_row(Cursor,RetVal) :-
 	odbc_exec_query(4,Cursor,RetVal).
          
 get_column(Cursor,Col,X,RetVal) :-
 	odbc_exec_query(5,Cursor,Col,X,RetVal).      
     
 set_bind(Cursor,BindId,H1) :-
-	odbc_exec_query(6,Cursor,BindId,H1).
+	odbc_exec_query(6,Cursor,BindId,H1,_Ret).
 
-find_free_cursor(StmtNo, Cursor) :-
-	odbc_exec_query(7,StmtNo,Cursor),
-	(Cursor == 0
+find_free_cursor(ConnHandle,SQLStmt,Cursor) :-
+	odbc_exec_query(7,ConnHandle,SQLStmt,Cursor),
+	(Cursor =:= 0
 	 ->	odbc_error('No more cursors left.'),
 		fail
 	 ;	true
 	).	
 
-odbc_disconnect :- odbc_exec_query(8).
+odbc_disconnect(ConnHandle) :- odbc_exec_query(8,ConnHandle).
 
 odbc_set_cursor_close(Cursor) :- odbc_exec_query(9,Cursor).
 
-odbc_commit(Ret) :- odbc_exec_query(10,Ret).
+odbc_commit(ConnHandle,Ret) :- odbc_exec_query(10,ConnHandle,Ret).
 
-odbc_rollback(Ret) :- odbc_exec_query(11,Ret).
+odbc_rollback(ConnHandle,Ret) :- odbc_exec_query(11,ConnHandle,Ret).
 
 odbc_columns(Cursor,Table,Ret) :- odbc_exec_query(12,Cursor,Table,Ret).
 
 odbc_tables(Cursor,Ret) :- odbc_exec_query(13,Cursor,Ret).
 
-odbc_user_tables(Cursor,Ret) :- odbc_exec_query(14,Cursor,Ret).
+odbc_usertables(Cursor,Ret) :- odbc_exec_query(14,Cursor,Ret).
 
-odbc_exec_query(A) :- odbc_exec_query(A,_,_,_,_).
+odbc_describe_select(Cursor,Ret) :- odbc_exec_query(15,Cursor,Ret).
+
+%%% parameters in SQLEXT.H;
+%%Attr: SQL_AUTOCOMMIT(102) Val: on(1), off(0);
+odbc_connect_option(ConnHandle,GetSet,Attr,Value,RetVal) :-
+	odbc_exec_query(16,ConnHandle,GetSet,Attr,Value,RetVal).
+
+%%odbc_exec_query(A) :- odbc_exec_query(A,_,_,_,_).
 odbc_exec_query(A,B) :- odbc_exec_query(A,B,_,_,_).
 odbc_exec_query(A,B,C) :- odbc_exec_query(A,B,C,_,_).
 odbc_exec_query(A,B,C,D) :- odbc_exec_query(A,B,C,D,_).
+odbc_exec_query(A,B,C,D,E) :- odbc_exec_query(A,B,C,D,E,_).
 
