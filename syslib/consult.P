@@ -23,6 +23,11 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+#include "char_defs.h"
+#include "flag_defs.h"
+
 
 compile(Path) :- compile(Path, []).	% compile with no options
 
@@ -44,14 +49,14 @@ compile0(Path, Options) :-
 	!,
 	compile_f(SExt, Base, Options, _, Mod, Dir).
 compile0(Path, _) :-
-	file_write0(2, 'Cannot find the file/module '),
-	file_write0(2, Path), file_nl(2), fail.
+	file_write0(STDERR, 'Cannot find the file/module '),
+	file_write0(STDERR, Path), file_nl(STDERR), fail.
 
-compile_f(0'P, Base, Opts, ExList, Mod, _) :- 
+compile_f(CH_P, Base, Opts, ExList, Mod, _) :- 
 	compile(Mod, Base, Opts, ExList).
-compile_f(0'c, Base, Opts, ExList, Mod, Dir) :- 
+compile_f(CH_c, Base, Opts, ExList, Mod, Dir) :- 
 	compile_cH(Mod, Base, Opts, ExList, Dir).
-compile_f(0'x, Base, Opts, ExList, Mod, _) :-
+compile_f(CH_x, Base, Opts, ExList, Mod, _) :-
 	str_cat(Base, '.P', FileName),
 	sys_link(Base, FileName, _Result),
 	compile(Mod, Base, Opts, ExList),
@@ -92,13 +97,13 @@ reconsult0(Path, Options) :-
 	).
 
 reconsult0(Path, _) :-
-        file_write0(2, 'Cannot find the file/module '),
-        file_write0(2, Path), file_nl(2), fail.
+        file_write0(STDERR, 'Cannot find the file/module '),
+        file_write0(STDERR, Path), file_nl(STDERR), fail.
 
 i_want_compile(SExt, Base, Obj, HasObj) :-
 	( HasObj =:= 0 -> true ; needs_recompile(SExt, Base, Obj) ).
 
-needs_recompile(0'P, Base, Obj) :-
+needs_recompile(CH_P, Base, Obj) :-
 	( str_cat(Base, '.P', PFileName),
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(PFileName, time(PTime1,PTime2)),
@@ -113,18 +118,18 @@ needs_recompile(0'P, Base, Obj) :-
 	  time(OTime1,Otime2) @< time(HTime1,HTime2)
 	).	  
 
-needs_recompile(0'x, Base, Obj) :-
+needs_recompile(CH_x, Base, Obj) :-
 	file_time(Obj, time(OTime1,OTime2)), 
 	file_time(Base, time(PTime1,PTime2)),
 	time(OTime1,OTime2) @< time(PTime1,PTime2).
 
-%%%needs_recompile(0'o, _Base, _Obj).
+%%%needs_recompile(CH_o, _Base, _Obj).
 % As a temporary solution a foreign module needs to be recompiled
 % if either the .c file or if the .H file needs to be recompiled.
 
-% Solution??? It's a problem!!! What does this test for solaris do?
+% Solution??? It''s a problem!!! What does this test for solaris do?
 % obviously, solaris is not the only system that uses .so!!! -- mk
-needs_recompile(0'c, Base, Obj) :-
+needs_recompile(CH_c, Base, Obj) :-
 	xsb_configuration(os_type, OS_type),
 	( ( str_sub('solaris', OS_type) -> str_cat(Base, '.so', C_Obj)
 	  ; (str_sub('windows', OS_type) -> str_cat(Base, '.dll', C_Obj)
@@ -169,28 +174,28 @@ search_module(Name, Dir, Mod, SExt, HasObj, Base, Obj) :-
 	search_slash(Name, Len, Slash), % If Slash =:= -1 no slash is found
 	Loc1 is Len - 2,	   % The following is obviously a non-general
 	buff_byte(Name, Loc1, B1), % way of searching for the '.?' suffix
-	( B1 =:= 0'. -> Dot = Loc1 ; Dot = Len ),
+	( B1 =:= CH_DOT -> Dot = Loc1 ; Dot = Len ),
 	( Slash < 0, Dot =:= Len ->  % only a base name
 		Mod = Name, real_search_module(Mod, Dir, Base, SExt)
 	  ;	% is a full file name
 	    ( Dot =:= Len -> 
 		% if the file name has no extension first check for the
 		% existence of the file with the extension.
-		( str_cat(Name, '.P', PName), file_exists(PName), SExt = 0'P
-		; str_cat(Name, '.c', PName), file_exists(PName), SExt = 0'c
-		; file_exists(Name), SExt = 0'x
+		( str_cat(Name, '.P', PName), file_exists(PName), SExt = CH_P
+		; str_cat(Name, '.c', PName), file_exists(PName), SExt = CH_c
+		; file_exists(Name), SExt = CH_x
 		; obj_ext(OExt), str_cat(Name, OExt, PName),
 		  file_exists(PName), SExt = OExt
 		)
 	  %% fle with extension
 	  ; file_exists(Name), Loc3 is Len - 1, buff_byte(Name, Loc3, Ext),
-	    ( memberchk(Ext, [0'P,0'c,0'O]) -> SExt = Ext ; SExt = 0'x )
+	    ( memberchk(Ext, [CH_P,CH_c,CH_O]) -> SExt = Ext ; SExt = CH_x )
 	  ),
 	  %% just the base name
 	  ( Slash < 0 -> 
 	        slash(Slash_chr),  % get the OS-appropriate slash: / or \.
     	    	str_cat('.', Slash_chr, Dir),
-		( SExt =:= 0'x -> Mod = Name
+		( SExt =:= CH_x -> Mod = Name
 		; str_substring(Name, 0, Dot, Mod)
 		),
 		str_cat(Dir, Mod, Base)
@@ -211,15 +216,15 @@ search_module(Name, Dir, Mod, SExt, HasObj, Base, Obj) :-
 real_search_module(ModName, Dir, Base, Ext) :-
         libpath(Dir),
         str_cat(Dir, ModName, Base),
-	( str_cat(Base, '.P', Path), file_exists(Path), Ext = 0'P
-	; str_cat(Base, '.c', Path), file_exists(Path), Ext = 0'c
-	; file_exists(Base), Ext = 0'x		% no suffix
+	( str_cat(Base, '.P', Path), file_exists(Path), Ext = CH_P
+	; str_cat(Base, '.c', Path), file_exists(Path), Ext = CH_c
+	; file_exists(Base), Ext = CH_x		% no suffix
 	; obj_ext(OExt), str_cat(Base, OExt, Path), file_exists(Path), Ext = OExt
 	).
 
 /*======================================================================*/
 /* search_slash(+FileName, +InLoc, -SlashLoc)				*/
-/*	Search for the occurrence of a '/' from the InLoc'th character	*/
+/*	Search for the occurrence of a '/' from the InLoc''th character	*/
 /*	of FileName (backwards), and return the offset of the last '/'	*/
 /*	character. If no '/' exists, a -1 is returned.			*/
 /*======================================================================*/
@@ -228,7 +233,7 @@ search_slash(FileName, I, SlashLoc) :-
 	( I =:= 0 -> SlashLoc = -1
 	; I1 is I - 1,
 	  buff_byte(FileName, I1, Byte),
-	  ( (Byte =:= 0'/ ; Byte =:= 0'\) -> SlashLoc = I1 
+	  ( (Byte =:= CH_SLASH ; Byte =:= CH_BACKSLASH) -> SlashLoc = I1 
 	  ; search_slash(FileName, I1, SlashLoc) 
 	  )
 	).	
@@ -244,13 +249,13 @@ load_exec(File, ModName) :-
 	code_load(File, Init, 1),	% use the changed C loader.
 	% jf: for Windows a valid file pointer might be negative
 	( Init =\= 0			% load succeeded
-	; Init =:= 0, file_write0(2, 'Error in loading file '), 
-		file_write0(2, File),
-		file_nl(2), fail
+	; Init =:= 0, file_write0(STDERR, 'Error in loading file '), 
+		file_write0(STDERR, File),
+		file_nl(STDERR), fail
 	),
 	!,
-	file_write0(2, '['), file_write0(2, ModName),
-	file_write0(2, ' loaded]'), file_nl(2),
+	file_write0(STDERR, '['), file_write0(STDERR, ModName),
+	file_write0(STDERR, ' loaded]'), file_nl(STDERR),
 	(Init > 4			% Prolog byte code loaded
 	 ->	co_code_call(Init, true, 2),	% call '_$main'
 		unload_seg(Init)		% free space for '_$main'
@@ -269,7 +274,7 @@ compile_load_user(Options) :-
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
 read_canonical(Term) :- 
-	stat_flag(10, File), 
+	stat_flag(CURRENT_INPUT, File), 
 	file_read_canonical(File,Term,_).
 
 cvt_canonical(InFile,OutFile) :-
@@ -310,14 +315,14 @@ load_dyn(File) :-
 	load_dyn0(SExt,Base).
 
 load_dyn0(SExt,Base) :-
-	(SExt == 0'x	% no suffix
+	(SExt == CH_x	% no suffix
 	 ->	init_for_load(Base),
 		load_dyn1(Base),
 		cleanup_for_load
 	 ; 	tran_ext(SExt,Suff),
 	 	str_cat(Base, Suff, Rfname),
 		init_for_load(Rfname),
-		(SExt == 0'P
+		(SExt == CH_P
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
 			 ->	load_dyn1(Hfname)
@@ -329,8 +334,8 @@ load_dyn0(SExt,Base) :-
 		cleanup_for_load
 	).
 
-tran_ext(0'P,'.P').
-tran_ext(0'D,'.D').
+tran_ext(CH_P,'.P').
+tran_ext(CH_D,'.D').
 
 load_dyn1(Rfname) :-
 	cputime(T0),
@@ -433,7 +438,7 @@ read_and_assert :-
 	 ->	!,seen,fail
 	 ;	do_assert_and_fail(Term)
 	).
-%% Don't loop, if restart is requested
+%% Don''t loop, if restart is requested
 read_and_assert :- conget(needs_restart,1), !.
 read_and_assert :- read_and_assert.
 
@@ -448,14 +453,14 @@ load_dync(File) :-
 	load_dync0(SExt,Base).
 
 load_dync0(SExt,Base) :-
-	(SExt == 0'x	% no suffix
+	(SExt == CH_x	% no suffix
 	 ->	init_for_load(Base),
 		load_dync1(Base),
 		cleanup_for_load
 	 ; 	tran_ext(SExt,Suff),
 	 	str_cat(Base, Suff, Rfname),
 		init_for_load(Rfname),
-		(SExt == 0'P
+		(SExt == CH_P
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
 			 ->	load_dync1(Hfname)
@@ -471,7 +476,7 @@ load_dync1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
 	open_or_cpp_file(Rfname),
-	stat_flag(10,Fd),
+	stat_flag(CURRENT_INPUT,Fd),
 	file_read_canonical(-1000,0,0),	% initialize previous psc
 	(read_and_assert(Fd)
 	%% If needs restart, close old file and skip to the second load_dyn1

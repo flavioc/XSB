@@ -26,3 +26,8 @@
 #define STDIN	     0
 #define STDOUT	     1
 #define STDERR	     2
+
+#define OREAD	     0	  /* open for read        */
+#define OWRITE	     1	  /* open for write       */
+#define OAPPEND	     2	  /* open for append      */
+#define OSTRING	     3	  /* open for as a string */

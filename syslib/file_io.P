@@ -23,34 +23,40 @@
 */
 
 
+:- compiler_options([cpp_on]).
+#include "io_defs.h"
+#include "standard.h"
+#include "flag_defs.h"
+
+
 	       /********************************/
 	       /*  Formatted I/O    	       */
 	       /********************************/
 
 fmt_write(Fmt, Args) :-
-       stat_flag(11, FileDes),   % Current output
+       stat_flag(CURRENT_OUTPUT, FileDes),   % Current output
 	fmt_write(FileDes, Fmt, Args).
 
 fmt_write(FileDes, Fmt, Args) :-
-       ( callable(Args) -> formatted_io(1, FileDes, Fmt, Args, _Ret)
+       ( callable(Args) -> formatted_io(FMT_WRITE, FileDes, Fmt, Args, _Ret)
          ;
 	 abort('Usage: fmt_write([+FileDes,] +FmtString, args(+A1,+A2,...))')
        ).
 
 fmt_write_string(Str, Fmt, Args) :-
-	( var(Str), callable(Args) -> formatted_io(2, Str, Fmt, Args, _Ret)
-	  ;
-	  abort('Usage: fmt_write_string(-OutputString, +FmtString, args(+A1,...))')
+	( var(Str), callable(Args)
+    	 -> formatted_io(FMT_WRITE_STRING, Str, Fmt, Args, _Ret)
+	 ; abort('Usage: fmt_write_string(-OutputString, +FmtString, args(+A1,...))')
         ).
 
 
 fmt_read(Fmt,Result,Status) :-
-        stat_flag(10, FileDes),  % Current input
+        stat_flag(CURRENT_INPUT, FileDes),  % Current input
 	fmt_read(FileDes, Fmt,Result,Status).
 
 fmt_read(FileDes, Fmt, Result, Status) :-
 	(compound(Result), var(Status)
-		     -> formatted_io(3, FileDes, Fmt, Result, Status)
+		     -> formatted_io(FMT_READ, FileDes, Fmt, Result, Status)
 	;
 	 abort('Usage: fmt_read([+FileDes,] +FmtString, result(-R1,-R2,...), -RetCode)')
     	).
@@ -62,36 +68,41 @@ fmt_read(FileDes, Fmt, Result, Status) :-
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
 
-file_flush(FileDes, Ret) :- file_function(0, FileDes, Ret, _D, _E, _,_).
+file_flush(FileDes, Ret) :-
+	file_function(FILE_FLUSH, FileDes, Ret, _D, _E, _,_).
 file_seek(FileDes, Offset, Place, Ret) :-
-	file_function(1, FileDes, Offset, Place, Ret, _,_).
+	file_function(FILE_SEEK, FileDes, Offset, Place, Ret, _,_).
 file_truncate(FileDes, Length, Ret) :-
-	file_function(2, FileDes, Length, Ret, _E, _,_).
-file_pos(FileDes, Pos) :- file_function(3, FileDes, Pos, _Ret, _E, _,_).
+	file_function(FILE_TRUNCATE, FileDes, Length, Ret, _E, _,_).
+file_pos(FileDes, Pos) :-
+	file_function(FILE_POS, FileDes, Pos, _Ret, _E, _,_).
 file_open(FileName, RWMode, FileDes) :-
-	file_function(4, FileName, RWMode, FileDes, _E, _,_).
-file_close(FileDes) :- file_function(5,FileDes,_X,_Y,_Z, _,_).
-file_get(FileDes,Char) :- file_function(6, FileDes, Char, _X, _Y, _,_).
-file_put(FileDes,Char) :- file_function(7, FileDes, Char, _X, _Y, _,_).
+	file_function(FILE_OPEN, FileName, RWMode, FileDes, _E, _,_).
+file_close(FileDes) :-
+	file_function(FILE_CLOSE,FileDes,_X,_Y,_Z, _,_).
+file_get(FileDes,Char) :-
+	file_function(FILE_GET, FileDes, Char, _X, _Y, _,_).
+file_put(FileDes,Char) :-
+	file_function(FILE_PUT, FileDes, Char, _X, _Y, _,_).
 
 %% These are lower level than file_read_line_atom/list
-%% Therefore, they don't check their arguments.
-%% file_getbuf doesn't intern ToString.
+%% Therefore, they don''t check their arguments.
+%% file_getbuf doesn''t intern ToString.
 file_getbuf(FileDes, ByteCount, ToString, BytesRead) :-
-	file_function(8, FileDes, ByteCount, ToString, BytesRead,_,_).
+	file_function(FILE_GETBUF, FileDes,ByteCount,ToString,BytesRead,_,_).
 
 file_getbuf_atom(FileDes, ByteCount, ToAtom, BytesRead) :-
 	(var(ToAtom), var(BytesRead) ->
-	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
 	    intern_string(TmpStr, ToAtom)
 	;
 	 abort('Usage: file_getbuf_atom([+FileDes,] +ByteCount, -ToAtom, -BytesRead)')
         ).
 
 file_getbuf_atom(ByteCount, ToAtom, BytesRead) :-
-	stat_flag(10, FileDes),
+	stat_flag(CURRENT_INPUT, FileDes),
 	(var(ToAtom), var(BytesRead) ->
-	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
 	    intern_string(TmpStr, ToAtom)
 	;
 	 abort('Usage: file_getbuf_atom([+FileDes,] +ByteCount, -ToAtom, -BytesRead)')
@@ -99,38 +110,38 @@ file_getbuf_atom(ByteCount, ToAtom, BytesRead) :-
 
 file_getbuf_list(FileDes, ByteCount, ToList, BytesRead) :-
 	(var(ToList), var(BytesRead) ->
-	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
 	    atom_codes(TmpStr, ToList)
 	;
 	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
 
 file_getbuf_list(ByteCount, ToList, BytesRead) :-
-	stat_flag(10, FileDes),
+	stat_flag(CURRENT_INPUT, FileDes),
 	(var(ToList), var(BytesRead) ->
-	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
+	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
 	    atom_codes(TmpStr, ToList)
 	;
 	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
 
 file_putbuf(FileDes, ByteCount, FromString, Offset, BytesWritten) :-
 	(var(BytesWritten) ->
-	    file_function(9, FileDes, ByteCount, FromString, Offset, BytesWritten,_)
+	    file_function(FILE_PUTBUF, FileDes,ByteCount,FromString,Offset,BytesWritten,_)
 	;
 	abort('Usage: file_putbuf([+FileDes,] +ByteCount, +FromString, +Offset, -BytesWritten)')
     ).
 
 file_putbuf(ByteCount, FromString, Offset, BytesWritten) :-
-	stat_flag(11, FileDes),
+	stat_flag(CURRENT_OUTPUT, FileDes),
 	(var(BytesWritten) ->
-	    file_function(9, FileDes, ByteCount, FromString, Offset, BytesWritten,_)
+	    file_function(FILE_PUTBUF, FileDes,ByteCount,FromString,Offset,BytesWritten,_)
 	;
 	abort('Usage: file_putbuf([+FileDes,] +ByteCount, +FromString, +Offset, -BytesWritten)')
 	).
 
-%% This doesn't intern Str
+%% This doesn''t intern Str
 file_read_line(FileDes, Str, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(10, FileDes, Str, IsFullLine, _, _,_)
+	    file_function(FILE_READ_LINE, FileDes, Str, IsFullLine, _, _,_)
 	    ;
 	    abort('Usage: file_read_line([+FileDes,] -InputStr, -IsFullLine)')
         ).
@@ -138,7 +149,7 @@ file_read_line(FileDes, Str, IsFullLine) :-
 %% Like file_read_line, but Str becomes an interned atom
 file_read_line_atom(FileDes, Str, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(10, FileDes, UnStr, IsFullLine, _, _,_),
+	    file_function(FILE_READ_LINE, FileDes, UnStr, IsFullLine, _, _,_),
 	    intern_string(UnStr,Str)
 	    ;
 	    abort('Usage: file_read_line_atom([+FileDes,] -InputStr, -IsFullLine)')
@@ -147,13 +158,13 @@ file_read_line_atom(FileDes, Str, IsFullLine) :-
 %% Read line from current input stream (previously set by 'see')
 %% Intern string
 file_read_line_atom(Str, IsFullLine) :-
-	stat_flag(10, FileDes),  % Current input
+	stat_flag(CURRENT_INPUT, FileDes),  % Current input
 	file_read_line_atom(FileDes, Str, IsFullLine).
 
 %% Like file_read_line_atom, but returns list of characters
 file_read_line_list(FileDes, CharLst, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(10, FileDes, Str, IsFullLine, _, _,_),
+	    file_function(FILE_READ_LINE, FileDes, Str, IsFullLine, _, _,_),
 	    atom_codes(Str,CharLst)
 	    ;
 	    abort('Usage: file_read_line_list([+FileDes,] -InputStr, -IsFullLine)')
@@ -162,18 +173,18 @@ file_read_line_list(FileDes, CharLst, IsFullLine) :-
 %% Read line from current input stream (previously set by 'see')
 %% Return list of chars
 file_read_line_list(Lst, IsFullLine) :-
-	stat_flag(10, FileDes),  % Current input
+	stat_flag(CURRENT_INPUT, FileDes),  % Current input
 	file_read_line_list(FileDes, Lst, IsFullLine).
 
 %% Write Str out to FileDes. Str must be atom or list of chars.
 %% This is checked in C, by the builtin.
 file_write_line(FileDes, Str, Offset) :-
-	file_function(11, FileDes, Str, Offset, _,_,_).
+	file_function(FILE_WRITE_LINE, FileDes, Str, Offset, _,_,_).
 
 %% Same as file_write_line/3, but write to current output
 file_write_line(Str, Offset) :-
-	stat_flag(11, FileDes),  % Current output
-	file_function(11, FileDes, Str, Offset, _,_,_).
+	stat_flag(CURRENT_OUTPUT, FileDes),  % Current output
+	file_function(FILE_WRITE_LINE, FileDes, Str, Offset, _,_,_).
 
 
 /***************************************************************/
@@ -182,8 +193,8 @@ file_write_line(Str, Offset) :-
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
 
-file_time(FileName, Time) :- file_stat(FileName,0,Time).
-file_size(FileName, Size) :- file_stat(FileName,1,Size).
+file_time(FileName, Time) :- file_stat(FileName,FILE_STAT_TIME,Time).
+file_size(FileName, Size) :- file_stat(FileName,FILE_STAT_SIZE,Size).
 
 /***************************************************************
 **
@@ -192,11 +203,11 @@ file_size(FileName, Size) :- file_stat(FileName,1,Size).
 ****************************************************************/
 
 print_file_contents(Filename) :-
-	stat_flag(11, ToFileDes),  % current output
+	stat_flag(CURRENT_OUTPUT, ToFileDes),  % current output
 	print_file_contents(Filename, ToFileDes).
 
 print_file_contents(FileName, ToFileDes) :-
-	file_open(FileName, 0, Fdes),
+	file_open(FileName, OREAD, Fdes),
 	print_fd_contents(Fdes, ToFileDes),
 	file_close(Fdes).
 print_fd_contents(Fdes, ToFileDes) :-

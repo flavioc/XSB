@@ -54,8 +54,6 @@ dos_os_loader :- stat_flag(CONFIG_NAME, ConfigurationC),
 	%% convert C string to Prolog
 	intern_string(ConfigurationC, Configuration),
 	str_sub('pc-dos', Configuration, _).
-%% NEW
-%%windows_os_loader :-  stat_flag(28, ConfigurationC),
 windows_os_loader :-  stat_flag(CONFIG_NAME, ConfigurationC),
 	%% convert C string to Prolog
 	intern_string(ConfigurationC, Configuration),
@@ -79,8 +77,6 @@ fmt_write_string(S,Fmt,A) :- formatted_io(FMT_WRITE_STRING, S,Fmt,A,_).
 	set_current_output,
 	import_standard_predicates,
 	%% Load the xsb_configuration predicate
-	%% NEW
-	%%stat_flag(26, ConfigFileC),
 	stat_flag(CONFIG_FILE, ConfigFileC),
 	intern_string(ConfigFileC, ConfigFile), % convert C string to Prolog
 	reconsult(ConfigFile),
@@ -113,8 +109,6 @@ set_current_module :-
 	conpsc(current_module, CURMOD_PSC),
 	conpsc(usermod, USERMOD_PSC),
 	psc_set_prop(CURMOD_PSC, USERMOD_PSC),
-	%% NEW
-	%%stat_set_flag(12, 0).
 	stat_set_flag(CURRENT_MODULE, 0).
 
 
@@ -129,8 +123,6 @@ set_current_input :-
 	psc_set_type(UserInPSC, 5),        % ``ep'' field contains file desc
 	psc_set_prop(UserInPSC, 0),        % ``ep'' field set to stdin
 	conset(current_input, UserInPSC),
-	%% NEW
-	%%stat_set_flag(10, 0).
 	stat_set_flag(CURRENT_INPUT, 0).
 
 
@@ -145,8 +137,6 @@ set_current_output :-
 	psc_set_type(UserOutPSC, 5),       % ``ep'' field contains file desc
 	psc_set_prop(UserOutPSC, 1),       % ``ep'' field set to stdout
 	conset(current_output, UserOutPSC),
-	%% NEW
-	%%stat_set_flag(11, 1).
 	stat_set_flag(CURRENT_OUTPUT, 1).
 
 
@@ -259,8 +249,6 @@ entire path to our interpreter to the loader.
  */
 
 execute_command_module :-
-	%% NEW
-	%%stat_flag(57, InputFilePtr_INT),
 	stat_flag(CMD_LOOP_DRIVER, InputFilePtr_INT),
 	load(InputFilePtr_INT).
 
@@ -302,7 +290,6 @@ XSB's in-lined predicates, builtins, and functions.
 	; Type =:= 5 -> psc_insert(Term, 0, PSC, 0)
 	),
 	*/
-	%% NEW
 	( Type =:= CS -> term_psc(Term, PSC)
 	; Type =:= STRING -> psc_insert(Term, 0, PSC, 0)
 	),
@@ -319,7 +306,6 @@ load_pred0(PSC) :-
 	load_pred1(PSC),
 	stat_set_flag(1, Hitrace).	% resume hitrace status if successful
 	*/
-	%% NEW
 	stat_flag(HITRACE, Hitrace), 	
 	stat_set_flag(HITRACE, 0),	  % turn off hitrace
 	load_pred1(PSC),
@@ -361,8 +347,6 @@ load_pred1(PSC) :-
 
 load(ModName) :-
 	'_$savecp'(B),
-	%% NEW
-	%%stat_flag(4, Debug_on),
 	stat_flag(DEBUG_ON, Debug_on),
 	( Debug_on =:= 1
 	  ->	ll_prompt('[ load module '),
@@ -427,22 +411,16 @@ libpath(P) :- libraries_loaded,
 	      library_directory(Dir), 
 	      expand_filename(Dir, P1),
 	      dirname_canonic(P1, P).
-%% NEW
-%%libpath(P) :- stat_flag(23, InstallDir1),%% get the installation directory
 libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),  % get the installation dir
 	      intern_string(InstallDir1, InstallDir),
 	      slash(Slash),
 	      %% <installdir>/lib/  (slash type depends on the OS)
 	      fmt_write_string(P, '%s%slib%s', f(InstallDir, Slash, Slash)).
-%% NEW 
-%%libpath(P) :- stat_flag(23, InstallDir1),
 libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),
 	      intern_string(InstallDir1, InstallDir),
 	      slash(Slash),
 	      %%<installdir>/syslib/  (slash type depends on the OS)
 	      fmt_write_string(P,'%s%ssyslib%s',f(InstallDir, Slash, Slash)).
-%% NEW
-%%libpath(P) :- stat_flag(23, InstallDir1),
 libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),
 	      intern_string(InstallDir1, InstallDir),
 	      slash(Slash),
@@ -455,8 +433,6 @@ libpath(P) :- slash(Slash), str_cat('.', Slash,P).
  */
 
 libraries_loaded :- 
-	%% NEW
-	%%stat_flag(50, Lib_Loaded),
 	stat_flag(LIBS_LOADED, Lib_Loaded),
 	Lib_Loaded =:= 1.
 
@@ -478,7 +454,6 @@ ll_nl :- (windows_os_loader
 	 ->  file_put(2, 13), file_put(2, 10)
 	 ;   file_put(2, 10) ).
 */
-%% NEW
 ll_nl :- (windows_os_loader
 	 ->  file_put(STDERR, CH_RETURN), file_put(STDERR, CH_NEWLINE)
 	 ;   file_put(STDERR, CH_NEWLINE) ).
@@ -497,7 +472,6 @@ ll_prompt(N, String) :-
 	; T =:= 2 -> str_insert(String, String0)	% INT encoded string
 	),						% eg, from stat_flag
 	*/
-	%% NEW
 	( T =:= STRING -> String0 = String
 	; T =:= CS -> term_psc(String, PSC), psc_name(PSC, String0)
 	; T =:= INT -> str_insert(String, String0)	% INT encoded string
@@ -511,8 +485,6 @@ ll_prompt(N, String) :-
  *  Print a small integer
  */
 ll_writearity(Int) :- 
-	%% NEW
-	%%( Int < 10 -> Char is Int + 48, file_put(STDERR, Char)
 	( Int < 10 -> Char is Int + CH_0, file_put(STDERR, Char)
 	; file_put(STDERR, CH_STAR)	% when arity > 9, write an asterisk *
 	).	
