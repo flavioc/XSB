@@ -278,13 +278,16 @@ inline static bool hilog_arg(void)
   return TRUE;
 }
 
+#define INITIAL_NAMELEN 256
 
 inline static bool atom_to_list(int call_type)
 {
   /* r1: ?term; r2: ?character list	*/
   int i, len;
   long c;
-  char *atomname;
+  char *atomname, *atomnamelast;
+  static char *atomnameaddr = NULL;
+  static int atomnamelen;
   char tmpstr[2], *tmpstr_interned;
   Cell heap_addr, term, term2;
   Cell list, new_list;
@@ -295,7 +298,14 @@ inline static bool atom_to_list(int call_type)
   term = ptoc_tag(1);
   list = ptoc_tag(2);
   if (!isnonvar(term)) {	/* use is: CODES/CHARS --> ATOM */
-    atomname = (char *)hreg; term2 = list;	/* use heap for temp storage */
+    if (atomnameaddr == NULL) {
+      atomnameaddr = malloc(INITIAL_NAMELEN);
+      atomnamelen = INITIAL_NAMELEN;
+      /* printf("Allocated namebuf: %p, %d\n",atomnameaddr,atomnamelen);*/
+    }
+    atomname = atomnameaddr;
+    atomnamelast = atomnameaddr + (atomnamelen - 1);
+    term2 = list;	/* DON'T use heap for temp storage */
     do {
       deref(term2);
       if (isnil(term2)) {
@@ -320,6 +330,13 @@ inline static bool atom_to_list(int call_type)
 	  err_handle(RANGE, 2, call_name, 2, "ASCII code", heap_addr);
 	  return FALSE;	/* fail */
 	}
+	if (atomname >= atomnamelast) {
+	  atomnameaddr = (char *)realloc(atomnameaddr, (atomnamelen << 1));
+	  atomname = atomnameaddr + (atomnamelen - 1);
+	  atomnamelen = atomnamelen << 1;
+	  atomnamelast = atomnameaddr + (atomnamelen - 1);
+	  /*printf("Allocated namebuf: %p, %d\n",atomnameaddr,atomnamelen);*/
+	}
 	*atomname++ = c;
 	term2 = cell(clref_val(term2)+1);
       } else {
@@ -328,7 +345,7 @@ inline static bool atom_to_list(int call_type)
 	return FALSE;	/* fail */
       }
     } while (1);
-    bind_string((CPtr)(term), (char *)string_find((char *)hreg, 1));
+    bind_string((CPtr)(term), (char *)string_find((char *)atomnameaddr, 1));
     return TRUE;
   } else {	/* use is: ATOM --> CODES/CHARS */
     if (isstring(term)) {
@@ -340,9 +357,13 @@ inline static bool atom_to_list(int call_type)
 	}
 	else return isnil(list);
       } else {
+	/* check that there is enough space on the heap! */
+	check_glstack_overflow(2, pcreg, 2*len*sizeof(Cell)) ;
+	list = ptoc_tag(2);   /* in case it changed */
+
 	new_list = makelist(hreg);
 	for (i = 0; i < len; i++) {
-	  if (call_type==ATOM_CODES)
+ 	  if (call_type==ATOM_CODES)
 	    follow(hreg++) = makeint(*(unsigned char *)atomname);
 	  else {
 	    tmpstr[0]=*atomname;
@@ -356,6 +377,7 @@ inline static bool atom_to_list(int call_type)
 	}
 	follow(top) = makenil;
 	return unify(list, new_list);
+      contcase: return(FALSE);
       } 
     } else err_handle(TYPE, 1, call_name, 2, "atom", term);
   }
