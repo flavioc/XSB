@@ -103,6 +103,7 @@ standard_symbol(file_clone, 3, file_io).
 standard_symbol(file_reopen, 4, file_io).
 
 standard_symbol(file_write, 2, xsb_writ).
+standard_symbol(file_nl, 1, xsb_writ).
 standard_symbol(file_read, 2, xsb_read).
 
 standard_symbol(get, 1, standard).
@@ -213,8 +214,8 @@ standard_symbol(debug_ctl, 2, debugger).
 standard_symbol(tsetof, 3, setof).
 standard_symbol(ttywrite, 1, standard).
 standard_symbol(ttywritenl, 1, standard).
-standard_symbol(unix, 1, unix).
-standard_symbol(unix, 2, unix).
+standard_symbol(unix, 1, unix).	       	   % obsolete
+standard_symbol(unix, 2, unix).	       	   % obsolete
 standard_symbol(shell, 1, shell).
 standard_symbol(shell, 2, shell).
 standard_symbol(shell, 5, shell).
