@@ -8,6 +8,19 @@ user program can register \emph{hooks} to handle certain supported
 events. All the predicates described below must be imported from {\tt
 xsb\_hook}.
 
+An example of the use of hooks is to have XSB fail quietly when it
+encounters an undefined predicate.  This can be achieved by the
+the example code, which is explained in the following sections.
+
+\begin{verbatim}
+:- import add_xsb_hook/1,xsb_undefined_predicate_hook/1 from xsb_hook.
+
+:- add_xsb_hook(xsb_undefined_predicate_hook(undef_fail(_))).
+
+undef_fail(_).
+\end{verbatim}
+
+
 \section{Adding and Removing Hooks}
 
 A hook in XSB can be either a 0-ary predicate or a unary predicate.
