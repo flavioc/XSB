@@ -4,6 +4,7 @@
 	delete_class_cascade/1,
 	obliterate_class/1,obliterate_classes/1,
 	obliterate_object/1,	obliterate_objects/1,	
+	obliterate_extensional_component/1,
 	retractall_itsobjects/1,
 	retractall_subclasses/1,
 	delete_all_things_to_delete,
@@ -123,6 +124,21 @@ retractall_subclasses(PCid):-
 /* Delete a class, all its subclasses, and all their relations and attributes */
 delete_class_cascade(ACid) :-
 	obliterate_class(ACid).
+
+/* Delete an extensional component, and everything that references it.
+This only works for components whose objects and classes are defined
+extensionally.  */
+
+:- import isa_ext/2 from usermod.
+obliterate_extensional_component(Comp) :-
+	retractall(things_to_delete(_)),
+	(isa_ext(Thing,_),
+	 cdf_id_fields(Thing,_,_,Comp),
+	 assert(things_to_delete(Thing)),
+	 fail
+	 ;
+	 delete_all_things_to_delete
+	).
 
 
 /************************************************************************/
