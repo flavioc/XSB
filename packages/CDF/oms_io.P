@@ -406,17 +406,19 @@ load_oms(Dir) :-
 	oms_initialize_ctrs,
 	init_oms_rels.
 
-%--------------------------------------------------------------------
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(merge_omsext/0, "@tt{mergeomsext}: translates in-memory
 facts in External Format to Internal Format, combines these facts with
 the current store of information in Internal Format, and removes the
 External Format facts from memory once they have been merged.  Any
 information present in the OMS in Internal or External Intensional
-Format will persist after the new files have been merged.
+Format will persist after the new files have been merged.  Redundancy
+checks are performed -- e.g. that a relationship that has been added
+is implied by inheritance.
 
 For now, oms_caching is turned off for the extent of merge_omsext, 
 so that newXXX routines can be used.").
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 merge_omsext :-
 	cputime(Begin),
@@ -437,13 +439,10 @@ merge_omsext :-
 	retract_omsext,
 	time_message(Begin,('external OMS(s) merged')).
 
-/* Checks for Name,Nid,Sou are pefromed
-   in newClass  */
+/* Checks for Name,Nid,Sou are pefromed in newClass  */
 cp_atomic_class_extoms :-
 	class_ext(Name,Nid,Sou),
 	atomic(Nid),
-%	Term = 	class_ext(Name,Nid,Sou),
-%	check_new_source(Sou,Term),  (not needed -- done in new class)
 	newClass(Name,unk,Nid,Sou,_Cid),
 	fail.
 cp_atomic_class_extoms.
@@ -466,18 +465,17 @@ cp_parameterized_class_extoms :-
 	fail.
 cp_parameterized_class_extoms.
 
-/* not checking for subsumption right now in immediate subclass. */
+/* not checking for subsumption right now in immediate subclass. 
+   also, removed check of immediate_subclass(SubCid,SupCid) -- done
+   in newClass */
 cp_subclass_extoms :-
 	subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource),
 	Term = subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource),
 %	writeln(subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource)),
 	get_cid_from_nid_src(SubNatCid,SubSource,Term,SubCid),
 	get_atomic_class(SupNatCid,SupSource,SupCid,Term),
-	(immediate_subclass(SubCid,SupCid)
-	 ->	fail
-	 ;	newSubclass(SubCid,SupCid),
-		fail
-	).
+	newSubclass(SubCid,SupCid),
+	fail.
 cp_subclass_extoms.
 
 cp_relationship_extoms :-
@@ -488,9 +486,19 @@ cp_relationship_extoms :-
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
 	newRelationship_omsext(SCid,RCid,TCid),
-%	newRelationship(SCid,RCid,TCid),
 	fail.
 cp_relationship_extoms.
+
+/* doesn't do the usual class_exists checking for new rel, unnecess. */
+newRelationship_omsext(SCid,RCid,TCid) :-
+	(relationship_inh_gen(SCid,RCid,TCid)
+	 ->   true
+	 ;    (is_an_inheritable_relationship(RCid) -> 
+   	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
+	        ;  oms_warning(update,('attempt to add an inheritable ',
+		    ' relationship for class that is not a ',
+		    ' relationship: ',RCid)),
+	            fail) ).
 
 cp_strel_extoms :-
 	strel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
@@ -566,6 +574,129 @@ cp_attribute_object_extoms :-
 		fail
 	).
 cp_attribute_object_extoms.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+:- comment(fast_merge_omsext/0, "@tt{mergeomsext}: translates
+in-memory facts in External Format to Internal Format, combines these
+facts with the current store of information in Internal Format, and
+removes the External Format facts from memory once they have been
+merged.  Any information present in the OMS in Internal or External
+Intensional Format will persist after the new files have been merged.
+Redundancy checks are not performed -- e.g. that a relationship that
+has been added is implied by inheritance.
+
+For now, oms_caching is turned off for the extent of merge_omsext, 
+so that newXXX routines can be used.").
+
+fast_merge_omsext :-
+	cputime(Begin),
+	caching_oms(Cache),
+	oms_dont_use_cache,
+	cp_atomic_class_extoms,
+	time_message(Begin,('atomic classes merged')),
+	cp_object_extoms,
+	time_message(Begin,('atomic objects merged')),
+	cp_parameterized_class_extoms,
+	time_message(Begin,('param classes merged')),
+	fast_subclass_extoms,
+	time_message(Begin,('subclass merged')),
+	fast_relationship_extoms,
+	time_message(Begin,('irels merged')),
+	fast_strel_extoms,
+	time_message(Begin,('strels merged')),
+	fast_schrel_extoms,
+	time_message(Begin,('schrels merged')),
+	fast_memberof_extoms,
+	time_message(Begin,('mos merged')),
+	fast_attribute_extoms,
+	time_message(Begin,('attrs merged')),
+	fast_attribute_object_extoms,
+	(oms_checking(partial) -> true ; check_consistency),
+	(Cache =:= 1 -> oms_use_cache ; true),
+	retract_omsext,
+	time_message(Begin,('external OMS(s) merged')).
+
+fast_subclass_extoms :-
+	subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource),
+	Term = subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource),
+%	writeln(subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource)),
+	get_cid_from_nid_src(SubNatCid,SubSource,Term,SubCid),
+	get_atomic_class(SupNatCid,SupSource,SupCid,Term),
+	oms_update_list([asserta(oms_sc(SubCid,SupCid))]),
+	fail.
+fast_subclass_extoms.
+
+fast_relationship_extoms :-
+	relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	Term = relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+%	writeq(relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc)),nl,
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+        (is_an_inheritable_relationship(RCid) -> 
+   	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
+	        ;  oms_warning(update,('attempt to add an inheritable ',
+		    ' relationship for class that is not a ',
+		    ' relationship: ',RCid))),
+	fail.
+fast_relationship_extoms.
+
+fast_strel_extoms :-
+	strel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	Term = 	strel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+%	writeq(strel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc)),
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	asserta(oms_strel(SCid,RCid,TCid)),
+	fail.
+fast_strel_extoms.
+
+fast_schrel_extoms :-
+	schrel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	Term = schrel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+%	writeq(schrel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc)),
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	asserta(oms_schrel(SCid,RCid,TCid)),
+	fail.
+fast_schrel_extoms.
+
+fast_memberof_extoms :-
+	memberof_ext(NOid,OSrc,NCid,Src),
+%	writeln(memberof_ext(NOid,OSrc,NCid,Src)),
+	Term = memberof_ext(NOid,OSrc,NCid,Src),
+	get_oid_from_nid_src(NOid,OSrc,Term,Oid),
+	get_cid_from_nid_src(NCid,Src,Term,Cid),
+%	get_atomic_class(NCid,Src,Cid,Term),
+	asserta(oms_mo(Oid,Cid)),
+	fail.
+fast_memberof_extoms.
+
+fast_attribute_extoms :-
+	attribute_ext(NOid,Osrc,RNCid,RSrc,TNCid,TSrc),
+	Term = attribute_ext(NOid,Osrc,RNCid,RSrc,TNCid,TSrc),
+%	writeq(attribute_ext(NOid,Osrc,RNCid,RSrc,TNCid,TSrc)),nl,
+	get_oid_from_nid_src(NOid,Osrc,Term,Oid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	asserta(oms_at(Oid,RCid,TCid)),
+	fail.
+fast_attribute_extoms.
+
+fast_attribute_object_extoms :-
+	attribute_object_ext(SNOid,Osrc1,RNCid,RSrc,TNOid,Osrc2),
+	Term = attribute_object_ext(SNOid,Osrc1,RNCid,RSrc,TNOid,Osrc2),
+	get_oid_from_nid_src(SNOid,Osrc1,Term,SOid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_oid_from_nid_src(TNOid,Osrc2,Term,TOid),
+	asserta(oms_ao(SOid,RCid,TOid)),
+	fail.
+fast_attribute_object_extoms.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_mergeomsext/1, "@tt{load_mergeomsext(DirectoryList)}:
 loads and merges information in External Format from

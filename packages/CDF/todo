@@ -1,21 +1,31 @@
-
-Bug in dump_oms.P (save state).
-ALso, dont dump oms comp.
-
-Take indices out of oms_io.P
-
-create_component_internal/1 fail if subdependencies are not themselves
-components.  Make it into a list.
+-----------------------------
+Components: 
 
 Probably need a component dirty for dump component or dump new version.
 
-locks
-
-get rid of dump_component/1,
-
-versions in load_component.
+  create_extranal_component/1, 
 
 make sure I dump external rules.
+
+  update_components/2, fail if subdependencies are not
+themselves components.
+
+Incorporate antirelationships in create_component, etc.
+
+Do I have an obj_nidbound?
+cp_product_object_extoms 
+
+If a version conflict is detected between a component to be loaded and
+one already in the OMS state or about to be loaded,
+@tt{loadmerge_component/2} aborts without changing the OMS state.
+
+-----------------------------
+
+Bug in dump_oms.P (save state).
+
+Take indices out of oms_io.P
+
+locks
 
 Do something better with friendly atom codes.
 

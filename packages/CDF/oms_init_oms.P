@@ -9,7 +9,7 @@
 	is_a_relation/1,	relationship/3, 
 	immediate_relationship/3,immediate_irel/3, 
 	is_an_inheritable_relationship/1,
-	newRelationship/3, newRelationshipClass/3,
+	newRelationship/3, newRelationshipClass/4, newRelationshipClass/3,
 	retractallRelationship/3,
 	strel/3,	is_a_strel/1,
 	newStrel/3, newStrelClass/3, retractallStrel/3,	schrel/3,
@@ -384,14 +384,21 @@ newPrimitiveClass(Name,ParentCid,NewCid,Source,NativeID):-
 
 init_component_info :-
         class(RootCid,'OMS Root','OMS Root','OMS'),
-	newClass('OMS Component',RootCid,'OMS',CompCid),
-	newClass('OMS',CompCid,'OMS',_),
-	newClass('compVers/1',RootCid,
-			compVers('OMS Component','OMS',integer(_),'OMS'),
-			'OMS',CVid),
-	class(Inhid,'OMS Inheritable Relationships',_,'OMS'),
-	newClass(omsComponentDepends,Inhid,'OMS',Depid),
-	newSchrel(CVid,Depid,CVid).	/* all dependencies must incl vers. */
+	newClass('OMS Component',RootCid,'OMS',_),
+	newClass('compVers/2',RootCid,
+			compVers('OMS Root','OMS',integer(_),'OMS'),
+			'OMS',_CVid),
+	newComponent('OMS',_OCid,_Rcid).
+
+newComponent(Name,compVers(NameId,integer(V)),Relid):- 
+	class(GenCompid,_,'OMS Component','OMS'),
+	newClass(Name,GenCompid,Name,NameId),
+	(immediate_subclass(compVers(NameId,integer(V)),GenCompid) -> 
+	     true 
+	   ; 
+	     newSubclass(compVers(NameId,integer(0)),GenCompid),
+	     V = 0 ),
+	newRelationshipClass(componentDepends,Name,Relid).
 
 oms_primitive_type(X):- oms_primitive_class(X,_,_,_).
 
@@ -1228,21 +1235,6 @@ relationship_target_class_exists(SCid):-
 		    ' relationship where target is missing: ',SCid)),
 	   fail).
 
-%%%%%%%%%%%%%%%
-/* To be used ONLY when loading from an external file.
-     In this case, it is known that SCid, RCid, and TCid are all proper class ids. 
-*/
-
-newRelationship_omsext(SCid,RCid,TCid) :-
-	(relationship_inh_gen(SCid,RCid,TCid)
-	 ->   true
-	 ;    (is_an_inheritable_relationship(RCid) -> 
-   	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
-	        ;  oms_warning(update,('attempt to add an inheritable ',
-		    ' relationship for class that is not a ',
-		    ' relationship: ',RCid)),
-	            fail) ).
-
 %%% SET-VALUED RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(is_a_strel/1, "@tt{is_a_strel(RCid)} checks that @tt{RCid}
@@ -2008,7 +2000,6 @@ newAttribute(SOid,RCid,TCid) :-
 	).
 
 newAttribute(SOid,RCid,TCid,Upd0,Upd) :-
-%	standardize_value(TCidA,TCid),
 	check_incremental_constraints(attribute(SOid,RCid,TCid)),
 	(check_attribute(SOid,RCid,TCid)
 	 ->	Upd0 = Upd
@@ -2132,10 +2123,21 @@ newAttributeObject(SOid,RCid,TOid,Upd0,Upd) :-
 
 %%% MIXED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
-:- comment(newRelationshipClass/3,"Creates a class that is an
-immediate subclass of of @tt{OMS Inheritable Relationships}.  This
-predicate only creates a class, and does not create any specific
-relationship tuples").
+:-comment(newRelationshipClass/4,"
+newRelationshipClass(+Name,+Nid,+Source,-Cid) creates a class that is
+an immediate subclass of @tt{id('OMS Inheritable
+Relationships','OMS')}.  This predicate only creates a class, and does
+not create any specific relationship tuples").
+
+newRelationshipClass(Name,Nid,Source,NewCid) :-
+	class(RelCid,'OMS Inheritable Relationships',
+		     'OMS Inheritable Relationships','OMS'),
+	newClass(Name,RelCid,Nid,Source,NewCid).
+
+:-comment(newRelationshipClass/3,"
+newRelationshipClass(+Nid,+Source,-Cid) acts as
+@pred{newRelationshipClass/4}, but assumes that the name of the class
+is the same as @tt{Nid}.").
 
 newRelationshipClass(Name,Source,NewCid) :-
 	class(RelCid,'OMS Inheritable Relationships',

@@ -8,13 +8,13 @@
     at_least/3, at_most/3,
     gt/2,gte/2,lt/2,lte/2,
 
-    query_attribute/3,query_immediate_attribute/3,
-    query_attribute_object/3,
-    query_memberof/2, query_immediate_memberof/2,
-    query_irel/3,query_immediate_irel/3,
-    query_schrel/3,query_immediate_schrel/3,
-    query_strel/3, query_subclass/2,
-    query_subclass_nr/2,query_immediate_subclass/2.
+    q_attribute/3,q_immediate_attribute/3,
+    q_attribute_object/3,
+    q_memberof/2, q_immediate_memberof/2,
+    q_irel/3,q_immediate_irel/3,
+    q_schrel/3,q_immediate_schrel/3,
+    q_strel/3, q_subclass/2,
+    q_subclass_nr/2,q_immediate_subclass/2.
 
 :- import length/2, ground/1 from basics.
 
@@ -174,38 +174,43 @@ key_label(id(Nid,Src),Label):- object(_,Label,Nid,Src).
 :-comment(attr/3,"@tt{attr(id(Obj,Osrc),id(Relation,Rsrc),id(Target,Tsrc))}
 finds all attributes and attribute_objects for the object with NID
 @tt{id(Obj,Src)} and source @tt{Obj,Osrc)}, using
-@pred{query_attribute/3} and @pred{query_attribute_object/3}.  Any
+@pred{q_attribute/3} and @pred{q_attribute_object/3}.  Any
 instantiation pattern may be used.  ").
 
 /* TLS: OMS shd probably be fixed so that we can't have an attribute
    as well as an attribute object. */
 
-qnewIrel(id(SNCid,SSrc),id(RNCid,RSrc),id(TNCid,TSrc)):- 
+q_newIrel(id(SNCid,SSrc),id(RNCid,RSrc),id(TNCid,TSrc)):- 
 	Term = newIrel(id(SNCid,SSrc),id(RNCid,RSrc),id(TNCid,TSrc)),
 	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
 	newRelationship_omsext(SCid,RCid,TCid).
 
+q_newSubclass(id(SNCid,SSrc),id(TNCid,TSrc)):- 
+	Term = newSubclass(id(SNCid,SSrc),id(TNCid,TSrc)),
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	newSubclass(SCid,TCid).
 
 :- table attr/3.
 attr(Objin,RCid,TObjin):- 
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
-	query_attribute(Objout,RCid,TObjout),
+	q_attribute(Objout,RCid,TObjout),
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
 	\+ more_specific_target(Objout,RCid,TObjout).
 attr(Objin,RCid,TObjin):- 
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
-	table_query_attribute_object(Objout,RCid,TObjout),
+	table_q_attribute_object(Objout,RCid,TObjout),
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout).
 attr(Objin,RCid,TObjin):- 
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
-	query_irel(Objout,RCid,TObjout),
+	q_irel(Objout,RCid,TObjout),
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout).
 
@@ -213,48 +218,48 @@ attr(Objin,RCid,TObjin):-
 immediate_attr(Objin,RCid,TObjin):- 
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
-	query_immediate_attribute(Objout,RCid,TObjout),
+	q_immediate_attribute(Objout,RCid,TObjout),
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
 	\+ more_specific_target(Objout,RCid,TObjout).
 immediate_attr(Objin,RCid,TObjin):- 
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
-	table_query_immediate_attribute_object(Objout,RCid,TObjout),
+	table_q_immediate_attribute_object(Objout,RCid,TObjout),
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout).
 immediate_attr(Objin,RCid,TObjin):- 
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout),
-	query_immediate_irel(Objout,RCid,TObjout),
+	q_immediate_irel(Objout,RCid,TObjout),
 	pop_out_object(Objin,Objout),
 	pop_out_object(TObjin,TObjout).
 
 
 more_specific_target(id(Source,Ssrc),id(Relation,Rsrc),id(Target,Tsrc)):- 
-	table_query_attribute_object(id(Source,Ssrc),id(Relation,Rsrc),
+	table_q_attribute_object(id(Source,Ssrc),id(Relation,Rsrc),
 					       id(Object,Osrc)),
-	query_memberof(id(Object,Osrc),id(Target,Tsrc)).
+	q_memberof(id(Object,Osrc),id(Target,Tsrc)).
 
 pop_out_object(id(object(Obj,Src),'OMS'),id(Obj,Src)) :- nonvar(Obj), !.
 pop_out_object(Obj,Obj).
 
 :- comment(isa/2,"@tt{isa(id(Sub,Subsrc),id(Sup,Supsrc))} traverses
-the inheritance hierarchy using @pred{query_subclass/2} or
-@tt{query_memberof/2} predicates.  Any instantiation pattern may be
+the inheritance hierarchy using @pred{q_subclass/2} or
+@tt{q_memberof/2} predicates.  Any instantiation pattern may be
 used.").
 
 isa(id(One,Osrc),id(Two,Tsrc)):- 
-	query_subclass(id(One,Osrc),id(Two,Tsrc)).
+	q_subclass(id(One,Osrc),id(Two,Tsrc)).
 isa(Objin,id(Two,Tsrc)):- 
 	pop_out_object(Objin,Objout),
-	query_memberof(Objout,id(Two,Tsrc)).
+	q_memberof(Objout,id(Two,Tsrc)).
 
 immediate_isa(B,C):- 
-	query_immediate_subclass(B,C).
+	q_immediate_subclass(B,C).
 immediate_isa(B,C):- 
 	pop_out_object(B,B1),
-	query_immediate_memberof(B1,C).
+	q_immediate_memberof(B1,C).
 
 :- comment(at_least/3,"@tt{at_least(N,Var,Template)} succeeds if
 backtracking through @tt{Template} produces at least @tt{N} unique
@@ -306,12 +311,12 @@ OMS primitive types.").
 gte(float(One),float(Two)):- One > Two.
 gte(integer(One),integer(Two)):- One > Two.
 
-:- comment(query_attribute/3,"This predicate has the same behavior as
+:- comment(q_attribute/3,"This predicate has the same behavior as
 @pred{attribute/3}, except that Native Ids and Source pairs are used
 instead of concept ids or object ids.").
 
 % + + ?
-query_attribute(id(Obj,Osrc),id(Rel,Rsrc),id(Attr,Asrc)) :- 
+q_attribute(id(Obj,Osrc),id(Rel,Rsrc),id(Attr,Asrc)) :- 
 	q_cvt_oid(Obj,Osrc,Oid),
 	q_cvt_cid(Rel,Rsrc,Rid),
 	q_cvt_cid(Attr,Asrc,Tid),
@@ -342,12 +347,12 @@ q_cvt_cid(Cls,Csrc,Cid) :-
 	 ;	true
 	).
 
-:- comment(query_immediate_attribute/3,"This predicate has the same
+:- comment(q_immediate_attribute/3,"This predicate has the same
 behavior as @pred{immediate_attribute/3}, except that Native Ids and
 Sources are used instead of concept ids or object ids.").
 
 % + + ?
-query_immediate_attribute(id(Obj,Osrc),id(Rel,Rsrc),id(Attr,Asrc)):- 
+q_immediate_attribute(id(Obj,Osrc),id(Rel,Rsrc),id(Attr,Asrc)):- 
 	q_cvt_oid(Obj,Osrc,Oid),
 	q_cvt_cid(Rel,Rsrc,Rid),
 	q_cvt_cid(Attr,Asrc,Tid),
@@ -356,16 +361,16 @@ query_immediate_attribute(id(Obj,Osrc),id(Rel,Rsrc),id(Attr,Asrc)):-
 	q_cvt_cid(Rel,Rsrc,Rid),
 	q_cvt_cid(Attr,Asrc,Tid).
 
-:- comment(query_attribute_object/3,"This predicate has the same
+:- comment(q_attribute_object/3,"This predicate has the same
 behavior as @pred{attribute_object/3}, except that Native Ids and
 Sources are used instead of concept ids or object ids.").
 
-:- table query_attribute_object/3.
-table_query_attribute_object(O,R,O1):- 
-	query_attribute_object(O,R,O1).
+:- table q_attribute_object/3.
+table_q_attribute_object(O,R,O1):- 
+	q_attribute_object(O,R,O1).
 
 % + + ?
-query_attribute_object(id(Obj,Osrc),id(Rel,Rsrc),id(AO,Asrc)):- 
+q_attribute_object(id(Obj,Osrc),id(Rel,Rsrc),id(AO,Asrc)):- 
 	q_cvt_oid(Obj,Osrc,Oid),
 	q_cvt_cid(Rel,Rsrc,Rid),
 	q_cvt_oid(AO,Asrc,Tid),
@@ -374,11 +379,11 @@ query_attribute_object(id(Obj,Osrc),id(Rel,Rsrc),id(AO,Asrc)):-
 	q_cvt_cid(Rel,Rsrc,Rid),
 	q_cvt_oid(AO,Asrc,Tid).
 
-:- table query_immediate_attribute_object/3.
-table_query_immediate_attribute_object(O,R,O1):- 
-	query_immediate_attribute_object(O,R,O1).
+:- table q_immediate_attribute_object/3.
+table_q_immediate_attribute_object(O,R,O1):- 
+	q_immediate_attribute_object(O,R,O1).
 
-query_immediate_attribute_object(id(Obj,Osrc),id(Rel,Rsrc),id(AO,Asrc)):- 
+q_immediate_attribute_object(id(Obj,Osrc),id(Rel,Rsrc),id(AO,Asrc)):- 
 	q_cvt_oid(Obj,Osrc,Oid),
 	q_cvt_cid(Rel,Rsrc,Rid),
 	q_cvt_oid(AO,Asrc,Tid),
@@ -387,39 +392,39 @@ query_immediate_attribute_object(id(Obj,Osrc),id(Rel,Rsrc),id(AO,Asrc)):-
 	q_cvt_cid(Rel,Rsrc,Rid),
 	q_cvt_oid(AO,Asrc,Tid).
 
-:- comment(query_memberof/2,"This predicate has the same behavior as
+:- comment(q_memberof/2,"This predicate has the same behavior as
 @pred{memberof/2}, except that Native Ids and Sources are used instead
 of concept ids or object ids.").  
 
 % + +
-query_memberof(id(Obj,Osrc),id(Class,Csrc)):-
+q_memberof(id(Obj,Osrc),id(Class,Csrc)):-
 	q_cvt_oid(Obj,Osrc,Oid),
 	q_cvt_cid(Class,Csrc,Cid),
 	memberof(Oid,Cid),
 	q_cvt_oid(Obj,Osrc,Oid),
 	q_cvt_cid(Class,Csrc,Cid).
 
-:- comment(query_immediate_subclass/2,"This predicate has the same
+:- comment(q_immediate_subclass/2,"This predicate has the same
 behavior as @pred{immediate_memberof/2}, except that Native Ids and
 Sources are used instead of concept ids.").
 
 % + +
-query_immediate_memberof(id(Nid1,Src1),id(Nid2,Src2)):- 
+q_immediate_memberof(id(Nid1,Src1),id(Nid2,Src2)):- 
 	q_cvt_oid(Nid1,Src1,Num1),
 	q_cvt_cid(Nid2,Src2,Num2),
 	immediate_memberof(Num1,Num2),
 	q_cvt_oid(Nid1,Src1,Num1),
 	q_cvt_cid(Nid2,Src2,Num2).
 
-:- comment(query_irel/3,"This predicate has the same behavior as
+:- comment(q_irel/3,"This predicate has the same behavior as
 @pred{irel/3}, except that Native Ids and Sources are used instead of
 concept ids.").
 
-query_irel(F,R,S):- 
-	query_relationship(F,R,S).
+q_irel(F,R,S):- 
+	q_relationship(F,R,S).
 
 % + + ?
-query_relationship(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
+q_relationship(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
 	q_cvt_cid(From,Fsrc,Cnum),
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum),
@@ -428,12 +433,12 @@ query_relationship(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):-
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum).
 
-:- comment(query_irel/3,"This predicate has the same behavior as
+:- comment(q_irel/3,"This predicate has the same behavior as
 @pred{immediate_irel/3}, except that Native Ids and Sources are used instead of
 concept ids.").
 
 % + + ?
-query_immediate_irel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
+q_immediate_irel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
 	q_cvt_cid(From,Fsrc,Cnum),
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum),
@@ -442,12 +447,12 @@ query_immediate_irel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):-
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum).
 
-:- comment(query_strel/3,"This predicate has the same behavior as
+:- comment(q_strel/3,"This predicate has the same behavior as
 @pred{strel/3}, except that Native Ids and Sources are used instead of
 concept ids.").
 
 % + + ?
-query_strel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
+q_strel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
 	q_cvt_cid(From,Fsrc,Cnum),
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum),
@@ -456,12 +461,12 @@ query_strel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):-
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum).
 
-:- comment(query_schrel/3,"This predicate has the same behavior as
+:- comment(q_schrel/3,"This predicate has the same behavior as
 @pred{schrel/3}, except that Native Ids and Sources are used instead
 of concept ids.").
 
 % + + ?
-query_schrel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
+q_schrel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
 	q_cvt_cid(From,Fsrc,Cnum),
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum),
@@ -470,12 +475,12 @@ query_schrel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):-
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum).
 
-:- comment(query_immediate_schrel/3,"This predicate has the same behavior as
+:- comment(q_immediate_schrel/3,"This predicate has the same behavior as
 @pred{immediate_schrel/3}, except that Native Ids and Sources are used
 instead of concept ids.").
 
 % + + ?
-query_immediate_schrel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
+q_immediate_schrel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
 	q_cvt_cid(From,Fsrc,Cnum),
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum),
@@ -484,34 +489,34 @@ query_immediate_schrel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):-
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum).
 
-:- comment(query_subclass_nr/2,"This predicate has the same behavior
+:- comment(q_subclass_nr/2,"This predicate has the same behavior
 as @pred{subclass/2}, except that Native Ids and Sources are used
 instead of concept ids @em{but} is not reflexive --
 i.e. @tt{subclass(X,X)} is never true.").
 
-query_subclass_nr(Id1,Id2):- 
-	query_subclass(Id1,Id2),
+q_subclass_nr(Id1,Id2):- 
+	q_subclass(Id1,Id2),
 	Id1 \== Id2.
 
-:- comment(query_subclass/2,"This predicate has the same behavior
+:- comment(q_subclass/2,"This predicate has the same behavior
 as @pred{subclass/2}, except that Native Ids and Sources are used
 instead of concept ids.").
 
-:- table query_subclass/2.
+:- table q_subclass/2.
 % + +
- query_subclass(id(Nid1,Src1),id(Nid2,Src2)):- 
+ q_subclass(id(Nid1,Src1),id(Nid2,Src2)):- 
 	q_cvt_cid(Nid1,Src1,Num1),
 	q_cvt_cid(Nid2,Src2,Num2),
 	subclass(Num1,Num2),
 	q_cvt_cid(Nid1,Src1,Num1),
 	q_cvt_cid(Nid2,Src2,Num2).
 
-:- comment(query_immediate_subclass/2,"This predicate has the same
+:- comment(q_immediate_subclass/2,"This predicate has the same
 behavior as @pred{immediate_subclass/2}, except that Native Ids and
 Sources are used instead of concept ids.").
 
 % + +
-query_immediate_subclass(id(Nid1,Src1),id(Nid2,Src2)):- 
+q_immediate_subclass(id(Nid1,Src1),id(Nid2,Src2)):- 
 	q_cvt_cid(Nid1,Src1,Num1),
 	q_cvt_cid(Nid2,Src2,Num2),
 	immediate_subclass(Num1,Num2),
