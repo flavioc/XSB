@@ -39,7 +39,7 @@ XSB-ODBC interface provides is as follows:
 	\item Caching compiler generated SQL statements with bind variables 
 		and efficient cursor management for cached statements
 	\end{itemize}
-\item A powerful Prolog / SQL compiler based on \cite{Dra92}.
+\item A powerful Prolog / SQL compiler based on \cite{Drax92}.
 \item Full source code availability
 \item Independence from database schema by employing a {\it relation level}
 \item Performance as SQL by employing a {\it view level} 
@@ -218,14 +218,14 @@ All arguments are standard Prolog terms.  {\tt ARG1}, {\tt ARG2}, ...,
 {\tt ARGn}defines the attributes to be retrieved from the database, while
 {\tt DatabaseGoal} defines the selection restrictions and join conditions.
 
-The compiler is a simple extension of \cite{Dra92} which generates SQL
+The compiler is a simple extension of \cite{Drax92} which generates SQL
 queries with bind variables and handles NULL values as described in
 Section \ref{NULL-values}.  It allows negation, the expression
 of arithmetic functions, and higher-order constructs such as grouping,
 sorting, and aggregate functions.
 
 Database goals are translated according to the following rules
-from \cite{Dra92}:
+from \cite{Drax92}:
 \begin{itemize}
 \item Disjunctive goals translate to distinct SQL queries
 	connected through the UNION operator.
@@ -239,7 +239,7 @@ from \cite{Dra92}:
 	  the constant value.
 \item Nulls are translated to {\tt IS NULL} conditions.
 \end{itemize}
-For more examples and implementation details see \cite{Dra92}.
+For more examples and implementation details see \cite{Drax92}.
  
 In the following, we show the definition of a simple join view between the 
 two database predicates {\it Room} and {\it Floor}.
