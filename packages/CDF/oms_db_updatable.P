@@ -2,6 +2,7 @@
 
 :- import member/2, length/2, append/3 from basics.
 :- import odbc_sql/4, odbc_open/2, odbc_open/4 from odbc_call.
+:- ensure_loaded(oms_utilities).
 
 :- document_export coerce_db_type/5, oms_db_open/3.
 
@@ -683,6 +684,7 @@ db_build_questions([_],['?'|Q],Q) :- !.
 db_build_questions([_|As],['?,'|Q0],Q) :-
 	db_build_questions(As,Q0,Q).
 
+/*
 odbc_sql_local(Connection,Input,Statement,Output):- 
 	%% writeln('SQL_CALL'(Statement,Input)),
 	findall(O,odbc_sql(Connection,Input,Statement,O),Outputs1),
