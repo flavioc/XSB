@@ -803,6 +803,7 @@ flora_not_end_of_input(Status) :- member(FLORA_NOT_EOF,Status).
 *************************************************************************/
 flora_reset_modules_for_file(FullFileName) :-
 	flora_reset_lexer(FullFileName),
+	flora_reset_composer,
 	flora_reset_operator,
 	flora_reset_arguments,
 	flora_reset_prolog,
@@ -817,6 +818,7 @@ flora_reset_modules_for_file(FullFileName) :-
 *************************************************************************/
 flora_reset_modules_for_shell :-
 	flora_reset_lexer,
+	flora_reset_composer,
 	flora_reset_compiler,
 	conset(flora_shell_mode,1).
 
@@ -1180,7 +1182,7 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	    Tokens=InputTokens
 	  ),
 	  flora_compose(Tokens,ComposerTerm,ComposerStatus),
-	  flora_composer_errorwarn(Tokens,ComposerStatus,CompoErrNum,CompoWarnNum),
+	  flora_composer_errorwarn(ComposerStatus,CompoErrNum,CompoWarnNum),
 	  ( CompoErrNum > 0 ->
 	      FlattenedRules=[],
 	      OptionList=[],
@@ -1188,7 +1190,7 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	      WarnNum=CompoWarnNum
 	  ;
 	    flora_parse(ComposerTerm,ParserTerm,ParserStatus),
-	    flora_parser_error(Tokens,ParserStatus,ParErrNum),
+	    flora_parser_error(ParserStatus,ParErrNum),
 	    ( ParErrNum > 0 ->
 		FlattenedRules=[],
 		OptionList=[],
@@ -1196,7 +1198,7 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 		WarnNum=CompoWarnNum
 	    ;
 	      flora_compile(ParserTerm,FlattenedRules,OptionList,CompilerStatus),
-	      flora_compiler_errorwarn(Tokens,CompilerStatus,CompiErrNum,CompiWarnNum),
+	      flora_compiler_errorwarn(CompilerStatus,CompiErrNum,CompiWarnNum),
 	      ErrNum=CompiErrNum,
 	      WarnNum is CompoWarnNum+CompiWarnNum
 	    )
@@ -1328,12 +1330,8 @@ flora_errorwarn_count(ErrNum,WarnNum) :-
 	!.
 
 
-flora_last_element([T],T).
+flora_last_element([T],T) :- !.
 flora_last_element([_|L],T) :- flora_last_element(L,T).
-
-
-flora_nth_element([T|_],1,T) :- !.
-flora_nth_element([_|L],N,T) :- M is N-1, flora_nth_element(L,M,T).
 
 
 /*************************************************************************
@@ -1359,13 +1357,13 @@ flora_lexer_error(Tokens,LexerStatus,ErrNum) :-
 
 
 /*************************************************************************
-  flora_composer_errorwarn(+Tokens,+ComposerStatus,-ErrNum,-WarnNum)
+  flora_composer_errorwarn(+ComposerStatus,-ErrNum,-WarnNum)
 *************************************************************************/
-flora_composer_errorwarn(_Tokens,[],0,0) :- !.
+flora_composer_errorwarn([],0,0) :- !.
 
-flora_composer_errorwarn(Tokens,[error(Indx,Msg)|L],ErrNum,WarnNum) :-
+flora_composer_errorwarn([error(Indx,Msg)|L],ErrNum,WarnNum) :-
 	!,
-	flora_nth_element(Tokens,Indx,Tk),
+	flora_nth_token(Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
 	( flora_current_compile_filename(FileName) ->
 	    flora_error_line('[%s] [Composer] near line(%d)/char(%d) `%s''',
@@ -1376,13 +1374,13 @@ flora_composer_errorwarn(Tokens,[error(Indx,Msg)|L],ErrNum,WarnNum) :-
 	),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
-	flora_composer_errorwarn(Tokens,L,EN,WarnNum),
+	flora_composer_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 
-flora_composer_errorwarn(Tokens,[error(I1,I2,Msg)|L],ErrNum,WarnNum) :-
+flora_composer_errorwarn([error(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	!,
-	flora_nth_element(Tokens,I1,Tk1),
-	flora_nth_element(Tokens,I2,Tk2),
+	flora_nth_token(I1,Tk1),
+	flora_nth_token(I2,Tk2),
 	flora_token_text(Tk1,TextStr1,BLN1,BCN1,_ELN1,_ECN1),
 	flora_token_text(Tk2,TextStr2,BLN2,BCN2,_ELN2,_ECN2),
 	( flora_current_compile_filename(FileName) ->
@@ -1394,13 +1392,13 @@ flora_composer_errorwarn(Tokens,[error(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
-	flora_composer_errorwarn(Tokens,L,EN,WarnNum),
+	flora_composer_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 
-flora_composer_errorwarn(Tokens,[warning(I1,I2,Msg)|L],ErrNum,WarnNum) :-
+flora_composer_errorwarn([warning(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	!,
-	flora_nth_element(Tokens,I1,Tk1),
-	flora_nth_element(Tokens,I2,Tk2),
+	flora_nth_token(I1,Tk1),
+	flora_nth_token(I2,Tk2),
 	flora_token_text(Tk1,TextStr1,BLN1,BCN1,_ELN1,_ECN1),
 	flora_token_text(Tk2,TextStr2,BLN2,BCN2,_ELN2,_ECN2),
 	( flora_current_compile_filename(FileName) ->
@@ -1412,28 +1410,28 @@ flora_composer_errorwarn(Tokens,[warning(I1,I2,Msg)|L],ErrNum,WarnNum) :-
 	),
 	flora_warning_indentline,
 	flora_stdwarn_string("%s\n",args(Msg)),
-	flora_composer_errorwarn(Tokens,L,ErrNum,WN),
+	flora_composer_errorwarn(L,ErrNum,WN),
 	WarnNum is WN+1.
 
-flora_composer_errorwarn(Tokens,[error(Msg)|L],ErrNum,WarnNum) :-
+flora_composer_errorwarn([error(Msg)|L],ErrNum,WarnNum) :-
 	!,
 	( flora_current_compile_filename(FileName) ->
 	    flora_error_line('[%s] [Composer] %s',args(FileName,Msg))
 	;
 	  flora_error_line('[Composer] %s',args(Msg))
 	),
-	flora_composer_errorwarn(Tokens,L,EN,WarnNum),
+	flora_composer_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 
 
 /*************************************************************************
-  flora_parser_error(+Tokens,+ParserStatus,-ErrNum)
+  flora_parser_error(+ParserStatus,-ErrNum)
 *************************************************************************/
-flora_parser_error(_Tokens,[],0) :- !.
+flora_parser_error([],0) :- !.
 
-flora_parser_error(Tokens,[error(Indx,Msg)|L],ErrNum) :-
+flora_parser_error([error(Indx,Msg)|L],ErrNum) :-
 	!,
-	flora_nth_element(Tokens,Indx,Tk),
+	flora_nth_token(Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
 	( flora_current_compile_filename(FileName) ->
 	    flora_error_line('[%s] [Parser] near line(%d)/char(%d) `%s''',
@@ -1444,28 +1442,28 @@ flora_parser_error(Tokens,[error(Indx,Msg)|L],ErrNum) :-
 	),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
-	flora_parser_error(Tokens,L,EN),
+	flora_parser_error(L,EN),
 	ErrNum is EN+1.
 
-flora_parser_error(Tokens,[error(Msg)|L],ErrNum) :-
+flora_parser_error([error(Msg)|L],ErrNum) :-
 	!,
 	( flora_current_compile_filename(FileName) ->
 	    flora_error_line('[%s] [Parser] %s',args(FileName,Msg))
 	;
 	  flora_error_line('[Parser] %s',args(Msg))
 	),
-	flora_parser_error(Tokens,L,EN),
+	flora_parser_error(L,EN),
 	ErrNum is EN+1.
 
 
 /*************************************************************************
-  flora_compiler_errorwarn(+Tokens,+CompilerStatus,-ErrNum,-WarnNum)
+  flora_compiler_errorwarn(+CompilerStatus,-ErrNum,-WarnNum)
 *************************************************************************/
-flora_compiler_errorwarn(_Tokens,[],0,0) :- !.
+flora_compiler_errorwarn([],0,0) :- !.
 
-flora_compiler_errorwarn(Tokens,[error(Indx,Msg)|L],ErrNum,WarnNum) :-
+flora_compiler_errorwarn([error(Indx,Msg)|L],ErrNum,WarnNum) :-
 	!,
-	flora_nth_element(Tokens,Indx,Tk),
+	flora_nth_token(Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
 	( flora_current_compile_filename(FileName) ->
 	    flora_error_line('[%s] [Compiler] near line(%d)/char(%d) `%s''',
@@ -1476,12 +1474,12 @@ flora_compiler_errorwarn(Tokens,[error(Indx,Msg)|L],ErrNum,WarnNum) :-
 	),
 	flora_error_indentline,
 	flora_stderr_string("%s\n",args(Msg)),
-	flora_compiler_errorwarn(Tokens,L,EN,WarnNum),
+	flora_compiler_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 
-flora_compiler_errorwarn(Tokens,[warning(Indx,Msg)|L],ErrNum,WarnNum) :-
+flora_compiler_errorwarn([warning(Indx,Msg)|L],ErrNum,WarnNum) :-
 	!,
-	flora_nth_element(Tokens,Indx,Tk),
+	flora_nth_token(Indx,Tk),
 	flora_token_text(Tk,TextStr,BLN,BCN,_ELN,_ECN),
 	( flora_current_compile_filename(FileName) ->
 	    flora_warning_line('[%s] [Compiler] near line(%d)/char(%d) `%s''',
@@ -1492,17 +1490,17 @@ flora_compiler_errorwarn(Tokens,[warning(Indx,Msg)|L],ErrNum,WarnNum) :-
 	),
 	flora_warning_indentline,
 	flora_stdwarn_string("%s\n",args(Msg)),
-	flora_compiler_errorwarn(Tokens,L,ErrNum,WN),
+	flora_compiler_errorwarn(L,ErrNum,WN),
 	WarnNum is WN+1.
 
-flora_compiler_errorwarn(Tokens,[error(Msg)|L],ErrNum,WarnNum) :-
+flora_compiler_errorwarn([error(Msg)|L],ErrNum,WarnNum) :-
 	!,
 	( flora_current_compile_filename(FileName) ->
 	    flora_error_line('[%s] [Compiler] %s',args(FileName,Msg))
 	;
 	  flora_error_line('[Compiler] %s',args(Msg))
 	),
-	flora_compiler_errorwarn(Tokens,L,EN,WarnNum),
+	flora_compiler_errorwarn(L,EN,WarnNum),
 	ErrNum is EN+1.
 
 
@@ -1736,12 +1734,12 @@ flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
 	),
 	!.
 
+
 /*****************************************************************************
    flora_measure_time(+Call,+Message)
    Tells now much time the call has been executing.
    Message is printed to identify the call.
 *****************************************************************************/
-
 flora_measure_time(Call,Message) :-
 	cputime(T1),
 	call(Call),

@@ -38,7 +38,11 @@
 
 :- import eval/2 from eval.
 
+:- import conget/2, conset/2 from gensym.
+
 :- import flora_opdef/3 from flroperator.
 
-:- export flora_compose/3.
-
+:- export
+	flora_reset_composer/0,
+	flora_compose/3,
+	flora_nth_token/2.

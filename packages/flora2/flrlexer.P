@@ -256,7 +256,7 @@ flora_tokens(TokenList,Status) :-
 	    Status=[FLORA_NOT_EOF],
 	    set_charpos(NextLN,NextCN)
 
-	; whitespace(C1) ->
+	; is_whitespace(C1) ->
 	    flora_whitespace_struct(Chars,LN1,CN1,LN2,CN2,Tk),
 	    TokenList=[Tk|Tokens],
 	    scan_line(C1,LN1,CN1,NextLN,NextCN,Chars,LN2,CN2,Tokens,Status)
@@ -282,7 +282,7 @@ scan_line(Ch,LN1,CN1,LN,CN,[Ch|Chars],LN2,CN2,Tokens,Status) :-
 	    Status=[FLORA_NOT_EOF],
 	    set_charpos(NextLN,NextCN)
 
-	; whitespace(C) ->
+	; is_whitespace(C) ->
 	    scan_line(C,LN,CN,NextLN,NextCN,Chars,LN2,CN2,Tokens,Status)
 	;
 	  Chars=[],
@@ -299,7 +299,7 @@ scan_line(Ch,LN1,CN1,LN,CN,[Ch|Chars],LN2,CN2,Tokens,Status) :-
   by conget/conset. Performance can be improved.
 ****************************************************************************/
 read_tokens(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status) :-
-	( whitespace(Char) ->
+	( is_whitespace(Char) ->
 	    read_whitespace(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status)
 
 	; Char >= CH_a, Char =< CH_z ->
@@ -347,7 +347,7 @@ read_whitespace(C1,LN1,CN1,LN,CN,TokenList,Status) :-
 
 scan_whitespace(C1,LN1,CN1,LN,CN,[C1|Chars],LN2,CN2,Tokens,Status) :-
 	get_char(LN,CN,Ch,NextLN,NextCN),
-	( whitespace(Ch) ->
+	( is_whitespace(Ch) ->
 	    scan_whitespace(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,Tokens,Status)
 	;
 	  Chars=[],
@@ -356,10 +356,10 @@ scan_whitespace(C1,LN1,CN1,LN,CN,[C1|Chars],LN2,CN2,Tokens,Status) :-
 	  read_tokens(Ch,LN,CN,NextLN,NextCN,Tokens,Status)
 	).
 
-whitespace(CH_TAB) :- !.
-whitespace(CH_NEWLINE) :- !.
-whitespace(CH_RETURN) :- !.
-whitespace(CH_SPACE) :- !.
+is_whitespace(CH_TAB) :- !.
+is_whitespace(CH_NEWLINE) :- !.
+is_whitespace(CH_RETURN) :- !.
+is_whitespace(CH_SPACE) :- !.
 
 
 /****************************************************************************
@@ -783,7 +783,7 @@ read_after_fullstop(DLN,DCN,Ch,LN,CN,LN1,CN1,TokenList,Status) :-
 	    TokenList=[Tk],
 	    Status=[FLORA_EOF]
 
-	; whitespace(Ch) ->
+	; is_whitespace(Ch) ->
 	    flora_rule_delimeter_struct([CH_DOT,Ch],DLN,DCN,LN,CN,Tk),
 	    TokenList=[Tk],
 	    Status=[FLORA_NOT_EOF],
@@ -1069,4 +1069,3 @@ read_float(Char,LN,CN,LN1,CN1,Integer,TxChs,BLN,BCN,TokenList,Status) :-
 	  TokenList=[Tk|Tokens],
 	  read_tokens(C1,LNO1,CNO1,LNO2,CNO2,Tokens,Status)
 	).
-

@@ -26,12 +26,14 @@
 
 :- compiler_options([xpp_on]).
 
-#define PREOP	preop  /* PREOP(Op,Associativity,Precedence,Index) */
-#define INFOP	infop  /* INFOP(Op,Left,Right,Precedence,Index) */
-#define SUFOP	sufop  /* SUFOP(Op,Associativity,Precedence,Index) */
-#define FUNCT	funct  /* FUNCT(Term) */
-#define OPRND	oprnd  /* OPRND(Term) */
-#define BRACE	brace  /* BRACE(Symbol,Index) */
+#define PREOP		preop	/* PREOP(Op,Associativity,Precedence,Index) */
+#define INFOP		infop	/* INFOP(Op,Left,Right,Precedence,Index) */
+#define SUFOP		sufop	/* SUFOP(Op,Associativity,Precedence,Index) */
+#define FUNCT		funct	/* FUNCT(Term) */
+#define OPRND		oprnd	/* OPRND(Term) */
+#define BRACE		brace	/* BRACE(Symbol,Index) */
+
+#define TKCNT		tkcnt	/* index counter for tokens */
 
 #include "char_defs.h"
 #include "flora_errors.flh"
@@ -39,25 +41,33 @@
 
 
 /***************************************************************************
-  utilities
+  flora_nth_token(+IndexNumber,-Token)
 ***************************************************************************/
-index_tokens(_) :- retractall(indexed_token(_,_)), fail.
+flora_nth_token(N,T) :-
+	indexed_token(N,T).
 
-index_tokens(Tokens) :- index_tokens_list(Tokens,LOW_INDEX).
 
+/***************************************************************************
+  index_tokens(+TokensList,+IndexNumber)
+***************************************************************************/
+index_tokens([],N) :-
+	!,
+	%% Store the index sequence number after indexing all tokens.
+	conset(TKCNT,N).
 
-/**************************************************************************/
-index_tokens_list([],_).
-
-index_tokens_list([T|Ts],N) :-
-	T =.. [F|L],
-	(L=[A,_], NewT =.. [F,A], !; L=[_], NewT =.. [F], !), %% strip text info
-	assert(indexed_token(N,NewT)),
+index_tokens([T|Ts],N) :-
+%	T =.. [F|L],
+%	(L=[A,_], NewT =.. [F,A], !; L=[_], NewT =.. [F], !), %% strip text info
+%	assert(indexed_token(N,NewT)),
+	assert(indexed_token(N,T)),
 	eval(N+1,M),
-	index_tokens_list(Ts,M).
+	index_tokens(Ts,M),
+	!.
 
 
-/**************************************************************************/
+/***************************************************************************
+  token_by_index(?Index,?Token)
+***************************************************************************/
 token_by_index(Index,Token) :-
 	var(Index),
 	!,
@@ -73,14 +83,19 @@ token_by_index(Index,Token) :-
 	indexed_token(N,Token).
 
 
-/**************************************************************************/
+/***************************************************************************
+  is_next_token(+Index,+Token)
+
+  It checks if the token index by "Index" matches "Token". If it is a
+  whitespace or comment, it will be skipped until a nonwhitespace.
+***************************************************************************/
 is_next_token(Index,Token) :-
 	token_by_index(Index,T),
 	( T=Token ->
 	    !,
 	    true
 
-	; (T=WHITESPACE; T=COMMENT) ->
+	; (T=WHITESPACE(_); T=COMMENT(_)) ->
 	    eval(Index+1,N),
 	    is_next_token(N,Token)
 	;
@@ -92,7 +107,7 @@ is_next_token(Index,Token) :-
 /**************************************************************************
   if_flora_gpp_markup(+Token)
 **************************************************************************/
-is_flora_gpp_markup(QUOTED_ATOM(FLORA_GPP_MARKUP)).
+is_flora_gpp_markup(QUOTED_ATOM(FLORA_GPP_MARKUP,_)).
 
 
 /**************************************************************************
@@ -100,32 +115,32 @@ is_flora_gpp_markup(QUOTED_ATOM(FLORA_GPP_MARKUP)).
 
   Special tokens are treated as if they were just operands.
 **************************************************************************/
-is_sole_operand(VARIABLE(_)) :- !.
-is_sole_operand(NUMBER(_)) :- !.
-is_sole_operand(ASCII_STRING(_)) :- !.
-is_sole_operand(SPECIAL_TOKEN(_)) :- !.
-is_sole_operand(IDENTIFIER(I)) :- \+ flora_opdef(_,_,I), !.
-is_sole_operand(QUOTED_ATOM(QA)) :- \+ flora_opdef(_,_,QA), !.
-is_sole_operand(SYMBOL_TOKEN(ST)) :- \+ flora_opdef(_,_,ST), !.
+is_sole_operand(VARIABLE(_,_)) :- !.
+is_sole_operand(NUMBER(_,_)) :- !.
+is_sole_operand(ASCII_STRING(_,_)) :- !.
+is_sole_operand(SPECIAL_TOKEN(_,_)) :- !.
+is_sole_operand(IDENTIFIER(I,_)) :- \+ flora_opdef(_,_,I), !.
+is_sole_operand(QUOTED_ATOM(QA,_)) :- \+ flora_opdef(_,_,QA), !.
+is_sole_operand(SYMBOL_TOKEN(ST,_)) :- \+ flora_opdef(_,_,ST), !.
 
 
 /***************************************************************************
   These symbol tokens are not allowed to be directly used as atoms.
 ***************************************************************************/
-is_sole_operator(SYMBOL_TOKEN(FL_COMMA),FL_COMMA) :- !.
-is_sole_operator(SYMBOL_TOKEN(FL_SEMICOLON),FL_SEMICOLON) :- !.
-is_sole_operator(SYMBOL_TOKEN(FL_IMPLYOP),FL_IMPLYOP) :- !.
-is_sole_operator(SYMBOL_TOKEN(FL_QUERYOP),FL_QUERYOP) :- !.
-is_sole_operator(SYMBOL_TOKEN(FL_TRAN),FL_TRAN) :- !.
+is_sole_operator(SYMBOL_TOKEN(FL_COMMA,_),FL_COMMA) :- !.
+is_sole_operator(SYMBOL_TOKEN(FL_SEMICOLON,_),FL_SEMICOLON) :- !.
+is_sole_operator(SYMBOL_TOKEN(FL_IMPLYOP,_),FL_IMPLYOP) :- !.
+is_sole_operator(SYMBOL_TOKEN(FL_QUERYOP,_),FL_QUERYOP) :- !.
+is_sole_operator(SYMBOL_TOKEN(FL_TRAN,_),FL_TRAN) :- !.
 
 
 /**************************************************************************/
-is_atom_operator(IDENTIFIER(I)) :- flora_opdef(_,_,I), !.
-is_atom_operator(QUOTED_ATOM(QA)) :- flora_opdef(_,_,QA), !.
+is_atom_operator(IDENTIFIER(I,_)) :- flora_opdef(_,_,I), !.
+is_atom_operator(QUOTED_ATOM(QA,_)) :- flora_opdef(_,_,QA), !.
 
 
 /**************************************************************************/
-is_symobject_operator(SYMBOL_TOKEN(ST)) :- flora_opdef(_,_,ST), !.
+is_symobject_operator(SYMBOL_TOKEN(ST,_)) :- flora_opdef(_,_,ST), !.
 
 
 /**************************************************************************/
@@ -151,15 +166,15 @@ is_suffix(O,A,P) :-
 
 
 /**************************************************************************/
-is_left_brace(SYMBOL_TOKEN(FL_PARENTHESIS),FL_PARENTHESIS) :- !.
-is_left_brace(SYMBOL_TOKEN(FL_BRACKET),FL_BRACKET) :- !.
-is_left_brace(SYMBOL_TOKEN(FL_BRACE),FL_BRACE) :- !.
+is_left_brace(SYMBOL_TOKEN('(',_),FL_PARENTHESIS) :- !.
+is_left_brace(SYMBOL_TOKEN('[',_),FL_BRACKET) :- !.
+is_left_brace(SYMBOL_TOKEN('{',_),FL_BRACE) :- !.
 
 
 /**************************************************************************/
-is_right_brace(SYMBOL_TOKEN(')'),FL_PARENTHESIS) :- !.
-is_right_brace(SYMBOL_TOKEN(']'),FL_BRACKET) :- !.
-is_right_brace(SYMBOL_TOKEN('}'),FL_BRACE) :- !.
+is_right_brace(SYMBOL_TOKEN(')',_),FL_PARENTHESIS) :- !.
+is_right_brace(SYMBOL_TOKEN(']',_),FL_BRACKET) :- !.
+is_right_brace(SYMBOL_TOKEN('}',_),FL_BRACE) :- !.
 
 
 /**************************************************************************/
@@ -175,7 +190,10 @@ argument_struct(S,I1,I2,ARGUMENT(S,I1,I2)).
 
 function_struct(F,A,FUNCTION(F,A)).
 
-object_struct(O,I,OBJECT(O,I)).
+object_struct(O,I,OBJECT(T,I)) :-
+	%% Strip textual information.
+	O =.. [F,N,_],
+	T =.. [F,N].
 
 
 /**************************************************************************/
@@ -256,6 +274,14 @@ max_error2(composing_error(N11,N12,M1),[composing_error(N21,N22,M2)|T],X) :-
 
 
 /***************************************************************************
+  flora_reset_composer/0
+***************************************************************************/
+flora_reset_composer :-
+	retractall(indexed_token(_,_)),
+	conset(TKCNT,LOW_INDEX).
+
+
+/***************************************************************************
   flora_compose(+Tokens,-Term,-Status)
   is the main function to compose high level intermediate tokens from a
   list of primitive tokens returned by the Flora Lexer.
@@ -275,8 +301,10 @@ flora_compose(_,_,_) :-
 	fail.
 
 flora_compose(Tokens,Term,Status) :-
-	index_tokens(Tokens),
-	flora_compose(NULL,[],[],LOW_INDEX,Term,Status),
+	%% Get the index sequence number.
+	conget(TKCNT,N),
+	index_tokens(Tokens,N),
+	flora_compose(NULL,[],[],N,Term,Status),
 	!.
 
 flora_compose(_,_,[ErrorMsg]) :-
@@ -315,8 +343,7 @@ flora_compose(PrevToken,TmStack,OpStack,N,Term,Status) :-
 	  fail
         ).
 
-
-flora_compose(PrevToken,TmStack,OpStack,N,WHITESPACE,Term,Status) :-
+flora_compose(PrevToken,TmStack,OpStack,N,WHITESPACE(_),Term,Status) :-
 	!,
 	see_whitespace(PrevToken,TmStack,OpStack,N,Term,Status).
 
@@ -350,11 +377,11 @@ flora_compose(PrevToken,TmStack,OpStack,N,CurToken,Term,Status) :-
 	!,
 	compose_atom_operator(PrevToken,TmStack,OpStack,N,CurToken,Term,Status).
 
-flora_compose(PrevToken,TmStack,OpStack,N,COMMENT,Term,Status) :-
+flora_compose(PrevToken,TmStack,OpStack,N,COMMENT(_),Term,Status) :-
 	!,
 	see_comment(PrevToken,TmStack,OpStack,N,Term,Status).
 
-flora_compose(PrevToken,TmStack,OpStack,N,RULE_DELIMETER,Term,Status) :-
+flora_compose(PrevToken,TmStack,OpStack,N,RULE_DELIMETER(_),Term,Status) :-
 	!,
 	see_end(PrevToken,TmStack,OpStack,N,Term,Status).
 
@@ -391,10 +418,10 @@ compose_atom_operator(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status) :-
 	see_operand(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status).
 
 compose_atom_operator(PrevToken,TmStack,OpStack,N,CurToken,Term,Status) :-
-	( CurToken=IDENTIFIER(I) ->
+	( CurToken=IDENTIFIER(I,_) ->
 	    compose_sole_operator(PrevToken,TmStack,OpStack,N,I,Term,Status)
 	;
-	  CurToken=QUOTED_ATOM(QA),
+	  CurToken=QUOTED_ATOM(QA,_),
 	  compose_sole_operator(PrevToken,TmStack,OpStack,N,QA,Term,Status)
         ).
 
@@ -417,7 +444,7 @@ compose_symobject_operator(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status) :-
 	!,
 	see_operand(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status).
 
-compose_symobject_operator(PrevToken,TmStack,OpStack,N,SYMBOL_TOKEN(S),Term,Status) :-
+compose_symobject_operator(PrevToken,TmStack,OpStack,N,SYMBOL_TOKEN(S,_),Term,Status) :-
 	compose_sole_operator(PrevToken,TmStack,OpStack,N,S,Term,Status).
 
 compose_symobject_operator(OPRND(_),_TmStack,_OpStack,_N,_CurToken,_Term,_Status) :-

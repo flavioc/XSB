@@ -80,7 +80,7 @@
 :- import storage_insert_fact/3,
 	storage_commit/1,
 	storage_reclaim_space/1
-    from storage.
+   from storage.
 
 :- import bootstrap_flora/0 from flora2.
 :- bootstrap_flora.
@@ -96,7 +96,11 @@
 	flora_current_compile_filename/1
    from flrlexer.
 
-:- import flora_compose/3 from flrcomposer.
+:- import
+	flora_reset_composer/0,
+	flora_compose/3,
+	flora_nth_token/2
+   from flrcomposer.
 
 :- import flora_reset_operator/0 from flroperator.
 
