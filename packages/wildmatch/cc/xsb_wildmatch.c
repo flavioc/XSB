@@ -34,7 +34,7 @@
 #include <glob.h>
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
 

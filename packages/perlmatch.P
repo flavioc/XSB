@@ -23,7 +23,7 @@
 */
 
 :- export bulk_match/3, get_match_result/2, try_match/2,
-	  next_match/0, string_substitute/3, load_perl/0, unload_perl/0.
+	  next_match/0, perl_substitute/3, load_perl/0, unload_perl/0.
 
 :- import xsb_configuration/2 from xsb_configuration.
 :- import bootstrap_package/2 from packaging.
@@ -31,7 +31,7 @@
 
 :- import bulk_match__/3, get_match_result__/2
    from plmchshell.
-:- import try_match__/2, next_match__/0, string_substitute__/3,
+:- import try_match__/2, next_match__/0, perl_substitute__/3,
 	  load_perl__/0, unload_perl__/0
    from xsbpattern.
 
@@ -54,8 +54,8 @@ try_match(String, Pattern) :- try_match__(String, Pattern).
 next_match :- next_match__.
 get_match_result(TypeOfMatch, Value) :- get_match_result__(TypeOfMatch, Value).
 
-string_substitute(String, SubstExpr, Result) :-
-    	 string_substitute__(String, SubstExpr, Result).
+perl_substitute(String, SubstExpr, Result) :-
+    	 perl_substitute__(String, SubstExpr, Result).
 
 load_perl :- load_perl__.
 unload_perl :- unload_perl__.

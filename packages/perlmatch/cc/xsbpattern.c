@@ -27,7 +27,7 @@
        try_match__() -- find the match pattern,
        next_match__() -- find the next match pattern,
        do_bulk_match__() -- find the global match patterns,
-       string_substitute__() -- substitute the string with expected pattern,
+       perl_substitute__() -- substitute the string with expected pattern,
        load_perl__() -- load the perl interpretor,
        unload_perl__() -- release the perl interpretor object,
        get_match_resultC__() -- get the perl pattern match C function,
@@ -168,7 +168,7 @@ int do_bulk_match__( void )
 }
 
 /*----------------------------------------------------------------------------
-string_substitute__()
+perl_substitute__()
 The pattern substitution function which includes loading perl interpreter 
 and doing the pattern substitution, then returning the replaced string.
 arguments: 
@@ -176,7 +176,7 @@ arguments:
 	 char* pattern, match pattern
   output:char* string, output text
 ----------------------------------------------------------------------------*/
-int string_substitute__( void )
+int perl_substitute__( void )
 {
 
   SV *text=newSV(0);    /* Perl representation for the string to be 
