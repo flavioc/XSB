@@ -164,9 +164,9 @@ rundemo(X,Dtvs) :-
 	slash(Slash),
 	%% Add the demo directory to library_directory
 	fmt_write_string(DemoDir, '%s%sdemos', f(FloraDir, Slash)),
-	(library_directory(DemoDir)
-	       -> true
-		; assert(library_directory(DemoDir))
+	(  library_directory(DemoDir)
+        -> true
+	;  assert(library_directory(DemoDir))
 	),
 	flconsult(X,Dtvs),
 	retract(library_directory(DemoDir)).
@@ -177,9 +177,9 @@ rundemo(X) :-
 	slash(Slash),
 	%% Add the demo directory to library_directory
 	fmt_write_string(DemoDir, '%s%sdemos', f(FloraDir, Slash)),
-	(library_directory(DemoDir)
-	       -> true
-		; assert(library_directory(DemoDir))
+	(  library_directory(DemoDir)
+        -> true
+	;  assert(library_directory(DemoDir))
 	),
 	flconsult(X),
 	retract(library_directory(DemoDir)).
@@ -238,9 +238,9 @@ flcompile_all_demos  :-
 	slash(S),
 	fmt_write_string(DemoDir,'%s%sdemos',f(FloraDir,S)),
         glob_directory('*.flr', DemoDir, _, DemoList),
-	(library_directory(DemoDir) -> true
-	    ;
-	    assert(library_directory(DemoDir))
+	(  library_directory(DemoDir)
+	-> true
+	;  assert(library_directory(DemoDir))
 	),
 	flcompile_demo(DemoList),
 	retract(library_directory(DemoDir)).
