@@ -646,22 +646,28 @@ int key_compare(const void * t1, const void * t2)
 }
 
 /*======================================================================*/
+/* print an atom as quoted.						*/
+/*======================================================================*/
+
+void print_aqatom(FILE *file, char *string) {
+  int loc = 0;
+
+  fprintf(file,"'");
+  while (string[loc] != '\0') {
+    if (string[loc] == '\'') fprintf(file,"'");
+    fprintf(file,"%c",string[loc++]);
+  }
+  fprintf(file,"'");
+}
+
+/*======================================================================*/
 /* print an atom, quote it if necessary.				*/
 /*======================================================================*/
 
 void print_qatom(FILE *file, char *string)
 {
-  int loc;
-
-  if (quotes_are_needed(string)) {
-    loc = 0;
-    fprintf(file,"'");
-    while (string[loc] != '\0') {
-      if (string[loc] == '\'') fprintf(file,"'");
-      fprintf(file,"%c",string[loc++]);
-    }
-    fprintf(file,"'");
-  } else fprintf(file, "%s", string);
+  if (quotes_are_needed(string)) print_aqatom(file, string);
+  else fprintf(file, "%s", string);
 }
 
 /*======================================================================*/

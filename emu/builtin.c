@@ -1552,6 +1552,7 @@ int builtin_call(byte number)
     case TK_INOP   : print_op(fptr, ptoc_string(3), 2); break;
     case TK_POSTOP : print_op(fptr, ptoc_string(3), 3); break;
     case TK_QATOM  : print_qatom(fptr, ptoc_string(3)); break;
+    case TK_AQATOM : print_aqatom(fptr, ptoc_string(3)); break;
     case TK_QSTR   : print_dqatom(fptr, ptoc_string(3)); break;
     case TK_TERML  : print_term_canonical(fptr, ptoc_tag(3), 1); break;
     case TK_TERM   : print_term_canonical(fptr, ptoc_tag(3), 0); break;
