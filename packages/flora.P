@@ -35,8 +35,8 @@
 %% bootstrap_package will fail, if Flora is already loaded,
 %% so package_configuration won't be asserted twice.
 bootstrap_flora :-
-	bootstrap_package('flora',flora),
-	assert(package_configuration(version(flora),'0.93 of 06/10/1999')).
+	bootstrap_package([flora,lib,pkgs],flora),
+	assert(package_configuration(version(flora),'0.93 of 06/15/1999')).
 
 flora_shell :- bootstrap_flora, [flrshell], '_$_$_flora_shell'.
 flora_shell :- '_$_$_flora_shell'.
