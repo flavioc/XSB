@@ -29,3 +29,4 @@
 :- import term_type/2, fast_ground/1, copy_term0/2
      from machine.
 
+:- import is_list/1 from standard.
