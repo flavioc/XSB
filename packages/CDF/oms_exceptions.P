@@ -7,7 +7,8 @@
 #include "flag_defs_xsb.h"
 #include "standard.h"
 :- dynamic using_xj/0.
-
+:- ensure_loaded(xsb_logger).
+	
 :- comment(module,"This module is designed to handle different kinds
 of ""exceptions"" that arise in execution of the OMS.  The word
 ""exceptions"" is used to cover both @em{warnings} and @em{errors}.
@@ -48,54 +49,42 @@ handler.
 oms_error(Type,List):- 
 	throw(oms_error(Type,List)).
 
-handle_oms_error(Type,List):- 
-	(using_xj -> 
-	    handle_oms_error_xj(Type,List)
-	  ;
-	    handle_oms_error_noxj(Type,List)).
-
+handle_oms_error(Type,List):-
+	concat_comma_list(List,Messages), 
+	log_error('CDF', '', Type, [Messages]).
+/*
 write_oms_error_noxj(Message):- 
 	message('++Error[OMS]: ', STDERR),
 	message('(Consistency) ', STDERR),
 	messageln(Message, STDERR).
-
-handle_oms_error_noxj(consistency,Message):- 
-	write_oms_error_noxj(Message),
-	abort.
-handle_oms_error_noxj(update,Message):- 
-	write_oms_error_noxj(Message),
-	abort.
-
-/* TLS: this is basically abort/1 */
-handle_oms_error_noxj(consistency,Message):- 
-	message('++Error[OMS(XJ)]: ', STDERR),
-	message('(Consistency) ', STDERR),
-	messageln(Message, STDERR),
-	abort.
-handle_oms_error_noxj(update,Message):- 
-	message('++Error[OMS(XJ)]: ', STDERR),
-	message('(Update) ', STDERR),
-	messageln(Message, STDERR),
-	abort.
+*/
 
 :- comment(oms_warning/2,"OMS warning can be used to handle warnings
 of different types -- currently @tt{consistency_warning} and
 @tt{update_warning}.  Actions taken depend on whether
 @pred{using_xj/0} is defined or not.").
 
-oms_warning(Type,List):- 
-	(using_xj -> 
-	    oms_warning_xj(Type,List)
-	  ;
-	    oms_warning_noxj(Type,List)).
+oms_warning(Type,MessageList):-
+	concat_comma_list(MessageList,Messages),
+	log_warn('CDF', '', Type, [Messages]).
 
-oms_warning_noxj(Type,Message):- 
-	message('++Warning[OMS]: ', STDWARN),
-	message((' '(Type),' '), STDWARN),
-	messageln(Message, STDWARN).
+oms_warning(Module,Type,MessageList):-
+	concat_comma_list(MessageList,Messages),
+	log_warn(Module, '', Type, [Messages]).
 
-oms_warning_xj(Type,Message):- 
-	message('++Warning[OMS(XJ)]: ', STDWARN),
-	message((' '(Type),' '), STDWARN),
-	messageln(Message, STDWARN).
+oms_warning(Module,Predicate,Type,MessageList):-
+	concat_comma_list(MessageList,Messages),
+	log_warn(Module, Predicate, Type, [Messages]).
 
+:- import term_to_atom/2, concat_atom/2 from string.
+concat_comma_list((A,B),Text):- !,
+	(atom(A)
+	 ->	A1 = A
+	 ;	term_to_atom(A,A1)),
+   concat_comma_list(B,Text1),
+   concat_atom([A1,' ',Text1],Text).
+concat_comma_list(A,A1) :-
+	(atom(A)
+	 ->	A1 = A
+	 ;	term_to_atom(A,A1)
+	).
