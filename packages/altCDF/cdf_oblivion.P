@@ -201,9 +201,13 @@ close_things_to_delete :-
 	%%writeln(done(CNT)).
 
 :- table disconnected/1.
-disconnected(X) :- X == cid('CDF Classes',cdf), !, fail. % root IS connected
-disconnected(X) :- things_to_delete(X).
-disconnected(X) :- findall(Y,immed_isa(X,Y),Ys), all_disconnected(Ys).
+disconnected(X) :-
+	X \== cid('CDF Classes',cdf),
+	(things_to_delete(X)
+	 ->	true
+	 ;	findall(Y,immed_isa(X,Y),Ys),
+		all_disconnected(Ys)
+	).
 
 all_disconnected([]).
 all_disconnected([X|Xs]) :- disconnected(X), all_disconnected(Xs).
