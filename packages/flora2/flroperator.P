@@ -49,6 +49,9 @@ flora_op(1500,fx,FL_HILOGTABLE).
 flora_op(1500,fx,FL_EQUALITY).
 flora_op(1500,fx,FL_ABOLISH).
 
+flora_op(1500,fx,FL_COMPILE).
+flora_op(1500,fx,FL_LOAD).
+
 flora_op(1400,xfx,FL_FROM).
 flora_op(1400,xfx,FL_IN).
 flora_op(1400,xfy,FL_SEMICOLON).

@@ -83,11 +83,10 @@ flora_prlg(abolish_all_tables,0) :- !.
 /****************************************************************************
   FLORA shell predicates
 ****************************************************************************/
-flora_prlg(flCompile,1) :- !.
-flora_prlg(flCompile,2) :- !.
+flora_prlg(FL_COMPILE,1) :- !.
+flora_prlg(FL_LOAD,1) :- !.
+flora_prlg(flModule,1) :- !.
 flora_prlg(flP2H,2) :- !.
-flora_prlg(flLoad,1) :- !.
-flora_prlg(flConsult,1) :- !.
 flora_prlg(flCompileInclude,1) :- !.
 flora_prlg(help,0) :- !.
 flora_prlg(reset,1) :- !.

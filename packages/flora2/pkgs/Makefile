@@ -65,7 +65,7 @@ recompile: $(ALL) finish
 	@cat $(SVFILE)
 
 .flr.P:
-	echo 'import flcompile/1 from flrutils. flcompile($*).' >> cmd...
+	echo 'import (flCompile)/1 from flora2. flCompile($*).' >> cmd...
 
 init:
 	/bin/rm -f $(SVFILE)

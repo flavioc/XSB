@@ -44,8 +44,13 @@
 	flImportFloraPred/4
    from flrimport.
 
+:- import flora_wssymbol/3 from flrwrapper.
+
+:- import current_predicate/1 from curr_sym.
+
 :- import
-	flora_load_module_internal/2, flora_load_module_internal/1
+	flora_load_module_internal/2, flora_load_module_internal/1,
+	flora_compile_internal/2, flora_compile_internal/1
    from flrutils.
 
 :- import fmt_write_string/3 from file_io.
@@ -75,6 +80,8 @@
 	unstrap_flora/0,
 	(flImport)/1,
 	(flLoad)/1,
+	(flCompile)/1,
+	flModule/1,
 	flora_shell/0.
 
 
@@ -147,6 +154,11 @@ flora_shell :-
       :- flLoad file.
   or
       :- flLoad file>>module.
+
+  To compile (without loading):
+      :- flCompile file.
+  or
+      :- flCompile file>>module.
 ************************************************************************/
 
 :- op(1150,fx,(flProlog)).
@@ -157,8 +169,9 @@ flora_shell :-
 :- op(1170,fx,(flImport)).
 
 :- op(1050,fx,(flLoad)).	% loads file into module: flLoad(File>>Module)
-:- op(1050,fx,(flModule)).	% checks if the module is loaded
-%% The other operators, '>>' and 'from' are already defined in XSB
+      % compiles file for loading into module: flCompile(File>>Module)
+:- op(1050,fx,(flCompile)).
+%% The other operators, '>>' and 'from', are already defined in XSB
 
 flImport(flHilog(from(as(What,AsWhat),FileMod))) :- !,
 	(atom(FileMod) 
@@ -183,3 +196,11 @@ flImport(X) :- abort(['Invalid flImport syntax: ', X]).
 
 flLoad(File>>Module) :- flora_load_module_internal(File,Module).
 flLoad(Module) :- flora_load_module_internal(Module).
+
+flCompile(File>>Module) :- flora_compile_internal(File,Module).
+flCompile(Module) :- flora_compile_internal(Module).
+
+%% tells if ModuleName is loaded
+flModule(ModuleName) :- 
+	flora_wssymbol(flThisModule,ModuleName,MagicName),
+	current_predicate(MagicName/1).

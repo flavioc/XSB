@@ -64,7 +64,8 @@
 
 :- import
 	unstrap_flora/0,
-	(flLoad)/1
+	(flLoad)/1,
+	(flCompile)/1
    from flora2.
 
 :- import flora_shreset_operator/0 from flroperator.
@@ -88,13 +89,11 @@
 
 :- import
 	maxerr/1,
-	flCompile/1,
-	flCompile/2,
 	flP2H/2,
-	flConsult/1,
 	flCompileInclude/1,
 	flloadtrailer/1,
 	flora_shell_command_line/3,
+	flora_load_module_internal/1,
 	flora_good_command/1,
 	flora_end_of_input/1,
 	flora_check_filename/1

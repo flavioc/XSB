@@ -48,15 +48,16 @@
 
 
 /*************************************************************************
-  flCompile(+File)
+  flora_compile_internal(+File)
 *************************************************************************/
-flCompile(File) :- flCompile(File,FLORA_DEFAULT_WORKSPACE).
+flora_compile_internal(File) :-
+	flora_compile_internal(File,FLORA_DEFAULT_WORKSPACE).
 
 
 /*************************************************************************
-  flCompile(+File,+Workspace)
+  flora_compile_internal(+File,+Workspace)
 *************************************************************************/
-flCompile(File,Workspace) :-
+flora_compile_internal(File,Workspace) :-
 	flora_check_filename(File),
 	flora_check_workspace(Workspace),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
@@ -77,11 +78,6 @@ flCompile(File,Workspace) :-
         ),
 	!.
 
-
-/*************************************************************************
-  flConsult(+File)
-*************************************************************************/
-flConsult(File) :- flora_load_module_internal(File).
 
 
 /**********************************************************************

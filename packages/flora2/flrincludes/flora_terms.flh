@@ -521,3 +521,10 @@
 #define NONE			none
 #define BASIC			basic
 #define FLOGIC			flogic
+
+
+/****************************************************************************
+  compilation
+****************************************************************************/
+#define FL_COMPILE	    flCompile
+#define FL_LOAD	    	    flLoad

@@ -139,11 +139,10 @@
 
 :- export
 	maxerr/1,
-	flCompile/1,
-	flCompile/2,
+	flora_compile_internal/1,
+	flora_compile_internal/2,
 	flora_load_module_internal/1,
 	flora_load_module_internal/2,
-	flConsult/1,
 	flCompileInclude/1,
 	flP2H/2,
 	flloadtrailer/1,

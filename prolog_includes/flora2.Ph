@@ -28,5 +28,6 @@
 :- import 
 	(flImport)/1,
 	(flLoad)/1,
-	(flModule)/1
+	(flCompile)/1,
+	flModule/1,
    from flora2.
