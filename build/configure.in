@@ -1363,8 +1363,8 @@ if test "${do_debugging}" = "yes" ; then
         CFLAGS="${CFLAGS} -gdwarf-2 -g3"
    else
 	CFLAGS="${CFLAGS} -g"
-	LDFLAGS="-g ${LDFLAGS}"
-	LINKFLAGS="-g ${LINKFLAGS}"
+	LDFLAGS=" -g ${LDFLAGS}"
+	LINKFLAGS=" -g ${LINKFLAGS}"
    fi
 fi
 
