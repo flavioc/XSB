@@ -77,6 +77,7 @@ oms_warning(Module,Predicate,Type,MessageList):-
 	log_warn(Module, Predicate, Type, [Messages]).
 
 :- import term_to_atom/2, concat_atom/2 from string.
+concat_comma_list(Var, '_'):- var(Var),!.
 concat_comma_list((A,B),Text):- !,
 	(atom(A)
 	 ->	A1 = A
