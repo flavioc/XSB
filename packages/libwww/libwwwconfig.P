@@ -42,7 +42,7 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
     write('%% XSB CC:                '), writeln(CC),
     write('%% Libwww compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
-    writeln(':- export do_libwww_fetch_url___/3, do_libwww_form_request___/3.'),
+    writeln(':- export do_libwww_fetch_url___/4, do_libwww_form_request___/4.'),
     fmt_write(':- ldoption('' %s'').', arg(LoaderFlags)), writeln(''),
     told.
     
