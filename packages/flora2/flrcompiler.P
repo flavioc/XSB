@@ -77,11 +77,6 @@ is_flexpunge(FLEXPUNGE(FAList,M),FAList,M).
 is_flflogicstatic(FLFLOGICSTATIC(F,N),F,N).
 is_flflorapatch(FLFLORAPATCH(F,N),F,N).
 
-is_flflorapreddef(FLFLORAPREDDEF(F),F).
-is_flfloranopreddef(FLFLORANOPREDDEF(F,N),F,N).
-%% Recognizes the :- debug directive keyword
-is_fldebug(FLDEBUG).
-
 is_flconjunct(FLCONJUNCT(L,R),L,R).
 is_fldisjunct(FLDISJUNCT(L,R),L,R).
 is_flnot(FLNOT(Goal),Goal).
@@ -891,13 +886,10 @@ initialize_work :-
 	clear_directive,
 	clear_option.
 
-flora_debug_mode :- flora_in_debug_mode(_).
-
 /****************************************************************************
   flora_reset_compiler/0
 ****************************************************************************/
 flora_reset_compiler :-
-	retractall(flora_in_debug_mode(_)),
 	reset_newpredicate,
 	reset_newoid.
 
@@ -1037,22 +1029,22 @@ compile_direct(DirectTerm,CodeList,[]) :-
 	  prologterm_struct(FCode,2,[SCode,HCode],BCode),
 	  patchrule_struct(HCode,BCode,Code),
 
-	  ( flora_debug_mode ->
-	      thisfldstorage_struct(FldSCode),
-	      prologterm_struct(FCode,2,[FldSCode,HCode],FldBCode),
-	      not_struct(FldBCode,NotCode),
-	      atomobj_struct(flora_error_undefined, ECode),
-	      prologterm_struct(ECode,1,[HCode],MsgCode),
-	      conjunct_struct(NotCode, MsgCode, NMCode),
-	      atomobj_struct(abort,ACode),
-	      prologterm_struct(ACode,0,[],AbortCode),
-	      conjunct_struct(NMCode,AbortCode,BCode2),
-	      patchrule_struct(HCode,BCode2,NotFoundCode),
+	  atomobj_struct(flora_debug_module_registry, DMCode),
+	  thismodule_struct(ModCode),
+	  prologterm_struct(DMCode,1,[ModCode],DebugCode),
+	  thisfldstorage_struct(FldSCode),
+	  prologterm_struct(FCode,2,[FldSCode,HCode],FldBCode),
+	  not_struct(FldBCode,NotCode),
+	  atomobj_struct(flora_error_undefined, ECode),
+	  prologterm_struct(ECode,1,[HCode],MsgCode),
+	  conjunct_struct(DebugCode,NotCode,DNCode),
+	  conjunct_struct(DNCode, MsgCode, NMCode),
+	  atomobj_struct(abort,ACode),
+	  prologterm_struct(ACode,0,[],AbortCode),
+	  conjunct_struct(NMCode,AbortCode,BCode2),
+	  patchrule_struct(HCode,BCode2,NotFoundCode),
 
-	      CodeList=[NotFoundCode,Code]
-	  ;
-	      CodeList=[Code]
-	  )
+	  CodeList=[NotFoundCode,Code]
 	),
 	!.
 
@@ -1128,121 +1120,6 @@ compile_direct(DirectTerm,[Code],[]) :-
 	  rule_struct(HCode,BCode,Code)
 	),
 	!.
-
-compile_direct(DirectTerm, [], [] ) :-
-	is_fldebug(DirectTerm),
-	assert(flora_in_debug_mode(1)),
-	!.
-
-compile_direct(DirectTerm,[ThenCode,ElseCode],[]) :-
-	is_flflorapreddef(DirectTerm,Term),
-	is_flterm(Term,FunctAtom,2,[Arity,ArgList]),
-	is_flatom(FunctAtom,P),
-	is_flnumber(Arity,N),
-	new_varobjlist(N,ArgsCode),
-	is_fllist(ArgList, AList,_L,_I),
-	compile_preddef_arglist(AList,ArgsCode,N,FindCode),
-	( flora_is_flogic_base(P) ->
-	  %% Generate the patch rule to catch 
-	  %% undefined flogic predicates
-	  str_cat(FLDEBUGPREFIX,P,HP),
-	  flora_define_flogicstatic(HP,N),
-	  flora_define_flogicstatic(P,N),
-	  atomobj_struct(HP, HPCode),
-	  atomobj_struct(P, PCode),
-	  termlit_struct(HPCode,N,ArgsCode,HCode),
-	  termlit_struct(PCode,N,ArgsCode,FactCode),
-
-	  new_varobjlist(1, [Index]),
-	  cut_struct(Index,CutCode),
-	  conjunct_struct(FindCode,CutCode,FandCCode),
-
-	  conjunct_struct(FandCCode,FactCode,BCode1),
-	  rule_struct(HCode,BCode1,ThenCode),
-
-	  not_struct(FindCode,NotCode),
-	  atomobj_struct(flora_error_undefined, ECode),
-	  prologterm_struct(ECode,1,[FactCode],MsgCode),
-	  atomobj_struct(abort,ACode),
-	  prologterm_struct(ACode,0,[],AbortCode),
-	  conjunct_struct(NotCode,MsgCode,NMCode),
-	  conjunct_struct(NMCode,AbortCode,BCode2),
-	  rule_struct(HCode,BCode2,ElseCode)
-	;
-	  %% Generate the patch rule to catch 
-	  %% undefined hilog predicates
-	  flora_define_flogicstatic(P,N),
-	  atomobj_struct(P,PCode),
-	  termlit_struct(PCode,N,ArgsCode,HCode),
-	  new_varobjlist(1, [Index]),
-	  cut_struct(Index,CutCode),
-	  atomobj_struct(fail,FC),
-	  prologterm_struct(FC,0,[],FailCode),
-	  conjunct_struct(FindCode,CutCode,FandCCode),
-	  conjunct_struct(FandCCode,FailCode,BCode1),
-	  rule_struct(HCode,BCode1,ThenCode),
-
-	  atomobj_struct(flora_error_undefined, ECode),
-	  prologterm_struct(ECode,1,[HCode],MsgCode),
-	  atomobj_struct(abort,ACode),
-	  prologterm_struct(ACode,0,[],AbortCode),
-	  conjunct_struct(MsgCode,AbortCode,BCode2),
-	  rule_struct(HCode,BCode2,ElseCode)
-	),
-	!.
-
-compile_direct(DirectTerm,[Code],[]) :-
-	is_flfloranopreddef(DirectTerm,P,N),
-
-	%% Generate the patch rule to not catch 
-	%% undefined flogic predicates
-	str_cat(FLDEBUGPREFIX,P,HP),
-	flora_define_flogicstatic(P,N),
-	flora_define_flogicstatic(HP,N),
-	atomobj_struct(HP, HPCode),
-	new_varobjlist(N,ArgsCode),
-	termlit_struct(HPCode,N,ArgsCode,HCode),
-	atomobj_struct(P,PCode),
-	termlit_struct(PCode,N,ArgsCode,FactCode),
-	rule_struct(HCode,FactCode,Code),
-	!.
-
-compile_preddef_arg(Term,ACode,M,Code) :- 
-	is_flterm(Term,_F,2,[FL_P,FL_N]),
-	is_flatom(FL_P,P),
-	is_flnumber(FL_N,N),
-	!,
-	( (N>M) ->
-	    N1 is N-M,
-	    new_varobjlist(N1,MoreACode),
-	    append(ACode,MoreACode,ArgsCode)
-
-	;
-	    ArgsCode=ACode
-	),
-	flora_define_flogicstatic(P,N),
-	atomobj_struct(P,PCode),
-	termlit_struct(PCode,N,ArgsCode,FactCode),
-
-	new_varobjlist(1,[NewFactCode]),
-	atomobj_struct(copy_term,CCode),
-	prologterm_struct(CCode,2,[FactCode,NewFactCode],CopyCode),
-
-	thisfldstorage_struct(SCode),
-	atomobj_struct(storage_find_fact,FCode),
-	prologterm_struct(FCode,2,[SCode,NewFactCode],FindCode),
-
-	conjunct_struct(CopyCode,FindCode,Code).
-
-compile_preddef_arglist([Term],ACode,N,Code) :-
-	!,
-	compile_preddef_arg(Term,ACode,N,Code).
-
-compile_preddef_arglist([T|L],ACode,N,Code) :-
-	compile_preddef_arg(T,ACode,N,TC),
-	compile_preddef_arglist(L,ACode,N,LC),
-	disjunct_struct(TC,LC,Code).
-
 
 /****************************************************************************
   compile_flatomvar(+T,-Code)

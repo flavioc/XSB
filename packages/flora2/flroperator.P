@@ -54,10 +54,6 @@ flora_op(1600,fx,FL_STATICFIRSTORDERALL).
 flora_op(1600,fx,FL_FLOGICSTATIC).
 flora_op(1600,fx,FL_FLORAPATCH).
 
-flora_op(1600,fx,FL_FLORAPREDDEF).
-flora_op(1600,fx,FL_FLORANOPREDDEF).
-flora_op(1600,fx,FL_DEBUG).
-
 flora_op(1600,fx,FL_COMPILE).
 flora_op(1600,fx,FL_LOAD).
 flora_op(1600,fx,FL_DUMP).

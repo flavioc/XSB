@@ -32,6 +32,7 @@
   :- FL_FLOGICSTATIC predicate-list. (flogic)
   :- FL_FIRSTORDER predicate-list.   (firstorder)
   :- FL_STORAGE predicate-list.      (storage)
+  :- FL_DEBUGMODULE predicate.       (debugmodule)
 
   Predicates mentioned in these directives are 
   recorded and whenever they occur in other directives or rules
@@ -65,12 +66,14 @@
 #define FL_DUMP	       	        dump
 #define FL_INDEX2	       	index2
 #define FL_STORAGE	       	storage
+#define FL_DEBUGMODULE	       	debugmodule
 
 :- dynamic wrap_arguments_directive/1.
 
 :- op(1100,fy,FL_FLOGICSTATIC).
 :- op(1100,fy,FL_DUMP).
 :- op(1100,fy,FL_STORAGE).
+:- op(1100,fy,FL_DEBUGMODULE).
 
 :- op(1100,fx,FL_FIRSTORDER).
 :- op(1100,fx,FL_ARGUMENTS).
@@ -152,6 +155,8 @@ process_clause(X) :-
 	-> intern_predicate_specs(PredList,FL_FIRSTORDER)
 	; is_directive(X,FL_STORAGE,RuleList)
 	-> dump_storage_rules(RuleList)
+	; is_directive(X,FL_DEBUGMODULE,Pred)
+	-> dump_debugmodule_rule(Pred)
 	; is_directive(X,Directive,PredList)
 	-> dump_other_directive(Directive,PredList)
 	; %% assume it is a rule -- no queries
@@ -243,14 +248,27 @@ dump_storage_rules(Rule) :- dump_storage_rule(Rule).
 
 %% A storage rule looks like this: rule(head-predicate/arity,body-predicate)
 dump_storage_rule(rule(HeadSpec,TailPred)) :-
+	dump_storage_rule(rule(HeadSpec,TailPred,normal)).
+
+dump_storage_rule(rule(HeadSpec,TailPred,Storage)) :-
 	spec2skeleton(HeadSpec,HeadSkeleton),
 	dump_simple_goal(HeadSkeleton,0), writeln(' :-'),
 	indent(1),
-	write('storage_find_fact(FLORA_THIS_STORAGE,'),
+	( Storage=fld,
+	    write('storage_find_fact(FLORA_THIS_FLD_STORAGE,')
+	;
+	  Storage=normal,
+	    write('storage_find_fact(FLORA_THIS_STORAGE,')
+	),
 	%% attach tail's functor to Head's variables
 	HeadSkeleton =.. [_|HeadVars], BodySkeleton =.. [TailPred|HeadVars],
 	dump_simple_goal(BodySkeleton,0), writeln(').').
 	
+dump_debugmodule_rule(Pred) :-
+	dump_simple_goal(Pred,0), writeln(' :-'),
+	indent(1),
+	writeln('flora_debug_module_registry(FLORA_THIS_MODULE_NAME).').
+
 dump_rule((Head :- Body)) :- !,
 	dump_simple_goal(Head,0),
 	writeln(' :-'),

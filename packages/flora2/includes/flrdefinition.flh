@@ -15,6 +15,15 @@ FLORA_THIS_WORKSPACE(flThisModule)(FLORA_THIS_MODULE_NAME).
 	FLORA_SYMBOL('debugger_loaded')/0
    from flrdebugger.
 
+:- import flora_error_undefined/1 from flrundefined.
+:- import flora_in_debug_mode/1 from flrutils.
+:- import storage_insert_fact/3,storage_delete_fact/3 from storage.
+
+?- storage_delete_all(FLORA_THIS_FLD_STORAGE).
+?- flora_in_debug_mode(_), !,
+      assert(flora_debug_module_registry(FLORA_THIS_MODULE_NAME))
+      ; true.
+
 ?- storage_delete_all(FLORA_THIS_STORAGE).
 ?- (flora_storage_registry(FLORA_THIS_STORAGE), !
     ; assert(flora_storage_registry(FLORA_THIS_STORAGE))

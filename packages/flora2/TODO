@@ -239,7 +239,7 @@ DONE 10. Implement convenient versions of I/O predicates and others, such as
     #define FLORA_MODULE  .....
     would be dumped into the .P file
 
-12. Do dependency checking in the compiler to determine if a tabled
+DONE 12. Do dependency checking in the compiler to determine if a tabled
     predicate or an F-molecule depends on an update predicate.
 
 13. Do smart reordering of arithmetic operations in rule bodies to minimize

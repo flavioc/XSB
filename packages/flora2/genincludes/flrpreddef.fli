@@ -1,68 +1,634 @@
-/***************************************************************************
-  file: genincludes/flrpreddef.fli
-
-  Author(s): Chang Zhao
-
-  Contact:   xsb-contact@cs.sunysb.edu
-
-  Copyright (C) The Research Foundation of SUNY, 2002
-
-  This is a template file to generate the FLORA include file for
-  detecting undefined user predicates.
-***************************************************************************/
-
-
 #include "flora_terms.flh"
 
-/**************************************************************************
-  F-logic
-***************************************************************************/
-:- FL_FLORAPREDDEF
-	WRAP_SUB(2,[(WRAP_SUB,2)]),
-	WRAP_ISA(2,[(WRAP_ISA,2),(WRAP_SUB,2)]),
-	WRAP_METH(2,[(WRAP_METH,2),(WRAP_IMETH,2)]),
-	WRAP_IMETH(2,[(WRAP_IMETH,2)]),
-	WRAP_FD(3,[(WRAP_FD,3),(WRAP_IFD,3)]),
-	WRAP_IFD(3,[(WRAP_IFD,3)]),
-	WRAP_FDDEF(2,[(WRAP_FD,3),(WRAP_IFD,3)]),
-	WRAP_IFDDEF(2,[(WRAP_IFD,3)]),
-	WRAP_FDSIG(3,[(WRAP_FDSIG,3),(WRAP_IFDSIG,3)]),
-	WRAP_IFDSIG(3,[(WRAP_IFDSIG,3)]),
-	WRAP_MVD(3,[(WRAP_MVD,3),(WRAP_IMVD,3)]),
-	WRAP_IMVD(3,[(WRAP_IMVD,3)]),
-	WRAP_MVDDEF(2,[(WRAP_MVD,3),(WRAP_IMVD,3),
-		        (WRAP_MVDDEF,2),(WRAP_IMVDDEF,2)]),
-	WRAP_IMVDDEF(2,[(WRAP_IMVD,3),(WRAP_IMVDDEF,2)]),
-	WRAP_MVDSIG(3,[(WRAP_MVDSIG,3),(WRAP_IMVDSIG,3)]),
-	WRAP_IMVDSIG(3,[(WRAP_IMVDSIG,3)]),
-	WRAP_MVDINC(3,[(WRAP_MVD,3),(WRAP_IMVD,3)]),
-	WRAP_IMVDINC(3,[(WRAP_IMVD,3)]),
-	WRAP_MVDTOLIST(3,[(WRAP_MVD,3),(WRAP_IMVD,3)]),
-	WRAP_IMVDTOLIST(3,[(WRAP_IMVD,3)]),
-	WRAP_TRAN(2,[(WRAP_TRAN,2)]).
+:- FL_FLOGICSTATIC
+	isa/2, d_isa/2, check_isa/2, defined_isa/2,
+	sub/2, d_sub/2, check_sub/2, defined_sub/2,
+	meth/2, d_meth/2, check_meth/2, defined_meth/2,
+	imeth/2, d_imeth/2, check_imeth/2, defined_imeth/2,
+	fd/3, d_fd/3, check_fd/3, defined_fd/3,
+	ifd/3, d_ifd/3, check_ifd/3, defined_ifd/3,
+	fdsig/3, d_fdsig/3, check_fdsig/3, defined_fdsig/3,
+	ifdsig/3, d_ifdsig/3, check_ifdsig/3, defined_ifdsig/3,
+	fddef/2, d_fddef/2,
+	ifddef/2, d_ifddef/2,
+	mvd/3, d_mvd/3, check_mvd/3, defined_mvd/3,
+	imvd/3, d_imvd/3, check_imvd/3, defined_imvd/3,
+	mvdsig/3, d_mvdsig/3, check_mvdsig/3, defined_mvdsig/3,
+	imvdsig/3, d_imvdsig/3, check_imvdsig/3, defined_imvdsig/3,
+	mvddef/2, d_mvddef/2, check_mvddef/2, defined_mvddef/2,
+	imvddef/2, d_imvddef/2, check_imvddef/2, defined_imvddef/2,
+	tran/2, d_tran/2, check_tran/2, defined_tran/2,
+	d_mvdinc/3, mvdinc/3,
+	d_imvdinc/3, imvdinc/3,
+	d_mvdtolist/3, mvdtolist/3,
+	d_imvdtolist/3, imvdtolist/3.
 
-/**************************************************************************
-  HiLog
-***************************************************************************/
-:- FL_FLORAPREDDEF
-	WRAP_HILOG(1,[(WRAP_HILOG,1)]),
-	WRAP_HILOG(2,[(WRAP_HILOG,2)]),
-	WRAP_HILOG(3,[(WRAP_HILOG,3)]),
-	WRAP_HILOG(4,[(WRAP_HILOG,4)]),
-	WRAP_HILOG(5,[(WRAP_HILOG,5)]),
-	WRAP_HILOG(6,[(WRAP_HILOG,6)]),
-	WRAP_HILOG(7,[(WRAP_HILOG,7)]),
-	WRAP_HILOG(8,[(WRAP_HILOG,8)]),
-	WRAP_HILOG(9,[(WRAP_HILOG,9)]),
-	WRAP_HILOG(10,[(WRAP_HILOG,10)]),
-	WRAP_HILOG(11,[(WRAP_HILOG,11)]),
-	WRAP_HILOG(12,[(WRAP_HILOG,12)]),
-	WRAP_HILOG(13,[(WRAP_HILOG,13)]),
-	WRAP_HILOG(14,[(WRAP_HILOG,14)]),
-	WRAP_HILOG(15,[(WRAP_HILOG,15)]),
-	WRAP_HILOG(16,[(WRAP_HILOG,16)]),
-	WRAP_HILOG(17,[(WRAP_HILOG,17)]),
-	WRAP_HILOG(18,[(WRAP_HILOG,18)]),
-	WRAP_HILOG(19,[(WRAP_HILOG,19)]),
-	WRAP_HILOG(20,[(WRAP_HILOG,20)]),
-	WRAP_HILOG(21,[(WRAP_HILOG,21)]).
+:- FL_FLOGICSTATIC debugging/0.
+
+:- debugmodule debugging.
+
+d_isa(X,Y) :- 
+	debugging,
+	check_isa(X,Y),
+	check_sub(X,Y),
+	!,
+	flora_error_undefined(isa(X,Y)),
+	abort.
+
+d_isa(X,Y) :- 
+	isa(X,Y).
+	    
+d_sub(X,Y) :- 
+	debugging,
+	check_sub(X,Y),
+	!,
+	flora_error_undefined(sub(X,Y)),
+	abort.
+
+d_sub(X,Y) :- 
+	sub(X,Y).
+
+d_meth(X,Y) :-
+	debugging,
+	check_meth(X,Y),
+	check_imeth(X,Y),
+	!,
+	flora_error_undefined(meth(X,Y)),
+	abort.
+
+d_meth(X,Y) :-
+	meth(X,Y).
+
+d_imeth(X,Y) :-
+	debugging,
+	check_imeth(X,Y),
+	!,
+	flora_error_undefined(imeth(X,Y)),
+	abort.
+
+d_imeth(X,Y) :-
+	imeth(X,Y).
+
+d_fd(X,Y,Z) :-
+	debugging,
+	check_fd(X,Y,Z),
+	check_ifd(X,Y,Z),
+	!,
+	flora_error_undefined(fd(X,Y,Z)),
+	abort.
+
+d_fd(X,Y,Z) :-
+	fd(X,Y,Z).
+	    
+d_ifd(X,Y,Z) :-
+	debugging,
+	check_ifd(X,Y,Z),
+	!,
+	flora_error_undefined(ifd(X,Y,Z)),
+	abort.
+
+d_ifd(X,Y,Z) :-
+	ifd(X,Y,Z).
+	    
+
+d_fddef(X,Y) :-
+	debugging,
+	check_fd(X,Y,Z),
+	check_ifd(X,Y,Z),
+	!,
+	flora_error_undefined(fddef(X,Y)),
+	abort.
+
+d_fddef(X,Y) :-
+	fddef(X,Y).
+	    
+d_ifddef(X,Y) :-
+	debugging,
+	check_ifd(X,Y,Z),
+	!,
+	flora_error_undefined(ifddef(X,Y)),
+	abort.
+
+d_ifddef(X,Y) :-
+	ifddef(X,Y).
+	    
+d_fdsig(X,Y,Z) :-
+	debugging,
+	check_fdsig(X,Y,Z),
+	check_ifdsig(X,Y,Z),
+	!,
+	flora_error_undefined(fdsig(X,Y,Z)),
+	abort.
+
+d_fdsig(X,Y,Z) :-
+	fdsig(X,Y,Z).
+	    
+d_ifdsig(X,Y,Z) :-
+	debugging,
+	check_ifdsig(X,Y,Z),
+	!,
+	flora_error_undefined(ifdsig(X,Y,Z)),
+	abort.
+
+d_ifdsig(X,Y,Z) :-
+	ifdsig(X,Y,Z).
+	    
+d_mvd(X,Y,Z) :-
+	debugging,
+	check_mvd(X,Y,Z),
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(mvd(X,Y,Z)),
+	abort.
+
+d_mvd(X,Y,Z) :-
+	mvd(X,Y,Z).
+	    
+d_imvd(X,Y,Z) :-
+	debugging,
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(imvd(X,Y,Z)),
+	abort.
+
+d_imvd(X,Y,Z) :-
+	imvd(X,Y,Z).
+	    
+
+d_mvddef(X,Y) :-
+	debugging,
+	check_mvddef(X,Y),
+	check_imvddef(X,Y),
+	check_mvd(X,Y,Z),
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(mvddef(X,Y)),
+	abort.
+
+d_mvddef(X,Y) :-
+	mvddef(X,Y).
+	    
+d_imvddef(X,Y) :-
+	debugging,
+	check_imvddef(X,Y),
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(imvddef(X,Y)),
+	abort.
+
+d_imvddef(X,Y) :-
+	imvddef(X,Y).
+	    
+d_mvdsig(X,Y,Z) :-
+	debugging,
+	check_mvdsig(X,Y,Z),
+	check_imvdsig(X,Y,Z),
+	!,
+	flora_error_undefined(mvdsig(X,Y,Z)),
+	abort.
+
+d_mvdsig(X,Y,Z) :-
+	mvdsig(X,Y,Z).
+	    
+d_imvdsig(X,Y,Z) :-
+	debugging,
+	check_imvdsig(X,Y,Z),
+	!,
+	flora_error_undefined(imvdsig(X,Y,Z)),
+	abort.
+
+d_imvdsig(X,Y,Z) :-
+	imvdsig(X,Y,Z).
+
+d_mvdinc(X,Y,Z) :-
+	debugging,
+	check_mvd(X,Y,Z),
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(mvd(X,Y,Z)),
+	abort.
+
+d_mvdinc(X,Y,Z) :-
+	mvdinc(X,Y,Z).
+	    
+d_imvdinc(X,Y,Z) :-
+	debugging,
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(imvd(X,Y,Z)),
+	abort.
+
+d_imvdinc(X,Y,Z) :-
+	imvdinc(X,Y,Z).
+	    
+d_mvdtolist(X,Y,Z) :-
+	debugging,
+	check_mvd(X,Y,Z),
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(mvd(X,Y,Z)),
+	abort.
+
+d_mvdtolist(X,Y,Z) :-
+	mvdtolist(X,Y,Z).
+	    
+d_imvdtolist(X,Y,Z) :-
+	debugging,
+	check_imvd(X,Y,Z),
+	!,
+	flora_error_undefined(imvd(X,Y,Z)),
+	abort.
+
+d_imvdtolist(X,Y,Z) :-
+	imvdtolist(X,Y,Z).
+	    
+d_tran(X,Y) :-
+	debugging,
+	check_tran(X,Y),
+	!,
+	flora_error_undefined(tran(X,Y)),
+	abort.
+
+d_tran(X,Y) :-
+	tran(X,Y).
+	    
+check_isa(X,Y) :- defined_isa(X,Y), !, fail.
+check_isa(X,Y).
+
+check_sub(X,Y) :- defined_sub(X,Y), !, fail.
+check_sub(X,Y).
+
+check_meth(X,Y) :- defined_meth(X,Y), !, fail.
+check_meth(X,Y).
+
+check_imeth(X,Y) :- defined_imeth(X,Y), !, fail.
+check_imeth(X,Y).
+
+check_fd(X,Y,Z) :- defined_fd(X,Y,Z), !, fail.
+check_fd(X,Y,Z).
+
+check_ifd(X,Y,Z) :- defined_ifd(X,Y,Z), !, fail.
+check_ifd(X,Y,Z).
+
+check_fdsig(X,Y,Z) :- defined_fdsig(X,Y,Z), !, fail.
+check_fdsig(X,Y,Z).
+
+check_ifdsig(X,Y,Z) :- defined_ifdsig(X,Y,Z), !, fail.
+check_ifdsig(X,Y,Z).
+
+check_mvd(X,Y,Z) :- defined_mvd(X,Y,Z), !, fail.
+check_mvd(X,Y,Z).
+
+check_imvd(X,Y,Z) :- defined_imvd(X,Y,Z), !, fail.
+check_imvd(X,Y,Z).
+
+check_mvdsig(X,Y,Z) :- defined_mvdsig(X,Y,Z), !, fail.
+check_mvdsig(X,Y,Z).
+
+check_imvdsig(X,Y,Z) :- defined_imvdsig(X,Y,Z), !, fail.
+check_imvdsig(X,Y,Z).
+
+check_mvddef(X,Y) :- defined_mvddef(X,Y), !, fail.
+check_mvddef(X,Y).
+
+check_imvddef(X,Y) :- defined_imvddef(X,Y), !, fail.
+check_imvddef(X,Y).
+
+check_tran(X,Y) :- defined_tran(X,Y), !, fail.
+check_tran(X,Y).
+
+:- storage(rule(defined_isa/2,isa,fld)).
+:- storage(rule(defined_sub/2,sub,fld)).
+:- storage(rule(defined_meth/2,meth,fld)).
+:- storage(rule(defined_imeth/2,imeth,fld)).
+:- storage(rule(defined_fd/3,fd,fld)).
+:- storage(rule(defined_ifd/3,ifd,fld)).
+:- storage(rule(defined_fdsig/3,fdsig,fld)).
+:- storage(rule(defined_ifdsig/3,ifdsig,fld)).
+:- storage(rule(defined_mvd/3,mvd,fld)).
+:- storage(rule(defined_imvd/3,imvd,fld)).
+:- storage(rule(defined_mvdsig/3,mvdsig,fld)).
+:- storage(rule(defined_imvdsig/3,imvdsig,fld)).
+:- storage(rule(defined_mvddef/2,mvddef,fld)).
+:- storage(rule(defined_imvddef/2,imvddef,fld)).
+:- storage(rule(defined_tran/2,tran,fld)).
+
+:- FL_FLOGICSTATIC
+	flapply/1, defined_flapply/1,
+	flapply/2, defined_flapply/2,
+	flapply/3, defined_flapply/3,
+	flapply/4, defined_flapply/4,
+	flapply/5, defined_flapply/5,
+	flapply/6, defined_flapply/6,
+	flapply/7, defined_flapply/7,
+	flapply/8, defined_flapply/8,
+	flapply/9, defined_flapply/9,
+	flapply/10, defined_flapply/10,
+	flapply/11, defined_flapply/11,
+	flapply/12, defined_flapply/12,
+	flapply/13, defined_flapply/13,
+	flapply/14, defined_flapply/14,
+	flapply/15, defined_flapply/15,
+	flapply/16, defined_flapply/16,
+	flapply/17, defined_flapply/17,
+	flapply/18, defined_flapply/18,
+	flapply/19, defined_flapply/19,
+	flapply/20, defined_flapply/20,
+	flapply/21, defined_flapply/21.
+
+flapply(X01) :-
+	debugging,
+	defined_flapply(X01),
+	!,
+	fail.
+
+flapply(X01) :-
+	debugging,
+	flora_error_undefined(flapply(X01)),
+	abort.
+
+flapply(X01,X02) :-
+	debugging,
+	defined_flapply(X01,X02),
+	!,
+	fail.
+
+flapply(X01,X02) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02)),
+	abort.
+
+flapply(X01,X02,X03) :-
+	debugging,
+	defined_flapply(X01,X02,X03),
+	!,
+	fail.
+
+flapply(X01,X02,X03) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03)),
+	abort.
+
+flapply(X01,X02,X03,X04) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+				      X11)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+				      X11,X12)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+				      X11,X12,X13)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+					X11,X12,X13,X14,X15)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15,X16),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+					X11,X12,X13,X14,X15,X16)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15,X16,X17),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15,X16,X17)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15,X16,X17,X18),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+					X11,X12,X13,X14,X15,X16,X17,X18)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18,X19) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15,X16,X17,X18,X19),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18,X19) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+				      X11,X12,X13,X14,X15,X16,X17,X18,X19)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18,X19,X20) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15,X16,X17,X18,X19,X20),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18,X19,X20) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+				      X11,X12,X13,X14,X15,X16,X17,X18,X19,X20)),
+	abort.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21) :-
+	debugging,
+	defined_flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21),
+	!,
+	fail.
+
+flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+	X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21) :-
+	debugging,
+	flora_error_undefined(flapply(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,
+			 	      X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21)),
+	abort.
+
+:- storage(rule(defined_flapply/1,flapply,fld)).
+:- storage(rule(defined_flapply/2,flapply,fld)).
+:- storage(rule(defined_flapply/3,flapply,fld)).
+:- storage(rule(defined_flapply/4,flapply,fld)).
+:- storage(rule(defined_flapply/5,flapply,fld)).
+:- storage(rule(defined_flapply/6,flapply,fld)).
+:- storage(rule(defined_flapply/7,flapply,fld)).
+:- storage(rule(defined_flapply/8,flapply,fld)).
+:- storage(rule(defined_flapply/9,flapply,fld)).
+:- storage(rule(defined_flapply/10,flapply,fld)).
+:- storage(rule(defined_flapply/11,flapply,fld)).
+:- storage(rule(defined_flapply/12,flapply,fld)).
+:- storage(rule(defined_flapply/13,flapply,fld)).
+:- storage(rule(defined_flapply/14,flapply,fld)).
+:- storage(rule(defined_flapply/15,flapply,fld)).
+:- storage(rule(defined_flapply/16,flapply,fld)).
+:- storage(rule(defined_flapply/17,flapply,fld)).
+:- storage(rule(defined_flapply/18,flapply,fld)).
+:- storage(rule(defined_flapply/19,flapply,fld)).
+:- storage(rule(defined_flapply/20,flapply,fld)).
+:- storage(rule(defined_flapply/21,flapply,fld)).

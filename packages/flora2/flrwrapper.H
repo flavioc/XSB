@@ -67,6 +67,7 @@
 	flora_system_storage_name/2,
 	flora_storage_name/2,
 	flora_user_fld_storage_name/2,
+	flora_system_fld_storage_name/2,
 	flora_fld_storage_name/2,
 	flora_is_flogic_base/1,
 

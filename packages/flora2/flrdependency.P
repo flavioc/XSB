@@ -1,0 +1,1274 @@
+%%%% Usage: check_for_dependencies(+CodeList,-ErrWarnList)
+%%%%        generate_rules(+CodeList)
+%%%%        depend(+Sk1,+Sk2,+Option).
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+#define MAXDEPTH	3
+#define STARTPOINT	0
+
+/****************************************************************************
+  utilities
+ ****************************************************************************/
+is_prrule(PRRULE(Head,Body),Head,Body).
+
+is_prdirective(PRDIRECTIVE(Direct),Direct).
+is_prtable(PRTABLE(P,A),P,A).
+is_prhilogtable(PRHILOGTABLE(A),A).
+
+is_prthismodule(PRTHISMODULE(PRTHISMODULE)).
+is_prthisstorage(PRTHISSTORAGE(PRTHISSTORAGE)).
+
+%% with textual information
+is_pratom(PRATOM(Atom,I),Atom,I).
+is_prnumber(PRNUMBER(Number,I),Number,I).
+is_prvariable(PRVARIABLE(Name,I),Name,I).
+is_prstring(PRSTRING(String,I),String,I).
+is_prlist(PRLIST(L,T,I),L,T,I).
+is_prstorage(PRSTORAGE(PRATOM(WS,I)),WS,I).
+
+%% with textual information
+is_skolem(PRFDSKOLEM(Obj,Att,I),WRAP_FDSKOLEM,2,[Obj,Att],I) :- !.
+is_skolem(PRIFDSKOLEM(Obj,Att,I),WRAP_IFDSKOLEM,2,[Obj,Att],I) :- !.
+
+is_prterm(PRTERM(FObj,N,ObjList),FObj,N,ObjList).
+
+is_goallogic(PRAND(Goal1,Goal2),',',2,[Goal1,Goal2]) :- !.
+is_goallogic(PROR(Goal1,Goal2),';',2,[Goal1,Goal2]) :- !.
+is_goallogic(PRNOT(Goal),'not',1,[Goal]) :- !.
+is_goallogic(PRTNOT(Goal),'sk_not',1,[Goal]) :- !.
+
+%% with textual information
+is_goallogic(PRCUT(I),'!',0,[],I) :- !.
+
+is_prcall(PRCALL(Var),Var) :- !.
+
+%% with textual information
+is_pratomlit(PRATOMLIT(A,I),A,I).
+
+is_prtermlit(PRTERMLIT(FObj,N,ObjList),FObj,N,ObjList).
+is_prworkspace(PRWORKSPACE(P,WS),P,WS).
+
+%% with textual information
+is_florasyslib(FLORASYSLIB(I,F,N,Args),F,N,Args,I).
+
+is_prologterm(PROLOGTERM(F,N,Args),F,N,Args).
+is_prologliblit(PROLOGLIBLIT(PROLOGTERM(F,N,Args)),F,N,Args).
+
+is_prnewpred(PRNEWPRED(Name,N,Vars),Name,N,Vars).
+
+%% with textual information
+is_prnewoid(PRNEWOID(Oid,I),Oid,I).
+
+is_flogic(PRISA(Obj1,Obj2),WRAP_ISA,2,[Obj1,Obj2]) :- !.
+is_flogic(PRSUB(Obj1,Obj2),WRAP_SUB,2,[Obj1,Obj2]) :- !.
+is_flogic(PRMETH(Obj,Meth),WRAP_METH,2,[Obj,Meth]) :- !.
+is_flogic(PRIMETH(Obj,IMeth),WRAP_IMETH,2,[Obj,IMeth]) :- !.
+is_flogic(PRFD(Obj,Att,Val),WRAP_FD,3,[Obj,Att,Val]) :- !.
+is_flogic(PRIFD(Obj,Att,Val),WRAP_IFD,3,[Obj,Att,Val]) :- !.
+is_flogic(PRFDSIG(Obj,Att,Val),WRAP_FDSIG,3,[Obj,Att,Val]) :- !.
+is_flogic(PRMVDSIG(Obj,Att,Val),WRAP_MVDSIG,3,[Obj,Att,Val]) :- !.
+is_flogic(PRIFDSIG(Obj,Att,Val),WRAP_IFDSIG,3,[Obj,Att,Val]) :- !.
+is_flogic(PRIMVDSIG(Obj,Att,Val),WRAP_IMVDSIG,3,[Obj,Att,Val]) :- !.
+is_flogic(PRMVD(Obj,Att,Val),WRAP_MVD,3,[Obj,Att,Val]) :- !.
+is_flogic(PRIMVD(Obj,Att,Val),WRAP_IMVD,3,[Obj,Att,Val]) :- !.
+is_flogic(PRMVDINC(Obj,Att,Val),WRAP_MVDINC,3,[Obj,Att,Val]) :- !.
+is_flogic(PRIMVDINC(Obj,Att,Val),WRAP_IMVDINC,3,[Obj,Att,Val]) :- !.
+is_flogic(PRMVDTOLIST(Obj,Att,Val),WRAP_MVDTOLIST,3,[Obj,Att,Val]) :- !.
+is_flogic(PRIMVDTOLIST(Obj,Att,Val),WRAP_IMVDTOLIST,3,[Obj,Att,Val]) :- !.
+is_flogic(PREXISTS(Obj),WRAP_EXISTS,1,[Obj]) :- !.
+is_flogic(PRFDDEF(Obj,Att),WRAP_FDDEF,2,[Obj,Att]) :- !.
+is_flogic(PRIFDDEF(Obj,Att),WRAP_IFDDEF,2,[Obj,Att]) :- !.
+is_flogic(PRMVDDEF(Obj,Att),WRAP_MVDDEF,2,[Obj,Att]) :- !.
+is_flogic(PRIMVDDEF(Obj,Att),WRAP_IMVDDEF,2,[Obj,Att]) :- !.
+is_flogic(PRTRAN(Obj,Tran),WRAP_TRAN,2,[Obj,Tran]) :- !.
+is_flogic(PROBJEQL(O1,O2),WRAP_OBJEQL,2,[O1,O2]) :- !.
+
+default_tabled(WRAP_ISA,2).
+default_tabled(WRAP_SUB,2).
+default_tabled(WRAP_FD,3).
+default_tabled(WRAP_IFD,3).
+default_tabled(WRAP_METH,2).
+default_tabled(WRAP_IMETH,2).
+default_tabled(WRAP_FDSIG,3).
+default_tabled(WRAP_MVDSIG,3).
+default_tabled(WRAP_IFDSIG,3).
+default_tabled(WRAP_IMVDSIG,3).
+default_tabled(WRAP_MVD,3).
+default_tabled(WRAP_IMVD,3).
+default_tabled(WRAP_EXISTS,1).
+default_tabled(WRAP_FDDEF,2).
+default_tabled(WRAP_IFDDEF,2).
+default_tabled(WRAP_MVDDEF,2).
+default_tabled(WRAP_IMVDDEF,2).
+default_tabled(WRAP_OBJEQL,2).
+
+procedural(WRAP_TRAN,2).
+
+dboperation(FLLIBINSERT,1).
+dboperation(FLLIBINSERTALL,1).
+dboperation(FLLIBBTINSERT,1).
+dboperation(FLLIBBTINSERTALL,1).
+dboperation(FLLIBDELETE,1).
+dboperation(FLLIBDELETEALL,1).
+dboperation(FLLIBBTDELETE,1).
+dboperation(FLLIBBTDELETEALL,1).
+dboperation(FLLIBERASE,1).
+dboperation(FLLIBERASEALL,1).
+dboperation(FLLIBBTERASE,1).
+dboperation(FLLIBBTERASEALL,1).
+
+dboperation(FLLIBINSERT,2).
+dboperation(FLLIBINSERTALL,2).
+dboperation(FLLIBBTINSERT,2).
+dboperation(FLLIBBTINSERTALL,2).
+dboperation(FLLIBDELETE,2).
+dboperation(FLLIBDELETEALL,2).
+dboperation(FLLIBBTDELETE,2).
+dboperation(FLLIBBTDELETEALL,2).
+dboperation(FLLIBERASE,2).
+dboperation(FLLIBERASEALL,2).
+dboperation(FLLIBBTERASE,2).
+dboperation(FLLIBBTERASEALL,2).
+
+is_fllibdb(FLLIBINSERT) :- !.
+is_fllibdb(FLLIBINSERTALL) :- !.
+is_fllibdb(FLLIBDELETE) :- !.
+is_fllibdb(FLLIBDELETEALL) :- !.
+is_fllibdb(FLLIBERASE) :- !.
+is_fllibdb(FLLIBERASEALL) :- !.
+
+is_fllibdb(FLLIBBTINSERT) :- !.
+is_fllibdb(FLLIBBTINSERTALL) :- !.
+is_fllibdb(FLLIBBTDELETE) :- !.
+is_fllibdb(FLLIBBTDELETEALL) :- !.
+is_fllibdb(FLLIBBTERASE) :- !.
+is_fllibdb(FLLIBBTERASEALL) :- !.
+
+is_upd(FLLIBINSERT(List,Condition),insert,List,Condition) :- !.
+is_upd(FLLIBBTINSERT(List,Condition),btinsert,List,Condition) :- !.
+is_upd(FLLIBDELETE(List,Condition),delete,List,Condition) :- !.
+is_upd(FLLIBBTDELETE(List,Condition),btdelete,List,Condition) :- !.
+is_upd(FLLIBERASE(List,Condition),erase,List,Condition) :- !.
+is_upd(FLLIBBTERASE(List,Condition),bterase,List,Condition) :- !.
+
+is_updall(FLLIBINSERTALL(List,Condition),insertall,List,Condition) :- !.
+is_updall(FLLIBBTINSERTALL(List,Condition),btinsertall,List,Condition) :- !.
+is_updall(FLLIBDELETEALL(List,Condition),deleteall,List,Condition) :- !.
+is_updall(FLLIBBTDELETEALL(List,Condition),btdeleteall,List,Condition) :- !.
+is_updall(FLLIBERASEALL(List,Condition),eraseall,List,Condition) :- !.
+is_updall(FLLIBBTERASEALL(List,Condition),bteraseall,List,Condition) :- !.
+
+is_upd(FLLIBINSERT(List),insert,List,_) :- !.
+is_upd(FLLIBBTINSERT(List),btinsert,List,_) :- !.
+is_upd(FLLIBDELETE(List),delete,List,_) :- !.
+is_upd(FLLIBBTDELETE(List),btdelete,List,_) :- !.
+is_upd(FLLIBERASE(List),erase,List,_) :- !.
+is_upd(FLLIBBTERASE(List),bterase,List,_) :- !.
+
+is_updall(FLLIBINSERTALL(List),insertall,List,_) :- !.
+is_updall(FLLIBBTINSERTALL(List),btinsertall,List,_) :- !.
+is_updall(FLLIBDELETEALL(List),deleteall,List,_) :- !.
+is_updall(FLLIBBTDELETEALL(List),btdeleteall,List,_) :- !.
+is_updall(FLLIBERASEALL(List),eraseall,List,_) :- !.
+is_updall(FLLIBBTERASEALL(List),bteraseall,List,_) :- !.
+
+is_agg(FLLIBMIN(Var,Group,Cond,Result),min,Var,Group,Cond,Result) :- !.
+is_agg(FLLIBMAX(Var,Group,Cond,Result),max,Var,Group,Cond,Result) :- !.
+is_agg(FLLIBSUM(Var,Group,Cond,Result),sum,Var,Group,Cond,Result) :- !.
+is_agg(FLLIBAVG(Var,Group,Cond,Result),avg,Var,Group,Cond,Result) :- !.
+is_agg(FLLIBCOUNT(Var,Group,Cond,Result),count,Var,Group,Cond,Result) :- !.
+is_agg(FLLIBCOLLECTSET(Var,Group,Cond,Result),collectset,Var,Group,Cond,Result)
+	:- !.
+is_agg(FLLIBCOLLECTBAG(Var,Group,Cond,Result),collectbag,Var,Group,Cond,Result)
+	:- !.
+
+/****************************************************************************
+  cut_off(+Term_before_cutoff,-Term_after_cutoff)
+  cut off a term whose depth is greater than MAXDEPTH
+ ****************************************************************************/
+cut_off(T1,T2) :- cut_off(T1,T2,1).
+
+cut_off(T1,T2,N) :-
+	( N>MAXDEPTH ->
+	    writeln('Too deep'),
+	    fail
+	;
+	    ( (atomic(T1); var(T1)) ->
+	        T2=T1,
+		!
+            ;
+	        ( N=MAXDEPTH ->
+		    functor(T1,Func,Nargs),
+		    functor(T2,Func,Nargs)
+	        ;
+		    NewN is N+1,
+		    T1 =.. [Func|Args],
+		    L = [Func],
+		    trans(L,Args,NewL,NewN),
+		    T2 =.. NewL
+	        )
+	    )
+	).
+		
+trans(L,[],L,_) :- !.
+
+trans(L,[H|T],NL,N) :-
+	cut_off(H,H1,N),
+	append(L,[H1],L1),
+	trans(L1,T,NL,N).
+
+/****************************************************************************
+  depth(+Term,-Depth_of_the_term)
+  compute the depth of a term
+ ****************************************************************************/
+depth(X,0) :- atomic(X), !.
+depth(X,0) :- var(X), !.
+depth(X,N1) :-
+	functor(X,F,_),
+	X =.. [F|Y],
+	param_depth(Y,N),
+	N1 is N+1.
+
+/****************************************************************************
+  param_depth(+ParamList,-MaxDepth)
+  given a list of parameters, returns the max depth of all params
+ ****************************************************************************/
+param_depth([X],N) :- depth(X,N).
+param_depth([H|T],N) :-
+	depth(H,N1),
+	param_depth(T,N2),
+	( (N1>N2) ->
+            N = N1
+        ;
+            N = N2
+        ).
+
+/****************************************************************************
+  depend(+Sk1,+Sk2,-T1,-T2,+Option)
+  possible options: u -- depends on update
+                    a -- depends on aggregation
+                    n -- depends negatively
+                    p -- depends positively
+    		    arb -- arbitrary
+  check whether Sk1 depends on Sk2 with given option, T1 and T2 are
+  instantiations of Sk1 and Sk2, respectively
+ ****************************************************************************/
+depend(Sk1,Sk2,T1,T2,Opt) :-
+	check_for_rule_generating,
+	retractall(dependency(_,_,_,_)),
+	depend(Sk1,Sk2),
+	dependency((T1,_IT1),(T2,_IT2),anu(A,N,U),_),
+	( (Opt=u, atom(U))
+	; (Opt=a, atom(A))
+	; (Opt=n, atom(N))
+	; (Opt=p, var(N))
+	; (Opt=arb)
+	).
+
+/****************************************************************************
+  depend(+Sk1,+Sk2,+Option)
+  decides whether Sk1 dependes on Sk2 without caring about the 
+  instantiations
+ ****************************************************************************/
+depend(Sk1,Sk2,Opt) :- depend(Sk1,Sk2,_IT1,_IT2,Opt).
+
+
+/****************************************************************************
+  check_for_rule_generating
+  check whether generate_rules has been called
+ ****************************************************************************/
+check_for_rule_generating :-
+	conget(generated,N),
+        ( N=1 ->
+            true
+        ;
+            writeln('Please call generate_rules(+CodeList) first'),
+            fail
+        ).
+
+/****************************************************************************
+  depend(+Sk1,+Sk2)
+  decide whether term skeleton Sk1 depends on Sk2
+  and whether the dependency is through aggregation, negation, update
+  dependency/4 will be asserted for each path pattern from Sk1 to Sk2
+ ****************************************************************************/
+depend(Sk1,Sk2) :-
+	retractall(target(_)),
+	assert(target(Sk2)),
+	findall((RuleHead),match_rule(Sk1,RuleHead,_,_),HeadList),
+	remove_dup(HeadList,NewHeadList),
+	depend_list(NewHeadList).
+
+remove_dup([],[]) :- !.
+remove_dup([H|T],NewList) :-
+	( member(H,T) ->
+	    remove_dup(T,NewList)
+	;
+	    remove_dup(T,InterList),
+	    NewList = [H|InterList]
+	).
+
+depend_list([]) :- !.
+depend_list([(H)|T]) :-
+    retractall(dependency(_,_,_)),
+    depend_detail(H),
+    findall((Body,anu(A,N,U),Templete),
+	    dependency(Body,anu(A,N,U),Templete),
+	    DependencyList),
+    assert_dependency_list(H,DependencyList),
+    depend_list(T).
+
+assert_dependency_list(_,[]) :- !.
+assert_dependency_list(Term,[(Body,anu(A,N,U),Templete)|T]) :-
+    assert(dependency(Term,Body,anu(A,N,U),Templete)),
+    assert_dependency_list(Term,T).
+
+depend_detail((Sk1,IndSk1)) :-
+    retractall(checked(_)),
+    assert(checked((Sk1,anu(_,_,_),_))),
+    L = [(Sk1,(Sk1,IndSk1),anu(_,_,_),STARTPOINT,_)],
+    traversal(L).
+
+/****************************************************************************
+  traversal(+List)
+  BFS for all possible dependencies from Sk1 to Sk2. Originally List only
+  contains Sk1. Sk2 is asserted by target(Sk2). Each time the first element
+  of the list is taken out. We find the rules whose heads can unify with this
+  element and consider the bodies of those rules. If 
+  1) the rule body unifies with Sk2, then we have found a dependency
+  2) we have checked the body (asserted by checked/1) with the same (A,N,U)
+     and Template value, then it will be discarded
+  3) otherwise, the body and its cut-off form will be put to the end of List
+ ****************************************************************************/
+traversal([]) :- !.
+traversal([Head|Tail]) :-
+	Head = (Term,(T,IndTerm),anu(A,N,U),Times,Template),
+	target(Sk2),
+	( Term=Sk2 ->
+	    assert(dependency((T,IndTerm),anu(A,N,U),Template))
+	;
+	    true
+	),
+	( (Times==STARTPOINT) ->
+	    findall((RuleBody,anu(A,N,U)),
+	         same_rule(IndTerm,_RuleHead,RuleBody,anu(A,N,U)),
+	         BodyList)
+	;
+	    findall((RuleBody,anu(A,N,U)),
+	         match_rule(Term,_RuleHead,RuleBody,anu(A,N,U)),
+	         BodyList)
+	),
+	NewTimes is Times+1,
+	my_append(Tail,BodyList,NewList,NewTimes,Template),
+	traversal(NewList).
+
+my_append(List,[],List,_,_) :- !.
+my_append(List,[Head|Tail],NewList,Times,Template) :-
+	Head = ((RuleBody,IndRuleBody),anu(A,N,U)),
+	( (depth((RuleBody),Depth),Depth>MAXDEPTH) ->
+	    cut_off(RuleBody,NewBody),
+	    TT=tt
+	;
+	    NewBody=RuleBody,
+	    TT=Template
+	),
+	( (checked(T),variant(T,(NewBody,anu(A,N,U),TT))) ->
+	    TempList = List
+	;
+	    assert(checked((NewBody,anu(A,N,U),TT))),
+	    NewTerm = (NewBody,(RuleBody,IndRuleBody),anu(A,N,U),Times,TT),
+	    append(List,[NewTerm],TempList)
+	),
+	my_append(TempList,Tail,NewList,Times,Template).
+
+/****************************************************************************
+  match_rule(+Term,-Head,-Body,?anu(A,N,U))
+  find rules whose heads unify with Term
+ ****************************************************************************/
+match_rule(T,(H,IH),B,anu(A,N,U)) :-
+	rule((H,IH),B,anu(A,N,U)),
+	T=H.
+
+/****************************************************************************
+  same_rule(+IndTerm,-Head,-Body,?anu(A,N,U))
+  find rules whose heads unify with Term
+ ****************************************************************************/
+same_rule(IT,(H,IH),B,anu(A,N,U)) :-
+	rule((H,IH),B,anu(A,N,U)),
+	IT=IH.
+
+
+/****************************************************************************
+  generate_rules(+CodeList)
+  generate rules from intermediate code
+ ****************************************************************************/
+generate_rules([]) :- !.
+generate_rules(CodeList) :-
+	conset(generated,1),
+	retractall(rule(_,_,_)),
+	parse_codelist(CodeList).
+
+/****************************************************************************
+  parse_codelist(+CodeList)
+  generate rules from a list of intermediate code
+ ****************************************************************************/
+parse_codelist([T]) :-
+	!,
+	parse_code(T).
+
+parse_codelist([T|L]) :-
+	parse_code(T),
+	parse_codelist(L).
+
+
+parse_code(Term) :-
+	( is_prrule(Term,Head,Body) ->
+            parse_rule(Head,Body)
+	;
+            true
+	).
+
+parse_rule(Head,Body) :-
+	build_struct(Head,VarList,HeadCode,HCI),
+	build_struct(Body,VarList,BodyCode,BCI),
+	assert_rule((HeadCode,HCI),BodyCode,BCI,anu(_,_,_)).
+
+assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,N,U)) :-
+	(BodyCode=','(Body1,Body2); BodyCode=';'(Body1,Body2)),
+	(BCI=','(BCI1,BCI2); BCI=';'(BCI1,BCI2)),
+	!,
+	assert_rule(HeadCode,Body1,BCI1,anu(A,N,U)),
+	assert_rule(HeadCode,Body2,BCI2,anu(A,N,U)).
+
+assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,_,U)) :-
+	(BodyCode=not(NewBody); BodyCode=tnot(NewBody)),
+	(BCI=not(NewBCI); BCI=tnot(NewBCI)),
+	!,
+	assert_rule(HeadCode,NewBody,NewBCI,anu(A,n,U)).
+
+assert_rule(HeadCode,BodyCode,(BCI,Index),anu(A,N,U)) :-
+	is_upd(BodyCode,_,List,Cond),
+	!,
+	BCI =.. [_DBOP,(ListI,_I)|CondIList],
+	assert(rule(HeadCode,(BodyCode,(BCI,Index)),anu(A,N,u))),
+	(CondIList==[] ->
+	    true
+	;
+	    CondIList=[CondI],
+	    assert_rule(HeadCode,Cond,CondI,anu(A,N,U))
+	),
+	assert_rules(HeadCode,List,ListI,anu(A,N,u)).
+
+assert_rule(HeadCode,BodyCode,(BCI,Index),anu(A,N,U)) :-
+	is_updall(BodyCode,_,List,Cond),
+	!,
+	BCI =.. [_DBOP,(ListI,_I)|CondIList],
+	assert(rule(HeadCode,(BodyCode,(BCI,Index)),anu(a,N,u))),
+	(CondIList==[] ->
+	    true
+	;
+	    CondIList=[CondI],
+	    assert_rule(HeadCode,Cond,CondI,anu(A,N,U))
+	),
+	assert_rules(HeadCode,List,ListI,anu(A,N,u)).
+
+assert_rule(HeadCode,BodyCode,(BCI,Index),anu(_,N,U)) :-
+	is_agg(BodyCode,_,_,_,Condition,_),
+	!,
+	BCI =.. [_AggOP,_Var,_Group,ConditionI|_Rest],
+	assert(rule(HeadCode,(BodyCode,(BCI,Index)),anu(a,N,U))),
+	assert_rule(HeadCode,Condition,ConditionI,anu(a,N,U)).
+
+assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,N,U)) :-
+	BodyCode = flsysdbupdate(NewBody,_),
+	!,
+	BCI = flsysdbupdate(NewBCI,_),
+	assert_rule(HeadCode,NewBody,NewBCI,anu(A,N,U)).
+
+assert_rule(_H,BodyCode,_BI,_) :-
+	var(BodyCode),
+	!.
+
+assert_rule(HeadCode,BodyCode,BCwithIndex,anu(A,N,U)) :-
+	assert(rule(HeadCode,(BodyCode,BCwithIndex),anu(A,N,U))).
+
+assert_rules(_,[],_,_) :- !.
+assert_rules(HeadCode,[H|T],[HI|TI],anu(A,N,U)) :-
+    assert_rule(HeadCode,H,HI,anu(A,N,U)),
+    assert_rules(HeadCode,T,TI,anu(A,N,U)).
+
+/****************************************************************************
+  build_structlist(+TermList,?VarList,-CodeList,-IndexCodeList)
+ ****************************************************************************/
+build_structlist([],_VarList,[],[]) :- !.
+
+build_structlist([T|L],VarList,[TCode|LCode],[TI|LI]) :-
+	!,
+	build_struct(T,VarList,TCode,TI),
+	build_structlist(L,VarList,LCode,LI).
+
+
+/****************************************************************************
+  build_struct(+Term,+Workspace,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_struct(Term,_VarList,Code,(Code,Index)) :-
+	is_pratom(Term,Code,Index),
+	!.
+
+build_struct(Term,_VarList,Code,(Code,Index)) :-
+	is_prnumber(Term,Code,Index),
+	!.
+
+build_struct(Term,VarList,Code,(Code,Index)) :-
+	is_prvariable(Term,Name,Index),
+	!,
+	build_variable(Name,VarList,Code).
+
+build_struct(Term,_VarList,Code,(Code,Index)) :-
+	is_prstring(Term,Code,Index),
+	!.
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_prlist(Term,L,T,Index),
+	!,
+	( L == [] ->
+	    Code=[],
+	    CodeInd=[]
+	;
+	  build_structlist(L,VarList,LCode,LCodeInd),
+	  ( T == [] ->
+	      Code=LCode,
+	      CodeInd=LCodeInd
+	  ;
+	    build_struct(T,VarList,TCode,TCodeInd),
+	    append(LCode,TCode,Code),
+	    append(LCodeInd,TCodeInd,CodeInd)
+	  )
+        ).
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_prterm(Term,FObj,N,ObjList),
+	!,
+	( is_pratom(FObj,FAtom,Index),flora_prlgdef(FAtom,N) ->
+	    build_prolog(FAtom,N,ObjList,VarList,Code,CodeInd)
+	;
+	  build_struct(FObj,_NewVar,_FCode,(_,Index)),
+	  build_hilog(FObj,N,ObjList,VarList,Code,CodeInd)
+
+	).
+
+build_struct(Term,VarList,Code,(CodeInd,NO_INDEX)) :-
+	is_goallogic(Term,F,N,Args),
+	!,
+	( N == 0 ->
+	    Code=F,
+	    CodeInd=F
+	;
+	  build_structlist(Args,VarList,ACode,ACodeInd),
+	  Code =.. [F|ACode],
+	  CodeInd =.. [F|ACodeInd]
+        ).
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_goallogic(Term,F,N,Args,Index),
+	!,
+	( N == 0 ->
+	    Code=F,
+	    CodeInd=F
+	;
+	  build_structlist(Args,VarList,ACode,ACodeInd),
+	  Code =.. [F|ACode],
+	  CodeInd =.. [F|ACodeInd]
+        ).
+
+build_struct(Term,VarList,Code,(CodeInd,NO_INDEX)) :-
+	is_prcall(Term,VarTerm),
+	!,
+	build_struct(VarTerm,VarList,Code,CodeInd).
+
+build_struct(Term,_VarList,Code,(CodeInd,Index)) :-
+	is_pratomlit(Term,A,Index),
+	!,
+	( flora_prlgdef(A,0) ->
+	    Code=A,
+	    CodeInd=A
+	;
+	  build_atomlit((A,Index),Code,CodeInd)
+	).
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_prtermlit(Term,FObj,N,ObjList),
+	!,
+	( is_pratom(FObj,FAtom,Index),flora_prlgdef(FAtom,N) ->
+	    build_prolog(FAtom,N,ObjList,VarList,Code,CodeInd)
+	;
+	  build_struct(FObj,_NewVar,_FCode,(_,Index)),
+	  build_termlit(FObj,N,ObjList,VarList,Code,CodeInd)
+	).
+
+build_struct(Term,VarList,Code,CodeInd) :-
+	is_prworkspace(Term,P,_WS),
+	!,
+ 	build_wsstruct(P,VarList,Code,CodeInd).
+
+build_struct(Term,VarList,Code,(CodeInd,NO_INDEX)) :-
+	is_prnewpred(Term,F,N,Args),
+	!,
+	build_newpred(F,N,Args,VarList,Code,CodeInd).
+
+build_struct(Term,_VarList,Oid,(Oid,Index)) :-
+	is_prnewoid(Term,Oid,Index),
+	!.
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_flogic(Term,F,N,Args),
+	!,
+	Args=[Obj|_Rest],
+	build_struct(Obj,_NewVar,_FCode,(_,Index)),
+	build_wsliteral(F,N,Args,VarList,Code,CodeInd).
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_prologterm(Term,Funct,N,Args),
+	!,
+	is_pratom(Funct,F,Index),
+	build_prolog(F,N,Args,VarList,Code,CodeInd).
+
+build_struct(Term,VarList,Code,(CodeInd,NO_INDEX)) :-
+	is_prologliblit(Term,Funct,_N,Args),
+	!,
+	is_pratom(Funct,F,I),
+	build_structlist(Args,VarList,ArgsCodeList,ArgListI),
+	Code=','('=..'(P,[F|ArgsCodeList]),call(P)),
+	CodeInd=','(('=..'(P,[(F,I)|ArgListI]),NO_INDEX),(call(P),NO_INDEX)).
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_florasyslib(Term,F,N,Args,Index),
+	!,
+	build_syslib(F,N,Args,VarList,Code,CodeInd).
+
+build_struct(Term,VarList,Code,(CodeInd,Index)) :-
+	is_skolem(Term,F,N,Args,Index),
+	!,
+	build_prolog(F,N,Args,VarList,Code,CodeInd).
+
+build_struct(Term,_VarList,thismodule,(thismodule,NO_INDEX)) :-
+	is_prthismodule(Term),
+	!.
+
+build_struct(Term,_VarList,thisstorage,(thisstorage,NO_INDEX)) :-
+	is_prthisstorage(Term),
+	!.
+
+build_struct(Term,_VarList,WS,(WS,Index)) :-
+	is_prstorage(Term,WS,Index),
+	!.
+
+build_struct(Term,_VarList,Term,(Term,NO_INDEX)) :-
+	atomic(Term),
+	!.
+
+/****************************************************************************
+  build_variable(+Name,?VarList,-Code)
+ ****************************************************************************/
+build_variable(Name,[Name=Code|_],Code) :- !.
+
+build_variable(Name,[_|NVs],Code) :-
+	build_variable(Name,NVs,Code).
+
+
+/****************************************************************************
+  build_wsstruct(+Term,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_wsstruct(Term,VarList,Code,(CodeInd,Index)) :-
+	( is_pratomlit(Term,Atom,Index) ->
+	    build_atomlit((Atom,Index),Code,CodeInd)
+
+	; is_prtermlit(Term,FObj,N,ObjList) ->
+	    build_struct(FObj,_NewVar,_FCode,(_,Index)),
+	    build_termlit(FObj,N,ObjList,VarList,Code,CodeInd)
+
+	; is_flogic(Term,F,N,Args) ->
+	    Args=[Obj|_Rest],
+	    build_struct(Obj,_NewVar,_FCode,(_,Index)),
+	    build_wsliteral(F,N,Args,VarList,Code,CodeInd)
+        ).
+
+/****************************************************************************
+  build_wsliteral(+Funct,+Arity,+Args,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_wsliteral(F,_N,Args,VarList,Code,CodeInd) :-
+	build_structlist(Args,VarList,ACodeList,AListInd),
+	Code =.. [F|ACodeList],
+	CodeInd =.. [F|AListInd].
+
+/****************************************************************************
+  build_atomlit(+(Atom,Index),-Code,-IndexedCode)
+ ****************************************************************************/
+build_atomlit((A,_I),Code,CodeInd) :-
+	flora_firstorderdef(A,0),
+	!,
+	build_wsliteral(A,0,[],_VarList,Code,CodeInd).
+
+build_atomlit((A,_I),Code,CodeInd) :-
+	flora_flogicstaticdef(A,0),
+	!,
+	build_wsliteral(A,0,[],_VarList,Code,CodeInd).
+
+build_atomlit((A,I),Code,CodeInd) :-
+	build_wsliteral(WRAP_HILOG,1,[PRATOM(A,I)],_VarList,Code,CodeInd).
+
+
+/****************************************************************************
+  build_termlit(+Functor,+Arity,+Args,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_termlit(Funct,N,Args,VarList,Code,CodeInd) :-
+	is_pratom(Funct,FAtom,_I),
+	flora_firstorderdef(FAtom,N),
+	!,
+	build_wsliteral(FAtom,N,Args,VarList,Code,CodeInd).
+
+build_termlit(Funct,N,Args,VarList,Code,CodeInd) :-
+	is_pratom(Funct,FAtom,_I),
+	flora_flogicstaticdef(FAtom,N),
+	!,
+	build_wsliteral(FAtom,N,Args,VarList,Code,CodeInd).
+
+build_termlit(Funct,N,Args,VarList,Code,CodeInd) :-
+	M is N+1,
+	build_wsliteral(WRAP_HILOG,M,[Funct|Args],VarList,Code,CodeInd).
+
+
+/****************************************************************************
+  build_prolog(+F,+N,+Args,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_prolog(F,N,Args,VarList,Code,CodeInd) :-
+	( N == 0 ->
+	    Code=F,
+	    CodeInd=F
+	;
+	  build_structlist(Args,VarList,ACode,ACodeInd),
+	  Code =.. [F|ACode],
+	  CodeInd =.. [F|ACodeInd]
+        ).
+
+
+/****************************************************************************
+  build_hilog(+F,+N,+Args,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_hilog(F,N,Args,VarList,Code,CodeInd) :-
+	M is N+1,
+	build_prolog(WRAP_HILOG,M,[F|Args],VarList,Code,CodeInd).
+
+
+/****************************************************************************
+  build_syslib(+Lib,+N,+Args,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_syslib(FLLIBANSWER,N,Args,VarList,Code,CodeInd) :-
+	!,
+	build_prolog(FLLIBSHELLANS,N,Args,VarList,Code,CodeInd).
+
+build_syslib(Lib,1,[List],VarList,Code,CodeInd) :-
+	is_fllibdb(Lib),
+	!,
+	build_struct(List,VarList,ListCode,ListCodeInd),
+	Code =.. [Lib,ListCode],
+	CodeInd =.. [Lib,ListCodeInd].
+
+build_syslib(Lib,2,[List,Cond],VarList,Code,CodeInd) :-
+	is_fllibdb(Lib),
+	!,
+	build_struct(List,VarList,ListCode,ListCodeInd),
+	build_struct(Cond,VarList,CondCode,CondCodeInd),
+	Code =.. [Lib,ListCode,CondCode],
+	CodeInd =.. [Lib,ListCodeInd,CondCodeInd].
+
+build_syslib(Lib,N,Args,VarList,Code,CInd) :-
+	( Lib == FLLIBMODLIT,N == 2 ->
+	    Args=[P,WS]
+
+	; Lib == FLLIBMODOBJ,N == 3 ->
+	    Args=[P,WS,Object]
+	),
+	!,
+	( is_pratomlit(P,A,I) ->
+	    ( flora_firstorderdef(A,0) ->
+		ModeArg=fo,
+		PF=A,
+		is_prlist(PArgs,[],[],_)
+	    ;
+	      ModeArg=[],
+	      PF=WRAP_HILOG,
+	      is_prlist(PArgs,[PRATOM(A,I)],[],_)
+	    )
+
+	; is_prtermlit(P,FObj,Arity,ObjList) ->
+	    ( is_pratom(FObj,FAtom,_),flora_firstorderdef(FAtom,Arity) ->
+		ModeArg=fo,
+		PF=FAtom,
+		is_prlist(PArgs,ObjList,[],_)
+	    ;
+	      ModeArg=[],
+	      PF=WRAP_HILOG,
+	      is_prlist(PArgs,[FObj|ObjList],[],_)
+	    )
+	;
+	  ModeArg=[],
+	  is_flogic(P,PF,Arity,ObjList),
+	  is_prlist(PArgs,ObjList,[],_)
+	),
+	!,
+	( Lib == FLLIBMODLIT ->
+	    ( ModeArg == [] ->
+		build_prolog(FLLIBMODLIT,3,[PF,PArgs,WS],VarList,Code,CInd)
+	    ;
+		build_prolog(FLLIBMODLIT,4,[FL_FIRSTORDER,PF,PArgs,WS],
+		                   VarList,Code,CInd)
+	    )
+	;
+	    ( ModeArg == [] ->
+		build_prolog(FLLIBMODOBJ,4,[PF,PArgs,WS,Object],
+		                   VarList,Code,CInd)
+	    ;
+	      build_prolog(FLLIBMODOBJ,5,[FL_FIRSTORDER,PF,PArgs,WS,Object],
+	                         VarList,Code,CInd)
+	    )
+	).
+
+build_syslib(Lib,N,Args,VarList,Code,CodeInd) :-
+	build_prolog(Lib,N,Args,VarList,Code,CodeInd).
+
+
+/****************************************************************************
+  build_newpred(+F,+N,+Args,?VarList,-Code,-IndexedCode)
+ ****************************************************************************/
+build_newpred(F,N,Args,VarList,Code,CodeInd) :-
+	build_wsliteral(F,N,Args,VarList,Code,CodeInd).
+
+
+
+/****************************************************************************
+ check_for_dependencies(+CodeList,-WarnList)
+ check whether tabled predicates depend on procedural/database operations.
+ ****************************************************************************/
+check_for_dependencies(CodeList,WarnList) :-
+	retractall(program_tabled(_,_)),
+	retrieve_program_tabled(CodeList),
+	generate_rules(CodeList),
+	findall((Func1,Arity1),
+		(default_tabled(Func1,Arity1);program_tabled(Func1,Arity1)),
+		TabledList
+	       ),
+	findall((Func2,Arity2),procedural(Func2,Arity2),ProcList),
+	findall((Func3,Arity3),dboperation(Func3,Arity3),DbList),
+	retractall(warning_seen(_,_,_,_)),
+	checking_list(TabledList,DbList,'database operation'),
+	checking_list(TabledList,ProcList,'procedure'),
+	generate_warnings(WarnList).
+
+/****************************************************************************
+ checking_list(+TabledPredicateList,+TargetList,+TargeType)
+ ****************************************************************************/
+checking_list([],_,_) :- !.
+checking_list([H|T],OpList,Type) :-
+	checking(H,OpList,Type),
+	checking_list(T,OpList,Type).
+
+/****************************************************************************
+ checking(+(Func,Arity),+TargetList,+TargeType)
+ ****************************************************************************/
+checking(_,[],_) :- !.
+checking((Func1,Arity1),[(Func2,Arity2)|T2],Type) :-
+	functor(TabledPred,Func1,Arity1),
+	functor(OpPred,Func2,Arity2),
+	( depend(TabledPred,OpPred,arb) ->
+	    aggregate_warnings(Type)
+	;
+	    true
+	),
+	checking((Func1,Arity1),T2,Type).
+
+/****************************************************************************
+ aggregate_warnings(+Type)
+ find all asserted dependency/4, generate warnings and aggregate them
+ ****************************************************************************/
+aggregate_warnings(Type) :-
+	findall(((T1,IT1),(T2,IT2),anu(A,N,U),Temp),
+		dependency((T1,IT1),(T2,IT2),anu(A,N,U),Temp),
+		DependencyList
+	       ),
+	aggregate_warnings(DependencyList,Type).
+
+aggregate_warnings([],_) :- !.
+aggregate_warnings([((T1,IT1),(T2,IT2),_,_)|T],Type) :-
+	conset(min_ind,0),
+	conset(next_min_ind,0),
+	to_string(T1,IT1,Str1),
+	conget(min_ind,HMinInd),
+	conget(next_min_ind,HNMinInd),
+
+	conset(min_ind,0),
+	conset(next_min_ind,0),
+	to_string(T2,IT2,Str2),
+	conget(min_ind,BMinInd),
+
+        fmt_write_string(WarnMsg,"Rule head which begins with %s depends on %s %s",
+			args(Str1,Type,Str2)),
+
+	( warning_seen(HMinInd,HInd2,BMinInd,_) ->
+	    ( (HInd2<HNMinInd;HInd2=HNMinInd) ->
+	        true
+	    ;
+	        retract(warning_seen(HMinInd,HInd2,BMinInd,_)),
+		assert(warning_seen(HMinInd,HNMinInd,BMinInd,WarnMsg))
+	    )
+	;
+	    assert(warning_seen(HMinInd,HNMinInd,BMinInd,WarnMsg))
+	),
+	aggregate_warnings(T,Type).
+
+/****************************************************************************
+ retrieve_program_table(+IntermediateCodeList)
+ ****************************************************************************/
+retrieve_program_tabled([]) :- !.
+retrieve_program_tabled([H|T]) :-
+	( is_prdirective(H,Direct) ->
+	    (is_prtable(Direct,Functor,Arity) ->
+	        assert(program_tabled(Functor,Arity))
+	    ;
+	        (is_prhilogtable(Direct,Arity) ->
+		    ActualArity is Arity+1,
+                    assert(program_tabled(flapply,ActualArity))
+                ;
+                    true
+                )
+            )
+	;
+            true
+	),
+	retrieve_program_tabled(T).
+
+/****************************************************************************
+ to_string(+Term,+IndexedTerm,-Str)
+ ****************************************************************************/
+ to_string(Term,(IT,Index),Str) :-
+	rebuild_text(Term,(IT,Index),Text),
+	( (Index==NO_INDEX) ->
+	    fmt_write_string(Str,"'%s'",args(Text))
+	;
+ 	    flora_nth_token(Index,Token),
+	    flora_token_text(Token,_T,BL,BC,_EL,_EC),
+	    fmt_write_string(Str,"'%s' near line(%d)/char(%d)",
+			     args(Text,BL,BC))
+	).
+ 	
+/****************************************************************************
+ rebuild_text(+Term,+IndexdTerm,-Text)
+ return a string for the given term to construct warning message
+ ****************************************************************************/
+rebuild_text(Term,(_T,Index),Text) :-
+	(atomic(Term);var(Term)),
+	!,
+	conget(min_ind,MinInd),
+	conget(next_min_ind,NextMinInd),
+	( (Index<MinInd; MinInd=0) ->
+	    conset(next_min_ind,MinInd),
+	    conset(min_ind,Index)
+	;
+	    ( (Index<NextMinInd; NextMinInd=0) ->
+	        conset(next_min_ind,Index)
+	    ;
+	        true
+	    )
+	),
+	flora_nth_token(Index,Token),
+	flora_token_text(Token,Text,_BL,_BC,_EL,_EC).
+
+rebuild_text(Term,(IndTerm,_Ind),Text) :-
+	Term=..['.'|_ListItems],
+	!,
+	rebuild_text_list(Term,IndTerm,ListText),
+	fmt_write_string(Text,"[%s]",args(ListText)).
+
+rebuild_text(Term,(_IndT,Index),Text) :-
+	( is_upd(Term,_Op,_List,_Cond)
+	; is_updall(Term,_Op,_List,_Cond)
+	; is_agg(Term,_Op,_Var,_Group,_Condition,_Result)
+	),
+    	!,
+	conget(min_ind,MinInd),
+	conget(next_min_ind,NextMinInd),
+	( (Index<MinInd; MinInd=0) ->
+	    conset(next_min_ind,MinInd),
+	    conset(min_ind,Index)
+	;
+	    ( (Index<NextMinInd; NextMinInd=0) ->
+	        conset(next_min_ind,Index)
+	    ;
+	        true
+	    )
+	),
+	flora_nth_token(Index,Token),
+	flora_token_text(Token,Text,_BL,_BC,_EL,_EC).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=tran(Var,Tran),
+	!,
+	IndT=tran(IndVar,IndTran),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Tran,IndTran,TranText),
+	fmt_write_string(Text,"%s[#%s]",args(VarText,TranText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=isa(Var,Class),
+	!,
+	IndT=isa(IndVar,IndClass),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Class,IndClass,ClassText),
+	fmt_write_string(Text,"%s:%s",args(VarText,ClassText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=sub(Var,Class),
+	!,
+	IndT=sub(IndVar,IndClass),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Class,IndClass,ClassText),
+	fmt_write_string(Text,"%s::%s",args(VarText,ClassText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=meth(Var,Meth),
+	!,
+	IndT=meth(IndVar,IndMeth),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Meth,IndMeth,MethText),
+	fmt_write_string(Text,"%s[%s]",args(VarText,MethText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=imeth(Var,IMeth),
+	!,
+	IndT=imeth(IndVar,IndIMeth),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(IMeth,IndIMeth,IMethText),
+	fmt_write_string(Text,"%s[*%s]",args(VarText,IMethText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=fdskolem(Var,Meth),
+	!,
+	IndT=fdskolem(IndVar,IndMeth),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Meth,IndMeth,MethText),
+	fmt_write_string(Text,"%s.%s",args(VarText,MethText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=ifdskolem(Var,IMeth),
+	!,
+	IndT=ifdskolem(IndVar,IndIMeth),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(IMeth,IndIMeth,IMethText),
+	fmt_write_string(Text,"%s!%s",args(VarText,IMethText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=fd(Var,Attr,Val),
+	!,
+	IndT=fd(IndVar,IndAttr,IndVal),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	( (not(var(Val)),(Val=fdskolem(Var,Attr))) ->
+	    fmt_write_string(Text,"%s.%s[]",args(VarText,AttrText))
+	;
+	    rebuild_text(Val,IndVal,ValText),
+	    fmt_write_string(Text,"%s[%s->%s]",args(VarText,AttrText,ValText))
+	).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=ifd(Var,Attr,Val),
+	!,
+	IndT=ifd(IndVar,IndAttr,IndVal),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	( (not(var(Val)),(Val=ifdskolem(Var,Attr))) ->
+	    fmt_write_string(Text,"%s!%s[]",args(VarText,AttrText))
+	;
+	    rebuild_text(Val,IndVal,ValText),
+	    fmt_write_string(Text,"%s[%s*->%s]",args(VarText,AttrText,ValText))
+	).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=fdsig(Var,Attr,Type),
+	!,
+	IndT=fdsig(IndVar,IndAttr,IndType),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	rebuild_text(Type,IndType,TypeText),
+	fmt_write_string(Text,"%s[%s=>%s]",args(VarText,AttrText,TypeText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=ifdsig(Var,Attr,Type),
+	!,
+	IndT=ifdsig(IndVar,IndAttr,IndType),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	rebuild_text(Type,IndType,TypeText),
+	fmt_write_string(Text,"%s[%s*=>%s]",args(VarText,AttrText,TypeText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=mvd(Var,Attr,Val),
+	!,
+	IndT=mvd(IndVar,IndAttr,IndVal),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	rebuild_text(Val,IndVal,ValText),
+	fmt_write_string(Text,"%s[%s->>{%s}]",args(VarText,AttrText,ValText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=imvd(Var,Attr,Val),
+	!,
+	IndT=imvd(IndVar,IndAttr,IndVal),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	rebuild_text(Val,IndVal,ValText),
+	fmt_write_string(Text,"%s[%s*->>{%s}]",args(VarText,AttrText,ValText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=mvdsig(Var,Attr,Type),
+	!,
+	IndT=mvdsig(IndVar,IndAttr,IndType),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	rebuild_text(Type,IndType,TypeText),
+	fmt_write_string(Text,"%s[%s=>>%s]",args(VarText,AttrText,TypeText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=imvdsig(Var,Attr,Type),
+	!,
+	IndT=imvdsig(IndVar,IndAttr,IndType),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	rebuild_text(Type,IndType,TypeText),
+	fmt_write_string(Text,"%s[%s*=>>%s]",args(VarText,AttrText,TypeText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=exists(Var),
+	!,
+	IndT=exists(IndVar),
+	rebuild_text(Var,IndVar,VarText),
+	fmt_write_string(Text,"%s[]",args(VarText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=mvddef(Var,Attr),
+	!,
+	IndT=mvddef(IndVar,IndAttr),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	fmt_write_string(Text,"%s[%s->>{}]",args(VarText,AttrText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=imvddef(Var,Attr),
+	!,
+	IndT=imvddef(IndVar,IndAttr),
+	rebuild_text(Var,IndVar,VarText),
+	rebuild_text(Attr,IndAttr,AttrText),
+	fmt_write_string(Text,"%s[%s*->>{}]",args(VarText,AttrText)).
+
+rebuild_text(Term,(IndT,_Index),Text) :-
+	Term=objeql(O1,O2),
+	!,
+	IndT=objeql(IndO1,IndO2),
+	rebuild_text(O1,IndO1,O1Text),
+	rebuild_text(O2,IndO2,O2Text),
+	fmt_write_string(Text,"%s:=:%s",args(O1Text,O2Text)).
+
+rebuild_text(Term,(IndT,Index),Text) :-
+	Term=..[F|A],
+	IndT=..[_IndF|IndA],
+	( (F==flapply) ->
+	    A=[Func|Args],
+	    IndA=[IndFunc|IndArgs],
+	    rebuild_text(Func,IndFunc,FuncText)
+	;
+	    conget(min_ind,MinInd),
+	    conget(next_min_ind,NextMinInd),
+	    ( (Index<MinInd; MinInd=0) ->
+	        conset(next_min_ind,MinInd),
+	        conset(min_ind,Index)
+	    ;
+	        ( (Index<NextMinInd; NextMinInd=0) ->
+	            conset(next_min_ind,Index)
+	        ;
+	            true
+	        )
+	    ),
+	    flora_nth_token(Index,Token),
+	    flora_token_text(Token,FuncText,_BL,_BC,_EL,_EC),
+	    Args=A,
+	    IndArgs=IndA
+	),
+	( (Args==[]) ->
+	    fmt_write_string(Text,"%s",args(FuncText))
+	;
+	    rebuild_text_list(Args,IndArgs,ArgsText),
+	    fmt_write_string(Text,"%s(%s)",args(FuncText,ArgsText))
+	).
+
+/****************************************************************************
+ rebuild_text_list(+List,+IndexdList,-Text)
+ ****************************************************************************/
+rebuild_text_list(L,(_Var,Index),Text) :-
+	var(L),
+	!,
+	conget(min_ind,MinInd),
+	conget(next_min_ind,NextMinInd),
+	( (Index<MinInd; MinInd=0) ->
+	    conset(next_min_ind,MinInd),
+	    conset(min_ind,Index)
+	;
+	    ( (Index<NextMinInd; NextMinInd=0) ->
+	        conset(next_min_ind,Index)
+	    ;
+	        true
+	    )
+	),
+	flora_nth_token(Index,Token),
+	flora_token_text(Token,Text,_BL,_BC,_EL,_EC).
+
+rebuild_text_list([],_,'') :- !.
+
+rebuild_text_list([H|L],[IndH|IndL],Text) :-
+	( var(L) ->
+	    rebuild_text(H,IndH,HText),
+	    ( (IndL=..['.'|_ListItems]) ->
+	        rebuild_text_list(L,IndL,LText),
+	        fmt_write_string(Text,"%s,%s",args(HText,LText))
+	    ;
+	        rebuild_text(L,IndL,LText),
+	        fmt_write_string(Text,"%s|%s",args(HText,LText))
+	    )
+	;
+	    ( L==[] ->
+	        rebuild_text(H,IndH,Text)
+	    ;
+	        rebuild_text(H,IndH,HText),
+	        ( (IndL=..['.'|_ListItems]) ->
+	            rebuild_text_list(L,IndL,LText),
+	            fmt_write_string(Text,"%s,%s",args(HText,LText))
+	        ;
+	            rebuild_text(L,IndL,LText),
+	            fmt_write_string(Text,"%s|%s",args(HText,LText))
+	        )
+	    )
+	).
+
+/****************************************************************************
+ generate_warnings(-WarnList)
+ ****************************************************************************/
+generate_warnings(WarnList) :-
+	findall((HInd1,WarnMsg),warning_seen(HInd1,_,_,WarnMsg),WL),
+	sort(WL, SortedWL),
+	append_warnings(SortedWL,WarnList).
+
+append_warnings([],[]) :- !.
+append_warnings([(_HInd,WarnMsg)|T],WarnList) :-
+	append_warnings(T,InterWarnList),
+	append([warning(WarnMsg)],InterWarnList,WarnList).

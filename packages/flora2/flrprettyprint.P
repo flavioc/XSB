@@ -147,14 +147,16 @@ postfix_term(Term) :-
  Checks if Term is an arithmetic expression (so we will consider 
  striping '()' if the arithmetic expression is a top level predicate).
 ***********************************************************************/
+/*
 arith_exp(is(_,_)) :- !.
-arith_exp(eval(_)) :- !.
+arith_exp(eval(_,_)) :- !.
 arith_exp('<'(_,_)) :- !.
 arith_exp('=<'(_,_)) :- !.
 arith_exp('>'(_,_)) :- !.
 arith_exp('>='(_,_)) :- !.
 arith_exp('=:='(_,_)) :- !.
 arith_exp('=\='(_,_)) :- !.
+*/
 
 %% We need to do extra indentation for long query '?- a,b.' , to make
 %% the output be like  ?- a,  instead of  ?- a,

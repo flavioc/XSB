@@ -26,7 +26,8 @@ XSBDIR=../../..
 
 ALL = 	aggregate.P benchmark.P default.P family_obj.P \
 	family_rel.P flogic_basics.P metavar.P mix.P module1.P mod1.P \
-	mono_inherit.P rel_ops.P tree_traversal.P
+	mono_inherit.P rel_ops.P tree_traversal.P \
+	btupdates.P pretty.P
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	$(XSBDIR)/emu/flag_defs_xsb.h \

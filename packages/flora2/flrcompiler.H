@@ -50,13 +50,9 @@
    from flrfirstorder.
 
 :- import 
-	flora_is_dynamic_flogic_base/2,
-	flora_is_flogic_base/1
+	flora_is_dynamic_flogic_base/2
    from flrwrapper.
-
-:- dynamic flora_in_debug_mode(_).
 
 :- export 
 	flora_reset_compiler/0, 
-	flora_compile/4,
-	flora_debug_mode/0.
+	flora_compile/4.

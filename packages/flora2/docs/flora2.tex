@@ -3924,20 +3924,44 @@ checks, as described below.
 predicates at run time. This feature can be of great help because a trivial
 typo can cause a method/predicate call to fail, sending the programmer on a
 wild goose chase after a hard-to-find bug. It should be noted, however,
-that enabling these checks can slow runtime by a factor of 2 or 3, so we
+that enabling these checks can slow the runtime by a factor of 2 or 3, so we
 recommend this to be done during debugging only.
 
-To enable runtime checks for undefined invocations, put the compiler
-directive
+\index{check\_undefined/1}
+\index{check\_undefined/2}
 %%
-\begin{quote}
- {\tt
- :- debug.
- }
-\end{quote}
+To enable runtime checks for undefined invocations, \FLORA provides two
+methods, which can be called at any time during program execution (and thus
+enable and disable the checks dynamically):
 %%
-at the top of the file where these checks are to be enabled. This feature
-works on a per-module basis.
+\begin{verbatim}
+    ?- debug[#check_undefined(Flag)]@flora(sys).}
+    ?- debug[#check_undefined(Flag,Module)]@flora(sys).
+\end{verbatim}
+%%
+The argument {\tt Flag} can be {\tt on}, {\tt off}, or it can be a variable.
+The argument {\tt Module} must be a valid loaded flora module name 
+or it can be a variable. When the flag argument is {\tt on}, the first
+method turns on the checks for undefinedness in all modules. The second
+method does it in a specific module. When the flag argument is off, the
+above methods turn the undefinedness checks off globally or in a specific
+module, respectively.
+
+When either {\tt Flag} or {\tt Module} (or both) is a variable, the above
+methods do not change the way undefined calls are treated. Instead, they
+query the state of the system. For instance, in
+%%
+\begin{verbatim}
+    ?- debug[#check_undefined(Flag)]@flora(sys).
+    ?- debug[#check_undefined(Flag,foo)]@flora(sys).
+    ?- debug[#check_undefined(on,Module)]@flora(sys).
+\end{verbatim}
+%%
+the first query binds {\tt Flag} to {\tt on} or {\tt off} depending on
+whether the checks are turned on or off globally. The second query reports
+on the state of the undefinedness checks in \FLORA module {\tt foo}, while
+the third query tells in which modules these checks are turned on.
+
 
 We should note one subtle interaction between these checks and
 meta-programming. Suppose your program does not have any class membership
@@ -3965,17 +3989,25 @@ One way of circumventing this problem is to insert some weird facts into the
 database and special-case them in the program. For instance, you could put
 the following facts into the program to silence the above errors:
 %%
-\begin{quote}
- {\tt
- ads\_asd\_fsffdfd : ads\_asd\_fsffdfd.
- }\\
- {\tt
- ads\_asd\_fsffdfd[ads\_asd\_fsffdfd ->> ads\_asd\_fsffdfd].
- }
-\end{quote}
+\begin{verbatim}
+    ads\_asd\_fsffdfd : ads\_asd\_fsffdfd.
+    ads\_asd\_fsffdfd[ads\_asd\_fsffdfd ->> ads\_asd\_fsffdfd].
+\end{verbatim}
 %%
 You can then arrange the logic of your program so that anything that contains
 {\tt ads\_asd\_fsffdfd} is discarded.
+
+Another way to circumvent  the problem is to turn the undefinedness checks
+off temporarily. For instance, suppose the query {\tt ?- X:a} causes
+unintended undefinedness error in module {\tt foo}. Then we can avoid the
+problem by posing the following query instead:
+%%
+\begin{verbatim}
+ ?- debug[#check_undefined(off,foo)]@flora(sys),
+    X:a,
+    debug[#check_undefined(on,foo)]@flora(sys).
+\end{verbatim}
+%%
 
 \subsection{Type Checking}\label{sec-typechecking}
 

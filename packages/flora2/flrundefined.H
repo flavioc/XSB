@@ -39,9 +39,9 @@
 
 :- import flora_decode_predicate/6 from flrwrapper.
 
-:- import flora_error_line/2 from flrprint.
-
 :- import flora_debug_module_registry/1 from flrutils.
+
+:- import flora_error_line/2 from flrprint.
 
 :- export
 	flora_debug_code/2,

@@ -114,7 +114,6 @@
 
 :- import
 	flora_reset_compiler/0,
-	flora_debug_mode/0,
 	flora_compile/4
    from flrcompiler.
 
@@ -167,15 +166,22 @@
 	flora_fld_storage_name/2
    from flrwrapper.
 
+:- import check_for_dependencies/2 from flrdependency.
+
 :- dynamic flora_maxerr(_).
 :- dynamic flora_xpp_extra_options/1.
 :- dynamic flora_module_registry/1.
 
 :- dynamic flora_debug_module_registry/1.
+:- dynamic flora_in_debug_mode/1.
 
 :- dynamic flora_storage_registry/1.
 
 :- index(flora_maxerr/1,trie).
+:- index(flora_debug_module_registry/1,trie).
+:- index(flora_storage_registry/1,trie).
+:- index(flora_module_registry/1,trie).
+:- index(flora_in_debug_mode/1,trie).
 
 :- export
 	flMaxerr/1,
@@ -212,6 +218,7 @@
 	flora_module_registry/1,
 	%% support for undefinedness
 	flora_debug_module_registry/1,
+	flora_in_debug_mode/1,
 
 	flora_storage_registry/1,
 	flora_reclaim_storage_space/0,

@@ -180,11 +180,6 @@
 #define FL_FLOGICSTATIC		flogic
 #define FL_FLORAPATCH		patch
 
-%% support for detecting undefinedness
-#define FL_FLORAPREDDEF		preddef	
-#define FL_FLORANOPREDDEF	nopreddef	
-#define FL_DEBUG		debug
-
 #define FL_HILOGTABLE		hilogtable
 #define FL_EQUALITY		equality
 #define FL_EXPUNGE		expunge
@@ -292,11 +287,6 @@
 #define FLFLOGICSTATIC		flflogicstatic
 #define FLFLORAPATCH		flflorapatch
 
-%% support for undefinedness checking
-#define FLFLORAPREDDEF		flflorapreddef
-#define FLFLORANOPREDDEF	flfloranopreddef
-#define FLDEBUG			fldebug
-
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
 #define FLSTRING		flstring
@@ -348,6 +338,7 @@
 #define PRHILOGTABLE		prhilogtable
 #define PRTHISMODULE		prthismodule
 #define PRTHISSTORAGE		prthisstorage
+#define PRTHISFLDSTORAGE	prthisfldstorage
 #define PRSTORAGE		prstorage
 %% For the trie that keeps track of defined predicate skeletons
 #define PRTHISFLDSTORAGE	prthisfldstorage
@@ -529,17 +520,14 @@
 #define FLEQLBASIC		fleqlbasic
 #define FLEQLFLOGIC		fleqlflogic
 
-%% undefinedness checking
-#define	FLPREDDEF		flpreddef
-#define	FLNOPREDDEF		flnopreddef
-
-
 /****************************************************************************
   FLORA include files
 ****************************************************************************/
 #define FLDEFINITION		fldefinition
 #define FLPATCH			flpatch
 
+%% support for undefinedness checking
+#define FLPREDDEF		flpreddef
 
 /****************************************************************************
   default workspace

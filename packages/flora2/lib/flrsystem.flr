@@ -71,3 +71,84 @@ message(X) :-
 	flP2H(PX,X)@prolog(),
 	message(PX,STDERR)@prolog(standard),
 	flora_stderr_nl@prolog(flrprint).
+
+
+debug[#check_undefined(Flag)] :-
+	var(Flag)@prolog(),
+	!,
+	( flora_in_debug_mode(_)@prolog(),
+	    Flag=on,
+	    !
+	;
+	    Flag=off
+	).
+	 
+debug[#check_undefined(on)] :-
+	!,
+	(flora_in_debug_mode(_)@prolog(),!;
+	assert(flora_in_debug_mode(1)@prolog())@prolog(),
+	findall(M,
+	        (flora_module_registry(M)@prolog(),
+		(not(flora_debug_module_registry(M)@prolog())))@prolog(),
+		ML)@prolog(),
+	turn_on_debug_all(ML)).
+	
+debug[#check_undefined(off)] :-
+	!,
+	retractall(flora_in_debug_mode(_)@prolog())@prolog(),
+	findall(M,flora_debug_module_registry(M)@prolog(),ML)@prolog(),
+	turn_off_debug_all(ML).
+
+debug[#check_undefined(_InvalidOpt)] :-
+	flora_stderr_string('Invalid option to check_undefined')
+		@prolog(flrprint).
+
+
+debug[#check_undefined(_Flag,Module)] :-
+	( var(Module)@prolog(),
+	  flora_stderr_string('Invalid module name in check_undefined')
+	  	@prolog(flrprint)
+	; (not(flora_module_registry(Module)@prolog()))@prolog(),
+	  flora_stderr_string('Unloaded module name in check_undefined')
+	  	@prolog(flrprint)
+	),
+	!.
+
+debug[#check_undefined(Flag,Module)] :-
+	var(Flag)@prolog(),
+	!,
+	( flora_debug_module_registry(Module)@prolog(), 
+	    Flag=on,
+	    !
+	;
+	    Flag=off
+	).
+	 
+debug[#check_undefined(on,Module)] :-
+	!,
+	(flora_debug_module_registry(Module)@prolog(),!;
+	turn_on_debug(Module)).
+	
+debug[#check_undefined(off,Module)] :-
+	!,
+	((not(flora_debug_module_registry(Module)@prolog()))@prolog(),!;
+	turn_off_debug(Module)).
+
+debug[#check_undefined(_InvalidOpt,_Module)] :-
+	flora_stderr_string('Invalid option to check_undefined')@prolog(flrprint).
+
+turn_on_debug_all([]) :- !.
+turn_on_debug_all([H|L]) :-
+	turn_on_debug(H),
+	turn_on_debug_all(L).
+
+turn_on_debug(Module) :-
+	assert(flora_debug_module_registry(Module)@prolog())@prolog().
+
+turn_off_debug_all([]) :- !.
+turn_off_debug_all([H|L]) :-
+	turn_off_debug(H),
+	turn_off_debug_all(L).
+
+turn_off_debug(Module) :-
+	retractall(flora_debug_module_registry(Module)@prolog())@prolog().

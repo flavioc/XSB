@@ -1,5 +1,4 @@
 
-%%:- debug.
 
 faculty :: instructor.
 lecturer :: instructor.

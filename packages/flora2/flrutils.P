@@ -261,7 +261,7 @@ flsetuppatch :-
 	fmt_write_string(PatchFullName,'%s%strailer%s%s',args(FloraDir,S,S,PatchName)),
 	telling(PreOutFile),
 	tell(PatchFullName),
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLNOPREDDEF],HeaderStatus),
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLPREDDEF],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -786,6 +786,24 @@ flora_loaddyn_FDB_filename(DBFileName) :-
 	writeln('#endif'),
 	nl.
 
+/*************************************************************************
+  flora_loaddyn_FLD_filename(+FLDFileName)
+*************************************************************************/
+flora_loaddyn_FLD_filename(FLDFileName) :-
+	%% Output the base file name only. The full path will be taken
+	%% care of by flora_load_dyn_fld and consult.
+	parse_filename(FLDFileName,_Dir,Base,Ext),
+	writeln('#if !defined(FLORA_FLD_FILENAME)'),
+	writeln(':- import flora_load_dyn_fld/2 from flrutils.'),
+	current_output_port(OutPort),
+	fmt_write(OutPort, "#define FLORA_FLD_FILENAME  '%s.%s'", args(Base,Ext)),
+	nl,
+	writeln('?- flora_load_dyn_fld(FLORA_FLD_FILENAME,FLORA_THIS_MODULE_NAME).'),
+	writeln('#else'),
+	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
+	writeln('?- flora_read_canonical_and_insert(FLORA_FLD_FILENAME,FLORA_THIS_FLD_STORAGE).'),
+	writeln('#endif'),
+	nl.
 
 /*************************************************************************
   flora_loaddyn_FLD_filename(+FLDFileName)
@@ -894,7 +912,14 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	  flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
+	    /*
+	    check_for_dependencies(CompiledRuleList, DepWarnList),
+	    check_for_dependencies_warn(DepWarnList, DepWarnNum),
+	    flora_errorwarn_count(0,DepWarnNum),
+	    flora_stderr_string("\n"),
+	    */
+
+	    flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
         ),
 	cputime(T1),
 	( FileStatus == FLORA_FAILURE ->
@@ -915,11 +940,7 @@ flora_compile_file(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
 flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus) :-
-	(flora_debug_mode ->
-	    flora_debug_code(CompiledRuleList, FLDFile)
-	;
-	    true
-	),
+	flora_debug_code(CompiledRuleList, FLDFile),
 	flora_divide_program(CompiledRuleList,RuleList,FactList),
 	sort(FileOptionList,FileOptions),
 	flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,DBFile,FLDFile,PFileStatus),
@@ -961,44 +982,19 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	    FileStatus=FLORA_FAILURE
 	;
 	  (FactList == [] -> true; flora_loaddyn_FDB_filename(DBFile)),
-
-	  ( flora_debug_mode ->
-	      writeln('?- storage_delete_all(FLORA_THIS_FLD_STORAGE).'),
-	      writeln('?- (flora_debug_module_registry(FLORA_THIS_MODULE_NAME),!'),
-	      writeln(';assert(flora_debug_module_registry(FLORA_THIS_MODULE_NAME))).'),
-	      writeln(':- import flora_error_undefined/1 from flrundefined.'),
-	      flora_loaddyn_FLD_filename(FLDFile),
-	      nl
-	  ;
-	      true
-	  ),
-
+	  flora_loaddyn_FLD_filename(FLDFile),
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
 		  flora_message_line('including full F-logic equality maintenance'),
-		  ( flora_debug_mode ->
-		      flora_include_file([FLEQLTRAILER,FLSCALAREQL,FLPREDDEF],FileStatus)
-		  ;
-		      flora_include_file([FLEQLTRAILER,FLSCALAREQL,FLNOPREDDEF],FileStatus)
-		  )
+		  flora_include_file([FLEQLTRAILER,FLSCALAREQL,FLPREDDEF],FileStatus)
 
 
 	      ; member(FLEQLBASIC,FileOptionList) ->
 	          flora_message_line('including basic equality maintenance'),
-		  %% flora_include_file([FLEQLTRAILER],FileStatus)
-		  ( flora_debug_mode ->
-		      flora_include_file([FLEQLTRAILER,FLPREDDEF],FileStatus)
-		  ;
-		      flora_include_file([FLEQLTRAILER,FLNOPREDDEF],FileStatus)
-		  )
+		  flora_include_file([FLEQLTRAILER,FLPREDDEF],FileStatus)
 	      ;
-	        %% flora_include_file([FLTRAILER],FileStatus)
-		(flora_debug_mode ->
-	            flora_include_file([FLTRAILER,FLPREDDEF],FileStatus)
-		;
-	            flora_include_file([FLTRAILER,FLNOPREDDEF],FileStatus)
-		)
+	        flora_include_file([FLTRAILER,FLPREDDEF],FileStatus)
 	      )
 	  ;
 	    flora_coder_error(CoderStatus),
@@ -1575,6 +1571,18 @@ flora_parser_error([error(Msg)|L],ErrNum) :-
 	flora_parser_error(L,EN),
 	ErrNum is EN+1.
 
+check_for_dependencies_warn([],0) :- !.
+
+check_for_dependencies_warn([warning(Msg)|L],WarnNum) :-
+	!,
+	( flora_current_compile_filename(FileName) ->
+	    flora_warning_line('[%s] [Dependency Checking] %s',
+			       args(FileName,Msg))
+	;
+	    flora_warning_line('[Dependency Checking] %s', args(Msg))
+	),
+	check_for_dependencies_warn(L,WN),
+	WarnNum is WN+1.
 
 /*************************************************************************
   flora_compiler_errorwarn(+CompilerStatus,-ErrNum,-WarnNum)
