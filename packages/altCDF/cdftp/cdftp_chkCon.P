@@ -9,12 +9,14 @@
 	localClassExpression/2,  % hide
 	checkIdConsistency/1, consistentWith/2,
 	allModelsEntails/2,
-	localClassExpression/3,	check_lce/2.
+	localClassExpression/3,	check_lce/2,
+            isCE/1, ceMember/2.
 
 :- document_import isa_ext/2 from usermod.
 :- document_import compdlrule/3 from usermod.
 
-:- document_import classIdentifier/1,topIdentifier/1 from cdftp_cdfsc.
+:- document_import classIdentifier/1,topIdentifier/1,
+	                 bottomIdentifier/1 from cdftp_cdfsc.
 
 :- document_import checkContexts/6,
             sat/3
@@ -25,7 +27,7 @@
 
 :- import tp_writeln/2 from tp_utils.
 :- import   isa/2, allAttr/3, hasAttr/3, necessCond/2,
-	   maxAttr/4, minAttr/4 from cdf_init_cdf.
+	   maxAttr/4, minAttr/4,cdf_id_fields/4 from cdf_init_cdf.
 :- import 
 %         cdf_id_fields/4, system_component/1,
 	abolish_cdf_tables/0
@@ -35,8 +37,8 @@
 
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import message/1 from standard.
-:- import domain_error/4 from error_handler.
-:- import memberchk/2 from basics.
+:- import domain_error/4, misc_error/1,check_ground/3 from error_handler.
+:- import memberchk/2,member/2 from basics.
 
 %---------------------------------------------------- :-
 :- comment(module,"The module @tt{cdftp_chkCon} contains the top-level
@@ -407,6 +409,129 @@ descend(Class):-
 	descend(cid(NewClass,S)),
 	fail.
 
+%--------------------------------
+
+checkComponent(Comp,Orig):- 
+	(atom(Comp) -> 
+	    true
+	  ; misc_error(['Component must be an atom in ',Orig]) ).
+
+ce_check_integer(N,Orig):- 
+	(integer(N) -> 
+	    true
+	  ; misc_error(['Expecting integer for ',N,' in the class expression',Orig]) ).
+
+/*
+ce_check_nonvar(Var,Orig):- 
+	(var(Var) -> 
+	    misc_error(['Class expression ',Orig,' is not fully ground.'])
+	  ; true).
+*/
+
+% Assumes groundness check has already been done.
+checkIdentifier(Id,Type,Orig):- 
+	(cdf_id_fields(Id,T,_,Component),
+	 member(T,Type) -> 
+	    checkComponent(Component,Id)
+	  ; make_type_readible(Type,Type1),
+	    misc_error(['Identifier ',Id,' is not of type ',Type1,' in ',Orig]) ).
+
+make_type_readible([A],[A]):- !.
+make_type_readible([A|B],[A,/|B1]):- 
+	make_type_readible(B,B1).
+
+isCE(CE):- 
+	check_ground(CE,isCE,1),
+	checkIdentifier(CE,[vid],CE),
+	CE = vid(CE1,_),
+	isCE_1(CE1,CE).
+
+isCE_1(','(Class,B),Orig):- !,
+	isCE_1(Class,Orig),
+	isCE_1(B,Orig).
+isCE_1(';'(Class,B),Orig):- !,
+	isCE_1(Class,Orig),
+	isCE_1(B,Orig).
+isCE_1(exists(inv(R),B),Orig):- !,
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(exists(R,B),Orig):- !,
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(all(inv(R),B),Orig):- !,
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(all(R,B),Orig):- !,
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(atLeast(N,inv(R),B),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(atLeast(N,R,B),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(atLeast(N,inv(R)),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig).
+isCE_1(atLeast(N,R),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig).
+isCE_1(atMost(N,inv(R),B),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(atMost(N,R,B),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig),
+	isCE_1(B,Orig).
+isCE_1(atMost(N,inv(R)),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig).
+isCE_1(atMost(N,R),Orig):- !,
+	ce_check_integer(N,Orig),
+	checkIdentifier(R,[rid],Orig).
+isCE_1(not(Class),Orig):- !,
+	isCE_1(Class,Orig).
+isCE_1(X,Orig):- !,
+	(bottomIdentifier(X) ; topIdentifier(X) ; checkIdentifier(X,[cid,oid],Orig)).
+isCE_1(Position,CE):- 
+	misc_error(['Class expression syntax error in ',CE,' at ',Position]).
+% should probably do component/1 and sameAs/4.
+
+% Assumes that CE is a CE.
+ceMember(vid(CE1,_),Ret):- 
+	ceMember_1(CE1,Ret).
+
+ceMember_1(','(Class,B),Ret):- 
+	(ceMember_1(Class,Ret) ; ceMember_1(B,Ret)).
+ceMember_1(';'(Class,B),Ret):- 
+	(ceMember_1(Class,Ret) ; ceMember_1(B,Ret)).
+ceMember_1(exists(inv(R),B),Ret):- 
+	Ret = R ; ceMember_1(B,Ret).
+ceMember_1(exists(R,B),Ret):- 
+	(Ret = R ; ceMember_1(B,Ret)).
+ceMember_1(all(inv(R),B),Ret):- 
+	Ret = R ; ceMember_1(B,Ret).
+ceMember_1(all(R,B),Ret):- 
+	Ret = R ; ceMember_1(B,Ret).
+ceMember_1(atLeast(_N,inv(R),B),Ret):- 
+	Ret = R ; ceMember_1(B,Ret).
+ceMember_1(atLeast(_N,R,B),Ret):- 
+	Ret = R ; ceMember_1(B,Ret).
+ceMember_1(atLeast(_N,inv(R)),R).
+ceMember_1(atLeast(_N,R),R).
+ceMember_1(atMost(_N,inv(R),B),Ret):- 
+	Ret = R ; ceMember_1(B,Ret).
+ceMember_1(atMost(_N,R,B),Ret):- 
+	Ret = R ; ceMember_1(B,Ret).
+ceMember_1(atMost(_N,inv(R)),R).
+ceMember_1(atMost(_N,R),R).
+ceMember_1(not(Class),Ret):- 
+	ceMember_1(Class,Ret).
+ceMember_1(X,X):- cdf_id_fields(X,_,_,_).
+
 end_of_file.
 
 % atomic	
@@ -516,3 +641,4 @@ classify_1(Expr):-
 classify_1(_Expr).
 
 :- document_import cdf_warning/2 from cdf_exceptions.
+

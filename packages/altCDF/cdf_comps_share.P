@@ -376,6 +376,7 @@ perform_component_level_checks:-
 % when loading a dependency.
 
 load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):- 
+	writeln(loading_pass1(Name)),write_cha,nl,
 	get_full_path_and_loadname(Name,PathIn,Vin,AbsPath,V,Loadname),
 	(check_component(Name,AbsPath,V,Arglist,Flag) -> 
 	    slash(Slash),
@@ -383,6 +384,7 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):-
 				nl,
                 concat_atom([AbsPath,Slash,Loadname],Absname),
 	    cdf_load_extensional_facts(Absname,AbsPath),
+	    writeln(just_loaded(Name)),write_cha,nl,
 	    check_good_component(Name,AbsPath),
 	    (	pe_push_dir(AbsPath),
                 load_component_dependencies_pass1(Name,AbsPath,Arglist)
@@ -391,7 +393,17 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):-
 	  ; 
 	    fail ).
 
+
+write_cha:- 
+	classHasAttr_ext(_,crid(hasPath,Name),F),
+	writeln(paths(Name,F)),
+	fail.
+write_cha.
+
+
+
 load_component_dependencies_pass1(Name,Abs,Arglist):-
+	writeln(loading_deps(Name)),write_cha,nl,
  	findall((V,New,Relnew,Vnew,DepType),
 		( (   DepType = componentDepends
 		   ;  DepType = staticComponentDepends

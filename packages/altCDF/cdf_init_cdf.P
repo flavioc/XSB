@@ -480,6 +480,7 @@ immed_isa(SubCid,SupCid) :-
 	immed_isa1(SubCid,SupCid).
 
 immed_isa1(SubCid,SupCid) :- 
+%	writeln(	isa_ext(SubCid,SupCid)),
 	isa_ext(SubCid,SupCid).
 immed_isa1(SubCid,SupCid) :- 
 	isa_int(SubCid,SupCid).
@@ -689,6 +690,7 @@ gens_good_isas(Term):-
 /**********/
 
 hasAttr(SCid,Rid,TCid):- 
+%	writeln(calling(hasAttr(SCid,Rid,TCid))),
 	apply_checks(query,hasAttr_ext(SCid,Rid,TCid)),
 	hasAttr1(SCid,Rid,TCid).
 	
@@ -954,7 +956,11 @@ immed_classHasAttr(SCid,Rid,TCid) :-
 immed_classHasAttr1(SCid,Rid,TCid) :- 
 	classHasAttr_ext(SCid,Rid,TCid).
 immed_classHasAttr1(SCid,Rid,TCid) :- 
-	classHasAttr_int(SCid,Rid,TCid).
+	cputime(T1),
+	classHasAttr_int(SCid,Rid,TCid),
+	cputime(T2),
+	Tot is T2 - T1,
+	writeln(classHasAttr_int(SCid,Rid,TCid)/Tot).
 
 :- comment(classHasAttr/3, "@tt{classHasAttr(SCid,Rid,TCid)} defines
 the semantic set-valued relation predicate, where @tt{SCid} is the
@@ -1305,7 +1311,7 @@ not_max_implicative_maxAttr_23fix(Term,BindPat) :-
 immed_necessCond(Class,Formula):- 
 	apply_checks(query,necessCond_ext(Class,Formula)),
 	check_var(Formula,'immed_necessCond/2',2),
-	immed_necessCond(Class,Formula).
+	immed_necessCond1(Class,Formula).
 
 immed_necessCond1(Class,Formula):- 
 	necessCond_ext(Class,Formula).
