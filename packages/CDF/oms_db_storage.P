@@ -464,7 +464,8 @@ dump_db_attribute_object(_Connection,_Source).
 assert_rule_if_nec(H,B) :- (clause(H,B) -> true ; assert((H:-B))).
 */
 
-%%:- dynamic calls_class/3.
+:- dynamic calls_class/3.
+:- index(calls_class/3,[2,3]).
 :- dynamic cache_class/3.
 :- index(cache_class/3,[2,3]).
 :- dynamic calls_immediate_subclass/4.
@@ -552,11 +553,16 @@ class_int_cdb(Name,NatCid,Source) :-
 	 ->	functor(NatCid,Fn,Ar),
 		functor(NatCid0,Fn,Ar),
 		parameterized_ext_int(NatCid,Cid,Source),
-		(cache_class(Name,NatCid0,Source),
+		(get_term_vars(calls_class(Name,NatCid0,Source),Vars),
+		 calls_class(Name,NatCid0,Source),
+		 is_most_general_term(Vars),
+		 !,
+		 cache_class(Name,NatCid0,Source),
 		 parameterized_ext_int(NatCid0,Cid0,Source),
 		 subclass(Cid,Cid0),
 		 !
 		 ;
+		 assert(calls_class(Name,NatCid1,Source)), % though NatCid1 is open, only param classes are cached
 		 db_call_gen(Cx,oms_class,[Name,NatCid1,Source]),
 		 structure(NatCid1),
 		 \+ (get_term_vars(NatCid1,Vars),
@@ -633,13 +639,13 @@ immediate_attribute_object_int_cdb(SNatOid,SSource,RNatCid,RSource,TNatOid,TSour
 		      oms_attribute_object,Cx).
 
 
-db_cache_call(CallTerm,CacheTerm,_,_) :-
+db_cache_call(CallTerm,CacheTerm,_,_) :- 
 	get_term_vars(CallTerm,Vars),
 	call0(CallTerm),
-	is_most_general_term(Vars),
+	is_most_general_term(Vars), 
 	!,
 %%	check_index(CacheTerm),
-	call0(CacheTerm).
+	call0(CacheTerm). 
 db_cache_call(CallTerm,CacheTerm,TableName,Cx) :-
 	(   assoc_pred(CacheTerm,_,Call),
 	    cache_abstract(Cx,Call,AbsCall)
