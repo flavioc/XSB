@@ -378,6 +378,8 @@ copy_files::
 	    cp -fr ${src_etcdir}/* ${install_etcdir}; \
 	    echo "Copying examples..."; \
 	    cp -f ${src_examples}/*.[POH] ${install_examples}; \
+	    cp -f ${src_examples}/README ${install_examples}; \
+	    cp -f ${src_examples}/Makefile ${install_examples}; \
 	    ./copysubdirs.sh ${src_examples} ${install_examples} ; \
 	    echo ""; echo "Installed!" \
 	  )
