@@ -880,11 +880,21 @@ The following options are currently recognized by the compiler:
   %%$
   and \verb|$XSB_DIR/prolog_includes|.
   %%$
-  \index{\tt xsb\_xpp\_include\_dir}
+  \index{\tt xpp\_include\_dir}
   %%
   However, additional directories can be added to this search path by
-  asserting into the predicate \verb|xpp_include_dir/1|, which should
-  be imported from module {\tt parse}.
+  asserting into the predicate \verb|xpp_include_dir/1|, {\bf which should
+  be imported from module} {\tt parse}.
+
+  Note that when compiling XSB programs, GPP {\bf does not} search the
+  current directory. If you want it to, then the following statements must
+  be executed:
+%%
+\begin{verbatim}
+    :- import xpp_include_dir/1 from parse.
+    :- assert(xpp_include_dir('.')).
+\end{verbatim}
+%%
 
   XSB predefines the constant {\tt XSB\_PROLOG}, which can be used for
   conditional compilation. For instance, you can write portable program
