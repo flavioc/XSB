@@ -51,17 +51,10 @@ JAVA_PLATFORM_HEADER_PATH=@JAVA_PLATFORM_HEADER_PATH@
 # For mno-cygwin 
 # -mdll option is needed so that MSVC files could link to dll
 # however for old cygwin versions -dll option is used  
-mno_cyg_inclib=@mno_cyg_inclib@
-mno_cyg_lib=@mno_cyg_lib@
-#cygconf=`(uname -m) 2>/dev/null` || cygconf=unknown
-cygconf=i686
-cygdirname=${cygconf}-pc-mingw32
-DLLTOOL=dlltool
 DLLNAME=xsb.dll
-DLL_LIBS=$(LDFLAGS) -L /usr/$(cygdirname)/lib -lmingw32 -lmsvcrt -lmoldname -lcrtdll -lkernel32 -L /usr/lib/gcc-lib/$(cygdirname)/3.2 -lgcc
+DLL_LIBS=$(LDFLAGS) 
 LIB_OBJECTS=xsb.o dllinit_xsb.o
 BASE_FILE=xsb.base
-EXP_FILE=xsb.exp
 DEF_FILE=xsb.def
 LIB_FILE=libxsb.a
 ENTRY_FUNCTION=_win_xsbent@12
@@ -183,7 +176,7 @@ xsboramod:: $(ORAOBJS)
 
 
 depend::
-	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix)  -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(mno_cyg_inclib) $(CFLAGS) -- $(SRCS) $(ODBCSRC) ${INTERPROLOGSRC}
+	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix)  -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(CFLAGS) -- $(SRCS) $(ODBCSRC) ${INTERPROLOGSRC}
 
 #
 # create a new DLL library in cygwin (compiled with -mno-cygwin) environment
@@ -200,18 +193,12 @@ dll: $(DLLTYPE)
 nodll:
 
 cygdll: $(HEADERS) $(DEF_FILE) xsb.o
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) dllinit_xsb.cc
+	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) dllinit_xsb.cc
 	@cp dllinit_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
-	$(LD) -s --base-file $(BASE_FILE) --dll -o $(DLLNAME) $(LIB_OBJECTS) $(DLL_LIBS) -e $(ENTRY_FUNCTION)
-	$(DLLTOOL) --as=$(AS) --dllname $(DLLNAME) --def $(DEF_FILE) --base-file $(BASE_FILE) --output-exp $(EXP_FILE)
-	$(LD) -s --base-file $(BASE_FILE) $(EXP_FILE) -dll -o $(DLLNAME) $(LIB_OBJECTS) $(DLL_LIBS) -e $(ENTRY_FUNCTION)
-	$(DLLTOOL) --as=$(AS) --dllname $(DLLNAME) --def $(DEF_FILE) --base-file $(BASE_FILE) --output-exp $(EXP_FILE)
-	$(LD) $(EXP_FILE) --dll -o $(DLLNAME) $(LIB_OBJECTS) $(DLL_LIBS) -e $(ENTRY_FUNCTION)
-	$(DLLTOOL) --as=as --dllname  $(DLLNAME) --def $(DEF_FILE) --output-lib $(LIB_FILE)
+	$(CC) -mno-cygwin -shared -o $(DLLNAME) $(LIB_OBJECTS) $(DEF_FILE) -Wl,--out-implib=xsb.a $(DLL_LIBS) -e $(ENTRY_FUNCTION)
 	@mv $(DLLNAME) $(bindir) 2> /dev/null || echo ""
 	@mv $(LIB_FILE) $(bindir) 2> /dev/null || echo ""
 	@rm -f $(BASE_FILE) 2> /dev/null || echo ""
-	@rm -f $(EXP_FILE) 2> /dev/null || echo ""
 
 
 #=======================================================================
@@ -223,32 +210,32 @@ interprolog_callback.o: interprolog_callback.c
 	@cp callback.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 init_xsb.o: init_xsb.c
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) init_xsb.c
+	$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) init_xsb.c
 	@cp init_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 dynload.o: dynload.c
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) dynload.c
+	$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) dynload.c
 	@cp dynload.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 emuloop.o: emuloop.c
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(emuloopCFLAGS) emuloop.c
+	$(CC) -I$(arch_config_prefix)  -c $(emuloopCFLAGS) emuloop.c
 	@cp emuloop.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # Higher optimization level has problem with some versions of gcc
 tr_utils.o: tr_utils.c
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(trutilsCFLAGS) tr_utils.c
+	$(CC) -I$(arch_config_prefix)  -c $(trutilsCFLAGS) tr_utils.c
 	@cp tr_utils.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 builtin.o: builtin.c
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(builtinsCFLAGS) builtin.c
+	$(CC) -I$(arch_config_prefix)  -c $(builtinsCFLAGS) builtin.c
 	@cp builtin.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 loader_xsb.o: loader_xsb.c
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(loaderCFLAGS) loader_xsb.c
+	$(CC) -I$(arch_config_prefix)  -c $(loaderCFLAGS) loader_xsb.c
 	@cp loader_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
-	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) $*.c
+	$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) $*.c
 	@cp $*.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 

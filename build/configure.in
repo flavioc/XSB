@@ -423,8 +423,6 @@ if test "${enable_no_cygwin+set}" = "set"; then
 	host_cpu=x86
 	configuration_templ=xsb_configuration.in
 	config_dot_h_templ=def_config_mnoc.in
-	mno_cyg_inclib="-I/usr/i686-cygwin/include/mingw32"
-	mno_cyg_lib="-I/usr/i686-cygwin/lib"
 fi
 
 # arch-independent XSB directories
