@@ -42,6 +42,7 @@ extern void init_newtrie(void);
 extern void delete_branch(BTNptr, BTNptr *);
 extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);
+extern void reclaim_uninterned_nr(BTNptr root);
 extern void delete_trie(BTNptr);
 
 extern xsbBool has_unconditional_answers(VariantSF);

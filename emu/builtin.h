@@ -164,6 +164,7 @@
 #define DELETE_TRIE             164
 #define TRIE_DISPOSE_NR         165
 #define TRIE_UNDISPOSE          166
+#define RECLAIM_UNINTERNED_NR   167
 
 #define SET_TABLED_EVAL		170
 

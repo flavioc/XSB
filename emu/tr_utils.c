@@ -1037,6 +1037,13 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
      xsb_dbgmsg("Attempt to undelete a node that is not deleted");
  }
 
+
+void reclaim_uninterned_nr(BTNptr root)
+{
+  puts("To be implemented");
+}
+
+
 /*----------------------------------------------------------------------*/
 
 #define DELETE_TRIE_STACK_INIT 100

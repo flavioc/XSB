@@ -148,6 +148,10 @@ delete_all(Root,[Hd|Tl]) :- trie_unintern(Root,Hd),
 delete_trie(Root) :- delete_trie(Root,intern).
 
 
+/* reclaims nodes previously uninterned (but not deleted)
+   with trie_unintern_nr */
+trie_reclaim_uninterned_nr(_Root) :- '_$builtin'(RECLAIM_UNINTERNED_NR).
+
 
 /* builtin calls */
 i_trie_intern(_Term,_Root,_Leaf,_Flag) :- '_$builtin'(TRIE_INTERN).

@@ -646,6 +646,7 @@ void init_builtin_table(void)
   set_builtin_table(DELETE_TRIE, "delete_trie");
   set_builtin_table(TRIE_DISPOSE_NR, "trie_dispose_nr");
   set_builtin_table(TRIE_UNDISPOSE, "trie_undispose");
+  set_builtin_table(RECLAIM_UNINTERNED_NR, "reclaim_uninterned_nr");
 
   set_builtin_table(SET_TABLED_EVAL, "set_tabled_eval_method");
   set_builtin_table(PUT_ATTRIBUTES, "put_attributes");
@@ -1793,6 +1794,9 @@ int builtin_call(byte number)
     break;
   case TRIE_UNDISPOSE:
     undelete_branch((BTNptr) ptoc_int(2));
+    break;
+  case RECLAIM_UNINTERNED_NR:
+    reclaim_uninterned_nr((BTNptr) ptoc_int(1));
     break;
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify() );
