@@ -105,9 +105,12 @@ flora_module_path_remove(Path) :- retractall(library_directory(Path)).
 
 flora_module_path_get('.').
 flora_module_path_get(Path) :- library_directory(Path).
-flora_module_path_get(Path) :- xsb_configuration(libdir,Path).
-flora_module_path_get(Path) :- xsb_configuration(syslibdir,Path).
-flora_module_path_get(Path) :- xsb_configuration(cmplibdir,Path).
+flora_module_path_get(Path) :-
+	xsb_configuration(libdir,LibPath), LibPath = Path.
+flora_module_path_get(Path) :-
+	xsb_configuration(syslibdir,SyslibPath), SyslibPath=Path.
+flora_module_path_get(Path) :-
+	xsb_configuration(cmplibdir,CmplibPath), CmplibPath = Path.
 
 
 %% User Home
