@@ -33,7 +33,6 @@ extern void reclaim_ans_list_nodes(SGFrame);
 extern void variant_call_search_rdonly(int, CPtr, CPtr *, int *, byte *);
 extern void init_newtrie(void);
 extern int  delete_branch(NODEptr, CPtr);
-extern void clear_interned_tries(void);
 extern void safe_delete_branch(NODEptr);
 
 extern bool has_unconditional_answers(SGFrame);
@@ -45,5 +44,6 @@ extern void trie_dispose(void);
 extern void delete_trie(NODEptr);
 
 extern NODEptr *Set_ArrayPtr;
+extern int first_free_set;
 
 extern void free_node_function(NODEptr);
