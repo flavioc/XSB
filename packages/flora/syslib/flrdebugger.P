@@ -371,7 +371,6 @@ flora_read_debugger_data :-
 	fmt_write_string(DebugDataFile,
 			 '%s/syslib/flrdebug_data.P', arg(FlrSysLib)),
 	file_open(DebugDataFile, 0, File),
-	writeln(File),
 	repeat,
 	    file_read(File,T),
 	    (T = end_of_file -> true
