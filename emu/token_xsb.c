@@ -23,7 +23,6 @@
 ** 
 */
 
-
 #include "xsb_config.h"
 
 #include <stdio.h>
@@ -37,7 +36,6 @@
 #include "subp.h"
 #include "register.h"
 #include "error_xsb.h"
-
 
 #define exit_if_null(x) {\
   if(x == NULL){\
@@ -247,7 +245,7 @@ int intype(int c)
 
 static void SyntaxError(char *description)
 {
-	char message[80];
+	char message[100];
 
 	sprintf(message, "++Error: %s (syntax error)\n", description);
 	pcreg = exception_handler(message);
@@ -547,11 +545,10 @@ void realloc_strbuff(char **pstrbuff, char **ps, int *pn)
   return;
 }
 
-
 struct token *GetToken(FILE *card, STRFILE *instr, int prevch)
 {
         char *s;
-        register int c, d;
+        register int c, d = 0;
         long oldv = 0, newv = 0; 
         int n;
 
@@ -590,8 +587,61 @@ START:
 				return token;
                         }
                     if (d == 0) {
-                        /*  0'c['] is a character code  */
-                        d = read_character(card, instr, -1);
+		      /*  0'c['] is a character code  */
+		      d = read_character(card, instr, -1);
+		      /* TLS: changed to handle some of the important cases
+			 of character code constants, sec 6.4.4 of ISO.
+			 Here is what it does and doesnt do: 
+			 A character code constant is 0' followed by 
+			 a number of possible items.  
+			 1) non quote char
+			 2) single quote char ',' single quote char
+			 3) double quote char
+			 4) back quote char
+
+			 We handle 3,4, do not handle 2, and handle (I
+			 think) all the cases for 1 *except*
+
+			 meta-escape sequence
+			 octal escape sequence
+			 hexadecimal escape sequence
+
+			 and partially handle control escape
+			 sequences, which is what got me into this in
+			 the first place.  For these last, my change
+			 is somewhat kludgy, and I am open to
+			 suggestions about what library function to
+			 use to convert, e.g.  \n to 10.  
+			 
+			 If someone can tell me a better way to do
+			 this, then we still need to add \a, \b, \f,
+			 \r, \v for ISO.  */
+
+		      if (d == '\\') {
+			d = GetC(card,instr);
+			if (d == 'n') {
+			  rad_int = 10; 
+			  token->value = (char *)(&rad_int);
+			  token->nextch = GetC(card,instr);
+			  token->type = TK_INT;
+			  return token;
+			} 
+			if (d == 't') {
+			  rad_int = 9;  
+			  token->value = (char *)(&rad_int);
+			  token->nextch = GetC(card,instr);
+			  token->type = TK_INT;
+			  return token;
+			} 
+			if (d == ' ') {
+			  rad_int = 47;  /* handle 0'\ */
+			  token->value = (char *)(&rad_int);
+			  token->nextch = GetC(card,instr);
+			  token->type = TK_INT;
+			  return token;
+			}
+		      }
+		      else {
                         sprintf(strbuff, "%d", d);
                         d = GetC(card,instr);
 			rad_int = atoi(strbuff);
@@ -599,6 +649,7 @@ START:
 			token->value = (char *)(&rad_int);
 			token->type = TK_INT;
                         return token;
+		      }
                     }
                     while (c = GetC(card,instr), DigVal(c) < 99)
                         if (c != '_') {
@@ -631,8 +682,8 @@ START:
                     else
 			token->type = TK_INT;
                     return token;
-                } else
-                if (c == intab.dpoint) {
+                }
+		else if (c == intab.dpoint) {
                     d = GetC(card,instr);
                     if (InType(d) == DIGIT) {
 DECIMAL:                *s++ = '.';
@@ -669,7 +720,18 @@ DECIMAL:                *s++ = '.';
                         unGetC(d, card, instr);
                         /* c has not changed */
                     }
-                }
+		}
+		else {
+		  if (c == 'b' || c == 'x' || c == 'o' ) {
+		    SyntaxError("ISO binary/hex/octal integer constants not yet implemented"); 
+		    do {
+		      if (d != '_') *s++ = d;
+		      d = GetC(card,instr);
+		    } while (InType(d) <= BREAK);
+		    token->type = TK_ERROR;
+		    return token;
+		  }
+		};
                 *s = 0;
 		rad_int = atoi(strbuff);
 		token->nextch = c;
@@ -681,10 +743,10 @@ DECIMAL:                *s++ = '.';
                 return token;
  
             case BREAK:        /* Modified for HiLog */
-                do {
+	      do {
                     if (--n < 0) {
-		      realloc_strbuff(&strbuff, &s, &n);
-		    }
+		      realloc_strbuff(&strbuff, &s, &n); 
+		      }
                     *s++ = c, c = GetC(card,instr);
                 } while (InType(c) <= LOWER);
                 *s = 0;
