@@ -117,11 +117,24 @@ imvdinc(O,M,[H|T]) :- imvd(O,M,H), imvdinc(O,M,T).
 
 /****************************************************************************
   multivalued attributes aggregation
+
+  Note: (1) These two predicates always succeeds.
+        (2) These two predicates are not tabled.
 ****************************************************************************/
+mvdtolist(O,M,L) :-
+	mvddef(O,M),
+	findall(V,mvd(O,M,V),L).
 
-mvdtolist(O,M,L) :- findall(V,mvd(O,M,V),L).
+mvdtolist(O,M,[]) :-
+	tnot(mvddef(O,M)).
 
-imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L). 
+
+imvdtolist(O,M,L) :-
+	imvddef(O,M),
+	findall(V,imvd(O,M,V),L).
+ 
+imvdtolist(O,M,[]) :-
+	tnot(imvddef(O,M)).
 
 
 /****************************************************************************
