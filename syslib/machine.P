@@ -74,7 +74,6 @@ buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(38).
 copy_term0(_Term, _Result) :- '_$builtin'(39).
 /* check if Sub is a substring in Str */
 str_sub(_Sub, _Str, _Pos) :- '_$builtin'(40).
-str_sub(Sub, Str) :- str_sub(Sub, Str, _).
 %% If file is a directory, add slash, if needed, or strip extra slashes
 dirname_canonic(_File, _Canonic) :- '_$builtin'(41).
 /* for efficiency reasons, the following predicates are also implemented */

@@ -106,7 +106,7 @@
 
 /*----------------------------------------------------------------------*/
 
-    case GET_DELAY_LISTS:
+    case GET_DELAY_LISTS: {
       /*
        * When GET_DELAY_LISTS is called, we can assume that the
        * corresponding tabled subgoal call has been completed and so trie
@@ -114,10 +114,12 @@
        * trie_get_returns_for_call()).  After the execution of trie code,
        * var_regs[] contains the substitution factor of the _answer_ to
        * the call.
-       *
-       * This builtin has been modified since XSB 1.8.1 to handle
-       * variables in delay list.
        */
+      DL dl;
+      DE de;
+      BTNptr as_leaf;
+      Cell delay_lists;
+      CPtr dls_head, dls_tail = NULL;
 
 #ifdef DEBUG_DELAYVAR
       xsb_mesg(">>>> (at the beginning of GET_DELAY_LISTS");
@@ -125,7 +127,7 @@
 	
       {
 	int i;
-	for(i = 0; i <= global_num_vars; i++){
+	for (i = 0; i <= global_num_vars; i++) {
 	  Cell x;
 	  fprintf(stderr, ">>>> var_regs[%d] =",i);
 	  x = (Cell)var_regs[i];
@@ -187,6 +189,7 @@
 	bind_nil((CPtr)delay_lists);
       }
       break;
+    }
 
 /*----------------------------------------------------------------------*/
 

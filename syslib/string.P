@@ -30,32 +30,6 @@
 :- compiler_options([sysmod]).
 
 
-%  str_fromlist(-Atom, +List)
-%  Given a list of integers representing characters returns the 
-%  corresponding atom. This is more like atom_codes/2 that works
-%  only in the opposite direction.
-
-str_fromlist(String, List) :-
-	str_fl_check(List, Length),
-	buff_alloc(Length, Buff),
-	str_fl_put(Buff, 0, List),
-	intern_string(Buff, String),
-	buff_dealloc(Buff,Length,0).
-
-str_fl_check([], 1).
-str_fl_check([_H|T], N) :- 
-/* The following check (enhanced) is now ensured by name/2
-	integer(H),	 */
-	str_fl_check(T,M), N is M + 1.
-
-:- index str_fl_put/3-3.
-
-str_fl_put(Buff, N, []) :- buff_set_byte(Buff, N, 0).  % ending \0
-str_fl_put(Buff, N, [A|T]) :-
-	buff_set_byte(Buff, N, A),
-	N1 is N + 1,
-	str_fl_put(Buff, N1, T).
-
 %--- 
 /* 
 TLS 7/99 This version is linear rather than quadratic and seems
@@ -91,12 +65,12 @@ atom_to_charlist([Atom|Rest],Slist,[List,Slist|Lrest]):-
 	atom_codes(Atom,List),
 	atom_to_charlist(Rest,Slist,Lrest).
 
-str_length(Str, Len) :- ( atom(Str) -> str_len(Str, L), Len = L ).
+str_length(Str, Len) :- str_len(Str, Len).
 
-str_cat(S1, S2, S3) :- (atom(S1), atom(S2) -> str_cat(S1,S2,S), S = S3 ).
+str_cat(S1, S2, S3) :- str_cat(S1, S2, S3).
 %% Only checks the first match
-str_sub(S1, S2, Pos) :- (atom(S1), atom(S2) -> str_sub(S1,S2,Pos1), Pos=Pos1 ).
-str_sub(S1,S2) :- str_sub(S1,S2,_Pos).
+str_sub(S1, S2, Pos) :- str_sub(S1, S2, Pos).
+str_sub(S1, S2) :- str_sub(S1, S2, _Pos).
 
 
 %% Extract substring of Len at Loc from String. Result -> SubString
@@ -123,6 +97,5 @@ str_ncopy(Source, SDisp, Dest, DDisp, Len) :- Len > 0,
 	DDisp1 is DDisp + 1,
 	Len1 is Len-1,
 	str_ncopy(Source, SDisp1, Dest, DDisp1, Len1).
-
 
 /* ---------------------- end of file string.P ------------------------ */

@@ -62,8 +62,6 @@ extern void xsb_exit(char *);
 #define InType(c)       (intab.chtype+1)[c]
 #define DigVal(c)       (digval+1)[c]
 
-/*#define MY_MAXINT ((int)0x07ffffff)*/	/* Modified by Kostis */
- 
 #ifdef BITS64
 #define MY_MAXINT ((long)0x07fffffffffffff)
 #else

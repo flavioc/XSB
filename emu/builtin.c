@@ -622,13 +622,8 @@ int builtin_call(byte number)
   CPtr var;
   char *addr, *tmpstr;
   int  value, i, disp, arity, tmpval;
-  Cell term;
+  Cell term, term2;
   
-  DL dl;				/* for residual program */
-  DE de;				/* for residual program */
-  BTNptr as_leaf;			/* for residual program */
-  Cell delay_lists;			/* for residual program */
-  CPtr dls_head, dls_tail = NULL;	/* for residual program */
   TIFptr tip;
   Psc  psc;
   Pair sym;
@@ -895,16 +890,26 @@ int builtin_call(byte number)
     }
     break;
   case STR_LEN:		/* R1: +String; R2: -Length */
-    addr = ptoc_string(1);
-    ctop_int(2, strlen(addr));
-    break;
+    term = ptoc_tag(1);
+    if (isstring(term)) {
+      addr = string_val(term);
+      return int_unify(makeint(strlen(addr)), ptoc_tag(2));
+    } else return FALSE;
   case STR_CAT:		/* R1: +Str1; R2: +Str2: R3: -Str3 */
-    addr = (char *)hreg;	/* use global stack as temp space */
-    strcpy(addr, ptoc_string(1));
-    strcat(addr, ptoc_string(2));
-    ctop_string(3, string_find(addr, 1));
-    break;
-  case STR_CMP:		/* R1: +Str1; R2: +Str2: R3: -Res*/
+    term = ptoc_tag(1);
+    term2 = ptoc_tag(2);
+    if (isstring(term) && isstring(term2)) {
+      char *str1 = string_val(term);
+      char *str2 = string_val(term2);
+
+      tmpstr = (char *)malloc(strlen(str1) + strlen(str2) + 1);
+      strcpy(tmpstr, str1);
+      strcat(tmpstr, str2);
+      str1 = string_find(tmpstr, 1);
+      free(tmpstr);
+      return atom_unify(makestring(str1), ptoc_tag(3));
+    } else return FALSE;
+  case STR_CMP:		/* R1: +Str1; R2: +Str2: R3: -Res */
     ctop_int(3, strcmp(ptoc_string(1), ptoc_string(2)));
     break;
   case STR_HSH:		/* R1: +String; R2: +Arity;
@@ -913,18 +918,19 @@ int builtin_call(byte number)
     ctop_int(4, value);
     break;
   case STR_SUB:   /* R1: +Substring; R2: +String; R3: -Pos */
-    { 
-      char *subptr = ptoc_string(1);
-      char *stringptr = ptoc_string(2);
+    term = ptoc_tag(1);
+    term2 = ptoc_tag(2);
+    if (isstring(term) && isstring(term2)) { 
+      char *subptr = string_val(term);
+      char *stringptr = string_val(term2);
       char *matchptr = strstr(stringptr, subptr);
       int substr_pos = matchptr-stringptr+1; /* relative pos of substring */
       if (matchptr == NULL)
 	return FALSE;
       else {
-	ctop_int(3, substr_pos);
-	return TRUE;
+	return int_unify(makeint(substr_pos), ptoc_tag(3));
       }
-    }
+    } else return FALSE;
   case INTERN_STRING: /* R1: +String1; R2: -String2 ; Intern string */
     ctop_string(2, string_find(ptoc_string(1), 1));
     break;
@@ -1508,15 +1514,16 @@ int builtin_call(byte number)
     return( startInterruptThread( (SOCKET)ptoc_int(1) ) );
 #endif
 
-  case FORCE_TRUTH_VALUE: /* +R1: AnsLeafPtr; +R2: TruthValue */
-    as_leaf = (BTNptr) ptoc_addr(1);
+  case FORCE_TRUTH_VALUE: { /* +R1: AnsLeafPtr; +R2: TruthValue */
+    BTNptr as_leaf = (BTNptr) ptoc_addr(1);
     tmpstr = ptoc_string(2);
     if (!strcmp(tmpstr, "true"))
       force_answer_true(as_leaf);
     else if (!strcmp(tmpstr, "false"))
       force_answer_false(as_leaf);
     else xsb_abort("FORCE_TRUTH_VALUE: Argument 2 has unknown truth value");
-  break;
+    break;
+  }
 
   default:
     xsb_exit("Builtin #%d is not implemented", number);

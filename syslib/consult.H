@@ -42,7 +42,7 @@
 :- import rm/1, sys_link/3 from shell.
 :- import file_write0/2, file_nl/1 from xsb_writ.
 :- import hdr_ext/1, obj_ext/1, predicate_property/2 from curr_sym.
-:- import str_substring/4, str_cat/3 from string.
+:- import str_substring/4, str_cat/3, str_sub/2 from string.
 :- import abort/1, call/1, file_exists/1, atom/1, repeat/0,
 	  seeing/1, see/1, seen/0, call/1, goal_cut_trans/3,
 	  expand_term/2, read/1, op/3, (table)/1, (index)/3, (index)/2,
@@ -50,10 +50,9 @@
 	  told/0, telling/1, functor/3, cputime/1
      from standard.
 
-:- import code_load/3, code_call/3, buff_byte/3, str_len/2, str_sub/2,
-	  expand_filename/2, tilde_expand_filename/2,
-     	  unload_seg/1, buff_word/3, 
-	  assert_code_to_buff/2, assert_buff_to_clref/7,
+:- import code_load/3, code_call/3, buff_byte/3, str_len/2,
+	  expand_filename/2, tilde_expand_filename/2, unload_seg/1,
+	  buff_word/3, assert_code_to_buff/2, assert_buff_to_clref/7,
 	  file_read_canonical/3, stat_flag/2, conpsc/2, 
 	  psc_prop/2, psc_tabled/2, psc_type/2, psc_name/2,
 	  psc_arity/2, slash/1
