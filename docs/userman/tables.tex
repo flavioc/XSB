@@ -125,7 +125,7 @@ depth 24.  }
 \end{example}
 %---------------------------------------------------------------------()
 
-Tabling can generally be useful for optimizing data-orieted queries.
+Tabling can generally be useful for optimizing data-oriented queries.
 Section \ref{tabling_directives} illustrates how the {\tt
 suppl\_table} directive can be used to aid in optimizing such queries.
 
@@ -145,7 +145,7 @@ arguments into the table, transforming a linear algorithm into a
 quadratic one.
 
 A non-trivial program that uses tabling can be found as part of the
-XSB compiler, in \verb|$XSB_DIR/cmplib/mode.P|.
+XSB compiler, in {\tt \$XSB\_DIR/cmplib/mode.P}.
 
 \section{Left-to-Right Dynamically Stratified Negation}
 \index{negation!stratified}
@@ -279,7 +279,7 @@ of a ground atom may be {\em undefined} in addition to being true or
 false.  From the perspective of stratification, these programs are not
 even dynamically stratified.  XSB, in fact, handles such programs,
 evaluating them according to the Well-Founded Semantics \cite{VGRS91}.
-This semantics is a natural extension from a programmer's perspetive.
+This semantics is a natural extension from a programmer's perspective.
 It can be shown that a program is dynamically stratified if and only
 if it has a two-valued well-founded model.  Furthermore, more
 elaborate forms of non-monotonic reasoning, such as stable models
@@ -326,7 +326,7 @@ If every clause defining $A$ fails (perhaps by delaying and checking
 all literals in the clause) $A$ is false.  If neither of these cases
 occur $A$ is undefined.  Thus $A$ is undefined if there is no
 successful derivation of it and it is not failed through finite
-failure or infinite positive recutsion.  That is, $A$ is failed if
+failure or infinite positive recursion.  That is, $A$ is failed if
 after removing all successful literals in clauses that define $A$, and
 after failing all clauses for $A$ with failed literals, recursion
 through negation remains.
@@ -336,7 +336,7 @@ the Well-founded semantics with explicit negation, (WFSX)
 \cite{ADP95}, adds explicit (or provable) negation to the default
 negation used by the Well-founded semantics.  Using WFSX, problems in
 domains such as diagnosis and hierarchical reasoning, or domains that
-require updates \cite{Leit97}, can be easily modelled as logic
+require updates \cite{Leit97}, can be easily modeled as logic
 programs, and using the XSB preprocessor for WFSX (Section {\it
 Extended Logic Programs} in Volume 2) such programs can be computed
 efficiently.  See \cite{Swif99a} for an overview of non-monotonic
@@ -354,7 +354,7 @@ q:-$\neg$p. \\
 r. \\
 \end{Prog}
 \end{center}
-there are two stable models of this program: on in which {\tt p} and
+there are two stable models of this program: one in which {\tt p} and
 {\tt r} are true, and another in which {\tt q}, and {\tt r} are true.
 In the Well-Founded model, {\tt r} is true, {\tt s} is false, and {\tt
 q} and {\tt p} are undefined.  As mentioned above, SLG delays literals
@@ -376,7 +376,7 @@ q:-$\neg$p. \\
 r. \\
 \end{Prog}
 \end{center}
-Computing stable models is an intractible problem.  The residual
+Computing stable models is an intractable problem.  The residual
 program may have evaluated away clauses and body literals from the
 original program.  For a ground program, if it is ensured that
 residual clauses are produced for all atoms, using the residual
@@ -423,7 +423,7 @@ SLG-WAM level, the engine is very efficient.  There are associated
 disadvantages with our paradigm, though.  Firstly, we copy structures
 between the execution stacks and table space, rather than allowing
 sharing between the two spaces\footnote{It is possible to avoid
-copying in the case of ground strucures, but this is not implemented
+copying in the case of ground structures, but this is not implemented
 for the trie-based table structures of \version}.  Also, since
 \ourprolog's evaluation is tuple-at-a-time, it is not particularly
 efficient for queries to large relations which are kept on
@@ -434,12 +434,12 @@ engine.}.
 
 Tabling integrates well with most Prolog functionality.  The use of
 negation and aggregates in tabled predicates was discussed in the
-precious section.  Other Prolog predicates, such as meta-logical
+previous section.  Other Prolog predicates, such as meta-logical
 predicates like {\tt var/1}, predicates with side-effects like {\tt
 read/1} and {\tt write/1} can be used freely in tabled predicates as
 long as it is remembered that only the first call to a goal will
 execute program clauses: the rest will look up answers from a table.
-If the user wants to reexecute the program clauses for any reason, the
+If the user wants to re-execute the program clauses for any reason, the
 Prolog predicates {\tt abolish\_all\_tables/0, abolish\_table\_pred/1}
 or {\tt abolish\_table\_call/1} can be used, which will cause new
 calls to a goal to execute program clauses, in addition to removing
@@ -499,12 +499,12 @@ Given the asynchronicity of answer generation and answer return,
 tabling systems face an important scheduling choice not present in
 traditional top-down evaluation: How does the order of returning
 answers to consuming subgoals affect program efficiency.  The
-scheduling of answer returns is an important issue for effiency of
+scheduling of answer returns is an important issue for efficiency of
 evaluations.  Indeed, the tabling scheduling strategy of XSB was
 thoroughly revised in version 1.5 to use a strategy that is more
 efficient in terms of time and space \cite{JFLP-Scheduling}.
 
-The same paper outlined implementatoin of a second scheduling
+The same paper outlined implementation of a second scheduling
 strategy, \localsched, which has applications to non-monotonic
 reasoning and when combined with answer subsumption can improve the
 performance of some programs by arbitrary amounts. In \localsched\ the
@@ -573,3 +573,8 @@ That would be nice, but will it happen?
 In an upcoming release, XSB will allow \localsched\ to be defined at
 the predicate level.
 }
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 
