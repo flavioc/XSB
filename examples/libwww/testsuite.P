@@ -38,9 +38,14 @@
 :- libwww_request([html('http://www.cs.mit.edu',Z,P,Y,XXX)]).
 :- libwww_request([html('http://localhost/',Z,P,Y,XXX)]).
 :- libwww_request([html("http://localhost/",Z,P,Y,XXX)]).
+
 :- libwww_request([xml('http://localhost/simple.xml',
 		       [if_modified('Tue, 21 Sep 1999 14:46:36 GMT')],
 		       P,Y,XXX)]).
+:- libwww_request([xml('http://phony/simple.xml',
+		       [if_modified('Tue, 21 Sep 1999 14:46:36 GMT')],
+		       P,Y,XXX)]).
+
 :- libwww_request([head('http://localhost/',Z,P,Y,XXX)]).
 :- libwww_request([fetch("http://localhost/",Z,P,Y,XXX)]).
 
