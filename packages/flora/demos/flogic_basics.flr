@@ -31,6 +31,8 @@ fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
 
 e(a,b). e(b,a). e(b,c).			% a binary PREDICATE (graph)
 
+:- table tc/2.
+
 tc(X,Y) :- e(X,Y).			% a RULE and ...
 tc(X,Y) :- tc(X,Z), tc(Z,Y).		% ... a (doubly) RECURSIVE RULE
  
@@ -65,7 +67,7 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 ?- times_flies_like_an_arrow.	% ==> `yes'
 
 ?- fruit_flies_like_a_banana.	% ==> `no' (and a warning)
-?- call(myprint(">>> Answer NO and WARNING intended! <<<")).
+?- writeln('>>> Answer NO and WARNING intended! <<<').
 
 ?- fruit_flies_like_a_banana[].	% ==> `yes'
 
@@ -82,6 +84,6 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
             {H:dangerous_hobby}	% ... which are dangerous?
 ]. 
 
-?- call(myprint("Thanks ")), call(unix(whoami)), call(myprint(" for using FLIP!")).
+?- writeln('Thanks '), unix(whoami), writeln(' for using FLIP!').
 
 
