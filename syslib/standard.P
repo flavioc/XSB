@@ -770,7 +770,10 @@ repeat :- true; repeat.
 
 fail_if(Term) :- fail_if(Term).
 
-not(Term) :-  (call(Term), !, fail) ; true.
+nop. % used to force attv interrupts before commiting the answer
+     % on not/1.
+
+not(Term) :-  (call(Term), nop, !, fail) ; true.
 
 \+ Term :- \+ Term.
 
