@@ -64,5 +64,6 @@ extern void print_all_stacks(void);
 extern void print_regs(int,int);
 extern void print_heap(int,int,int);
 extern void print_gc_statistics(void);
+extern Cell attv_interrupts[20480][2];
 
 /*----------------------------------------------------------------------*/

@@ -89,7 +89,7 @@ static struct sigaction act, oact;
 void (*xsb_default_segfault_handler)(int); /* where the previous value of the
 					     SIGSEGV/SIGBUS handler is saved */
 
-static Cell attv_interrupts[20480][2];
+Cell attv_interrupts[20480][2];
 
 /*
  * Put an attv interrupt into the interrupt chain. op1 is the related
