@@ -161,7 +161,7 @@ cc_options(CC_Name, Options, CC_Opts) :-
 	;   fmt_write_string(CC_Opts2, '-I%s -I%s', args(Emudir, ConfigDir))
 	),
 	(  str_sub(gcc,CC_Name) %% gcc, egcc, kgcc, and friends
-	-> str_cat(' -Wall ', CC_Opts2, CC_Opts)
+	-> str_cat(' -Wall -fPIC ', CC_Opts2, CC_Opts)
 	;  CC_Opts = CC_Opts2
 	).
 
