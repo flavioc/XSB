@@ -572,6 +572,26 @@ static void db_geninst(prolog_term, RegStat, struct instruction *);
 static void db_bldsubs(prolog_term, RegStat, struct flatten_elt *);
 static void db_genaput(prolog_term, int, struct instruction *, RegStat);
 
+#ifdef DEBUG_ASSERTIONS
+/* Run the choicepoint stack and check whether the predicate is 
+   being run */
+int predicate_is_open(Psc pred)
+{
+  Choice b;
+
+  b = (Choice) (breg < bfreg ? breg : bfreg);
+
+  while (b) {
+    if (b->psc == pred)
+      return 1;
+    b = b->prev_top;
+    if (b >= tcpstack.high - 1 - CP_SIZE)
+      break;
+  }
+  return 0;
+}
+#endif /* DEBUG_ASSERTIONS */
+
 /*======================================================================*/
 /*  The following code compiles a clause into a local buffer.  It	*/
 /*  treats all rules as though they had a single literal on their	*/
@@ -624,6 +644,10 @@ int assert_code_to_buff_p(prolog_term Clause)
     has_body = 0;
   }
   Arity = arity(Head);
+#ifdef DEBUG_ASSERTIONS
+  if (predicate_is_open(get_str_psc(Head)))
+    xsb_abort("Asserting to an open relation.\n");
+#endif
   Location = 0;
   Loc = &Location;
   dbgen_instB_ppvw(test_heap,Arity,0);  /* size will be backpatched */
@@ -2281,3 +2305,4 @@ int trie_retract_safe(void)
 }
 
 /*-----------------------------------------------------------------*/
+
