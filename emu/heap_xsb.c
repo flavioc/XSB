@@ -121,7 +121,7 @@ Todo:
 /* this might belong somewhere else (or should be accessible to init.c),
    but in the meantime, this will do */
 #ifdef GC
-static float mark_threshold = 0.9;
+static float mark_threshold = 0.9F;
 #endif
 
 /*=========================================================================*/
@@ -1534,7 +1534,7 @@ bool glstack_realloc(int new_size, int arity)
 	     new_size,arity) ;
 #endif
 
-  expandtime = 1000*cpu_time() ;
+  expandtime = (long)(1000*cpu_time()) ;
 
   new_size_in_bytes = new_size*K ;
   new_size_in_cells = new_size_in_bytes/sizeof(Cell) ;
@@ -1626,7 +1626,7 @@ bool glstack_realloc(int new_size, int arity)
   if (islist(delayreg))
     delayreg = (CPtr)makelist(clref_val(delayreg) + heap_offset);
 
-  expandtime = 1000*cpu_time() - expandtime;
+  expandtime = (long)(1000*cpu_time()) - expandtime;
 
 #ifdef STACKS_DEBUG
   xsb_dbgmsg("Heap/Local Stack expansion - finished in %ld msecs\n",
@@ -2461,7 +2461,7 @@ int gc_heap(int arity)
 
 #ifdef GC
   CPtr p;
-  int  begin_marktime, end_marktime,
+  long  begin_marktime, end_marktime,
 #ifdef VERBOSE_GC
        begin_slidetime, begin_copy_time,
 #endif
@@ -2482,7 +2482,7 @@ int gc_heap(int arity)
 	       arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ;
 
 #endif
-    begin_marktime = 1000*cpu_time() ;
+    begin_marktime = (long)(1000*cpu_time()) ;
 
     total_collected += hreg+1-(CPtr)glstack.low;
 
@@ -2509,7 +2509,7 @@ int gc_heap(int arity)
 
     marked = mark_heap(arity, &marked_dregs);
 
-    end_marktime = 1000*cpu_time();
+    end_marktime = (long)(1000*cpu_time());
 
     if (fragmentation_only)
       {
@@ -2590,7 +2590,7 @@ int gc_heap(int arity)
 	if (delayreg != NULL)
 	  delayreg = (CPtr)reg[arity--];
 
-	end_slidetime = 1000*cpu_time();
+	end_slidetime = (long)(1000*cpu_time());
 
 	total_time_gc += (end_slidetime - begin_marktime);
 #ifdef VERBOSE_GC
@@ -2615,7 +2615,7 @@ int gc_heap(int arity)
 	free(begin_new_heap);
 	adapt_hreg_from_choicepoints(hreg);
 	hbreg = cp_hreg(breg);
-	end_copy_time = 1000*cpu_time();
+	end_copy_time = (long)(1000*cpu_time());
 
 	total_time_gc += (end_copy_time - begin_marktime);
 #ifdef VERBOSE_GC

@@ -116,7 +116,7 @@ extern System_Stack pdl,            /* PDL                        */
 /* Calculate New Stack Size
    ------------------------ */
 #define resize_stack(stack_size,min_exp) /*"stack_size" is in K-byte blocks*/\
-   ((stack_size) < (min_exp)/K ? (stack_size) + (min_exp)/K : 2 * (stack_size))
+   (((unsigned long)stack_size) < (min_exp)/K ? (stack_size) + (min_exp)/K : 2 * (stack_size))
 
 
 /* Program and Symbol Tables Space (in Bytes)

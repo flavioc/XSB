@@ -405,7 +405,7 @@ typedef struct compl_susp_choice_point {
  *  On "exit", 't_breg' points to the topmost arg on the cpstack.
  */
 #define save_registers(t_breg, arity, regbase) {\
-    int ii;\
+    byte ii;\
     for (ii = 1; ii <= arity; ii++) bld_copy(--t_breg, cell(regbase+ii));\
   }
 

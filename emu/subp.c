@@ -350,7 +350,7 @@ void intercept(Psc psc) {
     if ( byte_size > tds.maxopenstack_count )
       tds.maxopenstack_count = byte_size;
 
-    if (level_num > tds.maxlevel_num)
+    if ((unsigned long)level_num > tds.maxlevel_num)
       tds.maxlevel_num = level_num;
   }
 }

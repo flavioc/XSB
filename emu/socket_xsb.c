@@ -173,7 +173,8 @@ bool xsb_socket_request(void)
 {
   static int ecode = 0;                     /* error code for socket ops */
   static SOCKET sock_handle, sock_handle_in;
-  static int domain, portnum;
+  static int domain;
+  static unsigned short portnum;
   static SOCKADDR_IN socket_addr;
   static struct linger sock_linger_opt;
 

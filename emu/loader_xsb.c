@@ -261,7 +261,7 @@ inline static pindex new_index_seg(int no_cells)
 
 /*----------------------------------------------------------------------*/
 
-static void gen_index(bool tabled, int clause_no, CPtr sob_arg_p, char arity)
+static void gen_index(bool tabled, int clause_no, CPtr sob_arg_p, byte arity)
 {
   pindex new_i;
   CPtr   ep1, ep2, temp;
@@ -374,7 +374,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
       case I:
 	get_obj_word_bb(inst_addr);
 	if (oprand==2) {	/* second operand of switchonbound */
-	  if (cell(inst_addr) >= NUM_INDEX_BLKS*num_index_reloc) {
+	  if (cell(inst_addr) >= (unsigned long)(NUM_INDEX_BLKS*num_index_reloc)) {
 	    num_index_reloc = (cell(inst_addr)/NUM_INDEX_BLKS)+1;
 	    index_reloc = (CPtr *)realloc(index_reloc,NUM_INDEX_BLKS*
 					  num_index_reloc*sizeof(CPtr));
@@ -420,7 +420,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 static void load_index(FILE *fd, int index_bytes, int table_num)
 {
   Integer index_bno, clause_no, t_len;
-  char    index_inst, arity;
+  byte    index_inst, arity;
   int     temp_space, count = 0;
   CPtr    sob_arg_p, temp_ptr;
 
@@ -437,7 +437,7 @@ static void load_index(FILE *fd, int index_bytes, int table_num)
     else temp_ptr = hptr = (CPtr)malloc(temp_space*sizeof(CPtr));
     t_len = get_index_tab(fd, clause_no);
     
-    gen_index(table_num > 0, clause_no, sob_arg_p, arity);
+    gen_index((bool)(table_num > 0), clause_no, sob_arg_p, arity);
     free(indextab);
     if (temp_ptr != hreg) free(temp_ptr);
     count += 10 + t_len;
@@ -607,7 +607,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
     if (is_new && t_env==T_IMPORTED)
       set_ep(temp_pair->psc_ptr, (byte *)(mod));
     /* set ep to the psc record of the module name */
-    env_type_set(temp_pair->psc_ptr, t_env, t_type, is_new);
+    env_type_set(temp_pair->psc_ptr, t_env, t_type, (bool)is_new);
     /* dsw added following */
     if (exp && t_env == T_EXPORTED) {
       /* xsb_dbgmsg("exporting: %s from: %s",name,cur_mod->nameptr); */

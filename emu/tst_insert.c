@@ -577,7 +577,7 @@ void tstCreateStructures(TSTNptr pTST) {
 
     /*** For each bucket in this hash table ... ***/
     for ( pBucket = TSTHT_BucketArray(ht), bucketNum = 0;
-	  bucketNum < TSTHT_NumBuckets(ht);
+	  (unsigned int)bucketNum < TSTHT_NumBuckets(ht);
 	  pBucket++, bucketNum++ )
 
       /*** For each TSTN in a bucket... ***/

@@ -86,7 +86,7 @@ typedef struct psc_pair *Pair;
 
 extern Pair link_sym(Psc, Psc);
 extern Pair insert_module(int, char *);
-extern Pair insert(char *, char, Psc, int *);
+extern Pair insert(char *, byte, Psc, int *);
 
 extern char* string_find(char*, int);
 

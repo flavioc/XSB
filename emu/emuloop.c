@@ -641,16 +641,16 @@ contcase:     /* the main loop */
     op2 = *(pw)lpcreg; lpcreg+=4;
     pad64;
 #ifdef GC_TEST
-    if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < op2))
+    if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < (long)op2))
       {
 	infcounter = 0;
         fprintf(stddbg, ".");
 #else
-    if ((ereg - hreg) < op2)
+    if ((ereg - hreg) < (long)op2)
       {
 #endif
         if (gc_heap(op1)) { /* garbage collection potentially modifies hreg */
-	  if ((ereg - hreg) < op2) {
+	  if ((ereg - hreg) < (long)op2) {
 	    if (flags[STACK_REALLOC]) {
 	      if (glstack_realloc(resize_stack(glstack.size,0),op1) != 0) {
 		local_global_exception(lpcreg);

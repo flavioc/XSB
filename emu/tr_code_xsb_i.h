@@ -63,7 +63,7 @@
  }
 
 #define find_next_nonempty_bucket(pBTHT, pTable, BucketNum) {	\
-   word TableSize = BTHT_NumBuckets(pBTHT);			\
+   long TableSize = BTHT_NumBuckets(pBTHT);			\
 								\
    while (TRUE) {						\
      BucketNum++;						\

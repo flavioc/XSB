@@ -387,7 +387,7 @@ void SetVar()
       *((int *)CursorTable[i].VarList[j-1]) = ptoc_int(4);
       break;
     case 1:
-      *((float *)CursorTable[i].VarList[j-1]) = ptoc_float(4);
+      *((float *)CursorTable[i].VarList[j-1]) = (float)ptoc_float(4);
       break;
     case 2:
       strncpy(CursorTable[i].VarList[j-1], ptoc_string(4), MAXBINDVALLEN);
@@ -408,7 +408,7 @@ void SetVar()
     break;
   case 1:
     assert(CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(float)));
-    *((float *)CursorTable[i].VarList[j-1]) = ptoc_float(4);
+    *((float *)CursorTable[i].VarList[j-1]) = (float)ptoc_float(4);
     break;
   case 2:
     assert(CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(char) * MAXBINDVALLEN));
@@ -440,6 +440,8 @@ void SetBind()
   CursorTable[i].BList[CursorTable[i].BCurNum] = CursorTable[i].VarList[--j];
   CursorTable[i].BTypes[(CursorTable[i].BCurNum)++] = CursorTable[i].VarTypes[j];
 }
+
+int DescribeSelectList(int);
 
 //-----------------------------------------------------------------------------
 //  FUNCTION NAME:
@@ -562,13 +564,13 @@ void Parse()
     for (j = 0; j < CursorTable[i].BListNum; j++) {
       if (CursorTable[i].BTypes[j] == 2)
 	// we're sloppy here.  it's ok for us to use the default values
-	rc = SQLSetParam(CursorTable[i].hstmt, j+1, SQL_C_CHAR, SQL_CHAR,
+	rc = SQLSetParam(CursorTable[i].hstmt, (short)(j+1), SQL_C_CHAR, SQL_CHAR,
 			 MAXCHARLEN, 0,(char *) CursorTable[i].BList[j], NULL);
       else if (CursorTable[i].BTypes[j] == 1)
-	rc = SQLSetParam(CursorTable[i].hstmt, j+1, SQL_C_FLOAT, SQL_FLOAT,
+	rc = SQLSetParam(CursorTable[i].hstmt, (short)(j+1), SQL_C_FLOAT, SQL_FLOAT,
 			 0, 0, (float *)(CursorTable[i].BList[j]), NULL);
       else
-	rc = SQLSetParam(CursorTable[i].hstmt, j+1, SQL_C_SLONG, SQL_INTEGER,
+	rc = SQLSetParam(CursorTable[i].hstmt, (short)(j+1), SQL_C_SLONG, SQL_INTEGER,
 			 0, 0, (int *)(CursorTable[i].BList[j]), NULL);
       if (rc != SQL_SUCCESS) {
 	ctop_int(4,PrintErrorMsg(i));
@@ -658,7 +660,7 @@ int DescribeSelectList(int i)
     assert(CursorTable[i].OutLen = (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum));
     assert(CursorTable[i].ColLen = (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum));
     for (j = 0; j < CursorTable[i].ColNum; j++) {
-      SQLDescribeCol(CursorTable[i].hstmt, j+1, (UCHAR FAR*)colname,
+      SQLDescribeCol(CursorTable[i].hstmt, (short)(j+1), (UCHAR FAR*)colname,
 		     sizeof(colname), &colnamelen,
 		     &CursorTable[i].ColTypes[j],
 		     &collen, &scale, &nullable);
@@ -678,7 +680,7 @@ int DescribeSelectList(int i)
   }
   // bind them
   for (j = 0; j < CursorTable[i].ColNum; j++) 
-    SQLBindCol(CursorTable[i].hstmt, j+1, SQL_C_CHAR, CursorTable[i].Data[j],
+    SQLBindCol(CursorTable[i].hstmt, (short)(j+1), SQL_C_CHAR, CursorTable[i].Data[j],
 	       CursorTable[i].ColLen[j], (SDWORD FAR *)(&(CursorTable[i].OutLen[j])));
   return 0;
 }
