@@ -29,7 +29,7 @@ ALL = 	aggregs.O array.O array1.O assoc_xsb.O \
 	directry.O foreign.O format.O \
 	intern.O obsolete.O odbc_call.O ordsets.O ora_call.O \
 	packaging.O random.O scrptutl.O socket.O storage.O \
-	ugraphs.O wrapping.O write_term.O xsb_ciao.O xnmr.O
+	ugraphs.O wrapping.O write_term.O xsb_ciao.O xnmr.O justifyLP.O
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
