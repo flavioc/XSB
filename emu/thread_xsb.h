@@ -56,7 +56,7 @@ void init_system_threads( void ) ;
 
 /* TLS: for Cygwin, these constants must be re-defined */
 
-#if defined(CYGWIN) || defined(DARWIN)
+#if defined(DARWIN)
 
 #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
 #define PTHREAD_MUTEX_ERRORCHECK_NP PTHREAD_MUTEX_ERRORCHECK
