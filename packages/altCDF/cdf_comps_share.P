@@ -12,7 +12,7 @@
 
 :- import 
 	classHasAttr/3,
-	retractallExtTerm/1, newExtTerm/1,
+	retractallExtTerm/1, newExtTerm/1, newExtTerm/2,
 	cdf_id_fields/4,
 	system_component/1 from cdf_init_cdf.
 
@@ -788,10 +788,10 @@ reload_extensional(CPath) :-
 %%	writeln(Term),
 	(Term == end_of_file
 	 ->	!
-	 ; Term = :-(_)
+	 ; Term @= :-(_)
 	 ->	fail
 	 ;      use_canonical_path(Term,CPath,CanonTerm),
-	        newExtTerm(CanonTerm),
+	        newExtTerm(newExtTermBatch,CanonTerm),
 	  	fail).
 
 use_canonical_path(classHasAttr_ext(cid(N,N),crid(hasPath,N),cid(_,cdfpt)),
