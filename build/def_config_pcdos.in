@@ -46,9 +46,6 @@
 /* Does DOS have sockets? Which libraries must be added for this????? */
 #define HAVE_SOCKET 1
 
-/* Define as __inline if that's what the C compiler calls it.  */
-#define inline __inline__
-
 
 /******* END Variables to be set manually ****************/
 
@@ -68,6 +65,9 @@
 
 /* Use delay strategy */
 #define SLG_WITH_DELAY 1
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#define inline __inline__
 
 
 #if defined(FOREIGN_COFF))
