@@ -37,7 +37,7 @@
 
 #define edge_alloc_chunk_size	(1024 * sizeof(struct ascc_edge))
 
-char *edge_space_chunk_ptr = NULL;
+static char *edge_space_chunk_ptr = NULL;
 
 static EPtr free_edges = NULL, free_edge_space = NULL, top_edge_space = NULL;
 
@@ -119,16 +119,16 @@ static void reclaim_edge_space(ComplStackFrame csf_ptr)
 
 #ifdef CHAT
 #define first_consumer(SUBG,CSF) (compl_cons_copy_list(CSF))
-#define ptcp_of_gen(SUBG,CSF)	 ((TChoice)(compl_ptcp(CSF)))
+#define ptcp_of_gen(SUBG,CSF)	 ((SGFrame)(compl_ptcp(CSF)))
 #define ptcp_of_cons(CONS_CP) \
-	((TChoice)(nlcp_ptcp((&chat_get_cons_start((chat_init_pheader)CONS_CP)))))
+	((SGFrame)(nlcp_ptcp((&chat_get_cons_start((chat_init_pheader)CONS_CP)))))
 #define ptcp_of_csusp(CSUSP_CP) \
-	((TChoice)(csf_ptcp((&chat_get_cons_start((chat_init_pheader)CSUSP_CP)))))
+	((SGFrame)(csf_ptcp((&chat_get_cons_start((chat_init_pheader)CSUSP_CP)))))
 #else
 #define first_consumer(SUBG,CSF) (subg_asf_list_ptr(SUBG))
-#define ptcp_of_gen(SUBG,CSF)	 ((TChoice)(tcp_ptcp(subg_cp_ptr(SUBG))))
-#define ptcp_of_cons(CONS_CP)	 ((TChoice)(nlcp_ptcp(CONS_CP)))
-#define ptcp_of_csusp(CSUSP_CP)	 ((TChoice)(csf_ptcp(CSUSP_CP)))
+#define ptcp_of_gen(SUBG,CSF)	 ((SGFrame)(tcp_ptcp(subg_cp_ptr(SUBG))))
+#define ptcp_of_cons(CONS_CP)	 ((SGFrame)(nlcp_ptcp(CONS_CP)))
+#define ptcp_of_csusp(CSUSP_CP)	 ((SGFrame)(csf_ptcp(CSUSP_CP)))
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -136,9 +136,8 @@ static void reclaim_edge_space(ComplStackFrame csf_ptr)
 static void construct_dep_graph(ComplStackFrame leader_compl_frame)
 {
     EPtr eptr;
-    TChoice p;
     CPtr asf, nsf;
-    SGFrame source_subg;
+    SGFrame p, source_subg;
     ComplStackFrame csf1, csf2;
 
     csf1 = leader_compl_frame;
@@ -182,8 +181,10 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
   CPtr ComplStkFrame; /* CopyFrame */
   bool sccs_needed;
   SGFrame curr_subg;
+#if (!defined(CHAT))
   CPtr cont_breg = leader_breg;
-  
+#endif
+
   /* Perform a check whether exact completion is needed.  For subgoals
      that are already marked as (early) completed, make sure their
      completion suspension frames are not taken into account and the
@@ -231,7 +232,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 
     max_finish_csf = DFS_DGT((ComplStackFrame)leader_compl_frame);
 #ifdef COMPLETION_DEBUG
-    fprintf(stderr, "! MAX FINISH_SUBGOAL = %p\n", max_finish_csf);
+    fprintf(stderr,"! MAX FINISH_SUBGOAL AT COMPL STACK: %p\n",max_finish_csf);
 #endif
     /* mark as not visited all subgoals in the completion stack
      * below leader_compl_frame */
@@ -251,17 +252,16 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     non_lrd_stratified = FALSE;
     
     while (ComplStkFrame >= openreg) {
-      TChoice p;
-      CPtr susp_subgoal, susp_csf;
-      curr_subg = compl_subgoal_ptr(ComplStkFrame);
+      CPtr    susp_csf;
+      SGFrame susp_subgoal;
 
+      curr_subg = compl_subgoal_ptr(ComplStkFrame);
       if (!is_completed(curr_subg)) {
 	if (compl_visited(ComplStkFrame) != FALSE) {
 	  curr_subg = compl_subgoal_ptr(ComplStkFrame);  
 	  for (nsf = subg_compl_susp_ptr(curr_subg);
 	       nsf != NULL; nsf = csf_prevcsf(nsf)) {
-	    if ((p = ptcp_of_csusp(nsf)) != NULL) {
-	      susp_subgoal = (CPtr)p;
+	    if ((susp_subgoal = ptcp_of_csusp(nsf)) != NULL) {
 	      susp_csf = subg_compl_stack_ptr(susp_subgoal);      
 	      if (!is_completed(susp_subgoal) && 
 		  susp_csf <= leader_compl_frame &&
@@ -293,16 +293,14 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     /*--- We have to find the continuation.  It is the topmost ---*/
     /*--- subgoal of the ASCC that will not be completed. ---*/
     if (non_lrd_stratified == FALSE) {
-#ifdef CHAT
-      cont_breg = leader_breg;
-#else
+#if (!defined(CHAT))
       found = FALSE;
       for (ComplStkFrame = openreg;
 	   !found && ComplStkFrame <= leader_compl_frame;
 	   ComplStkFrame = prev_compl_frame(ComplStkFrame)) {
 	if (compl_visited(ComplStkFrame) <= FALSE) {
 	  cont_breg = subg_cp_ptr(compl_subgoal_ptr(ComplStkFrame));
-	  breg = cont_breg;		/*-- Check this for correctness! --*/
+	  breg = cont_breg;
 #ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
 	  fprintf(stderr, "------ Setting TBreg to %p...\n", cont_breg);
 #endif
@@ -398,8 +396,9 @@ fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
 	    }
 	    subg_compl_susp_ptr(curr_subg) = head_ndnsf;
 	  }
-	  /* So that other Compl_Susp_CPs can be saved. */
-	  cont_breg = breg; 
+#if (!defined(CHAT))
+	  cont_breg = breg; /* So that other Compl_Susp_CPs can be saved. */
+#endif
 	}
       }
     }
@@ -447,10 +446,6 @@ fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
       ComplStkFrame = next_compl_frame(ComplStkFrame);
     }
     
-    /* this guarantees that all simplification has been done
-     * and so the answer status can be correctly set and
-     * are guaranteed not to change anymore
-     */
     ComplStkFrame = leader_compl_frame;
     while (ComplStkFrame >= openreg) {
       curr_subg = compl_subgoal_ptr(ComplStkFrame);
