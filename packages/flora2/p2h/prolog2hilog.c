@@ -292,7 +292,7 @@ static char *pterm2string(prolog_term term)
   static VarString *StrArgBuf;
   prolog_term term2 = p2p_deref(term);
 
-  XSB_StrCreate(StrArgBuf);
+  XSB_StrCreate(&StrArgBuf);
   XSB_StrSet(StrArgBuf,"");
   print_pterm(term2, 1, StrArgBuf); 
   return StrArgBuf->string;
