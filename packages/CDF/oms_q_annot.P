@@ -108,6 +108,12 @@ calls @tt{widen/6} again with @tt{Super} bound.
 
 @end{itemize}
 
+Another relaxation annotation of the form, @tt{attr(S,R,T)::opt(Pen)},
+is supported.  This acts like the unannotated @tt{attr(S,R,T)} call if
+the call succeeds (and for each time it succeeds.)  However if the
+@tt{attr(S,R,T)} call fails, the query still succeeds, but with a
+penalty of @tt{Pen} points.
+
 ").
 
 :- op(700,xfx,::).
