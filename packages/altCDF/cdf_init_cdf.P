@@ -6,7 +6,7 @@
 %	ic/1, 
 	necessCond/2,
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
-	hasAttr/3, immed_hasAttr/3, 
+	hasAttr/3, immed_hasAttr/3,
 	allAttr/3, immed_allAttr/3, 
 	minAttr/4, immed_minAttr/4, 
 	maxAttr/4, immed_maxAttr/4, 
@@ -73,7 +73,8 @@ cdf_dynamic(isa_ext/2).
 cdf_index(isa_ext,2,[*(1),*(2)]).
 
 cdf_dynamic(hasAttr_ext/3).
-cdf_index(hasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+%%cdf_index(hasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+cdf_index(hasAttr_ext,3,[*(1) + *(2) + *(3),*(1) + *(2),*(2) + *(3)]).
 cdf_dynamic(minAttr_ext/4).
 cdf_index(minAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
 cdf_dynamic(classHasAttr_ext/3).
@@ -889,7 +890,7 @@ classHasAttr1(SCid,Rid,TCid) :-
 	once(explosive_isa(RidAb,Rid)),
 	once(explosive_isa(TCidAb,TCid)).
 
-:- table classHasAttr_12fix/3.
+%%:- table classHasAttr_12fix/3.
 classHasAttr_12fix(SCid,Rid,TCid) :-
 	OutTerm = rln(SCid,Rid,TCid),
 	copy_term(OutTerm,BindPat),
@@ -897,7 +898,7 @@ classHasAttr_12fix(SCid,Rid,TCid) :-
 	(not_max_implicative_classHasAttr_12fix(OutTerm,BindPat) -> 
 	    fail ; true).
 
-:- table classHasAttr_12fix_sub/3.
+%%:- table classHasAttr_12fix_sub/3.
 classHasAttr_12fix_sub(SCid,Rid,TCid) :-
 	isa(RidC,Rid),
 	immed_classHasAttr1(SCid,RidC,TCidC),
@@ -1340,13 +1341,13 @@ abolish_hasAttr_inherits :-
 	abolish_table_pred(hasAttr_12fix_sub(_,_,_)),
 	abolish_table_pred(hasAttr_23fix_sub(_,_,_)).
 
-abolish_classHasAttr_inherits :-
-	abolish_table_pred(classHasAttr_1fix(_,_,_)),
+abolish_classHasAttr_inherits :- true.
+/*	abolish_table_pred(classHasAttr_1fix(_,_,_)),
 	abolish_table_pred(classHasAttr_12fix(_,_,_)),
 	abolish_table_pred(classHasAttr_23fix(_,_,_)),
 	abolish_table_pred(classHasAttr_1fix_sub(_,_,_)),
 	abolish_table_pred(classHasAttr_12fix_sub(_,_,_)),
-	abolish_table_pred(classHasAttr_23fix_sub(_,_,_)).
+	abolish_table_pred(classHasAttr_23fix_sub(_,_,_)). */
 
 abolish_allAttr_inherits :-
 	abolish_table_pred(allAttr_1fix(_,_,_)),
