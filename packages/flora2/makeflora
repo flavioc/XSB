@@ -10,7 +10,14 @@ else
 fi
 
 # Generate the files that contain the Prolog & Flora installation directories
-echo "['flrconfig.P']." | $PROLOG
+# Generates runflora file that can be used to run flora
+rm -fr .makeflora.tmp
+(echo "['flrconfig.P']." | $PROLOG) \
+    || (echo "Usage:  runflora all full-path-to-prolog"; touch .makeflora.tmp)
+if test -f .makeflora.tmp ; then
+    rm -rf .makeflora.tmp
+    exit 1
+fi
 
 chmod 700 ./runflora
 
