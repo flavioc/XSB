@@ -54,7 +54,7 @@ static double TZ = 1.0/30323.0;
 
 /*
  * Returns a float number within the range [0.0, 1.0) in reg 2.
- * ret_random() returns -1 if there is an error, 0 if everything is OK.
+ * ret_random() returns FALSE if there is an error, TRUE if everything is OK.
  */
 int ret_random() {
   Float X, Y, Z, T;
@@ -71,14 +71,14 @@ int ret_random() {
   term = ptoc_tag(2);
   if (isref(term)) {
     ctop_float(2, T - (int)T);
-    return 0;
+    return TRUE;
   }
-  else return -1;
+  else return FALSE;
 }    
 
 /*
  * Unifies reg 2,3,4 with the random seeds IX, IY, IZ.  
- * getrand() returns -1 if there is an error, 0 if everything is OK.
+ * getrand() returns FALSE if there is an error, TRUE if everything is OK.
  */
 int getrand() {
   Cell term;
@@ -87,21 +87,21 @@ int getrand() {
   if (isref(term))
     ctop_int(2, IX);
   else if (!isinteger(term) || (int_val(term) != IX))
-    return -1;
+    return FALSE;
 
   term = ptoc_tag(3);
   if (isref(term))
     ctop_int(3, IY);
   else if (!isinteger(term) || (int_val(term) != IY))
-    return -1;
+    return FALSE;
 
   term = ptoc_tag(4);
   if (isref(term))
     ctop_int(4, IZ);
   else if (!isinteger(term) || (int_val(term) != IZ))
-    return -1;
+    return FALSE;
 
-  return 0;
+  return TRUE;
 }
 
 /*

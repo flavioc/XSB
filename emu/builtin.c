@@ -1349,12 +1349,10 @@ int builtin_call(byte number)
   case WH_RANDOM:		/* R1: +Type of operation */
     switch (ptoc_int(1)) {
     case RET_RANDOM:		/* return a random float in [0.0, 1.0) */
-      if (ret_random() == -1)
-	return FALSE;
+      return ret_random();
       break;
     case GET_RAND:		/* getrand */
-      if (getrand() == -1)
-	return FALSE;
+      return getrand();
       break;
     case SET_RAND:		/* setrand */
       setrand();
