@@ -37,6 +37,7 @@
 #define popen    _popen
 #define pclose   _pclose
 #define dup      _dup
+#define putenv   _putenv
 #define dup2     _dup2
 #define fileno   _fileno
 #endif
