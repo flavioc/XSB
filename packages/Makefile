@@ -23,9 +23,9 @@
 ##
 
 
-ALL = 	flip.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O
+ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O
 
-SUBDIR = flip slx perlmatch gap regmatch wildmatch
+SUBDIR = flora slx perlmatch gap regmatch wildmatch
 
 Option = [optimize]
 
@@ -60,9 +60,9 @@ slx::
 	@echo ""
 	cd slx; make
 
-flip::
+flora::
 	@echo ""
-	cd flip; make
+	cd flora; make
 
 perlmatch::
 	@echo ""
