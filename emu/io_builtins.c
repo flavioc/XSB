@@ -197,7 +197,7 @@ bool fmt_write(void)
 					1,   /* initialize    	      	     */
 					0);  /* write    	      	     */
   xsb_segfault_message =
-    "FMT_WRITE: Argument type doesn't match format specifier";
+    "++FMT_WRITE: Argument type doesn't match format specifier\n";
   signal(SIGSEGV, &xsb_segfault_catcher);
   
   for (i = 1; (i <= Arity); i++) {
@@ -315,7 +315,7 @@ bool fmt_write_string(void)
 					1,  /* initialize     	      	     */
 					0); /* write     	      	     */
   xsb_segfault_message =
-    "FMT_WRITE_STRING: Argument type doesn't match format specifier";
+    "++FMT_WRITE_STRING: Argument type doesn't match format specifier\n";
   signal(SIGSEGV, &xsb_segfault_catcher);
   
   for (i = 1; (i <= Arity); i++) {
