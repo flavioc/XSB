@@ -118,7 +118,7 @@
 	db_remove_prref/1,
 	db_reclaim0/2,
 	oracle_query/7,
-	odbc_exec_query/5,
+	odbc_exec_query/6,
 	private_builtin/11,
 	segfault_handler/1,
 	is_charlist/2,
