@@ -9,13 +9,16 @@
 :- export load_extensional_facts/1, 
 	dump_extensional_facts/1, 
 	load_intensional_rules/1,
+	dump_intensional_rules/1, 
+	write_component_intensional/1,
 	merge_intensional_rules/0,
 	retract_intensional_rules/1,
 	cdf_exists/1.
 
 :- import allAttr_ext/3, isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, 
 	minAttr_ext/4, maxAttr_ext/4,
-	necessCond_ext/2, coversAttr_ext/3 
+	necessCond_ext/2, coversAttr_ext/3,
+            compdlrule/3, compdltrans/3
 		 from usermod.
 
 :- import isa_int/2, allAttr_int/3, hasAttr_int/3, classHasAttr_int/3, 
@@ -24,12 +27,14 @@
 		 from usermod.
 
 :- import component_table_int/3 from usermod.
-
 :- import caching_cdf/1 from usermod.
 
+:- import pretty_print/1 from newpp.
 :- import newIntRule/3,newDLRule/3,
 	 newExtTermBatch/2,transform_intensional_rules/4,
-	 abolish_cdf_tables/0  from cdf_init_cdf.
+	 abolish_cdf_tables/0, cdf_id_fields/4 from cdf_init_cdf.
+
+:- import  get_intensional_mfile_expansion/2 from cdf_comps_share.
 
 :- import clause_assert/2 from cdf_exceptions.
 
@@ -41,6 +46,7 @@
 %:- import load_dync/2 from consult.
 :- import path_sysop/2 from file_io.
 :- import slash/1 from machine.
+:- import variant/2 from subsumes.
 
 :- comment(module, "These routines load CDF files from a disk file
 system into memory, save them from memory to disk, and merge
@@ -88,7 +94,7 @@ sort_and_write_terms(_Terms).
 cdf_ext_inst(Term):-
 	(Term = isa_ext(_,_) ; Term = allAttr_ext(_,_,_) ; 
 	 Term = classHasAttr_ext(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
-             Term = necessCond_ext(_,_) ; coversAttr_ext(_,_,_) ; 
+             Term = necessCond_ext(_,_) ; Term = coversAttr_ext(_,_,_) ; 
 	 Term = minAttr_ext(_,_,_,_) ; Term = maxAttr_ext(_,_,_,_) ).
 
 dump_extensional_facts_2:- 
@@ -99,7 +105,67 @@ dump_extensional_facts_2:-
 dump_extensional_facts_2.
 %-----------------------------------------------------------------
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* TLS: Some documentation is probably worthwhile here.  When an
+intensional rule is loaded from a directory D, it is given a sort of
+multifile expansion.  I.e. if isa_int(A,B):- Body is loaded from file
+foo, two clauses are asserted:
+    isa_int(A,B):- isa_int_foo(A,B).
+and
+    isa_int_foo(A,B):- Body
+this associates each clause with the file it came from, which is
+useful for all sorts of purposes.  The problem is that foo may or may
+not be the component -- it will be if the rules have been loaded as a
+component, but not if the rules have been loaded from a file.  To
+address this, we must look through all rules and search through their
+components. 
+
+This could perhaps be optimized, so that rules loaded from an existing
+component are not checked, but I'm not doing that right now. */
+
+dump_intensional_rules(Dir) :-
+	throw_cdf_writable(Dir),
+	dump_intensional_rules_1(Dir).
+
+dump_intensional_rules_1(Dir) :-
+	cdf_fix_dir(Dir,DirS),
+  	concat_atom([DirS,'cdf_intensional.P'],File),
+	tell(File),
+	write_component_intensional(_Comp),
+	told.
+
+write_component_intensional(Comp):- 
+	get_intensional_mfile_expansion(Head,Call),
+	component_table_int(Head,SrcArg,_Arg2),
+	Head =.. [H|_],
+	write_component_intensional_1(Comp,Call,H,SrcArg),
+	fail.
+write_component_intensional(Comp):- 
+	compdlrule(Comp,DLHead,DLBody),
+	write_canonical('<='(DLHead,DLBody)), writeln('.'),
+	fail.
+write_component_intensional(_).
+
+% Comp will be var if called from dump -- so don't need to check any
+% components.  It will be an atom if called via  update components 
+write_component_intensional_1(Comp,Call,Head,SrcArg):- 
+	clause(Call,Body), 
+%	writeln('     clause'(Call,Body)), 
+	(var(Comp) -> 
+	    true
+	 ;  arg(SrcArg,Call,A),
+	    cdf_id_fields(A,_,_,Comp1),
+	    nonvar(Comp1),Comp1 = Comp),
+	Call =..[_|L],
+	NewHead =.. [Head|L],
+	\+ is_dl_rule(Comp,NewHead,Body),
+	pretty_print(clause(NewHead,Body)).
+
+
+is_dl_rule(Comp,Head,Body):- 
+	compdltrans(Comp,Head1,Body1),
+	variant(f(Head,Body),f(Head1,Body1)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_extensional_facts/1,
 "@tt{load_extensional_facts(DirectoryList)}: loads the file

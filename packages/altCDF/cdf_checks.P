@@ -148,7 +148,8 @@ to and loading them from a component.
 
 %-----------------------------------------------------------------
 
-:- document_export 
+:- document_export
+              isType0Term/1,                        % documented
               cdf_check_ground/1,                % documented
 	  cdf_check_ground_fail/1,          % not documented
 	  cdf_check_sorts/1,                   % documented
@@ -224,6 +225,8 @@ call_check(Check,CDFFlag):-
 %           writeln(failed(Check))
            ).
 
+isType0Term(Term):- type_table(Term,_).
+
 %-----------------
 cdf_check_ground_fail(Term):- 
 	catch(cdf_check_ground(Term),Error,failwrite(Error)).
@@ -231,6 +234,9 @@ cdf_check_ground_fail(Term):-
 failwrite(Error):- numbervars(Error),messageln(Error,STDERR),fail.
 
 cdf_check_ground(Term):- 
+	(isType0Term(Term) -> 
+	    true 
+	  ; domain_error(type0Term,Term,cdf_check_ground/1,1)),
 	cdf_check_ground(Term,Term).
 
 cdf_check_ground(minAttr_ext(A,B,C,N),OrigTerm):- !,
@@ -245,17 +251,23 @@ cdf_check_ground(Term,OrigTerm):-
 
 cdf_check_id_list([],_,_).
 cdf_check_id_list([Id|Rest],N,OrigTerm):- 
-	cdf_id_fields(Id,_,_Nid,Cmpt),
+	cdf_id_fields(Id,_,Nid,Cmpt),
 	(Cmpt == cdfpt -> 
 	    true
-	  ; cdf_check_ground_1(Id,N,OrigTerm)),
+	  ; cdf_check_ground_1(Nid,Cmpt,N,OrigTerm)),
 	N1 is N + 1,
 	cdf_check_id_list(Rest,N1,OrigTerm).
 
-cdf_check_ground_1(Nid,Arg,OrigTerm):- 
-	(ground(Nid) -> 
+cdf_check_ground_1(Nid,Cmpt,Arg,OrigTerm):- 
+	(ground(Cmpt) -> 
 	  true
-            ; instantiation_error(OrigTerm,Arg,ground)).
+            ; instantiation_error(OrigTerm,Arg,ground)),
+	(structure(Nid) -> 
+	    Nid =.. [_Functor|Args],
+    	    cdf_check_id_list(Args,1,OrigTerm)
+	 ; (ground(Nid) -> 
+	      true
+                ; instantiation_error(OrigTerm,Arg,ground))).
 
 %-----------------
 

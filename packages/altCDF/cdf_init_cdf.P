@@ -1,6 +1,7 @@
 :- compiler_options([xpp_on]).
 
 :- export
+            isDynSupportedPred/1,
             abolish_cdf_tables/0,
 	cdf_id_fields/4,
 	cdf_root/1,
@@ -310,6 +311,7 @@ cdf_id_fields1(rid(N,S),rid,N,S).
 cdf_id_fields1(crid(N,S),crid,N,S).
 cdf_id_fields1(crrid(N,S),crrid,N,S).
 cdf_id_fields1(crcrid(N,S),crcrid,N,S).
+cdf_id_fields1(vid(N,S),vid,N,S).
 
 :- index cdf_id_fields2/4-2.
 cdf_id_fields2(cid(N,S),cid,N,S).
@@ -318,6 +320,7 @@ cdf_id_fields2(rid(N,S),rid,N,S).
 cdf_id_fields2(crid(N,S),crid,N,S).
 cdf_id_fields2(crrid(N,S),crrid,N,S).
 cdf_id_fields2(crcrid(N,S),crcrid,N,S).
+cdf_id_fields2(vid(N,S),vid,N,S).
 
 product_identifier(Id):- 
 	cdf_id_fields(Id,_F,I,Comp),
@@ -1729,6 +1732,15 @@ retractallDLRule_1(H,B,Name) :-
 retractallDLRule_1(_,_,_).
 
 %%%%%%%%%%%%%%%%%
+
+isDynSupportedPred(isa(_,_)).
+isDynSupportedPred(hasAttr(_,_,_)).
+isDynSupportedPred(allAttr(_,_,_)).
+isDynSupportedPred(classHasAttr(_,_,_)).
+isDynSupportedPred(maxAttr(_,_,_,_)).
+isDynSupportedPred(minAttr(_,_,_,_)).
+isDynSupportedPred(coversAttr(_,_,_)).
+isDynSupportedPred(necessCond(_,_)).
 
 abolish_cdf_tables:-
 	abolish_isas,
