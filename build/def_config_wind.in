@@ -125,3 +125,6 @@
 /* GC on SLG-WAM! ;) */
 #undef SLG_GC
 
+/* Defined under OS X */
+#undef DARWIN
+

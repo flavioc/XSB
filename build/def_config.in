@@ -52,6 +52,9 @@
 /* Defined under Linux */
 #undef LINUX
 
+/* Defined under OS X */
+#undef DARWIN
+
 /* Older Linux using a.out format */
 #undef LINUX_AOUT
 
