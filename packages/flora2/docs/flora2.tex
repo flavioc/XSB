@@ -238,15 +238,15 @@ to keep abreast with the development of \FLORA or if a newer version was
 released in-between the releases of XSB). The installation instructions are
 somewhat different in these two cases.
 
-\paragraph{Installing \FLORA under UNIX.}
+\paragraph{Installing \FLORA in UNIX.}
 To configure a version of \FLORA that was downloaded as part of the
 distribution of XSB, simply configure XSB as usual:
 %%
 \begin{verbatim}
  cd XSB/build
- configure
- makexsb
- makexsb packages
+ ./configure
+ ./makexsb
+ ./makexsb packages
 \end{verbatim}
 %%
 
@@ -256,8 +256,8 @@ also do the following:
 %%
 \begin{verbatim}
  cd packages/flora2
- makeflora clean
- makeflora
+ ./makeflora clean
+ ./makeflora
 \end{verbatim}
 %%
 
@@ -270,8 +270,8 @@ configure \FLORA, do the following:
 %%
 \begin{verbatim}
  cd flora2
- makeflora clean
- makeflora
+ ./makeflora clean
+ ./makeflora
 \end{verbatim}
 %%
 (assuming that XSB has been already installed and configured separately).
@@ -281,7 +281,7 @@ need to provide the XSB installation directory to {\tt makeflora} as
 an argument, {\it e.g.},
 %%
 \begin{verbatim}
- makeflora all ~/XSB  
+ ./makeflora all ~/XSB  
 \end{verbatim}
 %%
 
@@ -292,8 +292,8 @@ Then use the following commands to configure
 %%
 \begin{alltt}
    cd flora2
-   makeflora clean
-   makeflora all \emph{path-to-prolog-executable}
+   ./makeflora clean
+   ./makeflora all \emph{path-to-prolog-executable}
 \end{alltt}
 %%
 where \emph{path-to-prolog-executable} is the full path name of the XSB
@@ -302,6 +302,29 @@ executable.
 In addition, make sure that the {\tt packages} directory contains a
 shortcut called {\tt flora2.P} to the file
 {\tt packages$\backslash$flora2$\backslash$flora2.P}.
+
+%%\paragraph{Installing \FLORA in Windows under Cygwin.}
+%%
+%%Configure XSB as in Unix, but make sure that the option {\tt
+%%  --with-no-cygwin} is used (yes, the name of the option is odd).
+%%%%
+%%\begin{verbatim}
+%% cd XSB/build
+%% ./configure --enable-no-cygwin
+%% ./makexsb
+%% ./makexsb packages
+%%\end{verbatim}
+%%%%
+%%Then change to the \FLORA directory and configure \FLORA:
+%%%%
+%%\begin{alltt}
+%%   cd flora2
+%%   ./makeflora clean
+%%   ./makeflora all \emph{path-to-prolog-executable}
+%%\end{alltt}
+%%%%
+%%If XSB can be found through the PATH environment variable then you can
+%%simply type {\tt ./makeflora}.
 
 
 \paragraph{Running \FLORA.}
