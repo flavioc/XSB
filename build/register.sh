@@ -11,7 +11,7 @@ Installation logs help the XSB group to keep track of the usage of the
 system on different architectures and to focus its efforts on the 
 architectures that are used more frequently.
 
-The log will be sent automatically to  \`xsb-internal@cs.sunysb.edu'
+The log will be sent automatically to  \`xsb-contact@cs.sunysb.edu'
 Would you like to send us the installation log? (y/n): y
 EOF
 
@@ -19,7 +19,7 @@ read sendlog
 
 if test "$sendlog" != "n" -a "$sendlog" != "no" ; then
     (cat sendlog.msg Installation_summary \
-	| mail kifer@cs.sunysb.edu) \
+	| mail xsb-contact@cs.sunysb.edu) \
     && echo "" ; echo "Thank you!"; echo ""
 fi
 
@@ -41,7 +41,7 @@ EOF
     read register
 
     if test "$register" != "n" -a "$register" != "no" ; then
-	(cat registration.msg | mail kifer@cs.sunysb.edu \
+	(cat registration.msg | mail xsb-contact@cs.sunysb.edu \
 	    && echo ""; \
 		echo "Thank you for registering as an XSB user!"); echo ""
 

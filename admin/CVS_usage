@@ -183,10 +183,10 @@ Explanations:
     # This is how we'll be making releases. (Need to decide on the docs)
     xsbrelease   -a !XSB/tests !XSB/admin !XSB/docs XSB
 
-NOTE: The modules xsbcore, xsbdevel, xsbrelease must be checked out from
-      the ~/projects directory, and you must specify the repository.
-      The other modules must be checked out when you are in ~/projects/XSB,
-      and there isno need to specify the repository!!!
+NOTE: The modules XSBCORE, XSBDEVEL, XSBRELEASE must be checked out from
+      the ~/projects directory, and you MUST SPECIFY the repository.
+      The OTHER MODULES must be checked out when you are in ~/projects/XSB,
+      and there is NO NEED to specify the repository!!!
 
 NOTE: modules provide a convenient way of grouping files and directories
       for checkout, but for some reason, CVS developers didn't extend this
