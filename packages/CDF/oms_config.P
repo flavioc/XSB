@@ -6,11 +6,11 @@ component_table_ext(oms_rln(_,_,_),arg(2,class),[arg(1,class),arg(3,class)]).
 component_table_ext(oms_schrel(_,_,_),arg(2,class),
 					[arg(1,class),arg(3,class)]).
 component_table_ext(oms_strel(_,_,_),arg(2,class),[arg(1,class),arg(3,class)]).
-component_table_ext(oms_at(_,_,_),arg(2,obj),[arg(1,class),arg(3,class)]).
-component_table_ext(oms_ao(_,_,_),arg(2,obj),[arg(1,class),arg(3,obj)]).
+component_table_ext(oms_at(_,_,_),arg(2,class),[arg(1,obj),arg(3,class)]).
+component_table_ext(oms_ao(_,_,_),arg(2,class),[arg(1,obj),arg(3,obj)]).
 
 component_table_int(class_int(_,_,_),3,[]).
-component_table_int(object_int(_,_,_,_),3,[]).
+component_table_int(object_int(_,_,_),3,[]).
 component_table_int(immediate_subclass_int(_,_,_,_),2,[arg(4,warn)]).
 component_table_int(immediate_memberof_int(_,_,_,_),2,[arg(4,warn)]).
 component_table_int(immediate_relationship_int(_,_,_,_,_,_),4,
