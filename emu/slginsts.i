@@ -136,20 +136,28 @@ case answer_return:
       if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
 	int i;
 	CPtr temp_hreg;
+	char *ret_str;
 	/*
 	 * After load_solution_trie(), the substitution factor of the
 	 * answer is left in array var_addr[], and its arity is in
 	 * num_heap_term_vars.  We have to put it into a term ret/n (on 
 	 * the heap) and pass it to delay_positively().
 	 */
-	temp_hreg = hreg;
-	new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
-	for (i = 0; i < num_heap_term_vars; i++) {
-	  cell(hreg++) = (Cell) var_addr[i];
+	if (num_heap_term_vars == 0) {
+	  ret_str = string_find("ret", 1);
+	  delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
+			   makestring(ret_str));
 	}
-	SUBGOAL = nlcp_subgoal_ptr(breg);
-	delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
-			 temp_hreg);
+	else {
+	  temp_hreg = hreg;
+	  new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	  for (i = 0; i < num_heap_term_vars; i++) {
+	    cell(hreg++) = (Cell) var_addr[i];
+	  }
+	  SUBGOAL = nlcp_subgoal_ptr(breg);
+	  delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
+			   makecs(temp_hreg));
+	}
       }
       lpcreg = cpreg;
     } else {
@@ -252,8 +260,11 @@ case new_answer_dealloc:
 
 #ifdef DEBUG_DELAYVAR
     fprintf(stderr, ">>>> ans_var_pos_reg = ");
-    fprintf(stderr, "%s/%d\n", get_name((Psc)(cell(ans_var_pos_reg))),
-	   get_arity((Psc)(cell(ans_var_pos_reg))));
+    if (isinteger(cell(ans_var_pos_reg)))
+      fprintf(stderr, "\"ret\"\n");
+    else 
+      fprintf(stderr, "%s/%d\n", get_name((Psc)(cell(ans_var_pos_reg))),
+	      get_arity((Psc)(cell(ans_var_pos_reg))));
 #endif
 
     do_delay_stuff(TrieRetPtr, (SGFrame)SUBGOAL, xflag);
@@ -284,7 +295,13 @@ case new_answer_dealloc:
 	 * pointer to the heap where the substitution factor of the
 	 * answer was saved as a term ret/n (in variant_trie_search()).
 	 */
-	delay_positively(SUBGOAL, TrieRetPtr, ans_var_pos_reg);
+	if (isinteger(cell(ans_var_pos_reg))) {
+	  char *ret_str;
+	  ret_str = string_find("ret", 1);
+	  delay_positively(SUBGOAL, TrieRetPtr, makestring(ret_str));
+	}
+	else 
+	  delay_positively(SUBGOAL, TrieRetPtr, makecs(ans_var_pos_reg));
 #endif
       } else {
 	if (CallNumVar == 0) {	/* perform early completion */
@@ -511,18 +528,26 @@ lay_down_consumer:
 	{
 	  int i;
 	  CPtr temp_hreg;
+	  char *ret_str;
 	  /*
 	   * Similar to delay_positively() in retry_active, we also
 	   * need to put the substitution factor of the answer,
 	   * var_addr[], into a term ret/n and pass it to
 	   * delay_positively().
 	   */
-	  temp_hreg = hreg;
-	  new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
-	  for (i = 0; i < num_heap_term_vars; i++)
-	    cell(hreg++) = (Cell) var_addr[i];
-	  delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
-			   temp_hreg);
+	  if (num_heap_term_vars == 0) {
+	    ret_str = string_find("ret", 1);
+	    delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
+			     makestring(ret_str));
+	  }
+	  else {
+	    temp_hreg = hreg;
+	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	    for (i = 0; i < num_heap_term_vars; i++)
+	      cell(hreg++) = (Cell) var_addr[i];
+	    delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
+			     makecs(temp_hreg));
+	  }
 	}
       }
       lpcreg = cpreg;
