@@ -30,8 +30,8 @@
 :- import bootstrap_package/2, package_configuration/2 from packaging.
 
 :- bootstrap_package('sModels', sModels),
-   assert(package_configuration(version(sModels), 'sModels 082399')),
-	[smodels].
+   assert(package_configuration(version(sModels), 'sModels 082599')).
+
 
 
 
