@@ -29,6 +29,8 @@
 	 get_file_name/2, get_file_date/2,
 	 is_directory/1,
 	 whats_new/3,
+	 split_dirs/3,
+	 rel_path/3,
 	 canonical_pathname/2.
 
 :- import  ca/2, date/1, sysin/2 from scrptutl.
@@ -39,6 +41,9 @@
 	from standard.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import cwd/1, sys_chdir/2 from shell.
+
+:- import scan/2, set_scan_par/1 from stdscan.
+:- import flatten/2 from basics.
 
 % I always want this in UNIX.
 whats_new(Directory,Date,List):-
@@ -158,4 +163,69 @@ canonical_pathname(Path,CPath) :-
 	    sys_chdir(OldCWD,_)
 	;   throw(instantiation_error(canonical_pathname(Path,CPath)))
 	).
+
+
+%% split_dirs(+Path,-Drive,-LDirs)
+%% accepts a (canonical) path, and returns the list of directories
+%% that form the path.
+split_dirs(Path,Drive,LDirs) :-
+	(   atom(Path)
+	->  atom_codes(Path,CPath)
+	;   CPath = Path
+	),
+	set_scan_par(no_case),
+	scan(CPath,SCPath),
+	once(path(Drive,LDirs,SCPath,[])).
+
+path(Drive,LDirs) -->
+	disk(Drive),
+	!,
+	dirs(LDirs).
+path([],LDirs) -->
+	dirs(LDirs).
+
+disk(Drive) -->
+	[Drive], [':'].
+
+dirs([]) --> opt_slash, [].
+dirs([Dir|Dirs]) -->
+	slash,
+	[Dir],
+	dirs(Dirs).
+
+slash --> ['/'], !.
+slash --> ['\'], opt_bslash.
+opt_bslash --> [].
+opt_bslash --> ['\'], opt_bslash.
+opt_slash --> [].
+opt_slash --> slash.
+
+%% rel_path(+Orig, +Dest, -RelPath)
+%% Makes RelPath a relative path to Dest from Orig. If drive names are
+%% given, and they are different, RelPath = Dest.
+
+rel_path(Orig, Dest, RelPath) :-
+	split_dirs(Orig,ODrive,ODirs),
+	split_dirs(Dest,DDrive,DDirs),
+	(   ODrive = DDrive
+	->  make_relative(ODirs,DDirs,RelPath)
+	;   atom_codes(RelPath,Dest)
+	).
+
+make_relative([],[],'.') :- !.
+make_relative([],D,CD) :- !,
+	concat_atom(D,'/',CD).
+make_relative(O,[],R) :- !,
+	down_n(O,Dots),
+	concat_atom(Dots,'/',R).
+make_relative([H|O],[H|D],R) :- !,
+	make_relative(O,D,R).
+make_relative(O,D,R) :-
+	down_n(O,Dots),
+	flatten([Dots,D],LPath),
+	concat_atom(LPath,'/',R).
+
+down_n([],[]) :- !.
+down_n([_H|T],['..'|TT]) :-
+	down_n(T,TT).
 
