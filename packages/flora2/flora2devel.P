@@ -30,7 +30,7 @@
 %% .flora_path contains #define FLORA_INSTALL_DIR
 #include ".flora_path"
 
-#define FLORA_VERSION               '0.85devel of April 2002'
+#define FLORA_VERSION               '0.85devel of May 2002'
 
 :- import flora_configuration/2 from flrregistry.
 :- import flora_concat_atoms/2,

@@ -24,7 +24,7 @@
 
 OBJEXT=.xwam
 
-ALL = 	flora2${OBJEXT} slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
+ALL = 	slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
 	sModels${OBJEXT} libwww${OBJEXT} clpr${OBJEXT} xsbdoc${OBJEXT} \
 	xmc${OBJEXT}
@@ -76,8 +76,9 @@ slx::
 
 flora2::
 	@echo ""
-	ln -s flora2/flora2.P .
-	cd flora2; makeflora all ../$(PROLOG)
+	@rm -f flora2.P flora2$(OBJEXT)
+	@ln -s flora2/flora2.P .
+	cd flora2; makeflora all $(XSB)
 
 libwww::
 	@echo ""

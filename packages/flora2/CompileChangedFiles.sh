@@ -10,7 +10,7 @@ fi
 # If PROLOG variable is not specified to make,
 # then $PROLOG_COMMAND will start with `none'.
 # Catch it here and tell what to do.
-if test "`echo "$PROLOG_COMMAND" | sed -e s/^none//`" != "$PROLOG_COMMAND" ; then
+if test "`echo "$PROLOG_COMMAND" | sed 's/^none//'`" != "$PROLOG_COMMAND" ; then
     echo ""
     echo "*** PLEASE USE ./makeflora TO BUILD FLORA-2"
     echo ""

@@ -76,7 +76,7 @@
 	flora_shell/0.
 
 
-#define FLORA_VERSION               '0.84 of March 2002'
+#define FLORA_VERSION               '0.85 of May 2002'
 /*****************************************************************************/
 
 
