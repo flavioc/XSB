@@ -19,13 +19,9 @@ mary[salary@(1996) -> 70].
 mary[salary@(1997) -> 80].
 mary[salary@(1998) -> unknown].
 
-/*
 ?- Z := max {X; john[salary@(Year)->X] }.
 
 ?- Z := max{X ; john[salary@(Year) ->X], Year < 1996}.
-
-// It is strange that Florid will report an error saying invalid
-// aggregate expression for the following query.
 
 ?- Z=count{Year; john.salary@(Year) < max{X; john[salary@(Y2)->X], Y2<Year} }.
 
@@ -33,10 +29,11 @@ mary[salary@(1998) -> unknown].
 
 ?- Z= avg{X [Who]; Who[salary@(Year)->X]}.
 
+?- Z= collectset{Year [Who]; Who[salary@(Year) -> X], X < 60}.
+
 ?- retract(mary[salary@(Y)->S],S=unknown).
 
 ?- retract(john[salary@(Y)->S1], mary[salary@(Y)->S2], S1<S2).
 
 ?- retract(john[salary@(Y)->S1] | mary[salary@(Y)->S2], S1<S2).
-*/
 
