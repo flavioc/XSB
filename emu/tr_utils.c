@@ -807,8 +807,8 @@ static void delete_variant_table(BTNptr x) {
       free_trie_ht(ht);
     }
     else {
-      if ( IsNonNULL(Sibl(node)) )
-	push_node(Sibl(node));
+      if ( IsNonNULL(BTN_Sibling(node)) )
+	push_node(BTN_Sibling(node));
       if ( IsNonNULL(BTN_Child(node)) ) {
 	if ( IsLeafNode(node) ) {
 	  /*
@@ -831,10 +831,10 @@ static void delete_variant_table(BTNptr x) {
 		free_trie_ht(ht);
 	      }
 	      else {
-		if (Sibl(rnod)) 
-		  push_node(Sibl(rnod));
+		if (BTN_Sibling(rnod)) 
+		  push_node(BTN_Sibling(rnod));
 		if ( ! IsLeafNode(rnod) )
-		  push_node(Child(rnod));
+		  push_node(BTN_Child(rnod));
 		SM_DeallocateStruct(*smBTN,rnod);
 	      }
 	    }
@@ -843,7 +843,7 @@ static void delete_variant_table(BTNptr x) {
 	  FreeProducerSF(pSF);
 	} /* is leaf */
 	else 
-	  push_node(Child(node));
+	  push_node(BTN_Child(node));
       } /* there is a child of "node" */
       SM_DeallocateStruct(*smBTN,node);
     }
@@ -988,8 +988,8 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
   else {
     if (Contains_TRY_Instr(lowest_node_in_branch)) {
       /* Alter sibling's instruction:  trust -> no_cp  retry -> try */
-      Instr(Sibl(lowest_node_in_branch)) =
-	Instr(Sibl(lowest_node_in_branch)) -1;
+      BTN_Instr(BTN_Sibling(lowest_node_in_branch)) =
+	BTN_Instr(BTN_Sibling(lowest_node_in_branch)) -1;
       y1 = &BTN_Child(BTN_Parent(lowest_node_in_branch));
       if (is_hash(*y1)) {
 	z = CalculateBucketForSymbol((BTHTptr)(*y1),
@@ -998,13 +998,13 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
       }
       else
 	z = y1;
-      *z = Sibl(lowest_node_in_branch);      
+      *z = BTN_Sibling(lowest_node_in_branch);      
     }
     else { /* not the first in the sibling chain */
       prev = get_prev_sibl(lowest_node_in_branch);      
-      Sibl(prev) = Sibl(lowest_node_in_branch);
+      BTN_Sibling(prev) = BTN_Sibling(lowest_node_in_branch);
       if (Contains_TRUST_Instr(lowest_node_in_branch))
-	Instr(prev) -= 2; /* retry -> trust ; try -> nocp */
+	BTN_Instr(prev) -= 2; /* retry -> trust ; try -> nocp */
     }
     SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
   }
@@ -1017,8 +1017,8 @@ void safe_delete_branch(BTNptr lowest_node_in_branch) {
   byte choicepttype;
 
   MakeStatusDeleted(lowest_node_in_branch);
-  choicepttype = 0x3 & Instr(lowest_node_in_branch);
-  Instr(lowest_node_in_branch) = choicepttype | trie_no_cp_fail;
+  choicepttype = 0x3 & BTN_Instr(lowest_node_in_branch);
+  BTN_Instr(lowest_node_in_branch) = choicepttype | trie_no_cp_fail;
 }
 
 void undelete_branch(BTNptr lowest_node_in_branch) {
@@ -1027,10 +1027,10 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
    byte typeofinstr;
 
    if( IsDeletedNode(lowest_node_in_branch) ){
-     choicepttype = 0x3 &  Instr(lowest_node_in_branch);
+     choicepttype = 0x3 &  BTN_Instr(lowest_node_in_branch);
      typeofinstr = (~0x3) & BTN_Status(lowest_node_in_branch);
 
-     Instr(lowest_node_in_branch) = choicepttype | typeofinstr;
+     BTN_Instr(lowest_node_in_branch) = choicepttype | typeofinstr;
      MakeStatusValid(lowest_node_in_branch);
    }
    else
@@ -1139,8 +1139,8 @@ void delete_trie(BTNptr iroot) {
 	  }
 	}
 	else {
-	  sib  = Sibl(root);
-	  chil = Child(root);      
+	  sib  = BTN_Sibling(root);
+	  chil = BTN_Child(root);      
 	  /* Child nodes == NULL is not the correct test*/
 	  if (IsLeafNode(root)) {
 	    if (IsNonNULL(chil))
@@ -1201,7 +1201,7 @@ void delete_return(BTNptr l, VariantSF sg_frame)
 #endif
 
 #ifdef DEBUG_RECLAIM_DEL_RET
-    xsb_dbgmsg("DELETE_NODE: %d - Par: %d", l, Parent(l));
+    xsb_dbgmsg("DELETE_NODE: %d - Par: %d", l, BTN_Parent(l));
 #endif
   safe_delete_branch(l);
   if (!is_completed(sg_frame)) {
@@ -1251,6 +1251,8 @@ void delete_return(BTNptr l, VariantSF sg_frame)
 #endif
    
     ALN_Next(n) = next;
+    /* lfcastro: the above seems redundant */
+
     if(next == NULL){ /* last answer */
       subg_ans_list_tail(sg_frame) = n;
     }      

@@ -28,7 +28,7 @@
 
 /*----------------------------------------------------------------------*/
 
-case check_complete: {
+XSB_Start_Instr(check_complete,_check_complete); {
   CPtr    cs_ptr;
   CPtr    orig_breg = breg;
   xsbBool    leader = FALSE;
@@ -127,7 +127,7 @@ case check_complete: {
 	  }
 	}
 	lpcreg = cpreg;
-	goto contcase;
+	XSB_Next_Instr();
       } 
       else { 
 	tcp_tag(breg) = CHECK_COMPLETE_TAG;      
@@ -143,7 +143,7 @@ case check_complete: {
     if ((tmp_breg = sched_answers(subgoal, breg, leader))){
       breg = tmp_breg;
       Fail1;  
-      goto contcase;
+      XSB_Next_Instr();
     }
   }
 /*--------------------------------------------------------------------------*/
@@ -162,7 +162,7 @@ case check_complete: {
     {
       breg = tmp_breg;
       Fail1;
-      goto contcase;
+      XSB_Next_Instr();
     }
 
 /*==========================================================================*/
@@ -344,7 +344,7 @@ case check_complete: {
 	/* backtrack to prev tabled subgoal after returning answers */
 	breg = tcp_prevbreg(orig_breg); /* orig_???*/ 
 	delay_it = 1;
-	goto contcase;
+	XSB_Next_Instr();
       } /* if there are answers */   
       else {  /* There are no answers to return
 		 ------------------------------ */
@@ -399,5 +399,5 @@ case check_complete: {
 #endif
   }
   Fail1;
-  goto contcase;
+  XSB_Next_Instr();
 } /* end of check_complete */

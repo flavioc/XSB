@@ -104,7 +104,7 @@
 	breg = cut_breg;					\
      }								\
      check_table_cut = TRUE;                                    \
-     goto contcase;						\
+     XSB_Next_Instr();		       			\
    }
 
 /*----------------------------------------------------------------------*/

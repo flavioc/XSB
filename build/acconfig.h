@@ -153,6 +153,11 @@
 #undef SIZEOF_LONG
 
 
+#undef INDIRECT_THREADING
+#undef GC_TEST
+#undef FREEBSD
+#undef HAVE_READLINE
+
 
 /* Leave that blank line there!!  Autoheader needs it.
    If you're adding to this file, keep in mind:

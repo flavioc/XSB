@@ -110,6 +110,7 @@
 /* Sets runtime library search path for the dynamic loader */
 #undef RUNTIME_LD_PATH
 
+#undef INDIRECT_THREADING
 
 #ifdef ___ALWAYS_TRUE___
 #if ( defined(SUN) )

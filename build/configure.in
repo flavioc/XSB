@@ -441,7 +441,9 @@ case $CC in
    gcc)	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	c_inline_level="-finline-functions -Winline" 
-	CFLAGS="-ansi -pedantic -Wall"
+	CFLAGS="-Wall"
+#	CFLAGS="-ansi -pedantic"
+# -ansi & -pedantic are used only if not using threading
 	;;
    cc)  if test "$__sunpro_c" = "no"; then
 	   emuloop_opt_level=-${optimization_level-"O4"}
@@ -825,6 +827,31 @@ if test "${enable_gc_test}" = "yes" ; then
    gc_test=yes
 fi
 
+AC_ARG_ENABLE(threading,
+[  --enable-threading         Implements indirect threading on emulator loop])
+if test "${with_threading}" = "yes" ; then
+   enable_threading=yes
+fi
+if test "${enable_threading}" = "yes" ; then
+  if test "${CC}" = "gcc"; then
+    AC_DEFINE(INDIRECT_THREADING)
+    threading=yes
+  else
+    AC_MSG_ERROR(Threading is only possible with gcc)
+  fi
+else
+  CFLAGS="-ansi -pedantic ${CFLAGS}"
+fi
+
+AC_ARG_ENABLE(profiling,
+[  --enable-profiling        Forces gcc to generate information for profiling])
+if test "${with_profiling}" = "yes" ; then
+	enable_profiling=yes
+fi
+if test "${enable_profiling}" = "yes" ; then
+  CFLAGS="-pg -g -a ${CFLAGS}"
+  LDFLAGS="-pg ${LDFLAGS}"
+fi
 
 dnl Choose an abstract machine for XSB
 engine_mode=chat

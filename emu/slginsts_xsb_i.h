@@ -104,14 +104,14 @@
  *    3rd word: preds_TableInfo_record
  */
 
-case tabletry:
-case tabletrysingle: {
+XSB_Start_Instr_Chained(tabletry,_tabletry);
+XSB_Start_Instr(tabletrysingle,_tabletrysingle); {
   /*
    *  Retrieve instruction arguments and test the system stacks for
    *  overflow.  The local PCreg, "lpcreg", is incremented to point to
    *  the instruction to be executed should this one fail.
    */
-  byte this_instr = *(lpcreg - 1);
+  byte this_instr = *lpcreg;
   byte *continuation;
   TabledCallInfo callInfo;
   CallLookupResults lookupResults;
@@ -121,9 +121,11 @@ case tabletrysingle: {
 
   xwammode = 1;
   CallInfo_Arguments(callInfo) = reg + 1;
-  ppad;   CallInfo_CallArity(callInfo) = (Cell)(*lpcreg++);  pad64;
-  LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;
-  CallInfo_TableInfo(callInfo) = (* (TIFptr *) lpcreg);  ADVANCE_PC;
+  CallInfo_CallArity(callInfo) = get_xxa; 
+  LABEL = (CPtr)((byte *) get_xxxl);  
+  Op1(get_xxxxl);
+  CallInfo_TableInfo(callInfo) = (TIFptr) get_xxxxl;
+  ADVANCE_PC(size_xxxXX);
 
   check_tcpstack_overflow;
   CallInfo_VarVectorLoc(callInfo) = top_of_cpstack;
@@ -131,7 +133,7 @@ case tabletrysingle: {
   if ( this_instr == tabletry ) {
     /* lpcreg was left pointing to the next clause, e.g. tableretry */
     continuation = lpcreg;
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, goto contcase) ;
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr()) ;
   }
   else
     continuation = (pb) &check_complete_inst;
@@ -175,7 +177,7 @@ case tabletrysingle: {
       root_address = breg;
     hbreg = hreg;
     lpcreg = (byte *) LABEL;	/* branch to program clause */
-    goto contcase;
+    XSB_Next_Instr();
   }
 
   else if ( is_completed(producer_sf) ) {
@@ -210,11 +212,11 @@ case tabletrysingle: {
       }
       delay_it = 1;
       lpcreg = (byte *)subg_ans_root_ptr(producer_sf);
-      goto contcase;
+      XSB_Next_Instr();
     }
     else {
       Fail1;
-      goto contcase;
+      XSB_Next_Instr();
     }
   }
 
@@ -334,7 +336,7 @@ case tabletrysingle: {
       Fail1;
     }
   }
-  goto contcase;
+  XSB_Next_Instr();
 }
 
 /*-------------------------------------------------------------------------*/
@@ -354,7 +356,7 @@ case tabletrysingle: {
  *    points to the dummy answer.
  */
 
-case answer_return: {
+XSB_Start_Instr(answer_return,_answer_return); {
   VariantSF consumer_sf;
   ALNptr answer_set;
   BTNptr answer_leaf;
@@ -444,7 +446,7 @@ case answer_return: {
 #endif
     Fail1;
   }
-  goto contcase;
+  XSB_Next_Instr();
 }
 
 /*-------------------------------------------------------------------------*/
@@ -466,7 +468,7 @@ case answer_return: {
  *    negation suspensions of the subgoal are abolished.
  */
 
-case new_answer_dealloc: {
+XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc); {
 
   CPtr producer_cpf, producer_csf, answer_template;
   int template_size, attv_num, tmp;
@@ -474,10 +476,10 @@ case new_answer_dealloc: {
   xsbBool isNewAnswer = FALSE;
   BTNptr answer_leaf;
 
-  pad;
-  ARITY = (Cell) (*lpcreg++);
-  Yn = (Cell) (*lpcreg++);
-  pad64;
+  ARITY = get_xax;
+  Yn = get_xxa; /* we want the # of the register, not a pointer to it */
+
+  ADVANCE_PC(size_xxx);
   producer_sf = (VariantSF)cell(ereg-Yn);
   producer_cpf = subg_cp_ptr(producer_sf);
 
@@ -499,7 +501,7 @@ case new_answer_dealloc: {
   if ((subgoal_space_has_been_reclaimed(producer_sf,producer_csf)) ||
       (IsNonNULL(delayreg) && answer_is_junk(delayreg))) {
     Fail1;
-    goto contcase;
+    XSB_Next_Instr();
   }
 
 #ifdef CHAT
@@ -610,7 +612,7 @@ case new_answer_dealloc: {
   }
   else     /* repeat answer -- ignore */
     Fail1;
-  goto contcase;
+  XSB_Next_Instr();
 }
 
 /*-------------------------------------------------------------------------*/
@@ -629,11 +631,10 @@ case new_answer_dealloc: {
  *    next code subblock.
  */
 
-case tableretry:
-  ppad; op1byte;
-  pad64;
-  tcp_pcreg(breg) = lpcreg+sizeof(Cell);
-  lpcreg = *(pb *)lpcreg;
+XSB_Start_Instr(tableretry,_tableretry);
+Op1(get_xxa);
+  tcp_pcreg(breg) = lpcreg+sizeof(Cell)*2;
+  lpcreg = *(pb *)(lpcreg+sizeof(Cell));
   restore_type = 0;
   goto table_restore_sub;
 
@@ -652,9 +653,9 @@ case tableretry:
  *    subblock.
  */
 
-case tabletrust:
-    ppad; op1byte;
-    pad64;
+XSB_Start_Instr(tabletrust,_tabletrust);
+Op1(get_xxa);
+ADVANCE_PC(size_xxx);
     tcp_pcreg(breg) = (byte *) &check_complete_inst;
     lpcreg = *(pb *)lpcreg;
 #if (defined(LOCAL_EVAL) || defined(CHAT))
@@ -671,7 +672,7 @@ case tabletrust:
 
 /*-------------------------------------------------------------------------*/
 
-case resume_compl_suspension:
+XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension);
 #ifdef DEBUG_DELAYVAR
       fprintf(stddbg, ">>>> resume_compl_suspension is called\n");
 #endif
@@ -692,14 +693,14 @@ case resume_compl_suspension:
       breg = csf_prev(breg);  /* forget this CP; simulates Fail1 */
     }
     lpcreg = cpreg;
-    goto contcase;
+    XSB_Next_Instr();
   }
 #else
   {
     CPtr csf = cs_compsuspptr(breg);
     /* Switches the environment to a frame of a subgoal that was	*/
     /* suspended on completion, and sets the continuation pointer.	*/
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, goto contcase);
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
     freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
     ptcpreg = csf_ptcp(csf);
     neg_delay = (csf_neg_loop(csf) != FALSE);
@@ -716,8 +717,9 @@ case resume_compl_suspension:
       breg = cs_prevbreg(breg);
     }
     lpcreg = cpreg;
-    goto contcase;
+    XSB_Next_Instr();
   }
 #endif
 
 /*----------------------------------------------------------------------*/
+

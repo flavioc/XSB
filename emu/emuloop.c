@@ -87,28 +87,88 @@ CPtr	ans_var_pos_reg;
 #endif
 
 /*----------------------------------------------------------------------*/
-
-#define pad		(lpcreg++)
-#define ppad		(lpcreg+=2)
-#define pppad		(lpcreg+=3)
-#define opregaddr	(rreg+(*lpcreg++))
-#define opvaraddr	(ereg-(Cell)(*lpcreg++))
-
-#ifdef BITS64
-#define pad64		(lpcreg += 4)
+/* indirect threading-related stuff                                     */
+#ifdef DEBUG
+#define XSB_Debug_Instr \
+   if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);\
+   xctr++;
 #else
-#define pad64
+#define XSB_Debug_Instr
+#endif
+#ifdef PROFILE
+#define XSB_Profile_Instr \
+    if (flags[PROFFLAG]) { \
+      inst_table[(int) *(lpcreg)][sizeof(Cell)+1] \
+        = inst_table[(int) *(lpcreg)][sizeof(Cell)+1] + 1; \
+      if (flags[PROFFLAG] > 1 && (int) *lpcreg == builtin) \
+        builtin_table[(int) *(lpcreg+3)][1] = \
+  	  builtin_table[(int) *(lpcreg+3)][1] + 1;\
+    } 
+#else
+#define XSB_Profile_Instr
 #endif
 
-#define opreg		cell(opregaddr)
-#define opvar		cell(opvaraddr)
-#define op1byte		op1 = (Cell)(*lpcreg++)
-#define op2byte		op2 = (Cell)(*lpcreg++)
-#define op3byte		op3 = (CPtr)((int)(*lpcreg++))
-#define op2word		op2 = (Cell)(*(CPtr)lpcreg); lpcreg+=sizeof(Cell)
-#define op3word		op3 = *(CPtr)lpcreg; lpcreg+=sizeof(Cell)
+#ifdef INDIRECT_THREADING
+static void *instr_addr[256];
+#define XSB_Next_Instr()   do {           \
+                   XSB_Debug_Instr \
+                   XSB_Profile_Instr \
+                   goto *instr_addr[(byte)*lpcreg]; \
+                   } while(0)
 
-#define ADVANCE_PC	(lpcreg+=sizeof(Cell))
+#define XSB_Start_Instr_Chained(Instr,Label) \
+        Label:
+#define XSB_Start_Instr(Instr,Label)  \
+        Label: 
+
+
+#else /* no threading */
+#define XSB_Next_Instr()              goto contcase
+
+#define XSB_Start_Instr_Chained(Instr,Label) \
+        case Instr:
+#define XSB_Start_Instr(Instr,Label)  \
+        case Instr: 
+#endif
+
+/*----------------------------------------------------------------------*/
+
+#define get_axx         (lpcreg[1])
+#define get_vxx         (ereg-(Cell)lpcreg[1])
+#define get_rxx         (rreg+lpcreg[1])
+
+#define get_xax         (lpcreg[2])
+#define get_xvx         (ereg-(Cell)lpcreg[2])
+#define get_xrx         (rreg+lpcreg[2])
+
+#define get_xxa         (lpcreg[3])
+#define get_xxv         (ereg-(Cell)lpcreg[3])
+#define get_xxr         (rreg+lpcreg[3])
+
+#define get_xxxl        (*(CPtr)(lpcreg+sizeof(Cell)))
+#define get_xxxs        (*(CPtr)(lpcreg+sizeof(Cell)))
+#define get_xxxc        (*(CPtr)(lpcreg+sizeof(Cell)))
+#define get_xxxn        (*(CPtr)(lpcreg+sizeof(Cell)))
+#define get_xxxg        (*(CPtr)(lpcreg+sizeof(Cell)))
+#define get_xxxi        (*(CPtr)(lpcreg+sizeof(Cell)))
+#define get_xxxf        (*(CPtr)(lpcreg+sizeof(Cell)))
+
+#define get_xxxxi       (*(CPtr)(lpcreg+sizeof(Cell)*2))
+#define get_xxxxl       (*(CPtr)(lpcreg+sizeof(Cell)*2))
+
+#define Op1(Expr)       op1 = (Cell)Expr
+#define Op2(Expr)       op2 = (Cell)Expr
+#define Op3(Expr)       op3 = (CPtr)Expr
+
+#define Register(Expr)  (cell(Expr))
+#define Variable(Expr)  (cell(Expr))
+
+#define size_none       0
+#define size_xxx        1
+#define size_xxxX       2
+#define size_xxxXX      3
+
+#define ADVANCE_PC(InstrSize)  (lpcreg += InstrSize*sizeof(Cell))
 
 /* Be sure that flag only has the following two values.	*/
 
@@ -232,6 +292,12 @@ static int emuloop(byte *startaddr)
   op1 = op2 = (Cell) NULL;
   lpcreg = (pb)&reset_inst;  /* start by initializing abort handler */
 
+#ifdef INDIRECT_THREADING
+#define XSB_INST(INum,Instr,Label,d1,d2,d3,d4) \
+        instr_addr[INum] = &&##Label
+#include "xsb_inst_list.h"
+#endif
+
 contcase:     /* the main loop */
 
 #ifdef DEBUG
@@ -248,65 +314,77 @@ contcase:     /* the main loop */
   }
 #endif
   
-  switch (*lpcreg++) {
+#ifdef INDIRECT_THREADING
+  XSB_Next_Instr();
+#else
+
+  switch (*lpcreg) {
+#endif
     
-  case getpvar:  /* PVR */
-    pad;
-    op1 = (Cell)(opvaraddr);
-    /* trailing is needed here because this instruction can also be
+  XSB_Start_Instr(getpvar,_getpvar);  /* PVR */
+    Op1(Variable(get_xvx));
+    Op2(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
+   /* trailing is needed here because this instruction can also be
        generated *after* the occurrence of the first call - kostis */
-    op2 = opreg; 
     bind_copy((CPtr)op1, op2);      /* In WAM bld_copy() */
-    pad64;
-    goto contcase;
+    XSB_Next_Instr();
     
-  case getpval: /* PVR */
-    pad; op1 = opvar; op2 = opreg;
-    pad64;
+  XSB_Start_Instr(getpval,_getpval); /* PVR */
+    Op1(Variable(get_xvx));
+    Op2(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     goto nunify;
 
-  case getstrv: /* PPV-S */
-    ppad; op1 = opvar; pad64; op2word;
+  XSB_Start_Instr(getstrv,_getstrv); /* PPV-S */
+    Op1(Variable(get_xxv));
+    Op2(get_xxxs);
+    ADVANCE_PC(size_xxxX);
     nunify_with_str(op1,op2);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case gettval: /* PRR */
-    pad; op1 = opreg; op2 = opreg;
-    pad64;
+  XSB_Start_Instr(gettval,_gettval); /* PRR */
+    Op1(Register(get_xrx));
+    Op2(Register(get_xxr));
+    ADVANCE_PC(size_xxx);
     goto nunify;
 
-  case getcon: /* PPR-C */
-    ppad; op1 = opreg; pad64; op2word;
+  XSB_Start_Instr(getcon,_getcon); /* PPR-C */
+    Op1(Register(get_xxr));
+    Op2(get_xxxc);
+    ADVANCE_PC(size_xxxX);
     nunify_with_con(op1,op2);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case getnil: /* PPR */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(getnil,_getnil); /* PPR */
+  Op1(Register(get_xxr));
+  ADVANCE_PC(size_xxx);
     nunify_with_nil(op1);
-    goto contcase;	
+    XSB_Next_Instr();	
 
-  case getstr: /* PPR-S */
-    ppad; op1 = opreg; pad64; op2word;
+  XSB_Start_Instr(getstr,_getstr); /* PPR-S */
+  Op1(Register(get_xxr));
+  Op2(get_xxxs);
+  ADVANCE_PC(size_xxxX);
     nunify_with_str(op1,op2);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case getlist: /* PPR */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(getlist,_getlist); /* PPR */
+  Op1(Register(get_xxr));
+  ADVANCE_PC(size_xxx);
     nunify_with_list_sym(op1);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case getattv: /* PPR */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(getattv,_getattv); /* PPR */
+  Op1(Register(get_xxr));
+  ADVANCE_PC(size_xxx);
     nunify_with_attv(op1);
-    goto contcase;
+    XSB_Next_Instr();
 
 /* tls 12/8/92 */
-  case unipvar: /* PPV */
-    ppad; op1 = (Cell)(opvaraddr);
-    pad64;
+  XSB_Start_Instr(unipvar,_unipvar); /* PPV */
+  Op1(get_xxv);
+  ADVANCE_PC(size_xxx);
     if (flag) {	/* if (flag == WRITE) */
       bind_ref((CPtr)op1, hreg);
       new_heap_free(hreg);
@@ -316,11 +394,11 @@ contcase:     /* the main loop */
       bind_copy((CPtr)op1, *(sreg));
       sreg++;
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case unipval: /* PPV */
-    ppad; op1 = opvar;
-    pad64;
+  XSB_Start_Instr(unipval,_unipval); /* PPV */
+  Op1(Variable(get_xxv));
+  ADVANCE_PC(size_xxx);
     if (flag) { /* if (flag == WRITE) */
       nbldval(op1); 
     } 
@@ -328,11 +406,11 @@ contcase:     /* the main loop */
       op2 = *(sreg++);
       goto nunify;
     } 
-    goto contcase;
+    XSB_Next_Instr();
 
-  case unitvar: /* PPR */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(unitvar,_unitvar); /* PPR */
+  Op1(get_xxr);
+  ADVANCE_PC(size_xxx);
     if (flag) {	/* if (flag == WRITE) */
       bld_ref((CPtr)op1, hreg);
       new_heap_free(hreg);
@@ -340,22 +418,23 @@ contcase:     /* the main loop */
     else {
       bld_copy((CPtr)op1, *(sreg++));
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case unitval: /* PPR */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(unitval,_unitval); /* PPR */
+  Op1(Register(get_xxr));
+  ADVANCE_PC(size_xxx);
     if (flag) { /* if (flag == WRITE) */
       nbldval(op1); 
-      goto contcase;
+      XSB_Next_Instr();
     }
     else {
       op2 = *(sreg++);
       goto nunify;
     } 
 
-  case unicon: /* PPP-C */
-    pppad; pad64; op2word;
+  XSB_Start_Instr(unicon,_unicon); /* PPP-C */
+  Op2(get_xxxc);
+  ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
       new_heap_string(hreg, (char *)op2);
     }
@@ -363,11 +442,10 @@ contcase:     /* the main loop */
       op1 = *(sreg++);
       nunify_with_con(op1,op2);
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case uninil: /* PPP */
-    pppad;
-    pad64;
+  XSB_Start_Instr(uninil,_uninil); /* PPP */
+  ADVANCE_PC(size_xxx);
     if (flag) {	/* if (flag == WRITE) */
       new_heap_nil(hreg);
     }
@@ -375,161 +453,169 @@ contcase:     /* the main loop */
       op1 = *(sreg++);
       nunify_with_nil(op1);
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case getnumcon: /* PPR-N */
-    ppad; op1 = opreg; pad64; op2word;
+  XSB_Start_Instr(getnumcon,_getnumcon); /* PPR-N */
+  Op1(Register(get_xxr));
+  Op2(get_xxxn);
+  ADVANCE_PC(size_xxxX);
     nunify_with_num(op1,op2);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case getfloat: /* PPR-N */
-    ppad; op1 = opreg; pad64; op2word;
+  XSB_Start_Instr(getfloat,_getfloat); /* PPR-N */
+  Op1(Register(get_xxr));
+  Op2(get_xxxn);
+  ADVANCE_PC(size_xxxX);
     nunify_with_float(op1,op2);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case putnumcon: /* PPR-N */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
-    op2 = *(pw)lpcreg; ADVANCE_PC;
+  XSB_Start_Instr(putnumcon,_putnumcon); /* PPR-N */
+  Op1(get_xxr);
+  op2 = *(pw)(lpcreg+sizeof(Cell));
+  ADVANCE_PC(size_xxxX);
     bld_int((CPtr)op1, op2);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case putfloat: /* PPR-N */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
-    bld_float((CPtr)op1, asfloat(*(pw)lpcreg));
-    ADVANCE_PC;
-    goto contcase;
+  XSB_Start_Instr(putfloat,_putfloat); /* PPR-N */
+  Op1(get_xxr);
+  Op2(get_xxxn);
+  ADVANCE_PC(size_xxxX);
+    bld_float((CPtr)op1, asfloat(op2));
+    XSB_Next_Instr();
 
-  case putpvar: /* PVR */
-    pad;
-    op1 = (Cell)(opvaraddr);
+  XSB_Start_Instr(putpvar,_putpvar); /* PVR */
+  Op1(get_xvx);
+  Op2(get_xxr);
+  ADVANCE_PC(size_xxx);
     bld_free((CPtr)op1);
-    op2 = (Cell)(opregaddr);
-    pad64;
     bld_ref((CPtr)op2, (CPtr)op1);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case putpval: /* PVR */
-    pad; op1 = (Cell)(opvaraddr);
-    bld_copy(opregaddr, *((CPtr)op1));
-    pad64;
-    goto contcase;
+  XSB_Start_Instr(putpval,_putpval); /* PVR */
+  Op1(get_xvx);
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
+    bld_copy(op3, *((CPtr)op1));
+    XSB_Next_Instr();
 
-  case puttvar: /* PRR */
-    pad; op1 = (Cell)(opregaddr); op2 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(puttvar,_puttvar); /* PRR */
+  Op1(get_xrx);
+  Op2(get_xxr);
+  ADVANCE_PC(size_xxx);
     bld_ref((CPtr)op1, hreg);
     bld_ref((CPtr)op2, hreg);
     new_heap_free(hreg); 
-    goto contcase;
+    XSB_Next_Instr();
 
 /* tls 12/8/92 */
-  case putstrv: /*  PPV-S */
-    ppad; op1 = (Cell)(opvaraddr);
-    pad64;
+  XSB_Start_Instr(putstrv,_putstrv); /*  PPV-S */
+  Op1(get_xxv);
+  Op2(get_xxxs);
+  ADVANCE_PC(size_xxxX);
     bind_cs((CPtr)op1, (Pair)hreg);
-    new_heap_functor(hreg, *(Psc *)lpcreg); ADVANCE_PC;
-    goto contcase;
+    new_heap_functor(hreg, (Psc)op2); 
+    XSB_Next_Instr();
 
-  case putcon: /* PPR-C */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
-    bld_string((CPtr)op1, *(char **)lpcreg); ADVANCE_PC;
-    goto contcase;
+  XSB_Start_Instr(putcon,_putcon); /* PPR-C */
+  Op1(get_xxr);
+  Op2(get_xxxc);
+  ADVANCE_PC(size_xxxX);
+    bld_string((CPtr)op1, (char *)op2);
+    XSB_Next_Instr();
     
-  case putnil: /* PPR */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(putnil,_putnil); /* PPR */
+  Op1(get_xxr);
+  ADVANCE_PC(size_xxx);
     bld_nil((CPtr)op1);
-    goto contcase;
+    XSB_Next_Instr();
     
 /* doc tls -- differs from putstrv since it pulls from a register */
-  case putstr: /* PPR-S */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(putstr,_putstr); /* PPR-S */
+  Op1(get_xxr);
+  Op2(get_xxxs);
+  ADVANCE_PC(size_xxxX);
     bld_cs((CPtr)op1, (Pair)hreg);
-    new_heap_functor(hreg, *(Psc *)lpcreg); ADVANCE_PC;
-    goto contcase;
+    new_heap_functor(hreg, (Psc)op2); 
+    XSB_Next_Instr();
 
-  case putlist: /* PPR */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(putlist,_putlist); /* PPR */
+  Op1(get_xxr);
+  ADVANCE_PC(size_xxx);
     bld_list((CPtr)op1, hreg);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case putattv: /* PPR */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(putattv,_putattv); /* PPR */
+  Op1(get_xxr);
+  ADVANCE_PC(size_xxx);
     bld_attv((CPtr)op1, hreg);
     new_heap_free(hreg);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case bldpvar: /* PPV */
-    ppad; op1 = (Cell)(opvaraddr);
-    pad64;
+  XSB_Start_Instr(bldpvar,_bldpvar); /* PPV */
+  Op1(get_xxv);
+  ADVANCE_PC(size_xxx);
     /* tls 12/8/92 */
     bind_ref((CPtr)op1, hreg); /* trailing is needed: if o/w see ai_tests */
     new_heap_free(hreg);
-    goto contcase;
+    XSB_Next_Instr();
     
-  case bldpval: /* PPV */
-    ppad; op1 = opvar;
-    pad64;
+  XSB_Start_Instr(bldpval,_bldpval); /* PPV */
+  Op1(Variable(get_xxv));
+  ADVANCE_PC(size_xxx);
     nbldval(op1);
-    goto contcase;
+    XSB_Next_Instr();
     
-  case bldtvar: /* PPR */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(bldtvar,_bldtvar); /* PPR */
+  Op1(get_xxr);
+  ADVANCE_PC(size_xxx);
     bld_ref((CPtr)op1, hreg);
     new_heap_free(hreg);
-    goto contcase;
+    XSB_Next_Instr();
     
-  case bldtval: /* PPR */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(bldtval,_bldtval); /* PPR */
+  Op1(Register(get_xxr));
+  ADVANCE_PC(size_xxx);
     nbldval(op1);
-    goto contcase;
+    XSB_Next_Instr();
     
-  case bldcon: /* PPP-C */
-    pppad;
-    pad64;
-    new_heap_string(hreg, *(char **)lpcreg);
-    ADVANCE_PC;
-    goto contcase;
+  XSB_Start_Instr(bldcon,_bldcon); /* PPP-C */
+  Op2(get_xxxc);
+  ADVANCE_PC(size_xxxX);
+    new_heap_string(hreg, (char *)op2);
+    XSB_Next_Instr();
     
-  case bldnil: /* PPP */
-    pppad;
-    pad64;
+  XSB_Start_Instr(bldnil,_bldnil); /* PPP */
+  ADVANCE_PC(size_xxx);
     new_heap_nil(hreg);
-    goto contcase;
+    XSB_Next_Instr();
     
-  case getlist_tvar_tvar: /* RRR */
-    op1 = opreg;
+  XSB_Start_Instr(getlist_tvar_tvar,_getlist_tvar_tvar); /* RRR */
+  Op1(Register(get_rxx));
+  Op2(get_xrx);
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     XSB_Deref(op1);
     if (isref(op1)) {
       bind_list((CPtr)(op1), hreg);
-      op1 = (Cell)(opregaddr);
+      op1 = (Cell)op2;
       bld_ref((CPtr)op1, hreg);
       new_heap_free(hreg);
-      op1 = (Cell)(opregaddr);
-      pad64;
+      op1 = (Cell)op3;
       bld_ref((CPtr)op1, hreg);
       new_heap_free(hreg);
     } else if (islist(op1)) {
       sreg = clref_val(op1);
-      op1 = (Cell)(opregaddr);
+      op1 = (Cell)op2;
       bld_ref((CPtr)op1, *(sreg));
-      op1 = (Cell)(opregaddr);
-      pad64;
+      op1 = (Cell)op3;
       bld_ref((CPtr)op1, *(sreg+1));
     }
     else Fail1;
-    goto contcase;	/* end getlist_tvar_tvar */
+    XSB_Next_Instr();	/* end getlist_tvar_tvar */
 
-  case uninumcon: /* PPP-N */
-    pppad; pad64; op2word; /* num in op2 */
+  XSB_Start_Instr(uninumcon,_uninumcon); /* PPP-N */
+  Op2(get_xxxn); /* num in op2 */
+  ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
       new_heap_num(hreg, (Integer)op2);
     }
@@ -537,10 +623,11 @@ contcase:     /* the main loop */
       op1 = *(sreg++);
       nunify_with_num(op1,op2);
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case unifloat: /* PPPF */
-    pppad; pad64; op2word; /* num in op2 */
+  XSB_Start_Instr(unifloat,_unifloat); /* PPPF */
+  Op2(get_xxxf); /* num in op2 */
+  ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
       new_heap_float(hreg, asfloat(op2));
     }
@@ -548,99 +635,96 @@ contcase:     /* the main loop */
       op1 = cell(sreg++);
       nunify_with_float(op1,op2);
     }
-    goto contcase;
+    XSB_Next_Instr();
     
-  case bldnumcon: /* PPP-N */
-    pppad; pad64; op2word; /* num to op2 */
+  XSB_Start_Instr(bldnumcon,_bldnumcon); /* PPP-N */
+  Op2(get_xxxn);  /* num to op2 */
+  ADVANCE_PC(size_xxxX);
     new_heap_num(hreg, (Integer)op2);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case bldfloat: /* PPP-F */
-    pppad; pad64; op2word; /* num to op2 */
+  XSB_Start_Instr(bldfloat,_bldfloat); /* PPP-F */
+  Op2(get_xxxf); /* num to op2 */
+  ADVANCE_PC(size_xxxX);
     new_heap_float(hreg, asfloat(op2));
-    goto contcase;
+    XSB_Next_Instr();
 
-  case trymeelse: /* PPA-L */
-    ppad; op1byte; pad64; op2word;
+  XSB_Start_Instr(trymeelse,_trymeelse); /* PPA-L */
+  Op1(get_xxa);
+  Op2(get_xxxl);
+  ADVANCE_PC(size_xxxX);
     goto subtryme;
 
-  case retrymeelse: /* PPA-L */
-    ppad; op1byte;
-    pad64;
-    cp_pcreg(breg) = *(byte **)lpcreg;
-    ADVANCE_PC;
+  XSB_Start_Instr(retrymeelse,_retrymeelse); /* PPA-L */
+  Op1(get_xxa);
+    cp_pcreg(breg) = (byte *)get_xxxl;
+    restore_type = 0;
+    ADVANCE_PC(size_xxxX);
+    goto restore_sub;
+
+  XSB_Start_Instr(trustmeelsefail,_trustmeelsefail); /* PPA */
+  Op1(get_xxa);
+    restore_type = 1;
+    ADVANCE_PC(size_xxx);
+    goto restore_sub;
+
+  XSB_Start_Instr(try,_try); /* PPA-L */
+  Op1(get_xxa);
+    op2 = (Cell)((Cell)lpcreg + sizeof(Cell)*2);
+    lpcreg = *(pb *)(lpcreg+sizeof(Cell)); /* = *(pointer to byte pointer) */
+    goto subtryme;
+
+  XSB_Start_Instr(retry,_retry); /* PPA-L */
+  Op1(get_xxa);
+    cp_pcreg(breg) = lpcreg+sizeof(Cell)*2;
+    lpcreg = *(pb *)(lpcreg+sizeof(Cell));
     restore_type = 0;
     goto restore_sub;
 
-  case trustmeelsefail: /* PPA */
-    ppad; op1byte;
-    pad64;
+  XSB_Start_Instr(trust,_trust); /* PPA-L */
+  Op1(get_xxa);
+    lpcreg = *(pb *)(lpcreg+sizeof(Cell));
     restore_type = 1;
     goto restore_sub;
 
-  case try: /* PPA-L */
-    ppad; op1byte;
-    pad64;
-    op2 = (Cell)((Cell)lpcreg + sizeof(Cell));
-    lpcreg = *(pb *)lpcreg; /* = *(pointer to byte pointer) */
-    goto subtryme;
-
-  case retry: /* PPA-L */
-    ppad; op1byte;
-    pad64;
-    cp_pcreg(breg) = lpcreg+sizeof(Cell);
-    lpcreg = *(pb *)lpcreg;
-    restore_type = 0;
-    goto restore_sub;
-
-  case trust: /* PPA-L */
-    ppad; op1byte;
-    pad64;
-    lpcreg = *(pb *)lpcreg;
-    restore_type = 1;
-    goto restore_sub;
-
-  case getVn: /* PPV */
-    ppad; op1 = (Cell)(opvaraddr);
-    pad64;
+  XSB_Start_Instr(getVn,_getVn); /* PPV */
+  Op1(get_xxv);
+  ADVANCE_PC(size_xxx);
     cell((CPtr)op1) = (Cell)tcp_subgoal_ptr(breg);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case getpbreg: /* PPV */
-    ppad; op1 = (Cell)(opvaraddr);
-    pad64;
+  XSB_Start_Instr(getpbreg,_getpbreg); /* PPV */
+  Op1(get_xxv);
+  ADVANCE_PC(size_xxx);
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
-    goto contcase;
+    XSB_Next_Instr();
 
-  case gettbreg: /* PPR */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(gettbreg,_gettbreg); /* PPR */
+  Op1(get_xxr);
+  ADVANCE_PC(size_xxx);
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
-    goto contcase;
+    XSB_Next_Instr();
 
-  case putpbreg: /* PPV */
-    ppad; op1 = opvar;
-    pad64;
+  XSB_Start_Instr(putpbreg,_putpbreg); /* PPV */
+  Op1(Variable(get_xxv));
+  ADVANCE_PC(size_xxx);
     cut_code(op1);
 
-  case puttbreg: /* PPR */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(puttbreg,_puttbreg); /* PPR */
+  Op1(Register(get_xxr));
+  ADVANCE_PC(size_xxx);
     cut_code(op1);
 
-  case jumptbreg: /* PPR-L */	/* ??? */
-    ppad; op1 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(jumptbreg,_jumptbreg); /* PPR-L */	/* ??? */
+  Op1(get_xxr);
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
-    lpcreg = *(byte **)lpcreg;
-    goto contcase;
+    lpcreg = *(byte **)(lpcreg+sizeof(Cell));
+    XSB_Next_Instr();
 
-  case test_heap: /* PPA-N */
-    ppad;
-    op1byte;  /* op1 = the arity of the procedure */
-    pad64;
-    op2 = *(pw)lpcreg; lpcreg+=4;
-    pad64;
+  XSB_Start_Instr(test_heap,_test_heap); /* PPA-N */
+  Op1(get_xxa); /* op1 = the arity of the procedure */
+  Op2(get_xxxn);
+  ADVANCE_PC(size_xxxX);
 #ifdef GC_TEST
     if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < (long)op2))
       {
@@ -655,57 +739,53 @@ contcase:     /* the main loop */
 	    if (flags[STACK_REALLOC]) {
 	      if (glstack_realloc(resize_stack(glstack.size,0),op1) != 0) {
 		local_global_exception(lpcreg);
-		goto contcase;
+		XSB_Next_Instr();
 	      }
 	    } else {
 	      xsb_warn("Reallocation is turned OFF !");
 	      local_global_exception(lpcreg);
-	      goto contcase;
+	      XSB_Next_Instr();
 	    }
 	  }
 	}
 	/* are there any localy cached quantities that must be reinstalled ? */
       }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case switchonterm: /* PPR-L-L */
-    ppad; 
-    op1 = opreg;
-    pad64;
+  XSB_Start_Instr(switchonterm,_switchonterm); /* PPR-L-L */
+  Op1(Register(get_xxr));
     XSB_Deref(op1);
     switch (cell_tag(op1)) {
     case XSB_FREE:
     case XSB_REF1:
     case XSB_ATTV:
-      lpcreg += 2 * sizeof(Cell);
+      ADVANCE_PC(size_xxxXX);
       break;
     case XSB_INT:
     case XSB_STRING:
     case XSB_FLOAT:
-      lpcreg = *(pb *)lpcreg;	    
+      lpcreg = *(pb *)(lpcreg+sizeof(Cell));	    
       break;
     case XSB_STRUCT:
       if (get_arity(get_str_psc(op1)) == 0) {
-	lpcreg = *(pb *)lpcreg;
+	lpcreg = *(pb *)(lpcreg+sizeof(Cell));
 	break;
       }
     case XSB_LIST:	/* include structure case here */
-      lpcreg += sizeof(Cell); lpcreg = *(pb *)lpcreg; 
+      lpcreg = *(pb *)(lpcreg+sizeof(Cell)*2); 
       break;
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case switchonbound: /* PPR-L-L */
+  XSB_Start_Instr(switchonbound,_switchonbound); /* PPR-L-L */
     /* op1 is register, op2 is hash table offset, op3 is modulus */
-    ppad; 
-    op1 = opreg;
-    pad64;
+  Op1(get_xxr);
     XSB_Deref(op1);
     switch (cell_tag(op1)) {
     case XSB_FREE:
     case XSB_REF1:
     case XSB_ATTV:
-      lpcreg += 2 * sizeof(Cell);
+      lpcreg += 3 * sizeof(Cell);
       goto sotd2;
     case XSB_INT: 
     case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
@@ -721,26 +801,24 @@ contcase:     /* the main loop */
       op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
       break;
     }
-    op2 = (Cell)(*(byte **)(lpcreg));
-    lpcreg += sizeof(Cell);
-    op3 = *(CPtr *)lpcreg;
+    op2 = (Cell)(*(byte **)(lpcreg+sizeof(Cell)));
+    op3 = *(CPtr *)(lpcreg+sizeof(Cell)*2);
     /* doc tls -- op2 + (op1%size)*4 */
     lpcreg =
       *(byte **)((byte *)op2 + ihash((Cell)op1, (Cell)op3) * sizeof(Cell));
-  sotd2: goto contcase;
+  sotd2: XSB_Next_Instr();
       
-  case switchon3bound: /* RRR-L-L */
+  XSB_Start_Instr(switchon3bound,_switchon3bound); /* RRR-L-L */
   {
     int  i, j = 0;
     Cell opa[3]; 
     /* op1 is register, op2 is hash table offset, op3 is modulus */
-    if (*lpcreg == 0) { lpcreg++; opa[0] = 0; }
-    else opa[0] = (Cell)opreg;
-    opa[1] = (Cell)opreg;
-    opa[2] = (Cell)opreg;
-    pad64;
-    op2 = (Cell)(*(byte **)(lpcreg)); lpcreg += sizeof(Cell);
-    op3 = *(CPtr *)lpcreg; 
+    if (*lpcreg == 0) { opa[0] = 0; }
+    else opa[0] = Register(get_rxx);
+    opa[1] = Register(get_xrx);
+    opa[2] = Register(get_xxr);
+    op2 = (Cell)(*(byte **)(lpcreg+sizeof(Cell)));
+    op3 = *(CPtr *)(lpcreg+sizeof(Cell)*2); 
     /* This is not a good way to do this, but until we put retract into C,
        or add new builtins, it will have to do. */
     for (i = 0; i <= 2; i++) {
@@ -751,7 +829,7 @@ contcase:     /* the main loop */
 	case XSB_FREE:
 	case XSB_REF1:
 	case XSB_ATTV:
-	  lpcreg += sizeof(Cell);
+	  ADVANCE_PC(size_xxxXX);
 	  goto sob3d2;
 	case XSB_INT: 
 	case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
@@ -774,39 +852,34 @@ contcase:     /* the main loop */
       }
     }
     lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
-  sob3d2: goto contcase;
+  sob3d2: XSB_Next_Instr();
   }
 
-  case trymeorelse: /* PPA-L */
-    pppad;
-    pad64;
-    op1 = 0;
-    op2word;
+  XSB_Start_Instr(trymeorelse,_trymeorelse); /* PPA-L */
+  Op1(0);
+  Op2(get_xxxl);
+    ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     goto subtryme;
 
-  case retrymeorelse: /* PPA-L */
-    pppad;
-    pad64;
-    op1 = 0;
-    cp_pcreg(breg) = *(byte **)lpcreg;
-    ADVANCE_PC;
+  XSB_Start_Instr(retrymeorelse,_retrymeorelse); /* PPA-L */
+  Op1(0);
+    cp_pcreg(breg) = *(byte **)(lpcreg+sizeof(Cell));
+    ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     restore_type = 0;
     goto restore_sub;
 
-  case trustmeorelsefail: /* PPA */
-    pppad;
-    pad64;
-    op1 = 0;
+  XSB_Start_Instr(trustmeorelsefail,_trustmeorelsefail); /* PPA */
+  Op1(0);
+  ADVANCE_PC(size_xxx);
     cpreg = lpcreg+sizeof(Cell);
     restore_type = 1;
     goto restore_sub;
 
-  case dyntrustmeelsefail: /* PPA-L, second word ignored */
-    ppad; op1byte; 
-    pad64;
-    ADVANCE_PC;
+  XSB_Start_Instr(dyntrustmeelsefail,_dyntrustmeelsefail); /* PPA-L, second word ignored */
+  Op1(get_xxa);
+    ADVANCE_PC(size_xxxX);
     restore_type = 1;
     goto restore_sub;
 
@@ -817,25 +890,25 @@ contcase:     /* the main loop */
 
 /*----------------------------------------------------------------------*/
 
-  case term_comp: /* RRR */
-    op1 = (Cell)*(opregaddr);
-    op2 = (Cell)*(opregaddr);
-    bld_int(opregaddr, compare((void*)op1, (void*)op2));
-    pad64;
-    goto contcase;
+  XSB_Start_Instr(term_comp,_term_comp); /* RRR */
+  Op1(get_rxx);
+  Op2(get_xrx);
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
+    bld_int(op3, compare((void *)op1, (void *)op2));
+    XSB_Next_Instr();
 
-  case movreg: /* PRR */
-    pad;
-    op1 = (Cell)(opregaddr);
-    bld_copy(opregaddr, *((CPtr)op1));
-    pad64;
-    goto contcase;
+  XSB_Start_Instr(movreg,_movreg); /* PRR */
+  Op1(get_xrx);
+  Op2(get_xxr);
+  ADVANCE_PC(size_xxx);
+    bld_copy((CPtr) op2, *((CPtr)op1));
+    XSB_Next_Instr();
 
 #define ARITHPROC(OP, STROP) \
-    pad;								\
-    op1 = opreg;							\
-    op3 = opregaddr;							\
-    pad64;								\
+    Op1(Register(get_xrx));                                             \
+    Op3(get_xxr);                                                       \
+    ADVANCE_PC(size_xxx);                                               \
     op2 = *(op3);							\
     XSB_Deref(op1);	       						\
     XSB_Deref(op2);		       					\
@@ -853,15 +926,14 @@ contcase:     /* the main loop */
 	else { arithmetic_abort(op2, STROP, op1); } 	                \
     } else { arithmetic_abort(op2, STROP, op1); }
 
-  case addreg: /* PRR */
+  XSB_Start_Instr(addreg,_addreg); /* PRR */
     ARITHPROC(+, "+");
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case subreg: /* PRR */
-    pad;
-    op1 = opreg;
-    op3 = opregaddr;							
-    pad64;
+  XSB_Start_Instr(subreg,_subreg); /* PRR */
+  Op1(Register(get_xrx));
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1);
     XSB_Deref(op2);
@@ -879,17 +951,16 @@ contcase:     /* the main loop */
       else arithmetic_abort(op2, "-", op1);
     }
     else arithmetic_abort(op2, "-", op1);
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case mulreg: /* PRR */
+  XSB_Start_Instr(mulreg,_mulreg); /* PRR */
     ARITHPROC(*, "*");
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case divreg: /* PRR */
-    pad;
-    op1 = opreg;
-    op3 = opregaddr;
-    pad64;
+  XSB_Start_Instr(divreg,_divreg); /* PRR */
+  Op1(Register(get_xrx));
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1);
     XSB_Deref(op2);
@@ -906,13 +977,12 @@ contcase:     /* the main loop */
 	bld_float(op3, (Float)int_val(op2)/float_val(op1)); }
       else { arithmetic_abort(op2, "/", op1); }
     } else { arithmetic_abort(op2, "/", op1); }
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case idivreg: /* PRR */
-    pad;
-    op1 = opreg;
-    op3 = opregaddr;
-    pad64;
+  XSB_Start_Instr(idivreg,_idivreg); /* PRR */
+  Op1(Register(get_xrx));
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1);
     XSB_Deref(op2);
@@ -926,52 +996,50 @@ contcase:     /* the main loop */
       }
     }
     else { arithmetic_abort(op2, "//", op1); }
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case int_test_z:   /* PPR-N-L */
-    ppad;
-    op1 = opreg; pad64;
-    XSB_Deref(op1); op2word;
+  XSB_Start_Instr(int_test_z,_int_test_z);   /* PPR-N-L */
+  Op1(Register(get_xxr));
+  Op2(get_xxxn);
+  Op3(get_xxxxl);
+  ADVANCE_PC(size_xxxXX);
+    XSB_Deref(op1); 
     if (isnumber(op1)) {
       if ((int_val(op1) - (Integer)op2) == 0)
-	lpcreg = *(byte **)lpcreg;
-      else ADVANCE_PC;
+	lpcreg = (byte *)op3;
     }
     else {
-      ADVANCE_PC;
       arithmetic_comp_abort(op1, "=\\=", op2);
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case int_test_nz:   /* PPR-N-L */
-    ppad;
-    op1 = opreg; pad64;
-    XSB_Deref(op1); op2word;
+  XSB_Start_Instr(int_test_nz,_int_test_nz);   /* PPR-N-L */
+  Op1(Register(get_xxr));
+  Op2(get_xxxn);
+  Op3(get_xxxxl);
+  ADVANCE_PC(size_xxxXX);
+    XSB_Deref(op1); 
     if (isnumber(op1)) {
       if ((int_val(op1) - (Integer)op2) != 0)
-	lpcreg = *(byte **)lpcreg;
-      else ADVANCE_PC;
+	lpcreg = (byte *) op3;
     }
     else {
-      ADVANCE_PC;
       arithmetic_comp_abort(op1, "=:=", op2);
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case putdval: /* PVR */
-    pad; 
-    op1 = opvar;
+  XSB_Start_Instr(putdval,_putdval); /* PVR */
+  Op1(Variable(get_xvx));
+  Op2(get_xxr);
+  ADVANCE_PC(size_xxx);
     XSB_Deref(op1);
-    op2 = (Cell)(opregaddr);
-    pad64;
     bld_copy((CPtr)op2, op1);
-    goto contcase;
+    XSB_Next_Instr();
 
-  case putuval: /* PVR */
-    pad;
-    op1 = opvar;
-    op2 = (Cell)(opregaddr);
-    pad64;
+  XSB_Start_Instr(putuval,_putuval); /* PVR */
+  Op1(Variable(get_xvx));
+  Op2(get_xxr);
+  ADVANCE_PC(size_xxx);
     XSB_Deref(op1);
     if (isnonvar(op1) || ((CPtr)(op1) < hreg) || ((CPtr)(op1) >= ereg)) {
       bld_copy((CPtr)op2, op1);
@@ -980,18 +1048,19 @@ contcase:     /* the main loop */
       bind_ref((CPtr)(op1), hreg);
       new_heap_free(hreg);
     } 
-    goto contcase;
+    XSB_Next_Instr();
 
   /*
    * Instruction `check_interrupt' is used before `new_answer_dealloc' to
    * handle the pending attv interrupts.  It is similar to `call' but the
    * second argument (S) is not used currently.
    */
-  case check_interrupt: { /* PPA-S */
+  XSB_Start_Instr(check_interrupt,_check_interrupt); { /* PPA-S */
     Pair true_pair;
     int new_indicator;
-
-    pppad; pad64; op2word;
+    
+    Op2(get_xxxs);
+    ADVANCE_PC(size_xxxX);
     if (int_val(cell(interrupt_reg)) > 0) {
       cpreg = lpcreg;
       true_pair = insert("true", 0, global_mod, &new_indicator);
@@ -1000,31 +1069,34 @@ contcase:     /* the main loop */
       bld_copy(reg + 1, build_interrupt_chain());
       lpcreg = get_ep((Psc) flags[MYSIG_ATTV + 32]);
     }
-    goto contcase;
+    XSB_Next_Instr();
   }
 
-  case call: { /* PPA-S */
+  XSB_Start_Instr(call,_call); { /* PPA-S */
     Psc psc;
 
-    pppad; pad64; op2word;	/* the first arg is used later by alloc */
+    Op2(get_xxxs); /* the first arg is used later by alloc */
+    ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     psc = (Psc)op2;
     call_sub(psc);
-    goto contcase;
+    XSB_Next_Instr();
   }
 
-  case call_forn: { /* PPP-L, maybe use userfun instr? */
-    pppad; pad64; op2word;
+  XSB_Start_Instr(call_forn,_call_forn); { /* PPP-L, maybe use userfun instr? */
+    Op2(get_xxxl);
+    ADVANCE_PC(size_xxxX);
     if (((PFI)op2)())  /* call foreign function */
       lpcreg = cpreg;
     else Fail1;
-    goto contcase;
+    XSB_Next_Instr();
   }
 
-  case load_pred: { /* PPP-S */
+  XSB_Start_Instr(load_pred,_load_pred); { /* PPP-S */
     Psc psc;
     
-    pppad; pad64; op2word;
+    Op2(get_xxxs);
+    ADVANCE_PC(size_xxxX);
     psc = (Psc)op2;
     /* check env or type to give (better) error msgs? */
     switch (get_type(psc)) {
@@ -1040,12 +1112,13 @@ contcase:     /* the main loop */
       lpcreg = get_ep(psc);             /* ep of undef handler */
       break;
     }
-    goto contcase;
+    XSB_Next_Instr();
   }
 
-  case allocate_gc: /* PAA */
-    pad; op2byte; op3byte;
-    pad64;
+  XSB_Start_Instr(allocate_gc,_allocate_gc); /* PAA */
+  Op2(get_xax);
+  Op3((CPtr) (int)get_xxa);
+  ADVANCE_PC(size_xxx);
 #if (!defined(CHAT))
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
@@ -1067,12 +1140,11 @@ contcase:     /* the main loop */
         p--;
       }
     }
-    goto contcase;
+    XSB_Next_Instr();
 
 /* This is obsolete and is only kept for backwards compatibility for < 2.0 */
-  case allocate: /* PPP */
-    pppad; 
-    pad64;
+  XSB_Start_Instr(allocate,_allocate); /* PPP */
+  ADVANCE_PC(size_xxx);
 #if (!defined(CHAT))
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
@@ -1094,133 +1166,125 @@ contcase:     /* the main loop */
         p--;
       }
     }
-    goto contcase;
+    XSB_Next_Instr();
 
-  case deallocate: /* PPP */
-    pppad; 
-    pad64;
+  XSB_Start_Instr(deallocate,_deallocate); /* PPP */
+  ADVANCE_PC(size_xxx);
     cpreg = *((byte **)ereg-1);
     ereg = *(CPtr *)ereg;
-    goto contcase;
+    XSB_Next_Instr();
 
-  case proceed:  /* PPP */
+  XSB_Start_Instr(proceed,_proceed);  /* PPP */
     lpcreg = cpreg;
-    goto contcase;
+    XSB_Next_Instr();
 
-  case execute: { /* PPP-S */
+  XSB_Start_Instr(execute,_execute); { /* PPP-S */
     Psc psc;
 
-    pppad; pad64; op2word;
+    Op2(get_xxxs);
+    ADVANCE_PC(size_xxxX);
     psc = (Psc)op2;
     call_sub(psc);
-    goto contcase;
+    XSB_Next_Instr();
   }
 
-  case jump:   /* PPP-L */
-    pppad;
-    pad64;
-    lpcreg = *(byte **)lpcreg;
-    goto contcase;
+  XSB_Start_Instr(jump,_jump);   /* PPP-L */
+    lpcreg = (byte *)get_xxxl;
+    XSB_Next_Instr();
 
-  case jumpz:   /* PPR-L */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(jumpz,_jumpz);   /* PPR-L */
+  Op1(Register(get_xxr));
     if (int_val(op1) == 0)
-      lpcreg = *(byte **)lpcreg;
-    else ADVANCE_PC;
-    goto contcase;
+       lpcreg = (byte *)get_xxxl;
+    else
+         ADVANCE_PC(size_xxxX);
+    XSB_Next_Instr();
 
-  case jumpnz:    /* PPR-L */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(jumpnz,_jumpnz);    /* PPR-L */
+  Op1(Register(get_xxr));
     if (int_val(op1) != 0)
-      lpcreg = *(byte **)lpcreg;
-    else ADVANCE_PC;
-    goto contcase;
+      lpcreg = (byte *)get_xxxl;
+    else ADVANCE_PC(size_xxxX);;
+    XSB_Next_Instr();
 
-  case jumplt:    /* PPR-L */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(jumplt,_jumplt);    /* PPR-L */
+  Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) < 0) ||
 	(isfloat(op1) && float_val(op1) < 0.0))
-      lpcreg = *(byte **)lpcreg;
-    else ADVANCE_PC;
-    goto contcase; 
+      lpcreg = (byte *)get_xxxl;
+    else ADVANCE_PC(size_xxxX);
+    XSB_Next_Instr(); 
 
-  case jumple:    /* PPR-L */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(jumple,_jumple);    /* PPR-L */
+  Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) <= 0) ||
 	(isfloat(op1) && float_val(op1) <= 0.0))
-      lpcreg = *(byte **)lpcreg;
-    else ADVANCE_PC;
-    goto contcase; 
+      lpcreg = (byte *)get_xxxl;
+    else ADVANCE_PC(size_xxxX);
+    XSB_Next_Instr(); 
 
-  case jumpgt:    /* PPR-L */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(jumpgt,_jumpgt);    /* PPR-L */
+  Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) > 0) ||
 	(isfloat(op1) && float_val(op1) > 0.0))
-      lpcreg = *(byte **)lpcreg;
-    else ADVANCE_PC;
-    goto contcase;
+        lpcreg = (byte *)get_xxxl;
+    else ADVANCE_PC(size_xxxX);
+    XSB_Next_Instr();
 
-  case jumpge:    /* PPR-L */
-    ppad; op1 = opreg;
-    pad64;
+  XSB_Start_Instr(jumpge,_jumpge);    /* PPR-L */
+  Op1(Register(get_xxr));
     if ((isinteger(op1) && int_val(op1) >= 0) ||
 	(isfloat(op1) && float_val(op1) >= 0.0))
-      lpcreg = *(byte **)lpcreg;
-    else ADVANCE_PC;
-    goto contcase; 
+        lpcreg = (byte *)get_xxxl;
+    else ADVANCE_PC(size_xxxX);
+    XSB_Next_Instr(); 
 
-  case fail:    /* PPP */
+  XSB_Start_Instr(fail,_fail);    /* PPP */
     Fail1; 
-    goto contcase;
+    XSB_Next_Instr();
 
-  case noop:  /* PPA */
-    ppad; op1byte;
-    pad64;
+  XSB_Start_Instr(noop,_noop);  /* PPA */
+  Op1(get_xxa);
+  ADVANCE_PC(size_xxx);
     lpcreg += (int)op1;
     lpcreg += (int)op1;
-    goto contcase;
+    XSB_Next_Instr();
 
-  case halt:  /* PPP */
-    pppad;
-    pad64;
+  XSB_Start_Instr(halt,_halt);  /* PPP */
+  ADVANCE_PC(size_xxx);
     pcreg = lpcreg; 
     inst_begin = lpcreg;  /* hack for the moment to make this a ``creturn'' */
     return(0);	/* not "goto contcase"! */
 
-  case builtin:
-    ppad; op1byte; pad64; pcreg=lpcreg; 
+  XSB_Start_Instr(builtin,_builtin);
+  Op1(get_xxa);
+  ADVANCE_PC(size_xxx);
+    pcreg=lpcreg; 
     if (builtin_call((int)(op1))) {lpcreg=pcreg;}
     else Fail1;
-    goto contcase;
+    XSB_Next_Instr();
 
-  case unifunc:   /* PAR */
-    pad;
-    op1byte;
-    if (unifunc_call((int)(op1), opregaddr) == 0) {
+  XSB_Start_Instr(unifunc,_unifunc);   /* PAR */
+  Op1(get_xax);
+  Op2(get_xxr);
+  ADVANCE_PC(size_xxx);
+    if (unifunc_call((int)(op1), (CPtr)op2) == 0) {
       xsb_error("Error in unary function call");
       Fail1;
     }
-    pad64;
-    goto contcase;
+    XSB_Next_Instr();
 
-  case calld:   /* PPA-L */
-    pppad;
-    pad64;
+  XSB_Start_Instr(calld,_calld);   /* PPA-L */
+  ADVANCE_PC(size_xxx); /* this is ok */
     cpreg = lpcreg+sizeof(Cell); 
-    check_glstack_overflow(MAX_ARITY, lpcreg, OVERFLOW_MARGIN, goto contcase);
+    check_glstack_overflow(MAX_ARITY, lpcreg,OVERFLOW_MARGIN,XSB_Next_Instr());
     lpcreg = *(pb *)lpcreg;
-    goto contcase;
+    XSB_Next_Instr();
 
-  case logshiftr:  /* PRR */
-    pad;
-    op1 = opreg;
-    op3 = opregaddr;
-    pad64; 
+  XSB_Start_Instr(logshiftr,_logshiftr);  /* PRR */
+  Op1(Register(get_xrx));
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1228,13 +1292,12 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'>>'", op1);
     }
     else { bld_int(op3, int_val(op2) >> int_val(op1)); }
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case logshiftl:   /* PRR */
-    pad;
-    op1 = opreg;
-    op3 = opregaddr;
-    pad64;
+  XSB_Start_Instr(logshiftl,_logshiftl);   /* PRR */
+  Op1(Register(get_xrx));
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1242,13 +1305,12 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'<<'", op1);
     }
     else { bld_int(op3, int_val(op2) << int_val(op1)); }
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case or:   /* PRR */
-    pad;
-    op1 = opreg;
-    op3 = opregaddr;
-    pad64;
+  XSB_Start_Instr(or,_or);   /* PRR */
+  Op1(Register(get_xrx));
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1256,13 +1318,12 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'\\/'", op1);
     }
     else { bld_int(op3, int_val(op2) | int_val(op1)); }
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case and:   /* PRR */
-    pad;
-    op1 = opreg;
-    op3 = opregaddr;
-    pad64;
+  XSB_Start_Instr(and,_and);   /* PRR */
+  Op1(Register(get_xrx));
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
@@ -1270,19 +1331,18 @@ contcase:     /* the main loop */
       arithmetic_abort(op2, "'/\\'", op1);
     }
     else { bld_int(op3, int_val(op2) & int_val(op1)); }
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case negate:   /* PPR */
-    ppad;
-    op3 = opregaddr;
-    pad64;
+  XSB_Start_Instr(negate,_negate);   /* PPR */
+  Op3(get_xxr);
+  ADVANCE_PC(size_xxx);
     op2 = *(op3);
     XSB_Deref(op2);
     if (!isinteger(op2)) { arithmetic_abort1("'\\'", op2); }
     else { bld_int(op3, ~(int_val(op2))); }
-    goto contcase; 
+    XSB_Next_Instr(); 
 
-  case reset:  /* PPP */
+  XSB_Start_Instr(reset,_reset);  /* PPP */
     /*
      * This instruction is added just to provide a fall back point for
      * xsb_abort() or xsb_segfault_catcher().  It is called only once, and 
@@ -1298,29 +1358,37 @@ contcase:     /* the main loop */
       signal(SIGSEGV, xsb_default_segfault_handler);
     }
     else lpcreg = startaddr;  /* first instruction of entire engine */
-    goto contcase;
+    XSB_Next_Instr();
 
+#ifndef INDIRECT_THREADING
   default: {
     char message[80];
-    sprintf(message, "Illegal opcode hex %x", *--lpcreg); 
+    sprintf(message, "Illegal opcode hex %x", *lpcreg); 
     xsb_exit(message);
   }
 } /* end of switch */
-
+#else
+  _no_inst:
+    {
+      char message[80];
+      sprintf(message, "Illegal opcode hex %x", *lpcreg);
+      xsb_exit(message);
+    }
+#endif
 
 /*======================================================================*/
 /* unification routines							*/
 /*======================================================================*/
 
-#define IFTHEN_SUCCEED  goto contcase
-#define IFTHEN_FAILED	{Fail1 ; goto contcase ;}
+#define IFTHEN_SUCCEED  XSB_Next_Instr()
+#define IFTHEN_FAILED	{Fail1 ; XSB_Next_Instr() ;}
 
 nunify: /* ( op1, op2 ) */
 /* word op1, op2 */
 #include "unify_xsb_i.h"
 
     /* unify_xsb_i already ends with this statement.
-       goto contcase;  
+       XSB_Next_Instr();  
     */
     /* end of nunify */
 
@@ -1337,7 +1405,7 @@ subtryme:
   save_choicepoint(cps_top, ereg, (byte *)op2, breg);
   breg = cps_top;
   hbreg = hreg;
-  goto contcase;
+  XSB_Next_Instr();
 } /* end of subtryme */
 
 /*----------------------------------------------------------------------*/
@@ -1357,7 +1425,7 @@ restore_sub:
     breg = cp_prevbreg(breg); 
     restore_trail_condition_registers(breg);
   }
-  goto contcase;
+  XSB_Next_Instr();
 } /* end of restore_sub */
 
 /*----------------------------------------------------------------------*/
@@ -1377,7 +1445,7 @@ table_restore_sub:
     xtemp1 = tcp_prevbreg(breg); 
     restore_trail_condition_registers(xtemp1);
   }
-  goto contcase;
+  XSB_Next_Instr();
 } /* end of table_restore_sub */
 
 /*----------------------------------------------------------------------*/

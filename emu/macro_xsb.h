@@ -293,6 +293,7 @@ typedef struct subgoal_frame {
 #if (!defined(CHAT))
 #define subg_asf_list_ptr(b)	((VariantSF)(b))->asf_list_ptr
 #endif
+
 /* use this for mark as completed == 0 */
 #define subg_compl_stack_ptr(b)	((VariantSF)(b))->compl_stack_ptr
 #define subg_compl_susp_ptr(b)	((VariantSF)(b))->compl_suspens_ptr

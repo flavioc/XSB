@@ -156,7 +156,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
        xsb_error("Trail clobbered Choice Point Stack");	       	       	    \
        print_statistics(1);						    \
        trail_cp_exception(lpcreg);					    \
-       goto contcase;							    \
+       XSB_Next_Instr();       						    \
      }									    \
      else {								    \
        fprintf(stdwarn, "\nTrail / Choice Point Stack overflow:   ");	    \
@@ -176,7 +176,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
          fprintf(stdwarn, "Reallocation turned OFF!\n");		    \
          print_statistics(1);						    \
          trail_cp_exception(lpcreg);					    \
-         goto contcase;							    \
+         XSB_Next_Instr();     						    \
        }								    \
      }									    \
    }									    \
@@ -231,7 +231,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
        fprintf(stdwarn, "Reallocation turned OFF!\n");                 	\
        print_statistics(1);                                        	\
        complstack_exception(lpcreg);                               	\
-       goto contcase;                                              	\
+       XSB_Next_Instr();                                              	\
      }                                                      		\
      fflush(stdwarn);                                        		\
    }
@@ -248,14 +248,14 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      if ((pb)cps_top < (pb)top_of_trail) {				\
        lpcreg = exception_handler("\nFatal ERROR:  --Trail "		\
 				  "clobbered Choice Point Stack--\n");	\
-       goto contcase;							\
+       XSB_Next_Instr();       						\
      }									\
      else {								\
        if (flags[STACK_REALLOC])					\
          tcpstack_realloc(resize_stack(tcpstack.size,0));		\
        else {								\
          trail_cp_exception(lpcreg);					\
-         goto contcase;							\
+         XSB_Next_Instr();	       					\
        }								\
      }									\
    }									\
@@ -283,7 +283,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
         complstack_realloc(resize_stack(complstack.size,0));                 \
       else {                                                                 \
 	complstack_exception(lpcreg);                                        \
-	goto contcase;                                                       \
+	XSB_Next_Instr();                                                    \
       }                                                                      \
     }
 

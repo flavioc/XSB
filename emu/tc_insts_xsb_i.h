@@ -28,21 +28,21 @@
 /* The following is the list of Trie-Code instructions.			*/
 /*----------------------------------------------------------------------*/
 
-case trie_no_cp_str:
+XSB_Start_Instr(trie_no_cp_str,_trie_no_cp_str);
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_no_cp_str");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_str;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_try_str: {
+XSB_Start_Instr(trie_try_str,_trie_try_str); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_try_str");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
@@ -51,56 +51,56 @@ case trie_try_str: {
 	hbreg = hreg;
 	unify_with_trie_str;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_retry_str: {
+XSB_Start_Instr(trie_retry_str,_trie_retry_str); {
         CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_str");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) =  (byte *)opfail;
 	unify_with_trie_str;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_trust_str: {
+XSB_Start_Instr(trie_trust_str,_trie_trust_str); {
         CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_str");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
 	restore_trail_condition_registers(breg);
 	unify_with_trie_str;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/
 
-case trie_no_cp_numcon:
+XSB_Start_Instr(trie_no_cp_numcon,_trie_no_cp_numcon);
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_no_cp_numcon:");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_try_numcon: {
+XSB_Start_Instr(trie_try_numcon,_trie_try_numcon); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_try_numcon");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
@@ -110,30 +110,30 @@ case trie_try_numcon: {
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_retry_numcon: {
+XSB_Start_Instr(trie_retry_numcon,_trie_retry_numcon); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_numcon");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_trust_numcon: {
+XSB_Start_Instr(trie_trust_numcon,_trie_trust_numcon); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_numcon");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);
@@ -141,27 +141,27 @@ case trie_trust_numcon: {
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/
 
-case trie_no_cp_numcon_succ:
+XSB_Start_Instr(trie_no_cp_numcon_succ,_trie_no_cp_numcon_succ);
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_no_cp_numcon_succ");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	proceed_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_try_numcon_succ: {
+XSB_Start_Instr(trie_try_numcon_succ,_trie_try_numcon_succ); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_try_numcon_succ");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
@@ -171,30 +171,30 @@ case trie_try_numcon_succ: {
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	proceed_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_retry_numcon_succ: {
+XSB_Start_Instr(trie_retry_numcon_succ,_trie_retry_numcon_succ); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_numcon_succ");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	proceed_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_trust_numcon_succ: {
+XSB_Start_Instr(trie_trust_numcon_succ,_trie_trust_numcon_succ); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_numcon_succ");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);
@@ -202,16 +202,16 @@ case trie_trust_numcon_succ: {
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	proceed_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/
 
-case trie_no_cp_var:
+XSB_Start_Instr(trie_no_cp_var,_trie_no_cp_var);
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_no_cp_var");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	num_vars_in_var_regs = DecodeTrieVar(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
 #ifdef DEBUG
@@ -225,14 +225,14 @@ case trie_no_cp_var:
 #endif
 	reg_arrayptr--;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_try_var: {
+XSB_Start_Instr(trie_try_var,_trie_try_var); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_try_var");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	/*	save_find_locx(ereg);*/
@@ -254,15 +254,15 @@ case trie_try_var: {
 #endif
 	reg_arrayptr--;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_retry_var: {
+XSB_Start_Instr(trie_retry_var,_trie_retry_var); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_var");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
@@ -280,15 +280,15 @@ case trie_retry_var: {
 #endif
 	reg_arrayptr--;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_trust_var:  {
+XSB_Start_Instr(trie_trust_var,_trie_trust_var);  {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_var");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
@@ -307,26 +307,26 @@ case trie_trust_var:  {
 #endif
 	reg_arrayptr--;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/
 
-case trie_no_cp_val:
+XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val);
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_no_cp_val");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_val;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_try_val: {
+XSB_Start_Instr(trie_try_val,_trie_try_val); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_try_val");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
@@ -335,55 +335,55 @@ case trie_try_val: {
 	hbreg = hreg;
 	unify_with_trie_val;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_retry_val: {
+XSB_Start_Instr(trie_retry_val,_trie_retry_val); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_val");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
 	unify_with_trie_val;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_trust_val: {
+XSB_Start_Instr(trie_trust_val,_trie_trust_val); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_val");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
 	restore_trail_condition_registers(breg);
 	unify_with_trie_val;
 	next_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/
 
-case trie_no_cp_list:
+XSB_Start_Instr(trie_no_cp_list,_trie_no_cp_list);
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_no_cp_list");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_list;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_try_list: {
+XSB_Start_Instr(trie_try_list,_trie_try_list); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_try_list");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
@@ -392,69 +392,69 @@ case trie_try_list: {
 	hbreg = hreg;
 	unify_with_trie_list;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_retry_list: {
+XSB_Start_Instr(trie_retry_list,_trie_retry_list); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_list:");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
 	unify_with_trie_list;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_trust_list: {
+XSB_Start_Instr(trie_trust_list,_trie_trust_list); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_list");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
 	restore_trail_condition_registers(breg);
 	unify_with_trie_list;
 	non_ftag_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/
 /* fail insts for deleted nodes - reclaim deleted returns at completion */
 /*----------------------------------------------------------------------*/
 
-case trie_no_cp_fail:
+XSB_Start_Instr(trie_no_cp_fail,_trie_no_cp_fail);
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_no_cp_fail");
 #endif	
 	lpcreg = (byte *) & fail_inst;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_trust_fail: {
+XSB_Start_Instr(trie_trust_fail,_trie_trust_fail); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_fail");
 #endif	
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
 	restore_trail_condition_registers(breg);
 	lpcreg = (byte *) & fail_inst;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_try_fail: {
+XSB_Start_Instr(trie_try_fail,_trie_try_fail); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_try_fail");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
@@ -462,20 +462,20 @@ case trie_try_fail: {
 	breg = tbreg;
 	hbreg = hreg;
 	lpcreg = (byte *) & fail_inst;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
-case trie_retry_fail: {
+XSB_Start_Instr(trie_retry_fail,_trie_retry_fail); {
 	CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_fail");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
 	lpcreg = (byte *) & fail_inst;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/
@@ -533,7 +533,7 @@ case trie_retry_fail: {
              +-------------+
 */
 
-case hash_opcode: {
+XSB_Start_Instr(hash_opcode,_hash_opcode); {
 	CPtr tbreg, temp_ptr_for_hash;;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("hash_opcode");
@@ -542,7 +542,7 @@ case hash_opcode: {
     *  Under new trie structure, NodePtr is actually pointing at a
     *  Hash Table Header struct.
     */
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
@@ -564,7 +564,7 @@ case hash_opcode: {
 	breg = tbreg;
 	hbreg = hreg;
 	lpcreg = (byte *) &hash_handle_inst;
-	goto contcase;
+	XSB_Next_Instr();
 }
 
 /*
@@ -573,7 +573,7 @@ case hash_opcode: {
  *  needed to distinguish between the two cases.  Hence the use of the
  *  FIRST_HASH_NODE flag in the CPS.
  */
-case hash_handle:
+XSB_Start_Instr(hash_handle,_hash_handle);
   {
     CPtr    tbreg;
     BTHTptr hash_hdr, *hash_base;
@@ -642,26 +642,26 @@ case hash_handle:
 	cell(breg+CP_SIZE) = makeint(hash_offset);
       }
     }
-    goto contcase;
+    XSB_Next_Instr();
   }
 
 /*----------------------------------------------------------------------*/
 
-case trie_proceed:	/* This is essentially a "proceed" */
+XSB_Start_Instr(trie_proceed,_trie_proceed);	/* This is essentially a "proceed" */
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_proceed:");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	proceed_lpcreg;
-	goto contcase;
+	XSB_Next_Instr();
 
-case trie_root:      /* A no-op; begin processing with child */
+XSB_Start_Instr(trie_root,_trie_root);      /* A no-op; begin processing with child */
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_root:");
 #endif
-	NodePtr = (BTNptr) (lpcreg - 1);
+	NodePtr = (BTNptr) lpcreg;
 	lpcreg = (byte *) BTN_Child(NodePtr);
-	goto contcase;
+	XSB_Next_Instr();
 
 /*
  * This is the embedded-trie instruction which is placed in the root of
@@ -670,12 +670,12 @@ case trie_root:      /* A no-op; begin processing with child */
  * prepares the engine to walk a call trie.  Maybe there's a way to
  * "unify" these operations now that all tries contain root nodes.
  */
-case trie_assert_inst:
+XSB_Start_Instr(trie_assert_inst,_trie_assert_inst);
 {
   Psc psc_ptr;
   int i;
 
-  NodePtr = (BTNptr) (lpcreg - 1);
+  NodePtr = (BTNptr) lpcreg;
   if (Child(NodePtr) != NULL) {
     psc_ptr = DecodeTriePSC(BTN_Symbol(NodePtr));
     reg_arrayptr = reg_array -1;
@@ -685,27 +685,27 @@ case trie_assert_inst:
   }
   else
     lpcreg = (byte *) &fail_inst;
-  goto contcase;
+  XSB_Next_Instr();
 }	
 
-case trie_no_cp_attv:
+XSB_Start_Instr(trie_no_cp_attv,_trie_no_cp_attv);
 {
 #ifdef PVR_DEBUG_TC_INSTS
   xsb_dbgmsg("trie_no_cp_attv");
 #endif
-  NodePtr = (BTNptr) (lpcreg - 1);
+  NodePtr = (BTNptr) lpcreg;
   unify_with_trie_attv;
   next_lpcreg
-  goto contcase;
+  XSB_Next_Instr();
 }
 
-case trie_try_attv:
+XSB_Start_Instr(trie_try_attv,_trie_try_attv);
 {
   CPtr tbreg;
 #ifdef PVR_DEBUG_TC_INSTS
   xsb_dbgmsg("trie_try_attv");
 #endif
-  NodePtr = (BTNptr) (lpcreg - 1);
+  NodePtr = (BTNptr) lpcreg;
   save_find_locx(ereg);
   tbreg = top_of_cpstack;
   save_trie_registers(tbreg);
@@ -714,7 +714,7 @@ case trie_try_attv:
   hbreg = hreg;
   unify_with_trie_attv;
   next_lpcreg;
-  goto contcase;
+  XSB_Next_Instr();
 }
 
 /*----------------------------------------------------------------------*/

@@ -102,7 +102,7 @@ int *asynint_ptr = &asynint_val;
     /* op is FREE */							\
     bind_nil((CPtr)(op));						\
   }									\
-  else if (isnil(op)) goto contcase; /* op == [] */			\
+  else if (isnil(op)) XSB_Next_Instr(); /* op == [] */			\
   else if (isattv(op)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_nil, interrupt needed\n");	\
     add_interrupt(op, makenil);						\
@@ -118,7 +118,7 @@ int *asynint_ptr = &asynint_val;
     bind_string((CPtr)(OP1), (char *)OP2);				\
   }									\
   else if (isstring(OP1)) {						\
-    if (string_val(OP1) == (char *)OP2) goto contcase; else Fail1;	\
+    if (string_val(OP1) == (char *)OP2) XSB_Next_Instr(); else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_con, interrupt needed\n");	\
@@ -137,7 +137,7 @@ int *asynint_ptr = &asynint_val;
     bind_int((CPtr)(OP1), (Integer)OP2);				\
   }									\
   else if (isinteger(OP1)) {						\
-    if (int_val(OP1) == (Integer)OP2) goto contcase; else Fail1;	\
+    if (int_val(OP1) == (Integer)OP2) XSB_Next_Instr(); else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_num, interrupt needed\n");	\
@@ -154,7 +154,7 @@ int *asynint_ptr = &asynint_val;
     bind_float(vptr(op1), asfloat(op2));				\
   }									\
   else if (isfloat(op1)) {						\
-    if (float_val(op1) == asfloat(op2)) goto contcase; else Fail1;	\
+    if (float_val(op1) == asfloat(op2)) XSB_Next_Instr(); else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
     attv_dbgmsg(">>>> ATTV nunify_with_float, interrupt needed\n");	\

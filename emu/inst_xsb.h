@@ -24,9 +24,9 @@
 */
 
 
-#ifndef XSB_INSTS
+#ifndef __XSB_INSTS__
 
-#define XSB_INSTS
+#define __XSB_INSTS__
 
 extern void init_inst_table(void);
 
@@ -202,6 +202,9 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define bldnil          0x1d
 #define uninumcon	0x1e
 #define bldnumcon	0x1f
+
+#define no_inst         0x20 
+/* the above number is used for invalid opcodes in the threading engine */
 
 #define getattv		0x30
 #define putattv		0x31
