@@ -47,7 +47,18 @@ Otherwise, @tt{cdf_error/2} will be handled by the default error
 handler.
 ").
 
+/* TLS: the xjNotifyUser should probably be best put in the handler,
+but until we get XJ to handle exceptions, I want to make sure the user
+is properly notified */
+
+:- import concat_atom/2 from string.
+:- import xjReportError/2 from usermod.
+
 cdf_error(Type,List):- 
+	(using_xj -> 
+	    concat_atom(List,String),
+	    xjReportError(Type,String)
+	  ; true),
 	throw(cdf_error(Type,List)).
 
 handle_cdf_error(Type,List):- 

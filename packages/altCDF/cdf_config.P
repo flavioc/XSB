@@ -53,3 +53,6 @@ component_table_int(maxAttr_int(_,_,_,_),2,[arg(1,warn),arg(3,no_warn),
 component_table_int(assert_cdf_int(_),null,[]).
 component_table_int(retractall_cdf_int(_),null,[]).
 
+/* For DL Rules */
+:- op(400, xfx, (<=)).
+

@@ -5,8 +5,6 @@
 	retract_intensional_rules/1,
 	cdf_exists/1.
 
-%:- import (:-)/2 from usermod.
-
 :- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3,
 	necessCond_ext/2, %ic_ext/1, 
 	minAttr_ext/4, maxAttr_ext/4
@@ -21,7 +19,9 @@
 
 :- import newExtTerm/2 from cdf_init_cdf.
 
-:- import cdf_error/2 from cdf_exceptions.
+:- import dlrule_to_cdf/2 from cdftp_rules.
+
+:- import cdf_error/2,cdf_warning/2 from cdf_exceptions.
 
 :- import cdf_fix_dir/2 from cdf_utilities.
 
@@ -245,28 +245,42 @@ retract_intensional_rules(_).
 read_intensional_rules_1(Name):- 
 	repeat,
 	read(T),
-	(T = end_of_file -> 
-	   true
-	 ; T = (:-(Query))
-	 ->	call(Query),
-		fail
-	 ; T = (:-(Head,Body))
-	 ->	transform_intensional_rules(Head,NewHead,Name),
-		asserta((:-(Head,NewHead))),
-		asserta((:-(NewHead,Body))),
-		fail
-	 ;	transform_intensional_rules(T,NewHead,Name),
-		asserta((:-(T,NewHead))),
-		asserta(NewHead),
-		fail
-	),
+%	(T = (H :- B) -> write(true) ; write(false)),
+%	(T = (H <= B) -> write(true) ; write(false)),
+	read_intensional_rules_2(T,Name),
 	!.
+
+read_intensional_rules_2(end_of_file,_Name).
+read_intensional_rules_2('<='(Head,Body),Name):- !,
+	dlrule_to_cdf('<='(Head,Body),CDFList),
+	member((:-(H,B)),CDFList),
+	transform_intensional_rules(H,NewHead,Name),
+	asserta((:-(H,NewHead))),
+	asserta((:-(NewHead,B))),
+	fail.
+read_intensional_rules_2((:-(Query)),_Name):- !,
+	call(Query),
+	fail.
+read_intensional_rules_2((Head :- Body),Name):- !,
+	transform_intensional_rules(Head,NewHead,Name),
+	asserta((:-(Head,NewHead))),
+	asserta((:-(NewHead,Body))),
+	fail.
+read_intensional_rules_2(T,Name):- 
+	transform_intensional_rules(T,NewHead,Name),
+	asserta((:-(T,NewHead))),
+	asserta(NewHead),
+	fail.
 
 transform_intensional_rules(Head,NewHead,Name):- 
 	component_table_int(Head,_,_),
 	Head =.. [F|T],
 	concat_atom([F,'_',Name],NewF),
-	NewHead =.. [NewF|T].
+	NewHead =.. [NewF|T],!.
+transform_intensional_rules(Head,_NewHead,Name):- 
+	cdf_warning(rule_load,['Cannot intern intensional rule with head ',
+	                                  Head,' for directory ',Name]),
+	fail.
 
 :- comment(cdf_exists/1, "@tt{cdf_exists(Dir)} checks whether
 @tt{cdf_extensional.P} file is present in directory @tt{Dir}").
