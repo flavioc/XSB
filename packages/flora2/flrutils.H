@@ -35,8 +35,11 @@
 
 :- import assert/1, retractall/1 from assert.
 
-:- import compile/2, consult/1,
-	read_canonical/1, current_loaded_file/1
+:- import
+	compile/2,
+	consult/1,
+	read_canonical/1,
+	current_loaded_file/1
     from consult.
 
 :- import library_directory/1 from usermod.
@@ -45,9 +48,7 @@
 
 :- import xsb_configuration/2 from xsb_configuration.
 
-:- import xpp_options/1,
-	xpp_process_file/3
-    from parse.
+:- import xpp_options/1, xpp_process_file/3 from parse.
 
 :- import current_output_port/1, current_predicate/1 from curr_sym.
 
