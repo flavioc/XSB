@@ -173,7 +173,12 @@ int sys_syscall(int callno)
     result = file_copy(from,to);
     break;
   }
-    
+  case SYS_create: {
+    result = open(ptoc_longstring(3),O_CREAT|O_EXCL,S_IREAD|S_IWRITE);
+    if (result >= 0) close(result);
+    break;
+  }
+
   default: xsb_abort("[SYS_SYSCALL] Unknown system call number, %d", callno);
   }
   return result;
