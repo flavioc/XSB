@@ -310,8 +310,8 @@ void total_stat(double elapstime) {
   printf("\nVariant Operations:\n");
   printf("  %ld subgoal check/insert attempts", subg_chk_ins);
   printf(" inserted %5ld subgoals in the tables\n", subg_inserts);
-  printf("  %ld answer check/insert attempts", ans_chk_ins);
-  printf(" inserted %5ld answers in the tables\n", ans_inserts);
+  printf("  %ld answer  check/insert attempts", ans_chk_ins);
+  printf(" inserted %5ld answers  in the tables\n", ans_inserts);
 
   if (de_count > 0) {
     printf("\n");

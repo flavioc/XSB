@@ -413,8 +413,8 @@ void print_subsumption_stats() {
 	 NumSubOps_VariantCall, NumSubOps_SubsumedCall,
 	 NumSubOps_SubsumedCallEntry, NumSubOps_CallToCompletedTable);
   printf("  Answer check/insert operations:    %8d\n"
-	 "    Actual answer inserts:         %6d\n"
-	 "    Derivation ratio (New/Total):    %4.2f\n",
+	 "  * Actual answer inserts:         %6d\n"
+	 "  * Derivation ratio (New/Total):    %4.2f\n",
 	 NumSubOps_AnswerCheckInsert, NumSubOps_AnswerInsert,
 	 ( (NumSubOps_AnswerCheckInsert != 0)
 	   ? (float)NumSubOps_AnswerInsert / (float)NumSubOps_AnswerCheckInsert
