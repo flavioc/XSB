@@ -555,7 +555,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 
   get_obj_byte(&t_env);
   /* this simple check can avoid worse situations in case of compiler bugs */
-  if (t_env > T_GLOBAL) xsb_exit("Fatal: Object file loaded is corrupted");
+  if (t_env > T_GLOBAL) xsb_abort("The loaded object file is corrupted");
 
   get_obj_byte(&t_type);
   get_obj_byte(&t_arity);
