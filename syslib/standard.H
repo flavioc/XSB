@@ -34,7 +34,7 @@
 	call/1,		call_expose/1,	callable/1,
 	close/1,             close/2,	compare/3,	
   compound/1,	cputime/1,	
-            display/1, now/1, datime/1,
+            display/1, displayln/1, now/1, datime/1,
             error_write/1, error_writeln/1,
 	expand_term/2,	file_exists/1,	fail/0,		fail_if/1,
 	fileerrors/0,	float/1,	functor/3,
