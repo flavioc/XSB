@@ -920,14 +920,13 @@ message((M1,M2)) :-
 	!,
 	message(M1),
 	message(M2).
-message(P/N) :-		% temp solution
+message(P/N) :-		% temp solution till we fix operators
 	!,
 	message(P),
 	file_put(2, 47),	% 0'/ = 47
 	file_write0(2, N).
 message(Message) :- 
-	conname(Message, String),
-	file_write0(2, String). % 2 denotes stderr
+	file_write0(2, Message). % 2 denotes stderr
 
 messageln(Message) :- 
 	message(Message),
