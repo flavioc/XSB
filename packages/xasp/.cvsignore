@@ -1,0 +1,7 @@
+*.xwam
+*.lnk
+*.h 
+*.o 
+*.so
+Makefile
+xsb_wrap_smodels.c
