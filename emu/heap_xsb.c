@@ -102,19 +102,27 @@ Todo:
 
 /* For Reallocation Routines
    ------------------------- */
-#include <stdio.h>     /* printf */
+#include <stdio.h>         /* for printf and friends */
 
-#include "register.h"  /* breg, trreg */
+#include "register.h"      /* breg, trreg */
 #include "psc_xsb.h"       /* needed by "tries.h" and "macro_xsb.h" */
-#include "tries.h"     /* needed by "choice.h" */
-#include "choice.h"    /* choice point structures and macros */
-#include "error_xsb.h"  /* xsb_exit() and friends */
-#include "macro_xsb.h"    /* Completion Stack and Subgoal Frame def's */
-#include "realloc.h"   /* Heap - ls reallocation macros */
-#include "chat.h"      /* CHAT related declarations */
+#include "tries.h"         /* needed by "choice.h" */
+#include "choice.h"        /* choice point structures and macros */
+#include "error_xsb.h"     /* xsb_exit() and friends */
+#include "macro_xsb.h"     /* Completion Stack and Subgoal Frame def's */
+#include "realloc.h"       /* Heap - ls reallocation macros */
+#include "chat.h"          /* CHAT related declarations */
 #include "flags_xsb.h"     /* for checking whether functionality is enabled */
 #include "heap_xsb.h"
 #include "io_builtins_xsb.h"
+
+/*=========================================================================*/
+
+/* this might belong somewhere else (or should be accessible to init.c),
+   but in the meantime, this will do */
+#ifdef GC
+static float mark_threshold = 0.9;
+#endif
 
 /*=========================================================================*/
 
@@ -235,7 +243,7 @@ static char *compl_marks = NULL ;
 #endif
 
 #ifdef GC
-static inline CPtr hp_pointer_from_cell(Cell cell, int *tag)
+inline static CPtr hp_pointer_from_cell(Cell cell, int *tag)
 {
     int t;
     CPtr retp;
@@ -311,7 +319,7 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 
 /*-------------------------------------------------------------------------*/
 
-static char * pr_h_marked(CPtr cell_ptr)
+inline static char * pr_h_marked(CPtr cell_ptr)
 { int i ;
   i = cell_ptr - heap_bot ;
   if (heap_marks == NULL) return("not_m") ;
@@ -321,7 +329,7 @@ static char * pr_h_marked(CPtr cell_ptr)
   return("not_m") ;
 } /* pr_h_marked */
 
-static char * pr_ls_marked(CPtr cell_ptr) 
+inline static char * pr_ls_marked(CPtr cell_ptr) 
 { int i ; 
   i = cell_ptr - ls_top ;
   if (ls_marks == NULL) return("not_m") ;
@@ -331,7 +339,7 @@ static char * pr_ls_marked(CPtr cell_ptr)
   return("not_m") ; 
 } /* pr_ls_marked */ 
 
-static char * pr_cp_marked(CPtr cell_ptr) 
+inline static char * pr_cp_marked(CPtr cell_ptr) 
 { int i ; 
   i = cell_ptr - cp_top ;
   if (cp_marks == NULL) return("not_m") ;
@@ -339,7 +347,7 @@ static char * pr_cp_marked(CPtr cell_ptr)
   return("not_m") ; 
 } /* pr_cp_marked */ 
 
-static char * pr_tr_marked(CPtr cell_ptr) 
+inline static char * pr_tr_marked(CPtr cell_ptr) 
 { int i ; 
   i = cell_ptr - tr_bot ;
   if (tr_marks == NULL) return("not_m") ;
@@ -503,7 +511,7 @@ static int mark_root(Cell cell_val)
 
 /*----------------------------------------------------------------------*/
 
-static inline int mark_region(CPtr beginp, CPtr endp)
+inline static int mark_region(CPtr beginp, CPtr endp)
 { int marked = 0 ;
 
   while (beginp <= endp)
@@ -897,7 +905,7 @@ static int mark_hreg_from_choicepoints(void)
 
 #ifdef GC
 
-static void adapt_hreg_from_choicepoints(CPtr h)
+inline static void adapt_hreg_from_choicepoints(CPtr h)
 { CPtr b, bprev;
 
   /* only after copying collection */
@@ -983,7 +991,7 @@ int mark_heap(int arity, int *marked_dregs)
 
 /*-------------------------------------------------------------------------*/
 
-static char *code_to_string(byte *pc)
+inline static char *code_to_string(byte *pc)
 {
   return((char *)(inst_table[*pc][0])) ;
 } /* code_to_string */
@@ -1402,8 +1410,8 @@ void print_all_stacks(void)
 
 #ifdef CHAT
 
-static void chat_relocate_region(CPtr *startp, int len,
-				 int heap_offset, int local_offset)
+inline static void chat_relocate_region(CPtr *startp, int len,
+					int heap_offset, int local_offset)
 { int j;
   Cell cell_val;
 
@@ -1742,7 +1750,7 @@ static void unchain(CPtr hptr, CPtr destination)
 
 /*----------------------------------------------------------------------*/
 
-static void swap_with_tag(CPtr p, CPtr q, int tag)
+inline static void swap_with_tag(CPtr p, CPtr q, int tag)
 { /* p points to a cell with contents a tagged pointer
      make *q = p + tag, but maybe shift p
   */
@@ -2453,11 +2461,11 @@ int gc_heap(int arity)
 
 #ifdef GC
   CPtr p;
-  int  begin_marktime,
+  int  begin_marktime, end_marktime,
 #ifdef VERBOSE_GC
-    end_marktime, begin_slidetime, begin_copy_time,
+       begin_slidetime, begin_copy_time,
 #endif
-    end_slidetime, end_copy_time;
+       end_slidetime, end_copy_time;
   int  marked = 0, marked_dregs = 0, i;
 
   if (flags[GARBAGE_COLLECT] != NO_GC) {
@@ -2495,15 +2503,13 @@ int gc_heap(int arity)
 	  arity++;
 	  reg[arity] = (Cell)delayreg;
 	}
-	for (i = 1; i <= arity; i++ )
+	for (i = 1; i <= arity; i++)
 	  *hreg++ = reg[i] ;
       }
 
-    marked = mark_heap(arity, &marked_dregs) ;
+    marked = mark_heap(arity, &marked_dregs);
 
-#ifdef VERBOSE_GC
-    end_marktime = 1000*cpu_time() ;
-#endif
+    end_marktime = 1000*cpu_time();
 
     if (fragmentation_only)
       {
@@ -2514,6 +2520,7 @@ int gc_heap(int arity)
 		   marked,hreg+1-(CPtr)glstack.low,
 		   heap_early_reset,ls_early_reset);
 
+      free_marks:
 	/* get rid of the marking areas - if they exist */
 	if (heap_marks)  { free((heap_marks-1)); heap_marks = NULL; }
 	if (tr_marks)    { free(tr_marks); tr_marks = NULL; }
@@ -2528,6 +2535,22 @@ int gc_heap(int arity)
 #ifdef VERBOSE_GC
     xsb_dbgmsg("Heap gc - marking finished - #marked = %d - start compact",
 	       marked);
+#endif
+
+   /* An attempt to add some gc/expansion policy;
+       ideally this should be user-controlled */
+#if (! defined(GC_TEST))
+     if (marked > ((hreg+1-(CPtr)glstack.low)*mark_threshold))
+      {
+#ifdef VERBOSE_GC
+        xsb_dbgmsg("Heap gc - marked too much - quitting gc") ;
+#endif
+        if (slide)
+          hreg -= arity;
+	total_collected = 0; /* keep statistics honest */
+	total_time_gc += (end_marktime - begin_marktime);
+        goto free_marks; /* clean-up temp areas and get out of here... */
+      }
 #endif
 
     total_collected -= marked;
