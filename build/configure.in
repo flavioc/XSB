@@ -1030,7 +1030,9 @@ chmod 444 ${arch_config_file} \
 
 # Move the config file in case of DOS and Windoze to the right place
 if test -n "$with_os" ; then
+   echo "Copying config.h, debug.h to <emudir>/configs and <emudir>/debugs"
    cp -f ${arch_config_prefix}/config.h  ${emudir}/configs
+   cp -f ${arch_config_prefix}/debug.h  ${emudir}/debugs
 fi
 
 dnl Copying to the installation directory ($prefix) is done in the top

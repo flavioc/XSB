@@ -657,9 +657,9 @@ case "$with_os" in
 	os_version=
 	host_vendor=pc
 	host_cpu=x86
-	configuration_templ=xsb_configuration_nt.in
-	config_dot_h_templ=def_config_nt.in
-	echo 'Checking host system type... Windows NT/95/98'
+	configuration_templ=xsb_configuration_wind.in
+	config_dot_h_templ=def_config_wind.in
+	echo 'Configuring for host system type... Windows NT/95/98'
 	;;
   pcdo*) 	canonical=x86-pc-pcdos
 	host_os=pcdos
@@ -669,7 +669,7 @@ case "$with_os" in
 	host_cpu=x86
 	configuration_templ=xsb_configuration_pcdos.in
 	config_dot_h_templ=def_config_pcdos.in
-	echo 'Checking host system type... PC DOS'
+	echo 'Configuring for host system type... PC DOS'
 	;;
   *)    	if test -n "$with_os" ; then
 	   echo "OS \`$with_os' is not supported"
@@ -3676,7 +3676,9 @@ chmod 444 ${arch_config_file} \
 
 # Move the config file in case of DOS and Windoze to the right place
 if test -n "$with_os" ; then
+   echo "Copying config.h, debug.h to <emudir>/configs and <emudir>/debugs"
    cp -f ${arch_config_prefix}/config.h  ${emudir}/configs
+   cp -f ${arch_config_prefix}/debug.h  ${emudir}/debugs
 fi
 
 echo ""
