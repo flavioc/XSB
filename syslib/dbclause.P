@@ -241,6 +241,18 @@ db_get_clauses1(ClRef0,CurrILvl0,CurrInd0,PrRef,Head,Failed,
 		)
 	).
 
+
+db_get_clauses_in_list(Lo,OClRef,ONlev,ONind,Prref,Head,CeList0,CeList) :-
+	db_get_clause(OClRef,ONlev,ONind,Prref,Head,0,NClref,_Typ,Entry,NNlev,NNind),
+	(NClref =:= 0
+	 ->	CeList0 = CeList
+	 ; Lo > 0
+	 ->	Lo1 is Lo-1,
+		db_get_clauses_in_list(Lo1,NClref,NNlev,NNind,Prref,Head,CeList0,CeList)
+	 ; 	CeList0 = [[NClref|Entry]|CeList1],
+		db_get_clauses_in_list(Lo,NClref,NNlev,NNind,Prref,Head,CeList1,CeList)
+	).
+
 /************************************************************************/
 /* The following routine cleans up by reclaiming space for all clauses	*/
 /* that were erased without reclaiming their space.			*/

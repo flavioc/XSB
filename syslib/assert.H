@@ -29,24 +29,27 @@
 :- export retract/1, retractall/1, abolish/1, abolish/2. 
 :- export retract0/1.	% used in standard.P (for multifile)
 :- export retract_nr/1, reclaim_space/1.
+:- export retract_facts_back_to/2.
 :- export clause0/2, clause/2.
 :- export (dynamic)/1.
 :- export t_assert/2.
 
 
-:- import append/3 from basics.
-:- import (=..)/2, functor/3, integer/1, callable/1, 
-	  goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1
+:- import append/3, member/2, reverse/2 from basics.
+:- import (=..)/2, functor/3, integer/1, callable/1, throw/1,
+  goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1,
+  is_most_general_term/1
      from standard.
 %%:- import call_c/1 from standard.
 :- import db_retract/3, db_retractall/2, db_abolish/1, db_clause/4,
-	  db_retract_nr/3, db_reclaim_space/2
+  db_retract_nr/3, db_reclaim_space/2, db_get_clauses_in_list/8
      from dbclause.
 :- import '_$index'/3, '_$trie_asserted'/1, retract_trie_index/1,
 	  retract_index/1 from file_op.
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2, buff_byte/3,
 	  buff_word/3, conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
-	  psc_tabled/2, psc_set_ep/2, unload_seg/1, db_build_prref/3
+  psc_tabled/2, psc_set_ep/2, unload_seg/1, db_build_prref/3,
+  code_call/3, db_retract0/2
      from machine.
 %%:- import term_psc/2 from machine.
 :- import '_$table'/1 from file_op.

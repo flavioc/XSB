@@ -25,6 +25,7 @@
 	  
 :- export db_retract/3, db_retract_nr/3, db_reclaim_space/2.
 :- export db_clause/4, db_retractall/2, db_abolish/1, '_$clause_int'/1.
+:- export db_get_clauses_in_list/8.
 
 :- import asserti/2, (dynamic)/1 from assert.
 :- import abort/1, atom/1, call/1, repeat/0, is_most_general_term/1

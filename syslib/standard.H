@@ -117,5 +117,6 @@
 :- import predicate_property/2 from curr_sym.
 :- import (dynamic)/1, asserta/1 from assert.
 :- import concat_atom/2 from string.
+:- import consult/1, reconsult/1 from consult.
 
 /* --------------------- end of file standard.H ----------------------- */

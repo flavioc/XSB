@@ -286,6 +286,28 @@ db_new_prref(PSC,PHead,Prref) :-
 	db_build_prref(PSC, Tabled, Prref).
 
 /*======================================================================*/
+/* db_dynamic_prref(+PHead,+CallingRef,-Prref):				*/
+/*	returns the Prref for the predicate that is the main functor	*/
+/*      symbol of PHead.  CallingRef is used in the error message	*/
+/*      thrown if PHead is a compiled predicate.  The predicate fails	*/
+/*      if PHead is undefined, and succeeds returning the Prref if	*/
+/*      PHead is a dynamic predicate.					*/
+/*									*/
+/*======================================================================*/
+
+get_dynamic_prref(Head,CallingPred,Prref) :-
+	conpsc(Head, PSC),
+	psc_type(PSC,Type),
+	(Type =:= T_PRED		/* is compiled */
+	 ->	functor(Head,F,A),
+	        throw(error(predicate_type_error,
+			    (CallingPred, ' cannot be appled to compiled predicate', F/A)))
+	 ;	Type =:= T_DYNA, % is DYNA 
+		psc_ep(PSC, Prref) % get Prref
+	).
+	
+
+/*======================================================================*/
 /* retract(+Fact)							*/
 /*	this routine retracts facts. It does so by running the chain of */
 /*	buffers, explicitly. When it finds a fact that unifies, it 	*/
@@ -311,26 +333,16 @@ retract(Rule) :-	% changed for multifile predicates (2/24/98)
 	 ;	retract0((Head :- Body))
 	).
 
-/*
-call_retract_hook(Head,Body) :-
-	term_psc(retract_hook(_,_),Psc),
-	psc_type(Psc,Type),
-	(Type > T_ORDI % essentially means != T_ORDI
-	 ->	call_c(retract_hook(Head,Body))
-	 ;	true
-	).
-*/
+
+
+
 
 do_multifile_retract(Head, Body) :-
 	'_$multifile_retract'(Head, _, New_Head),
 	check_retract(New_Head, multifile_retract/1),
-	conpsc(New_Head, PSC),
-	psc_type(PSC,Type), 
-	(Type =:= T_PRED		/* is compiled */
-	 ->	functor(Head,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A])
-         ;	psc_ep(PSC, Prref),			/* get Prref */
-                db_retract(New_Head, Body, Prref)
+	(get_dynamic_prref(New_Head,'retract/1',Prref)
+	 ->	true
+	 ;	db_retract(New_Head, Body, Prref)
 	).
 
 
@@ -340,15 +352,8 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract/1),
-	conpsc(Head, PSC),
-	psc_type(PSC,Type),
-	(Type =:= T_PRED		/* is Compiled */
-	 ->	functor(Head,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A, Rule])
-	 ;      Type =:= T_DYNA,
-		psc_ep(PSC, Prref),			/* get Prref */
-	        db_retract(Head, Body, Prref)
-	).
+	get_dynamic_prref(Head,'retract/1',Prref),
+	db_retract(Head, Body, Prref).
 
 retractall(Fact) :-
 	call_xsb_hook(xsb_retract_hook(_),[Fact,true],all),
@@ -365,18 +370,10 @@ do_multifile_retractall(_).
 
 retractall0(Fact) :-
 	check_retract(Fact, retractall/1),
-	conpsc(Fact, PSC),
-	psc_type(PSC,Type), 
-	(Type =:= T_PRED		/* is Compiled */
-	 ->	functor(Fact,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A, Fact])
-	 ;	(	Type =:= T_DYNA
-			->
-			psc_ep(PSC, Prref),		/* get Prref */
-			db_retractall(Fact, Prref)
-			;
-			true
-	)	).
+	(get_dynamic_prref(Fact,'retractall/1',Prref)
+	 ->	db_retractall(Fact, Prref)
+	 ;	true
+	).
 
 retract_nr(Rule) :-
 	(Rule = (Head :- Body)
@@ -384,30 +381,45 @@ retract_nr(Rule) :-
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract_nr/1),
-	conpsc(Head, PSC),
-	psc_type(PSC,Type), 
-	(Type =:= T_PRED		/* is Compiled */
-	 ->	functor(Head,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A, Rule])
-         ;      Type =:= T_DYNA,
-		psc_ep(PSC, Prref),			/* get Prref */
-	        db_retract_nr(Head, Body, Prref)
-	).
+	get_dynamic_prref(Head,'retract_nr/1',Prref),
+	db_retract_nr(Head, Body, Prref).
 
 reclaim_space(Fact) :-
 	check_retract(Fact, reclaim_space/1),
-	conpsc(Fact, PSC),
-	psc_type(PSC,Type), 
-	(Type =:= T_PRED		/* is compiled */
-	 ->	functor(Fact,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A, Fact])
-	 ;	(	Type =:= T_DYNA
-			->
-			psc_ep(PSC, Prref),		/* get Prref */
-			db_reclaim_space(Fact, Prref)
-			;
-			true
-	)	).
+	(get_dynamic_prref(Fact,'reclaim_space/1',Prref)
+	 ->	db_reclaim_space(Fact, Prref)
+	 ;	true
+	).
+
+/*======================================================================*/
+/*									*/
+/* retract_facts_back_to(+Skel,+Lim) Skel must be an open term for	*/
+/*	a dynamic predicate containing only facts, and Lim is an 	*/
+/*	integer. This predicate nondeterministically removes and returns*/
+/*	the last facts from the dynamic predicate, binding Skel.  Lim	*/
+/*	indicates how many of the last facts of Skel to remove and	*/
+/*	return: the facts from that last one back to (and including) the*/
+/*	Lim+1st	one.  This predicate is designed to allow an unindexed	*/
+/*	dynamic predicate to serve as a log, and to use this predicate	*/
+/*	to support undo.						*/
+/*									*/
+/*======================================================================*/
+
+retract_facts_back_to(Skel,Lim) :-
+	(is_most_general_term(Skel)
+	 ->	true
+	 ;	throw(error(instantiation_error,
+			    ('retract_facts_back_to/2, First argument is not an open term: ',Skel)))
+	),
+	get_dynamic_prref(Skel,'retract_facts_back_to/2',Prref),
+	db_get_clauses_in_list(Lim,0,0,0,Prref,Skel,RList,[]),
+	reverse(RList,List),
+	member([Clref|EntryPt],List),
+	do_dyn_code_call(EntryPt,Skel),
+	db_retract0(Clref,0).
+
+do_dyn_code_call(EntryPt,Skel) :-
+	code_call(EntryPt,Skel,1). % 1 => dynamic pred, and last call in clause.
 
 /*======================================================================*/
 /* check_retract(+Head_of_Clause, +Predicate_Called)			*/
@@ -522,14 +534,9 @@ clause(Head, Body) :-
 
 
 clause0(Head, Body) :-
-	conpsc(Head, PSC),
-	psc_type(PSC,Type), Type = T_DYNA,		/* is DYNA */
-	(Type =:= T_PRED		/* is compiled */
-	 ->	functor(Head,F,A),
-	        abort(['cannot apply clause/2 to non dynamic predicate', F/A])
-	 ;	psc_ep(PSC, Prref),			/* get Prref */
-	        db_clause(Head,Body,Prref,_Clref)
-	).
+	get_dynamic_prref(Head,'clause0/2',Prref),
+	db_clause(Head,Body,Prref,_Clref).
+
 
 /*======================================================================*/
 /* check_clause(+Head_of_Clause)					*/
