@@ -54,7 +54,7 @@ CPtr pdlreg;
 CPtr openreg;
 CPtr root_address;
 
-CPtr ptcpreg;
+CPtr ptcpreg = NULL;
 CPtr delayreg;
 
 #ifdef DEMAND

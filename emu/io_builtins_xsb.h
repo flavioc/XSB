@@ -32,3 +32,7 @@
 extern FILE *open_files[];      /* Table of file pointers for open files */
 
 extern int xsb_intern_file(FILE *f, char *c);
+
+extern void write_quotedname(FILE *file, char *string);
+extern void double_quotes(char *string, char *new_string);
+extern xsbBool no_quotes_needed(char *string);

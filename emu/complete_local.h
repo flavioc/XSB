@@ -88,6 +88,86 @@ void makeConsumerFromGenerator(VariantSF producer_sf)
 #define ProfileLeader
 #endif
 
+
+
+/* The following function writes the SDG to stddbg.  The SDG is
+written every "std_sample_rate" times the computation determines that
+it is checking completion for a leader.  If so, the opentable stack is
+traversed along with the various lists hanging off of the subgoal
+frames.  For each edge in the SDG a Prolog-readible fact is written
+
+edge(sdg_check_num,Type,Root_subgoal,Selected_tabled_subgoal)
+
+sdg_check_num is the number of the check.  Using sdg_check_num one can
+get a somewhat dynamic view of how the SDG changes over the
+computation.
+
+Type = 1 if it is a positive link (consumer choice point)
+Type = -1 if it is a negative link to a completion suspension choice point
+Type = 2 if it is the first call (generator cp is used here).  
+
+Right now, there isnt a good way of determining whether the first call
+of a tabled predicate is positive or negative.  So its best to table
+tnot/1 in tables.P if you want to keep full track of signs */
+
+#ifdef PROFILE
+void print_sdg_edge(int check_num,int sign,VariantSF fromsf,VariantSF tosf)
+{
+  fprintf(stddbg,"edge(%d,%d,",check_num,sign);   
+  print_subgoal(stddbg,fromsf); fprintf(stddbg,",");
+  print_subgoal(stddbg,tosf); fprintf(stddbg,").\n");
+}
+
+void SpitOutGraph(CPtr cs_ptr)
+{ 
+  CPtr tmp_openreg = cs_ptr;
+  CPtr nsf;
+  int num_subgoals = 0; 
+  VariantSF prof_compl_subg; 
+  
+  sdg_check_num++; 
+  if (sdg_sample_rate > 0 && (sdg_check_num % sdg_sample_rate == 0)) { 
+    printf(" /* now checking: %d */ \n",sdg_check_num);
+    while (tmp_openreg < COMPLSTACKBOTTOM) {
+      num_subgoals++;
+      prof_compl_subg = compl_subgoal_ptr(tmp_openreg);
+
+      fprintf(stddbg,"   /* ");
+      print_subgoal(stddbg, prof_compl_subg); 
+      fprintf(stddbg," */ \n");
+
+      if (tcp_ptcp(subg_cp_ptr(prof_compl_subg)) != NULL ) {
+      print_sdg_edge(sdg_check_num,2,
+		     tcp_ptcp(subg_cp_ptr(prof_compl_subg)),
+		     prof_compl_subg);
+      } else {
+      }
+
+      nsf = subg_asf_list_ptr(prof_compl_subg); 
+      while (nsf != NULL) {
+
+	print_sdg_edge(sdg_check_num,1,nlcp_ptcp(nsf),prof_compl_subg);
+
+	nsf = nlcp_prevlookup(nsf); 
+      }
+
+      nsf = subg_compl_susp_ptr(prof_compl_subg); 
+      while (nsf != NULL) {
+
+	print_sdg_edge(sdg_check_num,-1,csf_ptcp(nsf),prof_compl_subg);
+
+	nsf = csf_prevcsf(nsf); 
+      }
+
+      tmp_openreg = prev_compl_frame(tmp_openreg);
+    }
+    /*    printf("doing checking %d %d \n",sdg_check_num,num_subgoals); */
+  } 
+}
+#else
+#define SpitOutGraph
+#endif
+
 #ifdef LOCAL_EVAL
 #define DisposeOfComplSusp(subgoal) \
         subg_compl_susp_ptr(subgoal) = NULL
@@ -188,6 +268,12 @@ static inline void CompleteSimplifyAndReclaim(CPtr cs_ptr)
     ComplStkFrame = next_compl_frame(ComplStkFrame);
   } /* while */
   
+  /* TLS: placemarker while I develop it.  This function should happen
+   *after* simplification and *before* removal of answer lists, which
+   is useful for traversing dependency graphs. */
+
+  /*  remove_unfounded_set(cs_ptr); */
+      
   /* reclaim all answer lists, but the one for the leader */
   ComplStkFrame = next_compl_frame(cs_ptr);
   while (ComplStkFrame >= openreg) {

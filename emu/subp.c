@@ -311,6 +311,8 @@ Pair build_call(Psc psc)
 /* set interrupt code in reg 2 and return ep of interrupt handler.	*/
 /* the returned value is normally assigned to pcreg, so this is like	*/
 /* raising a trap.							*/
+/* Note that the interrupt handlers referred to by flags array values   */
+/* are set up on the Prolog side via set_inthandler/2                   */
 /*======================================================================*/
 
 Psc synint_proc(Psc psc, int intcode, byte *cur_inst)

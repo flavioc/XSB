@@ -28,6 +28,7 @@
 #include "xsb_debug.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
@@ -42,6 +43,12 @@
 #include "choice.h"
 #include "macro_xsb.h"
 #include "inst_xsb.h"
+#include "debug_xsb.h"
+#include "token_xsb.h"
+#include "varstring_xsb.h"
+#include "cinterf.h"
+#include "io_defs_xsb.h"
+#include "io_builtins_xsb.h"
 
 #ifdef DEBUG
 #include "subp.h"
@@ -64,21 +71,6 @@ int register_watch_flag = 0;
 /*----------------------------------------------------------------------*/
 
 extern int  xctr;
-
-/*----------------------------------------------------------------------*/
-
-#ifdef DEBUG
-#define STRIDESIZE     30
-
-#define EOS	"--------------------BOTTOM_OF_STACK--------------------\n"
-#define EOFR	"--------------------------------------------\n"
-#define EOSUBG	"------------------------------------------------------------\n"
-
-#define print_subg_header(SUBG) { \
-    fprintf(stddbg, "=== Frame for "); print_subgoal(stddbg, SUBG); \
-    if (is_completed(SUBG)) fprintf(stddbg, " (completed) ===\n"); \
-    else fprintf(stddbg, " (incomplete) ===\n"); }
-#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -434,6 +426,7 @@ static void monitor_memory_watch(void)
 
 static Cell cell_array[500];
 
+
 static void print_term_of_subgoal(FILE *fp, int *i)
 {
   Cell term;
@@ -446,7 +439,8 @@ static void print_term_of_subgoal(FILE *fp, int *i)
     break;
   case XSB_STRUCT:
     args = get_arity((Psc)cs_val(term));
-    fprintf(fp, "%s", get_name((Psc)cs_val(term)));
+    write_quotedname(fp,     get_name((Psc)cs_val(term)));
+    /*    fprintf(fp, "%s", get_name((Psc)cs_val(term))); */
     if (args > 0) fprintf(fp, "(");
     for (j = args; j > 0; j--) {
       (*i)--;
@@ -473,7 +467,8 @@ static void print_term_of_subgoal(FILE *fp, int *i)
     fprintf(fp, "]");
     break;
   case XSB_STRING:
-    fprintf(fp, "%s", string_val(term));
+    write_quotedname(fp,string_val(term));
+  /*    fprintf(fp, "%s", string_val(term));*/
     break;
   case XSB_INT:
     fprintf(fp, "%d", int_val(term));
@@ -499,7 +494,8 @@ void print_subgoal(FILE *fp, VariantSF subg)
   for (leaf = subg_leaf_ptr(subg); leaf != NULL; leaf = Parent(leaf)) {
     cell_array[i++] = BTN_Symbol(leaf);
   }
-  fprintf(fp, "%s", get_name(psc));
+  write_quotedname(fp,     get_name(psc));
+  /*  fprintf(fp, "%s", get_name(psc)); */
   if (get_arity(psc) > 0) {
     fprintf(fp, "(");
     for (i = i-2; i >= 0 ; i--) {
@@ -1006,7 +1002,7 @@ static void print_choice_points(int overlap)
 /*----------------------------------------------------------------------*/ 
 
 /* Needs to change when new xwam stacks are introduced.  */
-static void print_heap(int overlap)	/* Heap grows up */
+ void terry_print_heap(int overlap)	/* Heap grows up */
 {
   int i, offset = 0;
   char ans = 'y';
@@ -1033,13 +1029,6 @@ static void print_heap(int overlap)	/* Heap grows up */
     }
   }
 }
-
-/*----- For table debugging --------------------------------------------*/ 
-
-static char *compl_stk_frame_field[] = {
-  "subgoal_ptr", "level_num",
-  "del_ret_list", "visited", "DG_edges", "DGT_edges"
-};
 
 /*----------------------------------------------------------------------*/
 
@@ -1400,7 +1389,7 @@ static void debug_interact(void)
   case 'H':
     scanf("%d", &num);
     skip_to_nl();
-    print_heap(num);
+    terry_print_heap(num);
     goto again;
   case 'k':
     scanf("%d", &num);

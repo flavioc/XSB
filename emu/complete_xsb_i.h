@@ -73,8 +73,8 @@ XSB_Start_Instr(check_complete,_check_complete)
     /* The following code is only done in profile mode; it keeps track
      * of characteristics of SCCs */
 
-    ProfileLeader;
-
+    /* ProfileLeader; */
+    /* SpitOutGraph(cs_ptr); */
     /* check if fixpoint has been reached, otherwise schedule any
      * unresolved answers */
     FailIfAnswersFound(check_fixpoint(subgoal,breg));
@@ -91,8 +91,6 @@ XSB_Start_Instr(check_complete,_check_complete)
       
       CompleteSimplifyAndReclaim(cs_ptr);
 
-      remove_unfounded_set(cs_ptr);
-      
       /* leader has non-returned answers? */
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
 	reclaim_incomplete_table_structs(subgoal);

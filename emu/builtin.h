@@ -226,6 +226,7 @@
 #define UNWIND_STACK            233
 #define CLEAN_UP_BLOCK          234
 
+#define DUMMY                   235
 /* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
 #define PRINT_LS                240
 #define PRINT_TR                241
@@ -245,3 +246,36 @@
 
 /* This hook is for Interprolog */
 #define INTERPROLOG_CALLBACK    255
+
+#define PLUS_FUNCT 1
+#define MINUS_FUNCT 2
+#define TIMES_FUNCT 3
+#define DIV_FUNCT 4
+#define BITAND_FUNCT 5
+#define BITOR_FUNCT 6
+
+#define BITNOT_FUNCT 7
+#define IDIV_FUNCT 8
+
+#define SIN_FUNCT 9
+#define COS_FUNCT 10
+#define TAN_FUNCT 11
+
+#define FLOAT_FUNCT 13
+#define FLOOR_FUNCT 14
+#define EXP_FUNCT 15
+#define LOG_FUNCT 16
+#define LOG10_FUNCT 17
+#define SQRT_FUNCT 18
+#define ASIN_FUNCT 19
+#define ACOS_FUNCT 20
+#define ATAN_FUNCT 21
+#define ABS_FUNCT 22
+#define TRUNC_FUNCT 23
+#define ROUND_FUNCT 24
+#define CEIL_FUNCT 25
+
+#define BITSHIFTL_FUNCT 26
+#define BITSHIFTR_FUNCT 27
+#define UMINUS_FUNCT 28
+
