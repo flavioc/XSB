@@ -1177,16 +1177,6 @@ contcase:     /* the main loop */
     pad64;
     goto contcase;
 
-  case userfunc: {  /* PPA-S */	/* The same as "call" now */
-    Psc psc;
-
-    pppad; pad64; op2word;	/* the first arg is used later by alloc */
-    cpreg = lpcreg;
-    psc = (Psc)op2;
-    call_sub(psc);
-    goto contcase;
-  }
-
   case calld:   /* PPA-L */
     pppad;
     pad64;

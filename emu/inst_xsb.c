@@ -233,7 +233,6 @@ static void init_inst_table_4(void)
   set_inst(halt, "halt",               PPP,X, X,X);
   set_inst(builtin, "builtin",         PP, A, X,X);
   set_inst(unifunc, "unifunc",	       PPP,X, X,X);
-  set_inst(userfunc, "userfunc",       PP, A, S,X);
   set_inst(reset, "reset",	       PPP,X, X,X);
 }
 
