@@ -51,4 +51,4 @@ for f in $files ; do
 done
 
 # This also makes plain files executable. Any easy way to add x to dirs only? 
-chmod -R a=rx $2
+chmod -R a+rx,u+w $2

@@ -180,19 +180,19 @@ copy_files::
 	    ${INSTALL} ${src_bindir}/* ${install_bindir}  ; \
 	    ${INSTALL} ${src_scriptdir}/xsb${config_tag} \
 				${install_scriptdir}/xsb${config_tag}; \
-	    chmod 555 ${install_scriptdir}/* ${install_bindir}/* ; \
+	    chmod 755 ${install_scriptdir}/* ${install_bindir}/* ; \
 	    cp -f ${srcdir}/build/config.sub \
 		  ${srcdir}/build/config.guess \
 		  ${prefix}/build; \
-	    chmod 555 ${prefix}/build/* ; \
+	    chmod 755 ${prefix}/build/* ; \
 	    echo "Copying config..." ; \
 	    cp -f ${src_config_prefix}/configuration.* \
 	          ${install_config_prefix} ; \
-	    chmod 444 ${install_config_prefix}/configuration.* ; \
+	    chmod 644 ${install_config_prefix}/configuration.* ; \
 	    touch ${install_config_prefix}/configuration.O ; \
 	    cp -f ${src_config_prefix}/banner.msg \
 	          ${install_config_prefix} ; \
-	    chmod 444 ${install_config_prefix}/banner.msg ; \
+	    chmod 644 ${install_config_prefix}/banner.msg ; \
 	    cp -f ${src_config_libdir}/* \
 	          ${install_config_libdir} 2> /dev/null || echo ""; \
 	    chmod 644 ${install_config_libdir}/* 2> /dev/null || echo ""; \
@@ -201,15 +201,15 @@ copy_files::
 	          ${install_emudir} ; \
 	    echo "Copying lib..." ; \
 	    cp -f ${src_libdir}/*.O ${install_libdir} ; \
-	    chmod 444 ${install_libdir}/*.O ; \
+	    chmod 644 ${install_libdir}/*.O ; \
 	    ./copysubdirs.sh ${src_libdir} ${install_libdir} ; \
 	    echo "Copying syslib..." ; \
 	    cp -f ${src_syslibdir}/*.O ${install_syslibdir} ; \
-	    chmod 444 ${install_syslibdir}/*.O ; \
+	    chmod 644 ${install_syslibdir}/*.O ; \
 	    ./copysubdirs.sh ${src_syslibdir} ${install_syslibdir} ; \
 	    echo "Copying cmplib..." ; \
 	    cp -f ${src_cmplibdir}/*.O ${install_cmplibdir} ; \
-	    chmod 444 ${install_cmplibdir}/*.O ; \
+	    chmod 644 ${install_cmplibdir}/*.O ; \
 	    ./copysubdirs.sh ${src_cmplibdir} ${install_cmplibdir} ; \
 	    echo "Copying packages..."; \
 	    cp -f ${src_pkgdir}/*.O ${install_pkgdir}; \
