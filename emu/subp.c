@@ -94,6 +94,7 @@ bool unify(Cell rop1, Cell rop2)
 /*----------------------------------------*/
 #include "unify.i"
 /*----------------------------------------*/
+  IFTHEN_SUCCEED;
 
 }  /* end of unify */
 
