@@ -118,13 +118,13 @@ void table_call_search(TabledCallInfo *call_info, CallLookupResults *results) {
  * elements arranged from high to low memory.
  */
 BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
-			   CPtr template, xsbBool *is_new) {
+			   CPtr templ, xsbBool *is_new) {
 
   void *answer;
 
   if ( IsSubsumptiveProducer(producer) ) {
     answer =
-      subsumptive_answer_search(size,template,(SubProdSF)producer,is_new);
+      subsumptive_answer_search(size,templ,(SubProdSF)producer,is_new);
     if ( *is_new ) {
 
       /* Put New Answer at End of Answer Chain
@@ -145,7 +145,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 #endif /* IGNORE_DELAYVAR */
 
-    answer = variant_answer_search(size,attv_num,template,producer,&wasFound);
+    answer = variant_answer_search(size,attv_num,templ,producer,&wasFound);
 
 #ifdef DEBUG_DELAYVAR
 #ifndef IGNORE_DELAYVAR
@@ -171,7 +171,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
 
 /*-------------------------------------------------------------------------*/
 
-void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr template,
+void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr templ,
 			  TIFptr pred) {
 
   if (size == 0) {
@@ -181,10 +181,10 @@ void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr template,
   }
   else {
     if ( IsSubsumptivePredicate(pred) )
-      consume_subsumptive_answer(answer,size,template);
+      consume_subsumptive_answer(answer,size,templ);
     else
       /* this also tracks variables created during unification */
-      load_solution_trie(size,attv_num,template,answer);
+      load_solution_trie(size,attv_num,templ,answer);
   }
 }
 
@@ -200,7 +200,7 @@ void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr template,
  */
 
 ALNptr table_retrieve_answers(SubProdSF prodSF, SubConsSF consSF,
-			      CPtr template) {
+			      CPtr templ) {
 
   int size;
   TimeStamp ts;         /* for selecting answers from subsumer's AnsTbl */
@@ -214,11 +214,11 @@ ALNptr table_retrieve_answers(SubProdSF prodSF, SubConsSF consSF,
     xsb_abort("Answer Retrieval apparently triggered for a variant!\n"
 	      "Perhaps SF type is corrupt?");
 #endif
-  size = int_val(*template);
-  template = template + size;
+  size = int_val(*templ);
+  templ = templ + size;
   ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
-  answers = retrieve_unifying_answers(tstRoot,ts,size,template);
+  answers = retrieve_unifying_answers(tstRoot,ts,size,templ);
   conssf_timestamp(consSF) = TSTN_TimeStamp(tstRoot);
   if ( IsNonNULL(answers) )
     SF_AppendNewAnswerList(consSF,answers);
