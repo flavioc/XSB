@@ -12,7 +12,7 @@
             retractallExtTerm/1
 	from cdf_init_cdf.
 
-:- import classHasAttr_ext/3, hasAttr_ext/3, allAttr_ext/3 from usermod.
+:- import classHasAttr_ext/3, hasAttr_ext/3, allAttr_ext/3, minAttr_ext/4, maxAttr_ext/4 from usermod.
 
 :- import member/2 from basics.
 
@@ -154,12 +154,12 @@ gc_allrels_fail :- gc_classHasAttr_fail.
 
 gc_minAttr_fail :-
 	orphan_minAttr(A,B,C),
-	retractallExtTerm(minAttr_ext(A,B,C)),
+	retractallExtTerm(minAttr_ext(A,B,C,_)),
 	fail.
 
 gc_maxAttr_fail :-
 	orphan_maxAttr(A,B,C),
-	retractallExtTerm(maxAttr_ext(A,B,C)),
+	retractallExtTerm(maxAttr_ext(A,B,C,_)),
 	fail.
 
 gc_hasAttr_fail :-
@@ -178,13 +178,13 @@ gc_classHasAttr_fail :-
 	fail.
 
 orphan_minAttr(A,B,C) :-
-	minAttr_ext(A,B,C),
+	minAttr_ext(A,B,C,_),
 	\+ (explicit_implicit_isa(A), 
 	     explicit_implicit_isa(B), 
 	     explicit_implicit_isa(C)).
 	 
 orphan_maxAttr(A,B,C) :-
-	maxAttr_ext(A,B,C),
+	maxAttr_ext(A,B,C,_),
 	\+ (explicit_implicit_isa(A), 
 	     explicit_implicit_isa(B), 
 	     explicit_implicit_isa(C)).
