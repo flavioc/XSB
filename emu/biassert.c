@@ -1006,15 +1006,8 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*		4: Addr of first Clref on ALL chain			*/
 /*		8: Addr of last Clref on ALL chain			*/
 /*									*/
-/* PrRef's point to chain of clRef's (one of 3 types):			*/
+/* PrRef's point to chain of clRef's (one of 2 types):			*/
 /* (the -8 location stores length of buff + flag indicating ClRef type	*/
-/*	ClRef2 (for compiled code):					*/
-/*		-8: length of buffer (+2)				*/
-/*		-4: Addr of previous ClRef (or PrRef)			*/
-/*		0: Try-type instruction, for chain			*/
-/*		4: (cont) Addr of next ClRef on chain			*/
-/*		8: jump							*/
-/*		12: Addr of compiled code				*/
 /*	ClRef0 (for unindexed asserted code):				*/
 /*		-8: length of buffer (+0)				*/
 /*		-4: Addr of previous ClRef (or PrRef)			*/
@@ -1092,7 +1085,6 @@ typedef ClRef SOBRef ;
 
 #define UNINDEXED_CL	0
 #define SOB_RECORD	1
-#define COMPILED_CL	2
 #define INDEXED_CL	3
 
 #define MakeClRef(ptr,Type,NCells)\
@@ -1583,7 +1575,6 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 	else if( ClRefType(ClRefNext(Clause)) != SOB_RECORD )
 	  return ClRefNext(Clause) ;
 	else /* should do as in cl_ref_first -- to index */
-	     /* when first clause COMPILED */
 	{   s = ClRefNext(Clause) ; 
 	    if( IndexLevel == 0 ) /* goto first cl in all chain */
 	    {	while( ClRefType(s) == SOB_RECORD )
@@ -1815,8 +1806,6 @@ static int really_delete_clause(ClRef Clause)
             }
             break ;
         }
-        case COMPILED_CL:
-	  return(0);  /* error message already given */
         case SOB_RECORD:
         default :
 	  xsb_exit( "retract internal error!" ) ;
@@ -1862,8 +1851,6 @@ static int retract_clause( ClRef Clause, int retract_nr )
 	    cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = 66;
 	  }
 	  break ;
-        case COMPILED_CL:
-	  return 0 ; /* cannot retract compiled code */
         case SOB_RECORD:
 	  xsb_exit( "retracting indexing record!" ) ;
 	  break ;
@@ -2114,18 +2101,6 @@ int gen_retract_all(/* R1: + buff */)
 	    /* really_delete_clause(buffer); */
 	    mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
       break;
-    case COMPILED_CL:
-      {
-	if (clref_trie_asserted((CPtr) buffer)) {
-	  abolish_trie_asserted_stuff((CPtr) buffer);
-        }
-        else
-	  unload_seg((pseg)ClRefCompiledCode(buffer));
-	if (another_buff(ClRefTryInstr(buffer)))
-	  buffers_to_free[btop++] = ClRefNext(buffer);
-/*	mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer)); */ /*??rfm*/
-	break;
-      }
     }
   }
   return TRUE;
