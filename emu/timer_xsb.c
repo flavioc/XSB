@@ -36,6 +36,8 @@
 
 
 /* To set a timeout, do this:
+#include <signal.h>
+#include <setjmp.h>
 #include "configs/config.h"
 #include "cell_xsb.h"
 #include "timer_xsb.h"

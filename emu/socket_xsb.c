@@ -31,6 +31,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
+#include <setjmp.h>
+
 
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"

@@ -28,10 +28,10 @@
 #endif
 
 
-#include <signal.h>
-#include <setjmp.h>
-
+#ifndef SYSTEM_FLAGS
 #include "flags_xsb.h"
+#endif
+
 #include "timer_defs_xsb.h"
 
 #ifdef WIN_NT
