@@ -66,7 +66,7 @@ case check_complete: {
     }
     else { /* This code mimics the answer_return code */
       CPtr answer_template;
-      int template_size, attv_num;
+      int template_size, attv_num, tmp;
       ALNptr answer_set;
       BTNptr answer_leaf;
 
@@ -77,7 +77,7 @@ case check_complete: {
 	ARITY = tcp_arity(breg); 
 	answer_template = breg + TCP_SIZE + (Cell)ARITY;
 
-	int tmp = int_val(cell(answer_template));
+	tmp = int_val(cell(answer_template));
 	get_var_and_attv_nums(template_size, attv_num, tmp);
 	answer_template += template_size;
 	answer_leaf = ALN_Answer(answer_set);
