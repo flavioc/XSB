@@ -1,0 +1,11 @@
+:- import libwww_fetch_url/4, libwww_form_request/4 from libwww.
+
+%% example for form request using POST 
+
+postform :-
+libwww_form_request('http://www.amazon.com/exec/obidos/search-handle-form/002-0526407-6129061',[form_list(['index=books','field-keywords=java']),form_method('POST')],_R,S),
+
+writeln(libwww_form_request('http://www.amazon.com/exec/obidos/search-handle-form/002-0526407-6129061',[form_list(['index=books','field-keywords=java']),form_method('POST')],_R,S)).
+
+
+

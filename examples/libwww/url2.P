@@ -1,0 +1,9 @@
+:- import libwww_fetch_url/4, libwww_form_request/4 from libwww.
+
+%% example for fetching url without any specified request
+
+url2 :-
+
+libwww_fetch_url('http://www.sunysb.edu/',[],_R,S),
+writeln(libwww_fetch_url('http://www.sunysb.edu/',[],_R,S)).
+

@@ -1,0 +1,11 @@
+:- import libwww_fetch_url/4, libwww_form_request/4 from libwww.
+
+% form request using POST for get page.
+
+getformbad :-
+libwww_form_request('http://adam.cc.sunysb.edu:8765/query.html',[form_list(['qt=computer+science']),
+form_method('POST')], _R,S),
+
+writeln(libwww_form_request('http://adam.cc.sunysb.edu:8765/query.html',[form_list([qt=computer+
+science]), form_method('POST')], _R,S)).
+

@@ -1,0 +1,11 @@
+:- import libwww_fetch_url/4, libwww_form_request/4 from libwww.
+
+%% example for fetching if the last-modified time is newer. In this case,
+%% it is not new.
+url_modtime2 :-  writeln('I am here...'), 
+
+libwww_fetch_url('http://www.sunysb.edu/',[timeout(2),if_modified_since(30,11,1999,23,12,2)],
+_R,S),
+writeln(libwww_fetch_url('http://www.sunysb.edu/',[timeout(2),if_modified_since(30,11,1999,
+23,12,2)], _R,S)).
+

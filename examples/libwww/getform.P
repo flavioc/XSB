@@ -1,0 +1,11 @@
+:- import libwww_fetch_url/4, libwww_form_request/4 from libwww.
+
+%% example for form request using GET method
+
+getform :-
+libwww_form_request('http://infoseek.go.com/Titles',[form_list(['qt=computer+science']),
+form_method('Get')], _R,S),
+
+writeln(libwww_form_request('http://infoseek.go.com/Titles',[form_list([qt=computer+
+science]), form_method('Get')], _R,S)).
+

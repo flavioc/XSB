@@ -1,14 +1,15 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#include <time.h>
 #define BASIC_AUTH "basic"
+#define MAX_STATUS_MSG_INDEX 49
 typedef struct HT_err {
-	int code;
-	char * message;
-	char * type;
+  int   code;
+  char *message;
+  char *type;
 } HT_status;
 
-#define MAX_STATUS_MSG_INDEX 48 
 HT_status status_msg[] = {  
     { 100, "Continue",                                  "information" }, 
     { 101, "Switching Protocols",                       "information" }, 
@@ -28,6 +29,7 @@ HT_status status_msg[] = {
     { 305, "Use Proxy",                                 "redirection" }, 
     { 306, "Proxy Redirect",                            "redirection" }, 
     { 307, "Temporary Redirect",                        "redirection" }, 
+    { -400, "Bad Request",                              "client_error" },    
     { -401, "Unauthorized",                             "client_error" },
     { -403, "Forbidden",                                "client_error" },
     { -404, "Not Found",                                "client_error" },
@@ -61,26 +63,30 @@ HT_status status_msg[] = {
 };
 
 typedef struct _HTBasic {		  /* Basic challenge and credentials */
-    char *	uid;
-    char *	pw;
-    BOOL	proxy;				     /* Proxy authentication */
+  char  *uid;
+  char  *pw;
+  BOOL   proxy;				  /* Proxy authentication */
 } HTBasic;
 
 
 HTBasic *HTBasic_new();
-BOOL Basic_credentials (HTRequest *request, HTBasic *basic);
-int Basic_generate (HTRequest *request, void *context, int mode);
-void time_comparison(char *, prolog_term);
+BOOL     Basic_credentials (HTRequest *request, HTBasic *basic);
+int      Basic_generate (HTRequest *request, void *context, int mode);
+void     time_comparison(char *, struct tm *);
 HTChunk *HTGetFormAnchorToChunk (HTAssocList *formdata,
-                                  HTAnchor *anchor,
-                                  HTRequest *request);
+				 HTAnchor *anchor,
+				 HTRequest *request);
 
 #endif 
 
 #define MAX 7
 
-int load = FALSE;
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
+int load_flag = TRUE;
+int key = FALSE;
+int time_flag = FALSE;
+int auth_flag = FALSE;
+int filter_flag = FALSE;
+int status_flag = FALSE;
+int head_flag = FALSE;
+int k = FALSE;
+
