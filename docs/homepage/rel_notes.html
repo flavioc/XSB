@@ -18,7 +18,8 @@ improvements.
 <h3>News</h3>
 <ul>
 <li> <b>Subsumption:</b> In addition to variant-based tabling, XSB now
-provides subsumption-based tabling.  In a subsumption-based tabled
+provides tabling based on subsumption of calls.    In such a 
+"subsumption-based" tabled 
 evaluation, answers from a more general subgoal are used to satisfy a
 subsumed (more specific) subgoal, thereby permitting greater reuse of
 computed results.  The tabling strategy may be chosen on a per
@@ -33,11 +34,11 @@ advantage of special gcc features to implement a jumptable-based
 emulator, which speeds up XSB considerably.
 <li> <b>Sockets:</b> XSB now supports the socket select call and timeouts.
 <li> <b>RDF parser:</b> The XSB libwww package that first appeared in
-XSB 2.2 now has new interface to the RDF parser provided by the libwww
+XSB 2.2 now has new interface to the RDF parser provided by e libwww
 package from W3C.  It requires that the libwww library from W3C is
 installed.
-<li> The <b>throw/catch mechanism</b>: It was already present in version 2.2,
-but now it is also documented.
+<li> An ISO-compatable <b>throw/catch mechanism</b>: It was already
+present in version 2.2, but now it is also documented.
 <li> Foreign C interface now works on SGI's IRIX.
 <li> <b>Backtrackable assert and retract</b>, plus Perl-style
 associative arrays. (Read about them in the section on modifying the
