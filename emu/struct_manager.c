@@ -23,7 +23,6 @@
 */
 
 
-/* xsb_config.h must be the first #include.  Please don't move it. */
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
@@ -40,16 +39,24 @@
 
 void smPrint(Structure_Manager smRecord, char *string) {
 
+  void *pBlock;
+  counter nBlocks;
+
+  nBlocks = 0;
+  for ( pBlock = SM_CurBlock(smRecord);  IsNonNULL(pBlock);
+	pBlock = SMBlk_NextBlock(pBlock) )
+    nBlocks++;
+
   fprintf(stddbg,
 	  "  Structure Manager for %s (%s)\n"
-	  "\tBlock:   0x%p\t\tFree List:  0x%p\n"
-	  "\tNextStr: 0x%p\t\tAlloc List: 0x%p\n"
-	  "\tLastStr: 0x%p\n"
+	  "\tCurBlock: %p\t\tTotal Blocks: %u\n"
+	  "\tNextStr:  %p\t\tFree List:   %p\n"
+	  "\tLastStr:  %p\t\tAlloc List:  %p\n"
 	  "\tStructs per block: %u\t\tStruct size: %u bytes\n",
 	  SM_StructName(smRecord),	string,
-	  SM_CurBlock(smRecord),	SM_FreeList(smRecord),
-	  SM_NextStruct(smRecord),	SM_AllocList(smRecord),
-	  SM_LastStruct(smRecord),
+	  SM_CurBlock(smRecord),	nBlocks,
+	  SM_NextStruct(smRecord),	SM_FreeList(smRecord),
+	  SM_LastStruct(smRecord),	SM_AllocList(smRecord),
 	  SM_StructsPerBlock(smRecord),	SM_StructSize(smRecord));
 }
 
@@ -82,6 +89,7 @@ void smAllocateBlock(Structure_Manager *pSM) {
 /*
  *  Return all blocks held by the Structure Manager to the system.
  */
+
 void smFreeBlocks(Structure_Manager *pSM) {
 
   void *pCurBlock, *pNextBlock;
@@ -94,4 +102,41 @@ void smFreeBlocks(Structure_Manager *pSM) {
   }
   SM_CurBlock(*pSM) = SM_NextStruct(*pSM) = SM_LastStruct(*pSM) = NULL;
   SM_AllocList(*pSM) = SM_FreeList(*pSM) = NULL;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *  Determine whether a given pointer is indeed a reference to a
+ *  structure maintained by some Structure Manager.
+ */
+
+xsbBool smIsValidStructRef(Structure_Manager *pSM, void *ptr) {
+
+  void *pBlock, *firstStruct, *lastStruct;
+  size_t structSize;
+
+
+  structSize = SM_StructSize(*pSM);
+
+  for ( pBlock = SM_CurBlock(*pSM);  IsNonNULL(pBlock);
+	pBlock = SMBlk_NextBlock(pBlock) ) {
+    
+    firstStruct = SMBlk_FirstStruct(pBlock);
+    lastStruct =
+      SMBlk_LastStruct(pBlock,structSize,SM_StructsPerBlock(*pSM));
+
+    /* Determine whether pointer lies within block
+       ------------------------------------------- */
+    if ( (firstStruct <= ptr) && (ptr <= lastStruct) ) {
+
+      /* Determine whether pointer is a valid reference
+	 ---------------------------------------------- */
+      if ( (((char *)ptr - (char *)firstStruct) MOD structSize) == 0 )
+	return TRUE;
+      else
+	return FALSE;
+    }
+  }
+  return FALSE;
 }

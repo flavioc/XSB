@@ -1575,9 +1575,9 @@ int builtin_call(byte number)
      *                              producer is incomplete.
      *
      * Notice that not only can these combinations describe the
-     * characteristics of a found goal, but they are also equipped to
-     * predict how an unfound goal would have been treated had it really
-     * been called.
+     * characteristics of a subgoal in the table, but they are also
+     * equipped to predict how a new goal would have been treated had it
+     * really been called.
      */
     const int regGoalHandle   = 1;   /* in:  either a term or a SF ptr */
     const int regPredType     = 2;   /* out: status (as INT) */
@@ -1589,11 +1589,20 @@ int builtin_call(byte number)
     Cell goalTerm;
 
     goalTerm = ptoc_tag(regGoalHandle);
+    if ( isref(goalTerm) ) {
+      err_handle(INSTANTIATION, regGoalHandle,
+		 (char *)builtin_table[TABLE_STATUS][0],
+		 4, "", goalTerm);
+      return FALSE;
+    }
     if ( is_encoded_addr(goalTerm) ) {
       goalSF = (VariantSF)decode_addr(goalTerm);
-      if ( IsNULL(goalSF) ) {
-	err_handle(TYPE, regGoalHandle, "table_status", 4,
-		   "Valid subgoal frame pointer", goalTerm);
+      if ( ! smIsValidStructRef(&smVarSF,goalSF) &&
+	   ! smIsValidStructRef(&smProdSF,goalSF) &&
+	   ! smIsValidStructRef(&smConsSF,goalSF) ) {
+	err_handle(TYPE, regGoalHandle,
+		   (char *)builtin_table[TABLE_STATUS][0],
+		   4, "Valid Table Entry Handle", goalTerm);
 	return FALSE;	/* fail */
       }
       if ( IsProperlySubsumed(goalSF) )
@@ -1608,8 +1617,9 @@ int builtin_call(byte number)
 
       psc = term_psc(goalTerm);
       if ( IsNULL(psc) ) {
-	err_handle(TYPE, regGoalHandle, "table_status", 4,
-		   "callable term", goalTerm);
+	err_handle(TYPE, regGoalHandle,
+		   (char *)builtin_table[TABLE_STATUS][0],
+		   4, "Callable term", goalTerm);
 	return FALSE;	/* fail */
       }
       tif = get_tip(psc);
@@ -1681,16 +1691,24 @@ int builtin_call(byte number)
   }
 
   case ABOLISH_TABLE_PREDICATE: {
-    const int regTerm = 1;   /* in: term with tabled pred as primary functor */
-    Cell   term;
-    Psc    psc;
+    const int Arity = 1;
+    const int regTerm = 1;   /* in: tabled predicate as term */
+    Cell term;
+    Psc psc;
     TIFptr tif;
 
     term = ptoc_tag(regTerm);
+    if ( isref(term) ) {
+      err_handle(INSTANTIATION, regTerm,
+		 (char *)builtin_table[ABOLISH_TABLE_PREDICATE][0],
+		 Arity, "", term);
+      return FALSE;
+    }
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
-      err_handle(TYPE, 1, (char *)builtin_table[ABOLISH_TABLE_PREDICATE][0],
-		 1, "Predicate specification", term);
+      err_handle(TYPE, regTerm,
+		 (char *)builtin_table[ABOLISH_TABLE_PREDICATE][0],
+		 Arity, "Predicate specification", term);
       return FALSE;	/* fail */
     }
     tif = get_tip(psc);
@@ -1818,29 +1836,40 @@ int builtin_call(byte number)
     }
     break;
 
-  case SET_TABLED_EVAL: {    /* R1: +Term */
+  case SET_TABLED_EVAL: {
+    const int Arity = 2;
+    const int regTerm = 1;   /* in: tabled predicate as term */
+    const int regTEM = 2;    /* in: table eval method to use for pred */
+    Cell term;
     Psc psc;
     TIFptr tif;
 
-    psc = get_str_psc(ptoc_tag(1));
-    tif = get_tip(psc);
-    if ( IsNonNULL(tif) ) {
-      if ( IsNULL(TIF_CallTrie(tif)) ) {
-	TIF_EvalMethod(tif) = (TabledEvalMethod)ptoc_int(2);
-	return TRUE;
-      }
-      else {
-	xsb_warn("Cannot change tabling method for tabled predicate %s/%d\n"
-		  "\t   Calls to %s/%d have already been issued\n",
-		  get_name(psc), get_arity(psc),
-		  get_name(psc), get_arity(psc));
-	return FALSE;
-      }
+    term = ptoc_tag(regTerm);
+    if ( isref(term) ) {
+      err_handle(INSTANTIATION, regTerm,
+		 (char *)builtin_table[SET_TABLED_EVAL][0],
+		 Arity, "", term);
+      return FALSE;
     }
-    else {
+    psc = term_psc(term);
+    if ( IsNULL(psc) ) {
+      err_handle(TYPE, regTerm, (char *)builtin_table[SET_TABLED_EVAL][0],
+		 Arity, "Predicate specification", term);
+      return FALSE;	/* fail */
+    }      
+    tif = get_tip(psc);
+    if ( IsNULL(tif) ) {
       xsb_warn("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
       return FALSE;
     }
+    if ( IsNonNULL(TIF_CallTrie(tif)) ) {
+      xsb_warn("Cannot change tabling method for tabled predicate %s/%d\n"
+	       "\t   Calls to %s/%d have already been issued\n",
+	       get_name(psc), get_arity(psc), get_name(psc), get_arity(psc));
+      return FALSE;
+    }
+    TIF_EvalMethod(tif) = (TabledEvalMethod)ptoc_int(regTEM);
+    return TRUE;
   }
 
   case PRINT_CHAT: print_chat(1) ; return TRUE ;

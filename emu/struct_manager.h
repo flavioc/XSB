@@ -172,9 +172,10 @@ typedef struct Structure_Manager {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+extern void smPrint(Structure_Manager, char *);
 extern void smAllocateBlock(Structure_Manager *);
 extern void smFreeBlocks(Structure_Manager *);
-extern void smPrint(Structure_Manager, char *);
+extern xsbBool smIsValidStructRef(Structure_Manager *, void *);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -190,7 +191,7 @@ extern void smPrint(Structure_Manager, char *);
 #define SMBlk_FirstStruct(pBlock)	( (char *)pBlock + sizeof(void *) )
 
 #define SMBlk_LastStruct(pBlock,StructSize,StructsPerBlock)	\
-   ( (char *)SMBlk_FirstStruct(pBlock) + StructSize * (StructsPerBlock - 1) )
+   ( SMBlk_FirstStruct(pBlock) + StructSize * (StructsPerBlock - 1) )
 
 #define SMBlk_NextStruct(pStruct,StructSize)   ( (char *)pStruct + StructSize )
 

@@ -199,7 +199,8 @@ abolish_table_call(_Call) :-
  *   answers of Call.
  */
 
-get_call(Call, SubgoalPtr, RetSkel) :- get_call(Call, SubgoalPtr, RetSkel).
+get_call(Call, SubgoalPtr, RetSkel) :-
+	get_call(Call, SubgoalPtr, RetSkel).
 
 
 /*
@@ -211,23 +212,27 @@ get_call(Call, SubgoalPtr, RetSkel) :- get_call(Call, SubgoalPtr, RetSkel).
  */
 
 get_calls(CallSkel, SubgoalPtr, RetSkel) :-
-	findall(p(CallSkel,SubgoalPtr,RetSkel),
-		( get_calls(CallSkel),
-		  get_lastnode_cs_retskel(CallSkel, _, SubgoalPtr, RetSkel)
+	findall((CallSkel,SubgoalPtr,RetSkel),
+		(
+		  get_calls(CallSkel),
+		  get_lastnode_cs_retskel(CallSkel, _Leaf, SubgoalPtr, RetSkel)
 		),
 		List),
-	member(p(CallSkel,SubgoalPtr,RetSkel),List).
+	member((CallSkel,SubgoalPtr,RetSkel),List).
 
 
 /*
- * get_calls_for_table(+Skeleton, -Call)
- *   Only the predicate information of Skeleton is used to identify the
- *   table from which all calls are enumerated through backtracking and
- *   returned in Call.
+ * get_calls_for_table(+PredSpec,?Call)
+ *   The predicate information of PredSpec is used to identify the table
+ *   from which all calls are enumerated through backtracking and
+ *   unified with Call.  PredSpec can be the usual p/n form, or given as
+ *   a term: p(t1,...,tn).
  */
 
-get_calls_for_table(Skeleton, Call) :-
-	functor(Skeleton,F,A), functor(Call,F,A),
+get_calls_for_table(PredSpec,Call) :-
+	( PredSpec = P/N
+	  -> functor(Call,P,N)
+	  ;  functor(PredSpec,P,N), functor(Call,P,N) ),
 	get_calls(Call, _CallStr, _RetSkel).
 
 
@@ -236,8 +241,19 @@ get_lastnode_cs_retskel(CallTerm, LastNode, SubgoalPtr, RetSkel) :-
 	get_lastnode_cs_retskel(CallTerm, LastNode, SubgoalPtr, RetSkel).
 
 
-get_returns_for_call(Call, Return) :-  % Do NOT write (Call,Call) - WRONG !
-	get_call(Call, C, R), get_returns(C, R), Return = Call.
+/*
+ * get_returns_for_call(+CallTerm,?AnswerTerm)
+ *   Succeeds whenever CallTerm is a subgoal in the table and AnswerTerm
+ *   unifies with one of its answers.  Backtracks through all unifying
+ *   answers of CallTerm.
+ */
+
+get_returns_for_call(CallTerm,AnswerTerm) :-
+	copy_term(CallTerm,Call),
+	get_call(Call,SF,Return),	% vars of 'Call' are put into 'Return'
+	get_returns(SF,Return),		% instantiate vars of 'Return', and
+	AnswerTerm = Call.		%   hence of 'Call' as well
+
 
 get_residual(CallSkel, DelayList) :-
 	get_calls(CallSkel, S, R),
@@ -254,30 +270,33 @@ get_returns_and_dls(CallStr, RetSkel, DLs) :-
 		    get_lastnode_cs_retskel(_,Leaf,_,_),
 		    get_delay_lists(Leaf,DLs)
 		),
-		L),
-	member((CallStr,RetSkel,DLs),L).
-%	get_returns(CallStr, RetSkel, Leaf),
-%	get_delay_lists(Leaf, DLs).
+		List),
+	member((CallStr,RetSkel,DLs),List).
 
 /* inline builtin #144 */
 get_delay_lists(Leaf, DLs) :- get_delay_lists(Leaf, DLs).
 
-/* Given the address of the call structure for a return trie (CallStr)
- * and a return skeleton (RetSkel), both as returned by get_calls/3, it
- * instantiates through backtracking the return skeleton, Retskel, for
- * all the returns in the specified trie.  If RetSkel is partially
- * instantiated, it returns only those answers that unify with it.
- * get_returns/3 returns in addition the leaf node of the return.
- * It can be passed to delete_return/2 (along with the CallStr) to
- * delete the return.
+
+/*
+ * get_returns(+SubgoalFrame,#ReturnSkeleton,-AnswerLeaf)
+ *   Given the address of the call structure for a return trie (CallStr)
+ *   and a return skeleton (RetSkel), both as returned by get_calls/3,
+ *   it instantiates through backtracking the return skeleton for all
+ *   the returns in the specified trie.  If RetSkel is partially
+ *   instantiated, it returns only those answers that unify with it.
+ *   get_returns/3 returns in addition the leaf node of the return.  It
+ *   can be passed to delete_return/2 (along with the CallStr) to delete
+ *   the return.
  */
 
 get_returns(CallStr, RetSkel, Rleaf) :-
-	findall(p(CallStr,RetSkel,Rleaf), (get_returns(CallStr,RetSkel),
-			       get_lastnode_cs_retskel(_,Rleaf,_,_)
-			   ),
+	findall((CallStr,RetSkel,Rleaf),
+	        (
+		    get_returns(CallStr,RetSkel),
+		    get_lastnode_cs_retskel(_,Rleaf,_,_)
+		),
 		List),
-	member(p(CallStr,RetSkel,Rleaf),List).
+	member((CallStr,RetSkel,Rleaf),List).
 
 /*----------------------------------------------------------------------*/
 /* delete_return(Cs,N) takes a call structure pointer in Cs (returned
@@ -311,11 +330,8 @@ trie_retract_all(X) :- retractall(X).
 abolish_table_predicate(_Term) :- '_$builtin'(ABOLISH_TABLE_PREDICATE).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :-
 	'_$builtin'(TRIE_DELETE_TERM).
-
 get_returns(_CallStr,_RetSkel) :- '_$builtin'(TRIE_GET_RETURN).
 get_calls(_CallSkel)  :- '_$builtin'(TRIE_UNIFY_CALL).
 force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(FORCE_TRUTH_VALUE).
 
 /* ---------------------- end of file tables.P ------------------------ */
-
-
