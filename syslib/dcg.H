@@ -29,7 +29,7 @@
   tphrase_print_words/0.
 
 :- import abort/1, arg/3, call/1, is_list/1, functor/3,
-  write/1, writeln/1, warning/1, (index)/3, is/2, '=:='/2
+	write/1, writeln/1, warning/1, (index)/3
    from standard.
 :- import xsb_flag/2 from curr_sym.
 :- import stat_set_flag/2 from machine.

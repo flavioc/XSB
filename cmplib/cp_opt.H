@@ -30,5 +30,5 @@
 :- import have_hardcut/2 from preproc.
 :- import index_split/2 from tp_index.
 :- import member/2, append/3 from basics.
-:- import functor/3, arg/3, atom_codes/2, '=:='/2, is/2 from standard.
+:- import functor/3, arg/3, atom_codes/2 from standard.
 :- import sym_type/2, sym_name/3, sym_index/2 from symtab.

@@ -31,5 +31,5 @@
 :- import ll_arg/3 from auxlry.
 :- import append/3 from basics.
 :- import atom_codes/2, functor/3, hilog_functor/3, atomic/1, integer/1,
-          arg/3, '=..'/2, is/2
+	  arg/3, '=..'/2
      from standard.

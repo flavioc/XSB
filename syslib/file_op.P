@@ -140,7 +140,6 @@ deactivate_op(T, S) :-
 '_$op1'(700,xfx,'@>=').
 '_$op1'(700,xfx,'=..').
 '_$op1'(700,xfx,'^=..').	% HiLog univ
-
 '_$op1'(700,xfx,is).
 '_$op1'(700,xfx,'=:=').
 '_$op1'(700,xfx,'=\=').
@@ -148,15 +147,6 @@ deactivate_op(T, S) :-
 '_$op1'(700,xfx,'=<').
 '_$op1'(700,xfx,'>').
 '_$op1'(700,xfx,'>=').
-
-'_$op1'(700,xfx,is_inl).
-'_$op1'(700,xfx,'=:=_inl').
-'_$op1'(700,xfx,'=\=_inl').
-'_$op1'(700,xfx,'<_inl').
-'_$op1'(700,xfx,'=<_inl').
-'_$op1'(700,xfx,'>_inl').
-'_$op1'(700,xfx,'>=_inl').
-
 %'_$op1'(700,xfx,in).		% Not in the Prolog standard (used for domains)
 %'_$op1'(700,xfx,'/=').		% Not in the Prolog standard (used for domains)
 '_$op1'(661,xfy,'.').		% Not in the Prolog standard /* !! */

@@ -46,76 +46,76 @@ eval(Expr, Res) :-
 
 eval(Arg, Res,Expr) :- 
 	term_type(Arg, T), 
-	((T '=:=_inl' XSB_FREE; T '=:=_inl' XSB_ATTV) ->
+	((T =:= XSB_FREE; T =:= XSB_ATTV) ->
 	    eval_instantiation_abort(Expr)
-	; T '=:=_inl' XSB_INT -> Res=Arg
-	; T '=:=_inl' XSB_FLOAT -> Res=Arg
-	; (T '=:=_inl' XSB_STRING; T '=:=_inl' XSB_LIST) ->
+	; T =:= XSB_INT -> Res=Arg
+	; T =:= XSB_FLOAT -> Res=Arg
+	; (T =:= XSB_STRING; T =:= XSB_LIST) ->
 	    abort(['Type Error: Non evaluable arithmetic expression:',Expr])	
 	; eval0(Arg, Res,Expr) -> true	/* system defined function */
-	; T '=:=_inl' XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
+	; T =:= XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
 	).
 
 /* TLS: we are now more ISO-compatable for fp-to-integer rouinding
 functions, 9.1.5.1.  To be completely compatable, we'd have to check for
 overflow.  */
 eval0('+'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y,Res2,Expr), Res is_inl Res1 + Res2.  
+		eval(Y,Res2,Expr), Res is Res1 + Res2.  
 eval0('-'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 - Res2.  
+		eval(Y, Res2,Expr), Res is Res1 - Res2.  
 eval0('*'(X,Y), Res,Expr) :- eval(X,Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 * Res2.  
+		eval(Y, Res2,Expr), Res is Res1 * Res2.  
 eval0('/'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 / Res2.  
+		eval(Y, Res2,Expr), Res is Res1 / Res2.  
 eval0('//'(X,Y),Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 // Res2.
+		eval(Y, Res2,Expr), Res is Res1 // Res2.
 eval0(rem(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 rem Res2.  
+		eval(Y, Res2,Expr), Res is Res1 rem Res2.  
 eval0(mod(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 mod Res2.  
+		eval(Y, Res2,Expr), Res is Res1 mod Res2.  
 eval0('/\'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 /\ Res2.  
+		eval(Y, Res2,Expr), Res is Res1 /\ Res2.  
 eval0('\/'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 \/ Res2.  
+		eval(Y, Res2,Expr), Res is Res1 \/ Res2.  
 eval0('<<'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is_inl Res1 << Res2.  
+		eval(Y, Res2,Expr), Res is Res1 << Res2.  
 eval0('>>'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-eval(Y,Res2), Res is_inl Res1 >> Res2.  
-eval0('-'(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl -(Res1).
-eval0('\'(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl '\'(Res1).  
-eval0(float(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl float(Res1).  
-eval0(floor(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl floor(Res1).  
-eval0(abs(X),Res,Expr) :- eval(X, Res1,Expr), Res is_inl abs(Res1).  
-eval0(truncate(X),Res,Expr) :- eval(X, Res1,Expr), Res is_inl truncate(Res1).  
-eval0(round(X),Res,Expr) :- eval(X, Res1,Expr), Res is_inl round(Res1).  
-eval0(ceiling(X),Res,Expr) :- eval(X, Res1,Expr), Res is_inl ceiling(Res1).  
-eval0(sin(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl sin(Res1).
-eval0(cos(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl cos(Res1).
-eval0(tan(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl tan(Res1).
-eval0(asin(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl asin(Res1).
-eval0(acos(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl acos(Res1).
-eval0(atan(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl atan(Res1).
-eval0(exp(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl exp(Res1).
-eval0(log(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl log(Res1).
-eval0(log10(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl log10(Res1).
-eval0(sqrt(X), Res,Expr) :- eval(X, Res1,Expr), Res is_inl sqrt(Res1).
+eval(Y,Res2), Res is Res1 >> Res2.  
+eval0('-'(X), Res,Expr) :- eval(X, Res1,Expr), Res is -(Res1).
+eval0('\'(X), Res,Expr) :- eval(X, Res1,Expr), Res is '\'(Res1).  
+eval0(float(X), Res,Expr) :- eval(X, Res1,Expr), Res is float(Res1).  
+eval0(floor(X), Res,Expr) :- eval(X, Res1,Expr), Res is floor(Res1).  
+eval0(abs(X),Res,Expr) :- eval(X, Res1,Expr), Res is abs(Res1).  
+eval0(truncate(X),Res,Expr) :- eval(X, Res1,Expr), Res is truncate(Res1).  
+eval0(round(X),Res,Expr) :- eval(X, Res1,Expr), Res is round(Res1).  
+eval0(ceiling(X),Res,Expr) :- eval(X, Res1,Expr), Res is ceiling(Res1).  
+eval0(sin(X), Res,Expr) :- eval(X, Res1,Expr), Res is sin(Res1).
+eval0(cos(X), Res,Expr) :- eval(X, Res1,Expr), Res is cos(Res1).
+eval0(tan(X), Res,Expr) :- eval(X, Res1,Expr), Res is tan(Res1).
+eval0(asin(X), Res,Expr) :- eval(X, Res1,Expr), Res is asin(Res1).
+eval0(acos(X), Res,Expr) :- eval(X, Res1,Expr), Res is acos(Res1).
+eval0(atan(X), Res,Expr) :- eval(X, Res1,Expr), Res is atan(Res1).
+eval0(exp(X), Res,Expr) :- eval(X, Res1,Expr), Res is exp(Res1).
+eval0(log(X), Res,Expr) :- eval(X, Res1,Expr), Res is log(Res1).
+eval0(log10(X), Res,Expr) :- eval(X, Res1,Expr), Res is log10(Res1).
+eval0(sqrt(X), Res,Expr) :- eval(X, Res1,Expr), Res is sqrt(Res1).
 
 eval1(Term, Res) :-
 	term_psc(Term, Psc),
 	psc_type(Psc, T0),
-	( T0 '=:=_inl' 15 ->		% unloaded function
+	( T0 =:= 15 ->		% unloaded function
 	    psc_prop(Psc, ModPSC),
             psc_name(ModPSC, ModName),
             psc_type(ModPSC, ModType),
-            ( ModType '=:=_inl' 4
-            ; ModType '=\=_inl' 4,        % module is not loaded yet
+            ( ModType =:= 4
+            ; ModType =\= 4,              % module is not loaded yet
               load(ModName)               % can fail here
             )
 	; true
 	),
 	psc_type(Psc, T1),
-	( T1 '=\=_inl' 14, eval_regularterm(Term, Res)	 % Regular term
-	; T1 '=:=_inl' 14,
+	( T1 =\= 14, eval_regularterm(Term, Res)	 % Regular term
+	; T1 =:= 14,
 	  abort('Invalid term in arithmetic expression')
 % no longer support user-defined functions
 %          psc_prop(Psc, Code),
@@ -134,8 +134,8 @@ eval_regularterm(Term, Res) :-
 	eval_rt_args(0, A, Term, Res).
 
 eval_rt_args(A, A, _, _).
-eval_rt_args(I, A, Term, Res) :- I '<_inl' A,
-	I1 is_inl I + 1,
+eval_rt_args(I, A, Term, Res) :- I < A,
+	I1 is I + 1,
 	arg(I1, Term, X),
 	arg(I1, Res, Y),
 	eval(X, Y),

@@ -822,12 +822,12 @@ X @>= Y :- X @>= Y.
 %	only instantiation errors. For example the following should simply
 %	fail 4+a =< foo(1,3)
 
-  '<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 '<_inl' Y1.
- '=<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 '=<_inl' Y1.
- '>='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 '>=_inl' Y1.
-  '>'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 '>_inl' Y1.
-'=:='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 '=:=_inl' Y1.
-'=\='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 '=\=_inl' Y1.
+  '<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 < Y1.
+ '=<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =< Y1.
+ '>='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 >= Y1.
+  '>'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 > Y1.
+'=:='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =:= Y1.
+'=\='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =\= Y1.
 
 
 			/*****************************/

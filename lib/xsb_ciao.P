@@ -15,7 +15,7 @@
 :- import concat_atom/2 from string.
 :- import abort/1, atom/1, current_op/3, parse_filename/4 
 			from usermod.
-:- import message/2, is/2 from standard.
+:- import message/2 from standard.
 
 % Ciao idioms and support -- adapted from operators.pl
 current_prefixop(Op,Less,Prec):- 

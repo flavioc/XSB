@@ -37,6 +37,6 @@
  	  stat_flag/2, file_puttoken/3, psc_set_type/2
      from machine.
 :- import name/2, arg/3, functor/3, atomic/1, 
-  integer/1, atom_codes/2, is/2
+	  integer/1, atom_codes/2
      from standard.
 :- import obsolete/2 from obsolete.

@@ -29,4 +29,3 @@
 
 :- import memberchk/2 from basics.
 :- import sym_name/3 from symtab.
-:- import '=:='/2, '=\='/2 from standard.

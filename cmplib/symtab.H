@@ -34,7 +34,7 @@
 :- import 'table #'/0 from compile.
 :- import memberchk/2, append/3, member/2 from basics.
 :- import error/1 from auxlry.
-:- import integer/1, functor/3, is/2, '>'/2, '=:='/2 from standard.
+:- import integer/1, functor/3 from standard.
 :- import membercheck/2, member2/2, closetail/1 from listutil.
 :- import ll_arg/3 from auxlry.
 :- import conget/2, conset/2 from gensym.

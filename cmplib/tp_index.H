@@ -30,4 +30,4 @@
 :- import gennum/1 from gensym.
 :- import member/2 from basics.
 :- import length/2, nthmember/3 from listutil.
-:- import '=:='/2 from standard.
+

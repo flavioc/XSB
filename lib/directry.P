@@ -33,7 +33,7 @@
 :- import  ca/2, date/1, sysin/2 from scrptutl.
 :- import concat_atom/2 from string.
 :- import member/2 from basics.
-:- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1, is/2
+:- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1
 	from standard.
 
 % I always want this in UNIX.

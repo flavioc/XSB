@@ -32,4 +32,4 @@
 
 :- import member/2, append/3, memberchk/2 from basics.
 :- import closetail/1, length/2, member2/2 from listutil.
-:- import '<'/2, '>'/2, '=<'/2, '>='/2, '=:='/2, is/2 from standard.
+

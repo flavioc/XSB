@@ -36,7 +36,7 @@
 :- import call_expose/1, goal_cut_trans/3,
           push_abort_cutpoint/0, pop_abort_cutpoint/0,
 	  is_most_general_term/1, (table)/1, repeat/0,
-          (import)/1 , '>'/2, '=:='/2
+	  (import)/1 
      from standard.
 :- import conpsc/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
           term_psc/2, conname/2, stat_flag/2, stat_set_flag/2, 

@@ -69,7 +69,7 @@
 
 :- import sort/2 from setof.
 :- import length/2 from basics.
-:- import compare/3,is/2, '>'/2 from standard.
+:- import compare/3 from standard.
 
 % :- mode
 % 	list_to_ord_set(+, ?),

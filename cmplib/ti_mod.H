@@ -31,6 +31,5 @@
 :- import gensym_pred/2 from preproc.
 :- import membercheck/2 from listutil.
 :- import sym_name/3, sym_insert/5, sym_pass_thru/1 from symtab.
-:- import integer/1, number/1, atom_codes/2, number_codes/2,
-          is/2, '>'/2, '=:='/2  from standard.
+:- import integer/1, number/1, atom_codes/2, number_codes/2 from standard.
 

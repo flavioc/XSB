@@ -41,4 +41,3 @@
 	trie_reclaim_uninterned_nr/1
    from intern.
 
-:- import '=<'/2 from standard.

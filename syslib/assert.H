@@ -36,8 +36,7 @@
 
 :- import append/3 from basics.
 :- import (=..)/2, functor/3, integer/1, callable/1, 
-          goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1,
-          '<'/2, '>'/2, '=:='/2, is/2
+	  goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1
      from standard.
 %%:- import call_c/1 from standard.
 :- import db_retract/3, db_retractall/2, db_abolish/1, db_clause/4,

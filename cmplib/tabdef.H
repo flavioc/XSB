@@ -29,6 +29,5 @@
 :- import ll_arg/3 from auxlry.
 :- import message/1, error/1 from auxlry.
 :- import sym_prop/2, sym_propin/2, sym_gen/2, sym_name/3 from symtab.
-:- import is/2, '<'/2, '>'/2, '=:='/2 from standard.
 
 /* ----------------------- end of file tabdef.H ----------------------- */

@@ -1,6 +1,4 @@
 
-:- import op/3 from standard.
-
 :- export included_ciao_directive/1.
 
 included_ciao_directive(comment(_,_)).

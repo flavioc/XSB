@@ -30,6 +30,5 @@
 	  getrand/1,
 	  setrand/1.
 
-:- import abort/1, integer/1, '<'/2, '>'/2, '>='/2, '=<'/2, is/2
-             from standard.
+:- import abort/1, integer/1 from standard.
 :- import keysort/2 from setof.

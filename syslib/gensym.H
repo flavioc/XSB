@@ -34,5 +34,5 @@
 	str_len/2, str_cat/3, psc_set_type/2, term_psc/2
      from machine.
 :- import number_codes/2, atom_codes/2, arg/3,
-         integer/1, atom/1, abort/1, is/2 
+	integer/1, atom/1, abort/1
      from standard.

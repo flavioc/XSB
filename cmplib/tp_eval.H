@@ -34,4 +34,3 @@
 :- import release/3, hold/3, release_if_done0/5, getreg/2, alloc_reg/3,
 	  putvarinst/5
      from tp_var.
-:- import '=:='/2 from standard.

@@ -25,24 +25,12 @@
 
 
 /*======================================================================*/
-/* geninline(+Pname, +Args, HoldRegs, -Pil, -PilRest, +Tin, -Tout, */
-/* +PredSym, +NC) 						   */ 
-/* Generate code for inline predicates.       			   */ 
-/* + Args: in intermediate program format.                         */ 
-/* - Pil-PilRest: pil code generated, as a differential list       */ 
-/*								   */ 
-
-/* TLS 04/02.  Sadly the predicates that depend on arithmetic
-evaluation (is/2, </2 etc) are not inlined properly.  It turns out
-that whenever an expression is nonground a call to eval/2 must be made
-at run time.  In fact inlining makes little sense for such predicates,
-since inlining just takes an expression and generates arithmetic
-instructions for it. The best thing to do is to partially evaluate the
-expressions based on static information, which demands a different
-algorithm from inlining.  For instance, inlining transforms the
-expression X + 0 to addreg(Xregister,0) which is incorrect.
-*/
-
+/* geninline(+Pname, +Args, HoldRegs, -Pil, -PilRest, +Tin, -Tout,	*/
+/*	     +PredSym, +NC)						*/
+/*	Generate code for inline predicates.				*/
+/*		+ Args: in intermediate program format.			*/
+/*		- Pil-PilRest: pil code generated, as a differential	*/
+/*			       list.					*/
 /*======================================================================*/
 
 geninline(true, [], _, Pil, Pil, T, T, _, _).
@@ -65,10 +53,6 @@ geninline('_$cutto', [Arg], _, Pil, Pilr, Tin, Tout, _, _) :-
 	geninline_cutto(Arg, Pil, Pilr, Tin, Tout).
 
 geninline(is, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC) :-
-%	write(user,(is, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC)),
-	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, PredSym, NC).
-geninline(is_inl, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC) :-
-%	write(user,(is_inl, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC)),
 	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, PredSym, NC).
 geninline(=, [Lhs,Rhs], HoldR, Pil, Pilr, Tin, Tout, _, _) :-
 	geninl_load_lhs(Lhs, R, Pil, Pil1, Tin, Tmid0, SaveReg),

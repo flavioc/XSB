@@ -37,4 +37,3 @@
 :- import vprag_occ/2, vprag_loc/2, vprag_use/2, vprag_type/2,
 	  vprag_nouse/2, vprag_type1/2
      from varproc.
-:- import '>'/2, '=<'/2, is/2, '=:='/2, '=\='/2 from standard.

@@ -35,7 +35,7 @@
 	sys_mkdir/2, sys_rmdir/2,
 	sys_unlink/2, sys_exit/1, sys_rename/3.
 
-:- import atom/1, abort/1,'=:='/2 from standard.
+:- import atom/1, abort/1 from standard.
 :- import sys_system/7, expand_filename/2, sys_syscall/4
    from machine.
 

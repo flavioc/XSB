@@ -27,7 +27,7 @@
 :- import put_attributes/2, get_attributes/3,
 	  delete_attributes/1 from machine.
 :- import memberchk/2, copy_term/2 from basics.
-:- import arg/3, functor/3, abort/1, '=:='/2, '=\='/2, is/2 from standard.
+:- import arg/3, functor/3, abort/1 from standard.
 :- import assert/1, retractall/1, (dynamic)/1 from assert.
 :- import file_write/2, file_nl/1 from xsb_writ.
 :- import findall/3 from setof.
