@@ -30,8 +30,9 @@
 :- import bootstrap_package/2 from packaging.
 
 init_cdf:- 
-	bootstrap_package('altCDF','altCDF'),
+	bootstrap_package(['altCDF',cdftp,doc],'altCDF'),
 	[cdf_init_cdf],
 	[cdf_io].
 
 :- init_cdf.
+
