@@ -351,17 +351,27 @@ void SetBindVarNum()
   int i = ptoc_int(2);
 
   if (CursorTable[i].Status == 2) {
-    assert(CursorTable[i].VarListNum == ptoc_int(3));
-    assert(CursorTable[i].BListNum == ptoc_int(4));
+    if (CursorTable[i].VarListNum != ptoc_int(3))
+      xsb_exit("In SetBindVarNum: CursorTable[i].VarListNum != ptoc_int(3)");
+    if (CursorTable[i].BListNum != ptoc_int(4))
+      xsb_exit("In SetBindVarNum: CursorTable[i].BListNum != ptoc_int(4)");
     return;
   }
     
   CursorTable[i].VarListNum = ptoc_int(3);
-  assert((CursorTable[i].VarList = malloc(sizeof(UCHAR *) * CursorTable[i].VarListNum)));
-  assert((CursorTable[i].VarTypes = malloc(sizeof(int) * CursorTable[i].VarListNum)));
+  CursorTable[i].VarList = malloc(sizeof(UCHAR *) * CursorTable[i].VarListNum);
+  if (!CursorTable[i].VarList)
+    xsb_exit("Not enough memory for CursorTable[i].VarList!");
+  CursorTable[i].VarTypes = malloc(sizeof(int) * CursorTable[i].VarListNum);
+  if (!CursorTable[i].VarTypes)
+    xsb_exit("Not enough memory for CursorTable[i].VarTypes!");
   CursorTable[i].BListNum = ptoc_int(4);
-  assert((CursorTable[i].BList = malloc(sizeof(UCHAR *) * CursorTable[i].BListNum)));
-  assert((CursorTable[i].BTypes = malloc(sizeof(int) * CursorTable[i].BListNum)));
+  CursorTable[i].BList = malloc(sizeof(UCHAR *) * CursorTable[i].BListNum);
+  if (!CursorTable[i].BList)
+    xsb_exit("Not enough memory for CursorTable[i].BList!");
+  CursorTable[i].BTypes = malloc(sizeof(int) * CursorTable[i].BListNum);
+  if (!CursorTable[i].BTypes)
+    xsb_exit("Not enough memory for CursorTable[i].BTypes!");
   CursorTable[i].BCurNum = 0;
 }
 
@@ -377,11 +387,13 @@ void SetVar()
   int i = ptoc_int(2);
   int j = atoi(ptoc_string(3)+4);
 
-  assert((j > 0) && (j <= CursorTable[i].VarListNum));
+  if (!((j > 0) && (j <= CursorTable[i].VarListNum)))
+    xsb_exit("Abnormal argument in SetVar!");
     
   // if we're reusing an opened cursor w/ the statement number
   if (CursorTable[i].Status == 2) {
-    assert(CursorTable[i].VarTypes[j-1] == ptoc_int(5));
+    if (CursorTable[i].VarTypes[j-1] != ptoc_int(5))
+      xsb_exit("CursorTable VarTypes error!");
     switch (CursorTable[i].VarTypes[j-1]) {
     case 0:
       *((int *)CursorTable[i].VarList[j-1]) = ptoc_int(4);
@@ -394,8 +406,7 @@ void SetVar()
       (CursorTable[i].VarList[j-1])[MAXBINDVALLEN - 1] = 0;
       break;
     default:
-      xsb_error("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
-      assert(0);
+      xsb_exit("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
     }
     return;
   }
@@ -403,21 +414,26 @@ void SetVar()
   // otherwise, memory needs to be allocated in this case
   switch (CursorTable[i].VarTypes[j-1] = ptoc_int(5)) {
   case 0:
-    assert(CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(int)));
+    CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(int));
+    if (!CursorTable[i].VarList[j-1])
+      xsb_exit("Not enough memory for an int in SetVar!");
     *((int *)CursorTable[i].VarList[j-1]) = ptoc_int(4);
     break;
   case 1:
-    assert(CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(float)));
+    CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(float));
+    if (!CursorTable[i].VarList[j-1])
+      xsb_exit("Not enough memory for a float in SetVar!");
     *((float *)CursorTable[i].VarList[j-1]) = (float)ptoc_float(4);
     break;
   case 2:
-    assert(CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(char) * MAXBINDVALLEN));
+    CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(char) * MAXBINDVALLEN);
+    if (!CursorTable[i].VarList[j-1])
+      xsb_exit("Not enough memory for MAXBINDVALLEN chars in SetVar!");
     strncpy(CursorTable[i].VarList[j-1], ptoc_string(4), MAXBINDVALLEN);
     CursorTable[i].VarList[j-1][MAXBINDVALLEN - 1] = 0;
     break;
   default:
-    xsb_error("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
-    assert(0);
+    xsb_exit("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
   }
 }
 
@@ -433,7 +449,8 @@ void SetBind()
   int i = ptoc_int(2);
   int j = atoi(ptoc_string(3)+4);
   
-  assert((j > 0) && (j <= CursorTable[i].VarListNum));
+  if (!((j > 0) && (j <= CursorTable[i].VarListNum)))
+    xsb_exit("Abnormal argument in SetBind!");
     
   if (CursorTable[i].Status == 2) return;                 // did this already
 
@@ -462,7 +479,9 @@ void Parse()
   RETCODE rc;
   UWORD TablePrivilegeExists;
 
-  assert((i >= -3) && ( i < MAXCURSORNUM));
+  if (!((i >= -3) && ( i < MAXCURSORNUM)))
+    xsb_exit("Abnormal argument in Parse!");
+
   switch (i) {
   case (-3):                // index = -3; special case for rollback
     if (((rc=SQLTransact(henv,hdbc,SQL_ROLLBACK)) == SQL_SUCCESS) ||
@@ -552,7 +571,10 @@ void Parse()
       return;
     }
   } else {
-    assert(CursorTable[i].Sql = (UCHAR *)strdup(ptoc_string(3)));
+    CursorTable[i].Sql = (UCHAR *)strdup(ptoc_string(3));
+    if (!CursorTable[i].Sql)
+      xsb_exit("Not enough memory for strdup in Parse!");
+
     if (SQLPrepare(CursorTable[i].hstmt, CursorTable[i].Sql, SQL_NTS)
 	!= SQL_SUCCESS) {
       ctop_int(4,PrintErrorMsg(i));
@@ -655,10 +677,26 @@ int DescribeSelectList(int i)
   // if we aren't reusing a closed statement hand, we need to get
   // resulting rowset info and allocate memory for it
   if (CursorTable[i].Status != 2) {
-    assert(CursorTable[i].ColTypes = (SWORD *)malloc(sizeof(SWORD) * CursorTable[i].ColNum));
-    assert(CursorTable[i].Data = (UCHAR **)malloc(sizeof(char *) * CursorTable[i].ColNum));
-    assert(CursorTable[i].OutLen = (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum));
-    assert(CursorTable[i].ColLen = (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum));
+    CursorTable[i].ColTypes =
+      (SWORD *)malloc(sizeof(SWORD) * CursorTable[i].ColNum);
+    if (!CursorTable[i].ColTypes)
+      xsb_exit("Not enough memory for ColTypes!");
+    
+    CursorTable[i].Data =
+      (UCHAR **)malloc(sizeof(char *) * CursorTable[i].ColNum);
+    if (!CursorTable[i].Data)
+      xsb_exit("Not enough memory for Data!");
+
+    CursorTable[i].OutLen =
+      (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum);
+    if (!CursorTable[i].OutLen)
+      xsb_exit("Not enough memory for OutLen!");
+
+    CursorTable[i].ColLen =
+      (UDWORD *)malloc(sizeof(UDWORD) * CursorTable[i].ColNum);
+    if (!CursorTable[i].ColLen)
+      xsb_exit("Not enough memory for ColLen!");
+    
     for (j = 0; j < CursorTable[i].ColNum; j++) {
       SQLDescribeCol(CursorTable[i].hstmt, (short)(j+1), (UCHAR FAR*)colname,
 		     sizeof(colname), &colnamelen,
@@ -674,8 +712,10 @@ int DescribeSelectList(int i)
 	SetCursorClose(i);
 	return(1);
       }
-      assert(CursorTable[i].Data[j] = (UCHAR *) malloc(
-						       ((unsigned) CursorTable[i].ColLen[j]+1)*sizeof(UCHAR)));   
+      CursorTable[i].Data[j] =
+	(UCHAR *) malloc(((unsigned) CursorTable[i].ColLen[j]+1)*sizeof(UCHAR));
+      if (!CursorTable[i].Data[j])
+	xsb_exit("Not enough memory for Data[j]!");
     }
   }
   // bind them
