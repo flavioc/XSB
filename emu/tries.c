@@ -53,8 +53,13 @@
 
 /*----------------------------------------------------------------------*/
 
-extern tab_inf_ptr get_tip(Psc);
 extern Psc term_psc(Cell);
+extern Cell ptoc_tag(int);
+extern void ctop_tag(int, Cell);
+extern tab_inf_ptr get_tip(Psc);
+#ifdef DPVR_DEBUG_BD
+extern void printterm(Cell, byte, int);
+#endif
 
 /*----------------------------------------------------------------------*/
 /* The following variables are used in other parts of the system        */
@@ -85,23 +90,43 @@ struct HASHhdr *HASHrootptr;
 
 struct HASHhdr tra_HASHroot = {0,0,0,0};
 
-/*****************Addr Stack*************/
-int addr_stack_pointer = 0;
-int addr_stack_size    = DEFAULT_ARRAYSIZ;
+/*----------------------------------------------------------------------*/
+/* Safe assignment -- can be generalized by type.
+   CPtr can be abstracted out */
+#define safe_assign(ArrayNam,Index,Value,ArraySz) {\
+   if (Index >= ArraySz) {\
+     trie_expand_array(CPtr,ArrayNam,ArraySz,"var_addr");\
+   }\
+   ArrayNam[Index] = Value;\
+}
 
-CPtr *Addr_Stack;
+/*----------------------------------------------------------------------*/
+/*****************Addr Stack*************/
+static int addr_stack_pointer = 0;
+static CPtr *Addr_Stack;
+static int addr_stack_size    = DEFAULT_ARRAYSIZ;
+
+#define pop_addr Addr_Stack[--addr_stack_pointer]
 #define push_addr(X) {\
-    if(addr_stack_pointer == addr_stack_size){\
-       xpand_array(CPtr, Addr_Stack ,addr_stack_size,"Addr_Stack");\
+    if (addr_stack_pointer == addr_stack_size) {\
+       trie_expand_array(CPtr, Addr_Stack ,addr_stack_size,"Addr_Stack");\
     }\
     Addr_Stack[addr_stack_pointer++] = ((CPtr) X);\
 }
 
-#define pop_addr Addr_Stack[--addr_stack_pointer]
-
+/*----------------------------------------------------------------------*/
 /*****************Term Stack*************/
-int term_stackptr = -1;
-long term_stacksize = DEFAULT_ARRAYSIZ;
+static int  term_stackptr = -1;
+static Cell *term_stack;
+static long term_stacksize = DEFAULT_ARRAYSIZ;
+
+#define pop_term term_stack[term_stackptr--]
+#define push_term(T) {\
+    if (term_stackptr+1 == term_stacksize) {\
+       trie_expand_array(Cell,term_stack,term_stacksize,"term_stack");\
+    }\
+    term_stack[++term_stackptr] = ((Cell) T);\
+}
 
 /*----------------------------------------------------------------------*/
 /*********Simpler trails ****************/
@@ -115,6 +140,9 @@ long term_stacksize = DEFAULT_ARRAYSIZ;
 	untrail(*mini_trail_top);		\
 	mini_trail_top--;			\
     }	
+
+#define simple_dbind_ref_nth_var(addr,n) simple_dbind_ref(addr,VarEnumerator[n])
+#define bld_nth_var(addr,n)  bld_ref(addr,VarEnumerator[n])
 
 /*----------------------------------------------------------------------*/
 /*******NEW DEFINES******/
@@ -279,6 +307,22 @@ static ALPtr alloc_more_answer_list_space(void)
   aln_answer_ptr(t) = NULL;\
   aln_next_aln(t) = NULL;\
   }
+
+/*----------------------------------------------------------------------*/
+
+void init_trie_aux_areas(void)
+{
+  int i;
+
+  alloc_arr(Cell,term_stack,term_stacksize);
+  alloc_arr(CPtr,var_addr,var_addr_arraysz);
+  alloc_arr(CPtr,Addr_Stack,addr_stack_size);
+  alloc_arr(Cell,reg_array,reg_array_size);
+  reg_arrayptr = reg_array -1;
+
+  for (i = 0; i < NUM_TRIEVARS; i++)
+    VarEnumerator[i] = (Cell) & (VarEnumerator[i]);
+}
 
 /*----------------------------------------------------------------------*/
 
@@ -1090,17 +1134,10 @@ void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf)
 
   term_stackptr = -1;
   SolnPtr = Leaf;
-#ifdef DEBUG_INTERN
-  printf("var to be bound = _%d\n",(int)term);
-#endif
 
   num_heap_term_vars = 0;     
   while (SolnPtr!= NULL) {
     push_term((Atom(SolnPtr)));
-#ifdef DEBUG_INTERN
-    printf("node = ");
-    print_trie_node(SolnPtr);
-#endif
     SolnPtr = unftag(Parent(SolnPtr));
   }
 
@@ -1121,14 +1158,6 @@ void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf)
    */
   global_num_vars = num_vars_in_var_regs = num_heap_term_vars - 1;
   Last_Nod_Sav = Leaf;
-
-#ifdef DEBUG_INTERN
-  deref(returned_val);
-  printf("Retd val =");
-  printterm((Cell)returned_val,1,25);
-  printf(" ");
-  printf(" *gen = %d\n",(int)*gen);
-#endif
 }
 
 /*----------------------------------------------------------------------*/

@@ -65,6 +65,7 @@
 CPtr Temp_VarPosReg;
 CPtr call_vars[MAX_VAR_SIZE];
 
+extern Cell ptoc_tag(int);
 #ifdef DEBUG
 extern void printterm(Cell, byte, int);
 #endif

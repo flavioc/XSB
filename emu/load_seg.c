@@ -63,7 +63,7 @@ static struct tab_info *tab_info_ptr;
 
 tab_inf_ptr first_tip = 0, last_tip = 0;
 static pseg last_text = 0;	/* permanent var, chain of text seg */
-extern CPtr *reloc_table; /* passed in parameter, but valid only once */
+extern pw   *reloc_table; /* passed in parameter, but valid only once */
 
 /* === local declarations =============================================	*/
 
@@ -87,7 +87,7 @@ static pindex *index_block_chain;	/* index block chain */
 #define st_ptrpsc(i_addr)  (cell(i_addr) = *reloc_table[cell(i_addr)])
 
 #define st_pscname(i_addr) (cell(i_addr) = \
-	(Cell) get_name((struct psc_rec *)(*reloc_table[cell(i_addr)])))
+	(Cell) get_name((Psc)(*reloc_table[cell(i_addr)])))
 
  
 #define gentry(opcode, arg1, arg2, ep) {	\
@@ -110,7 +110,7 @@ static pindex *index_block_chain;	/* index block chain */
 
 /* === return an appropriate hash table size ==========================	*/
 
-int hsize(int numentry)
+static int hsize(int numentry)
 {
     int i, j, temp;
 
@@ -149,55 +149,147 @@ void unload_seg(pseg s)
   mem_dealloc((pb)seg_hdr(s), seg_size(s));
 }
 
-/*== Make Gnu C Compiler silent ======================================*/
+/*----------------------------------------------------------------------*/
 
-static void load_index(int, int);
-static int get_index_tab(int);
-static void gen_index(bool, int, CPtr, char);
-static int  load_text(int, int, int *);
-static void inserth(CPtr , struct hrec *);
+/* use heap top as temp place of hash link and entries; */
+/* heap top pointer is not alterred so nothing affects later heap use */
 
-/*== the entry procedure =============================================*/
-/* Some debugging stuff in here.  I'll take it out when I'm sure 
-   that I'm done with the changes */
+static void inserth(CPtr label, struct hrec *bucket) 
+{ 
+  CPtr temp;
 
-pseg load_seg(int seg_num, int text_bytes, int index_bytes, FILE *file)
-{
-   int current_tab;
-
-   current_seg = (pseg) mem_alloc(ZOOM_FACTOR*text_bytes+SIZE_SEG_HDR);
-
-/* Allocate first chunk of index_reloc */
-   index_reloc = (CPtr *)malloc(NUM_INDEX_BLKS*sizeof(CPtr));
-   if (!index_reloc) {
-     fprintf(stderr, "ERROR: couldn't allocate index relocation space.\n");
-     return NULL;
-   }
-   num_index_reloc = 1;
-
-/* SCAFFOLD */
-   if ((long) current_seg % sizeof(Cell) != 0)
-     fprintf(stderr, "non-aligned seg_first_inst!\n");
-		/* alloc space, include 16 bytes header */
-   current_seg++ ;
-   seg_next(current_seg)  = 0 ;
-   seg_prev(current_seg)  = last_text ;
-   seg_index(current_seg) = 0 ;
-   seg_size(current_seg)  = text_bytes*ZOOM_FACTOR + SIZE_SEG_HDR ;
-   fd = file;
-   if (!load_text(seg_num, text_bytes, &current_tab)) {
-     mem_dealloc((pb)seg_hdr(current_seg), text_bytes+SIZE_SEG_HDR);
-     return NULL;
-   }
-   index_block_chain = &seg_index(current_seg) ;
-   load_index(index_bytes, current_tab) ;
-   free(index_reloc) ;
-
-/* set text-index segment chain */
-   if (last_text) seg_next(last_text) = current_seg;
-   last_text = current_seg;
-   return current_seg;
+  bucket->l++;
+  temp = (CPtr)&(bucket->link);
+  if (bucket->l > 1) {
+       temp = (CPtr)*temp;
+       while ((CPtr)*temp != temp) 
+          temp = (CPtr)*(++temp);
+  }
+  *temp = (Cell)hptr;
+  cell(hptr) = (Cell) label; hptr ++;
+  cell(hptr) = (Cell) hptr; hptr ++;
 }
+
+/*----------------------------------------------------------------------*/
+
+static int get_index_tab(int clause_no)
+{
+  long hashval, size, j;
+  long count = 0;
+  byte  type ;
+  CPtr label;
+  Integer ival;
+  Cell val;
+
+  hptr = hreg;
+  size = hsize(clause_no);
+
+  indextab = (struct hrec *)malloc(size*sizeof(struct hrec)); 
+
+  for (j = 0; j < size; j++) {
+      indextab[j].l = 0;
+      indextab[j].link = (CPtr)&(indextab[j].link);
+  }
+  for (j = 0; j< clause_no; j++) {
+         get_obj_byte(&type);
+         switch (type) {
+	    case 'i': get_obj_word_bb(&ival);
+		      val = (Cell) ival ;
+		      count += 9;
+		      break;
+	    case 'l': val = (Cell)(list_str); 
+		      count += 5;
+		      break;
+            case 'n': val = 0;
+		      count += 5;
+		      break;
+	    case 'c': get_obj_word_bb(&ival);
+		      count += 9;
+		      val = (Cell)ival ;
+		      st_pscname(&val);
+		      break;
+	    case 's': get_obj_word_bb(&ival);
+		      count += 9;
+		      val = (Cell)ival ;
+		      st_ptrpsc(&val);
+		      break; 
+	 }
+         get_obj_word_bbsig(&label);
+         label = reloc_addr((Integer)label, seg_text(current_seg));
+         hashval = ihash(val, size);
+         inserth(label, &indextab[hashval]);
+  }
+  return count;
+}
+
+/*----------------------------------------------------------------------*/
+
+static pindex new_index_seg( int no_cells )
+{
+  pindex new_i = (pindex)mem_alloc(SIZE_IDX_HDR + sizeof(Cell) * no_cells ) ;
+ 
+/* initialize fields of new index segment header */
+  i_next(new_i) = 0 ;
+  i_size(new_i) = SIZE_IDX_HDR + sizeof(Cell) * no_cells ;
+ 
+/* append at tail of block chain */
+  *index_block_chain = new_i ;
+  index_block_chain = &i_next(new_i) ;
+
+  return new_i ;
+}
+
+/*----------------------------------------------------------------------*/
+
+static void gen_index(bool tabled, int clause_no, CPtr sob_arg_p, char arity)
+{
+  pindex new_i ;
+  CPtr ep1, ep2;
+  int j, size;
+  CPtr temp;
+ 
+  size = hsize(clause_no);
+  new_i = new_index_seg(size);
+
+  ep1 = i_block(new_i) ;
+  cell(sob_arg_p) = (Cell)ep1 ;
+  for (j = 0; j < size; j++) {
+        if (indextab[j].l == 0) cell(ep1) = (Cell) &fail_inst;
+        else if (indextab[j].l == 1) {
+ 		if (!tabled) {
+		    cell(ep1) = *(indextab[j].link);
+		} else {  /* create tabletrysingle */
+           	    cell(ep1) = cell(indextab[j].link);
+           	    new_i = new_index_seg(3);
+           	    ep2 = i_block(new_i);
+           	    cell(ep1) = (Cell) ep2;
+           	    temp = indextab[j].link;
+           	    gentabletry(tabletrysingle, arity,
+				*temp++, tab_info_ptr, ep2);
+        	}
+      } else {
+          /* otherwise create try/retry/trust instruction */
+          new_i = new_index_seg(2*indextab[j].l+tabled);
+          ep2 = i_block(new_i) ;
+          cell(ep1) = (Cell) ep2 ;
+          temp = (indextab[j].link) ;
+	  if(!tabled)		/* generate "try" */
+             gentry(try, arity, *temp, ep2) 
+	  else
+	     gentabletry(tabletry, arity, *temp, tab_info_ptr, ep2)
+
+          for (temp++; *temp != (Cell)temp; temp++) {
+             temp = (CPtr) cell(temp);		/* generate "retry" */
+             gentry((tabled?tableretry:retry), arity, *temp, ep2);
+          }
+	  /* change last "retry" to "trust" */
+          cell_opcode(ep2-2) = tabled ? tabletrust : trust;
+     }
+     ep1++;
+  }
+}
+
+/*----------------------------------------------------------------------*/
 
 static int load_text(int seg_num, int text_bytes, int *current_tab)
 {
@@ -334,139 +426,46 @@ static void load_index(int index_bytes, int table_num)
   }
 }
 
-/*----------------------------------------------------------------------*/
+/*== the entry procedure =============================================*/
+/* Some debugging stuff in here.  I'll take it out when I'm sure 
+   that I'm done with the changes */
 
-static int get_index_tab(int clause_no)
+pseg load_seg(int seg_num, int text_bytes, int index_bytes, FILE *file)
 {
-  long hashval, size, j;
-  long count = 0;
-  byte  type ;
-  CPtr label;
-  Integer ival;
-  Cell val;
+   int current_tab;
 
-  hptr = hreg;
-  size = hsize(clause_no);
+   current_seg = (pseg) mem_alloc(ZOOM_FACTOR*text_bytes+SIZE_SEG_HDR);
 
-  indextab = (struct hrec *)malloc(size*sizeof(struct hrec)); 
+/* Allocate first chunk of index_reloc */
+   index_reloc = (CPtr *)malloc(NUM_INDEX_BLKS*sizeof(CPtr));
+   if (!index_reloc) {
+     fprintf(stderr, "ERROR: couldn't allocate index relocation space.\n");
+     return NULL;
+   }
+   num_index_reloc = 1;
 
-  for (j = 0; j < size; j++) {
-      indextab[j].l = 0;
-      indextab[j].link = (CPtr)&(indextab[j].link);
-  }
-  for (j = 0; j< clause_no; j++) {
-         get_obj_byte(&type);
-         switch (type) {
-	    case 'i': get_obj_word_bb(&ival);
-		      val = (Cell) ival ;
-		      count += 9;
-		      break;
-	    case 'l': val = (Cell)(list_str); 
-		      count += 5;
-		      break;
-            case 'n': val = 0;
-		      count += 5;
-		      break;
-	    case 'c': get_obj_word_bb(&ival);
-		      count += 9;
-		      val = (Cell)ival ;
-		      st_pscname(&val);
-		      break;
-	    case 's': get_obj_word_bb(&ival);
-		      count += 9;
-		      val = (Cell)ival ;
-		      st_ptrpsc(&val);
-/*		      val = *reloc_table[val]; */
-		      break; 
-	 }
-         get_obj_word_bbsig(&label);
-         label = reloc_addr((Integer)label, seg_text(current_seg));
-         hashval = ihash(val, size);
-         inserth(label, &indextab[hashval]);
-  }
-  return count;
+/* SCAFFOLD */
+   if ((long) current_seg % sizeof(Cell) != 0)
+     fprintf(stderr, "non-aligned seg_first_inst!\n");
+		/* alloc space, include 16 bytes header */
+   current_seg++ ;
+   seg_next(current_seg)  = 0 ;
+   seg_prev(current_seg)  = last_text ;
+   seg_index(current_seg) = 0 ;
+   seg_size(current_seg)  = text_bytes*ZOOM_FACTOR + SIZE_SEG_HDR ;
+   fd = file;
+   if (!load_text(seg_num, text_bytes, &current_tab)) {
+     mem_dealloc((pb)seg_hdr(current_seg), text_bytes+SIZE_SEG_HDR);
+     return NULL;
+   }
+   index_block_chain = &seg_index(current_seg) ;
+   load_index(index_bytes, current_tab) ;
+   free(index_reloc) ;
+
+/* set text-index segment chain */
+   if (last_text) seg_next(last_text) = current_seg;
+   last_text = current_seg;
+   return current_seg;
 }
 
 /*----------------------------------------------------------------------*/
-
-static pindex new_index_seg( int no_cells )
-{
-  pindex new_i = (pindex)mem_alloc(SIZE_IDX_HDR + sizeof(Cell) * no_cells ) ;
- 
-/* initialize fields of new index segment header */
-  i_next(new_i) = 0 ;
-  i_size(new_i) = SIZE_IDX_HDR + sizeof(Cell) * no_cells ;
- 
-/* append at tail of block chain */
-  *index_block_chain = new_i ;
-  index_block_chain = &i_next(new_i) ;
-
-  return new_i ;
-}
-
-static void gen_index(bool tabled, int clause_no, CPtr sob_arg_p, char arity)
-{
-  pindex new_i ;
-  CPtr ep1, ep2;
-  int j, size;
-  CPtr temp;
- 
-  size = hsize(clause_no);
-  new_i = new_index_seg(size);
-
-  ep1 = i_block(new_i) ;
-  cell(sob_arg_p) = (Cell)ep1 ;
-  for (j = 0; j < size; j++) {
-        if (indextab[j].l == 0) cell(ep1) = (Cell) &fail_inst;
-        else if (indextab[j].l == 1) {
- 		if (!tabled) {
-		    cell(ep1) = *(indextab[j].link);
-		} else {  /* create tabletrysingle */
-           	    cell(ep1) = cell(indextab[j].link);
-           	    new_i = new_index_seg(3);
-           	    ep2 = i_block(new_i);
-           	    cell(ep1) = (Cell) ep2;
-           	    temp = indextab[j].link;
-           	    gentabletry(tabletrysingle, arity,
-				*temp++, tab_info_ptr, ep2);
-        	}
-      } else {
-          /* otherwise create try/retry/trust instruction */
-          new_i = new_index_seg(2*indextab[j].l+tabled);
-          ep2 = i_block(new_i) ;
-          cell(ep1) = (Cell) ep2 ;
-          temp = (indextab[j].link) ;
-	  if(!tabled)		/* generate "try" */
-             gentry(try, arity, *temp, ep2) 
-	  else
-	     gentabletry(tabletry, arity, *temp, tab_info_ptr, ep2)
-
-          for (temp++; *temp != (Cell)temp; temp++) {
-             temp = (CPtr) cell(temp);		/* generate "retry" */
-             gentry((tabled?tableretry:retry), arity, *temp, ep2);
-          }
-	  /* change last "retry" to "trust" */
-          cell_opcode(ep2-2) = tabled ? tabletrust : trust;
-     }
-     ep1++;
-  }
-}
-
-/* use heap top as temp place of hash link and entries; */
-/* heap top pointer is not alterred so nothing affect later heap use */
-
-static void inserth(CPtr label, struct hrec *bucket) 
-{ 
-  CPtr temp;
-
-  bucket->l++;
-  temp = (CPtr)&(bucket->link);
-  if (bucket->l > 1) {
-       temp = (CPtr)*temp;
-       while ((CPtr)*temp != temp) 
-          temp = (CPtr)*(++temp);
-  }
-  *temp = (Cell)hptr;
-  cell(hptr) = (Cell) label; hptr ++;
-  cell(hptr) = (Cell) hptr; hptr ++;
-}

@@ -28,15 +28,7 @@
 #define del_ret_node(X)  DelFlag(aln_answer_ptr(X)) = 1
 #define is_del_ret_node(X)  DelFlag(aln_answer_ptr(X)) == 1 
 
-
-#define exit_if_null(x) {\
-  if( x == NULL){\
-   printf("Malloc Failed !\n");\
-   xsb_exit("Bye");\
-}\
-}
-
-#define is_not_deleted(X)	DelFlag(X) != 1
+#define is_not_deleted(X)      DelFlag(X) != 1
 
 struct HASHhdr {
   struct HASHhdr *next, *prev;
@@ -117,6 +109,7 @@ extern void	abolish_trie(void);
 extern void	aux_call_info(void);
 extern void	prolog_newnode(void);
 extern void	remove_open_tries(CPtr);
+extern void     init_trie_aux_areas(void);
 extern void	get_lastnode_cs_retskel(void);
 extern void     load_solution_trie(int, CPtr, NODEptr);
 extern bool     variant_call_search(int, CPtr, CPtr *);
@@ -134,166 +127,86 @@ extern void     bottom_up_unify(void);
 /* slg variables */
 extern CPtr VarPosReg;
 extern CPtr ans_var_pos_reg;
-extern int num_vars_in_var_regs;
-extern int global_num_vars;
+extern int  num_vars_in_var_regs;
+extern int  global_num_vars;
 
 /* used for statistics */
 extern long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
 
 /* trie routine variables */
-extern NODEptr free_trie_nodes,
-               Last_Nod_Sav,
-               TrieRetPtr,               
-	       Paren;
+extern NODEptr free_trie_nodes, Last_Nod_Sav, Paren;
 extern ALPtr   free_answer_list_nodes;
 
+/* registers for trie backtracking */
+extern CPtr reg_arrayptr, var_regs[];
 
-
-/* allocate an array for easy expansion */
- 
+/*----------------------------------------------------------------------*/
+/* allocate an array for easy expansion */ 
 #define alloc_arr(AArrType,AArrayNam,AArraySz){\
     AArrayNam = (AArrType *)malloc(sizeof(AArrType) * AArraySz);\
-    if(AArrayNam == NULL){\
-       fprintf(stderr,"No More memory for reallocating Array");\
-       xsb_exit("Bye");\
+    if (AArrayNam == NULL) {\
+      xsb_exit("No More memory for reallocating Array");\
     }\
 }
 
-/* expand the array */
-
-#define xpand_array(ArrType,ArrayNam, ArraySz, Nam){\
+/* expand the array by doubling its size */
+#define trie_expand_array(ArrType,ArrayNam, ArraySz, Nam) {\
     ArrType *Temp;\
     int Siz;\
     int i;\
 \
     Temp = ArrayNam;\
     Siz  = ArraySz;\
-\
     ArraySz = 2 * ArraySz;\
     alloc_arr(ArrType,ArrayNam,ArraySz);\
-    fprintf(stderr, "**Warning:Dynamically Expanding Array(%s) To Size %ld**\n",Nam,(long)ArraySz);\
-    \
-    for( i = 0; i < Siz; i ++){\
-       ArrayNam[i] = Temp[i];\
+    for (i = 0; i < Siz; i++) {\
+      ArrayNam[i] = Temp[i];\
     }\
-    fprintf(stderr,"**Done\n");\
     free(Temp);\
- }
-
-
-
-/* term stack */
-#define MAXSTACK 10000
-extern int term_stackptr;
-extern Cell *term_stack;
-extern long term_stacksize;
-#define pop_term  term_stack[term_stackptr--]
-#define push_term(T){\
-    if(term_stackptr +1 == term_stacksize){\
-       xpand_array(Cell,term_stack,term_stacksize,"term_stack");\
-    }\
-  term_stack[++term_stackptr] = ((Cell) T);\
 }
 
-#define pop_term_trust term_stackptr--
-#define not_empty_term  term_stackptr != -1
-
-
-/* registers for trie backtracking */
-#define MaxTrieRegs 500
-extern CPtr reg_arrayptr,
-       var_regs[];
-extern Cell CallNumVar;
-
 #define will_overflow_reg_array(x) {\
-   int idx; \
-   if( x >= reg_array +reg_array_size ){\
-   idx = reg_arrayptr - reg_array;\
-    xpand_array(Cell,reg_array,reg_array_size,"reg_array");\
-   reg_arrayptr = reg_array + idx;\
+   if (x >= reg_array+reg_array_size) {\
+     int idx = reg_arrayptr - reg_array;\
+     trie_expand_array(Cell,reg_array,reg_array_size,"reg_array");\
+     reg_arrayptr = reg_array + idx;\
    }\
 }
 
-#define pushreg(X){\
-        will_overflow_reg_array(reg_arrayptr+1);\
-	(*(++reg_arrayptr)) = (Cell) X;\
+#define pushreg(X) {\
+   will_overflow_reg_array(reg_arrayptr+1);\
+   (*(++reg_arrayptr)) = (Cell) X;\
 }
+/*----------------------------------------------------------------------*/
+
+extern struct HASHhdr HASHroot;
+extern struct HASHhdr *HASHrootptr;
 
 extern CPtr *var_addr;
 extern int  var_addr_arraysz;
 
-/* Safe assignment -- can be generalized by type.
-  CPtr can be abstracted out */
-
-#define safe_assign(ArrayNam,Index,Value,ArraySz) {\
-   if( Index >=  ArraySz){\
-     xpand_array(CPtr,ArrayNam,ArraySz,"var_addr");\
-   }\
-   ArrayNam[Index] = Value;\
-}
-     
-     
-
 extern Cell VarEnumerator[];
 extern int  num_heap_term_vars;
 
+/*----------------------------------------------------------------------*/
 /* has to go into trie_code.i --- but for now */
 #define is_no_cp(x) (((Cell)Instr(x) & 0x3)== 0)
 #define is_trust(x) (((Cell)Instr(x) & 0x3)== 1)
 #define is_try(x)   (((Cell)Instr(x) & 0x3)== 2)
 #define is_retry(x) (((Cell)Instr(x) & 0x3)== 3)
 
-#ifdef DEBUG
+/*----------------------------------------------------------------------*/
 
-#define print_trie_atom(X){\
- if(cell_tag(X) == STRING)\
-   printf("atom(%s)",string_val(X));\
- else if(cell_tag(X) == CS) \
-   printf("atom(%s/%d)",get_name((Psc)dec_addr(X)), get_arity((Psc)dec_addr(X))) ;\
- else if(cell_tag(X) == INT)\
-   printf("atom(%d)",int_val(X));\
- else if(cell_tag(X) == LIST)\
-   printf("./2");\
- else\
-  printf("Unk(%x)",(int)X);\
- }
- 
-#define print_trie_node(X) {\
- printf("%x,I(%x),A(%x),P(%x),S(%x)",(int)X,Instr(X),(int)Atom(X),(int)Parent(X),(int)Sibl(X));\
- if(cell_tag(Atom(X)) == STRING)\
-   printf("atom(%s)\n",string_val(Atom(X)));\
- else if(cell_tag(Atom(X)) == CS) \
-   printf("atom(%s/%d)\n",get_name((Psc)dec_addr(Atom(X))), get_arity((Psc)dec_addr(Atom(X)))) ;\
- else if(cell_tag(Atom(X)) == INT)\
-   printf("atom(%d)\n",int_val(Atom(X)));\
- if(cell_tag(Atom(X)) == LIST)\
-   printf("./2\n");}
-#endif
-
-/* to avoid warnings */
-extern Cell ptoc_tag(int);
-extern void ctop_tag(int, Cell);
-
-#define NUM_TRIEVARS 400
-
-
-
-#define simple_dbind_ref_nth_var(addr,n)  simple_dbind_ref(addr,VarEnumerator[n])
-#define bld_nth_var(addr,n)  bld_ref(addr,VarEnumerator[n])
 #define dbind_ref_nth_var(addr,n) dbind_ref(addr,VarEnumerator[n])
 #define trie_var_num(x)  ((((Cell) x) - VarEnumerator[0])/sizeof(Cell))
-#define is_VarEnumerator(x) (!((((Cell) x) >=  VarEnumerator[0]) && (((Cell) x) <=  VarEnumerator[NUM_TRIEVARS -1])) )
+#define is_VarEnumerator(x) (!((((Cell) x) >= VarEnumerator[0]) && (((Cell) x) <= VarEnumerator[NUM_TRIEVARS-1])) )
 
-
-
-extern CPtr * Addr_Stack;
-extern int addr_stack_size; 
 extern Cell * reg_array;
 extern int reg_array_size;
 extern int delay_it;
 
+#define NUM_TRIEVARS 400
 #define DEFAULT_ARRAYSIZ 512 
 
 extern CPtr *copy_of_var_addr;
-extern int copy_of_num_heap_term_vars;
-extern void printterm(Cell, byte, int);
+extern int  copy_of_num_heap_term_vars;

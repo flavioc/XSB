@@ -49,6 +49,23 @@ extern void print_subgoal(FILE *, SGFrame);
 
 /*----------------------------------------------------------------------*/
 
+#ifdef DEBUG_DELAYVAR
+#define print_trie_atom(X) {\
+ if (isstring(X)) \
+   printf("atom(%s)",string_val(X));\
+ else if (isconstr(X)) \
+   printf("atom(%s/%d)",get_name((Psc)dec_addr(X)),get_arity((Psc)dec_addr(X)));\
+ else if (isinteger(X)) \
+   printf("atom(%d)",int_val(X));\
+ else if (islist(X))\
+   printf("./2");\
+ else\
+  printf("Unk(%x)",(int)X);\
+ }
+#endif
+
+/*----------------------------------------------------------------------*/
+
 static Cell cell_array[500];
 
 /*----------------------------------------------------------------------*/

@@ -78,8 +78,6 @@ pdl = {NULL, NULL, 0,
       complstack = {NULL, NULL, 0,
 		    COMPLSTACK_DEFAULT_SIZE};   /* Completion Stack  */
 
-extern char executable[];
-
 Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
 
 extern char *strip_names_from_path(char* path, int how_many);
@@ -99,44 +97,12 @@ extern double realtime_count;
 extern pw reloc_table[];
 
 /* jf: to init stat. structs */
-extern void perproc_reset_stat(), reset_stat_total(); 
+extern void perproc_reset_stat(void), reset_stat_total(void); 
 
 /* these three are from self_orientation.c */
 extern char *install_dir; 
 extern char *xsb_config_file; /* configuration.P */
 extern char *user_home; /* the user HOME dir or install dir, if HOME is null */
-
-Cell *term_stack;
-
-/* Version message */
-
-char *word_mode[3] = {
-  "single word",
-  "one & half word",
-  "double word"
-};
-
-char *par_mode[3] = {
-  "sequential",
-  "parallel"
-};
-
-char *months[12] = {
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-};
-
-
 
 /*==========================================================================*/
 
@@ -163,7 +129,6 @@ void static version_message(void) {
 
   char licensemsg[MAXPATHLEN], configmsg[MAXPATHLEN];
 
-
   sprintf(licensemsg, "%s%cetc%ccopying.msg", install_dir, SLASH, SLASH);
   sprintf(configmsg, "%s%cbanner.msg", 
 	  strip_names_from_path(xsb_config_file, 1), SLASH);
@@ -175,8 +140,9 @@ void static version_message(void) {
   exit(0);
 }
 
-void static help_message(void) {
+static void help_message(void) {
   char helpmsg[MAXPATHLEN];
+
   sprintf(helpmsg, "%s%cetc%chelp.msg", install_dir, SLASH, SLASH);
   puts("");
   display_file(helpmsg);
@@ -203,35 +169,13 @@ char *init_para(int argc, char *argv[])
   char *cmd_line_goal="true.";
   int strlen_instdir, strlen_initfile, strlen_2ndfile;
 
-  {
-    /* This needs cleaning up : should go to a .h file in the
-       next integration -Prasad */
-    extern struct HASHhdr HASHroot;
-    extern struct HASHhdr *HASHrootptr;
-
-    HASHrootptr = &HASHroot;
-  }
+  HASHrootptr = &HASHroot;
   init_newtrie();
-  alloc_arr(Cell,term_stack,term_stacksize);
-  alloc_arr(CPtr,var_addr,var_addr_arraysz);
-  alloc_arr(CPtr,Addr_Stack,addr_stack_size );
-  alloc_arr(Cell,reg_array,reg_array_size);
-  reg_arrayptr = reg_array -1;
+  init_trie_aux_areas();
 
-  /* jf: init stat. structures */
+  /* init stat. structures */
   perproc_reset_stat();
   reset_stat_total();
-
-  /*
-    term_stack = (Cell *)malloc(sizeof(Cell) * term_stacksize);
-    exit_if_null(term_stack);
-
-    var_addr = (CPtr *)malloc(sizeof(CPtr)* var_addr_arraysz);
-    exit_if_null(var_addr);
-
-    Addr_Stack = (CPtr *)malloc(sizeof(CPtr)*addr_stack_size );
-    exit_if_null(Addr_Stack);
-  */ 
 
 
   flags[STACK_REALLOC] = TRUE;
@@ -611,9 +555,6 @@ void init_machine(void) {
 
   symbol_table.table = calloc(symbol_table.size, sizeof(Pair));
   string_table.table = calloc(string_table.size, sizeof(char *));
-
-  for (i = 0; i < NUM_TRIEVARS; i++)
-    VarEnumerator[i] = (Cell) & (VarEnumerator[i]);
 
   open_files[0] = stdin;
   open_files[1] = stdout;
