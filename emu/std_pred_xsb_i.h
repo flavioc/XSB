@@ -203,8 +203,10 @@ inline static xsbBool univ_builtin(void)
 	  if (list_construction) { /* no errors can occur */
 	    bind_list((CPtr)term, hreg);
 	    list = cell(head+1);
+	    XSB_Deref(list);
 	    bld_copy(hreg, cell(clref_val(list))); hreg++;
 	    list = cell(clref_val(list)+1);
+	    XSB_Deref(list);
 	    bld_copy(hreg, cell(clref_val(list))); hreg++;
 	  } else { /* compound term construction */
 	    sreg = hreg;
