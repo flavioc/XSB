@@ -67,12 +67,12 @@ standard_symbol(current_atom, 1, curr_sym).
 standard_symbol(current_functor, 1, curr_sym).
 standard_symbol(current_functor, 2, curr_sym).
 standard_symbol(current_input, 1, curr_sym).
-standard_symbol(current_input_fd, 1, curr_sym).
+standard_symbol(current_input_port, 1, curr_sym).
 standard_symbol(current_module, 1, curr_sym).
 standard_symbol(current_module, 2, curr_sym).
 standard_symbol(current_op, 3, curr_sym).
 standard_symbol(current_output, 1, curr_sym).
-standard_symbol(current_output_fd, 1, curr_sym).
+standard_symbol(current_output_port, 1, curr_sym).
 standard_symbol(current_predicate, 1, curr_sym).
 standard_symbol(current_predicate, 2, curr_sym).
 standard_symbol(debug, 0, debugger).

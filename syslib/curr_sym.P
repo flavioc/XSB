@@ -157,7 +157,7 @@ current_input(Stream) :-
 	psc_name(Curin, Name),
 	Name = Stream.
 
-current_input_fd(FileDes) :- stat_flag(CURRENT_INPUT, FileDes).
+current_input_port(FileDes) :- stat_flag(CURRENT_INPUT, FileDes).
 
 
 /* ===== current_op/3 ================================================= */
@@ -182,7 +182,7 @@ current_output(Stream) :-
 	psc_name(Curout, Name), 
 	Name = Stream.
 
-current_output_fd(FileDes) :- stat_flag(CURRENT_OUTPUT, FileDes).
+current_output_port(FileDes) :- stat_flag(CURRENT_OUTPUT, FileDes).
 
 
 /* ===== current_predicate/1 ========================================== */

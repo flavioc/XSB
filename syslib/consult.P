@@ -151,8 +151,15 @@ needs_recompile('c', Base, Obj) :-
 /*		5) the base name of the file (Base = Dir+Mod), and	*/
 /*		6) the object file name (Obj)				*/
 /* 	The call will fail if the specified file cannot be found.	*/
+/*     	       	       	       	       	       	       	       	        */
+/*  search_module/6 is like search_module/7, except that it drops    	*/
+/*     	       	    the HasObj argument. search_module/6 is exported    */
 /*======================================================================*/
 
+%% search_module/6
+search_module(FileName, Dir, Mod, Ext, Base, Obj) :-
+	search_module(FileName, Dir, Mod, Ext, _HasObj, Base, Obj).
+%% search_module/7
 search_module(FileName, Dir, Mod, Ext, HasObj, Base, Obj) :-
 	almost_search_module(FileName, D, Mod, E, B),
 	( D == '', FileName == Mod -> % only a module name was given
@@ -208,7 +215,7 @@ compile_load_user(Options) :-
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
 read_canonical(Term) :- 
-	stat_flag(CURRENT_INPUT, File), 
+	current_input_port(File), 
 	file_read_canonical(File,Term,_).
 
 cvt_canonical(InFile,OutFile) :-
@@ -278,9 +285,10 @@ load_dyn1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
 	open_or_cpp_file(Rfname, CPP_process),
-	(read_and_assert
+	current_input_port(CPPport), % port from process, if it was launched
+	(   read_and_assert
 	%% If needs restart, close old file and skip to the second load_dyn1
-	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
+	->  ( conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(cpp_on,0)
 	),
 	(
@@ -288,8 +296,9 @@ load_dyn1(Rfname) :-
 	;   %% Wait, if cpp was spawned so as to not leave zombies
 	    process_control(CPP_process, wait),
 	    %% Also, release the file descriptor used to read from cpp
-	    stat_flag(CURRENT_INPUT, FromPort), file_close(FromPort)
+	    file_close(CPPport)
 	),
+	seen,
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
 load_dyn1(Rfname) :- 
@@ -372,7 +381,7 @@ read_and_assert :-
 	load_dyn_module(ModName),
 	change_multifile_directive(Term2, ModName, Term),
 	(Term == end_of_file
-	 ->	!,seen,fail
+	 ->	!, fail
 	 ;	do_assert_and_fail(Term)
 	).
 %% Don''t loop, if restart is requested
@@ -412,9 +421,9 @@ load_dync1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
 	open_or_cpp_file(Rfname, CPP_process),
-	stat_flag(CURRENT_INPUT,Fd),
+	current_input_port(CPPport),
 	file_read_canonical(-1000,0,0),	% initialize previous psc
-	(read_and_assert(Fd)
+	(   read_and_assert(CPPport)
 	%% If needs restart, close old file and skip to the second load_dyn1
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(cpp_on,0)
@@ -424,8 +433,9 @@ load_dync1(Rfname) :-
 	;   %% Wait, if cpp was spawned so as to not leave zombies
 	    process_control(CPP_process, wait),
 	    %% Also, release the file descriptor used to read from cpp
-	    stat_flag(CURRENT_INPUT, FromPort), file_close(FromPort)
+	    file_close(CPPport)
 	),
+	seen,
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
 load_dync1(Rfname) :- 
@@ -435,8 +445,8 @@ load_dync1(Rfname) :-
 
 
 %% This version is used for load_dync1 only!
-read_and_assert(Fd) :-
-	file_read_canonical(Fd,Term0,Opsc),	% Opsc: Old(Previous) psc
+read_and_assert(IPort) :-
+	file_read_canonical(IPort,Term0,Opsc),	% Opsc: Old(Previous) psc
 %	expand_term(Term0,Term1),	% should we do this?
 	load_dyn_module(ModName),
 	change_multifile_directive(Term0, ModName, Term),
@@ -448,11 +458,11 @@ read_and_assert(Fd) :-
 	 ;	Prref=_,NArity=_,Index=_,Hashsize=_	 
 	),
 	(Term == end_of_file
-	 ->	!,seen,fail
+	 ->	!, fail
 	 ;	do_assert_and_fail(Term)
 	).
-read_and_assert(_Fd) :- conget(needs_restart,1), !.
-read_and_assert(Fd) :- read_and_assert(Fd).
+read_and_assert(_IPort) :- conget(needs_restart,1), !.
+read_and_assert(IPort) :- read_and_assert(IPort).
 
 
 /* In change_multifile_directive(TermIn, ModName, TermOut), TermOut may be 
@@ -526,9 +536,9 @@ do_assert_and_fail(Term) :-	% Now Term is the output of
    OPsc is the Original Psc (e.g. for p(_,_)), while Psc is the actually
    used Psc (e.g. for p_file1(_,_)).  OPsc is only used in 
    load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize).  So, after
-   file_read_canonical(Fd,Term0,OPsc) reads a new Term0 (say p(_,_)), and the
-   psc address is the same as that of the previous read term, then this term 
-   can be asserted directly.   
+   file_read_canonical(IPort,Term0,OPsc) reads a new Term0 (say p(_,_)),
+   and the psc address is the same as that of the previous read term,
+   then this term can be asserted directly.   
 */
 
 set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize) :-

@@ -25,7 +25,7 @@
 
 
 :- export consult/1, consult/2, '.'/2, reconsult/1, reconsult/2,
-	  compile/1, compile/2, real_search_module/4,
+	  compile/1, compile/2, search_module/6,
 	  load_dyn/1, load_dync/1, read_canonical/1,
 	  ensure_dyn_loaded/1, ensure_dync_loaded/1,
 	  cvt_canonical/2.
@@ -38,7 +38,7 @@
 :- import compile_cH/5 from foreign.
 :- import str_cat/3, str_sub/2 from string.
 :- import default_assert_size/1 from config.
-:- import predicate_property/2 from curr_sym.
+:- import predicate_property/2, current_input_port/1 from curr_sym.
 :- import file_write0/2, file_nl/1 from xsb_writ.
 :- import rm/1, sys_link/3, process_control/2 from shell.
 :- import abort/1, call/1, file_exists/1, atom/1, repeat/0,
@@ -50,7 +50,7 @@
 :- import code_load/3, code_call/3,
 	  expand_filename/2, tilde_expand_filename/2, unload_seg/1,
 	  buff_word/3, assert_code_to_buff/2, assert_buff_to_clref/7,
-	  file_read_canonical/3, stat_flag/2, conpsc/2, 
+	  file_read_canonical/3, conpsc/2, 
 	  psc_prop/2, psc_tabled/2, psc_type/2, psc_name/2,
 	  psc_arity/2, existing_file_extension/2, almost_search_module/5
      from machine.

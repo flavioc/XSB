@@ -25,7 +25,7 @@
 
 :- export current_op/3, 
 	current_input/1, current_output/1,
-	current_input_fd/1, current_output_fd/1,
+	current_input_port/1, current_output_port/1,
 	current_module/1, current_module/2,
 	current_atom/1, current_atom/2, 
 	current_functor/1, current_functor/2, 
