@@ -82,7 +82,6 @@ extern char executable[];
 
 Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
 
-extern char* strchr(char *, int);
 extern char *strip_names_from_path(char* path, int how_many);
 
 /* real_alloc uses malloc only to keep pspacesize straight. */

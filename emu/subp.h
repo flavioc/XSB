@@ -34,8 +34,10 @@ extern void remove_open_tables_reset_freezes(void);
 extern bool unify(Cell, Cell);
 extern bool int_unify(Cell, Cell);
 extern bool atom_unify(Cell, Cell);
-extern bool compare(/* Cell, Cell */);
-extern bool key_compare(/* Cell, Cell */);
+
+/* don't use Cell declarations here, to avoid compiler warnings */
+extern int compare(/* Cell, Cell */);
+extern int key_compare(/* Cell, Cell */);
 
 extern byte *exception_handler(char *);
 

@@ -156,7 +156,6 @@
 #define call_conv
 #endif
 
-#include "basictypes.h"
 
 #ifdef BITS64
 typedef long prolog_int ;

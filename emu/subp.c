@@ -321,7 +321,7 @@ static int sign(Float num)
 /*	in the above ordering list.					*/
 /*======================================================================*/
 
-bool compare(Cell val1, Cell val2)
+int compare(Cell val1, Cell val2)
 {
 	int arity1, arity2, comp;
 	struct psc_rec *ptr1, *ptr2;
@@ -405,7 +405,7 @@ bool compare(Cell val1, Cell val2)
 /*	standard total order of Prolog terms (see compare()).		*/
 /*======================================================================*/
 
-bool key_compare(Cell term1, Cell term2)
+int key_compare(Cell term1, Cell term2)
 {
     deref(term1);		/* term1 is not in register! */
     deref(term2);		/* term2 is not in register! */

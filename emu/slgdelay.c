@@ -493,7 +493,7 @@ static bool remove_ide_from_idl(IDE ide, IDLT *idl_tab_entry)
     if (idl == idlt_idl(*idl_tab_entry)) {
       idlt_idl(*idl_tab_entry) = ides_next_ide(idl);
     }
-    return (bool) idlt_idl(*idl_tab_entry);
+    return (bool) (NULL == idlt_idl(*idl_tab_entry));
 }
 
 /*----------------------------------------------------------------------*/
@@ -517,7 +517,7 @@ static bool remove_idl_from_idl_list(IDLT idl_tab_entry, ASI *asi)
     if (idls == asi_idl_list(*asi)) {
       asi_idl_list(*asi) = idl_list_next(idls);
     }
-    return (bool) asi_idl_list(*asi);
+    return (bool) (NULL == asi_idl_list(*asi));
 }
 
 /*----------------------------------------------------------------------*/

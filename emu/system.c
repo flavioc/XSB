@@ -25,6 +25,7 @@
 
 
 #include "configs/config.h"
+#include "basictypes.h"
 #include "cell.h"
 #include "cinterf.h"
 #include "msyscall.h"
