@@ -1702,7 +1702,7 @@ if test -n "$with_gcc" ; then
 	if test -n "$optimization_level"; then
 	   c_inline_level=""
 	else
-	   c_inline_level="-finline-functions -Winline"
+	   c_inline_level="-finline-functions"
 	fi
 	CFLAGS="-Wall -ansi -pedantic"
    fi
@@ -1715,7 +1715,7 @@ else
 	if test -n "$optimization_level"; then
 	   c_inline_level=""
 	else
-	   c_inline_level="-finline-functions -Winline" 
+	   c_inline_level="-finline-functions" 
 	fi
 	CFLAGS="-Wall -ansi -pedantic"
 	 ;;
