@@ -1,6 +1,6 @@
 /*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      xsbsocket.i
-** Author(s): Hasan Davulcu? (kifer took this out of builtin.c)
+** Author(s): juliana, davulcu, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999

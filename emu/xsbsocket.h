@@ -1,5 +1,5 @@
 /* File:      xsbsocket.h
-** Author(s): kifer
+** Author(s): juliana, davulcu, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1999
