@@ -136,6 +136,7 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
 	    ;	str_sub('windows', Configuration)
+	    ;	str_sub('cygwin', Configuration)
 	    ->	warning(('You must create the ', Modname,'.dll'))
 	    ;	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
 	        /* The following is here because C compilers usually put 

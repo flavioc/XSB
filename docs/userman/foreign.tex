@@ -190,9 +190,9 @@ output unification should be explicitly performed in the Prolog level.  The
 function prototypes should be declared before the corresponding functions
 are used.  This is done by including the {\tt "cinterf.h"} header file.
 Under Unix, the XSB foreign C interface automatically finds this file in
-the {\tt XSB/emu} directory. Under Windows, the user must compile and
-create the DLL out of the C file manually, so the compiler option
-`\verb|/I...\XSB\emu|' is necessary.
+the {\tt XSB/emu} directory. Under Windows (including Cygwin), the user
+must compile and create the DLL out of the C file manually, so the compiler
+option `\verb|/I...\XSB\emu|' is necessary.
 
 The following C functions are used to convert basic Prolog and C data types
 to each other.
@@ -984,7 +984,7 @@ In all modes and types, checks are performed to ensure the types of
 the arguments. Also, all arguments of type '-' are checked to be free
 variables at call time.
 
-\section{Compiling Foreign Modules on Windows}
+\section{Compiling Foreign Modules on Windows and under Cygwin}
 
 Due to the complexity of creating makefiles for the different compilers
 under Windows, XSB doesn't attempt to compile and build DLL's for the
@@ -1007,6 +1007,9 @@ top of the file:
    #include "cinterf.h"
 \end{verbatim}
 %%
+
+Note that these same DLLs will work under Cygwin --- XSB's C interface
+under Cygwin is like that under Windows rather than Unix.
 
 
 If the above makefile cannot be adapted, then the user has to create the DLL

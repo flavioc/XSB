@@ -53,7 +53,8 @@
     -> [Basename]
 
     ;  % Don't check anything on Windows -- module is supposed to be compiled
-	flora_running_under(windows) -> [Basename]
+	(flora_running_under(windows) ; flora_running_under(cygwin))
+	-> [Basename]
 
     %% If Module isn't compiled or is old --- recompile
     ;   xsb_configuration(compiler, CC),

@@ -1,4 +1,5 @@
 *.xwam
+*.lnk
 *.h 
 *.o 
 *.so

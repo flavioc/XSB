@@ -32,6 +32,7 @@
 #include "wind2unix.h"
 #include <errno.h>
 #include <stdio.h>
+#include <stdio.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
