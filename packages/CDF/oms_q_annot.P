@@ -8,13 +8,13 @@
 
 :- comment(module,"
 
-The OMS Query language (@ref{}), allows a user to obtain objects and
-classes that fulfill certain search conditions from an OMS.  However,
-there are many cases in which either a) the OMS contains no objects or
-classes that fulfill a given set of conditions, or b) there are too
-many ways to fulfill search conditions so that the various answers to
-a query need to be ordered in some manner.  Such sitiations can be
-addressed by @em{query relaxation}.
+The OMS Query language (@ref{A Query View for the OMS}), allows a user
+to obtain objects and classes that fulfill certain search conditions
+from an OMS.  However, there are many cases in which either a) the OMS
+contains no objects or classes that fulfill a given set of conditions,
+or b) there are too many ways to satisfy the search conditions so that
+the various answers to a query need to be ordered in some manner.
+Such situations can be addressed by @em{query relaxation}.
 
 We introduce query relaxation by example.  Suppose we have the query
 
@@ -27,16 +27,24 @@ isa(A,id(aluminum,myont)),
 attr(Part,id(used_on_platform,myont),id('F-14',dla))
 @end{verbatim}
 
-(cf. @ref{}) but a given OMS contains no such manufacturers.  Relevant
-information can still be obtained from an OMS by allowing the query to
-be ""relaxed"", which will allow a ""close"" superset of the desired
-manufacturers to be returned.  Of course what it means for one query
-to be close to another, or the best way a query should be relaxed is
-specific to each query.  Therefore the query relaxation module allows
-relaxation to be performed by @em{widening} the classes to which
-elements of a query may belong.  Other types of query relaxation may
-be fit into this framework, and may be implemented in this module as
-the need arises.
+(cf. @ref{F-14 Example}) but a given OMS contains no such
+manufacturers.  Relevant information can still be obtained from an OMS
+by allowing the query to be ""relaxed"", which will allow a ""close""
+superset of the desired manufacturers to be returned.  Of course what
+it means for one query answer to be close to another, or the best way
+a query should be relaxed is specific to each query.  Therefore the
+query relaxation module allows relaxation to be performed by
+@em{widening} the classes to which elements of a query may belong.
+Other types of query relaxation may be fit into this framework, and
+may be implemented in this module as the need arises.  The idea is
+that query annotations indicate that the annotated subcomponents need
+not necessarily be directly satisfied for the entire query to be
+satisfied.  The annotation indicates how the subcomponent can be
+""partially"" satisfied and indicates a penalty to be applied if the
+query can indeed be only partially satisfied.  Penalties of components
+are summed across the entire query, and each answer to the entire
+query thus gets an associated penalty.  Thus an answer that completely
+satisfies the query gets a penalty of 0.
 
 For the sake of example, suppose that in the above query it is not
 absolutely crucial that a part be made out of aluminum.  In this case
@@ -50,21 +58,21 @@ relaxing_query(
      attr(Part,id(has_material,myont),A),
      isa(A,id(aluminum,myont))::widen(10,Actual_mat)
      attr(Part,id(used_on_platform,myont),id('F-14',dla))),
-	10,Score)
+    10,
+    Score)
 @end{verbatim}
+
 The predicate @tt{relaxing_query/3} consists of three arguments: a
 query annotated with weights; a cutoff; and a score.  In the annotated
-query, one literal has been annotated with the @em{relaxation
-predicate} @tt{widen(10,Actual_mat).  In our implementation of
-weighted queries, this means that all aspects of the query @{must} be
-fulfilled @em{that are not weighted}.
+query, one literal has been annotated with the @em{relaxation term}
+@tt{widen(10,Actual_mat)}.  In our implementation of weighted queries,
+all components of the query @em{that are not weighted} @em{must} be
+satisfied.
 
-We provide a transformational semantics for the weighed query.  First
-the query in the first argument is preprocessed to call the weighting
-functions as Prolog predicates, and to pass along the weights
-accumulated as the query is evaluated @footnote{In the current
-implementation this transformation is effectively performed by a
-meta-interpreter.}.
+We describe by example the semantics for a weighed query.
+@footnote{The current implementation of relaxed query evaluation uses
+a meta-interpreter.  A future implemenation could be done through
+query transformation.}
 
 @begin{verbatim}
 relaxing_query(
@@ -75,48 +83,87 @@ relaxing_query(
      widen(A,id(aluminum,myont)),widen(10,Actual_mat),Cutoff,0,Score),
      attr(Part,id(used_on_platform,myont),id('F-14',dla))),
 	Cutoff,Score)
-
 @end{verbatim}
 
-Let's start first by looking at the predicate
+The following forms of relaxation goals are supported:
+@begin{enumerate}
 
-@begin{verbatim}
-     widen(Sub,Super,,widen(Scale,Actual_Super),Cutoff,Penalty_in,Penalty_out)
-@end{verbatim}
+@item 
+@tt{isa(Sub,Super)::widen(Penalty,Actual_Super)}
+
 whose modes are
-@begin{verbatim}
-     widen(+,?,,widen(+,-),+,+,-)
-@end{verbatim}
-
+@tt{isa(+,?)::widen(+,-)},
 which has the two following usages.  
 
-@begin{enumerate} 
+@begin{itemize} 
 
-@item If @tt{Super} is bound on input, widen checks to see if
-@tt{isa(Sub,Super)} holds.  If not, the query fails.  Othewise, if
+@item
+If @tt{Super} is bound on input, it is checked to see if
+@tt{isa(Sub,Super)} holds.  If not, the query fails.  Otherwise, if
 @tt{isa(Sub,Super)} holds, then the query first proceeds with no
-penalty -- so that @tt{Penalty_out} is set to be the same as
-@tt{Penalty_in}.  Otherwise, the immediate superclass of @tt{Super} is
-obtained, and @tt{Penalty_out} is set to @tt{10 + Penalty_in}, and if
-@tt{Penalty_out} is less than @tt{Cutoff} the query may proceed.  This
-relaxation continues, looking at larger and larger supersets until the
-cutoff is exceeded.
+penalty.  Otherwise, the immediate superclass of @tt{Super} is
+obtained (and bound to Actual_Super), and the subgoal is satisfied
+with a penalty value given by @tt{Penalty}.  This relaxation continues,
+looking at larger and larger classes, applying the penalty at each
+relaxation step.  If the accumulated penalty exceeds the Cutoff at any
+time, the current query answer fails and another answer is sought.
 
-@item If @tt{Super} is not bound on input, @tt{widen/6} finds the most
+@item
+If @tt{Super} is not bound on input, @tt{widen/6} finds the most
 specific class of which @tt{Sub} is a subclass or member, and then
-calls @tt{widen/6} again with @tt{Super} bound.
+proceeds as described above, now that Super is bound.
 
 @end{itemize}
 
-Another relaxation annotation of the form, @tt{attr(S,R,T)::opt(Pen)},
-is supported.  This acts like the unannotated @tt{attr(S,R,T)} call if
-the call succeeds (and for each time it succeeds.)  However if the
-@tt{attr(S,R,T)} call fails, the query still succeeds, but with a
-penalty of @tt{Pen} points.
+@item 
+@tt{attr(Sou,Rel,Targ)::widen(ArgNo,Penalty,Actual)}
+
+whose modes are
+@tt{attr(+,+,?)::widen(+,+,-)}.
+
+Currently @tt{ArgNo} @em{must} be the value 1, indicating relaxation
+on the first argument of @tt{attr}.
+
+If @tt{attr(Sou,Rel,Targ)} is immediately satisfiable (i.e., without
+using inheritance), then the subgoal succeeds with no penalty.
+Otherwise, an immediate superior, say @tt{SouSup}, of @tt{Sou} is
+found (i.e., a class immediately containing the object @tt{Sou} or the
+superclass immediately above the class @tt{Sou}.)  If
+@tt{attr(SouSup,Rel,Targ)} is immediately satisfiable, then the
+subquery succeeds with penalty value of @tt{Penalty} and with
+@tt{Actual} bound to @tt{SouSup}.  The process continues for each
+ancestor of @tt{Sou}, with an additional penalty of @tt{Penalty} for
+each step.
+
+@item
+@tt{attr(S,R,T)::opt(Penalty)}
+
+If @tt{attr(S,R,T)} succeeds then the subquery is satisfied with no
+penalty.  If @tt{attr(S,R,T)} fails, then the subquery succeeds with a
+penalty value given by @tt{Penalty}.
+
+@end{itemize}
 
 ").
 
 :- op(700,xfx,::).
+
+:- comment(relaxing_query/3, "
+
+@tt{relaxing_query(+Annot_Query,+Cutoff,?Penalty)} implements a
+meta-interpreter over evaluation of an OMS query to support query
+relaxation.  This allows subgoals within a query goal to be annotated
+to indicate that these subgoals can be relaxed, i.e. satisfied in
+other (less stringent) ways, and the entire query can still succeed.
+Nonstrict satisfaction of subgoals incurs penalties, which are summed
+over all the subgoals of a query.  If the sum of the penalties exceed
+a cutoff, then the global query fails.  @tt{Annot_Query} is the
+annotated query to evaluate; @tt{Cutoff} is the maximum allowed
+penalty sum that can be returned, and @tt{Penalty} is bound to the
+penalty value corresponding to the answer returned in the bindings of
+variables in @tt{Annot_Query}.
+
+").
 
 relaxing_query(Q,Cutoff,Penalty_out):- !,
 	relaxing_query(Q,Cutoff,0,Penalty_out).
@@ -192,187 +239,8 @@ weighted_isa_bf(id(Nid,Src),Actual,Scale,Cutoff,Pen_in,Pen_out):-
 	(object(_,_,Nid,Src) -> 
 	    query_immediate_memberof(id(Nid,Src),id(Cid,Csrc)),
 	    weighted_isa_bb(id(Nid,Src),id(Cid,Csrc),
-	                                              Scale,Cutoff,Actual,Pen_in,Pen_out)
+	                    Scale,Cutoff,Actual,Pen_in,Pen_out)
 	  ;
 	    weighted_isa_bb(id(Nid,Src),id(Nid,Src),
-	                                              Scale,Cutoff,Actual,Pen_in,Pen_out) ).
-end_of_file.
+	                    Scale,Cutoff,Actual,Pen_in,Pen_out) ).
 
-We introduce query relaxation by example.  Suppose we have the query
-
-@begin{verbatim}
-isa(Manf,Msrc,manufacturers,myont),
-at_least(4,Part,(attr(Manf,has_manufactured,Part),
-                 isa(Part,parts),
-                 attr(Part,has_material,A),
-                 isa(A,aluminum),
-                 attr(Part,used_on_platform,'F-14')))
-@end{verbatim}
-
-(cf. @ref{}) but a given OMS contains no such manufacturers.  Relevant
-information can still be obtained from an OMS by allowing the query to
-be ""relaxed"", which will allow a ""close"" superset of the desired
-manufacturers to be returned.  Of course what it means for one query
-to be close to another, or the best way a query should be relaxed is
-specific to each query.  Therefore the query relaxation module allows
-each query literal to be @em{annotated} with a weight.  For the sake
-of example, suppose that in the above query it is not absolutely
-crucial that a part be made out of aluminum, that the part be used on
-the @tt{F-14}, or that the manufacurer have made 4 such parts.  In
-this case the query could be invoked as:
-
-@begin{verbatim}
-relaxing_query(
-    (isa(Manf,Msrc,manufacturers,myont),
-     at_least(4,Part,(attr(Manf,Msrc,has_manufactured,Rsrc,Part,Psrc),
-               isa(Part,Psrc,parts,myont),
-               attr(Part,Psrc,has_material,Msrc,A,Asrc),
-               isa(A,Asrc,aluminum,myont)::widen(10,)
-               attr(Part,Psrc,used_on_platform,myont,'F-14',myont)::omit(10)
-                ))::relax_cardinality(2,10)),50,100).
-@end{verbatim}
-
-The predicate @tt{relaxing_query/3} consists of three arguments: a
-query annotated with weights; a cutoff; and a score.  In the annotated
-query, one literal has been annotated with the @em{relaxation predicate}
-@tt{widen(10), another with the weight function @tt{omit(10)), and
-another with the weight function @tt{relax_cardinality(10).  In our
-implementation of weighted queries, this means that all aspects of the
-query @{must} be fulfilled @em{that are not weighted}.
-
-We provide a transformational semantics for the weighed query.  First
-the query in the first argument is preprocessed to call the weighting
-functions as Prolog predicates, and to pass along the weights
-accumulated as the query is evaluated @footnote{In the current
-implementation this transformation is effectively performed by a
-meta-interpreter.}.
-
-@begin{verbatim}
-relaxing_query(
-  (isa(Manf,Msrc,manufacturers,myont),
-   relax_at_least(4,2,Part,Single_sum,
-        (attr(Manf,Msrc,has_manufactured,Rsrc,Part,Psrc),
-         isa(Part,Psrc,parts,myont),
-         attr(Part,Psrc,has_material,Msrc,A,Asrc),
-         widen(isa(A,Asrc,aluminum,myont),widen(,Actual,0),10,0,Mid_1),
-         omit(attr(Part,Psrc,used_on_platform,myont,'F-14',myont),10,Mid_1,Mid_2),
-	   Total_sum,10):Weight),
-  50)
-@end{verbatim}
-
-Let's start first by looking at the @tt{widen/2} function.  This
-function can be represented via the annotated clauses:
-
-@begin{verbatim}
-widen(isa(X,Z),N):_ :- 
-	var(Z),!,
-	raise_exception('Instantiation Error',widen(isa(X,Z),N)).
-widen(isa(X,Z),N):N :- 
-	isa(X,Z).
-widen(isa(X,Z),_N):0:- 
-	immediate_subclass(Z,Z1),
-	isa(X,Z1).
-@end{verbatim}
-
-If @tt{Z} is unbound at the time of call an instantiation error is
-raised.  Otherwise, the second clause indicates that the predicate
-widen succeeds with a weight of @tt{N} if the @pred{isa/3} relation
-holds in the OMS.  The third clause indicates that the predicate still
-succeeds if @tt{X} is a subclass of or memberof an immediate parent of
-Z, only upon its success it will have a weight of 0.  For each
-successful answer substitution, only the maximum weight is retained.
-
-The widen clauses themselves are instances of a formalism (not
-surprisingly) called @em{Annotation Logic Programming} @cite{}.
-Annotation logic can be used to compute various aspects of
-quantitative or paraconsistent reasoning within logic programming.
-Indeed, annotation logic has been used to capture various aspects of
-fuzzy, probabilistic and temporal logic.  In @cite{} it is shown how
-annotation logic can be computed efficiently using XSB's tabling
-system.
-
-The @tt{omit/2} predicate is also defined using annotation clauses:
-
-@begin{verbatim}
-omit(attr(X,Y,Z),N):N :- attr(X,Y,Z).  
-omit(attr(X,Y,Z),_N):0.
-@end{verbatim} 
-
-If the @pred{attr/3} succeeds @tt{omit/2} succeeds with weight of 10
--- otherwise it succeeds with a weight of 0.  Note that when the
-original query is preprocessed, the weights from @tt{widen/2} and
-@tt{omit/2} are accumulated via newly introduced variables,
-@tt{Widen_w}, @tt{Omit_w}, and @tt{Single_sum}.
-
-In order to obtain a weight for the query as a whole, several steps
-are necessary.  Consider first the predicate 
-
-@begin{verbatim}
-weighted_at_least(N,CountingVar,TemplateSum,WeightedTemplate,TotalSum)
-@end{verbatim}
-
-which is not shown in the above preprocessed query.  When a weighted
-template succeeds for @pred{weighted_at_least/5} with a binding to
-@tt{CountingVar}, there is also a weight (@tt{TemplateSum) associated
-with the binding.  The predicate @tt{weighted_at_least/5} then
-succeeds if there are at least @tt{N} different bindings returned for
-@tt{CountingVar} (according to OMS operational semantics).
-@tt{TotalSum} is the sum of the @tt{N} bindings to @tt{Var} that have
-the greatest @tt{TemplateSum}.  In the manufacturing example above,
-the maximal sum for @tt{weighted_at_least/5} when @tt{N} was 4 would
-be 80, since each binding to @tt{Part} might have a maximum weight of
-20, and four bindings are counted.  
-
-Next, consider the predicate
-
-@begin{verbatim}
-relax_at_least(OptimalNum,RelaxNum,Termplate,Total)
-@end{verbatim}
-
-which calls @tt{weighted_at_least/5}.  This predicate has the
-following semantics
-
-@begin{verbatim}
-relax_at_least(OptimalNum,RelaxNum,Var,Sum,Template,Total,Inc):Weight :- 
-	weighted_at_least(OptimalNum,Var,Sum,Template,Total),
-	Weight is Total + Inc,
-relax_at_least(OptimalNum,RelaxNum,Var,Sum,Template,Total,_Inc):Total :- 
-	WorkingNum is OptimalNum - RelaxNum,
-	weighted_at_least(WorkingNum,Var,Sum,Template,Total).
-@end{verbatim}
-
-In other words, @tt{relax_at_least/6} adds a weight of 10 to the
-weight returned in @tt{Total} by @tt{weighted_at_least/5} if its call
-to @tt{weighted_at_least/5} succeeds with @tt{OptimalNum}.  Otherwise,
-@tt{OptimalNum} is relaxed and @tt{weighted_at_least/5} called with a
-smaller number.   This time, if @tt{weighted_at_least/5} succeeds no
-weight will be added to the query.
-
-At this stage, all weights in the query have been explained.  A call
-to @tt{relaxing_query/2} succeeds if the query in its first argument
-succeeds with a weight that is greater than or equal to the cutoff in
-argument 2.
-
-Weighted queries give an extremely powerful mechanism for extending
-OMS queries so that they can perform partial matches or filter out the
-""best"" matches to a query.  Along with this power goes a
-responsibility to the user -- or programmer -- that in annotating a
-query, the use of weights represents the desired behavior for a
-query.  Several points are worthwhile noting about this
-
-@begin{itemize} 
-
-@item The use of weights is disallowed within an @pred{at_least/3}
-template (for now).
-
-@item The use of the weighting function @tt{omit/2} can lead to
-queries in which variables may not be linked through attributes as
-well as to instantiation errors in predicates such as @tt{widen/2}.
-It is the user's responsibility to avoid such situations.
-
-@item The weighting functions mentioned above are not the only
-functions allowed.  The design of the weighted queries preprocessor
-will be such that new weighting functions can be added to various
-predicates in the underlying query language.
-
-@end{itemize}

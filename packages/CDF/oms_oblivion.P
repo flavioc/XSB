@@ -25,12 +25,30 @@ files.
 	from oms_init_oms.
 */
 
-:- comment(module," Please document!").
+:- comment(module,"
+
+These predicates allow a user of the OMS to delete large portions of the
+currently loaded OMS.  They are implmented in a way that tries to be
+efficient for reasonably large sets of deletions.
+
+").
 
 %% handle caches
 
- /* obliterate_concept takes a CID and removes it from the taxonomy and
-then remeoves everything else that becomes disconnected. */
+:- comment(obliterate_class/1, "
+
+@tt{obliterate_concept(+ConceptID)} takes a Concept ID, removes the
+concept from the taxonomy and then removes (most) other facts that
+refer to this concept.  All its subclasses that are not subclasses of
+other non-deleted concepts are removed.  It also removes objects that
+become disconnected by being members of this class and not a member of
+any other nondeleted class.  It deletes relationship, schrel, strel,
+attribute, and attribute_object facts that reference any deleted class
+or object @em{at the top level}.  NB: References to the deleted
+classes and objects that are embedded in parameterized types are
+@em{not} detected and are thus @em{not} deleted.
+
+").
 
 obliterate_class(Cid) :-
 	(findall(PCid,immediate_subclass(Cid,PCid),PCids),
@@ -53,6 +71,19 @@ retractall_itsobjects(Cid):-
 	 true
 	).
 
+:- comment(obliterate_objects/1, "
+
+@tt{obliterate_objects(+ObjIdList)} removes all objects whose ObjID's
+are in the input list.  It removes them from all classes they are in,
+and it removes all attribute and attribute_object facts that refer to
+them @em{at the top level}.  NB: References to the deleted objects
+that are embedded in parameterized types are @em{not} detected and are
+thus @em{not} deleted. [Bug: It should delete class references to
+object(ObjID) for deleted ObjID.  I don't think it does this, but I
+think it should.]
+
+").
+
 obliterate_objects(ObjList) :-
 	findall(p(Oid,Cid),(member(Oid,ObjList),
 		     retractall_object(Oid,_,_,_),
@@ -65,12 +96,39 @@ obliterate_objects(_) :- gc_attribute_fail.
 obliterate_objects(_) :- gc_attribute_object_fail.
 obliterate_objects(_).
 
+:- comment(obliterate_object/1, "
+
+@tt{obliterate_objects(+ObjId)} removes the object identified by
+ObjID.  It removes it from all classes it is in, and it removes
+all attribute and attribute_object facts that refers to it @em{at the
+top level}.  NB: References to the deleted objects that are embedded
+in parameterized types are @em{not} detected and are thus @em{not}
+deleted. [Bug: It should delete class references to object(ObjID) for
+deleted ObjID.  I don't think it does this, but I think it should.]
+
+").
+
 obliterate_object(Oid) :-
 	retractall_attribute(Oid,_,_),
 	retractall_attribute_object(Oid,_,_),
 	retractall_attribute_object(_,_,Oid),
 	retractall_memberof(Oid,_),
 	retractall_object(Oid,_,_,_).
+
+:- comment(obliterate_class/1, "
+
+@tt{obliterate_concept(+CidList)} takes a list of concept IDs, removes
+them from the taxonomy and then removes (most) other facts that refer
+to these concepts.  All subclasses that are not subclasses of other
+non-deleted concepts are removed.  It also removes objects that become
+disconnected by being members of any deleted class and not a member of
+any other nondeleted class.  It deletes relationship, schrel, strel,
+attribute, and attribute_object facts that reference any deleted class
+or object @em{at the top level}.  NB: References to the deleted
+classes and objects that are embedded in parameterized types are
+@em{not} detected and are thus @em{not} deleted.
+
+").
 
 obliterate_classes(Cids) :-
 	(findall(p(Cid,PCid),

@@ -25,22 +25,24 @@
 
 The current version of the OMS has a well-defined programmer's
 interface, and this interface has been used successfully for several
-applications.  However in addition to a query language, it is useful
-to define a query language which is simple enough to be used by data
-analysts or by programmers with a limited knowledge of Prolog.  We
-state our background assumptions for a query language.
+applications.  However in addition to a programmers' query language,
+it is useful to define a simpler, higher-level query language which is
+simple enough to be used by data analysts or by programmers with a
+limited knowledge of Prolog.  We state our background assumptions for
+a query language.
 
 @begin{itemize} @item The user should be exposed as little as possible
 to the internal view of the OMS -- no concept ids or object ids should
 be used; rather, queries should be made via native ids and sources.
-OMS primitive types, however are visible to the user -- i.e. the
+OMS primitive types, however, are visible to the user -- e.g., the
 integer 1234 is presented as integer(1234).
 
 @item Queries should primarily concern objects and their attributes.
-however, certain aspects of the OMS, such as the distinction between
-classes and objects, should be abstracted from a user writing a query.
+However, certain aspects of the OMS, such as the distinction between
+classes and objects, should be abstracted for a user writing a query.
 In order to make this abstraction @em{we assume that the NID/Source
-pair is unique for the set of objects and classes together}.
+pair is unique for the set of objects and classes together}.  This is
+an additional assumption that OMS's normally need not satisfy.
 
 @item The form of the query language should be relatively simple.  It
 should not allow (arbitrary) recursion, should require a minimum of
@@ -54,8 +56,8 @@ constraint and rule system, that is under development for the OMS.
 @end{itemize}
 
 We introduce the OMS query language by example.  The English query
-@em{'show me all manufacturers who have made at least 4 aluminum parts
-for the F-14'} would be queried as
+@em{``Show me all manufacturers who have made at least 4 aluminum parts
+for the F-14''} would be queried as:
 
 @begin{verbatim}
 isa(id(Manf,Msrc),id(manufacturers,myont)),
@@ -79,11 +81,12 @@ query
 @item The distinction between OMS objects and classes is ignored.  The
 predicate @pred{isa/2} is used to represent @tt{memberof} relations
 for manufacturer and part objects, as well as @tt{subclass} relations
-for the class @tt{aluminum}.  It does this by translating native
-id/source pairs (represented as @tt{id/2} terms) into internal concept
-or object ids and calling the internal predicates as described in
-@ref{Programmer's View of the OMS}.  Similarly, @pred{attr/3} may
-access either @tt{attribute} or @tt{attribute_object} information.
+for the class @tt{aluminum}.  The implementation does this by
+translating native id/source pairs (represented as @tt{id/2} terms)
+into internal concept or object ids and calling the internal
+predicates as described in @ref{Programmer's View of the OMS}.
+Similarly, @pred{attr/3} may access either @tt{attribute} or
+@tt{attribute_object} information.
 
 @item The query is essentially an @em{ACLQ} query, as will be explained
 in the (forthcoming) section on the OMS rule and constraint system.
@@ -108,6 +111,7 @@ generality (e.g. @tt{Steel}, @tt{High-Carbon Steel}, or @tt{Steel
 Alloy 9672'}).  In this case, @tt{Mat} values counted are simply the
 values of the material returned by the OMS -- the most specific set of
 classes defined by the has_material attribute of a given part.
+
 @end{itemize}
 
 With this in mind, the query language for the OMS has the following
@@ -127,30 +131,39 @@ and @pred{gte/2} for @tt{>=/2}.
 @begin{itemize}
 
 @item @tt{attr(id(Source,Ssrc),id(Relation,Rsrc),id(Target,Tsrc))}
-assumes that @tt{Source} is an object.  If @tt{id(Source,Src)} has a
-@tt{id(Relation,Rsrc)} attribute providing a class @tt{id(Target,Tsrc)}
-(according to the OMS operational inheritance semantics), then it
-returns the NID and Source of the @tt{Target} object or class.
+is true if one of the following conditions obtains:
 
-@item @tt{isa(id(Element,Esrc),id(Class,Csrc))} if
-@tt{id(Element,Esrc)} is a class, the @tt{subclass/2} predicate is
-used; otherwise if @tt{id(Element,Esrc)} is an object, the
-@tt{memberof/2} predicate is used.
+@tt{id(Source,Src)} is an object with an attribute relationship
+identified by @tt{id(Relation,Rsrc)} with a class value of
+@tt{id(Target,Tsrc)}, according to the OMS operational inheritance
+semantics.
+
+@tt{id(Source,Src)} is an object with an attribute_object
+relationship identified by @tt{id(Relation,Rsrc)} with an object value
+of @tt{id(Target,Tsrc)}, according to the OMS operational inheritance
+semantics.
+
+@tt{id(Source,Src)} is a class with an inheritable relationship
+identified by @tt{id(Relation,Rsrc)} with a class value of
+@tt{id(Target,Tsrc)}, according to the OMS operational inheritance
+semantics.
+
+@item @tt{isa(id(Element,Esrc),id(Class,Csrc))} is true if
+@tt{id(Element,Esrc)} is a class, and the @tt{subclass/2} predicate is
+true of the pair; otherwise it is true if @tt{id(Element,Esrc)} is an
+object, and the @tt{memberof/2} predicate is true of the pair.
 
 @item @tt{at_least(Integer,Var,Template)} The number of unique
 instantiations of @tt{Var} produced by backtracking through
-@tt{Template} are counted.  This predicate succeeds if that number is
+@tt{Template} is counted.  This predicate succeeds if that number is
 greater than or equal to @tt{Integer}.  OMS operational inheritance
 semantics is used to produce these bindings.
 
-@item @tt{at_most(Integer,Var,Template)} The number of unique
+@item @tt{at_most(Integer,Var,Template)}: The number of unique
 instantiations of @tt{Var} produced by backtracking through
-@tt{Template} are counted.  This predicate succeeds if that number is
+@tt{Template} is counted.  This predicate succeeds if that number is
 less than or equal to @tt{Integer}.  OMS operational inheritance
 semantics is used to produce these bindings.
-
-@end{itemize}
- 
 ").
 
 key_label(id(Nid,Src),Label):- class(_,Label,Nid,Src).
