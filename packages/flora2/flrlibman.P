@@ -198,7 +198,7 @@ flora_include(FLSCALAREQL,IncFile) :- !,
 
 
 /********************************************************************
-  flora_library(+Atom,+FilePath)
+  flora_library(+Atom,-FilePath)
   indicates which library to be loaded.
 ********************************************************************/
 flora_library(FLLIBMIN,IncFile) :- !,
@@ -263,7 +263,7 @@ flora_library(FLLIBERASEALL,IncFile) :- !,
 	slash(S),
 	fmt_write_string(IncFile,'syslib%sflrdbop.P',arg(S)).
 
-flora_library(FLLIBDBOP,IncFile) :- !,
+flora_library(FLLIBBTDBOP,IncFile) :- !,
 	slash(S),
 	fmt_write_string(IncFile,'syslib%sflrbtdbop.P',arg(S)).
 flora_library(FLLIBBTINSERT,IncFile) :- !,
