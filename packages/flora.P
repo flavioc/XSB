@@ -49,7 +49,7 @@
 %% Then bootstrap_flora quietly succeeds without 
 %% so that package_configuration won''t be asserted twice.
 bootstrap_flora :-
-	bootstrap_package([flora,lib,syslib,pkgs],flora),
+	bootstrap_package([flora,lib,syslib,pkgs,p2h],flora),
 	!,
 	assert(package_configuration(version(flora),'0.94 of 1999/11/21')),
 	package_configuration(dir(flora),FlDir),
@@ -58,7 +58,7 @@ bootstrap_flora :-
 	assert(xpp_include_dir(FloraIncludeDir)),
 	fmt_write_string(LibFlrDisplay,'%s%ssyslib%sflrdisplay',
 			 f(FlDir,S,S)),
-	[tables, LibFlrDisplay, flrutils].
+	[tables, LibFlrDisplay, flrutils, p2h_config].
 bootstrap_flora.
 
 %% don''t show flora_shell in trace
