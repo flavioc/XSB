@@ -37,10 +37,11 @@
 #include "cinterf.h"
 
 extern char *p_charlist_to_c_string(prolog_term term, char *outstring,
+				    int outstring_size,
 				    char *in_func, char *where);
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
-static char wild_buffer[MAXBUFSIZE], input_string_buffer[MAXBUFSIZE];
+static char wild_buffer[MAXBUFSIZE], input_string_buffer[4*MAXBUFSIZE];
 static prolog_term wild_term, input_string_term;
 
 /* XSB wildcard matcher entry point 
@@ -64,6 +65,7 @@ bool do_wildmatch__(void)
     wild_ptr = string_val(wild_term);
   else if (is_list(wild_term))
     wild_ptr = p_charlist_to_c_string(wild_term, wild_buffer,
+				      sizeof(wild_buffer),
 				      "WILDMATCH", "wildcard");
   else
     xsb_abort("WILDMATCH: Wildcard (Arg 1) must be an atom or a character list");
@@ -74,6 +76,7 @@ bool do_wildmatch__(void)
   else if (is_list(input_string_term)) {
     input_string = p_charlist_to_c_string(input_string_term,
 					  input_string_buffer,
+					  sizeof(wild_buffer),
 					  "WILDMATCH", "input string");
   } else
     xsb_abort("WILDMATCH: Input string (Arg 2) must be an atom or a character list");
@@ -110,6 +113,7 @@ bool do_glob_directory__(void)
     wild_ptr = string_val(wild_term);
   else if (is_list(wild_term)) {
     wild_ptr = p_charlist_to_c_string(wild_term, wild_buffer,
+				      sizeof(wild_buffer),
 				      "GLOB_DIRECTORY", "wildcard");
   }
   else
