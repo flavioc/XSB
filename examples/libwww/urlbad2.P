@@ -1,9 +1,0 @@
-:- import libwww_fetch_url/4, libwww_form_request/4 from libwww.
-
-%% example for fetching nonexistent file from remost host, return NOT
-%% FOUND 
-urlbad :-
-
-libwww_fetch_url('http://www.sunysb.edu/chris.a',[ ],_R,S),
-writeln(libwww_fetch_url('http://www.sunysb.edu/chris.a',[ ],_R,S)).
-

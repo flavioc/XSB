@@ -1,0 +1,133 @@
+
+:- [libwww_request].
+
+:- import libwww_request/1 from libwww_request.
+
+
+%% XML
+:- libwww_request([xml('http://www.w3.org/TR/1998/REC-xml-19980210.xml',
+		       [timeout(1)],P,Y,Z)]).
+:- libwww_request([html('http://swww.etrade.com/', [timeout(1)],P,Y,Z),
+		   html('http://www.etrade.com/', [timeout(1)],PP,YY,ZZ)]).
+:- libwww_request([html('http://swww.etrade.com/', [timeout(6)],P,Y,Z)]).
+:- libwww_request([html('http://www.etrade.com/', _,P,Y,Z)]).
+:- libwww_request([xml('REC-xml-19980210.xml',X,P,Y,Z)]).
+:- libwww_request([xml('simple.xml',X,PP,Y,Z),
+		   xml('REC-xml-19980210.xml',[],P,Yz,Zz)]).
+:- libwww_request([xml('simple.xml',X,PP,Y,Z),
+		   xml('http://www.w3.org/TR/1998/REC-xml-19980210.xml',
+		       XX,P,YY,ZZ)]).
+:- libwww_request([xml('simple.xml',X,P,Y,Z)]).
+:- libwww_request([xml('simple_wrong.xml',X,P,Y,Z)]).
+:- libwww_request([xml('simple.xml',
+			[selection([a,f],[d],[c])],
+			P,Y,Z)]).
+:- libwww_request([xml('simple1.xml',[],P,Y,Z)]).
+:- libwww_request([xml("simple1.xml",[],P,Y,Z)]).
+
+
+:- libwww_request([html('http://www.cs.mit.edu',Z,P,Y,XXX)]).
+:- libwww_request([html('http://localhost/',Z,P,Y,XXX)]).
+:- libwww_request([html("http://localhost/",Z,P,Y,XXX)]).
+:- libwww_request([head('http://localhost/',Z,P,Y,XXX)]).
+:- libwww_request([fetch("http://localhost/",Z,P,Y,XXX)]).
+:- libwww_request([html('http://localhost/',
+			[if_modified('Tue, 21 Sep 2000 14:46:36 GMT')],P,Y,X),
+		   fetch('http://localhost/sub/001.ent',Z,PPP,YYY,XXX),
+	 	   fetch('http://localhost/',
+			[if_modified('Tue, 21 Mar 1998 14:46:36 GMT')],
+			 PP,YY,XX),
+		   fetch('hp://localhost/sub/001.ent',ZZ,PPPP,YYYY,XXXX)
+		  ] ).
+:- libwww_request([fetch('http://localhost/sub/001.ent',Z,PPP,YYY,XXX),
+		   ff('http://localhost/sub/001.ent',Z,PPPP,YYYY,XXXX)]).
+:- libwww_request([fetch('http://localhost/22',Z,P,Y,XXX)]).
+:- libwww_request([fetch('http://localhost/',[timeout(1)],P,Y,XXX)]).
+:- libwww_request([fetch('http://localhost/22',Z,P,Y,XXX),
+		   fetch('http://localhost/22',_,_,_,XX),
+		   fetch('http://localhost/22',_,_,_,X),
+		   fetch('http://localhost/',[timeout(1)],P1,Y1,X1)
+		   ]).
+:- libwww_request([fetch('simple.html', X,P,Y,Z)]).
+
+:- libwww_request([html('http://www.sunysb.edu/abcddfs',Z,P,Y,XXX)]).
+
+:- libwww_request([html('http://www.cs.sunysb.edu',[timeout(1)],P,Y,X)]).
+
+:- libwww_request([html('test2.html',[selection(['FORM','TABLE'],_,_)],
+			P,Y,X)]).
+:- libwww_request([html('test2.html',
+			[selection(['FORM','TABLE'],_,_)],PP,Y,X),
+		   html('test1.html',
+			[selection(['FORM','TABLE'],_,_)],P,YX,XX)]).
+
+:- libwww_request([html('newsday1.html',
+			[selection(['FORM','TABLE'],[p,hr],_)],P,Y,X),
+		   html('newsday1.html',[selection(_,[p,hr],_)],PP,YY,XX)
+		  ]).
+
+:- libwww_request([html('w3c.html',
+			[selection(['FORM','TABLE'],_,_)],P,Y,X)]).
+:- libwww_request([html('w3c1.html',
+			[selection(['FORM','TABLE'],_,[font,p])],P,Y,X)]).
+:- libwww_request([html('w3c1.html',
+			[selection(['FORM'],_,_)],P,Y,X)]).
+:- libwww_request([html('w3c1.html', [],P,Y,Z)]).
+
+:- libwww_request([html('http://www.ug.cs.sunysb.edu/~kifer/test/test.html',
+			[authentication([c(unknown,kkk,lll),
+					 c('SUNYStonyBrook',
+					   testuser,hahaha)])],
+			P,Y,Z)]).
+:- libwww_request([html('http://www.ug.cs.sunysb.edu/~kifer/test/test.html',
+			[authentication([c(unknown,kkk,lll),
+					 c(_,testuser,ppp)])],
+			P,Y,Z)]).
+:- libwww_request([html('http://www.ug.cs.sunysb.edu/~kifer/test/test.html', 
+			X,P,Y,Z)]).
+
+
+:- libwww_request([html('simple.html', X,P,Y,Z)]).
+:- libwww_request([html('simple.html', [selection([a],_,_)],P,Y,Z),
+		   html('simple.html',
+			[selection([body,a,form],[ul,p],_)],PP,YY,ZZ)
+		  ]).
+
+:- libwww_request([html("simple.html", [selection([a],_,_)],PP,Y,Z),
+		   html('simple.html',
+			[selection([body,a,form],[ul,p],_)],P,Ya,Za)]).
+
+:- libwww_request([html('http://www.amazon.com',
+			[selection([body,a,form],[ul,p],_)],PP,Y,Z),
+		   html('http://www.w3c.org',
+			[selection(['FORM','TABLE'],_,_)],P,Y1,Z1)]).
+:- libwww_request([html('http://www.amazon.com/exec/obidos/subst/home/home.html/104-9212421-6329226',
+			[selection([form],[ul,p],_)],PP,Y,Z),
+		   html('http://www.w3.org',
+			[selection(['FORM'],[p],_)],P,Y1,Z1)]).
+:- libwww_request([html('test2.html',
+			[selection(['FORM','TABLE'],_,_)],PPP,Y,X),
+		   html('http://www.w3c.org',
+			[selection(['FORM'],[p],_)],PP,Y1,Z1),
+		   html('http://www.w3c.org',
+			[selection(['FORM'],[p],_)],P,Y2,Z2)
+		    ]).
+
+:- libwww_request([html('simple2.html', [],P,Y,X)]).
+
+:- libwww_request([html('http://infoseek.go.com/Titles',
+			[method(get), formdata(['qt=computer+science']),
+			 selection(_,['TABLE',form,title,img,p,br,
+				      hr,frame,iframe],[font,base,pcdata])],
+			P,Y,Z)]).
+:- libwww_request([html('http://www.amazon.com/exec/obidos/search-handle-form/002-0526407-6129061',
+			[method(post),
+			 formdata(['index=books','field-keywords=java']),
+			 selection(_,['TABLE',form,title,img],[font])],
+			P,Y,Z)]).
+%% Wrong method: get instead of POST
+:- libwww_request([html('http://www.amazon.com/exec/obidos/search-handle-form/002-0526407-6129061',
+			[method(get),
+			 formdata(['index=books','field-keywords=java']),
+			 selection(_,['TABLE',form,title,img],[font])],
+			P,Y,Z)]).

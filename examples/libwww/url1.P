@@ -1,9 +1,0 @@
-:- import libwww_fetch_url/4, libwww_form_request/4 from libwww.
-
-%% example for fetching url with specified timeout request
-
-url1 :-
-
-libwww_fetch_url('http://www.sunysb.edu/',[timeout(1)],_R,S),
-writeln(libwww_fetch_url('http://www.sunysb.edu/',[timeout(1)],_R,S)).
-
