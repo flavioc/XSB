@@ -9,25 +9,36 @@
 
 <hr>
 <center>
-<h1> Release Notes for Version 2.2.1</h1></center>
+<h1> Release Notes for Version 2.3</h1></center>
 
 <h3> General</h3>
-This is primarily a maintenance release.
+A number of bugs fixed. Some new features. Performance improvements.
 
 <h3>News</h3>
 <ul>
-<li> The XSB libwww package that first appeared in XSB 2.2.1 now has interface
-to the RDF parser provided by the libwww package from W3C.
-<li> Foreign C module interface now works on SGI's.
+<li> <b>Sockets:</b> XSB now supports the socket select call and timeouts.
+<li> <b>RDF parser:</b> The XSB libwww package that first appeared in XSB 2.2
+now has new 
+interface to the RDF parser provided by the libwww package from W3C.
+It requires that the libwww library from W3C is installed.
+<li> The throw/catch mechanism. It was already present in version 2.2, but now
+it is also documented.
+<li> Foreign C interface now works on SGI's IRIX.
 </ul>
 
 <h3>Backward Incompatibility</h3>
-The type <tt>bool</tt> used by the external C interface has been renamed to
-xsbBool, because of clashes with various include files that exist on some
+<ul>
+<li> The type <tt>bool</tt> used by the external C interface has been renamed
+to xsbBool, because of clashes with various include files that exist on some
 platforms. Likewise, the macros for dealing with the variable string type used
 by C programs that call XSB as a library have been renamed. For instance,
 <tt>vstrDEFINE</tt> is now <tt>XSB_StrDefine</tt>. See Vol. 2 of the manual for
 the new names.
+<li>
+The experimental builtin set_timer/1 has been deprecated in favour of the more
+general builtin set_timer/2. See Manual 2 for the details of how to set timer
+to timeout Prolog subgoals.
+</ul>
 
 <hr>
 <center>
