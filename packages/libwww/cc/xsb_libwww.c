@@ -173,7 +173,7 @@ bool do_libwww_fetch_url___(void)
 		xsb_abort("Bad parameters - please try again\n");
 		
 	/* check for the newness of last_modified time */ 
-	if (modified_time != NULL) 
+	if (!is_nil(modified_time)) 
 		time_comparison(last_modified, modified_time);
 	else 
 		load = TRUE;
