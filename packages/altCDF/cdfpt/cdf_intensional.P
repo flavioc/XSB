@@ -1,0 +1,44 @@
+
+isa_int(oid(Integer,cdfpt),cid(allIntegers,cdf)):- 
+    (integer(Integer) -> 
+        true
+      ; (var(Integer) -> oms_warning(instantiation,['Isa for primitive types',
+             'must have first argument instantiated']) ) ).
+
+isa_int(cid(Integer,cdfpt),cid(allIntegers,cdf)):- 
+    (integer(Integer) -> 
+        true
+      ; (var(Integer) -> oms_warning(instantiation,['Isa for primitive types',
+             'must have first argument instantiated']) ) ).
+
+%------------
+
+isa_int(oid(Float,cdfpt),cid(allFloats,cdf)):- 
+    (float(Float) -> 
+        true
+
+      ; (var(Float) -> oms_warning(instantiation,['Isa for primitive types',
+             'must have first argument instantiated']) ) ).
+
+isa_int(cid(Float,cdfpt),cid(allFloats,cdf)):- 
+    (float(Float) -> 
+        true
+      ; (var(Float) -> oms_warning(instantiation,['Isa for primitive types',
+             'must have first argument instantiated']) ) ).
+
+
+%------------
+
+isa_int(oid(Atom,cdfpt),cid(allAtoms,cdf)):- 
+    (atom(Atom) -> 
+        true
+
+      ; (var(Atom) -> oms_warning(instantiation,['Isa for primitive types',
+             'must have first argument instantiated']) ) ).
+
+isa_int(cid(Atom,cdfpt),cid(allAtoms,cdfpt)):- 
+    (atom(Atom) -> 
+        true
+      ; (var(Atom) -> oms_warning(instantiation,['Isa for primitive types',
+             'must have first argument instantiated']) ) ).
+
