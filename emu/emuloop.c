@@ -63,6 +63,7 @@
 #include "tr_utils.h"
 #include "cut.h"
 #include "export.h"
+#include "self_orientation.h"
 
 CPtr	VarPosReg;
 /*

@@ -90,7 +90,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   while (search_ptr) {
     name = get_name(search_ptr->psc_ptr);
 #ifdef XSB_DLL
-    tempname = "__";
+    tempname[0] = '_';
+    tempname[1] = '_';
     strcpy(tempname[2],name);
     tempsize=strlen(tempname);
     tempname[tempsize++] = '@';
