@@ -913,13 +913,13 @@ void init_newtrie(void)
 
 Integer newtrie(void)
 {
-  int i;
+  Integer i;
   Integer result;
   
   if (first_free_set != 0) {	/* a free set is available */
     i = first_free_set;		/* save it in i */
-    result = (Integer)first_free_set;
-    first_free_set = (long) Set_ArrayPtr[first_free_set] >> 2;
+    result = first_free_set;
+    first_free_set = (Integer) Set_ArrayPtr[first_free_set] >> 2;
     Set_ArrayPtr[i] = NULL;	/* must be reset to NULL */
   }
   else {

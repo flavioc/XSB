@@ -1174,7 +1174,7 @@ int builtin_call(byte number)
     ctop_int(3, compare((void *)ptoc_tag(1), (void *)ptoc_tag(2)));
     break;
   case TERM_NEW_MOD: {  /* R1: +ModName, R2: +Term, R3: -NewTerm */
-    Integer new, disp;
+    int new, disp;
     Psc termpsc, modpsc, newtermpsc;
     Cell arg, term = ptoc_tag(2);
     XSB_Deref(term);
@@ -1448,7 +1448,7 @@ int builtin_call(byte number)
     /* When the given module is 0 (null string), current module is used. */
     Psc  psc;
     Pair sym;
-    Integer  value;
+    int  value;
     char *addr = ptoc_string(4);
     if (addr)
       psc = pair_psc(insert_module(0, addr));
@@ -1466,7 +1466,7 @@ int builtin_call(byte number)
      * Creates a PSC record for a predicate and its module (if they
      * don't already exist) and links the predicate into usermod.
      */
-    Integer  value;
+    int  value;
     Psc  psc = pair_psc(insert_module(0, ptoc_string(3)));
     Pair sym = insert(ptoc_string(1), (char)ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
@@ -2603,11 +2603,12 @@ void remove_prog_seg(byte *code_addr) {
 
 Psc p3psc = NULL;
 
-void retrieve_prof_table() { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt], r4: -NextNodePtr */
+void retrieve_prof_table() { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt), r4: -NextNodePtr */
   ubi_btNodePtr NodePtr;
   CPtr pscptrloc, modpscptrloc;
   Cell arg3;
-  Integer i,tmp;
+  Integer i;
+  int tmp;
   Psc apsc;
 
   i = ptoc_int(2);

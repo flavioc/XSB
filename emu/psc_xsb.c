@@ -195,8 +195,8 @@ static int is_globalmod(Psc mod_psc)
 static Pair search(int arity, char *name, Pair *search_ptr)
 {
     Psc psc_ptr;
-    Pair *init_search_ptr = search_ptr;
-    Pair found_pair;
+    /*    Pair *init_search_ptr = search_ptr; */
+    /*    Pair found_pair; */
 
     while (*search_ptr) {
       psc_ptr = (*search_ptr)->psc_ptr;
