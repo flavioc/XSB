@@ -93,6 +93,7 @@
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
 #define ERROR_PRLGLIT	'invalid PROLOG literal'
 #define ERROR_WSNAME	'invalid module name'
+#define ERROR_CHANGE_SYSMOD 'attempt to change private data in system module'
 #define ERROR_PATHEXP	'invalid path expression'
 #define ERROR_HDLITERAL 'invalid literal/molecule in rule head'
 #define ERROR_EXPINHEAD 'invalid path expression in rule head'

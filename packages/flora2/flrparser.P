@@ -2393,6 +2393,8 @@ flora_dbliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Sta
 	( flora_name_or_normvar(R,RCode) ->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
+	; flora_workspace(R,_,_) ->
+	    parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
 	).
@@ -2427,6 +2429,8 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 	( flora_name_or_normvar(R,RCode) ->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
+	; flora_workspace(R,_,_) ->
+	    parsing_error(R,ERROR_CHANGE_SYSMOD,Status)
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
