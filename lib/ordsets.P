@@ -52,7 +52,7 @@
 	ord_del_element/3,	%  Set x Elem -> Set
 	merge/3,		%  OrdList x OrdList -> OrdList
 	ord_disjoint/2,		%  Set x Set ->
-	ord_insert/3,		%  Set x Elem -> Set
+%%	ord_insert/3,		%  Set x Elem -> Set
 	ord_intersect/2,	%  Set x Set ->
 	ord_intersection/3,
 	ord_intersection/4,

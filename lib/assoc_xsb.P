@@ -34,8 +34,8 @@
 	get_prev_assoc/4,		% Key x Assoc -> Key x Val
 	is_assoc/1,			% Assoc ->
 	list_to_assoc/2,		% List -> Assoc
-	map_assoc/2,			% Goal x Assoc ->
-	map_assoc/3,			% Goal x Assoc -> Assoc
+%%	map_assoc/2,			% Goal x Assoc ->
+%%	map_assoc/3,			% Goal x Assoc -> Assoc
 	max_assoc/3,			% Assoc -> Key x Val
 	min_assoc/3,			% Assoc -> Key x Val
 	ord_list_to_assoc/2,		% List -> Assoc
