@@ -2036,6 +2036,7 @@ int gen_retract_all(/* R1: + buff */)
 	  buffers_to_free[btop++] = (ClRef) ClRefFirstIndex(buffer);
       if (another_buff(ClRefTryInstr(buffer)))
 	  buffers_to_free[btop++] = ClRefNext(buffer);
+      mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
       break ;
     case UNINDEXED_CL: 
     case INDEXED_CL:
@@ -2043,7 +2044,8 @@ int gen_retract_all(/* R1: + buff */)
 	  buffers_to_free[btop++] = ClRefNext(buffer);
 	  if( ClRefNotRetracted(buffer) )
 	    /*		retract_clause(buffer,0) */
-	    really_delete_clause(buffer);
+	    /* really_delete_clause(buffer); */
+	    mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
       break;
     case COMPILED_CL:
       {
