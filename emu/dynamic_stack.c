@@ -85,7 +85,7 @@ void dsInit(DynamicStack *ds, size_t stack_size, size_t frame_size,
 /*-------------------------------------------------------------------------*/
 
 /*
- * num_frames are the number of frames that are needed immediately.
+ * `num_frames' are the number of frames that are needed immediately.
  * Here we make sure that the expanded size can accommodate this need.
  */
 
@@ -96,7 +96,10 @@ void dsExpand(DynamicStack *ds, int num_frames) {
 
   if ( num_frames < 1 )
     return;
-  new_size = 2 * DynStk_CurSize(*ds);
+  if ( DynStk_CurSize(*ds) > 0 )
+    new_size = 2 * DynStk_CurSize(*ds);
+  else
+    new_size = DynStk_InitSize(*ds);
   if ( new_size < DynStk_CurSize(*ds) + num_frames )
     new_size = new_size + num_frames;
 #ifdef DEBUG_TRIE_STACK
