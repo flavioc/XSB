@@ -1,0 +1,355 @@
+:- compiler_options([ciao_directives]).
+
+:- comment(module,
+"
+@section(Updatable External Object Data Sources)
+
+OMS object data (objects and their attributes) can be stored and
+retrieved from external tables within a relations database, accessible
+through the ODBC interface.  Objects can be created and deleted and
+their attributes can be added, deleted and updated.  The table(s) in
+the external relational database are updated to reflect such changes.
+
+An Updatable External Object Data Source is stored as a ""component"",
+which is identified by a particular, unique, Source.
+
+The external database table(s) of an Updatable External Object Data
+Source must be of specific form(s), and represent objects and their
+attributes in particular ways.  However, the ways supported are
+general enough to allow reasonably natural external data
+representations.
+
+The main table in an Updatable External OMS Object Data Source is
+called the Object Table.  An object table is a database table whose
+rows represent objects to be seen within an OMS.  Such a set of
+objects will share the same ""source"" in the OMS, indicating their
+""component"".
+
+An Object Table contains a column which is the OMS object Native ID,
+and that column must be a key for the object table.  The table may
+have other columns that can be reflected as OMS attributes for the
+objects.  Each such attribute must (clearly) be functional.  There may
+also be other tables, called attribute tables, which have a foreign
+key to the object table, and a column that can be reflected as an OMS
+attribute for the object.  These attributes need not be functional.
+
+An object table must be declared with the following fact.
+
+ext_object_table(Source,DBName,TableName,NOidAttr,NameAttr,
+		 con,MemberofNCid,MemberofSou).
+
+where:
+
+@begin{itemize}
+@item
+Source is the component identifier for this object table.
+@item
+DBName is the name of the DB containing the object table.
+@item
+TableName is the name of the object table in the database.
+@item
+NOidAttr is the column name of the key column of the object table.
+@item
+NameAttr is the column name of field that contains the name field
+  for the object.  (If there is no special one, it should be the same
+  as NOidAttr.)
+@item
+con is the constant 'con' (for now), meaning that the class containing
+  all the objects in the object table is a single fixed class.
+@item
+MemberofNCid is the Native ID of the class of which all these objects
+  are members.
+@item
+MemberofSou is the Source of this memberof class.
+@end{itemize}
+
+For each functional attribute represented in an object_table, there
+must be a fact of the following form:
+
+ext_functional_attribute_table(Source,RelationNatCid,RelationSou,TarAttr).
+
+where:
+
+@begin{itemize}
+@item
+Source is the component identifier for this object table.
+@item
+RelationsNatCid is the Native ID of the OMS relationship for this
+  attribute.
+@item
+RelationSou is the Source of the OMS relationship for this attribute.
+@item
+TarAttr is the name of the column in the table containing the value of
+  this attribute.
+@end{itemize}
+
+There must be a schrel in the OMS for each of these OMS relationships
+indicating the type of the attribute value, which must be one of
+atom(_) or integer(_).  (This will be expanded...)
+
+For each attribute table, there must be a fact of the following form:
+
+ext_attribute_table(Source,TableName,NOidAttr,
+		    RelationNatCid,RelationSou,TarAttr)
+
+where:
+@begin{itemize}
+@item
+Source is the component identifier for this object table.
+@item
+TableName is the name of the attribute table in the database.
+@item
+NOidAttr is the column name of the column of the attribute table which
+  is a foreign key to the object table.
+@item
+RelationsNatCid is the Native ID of the OMS relationship for this
+  attribute.
+@item
+RelationSou is the Source of the OMS relationship for this attribute.
+@item
+TarAttr is the name of the column in the table containing the value of
+  this attribute.
+@end{itemize}
+").
+
+:- dynamic ext_object_table/8.
+:- dynamic ext_functional_attribute_table/4.
+:- dynamic ext_attribute_table/6.
+
+/****************************************************************/
+/*								*/
+/* Objects from an Updatable External Object Data Source 	*/
+/*								*/
+/****************************************************************/
+object_int_udb(Name,NatId,Source) :-
+	ext_object_table(Source,DBName,TableName,NOidAttr,NameAttr,_CP,_MC,_MS),
+	%%writeln(ob_int(Name,NatId,Source)),
+	(nonvar(NatId)
+	 ->	(ob_id_map(_Oid,Name,NatId,Source)
+		 ->	true
+		 ;	odbc_sql_local([NatId],
+				       ['select ',NameAttr,
+					' from ',DBName,'..',TableName,
+					' where ',NOidAttr,' = ?'],
+				       [Name])
+		)
+	 ;	odbc_sql_local([],
+				   ['select ',NOidAttr,',',NameAttr,
+				    ' from ',DBName,'..',TableName],
+				   [NatId,Name])
+	).
+
+retractall_object_int_udb(Oid,Name,NatId,Source) :-
+	ext_object_table(Source,DBName,TableName,NOidAttr,_NameAttr,_CP,_MC,_MS),
+	!,
+	%%writeln(ret_ob_int(Oid,Name,NatId,Source)),
+	retractall(ob_id_map(Oid,Name,NatId,Source)),
+	odbc_sql_local([NatId],
+		       ['delete from',DBName,'..',TableName,
+			' where ',NOidAttr,' = ?'
+			],[]),
+	oms_update_list([ext_update(oms_obj(Oid,Name,NatId,Source))]).
+
+newObject_int_udb(Name,Cid,NatId,Source,Oid) :-
+	nonvar(Source),
+	ext_object_table(Source,DBName,TableName,NOidAttr,NameAttr,CP,MC,MS),
+	!,
+	nonvar(Name), nonvar(NatId), nonvar(Cid),
+	%%writeln(new_ob_int(Name,Cid,NatId,Source)),
+	(CP == con
+	 ->	(class(Cid,_,MC,MS)
+		 ->	true
+		 ;	Cid = unk
+		),
+		(NOidAttr == NameAttr
+		 ->	odbc_sql_local([NatId],
+				       ['insert into ',DBName,'..',TableName,
+					' (',NOidAttr,')',
+					' values (?)'
+					],
+				       [])
+		 ;	odbc_sql_local([NatId,Name],
+				       ['insert into ',DBName,'..',TableName,
+					'(',NOidAttr,',',NameAttr,')',
+					' values (?,?)'
+					],
+				       [])
+		)
+	 ;	class(Cid,_,CNatId,MS),
+		odbc_sql_local([NatId,Name,CNatId],
+				   ['insert into ',DBName,'..',TableName,
+				    '(',NOidAttr,',',NameAttr,')',
+				    ' values (?,?)'
+				    ],
+				   [])
+	),
+	newoid(NatId,Oid,unk,Source,_,_),
+	asserta(ob_id_map(Oid,Name,NatId,Source)),
+	oms_update_list([ext_update(oms_mo(Oid,Cid)),
+			 ext_update(oms_obj(Oid,Name,NatId,Source))]).
+
+/****************************************************************/
+/*								*/
+/* Memberof from an Updatable External Object Data Source 	*/
+/*								*/
+/****************************************************************/
+immediate_memberof_int_udb(NatOID,Source,NatCid,CSou) :-
+	ext_object_table(Source,DBName,TableName,NOidAttr,_NameAttr,CP,MC,CSou),
+	%%writeln(db_im_mo(NatOID,Source,NatCid,CSou)),
+	(nonvar(NatOID)
+	 ->	(CP == con
+		 ->	NatCid=MC
+		 ;	odbc_sql_local([NatOID],
+					   ['select ',MC,
+					    ' from ',DBName,'..',TableName,
+					    ' where ',NOidAttr,' = ?'],
+					   [NatCid])
+		)
+	 ;	(CP == con
+		 ->	NatCid=MC,
+			object(_,_,NatOID,Source)
+		 ;	odbc_sql_local([],
+					   ['select ',NOidAttr,', ',MC,
+					    ' from ',DBName,'..',TableName],
+					   [NatOID,NatCid])
+		)
+	).
+
+%%% retractall_memberof is a noop, since retractall_object will remove it.
+retractall_memberof_int_udb(Oid,Cid) :-
+	nonvar(Oid),
+	object(Oid,_,_NOid,Source),
+	ext_object_table(Source,_DBName,_TableName,_NOidAttr,_NameAttr,_CP,_MC,_CSou),
+	!,
+	oms_update_list([ext_update(oms_mo(Oid,Cid))]).
+
+/****************************************************************/
+/*								*/
+/* Attributes from an Updatable External Object Data Source 	*/
+/*								*/
+/****************************************************************/
+immediate_attribute_int_udb(SNOid,Source,RNOid,RSou,TNCid,TSou) :-
+	ext_object_table(Source,DBName,OTableName,ONOidAttr,_NameAttr,_CP,_MC,_CSou),
+	(ext_functional_attribute_table(Source,RNOid,RSou,TarAttr),
+	 TableName = OTableName,
+	 NOidAttr = ONOidAttr
+	 ;
+	 ext_attribute_table(Source,TableName,NOidAttr,RNOid,RSou,TarAttr)
+	),
+	class(RCid,_,RNOid,RSou),
+	%%writeln(im_at_int(SNOid,RNOid,TNCid)),
+	(nonvar(SNOid)
+	 ->	object(SOid,_,SNOid,Source),
+		schrel(SCid,RCid,Type),
+		memberof(SOid,SCid), \+ SCid = object(_),
+		class(Type,_,TNCid,TSou),
+		odbc_sql_local([SNOid],
+			 ['select ',TarAttr,
+			  ' from ',DBName,'..',TableName,
+			  ' where ',NOidAttr,' = ?'],
+			 [TNCid1]),
+	        coerce_db_type(TNCid,TNCid1)
+	 ;	writeln('ERROR: Attribute_int must have NatId bound'),
+		fail
+	)
+	%%,writeln(im_attr(SNOid,RNOid,TNCid))
+	.
+
+coerce_db_type(atom('NULL'),'NULL') :- !, fail.
+coerce_db_type(atom(Atom),Atom) :- atom(Atom).
+coerce_db_type(integer(Int),Int) :- integer(Int).
+
+retractall_attribute_int_udb(Oid,RCid,TCid) :-
+	ob_id_map(Oid,_Name,NatId,Source), % object must exist
+	ext_object_table(Source,DBName,TableName,NOidAttr,_NameAttr,_CP,_MC,_MS),
+	!,
+	class(RCid,_,RNOid,RSou),
+	%%writeln(ret_at_int(NatId,RNOid,TCid)),
+	(ext_functional_attribute_table(Source,RNOid,RSou,TarAttr),
+	 odbc_sql_local([NatId],
+			['update ',DBName,'..',TableName,
+			 ' set ',TarAttr,' = NULL',
+			 ' where ',NOidAttr,' = ?'],
+			[])
+	 ;
+	 ext_attribute_table(Source,ATableName,ANOidAttr,RNOid,RSou,TarAttr),
+	 (nonvar(TCid)
+	  ->	 coerce_db_type(TCid,DBVal),
+		 odbc_sql_local([NatId,DBVal],
+				['delete from ',DBName,'..',ATableName,
+				 ' where ',ANOidAttr,' = ?',
+				 ' and ',TarAttr,' = ?'],[])
+	  ;	 odbc_sql_local([NatId],
+				['delete from ',DBName,'..',ATableName,
+				 ' where ',ANOidAttr,' = ?'],[])
+	 )
+	),
+	oms_update_list([ext_update(oms_at(Oid,RCid,TCid))]).
+
+newAttribute_int_udb(Oid,RCid,TCid) :-
+	nonvar(Oid),
+	ob_id_map(Oid,_Name,NatId,Source), % object must exist
+	ext_object_table(Source,DBName,TableName,NOidAttr,_NameAttr,_CP,_MC,_MS),
+	!,
+	class(RCid,_,RNOid,RSou),
+	%%writeln(new_at_int(NatId,RNOid,TCid)),
+	coerce_db_type(TCid,TVal),
+	(ext_functional_attribute_table(Source,RNOid,RSou,TarAttr),
+	 odbc_sql_local([TVal,NatId],
+			['update ',DBName,'..',TableName,
+			 ' set ',TarAttr,' = ?',
+			 ' where ',NOidAttr,' = ?'],
+			[])
+	 ;
+	 ext_attribute_table(Source,ATableName,ANOidAttr,RNOid,RSou,TarAttr),
+	 odbc_sql_local([NatId,TVal],
+			['insert into ',DBName,'..',ATableName,
+			 '(',ANOidAttr,',',TarAttr,')',
+			 ' values (?,?)'
+			 ],
+			[])
+	),
+	oms_update_list([ext_update(oms_at(Oid,RCid,TCid))]).
+
+/****************************************************************/
+/*								*/
+/* Helper predicates for Updatable External Object Data Source 	*/
+/*								*/
+/****************************************************************/
+:- import member/2 from basics.
+:- import odbc_sql/3 from odbc_call.
+odbc_sql_local(Input,Statement,Output):- 
+	writeln('SQL_CALL'(Statement)),
+	findall(O,odbc_sql(Input,Statement,O),Outputs1),
+	sort(Outputs1,Outputs),
+	member(Output,Outputs).
+
+assert_ifnew(Head,Body) :-
+	(clause(Head,Body)
+	 ->	true
+	 ;	assert((Head:-Body))
+	).
+
+:- assert_ifnew(object_int(Name,NatID,Source),
+		 object_int_udb(Name,NatID,Source)).
+
+:- assert_ifnew(retractall_object_int(Oid,Name,NatId,Source),
+		 retractall_object_int_udb(Oid,Name,NatId,Source)).
+
+:- assert_ifnew(newObject_int(Name,Cid,NatId,Source,Oid),
+		 newObject_int_udb(Name,Cid,NatId,Source,Oid)).
+
+:- assert_ifnew(immediate_memberof_int(NatOID,Source,NatCid,CSou),
+		 immediate_memberof_int_udb(NatOID,Source,NatCid,CSou)).
+
+:- assert_ifnew(retractall_memberof_int(OID,Cid),
+		 retractall_memberof_int_udb(OID,Cid)).
+
+:- assert_ifnew(immediate_attribute_int(SNOid,Source,RNOid,RSou,TNCid,TSou),
+		 immediate_attribute_int_udb(SNOid,Source,RNOid,RSou,TNCid,TSou)).
+
+:- assert_ifnew(retractall_attribute_int(Oid,RCid,TCid),
+		 retractall_attribute_int_udb(Oid,RCid,TCid)).
+
+:- assert_ifnew(newAttribute_int(Oid,RCid,TCid),
+		 newAttribute_int_udb(Oid,RCid,TCid)).

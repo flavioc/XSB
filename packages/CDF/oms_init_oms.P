@@ -81,6 +81,14 @@
 :- dynamic immediate_attribute_int/6.
 :- dynamic attribute_object_int/6.
 
+:- ensure_loaded(oms_db_updatable).
+:- dynamic oms_extint_updatable/1.
+:- dynamic retractall_object_int/4.
+:- dynamic newObject_int/5.
+:- dynamic retractall_memberof_int/2.
+:- dynamic retractall_attribute_int/3.
+:- dynamic newAttribute_int/3.
+
 :- dynamic cn_id_map/4.
 :- index(cn_id_map/4,[1,3+4],5001).
 
@@ -1554,12 +1562,20 @@ object(Oid,Name,NatId,Source) :-
 	 ; nonvar(NatId),nonvar(Source)
 	 ->	(oms_obj(Oid,Name,NatId,Source)
 		 ->	true
-		 ;	get_object_int(Oid,Name,NatId,Source)
+		 ;	get_object_int_b(Oid,Name,NatId,Source)
  		)
 	 ;	(oms_obj(Oid,Name,NatId,Source)
 		 ;
 		 get_object_int(Oid,Name,NatId,Source)
 		)
+	).
+
+get_object_int_b(Oid,Name,NatId,Source) :-
+	(ob_id_map(Oid,Name,NatId,Source)
+	 ->	true
+	 ;	object_int(Name,NatId,Source),
+	 	newoid(NatId,Oid,unk,Source,_Upd0,_Upd1),
+		asserta(ob_id_map(Oid,Name,NatId,Source))
 	).
 
 get_object_int(Oid,Name,NatId,Source) :-
@@ -1595,6 +1611,11 @@ matching the parameters from oms_obj/4 facts.  It does not affect
 @pred{object_int/3} facts.  ").
 
 retractall_object(Oid,Name,Native_Id,Source) :-
+	ob_id_map(Oid,Name,Native_Id,Source),
+	oms_extint_updatable(Source),
+	!,
+	retractall_object_int(Oid,Name,Native_Id,Source).
+retractall_object(Oid,Name,Native_Id,Source) :-
 	retractallObject(Oid,Name,Native_Id,Source).
 
 retractallObject(Oid,Name,Native_Id,Source) :-
@@ -1609,7 +1630,11 @@ its newly created object ID.
 If the new object @tt{NatOid} is non-atomic, a check is made to ensure
 that it is conformable with @tt{Cid}.").
 
-%%%DSW require a class id and add member (analogous to newClass)
+newObject(Name,Cid,NatOid,Source,Oid) :-
+	nonvar(Source),
+	oms_extint_updatable(Source),
+	!,
+	newObject_int(Name,Cid,NatOid,Source,Oid).
 newObject(Name,Cid,NatOid,Source,Oid) :-
 	newObject(Name,Cid,NatOid,Source,Oid,Updates,[]),
 	oms_update_list(Updates).
@@ -1794,6 +1819,12 @@ retractall_memberof(Oid,Cid) :-
 	retractallMemberof(Oid,Cid).
 
 retractallMemberof(Oid,Cid) :-
+	nonvar(Oid),
+	object(Oid,_,_NOid,Source),
+	oms_extint_updatable(Source),
+	!,
+	retractall_memberof_int(Oid,Cid).
+retractallMemberof(Oid,Cid) :-
 	oms_update_list([retractall(oms_mo(Oid,Cid))]).
 
 :- comment(newMemberof/2, "@tt{newMemberof(CCid,PCid)} adds object
@@ -1943,6 +1974,12 @@ retractall_attribute(Oid,RCid,TCid) :-
 	retractallAttribute(Oid,RCid,TCid).
 
 retractallAttribute(Oid,RCid,TCid) :-
+	nonvar(Oid),
+	ob_id_map(Oid,_Name,_NatId,Source), % object must exist
+	oms_extint_updatable(Source),
+	!,
+	retractall_attribute_int(Oid,RCid,TCid).
+retractallAttribute(Oid,RCid,TCid) :-
 	oms_update_list([retractall(oms_at(Oid,RCid,TCid))]).
 
 :- comment(updateAttribute/5,
@@ -1998,6 +2035,11 @@ tuple as an @pred{oms_at/3} attribute tuple, if it is not already
 implied by the ontology.  Checks attribute facts against schema
 information to make sure the schema constraints are not violated.").
 
+newAttribute(SOid,RCid,TCid) :-
+	object(SOid,_,_,Source),
+	oms_extint_updatable(Source),
+	!,
+	newAttribute_int(SOid,RCid,TCid).
 newAttribute(SOid,RCid,TCid) :-
 	(var(SOid)
 	 ->	oms_error(newAttribute,'Calling newAttribute with variable object')
@@ -2270,6 +2312,16 @@ assert_oms(oms_sc(A,B)) :- !,
 	abolish_relationship_inherits,
 	abolish_schrel_inherits.
 assert_oms(Term) :- asserta(Term).
+
+%% For updates to external DB's, where the update has already been done
+ext_update_oms(oms_rln(_,_,_)) :- !,
+	abolish_relationship_inherits.
+ext_update_oms(oms_schrel(_,_,_)) :- !,
+	abolish_schrel_inherits.
+ext_update_oms(oms_sc(_,_)) :- !,
+	abolish_relationship_inherits,
+	abolish_schrel_inherits.
+ext_update_oms(_).
 
 abolish_relationship_inherits :-
 	abolish_table_pred(relationship_inh_gen(_,_,_)),
