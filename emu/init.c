@@ -354,10 +354,7 @@ char *init_para(int argc, char *argv[])
       }
 
       if (strchr(cmd_line_goal, '.') == NULL) {
-	char tmpbuf[100];
-	sprintf(tmpbuf, "Syntax error in command line goal:\n\t`%s'",
-		cmd_line_goal);
-	xsb_abort(tmpbuf);
+	xsb_exit("\n\nSyntax error in command line goal:\n\t`%s'", cmd_line_goal);
       }
       break;
     case 'h':
