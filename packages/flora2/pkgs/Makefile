@@ -36,7 +36,7 @@ Option = [optimize]
 #
 # Self-make: Version 1.4.1
 #
-PROLOG = ../../../bin/xsb
+PROLOG = none
 PROLOG_COMMAND = $(PROLOG) -i -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
@@ -73,7 +73,6 @@ init:
 	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN), _)." >> cmd...
-	@echo "[flora2],bootstrap_flora." >> cmd...
 
 finish:
 	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> cmd...

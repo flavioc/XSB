@@ -42,7 +42,7 @@ ALLOBJS = standard.P \
           eqlflogic.P \
           patch.P
 
-PROLOG = ../../../bin/xsb
+PROLOG = none
 
 PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 

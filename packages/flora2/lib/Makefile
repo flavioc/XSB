@@ -35,7 +35,7 @@ Option = [optimize]
 #
 # Self-make: Version 1.4.1
 #
-PROLOG = ../../../bin/xsb
+PROLOG = none
 PROLOG_COMMAND = $(PROLOG) -i -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#

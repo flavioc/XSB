@@ -28,7 +28,7 @@
 
 OBJEXT=.xwam
 
-PROLOG = ../../../bin/xsb
+PROLOG = none
 FLORADIR = ..
 
 ALLOBJS = flranswer${OBJEXT} \
