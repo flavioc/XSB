@@ -228,7 +228,7 @@ load_db_schrel(Connection) :-
 	odbc_sql(Connection,[],
 		 'select SNatCid,SSource,RNatCid,RSource,TNatCid,TSource from oms_schrel',
 		 [term(SNCid),term(SSrc),term(RNCid),term(RSrc),term(TNCid),term(TSrc)]),
-	Term = relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	Term = schrel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
 	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
@@ -240,7 +240,7 @@ load_db_strel(Connection) :-
 	odbc_sql(Connection,[],
 		 'select SNatCid,SSource,RNatCid,RSource,TNatCid,TSource from oms_strel',
 		 [term(SNCid),term(SSrc),term(RNCid),term(RSrc),term(TNCid),term(TSrc)]),
-	Term = relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	Term = strel_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
 	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
@@ -355,7 +355,7 @@ dump_db_schrel(Connection,Source) :-
 dump_db_schrel(_Connection,_Source).
 
 dump_db_strel(Connection,Source) :-
-	strel(SCid,RCid,TCid),
+	immediate_strel(SCid,RCid,TCid),
 	cvt_cid_nid(SCid,SNatCid,Source),
 	cvt_cid_nid(RCid,RNatCid,RSource),
 	cvt_cid_nid(TCid,TNatCid,TSource),
@@ -429,7 +429,7 @@ dump_db_attribute_object(_Connection,_Source).
 :- assert_rule_if_nec(immediate_subclass_int(A,B,C,D),immediate_subclass_int_cdb(A,B,C,D)).
 :- assert_rule_if_nec(immediate_relationship_int(A,B,C,D,E,F),immediate_relationship_int_cdb(A,B,C,D,E,F)).
 :- assert_rule_if_nec(immediate_schrel_int(A,B,C,D,E,F),immediate_schrel_int_cdb(A,B,C,D,E,F)).
-:- assert_rule_if_nec(strel_int(A,B,C,D,E,F),strel_int_cdb(A,B,C,D,E,F)).
+:- assert_rule_if_nec(immediate_strel_int(A,B,C,D,E,F),immediate_strel_int_cdb(A,B,C,D,E,F)).
 :- assert_rule_if_nec(object_int(A,B,C),object_int_cdb(A,B,C)).
 :- assert_rule_if_nec(immediate_memberof_int(A,B,C,D),immediate_memberof_int_cdb(A,B,C,D)).
 :- assert_rule_if_nec(immediate_attribute_int(A,B,C,D,E,F),immediate_attribute_int_cdb(A,B,C,D,E,F)).
@@ -456,10 +456,10 @@ assert_rule_if_nec(H,B) :- (clause(H,B) -> true ; assert((H:-B))).
 :- index(calls_immediate_schrel/6,[1+2+3,3+ *(5)+6]).
 :- dynamic cache_immediate_schrel/6.
 :- index(cache_immediate_schrel/6,[1+2+3,3+ *(5)+6]).
-:- dynamic calls_strel/6.
-:- index(calls_strel/6,[1+2+3,3+ *(5)+6]).
-:- dynamic cache_strel/6.
-:- index(cache_strel/6,[1+2+3,3+ *(5)+6]).
+:- dynamic calls_immediate_strel/6.
+:- index(calls_immediate_strel/6,[1+2+3,3+ *(5)+6]).
+:- dynamic cache_immediate_strel/6.
+:- index(cache_immediate_strel/6,[1+2+3,3+ *(5)+6]).
 
 :- dynamic calls_immediate_memberof/4.
 :- index(calls_immediate_memberof/4,[1+2,3+4]).
@@ -490,8 +490,8 @@ a form of cache prefetching.").
 % has_index(cache_immediate_relationship,[3,5,6]).
 % has_index(cache_immediate_schrel,[1,2,3]).
 % has_index(cache_immediate_schrel,[3,5,6]).
-% has_index(cache_strel,[1,2,3]).
-% has_index(cache_strel,[3,5,6]).
+% has_index(cache_immediate_strel,[1,2,3]).
+% has_index(cache_immediate_strel,[3,5,6]).
 % has_index(cache_immediate_memberof,[1,2]).
 % has_index(cache_immediate_memberof,[3,4]).
 % has_index(cache_immediate_attribute,[1,2,3]).
@@ -504,7 +504,7 @@ assoc_pred(cache_class(A,B,C), calls_class(A,B,C), class(A,B,C)).
 assoc_pred(cache_immediate_subclass(A,B,C,D), calls_immediate_subclass(A,B,C,D), immediate_subclass(A,B,C,D)).
 assoc_pred(cache_immediate_relationship(A,B,C,D,E,F), calls_immediate_relationship(A,B,C,D,E,F), immediate_relationship(A,B,C,D,E,F)).
 assoc_pred(cache_immediate_schrel(A,B,C,D,E,F), calls_immediate_schrel(A,B,C,D,E,F), immediate_schrel(A,B,C,D,E,F)).
-assoc_pred(cache_strel(A,B,C,D,E,F), calls_strel(A,B,C,D,E,F), strel(A,B,C,D,E,F)).
+assoc_pred(cache_immediate_strel(A,B,C,D,E,F), calls_immediate_strel(A,B,C,D,E,F), immediate_strel(A,B,C,D,E,F)).
 assoc_pred(cache_immediate_memberof(A,B,C,D), calls_immediate_memberof(A,B,C,D), immediate_memberof(A,B,C,D)).
 assoc_pred(cache_immediate_attribute(A,B,C,D,E,F), calls_immediate_attribute(A,B,C,D,E,F), immediate_attribute(A,B,C,D,E,F)).
 assoc_pred(cache_immediate_attribute_object(A,B,C,D,E,F), calls_immediate_attribute_object(A,B,C,D,E,F), immediate_attribute_object(A,B,C,D,E,F)).
@@ -568,10 +568,10 @@ immediate_schrel_int_cdb(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource) :-
 		      cache_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      oms_schrel,Cx).
 
-strel_int_cdb(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource) :-
+immediate_strel_int_cdb(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource) :-
 	ext_caching(SSource,Cx),
-	db_cache_call(calls_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
-		      cache_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
+	db_cache_call(calls_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
+		      cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 		      oms_strel,Cx).
 
 object_int_cdb(Name,NatOid,Source) :-
@@ -669,13 +669,13 @@ abstract_call(calls_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSo
 abstract_call(calls_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 	      calls_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
 	      cache_immediate_schrel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)).
-abstract_call(calls_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
-	      calls_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
-	      cache_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)) :-
+abstract_call(calls_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
+	      calls_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
+	      cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)) :-
 	nonvar(SNatCid),nonvar(SSource),nonvar(RNatCid),nonvar(RSource),!.
-abstract_call(calls_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
-	      calls_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
-	      cache_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)).
+abstract_call(calls_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
+	      calls_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource),
+	      cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)).
 
 abstract_call(calls_immediate_memberof(NatOid,Source,_NatCid,_CSource),
 	      calls_immediate_memberof(NatOid,Source,NatCid,CSource),
@@ -834,9 +834,9 @@ assert_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
 	ext_caching(SSource,Cx),
 	class(RCid,_,RNatCid,RSource),
 	class(TCid,_,TNatCid,TSource),
-	(cache_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
+	(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
 	 ->	true
-	 ;	assert(cache_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
+	 ;	assert(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
 		odbc_sql(Cx,[term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
 			 'insert into oms_strel (SNatCid,SSource,RNatCid,RSource,TNatCid,TSource) values (?,?,?,?,?,?)',
 			 []
@@ -953,7 +953,7 @@ retractall_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
 		ext_caching(SSource,Cx),
 		class(RCid,_,RNatCid,RSource),
 		class(TCid,_,TNatCid,TSource),
-		retractall(cache_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
+		retractall(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)),
 		odbc_sql(Cx,[term(SNatCid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
 			 'delete from oms_strel where SNatCid=? and SSource=? and RNatCid=? and RSource=? and TNatCid=? and TSource=?',
 			 []
@@ -962,7 +962,7 @@ retractall_oms_int_cdb(oms_strel(SCid,RCid,TCid)) :-
 	 ->	class(SCid,_,SNatCid,SSource),
 		ext_caching(SSource,Cx),
 		class(RCid,_,RNatCid,RSource),
-		retractall(cache_strel(SNatCid,SSource,RNatCid,RSource,_,_)),
+		retractall(cache_immediate_strel(SNatCid,SSource,RNatCid,RSource,_,_)),
 		odbc_sql(Cx,[term(SNatCid),term(SSource),term(RNatCid),term(RSource)],
 			 'delete from oms_strel where SNatCid=? and SSource=? and RNatCid=? and RSource=?',
 			 []

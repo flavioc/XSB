@@ -12,7 +12,7 @@
 	newIrel/3, retractallIrel/3,
 	schrel/3, immediate_schrel/3, 
 	newSchrel/3,  retractallSchrel/3,
-	newStrelName/5, newStrelName/4, strel/3, is_a_strel/1,
+	newStrelName/5, newStrelName/4, strel/3, immediate_strel/3, is_a_strel/1,
 	newStrel/3, retractallStrel/3,
 	object/4, newObject/5, retractallObject/4, updateObject/4,
 	memberof/2, immediate_memberof/2, 
@@ -66,7 +66,7 @@
 :- dynamic class_int/3.
 :- dynamic immediate_subclass_int/4.
 :- dynamic immediate_relationship_int/6.
-:- dynamic strel_int/6.
+:- dynamic immediate_strel_int/6.
 :- dynamic immediate_schrel_int/6.
 :- dynamic immediate_memberof_int/4.
 :- dynamic object_int/3.
@@ -271,7 +271,7 @@ new_oms:-
 	retractall(class_int(_,_,_)),
 	retractall(immediate_subclass_int(_,_,_,_)),
 	retractall(immediate_relationship_int(_,_,_,_,_,_)),
-	retractall(strel_int(_,_,_,_,_,_)),
+	retractall(immediate_strel_int(_,_,_,_,_,_)),
 	retractall(immediate_schrel_int(_,_,_,_,_,_)),
 	retractall(object_int(_,_,_)),
 	retractall(immediate_memberof_int(_,_,_,_)),
@@ -1245,34 +1245,89 @@ is_a_strel(RCid) :-
 	 ;	subclass_fb(RCid,RelsCid), RCid \== RelsCid
 	).
 
-/* TLS: dont really need new def for immediate as there is no inh 
-immediate_strel(SCid,RCid,TCid) :- strel(SCid,RCid,TCid).*/
 
 :- comment(strel/3, "@tt{strel(SCid,RCid,TCid)} defines the semantic
 set-valued relation predicate, where @tt{SCid} is the source class ID,
 @tt{RCid} is the relation class ID, and @tt{TCid} is the target class
 ID. ").
 
-strel(SCid,RCid,TCid) :- oms_strel(SCid,RCid,TCid).
-strel(SCid,RCid,TCid) :- strel_int(SCid,RCid,TCid).
+immediate_strel(SCid,RCid,TCid) :- oms_strel(SCid,RCid,TCid).
+immediate_strel(SCid,RCid,TCid) :- immediate_strel_int(SCid,RCid,TCid).
 
-strel_int(SCid,RCid,TCid) :-
+immediate_strel_int(SCid,RCid,TCid) :-
 	(nonvar(SCid)
 	 ->	(nonvar(RCid)
-		 ->	class(SCid,_,SNatId,SSou),
-			class(RCid,_,RNatId,RSou),
-			strel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
-			class(TCid,_,TNatId,TSou)
-		 ;	class(SCid,_,SNatId,SSou),
-			strel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
-			class(RCid,_,RNatId,RSou),
-			class(TCid,_,TNatId,TSou)
+		 ->	class_cidbound(SCid,_,SNatId,SSou),
+			class_cidbound(RCid,_,RNatId,RSou),
+			immediate_strel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
+			class_nidbound(TCid,_,TNatId,TSou)
+		 ;	class_cidbound(SCid,_,SNatId,SSou),
+			immediate_strel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
+			class_nidbound(RCid,_,RNatId,RSou),
+			class_nidbound(TCid,_,TNatId,TSou)
 		)
-	 ;	strel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
-		class(SCid,_,SNatId,SSou),
-		class(RCid,_,RNatId,RSou),
-		class(TCid,_,TNatId,TSou)
+	 ;	(nonvar(RCid) -> 
+			class_cidbound(RCid,_,RNatId,RSou),
+			immediate_strel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
+			class_nidbound(SCid,_,SNatId,SSou),
+			class_nidbound(TCid,_,TNatId,TSou)
+		; 	immediate_strel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
+			class(SCid,_,SNatId,SSou),
+			class(RCid,_,RNatId,RSou),
+			class(TCid,_,TNatId,TSou) )
 	).
+
+strel(SCid,RCid,TCid) :-
+	var(SCid),var(RCid),var(TCid), !,
+	immediate_strel(SCid,RCid,TCid).
+strel(SCid,RCid,TCid) :-
+	var(RCid), !,  %% relation is free var
+	is_a_strel(RCid),
+	strel_inh_fr(SCid,RCid,TCid).
+strel(SCid,RCid,TCid) :-
+	strel_inh(SCid,RCid,TCid).
+
+:- table strel_inh_fr/3.
+strel_inh_fr(SCid,RCid,TCid) :-
+	OutTerm = strel(SCid,RCid,TCid),
+	copy_term(OutTerm,CopyTerm),
+	strel_inh_gen_fr(SCid,RCid,TCid),
+	(more_specific_strel(OutTerm,CopyTerm) -> fail ; true).
+
+:- table strel_inh/3.
+strel_inh(SCid,RCid,TCid) :-
+	OutTerm = strel(SCid,RCid,TCid),
+	copy_term(OutTerm,CopyTerm),
+	strel_inh_gen(SCid,RCid,TCid),
+	(more_specific_strel(OutTerm,CopyTerm) -> fail ; true).
+
+:- table strel_inh_gen/3.
+strel_inh_gen(SCid,RCid,TCid) :-
+	subclass(RCidP,RCid),
+	strel_inh_gen_fr(SCid,RCidP,TCid).
+
+:- table strel_inh_gen_fr/3.
+strel_inh_gen_fr(SCid,RCid,TCid) :-
+	(var(SCid)
+	 ->	(var(TCid)
+		 ->	immediate_strel(SCid,RCid,TCid)
+		 ;	subclass(TCidP,TCid),
+			immediate_strel(SCid,RCid,TCidP)
+		)
+	 ;      immediate_strel(SCid,RCid,TCidP),
+		(var(TCid)
+		 ->	TCid = TCidP
+		 ;	subclass(TCidP,TCid) % was if_
+		)
+	).
+
+more_specific_strel(OutTerm,CopyTerm) :-
+	CopyTerm = strel(SCid,RCidO,TCidO),
+	OutTerm = strel(SCid,RCid,TCid),
+	strel_inh_gen(SCid,RCidO,TCidO),
+	\+ variant(OutTerm,CopyTerm),	
+	subclass(RCidO,RCid),	
+	subclass(TCidO,TCid).
 
 :- comment(assert_strel/3, "@tt{assert_strel(SCid,RCid,TCid)} adds a
 new set-valued relation tuple to the ontology, if it is not already
@@ -1361,7 +1416,7 @@ immediate_schrel_int(SCid,RCid,TCid) :-
 			class_cidbound(RCid,_,RNatId,RSou),
 	                        immediate_schrel_int(SNatId,SSou,
 				RNatId,RSou,TNatId,TSou),
-			class_cidbound(RCid,_,RNatId,RSou),
+			class_nidbound(SCid,_,SNatId,SSou),
 			class_nidbound(TCid,_,TNatId,TSou)
 		; 	immediate_schrel_int(SNatId,SSou,
 		                                    RNatId,RSou,TNatId,TSou),
@@ -2308,9 +2363,12 @@ abolish_nec_tables(oms_rln(_,_,_)) :- !,
 	abolish_relationship_inherits.
 abolish_nec_tables(oms_schrel(_,_,_)) :- !,
 	abolish_schrel_inherits.
+abolish_nec_tables(oms_strel(_,_,_)) :- !,
+	abolish_strel_inherits.
 abolish_nec_tables(oms_sc(_,_)) :- !,
 	abolish_relationship_inherits,
-	abolish_schrel_inherits.
+	abolish_schrel_inherits,
+	abolish_strel_inherits.
 abolish_nec_tables(_).
 
 abolish_relationship_inherits :-
@@ -2324,6 +2382,12 @@ abolish_schrel_inherits :-
 	abolish_table_pred(schrel_inh_gen_fr(_,_,_)),
 	abolish_table_pred(schrel_inh(_,_,_)),
 	abolish_table_pred(schrel_inh_fr(_,_,_)).
+
+abolish_strel_inherits :-
+	abolish_table_pred(strel_inh_gen(_,_,_)),
+	abolish_table_pred(strel_inh_gen_fr(_,_,_)),
+	abolish_table_pred(strel_inh(_,_,_)),
+	abolish_table_pred(strel_inh_fr(_,_,_)).
 
 %%% Logging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

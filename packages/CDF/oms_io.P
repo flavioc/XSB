@@ -668,7 +668,7 @@ fast_strel_extoms :-
             (is_a_strel(RCid) -> 
    	           oms_update_list([asserta(oms_strel(SCid,RCid,TCid))])
 	        ;  oms_warning(update,('attempt to add a',
-		    ' schrel for class that is not a strel: ',RCid)))),
+		    ' strel for class that is not a strel: ',RCid)))),
 	fail.
 fast_strel_extoms.
 
@@ -994,12 +994,12 @@ merge_intensional_oms :-
 	 ;
 	 retractall(immediate_relationship_int(_,_,_,_,_,_)),
 
-	 strel_int(SCid,RCid,TCid),
+	 immediate_strel_int(SCid,RCid,TCid),
 	 \+oms_strel(SCid,RCid,TCid),
 	 asserta(oms_strel(SCid,RCid,TCid)),
 	 fail
 	 ;
-	 retractall(strel_int(_,_,_,_,_,_)),
+	 retractall(immediate_strel_int(_,_,_,_,_,_)),
 
 	 immediate_schrel_int(SCid,RCid,TCid),
 	 \+oms_schrel(SCid,RCid,TCid),
@@ -1238,10 +1238,9 @@ intensional_head(immediate_subclass_int(_,_,_,_),2).
 intensional_head(immediate_memberof_int(_,_,_,_),2).
 intensional_head(immediate_relationship_int(_,_,_,_,_,_),4).
 intensional_head(immediate_schrel_int(_,_,_,_,_,_),4).
-intensional_head(immediate_schrel_int(_,_,_,_,_,_),4).
+intensional_head(immediate_strel_int(_,_,_,_,_,_),4).
 intensional_head(immediate_attribute_int(_,_,_,_,_,_),4).
 intensional_head(attribute_object_int(_,_,_,_,_,_),4).
-intensional_head(strel_int(_,_,_,_,_,_),4).
 
 end_of_file.
 

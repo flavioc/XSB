@@ -16,7 +16,7 @@ files.
 :- import
 	attribute_object/3, class/4, 
 	immediate_attribute/3, immediate_relationship/3, 
-	immediate_schrel/3, strel/3,
+	immediate_schrel/3, immediate_strel/3,
 	object/4,
 	retractall_attribute/3, retractall_attribute_object/3,
 	retractall_class/4, retractall_memberof/2,
@@ -223,7 +223,7 @@ orphan_schrel(A,B,C) :-
 	\+ (class(A,_,_,_), class(B,_,_,_), class(C,_,_,_)).
 	 
 orphan_strel(A,B,C) :-
-	strel(A,B,C),
+	immediate_strel(A,B,C),
 	\+ (class(A,_,_,_), class(B,_,_,_), class(C,_,_,_)).
 	 
 orphan_attribute(A,B,C) :-

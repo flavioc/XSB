@@ -37,7 +37,7 @@ View.  These include the following predicates which query a CDF state:
     q_memberof/2, q_immediate_memberof/2,
     q_irel/3,q_immediate_irel/3,
     q_schrel/3,q_immediate_schrel/3,
-    q_strel/3, 
+    q_strel/3, q_immediate_strel/3,
     q_attribute/3,q_immediate_attribute/3,
     q_attribute_object/3}
 
@@ -225,6 +225,16 @@ q_strel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):-
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum),
 	strel(Cnum,Rnum,Tnum),
+	q_cvt_cid(From,Fsrc,Cnum),
+	q_cvt_cid(Rel,Rsrc,Rnum),
+	q_cvt_cid(Targ,Tsrc,Tnum).
+
+% + + ?
+q_immediate_strel(id(From,Fsrc),id(Rel,Rsrc),id(Targ,Tsrc)):- 
+	q_cvt_cid(From,Fsrc,Cnum),
+	q_cvt_cid(Rel,Rsrc,Rnum),
+	q_cvt_cid(Targ,Tsrc,Tnum),
+	immediate_strel(Cnum,Rnum,Tnum),
 	q_cvt_cid(From,Fsrc,Cnum),
 	q_cvt_cid(Rel,Rsrc,Rnum),
 	q_cvt_cid(Targ,Tsrc,Tnum).

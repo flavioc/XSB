@@ -158,7 +158,7 @@ oms_clean_strel :-
 		(class_cidbound(A,L1,N1,S1) -> Sou=class(A,L1,N1,S1) ; Sou = class(A,????)),
 		(class_cidbound(B,L2,N2,S2) -> Rel=class(B,L2,N2,S2) ; Rel = class(B,????)),
 		(class_cidbound(C,L3,N3,S3) -> Tar=class(C,L3,N3,S3) ; Tar = class(C,????)),
-		writeq(strel(Sou,Rel,Tar)),nl,
+		writeq(immediate_strel(Sou,Rel,Tar)),nl,
 		fail
 	 ;	fail
 	).
