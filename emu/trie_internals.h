@@ -691,7 +691,7 @@ extern Structure_Manager *smBTHT;
 
 /* Allocating New TSTNs
    -------------------- */
-#define TSTNs_PER_BLOCK   16
+#define TSTNs_PER_BLOCK    K
 extern Structure_Manager smTSTN;
 
 TSTNptr new_tstn(int TrieType, int NodeType, Cell Symbol,
@@ -756,7 +756,7 @@ typedef struct TimeStamp_Index_Node {
 
 /* Memory Management
    ----------------- */
-#define TSI_ENTRIES_PER_BLOCK    16
+#define TSI_ENTRIES_PER_BLOCK  256
 
 extern Structure_Manager smEntry;
 
@@ -810,7 +810,7 @@ typedef struct HashTable_for_TSTNs {
 
 /* Memory Management
    ----------------- */
-#define TSTHTs_PER_BLOCK    K
+#define TSTHTs_PER_BLOCK  16
 
 extern Structure_Manager smTSTHT;
 

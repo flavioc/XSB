@@ -340,7 +340,7 @@ extern ALNptr empty_return();
 
 /* Global Structure Management
    --------------------------- */
-#define SUBGOAL_FRAMES_PER_BLOCK     K
+#define SUBGOAL_FRAMES_PER_BLOCK    16
 
 extern struct Structure_Manager smSF;
 
