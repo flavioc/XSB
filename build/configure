@@ -454,7 +454,7 @@ fi
 SHELL=/bin/sh
 
 ./touch.sh buildxsb.lock
-trap 'rm buildxsb.lock; exit 1' 1 2 15
+trap 'rm buildxsb.lock; exit 1' 0 1 2 3 15
 
 build_dir="`pwd`"
 # strip the last directory and possibly trailing slashes
@@ -1388,7 +1388,7 @@ echo "$ac_t""$__sunpro_c" 1>&6
 
 
 case $CC in
-   gcc)	emuloop_opt_level=-${optimization_level-"O3 -fomit-frame-pointer"}
+   gcc)	emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	c_inline_level="-finline-functions -Winline" 
 	CFLAGS="-Wall"
@@ -1434,7 +1434,7 @@ for ac_kw in inline __inline__ __inline; do
 #include "confdefs.h"
 
 int main() {
-} int $ac_kw foo() {
+} $ac_kw foo() {
 ; return 0; }
 EOF
 if { (eval echo configure:1441: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
@@ -2037,7 +2037,7 @@ else
 int main() {
 
 /* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x = {0,0};
+typedef int charset[2]; const charset x;
 /* SunOS 4.1.1 cc rejects this.  */
 char const *const *ccp;
 char **p;
@@ -2568,7 +2568,7 @@ if test "${perl_support}" = "yes"; then
 fi
 
 # Need to re-state the trap since configure resets it occasionally
-trap 'rm buildxsb.lock; exit 1' 1 2 15
+trap 'rm buildxsb.lock; exit 1' 0 1 2 3 15
 
 
 
@@ -3529,7 +3529,7 @@ test "$no_create" = yes || ${CONFIG_SHELL-/bin/sh} $CONFIG_STATUS || exit 1
 chmod 644 ${arch_config_file}
 
 # Need to re-state the trap since configure resets it occasionally
-trap 'rm buildxsb.lock; exit 1' 1 2 15
+trap 'rm buildxsb.lock; exit 1' 0 1 2 3 15
 
 ############ End of configuration -- the rest is mostly cosmetic ##############
 ###############################################################################
