@@ -325,6 +325,12 @@ change_multifile_directive(':-'(index(P/A, Arg, Size)), ModName,
 	'_$multifile2'(Term, ModName, _), !,
 	get_p_mod(P, ModName, P_Mod).
 
+change_multifile_directive(':-'(index(P/A, Arg)), ModName, 
+			   ':-'(index(P_Mod/A, Arg))) :-
+	functor(Term, P, A),
+	'_$multifile2'(Term, ModName, _), !,
+	get_p_mod(P, ModName, P_Mod).
+
 change_multifile_directive(':-'(index(PAs)), ModName, ':-'(index(NewPAs))) :-
 	!,
 	change_index(PAs, ModName, NewPAs).
