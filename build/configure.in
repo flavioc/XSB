@@ -44,9 +44,8 @@ fi
 
 SHELL=/bin/sh
 
-
-
 build_dir="`pwd`"
+
 # strip the last directory and possibly trailing slashes
 topdir=`echo "${build_dir}" | sed 's,/[[^/]][[^/]]*/*$,,'`
 
@@ -59,55 +58,86 @@ AC_DEFINE(___ALWAYS_TRUE___)
 
 
 AC_ARG_WITH(gcc,
-[  --with-gcc		   use GCC to compile XSB])
+[  --with-gcc                   use GCC to compile XSB])
 AC_ARG_WITH(cc,
-[  --with-cc		   use CC to compile XSB])
+[  --with-cc                    use CC to compile XSB])
 AC_ARG_WITH(acc,
-[  --with-acc		   use ACC to compile XSB])
+[  --with-acc                   use ACC to compile XSB])
 AC_ARG_WITH(os,
-[  --with-os=wind	   build XSB for Windows NT/95/98])
+[  --with-os=wind               build XSB for Windows NT/95/98])
 AC_ARG_WITH(wind,
-[  --with-wind		   build XSB for Windows NT/95/98])
-
+[  --with-wind                  build XSB for Windows NT/95/98])
 AC_ARG_WITH(libwww,
-[  --with-libwww=DIR	   the libwww library used for Web access is at DIR])
-
+[  --with-libwww=DIR            the libwww library used for Web access is at DIR])
+AC_ARG_WITH(dbdrivers,
+[  --with-dbdrivers             configure dbdrivers package])
 AC_ARG_WITH(oracle,
-[  --with-oracle	   compile with support of Oracle])
+[  --with-oracle                compile with support of Oracle])
 AC_ARG_WITH(odbc,
-[  --with-odbc		   compile with support of Oracle])
-
+[  --with-odbc                  compile with support for ODBC])
+AC_ARG_WITH(iodbc,
+[  --with-iodbc                 use iODBC driver manager])
 AC_ARG_WITH(interprolog,
-[  --with-interprolog	   compile with support for InterProlog.
-               It is possible you would need to use --site-includes
-               option to specify locations of jni.h and jni_md.h
-               files])
+[  --with-interprolog           compile with support for InterProlog.
+                                It is possible you would need to use --site-includes
+                                option to specify locations of jni.h and jni_md.h
+                                files])
+AC_ARG_WITH(smodels,
+[  --with-smodels=path          use SMODELS for the XNMR module.
+                                path is the path where smodels has
+                                been installed and compiled])
+AC_ARG_WITH(itkwish,
+[  --with-itkwish=DIR			DIR where the itkwish shell is located])
+
 
 AC_ARG_ENABLE(no-cygwin,
-[  --enable-no-cygwin	    compiled with option -mno-cygwin (default: enabled)], ,
+[  --enable-no-cygwin           compiled with option -mno-cygwin (default: enabled)], ,
                             enable_no_cygwin=yes)
-
 AC_ARG_ENABLE(debug,
-[  --enable-debug	      compile with debugging turned on])
+[  --enable-debug               compile with debugging turned on])
 AC_ARG_ENABLE(debug-verbose,
-[  --enable-debug-verbose     compile with verbose messages])
+[  --enable-debug-verbose       compile with verbose messages])
 AC_ARG_ENABLE(debug-vm,
-[  --enable-debug-vm          compile with VM-level debugging])
+[  --enable-debug-vm            compile with VM-level debugging])
 AC_ARG_ENABLE(debug-assertions,
-[  --enable-debug-assertions  enables several assertions])
+[  --enable-debug-assertions    compile with debug assertions])
 AC_ARG_ENABLE(dwarf-debug,
-[  --enable-dwarf-debug	      compile with extra (macro) debugging turned on])
+[  --enable-dwarf-debug         compile with extra (macro) debugging turned on])
 AC_ARG_ENABLE(oracle-debug,
-[  --enable-oracle-debug      compile with Oracle debugging turned on])
+[  --enable-oracle-debug        compile with Oracle debugging turned on])
 AC_ARG_ENABLE(profile,
-[  --enable-profile	      compile with profiling turned on])
+[  --enable-profile             compile with profiling turned on])
 AC_ARG_ENABLE(optimization,
-[  --disable-optimization     compile with no optimization (default: enabled)],
+[  --disable-optimization       compile with no optimization (default: enabled)],
                  disable_optimization=yes)
-
+AC_ARG_ENABLE(batched-scheduling,
+[  --enable-batched-scheduling  compile using the batched scheduling strategy;
+                                default is the local strategy])
+dnl AC_ARG_ENABLE(local-scheduling,
+dnl [  --enable-local-scheduling  compile using the local scheduling strategy;
+dnl			     default is the batched strategy])
+dnl AC_ARG_ENABLE(local-scheduling,
+dnl [  --with-local-scheduling	compile using the local scheduling strategy;
+dnl			    default is the batched strategy])
+dnl Allow some slack in how local scheduling is specified
+AC_ARG_ENABLE(gc-test,
+[  --enable-gc-test             stress-test the garbage collector (for developers)])
+AC_ARG_ENABLE(demand,
+[  --enable-demand              compile with demand support])
+AC_ARG_ENABLE(jumptable,
+[  --disable-jumptable          disables the jumptable-based emulator loop],
+                   disable_jumptable=yes)
+AC_ARG_ENABLE(mt,
+[  --enable-mt                  compile multithreaded engine])
+AC_ARG_ENABLE(profiling,
+[  --enable-profiling           force gcc to generate information for profiling])
+AC_ARG_ENABLE(electric-fence,
+[  --enable-electric-fence      link with the electric fence malloc debugger])
+                                
 if test "${with_debug}" = "yes" ; then
    enable_debug=yes
 fi
+
 if test "${with_debugging}" = "yes" ; then
    enable_debug=yes
 fi
@@ -236,17 +266,6 @@ dnl Take care of the scheduling strategy
 xsb_scheduling_strategy=local
 enable_local_scheduling=yes
 
-AC_ARG_ENABLE(batched-scheduling,
-[  --enable-batched-scheduling	compile using the batched scheduling strategy;
-                default is the local strategy])
-dnl AC_ARG_ENABLE(local-scheduling,
-dnl [  --enable-local-scheduling  compile using the local scheduling strategy;
-dnl			     default is the batched strategy])
-dnl AC_ARG_ENABLE(local-scheduling,
-dnl [  --with-local-scheduling	compile using the local scheduling strategy;
-dnl			    default is the batched strategy])
-dnl Allow some slack in how local scheduling is specified
-
 if test "${enable_batched_sched}" = "yes" || \
    test "${enable_batched_schedule}" = "yes" || \
    test "${enable_batched}" = "yes" || \
@@ -268,8 +287,6 @@ AC_DEFINE(SLG_GC)
 dnl The following is to be used only by developers for GC debugging
 gc_test=no
 
-AC_ARG_ENABLE(gc-test,
-[  --enable-gc-test	      stress-test the garbage collector (for developers)])
 if test "${with_gc_test}" = "yes" ; then
    enable_gc_test=yes
 fi
@@ -278,8 +295,6 @@ if test "${enable_gc_test}" = "yes" ; then
    gc_test=yes
 fi
 
-AC_ARG_ENABLE(demand,
-[  --enable-demand            compile with demand support])
 demand=no
 if test "${with_demand}" = "yes" ; then
    enable_demand=yes
@@ -665,58 +680,64 @@ if test -n "$with_gcc" ; then
         trutils_opt_level=-${optimization_level-"O1"}
         builtins_opt_level=-${optimization_level-"O1"}
         loader_opt_level=-${optimization_level-"O2"}
-    CFLAGS=""
-    c_inline_level=""
+        CFLAGS=""
+        c_inline_level=""
    else
-    emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-    trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-    builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-    loader_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-    if test -n "$optimization_level"; then
-       c_inline_level=""
-    else
-       c_inline_level="-finline-functions"
-    fi
-    CFLAGS="-Wall -ansi -pedantic"
+        emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+        trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+        builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+        loader_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+        
+        if test -n "$optimization_level"; then
+            c_inline_level=""
+        else
+            c_inline_level="-finline-functions"
+        fi
+        
+        CFLAGS="-Wall -ansi -pedantic"
    fi
 else
- case $CC in
-   gcc) emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-    trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-    builtins_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-    loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
-    if test -n "$optimization_level"; then
-       c_inline_level=""
-    else
-       c_inline_level="-finline-functions"
-    fi
-    CFLAGS="-Wall -ansi -pedantic"
-     ;;
-   cc)	if test "$__sunpro_c" = "no"; then
-       emuloop_opt_level=-${optimization_level-"O4"}
-       trutils_opt_level=-${optimization_level-"O4"}
-       builtins_opt_level=-${optimization_level-"O4"}
-       loader_opt_level=-${optimization_level-"O4"}
-    else
-       # emuloop_opt_level is the optimization level for emuloop.c
-       # Using xO4 would take SunPro more than an hour, hence xO2.
-       emuloop_opt_level=-${optimization_level-"xO2"}
-       trutils_opt_level=-${optimization_level-"xO4"}
-       builtins_opt_level=-${optimization_level-"xO4"}
-       loader_opt_level=-${optimization_level-"xO4"}
-    fi
-    c_inline_level=""
-    CFLAGS=""
-    ;;
-   acc) # acc also seems to choke on high optimization levels for emuloop.c
-    emuloop_opt_level=-${optimization_level-"O2"}
-    trutils_opt_level=-${optimization_level-"O4"}
-    builtins_opt_level=-${optimization_level-"O4"}
-    loader_opt_level=-${optimization_level-"O4"}
-    c_inline_level=""
-    CFLAGS="-Xa"
-    ;;
- esac
+    case $CC in
+        gcc)    emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+                trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+                builtins_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+                loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
+    
+                if test -n "$optimization_level"; then
+                    c_inline_level=""
+                else
+                    c_inline_level="-finline-functions"
+                fi
+                
+                CFLAGS="-Wall -ansi -pedantic"
+        ;;
+        cc) if test "$__sunpro_c" = "no"; then
+                emuloop_opt_level=-${optimization_level-"O4"}
+                trutils_opt_level=-${optimization_level-"O4"}
+                builtins_opt_level=-${optimization_level-"O4"}
+                loader_opt_level=-${optimization_level-"O4"}
+            else
+                # emuloop_opt_level is the optimization level for emuloop.c
+                # Using xO4 would take SunPro more than an hour, hence xO2.
+                emuloop_opt_level=-${optimization_level-"xO2"}
+                trutils_opt_level=-${optimization_level-"xO4"}
+                builtins_opt_level=-${optimization_level-"xO4"}
+                loader_opt_level=-${optimization_level-"xO4"}
+            fi
+            
+            c_inline_level=""
+            CFLAGS=""
+        ;;
+        acc) # acc also seems to choke on high optimization levels for emuloop.c
+            emuloop_opt_level=-${optimization_level-"O2"}
+            trutils_opt_level=-${optimization_level-"O4"}
+            builtins_opt_level=-${optimization_level-"O4"}
+            loader_opt_level=-${optimization_level-"O4"}
+                
+            c_inline_level=""
+            CFLAGS="-Xa"
+        ;;
+    esac
 fi
 
 
@@ -731,27 +752,27 @@ c_site_includes=
 
 dnl --site-static-libraries (multiple dirs)
 if test -n "$site_static_libraries"; then
-  echo "    Adding static libraries to loader flags:"
-  for arg in $site_static_libraries; do
-    case "$arg" in
-      dnl If it is a loader option, just pass it on, don't add -L
-      -* ) ;;
-    dnl strip trailing slashes
-       * ) arg=`echo "-L${arg}" | sed 's,\([[^/]]\)/*$,\1,'` ;;
-    esac
-    ld_site_libraries="${ld_site_libraries} $arg"
-    echo "		$arg"
-  done
+    echo "    Adding static libraries to loader flags:"
+    for arg in $site_static_libraries; do
+        case "$arg" in
+            dnl If it is a loader option, just pass it on, don't add -L
+            -* ) ;;
+            dnl strip trailing slashes
+            * ) arg=`echo "-L${arg}" | sed 's,\([[^/]]\)/*$,\1,'` ;;
+        esac
+        ld_site_libraries="${ld_site_libraries} $arg"
+        echo "		$arg"
+    done
 fi
 
 dnl --site-includes (multiple dirs)
 if test -n "$site_includes"; then
-  echo "    Appending directories to the C include path:"
-  for arg in $site_includes; do
-    arg=`echo "-I${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
-    c_site_includes="${c_site_includes} $arg"
-    echo "		$arg"
-  done
+    echo "    Appending directories to the C include path:"
+    for arg in $site_includes; do
+        arg=`echo "-I${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
+        c_site_includes="${c_site_includes} $arg"
+        echo "		$arg"
+    done
 fi
 
 dnl --with-libwww=DIR
@@ -761,13 +782,15 @@ if test -n "$with_libwww" && test -f $topdir/packages/libwww; then
     cd $build_dir
 fi
 
-cd $topdir/packages/dbdrivers
-./run_configure_scripts --with-odbc-libdir="$with_odbc_libdir" \
-            --with-odbc-incdir="$with_odbc_incdir" \
-            --with-mysql-libdir="$with_mysql_libdir" \
-            --with-mysql-incdir="$with_mysql_incdir" \
-              > /dev/null
-cd $build_dir
+if test -n "${with_dbdrivers}" && test -f $topdir/packages/dbdrivers; then
+    cd $topdir/packages/dbdrivers
+    ./run_configure_scripts --with-odbc-libdir="$with_odbc_libdir" \
+                            --with-odbc-incdir="$with_odbc_incdir" \
+                            --with-mysql-libdir="$with_mysql_libdir" \
+                            --with-mysql-incdir="$with_mysql_incdir" \
+                            > /dev/null
+    cd $build_dir
+fi
 
 
 dnl check for Make feature
@@ -784,21 +807,21 @@ dnl it invokes AC_TRY_RUN without specifying an action for cross-compilation,
 dnl if the second arg to AC_CHECK_SIZEOF is not given.
 AC_CHECK_SIZEOF(long,4)
 if test "${ac_cv_sizeof_long}" = 8 -o "$ac_force64" = "yes" ; then
-   AC_DEFINE(BITS64)
-   machine64bit=yes
-   echo ""
-   echo "    Configuring XSB for a 64 bit machine"
-   echo ""
+    AC_DEFINE(BITS64)
+    machine64bit=yes
+    echo ""
+    echo "    Configuring XSB for a 64 bit machine"
+    echo ""
 fi
 
 if test "${ac_cv_sizeof_long}" = 0; then
-  echo ""
-  echo "*** PANIC!!! Configure tests are not working - compiler $CC is broken!"
-  echo "*** $CC says that sizeof(long)=0 !!!"
-  echo "*** Please check config.log for compilation errors and use a different compiler."
-  echo ""
-  rm -f  buildxsb.lock
-  exit 1
+    echo ""
+    echo "*** PANIC!!! Configure tests are not working - compiler $CC is broken!"
+    echo "*** $CC says that sizeof(long)=0 !!!"
+    echo "*** Please check config.log for compilation errors and use a different compiler."
+    echo ""
+    rm -f  buildxsb.lock
+    exit 1
 fi
 
 # A series of checks for essential libraries.
@@ -812,7 +835,7 @@ AC_CHECK_LIB(socket, main,, have_socket=no)
 
 AC_CHECK_LIB(readline, readline, have_readline=yes)
 if test "$have_readline" = yes ; then
-   AC_DEFINE(HAVE_READLINE)
+    AC_DEFINE(HAVE_READLINE)
 fi
 
 
@@ -871,7 +894,7 @@ LIBS="${ld_site_libraries} ${LIBS}"
 
 
 if test "${enable_oracle_debug+yes}" = "yes" || \
-   test "${enable_oracle_debugging+yes}" = "yes"; then
+    test "${enable_oracle_debugging+yes}" = "yes"; then
     AC_DEFINE(ORACLE_DEBUG)
     with_oracle=yes
     do_debugging=yes
@@ -959,7 +982,7 @@ if test "${with_odbc+set}" = "set"; then
 #
 EOT
 #
-    else
+else
 #	cat <<EOT
 #
 #    Checking whether XSB can be built with ODBC support.
@@ -1011,67 +1034,75 @@ INTERPROLOGOBJ=""
 if test "${with_interprolog+set}" = "set"; then
     AC_DEFINE(XSB_INTERPROLOG)
     with_interprolog=yes
-   INTERPROLOGSRC="interprolog_callback.c"
-   INTERPROLOGOBJ="interprolog_callback.o"
-   dnl also needed to pass jni include file locations to windows make file through site-includes
+    INTERPROLOGSRC="interprolog_callback.c"
+    INTERPROLOGOBJ="interprolog_callback.o"
+    dnl also needed to pass jni include file locations 
+    dnl to windows make file through site-includes
 fi
 
-   win_site_includes=
-   win_ld_site_libraries=
+win_site_includes=
+win_ld_site_libraries=
+
 if test "$with_os" = wind ; then
-dnl --site-includes (multiple dirs)
-if test -n "$site_includes"; then
-  echo "    Appending directories to the C library path:"
-  for arg in $site_includes; do
-    arg=`echo "/I\"${arg}\"" | sed 's,\([[^/]]\)/*$,\1,'`
-    win_site_includes="${win_site_includes} $arg"
-    echo "		\"$arg\""
-  done
-fi
-dnl --site-static-libraries (multiple dirs)
-if test -n "$site_static_libraries"; then
-  echo "    Appending directories to the C include path:"
-  for arg in $site_static_libraries; do
-    arg=`echo "/LIBPATH:\"${arg}\"" | sed 's,\([[^/]]\)/*$,\1,'`
-    win_ld_site_libraries="${win_ld_site_libraries} $arg"
-    echo "		\"$arg\""
-  done
-fi
-if test "${enable_mt}" = "yes" ; then
-    win_ld_site_libraries="pthreadVC1.lib ${win_ld_site_libraries}"
-fi
+    dnl --site-includes (multiple dirs)
+    
+    if test -n "$site_includes"; then
+        echo "    Appending directories to the C library path:"
+        for arg in $site_includes; do
+            arg=`echo "/I\"${arg}\"" | sed 's,\([[^/]]\)/*$,\1,'`
+            win_site_includes="${win_site_includes} $arg"
+            echo "		\"$arg\""
+        done
+    fi
+    
+    dnl --site-static-libraries (multiple dirs)
+    if test -n "$site_static_libraries"; then
+        echo "    Appending directories to the C include path:"
+        for arg in $site_static_libraries; do
+            arg=`echo "/LIBPATH:\"${arg}\"" | sed 's,\([[^/]]\)/*$,\1,'`
+            win_ld_site_libraries="${win_ld_site_libraries} $arg"
+            echo "		\"$arg\""
+        done
+    fi
+    
+    if test "${enable_mt}" = "yes" ; then
+        win_ld_site_libraries="pthreadVC1.lib ${win_ld_site_libraries}"
+    fi
 fi
 
 AC_CHECK_PROG(perl_support, perl, "yes", "no")
 
 if test "${perl_support}" = "yes"; then
-   #old versions of perl don't have Config module
-   # so we check for this as well
-   perl_archlib=`perl -MConfig -e 'print $Config{archlib}'` || perl_support=no
+    #old versions of perl don't have Config module
+    # so we check for this as well
+    perl_archlib=`perl -MConfig -e 'print $Config{archlib}'` || perl_support=no
 fi
-if test "${perl_support}" = "yes"; then
-   perl_cc_compiler=`perl -MConfig -e 'print $Config{cc}'`
-   perl_ccflags=`perl -MConfig -e 'print $Config{ccflags}'`
-   perl_libs=`perl -MConfig -e 'print $Config{libs}'`
 
-   # Perl base revision comes out as 5.0, so we strip .0
-   perl_baserev=`perl -MConfig -e 'print "$Config{baserev}\n"' | sed -e 's/\..*//'`
-   perl_patchlevel=`perl -MConfig -e 'print $Config{patchlevel}'`
+if test "${perl_support}" = "yes"; then
+    perl_cc_compiler=`perl -MConfig -e 'print $Config{cc}'`
+    perl_ccflags=`perl -MConfig -e 'print $Config{ccflags}'`
+    perl_libs=`perl -MConfig -e 'print $Config{libs}'`
+
+    # Perl base revision comes out as 5.0, so we strip .0
+    perl_baserev=`perl -MConfig -e 'print "$Config{baserev}\n"' | sed -e 's/\..*//'`
+    perl_patchlevel=`perl -MConfig -e 'print $Config{patchlevel}'`
 
    # perl support doesn't work with perl < 5.004
    if test $[perl_baserev] -lt 5 ; then
-      perl_support=no
+        perl_support=no
    fi
+   
    if test "$perl_baserev" = "5" -a $[perl_patchlevel] -lt 4  ; then
-      perl_support=no
+        perl_support=no
    fi
 fi
 
 if test "`echo $perl_libs | sed 's/-lgdbm//'`" != "$perl_libs"; then
-   AC_CHECK_LIB(gdbm, main,, perl_support=no)
+    AC_CHECK_LIB(gdbm, main,, perl_support=no)
 fi
+
 if test "`echo $perl_libs | sed 's/-lndbm//'`" != "$perl_libs"; then
-   AC_CHECK_LIB(ndbm, main,, perl_support=no)
+    AC_CHECK_LIB(ndbm, main,, perl_support=no)
 fi
 
 # Need to re-state the trap since configure resets it occasionally
@@ -1094,6 +1125,7 @@ if test "${java_support}" = "yes"; then
 else
     javac=javac
 fi
+
 AC_SUBST(javac)
 AC_SUBST(java_support)
 
@@ -1104,13 +1136,13 @@ java_path=$java_path/include
 #java_path=`echo $java_path | sed 's,bin/javac,include,' `
 
 if test "${with_interprolog}" = "yes"; then
-  if test "${java_support}" != "yes"; then
-    echo "Interprolog not supported due to failure to find Java"
-    with_interprolog=""
-    JAVA_HEADER_PATH=""
-    JAVA_PLATFORM_HEADER_PATH=""
+    if test "${java_support}" != "yes"; then
+        echo "Interprolog not supported due to failure to find Java"
+        with_interprolog=""
+        JAVA_HEADER_PATH=""
+        JAVA_PLATFORM_HEADER_PATH=""
   else
-    JAVA_HEADER_PATH=${java_path}
+        JAVA_HEADER_PATH=${java_path}
         JAVA_PLATFORM_HEADER_PATH=`ls ${JAVA_HEADER_PATH}/*/jni_md.h`
         JAVA_PLATFORM_HEADER_PATH="${JAVA_PLATFORM_HEADER_PATH%jni_md.h}"
     echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
@@ -1129,32 +1161,34 @@ if test "${enable_profile}" = "yes"; then
     AC_DEFINE(PROFILE)
     do_debugging=yes
 fi
+
 if test "${enable_debug}" = "yes"; then
     AC_DEFINE(DEBUG)
 dnl    AC_DEFINE(CP_DEBUG)
     do_debugging=yes
 fi
+
 if test "${enable_debug_verbose}" = "yes"; then
    AC_DEFINE(DEBUG_VERBOSE)
 fi
+
 if test "${enable_debug_vm}" = "yes"; then
    AC_DEFINE(DEBUG_VM)
 fi
+
 if test "${enable_debug_assertions}" = "yes"; then
    AC_DEFINE(DEBUG_ASSERTIONS)
    AC_DEFINE(CP_DEBUG)
 fi
 
-AC_ARG_ENABLE(jumptable,
-[  --disable-jumptable	       Disables the jumptable-based emulator loop],
-                   disable_jumptable=yes)
+
 jumptable=no
 if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
    if test "${disable_jumptable}" != "yes"; then
-     AC_DEFINE(JUMPTABLE_EMULOOP)
-     jumptable=yes
-     CFLAGS=`echo ${CFLAGS} | sed -e "s/-ansi//"`
-     CFLAGS=`echo ${CFLAGS} | sed -e "s/-pedantic//"`
+        AC_DEFINE(JUMPTABLE_EMULOOP)
+        jumptable=yes
+        CFLAGS=`echo ${CFLAGS} | sed -e "s/-ansi//"`
+        CFLAGS=`echo ${CFLAGS} | sed -e "s/-pedantic//"`
    fi
 fi
 
@@ -1168,45 +1202,38 @@ AC_DEFINE(INSN_BLOCKS)
 #	insn_blocks=yes
 #fi
 
-AC_ARG_ENABLE(mt,
-[  --enable-mt                compile multithreaded engine])
 if test "${enable_mt}" = "yes" ; then
-   AC_DEFINE(MULTI_THREAD)
-if test "${host_os}" = "cygwin"; then
-   LDFLAGS="${LDFLAGS} -lpthreadVSE1"
-else
-if test "$with_os" != wind ; then
-   LDFLAGS="${LDFLAGS} -lpthread"
-fi
-fi
-   CFLAGS="${CFLAGS} -D_GNU_SOURCE"
+    AC_DEFINE(MULTI_THREAD)
+    
+    if test "${host_os}" = "cygwin"; then
+        LDFLAGS="${LDFLAGS} -lpthreadVSE1"
+    else
+        if test "$with_os" != wind ; then
+            LDFLAGS="${LDFLAGS} -lpthread"
+        fi
+    fi
+    
+    CFLAGS="${CFLAGS} -D_GNU_SOURCE"
 fi
 
-AC_ARG_ENABLE(profiling,
-[  --enable-profiling	     Forces gcc to generate information for profiling])
 if test "${with_profiling}" = "yes" ; then
     enable_profiling=yes
 fi
 if test "${enable_profiling}" = "yes" ; then
-  CFLAGS="-pg -ggdb -a ${CFLAGS}"
-  LDFLAGS="-pg ${LDFLAGS}"
+    CFLAGS="-pg -ggdb -a ${CFLAGS}"
+    LDFLAGS="-pg ${LDFLAGS}"
 fi
 
-AC_ARG_ENABLE(electric-fence,
-[  --enable-electric-fence    link with the electric fence malloc debugger])
 if test "${with_electric_fence}" = "yes" ; then
-   enable_electric_fence=yes
+    enable_electric_fence=yes
 fi
 if test "${enable_electric_fence}" = "yes" ; then
-   echo "enabling electric fence..."
-   LDFLAGS="${LDFLAGS} -lefence"
-   AC_DEFINE(ELECTRIC_FENCE)
+    echo "enabling electric fence..."
+    LDFLAGS="${LDFLAGS} -lefence"
+    AC_DEFINE(ELECTRIC_FENCE)
 fi
 
 dnl Check for Incr Tcl (used in the XMC gui)
-AC_ARG_WITH(itkwish,
-[  --with-itkwish=DIR	       Path to where the itkwish shell is located]
-)
 
 AC_PATH_PROG(itkwish_path, itkwish, no, $PATH:$with_itkwish)
 if test "${itkwish_path}" = "no"; then
@@ -1234,13 +1261,13 @@ dnl lfcastro
 # Normally, the optimization level will be O4.
 # SGI64 must have O1 and 32 bit SGI's can have O2
 if test "$__sunpro_c" = "no"; then
-   if test "$CC" = "gcc" ; then
-    c_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
-   else
-    c_opt_level=-${optimization_level-"O4"}
-   fi
+    if test "$CC" = "gcc" ; then
+        c_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
+    else
+        c_opt_level=-${optimization_level-"O4"}
+    fi
 else
-   c_opt_level=-${optimization_level-"xO4"}
+    c_opt_level=-${optimization_level-"xO4"}
 fi
 
 
@@ -1259,159 +1286,172 @@ fi
 
 # Set OS-specific variables for XSB
 case "$canonical" in
-     *alpha*)  AC_DEFINE(FOREIGN_ELF)
+    *alpha*)    AC_DEFINE(FOREIGN_ELF)
         ;;
-     *hpux*) AC_DEFINE(HP700)
-         AC_DEFINE(_HPUX_SOURCE)
+    *hpux*)     AC_DEFINE(HP700)
+                AC_DEFINE(_HPUX_SOURCE)
         ;;
-     *linux*) AC_DEFINE(LINUX)
-          AC_DEFINE(_GNU_SOURCE)
-          if test "`uname -r | cut -d "." -f "1 2"`" = "2.6"; then
-            echo "Guessing the tagging for this version of Linux"
-            AC_DEFINE(GENERAL_TAGGING)
-          fi
-          case "${canonical}" in
-           *ppc* | *powerpc* | *m68k* ) AC_DEFINE(MKLINUX_PPC) ;;
-           dnl Linux a.out
-           *)
-               if test "${ac_linuxaout+set}" = "set" ; then
-             AC_DEFINE(LINUX_AOUT)
-               else
-             dnl Linux ELF
-             AC_DEFINE(LINUX_ELF)
-#			  if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set";
-#			  then
-#			   CFLAGS="-m486 ${CFLAGS}"
-#			   AC_DEFINE(USE_BP_LPCREG)
-#			 fi
-             if test "${have_dl}" != "no" ; then
+    *linux*)    AC_DEFINE(LINUX)
+                AC_DEFINE(_GNU_SOURCE)
+                
+                if test "`uname -r | cut -d "." -f "1 2"`" = "2.6"; then
+                    echo "Guessing the tagging for this version of Linux"
+                    AC_DEFINE(GENERAL_TAGGING)
+                fi
+          
+                case "${canonical}" in
+                    *ppc* | *powerpc* | *m68k* ) AC_DEFINE(MKLINUX_PPC) 
+                    ;;
+                    dnl Linux a.out
+                    *)
+                    if test "${ac_linuxaout+set}" = "set" ; then
+                        AC_DEFINE(LINUX_AOUT)
+                    else
+                        dnl Linux ELF
+                        AC_DEFINE(LINUX_ELF)
+#			            if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
+#			              CFLAGS="-m486 ${CFLAGS}"
+#			              AC_DEFINE(USE_BP_LPCREG)
+#			            fi
+                        
+                        if test "${have_dl}" != "no" ; then
+                            AC_DEFINE(FOREIGN_ELF)
+                            LDFLAGS="${LDFLAGS} -ldl"
+                            
+                            if test "$__export_dynamic" = "yes" ; then
+                                LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+                            fi
+                        fi
+                        
+                        if test "${have_pthread}" != "no" ; then
+                            LDFLAGS="${LDFLAGS} -lpthread"
+                        fi
+                    fi
+                ;;
+                esac
+        ;;
+    *freebsd* ) AC_DEFINE(FREEBSD)
                 AC_DEFINE(FOREIGN_ELF)
-                LDFLAGS="${LDFLAGS} -ldl"
-                    if test "$__export_dynamic" = "yes" ; then
-                   LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+                if test "$__export_dynamic" = "yes" ; then
+                    LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
                 fi
-             fi
-             if test "${have_pthread}" != "no" ; then
-                LDFLAGS="${LDFLAGS} -lpthread"
-             fi
-               fi
-           ;;
-          esac
-          ;;
-      *freebsd* )
-    AC_DEFINE(FREEBSD)
-    AC_DEFINE(FOREIGN_ELF)
-    if test "$__export_dynamic" = "yes" ; then
-        LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-    fi
-    if test "${have_dl}" = yes ; then
-        LDFLAGS="${LDFLAGS} -ldl"
-    fi
-    if test "${have_pthread}" != "no" ; then
-        LDFLAGS="${LDFLAGS} -lpthread"
-    fi
-    ;;
-      *-rhapsody* | *-darwin* )
-        AC_DEFINE(DARWIN)
-    # Darwin uses its own format for shared libraries and doesn't
-    # support the dlopen() interface. We need to find a wrapper for that.
-    ;;
-      *sgi* )
-         AC_DEFINE(FOREIGN_ELF)
-         if test "${machine64bit}" = yes ; then
-        AC_DEFINE(SGI64)
-        c_opt_level=-${optimization_level-"O1"}
-        emuloop_opt_level=-${optimization_level-"O1"}
-        trutils_opt_level=-${optimization_level-"O1"}
-        builtins_opt_level=-${optimization_level-"O1"}
-            loader_opt_level=-${optimization_level-"O1"}
-
-        if test ! "$CC" = gcc ; then
-            CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
-            LDFLAGS="-64 -lm"
-            LINKFLAGS="-64"
-            GPPCFLAGS="-64"
-        fi
-         else
-        AC_DEFINE(SGI)
-        c_opt_level=-${optimization_level-"O2"}
-        emuloop_opt_level=-${optimization_level-"O2"}
-        trutils_opt_level=-${optimization_level-"O2"}
-        builtins_opt_level=-${optimization_level-"O2"}
-            loader_opt_level=-${optimization_level-"O1"}
-        if test ! "$CC" = gcc ; then
-            CFLAGS="${CFLAGS} -OPT:Olimit=7500"
-            GPPCFLAGS="-OPT:Olimit=7500"
-        fi
-         fi
-         trutils_opt_level=${c_opt_level}
-        ;;
-      *-solaris* | *-sunos5* ) AC_DEFINE(SOLARIS)
-         LDFLAGS="${LDFLAGS} -lnsl -ldl"
-         if test "${have_dl}" = "no" ; then
-            AC_MSG_ERROR(Your system is missing library: \`dl')
-         fi
-         if test "${have_nsl}" = "no" ; then
-            AC_MSG_ERROR(Your system is missing library: \`nsl')
-         fi
-         if test "${have_pthread}" != "no" ; then
-            LDFLAGS="${LDFLAGS} -lpthread"
-         fi
-         AC_DEFINE(BIG_MEM)
-         AC_DEFINE(FOREIGN_ELF)
-         case "${canonical}" in
-              *i*86-*-*)
-                AC_DEFINE(SOLARIS_x86)
-               ;;
-             *)
-                if test "$CC" = "gcc" ; then
-                   CFLAGS="-msupersparc ${CFLAGS}"
+                
+                if test "${have_dl}" = yes ; then
+                    LDFLAGS="${LDFLAGS} -ldl"
                 fi
-               ;;
-         esac
-         LDFLAGS="-lsocket ${LDFLAGS}"
-         if test "$__export_dynamic" = "yes" ; then
-             LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-         fi
-         if test "${have_socket}" = "no" ; then
-             AC_MSG_ERROR(Your system is missing library: \`socket')
-         fi
+                
+                if test "${have_pthread}" != "no" ; then
+                    LDFLAGS="${LDFLAGS} -lpthread"
+                fi
         ;;
-      *-aix*)  AC_DEFINE(IBM)
-           ;;
-      *-sunos4*)    AC_DEFINE(SUN)
-         AC_DEFINE(FOREIGN_AOUT)
-         CFLAGS="${CFLAGS} -DBIG_MEM"
-         LDFLAGS="${LDFLAGS} -N"
+    *-rhapsody* | *-darwin* )
+                AC_DEFINE(DARWIN)
+                # Darwin uses its own format for shared libraries and doesn't
+                # support the dlopen() interface. We need to find a wrapper for that.
         ;;
-      *-cygwin*) AC_DEFINE(CYGWIN)
+    *sgi* )     AC_DEFINE(FOREIGN_ELF)
+                if test "${machine64bit}" = yes ; then
+                    AC_DEFINE(SGI64)
+                    c_opt_level=-${optimization_level-"O1"}
+                    emuloop_opt_level=-${optimization_level-"O1"}
+                    trutils_opt_level=-${optimization_level-"O1"}
+                    builtins_opt_level=-${optimization_level-"O1"}
+                    loader_opt_level=-${optimization_level-"O1"}
 
-                 real_host_os=cygwin
-         builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-         loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
-         if test "${enable_no_cygwin}" = "yes"; then
-            echo 'Configuring for host system type... no-cygwin'
-            host_os=windows
-            os_type=windows
-            os_version=
-            host_vendor=pc
-            host_cpu=x86
-            configuration_templ=xsb_configuration.in
-            config_dot_h_templ=def_config_mnoc.in
-            GPPWNTFLAG="-D WIN_NT"
+                    if test ! "$CC" = gcc ; then
+                        CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
+                        LDFLAGS="-64 -lm"
+                        LINKFLAGS="-64"
+                        GPPCFLAGS="-64"
+                    fi
+                else
+                    AC_DEFINE(SGI)
+                    c_opt_level=-${optimization_level-"O2"}
+                    emuloop_opt_level=-${optimization_level-"O2"}
+                    trutils_opt_level=-${optimization_level-"O2"}
+                    builtins_opt_level=-${optimization_level-"O2"}
+                    loader_opt_level=-${optimization_level-"O1"}
+                    
+                    if test ! "$CC" = gcc ; then
+                        CFLAGS="${CFLAGS} -OPT:Olimit=7500"
+                        GPPCFLAGS="-OPT:Olimit=7500"
+                    fi
+                fi
+                trutils_opt_level=${c_opt_level}
+        ;;
+    *-solaris* | *-sunos5* ) 
+                AC_DEFINE(SOLARIS)
+                LDFLAGS="${LDFLAGS} -lnsl -ldl"
+                
+                if test "${have_dl}" = "no" ; then
+                    AC_MSG_ERROR(Your system is missing library: \`dl')
+                fi
+                if test "${have_nsl}" = "no" ; then
+                    AC_MSG_ERROR(Your system is missing library: \`nsl')
+                fi
+                
+                if test "${have_pthread}" != "no" ; then
+                    LDFLAGS="${LDFLAGS} -lpthread"
+                fi
+                
+                AC_DEFINE(BIG_MEM)
+                AC_DEFINE(FOREIGN_ELF)
+                
+                case "${canonical}" in
+                    *i*86-*-*) AC_DEFINE(SOLARIS_x86)
+                    ;;
+                    *)
+                        if test "$CC" = "gcc" ; then
+                            CFLAGS="-msupersparc ${CFLAGS}"
+                        fi
+                    ;;
+                esac
+                
+                LDFLAGS="-lsocket ${LDFLAGS}"
+                if test "$__export_dynamic" = "yes" ; then
+                    LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+                fi
+                if test "${have_socket}" = "no" ; then
+                    AC_MSG_ERROR(Your system is missing library: \`socket')
+                fi
+        ;;
+    *-aix*)     AC_DEFINE(IBM)
+        ;;
+    *-sunos4*)  AC_DEFINE(SUN)
+                AC_DEFINE(FOREIGN_AOUT)
+                CFLAGS="${CFLAGS} -DBIG_MEM"
+                LDFLAGS="${LDFLAGS} -N"
+        ;;
+    *-cygwin*)  AC_DEFINE(CYGWIN)
+                real_host_os=cygwin
+                
+                builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+                loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
+                
+                if test "${enable_no_cygwin}" = "yes"; then
+                    echo 'Configuring for host system type... no-cygwin'
+                    host_os=windows
+                    os_type=windows
+                    os_version=
+                    host_vendor=pc
+                    host_cpu=x86
+                    configuration_templ=xsb_configuration.in
+                    config_dot_h_templ=def_config_mnoc.in
+                    GPPWNTFLAG="-D WIN_NT"
 
-            if test "${xsb_scheduling_strategy}" = "local" ; then
-               emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-            fi
+                    if test "${xsb_scheduling_strategy}" = "local" ; then
+                        emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+                    fi
 
-            LDFLAGS="$LDFLAGS -lwsock32 -luser32"
-         fi
+                    LDFLAGS="$LDFLAGS -lwsock32 -luser32"
+                fi
         ;;
 esac
 
 # check for MIPS
 case "$canonical" in
-     *mips*) AC_DEFINE(MIPS_BASED) ;;
+    *mips*) AC_DEFINE(MIPS_BASED) 
+    ;;
 esac
 
 dnl Let autoconf take care of the "inline" and "const" keywords.
@@ -1421,46 +1461,42 @@ if test -z "$with_os" ; then
     AC_C_INLINE
 fi
 
-
-
 # Don't optimize and inline if debugging!!
 if test "${do_debugging}" = "yes"  -o "${disable_optimization}" = "yes" ; then
-   c_opt_level=
-   emuloop_opt_level=
-   trutils_opt_level=
-   builtins_opt_level=
-   loader_opt_level=
-   c_inline_level=
+    c_opt_level=
+    emuloop_opt_level=
+    trutils_opt_level=
+    builtins_opt_level=
+    loader_opt_level=
+    c_inline_level=
 fi
 if test "${do_debugging}" = "yes" ; then
-   if test "${enable_dwarf_debug}" = "yes" ; then
+    if test "${enable_dwarf_debug}" = "yes" ; then
         CFLAGS="${CFLAGS} -gdwarf-2 -g3"
-   else
-    CFLAGS="${CFLAGS} -g"
-    LDFLAGS=" -g ${LDFLAGS}"
-    LINKFLAGS=" -g ${LINKFLAGS}"
-   fi
+    else
+        CFLAGS="${CFLAGS} -g"
+        LDFLAGS=" -g ${LDFLAGS}"
+        LINKFLAGS=" -g ${LINKFLAGS}"
+    fi
 fi
 
 if test "${CC}" = "gcc" -a "${host_os}" != "windows"  ; then
-   dnl gcc is smarter when creating dynamic libraries in Unix
-   LD=gcc
-   LINKFLAGS="-nodefaultlibs -nostartfiles ${LINKFLAGS}"
+    dnl gcc is smarter when creating dynamic libraries in Unix
+    LD=gcc
+    LINKFLAGS="-nodefaultlibs -nostartfiles ${LINKFLAGS}"
 else
-   LD=ld
+    LD=ld
 fi
 
 dnl special flags for simplescalar
-if test "${CC}" = "sslittle-na-sstrix-gcc"
-then
+if test "${CC}" = "sslittle-na-sstrix-gcc"; then
     AC_DEFINE(SIMPLESCALAR)
     CROSS_SIMULATOR="sim-fast"
     c_opt_level=-${optimization_level-"O1"}
     LD=sslittle-na-sstrix-ld
 fi
 
-if test "${CC}" = "arm-linux-gcc"
-then
+if test "${CC}" = "arm-linux-gcc"; then
     LD=arm-linux-ld
 fi
 
@@ -1477,55 +1513,56 @@ fi
 # dnl ODBC library
 if test "${with_odbc}" = yes ; then
    case "$canonical" in
-    *-cygwin*) LDFLAGS="-lodbc32${LDFLAGS}"
-           LINKFLAGS="-lodbc32 ${LINKFLAGS}"
-           ;;
-    *) LDFLAGS="-lodbc${LDFLAGS}"
-       LINKFLAGS="-lodbc ${LINKFLAGS}"
-   esac
+    *-cygwin*)  LDFLAGS="-lodbc32 ${LDFLAGS}"
+                LINKFLAGS="-lodbc32 ${LINKFLAGS}"
+        ;;
+    *)          if test -n "${with_iodbc}"; then
+                    LDFLAGS="-liodbc ${LDFLAGS}"
+                    LINKFLAGS="-liodbc ${LINKFLAGS}"
+                else
+                    LDFLAGS="-lodbc ${LDFLAGS}"
+                    LINKFLAGS="-lodbc ${LINKFLAGS}"
+                fi
+    esac
 fi
 
 # this is needed for -mno-cygwin dll compilation
 DLLTYPE=nodll
 
 if test "${enable_no_cygwin}" = "yes" -a "${real_host_os}" = "cygwin"; then
-   CC="${CC} -mno-cygwin"
-   DLLTYPE=cygdll
+    CC="${CC} -mno-cygwin"
+    DLLTYPE=cygdll
 fi
 
 #These are used to compile the interface with sModels
-AC_ARG_WITH(smodels,
-[  --with-smodels=path		   use SMODELS for the XNMR module.
-                   path is the path where smodels has
-                   been installed and compiled])
-
 if test "x${with_smodels}" = "x"; then
-   echo "    Not using SMODELS"
-   smodels_goal=nope
+    echo "    Not using SMODELS"
+    smodels_goal=nope
 else
-   AC_PROG_CXX
-   smodels_goal=all
-   if test  "$os_type" = "windows"; then
-      XASPLIBNAME=xasppkg.dll
-      XASPDEFFILE=xasppkg.def
-      smoCFLAGS="-I${arch_config_prefix} -I${with_smodels}"
-      smoLDFLAGS="-L${arch_config_prefix}/bin -L${with_smodels}"
-      smoLIB="-lsmodels -lxsb"
-      if test "${enable_no_cygwin}" = "yes"; then
-     CXX="${CXX} -mno-cygwin"
-      fi
-   else
-      XASPLIBNAME=xasppkg.so
-      XASPDEFFILE=
-      smoCFLAGS="-I${arch_config_prefix} -I${with_smodels}"
-      smoLDFLAGS="-L${arch_config_prefix}/bin"
-      smoLIB="${with_smodels}/.libs/libsmodels.a"
-   fi
-AC_SUBST(XASPLIBNAME)
-AC_SUBST(XASPDEFFILE)
-AC_SUBST(smoCFLAGS)
-AC_SUBST(smoLDFLAGS)
-AC_SUBST(smoLIB)
+    AC_PROG_CXX
+    smodels_goal=all
+    if test  "$os_type" = "windows"; then
+        XASPLIBNAME=xasppkg.dll
+        XASPDEFFILE=xasppkg.def
+        smoCFLAGS="-I${arch_config_prefix} -I${with_smodels}"
+        smoLDFLAGS="-L${arch_config_prefix}/bin -L${with_smodels}"
+        smoLIB="-lsmodels -lxsb"
+        if test "${enable_no_cygwin}" = "yes"; then
+            CXX="${CXX} -mno-cygwin"
+        fi
+    else
+        XASPLIBNAME=xasppkg.so
+        XASPDEFFILE=
+        smoCFLAGS="-I${arch_config_prefix} -I${with_smodels}"
+        smoLDFLAGS="-L${arch_config_prefix}/bin"
+        smoLIB="${with_smodels}/.libs/libsmodels.a"
+    fi
+    
+    AC_SUBST(XASPLIBNAME)
+    AC_SUBST(XASPDEFFILE)
+    AC_SUBST(smoCFLAGS)
+    AC_SUBST(smoLDFLAGS)
+    AC_SUBST(smoLIB)
 fi
 
 AC_SUBST(with_smodels)
@@ -1549,13 +1586,13 @@ AC_DEFINE_UNQUOTED(CONFIGURATION, "${canonical}")
 AC_DEFINE_UNQUOTED(FULL_CONFIG_NAME, "${full_config_name}")
 
 if test "${enable_profile+yes}" = "yes"; then
-   compile_mode=profile
+    compile_mode=profile
 elif test "${enable_debug+yes}" = "yes"; then
-   compile_mode=debug
+    compile_mode=debug
 elif test "$disable_optimization" = "yes"; then
-   compile_mode=normal
+    compile_mode=normal
 else
-   compile_mode=optimal
+    compile_mode=optimal
 fi
 
 ### Specify what will be substituted into Makefile, xsb_config.h, etc.
@@ -1593,9 +1630,9 @@ AC_SUBST(LINKFLAGS)
 emumake_goal=doodledandy
 
 if test "${with_oracle}" = "yes" ; then
-   emumake_goal=xsbora
+    emumake_goal=xsbora
 else
-   emumake_goal=xsb
+    emumake_goal=xsb
 fi
 AC_SUBST(emumake_goal)
 
@@ -1712,7 +1749,7 @@ Installation date: ${install_date}
   loader_xsb.c will be built with: 		  ${CC} ${loaderCFLAGS}
   emuloop.c will be built with: 		  ${CC} ${emuloopCFLAGS}
   tr_utils.c will be built with:		  ${CC} ${trutilsCFLAGS}
-  Loader flags: 				  ${LDFLAGS}
+  Loader flags: 				${LDFLAGS}
   Compilation mode:				  ${compile_mode}
   XSB abstract machine: 			  ${engine_mode}
   XSB scheduling strategy:			  ${xsb_scheduling_strategy}
@@ -1725,19 +1762,19 @@ Installation date: ${install_date}
 case "$with_oracle" in
    "yes") echo "  Building with support for ORACLE:		  yes"
     ;;
-   "no") echo "  Building with support for ORACLE:	       NO"
+   "no")  echo "  Building with support for ORACLE:		  NO"
     ;;
 esac
 case "$with_odbc" in
    "yes") echo "  Building with support for ODBC:		  yes"
     ;;
-   "no") echo "  Building with support for ODBC:	       NO"
+   "no")  echo "  Building with support for ODBC:		  NO"
     ;;
 esac
 case "$with_interprolog" in
-   "yes") echo "  Building with support for InterProlog:		  yes"
+   "yes") echo "  Building with support for InterProlog:	  yes"
     ;;
-   "no") echo "  Building with support for InterProlog:	       NO"
+   "no")  echo "  Building with support for InterProlog:	  NO"
     ;;
 esac
 
@@ -1749,29 +1786,30 @@ if test -n "$site_dynamic_libraries" ; then
     echo "			      $arg"
    done
 fi
-
-echo "  POSIX regexp matching libraries:		  $regmatch_support"
-echo "  POSIX wildcard matching libraries:		  $wildmatch_support"
-echo "  Perl support:					  $perl_support"
+echo "  POSIX regexp matching libraries:                $regmatch_support"
+echo "  POSIX wildcard matching libraries:              $wildmatch_support"
+echo "  Perl support:                                   $perl_support"
 
 if test "$perl_support" = "yes"; then
    cat <<EOT
-  Perl archlib: 				  $perl_archlib/CORE
-  Perl C compiler:				  $perl_cc_compiler
-  Perl C flags: 				  $perl_ccflags
-  Perl loader flags:				  $perl_libs
+  Perl archlib:                                   $perl_archlib/CORE
+  Perl C compiler:                                $perl_cc_compiler
+  Perl C flags:                                   $perl_ccflags
+  Perl loader flags:                              $perl_libs
 EOT
 fi
 
-if test -f $topdir/packages/libwww/Installation_summary; then
+if test -n "${with_libwww}" && test -f $topdir/packages/libwww/Installation_summary; then
     cat $topdir/packages/libwww/Installation_summary
 fi
 
-cat $topdir/packages/dbdrivers/Installation_summary
+if test -n "${with_dbdrivers}" && test -f $topdir/packages/dbdrivers/Installation_summary; then
+    cat $topdir/packages/dbdrivers/Installation_summary
+fi
 
 if test -n "$javac"; then
    cat <<EOT
-  Java compiler:				  $javac
+  Java compiler:                                  $javac
 EOT
 fi
 
