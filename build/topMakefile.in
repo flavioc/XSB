@@ -137,15 +137,15 @@ INSTALL_DATA = @INSTALL_DATA@
 
 
 # Normal user
-all: prepare emu gpp remake_dot_O_files configure_packages_src register emu_clean 
+all: prepare emu xsbmod gpp remake_dot_O_files configure_packages_src register emu_clean 
 
 # Developer who just checked out or updated CVS copy
-devel: prepare emu gpp remake_dot_O_files configure_packages_src emu_clean
+devel: prepare emu xsbmod gpp remake_dot_O_files configure_packages_src emu_clean
 
-superdevel: prepare emu gpp remake_dot_O_files_force configure_packages_src emu_clean
+superdevel: prepare emu xsbmod gpp remake_dot_O_files_force configure_packages_src emu_clean
 
 # Developer who needs a quick re-make of the executable
-fast: prepare emu gpp emu_clean
+fast: prepare emu xsbmod gpp emu_clean
 
 prepare:
 	@cd $(src_emudir); \
@@ -171,7 +171,8 @@ emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	                (rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
 
 gpp:
-	cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
+	@echo ""; echo "Making gpp"
+	@cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
 
 # Compiling the interface with SModels.
 smodels:

@@ -37,12 +37,6 @@
 #define CONFIG_INCLUDED
 #endif
 
-/* Defined on DEC Alpha's */
-#undef DECALPHA
-
-/* Defined on DEC stations */
-#undef DECstation
-
 /* HP300 running HP-UX */
 #undef HP300
 
@@ -64,21 +58,15 @@
 /* Use local eval strategy. Default is `batched' */
 #undef LOCAL_EVAL
 
-/* MIPS based machines, such as SGI, DECstation, SONY-NEWS */
+/* MIPS based machines, such as old SGI's */
 #undef MIPS_BASED
 
 /* MK Linux on Power PC */
 #undef MKLINUX_PPC
 
-/* Next Step */
-#undef NeXT
-
 /* Defined, if XSB is built with support for ORACLE DB */
 #undef ORACLE
 #undef ORACLE_DEBUG
-
-/* Defined on Sequent machines */
-#undef SEQUENT
 
 /* Defined on SGI machines */
 #undef SGI
@@ -90,9 +78,6 @@
 
 /* Sun Solaris on Intel */
 #undef SOLARIS_x86
-
-/* Sony mips-based machines */
-#undef SONY_NEWS
 
 /* Old, pre-solaris SunOS */
 #undef SUN

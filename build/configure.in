@@ -860,11 +860,7 @@ LDFLAGS="$LDFLAGS -lm"
 
 # Set OS-specific variables for XSB
 case "$canonical" in
-     *alpha*) AC_DEFINE(DECALPHA)
-	      AC_DEFINE(FOREIGN_ELF)
-		;;
-     *decstation*) AC_DEFINE(DECstation)
-		   AC_DEFINE(MIPS_BASED)
+     *alpha*)  AC_DEFINE(FOREIGN_ELF)
 		;;
      *hpux*) AC_DEFINE(HP700)
 		;;
@@ -890,13 +886,7 @@ case "$canonical" in
 		   ;;
 	      esac
 	      ;;
-      dnl NexTStep
-      *next*) AC_DEFINE(NeXT) ;;
-      *sequent*) AC_DEFINE(SEQUENT) ;;
       *sgi*) 
-	     case "${canonical}" in
-	       *mips*) AC_DEFINE(MIPS_BASED) ;;
-	     esac
 	     AC_DEFINE(FOREIGN_ELF)
 	     if test "${machine64bit}" = yes ; then
 		AC_DEFINE(SGI64)
@@ -926,13 +916,13 @@ case "$canonical" in
 		 if test "${have_nsl}" = "no" ; then
 		    AC_MSG_ERROR(Your system is missing library: \`nsl')
 		 fi
+		 AC_DEFINE(BIG_MEM)
+		 AC_DEFINE(FOREIGN_ELF)
 		 case "${canonical}" in
 		      *i*86-*-*)
 			    AC_DEFINE(SOLARIS_x86)
 			   ;;
 		         *)
-			    AC_DEFINE(BIG_MEM)
-			    AC_DEFINE(FOREIGN_ELF)
 			    if test "$CC" = "gcc" ; then
 			       CFLAGS="${CFLAGS} -msupersparc"
 			    fi
@@ -946,19 +936,17 @@ case "$canonical" in
 			   ;;
 		 esac
 		 ;;
-      # SONY-NEWS
-      *sony*)  case "${canonical}" in
-		    *news*) AC_DEFINE(SONY_NEWS)
-			    AC_DEFINE(MIPS_BASED)
-			;;
-	       esac
-	       ;;
       *-aix*)  AC_DEFINE(IBM) ;;
       *-sunos4*) AC_DEFINE(SUN)
 		 AC_DEFINE(FOREIGN_AOUT)
 		 CFLAGS="${CFLAGS} -DBIG_MEM"
 		 LDFLAGS="${LDFLAGS} -N"
 		;;
+esac
+
+# check for MIPS
+case "$canonical" in
+     *mips*) AC_DEFINE(MIPS_BASED) ;;
 esac
 
 # Don't optimize and inline if debugging!!
