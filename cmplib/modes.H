@@ -57,3 +57,5 @@
 :- import bagPO/3, bagPO1/3 from aggregs.
 :- import subsumes_chk/2 from subsumes.
 :- import get_maximal_calls/1 from usermod.
+
+:- import '_$local_calls'/1, apply/2, (:-)/2, (:-)/1 from usermod.

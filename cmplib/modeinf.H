@@ -75,3 +75,5 @@
 
 %:- export prop_iff/2, prop_iff/1, prop_iff_list/2.
 %:- export prop_if_list/2, prop_if/3, prop_if/2.
+
+:- import apply/2, (:-)/2, (:-)/1 from usermod.
