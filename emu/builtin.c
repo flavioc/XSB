@@ -84,6 +84,8 @@
 #endif
 #include "residual.h"
 #include "tables.h"
+#include "trie_internals.h"
+#include "table_status_defs.h"
 
 #ifdef ORACLE
 #include "oracle_xsb.h"
@@ -230,9 +232,11 @@ DllExport char* call_conv ptoc_string(int regnum)
 
 
 /*
- *  For decoding pointers to objects, currently PSC and PSC-PAIR records.
+ *  For decoding object pointers, like PSC, PSC-PAIR and Subgoal frames.
  */
-#define ptoc_addr(regnum)	ptoc_int(regnum)
+#define ptoc_addr(regnum)	(void *)ptoc_int(regnum)
+#define is_encoded_addr(term)	isinteger(term)
+#define decode_addr(term)	(void *)int_val(term)
 
 
 /*
@@ -307,7 +311,7 @@ inline static void ctop_tag(int regnum, Cell term)
 
 
 /*
- *  For encoding pointers to objects, currently PSC and PSC-PAIR records.
+ *  For encoding object pointer, like PSC, PSC-PAIR and Subgoal frames.
  */
 #define ctop_addr(regnum, val)    ctop_int(regnum, (prolog_int)val)
 
@@ -863,39 +867,39 @@ int builtin_call(byte number)
   
   switch (number) {
   case PSC_NAME: {	/* R1: +PSC; R2: -String */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     ctop_string(2, get_name(psc));
     break;
   }
   case PSC_ARITY: {	/* R1: +PSC; R2: -int */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     ctop_int(2, (Integer)get_arity(psc));
     break;
   }
   case PSC_TYPE: {	/* R1: +PSC; R2: -int */
 			/* type: see psc_xsb.h, `entry_type' field defs */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     ctop_int(2, (Integer)get_type(psc));
     break;
   }
   case PSC_SET_TYPE: {	/* R1: +PSC; R2: +type (int): see psc_xsb.h */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     set_type(psc, ptoc_int(2));
     break;
   }
   case PSC_PROP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     ctop_int(2, (Integer)get_ep(psc));
     break;
   }
   case PSC_SET_PROP: {	       /* R1: +PSC; R2: +int */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     set_ep(psc, (pb)ptoc_int(2));
     break;
   }
   case PSC_SET_SPY: { 	       /* R1: +PSC; R2: +int */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     set_spy(psc, ptoc_int(2));
     break;
   }
@@ -919,7 +923,7 @@ int builtin_call(byte number)
     break;
   case TERM_NEW: {		/* R1: +PSC, R2: -term */
     int disp;
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     sreg = hreg;
     hreg += get_arity(psc) + 1;
     ctop_constr(2, (Pair)sreg);
@@ -1407,18 +1411,18 @@ int builtin_call(byte number)
 
   case PSC_ENV:	{       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     ctop_int(2, (Integer)get_env(psc));
     break;
   }
   case PSC_SPY:	{	/* reg 1: +PSC; reg 2: -int */
 				/* env: 0 = non-spied else spied */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     ctop_int(2, (Integer)get_spy(psc));
     break;
   }
  case PSC_TABLED: {	/* reg 1: +PSC; reg 2: -int */
-    Psc psc = (Psc)ptoc_addr(1);
+    Psc psc = ptoc_addr(1);
     ctop_int(2, (Integer)get_tip(psc));
     break;
   }
@@ -1430,7 +1434,6 @@ int builtin_call(byte number)
   case GET_SUBGOAL_PTR: {	/* reg1: +term; reg2: -subgoal_ptr */
     Psc  psc;
     TIFptr tip;
-    SGFrame subgoal_ptr;
     Cell term = ptoc_tag(1);
 
     if ((psc = term_psc(term)) == NULL) {
@@ -1441,8 +1444,7 @@ int builtin_call(byte number)
     if (tip == NULL) {
       xsb_abort("Predicate %s/%d is not tabled", get_name(psc),get_arity(psc));
     }
-    subgoal_ptr = get_subgoal_ptr(term, tip);
-    ctop_int(2, (Integer)subgoal_ptr);
+    ctop_addr(2, get_subgoal_ptr(term, tip));
     break;
   }
 
@@ -1548,54 +1550,151 @@ int builtin_call(byte number)
     
 /*----------------------------------------------------------------------*/
     
-  case TABLE_STATUS: { /* reg1: +term or +subgoal_ptr; reg2: -status (int) */
-    Psc    psc;
-    TIFptr tip;
-    int    value;
-    SGFrame subgoal_ptr;
-    Cell   term = ptoc_tag(1);
-    if (!isinteger(term)) {
-      if ((psc = term_psc(term)) == NULL) {
-	err_handle(TYPE, 1, "table_status", 2, "callable term", term);
+  case TABLE_STATUS: {
+    /*
+     * Given a tabled goal, report on the following attributes:
+     * 1) Predicate Type: Variant, Subsumptive, or Untabled
+     * 2) Goal Type: Producer, Properly Subsumed Consumer, Has No
+     *      Call Table Entry, or Undefined
+     * 3) Answer Set Status: Complete, Incomplete, or Undefined.
+     *
+     * Valid combinations reported by this routine:
+     * When the predicate is an untabled functor, then only one sequence
+     *   is generated:  Untabled,Undefined,Undefined
+     * Otherwise the following combinations are possible:
+     *
+     * GoalType    AnsSetStatus   Meaning
+     * --------    ------------   -------
+     * producer    complete       call exists; it is a completed producer.
+     *             incomplete     call exists; it is an incomplete producer.
+     *
+     * subsumed    complete       call exists; it's properly subsumed by a
+     *                              completed producer.
+     *             incomplete     call exists; it's properly subsumed by an
+     *                              incomplete producer.
+     *
+     * no_entry    undefined      is a completely new call, not subsumed by
+     *                              any other -> if this were to be called
+     *                              right now, it would be a producing call.
+     *             complete       there is no entry for this call, but if it
+     *                              were to be called right now, it would
+     *                              consume from a completed producer.
+     *                              (The call is properly subsumed.)
+     *             incomplete     same as previous, except the subsuming
+     *                              producer is incomplete.
+     *
+     * Notice that not only can these combinations describe the
+     * characteristics of a found goal, but they are also equipped to
+     * predict how an unfound goal would have been treated had it really
+     * been called.
+     */
+    const int regGoalHandle   = 1;   /* in:  either a term or a SF ptr */
+    const int regPredType     = 2;   /* out: status (as INT) */
+    const int regGoalType     = 3;   /* out: status (as INT) */
+    const int regAnsSetStatus = 4;   /* out: status (as INT) */
+
+    int pred_type, goal_type, answer_set_status;
+    SGFrame goalSF, subsumerSF;
+    Cell goalTerm;
+
+    goalTerm = ptoc_tag(regGoalHandle);
+    if ( is_encoded_addr(goalTerm) ) {
+      goalSF = decode_addr(goalTerm);
+      if ( IsNULL(goalSF) ) {
+	err_handle(TYPE, regGoalHandle, "table_status", 4,
+		   "Valid subgoal frame pointer", goalTerm);
 	return FALSE;	/* fail */
       }
-      tip = get_tip(psc);
-      if (tip == NULL) {
-	ctop_int(2, 0); /* undef */
+      subsumerSF = subg_producer(goalSF);
+      pred_type = TIF_EvalMethod(subg_tif_ptr(subsumerSF));
+    }
+    else {
+      Psc psc;
+      TIFptr tif;
+
+      psc = term_psc(goalTerm);
+      if ( IsNULL(psc) ) {
+	err_handle(TYPE, regGoalHandle, "table_status", 4,
+		   "callable term", goalTerm);
+	return FALSE;	/* fail */
+      }
+      tif = get_tip(psc);
+      if ( IsNULL(tif) ) {
+	ctop_int(regPredType, UNTABLED_PREDICATE);
+	ctop_int(regGoalType, UNDEFINED_CALL);
+	ctop_int(regAnsSetStatus, UNDEFINED_ANSWER_SET);
 	return TRUE;
-      } 
-      subgoal_ptr = get_subgoal_ptr(term, tip);
-    } else {
-      subgoal_ptr = (SGFrame)int_val(term);
+      }
+      pred_type = TIF_EvalMethod(tif);
+      if ( IsVariantPredicate(tif) )
+	goalSF = subsumerSF = get_subgoal_ptr(goalTerm, tif);
+      else {
+	BTNptr leaf;
+	TriePathType path_type;
+
+	leaf =
+	  subsumptive_trie_lookup(get_arity(psc), clref_val(goalTerm) + 1,
+				  TIF_CallTrie(tif), &path_type);
+	if ( path_type == NO_PATH )
+	  goalSF = subsumerSF = NULL;
+	else if ( path_type == VARIANT_PATH ) {
+	  goalSF = CallTrieLeaf_GetSF(leaf);
+	  subsumerSF = subg_producer(goalSF);
+	}
+	else {
+	  goalSF = NULL;
+	  subsumerSF = subg_producer(CallTrieLeaf_GetSF(leaf));
+	}
+      }
     }
-    if ( IsNULL(subgoal_ptr) ) {
-      value = 1; /* no_call_yet */
-    } else {
-      value = (is_completed(subgoal_ptr)) ?  2 : 3;
+    /*
+     * Now both goalSF and subsumerSF should be set for all cases.
+     * Determine status values based on these pointers.
+     */
+    if ( IsNonNULL(goalSF) ) {
+      if ( goalSF == subsumerSF )
+	goal_type = PRODUCER_CALL;
+      else
+	goal_type = SUBSUMED_CALL;
     }
-    ctop_int(2, value);
-    break;
+    else
+      goal_type = NO_CALL_ENTRY;
+
+    if ( IsNonNULL(subsumerSF) ) {
+      if ( is_completed(subsumerSF) )
+	answer_set_status = COMPLETED_ANSWER_SET;
+      else
+	answer_set_status = INCOMPLETE_ANSWER_SET;
+    }
+    else
+      answer_set_status = UNDEFINED_ANSWER_SET;
+
+    ctop_int(regPredType, pred_type);
+    ctop_int(regGoalType, goal_type);
+    ctop_int(regAnsSetStatus, answer_set_status);
+    return TRUE;
   }
+
   case ABOLISH_TABLE_PREDICATE: {
+    const int regTerm = 1;   /* in: term with tabled pred as primary functor */
+    Cell   term;
     Psc    psc;
-    TIFptr tip;
-    Cell   term = ptoc_tag(1);
-    if ((psc = term_psc(term)) == NULL) {
+    TIFptr tif;
+
+    term = ptoc_tag(regTerm);
+    psc = term_psc(term);
+    if ( IsNULL(psc) ) {
       err_handle(TYPE, 1, "abolish_table_pred", 1,
 		 "predicate (specification)", term);
       return FALSE;	/* fail */
     }
-    tip = get_tip(psc);
-    if (tip == NULL) {
-      xsb_abort("Cannot abolish tables of untabled predicate %s/%d",
+    tif = get_tip(psc);
+    if ( IsNULL(tif) ) {
+      xsb_abort("Table error: untabled predicate in argument 1 of %s/%d",
 		get_name(psc), get_arity(psc));
-    } else {
-      BTNptr CallRoot = TIF_CallTrie(tip);
-
-      TIF_CallTrie(tip) = NULL;
-      delete_predicate_table(CallRoot);
     }
-    break;
+    delete_predicate_table(tif);
+    return TRUE;
   }
   case TRIE_ASSERT:
     if (trie_assert())
@@ -1808,7 +1907,7 @@ int builtin_call(byte number)
 #endif
 
   case FORCE_TRUTH_VALUE: { /* +R1: AnsLeafPtr; +R2: TruthValue */
-    BTNptr as_leaf = (BTNptr) ptoc_addr(1);
+    BTNptr as_leaf = ptoc_addr(1);
     char *tmpstr = ptoc_string(2);
     if (!strcmp(tmpstr, "true"))
       force_answer_true(as_leaf);

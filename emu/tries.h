@@ -315,6 +315,7 @@ void	subsumptive_call_search(TabledCallInfo *, CallLookupResults *);
 TSTNptr	subsumptive_answer_search(int,CPtr,struct subgoal_frame *,bool *);
 void	consume_subsumptive_answer(BTNptr,int,CPtr);
 ALNptr	retrieve_unifying_answers(TSTNptr,TimeStamp,int,CPtr);
+void	delete_subsumptive_table(BTNptr);
 
 /*---------------------------------------------------------------------*/
 

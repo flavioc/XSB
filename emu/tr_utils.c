@@ -56,6 +56,7 @@
 #include "io_builtins_xsb.h"
 #include "trassert.h"
 #include "tr_utils.h"
+#include "tst_utils.h"
 #ifdef CHAT
 #include "chat.h"
 #endif
@@ -103,8 +104,8 @@ bool has_unconditional_answers(SGFrame subg)
  * if present, or NULL otherwise.
  */
 
-BTNptr trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
-		   Cell varArray[]) {
+BTNptr variant_trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
+			   Cell varArray[]) {
 
   BTNptr trieNode;      /* Used for stepping down through the trie */
 
@@ -207,6 +208,401 @@ BTNptr trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
   }
 }
 
+/*-----------------------------------------------------------------------*/
+
+/*  #define DEBUG_TRIE_LOOKUP */
+
+#ifdef DEBUG_TRIE_LOOKUP
+static void printTriePathType(TriePathType type, BTNptr leaf) {
+
+  switch (type) {
+  case NO_PATH:
+    printf("No path found :-(\n");
+    break;
+  case VARIANT_PATH:
+    printf("Variant path found: ");
+    triePrintPath(leaf,FALSE);
+    break;
+  case SUBSUMPTIVE_PATH:
+    printf("Subsumptive path found: ");
+    triePrintPath(leaf,FALSE);
+    break;
+  default:
+    printf("What kind of path? (%d)\n", type);
+    break;
+  }
+}
+#endif
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ * Searches the trie branch below a given node for a path which subsumes
+ * a given subterm.  If such a path is discovered, then returns a
+ * pointer to the leaf identifying the path, otherwise returns NULL.
+ * Also indicates in a flag whether a) the path is actually a variant of
+ * the subterm, b) the path properly subsumes the subterm, or c) no path
+ * was found at all.
+ *
+ * Assumes that the subterm has been pushed onto the tstTermStack, and
+ * that the following data structures have been primed for use:
+ * tstTermStackLog, tstTrail, TrieVarBindings[], and VarEnumerator[].
+ */
+
+static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
+
+  Cell subterm, symbol;
+  BTNptr cur, match, var, leaf;
+  int arity, trievar_index;
+  CPtr args;
+  extern bool are_identical_subterms(Cell,Cell);
+
+  /*
+   * Base Case:
+   * ---------
+   * We've paired a subterm with a term in the trie.  How this trie
+   * term relates to the subterm will be set as we unroll the
+   * recursion.  Return a handle for this trie term.
+   */
+  if ( TermStack_IsEmpty ) {
+#ifdef DEBUG_TRIE_LOOKUP
+    printf("Base case: empty TermStack\n");
+#endif
+    return parent;
+  }
+
+  /*
+   * Recursive Case:
+   * --------------
+   * Find a pairing of the next subterm on the TermStack with a symbol
+   * in the trie below 'parent.'  If one is found, then recurse.
+   * Otherwise, signal the failure of the exploration of this branch
+   * by returning NULL.
+   */
+#ifdef DEBUG_TRIE_LOOKUP
+  printf("Recursive case:\n");
+#endif
+  subterm = TermStack_Pop;
+  TermStackLog_PushFrame;
+  deref(subterm);
+  if ( isref(subterm) ) {
+
+    /* Handle Call Variables
+       ===================== */
+
+    if ( IsHashHeader(BTN_Child(parent)) )
+      var = BTHT_BucketArray(BTN_GetHashHdr(parent))[TRIEVAR_BUCKET];
+    else
+      var = BTN_Child(parent);
+
+    if ( ! IsStandardizedVariable(subterm) ) {
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("  Found new call variable: ");
+#endif
+
+      /*
+       * Pair this free call variable with a new trie variable (there is at
+       * most one of these among a set of child nodes).  Mark the call var to
+       * indicate that it has already been seen, in case of repeated
+       * occurrences in the call.  Bind the trie var to the call var and
+       * trail them both.
+       */
+      for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
+	if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
+#ifdef DEBUG_TRIE_LOOKUP
+	  printf("  Binding it to free trievar\n");
+#endif
+	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
+	  /*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
+	  TrieVarBindings[trievar_index] = subterm;
+	  Trail_Push(&TrieVarBindings[trievar_index]);
+	  /*** CallVar_MarkIt(subterm,trievar_index); ***/
+	  StandardizeVariable(subterm,trievar_index);
+	  Trail_Push(subterm);
+	  leaf = sub_trie_lookup(cur,pathType);
+	  if ( IsNonNULL(leaf) ) {
+	    if ( *pathType == NO_PATH )
+	      *pathType = VARIANT_PATH;
+	    return leaf;
+	  }
+	  else {
+#ifdef DEBUG_TRIE_LOOKUP
+	  printf(" Binding to free trievar didn't lead to valid path\n");
+#endif
+	    Trail_PopAndReset;
+	    Trail_PopAndReset;
+	    break;
+	  }
+	}
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("No free trievar here\n");
+#endif
+    }
+    else {
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("  Found repeat call variable\n"
+	     "  Option #1: Look to pair with repeat trie var\n");
+#endif
+      /*
+       * Option 1: Look for a nonlinear trie variable which has already been
+       * --------  bound to this nonlinear call variable earlier in the
+       *           search.  There may be more than one.
+       */
+      for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
+	if ( IsTrieVar(BTN_Symbol(cur)) &&
+	     ! IsNewTrieVar(BTN_Symbol(cur)) ) {
+	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
+	  /***********************************************
+	     could just compare
+	         *(TrieVarBindings[trievar_index]) -to- subterm
+		                  - OR -
+		 TrieVarBindings[trievar_index]
+		   -to- TrieVarBindings[IndexOfStdVar(subterm)]
+	  ***********************************************/
+	  if ( are_identical_subterms(TrieVarBindings[trievar_index],
+				      subterm) ) {
+#ifdef DEBUG_TRIE_LOOKUP
+	    printf("  Found trivar with identical binding\n");
+#endif
+	    leaf = sub_trie_lookup(cur,pathType);
+	    if ( IsNonNULL(leaf) ) {
+	      /*
+	       * This may or may not be a variant path, depending on what has
+	       * happened higher-up in the trie.  We therefore make a
+	       * conservative "guess" and leave it to be determined at that
+	       * point during the recursive unrolling.
+	       */
+	      if ( *pathType == NO_PATH )
+		*pathType = VARIANT_PATH;
+	      return leaf;
+	    }
+#ifdef DEBUG_TRIE_LOOKUP
+	    else
+	      printf("  Pairing with identically bound trievar didn't lead to valid path\n");
+#endif
+	  }
+	}
+      /*
+       * Option 2: Bind the nonlinear call variable with an unbound trie
+       * --------  variable.  There is only one of these in a sibling set.
+       */    
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("  Option #2: Bind new trievar to repeat call var\n");
+#endif
+      for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
+	if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("    Found new trievar; binding it\n");
+#endif
+	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
+	  /*** TrieVar_BindToMarkedCallVar(trievar_index,subterm); ***/
+	  TrieVarBindings[trievar_index] =
+	    TrieVarBindings[IndexOfStdVar(subterm)];
+	  Trail_Push(&TrieVarBindings[trievar_index]);
+	  leaf = sub_trie_lookup(cur,pathType);
+	  if ( IsNonNULL(leaf) ) {
+	    *pathType = SUBSUMPTIVE_PATH;
+	    return leaf;
+	  }
+	  else {
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("    Binding new trievar to repeat callvar didn't lead to valid path\n");
+#endif
+	    Trail_PopAndReset;
+	    break;
+	  }
+	}
+    }
+  }
+  else {
+
+    /* Handle NonVariable Subterms
+       =========================== */
+    /*
+     * The following should trie-encode the first symbol of subterm and
+     * record any recursive components of subterm (for reconstitution later,
+     * if needed).
+     */
+    if ( isconstant(subterm) ) {      /* INT, FLOAT, STRING */
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("  Found constant\n");
+#endif
+      symbol = EncodeTrieConstant(subterm);
+      arity = 0;
+      args = NULL;
+    }
+    else if ( isconstr(subterm) ) {   /* CS */
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("  Found structure\n");
+#endif
+      symbol = EncodeTrieFunctor(subterm);
+      arity = get_arity((Psc)*clref_val(subterm));
+      args = clref_val(subterm) + 1;
+    }
+    else if ( islist(subterm) ) {     /* LIST */
+#ifdef DEBUG_TRIE_LOOKUP
+      printf("  Found list\n");
+#endif
+      symbol = EncodeTrieList(subterm);
+      arity = 2;
+      args = clref_val(subterm);
+    }
+    else {
+      Trail_Unwind_All;
+      xsb_abort("sub_trie_lookup(): bad tag");
+      *pathType = NO_PATH;
+      return NULL;
+    }
+
+    /*
+     * Determine the node chains below 'parent' where 'symbol' and trie
+     * variables may exist.
+     */
+    if ( IsHashHeader(BTN_Child(parent)) ) {
+      BTNptr *buckets;
+      BTHTptr ht;
+
+      ht = BTN_GetHashHdr(parent);
+      buckets = BTHT_BucketArray(ht);
+      match = buckets[TrieHash(symbol,BTHT_GetHashSeed(ht))];
+      var = buckets[TRIEVAR_BUCKET];
+    }
+    else  /* the children are arranged as a simple chain of nodes */
+      var = match = BTN_Child(parent);
+
+    /*
+     * Option 1: Look for an identical symbol in the trie.  There is at most
+     * --------  one of these among a set of child nodes.
+     */
+#ifdef DEBUG_TRIE_LOOKUP
+    printf("  Nonvar Option #1: Find matching symbol in trie\n");
+#endif
+    for ( cur = match;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
+      if ( symbol == BTN_Symbol(cur) ) {
+	CPtr origTermStackTop = tstTermStack.top;
+#ifdef DEBUG_TRIE_LOOKUP
+	printf("  Found matching trie symbol\n");
+#endif
+	TermStack_PushLowToHighVector(args,arity);
+	leaf = sub_trie_lookup(cur,pathType);
+	if ( IsNonNULL(leaf) ) {
+	  if ( *pathType == NO_PATH )
+	    *pathType = VARIANT_PATH;
+	  return leaf;
+	}
+	else {
+#ifdef DEBUG_TRIE_LOOKUP
+	  printf("  Matching trie symbol didn't lead to valid path\n");
+#endif
+	  tstTermStack.top = origTermStackTop;
+	  break;
+	}
+      }
+
+    /*
+     * Option 2: Look for a trie variable which has already been bound to
+     * --------  an identical symbol during this process.
+     */
+
+#ifdef DEBUG_TRIE_LOOKUP
+    printf("  Nonvar Option #2: Match with previously bound trievar\n");
+#endif
+    for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
+      if ( IsTrieVar(BTN_Symbol(cur)) && ! IsNewTrieVar(BTN_Symbol(cur)) ) {
+	trievar_index = DecodeTrieVar(BTN_Symbol(cur));
+	if ( are_identical_subterms(TrieVarBindings[trievar_index],
+				    subterm) ) {
+#ifdef DEBUG_TRIE_LOOKUP
+	  printf("  Found trievar bound to matching symbol\n");
+#endif
+	  leaf = sub_trie_lookup(cur,pathType);
+	  if ( IsNonNULL(leaf) ) {
+	    *pathType = SUBSUMPTIVE_PATH;
+	    return leaf;
+	  }
+#ifdef DEBUG_TRIE_LOOKUP
+	  else
+	    printf("  Bound trievar didn't lead to valid path\n");
+#endif
+	}
+      }
+
+    /*
+     * Option 3: Bind the symbol with an unbound trie variable.
+     * --------
+     */
+#ifdef DEBUG_TRIE_LOOKUP
+    printf("  Nonvar Option #3: Bind free trievar to symbol\n");
+#endif
+    for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
+      if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
+#ifdef DEBUG_TRIE_LOOKUP
+	printf("  Binding free trievar to symbol\n");
+#endif
+	trievar_index = DecodeTrieVar(BTN_Symbol(cur));
+	/*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
+	TrieVarBindings[trievar_index] = subterm;
+	Trail_Push(&TrieVarBindings[trievar_index]);
+	leaf = sub_trie_lookup(cur,pathType);
+	if ( IsNonNULL(leaf) ) {
+	  *pathType = SUBSUMPTIVE_PATH;
+	  return leaf;
+	}
+	else {
+#ifdef DEBUG_TRIE_LOOKUP
+	  printf("Binding free trievar to symbol didn't lead to valid path\n");
+#endif
+	  Trail_PopAndReset;
+	  break;  /* only one unbound trie variable per sibling set */
+	}
+      }
+  }
+
+  /* Nothing worked, so fail.  Make stacks same as when this was called. */
+#ifdef DEBUG_TRIE_LOOKUP
+    printf("All options failed!\n");
+#endif
+  TermStackLog_PopAndReset;
+  *pathType = NO_PATH;
+  return NULL;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ * Given a term as an arity and array of subterms, determines whether
+ * there exists a subsuming path in the given trie.  A pointer to the
+ * leaf of the discovered path, if any, is returned, and a flag is set
+ * to indicate how the path relates to the subterm.
+ */
+
+BTNptr subsumptive_trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
+			       TriePathType *path_type) {
+
+  BTNptr leaf;
+
+  *path_type = NO_PATH;
+  if ( IsNULL(trieRoot) || IsNULL(BTN_Child(trieRoot)) )
+    return NULL;
+
+  else if ( nTerms > 0) {
+    Trail_ResetTOS;
+    TermStackLog_ResetTOS;
+    TermStack_ResetTOS;
+    TermStack_PushLowToHighVector(termVector,nTerms);
+    leaf = sub_trie_lookup(trieRoot, path_type);
+    Trail_Unwind_All;
+#ifdef DEBUG_TRIE_LOOKUP
+    printTriePathType(*path_type, leaf);
+#endif
+    return leaf;
+  }
+  else {
+    /* Error in function call */
+    return NULL;
+  }
+}
+
 /*----------------------------------------------------------------------*/
 
 SGFrame get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
@@ -215,8 +611,8 @@ SGFrame get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
   BTNptr call_trie_leaf;
 
   arity = get_arity(term_psc(callTerm));
-  call_trie_leaf = trie_lookup(arity, clref_val(callTerm) + 1,
-			       TIF_CallTrie(pTIF), NULL);
+  call_trie_leaf = variant_trie_lookup(arity, clref_val(callTerm) + 1,
+				       TIF_CallTrie(pTIF), NULL);
   if ( IsNonNULL(call_trie_leaf) )
     return CallTrieLeaf_GetSF(call_trie_leaf);
   else
@@ -326,13 +722,13 @@ SGFrame get_call(Cell callTerm, Cell *retTerm) {
     xsb_abort("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
 
   arity = get_arity(term_psc(callTerm));
-  call_trie_leaf = trie_lookup(arity, clref_val(callTerm) + 1,
-			       TIF_CallTrie(tif), callVars);
+  call_trie_leaf = variant_trie_lookup(arity, clref_val(callTerm) + 1,
+				       TIF_CallTrie(tif), callVars);
   if ( IsNULL(call_trie_leaf) )
     return NULL;
   else {
     sf = CallTrieLeaf_GetSF(call_trie_leaf);
-    if ( ! SubgoalHasOwnAnswerSet(sf) )
+    if ( IsConsumerSF(sf) )
       construct_answer_template(callTerm, subg_producer(sf), callVars);
     *retTerm = build_ret_term(callVars[0],&callVars[1]);
     return sf;
@@ -386,28 +782,16 @@ static void free_trie_ht(BTHTptr ht) {
   SM_DeallocateStruct(*smBTHT,ht);
 }
 
-/*----------------------------------------------------------------------*/
-/* Given the address of a node, delete it and all nodes below it in the trie */
-/*----------------------------------------------------------------------*/
 
-/*
- * Called only by builtin ABOLISH_TABLE_PREDICATE with the root of a
- * Call Trie.
- */
+static void delete_variant_table(BTNptr x) {
 
-void delete_predicate_table(BTNptr x)
-{
   struct freeing_stack_node *node_stk_top = 0, *call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
   BTHTptr ht;
 
-  if (x == NULL)
-    return;
 
-  if ( ! ( IsTrieRoot(x) && IsInCallTrie(x) ) ) {
-    xsb_dbgmsg("DELETE_PREDICATE_TABLE: object is not the root of a call trie");
+  if ( IsNULL(x) )
     return;
-  }
 
   push_node(x);
   while (node_stk_top != 0) {
@@ -464,6 +848,19 @@ void delete_predicate_table(BTNptr x)
       SM_DeallocateStruct(*smBTN,node);
     }
   }
+}
+
+/*----------------------------------------------------------------------*/
+/* Delete the table for a given tabled predicate, specified as a TIF    */
+/*----------------------------------------------------------------------*/
+
+void delete_predicate_table(TIFptr tif) {
+
+  if ( IsVariantPredicate(tif) )
+    delete_variant_table(TIF_CallTrie(tif));
+  else
+    delete_subsumptive_table(TIF_CallTrie(tif));
+  TIF_CallTrie(tif) = NULL;
 }
 
 /*----------------------------------------------------------------------*/
@@ -690,7 +1087,9 @@ int trie_op_size, trie_node_size, trie_hh_size;
   delete_trie_hh[trie_hh_top] = hh;\
 }  
 
+
 void delete_trie(BTNptr iroot) {
+
   BTNptr root, sib, chil;  
   int trie_op_top = 0;
   int trie_node_top = 0;
