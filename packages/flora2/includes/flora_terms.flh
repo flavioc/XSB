@@ -174,6 +174,8 @@
 #define FL_NOHILOGALL		flPredicateAll
 #define FL_HILOGTABLE		flHilogTable
 #define FL_EQUALITY		flEquality
+#define FL_ABOLISH		flAbolish
+#define FL_IN			(in)
 
 #define FL_MIN			flMin
 #define FL_MAX			flMax
@@ -217,6 +219,9 @@
   FLOPDEF(Predecence,Associativity,Op)
   FLINDEX(Functor,Arity,Name)
   FLHILOGTABLE(Arity)
+  FLEQUALITY(Type)
+  FLABOLISH(FunctArityList)
+  FLABOLISH(FunctArityList,Module)
 
   FLVAR(Name,Index)
   FLATOM(Atom)
@@ -267,6 +272,7 @@
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
 #define FLEQUALITY		flequality
+#define FLABOLISH		flabolish
 
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
@@ -315,6 +321,7 @@
 #define PRIMPORT		primport
 #define PRINDEX			prindex
 #define PRHILOGTABLE		prhilogtable
+#define PRTHISMODULE		prthismodule
 
 #define PRATOM			pratom
 #define PRNUMBER		prnumber
@@ -403,6 +410,9 @@
 #define FLLIBDYNMOD		fllibdynmod
 #define FLLIBMODLIT		fllibmodlit
 #define FLLIBMODOBJ		fllibmodobj
+
+#define FLLIBEQUALITY		fllibequality
+#define FLLIBABOLISH		fllibabolish
 
 
 /****************************************************************************

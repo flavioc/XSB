@@ -1,0 +1,96 @@
+/* File:      flrabolish.P
+**
+** Author(s): Guizhen Yang 
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "flora_terms.flh"
+
+
+:- import abolish/1 from assert.
+
+:- import findall/3 from setof.
+
+:- import storage_find_fact/2, storage_delete_fact/3 from storage.
+
+:- import flora_register_syslib/1 from flrlibman.
+
+:- import flora_check_workspace/1 from flrutils.
+
+:- import flora_error_line/4 from flrprint.
+
+:- import flora_wspredicate/4 from flrwrapper.
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBABOLISH).
+
+
+/*****************************************************************************
+  fllibabolish
+*****************************************************************************/
+fllibabolish(FAList) :- fllibabolish(FAList,FLORA_DEFAULT_WORKSPACE).
+
+fllibabolish(FAList,WS) :-
+	( flora_check_workspace(WS) ->
+	    flora_abolish(FAList,WS)
+	;
+	  abort
+	).
+
+
+/*****************************************************************************
+  flora_abolish(+FAList,+WS)
+*****************************************************************************/
+flora_abolish([],_WS) :- !.
+
+flora_abolish([F/A],WS) :-
+	( not atom(F) ->
+	    flora_error_line('invalid functor to be abolished'),
+	    abort
+
+	; not integer(A) ->
+	    flora_error_line('invalid predicate arity to be abolished'),
+	    abort
+	;
+	  flora_wspredicate(F,[],WS,P),
+	  abolish(P/A),
+	  functor(Fact,P,A),
+	  findall(Fact,storage_find_fact(FLORA_STORAGE_NAME,Fact),FactList),
+	  flora_storage_abolishlist(FactList)
+	).
+
+
+/*****************************************************************************
+  flora_storage_abolishlist(+FactList)
+*****************************************************************************/
+flora_storage_abolishlist([]) :- !.
+
+flora_storage_abolishlist([F|L]) :-
+	!,
+	storage_delete_fact(FLORA_STORAGE_NAME,F,_Deleted),
+	flora_storage_abolishlist(L).
