@@ -119,6 +119,9 @@ term_to_codes(Term,Var0,Var,Codes0,Codes) :-
 	 ;	atom(Term)
 	 ->	Var = Var0,
 		extern_atom_codes(Term,Codes0,Codes)
+	 ;	float(Term)
+	 ->	Var = Var0,
+		extern_float_codes(Term,Codes0,Codes)
 	 ;	is_list(Term)
 	 ->	Term=[Term1|Terms],
 		Codes0 = [0'[|Codes1],
@@ -170,11 +173,48 @@ copy_double_quote([C|Cs],[C|Cs0],Cs1) :-
 	 ;	copy_double_quote(Cs,Cs0,Cs1)
 	).
 
+extern_float_codes(Float,Codes0,Codes) :-
+	Log10 is log(10),
+	Exp is floor(log(Float)/Log10-6), % to get 6 or 7 digits, Put . Exp to left from end
+	DigitsInt is floor(Float/exp(Exp*Log10)),
+	number_codes(DigitsInt,Digits),
+	length(Digits,Length),
+	Dist is Length+Exp,
+	(Dist > 0
+	 ->	place_decimal(Digits,Dist,Codes0,Codes)
+	 ;	Codes0 = [0'0,0'.|Codes1],
+		prefix_decimal(Digits,Dist,Codes1,Codes)
+	).
+
+place_decimal([],Dist,Codes0,Codes) :-
+	(Dist > 0
+	 ->	Dist1 is Dist - 1,
+		Codes0 = [0'0|Codes1],
+		place_decimal([],Dist1,Codes1,Codes)
+	 ;	Codes0 = [0'.,0'0|Codes]
+	).
+place_decimal([D|Digits],Dist,Codes0,Codes) :-
+	(Dist > 0
+	 ->	Dist1 is Dist - 1,
+		Codes0 = [D|Codes1],
+		place_decimal(Digits,Dist1,Codes1,Codes)
+	 ; 	append([0'.,D|Digits],Codes,Codes0)
+	).
+		
+prefix_decimal(Digits,Dist,Codes0,Codes) :-
+	(Dist =:= 0
+	 ->	append(Digits,Codes,Codes0)
+	 ;	Dist1 is Dist + 1,
+		Codes0 = [0'0|Codes1],
+		prefix_decimal(Digits,Dist1,Codes1,Codes)
+	).
+
+
 /***************************************************************/
 /*                                                             */
 /* codes_to_term (atom_to_term) convert a list of codes (atom) */
 /* representing a canonical term into an XSB term.             */
-/* (It does NOT handle floats.)                                */
+/* (It handles floats only in xx.xxx form.)                    */
 /*                                                             */
 /***************************************************************/
 
@@ -237,15 +277,34 @@ next_token(Rest0,Rest,ST0,ST,Tok) :-
 	 ->	ST = ST0,
 		scan_quoted_con(Rest1,Rest,Codes,[]),
 		atom_codes(Tok,Codes)
+	 ; C =:= 0'.
+	 ->	ST = ST0,
+		scan_decimal(Rest1,Rest,1.0,0.0,Tok)
 	 ;	ST = ST0,
 		scan_to_delim(Rest0,Rest,Codes,[]),
 		atom_codes(Tok,Codes)
 	).
 
 scan_number(Rest0,Rest,Val0,Val) :-
+	(Rest0 = [D|Rest1]
+	 ->	(D >= 0'0, D =< 0'9
+		 ->	Val1 is 10*Val0+D-0'0,
+			scan_number(Rest1,Rest,Val1,Val)
+		 ; D =:= 0'.
+		 ->	Val1 is float(Val0),
+			scan_decimal(Rest1,Rest,1.0,Val0,Val)
+		 ;	Rest = Rest0,
+			Val = Val0
+		)
+	 ;	Rest = Rest0,
+		Val = Val0
+	).
+
+scan_decimal(Rest0,Rest,Dec,Val0,Val) :-
 	(Rest0 = [D|Rest1], D >= 0'0, D =< 0'9
-	 ->	Val1 is 10*Val0+D-0'0,
-		scan_number(Rest1,Rest,Val1,Val)
+	 ->	Dec1 is Dec / 10,
+		Val1 is Val0 + (D - 0'0) * Dec1,
+		scan_decimal(Rest1,Rest,Dec1,Val1,Val)
 	 ;	Rest = Rest0,
 		Val = Val0
 	).
@@ -292,5 +351,27 @@ scan_blanks(Rest0,Rest) :-
 	 ->	scan_blanks(Rest1,Rest)
 	 ;	Rest = Rest0
 	).
+
+/***************************************************************/
+/*                                                             */
+/* read_atom_to_term converts an atom containing the           */
+/* characters of a valid readable term (without a terminating  */
+/* '.') to a term (3-arg returns variable names).  It uses     */
+/* file_read_foe, using the current operators.  It fails if    */
+/* there is an error.                                          */
+/*                                                             */
+/***************************************************************/
+
+read_atom_to_term(Atom,Term) :-
+	read_atom_to_term(Atom,Term,_).
+
+read_atom_to_term(Atom,Term,Vars) :-
+	file_open([Atom,'.'],sr,FileDes),
+	(file_read_foe(FileDes,Term,Vars)
+	 ->	file_close(FileDes)
+	 ;	file_close(FileDes),
+		fail
+	).
+		  
 
 /* ---------------------- end of file string.P ------------------------ */
