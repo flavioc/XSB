@@ -32,11 +32,12 @@
 
 %% Construct the file cc/xsb_libwww.H on the fly
 make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
-	slash(Slash),
-	xsb_configuration(configuration, XSBconfiguration),
-	package_configuration(dir(libwww), LibwwwDir),
-	fmt_write_string(LD_directives_file,
-			 '%s%scc%sxsb_libwww.H', f(LibwwwDir, Slash, Slash)),
+    slash(Slash),
+    xsb_configuration(configuration, XSBconfiguration),
+    package_configuration(dir(libwww), LibwwwDir),
+    fmt_write_string(LD_directives_file,
+		     '%s%scc%sxsb_libwww.H', f(LibwwwDir, Slash, Slash)),
+    telling(OldTell),
     tell(LD_directives_file),
     writeln('%% This file is generated on-the-fly by libwwwconfig.P'),
     writeln('%% Do not edit--any changes will be written over.'),
@@ -44,9 +45,10 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
     write('%% XSB CC:                '), writeln(CC),
     write('%% Libwww compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
-    writeln(':- export do_libwww_fetch_url___/4, do_libwww_form_request___/4.'),
+    writeln(':- export do_libwww_fetch_url___/4,do_libwww_form_request___/4.'),
     fmt_write(':- ldoption('' %s'').', arg(LoaderFlags)), nl,
-    told.
+    told,
+    tell(OldTell).
     
 
 :-  package_configuration(dir(libwww), LibwwwDir),

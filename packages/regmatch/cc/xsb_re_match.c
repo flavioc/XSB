@@ -55,16 +55,18 @@ extern unsigned long hash(char *objname, byte arity, unsigned long tbl_size);
 
 /* cache table for compiled regular expressions */
 struct regexp_tbl_entry {
-  int     ignorecase;	     	     	/* whether case should be ignored */
+  int     flags;	     	     	/* flags used to build regexp */
   char    *original;	    	    	/* the original regexp */
   regex_t compiled;	    	    	/* the compiled regexp */
 };
 
 struct regexp_tbl_entry regexp_tbl[REGEXP_TBL_SIZE];
 
-static bool xsb_re_match(char *regexp_ptr, char* match_str, int ignorecase,
-			 regmatch_t **match_array, int *paren_number);
+static bool xsb_re_match(char *regexp_ptr, char* match_str, int match_flags,
+			 regmatch_t **match_array, int *paren_number,
+			 char *context);
 static void initialize_regexp_tbl(void);
+static int make_flags(prolog_term flag_term, char *context);
 
 static int first_call = TRUE; /* whether this is the first call to the regexp
 				 matcher. Used to initialize the regexp tbl */
@@ -80,7 +82,9 @@ static vstrDEFINE(regexp_buffer);
        Arg1: regexp
        Arg2: string
        Arg3: offset
-       Arg4: ignorecase
+       Arg4: match_flags: Var means case-sensitive/extended;
+       	       	          number: ignorecase/extended
+			  List: [{extended|ignorecase},...]
    Out:
        Arg5: list of the form [match(bo0,eo0), match(bo1,eo1),...]
        	     where bo0,eo0 specifies the beginning and ending offsets of the
@@ -98,7 +102,7 @@ bool do_regmatch__(void)
   int i;
   char *regexp_ptr=NULL;      /* regular expression ptr	       	      */
   char *input_string=NULL;    /* string where matches are to be found */
-  int ignorecase=FALSE;
+  int match_flags=0;
   int return_code, paren_number, offset;
   regmatch_t *match_array;
 
@@ -129,16 +133,14 @@ bool do_regmatch__(void)
   offset = int_val(offset_term);
   if (offset < 0 || offset > strlen(input_string))
     xsb_abort("RE_MATCH: Arg 3 (=%d) must be between 0 and %d",
-	      strlen(input_string));
+	      offset, strlen(input_string));
 
-  /* If arg 4 is bound to anything, then consider this as ignore case flag */
-  if (! is_var(reg_term(4)))
-    ignorecase = TRUE;
-
+  /* arg 4 specifies flags: _, number, list [extended,ignorecase] */
+  match_flags = make_flags(reg_term(4), "RE_MATCH");
 
   /* paren_number gets the # of parenthetical subexpressions (not 1 minus!) */
-  return_code = xsb_re_match(regexp_ptr, input_string+offset, ignorecase,
-			     &match_array, &paren_number);
+  return_code = xsb_re_match(regexp_ptr, input_string+offset, match_flags,
+			     &match_array, &paren_number, "RE_MATCH");
 
   if (! return_code) return FALSE;
 
@@ -168,7 +170,9 @@ bool do_regmatch__(void)
        Arg1: regexp
        Arg2: string
        Arg3: offset
-       Arg4: ignorecase
+       Arg4: match_flags: Var means case-sensitive/extended;
+       	       	          number: ignorecase/extended
+			  List: [{extended|ignorecase},...]
    Out:
        Arg5: list of the form [match(bo0,eo0), match(bo1,eo1),...]
        	     where bo*,eo* specify the beginning and ending offsets of the
@@ -185,7 +189,7 @@ bool do_bulkmatch__(void)
   prolog_term output_term = p2p_new();
   char *regexp_ptr=NULL;      /* regular expression ptr	       	      */
   char *input_string=NULL;    /* string where matches are to be found */
-  int ignorecase=FALSE;
+  int match_flags=FALSE;
   int return_code, paren_number, offset;
   regmatch_t *match_array;
   int last_pos=0, input_len;
@@ -198,31 +202,30 @@ bool do_bulkmatch__(void)
     regexp_ptr = string_val(regexp_term);
   else if (is_list(regexp_term))
     regexp_ptr = p_charlist_to_c_string(regexp_term, &regexp_buffer,
-					"RE_MATCH", "regular expression");
+					"RE_BULKMATCH", "regular expression");
   else
-    xsb_abort("RE_MATCH: Arg 1 (the regular expression) must be an atom or a character list");
+    xsb_abort("RE_BULKMATCH: Arg 1 (the regular expression) must be an atom or a character list");
 
   input_term = reg_term(2);  /* Arg2: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
     input_string = p_charlist_to_c_string(input_term, &input_buffer,
-					  "RE_MATCH", "input string");
+					  "RE_BULKMATCH", "input string");
   } else
-    xsb_abort("RE_MATCH: Arg 2 (the input string) must be an atom or a character list");
+    xsb_abort("RE_BULKMATCH: Arg 2 (the input string) must be an atom or a character list");
 
   input_len = strlen(input_string);
   
   offset_term = reg_term(3); /* arg3: offset within the string */
   if (! is_int(offset_term))
-    xsb_abort("RE_MATCH: Arg 3 (the offset) must be an integer");
+    xsb_abort("RE_BULKMATCH: Arg 3 (the offset) must be an integer");
   offset = int_val(offset_term);
   if (offset < 0 || offset > input_len)
-    xsb_abort("RE_MATCH: Arg 3 (=%d) must be between 0 and %d", input_len);
+    xsb_abort("RE_BULKMATCH: Arg 3 (=%d) must be between 0 and %d", input_len);
 
-  /* If arg 4 is bound to anything, then consider this as ignore case flag */
-  if (! is_var(reg_term(4)))
-    ignorecase = TRUE;
+   /* arg 4 specifies flags: _, number, list [extended,ignorecase] */
+  match_flags = make_flags(reg_term(4), "RE_BULKMATCH");
 
   last_pos = offset;
   /* returned result */
@@ -231,8 +234,8 @@ bool do_bulkmatch__(void)
     c2p_list(listTail); /* make it into a list */
     listHead = p2p_car(listTail); /* get head of the list */
 
-    return_code = xsb_re_match(regexp_ptr, input_string+last_pos, ignorecase,
-			       &match_array, &paren_number);
+    return_code = xsb_re_match(regexp_ptr, input_string+last_pos, match_flags,
+			       &match_array, &paren_number, "RE_BULKMATCH");
     /* exit on no match */
     if (! return_code) break;
 
@@ -477,6 +480,41 @@ bool do_regcharlist_to_string__(void)
 }
 
 
+static int make_flags(prolog_term flag_term, char *context)
+{
+  int flags = 0;
+  prolog_term aux_list=flag_term, head_trm;
+  char *head;
+
+  if (is_var(flag_term))
+    return REG_EXTENDED;
+  else if (is_int(flag_term))
+    return (REG_EXTENDED | REG_ICASE);
+
+  if (is_nil(flag_term))
+    return 0; /* basic, case-sensitive */
+
+  if (! is_list(flag_term))
+    xsb_abort("%s: Arg 4 (flags) must be a variable, an integer, or a list",
+	      context);
+
+  do {
+    head_trm = p2p_car(aux_list);
+    aux_list = p2p_cdr(aux_list);
+    if (!is_string(head_trm))
+      xsb_abort("%s: Arg 4: allowed flags are `extended' and `ignorecase'",
+		context);
+    head = string_val(head_trm);
+    if (strcmp(head,"extended")==0)
+      flags = flags | REG_EXTENDED;
+    else if (strcmp(head,"ignorecase")==0)
+      flags = flags | REG_ICASE;
+  } while (!is_nil(aux_list));
+  
+  return flags;
+}
+
+
 /* 
    Takes REGEXP, BUFFER (the string where matches are to be found), and a
    Boolean flag IGNORECASE.
@@ -492,12 +530,12 @@ bool do_regcharlist_to_string__(void)
    Returns: TRUE if matched, false, if not.
  */
 #define ERR_MSG_LEN 100
-static bool xsb_re_match(char *regexp_ptr, char *match_str, int ignorecase,
-			 regmatch_t **match_array, int *paren_number)
+static bool xsb_re_match(char *regexp_ptr, char *match_str, int flags,
+			 regmatch_t **match_array, int *paren_number,
+			 char *context)
 {
   static regmatch_t matches[NMATCH];   /* the array where matches are stored */
   regex_t *compiled_re;
-  int flags = (ignorecase ? (REG_EXTENDED | REG_ICASE) : REG_EXTENDED);
   int idx, err_code;
   char err_msg[ERR_MSG_LEN];
 
@@ -511,16 +549,17 @@ static bool xsb_re_match(char *regexp_ptr, char *match_str, int ignorecase,
   compiled_re = &regexp_tbl[idx].compiled;
   if ((regexp_tbl[idx].original == NULL)
       || (0 != strcmp(regexp_ptr, regexp_tbl[idx].original))
-      || (regexp_tbl[idx].ignorecase != ignorecase)
+      || (regexp_tbl[idx].flags != flags)
       ) {
     /* need to recompile regexp */
     regexp_tbl[idx].original = regexp_ptr;
-    regexp_tbl[idx].ignorecase = ignorecase;
-    if (0 == (err_code = regcomp(&regexp_tbl[idx].compiled, regexp_ptr, flags)))
+    regexp_tbl[idx].flags = flags;
+    if (0 == (err_code = regcomp(&regexp_tbl[idx].compiled,regexp_ptr,flags)))
       regexp_tbl[idx].original = regexp_ptr;
     else {
+      regexp_tbl[idx].original = NULL;
       regerror(err_code, compiled_re, err_msg, ERR_MSG_LEN);
-      xsb_abort("RE_MATCH: %s", err_msg);
+      xsb_abort("%s: %s", context, err_msg);
     }
   }
 
@@ -531,7 +570,7 @@ static bool xsb_re_match(char *regexp_ptr, char *match_str, int ignorecase,
 
   if (err_code != 0) {
     regerror(err_code, compiled_re, err_msg, ERR_MSG_LEN);
-    xsb_abort("RE_MATCH: %s", err_msg);
+    xsb_abort("%s: %s", context, err_msg);
   }
 
   return TRUE;
@@ -544,7 +583,7 @@ void initialize_regexp_tbl()
   first_call = FALSE;
   for (i=0; i<NMATCH; i++) {
     regexp_tbl[i].original = NULL;
-    regexp_tbl[i].ignorecase = FALSE;
+    regexp_tbl[i].flags = 0;
   }
 }
 

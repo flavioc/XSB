@@ -36,6 +36,7 @@ make_xsb_re_matchH(CC, CC_opts, LoaderFlags) :-
     package_configuration(dir(regmatch), RegMatchDir),
     fmt_write_string(LD_directives_file,
 		     '%s%scc%sxsb_re_match.H', f(RegMatchDir, Slash, Slash)),
+    telling(OldTell),
     tell(LD_directives_file),
     writeln('%% This file is generated on-the-fly by regmtchconfig.P'),
     writeln('%% Do not edit--any changes will be written over.'),
@@ -47,7 +48,8 @@ make_xsb_re_matchH(CC, CC_opts, LoaderFlags) :-
     write(':- ldoption('''),
     write(LoaderFlags),
     writeln(''').'),
-    told.
+    told,
+    tell(OldTell).
     
 
 :-  package_configuration(dir(regmatch), RegMatchDir),

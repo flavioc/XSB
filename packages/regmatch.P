@@ -42,7 +42,7 @@
    from xsb_re_match.
 
 :- bootstrap_package('regmatch', regmatch),
-   (xsb_configuration(regmatch_support, 'yes') -> [regmtchshell]
+   (xsb_configuration(regmatch_support, 'yes') -> [regmtchconfig]
      ;
      abort('Your system does not seem to have the POSIX pattern matching library installed.')
      ).

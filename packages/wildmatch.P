@@ -38,7 +38,7 @@
 :- import do_glob_directory__/4, do_wildmatch__/3, do_convert_string__/3 from xsb_wildmatch.
 
 :- bootstrap_package('wildmatch', wildmatch),
-   (xsb_configuration(wildmatch_support, 'yes') -> [wldmtchshell]
+   (xsb_configuration(wildmatch_support, 'yes') -> [wldmtchconfig]
      ;
      abort('Your system does not seem to have the POSIX wildcard matching library installed.')
      ).

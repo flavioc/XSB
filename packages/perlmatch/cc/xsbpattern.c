@@ -178,7 +178,6 @@ arguments:
 ----------------------------------------------------------------------------*/
 int perl_substitute__( void )
 {
-
   SV *text=newSV(0);    /* Perl representation for the string to be 
 			   modified by substitution */ 
   char *subst_cmd = ptoc_string(2);
