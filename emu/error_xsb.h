@@ -96,6 +96,8 @@ extern void (*xsb_default_segfault_handler)(int); /* where the previous value
 extern jmp_buf xsb_abort_fallback_environment; /* Environment for abort
 						  longjump saved here */
 
+extern int print_xsb_backtrace();
+
 /* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
 extern void xsb_segfault_catcher (int);
 extern void xsb_segfault_quitter(int);

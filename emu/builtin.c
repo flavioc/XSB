@@ -162,6 +162,7 @@ extern xsbBool is_absolute_filename(char *filename);
 extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
 
 int print_xsb_backtrace();
+int build_xsb_backtrace();
 
 extern xsbBool xsb_socket_request(void);
 
@@ -705,6 +706,7 @@ void init_builtin_table(void)
 
   set_builtin_table(PSC_INSERT, "psc_insert");
   set_builtin_table(PSC_IMPORT, "psc_import");
+  set_builtin_table(PSC_DATA, "psc_data");
   set_builtin_table(PSC_INSERTMOD, "psc_insertmod");
 
   set_builtin_table(FILE_GETTOKEN, "file_gettoken");
@@ -1454,6 +1456,12 @@ int builtin_call(byte number)
       set_data(pair_psc(sym), (psc));
     env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, (xsbBool)value);
     link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
+    break;
+  }
+
+  case PSC_DATA:  {	/* R1: +PSC; R2: -int */
+    Psc psc = (Psc)ptoc_addr(1);
+    ctop_int(2, (Integer)get_data(psc));
     break;
   }
 
@@ -2280,9 +2288,14 @@ int builtin_call(byte number)
 
   case XSB_BACKTRACE:
     switch (ptoc_int(1)) {
-    case 1: print_xsb_backtrace();
+    case 1: 
+      print_xsb_backtrace();
+      break;
+    case 2: 
+      build_xsb_backtrace();
+      break;
     }
-
+    break;
   case PRINT_LS: print_ls(1) ; return TRUE ;
   case PRINT_TR: print_tr(1) ; return TRUE ;
   case PRINT_HEAP: print_heap(0,2000,1) ; return TRUE ;
@@ -2621,7 +2634,6 @@ int print_xsb_backtrace() {
   byte *tmp_cpreg;
   CPtr tmp_ereg, tmp_breg;
   if (xsb_profiling_enabled) {
-
     // print forward continuation
     printf("Forward Continuation...\n");
     tmp_psc = psc_from_code_addr(pcreg);
@@ -2647,7 +2659,7 @@ int print_xsb_backtrace() {
     while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg)) {
       tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
       if (tmp_psc) printf("... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),cp_pcreg(tmp_breg));
-      else printf("... unknown/?,  pc=%p\n",cp_pcreg(tmp_breg));
+      else printf("... unknown/?,  i=%x, pc=%p\n",*cp_pcreg(tmp_breg),cp_pcreg(tmp_breg));
       tmp_breg = cp_prevbreg(tmp_breg);
     }
   } else {
@@ -2663,6 +2675,67 @@ int print_xsb_backtrace() {
   }
   return TRUE;
 }
+
+int build_xsb_backtrace() {
+  Psc tmp_psc, called_psc;
+  byte *tmp_cpreg;
+  CPtr tmp_ereg, tmp_breg, forward, backward;
+  Cell backtrace;
+
+  backtrace = makelist(hreg);
+  forward = hreg++;
+  backward = hreg++;
+  if (xsb_profiling_enabled) {
+    tmp_psc = psc_from_code_addr(pcreg);
+    follow(hreg++) = makeint(tmp_psc);
+    tmp_ereg = ereg;
+    tmp_cpreg = cpreg;
+    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call &&
+	   (pb)top_of_localstk > (pb)top_of_heap + 96) {
+      called_psc = *((Psc *)tmp_cpreg - 1);
+      if (called_psc != tmp_psc) {
+	follow(forward) = makelist(hreg);
+	follow(hreg++) = makeint(called_psc);
+	forward = hreg++;
+      }
+      tmp_psc = psc_from_code_addr(tmp_cpreg);
+      follow(forward) = makelist(hreg);
+      follow(hreg++) = makeint(tmp_psc);
+      forward = hreg++;
+      tmp_cpreg = *((byte **)tmp_ereg-1);
+      tmp_ereg = *(CPtr *)tmp_ereg;
+    }
+    follow(forward) = makenil;
+
+    tmp_breg = breg;
+    while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg) &&
+	   (pb)top_of_localstk > (pb)top_of_heap + 48) {
+      tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
+      follow(backward) = makelist(hreg);
+      follow(hreg++) = makeint(tmp_psc);
+      backward = hreg++;
+      tmp_breg = cp_prevbreg(tmp_breg);
+    }
+    follow(backward) = makenil;
+
+  } else {
+    tmp_ereg = ereg;
+    tmp_cpreg = cpreg;
+    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call &&
+	   (pb)top_of_localstk > (pb)top_of_heap + 48) {
+      called_psc = *((Psc *)tmp_cpreg - 1);
+      follow(forward) = makelist(hreg);
+      follow(hreg++) = makeint(called_psc);
+      forward = hreg++;
+      tmp_cpreg = *((byte **)tmp_ereg-1);
+      tmp_ereg = *(CPtr *)tmp_ereg;
+    }
+    follow(forward) = makenil;
+    follow(backward) = makenil;
+  }
+  return unify(ptoc_tag(2),backtrace);
+}
+
 
 /*------------------------- end of builtin.c -----------------------------*/
 

@@ -50,8 +50,6 @@
 #include "flags_xsb.h"
 #include "term_psc_xsb_i.h"
 
-extern void exit(int status);
-
 FILE *stdmsg;	     	     	  /* stream for XSB benign messages */
 FILE *stddbg;	     	     	  /* stream for XSB debug msgs */
 FILE *stdwarn;	     	     	  /* stream for XSB warnings */
@@ -117,6 +115,7 @@ void call_conv xsb_basic_abort(char *message)
   int isnew;
   Cell *tptr;
 
+  print_xsb_backtrace();
   if (!space_for_ball) {
     space_for_ball = (Cell *) malloc(2*sizeof(Cell)); /* 2 cells needed for term */
     if (!space_for_ball) xsb_exit("out of memory in xsb_basic_abort!");

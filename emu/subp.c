@@ -713,6 +713,7 @@ void xsb_segfault_catcher(int err)
 
 void xsb_segfault_quitter(int err)
 {
+  print_xsb_backtrace();
   xsb_exit(xsb_segfault_message);
 }
 
