@@ -37,5 +37,5 @@
 	  term_arg/3
      from machine.
 :- import name/2, arg/3, functor/3, atomic/1, atom/1, told/0, tell/1, 
-	  integer/1, atom_chars/2
+	  integer/1, atom_codes/2
      from standard.

@@ -180,10 +180,12 @@ inline_builtin(=.., 2, 202).
 inline_builtin(hilog_arg, 3, 204).
 % inline_builtin(hilog_univ, 2, 205).
 
+inline_builtin(atom_codes, 2, 207).
 inline_builtin(atom_chars, 2, 208).
 inline_builtin(number_chars, 2, 209).
 inline_builtin(put, 1, 210).
 inline_builtin(tab, 1, 211).
+inline_builtin(number_codes, 2, 212).
 
 inline_builtin(sort, 2, 220).
 inline_builtin(keysort, 2, 221).

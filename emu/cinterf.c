@@ -272,6 +272,113 @@ DllExport prolog_term call_conv p2p_deref(prolog_term term)
     return (prolog_term)t;
 }
 
+/* convert Arg 1 -- prolog list of characters (a.k.a. prolog string) into C
+   string and return this string.
+   Arg 2: which function was called from.
+   Arg 3: where in the call this happened.
+   Args 2 and 3 are used for error reporting.
+   This function converts escape sequences in the Prolog string
+   (except octal/hexadecimal) into the corresponding real characters.
+*/
+char *p_charlist_to_c_string (prolog_term term, char *in_func, char *where)
+{
+  char str[MAXBUFSIZE+1];
+  int i = 0, head_val;
+  int escape_mode=FALSE;
+  prolog_term list = term, list_head;
+
+  if (!is_list(list)) {
+    xsb_abort("%s: %s is not a list of characters", in_func, where);
+  }
+
+  while (is_list(list) && i < MAXBUFSIZE) {
+    if (is_nil(list)) break;
+    list_head = p2p_car(list);
+    if (!is_int(list_head)) {
+      xsb_abort("%s: A Prolog string (a character list) expected, %s",
+		in_func, where);
+    }
+    head_val = int_val(list_head);
+    if (head_val < 0 || head_val > 255) {
+      xsb_abort("%s: A Prolog string (a character list) expected, %s",
+		in_func, where);
+    }
+
+    head_val = (char) head_val;
+    /* convert ecape sequences */
+    if (escape_mode)
+      switch (head_val) {
+      case 'a':
+	str[i] = '\a';
+	break;
+      case 'b':
+	str[i] = '\b';
+	break;
+      case 'f':
+	str[i] = '\f';
+	break;
+      case 'n':
+	str[i] = '\n';
+	break;
+      case 'r':
+	str[i] = '\r';
+	break;
+      case 't':
+	str[i] = '\t';
+	break;
+      case 'v':
+	str[i] = '\v';
+	break;
+      default:
+	str[i] = head_val;
+      }
+    else
+      str[i] = head_val;
+
+    if (str[i] == '\\' && !escape_mode)
+      escape_mode = TRUE;
+    else {
+      i++;
+      escape_mode = FALSE;
+    }
+    list = p2p_cdr(list);
+  } /* while */
+
+  str[i] = '\0';
+  return(string_find(str,1));
+}
+
+
+/* convert a C string into a prolog list of characters.
+   LIST must be a Prolog variable. IN_FUNC is a string that should indicate the
+   high-level function from this c_string_to_p_charlist was called.
+   WHERE is another string with additional info. These two are used to provide
+   informative error messages to the user. */
+void c_string_to_p_charlist(char *name, prolog_term list,
+			    char *in_func, char *where)
+{
+  Cell new_list;
+  CPtr top = 0;
+  int len=strlen(name), i;
+
+  if (isnonvar(list)) {
+    xsb_abort("%s: A variable expected, %s", in_func, where);
+  }
+  if (len == 0) {
+    bind_nil((CPtr)(list));
+  } else {
+    new_list = makelist(hreg);
+    for (i = 0; i < len; i++) {
+      follow(hreg++) = makeint(*(unsigned char *)name);
+      name++;
+      top = hreg++;
+      follow(top) = makelist(hreg);
+    } follow(top) = makenil;
+    unify(list, new_list);
+  } 
+}
+
+
 
 /*
 ** Constaints and internal data structures

@@ -33,7 +33,7 @@
 :- import  ca/2, date/1, sysin/2 from scrptutl.
 :- import concat_atom/2 from string.
 :- import member/2 from basics.
-:- import atom_chars/2, arg/3, number_chars/2, name/2, integer/1
+:- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1
 	from standard.
 
 % I always want this in UNIX.
@@ -90,7 +90,7 @@ get_file_date(File,Date):- arg(6,File,Date).
 
 is_directory(File):-
 	arg(1,File,Permissions),
-	atom_chars(Permissions,[100|_]).
+	atom_codes(Permissions,[100|_]).
 
 directory(Argument,Dir):-
 	ca(['ls -l',Argument],Command),
@@ -120,8 +120,8 @@ process_date(date(Tyear,Tmonth,Tday),
 	name(TY,[H1,H2,58,M1,M2]),!,
 	month(M_in,Month),
 %	aton(D,Day),
-	number_chars(Hour,[H1,H2]),
-	number_chars(Min,[M1,M2]),
+	number_codes(Hour,[H1,H2]),
+	number_codes(Min,[M1,M2]),
 	(d(Month,D) @> d(Tmonth,Tday) 
 		-> Year is Tyear-1 ; Year = Tyear).
 process_date(_,M_in,D,Y,date(Y,Month,D,0,0,0)):- 
@@ -131,8 +131,8 @@ process_date(_,M_in,D,Y,date(Y,Month,D,0,0,0)):-
 
 %process_time_year(TY,time(Hour,Minute)):- 
 %	name(TY,[H1,H2,58,M1,M2]),!,
-%	number_chars(Hour,[H1,H2]),
-%	number_chars(Minute,[M1,M2]).
+%	number_codes(Hour,[H1,H2]),
+%	number_codes(Minute,[M1,M2]).
 %process_time_year(TY,year(TY1)):- aton(TY,TY1).
 
 

@@ -68,7 +68,7 @@ void xsb_abort(char *description, ...)
     pcreg = exception_handler(message);
 
     /* this allows xsb_abort to jump out even from nested loops */
-    longjmp(xsb_abort_fallback_environment, pcreg);
+    longjmp(xsb_abort_fallback_environment, (int) pcreg);
 }
 
 

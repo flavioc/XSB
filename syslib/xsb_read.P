@@ -260,7 +260,7 @@ read5(punc(123), S1, Precedence, Answer, S) :-
 % Term ::= String
 read5(string(String), S0, Precedence, Answer, S) :- 
         !,
-	( string_as(list) -> atom_chars(String, Term)  %This is the case for 
+	( string_as(list) -> atom_codes(String, Term)  %This is the case for 
                                                        %the moment.
 	; string_as(string) -> Term = String
 	; string_as(constant) -> read_getcon(String, Term)

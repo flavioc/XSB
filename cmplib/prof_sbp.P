@@ -51,15 +51,15 @@ otherwise.
 /*----name_append-------------------------------------------------------*/
 
 name_append(C1, C2, C3) :- atom(C1), atom(C2), !,
-	atom_chars(C1, N1),
-	atom_chars(C2, N2),
+	atom_codes(C1, N1),
+	atom_codes(C2, N2),
 	append(N1, N2, N3),
-	atom_chars(C3, N3).
+	atom_codes(C3, N3).
 name_append(C1, C2, C3) :- atom(C2), atom(C3),  !,
-	atom_chars(C3, N3),
-	atom_chars(C2, N2),
+	atom_codes(C3, N3),
+	atom_codes(C2, N2),
 	append(N1, N2, N3),
-	atom_chars(C1, N1).
+	atom_codes(C1, N1).
 
 /*----append------------------------------------------------------------*/
 
@@ -78,8 +78,8 @@ gennum(N) :- conget(gennum_val, O), N is O + 1, conset(gennum_val, N).
 /*----gensym------------------------------------------------------------*/
 
 gensym(R, C) :-
-	gennum(N), atom_chars(R, N1), name(N, N2),
-	append(N1, N2, N3), atom_chars(C, N3).
+	gennum(N), atom_codes(R, N1), name(N, N2),
+	append(N1, N2, N3), atom_codes(C, N3).
 
 /*----copyterm----------------------------------------------------------*/
 /* Get a copy of the Term, with a new set of variables.			*/

@@ -29,6 +29,6 @@
 :- import warning/1 from auxlry.
 :- import numbervars/3 from num_vars.
 :- import ll_arg/3, append/3 from prof_sbp.
-:- import atom_chars/2, functor/3, hilog_functor/3, atomic/1, integer/1,
+:- import atom_codes/2, functor/3, hilog_functor/3, atomic/1, integer/1,
 	  arg/3, '=..'/2
      from standard.

@@ -378,6 +378,24 @@ NOTE: using tags can be your life-line, if you mess up your local copy!
       You simply do a checkout with the tag you trust!
 
 THEREFORE: you should tag ONLY the versions that DO run properly!!!
+
+
+Checking out versions based on date
+-----------------------------------
+
+Tagging is one way to put your hand on a consistent version.
+However, it is also possible to check out versions based on date:
+
+	cvs checkout -D 1999-1-3
+
+This is not guaranteed to always be a good working version of XSB, but with
+high probablity it is (since the rule around here is to run the testsuite
+before committing changes).
+
+NOTE: It is important to keep in mind that when you check out based on a
+      tag or on a date, the copy you get is STICKY. This means that it is
+      immune to "cvs update" commands.
+
         
 
 Branching out development versions

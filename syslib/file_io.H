@@ -28,7 +28,7 @@
     	file_stat/3, formatted_io/5, intern_string/2
       from machine.
 
-:- import abort/1, atom_chars/2,
+:- import abort/1, atom_codes/2,
 	  compound/1, callable/1
       from standard.
 

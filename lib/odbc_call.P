@@ -568,7 +568,7 @@ gensym(Root,Symbol) :-
     var(Symbol),
     conget(Root,Counter),
     NewCounter is Counter + 1,
-    name(NewCounter,L), atom_chars(Atom,L),
+    name(NewCounter,L), atom_codes(Atom,L),
     str_cat(Root,Atom,Symbol),
     conset(Root,NewCounter).
    

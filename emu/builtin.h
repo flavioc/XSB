@@ -184,10 +184,12 @@ extern void init_builtin_table(void);
 #define HiLog_ARG		204
 #define HiLog_UNIV		205
 
+#define ATOM_CODES		207
 #define ATOM_CHARS		208
 #define NUMBER_CHARS		209
 #define PUT			210
 #define TAB			211
+#define NUMBER_CODES		212
 
 #define SORT			220
 #define KEYSORT			221

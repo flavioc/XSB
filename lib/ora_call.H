@@ -37,7 +37,7 @@
 :- import conset/2, conget/2 from prof_sbp.
 :- import (dynamic)/1, assert/1, asserta/1, retract/1,
    retractall/1 from assert.
-:- import write/1, writeln/1, (=..)/2, atom_chars/2 from standard.
+:- import write/1, writeln/1, (=..)/2, atom_codes/2 from standard.
 :- import name/2, atom/1, integer/1, (\=)/2, atomic/1 from standard.
 :- import nl/0, functor/3, number/1, call/1, (not)/1 from standard.
 :- import findall/3, bagof/3 from setof.

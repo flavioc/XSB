@@ -31,7 +31,7 @@
 
 :- export 
 	arg/3,		arg0/3,		atom/1,		atomic/1,
-	atom_chars/2,
+	atom_chars/2,   atom_codes/2,
 	cputime/1,	call/1,		call_expose/1,	callable/1,
 	close/1,	compare/3,	compound/1,	display/1,
 	expand_term/2,	file_exists/1,	fail/0,		fail_if/1,
@@ -43,7 +43,7 @@
         is_string/1,
 	listing/0,	listing/1,	name/2,		nl/0, nl/1,
 	nofileerrors/0, nonvar/1,	(not)/1,	number/1,
-	number_chars/2,
+	number_chars/2, number_codes/2,
 	once/1,		op/3,		open/3,          otherwise/0,
 	print/1,	put/1,
 	read/1,		read/2,         real/1,		repeat/0,

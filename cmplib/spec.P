@@ -550,7 +550,7 @@ singleton_special_call([CArg|CArgs], [HArg|HArgs], Body, SpecCall) :-
 
 'arg unification'(CallArg, HeadArg, SpecCall, RestSpecCall) :-
 	( HeadArg = varocc(Id) ->
-		name(Id, L), NL = [0'_, 0'v|L], atom_chars(NewId, NL),
+		name(Id, L), NL = [0'_, 0'v|L], atom_codes(NewId, NL),
 		SpecCall = and(inlinegoal(=,2,[CallArg,varocc(NewId)]),
 			       RestSpecCall)
 	; ( CallArg = varocc(_) -> 
@@ -689,7 +689,7 @@ occurs_in(A, [_|B], [_|C], D) :- occurs_in(A, B, C, D).
 
 name_vars_uniquely(G, Sym, NG) :-
 	sym_name(Sym, N, A),
-	atom_chars(N, NL), name(A, AL), append([0'_|NL], [0'_|AL], PredL), 
+	atom_codes(N, NL), name(A, AL), append([0'_|NL], [0'_|AL], PredL), 
 	conget('singleton call #', C), NewC is C+1, name(NewC, CL),
 	conset('singleton call #', NewC), append(PredL, [0'_|CL], IdL),
 	'name vars uniquely'(G, IdL, NG).
@@ -717,7 +717,7 @@ make_arg_vars_unique(varocc(Id), IdL, varocc(NewId)) :-
 	!,
 	name(Id, IdName),
 	( IdName = [0'_,0'v|_] ->
-		append(IdName, IdL, NewIdL), atom_chars(NewId, NewIdL)
+		append(IdName, IdL, NewIdL), atom_codes(NewId, NewIdL)
 	; NewId = Id
 	).
 make_arg_vars_unique(structure(Sym,Args), IdL, structure(Sym,NewArgs)) :-

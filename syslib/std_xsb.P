@@ -42,6 +42,7 @@ standard_symbol(assertz, 1, assert).
 standard_symbol(atom, 1, standard).
 standard_symbol(atomic, 1, standard).
 standard_symbol(atom_chars, 2, standard).
+standard_symbol(atom_codes, 2, standard).
 standard_symbol(bagof, 3, setof).
 standard_symbol(break, 0, x_interp).
 standard_symbol('C', 3, dcg).
@@ -132,6 +133,7 @@ standard_symbol((not), 1, standard).
 standard_symbol((notrace), 0, debugger).
 standard_symbol(number, 1, standard).
 standard_symbol(number_chars, 2, standard).
+standard_symbol(number_codes, 2, standard).
 standard_symbol(once, 1, standard).
 standard_symbol(op, 3, standard).
 standard_symbol(open, 3, standard).

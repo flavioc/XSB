@@ -86,9 +86,9 @@ cp_opt_block1(_,pred(Sym,_Pscs,_Oth),pred(Sym1,Pscs1,Oth1),Symtab):-
 	ClList =[pred(_Sym1,Pscs1,Oth1)|_T].
 
 transform_pred(Pred,Pred1):-
-	atom_chars(Pred,Predlist),
+	atom_codes(Pred,Predlist),
 	append("_$",Predlist,Predlist1),
-	atom_chars(Pred1,Predlist1).
+	atom_codes(Pred1,Predlist1).
 
 bind_args(0,_,_):-!.
 bind_args(N,Head,Body):-

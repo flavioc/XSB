@@ -100,7 +100,7 @@ file_getbuf_atom(ByteCount, ToAtom, BytesRead) :-
 file_getbuf_list(FileDes, ByteCount, ToList, BytesRead) :-
 	(var(ToList), var(BytesRead) ->
 	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
-	    atom_chars(TmpStr, ToList)
+	    atom_codes(TmpStr, ToList)
 	;
 	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
 
@@ -108,7 +108,7 @@ file_getbuf_list(ByteCount, ToList, BytesRead) :-
 	stat_flag(10, FileDes),
 	(var(ToList), var(BytesRead) ->
 	    file_function(8, FileDes, ByteCount, TmpStr, BytesRead,_,_),
-	    atom_chars(TmpStr, ToList)
+	    atom_codes(TmpStr, ToList)
 	;
 	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
 
@@ -154,7 +154,7 @@ file_read_line_atom(Str, IsFullLine) :-
 file_read_line_list(FileDes, CharLst, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
 	    file_function(10, FileDes, Str, IsFullLine, _, _,_),
-	    atom_chars(Str,CharLst)
+	    atom_codes(Str,CharLst)
 	    ;
 	    abort('Usage: file_read_line_list([+FileDes,] -InputStr, -IsFullLine)')
         ).

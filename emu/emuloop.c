@@ -171,7 +171,6 @@ int     xctr;
 char *xsb_default_segfault_msg =
      "++Memory violation occurred during evaluation\n";
 char *xsb_segfault_message;
-jmp_buf xsb_segfault_fallback_environment;
 jmp_buf xsb_abort_fallback_environment;
 
 /*======================================================================*/

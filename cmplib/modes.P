@@ -437,13 +437,13 @@ ext2int('++', g) :- !.
 ext2int(_, _).
 
 get_new_negliteral_name(NewName) :-
-	atom_chars('_$neg_$', Prefix),
+	atom_codes('_$neg_$', Prefix),
 	conget('_$lastnegatedliteral', L),
 	Sno is L + 1,
 	conset('_$lastnegatedliteral', Sno),
 	name(Sno, Suffix),
 	append(Prefix, Suffix, Name),
-	atom_chars(NewName, Name).
+	atom_codes(NewName, Name).
 
 
 /** Now that all user predicates are wrapped with '_call_user', there

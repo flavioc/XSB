@@ -194,7 +194,7 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   case INT: return int_val(addr);
   default: xsb_abort("PTOC_INT: Argument of unknown type");
   }
-  return 0;
+  return FALSE;
 }
 
 DllExport prolog_float call_conv ptoc_float(int regnum)
@@ -553,8 +553,10 @@ void init_builtin_table(void)
   set_builtin_table(UNIV, "univ");
   set_builtin_table(HiLog_ARG, "hilog_arg");
   set_builtin_table(HiLog_UNIV, "hilog_univ");
+  set_builtin_table(ATOM_CODES, "atom_codes");
   set_builtin_table(ATOM_CHARS, "atom_chars");
   set_builtin_table(NUMBER_CHARS, "number_chars");
+  set_builtin_table(NUMBER_CODES, "number_codes");
 
   set_builtin_table(PUT, "put");
   set_builtin_table(TAB, "tab");
@@ -594,6 +596,8 @@ void init_builtin_table(void)
 #include "xsbsocket.i"
 #endif /* HAVE_SOCKET */
 
+/* inlined functions for prolog standard builtins */
+#include "std_pred.i"
 
 /* --- built in predicates --------------------------------------------	*/
 
@@ -602,16 +606,7 @@ int builtin_call(byte number)
   CPtr var;
   char *addr, *tmpstr;
   int  value, i, disp, arity, tmpval;
-  long c;
-  int  new_indicator, len;	        /* for standard preds */
-  
-  Cell heap_addr, term, term2, index;	/* used in standard preds */
-  Cell functor, list, new_list;		/* for standard preds */
-  CPtr head, top = 0;			/* for standard preds */
-  char str[256];
-  char *name;				/* for standard preds */
-  char hack_char;			/* for standard preds */
-  Cell *cell_tbl;			/* for standard preds */
+  Cell term;
   
   DL dl;				/* for residual program */
   DE de;				/* for residual program */
@@ -1085,7 +1080,7 @@ int builtin_call(byte number)
     char *env = getenv(ptoc_string(1));
     if (env == NULL)
       /* otherwise, string_find dumps core */
-      return 0;
+      return FALSE;
     else
       ctop_string(2, string_find(env,1));
     break;
@@ -1157,7 +1152,7 @@ int builtin_call(byte number)
     term = ptoc_tag(1);
     if ((psc = term_psc(term)) == NULL) {
       err_handle(TYPE, 1, "get_subgoal_ptr", 2, "callable term", term);
-      return 0;	/* fail */
+      return FALSE;	/* fail */
     }
     arity = get_arity(psc);
     tip = get_tip(psc);
@@ -1287,26 +1282,26 @@ int builtin_call(byte number)
   case DB_REMOVE_PRREF:
     db_remove_prref();
     break;
-
+    
 /*----------------------------------------------------------------------*/
 
-#include "std_pred.i"
-
+#include "std_cases.i"
+    
 #ifdef ORACLE
 #include "oracle.i"
 #endif
-
+    
 #ifdef XSB_ODBC
 #include "xsb_odbc.i"
 #endif
-
+    
 /*----------------------------------------------------------------------*/
-
+    
   case TABLE_STATUS:  /* reg1: +term; reg2: -status (int) */
     term = ptoc_tag(1);
     if ((psc = term_psc(term)) == NULL) {
       err_handle(TYPE, 1, "table_status", 2, "callable term", term);
-      return 0;	/* fail */
+      return FALSE;	/* fail */
     }
     tip = get_tip(psc);
     if (tip == NULL) {
@@ -1328,7 +1323,7 @@ int builtin_call(byte number)
     if ((psc = term_psc(term)) == NULL) {
       err_handle(TYPE, 1, "abolish_table_pred", 1,
 		 "predicate (specification)", term);
-      return 0;	/* fail */
+      return FALSE;	/* fail */
     }
     tip = get_tip(psc);
     if (tip == NULL) {
@@ -1498,7 +1493,7 @@ int builtin_call(byte number)
     xsb_exit("Builtin #%d is not implemented", number);
     break;
   }
-  return 1;
+  return TRUE;
 }
 
 /*------------------------- Auxiliary functions -----------------------------*/
@@ -1602,7 +1597,7 @@ static bool no_quotes_needed(char *string)
       ctr++;
       nextchar = (int) string[ctr];
     }
-    if (!flag) return 0;
+    if (!flag) return FALSE;
   }
 
   if (string[1] == '\0') {
@@ -1674,9 +1669,9 @@ static int fast_ground(CPtr temp)
   cptr_deref(temp);
   switch(cell_tag(temp)) {
   case FREE: case REF1:
-    return 0;
+    return FALSE;
   case STRING: case INT: case FLOAT:
-    return 1;
+    return TRUE;
   case LIST:
     flag = flag * fast_ground(clref_val(temp));
     return flag * fast_ground(clref_val(temp)+1);

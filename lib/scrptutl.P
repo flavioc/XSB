@@ -72,7 +72,7 @@ month('Dec',11).
 % Utilities.
 %aton(Atom,Number):-
 %	name(Atom,L),
-%	number_chars(Number,L).
+%	number_codes(Number,L).
 
 simple_tokenize([],[]):-!.
 simple_tokenize([32|Rest],Toks):-!,

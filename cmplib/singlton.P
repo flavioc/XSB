@@ -98,7 +98,7 @@ calculate_occurences(Term, Occurences) :-
 write_singleton_warnings([], _, _, _) :-
 	!.	% This captures the open-end of VariableList.
 write_singleton_warnings([vv(VarName,'$VAR'(N))|Rest], Occurences, P, A) :-
-	atom_chars(VarName, CharList),
+	atom_codes(VarName, CharList),
 	( CharList = [95|_] ->	% variable Var begins with an "_"
 		true		% (underscore), so its OK, ignore it!.
 	; ll_arg(N, Occurences, OccCount),

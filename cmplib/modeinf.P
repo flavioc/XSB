@@ -488,10 +488,10 @@ make_iff([Y|Ys], X, T) :-
 	('_$done_before'(N0, Old) -> T =.. [Old, X, Y|Ys]
 	; 
 	N is N0+2,
-	atom_chars('_$prop_iff', P),
+	atom_codes('_$prop_iff', P),
 	name(N, No),
 	append(P, No, Prop),
-	atom_chars(PName, Prop),
+	atom_codes(PName, Prop),
 	T =.. [PName, X, Y | Ys],
 	First = prop_iff(X,Y,Z),
 	(N == 4

@@ -1165,11 +1165,11 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
     As a consequence of this, there are some atoms (for example \verb|'18'|)
     which cannot be constructed by using {\tt name/2}\@. 
     If conversion to an atom is preferred in these cases, the 
-    standard predicate {\tt atom\_chars/2} should be used instead. The 
+    standard predicate {\tt atom\_codes/2} should be used instead. The 
     syntax for numbers that is accepted by {\tt name/2} is exactly the one 
     which {\tt read/1} accepts.  Predicate {\tt name/2} is provided for 
     backwards compatibility.  It is advisable that new programs use
-    the predicates {\tt atom\_chars/2} and {\tt number\_chars/2} described
+    the predicates {\tt atom\_codes/2} and {\tt number\_codes/2} described
     below.
 
     In \version\ predicate {\tt name/2} is not yet implemented for 
@@ -1227,8 +1227,8 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
 	character list representation is not implemented yet).
      \end{description}
 
-\ouritem{atom\_chars(?Atom, ?CharList)}\index{{\tt atom\_chars/2}} 
-    The standard predicate {\tt atom\_chars/2} performs the conversion 
+\ouritem{atom\_codes(?Atom, ?CharList)}\index{{\tt atom\_codes/2}} 
+    The standard predicate {\tt atom\_codes/2} performs the conversion 
     between an atom and its character list representation. 
     If {\tt Atom} is supplied (and is an atom), {\tt CharList} 
     is unified with a list of ASCII codes representing the {\em ``name''} 
@@ -1240,46 +1240,46 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
     exactly those characters, even if the characters look like the
     printed representation of a number.
 
-    If both of the arguments of {\tt atom\_chars/2} are uninstantiated or
+    If both of the arguments of {\tt atom\_codes/2} are uninstantiated or
     {\tt CharList} is not a proper list of ASCII characters, {\tt
-    atom\_chars/2} aborts, and an error message will be sent to
+    atom\_codes/2} aborts, and an error message will be sent to
     the standard error stream.
 
     Examples:
     {\footnotesize
      \begin{verbatim}
-                   | ?- atom_chars('Foo', L).
+                   | ?- atom_codes('Foo', L).
                    L = [70,111,111]
 
-                   | ?- atom_chars([], L).
+                   | ?- atom_codes([], L).
                    L = [91,93]
 
-                   | ?- atom_chars(X, [102,111,111]).
+                   | ?- atom_codes(X, [102,111,111]).
                    X = foo
  
-                   | ?- atom_chars(X, []).
+                   | ?- atom_codes(X, []).
                    X = ''
 
-                   | ?- atom_chars(X, "Foo").
+                   | ?- atom_codes(X, "Foo").
                    X = 'Foo'
 
-                   | ?- atom_chars(X, [52,51,49]).
+                   | ?- atom_codes(X, [52,51,49]).
                    X = '431'
 
-                   | ?- atom_chars(X, [52,51,49]), integer(X).
+                   | ?- atom_codes(X, [52,51,49]), integer(X).
                    no
 
-                   | ?- atom_chars(X, [52,Y,49]).
-                   ! Instantiation error in argument 2 of atom_chars/2
+                   | ?- atom_codes(X, [52,Y,49]).
+                   ! Instantiation error in argument 2 of atom_codes/2
                    ! Aborting...
 
-                   | ?- atom_chars(431, L).
-                   ! Type error: in argument 1 of atom_chars/2
+                   | ?- atom_codes(431, L).
+                   ! Type error: in argument 1 of atom_codes/2
                    ! atom expected, but something else found
                    ! Aborting...
 
-                   | ?- atom_chars(X, [52,300,49]).
-                   ! Range error: in argument 2 of atom_chars/2
+                   | ?- atom_codes(X, [52,300,49]).
+                   ! Range error: in argument 2 of atom_codes/2
                    ! ASCII code expected, but 300 found
                    ! Aborting...
      \end{verbatim}}
@@ -1295,8 +1295,8 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ouritem{number\_chars(?Number, ?CharList)}\index{{\tt number\_chars/2}} 
-    The standard predicate {\tt number\_chars/2} performs the conversion 
+\ouritem{number\_codes(?Number, ?CharList)}\index{{\tt number\_codes/2}} 
+    The standard predicate {\tt number\_codes/2} performs the conversion 
     between a number and its character list representation. 
     If {\tt Number} is supplied (and is a number), {\tt CharList} is
     unified with a list of ASCII codes comprising the printed representation
@@ -1304,30 +1304,30 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
     then {\tt CharList} must be a proper list of ASCII character codes that
     corresponds to the correct syntax of a number (either integer or float)
     In that case, {\tt Number} is instantiated to that number, otherwise
-    {\tt number\_chars/2} will simply fail.
+    {\tt number\_codes/2} will simply fail.
 
-    If both of the arguments of {\tt number\_chars/2} are uninstantiated or
+    If both of the arguments of {\tt number\_codes/2} are uninstantiated or
     {\tt CharList} is not a proper list of ASCII characters, {\tt
-    number\_chars/2} aborts, and an error message will be sent to
+    number\_codes/2} aborts, and an error message will be sent to
     the standard error stream.
 
     Examples:
     {\footnotesize
      \begin{verbatim}
-                   | ?- number_chars(123, L).
+                   | ?- number_codes(123, L).
                    L = [49,50,51];
 
-                   | ?- number_chars(N, [49,50,51]), integer(N).
+                   | ?- number_codes(N, [49,50,51]), integer(N).
                    N = 123
 
-                   | ?- number_chars(31.4e+10, L).
+                   | ?- number_codes(31.4e+10, L).
                    L = [51,46,49,51,57,57,57,55,69,43,49,48]
 
-                   | ?- number_chars(N, "314e+8").
+                   | ?- number_codes(N, "314e+8").
                    N = 3.14e+10
 
-                   | ?- number_chars(foo, L).
-                   ! Type error: in argument 1 of number_chars/2
+                   | ?- number_codes(foo, L).
+                   ! Type error: in argument 1 of number_codes/2
                    ! number expected, but something else found
                    ! Aborting...
      \end{verbatim}}

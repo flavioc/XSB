@@ -32,7 +32,7 @@
 
 %  str_fromlist(-Atom, +List)
 %  Given a list of integers representing characters returns the 
-%  corresponding atom. This is more like atom_chars/2 that works
+%  corresponding atom. This is more like atom_codes/2 that works
 %  only in the opposite direction.
 
 str_fromlist(String, List) :-

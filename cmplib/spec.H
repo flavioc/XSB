@@ -25,7 +25,7 @@
 
 :- export spec/2.
 
-:- import name/2, atom_chars/2 from standard.
+:- import name/2, atom_codes/2 from standard.
 :- import append/3, conget/2, conset/2 from prof_sbp.
 :- import gensym_pred/2, have_hardcut/2 from preproc.
 :- import member1/2, warning/1, message/1, error/1, option/1 from auxlry.

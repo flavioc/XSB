@@ -445,8 +445,10 @@ hilog_arglist(X, [Y|Z], I, N) :- K is I - 1, J is N - K,
 %----------------------------%
 
 atom_chars(A, L) :- atom_chars(A, L).
+atom_codes(A, L) :- atom_codes(A, L).
 
 number_chars(T, L) :- number_chars(T, L).
+number_codes(T, L) :- number_codes(T, L).
 
 name(T, L) :-
 	term_type(T, Type),
@@ -459,7 +461,7 @@ name(T, L) :-
 		)
 	; Type =:= 2 -> int_name(T, [], L)	% integer
 	; Type =:= 6 -> real_name(T, [], L)	% real
-	; Type =:= 5 -> atom_chars(T, L)
+	; Type =:= 5 -> atom_codes(T, L)
 	; abort('Wrong type in argument 1 of name/2')
 	).
 
