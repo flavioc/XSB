@@ -456,15 +456,27 @@ XSB_End_Instr()
  *    1st word: opcode X pred_arity perm_var_index
  *
  *  Description:
- *    Last instruction in each clause of a tabled predicate.  Is executed
- *    by a producing call to record a computed answer.  Two notations are
- *    made in the answer set: (1) the variable substitutions are saved in
- *    the answer trie, and (2) a new entry is made at the end of the answer
- *    list which points to the answer trie entry of (1).  All the
+ *    Last instruction in each clause of a tabled predicate.  The instruction
+ *    (1) saves the answer substitution in the answer trie and (2)
+ *    adds a cell to the end of the answer list pointing to the root
+ *    of the new subtstitution. All the
  *    information necessary to perform this Answer Check/Insert operation
- *    is saved in the producer's choice point frame.  This structure can be
+ *    is saved in the producer's choice point frame.  This CP is 
  *    reached through the subgoal frame, which is noted in the first
- *    environment variable.
+ *    environment variable of the tabled clause.
+ * 
+ *    In the case where we have added an unconditional ground answer
+ *    we perform early completion for the subgoal.
+ *
+ *    Next, if we are executing Local Evaluation, we fail after adding
+ *    the answer (and perhaps performing ec)  This is not always the
+ *    optimal way, as we need fail only if the subgoal is potentially
+ *    a leader.
+ * 
+ *    If we are not executing local evaluation, we take the forward
+ *    condinuation (i.e. we'll proceed).  In his case a delay element
+ *    must be added to the delay list or the root subgoal of the
+ *    current subgoal before proceeding.
  */
 
 XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc) 
@@ -559,7 +571,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 #endif
       /*
        * The new answer for this call is a conditional one, so add it
-       * into the delay list for the parent predicate.  Notice that
+       * into the delay list for its root subgoal.  Notice that
        * delayreg has already been restored to the delayreg of parent.
        *
        * This is the new version of delay_positively().  Here,
@@ -578,7 +590,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 	delay_positively(producer_sf, answer_leaf,
 			 makestring(get_ret_string()));
 #endif /* IGNORE_DELAYVAR */
-#endif /* LOCAL_EVAL */
+#endif /* ! LOCAL_EVAL */
     }
     else {
       if (template_size == 0) {

@@ -281,7 +281,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 	ComplStkFrame = next_compl_frame(ComplStkFrame);
       } /* while */
 
-      /* if subgoal has answers and these haven't been returned yet
+      /* if (leader) subgoal has answers and these haven't been returned yet
        * (when answers are returned, the answer list is reclaimed
        * and set to 0, 1 or 2) */
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
@@ -295,6 +295,11 @@ XSB_Start_Instr(check_complete,_check_complete)
 	 */
 
 	/* schedule return of answers */
+	/* TLS: I dont see how the next condition can happen, 
+	   breg shd only be set
+	   by negation_suspension creation and we are in an if
+	   conditional that precludes that */
+	   
 	if (breg!=orig_breg) {
 	  fprintf(stderr,"breg!=origbreg(%d,%d)\n",(int)breg,(int)orig_breg);
 	  orig_breg = breg;
