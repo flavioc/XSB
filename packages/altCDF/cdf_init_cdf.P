@@ -673,7 +673,7 @@ check_hasAttr_indices(Scid,Rid,Tcid):-
 	    true
 	  ; (ground(Rid),ground(Tcid) -> 
 	         true
-	       ; writeln(nonindexed(hasAttr(Scid,Rid,Tcid))) ) ).
+	       ; writeln(userout,nonindexed(hasAttr(Scid,Rid,Tcid))) ) ).
 
 :- comment(hasAttr/3, "@tt{hasAttr(SCid,Rid,TCid)} defines the
 inheritable relation predicate, where @tt{SCid} is the source class or
