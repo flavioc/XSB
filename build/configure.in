@@ -378,10 +378,9 @@ AC_MSG_RESULT($__sunpro_c)
 
 dnl set some basic flags
 case $CC in
-   gcc) # This is the optimization flag used for emuloop.c. 
-	# It is generally lower than for other modules.
-	c_low_opt_level=-${optimization_level-"O4"}
-	CFLAGS="-ansi -pedantic -finline-functions -Winline -Wall"
+   gcc)	c_low_opt_level=-${optimization_level-"O4"}
+	c_inline_level="-finline-functions -Winline" 
+	CFLAGS="-ansi -pedantic -Wall"
 	;;
    cc)  if test "$__sunpro_c" = "no"; then
 	   c_low_opt_level=-${optimization_level-"O4"}
@@ -390,10 +389,12 @@ case $CC in
     	   # Using xO4 would take SunPro more than an hour, hence xO2.
 	   c_low_opt_level=-${optimization_level-"xO2"}
         fi
+	c_inline_level=""
 	CFLAGS=""
 	;;
    acc) # acc also seems to choke on high optimization levels for emuloop.c
 	c_low_opt_level=-${optimization_level-"O2"}
+	c_inline_level=""
 	CFLAGS="-Xa"
 	;;
 esac
@@ -773,8 +774,7 @@ case "$canonical" in
      *decstation*) AC_DEFINE(DECstation)
 		   AC_DEFINE(MIPS_BASED)
 		;;
-     *hp300*) AC_DEFINE(HP300) ;;
-     *hp700*) AC_DEFINE(HP700) ;;
+     *hpux*) AC_DEFINE(HP700) ;;
      *linux*) AC_DEFINE(LINUX)
 	      case "${canonical}" in
 		   *ppc* | *powerpc* | *m68k* ) AC_DEFINE(MKLINUX_PPC) ;;
@@ -871,10 +871,11 @@ case "$canonical" in
 		;;
 esac
 
-# Don't optimize if debugging!!
+# Don't optimize and inline if debugging!!
 if test "${do_debugging}" = "yes"  -o "${disable_optimization}" = "yes" ; then
    c_opt_level=
    c_low_opt_level=
+   c_inline_level=
 fi
 if test "${do_debugging}" = "yes" ; then
    CFLAGS="${CFLAGS} -g"
@@ -890,9 +891,9 @@ if test "${with_oracle}" = yes ; then
 		${LDFLAGS}"
 fi
 
-LCFLAGS="${c_site_includes} ${c_low_opt_level} ${CFLAGS}"
+LCFLAGS="${c_site_includes} ${c_low_opt_level} ${c_inline_level} ${CFLAGS}"
 dnl Set CFLAGS **after** LCFLAGS
-CFLAGS="${c_site_includes} ${c_opt_level} ${CFLAGS}"
+CFLAGS="${c_site_includes} ${c_opt_level} ${c_inline_level} ${CFLAGS}"
 LDFLAGS="${ld_site_libraries} ${LDFLAGS}"
 
 
