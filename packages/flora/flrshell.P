@@ -129,6 +129,7 @@ STD_FPREFIX(print_answers)(Gs,NVs) :-
 	->  STD_FPREFIX(print_all)(Gs,NVs)
 	;   STD_FPREFIX(print_one)(Gs,NVs)
 	).
+STD_FPREFIX(print_answers)(_Gs,_NVs) :- abolish_table_pred(STD_FPREFIX(call)/1).
 
 
 /*********************************************************************/

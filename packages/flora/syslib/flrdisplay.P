@@ -57,57 +57,73 @@
 
 :- dynamic STD_FPREFIX(switch)/1.
 
+:- import ground/1 from basics.
+
+:- op(1050,xfy,'##>').
+:- op(1100,xfy,'##').
+
+(C ##> T ## _S) :- call(C), call(T).
+(C ##> _T ## S) :- ground(C), tnot(C), call(S).
+
+:- table STD_FPREFIX(call)/1.
+
 
 /********************************************************************/
 STD_FPREFIX(print_all)(Gs,NVs) :-
 	cputime(T0),
 	( NVs == [] ->
-	    ( STD_FPREFIX(call)(Gs) ->
-		STD_FPREFIX(write_Yes) 
-	      ;
-	        STD_FPREFIX(write_No) 
+	    (    STD_FPREFIX(call)(Gs)
+	    ##>  STD_FPREFIX(write_Yes) 
+	    ##   STD_FPREFIX(write_No) 
 	    )
-
-	  ;
-	    STD_FPREFIX(findall)(NVs,Gs,TempL),
+	
+	;   STD_FPREFIX(findall)(NVs,Gs,TempL),
 	    sort(TempL,L),
 	    cputime(T1),
 	    T is T1-T0,
 	    length(L,N),
-	    ( N = 0 ->
-	        STD_FPREFIX(write_No)
-	      ;
-		( STD_FPREFIX(switch)(no_chatter) -> true
+	    ( N = 0 -> STD_FPREFIX(write_No)
+	    ;
+		(   STD_FPREFIX(switch)(no_chatter)
+		->  true
 		;   STD_FPREFIX(write_matches)(L), nl,
 		    fmt_write(STDFDBK,
 			      '%d solution(s) in %S seconds on ',
 			      args(N,T)),
 		    shell(hostname,block,STDFDBK,block,_)
 		),
-	        STD_FPREFIX(write_Yes)
+		STD_FPREFIX(write_Yes)
 	    )
-	).
+	),
+	%% We need to fail here because if control reaches the end then 
+	%% Prolog top level issues a cut. Since Gs can have tabled predicates,
+	%% XSB might complain that there is an illegal cut over tables.
+	%% So, we simply let control fail to the second print_answers clauses
+	%% (in flrshell.P).
+	%% Prolog top level then cuts over that second clause and everyone 
+	%% is happy.
+	fail.
 
 
 /********************************************************************/
 STD_FPREFIX(print_one)(Gs,NVs) :-
 	( NVs == [] ->
-	    ( STD_FPREFIX(call)(Gs) ->
-	        STD_FPREFIX(write_Yes)
-	      ;
-	        STD_FPREFIX(write_No)
+	    (   STD_FPREFIX(call)(Gs)
+	    ##> STD_FPREFIX(write_Yes)
+	    ##  STD_FPREFIX(write_No)
 	    )
-
-	  ;
+	
+	;
 	    ( STD_FPREFIX(call)(Gs),
-	      STD_FPREFIX(write_pairs)(NVs),
-	      STD_FPREFIX(fail_unless_return), !
-	     ;
-	      STD_FPREFIX(write_No)
+		STD_FPREFIX(write_pairs)(NVs),
+		STD_FPREFIX(fail_unless_return)
+	    ##> true
+	    ##  STD_FPREFIX(write_No)
 	    )
-	).
-
-
+	),
+	fail.
+	
+	
 STD_FPREFIX(fail_unless_return) :- 
 	get0(C),
 	(C == CH_NEWLINE -> true ; get0(_)),
@@ -133,16 +149,17 @@ STD_FPREFIX(findall)(NVs,Gs,TempL) :-
 STD_FPREFIX(findall)(_NVs,_Gs,_TempL) :- STD_FPREFIX(handle_notrace), fail.
 
 STD_FPREFIX(handle_trace) :-
-    	( STD_FPREFIX(switch)(trace) -> (stat_flag(6, Trace), Trace = 0
-					 -> trace
-					 ;  true
-					)
-	    	    	    	     ; true
+    	(  STD_FPREFIX(switch)(trace)
+	-> (stat_flag(6, Trace), Trace = 0
+	   -> trace
+	   ;  true
+	   )
+	; true
 	).
 STD_FPREFIX(handle_notrace) :-
-    	(stat_flag(6, Trace), Trace > 0
-	  ->  notrace
-	  ;   true
+    	(   stat_flag(6, Trace), Trace > 0
+	->  notrace
+	;   true
 	).
 
 %% This turns off trace, so that flora internal stuff done after a
