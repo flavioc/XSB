@@ -674,7 +674,7 @@ only} those clauses of {\tt predicate/arity} that were defined in the
 file itself.
 
 After loading the module, all exported predicates of that module are
-imported into the current environment (the current current working
+imported into the current environment (the current working
 module {\tt usermod}).  For non-modules (see section~\ref{Modules}),
 all predicates are imported into thecurrent working module.
 
@@ -1051,6 +1051,7 @@ spec\_repr} compiler option (see Section~\ref{compiler_options})
 specialisation with replacement of the selected clauses with the
 representative of these clauses is performed.  Using this compiler
 option, predicate {\tt ordered/2} above would be specialised as follows:
+%%
 \begin{center}
 \begin{minipage}{4.1in}
 \begin{verbatim}
@@ -1063,6 +1064,8 @@ _$ordered(X, [Y|Z]) :- X @=< Y, _$ordered(Y, Z).
 \end{verbatim}
 \end{minipage}
 \end{center}
+%%$
+%%
 We note that in the presense of cuts or side-effects, the code
 replacement operation is not always sound, i.e.  there are cases when
 the original and the residual program are not computationally equivalent

@@ -371,11 +371,18 @@ terminates the input stream.
 
 If for some reason you don't feel like writing your own XSB programs, 
 there are several sample XSB programs in the directory: 
-\verb'$XSB_DIR/examples'.  All contain source code.
+{\tt \$XSB\_DIR/examples}.  All contain source code.
 
 The entry predicates of all the programs in that directory are given
 the names {\tt demo/0} (which prints out results) and {\tt go/0}
-(which does not print results). Hence, a sample session might look like
+(which does not print results).\footnote{
+  %%
+  This convention does not apply to the subdirectories of the examples
+  directory, which illustrate advanced features of XSB.
+  %%
+  }
+%%
+Hence, a sample session might look like
 (the actual times shown below may vary and some extra information is given
 using comments after the \% character):
 
