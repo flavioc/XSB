@@ -169,7 +169,7 @@ exists(X) :- ifd(X,_,_).
 exists(X) :- ifd(_,_,X).
 exists(X) :- imvd(X,_,_).
 exists(X) :- imvd(_,_,X).
-exists(X) :- imvddef(X,_,_).
+exists(X) :- imvddef(X,_).
 exists(X) :- isa(X,_).
 exists(X) :- isa(_,X).
 exists(X) :- sub(X,_).
