@@ -59,11 +59,17 @@ geninline(@=, [Arg1,Arg2], _HoldR, Pil, Pilr, Tin, Tout, _PredSym, _NC) :-
 	geninl_load_lhs(Arg2, R2, Pilm,
 			[fun_test_ne(R1,R2,abs(-1))|Pilr], Tmid, Tout, _).
 geninline(=, [Lhs,Rhs], HoldR, Pil, Pilr, Tin, Tout, _, _) :-
-	geninl_load_lhs(Lhs, R, Pil, Pil1, Tin, Tmid0, SaveReg),
-	release_if_tvar_if_done(Rhs, R, HoldR, Tmid0, Tmid1),
-	tgetpar(Rhs, R, Pil1, Pilr, Tmid1, Tmid2),
-	append(SaveReg, Tmid2, Tmid3),
-	geninl_unload_lhs(Lhs, R, HoldR, Tmid3, Tout).
+	(if_void_var(Lhs),if_void_var(Rhs)
+	 ->	Pilr = Pil, Tout = Tin
+	 ;	geninl_load_lhs(Lhs, R, Pil, Pil1, Tin, Tmid0, SaveReg),
+		release_if_tvar_if_done(Rhs, R, HoldR, Tmid0, Tmid1),
+		tgetpar(Rhs, R, Pil1, Pilr, Tmid1, Tmid2),
+		(SaveReg = [HR],memberchk(HR,Tmid2)
+		 ->	Tmid3 = Tmid2
+		 ;	append(SaveReg, Tmid2, Tmid3)
+		),
+		geninl_unload_lhs(Lhs, R, HoldR, Tmid3, Tout)
+	).
 geninline(Op, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC) :-
 	arithrelop(Op),
 	!,
@@ -81,14 +87,20 @@ geninline(TermCompOp, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, _, _) :-
 
 /*======================================================================*/
 /*======================================================================*/
-
+:- import memberchk/2 from basics.
 geninl_load_lhs(Term,R,Pil,Pilr,Tin,Tout,SaveR) :-
-	( Term = varocc(_Vid,Prag) ->
-		alloc_reg(Prag, Tin, Tmid), vprag_type(Prag, T),
+	(Term = varocc(_Vid,Prag)
+	 ->	alloc_reg(Prag, Tin, Tmid), vprag_type(Prag, T),
 		vprag_occ(Prag, Oc), vprag_loc(Prag, Loc),
-		( T = t -> R = Loc, Tout = Tmid,
-		  ( (Oc=l; Oc=v), SaveR = [] ; SaveR = [R] )
-		; getreg(Tmid, R), hold(R, Tmid, Tout), SaveR = []
+		(T = t
+		 ->	R = Loc, Tout = Tmid,
+			(memberchk(R,Tmid)
+			 ->	SaveR = []
+			 ; (Oc=l; Oc=v)
+			 ->	SaveR = []
+			 ;	SaveR = [R]
+			)
+		 ;      getreg(Tmid, R), hold(R, Tmid, Tout), SaveR = []
 		),
 		putvarinst(Prag, R, Pil, Pilr,0)
 /* it seems unlikely we'll get a putdval here, so tabled = 0 */
@@ -162,6 +174,7 @@ release_if_tvar_if_done(varocc(Vid,Prag),N,HoldR,Tin,Tout) :- !,
 	release_if_done(Vid,N,Prag,HoldR,Tin,Tout).
 release_if_tvar_if_done(_,_,_HoldR,Tin,Tin).
 
+if_void_var(varocc(_,Prag)) :- vprag_occ(Prag,v).
 
 /*======================================================================*/
 /*======================================================================*/

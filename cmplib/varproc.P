@@ -1,5 +1,5 @@
 /* File:      varproc.P
-** Author(s): Jiyang Xu, Terrance Swift, Kostis Sagonas
+** Author(s): Jiyang Xu, Terrance Swift, Kostis Sagonas, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -176,48 +176,53 @@ mark_last(no(_Vid)).
 /*	 p - otherwise							*/
 /*======================================================================*/
 
-mark_type([], _, _).
+mark_type([], _VT, _).
 mark_type([variable(Vid,v(Type,_Loc,Use,_NoUse))|Rest], VarTab, LastChunk) :-
-	mark_type1(VarTab, Chunks, LastChunk, Safe, Vid),
+	mark_type1(VarTab, Chunks, LastChunk, Safe, OKt, Vid),
 	length(Chunks, L),
-	( L > 1 -> Type = p
-	; Type = t
-	; true			% Type is vh or p but already determined
+	(L > 1
+	 ->	Type = p
+	 ; nonvar(OKt)
+	 ->	Type = t
+	 ; Type = p
+	 ->	true
+	 ;	true % Type is vh but already determined
 	),
 	( Type == p -> ( var(Safe) -> Use = d ; Use = u ) ; true ),
 	mark_type(Rest, VarTab, LastChunk).
 
-mark_type1([], _, _, _, _).
-mark_type1([One|Rest], Chunks, LastChunk, Safe, Vid) :-
-	mark_type2(One,  Chunks, LastChunk, Safe, Vid),
+mark_type1([], _, _, _, _, _).
+mark_type1([One|Rest], Chunks, LastChunk, Safe, OKt, Vid) :-
+	mark_type2(One,  Chunks, LastChunk, Safe, OKt, Vid),
 	!,	% needed to cut unnecessary choice points... (bmd & kostis)
-	mark_type1(Rest, Chunks, LastChunk, Safe, Vid).
+	mark_type1(Rest, Chunks, LastChunk, Safe, OKt, Vid).
 
-mark_type2(head(VOList), Chunks, LastChunk, Safe, Vid) :-
-	mark_seen(VOList, 1, Chunks, LastChunk, Safe, Vid).
-mark_type2(goal(CkId,_,_,VOList), Chunks, LastChunk, Safe, Vid) :-
-	mark_seen(VOList, CkId, Chunks, LastChunk, Safe, Vid).
-mark_type2(inlinegoal(CkId,_,_,VOList), Chunks, LastChunk, Safe, Vid) :-
-	mark_seen(VOList, CkId, Chunks, LastChunk, Safe, Vid).
-mark_type2(branch(A,B), Chunks, LastChunk, Safe, Vid) :-
-	mark_type1(A, Chunks, LastChunk, Safe, Vid),
-	mark_type1(B, Chunks, LastChunk, Safe, Vid).
-mark_type2(ifthenelse(A,B,C), Chunks, LastChunk, Safe, Vid) :-
-	mark_type1(A, Chunks, LastChunk, Safe, Vid),
-	mark_type1(B, Chunks, LastChunk, Safe, Vid),
-	mark_type1(C, Chunks, LastChunk, Safe, Vid).
+mark_type2(head(VOList), Chunks, LastChunk, Safe, OKt, Vid) :-
+	mark_seen(VOList, 1, Chunks, LastChunk, Safe, OKt, Vid).
+mark_type2(goal(CkId,_,_,VOList), Chunks, LastChunk, Safe, OKt, Vid) :-
+	mark_seen(VOList, CkId, Chunks, LastChunk, Safe, OKt, Vid).
+mark_type2(inlinegoal(CkId,_,_,VOList), Chunks, LastChunk, Safe, OKt, Vid) :-
+	mark_seen(VOList, CkId, Chunks, LastChunk, Safe, OKt, Vid).
+mark_type2(branch(A,B), Chunks, LastChunk, Safe, OKt, Vid) :-
+	mark_type1(A, Chunks, LastChunk, Safe, OKt, Vid),
+	mark_type1(B, Chunks, LastChunk, Safe, OKt, Vid).
+mark_type2(ifthenelse(A,B,C), Chunks, LastChunk, Safe, OKt, Vid) :-
+	mark_type1(A, Chunks, LastChunk, Safe, OKt, Vid),
+	mark_type1(B, Chunks, LastChunk, Safe, OKt, Vid),
+	mark_type1(C, Chunks, LastChunk, Safe, OKt, Vid).
 
-mark_seen(VOList, CkId, Chunks, LastChunk, Safe, Vid) :-
-	mark_seen1(VOList, CkId, Seen, LastChunk, Safe, Vid),
+mark_seen(VOList, CkId, Chunks, LastChunk, Safe, OKt, Vid) :-
+	mark_seen1(VOList, CkId, Seen, LastChunk, Safe, OKt, Vid),
 	( var(Seen) -> true ; memberchk(CkId, Chunks) ).
 
-mark_seen1([], _, _, _, _, _).
-mark_seen1([varocc(Vid0,Prag)|Rest], CkId, Seen, LastChunk, Safe, Vid) :-
+mark_seen1([], _, _, _, _, _, _).
+mark_seen1([varocc(Vid0,Prag)|Rest], CkId, Seen, LastChunk, Safe, OKt, Vid) :-
     ( Vid0 = Vid -> 
 	Seen = 1,	/* just bind Seen to a constant */
 	( member(CkId, LastChunk) -> vprag_lastchunk(Prag, 1)
 	; vprag_lastchunk(Prag, 0)
 	),
+	(vprag_level(Prag,s) -> OKt = 1 ; true), %been seen in structure context
 	vprag_occ(Prag, Occ),
 	( Occ == f ->
 	  % determine if the variable is safe when pval in the last goal
@@ -226,21 +231,24 @@ mark_seen1([varocc(Vid0,Prag)|Rest], CkId, Seen, LastChunk, Safe, Vid) :-
 	  ; true
 	  ),
 	  % determine if the variable must be permanent
-	  ( ( vprag_context(Prag, h) 
-	    ; vprag_level(Prag,s)
-	    ; member(CkId,LastChunk) ) -> true
-	  ; vprag_type(Prag, p)
+	  (vprag_context(Prag, h)
+	   ->	  OKt = 1
+	   ; member(CkId,LastChunk)
+	   ->	  OKt = 1
+	   ;	  true
 	  )
-	; Occ == v ->	% determine if the variable can be typed "vh"
-		( vprag_context(Prag, h), vprag_level(Prag, t) -> 
-			vprag_type(Prag, vh)
-		; true
+	; Occ == v	% determine if the variable can be typed "vh"
+	 ->	(vprag_context(Prag, h), vprag_level(Prag, t)
+		 ->	vprag_type(Prag, vh)
+		 ; member(CkId,LastChunk)
+		 ->	OKt = 1
+		 ;	true
 		)
-	; true
+	 ;	true
 	)
     ; true
     ),
-    mark_seen1(Rest, CkId, Seen, LastChunk, Safe, Vid).
+    mark_seen1(Rest, CkId, Seen, LastChunk, Safe, OKt, Vid).
 
 
 /*======================================================================*/
@@ -253,14 +261,16 @@ mark_seen1([varocc(Vid0,Prag)|Rest], CkId, Seen, LastChunk, Safe, Vid) :-
 
 alloc_vars([], _VarTab, PV, PV).
 alloc_vars([variable(Vid,v(VT,Loc,Use,NoUse))|VarList], VarTab, PVin, PVout) :-
-    ( VT == p -> PVmed is PVin+1, Loc is PVmed+1 /* first pvar has offset 2 */
-    ; VT == vh -> PVmed = PVin, Loc = 0
-    ; PVmed = PVin,
-      search_tvar(VarTab, OccList, LGArity, Vid),
-      compute_use1(OccList, HUse0, [], BUse0, [], NoUse0, [], OccInChunk, Vid),
-      ( var(OccInChunk) -> ChkArg = 0 ; ChkArg = LGArity ),
-      /* Conflict set = ChkArg - BUse0 */
-      conflict_avoid(BUse0, HUse0, NoUse0, Use, NoUse, ChkArg)
+    (VT == p
+     ->	    PVmed is PVin+1, Loc is PVmed+1 /* first pvar has offset 2 */
+     ; VT == vh
+     ->	    PVmed = PVin, Loc = 0
+     ;	    PVmed = PVin,
+	    search_tvar(VarTab, OccList, LGArity, Vid),
+	    compute_use1(OccList, HUse0, [], BUse0, [], NoUse0, [], OccInChunk, Vid),
+	    (var(OccInChunk) -> ChkArg = 0 ; ChkArg = LGArity),
+	    /* Conflict set = ChkArg - BUse0 */
+	    conflict_avoid(BUse0, HUse0, NoUse0, Use, NoUse, ChkArg)
     ),
     !, % needed to cut unnecessary choice points... (bmd & kostis)
     alloc_vars(VarList, VarTab, PVmed, PVout).
@@ -270,7 +280,8 @@ alloc_vars([variable(Vid,v(VT,Loc,Use,NoUse))|VarList], VarTab, PVin, PVout) :-
 /*======================================================================*/
 
 search_tvar([One|Rest], OccList, Arity, Vid) :-
-	'search tvar'(One, OccList, Arity, Vid, Rest).
+	'search tvar'(One, OccList, Arity, Vid, Rest),
+	!.
 search_tvar([_One|Rest], OccList, Arity, Vid) :-
 	search_tvar(Rest, OccList, Arity, Vid).
 
@@ -286,11 +297,13 @@ search_tvar([_One|Rest], OccList, Arity, Vid) :-
 	( search_tvar(A, OccList, Arity, Vid)
 	; search_tvar(B, OccList, Arity, Vid)
 	; search_tvar(C, OccList, Arity, Vid)
-	).
+	),
+	!.
 'search tvar'(branch(A,B), OccList, Arity, Vid, _) :-
 	( search_tvar(A, OccList, Arity, Vid)
 	; search_tvar(B, OccList, Arity, Vid)
-	).
+	),
+	!.
 
 search_occ([varocc(Vid,_Prag)|_Rest], Vid).
 search_occ([_|Rest], Vid) :- search_occ(Rest, Vid).
@@ -333,27 +346,26 @@ get_OccList([One|Rest], VOListIn, VOListOut, Arity) :-
 /*======================================================================*/
 
 compute_use1([], HUse0,HUse0, BUse0,BUse0, NoUse0,NoUse0, _, _).
-compute_use1([varocc(I,Prag)|Rest],
-	     HUse0,HUseR, BUse0,BUseR, NoUse0,NoUseR, OccInChunk, Vid) :-
-	( I = Vid -> 
-	      NoUse0=NoUseM, vprag_context(Prag, HB),
-	      ( HB == b -> OccInChunk = 1 /* just bind it */ ; true ),
-	      vprag_level(Prag, Level),
-	      ( Level == t ->
-		( HB == h ->
-			vprag_argno(Prag, Arg), HUse0=[Arg|HUseM], BUse0=BUseM
-		; HB == b ->
-			vprag_argno(Prag, Arg), BUse0=[Arg|BUseM], HUse0=HUseM
-		; HB == i ->
-			HUse0=HUseM, BUse0=BUseM
+compute_use1([varocc(I,Prag)|Rest],HUse0,HUseR,BUse0,BUseR,NoUse0,NoUseR,OccInChunk,Vid) :-
+	(I = Vid
+	 ->	NoUse0=NoUseM, vprag_context(Prag, HB),
+		( HB == b -> OccInChunk = 1 /* just bind it */ ; true ),
+		vprag_level(Prag, Level),
+		(Level == t
+		 ->	(HB == h
+			 ->	vprag_argno(Prag, Arg), HUse0=[Arg|HUseM], BUse0=BUseM
+			 ; HB == b
+			 ->	vprag_argno(Prag, Arg), BUse0=[Arg|BUseM], HUse0=HUseM
+			 ; HB == i
+			 ->	HUse0=HUseM, BUse0=BUseM
+			)
+		 ;	HUse0=HUseM, BUse0=BUseM
 		)
-	      ; HUse0=HUseM, BUse0=BUseM
-	      )
-	; HUse0=HUseM, BUse0=BUseM,
-	  ( vprag_context(Prag, b), vprag_level(Prag, t), vprag_type(Prag, t),
-	    vprag_argno(Prag, Arg), NoUse0=[Arg|NoUseM]
-	  ; NoUse0=NoUseM
-	  )
+	 ;      HUse0=HUseM, BUse0=BUseM,
+		(vprag_context(Prag, b), vprag_level(Prag, t), vprag_type(Prag, t)
+		 ->	vprag_argno(Prag, Arg), NoUse0=[Arg|NoUseM]
+		 ;	NoUse0=NoUseM
+		)
 	),
 	compute_use1(Rest,HUseM,HUseR,BUseM,BUseR,NoUseM,NoUseR,OccInChunk,Vid).
 
@@ -371,22 +383,26 @@ conflict_avoid(BUse0, HUse0, NoUse0, Use, NoUse, ChkArg) :-
 
 conf_real_use([], Use, Use, _ChkArg).
 conf_real_use([One|More], Use, UseR, ChkArg) :-
-	( One =< ChkArg, Use=UseM	% conflict or already in BUse
-	; member(One, UseR), Use=UseM	% alread in BUse
-	; Use = [One|UseM]		% head par in front
+	(One =< ChkArg
+	 ->	Use=UseM		% conflict or already in BUse
+	 ; member(One, UseR)
+	 ->	Use=UseM		% alread in BUse
+	 ;	Use = [One|UseM]	% head par in front
 	),
 	conf_real_use(More, UseM, UseR, ChkArg).
 
 conf_nouse1([], _, _).
 conf_nouse1([One|More], Use, NoUse) :-
-	( member(One, Use) ; memberchk(One, NoUse) ),
+	(member(One, Use) ; memberchk(One, NoUse)),
+	!,
 	conf_nouse1(More, Use, NoUse).
 
 conf_nouse2(N, Use, NoUse) :-
-	( N =:= 0 -> closetail(NoUse)
-	; ( member2(N, Use) ; memberchk(N, NoUse) ),
-	  N1 is N - 1,
-	  conf_nouse2(N1, Use, NoUse)
+	(N =:= 0
+	 ->	closetail(NoUse)
+	 ; ( member2(N, Use) ; memberchk(N, NoUse) )
+	 ->	  N1 is N - 1,
+		conf_nouse2(N1, Use, NoUse)
 	).
 
 
@@ -415,7 +431,7 @@ vprag_occ(vrec(_,_,_,C,_,_), C).
 vprag_lastchunk(vrec(_,_,_,_,_,C), C).
 vprag_common(vrec(_,_,_,_,C,_), C).
 vprag_type(vrec(_,_,_,_,v(C,_,_,_),_), C).
-	% t - Temp var, p - Permanent var, vh - void var at head
+	% t - Temp var, p - Permanent var, vh - void var at head, v - void not head
 
 /*------------------------------------------------------*/
 /* The following information is filled by alloc_vars/2.	*/
@@ -437,11 +453,10 @@ vprag_nouse(vrec(_,_,_,_,v(_,_,_,C),_), C).
 
 vprag_type1(Prag, T) :-
 	vprag_type(Prag, T0),
-	( T0 = p, vprag_lastchunk(Prag, 1),
-	  ( vprag_occ(Prag, l) ; vprag_occ(Prag, s) ) -> vprag_use(Prag, T)
-	; T = T0
+	(T0 = p, vprag_lastchunk(Prag,1), (vprag_occ(Prag,l) ; vprag_occ(Prag,s))
+	 ->	vprag_use(Prag,T)
+	 ;	T = T0
 	).
-
 
 force_varproc_loaded.
 

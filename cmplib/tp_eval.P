@@ -88,7 +88,7 @@ eval_exp(real(N),R,[Inst|Pil],Pil,_,Tin,Tout,_,_) :-
 eval_exp(structure(Sym,Args),R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
 	sym_name(Sym, Op, Arity),
 	( Arity =:= 2 -> Args = [E1,E2],
-		eval_binop(Op,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC)
+	 eval_binop(Op,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC)
 	; Arity =:= 1 -> Args = [E],
 		eval_uniop(Op, E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC)
 	; sym_name(PredSym, P, A),
@@ -103,18 +103,19 @@ eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,PredSym,NC) :-
 	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
 	Inst = fail, Tin = Tout, R = 0.
 
-eval_uniop('+',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  /* unary plus */
+eval_uniop('+',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :- !, /* unary plus */
     eval_exp(E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC).
-eval_uniop('-',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  /* unary minus */
+eval_uniop('-',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  !, /* unary minus */
     getreg(Tin,R), hold(R,Tin,Tmid1),
     Pil = [putnumcon(R,0)|Pilm],
     eval_exp(E,R1,Pilm,[subreg(R1,R)|Pilr],HoldR,Tmid1,Tmid2,PredSym,NC),
     release(R,Tmid2,Tmid3),
     release_if_done0(E,R1,HoldR,Tmid3,Tout).
-eval_uniop('\',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  /* negation */
+eval_uniop('\',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  !, /* negation */
     eval_exp(E,R,Pil,[negate(R)|Pilr],HoldR,Tin,Tout,PredSym,NC).
 eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-   /* others */
     builtin_function(Op, 1, Num),
+    !,
     eval_exp(E,R,Pil,[unifunc(Num,R)|Pilr],HoldR,Tin,Tout,PredSym,NC).
 eval_uniop(Op,_,_,Pil,Pil,_,Tin,Tin,PredSym,NC) :-
     sym_name(PredSym, P, A),

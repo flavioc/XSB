@@ -142,13 +142,12 @@ tbldpars([Subpar|Subpars],Pil,Pilr,T1,T2) :-
     tbldpars(Subpars,Pil1,Pilr,T3,T2).
 
 tbldpar(varocc(Vid,Prag),Pil,Pilr,Tin,Tout) :-
-    alloc_reg(Prag,Tin,Tmid),
-    bldvarinst(Prag,Pil,Pilr,Tmid),
-    ( vprag_context(Prag, i), Tout=Tmid			/* in inline */
-    ; vprag_type(Prag,t), vprag_loc(Prag,Loc),
-	release_if_done(Vid,Loc,Prag,[],Tmid,Tout)
-    ; Tmid = Tout
-    ).
+	bldvarinst(Prag,Pil,Pilr,Tin,Tmid),
+	(vprag_type(Prag,t)
+	 ->	vprag_loc(Prag,Loc),
+		release_if_done(Vid,Loc,Prag,[],Tmid,Tout)
+	 ;	Tmid = Tout
+	).
 tbldpar(integer(V),[bldnumcon(V)|Pilr],Pilr,T,T).
 tbldpar(real(V),[bldfloat(V)|Pilr],Pilr,T,T).
 tbldpar(constant(Sym),[bldcon(Sym)|Pilr],Pilr,T,T).
@@ -190,13 +189,12 @@ tunipars([Subpar|Subpars], Pil, Pilr, T1, T2) :-
 /*----------------------------------------------------------------------*/
 
 tunipar(varocc(Vid,Prag), Pil, Pilr, Tin, Tout) :-
-    alloc_reg(Prag, Tin, Tmid),
-    univarinst(Prag, Pil, Pilr), 
-    ( vprag_context(Prag, i), Tout = Tmid		/* in inline */
-    ; vprag_type(Prag, t), vprag_loc(Prag, Loc),
-      release_if_done(Vid, Loc, Prag, [], Tmid, Tout)
-    ; Tmid = Tout
-    ).
+	univarinst(Prag, Pil, Pilr, Tin, Tmid), 
+	(vprag_type(Prag, t)
+	 ->	vprag_loc(Prag, Loc),
+		release_if_done(Vid, Loc, Prag, [], Tmid, Tout)
+	 ;	Tmid = Tout
+	).
 tunipar(integer(V), [uninumcon(V)|Pilr], Pilr, T, T).
 tunipar(real(V), [unifloat(V)|Pilr], Pilr, T, T).
 tunipar(constant(Sym), [unicon(Sym)|Pilr], Pilr, T, T).

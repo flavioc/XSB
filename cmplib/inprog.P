@@ -129,8 +129,13 @@ inp_body(goal(Sym,Args),goal(Sym,NArgs),VarTab,VarTabr,Ckin,Ckout,VarList) :-
     inp_args(Args,NArgs,VOList,[],b,1,VarList).
 inp_body(inlinegoal(Name,Arity,Args),inlinegoal(Name,Arity,NArgs),
 		VarTab,VarTabr,Chunkno,Chunkno,VarList) :-
-    VarTab=[inlinegoal(Chunkno,Name,Arity,VOList)|VarTabr],
-    inp_args(Args,NArgs,VOList,[],i,1,VarList).
+%%	(Name = (=), Arity =:= 2, Args = [Lhs,Rhs], Rhs = varocc(_), \+ Lhs = varocc(_)
+%%	 ->	Args2 = [Rhs,Lhs]
+%%	 ;	Args2 = Args
+%%	),
+	Args2 = Args,
+	VarTab=[inlinegoal(Chunkno,Name,Arity,VOList)|VarTabr],
+	inp_args(Args2,NArgs,VOList,[],i,1,VarList).
 
 
 /*  	"inp_body_test" converts the test for an if-then-else		*/

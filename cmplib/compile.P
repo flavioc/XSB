@@ -297,7 +297,6 @@ find_if_tabled(Sym, tabled(Tabind,Ar)):-
 find_if_tabled(_, 0). 
 
 /*======================================================================*/
-
 compile_clauses([], _, PilCode, PilCode, Nin, Nin).
 compile_clauses([Clause|Clauses], Sym, PilCode, PilCodeR, Nin, Nout) :-
 	Nmid is Nin + 1,  

@@ -1,5 +1,5 @@
 /* File:      tp_var.P
-** Author(s): Saumya Debray, Kostis Sagonas, Terrance Swift
+** Author(s): Saumya Debray, Kostis Sagonas, Terrance Swift, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -22,7 +22,6 @@
 ** $Id$
 ** 
 */
-
 
 
 getvarinst(VPrag, N, Pil, Pilr, Tin) :-
@@ -67,7 +66,8 @@ getvar_s(u,Loc,N,[putuval(Loc,N1),gettval(N1,N)|Pil],Pil,T) :-
 putvar_f(p,Loc,N,[putpvar(Loc,N)|Pil],Pil).
 putvar_f(t,Loc,N,[puttvar(Loc,N)|Pil],Pil).
 
-putvoid(p,Loc,N,[putpvar(Loc,N),putuval(Loc,N)|Pil],Pil).
+%%putvoid(p,Loc,N,[putpvar(Loc,N),putuval(Loc,N)|Pil],Pil). %% ??why both??
+putvoid(p,Loc,N,[putuval(Loc,N)|Pil],Pil).
 putvoid(t,Loc,N,[puttvar(Loc,N)|Pil],Pil).
 
 /* tabled predicates always need an environment */
@@ -80,13 +80,22 @@ putvar_s(u,Loc,N,Tab,[Inst|Pil],Pil):-
 putvar_s(d,Loc,N,Tab,[Inst|Pil],Pil):-
 	Tab =:= 1 -> Inst = putpval(Loc,N) ; Inst = putdval(Loc,N).
 
-univarinst(VPrag, Pil, Pilr) :-
+univarinst(VPrag, Pil, Pilr, Tin, Tout) :-
 	vprag_type1(VPrag, Typ),
-	vprag_loc(VPrag,Loc),
 	vprag_occ(VPrag, Occ),
-	( Occ == v -> univar_v(Typ,Loc,Pil,Pilr)
-	; Occ == f  -> univar_f(Typ, Loc, Pil, Pilr)
-	; ( Occ == l ; Occ == s ) -> univar_s(Typ, Loc, Pil, Pilr)
+	(Occ == v
+	 ->	%%univar_v(Typ,Loc,Pil,Pilr)
+		(vprag_loc(VPrag,256) -> true ; true), % bind to dummy
+		Pil = [uniavar|Pilr],
+		Tout = Tin
+	; Occ == f
+	 ->	alloc_reg(VPrag,Tin,Tout),
+		vprag_loc(VPrag,Loc),
+		univar_f(Typ, Loc, Pil, Pilr)
+	; (Occ == l ; Occ == s)
+	 ->	Tout = Tin,
+		vprag_loc(VPrag,Loc),
+		univar_s(Typ, Loc, Pil, Pilr)
 	).
 
 univar_f(p,Loc,[unipvar(Loc)|Pilr],Pilr).
@@ -97,16 +106,22 @@ univar_s(t,Loc,[unitval(Loc)|Pilr],Pilr).
 univar_s(d,Loc,[unipval(Loc)|Pilr],Pilr).
 univar_s(u,Loc,[unipval(Loc)|Pilr],Pilr).
 
-univar_v(p,Loc,[unipvar(Loc)|Pilr],Pilr).
-univar_v(t,_Loc,[uniavar|Pilr],Pilr).
-
-bldvarinst(VPrag, Pil, Pilr, _Tin) :-
+bldvarinst(VPrag, Pil, Pilr, Tin, Tout) :-
 	vprag_type(VPrag, Typ),
-	vprag_loc(VPrag,Loc),
 	vprag_occ(VPrag, Occ),
-	( Occ == v -> bldvar_v(Typ,Loc,Pil,Pilr)
-	; Occ == f -> bldvar_f(Typ,Loc,Pil,Pilr)
-	; ( Occ == l ; Occ == s ) -> bldvar_s(Typ,Loc,Pil,Pilr)
+	(Occ == v
+	 ->	Tout = Tin,
+		%%bldvar_v(Typ,Loc,Pil,Pilr)
+		vprag_loc(VPrag,256),
+	Pil = [bldavar|Pilr]
+	; Occ == f
+	 ->	alloc_reg(VPrag,Tin,Tout),
+		vprag_loc(VPrag,Loc),
+		bldvar_f(Typ,Loc,Pil,Pilr)
+	; (Occ == l ; Occ == s)
+	 ->	Tout = Tin,
+		vprag_loc(VPrag,Loc),
+		bldvar_s(Typ,Loc,Pil,Pilr)
 	).
 
 bldvar_f(p,Loc,[bldpvar(Loc)|Pilr],Pilr).
@@ -114,9 +129,6 @@ bldvar_f(t,Loc,[bldtvar(Loc)|Pilr],Pilr).
 
 bldvar_s(p,Loc,[bldpval(Loc)|Pilr],Pilr).
 bldvar_s(t,Loc,[bldtval(Loc)|Pilr],Pilr).
-
-bldvar_v(p,Loc,[bldpvar(Loc)|Pilr],Pilr).
-bldvar_v(t,_,[bldavar|Pilr],Pilr).
 
 /*======================================================================*/
 /* Register allocation/deallocation utilities --- used by tprog.P	*/
@@ -247,7 +259,6 @@ computil_find_reg1([_|Rest],Tin,Reg) :- computil_find_reg1(Rest,Tin,Reg).
 
 %:- import tell/1, telling/1, told/0, write/1, nl/0 from standard.
 
-/* called by tcond_sot to release ... */
 release_if_done(Vid,R,VPrag,HoldR,Tin,Tout) :-
 	vprag_type(VPrag, T),
 	( T == t -> 
@@ -255,6 +266,7 @@ release_if_done(Vid,R,VPrag,HoldR,Tin,Tout) :-
 	    vprag_occ(VPrag, Occ),
 	    ( nonvar(L), release_if_done1(Vid,R,HoldR,Tin,Tout,L,Occ)
 	    ; var(L), Tout = [R|Tin]	% Changed Kostis (12/18/92) to fix bug.
+				% Now two terms share this reg, so on list TWICE!
 	    )
 	; release(R, Tin, Tout)		% T is one of: p, d, u, vh
 	).
@@ -264,16 +276,17 @@ release_if_done(Vid,R,VPrag,HoldR,Tin,Tout) :-
 release_if_done(_,_,_,_,T,T).
 
 release_if_done1(Vid,R,HoldR,Tin,Tout,L,Occ) :-
-    \+ memberchk(Vid,HoldR),
-    ( ( Occ == v ; Occ == l ) ->
-	( release(R,Tin,Tmid),
-	  ( R =:= L, Tmid = Tout
-	  ; R =\= L, release(R,Tmid,Tout)
-	  )
-	) 
-	; (R =\= L, release(R,Tin,Tout))
-    ).
-
+	\+ memberchk(Vid,HoldR),
+	(Occ == l
+	 ->	release(R,Tin,Tmid),
+		(R =:= L
+		 ->	Tmid = Tout
+		 ;	release(L,Tmid,Tout)
+		)
+	 ; R =\= L
+	 ->	release(R,Tin,Tout)
+	 ;	Tout = Tin
+	).
 
 /*======================================================================*/
 /* release_if_done0(+Arg, +Reg, +Hold, +Tin, -Tout)			*/

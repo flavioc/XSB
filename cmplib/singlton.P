@@ -59,7 +59,7 @@ singleton_check(Clause, VariableList) :-
 singleton_warnings(Clause, VariableList) :-
 	numbervars_cmplib(Clause, 1, NumberOfVars),
 	N is NumberOfVars - 1,
-	functor(Occurences, occ, N),
+	log_ith(0,Occurences,N),
 	calculate_occurences(Clause, Occurences),
 	Clause = (Head :- _),
 	hilog_functor(Head, P, A),
@@ -70,7 +70,7 @@ calculate_singleton(Clause,VarList,Occurences) :-
 	copy_term((Clause,VarList),(Clause1,VarList1)),
 	numbervars_cmplib(Clause1, 1, NumberOfVars),
 	N is NumberOfVars - 1,
-	functor(Occ, occ, N),
+	log_ith(0,Occ,N),
 	calculate_occurences(Clause1, Occ),
 	process_raw_occurences(VarList,VarList1,Occ,Occurences).
 
@@ -80,7 +80,7 @@ process_raw_occurences([vv(Name,Var)|R],[vv(Name,'_$cmplib_var'(N))|R1],Occ, Occ
 	atom_codes(Name, CharList),
 	( CharList = [95|_] ->	% variable Var begins with an "_"
                 Occurences = NewOccurences
-	  ; ll_arg(N, Occ, OccCount),
+	  ; log_ith(N, Occ, OccCount),
 	    ( OccCount == found('at least twice') -> 
   	        Occurences = NewOccurences
 	      ; Occurences = [Name = Var|NewOccurences] )
@@ -98,7 +98,7 @@ calculate_occurences(Term, Occurences) :-
 	arg(NewN, Term, Arg),	% We cannot use ll_arg/3 here (Term may be a list)
 	( Arg = '_$cmplib_var'(Number) ->
 		( integer(Number) ->
-			ll_arg(Number, Occurences, OccCount),
+			log_ith(Number, Occurences, OccCount),
 			( var(OccCount) -> OccCount = found(_)
 			; OccCount = found(Times) -> 
 				( var(Times) -> Times = 'at least twice'
@@ -126,7 +126,7 @@ write_singleton_warnings_1([vv(VarName,'_$cmplib_var'(N))|Rest],Occurences, P, A
 	atom_codes(VarName, CharList),
 	( CharList = [95|_] ->	% variable Var begins with an "_"
 		true		% (underscore), so its OK, ignore it!.
-	; ll_arg(N, Occurences, OccCount),
+	; log_ith(N, Occurences, OccCount),
 	  ( OccCount == found('at least twice') -> true
 	  ; (warning(('Singleton variable ', VarName,
 		     ' in a clause of ', P, '/', A))
