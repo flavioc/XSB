@@ -1361,8 +1361,8 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 
      realtime = real_time();
      setbuf(stdout, NULL);
-     init_machine();		/* init space, regs, stacks */
      startup_file = init_para(argc, argv);	/* init parameters */
+     init_machine();		/* init space, regs, stacks */
      init_inst_table();		/* init table of instruction types */
      init_symbols();		/* preset a few symbols in PSC table */
      init_interrupt();		/* catch ^C interrupt signal */
