@@ -24,6 +24,10 @@
 */
 
 
+:- compiler_options([sysmod, xpp_on]).
+#include "flag_defs.h"
+
+
 
 /*======================================================================*/
 /* parse(+Modname, +PFile, +HFile,					*/
@@ -112,7 +116,7 @@ open_or_xpp_file(File, XPP_process) :-
 	; 
 	    %% xpp_on is set: use preprocessor
 	    xpp_process_file(File, XPP_process, IOportFromProc),
-	    stat_set_flag(10, IOportFromProc)
+	    stat_set_flag(CURRENT_INPUT, IOportFromProc)
 	).
 
 xpp_process_file(FileName, XPP_process, IOportFromProc) :-
@@ -120,9 +124,13 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	;   make_gpp_command(XPP_command)
 	),
 	fmt_write_string(FullXPP_command, '%s %s', args(XPP_command,FileName)),
-	fmt_write_string(XPP_command_msg, '[%s]', arg(FullXPP_command)),
+#ifdef DEBUG_GPP
+	fmt_write_string(XPP_command_msg, '[%s]', FullXPP_command),
+#else
+	fmt_write_string(XPP_command_msg, '[Preprocessing %s]', FileName),
+#endif
 	message(XPP_command_msg),
-	%% Redirect cpp''s stderr to XSB''s STDWARN
+	%% Redirect cpp's stderr to XSB's STDWARN
 	spawn_process(FullXPP_command, block, IOportFromProc, 3, XPP_process),
 	!,
 	retractall(xpp_program(_)).
@@ -206,7 +214,8 @@ parse_clauses(ModName, Module) :-
 parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
 	error(('Clauses of ', M, ' cannot be parsed.')).
 
-my_read(Term, Vars) :- stat_flag(10, File), file_read(File, Term, Vars).
+my_read(Term, Vars) :-
+	stat_flag(CURRENT_INPUT, File), file_read(File, Term, Vars).
 
 check_compilable_clause(Cl) :- var(Cl), !, 
 	error(('Clause cannot be compiled: ',Cl)),
@@ -223,9 +232,6 @@ check_compilable_clause([Cl|Cls]) :- !,
 	check_compilable_clause(Cls).
 check_compilable_clause(_).
 
-%/////////////////////////////////////////////////////////////////////////
-% 	Modifications made by Baoqiu Cui (11/22/1996)
-%/////////////////////////////////////////////////////////////////////////
 %-------------------------------------------------------------------------
 % Note: The VariableList is not used in the rule parse_clause/3 for the 
 %	queries like
@@ -615,7 +621,8 @@ parse_index((Pred, Preds), SymTab) :- !,
 	parse_index(Preds, SymTab).
 parse_index(Pname/Arity-Arg, _SymTab) :-
 	\+ integer(Arg), !, 
-	warning(('Index cannot be created on more than one arguments for a compiled predicate ',Pname,'/',Arity,' !')).
+	warning(('Cannot index a compiled predicate on more than one argument '
+		,Pname,'/',Arity,' !')).
 parse_index(Pname/Arity-Arg, SymTab) :- !,
 	index(Pname/Arity, Arg, 0),
 	sym_insert(Pname, Arity, [index(Arg)], SymTab, _).
@@ -689,7 +696,7 @@ trans_arg(RawArg, Arg, _SymTab, VidIn, VidOut) :- var(RawArg),
 	Arg = varocc(VidOut).
 trans_arg('$$var'(ID), varocc(ID), _SymTab, VidIn, VidIn) :- integer(ID).
 	% the test is needed for self-compiling! Trick.
-	% when compile this module, '$$var' may mean a structure!
+	% when compiling this module, '$$var' may mean a structure!
 trans_arg(RawArg, integer(RawArg), _SymTab, VidIn, VidIn) :- integer(RawArg).
 trans_arg(RawArg, real(RawArg), _SymTab, VidIn, VidIn) :- real(RawArg).
 trans_arg(RawArg, constant(Sym), SymTab, VidIn, VidIn) :- atom(RawArg),
