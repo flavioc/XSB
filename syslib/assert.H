@@ -33,7 +33,7 @@
 :- export clause0/2, clause/2.
 :- export (dynamic)/1.
 :- export t_assert/2.
-
+:- export exchange_definitions/2.
 
 :- import append/3 from basics.
 :- import (=..)/2, functor/3, integer/1, callable/1, throw/1,
