@@ -38,8 +38,6 @@
 
 %%:- export flora_prettyprint/1.
 
-_Obj : flora_pp_superclass.
-
 
 %% Methods to ignore during pretty printing
 flora_print_ignore(print(pretty)).
