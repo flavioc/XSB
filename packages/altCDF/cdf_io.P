@@ -2,9 +2,9 @@
 
 #include "standard.h"
 
-:- import message/1, messageln/2 from standard.
+:- import message/1,messageln/2 from standard.
 
-messageln(Message) :- messageln(Message, STDMSG).
+%messageln(Message) :- messageln(Message, STDMSG).
 
 :- export load_extensional_facts/1, 
 	dump_extensional_facts/1, 
@@ -25,11 +25,14 @@ messageln(Message) :- messageln(Message, STDMSG).
 
 :- import component_table_int/3 from usermod.
 
-:- import newExtTerm/2 from cdf_init_cdf.
+:- import caching_cdf/1 from usermod.
+
+:- import newIntRule/3,newExtTermBatch/2,transform_intensional_rules/4,
+	 abolish_cdf_tables/0  from cdf_init_cdf.
 
 :- import dlrule_to_cdf/2 from cdftp_rules.
 
-:- import cdf_warning/2 from cdf_exceptions.
+:- import clause_assert/2 from cdf_exceptions.
 
 :- import cdf_fix_dir/2 from cdf_utilities.
 
@@ -122,10 +125,12 @@ load_extensional_facts(Dir) :-
 reload_extensional(Dir):- 
 	concat_atom([Dir,'cdf_extensional.P'],File),
 	see(File),
+	abolish_cdf_tables,
 	reload_extensional,
 	seen.
 
 reload_extensional :-
+	caching_cdf(Flg),
 	repeat,
 	read_canonical(Term),
 %	writeln(Term),
@@ -133,7 +138,7 @@ reload_extensional :-
 	 ->	!
 	 ; Term = :-(_)
 	 ->	fail
-	 ; 	newExtTerm(newExtTermBatch,Term),
+	 ; 	newExtTermBatch(Term,Flg),
 	  	fail).
 
 %-------------------------------------------------------------- 
@@ -240,6 +245,7 @@ read_till_slash_1([H|R],[H|R1],S):-
 %TLS: dont know if permission error is right here.	   :	
 load_intensional_rules(Path,Name):- 
 	retract_intensional_rules(Name),
+	abolish_cdf_tables,
 	concat_atom([Path,'/cdf_intensional.P'],File),
 	(file_exists(File) -> 
    	    see(File),
@@ -283,13 +289,7 @@ read_intensional_rules_2((:-(Query)),_Name):- !,
 	call(Query),
 	fail.
 read_intensional_rules_2((Head :- Body),Name):- !,
-	transform_intensional_rules(Head,BlankBody,NewHead,Name),
-	functor(Head,T,A),
-	functor(BlankHead,T,A),
-	BlankHead =.. [_|Args],
-	BlankBody =.. [_|Args],
-	clause_assert(BlankHead,BlankBody),
-	assert((:-(NewHead,Body))),
+	newIntRule(Head,Body,Name),
 	fail.
 %read_intensional_rules_2(auxiliary_cdf_rule(Head,Body),Name):- !,
 %	auxiliary_cdf_rule(Name,Head,Body):- !,
@@ -304,23 +304,6 @@ read_intensional_rules_2(Head,Name):-
 	BlankBody =.. [_|Args],
 	clause_assert(BlankHead,BlankBody),
 	assert(NewHead),
-	fail.
-
-clause_assert(Head,Body):- 
-	(clause(Head,Body) -> true ; asserta((:-(Head,Body)))).
-
-% hasAttr_int(_,_,_) , hasAttr_int_Name(_,_,_)  ; hasAttr_int_name(<Orig stuff>) 
-transform_intensional_rules(Head,BlankHead,NewHead,Name):- 
-	component_table_int(Head,_,_),
-	Head =.. [F|T],
-	functor(Head,F,N),
-	concat_atom([F,'_',Name],NewF),
-	NewHead =.. [NewF|T],
-	functor(BlankHead,NewF,N),
-	!.
-transform_intensional_rules(Head,_BlankHead,_NewHead,Name):- 
-	cdf_warning(rule_load,['Cannot intern intensional rule with head ',
-	                                  Head,' for directory ',Name]),
 	fail.
 
 :- comment(cdf_exists/1, "@tt{cdf_exists(Dir)} checks whether

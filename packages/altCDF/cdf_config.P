@@ -77,10 +77,12 @@ initial_cdf_flag(componentUpdate,check(A,B,[classify_if_necessary(A,B)])).
 initial_cdf_flag(newExtTermSingle,check(A,B,[cdf_check_ground(B),
 				   	     check_types(A,B),
 					     check_identity(A,B)])).
+/*
 initial_cdf_flag(newExtTermBatch,check(A,B,[%cdf_check_ground(B),
 				   	     %check_types(A,B),
 					     %check_identity(A,B)
                                                                  ])).
+*/
 
 :- dynamic cdf_flags/2.
 :- index(cdf_flags/2,trie).

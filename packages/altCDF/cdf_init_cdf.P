@@ -17,12 +17,16 @@
 	classHasAttr/3, immed_classHasAttr/3, 
 	coversAttr/3, immed_coversAttr/3,
 	in_hierarchy/1,
-	newExtTerm/1, newExtTerm/2, retractallExtTerm/1,
+	newExtTerm/1, newExtTerm/2, newExtTermBatch/2,
+            retractallExtTerm/1,
+	newIntRule/3, newIntRule/4, newIntRuleBatch/4,
+            retractallIntRule/1,
 	assert_cdf/1, retractall_cdf/1,
 	updateExtTerm/3,
 	make_cdf_clean/0, make_cdf_clean/1,
 	make_cdf_dirty/1,
 	cdf_use_cache/0, cdf_dont_use_cache/0,
+	transform_intensional_rules/4,
 	set_chk_index/0.
 
 #include "./cdf_definitions.h"
@@ -62,13 +66,18 @@
 	  load_component/3 from cdf_comps_share.
 
 %%%%%%%%%% 
-:- import cdf_message/1 from cdf_exceptions.
+
+:- import cdf_message/1,cdf_warning/2 from cdf_exceptions.
 
 %%%%%%%%%%
 
-:- import call_assert/1 from cdf_utilities.
+:- import call_assert/1,clause_assert/2 from cdf_utilities.
 
 %%%%%%%%%% Non-CDF Libraries
+
+:- import component_table_int/3 from usermod.
+
+%%%%%%%%%%
 
 :- import check_var/3 from error_handler.
 :- import call0/1 from machine.
@@ -77,6 +86,7 @@
 %%:- import conset/2, conget/2, coninc/1 from gensym.
 :- import ground/1 from basics.
 :- import abolish_table_pred/1 from tables.
+:- import concat_atom/2 from string.
 
 #if TABLEDISA
 ?- cdf_message('Using tabled isa').
@@ -1466,16 +1476,34 @@ not_max_implicative_coversAttr_23fix(Term,BindPat) :-
 	once(explosive_isa(TCid,TCidO)).	
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% UPDATES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(retractallExtTerm/1, "@tt{retractallExtTerm(Term)} retracts
-all extensional CDF facts that unify with the parameters.  Note that
-this operation simply removes all matching tuples.  It does not affect
-information derived via intensional rules, and may not affect
-information derived via inheritance.").
+% Caching and cleaning.
 
-retractallExtTerm(Term) :- 
-	apply_checks(retractallExtTermSingle,Term),
-	cdf_update_list([retractall(Term)]).
+:- cdf_dont_use_cache.
+
+:- import caching_cdf/1 from usermod.
+
+cdf_use_cache :- retractall(caching_cdf(_)),asserta(caching_cdf(1)).
+cdf_dont_use_cache :- retractall(caching_cdf(_)), asserta(caching_cdf(0)).
+
+% Moved here from cdf_xj/cdf  TLS
+
+:- make_cdf_clean.
+
+make_cdf_dirty(Name) :- 
+	(Name == 'cdf' -> 
+	    true
+	  ; 
+	 call_assert(cdf_flags(dirty,Name)) ).
+
+make_cdf_clean(Name) :- retractall(cdf_flags(dirty,Name)).
+
+make_cdf_clean :- retractall(cdf_flags(dirty,_)).
+
+%------------------------------------------------------
+% Updating Extensional Facts
 
 :- comment(newExtTerm/1, "@tt{newExtTerm(Term)} is used to add a new
 extensional term to the ontology.
@@ -1495,41 +1523,48 @@ before it can be added.
 
 newExtTerm(Term):- newExtTerm(newExtTermSingle,Term).
 
-newExtTerm(Context,Term):- 
-	(apply_checks(Context,Term) -> 
-	    cdf_update_list([asserta(Term)])
+newExtTerm(newExtTermSingle,Term):- 
+	(apply_checks(newExtTermSingle,Term) -> 
+	    caching_cdf(Flg),
+	    assert_cdf(Term),
+	    maybe_invalidate_cache(Flg,Term)
+	  ; true).
+newExtTerm(newExtTermBatch,Term):- 
+	caching_cdf(Flg),
+	newExtTermBatch(Term,Flg).
+
+% Should be called only by load_extensional_facts etc. 
+% This could probably be optimized a little by changing assert_cdf_term/1
+% to assert_cdf_ext/1.  But I'm not sure about assert_cdf_int/1 and whether it 
+% needs to be considered.
+newExtTermBatch(Term,Flg):- 
+	(apply_checks(newExtTermBatch,Term) -> 
+%	     cdf_log(assert(Term)),
+	     assert_cdf_term(Term),
+ 	     maybe_invalidate_cache(Flg,Term)
 	  ; true).
 
-/*
-newExtTerm(Context,Term):- 
-	apply_checks(Context,Term),
-	cdf_update_list([asserta(Term)]).
-*/
-newExtTerm(Context,Term,Upd0,Upd):- 
-	(apply_checks(Context,Term) -> 
-	    Upd0 = [asserta(Term)|Upd]
-	  ; Upd0 = Upd).		
+:- comment(retractallExtTerm/1, "@tt{retractallExtTerm(Term)} retracts
+all extensional CDF facts that unify with the parameters.  Note that
+this operation simply removes all matching tuples.  It does not affect
+information derived via intensional rules, and may not affect
+information derived via inheritance.").
 
-:- comment(cdf_update_list/1, "cdf_update_list takes a list of
-assert/retracts to stored CDF relations and executes them.  All
-updates to any CDF relation should go through here.  This will allow
-us to keep XJ notified of changes, and to keep the external DB
-consistent, when we get to it.").
-
-cdf_update_list(List) :-
+retractallExtTerm(Term) :- 
+	apply_checks(retractallExtTermSingle,Term),
 	caching_cdf(Flg),
-	cdf_do_update_list(List,Flg).
-
-cdf_do_update_list([],_).
-cdf_do_update_list([Term|Terms],CFlg) :-
-	cdf_update_term(Term,CFlg),
-	cdf_do_update_list(Terms,CFlg).
+	cdf_update_term(retractall(Term),Flg).
 
 #if USING_XJ
 :- import cache_invalidate_for/1 from prologCache.
 
 :- 	   cdf_message('Using XJ').
 :- 	   assert(cdf_configuration(proprietary_features,on)).
+
+maybe_invalidate_cache(Flg,Term):- 
+	    (Flg =:= 1
+   	       ->	cache_invalidate_for(Term)
+	     ;	true).
 
 cdf_update_term(asserta(Term),CFlg) :-
 	assert_cdf(Term),
@@ -1555,14 +1590,9 @@ cdf_update_term(asserta(Term),CFlg) :-
 cdf_update_term(retractall(Term),CFlg) :-
 	retractall_cdf(Term).
 
+maybe_invalidate_cache(_,_).
+
 #endif
-
-:- cdf_dont_use_cache.
-
-:- import caching_cdf/1 from usermod.
-
-cdf_use_cache :- retractall(caching_cdf(_)),asserta(caching_cdf(1)).
-cdf_dont_use_cache :- retractall(caching_cdf(_)), asserta(caching_cdf(0)).
 
 %-----------------------------------------------------------
 %%%%%%%%%%  Retract tables as appropriate upon update; adjust dirty bits.
@@ -1577,6 +1607,9 @@ assert_cdf_term(Term) :-
 	assert_cdf_int(Term),
 	!.
 assert_cdf_term(Term) :-
+	assert_cdf_ext(Term).
+
+assert_cdf_ext(Term):- 
 	asserta(Term),
 	get_component_extensional(Term,Name),
 	(cdf_flags(dirty,Name)
@@ -1605,6 +1638,62 @@ retractall_cdf_term(Term) :-
 	fail.
 retractall_cdf_term(_).
 
+%------------------------------------------------------
+% Updating Intensional Rules.
+% Need to check consist, log, check cache, and check dirty.
+
+newIntRule(Head,Body,Cmpt):- 
+	newIntRule(newIntRuleSingle,Head,Body,Cmpt).
+
+newIntRule(newIntRuleSingle,Head,Body,Cmpt):- 
+	newIntRuleSingle(Head,Body,Cmpt).
+newIntRule(newIntRuleBatch,Head,Body,Cmpt):- 
+	caching_cdf(Flg),
+	newIntRuleBatch(Head,Body,Cmpt,Flg).
+
+newIntRuleSingle(Head,Body,Cmpt):- 
+	(apply_checks(newIntRuleBatch,Head)  -> 
+	    abolish_nec_tables(Head),
+	    caching_cdf(Flg),
+	    addIntRule(Head,Body,Cmpt),
+	    maybe_invalidate_cache(Flg,Head)
+	 ;  true).
+
+newIntRuleBatch(Head,Body,Cmpt,Flag):- 
+	(apply_checks(newIntRuleBatch,Head) -> 
+	    addIntRule(Head,Body,Cmpt),
+	    maybe_invalidate_cache(Flag,Head)
+	  ; true).
+
+addIntRule(Head,Body,Cmpt):- 
+	cdf_log(assert((Head :- Body))),
+	apply_checks(newIntRuleSingle,Head),
+	transform_intensional_rules(Head,BlankBody,NewHead,Cmpt),
+	functor(Head,T,A),
+	functor(BlankHead,T,A),
+	BlankHead =.. [_|Args],
+	BlankBody =.. [_|Args],
+	clause_assert(BlankHead,BlankBody),
+	assert((:-(NewHead,Body))),
+	(cdf_flags(dirty,Cmpt)
+	 ->	true
+	 ;	make_cdf_dirty(Cmpt)
+	).
+	
+% hasAttr_int(_,_,_) , hasAttr_int_Name(_,_,_)  ; hasAttr_int_name(<Orig stuff>) 
+transform_intensional_rules(Head,BlankHead,NewHead,Name):- 
+	component_table_int(Head,_,_),
+	Head =.. [F|T],
+	functor(Head,F,N),
+	concat_atom([F,'_',Name],NewF),
+	NewHead =.. [NewF|T],
+	functor(BlankHead,NewF,N),
+	!.
+transform_intensional_rules(Head,_BlankHead,_NewHead,Name):- 
+	cdf_warning(rule_load,['Cannot intern intensional rule with head ',
+	                                  Head,' for directory ',Name]),
+	fail.
+
 %%%%%%%%%%%%%%%%%
 
 abolish_cdf_tables:-
@@ -1629,21 +1718,45 @@ abolish_isas:-
 	abolish_table_pred(table_isa(_,_)).
 #endif
 
+abolish_nec_tables(hasAttr_int(_,_,_)) :- !,
+	abolish_nec_tables(hasAttr_ext(_,_,_)) .
 abolish_nec_tables(hasAttr_ext(_,_,_)) :- !,
-	abolish_hasAttr_inherits.
+	abolish_hasAttr_inherits,
+	abolish_minAttr_inherits.
+
+abolish_nec_tables(coversAttr_int(_,_,_)) :- !,
+	abolish_nec_tables(coversAttr_ext(_,_,_)) .
 abolish_nec_tables(coversAttr_ext(_,_,_)) :- !,
 	abolish_coversAttr_inherits.
+
+abolish_nec_tables(allAttr_int(_,_,_)) :- !,
+	abolish_nec_tables(allAttr_ext(_,_,_)) .
 abolish_nec_tables(allAttr_ext(_,_,_)) :- !,
 	abolish_allAttr_inherits.
+
+abolish_nec_tables(classHasAttr_int(_,_,_)) :- !,
+	abolish_nec_tables(classHasAttr_ext(_,_,_)) .
 abolish_nec_tables(classHasAttr_ext(_,_,_)) :- !,
 	abolish_classHasAttr_inherits.
+
+abolish_nec_tables(minAttr_int(_,_,_,_)) :- !,
+	abolish_nec_tables(minAttr_ext(_,_,_,_)) .
 abolish_nec_tables(minAttr_ext(_,_,_,_)) :- !,
 	abolish_minAttr_inherits,
 	abolish_hasAttr_inherits.
+
+abolish_nec_tables(maxAttr_int(_,_,_,_)) :- !,
+	abolish_nec_tables(maxAttr_ext(_,_,_,_)) .
 abolish_nec_tables(maxAttr_ext(_,_,_,_)) :- !,
 	abolish_maxAttr_inherits.
+
+abolish_nec_tables(necessCond_int(_,_)) :- !,
+	abolish_nec_tables(necessCond_ext(_,_)).
 abolish_nec_tables(necessCond_ext(_,_)) :- !,
 	abolish_necessCond_inherits.
+
+abolish_nec_tables(isa_int(_,_)) :- !,
+	abolish_nec_tables(isa_ext(_,_)) .
 abolish_nec_tables(isa_ext(_,_)) :- !,
             abolish_isas,
 	abolish_hasAttr_inherits,
@@ -1703,20 +1816,6 @@ abolish_minAttr_inherits :-
 
 abolish_necessCond_inherits :-
 	abolish_coversAttr_inherits.
-
-% Moved here from cdf_xj/cdf  TLS
-
-:- make_cdf_clean.
-
-make_cdf_dirty(Name) :- 
-	(Name == 'cdf' -> 
-	    true
-	  ; 
-	 call_assert(cdf_flags(dirty,Name)) ).
-
-make_cdf_clean(Name) :- retractall(cdf_flags(dirty,Name)).
-
-make_cdf_clean :- retractall(cdf_flags(dirty,_)).
 
 %%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1815,6 +1914,25 @@ updateExtTermMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
 	).
 updateExtTermMerge([],[],_ArgsVars,Updates,Updates).
 
+:- comment(cdf_update_list/1, "cdf_update_list takes a list of
+assert/retracts to stored CDF relations and executes them.  All
+updates to any CDF relation should go through here.  This will allow
+us to keep XJ notified of changes, and to keep the external DB
+consistent, when we get to it.").
+
+cdf_update_list(List) :-
+	caching_cdf(Flg),
+	cdf_do_update_list(List,Flg).
+
+cdf_do_update_list([],_).
+cdf_do_update_list([Term|Terms],CFlg) :-
+	cdf_update_term(Term,CFlg),
+	cdf_do_update_list(Terms,CFlg).
+
+newExtTerm(Context,Term,Upd0,Upd):- 
+	(apply_checks(Context,Term) -> 
+	    Upd0 = [asserta(Term)|Upd]
+	  ; Upd0 = Upd).		
 
 %%%%%% TLS: please keep this here -- we want to do the initialization 
 %%%%%% LAST upon load.

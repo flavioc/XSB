@@ -1,7 +1,7 @@
 /* Utilities for use with CDF's */
 :- export
 	  build_taxonomy/4,
-	  call_assert/1,
+	  call_assert/1,clause_assert/2,
 	  cdf_fix_dir/2,
 	  file_latest_version/3,
 	  odbc_sql_local/4,
@@ -30,6 +30,9 @@ get_component_intensional_bind(Term,Component):-
 	cdf_id_fields(CID,_,_,Component).
 
 call_assert(Term):- (call0(Term) -> true ; asserta(Term)).
+
+clause_assert(Head,Body):- 
+	(clause(Head,Body) -> true ; asserta((:-(Head,Body)))).
 
 cdf_fix_dir(Dir,DirS) :-
 	(Dir == ''
