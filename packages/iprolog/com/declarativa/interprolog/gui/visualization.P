@@ -1,0 +1,111 @@
+/* 
+** Author(s): Miguel Calejo
+** Contact:   interprolog@declarativa.com, http://www.declarativa.com
+** Copyright (C) Declarativa, Portugal, 2000-2002
+** Use and distribution, without any warranties, under the terms of the 
+** GNU Library General Public License, readable in http://www.fsf.org/copyleft/lgpl.html
+*/
+/* IMPORTANT WARNING:  THIS FILE WAS EXTRACTED FROM THE INTERPROLOG JAR FILE.
+   If you decide to edit, compile it with XSB Prolog and rebuild the jar file.
+   Simply saving the text file is not enough.
+*/
+
+% Not a Prolog module, as most predicates are exported
+	
+/**** Fact collection browser ****/
+
+%browseLiteralInstances(GroundTerm,Instances)
+%example: browseLiteralInstances(country(name,continent),[continent(usa,america),continent(portugal,europe)])
+browseLiteralInstances(GroundTerm,Instances) :- 
+	buildTermModel(GroundTerm,TemplateModel),
+	buildTermModels(Instances,InstanceModels),
+	functor(GroundTerm,F,N), % some redundancy here, for some convenience to PredicateTableModel.java
+	ipObjectSpec('PredicateTableModel',Table,[N,F,TemplateModel,InstanceModels],_),
+	javaMessage('com.declarativa.interprolog.gui.PredicateTableWindow','PredicateTableWindow'(Table)).
+
+% uses ipObjectSpect('PredicateTableModel',Table,[Arity,Functor,TermModelTemplate,TermModelInstances],_)
+showObjectSpecs :-
+	findall(ipObjectSpec(Name,VNames,A,B),ipObjectSpec(Name,_,_,examples-[A,B]/VNames), Instances),
+	browseLiteralInstances(ipObjectSpec('Name','Variables','Example A','Example B'),Instances).
+
+showObjectTemplates :-
+	findall(ipObjectTemplate(Name,VNames,TSubs),ipObjectTemplate(Name,_Template,VNames,_TVars,TSubs), Instances),
+	browseLiteralInstances(ipObjectTemplate('Name','Variables','Example Bindings'),Instances).
+
+
+
+/**** Term and list browsers ****/
+
+% example: browseTerm(2+X=X*4)
+browseTerm(T) :- 
+	buildTermModel(T,M), ipPrologEngine(Engine),
+	ipObjectSpec('IPClassObject',Class,['com.declarativa.interprolog.gui.TermModelWindow'],_),
+	javaMessage(Class,_,null,'TermModelWindow',[M,Engine],0,_).
+
+% example: browseList([miguel(X),2+X=X*4,one(two(three))])
+browseList(L) :-
+	copy_term(L,LL),
+	%buildTermModelList(LL,1,_,NL),
+	buildTermModelList_2(LL,NL),
+	ipObjectSpec('TermListModel',List,[NL],_),
+	javaMessage('com.declarativa.interprolog.gui.TermListWindow','TermListWindow'(List)).
+	
+
+
+
+/**** Hierarchical multi-list term browser ****/
+
+% tree nodes represented as anyFunctor(Term,ChildrenList)
+buildTermTreeModel(X,Model) :- 
+	arg(2,X,[]), !, 
+	arg(1,X,T), buildTermModel(T,TM),
+	ipObjectTemplate('ArrayOfTermTreeModel',Children,_,[[]],_),
+	ipObjectTemplate('TermTreeModel',Model,_,[Children,TM],_).
+buildTermTreeModel(X,Model) :-
+	arg(1,X,T), buildTermModel(T,TM),
+	ipObjectTemplate('ArrayOfTermTreeModel',TMC,_,[Models],_),
+	ipObjectTemplate('TermTreeModel',Model,_,[TMC,TM],_),
+	arg(2,X,Children),
+	buildTermTreeModels(Children,Models).
+	
+buildTermTreeModels([],[]).
+buildTermTreeModels([C1|Cn],[M1|Mn]) :- 
+	buildTermTreeModel(C1,M1),
+	buildTermTreeModels(Cn,Mn).
+
+
+testbttm2 :-
+	ipObjectTemplate('ArrayOfString',Titles,_,
+		[[string('A familiar example'),string('Humans'),string('Children'),string('Pet')]],_
+		),
+	Children = [t(luis,[t(tartaruga,[])]),t(isabel,[t('artificial baby',[])])],
+	buildTermTreeModel(t('Familia ficticia',[t(gabriela,Children), t(miguel,Children)]),M),
+	javaMessage('com.declarativa.interprolog.gui.TermTreeWindow','TermTreeWindow'(M,Titles)).
+
+showObjectVariables :-
+	findall(Class,ipObjectSpec(Class,_,_,_),Classes),
+	buildClassTree(Classes,TreeList),
+	buildTermTreeModel(t('Dummy',TreeList),M),
+	ipObjectTemplate('ArrayOfString',Titles,_,
+		[[string('Object specifications available'),string('Class'),string('Instance variables')]],_
+		),
+	javaMessage('com.declarativa.interprolog.gui.TermTreeWindow','TermTreeWindow'(M,Titles)).
+
+buildClassTree([],[]) :- !.
+buildClassTree([C|Classes],[t(C,Variables)|Trees]) :- 
+	ipObjectTemplate(C,_,Vars,_,_),
+	buildVarTrees(Vars,Variables),
+	buildClassTree(Classes,Trees).
+
+buildVarTrees([],[]) :- !.
+buildVarTrees([V|Vars],[t(V,[])|Variables]) :- buildVarTrees(Vars,Variables).
+
+
+%browseTreeTerm(t(root,[t(child1,[]),t(child2,[]),t(child3,[t(granchild31,[t(grandgrandchild311,[])])])])).
+
+browseTreeTerm(T) :- 
+	buildTermTreeModel(T,M), 
+	ipObjectTemplate('ArrayOfString',Titles,_,[[]],_),
+	javaMessage('com.declarativa.interprolog.gui.TermTreeWindow','TermTreeWindow'(M,Titles)).
+
+
