@@ -42,9 +42,10 @@ member ()
 cur_dir=`pwd`
 files=`ls`
 
-rm -f *.O  # clean out .O in the top directory
-
 subdir_exclude_list="CVS objfiles.saved"
+
+# clean the packages/ dir itself
+make clean
 
 for f in $files ; do
   if test -d "$f" ; then
@@ -53,7 +54,7 @@ for f in $files ; do
     else
        echo "Cleaning up $cur_dir/$f"
        cd $f
-       rm -f *.O *.o *.so */*.O */*.o */*.so > /dev/null || echo ""
+       make clean
        cd ..
     fi
   fi

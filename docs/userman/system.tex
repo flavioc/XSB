@@ -488,7 +488,7 @@ cmd_loop_driver:
          -o N : allocate N KB for the SLG completion stack
          -u N : allocate N KB for the SLG unification stack
            -r : turn off automatic stack expansion
-   -g gc_type : choose the garbage collection ("none", "indirection", sliding", or "copying") 
+   -g gc_type : choose garbage collection ("none", "indirection", "sliding", or "copying") 
            -s : maintain detailed statistical information
            -S : set default tabling method to subsumption-based
            -T : print a trace of each called predicate
@@ -534,23 +534,23 @@ The order in which these options appear makes no difference.
     the chapter {\it Calling XSB from C} in Volume 2  for details.
 \item[{\tt -d}] Produces a disassembled dump of {\tt byte\_code\_file} to 
     {\tt stdout} and exits.
-\item[{\tt -c} {\em size}] Allocates {\em initial  size\/} KB of space
+\item[{\tt -c} {\em size}] Allocates {\em initial  size\/} KBytes of space
     to the trail/choice-point stack area.  The trail stack grows
     upward from the bottom of the region, and the choice point stack
     grows downward from the top of the region.  Because this region is
     expanded automatically from Version 1.6.0 onward, this option
-    should rarely need to be used.  Default initial size: 768 Kbytes.
-\item[{\tt -m} {\em size}] Allocates {\em size\/} Kbytes
+    is rarely needed.  Default initial size: 768 KBytes.
+\item[{\tt -m} {\em size}] Allocates {\em size\/} KBytes
     of space to the local/global stack area.  The global stack grows 
     upward from the bottom of the region, and the local stack grows 
-    downward from the top of the region.  Default: 768 Kbytes.
-\item[{\tt -o} {\em size}] Allocates {\em size\/} Kbytes of space
+    downward from the top of the region.  Default: 768 KBytes.
+\item[{\tt -o} {\em size}] Allocates {\em size\/} KBytes of space
     to the completion stack area.  Because this region is expanded
-    automatically from Version 1.6.0 onward, this option should rarely
-    need to be used. Default initial size 64 Kbytes.
-\item[{\tt -u} {\em size}] Allocates {\em size} Kbytes of space
-    to the unification (and table copy) stack.  Default 64 Kbytes.
-    (This option should rarely need to be used).
+    automatically from Version 1.6.0 onward, this option is rarely
+    needed. Default initial size 64 KBytes.
+\item[{\tt -u} {\em size}] Allocates {\em size} KBytes of space
+    to the unification (and table copy) stack.  Default 64 KBytes.
+    (This option is rarely needed.)
 \item[{\tt -D}] Tells XSB to use a top-level command loop driver specified
   here instead of the standard XSB interpreter. This is most useful when
   XSB is used as a server.

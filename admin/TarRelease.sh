@@ -19,6 +19,10 @@ files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS \
 
     cd ../..
 
+    (cd XSB/build; chmod u+rwx configure; autoconf)
+    (cd XSB; make)
+    (cd XSB/docs/userman; make)
+
     tar cvf XSB/XSB.tar $files
 
     gzip -f XSB/XSB.tar

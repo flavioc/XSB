@@ -83,8 +83,12 @@ install_syslibdir=$(prefix)/syslib
 install_cmplibdir=$(prefix)/cmplib
 # where prolog includes go
 install_prolog_includes=$(prefix)/prolog_includes
+
 # where packages are installed
 install_pkgdir=$(prefix)/packages
+# specific packages:
+install_pkgxmcdir=${prefix}/packages/xmc
+
 # where etc are installed
 install_etcdir=$(prefix)/etc
 # where .h files will be copied
@@ -122,11 +126,15 @@ install_bindir=$(install_config_prefix)/bin
 install_config_libdir=$(install_config_prefix)/lib
 # where the scripts go
 install_scriptdir=$(prefix)/bin
+# where the config detection scripts go
+install_builddir=${prefix}/build
 
 # where the object code goes
 src_config_objlibdir=$(src_config_prefix)/saved.o
 src_bindir=$(src_config_prefix)/bin
 src_scriptdir=$(srcdir)/bin
+
+arch_install_objdir=${install_config_prefix}/saved.o
 
 EXECUTABLE=$(src_bindir)/xsb
 
@@ -231,7 +239,86 @@ register:
 	@./register.sh
 
 
-install:: copy_files configure_packages_install
+install:: make_directories copy_files configure_packages_install
+
+make_directories::
+	@echo "Verifying that installtion directories exist..."
+	@rm -f .missingdirs.tmp
+	@echo -n "Directory: ${install_emudir}..."
+	  @(test -d "${install_emudir}" || \
+	    mkdir -p "${install_emudir}" ) &&	\
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_emudir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_libdir}..."
+	  @(test -d "${install_libdir}" || \
+	    mkdir -p "${install_libdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_libdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_syslibdir}..."
+	  @(test -d "${install_syslibdir}" || \
+	    mkdir -p "${install_syslibdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_syslibdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_cmplibdir}..."
+	  @(test -d "${install_cmplibdir}" || \
+	    mkdir -p "${install_cmplibdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_cmplibdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_scriptdir}..."
+	  @(test -d "${install_scriptdir}" || \
+	    mkdir -p "${install_scriptdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_scriptdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_builddir}..."
+	  @(test -d "${install_builddir}" || \
+	    mkdir -p "${install_builddir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_builddir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_bindir}..."
+	  @(test -d "${install_bindir}" || \
+	    mkdir -p "${install_bindir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_bindir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_config_libdir}..."
+	  @(test -d "${install_config_libdir}" || \
+	    mkdir -p "${install_config_libdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_config_libdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${arch_install_objdir}..."
+	  @(test -d "${arch_install_objdir}" || \
+	    mkdir -p "${arch_install_objdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${arch_install_objdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_etcdir}..."
+	  @(test -d "${install_etcdir}" || \
+	    mkdir -p "${install_etcdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_etcdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_pkgdir}..."
+	  @(test -d "${install_pkgdir}" || \
+	    mkdir -p "${install_pkgdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_pkgdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_pkgxmcdir}..."
+	  @(test -d "${install_pkgxmcdir}" || \
+	    mkdir -p "${install_pkgxmcdir}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_pkgxmcdir}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_examples}..."
+	  @(test -d "${install_examples}" || \
+	    mkdir -p "${install_examples}" ) && \
+	      echo "ok" || \
+		(echo "FAILED"; echo "+++Can't create ${install_examples}" >> .missingdirs.tmp)
+	@echo -n "Directory: ${install_prolog_includes}..."
+	  @(test -d "${install_prolog_includes}" || \
+	    mkdir -p "${install_prolog_includes}" ) && \
+	      echo "ok" || \
+	        (echo "FAILED"; echo "+++Can't create ${install_prolog_includes}" >> .missingdirs.tmp)
+	@(test -f .missingdirs.tmp && \
+	  (cat .missingdirs.tmp; \
+	    echo "***Make the above directories manually and rerun makexsb")) \
+		|| echo "Verifying installation directories ... Done"
+	@test ! -f .missingdirs.tmp || exit 1
 
 copy_files::
 	@( test "${prefix}" = "${srcdir}" && \
@@ -315,7 +402,7 @@ configclean::
 	rm -rf $(src_config_prefix)/*
 
 # clean out all architectures
-distclean:
+distclean: clean
 	rm -rf $(srcdir)/config/*
 	rm -f $(srcdir)/bin/*
 	rm -f $(srcdir)/emu/*.o
@@ -323,11 +410,14 @@ distclean:
 # clean only the object code for this architecture
 clean:
 	@echo "Cleaning up ${src_config_objlibdir}"
-	@rm -f ${src_config_objlibdir}/*
+	@-rm -f ${src_config_objlibdir}/*
 	@echo "Cleaning up ${src_emudir}"
-	@rm -f ${src_emudir}/*.o
+	@-rm -f ${src_emudir}/*.o
+	@echo "Cleaning up packages"
 	@cd ../packages; ../build/clean_pkgs.sh
-	@cd ${src_examples}; @rm -f *.O *.o *~ */*.O */*.o */*~
+	@-cd ${src_examples}; rm -f *.O *.o *~ */*.O */*.o */*~
+	@echo "Cleaning up ${src_libdir}"
+	@-(cd ${src_libdir}; make clean)
 
 # recreate the makefiles
 again: Makefile.in emuMakefile.in config.status ${src_config_prefix}/config.cache

@@ -87,5 +87,9 @@ finish:
 	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> cmd...
 
 
+clean:
+	/bin/rm -f *.O
+
+
 .DONE:
 	echo Done

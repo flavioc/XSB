@@ -115,5 +115,8 @@ finish:
 	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
 
 
+clean:
+	/bin/rm -f *.O *~ .*~ *.bak .#*
+
 .DONE:
 	@echo Done

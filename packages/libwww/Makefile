@@ -76,7 +76,8 @@ finish:
 
 
 clean:
-	rm -f *.O cc/*.H
+	rm -f *.O *~ .*~ *.bak
+	rm -f cc/*.H cc/*.so cc/*.o cc/*.O cc/*~ cc/.*~ cc/*.bak
 
 
 .DONE:

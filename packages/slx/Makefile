@@ -50,9 +50,11 @@ all: $(ALL)
 	/bin/rm cmd...
 
 
+.PHONY: clean
 
-# Unfortunately, this needs to be commented on the NeXT.
-# %.O:	%.H
+clean:
+	/bin/rm -f *.O *~ .*~ *.bak
+
 
 .DONE:
 	echo Done

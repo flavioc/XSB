@@ -85,13 +85,15 @@ lex.yy.c: xl.l
 .PHONY : clean
 
 clean:
-	-echo "Removing all object files!"
-	-rm -f parse *.o xlparse.O
-	-echo "Removing all libraries!"
-	-rm -f libxlp.a xlparse.so
-	-echo "Removing intermediate C files!"
-	-rm -f xl.tab.c lex.yy.c
-	-echo "Removing all Prolog bytecode files!"
+	@echo "Removing all C object files..."
+	-rm -f parse *.o
+	@echo "Removing all Prolog bytecode files..."
 	-rm -f $(ALL)
+	@echo "Removing all libraries!"
+	-rm -f libxlp.a xlparse.so
+	@echo "Removing intermediate C files..."
+	-rm -f xl.tab.c lex.yy.c
+	@echo "Removing junk..."
+	-rm -f *~ .*~ *.so
 .DONE:
 	@echo Done

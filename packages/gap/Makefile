@@ -70,6 +70,11 @@ init:
 finish:
 	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
 
+.PHONY: clean
+
+clean:
+	/bin/rm -f *.O *~ .*~ *.bak
+
 
 .DONE:
 	echo Done

@@ -72,6 +72,10 @@ init:
 finish:
 	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> cmd...
 
+clean:
+	/bin/rm -f *.O *~ .*~ *.bak
+	/bin/rm -f cc/*.[Oo] cc/*.so cc/*~ cc/.*~  cc/*.bak
+
 
 .DONE:
 	echo Done

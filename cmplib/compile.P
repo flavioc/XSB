@@ -50,21 +50,21 @@ compile(Modname, Basename, Options, ExportList) :-
 	(   KeepQuiet is BannerCtl mod QUIETLOAD, KeepQuiet =:= 0
 	->  true
 	;
-	message(('[Compiling ', Basename, ']'))
+	    message(('[Compiling ', Basename, ']'))
 	),
 	cputime(TimeStart),
 	retractall(current_compiled_module(_)),
 	assert(current_compiled_module(Basename)),
 	db_preprocess(PFile, HFile, OptFile, SourceFile),
 	parse(Modname, SourceFile, HFile, Module_0),
-    ( option(profile) -> 
-		time_message(TimeStart, 'Parse finito'), cputime(TimeParse)
-    ; TimeParse = TimeParse ),	% To avoid a silly lamp variable message!
+	( option(profile) -> 
+	    time_message(TimeStart, 'Parse finita'), cputime(TimeParse)
+	; TimeParse = TimeParse ), % To avoid a silly lamp variable message!
 	abort_if_syntax_errors(Modname), !,
 	useinfer(Module_0, IsModule, ExportList), !,
-    ( option(profile) -> 
-		time_message(TimeParse, 'Useinfer finito'), cputime(TimeUse)
-    ; TimeUse = TimeUse ),% To avoid a silly lamp variable message!
+	( option(profile) -> 
+	    time_message(TimeParse, 'Useinfer finita'), cputime(TimeUse)
+	; TimeUse = TimeUse ), % To avoid a silly lamp variable message!
 	modeinfer(Modname, Module_0, DFile),
 	specialise(Module_0, Module0, SpecFile),
 	table_process(Module0, Module, TableFile),
@@ -74,8 +74,8 @@ compile(Modname, Basename, Options, ExportList) :-
 	dispose_symtab( SymTab ),
 	( option(compile_off) -> print_result(Module) ; true ),
 	( conget('error occurred', 1) ->
-		sys_unlink(OFile,_), 
-		message(('The file ', OFile, ' is removed')), abort
+	    sys_unlink(OFile,_), 
+	    message(('The file ', OFile, ' is removed')), abort
 	; true
 	), !,
 	( IsModule =:= 0 -> IsModuleMsg = '' ; IsModuleMsg = 'Module ' ),
