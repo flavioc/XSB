@@ -1,8 +1,9 @@
-\documentclass[11pt]{report}
+\documentclass[11pt]{article}
 
 \usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb,alltt}
 
 \pagestyle{headings}
+\bibliographystyle{plain}
 
 \setlength{\topmargin}{-0.25in}
 \setlength{\headheight}{10pt}
@@ -13,8 +14,6 @@
 \setlength{\textwidth}{6.5in}
 \setlength{\footskip}{50pt}
 
-% JF: not allowed in Latex2e
-%\setlength{\footheight}{24pt}
 
 \setlength{\parskip}{2mm}               % space between paragraphs
 
@@ -50,12 +49,6 @@
 }
 
 \newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
-
-
-\begin{document}
-
-%%--------------------------- cut above before incorporating into document
-
 
 
 \newenvironment{qrules}{\begin{quote}\sf\begin{tabular}[t]{l}}%
@@ -148,11 +141,20 @@
 \newcommand{\dq}{\symbol{34}}
 
 
-\chapter{\FLORA's Secrets}
+\title{\bf \FLORA's Secrets}
 
-\begin{center}
-{\Large {\bf By Bertram Lud\"ascher, Guizhen Yang and Michael Kifer}}
-\end{center}
+\author{
+  Bertram Lud\"ascher
+  \and
+  Guizhen Yang
+  \and
+  Michael Kifer
+  }
+  
+\begin{document}
+
+\maketitle
+
 
 \section{Introduction}
 
@@ -163,14 +165,17 @@ extension {\tt .P} ({\it e.g.}, {\tt file.P}), which is a regular XSB
 program. This program is then passed to XSB for compilation (yielding {\tt
   file.O}) and execution.
 
-The origins of \FLORA trace back to the \FLIP compiler developed by Bertram
-Lud\"aescher, and the basic architectures of the two compilers are the same.
-However, \FLORA has many features not found in \FLIP, it has a much more
-optimized compiler and its tokenizer and parser are very different from
+The current version of \FLORA was implemented by Guizhen Yang, but its 
+origins trace back to the \FLIP compiler developed by Bertram
+Lud\"aescher, and the basic architectures of the two compilers are similar.
+However, unlike \FLIP, \FLORA is a complete application development
+platform with many features not found in \FLIP. It has a much more
+optimized compiler, and its tokenizer and parser are very different from
 \FLIP's.
 
-The programming language supported by \FLORA is a dialect of F-logic
-that is mostly compatible with \FLORID.\footnote{
+The programming language supported by \FLORA is a dialect of F-logic that
+is mostly compatible with the extensions introduced in \FLORID, a C++-based
+F-logic system developed at Freiburg University.\footnote{
   %%
   See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
   details.
@@ -1813,5 +1818,6 @@ equality maintenance level 1.  If equality maintenance is given both in the
 {\tt flcompile} command and inside the flora module being compiled, the
 highest level will be selected by the compiler.
 
-%------------------- cut below
+
+\bibliography{../../../docs/userman/manual}
 \end{document}
