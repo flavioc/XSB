@@ -28,6 +28,12 @@
 
 :- import bootstrap_package/2, package_configuration/2 from packaging.
 :- import '_$_$_flora_shell'/0 from usermod.
+:- import slash/1 from machine.
+:- import flconsult/1, flconsult/2,
+	flload/1, dynload/1,
+	dyncompile/1, dyncompile/2,
+	dynconsult/1, dynconsult/2
+   from flrutils.
 
 :- export bootstrap_flora/0, flora_shell/0.
 
@@ -36,7 +42,16 @@
 %% so package_configuration won't be asserted twice.
 bootstrap_flora :-
 	bootstrap_package([flora,lib,pkgs],flora),
-	assert(package_configuration(version(flora),'0.93 of 06/15/1999')).
+	assert(package_configuration(version(flora),'0.93 of 06/15/1999')),
+	package_configuration(dir(flora),FloraDir),
+	slash(S),
+	fmt_write_string(LibFlrDisplay,'%s%ssyslib%sflrdisplay',
+			 f(FloraDir,S,S)),
+	[tables, LibFlrDisplay, flrutils].
 
-flora_shell :- bootstrap_flora, [flrshell], '_$_$_flora_shell'.
-flora_shell :- '_$_$_flora_shell'.
+flora_shell :- (package_configuration(loaded(flora), yes) -> true
+	         ;   
+		   bootstrap_flora
+	       ),
+	       [flrshell],
+	       '_$_$_flora_shell'.

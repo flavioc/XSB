@@ -28,16 +28,10 @@
 
 /*********************************************************************/
 '_$_$_flora_shell' :-
-	( package_configuration(dir(flora),FloraDir) ->
-	    true
-
+	( package_configuration(loaded(flora), yes) -> true
 	  ;
-	    bootstrap_flora,
-	    package_configuration(dir(flora),FloraDir)
+	    bootstrap_flora
 	),
-	slash(S),
-	fmt_write_string(Lib,'%s%ssyslib%sflrdisplay',f(FloraDir,S,S)),
-	[tables, Lib, flrutils],
 	'_$_$_flora_welcome_msg',
 	all,
 	push_abort_cutpoint,
