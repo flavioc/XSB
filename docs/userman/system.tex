@@ -52,7 +52,7 @@ while it is executing a query, strike \verb'CTRL-c'.
 %=======================================
 
 The XSB system, when installed, resides in a single directory that
-contains the following six subdirectories:
+contains the following subdirectories:
 \begin{enumerate}
 \item {\tt build}
 \item {\tt docs}
@@ -319,7 +319,7 @@ applications. User-level packaging is implemented through the predicate
      bootstrap_userpackage(+LibraryDir, +PackageDir, +PackageName).
 \end{verbatim}
 %%
-\index{{\tt bootstrap_userpackage/3}}
+\index{{\tt bootstrap\_userpackage/3}}
 which must be imported from the {\tt packaging} module. 
 
 To illustrate, suppose you wanted to create a package, {\tt foobar}, inside
@@ -367,8 +367,8 @@ Packages can also be unloaded using the predicate
 %%
 removes the directory \verb|~/my_lib/foobar| from the library search path
 and deletes the associated information from \verb|package_configuration/3|.
-\index{{\tt unload_package/1}}
-\index{{\tt package_configuration/2}}
+\index{{\tt unload\_package/1}}
+\index{{\tt package\_configuration/2}}
 
 
 \subsection{Dynamically loading predicates in the interpreter}

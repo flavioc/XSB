@@ -22,16 +22,16 @@ use the following procedure.
 \item	Decide in which directory in your file system you want to
 	install XSB and copy or move XSB there.
 
-	In the rest of this manual, let us use \verb'$XSB_DIR' to
+	In the rest of this manual, let us use {\tt \$XSB\_DIR}  to
 	refer to this directory.  Note the original subdirectory
 	structure must be maintained, namely, the directory
-	\verb'$XSB_DIR' should contain all the subdirectories and files
+	{\tt \$XSB\_DIR}  should contain all the subdirectories and files
 	that came with the distribution. In particular, the following
 	directories are required for XSB to work:
 	\verb'emu', \verb'syslib', \verb'cmplib', 
 	\verb'lib', \verb'packages', \verb'build', and \verb'etc'.
 
-\item Change directory to \verb'$XSB_DIR/build' and then run these commands:
+\item Change directory to {\tt \$XSB\_DIR/build} and then run these commands:
   %%
   \begin{quote}
     \tt
@@ -49,20 +49,20 @@ use the following procedure.
   %%
   \begin{quote}
     \tt
-    configure --prefix=\verb'$SHARED_XSB'\\
+    configure --prefix=\$SHARED\_XSB\\
     \tt
     makexsb\\
     \tt
     makexsb install
   \end{quote}
   %%$
-  where \verb'$SHARED_XSB' denotes the shared directory where XSB is
+  where {\tt \$SHARED\_XSB}  denotes the shared directory where XSB is
   installed.  In all cases, XSB can be run using the script
   %%$
   \begin{quote}
-    \verb'$XSB_DIR/bin/xsb'
+    \tt
+    \$XSB\_DIR/bin/xsb
   \end{quote}
-  %%$
   However, if XSB is installed in a central location, the script for
   general use is:
   \begin{quote}
@@ -171,17 +171,15 @@ the object files in {\tt syslib} and {\tt cmplib}.
 \section{Installing XSB under DOS} \label{quick:DOS}
 %==========================================
 
-***This got to be changed!!!
-
 \begin{enumerate}
 \item 
-   XSB will unpack into a subdirectory named {\tt XSB}.
-   Assuming that you have {\tt XSB???.ZIP} in the top-level directory,
+   XSB will unpack into a subdirectory named {\tt xsb}.
+   Assuming that you have {\tt XSB???.ZIP} in the {\tt \$XSB\_DIR} directory,
    you can issue the command
 \begin{verbatim}
    unzip386 xsb???.zip
 \end{verbatim}
-   which will install XSB in the directory {\tt $\backslash$XSB}.
+   which will install XSB in the subdirectory {\tt xsb}.
 
 \item 
    If you have no other source of DPMI support (Windows is one source),
@@ -191,55 +189,22 @@ the object files in {\tt syslib} and {\tt cmplib}.
    floating-point unit.
 
 \item 
-   If you unpacked XSB in the top-level directory, go to step 4.
-   Otherwise, you must ensure that XSB can find its system files.
-   This can be accomplished in any of the following ways:
-\begin{enumerate}
-\item   Set the environment variable XSBHOME to point to XSB's
-       home directory.  For example, if you unpacked XSB in
-       {\tt c:$\backslash$mystuff}, you would add the following line to
-       {\tt AUTOEXEC.BAT}:
-\begin{verbatim}
-       SET XSBHOME=c:\mystuff\xsb
-\end{verbatim}
-\begin{center}
-   -or-
-\end{center}
-\item  Specify XSB's home directory on the command line when
-       starting XSB (using the -D option)
-\begin{center}
-   -or-
-\end{center}
-\item  Modify the Makefile the emu directory to reflect the
-       home directory of XSB, and recompile.
-\end{enumerate}
-   Most users will probably prefer the first option.
-
-\item 
    If you modified {\tt AUTOEXEC.BAT}, either reboot or set the variables
    by hand.  Start XSB as follows:
-\begin{verbatim}
-   \xsb\emu\xsb -i
-\end{verbatim}
-   (appropriately modified to reflect where you installed XSB).  You
-   may move the executable {\tt
-   $\backslash$xsb$\backslash$emu$\backslash$xsb.exe to} some directory in
-   your search path, if you like, or add {\tt $\backslash$xsb$\backslash$emu}
-   to your path.  Don't move XSB's system files (in cmplib, lib, and
-   syslib) unless you also ensure that XSB can find them in their new
-   location (see Step 3).
+\begin{equation}
+  \tt
+   \$XSB\_DIR \backslash config\backslash \mbox{\tt
+   x86-pc-pcdos}\backslash bin \backslash xsb~-i
+\end{equation}
+If you decide to move XSB to some other place, make sure that the entire
+   directory tree is moved --- XSB executable looks for the files it needs
+   relatively to its current position in the file system.
 
-   The XSB executable in COFF format
-   ({\tt $\backslash$xsb$\backslash$emu$\backslash$xsb}) is needed for the C
-   interface.  If you don't plan to use the C interface, you can
-   delete this file.
 \end{enumerate}
 
 
 \section{Building XSB using MS Visual C++}
 %=========================================
-
-***This will need to be changed!!!
 
 You can compile XSB under Microsoft Visual C++ compiler in development
 environment to create a console-supported top loop or a DLL by following
@@ -257,12 +222,13 @@ these steps (based on MS Visual C++ 4.1):
    top loop) or {\bf Dynamic-Link Library} (to create a DLL), and set
    the {\bf Name}, {\bf Platform} and {\bf Location} for the project.
    Then click on {\bf Create} to close the window.
-
-\item
-   Click on {\bf Insert}, then click on {\bf Files into Project ...}.
-   Select all files from the {\tt emu} directory (highlight the {\tt*.[chi]}
-   files) and add them to the project (click {\bf Add}) (if {\tt xddemain.c}
-   is included, delete it!).
+   
+ \item Click on {\bf Insert}, then click on {\bf Files into Project ...}.
+   Select all files from the {\tt emu} directory (highlight the
+   {\tt*.[chi]} files) and the {\tt .h} files from the $\tt emu\backslash
+   debugs$ and $\tt emu\backslash configs$ directories. Add them to the
+   project (click {\bf Add}). Do not include the files in the {\tt dde}
+   subdirectory of {\tt emu}.  
 
 \item
    Click on {\bf Build}, then {\bf Set Default Configurations}.  Set to
@@ -278,22 +244,20 @@ these steps (based on MS Visual C++ 4.1):
 
 	\item Click on the {\bf C/C++} tab, add the following
 	definitions in the {\bf Preprocessor definitions} input box
-	(WIN32, and \_CONSOLE are already there): {\tt WIN\_NT}
-	(required), {\tt DIR=$\backslash$"C:$\backslash
+	(WIN32, and \_CONSOLE are already there):
+	{\tt DIR=$\backslash$"C:$\backslash
 	\backslash$xsbsys$\backslash \backslash$xsb$\backslash$"} (with
-	your xsb directory, required), {\tt SOCKET\_IO} (for socket
-	support, if desired), {\tt ORACLE} (for Oracle interface, if
+	your xsb directory, required), 
+	{\tt ORACLE} (for Oracle interface, if
 	desired), {\tt XSB\_ODBC} (for ODBC interface, if desired), {\tt
-	XSB\_DLL} (if you are compiling XSB as a DLL) and {\tt
-	EXECUTABLE=xsbdll} (if compiling a DLL, how it will name .dll
-	file).
+	XSB\_DLL} (if you are compiling XSB as a DLL).
 
 	\item Click on the {\bf Link} tab, add the following items in
 	the {\bf Object/Library Modules} input box ({\tt kernel32.lib,
 	user32.lib, gdi32.lib, winspool.lib, comdlg32.lib, advapi32.lib,
 	shell32.lib, ole32.lib, oleaut32.lib, uuid.lib, odbc32.lib,
-	odbccp32.lib} are already there): {\tt wsock32.lib} (for socket
-	support) and the full path to an SQL lib (for Oracle support,
+	odbccp32.lib} are already there): {\tt wsock32.lib}
+	and the full path to an SQL lib (for Oracle support,
 	e.g., {\tt
 	d:$\backslash$orant$\backslash$pro22$\backslash$lib$\backslash$msvc$\backslash$sqllib18.lib})
 
@@ -308,6 +272,15 @@ Then, click on {\bf OK} in the {\bf Project Settings} window.
    Click on {\bf Build}, then {\bf Rebuild All}.
 
 \end{enumerate}
+
+You should see the XSB executable in the directory
+%%
+\begin{equation}
+ \tt
+ \$XSB\_DIR\backslash config\backslash \mbox{\tt x86-pc-windows}\backslash bin
+ \backslash xsb
+\end{equation}
+%%
 
 If you chose {\bf Console Application}, then you can run the XSB executable
 either from a DOS prompt or by double clicking the executable.
@@ -324,16 +297,16 @@ XSB\_DLL\_C.
 %============================
 
 XSB can be invoked by the command:
-\begin{verbatim}
-       $XSB_DIR/bin/xsb -i
-\end{verbatim}
+\begin{quote}
+       \tt \$XSB\_DIR/bin/xsb -i
+\end{quote}
 %%$
 if you have installed XSB in your private directory.
-If XSB is instaled in a shared directory ({\it e.g.}, \verb'$SHARED_XSB'
-for the entire site, then you should use
-\begin{verbatim}
-       $SHARED_XSB/bin/xsb -i
-\end{verbatim}
+If XSB is instaled in a shared directory ({\it e.g.}, \$SHARED\_XSB
+for the entire site (UNIX only), then you should use
+\begin{quote}
+       \tt \$SHARED\_XSB/bin/xsb -i
+\end{quote}
 %%
 In both cases, you will find yourself in the top level interpreter.  
 As mentioned above, this script automatically detects the system

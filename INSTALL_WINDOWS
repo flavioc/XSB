@@ -4,7 +4,7 @@
 
 1. Check the file 
 
-       emu/configs/config.h
+       emu\configs\config.h
 
    You may have to change some variables there. The variables are commented
    so hopefully it should be clear how things might need to be changed.
@@ -13,16 +13,16 @@
 2. Check the file:
 
    Windows:
-       config/x86-pc-windows/configuration.P
+       config\x86-pc-windows\configuration.P
    Dos:
-       config/x86-pc-pcdos/configuration.P
+       config\x86-pc-pcdos\configuration.P
 
    Again, some settings there might need to be changed.
    The file is commented and the part that might need to be changed is
    clearly marked.
 
 3. IF YOU ARE DEBUGGING:
-   Check the files in emu/debugs/ and DEFINE the appropriate debugging
+   Check the files in emu\debugs\ and DEFINE the appropriate debugging
    flags. In particular, the DEBUG flag in emu/debugs/debug.h must be set.
 
 4. If you change the XSB scheduling strategy (batched to local or vice
@@ -30,9 +30,9 @@
    DEBUG to optimized, then please also update the file
 
    Windows:
-	 config/x86-pc-windows/banner.msg
+	 config\x86-pc-windows\banner.msg
    DOS:
-	 config/x86-pc-pcdos/banner.msg
+	 config\x86-pc-pcdos\banner.msg
 
    The only purpose of this update is to ensure that the user doesn't get
    an incorrect banner message on startup.
@@ -42,9 +42,9 @@
 5. If you downloaded a precompiled version of XSB, you are done.
    If you need to recompile XSB, then read (6).
 
-6. Compile the ./emu directory.
+6. Compile the .\emu directory.
 
    Windows:
 	Load the files in the emu\ directory into C++ studio.
 	Add the files in emu\debugs and emu\configs directories.
-	Add winsoc32.lib library to the list of libraries to be linked with.
+	Add wsock32.lib library to the list of libraries to be linked with.
