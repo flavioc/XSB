@@ -330,7 +330,10 @@ rename_one_subthing_list([OldThing|OldThingList],[NewThing|NewThingList]) :-
 
 save_rename_list([]).
 save_rename_list([Old>New|Rest]) :-
-	assert(things_to_rename(Old,New)),
+	(Old \== New
+	 ->	assert(things_to_rename(Old,New))
+	 ;	true
+	),
 	save_rename_list(Rest).
 
 :- import term_set_arg/4 from machine.
