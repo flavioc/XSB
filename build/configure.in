@@ -1141,8 +1141,15 @@ install_date=`date`
 
 (
 echo "
-XSB configured for \`${canonical}'.
-Date: ${install_date}
+
+                        INSTALLATION SUMMARY
+                        --------------------
+
+XSB Version:       ${xsb_version}
+Code name:         ${xsb_codename}
+Release date:      ${xsb_release_date}
+Configuration:     ${canonical}
+Installation date: ${install_date}
 
   Build process is looking for XSB sources in:    ${topdir}
   XSB should be installed in:                     ${prefix}
