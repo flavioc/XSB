@@ -6,6 +6,7 @@
 	  update_all_components/1,
 	  update_components/2,
           loadmerge_component/2,
+          fast_loadmerge_component/2,
 	  add_component_initializer/2.
 
 :- import slash/1 from machine.
@@ -21,6 +22,7 @@
 :- ensure_loaded(oms_io).
 :- ensure_loaded(oms_queries).
 :- ensure_loaded(oms_config).
+
 
 :- comment(module,"Typically, an OMS instance can be partitioned into
 several separate cells, representing information that arises from
@@ -73,20 +75,20 @@ in their partitions of relations and attributes.  Relation-based
 component systems are useful when different processes may be
 associated with creating or modifying different relations and
 attributes for the same class or object.  The OMS uses a
-relation-based component system.
+relation-based component system by default, but can be repartitioned
+by adjusting the tables in @module{oms_config.P}.
 
 In either case, one component @em{C1} directly depends on another
-component @em{C2} if @em{id(NID2,C2)} is a non-component argument in a
-fact in component @em{C1}; or if @em{id(NID2,C2)} occurs in a
-component argument in a fact in component @em{C1}.  This definition
-implies that a component in a constituent of a product identifier give
-rise to dependencies dependencies only if the product identifier is in
-the component argument of a fact.  By this definition, it is easy to
-see that component dependency need not be hierarchical so that two
-components may directly depend on one another; furthermore each
-component must directly depend on itself.  In addition, each component
-always derectly depends on the component 'OMS' by fiat.  Component
-dependency is defined as the transitive closure of direct dependency.
+component @em{C2} if @em{id(NID2,C2)} is an argument in a fact in
+component @em{C1}; or if @em{id(Nid1,C1)} is a component argument of a
+fact in @em{C1}, @em{Nid1} is a product identifier, and
+@em{id(NID2,C2)} occurs as a direct constituent in @em{C1}.  By this
+definition, it is easy to see that component dependency need not be
+hierarchical so that two components may directly depend on one
+another; furthermore each component must directly depend on itself.
+In addition, each component always derectly depends on the component
+'OMS' by fiat.  Component dependency is defined as the transitive
+closure of direct dependency.
 
 Dependency information is used to determine how to load a component
 and when to update it and is usually computed by the OMS.  Computing
@@ -118,15 +120,14 @@ and its dependency information by the strel
 one version for each component name, which constraint affects the
 behavior of certain or the routines below.
 
-Once version @tt{Version} of component @tt{Name} has been loaded,
- the OMS checks to see whether it has a strel
+Once version @tt{Version} of component @tt{Name} has been loaded, the
+OMS checks to see whether it has a strel
 @tt{id(initialization_file,Name)} indicating an initialization file,
 represented as the primitive type @tt{atom/1}.  If so, the file is
 consulted, and the actions of the file are taken to be transparent to
-the 'OMS' (unless they explicitly call OMS routines).  As a
-convenience the predicate
-@pred{add_component_initializer(Component,File)} can be used to add
-@tt{File} as an initialization file for @tt{Component}.
+the OMS (unless they explicitly call OMS routines).  As a convenience,
+the predicate @tt{add_component_initializer(Component,File)} can be
+used to add @tt{File} as an initialization file for @tt{Component}.
 
 A convention is made that a component @tt{Name} with version @tt{V} is
 to be found in a directory named @tt{Name_V}. The OMS looks for these
@@ -141,8 +142,8 @@ update components used by an OMS state.  One way to do this is by the
 predicate @tt{update_all_components(Dir)} which determines a class or
 relation based partition of the OMS instance, and computes all
 dependencies between these cells.  Cells that are not components are
-made into components (with version 0), and that are already components
-have their version number updated if necessary (by checking
+made into components (with version 0), and those that are already
+components have their version number updated if necessary (by checking
 @tt{oms_dirty/1}).  New and updated components are written as
 subdirectories of @tt{Dir}.
 
@@ -162,8 +163,9 @@ that has not been made into a component.
 along with a component @em{C1} and all components on which @em{C1}
 transitively depends.  If a version conflict is detected between a
 component to be loaded and one already in the OMS state or about to be
-loaded, @tt{loadmerge_component/2} aborts without changing the OMS
-state.  Alternately, a user may give a full path name to
+loaded, @tt{loadmerge_component/2} aborts without changing OMS
+extensional rules in internal form, or intensional rules.
+Alternately, a user may give a full path name to
 @pred{loadmerge_component(Directory,Name.Version)} to obtain a
 component from a particular version.
 
@@ -411,10 +413,17 @@ loadmerge_component(Name,Version):-
 
 fast_loadmerge_component(Name,Version):- 
 	retract_omsext,
-	load_component(Name,Version),
+	catch(load_component(Name,Version),
+	      oms_error(component_load,Message),
+	      handle_load_component_error(Message) ),
 	message(['Merging in components.']),nl,
 	fast_merge_omsext,
 	initialize_component(Name,Version).
+
+handle_load_component_error(Message):- 
+	retract_omsext,
+	write_oms_error_noxj(Message),
+	abort.
 
 load_component(Name,Version):- 
 	message(['Loading component: ',Name,'_',Version]),nl,
@@ -422,8 +431,8 @@ load_component(Name,Version):-
 	find_component_dir(NewName,Full),
 	overload_omsext(Full),
 	is_component(Name),
-	load_intensional_rules(Full,Name),
-        load_component_dependencies(Name,Version).
+        load_component_dependencies(Name,Version),
+	load_intensional_rules(Full,Name).
 
 load_component_dependencies(Name,V):- 
 	strel_ext(compVers(Name,Name,integer(V),'OMS'),'OMS',
@@ -443,11 +452,36 @@ initialize_component(Name,V):-
 	fail.
 initialize_component(_,_).
 
-/* TLS: assume that if a component is known, its dependencies are in
-_ext facts.  Also, need to create class_ext(Name,Name,Name) in order
-to have compVers/2. */
-is_component('OMS').
-is_component(Name):- class_ext(Name,Name,Name).
+/* To be used only by load_component.  The idea is that we have loaded
+_ext facts for an erstwhile component C, but have not merged them.  We
+check that C is indeed a component, and that its dependencies do not
+have a version conflict with other dependencies of loaded components
+(merged or unmerged).  */
+
+is_component('OMS').  
+is_component(Name):-
+	extract_file_name(Name,Comp),
+	class_ext(Comp,Comp,Comp),
+	(conflicting_version(Comp,New,V1,Comp2,V2) -> 
+	    oms_error(component_load,['component ',Comp,' depends on version ',
+	  	 V1,' of ',New,' while ',Comp2,' depends on version ',V2,
+	         ' of ',New])
+	  ; true).
+
+conflicting_version(Name,New,V1,Name2,V2):- 
+	strel_ext(compVers(Name,Name,integer(_),'OMS'),'OMS',
+			 componentDepends,Name,
+			 compVers(New,New,integer(V1),'OMS'),'OMS'),
+	(    strel_ext(compVers(Name2,Name2,integer(_),'OMS'),'OMS',
+			 componentDepends,_,
+			 compVers(New,New,integer(V2),'OMS'),'OMS')
+	 ; 
+	     class(Cid,New,New,New),
+	     class(Rid,componentDepends,componentDepends,Name),
+	     immediate_strel(Sid,Rid,compVers(Cid,integer(V2))),
+	     Sid = compVers(Sid2,_),class(Sid2,Name2,Name2,Name2)
+	),
+        V1 \== V2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(update_all_components/1, "@tt{update_all_components(Dir)}
@@ -678,6 +712,18 @@ add_component_initializer(Comp,File):-
 	oms_warning(component,['Cannot initialize uncreated component ',
 				Comp]),
 	fail).
+
+:-comment(merge_components/2,"merge_components(+List,+Component)
+merges the components in @tt{List} into component @tt{Component}.
+Specifically, for each component @tt{C} in @tt{List} it renames any
+known identifier @tt{id(Nid,C)} in the OMS state to
+@tt{id(Nid,Component)}.  The dirty bit is set on @tt{Component} so
+that it will be written out on update.  ").
+
+merge_components([],_).
+merge_components([H|T],Component):- 
+	merge_components(T,Component).
+
 
 end_of_file.
 

@@ -1,22 +1,63 @@
-I tried that yesterday and was getting duplicate facts in the OMS.  If 
-I fast_loadmerge-d the same component twice I would get duplicates of
-all the immediate_subclass facts, for instance.  So I think we
-probably should check for duplicate oms_sc facts (and all the others)
-before we assert them.  The other alternative is to refuse to load the 
-same component twice, assuming that component-versions can't be
-modified, but only a new version written....
+Paper
 
-warnings for loading oms component.
+tt irel, schrel, etc.
+Updating OMS for paper.
 
-Updating intensional rules.
+---------------------------------------------------
+Doc
+
+doc -- is ontology model defined?
 
 Doc: oms => CDF.
 
 Index External View Documentation.
 
-If a version conflict is detected between a component to be loaded and
-one already in the OMS state or about to be loaded,
-@tt{loadmerge_component/2} aborts without changing the OMS state.
+Log in doc. etc.
+
+Ontology vs. OMS instance vs. OMS state.
+
+Make sure ive mentioned product identifiers, and direct constituents.
+
+---------------------------------------------------
+OMS changes to update for paper.
+
+make sure omsext can read relation and subrel.
+
+---------------------------------------------------
+
+Component changes.
+
+Does update_components create internal component info?
+
+Intentional rules -- product classes get only direct dependencies.
+
+in fast_merge, decode whether we need to do an OMS_update or just an
+assert.
+
+Components: 
+
+Probably need a component dirty for dump component or dump new version.
+
+-- Renaming.  
+
+3) Merge Components.
+
+-- Keeping track of files.
+
+-- Update_all.
+
+-- Second and third argument inheritance for strels.
+
+1)  DB updatable.
+
+2)  DB storage.
+
+
+
+--------------------------------------------------------------
+Other: 
+
+Updating intensional rules.
 
 Synthesize retractallXXX with obliterateXXX.
 
@@ -24,38 +65,13 @@ Maybe get rid of schema + data files?
 
 strelschrels.  Constraints on strels?
 
-Does update_components create internal component info?
-
-Log in doc. etc.
-
-Ontology vs. OMS instance vs. OMS state.
-
 Need consistency checking in newRelName newStrelName.
 
 might need newCrel.
 
-get rid of []?
-
-Intentional rules -- product classes get only direct dependencies.
+get rid of [] (no.. clause).
 
 -----------------------------
-
-in fast_merge, decode whether we need to do an OMS_update or just an
-assert.
-
-Components: 
-
--- Probably need a component dirty for dump component or dump new version.
-
--- Renaming.  
-
--- Merge Components.
-
--- Configurable components.
-
--- Keeping track of files.
-
--- Second and third argument inheritance for strels.
 
 update_components/2, fail if subdependencies are not
 themselves components.
@@ -64,8 +80,6 @@ Incorporate antirelationships in create_component, etc.
 
 Do I have an obj_nidbound?
 cp_product_object_extoms 
-
-
 
 -----------------------------
 

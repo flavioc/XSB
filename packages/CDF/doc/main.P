@@ -40,23 +40,686 @@ tools.
 @section{A (somewhat) Formal Introduction to CDF}
 
 In this section we motivate design decisions taken by CDF, and
-introduce a semantics of CDF based on a translation of an @em{ CDF
+introduce a semantics of CDF based on a translation of an @em{CDF
 instance} into a set of first-order logic sentences that constitute an
 @em{Ontology Theory} whose models are the models of a CDF instance.
 For simplicity of presentation our description of CDF instances omits
 features that will be introduced in later sections -- such as
 primitive types, extensional facts vs. intensional rules, internal
-format vs. external format to name a few @footnote{The development of
+identifiers vs. identifiers to name a few @footnote{The development of
 this section generally follows @cite{SwiW03}.}.
 
 From a semantic point of view, a @em{CDF instance} can be thought of
-as a set of ground Prolog facts for the following 9 predicates:
-@em{class/2}, @em{object/2}, @em{subclass/2}, @em{memberof/2},
-@em{irel/3}, @em{schrel/3}, @em{strel/3}, @em{attribute/3}, and
-@em{attribute_object/3}.  In practice, these facts may be defined
-either @em{extensionally}, or @em{intensionally} using XSB rules.
+as a set of ground Prolog facts for the following predicates:
+@tt{class/2}, @tt{object/2}, @tt{relation/2}, @tt{subclass/2},
+@tt{subrel/2}, @tt{memberof/2}, @tt{irel/3}, @tt{schrel/3},
+@tt{strel/3}, @tt{attribute/3}, and @tt{attribute_object/3}.  In
+practice, these facts may be defined either @em{extensionally}, or
+@em{intensionally} using XSB rules.  Most of the arguments of facts in
+a CDF instance are @em{identifiers}.  The actual syntax for
+identifiers in CDF will be interoduced in Section @ref{}; for now we
+can equate identifiers with logical terms.  For the purposes of this
+section (though not of CDF) an @em{atomic identifier} can be thought
+of as an atomic term, while a product identifier can be thought of as
+a non-atomic term.
 
-Most of the arguments of facts in a CDF instance are @em{identifiers},
+Despite the simple syntax of CDF instances, their semantics differs
+from the usual semantics assigned to facts in Prolog.  While some
+identifiers identify objects of a given structure (as in the semantics
+of Prolog), others identify tuples of objects, sets of objects or of
+tuples of objects, or relationships.  Furthermore, the facts of a CDF
+instance can implicitly denote inheritance of various relationships
+among classes and objects or constraints about what relationships are
+allowed.
+
+The rest of this section has two aims: first it motivates the
+semantics of CDF via various examples -- as it does so, it introduces
+the formal semantics for the various predicates that are introduced as
+well as axioms for CDF as a whole.
+
+@subsection{Classes and Objects}
+Naive set theory provides a natural way to classify objects and to
+discuss their relations.  Accordingly, CDF makes a fundamental
+distinction between objects and sets.
+
+@bf{Example 1}  We begin to construct a fragment of a CDF instance for
+representing medical sutures, which will form a running example
+throughout the paper.  In the process of modelling this instance, we
+adapt meta-data from the U.S. Defence Logistics Information Service
+(@tt{http://www.dlis.mil}), from the Universal Standard Products and
+Services Classification @cite{UNSPSC}, as well as from the website of
+various commercial medical supply companies.
+
+@begin{verbatim}
+  class(medicalEquipment,medicalEquipment)
+         class(woundCareProducts,woundCareProducts,) 
+  class(suturesAndRelatedProducts,suturesAndRelatedProducts)
+         class(sutures,sutures)) 
+  class(nonAbsorbableSutures,nonAbsorbableSutures)
+         class(absorbableSutures,absorbableSutures) 
+  class(sutureNeedles,sutureNeedles) 
+@end{verbatim}
+
+In CDF, sets are termed @em{classes} to stress the informality of its
+sets from the perspective of set theory.  The first argument in the
+@tt{class/2} tuples is the name of the class, and the second is an
+identifier.  Each identifier is taken to exclusively identify an
+element which may be a class, an object, or a relation, exclusively.
+For readibility, we have made the names of the classes equal to the
+identifiers, but in practice, identifiers of classes and objects
+differ from their names (@ref{}).
+
+Along with classes,
+the fragment contains the following objects, whose names and
+identifiers are formed from their various part numbers.
+ @begin{verbatim}
+  object(suture547466,suture547466)
+  object(sutureU245H,sutureU245H)
+@end{verbatim}
+
+Note that the decision of whether to denote an entity as an object or
+as a class depends on the use of a given CDF instance.  Here, a given
+part number can specify a number of physical parts, but the physical
+parts are taken to be identical for the purposes of this instance.
+However, if we were constructing a CDF instance for warehouse
+management, the above objects might be better represented as classes,
+and the physical objects represented as CDF objects.
+
+In the instance of Example 1, there is no explicit indication that the
+objects are members of the class @tt{sutures}, nor is there explicit
+indication that the class of @tt{absorbableSutures} is a subclass of
+@tt{sutures}.  This information can be added via the predicate:
+
+@begin{itemize}
+@item	@tt{memberof(Object_id,Class_id)}
+@end{itemize}
+
+@noindent
+indicating that a given object is a member of a given class; and via
+the predicate: 
+@begin{itemize}
+@item	@tt{subclass(Class1_id,Class2_id)}
+@end{itemize}
+
+@noindent
+indicating that @em{Class1_id} is a subclass of @em{Classs2_id}.
+
+@bf{Example 2} 
+Continuing from Example 1, we add the facts
+@begin{verbatim}
+  class('OMS Root','OMS Root')   
+  subclass(medicalEquipment,'OMS Root')  
+   subclass(woundCareProducts,medicalEquipment) 
+    subclass(suturesAndRelatedProducts,woundCareProducts)
+        subclass(sutures,suturesandRelatedProducts) 
+            subclass(absorbableSutures,sutures)  
+            subclass(nonAbsorbableSutures,sutures) 
+            subclass(sutureNeedles,suturesAndRelatedProducts)  
+@end{verbatim}
+
+@noindent
+to denote the hierarchy of classes.  Note that the top class on the
+hierarchy is called @tt{'OMS Root'}, a class that is included in every
+instance and denotes the maximal element of any @tt{subclass/2}
+relation.  Next, we add the facts 
+@begin{verbatim}
+  memberof(suture547466,absorbableSutures)
+  memberof(sutureU245H,suturesAndRelatedProducts)
+@end{verbatim} 
+@noindent
+to denote classes to which the objects belong.  Note that by these
+statements, @tt{sutureU245H} belongs to the class
+@tt{suturesAndRelatedProducts} which is (potentially)
+more general than the class @tt{absorbableSutures}.
+@end{example}
+
+At this point, we have introduced four CDF predicates, and can begin
+defining the semantics of CDF instances.
+
+@bf{Definition 1} @em{An @em{ontology language} is a first-order
+language containing only predicates: @em{isClass/1,
+isObj/1,isRel/1,memof/2, rel/3, and crel/3}.  An @em{ontology
+structure} is a structure defined over an ontology language.  An
+@em{ontology theory} is a set of first-order sentences formed over an
+ontology language that includes a set of @em{ core axioms}.  If @em{T}
+is an ontology theory formed over an ontology language @em{L}, an
+ontology structure @em{S} over @em{L} is a model of @em{T} is every
+sentence of @em{T} is satisfied in @em{S}.}
+
+An ontology theory has both core axioms that belong to every ontology
+theory, and @em{instance axioms} that are particular to a given theory
+and that are used to represent the meaning of a given CDF instance.
+Accordingly, in developing our semantics we present both core and
+instance axioms.  As a technical point, if @em{I} is an atomic
+identifier in a CDF instance, then we assume that @em{I} is a constant
+in @em{L} the language underlying the ontology theory to which we
+translate.  Similarly, if @em{I} is a @em{n}-ary product identifier,
+we assume that @em{I} is an @em{n}-ary function in @em{L}.  We thus
+freely use identifiers when refering both to CDF instances and to
+ontology theories.
+
+Informally @em{isClass/1} indicates that an identifier @em{I} is a
+class name or @em{ class identifier}; @em{isObj/1} that @em{I} is an
+object name or @em{object identifier}; and @em{isRel/1} that @em{I} is
+a relation name, or @em{relation identifier}.  @em{memof(O,C)}
+indicates that object identifier @em{O} is a member of class
+identifier @em{C}; @em{rel(O1,R,O2)} indicates that object identifier
+@em{O1} has an @em{R} relation to an object identifier @em{O2}; and
+@em{crel(C1,R,O2)} indicates that the class identifier @em{C1} has a
+@em{R} relation to an object identifier @em{O2}.
+
+Our first core axiom ensures that objects, classes, and relations have
+distinct identifiers
+
+@bf{Core Axiom 1} @em{[Distinct Identifiers]}
+
+@noindent
+@em{(@bf{not exists} Id).(isClass(Id) @bf{and} isObj(Id)) @bf{and}
+    (@bf{not exists} Id).(isClass(Id) @bf{and} isRel(Id)) @bf{and}
+    (@bf{not exists} Id).(isObj(Id) @bf{and} isRel(Id))
+}
+
+@em{isClass/1}, @em{isObj/1}, and @em{isRel/1} provides a sorting that
+extends to all predicates, as the next axiom indicates.
+
+@bf{Core Axiom 2} @em{[Predicate Sorts]}
+
+@em{
+    (@bf{forall} X,Y).(memof(X,Y) @bf{=>} (isObj(X) @bf{and} isClass(Y)))
+								@bf{and} 
+    (@bf{forall} X,Y,Z).(rel(X,Y,Z) @bf{=>} (isObj(X) @bf{and} isRel(Y)
+					   @bf{and} isObj(Z))) @bf{and}  
+    (@bf{forall} X,Y,Z).(crel(X,Y,Z) @bf{=>} (isClass(X) @bf{and} isRel(Y)
+					   @bf{and} isObj(Z))) 
+}
+
+
+We now provide rules to construct instance axioms for the CDF instance
+predicates introduced so far.  Note that the names of identifiers play
+no role in CDF semantics.
+
+@bf{Instance Axiom} [@tt{class/2}] For each fact
+of the form @tt{class(Atom,Id)} in an OMS instance @em{O}, add the
+axiom: 
+@begin{itemize}
+@item @em{isClass(Id)} 
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{class(Atom,Id)})}.
+
+@bf{Instance Axiom} [@tt{object/2}]
+For each fact of the form @tt{object(Atom,Id)} add the instance
+axiom: 
+@begin{itemize}
+@item @em{isObj(Id)} 
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{object(Atom,Id)})}
+
+@bf{Instance Axiom} [@tt{relation/2}] For each
+fact of the form @tt{relation(Atom,Id)} add the instance axiom:
+@begin{itemize}
+@item @em{isObj(Id)} 
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{relation(Atom,Id)})}
+
+@bf{Instance Axiom} [@tt{subclass/2}]
+For each fact of the form @tt{subclass(Id1,Id2)} add the instance
+axiom: 
+@begin{itemize}
+@item	@em{(@bf{forall} X).(memof(X,Id1) @bf{=>} memof(X,Id2))}
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{subclass(Id1,Id2)})}.
+
+The CDF instance predicate @tt{subrel/2} is used to indicate that one
+relation is a sub-relation of another.
+
+@bf{Instance Axiom} [@tt{subrel/2}]
+For each fact of the form @tt{subrel(Id1,Id2)} add the instance
+axiom: 
+@begin{itemize}
+@item	@em{(@bf{forall}) X,Y.(rel(X,Id1,Y) @bf{=>} rel(X,Id2,Y))}
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{subrel(Id1,Id2)})}.
+
+@bf{Instance Axiom} [@tt{memberof/2}]
+For each fact of the form @tt{memberof(Id1,Id2)} add the instance
+axiom:
+@begin{itemize}
+@item @em{memof(Id1,Id2)}
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{memberof(Id1,Id2)})}.
+
+It is important for the semantics of relations that each class have at
+least one member.
+
+@bf{Core Axiom 3} @em{[Non-Null Classes]}
+@begin{itemize}
+@item @em{(@bf{forall} X).(isClass(X) @bf{=>} (@bf{exists} Y).memof(Y,X))}
+@end{itemize}
+
+Our last core axiom for these predicates ensures is that each class is
+a subclass of @tt{'OMS Root'}.
+
+@bf{Core Axiom} @em{[Domain Containment]}
+@begin{itemize}
+@item @em{(@bf{forall} X).(isObj(X) @bf{=>} memof(X,'OMS Root'))}
+@end{itemize} 
+
+@subsection{General Relations between Classes}
+
+Given classes, objects and the predicates @tt{subclass/2} and
+@tt{memberof/2}, simple but useful @em{taxonomies} can be developed.
+However, not all interesting information about the world can be
+represented via a fixed subclass relation.  Hence, there are other
+predicates that can indicate arbitrary relations among classes.
+
+The first type of relation between classes simply states that the
+relationship holds for all elements of the class.  This is done using
+the @tt{irel/3} predicate, whose name stands for ``inheritable
+relationship''.
+
+@bf{Example 3}
+The following fragment adds to the facts in the previous examples.
+
+@begin{verbatim}
+class(endType)          class(endTypeDomain)
+class(singleArmed)      class(doubleArmed)
+class(unarmed)          relation(endType,endType) 
+
+subclass(endTypeDomain,'OMS Root') 
+   subclass(singleArmed,endTypeDomain) 
+    subclass(doubleArmed,endTypeDomain)  
+   subclass(unarmed,endTypeDomain) 
+
+irel(sutures,endType,endTypeDomain)  
+@end{verbatim}
+
+@noindent
+This fragment indicates that @em{any} object in the @tt{
+sutures} class has a @tt{endType} relation to an
+object in or subclass of @tt{endTypeDomain}.  This immediately
+implies that any class that is defined as a subclass of
+@tt{sutures} will inherit the @tt{endType}
+relationship.  This knowledge may be relatively definite -- that it
+has a relation to the class @tt{unarmed} or less definite that
+the subclass just has a relation to @tt{endTypeDomain},
+e.g. to @tt{unarmed} or @tt{ singleArmed} or @tt{
+doubleArmed}.
+
+@tt{irel/3} thus provides a simple but powerful mechanism for
+inheritance in CDF, as can be seen from the following translation
+rule:
+
+@bf{Instance Axiom} [irel/3]
+For each fact of the form @tt{irel(Cid1,Rid,Cid2)} add the instance
+axiom: 
+@begin{itemize}
+@item @em{
+(@bf{forall} X). (memof(X,Cid1) @bf{=>} (@bf{exists} Y).(rel(X,Rid,Y) 
+					@bf{and} memof(Y,Cid2))))
+}
+@end{itemize} @noindent
+denoted as @em{Int(@tt{irel(Cid1,Rid,Cid2)})}
+
+Alternatively, sets may have relations that do @em{not} hold for their
+subclasses or members.  For instance, a finite set may have a given
+cardinality, but its proper subsets will have a different cardinality.
+From a practical point of view, such relations on sets are
+@em{non-inheritable}.
+
+@bf{Example 4} 
+A practical example of a non-inheritable relation comes from an
+application that may be called part equivalency matching.  In this
+application, the possible attributes for a class of parts are given
+various weights.  Two parts match if the sum of the weights of their
+attributes that match are above a given threshold.  The weighting for
+the @tt{endType} of sutures might be given as:
+
+@begin{verbatim}
+class(endTypeWeight,match)).  class(highWeight,match))
+subclass(endTypeWeight,match),'OMS Root')
+strel(sutures,endTypeWeight,match),highWeight,match))
+@end{verbatim} 
+
+@noindent 
+This fragment indicates that the matching weight for the
+@tt{endType} attribute for parts classified to
+@tt{sutures} should be @tt{highweight}.  Matching weights are
+denoted as non-inheritable using the @tt{strel/3} predicate, which
+indicates a @em{set-valued} relation.  The weights are made
+non-inheritable because a weight may depend on a given classification
+of a part.  For instance if a part were classified as a
+@tt{nonAbsorbableSuture}, its @tt{endType} might weigh
+less (or more) for determining whether two sutures are equivalent.
+
+
+@bf{Instance Axiom} [@tt{strel/3}]
+For each fact of the form @tt{strel(Id1,Rid,Id2)} add the instance axiom:
+@begin{itemize}
+@item @em{
+(@bf{exists} X).membof(X,Id2) @bf{and} crel(Id1,Rid,X)
+}
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{strel(Cid1,Rid,Cid2)})}.
+
+Finally, it is often useful to indicate typing via @tt{schema
+relations} between sets.  To take a simple example, the class
+@em{person} may have a relation @em{ brother} to the class of
+@em{malePerson}.  This doesn't mean that every person @em{has} a
+brother that is a @em{malePerson} (as would be indicated by
+@tt{irel/3}), only that @em{if} a person has a brother, the brother
+must be a @em{malePerson}.
+
+@bf{Example 5}
+The following fragment provides an application-oriented example:
+@begin{verbatim}
+class(dlaPart)  class(suturesRusPart)  
+class(EquivalencyMatch,match)) 
+
+subclass(dlaPart,'OMS Root')  
+subclass(suturesRusPart,'OMS Root') 
+      subclass(suturesRusMatch,'CDF Relations','CDF')) 
+schrel(dlaPart,suturesRusMatch,suturesRusPart) 
+@end{verbatim}
+
+@noindent This fragment indiates that a given @tt{dlaPart} may
+have a @tt{suturesRusMatch} to a given
+@tt{suturesRusPart} -- but not necessarily -- an equivalent
+part may not be in the vendor's catalog.  However, the fragment
+precludes the case in which a @tt{dlaPart} has a
+@tt{suturesRusMatch} to a part in class that is not a
+@tt{suturesRusPart}, such as the parts from a competing
+vendor.
+
+Not surprisingly, the semantics of @tt{schrel/3} resembles that of
+@tt{irel/3}.
+
+@bf{Instance Axiom} [@tt{schrel/3}]
+For each fact of the form @tt{schrel(Cid1,Rid,Cid2)} add the instance
+axiom: 
+@begin{itemize}
+@item @em{
+(@bf{forall} X.@bf{forall} Y). ((memof(X,Cid1) @bf{and} rel(X,Rid,Y))
+					@bf{=>} memof(Y,Cid2))
+}
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{schrel(Cid1,Rid,Cid2)})}.
+
+@subsection{General Relations among Objects and Classes}
+
+Relations between objects and classes, and between objects and other
+objects are modelled by CDF predicates @tt{attribute/3} and
+@tt{attribute_object/3}.  
+
+@bf{Example 6} @tt{attribute/3} relates an object to a class.  The
+fragment
+@begin{verbatim}
+attribute(suture547466,endType,singleArmed)
+@end{verbatim} 
+
+@noindent indicates via its first fact that the @tt{suture547466}
+object has an @tt{endType} that is in the class @tt{singleArmed}.  In
+the case of many types of attributes, such as needle end types, colors
+and so on, relating an object to a class is sufficient as there is no
+need to distinguish objects within the target class of colors or end
+types.  The second fact indicates that there is a @tt{suturesRusMatch}
+between the objects @tt{suture547466} and @tt{sutureU245H}, indicated
+by the predicate @tt{attribute_object/3} which is used to relate an
+object to an object.
+
+At this stage, we can introduce our last two translation rules.
+
+@bf{Instance Axiom} [@tt{attribute/3}]
+For each fact of the form @tt{attribute(Oid1,Rid,Cid2)} add the instance
+axiom: 
+@begin{itemize}
+@item @em{
+  (@bf{exists} X).(rel(Oid1,Rid,X) @bf{and} memof(X,Cid2))
+}
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{attribute(Oid1,Rid,Cid2)})}.
+
+@bf{Instance Axiom} [attribute_object/3]
+For each fact of the form @tt{attribute_object(Oid1,Rid,Oid2)} add
+the instance axiom:
+@begin{itemize}
+@item @em{rel(Oid1,Rid,Oid2)}
+@end{itemize}
+@noindent
+denoted as @em{Int(@tt{attribute_object(Oid1,Rid,Oid2)})}.
+
+@subsection{Product Classes and Object}
+
+The above predicates allow the definition of various named binary
+relations between classes.  However, binary definitions can sometimes
+be inconvenient to use.  For instance, in the part equivalency
+matching example, (Example 4), it may be desirable to make explicit
+the weight of the match as an indication of the strength of the match.
+The weight could be made explicit by a series of definitions
+
+@begin{verbatim}
+schrel(dlaPart,suturesRusMatch_low,suturesRusPart)
+:
+schrel(dlaPart,suturesRusMatch_high,suturesRusPart)
+@end{verbatim} 
+@noindent 
+indicting that a given part has a match of weight @em{low} through
+@em{high}.  However, for a scale with a large number of values,
+defining matches in this way is time-consuming and prone to errors.
+To address this, CDF provides @em{product classes}, as in the
+following fact
+
+@begin{verbatim}
+schrel(dlaPart,suturesRusMatch(matchScale),suturesRusPart)
+@end{verbatim} 
+@noindent 
+which indicates that a @tt{dlaPart} can have
+a @tt{suturesRusMatch} relation with some @tt{matchScale}
+weight to a @tt{suturesRusPart} part.
+
+@bf{Example 5} 
+Anoter aspect of product classes is illustrated by the fragment:
+@begin{verbatim}
+class(sign,sign)   class('+','+')  class('-','-')  
+class(dimension,dimension)  class(length,length)  
+class(unit,unit)  class(width,width)  class(height,height) 
+class(time,time)  class(minutes,minutes)  class(days,days) 
+
+subclass(sign,omsRoot)  
+   subclass('+',sign) 
+   subclass('-',sign) 
+subclass(unit,omsRoot,oms))  
+   subclass(dimensionUnit,unit) 
+      subclass(length,dimensionUnit)  
+      subclass(width,dimensionUnit) 
+       subclass(height,dimensionUnit) 
+   subclass(timeUnit,unit) 
+      subclass(minutes,timeUnit) 
+        subclass(days,timeUnit)
+
+class('measure/3',measure(sign,integer,unit))
+@end{verbatim}
+
+@noindent
+
+The class @tt{measure(sign,integer,unit)} can be thought of as the set
+of terms with outer functor @tt{measure/3} whose first argument is a
+member of the class @tt{sign}, whose second argument is an integer
+@tt{integer} indicates the class of all integers @footnote{As a
+practical matter, integers are defined as a primitive type, see
+@cite{SwiW03}.}, and whose third element is a member of @tt{unit}.  By
+this reasoning, the terms @tt{ measure('+',integer(1),length)} and
+@tt{measure('-',integer(2),days} are both subclasses of @tt{
+measure(sign,integer,unit)}, but neither is a subclass of each other.
+
+We capture the intuition behind product classes through the following
+axiom schemas.  The first indicates that product identifiers 
+are constructed from @em{constituent identifiers} of the same sort.
+
+@bf{Core Axiom} @em{[Downward Closure]}
+For each product identifier @em{f(x1,...,xn)} and for each atomic
+identifier @em{c} the following axioms are added,
+@begin{itemize}
+@item @em{isClass(f(x1,...,xn)) @bf{=>}
+	isClass(x1) @bf{and} ... @bf{and} isClass(x_n)}
+@item @em{isObj(f(x1,...,xn)) @bf{=>}
+	isObj(x1) @bf{and} ... @bf{and} isObj(x_n)}
+@item @em{isRel(f(x1,...,xn)) @bf{=>}
+	isRel(x1) @bf{and} ... @bf{and} isRel(x_n)}
+@end{itemize}
+
+The next axiom associates product classes with the objects they contain.
+
+@bf{Core Axiom} @em{[Implicit Subclassing]}
+For each product identifier @em{f(x1,...,xn)} and for each atomic
+identifier @em{c} the following axioms are added,
+@begin{enumerate}
+@item @em{(@bf{forall} O).(memof(O,f(x1,...,xn)) @bf{=>}
+	 (O = f(y1,...,yn) @bf{and} 
+		memof(y1,x1) @bf{and} ... @bf{and} memof(yn,xn)))}
+
+@item @em{(@bf{forall} C).(memof(f(x1,...,xn),C) @bf{=>}
+	(C = f(y1,...,yn) @bf{or} C = c))}
+@end{enumerate}
+
+@noindent
+Note that together with Axiom @ref{ax:sorts}, Axiom @\ref{ax:implsc}
+implies that if @em{memof(f(y1,...,yn),f(x1,...,xn))} holds,
+then @em{isObj(f(y1,...,yn))}, and @em{isClass(f(x1,...,xn))} hold
+as do @em{isObj(y_i)} and @em{isClass(xi)} for @em{1 =< i =< n}.
+
+@cite{SwiW03} gives conditions that are necessary and sufficient for
+an OMS instance to have be consistent.
+
+@subsection{Inheritance}
+
+Consider the effects of inheritance on @tt{attribute/3} and
+@tt{attribute_object/3}.  The definition of the @tt{irel/3} relation
+in Example 3 on the class of @tt{sutures} indicates that each
+object in this class is related to @tt{endTypeDomain}.  Thus,
+if no stronger information were provided for, say, part
+@tt{suturesU245H}, then 
+@begin{itemize}
+@item @em{Int(@tt{attribute(suturesU245H,endType,endTypeDomain)})}
+@end{itemize}
+@noindent would be true in any model of the CDF instance.  This
+consequence can be seen as a primitive form of ``default'', or more
+precisely indefinite, reasoning that is provided by CDF.  Indeed,
+@begin{itemize}
+@item @em{Int(@tt{attribute(suture547466,endType,endTypeDomain)})}
+@end{itemize}
+@noindent 
+would also be true, but would be of less interest, since Example 3
+indicates there is specific information that @tt{suture547466}
+is related to a subclass of @tt{endTypeDomain}, namely
+@tt{singleArmed}.
+
+In contrast to the relation @tt{endType} the relation
+@tt{suturesRusMatch} was defined via the @tt{schrel/3}
+predicate.  So in this case no @tt{attribute/3}, will be inferred, as
+accords with intuition.  However the constraint that any
+@tt{suturesRusMatch} must be to a @tt{suturesRusPart}
+holds for members of the class @tt{sutures}, just as it holds
+for subclasses of @tt{sutures}.
+
+The followin formulas summarize inheritance in the first argument of
+relations, and can be proved in a straightforward manner.
+
+@bf{Proposition 1.1} @em{[First Argument Inheritance Propagation]}
+Let @em{M} be an ontology model.
+@begin{itemize}
+@item If @em{M |= Int(@tt{irel(Id1,Id2,Id3)}) @bf{and}
+	Int(@tt{subclass(Id0,Id1)})} then @em{M |= @tt{irel(Id0,Id2,Id3)})}
+
+@item If @em{M |= Int(@tt{irel(Id1,Id2,Id3)}) @bf{and}
+	Int(memberof(Id0,Id1))} then @em{M |= Int(attribute(Id0,Id2,Id3)})}
+
+@item If @em{M |= Int(@tt{irel(Id1,Id2,Id3)}) @bf{and}
+	Int(memberof(Id0,Id1))} then @em{M |= Int(attribute(Id0,Id2,Id3)})}
+
+@item If @em{M |= Int(@tt{schrel(Id1,Id2,Id3)}) @bf{and}
+    Int(@tt{subclass(Id0,Id1)})} then @em{M |= Int(@tt{schrel(Id0,Id2,Id3)})}
+
+@item If @em{M |= Int(@tt{schrel(Id1,Id2,Id3)}) @bf{and}
+		         Int(@tt{memberof(Id0,Id1)}) 
+		@bf{and} Int(@tt{attribute(Id0,Id2,Id4)})} then 
+	@em{M |= Int(@tt{subclass(Id4,Id3)})}
+
+@item  If @em{M |= Int(@tt{schrel(Id1,Id2,Id3)}) @bf{and}
+	        Int(@tt{memberof(Id0,Id1)}) @bf{and} 
+		Int(@tt{attribute_object(Id0,Id2,Id4)})}
+	then @em{M |= Int(@tt{memberof(Id4,Id3)})}
+@end{itemize}
+
+There is inheritance also in the third argument of relations.
+Consider again the @tt{irel/3} fact @tt{endType}, defined in
+Example 3.  This fact states that any element of @tt{sutures}
+is related to a member or subclass of @tt{endTypeDomain}.  By
+this definition, it also holds that @tt{endType} relates any
+element of @tt{sutures} to a member or subclass of any
+@em{superclass} of @tt{endTypeDomain} so that
+@begin{itemize}
+@item @em{
+	Int(irel(sutures,endType,'OMS Root'))}
+@end{itemize}
+@noindent
+should also hold in any model of the CDF instance.  Similiarly, 
+@begin{itemize}
+@item @em{
+  Int(schrel('dlaPart',suturesRusMatch,'OMS Root'))}
+@end{itemize} 
+
+@noindent should also hold.  In English, every member or subclass of
+@tt{suture} that has a @tt{suturesRusMatch} relation has the same
+relation to a member or subclass of @tt{'OMS Root'}.
+
+@bf{Proposition 1.2} @em{[Third-Argument Inheritance Propagation]}
+@begin{itemize}
+@item If @em{M |= Int(irel(Id1,Id2,Id3)) @bf{and}
+	Int(subclass(Id3,Id4))} then @em{M |= Int(irel(Id0,Id2,Id4))}
+
+@item If @em{M |= Int(schrel(Id1,Id2,Id3)) @bf{and}
+	Int(subclass(Id3,Id4))} then @em{M |= Int(schrel(Id0,Id2,Id4))}
+
+@item If @em{M |= Int(strel(Id1,Id2,Id3)) @bf{and}
+	Int(subclass(Id3,Id4))} then @em{M |= Int(strel(Id0,Id2,Id4))}
+@end{itemize}
+
+A final aspect of inheritance arises from the fact that relation names
+themselves are classes.  In our framework, inheritance in the second
+argument of relations is taken to account for generalization or
+specialization of the relations.  For instance, the relation
+@tt{parent} can be generalized to @tt{ancestor} or specialized to
+@tt{mother}.  Thus, if @tt{Abraham} is the @tt{parent} of @tt{Isaac},
+it is true that he is the @tt{ancestor} or @tt{Isaac} but not
+necessarily the @tt{mother} of @tt{Isaac}.  This intuition is
+reflected in the final inheritance propositions.
+
+@bf{Proposition} @em{[Second-Argument Inheritance Propagation]}
+
+@begin{itemize}
+@item If @em{M |= irel(Id1,Id2,Id3)) @bf{and}
+	subclass(Id2,Id4))} then @em{M |= irel(Id0,Id4,Id3)}
+
+@item If @em{M |= schrel(Id1,Id2,Id3)) @bf{and}
+	subclass(Id2,Id4))} then @em{M |= schrel(Id0,Id4,Id3)}
+
+@item If @em{M |= strel(Id1,Id2,Id3)) @bf{and}
+	subclass(Id2,Id4))} then @em{M |= strel(Id0,Id4,Id3)}
+@end{itemize}
+
+
+@section{Views and Formats of the OMS}
+
+
 where a term @em{T} is an identifier iff:
 
 @begin{enumerate}
@@ -74,314 +737,10 @@ identifier, the atomic second argument is called the @em{source}.  We
 will see in later sections that identifiers can be in either @em{internal}
 or @em{external} format.
 
-Despite the simple syntax of CDF instances, their semantics differs
-from the usual semantics assigned to facts in Prolog.  While some
-identifiers identify objects of a given structure (as in the semantics
-of Prolog), others identify tuples of objects, sets of objects or of
-tuples of objects, or relationships.  Furthermore, the facts of a CDF
-instance can implicitly denote inheritance of various relationships
-among classes and objects or constraints about what relationships are
-allowed.
-
-The rest of this section has two aims: first it motivates the
-semantics of CDF via various examples -- as it does so, it introduces
-the formal semantics for the various predicates that are introduced as
-well as axioms for CDF as a whole.
-
-@bf{Classes and Objects}
-Naive set theory provides a natural way to classify objects and to
-discuss their relations.  Accordingly, CDF makes a fundamental
-distinction between objects and sets.
-
-@bf{Example 1}  We begin to construct a fragment of a CDF instance for
-representing medical sutures, which will form a running example
-throughout the paper.  In the process of modelling this instance, we
-adapt meta-data from the U.S. Defence Logistics Information Service
-(@tt{http://www.dlis.mil}), from the Universal Standard Products and
-Services Classification @cite{UNSPSC}, as well as from the website of
-various commercial medical supply companies.
-
-@begin{verbatim}
-  class(medicalEquipment,id(42,unspsc))
-         class(woundCareProducts,id(4231,unspsc)) 
-  class(suturesAndRelatedProducts,id(423117,unspsc))
-         class(sutures,id(42311701,unspsc)) 
-  class(nonAbsorbableSutures,id(12953,dla))
-         class(absorbableSutures,id(12952,dla)) \\
-  class(sutureNeedles,id(07251,dla))
-@end{verbatim}
-
-In CDF, sets are termed @em{classes} to stress the informality of its
-sets from the perspective of set theory.  The first argument in the
-@tt{class/2} tuples is the name of the class, and the second is an
-identifier.  Each identifier is taken to uniquely identify an ontology
-element which may be a class, an object, or a relation.  For instance
-the identifier for the class @tt{ medicalEquipment},
-@em{id('42',unspsc)} is unique, and from a practical perspective means
-that @tt{medicalEquipment}, has the identifier @tt{42} within the
-UNSPSC system, although @tt{42} may have a very different meaning
-within the DLA system.  Along with classes, the fragment contains the
-following objects, whose names and identifiers are formed from their
-various part numbers.  
- @begin{verbatim}
-  object(suture547466,id('000547466',dla))
-  object(sutureU245H,id('U245H',sru))
-@end{verbatim}
-
-The component @tt{sru} is used to denote a commercial source of
-sutures~@footnote{All examples used in this paper arise from actual
-data used by XSB, Inc., although company names and part numbers have
-been changed to protect proprietary information.}.  Note that the
-decision of whether to denote an entity as an object or as a class
-depends on the use of a given CDF instance.  Here, a given part number
-can specify a number of physical parts, but the physical parts are
-taken to be identical for the purposes of this instance.  However, if
-we were constructing a CDF instance for warehouse management, the
-above objects might be better represented as classes, and the physical
-objects represented as CDF objects.
-
-While each identifier uniquely determines an ontology element, the
-identifiers described above can be somewhat hard to read so for the
-purposes of presentation, in this section we substitute the names of
-the various elements for the first arguments of their identifiers.
-
-In the instance of Example 1, there is no explicit
-indication that the objects are members of the class @tt{
-id(sutures,dla)}, nor is there explicit indication that the class of
-@tt{id(absorbableSutures,dla)} is a subclass of @tt{
-id(sutures,dla)}.  This information can be added via the predicate:
-
-@begin{itemize}
-@item	@em{memberof(Object_id,Class_id)}
-@end{itemize}
-
-indicating that a given object is a member of a given class; and via
-the predicate: 
-@begin{itemize}
-@item	@em{subclass(Class1_id,Class2_id)}
-@end{itemize}
-
-indicating that @em{Class1_id} is a subclass of @em{Classs2_id}.
 
 
 
 
-
-
-Given classes and their subclass relations, denoted via the predicate
-@pred{subclass_ext/4}, simple but useful @concept{taxonomies} can be
-developed.  However, not all interesting information about the world
-can be represented via a fixed subclass relation.  Hence, there are
-other predicates that can indicate arbitrary relations between
-classes.
-
-The first type of relation between classes simply states that the
-relationship holds for all elements of the class.  This is done using
-the @pred{relationship_ext/6} predicate.  For example, in the database
-fragment 
-@begin{verbatim} 
-class_ext( needle_type, needle_type,my_ont)
-class_ext( needle_type_domain, needle_type_domain,my_ont)
-relationship_ext(Sutures,dla, needle_type,my_ont,needle_type_domain,my_ont).  
-@end{verbatim} 
-
-@noindent @tt{Sutures}, @tt{ needle_type}, and @tt{
-needle_type_domain} are all classes, and the @tt{ needle_type}
-relationship is inheritable.  This fragment indicates that any object
-in the @tt{sutures class} has a @tt{ needle_type} relation to an
-element (or elements) in the class @tt{needle_type_domain}.  It also
-implies that any class @em{C} that is defined as a subclass of
-@tt{Sutures} will inherit the @tt{ needle_type} relationship.  To see
-this, note that the elements of @em{C} are a subset of the objets of
-@tt{Sutures} so that if each element of @tt{Sutures} has a
-needle_type, then every element of @em{C} must also.
-@pred{relationship_ext/6} thus provides a simple but powerful
-mechanism for inheritance in the OMS.  In addition, the above fragment
-also indicates that @tt{relationship_ext/6} facts (as well as
-@tt{subclass_ext/4} facts) can relate classes from different
-ontologies.
-
-Naive set theory distinguishes between sets and primitive elements.
-In the OMS, elements of sets are called @em{objects}, which are
-denoted via the @pred{object_ext/3} relation.  Objects are linked to
-classes via the @pred{memberof_ext/4} relation, and in the OMS each
-object must be linked to at least one class.  Thus a particular suture
-may be denoted as 
-
-@begin{verbatim} 
-object_ext('SUTURE SET,NONABSORBABLE,SURGICAL',007689768,dla)
-memberof_ext(0087689768,dla,Sutures,dla) 
-@end{verbatim}
-
-@noindent We say that an object @em{O} is of type or class @em{C1} if
-there is a fact @em{memberof(O,C)} and @em{C} is a subclass of @em{C1}
-(remember that a class is a subclass of itself, so that @em{O} will be
-a subclass of @em{C}).  Also note in the example above, the name of
-the object is given as the DLA item name code, so that many different
-objects with different native ids may share the same name.
-
-Analogously to @tt{relationship_ext/6}, each object can be linked to a
-class via the @pred{attribute/3} relation 
-@begin{verbatim} 
-attribute_ext(87689768,dla,needle_type,my_ont,curved,my_ont)
-@end{verbatim} 
-
-@noindent or to another object via the @pred{attribute_object/3}
-relation.  We will return to the effects of inheritance on these
-predicates shortly, after describing two other types of relations.
-
-Sets may have relations that do not hold for their members.  For
-instance, a finite set may have a given cardinality, but its subsets
-will have a different cardinality.  From a practical point of view,
-such relations on sets are @em{non-inheritable}.  A practical example
-of a non-inheritable relation comes from part matching.
-@begin{verbatim}
-strel(Sutures,dla,needle_type_weight,dla,integer(5),OMS).
-@end{verbatim} 
-
-@noindent This fragment indicates that the matching weight for the
-@tt{needle_type} attribute for parts classified to @tt{Sutures} should
-be @tt{5} (actually @tt{integeger(X)} is an OMS primitive type see
-@ref{oms_init_oms (library)} for a further discussion).  Matching
-weights are non-inheritable because a given classification of a part
-may increase or decrease the weight.  For instance if a part were
-classified as a non-absorbable cuticle suture, needle type might weigh
-less (or more) for matching.  This practical example can be linked
-back to set theory.  The @tt{needle_type_weight} is a relation on the
-set @tt{Sutures}, and is irrelevant to the proper subset
-@tt{Absorbable Sutures} of @tt{Sutures} @footnote{For this example, we
-assume that @tt{Absorbable Sutures} is a proper subset of
-@tt{Sutures}.}.
-
-Finally, it is often very useful to be able to state @em{schema
-relations} between sets.  To take a simple example, the class
-@em{person} has a relation @em{brother} to the class of
-@em{male_person}.  This doesn't mean that every person @em{has} a
-brother, only that @em{if} a person has a brother, the brother is a
-@em{male_person}.  The following fragment provides an
-application-oriented example: 
-@begin{verbatim}
-schema_ext(dla_part,dla,newark_match,dla,newark_part,newark).
-@end{verbatim} @noindent
-This indiates that a given @em{dla_part} may have a @tt{newark_match}
-to a given @tt{newark_part} -- but not necessarily.
-
-With this discussion of relations in mind, we can turn back to a
-fuller description of 
-@tt{attribute/6} and @tt{attribute_object_ext/6}.  The fragment
-@begin{verbatim} 
-attribute_ext(87689768,dla, needle_type,my_ont,curved,my_ont),
-@end{verbatim}  @noindent
-mentioned above indicates that part @tt{87689768} has a
-@tt{needle_type} that is in the class @tt{curved}.  There are several
-points to observe about this.  First, @tt{curved} is a class, rather
-than an object.  In the case of many types of attributes, such as
-needle types, colors and so on, relating an object to a class is
-sufficient as there is no need to distinguish objects within the
-class.  It would be equally correct to state
-@begin{verbatim} 
-attribute_object_ext(87689768,dla,needle_type,my_ont,curved_object,my_ont),
-@end{verbatim}  @noindent
-if an object @tt{curved_object} were defined as an object and as a
-member of the class @tt{curved}.  However, we believe that the use of
-@pred{attribute_ext/6} is more intuitive in cases such as this where
-the actual objects within a class do not matter.
-
-Consider the effects of inheritance on @tt{attribute_ext/6} and
-@tt{attribute_object_ext/6}.  In the case of @tt{needle_type}, the
-definition of @tt{needle_type} on the class of @tt{Sutures} via a
-@tt{relatioship_ext/6} predicate indicates that each object in this class
-is related to @tt{needle_type_domain}.  Thus, if no stronger 
-information were provided for, say, part @tt{0092424}, then the fact
-@begin{verbatim} 
-attribute_ext(0092424,dla, needle_type,my_ont,needle_type_domain,my_ont),
-@end{verbatim}  @noindent
-would be true in the OMS, and this can be seen as a primitive form of
-``default'' reasoning that is provided by the OMS.  Indeed, the fact 
-@begin{verbatim} 
-attribute_ext(87689768,dla,needle_type,my_ont,needle_type_domain,my_ont), 
-@end{verbatim}  @noindent
-would also be true, but would be of less interest, since there is
-specific information that @tt{87689768} is related to a subclass of
-@tt{needle_type_domain}, namely @tt{curved}.
-
-In contrast to the relation @tt{needle_type} the relation
-@tt{newark_match} was defined via the @tt{schema_ext/6} predicate.  So
-in this case no @tt{attribute_ext/6}, will be inferred, as accords
-with intuition.  
-
-All relations defined by the 3rd and 4th arguments of
-@pred{relationship_ext/6}, @pred{strel_ext/6}, @pred{schrel_ext/6},
-@pred{attribute_ext/6}, and @pred{attribute_object_ext/6} are classes
-(e.g. @tt{needle_type}, @tt{needle_type_weight}, and
-@tt{newark_match}.  Relations can be defined on these classes in
-exactly the same manner as other classes.  For instance, an
-@tt{AQL_level} could be defined for the class @tt{newark_match}
-indicating the number of errors per hundred found in random samples.
-Similarly, a relation @tt{unique} might be defined on @tt{needle_type}
-indicating that any part could be related to one most specific
-subclass of @tt{needle_type_domain}.  This last case suggests a
-mechanism for extending the semantics of the OMS.  While the OMS would
-not enforce the constraint of @tt{unique} itself, a type-checker would
-be written in XSB to ensure that needle types were unique or for other
-application-specific semantic constaints.
-
-The above relation predicates allow the definition of named binary
-relations between classes.  However, binary definitions can sometimes
-be inconvenient to use.  For instance, in the matching weight example,
-two parts may have a given match with a given weight that indicates
-the strength of the match.  This could be defined by a series of
-definitions 
-@begin{verbatim}
-schema_ext(dla_part,dla,newark_match_1,dla,newark_part,newark).  
-:
-schema_ext(dla_part,dla,newark_match_n,dla,newark_part,newark).
-@end{verbatim} 
-@noindent 
-indicting that a given part has a newark
-match of weight @em{1} through @em{n}.  However, defining matches in
-this way is time-consuming and prone to errors.  To address this, the
-OMS provides @em{parameterized classes}, as in the following fact
-@begin{verbatim}
-schema_ext(dla_part,dla,newark_match(integer(_)),dla,newark_part,newark).
-@end{verbatim} @noindent which indicates that a @tt{dla_part} can have
-a @tt{newark_match} with an integer weight to a @tt{newark_part}.  An
-example of attribute information for this relation is:
-@begin{verbatim}
-attribute_object_ext(87689768,dla,newark_match(integer(9)),dla,58f1j,newark).
-@end{verbatim} @noindent
-
-There are other aspects to the OMS, including features that allow the
-combination of ontologies, the efficient storage of ontologies in
-databases, and further aspects of inheritance all of which are
-discussed below.  In addition, we discuss in Section @ref{Builtin
-Classes and Relationships} conventions that may be useful for default
-reasoning.
-
-@subsection{Comparisons with Other Systems}
-
-The OMS has similarities to other systems for managing object-oriented
-knowledge such as @em{Flora} (@uref{http://xsb.sourceforge.net}), RDF
-(@uref{http://www.w3c.org/RDF/}), and Protege
-(@uref{http://www.smi.stanford.edu/projects/protege}).  Indeed, the
-connections between these systems are sometimes strong. There exists
-translations between OMS and Protege (documented below) as well as
-between OMS and RDF via Protege.  However the OMS differs from these
-systems in its easy convertability between Prolog and database syntax.
-In addition, the various semantic axioms of the OMS that have been
-developed to allow it to handle partial information (@ref{Semantic
-Axioms}) distinguishes it both from RDF and Protege.
-
-While many of the ideas of the OMS were inspired by F-logic
-@cite{KLW95} and FLORA, the OMS is simpler than FLORA in several
-respects.  First, it does not allow information about taxonomies or
-relations to be defined dynamically by rules.  Second, the OMS does
-not provide for a constraint that a given attribute is unique or
-functional.  And third, the OMS does not provide for non-monotonic
-inheritance, but substitutes a the monotonic inheritance of @tt{
-relationship_ext} facts for default reasoning.  These differences are
-the results of design decisions intended to make the OMS more
-efficient, and easier to use in commercial systems.
 
 @section{Views and Formats of the OMS}
 
@@ -412,7 +771,7 @@ mechanism for the OMS to dynamically access and intern ontology data
 that is not in an OMS format -- for example, data that is kept in an
 extenal database.  These views and formats are discussed below with
 the exception of the Query View, which is discussed in
-@ref{oms_queries (library)}.
+@ref{omsqueries (library)}.
 
 @subsection{OMS: External Format}
 
@@ -425,13 +784,13 @@ create more meaningful names.}.  @tt{ext4.P} contains class
 definitions that include the following classes.
 
 @begin{verbatim}
-class_ext('OMS Root','OMS Root','OMS').
+class_ext('OMS Root','OMS Root'.
 class_ext('OMS Inheritable Relationships',
-          'OMS Inheritable Relationships','OMS').
-class_ext('OMS Set-Valued Relations','OMS Set-Valued Relations','OMS').
-class_ext('OMS Schema Relations','OMS Schema Relations','OMS').
-class_ext('OMS Relations','OMS Relations','OMS').
-class_ext('Descriptions','Descriptions','OMS').
+          'OMS Inheritable Relationships'.
+class_ext('OMS Set-Valued Relations','OMS Set-Valued Relations'.
+class_ext('OMS Schema Relations','OMS Schema Relations'.
+class_ext('OMS Relations','OMS Relations'.
+class_ext('Descriptions','Descriptions'.
 
 class_ext(myownname,c1,test).
 class_ext(c2,c2,test).
@@ -478,20 +837,20 @@ ontology.  The class hierarchy is defined as:
 subclass_ext('OMS Inheritable Relationships','OMS','OMS Relations',OMS).
 subclass_ext('OMS Set-Valued Relations','OMS','OMS Relations',OMS).
 subclass_ext('OMS Schema Relations','OMS','OMS Relations',OMS).
-subclass_ext('OMS Relations','OMS','OMS Root','OMS').
-subclass_ext('Descriptions','OMS','OMS Set-Valued Relations','OMS').
+subclass_ext('OMS Relations','OMS','OMS Root'.
+subclass_ext('Descriptions','OMS','OMS Set-Valued Relations'.
 
 subclass_ext(c1,test,c2,test).
 subclass_ext(c2,test,c3,test).
-subclass_ext(c3,test,'OMS Root','OMS').
+subclass_ext(c3,test,'OMS Root'.
 
 subclass_ext(c11,test,c12,test).
 subclass_ext(c12,test,c13,test).
-subclass_ext(c13,test,'OMS Root','OMS').
+subclass_ext(c13,test,'OMS Root'.
 
 subclass_ext(r1,test,r2,test).
-subclass_ext(r2,test,'OMS Inheritable Relationships','OMS').
-subclass_ext(r3,test,'OMS Schema Relations','OMS').
+subclass_ext(r2,test,'OMS Inheritable Relationships'.
+subclass_ext(r3,test,'OMS Schema Relations'.
 
 subclass_ext(f(c2,test,g(integer(1),'OMS',c11,test),test),test,c2,test).
 @end{verbatim}
@@ -566,7 +925,7 @@ used freely throughout the rest of the ontology definition.
 Set-valued and schema relations are defined anagously:
 
 @begin{verbatim}
-strel_ext(c1,test,'Descriptions','OMS',atom('a description'),'OMS').
+strel_ext(c1,test,'Descriptions','OMS',atom('a description').
 
 schrel_ext(c1,test,r2,test,c12,test).
 @end{verbatim}

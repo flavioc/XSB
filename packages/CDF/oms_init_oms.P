@@ -298,7 +298,7 @@ init_schema_index_std :-
 	index(oms_rln(_,_,_),[1+2,1,2+3]),
 %%	index(oms_rln(_,_,_),[1+2,1,16'0283]),
 	%% oms_strel(SCid,RCid,TCid)
-%	index(oms_strel(_,_,_),[1+2,1]),
+	index(oms_strel(_,_,_),[1+2,1,2+3]),
 	%% oms_schrel(SCid,RCid,TCid)
 	index(oms_schrel(_,_,_),[1+2,1,2+3]).
 

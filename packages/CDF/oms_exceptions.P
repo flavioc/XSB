@@ -6,7 +6,6 @@
 
 #include "flag_defs_xsb.h"
 #include "standard.h"
-
 :- dynamic using_xj/0.
 
 :- comment(module,"This module is designed to handle different kinds
@@ -55,15 +54,16 @@ handle_oms_error(Type,List):-
 	  ;
 	    handle_oms_error_noxj(Type,List)).
 
-handle_oms_error_noxj(consistency,Message):- 
+write_oms_error_noxj(Message):- 
 	message('++Error[OMS]: ', STDERR),
 	message('(Consistency) ', STDERR),
-	messageln(Message, STDERR),
+	messageln(Message, STDERR).
+
+handle_oms_error_noxj(consistency,Message):- 
+	write_oms_error_noxj(Message),
 	abort.
 handle_oms_error_noxj(update,Message):- 
-	message('++Error[OMS]: ', STDERR),
-	message('(Update) ', STDERR),
-	messageln(Message, STDERR),
+	write_oms_error_noxj(Message),
 	abort.
 
 /* TLS: this is basically abort/1 */
