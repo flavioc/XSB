@@ -28,7 +28,7 @@ ALL =	assert.O basics.O consult.O curr_sym.O \
 	domain.O eval.O file_op.O hilogsym.O loader.O \
 	machine.O num_vars.O standard.O std_sbp.O \
 	string.O subsumes.O sysinitrc.O tables.O term_exp.O \
-	x_interp.O xsb_read.O xsb_tok.O xsb_writ.O
+	x_interp.O xsb_read.O xsb_tok.O xsb_writ.O xcallxsb.O
 
 
 # The following file(s) are not used any more do not make them!
