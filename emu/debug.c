@@ -467,20 +467,29 @@ void print_subgoal(FILE *fp, SGFrame subg)
 
 static void print_delay_element(FILE *fp, Cell del_elem)
 {
-  Psc  psc;
-  CPtr cptr;
+    Psc  psc;
+    CPtr cptr;
+    int arity, i;
 
-  if ((psc = get_str_psc(del_elem)) == delay_psc) {
-    fprintf(fp, "%s(", get_name(psc));
-    cptr = (CPtr)cs_val(del_elem);
-    print_subgoal(fp, (SGFrame)cell(cptr+1)); fprintf(fp, ",");
-    fprintf(fp, "%p", (SGFrame)cell(cptr+2)); fprintf(fp, ",");
-    if (cell(cptr+3) == NEG_DELAY) fprintf(fp, "NEG");
-    else fprintf(fp, "POS");
-    fprintf(fp, ")");
-  } else {
-    xsb_abort("Unknown delay list element in print_delay_element()");
-  }
+    if ((psc = get_str_psc(del_elem)) == delay_psc) {
+      fprintf(fp, "%s(", get_name(psc));
+      cptr = (CPtr)cs_val(del_elem);
+      print_subgoal(fp, (SGFrame)cell(cptr+1)); fprintf(fp, ",");
+      fprintf(fp, "%p", (SGFrame)cell(cptr+2)); fprintf(fp, ",");
+      if (cell(cptr+3) == NEG_DELAY)
+	fprintf(fp, "NEG");
+      else {
+	psc = get_str_psc(cell(cptr + 3));
+	arity = get_arity(psc);
+	fprintf(fp, "%s/%d(", get_name(psc), arity);
+	cptr = (CPtr) cs_val(cell(cptr + 3));
+ 	for (i = 0; i < arity; i++)
+	  printterm(cell(cptr + 1 +i), 1, 25);
+      }
+      fprintf(fp, ")");
+    } else {
+      xsb_abort("Unknown delay list element in print_delay_element()");
+    }
 }
 
 /*----------------------------------------------------------------------*/
@@ -1002,7 +1011,7 @@ static void print_tables(void)
   int i = 0;
   char ans = 'y';
   SGFrame subg;
-  NIDEs nide;
+  PNDE nde;
 
   i = count_subgoals();
   printf("\t There are %d subgoal structures...\n", i); if (i) printf(EOSUBG);
@@ -1020,10 +1029,10 @@ static void print_tables(void)
 	   subg_compl_susp_ptr(subg));
     printf("\t ans_list = %6p,       leaf_ptr = %6p,          cp_ptr = %p\n",
 	   subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
-    printf("\tnide_list");
-    for (nide = subg_nide_list(subg); nide != NULL; nide = ides_next_ide(nide))
-      printf(" --> %p", ides_ide(nide));
-    if (subg_nide_list(subg) == NULL) printf(" = NULL\n"); else printf("\n");
+    printf("\tnde_list");
+    for (nde = subg_nde_list(subg); nde != NULL; nde = pnde_next(nde))
+      printf(" --> %p", pnde_de(nde));
+    if (subg_nde_list(subg) == NULL) printf(" = NULL\n"); else printf("\n");
     subg = subg_next_subgoal(subg);
     if (subg != NULL) printf(EOSUBG);
     if (i == 10) {
