@@ -84,13 +84,13 @@ Filehandle[#readline(atom,String)] :-
 Filehandle[#readline(charlist,String)] :-
 	!, file_read_line_list(Filehandle,String)@prolog(file_io).
 _Filehandle[#readline(Request,_)] :- 
-	abort(('Invalid readline format, ', Request))@prolog().
+	abort(('Invalid readline format, ', Request))@flora(sys).
 readline(atom,String) :-
 	!, file_read_line_atom(String)@prolog(file_io).
 readline(charlist,String) :-
 	!, file_read_line_list(String)@prolog(file_io).
 readline(Request,_) :- 
-	abort(('Invalid readline format, ', Request))@prolog().
+	abort(('Invalid readline format, ', Request))@flora(sys).
 
 
 %%%%%%%%%%%%%%%%%%%%
