@@ -491,7 +491,7 @@ dnl Find the source directory.
 
 if test ! -f "${emudir}/emuloop.h" -o ! -f "${syslibdir}/tables.P" ; then
   echo ""
-  echo "    ******* I cannot find XSB sources!!! *_******"
+  echo "    ******* I cannot find XSB sources!!! *******"
   echo "    You must run \`configure' in the directory \`srcDir/build' "
   echo "    where \`srcDir' is the top directory of the XSB source tree."
   echo ""
@@ -1000,7 +1000,7 @@ AC_SUBST(javac)
 AC_SUBST(java_support)
 
 AC_PATH_PROG(java_path,javac,no)
-java_path="${java_path%bin/javac}include"
+java_path=`echo $java_path | sed 's,bin/javac,include,' `
 
 if test "${with_interprolog}" = "yes"; then
   if test "${java_support}" != "yes"; then
