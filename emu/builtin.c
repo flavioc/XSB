@@ -323,6 +323,8 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)
   XSB_Deref(addr);
   if (isref(addr)) {
     bind_int(vptr(addr), value);
+    if (value != ptoc_int(regnum))
+      fprintf(stderr,"CTOP_INT: OVERFLOW %lx (Reg = %d)\n", value, regnum);
   }
   else
     xsb_abort("CTOP_INT: Wrong type of argument %lx (Reg = %d)", addr, regnum);
