@@ -9,7 +9,7 @@ files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS \
 	./XSB/admin \
         ./XSB/build/ac* ./XSB/build/*.in ./XSB/build/config.guess \
      	./XSB/build/config.sub ./XSB/build/*sh ./XSB/build/*.msg \
-    	./XSB/build/*.bat \
+    	./XSB/build/*.bat ./XSB/build/*.sed \
     	./XSB/build/configure ./XSB/build/README \
         ./XSB/emu ./XSB/syslib ./XSB/cmplib ./XSB/lib \
 	./XSB/gpp \
