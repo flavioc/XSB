@@ -53,6 +53,8 @@ tables[#abolish] :- abolish_all_tables@prolog().
 
 abort(X) :-
 	flP2H(PX,X)@prolog(),
-	str_cat('[Runtime] ', PX, Str)@prolog(string),
-	flora_error_line(Str)@prolog(flrprint),
+	flora_error_heading@prolog(flrprint),
+	flora_stderr_string('[Runtime] ')@prolog(flrprint),
+	message(PX,STDERR)@prolog(standard),
+	flora_stderr_nl@prolog(flrprint),
 	abort@prolog().
