@@ -26,7 +26,7 @@
  	from usermod.
 
 % cdf_config.
-:- import cdf_dirty/1,
+:- import cdf_flags/2,
 	  component_table_ext/3,component_table_int/3 from usermod.
 
 :- import cdf_warning/2,cdf_error/2 from cdf_exceptions.
@@ -220,7 +220,8 @@ class or relation based partition of the CDF instance, and computes
 all dependencies between these cells.  Cells that are not components
 are made into components (with version 0), and those that are already
 components have their version number updated if necessary (by checking
-@tt{cdf_dirty/1}).  Other aspects may be specified by various options.
+@tt{dirty} entries of @tt{cdf_flags/2}).  Other aspects may be
+specified by various options.
 
 Alternately, if a part of a loaded CDF instance is to be saved as a
 component the predicate @tt{update_components(List,Dir)} can be used.
@@ -451,8 +452,8 @@ split_arglist_on_version([H|T],V,[H|T1]):-
 
 clean_up_dirty_bits:- 
 	temp_depends(From,To,_,_),
-	retractall(oms_dirty(From)),
-	retractall(oms_dirty(To)),
+	retractall(cdf_flags(dirty,From)),
+	retractall(cdf_flags(dirty,To)),
 	fail.
 clean_up_dirty_bits.
 
@@ -731,8 +732,8 @@ versions_for_existing_component(Name):-
 
 propagate_for_name(Name):- 
 	((\+ component_exists(Name) ; needs_update_tran(Name)) -> 
-	     call_assert(cdf_dirty(Name))
-	   ; true).	
+	    call_assert(cdf_flags(dirty,Name)) 
+	  ; true).
 
 /* demand could go here */
 needs_update_tran(Name):- 
@@ -959,7 +960,7 @@ write_component_intensional(Name):-
 write_component_intensional(_).
 
 needs_update(Component):- 
-	cdf_dirty(Component),
+	cdf_flags(dirty,Component),
 	\+ system_component(Component).
 
 /* New component initializes a new component, creating version,
@@ -1150,7 +1151,6 @@ write_call(_Call):-
 
 :- table table_call/1.
 table_call(Call):- call(Call).
-
 
 :-comment(merge_components/2,"merge_components(+List,+Component)
 merges the components in @tt{List} into component @tt{Component}.

@@ -6,6 +6,9 @@ dirty
 logging
 */
 
+:- dynamic cdf_flags/2.
+:- index(cdf_flags/2,trie).
+
 :- dynamic caching_cdf/1.
 :- dynamic cdf_dirty/1.
 :- dynamic using_xj/0.

@@ -1,13 +1,13 @@
 :- compiler_options([ciao_directives]).
 
 :- export
-	isa/2, immed_isa/2, implicit_isa/2,
+	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
 	hasAttr/3, immed_hasAttr/3, 
 	allAttr/3, immed_allAttr/3, 
 	classHasAttr/3, immed_classHasAttr/3, 
 	in_hierarchy/1,
 	newExtTerm/1, retractallExtTerm/1,
-	initialize_state/0, system_component/1,
+	initialize_state/0, system_component/1, initialize_cdf/0,
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
 	cdf_set_log_on/0, cdf_set_log_off/0, cdf_reset_log/0, show_log/0,
@@ -22,7 +22,7 @@
 
 :- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3 
 							from  usermod.
-:- import cdf_dirty/1, cdf_log_trie/1, 
+:- import cdf_flags/2, cdf_log_trie/1, 
 	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 
 :- import load_component/3 from cdf_components.
@@ -662,7 +662,7 @@ assert_cdf_term(Term) :-
 assert_cdf_term(Term) :-
 	asserta(Term),
 	get_component_extensional(Term,Name),
-	(cdf_dirty(Name)
+	(cdf_flags(dirty,Name)
 	 ->	true
 	 ;	make_cdf_dirty(Name)
 	).
@@ -680,7 +680,7 @@ retractall_cdf_term(Term) :-
 retractall_cdf_term(Term) :-
 	retract(Term),
 	get_component_extensional(Term,Name),
-	(cdf_dirty(Name)
+	(cdf_flags(dirty,Name)
 	 ->	true
 	 ;	make_cdf_dirty(Name)
 	),
