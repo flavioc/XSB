@@ -55,6 +55,7 @@ extern void err_handle(int, int, char *, int, char *, Cell);
 
 #define err(d, a, f, ar)	err_handle(d, a, f, ar, NULL, (Cell)NULL)
 
+#define xsb_mesg(message)       fprintf(stderr, "%s\n", message)
 #define xsb_warn(warning)	fprintf(stderr, "++Warning: %s\n", warning)
 
 /*----------------------------------------------------------------------*/
