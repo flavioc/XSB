@@ -119,35 +119,34 @@ static char *new_block;		/* used in new_entry() */
 
 #define release_entry(ENTRY_TO_BE_RELEASED,				\
 		      RELEASED,						\
-		      NEXT_FUNCTION)					\
+		      NEXT_FUNCTION) {					\
   NEXT_FUNCTION(ENTRY_TO_BE_RELEASED) = RELEASED;			\
-  RELEASED = ENTRY_TO_BE_RELEASED
+  RELEASED = ENTRY_TO_BE_RELEASED;					\
+}
 
 /*
- * In remove_pnde(), PNDE_ITEM only needs to be removed/released when this
- * PNDE list (pointed by PNDE_HEAD) has not been `forgotten' (set to NULL,
- * see simplify_neg_fails() and simplify_pos_unconditional()).  Otherwise,
- * all the items in this PNDE list are already being processed and will be
- * released in simplify_neg_fails() or simplify_pos_unconditional(), so
- * there is no need to release PNDE_ITEM again here.
+ * remove_pnde(PNDE_HEAD, PNDE_ITEM) removes PNDE_ITEM from the
+ * corresponding doubly-linked PNDE list.  If PNDE_ITEM is the first one
+ * in the list, resets PNDE_HEAD to point to the next one.
+ *
+ * One principle: Whenever we remove a DE, its PDE (or NDE) must be
+ * removed from the PNDE list *first* using remove_pnde().
  */
 
-#define remove_pnde(PNDE_HEAD, PNDE_ITEM) {			\
-  PNDE *pnde_head_ptr;						\
-  PNDE next;							\
-								\
-  pnde_head_ptr = &(PNDE_HEAD);					\
-  next = pnde_next(PNDE_ITEM);					\
-  if (*pnde_head_ptr) {						\
-    if (*pnde_head_ptr == PNDE_ITEM)				\
-      *pnde_head_ptr = next;					\
-    else {							\
-      pnde_next(pnde_prev(PNDE_ITEM)) = next;			\
-      if (next)							\
-        pnde_prev(next) = pnde_prev(PNDE_ITEM);			\
-    }								\
-    release_entry(PNDE_ITEM, released_pndes, pnde_next);	\
-  }								\
+#define remove_pnde(PNDE_HEAD, PNDE_ITEM) {		\
+  PNDE *pnde_head_ptr;					\
+  PNDE next;						\
+							\
+  pnde_head_ptr = &(PNDE_HEAD);				\
+  next = pnde_next(PNDE_ITEM);				\
+  if (*pnde_head_ptr == PNDE_ITEM)			\
+    *pnde_head_ptr = next;				\
+  else {						\
+    pnde_next(pnde_prev(PNDE_ITEM)) = next;		\
+    if (next)						\
+      pnde_prev(next) = pnde_prev(PNDE_ITEM);		\
+  }							\
+  release_entry(PNDE_ITEM, released_pndes, pnde_next);	\
 }
 
 /*
@@ -359,6 +358,9 @@ static void record_de_usage(DL dl)
   DE de;
   PNDE pnde, current_first;
   NODEptr as_leaf;
+#ifdef DEBUG_DELAYVAR
+  NODE tmp;
+#endif
  
   de = dl_de_list(dl);
   while (de) {
@@ -376,6 +378,16 @@ static void record_de_usage(DL dl)
     pnde_prev(pnde) = NULL;
     if ((as_leaf = de_ans_subst(de)) == NULL) {	/* a negative DE */
       current_first = subg_nde_list(de_subgoal(de));
+#ifdef DEBUG_DELAYVAR
+      tmp = current_first;
+      while (tmp) {
+	if (pnde_de(tmp) == de) {
+	  printf(">>>> ERROR: tmp = %p, tmp->de = %p\n",
+		 tmp, pnde_de(tmp));
+	}
+	tmp = pnde_next(tmp);
+      }
+#endif      
       pnde_next(pnde) = current_first;
       if (current_first)
 	pnde_prev(current_first) = pnde;
@@ -650,7 +662,7 @@ static void release_all_dls(ASI asi)
 static void simplify_pos_unconditional(NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
-  PNDE pde, tmp;
+  PNDE pde;
   DE de;
   DL dl;
 
@@ -661,14 +673,11 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
   release_all_dls(asi);
   
   unmark_conditional_answer(as_leaf);
-  pde = asi_pdes(asi);
-  asi_pdes(asi) = NULL;		/* forget this PDE list */
-  while (pde) {
+
+  while ((pde = asi_pdes(asi))) {
     de = pnde_de(pde);
     dl = pnde_dl(pde);
-    tmp = pnde_next(pde);
-    release_entry(pde, released_pndes, pnde_next);
-    pde = tmp;	/* the next PDE */
+    remove_pnde(asi_pdes(asi), pde);
     if (!remove_de_from_dl(de, dl))
       handle_empty_dl_creation(dl);
   }
@@ -688,7 +697,7 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
 
 void simplify_neg_fails(SGFrame subgoal)
 {
-  PNDE nde = subg_nde_list(subgoal), tmp;
+  PNDE nde;
   DE de;
   DL dl;
 
@@ -698,15 +707,18 @@ void simplify_neg_fails(SGFrame subgoal)
   print_subgoal(stddbg, subgoal); fprintf(stddbg, "\n");
 #endif
 
-  subg_nde_list(subgoal) = NULL; /* forget this NDE list */
-  while (nde) {
-    de = pnde_de(nde); dl = pnde_dl(nde);
-    tmp = pnde_next(nde);
-    release_entry(nde, released_pndes, pnde_next);
-    nde = tmp;	/* the next NDE */
+  while ((nde = subg_nde_list(subgoal))) {
+    de = pnde_de(nde);
+    dl = pnde_dl(nde);
+    remove_pnde(subg_nde_list(subgoal), nde);
     if (!remove_de_from_dl(de, dl))
       handle_empty_dl_creation(dl);
   }
+
+#ifdef DEBUG_DELAYVAR
+  fprintf(stddbg, ">>>> end simplify_neg_fails()\n");
+#endif
+  
 }
 
 /*
@@ -721,7 +733,7 @@ void simplify_neg_fails(SGFrame subgoal)
 
 static void simplify_neg_succeeds(SGFrame subgoal)
 {
-  PNDE nde = subg_nde_list(subgoal), tmp;
+  PNDE nde;
   DL dl;
   DE de, tmp_de;
   ASI used_asi, de_asi;
@@ -731,12 +743,8 @@ static void simplify_neg_succeeds(SGFrame subgoal)
   fprintf(stddbg, ">>>> start simplify_neg_succeeds()\n");
 #endif
 
-  subg_nde_list(subgoal) = NULL; /* forget this NDE list */
-  while (nde) {
+  while ((nde = subg_nde_list(subgoal))) {
     dl = pnde_dl(nde); /* dl: to be removed */
-    tmp = pnde_next(nde);
-    release_entry(nde, released_pndes, pnde_next);
-    nde = tmp;	/* the next NDE */
     used_as_leaf = dl_asl(dl);
     if (IsValidNode(used_as_leaf) &&
 	(used_asi = Delay(used_as_leaf)) != NULL) {
@@ -774,7 +782,7 @@ static void simplify_neg_succeeds(SGFrame subgoal)
 static void simplify_pos_unsupported(NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
-  PNDE pde, tmp;
+  PNDE pde;
   DL dl;
   DE de, tmp_de;
   ASI used_asi, de_asi;
@@ -784,13 +792,8 @@ static void simplify_pos_unsupported(NODEptr as_leaf)
   fprintf(stddbg, ">>>> start simplify_pos_unsupported()\n");
 #endif
 
-  pde = asi_pdes(asi);
-  asi_pdes(asi) = NULL;		/* forget this PDE list */
-  while (pde) {
+  while ((pde = asi_pdes(asi))) {
     dl = pnde_dl(pde); /* dl: to be removed */
-    tmp = pnde_next(pde);
-    release_entry(pde, released_pndes, pnde_next);
-    pde = tmp;	/* the next PDE */
     used_as_leaf = dl_asl(dl);
     if (IsValidNode(used_as_leaf) &&
 	(used_asi = Delay(used_as_leaf)) != NULL) {
@@ -897,6 +900,5 @@ void force_answer_false(NODEptr as_leaf)
     simplify_neg_fails(subgoal);
   }
 }
-
 
 /*---------------------- end of file slgdelay.c ------------------------*/
