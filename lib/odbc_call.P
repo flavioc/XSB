@@ -1027,27 +1027,27 @@ query_atom(query([agg_query(Function,Select,From,Where,Group)],_,_),QueryList,Di
 	%% --- ugly rule here: aggregate function only in SELECT Part of query ----
 	!, query_atom(agg_query(Function,Select,From,Where,Group),QueryList,Diff,Blist,Olist).
 query_atom(query(Select,From,Where),QueryList,Diff,Blist,Olist) :-
-	clause_atom('SELECT',Select,',',QueryList,X1,Blist,Tl2),
-	clause_atom('FROM',From,',',X1,X2,Tl2,Tl1),
-	clause_atom('WHERE',Where,'AND',X2,Diff,Tl1,Olist).
+	clause_atom(' SELECT ',Select,',',QueryList,X1,Blist,Tl2),
+	clause_atom(' FROM ',From,',',X1,X2,Tl2,Tl1),
+	clause_atom(' WHERE ',Where,' AND ',X2,Diff,Tl1,Olist).
 query_atom(del_query(From,Where),QueryList,Diff,Blist,Olist) :-
-	clause_atom('DELETE FROM',From,',',QueryList,X1,Blist,Tlist),
-	clause_atom('WHERE',Where,'AND',X1,Diff,Tlist,Olist).
+	clause_atom(' DELETE FROM ',From,',',QueryList,X1,Blist,Tlist),
+	clause_atom(' WHERE ',Where,' AND ',X1,Diff,Tlist,Olist).
 query_atom(ins_query(From,Columns,Where),QueryList,Diff,Blist,Olist) :-
-	clause_ins_atom('INSERT INTO',From,',',QueryList,X1,Blist,Tlist),
-	clause_ins_atom('(',Columns,',',X1,X2,Tlist,Tlist1),
+	clause_ins_atom(' INSERT INTO',From,',',QueryList,X1,Blist,Tlist),
+	clause_ins_atom(' (',Columns,',',X1,X2,Tlist,Tlist1),
 	clause_ins_atom(') VALUES (',Where,',',X2,X3,Tlist1,Olist),
 	column_atom_a(')',X3,Diff,_,_).
 query_atom(agg_query(Function,Select,From,Where,Group),QueryList,Diff,Blist,Olist) :-
-	clause_atom('SELECT',Function,Select,',',QueryList,X1,Blist,Tl3),
-	clause_atom('FROM',From,',',X1,X2,Tl3,Tl2),
-	clause_atom('WHERE',Where,'AND',X2,X3,Tl2,Tl1),
-	clause_atom('GROUP BY',Group,',',X3,Diff,Tl1,Olist).
+	clause_atom(' SELECT ',Function,Select,',',QueryList,X1,Blist,Tl3),
+	clause_atom(' FROM ',From,',',X1,X2,Tl3,Tl2),
+	clause_atom(' WHERE ',Where,' AND',X2,X3,Tl2,Tl1),
+	clause_atom(' GROUP BY ',Group,',',X3,Diff,Tl1,Olist).
 query_atom(negated_existential_subquery(Select,From,Where),QueryList,Diff,Blist,Olist) :-
-	column_atom_a('NOT EXISTS(',QueryList,X1,_,_),   
-	clause_atom('SELECT',Select,',',X1,X2,Blist,Tl2),
-	clause_atom('FROM',From,',',X2,X3,Tl2,Tl1),
-	clause_atom('WHERE',Where,'AND',X3,X4,Tl1,Olist),
+	column_atom_a(' NOT EXISTS(',QueryList,X1,_,_),   
+	clause_atom(' SELECT ',Select,',',X1,X2,Blist,Tl2),
+	clause_atom(' FROM ',From,',',X2,X3,Tl2,Tl1),
+	clause_atom(' WHERE ',Where,' AND ',X3,X4,Tl1,Olist),
 	column_atom_a(')',X4,Diff,_,_).
 
 %% -- clause_atom(Keyword,ClauseCode,Junctor,CurrAtom,QueryAtom,Blist,Olist) 
