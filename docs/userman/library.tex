@@ -414,6 +414,7 @@ the XSB compiler.
     \begin{verbatim}
     :- compiler_options([xpp_on]).      
     \end{verbatim}
+
     %%
     Of course, the name \verb|compiler_options| might seem like a misnomer
     here (since the file is not being compiled), but it is convenient to
@@ -1020,6 +1021,7 @@ be used by the standard I/O predicates, like see/1, tell/1, read/1, etc.
 The stream returns by this predicate is identified by a newly created atom,
 such as \verb|_$newstream_#123|. 
 
+%%$ -- so that font-lock-mode works in Emacs
 
 \end{description}
 
@@ -1297,6 +1299,9 @@ Example:
 
                yes
 \end{verbatim}}
+  
+  This predicate is obsolete and \verb|datime/1|, defined in
+  \texttt{standard}, should be used instead.
 
 \ournewitem{file\_time(+FileName, -time(Time1,Time2))}{file\_io}
 \index{{\tt file\_time/2}}
