@@ -26,12 +26,6 @@
 
 #define REL_TAB_SIZE    32768
 
-#define T_EXPORTED 0
-#define T_LOCAL    1
-#define T_IMPORTED 2
-#define T_IMEX     3    /* not used */
-#define T_GLOBAL   4
-
 /* Data structures holding the compiled code */
 
 struct index_block {
@@ -70,19 +64,6 @@ typedef struct text_segment text_seg, seg_hdr, *pseg ;
 /* Zoom the object file to fit actual word size */
 #define ZOOM_FACTOR             (WORD_SIZE / OBJ_WORD_SIZE)
 
-/* In the following, y is the number of bytes we want to read from fd   */
-#define get_obj_data(x,y)	(fread((char *)(x), 1, (y), fd))
-
-#define get_obj_byte(x)		(get_obj_data((x),1))
-#define get_obj_word(x)		(get_obj_data((x),OBJ_WORD_SIZE))
-#define get_obj_string(x,len)	(get_obj_data((x),(len)))
-
-#define get_obj_word_bb(x)    {get_obj_word(x) ; fix_bb(x) ; }
-#define get_obj_word_bbsig(x) {get_obj_word(x) ; fix_bb4(x) ; \
-			       *(Integer *)(x) = *(int *)(x);}
-#define get_obj_word_bbflt(x) {get_obj_word(x) ; fix_bb4(x) ; \
-			       *(Float *)(x) = *(float *)(x);}
-
 /************************************************************************/
 /*									*/
 /* fix_bb: fixes the byte-backwards problem.  It is passed a pointer to	*/
@@ -110,4 +91,4 @@ typedef struct text_segment text_seg, seg_hdr, *pseg ;
 extern byte *loader(char *, int);
 extern void env_type_set(Psc, byte, byte, bool);
 extern void unload_seg(pseg);
-
+extern unsigned int read_magic(FILE *);

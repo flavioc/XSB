@@ -25,7 +25,7 @@
 
 :- compiler_options([xpp_on]).
 
-#define XSB_MAX_ATOM_LEN 255
+#include "psc_defs.h"
 
 /*======================================================================*/
 /*  asm_gendata(+SymList)						*/ 
@@ -43,28 +43,30 @@ asm_putsym(Sym) :-
 	sym_name(Sym, Name, Arity), str_len(Name, L),
 	sym_env(Sym, Env), env_code(Env, DomCode),
 	sym_category(Sym, Cat), category_code(Cat, CatCode),
-	put(DomCode), put(CatCode), put(Arity),
-	(   L =< XSB_MAX_ATOM_LEN
-	->  put(L) 
-	;   error(('cannot generate byte-code for atoms longer than ',
-		   XSB_MAX_ATOM_LEN)) 
-	),
+	put(DomCode), put(CatCode), put(Arity), asm_putlength(L),
 	write(Name),
-	( DomCode =\= 2 -> true
+	( DomCode =\= T_IMPORTED -> true
 	; Env = im(Mod), str_len(Mod, LM), put(LM), write(Mod)
 	),
 	!.
 
-env_code(ex, 0).
-env_code((local), 1).
-env_code(im(_), 2).
-% env_code(imex, 3).
-env_code(global, 4).
+% Writes the length of an atom to a byte code file.  Atoms with length
+% less than 255 have their length denoted using one byte; for atoms
+% with length 255 and higher, the escape byte 255 is used and the
+% length of the atom is written as an integer (next 4 bytes).
 
-category_code(ordinary, 0).		% uninstantiated variable
+asm_putlength(L) :-
+	( L < 255 -> put(L) ; put(255), write_int(L) ).
+
+env_code(ex, T_EXPORTED).
+env_code((local), T_LOCAL).
+env_code(im(_), T_IMPORTED).
+env_code(global, T_GLOBAL).
+
+category_code(ordinary, T_ORDI).	% uninstantiated variable
 % category_code(dynamic, 1).		% not used in the compiler yet
-category_code(pred, 12).		% T_UDEF; T_PRED=:=2
-category_code(module, 4).
+category_code(pred, T_UDEF).		% T_PRED=:=2
+category_code(module, T_MODU).
 
 
 /*======================================================================*/
@@ -119,7 +121,7 @@ asm_genarg(t(T), _) :- write(T).
 asm_genindex(IndexCode, LabelTab) :-
 	member(Inst, IndexCode),
 	asm_proc_index(Inst, LabelTab),
-	fail.		% reclaim space (remove all choice points left)
+	fail.		% reclaim space
 asm_genindex(_, _).
 
 asm_proc_index(cases(_Label,Arity,Num,OrderNum), _) :-

@@ -90,11 +90,10 @@ asm_inst(trymeorelse(A,L),	8,	183,	[pp, a(A), l(L)]).
 asm_inst(retrymeorelse(A,L),	8,	184,	[pp, a(A), l(L)]).
 asm_inst(trustmeorelsefail(A),	4,	185,	[pp, a(A)]	).
 
-asm_inst(tableretry(A,L),	8,	189,	[pp, a(A), l(L)]).
-asm_inst(tabletry(A,L,Tbind),   12,     190,    [pp, a(A), l(L), i(Tbind)]).
-asm_inst(tabletrust(A,L), 	8,     	193,    [pp, a(A), l(L)]).
-asm_inst(tabconfig(Chs,Rhs), 	0,    	194,    [ppp, i(Chs), i(Rhs)]).
-asm_inst(tabletrysingle(A,L,Tbi),12,	197,	[pp, a(A), l(L), i(Tbi)]).
+asm_inst(tabletrysingle(A,L,Tbi),12,	192,	[pp, a(A), l(L), i(Tbi)]).
+asm_inst(tabletry(A,L,Tbind),   12,     193,    [pp, a(A), l(L), i(Tbind)]).
+asm_inst(tableretry(A,L),	8,	194,	[pp, a(A), l(L)]).
+asm_inst(tabletrust(A,L), 	8,     	195,    [pp, a(A), l(L)]).
 asm_inst(check_interrupt(S,B),  8,	206,	[pp, a(B), s(S)]).
 asm_inst(new_answer_dealloc(A1,A2), 4,  207,    [p, a(A1), a(A2)]).
 

@@ -294,14 +294,13 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 /* Tabling instructions --- they should really be changed to be as shown */
 
-#define tableretry		0xbd    /* c2 */
-#define tabletry		0xbe    /* c1 */
-
-#define tabletrust		0xc1    /* c3 */
-#define tabletrysingle		0xc5    /* c0 */
-#define check_complete		0xc4    /* c4 */
-#define answer_return		0xc7    /* c5 */
-#define resume_compl_suspension 0xc6    /* c6 */
+#define tabletrysingle		0xc0
+#define tabletry		0xc1
+#define tableretry		0xc2
+#define tabletrust		0xc3
+#define check_complete		0xc4
+#define answer_return		0xc5
+#define resume_compl_suspension 0xc6
 
 #define check_interrupt		0xce
 #define new_answer_dealloc	0xcf

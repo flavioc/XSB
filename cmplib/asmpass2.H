@@ -1,5 +1,5 @@
 /* File:      asmpass2.H
-** Author(s): Saumya Debray, Kostis F. Sagonas
+** Author(s): Saumya Debray, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -25,7 +25,7 @@
 
 
 :- export force_asm_pass2_loaded/0.
-:- export asm_gendata/1, asm_gentext/2, asm_genindex/2.
+:- export asm_gendata/1, asm_gentext/2, asm_genindex/2, asm_putlength/1.
 
 :- import error/1 from auxlry.
 :- import asm_inst/4 from asm_inst.

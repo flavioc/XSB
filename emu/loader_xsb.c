@@ -40,6 +40,7 @@
 
 #include "auxlry.h"
 #include "psc_xsb.h"
+#include "psc_defs.h"
 #include "loader_xsb.h"
 #include "cell_xsb.h"
 #include "heap_xsb.h"
@@ -84,6 +85,20 @@ extern TIFptr get_tip(Psc);
 #define reloc_addr(offset, base) ((CPtr)((offset)<0 ? \
        		(pb)&fail_inst : ((pb)(base))+(long)(offset)*ZOOM_FACTOR))
 
+
+/* In the following, y is the number of bytes we want to read from fd   */
+#define get_obj_data(x,y)	(fread((char *)(x), 1, (y), fd))
+
+#define get_obj_byte(x)		(get_obj_data((x),1))
+#define get_obj_word(x)		(get_obj_data((x),OBJ_WORD_SIZE))
+#define get_obj_string(x,len)	(get_obj_data((x),(len)))
+
+#define get_obj_word_bb(x)    {get_obj_word(x) ; fix_bb(x) ; }
+#define get_obj_word_bbsig(x) {get_obj_word(x) ; fix_bb4(x) ; \
+			       *(Integer *)(x) = *(int *)(x);}
+#define get_obj_word_bbflt(x) {get_obj_word(x) ; fix_bb4(x) ; \
+			       *(Float *)(x) = *(float *)(x);}
+
 /* === local declarations =============================================	*/
 
 struct hrec {
@@ -116,13 +131,9 @@ static TIFptr tab_info_ptr;
 static CPtr hptr;
 static pindex *index_block_chain;	/* index block chain */
 
-#ifndef CHAT
-static int warned_old_obj = 0;	/* warned the user about old .O files ? */
-#endif
-
 /* === return an appropriate hash table size ==========================	*/
 
-static inline int hsize(int numentry)
+inline static int hsize(int numentry)
 {
   int i, j, temp;
 
@@ -163,7 +174,7 @@ void unload_seg(pseg s)
 /* use heap top as temp place of hash link and entries; */
 /* heap top pointer is not alterred so nothing affects later heap use */
 
-static inline void inserth(CPtr label, struct hrec *bucket) 
+inline static void inserth(CPtr label, struct hrec *bucket) 
 { 
   CPtr temp;
 
@@ -232,7 +243,7 @@ static int get_index_tab(FILE *fd, int clause_no)
 
 /*----------------------------------------------------------------------*/
 
-static inline pindex new_index_seg(int no_cells)
+inline static pindex new_index_seg(int no_cells)
 {
   pindex new_i = (pindex)mem_alloc(SIZE_IDX_HDR + sizeof(Cell) * no_cells ) ;
  
@@ -390,13 +401,6 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	get_obj_word(&tab_config_hold);          /* space holder */
 	cell(inst_addr) = (Cell) tab_info_ptr;
 	inst_addr ++;
-	if (current_opcode == tabletry || 
-	    current_opcode == tabletrysingle) {  /* tabconfig */
-	  /* Consume the next 12 bytes (used to hold the CHS and RHS) */
-	  get_obj_word(&tab_config_hold);
-	  get_obj_word(&tab_config_hold);
-	  get_obj_word(&tab_config_hold);
-	}
 	break;
       default:
 	break;
@@ -532,24 +536,46 @@ void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
   }
 }
 
-/************************************************************************/
+/*----------------------------------------------------------------------*/
 
-static inline Cell read_magic(FILE *fd)
+inline unsigned int read_magic(FILE *fd)
 {
-  Cell num;
+  unsigned int num;
 
-  if ((int)get_obj_word(&num) < 4) return 0;
+  if (get_obj_word(&num) < 4) return 0;
   fix_bb((byte *)&num);
   return num;
 }
 
-/************************************************************************/
+/*----------------------------------------------------------------------*/
+
+inline static char *get_obj_atom(FILE *fd, char *str)
+{
+  byte x;
+  
+  get_obj_data((&x),1);
+  if (x == 255) { /* handle unusual case specially */
+    char *real_str;
+    unsigned int len;
+    get_obj_word_bb(&len);
+    /* xsb_dbgmsg("get_obj_len = %d... Case is not handled yet!\n",len); */
+    real_str = (char *)malloc(len);
+    get_obj_string(real_str, len); real_str[len] = 0;
+    return real_str;
+  }
+  else { /* optimize common case -- no malloc() */
+    get_obj_string(str, x); str[x] = 0;
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------*/
 
 static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 {
-  char name[256], modname[256];
+  char str[256], *real_str;
   int  is_new;
-  byte t_arity, t_type, t_env, t_len, t_modlen;
+  byte t_arity, t_type, t_env;
   Pair temp_pair;
   Psc  mod;
 
@@ -559,12 +585,13 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 
   get_obj_byte(&t_type);
   get_obj_byte(&t_arity);
-  get_obj_byte(&t_len);
-  get_obj_string(name, t_len);
-  name[t_len] = 0;
-  if (t_type==T_MODU) temp_pair = insert_module(0, name);
+  real_str = get_obj_atom(fd, str);
+  if (t_type == T_MODU)
+    temp_pair = insert_module(0, (real_str ? real_str : str));
   else {
     if (t_env == T_IMPORTED) {
+      byte t_modlen;
+      char modname[256];
       get_obj_byte(&t_modlen);
       get_obj_string(modname, t_modlen);
       modname[t_modlen] = 0;
@@ -572,20 +599,22 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       mod = temp_pair->psc_ptr;
     } else if (t_env == T_GLOBAL) mod = global_mod;
     else mod = cur_mod;
-    temp_pair = insert(name, t_arity, mod, &is_new);
+    temp_pair = insert((real_str ? real_str : str), t_arity, mod, &is_new);
     if (is_new && t_env==T_IMPORTED)
       set_ep(temp_pair->psc_ptr, (byte *)(mod));
     /* set ep to the psc record of the module name */
     env_type_set(temp_pair->psc_ptr, t_env, t_type, is_new);
     /* dsw added following */
     if (exp && t_env == T_EXPORTED) {
-      /* xsb_dbgmsg("exporting: %s from: %s",name,cur_mod->nameptr);*/
+      /* xsb_dbgmsg("exporting: %s from: %s",name,cur_mod->nameptr); */
       if (is_new) set_ep(temp_pair->psc_ptr, (byte*)(mod));
       link_sym(temp_pair->psc_ptr, (Psc)flags[CURRENT_MODULE]);
     }
   }
   if (!temp_pair) return 0;
   
+  if (real_str) { free(real_str); real_str = NULL; }
+
   /*	if (count >= REL_TAB_SIZE) {
 	xsb_dbgmsg("Reloc_table overflow");
 	return 0;
@@ -617,27 +646,28 @@ static bool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int exp)
   for (i = count; i < psc_count; i++) {
     if (!load_one_sym(fd, cur_mod, i, exp)) return 0;
   }
-  return (1);
+  return 1;
 }
 
 /************************************************************************/
 
 static byte *loader1(FILE *fd, int exp)
 {
-  char name_len, name[64], arity;
-  int  is_new, seg_count ;
+  char name[128], arity;
+  byte name_len;
+  int  is_new, seg_count;
   unsigned long psc_count;
   Integer text_bytes, index_bytes;
   pseg seg_first_inst, first_inst;
-  struct psc_rec *cur_mod;
+  Psc cur_mod;
   Pair ptr;
   TIFptr tip;
  
   seg_count = 0; first_inst = 0;
   get_obj_byte(&name_len);
-  if (name_len < 64)
+  if (name_len < 128)
     get_obj_string(name, name_len);
-  else xsb_exit("module name %s too long");
+  else xsb_exit("module name too long");
   name[(int)name_len] = 0;
   if (name_len==0) cur_mod = global_mod;
   else {
@@ -656,7 +686,7 @@ static byte *loader1(FILE *fd, int exp)
     /* get the header of the segment */
     get_obj_byte(&arity);
     get_obj_byte(&name_len);
-    if (name_len < 64)
+    if (name_len < 127)
       get_obj_string(name, name_len);
     else xsb_exit("name %s too long");
     name[(int)name_len] = 0;
@@ -710,31 +740,28 @@ static byte *loader1(FILE *fd, int exp)
 #ifdef FOREIGN
 static byte *loader_foreign(char *filename, FILE *fd, int exp)
 {
-  unsigned char name_len, ldoption_len; 
-  char name[64], ldoption[256];
+  byte name_len, *instr;
+  char name[128], ldoption[256], *real_ldoption;
   unsigned long psc_count;
   Psc  cur_mod;
   Pair ptr;
 
   get_obj_byte(&name_len);
-  if (name_len > 64) {
+  if (name_len > 128) {
     xsb_error("name of foreign module too long");
     return 0;
   }
   get_obj_string(name, name_len);
   name[name_len] = 0;
-  get_obj_byte(&ldoption_len);
-  if (ldoption_len >= 255) {
-    xsb_error("ldoption is too long for foreign module %s", name);
-    return 0;
-  }
-  get_obj_string(ldoption, ldoption_len);
-  ldoption[ldoption_len] = 0;
+  real_ldoption = get_obj_atom(fd, ldoption);
   ptr = insert_module(T_MODU, name);
   cur_mod = ptr->psc_ptr;
   get_obj_word_bb(&psc_count);
   if (!load_syms(fd, (int)psc_count, 0, cur_mod, exp)) return 0;
-  return load_obj(filename, cur_mod, ldoption);
+  instr = load_obj(filename, cur_mod,
+		   (real_ldoption ? real_ldoption : ldoption));
+  if (real_ldoption) { free(real_ldoption); real_ldoption = NULL; }
+  return instr;
 } /* end of loader_foreign */
 #endif
 
@@ -747,39 +774,34 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 /*									*/
 /************************************************************************/
 
+static int warned_old_obj = 0;	/* warned the user about old .O files ? */
+
 byte *loader(char *file, int exp)
 {
   FILE *fd;	      /* file descriptor */
-  Cell magic_num;
+  unsigned int magic_num;
   byte *first_inst = NULL;
-  char message[240];  /* Allow multiple lines of error reporting.    */
+  char message[300];  /* Allow multiple lines of error reporting.    */
 
   fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
   if (!fd) return 0;
   if (flags[HITRACE]) xsb_mesg("\n     ...... loading file %s", file);
   magic_num = read_magic(fd);
 
-  if (magic_num == 0x11121304) {
-#ifdef CHAT			/* CHAT does not work with old .O files */
-    sprintf(message,
-	    "File: %s has an old byte code format that is not\n%s",
-	    file,
-	    "\t supported by CHAT.  The XSB program file must be recompiled.");
-    xsb_abort(message);
-#else
+  if (magic_num == 0x11121304 || magic_num == 0x11121305) {
     if (!warned_old_obj) {
       sprintf(message,
-	      "File  \"%s\"\n"
-	      "\t   has an old byte code format that will NOT be supported\n"
-	      "\t   in the future.  You are recommended to recompile\n"
-	      "\t   all the .O files generated by XSB version 1.x.x.", file);
+	      "File \"%s\"\n"
+	      "\t   has byte code format that is NOT supported anymore.\n"
+	      "\t   Various strange things may happen and you are strongly\n"
+	      "\t   recommended to recompile it using XSB version > 2.01.",
+	      file);
       xsb_warn(message);
       warned_old_obj = 1;
     }
-#endif
   }
 
-  if (magic_num == 0x11121304 || magic_num == 0x11121305)
+  if (magic_num == 0x11121307 || magic_num == 0x11121305)
     first_inst = loader1(fd,exp);
   else if (magic_num == 0x11121308) {
 #ifdef FOREIGN

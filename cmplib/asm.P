@@ -76,7 +76,7 @@ asm_genheader(_OFile, _ModName, _SymTab, _IsModule).
 
 asm_genheader0(OFile, ModName, SymTab, IsModule) :-
 	tell(OFile),
-	asm_magic(5),	/* use magic number 17-18-19-5 */
+	asm_magic(7),	/* use magic number 17-18-19-7 */
 	( IsModule =:= 0 -> put(0)
 	; str_len(ModName, L), put(L), write(ModName)
 	),
@@ -98,7 +98,7 @@ asm_genheader0(OFile, ModName, SymTab, IsModule) :-
 asm_PIL(Sym, PilCode, NC, IsModule) :-
 	asm_magic(6),				% use magic number 17-18-19-6
 	sym_name(Sym, PredName, Arity), 
-	put(Arity), str_len(PredName, L), put(L), write(PredName),
+	put(Arity), str_len(PredName, L), asm_putlength(L), write(PredName),
 	asm_get_index(PilCode, ProgramCode, Index, IndSize, 0),
 	!,
 	compute_hash_table_size(NC, HashSize),

@@ -37,7 +37,7 @@
 makeindex(Sym, [clause(_,_,crec(_,Label))], Pil, Pilr, _, Tabled) :- !,
 	( Tabled == 0 -> Pil = Pilr
 	; Tabled = tabled(Ind,_), sym_name(Sym, _, Arity),
-	  Pil = [tabletrysingle(Arity,Label,Ind),tabconfig(0,0)|Pilr]
+	  Pil = [tabletrysingle(Arity,Label,Ind)|Pilr]
 	).
 
 /*----------------------------------------------------------------------*/
@@ -116,8 +116,7 @@ index_genarglabel([ArgLabel|Rest], [ArgLabel|Pil], Pilr) :-
 
 index_gentrys(Arity, [Label|Rest], Pil, Pilr, Tabled) :-
 	( Tabled == 0 -> Pil = [try(Arity,Label)|Pilm]
-	; Tabled = tabled(Ind,_),
-	  Pil = [tabletry(Arity,Label,Ind),tabconfig(0,0)|Pilm]
+	; Tabled = tabled(Ind,_), Pil = [tabletry(Arity,Label,Ind)|Pilm]
 	),
 	index_genretrys(Arity, Rest, Pilm, Pilr, Tabled).
 
