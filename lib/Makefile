@@ -24,10 +24,10 @@
 ##
 
 
-ALL = 	aggregs.O array.O array1.O directry.O foreign.O \
+ALL = 	aggregs.O array.O array1.O assoc.O directry.O foreign.O \
 	intern.O obsolete.O \
 	odbc_call.O ordsets.O ora_call.O \
-	packaging.O random.O scrptutl.O socket.O wrapping.O \
+	packaging.O random.O scrptutl.O socket.O ugraph.O wrapping.O \
 	xnmr.O
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
