@@ -273,9 +273,7 @@ void print_help(void)
   xsb_dbgmsg("      B <num>: print detailed Prolog choice points from the top");
   xsb_dbgmsg("\tof the choice point stack with <num>-Cell overlap");
   xsb_dbgmsg("      c <num>: print top of choice point stack with <num> overlap");
-#if (!defined(CHAT))
   xsb_dbgmsg("      C <num>: print choice point stack (around bfreg) with <num> overlap");
-#endif
   xsb_dbgmsg("      d: print disassembled code for module");
   xsb_dbgmsg("      D: print current value of delay list (pointed by delayreg)");
   xsb_dbgmsg("      e <size>: expand trail/cp stack to <size> K-byte blocks");
@@ -739,9 +737,7 @@ static void print_local_stack(int overlap)
     fprintf(stddbg, "ebreg on top\n");
   }
   for (i = -overlap; i < 0; i++) {
-#if (!defined(CHAT))
     if ( cell_ptr+i == efreg ) fprintf(stddbg, "efreg\n");
-#endif
     print_cp_cell("Local Stack", cell_ptr+i, cell(cell_ptr+i));
   }
   fprintf(stddbg, "top\n");
@@ -751,9 +747,7 @@ static void print_local_stack(int overlap)
 	fprintf(stddbg, "ebreg\n");
       if (cell_ptr == ereg)
 	fprintf(stddbg, "ereg\n");
-#if (!defined(CHAT))
       if (cell_ptr == efreg) fprintf(stddbg, "efreg\n");
-#endif
       print_cp_cell("Local Stack", cell_ptr, cell(cell_ptr));
       cell_ptr++;
     }
@@ -777,17 +771,11 @@ static void print_trail(int overlap)		/* trail grows up */
   char ans = 'y';
   CPtr *temp;
 
-#ifdef CHAT
-  temp = trreg;
-#else
   if (trfreg > trreg) temp = trfreg;  else temp = trreg;
-#endif
   for (i = overlap; (i > 0); i--)
     {
       if ( (temp + i) == trreg ) xsb_dbgmsg("trreg");
-#if (!defined(CHAT))
       if ( (temp + i) == trfreg ) xsb_dbgmsg("trfreg");
-#endif
       print_cell("Trail", (CPtr)(temp+i), cell((CPtr)(temp+i)), NULL);
     }
   while (ans == 'y' && temp-offset >= (CPtr *) tcpstack.low) { 
@@ -795,9 +783,7 @@ static void print_trail(int overlap)		/* trail grows up */
 	   ; (i <= STRIDESIZE && temp-(offset+i) >= (CPtr *)tcpstack.low)
 	   ; i++ )      {
       if ( (temp - (offset+i)) == trreg ) xsb_dbgmsg("trreg");
-#if (!defined(CHAT))
       if ( (temp - (offset+i)) == trfreg ) xsb_dbgmsg("trfreg");
-#endif
       print_cell("Trail", (CPtr)(temp-(offset+i)),
 		 cell((CPtr)(temp-(offset+i))), NULL);
       if ( (temp-(offset+i)) == (CPtr *) tcpstack.low ) 
@@ -812,7 +798,6 @@ static void print_trail(int overlap)		/* trail grows up */
 
 /*----------------------------------------------------------------------*/ 
 
-#if (!defined(CHAT))
 
 static void print_freeze_choice_points(int overlap)	/* CPs grow down */
 {
@@ -846,8 +831,6 @@ static void print_freeze_choice_points(int overlap)	/* CPs grow down */
     skip_to_nl();
   }
 }
-
-#endif
 
 /*----------------------------------------------------------------------*/ 
 
@@ -923,7 +906,6 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
 	       &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr));
     xsb_dbgmsg("%s%p:\tsubgoal frame ptr:\t0x%p", s,
 	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr));
-#if (!defined(CHAT))
     xsb_dbgmsg("%s%p:\tCh P  freeze register:\t0x%p", s,
 	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr));
     xsb_dbgmsg("%s%p:\tHeap  freeze register:\t0x%p", s,
@@ -935,9 +917,6 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
 #ifdef LOCAL_EVAL
     xsb_dbgmsg("%s%p:\tlocal eval trie_return:\t0x%p", s,
 	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr));
-/*     xsb_dbgmsg("%s%p:\tsubst factor arity:\t0x%d", s, */
-/* 	       &(tcp_arity(cpf_addr)), int_val(tcp_arity(cpf_addr))); */
-#endif
 #endif
     num_of_args = length - TCP_SIZE;
     for (i = 1, arg = cpf_addr + TCP_SIZE; i <= num_of_args; i++, arg++)
@@ -967,19 +946,15 @@ static void print_cpfs(int overlap)
     type;
 
   for (i = -overlap ; (i < 0) ; i++) {
-#if (!defined(CHAT))
     if ((breg+i) == bfreg) xsb_dbgmsg("bfreg");
-#endif
     print_cp_cell("   CP stack", breg+i, cell(breg+i));
   }
   xsb_dbgmsg("breg");
   cpf = breg;
   do {
     for (i = 0; (i < frames) && (cpf < cp_stack_bottom); i++) {
-#if (!defined(CHAT))
       if ( cpf == bfreg )
 	xsb_dbgmsg("bfreg");
-#endif
       analyze_cpf(cpf, &length, &type);
       print_cpf(cpf, length, type);
       cpf = cpf + length;
@@ -1005,9 +980,7 @@ static void print_choice_points(int overlap)
   CPtr cp_stack_bottom = (CPtr)tcpstack.high;
  
   for (i = -overlap ; (i < 0) ; i++) {
-#if (!defined(CHAT))
     if ((breg+i) == bfreg) xsb_dbgmsg("bfreg");
-#endif
     print_cp_cell("CP stack", breg+i, cell(breg+i));
   }
   xsb_dbgmsg("breg");
@@ -1015,9 +988,7 @@ static void print_choice_points(int overlap)
     for (i = last;
 	 (i <= last + STRIDESIZE) && (breg+i <= cp_stack_bottom);
 	 i++) {
-#if (!defined(CHAT))
       if ( (breg + i) == bfreg ) xsb_dbgmsg("bfreg");
-#endif
       print_cp_cell("CP stack", breg+i, cell(breg+i));
       if ( (breg + i) == cp_stack_bottom ) fprintf(stddbg, EOS);
     }
@@ -1048,9 +1019,7 @@ static void print_heap(int overlap)	/* Heap grows up */
     for (i = 0
 	   ;(i <= STRIDESIZE && hreg-(offset+i) >= (CPtr) glstack.low) 
 	   ; i++) {
-#if (!defined(CHAT))
       if ( (hreg - (offset+i)) == hfreg ) xsb_dbgmsg("hfreg");
-#endif
       if ( (hreg - (offset+i)) == hbreg ) xsb_dbgmsg("hbreg");
       print_cell("Heap", hreg-(offset+i), cell(hreg-(offset+i)), NULL);
       if ( (hreg-(offset+i)) == (CPtr) glstack.low ) 
@@ -1069,9 +1038,6 @@ static void print_heap(int overlap)	/* Heap grows up */
 
 static char *compl_stk_frame_field[] = {
   "subgoal_ptr", "level_num",
-#ifdef CHAT
-  "tcp-hreg", "tcp-pdreg", "tcp-ptcp", "cons_copy_list",
-#endif
   "del_ret_list", "visited", "DG_edges", "DGT_edges"
 };
 
@@ -1246,9 +1212,7 @@ void print_tables(void)
 		 subg_ans_list_ptr(subg), subg_ans_list_tail(subg),
 		 subg_next_subgoal(subg), subg_prev_subgoal(subg), 
 		 subg_cp_ptr(subg));
-#ifndef CHAT
       xsb_dbgmsg("  asf_list_ptr = %p,", subg_asf_list_ptr(subg));
-#endif
       xsb_dbgmsg("  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
 		 "  nde_list = %p",
 		 subg_compl_stack_ptr(subg), subg_compl_susp_ptr(subg),
@@ -1294,12 +1258,10 @@ static void print_status(void)
   xsb_dbgmsg("    cpreg: 0x%p", cpreg);
   xsb_dbgmsg("    pcreg: 0x%p", pcreg);
 
-#if (!defined(CHAT))
   xsb_dbgmsg("    efreg: 0x%p", efreg);
   xsb_dbgmsg("    bfreg: 0x%p", bfreg);
   xsb_dbgmsg("    hfreg: 0x%p", hfreg);
   xsb_dbgmsg("   trfreg: 0x%p", trfreg);
-#endif
   xsb_dbgmsg("   pdlreg: 0x%p", pdlreg);
   xsb_dbgmsg("  ptcpreg: 0x%p", ptcpreg);
   xsb_dbgmsg(" delayreg: 0x%p", delayreg);
@@ -1394,14 +1356,12 @@ static void debug_interact(void)
     skip_to_nl();
     print_choice_points(num);
     goto again;
-#if (!defined(CHAT))
   case 'C':
     scanf("%d", &num);
     skip_to_nl();
     print_freeze_choice_points(num);
     skip_to_nl();
     goto again;
-#endif
   case 'd':
     skip_to_nl();
     dis(1);

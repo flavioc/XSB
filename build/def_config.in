@@ -138,10 +138,6 @@
 #undef CONFIGURATION
 #undef FULL_CONFIG_NAME
 
-#undef CHAT
-
-#undef WAM_TRAIL
-
 #undef GC
 
 #undef GC_TEST

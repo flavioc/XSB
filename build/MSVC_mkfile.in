@@ -162,7 +162,6 @@ CLEAN :
 	-@erase "$(OBJDIR)\builtin.obj"
 	-@erase "$(OBJDIR)\cinterf.obj"
 	-@erase "$(OBJDIR)\chat.obj"
-	-@erase "$(OBJDIR)\debug_xsb.obj"
 	-@erase "$(OBJDIR)\dis.obj"
 	-@erase "$(OBJDIR)\dynload.obj"
 	-@erase "$(OBJDIR)\dynamic_stack.obj"
@@ -222,7 +221,6 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/auxlry.obj" \
 	"$(OBJDIR)/builtin.obj" \
 	"$(OBJDIR)/biassert.obj" \
-	"$(OBJDIR)/chat.obj"\
 	"$(OBJDIR)/cinterf.obj" \
 	"$(OBJDIR)/debug_xsb.obj" \
 	"$(OBJDIR)/dis.obj" \

@@ -92,10 +92,6 @@
 #undef CONFIGURATION
 #undef FULL_CONFIG_NAME
 
-#undef CHAT
-
-#undef WAM_TRAIL
-
 #undef GC
 
 /* The number of bytes in a long.  */
@@ -262,10 +258,6 @@
 /*  File needed for XSB to get the configuration information */
 #undef CONFIGURATION
 #undef FULL_CONFIG_NAME
-
-#undef CHAT
-
-#undef WAM_TRAIL
 
 #undef GC
 

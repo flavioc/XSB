@@ -28,17 +28,9 @@
 #define IFTHEN_FAILED	{Fail1 ; XSB_Next_Instr() ;}
 
 
-#ifdef CHAT
-#define COND1      (CPtr)(op1) < hreg 
-#else
 #define COND1      (CPtr)(op1) < hreg ||  (CPtr)(op1) < hfreg 
-#endif
 
-#ifdef CHAT
-#define COND2      (CPtr)(op2) < hreg 
-#else
 #define COND2      (CPtr)(op2) < hreg ||  (CPtr)(op2) < hfreg 
-#endif
 
 #define unify_xsb(loc) \
  loc##_tail_recursion: \

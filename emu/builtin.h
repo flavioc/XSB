@@ -226,7 +226,6 @@
 #define CLEAN_UP_BLOCK          234
 
 /* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
-#define PRINT_CHAT              239
 #define PRINT_LS                240
 #define PRINT_TR                241
 #define PRINT_HEAP              242

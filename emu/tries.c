@@ -50,9 +50,6 @@
 #include "cinterf.h"
 #include "error_xsb.h"
 #include "tr_utils.h"
-#ifdef CHAT
-#include "chat.h"
-#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -1277,7 +1274,6 @@ void variant_call_search(TabledCallInfo *call_info,
     case XSB_FREE:
     case XSB_REF1:
       if (! IsStandardizedVariable(call_arg)) {
-#ifndef CHAT
 	/*
 	 * Point all local variables to heap.  This is required to support
 	 * attributed variables in tabling: in order to share unchanged
@@ -1295,7 +1291,6 @@ void variant_call_search(TabledCallInfo *call_info,
 	  bind_ref(call_arg, hreg);
 	  call_arg = hreg++;
 	}
-#endif
 	/*
 	 * Save pointers of the substitution factor of the call into CP
 	 * stack.  Each pointer points to a variable in the heap (in CHAT)
@@ -1418,10 +1413,6 @@ void remove_open_tries(CPtr bottom_parameter)
 	check_table_cut = FALSE;  /* permit cuts over tables */
 	warned = TRUE;
       }
-#ifdef CHAT
-      chat_free_cons_chat_areas(CallStrPtr);
-      chat_free_compl_susp_chat_areas(CallStrPtr);
-#endif
       remove_calls_and_returns(CallStrPtr);
     }
     openreg += COMPLFRAMESIZE;

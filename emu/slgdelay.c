@@ -43,7 +43,6 @@
 #include "macro_xsb.h"
 #include "tr_utils.h"
 #include "inst_xsb.h"
-#include "chat.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 
@@ -587,11 +586,7 @@ static void handle_empty_dl_creation(DL dl)
     /*-- perform early completion if necessary; please preserve invariants --*/
     if (!is_completed(subgoal) && most_general_answer(as_leaf)) {
       perform_early_completion(subgoal, subg_cp_ptr(subgoal));
-#ifdef CHAT
-      chat_free_compl_susp_chat_areas(subgoal);
-#else
       subg_compl_susp_ptr(subgoal) = NULL;
-#endif
     }
     simplify_neg_succeeds(subgoal);
   }

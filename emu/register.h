@@ -45,12 +45,10 @@ extern Psc pscreg;
 #endif
 /*---- registers added for the SLG-WAM ---------------------------------*/
 
-#if (!defined(CHAT))
 extern CPtr efreg;
 extern CPtr bfreg;
 extern CPtr hfreg;
 extern CPtr *trfreg;
-#endif
 extern CPtr pdlreg;
 extern CPtr openreg;
 

@@ -131,10 +131,6 @@ case IS_INCOMPLETE: {
 #endif
     adjust_level(subg_compl_stack_ptr(producerSF));
     save_find_locx(ereg);
-#ifdef CHAT
-    subg_compl_susp_ptr(producerSF) = (CPtr)
-      save_a_chat_compl_susp(producerSF, t_ptcp, cpreg);
-#else
     efreg = ebreg;
     if (trreg > trfreg) trfreg = trreg;
     if (hfreg < hreg) hfreg = hreg;
@@ -148,7 +144,6 @@ case IS_INCOMPLETE: {
     csf_prevtop(bfreg) = old_cptop;
 #endif
     subg_compl_susp_ptr(producerSF) = bfreg;
-#endif
     return FALSE;
   }
 }

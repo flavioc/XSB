@@ -124,12 +124,6 @@ struct ascc_edge {
 struct completion_stack_frame {
   VariantSF subgoal_ptr;
   int     level_num;
-#ifdef CHAT
-  CPtr    hreg;	          /* for accessing the substitution factor */
-  CPtr    pdreg;
-  CPtr    ptcp;
-  CPtr    cons_copy_list; /* Pointer to a list of consumer copy frames */
-#endif
   ALNptr  del_ret_list;   /* to reclaim deleted returns */
   int     visited;
 #ifndef LOCAL_EVAL
@@ -142,12 +136,6 @@ struct completion_stack_frame {
 
 #define compl_subgoal_ptr(b)	((ComplStackFrame)(b))->subgoal_ptr
 #define compl_level(b)		((ComplStackFrame)(b))->level_num
-#ifdef CHAT
-#define compl_hreg(b)		((ComplStackFrame)(b))->hreg
-#define compl_pdreg(b)		((ComplStackFrame)(b))->pdreg
-#define compl_ptcp(b)		((ComplStackFrame)(b))->ptcp
-#define compl_cons_copy_list(b)	((ComplStackFrame)(b))->cons_copy_list
-#endif
 #define compl_del_ret_list(b)	((ComplStackFrame)(b))->del_ret_list
 #define compl_visited(b)	((ComplStackFrame)(b))->visited
 #ifndef LOCAL_EVAL
@@ -187,29 +175,9 @@ struct completion_stack_frame {
   compl_del_ret_list(openreg) = NULL; \
   compl_visited(openreg) = FALSE
 
-#define push_completion_frame_chat(subgoal) \
-  compl_hreg(openreg) = hreg - 1; /* so that it points to something useful */ \
-  compl_pdreg(openreg) = delayreg; \
-  compl_cons_copy_list(openreg) = NULL; \
-  compl_ptcp(openreg) = ptcpreg
-
 #define push_completion_frame_batched(subgoal) \
   compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL
 
-#ifdef CHAT
-#ifdef LOCAL_EVAL
-#define	push_completion_frame(subgoal)	\
-  push_completion_frame_common(subgoal); \
-  push_completion_frame_chat(subgoal); \
-  check_completion_stack_overflow
-#else
-#define	push_completion_frame(subgoal)	\
-  push_completion_frame_common(subgoal); \
-  push_completion_frame_chat(subgoal); \
-  push_completion_frame_batched(subgoal); \
-  check_completion_stack_overflow
-#endif
-#else  /* Regular SLG-WAM */
 #ifdef LOCAL_EVAL
 #define	push_completion_frame(subgoal)	\
   push_completion_frame_common(subgoal); \
@@ -219,30 +187,15 @@ struct completion_stack_frame {
   push_completion_frame_common(subgoal); \
   push_completion_frame_batched(subgoal); \
   check_completion_stack_overflow
-#endif
 #endif
 
 #if (!defined(LOCAL_EVAL))
-#if (defined(CHAT))
-#define compact_completion_frame(cp_frame,cs_frame,subgoal)	\
-  compl_subgoal_ptr(cp_frame) = subgoal;			\
-  compl_level(cp_frame) = compl_level(cs_frame);		\
-  compl_hreg(cp_frame) = compl_hreg(cs_frame);			\
-  compl_pdreg(cp_frame) = compl_pdreg(cs_frame);	       	\
-  compl_ptcp(cp_frame) = compl_ptcp(cs_frame);			\
-  compl_cons_copy_list(cp_frame) = compl_cons_copy_list(cs_frame); \
-  compl_del_ret_list(cp_frame) = compl_del_ret_list(cs_frame);	\
-  compl_visited(cp_frame) = FALSE;				\
-  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL;  \
-  cp_frame = next_compl_frame(cp_frame)
-#else
 #define compact_completion_frame(cp_frame,cs_frame,subgoal)	\
   compl_subgoal_ptr(cp_frame) = subgoal;			\
   compl_level(cp_frame) = compl_level(cs_frame);		\
   compl_visited(cp_frame) = FALSE;				\
   compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL;  \
   cp_frame = next_compl_frame(cp_frame)
-#endif
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -272,12 +225,9 @@ typedef struct subgoal_frame {
   void *next_subgoal;	  
   void *prev_subgoal;
   CPtr  cp_ptr;		  /* Pointer to the Generator CP */
-#if (!defined(CHAT))
   CPtr asf_list_ptr;	  /* Pointer to list of (CP) active subgoal frames */
-#endif
   CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame */
-  CPtr compl_suspens_ptr; /* CHAT: points to CHAT area; type chat_init_pheader
-			     SLGWAM: CP stack ptr */
+  CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr */
   PNDE nde_list;	  /* pointer to a list of negative DEs */
 } variant_subgoal_frame;
 
@@ -292,9 +242,7 @@ typedef struct subgoal_frame {
 #define subg_ans_list_ptr(b)	((VariantSF)(b))->ans_list_ptr
 #define subg_ans_list_tail(b)	((VariantSF)(b))->ans_list_tail
 #define subg_cp_ptr(b)		((VariantSF)(b))->cp_ptr
-#if (!defined(CHAT))
 #define subg_asf_list_ptr(b)	((VariantSF)(b))->asf_list_ptr
-#endif
 
 /* use this for mark as completed == 0 */
 #define subg_compl_stack_ptr(b)	((VariantSF)(b))->compl_stack_ptr
@@ -517,11 +465,7 @@ void tstCreateTSIs(TSTNptr);
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
 
-#ifdef CHAT
-#define set_min(a,b,c)	a = b
-#else
 #define set_min(a,b,c)	if (b < c) a = b; else a = c
-#endif
 
 #define tab_level(SUBG_PTR)     \
         compl_level((subg_compl_stack_ptr(SUBG_PTR)))
@@ -582,21 +526,10 @@ void tstCreateTSIs(TSTNptr);
 
 #define structs_are_reclaimed(SUBG_PTR) subg_is_reclaimed(SUBG_PTR)
    
-#ifdef CHAT
-#define mark_as_completed(SUBG_PTR) {					\
-          subg_is_complete(SUBG_PTR) = TRUE;				\
-          /* the following is used to maintain invariants; */		\
-          /* ideally the completion stack should be compacted */	\
-          /* and completed subgoals should be removed instead */	\
-          compl_pdreg(subg_compl_stack_ptr(SUBG_PTR)) = NULL;		\
-          reclaim_del_ret_list(SUBG_PTR);				\
-        } 
-#else
 #define mark_as_completed(SUBG_PTR) {		\
           subg_is_complete(SUBG_PTR) = TRUE;	\
           reclaim_del_ret_list(SUBG_PTR);	\
         }
-#endif
 
 #define subgoal_space_has_been_reclaimed(SUBG_PTR,CS_FRAME) \
         (SUBG_PTR != compl_subgoal_ptr(CS_FRAME))
@@ -615,30 +548,15 @@ void tstCreateTSIs(TSTNptr);
 /* A new Subgoal Frame flag prevents multiple calls.	- Ernie		*/
 /*----------------------------------------------------------------------*/
 
-#ifdef CHAT
-#define reclaim_incomplete_table_structs(SUBG_PTR) {	\
-   if ( ! structs_are_reclaimed(SUBG_PTR) ) {		\
-     chat_free_cons_chat_areas(SUBG_PTR);		\
-     table_complete_entry(SUBG_PTR);			\
-     structs_are_reclaimed(SUBG_PTR) = TRUE;		\
-   }							\
- }
-#else
 #define reclaim_incomplete_table_structs(SUBG_PTR) {	\
    if ( ! structs_are_reclaimed(SUBG_PTR) ) {		\
      table_complete_entry(SUBG_PTR);			\
      structs_are_reclaimed(SUBG_PTR) = TRUE;		\
    }							\
  }
-#endif
 
 /*----------------------------------------------------------------------*/
 
-#ifdef CHAT
-#define reset_freeze_registers \
-    level_num = 0; \
-    root_address = ptcpreg = NULL
-#else
 #define reset_freeze_registers \
     bfreg = (CPtr)(tcpstack.high) - CP_SIZE; \
     trfreg = (CPtr *)(tcpstack.low); \
@@ -652,15 +570,7 @@ void tstCreateTSIs(TSTNptr);
     if (trfreg > tcp_trfreg(tcp)) { trfreg = tcp_trfreg(tcp); }\
     if (hfreg > tcp_hfreg(tcp)) { hfreg = tcp_hfreg(tcp); }	 \
     if (efreg < tcp_efreg(tcp)) { efreg = tcp_efreg(tcp); }
-#endif
 
-
-#ifdef CHAT
-#define reclaim_stacks(tcp) \
-  if (tcp == root_address) { \
-    reset_freeze_registers; \
-  }
-#else
 #define reclaim_stacks(tcp) \
   if (tcp == root_address) { \
     reset_freeze_registers; \
@@ -670,7 +580,6 @@ void tstCreateTSIs(TSTNptr);
     adjust_freeze_registers(tcp); \
     /* xsb_dbgmsg(adjust registers...."); */ \
   }
-#endif
 
 /*----------------------------------------------------------------------*/
 

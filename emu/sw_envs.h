@@ -30,7 +30,6 @@
 #define PROFILE_SWITCH_ENV_ITER
 #endif
 
-#if (!defined(CHAT))
 #define freeze_and_switch_envs(tbreg, CPsize)	\
   if (bfreg > breg) {				\
     CPtr local_top;				\
@@ -41,11 +40,7 @@
     if (efreg > local_top) efreg = local_top;	\
   }						\
   switch_envs(tbreg)
-#endif
 
-#ifdef CHAT
-#define switch_envs(tbreg)	undo_bindings(tbreg) PROFILE_SWITCH_ENV
-#else
 /*
  * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following
  * macro should be changed to:
@@ -87,7 +82,6 @@
     }									\
   }									\
 }
-#endif
 
 #ifdef MEASURE_WAM_STUFF
 #define undo_bindings(TBREG) {			\
@@ -102,19 +96,6 @@
 }
 #endif
 
-#ifdef WAM_TRAIL
-/*
- * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following
- * macro should be changed to:
- * 	untrail(temp_trreg);
- */
-#define table_undo_bindings(old_trreg) {	\
-  while (trreg > (CPtr *) old_trreg) {		\
-    CPtr temp_trreg = *(--trreg);		\
-    untrail2(trreg, (Cell)temp_trreg);		\
-  }						\
-}
-#else
 /*
  * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following
  * macro should be changed to:
@@ -126,5 +107,4 @@
     trreg = trail_parent(trreg);			\
   }							\
 }
-#endif
 

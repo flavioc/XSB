@@ -241,24 +241,8 @@ fi
 dnl Choose an abstract machine for XSB
 engine_mode=slg-wam
 
-AC_ARG_ENABLE(chat,
-[  --enable-chat	      compile using the new CHAT abstract machine;
-			     default is SLG-WAM])
-AC_ARG_ENABLE(slg-wam,
-[  --enable-slg-wam	      compile using the olde SLG-WAM abstract machine;
-			     this is the default])
-if test "${with_chat}" = "yes" ; then
-   enable_chat=yes
-fi
-if test "${enable_chat}" = "yes" ; then
-   engine_mode=chat
-   AC_DEFINE(CHAT)
-   AC_DEFINE(GC)
-   AC_DEFINE(WAM_TRAIL)
-else
-   AC_DEFINE(GC)
-   AC_DEFINE(SLG_GC)
-fi
+AC_DEFINE(GC)
+AC_DEFINE(SLG_GC)
     
 dnl The following is to be used only by developers for GC debugging
 gc_test=no
@@ -330,9 +314,6 @@ if test "${config_tag}" = "NONE" ; then
     dnl If batched scheduling, add -btc
     if test "${xsb_scheduling_strategy}" = "batched" ; then
        config_tag="${config_tag}-btc"
-    fi
-    if test "${engine_mode}" = "chat" ; then
-       config_tag="${config_tag}-cht"
     fi
 fi
 

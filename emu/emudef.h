@@ -45,12 +45,11 @@ CPtr ebreg;		/* breg into environment stack	*/
 Psc pscreg;
 #endif
 
-#if (!defined(CHAT))
 CPtr efreg;
 CPtr bfreg;
 CPtr hfreg;
 CPtr *trfreg;
-#endif
+
 CPtr pdlreg;
 CPtr openreg;
 CPtr root_address;

@@ -194,31 +194,6 @@ inline static void adapt_hfreg_from_choicepoints(CPtr h)
 
 /*=======================================================================*/
 
-#ifdef CHAT
-static inline void chat_copy_region(CPtr p, int len)
-{
-  CPtr q;
-  int  j, tag;
-  Cell contents;
-
-  while (len)
-    {
-      if (len > sizeof(CPtr))
-        { len -= sizeof(CPtr); j = sizeof(CPtr) ; }
-      else { j = len; len = 0; }
-      while (j--)
-        { contents = cell(p);
-          q = hp_pointer_from_cell(contents,&tag) ;
-          if (!q) { p++; continue ; }
-          if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
-          adapt_external_heap_pointer(p,q,tag);
-          p++;
-        }
-      p++; /* skip chain bits */
-    }
-} /* chat_copy_region */
-#endif
-
 #ifdef GC
 
 static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
@@ -256,14 +231,12 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  find_and_copy_block(q); 
 	adapt_external_heap_pointer(p,q,tag);
 	}
-#ifndef CHAT
 #ifdef PRE_IMAGE_TRAIL
       /* re-tag pre image cells in trail */
       if (tr_pre_marked(p-tr_bot)) {
 	*p = *p | PRE_IMAGE_MARK;
 	tr_clear_pre_mark(p-tr_bot);
       }
-#endif
 #endif
     }
 
@@ -281,41 +254,6 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	}
     }
 
-#ifdef CHAT
-  /* copy & adapt substitution factors reachable - they are pointed by a
-     field of completion stack; the substitution factors of the consumers 
-     are in the choice point stack and they have just been treated */
-
-    { CPtr compl_fr;
-      compl_fr = openreg;
-      while (compl_fr != COMPLSTACKBOTTOM)
-	{ /* CHAT stores the substitution factor of generators in the heap */
-	  p = (CPtr)(&compl_hreg(compl_fr));
-	  contents = cell(p) ;
-	  q = hp_pointer_from_cell(contents,&tag) ;
-	  if (!q)
-	    xsb_dbgmsg("bad heap pointer during copying SF");
-	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
-	  adapt_external_heap_pointer(p,q,tag);
-
-	  /* we also need to adapt the Dreg fields */
-	  if (compl_pdreg(compl_fr) != NULL) {
-	    p = (CPtr)(&(compl_pdreg(compl_fr)));
-	    contents = cell(p) ;
-	    q = hp_pointer_from_cell(contents,&tag) ;
-	    if (!q)
-	      xsb_mesg("non null Dreg field in ComplStack points not in heap");
-	    else
-	      {
-		if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
-		adapt_external_heap_pointer(p,q,tag);
-	      }	    
-	  }
-	  compl_fr = prev_compl_frame(compl_fr);
-	}
-    }
-#endif
-
   /* local stack */
   /* a more precise traversal of local stack is possible */
 
@@ -331,60 +269,6 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  adapt_external_heap_pointer(p,q,tag);
 	}
     }
-
-#ifdef CHAT
-  /* CHAT areas */
-
-    if (chat_link_headers != NULL)
-    { chat_init_pheader initial_pheader;
-      chat_incr_pheader pheader;
-      int  trlen;
-      CPtr b, *tr;
-
-      initial_pheader = chat_link_headers;
-      do
-	{
-	  /* copying of heap pointer from consumer is unnecessary */
-
-	  /* because of how copying of ls is done above, no need to   */
-	  /* do copying of the ls that is reachable from the consumer */
-	  /* revision might be needed                                 */
-
-	  /*----------------------------------------------------------*/
-	  /* adapt the delay list field of choice points too */
-	  b = (CPtr)(&chat_get_cons_start(initial_pheader));
-	  if (cp_pdreg(b) != NULL) {
-	    p = (CPtr)(&(cp_pdreg(b)));
-	    contents = cell(p) ;
-	    q = hp_pointer_from_cell(contents,&tag) ;
-	    if (!q)
-	      xsb_mesg("non null Dreg field in CP stack points not in heap");
-	    else
-	      {
-		if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
-		adapt_external_heap_pointer(p,q,tag);
-	      }
-	  }
-	  /*----------------------------------------------------------*/
-
-	  /* copying of the CHAT trails */
-	  /* during which the imarkbit is switched off */
-
-	  pheader = chat_get_father(initial_pheader);
-	  while ((pheader != NULL) && chat_area_imarked(pheader))
-	  { chat_iunmark_area(pheader);
-	    tr = chat_get_tr_start(pheader);
-	    trlen = chat_get_tr_length(pheader);
-	    chat_copy_region((CPtr)tr,trlen);
-	    pheader = chat_get_ifather(pheader);
-	  }
-	  initial_pheader = initial_pheader->next_header;
-	}
-      while (initial_pheader != chat_link_headers);
-      /* copy of answer template special area */
-      chat_copy_region(at_start, at_area_size);
-    }
-#endif
 
     /* now do the argument registers */
 

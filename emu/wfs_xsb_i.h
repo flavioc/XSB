@@ -121,19 +121,10 @@ static void reclaim_edge_space(ComplStackFrame csf_ptr)
 /* subgoal dependency graph by looking at different data structures.	*/
 /*----------------------------------------------------------------------*/
 
-#ifdef CHAT
-#define first_consumer(SUBG,CSF) (compl_cons_copy_list(CSF))
-#define ptcp_of_gen(SUBG,CSF)	 ((VariantSF)(compl_ptcp(CSF)))
-#define ptcp_of_cons(CONS_CP) \
-	((VariantSF)(nlcp_ptcp((&chat_get_cons_start((chat_init_pheader)CONS_CP)))))
-#define ptcp_of_csusp(CSUSP_CP) \
-	((VariantSF)(csf_ptcp((&chat_get_cons_start((chat_init_pheader)CSUSP_CP)))))
-#else
 #define first_consumer(SUBG,CSF) (subg_asf_list_ptr(SUBG))
 #define ptcp_of_gen(SUBG,CSF)	 ((VariantSF)(tcp_ptcp(subg_cp_ptr(SUBG))))
 #define ptcp_of_cons(CONS_CP)	 ((VariantSF)(nlcp_ptcp(CONS_CP)))
 #define ptcp_of_csusp(CSUSP_CP)	 ((VariantSF)(csf_ptcp(CSUSP_CP)))
-#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -185,9 +176,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
   CPtr ComplStkFrame; /* CopyFrame */
   xsbBool sccs_needed;
   VariantSF curr_subg;
-#if (!defined(CHAT))
   CPtr cont_breg = leader_breg;
-#endif
 
 /*----------------------------------------------------------------------*/
   /* Perform a check whether exact completion is needed (sccs_needed).
@@ -202,11 +191,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
   while (ComplStkFrame >= openreg) {
     curr_subg = compl_subgoal_ptr(ComplStkFrame);
     if (is_completed(curr_subg)) {
-#ifdef CHAT
-      chat_free_compl_susp_chat_areas(curr_subg);
-#else
       subg_compl_susp_ptr(curr_subg) = NULL;
-#endif
     } else {
       if (subg_compl_susp_ptr(curr_subg) != NULL) sccs_needed = TRUE;
     }
@@ -242,9 +227,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
   */
 
   if (sccs_needed) {
-#if (!defined(CHAT))
     xsbBool found;
-#endif
     CPtr nsf;
     CPtr CopyFrame;
     ComplStackFrame csf, max_finish_csf;
@@ -350,7 +333,6 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     */
 
     if (non_lrd_stratified == FALSE) {
-#if (!defined(CHAT))
       found = FALSE;
       for (ComplStkFrame = openreg;
 	   !found && ComplStkFrame <= leader_compl_frame;
@@ -368,19 +350,16 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 			/* and all subgoals will be completed (no delay) */
 	cont_breg = tcp_prevbreg(leader_breg);
       }
-#endif
     } else {	/* the chosen SCC has a loop through negation */
       for (ComplStkFrame = openreg; ComplStkFrame <= leader_compl_frame;
 	   ComplStkFrame = prev_compl_frame(ComplStkFrame)) {
 	if (compl_visited(ComplStkFrame) != FALSE)
 	  compl_visited(ComplStkFrame) = DELAYED;
       }
-#if (!defined(CHAT))
       cont_breg = subg_cp_ptr(compl_subgoal_ptr(leader_compl_frame));
       breg = cont_breg;
 #ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
       xsb_dbgmsg("------ Setting TBreg to %p...", cont_breg);
-#endif
 #endif
     }
     
@@ -434,28 +413,12 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
        */
 
        if ((nsf = subg_compl_susp_ptr(curr_subg)) != NULL) {
-#ifdef CHAT
-	 CPtr H, EB;
-	 
-	 H = cp_hreg(breg);
-	 EB = cp_ebreg(breg);
-#ifdef Chat_DEBUG
-	 xsb_dbgmsg("leader_cp = %p, subgoal = %p, eb = %d",
-		    breg, tcp_subgoal_ptr(breg),
-		    ((CPtr)glstack.high - 1) - EB);
-#endif
-#else
 	 CPtr min_breg;
 	 
 	 set_min(min_breg, breg, bfreg);
-#endif
 	 if (compl_visited(ComplStkFrame) != DELAYED) {
-#ifdef CHAT
-	   breg = chat_restore_compl_susp((chat_init_pheader)nsf, H, EB);
-#else
 	   save_compl_susp_cp(min_breg, cont_breg, nsf);
 	   breg = min_breg;
-#endif
 	   /*-- forget these completion suspensions --*/
 	   subg_compl_susp_ptr(curr_subg) = NULL;
 #ifdef VERBOSE_COMPLETION
@@ -480,18 +443,12 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	     }
 	   }
 	   if (head_dnsf != NULL) {
-#ifdef CHAT
-	     breg = chat_restore_compl_susp((chat_init_pheader)head_dnsf, H, EB);
-#else
 	     save_compl_susp_cp(min_breg, cont_breg, head_dnsf);
 	     breg = min_breg;
-#endif
 	   }
 	   subg_compl_susp_ptr(curr_subg) = head_ndnsf;
 	 }
-#if (!defined(CHAT))
 	 cont_breg = breg; /* So that other Compl_Susp_CPs can be saved. */
-#endif
        }
      }
    }
@@ -544,7 +501,6 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
       tcp_prevbreg value will be adjusted anyway.
      */
 
-#if (!defined(CHAT))
     tcp_prevbreg(subg_cp_ptr(compl_subgoal_ptr(leader_compl_frame))) = 
       tcp_prevbreg(subg_cp_ptr(leader_subg));
     for (ComplStkFrame = next_compl_frame(leader_compl_frame);
@@ -553,7 +509,6 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
       tcp_prevbreg(subg_cp_ptr(compl_subgoal_ptr(ComplStkFrame))) = 
 	subg_cp_ptr(compl_subgoal_ptr(prev_compl_frame(ComplStkFrame)));
     }
-#endif
   } /* if sccs_needed */
   else { /* sccs not needed */
     ComplStkFrame = leader_compl_frame;

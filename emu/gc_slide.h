@@ -49,12 +49,6 @@
 #define tr_set_unchained(p)      tr_marks[(p-tr_bot)] &= ~CHAIN_BIT
 #define tr_is_chained(p)         (tr_marks[(p-tr_bot)] & CHAIN_BIT)
 
-#ifdef CHAT
-#define compl_is_chained(p)      compl_marks[(compl_bot-p)]
-#define compl_set_unchained(p)   compl_marks[(compl_bot-p)] = 0
-#define compl_set_chained(p)     compl_marks[(compl_bot-p)] = 1
-#endif
-
 static void unchain(CPtr hptr, CPtr destination)
 {
   CPtr start, pointsto ;
@@ -99,20 +93,8 @@ static void unchain(CPtr hptr, CPtr destination)
 	    continue_after_this = cp_is_chained(pointsto) ;
 	    cp_set_unchained(pointsto) ;
 	    break ;
-#ifdef CHAT
-	  case TO_COMPL :
-	    continue_after_this = compl_is_chained(pointsto) ;
-	    compl_set_unchained(pointsto) ;
-	    break ;
-#endif
 	  default :
-#ifdef CHAT
-	    /* we count on it being into a CHAT area - trail or arguments */
-	    continue_after_this = chat_is_chained(pointsto) ;
-	    chat_set_unchained(pointsto);
-#else
 	    xsb_exit("pointsto wrong space error during unchaining");
-#endif
 	    break;
 	}
       *hptr = *pointsto ;
@@ -164,86 +146,6 @@ inline static void swap_with_tag(CPtr p, CPtr q, int tag)
 } /* swap_with_tag */
 
 #endif /* GC */
-
-/*----------------------------------------------------------------------*/
-
-#ifdef CHAT
-
-#ifdef SAFE_GC
-static void chat_check_zero_region(CPtr b, int len)
-{ int j;
-
-  /* no need to distinguish between trail or args  */
-
-  while (len)
-    { if (len > sizeof(CPtr))
-           { len -= sizeof(CPtr); j = sizeof(CPtr); }
-      else { j = len; len = 0; }
-      while (j--)
-	{
-	  if (chat_is_chained(b))
-	    xsb_dbgmsg("chain bit left in chat area");
-	  b++;
-	}
-      b++; /* skipping the chain bits */
-    } 
-} /* chat_check_zero_region */
-#endif
-
-static void chat_check_zero(void)
-{
-#ifdef SAFE_GC
-  chat_init_pheader initial_pheader;
-  chat_incr_pheader pheader;
-  int trlen;
-  CPtr b,*tr;
-
-  if (chat_link_headers == NULL) return;
-
-  initial_pheader = chat_link_headers;
-  do
-    {
-      pheader = chat_get_father(initial_pheader);
-      while (pheader != NULL)
-	{ tr = chat_get_tr_start(pheader);
-	  trlen = chat_get_tr_length(pheader);
-	  chat_check_zero_region((CPtr)tr,trlen);
-	  pheader = chat_get_ifather(pheader);
-	}
-      initial_pheader = initial_pheader->next_header;
-    }
-  while (initial_pheader != chat_link_headers);
-#endif
-} /* chat_check_zero */
-
-/*----------------------------------------------------------------------*/
-
-static void chat_chain_region(CPtr b, int len)
-{ int whereto, tag, j ;
-  Cell contents;
-  CPtr q ;
-
-  /* no need to distinguish between trail or args chaining */
-
-  while (len)
-    { if (len > sizeof(CPtr))
-      { len -= sizeof(CPtr); j = sizeof(CPtr); }
-      else { j = len; len = 0; }
-      while (j--)
-	{ contents = cell(b);
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP) { b++; continue ; }
-	  if (! h_marked(q-heap_bot)) { xsb_mesg("panic 17"); b++; continue ; }
-	  if (h_is_chained(q)) chat_set_chained(b) ;
-	  h_set_chained(q) ;
-	  swap_with_tag(b,q,tag) ;
-	  b++;
-	}
-      b++; /* skipping the chain bits */
-    }
-} /* chat_chain_region */
-
-#endif
 
 /*----------------------------------------------------------------------*/
 /*
@@ -404,43 +306,6 @@ static CPtr slide_heap(int num_marked)
 	}
     }
 
-    /* chain the substitution factors reachable - for CHAT	  */
-    /* substitution factors of generators are in the heap and are */
-    /* pointed by a field of the completion stack; the substitution */
-    /* factors of the consumers are in the choice point stack     */
-    /* so they have just been chained already                     */
-
-#ifdef CHAT
-    { CPtr compl_fr;
-
-      compl_fr = openreg;
-      while (compl_fr != COMPLSTACKBOTTOM)
-	{ /* substitution factor is now in the heap for generators */
-	  p = (CPtr)(&compl_hreg(compl_fr));
-	  contents = cell(p);
-	  q = hp_pointer_from_cell(contents,&tag);
-	  if (!q) xsb_dbgmsg("bad heap pointer during chaining SF");
-	  if (! h_marked(q-heap_bot)) xsb_dbgmsg("chain SF problem");
-	  if (h_is_chained(q)) compl_set_chained(p);
-	  h_set_chained(q);
-	  swap_with_tag(p,q,tag);
-
-	  /* we also need to adapt the Dreg fields */
-	  if (compl_pdreg(compl_fr) != NULL) {
-	    p = (CPtr)(&(compl_pdreg(compl_fr)));
-	    contents = cell(p);
-	    q = hp_pointer_from_cell(contents,&tag);
-	    if (!q)
-	      xsb_dbgmsg("bad heap pointer during chaining Dreg");
-	    if (! h_marked(q-heap_bot)) xsb_dbgmsg("chain Dreg problem");
-	    if (h_is_chained(q)) compl_set_chained(p);
-	    h_set_chained(q);
-	    swap_with_tag(p,q,tag);
-	  }
-	  compl_fr = prev_compl_frame(compl_fr);
-	}
-    }
-#endif
 
     /* chain local stack */
     /* more precise traversal of local stack possible */
@@ -460,44 +325,6 @@ static CPtr slide_heap(int num_marked)
 	  swap_with_tag(p,q,tag) ;
 	}
     }
-
-#ifdef CHAT
-    /* chain CHAT areas */
-
-    if (chat_link_headers != NULL)
-      { chat_init_pheader initial_pheader;
-        chat_incr_pheader pheader;
-	int trlen;
-	CPtr b,*tr;
-
-	initial_pheader = chat_link_headers;
-	do
-	  {
-	    /* chaining of heap pointer from consumer is unnecessary */
-
-	    /* because of how chaining of ls is done above, no need to   */
-	    /* do chaining of the ls that is reachable from the consumer */
-	    /* revision might be needed                                  */
-
-	    /* chaining of the CHAT trails */
-	    /* during which the imarkbit is switched off */
-
-	    pheader = chat_get_father(initial_pheader);
-	    while ((pheader != NULL) && chat_area_imarked(pheader))
-	      {
-		chat_iunmark_area(pheader);
-		tr = chat_get_tr_start(pheader);
-		trlen = chat_get_tr_length(pheader);
-		chat_chain_region((CPtr)tr,trlen);
-		pheader = chat_get_ifather(pheader);
-	      }
-	    initial_pheader = initial_pheader->next_header;
-	  }
-	while (initial_pheader != chat_link_headers);
-	/* chain answer template special area */
-	chat_chain_region(at_start, at_area_size);
-      }
-#endif
 
     /* if (print_on_gc) print_all_stacks() ; */
 
@@ -641,7 +468,6 @@ static CPtr slide_heap(int num_marked)
 #endif
   }
 
-#ifndef CHAT
 #ifdef PRE_IMAGE_TRAIL
 
     /* re-tag pre image cells in trail */
@@ -651,7 +477,6 @@ static CPtr slide_heap(int num_marked)
 	tr_clear_pre_mark(p-tr_bot);
       }
     }
-#endif
 #endif
 
     return(heap_bot + num_marked) ;

@@ -69,7 +69,6 @@ do { \
 #endif
 #define ls_clear_mark(i)   ls_marks[i] = 0
 
-#ifndef CHAT
 #define tr_marked(i)         (tr_marks[i])
 #define tr_mark(i)           tr_marks[i] |= MARKED
 #define tr_clear_mark(i)     tr_marks[i] &= ~MARKED
@@ -80,7 +79,6 @@ do { \
 #define cp_marked(i)       (cp_marks[i])
 #define cp_mark(i)         cp_marks[i] |= MARKED
 #define cp_clear_mark(i)   cp_marks[i] &= ~MARKED
-#endif 
 
 /*=========================================================================*/
 
@@ -186,13 +184,9 @@ inline static char * pr_cp_marked(CPtr cell_ptr)
 { int i ; 
  i = cell_ptr - cp_top ;
  if (cp_marks == NULL) return("not_m") ;
-#ifdef CHAT
- if (cp_marks[i]) return ("chained");
-#else
  if (cp_marked(i) == MARKED) return("marked") ;
  if (cp_marked(i) == CHAIN_BIT) return("chained") ;
  if (cp_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
-#endif
  return("not_m") ; 
 } /* pr_cp_marked */ 
 
@@ -200,15 +194,11 @@ inline static char * pr_tr_marked(CPtr cell_ptr)
 { int i ; 
  i = cell_ptr - tr_bot ;
  if (tr_marks == NULL) return("not_m") ;
-#ifdef CHAT
- if (tr_marks[i]) return("chained");
-#else
  if (tr_marked(i) == MARKED) return("marked") ;
  if (tr_marked(i) == CHAIN_BIT) return("chained") ;
  if (tr_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
  if (tr_marked(i) == (CHAIN_BIT | MARKED | TRAIL_PRE)) 
    return("chained+marked+pre");
-#endif
  return("not_m") ; 
 } /* pr_tr_marked */ 
 
@@ -385,65 +375,6 @@ inline static int mark_region(CPtr beginp, CPtr endp)
 } /* mark_region */
 
 /*----------------------------------------------------------------------*/
-#ifdef CHAT
-inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
-{
-  CPtr a = begintr;
-  CPtr trailed_cell;
-  unsigned long i=0, marked=0;
-
-  while (a-- > (CPtr)endtr)
-    { /* a[0] == & trailed cell */
-      trailed_cell = (CPtr)a[0] ;
-      if (points_into_heap(trailed_cell))
-	{ i = trailed_cell - heap_bot ;
-	if (! h_marked(i))
-	  {
-#if (EARLY_RESET == 1)
-	    {
-	      /* instead of marking the word in the heap, 
-		 we make the trail cell point to itself */
-	      TO_BUFFER(trailed_cell);
-	      h_mark(i) ;
-	      marked++ ;
-	      bld_free(trailed_cell); /* early reset */
-	      /* could do trail compaction now or later */
-	      heap_early_reset++;
-	    }
-#else
-	    {
-	      marked += mark_root((Cell)trailed_cell);
-	    }
-#endif
-	  }
-	}
-      else
-	/* it must be a ls pointer, but for safety
-	   we take into account between_h_ls */
-	if (points_into_ls(trailed_cell))
-	  { i = trailed_cell - ls_top ;
-	  if (! ls_marked(i))
-	    {
-#if (EARLY_RESET == 1)
-	      {
-		/* don't ls_mark(i) because we early reset
-		   so, it is not a heap pointer
-		   but marking would be correct */
-		bld_free(trailed_cell) ; /* early reset */
-		/* could do trail compaction now or later */
-		ls_early_reset++;
-	      }
-#else
-	      { ls_mark(i) ;
-	      marked += mark_region(trailed_cell,trailed_cell);
-	      }
-#endif
-	    }
-	  }
-    }
-  return marked;
-}
-#else
 inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 {
   CPtr a = begintr;
@@ -551,7 +482,6 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
     }
   return marked;
 }
-#endif
 /*----------------------------------------------------------------------*/
 
 static int mark_query(void)
@@ -625,12 +555,7 @@ restart:
 
       if (is_generator_choicepoint(b))
 	{ /* mark the arguments */
-#ifdef CHAT
-	  total_marked += mark_region(b+TCP_SIZE,tcp_prevbreg(b)-1);
-	  /* mark the substitution factor later */
-#else
 	  total_marked += mark_region(b+TCP_SIZE, tcp_prevtop(b)-1);
-#endif
 	}
       else if (is_consumer_choicepoint(b))
 	{ /* mark substitution factor -- skip the number of SF vars */
@@ -651,11 +576,7 @@ restart:
 	/* there is nothing to do in this case */ ;
       else { 
 	CPtr endregion, beginregion;
-#ifdef CHAT
-	endregion = cp_prevbreg(b)-1;
-#else
 	endregion = cp_prevtop(b)-1;
-#endif
 	beginregion = b+CP_SIZE;
 	total_marked += mark_region(beginregion,endregion) ;
 
@@ -669,9 +590,6 @@ restart:
 	active_cps++;
       }
 #endif
-#ifdef CHAT
-      b = cp_prevbreg(b) ;
-#else
       if (first_time) {
 	first_time = 0;
 	if (bfreg < breg) {
@@ -684,274 +602,11 @@ restart:
       }
 
       b = cp_prevtop(b);
-#endif
     }
 
 } /* mark_query */
 
 /*----------------------------------------------------------------------*/
-
-#ifdef CHAT
-
-static int chat_mark_trail(CPtr *tr, int trlen)
-{
-  int  i, j, m = 0;
-  CPtr trailed_cell;
-
-  /* mark trail: both address and value - do cautious early reset */
-
-  while (trlen)
-    { 
-      if (trlen > sizeof(CPtr))
-	{ trlen -= sizeof(CPtr); j = sizeof(CPtr)>>1 ; }
-      else { j = trlen>>1; trlen = 0; }
-      while (j--)
-	{ 
-	  /* mark address */
-	  trailed_cell = *tr;
-	  tr++;
-	  if (points_into_heap(trailed_cell))
-	    { i = trailed_cell - heap_bot ;
-	    if (! h_marked(i))
-	      { TO_BUFFER(trailed_cell);
-		h_mark(i) ; /* it is correct to mark this cell, because the
-			       value is also marked
-			       avoiding to mark the cell would make chat
-			       trail compaction necessary
-			    */
-#if (EARLY_RESET == 1)
-	      *tr = (CPtr)makeint(88888);
-	      heap_early_reset++;
-#endif
-	      m++ ;
-	      }
-	    }
-	  else
-	    /* it must be a ls pointer, but we check between_h_ls */
-	    if (points_into_ls(trailed_cell))
-	      { i = trailed_cell - ls_top ;
-	      if (! ls_marked(i))
-		{
-		  /* it is possible to come here:
-		     in SLG-WAM (and CHAT) there might exist envs
-		     that are not reachable from anywhere and some
-		     CHAT trail pointer might point into it
-		     as example (maybe not simplest):
-		     :- table g/1.
-
-		     g(X) :- a, g(Y).
-		     g(_) :- gc_heap.
-
-		     a :- b(X), p(X), use(X).
-		       
-		     p(17).
-		       
-		     use(_).
-		       
-		     b(_).
-		     b(_) :- fail.
-		  */
-#if (EARLY_RESET == 1)
-		  *tr = (CPtr)makeint(99999);
-		  ls_early_reset++;
-#endif
-		}
-	      }
-
-	  /* mark value */
-	  m += mark_root((Cell)(*tr));
-	  tr++;
-	}
-      tr++; /* skip chain bits */
-    }
-
-  return m;
-} /* chat_mark_trail */
-
-static int chat_mark_region(CPtr b, int len)
-{
-  int j, m = 0;
-
-  while (len)
-    {
-      if (len > sizeof(CPtr))
-        { len -= sizeof(CPtr); j = sizeof(CPtr) ; }
-      else { j = len; len = 0; }
-      while (j--)
-        {
-          m += mark_root(*b);
-          b++;
-        }
-      b++; /* skip chain bits */
-    }
-
-  return m; 
-} /* chat_mark_region */
-
-static int chat_mark_answer_template_area(CPtr b, int len)
-{
-  int j, m = 0;
-  while (len) {
-    if (len > sizeof(CPtr)) {
-      len -= sizeof(CPtr);
-      j = sizeof(CPtr);
-    } else {
-      j = len;
-      len = 0; 
-    }
-    while (j--) {
-      CPtr region; /* special marking for answer templates on heap */
-      int at_size;
-      region = *b;
-      at_size = (int_val(cell(region)) & 0xffff) + 1;
-      while (at_size--) 
-	m += mark_cell(region--);
-      b++;
-    }
-    b++; /* skip chain bits */
-  }
-  return m;
-}
-
-/*-------------------------------------------------------------------------
-chat_mark_frozen_parts: see ISMM'98 paper for more understanding
-for CHAT it means:
-         mark the environment chain starting from the consumer
-	 then mark the trail in the chat areas of this consumer
-	          but be careful with early reset
-	 since the failure continuations of a consumer are always also
-	 failure continuations of the active computation, there is no
-	 need to mark the failure continuations of the consumer
-  -------------------------------------------------------------------------*/
-
-static int chat_mark_frozen_parts(int *avail_dreg_marks)
-{
-  int  m, i, trlen, yvar;
-  chat_init_pheader initial_pheader;
-  chat_incr_pheader pheader;
-  CPtr b, e, d, *tr;
-  byte *cp;
-
-  m = 0;
-  initial_pheader = chat_link_headers;
-
-  /* mark answer template special area  --lfcastro */
-  m += chat_mark_answer_template_area(at_start, at_area_size);
-
-
-  if (initial_pheader != NULL)
-    do
-      {
-#ifdef GC_PROFILE
-	if (examine_data)
-	  frozen_cps++;
-#endif
-	/* marking of heap pointer from consumer is unnecessary */
-	/* as consumer gets hreg from its scheduling generator  */
-
-	/* mark from the consumer the environment chain */
-	/* it is enough to do that until the e of the leader of the consumer */
-	/* we do it all the way up for now */
-
-	b = (CPtr)(&chat_get_cons_start(initial_pheader));
-	e = cp_ereg(b);
-	cp = cp_cpreg(b);
-
-	/* mark the delay list field of choice points too */
-	if ((d = cp_pdreg(b)) != NULL) {
-	  if (slide) {
-	    if (*avail_dreg_marks > 0) {
-	      *avail_dreg_marks -= 1;
-	      *hreg = (Cell)d;
-	      heap_top++;
-	      m += mark_root((Cell)d)+1; /* +1 because of the following line */
-	      TO_BUFFER(hreg);
-	      h_mark(hreg-heap_bot) ;
-	      hreg++;
-	    } else xsb_exit("Fatal: no heap space to mark Dreg of CHAT areas");
-	  }
-	  else {
-	    m += mark_root((Cell)d);
-	  }
-	}
-
-	while ((e < ls_bot) && (cp != NULL))
-	  {
-	    if (ls_marked(e - ls_top)) break ;
-	    ls_mark(e - ls_top) ;
-	    yvar = *(cp-2*sizeof(Cell)+3) - 1 ;
-	    m += mark_region(e-yvar,e-2) ;
-	    i = (e-2) - ls_top ;
-	    while (yvar-- > 1) ls_mark(i--) ;
-	    cp = (byte *)e[-1] ;
-	    e = (CPtr)e[0] ;
-	  }
-
-	initial_pheader = initial_pheader->next_header;
-      }
-    while (initial_pheader != chat_link_headers);
-
-  initial_pheader = chat_link_headers;
-  if (initial_pheader != NULL)
-    do
-      { /* now mark the CHAT trails */
-	pheader = chat_get_father(initial_pheader);
-	while ((pheader != NULL) && (! chat_area_imarked(pheader)))
-	  {
-	    chat_imark_area(pheader);
-	    tr = chat_get_tr_start(pheader);
-	    trlen = chat_get_tr_length(pheader);
-	    m += chat_mark_trail(tr,trlen);
-
-	    pheader = chat_get_ifather(pheader);
-	  }
-	initial_pheader = initial_pheader->next_header;
-      }
-    while (initial_pheader != chat_link_headers);
-
-
-  return m;
-
-} /* chat_mark_frozen_parts */
-
-/*-------------------------------------------------------------------------*/
-
-static int chat_mark_substitution_factor(void)
-{
-  CPtr compl_fr;
-  VariantSF subg_ptr;
-  CPtr region_to_mark, d;
-  int  CallNumVar, m = 0;
-
-  /* mark the substitution factor starting from the completion stack */
-  compl_fr = openreg;
-  while (compl_fr != COMPLSTACKBOTTOM)
-    {
-      /* substitution factor is now in the heap for generators */
-      region_to_mark = compl_hreg(compl_fr);
-      /* `+ 1': mark the Num too */
-      CallNumVar = (int_val(cell(region_to_mark)) & 0xffff) + 1;
-      while (CallNumVar--)
-	m += mark_cell(region_to_mark--);
-
-      /* we also need to mark the Dreg fields of those generator
-         choice points that have been reclaimed from the CP stack */
-      subg_ptr = compl_subgoal_ptr(compl_fr);
-      if ((subg_cp_ptr(subg_ptr) == NULL) /* not in the CP stack anymore */ &&
-	  (! is_completed(subg_ptr))) {
-	if ((d = compl_pdreg(compl_fr)) != NULL) {
-	  m += mark_root((Cell)d);
-	}
-      }
-      compl_fr = prev_compl_frame(compl_fr);
-    }
-  return m;
-
-} /* chat_mark_substitution_factor */
-
-#endif
-
-/*-------------------------------------------------------------------------*/
 
 static int mark_hreg_from_choicepoints(void)
 {
@@ -961,18 +616,10 @@ static int mark_hreg_from_choicepoints(void)
   /* this has to happen after all other marking ! */
   /* actually there is no need to do this for a copying collector */
 
-#ifdef CHAT
-  b = breg;
-#else
   b = (bfreg < breg ? bfreg : breg);
-#endif
   bprev = 0;
   m = 0;
-#ifdef CHAT
-  while (b != bprev) 
-#else
     while(1)
-#endif
      {
       h = cp_hreg(b) ;
       i = h - heap_bot ;
@@ -1001,13 +648,9 @@ static int mark_hreg_from_choicepoints(void)
       }
 #endif
       bprev = b; 
-#ifdef CHAT
-    b = cp_prevbreg(b);
-#else
     b = cp_prevtop(b);
     if (b >= (cp_bot-CP_SIZE))
       break;
-#endif
   }
   return m;
 } /* mark_hreg_from_choicepoints */
@@ -1052,13 +695,6 @@ int mark_heap(int arity, int *marked_dregs)
   if (print_on_gc) print_all_stacks(arity);
   
   if (slide) {
-#ifdef CHAT
-    avail_dreg_marks = MAX_DREG_MARKS;
-    /* here allocate EXACT amount for completion stack: not upper bound */
-    compl_marks = (char *)calloc(compl_bot - top_of_complstk,1);
-    if (! compl_marks)
-      xsb_exit("Not enough core to allocate chain bits for completion stack");
-#endif
 #ifdef INDIRECTION_SLIDE
     /* space for keeping pointers to live data */
     slide_buf_size = (hreg+1-(CPtr)glstack.low)*0.2;
@@ -1070,13 +706,6 @@ int mark_heap(int arity, int *marked_dregs)
       slide_buffering=1;
     else
       slide_buffering=0;
-#endif
-#ifdef CHAT
-    /* these areas are not used in a copying collector */
-    cp_marks = (char *)calloc(cp_bot - cp_top + 1,1);
-    tr_marks = (char *)calloc(tr_top - tr_bot + 1,1);
-    if ((! cp_marks) || (! tr_marks))
-      xsb_exit("Not enough core to perform garbage collection chaining phase");
 #endif
   }
   
@@ -1139,19 +768,9 @@ int mark_heap(int arity, int *marked_dregs)
 #endif
 
 
-#ifdef CHAT
-  marked += chat_mark_substitution_factor();
-#endif
-
   marked += mark_query();
 
-#ifdef CHAT
-  marked += chat_mark_frozen_parts(&avail_dreg_marks);
-  if (slide) *marked_dregs = MAX_DREG_MARKS - avail_dreg_marks;
   marked += mark_from_attv_array();
-#else /* SLG_GC */
-  marked += mark_from_attv_array();
-#endif
 
   if (slide)
     marked += mark_hreg_from_choicepoints();

@@ -31,11 +31,6 @@
  * and 4-word ones.  After untrailing a trail frame, trreg can be reset by 
  * following the trail_parent pointer.
  *
- * In CHAT, trreg always points to the address field of a trail frame, and
- * the trail stack may contain both 1-word trail frames or 2-word ones.
- * After untrailing a trail frame, trreg is set to trreg-1 or trreg-2
- * (depending on the lowest bit of the address field of the trail frame).
- *
  * 1) Regular (forward) trail frame in SLG-WAM (3-word trail frame)
  * ----------------------------------------------------------------
  *    low memory
@@ -61,46 +56,11 @@
  *     |     | trail_parent   : Pointer to the trail_parent cell of the
  *     +-----+                  previous trail frame)
  *    high memory
- *
- * 3) Regular WAM-TRAIL frame in CHAT (1-word trail frame)
- * -------------------------------------------------------
- *     +-----+
- *     |     | Address of the trailed variable
- *     +-----+
- *
- * 4) Pre-image trail frame in CHAT (2-word trail frame)
- * -----------------------------------------------------
- *     +-----+
- *     |     | Old value of the trailed variable (cell)
- *     +---+-+
- *     |   |1| Address of the trailed variable (with PRE_IMAGE_MARK)
- *     +---+-+
  */
 
 #define PRE_IMAGE_TRAIL
 
 #define PRE_IMAGE_MARK   1
-
-#ifdef WAM_TRAIL
-
-#define pushtrail0(addr,val) {						\
-  if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {	\
-    handle_tcpstack_overflow();						\
-  }									\
-  *(trreg++) = addr;							\
-}
-
-#ifdef PRE_IMAGE_TRAIL
-#define push_pre_image_trail0(addr, new_value) {			\
-  if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {	\
-    handle_tcpstack_overflow();						\
-  }									\
-  *(trreg++) = (CPtr) (cell(addr));					\
-  *(trreg++) = (CPtr) ((Cell) (addr) | PRE_IMAGE_MARK);			\
-}
-#endif /* PRE_IMAGE_TRAIL */
-
-#else  /* WAM_TRAIL */
 
 #define TRAIL_FRAME_SIZE  4
 
@@ -152,14 +112,8 @@
   }
 #endif /* PRE_IMAGE_TRAIL */
 
-#endif /* WAM_TRAIL */
-
-#ifdef CHAT
-#define conditional(a)	( ((a) >= ebreg) || ((a) < hbreg) )
-#else
 #define conditional(a)	( ((a) >= ebreg || (a) >= efreg) || \
 			  ((a) < hbreg  || (a) < hfreg) )
-#endif
 
 #define pushtrail(a,v)	if (conditional(a)) { pushtrail0(a,v); }
 #define dpushtrail(a,v) pushtrail0(a,v)
@@ -227,17 +181,6 @@
 
 #ifdef PRE_IMAGE_TRAIL	/* untrail2 is for pre_image trail. */
 
-#ifdef WAM_TRAIL
-#define untrail2(trail_ptr, addr) {		\
-  if ((addr) & PRE_IMAGE_MARK) {		\
-    bld_copy0((CPtr)((addr) - PRE_IMAGE_MARK),	\
-              cell((CPtr)trail_ptr - 1));	\
-    trreg--;					\
-  }						\
-  else						\
-    bld_free((CPtr)(addr));			\
-}
-#else  /* WAM_TRAIL */
 #define untrail2(trail_ptr, addr)		\
   if ((addr) & PRE_IMAGE_MARK) {		\
     bld_copy0((CPtr)((addr) - PRE_IMAGE_MARK),	\
@@ -245,7 +188,6 @@
   }						\
   else						\
     bld_free((CPtr)(addr))
-#endif /* WAM_TRAIL */
 
 #endif /* PRE_IMAGE_TRAIL */
 

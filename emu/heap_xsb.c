@@ -35,7 +35,7 @@
 
 	heap garbage collection
 	-----------------------
-	Function gc_heap(arity) - currently only supported for CHAT
+	Function gc_heap(arity) - 
 	   To understand the usefulness logic, see paper:
 		B. Demoen and K. Sagonas.
 		Memory Management for Prolog with Tabling.
@@ -116,7 +116,6 @@ Todo:
 #include "error_xsb.h"     /* xsb_exit() and friends */
 #include "macro_xsb.h"     /* Completion Stack and Subgoal Frame def's */
 #include "realloc.h"       /* Heap - ls reallocation macros */
-#include "chat.h"          /* CHAT related declarations */
 #include "flags_xsb.h"     /* for checking whether functionality is enabled */
 #include "heap_xsb.h"
 #include "io_builtins_xsb.h"
@@ -159,15 +158,6 @@ void print_cpf_pred(CPtr cpf);
 /* to choose between copying or sliding collector:
    its value is determined based on the the value of flags[GARBAGE_COLLECT] */
 static xsbBool slide;
-
-/* max value of active delay register fields in CHAT areas.  it should
-   not be bigger than the margin (2nd arg) of gc_heap instruction minus
-   stuff (like aregs) which are put on heap in the beginning of a sliding
-   collection. and it should be used only for a sliding collector. */
-#ifdef CHAT
-#define MAX_DREG_MARKS 1000
-#endif
-
 
 #ifdef GC
 /* measuring fragmentation without collection - it also sets slide = 0 */
@@ -247,17 +237,13 @@ static double total_time_gc = 0 ;
 static unsigned long total_collected = 0 ;
 
 /*----------------------------------------------------------------------*/
-/* marker bits in different areas: the mark bit for the CHAT areas is   */
-/* in the CHAT areas themselves.                                        */
+/* marker bits in different areas.                                      */
 /*----------------------------------------------------------------------*/
 
 static char *heap_marks  = NULL ;
 static char *ls_marks    = NULL ;
 static char *tr_marks    = NULL ;
 static char *cp_marks    = NULL ;
-#ifdef CHAT
-static char *compl_marks = NULL ;
-#endif
 
 #define INDIRECTION_SLIDE
 #ifdef INDIRECTION_SLIDE
@@ -276,13 +262,6 @@ static unsigned long slide_buf_size = 0;
 #define testreturnit(retp)   if (points_into_heap(retp)) return(retp)
 #else
 #define testreturnit(retp)   return(retp)
-#endif
-
-#ifdef CHAT
-/* space to temporarily keep answer template pointers from consumer
-   CPs to allow for chaining --lfcastro */
-CPtr *at_malloc=NULL, *at_start=NULL; 
-unsigned long at_area_size = 0, at_malloc_size = 0;
 #endif
 
 /*=========================================================================*/
@@ -315,123 +294,6 @@ unsigned long at_area_size = 0, at_malloc_size = 0;
                         o pointers IN the heap (because there shouldn't be
                                 any pointing into the local stack).
 */
-
-
-/*----------------------------------------------------------------------*/
-/* reallocation for CHAT areas                                          */
-/*----------------------------------------------------------------------*/
-
-#ifdef CHAT
-
-inline static void chat_relocate_region(CPtr *startp, int len,
-					int heap_offset, int local_offset)
-{ int j;
-  Cell cell_val;
-
-  while (len)
-    { 
-      if (sizeof(CPtr) > len)
-	       { j = len; len = 0; }
-	  else { j = sizeof(CPtr); len -= sizeof(CPtr); }
-
-      while (j--)
-	{ reallocate_heap_or_ls_pointer(startp);
-	  startp++;
-	}
-      startp++;
-    }
-} /* chat_relocate_region */
-
-/*----------------------------------------------------------------------*/
-
-inline static void chat_clear_marks(void)
-{
-  register chat_init_pheader initial_pheader;
-  register chat_incr_pheader pheader;
-
-  initial_pheader = chat_link_headers;
-  if (initial_pheader != NULL) {
-    do
-      {
-	pheader = chat_get_father(initial_pheader);
-	while ((pheader != NULL) && (chat_area_imarked(pheader)))
-	  {
-	    chat_iunmark_area(pheader);
-	    pheader = chat_get_ifather(pheader);
-	  }
-	initial_pheader = initial_pheader->next_header;
-      }
-    while (initial_pheader != chat_link_headers);
-  }
-}
-
-/*----------------------------------------------------------------------*/
-
-static void chat_relocate_all(CPtr heap_bot, int heap_offset,
-			      CPtr ls_bot, int local_offset)
-{
-  CPtr *b, *tr;
-  int  i, trlen;
-  Cell cell_val;
-  register chat_incr_pheader pheader;
-  register chat_init_pheader initial_pheader;
-
-  initial_pheader = chat_link_headers;
-  if (initial_pheader != NULL)
-  {
-    do
-      {
-	/* relocate the saved consumer choice points -- this also */
-	/* takes care of their Dreg field.  A more refined traversal */
-	/* of choice points is possible, but is it worth it ? */
-	b = (CPtr *)(&chat_get_cons_start(initial_pheader));
-	for (i = NLCP_SIZE; i > 0; i--)
-	  { reallocate_heap_or_ls_pointer(b);
-	    b++;
-	  }
-
-	/* relocate the CHAT trail */
-	/* this is more tricky than expected: the marks must be used:  */
-	/* a relocated pointer might point to the old area !           */
-	/* and the marks have to switched off as well at the end       */
-	pheader = chat_get_father(initial_pheader);
-	while ((pheader != NULL) && (! chat_area_imarked(pheader)))
-	  {
-	    chat_imark_area(pheader);
-	    tr = chat_get_tr_start(pheader);
-	    trlen = chat_get_tr_length(pheader);
-	    chat_relocate_region(tr,trlen,heap_offset,local_offset);
-
-	    pheader = chat_get_ifather(pheader);
-	  }
-	initial_pheader = initial_pheader->next_header;
-      }
-    while (initial_pheader != chat_link_headers);
-
-    chat_clear_marks();      /* here the marks are switched off */
-  }
-
-  /* now relocate pointers to the heap from the completion
-   * stack: the SF and Dreg fields for generators */
-  { register CPtr compl_fr;
-    register CPtr *p;
-
-    compl_fr = openreg;
-    while (compl_fr != COMPLSTACKBOTTOM)
-      { /* substitution factor is now in the heap for generators */
-	p = (CPtr *)(&compl_hreg(compl_fr));
-	reallocate_heap_or_ls_pointer(p);
-	/* relocate Dreg field too: if non-null, it points to the heap */
-	p = (CPtr *)(&compl_pdreg(compl_fr));
-	reallocate_heap_or_ls_pointer(p);
-	compl_fr = prev_compl_frame(compl_fr);
-      }
-  }
-
-} /* chat_relocate_all */
-
-#endif /* CHAT */
-
 /*----------------------------------------------------------------------*/
 
 xsbBool glstack_realloc(int new_size, int arity)
@@ -494,15 +356,6 @@ xsbBool glstack_realloc(int new_size, int arity)
   { reallocate_heap_or_ls_pointer(cell_ptr) ; }
 
   /* Update the trailed variable pointers */
-#ifdef WAM_TRAIL
-  for (cell_ptr = (CPtr *)top_of_trail - 1;
-       cell_ptr >= (CPtr *)tcpstack.low;  /* CHAT needs: >= */
-       cell_ptr--)
-  { /* the address is the only thing */
-    cell_val = (Cell)*cell_ptr ;
-    realloc_ref(cell_ptr,(CPtr)cell_val) ;
-  }
-#else
   for (cell_ptr = (CPtr *)top_of_trail - 1;
        cell_ptr > (CPtr *)tcpstack.low;
        cell_ptr = cell_ptr - 2)
@@ -513,7 +366,6 @@ xsbBool glstack_realloc(int new_size, int arity)
     cell_val = (Cell)*cell_ptr ;
     realloc_ref(cell_ptr,(CPtr)cell_val) ;
   }
-#endif
 
   /* Update the CP Stack pointers */
   for (cell_ptr = (CPtr *)top_of_cpstack;
@@ -528,10 +380,6 @@ xsbBool glstack_realloc(int new_size, int arity)
     arity-- ;  
   }
 
-#ifdef CHAT
-  chat_relocate_all(heap_bot,heap_offset,ls_bot,local_offset); 
-#endif 
-
   /* Update the system variables */
   glstack.low = (byte *)new_heap_bot ;
   glstack.high = (byte *)(new_ls_bot + 1) ;
@@ -539,14 +387,10 @@ xsbBool glstack_realloc(int new_size, int arity)
 
   hreg = (CPtr)hreg + heap_offset ;
   hbreg = (CPtr)hbreg + heap_offset ;
-#if (!defined(CHAT))
   hfreg = (CPtr)hfreg + heap_offset ;
-#endif
   ereg = (CPtr)ereg + local_offset ;
   ebreg = (CPtr)ebreg + local_offset ;
-#if (!defined(CHAT))
   efreg = (CPtr)efreg + local_offset ;
-#endif
 
   if (islist(delayreg))
     delayreg = (CPtr)makelist(clref_val(delayreg) + heap_offset);
@@ -623,57 +467,6 @@ int gc_heap(int arity)
       }
     }
     
-
-#ifdef CHAT
-    /* copy AT ptrs from consumer CPs into a special chat-like area */
-    { 
-      chat_init_pheader initial_pheader;
-      unsigned long at_num = 0, malloc_size = 0, j;
-      CPtr *at_ptr;
-      
-      /* count # of consumers in CHAT area */
-      initial_pheader = chat_link_headers;
-      if (initial_pheader != NULL) {
-	do {
-	  at_num++;
-	  initial_pheader = initial_pheader->next_header;
-	} while (initial_pheader != chat_link_headers);
-	at_area_size = at_num;
-	/* compute size of area, allocate and align */
-	malloc_size = (((at_num + sizeof(CPtr) - 1)/sizeof(CPtr))*
-		       (sizeof(CPtr)+1) + sizeof(CPtr)); /* needed_size(at_num) */
-	at_malloc_size = malloc_size;
-	at_malloc = malloc(malloc_size * sizeof(CPtr));
-	at_start = at_malloc;
-	malloc_size = (((long)at_start)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
-	if (malloc_size != 0)
-	  at_start += sizeof(CPtr) + 1 - malloc_size; /* align at_start */
-	
-	/* copy A.T. ptrs from consumer CP's */
-	at_ptr = at_start;
-	initial_pheader = chat_link_headers;
-	while (at_num) {
-	  at_ptr[sizeof(CPtr)] = 0;
-	  if (sizeof(CPtr) >= at_num) {
-	    j = at_num; 
-	    at_num = 0;
-	  } else {
-	    j = sizeof(CPtr);
-	    at_num -= sizeof(CPtr);
-	  }
-	  while (j--) {
-	    *(at_ptr++) = nlcp_template(&chat_get_cons_start(initial_pheader));
-	    initial_pheader = initial_pheader->next_header;
-	  }
-	  at_ptr++;
-	}
-      } else {
-	at_area_size = 0;
-	at_malloc = at_start = NULL;
-      }
-    }
-#endif
-
 #ifdef SLG_GC
     /* in SLGWAM, copy hfreg to the heap */
     if (slide) {
@@ -699,10 +492,6 @@ int gc_heap(int arity)
       if (tr_marks)    { free(tr_marks); tr_marks = NULL; }
       if (ls_marks)    { free(ls_marks); ls_marks = NULL; }
       if (cp_marks)    { free(cp_marks); cp_marks = NULL; }
-#ifdef CHAT
-      if (compl_marks) { free(compl_marks); compl_marks = NULL; }
-      if (at_malloc) { free(at_malloc) ; at_malloc = NULL; } 
-#endif
       goto end;
     }
     
@@ -718,9 +507,6 @@ int gc_heap(int arity)
           hreg -= arity;
 	total_time_gc += (double) 
 	  (end_marktime-begin_marktime)*1000/CLOCKS_PER_SEC;
-#ifdef CHAT
-	chat_clear_marks();
-#endif
         goto free_marks; /* clean-up temp areas and get out of here... */
       }
 #endif
@@ -735,24 +521,6 @@ int gc_heap(int arity)
 
 	if (hreg != (heap_bot+marked))
 	  xsb_dbgmsg("heap sliding gc - inconsistent hreg");
-#ifdef CHAT
-	hreg -= marked_dregs;
-	{
-	  CPtr b, p = hreg;
-	  chat_init_pheader initial_pheader = chat_link_headers;
-	  
-	  if (initial_pheader != NULL)
-	    do
-	      { /* loop over CHAT areas to restore Dreg fields */
-		b = (CPtr)(&chat_get_cons_start(initial_pheader));
-		if (cp_pdreg(b) != NULL)
-		  cp_pdreg(b) = (CPtr)*p++ ;
-		initial_pheader = initial_pheader->next_header;
-	      }
-	    while (initial_pheader != chat_link_headers);
-	}
-#endif
-
 #ifdef SLG_GC
 	/* copy hfreg back from the heap */
 	hreg--;
@@ -791,11 +559,7 @@ int gc_heap(int arity)
 	hreg = copy_heap(marked,begin_new_heap,end_new_heap,arity);
 
 	free(begin_new_heap);
-#ifdef CHAT
-	adapt_hreg_from_choicepoints(hreg);
-#else
 	adapt_hfreg_from_choicepoints(hreg);
-#endif
 	hbreg = cp_hreg(breg);
 
 #ifdef SLG_GC
@@ -809,33 +573,6 @@ int gc_heap(int arity)
 	GC_PROFILE_COPY_FINAL_SUMMARY;
       }
     
-#ifdef CHAT
-    /* copy answer template pointers from special area back to consumers */
-    {
-      CPtr *at_ptr;
-      unsigned long j, at_num;
-      chat_init_pheader initial_pheader;
-
-      at_ptr = at_start;
-      at_num = at_area_size;
-      initial_pheader = chat_link_headers;
-      while (at_num) {
-	if (sizeof(CPtr) >= at_num) {
-	  j = at_num; 
-	  at_num = 0;
-	} else {
-	  j = sizeof(CPtr);
-	  at_num -= sizeof(CPtr);
-	}
-	while (j--) {
-	  nlcp_template(&chat_get_cons_start(initial_pheader)) = *(at_ptr++);
-	  initial_pheader = initial_pheader->next_header;
-	}
-	at_ptr++;
-      }
-    }
-#endif
-
     if (print_on_gc) print_all_stacks(arity);
     
     /* get rid of the marking areas - if they exist */
@@ -859,22 +596,6 @@ int gc_heap(int arity)
       free(cp_marks) ;
       cp_marks = NULL ;
     }
-#ifdef CHAT
-    if (compl_marks) { 
-      i = (compl_bot - top_of_complstk);
-      check_zero(compl_marks,i,"compl") ;
-      free(compl_marks) ;
-      compl_marks = NULL ;
-    }
-    chat_check_zero();
-
-    if (at_malloc) {
-      check_zero(at_start, at_area_size, "at_area");
-      free(at_malloc);
-      at_malloc = at_start = NULL;
-    }
-#endif
-
 #ifdef SAFE_GC
     p = hreg;
     while (p < heap_top)
@@ -883,7 +604,7 @@ int gc_heap(int arity)
     
   } /* if (flags[GARBAGE_COLLECT]) */
 #else
-  /* for non-CHAT, there is no gc, but stack expansion can be done */
+  /* for no-GC, there is no gc, but stack expansion can be done */
 #endif
   
 #ifdef GC

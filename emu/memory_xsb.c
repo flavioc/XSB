@@ -99,9 +99,7 @@ void tcpstack_realloc(long new_size) {
   long trail_offset,      /* byte offsets between the old and new */
        cps_offset;        /*   stack bottoms */
 
-#ifndef CHAT
   CPtr *trail_link;    /* for stepping thru Trail and altering dyn links */
-#endif
   CPtr *cell_ptr;      /* for stepping thru CPStack and altering cell values */
   byte *cell_val;      /* consider each cell to contain a ptr value */
 
@@ -172,14 +170,12 @@ void tcpstack_realloc(long new_size) {
    *  pointer to mark the bottom of the Trail.  The TRx reg's point to the
    *  previous-link field of the Trail frames (i.e., the last field).
    */
-#ifndef CHAT
   if (trail_offset != 0) {
     for (trail_link = (CPtr *)new_trail;
 	 trail_link <= (CPtr *)(trail_top + trail_offset);
 	 trail_link = trail_link + 3)
       *trail_link = (CPtr)((byte *)*trail_link + trail_offset);
   }
-#endif
 
   /* Update the pointers in the CP Stack
      ----------------------------------- */
@@ -222,11 +218,9 @@ void tcpstack_realloc(long new_size) {
        csf_ptr < (ComplStackFrame)complstack.high;
        csf_ptr++) {
     subg_ptr = compl_subgoal_ptr(csf_ptr);
-#if (!defined(CHAT))
     if ( IsNonNULL(subg_asf_list_ptr(subg_ptr)) )
       subg_asf_list_ptr(subg_ptr) =
 	(CPtr)( (byte *)subg_asf_list_ptr(subg_ptr) + cps_offset );
-#endif
     if ( IsNonNULL(subg_compl_susp_ptr(subg_ptr)) )
       subg_compl_susp_ptr(subg_ptr) =
 	(CPtr)( (byte *)subg_compl_susp_ptr(subg_ptr) + cps_offset );
@@ -243,10 +237,8 @@ void tcpstack_realloc(long new_size) {
   
   trreg = (CPtr *)((byte *)trreg + trail_offset);
   breg = (CPtr)((byte *)breg + cps_offset);
-#if (!defined(CHAT))
   trfreg = (CPtr *)((byte *)trfreg + trail_offset);
   bfreg = (CPtr)((byte *)bfreg + cps_offset);
-#endif
   if ( IsNonNULL(root_address) )
     root_address = (CPtr)((byte *)root_address + cps_offset);
 

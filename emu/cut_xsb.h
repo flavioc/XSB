@@ -54,14 +54,6 @@
 /*									*/
 /*----------------------------------------------------------------------*/
 
-#ifdef CHAT
-#define CHAT_CSF_CLEANUP(instruc) \
- if (instruc == resume_compl_suspension) \
-    chat_free_cp_compl_susp_chat_areas((ComplSuspFrame)breg);
-#else
-#define CHAT_CSF_CLEANUP(instruc)
-#endif
-
 #define CHECK_TABLE_CUT(instruc)       \
   if (check_table_cut)                 \
     switch (instruc) {                 \
@@ -80,8 +72,7 @@
       break;                           \
     default:                           \
       break;                           \
-    }                                  \
-  CHAT_CSF_CLEANUP(instruc)
+    }
 
 
 #define cut_code(OP1)	                                        \
@@ -112,11 +103,6 @@
 /* Takes a pointer to the choice point frame we are cutting back to.	*/
 /*----------------------------------------------------------------------*/
 
-#ifdef CHAT      /* First attempt: CHECK FOR CORRECTNESS !!! */
-#define cut_restore_trail_condition_registers(CUTB) \
-    ebreg = cp_ebreg(CUTB); \
-    hbreg = cp_hreg(CUTB);
-#else
 #define cut_restore_trail_condition_registers(CUTB) \
     if ((CPtr)  *CUTB >= (CPtr) pdl.low || \
 		*CUTB == (Cell) &answer_return_inst || \
@@ -125,32 +111,17 @@
 	ebreg = cp_ebreg(CUTB); \
 	hbreg = cp_hreg(CUTB); \
     }
-#endif
 
 /*----------------------------------------------------------------------*/
 /* Deletes all trail frames that are no longer conditional.		*/
 /* Most probably, it does *NOT* work for cuts over tables!!		*/
 /*----------------------------------------------------------------------*/
 
-#if (!defined(WAM_TRAIL))
 #define trail_parent(t)         ((CPtr *)*(t))
 #define trail_value(t)          ((CPtr *)*((t)-1))
 #define trail_variable(t)       ((CPtr *)*((t)-2))
 #define good_trail_register(t)	(conditional(((CPtr) *((t)-2))))
-#else
-#define good_trail_register(t)	(conditional(((CPtr) *(t))))
-#endif
 
-#if (defined(CHAT) && defined(WAM_TRAIL))
-#define unwind_trail(tbreg, from, to) {	\
-    from = to = (CPtr) cp_trreg(tbreg);				\
-    while (from < (CPtr)trreg) {				\
-      if (good_trail_register(from)) { *to = *from; to++; }	\
-      from++;							\
-    }								\
-    trreg = (CPtr *)to;						\
-  }
-#else
 #define unwind_trail(tbreg, t1, t2) {	\
     while (!good_trail_register(trreg) &&				\
 	   trreg > trfreg &&						\
@@ -167,6 +138,5 @@
       }									\
     }									\
   }
-#endif
 
 

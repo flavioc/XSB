@@ -316,12 +316,11 @@ void print_regs(int a, int add)
   fprintf(where,"wam_reg(hreg,%ld).\n",(long)(hreg-heap_bot)) ;
   fprintf(where,"wam_reg(ereg,%ld).\n",(long)(ls_bot-ereg)) ;
 
-#if (!defined(CHAT))
   fprintf(where,"wam_reg(trfreg,%ld).\n",(long)((CPtr)trfreg-tr_bot)) ;
   fprintf(where,"wam_reg(bfreg,%ld).\n",(long)(cp_bot-bfreg)) ;
   fprintf(where,"wam_reg(hfreg,%ld).\n",(long)(hfreg-heap_bot)) ;
   fprintf(where,"wam_reg(efreg,%ld).\n",(long)(ls_bot-efreg)) ;
-#endif
+
   fprintf(where,"wam_reg(ptcpreg,%ld).\n",(Cell)ptcpreg) ;
 
   fprintf(where,"wam_reg(ebreg,%ld).\n",(long)(ls_bot-ebreg)) ;
@@ -340,82 +339,6 @@ void print_regs(int a, int add)
   fclose(where) ;
 } /* print_regs */
 
-void print_chat(int add)
-{
-#ifdef CHAT
-  CPtr startp;                                                     
-  FILE *where;
-  chat_init_pheader initial_pheader;
-  chat_incr_pheader pheader;
-  char buf[100];                                                         
-  int  i, j, len;
-
-  sprintf(buf,"CHAT%d",printnum) ;                                       
-  printnum += add ;
-  where = fopen(buf,"w") ;                                                
-  if (! where)
-    { xsb_dbgmsg("could not open CHAT%d",printnum);
-      return;
-    }
-  stack_boundaries ;      
-
-  initial_pheader = chat_link_headers;
-  if (initial_pheader != NULL)
-    {
-      do
-	{
-	  CPtr b = (CPtr)(&chat_get_cons_start(initial_pheader));
-	  
-	  if (is_consumer_choicepoint(b))
-	    fprintf(where,"CHAT area of a consumer");
-	  else if (is_compl_susp_frame(b))
-	    fprintf(where,"CHAT area of a completion suspension");
-	  else fprintf(where,"CHAT area of UNKNOWN TYPE");
-#ifdef DEBUG
-	  fprintf(where," (subgoal = ");
-	  print_subgoal(where, (VariantSF)nlcp_subgoal_ptr(b));
-	  fprintf(where,")");
-#endif
-	  fprintf(where," @ %p:\n",initial_pheader);
-	  fprintf(where,"----------------------\n");
-
-	  fprintf(where,"Trail\n");
-	  pheader = chat_get_father(initial_pheader);
-	  while (pheader != NULL)
-	    {
-	      fprintf(where,"increment %p marked = %d\n",
-		      pheader,chat_area_imarked(pheader));
-	      startp = (CPtr)chat_get_tr_start(pheader);
-	      len = chat_get_tr_length(pheader);
-
-	      i = 0;
-	      while (len)
-		{
-		  if (len > sizeof(CPtr))
-		    { j = sizeof(CPtr); len -= sizeof(CPtr); }
-		  else { j = len; len = 0; }
-		  while (j--)
-		    {
-		      fprintf(where,"chattrail('%p',%3d,%1d,",
-			      startp,i,chat_is_chained(startp));
-		      print_cell(where,startp,FROM_CP);
-		      startp++ ; i++;
-		    }
-		  startp++;
-		}
-
-	      pheader = chat_get_ifather(pheader);
-	    }
-	  fprintf(where,"End CHAT area - %p\n\n\n",initial_pheader);
-	  initial_pheader = initial_pheader->next_header;
-	}
-      while (initial_pheader != chat_link_headers);
-    }
-  else fprintf(where,"no CHAT areas\n");
-
-  fclose(where) ;
-#endif
-} /* print_chat */
 
 void print_all_stacks(int arity)
 {
@@ -425,8 +348,5 @@ void print_all_stacks(int arity)
     print_ls(0) ;
     print_tr(0) ;
     print_cp(0) ;
-#ifdef CHAT
-    print_chat(0);
-#endif
 } /* print_all_stacks */
 

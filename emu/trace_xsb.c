@@ -43,10 +43,6 @@
 #include "flags_xsb.h"
 #include "heap_xsb.h"
 
-#ifdef CHAT
-#include "chat.h"
-#endif
-
 /*======================================================================*/
 
 double time_start;      /* time from which stats started being collected */
@@ -120,7 +116,6 @@ void total_stat(double elapstime) {
     tablespace_alloc, tablespace_used,
     trieassert_alloc, trieassert_used,
     gl_avail, tc_avail,
-    chat_alloc, chat_used,
     de_space_alloc, de_space_used,
     dl_space_alloc, dl_space_used;
 
@@ -164,22 +159,15 @@ void total_stat(double elapstime) {
   dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_list);
 
-#ifdef CHAT
-  chat_alloc = chat_max_alloc();
-  chat_used = chat_now_used();
-#else
-  chat_alloc = chat_used = 0;
-#endif
-
   total_alloc =
     pspacesize  +  trieassert_alloc  +  tablespace_alloc  +
     (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
-    chat_alloc + de_space_alloc + dl_space_alloc;
+    de_space_alloc + dl_space_alloc;
 
   total_used  =
     pspacesize  +  trieassert_used  +  tablespace_used  +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
-    chat_used + de_space_used + dl_space_used;
+    de_space_used + dl_space_used;
 
 
   printf("\n");
@@ -257,10 +245,6 @@ void total_stat(double elapstime) {
     printf("\n");
   }
 
-#ifdef CHAT
-  printf("CHAT Operations\n");
-  print_chat_statistics();
-#endif
 #ifdef GC
   printf("\n");
   print_gc_statistics();
@@ -284,9 +268,6 @@ void perproc_reset_stat(void)
    reset_maximum_tablespace_stats();
    ans_chk_ins = ans_inserts = 0;
    subg_chk_ins = subg_inserts = 0;
-#ifdef CHAT
-   reset_chat_statistics();
-#endif
    time_start = cpu_time();
 }
 

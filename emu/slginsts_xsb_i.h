@@ -66,7 +66,7 @@
  *             +-------------+
  *
  *
- *  Under CHAT, Answer Templates for producer calls are stored in the Heap:
+ *  Answer Templates are stored in the Heap:
  *
  *             +-------------+
  *             |      .      |   LOW MEMORY
@@ -163,20 +163,16 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
   /*
    *  Perform a call-check/insert operation on the current call.  The
-   *  subterms of this call which form the answer template are computed
-   *  and pushed on top of the CP stack, along with its size (encoded as
-   *  a Prolog INT) .  A pointer to this size, followed by the reverse
-   *  template vector (as depicted above), is returned in
-   *  CallLUR_VarVector(lookupResults).
-   *  NOTE: ONLY if we find a new producer and ONLY if we are computing
-   *    under CHAT, the answer template is pushed on the Heap rather than
-   *    the CPS.  In that case, (heap - 1) points to the A.T. and
-   *    CallLUR_VarVector(lookupResults) has the same value as
-   *    CallInfo_VarVectorLoc(callInfo).
+   *  subterms of this call which form the answer template are
+   *  computed and pushed on top of the CP stack, along with its size
+   *  (encoded as a Prolog INT) .  A pointer to this size, followed by
+   *  the reverse template vector (as depicted above), is returned in
+   *  CallLUR_VarVector(lookupResults).  Always (now) the answer
+   *  template is pushed on the Heap rather than the CPS.  In that
+   *  case, (heap - 1) points to the A.T. and
+   *  CallLUR_VarVector(lookupResults) has the same value as
+   *  CallInfo_VarVectorLoc(callInfo).
    */
-
-/* the above about the answer template is true for all CPs in SLGWAM
-   now.                                                   --lfcastro */
 
   table_call_search(&callInfo,&lookupResults);
 
@@ -290,7 +286,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
     answer_template = hreg-1;
 
-#if (!defined(CHAT))
     efreg = ebreg;
     if (trreg > trfreg) trfreg = trreg;
     if (hfreg < hreg) hfreg = hreg;
@@ -301,13 +296,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     nlcp_prevtop(consumer_cpf) = prev_cptop;
 #endif
     subg_asf_list_ptr(producer_sf) = breg = bfreg = consumer_cpf;
-#else
-    SaveConsumerCPF( consumer_cpf, consumer_sf, answer_template );
-    breg = consumer_cpf;   /* save_a_consumer_copy() needs this update */
-    compl_cons_copy_list(subg_compl_stack_ptr(producer_sf)) =
-      nlcp_chat_area(consumer_cpf) =
-        (CPtr) save_a_consumer_copy(producer_sf, CHAT_CONS_AREA);
-#endif
 
     /* Consume First Answer or Suspend
        ------------------------------- */
@@ -322,12 +310,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
     if ( IsNonNULL(answer_continuation) ) {
       int tmp;
-#ifdef CHAT      /* for the time being let's update consumed answers eagerly */
-      nlcp_trie_return((CPtr)
-		       (&chat_get_cons_start
-			((chat_init_pheader)
-			 nlcp_chat_area(consumer_cpf)))) =
-#endif
       nlcp_trie_return(consumer_cpf) = answer_continuation; 
       hbreg = hreg;
 
@@ -378,10 +360,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     }
     else {
       breg = nlcp_prevbreg(consumer_cpf);
-#ifdef CHAT
-      hreg = cp_hreg(breg);
-      ereg = cp_ereg(breg);
-#endif
       Fail1;
     }
   }
@@ -478,18 +456,9 @@ XSB_Start_Instr(answer_return,_answer_return)
 
     /* Suspend this Consumer
        --------------------- */
-#ifdef CHAT	/* update consumed answers in CHAT-area before failing out */
-    nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
-      nlcp_trie_return(breg);	/* last answer consumed */
-#endif
     breg = nlcp_prevbreg(breg); /* in semi-naive this execs next active */
-#ifdef CHAT
-    hreg = cp_hreg(breg);
-    restore_trail_condition_registers(breg);
-#else
     restore_trail_condition_registers(breg);
     if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg;
-#endif
     Fail1;
   }
 XSB_End_Instr()
@@ -561,11 +530,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   }
 
   /* answer template is now in the heap for generators */
-#if defined(CHAT)
-  answer_template = compl_hreg(producer_csf);
-#else
   answer_template = tcp_template(subg_cp_ptr(producer_sf));
-#endif
   tmp = int_val(cell(answer_template));
   get_var_and_attv_nums(template_size, attv_num, tmp);
   answer_template--;
@@ -602,11 +567,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 				     answer_template, &isNewAnswer );
 
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */
-#if defined(CHAT)
-    delayreg = compl_pdreg(producer_csf); /* restore delayreg of parent */
-#else
     delayreg = tcp_pdreg(producer_cpf);      /* restore delayreg of parent */
-#endif
     if (is_conditional_answer(answer_leaf)) {	/* positive delay */
 #ifndef LOCAL_EVAL
 #ifdef DEBUG_DELAYVAR
@@ -646,7 +607,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 	 *  the CPF to a check_complete instr.
 	 */
 	perform_early_completion(producer_sf, producer_cpf);
-#if (defined(LOCAL_EVAL) && !defined(CHAT))
+#if defined(LOCAL_EVAL)
 	breg = producer_cpf;
 #endif
       }
@@ -654,11 +615,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 #ifdef LOCAL_EVAL
     Fail1;	/* and do not return answer to the generator */
 #else
-#if defined(CHAT) 
-    ptcpreg = compl_ptcp(producer_csf);
-#else
     ptcpreg = tcp_ptcp(producer_cpf);
-#endif
     cpreg = *((byte **)ereg-1);
     ereg = *(CPtr *)ereg;
     lpcreg = cpreg; 
@@ -714,7 +671,7 @@ XSB_Start_Instr(tabletrust,_tabletrust)
   ADVANCE_PC(size_xxx);
   tcp_pcreg(breg) = (byte *) &check_complete_inst;
   lpcreg = *(pb *)lpcreg;
-#if (defined(LOCAL_EVAL) || defined(CHAT))
+#if defined(LOCAL_EVAL)
   /* trail cond. registers should not be restored here for Local */
   restore_type = 0;
 #else
@@ -732,25 +689,6 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
 #ifdef DEBUG_DELAYVAR
       fprintf(stddbg, ">>>> resume_compl_suspension is called\n");
 #endif
-#ifdef CHAT
-{
-    chat_init_pheader chat_area;
-
-    switch_envs(breg);
-    ptcpreg = csf_ptcp(breg);
-    delayreg = csf_pdreg(breg);
-    neg_delay = (csf_neg_loop(breg) != FALSE);
-    restore_some_wamregs(breg, ereg); /* this also restores cpreg */
-    chat_area = (chat_init_pheader)nlcp_chat_area(breg);
-    chat_restore_compl_susp_trail(chat_area); /* the chat area is freed here */
-    if ((chat_area = (chat_init_pheader)csf_prevcsf(breg)) != NULL) {
-      chat_update_compl_susp(chat_area);
-    } else {
-      breg = csf_prev(breg);  /* forget this CP; simulates Fail1 */
-    }
-    lpcreg = cpreg;
-}
-#else
 {
   if ((unsigned long) csf_pcreg(breg) == 
       (unsigned long) &resume_compl_suspension_inst) {
@@ -794,7 +732,6 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
     lpcreg = cpreg;
   }
 }
-#endif
 XSB_End_Instr()
 
 /*----------------------------------------------------------------------*/

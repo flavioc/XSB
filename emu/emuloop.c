@@ -85,10 +85,6 @@ CPtr	ans_var_pos_reg;
 #include "tr_delay.h"
 #include "tr_code_xsb_i.h"
 
-#ifdef CHAT
-#include "chat.h"
-#endif
-
 /*----------------------------------------------------------------------*/
 /* indirect threading-related stuff                                     */
 
@@ -249,19 +245,11 @@ static void *instr_addr[256];
 
 #define Fail1 lpcreg = cp_pcreg(breg);
 
-/* why the test on pcheck_complete_inst in the following non-CHAT macro ? */
-
-#ifdef CHAT
-#define restore_trail_condition_registers(BREG) \
-      ebreg = cp_ebreg(BREG); \
-      hbreg = cp_hreg(BREG);
-#else
 #define restore_trail_condition_registers(breg) \
       if (*breg != (Cell) &check_complete_inst) { \
 	ebreg = cp_ebreg(breg); \
 	hbreg = cp_hreg(breg); \
       } 
-#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -288,11 +276,7 @@ int  xctr;
 
 /*----------------------------------------------------------------------*/
 
-#ifdef CHAT
-#include "chatsched_xsb_i.h"
-#else
 #include "schedrev_xsb_i.h"
-#endif
 
 #ifndef LOCAL_EVAL 
 #include "wfs_xsb_i.h" 
@@ -1410,16 +1394,12 @@ contcase:     /* the main loop */
     Op2(get_xax);
     Op3((CPtr) (int)get_xxa);
     ADVANCE_PC(size_xxx);
-#if (!defined(CHAT))
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
     else {
-#endif
       if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
       else op1 = (Cell)(ebreg-1);
-#if (!defined(CHAT))
     }
-#endif
     *(CPtr *)((CPtr) op1) = ereg;
     *((byte **) (CPtr)op1-1) = cpreg;
     ereg = (CPtr)op1; 
@@ -1437,16 +1417,12 @@ contcase:     /* the main loop */
   XSB_Start_Instr(allocate,_allocate) /* PPP */
     Def1op
     ADVANCE_PC(size_xxx);
-#if (!defined(CHAT))
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
     else {
-#endif
       if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
       else op1 = (Cell)(ebreg-1);
-#if (!defined(CHAT))
     }
-#endif
     *(CPtr *)((CPtr) op1) = ereg;
     *((byte **) (CPtr)op1-1) = cpreg;
     ereg = (CPtr)op1; 

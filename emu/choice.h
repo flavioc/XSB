@@ -30,9 +30,7 @@
 #define STANDARD_CP_FRAME       0
 #define GENERATOR_CP_FRAME	1
 #define CONSUMER_CP_FRAME	2
-#if (!defined(CHAT))
 #define COMPL_SUSP_CP_FRAME	3
-#endif
 
 /* --- type definitions ----------------------------------------------- */
 
@@ -117,7 +115,6 @@ typedef struct tabled_choice_point {
 #if defined(LOCAL_EVAL) && !defined(SLG_GC)
   CPtr prev_top;
 #endif
-#if (!defined(CHAT))
 /* The following are needed to reclaim frozen space at SCC completion time */
     CPtr bfreg;
     CPtr hfreg;
@@ -125,9 +122,6 @@ typedef struct tabled_choice_point {
     CPtr efreg;
 #ifdef LOCAL_EVAL
     ALNptr trie_return;
-#endif
-#else
-    CPtr chat_roots;
 #endif
 } *TChoice;
 
@@ -157,7 +151,6 @@ typedef struct tabled_choice_point {
 
 #define tcp_template(b)         ((TChoice)(b))->answer_template
 
-#if (!defined(CHAT))
 #define tcp_bfreg(b)		((TChoice)(b))->bfreg
 #define tcp_hfreg(b)		((TChoice)(b))->hfreg
 #define tcp_trfreg(b)		((TChoice)(b))->trfreg
@@ -166,9 +159,6 @@ typedef struct tabled_choice_point {
 #ifdef LOCAL_EVAL
 #define tcp_trie_return(b)	((TChoice)(b))->trie_return
 #endif
-#else
-#define tcp_chat_roots(b)       ((TChoice)(b))->chat_roots
-#endif
 
 #define is_generator_choicepoint(b)			\
     ((cp_pcreg(b) == (byte *) &check_complete_inst) ||	\
@@ -176,17 +166,10 @@ typedef struct tabled_choice_point {
      (cell_opcode(cp_pcreg(b)) == tableretry))
 
 /* The following macro is used to perform early completion */
-#ifdef CHAT
-#define perform_early_completion(ProdSF,ProdCPF)		\
-    if (ProdCPF != NULL)					\
-      tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;	\
-    mark_as_completed(ProdSF)
-#else
 #define perform_early_completion(ProdSF,ProdCPF)	    \
     if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) \
       tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   \
     mark_as_completed(ProdSF)
-#endif
 
 
 #define _SaveProducerCPF_common(TopCPS, Cont, pSF) {    \
@@ -203,16 +186,6 @@ typedef struct tabled_choice_point {
    tcp_prevbreg(TopCPS) = breg;				\
    tcp_pcreg(TopCPS) = Cont;				\
  }
-
-#ifdef CHAT
-
-#define SaveProducerCPF(TopCPS, Cont, pSF, Arity, AT) {	\
-   _SaveProducerCPF_common(TopCPS, Cont, pSF);		\
-   tcp_template(TopCPS) = AT;                           \
-   tcp_chat_roots(TopCPS) = NULL;			\
- }
-
-#else	/* !defined(CHAT) */
 
 #define _SaveProducerCPF_slg(TopCPS, Cont, pSF, AT) {	\
    _SaveProducerCPF_common(TopCPS, Cont, pSF);		\
@@ -232,9 +205,6 @@ typedef struct tabled_choice_point {
 #define SaveProducerCPF(TopCPS, Cont, pSF, Arity, AT)	\
    _SaveProducerCPF_slg(TopCPS, Cont, pSF, AT)
 #endif
-
-#endif	/* of CHAT */
-
 
 /*----------------------------------------------------------------------*/
 /* Consumer Choice Point						*/
@@ -258,9 +228,6 @@ typedef struct consumer_choice_point {
     CPtr prev;		/* prev top of choice point stack */
     CPtr answer_template;
     CPtr subgoal_ptr;	/* where the answer list lives */
-#ifdef CHAT
-    CPtr chat_area;	/* temporarily */
-#endif
     CPtr prevlookup;	/* link for chain of consumer CPFs */
     ALNptr trie_return;	/* last answer consumed by this consumer */
 }
@@ -282,9 +249,6 @@ typedef struct consumer_choice_point {
 #define nlcp_template(b)        ((NLChoice)(b))->answer_template
 #ifdef SLG_GC
 #define nlcp_prevtop(b)         ((NLChoice)(b))->prev_top
-#endif
-#ifdef CHAT
-#define nlcp_chat_area(b)	((NLChoice)(b))->chat_area
 #endif
 
 #define is_consumer_choicepoint(b) \
@@ -314,26 +278,13 @@ typedef struct consumer_choice_point {
    nlcp_pcreg(TopCPS) = (pb) &answer_return_inst; 		\
  }
 
-#ifdef CHAT
-#define SaveConsumerCPF(TopCPS,ConsSF,AT) {		\
-   _SaveConsumerCPF_common(TopCPS,ConsSF,NULL);		\
-    nlcp_template(TopCPS) = AT;                         \
-    nlcp_chat_area(TopCPS) = NULL;			\
- }
-#else
 #define SaveConsumerCPF(TopCPS,ConsSF,PrevConsumer, AT)	\
    _SaveConsumerCPF_common(TopCPS,ConsSF,PrevConsumer); \
    nlcp_template(TopCPS) = AT
-#endif
 
 /*----------------------------------------------------------------------*/
 /* The following CP is used for a computation that has been suspended	*/
-/* on completion of a subgoal.	For CHAT it is not put on the CP stack 	*/
-/* upon suspension; instead a chat-area is created for it.  This chat   */
-/* area is reinstalled upon resumption of the suspended computation.    */
-/* NOTE: CHAT relies on the fact that this CP and the choice points of  */
-/*       consumers (NLChoice) have similar structure; so the minor      */
-/*       change below indicated by the if-defs !!                       */
+/* on completion of a subgoal.                                          */
 /*----------------------------------------------------------------------*/
 
 typedef struct compl_susp_frame {
@@ -351,20 +302,9 @@ typedef struct compl_susp_frame {
   CPtr ereg;		/* current top of stack */
   CPtr pdreg;		/* value of delay register for the parent subgoal */
   CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
-#ifdef CHAT
-  CPtr prev;		/* previous CP -- not used in the SLG-WAM */
-  		    /* although for garbage collection it probably should */
-  CPtr answer_template; /* not really used, but kept as placeholder to 
-			   guarantee assumption below for neg_loop */
-#endif
   CPtr subgoal_ptr;	/* pointer to the call structure */
-#ifdef CHAT
-    CPtr chat_area;	/* this field is needed for compl susp frames */
-#endif
   CPtr prevcsf;	/* previous completion suspension frame */
   Cell neg_loop;	/* !0 if the suspension is not LRD stratified */
-  /* for CHAT this field appears in the place of nlcp_trie_return */
-  /* so please make sure that it has the same size as ALNptr */
 } *ComplSuspFrame;
 
 #define CSF_SIZE	(sizeof(struct compl_susp_frame)/sizeof(CPtr))
@@ -375,51 +315,26 @@ typedef struct compl_susp_frame {
 #define csf_trreg(b)		((ComplSuspFrame)(b))->trreg
 #define csf_cpreg(b)		((ComplSuspFrame)(b))->cpreg
 #define csf_ereg(b)		((ComplSuspFrame)(b))->ereg
-#ifdef CHAT
-#define csf_prev(b)		((ComplSuspFrame)(b))->prev
-#endif
 #define csf_pdreg(b)		((ComplSuspFrame)(b))->pdreg
 #define csf_ptcp(b)		((ComplSuspFrame)(b))->ptcp
 #define csf_subgoal_ptr(b)	((ComplSuspFrame)(b))->subgoal_ptr
 #define csf_prevcsf(b)		((ComplSuspFrame)(b))->prevcsf
 #define csf_neg_loop(b)		((ComplSuspFrame)(b))->neg_loop
-#ifdef CHAT
-#define csf_chat_area(b)	((ComplSuspFrame)(b))->chat_area
-#endif
 #ifdef SLG_GC
 #define csf_prevtop(b)          ((ComplSuspFrame)(b))->prev_top
 #endif
+
 #ifdef CP_DEBUG
 #define csf_psc(b)              ((ComplSuspFrame)(b))->psc
 #define SAVE_CSFPSC(b)            csf_psc(b) = pscreg
 #else
 #define SAVE_CSFPSC(b)
 #endif
-/* #ifdef CHAT  this is valid for both! --lfcastro */
+
 #define is_compl_susp_frame(b) \
     ((cp_pcreg(b) == (byte *) &resume_compl_suspension_inst) || \
     (cp_pcreg(b) == (byte *) &resume_compl_suspension_inst2))
       
-     
-/* #endif */
-
-#ifdef CHAT
-#define save_compl_susp_frame(WHERE,SUBG,T_PTCP,CPREG) \
-    csf_pcreg(WHERE) = (pb) &resume_compl_suspension_inst; \
-    csf_ebreg(WHERE) = ebreg; \
-    csf_hreg(WHERE) = hreg; \
-    SAVE_CSFPSC(WHERE); \
-    csf_trreg(WHERE) = trreg; \
-    csf_cpreg(WHERE) = CPREG; \
-    csf_ereg(WHERE) = ereg; \
-    csf_prev(WHERE) = NULL; /* will be filled in re-installation */\
-    csf_pdreg(WHERE) = delayreg; \
-    csf_ptcp(WHERE) = T_PTCP; \
-    csf_subgoal_ptr(WHERE) = (CPtr)SUBG; \
-    csf_prevcsf(WHERE) = subg_compl_susp_ptr(SUBG); \
-    csf_neg_loop(WHERE) = FALSE; \
-    csf_chat_area(WHERE) = NULL
-#else
 #define save_compl_susp_frame(t_breg,t_ereg,subg,t_ptcp,CPREG) \
     t_breg -= CSF_SIZE; \
     csf_neg_loop(t_breg) = FALSE; \
@@ -434,14 +349,12 @@ typedef struct compl_susp_frame {
     csf_hreg(t_breg) = hreg; \
     csf_ebreg(t_breg) = ebreg; \
     csf_pcreg(t_breg) = (pb) &resume_compl_suspension_inst
-#endif
 
 /*----------------------------------------------------------------------*/
 /* The following CP is used to resume a set of computations that have	*/
 /* been suspended on completion of a subgoal.  Only SLG-WAM uses this. 	*/
 /*----------------------------------------------------------------------*/
 
-#if (!defined(CHAT))    /* CHAT does not need this */
 
 typedef struct compl_susp_choice_point {
     byte *next_clause;	/* the completion suspension instruction */
@@ -499,7 +412,6 @@ typedef struct compl_susp_choice_point {
     cs_hreg(t_breg) = hreg; \
     cs_ebreg(t_breg) = ebreg; \
     cs_pcreg(t_breg) = (pb) &resume_compl_suspension_inst2
-#endif
 
 /* --------------------------------------------------------------------	*/
 
@@ -545,15 +457,6 @@ typedef struct compl_susp_choice_point {
  *  EFreg always point to the topmost Permanent Variable in the frame.
  */
 
-#ifdef CHAT
-#define save_find_locx(t_ereg) \
-    if (ereg_on_top(t_ereg)) ebreg = t_ereg - *(cpreg-2*sizeof(Cell)+3)+1;
-
-#define restore_some_wamregs(t_breg, t_ereg) \
-    hreg = hbreg; \
-    cpreg = cp_cpreg(t_breg); \
-    t_ereg = cp_ereg(t_breg)
-#else
 /*
  *  Set ebreg to the topmost env frame of those pointed to by ereg or efreg.
  */
@@ -565,6 +468,5 @@ typedef struct compl_susp_choice_point {
     if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg; \
     cpreg = cp_cpreg(t_breg); \
     t_ereg = cp_ereg(t_breg)
-#endif
 
 #endif

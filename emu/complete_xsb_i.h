@@ -35,11 +35,7 @@
   } \
 }
 
-#ifdef CHAT
-#define check_fixpoint(sg, b)    chat_fixpoint(sg, (TChoice)b)
-#else
 #define check_fixpoint(sg, b)    find_fixpoint(sg, b)
-#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -64,7 +60,6 @@ XSB_Start_Instr(check_complete,_check_complete)
     leader = 1;
   }
   
-#if (!defined(CHAT))
 /* 
  * This code is done regardless of whether breg is a leader.  The
  * thought was that as long as we're here, why not schedule answers
@@ -73,7 +68,6 @@ XSB_Start_Instr(check_complete,_check_complete)
  */
   FailIfAnswersFound(sched_answers(subgoal, breg, leader));
 
-#endif /* not CHAT */
   if (leader) {
 
     /* The following code is only done in profile mode; it keeps track
@@ -125,9 +119,6 @@ XSB_Start_Instr(check_complete,_check_complete)
       if (breg == orig_breg) {	
 	reclaim_stacks(orig_breg); /* lfcastro */
 	breg = tcp_prevbreg(breg);
-#ifdef CHAT
-	restore_trail_condition_registers(breg);
-#endif
       }
     }
 
@@ -135,27 +126,17 @@ XSB_Start_Instr(check_complete,_check_complete)
 
   }
   else {    /* if not leader */
-#ifdef CHAT
-    chat_incremental_copy(subgoal);
-    /* let's cause some segmentation faults and fix exact completion in CHAT */
-    subg_cp_ptr(subgoal) = NULL;	/* preserve invariants */
-#else
 #ifdef LOCAL_EVAL
     makeConsumerFromGenerator(subgoal);
 /*     subg_cp_ptr(subgoal) = NULL; */
 #endif
-#endif
     breg = tcp_prevbreg(breg); 
     /* since the trail condition registers are not reset in
-     * tabletrust for CHAT or for local, they should be restored here
+     * tabletrust for local, they should be restored here
      */
-#ifdef CHAT
-    restore_trail_condition_registers(breg);
-#else
 #ifdef LOCAL_EVAL
     hbreg = tcp_hreg(breg);
     ebreg = tcp_ebreg(breg);
-#endif
 #endif
   }
   Fail1;

@@ -25,7 +25,6 @@
 #define __COMPLETE_LOCAL_H__
 
 #ifdef LOCAL_EVAL
-#ifndef CHAT
 void makeConsumerFromGenerator(VariantSF producer_sf)
 {
   nlcp_trie_return(breg) = subg_ans_list_ptr(producer_sf);
@@ -33,7 +32,6 @@ void makeConsumerFromGenerator(VariantSF producer_sf)
   nlcp_prevlookup(breg) = subg_asf_list_ptr(producer_sf);
   subg_asf_list_ptr(producer_sf) = breg;
 }
-#endif /* CHAT */
 #endif /* LOCAL */
 
 #ifdef PROFILE
@@ -91,21 +89,6 @@ void makeConsumerFromGenerator(VariantSF producer_sf)
 #endif
 
 #ifdef LOCAL_EVAL
-#ifdef CHAT
-#define DisposeOfComplSusp(subgoal) \
-        chat_free_compl_susp_chat_areas(subgoal)
-#define DeleteCSF(nsf) \
-        chat_free_compl_susp_chat_area((chat_init_pheader) nsf)
-#define ResumeCSFs() \
-{ \
-  CPtr H, EB; \
-  H = cp_hreg(breg); \
-  EB = cp_ebreg(breg); \
-  breg = cc_tbreg = \
-    chat_restore_compl_susp((chat_init_pheader)nsf, H, EB); \
-  subg_compl_susp_ptr(compl_subg) = NULL; \
-}
-#else
 #define DisposeOfComplSusp(subgoal) \
         subg_compl_susp_ptr(subgoal) = NULL
 #define DeleteCSF(nsf) \
@@ -132,16 +115,12 @@ void makeConsumerFromGenerator(VariantSF producer_sf)
   subg_compl_susp_ptr(compl_subg) = NULL; \
 }
   
-#endif
-
 static inline CPtr ProcessSuspensionFrames(CPtr cc_tbreg_in, CPtr cs_ptr)
 {
   CPtr ComplStkFrame = cs_ptr;
   VariantSF compl_subg;
   CPtr cc_tbreg = cc_tbreg_in;
-#ifndef CHAT
   CPtr cur_breg = NULL; /* tail of chain of nsf's; used in ResumeCSFs */
-#endif
 
   /* check from leader up to the youngest subgoal */
   while (ComplStkFrame >= openreg) {
@@ -234,11 +213,7 @@ static inline void SetupReturnFromLeader(CPtr orig_breg, CPtr cs_ptr, VariantSF 
    */
   ebreg = cp_ebreg(tcp_prevbreg(orig_breg));
   hbreg = cp_hreg(tcp_prevbreg(orig_breg));
-#ifdef CHAT
-  compl_cons_copy_list(cs_ptr) = 0;
-#else
   subg_asf_list_ptr(subgoal) = 0;
-#endif
   
   /* reclaim stacks, including leader */
   openreg = prev_compl_frame(cs_ptr);

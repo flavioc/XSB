@@ -45,9 +45,7 @@
 #include "flags_xsb.h"
 #include "trie_internals.h"
 #include "tst_aux.h"
-#if (!defined(WAM_TRAIL))
 #include "cut_xsb.h"
-#endif
 #include "macro_xsb.h"
 #include "sw_envs.h"
 #include "choice.h"
@@ -58,9 +56,6 @@
 #include "tr_utils.h"
 #include "tst_utils.h"
 #include "subp.h"
-#ifdef CHAT
-#include "chat.h"
-#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -758,12 +753,8 @@ void delete_return(BTNptr l, VariantSF sg_frame)
   ALNptr a, n, next;
   NLChoice c;
   int groundcall = FALSE;
-#ifdef CHAT
-  chat_init_pheader chat_ptr;
-#else
 #ifdef LOCAL_EVAL
   TChoice  tc;
-#endif
 #endif
 
 #ifdef DEBUG_RECLAIM_DEL_RET
@@ -806,26 +797,6 @@ void delete_return(BTNptr l, VariantSF sg_frame)
     
     /* Make consumed answer field of consumers point to
        previous sibling if they point to a deleted answer */
-#ifdef CHAT
-    chat_ptr = (chat_init_pheader)compl_cons_copy_list(subg_compl_stack_ptr(sg_frame));
-    while (chat_ptr != NULL) {
-      c = (NLChoice)(&chat_get_cons_start(chat_ptr));
-      if (nlcp_trie_return(c) == a) {
-	nlcp_trie_return(c) = n;
-      }
-      chat_ptr = (chat_init_pheader)nlcp_prevlookup(c);
-    }
-    /* lfcastro: run the CP stack, also */
-    { 
-      NLChoice b;
-      b = (NLChoice)breg;
-      while (b <= (NLChoice)sg_frame->cp_ptr) {
-	if (b->trie_return == a)
-	  b->trie_return = n;
-	b = (NLChoice)b->prev;
-      }
-    }
-#else
     c = (NLChoice) subg_asf_list_ptr(sg_frame);
     while(c != NULL){
       if(nlcp_trie_return(c) == a){
@@ -833,9 +804,8 @@ void delete_return(BTNptr l, VariantSF sg_frame)
       }
       c = (NLChoice)nlcp_prevlookup(c);
     }
-#endif
 
-#if (defined(LOCAL_EVAL) && !defined(CHAT))
+#if (defined(LOCAL_EVAL))
       /* if gen-cons points to deleted answer, make it
        * point to previous sibling */
       tc = (TChoice)subg_cp_ptr(sg_frame);
@@ -899,15 +869,9 @@ void breg_retskel(void)
     breg_offset = ptoc_int(1);
     tcp = (CPtr)((Integer)(tcpstack.high) - breg_offset);
     sg_frame = (VariantSF)(tcp_subgoal_ptr(tcp));
-#ifdef CHAT
-    where = compl_hreg(subg_compl_stack_ptr(sg_frame));
-    Nvars = int_val(cell(where)) & 0xffff; /* See get_var_and_attv_nums() */
-    cptr = where - Nvars - 1;
-#else
     where = tcp_template(tcp);
     Nvars = int_val(cell(where)) & 0xffff;
     cptr = where - Nvars - 1;
-#endif
     if (Nvars == 0) {
       ctop_string(3, get_ret_string());
     } else {

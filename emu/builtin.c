@@ -80,9 +80,6 @@
 #include "trassert.h"
 #include "dynload.h"
 #include "cinterf.h"
-#ifdef CHAT
-#include "chat.h"
-#endif
 #include "residual.h"
 #include "tables.h"
 #include "trie_internals.h"
@@ -787,7 +784,6 @@ void init_builtin_table(void)
   set_builtin_table(UNWIND_STACK, "unwind_stack");
   set_builtin_table(CLEAN_UP_BLOCK, "clean_up_block");
 
-  set_builtin_table(PRINT_CHAT, "print_chat");
   set_builtin_table(PRINT_LS, "print_ls");
   set_builtin_table(PRINT_TR, "print_tr");
   set_builtin_table(PRINT_HEAP, "print_heap");
@@ -2096,7 +2092,6 @@ int builtin_call(byte number)
     return TRUE;
   }
 
-  case PRINT_CHAT: print_chat(1) ; return TRUE ;
   case PRINT_LS: print_ls(1) ; return TRUE ;
   case PRINT_TR: print_tr(1) ; return TRUE ;
   case PRINT_HEAP: print_heap(0,2000,1) ; return TRUE ;

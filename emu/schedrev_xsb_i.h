@@ -67,11 +67,7 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 	ALNptr answer_continuation;
 	BTNptr next_answer;
 
-#ifdef CHAT
-#define ANSWER_TEMPLATE consumer_cpf+NLCP_SIZE
-#else
 #define ANSWER_TEMPLATE nlcp_template(consumer_cpf)
-#endif
 
 	consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
 
@@ -94,14 +90,8 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }
     
-#ifdef CHAT
-    /**** The last consumer always backtracks to the producer ****/
-    if ( IsNonNULL(last_sched_cons) )
-      nlcp_prevbreg(last_sched_cons) = producer_cpf;
-#else /* --lfcastro */
     if ( IsNonNULL(last_sched_cons))
       nlcp_prevbreg(last_sched_cons) = breg;
-#endif
   } /* if any answers and active nodes */
 
 #ifdef DEBUG_REV
