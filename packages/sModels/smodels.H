@@ -27,11 +27,7 @@
 
 #include "configs/config.h"
 
-#ifdef LINUX
-:- compile_command 'egcc -c xsb_wrap_smodels.c; g++ -s -o smodels.so -shared smodels.c xsb_wrap_smodels.o  smodels.o stack.o dcl.o atomrule.o read.o queue.o timer.o list.o improve.o program.o api.o stable.o tree.o denant.o'.
-#else
 :- compile_command 'gcc -c xsb_wrap_smodels.c; g++ -s -o smodels.so -shared smodels.c xsb_wrap_smodels.o  smodels.o stack.o dcl.o atomrule.o read.o queue.o timer.o list.o improve.o program.o api.o stable.o tree.o denant.o'.
-#endif
 
 :- foreign_pred smodelsInit from init(void):void.
 :- foreign_pred smodelsNumAtoms(+a) from numberAtoms(a:int):void.
