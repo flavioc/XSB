@@ -60,6 +60,10 @@ flora_prlg(FL_PLUS,2) :- !.
 flora_prlg(FL_MINUS,2) :- !.
 flora_prlg(FL_SYMOR,2) :- !.
 
+flora_prlg(FL_FLOOR,1) :- !.
+flora_prlg(FL_ABS,1) :- !.
+flora_prlg(FL_FLOAT,1) :- !.
+
 flora_prlg(FL_STAR,2) :- !.
 flora_prlg(FL_SLASH,2) :- !.
 flora_prlg(FL_MOD,2) :- !.

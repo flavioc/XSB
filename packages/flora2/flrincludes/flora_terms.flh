@@ -102,6 +102,11 @@
 #define FL_MOD			(mod)
 #define FL_SYMOR		'\/'
 #define FL_SYMAND		'/\'
+
+#define FL_FLOOR                floor
+#define FL_ABS                  abs
+#define FL_FLOAT                float
+
 #define FL_UNDERSCORE		'_'
 #define FL_AT			'@'
 #define FL_DOLLAR		'$'
