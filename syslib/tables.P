@@ -128,8 +128,8 @@ abolish_table_pred(Spec) :-
 	).
 
 
-get_returns_for_call(Call,Call) :-
-	get_call(Call,C,R), get_returns(C,R).
+get_returns_for_call(Call,Return) :-  % Do NOT write (Call,Call) !
+	get_call(Call,C,R), get_returns(C,R), Return = Call.
 
 /* OLD get_returns_for_call/2
    should actually be called get_returns_for_subsumed_call/2.
