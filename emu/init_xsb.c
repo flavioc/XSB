@@ -530,7 +530,7 @@ char *init_para(int argc, char *argv[])
   flags[USER_HOME] = (Cell) malloc(strlen(user_home) + 1);
   strcpy( (char *)flags[USER_HOME], user_home );
 
-  /* install_dir is computed dynamically at system startup (in main_xsb.c).
+  /* install_dir is computed dynamically at system startup (in orient_xsb.c).
      Therefore, the entire directory tree can be moved --- only the relative
      positions count.
   */ 
