@@ -148,7 +148,7 @@ void print_cpf_pred(CPtr cpf);
 
 #endif /* GC_PROFILE */
 
-#define REALLOC_DEBUG
+/* #define REALLOC_DEBUG */
 
 /*=========================================================================*/
 
