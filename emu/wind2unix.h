@@ -27,6 +27,20 @@
 #ifndef S_ISDIR
 #define S_ISDIR(mode) ((mode & S_IFMT) == S_IFDIR)
 #endif
+#ifndef S_ISREG
+#define S_ISREG(mode) ((mode & S_IFMT) == S_IFREG)
+#endif
+
+#ifndef R_OK
+#define R_OK 4
+#endif
+#ifndef W_OK
+#define W_OK 2
+#endif
+/* On NT this just tests for existence rather than execution */
+#ifndef X_OK
+#define X_OK 0
+#endif
 
 #ifdef WIN_NT
 #define snprintf   _snprintf
@@ -39,6 +53,7 @@
 #define fileno     _fileno
 #define unlink     _unlink
 #define strcasecmp _stricmp
+#define access     _access
 #endif
 
 /* The separator used between pathnames in PATH environment */
