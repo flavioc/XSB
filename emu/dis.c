@@ -221,7 +221,7 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	/*if (cell_opcode(&instr) == noop) loc_pcreg += 2 * *(loc_pcreg-1); */
 	if (cell_opcode(&instr) == noop) loc_pcreg += cell_operand3(&instr)/2; /* ?!@% */
     } /* for */
-    fprintf(fd, ").\n");
+    fprintf(fd, ")");
     fflush(fd);
     return loc_pcreg;
 } /* print_inst */
@@ -240,7 +240,13 @@ static void dis_text(void)
       fprintf(filedes, "segment([\n");
       endaddr = (CPtr) ((pb) seg_hdr(this_seg) + seg_size(this_seg)) ;
       inst_addr2 = seg_text(this_seg);
-      while (inst_addr2<endaddr) inst_addr2 = print_inst(filedes, inst_addr2);
+      comma = 0;
+      while (inst_addr2<endaddr) {
+	if (comma) 
+	  fprintf(filedes,", \n");
+	comma = 1;
+	inst_addr2 = print_inst(filedes, inst_addr2);
+      }
       index_seg = seg_index(this_seg);
       while (index_seg) {
 	inst_addr2 = i_block(index_seg);
@@ -249,10 +255,16 @@ static void dis_text(void)
             cell_opcode(i_block(index_seg)) == tabletry ||
 	    cell_opcode(i_block(index_seg)) == tabletrysingle) {	
 	                                           /* is try/retry/trust */
-	  while (inst_addr2<endaddr) 
+	  while (inst_addr2<endaddr) {
+	    if (comma) 
+	      fprintf(filedes,", \n");
+	    comma = 1;
 	    inst_addr2 = print_inst(filedes, inst_addr2);
+	  }
 	} else {					/* is hash table */
-	  fprintf(filedes, "hash_table([\n");
+	  if (comma) 
+	    fprintf(filedes,", \n");
+	  fprintf(filedes, "     hash_table([\n");
 	  comma = 0;
 	  while (inst_addr2<endaddr) {
 	    if (comma) {
@@ -260,12 +272,12 @@ static void dis_text(void)
 	    }
 	    comma = 1;
 	    fprintf(filedes, 
-		    "     hash_entry(%p,%lx)", 
+		    "          hash_entry(%p,%lx)", 
 		    inst_addr2, 
 		    cell(inst_addr2));
 	    inst_addr2 ++;
 	  }
-	  fprintf(filedes, "]).\n");
+	  fprintf(filedes, "])");
 	}
 	index_seg = i_next(index_seg);
       }
