@@ -4,18 +4,19 @@
 
     # Run this in ./admin/ directory!
 
-files="./LICENSE ./INSTALL ./INSTALL_PROBLEMS ./INSTALL_WINDOWS \
-	./README ./FAQ ./Makefile \
-	./admin \
-      ./build/ac* ./build/*.in ./build/config.guess ./build/config.sub \
-      ./build/*sh ./build/*.msg ./build/configure ./build/README \
-      ./emu ./syslib ./cmplib ./lib \
-      ./etc \
-      ./packages "
+files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS ./XSB/INSTALL_WINDOWS \
+	./XSB/README ./XSB/FAQ ./XSB/Makefile \
+	./XSB/admin \
+        ./XSB/build/ac* ./XSB/build/*.in ./XSB/build/config.guess \
+        ./XSB/build/config.sub ./XSB/build/*sh ./XSB/build/*.msg \
+        ./XSB/build/configure ./XSB/build/README \
+        ./XSB/emu ./XSB/syslib ./XSB/cmplib ./XSB/lib \
+        ./XSB/etc \
+        ./XSB/packages "
 
-    cd ..
+    cd ../..
 
-    tar cvf XSB.tar $files
+    tar cvf XSB/XSB.tar $files
 
-    gzip -f XSB.tar
-    chmod 644 XSB.tar.gz
+    gzip -f XSB/XSB.tar
+    chmod 644 XSB/XSB.tar.gz
