@@ -13,8 +13,7 @@
 <HR>
 
 <p>
-This page is in pre-alpha state. Please excuse our appearance.
-Here is the blurb:
+This page is in alpha state. Please excuse our appearance.
 
 <p>
 FLORA is a sophisticated F-logic to <a
@@ -25,8 +24,11 @@ integrated with the XSB programming environment, which enables the development
 of large systems with components implemented in F-logic, Prolog, C, etc.
 
 <p>
-At present, FLORA is in beta testing and the 1.0 release is expected in the
-Fall. Here is the manual:
+We are happy to announce the release of an alpha version of FLORA-2, a
+completely overhauled re-implementation of FLORA, which now supports HiLog
+and Transaction Logic. FLORA-2 is <b>not</b> syntactically compatible with
+the earlier version of this system.
+Here is the manual:
 	<ul>
 	  <li> <a href="docs/manual.ps">Postscript version</a>
 	  <li> <a href="docs/manual.pdf">PDF version</a>
