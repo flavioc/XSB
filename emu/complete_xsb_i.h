@@ -51,7 +51,6 @@ XSB_Start_Instr(check_complete,_check_complete)
   fprintf(stderr, ">>>> check_complete is called.  The checked subgoal is: ");
   print_subgoal(stderr, subgoal); fprintf(stderr, "\n");
 #endif
-
   cs_ptr = subg_compl_stack_ptr(subgoal);
 
   if ((prev_compl_frame(cs_ptr) >= COMPLSTACKBOTTOM || is_leader(cs_ptr))) {
@@ -143,6 +142,8 @@ XSB_Start_Instr(check_complete,_check_complete)
 
   { /* schedule answers */
     CPtr tmp_breg;
+    /*    printf("sched_answers in CC\n");
+	  print_subgoal(stderr, subgoal); fprintf(stderr, "\n"); */
     if ((tmp_breg = sched_answers(subgoal, breg, leader))){
       breg = tmp_breg;
       Fail1;  
@@ -157,6 +158,59 @@ XSB_Start_Instr(check_complete,_check_complete)
     CPtr tmp_breg;
     /* check if fixpoint has been reached, otherwise schedule any
      * unresolved answers */
+/*==========================================================================*/
+#ifdef PROFILE
+  {
+    int num_subgoals = 0;
+    int num_completed = 0;
+    int num_consumers_in_ascc = 0;
+    int num_compl_susps_in_ascc = 0;
+    int leader_level;
+    CPtr profile_CSF = cs_ptr;
+    VariantSF prof_compl_subg; 
+
+    leader_level = compl_level(profile_CSF);
+    
+    /* check from leader up to the youngest subgoal */
+    while (profile_CSF >= openreg) {
+      num_subgoals++;
+      prof_compl_subg = compl_subgoal_ptr(profile_CSF);
+      if (is_completed(prof_compl_subg)) { /* this was early completed */
+	num_completed++;
+      }
+      else {
+	CPtr nsf;
+	nsf = subg_asf_list_ptr(prof_compl_subg);
+	while (nsf != NULL) {
+	  num_consumers_in_ascc++;
+	  nsf = nlcp_prevlookup(nsf);	
+	  }
+	nsf = subg_compl_susp_ptr(prof_compl_subg);
+	while (nsf != NULL) {
+	  num_compl_susps_in_ascc++;
+	  nsf = csf_prevcsf(nsf);	
+	  }
+      }
+      profile_CSF = next_compl_frame(profile_CSF);
+    }
+    if (num_subgoals > max_subgoals) { max_subgoals = num_subgoals; }
+    if (num_completed > max_completed) { max_completed = num_completed; }
+    if (num_consumers_in_ascc > max_consumers_in_ascc) {
+      max_consumers_in_ascc = num_consumers_in_ascc;
+    }
+    if (num_compl_susps_in_ascc > max_compl_susps_in_ascc) {
+      max_compl_susps_in_ascc = num_compl_susps_in_ascc;
+    }
+    if (flags[PROFFLAG] > 2) {
+      fprintf(stdmsg,"p(lev(%d),lead(%d),subg(%d),ec(%d),cons(%d),cs(%d)).\n",
+	     level_num,leader_level,num_subgoals,num_completed,
+	     num_consumers_in_ascc,num_compl_susps_in_ascc);
+    }
+  }
+  
+#endif /* PROFILE */
+/*==========================================================================*/
+
 #ifdef CHAT
     if ((tmp_breg = chat_fixpoint(subgoal, (TChoice)breg)))
 #else

@@ -34,11 +34,16 @@
 
 extern void init_builtin_table(void);
 
-Cell subinst_table[BUILTIN_TBL_SZ][2];
-
 #ifdef PROFILE
 Cell inst_table[BUILTIN_TBL_SZ][6];
 unsigned long num_switch_envs;
+unsigned long num_switch_envs_iter;
+
+Cell subinst_table[BUILTIN_TBL_SZ][2];
+int max_subgoals = 0;
+int max_completed = 0;
+int max_consumers_in_ascc = 0;
+int max_compl_susps_in_ascc = 0;
 
 #define XSB_INST(inum, inst, label, op1type, op2type, op3type, op4type) \
         inst_table[inst][0] = (Cell)( #inst ); \
@@ -98,6 +103,7 @@ void init_subinst_table(void)
   set_subinst_table(NEW_ANSWER_SIMPL_NEG_FAIL,"new_answer_simpl_neg_fail");
   set_subinst_table(NEW_ANSWER_SIMPL_NEG_SUC,"new_answer_simpl_neg_succ");
   num_switch_envs=0;
+  num_switch_envs_iter=0;
 }
 #endif
 

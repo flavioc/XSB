@@ -33,6 +33,10 @@
 #define NEW_ANSWER_SIMPL_NEG_FAIL 13
 #define NEW_ANSWER_SIMPL_NEG_SUC 14
 
+extern int max_subgoals;
+extern int max_completed;
+extern int max_consumers_in_ascc;
+extern int max_compl_susps_in_ascc;
 
 extern Cell subinst_table[256][2];
 

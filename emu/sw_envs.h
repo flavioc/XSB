@@ -24,8 +24,10 @@
 
 #ifdef PROFILE
 #define PROFILE_SWITCH_ENV num_switch_envs++;
+#define PROFILE_SWITCH_ENV_ITER num_switch_envs_iter++;
 #else
 #define PROFILE_SWITCH_ENV 
+#define PROFILE_SWITCH_ENV_ITER
 #endif
 
 #if (!defined(CHAT))
@@ -59,10 +61,12 @@
   if (start_trreg != end_trreg) {					\
     do {								\
       while (start_trreg > end_trreg) {					\
+        PROFILE_SWITCH_ENV_ITER                                         \
 	untrail2(start_trreg, (Cell) trail_variable(start_trreg));	\
 	start_trreg = trail_parent(start_trreg);			\
       }									\
       while (end_trreg > start_trreg) {					\
+        PROFILE_SWITCH_ENV_ITER                                         \
 	tmp = parent;							\
 	parent = trail_parent(parent);					\
 	*tmp = (CPtr) end_trreg;					\
@@ -73,6 +77,7 @@
     *end_trreg = (CPtr) parent;						\
     parent = tmp;							\
     while (end_trreg < trreg) {						\
+      PROFILE_SWITCH_ENV_ITER                                         \
       tmp = parent;							\
       cell((CPtr)((Cell)trail_variable(tmp) & ~PRE_IMAGE_MARK)) =	\
 	(Cell) trail_value(tmp);					\
