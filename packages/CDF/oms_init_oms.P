@@ -494,7 +494,11 @@ class_cidbound(Cid,Label,NatCid,Sou):-
 		    ->	   true
 	       ;      functor(Cid,Fn,Ar), EAr is Ar*2, functor(ESkel,Fn,EAr),
 		      class_int(Label,ESkel,Sou),
-		      cn_id_map(CidISkel,Label,ESkel,Sou),
+		      (cn_id_map(CidISkel,Label,ESkel,Sou)
+		       ->     true
+		       ;      parameterized_ext_int(ESkel,CidISkel,Sou),
+			      assert(cn_id_map(CidISkel,Label,ESkel,Sou))
+		      ),
 		      term_subclass(Cid,CidISkel),
 		      parameterized_int_ext(Cid,NatCid,Sou)
 	      ))))).

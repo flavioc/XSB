@@ -479,11 +479,14 @@ class_int_cdb(Name,NatCid,Source) :-
 		parameterized_ext_int(NatCid,Cid,Source),
 		(cache_class(Name,NatCid0,Source),
 		 parameterized_ext_int(NatCid0,Cid0,Source),
-		 subclass(Cid,Cid0), !
+		 subclass(Cid,Cid0),
+		 !
 		 ;
 		 db_call_gen(Cx,oms_class,[Name,NatCid1,Source]),
 		 structure(NatCid1),
-		 \+ cache_class(Name,NatCid1,Source),
+		 \+ (get_term_vars(NatCid1,Vars),
+		     cache_class(Name,NatCid1,Source),
+		     if_most_general_term(Vars)),
 		 assert(cache_class(Name,NatCid1,Source)),
 		 fail
 		 ;	
