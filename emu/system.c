@@ -99,7 +99,7 @@ static int xsb_spawn (char *prog, char *arg[],
 static void concat_array(char *array[], char *result_str, int maxsize);
 static int get_free_process_cell(void);
 static void init_process_table(void);
-static int process_status(pid_t pid);
+static int process_status(int pid);
 
 
 static struct proc_table_t {
@@ -366,7 +366,7 @@ static int xsb_spawn (char *progname, char *argv[],
 	       int pipe_to_proc[],int pipe_from_proc[],int pipe_from_stderr[],
 	       bool toproc_needed,bool fromproc_needed,bool fromstderr_needed)
 {
-  pid_t pid;
+  int pid;
   int stdin_saved, stdout_saved, stderr_saved;
 
   if ( toproc_needed && PIPE(pipe_to_proc) < 0 ) {
