@@ -1,0 +1,871 @@
+
+
+\newenvironment{qrules}{\begin{quote}\sf\begin{tabular}[t]{l}}%
+{\end{tabular}\end{quote}}
+
+
+\newcommand{\obj}{\textit{obj}}
+\newcommand{\db}[1]{\ensuremath{\mathcal{#1}}}
+
+\newcommand{\xany}{\textsf{any}}
+
+\newcommand{\xplus}{\ensuremath{^+}}
+\newcommand{\xstar}{\ensuremath{^*}}
+\newcommand{\xinv}{\ensuremath{^{-1}}}
+\newcommand{\xopt}{\ensuremath{^{?}}}
+
+\newcommand{\xto}[1]{\ensuremath{^{#1}}}
+\newcommand{\xcond}[1]{\ensuremath{\textsf{if}(#1)}}
+\newcommand{\xif}[1]{\ensuremath{\textsf{if}(#1)}}
+\newcommand{\xmu}[1]{\ensuremath{\tcmu(#1)}}
+\newcommand{\xmuif}[2]{\ensuremath{\tcmu(#1,#2)}}
+
+
+\newcommand{\xconc}{\ensuremath{{\cdot}}}
+\newcommand{\xor}{\ensuremath{|}}
+
+\newcommand{\nnot}{\mbox{$\neg$}}                           % negation
+\newcommand{\query}{\mbox{$\, ?\! - \, $}}                  % query
+\newcommand{\impl}                                          % implication
+  {\mbox{\Large $\; {\bf \leftarrow} \;$}}  
+\newcommand{\isa}{\,{\bf{:}}\,}
+\newcommand{\subcl}{\,{\bf{::}}\,}
+\newcommand{\eq}{\ensuremath{\doteq}}                           % equation
+
+% f-logic arrows
+
+\newcommand{\fd}{\ensuremath{{\rightarrow}}}                   % scalar
+\newcommand{\bfd}{\ensuremath{{\bullet\!\!\!\fd}}}            % " + inheritable
+\newcommand{\mvd}{\ensuremath{{\rightarrow\!\!\!\!\rightarrow}}}  % multivalued
+\newcommand{\bmvd}{\ensuremath{{\bullet\!\!\!\mvd}}}              % " + inheritable
+\newcommand{\Fd}{\ensuremath{{\Rightarrow}}}                      % scalar signature
+\newcommand{\Mvd}{\ensuremath{{\Rightarrow\!\!\!\!\Rightarrow}}}  % multiv signature
+
+
+
+% curved f-logic arrows
+
+\newcommand{\anyd}{\ensuremath{\leadsto}}                       % non-inheritable
+\newcommand{\bleadsto}{\ensuremath{\bullet\!\!\!\leadsto}}     % inheritable
+\newcommand{\banyd}{\bleadsto}                              % "
+\newcommand{\Leadsto}{\ensuremath{\approx}\!\!{>}}            % signature
+\newcommand{\Anyd}{\Leadsto}                                % "
+
+\newcommand{\FdConstr}{\ensuremath{\stackrel{constr}{\Fd}}}
+\newcommand{\MvdConstr}{\ensuremath{\stackrel{constr}{\Mvd}}}
+
+\newlength{\flogicindent}
+
+
+\newlength{\flength}
+\newlength{\counterlength}
+
+
+\newcommand{\la}{\ensuremath{\,\leftarrow\,}}
+
+\newcommand{\anon}{\_}
+
+\newcommand{\note}[1]{\textit{[[#1]]}}
+\newcommand{\nterm}[1]{\ensuremath{\langle}\textit{#1}\ensuremath{\rangle}}
+
+
+\newcommand{\NI}{\noindent}
+
+\newcommand{\bs}{\ensuremath{\backslash}}
+\newcommand{\FLIP}{{\mbox{\sc Flip}}\xspace}
+\newcommand{\FLORID}{{\textsc{Florid}}\xspace}
+\newcommand{\fl}{{F-logic}\xspace}
+
+
+\newcommand{\consts}{\ensuremath{\mathcal{C}}}
+\newcommand{\funcs}{\ensuremath{\mathcal{F}}}
+\newcommand{\preds}{\ensuremath{\mathcal{P}}}
+\newcommand{\vars}{\ensuremath{\mathcal{V}}}
+
+\newcommand{\HU}{\ensuremath{U}}
+\newcommand{\HB}{\ensuremath{\mathcal{HB}}}
+\newcommand{\ext}{\ensuremath{^{\star}}}
+
+
+
+
+\chapter{Tour de \FLIP}
+
+\author{Bertram Lud\"ascher}
+
+
+\section{Introduction}
+
+\FLIP is a simple F-logic to XSB compiler. It takes a program written in the 
+F-logic language \cite{KLW95} (which must be in a file with extension {\tt
+  .flp}, {\it e.g.}, {\tt file.flp}) and outputs a file with extension {\tt
+  .P} ({\it e.g.}, {\tt file.P}), which is a regular XSB program. This
+program is then passed to XSB for compilation (yielding {\tt file.O}) and
+execution. 
+
+\FLIP is part of the official distribution of XSB beginning with version
+2.0. It is organized as an XSB package and lives in the directory
+%%
+\begin{quote}
+ \verb|<xsb-installation-directory>/packages/flip/|  
+\end{quote}
+%%
+It comes with a number of demo programs that live in
+%%
+\begin{quote}
+ \verb|<xsb-installation-directory>/packages/flip/demos/|  
+\end{quote}
+%%
+The demos can be run by issuing the command
+\verb|rundemo("demo-filename").| at the \FLIP prompt, {\it e.g.},
+\verb|rundemo("flogic_basics").|
+
+To start using \FLIP, you must first invoke XSB and then load the {\tt flip} 
+module:
+%%
+\begin{quote}
+  \tt
+foo>~~xsb  \\
+\tt
+[ XSB chat during loading deleted ]\\
+\tt
+| ?- [flip].\\
+\tt
+[flip loaded]\\
+\tt
+[flpshell loaded]\\
+\tt
+| ?-
+\end{quote}
+%%
+At this point, it is possible to use some of the \FLIP shell commands, such as
+running demos. (The only trick is that you must append ``\_'' to every \FLIP
+shell command.) However, you are still not inside \FLIP command loop, so you 
+cannot run F-logic queries interactively. In order to do that, \FLIP shell
+must be started:
+%%
+\begin{quote}
+  \tt
+| ?- flip\_shell.  \\
+ \tt
+[ FLIP chat deleted ] \\
+ \tt
+FLIP> ?-
+\end{quote}
+%%
+
+At this stage, \FLIP interpreter takes over and F-logic syntax becomes the
+norm. To get back to the XSB command loop, type {\tt Control-D} or 
+%%
+\begin{quote}
+  \tt
+| ?- end.  
+\end{quote}
+%%
+
+
+\section{\FLIP Shell Commands}
+
+\FLIP commands:
+\begin{verbatim}
+  help          :       show this info
+  parse(FILE)   :       parse "FILE.flp"; create "FILE.P"
+  run(FILE)     :       compile "FILE.flp"; execute "FILE.P"
+  rundemo(FILE) :       same as run("FILE"), but "FILE.flp"
+                        is taken from the FLIP demo directory
+  load(FILE)    :       load and execute "FILE.O"
+  all           :       show all solutions (default)
+  one           :       show solutions one after another
+  end           :       say CIAO to FLIP
+  call(GOAL)    :       call underlying Prolog
+\end{verbatim}
+
+The commands {\tt parse(FILE)}, {\tt run(FILE)}, and {\tt load(FILE)} all
+use the XSB {\tt library\_directory} predicate to search for the module
+that is passed to them as an argument. The command {\tt rundemo(FILE)} is
+similar, except that it first looks for {\tt FILE} in the \FLIP demo
+directory. 
+
+
+\section{F-logic and \FLIP by Example}
+
+At some point in the future, this section will contain a number of small
+introductory examples of the use of F-logic and \FLIP. Meanwhile, the
+reader is referred to the excellent tutorial written by the members of the
+\FLORID project, which is yet another implementation of \fl.\footnote{
+  %%
+  See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
+  details.
+  %%
+  }
+%%
+Since \FLIP
+and \FLORID share the same syntax, the examples in that tutorial are
+also valid programs in \FLIP.
+
+
+
+\section{Inside \FLIP}
+
+
+\subsection{Modules}
+
+\FLIP consists of the following modules:
+\begin{itemize}
+\item \texttt{flpshell.P}: Top-level module which provides the \FLIP shell
+  commands, i.e., for loading and executing \FLIP programs
+  (\texttt{load/1}, \texttt{run/1}), setting the ouput mode
+  (\texttt{all/0} or \texttt{one/0} solution(s) at a time) and -- last
+  not least -- for directly issuing queries against the loaded
+  database/program.
+\item \texttt{flptokens.P}: \FLIP tokenizer, based on R. O'Keefe's public
+  domain tokenizer.
+\item \texttt{flpparser.P}: DCG parser for F-logic with path expressions
+  in the body.
+\item \texttt{flpcompiler.P}: Implements the compilation of F-logic to
+  XSB.
+\item \texttt{flputils.P}: Miscellaneous utility predicates.
+\end{itemize}
+
+
+
+\subsection{How \FLIP Works}
+
+
+
+\paragraph{Overview.}
+
+As an F-logic to XSB compiler, \FLIP first parses its argument file and then
+compiles it to XSB syntax. For instance the command
+\begin{verbatim}
+        FLIP> ?- run("myprog").  
+\end{verbatim}
+first parses the program \verb|"myprog.flp"| (using \texttt{flpparser.P})
+and then creates the XSB file \verb|"myprog.P"| (using
+\texttt{flpcompiler.P}).  Look at this file to see what has become of your
+F-logic program! The compilation consists mainly of a flattening procedure
+sketched below.  Next, \verb|"myprog.P"| is compiled by XSB, yielding
+\verb|"myprog.O"| which is then executed.  If \verb|"myprog.flp"| contains
+queries, these are immediately executed by XSB (provided there
+are no errors).
+
+The main purpose of the \FLIP shell, however, is to allow the
+evaluation of ad-hoc F-logic queries. For example, after having
+requested the execution of the \texttt{default.flp} file from the demo
+directory (using the
+command \texttt{FLIP>~?-rundemo("default").}), you may ask
+\begin{verbatim}
+    FLIP> ?-  X..kids[                  % Whose kids
+                 self -> K;             % ... (list them by name)
+                 hobbies ->>            % ... have hobbies
+                 {H:dangerous_hobby}    % ... that are dangerous?
+    ]. 
+\end{verbatim}
+\FLIP will parse, flatten, and evaluate this query in the same way as
+the queries in a source file.
+
+
+
+
+
+\paragraph{Flattening F-logic.}
+
+The core of the \FLIP system is the predicate
+\texttt{comp(+Flogic\_rule,-Prolog\_rules)}, which rewrites a complex
+F-logic rule into a set of ``flattened'' rules, which in turn can be
+directly mapped to XSB.
+
+Consider, e.g., the following complex F-logic molecule, representings
+facts about the object \texttt{mary} (the syntax of F-logic is given in
+Section \ref{sec-basic-flogic}):
+
+\begin{quote}
+{\small\begin{verbatim}
+mary:employee[age->29;kids->>{tim,leo};salary@(1998)->a_lot].
+\end{verbatim}}
+\end{quote}
+
+Clearly, such a complex molecule can be easily flattened into a conjunction
+of F-logic atoms.  For the different kinds of F-logic atoms we use a set of
+corresponding Prolog atoms. E.g., the result of translating the above
+F-molecule will be:
+
+\begin{quote}
+{\small \begin{verbatim}
+isa_(mary,employee).                    % mary:employee.
+fd_(mary,@(age),29).                    % mary[age->29].
+mvd_(mary,@(kids),tim).                 % mary[kids->>{tim}].
+mvd_(mary,@(kids),leo).                 % mary[kids->>{leo}].
+fd_(mary,@(salary,1998),a_lot).         % mary[salary@(1998)->a_lot].
+\end{verbatim}}
+\end{quote}
+
+%% For further details on path expressions see Section \ref{sec-references}.
+
+
+\paragraph{Closure Axioms.}
+
+In addition to the facts and rules given by the user, there are additional
+rules, called \emph{closure axioms}, which have to be considered when
+evaluating an F-logic program. In the current version, \FLIP implements
+the closure axioms by appending the file \texttt{lib/flptrailer.P} to every
+{\tt .P} file it generates. In this way, the closure rules get appended to
+every user program. These rules capture:
+
+\begin{itemize}
+\item The closure of ``\subcl'', i.e., the subclass hierarchy.  A
+  runtime check warns about cycles in the subclass hierarchy.
+\item The closure of ``isa'', i.e., if $X\isa C, C\subcl D$ then
+  $X\isa D$. 
+\item Monotone inheritance of ``\bfd'' and ``\bmvd'' methods,
+  e.g., if $C[M@(X)\bfd R],O\isa C$ then $O[M@(X)\fd R]$.
+\end{itemize}
+
+Additionally, \texttt{flptrailer.P} contains rules to check the
+consistency of functional (single-valued) methods.
+
+\paragraph{Known Bugs.}
+
+\begin{itemize}
+\item Rules like \texttt{p :- obj[].}  do not generate code.
+\item Non-ground answers are not properly displayed, e.g.,
+  \texttt{?-X::Y}.
+\end{itemize}
+
+\subsection{\FLIP vs FLORID}
+
+The syntax of \FLIP and some of its design decisions are borrowed from
+Florid, an F-logic interpreter developed at Freiburg University in Germany.
+For more information on Florid please visit the project home page:
+\verb|http://www.informatik.uni-freiburg.de/~dbis/florid/|. The following
+is a list of differences with the Florid system.
+
+\begin{itemize}
+\item \FLORID
+  \begin{itemize}
+  \item (Semi-)naive bottom-up evaluation.
+  \item Single-valued and multi-valued  path expressions in the body.
+  \item Single-valued path expressions in the head for anonymous
+    object creation.
+  \item Nonmonotonic inheritance (trigger semantics).
+  \item Derived equalities determined by functional methods.
+  \item ``Hard-wired'' closure axioms.
+  \item Additional Web-access features (access to Web pages via
+    \texttt{get}-method, Perl regular expressions, Perl interface).
+  \item Large C++ system.
+  \end{itemize}
+\item \FLIP
+  \begin{itemize}
+  \item Translation of F-logic into XSB rules.
+  \item Top-down evaluation of the generated rules. If tables, the compiled 
+    programs can be much more efficient than the corresponding Florid
+    programs.
+  \item Single-valued and multi-valued  path expressions in the body.
+  \item No path expressions in the head. Currently, the grammar allows such 
+    expressions, but the result is unpredictable.
+  \item Monotonic inheritance.
+  \item No derived equalities for functional methods---consistency check is 
+    done instead.
+  \item Closure axioms as additional rules.
+  \item Small Prolog system.
+  \item Full access to the underlying XSB system, including its database
+    connectivity.
+  \end{itemize}
+\end{itemize}
+
+
+
+
+
+\section{Syntax of \FLIP Programs (DCG)}
+
+The DCG grammar below specifies the syntax of \FLIP programs.  Symbols
+in brackets \texttt{[...]} correspond to {terminal symbols} as
+returned by the tokenizer (\texttt{tokens.P}). For example, the rule
+\begin{verbatim}
+id_term                 -->     [identifier(_),'('], paths, [')'].
+\end{verbatim}
+stands for the (E)BNF rule:
+\begin{quote}
+  \nterm{id\_term} ::= \textsf{identifier} "\textsf{(}" \nterm{paths} "\textsf{)}"
+\end{quote}
+where \nterm{id\_term} and \nterm{paths} are nonterminals (defined by
+the DCG grammar) and \textsf{identifier}, \textsf{(}, and \textsf{)}
+are terminals (defined by the tokeniser). In the actual \FLIP parser
+(\texttt{parser.P}), additional arguments to the DCG predicates are
+used to propagate variable bindings from the rule body to the head.
+For example, the actual code of the  above rule is
+\begin{verbatim}
+id_term(fn(F,L))        -->     [identifier(F),'('], paths(L), [')'].
+\end{verbatim}
+Hence, the actual value \texttt{F} of the identifier token (returned
+by the tokeniser) and of the path list \texttt{L} (returned by the
+DCG) are used to construct the term \texttt{fn(F,L)}
+(denoting a function symbol \texttt{F} and a list of arguments
+\texttt{L}). 
+
+For better readability, arguments to nonterminals have been omitted
+(for nonterminals) or anonymized (for terminals). A list of \emph{foo}
+expressions is denoted by \emph{foo\textbf{s}}; an optional (i.e.,
+possibly empty) \emph{foo} expression is named \emph{foo\textbf{1}}.
+The DGC grappar of \FLIP is shown in Figure~\ref{fig-flip-dcg}.
+
+
+\begin{figure}[htbp]
+\begin{minipage}[t]{.48\textwidth}
+{\scriptsize
+\begin{verbatim}
+rule                -->     head.
+rule                -->     head, [atom(' :-')], body.
+rule                -->     [atom(' ?-')], body.
+
+head                -->     terms.
+
+terms               -->     term, terms1.
+
+terms1              -->     [','], terms.    
+terms1              -->     [].
+
+body                -->     literals.
+
+literals            -->     literal, literals1.
+
+literals1           -->     [','], literals.
+literals1           -->     [].
+
+literal             -->     term.
+literal             -->     [identifier(not)], term.
+literal             -->     [atom(' ~')], term.
+
+term                -->     f_mol.
+term                -->     p_term.              
+                        
+p_term              -->     [identifier(_)], args.
+p_term              -->     path, special_pred, path.
+                                
+args                -->     ['('], paths, [')'].
+args                -->     [].
+
+special_pred        -->     [atom(' >')].
+special_pred        -->     [atom(' <')].
+special_pred        -->     [atom(' =')].
+special_pred        -->     [atom(' >=')].
+special_pred        -->     [atom(' =<')].
+special_pred        -->     [atom(' =/=')].
+                                                        
+path                -->     reference, opt_specification.
+
+f_mol               -->     reference, specification.
+
+reference           -->     object, sms.
+                          
+sms                 -->     specification0, meth_ref, sms.
+sms                 -->     []. 
+
+object              -->     id_term.            
+object              -->     ['('], path, [')'].
+
+specification0      -->     specification.
+specification0      -->     [].
+
+specification       -->     meth_spec.
+specification       -->     isa_spec, meth_spec1.
+
+opt_specification   -->     specification.
+opt_specification   -->     [].
+\end{verbatim}}
+\end{minipage}
+\begin{minipage}[t]{.48\textwidth}
+{\scriptsize
+\begin{verbatim}
+isa_spec            -->     isa_symbol, object.
+
+isa_symbol          -->     [atom(' :')].
+isa_symbol          -->     [atom(' ::')].
+
+meth_spec           -->     ['['], meths, [']'].
+meth_spec           -->     ['['], [']'].
+
+meth_spec1          -->     meth_spec.
+meth_spec1          -->     [].
+
+meth_ref            -->     colon, meth_appl.
+
+colon               -->     [atom(' ..')].
+colon               -->     [atom(' .')].
+colon               -->     [atom(' !!')].
+colon               -->     [atom(' !')].
+
+meth_appl           -->     object, meth_args.
+
+meth_args           -->     [atom(' @'),'('], paths, [')'].
+meth_args           -->     [].
+
+meths               -->     meth_appl, meth_result, rest_meths.
+
+rest_meths          -->     [atom(' ;')], meths.
+rest_meths          -->     [].
+
+paths               -->     path, paths1.
+                                
+paths1              -->     [','], paths.    
+paths1              -->     [].
+
+meth_result         -->     fun_arrow, path.
+
+meth_result         -->     set_arrow, path.
+meth_result         -->     set_arrow, ['{'], ['}'].
+meth_result         -->     set_arrow, ['{'], paths, ['}'].
+
+meth_result         -->     sig_arrow, path.
+meth_result         -->     sig_arrow, ['('], [')'].
+meth_result         -->     sig_arrow, ['('], paths, [')'].
+
+fun_arrow           -->     [atom(' ->')].   
+fun_arrow           -->     [atom(' *->')].   
+set_arrow           -->     [atom(' ->>')].    
+set_arrow           -->     [atom(' *->>')].
+sig_arrow           -->     [atom(' =>')].        
+sig_arrow           -->     [atom(' =>>')].    
+
+id_term             -->     [identifier(_),'('], paths, [')'].
+id_term             -->     [identifier(_)].
+id_term             -->     [var(_,_)].
+id_term             -->     [string(_)].
+id_term             -->     [num(_)].
+id_term             -->     [atom(' -'),num(_)].
+\end{verbatim}}
+\end{minipage}
+\caption{\FLIP DCG (Definite Clause Grammar)}
+\label{fig-flip-dcg}
+\end{figure}
+
+
+
+\section{Syntax of \fl\ and Path Expressions }
+
+The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
+
+
+\subsection{Basic F-logic Syntax}\label{sec-basic-flogic}
+
+
+\begin{itemize}
+\item \emph{Symbols}: The \fl\ alphabet fo \emph{object constructors}
+  consists of the sets \funcs (function symbols), \preds (predicate symbols
+  including $\eq$), and \vars (variables).  Variables are denoted by
+  capitalized symbols (e.g., $X,\textit{Name}$), whereas all other symbols,
+  especially constants (which are 0-ary object constructors) are denoted in
+  lowercase (e.g., $a,\textit{john}$).  An expression is called
+  \emph{ground} if it involves no variables.  In addition to the usual
+  first-order connectives and symbols, there are a number of special
+  symbols: ], [, \}, \{, \fd, \mvd, \Fd, \Mvd,
+  \isa, \subcl.\footnote{
+    %%
+    We do not deal with inheritance in this manual, so we
+    omit the symbols for \emph{inheritable} methods
+    \cite{KLW93}.
+    %%
+    }
+  %%
+\item \emph{Id-Terms/Oids}:  \medskip
+  
+  \hfill (0)
+  \begin{minipage}[t]{.80\textwidth}
+    First-order terms over \funcs\ and \vars\ are called
+    \emph{id-terms}, and are used to name objects, methods, and
+    classes.  Ground id-terms correspond to \emph{logical object
+      identifiers} (\emph{oid}s), also called object \emph{names}.
+  \end{minipage}
+  \hfill ~
+\item \emph{Atoms}: Let $O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
+  addition to the usual first-order atoms, like $p(X_1,\dots,X_n)$, there
+  are the following basic types of atoms: \medskip
+
+  \begin{math}
+    \hfill (1)~O[M\fd R_0] \hfill (2)~O[M\mvd \{R_1,\dots,R_n\}]
+    \hfill (3)~C[M\Fd T] \hfill (4)~C[M\Mvd T]. \hfill
+  \end{math} \medskip
+  
+  (1) and (2) are \emph{data atoms}, specifying that a \emph{method} $M$
+  applied to an object $O$ yields the result object $R_i$. In (1), $M$ is a
+  \emph{single-valued} (or \emph{scalar}) method, i.e., there is
+  at most one $R_0$ such that $O[M\fd R_0]$ holds. In contrast, in
+  (2), $M$ is \emph{multi-valued}, so there may be several result
+  objects $R_i$. For $n=1$ the braces may be omitted.\\
+                                %
+  (3) and (4) denote \emph{signature atoms}, specifying that the
+  (single-valued and multi-valued, respectively) method $M$ applied to
+  objects of \emph{class} $C$ yields results of type $T$.
+  
+  The organization of objects in classes is specified by
+  \emph{isa-atoms}: \medskip
+
+  \begin{math}
+    \hfill (5)~O\isa C \hfill (6)~C\subcl D. \hfill
+  \end{math} \medskip
+
+  (5) defines that $O$ is an \emph{instance} of class $C$, while (6)
+  specifies that $C$ is a \emph{subclass} of $D$. 
+\item \emph{Parameters}: Methods may be \emph{parameterized}, so
+  \begin{math}
+    M@(P_1,\dots,P_k)
+  \end{math} is allowed in (1)--(4), where $P_1,\dots,P_k$ are
+  id-terms; e.g., \textsf{john[salary@(1998)\fd 50000]}.
+  
+\item \emph{Programs}: \fl\ \emph{literals}, \emph{rules}, and
+  \emph{programs} are defined as usual, based on \fl\ atoms.
+\end{itemize}
+
+\NI As a concise notation for several atoms specifying properties of the
+same object, \emph{F-molecules} can be used. For instance, instead of
+$\textsf{john:person}\land\textsf{john[age\fd
+  31]}\land\textsf{john[children\mvd\{bob,mary\}]}$, we can simply write
+\textsf{john\isa person[age\fd 31; children\mvd\{bob,mary\}]}.
+
+
+\paragraph{Object Model.} 
+An \emph{\fl\ database (instance)} is represented by a set of facts
+(i.e., atoms and molecules). Object-oriented databases often admit a
+natural graph-like representation, which is, e.g., exploited in GOOD
+\cite{gyssens-paredaens-vdbussche-vgucht-TKDE-94}. Similarly, \fl\ 
+databases can be represented as labeled graphs where nodes correspond
+to logical oids, and where the different kinds of labeled edges (\fd,
+\mvd, \Fd, \Mvd) are used to represent different relations among
+objects (at the class or instance level).
+
+\begin{example}
+  {\bf (Publications Database)}
+  Figure~\ref{fig-flogic-model} depicts an \fl representation of a fragment
+  of an object-oriented publications database.
+\end{example}
+
+
+\begin{figure}[htbp]
+\begin{tabular}{c}
+\fbox{\small\sf
+  ~\begin{tabular}{l}
+    paper[authors\Mvd  person; title\Fd string].\qquad
+    conf\_p\subcl paper. \qquad  journal\_p\subcl paper.\\
+    journal\_p[in\_vol\Fd volume]. \qquad
+    conf\_p[at\_conf\Fd conf\_proc].\\
+    journal\_vol[of \Fd journal; volume\Fd integer; 
+               number\Fd integer; year\Fd integer].\\  
+    journal[name\Fd string; publisher\Fd string;
+            editors@(integer)\Mvd person]. \\
+    conf\_proc[of\_conf\Fd conf\_series; year\Fd integer;
+               editors@(integer)\Mvd person]. \\
+    conf\_series[name\Fd string]. \qquad publisher[name\Fd string].\\
+    person[name\Fd string; affil@(integer)\Fd institution]. \qquad
+    institution[name\Fd string; address\Fd string].\smallskip\\
+    \hline
+    $o_{j1}$\isa journal\_p[%
+      title\fd ``Records, Relations, Sets, Entities, and Things'';
+      authors\mvd$\{o_{mes}\}$; in\_vol\fd $o_{i11}$]. \\
+    $o_{di}$\isa conf\_p[%
+      title\fd ``DIAM II and Levels of Abstraction'';
+      authors\mvd$\{o_{mes},o_{eba}\}$; at\_conf\fd $o_{v76}$]. \\
+    $o_{i11}$\isa journal\_vol[of\fd $o_{is}$; number\fd 1; volume\fd 1; year\fd1975]. \\
+    $o_{is}$\isa journal[name\fd``Information Systems''; editors@(...)\mvd $\{o_{mj}\}$]. \\
+    $o_{v76}$\isa conf\_proc[of\fd vldb; year\fd 1976; editors\mvd $\{o_{pcl},o_{ejn}\}$].\\
+    $o_{vldb}$\isa conf\_series[name\fd``Very Large Databases'']. \\
+    $o_{mes}$\isa person[name\fd``Michael E. Senko'']. \quad
+    $o_{mj}$\isa person[name\fd``Matthias Jarke''; affil@($\dots$)\fd $o_{rwt}$]. \\
+    $o_{rwt}$\isa institution[name\fd``RWTH\_Aachen'']. \qquad \ldots
+\end{tabular}~}
+\end{tabular}
+\caption{A Publications Object Base and its Schema Represented 
+  Using \fl}\label{fig-flogic-model}
+\end{figure}
+
+
+
+
+
+\subsection{Path Expressions}
+
+In addition to the basic \fl\ syntax, the \FLIP  system also supports
+\emph{path expressions} to simplify object navigation along
+single-valued and multi-valued method applications, and to avoid
+explicit join conditions \cite{frohn-lausen-uphoff-VLDB-94}.  The
+basic idea is to allow the following \emph{path expressions} wherever
+id-terms are allowed:\footnote{
+  %%
+  \FLIP doesn't support path expressions in rule
+  heads.
+  %%
+  }
+%%
+
+  \medskip
+
+\begin{math}
+  \hfill (7)~O.M \hfill (8)~O..M \hfill
+\end{math} \medskip
+
+\NI The path expression in (7) is \emph{single-valued}; it refers to
+the unique object $R_0$ for which $O[M\fd R_0]$ holds; (8) is a
+\emph{multi-valued} path expression; it refers to each $R_i$ for which
+$O[M\mvd\{R_i\}]$ holds. $O$ and $M$ may be id-terms or path
+expressions; moreover, $M$ may be parameterized, i.e., of the form
+$M@(P_1,\dots,P_k)$.
+  
+In order to obtain a unique syntax and to specify different orders of
+method applications, parentheses are used: By default, path
+expressions associate to the left, so $a.b.c$ is equivalent to
+$(a.b).c$ and specifies the unique object $o$ such that $a[b\fd x]
+\land x[c\fd o]$ holds (note that $x=a.b$). In contrast, $a.(b.c)$ is
+the object $o'$ such that $b[c\fd x'] \land a[x'\fd o']$ holds (here,
+$x'=b.c$); generally, $o'\neq o$. Note that in $(a.b).c$, $b$ is a
+method name, whereas in $a.(b.c)$ it is used as an object name.
+Observe that function symbols can also be applied to path
+expressions, since path expressions (like id-terms) are used to
+reference objects.
+  
+As path expressions and F-logic atoms can be arbitrarily nested, this leads
+to a concise and very flexible specification language for object
+properties, as illustrated in the following example.
+
+\begin{example}[Path Expressions]\label{Ex:PathExpr}
+  Consider again the schema given in Figure~\ref{fig-flogic-model}.
+  Given the name $n$ of a person, the following path expression
+  references all editors of conferences in which $n$ had a
+  paper:\footnote{Each occurrence of ``\_'' denotes a distinct
+    don't-care variable (which is existentially quantified at the
+    innermost level).}
+\begin{qrules}
+  \anon\isa conf\_p[authors\mvd\{\anon [name\fd $n$]\}].at\_conf..editors
+\end{qrules}
+Therefore, the answer to the \emph{query}
+\begin{qrules}
+  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+  $n$]\}].at\_conf[editors\mvd\{E\}].
+\end{qrules}
+is the set of all pairs (\textsf{P},\textsf{E}) such that \textsf{P}
+is (the logical oid of) a paper written by $n$, and \textsf{E} is the
+corresponding proceedings editor.  If one is also interested in the
+affiliations of the above editors when the papers were published, we only
+need to slightly modify our query:
+\begin{qrules}
+  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+  $n$]\}].at\_conf[year\fd Y]..editors[affil@(Y)\fd A].
+\end{qrules}
+\end{example}
+Thus, \FLIP's path expressions support navigation and specification
+of object properties along two dimensions: the ``depth'' dimension
+corresponds to navigation along method applications (``.''  and
+``..''), while the bracketed specification lists specify
+properties of the intermediate objects (the ``breadth'' dimension). Note
+that constraints \emph{within} the expressions can be stated using
+variables.
+
+To access intermediate objects that arise implicitly in the middle
+of a path expression, one can define the method \textsf{self} a
+$X[\textsf{self}\fd X]$ and then simply
+write $\dots[\textsf{self}\fd O]\dots$ anywhere in a complex
+path expression. This would bind the id of the current object to the
+variable $O$.\footnote{
+  %%
+  A similar feature is used in other
+  languages, e.g., XSQL \cite{xsql-92}.
+  %%
+  }
+%%
+
+\begin{example}[Path Expressions with \textsf{self}]\label{ex-path-self}
+  Recall the second query in Example~\ref{Ex:PathExpr}. If the user is
+  also interested in the respective conferences, the query can be
+  reformulated as
+\begin{qrules}
+   ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+   $n$]\}].at\_conf[self\fd C; year\fd Y]..editors[affil@(Y)\fd A]. 
+\end{qrules}
+\end{example}
+
+\subsection{References: Truth Value vs.\ Object Value}\label{sec-references}
+
+Id-terms, F-logic atoms, and path expressions can all be used to
+reference objects. This is obvious for id-terms (0) and path
+expressions (7--8). Similarly, F-logic atoms (1--6) have not only a
+truth value, but also reference objects, i.e., yield an object value.
+For example, $o\isa c[m\fd r]$ is a reference to $o$ and. additionally,
+it specifies $o$'s membership in class $c$ and the value of the attribute $m$.
+
+Consequently, all F-logic expressions of the form (0--8) are called
+\emph{references}. F-logic references have a dual reading: Given an
+\fl\ database \db I (see below), a reference has
+\begin{itemize}
+\item an \emph{object value}, which yields the name(s) of the objects
+  reachable in \db I by the corresponding reference, and 
+\item a \emph{truth value} like any other literal or molecule of the
+  language; in particular, a reference $r$ evaluates to \emph{false} if
+  there exists no object that is referenced by $r$ in \db I.
+\end{itemize}
+Thus, a path expression can be viewed as a logical formula
+(\emph{the deductive perspective}), or as a name for a number of objects
+(\emph{the object-oriented perspective}).
+
+Consider the following path expression and the equivalent (with respect to
+the truth value) flattening:
+
+\begin{displaymath}
+a..b[c\mvd\{d.e\}] \quad\ \Leftrightarrow \quad\  a[b\mvd\{X_{ab}\}]
+\land d[e\fd X_{de}] \land X_{ab}[c\mvd\{X_{de}\}]. \hspace{4em} (*)
+\end{displaymath}
+
+
+Such flattening is used to determine the truth value of
+arbitrarily complex path expressions in the \emph{body} of a rule.
+The object values \obj of a path expression are
+the names of the referenced objects: e.g., for $(*)$ we have
+\begin{displaymath}
+\obj(a..b) = \{x_{ab} \mid \db I \models a[b\mvd\{x_{ab}\}]\}
+\qquad\textrm{ and }\qquad \obj(d.e) = \{x_{de} \mid \db I \models d[e\fd 
+x_{de}]\} ~,
+\end{displaymath}
+%
+where $\db I \models \varphi$ means that $\varphi$ holds in \db I.
+Observe that $\obj(d.e)$ contains at most one element because the
+\emph{single-valued} method $e$ is applied to the unique oid $d$.  In
+general, for an \fl\ database \db I, the object values of ground
+expressions are given by the following mapping \obj\ from ground
+references to sets of ground references:
+%
+\begin{displaymath}
+  \begin{array}{cll@{\hspace{4em}}c}
+    \obj(t) & := & \{t' \mid t'=t \textrm{ and } \db I\models t' \}, 
+     \textrm{ for a ground id-term $t$}  & (0) \\   
+                                %
+    \obj(o[\dots]) & :=& \{o'\in\obj(o) \mid \db I \models o'[\dots]
+    \}& (1),...,(4)\\  
+                                %
+    \obj(o\isa c) & := & \{o'\in\obj(o) \mid \db I \models o'\isa c\} &
+    (5) \\ 
+                                %
+    \obj(c\subcl d) & := & \{c'\in\obj(c) \mid \db I \models c'\subcl
+    d\} &  (6)\\ 
+                                %
+    \obj(o.m) & :=  & \{r'\in\obj(r) \mid \db I \models o[m\fd
+    r]\}  &  (7)\\ 
+                                %
+    \obj(o..m) & := &  \{ r'\in\obj(r) \mid \db I \models
+    o[m{\mvd}\{r\}] \} & (8)   
+  \end{array}
+\end{displaymath}
+Observe that if $t$ does not hold (i.e., occur) in \db I, then $\obj(t)$ is
+$\emptyset$.  Conversely, a ground reference $r$ is called \emph{active} if
+$\obj(r)\neq\emptyset$. A reference, $r$, can be classified as either
+single-valued or multi-valued:
+\begin{itemize}
+\item $r$ is called \emph{multi-valued} if
+ \begin{itemize}
+  \item it has the form $o..m$, or 
+  \item it has one of the forms $\underline{o}[\dots]$,
+    $\underline{o}\isa c$, $\underline{c}\subcl d$, or
+    $\underline{o}.\underline{m}$, and any of the underlined
+    subexpressions is multi-valued;
+ \end{itemize}
+\item in all other cases, $r$ is \emph{single-valued}.
+\end{itemize}
+
+
