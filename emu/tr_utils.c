@@ -641,34 +641,127 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
 
 /*----------------------------------------------------------------------*/
 
-void delete_trie(BTNptr root) {
+#define DELETE_TRIE_STACK_INIT 100
+#define MAX_DELETE_TRIE_STACK_SIZE 1000
+#define DT_NODE 0
+#define DT_DS 1
+#define DT_HT 2
 
-  BTNptr sib, chil;  
+char *delete_trie_op = NULL;
+BTNptr *delete_trie_node = NULL;
+BTHTptr *delete_trie_hh = NULL;
 
-  if ( IsNonNULL(root) ) {
-    if ( IsHashHeader(root) ) {
-      BTHTptr hhdr;
-      BTNptr *base, *cur;
+int trie_op_size, trie_node_size, trie_hh_size;
 
-      hhdr = (BTHTptr)root;
-      base = BTHT_BucketArray(hhdr);
-      for ( cur = base; cur < base + BTHT_NumBuckets(hhdr); cur++ )
-	delete_trie(*cur);
-      free_trie_ht(hhdr);
-    }
-    else {
-      sib  = Sibl(root);
-      chil = Child(root);      
-      /* Child nodes == NULL is not the correct test*/
-      if (IsLeafNode(root)) {
-	if (chil != NULL)
-	  xsb_exit("Anomaly in delete_trie !");
-      }
-      else
-	delete_trie(chil);
-      delete_trie(sib);
+#define push_delete_trie_node(node,op) {\
+  trie_op_top++;\
+  if (trie_op_top >= trie_op_size) {\
+    trie_op_size = 2*trie_op_size;\
+    delete_trie_op = (char *)realloc(delete_trie_op,trie_op_size*sizeof(char));\
+    if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
+    /*printf("realloc delete_trie_op to %d\n",trie_op_size);*/\
+  }\
+  delete_trie_op[trie_op_top] = op;\
+  trie_node_top++;\
+  if (trie_node_top >= trie_node_size) {\
+    trie_node_size = 2*trie_node_size;\
+    delete_trie_node = (BTNptr *)realloc(delete_trie_node,trie_node_size*sizeof(BTNptr));\
+    if (!delete_trie_node) xsb_exit("out of space for deleting trie");\
+    /*printf("realloc delete_trie_node to %d\n",trie_node_size);*/\
+  }\
+  delete_trie_node[trie_node_top] = node;\
+}  
+#define push_delete_trie_hh(hh) {\
+  trie_op_top++;\
+  if (trie_op_top >= trie_op_size) {\
+    trie_op_size = 2*trie_op_size;\
+    delete_trie_op = (char *)realloc(delete_trie_op,trie_op_size*sizeof(char));\
+    if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
+    /*printf("realloc delete_trie_op to %d\n",trie_op_size);*/\
+  }\
+  delete_trie_op[trie_op_top] = DT_HT;\
+  trie_hh_top++;\
+  if (trie_hh_top >= trie_hh_size) {\
+    trie_hh_size = 2*trie_hh_size;\
+    delete_trie_hh = (BTHTptr *)realloc(delete_trie_hh,trie_hh_size*sizeof(BTHTptr));\
+    if (!delete_trie_hh) xsb_exit("out of space for deleting trie");\
+    /*printf("realloc delete_trie_hh to %d\n",trie_hh_size);*/\
+  }\
+  delete_trie_hh[trie_hh_top] = hh;\
+}  
+
+void delete_trie(BTNptr iroot) {
+  BTNptr root, sib, chil;  
+  int trie_op_top = 0;
+  int trie_node_top = 0;
+  int trie_hh_top = -1;
+
+  if (!delete_trie_op) {
+    delete_trie_op = (char *)malloc(DELETE_TRIE_STACK_INIT*sizeof(char));
+    delete_trie_node = (BTNptr *)malloc(DELETE_TRIE_STACK_INIT*sizeof(BTNptr));
+    delete_trie_hh = (BTHTptr *)malloc(DELETE_TRIE_STACK_INIT*sizeof(BTHTptr));
+    trie_op_size = trie_node_size = trie_hh_size = DELETE_TRIE_STACK_INIT;
+  }
+
+  delete_trie_op[0] = 0;
+  delete_trie_node[0] = iroot;
+  while (trie_op_top >= 0) {
+    /*    printf("top %d %d %d %p\n",trie_op_top,trie_hh_top,
+	  delete_trie_op[trie_op_top],delete_trie_node[trie_node_top]); */
+    switch (delete_trie_op[trie_op_top--]) {
+    case DT_DS:
+      root = delete_trie_node[trie_node_top--];
       SM_DeallocateStruct(*smBTN,root);
+      break;
+    case DT_HT:
+      free_trie_ht(delete_trie_hh[trie_hh_top--]);
+      break;
+    case DT_NODE:
+      root = delete_trie_node[trie_node_top--];
+      if ( IsNonNULL(root) ) {
+	if ( IsHashHeader(root) ) {
+	  BTHTptr hhdr;
+	  BTNptr *base, *cur;
+	  hhdr = (BTHTptr)root;
+	  base = BTHT_BucketArray(hhdr);
+	  push_delete_trie_hh(hhdr);
+	  for ( cur = base; cur < base + BTHT_NumBuckets(hhdr); cur++ ) {
+	    if (IsNonNULL(*cur)) {
+	      push_delete_trie_node(*cur,DT_NODE);
+	    }
+	  }
+	}
+	else {
+	  sib  = Sibl(root);
+	  chil = Child(root);      
+	  /* Child nodes == NULL is not the correct test*/
+	  if (IsLeafNode(root)) {
+	    if (IsNonNULL(chil))
+	      xsb_exit("Anomaly in delete_trie !");
+	    push_delete_trie_node(root,DT_DS);
+	    if (IsNonNULL(sib)) {
+	      push_delete_trie_node(sib,DT_NODE);
+	    }
+	  }
+	  else {
+	    push_delete_trie_node(root,DT_DS);
+	    if (IsNonNULL(sib)) {
+	      push_delete_trie_node(sib,DT_NODE);
+	    }
+	    if (IsNonNULL(chil)) {
+	      push_delete_trie_node(chil,DT_NODE);
+	    }
+	  }
+	}
+      } else printf("null node");
+      break;
     }
+  }
+  if (trie_op_size > MAX_DELETE_TRIE_STACK_SIZE) {
+    free(delete_trie_op); delete_trie_op = NULL;
+    free(delete_trie_node); delete_trie_node = NULL;
+    free(delete_trie_hh); delete_trie_hh = NULL;
+    trie_op_size = 0; 
   }
 }
 
