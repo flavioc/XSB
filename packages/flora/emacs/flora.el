@@ -214,19 +214,23 @@ rigidly along with this one (not yet)."
 (defun flora-find-start-of-mline-comment ()
   "Return the start column of a /* */ comment.
 This assumes that the point is inside a comment."
-  (re-search-backward "/\\*" (point-min) t)
-  (forward-char 2)
-  (skip-chars-forward " \t")
-  (current-column))
+  (if (re-search-backward "/\\*" (point-min) t)
+      (progn
+	(forward-char 2)
+	(skip-chars-forward " \t")
+	(current-column))
+    (error "Not inside a comment")
+    ))
 
 (defun flora-in-mline-comment ()
   "Check if point is inside comment."
   (let ((pt (point)))
     (save-excursion
-      (re-search-backward "/\\*" (point-min) t)
-      ;; If after searching backward and finding /* we search forward
-      ;; and find */ then we aren't in comment
-      (not (re-search-forward "\\*/" pt t)))
+      (if (re-search-backward "/\\*" (point-min) t)
+	  ;; If after searching backward and finding /* we search forward
+	  ;; and find */ then we aren't in comment
+	  (not (re-search-forward "\\*/" pt t))
+	))
     ))
 
 (defun flora-indent-level ()
@@ -247,7 +251,7 @@ This assumes that the point is inside a comment."
 	(- (current-column) 2)))
      
      ;; Here we check if the current line is within a /* */ pair
-     ((and (looking-at "[^\*/]")
+     ((and (looking-at "[^\\*/]")
 	   (flora-in-mline-comment))
       (if flora-indent-mline-comments-flag
 	  (flora-find-start-of-mline-comment)
