@@ -107,7 +107,9 @@ void total_stat(double elapstime) {
     aln,		/* Answer List Nodes */
     tsi;		/* Time Stamp Indices (Index Entries/Nodes) */
 
-  SubgStats  sf;	/* Subgoal Frames */
+  SubgStats
+    varsf,		/* Variant Subgoal Frames */
+    subsf;		/* Subsumptive Subgoal Frames */
 
   HashStats
     tbtht,		/* Table Basic Trie Hash Tables */
@@ -130,16 +132,17 @@ void total_stat(double elapstime) {
 
   tbtn = node_statistics(&smTableBTN);
   tbtht = hash_statistics(&smTableBTHT);
-  sf = subgoal_statistics();
+  varsf = subgoal_statistics(&smVarSF);
+  subsf = subgoal_statistics(&smSubSF);
   aln = node_statistics(&smALN);
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
-  tsi = node_statistics(&smEntry);
+  tsi = node_statistics(&smTSIN);
 
   tablespace_alloc =
-    CurrentTotalTableSpaceAlloc(tbtn,tbtht,sf,aln,tstn,tstht,tsi);
+    CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,subsf,aln,tstn,tstht,tsi);
   tablespace_used =
-    CurrentTotalTableSpaceUsed(tbtn,tbtht,sf,aln,tstn,tstht,tsi);
+    CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,subsf,aln,tstn,tstht,tsi);
 
   abtn = node_statistics(&smAssertBTN);
   abtht = hash_statistics(&smAssertBTHT);
@@ -220,7 +223,8 @@ void total_stat(double elapstime) {
 	   ttt.maxopenstack_count,
 	   (ttt.maxopenstack_count/sizeof(struct completion_stack_frame)));
 
-    update_maximum_tablespace_stats(&tbtn,&tbtht,&sf,&aln,&tstn,&tstht,&tsi);
+    update_maximum_tablespace_stats(&tbtn,&tbtht,&varsf,&subsf,&aln,
+				    &tstn,&tstht,&tsi);
     printf("  Maximum table space used:  %ld bytes\n",
 	   maximum_total_tablespace_usage());
     printf("\n");

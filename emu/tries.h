@@ -175,16 +175,16 @@ typedef struct Basic_Trie_Node *NODEptr;
  *  Similar in construction and maintenance to normal tries, these extend
  *  the basic design in order to support answer subsumption.  Conditions
  *  under which hash tables are created and the way symbols are stored in
- *  the nodes are identical.  (See the file tries_priv.h for details.)
+ *  the nodes are identical.  (See the file trie_internals.h for details.)
  *
  *  A timestamp is maintained in each node of the Time-Stamped Trie (TST).
- *  When used for Answer Tables, the timestamp kept in each node is the
+ *  When used for Answer Sets, the timestamp kept in each node is the
  *  maximum of the timestamps of its children.  Since timestamps
  *  monotonically increase as terms are entered, this property can be
  *  easily maintained by propagating the timestamp of a newly interned
  *  term from the leaf to the root.  Hence, the root ALWAYS contains the
  *  timestamp of the largest-timestamped answer contained in the Answer
- *  Table.
+ *  Set.
  *
  *  For facilitating certain subsumptive operations, it is important to
  *  quickly identify nodes having a timestamp greater than a given one.
@@ -196,7 +196,7 @@ typedef struct Basic_Trie_Node *NODEptr;
  *  for pointing to an associated frame in this structure, where the
  *  timestamp is now kept.  The hash header is extended -- over the basic
  *  trie hash header -- to contain fields for maintaining these frames in
- *  a doubly linked list.  Once the Answer Table is completed, these
+ *  a doubly linked list.  Once the Answer Set is completed, these
  *  structures can be disposed.  To facilitate this, hash tables, within
  *  a particular TST, are chained together from the root, accessible from
  *  its Sibling field.  Lazy evaluation...
@@ -245,13 +245,8 @@ typedef struct Answer_List_Node {
   BTNptr answer_leaf;
 } AnsListNode;
 
-/* - - Preferred macros - - - - */
 #define ALN_Next(pALN)		((pALN)->link)
 #define ALN_Answer(pALN)	((pALN)->answer_leaf)
-
-/* - - For backwards compatibility - - - - */
-#define aln_answer_ptr(ALN)	ALN_Answer(ALN)
-#define aln_next_aln(ALN)	ALN_Next(ALN)
 
 /*===========================================================================*/
 
@@ -315,7 +310,7 @@ void	subsumptive_call_search(TabledCallInfo *, CallLookupResults *);
 TSTNptr	subsumptive_answer_search(int,CPtr,struct subgoal_frame *,xsbBool *);
 void	consume_subsumptive_answer(BTNptr,int,CPtr);
 ALNptr	retrieve_unifying_answers(TSTNptr,TimeStamp,int,CPtr);
-void	delete_subsumptive_table(BTNptr);
+void	delete_subsumptive_table(struct Table_Info_Frame *);
 
 /*---------------------------------------------------------------------*/
 

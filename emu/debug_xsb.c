@@ -72,7 +72,6 @@ extern int  xctr;
 
 #ifdef DEBUG
 #define STRIDESIZE     30
-#define SG_STRIDESIZE	7*CALLSTRUCTSIZE
 
 #define EOS	"--------------------BOTTOM_OF_STACK--------------------\n"
 #define EOFR	"--------------------------------------------\n"
@@ -469,7 +468,7 @@ void print_subgoal(FILE *fp, SGFrame subg)
   Psc  psc = TIF_PSC(subg_tif_ptr(subg));
 
   for (leaf = subg_leaf_ptr(subg); leaf != NULL; leaf = Parent(leaf)) {
-    cell_array[i++] = Atom(leaf);
+    cell_array[i++] = BTN_Symbol(leaf);
   }
   fprintf(fp, "%s", get_name(psc));
   if (get_arity(psc) > 0) {
@@ -1162,6 +1161,29 @@ void printTIF(TIFptr tif) {
 
 /*----------------------------------------------------------------------*/ 
 
+/*
+ *			Subgoal Frame Printing
+ *			----------------------
+ */
+
+char *stringSubgoalFrameType(byte type) {
+
+  switch(type) {
+  case VARIANT_PRODUCER_SFT:
+    return("variant");
+    break;
+  case SUBSUMPTIVE_PRODUCER_SFT:
+    return("subsumptive producer");
+    break;
+  case SUBSUMED_CONSUMER_SFT:
+    return("subsumptive consumer");
+    break;
+  default:
+    return("unknown");
+    break;
+  }
+}
+
 void print_tables(void)
 {
   int i = 0;
@@ -1182,6 +1204,10 @@ void print_tables(void)
       i++;
       print_subg_header(subg);
       fprintf(stddbg, "%p:\n", subg);
+      xsb_dbgmsg("  sf_type = %s,  is_complete = %s,  is_reclaimed = %s,",
+		 stringSubgoalFrameType(subg_sf_type(subg)),
+		 (subg_is_complete(subg) ? "YES" : "NO"),
+		 (subg_is_reclaimed(subg) ? "YES" : "NO"));
 #ifdef CHAT
       xsb_dbgmsg("  next_subg = %6p,  ans_root_ptr = %6p,",
 		 subg_next_subgoal(subg), subg_ans_root_ptr(subg));
@@ -1195,7 +1221,11 @@ void print_tables(void)
 		 subg_compl_susp_ptr(subg));
       xsb_dbgmsg("  ans_list = %6p,    leaf_ptr = %6p,        cp_ptr = %p",
 		 subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
-      xsb_dbgmsg("      nide = %p", subg_nde_list(subg));
+      xsb_dbgmsg("  nide = %p", subg_nde_list(subg));
+      if ( IsSubsumptiveSF(subg) )
+	xsb_dbgmsg("  producer = %p,  consumers = %p,  timestamp = %ul",
+		   subg_producer(subg), subg_consumers(subg),
+		   subg_timestamp(subg));
       subg = subg_next_subgoal(subg);
       if (subg != NULL)
 	fprintf(stddbg, EOSUBG);

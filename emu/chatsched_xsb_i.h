@@ -51,15 +51,15 @@ static CPtr schedule_subgoal(SGFrame producer_sf, CPtr compl_fr)
     while ( IsNonNULL(chat_ptr) ) {
       SGFrame consumer_sf = (SGFrame)nlcp_subgoal_ptr(consumer);
       ALNptr answer_set = ALN_Next(nlcp_trie_return(consumer));
-      if ( IsNULL(answer_set) &&
-	   ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
-	CPtr template, *baseTR;
+      if ( IsNULL(answer_set) && (consumer_sf != producer_sf) )
+	if ( ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
+	  CPtr template, *baseTR;
 
-	template = restore_answer_template(chat_ptr, &baseTR);
-	answer_set = table_retrieve_answers(producer_sf, consumer_sf,
-					    template);
-	undo_template_restoration(baseTR);
-      }
+	  template = restore_answer_template(chat_ptr, &baseTR);
+	  answer_set = table_retrieve_answers(producer_sf, consumer_sf,
+					      template);
+	  undo_template_restoration(baseTR);
+	}
       if ( IsNonNULL(answer_set) )
 	break;
       else {

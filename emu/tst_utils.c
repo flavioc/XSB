@@ -439,8 +439,8 @@ void printAnswerList(ALNptr pALN) {
   printf("Answer List %p:\n", pALN);
   while ( IsNonNULL(pALN) ) {
     printf("  ");
-    triePrintPath(aln_answer_ptr(pALN),YES);
+    triePrintPath(ALN_Answer(pALN),YES);
     printf("\n");
-    pALN = aln_next_aln(pALN);
+    pALN = ALN_Next(pALN);
   }
 }

@@ -88,8 +88,8 @@ xsbBool has_unconditional_answers(SGFrame subg)
   /* answer list has not been reclaimed yet, check each of its nodes. */
  
   while (node_ptr) {
-    if (is_unconditional_answer(aln_answer_ptr(node_ptr))) return TRUE;
-    node_ptr = aln_next_aln(node_ptr);
+    if (is_unconditional_answer(ALN_Answer(node_ptr))) return TRUE;
+    node_ptr = ALN_Next(node_ptr);
   }
   return FALSE;
 }
@@ -647,11 +647,11 @@ Cell build_ret_term(int arity, Cell termVector[]) {
 /*----------------------------------------------------------------------*/
 
 /*
- * Create the answer template for a call with the given producer.
+ * Create the answer template for a subsumed call with the given producer.
  * The template is stored in an array supplied by the caller.
  */
 
-void construct_answer_template(Cell callTerm, SGFrame producer,
+void construct_answer_template(Cell callTerm, SubsumptiveSF producer,
 			       Cell template[]) {
 
   Cell subterm, symbol;
@@ -728,7 +728,7 @@ SGFrame get_call(Cell callTerm, Cell *retTerm) {
     return NULL;
   else {
     sf = CallTrieLeaf_GetSF(call_trie_leaf);
-    if ( IsConsumerSF(sf) )
+    if ( IsProperlySubsumed(sf) )
       construct_answer_template(callTerm, subg_producer(sf), callVars);
     *retTerm = build_ret_term(callVars[0],&callVars[1]);
     return sf;
@@ -859,7 +859,7 @@ void delete_predicate_table(TIFptr tif) {
   if ( IsVariantPredicate(tif) )
     delete_variant_table(TIF_CallTrie(tif));
   else
-    delete_subsumptive_table(TIF_CallTrie(tif));
+    delete_subsumptive_table(tif);
   TIF_CallTrie(tif) = NULL;
   TIF_Subgoals(tif) = NULL;
 }
@@ -1199,18 +1199,18 @@ void delete_return(BTNptr l, SGFrame sg_frame)
   if (!is_completed(sg_frame)) {
     n = subg_ans_list_ptr(sg_frame);
     /* Find previous sibling -pvr */
-    while (aln_answer_ptr(aln_next_aln(n)) != l) {
-      n = aln_next_aln(n);/* if a is not in that list a core dump will result */
+    while (ALN_Answer(ALN_Next(n)) != l) {
+      n = ALN_Next(n);/* if a is not in that list a core dump will result */
     }
     if (n == NULL) {
       xsb_exit("Error in delete_return()");
     }
-    a               = aln_next_aln(n);
-    next            = aln_next_aln(a);
-    aln_next_aln(a) = compl_del_ret_list(subg_compl_stack_ptr(sg_frame));
+    a               = ALN_Next(n);
+    next            = ALN_Next(a);
+    ALN_Next(a) = compl_del_ret_list(subg_compl_stack_ptr(sg_frame));
     compl_del_ret_list(subg_compl_stack_ptr(sg_frame)) = a;    
 
-    aln_next_aln(n) = next;
+    ALN_Next(n) = next;
     
     /* Make consumed answer field of consumers point to
        previous sibling if they point to a deleted answer */
@@ -1242,7 +1242,7 @@ void delete_return(BTNptr l, SGFrame sg_frame)
       }
 #endif
    
-    aln_next_aln(n) = next;
+    ALN_Next(n) = next;
     if(next == NULL){ /* last answer */
       subg_ans_list_tail(sg_frame) = n;
     }      
@@ -1261,8 +1261,8 @@ void  reclaim_del_ret_list(SGFrame sg_frame) {
   
   while (x != NULL) {
     y = x;
-    x = aln_next_aln(x);
-    delete_branch(aln_answer_ptr(y), &subg_ans_root_ptr(sg_frame));
+    x = ALN_Next(x);
+    delete_branch(ALN_Answer(y), &subg_ans_root_ptr(sg_frame));
     SM_DeallocateStruct(smALN,y);
   }
 }

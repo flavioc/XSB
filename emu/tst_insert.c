@@ -51,8 +51,8 @@
 
 
 /*
- *  Allocate a tsi_Entry, associate it with a TSTN 'tstn', and place it
- *  at the head of the entry list managed by the hash table 'ht'.  This
+ *  Allocate a TS_IndexNode, associate it with a TSTN 'tstn', and place
+ *  it at the head of the TS Index managed by the hash table 'ht'.  This
  *  operation is used for symbols newly inserted into an established
  *  hash table.  The timestamp of this new entry will be set at the end
  *  of the subsumptive_answer_search operation when we walk back up the
@@ -60,22 +60,22 @@
  *  head of the entry list is where this new entry belongs.
  */
 
-inline static EntryPtr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
+inline static TSINptr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
 
-  EntryPtr pEntry;
+  TSINptr pTSIN;
 
-  New_Entry(pEntry, tstn);
-  Entry_Prev(pEntry) = NULL;
-  Entry_Next(pEntry) = TSTHT_HeadEntry(ht);
-  Entry_Prev(TSTHT_HeadEntry(ht)) = pEntry;
-  TSTHT_HeadEntry(ht) = pEntry;
-  return pEntry;
+  New_TSIN(pTSIN, tstn);
+  TSIN_Prev(pTSIN) = NULL;
+  TSIN_Next(pTSIN) = TSTHT_IndexHead(ht);
+  TSIN_Prev(TSTHT_IndexHead(ht)) = pTSIN;
+  TSTHT_IndexHead(ht) = pTSIN;
+  return pTSIN;
 }
     
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *  Used during the creation of a tsi.  Allocate a tsi_Entry for a
+ *  Used during the creation of a tsi.  Allocate a TS_IndexNode for a
  *  TS_TrieNode and insert it into the TSI in (decreasing) timestamp order.
  *
  *  NOTE: We cannot assume that the time stamp of the incoming node is  
@@ -86,70 +86,70 @@ inline static EntryPtr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
  *  guaranteed to coincide with time stamp order.
  */
 
-inline static EntryPtr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
+inline static TSINptr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
 
-  EntryPtr newEntry;      /* To be inserted after pEntry */
-  EntryPtr pEntry;        /* Steps thru each Entry inspecting time stamp */
+  TSINptr newTSIN;      /* To be inserted after pTSIN */
+  TSINptr pTSIN;        /* Steps thru each TSIN inspecting time stamp */
 
 
-  New_Entry(newEntry, tstn);
+  New_TSIN(newTSIN, tstn);
 
   /* Determine proper position for insertion
      --------------------------------------- */
-  pEntry = TSTHT_HeadEntry(ht);
-  while ( IsNonNULL(pEntry) &&
-	 (Entry_TimeStamp(newEntry) < Entry_TimeStamp(pEntry)) )
-    pEntry = Entry_Next(pEntry);
+  pTSIN = TSTHT_IndexHead(ht);
+  while ( IsNonNULL(pTSIN) &&
+	 (TSIN_TimeStamp(newTSIN) < TSIN_TimeStamp(pTSIN)) )
+    pTSIN = TSIN_Next(pTSIN);
 
 
-  /* Splice newEntry between pEntry and its predecessor
+  /* Splice newTSIN between pTSIN and its predecessor
      -------------------------------------------------- */
-  if ( IsNonNULL(pEntry) ) {
-    Entry_Prev(newEntry) = Entry_Prev(pEntry);
-    Entry_Next(newEntry) = pEntry;
-    if ( IsHeadOfEntryList(pEntry) )
-      TSTHT_HeadEntry(ht) = newEntry;
+  if ( IsNonNULL(pTSIN) ) {
+    TSIN_Prev(newTSIN) = TSIN_Prev(pTSIN);
+    TSIN_Next(newTSIN) = pTSIN;
+    if ( IsTSindexHead(pTSIN) )
+      TSTHT_IndexHead(ht) = newTSIN;
     else
-      Entry_Next(Entry_Prev(pEntry)) = newEntry;
-    Entry_Prev(pEntry) = newEntry;
+      TSIN_Next(TSIN_Prev(pTSIN)) = newTSIN;
+    TSIN_Prev(pTSIN) = newTSIN;
   }
-  else {   /* Insertion is at the end of the Entry list */
-    Entry_Prev(newEntry) = TSTHT_TailEntry(ht);
-    Entry_Next(newEntry) = NULL;
-    if ( IsNULL(TSTHT_HeadEntry(ht)) )  /* First insertion into TSI */
-      TSTHT_HeadEntry(ht) = newEntry;
+  else {   /* Insertion is at the end of the TSIN list */
+    TSIN_Prev(newTSIN) = TSTHT_IndexTail(ht);
+    TSIN_Next(newTSIN) = NULL;
+    if ( IsNULL(TSTHT_IndexHead(ht)) )  /* First insertion into TSI */
+      TSTHT_IndexHead(ht) = newTSIN;
     else
-      Entry_Next(TSTHT_TailEntry(ht)) = newEntry;
-    TSTHT_TailEntry(ht) = newEntry;
+      TSIN_Next(TSTHT_IndexTail(ht)) = newTSIN;
+    TSTHT_IndexTail(ht) = newTSIN;
   }
 
-  return(newEntry);
+  return(newTSIN);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifdef COMMENT	/* tsiRemoveEntry is not used anywhere now */
 /*
- *  Remove a tsi_Entry from a tsi and place it on the global TSI free
+ *  Remove a TS_IndexNode from a tsi and place it on the global TSI free
  *  list for later reuse.
  */
 
-static void tsiRemoveEntry(TSTHTptr ht, EntryPtr entry) {
+static void tsiRemoveEntry(TSTHTptr ht, TSINptr tsin) {
 
-  /* Splice out the Entry from the EntryList
-     --------------------------------------- */
-  if ( IsHeadOfEntryList(entry) )
-    TSTHT_HeadEntry(ht) = Entry_Next(entry);
+  /* Splice out the TSIN from the Index
+     ---------------------------------- */
+  if ( IsTSindexHead(tsin) )
+    TSTHT_IndexHead(ht) = TSIN_Next(tsin);
   else
-    Entry_Next(Entry_Prev(entry)) = Entry_Next(entry);
-  if ( IsTailOfEntryList(entry) )
-    TSTHT_TailEntry(ht) = Entry_Prev(entry);
+    TSIN_Next(TSIN_Prev(tsin)) = TSIN_Next(tsin);
+  if ( IsTSindexTail(tsin) )
+    TSTHT_IndexTail(ht) = TSIN_Prev(tsin);
   else
-    Entry_Prev(Entry_Next(entry)) = Entry_Prev(entry);
+    TSIN_Prev(TSIN_Next(tsin)) = TSIN_Prev(tsin);
 
-  /* Place the Entry on the FreeList
+  /* Place the TSIN on the FreeList
      ------------------------------- */
-  SM_DeallocateStruct(smEntry,entry);
+  SM_DeallocateStruct(smTSIN,tsin);
 }
 #endif /* COMMENT */
 
@@ -157,35 +157,35 @@ static void tsiRemoveEntry(TSTHTptr ht, EntryPtr entry) {
 
 /*
  *  Increase the time stamp of a hashed TSTN to that which is greater
- *  than any other.  Hence, its TSI Entry must be moved to the head of
+ *  than any other.  Hence, its TSIN must be moved to the head of
  *  the list to maintain our ordering property.
  */
 
 inline static void tsiPromoteEntry(TSTNptr tstn, TimeStamp ts) {
 
-  EntryPtr entry;
+  TSINptr tsin;
   TSTHTptr ht;
 
-  entry = TSTN_GetEntry(tstn);
-  Entry_TimeStamp(entry) = ts;
-  if ( IsHeadOfEntryList(entry) )
+  tsin = TSTN_GetTSIN(tstn);
+  TSIN_TimeStamp(tsin) = ts;
+  if ( IsTSindexHead(tsin) )
     return;
 
-  /* Splice out the Entry from the EntryList
-     --------------------------------------- */
+  /* Splice out the TSIN from the Index
+     ---------------------------------- */
   ht = TSTN_GetHashHdr(TSTN_Parent(tstn));
-  Entry_Next(Entry_Prev(entry)) = Entry_Next(entry);
-  if ( IsTailOfEntryList(entry) )
-    TSTHT_TailEntry(ht) = Entry_Prev(entry);
+  TSIN_Next(TSIN_Prev(tsin)) = TSIN_Next(tsin);
+  if ( IsTSindexTail(tsin) )
+    TSTHT_IndexTail(ht) = TSIN_Prev(tsin);
   else
-    Entry_Prev(Entry_Next(entry)) = Entry_Prev(entry);
+    TSIN_Prev(TSIN_Next(tsin)) = TSIN_Prev(tsin);
 
-  /* Place the Entry at the head of the EntryList
-     -------------------------------------------- */ 
-  Entry_Prev(entry) = NULL;
-  Entry_Next(entry) = TSTHT_HeadEntry(ht);
-  Entry_Prev(TSTHT_HeadEntry(ht)) = entry;
-  TSTHT_HeadEntry(ht) = entry;
+  /* Place the TSIN at the head of the Index
+     --------------------------------------- */ 
+  TSIN_Prev(tsin) = NULL;
+  TSIN_Next(tsin) = TSTHT_IndexHead(ht);
+  TSIN_Prev(TSTHT_IndexHead(ht)) = tsin;
+  TSTHT_IndexHead(ht) = tsin;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -225,7 +225,7 @@ inline static void tstnHashifyChildren(TSTNptr parent, TSTNptr root,
     TrieHT_InsertNode(tablebase, hashseed, tstn);
     MakeHashedNode(tstn);
     if ( needTSI )
-      TSTN_SetEntry(tstn, tsiOrderedInsert(ht, tstn));
+      TSTN_SetTSIN(tstn, tsiOrderedInsert(ht, tstn));
   }
 }
 
@@ -268,7 +268,7 @@ inline static TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol,
 #endif
     New_TSTN(tstn,TS_ANSWER_TRIE_TT,HASHED_INTERRIOR_NT,symbol,parent,chain);
     if ( needTSI )
-      TSTN_SetEntry(tstn, tsiHeadInsert(ht,tstn));
+      TSTN_SetTSIN(tstn, tsiHeadInsert(ht,tstn));
     *bucket = tstn;
     chain_length++;  /* total number of nodes now inhabiting this bucket */
     TrieHT_ExpansionCheck(ht,chain_length);
@@ -584,7 +584,7 @@ void tstCreateStructures(TSTNptr pTST) {
       /*** For each TSTN in a bucket... ***/
       for ( tstn = *pBucket;  IsNonNULL(tstn);  tstn = TSTN_Sibling(tstn) )
 
-	/*** Create a TSI Entry for each symbol (TSTN) ***/
-	TSTN_SetEntry(tstn,tsiOrderedInsert(ht,tstn));
+	/*** Create a TSIN for each symbol (TSTN) ***/
+	TSTN_SetTSIN(tstn,tsiOrderedInsert(ht,tstn));
   }
 }

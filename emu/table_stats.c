@@ -129,24 +129,35 @@ HashStats hash_statistics(Structure_Manager *sm) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-SubgStats subgoal_statistics() {
+SubgStats subgoal_statistics(Structure_Manager *sm) {
 
   SubgStats sg_stats;
-  SGFrame pProdSF, pSubSF;
+  SGFrame pProdSF;
+  SubsumptiveSF pConsSF;
   TIFptr tif;
 
 
-  sg_stats.sf = node_statistics(&smSF);
+  sg_stats.sf = node_statistics(sm);
 
   SubgStats_NumProducers(sg_stats) = SubgStats_NumConsumers(sg_stats) = 0;
-  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
-    for ( pProdSF = TIF_Subgoals(tif);  IsNonNULL(pProdSF);
-	  pProdSF = subg_next_subgoal(pProdSF) ) {
-      SubgStats_NumProducers(sg_stats)++;
-      for ( pSubSF = subg_consumers(pProdSF);  IsNonNULL(pSubSF); 
-	    pSubSF = subg_consumers(pSubSF) )
-	SubgStats_NumConsumers(sg_stats)++;
-    }
+  if ( SubgStats_FrameSize(sg_stats) == sizeof(variant_subgoal_frame) ) {
+    for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
+      if ( IsVariantPredicate(tif) )
+	for ( pProdSF = TIF_Subgoals(tif);  IsNonNULL(pProdSF);
+	      pProdSF = subg_next_subgoal(pProdSF) )
+	  SubgStats_NumProducers(sg_stats)++;
+  }
+  else {
+    for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
+      if ( IsSubsumptivePredicate(tif) )
+	for ( pProdSF = TIF_Subgoals(tif);  IsNonNULL(pProdSF);
+	      pProdSF = subg_next_subgoal(pProdSF) ) {
+	  SubgStats_NumProducers(sg_stats)++;
+	  for ( pConsSF = subg_consumers(pProdSF);  IsNonNULL(pConsSF); 
+		pConsSF = subg_consumers(pConsSF) )
+	    SubgStats_NumConsumers(sg_stats)++;
+	}
+  }
   if ( SubgStats_NumAllocFrames(sg_stats) !=
        (SubgStats_NumProducers(sg_stats) + SubgStats_NumConsumers(sg_stats)
 	+ SubgStats_NumFreeFrames(sg_stats)) )
@@ -171,7 +182,9 @@ void print_detailed_tablespace_stats() {
     aln,		/* Answer List Nodes */
     tsi;		/* Time Stamp Indices (Index Entries/Nodes) */
 
-  SubgStats  sf;	/* Subgoal Frames */
+  SubgStats
+    varsf,		/* Variant Subgoal Frames */
+    subsf;		/* Subsumptive Subgoal Frames */
 
   HashStats
     btht,		/* Basic Trie Hash Tables */
@@ -180,37 +193,37 @@ void print_detailed_tablespace_stats() {
 
   btn = node_statistics(&smTableBTN);
   btht = hash_statistics(&smTableBTHT);
-  sf = subgoal_statistics();
+  varsf = subgoal_statistics(&smVarSF);
+  subsf = subgoal_statistics(&smSubSF);
   aln = node_statistics(&smALN);
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
-  tsi = node_statistics(&smEntry);
+  tsi = node_statistics(&smTSIN);
 
   printf("\n"
-	 "  Table Space\n"
-	 "  -----------\n");  
+	 "Table Space Usage\n");
   printf("  Current Total Allocation:   %12u bytes\n"
 	 "  Current Total Usage:        %12u bytes\n",
-	 CurrentTotalTableSpaceAlloc(btn,btht,sf,aln,tstn,tstht,tsi),
-	 CurrentTotalTableSpaceUsed(btn,btht,sf,aln,tstn,tstht,tsi));
+	 CurrentTotalTableSpaceAlloc(btn,btht,varsf,subsf,aln,tstn,tstht,tsi),
+	 CurrentTotalTableSpaceUsed(btn,btht,varsf,subsf,aln,tstn,tstht,tsi));
   printf("\n"
-	 "    Basic Tries:\n");
-  printf("      Basic Trie Nodes (%u blocks):\n"
-	 "        Allocated:   %10u  (%8u bytes)\n"
-	 "        Used:        %10u  (%8u bytes)\n"
-	 "        Free:        %10u  (%8u bytes)\n",
+	 "  Basic Tries\n");
+  printf("    Basic Trie Nodes (%u blocks)\n"
+	 "      Allocated:   %10u  (%8u bytes)\n"
+	 "      Used:        %10u  (%8u bytes)\n"
+	 "      Free:        %10u  (%8u bytes)\n",
 	 NodeStats_NumBlocks(btn),
 	 NodeStats_NumAllocNodes(btn),  NodeStats_SizeAllocNodes(btn),
 	 NodeStats_NumUsedNodes(btn),  NodeStats_SizeUsedNodes(btn),
 	 NodeStats_NumFreeNodes(btn),  NodeStats_SizeFreeNodes(btn));
-  printf("      Basic Trie Hash Tables (%u blocks):\n"
-	 "        Headers:     %10u  (%8u bytes)\n"
-	 "          Used:      %10u  (%8u bytes)\n"
-	 "          Free:      %10u  (%8u bytes)\n"
-	 "        Buckets:     %10u  (%8u bytes)\n"
-	 "          Used:      %10u\n"
-	 "          Empty:     %10u\n"
-	 "        Occupancy:   %10u BTNs\n",
+  printf("    Basic Trie Hash Tables (%u blocks)\n"
+	 "      Headers:     %10u  (%8u bytes)\n"
+	 "        Used:      %10u  (%8u bytes)\n"
+	 "        Free:      %10u  (%8u bytes)\n"
+	 "      Buckets:     %10u  (%8u bytes)\n"
+	 "        Used:      %10u\n"
+	 "        Empty:     %10u\n"
+	 "      Occupancy:   %10u BTNs\n",
 	 HashStats_NumBlocks(btht),
 	 HashStats_NumAllocHeaders(btht),  HashStats_SizeAllocHeaders(btht),
 	 HashStats_NumUsedHeaders(btht),  HashStats_SizeUsedHeaders(btht),
@@ -219,47 +232,56 @@ void print_detailed_tablespace_stats() {
 	 HashStats_NonEmptyBuckets(btht),  HashStats_EmptyBuckets(btht),
 	 HashStats_TotalOccupancy(btht));
   printf("\n"
-	 "    Subgoal Frames (%u blocks):\n"
+	 "  Subgoal Frames\n"
+	 "    Variant Subgoal Frames (%u blocks)\n"
+	 "      Allocated:     %10u  (%8u bytes)\n"
+	 "      Used:          %10u  (%8u bytes)\n"
+	 "      Free:          %10u  (%8u bytes)\n"
+	 "    Subsumptive Subgoal Frames (%u blocks)\n"
 	 "      Allocated:     %10u  (%8u bytes)\n"
 	 "      Used:          %10u  (%8u bytes)\n"
 	 "        Producers:   %8u    (%6u bytes)\n"
 	 "        Consumers:   %8u    (%6u bytes)\n"
 	 "      Free:          %10u  (%8u bytes)\n",
-	 SubgStats_NumBlocks(sf),
-	 SubgStats_NumAllocFrames(sf),  SubgStats_SizeAllocFrames(sf),
-	 SubgStats_NumUsedFrames(sf),  SubgStats_SizeUsedFrames(sf),
-	 SubgStats_NumProducers(sf),
-	 SubgStats_NumProducers(sf) * SubgStats_FrameSize(sf),
-	 SubgStats_NumConsumers(sf),
-	 SubgStats_NumConsumers(sf) * SubgStats_FrameSize(sf),
-	 SubgStats_NumFreeFrames(sf),  SubgStats_SizeFreeFrames(sf));
+	 SubgStats_NumBlocks(varsf),
+	 SubgStats_NumAllocFrames(varsf),  SubgStats_SizeAllocFrames(varsf),
+	 SubgStats_NumUsedFrames(varsf),  SubgStats_SizeUsedFrames(varsf),
+	 SubgStats_NumFreeFrames(varsf),  SubgStats_SizeFreeFrames(varsf),
+	 SubgStats_NumBlocks(subsf),
+	 SubgStats_NumAllocFrames(subsf),  SubgStats_SizeAllocFrames(subsf),
+	 SubgStats_NumUsedFrames(subsf),  SubgStats_SizeUsedFrames(subsf),
+	 SubgStats_NumProducers(subsf),
+	 SubgStats_NumProducers(subsf) * SubgStats_FrameSize(subsf),
+	 SubgStats_NumConsumers(subsf),
+	 SubgStats_NumConsumers(subsf) * SubgStats_FrameSize(subsf),
+	 SubgStats_NumFreeFrames(subsf),  SubgStats_SizeFreeFrames(subsf));
   printf("\n"
-	 "    Answer List Nodes (%u blocks):\n"
-	 "      Allocated:     %10u  (%8u bytes)\n"
-	 "      Used:          %10u  (%8u bytes)\n"
-	 "      Free:          %10u  (%8u bytes)\n",
+	 "  Answer List Nodes (%u blocks)\n"
+	 "    Allocated:     %10u  (%8u bytes)\n"
+	 "    Used:          %10u  (%8u bytes)\n"
+	 "    Free:          %10u  (%8u bytes)\n",
 	 NodeStats_NumBlocks(aln),
 	 NodeStats_NumAllocNodes(aln),  NodeStats_SizeAllocNodes(aln),
 	 NodeStats_NumUsedNodes(aln),  NodeStats_SizeUsedNodes(aln),
 	 NodeStats_NumFreeNodes(aln),  NodeStats_SizeFreeNodes(aln));
   printf("\n"
-	 "    Time Stamp Tries:\n"
-	 "      Time Stamp Trie Nodes (%u blocks):\n"
-	 "        Allocated:   %10u  (%8u bytes)\n"
-	 "        Used:        %10u  (%8u bytes)\n"
-	 "        Free:        %10u  (%8u bytes)\n",
+	 "  Time Stamp Tries\n"
+	 "    Time Stamp Trie Nodes (%u blocks)\n"
+	 "      Allocated:   %10u  (%8u bytes)\n"
+	 "      Used:        %10u  (%8u bytes)\n"
+	 "      Free:        %10u  (%8u bytes)\n",
 	 NodeStats_NumBlocks(tstn),
 	 NodeStats_NumAllocNodes(tstn),  NodeStats_SizeAllocNodes(tstn),
 	 NodeStats_NumUsedNodes(tstn),  NodeStats_SizeUsedNodes(tstn),
 	 NodeStats_NumFreeNodes(tstn) ,  NodeStats_SizeFreeNodes(tstn));
-  printf("      Time Stamp Trie Hash Tables (%u blocks):\n"
-	 "        Headers:     %10u  (%8u bytes)\n"
-	 "          Used:      %10u  (%8u bytes)\n"
-	 "          Free:      %10u  (%8u bytes)\n"
-	 "        Buckets:     %10u  (%8u bytes)\n"
-	 "          Used:      %10u\n"
-	 "          Empty:     %10u\n"
-	 "        Occupancy:   %10u TSTNs\n",
+  printf("    Time Stamp Trie Hash Tables (%u blocks)\n"
+	 "      Headers:     %10u  (%8u bytes)\n"
+	 "        Used:      %10u  (%8u bytes)\n"
+	 "        Free:      %10u  (%8u bytes)\n"
+	 "      Buckets:     %10u  (%8u bytes)\n"
+	 "        Used:      %10u\n"
+	 "        Empty:     %10u\n"
+	 "      Occupancy:   %10u TSTNs\n",
 	 HashStats_NumBlocks(tstht),
 	 HashStats_NumAllocHeaders(tstht),  HashStats_SizeAllocHeaders(tstht),
 	 HashStats_NumUsedHeaders(tstht),  HashStats_SizeUsedHeaders(tstht),
@@ -267,10 +289,10 @@ void print_detailed_tablespace_stats() {
 	 HashStats_NumBuckets(tstht),  HashStats_SizeAllocBuckets(tstht),
 	 HashStats_NonEmptyBuckets(tstht),  HashStats_EmptyBuckets(tstht),
 	 HashStats_TotalOccupancy(tstht));
-  printf("      Time Stamp Trie Index Nodes (%u blocks):\n"
-	 "        Allocated:   %10u  (%8u bytes)\n"
-	 "        Used:        %10u  (%8u bytes)\n"
-	 "        Free:        %10u  (%8u bytes)\n",
+  printf("    Time Stamp Trie Index Nodes (%u blocks)\n"
+	 "      Allocated:   %10u  (%8u bytes)\n"
+	 "      Used:        %10u  (%8u bytes)\n"
+	 "      Free:        %10u  (%8u bytes)\n",
 	 NodeStats_NumBlocks(tsi),
 	 NodeStats_NumAllocNodes(tsi),  NodeStats_SizeAllocNodes(tsi),
 	 NodeStats_NumUsedNodes(tsi),  NodeStats_SizeUsedNodes(tsi),
@@ -279,13 +301,14 @@ void print_detailed_tablespace_stats() {
   if (flags[TRACE_STA]) {
     /* Report Maximum Usages
        --------------------- */
-    update_maximum_tablespace_stats(&btn,&btht,&sf,&aln,&tstn,&tstht,&tsi);
+    update_maximum_tablespace_stats(&btn,&btht,&varsf,&subsf,&aln,
+				    &tstn,&tstht,&tsi);
     printf("\n"
-	   "  Maximum Total Usage:        %12ld bytes\n",
+	   "Maximum Total Usage:        %12ld bytes\n",
 	   maximum_total_tablespace_usage());
-    printf("  Maximum Structure Usage:\n"
-	   "    ALNs:            %10u  (%8u bytes)\n"
-	   "    TSINs:           %10u  (%8u bytes)\n",
+    printf("Maximum Structure Usage:\n"
+	   "  ALNs:            %10u  (%8u bytes)\n"
+	   "  TSINs:           %10u  (%8u bytes)\n",
 	   maximum_answer_list_nodes(),
 	   maximum_answer_list_nodes() * NodeStats_NodeSize(aln),
 	   maximum_timestamp_index_nodes(),
@@ -345,18 +368,20 @@ void reset_maximum_tablespace_stats() {
 void compute_maximum_tablespace_stats() {
 
   NodeStats tstn, btn, aln, tsi;
-  SubgStats sf;
+  SubgStats varsf, subsf;
   HashStats tstht, btht;
 
   btn = node_statistics(&smTableBTN);
   btht = hash_statistics(&smTableBTHT);
-  sf = subgoal_statistics();
+  varsf = subgoal_statistics(&smVarSF);
+  subsf = subgoal_statistics(&smSubSF);
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
-  tsi = node_statistics(&smEntry);
+  tsi = node_statistics(&smTSIN);
   aln = node_statistics(&smALN);
 
-  update_maximum_tablespace_stats(&btn,&btht,&sf,&aln,&tstn,&tstht,&tsi);
+  update_maximum_tablespace_stats(&btn,&btht,&varsf,&subsf,&aln,
+				  &tstn,&tstht,&tsi);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -370,13 +395,13 @@ void compute_maximum_tablespace_stats() {
  */
 
 void update_maximum_tablespace_stats(NodeStats *btn, HashStats *btht,
-				     SubgStats *sf, NodeStats *aln,
-				     NodeStats *tstn, HashStats *tstht,
-				     NodeStats *tsi) {
+				     SubgStats *varsf, SubgStats *subsf,
+				     NodeStats *aln, NodeStats *tstn,
+				     HashStats *tstht, NodeStats *tsi) {
    unsigned long  byte_size;
 
-   byte_size =
-     CurrentTotalTableSpaceUsed(*btn,*btht,*sf,*aln,*tstn,*tstht,*tsi);
+   byte_size = CurrentTotalTableSpaceUsed(*btn,*btht,*varsf,*subsf,*aln,
+					  *tstn,*tstht,*tsi);
    if ( byte_size > maxTableSpaceUsage.total_bytes )
      maxTableSpaceUsage.total_bytes = byte_size;
    if ( NodeStats_NumUsedNodes(*aln) > maxTableSpaceUsage.alns )
@@ -426,7 +451,7 @@ void reset_subsumption_stats() {
 
 void print_detailed_subsumption_stats() {
 
-  printf("Subsumptive Operations:\n"
+  printf("Subsumptive Operations\n"
 	 "  Subsumptive call check/insert ops: %8u\n"
 	 "  * Calls to nonexistent or incomplete tables\n"
 	 "    - Producers:                   %6u\n"

@@ -33,7 +33,7 @@ BTNptr subsumptive_trie_lookup(int, CPtr, BTNptr, TriePathType *);
 extern SGFrame get_subgoal_ptr(Cell, TIFptr);
 extern SGFrame get_call(Cell, Cell *);
 extern Cell build_ret_term(int, Cell[]);
-extern void construct_answer_template(Cell, SGFrame, Cell[]);
+extern void construct_answer_template(Cell, SubsumptiveSF, Cell[]);
 extern void breg_retskel(void);
 extern void delete_predicate_table(TIFptr);
 extern void reclaim_del_ret_list(SGFrame);

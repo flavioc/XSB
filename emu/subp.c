@@ -60,6 +60,7 @@
 #include "sig_xsb.h"
 #include "inst_xsb.h"
 #include "macro_xsb.h"
+#include "table_stats.h"
 
 /*======================================================================*/
 /*======================================================================*/
@@ -186,6 +187,16 @@ void print_statistics(int amount) {
     perproc_stat();		/* move max usage into 'ttt' struct variable */
     total_stat(real_time()-realtime_count);   /* print */
     reset_stat_total();		/* reset 'ttt' struct variable (all 0's) */
+    break;
+  case 2:		    /* Print Detailed Table Usage */
+    print_detailed_tablespace_stats();
+    break;
+  case 3:		    /* Print Detailed Table, Stack, and CPUtime */
+    perproc_stat();
+    total_stat(real_time()-realtime_count);
+    reset_stat_total();
+    print_detailed_tablespace_stats();
+    print_detailed_subsumption_stats();
     break;
   case 5:
     dis(0); break;		/* output memory image; for debugging */

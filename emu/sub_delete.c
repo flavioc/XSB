@@ -60,9 +60,9 @@ static void free_tstht(TSTHTptr tstht) {
 }
 
 static void free_tsi(TSTHTptr tstht) {
-  if ( IsNonNULL(TSTHT_HeadEntry(tstht)) )
-    SM_DeallocateStructList(smEntry,TSTHT_TailEntry(tstht),
-			    TSTHT_HeadEntry(tstht));
+  if ( IsNonNULL(TSTHT_IndexHead(tstht)) )
+    SM_DeallocateStructList(smTSIN,TSTHT_IndexTail(tstht),
+			    TSTHT_IndexHead(tstht));
 }
 
 static void free_producer_sf(SGFrame sf) {
@@ -70,7 +70,7 @@ static void free_producer_sf(SGFrame sf) {
 }
 
 static void free_consumer_sf(SGFrame sf) {
-  SM_DeallocateStruct(smSF,sf);
+  SM_DeallocateStruct(smSubSF,sf);
 }
 
 /*
@@ -99,7 +99,7 @@ static void delete_tstht(TSTHTptr tstht) {
 
 static void delete_sf(SGFrame sf) {
   free_al(sf);
-  if ( IsProducerSF(sf) )
+  if ( IsProducingSubgoal(sf) )
     free_producer_sf(sf);
   else
     free_consumer_sf(sf);
@@ -107,10 +107,8 @@ static void delete_sf(SGFrame sf) {
 
 /*-----------------------------------------------------------------------*/
 
-/* Deleting Branches of Subsumptive Tables
-   --------------------------------------- */
 /*
- *  Delete the given TST Answer Table node and recursively all of
+ *  Delete the given TST Answer Set node and recursively all of
  *  its children.
  */
 
@@ -148,43 +146,55 @@ static void delete_tst_answer_set(TSTNptr root) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *  Delete the given subsumptive Call Table node and recursively all
- *  of its children.
+ *  Delete the given Call Table node and recursively all of its children.
  */
 
-void delete_subsumptive_table(BTNptr root) {
+void delete_call_index(BTNptr root) {
 
   BTNptr current, sibling;
   BTHTptr hash_hdr;
   unsigned int i;
-  SGFrame sf;
 
 
   if ( IsNULL(root) )
     return;
 
-  if ( IsLeafNode(root) ) {
-    sf = CallTrieLeaf_GetSF(root);
-    delete_tst_answer_set((TSTNptr)subg_ans_root_ptr(sf));
-    delete_sf(sf);
-  }
-  else {
-    if ( IsHashHeader(BTN_Child(root)) ) {
-      hash_hdr = BTN_GetHashHdr(root);
-      for ( i = 0;  i < BTHT_NumBuckets(hash_hdr);  i++ )
-	for ( current = BTHT_BucketArray(hash_hdr)[i];
-	      IsNonNULL(current);  current = sibling ) {
-	  sibling = BTN_Sibling(current);
-	  delete_subsumptive_table(current);
-	}
-      delete_btht(hash_hdr);
-    }
-    else
-      for ( current = BTN_Child(root);  IsNonNULL(current);
-	    current = sibling ) {
+  if ( IsHashHeader(BTN_Child(root)) ) {
+    hash_hdr = BTN_GetHashHdr(root);
+    for ( i = 0;  i < BTHT_NumBuckets(hash_hdr);  i++ )
+      for ( current = BTHT_BucketArray(hash_hdr)[i];
+	    IsNonNULL(current);  current = sibling ) {
 	sibling = BTN_Sibling(current);
-	delete_subsumptive_table(current);
+	delete_call_index(current);
       }
+    delete_btht(hash_hdr);
   }
+  else if ( ! IsLeafNode(root) )
+    for ( current = BTN_Child(root);  IsNonNULL(current);
+	  current = sibling ) {
+      sibling = BTN_Sibling(current);
+      delete_call_index(current);
+    }
   free_btn(root);
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+void delete_subsumptive_table(TIFptr tif) {
+
+  SubsumptiveSF cur_prod, next_prod,
+                cur_cons, next_cons;
+
+  for ( cur_prod = (SubsumptiveSF)TIF_Subgoals(tif);
+	IsNonNULL(cur_prod);  cur_prod = next_prod ) {
+    for ( cur_cons = subg_consumers(cur_prod);
+	  IsNonNULL(cur_cons);  cur_cons = next_cons ) {
+      next_cons = subg_consumers(cur_cons);
+      delete_sf((SGFrame)cur_cons);
+    }
+    next_prod = (SubsumptiveSF)subg_next_subgoal(cur_prod);
+    delete_tst_answer_set((TSTNptr)subg_ans_root_ptr(cur_prod));
+    delete_sf((SGFrame)cur_prod);
+  }
+  delete_call_index(TIF_CallTrie(tif));
 }

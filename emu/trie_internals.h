@@ -97,12 +97,12 @@
 
 #define TN_SetInstr(pTN,Symbol)					\
    switch( TrieSymbolType(Symbol) ) {				\
-   case XSB_STRUCT:							\
+   case XSB_STRUCT:						\
      TN_Instr(pTN) = (byte)trie_try_str;			\
      break;							\
-   case XSB_INT:							\
-   case XSB_STRING:							\
-   case XSB_FLOAT:							\
+   case XSB_INT:						\
+   case XSB_STRING:						\
+   case XSB_FLOAT:						\
      TN_Instr(pTN) = (byte)trie_try_numcon;			\
      break;							\
    case XSB_TrieVar:						\
@@ -113,7 +113,7 @@
      else							\
        TN_Instr(pTN) = (byte)trie_try_val;			\
      break;							\
-   case XSB_LIST:							\
+   case XSB_LIST:						\
      TN_Instr(pTN) = (byte)trie_try_list;			\
      break;							\
    default:							\
@@ -145,8 +145,9 @@
  *  data -- which appear as leaves of a trie.
  */
 
-#define TN_UpgradeInstrTypeToSUCCESS(pTN,SymbolTag)			\
-   if (SymbolTag == XSB_STRING || SymbolTag == XSB_INT || SymbolTag == XSB_FLOAT)	\
+#define TN_UpgradeInstrTypeToSUCCESS(pTN,SymbolTag)	\
+   if ( SymbolTag == XSB_STRING || SymbolTag == XSB_INT	\
+        || SymbolTag == XSB_FLOAT )			\
      TN_Instr(pTN) += 0x4
 
 
@@ -305,7 +306,7 @@ enum Types_of_Trie_Nodes {
 #define IsTrieVar(Symbol)	     ( TrieSymbolType(Symbol) == XSB_TrieVar )
 #define IsTrieConstant(Symbol)			\
    ( (TrieSymbolType(Symbol) == XSB_STRING) ||	\
-     (TrieSymbolType(Symbol) == XSB_INT) ||		\
+     (TrieSymbolType(Symbol) == XSB_INT) ||	\
      (TrieSymbolType(Symbol) == XSB_FLOAT) )
 
 #define EncodeTrieFunctor(Cell_STRUCT)	makecs(follow(clref_val(Cell_STRUCT)))
@@ -472,9 +473,9 @@ extern Cell TrieVarBindings[];
  */
 #define TRIEVAR_BUCKET	0
 
-#define TrieHash(Symbol, HashSeed)			\
-   ( IsTrieVar(Symbol)					\
-      ? TRIEVAR_BUCKET					\
+#define TrieHash(Symbol, HashSeed)				\
+   ( IsTrieVar(Symbol)						\
+      ? TRIEVAR_BUCKET						\
       : ( ((Symbol) >> XSB_CELL_TAG_NBITS) & (HashSeed) )	\
     )
 
@@ -685,9 +686,9 @@ extern Structure_Manager *smBTHT;
 
 /* For Hashed TSTNs
    ---------------- */
-#define TSTN_SetEntry(pTSTN,Entry)   TSTN_TimeStamp(pTSTN) = (TimeStamp)(Entry)
-#define TSTN_GetEntry(pTSTN)	      ((EntryPtr)TSTN_TimeStamp(pTSTN))
-#define TSTN_GetTSfromEntry(pTSTN)    Entry_TimeStamp(TSTN_GetEntry(pTSTN))
+#define TSTN_SetTSIN(pTSTN,TSIN)    TSTN_TimeStamp(pTSTN) = (TimeStamp)(TSIN)
+#define TSTN_GetTSIN(pTSTN)	    ((TSINptr)TSTN_TimeStamp(pTSTN))
+#define TSTN_GetTSfromTSIN(pTSTN)   TSIN_TimeStamp(TSTN_GetTSIN(pTSTN))
 
 /* For leaves of TS Answer Tries
    ----------------------------- */
@@ -726,53 +727,53 @@ TSTNptr new_tstn(int TrieType, int NodeType, Cell Symbol,
  *  hashed symbols are also organized in a secondary indexing structure
  *  based on their time stamps.  This index allows for the selection of
  *  symbols with valid time stamps -- symbols having time stamp values
- *  greater than some given time stamp -- in time proportional to such
- *  symbols.  The organization of a Time Stamp Index is maintained by a
- *  TST hash table and consists of a doubly-linked list of nodes (the
- *  'prev' field of the first node and the 'next' field of the last are
- *  always NULL) which, when traversed from head to tail, visits the
- *  symbols in decreasing time-stamp order.  These nodes are assigned
- *  one to a TSTN and contain bidirectional references, allowing for
- *  reorganization in constant time (TSTNs are likely to change their
- *  time stamp value during insertions).  The nodes of this index are
- *  globally maintained by a "Structure Manager" structure, are
- *  allocated from this pool when needed, and returned when not.  To
+ *  greater than some given time stamp -- in time proportional to the
+ *  number of such symbols.  The organization of a Time Stamp Index is
+ *  maintained by a TST Hash Table and consists of a doubly-linked list
+ *  of nodes (the 'prev' field of the first node and the 'next' field of
+ *  the last are always NULL) which, when traversed from head to tail,
+ *  visits the symbols in decreasing time-stamp order.  These nodes are
+ *  assigned one to a TSTN and contain bidirectional references,
+ *  allowing for reorganization in constant time (TSTNs are likely to
+ *  change their time stamp value during insertions).  The nodes of this
+ *  index are globally maintained by a "Structure Manager" structure,
+ *  are allocated from this pool when needed, and returned when not.  To
  *  allow rapid deallocation in accordance with the constraints of the
  *  Structure_Manager, the first word in these indexing nodes contain
  *  one of the fields used to link them into a chain.
  */
 
-typedef struct TimeStamp_Index_Node *EntryPtr;
+typedef struct TimeStamp_Index_Node *TSINptr;
 typedef struct TimeStamp_Index_Node {
-  EntryPtr prev;
-  EntryPtr next;
+  TSINptr prev;
+  TSINptr next;
   TimeStamp ts;
   TSTNptr tstn;
-} TSI_Entry;
+} TS_IndexNode;
 
-#define Entry_Prev(pEntry)		((pEntry)->prev)
-#define Entry_Next(pEntry)		((pEntry)->next)
-#define Entry_TimeStamp(pEntry)		((pEntry)->ts)
-#define Entry_TSTNode(pEntry)		((pEntry)->tstn)
+#define TSIN_Prev(TSIN)			((TSIN)->prev)
+#define TSIN_Next(TSIN)			((TSIN)->next)
+#define TSIN_TimeStamp(TSIN)		((TSIN)->ts)
+#define TSIN_TSTNode(TSIN)		((TSIN)->tstn)
 
-#define IsHeadOfEntryList(pEntry)	IsNULL(Entry_Prev(pEntry))
-#define IsTailOfEntryList(pEntry)	IsNULL(Entry_Next(pEntry))
+#define IsTSindexHead(TSIN)		IsNULL(TSIN_Prev(TSIN))
+#define IsTSindexTail(TSIN)		IsNULL(TSIN_Next(TSIN))
 
 /* Memory Management
    ----------------- */
-#define TSI_ENTRIES_PER_BLOCK  256
+#define TSINs_PER_BLOCK  256
 
-extern Structure_Manager smEntry;
+extern Structure_Manager smTSIN;
 
 /*
- *  Set `pEntry' to an unused Entry in the global TSI_Entry resource,
- *  and associate this Entry with the TSTN pointed to by pTSTN.
+ *  Set `TSIN' to an unused entry in the global TS_IndexNode resource,
+ *  and associate this entry with the TSTN pointed to by `TSTN'.
  * 'prev' and 'next' links are left to the caller to set.
  */
-#define New_Entry(pEntry, pTSTN) {			\
-   SM_AllocateStruct(smEntry,pEntry);			\
-   Entry_TSTNode(pEntry) = pTSTN;			\
-   Entry_TimeStamp(pEntry) = TSTN_TimeStamp(pTSTN);	\
+#define New_TSIN(TSIN, TSTN) {			\
+   SM_AllocateStruct(smTSIN,TSIN);		\
+   TSIN_TSTNode(TSIN) = TSTN;			\
+   TSIN_TimeStamp(TSIN) = TSTN_TimeStamp(TSTN);	\
  }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -791,8 +792,8 @@ typedef struct HashTable_for_TSTNs {
   TSTNptr *pBucketArray;
   TSTHTptr prev, next;
   TSTHTptr internalLink;     /* for reclaimation of Entries w/i a TST */
-  EntryPtr head_entry;       /* these fields maintain TSI */
-  EntryPtr tail_entry;
+  TSINptr index_head;       /* these fields maintain TSI */
+  TSINptr index_tail;
 } TST_HashTable;
 
 /* Field Access Macros
@@ -807,8 +808,8 @@ typedef struct HashTable_for_TSTNs {
 #define TSTHT_PrevTSTHT(pTSTHT)		TrieHT_PrevHT(pTSTHT)
 #define TSTHT_NextTSTHT(pTSTHT)		TrieHT_NextHT(pTSTHT)
 #define TSTHT_InternalLink(pTSTHT)	((pTSTHT)->internalLink)
-#define TSTHT_HeadEntry(pTSTHT)		((pTSTHT)->head_entry)
-#define TSTHT_TailEntry(pTSTHT)		((pTSTHT)->tail_entry)
+#define TSTHT_IndexHead(pTSTHT)		((pTSTHT)->index_head)
+#define TSTHT_IndexTail(pTSTHT)		((pTSTHT)->index_tail)
 
 #define TSTHT_GetHashSeed(pTSTHT)   BTHT_GetHashSeed((BTHTptr)(pTSTHT))
 
@@ -822,7 +823,7 @@ extern Structure_Manager smTSTHT;
    _New_TrieHT(smTSTHT,TSTHT,TrieType);				\
    TSTHT_InternalLink(TSTHT) = TSTRoot_GetHTList(TST);		\
    TSTRoot_SetHTList(TST,TSTHT);				\
-   TSTHT_HeadEntry(TSTHT) = TSTHT_TailEntry(TSTHT) = NULL;	\
+   TSTHT_IndexHead(TSTHT) = TSTHT_IndexTail(TSTHT) = NULL;	\
  }
 
 /*===========================================================================*/

@@ -226,8 +226,8 @@ case tabletrysingle: {
 
   else
 
-    /* New Subsumed Call
-       ----------------- */
+    /* New Properly Subsumed Call
+       -------------------------- */
     NewConsumerSF( consumer_sf, CallLUR_Leaf(lookupResults),
 		   CallInfo_TableInfo(callInfo), producer_sf );
 
@@ -264,10 +264,10 @@ case tabletrysingle: {
     /* Consume First Answer or Suspend
        ------------------------------- */
     answer_set = subg_answers(consumer_sf);
-    if ( IsNULL(answer_set) &&
-	 ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) )
-      answer_set =
-	table_retrieve_answers(producer_sf,consumer_sf,answer_template);
+    if ( IsNULL(answer_set) && (consumer_sf != producer_sf) )
+      if ( ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) )
+	answer_set =
+	  table_retrieve_answers(producer_sf,consumer_sf,answer_template);
 
     if ( IsNonNULL(answer_set) ) {
       int tmp;
@@ -354,7 +354,7 @@ case tabletrysingle: {
  */
 
 case answer_return: {
-  SGFrame consumer_sf, producer_sf;
+  SGFrame consumer_sf;
   ALNptr answer_set;
   BTNptr answer_leaf;
   CPtr answer_template;
@@ -364,13 +364,14 @@ case answer_return: {
      ----------------------- */
   answer_set = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
   consumer_sf = (SGFrame)nlcp_subgoal_ptr(breg);
-  producer_sf = subg_producer(consumer_sf);
   answer_template = breg + NLCPSIZE;
-  if ( IsNULL(answer_set) &&
-       ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
-    switch_envs(breg);
-    answer_set =
-      table_retrieve_answers(producer_sf,consumer_sf,answer_template);
+  if ( IsNULL(answer_set) && IsProperlySubsumed(consumer_sf) ) {
+    SGFrame producer_sf = (SGFrame)subg_producer(consumer_sf);
+    if ( ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
+      switch_envs(breg);
+      answer_set =
+	table_retrieve_answers(producer_sf,consumer_sf,answer_template);
+    }
   }
 
   if ( IsNonNULL(answer_set) ) {

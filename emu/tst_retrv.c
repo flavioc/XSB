@@ -283,10 +283,10 @@ static void tstRetrievalError(char *string, xsbBool cleanup_needed) {
  *  Return the next TSTN in the TSI with a valid timestamp (if one exists),
  *  otherwise return NULL.
  */
-#define Entry_NextValidTSTN(pValidEntry,TS)			\
-   ( ( IsNonNULL(Entry_Next(pValidEntry)) &&			\
-       IsValidTS(Entry_TimeStamp(Entry_Next(pValidEntry)),TS) )	\
-     ? Entry_TSTNode(Entry_Next(pValidEntry))			\
+#define TSI_NextValidTSTN(ValidTSIN,TS)				\
+   ( ( IsNonNULL(TSIN_Next(ValidTSIN)) &&			\
+       IsValidTS(TSIN_TimeStamp(TSIN_Next(ValidTSIN)),TS) )	\
+     ? TSIN_TSTNode(TSIN_Next(ValidTSIN))			\
      : NULL )
 
 /* ------------------------------------------------------------------------- */
@@ -322,8 +322,8 @@ static void tstRetrievalError(char *string, xsbBool cleanup_needed) {
 			       ContChain,TermStack_PushOp) 		\
    while ( IsNonNULL(SearchChain) ) {					\
      if (TrieEncodedSubterm == TSTN_Symbol(SearchChain)) {		\
-       if ( IsValidTS(TSTN_GetTSfromEntry(SearchChain),TS) ) {		\
-	 Chain_NextValidTSTN(ContChain,TS,TSTN_GetTSfromEntry);		\
+       if ( IsValidTS(TSTN_GetTSfromTSIN(SearchChain),TS) ) {		\
+	 Chain_NextValidTSTN(ContChain,TS,TSTN_GetTSfromTSIN);		\
 	 CPStack_PushFrame(ContChain);					\
 	 TermStackLog_PushFrame;					\
 	 TermStack_PushOp;						\
@@ -768,7 +768,7 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
       }
       if ( IsHashedNode(cur_chain) )
 	SearchChain_UnifyWithConstant(cur_chain,subterm,ts,
-				      TSTN_GetTSfromEntry)
+				      TSTN_GetTSfromTSIN)
       else
 	SearchChain_UnifyWithConstant(cur_chain,subterm,ts,TSTN_TimeStamp)
       break;
@@ -792,7 +792,7 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
 	  backtrack;
       }
       if ( IsHashedNode(cur_chain) )
-	SearchChain_UnifyWithFunctor(cur_chain,subterm,ts,TSTN_GetTSfromEntry)
+	SearchChain_UnifyWithFunctor(cur_chain,subterm,ts,TSTN_GetTSfromTSIN)
       else
 	SearchChain_UnifyWithFunctor(cur_chain,subterm,ts,TSTN_TimeStamp)
       break;
@@ -819,7 +819,7 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
 	  backtrack;
       }
       if ( IsHashedNode(cur_chain) )
-	SearchChain_UnifyWithList(cur_chain,subterm,ts,TSTN_GetTSfromEntry)
+	SearchChain_UnifyWithList(cur_chain,subterm,ts,TSTN_GetTSfromTSIN)
       else
 	SearchChain_UnifyWithList(cur_chain,subterm,ts,TSTN_TimeStamp)
       break;
@@ -847,16 +847,16 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
 	 *  cur_chain should be valid by virtue that we only save valid
 	 *  hashed alt_chains.  Find the next valid TSTN in the chain.
 	 */
-	alt_chain = Entry_NextValidTSTN(TSTN_GetEntry(cur_chain),ts);
+	alt_chain = TSI_NextValidTSTN(TSTN_GetTSIN(cur_chain),ts);
       else if ( IsHashHeader(cur_chain) ) {
 	/* Can only be here if stepping down onto this level... */
-	EntryPtr first_entry = TSTHT_HeadEntry((TSTHTptr)cur_chain);
+	TSINptr tsin = TSTHT_IndexHead((TSTHTptr)cur_chain);
 
-	if ( IsNULL(first_entry) )
+	if ( IsNULL(tsin) )
 	  TST_Retrieval_Error("TSI Structures don't exist", RequiresCleanup);
-	if ( IsValidTS(Entry_TimeStamp(first_entry),ts) ) {
-	  cur_chain = Entry_TSTNode(first_entry);
-	  alt_chain = Entry_NextValidTSTN(first_entry,ts);
+	if ( IsValidTS(TSIN_TimeStamp(tsin),ts) ) {
+	  cur_chain = TSIN_TSTNode(tsin);
+	  alt_chain = TSI_NextValidTSTN(tsin,ts);
 	}
 	else
 	  backtrack;

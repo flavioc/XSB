@@ -50,11 +50,14 @@
 
 /* Manager Structures
    ------------------ */
-Structure_Manager smSF     = SM_InitDecl(struct subgoal_frame,
+Structure_Manager smVarSF  = SM_InitDecl(variant_subgoal_frame,
 					 SUBGOAL_FRAMES_PER_BLOCK,
-					 "Subgoal Frame");
-Structure_Manager smALN = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
-				      "Answer List Node");
+					 "Variant Subgoal Frame");
+Structure_Manager smSubSF  = SM_InitDecl(subsumptive_subgoal_frame,
+					 SUBGOAL_FRAMES_PER_BLOCK,
+					 "Subsumptive Subgoal Frame");
+Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
+					 "Answer List Node");
 
 /*-------------------------------------------------------------------------*/
 
@@ -187,7 +190,7 @@ void table_consume_answer(BTNptr answer, int size, int attv_num, CPtr template,
 /*-------------------------------------------------------------------------*/
 
 /*
- *  Collects answers from a producer's answer table based on an answer
+ *  Collects answers from a producer's answer set based on an answer
  *  template and a time stamp value.  Collection is performed to
  *  replenish the answer cache of a properly subsumed subgoal.
  *  Collected answers are placed into the consumer's cache and the time
@@ -204,8 +207,10 @@ ALNptr table_retrieve_answers(SGFrame prodSF, SGFrame consSF, CPtr template) {
 
 
 #ifdef DEBUG
-  if (consSF == prodSF)
-    xsb_abort("Answer Retrieval triggered for a variant!");
+  if ( (consSF == prodSF) || (! IsSubsumptiveProducer(prodSF))
+       || (! IsProperlySubsumed(consSF)) )
+    xsb_abort("Answer Retrieval apparently triggered for a variant!\n"
+	      "Perhaps SF type is corrupt?");
 #endif
   size = int_val(*template);
   template = template + size;
@@ -228,22 +233,22 @@ ALNptr table_retrieve_answers(SGFrame prodSF, SGFrame consSF, CPtr template) {
 /*
  *  Deallocate all the data structures which become superfluous once the
  *  table has completed.  Currently, this includes the answer list nodes
- *  and the TSIs from the producer, and the answer list nodes from the
- *  subsumed subgoals.  For the producers, the engine requires that the
- *  dummy answer-list node remain, and that its 'next' field be set to
- *  either the constant CON_ANSWERS or UNCOND_ANSWERS depending on whether
- *  there were any conditional answers in the answer list.  For the
- *  subsumed (consumer) subgoals, the entire answer list, including the
- *  dummy, is reclaimed.
+ *  from the producer, and if subsumption was used, the TSIs from the
+ *  answer set and the answer list nodes from the subsumed subgoals.
+ *  For the producers, the engine requires that the dummy answer-list
+ *  node remain, and that its 'next' field be set to either the constant
+ *  CON_ANSWERS or UNCOND_ANSWERS depending on whether there were any
+ *  conditional answers in the answer list.  For the subsumed (consumer)
+ *  subgoals, the entire answer list, including the dummy, is reclaimed.
  *
  *  For statistical purposes, we check whether the current usage of
  *  these incomplete-table structures are new maximums.
  *
  *  Currently, timestamps from the TSIs are copied back to the TSTNs.
  *  Although not necessary, this method has some advantages.  Foremost,
- *  this field will never contain garbage values, and so we avoid dangling
- *  pointer problems.  Also, maintaining the time stamp values is
- *  beneficial for post-completion analysis of the TSTs and
+ *  this field will never contain garbage values, and so we avoid
+ *  dangling pointer problems.  Also, maintaining the time stamp values
+ *  is beneficial for post-completion analysis of the TSTs and
  *  characteristics of the query evaluation.
  *
  *  Multiple calls to this function is avoided by checking a flag in the
@@ -253,10 +258,10 @@ ALNptr table_retrieve_answers(SGFrame prodSF, SGFrame consSF, CPtr template) {
 
 void table_complete_entry(SGFrame producerSF) {
 
-  SGFrame pSF;
+  SubsumptiveSF pSF;
   ALNptr pRealAnsList, pALN, tag;
   TSTHTptr ht;
-  EntryPtr tsi_entry;
+  TSINptr tsi_entry;
 
 
 #ifdef DEBUG_STRUCT_ALLOC
@@ -278,29 +283,29 @@ void table_complete_entry(SGFrame producerSF) {
 	  IsNonNULL(ht);  ht = TSTHT_InternalLink(ht) ) {
 
       /*** Put timestamps back into TSTNs ***/
-      for ( tsi_entry = TSTHT_HeadEntry(ht);  IsNonNULL(tsi_entry);
-	    tsi_entry = Entry_Next(tsi_entry) )
-	TSTN_TimeStamp(Entry_TSTNode(tsi_entry)) = Entry_TimeStamp(tsi_entry);
+      for ( tsi_entry = TSTHT_IndexHead(ht);  IsNonNULL(tsi_entry);
+	    tsi_entry = TSIN_Next(tsi_entry) )
+	TSTN_TimeStamp(TSIN_TSTNode(tsi_entry)) = TSIN_TimeStamp(tsi_entry);
 
-      /*** Return Entry chain to Structure Manager ***/
-      if ( IsNULL(TSTHT_TailEntry(ht)) ||
-	   IsNonNULL(Entry_Next(TSTHT_TailEntry(ht))) ||
-	   IsNULL(TSTHT_HeadEntry(ht)) ||
-	   IsNonNULL(Entry_Prev(TSTHT_HeadEntry(ht))) )
+      /*** Return TSIN chain to Structure Manager ***/
+      if ( IsNULL(TSTHT_IndexTail(ht)) ||
+	   IsNonNULL(TSIN_Next(TSTHT_IndexTail(ht))) ||
+	   IsNULL(TSTHT_IndexHead(ht)) ||
+	   IsNonNULL(TSIN_Prev(TSTHT_IndexHead(ht))) )
 	xsb_warn("Malconstructed TSI");
 
 #ifdef DEBUG_STRUCT_ALLOC
-      fprintf(stderr, "  Reclaiming Entry chain\n");
-      smPrint(smEntry, "  before chain reclamation");
+      fprintf(stderr, "  Reclaiming TS Index\n");
+      smPrint(smTSIN, "  before chain reclamation");
 #endif
 
       /*** Because 'prev' field is first, the tail becomes the list head ***/
-      SM_DeallocateStructList(smEntry,TSTHT_TailEntry(ht),
-			      TSTHT_HeadEntry(ht));
-      TSTHT_HeadEntry(ht) = TSTHT_TailEntry(ht) = NULL;
+      SM_DeallocateStructList(smTSIN,TSTHT_IndexTail(ht),
+			      TSTHT_IndexHead(ht));
+      TSTHT_IndexHead(ht) = TSTHT_IndexTail(ht) = NULL;
 
 #ifdef DEBUG_STRUCT_ALLOC
-      smPrint(smEntry, "  after chain reclamation");
+      smPrint(smTSIN, "  after chain reclamation");
 #endif
     }
 
@@ -336,35 +341,37 @@ void table_complete_entry(SGFrame producerSF) {
 
   /* Process its Consumers
      --------------------- */
-  pSF = subg_consumers(producerSF);
+  if ( IsSubsumptiveProducer(producerSF) ) {
+    pSF = subg_consumers(producerSF);
 
 #ifdef DEBUG_STRUCT_ALLOC
-  if ( IsNonNULL(pSF) ) {
-    fprintf(stderr, "Reclaiming structures from consumers of ");
-    print_subgoal(stderr, producerSF);
-    fprintf(stderr, "\n");
-  }
+    if ( IsNonNULL(pSF) ) {
+      fprintf(stderr, "Reclaiming structures from consumers of ");
+      print_subgoal(stderr, producerSF);
+      fprintf(stderr, "\n");
+    }
 #endif
 
-  while ( IsNonNULL(pSF) ) {
+    while ( IsNonNULL(pSF) ) {
 
 #ifdef DEBUG_STRUCT_ALLOC
-    fprintf(stderr, "  Reclaiming ALN chain for consumer\n");
-    smPrint(smALN, "  before chain reclamation");
+      fprintf(stderr, "  Reclaiming ALN chain for consumer\n");
+      smPrint(smALN, "  before chain reclamation");
 #endif
 
-    if ( has_answers(pSF) )    /* real answers exist */
-      SM_DeallocateStructList(smALN,subg_ans_list_ptr(pSF),
-			      subg_ans_list_tail(pSF))
-    else
-      SM_DeallocateStruct(smALN,subg_ans_list_ptr(pSF))
+      if ( has_answers(pSF) )    /* real answers exist */
+	SM_DeallocateStructList(smALN,subg_ans_list_ptr(pSF),
+				subg_ans_list_tail(pSF))
+      else
+	SM_DeallocateStruct(smALN,subg_ans_list_ptr(pSF))
 
 #ifdef DEBUG_STRUCT_ALLOC
-    smPrint(smALN, "  after chain reclamation");
+      smPrint(smALN, "  after chain reclamation");
 #endif
 
-    subg_ans_list_ptr(pSF) = subg_ans_list_tail(pSF) = NULL;
-    pSF = subg_consumers(pSF);
+      subg_ans_list_ptr(pSF) = subg_ans_list_tail(pSF) = NULL;
+      pSF = subg_consumers(pSF);
+    }
   }
 
 #ifdef DEBUG_STRUCT_ALLOC
@@ -386,9 +393,10 @@ void release_all_tabling_resources() {
   SM_ReleaseResources(smTSTN);
   TrieHT_FreeAllocatedBuckets(smTSTHT);
   SM_ReleaseResources(smTSTHT);
-  SM_ReleaseResources(smEntry);
+  SM_ReleaseResources(smTSIN);
   SM_ReleaseResources(smALN);
-  SM_ReleaseResources(smSF);
+  SM_ReleaseResources(smVarSF);
+  SM_ReleaseResources(smSubSF);
 }
 
 /*-------------------------------------------------------------------------*/

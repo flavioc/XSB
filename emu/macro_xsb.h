@@ -23,6 +23,10 @@
 */
 
 
+/*----------------------------------------------------------------------*/
+
+typedef struct subgoal_frame *SGFrame;
+
 /*===========================================================================*/
 
 /*
@@ -45,7 +49,7 @@ typedef struct Table_Info_Frame {
   Psc  psc_ptr;			/* pointer to the PSC record of the subgoal */
   TabledEvalMethod method;	/* eval pred using variant or subsumption? */
   BTNptr call_trie;		/* pointer to the root of the call trie */
-  struct subgoal_frame *subgoals;  /* chain of predicate's subgoals */
+  SGFrame subgoals;		/* chain of predicate's subgoals */
   TIFptr next_tif;		/* pointer to next table info frame */
 } TableInfoFrame;
 
@@ -114,10 +118,6 @@ struct ascc_edge {
 /*----------------------------------------------------------------------*/
 
 #define DELAYED		-1
-
-/*----------------------------------------------------------------------*/
-
-typedef struct subgoal_frame *SGFrame;
 
 /*----------------------------------------------------------------------*/
 
@@ -248,67 +248,101 @@ struct completion_stack_frame {
 
 /*----------------------------------------------------------------------*/
 
-struct subgoal_frame {
-  SGFrame next_subgoal;
-  BTNptr ans_root_ptr;	/* Root of the return trie */
+enum SubgoalFrameType {
+  VARIANT_PRODUCER_SFT, SUBSUMPTIVE_PRODUCER_SFT, SUBSUMED_CONSUMER_SFT
+};
+
+/* Variant Subgoal Frame
+   --------------------- */
+typedef struct subgoal_frame {
+  byte sf_type;		  /* The type of subgoal frame */
+  byte is_complete;	  /* If producer, whether its answer set is complete */
+  byte is_reclaimed;	  /* Whether structs for supporting answer res from an
+			     incomplete table have been reclaimed */
+  TIFptr tif_ptr;	  /* Table of which this call is a part */
+  BTNptr leaf_ptr;	  /* Handle for call in the CallTrie */
+  BTNptr ans_root_ptr;	  /* Root of the return trie */
+  ALNptr ans_list_ptr;	  /* Pointer to the list of returns in the ret trie */
+  ALNptr ans_list_tail;	  /* pointer to the tail of the answer list */
+  void *next_subgoal;	  
+  void *prev_subgoal;
+  CPtr  cp_ptr;		  /* Pointer to the Generator CP */
 #if (!defined(CHAT))
-  CPtr asf_list_ptr;	/* Pointer to list of (CP) active subgoal frames */
+  CPtr asf_list_ptr;	  /* Pointer to list of (CP) active subgoal frames */
 #endif
-  TIFptr tif_ptr;	
-  CPtr compl_stack_ptr;	/* Pointer to subgoal's completion stack frame */
+  CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame */
 #ifdef CHAT
   CPtr compl_suspens_ptr; /* pointer to CHAT area; type is chat_init_pheader */
 #else
   CPtr compl_suspens_ptr; /* CP Stack ptr */
 #endif
-  ALNptr ans_list_ptr;	/* Pointer to the list of returns in the ret trie */
-  SGFrame prev_subgoal;
-  BTNptr leaf_ptr;	/* Used only in remove_open_tries */
-  CPtr  cp_ptr;         /* Pointer to the Generator CP */
-  ALNptr ans_list_tail; /* pointer to the tail of the answer list */
-  CPtr compl_flag;      /* indicates whether subgoal is completed */
-  PNDE nde_list;	/* pointer to a list of negative DEs */
-  TimeStamp ts;		/* Producer: timestamp to be given to next new answer
-			   Consumer: TS to use in next answer retrieval */
-  SGFrame producer;     /* the subgoal frame from whose answer table answers
-			   are collected into the answer list */
-  SGFrame consumers;    /* Producer: list of subgoal frames which consume from
-			     its answer table
-			   Consumer: link in this chain */
-  xsbBool reclaimed_structs;   /* whether tabling structures associated with an
-				  incomplete table have already been reclaimed;
-				  could be folded into a single word with
-				  compl_flag */
-};
+  PNDE nde_list;	  /* pointer to a list of negative DEs */
+} variant_subgoal_frame;
 
-#define CALLSTRUCTSIZE	(sizeof(struct subgoal_frame)/sizeof(CPtr))
-
-#define subg_next_subgoal(b)	((SGFrame)(b))->next_subgoal
+#define subg_sf_type(b)		((SGFrame)(b))->sf_type
+#define subg_is_complete(b)	((SGFrame)(b))->is_complete
+#define subg_is_reclaimed(b)	((SGFrame)(b))->is_reclaimed
 #define subg_prev_subgoal(b)	((SGFrame)(b))->prev_subgoal
+#define subg_next_subgoal(b)	((SGFrame)(b))->next_subgoal
+#define subg_tif_ptr(b)		((SGFrame)(b))->tif_ptr
+#define subg_leaf_ptr(b)	((SGFrame)(b))->leaf_ptr
 #define subg_ans_root_ptr(b)	((SGFrame)(b))->ans_root_ptr
+#define subg_ans_list_ptr(b)	((SGFrame)(b))->ans_list_ptr
+#define subg_ans_list_tail(b)	((SGFrame)(b))->ans_list_tail
+#define subg_cp_ptr(b)		((SGFrame)(b))->cp_ptr
 #if (!defined(CHAT))
 #define subg_asf_list_ptr(b)	((SGFrame)(b))->asf_list_ptr
 #endif
-#define subg_tif_ptr(b)		((SGFrame)(b))->tif_ptr
-#define subg_leaf_ptr(b)	((SGFrame)(b))->leaf_ptr
 /* use this for mark as completed == 0 */
 #define subg_compl_stack_ptr(b)	((SGFrame)(b))->compl_stack_ptr
 #define subg_compl_susp_ptr(b)	((SGFrame)(b))->compl_suspens_ptr
-#define subg_ans_list_ptr(b)	((SGFrame)(b))->ans_list_ptr
-#define subg_cp_ptr(b)		((SGFrame)(b))->cp_ptr
-#define subg_ans_list_tail(b)	((SGFrame)(b))->ans_list_tail
-#define subg_compl_flag(b)	((SGFrame)(b))->compl_flag
 #define subg_nde_list(b)	((SGFrame)(b))->nde_list
-#define subg_producer(b)	((SGFrame)(b))->producer
-#define subg_consumers(b)	((SGFrame)(b))->consumers
-#define subg_timestamp(b)	((SGFrame)(b))->ts
-#define subg_structs_are_reclaimed(b)	((SGFrame)(b))->reclaimed_structs
 
 
-/* Doubly-linked lists of Subgoal Frames
- * -------------------------------------
+/* Subsumption Subgoal Frame
+   ------------------------- */
+typedef struct SubsumptiveSubgoalFrame *SubsumptiveSF;
+typedef struct SubsumptiveSubgoalFrame {
+  variant_subgoal_frame var_sf;
+  SubsumptiveSF producer;     /* The subgoal frame from whose answer set
+				 answers are collected into the answer list */
+  SubsumptiveSF consumers;    /* List of properly subsumed subgoals which
+				 consume from a producer's answer set */
+  TimeStamp ts;		      /* Time stamp to use during next answer ident */
+} subsumptive_subgoal_frame;
+
+#define subg_producer(SF)	((SubsumptiveSF)(SF))->producer
+#define subg_consumers(SF)	((SubsumptiveSF)(SF))->consumers
+#define subg_timestamp(SF)	((SubsumptiveSF)(SF))->ts
+
+
+/* beginning of REAL answers in the answer list */
+#define subg_answers(subg)	ALN_Next(subg_ans_list_ptr(subg))
+
+
+#define IsVariantSF(pSF)	( subg_sf_type(pSF) == VARIANT_PRODUCER_SFT )
+#define IsSubsumptiveSF(pSF)				\
+   ( (subg_sf_type(pSF) == SUBSUMPTIVE_PRODUCER_SFT) ||	\
+     (subg_sf_type(pSF) == SUBSUMED_CONSUMER_SFT) )
+
+#define IsVariantProducer(pSF)		\
+   ( subg_sf_type(pSF) == VARIANT_PRODUCER_SFT )
+#define IsSubsumptiveProducer(pSF)	\
+   ( subg_sf_type(pSF) == SUBSUMPTIVE_PRODUCER_SFT )
+#define IsProperlySubsumed(pSF)		\
+   ( subg_sf_type(pSF) == SUBSUMED_CONSUMER_SFT )
+
+#define IsProducingSubgoal(pSF)		\
+   ( IsVariantProducer(pSF) || IsSubsumptiveProducer(pSF) )
+
+#define ProducerHasConsumers(pSF)	\
+   ( IsSubsumptiveProducer(pSF) && IsNonNULL(subg_consumers(pSF)) )
+
+
+/* Doubly-linked lists of Producer Subgoal Frames
+ * ----------------------------------------------
  * Manipulating a doubly-linked list maintained through fields
- * `prev' and `next'
+ * `prev' and `next'.
  */
 
 #define subg_dll_add_sf(pSF,Chain,NewChain) {	\
@@ -332,26 +366,14 @@ struct subgoal_frame {
  }
 
 
-/* beginning of REAL answers in the answer list */
-#define subg_answers(subg)	aln_next_aln(subg_ans_list_ptr(subg))
-
-#define IsProducerSF(pSF)		( subg_producer(pSF) == pSF )
-#define IsConsumerSF(pSF)		( subg_producer(pSF) != pSF )
-
-#define ConsumerIsProducerVariant(pSF)	  IsProducerSF(pSF)
-#define ConsumerIsProperlySubsumed(pSF)	  IsConsumerSF(pSF)
-
-#define ProducerHasConsumers(pSF)	IsNonNULL(subg_consumers(pSF))
-
 /*
  * Determines whether a producer subgoal has added answers to its set
- * since the given consumer last collected relavant answers from this set.
+ * since the given consumer last collected relevant answers from this set.
  */
 #define ConsumerCacheNeedsUpdating(ConsSF,ProdSF)		\
-   ( ( ConsSF != ProdSF ) &&					\
-     IsNonNULL(subg_ans_root_ptr(ProdSF)) &&			\
-     ( TSTN_TimeStamp((TSTNptr)subg_ans_root_ptr(ProdSF)) >	\
-       subg_timestamp(ConsSF) ) )
+   ( IsNonNULL(subg_ans_root_ptr(ProdSF)) &&			\
+     (TSTN_TimeStamp((TSTNptr)subg_ans_root_ptr(ProdSF)) >	\
+      subg_timestamp(ConsSF)) )
 
 extern ALNptr empty_return();
 
@@ -390,13 +412,14 @@ extern ALNptr empty_return();
    --------------------------- */
 #define SUBGOAL_FRAMES_PER_BLOCK    16
 
-extern struct Structure_Manager smSF;
+extern struct Structure_Manager smVarSF;
+extern struct Structure_Manager smSubSF;
 
 
 /* Subgoal Frame (De)Allocation
    ---------------------------- */
 /*
- * Allocates and initializes a subgoal frame for a producer subgoal.
+ * Allocates and initializes a subgoal frame for a producing subgoal.
  * The TIP field is initialized, fields of the call trie leaf and this
  * subgoal are set to point to one another, while the completion stack
  * frame pointer is set to the next available location (frame) on the
@@ -412,26 +435,38 @@ extern struct Structure_Manager smSF;
 
 #define NewProducerSF(SF,Leaf,TableInfo) {				    \
 									    \
-   SGFrame pNewSF;							    \
+   void *pNewSF;							    \
 									    \
-   SM_AllocateStruct(smSF,pNewSF);					    \
-   pNewSF = memset(pNewSF,0,sizeof(struct subgoal_frame));		    \
+   if ( IsVariantPredicate(TableInfo) ) {				    \
+     SM_AllocateStruct(smVarSF,pNewSF);					    \
+     pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		    \
+     subg_sf_type(pNewSF) = VARIANT_PRODUCER_SFT;			    \
+   }									    \
+   else {								    \
+     SM_AllocateStruct(smSubSF,pNewSF);					    \
+     pNewSF = memset(pNewSF,0,sizeof(subsumptive_subgoal_frame));	    \
+     subg_sf_type(pNewSF) = SUBSUMPTIVE_PRODUCER_SFT;			    \
+     subg_producer(pNewSF) = pNewSF;		   			    \
+     subg_timestamp(pNewSF) = PRODUCER_SF_INITIAL_TS;			    \
+   }									    \
    subg_tif_ptr(pNewSF) = TableInfo;					    \
    subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); \
    subg_leaf_ptr(pNewSF) = Leaf;					    \
    CallTrieLeaf_SetSF(Leaf,pNewSF);					    \
    subg_ans_list_ptr(pNewSF) = empty_return();				    \
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    \
-   subg_producer(pNewSF) = pNewSF;					    \
-   subg_timestamp(pNewSF) = PRODUCER_SF_INITIAL_TS;			    \
    SF = pNewSF;								    \
 }
 
 #define FreeProducerSF(SF) {					\
    subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
 		      TIF_Subgoals(subg_tif_ptr(SF)));		\
-   SM_DeallocateStruct(smSF,SF);				\
+   if ( IsVariantPredicate(subg_tif_ptr(SF)) )			\
+     SM_DeallocateStruct(smVarSF,SF)				\
+   else								\
+     SM_DeallocateStruct(smSubSF,SF)				\
  }
+
 
 /*
  *  Allocates and initializes a subgoal frame for a consuming subgoal: a
@@ -453,17 +488,18 @@ extern struct Structure_Manager smSF;
 void tstCreateStructures(TSTNptr);
 
 #define NewConsumerSF(SF,Leaf,TableInfo,Producer) {		\
-					      			\
-   SGFrame pNewSF;				    		\
-						    		\
-   SM_AllocateStruct(smSF,pNewSF);		       		\
-   pNewSF = memset(pNewSF,0,sizeof(struct subgoal_frame));	\
+								\
+   void *pNewSF;						\
+								\
+   SM_AllocateStruct(smSubSF,pNewSF);				\
+   pNewSF = memset(pNewSF,0,sizeof(subsumptive_subgoal_frame));	\
+   subg_sf_type(pNewSF) = SUBSUMED_CONSUMER_SFT;		\
    subg_tif_ptr(pNewSF) = TableInfo;				\
    subg_leaf_ptr(pNewSF) = Leaf;				\
-   CallTrieLeaf_SetSF(Leaf,pNewSF);		  		\
+   CallTrieLeaf_SetSF(Leaf,pNewSF);				\
    subg_ans_list_ptr(pNewSF) = empty_return();			\
-   subg_producer(pNewSF) = Producer;				\
-   if ( ! ProducerHasConsumers(Producer) )	 		\
+   subg_producer(pNewSF) = (SubsumptiveSF)Producer;		\
+   if ( ! ProducerHasConsumers(Producer) )			\
      tstCreateStructures((TSTNptr)subg_ans_root_ptr(Producer));	\
    subg_consumers(pNewSF) = subg_consumers(Producer);		\
    subg_consumers(Producer) = pNewSF;				\
@@ -535,12 +571,13 @@ void tstCreateStructures(TSTNptr);
 
 /*----------------------------------------------------------------------*/
 
-#define is_completed(SUBG_PTR)	\
-        ((Integer) subg_compl_flag(SUBG_PTR) < 0)
+#define is_completed(SUBG_PTR)		subg_is_complete(SUBG_PTR)
 
+#define structs_are_reclaimed(SUBG_PTR) subg_is_reclaimed(SUBG_PTR)
+   
 #ifdef CHAT
 #define mark_as_completed(SUBG_PTR) {					\
-          subg_compl_flag(SUBG_PTR) = (CPtr) -1;			\
+          subg_is_complete(SUBG_PTR) = TRUE;				\
           /* the following is used to maintain invariants; */		\
           /* ideally the completion stack should be compacted */	\
           /* and completed subgoals should be removed instead */	\
@@ -548,9 +585,9 @@ void tstCreateStructures(TSTNptr);
           reclaim_del_ret_list(SUBG_PTR);				\
         } 
 #else
-#define mark_as_completed(SUBG_PTR) {			\
-          subg_compl_flag(SUBG_PTR) = (CPtr) -1;	\
-          reclaim_del_ret_list(SUBG_PTR);		\
+#define mark_as_completed(SUBG_PTR) {		\
+          subg_is_complete(SUBG_PTR) = TRUE;	\
+          reclaim_del_ret_list(SUBG_PTR);	\
         } 
 #endif
 
@@ -573,17 +610,17 @@ void tstCreateStructures(TSTNptr);
 
 #ifdef CHAT
 #define reclaim_incomplete_table_structs(SUBG_PTR) {	\
-   if ( ! subg_structs_are_reclaimed(SUBG_PTR) ) {	\
+   if ( ! structs_are_reclaimed(SUBG_PTR) ) {		\
      chat_free_cons_chat_areas(SUBG_PTR);		\
      table_complete_entry(SUBG_PTR);			\
-     subg_structs_are_reclaimed(SUBG_PTR) = TRUE;	\
+     structs_are_reclaimed(SUBG_PTR) = TRUE;		\
    }							\
  }
 #else
 #define reclaim_incomplete_table_structs(SUBG_PTR) {	\
-   if ( ! subg_structs_are_reclaimed(SUBG_PTR) ) {	\
+   if ( ! structs_are_reclaimed(SUBG_PTR) ) {		\
      table_complete_entry(SUBG_PTR);			\
-     subg_structs_are_reclaimed(SUBG_PTR) = TRUE;	\
+     structs_are_reclaimed(SUBG_PTR) = TRUE;		\
    }							\
  }
 #endif
