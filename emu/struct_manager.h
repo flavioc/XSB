@@ -48,6 +48,7 @@
  * - SM_DeallocateStructList(SM,pHead,pTail)
  * - SM_CurrentCapacity(SM,NumBlocks,NumStructs)
  * - SM_CountFreeStructs(SM,NumFree)
+ * - SM_RawUsage(SM,TotalBlockUsageInBytes)
  * - SM_ReleaseResources(SM)
  *
  * Management Organization:
@@ -109,12 +110,12 @@
  *    SM_RemoveFromAllocList_SL/DL helpful for this...
  *
  * 4) Get info about the state of the Manager using routines
- *    SM_CurrentCapacity() and SM_CountFreeStructs().
+ *    SM_CurrentCapacity(), SM_CountFreeStructs(), and SM_RawUsage().
  *
  * 5) Releasing the resources of the Structure Manager returns the blocks
  *    to the system and resets some of its fields.
  *
- * 6) With possibly the exception of the allocated-record chain field,
+ * 6) With possibly the exception of the allocated-record-chain field,
  *    avoid direct manipulatiion of the Structure Manager!  Use the
  *    provided interface routines.
  */
@@ -126,13 +127,13 @@ typedef struct Structure_Manager {
     void *pLastStruct;     /* - last struct in current block */
   } cur_block;
   struct {		   /* Structure characteristics: */
-    unsigned int  size;    /* - size of the structure in bytes */
-    unsigned int  num;     /* - number of records per block */
-    char *name;            /* - short description of the struct type */
+    size_t size;	   /* - size of the structure in bytes */
+    counter num;	   /* - number of records per block */
+    char *name;		   /* - short description of the struct type */
   } struct_desc;
-  struct {                 /* Lists of structures: */
-    void *alloc;           /* - convenience hook, not directly maintained */
-    void *dealloc;         /* - deallocated structs, poised for reuse */
+  struct {		   /* Lists of structures: */
+    void *alloc;	   /* - convenience hook, not directly maintained */
+    void *dealloc;	   /* - deallocated structs, poised for reuse */
   } struct_lists;
 } Structure_Manager;
 
@@ -155,7 +156,7 @@ typedef struct Structure_Manager {
    ( IsNULL(SM_CurBlock(SM)) || (SM_NextStruct(SM) > SM_LastStruct(SM)) )
 
 #define SM_NumStructsLeftInBlock(SM)					 \
-   ( IsNonNULL(SM_CurBlock(SM))						 \
+   ( ! SM_CurBlockIsDepleted(SM)					 \
      ? ( ((char *)SM_LastStruct(SM) - (char *)SM_NextStruct(SM))	 \
 	 / SM_StructSize(SM) + 1 )					 \
      : 0 )
@@ -169,20 +170,21 @@ typedef struct Structure_Manager {
    pNewStruct = SM_NextStruct(SM);				\
    SM_NextStruct(SM) = SMBlk_NextStruct(SM_NextStruct(SM),SM_StructSize(SM))
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 extern void smAllocateBlock(Structure_Manager *);
 extern void smFreeBlocks(Structure_Manager *);
+extern void smPrint(Structure_Manager, char *);
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-/*
- * Free List Operations
- */
+/* Manipulating the Free List
+   -------------------------- */
 #define SMFL_NextFreeStruct(pFreeStruct)	( *(void **)(pFreeStruct) )
 
 
-/*
- * Block Operations
- */
+/* Manipulating Allocation Block
+   ----------------------------- */
 #define SMBlk_NextBlock(pBlock)		( *(void **)(pBlock) )
 
 #define SMBlk_FirstStruct(pBlock)	( (char *)pBlock + sizeof(void *) )
@@ -192,6 +194,7 @@ extern void smFreeBlocks(Structure_Manager *);
 
 #define SMBlk_NextStruct(pStruct,StructSize)   ( (char *)pStruct + StructSize )
 
+/*-------------------------------------------------------------------------*/
 
 /* Primary Interface Routines
    ========================== */
@@ -205,6 +208,7 @@ extern void smFreeBlocks(Structure_Manager *);
    {NULL, NULL}							\
  }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Allocate a structure from the Structure Manager.
@@ -221,6 +225,7 @@ extern void smFreeBlocks(Structure_Manager *);
    }						\
  }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  To deallocate a chain of structures -- of the same type -- at once,
@@ -238,6 +243,7 @@ extern void smFreeBlocks(Structure_Manager *);
 #define SM_DeallocateStruct(SM,pStruct)		\
    SM_DeallocateStructList(SM,pStruct,pStruct)
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Query the manager for the number of allocated blocks and the total
@@ -254,6 +260,7 @@ extern void smFreeBlocks(Structure_Manager *);
    NumStructs = NumBlocks * SM_StructsPerBlock(SM);	\
  }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Query the manager for the number of unallocated records it
@@ -273,7 +280,12 @@ extern void smFreeBlocks(Structure_Manager *);
      NumFreeStructs = 0;					\
  }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/*
+ *  Query the manager for the total number of bytes it obtained from
+ *  the system.
+ */
 #define SM_RawUsage(SM,UsageInBytes) {			\
    		 					\
    void *pBlock;					\
@@ -284,34 +296,39 @@ extern void smFreeBlocks(Structure_Manager *);
      UsageInBytes = UsageInBytes + SM_NewBlockSize(SM);	\
  }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Return all memory blocks to the system.
  */
 #define SM_ReleaseResources(SM)		smFreeBlocks(&SM)
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Place a newly allocated record on the "in use" list, maintained as
  *  either a singly- or doubly-linked (SL/DL) list.
  */
+
 #define SM_AddToAllocList_SL(SM,pRecord,LinkFieldMacro) {	\
    LinkFieldMacro(pRecord) = SM_AllocList(SM);			\
    SM_AllocList(SM) = pRecord;					\
  }
 
 #define SM_AddToAllocList_DL(SM,pRecord,PrevFieldMacro,NextFieldMacro) { \
-   NextFieldMacro(pRecord) = SM_AllocList(SM);				 \
    PrevFieldMacro(pRecord) = NULL;					 \
+   NextFieldMacro(pRecord) = SM_AllocList(SM);				 \
    SM_AllocList(SM) = pRecord;						 \
    if ( IsNonNULL(NextFieldMacro(pRecord)) )				 \
      PrevFieldMacro(NextFieldMacro(pRecord)) = pRecord;			 \
  }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Prepare a record for deallocation by removing it from the "in use" list.
  */
+
 #define SM_RemoveFromAllocList_SL(SM,pRecord,LinkFieldMacro,RecordType) { \
 									  \
    RecordType pCur, pPrev;						  \
@@ -347,7 +364,6 @@ extern void smFreeBlocks(Structure_Manager *);
      PrevFieldMacro(NextFieldMacro(pRecord)) = PrevFieldMacro(pRecord);	      \
    NextFieldMacro(pRecord) = PrevFieldMacro(pRecord) = NULL;		      \
  }
-
 
 /*===========================================================================*/
 
