@@ -1127,11 +1127,13 @@ DllExport void call_conv print_pterm(prolog_term term, int toplevel, VarString *
 int xsb_answer_string(VarString *ans, char *sep) {
   int i;
   
-  for (i=1; i<p2c_arity(reg_term(2)); i++) {
-    print_pterm(p2p_arg(reg_term(2),i),TRUE,ans);
-    XSB_StrAppend(ans,sep);
+  if (!is_string(reg_term(2))) {
+    for (i=1; i<p2c_arity(reg_term(2)); i++) {
+      print_pterm(p2p_arg(reg_term(2),i),TRUE,ans);
+      XSB_StrAppend(ans,sep);
+    }
+    print_pterm(p2p_arg(reg_term(2),p2c_arity(reg_term(2))),TRUE,ans);
   }
-  print_pterm(p2p_arg(reg_term(2),p2c_arity(reg_term(2))),TRUE,ans);
   return 0;
 }
 
