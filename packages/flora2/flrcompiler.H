@@ -45,6 +45,7 @@
 :- import flora_define_prolog/2 from flrprolog.
 
 :- import
+	flora_firstorderdef/2,
 	flora_define_firstorder/2,
 	flora_define_flogicstatic/2
    from flrfirstorder.

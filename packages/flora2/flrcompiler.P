@@ -288,10 +288,10 @@ list_struct(List,Term,PRLIST(List,Term,NO_INDEX)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
-thisfdbstorage_struct(PRTHISFDBSTORAGE(PRTHISFDBSTORAGE)).
 
+thisstorage_struct(fdb,PRTHISFDBSTORAGE(PRTHISFDBSTORAGE)).
 %% support for checking undefinedness
-thisfldstorage_struct(PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
+thisstorage_struct(fld,PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
 
 floralib_struct(WS,PRFLORALIB(WS)).
 storage_struct(WS,PRFDBSTORAGE(WS)).
@@ -931,6 +931,61 @@ report_option(Option) :- assert(TMPOPTION(Option)).
 
 
 /****************************************************************************
+   generate_patchrule(+HeadP,+BodyP,+Arity,+StorageType,-Code)
+
+   Generate patch rule of the form:
+   HeadP(X1,...,XN) :- storage_find_fact(<AppropriateStprage>,BodyP(X1,...,XN))
+****************************************************************************/
+generate_patchrule(HeadP,BodyP,Arity,StorageType,Code) :-
+	atomobj_struct(HeadP,HPCode),
+	atomobj_struct(BodyP,BPCode),
+	new_varobjlist(Arity,ArgsCode),
+	termlit_struct(HPCode,Arity,ArgsCode,HeadCode),
+	termlit_struct(BPCode,Arity,ArgsCode,BodyFactCode),
+	thisstorage_struct(StorageType,StorageNameCode),
+	atomobj_struct(storage_find_fact,FCode),
+	prologterm_struct(FCode,2,[StorageNameCode,BodyFactCode],BodyCode),
+	patchrule_struct(HeadCode,BodyCode,Code).
+
+
+/****************************************************************************
+    generate_undefinedness_traprule(+Pred,+Arity,-Code)
+
+    Generate a rule for checking undefinedness of firstorder predicates.
+    Note: the rules for F-logic wrapper predicates look differently
+    and they are explicitly defined in
+                       genincludes/flrpreddef.fli
+    The rules for firstorder predicates look as follows:
+      P(X1,...,XN) :-
+	  flora_debug_module_registry(ThisModule),
+	  not storage_find_fact(ThisModuleFLDStorageName,P(X1,...,XN)),
+	  flora_error_undefined(P(X1,...,XN)),
+	  abort.
+****************************************************************************/
+generate_undefinedness_traprule(Pred,Arity,Code) :-
+	atomobj_struct(Pred,PCode),
+	new_varobjlist(Arity,ArgsCode),
+	termlit_struct(PCode,Arity,ArgsCode,HeadCode),
+	atomobj_struct(flora_debug_module_registry, DMCode),
+	thismodule_struct(ModCode),
+	%% generate flora_debug_module_registry(ThisModule)
+	prologterm_struct(DMCode,1,[ModCode],DebugCode),
+	thisstorage_struct(fld,StorageNameCode),
+	atomobj_struct(storage_find_fact,FCode),
+	prologterm_struct(FCode,2,[StorageNameCode,HeadCode],FldBCode),
+	%% generate  not storage_find_fact(ThisModuleFLDStorageName,Pred(...))
+	not_struct(FldBCode,NotCode),
+	atomobj_struct(flora_error_undefined, ECode),
+	prologterm_struct(ECode,1,[HeadCode],MsgCode),
+	%% generate flora_error_undefined(Pred(...))
+	conjunct_code([DebugCode,NotCode,MsgCode], NMCode),
+	atomobj_struct(abort,ACode),
+	prologterm_struct(ACode,0,[],AbortCode),
+	conjunct_struct(NMCode,AbortCode,BodyCode),
+	patchrule_struct(HeadCode,BodyCode,Code).
+
+
+/****************************************************************************
   initialize_work
 ****************************************************************************/
 initialize_work :-
@@ -1025,27 +1080,44 @@ compile_directive([D|L],CodeList,Status) :-
         ).
 
 
-compile_direct(DirectTerm,[Code],[]) :-
+%% Some directives imply additional code. E.g., table implies firstorder
+compile_direct(DirectTerm,[Code|ImpliedCode],[]) :-
 	( is_flcommand(DirectTerm,C) ->
-	    command_struct(C,Direct)
+	    command_struct(C,Direct),
+	    ImpliedCode = []
 
 	; is_fltable(DirectTerm,P,A) ->
-	    table_struct(P,A,Direct)
+	    table_struct(P,A,Direct),
+	    ImpliedCode = []
+	/*
+	    %% :- table P/N implies :- firstorder P/N.
+	    (flora_firstorderdef(P,A) -> ImpliedCode = []
+	    ; flora_define_firstorder(P,A),
+		generate_patchrule(P,P,A,fdb,FdbLinkingCode),
+		generate_undefinedness_traprule(P,A,NotFoundCode),
+		ImpliedCode = [NotFoundCode,FdbLinkingCode]
+	    )
+	*/
 
 	%%; is_fldynamic(DirectTerm,P,A) ->
-	%%    dynamic_struct(P,A,Direct)
+	%%    dynamic_struct(P,A,Direct),
+	%%    ImpliedCode = []
 
 	%%; is_flexport(DirectTerm,P,A) ->
-	%%    export_struct(P,A,Direct)
+	%%    export_struct(P,A,Direct),
+	%%    ImpliedCode = []
 
 	%%; is_flimport(DirectTerm,P,A,M) ->
-	%%    import_struct(P,A,M,Direct)
+	%%    import_struct(P,A,M,Direct),
+	%%    ImpliedCode = []
 
 	; is_flindex(DirectTerm,P,A,N) ->
-	    index_struct(P,A,N,Direct)
+	    index_struct(P,A,N,Direct),
+	    ImpliedCode = []
 
 	; is_flhilogtable(DirectTerm,A) ->
-	    hilogtable_struct(A,Direct)
+	    hilogtable_struct(A,Direct),
+	    ImpliedCode = []
         ),
 	!,
 	directive_struct(Direct,Code).
@@ -1067,36 +1139,21 @@ compile_direct(DirectTerm,[],[]) :-
 
 compile_direct(DirectTerm,CodeList,[]) :-
 	is_flfirstorder(DirectTerm,P,N),
-	flora_define_firstorder(P,N),
-	%% Check if it is a firstorderall.
+	%% Check if it is a firstorderall
 	( (var(P); var(N)) ->
+	    flora_define_firstorder(P,N),
 	    CodeList=[]
-	;
-	  %% Generate the patch rule.
-	  atomobj_struct(P,PCode),
-	  new_varobjlist(N,ArgsCode),
-	  termlit_struct(PCode,N,ArgsCode,HCode),
-	  thisfdbstorage_struct(SCode),
-	  atomobj_struct(storage_find_fact,FCode),
-	  prologterm_struct(FCode,2,[SCode,HCode],BCode),
-	  patchrule_struct(HCode,BCode,Code),
+	; %% or has already been defined firstorder
+	    flora_firstorderdef(P,N) ->
+	    CodeList=[]
+	; %% new definition of a first-order predicate P/N
+	  flora_define_firstorder(P,N),
+	  %% Generate the patch rule to link predicate to FDB storage
+	  generate_patchrule(P,P,N,fdb,FdbLinkingCode),
+	  %% Generate rule for checking undefinedness
+	  generate_undefinedness_traprule(P,N,NotFoundCode),
 
-	  atomobj_struct(flora_debug_module_registry, DMCode),
-	  thismodule_struct(ModCode),
-	  prologterm_struct(DMCode,1,[ModCode],DebugCode),
-	  thisfldstorage_struct(FldSCode),
-	  prologterm_struct(FCode,2,[FldSCode,HCode],FldBCode),
-	  not_struct(FldBCode,NotCode),
-	  atomobj_struct(flora_error_undefined, ECode),
-	  prologterm_struct(ECode,1,[HCode],MsgCode),
-	  conjunct_struct(DebugCode,NotCode,DNCode),
-	  conjunct_struct(DNCode, MsgCode, NMCode),
-	  atomobj_struct(abort,ACode),
-	  prologterm_struct(ACode,0,[],AbortCode),
-	  conjunct_struct(NMCode,AbortCode,BCode2),
-	  patchrule_struct(HCode,BCode2,NotFoundCode),
-
-	  CodeList=[NotFoundCode,Code]
+	  CodeList=[NotFoundCode,FdbLinkingCode]
 	),
 	!.
 
@@ -1149,27 +1206,17 @@ compile_direct(DirectTerm,[Code],[]) :-
 	( flora_is_dynamic_flogic_base(P,N) ->
 	    str_cat(FLFACTPREFIX,P,HP),
 	    str_cat(FLBODYPREFIX,P,BP),
+	    %% flogicstatic will ensure that module name will
+	    %% be wrapped around the predicate names
 	    flora_define_flogicstatic(HP,N),
 	    flora_define_flogicstatic(BP,N),
-	    atomobj_struct(HP,HPCode),
-	    atomobj_struct(BP,BPCode),
-	    new_varobjlist(N,ArgsCode),
-	    termlit_struct(HPCode,N,ArgsCode,HCode),
-	    termlit_struct(BPCode,N,ArgsCode,BodyFactCode),
-	    thisfdbstorage_struct(SCode),
-	    atomobj_struct(storage_find_fact,FCode),
-	    prologterm_struct(FCode,2,[SCode,BodyFactCode],BCode),
-	    rule_struct(HCode,BCode,Code)
+	    %% Link P to FDB storage
+	    generate_patchrule(HP,BP,N,fdb,Code)
 	;
-	  %% a HiLog predicate
+	  %% A HiLog predicate
 	  flora_define_flogicstatic(P,N),
-	  atomobj_struct(P,PCode),
-	  new_varobjlist(N,ArgsCode),
-	  termlit_struct(PCode,N,ArgsCode,HCode),
-	  thisfdbstorage_struct(SCode),
-	  atomobj_struct(storage_find_fact,FCode),
-	  prologterm_struct(FCode,2,[SCode,HCode],BCode),
-	  rule_struct(HCode,BCode,Code)
+	  %% Link HiLog wrapper to FDB storage
+	  generate_patchrule(P,P,N,fdb,Code)
 	),
 	!.
 
@@ -3701,7 +3748,7 @@ compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
 	    %% The name of the module is known.
 	    storage_struct(WS,SCode)
 	;
-	  thisfdbstorage_struct(SCode)
+	  thisstorage_struct(fdb,SCode)
 	),
 	atomobj_struct(FLSYSDBUPDATE,FCode),
 	prologterm_struct(FCode,2,[C,SCode],DBCode),
