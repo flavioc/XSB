@@ -390,42 +390,21 @@ Intensional Format will not be affected by @pred{load_oms/1}.").
 
 load_oms :- load_oms('').
 
+/* TLS 03/03 added init_oms_rels, as loading an internal OMS may
+   need to incorporate new changes to the OMS in the rels */
 load_oms(odbc(Server,Name,Passwd)) :- !,
 	load_db_schema(Server,Name,Passwd),
 	load_db_data(Server,Name,Passwd),
-	oms_initialize_ctrs.
+	oms_initialize_ctrs,
+	init_oms_rels.
 load_oms(Dir) :-
 	%init_ext_dynamic,		
 	% included since OMS may be init'd by load_oms/1 or oms_init_all/0
 	oms_fix_dir(Dir,DirS),
 	dir_load_dync(DirS,schema_oms),
 	dir_load_dync(DirS,data_oms),
-	oms_initialize_ctrs.
-
-%--------------------------------------------------------------------
-
-:- comment(ensure_loaded_oms/1, "@tt{load_omsext(Directory)}: Dynamically loads
-schema_oms.P and data_oms.P files (in Internal Format) from Directory,
-defining *internal predicates in memory.  !!!! TLS this predicate does
-not currently work").
-
-ensure_loaded_oms :-
-	ensure_loaded_oms_schema,
-	ensure_loaded_oms_data,
-	oms_initialize_ctrs.
-
-ensure_loaded_oms_schema :-
-	ensure_loaded_oms_class,
-	ensure_loaded_oms_subclass,
-	ensure_loaded_oms_relationship,
-	ensure_loaded_oms_strel,
-	ensure_loaded_oms_schrel.
-
-ensure_loaded_oms_data :-
-	ensure_loaded_oms_object,
-	ensure_loaded_oms_memberof,
-	ensure_loaded_oms_attribute,
-	ensure_loaded_oms_attribute_object.
+	oms_initialize_ctrs,
+	init_oms_rels.
 
 %--------------------------------------------------------------------
 

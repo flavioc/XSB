@@ -180,6 +180,14 @@ instantiation pattern may be used.  ").
 /* TLS: OMS shd probably be fixed so that we can't have an attribute
    as well as an attribute object. */
 
+qnewIrel(id(SNCid,SSrc),id(RNCid,RSrc),id(TNCid,TSrc)):- 
+	Term = newIrel(id(SNCid,SSrc),id(RNCid,RSrc),id(TNCid,TSrc)),
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	newRelationship_omsext(SCid,RCid,TCid).
+
+
 :- table attr/3.
 attr(Objin,RCid,TObjin):- 
 	pop_out_object(Objin,Objout),

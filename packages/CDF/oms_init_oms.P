@@ -383,11 +383,15 @@ newPrimitiveClass(Name,ParentCid,NewCid,Source,NativeID):-
            oms_update_list(UpdateList)).
 
 init_component_info :-
-            class(RootCid,'OMS Root','OMS Root','OMS'),
-	newClass(component,RootCid,'OMS',CompCid),
+        class(RootCid,'OMS Root','OMS Root','OMS'),
+	newClass('OMS Component',RootCid,'OMS',CompCid),
 	newClass('OMS',CompCid,'OMS',_),
+	newClass('compVers/1',RootCid,
+			compVers('OMS Component','OMS',integer(_),'OMS'),
+			'OMS',CVid),
 	class(Inhid,'OMS Inheritable Relationships',_,'OMS'),
-	newClass(component_depends,Inhid,'OMS',_Depid).
+	newClass(omsComponentDepends,Inhid,'OMS',Depid),
+	newSchrel(CVid,Depid,CVid).	/* all dependencies must incl vers. */
 
 oms_primitive_type(X):- oms_primitive_class(X,_,_,_).
 

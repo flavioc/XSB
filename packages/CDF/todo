@@ -1,16 +1,21 @@
 
 Bug in dump_oms.P (save state).
+ALso, dont dump oms comp.
 
 Take indices out of oms_io.P
 
-Change create_component/1 so that it works on internal format also.
-and add other predicates.
+create_component_internal/1 fail if subdependencies are not themselves
+components.  Make it into a list.
+
+Probably need a component dirty for dump component or dump new version.
 
 locks
 
+get rid of dump_component/1,
 
+versions in load_component.
 
-
+make sure I dump external rules.
 
 Do something better with friendly atom codes.
 

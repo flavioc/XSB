@@ -208,7 +208,7 @@ given as a ground term, then @tt{CallToGetPar} should be @tt{true}.
 It can be used, for example, to ask the user for a database and/a
 password.  @tt{Parameter} specifies the necessary information for
 odbc_open to open a connection.  It is one of the following forms:
-@odbc(Server,Name,Passwd)} or @odbc{ConnectionString}.  See the
+@tt{odbc(Server,Name,Passwd)} or @tt{odbc(ConnectionString)}.  See the
 @tt{odbc_open/1/3} documentation @footnote{See Volume 2 of the XSB
 manual.}  for details on what these parameters must be.  ").
 

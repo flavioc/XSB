@@ -1,11 +1,12 @@
 :- compiler_options([ciao_directives]).
 
 :- document_export 
-	  analyze_component/1,
+	  analyze_component/2,
           create_component/1,
-	  create_component_internal/2,
-          dump_component/1,
-          loadmerge_component/1.
+	  update_all_components/1,
+	  update_components/2,
+          loadmerge_component/2,
+          loadmerge_component/3.
 
 :- import slash/1 from machine.
 
@@ -14,6 +15,10 @@
 :- import write_canonical_lettervar/1 from xsb_writ.
 :- import message/1 from standard.
 :- import numbervars/3 from num_vars.
+:- import member/2 from basics.
+
+:- ensure_loaded(oms_io).
+:- ensure_loaded(oms_queries).
 
 /*
 component has_status dirty...
@@ -22,12 +27,13 @@ Incorporate antirelationships in create_component, etc.
 */
 
 :- comment(module,"Typically, an OMS instance can be partitioned into
-several separate cells, or @em{components} -- representing information
-that arises from different sources, for instance, from UNSPSC, NAICS,
-or DLAFIIG.  There may be a need for these components to be managed
-separately so that various applications can update them and
-incorporate their information.  The OMS components system attempts to
-address this need.
+several separate cells, representing information that arises from
+different sources, for instance, from UNSPSC, NAICS, or DLAFIIG.
+There may be a need for these cells to be managed separately so that
+various applications can update them and incorporate their
+information.  The OMS components system attempts to address this need
+by allowing ontologies to be built from non-overlapping
+@em{components}.
 
 The facts in an OMS instance may be partitioned in various ways.  A
 @em{class-based component system} partitions an OMS-instance on
@@ -83,39 +89,219 @@ one attempts to combine internal identifiers from different files.  It
 does however provide tools to create components from a current loaded
 OMS instance.
 
-A convention is made that the name of a component is identical to the
-directory in which it resides.  Thus, a component @em{unspsc} must
-reside in the directory @em{unspsc}.  The OMS looks for these
+Information about components resides in the OMS itself which
+represents a component name along with a version using the product
+class @tt{compVers{id(Name,Name),id(integer(Version),'OMS'))}$ (in the
+'OMS' component).  Information about a component and version is
+maintained as a subclass of @tt{id('OMS Component','OMS')}.  Component
+dependency is represented by the relation
+@em{id('OMSComponentDepends','OMS')}.  An OMS state can contain only
+one version for each component name, which constraint affects the
+behavior of certain or the routines below.
+
+A convention is made that a component @tt{Name} with version @tt{V} is
+to be found in a directory named @tt{Name_V}. The OMS looks for these
 directories using XSB's library search paths -- or a full pathname can
-also be used.
+also be used to avoid ambiguity.
 
-Information about components resides in the OMS itself.  The OMS knows
-about a component @em{C1} when @tt{id(C1,C1)} is a subclass of the
-class @tt{id(component,OMS)}.  Component dependency is represented by
-the relation @em{id(component_depends,OMS)}.  For components
-consisting of external files, the predicate @pred{create_component/1}
-can be used to add this information.  @tt{create_component(Dir)} reads
-in external files, computes their dependencies, and writes out the
-files, plus component information, back to @em{Dir}.  In the case
-where a putative component includes an external intensional view,
+Given an OMS state, a user may want to do several things.  
+@begin{enumerate}
+
+@item A user may wish to create components from an OMS state, or to
+update components used by an OMS state.  One way to do this is by
+@{update_all_components(Dir)} which determines a class or relation
+based partition of the OMS instance, and computes all dependencies
+between these cells.  Cells that are not components are made into
+components (with version 0), and that are already components have
+their version number updated if necessary (by checking
+@tt{oms_dirty/1}).  New and updated components are written as
+subdirectories of @tt{Dir}.
+
+Alternately, if a part of a loaded OMS instance is to be saved as a
+component the predicate @tt{create_component_internal(List,Dir)} can
+be used.  @tt{List} is a list of component names, and for each
+@tt{Name} in @tt{List}, @pred{create_component_internal/2} writes ou
+the component @tt{Name} as a subdirectory of @tt{Dir} whose version is
+either 0 if the component is new, or incremented if the component is
+updated.  The predicate gives an error if a component @tt{Name} in
+@tt{List} depends on an updated component not in List, or if it
+depends on a cell that has not been made into a component.
+
+In the case where a external intensional view is part of an OMS state,
 dependency information for the external intensional view must be added
-by hand.  Similarly, @pred{create_component_internal(Name,Dir)}
-examines the facts in the component @tt{Name}, computes their
-dependencies, and writes them as external facts to @tt{Dir}.
+by hand.
 
-Components may be loaded via @pred{load_component/1} which loads a
+@item A user may wish to create components from external files.  In
+this case, the predicate @pred{create_component/1} can be used to add
+this information.  @tt{create_component(Dir)} reads in external files,
+computes their dependencies, and writes out the files, plus component
+information, back to @em{Dir}.  The information in this component does
+not affec the state of the OMS until it is explicitly loaded.  In the
+case where a putative component includes an external intensional view,
+dependency information for the external intensional view must be added
+by hand.  
+
+@item A user may wish to load components.  This is done via
+@pred{loadmerge_component(Name.Version)} which loads version @tt{Version}
+of component @tt{Name} as found in directory @tt{Dir}.  along with a
 component @em{C1} and all components on which @em{C1} transitively
-depends.  If a component is modified, it may be saved to file via
-@tt{dump_component/1} which dumps the component but not any subcomponents
-on which it may depend.
-").
+depends.  If a version conflict is detected between a component to be
+loaded and one already in the OMS state or about to be loaded,
+@tt{loadmerge_component/2} aborts without changing the OMS state.
+
+Alternately, a user may call
+@pred{loadmerge_component(Directory,Name.Version)} in which a
+directory path overrides the library path search of XSB.
+
+@item FInally, a user may analyze component dependency information via
+@tt{analyze_dependency/2}, which neither affects the OMS state, nor
+saves component information to files.  
+@end{enumerate} ").
+
+:- dynamic oms_component_type/1.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(analyze_component/1,
+:- comment(analyze_component/2,
 "@tt{analyze_component(-Component,Dependency_list)} examines a loaded
 OMS instance to partition it into components and for each component
-@em{C} to return a list of components upon which @{C} depends").
+@em{C} to return a list of components upon which @tt{C} depends").
+
+analyze_component(Name,List):- 
+	(oms_component_type(class_based) -> 
+ 	    analyze_component_class(Name,List)
+	  ; 
+ 	    analyze_component_relation(Name,List)).
+
+%-----------
+analyze_component_relation(Name,List):-
+	setof(Dep,
+	      (analyze_component_relation_1(Name,Dep) ; Dep = 'OMS'),List).
+
+:- table analyze_component_relation_1/2.
+analyze_component_relation_1(Name,Name):- 
+	analyze_class(Name,Name).
+analyze_component_relation_1(Name,Name):- 
+	analyze_object(Name,Name).
+analyze_component_relation_1(Name,Dep):- 
+	analyze_subclass(Name,Dep).
+analyze_component_relation_1(Name,Dep):- 
+	analyze_memberof(Name,Dep).
+analyze_component_relation_1(Name,Dep):- 
+	analyze_irel_r(Name,Dep).
+analyze_component_relation_1(Name,Dep):- 
+	analyze_strel_r(Name,Dep).
+analyze_component_relation_1(Name,Dep):- 
+	analyze_schrel_r(Name,Dep).
+analyze_component_relation_1(Name,Dep):- 
+	analyze_attribute_r(Name,Dep).
+analyze_component_relation_1(Name,Dep):- 
+	analyze_attribute_object_r(Name,Dep).
+
+analyze_irel_r(Name,Dep):-  
+	oms_rln(Id1,Id2,Id3),
+	source_from_cid(Id2,Name),
+	(Dep = Name ; source_from_cid(Id1,Dep) ; source_from_cid(Id3,Dep)).
+analyze_strel_r(Name,Dep):-  
+	oms_strel(Id1,Id2,Id3),
+	source_from_cid(Id2,Name),
+	(Dep = Name ; source_from_cid(Id1,Dep) ; source_from_cid(Id3,Dep)).
+analyze_schrel_r(Name,Dep):-  
+	oms_schrel(Id1,Id2,Id3),
+	source_from_cid(Id2,Name),
+	(Dep = Name ; source_from_cid(Id1,Dep) ; source_from_cid(Id3,Dep)).
+analyze_attribute_r(Name,Dep):-  
+	oms_at(Id1,Id2,Id3),
+	source_from_cid(Id2,Name),
+	(Dep = Name ; source_from_oid(Id1,Dep) ; source_from_cid(Id3,Dep)).
+analyze_attribute_object_r(Name,Dep):-  
+	oms_at(Id1,Id2,Id3),
+	source_from_cid(Id2,Name),
+	(Dep = Name ; source_from_oid(Id1,Dep) ; source_from_oid(Id3,Dep)).
+
+%-----------
+analyze_component_class(Name,List):-
+	setof(Dep,
+	      (analyze_component_class_1(Name,Dep) ; Dep = 'OMS'),List).
+
+:- table analyze_component_class_1/2.
+analyze_component_class_1(Name,Name):- 
+	analyze_class(Name,Name).
+analyze_component_class_1(Name,Name):- 
+	analyze_object(Name,Name).
+analyze_component_class_1(Name,Dep):- 
+	analyze_subclass(Name,Dep).
+analyze_component_class_1(Name,Dep):- 
+	analyze_memberof(Name,Dep).
+analyze_component_class_1(Name,Dep):- 
+	analyze_irel_c(Name,Dep).
+analyze_component_class_1(Name,Dep):- 
+	analyze_strel_c(Name,Dep).
+analyze_component_class_1(Name,Dep):- 
+	analyze_schrel_c(Name,Dep).
+analyze_component_class_1(Name,Dep):- 
+	analyze_attribute_c(Name,Dep).
+analyze_component_class_1(Name,Dep):- 
+	analyze_attribute_object_c(Name,Dep).
+
+analyze_irel_c(Name,Dep):-  
+	oms_rln(Id1,Id2,Id3),
+	source_from_cid(Id1,Name),
+	(Dep = Name ; source_from_cid(Id2,Dep) ; source_from_cid(Id3,Dep)).
+analyze_strel_c(Name,Dep):-  
+	oms_strel(Id1,Id2,Id3),
+	source_from_cid(Id1,Name),
+	(Dep = Name ; source_from_cid(Id2,Dep) ; source_from_cid(Id3,Dep)).
+analyze_schrel_c(Name,Dep):-  
+	oms_schrel(Id1,Id2,Id3),
+	source_from_cid(Id1,Name),
+	(Dep = Name ; source_from_cid(Id2,Dep) ; source_from_cid(Id3,Dep)).
+analyze_attribute_c(Name,Dep):-  
+	oms_at(Id1,Id2,Id3),
+	source_from_cid(Id1,Name),
+	(Dep = Name ; source_from_oid(Id2,Dep) ; source_from_cid(Id3,Dep)).
+analyze_attribute_object_c(Name,Dep):-  
+	oms_at(Id1,Id2,Id3),
+	source_from_cid(Id1,Name),
+	(Dep = Name ; source_from_oid(Id2,Dep) ; source_from_oid(Id3,Dep)).
+
+%----------------
+
+source_from_cid(Id,Source):-  oms_cn(Id,_,_,Source).
+source_from_cid(Id,Source):-  
+	compound(Id), Id =.. [_|Arglist],
+	source_from_cid_list(Arglist,Source).
+		
+source_from_cid_list(Arglist,Source):- 
+	member(Id,Arglist),
+	source_from_cid(Id,Source).
+source_from_cid(Id,Source):-  oms_cn(Id,_,_,Source).
+
+source_from_oid(Id,Source):-  oms_obj(Id,_,_,Source).
+source_from_oid(Id,Source):-  
+	compound(Id), Id =.. [_|Arglist],
+	source_from_oid_list(Arglist,Source).
+		
+source_from_oid_list(Arglist,Source):- 
+	member(Id,Arglist),
+	source_from_cid(Id,Source).
+
+analyze_class(Name,Name):-  
+	oms_cn(Id,_,_,_),
+	source_from_cid(Id,Name).
+analyze_object(Name,Name):-  
+	oms_obj(Id,_,_,_),
+	source_from_oid(Id,Name).
+analyze_subclass(Name,Dep):-  
+	oms_sc(Id1,Id2),
+	source_from_cid(Id1,Name),
+	(Dep = Name ; source_from_cid(Id2,Dep)).
+analyze_memberof(Name,Dep):-  
+	oms_mo(Id1,Id2),
+	source_from_oid(Id1,Name),
+	(Dep = Name ; source_from_cid(Id2,Dep)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(create_component/1,"@tt{create_component(Dir)} loads from
 @tt{Dir} @tt{data_omsext.P}, and @tt{schema_omsext.P} files, creates a
@@ -130,19 +316,19 @@ create_component(Name):-
 	check_component(Name),
 	assert(class_ext(Name,Name,Name)),
 	assert(subclass_ext(Name,Name,component,'OMS')),
-	create_dependencies(Name),
+	create_dependencies_ext(Name),
 	dump_component_ext(Full,Name),
 	retract_omsext.
 
 /* works on loaded, unmerged omsext */	
-create_dependencies(Name):- 
+create_dependencies_ext(Name):- 
 	find_component_dependency(Dep),
 	call_assert(relationship_ext(Name,Name,
-	                                     component_depends,'OMS',Dep,Dep)),
+	                             component_depends,'OMS',Dep,Dep)),
 	fail.
 create_dependencies(Name):- 
 	asserta(relationship_ext(Name,Name,
-	                                     component_depends,'OMS',Name,Name)).
+	                         component_depends,'OMS',Name,Name)).
 
 %-----------
 /* checks whether a set of loaded,  non-merged external facts with
@@ -235,12 +421,6 @@ check_attribute_object(Name):-
 	; 
 	   fail).
 check_attribute_object(_).
-
-
-:- comment(create_component_internal/2,
-"@tt{create_component_internal(Name,Dir)} dumps facts and intensional
-rules for a component specified by @tt{Name} from a loaded OMS
-instance to @tt{Dir}. ").
 
 %-------------------------------------
 
@@ -345,9 +525,17 @@ table_call(Call):- call(Call).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(loadmerge_component/1,"@tt{loadmerge_component(Name)} loads
+:- comment(loadmerge_component/2,
+"@tt{loadmerge_component(Name,Version)} loads version @tt{Version} of
 the component @tt{Name}, and recursively, all other components upon
-which @tt{Name} depends.").
+which @tt{Name} depends.  The component is found by searching through
+XSB library directories.").
+
+:- comment(loadmerge_component/3,
+"@tt{loadmerge_component(Dir,Name,Version)} loads version @tt{Version}
+of the component @tt{Name}, and recursively, all other components upon
+which @tt{Name} depends.  @tt{Name_Version} must be a subdirectory of
+@tt{Dir}$.").
 
 loadmerge_component(Name):- 
 	retract_omsext,
@@ -381,27 +569,200 @@ is_component(Name):- class_ext(Name,Name,Name).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(dump_component/1,"@tt{dump_component(Name)} dumps the
-component @tt{Name}.  It does not dump other components upon which
-@tt{Name} depends.").
+:- comment(update_all_components/1, "@tt{update_all_components(Dir)}
+analyzes components of an OMS state and their states, creates
+components when necessary, and dumps facts and intensional rules for
+all components, as subdirectories of @tt{Dir}.  New versions are
+created for components that have been updated since they were
+loaded. ").
 
-dump_component(Name):- 
-	find_component_dir(Name,Dir),
-	throw_oms_writable(Dir),
+update_all_components(Dir):- 
+	class(GenCompid,_,component,'OMS'),
+	analyze_component(Comp,Dep),
+	newClass(Comp,GenCompid,Comp,_Cid),
+	create_dependencies_int_1(Dep,GenCompid,Comp),
+	dump_component_1(Dir,Comp,0),
+	fail.
+update_all_components(_Dir).
+
+:- comment(update_components/2, "@tt{update_all_components(Dir,List)}
+Updates components in @tt{List} (or creates them) writing them into
+subdirectories of @tt{Dir}.  If a component in @tt{List} depends on a
+component that needs updating but is not in list or on a source that
+has not been made into a component, the predicate abort without
+changing the state or file system.  ").
+
+create_component_internal(Dir,Comp):- 
+	create_component_internal(Dir,Comp,0).
+
+create_component_internal(Dir,Comp,Version):- 
+	create_dependencies_int(Comp),
+	dump_component_1(Dir,Comp,Version).
+
+create_dependencies_int(Comp):- 
+	analyze_component(Comp,Dep),
+	class(GenCompid,_,component,'OMS'),
+	newClass(Comp,GenCompid,Comp,_Cid),
+	create_dependencies_int_1(Dep,GenCompid,Comp).
+
+/* unfactored code, but shd. be few dependencies */
+create_dependencies_int_1([],_Compid,_Comp).
+create_dependencies_int_1([H|T],Compid,Comp):- 
+	newClass(H,Compid,H,_Hid),
+	qnewIrel(id(Comp,Comp),id(component_depends,'OMS'),id(H,H)),
+	create_dependencies_int_1(T,Compid,Comp).
+
+dump_component_1(Dir,Name,Version):- 
+	(oms_component_type(class_based) -> 
+	    dump_component_1_class(Dir,Name,Version)
+	  ; 
+	    dump_component_1_relation(Dir,Name,Version)).
+
+dump_component_1_class(Dir,Name,Version):- 
 	slash(Slash),
-  	concat_atom([Dir,Slash,'schema_omsext.P'],SchFile),
+  	concat_atom([Dir,Slash,Name,'_',Version],NewDir),
+	xsb_makedir(NewDir),
+	concat_atom([NewDir,Slash,'schema_omsext.P'],SchFile),
 	init_ext_schema_index,
 	tell(SchFile),
 	compwrite_class(Name),compwrite_subclass(Name),
-	compwrite_irel(Name),compwrite_schrel(Name),
-	compwrite_strel(Name),
+	compwrite_irel_c(Name),compwrite_schrel_c(Name),
+	compwrite_strel_c(Name),
 	told,
-  	concat_atom([Dir,Slash,'data_omsext.P'],DataFile),
+  	concat_atom([NewDir,Slash,'data_omsext.P'],DataFile),
 	init_ext_data_index,
 	tell(DataFile),
 	compwrite_object(Name),compwrite_memberof(Name),
-	compwrite_attribute(Name),compwrite_attribute_object(Name),
+	compwrite_attribute_c(Name),compwrite_attribute_object_c(Name),
 	told.
+
+compwrite_irel_c(Source):- 
+	write_hdr(relationship_ext(_,_,_,_,_,_)),
+	oms_rln(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(
+                 relationship_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_irel_c(_).
+
+compwrite_schrel_c(Source):- 
+	write_hdr(schrel_ext(_,_,_,_,_,_)),
+	oms_schrel(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(schrel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_schrel_c(_).
+
+compwrite_strel_c(Source):- 
+	write_hdr(strel_ext(_,_,_,_,_,_)),
+	oms_strel(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(strel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_strel_c(_).
+
+compwrite_attribute_c(Source):- 
+	write_hdr(attribute_ext(_,_,_,_,_,_)),
+	oms_at(Sub,Mid,Targ),
+	oms_obj(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(
+	           attribute_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_attribute_c(_).
+
+compwrite_attribute_object_c(Source):- 
+	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
+	oms_ao(Sub,Mid,Targ),
+	oms_obj(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_obj(Targ,_,Nid2,Source2),
+	write_ext_term(
+	       attribute_object_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_attribute_object_c(_).
+
+%----------
+
+dump_component_1_relation(Dir,Name,Version):- 
+	slash(Slash),
+  	concat_atom([Dir,Slash,Name,'_',Version],NewDir),
+	xsb_makedir(NewDir),
+	concat_atom([NewDir,Slash,'schema_omsext.P'],SchFile),
+	init_ext_schema_index,
+	tell(SchFile),
+	compwrite_class(Name),compwrite_subclass(Name),
+	compwrite_irel_r(Name),compwrite_schrel_r(Name),
+	compwrite_strel_r(Name),
+	told,
+	concat_atom([NewDir,Slash,'data_omsext.P'],DataFile),
+	init_ext_data_index,
+	tell(DataFile),
+	compwrite_object(Name),compwrite_memberof(Name),
+	compwrite_attribute_r(Name),compwrite_attribute_object_r(Name),
+	told.
+
+compwrite_irel_r(Source):- 
+	write_hdr(relationship_ext(_,_,_,_,_,_)),
+	oms_rln(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(
+                 relationship_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_irel_r(_).
+
+compwrite_schrel_r(Source):- 
+	write_hdr(schrel_ext(_,_,_,_,_,_)),
+	oms_schrel(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(schrel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_schrel_r(_).
+
+compwrite_strel_r(Source):- 
+	write_hdr(strel_ext(_,_,_,_,_,_)),
+	oms_strel(Sub,Mid,Targ),
+	oms_cn(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(strel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_strel_r(_).
+
+compwrite_attribute_r(Source):- 
+	write_hdr(attribute_ext(_,_,_,_,_,_)),
+	oms_at(Sub,Mid,Targ),
+	oms_obj(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_cn(Targ,_,Nid2,Source2),
+	write_ext_term(
+	           attribute_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_attribute_r(_).
+
+compwrite_attribute_object_r(Source):- 
+	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
+	oms_ao(Sub,Mid,Targ),
+	oms_obj(Sub,_,Nid,Source),
+	oms_cn(Mid,_,Nid1,Source1),
+	oms_obj(Targ,_,Nid2,Source2),
+	write_ext_term(
+	       attribute_object_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_attribute_object_r(_).
+
+%---------
 
 compwrite_class(Source):- 
 	write_hdr(class_ext(_,_,_)),
@@ -434,59 +795,6 @@ compwrite_memberof(Source):-
 	write_ext_term(memberof_ext(Nid,Source,Nid1,Source1)),
 	fail.
 compwrite_memberof(_).
-
-compwrite_irel(Source):- 
-	write_hdr(relationship_ext(_,_,_,_,_,_)),
-	oms_rln(Sub,Mid,Targ),
-	oms_cn(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(
-	                 relationship_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_irel(_).
-
-compwrite_schrel(Source):- 
-	write_hdr(schrel_ext(_,_,_,_,_,_)),
-	oms_schrel(Sub,Mid,Targ),
-	oms_cn(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(schrel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_schrel(_).
-
-compwrite_strel(Source):- 
-	write_hdr(strel_ext(_,_,_,_,_,_)),
-	oms_strel(Sub,Mid,Targ),
-	oms_cn(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(strel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_strel(_).
-
-compwrite_attribute(Source):- 
-	write_hdr(attribute_ext(_,_,_,_,_,_)),
-	oms_at(Sub,Mid,Targ),
-	oms_obj(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(
-	           attribute_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_attribute(_).
-
-compwrite_attribute_object(Source):- 
-	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
-	oms_ao(Sub,Mid,Targ),
-	oms_obj(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_obj(Targ,_,Nid2,Source2),
-	write_ext_term(
-	       attribute_object_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_attribute_object(_).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -522,5 +830,18 @@ overload_dync_1:-
 	read_canonical(T),
 	(T = end_of_file -> true ; asserta(T),fail).
 
+xsb_makedir(Dir):- 
+	(path_sysop(isdir,Dir) -> true ; path_sysop(mkdir,Dir)).
+
 end_of_file.
+
+
+:- comment(dump_component/1,"@tt{dump_component(Name)} dumps the
+component @tt{Name}.  It does not dump other components upon which
+@tt{Name} depends.").
+
+dump_component(Name):- 
+	find_component_dir(Name,Dir),
+	throw_oms_writable(Dir),
+	dump_component_1(Dir,Name).
 
