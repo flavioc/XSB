@@ -1291,8 +1291,8 @@ contcase:     /* the main loop */
 /* unification routines							*/
 /*======================================================================*/
 
-#define IFTHEN_SUCCEED
-#define IFTHEN_FAILED	Fail1
+#define IFTHEN_SUCCEED  goto contcase
+#define IFTHEN_FAILED	{Fail1 ; goto contcase ;}
 
 nunify: /* ( op1, op2 ) */
 /* word op1, op2 */

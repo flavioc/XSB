@@ -1,7 +1,8 @@
 /* File:      unify_xsb_i.h
-** Author(s): David S. Warren, Terrance Swift, Jiyang Xu
+** Author(s): Bart Demoen (maintained & checked by Kostis Sagonas)
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
+** Copyright (C) K.U. Leuven 1999-2000
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
 ** Copyright (C) ECRC, Germany, 1990
 ** 
@@ -23,139 +24,122 @@
 ** 
 */
 
-tail_recursion:
-     deref2(op1, goto label_op1_free);
-     deref2(op2, goto label_op2_free);
+ tail_recursion:
+  deref2(op1, goto label_op1_free);
+  deref2(op2, goto label_op2_free);
 
-     switch (cell_tag(op1)) {
-     case FREE:
-     case REF1: 
-     label_op2_free: bind_copy((CPtr)(op2), op1);
-                     IFTHEN_SUCCEED;
-		     break;
-     label_op1_free:
-        deref(op2);
-	if (isref(op2)) {
-	  /* op2 is FREE 			free  ... free */
-	  if ( (CPtr)(op1) != (CPtr)(op2) ) {
-	    if ( (CPtr)(op1) < (CPtr)(op2) ) {
+  if (isattv(op1)) goto label_op1_attv;
+  if (isattv(op2)) goto label_op2_attv;
+
+  if (cell_tag(op1) != cell_tag(op2))
+    IFTHEN_FAILED;
+
+  if (isconstr(op1)) goto label_both_struct;
+  if (islist(op1)) goto label_both_list;
+  /* now they are both atomic */
+  if (op1 == op2) IFTHEN_SUCCEED;
+  IFTHEN_FAILED;
+
+
+ label_op1_free:
+  deref2(op2, goto label_both_free);
+  bind_copy((CPtr)(op1), op2);
+  IFTHEN_SUCCEED;
+
+
+ label_op2_free:
+  bind_copy((CPtr)(op2), op1);
+  IFTHEN_SUCCEED;
+
+
+ label_both_free:
+  if ( (CPtr)(op1) == (CPtr)(op2) ) IFTHEN_SUCCEED;
+  if ( (CPtr)(op1) < (CPtr)(op2) )
+    {
 #ifdef CHAT
-	      if ( (CPtr)(op1) < hreg )  
+      if ( (CPtr)(op1) < hreg )  
 #else
-		if ( (CPtr)(op1) < hreg ||  (CPtr)(op1) < hfreg )  
+      if ( (CPtr)(op1) < hreg ||  (CPtr)(op1) < hfreg )  
 #endif
-		  /* op1 not in local stack */
-		  { bind_ref((CPtr)(op2), (CPtr)(op1)); }
-		else  /* op1 points to op2 */
-		  { bind_ref((CPtr)(op1), (CPtr)(op2)); }
-	      /* doc tls -- extra garbage because stacks point in diff dirs. */
-	    }
-	    else { /* op1 > op2 */
+	/* op1 not in local stack */
+	{ bind_ref((CPtr)(op2), (CPtr)(op1)); }
+      else  /* op1 points to op2 */
+	{ bind_ref((CPtr)(op1), (CPtr)(op2)); }
+      }
+  else
+    { /* op1 > op2 */
 #ifdef CHAT
-	      if  ((CPtr)(op2) < hreg )
+      if  ((CPtr)(op2) < hreg )
 #else
-		if  ((CPtr)(op2) < hreg || (CPtr)(op2) < hfreg )
+      if  ((CPtr)(op2) < hreg || (CPtr)(op2) < hfreg )
 #endif
-		  { bind_ref((CPtr)(op1), (CPtr)(op2)); }
-		else
-		  { bind_ref((CPtr)(op2), (CPtr)(op1)); }
-	    }
-	  }
-	  IFTHEN_SUCCEED;
-	}
-	else {
-	  bind_copy((CPtr)(op1), op2);
-	  IFTHEN_SUCCEED;
-	}
-	break; /* for op1=free */
-
-     case CS: /* op1=c/s */
-       if (isconstr(op2)) {
-	 if (op1 != op2) {  /* a != b */
-	   op1 = (Cell)(clref_val(op1));
-	   op2 = (Cell)(clref_val(op2));
-	   if (((Pair)(CPtr)op1)->psc_ptr!=((Pair)(CPtr)op2)->psc_ptr){
-						/* 0(a) != 0(b) */
-	     IFTHEN_FAILED;
-	   } else {
-	     int arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);
-	     while (--arity) {
-	       op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);
-	       if (!unify(cell((CPtr)op1), cell((CPtr)op2))) {
-		 IFTHEN_FAILED;
-	       }
-	     }
-	     op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);
-	     goto tail_recursion;
-	   }
-	 }
-	 IFTHEN_SUCCEED;
-       }
-       else if (isattv(op2)) {
-	 attv_dbgmsg(">>>> CS = ATTV, interrupt needed\n");
-	 add_interrupt(op2, op1);
-	 IFTHEN_SUCCEED;
-       }
-       else { /* op2 is STRING, FLOAT, LIST, or INT.	*/
-	 IFTHEN_FAILED;
-       }
-       break;	/* for op1=c/s */
-
-     case LIST:	/* op1=list */
-       if (islist(op2)) {			/* list ... list */
-	 if (op1 != op2) {
-	   op1 = (Cell)(clref_val(op1));
-	   op2 = (Cell)(clref_val(op2));
-	   if ( !unify(cell((CPtr)op1), cell((CPtr)op2)))
-	     { IFTHEN_FAILED; }
-	   else
-	     { op1 = (Cell)((CPtr)op1+1);
-	       op2 = (Cell)((CPtr)op2+1);
-	       goto tail_recursion;
-	     }
-	 }
-	 IFTHEN_SUCCEED;
-       }
-       else if (isattv(op2)) {
-	 attv_dbgmsg(">>>> LIST = ATTV, interrupt needed\n");
-	 add_interrupt(op2, op1);
-	 IFTHEN_SUCCEED;
-       }
-       else { IFTHEN_FAILED; }
-       break; /* op1=list */
-
-     case INT:    /* op1=num */
-     case STRING: /* op1=string */
-     case FLOAT:
-       if (op1 == op2)
-	 { IFTHEN_SUCCEED; }
-       else if (isattv(op2)) {
-	 attv_dbgmsg(">>>> INT = ATTV, interrupt needed\n");
-	 add_interrupt(op2, op1);
-	 IFTHEN_SUCCEED;
-       }
-       else { IFTHEN_FAILED; }
-       break;     /* op1=atomic */
-
-     case ATTV:
-       deref(op2);
-       if (isref(op2)) {
-	 /* op2 is FREE				attv ... free */
-	 bind_copy((CPtr)op2, op1);
-	 IFTHEN_SUCCEED;
-       }
-       else if (!isattv(op2) || (isattv(op2) && op1 != op2)) {
-	 attv_dbgmsg(">>>> ATTV = ???, interrupt needed\n");
-	 add_interrupt(op1, op2);
-	 IFTHEN_SUCCEED;
-       }
-       else	/* isattv(op2) && op1==op2: no need to interrupt */
-	 IFTHEN_SUCCEED;
-       break;
-       
-       /* default:
-	  xsb_abort("Unknown term type in unify()");
-	  { IFTHEN_FAILED; }
-	  break; */
+	{ bind_ref((CPtr)(op1), (CPtr)(op2)); }
+      else
+	{ bind_ref((CPtr)(op2), (CPtr)(op1)); }
     }
+  IFTHEN_SUCCEED;
+
+
+ label_both_list:
+  if (op1 == op2) IFTHEN_SUCCEED;
+
+  op1 = (Cell)(clref_val(op1));
+  op2 = (Cell)(clref_val(op2));
+  if ( !unify(cell((CPtr)op1), cell((CPtr)op2)))
+    { IFTHEN_FAILED; }
+  op1 = (Cell)((CPtr)op1+1);
+  op2 = (Cell)((CPtr)op2+1);
+  goto tail_recursion;
+
+
+ label_both_struct:
+  if (op1 == op2) IFTHEN_SUCCEED;
+
+  /* a != b */
+  op1 = (Cell)(clref_val(op1));
+  op2 = (Cell)(clref_val(op2));
+  if (((Pair)(CPtr)op1)->psc_ptr!=((Pair)(CPtr)op2)->psc_ptr)
+    {
+      /* 0(a) != 0(b) */
+      IFTHEN_FAILED;
+    }
+  {
+    int arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);
+    while (--arity)
+      {
+	op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);
+	if (!unify(cell((CPtr)op1), cell((CPtr)op2)))
+	  {
+	    IFTHEN_FAILED;
+	  }
+      }
+    op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);
+    goto tail_recursion;
+  }
+
+
+  /* if the order of the arguments in add_interrupt is not important,
+     the following three can actually be collapsed into one; loosing
+     some meaningful attv_dbgmsg - they have been lost partially
+     already
+  */
+
+ label_op1_attv:
+  if (isattv(op2)) goto label_both_attv;
+  attv_dbgmsg(">>>> ATTV = something, interrupt needed\n");
+  add_interrupt(op1, op2);
+  IFTHEN_SUCCEED;
+
+ label_op2_attv:
+  attv_dbgmsg(">>>> something = ATTV, interrupt needed\n");
+  add_interrupt(op2, op1);
+  IFTHEN_SUCCEED;
+
+ label_both_attv:
+  if (op1 != op2)
+    {
+      attv_dbgmsg(">>>> ATTV = ???, interrupt needed\n");
+      add_interrupt(op1, op2);
+    }
+  IFTHEN_SUCCEED;
 
