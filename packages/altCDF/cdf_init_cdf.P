@@ -61,7 +61,7 @@
 :- import component_table_int/3 from usermod.
 
 % For newDLRule/2 etc.
-:- import dlrule_to_cdf/2 from cdftp_rules.
+:- import dlrule_to_cdf/3 from cdftp_rules.
 :- import compdlrule/3 from usermod.
 
 %%%%%%%%%% 
@@ -1721,7 +1721,8 @@ retractallIntRule_1(_,_,_).
 %DL rules are a specialized form of intensional rules.
 
 newDLRule(Head,Body,Name):- 
-	dlrule_to_cdf('<='(Head,Body),CDFList),
+	dlrule_to_cdf('<='(Head,Body),CDFList,Cmpt),
+	asserta(compdlrule(Cmpt,Head,Body)),
 	member((:-(H,B)),CDFList),
 	transform_intensional_rules(H,BlankBody,NewHead,Name),
 %	transform_intensional_rules(H,NewHead,Name),
@@ -1742,7 +1743,7 @@ retractallDLRule(Head,Body,Name) :-
 	maybe_invalidate_cache(Flg,Head,retract).
 
 retractallDLRule_1(H,B,Name) :- 
-	dlrule_to_cdf('<='(H,B),CDFList),
+	dlrule_to_cdf('<='(H,B),CDFList,Name),
 	member((:-(Head,Body)),CDFList),
 	abolish_nec_tables(Head),
 	transform_intensional_rules(Head,BlankBody,NewHead,Name),
