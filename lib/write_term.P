@@ -30,6 +30,9 @@
 
 :- import current_infixop/4, current_postfixop/3, current_prefixop/3
 								from xsb_ciao. 
+:- import check_nonvar_list/3,check_nonvar/3,
+	  type_error/4,domain_error/4 from error_handler.
+
 :- import write/1 from standard.
 
 %:- import get_atts/2 from atts.
@@ -37,25 +40,18 @@
 :- op(200,fy,(?)).
 :- op(500,fy,(@)).
 
-:- import (multifile)/1, op/3, abort/1, integer/1, arg/3, put_code/1,
+:- import (multifile)/1, op/3, integer/1, arg/3, put_code/1,abort/1,
 %	display/1, 
 	writeq/1, number/1, functor/3, atom/1, atom_codes/2,
 	set_output/1, current_output/1 from  usermod.
 :- import portray/1 from usermod.
 
 display(Term):- write(Term).
+
 %---------------------------------------------------------------% 
 % Adapted to XSB (by TLS) from Ciao where the authorship is as follows:
 % Adapted from shared code written by Richard A. O'Keefe.  Changes by
 % Mats Carlsson, Daniel Cabeza, and Manuel Hermenegildo.
-
-%:- pred(write_term(@Stream, ?Term, +OptList) 
-:- pred(write_term(@Stream, ?Term, +OptList) 
-   => stream * term * list(write_option) +  iso
-
-   # "Outputs the term @var{Term} to the stream @var{Stream}, with the
-      list of write-options @var{OptList}. See @pred{write_option/1}
-      type for default options.").
 
 write_term(Stream, Term, OptList) :-
         current_output(Curr),
@@ -63,20 +59,12 @@ write_term(Stream, Term, OptList) :-
         Default = options(false,false,false,false,1000000),
         compute_options(OptList, 3, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
-	set_output(Curr).
-
-:- pred(write_term(?Term, +OptList) => term * list(write_option) + iso
-
-   # "Behaves like @tt{current_output(S),
-      write_term(S,Term,OptList)}.").
+        set_output(Curr).
 
 write_term(Term,OptList):- 
         Default = options(false,false,false,false,1000000),
         compute_options(OptList, 2, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _).
-
-:- prop(write_option(Opt) 
-        # "@var{Opt} is a valid write option.").
 
 :- comment(write_option/1, "@var{Opt} is a valid write option which
  affects the predicate @tt{write_term/3} and similar ones. Possible
@@ -132,18 +120,17 @@ write_option(portrayed(Pr)) :- (Pr = true ; Pr = false),!.
 write_option(max_depth(MD)) :- integer(MD), MD >= 0.
 write_option(priority(Prio)) :- integer(Prio), Prio >= 1, Prio =< 1200.
 
-% aborts are Ciao throws.
 compute_options(V, N, _, _, _, _) :- var(V), !,
-        abort(instantiation_error(write_term/N-N)).
+       check_nonvar_list(V,write_term/N,N).
 compute_options([], _, Options, Prio, Options, Prio) :- !.
 compute_options([Opt|Opts], N, Options1, Prio1, Options, Prio) :- !,
         one_opt(Opt, N, Options1, Prio1, Options2, Prio2),
         compute_options(Opts, N, Options2, Prio2, Options, Prio).
 compute_options(Opts, N, _, _, _, _) :-
-        abort(type_error(list, Opts,write_term/N-N)).
+        type_error(list, Opts,write_term/N,N).
 
 one_opt(V, N, _, _, _, _) :- var(V), !,
-        abort(error(instantiation_error, write_term/N-N)).
+	check_nonvar(V,write_term/N,N).
 one_opt(quoted(Qt),     _, options(_ ,IO,NV,Pr,Li), Prio,
                            options(Qt,IO,NV,Pr,Li), Prio) :- boolean(Qt), !.
 one_opt(ignore_ops(IO), _, options(Qt,_ ,NV,Pr,Li), Prio,
@@ -159,7 +146,7 @@ one_opt(max_depth(MD),  _, options(Qt,IO,NV,Pr,_ ), Prio,
 one_opt(priority(Prio), _, Opts, _, Opts, Prio) :-
         integer(Prio), Prio >= 1, Prio =< 1200, !.
 one_opt(Opt, N, _, _, _, _) :-
-        abort(domain_error(write_option, Opt,write_term/N-N)).
+        domain_error(write_option, Opt,write_term/N,N).
 
 boolean(true).
 boolean(false).

@@ -24,41 +24,29 @@
 ** 
 */
 
-:- compiler_options([ciao_directives,optimize,sysmod]).
+:- compiler_options([optimize,sysmod,xpp_on]).
+
+#include "flag_defs_xsb.h"
+
 
 :- export format/2, format/3, format_control/1.
-:- import atm/1 from basic_props.
 
 :- import  put_code/1, nl/0, write/1, writeq/1, print/1,
 	write_canonical/1, write/1, current_output/1, integer/1, 'C'/3,
 	atom/1, atom_codes/2, set_output/1,xsb_configuration/2,
 	is_list/1 from usermod.
 
+:- import stat_set_flag/2 from machine.
+
 :-  import throw/1 from standard.
 
 :- import check_nonvar/3 from error_handler.
 
-:- import check_stream_or_alias/4 from file_io.
+:- import check_open_stream_or_alias/5 from file_io.
 
 :- import (\=)/2 from standard.
 
-display(Term):- write(Term).
-
-/*
-:- module(format, 
-	[format/2, format/3, format_control/1],
-	[dcg,assertions,isomodes]).
-
-:- use_module(library(write)).
-:- use_module(engine(internals)).
-
-%% FOR TEMPORARILY PARTIALLY DOCUMENTING:
-:- use_module(library('assertions/doc_props')).
-
-:- set_prolog_flag(multi_arity_warnings, off).
-*/
-
-% ------------------------------------------------------------------------
+% ---------------------------------------------------------------------------------------------
 :- comment(title,"Formatted output").
 
 :- comment(module,"The @tt{format} family of predicates is due to
@@ -388,16 +376,10 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
 
 ").
 
-
 % ------------------------------------------------------------------------
 
-:- prop(format_control(C) + ( regtype, doc_incomplete ) 
-   # "@var{C} is an atom or string describing how the arguments should
-      be formatted. If it is an atom it will be converted into a
-      string with @tt{name/2}.").
-
 format_control(C) :- string(C).
-format_control(C) :- atm(C).  
+format_control(C) :- atom(C).  
 
 % format(+Control, +Arguments)
 % format(+Stream, +Control, +Arguments)
@@ -409,36 +391,28 @@ format_control(C) :- atm(C).
 %
 
 
-:- pred(format(format_control(Format),Arguments)
-   # "Print @var{Arguments} onto current output stream according to format
-      @var{Format}.").
+% TLS: should probably replace parse_error.
 
 format(Control_in, Args_in) :- 
-	check_nonvar(Control_in,'format/2',1),
-	check_nonvar(Args_in,'format/2',1),
+	check_nonvar(Control_in,format/2,1),
+	check_nonvar(Args_in,format/2,1),
 	preproc_newlines(Control_in,Control),
 	preproc_newlines_list(Args_in,Args),
 	format1(Control, Args), !.
 format(Control, Arguments) :-
 	throw(error(parse_error(format(Control, Arguments)), format/2)).
 
-:- pred(format(+Stream,format_control(Format),Arguments)
-   # "Print @var{Arguments} onto @var{Stream} according to format
-      @var{Format}.").
-
-format(Stream, Control_in, Args_in) :-
-        check_stream_or_alias(Stream,'format/2',1,Stream),
-        check_nonvar(Control_in,'format/2',2),
-        check_nonvar(Args_in,'format/2',3),
+format(Stream_or_alias, Control_in, Args_in) :-
+        check_open_stream_or_alias(Stream_or_alias,format/2,1,output,Stream),
+        check_nonvar(Control_in,format/2,2),
+        check_nonvar(Args_in,format/2,3),
         preproc_newlines(Control_in,Control),
         preproc_newlines_list(Args_in,Args),
         current_output(Curr),
-        set_output(Stream),
-	(   format1(Control, Args) -> OK=yes
-	;   OK=no
-	),
+        stat_set_flag(CURRENT_OUTPUT, Stream),
+        ( format1(Control, Args) -> true ; true), 
         set_output(Curr),
-        OK=yes, !.
+        !.
 format(_, Control, Arguments) :-
 	throw(error(parse_error(format(..., Control, Arguments)), format/3)).
 
@@ -584,7 +558,7 @@ is_ascii_list([X|Xs], N0, N) :-
 	integer(X),
 	is_ascii_list(Xs, N1, N).
 
-fmt_pr(0'a, Arg, _) :- display(Arg).
+fmt_pr(0'a, Arg, _) :- write(Arg). % display
 fmt_pr(0'k, Arg, _) :- write_canonical(Arg).
 fmt_pr(0'p, Arg, _) :- print(Arg).
 fmt_pr(0'q, Arg, _) :- writeq(Arg).

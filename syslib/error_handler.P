@@ -273,6 +273,22 @@ check_nonvar_list1([H|T],Predicate,Arg):-
 	; 
 	    instantiation_error(Predicate,Arg)).
 
+% Checks that Term is either an atom or a list all of whose elements
+% are atoms.  This is how ptoc_longstring should be checked. 
+check_atom_list(Term,Predicate,Arg):- 
+	check_nonvar(Term,Predicate,Arg),
+	(( atom(Term) 
+	 ; check_atom_list1(Term,Predicate,Arg)) -> 
+	    true
+	 ;  type_error(list_of_atom,Term,Predicate,Arg)).
+	    
+check_atom_list1([],_Predicate,_Arg).
+check_atom_list1([H|T],Predicate,Arg):- 
+	(atom(H) -> 
+	    check_atom_list1(T,Predicate,Arg)
+	; 
+	    instantiation_error(Predicate,Arg)).
+
 %-------------
 end_of_file.
 

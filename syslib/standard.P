@@ -304,7 +304,7 @@ file_exists(F) :-
 % that would need to be added to the tokenizer.
 
 read_term(T,List):- 
-	read_term_check(List,read_term/3),
+	read_term_check(List,read_term/2),
 	stat_flag(CURRENT_INPUT, File), 
 	file_read(File, T,Vlist),
 	process_variable_list(List,T,Vlist),!.
@@ -315,9 +315,9 @@ read_term(S_or_A,T,List):-
 	file_read(Istr, T,Vlist),
 	process_variable_list(List,T,Vlist),!.
 
-read_term_check(List,Predvers):- 
-	check_nonvar_list(List,Predvers,3),
-	check_read_options(List,Predvers,3).
+read_term_check(List,F/N):- 
+	check_nonvar_list(List,F/N,N),
+	check_read_options(List,F/N,N).
 
 process_variable_list(List,T,Vlist):- 
 	(member(singletons(Sings),List) -> 

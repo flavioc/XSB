@@ -450,7 +450,7 @@ check_position_term(Position):-
 flush_output(S_or_A):-
 	check_open_stream_or_alias(S_or_A,flush_output/1,1,output,Str),
 	file_flush(Str,Ret),
-	(Ret == 0 ->
+	(Ret \== 0 ->
 	    permission_error(flush,stream,Str,flush_output/1)
 	  ; true).
 
@@ -459,7 +459,7 @@ flush_output(S_or_A):-
 flush_output:-
 	stat_flag(CURRENT_OUTPUT,Stream),
 	file_flush(Stream,Ret),
-	(Ret == 0 ->
+	(Ret \== 0 ->
 	    permission_error(flush,stream,Stream,flush_output/1)
 	  ; true).
 

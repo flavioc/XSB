@@ -29,7 +29,7 @@
               instantiation_error/3,
               permission_error/4, type_error/4, 
               misc_error/1,
-              check_atom/3,
+              check_atom/3, check_atom_list/3,
               check_ground/3,
               check_nonvar_list/3, check_nonvar/3, 
               check_number/3,
