@@ -1,9 +1,5 @@
 ;;; flora.el --- a major mode for editing and running F-Logic programs
 
-;; Adapted from flp.el by M. Kifer (kifer@cs.sunysb.edu)
-;; Flp.el, a major mode for FLORID, was derived from prolog.el 
-;; from GNU Emacs 19.28 
-
 ;; Authors:
 ;; Heinz Uphoff, uphoff@informatik.uni-freiburg.de
 ;; Christian Schlepphorst, schlepph@informatik.uni-freiburg.de
@@ -14,6 +10,11 @@
 ;; about Flora syntax and comments (well, sort of), and can send
 ;; regions, buffers, and files to an inferior F-Logic interpreter
 ;; process.
+
+;; This package was adapted from flp.el by M. Kifer (kifer@cs.sunysb.edu).
+;; In turn, flp.el, a major mode for FLORID, was derived from prolog.el 
+;; from GNU Emacs 19.28 
+
 ;;
 ;; Put
 ;;   (setq auto-mode-alist (cons '("\\.flr$" . flora-mode) auto-mode-alist))
@@ -51,7 +52,7 @@
 ;  "[^0-9]\\('\\([^\n']\\|\\\\'\\)*'\\)"
   "Regexp matching a quoted atom.")
 (defconst flora-string-regexp
-  "\\(\"\\([^\n\"]\\|\\\\\"\\)*\"\\)"
+  "\\(\"\\([^\n\"]\\|\\\\\"\\)*\"\\|'\\([^\n']\\|''\\)*'\\)"
   "Regexp matching a string.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,19 +98,22 @@
 (if flora-mode-syntax-table
     ()
   (let ((table (make-syntax-table)))
-    (modify-syntax-entry ?_ "w" table)
-    (modify-syntax-entry ?\\ "\\" table)
-    (modify-syntax-entry ?/ ". 1456" table)
-    (modify-syntax-entry ?* ". 23" table)
-    (modify-syntax-entry ?+ "." table)
-    (modify-syntax-entry ?- "." table)
-    (modify-syntax-entry ?= "." table)
-    (modify-syntax-entry ?% "<" table)
-    (modify-syntax-entry ?\n ">" table)
-    (modify-syntax-entry ?< "." table)
-    (modify-syntax-entry ?> "." table)
-    (modify-syntax-entry ?\' "\"" table)
-    (setq flora-mode-syntax-table table)))
+    (modify-syntax-entry ?_    "_"      table)
+    (modify-syntax-entry ?\\   "\\"     table)
+    (modify-syntax-entry ?+    "."      table)
+    (modify-syntax-entry ?-    "."      table)
+    (modify-syntax-entry ?=    "."      table)
+    (modify-syntax-entry ?%    "<"  table)
+    (modify-syntax-entry ?\n   ">"    table)
+    (modify-syntax-entry ?\C-m ">"    table)
+    (modify-syntax-entry ?<    "."      table)
+    (modify-syntax-entry ?>    "."      table)
+    (modify-syntax-entry ?\'   "\""     table)
+    ;; the // comment style isn't supported, due to the limitation of emacs
+    (modify-syntax-entry ?/    ". 14b" table)
+    (modify-syntax-entry ?*    ". 23b"   table)
+    (setq flora-mode-syntax-table table)
+    ))
 
 
 (define-abbrev-table 'flora-mode-abbrev-table ())
@@ -148,13 +152,15 @@
   (define-key map "\t" 'flora-indent-line)
   (define-key map "\C-c\C-l" 'flora-switch-to-flora-buffer)
   (define-key map "\C-c\C-b" 'flora-consult-buffer)
-  (define-key map "\M-\t" 'comint-dynamic-complete)
+  (define-key map "\M-\t"    'comint-dynamic-complete)
   (define-key map "\C-c\C-r" 'flora-consult-region)
   (define-key map "\C-c\C-c" 'flora-consult-first)
   (define-key map "\C-c\C-a" 'flora-consult-file)
   (define-key map "\C-c\C-s" 'flora-reset-system)
   (define-key map "\C-c\C-i" 'flora-interrupt)
-  (define-key map "\C-\\" 'flora-break)
+  (define-key map "\C-\\"    'flora-break)
+  (define-key map "*"	     'flora-electric-star)
+  (define-key map "/"	     'flora-electric-slash)
 )
 (if flora-mode-map
     nil
@@ -213,10 +219,15 @@ This assumes that the point is inside a comment."
   (skip-chars-forward " \t")
   (current-column))
 
-(defun flora-in-comment ()
+(defun flora-in-mline-comment ()
   "Check if point is inside comment."
-  ;; needs to be worked out
-  nil)
+  (let ((pt (point)))
+    (save-excursion
+      (re-search-backward "/\\*" (point-min) t)
+      ;; If after searching backward and finding /* we search forward
+      ;; and find */ then we aren't in comment
+      (not (re-search-forward "\\*/" pt t)))
+    ))
 
 (defun flora-indent-level ()
   "Compute Flora indentation level."
@@ -225,17 +236,19 @@ This assumes that the point is inside a comment."
     (skip-chars-forward " \t")
     (cond
      ((looking-at "%%%") 0)		;Large comment starts
-     ((looking-at "%[^%]") comment-column) ;Small comment starts
+     ((and (looking-at "%[^%]")
+	   (not (flora-in-mline-comment)))
+      comment-column) ;Small comment starts
      ;;End of /* */ comment
-     ((looking-at "\\*/")                  
+     ((or (looking-at "\\*/") (looking-at "\\*\\*"))
       (save-excursion
 	(flora-find-start-of-mline-comment)
 	(skip-chars-backward " \t")
 	(- (current-column) 2)))
      
      ;; Here we check if the current line is within a /* */ pair
-     ((and (looking-at "[^%/]")
-	   (flora-in-comment))
+     ((and (looking-at "[^\*/]")
+	   (flora-in-mline-comment))
       (if flora-indent-mline-comments-flag
 	  (flora-find-start-of-mline-comment)
 	;; Same as before
@@ -278,6 +291,58 @@ This assumes that the point is inside a comment."
 		(t 0))			;No indentation
 	  )))
      )))
+
+(defun flora-electric-star (arg)
+  "Insert a star character.
+If the star is the second character of a C style comment introducing
+construct, and we are on a comment-only-line, indent line as comment.
+If numeric ARG is supplied or point is inside a literal, indentation
+is inhibited."
+  (interactive "*P")
+  ;; if we are not in a comment, or if arg is given do not re-indent the
+  ;; current line, unless this star introduces a comment-only line.
+  (let ((indentp (and (not arg)
+		     (flora-in-mline-comment)
+		     (eq (char-before) ?*)
+		     (save-excursion
+		       (forward-char -1)
+		       (skip-chars-backward "*")
+		       (if (eq (char-before) ?/)
+			   (forward-char -1))
+		       (skip-chars-backward " \t")
+		       (bolp)))))
+    (self-insert-command (prefix-numeric-value arg))
+    (if indentp
+	(flora-indent-line))
+    ))
+
+(defun flora-electric-slash (arg)
+  "Insert a slash character.
+
+Indent the line as a comment, if:
+The slash is part of a `*/' token that closes a block oriented comment.
+
+If numeric ARG is supplied or point is inside a literal, indentation
+is inhibited."
+  (interactive "*P")
+  (let* ((ch (char-before))
+	 (indentp (and (not arg)
+		       (eq last-command-char ?/)
+		       (or (and (eq ch ?/)
+				(not (flora-in-literal)))
+			   (and (eq ch ?*)
+				(flora-in-mline-comment)))
+		       ))
+	 )
+    (self-insert-command (prefix-numeric-value arg))
+    (if indentp
+	(flora-indent-line))))
+
+(defun flora-in-literal ()
+  ;; to be worked out
+  nil)
+
+
 
 (defun end-of-flora-clause ()
   "Go to end of clause in this line."
