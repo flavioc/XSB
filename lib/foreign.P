@@ -87,6 +87,8 @@ runtime_loader_flag(Compiler,LibraryDir,Flag):-
 compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	xsb_configuration(compiler_flags, XSB_CC_Opts),
+	retractall(current_compiled_module(_)),
+	assert(current_compiled_module(Base)),
 	cc_name(Options, CC_Name),
 	cc_options(CC_Name, Options, CC_Opts0),
 	%% If XSB CC opts has -g then add -g to the foreign module options
