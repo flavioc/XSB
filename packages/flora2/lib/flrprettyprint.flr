@@ -191,7 +191,9 @@ flora_pp_subclasses_isa(Class,_) :-
 	(Sub :: Class)@Module,
 	Sub \= Class,
 	tnot(flora_in_between_sub(Sub,Class,Module)),
-	flora_pp_isa(Sub),
+	%% (Guizhen) The following call is dangling.
+        %% When commented out, the compiling warning goes away.
+        %flora_pp_isa(Sub),
 	fail.
 flora_pp_subclasses_isa(_,_).
 
