@@ -46,7 +46,6 @@
 #include "register.h"
 #include "flags_xsb.h"
 #include "inst_xsb.h"
-#include "token_xsb.h"
 #include "loader_xsb.h" /* for ZOOM_FACTOR */
 #include "subp.h"
 #include "tries.h"
@@ -676,7 +675,7 @@ CPtr init_term_buffer() {
 
 #define free_term_buffer() findall_free(findall_chunk_index)
 
-static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
+static int read_can_error(FILE *filep, STRFILE *instr, int prevchar, Cell prologvar)
 {
   char *ptr;
 
@@ -707,9 +706,8 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
   else
     fprintf(stderr,"\n");
   free_term_buffer();
-  ctop_string(2,(char *)string_find("read_canonical_error",1));
-  ctop_int(3,0);
-  return TRUE;
+  unify(prologvar,makestring(string_find("read_canonical_error",1)));
+  return 0;
 }
 
 
@@ -759,29 +757,9 @@ int read_canonical(void)
 {
   FILE *filep;
   STRFILE *instr;
-  int funtop = 0;
-  int optop = 0;
-  int cvarbot = MAXVAR-1;
-  int prevchar, arity, i, size;
-  CPtr h;
-  Cell arg2;
-  int j, op1;
-  Pair sym;
-  Float float_temp;
-  char *cvar;
-  int postopreq = FALSE, varfound = FALSE;
   long tempfp;
-  prolog_term term;
+  Cell prologvar;
   
-  if (opstk_size == 0) {
-    opstk = 
-      (struct opstktype *)malloc(INIT_STK_SIZE*sizeof(struct opstktype));
-    opstk_size = INIT_STK_SIZE;
-    funstk = 
-      (struct funstktype *)malloc(INIT_STK_SIZE*sizeof(struct funstktype));
-    funstk_size = INIT_STK_SIZE;
-  }
-
   tempfp = ptoc_int(1);
   if (tempfp == -1000) {
     prevpsc = 0;
@@ -795,6 +773,35 @@ int read_canonical(void)
     instr = NULL;
     SET_FILEPTR(filep, tempfp);
   }
+  prologvar = ptoc_tag(2);
+  ctop_int(3,read_canonical_term(filep, instr, prologvar));
+  return TRUE;
+}
+
+/* read canonical term, and return prev psc pointer, if valid */
+int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
+{
+  int funtop = 0;
+  int optop = 0;
+  int cvarbot = MAXVAR-1;
+  int prevchar, arity, i, size;
+  CPtr h;
+  int j, op1, retpscptr;
+  Pair sym;
+  Float float_temp;
+  char *cvar;
+  int postopreq = FALSE, varfound = FALSE;
+  prolog_term term;
+  
+  if (opstk_size == 0) {
+    opstk = 
+      (struct opstktype *)malloc(INIT_STK_SIZE*sizeof(struct opstktype));
+    opstk_size = INIT_STK_SIZE;
+    funstk = 
+      (struct funstktype *)malloc(INIT_STK_SIZE*sizeof(struct funstktype));
+    funstk_size = INIT_STK_SIZE;
+  }
+
   /* get findall buffer to read term into */
   h = init_term_buffer();
   size = 0;
@@ -810,7 +817,7 @@ int read_canonical(void)
 		  CPtr this_term;
 		  funtop--;
 		  if (funstk[funtop].funtyp != FUNFUN)	/* ending a list, oops */
-		    return read_can_error(filep,instr,prevchar);
+		    return read_can_error(filep,instr,prevchar,prologvar);
 		  arity = optop - funstk[funtop].funop;
 		  ensure_term_space(h,arity+1);
 		  this_term = h;
@@ -842,7 +849,7 @@ int read_canonical(void)
 		  CPtr this_term, prev_tail;
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN)
-			return read_can_error(filep,instr,prevchar);
+			return read_can_error(filep,instr,prevchar,prologvar);
 		  ensure_term_space(h,2);
 		  this_term = h;
 		  op1 = funstk[funtop].funop;
@@ -891,9 +898,9 @@ int read_canonical(void)
 		} else if (*token->value == '|') {
 		  postopreq = FALSE;
 		  if (funstk[funtop-1].funtyp != FUNLIST) 
-			return read_can_error(filep,instr,prevchar);
+			return read_can_error(filep,instr,prevchar,prologvar);
 		  funstk[funtop-1].funtyp = FUNDTLIST;
-		} else return read_can_error(filep,instr,prevchar);
+		} else return read_can_error(filep,instr,prevchar,prologvar);
       } else {  /* check for neg numbers and backpatch if so */
 		if (opstk[optop-1].typ == TK_ATOM && 
 				!strcmp("-",string_val(opstk[optop-1].op))) {
@@ -904,8 +911,8 @@ int read_canonical(void)
 			opstk[optop-1].typ = TK_REAL;
 			float_temp = (Float) *(double *)(token->value);
 			opstk[optop-1].op = makefloat(-float_temp);
-		  } else return read_can_error(filep,instr,prevchar);
-		} else return read_can_error(filep,instr,prevchar);
+		  } else return read_can_error(filep,instr,prevchar,prologvar);
+		} else return read_can_error(filep,instr,prevchar,prologvar);
       }
     } else {  /* must be an operand */
       switch (token->type) {
@@ -937,7 +944,7 @@ int read_canonical(void)
 		funtop++;
 
 		if (token->nextch != '(')
-			return read_can_error(filep,instr,prevchar);
+			return read_can_error(filep,instr,prevchar,prologvar);
 		token = GetToken(filep,instr,prevchar);
 		/* print_token(token->type,token->value); */
 		prevchar = token->nextch;
@@ -1036,48 +1043,48 @@ int read_canonical(void)
 	}
       case TK_EOF:
 	free_term_buffer();
-	ctop_string(2,string_find("end_of_file",1));
-	ctop_int(3,0);
-	return TRUE;
-      default: return read_can_error(filep,instr,prevchar);
+	if (isnonvar(prologvar)) 
+	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
+	unify(prologvar,makestring(string_find("end_of_file",1)));
+	return 0;
+      default: return read_can_error(filep,instr,prevchar,prologvar);
       }
     }
     if (funtop == 0) {  /* term is finished */
       token = GetToken(filep,instr,prevchar);
       /* print_token(token->type,token->value); */
       prevchar = token->nextch;
-      if (token->type != TK_EOC) return read_can_error(filep,instr,prevchar);
+      if (token->type != TK_EOC) return read_can_error(filep,instr,prevchar,prologvar);
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	term = opstk[0].op;
 	check_glstack_overflow(3, pcreg, (size+1)*sizeof(Cell)) ;
-	arg2 = ptoc_tag(2);
-	if (isnonvar(arg2)) 
+	if (isnonvar(prologvar)) 
 	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
-	bind_ref((CPtr)arg2,hreg);  /* build a new var to trail binding */
+	bind_ref((CPtr)prologvar,hreg);  /* build a new var to trail binding */
 	new_heap_free(hreg);
 	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
-	findall_copy_to_heap(term,(CPtr)arg2,&hreg) ; /* this can't fail */
+	findall_copy_to_heap(term,(CPtr)prologvar,&hreg) ; /* this can't fail */
 	free_term_buffer();
 
-	XSB_Deref(arg2);
-	term = (prolog_term) arg2;
+	XSB_Deref(prologvar);
+	term = (prolog_term) prologvar;
 	if ((isinteger(term)|isboxedinteger(term)) || 
 	    isfloat(term) || 
 	    isstring(term) ||
 	    varfound || 
 	    (isconstr(term) && !strcmp(":-",get_name(get_str_psc(term))))) {
-	  ctop_int(3,0);
+	  retpscptr = 0;
 	  prevpsc = 0;
 	}
 	else if (get_str_psc(term) == prevpsc) {
-	  ctop_int(3, (Integer)prevpsc);
+	  retpscptr = (Integer)prevpsc;
 	} else {
 	  prevpsc = get_str_psc(term);
-	  ctop_int(3,0);
+	  retpscptr = 0;
 	}
       } else {
-	ctop_int(3,0);
+	retpscptr = 0;
 	prevpsc = 0;
       }
 
@@ -1086,7 +1093,7 @@ int read_canonical(void)
 	free(funstk); funstk = NULL;
 	opstk_size = 0; funstk_size = 0;
       }
-      return TRUE;
+      return retpscptr;
     }
   }
 }
@@ -1325,6 +1332,7 @@ xsbBool no_quotes_needed(char *string)
   int nextchar;
   int ctr, flag;
 
+  if (!strcmp(string,"[]")) return FALSE;
   ctr = 0;
   nextchar = (int) string[0];
   flag = 0;
@@ -1385,8 +1393,6 @@ void write_quotedname(FILE *file, char *string)
 {
   char* new_string;
 
-  new_string  = (char *)malloc(2*(strlen(string))+1);
-
   if (*string == '\0') 
     fprintf(file,"''");
   else {
@@ -1394,10 +1400,168 @@ void write_quotedname(FILE *file, char *string)
       fprintf(file,"%s",string);
     }
     else {
+      new_string  = (char *)malloc(2*(strlen(string))+1);
       double_quotes(string,new_string);
       fprintf(file,"\'%s\'",new_string);
+      free(new_string);
     }
   }
-
-  free(new_string);
 }
+
+
+static char *wcan_string = NULL;
+static int wcan_string_len = 0;
+static int wcan_disp = 0;
+static char wcan_buff[32];
+static Psc dollar_var_psc = NULL;
+static int letter_flag = 1;
+
+void expand_wcan_string(int need)
+{
+  wcan_string_len = wcan_string_len + need;
+  wcan_string = realloc(wcan_string,wcan_string_len);
+  /*  printf("expanding buffer to %d\n",wcan_string_len); */
+}
+
+void wcan_append_string(char *string)
+{
+  int wcan_ndisp, string_len;
+
+  string_len = strlen(string);
+  wcan_ndisp = wcan_disp+string_len;
+  if (wcan_ndisp > wcan_string_len) expand_wcan_string(wcan_ndisp);
+  strncpy(wcan_string+wcan_disp,string,string_len);
+  wcan_disp = wcan_ndisp;
+}
+
+void wcan_append_string_chk(char *string)
+{
+  if (no_quotes_needed(string)) {
+    int string_len = strlen(string);
+    int ctr = 0;
+    int maxlen = wcan_disp+2*(string_len+1);
+    if (maxlen > wcan_string_len) 
+      expand_wcan_string(maxlen);
+    wcan_string[wcan_disp++] = 39;
+    while (string[ctr] != '\0') {
+      if (string[ctr] == 39) wcan_string[wcan_disp++] = 39;
+      wcan_string[wcan_disp++] = string[ctr++];
+    }
+    wcan_string[wcan_disp++] = 39;
+  } else {
+    wcan_append_string(string);
+  }
+}
+
+void write_canonical_term(Cell prologterm)
+{
+  XSB_Deref(prologterm);
+  switch (cell_tag(prologterm)) 
+    {
+    case XSB_INT:
+      sprintf(wcan_buff,"%ld",(long)int_val(prologterm));
+      wcan_append_string(wcan_buff);
+      break;
+    case XSB_STRING: 
+      wcan_append_string_chk(string_val(prologterm));
+    break;
+    case XSB_FLOAT:
+      sprintf(wcan_buff,"%2.4f",float_val(prologterm));
+      wcan_append_string(wcan_buff);
+      break;
+    case XSB_REF:
+    case XSB_REF1:
+      {int varval;
+      if (wcan_disp+2 > wcan_string_len) expand_wcan_string(wcan_disp+2);
+      wcan_string[wcan_disp++] = '_';
+      if (prologterm >= (Cell)glstack.low && prologterm <= (Cell)top_of_heap) {
+	wcan_string[wcan_disp++] = 'h';
+	varval = (long) ((prologterm-(Cell)glstack.low+1)/sizeof(CPtr));
+      }
+      else {
+	if (prologterm >= (Cell)top_of_localstk && prologterm <= (Cell)glstack.high) {
+	  wcan_string[wcan_disp++] = 'l';
+	  varval = (long) (((Cell)glstack.high-prologterm+1)/sizeof(CPtr));
+	}
+	else varval = prologterm;   /* Should never happen */
+      }
+      sprintf(wcan_buff,"%d",varval);
+      wcan_append_string(wcan_buff);
+      }
+      break;
+    case XSB_STRUCT: /* lettervar: i.e., print '$VAR'(i) terms as Cap Alpha-Num */
+      if (!dollar_var_psc) {
+	int new_indicator;
+	dollar_var_psc = pair_psc(insert("$VAR", 1, global_mod, &new_indicator));
+      }
+      if (letter_flag && (get_str_psc(prologterm) == dollar_var_psc)) {
+	int ival, letter;
+	Cell tempi = cell(clref_val(prologterm)+1);
+	XSB_Deref(tempi);
+	if (!isinteger(tempi)) xsb_abort("[write_canonical]: illegal $VAR argument");
+	ival = int_val(tempi);
+	letter = ival % 26;
+	ival = ival / 26;
+	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+	wcan_string[wcan_disp++] = letter + 'A';
+	if (ival != 0) {
+	  sprintf(wcan_buff,"%d",ival);
+	  wcan_append_string(wcan_buff);
+	}
+      } else {
+	int i;
+	wcan_append_string_chk(get_name(get_str_psc(prologterm)));
+	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+	wcan_string[wcan_disp++] = '(';
+	for (i = 1; i < get_arity(get_str_psc(prologterm)); i++) {
+	  write_canonical_term(cell(clref_val(prologterm)+i));
+	  if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+	  wcan_string[wcan_disp++] = ',';
+	}
+	write_canonical_term(cell(clref_val(prologterm)+i));
+	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+	wcan_string[wcan_disp++] = ')';
+      }
+      break;
+    case XSB_LIST:
+      {Cell tail;
+      if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+      wcan_string[wcan_disp++] = '[';
+      write_canonical_term(cell(clref_val(prologterm)));
+      tail = cell(clref_val(prologterm)+1);
+      XSB_Deref(tail);
+      while (islist(tail)) {
+	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+	wcan_string[wcan_disp++] = ',';
+	write_canonical_term(cell(clref_val(tail)));
+	tail = cell(clref_val(tail)+1);
+	XSB_Deref(tail);
+      } 
+      if (!isnil(tail)) {
+	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+	wcan_string[wcan_disp++] = '|';
+	write_canonical_term(tail);
+      }
+      if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+      wcan_string[wcan_disp++] = ']';
+      }
+      break;
+    default:
+      xsb_abort("Unsupported subterm tag");
+      return;
+    }
+  return;
+}
+
+void print_term_canonical(FILE *fptr, Cell prologterm, int letterflag)
+{
+
+  letter_flag = letterflag;
+  wcan_disp = 0;
+  write_canonical_term(prologterm);
+  if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
+  wcan_string[wcan_disp] = '\0';
+
+  fprintf(fptr, "%s", wcan_string);
+}
+

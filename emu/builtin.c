@@ -72,7 +72,6 @@
 #include "loader_xsb.h"
 #include "binding.h"
 #include "macro_xsb.h"
-#include "token_xsb.h"
 #include "builtin.h"
 #include "sig_xsb.h"
 #include "subp.h"
@@ -1352,7 +1351,10 @@ int builtin_call(byte number)
     case TK_POSTOP : print_op(fptr, ptoc_string(3), 3); break;
     case TK_QATOM  : print_qatom(fptr, ptoc_string(3)); break;
     case TK_QSTR   : fprintf(fptr, "\"%s\"", ptoc_string(3)); break;
-    default : xsb_abort("[FILE_PUTTOKEN] Unknown token type");
+    case TK_TERML  : print_term_canonical(fptr, ptoc_tag(3), 1); break;
+    case TK_TERM   : print_term_canonical(fptr, ptoc_tag(3), 0); break;
+    default : printf("flg: %d\n",ptoc_int(2));
+      xsb_abort("[FILE_PUTTOKEN] Unknown token type %d");
     }
     break;
   }

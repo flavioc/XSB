@@ -44,7 +44,6 @@
 #include "macro_xsb.h"
 #include "inst_xsb.h"
 #include "debug_xsb.h"
-#include "token_xsb.h"
 #include "varstring_xsb.h"
 #include "cinterf.h"
 #include "io_defs_xsb.h"

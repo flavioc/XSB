@@ -51,6 +51,7 @@
 #include "export.h"
 #include "register.h"
 #include "ptoc_tag_xsb_i.h"
+#include "io_builtins_xsb.h"
 
 #define MAXCURSORNUM                    25
 #define MAXVARSTRLEN                    2000
@@ -572,6 +573,8 @@ void SetBindVal()
 	/* SQLBindParameter will be done anyway*/
       }
       cur->BindList[j] = string_val(BindVal);
+    } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
+      xsb_abort("Structured bind variable type; will handle term");
     } else {
       xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
     }
@@ -595,6 +598,8 @@ void SetBindVal()
   } else if (isstring(BindVal)) {
     cur->BindTypes[j] = 2;
     cur->BindList[j] = string_val(BindVal);
+  } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
+    xsb_abort("Structured bind variable type; will handle term");
   } else {
     xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
   }
@@ -1035,6 +1040,7 @@ int GetColumn()
 {
   struct Cursor *cur = (struct Cursor *)ptoc_int(2);
   int ColCurNum = ptoc_int(3);
+  Cell op1;
   Cell op = ptoc_tag(4);
   UDWORD len;
 
@@ -1065,6 +1071,17 @@ int GetColumn()
     XSB_Deref(op);
     if (isref(op)) 
       return unify(op, makestring(string_find(cur->Data[ColCurNum],1))); 
+    if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
+      STRFILE strfile;
+      
+      op1 = cell(clref_val(op)+1);
+      XSB_Deref(op1);
+      
+      strfile.strcnt = strlen(cur->Data[ColCurNum]);
+      strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
+      read_canonical_term(NULL,&strfile,op1);
+      return TRUE;
+    }
     if (!isstring(op)) return FALSE;
     if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
     return TRUE;

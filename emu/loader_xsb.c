@@ -98,7 +98,7 @@ extern TIFptr get_tip(Psc);
 #define get_obj_string(x,len)	(get_obj_data((x),(len)))
 
 #define get_obj_word_bb(x)    {get_obj_word(x) ; fix_bb(x) ; }
-#define get_obj_word_bbsig(x) {get_obj_word(x) ; fix_bb4(x) ; \
+#define get_obj_word_bbsig(x) {get_obj_word(x) ; fix_bb4(x) ;\
 			       *(Cell *)(x) = makeint(*(int *)(x));}
 #define get_obj_word_bbsig_notag(x) {get_obj_word(x) ; fix_bb4(x) ; \
 			       *(Integer *)(x) = *(int *)(x);}

@@ -52,6 +52,8 @@
 #define TK_POSTOP   20
 #define TK_QATOM    21
 #define TK_QSTR     22		/* quoted string */
+#define TK_TERML    23          /* term, for write_canonical lettervar */
+#define TK_TERM     24          /* term, for write_canonical */
 
 #define DIGIT    0              /* 0 .. 9 */
 #define BREAK    1              /* _ */
