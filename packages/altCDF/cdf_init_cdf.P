@@ -8,7 +8,7 @@
 	allAttr/3, immed_allAttr/3, 
 	classHasAttr/3, immed_classHasAttr/3, 
 	in_hierarchy/1,
-	newExtTerm/1, retractallExtTerm/1,
+	newExtTerm/1, newExtTerm/2, retractallExtTerm/1,
 	initialize_state/0, system_component/1, initialize_cdf/0,
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
@@ -100,9 +100,9 @@ initialize_cdf:-
 	retractall(cdf_logging_state(_)),
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
-	initialize_cdf_flags,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
+	initialize_cdf_flags,
 	make_cdf_clean.
 	
 init_dynamic_code:- 
@@ -196,8 +196,10 @@ initialize_state:-
 	retractall(cdf_logging_state(_)),
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
+	retractall(cdf_flags(_,_)),
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
+	initialize_cdf_flags,
 	make_cdf_clean.
 
 reset_dynamics:- 
@@ -661,14 +663,16 @@ before it can be added.
 @end{itemize}
 ").
 
-newExtTerm(Term):- 
-	newExtTerm(Term,Upd0,[]),
+newExtTerm(Term):- newExtTerm(term_update,Term).
+
+newExtTerm(Context,Term):- 
+	newExtTerm(Context,Term,Upd0,[]),
 	sort(Upd0,Upds),
 	cdf_update_list(Upds).
 
-newExtTerm(Term,Upd0,Upd):- 
-	check_types(term_update,Term),
-	(check_implication(term_update,Term) -> 
+newExtTerm(Context,Term,Upd0,Upd):- 
+	check_types(Context,Term),
+	(check_implication(Context,Term) -> 
 	    Upd0 = [asserta(Term)|Upd]
 	  ; Upd0 = Upd).
 
@@ -891,12 +895,12 @@ updateExtTermMerge(SOValList,SNValList,ArgsVars,Updates0,Updates) :-
 					       Updates0,Updates)
 		)
 	 ;	copy_term(ArgsVars,p(NExtTerm,NVal)),
-		newExtTerm(NExtTerm,Updates0,Updates1),
+		newExtTerm(update_attribute,NExtTerm,Updates0,Updates1),
 		updateExtTermMerge(SOValList,SNVals,ArgsVars,Updates1,Updates)
 	).
 updateExtTermMerge([],[NVal|SNVals],ArgsVars,Updates0,Updates) :- !,
 	copy_term(ArgsVars,p(NExtTerm,NVal)),
-	newExtTerm(NExtTerm,Updates0,Updates1),
+	newExtTerm(update_attribute,NExtTerm,Updates0,Updates1),
 	updateExtTermMerge([],SNVals,ArgsVars,Updates1,Updates).
 updateExtTermMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
 	copy_term(ArgsVars,p(NExtTerm,OVal)),

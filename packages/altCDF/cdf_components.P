@@ -16,7 +16,7 @@
 
 :- import 
 	classHasAttr/3,
-	retractallExtTerm/1, newExtTerm/1,
+	retractallExtTerm/1, newExtTerm/2, newExtTerm/1,
 	system_component/1 from cdf_init_cdf.
 
 :- import canonical_pathname/2, rel_path/3 from directry.
@@ -507,7 +507,8 @@ load_component_dependencies_pass1(Name,Abs,Arglist):-
 							 cid(Relnew,cdfpt),
 							 cid(Vnew,cdfpt)),
 					       New))),
-	newExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
+	newExtTerm(component_create,
+		   classHasAttr_ext(cid(component(cid(Name,Name),
 						  cid(Abs,cdfpt),
 						  cid(V,cdfpt)),Name),
 				    crid(componentDepends,Name),
@@ -765,7 +766,8 @@ versions_for_existing_component(Name):-
  			            cid(compName(cid(Name,Name),
  					      cid(P,cdfpt)),Name),
  		                        crid(hasVersion,Name),cid(V,cdfpt))),
- 	      newExtTerm(classHasAttr_ext(cid(compName(cid(Name,Name),
+ 	      newExtTerm(component_create,
+			 classHasAttr_ext(cid(compName(cid(Name,Name),
  						              cid(P,cdfpt)),
 					      Name),
  	                             crid(hasVersion,Name),cid(V1,cdfpt))),
@@ -773,7 +775,8 @@ versions_for_existing_component(Name):-
  						    cid(P,cdfpt),
  						    cid(V,cdfpt)), Name),
  				      cid('CDF Classes',cdf))),
- 	    newExtTerm(isa_ext(cid(component(cid(Name,Name),
+ 	    newExtTerm(component_create,
+	               isa_ext(cid(component(cid(Name,Name),
 					     cid(P,cdfpt),
  					     cid(V1,cdfpt)), Name),
  			       cid('CDF Classes',cdf)))
@@ -885,7 +888,8 @@ create_all_dependencies_create(Name,_Dir,FromCompid):-
 					   crid(componentDepends,FromName),
 					   cid(component(cid(Name,Name),_,_V),
 					       Name))),
-	newExtTerm(classHasAttr_ext(FromCompid,
+	newExtTerm(component_create,
+		   classHasAttr_ext(FromCompid,
 				    crid(componentDepends,FromName),
 				    cid(component(cid(Name,Name),
 						  cid(Pcdf,cdfpt),
@@ -903,7 +907,8 @@ create_all_dependencies_create(ToName,Dir,FromCompid):- !,
 					   crid(componentDepends,FromName),
 					   cid(component(cid(ToName,ToName),
 							 _,_),_))),
-	newExtTerm(classHasAttr_ext(FromCompid,
+	newExtTerm(component_create,
+	           classHasAttr_ext(FromCompid,
 				    crid(componentDepends,FromName),
 				    cid(component(cid(ToName,ToName),
 						  cid(Dir,cdfpt),
@@ -943,7 +948,8 @@ create_all_dependencies_in_place(ToName,Dir,FromCompid):- !,
 					   cid(component(cid(ToName,ToName),
 							 _,_),
 					       _))),
-        newExtTerm(classHasAttr_ext(FromCompid,crid(componentDepends,FromName),
+        newExtTerm(component_create,
+		   classHasAttr_ext(FromCompid,crid(componentDepends,FromName),
 			        cid(component(cid(ToName,ToName),
 		                              cid(ToPath,cdfpt),
 					      cid(V,cdfpt)),ToName))).
@@ -1089,15 +1095,16 @@ newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
 	      cdf_error(component,['Creating a component path ',Path,
 			' for ',Src,' which has path ',Path1]) 
 	    ; 
-	      newExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),
+	      newExtTerm(component_create,
+			 classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),
 						Path)) ),
 	(classHasAttr(cid(compName(cid(Src,Src),Path),Src),
 			crid(hasVersion,Src),Version) -> 
 	     true 
 	   ; 
-	     newExtTerm(classHasAttr_ext(
-	                                           cid(compName(cid(Src,Src),Path),Src),
- 	                                           crid(hasVersion,Src),cid(0,cdfpt))),
+	     newExtTerm(component_create,
+			classHasAttr_ext(cid(compName(cid(Src,Src),Path),Src),
+ 	                                 crid(hasVersion,Src),cid(0,cdfpt))),
 	     Version = cid(0,cdfpt) ).
 newPathandVersion(create,cid(Name,Name),_Pathin,Path,V):- 
 	system_component(Name),!,
@@ -1111,7 +1118,7 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
         retractallExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),_)),
         retractallExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),_),Src),
 			 	crid(hasVersion,Src),_Int)),
-        newExtTerm(classHasAttr_ext(cid(Src,Src),
+        newExtTerm(component_create,classHasAttr_ext(cid(Src,Src),
 				    crid(hasPath,Src),cid(Pathin,cdfpt))),
         slash(Slash),
         concat_atom([Pathin,Slash,Src],File),
@@ -1119,7 +1126,7 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
   	     file_latest_version(Pathin,Src,Vold),
 	     V1 is Vold + 1
 	  ;  V1 = 0),
-       newExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),
+       newExtTerm(component_create,classHasAttr_ext(cid(compName(cid(Src,Src),
 						cid(Pathin,cdfpt)),Src),
 			           crid(hasVersion,Src),cid(V1,cdfpt))).
 /* Assumes merge_check has been done.  Do nothing if the component has been
@@ -1130,15 +1137,18 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):-
 				crid(hasVersion,Src),V) -> 
   	     true
 	  ; 
-    	     newExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),Path)),
+    	     newExtTerm(component_create,
+			classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),Path)),
 	     slash(Slash),
 	     concat_atom([Pathin,Slash,Name],File),
   	     (file_exists(File) ->
   	         file_latest_version(Pathin,Name,Vold),
 	          V is Vold + 1
 	       ;  V = 0),
-	     newExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),Pathin)),
-  	     newExtTerm(
+	     newExtTerm(component_create,
+		        classHasAttr_ext(cid(Src,Src),
+					 crid(hasPath,Src),Pathin)),
+  	     newExtTerm(component_create,
 		classHasAttr_ext(cid(compName(cid(Src,Src),Pathin),Src),
  				 crid(hasVersion,Src),V)),
 	     Pathin = Path ).

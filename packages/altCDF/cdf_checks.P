@@ -2,13 +2,16 @@
 
 :- export check_types/2, 
           check_implication/2,
-	  classify_if_necessary/2.
+	  classify_if_necessary/2,
+	  classify_if_necessary_no_checkflag/2.
 
 % fool that module system... 
 :- export check_isa_types/4, check_ind_types/3.
 
 :- import cdf_error/2, cdf_warning/2 from cdf_exceptions.
-:- import in_hierarchy/1,newExtTerm/1 from cdf_init_cdf.
+:- import in_hierarchy/1,
+	  newExtTerm/1,
+	  cdf_id_fields/4 from cdf_init_cdf.
 
 :- import cdf_flags/2 from usermod.
 
@@ -58,7 +61,7 @@ check_types_no_checkflag(query,Term):-
 %------
 :- comment(hide,check_isa_types/2).
 
-check_isa_types(term_update,First,Second,Term):- 
+check_isa_types(Context,First,Second,Term):- 
 	check_isa_arg_1(First,Term,Context,F1),
 	check_isa_arg_2(Second,Term,Context,F1).
 
@@ -70,23 +73,18 @@ check_isa_types(query,First,Second,Term):-
 	     true
 	  ; check_isa_arg_2(Second,Term,Context,F1)).
 
-check_isa_arg_1(First,Term,Context,F1):- 
-	(functor(First,F1,2) -> 
-	    true
+check_isa_arg_1(First,Term,Context,Fnct1):- 
+	(cdf_id_fields(First,Fnct1,Nid,Src) -> 
+  	    check_arg_consist(Src,Nid,Fnct1,First,Context,Term)
 	  ; cdf_warning(Context,[First,' in ',Term,' is not of proper type.']),
-	    fail ),
-	arg(1,First,A1),
-	check_arg_consist(A1,F1,First,Context,Term).
+	    fail ).
 
-check_isa_arg_2(Second,Term,Context,F1):- 
-	arg(2,Term,Second),
-	((functor(Second,F2,2),isa_consist(F1,F2)) -> 
-	    true
+check_isa_arg_2(Second,Term,Context,Fnct1):- 
+	((cdf_id_fields(Second,Fnct2,Nid,Src),isa_consist(Fnct1,Fnct2)) -> 
+  	    check_arg_consist(Src,Nid,Fnct2,Second,Context,Term)
 	  ; cdf_warning(Context,['Arguments in ',Term,
 				' are not of proper type.']),
-	    fail ),
-	arg(1,Second,A2),
-	check_arg_consist(A2,F2,Second,Context,Term).
+	    fail ).
 
 isa_consist(F,F):-!.
 isa_consist(oid,cid).
@@ -98,20 +96,25 @@ check_ind_types(Context,Term,List):-
 	Term =.. [_|R],
 	check_ind_types_1(R,List,Context,Term).
 
+% TLS: goes through the arguments of the CDF fact.
 check_ind_types_1([],[],_,_).
 check_ind_types_1([Id|T],[List|LT],Context,Term):- 
 	(var(Id) -> 
 	    true
 	  ; 
-	    (functor(Id,F,2),memberchk(F,List) -> 
-	        arg(1,Id,A),
-	        check_arg_consist(A,F,Id,Context,Term)
+	    (cdf_id_fields(Id,F,Nid,Src),memberchk(F,List) -> 
+
+	        check_arg_consist(Src,Nid,F,Id,Context,Term)
     	      ; cdf_warning(Context,
 			    [Id,' in ',Term,' is not of proper type.']),
 	        fail ) ),
 	check_ind_types_1(T,LT,Context,Term).
 
-check_arg_consist(Nid,F,Id,Context,Term):- 
+
+%TLS could perhaps also test to see that F \in oid,cid
+check_arg_consist(cdfpt,Nid,_F,_Id,Context,Term):- !,
+	check_primitive_type(Nid,Context,Term).
+check_arg_consist(_Src,Nid,F,Id,Context,Term):- 
 	(structure(Nid) -> 
 	    Nid =.. [_Funct|L],
 	    check_arg_consist_list(L,F,Id,Context,Term) 
@@ -122,13 +125,30 @@ check_arg_consist_list([Nid|T],F,Id,Context,Term):-
 	(var(Nid) -> 
 	    true
 	  ; 
-	    (functor(Nid,F,2) -> 
-	        arg(1,Nid,A),
-		check_arg_consist(A,F,Id,Context,Term)
+	    (cdf_id_fields(Nid,F,A,Src) -> 
+		check_arg_consist(Src,A,F,Id,Context,Term)
 	      ; cdf_warning(Context,[Id,' in ',Term,' is ill-formed.']),
 		fail ) ),
 	  check_arg_consist_list(T,F,Id,Context,Term).
 	
+check_primitive_type(Nid,Context,Term):- 
+	(atomic(Nid) -> 
+	    true
+	  ; structure(Nid),
+	    (cdf_id_fields(Nid,_,_,_) -> 
+    	         cdf_warning(Context,
+			    [Nid,' in ',Term,
+			     ' is not a proper primitive type.']),
+	         fail
+              ; 
+	         Nid =.. [_|List],
+  	         check_primitive_type_list(List,Context,Term) ) ).
+
+check_primitive_type_list([],_Context,_Term).
+check_primitive_type_list([H|T],Context,Term):- 
+	check_primitive_type(H,Context,Term),
+	check_primitive_type_list(T,Context,Term).
+
 type_table(isa(A,B),check_isa_types(_,A,B,isa(A,B))).
 type_table(isa_ext(A,B),check_isa_types(_,A,B,isa_ext(A,B))).
 type_table(isa_int(A,B),check_isa_types(_,A,B,isa_int(A,B))).
@@ -153,6 +173,8 @@ type_table(classHasAttr_ext(A,B,C),check_ind_types(_,classHasAttr_ext(A,B,C),
 type_table(classHasAttr_int(A,B,C),check_ind_types(_,classHasAttr(A,B,C),
 			[ [cid,rid,crid], [crid,crrid,crcrid], [cid,oid] ] ) ).
 
+%----------------------------------------------------------------------
+
 % want to change so that it checks for implication also.
 check_implication(Context,Term):- 
 	(cdf_flags(check_implication,Context) -> 
@@ -171,7 +193,9 @@ remove_ext(allAttr_ext(A,B,C),allAttr(A,B,C)).
 %----------------------------------------------------------------------
 
 classify_if_necessary(component_load,Name):-
+%	writeln(cin(Name)),
 	(cdf_flags(classify_if_necessary,component_load) -> 
+	    writeln(cin(Name)),
 	    classify_if_necessary_no_checkflag(Name)
 	  ; true).
 	    
@@ -203,7 +227,6 @@ classify_if_necessary_term(isa_ext(First,Second),Upd1,Upd):-
 
 classify_if_necessary_list([],Upd,Upd).
 classify_if_necessary_list([Arg|R],Updin,Upd):- 
-%	foo(Arg),
 	classify_arg(Arg,Updin,Updmid),
 	classify_if_necessary_list(R,Updmid,Upd).
 

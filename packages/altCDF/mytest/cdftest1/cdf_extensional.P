@@ -1,7 +1,9 @@
-isa_ext(cid(c3,test),id('CDF Root',cdf)).
-isa_ext(cid(c13,test),id('CDF Root',cdf)).
+isa_ext(cid(c3,test),cid('CDF Classes',cdf)).
+isa_ext(cid(c13,test),cid('CDF Classes',cdf)).
 isa_ext(cid(c1,test),cid(c2,test)).
 isa_ext(cid(c2,test),cid(c3,test)).
+
+isa_ext(cid(f(a),cdfpt),cid(11,test)).
 isa_ext(cid(c11,test),cid(c12,test)).
 isa_ext(cid(c12,test),cid(c13,test)).
 
@@ -45,6 +47,5 @@ allAttr_ext(oid(o2,test),rid(r1,test),cid(c12,test)).
 allAttr_ext(oid(o2,test),rid(r4,test),cid(c12,test)).
 allAttr_ext(oid(o2,test),rid(r2,test),oid(o12,test)).
 allAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test)).
-
 
 
