@@ -3,8 +3,7 @@
 :- export   supported_format/1,            supported_format_suffix/2,
 	    index_comment/2,               option_comment/2,
 	    format_front_matter/19,        format_intro/10,
-	    format_module_usage/10,
-	    format_predicates_begin/4,     format_predicate_begin/6,
+	    format_module_usage/10, 	   format_predicate_begin/6,
 	    format_predicate_comment/3,    format_predicate_end/2,
 	    format_native_declaration/3,     
 	    format_predicates_end/2,
@@ -15,6 +14,7 @@
 	    format_properties_end/2,       format_description/3,
 	    format_other_info/10,           
 	    format_includes_and_end_matter/6,
+	    format_tabling_declaration/3,
 	    verbatimize_string/3,
 
 	    typeindex/5, texinfo_escape_ats_etc/2. 	% for rewrite_command
@@ -632,7 +632,6 @@ format_index(Name,Titleat,Commentat,IndexId,OS) :-
 
 format_module_usage(texinfo,Name,Type,CExports,UMods,SysMods,Ops,NDecls,
 		    Indices,OS) :-
-	writeln(fmu_type(Type)),
 	texinfo_escape_ats_etc_all_atoms(Name,EName),
 	format_texinfo_section_name(EName,2,"Usage and interface",OS),
 	writeln(OS,'@cartouche'),
@@ -953,6 +952,7 @@ format_predicate_begin(texinfo,Type,PN,Indices,Opts,OS) :-
 	# "@var{Text} is an appropriate text for the header for
            @var{Type}.  Same for @var{Prefix} and @var{Postfix}".
 
+typetext(tpred,    "TABLED_PREDICATE",   "",    "").
 typetext(pred,    "PREDICATE",   "",    "").
 typetext(compat,  "PREDICATE",   "",    "").
 typetext(calls,   "PREDICATE",   "",    "").
@@ -960,12 +960,12 @@ typetext(success, "PREDICATE",   "",    "").
 typetext(comp,    "PREDICATE",   "",    "").
 %% typetext(func,    "FUNCTION",    "",    "").
 typetext(prop,    "PROPERTY",    "",    "").
-typetext(regtype, "REGTYPE",     "",    "").
+%typetext(regtype, "REGTYPE",     "",    "").
 typetext(decl,    "DECLARATION", ":- ", ".").
-typetext(modedef, "MODE",        "",    "").
-typetext(entry,   "ENTRY POINT", "",    "").
+%typetext(modedef, "MODE",        "",    "").
+%typetext(entry,   "ENTRY POINT", "",    "").
 %% This one just for undocumented reexports:
-typetext(udreexp, "(UNDOC_REEXPORT)",     "",    "").
+%typetext(udreexp, "(UNDOC_REEXPORT)",     "",    "").
 typetext(_,       "UNKNOWN",     "",    "").
 
 
@@ -991,42 +991,22 @@ format_predicate_comment(texinfo,Comment,OS) :-
 	: '='(texinfo) * term * stream
 
 	# "This predicate defines the format for documenting
-          miscellaneous declarations such as @decl{meta_predicate/1},
-          @decl{multifile/1}, @decl{dynamic/1}, @decl{data/1}, etc.
+          miscellaneous declarations such as @decl{dynamic/1}.
           @var{Format} is the type of output (e.g., texinfo, latex,
           etc.). @var{Decl} contains the declaration info. @var{OS} is
           the output stream to which writes should be made (normally
-          points to the output file). No special comment is generated
-          for the default value (@tt{static}).".
+          points to the output file). ".
 %% ---------------------------------------------------------------------------
 
-format_native_declaration(texinfo,normal(Type,Meta),OS) :-
-	!,
-	format_type_info(texinfo,Type,OS),
-	format_meta_info(texinfo,Meta,OS).
-format_native_declaration(texinfo,multifile(Type),OS) :-
-	!,
-	format(OS,"~nThe predicate is @emph{multifile}.~n~n",[]),
-	format_type_info(texinfo,Type,OS).
-format_native_declaration(texinfo,Mode,OS) :-
-	format_type_info(texinfo,Mode,OS).
-
-%% Static and implicit not interesting to document.
-format_type_info(texinfo,static,_OS) :-
-	!.
-format_type_info(texinfo,implicit,_OS) :-
-	!.
-format_type_info(texinfo,Type,OS) :-
+format_native_declaration(texinfo,Type,OS) :-
 	texinfo_escape_ats_etc_all_atoms(Type,EType),
 	format(OS,"~nThe predicate is of type @emph{~w}.~n~n",[EType]).
 
-format_meta_info(texinfo,0,_OS) :-
-	!.
-format_meta_info(texinfo,Meta,OS) :-
-	texinfo_escape_ats_etc_all_atoms(Meta,EMeta),
-	format(OS,"~n@emph{Meta-predicate} with arguments: @code{~w}.~n~n",
-               [EMeta]).
+%% ---------------------------------------------------------------------------
 
+format_tabling_declaration(texinfo,TType,OS) :-
+	texinfo_escape_ats_etc_all_atoms(Type,EType),
+	format(OS,"~nThe predicate uses @emph{~w} tabling.~n~n",[TType]).
 
 %% ---------------------------------------------------------------------------
 :- comment(format_predicate_end(Format,OS),"This predicate defines the
@@ -1053,7 +1033,7 @@ format_predicate_end(texinfo,OS) :-
    latex, etc.). @var{HD} describes the head of the predicate (as a
    structure whose argunents are the variable names).  @var{Type} is
    the type of predicate (predicate, function, declaration, ...).
-   @var{Standard} contains the atom @tt{iso} is the predicate is
+   @var{Standard} contains the atom @tt{iso} if the predicate is
    iso-compliant. @var{OS} is the output stream to which writes should
    be made (normally points to the output file.").
 
@@ -1218,9 +1198,7 @@ format_property(texinfo,Prop,PM,DocString,VarNames,Opts,OS) :-
 	(  ( member('-literalprops',Opts) 
 	   ; DocString==[] 
 	   ; DocString==undefined )
-	-> (  member('-propmods',Opts)
-           -> format(OS,"@code{~w:~w}",[EPM,EProp])
-	   ;  format(OS,"@code{~w}",[EProp]) )
+	-> format(OS,"@code{~w}",[EProp])
 	;  texinfo_escape_ats_etc_all_atoms(VarNames,RVarNames),
 	   (  ( member('-nopropsepln',Opts),
 	        list_concat([ NewDocString, "." ], DocString) )
@@ -1239,7 +1217,7 @@ format_property(texinfo,Prop,PM,DocString,VarNames,Opts,OS) :-
 	-> true 
 	;  functor(Prop,F,A),
 	   texinfo_escape_ats_etc_all_atoms(F/A,Desc),
-	   (  member('-propmods',Opts)
+	   (  EPM \== ''
            -> format(OS," (@code{~w:~w})",[EPM,Desc]) 
 	   ;  format(OS," (@code{~w})",[Desc]) ) ),
  	(  member('-nopropsepln',Opts)

@@ -84,7 +84,7 @@ xsbdoc(Format_file):-
 	xsbdoc_components(Components,Indices,Opts),
 	make_bibfiles(Base),	/* dont want main.P */
 	shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
-	shell_list(['texindex ',Base,'.gl ']),
+	shell_list(['texindex ',Base,'.?? ']),
 	shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
 	shell_list(['dvips ',Base,'.dvi',' -o ',Base,'.ps']),
 	!.
