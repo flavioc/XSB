@@ -213,7 +213,7 @@ static int get_index_tab(FILE *fd, int clause_no)
   for (j = 0; j < clause_no; j++) {
     get_obj_byte(&type);
     switch (type) {
-    case 'i': get_obj_word_bb(&ival);
+    case 'i': get_obj_word_bbsig(&ival);
       val = (Cell) ival ;
       count += 9;
       break;
