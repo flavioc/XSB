@@ -134,7 +134,7 @@ char *xsb_executable_full_path(char *myname)
   char *path = getenv("PATH");
   int len, found = 0;
   char *pathcounter, save;
-  static char myname_augmented;
+  static char myname_augmented[MAXPATHLEN];
 
   strcpy(myname_augmented, myname);
 #ifdef WIN_NT

@@ -59,3 +59,20 @@
 8. If you compiled XSB as a DLL (with DLL=yes) then NMAKE will put the DLL in:
 
      ./config/x86-pc-windows/saved.o/xsb.dll
+
+9. If you first compiled XSB as an executable and then want to compile it
+   as a DLL, then you should run
+
+        NMAKE /f "MS_VC_Mfile.mak" clean
+
+   before producing the xsb.dll. This will wipe out the object files from
+   the previous build, but it will leave xsb.exe in place, so you can use
+   both xsb.dll and xsb.exe.
+
+10. If you first compiled XSB as a release version and then decided to
+    create a debug version (or vice versa), you must also run 
+
+        NMAKE /f "MS_VC_Mfile.mak" clean
+
+    in between. However, you should be aware of the fact that the debug
+    version will replace the release executable (or the other way around).

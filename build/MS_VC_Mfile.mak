@@ -100,11 +100,13 @@ ORACLE_FLAG=/D "ORACLE"
 !ENDIF
 !ENDIF
 
+!IF "$(DLL)" == "yes"
+ALL : "$(OUTDIR)\xsb.dll"
+!ELSE
 ALL : "$(OUTDIR)\xsb.exe"
+!ENDIF
 
 CLEAN : 
-	-@erase "$(OUTDIR)\xsb.exe"
-
 	-@erase "$(INTDIR)\auxlry.obj"
 	-@erase "$(INTDIR)\biassert.obj"
 	-@erase "$(INTDIR)\builtin.obj"
@@ -203,10 +205,6 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 \
  /out:"$(OUTDIR)/xsb.exe" 
 
-"$(OUTDIR)\xsb.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
 
 !ELSEIF  "$(CFG)" == "debug"  &&  "$(DLL)" == "no"
 
@@ -219,10 +217,6 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
  /out:"$(OUTDIR)\xsb.exe" 
 
-"$(OUTDIR)\xsb.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
 
 !ELSEIF "$(CFG)" == "release" && "$(DLL)" == "yes"
 
@@ -248,6 +242,17 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /implib:"$(OUTDIR)/xsb.lib"	 
 
 !ENDIF 
+
+
+"$(OUTDIR)\xsb.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+"$(OUTDIR)\xsb.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
 
 .c{$(CPP_OBJS)}.obj:
    $(CPP) $(CPP_PROJ) $<  

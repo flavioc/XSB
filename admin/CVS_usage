@@ -292,31 +292,24 @@ How to make all this less painful
 Once you created a checked out version, you can do most of the other things
 using a graphical interface.
 
-I strongly recommend the use of XEmacs, because it has an integrated CVS
-interface, called pcl-cvs.  
+I strongly recommend the use of XEmacs or Emacs, because they have a fairly
+good graphical interface to CVS, called pcl-cvs.
 
-You can also use FSF Emacs, but then you will have to
-download pcl-cvs (which is now part of the official CVS distribution) from:
-http://www.cyclic.com/cvs/soft-pcl.html
-But then you also need another package, elib:
-ftp://ftp.lysator.liu.se/pub/emacs/elib-1.0.tar.gz, and then you also need
-to fix a bug in the aforesaid version of pcl-cvs (patch available from me on
-request). So, you get the picture ;-(.
-(I myself usually use FSF Emacs -- this is how I know about all these
-troubles!)
+I placed the latest versions of pcl-cvs compiled for the respective emacsen 
+in:
+    ~sbprolog/pcl-cvs-emacs/
+    ~sbprolog/pcl-cvs-xemacs/
 
-Please note that I placed a *better* version of pcl-cvs in
-~sbprolog/PCL-CVS.tar
-It is compiled for XEmacs (and probably doesn't run under FSF Emacs).
-It is a vastly improved version over that in the current XEmacs (it is what 
-you'll get when the next XEmacs comes out). 
-To install it, unpack it somewhere and put the files that end in *.elc
-on the library load path of your XEmacs.
+The best way to use these is to copy the appropriate directory into your
+work space and add this directory to the X/Emacs load path.
+This can be accomplished with the following command placed in your ~/.emacs 
+file:
 
+    (setq load-path (cons "~sbprolog/pcl-cvs-emacs/" load-path))
 
-FSF's version of Emacs comes with another version control package, VC,
-which can do certain things with CVS, but it is very limited, and I
-recommend against using it. (I use FSF emacs with pcl-cvs).
+Here I am using the directory in ~sbprolog instead of one in your work
+space.
+
 
 There are also various stand alone graphical interfaces to CVS, which
 can be found at the CVS web site, but I never tried them.
