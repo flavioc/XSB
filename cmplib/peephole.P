@@ -76,8 +76,14 @@ compile_popt11(movreg(R,R), PRest, OptPRest) :-
 	compile_popt1(PRest, OptPRest).
 compile_popt11(jump(L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
 	compile_popt1(PRest,OptPRest).
-compile_popt11(jump(Addr), [jump(_)|PRest], [jump(Addr)|OptPRest]) :-
-	compile_popt1(PRest,OptPRest).
+% Dead-code elimination
+compile_popt11(jump(Addr), [Instr|PRest], OptCode) :-
+	( Instr = label(_,_) ->
+	    OptCode = [jump(Addr),Instr|OptPRest], % label stays
+	    compile_popt1(PRest,OptPRest)
+	;   
+	    compile_popt11(jump(Addr), PRest, OptCode)
+	).
 compile_popt11(jumpz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
 	compile_popt1(PRest,OptPRest).
 compile_popt11(jumpnz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
