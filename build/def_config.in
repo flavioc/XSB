@@ -53,7 +53,7 @@
 #undef LINUX
 
 /* Guess tagging strategy for newer versions of Linux */
-#undef GUESS_TAGGING
+#undef GENERAL_TAGGING
 
 /* Defined under OS X */
 #undef DARWIN
@@ -272,7 +272,7 @@
 /* Define if you have execvp */
 #undef HAVE_EXECVP
 
-/* On x86/linux/gcc, we use bp as the register that contains 
+/* On x86/linux/gcc, we use bp as the register that contains
 the local program counter */
 #undef USE_BP_LPCREG
 

@@ -1,25 +1,25 @@
 ## File:      configure.in
 ## Author(s): kifer
 ## Contact:   xsb-contact@cs.sunysb.edu
-## 
+##
 ## Copyright (C) The Research Foundation of SUNY, 1998
-## 
+##
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
 ## Software Foundation; either version 2 of the License, or (at your option)
 ## any later version.
-## 
+##
 ## XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ## more details.
-## 
+##
 ## You should have received a copy of the GNU Library General Public License
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
 ## $Id$
-## 
+##
 ##
 
 dnl  Autoconf script for XSB
@@ -78,9 +78,9 @@ AC_ARG_WITH(odbc,
 [  --with-odbc		   compile with support of Oracle])
 
 AC_ARG_WITH(interprolog,
-[  --with-interprolog	   compile with support for InterProlog. 
+[  --with-interprolog	   compile with support for InterProlog.
                It is possible you would need to use --site-includes
-               option to specify locations of jni.h and jni_md.h 
+               option to specify locations of jni.h and jni_md.h
                files])
 
 AC_ARG_ENABLE(no-cygwin,
@@ -133,7 +133,7 @@ else
    engine_mode="slg-wam"
 fi
 
-# make sure new files are readable 
+# make sure new files are readable
 umask 022
 
 
@@ -264,7 +264,7 @@ fi
 
 AC_DEFINE(GC)
 AC_DEFINE(SLG_GC)
-    
+
 dnl The following is to be used only by developers for GC debugging
 gc_test=no
 
@@ -300,7 +300,7 @@ if test "${with_gcc+set}" = "set" ; then
     # allow --with-gcc=gcc-name
     CC=${with_gcc}
     if test "${with_gcc}" = "yes"; then
-        CC=gcc 
+        CC=gcc
     fi
 elif test "${with_cc+set}" = "set" ; then
     # allow --with-cc=compiler on cmd line
@@ -309,7 +309,7 @@ elif test "${with_cc+set}" = "set" ; then
        CC=cc
     fi
 elif test "${with_acc+set}" = "set" ; then
-    CC=acc 
+    CC=acc
 fi
 
 
@@ -407,7 +407,7 @@ case "$with_os" in
         configuration=$host_alias
     else
         canonical=`${CONFIG_SHELL-/bin/sh} ./config.sub $configuration 2>&1`
-      
+
         AC_CANONICAL_HOST
         if test -n "`echo "$canonical" | sed -e [s/${configuration}//]`" ; then
         echo $canonical
@@ -520,7 +520,7 @@ fi
 # Test if directories exist
 echo "Checking installation directories..."
 
-( 
+(
 # clear out the dir for recording missing directories
 rm -f .missingdirs.tmp
 
@@ -550,11 +550,11 @@ AC_MSG_CHECKING($scriptdir) && \
 AC_MSG_CHECKING($arch_bindir) && \
      ((test -d $arch_bindir || mkdir -p $arch_bindir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $arch_bindir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($arch_config_libdir) && \
      ((test -d $arch_config_libdir || mkdir -p ${arch_config_libdir}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $arch_config_libdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING(${arch_config_objlibdir}) && \
      ((test -d "${arch_config_objlibdir}" || mkdir -p ${arch_config_objlibdir}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $arch_config_objlibdir" >> .missingdirs.tmp)
@@ -563,7 +563,7 @@ dnl Checking site directories
 AC_MSG_CHECKING($site_libdir) && \
      ((test -d $site_libdir || mkdir -p $site_libdir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $site_libdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($site_config_libdir) && \
      ((test -d $site_config_libdir || mkdir -p $site_config_libdir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $site_config_libdir" >> .missingdirs.tmp)
@@ -572,55 +572,55 @@ dnl Checking installation directories
 AC_MSG_CHECKING($install_emudir) && \
      ((test -d $install_emudir || mkdir -p $install_emudir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_emudir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_libdir) && \
      ((test -d $install_libdir || mkdir -p $install_libdir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_libdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_syslibdir) && \
      ((test -d $install_syslibdir || mkdir -p $install_syslibdir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_syslibdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_cmplibdir) && \
      ((test -d $install_cmplibdir || mkdir -p $install_cmplibdir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_cmplibdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_scriptdir) && \
      ((test -d $install_scriptdir || mkdir -p $install_scriptdir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_scriptdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_builddir) && \
      ((test -d $install_builddir || mkdir -p $install_builddir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_builddir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($arch_install_bindir) && \
      ((test -d $arch_install_bindir || mkdir -p $arch_install_bindir) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $arch_install_bindir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($arch_install_config_libdir) && \
      ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $arch_install_config_libdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($arch_install_objdir) && \
      ((test -d $arch_install_objdir || mkdir -p ${arch_install_objdir}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $arch_install_objdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_etcdir) && \
      ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_etcdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_pkgdir) && \
      ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_pkgdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_pkgxmcdir) && \
      ((test -d $install_pkgxmcdir || mkdir ${install_pkgxmcdir}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_pkgxmcdir" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_examples) && \
      ((test -d $install_examples || mkdir -p ${install_examples}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create: $install_examples" >> .missingdirs.tmp)
-    
+
 AC_MSG_CHECKING($install_prolog_includes) && \
      ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && AC_MSG_RESULT(OK)) \
     || (AC_MSG_RESULT(FAILED); echo "+++Can't create  $install_prolog_includes" >> .missingdirs.tmp)
@@ -657,7 +657,7 @@ AC_MSG_RESULT($__sunpro_c)
 
 
 dnl set some basic flags
-# if --with-gcc, take it as a sign of trouble 
+# if --with-gcc, take it as a sign of trouble
 # with gcc and lower optimization levels
 if test -n "$with_gcc" ; then
    if test "${CC}" = "sslittle-na-sstrix-gcc" ; then
@@ -667,7 +667,7 @@ if test -n "$with_gcc" ; then
         loader_opt_level=-${optimization_level-"O2"}
     CFLAGS=""
     c_inline_level=""
-   else   
+   else
     emuloop_opt_level=-${optimization_level-"O4 -fomit-frame-pointer"}
     trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
     builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
@@ -688,7 +688,7 @@ else
     if test -n "$optimization_level"; then
        c_inline_level=""
     else
-       c_inline_level="-finline-functions" 
+       c_inline_level="-finline-functions"
     fi
     CFLAGS="-Wall -ansi -pedantic"
      ;;
@@ -721,7 +721,7 @@ fi
 
 
 dnl In XSB, CC is the C compiler to be used with the C interface
-dnl Could be different from C compiler with which XSB was compiled, 
+dnl Could be different from C compiler with which XSB was compiled,
 dnl if it was done with a cross-compiler.
 AC_DEFINE_UNQUOTED(CC, "${CC}")
 
@@ -888,7 +888,7 @@ fi
 #	cat <<EOT
 #
 #    Building for $with_os with Oracle support.
-#    You must ensure that all the necessary Oracle libraries 
+#    You must ensure that all the necessary Oracle libraries
 #    are installed on the target machine.
 #
 #EOT
@@ -1106,7 +1106,7 @@ java_path=$java_path/include
 if test "${with_interprolog}" = "yes"; then
   if test "${java_support}" != "yes"; then
     echo "Interprolog not supported due to failure to find Java"
-    with_interprolog=""    
+    with_interprolog=""
     JAVA_HEADER_PATH=""
     JAVA_PLATFORM_HEADER_PATH=""
   else
@@ -1204,7 +1204,7 @@ if test "${enable_electric_fence}" = "yes" ; then
 fi
 
 dnl Check for Incr Tcl (used in the XMC gui)
-AC_ARG_WITH(itkwish, 
+AC_ARG_WITH(itkwish,
 [  --with-itkwish=DIR	       Path to where the itkwish shell is located]
 )
 
@@ -1231,7 +1231,7 @@ dnl lfcastro
 #fi
 
 
-# Normally, the optimization level will be O4. 
+# Normally, the optimization level will be O4.
 # SGI64 must have O1 and 32 bit SGI's can have O2
 if test "$__sunpro_c" = "no"; then
    if test "$CC" = "gcc" ; then
@@ -1266,21 +1266,21 @@ case "$canonical" in
         ;;
      *linux*) AC_DEFINE(LINUX)
           AC_DEFINE(_GNU_SOURCE)
-          if test "`uname -r | cut -d "." -f "1 2"`" -ge "2.6"; then
-        echo "Guessing the tagging for this version of Linux"
-        AC_DEFINE(GUESS_TAGGING)
+          if test "`uname -r | cut -d "." -f "1 2"`" = "2.6"; then
+            echo "Guessing the tagging for this version of Linux"
+            AC_DEFINE(GENERAL_TAGGING)
           fi
           case "${canonical}" in
            *ppc* | *powerpc* | *m68k* ) AC_DEFINE(MKLINUX_PPC) ;;
            dnl Linux a.out
            *)
                if test "${ac_linuxaout+set}" = "set" ; then
-             AC_DEFINE(LINUX_AOUT) 
+             AC_DEFINE(LINUX_AOUT)
                else
              dnl Linux ELF
              AC_DEFINE(LINUX_ELF)
 #			  if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set";
-#			  then	
+#			  then
 #			   CFLAGS="-m486 ${CFLAGS}"
 #			   AC_DEFINE(USE_BP_LPCREG)
 #			 fi
@@ -1316,7 +1316,7 @@ case "$canonical" in
     # Darwin uses its own format for shared libraries and doesn't
     # support the dlopen() interface. We need to find a wrapper for that.
     ;;
-      *sgi* ) 
+      *sgi* )
          AC_DEFINE(FOREIGN_ELF)
          if test "${machine64bit}" = yes ; then
         AC_DEFINE(SGI64)
@@ -1341,7 +1341,7 @@ case "$canonical" in
             loader_opt_level=-${optimization_level-"O1"}
         if test ! "$CC" = gcc ; then
             CFLAGS="${CFLAGS} -OPT:Olimit=7500"
-            GPPCFLAGS="-OPT:Olimit=7500" 
+            GPPCFLAGS="-OPT:Olimit=7500"
         fi
          fi
          trutils_opt_level=${c_opt_level}
@@ -1385,7 +1385,7 @@ case "$canonical" in
          LDFLAGS="${LDFLAGS} -N"
         ;;
       *-cygwin*) AC_DEFINE(CYGWIN)
-          
+
                  real_host_os=cygwin
          builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
          loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
@@ -1399,7 +1399,7 @@ case "$canonical" in
             configuration_templ=xsb_configuration.in
             config_dot_h_templ=def_config_mnoc.in
             GPPWNTFLAG="-D WIN_NT"
-            
+
             if test "${xsb_scheduling_strategy}" = "local" ; then
                emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
             fi
@@ -1417,7 +1417,7 @@ esac
 dnl Let autoconf take care of the "inline" and "const" keywords.
 if test -z "$with_os" ; then
     dnl test for inlining only on Unix
-    dnl hard-set it in xsb_config.h on windows 
+    dnl hard-set it in xsb_config.h on windows
     AC_C_INLINE
 fi
 
@@ -1444,16 +1444,16 @@ fi
 
 if test "${CC}" = "gcc" -a "${host_os}" != "windows"  ; then
    dnl gcc is smarter when creating dynamic libraries in Unix
-   LD=gcc 
+   LD=gcc
    LINKFLAGS="-nodefaultlibs -nostartfiles ${LINKFLAGS}"
 else
    LD=ld
 fi
 
 dnl special flags for simplescalar
-if test "${CC}" = "sslittle-na-sstrix-gcc" 
+if test "${CC}" = "sslittle-na-sstrix-gcc"
 then
-    AC_DEFINE(SIMPLESCALAR)	
+    AC_DEFINE(SIMPLESCALAR)
     CROSS_SIMULATOR="sim-fast"
     c_opt_level=-${optimization_level-"O1"}
     LD=sslittle-na-sstrix-ld
@@ -1474,7 +1474,7 @@ fi
 #		${LDFLAGS}"
 #fi
 
-# dnl ODBC library 
+# dnl ODBC library
 if test "${with_odbc}" = yes ; then
    case "$canonical" in
     *-cygwin*) LDFLAGS="-lodbc32${LDFLAGS}"
@@ -1496,7 +1496,7 @@ fi
 #These are used to compile the interface with sModels
 AC_ARG_WITH(smodels,
 [  --with-smodels=path		   use SMODELS for the XNMR module.
-                   path is the path where smodels has 
+                   path is the path where smodels has
                    been installed and compiled])
 
 if test "x${with_smodels}" = "x"; then
@@ -1705,7 +1705,7 @@ Installation date: ${install_date}
   Configuration-specific executables go in:	  ${arch_bindir}
   Configuration-specific libraries go in:	  ${arch_config_libdir}
   Object code goes in:				  ${arch_config_objlibdir}
-  Site-specific code goes in:			  ${site_prefix} 
+  Site-specific code goes in:			  ${site_prefix}
   Site configuration-specific code goes in:	  ${site_config_prefix}
   XSB will be built with:			  ${CC} ${CFLAGS}
   builtin.c will be built with: 		  ${CC} ${builtinsCFLAGS}
@@ -1745,7 +1745,7 @@ if test -n "$site_dynamic_libraries" ; then
    echo "  Configured with dynamic libraries:"
    for arg in $site_dynamic_libraries ; do
     dnl Strip the trailing slashes
-    arg=`echo "${arg}" | sed 's,\([[^/]]\)/*$,\1,'` 
+    arg=`echo "${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
     echo "			      $arg"
    done
 fi
@@ -1779,7 +1779,7 @@ fi
 echo ""
 echo ""
 ) | tee Installation_summary
-     
+
 
 
 # This is needed so that *after* XSB is installed in a common directory,
@@ -1800,7 +1800,7 @@ if test -n "$site_dynamic_libraries"; then
   echo "" >> $tempfile
   for arg in $site_dynamic_libraries; do
     dnl Strip the trailing slashes
-    arg=`echo "${arg}" | sed 's,\([[^/]]\)/*$,\1,'` 
+    arg=`echo "${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
     echo ":- assert(library_directory('${arg}'))." >> ${tempfile}
     echo "		$arg"
   done
@@ -1813,7 +1813,7 @@ if test -n "$site_dynamic_libraries"; then
   sed '/%%[[ \t]]*-[[-]]*[[ \t]]*DO NOT EDIT THIS LINE/,$ d' \
     ${site_prefix}/siteinitrc.P | \
         cat - ${tempfile} > ${tempfile}1
-  
+
   mv -f ${tempfile}1 ${site_prefix}/siteinitrc.P
   rm -f ${tempfile}
 fi
@@ -1844,7 +1844,7 @@ test -f ${emudir}/private_builtin.c || \
    cp ${build_dir}/private_builtin.in ${emudir}/private_builtin.c
 
 dnl Copying to the installation directory ($prefix) is done in the top
-dnl makefile now! 
+dnl makefile now!
 echo ""
 echo "XSB is configured for installation in ${prefix}"
 echo "Site libraries are to be found in ${site_prefix}"
