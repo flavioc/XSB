@@ -101,6 +101,7 @@
 #endif
 
 #include "io_builtins_xsb.h"
+#include "storage_xsb.h"
 
 /* wind2unix.h must be included after sys/stat.h */
 #include "wind2unix.h"
@@ -2000,7 +2001,7 @@ int builtin_call(byte number)
     break;
 
   case NEWTRIE:
-    newtrie();
+    ctop_int(1,newtrie());
     break;
   case TRIE_INTERN:
     trie_intern();
@@ -2019,6 +2020,18 @@ int builtin_call(byte number)
   case RECLAIM_UNINTERNED_NR:
     reclaim_uninterned_nr(ptoc_int(1));
     break;
+
+  case STORAGE_BUILTIN: {
+    STORAGE_HANDLE *storage_handle =
+      storage_builtin(ptoc_int(1),(Cell)ptoc_tag(2));
+    if (storage_handle != NULL) {
+      ctop_int(3, (Integer)storage_handle->handle);
+      ctop_int(4, (Integer)storage_handle->snapshot_number);
+      ctop_int(5, (Integer)storage_handle->changed);
+    }
+    break;
+  }
+
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify() );
   case DELETE_TRIE:

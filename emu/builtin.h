@@ -107,6 +107,8 @@
 #define CONGET_TERM	         75
 #define CONSET_TERM	         76
 
+#define STORAGE_BUILTIN	       	 77
+
 #define PSC_ENV		        100
 #define PSC_SPY		        101
 #define PSC_TABLED	        102

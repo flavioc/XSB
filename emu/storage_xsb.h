@@ -1,8 +1,8 @@
-/* File:      intern.P
-** Author(s): Prasad Rao, Hasan Davulcu
+/* File:      storage_xsb.h  -- support for the storage.P module
+** Author(s): Michael Kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1998-2000
+** Copyright (C) The Research Foundation of SUNY, 2001
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,19 +23,22 @@
 */
 
 
-:- export storage_insert_fact_bt/3, storage_delete_fact_bt/3, 
-	storage_insert_fact/3, storage_delete_fact/3,
-	storage_delete_all/1,
-	storage_find_fact/2,
-	storage_reclaim_space/1,
-	storage_commit/1,
-	storage_insert_keypair_bt/4, storage_delete_keypair_bt/3,
-	storage_insert_keypair/4, storage_delete_keypair/3,
-	storage_find_keypair/3.
+#include "storage_xsb_defs.h"
 
-:- import trie_intern/5, trie_interned/4, trie_unintern_nr/2,
-	unmark_uninterned_nr/2,
-	delete_trie/1,
-	trie_reclaim_uninterned_nr/1
-   from intern.
+/* data structure for the storage handle
+   NAME is the name of the storage
+   HANDLE is the pointer to the root of the trie or the index of the trie root
+   SNAPSHOT_NUMBER is the snapshot number of the storage
+   CHANGED is a flag that tell if the trie has been changed by a backtrackable
+	   update since the last commit.
+*/
+struct storage_handle {
+  Cell      name;
+  Integer   handle;
+  Integer   snapshot_number;
+  xsbBool   changed;
+};
 
+typedef struct storage_handle STORAGE_HANDLE;
+
+extern STORAGE_HANDLE *storage_builtin(int builtin_number, Cell storage_name);

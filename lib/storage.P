@@ -23,20 +23,27 @@
 */
 
 
-:- dynamic storage_handles/3.
-:- index storage_handles/3-1.
+:- compiler_options([xpp_on,sysmod,optimize]).
+
+
+#include "storage_xsb_defs.h"
+#include "builtin.h"
+
+
+storage_builtin(_BuiltinNumber,_StorageName,_Handle,_Snapshot,_Changed) :-
+	'_$builtin'(STORAGE_BUILTIN).
 
 
 %% Inserts facts. On backtracking, the fact is deleted.
 storage_insert_fact_bt(StorageName,Fact,Inserted) :-	
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,Snapshot),
 	trie_intern(Fact, H, Leaf, New, _),
 	(New == 0
 	->  Inserted=1,  % new fact inserted
-	    storage_handles(StorageName,H,Snapshot),
+	    mark_storage_changed_bt(StorageName),
 	    (  true
 	    ; %% On backtracking
-		storage_handles(StorageName,H,NewSnapshot),
+		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
 		-> trie_unintern_nr(H, Leaf), fail 
 		)
@@ -47,7 +54,7 @@ storage_insert_fact_bt(StorageName,Fact,Inserted) :-
 
 %% Nonbacktrackable insert
 storage_insert_fact(StorageName,Fact,Inserted) :-	
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,_),
 	trie_intern(Fact, H, _Leaf, New, _),
 	(New == 0
 	->  Inserted=1   % new fact inserted
@@ -60,13 +67,13 @@ storage_insert_fact(StorageName,Fact,Inserted) :-
 %% On backtracking: unmarks facts that are marked for deletion
 
 storage_delete_fact_bt(StorageName,Fact,Deleted) :-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,Snapshot),
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
-	    storage_handles(StorageName,H,Snapshot),
+	    mark_storage_changed_bt(StorageName),
 	    ( trie_unintern_nr(H, Leaf)
 	    ; %% On backtracking
-		storage_handles(StorageName,H,NewSnapshot),
+		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
 		-> unmark_uninterned_nr(H, Leaf), fail
 		)
@@ -76,7 +83,7 @@ storage_delete_fact_bt(StorageName,Fact,Deleted) :-
 
 %% Nonbacktrackable delete
 storage_delete_fact(StorageName,Fact,Deleted) :-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,_),
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
 	    trie_unintern_nr(H, Leaf)
@@ -85,16 +92,14 @@ storage_delete_fact(StorageName,Fact,Deleted) :-
 
 %% deletes the whole trie
 storage_delete_all(StorageName) :- 
-	triehandle_for_storage(StorageName,H),
-	conset(StorageName,0),  % record that trie has been deleted
-	%% Important: cleanup storage handles
-	retract(storage_handles(StorageName,H,_)),
+	triehandle_for_storage(StorageName,H,_),
+	storage_builtin(DESTROY_STORAGE_HANDLE,StorageName,_,_,_),
 	delete_trie(H).
 
 
 %% Find fact in storage
 storage_find_fact(StorageName,Fact) :-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,_),
 	trie_interned(Fact, H, _, _).
 
 
@@ -105,7 +110,7 @@ storage_find_fact(StorageName,Fact) :-
 %% In both cases don't insert anything.
 %% If keypair is new, return 1 and insert pair(Key,Val)
 storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,Snapshot),
 	%% If this key already exists, then don't insert and return -1
 	(trie_interned(pair(Key,Val), H, _Leaf, _)
 	-> (Val==Value -> Inserted=0 ; Inserted = -1)
@@ -113,10 +118,10 @@ storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
 	    %% Key doesn't exist
 	    trie_intern(pair(Key,Value), H, Leaf_Pair, _New, _ ),
 	    Inserted = 1,	% new fact: insert it
-	    storage_handles(StorageName,H,Snapshot),
+	    mark_storage_changed_bt(StorageName),
 	    ( true
 	    ; %% On backtracking
-		storage_handles(StorageName,H,NewSnapshot),
+		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
 		->  trie_unintern_nr(H, Leaf_Pair), fail
 		)
@@ -127,13 +132,13 @@ storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
 
 %% If key exists, then delete the pair and return 1; otherwise, return 0
 storage_delete_keypair_bt(StorageName,Key, Deleted):-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,Snapshot),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
-	    storage_handles(StorageName,H,Snapshot),
+	    mark_storage_changed_bt(StorageName),
 	    ( trie_unintern_nr(H, Leaf) 
 	    ; %% On backtracking
-		storage_handles(StorageName,H,NewSnapshot),
+		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
 		-> unmark_uninterned_nr(H, Leaf), fail 
 		)
@@ -146,7 +151,7 @@ storage_delete_keypair_bt(StorageName,Key, Deleted):-
 %% Like keypair_insert_bt, keypair_delete_bt, 
 %% but these are not backtrackable.
 storage_insert_keypair(StorageName,Key, Value, Inserted):-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,_),
 	%% If this key already exists, then don't insert and return -1
 	( trie_interned(pair(Key,Val), H, _Leaf, _)
 	-> (Val==Value -> Inserted=0 ; Inserted = -1)
@@ -159,7 +164,7 @@ storage_insert_keypair(StorageName,Key, Value, Inserted):-
 
 %% If key exists, then delete the pair and return 1; otherwise, return 0
 storage_delete_keypair(StorageName,Key, Deleted):-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,_),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
 	    trie_unintern_nr(H, Leaf) 
@@ -168,16 +173,14 @@ storage_delete_keypair(StorageName,Key, Deleted):-
 
 
 storage_find_keypair(StorageName,Key,Value) :-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,_),
 	trie_interned(pair(Key,Value),H,_,_).
 
 
 %% Commit changes to the storage trie associated with StorageName
+%% (only if storage has been changed)
 storage_commit(StorageName) :-
-	( storage_handles(StorageName,Handle,Snapshot),
-	    Snapshot1 is Snapshot + 1,
-	    retract(storage_handles(StorageName,_,_)),
-	    assert(storage_handles(StorageName,Handle,Snapshot1)),
+	( storage_builtin(INCREMENT_STORAGE_SNAPSHOT,StorageName,_,_,_),
 	    !
 	%% don't backtrack over it
 	; fail
@@ -187,19 +190,15 @@ storage_commit(StorageName) :-
 %% which were marked for deletion. This should be done only at the top 
 %% level of a query.
 storage_reclaim_space(StorageName) :-
-	triehandle_for_storage(StorageName,H),
+	triehandle_for_storage(StorageName,H,_),
 	trie_reclaim_uninterned_nr(H).
 
 
 %% Create a new trie or use an existing one 
 %% that is already saved as a property of StorageName
-triehandle_for_storage(StorageName,Handle) :-
-	conget(StorageName,H),
-	(  H > 0 -> H = Handle
-	;  H==0
-	->
-	    new_trie(Handle), conset(StorageName,Handle),
-	    %% remember the trie handle
-	    assert(storage_handles(StorageName,Handle,0))
-	;  abort(('Storage: ', StorageName, ' trie handle is corrupted'))
-	).
+triehandle_for_storage(StorageName,Handle,Snapshot) :-
+	storage_builtin(GET_STORAGE_HANDLE,StorageName,Handle,Snapshot,_).
+
+
+mark_storage_changed_bt(StorageName) :-
+	storage_builtin(MARK_STORAGE_CHANGED,StorageName,_,_,_).

@@ -42,7 +42,7 @@ extern void delete_trie(BTNptr);
 
 extern xsbBool has_unconditional_answers(VariantSF);
 
-extern void newtrie(void);
+extern Integer  newtrie(void);
 extern void trie_intern(void);
 extern int  trie_interned(void);
 extern void trie_dispose(void);

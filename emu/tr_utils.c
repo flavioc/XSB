@@ -988,13 +988,14 @@ void init_newtrie(void)
 
 /* Returns a handle to an unused interned trie. */
 
-void newtrie(void)
+Integer newtrie(void)
 {
   int i;
+  Integer result;
   
   if (first_free_set != 0) {	/* a free set is available */
     i = first_free_set;		/* save it in i */
-    ctop_int(1, first_free_set);
+    result = (Integer)first_free_set;
     first_free_set = (long) Set_ArrayPtr[first_free_set] >> 2;
     Set_ArrayPtr[i] = NULL;	/* must be reset to NULL */
   }
@@ -1011,9 +1012,10 @@ void newtrie(void)
 	Set_ArrayPtr[i] = temp_arrayptr[i];
       free(temp_arrayptr);
     }
-    ctop_int(1, num_sets);
+    result = (Integer)num_sets;
     num_sets++;
   }
+  return result;
 }
 
 /*----------------------------------------------------------------------*/
@@ -1031,7 +1033,7 @@ void trie_intern(void)
 #ifdef DEBUG_INTERN
   fprintf(stddbg,"Interning ");
   printterm(stddbg,term,25);
-  xsb_dbgmsg("In position %d", RootIndex);
+  xsb_dbgmsg("In trie with root %d", RootIndex);
 #endif
   switch_to_trie_assert;
   Leaf = whole_term_chk_ins(term,&(Set_ArrayPtr[RootIndex]),&flag);
@@ -1298,9 +1300,9 @@ void reclaim_uninterned_nr(long rootidx)
     p = l -> next;
     free(l);
     switch_to_trie_assert;
-    if(IsDeletedNode(leaf))
+    if(IsDeletedNode(leaf)) {
       delete_branch(leaf, &(Set_ArrayPtr[rootidx]));
-    else
+    } else
       xsb_warn("Non deleted interned node in garbage list");
 
     switch_from_trie_assert;

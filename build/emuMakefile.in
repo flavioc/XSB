@@ -112,7 +112,7 @@ SRCS =	auxlry.c biassert.c builtin.c chat.c cinterf.c \
 	loader_xsb.c main_xsb.c memory_xsb.c orient_xsb.c \
 	pathname_xsb.c psc_xsb.c random_xsb.c residual.c \
 	scc_xsb.c slgdelay.c socket_xsb.c string_xsb.c \
-	struct_manager.c sub_delete.c subp.c \
+	storage_xsb.c struct_manager.c sub_delete.c subp.c \
 	system_xsb.c table_stats.c tables.c timer_xsb.c token_xsb.c \
 	tr_utils.c trace_xsb.c trie_lookup.c trie_search.c tries.c \
 	tst_insert.c tst_retrv.c tst_unify.c tst_utils.c varstring.c
@@ -128,7 +128,7 @@ OBJS =	auxlry.o biassert.o builtin.o chat.o cinterf.o \
 	loader_xsb.o memory_xsb.o orient_xsb.o \
 	pathname_xsb.o private_builtin.o psc_xsb.o random_xsb.o residual.o \
 	scc_xsb.o slgdelay.o socket_xsb.o string_xsb.o \
-	struct_manager.o sub_delete.o subp.o \
+	storage_xsb.o struct_manager.o sub_delete.o subp.o \
 	system_xsb.o table_stats.o tables.o timer_xsb.o token_xsb.o \
 	tr_utils.o trace_xsb.o trie_lookup.o trie_search.o tries.o \
 	tst_insert.o tst_retrv.o tst_unify.o tst_utils.o varstring.o
