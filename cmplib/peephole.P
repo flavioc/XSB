@@ -120,8 +120,6 @@ compile_popt1a1(gettval(R,R), PilRest, OptPilRest) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt1a1(movreg(R,R), PilRest, OptPilRest) :- 
 	compile_popt1a(PilRest, OptPilRest).
-compile_popt1a1(jump(L), [label(_,L)|PRest], [jump(_Addr)|OptPRest]) :-
-	compile_popt1a(PRest,OptPRest).
 compile_popt1a1(jump(Addr), [jump(_)|PRest], [jump(Addr)|OptPRest]) :-
 	compile_popt1a(PRest,OptPRest).
 compile_popt1a1(jumpz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
