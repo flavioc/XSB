@@ -1,4 +1,5 @@
 *.P
 *.O
 *.flh
+*.fld
 *.fdb

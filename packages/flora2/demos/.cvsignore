@@ -3,4 +3,5 @@
 cmd...
 *.fdb
 *.flh
+*.fld
 
