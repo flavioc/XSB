@@ -161,13 +161,14 @@ CLEAN :
 	-@erase "$(OBJDIR)\biassert.obj"
 	-@erase "$(OBJDIR)\builtin.obj"
 	-@erase "$(OBJDIR)\cinterf.obj"
-	-@erase "$(OBJDIR)\chat.obj"
+	-@erase "$(OBJDIR)\debug_xsb.obj"
 	-@erase "$(OBJDIR)\dis.obj"
 	-@erase "$(OBJDIR)\dynload.obj"
 	-@erase "$(OBJDIR)\dynamic_stack.obj"
 	-@erase "$(OBJDIR)\emuloop.obj"
 	-@erase "$(OBJDIR)\findall.obj"
 	-@erase "$(OBJDIR)\function.obj"
+	-@erase "$(OBJDIR)\gpp.obj" \
 	-@erase "$(OBJDIR)\hash_xsb.obj"
 	-@erase "$(OBJDIR)\hashtable_xsb.obj"
 	-@erase "$(OBJDIR)\heap_xsb.obj"
@@ -211,6 +212,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\socket_xsb.obj"
 	-@erase "$(OBJDIR)\string_xsb.obj"
 	-@erase "$(OBJDIR)\varstring.obj"
+	-@erase "$(OBJDIR)\xsb.pch"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
