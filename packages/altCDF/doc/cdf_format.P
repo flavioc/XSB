@@ -6,23 +6,22 @@ xsbdoc_main('main.P').
 xsbdoc_component('../cdf_init_cdf.P').
 xsbdoc_component('../cdf_io.P').
 xsbdoc_component('../cdf_exceptions.P').
-xsbdoc_component('../cdf_components.P').
+xsbdoc_component('../cdf_comps_share.P').
+xsbdoc_component('../cdf_checks.P').
+xsbdoc_component('../cdf_oblivion.P').
+%xsbdoc_component('c:/xsbsys/XSBCVS/XSBCVS/lib/cdf/cdf_comps_noshare.P').
 
 %xsbdoc_component('../cdf_db_updatable.P').
 %xsbdoc_component('../cdf_db_storage.P').
-%xsbdoc_component('../oms_constraints.P').
-%xsbdoc_component('../cdf_oblivion.P').
 %xsbdoc_component('../cdf_diffs.P').
-%xsbdoc_component('../oms_filters.P').
-%xsbdoc_component('../oms_rules.P').
 
 % xsbdoc_bibfile/1 indicates the bibtex files to use  if there are any
 % citations. 
 xsbdoc_bibfile('../../../docs/userman/manual').
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Miscellaneous Comments
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %xsbdoc_index(all).
 

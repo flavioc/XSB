@@ -124,7 +124,7 @@ There may be other contexts such as @em{obliterate_xxx}.
 
 As a first pass, I think the component checks should check a flag
 
-@begin{verbtim}
+@begin{verbatim}
 cdf_flag(component_check,Component)
 @end{verbatim}
 

@@ -9,7 +9,7 @@
 :- comment(copyright,"Copyright XSB, Inc 2001-2003; Medicine Rules,
 Inc, 2001.  This document produced via the XSBDOC system.").
 
-:- comment(summary,"@include{README.cdf}").
+:- comment(summary,"@include{READMEcdf}").
 
 :- comment(module,"
 

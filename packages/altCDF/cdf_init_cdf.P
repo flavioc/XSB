@@ -520,7 +520,7 @@ proper_isa(SubCid,SupCid) :-
 	isa(SubCid,SupCid),
 	SubCid \== SupCid.
 
-:- comment(explosive_isa/2, "@tt{explosive_isa(Id1,Id2) follows the
+:- comment(explosive_isa/2, "@tt{explosive_isa(Id1,Id2)} follows the
 isa axioms for product identifiers rather than the algorithm of
 @tt{implicit_isa/2}. Thus if neither @tt{Id1} nor @tt{Id2} are product
 identifiers, or if @tt{Id1} and @tt{Id2} are fully ground product
