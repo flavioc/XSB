@@ -379,7 +379,11 @@ if test ! -f "${emudir}/emuloop.h" -o ! -f "${syslibdir}/tables.P" ; then
 fi
 
 if test "${with_gcc+set}" = "set" ; then
-  	CC=gcc 
+	# allow --with-gcc=gcc-name
+	CC=${with_gcc}
+	if test "${with_gcc}" = "yes"; then
+	  	CC=gcc 
+	fi
 elif test "${with_cc+set}" = "set" ; then
 	# allow --with-cc=compiler on cmd line
   	CC=${with_cc}
@@ -794,8 +798,8 @@ AC_ARG_ENABLE(threading,
 if test "${with_threading}" = "yes" ; then
    enable_threading=yes
 fi
-if test "${enable_threading}" = "yes" ; then
-  if test "${CC}" = "gcc"; then
+if test "${enable_threading}" = "yes"; then
+  if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
     AC_DEFINE(INDIRECT_THREADING)
     threading=yes
     CFLAGS=`echo ${CFLAGS} | sed "s/-ansi//" -`
