@@ -28,22 +28,21 @@
 ** 
 */
 
+
 /* Info on the file extension used for XSB files */
 
+#define XSB_SRC_EXTENSION_STRING  ".P"
 #define XSB_OBJ_EXTENSION_STRING  ".xwam"
 #define XSB_OBJ_EXTENSION_LENGTH  5
-
-#define XSB_SRC_EXTENSION_STRING  ".P"
 
 #define XSB_OBJ_EXTENSION_ATOM    '.xwam'
 #define XSB_SRC_EXTENSION_ATOM    '.P'
 #define XSB_HDR_EXTENSION_ATOM    '.H'
+#define XSB_ASM_EXTENSION_ATOM    '.A'
+#define XSB_DCL_EXTENSION_ATOM    '.D'
 
 #define XSB_OBJ_EXTENSION_ATOM_SANS_DOT    'xwam'
 #define XSB_SRC_EXTENSION_ATOM_SANS_DOT    'P'
 #define XSB_HDR_EXTENSION_ATOM_SANS_DOT    'H'
 #define XSB_ASM_EXTENSION_ATOM_SANS_DOT    'A'
 #define XSB_DCL_EXTENSION_ATOM_SANS_DOT    'D'
-
-#define XSB_ASM_EXTENSION_ATOM    '.A'
-#define XSB_DCL_EXTENSION_ATOM    '.D'
