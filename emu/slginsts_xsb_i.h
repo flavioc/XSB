@@ -201,7 +201,7 @@ case tabletrysingle: {
 	  if (isattv(cell(cptr)))
 	    var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
 	}
-	/* now num_vars_in_var_regs should be CallNumAttv - 1 */
+	/* now num_vars_in_var_regs should be attv_num - 1 */
       }
 
       reg_arrayptr = reg_array-1;
