@@ -105,12 +105,12 @@ flora_load_system_module([H|T]) :-
 	flora_load_system_module(T).
 
 flora_load_system_module(SysModID) :-
-	( flora_sysmod_loaded(SysModID) ->
-	    true
+	( flora_sysmod_loaded(SysModID) -> true
 	;
-	  flora_load_system_module_internal(SysModID),
-	  %% Register the Flora system module ID.
-	  flora_register_sysmod(SysModID)
+	    %% Register the Flora system module ID.
+	    flora_register_sysmod(SysModID),
+	    %% Maybe we should unregister on error? Use throw/catch?
+	    flora_load_system_module_internal(SysModID)
 	),
 	!.
 
