@@ -28,6 +28,7 @@
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
 
+:- import trace/0 from debugger.
 compile_cH(Modname, Base, Options, ExList, Dir) :-
 	/* ldoption is needed at compile time for ELF systems,
 	   so compile_H is now done first. */
@@ -35,6 +36,23 @@ compile_cH(Modname, Base, Options, ExList, Dir) :-
 	compile_c(Modname,Base,Options,Dir,LdOption,CompComm,TempFile).
 
 
+%% This is a user-level predicate, that can be used to compile shared objects.
+%% These files don't require .H. They are used as auxiliary dynamically 
+%% linked libraries for foreign modules.
+%%
+%% COptions have the usual format: [cc(CC), cc_opts(Opts), ...]
+%% LdOption is a string to pass to the loader (like what is put in ldoptions)
+compile_so(Path, COptions, LdOptions) :-
+	parse_filename(Path, Dir, BaseName, _Extension),
+	fmt_write_string(PathSansExt, '%s/%s', args(Dir,BaseName)),
+	compile_c(BaseName, PathSansExt, COptions, Dir, LdOptions, _, _).
+	
+
+
+%% Options: C options
+%% LdOptions: Loader options
+%% CompCom: compiler command--for testing?
+%% TempFile: Directory
 compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	cc_name(Options, CC_Name),

@@ -25,6 +25,7 @@
 
 
 :- export compile_cH/5.
+:- export compile_so/3.
 
 :- import shell/1 from shell.
 :- import asm_magic/1 from asm.
@@ -41,6 +42,7 @@
 :- import write_header/0, process_from/2 from wrapping.
 :- import file_close/1, fmt_write_string/3 from file_io.
 :- import str_len/2, str_cat/3, stat_flag/2 from machine.
+:- import parse_filename/4 from machine.
 :- import message/1, warning/1, time_message/2 from auxlry.
 :- import read/1, see/1, seen/0, write/1, put/1, tell/1, told/0, repeat/0,
 	  atom/1, file_exists/1, cputime/1, abort/1, seeing/1, telling/1
