@@ -118,8 +118,11 @@ The basic interface assumes that correct modes ({\it i.e.}, input or
 output) and types are being passed between C and the Prolog level.  So,
 output unification should be explicitly performed in the Prolog level.  The
 function prototypes should be declared before the corresponding functions
-are used.  This is done by including the {\tt "cinterf.h"} header file
-(located in the {\tt XSB/emu} directory).
+are used.  This is done by including the {\tt "cinterf.h"} header file.
+Under Unix, the XSB foreign C interface automatically finds this file in
+the {\tt XSB/emu} directory. Under Windows, the user must compile and
+create the DLL out of the C file manually, so the compiler option
+`\verb|/I...\XSB\emu|' is necessary.
 
 The following C functions are used to convert basic Prolog and C data types
 to each other.

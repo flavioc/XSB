@@ -25,7 +25,7 @@
 
 :- compiler_options([xpp_on]).
 
-#include "flag_defs.h"
+#include "flag_defs_xsb.h"
 #include "psc_defs.h"
 
 compile_cH(Modname, Base, Options, ExList, Dir) :-
@@ -37,7 +37,8 @@ compile_cH(Modname, Base, Options, ExList, Dir) :-
 
 compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
-	cc_name(Options, CC_Name), cc_options(Options, CC_Opts),
+	cc_name(Options, CC_Name),
+	cc_options(Options, CC_Opts),
 	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( var(TempFile) -> TempFile = ''; true),
@@ -75,7 +76,11 @@ cc_name(Options, CC_Name) :-
 	;   xsb_configuration(compiler, CC_Name)
 	).
 cc_options(Options, CC_Opts) :-
-	( memberchk(cc_opts(CC_Opts), Options) -> true ; CC_Opts = '' ).
+	xsb_configuration(emudir, Emudir),
+	(   memberchk(cc_opts(CC_Opts1), Options)
+	->  fmt_write_string(CC_Opts, '-I%s %s', args(Emudir,CC_Opts1))
+	;   str_cat('-I', Emudir, CC_Opts)
+	).
 
 compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	hdr_ext(HExt),
@@ -172,7 +177,7 @@ co_asmsym([One|ExList]) :- co_one(One), co_asmsym(ExList).
 co_one(P/A) :-
 	str_len(P, L),
 	put(0),	% domain = ex(ported)
-	put(T_FORN),	% type = T_FORN (in psc.h)
+	put(T_FORN),	% type = T_FORN (in psc_xsb.h)
 	put(A),		% arity = a
 	put(L),		% length
 	write(P).		
