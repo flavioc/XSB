@@ -30,7 +30,6 @@
 #include "WWWApp.h"
 #include "WWWXML.h"
 #include "HTUtils.h"
-#include "../modules/expat/xmlparse/hashtable.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -198,35 +197,32 @@ PRIVATE void xml_beginElement(void  *userdata, /* where we build everything */
 			      const XML_Char **attributes)
 {
   XML_USERDATA *userdata_obj = (XML_USERDATA *) userdata;
-  char lower_tagname[MAX_XML_TAG_OR_ATTR_SIZE];
 
 #ifdef LIBWWW_DEBUG
   fprintf(stderr,
 	  "In xml_beginElement(%d): stackptr=%d tag=%s suppress=%d choose=%d\n",
 	  REQUEST_ID(userdata_obj->request),
 	  userdata_obj->stackptr, tag,
-	  IS_SUPPRESSED_TAG(tag, userdata_obj->request),
-	  IS_SELECTED_TAG(tag, userdata_obj->request)
+	  IS_SUPPRESSED_TAG((HKEY) tag, userdata_obj->request),
+	  IS_SELECTED_TAG((HKEY) tag, userdata_obj->request)
 	  );
 #endif
 
-  strcpy_lower(lower_tagname, tag);
-
-  if (IS_STRIPPED_TAG(lower_tagname, userdata_obj->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)tag, userdata_obj->request)) return;
 
   if ((suppressing(userdata_obj)
-       && !IS_SELECTED_TAG(lower_tagname, userdata_obj->request))
+       && !IS_SELECTED_TAG((HKEY)tag, userdata_obj->request))
       || (parsing(userdata_obj)
-	  && IS_SUPPRESSED_TAG(lower_tagname, userdata_obj->request))) {
+	  && IS_SUPPRESSED_TAG((HKEY)tag, userdata_obj->request))) {
     xml_push_suppressed_element(userdata_obj, tag);
     return;
   }
 
   /* parsing or suppressing & found a selected tag */
   if ((parsing(userdata_obj)
-       && !IS_SUPPRESSED_TAG(lower_tagname, userdata_obj->request))
+       && !IS_SUPPRESSED_TAG((HKEY)tag, userdata_obj->request))
       || (suppressing(userdata_obj) 
-	  && IS_SELECTED_TAG(lower_tagname, userdata_obj->request))) {
+	  && IS_SELECTED_TAG((HKEY)tag, userdata_obj->request))) {
     xml_push_element(userdata_obj,tag,attributes);
     return;
   }
@@ -237,18 +233,15 @@ PRIVATE void xml_beginElement(void  *userdata, /* where we build everything */
 PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
 {
   XML_USERDATA *userdata_obj = (XML_USERDATA *) userdata;
-  char lower_tagname[MAX_XML_TAG_OR_ATTR_SIZE];
-
-  strcpy_lower(lower_tagname, tag);
 
 #ifdef LIBWWW_DEBUG
   fprintf(stderr,
 	  "In xml_endElement(%d): stackptr=%d, tag=%s\n",
 	  REQUEST_ID(userdata_obj->request),
-	  userdata_obj->stackptr, lower_tagname);
+	  userdata_obj->stackptr, tag);
 #endif
 
-  if (IS_STRIPPED_TAG(lower_tagname, userdata_obj->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)tag, userdata_obj->request)) return;
 
   if (strcasecmp(STACK_TOP(userdata_obj).tag, tag) != 0)
     xml_libwww_abort_request(userdata_obj->request,
@@ -318,7 +311,7 @@ PRIVATE void xml_addText (void	         *userdata,
 PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 				     const XML_Char  **attrs)
 {
-  char attrname[MAX_XML_TAG_OR_ATTR_SIZE];
+  static vstrDEFINE(attrname);
   prolog_term
     prop_list = p2p_arg(elt_term,2),
     prop_list_tail = prop_list,
@@ -327,14 +320,15 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
   c2p_list(prop_list_tail);
 
   while (attrs && *attrs) {
-    strcpy_lower(attrname, (char *)*attrs);
+    vstrENSURE_SIZE(&attrname, strlen((char *)*attrs));
+    strcpy_lower(attrname.string, (char *)*attrs);
     
 #ifdef LIBWWW_DEBUG_VERBOSE
-    fprintf(stderr, "attr=%s \n", attrname);
+    fprintf(stderr, "attr=%s \n", attrname.string);
 #endif
     prop_list_head = p2p_car(prop_list_tail);
     c2p_functor("attval",2,prop_list_head);
-    c2p_string(attrname, p2p_arg(prop_list_head,1));
+    c2p_string(attrname.string, p2p_arg(prop_list_head,1));
     /* get value */
     attrs++;
     /* if *attrs=NULL, then it is an error: expat will stop */
@@ -357,7 +351,7 @@ PRIVATE void xml_push_element (XML_USERDATA    *userdata,
 			       const XML_Char  *tag,
 			       const XML_Char  **attrs)
 {
-  char lower_tagname[MAX_XML_TAG_OR_ATTR_SIZE];
+  static vstrDEFINE(lower_tagname);
   prolog_term location;
 
   /*   If tag is not valid */
@@ -389,25 +383,27 @@ PRIVATE void xml_push_element (XML_USERDATA    *userdata,
 						declaration */
   STACK_TOP(userdata).suppress = FALSE;
 
-  strcpy_lower(lower_tagname, tag);
+  /* lowercase the tag */
+  vstrENSURE_SIZE(&lower_tagname, strlen(tag)+1);
+  strcpy_lower(lower_tagname.string, tag);
 
   /* normal tags look like elt(tagname, attrlist, contentlist);
      pcdata tags are: elt(pcdata,[],text); */
-  if (strcmp(lower_tagname, "pcdata")==0)
+  if (vstrSTRCMP(&lower_tagname, "pcdata")==0)
     c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
   else /* normal elt */
     c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
 
-  c2p_string(lower_tagname, p2p_arg(STACK_TOP(userdata).elt_term, 1));
+  c2p_string(lower_tagname.string, p2p_arg(STACK_TOP(userdata).elt_term, 1));
   collect_xml_attributes(STACK_TOP(userdata).elt_term, attrs);
   
 #ifdef LIBWWW_DEBUG_VERBOSE
-  fprintf(stderr, "elt_name=%s\n", lower_tagname);
+  fprintf(stderr, "elt_name=%s\n", lower_tagname.string);
   print_prolog_term(STACK_TOP(userdata).elt_term, "elt_term");
 #endif
 
   /* normal element */
-  if (strcmp(lower_tagname, "pcdata")!=0) {
+  if (vstrSTRCMP(&lower_tagname, "pcdata")!=0) {
     STACK_TOP(userdata).content_list_tail =
       p2p_arg(STACK_TOP(userdata).elt_term,3);
     c2p_list(STACK_TOP(userdata).content_list_tail);
@@ -514,10 +510,11 @@ PRIVATE int xml_parse_termination_handler (HTRequest  *request,
 {
   ((XML_USERDATA *) param)->status = status;
 
-  total_number_of_requests--;
+  if (total_number_of_requests > 0)
+    total_number_of_requests--;
   /* if the last request has finished, stop the event loop 
      and unregister the callbacks */
-  if (total_number_of_requests<=0) {
+  if (total_number_of_requests == 0) {
     HTEventList_stopLoop();
 #ifdef LIBWWW_DEBUG
     fprintf(stderr, "In xml_parse_termination_handler: event loop halted\n");
@@ -556,10 +553,11 @@ PRIVATE void xml_libwww_abort_request(HTRequest *request, int status,
   fprintf(stderr, "In Request %d:\n", REQUEST_ID(request));
   xsb_warn(description,args);
 
-  total_number_of_requests--;
+  if (total_number_of_requests > 0)
+    total_number_of_requests--;
   /* if the last request has finished, stop the event loop 
      and unregister the callbacks */
-  if (total_number_of_requests<=0) {
+  if (total_number_of_requests == 0) {
     HTEventList_stopLoop();
 #ifdef LIBWWW_DEBUG
     fprintf(stderr, "In xml_libwww_abort_request: event loop halted\n");
@@ -806,32 +804,14 @@ PRIVATE void xml_default (void * userData, const XML_Char * str, int len)
 */
 
 
-/* hash table adapters */
-/* here we use the hash table from expat/xmlparse/hashtable.c with the macros
-   in libwww_parse_xml.h which assume the functions init_htable and
-   is_in_htable */
-#define INIT_SIZE 64
-void init_htable(HASH_TABLE *htable, int size)
-{
-  int realsize = (size ? size : INIT_SIZE);
-  htable->v = calloc(realsize, sizeof(NAMED *));
-  htable->size = realsize;
-  htable->usedLim = realsize / 2;
-}
-
-
-PRIVATE int is_in_htable(const char *item, HASH_TABLE *htable)
-{
-  if (!htable) return FALSE;
-  return (NULL != lookup(htable, item, 0));
-}
+/* hash table stuff */
 
 
 PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl)
 {
   prolog_term tail, head;
   int i=0;
-  char *tagname;
+  HKEY tagname;
   /* Save tag numbers in the table */
   tail=tag_list;
   while (is_list(tail) && !is_nil(tail) && i < tag_tbl->size) {
@@ -844,14 +824,22 @@ PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl)
 }
 
 
-PRIVATE void add_to_htable(char *tagname, HASH_TABLE *tag_tbl)
+PRIVATE unsigned long myhash(HKEY s)
 {
-  char lower_tagname[MAX_XML_TAG_OR_ATTR_SIZE];
-  strcpy_lower(lower_tagname, tagname);
-
-  if (!tag_tbl) return;
-
-  /* this also adds things, if the third arg is non-nil */
-  lookup(tag_tbl, (KEY) lower_tagname, MAX_XML_TAG_OR_ATTR_SIZE);
+  unsigned long h = 0;
+  while (*s)
+    h = (h << 5) + h + (unsigned char)*s++;
+  return h;
 }
+
+
+PRIVATE void free_htable(HASH_TABLE *htable)
+{
+  int i;
+  for (i=0; i < htable->size; i++)
+    if (htable->table[i] != NULL)
+      free(htable->table[i]);
+  free(htable->table);
+}
+
 

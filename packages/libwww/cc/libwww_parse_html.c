@@ -80,7 +80,7 @@ BOOL  libwww_parse_html(void)
 
   if (!is_list(request_term_list))
     xsb_abort("LIBWWW_PARSE_HTML: Argument must be a list");
-
+  
   request_list_tail = request_term_list;
   while (is_list(request_list_tail) && !is_nil(request_list_tail)) {
     request_id++;
@@ -303,7 +303,7 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
 				       const char  **value)
 {
   int tag_attributes_number = HTTag_attributes(tag);
-  char attrname[MAX_HTML_TAG_OR_ATTR_SIZE];
+  static vstrDEFINE(attrname);
   int cnt;
   prolog_term
     prop_list = p2p_arg(elt_term,2),
@@ -320,14 +320,16 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
 
   for (cnt=0; cnt<tag_attributes_number; cnt++) {
     if (present[cnt]) {
-      strcpy_lower(attrname, HTTag_attributeName(tag, cnt));
+      vstrENSURE_SIZE(&attrname, strlen(HTTag_attributeName(tag, cnt)));
+      strcpy_lower(attrname.string, HTTag_attributeName(tag, cnt));
       
 #ifdef LIBWWW_DEBUG_VERBOSE
-      fprintf(stderr, "attr=%s, val=%s \n", attrname, (char *)value[cnt]);
+      fprintf(stderr, "attr=%s, val=%s \n",
+	      attrname.string, (char *)value[cnt]);
 #endif
       prop_list_head = p2p_car(prop_list_tail);
       c2p_functor("attval",2,prop_list_head);
-      c2p_string(attrname, p2p_arg(prop_list_head,1));
+      c2p_string(attrname.string, p2p_arg(prop_list_head,1));
       /* some attrs, like "checked", are boolean and have no value; in this
 	 case we leave the value arg uninstantiated */
       if ((char *)value[cnt])
@@ -350,7 +352,7 @@ PRIVATE void html_push_element (HText       *htext,
 				const BOOL  *present,
 				const char **value)
 {
-  char tagname[MAX_HTML_TAG_OR_ATTR_SIZE];
+  static vstrDEFINE(tagname);
   HTTag *tag = special_find_tag(htext, element_number);
   prolog_term location;
 
@@ -397,11 +399,12 @@ PRIVATE void html_push_element (HText       *htext,
     c2p_functor("elt",3,STACK_TOP(htext).elt_term);
   }
 
-  strcpy_lower(tagname, HTTag_name(tag));
-  c2p_string(tagname, p2p_arg(STACK_TOP(htext).elt_term, 1));
+  vstrENSURE_SIZE(&tagname, strlen(HTTag_name(tag)));
+  strcpy_lower(tagname.string, HTTag_name(tag));
+  c2p_string(tagname.string, p2p_arg(STACK_TOP(htext).elt_term, 1));
   collect_html_attributes(STACK_TOP(htext).elt_term, tag, present, value);
 #ifdef LIBWWW_DEBUG_VERBOSE
-  fprintf(stderr, "elt_name=%s\n", tagname);
+  fprintf(stderr, "elt_name=%s\n", HTTag_name(tag));
   print_prolog_term(STACK_TOP(htext).elt_term, "elt_term");
 #endif
 
@@ -550,10 +553,11 @@ PRIVATE int html_parse_termination_handler (HTRequest  *request,
 {
   ((HText *) param)->status = status;
 
-  total_number_of_requests--;
+  if (total_number_of_requests > 0)
+    total_number_of_requests--;
   /* if the last request has finished, stop the event loop 
      and unregister the callbacks */
-  if (total_number_of_requests<=0) {
+  if (total_number_of_requests == 0) {
     HTEventList_stopLoop();
     HText_unregisterElementCallback();
     HText_unregisterTextCallback();
@@ -590,10 +594,11 @@ PRIVATE void html_libwww_abort_request(HTRequest *request, int status,
   fprintf(stderr, "In Request %d:\n", REQUEST_ID(request));
   xsb_warn(description,args);
 
-  total_number_of_requests--;
+  if (total_number_of_requests > 0)
+    total_number_of_requests--;
   /* if the last request has finished, stop the event loop 
      and unregister the callbacks */
-  if (total_number_of_requests<=0) {
+  if (total_number_of_requests == 0) {
     HTEventList_stopLoop();
 #ifdef LIBWWW_DEBUG
     fprintf(stderr, "In html_libwww_abort_request: event loop halted\n");
@@ -704,68 +709,19 @@ PRIVATE BOOL delete_HText_obj(HText *me)
   return HT_OK;
 }
 
-
-/* hash table stuff; deals with integers stored in a table; the integers are
-   html element numbers */
-PRIVATE int is_in_htable(int item, HASH_TABLE *htable)
-{
-  int idx = item % htable->size, i = idx;
-
-  while ( htable->table[i] != -1 ) {
-    if (htable->table[i] == item)
-      return TRUE;
-    i++;
-    i = i % htable->size;
-    if (i == idx) /* reached full circle */
-      return FALSE;
-  }
-  return FALSE;
-}
-
-
-PRIVATE int add_to_htable(int item, HASH_TABLE *htable)
-{
-  int idx = item % htable->size;
-  int i;
-
-  i=idx;
-  while ( htable->table[i] != -1 ) {
-    i++;
-    i = i % htable->size;
-    if (i == idx) /* reached full circle */
-      return FALSE;
-  }
-
-  /* found spot */
-  htable->table[i] = item;
-  return TRUE;
-}
-
-
-/* note that we use xsb_abort here instead of abort handlers, because the error
-   conditions handled here are programmatic mistakes rather than network
-   conditions. */
-PRIVATE void init_htable(HASH_TABLE *htable, int size)
-{
-  int i;
-  htable->size = size;
-  if ((htable->table=(int *)calloc(size, sizeof(int))) == NULL )
-    xsb_abort("LIBWWW_PARSE_HTML: Not enough memory");
-  for (i=0; i<size; i++)
-    htable->table[i] = -1;
-}
-
 PRIVATE void free_htable(HASH_TABLE *htable)
 {
   free(htable->table);
 }
 
 
+
 PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl)
 {
   prolog_term tail, head;
-  int i=0, tag_number;
+  int i=0;
   char *tagname;
+  HKEY tag_number;
   SGML_dtd *dtd = HTML_dtd();
   /* Save tag numbers in the table */
   tail=tag_list;

@@ -38,10 +38,18 @@ PRIVATE int general_parse_abort_handler (HTRequest  *request,
     ((REQUEST_CONTEXT *)HTRequest_context(request))->status_term;
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr, "In general_parse_termination_handler\n");
+  fprintf(stderr, "In general_parse_abort_handler\n");
 #endif
 
-  total_number_of_requests--;
+  if (total_number_of_requests > 0)
+    total_number_of_requests--;
+  if (total_number_of_requests == 0) {
+    HTEventList_stopLoop();
+#ifdef LIBWWW_DEBUG
+    fprintf(stderr, "In general_parse_abort_handler: event loop halted\n");
+#endif
+    /* we probably need to unregister the handlers here */
+  }
   if (is_var(status_term))
     c2p_int(status, status_term);
   else
@@ -72,9 +80,9 @@ PRIVATE void set_request_context(HTRequest *request,
 
   context->request_id = request_id;
 
-  init_htable(&(context->selected_tags_tbl),SELECTED_TAGS_TBL_SIZE);
-  init_htable(&(context->suppressed_tags_tbl),SUPPRESSED_TAGS_TBL_SIZE);
-  init_htable(&(context->stripped_tags_tbl),STRIPPED_TAGS_TBL_SIZE);
+  init_htable(&(context->selected_tags_tbl),SELECTED_TAGS_TBL_SIZE,caller);
+  init_htable(&(context->suppressed_tags_tbl),SUPPRESSED_TAGS_TBL_SIZE,caller);
+  init_htable(&(context->stripped_tags_tbl),STRIPPED_TAGS_TBL_SIZE,caller);
 
   context->parsed_result = p2p_arg(prolog_req,4);
   if(!is_var(context->parsed_result))
@@ -118,16 +126,15 @@ PRIVATE void set_request_context(HTRequest *request,
   
   /* attach context to the request */
   HTRequest_setContext(request, (void *) context);
-
   return;
 }
 
 
 PRIVATE void free_request_context (REQUEST_CONTEXT *context)
 {
-  DESTROY_HASH_TABLE(&(context->selected_tags_tbl));
-  DESTROY_HASH_TABLE(&(context->suppressed_tags_tbl));
-  DESTROY_HASH_TABLE(&(context->stripped_tags_tbl));
+  free_htable(&(context->selected_tags_tbl));
+  free_htable(&(context->suppressed_tags_tbl));
+  free_htable(&(context->stripped_tags_tbl));
   free(context);
 }
 
@@ -155,3 +162,50 @@ PRIVATE void print_prolog_term(prolog_term term, char *message)
   fprintf(stderr, "%s = %s\n", message, StrArgBuf.string);
 } 
 #endif
+
+
+PRIVATE void init_htable(HASH_TABLE *htable, int size, char *caller)
+{
+  int i;
+  htable->size = size;
+  if ((htable->table=(HKEY *)calloc(size, sizeof(HKEY))) == NULL )
+    /* use xsb_abort here, because it is not worth trying to recover from the
+       out of memory error */
+    xsb_abort("%s: Not enough memory", caller);
+  for (i=0; i<size; i++)
+    htable->table[i] = HTABLE_CELL_INITIALIZER;
+}
+
+PRIVATE int add_to_htable(HKEY item, HASH_TABLE *htable)
+{
+  int idx = (int) (HASH(item) % htable->size), i = idx;
+
+  while ( htable->table[i] != HTABLE_CELL_INITIALIZER ) {
+    i++;
+    i = i % htable->size;
+    if (i == idx) /* reached full circle */
+      return FALSE;
+  }
+  /* found spot */
+  SET_HASH_CELL(htable->table[i], item);
+  return TRUE;
+}
+
+
+/* hash table stuff; deals with integers stored in a table; the integers are
+   html element numbers */
+PRIVATE int is_in_htable(const HKEY item, HASH_TABLE *htable)
+{
+  int idx = (int) (HASH(item) % htable->size), i = idx;
+
+  while ( htable->table[i] != HTABLE_CELL_INITIALIZER ) {
+    if (HASH_CELL_EQUAL(htable->table[i],item)) {
+      return TRUE;
+    }
+    i++;
+    i = i % htable->size;
+    if (i == idx) /* reached full circle */
+      return FALSE;
+  }
+  return FALSE;
+}

@@ -22,8 +22,22 @@
 ** 
 */
 
+
+/*
+#define LIBWWW_DEBUG_VERBOSE
+#define LIBWWW_DEBUG
+#define LIBWWW_DEBUG_TERSE
+*/
+#ifdef LIBWWW_DEBUG_VERBOSE
+#define LIBWWW_DEBUG
+#endif
+#ifdef LIBWWW_DEBUG
+#define LIBWWW_DEBUG_TERSE
+#endif
+
+
 /* This error code is used in this package only -- not an HTTP error */
-#define HT_DOC_SYNTAX	     	 -555
+#define HT_DOC_SYNTAX	     	    -555
 
 #define SELECTED_TAGS_TBL_SIZE	    29
 #define SUPPRESSED_TAGS_TBL_SIZE    41
@@ -49,6 +63,13 @@ struct _HTStream {
 #define parsing(htext)  (!suppressing(htext))
 
 
+struct hash_table {
+  int size;
+  HKEY *table;
+};
+typedef struct hash_table HASH_TABLE;
+
+
 /* used to pass the input info to request and get output info from request back
    to the Prolog side*/
 struct request_context {
@@ -64,7 +85,6 @@ struct request_context {
   prolog_term status_term;
 };
 typedef struct request_context REQUEST_CONTEXT;
-
 
 #define REQUEST_ID(request) \
   ((REQUEST_CONTEXT *)HTRequest_context(request))->request_id
@@ -96,7 +116,11 @@ PRIVATE void set_request_context(HTRequest *request,
 PRIVATE void free_request_context (REQUEST_CONTEXT *context);
 
 PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl);
-PRIVATE void init_htable(HASH_TABLE *htable, int size);
+PRIVATE void init_htable(HASH_TABLE *htable, int size, char *caller);
+PRIVATE int add_to_htable(HKEY item, HASH_TABLE *htable);
+PRIVATE void free_htable(HASH_TABLE *htable);
+PRIVATE int is_in_htable(const HKEY item, HASH_TABLE *htable);
+
 
 PRIVATE int general_parse_abort_handler (HTRequest  *request,
 					 HTResponse *response,

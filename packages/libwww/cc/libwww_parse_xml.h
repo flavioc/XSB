@@ -23,23 +23,6 @@
 */
 
 
-#define LIBWWW_DEBUG_VERBOSE
-/*
-#define LIBWWW_DEBUG_TERSE
-#define LIBWWW_DEBUG
-*/
-#ifdef LIBWWW_DEBUG_VERBOSE
-#define LIBWWW_DEBUG
-#endif
-#ifdef LIBWWW_DEBUG
-#define LIBWWW_DEBUG_TERSE
-#endif
-
-
-#define MAX_XML_TAG_OR_ATTR_SIZE    100
-
-#define DESTROY_HASH_TABLE hashTableDestroy 
-
 #define MAX_XML_NESTING  170
 struct XML_userData {
   XML_Parser 	          parser; 
@@ -130,5 +113,12 @@ PRIVATE int xml_unknownEncoding (void 	      	*encodingHandlerData,
 PRIVATE void xml_default (void * userData, const XML_Char * s, int len);
 */
 
-PRIVATE int is_in_htable(const char *item, HASH_TABLE *htable);
-PRIVATE void add_to_htable(char *tagname, HASH_TABLE *tag_tbl);
+/* hash table stuff */
+typedef char * HKEY;
+PRIVATE unsigned long myhash(HKEY s);
+#define HTABLE_CELL_INITIALIZER      	NULL
+#define HASH(item) 	    	    	myhash(item)
+#define SET_HASH_CELL(cell,item)        cell=(HKEY)malloc(strlen(item)+1); \
+    	    	    	    	    	strcpy_lower(cell,item)
+#define HASH_CELL_EQUAL(cell,item)      strcasecmp(cell,item)==0
+

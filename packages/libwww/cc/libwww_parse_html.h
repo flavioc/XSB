@@ -23,29 +23,8 @@
 */
 
 
-/*
-#define LIBWWW_DEBUG_VERBOSE
-#define LIBWWW_DEBUG
-#define LIBWWW_DEBUG_TERSE
-*/
-#ifdef LIBWWW_DEBUG_VERBOSE
-#define LIBWWW_DEBUG
-#endif
-#ifdef LIBWWW_DEBUG
-#define LIBWWW_DEBUG_TERSE
-#endif
-
-#define MAX_HTML_TAG_OR_ATTR_SIZE  35
-
 /* special tag type that we use to wrap around text */
-#define PCDATA_SPECIAL 	     -77
-
-struct hash_table {
-  int size;
-  /* hash table is one big chunk, not an array */
-  int *table;
-};
-typedef struct hash_table HASH_TABLE;
+#define PCDATA_SPECIAL 	  -77
 
 #define MAX_HTML_NESTING  70
 struct _HText {
@@ -108,12 +87,6 @@ PRIVATE int html_parse_termination_handler(HTRequest    *request,
 PRIVATE void html_libwww_abort_request(HTRequest *request, int status,
 				       char *description, ...);
 
-/* hash table maintenance */
-PRIVATE int add_to_htable(int item, HASH_TABLE *htable);
-PRIVATE void free_htable(HASH_TABLE *htable);
-PRIVATE int is_in_htable(int element_number, HASH_TABLE *htable);
-
-
 /*-------------------*/
 enum http_method {FORM_GET, FORM_POST};
 typedef enum http_method HTTP_METHOD;
@@ -122,5 +95,9 @@ PRIVATE HTAssocList *get_form_params(prolog_term form_params);
 PRIVATE HTTP_METHOD get_request_method(prolog_term method);
 /*-------------------*/
 
-
-#define DESTROY_HASH_TABLE  free_htable
+/* hash table stuff */
+typedef int HKEY;
+#define HTABLE_CELL_INITIALIZER       -1
+#define HASH(item) 	    	      item
+#define SET_HASH_CELL(cell,item)      cell=item
+#define HASH_CELL_EQUAL(cell,item)    cell==item
