@@ -2680,7 +2680,7 @@ current program module.
 \section{Equality Maintenance}\label{sec-eqmaintain}
 
 
-Unlike regular Prolog, \FLORA terms can become {\tt equal}, which is a side
+Unlike in regular Prolog, \FLORA terms can become {\tt equal}, which is a side
 effect of the \fl semantics for scalar methods.  For instance, consider the
 following \fl facts:
 %%
@@ -2697,18 +2697,32 @@ should be also true about {\tt joe}, and vice versa.  Thus we should be
 able to derive that {\tt joe[son{\mvd}frank]}.
 
 What is illustrated above is just a very simple scenario of equality
-maintenance. Another scenario arises due to the path expressions in the
-rule heads (Section~\ref{sec-pathexp-head}).  Furthermore, users can define
-equality \emph{explicitly} in the source program using the predicate {\tt
-  :=:}, e.g.,
+maintenance. Another scenario when terms may become equal arises due to the
+path expressions in the rule heads (Section~\ref{sec-pathexp-head}).
+For instance, if our program has
+%%
+\begin{verbatim}
+ john.mother[father->bob].
+\end{verbatim}
+%%
+then \FLORA will create an internal oid to represent the value of
+{\tt john.mother}. However, if later on we insert the face
+\verb|john[mother->sally]| then this internal oid must be equated with
+{\tt sally}.
+
+In addition, \FLORA users can define equality \emph{explicitly} in the source
+program using the predicate {\tt :=:}, e.g.,
 %%
 \begin{quote}
 \verb|john:=:batman.|
 \end{quote}
 
-Once oids are made equal, this fact may need to be propagate to all \fl
-structures, including the subclass hierarchy, the ISA hierarchy, etc.,
-depending on the application domain. Although equality is a powerful
+Once oids are derived to be equal, this information may need to be
+propagate to all \fl 
+structures, including the subclass hierarchy, the ISA hierarchy, etc.
+For instance, if {\tt x} and {\tt y} are equal, then so must be {\tt f(x)}
+and {\tt f(y)}. If {\tt x:a} has been previously derived then we should now
+be able to derive {\tt y:a}, etc. Although equality is a powerful
 feature, its maintenance can slow the program down quite significantly.
 In order to be able to eat the cake and have it at the same time, \FLORA
 allows the user to control how equality is handled.
@@ -2735,7 +2749,7 @@ The first directive, \mbox{\tt equality none}, does not maintain equality
 and {\tt :=:} is considered just like any other user-defined predicate
 without any special semantics.  The directive \mbox{\tt equality basic}
 guarantees that {\tt :=:} obeys the usual congruence rules for equality,
-i.e., transitivity, reflexivity, and symmetry, and substitution, but not the
+i.e., transitivity, reflexivity, symmetry, and substitution, but not the
 special \fl equality rule for scalar methods. Finally, \mbox{\tt equality
   flogic} means that the full equality theory for \fl is in force.  In
 particular, programs with path expressions in the rule heads might require
@@ -2743,8 +2757,25 @@ this level of equality to work correctly (if there is a possibility that
 the Skolem terms introduced to represent the path expressions might be
 equal to some real objects).
 
-Note that the level of equality maintenance can also be changed at run time
-by executing a goal such as 
+If a \FLORA module does not define facts of the form {\tt a:=:b}, which
+involve the equality predicate {\tt :=:}, then the default equality
+maintenance level is {\tt none}. If the program does define such facts,
+then the default equality maintenance level is {\tt basic}, because it is
+assumed that the use of {\tt :=:} in the program is not accidental.
+
+Note that even if the module might have path expression in the head, the
+default equality level is still {\tt none} (unless {\tt :=:} is used).  The
+reason for this is that such path expressions do not always require
+equality maintenance, so the user has to request it explicitly.  For
+instance, if in the above example we never insert
+\verb|john[mother->sally]| then no equality maintenance will be required
+even if the program defines the fact {\tt john.mother[father->bob]}, as
+above.  However, if this fact is inserted, then the equality maintenance
+level appropriate for this case is {\tt flogic} ({\tt basic} will not be
+sufficient).
+
+In \FLORA, the desired level of equality maintenance can also be changed at
+run time by executing a goal such as
 %%
 \begin{quote}
  {\tt ?- (equality basic).}
@@ -2754,7 +2785,7 @@ Furthermore, \FLORA allows one user module to set, at run time, the level
 of equality maintenance in another user module:
 %%
 \begin{quote}
-\verb!equality {none|basic|flogic} in modulename!
+\verb!?- (equality flogic in modulename).!
 \end{quote}
 %%
 \index{dynamic module}
