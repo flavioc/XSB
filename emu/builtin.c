@@ -304,8 +304,9 @@ DllExport char* call_conv ptoc_longstring(int regnum)
   }
   XSB_StrShrink(LSBuff[regnum],100);
   */
-  if (LSBuff[regnum]==NULL)
-    XSB_StrCreate(LSBuff[regnum]);
+  if (LSBuff[regnum]==NULL) {
+    XSB_StrCreate(&LSBuff[regnum]);
+  }
   XSB_StrSet(LSBuff[regnum],"");
   constructString(addr,regnum);
   return(LSBuff[regnum]->string);

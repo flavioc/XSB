@@ -71,7 +71,7 @@ struct varstr {
 
 
 extern DllExport void call_conv varstring_init(VarString *vstr);
-extern DllExport void call_conv varstring_create(VarString *vstr);
+extern DllExport void call_conv varstring_create(VarString **vstr);
 extern DllExport struct varstr_ops VarStrOps;
 
 /* calling sequence shortcuts; all expect a VarString pointer */

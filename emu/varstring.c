@@ -115,10 +115,10 @@ DllExport void call_conv varstring_init(VarString *vstr)
   vstr->op = &VarStrOps;
 }
 
-DllExport void call_conv varstring_create(VarString *vstr)
+DllExport void call_conv varstring_create(VarString **vstr)
 {
-  vstr = (VarString *) malloc(sizeof(VarString));
-  varstring_init(vstr);
+  *vstr = (VarString *) malloc(sizeof(VarString));
+  varstring_init(*vstr);
 }
 
 
