@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH XSB 1 "January 14, 2002"
+.TH XSB 1 "March 5, 2002"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -18,45 +18,35 @@
 .SH NAME
 xsb \- A Logic Programming and Deductive Database System
 .SH SYNOPSIS
-.B xsb
-.RI [flags] " [-l] [-i]"
+.BI "xsb [" "flags" "] [-l] [-i]"
 .br
-.B xsb
-.RI [flags] " -n"
+.BI "xsb [" "flags" "] -n"
 .br
-.B xsb
-.RI [flags] " module"
+.BI "xsb [" "flags" "]" " module"
 .br
-.B xsb
-.RI [flags] " -B boot_module [-D cmd_loop_driver] [-t] [-e goal]"
+.BI "xsb [" "flags" "] -B" " boot_module " "[-D" " cmd_loop_driver" "] [-t] [-e" " goal" "]"
 .br
-.B xsb
-.RI [flags] " -B module_to_disassemble -d"
+.BI "xsb [" "flags" "] -B" " module_to_disassemble " "-d"
 .br
-.B xsb
-.RI " -[h | v]"
+.B xsb -[h | v]
 .br
-.B xsb
-.RI " --help | --version | --nobanner | --quietload | --noprompt"
+.B xsb --help |  --version  |  --nobanner  |  --quietload  |  --noprompt
 .br
 .SH DESCRIPTION
-This manual page was written for the Debian GNU/Linux distribution
+This manual page was prepared for the Debian GNU/Linux distribution
 because the original program does not have a manual page.
 Instead, it has extensive documentation in postscript format.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
 .\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
 .\" respectively.
-\fBxsb\fP is a research-oriented Logic Programming and Deductive Database System developed at SUNY Stony Brook. In addition to providing all the functionality of Prolog, it contains features not usually found in Logic Programming Systems such as evaluation according to the Well Founded Semantics through full SLG resolution, constraint handling for tabled programs, a compiled HiLog implementation, unification factoring and interfaces to other systems such as ODBC, C, Java, Perl, and Oracle.
+.B XSB is a research-oriented Logic Programming and Deductive Database System developed at SUNY Stony Brook. In addition to providing all the functionality of Prolog, it contains features not usually found in Logic Programming Systems such as evaluation according to the Well Founded Semantics through full SLG resolution, constraint handling for tabled programs, a compiled HiLog implementation, unification factoring and interfaces to other systems such as ODBC, C, Java, Perl, and Oracle.
 
 .SH OPTIONS
-These programs follow the usual GNU command line syntax, with long
-options starting with two dashes (`-').
-A summary of options is included below.
-For a complete description, see the postscript manuals.
+XSB follows the usual GNU command line syntax, with long options starting with two dashes (`-'). A summary of options is included below. For a complete description, see the postscript manuals.
 .SS
 memory management flags:
-.B \-c tcpsize | \-m glsize | \-o complsize | \-u pdlsize | \-r | \-g gc_type
+.BI "\-c" " tcpsize" " | \-m" " glsize" " | \-o" " complsize" " | \-u" " pdlsize" " | \-r | \-g" " gc_type"
 .SS
 miscellaneous flags:
 .B \-s | \-S | \-T
@@ -118,72 +108,69 @@ W = foo(_10073976,3);
 \fB-n\fP
 Used in conjunction with the -i option, to indicate that the usual read-eval-print top-loop is not to be entered, but instead will interface to a calling C program.
 .TP
-\fB-B\fP
-Specify the boot module to use in lieu of the standard loader
+.B -B
+.B Specify the boot module to use in lieu of the standard loader
 .TP
-\fB-D\fP
-Tells XSB to use a top-level command loop driver specified here instead of the standard XSB interpreter. This is most useful when XSB is used as a server.
+.B -D
+.B Tells XSB to use a top-level command loop driver specified here instead of the standard XSB interpreter. This is most useful when XSB is used as a server.
 .TP
-\fB-t\fP
-Traces through code at SLG-WAM instruction level. This option is for internal debugging and is not fully supported. It is also not available when the system is being used at the non-debug mode (compiled without the --debug option).
+.B -t
+.B Traces through code at SLG-WAM instruction level. This option is for internal debugging and is not fully supported. It is also not available when the system is being used at the non-debug mode (compiled without the --debug option).
 .TP
-\fB-d\fP
-Produces a disassembled dump of byte_code_file to stdout and exits.
+.B -d
+.B Produces a disassembled dump of byte_code_file to stdout and exits.
 .TP
-\fB-c N\fP
-Allocates N KBytes of space to the trail/choice-point stack area.  The trail stack grows upward from the bottom of the region, and the choice point stack grows downward from the top of the region.  Because this region is expanded automatically from Version 1.6.0 onward, this option should rarely need to be used.  Default initial size: 768 KBytes.
+.B -c
+.B Allocates N KBytes of space to the trail/choice-point stack area.  The trail stack grows upward from the bottom of the region, and the choice point stack grows downward from the top of the region.  Because this region is expanded automatically from Version 1.6.0 onward, this option should rarely need to be used.  Default initial size: 768 KBytes.
 .TP
-\fB-m N\fP
-Allocates N KBytes of space to the local/global stack area.  The global stack grows upward from the bottom of the region, and the local stack grows downward from the top of the region.  Default: 768 KBytes.
+.B -m
+.B Allocates N KBytes of space to the local/global stack area.  The global stack grows upward from the bottom of the region, and the local stack grows downward from the top of the region.  Default: 768 KBytes.
 .TP
-\fB-o N\fP
-Allocates N KBytes of space to the completion stack area.  Because this region is expanded automatically from Version 1.6.0 onward, this option should rarely need to be used. Default initial size 64 KBytes.
+.B -o
+.B Allocates N KBytes of space to the completion stack area.  Because this region is expanded automatically from Version 1.6.0 onward, this option should rarely need to be used. Default initial size 64 KBytes.
 .TP
-\fB-u N\fP
-Allocates N KBytes of space to the unification (and table copy) stack.  Default 64 KBytes. (This option should rarely need to be used).
+.B -u
+.B Allocates N KBytes of space to the unification (and table copy) stack.  Default 64 KBytes. (This option should rarely need to be used).
 .TP
-\fB-r\fP
-Turns off automatic stack expansion.
+.B -r
+.B Turns off automatic stack expansion.
 .TP
-\fB-g gc_type\fP
-Chooses the garbage collection strategy that
-is employed. Choice of the strategy is between "none" (meaning perform no garbage collection), or garbage collection based on "sliding", on "copying", or on "indirection". The choice "indirection" is not available on CHAT, and this choice will be ineffective on emulators configured for CHAT.
+.BI "-g" " gc_type"
+.B Chooses the garbage collection strategy that is employed. Choice of the strategy is between "none" (meaning perform no garbage collection), or garbage collection based on "sliding", on "copying", or on "indirection". The choice "indirection" is not available on CHAT, and this choice will be ineffective on emulators configured for CHAT.
 .TP
-\fB-s\fP
-Maintains information on the size of program stacks for the predicate
-.IR "statistics/0"
-\. This option may be expected to slow execution by around 10\%. Default: off.
+.B -s
+.B Maintains information on the size of program stacks for the predicate
+.IB "statistics/0" "."
+.B This option may be expected to slow execution by around 10\%. Default: off.
 .TP
-\fB-S\fP
-Indicates that tabled predicates are to be evaluated using subsumption-based tabling as a default for tabled predicates whose tabling method is not specified by using
-.IR "use\_variant\_tabling/1"
-or
-.IR "use\_subsumptive\_tabling/1"
-If this option is not specified, variant-based tabling will be used as the default tabling method by XSB.
+.B -S
+.B Indicates that tabled predicates are to be evaluated using subsumption-based tabling as a default for tabled predicates whose tabling method is not specified by using
+.IB "use\_variant\_tabling/1" " or "
+.IB "use\_subsumptive\_tabling/1" "."
+.B If this option is not specified, variant-based tabling will be used as the default tabling method by XSB.
 .TP
-\fB-T\fP
-Generates a trace at entry to each called predicate (both system and user-defined).  This option is available mainly for people who want to modify and/or extend XSB, and it is \fBnot\fP the normal way to trace XSB programs.  For the latter, the builtin predicates
-.IR "trace/0"
-or 
-.IR "debug/0"
-should be used.
+.B -T
+.B Generates a trace at entry to each called predicate (both system and user-defined).  This option is available mainly for people who want to modify and/or extend XSB, and it is \fBnot\fP the normal way to trace XSB programs.  For the latter, the builtin predicates
+.IB "trace/0" " or "
+.IB "debug/0"
+.B should be used.
 Note: This option is not available when the system is being used at the non-tracing mode.
 .TP
-\fB-v, --version\fP
-print the version and configuration information about XSB
+.B -v, --version
+Prints the version and configuration information about XSB.
 .TP
-\fB-h, --help\fP
-print a help message
+.B -h, --help
+Prints a help message
 .TP
-\fB--nobanner\fP
+.B --nobanner
 Do not show the startup banner. Useful in batch scripts and for interprocess communication (when XSB is launched as a subprocess).
 .TP
-\fB--quietload\fP
+.B --quietload
 Do not tell when a new module gets loaded. Useful in non-interactive activities and for interprocess communication.
 .TP
-\fB--noprompt\fP
+.B --noprompt
 Do not show the XSB prompt. Useful in batch mode and in interprocess communication.
 .SH SEE ALSO
 .SH AUTHOR
-This manual page was written by Kristis Makris <devcore@freeuk.com>,
-for the Debian GNU/Linux system (but may be used by others).
+This manual page was prepared by Kristis Makris <devcore@freeuk.com>,
+for the Debian GNU/Linux system (but may be used for other systems).
