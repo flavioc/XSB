@@ -57,7 +57,8 @@ default_sys_error_handler(error(instantiation_error,Msg)) :-
 default_sys_error_handler(error(type_error(Valid_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Type (',
 		    Culprit,' in place of ',Valid_type,')] ', Msg),STDERR).
-default_sys_error_handler(error(domain_error(Valid_type,Culprit),Msg)) :-
+default_sys_error_handler(error(domain_error(Valid_type_in,Culprit),Msg)) :-
+            concat_atom(Valid_type_in,Valid_type),
 	messageln(('++Error[XSB/Runtime/P]: [Domain (',
 		Culprit,' in place of ',Valid_type,')] ', Msg), STDERR).
 default_sys_error_handler(error(existence_error(_Object_type,_Culprit),Msg)) :-
@@ -87,9 +88,18 @@ domain_error(Valid_type,Culprit,Predicate,Arg):-
 	throw(error(domain_error(Valid_type,Culprit),
 	                             (' in arg ',Arg,' of predicate ',Predicate))).
 
+existence_error(Object_type,Culprit,Predicate,Arg):- 
+	throw(error(existence_error(Object_type,Culprit),
+	                             (' in arg ',Arg,' of predicate ',Predicate))).
+
+% obsolete TLS
 instantiation_error(Predicate,Arg):- 
 	throw(error(instantiation_error,
 	                             (' in arg ',Arg,' of predicate ',Predicate))).
+
+instantiation_error(Predicate,Arg,State):- 
+	throw(error(instantiation_error,
+	      (' in arg ',Arg,' of predicate ',Predicate,'---: must be ',State))).
 
 permission_error(Op,Obj_type,Culprit,Predicate):- 
 	throw(error(permission_error(Op,Obj_type,Culprit),(' in ',Predicate))).
@@ -110,10 +120,17 @@ check_atom(Term,Predicate,Arg) :-
 	 ;  type_error(atom,Term,Predicate,Arg) ).
 
 %-------------
+% Checks that a term is ground
+check_ground(Term,Predicate,Arg) :- 
+	(ground(Term) -> 
+	    true
+	 ;  instantiation_error(Predicate,Arg,ground) ).
+
+%-------------
 % Checks that a term is not a variable
 check_nonvar(Term,Predicate,Arg) :- 
 	(var(Term) -> 
-	    instantiation_error(Predicate,Arg)
+	    instantiation_error(Predicate,Arg,nonvar)
              ;  true).
 
 %-------------

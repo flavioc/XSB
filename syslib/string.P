@@ -27,18 +27,22 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod]).
-
+:- compiler_options([sysmod,optimize]).
 
 %--- 
+
 /* 
 TLS 7/99 This version is linear rather than quadratic and seems
 much faster than the old one (which I must confess to writing).  Also,
 this is well-behaved for memory management since it no longer uses
 str_cat or str_len.
+
+TLS: 12/03 I thought this might be more useful if I added a flatten,
+	so that substrings could be passed in as lists. 
 */
  
-concat_atom(Atomlist,Atom):-
+concat_atom(Listin,Atom):-
+            flatten(Listin,Atomlist),
 	atom_to_charlist(Atomlist,Charlist1),
 	flatten(Charlist1,Charlist),
 	atom_codes(Atom,Charlist).
