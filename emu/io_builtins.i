@@ -111,7 +111,7 @@ inline bool file_function(void)
 {
   static int file_des, value, size, offset, length;
   static STRFILE *sfptr;
-  static char buf[MAXBUFSIZE+1];
+  static char buf[MAX_IO_BUFSIZE+1];
   static char *addr, *tmpstr;
   static prolog_term pterm;
   static Cell term;
@@ -219,15 +219,15 @@ inline bool file_function(void)
        Read ByteCount bytes from FileDes into String starting 
        at position Offset. Doesn't intern string.	      */
     size = ptoc_int(3);
-    if (size > MAXBUFSIZE) {
-      size = MAXBUFSIZE;
-      xsb_warn("FILE_GETBUF: Byte count(%d) exceeds MAXBUFSIZE(%d)",
-	       size, MAXBUFSIZE);
+    if (size > MAX_IO_BUFSIZE) {
+      size = MAX_IO_BUFSIZE;
+      xsb_warn("FILE_GETBUF: Byte count(%d) exceeds MAX_IO_BUFSIZE(%d)",
+	       size, MAX_IO_BUFSIZE);
     }
 
     SET_FILEPTR(fptr, ptoc_int(2));
     value = fread(buf, 1, size, fptr);
-    *(buf+size) = '\0';
+    *(buf+value) = '\0';
     ctop_string(4, buf);
     ctop_int(5, value);
     break;
@@ -258,7 +258,7 @@ inline bool file_function(void)
     ** string read is a full line. Doesn't intern string.
     ** Prolog invocation: file_read_line(10, +File, -Str, -IsFullLine) */
     SET_FILEPTR(fptr, ptoc_int(2));
-    if (fgets(buf, MAXBUFSIZE, fptr) == NULL) {
+    if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL) {
       return FALSE;
     } else {
       ctop_string(3, buf);

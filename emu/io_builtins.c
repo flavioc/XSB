@@ -261,7 +261,7 @@ bool fmt_write(void)
       ValTerm: Term whose args are vars to receive values returned.
 ----------------------------------------------------------------------*/
 
-#define MAX_SPRINTF_STRING_SIZE MAXBUFSIZE*4
+#define MAX_SPRINTF_STRING_SIZE MAX_IO_BUFSIZE
 
 /* If no snprintf, we fill only half of OutString, to be on the safe side */
 #ifdef HAVE_SNPRINTF
