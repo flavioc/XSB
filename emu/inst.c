@@ -119,6 +119,7 @@ static void init_inst_table_2(void)
   set_inst(bldnumcon, "bldnumcon",       PPP,N, X,X);
   set_inst(getlist_tvar_tvar, "getlist_tvar_tvar", R, R, R,X);
 
+  set_inst(trie_root, "trie_root", X, X, X,X);
   set_inst(trie_no_cp_str, "trie_no_cp_str", X, X, X,X);
   set_inst(trie_try_str, "trie_try_str", X, X, X,X);
   set_inst(trie_retry_str, "trie_retry_str", X,X,X,X);
