@@ -19,7 +19,7 @@ This page is in alpha state. Please excuse our appearance.
 FLORA-2 is a sophisticated deductive object-oriented database system and
 application development platform. It is implemented as a compiler that
 translates a unified language of F-logic, HiLog, and Transaction Logic into
-<a href="http://www.cs.sunysb.edu/~sbprolog/xsb-page.html">
+<a href="http://xsb.sourceforge.net/">
 the XSB deductive engine</a>.
 
 The programming language supported by FLORA-2 is a dialect of F-logic with
