@@ -327,25 +327,28 @@ CPtr chat_free_compl_susp_chat_area(chat_init_pheader ptr)
 static CPtr *chat_reinstall_oldbindings(chat_incr_pheader pheader,
 					CPtr *where_tr)
 {
-    int  j;
-    long size_tr = chat_get_tr_length(pheader);
-    CPtr *chat_tr_area = chat_get_tr_start(pheader);
+  int  j;
+  long size_tr = chat_get_tr_length(pheader);
+  CPtr *chat_tr_area = chat_get_tr_start(pheader);
 
-    while (size_tr)
-      { 
-	  if (sizeof(CPtr) > size_tr)
-	       { j = size_tr>>1; size_tr = 0; }
-	  else { j = sizeof(CPtr)>>1; size_tr -= sizeof(CPtr); }
+  /* I am not sure that the following is *exact*, but it is a close estimate */
+  chat_restored_memory += sizeof(CPtr) * size_tr;
 
-	  while (j--)
-	    { *(where_tr++) = *chat_tr_area;  /* imitates pushtrail0 */
-	      *(*chat_tr_area) = (Cell)(*(chat_tr_area+1));
-	      chat_tr_area += 2;
-	    }
-	  chat_tr_area++;
-      }
+  while (size_tr)
+    {
+      if (sizeof(CPtr) > size_tr)
+	   { j = size_tr>>1; size_tr = 0; }
+      else { j = sizeof(CPtr)>>1; size_tr -= sizeof(CPtr); }
 
-    return where_tr;
+      while (j--)
+	{ *(where_tr++) = *chat_tr_area;  /* imitates pushtrail0 */
+	  *(*chat_tr_area) = (Cell)(*(chat_tr_area+1));
+	  chat_tr_area += 2;
+	}
+      chat_tr_area++;
+    }
+
+  return where_tr;
 
 } /* chat_reinstall_oldbindings */
 
@@ -366,8 +369,11 @@ static void chat_restore_init_area(CPtr destination, int type,
   destination += NLCPSIZE;
   len = chat_get_nrargs(phead);
   if (type == CONSUMER_TYPE) {
-    *destination = makeint(len); /* tagged */
+    *destination = makeint(len); /* put it tagged */
     destination++;
+    chat_restored_memory += sizeof(CPtr) * (NLCPSIZE+len+1);
+  } else {
+    chat_restored_memory += sizeof(CPtr) * NLCPSIZE;
   }
   from = (CPtr)chat_get_args_start(phead);
   while (len)
@@ -465,6 +471,8 @@ CPtr chat_restore_compl_susp(chat_init_pheader pheader, CPtr h, CPtr eb)
        should protect heap and local stack */
     hbreg = cp_hreg(compl_susp_breg) = h;
     ebreg = cp_ebreg(compl_susp_breg) = eb;
+
+    chat_nr_of_restores++;
 
     return compl_susp_breg;
 
@@ -970,7 +978,7 @@ void print_chat_statistics(void)
 	  chat_number_saved_consumers,
 	  chat_number_incremental_saves,
 	  chat_area_sharing);
-  printf("  number of restored suspensions: %ld; total restored memory: %ld\n",
+  printf("  number of restored suspensions: %ld; total restored memory: %ld b\n",
 	 chat_nr_of_restores,chat_restored_memory);
 }
 
