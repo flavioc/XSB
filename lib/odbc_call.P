@@ -1438,14 +1438,11 @@ set_def_bindvar_table(BindVals,Cursor) :-
 	set_def_bindvar_table(BindVals,Cursor,0).
 set_def_bindvar_table([],_Cursor,_I).
 set_def_bindvar_table([Val|BindVals],Cursor,I) :-
-	(Val = 'NULL'(_)
-	 ->	set_bind(Cursor,I,'NULL')
-	 ;	(structure(Val)
-		 ->	\+ (numbervars(Val),
-			    set_bind(Cursor,I,Val),
-			    fail)
-		 ;	set_bind(Cursor,I,Val)
-		)
+	(structure(Val)
+	 ->	\+ (numbervars(Val),
+		    set_bind(Cursor,I,Val),
+		    fail)
+	 ;	set_bind(Cursor,I,Val)
 	),
         I1 is I + 1,
 	set_def_bindvar_table(BindVals,Cursor,I1).
