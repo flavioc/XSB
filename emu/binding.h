@@ -52,7 +52,8 @@
 
 #define pushtrail0(addr,val)  \
    if (trfreg > trreg) {\
-     if ((char *)trfreg > ((char *)(top_of_cpstack) - 10)) {\
+     if ((char *)trfreg > \
+	 ((char *)(top_of_cpstack) - (TRAIL_FRAME_SIZE*sizeof(CPtr)))) {\
        handle_tcpstack_overflow();\
      }\
      *(trfreg+3) = (CPtr) trreg;\
@@ -61,7 +62,8 @@
      *(trreg-2) = addr;\
    }\
    else {\
-     if ((char *)trreg > ((char *)(top_of_cpstack) - 10)) {\
+     if ((char *)trreg > \
+	 ((char *)(top_of_cpstack) - (TRAIL_FRAME_SIZE*sizeof(CPtr)))) {\
        handle_tcpstack_overflow();\
      }\
      trreg = trreg+3;\
