@@ -244,9 +244,9 @@ int *asynint_ptr = &asynint_val;
     /* there is attv interrupt */					\
     synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\
     lpcreg = pcreg;							\
-    /* Set PSC to verify_attributes/2, so that the later call of */	\
-    /* intercept(PSC) will set the return point, pcreg, to	 */	\
-    /* verify_attributes/2.					 */	\
+    /* Set PSC to '_$attv_int'/2, so that the later call of	*/	\
+    /* intercept(PSC) will set the return point, pcreg, to	*/	\
+    /* '_$attv_int'/2.						*/	\
     PSC = (Psc) flags[MYSIG_ATTV+32];					\
   }									\
   else { 								\
@@ -276,9 +276,9 @@ int *asynint_ptr = &asynint_val;
       /* there is attv interrupt */					\
       synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\
       lpcreg = pcreg;							\
-      /* Set PSC to verify_attributes/2, so that the later call of */	\
-      /* intercept(PSC) will set the return point, pcreg, to	 */	\
-      /* verify_attributes/2.					 */	\
+      /* Set PSC to '_$attv_int'/2, so that the later call of	*/	\
+      /* intercept(PSC) will set the return point, pcreg, to	*/	\
+      /* '_$attv_int'/2.					*/	\
       PSC = (Psc) flags[MYSIG_ATTV+32];					\
     }									\
     else { 								\
