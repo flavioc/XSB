@@ -23,30 +23,3 @@ if test "$sendlog" != "n" -a "$sendlog" != "no" ; then
     && echo "" ; echo "Thank you!"; echo ""
 fi
 
-if test ! -f "$HOME/.xsb/registration" ; then
-
-    cat <<EOF
-*******************************************************************************
-
-Now, the final step of the installation procedure is to register you as  
-an XSB user.  This will be done by automatically sending an e-mail  
-message to  \`xsb-contact@cs.sunysb.edu'
-   
-We strongly encourage you to register.  If you do so, you will be	  
-included in a mailing list for future releases and major bug-fixes.  
-
-Would you like to register as an XSB user? (y/n): y
-EOF
-
-    read register
-
-    if test "$register" != "n" -a "$register" != "no" ; then
-	(cat registration.msg | mail xsb-contact@cs.sunysb.edu \
-	    && echo ""; \
-		echo "Thank you for registering as an XSB user!"); echo ""
-
-	#make sure .xsb/ exists
-	test -d "$HOME/.xsb" || mkdir "$HOME/.xsb"
-	date > "$HOME/.xsb/registration"
-    fi
-fi
