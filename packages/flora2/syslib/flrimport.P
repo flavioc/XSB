@@ -32,12 +32,14 @@
 check_args(P,A) :-
 	%% check that P is given as foo/arity
 	(functor(P,'/',_) -> true
-	; abort([Message, P, ' Arg 1 must have the form Pred/Arity'])
+	; abort(['flImport*/4: ', P, ', Arg 1 must have the form Pred/Arity'])
 	),
 	%% check that A is given as bar(_,_,_) and not as bar/Arity
 	(functor(A,'/',_)
-	-> abort([Message, A, ' Arg 2 must have the form Pred(_,_,...)'])
-	; true
+	-> abort(['flImport*/4: ', A, ', Arg 2 must have the form Pred(_,_,...)'])
+	%% check if A and P have the same arity
+	; functor(A,_,Arity), P=_/Arity -> true
+	; abort(['flImport*/4: ', P, ' and ', A, ' must have the same arity'])
 	).
 
 %% Clone A in the same module. Return a cloned A and the list of its arguments
